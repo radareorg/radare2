@@ -1,0 +1,32 @@
+NAME=pxj
+FILE=-
+CMDS=<<EOF
+w hello world # ascii string
+psa
+w The ç·ñ world # utf8 string
+psa
+w \x05hello # pascal1 string
+psa
+w \x03hello # pascal1 truncated string
+psa
+w \x04\x00\x00\x00hello pointer # 32bit pointer to string
+psa
+w \x0a\x00\x00\x00hello pointer # 32bit pointer to string
+psa
+
+w hello delta\x00
+s 0x10
+w \xf6\xff\xff\xff pointer # 32bit relative pointer
+psa
+EOF
+EXPECT=<<EOF
+hello world
+The ç·ñ world
+hello
+hel
+hello pointer
+pointer
+delta
+EOF
+RUN
+

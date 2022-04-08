@@ -465,9 +465,10 @@ static const char *help_msg_pq[] = {
 };
 
 static const char *help_msg_ps[] = {
-	"Usage:", "ps[bijqpsuwWxz+] [N]", "Print String",
+	"Usage:", "psa[bijqpsuwWxz+] [N]", "Print String",
 	"ps", "", "print string",
 	"ps+", "[j]", "print libc++ std::string (same-endian, ascii, zero-terminated)",
+	"psa", "", "print any type of string (psp/psw/psW/psz/..)",
 	"psb", "", "print strings in current block",
 	"psi", "", "print string inside curseek",
 	"psj", "", "print string in JSON format",
@@ -1125,15 +1126,12 @@ static int cmd_pdu(RCore *core, const char *input) {
 	switch (*input) {
 	case 'a': // "pdua"
 		{
-		ut64 to;
-		ut64 count;
-
 		if (input[1] == '?' || (input[1] && input[2] == '?') || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdua", true);
 			break;
 		}
 
-		to = r_num_get (core->num, arg);
+		ut64 to = r_num_get (core->num, arg);
 
 		if (!to) {
 			eprintf ("Couldn't parse address \"%s\"\n", arg);
@@ -1150,12 +1148,8 @@ static int cmd_pdu(RCore *core, const char *input) {
 		}
 
 		// pD <count>
-		count = to - core->offset;
-		if (input[1] == 'j') {
-			ret = r_core_cmdf (core, "pDJ %" PFMT64u, count);
-		} else {
-			ret = r_core_cmdf (core, "pD %" PFMT64u, count);
-		}
+		ut64 count = to - core->offset;
+		ret = r_core_cmdf (core, "%s %" PFMT64u, (input[1]== 'j')? "pDJ": "pD", count);
 		}
 		break;
 	case 'c': // "pduc"
@@ -5228,18 +5222,190 @@ static void core_print_decompile(RCore *core, const char *input) {
 		r_anal_esil_set_pc (esil, addr);
 		r_cons_printf ("addr_0x%08"PFMT64x"_0: // %s\n", addr, es);
 		char *cstr = esil2c (core, esil, es);
-		r_cons_printf ("%s", cstr);
-		free (cstr);
-		if (op->size > 0) {
-			addr += op->size;
-		} else {
-			addr += minopsize;
+		if (cstr) {
+			r_cons_printf ("%s", cstr);
+			free (cstr);
 		}
+		addr += (op->size > 0)? op->size: minopsize;
 		r_anal_op_free (op);
 	}
 	esil2c_free (esil->user);
 	esil->user = NULL;
 	r_anal_esil_free (esil);
+}
+
+static bool check_string_at(RCore *core, ut64 addr) {
+	if (!r_io_is_valid_offset (core->io, addr, 0)) {
+		return false;
+	}
+	const int len = core->blocksize; // max string length
+	int i;
+	// bool is_utf32le = false;
+	// bool is_utf32be = false;
+	bool is_utf16le = false;
+	bool is_utf16be = false;
+	bool is_pascal1 = false;
+	bool is_pascal2 = false;
+	bool is_utf8 = false;
+	bool is_ascii = false;
+	char *out = NULL; // utf8 string containing the printable result
+	ut8 *buf = malloc (len);
+	if (buf) {
+		if (r_io_read_at (core->io, addr, buf, len) < 1) {
+			free (buf);
+			return false;
+		}
+	} else {
+		eprintf ("Cannot allocate %d byte(s)\n", len);
+		return false;
+	}
+	int nullbyte = r_str_nlen ((const char *)buf, len);
+	if (nullbyte == len) {
+		// full block, not null terminated somehow. lets check how printable it is first..
+		buf[len - 1] = 0;
+		nullbyte--;
+	}
+	if (nullbyte < len && nullbyte > 3) {
+		is_ascii = true;
+		// it's a null terminated string!
+		for (i = 0; i < nullbyte; i++) {
+			if (!IS_PRINTABLE (buf[i])) {
+				is_ascii = false;
+			}
+		}
+		if (!is_ascii) {
+			is_utf8 = true;
+			if ((buf[0] & 0xf0) == 0xf0 && (buf[1] & 0xf0) == 0xf0) {
+				is_utf8 = false;
+			}
+			for (i = 0; i < nullbyte; i++) {
+				int us = r_utf8_size (buf + i);
+				if (us < 1) {
+					is_utf8 = false;
+					break;
+				}
+				i += us - 1;
+			}
+		}
+	}
+
+	// utf16le check
+	if (IS_PRINTABLE (buf[0]) && !buf[1]) {
+		if (IS_PRINTABLE (buf[2]) && !buf[3]) {
+			if (IS_PRINTABLE (buf[4]) && !buf[5]) {
+				if (IS_PRINTABLE (buf[6]) && !buf[7]) {
+					if (IS_PRINTABLE (buf[8]) && !buf[9]) {
+						is_utf16le = true;
+						out = malloc (len + 1);
+						if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, true) < 1) {
+							is_utf16le = false;
+						}
+					}
+				}
+			}
+		}
+	}
+	// utf16be check
+	if (IS_PRINTABLE (buf[1]) && !buf[0]) {
+		if (IS_PRINTABLE (buf[3]) && !buf[2]) {
+			if (IS_PRINTABLE (buf[5]) && !buf[4]) {
+				if (IS_PRINTABLE (buf[7]) && !buf[6]) {
+					if (IS_PRINTABLE (buf[9]) && !buf[8]) {
+						is_utf16be = true;
+						out = malloc (len + 1);
+						if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, false) < 1) {
+							is_utf16be = false;
+						}
+					}
+				}
+			}
+		}
+	}
+	// check for pascal string
+	{
+		ut8 plen = buf[0];
+		if (plen > 1 && plen < len) {
+			is_pascal1 = true;
+			int i;
+			for (i = 1; i < plen; i++) {
+				if (!IS_PRINTABLE (buf[i])) {
+					is_pascal1 = false;
+					break;
+				}
+			}
+			if (is_pascal1) {
+				out = r_str_ndup ((const char *)buf + 1, i);
+			}
+		}
+	}
+	if (!is_pascal1) {
+		ut8 plen = r_read_le16 (buf);
+		if (plen > 2 && plen < len) {
+			is_pascal2 = true;
+			for (i = 2; i < plen; i++) {
+				if (!IS_PRINTABLE (buf[i])) {
+					is_pascal2 = false;
+					break;
+				}
+			}
+			if (is_pascal2) {
+				out = r_str_ndup ((const char *)buf + 2, i);
+			}
+		}
+	}
+#if 0
+eprintf ("pascal %d\n", is_pascal1 + is_pascal2);
+eprintf ("utf8 %d\n", is_utf8);
+eprintf ("utf16 %d\n", is_utf16le+ is_utf16be);
+eprintf ("ascii %d\n", is_ascii);
+eprintf ("render%c", 10);
+#endif
+	// render the stuff
+	if (out) {
+		r_cons_printf ("%s\n", out);
+		free (out);
+		free (buf);
+		return true;
+	}
+	if (is_ascii || is_utf8) {
+		r_cons_printf ("%s\n", buf);
+		free (buf);
+		return true;
+	}
+	free (buf);
+	return false;
+}
+
+static bool check_string_pointer(RCore *core, ut64 addr) {
+	ut8 buf[16];
+	r_io_read_at (core->io, addr, buf, sizeof (buf));
+	// check for 64bit pointer to string
+	ut64 p1 = r_read_le64 (buf);
+	if (check_string_at (core, p1)) {
+		return true;
+	}
+	// check for 32bit pointer to string
+	ut64 p2 = (ut64)r_read_le32 (buf);
+	if (check_string_at (core, p2)) {
+		return true;
+	}
+	// check for self reference pointer to string used by swift
+	st32 p3 = (st32)r_read_le32 (buf);
+	ut64 dst = core->offset + p3;
+	if (check_string_at (core, dst)) {
+		return true;
+	}
+	return false;
+}
+
+static void cmd_psa(RCore *core, const char *_) {
+	bool found = true;
+	if (!check_string_at (core, core->offset)) {
+		if (!check_string_pointer (core, core->offset)) {
+			found = false;
+		}
+	}
+	core->num->value = found? 0: 1;
 }
 
 static int cmd_print(void *data, const char *input) {
@@ -6190,6 +6356,9 @@ static int cmd_print(void *data, const char *input) {
 			if (l > 0) {
 				r_print_string (core->print, core->offset, block, len, R_PRINT_STRING_ESC_NL);
 			}
+			break;
+		case 'a': // "psa"
+			cmd_psa (core, input + 1);
 			break;
 		case 'b': // "psb"
 			if (l > 0) {

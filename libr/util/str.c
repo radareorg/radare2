@@ -2926,6 +2926,7 @@ R_API char *r_str_uri_encode(const char *s) {
 	return trimDown? trimDown: od;
 }
 
+// XXX antipattern, bigendian should be 1 not 0
 R_API int r_str_utf16_to_utf8(ut8 *dst, int len_dst, const ut8 *src, int len_src, int little_endian) {
 	ut8 *outstart = dst;
 	ut8 *outend = dst + len_dst;
