@@ -397,11 +397,11 @@ typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
 #ifdef R_API
 
 typedef int RCmdReturnCode;
+#define R_CMD_RC_FAILURE 1
 #define R_CMD_RC_SUCCESS 0
 #define R_CMD_RC_QUIT -2
-#define R_CMD_RC_ERROR -1
-#define R_CMD_RC_ONE 1
-#define r_core_return_code(core, val) core->num->value = val
+#define R_CMD_RC_FASTQUIT -1
+#define r_core_return_code(core, val) (core)->num->value = (val)
 
 R_API RList *r_core_list_themes(RCore *core);
 R_API char *r_core_get_theme(RCore *core);

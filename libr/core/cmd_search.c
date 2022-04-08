@@ -2616,7 +2616,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			}
 			print_search_progress (at, to1, search->nhits, param);
 			r_cons_clear_line (1);
-			core->num->value = search->nhits;
+			r_core_return_code (core, search->nhits);
 			if (param->outmode != R_MODE_JSON) {
 				eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 			}
@@ -3227,7 +3227,6 @@ static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	bool dosearch_read = false;
-	RCmdReturnCode ret = R_CMD_RC_SUCCESS;
 	int errcode = -1;
 	RCore *core = (RCore *) data;
 	struct search_parameters param = {
@@ -4072,7 +4071,7 @@ reread:
 		}
 		if (input[param_offset - 1] != ' ') {
 			eprintf ("Missing ' ' after /i\n");
-			ret = false;
+			r_core_return_code (core, R_CMD_RC_FAILURE);
 			goto beach;
 		}
 		ignorecase = true;
@@ -4214,7 +4213,7 @@ reread:
 			st64 coff = core->offset;
 			RInterval itv = {core->offset, -coff};
 			if (!r_itv_overlap (search_itv, itv)) {
-				ret = false;
+				r_core_return_code (core, R_CMD_RC_SUCCESS);
 				goto beach;
 			} else {
 				search_itv = r_itv_intersect (search_itv, itv);

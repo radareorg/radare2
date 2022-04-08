@@ -189,7 +189,7 @@ static const char *help_msg_wx[] = {
 
 static void cmd_write_fail(RCore *core) {
 	eprintf ("ERROR: Cannot write in here, check map permissions or reopen the file with oo+\n");
-	core->num->value = 1;
+	r_core_return_code (core, R_CMD_RC_FAILURE);
 }
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
@@ -206,10 +206,10 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 				buf[len - 1] |= core->block[len - 1] & 0xf;
 			}
 		}
-		core->num->value = 0;
+		r_core_return_code (core, R_CMD_RC_SUCCESS);
 		if (!r_core_write_at (core, core->offset, buf, len)) {
 			cmd_write_fail (core);
-			core->num->value = 1;
+			r_core_return_code (core, R_CMD_RC_FAILURE);
 		}
 		if (r_config_get_i (core->config, "cfg.wseek")) {
 			r_core_seek_delta (core, len);
@@ -217,7 +217,7 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 		r_core_block_read (core);
 	} else {
 		eprintf ("Error: invalid hexpair string\n");
-		core->num->value = 1;
+		r_core_return_code (core, R_CMD_RC_FAILURE);
 	}
 	free (buf);
 	return len;
@@ -446,7 +446,8 @@ static int wo_handler_old(void *data, const char *input) {
 				eprintf ("Need hex value with `0x' prefix e.g. 0x41414142\n");
 			} else if (input[2] == ' ') {
 				value = r_num_get (core->num, input + 3);
-				core->num->value = r_debruijn_offset (value, r_config_get_i (core->config, "cfg.bigendian"));
+				int offset = r_debruijn_offset (value, r_config_get_i (core->config, "cfg.bigendian"));
+				r_core_return_code (core, offset);
 				r_cons_printf ("%"PFMT64d"\n", core->num->value);
 			}
 			break;
@@ -492,7 +493,7 @@ static void cmd_write_value(RCore *core, const char *input) {
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	bool be = r_config_get_i (core->config, "cfg.bigendian");
 
-	core->num->value = 0;
+	r_core_return_code (core, R_CMD_RC_SUCCESS);
 
 	switch (input[0]) {
 	case '?': // "wv?"
@@ -1419,7 +1420,7 @@ static int w_handler(RCore *core, const char *input) {
 	free (str);
 	WSEEK (core, len);
 	r_core_block_read (core);
-	core->num->value = len;
+	r_core_return_code (core, len);
 	return 0;
 }
 
@@ -1433,9 +1434,9 @@ static int wz_handler_old(void *data, const char *input) {
 		cmd_write_fail (core);
 	}
 	if (len > 0) {
-		core->num->value = len;
+		r_core_return_code (core, len);
 	} else {
-		core->num->value = 0;
+		r_core_return_code (core, 0);
 	}
 	WSEEK (core, len + 1);
 	r_core_block_read (core);
@@ -1711,9 +1712,9 @@ static int wx_handler_old(void *data, const char *input) {
 						if (!r_io_write_at (core->io, core->offset, out, len)) {
 							eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
 						}
-						core->num->value = len;
+						r_core_return_code (core, len);
 					} else {
-						core->num->value = 0;
+						r_core_return_code (core, 0);
 					}
 					free (out);
 				}
@@ -1723,7 +1724,7 @@ static int wx_handler_old(void *data, const char *input) {
 			if ((buf = r_file_slurp_hexpairs (arg, &size))) {
 				r_io_use_fd (core->io, core->io->desc->fd);
 				if (r_io_write_at (core->io, core->offset, buf, size) > 0) {
-					core->num->value = size;
+					r_core_return_code (core, size);
 					WSEEK (core, size);
 				} else {
 					eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
@@ -1745,9 +1746,9 @@ static int wx_handler_old(void *data, const char *input) {
 			int len = cmd_write_hexpair (core, input + 1);
 			if (len > 0) {
 				r_core_seek_delta (core, len);
-				core->num->value = len;
+				r_core_return_code (core, len);
 			} else {
-				core->num->value = 0;
+				r_core_return_code (core, 0);
 			}
 		}
 		break;
@@ -2140,7 +2141,7 @@ static int cmd_write(void *data, const char *input) {
 
 		ut64 addr = core->offset;
 		if (R_STR_ISEMPTY (curcs)) {
-			core->num->value = 0;
+			r_core_return_code (core, 0);
 			w_handler (core, str + 1);
 			addr += core->num->value;
 		} else {

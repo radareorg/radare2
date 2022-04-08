@@ -1373,41 +1373,47 @@ static int cmd_cmp(void *data, const char *input) {
 		switch (sz) {
 		case '1': { // "cv1"
 			ut8 n = (ut8) r_num_math (core->num, input + 2);
-			core->num->value = 1;
 			if (block[0] == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
-				core->num->value = 0;
+				r_core_return_code (core, 0);
+			} else {
+				r_core_return_code (core, 1);
 			}
 			break;
 		}
 		case '2': { // "cv2"
 			ut16 n = (ut16) r_num_math (core->num, input + 2);
-			core->num->value = 1;
 			if (core->blocksize >= 2 && *(ut16*)block == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
-				core->num->value = 0;
+				r_core_return_code (core, 0);
+			} else {
+				r_core_return_code (core, 1);
 			}
 			break;
 		}
 		case '4': { // "cv4"
 			ut32 n = (ut32) r_num_math (core->num, input + 2);
-			core->num->value = 1;
 			if (core->blocksize >= 4 && *(ut32*)block == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
-				core->num->value = 0;
+				r_core_return_code (core, 0);
+			} else {
+				r_core_return_code (core, 1);
 			}
 			break;
 		}
 		case '8': { // "cv8"
 			ut64 n = (ut64) r_num_math (core->num, input + 2);
-			core->num->value = 1;
 			if (core->blocksize >= 8 && *(ut64*)block == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
-				core->num->value = 0;
+				r_core_return_code (core, 0);
+			} else {
+				r_core_return_code (core, 1);
 			}
 			break;
 		}
 		default:
+			r_core_return_code (core, 1);
+			// fallthrough
 		case '?':
 			eprintf ("Usage: cv[1248] [num]\n"
 				"Show offset if current value equals to the one specified\n"
@@ -1438,7 +1444,8 @@ static int cmd_cmp(void *data, const char *input) {
 			ut64 at = r_num_math (core->num, input + 2);
 			ut8 buf[8] = {0};
 			r_io_read_at (core->io, at, buf, sizeof (buf));
-			core->num->value = memcmp (buf, core->block, sz)? 1: 0;
+			int val = memcmp (buf, core->block, sz)? 1: 0;
+			r_core_return_code (core, val);
 		}
 		break;
 	}
@@ -1457,7 +1464,7 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	}
 	if (val != UT64_MAX) {
-		core->num->value = val;
+		r_core_return_code (core, val);
 	}
 	return 0;
 }

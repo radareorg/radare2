@@ -1704,7 +1704,7 @@ rep:
 		if (input[1]) {
 			const char *arg = r_str_trim_head_ro (input + 1);
 			RFlagItem *fi = r_flag_get (core->flags, arg);
-			core->num->value = fi? 1: 0;
+			r_core_return_code (core, fi? 1:0);
 		} else {
 			r_core_cmd_help (core, help_msg_f);
 			break;
