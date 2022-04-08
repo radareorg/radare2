@@ -9,20 +9,20 @@ on:
 #    - cron: '0 0 * * 1'
 
 jobs:
-  build-offline:
-    name: linux-offline
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Building r2 without network access
-      run: |
-        ./preconfigure
-        echo UNPLUG
-        sudo rm -f /etc/resolv.conf || true
-        ping av.com || true
-        ./configure --with-rpath --prefix=/usr
-        make -j ; sudo make install
+#  build-offline:
+#    name: linux-offline
+#    runs-on: ubuntu-20.04
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#    - name: Building r2 without network access
+#      run: |
+#        ./preconfigure
+#        echo UNPLUG
+#        sudo rm -f /etc/resolv.conf || true
+#        ping av.com || true
+#        ./configure --with-rpath --prefix=/usr
+#        make -j ; sudo make install
   build-oldlibs:
     name: linux-acr-oldlibsbug
     runs-on: ubuntu-20.04
