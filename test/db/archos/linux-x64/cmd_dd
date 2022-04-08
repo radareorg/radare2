@@ -18,16 +18,16 @@ doc # kill the process to avoid actual ls output
 EOF
 EXPECT=<<EOF
 0 0x0 r-P
-1 0x0 r-P
-2 0x0 r-P
+1 0x0 -wP
+2 0x0 -wP
 ---
 #dd
 #dd
 #dd
 ---
 0 0x0 r-P
-1 0x0 r-P
-2 0x0 r-P
+1 0x0 -wP
+2 0x0 -wP
 3 0x0 r--
 ---
 1
@@ -37,7 +37,6 @@ EOF
 RUN
 
 NAME=dd open, close, duplicate
-BROKEN=1 # dd+ fails to open in rw
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
@@ -56,8 +55,8 @@ doc
 EOF
 EXPECT=<<EOF
 0 r-P
-1 r-P
-2 r-P
+1 -wP
+2 -wP
 3 r--
 4 rw-
 ---

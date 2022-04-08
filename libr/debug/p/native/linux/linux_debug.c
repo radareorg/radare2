@@ -1368,7 +1368,7 @@ RList *linux_desc_list (int pid) {
 				type = '-';
 			}
 		}
-		if (lstat(path, &st) != -1) {
+		if (lstat(file, &st) != -1) {
 			if (st.st_mode & S_IRUSR) {
 				perm |= R_PERM_R;
 			}

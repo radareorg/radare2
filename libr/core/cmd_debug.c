@@ -169,8 +169,8 @@ static const char *help_msg_dcu[] = {
 static const char *help_msg_dd[] = {
 	"Usage: dd", "", "Manage file descriptors for child process (* to show r2 commands)",
 	"dd", "[*]", "List file descriptors",
-	"dd", "[*] <file>", "Open file as read-only (r--)",
-	"dd+", "[*] <file>", "Open/create file as read-write (rw-)",
+	"dd", "[*] <file|addr>", "Open file as read-only (r--); addr = use as char* for path",
+	"dd+", "[*] <file|addr>", "Open/create file as read-write (rw-); addr = use as char* for path",
 	"dd-", "[*] <fd>", "Close fd",
 	"ddt", "[*]", "Close terminal fd (alias for `dd- 0`)",
 	"dds", "[*] <fd> [offset]", "Seek fd to offset (no offset = seek to beginning)",
@@ -4854,8 +4854,9 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	case '+': // "dd+"
 	case ' ': { // "dd"
 		RBuffer *buf;
-		int flags;
+		char *filename;
 		ut64 addr;
+		int flags;
 
 		if (argc < 2) {
 			// only dd and dd* can have 1 arg here, others should error out
@@ -4872,26 +4873,29 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		} else {
 			flags = O_RDONLY;
 		}
+
+		// Filename can be a given string or char* address in memory
 		addr = r_num_math (core->num, argv[1]);
-
-		// Filename can be a string literal or address in memory
 		if (addr) {
-			buf = r_core_syscallf (core, "open",
-					"%" PFMT64x ", %d, 0644",
-					addr, flags);
+			filename = r_core_cmd_strf (core, "ps @%" PFMT64x, addr);
 		} else {
-			char *filename = r_str_escape (argv[1]);
-			buf = r_core_syscallf (core, "open",
-					"\"%s\", %d, 0644",
-					filename, flags);
-			free (filename);
+			char *esc = r_str_escape (argv[1]);
+			filename = r_str_newf ("\"%s\"", esc);
+			free (esc);
 		}
 
-		if (buf) {
-			ret = run_buffer_dxr (core, buf, print);
-		} else {
-			eprintf ("Cannot open\n");
+		if (print || flags != O_RDONLY || !r_debug_desc_open (core->dbg, filename)) {
+			buf = r_core_syscallf (core, "open",
+					"%s, %d, 0644",
+					filename, flags);
+			if (buf) {
+				ret = run_buffer_dxr (core, buf, print);
+			} else {
+				eprintf ("Cannot open\n");
+			}
 		}
+
+		free (filename);
 		break;
 	}
 	case 's': { // "dds"
