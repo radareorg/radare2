@@ -1020,7 +1020,7 @@ static int cmd_rap_run(void *data, const char *input) {
 	if (res) {
 		int ret = atoi (res);
 		free (res);
-		core->num->value = ret;
+		r_core_return_code (core, ret);
 		return ret;
 	}
 	return false;
@@ -1034,7 +1034,7 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_yank (core, core->offset, r_num_math (core->num, input + 1));
 		break;
 	case 'l': // "yl"
-		core->num->value = r_buf_size (core->yank_buf);
+		r_core_return_code (core, r_buf_size (core->yank_buf));
 		break;
 	case 'y': // "yy"
 		while (input[1] == ' ') {
@@ -1926,9 +1926,9 @@ static int cmd_interpret(void *data, const char *input) {
 			} else {
 				if (!r_core_run_script (core, script_file)) {
 					eprintf ("Cannot find script '%s'\n", script_file);
-					core->num->value = 1;
+					r_core_return_code (core, R_CMD_RC_FAILURE);
 				} else {
-					core->num->value = 0;
+					r_core_return_code (core, R_CMD_RC_SUCCESS);
 				}
 			}
 		}
@@ -2348,7 +2348,7 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 		return false;
 	}
 	free (input);
-	core->num->value = rc;
+	r_core_return_code (core, rc);
 	return true;
 }
 
@@ -3715,7 +3715,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 							free (res);
 						}
 					}
-					core->num->value = value;
+					r_core_return_code (core, value);
 					r_list_free (tmpenvs);
 					return 0;
 				} else { // "|"
@@ -3951,7 +3951,7 @@ next2:
 			}
 			str = r_str_append (str, ptr2 + 1);
 			cmd = r_str_append (strdup (cmd), str);
-			core->num->value = value;
+			r_core_return_code (core, value);
 			ret = r_core_cmd_subst (core, cmd);
 			free (cmd);
 			if (scr_html != -1) {
@@ -4480,7 +4480,10 @@ fuji:
 		r_str_trim_head (cmd);
 		rc = r_cmd_call (core->rcmd, cmd);
 	} else {
-		rc = false;
+		rc = 0;
+	}
+	if (rc == 1) {
+		r_core_return_code (core, rc);
 	}
 beach:
 	if (grep) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #ifndef R2_CORE_H
 #define R2_CORE_H
@@ -395,7 +395,14 @@ typedef struct r_core_cmpwatch_t {
 typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
 
 #ifdef R_API
-//#define r_core_ncast(x) (RCore*)(size_t)(x)
+
+typedef int RCmdReturnCode;
+#define R_CMD_RC_FAILURE 1
+#define R_CMD_RC_SUCCESS 0
+#define R_CMD_RC_QUIT -2
+#define R_CMD_RC_FASTQUIT -1
+#define r_core_return_code(core, val) (core)->num->value = (val)
+
 R_API RList *r_core_list_themes(RCore *core);
 R_API char *r_core_get_theme(RCore *core);
 R_API const char *r_core_get_section_name(RCore *core, ut64 addr);

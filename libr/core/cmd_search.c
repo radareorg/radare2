@@ -7,6 +7,7 @@
 #include "r_list.h"
 #include "r_types_base.h"
 #include "cmd_search_rop.c"
+
 static int cmd_search(void *data, const char *input);
 
 #define USE_EMULATION 0
@@ -2615,7 +2616,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			}
 			print_search_progress (at, to1, search->nhits, param);
 			r_cons_clear_line (1);
-			core->num->value = search->nhits;
+			r_core_return_code (core, search->nhits);
 			if (param->outmode != R_MODE_JSON) {
 				eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 			}
@@ -3226,7 +3227,7 @@ static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	bool dosearch_read = false;
-	int ret = true;
+	int errcode = -1;
 	RCore *core = (RCore *) data;
 	struct search_parameters param = {
 		.core = core,
@@ -3250,14 +3251,14 @@ static int cmd_search(void *data, const char *input) {
 	}
 	if (core->in_search) {
 		eprintf ("Can't search from within a search.\n");
-		return false;
+		return R_CMD_RC_SUCCESS;
 	}
 	if (input[0] == '/') {
 		if (core->lastsearch) {
 			input = core->lastsearch;
 		} else {
 			eprintf ("No previous search done\n");
-			return false;
+			return R_CMD_RC_SUCCESS;
 		}
 	} else {
 		free (core->lastsearch);
@@ -3270,7 +3271,7 @@ static int cmd_search(void *data, const char *input) {
 	const ut64 search_to = r_config_get_i (core->config, "search.to");
 	if (search_from > search_to && search_to) {
 		eprintf ("Invalid search range where search.from > search.to.\n");
-		ret = false;
+		errcode = 0;
 		goto beach;
 	}
 	// {.addr = UT64_MAX, .size = 0} means search range is unspecified
@@ -3278,7 +3279,7 @@ static int cmd_search(void *data, const char *input) {
 	bool empty_search_itv = search_from == search_to && search_from != UT64_MAX;
 	if (empty_search_itv) {
 		eprintf ("Warning: from == to?\n");
-		ret = false;
+		errcode = 0;
 		goto beach;
 	}
 	// TODO full address cannot be represented, shrink 1 byte to [0, UT64_MAX)
@@ -3336,7 +3337,6 @@ reread:
 		if (core->offset) {
 			RInterval itv = {0, core->offset};
 			if (!r_itv_overlap (search_itv, itv)) {
-				ret = false;
 				goto beach;
 			} else {
 				search_itv = r_itv_intersect (search_itv, itv);
@@ -3588,7 +3588,6 @@ reread:
 			if (input[param_offset - 1]) {
 				char *kwd = r_core_asm_search (core, input + param_offset);
 				if (!kwd) {
-					ret = false;
 					goto beach;
 				}
 				dosearch = true;
@@ -3663,7 +3662,6 @@ reread:
 			}
 		case 'c': // "/cc"
 			{
-				ret = false;
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || input[2] == '?') {
@@ -3700,10 +3698,11 @@ reread:
 							}
 						}
 						free (hashValue);
+						r_core_return_code (core, 0);
 					} else {
 						eprintf ("Cannot allocate memory.\n");
+						r_core_return_code (core, 1);
 					}
-					ret = true;
 				} else {
 					eprintf ("Usage: /cc [hashname] [hexpairhashvalue]\n");
 					eprintf ("Usage: /CC to search ascii collisions\n");
@@ -4072,7 +4071,7 @@ reread:
 		}
 		if (input[param_offset - 1] != ' ') {
 			eprintf ("Missing ' ' after /i\n");
-			ret = false;
+			r_core_return_code (core, R_CMD_RC_FAILURE);
 			goto beach;
 		}
 		ignorecase = true;
@@ -4214,7 +4213,7 @@ reread:
 			st64 coff = core->offset;
 			RInterval itv = {core->offset, -coff};
 			if (!r_itv_overlap (search_itv, itv)) {
-				ret = false;
+				r_core_return_code (core, R_CMD_RC_SUCCESS);
 				goto beach;
 			} else {
 				search_itv = r_itv_intersect (search_itv, itv);
@@ -4417,7 +4416,11 @@ again:
 		r_search_maps (search, param.boundaries);
 	}
 beach:
-	core->num->value = search->nhits;
+	if (errcode != -1) {
+		r_core_return_code (core, errcode);
+	} else {
+		r_core_return_code (core, search->nhits);
+	}
 	core->in_search = false;
 	r_flag_space_pop (core->flags);
 	if (param.outmode == R_MODE_JSON) {
@@ -4426,5 +4429,5 @@ beach:
 	pj_free (param.pj);
 	r_list_free (param.boundaries);
 	r_search_kw_reset (search);
-	return ret;
+	return R_CMD_RC_SUCCESS;
 }

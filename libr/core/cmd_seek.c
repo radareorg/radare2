@@ -335,7 +335,7 @@ static void cmd_seek_opcode(RCore *core, const char *input) {
 	int val = (n < 0)
 		? cmd_seek_opcode_backward (core, -n)
 		: cmd_seek_opcode_forward (core, n);
-	core->num->value = val;
+	r_core_return_code (core, val);
 }
 
 static int cmd_seek(void *data, const char *input) {
