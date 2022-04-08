@@ -5907,6 +5907,10 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = 0;
 			processed_cmd = true;
 			break;
+		case 'v': // "pdv" // east decompiler
+			eprintf ("Error: r2pm -ci east\n");
+			processed_cmd = true;
+			break;
 		case 'd': // "pdd" // r2dec
 			eprintf ("Error: r2pm -ci r2dec\n");
 			processed_cmd = true;
