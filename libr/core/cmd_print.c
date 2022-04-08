@@ -5234,6 +5234,34 @@ static void core_print_decompile(RCore *core, const char *input) {
 	r_anal_esil_free (esil);
 }
 
+static bool strnullpad_check(const ut8 *buf, int len, int clen, int inc, bool be) {
+	int i;
+	for (i = 0; i < len; i += inc) {
+		if (inc == 2) {
+			if (be) {
+				if (!buf[i] && !buf[i + 1]) {
+					return false;
+				}
+				if (!IS_PRINTABLE (buf[i]) || buf[i + 1]) {
+					return false;
+				}
+			} else {
+				if (!buf[i] && !buf[i + 1]) {
+					return false;
+				}
+				if (buf[i] || !IS_PRINTABLE (buf[i+1])) {
+					return false;
+				}
+			}
+		// utf32 } else if (inc == 4) {
+		} else {
+			eprintf ("Invalid inc\n");
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool check_string_at(RCore *core, ut64 addr) {
 	if (!r_io_is_valid_offset (core->io, addr, 0)) {
 		return false;
@@ -5288,35 +5316,20 @@ static bool check_string_at(RCore *core, ut64 addr) {
 	}
 
 	// utf16le check
-	if (IS_PRINTABLE (buf[0]) && !buf[1]) {
-		if (IS_PRINTABLE (buf[2]) && !buf[3]) {
-			if (IS_PRINTABLE (buf[4]) && !buf[5]) {
-				if (IS_PRINTABLE (buf[6]) && !buf[7]) {
-					if (IS_PRINTABLE (buf[8]) && !buf[9]) {
-						out = malloc (len + 1);
-						if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, true) < 1) {
-							R_FREE (out);
-						}
-					}
-				}
-			}
+	if (strnullpad_check (buf, R_MIN (len, 10), 10, 2, false)) {
+		out = malloc (len + 1);
+		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, true) < 1) {
+			R_FREE (out);
 		}
 	}
 	// utf16be check
-	if (IS_PRINTABLE (buf[1]) && !buf[0]) {
-		if (IS_PRINTABLE (buf[3]) && !buf[2]) {
-			if (IS_PRINTABLE (buf[5]) && !buf[4]) {
-				if (IS_PRINTABLE (buf[7]) && !buf[6]) {
-					if (IS_PRINTABLE (buf[9]) && !buf[8]) {
-						out = malloc (len + 1);
-						if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, false) < 1) {
-							R_FREE (out);
-						}
-					}
-				}
-			}
+	if (strnullpad_check (buf, R_MIN (len, 10), 10, 2, true)) {
+		out = malloc (len + 1);
+		if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, false) < 1) {
+			R_FREE (out);
 		}
 	}
+	// TODO: add support for utf32 strings and improve util apis
 	// check for pascal string
 	{
 		ut8 plen = buf[0];
