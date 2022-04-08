@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2019-2022 - GustavoLCR */
 
 #include "ne.h"
-#define NE_BUG 0
 
 static char *__get_target_os(r_bin_ne_obj_t *bin) {
 	switch (bin->ne_header->targOS) {
@@ -505,25 +504,18 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 					free (reloc);
 					break;
 				}
-				char *name;
-#if NE_BUG
-				if (rel.index > 0 && rel.index < bin->ne_header->ModRefs) {
-					offset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;
-					name = __read_nonnull_str_at (bin->buf, offset);
-				} else {
-					name = r_str_newf ("UnknownModule%d_%x", rel.index, off); // ????
-				}
-#else
+				char *name = NULL;
 				if (rel.index > bin->ne_header->ModRefs) {
 					name = r_str_newf ("UnknownModule%d_%x", rel.index, off); // ????
-				} else {
+				} else if (rel.index > 0) {
 					offset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;
 					name = __read_nonnull_str_at (bin->buf, offset);
 				}
-#endif
 				if (rel.flags & IMPORTED_ORD) {
 					imp->ordinal = rel.func_ord;
-					imp->name = r_str_newf ("%s.%s", name, __func_name_from_ord(name, rel.func_ord));
+					char *fname = __func_name_from_ord (name, rel.func_ord);
+					imp->name = r_str_newf ("%s.%s", name, fname);
+					free (fname);
 				} else {
 					offset = bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;
 					char *func = __read_nonnull_str_at (bin->buf, offset);
@@ -566,6 +558,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 				r_list_append (relocs, reloc);
 			} else {
 				do {
+#define NE_BUG 0
 #if NE_BUG
 					if (reloc->paddr + 4 < r_buf_size (bin->buf)) {
 						break;
