@@ -1,3 +1,17 @@
+NAME=NE crash
+FILE=bins/ne/necrash
+CMDS=<<EOF
+aaa
+i~format
+i~csum
+aflc
+EOF
+EXPECT=<<EOF
+format   ne
+hdr.csum c258016a
+0
+EOF
+RUN
 NAME=NE Symbols
 FILE=bins/ne/anim8.exe
 CMDS=is
