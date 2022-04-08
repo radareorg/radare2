@@ -7,6 +7,7 @@
 #include "r_list.h"
 #include "r_types_base.h"
 #include "cmd_search_rop.c"
+
 static int cmd_search(void *data, const char *input);
 
 #define USE_EMULATION 0
@@ -3226,7 +3227,7 @@ static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	bool dosearch_read = false;
-	int ret = true;
+	int ret = 0;
 	RCore *core = (RCore *) data;
 	struct search_parameters param = {
 		.core = core,
@@ -3250,14 +3251,14 @@ static int cmd_search(void *data, const char *input) {
 	}
 	if (core->in_search) {
 		eprintf ("Can't search from within a search.\n");
-		return false;
+		return R_CMD_RC_SUCCESS;
 	}
 	if (input[0] == '/') {
 		if (core->lastsearch) {
 			input = core->lastsearch;
 		} else {
 			eprintf ("No previous search done\n");
-			return false;
+			return R_CMD_RC_SUCCESS;
 		}
 	} else {
 		free (core->lastsearch);
@@ -4417,7 +4418,7 @@ again:
 		r_search_maps (search, param.boundaries);
 	}
 beach:
-	core->num->value = search->nhits;
+	r_core_return_code (core, search->nhits);
 	core->in_search = false;
 	r_flag_space_pop (core->flags);
 	if (param.outmode == R_MODE_JSON) {
@@ -4426,5 +4427,5 @@ beach:
 	pj_free (param.pj);
 	r_list_free (param.boundaries);
 	r_search_kw_reset (search);
-	return ret;
+	return R_CMD_RC_SUCCESS;
 }
