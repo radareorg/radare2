@@ -584,6 +584,9 @@ R_API int r_utf8_strlen(const ut8 *str) {
 	return len;
 }
 
+// XXX this function name is really bad, rename to r_utf8_is_printable()
+// XXX but a single char rune is useless without processing the next chars
+// XXX not to mention int != bool
 R_API int r_isprint(const RRune c) {
 	// RRunes are most commonly single byte... We can early out with this common case.
 	if (c < 0x34F) {
