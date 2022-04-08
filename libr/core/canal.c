@@ -5295,10 +5295,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		arch = R2_ARCH_MIPS;
 	}
 
-	const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
-	if (!sn) {
-		eprintf ("Warning: No SN reg alias for current architecture.\n");
-	}
 	r_reg_arena_push (core->anal->reg);
 
 	IterCtx ictx = { start, end, fcn, NULL };
@@ -5408,6 +5404,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				i += op.size - 1;
 				goto repeat;
 			}
+		}
+		const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+		if (!sn) {
+			eprintf ("Warning: No SN reg alias for current architecture.\n");
 		}
 		if (sn && op.type == R_ANAL_OP_TYPE_SWI) {
 			r_strf_buffer (64);
