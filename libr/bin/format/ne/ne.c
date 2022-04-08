@@ -115,7 +115,7 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 	}
 	RList *entries = r_bin_ne_get_entrypoints (bin);
 	bool resident = true, first = true;
-	while (true) {
+	while (entries) {
 		ut8 sz = r_buf_read8_at (bin->buf, off);
 		if (!sz) {
 			first = true;
@@ -352,6 +352,9 @@ RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
 }
 
 RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
+	if (!bin->entry_table) {
+		return NULL;
+	}
 	RList *entries = r_list_newf (free);
 	if (!entries) {
 		return NULL;
