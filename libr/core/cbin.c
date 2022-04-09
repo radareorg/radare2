@@ -4195,7 +4195,11 @@ static bool bin_signature(RCore *r, PJ *pj, int mode) {
 }
 
 static bool bin_header(RCore *r, int mode) {
+	r_return_val_if_fail (r, false);
 	RBinFile *cur = r_bin_cur (r->bin);
+	if (!cur) {
+		return false;
+	}
 	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
 	if (plg && plg->header) {
 		plg->header (cur);

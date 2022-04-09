@@ -1,10 +1,6 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include <string.h>
-#include "r_bin.h"
-#include "r_config.h"
-#include "r_cons.h"
-#include "r_core.h"
+#include <r_core.h>
 #include "../bin/pdb/pdb_downloader.h"
 
 static const char *help_msg_i[] = {
@@ -776,16 +772,25 @@ static int cmd_info(void *data, const char *input) {
 
 			}
 			//we move input until get '\0'
-			while (*(++input)) ;
+			while (*(++input)) {};
 			//input-- because we are inside a while that does input++
 			// oob read if not input--
 			input--;
 			break;
 		case 'H': // "iH"
 			if (input[1] == 'H') { // "iHH"
-				RBININFO ("header", R_CORE_BIN_ACC_HEADER, NULL, -1);
+				playMsg (core, "header", -1);
+				if (!r_core_bin_info (core, R_CORE_BIN_ACC_HEADER, pj, mode, va, NULL, NULL)) {
+					eprintf ("No header fields found\n");
+				}
 				break;
+			} else {
+				playMsg (core, "fields", -1);
+				if (!r_core_bin_info (core, R_CORE_BIN_ACC_FIELDS, pj, mode, va, NULL, NULL)) {
+					eprintf ("No header fields found\n");
+				}
 			}
+			break;
 		case 'h': // "ih"
 			RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0);
 			break;
