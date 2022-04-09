@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2021 - pancake */
+/* radare2 - LGPL - Copyright 2009-2022 - pancake */
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -233,10 +233,12 @@ static void nextpal(RCore *core, int mode) {
 							r_list_free (files);
 							return;
 						}
+#if 0
 						eprintf ("%s %s %s\n",
 							r_str_get (nfn),
 							r_str_get (core->theme),
 							r_str_get (fn));
+#endif
 						if (nfn && !strcmp (nfn, core->theme)) {
 							r_list_free (files);
 							files = NULL;
@@ -275,10 +277,12 @@ static void nextpal(RCore *core, int mode) {
 							r_list_free (files);
 							return;
 						}
+#if 0
 						eprintf ("%s %s %s\n",
 							r_str_get (nfn),
 							r_str_get (core->theme),
 							r_str_get (fn));
+#endif
 						if (nfn && !strcmp (nfn, core->theme)) {
 							free (core->theme);
 							core->theme = strdup (fn);
@@ -304,7 +308,7 @@ done:
 	if (mode == 'l' && !core->theme && !r_list_empty (files)) {
 		//nextpal (core, mode);
 	} else if (mode == 'n' || mode == 'p') {
-		if (core->theme) {
+		if (R_STR_ISNOTEMPTY (core->theme)) {
 			r_core_cmdf (core, "eco %s", core->theme);
 		}
 	}
@@ -318,7 +322,7 @@ done:
 }
 
 R_API void r_core_echo(RCore *core, const char *input) {
-	if (!strncmp (input, "64 ", 3)) {
+	if (r_str_startswith (input, "64 ")) {
 		char *buf = strdup (input);
 		r_base64_decode ((ut8*)buf, input + 3, -1);
 		if (*buf) {

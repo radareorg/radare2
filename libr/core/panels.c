@@ -4056,6 +4056,9 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 			}
 		}
 		switch (key) {
+		case 'E':
+			r_core_visual_colors (core);
+			break;
 		case 'e':
 			{
 				__free_modal (&modal);
@@ -4065,7 +4068,7 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 				}
 				free (cmd);
 			}
-		break;
+			break;
 		case 'j':
 			modal->idx++;
 			__update_modal (core, menu_db, modal);
@@ -6868,6 +6871,9 @@ virtualmouse:
 		break;
 	case 'M':
 		__handle_visual_mark (core);
+		break;
+	case 'E':
+		r_core_visual_colors (core);
 		break;
 	case 'e':
 	{

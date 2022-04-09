@@ -501,14 +501,14 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		case 'H':
 			{
 				int y = R_MAX (x - 8, 0);
-				x = y - y%8;
+				x = y - y % 8;
 			}
 			break;
 		case 'L':
 		case 9:
 			{
 				int y = R_MIN (x + 8, nbits - 8);
-				x = y - y%8;
+				x = y - y % 8;
 			}
 			break;
 		case 'j':
@@ -532,7 +532,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			buf[x/8] = rotate_nibble (buf [(x / 8)], -1);
 			break;
 		case '<':
-			buf[x/8] = rotate_nibble (buf [(x / 8)], 1);
+			buf[x / 8] = rotate_nibble (buf [(x / 8)], 1);
 			break;
 		case 'i':
 			{
@@ -540,7 +540,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 				const char *line = r_line_readline ();
 				ut64 num = r_num_math (core->num, line);
 				if (num || (!num && *line == '0')) {
-					buf[x/8] = num;
+					buf[x / 8] = num;
 				}
 			}
 			break;
@@ -686,12 +686,9 @@ static bool sdbforcb(void *p, const char *k, const char *v) {
 			}
 			if (use_color && *pre == '>') {
 				r_cons_printf ("%s %s %s\n"Color_RESET, color_sel,
-					(vt->t_idx == vt->t_ctr)?
-					">":" ", k);
+					(vt->t_idx == vt->t_ctr)?  ">": " ", k);
 			} else {
-				r_cons_printf (" %s %s\n",
-					(vt->t_idx == vt->t_ctr)?
-					">":" ", k);
+				r_cons_printf (" %s %s\n", (vt->t_idx == vt->t_ctr)?  ">": " ", k);
 			}
 		}
 		vt->t_ctr ++;
@@ -4404,8 +4401,8 @@ R_API void r_core_visual_colors(RCore *core) {
 			"' to change foreground/background color\n");
 		r_cons_printf ("# Export colorscheme with command 'ec* > filename'\n");
 		r_cons_printf ("# Preview command: '%s' - Press 'c' to change it\n", preview_cmd);
-		r_cons_printf ("# Selected colorscheme : %s  - Use 'hl' or left/right arrow keys to change colorscheme\n", r_str_get_fail (curtheme, "default"));
-		r_cons_printf ("# Selected element: %s  - Use 'jk' or up/down arrow keys to change element\n", k);
+		r_cons_printf ("# Theme (eco): %s  - Use 'hl' or left/right arrow keys to change colorscheme\n", r_str_get_fail (curtheme, "default"));
+		r_cons_printf ("# Item (%s)  - Use 'jk' or up/down arrow keys to change element\n", k);
 		r_cons_printf ("# ec %s %s # %d (\\x1b%.*s)",
 			k, color, atoi (cstr+7), esc ? (int)(esc - cstr - 1) : (int)strlen (cstr + 1), cstr+1);
 		if (esc) {
@@ -4459,6 +4456,9 @@ R_API void r_core_visual_colors(RCore *core) {
 			opt = r_cons_pal_len () - 1;
 			break;
 		case ':':
+			r_core_visual_prompt_input (core);
+			break;
+		case ',':
 			r_cons_pal_random ();
 			break;
 		case '.':
@@ -4469,7 +4469,13 @@ R_API void r_core_visual_colors(RCore *core) {
 		case 'c':
 			r_line_set_prompt ("Preview command> ");
 			r_cons_show_cursor (true);
-			r_cons_fgets (preview_cmd, sizeof (preview_cmd), 0, NULL);
+			{
+				char newcmd[128] = {0};
+				r_cons_fgets (newcmd, sizeof (newcmd), 0, NULL);
+				if (*newcmd) {
+					r_str_ncpy (preview_cmd, newcmd, sizeof (preview_cmd) - 1);
+				}
+			}
 			r_cons_show_cursor (false);
 		}
 		if (opt != oopt) {
