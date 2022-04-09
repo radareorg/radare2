@@ -3156,6 +3156,7 @@ static int bin_fields(RCore *r, PJ *pj, int mode, int va) {
 			pj_o (pj);
 			pj_end (pj);
 		}
+		eprintf ("No header fields found.\n");
 		return false;
 	}
 	if (IS_MODE_JSON (mode)) {
