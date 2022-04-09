@@ -996,6 +996,23 @@ static void _core_cmp_info(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_curl(RCore *core, const char *arg) {
+	if (r_sys_getenv_asbool ("R2_CURL")) {
+		r_sys_cmdf ("curl %s", arg);
+	} else {
+		if (strstr (arg, "http") && strstr (arg, "://")) {
+			int len;
+			char *s = r_socket_http_get (arg, NULL, &len);
+			if (s) {
+				r_cons_write (s, len);
+				free (s);
+			}
+		} else {
+			eprintf ("Usage: curl [http-url]\n");
+		}
+	}
+}
+
 static int cmd_cmp(void *data, const char *input) {
 	static char *oldcwd = NULL;
 	int ret = 0, i, mode = 0;
@@ -1321,6 +1338,11 @@ static int cmd_cmp(void *data, const char *input) {
 	}
 	break;
 	case 'u': // "cu"
+		if (r_str_startswith (input, "url")) {
+			const char *arg = r_str_trim_head_ro (input + 3);
+			cmd_curl (core, arg);
+			break;
+		}
 		switch (input[1]) {
 		case '.':
 		case ' ':
