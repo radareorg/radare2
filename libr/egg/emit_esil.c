@@ -42,9 +42,7 @@ static void emit_frame_end(REgg *egg, int sz, int ctx) {
 	if (sz < 1 || ctx > 0) {
 		sz = 8; // minimum stack frame size
 	}
-	if (sz > 0) {
-		r_egg_printf (egg, "FP,%d,+,SP,:=,", sz);
-	}
+	r_egg_printf (egg, "FP,%d,+,SP,:=,", sz);
 }
 
 static void emit_comment(REgg *egg, const char *fmt, ...) {
