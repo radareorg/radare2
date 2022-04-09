@@ -5026,11 +5026,11 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 		}
 		break;
 	case 'e': // "pie"
-		if (strchr (input + 2, '?')) {
+		if (strchr (input + 2, '?')) { // "pie?"
 			r_core_cmd_help (core, help_msg_pie);
-		} else if (input[2] == 'f') {
+		} else if (input[2] == 'f') { // "pief"
 			const bool asm_offset = r_config_get_b (core->config, "asm.offset");
-			if (input[3] == 'q') {
+			if (input[3] == 'q') { // "piefq"
 				r_config_set_b (core->config, "asm.offset", false);
 			}
 			ut64 orig = core->offset;
@@ -5040,12 +5040,12 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 			if (fcn) {
 				r_list_foreach (fcn->bbs, iter, bb) {
 					r_core_seek (core, orig, true);
-					r_core_disasm_pdi (core, bb->size, 0, 'e');
+					r_core_disasm_pdi (core, bb->ninstr, 0, 'e');
 				}
 				r_core_seek (core, orig, true);
 			}
 			r_config_set_b (core->config, "asm.offset", asm_offset);
-		} else if (input[2] == 'q') {
+		} else if (input[2] == 'q') { // "pieq"
 			const bool orig = r_config_get_b (core->config, "asm.offset");
 			r_config_set_b (core->config, "asm.offset", false);
 			if (l != 0) {
