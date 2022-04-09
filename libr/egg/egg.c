@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2021 - pancake */
+/* radare - LGPL - Copyright 2011-2022 - pancake */
 
 #include <r_egg.h>
 #include <config.h>
@@ -9,6 +9,7 @@ R_LIB_VERSION (r_egg);
 extern REggEmit emit_x86;
 extern REggEmit emit_x64;
 extern REggEmit emit_arm;
+extern REggEmit emit_esil;
 extern REggEmit emit_trace;
 
 static REggPlugin *egg_static_plugins[] =
@@ -148,6 +149,10 @@ R_API bool r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const 
 			egg->bits = bits;
 			break;
 		}
+	} else if (!strcmp (arch, "esil")) {
+		egg->arch = R_SYS_ARCH_ESIL;
+		r_syscall_setup (egg->syscall, arch, bits, asmcpu, os);
+		egg->remit = &emit_esil;
 	} else if (!strcmp (arch, "arm")) {
 		egg->arch = R_SYS_ARCH_ARM;
 		switch (bits) {
