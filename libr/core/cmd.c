@@ -3,9 +3,6 @@
 #define INTERACTIVE_MAX_REP 1024
 
 #include <r_core.h>
-#include <r_anal.h>
-#include <r_cons.h>
-#include <r_cmd.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <ctype.h>
@@ -4157,6 +4154,19 @@ repeat_arroba:
 						r_core_cmdf (core, "so %s", ptr + 2);
 						cmd_tmpseek = core->tmpseek = true;
 					}
+				}
+				break;
+			case 'c': // "@c:"
+				{
+					char *s = r_core_cmd_str (core, ptr + 2);
+					if (*s) {
+						ut64 addr = r_num_math (core->num, s);
+						if (core->num->nc.errors == 0) {
+							r_core_seek (core, addr, true);
+							cmd_tmpseek = core->tmpseek = true;
+						}
+					}
+					free (s);
 				}
 				break;
 			case 'e': // "@e:"
