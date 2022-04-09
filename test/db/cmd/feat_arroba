@@ -1,3 +1,15 @@
+NAME=@c:
+FILE=--
+CMDS=<<EOF
+?v $$ @c:?e 123
+?v $$ @c:?e 0
+EOF
+EXPECT=<<EOF
+0x7b
+0x0
+EOF
+RUN
+
 NAME=@ addr
 FILE=--
 CMDS=<<EOF

@@ -1,10 +1,6 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include <stddef.h>
-#include <math.h> // required for signbit
-#include "r_cons.h"
-#include "r_core.h"
-#include "r_util.h"
+#include <r_core.h>
 
 static const char *help_msg_at[] = {
 	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
@@ -34,7 +30,8 @@ static const char *help_msg_at[] = {
 	"@{", "from to}", "temporary set from and to for commands supporting ranges",
 	"@a:", "arch[:bits]", "temporary set arch and bits",
 	"@b:", "bits", "temporary set asm.bits",
-	"@B:", "nth", "temporary seek to nth instruction in current bb (negative numbers too)",
+	"@B:", "nth", "temporary seek to nth instruction in current bb (negative numbers too)", // XXX rename to @n:
+	"@c:", "cmd", "seek to the address printed by the given command. same as '@ `cmd`'",
 	"@e:", "k=v,k=v", "temporary change eval vars",
 	"@f:", "file", "temporary replace block with file contents",
 	"@F:", "flagspace", "temporary change flag space",
