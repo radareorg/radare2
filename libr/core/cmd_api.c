@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
 #include "ht_pp.h"
@@ -496,6 +496,12 @@ R_API void r_cmd_del(RCmd *cmd, const char *command) {
 	R_FREE (cmd->cmds[idx]);
 }
 
+static char *r_cmd_filter_special(const char *input) {
+	char *s = strdup (input);
+	r_str_trim_args (s);
+	return s;
+}
+
 R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	struct r_cmd_item_t *c;
 	int ret = -1;
@@ -527,8 +533,13 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 		}
 		c = cmd->cmds[((ut8)input[0]) & 0xff];
 		if (c && c->callback) {
-			const char *inp = (*input)? input + 1: "";
-			ret = c->callback (cmd->data, inp);
+			if (*input) {
+				char *s = r_cmd_filter_special (input + 1);
+				ret = c->callback (cmd->data, s);
+				free (s);
+			} else {
+				ret = c->callback (cmd->data, "");
+			}
 		} else {
 			ret = -1;
 		}

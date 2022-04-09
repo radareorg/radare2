@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2021 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -982,7 +982,6 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 			if (vlen > klen) {
 				newstr = realloc (str, slen + 1);
 				if (!newstr) {
-					eprintf ("realloc fail\n");
 					R_FREE (str);
 					break;
 				}

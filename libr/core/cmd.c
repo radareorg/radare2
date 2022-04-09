@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2022 - nibble, pancake */
 
 #define INTERACTIVE_MAX_REP 1024
 
@@ -750,7 +750,7 @@ static int cmd_alias(void *data, const char *input) {
 					r_cmd_alias_set_raw (core->rcmd, buf, (ut8 *)s, l);
 					free (s);
 				} else if (!strncmp (def, "base64:", 7)) {
-					int b64_len = strlen (def+7);
+					int b64_len = strlen (def + 7);
 					if (b64_len > 0 && b64_len % 4 == 0) {
 						/* b64 decode result is always shorter
 						 * than strlen() of input */

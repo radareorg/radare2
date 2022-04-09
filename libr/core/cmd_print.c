@@ -7665,7 +7665,10 @@ beach:
 }
 
 static int cmd_hexdump(void *data, const char *input) {
-	return cmd_print (data, input - 1);
+	char *pcmd = r_str_newf ("x%s", input);
+	int rc = cmd_print (data, pcmd);
+	free (pcmd);
+	return rc;
 }
 
 static int lenof(ut64 off, int two) {

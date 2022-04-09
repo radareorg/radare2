@@ -163,7 +163,7 @@ RUN
 NAME=wp
 FILE=-
 CMDS=<<EOF
-echo 0x10 "hello" > .r2-wp.test
+echo "0x10 \"hello\"" > .r2-wp.test
 echo 0x20 01020304 >> .r2-wp.test
 cat .r2-wp.test
 wp .r2-wp.test

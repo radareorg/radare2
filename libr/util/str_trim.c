@@ -1,9 +1,6 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 
-#include "r_types.h"
-#include "r_util.h"
-#include "r_cons.h"
-#include "r_bin.h"
+#include <r_bin.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +9,7 @@
 
 // TODO: simplify this horrible loop
 R_API void r_str_trim_path(char *s) {
+	r_return_if_fail (s);
 	char *src, *dst, *p;
 	int i = 0;
 	if (!s || !*s) {
@@ -99,72 +97,62 @@ R_API const char *r_str_trim_head_wp(const char *str) {
 	return str;
 }
 
-/* remove spaces from the head of the string.
- * the string is changed in place */
+// remove in-place spaces from the head of the string.
 R_API void r_str_trim_head(char *str) {
+	r_return_if_fail (str);
 	char *p = (char *)r_str_trim_head_ro (str);
 	if (p && p != str) {
 		memmove (str, p, strlen (p) + 1);
 	}
 }
 
-/* remove spaces between args of the string except if args are surrounding
- * by quotes.
- * the string is changed in place */
 R_API void r_str_trim_args(char *str) {
-	const char *quotes = "\"'";
-	const char *isquote;
-	int idx, _b = 0, q = 0;
-	ut8 *b = (ut8*)&_b;
-	char *ws, *ch = str;
-	size_t len;
-
-	ws = (char *)r_str_trim_head_wp (ch);
-	len = strlen (ws);
-	while (*ws) {
-		ch = (char *)r_str_trim_head_ro (ws);
-		if (!*ch) {
-			break;
-		}
-		isquote = strchr (quotes, *ch);
-		if (isquote) {
-			idx = (int)(size_t)(isquote - quotes);
-			_b = R_BIT_TOGGLE (b, idx);
-			q = 1;
-		}
-		len -= ch - ws;
-		memmove (ws + 1, ch + q, len - q + 1);
-		if (q == 1) {
-			q = 0;
-			int i = 0;
-			for (; *ch; ch++) {
-				if (*ch == '\\') {
-					ch++;
+	r_return_if_fail (str);
+	char q = 0;
+	bool e = false;
+	char *s = str;
+	char *d = str;
+	while (*s) {
+		switch (*s) {
+		case '\'':
+		case '"':
+			if (e) {
+				e = false;
+			} else {
+				if (q) {
+					// needs to be escaped
+					if (q == *s) {
+						q = 0;
+						e = false;
+						s++;
+						continue;
+					}
+				} else {
+					q = *s;
+					s++;
+					e = false;
 					continue;
 				}
-				isquote = strchr (quotes, *ch);
-				if (isquote) {
-					idx = (int)(size_t)(isquote - quotes);
-					_b = R_BIT_TOGGLE (b, idx);
-					if (!_b) {
-						break;
-					} else {
-						_b = R_BIT_TOGGLE (b, idx);
-					}
-				}
-				i++;
 			}
-			if (!*ch) {
-				break;
+			break;
+		case '\\':
+			if (e) {
+				e = false;
+			} else {
+				e = true;
+				s++;
+				continue;
 			}
-			len -= i;
-			r_str_ncpy (ch, ch + 1, len);
-			ws = ch + 1;
-		} else {
-			ws = (char *)r_str_trim_head_wp (ch);
-			len -= ws - ch;
+			break;
+		default:
+			e = false;
+			break;
 		}
+		*d = *s;
+		s++;
+		d++;
 	}
+	*d = 0;
 }
 
 // Remove whitespace chars from the tail of the string, replacing them with
