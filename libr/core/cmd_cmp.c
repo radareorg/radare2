@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include "r_core.h"
 
@@ -10,32 +10,40 @@ static const char *help_message_ci[] = {
 	NULL
 };
 
+static const char *help_msg_cmp[] = {
+	"Usage: cmp", " [file] [file]", "Compare two ($alias) files, and change $? value",
+	"cmp", " ls ls.old", "Compare contents of given files",
+	"cmp", " $a $b", "Same as above but using alias files",
+	NULL
+};
+
 static const char *help_msg_c[] = {
 	"Usage:", "c[?dfx] [argument]", " # Compare",
-	"c", " [string]", "Compare a plain with escaped chars string",
-	"c*", " [string]", "Same as above, but printing r2 commands instead",
-	"c1", " [addr]", "Compare 8 bits from current offset",
-	"c2", " [value]", "Compare a word from a math expression",
-	"c4", " [value]", "Compare a doubleword from a math expression",
-	"c8", " [value]", "Compare a quadword from a math expression",
-	"cat", " [file]", "Show contents of file (see pwd, ls)",
-	"cc", " [at]", "Compares in two hexdump columns of block size",
-	"ccc", " [at]", "Same as above, but only showing different lines",
-	"ccd", " [at]", "Compares in two disasm columns of block size",
-	"ccdd", " [at]", "Compares decompiler output (e cmd.pdc=pdg|pdd)",
+	"c", " [string]", "compare a plain with escaped chars string",
+	"c*", " [string]", "same as above, but printing r2 commands instead",
+	"c1", " [addr]", "compare 8 bits from current offset",
+	"c2", " [value]", "compare a word from a math expression",
+	"c4", " [value]", "compare a doubleword from a math expression",
+	"c8", " [value]", "compare a quadword from a math expression",
+	"cat", " [file]", "show contents of file (see pwd, ls)",
+	"cc", " [at]", "compares in two hexdump columns of block size",
+	"ccc", " [at]", "same as above, but only showing different lines",
+	"ccd", " [at]", "compares in two disasm columns of block size",
+	"ccdd", " [at]", "compares decompiler output (e cmd.pdc=pdg|pdd)",
 	"cd", " [dir]", "chdir",
 	// "cc", " [offset]", "code bindiff current block against offset"
 	// "cD", " [file]", "like above, but using radiff -b",
-	"cf", " [file]", "Compare contents of file at current seek",
+	"cf", " [file]", "compare contents of file at current seek",
 	"cg", "[?] [o] [file]", "Graphdiff current file and [file]",
 	"ci", "[?] [obid] ([obid2])", "Compare two bin-objects (symbols, imports, ...)",
-	"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
-	"cu", "[?] [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
-	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
+	"cl|cls|clear", "", "clear screen, (clear0 to goto 0, 0 only)",
+	"cmp", " [file] [file]", "compare two files\n",
+	"cu", "[?] [addr] @at", "compare memory hexdumps of $$ and dst in unified diff",
+	"cud", " [addr] @at", "unified diff disasm from $$ and given address",
 	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte (silent return in $?)",
-	"cV", "[1248] [addr] @at", "Compare 1,2,4,8-byte address contents (silent, return in $?)",
-	"cw", "[?][*dqjru] [addr]", "Compare memory watchers",
-	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
+	"cV", "[1248] [addr] @at", "compare 1,2,4,8-byte address contents (silent, return in $?)",
+	"cw", "[?][*dqjru] [addr]", "compare memory watchers",
+	"cx", " [hexpair]", "compare hexpair string (use '.' as nibble wildcard)",
 	"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
 	"cX", " [addr]", "Like 'cc' but using hexdiff output",
 	NULL
@@ -470,21 +478,17 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 
 	switch (*input) {
 	case ' ': { // "cw "
-		char **argv;
 		int argc;
-		ut64 size;
-
-		argv = r_str_argv (input + 1, &argc);
+		char **argv = r_str_argv (input + 1, &argc);
 		if (!argv) {
 			return 1;
 		}
-
 		if (argc == 1) { // "cw [addr]"
 			addr = r_num_math (core->num, argv[0]);
 			r_core_cmpwatch_show (core, addr, 0);
 		} else if (argc == 3) { // "cw addr sz cmd"
 			addr = r_num_math (core->num, argv[0]);
-			size = r_num_math (core->num, argv[1]);
+			ut64 size = r_num_math (core->num, argv[1]);
 
 			if (size < 1) {
 				ret = 1;
@@ -1013,6 +1017,45 @@ static void cmd_curl(RCore *core, const char *arg) {
 	}
 }
 
+static char *myslurp(RCore *core, const char *a, ut64 *sz) {
+	if (*a == '$') {
+		RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, a + 1);
+		if (v) {
+			char *v_str = r_cmd_alias_val_strdup (v);
+			*sz = strlen (v_str);
+			return v_str;
+		}
+	} else {
+		size_t ssz;
+		char *rc = r_file_slurp (a, &ssz);
+		*sz = ssz;
+		return rc;
+	}
+	*sz = 0;
+	return NULL;
+}
+
+static int cmd_cmp_posix(RCore *core, const char *a, const char *b) {
+	ut64 sa, sb;
+	char *ba = myslurp (core, a, &sa);
+	char *bb = myslurp (core, b, &sb);
+	int res = 0;
+	if (!ba || !bb) {
+		eprintf ("One or more files can't be read.\n");
+		res = 1;
+	} else {
+		if (sa == sb) {
+			res = memcmp (ba, bb, sa)? 1: 0;
+		} else {
+			res = 1;
+		}
+	}
+	free (ba);
+	free (bb);
+	// return 0 if both files are the same
+	return res;
+}
+
 static int cmd_cmp(void *data, const char *input) {
 	static char *oldcwd = NULL;
 	int ret = 0, i, mode = 0;
@@ -1036,7 +1079,7 @@ static int cmd_cmp(void *data, const char *input) {
 			if (*path == '$' && !path[1]) {
 				eprintf ("No alias name given.\n");
 			} else if (*path == '$') {
-				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, path+1);
+				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, path + 1);
 				if (v) {
 					char *v_str = r_cmd_alias_val_strdup (v);
 					r_cons_println (v_str);
@@ -1479,6 +1522,20 @@ static int cmd_cmp(void *data, const char *input) {
 			// r_cons_clear_line (0);
 		} else if (!strchr (input, '0')) {
 			r_cons_clear00 ();
+		}
+		break;
+	case 'm': // "cmp"
+		if (input[1] != 'p' || strchr (input, '?')) {
+			r_core_cmd_help (core, help_msg_cmp);
+		} else {
+			int argc;
+			char **argv = r_str_argv (r_str_trim_head_ro (input + 2), &argc);
+			if (argc == 2) {
+				int res = cmd_cmp_posix (core, argv[0], argv[1]);
+				r_core_return_code (core, res);
+			} else {
+				r_core_cmd_help (core, help_msg_cmp);
+			}
 		}
 		break;
 	default:

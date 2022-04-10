@@ -1,3 +1,23 @@
+NAME=cmp files
+FILE=-
+CMDS=<<EOF
+cmp bins/elf/ls bins/elf/ls
+?v $?
+?e hello > $a
+?e hello > $b
+cmp $a $b
+?v $?
+?e world > $b
+cmp $a $b
+?v $?
+EOF
+EXPECT=<<EOF
+0x0
+0x0
+0x1
+EOF
+RUN
+
 NAME=cmp obj
 FILE=bins/elf/ls
 CMDS=<<EOF
