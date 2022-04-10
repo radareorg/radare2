@@ -521,7 +521,8 @@ static const char *help_msg_px[] = {
 	"pxf", "", "show hexdump of current function",
 	"pxh", "", "show hexadecimal half-words dump (16bit)",
 	"pxH", "", "same as above, but one per line",
-	"pxi", "", "HexII compact binary representation",
+	"pxi", "", "examine instructions (same as pDi)",
+	"pxI", "", "HexII compact binary representation",
 	"pxl", "", "display N lines (rows) of hexdump",
 	"pxo", "", "show octal dump",
 	"pxq", "", "show hexadecimal quad-words dump (64bit)",
@@ -6974,6 +6975,9 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'i': // "pxi"
+			r_core_cmdf (core, "pDi %s", input + 2);
+			break;
+		case 'I': // "pxI"
 			if (l != 0) {
 				core->print->show_offset = r_config_get_i (core->config, "hex.offset");
 				r_print_hexii (core->print, core->offset, core->block,
