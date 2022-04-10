@@ -80,8 +80,7 @@ RUN
 #EOF
 #RUN
 
-NAME=dd should not affect program registers or seek
-# TODO: add seek
+NAME=dd should not affect program registers
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
@@ -128,8 +127,8 @@ orax = 0x0000003b
 EOF
 RUN
 
-# FIXME: This is not a dd bug. RDebug fails to restore rflags. Collapse into
-# above test when fixed by removing the ~!rflags in the dr commands.
+# FIXME: r_debug_execute bug. Collapse into above test when fixed by removing
+# the ~!rflags in the dr commands.
 NAME=dd should not change rflags
 FILE=bins/elf/ls-focal
 BROKEN=1
@@ -145,6 +144,24 @@ EXPECT=<<EOF
 rflags = 0x00000200
 ---
 rflags = 0x00000200
+EOF
+RUN
+
+# FIXME: r_debug_execute bug. Collapse into above test when fixed.
+NAME=dd should not change seek
+FILE=bins/elf/ls-focal
+BROKEN=1
+ARGS=-d
+CMDS=<<EOF
+s > $seek1
+dd bins/elf/ls-focal
+s > $seek2
+?== `$seek1` `$seek2`
+?! echo seek did not move
+doc
+EOF
+EXPECT=<<EOF
+seek did not move
 EOF
 RUN
 
