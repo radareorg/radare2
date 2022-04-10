@@ -4879,14 +4879,19 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		if (addr) {
 			filename = r_core_cmd_strf (core, "ps @%" PFMT64x, addr);
 		} else {
-			char *esc = r_str_escape (argv[1]);
-			filename = r_str_newf ("\"%s\"", esc);
-			free (esc);
+			filename = r_str_escape (argv[1]);
+		}
+
+		if (!(flags & O_CREAT) && !r_file_exists (filename)) {
+			eprintf ("File %s does not exist.\n", filename);
+			free (filename);
+			ret = 1;
+			break;
 		}
 
 		if (print || flags != O_RDONLY || !r_debug_desc_open (core->dbg, filename)) {
 			buf = r_core_syscallf (core, "open",
-					"%s, %d, 0644",
+					"\"%s\", %d, 0644",
 					filename, flags);
 			if (buf) {
 				ret = run_buffer_dxr (core, buf, print);

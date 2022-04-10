@@ -43,6 +43,8 @@ CMDS=<<EOF
 # open 2 files, one in read-write
 dd bins/elf/ls-focal
 dd+ .tmp_dd
+# attempt to open a file that doesnt exist
+dd fakefile
 dd~[0,2]
 ?e ---
 # copy over the read-only fd
@@ -121,7 +123,7 @@ ARGS=-d
 CMDS=<<EOF
 dr~rflags
 ?e ---
-dd test/bins/ls-focal
+dd bins/elf/ls-focal
 dr~rflags
 doc
 EOF
