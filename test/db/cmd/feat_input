@@ -1,5 +1,4 @@
 NAME=newline ?e 
-
 FILE=malloc://1024
 CMDS=<<EOF
 # The test suite is not allowed to interpret the output!
