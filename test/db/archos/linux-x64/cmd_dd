@@ -67,7 +67,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dd should not affect program registers
+NAME=dd should not affect program registers or seek
+# TODO: add seek
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
