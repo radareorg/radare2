@@ -884,8 +884,10 @@ static int cmd_help(void *data, const char *input) {
 			if (input[2] == ' ') {
 				char *s = strdup (input + 3);
 				char *e = strchr (s, ' ');
+
 				if (e) {
 					*e++ = 0;
+					e = (char *)r_str_trim_head_ro (e);
 					int val = strcmp (s, e);
 					r_core_return_code (core, val);
 				} else {
