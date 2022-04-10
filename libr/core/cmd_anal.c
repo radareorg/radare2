@@ -640,7 +640,7 @@ static const char *help_msg_aft[] = {
 };
 
 static const char *help_msg_afv[] = {
-	"Usage:", "afv","[rbs]",
+	"Usage:", "afv[rbs]"," Function variables manipulation",
 	"afv*", "", "output r2 command to add args/locals to flagspace",
 	"afv-", "([name])", "remove all or given var",
 	"afv=", "", "list function variables and arguments with disasm refs",
@@ -655,6 +655,14 @@ static const char *help_msg_afv[] = {
 	"afvt", " [name] [new_type]", "change type for given argument/local",
 	"afvW", " [varname]", "list addresses where vars are accessed (WRITE)",
 	"afvx", "", "show function variable xrefs (same as afvR+afvW)",
+	NULL
+};
+
+static const char *help_msg_aeim[] = {
+	"Usage:", "aeim", " [addr] [size] [name] - initialize the ESIL VM stack",
+	"aeim", "", "initialize esil memory with default values from esil.stack.* evals",
+	"aeim", " 0x10000", "same as aeim@e:esil.stack.addr=0x10000",
+	"aeim", " 0x10000 2M mystack", "give a name to that new 2MB stack",
 	NULL
 };
 
@@ -5942,9 +5950,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		}
 	}
 	if (*input == '?') {
-		eprintf ("Usage: aeim [addr] [size] [name] - initialize ESIL VM stack\n");
-		eprintf ("Default: 0x100000 0xf0000\n");
-		eprintf ("See ae? for more help\n");
+		r_core_cmd_help (core, help_msg_aeim);
 		return;
 	}
 
