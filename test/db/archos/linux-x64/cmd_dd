@@ -67,6 +67,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+#NAME=dd read, write, seek
+#BROKEN=1
+#FILE=bins/elf/ls-focal
+#ARGS=-d
+#CMDS=<<EOF
+##TODO read/write should check perms first
+#dd test/bins/elf/ls-focal
+#doc
+#EOF
+#EXPECT=<<EOF
+#EOF
+#RUN
+
 NAME=dd should not affect program registers or seek
 # TODO: add seek
 FILE=bins/elf/ls-focal
