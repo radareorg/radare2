@@ -4960,6 +4960,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		int fd;
 		ut64 addr;
 		ut64 count;
+		char *perms;
 
 		if (argc < 4) {
 			r_core_cmd_help_match (core, help_msg_dd, "ddr", true);
@@ -4969,6 +4970,15 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		fd = (int) r_num_math (core->num, argv[1]);
 		addr = r_num_math (core->num, argv[2]);
 		count = r_num_math (core->num, argv[3]);
+
+		perms = r_core_cmd_strf (core, "dd~^%d[2]", fd);
+		if (!print && !(r_str_rwx (perms) & S_IRUSR)) {
+			eprintf ("fd %d is not readable.\n", fd);
+			free (perms);
+			ret = 1;
+			break;
+		}
+		free (perms);
 
 		if (print || !r_debug_desc_read (core->dbg, fd, addr, count)) {
 			RBuffer *buf = r_core_syscallf (core, "read",
@@ -4987,6 +4997,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		int fd;
 		ut64 addr;
 		ut64 count;
+		char *perms;
 
 		if (argc < 4) {
 			r_core_cmd_help_match (core, help_msg_dd, "ddw", true);
@@ -4996,6 +5007,15 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		fd = (int) r_num_math (core->num, argv[1]);
 		addr = r_num_math (core->num, argv[2]);
 		count = r_num_math (core->num, argv[3]);
+
+		perms = r_core_cmd_strf (core, "dd~^%d[2]", fd);
+		if (!print && !(r_str_rwx (perms) & S_IWUSR)) {
+			eprintf ("fd %d is not writable.\n", fd);
+			free (perms);
+			ret = 1;
+			break;
+		}
+		free (perms);
 
 		if (print || !r_debug_desc_write (core->dbg, fd, addr, count)) {
 			RBuffer *buf = r_core_syscallf (core, "write",

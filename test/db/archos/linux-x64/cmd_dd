@@ -72,7 +72,6 @@ RUN
 #FILE=bins/elf/ls-focal
 #ARGS=-d
 #CMDS=<<EOF
-##TODO read/write should check perms first
 #dd test/bins/elf/ls-focal
 #doc
 #EOF
