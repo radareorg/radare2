@@ -279,3 +279,16 @@ EXPECT=<<EOF
 0x1
 EOF
 RUN
+
+NAME=?== strcmp
+CMDS=<<EOF
+?== test test; ?! echo ok
+$a=$test
+$b=$test
+?== `$a` `$b`; ?! echo ok
+EOF
+EXPECT=<<EOF
+ok
+ok
+EOF
+RUN
