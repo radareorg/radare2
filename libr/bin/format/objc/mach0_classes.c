@@ -187,7 +187,13 @@ static void copy_sym_name_with_namespace(char *class_name, char *read_name, RBin
 static int sort_by_offset(const void *_a , const void *_b) {
 	RBinField *a = (RBinField*)_a;
 	RBinField *b = (RBinField*)_b;
-	return a->offset - b->offset;
+	if (a->offset > b->offset) {
+		return 1;
+	}
+	if (a->offset < b->offset) {
+		return -1;
+	}
+	return 0;
 }
 
 static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
