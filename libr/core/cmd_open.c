@@ -17,7 +17,7 @@ static const char *help_msg_o[] = {
 	"o:"," [len]","open a malloc://[len] copying the bytes from current offset",
 	"o=","","list opened files (ascii-art bars)",
 	"oL","","list all IO plugins registered",
-	"oa","[?][-] [A] [B] [filename]","Specify arch and bits for given file",
+	"oa","[?][-] [A] [B] [filename]","specify arch and bits for given file",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
 	"of","[?] [file]","open file and map it at addr 0 as read-only",
@@ -47,7 +47,7 @@ static const char *help_msg_on[] = {
 
 static const char *help_msg_oa[] = {
 	"Usage: oa","[-][arch] [bits] ([file])", "Specify arch and bits for given file",
-	"oa"," arm 32","Force arm32 for the current open file",
+	"oa"," arm 32","force arm32 for the current open file",
 	NULL
 };
 
@@ -97,31 +97,31 @@ static const char *help_msg_o_star[] = {
 
 static const char *help_msg_oba[] = {
 	"Usage:", "oba [addr] ([filename])", " # load bininfo and update flags",
-	"oba", " [addr]", "Open bin info from the given address",
-	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
-	"oba", " [addr] [/abs/filename]", "Open file and load bin info at given address",
+	"oba", " [addr]", "open bin info from the given address",
+	"oba", " [addr] [baddr]", "open file and load bin info at given address",
+	"oba", " [addr] [/abs/filename]", "open file and load bin info at given address",
 	NULL
 };
 
 static const char *help_msg_ob[] = {
 	"Usage:", "ob", " # List open binary files backed by fd",
-	"ob", " [bfid]", "Switch to open given objid",
-	"ob", "", "List opened binary files and objid",
-	"ob*", "", "List opened binary files and objid (r2 commands)",
-	"ob", " *", "Select all bins (use 'ob bfid' to pick one)",
-	"ob-", "*", "Delete all binfiles",
-	"ob-", "[objid]", "Delete binfile by binobjid",
-	"ob.", " ([addr])", "Show bfid at current address",
-	"ob=", "", "Show ascii art table having the list of open files",
-	"obL", "", "Same as iL or Li",
-	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
-	"oba", " [addr] [filename]", "Open file and load bin info at given address",
-	"oba", " [addr]", "Open bin info from the given address",
-	"obf", " ([file])", "Load bininfo for current file (useful for r2 -n)",
-	"obj", "", "List opened binary files and objid (JSON format)",
-	"obn", " [name]", "Select binfile by name",
-	"obo", " [fd]", "Switch to open binfile by fd number",
-	"obr", " [baddr]", "Rebase current bin object",
+	"ob", " [bfid]", "switch to open given objid",
+	"ob", "", "list opened binary files and objid",
+	"ob*", "", "list opened binary files and objid (r2 commands)",
+	"ob", " *", "select all bins (use 'ob bfid' to pick one)",
+	"ob-", "*", "delete all binfiles",
+	"ob-", "[objid]", "delete binfile by binobjid",
+	"ob.", " ([addr])", "show bfid at current address",
+	"ob=", "", "show ascii art table having the list of open files",
+	"obL", "", "same as iL or Li",
+	"oba", " [addr] [baddr]", "open file and load bin info at given address",
+	"oba", " [addr] [filename]", "open file and load bin info at given address",
+	"oba", " [addr]", "open bin info from the given address",
+	"obf", " ([file])", "load bininfo for current file (useful for r2 -n)",
+	"obj", "", "list opened binary files and objid (JSON format)",
+	"obn", " [name]", "select binfile by name",
+	"obo", " [fd]", "switch to open binfile by fd number",
+	"obr", " [baddr]", "rebase current bin object",
 	NULL
 };
 

@@ -301,7 +301,7 @@ static const char *help_msg_question_v[] = {
 	"$e", "", "1 if end of block, else 0",
 	"$e", "{flag}", "end of flag (flag->offset + flag->size)",
 	"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
-	"$F", "", "Same as $FB",
+	"$F", "", "same as $FB",
 	"$Fb", "", "begin of basic block",
 	"$FB", "", "begin of function",
 	"$Fe", "", "end of basic block",

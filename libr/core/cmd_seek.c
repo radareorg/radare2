@@ -11,79 +11,79 @@ static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool fo
 
 static const char *help_msg_s[] = {
 	"Usage: s", "", " # Help for the seek commands. See ?$? to see all variables",
-	"s", "", "Print current address",
-	"s.", "[?]hexoff", "Seek honoring a base from core->offset",
-	"s:", "pad", "Print current address with N padded zeros (defaults to 8)",
-	"s", " addr", "Seek to address",
-	"s-", "", "Undo seek",
-	"s-*", "", "Reset undo seek history",
-	"s-", " n", "Seek n bytes backward",
-	"s--", "[n]", "Seek blocksize bytes backward (/=n)",
-	"s+", "", "Redo seek",
-	"s+", " n", "Seek n bytes forward",
-	"s++", "[n]", "Seek blocksize bytes forward (/=n)",
-	"s[j*=!]", "", "List undo seek history (JSON, =list, *r2, !=names, s==)",
-	"s/", " DATA", "Search for next occurrence of 'DATA'",
-	"s/x", " 9091", "Search for next occurrence of \\x90\\x91",
-	"sa", " [[+-]a] [asz]", "Seek asz (or bsize) aligned to addr",
-	"sb", "", "Seek aligned to bb start",
-	"sC", "[?] string", "Seek to comment matching given string",
-	"sf", "", "Seek to next function (f->addr+f->size)",
-	"sf", " function", "Seek to address of specified function",
-	"sf.", "", "Seek to the beginning of current function",
-	"sg/sG", "", "Seek begin (sg) or end (sG) of section or file",
-	"sl", "[?] [+-]line", "Seek to line",
-	"sn/sp", " ([nkey])", "Seek to next/prev location, as specified by scr.nkey",
-	"snp", "", "Seek to next function prelude",
-	"spp", "", "Seek to prev function prelude",
-	"so", " [N]", "Seek to N next opcode(s)",
-	"sr", " pc", "Seek to register",
-	"ss", "[?]", "Seek silently (without adding an entry to the seek history)",
+	"s", "", "print current address",
+	"s.", "[?]hexoff", "seek honoring a base from core->offset",
+	"s:", "pad", "print current address with N padded zeros (defaults to 8)",
+	"s", " addr", "seek to address",
+	"s-", "", "undo seek",
+	"s-*", "", "reset undo seek history",
+	"s-", " n", "seek n bytes backward",
+	"s--", "[n]", "seek blocksize bytes backward (/=n)",
+	"s+", "", "redo seek",
+	"s+", " n", "seek n bytes forward",
+	"s++", "[n]", "seek blocksize bytes forward (/=n)",
+	"s[j*=!]", "", "list undo seek history (JSON, =list, *r2, !=names, s==)",
+	"s/", " DATA", "search for next occurrence of 'DATA'",
+	"s/x", " 9091", "search for next occurrence of \\x90\\x91",
+	"sa", " [[+-]a] [asz]", "seek asz (or bsize) aligned to addr",
+	"sb", "", "seek aligned to bb start",
+	"sC", "[?] string", "seek to comment matching given string",
+	"sf", "", "seek to next function (f->addr+f->size)",
+	"sf", " function", "seek to address of specified function",
+	"sf.", "", "seek to the beginning of current function",
+	"sg/sG", "", "seek begin (sg) or end (sG) of section or file",
+	"sl", "[?] [+-]line", "seek to line",
+	"sn/sp", " ([nkey])", "seek to next/prev location, as specified by scr.nkey",
+	"snp", "", "seek to next function prelude",
+	"spp", "", "seek to prev function prelude",
+	"so", " [N]", "seek to N next opcode(s)",
+	"sr", " pc", "seek to register",
+	"ss", "[?]", "seek silently (without adding an entry to the seek history)",
 	// "sp [page]  seek page N (page = block)",
 	NULL
 };
 
 static const char *help_msg_sdot[] = {
-	"Usage:", "s.", "seek here or there (near seeks)",
-	"s.", "", "Seek here, same as 's $$'",
-	"s..", "32a8", "Seek to the same address but replacing the lower nibbles",
+	"Usage:", "s.", "Seek here or there (near seeks)",
+	"s.", "", "seek here, same as 's $$'",
+	"s..", "32a8", "seek to the same address but replacing the lower nibbles",
 	NULL
 };
 
 static const char *help_msg_sC[] = {
 	"Usage:", "sC", "Comment grep",
-	"sC", "*", "List all comments",
-	"sC", " str", "Seek to the first comment matching 'str'",
+	"sC", "*", "list all comments",
+	"sC", " str", "seek to the first comment matching 'str'",
 	NULL
 };
 
 static const char *help_msg_sn[] = {
 	"Usage:", "sn[p]", "",
-	"sn", " [line]", "Seek to next address",
-	"snp", "", "Seek to next prelude",
+	"sn", " [line]", "seek to next address",
+	"snp", "", "seek to next prelude",
 	NULL
 };
 
 static const char *help_msg_sp[] = {
 	"Usage:", "sp[p]", "",
-	"sp", " [line]", "Seek to previous address",
-	"spp", "", "Seek to previous prelude",
+	"sp", " [line]", "seek to previous address",
+	"spp", "", "seek to previous prelude",
 	NULL
 };
 
 static const char *help_msg_sl[] = {
 	"Usage:", "sl+ or sl- or slc", "",
-	"sl", " [line]", "Seek to absolute line",
-	"sl", "[+-][line]", "Seek to relative line",
-	"slc", "", "Clear line cache",
-	"sll", "", "Show total number of lines",
-	"sleep", " [seconds]", "Sleep for an specific amount of time (support decimal values)",
+	"sl", " [line]", "seek to absolute line",
+	"sl", "[+-][line]", "seek to relative line",
+	"slc", "", "clear line cache",
+	"sll", "", "show total number of lines",
+	"sleep", " [seconds]", "sleep for an specific amount of time (support decimal values)",
 	NULL
 };
 
 static const char *help_msg_ss[] = {
 	"Usage: ss", "", " # Seek silently (not recorded in the seek history)",
-	"s?", "", "Works with all s subcommands",
+	"s?", "", "works with all s subcommands",
 	NULL
 };
 

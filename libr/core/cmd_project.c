@@ -16,8 +16,8 @@ static const char *help_msg_P[] = {
 	"Ps", " [file]", "save project",
 	"PS", " [file]", "save script file",
 	"P-", " [file]", "delete project (alias for Pd)",
-	"NOTE:", "", "The 'e prj.name' evar can save/open/rename/list projects.",
-	"NOTE:", "", "See the other 'e??prj.' evars for more options.",
+	"NOTE:", "", "the 'e prj.name' evar can save/open/rename/list projects.",
+	"NOTE:", "", "see the other 'e??prj.' evars for more options.",
 	"NOTE:", "", "project are stored in " R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS),
 	NULL
 };

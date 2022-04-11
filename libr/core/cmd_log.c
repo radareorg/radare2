@@ -42,8 +42,8 @@ static const char *help_msg_T[] = {
 	"Tm", " [idx]", "display log messages without index",
 	"Ts", "", "list files in current directory (see pwd, cd)",
 	"TT", "", "enter into the text log chat console",
-	"T=", "[.]", "Pull logs from remote r2 instance specified by http.sync",
-	"T=&", "", "Start background thread syncing with the remote server",
+	"T=", "[.]", "pull logs from remote r2 instance specified by http.sync",
+	"T=&", "", "start background thread syncing with the remote server",
 	NULL
 };
 
