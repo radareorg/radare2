@@ -9,7 +9,7 @@
 static const char *help_msg_t[] = {
 	"Usage: t", "", "# cparse types commands",
 	"t", "", "list all loaded types",
-	"tj", "", "list all loaded types as json",
+	"tj", "", "List all loaded types as json",
 	"t", " <type>", "show type in 'pf' syntax",
 	"t*", "", "list types info in r2 commands",
 	"t-", " <name>", "delete types by its name",
