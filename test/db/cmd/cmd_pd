@@ -1305,7 +1305,7 @@ RUN
 
 NAME=pdJ string
 CMDS=<<EOF
-w Snoo"ping as" usual,
+w 'Snoo\"ping as\" usual',
 Cs 30
 pdJ 1
 EOF

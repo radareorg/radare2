@@ -35,7 +35,7 @@ f@F:functions~483f4,48540
 f@F:*~483f4,48540
 afn mymain @ 0x08048540
 afn @ 0x08048540
-"?e The main flag shouldn't be renamed, it comes from bin:"
+"?e The main flag shouldnt be renamed, it comes from bin:"
 f@F:functions~483f4,48540
 ?e --
 f@F:*~483f4,48540
@@ -59,7 +59,7 @@ EXPECT=<<EOF
 0x08048540 92 main
 0x08048540 92 sym.main
 mymain
-The main flag shouldn't be renamed, it comes from bin:
+The main flag shouldnt be renamed, it comes from bin:
 0x080483f4 33 fcn.080483f4
 0x08048540 92 mymain
 --
