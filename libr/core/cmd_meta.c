@@ -67,12 +67,12 @@ static const char *help_msg_CC[] = {
 static const char *help_msg_CL[] = {
 	"Usage: CL", ".j-", "@addr - manage code-line references (loaded via bin.dbginfo and shown when asm.dwarf)",
 	"CL", "", "list all code line information (virtual address <-> source file:line)",
-	"CLj", "", "Same as above but in JSON format (See dir.source to change the path to find the referenced lines)",
-	"CL*", "", "Same as above but in r2 commands format",
-	"CL.", "", "Show list all code line information (virtual address <-> source file:line)",
-	"CL-", "*", "Remove all the cached codeline information",
-	"CL", " addr file:line", "Register new file:line source details, r2 will slurp the line",
-	"CL", " addr base64:text", "Register new source details for given address using base64",
+	"CLj", "", "same as above but in JSON format (See dir.source to change the path to find the referenced lines)",
+	"CL*", "", "same as above but in r2 commands format",
+	"CL.", "", "show list all code line information (virtual address <-> source file:line)",
+	"CL-", "*", "remove all the cached codeline information",
+	"CL", " addr file:line", "register new file:line source details, r2 will slurp the line",
+	"CL", " addr base64:text", "register new source details for given address using base64",
 	NULL
 };
 
@@ -123,7 +123,7 @@ static const char *help_msg_Cvb[] = {
 	"Cvb", "", "list all base pointer args/vars comments in human friendly format",
 	"Cvb*", "", "list all base pointer args/vars comments in r2 format",
 	"Cvb-", "[name]", "delete comments for var/arg at current offset for base pointer",
-	"Cvb", " [name]", "Show comments for var/arg at current offset for base pointer",
+	"Cvb", " [name]", "show comments for var/arg at current offset for base pointer",
 	"Cvb", " [name] [comment]", "add/append comment for the variable with the current name",
 	"Cvb!", "[name]", "edit comment using cfg editor",
 	NULL
@@ -135,7 +135,7 @@ static const char *help_msg_Cvr[] = {
 	"Cvr", "", "list all register based args comments in human friendly format",
 	"Cvr*", "", "list all register based args comments in r2 format",
 	"Cvr-", "[name]", "delete comments for register based arg for that name",
-	"Cvr", "[name]", "Show comments for register based arg for that name",
+	"Cvr", "[name]", "show comments for register based arg for that name",
 	"Cvr", "[name] [comment]", "add/append comment for the variable",
 	"Cvr!", "[name]", "edit comment using cfg editor",
 	NULL
@@ -146,7 +146,7 @@ static const char *help_msg_Cvs[] = {
 	"Cvs!", "[name]", "edit comment using cfg editor",
 	"Cvs", "", "list all stack based args/vars comments in human friendly format",
 	"Cvs", "[name] [comment]", "add/append comment for the variable",
-	"Cvs", "[name]", "Show comments for stack pointer var/arg with that name",
+	"Cvs", "[name]", "show comments for stack pointer var/arg with that name",
 	"Cvs*", "", "list all stack based args/vars comments in r2 format",
 	"Cvs-", "[name]", "delete comments for stack pointer var/arg with that name",
 	"Cvs?", "", "show this help",

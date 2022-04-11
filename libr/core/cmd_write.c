@@ -126,9 +126,9 @@ static const char *help_msg_wo[] = {
 
 static const char *help_msg_wop[] = {
 	"Usage:","wop[DO]"," len @ addr | value",
-	"wopD"," len [@ addr]","Write a De Bruijn Pattern of length 'len' at address 'addr'",
-	"wopD*"," len [@ addr]","Show wx command that creates a debruijn pattern of a specific length",
-	"wopO"," value", "Finds the given value into a De Bruijn Pattern at current offset",
+	"wopD"," len [@ addr]","write a De Bruijn Pattern of length 'len' at address 'addr'",
+	"wopD*"," len [@ addr]","show wx command that creates a debruijn pattern of a specific length",
+	"wopO"," value", "finds the given value into a De Bruijn Pattern at current offset",
 	NULL
 };
 
@@ -138,10 +138,10 @@ static const char *help_msg_wp[] = {
 	"^#", "", "comments",
 	".", "", "execute command",
 	"!", "", "execute command",
-	"", "", "OFFSET { code block }",
-	"", "", "OFFSET \"string\"",
-	"", "", "OFFSET 01020304",
-	"", "", "OFFSET : assembly",
+	"", "", "offset { code block }",
+	"", "", "offset \"string\"",
+	"", "", "offset 01020304",
+	"", "", "offset : assembly",
 	"", "", "+ {code}|\"str\"|0210|: asm",
 	NULL
 };
