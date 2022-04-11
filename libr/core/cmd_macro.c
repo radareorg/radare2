@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
+
 #include "r_cmd.h"
 #include "r_core.h"
 
@@ -16,9 +17,13 @@ static const char *help_msg_lparen[] = {
 	NULL
 };
 
-static int cmd_macro(void *data, const char *input) {
+static int cmd_macro(void *data, const char *_input) {
 	char *buf = NULL;
 	RCore *core = (RCore*)data;
+	char *input = strdup (_input);
+#if !SHELLFILTER
+	r_str_trim_args (input);
+#endif
 
 	switch (*input) {
 	case ')':
@@ -51,14 +56,14 @@ static int cmd_macro(void *data, const char *input) {
 				break;
 			case ')':
 				j--;
-				if (buf[i+1] =='(') {
+				if (buf[i + 1] == '(') {
 					buf[i + 1] = 0;
 					mustcall = i + 2;
 				}
 				break;
 			}
 		}
-		buf[strlen (buf) - 1]=0;
+		buf[strlen (buf) - 1] = 0;
 		r_cmd_macro_add (&core->rcmd->macro, buf);
 		if (mustcall) {
 			char *comma = strchr (buf, ' ');
@@ -71,10 +76,13 @@ static int cmd_macro(void *data, const char *input) {
 				r_cmd_macro_call (&core->rcmd->macro, buf);
 			} else {
 				eprintf ("Invalid syntax for macro\n");
+				r_core_return_code (core, R_CMD_RC_FAILURE);
 			}
 		}
 		free (buf);
 		} break;
 	}
-	return 0;
+	r_core_return_code (core, R_CMD_RC_SUCCESS);
+	free (input);
+	return R_CMD_RC_SUCCESS;
 }

@@ -1,3 +1,32 @@
+NAME=escaping colons
+FILE=-
+CMDS=<<EOF
+"(msg;?e hello;?e world)"
+(msg2\;?e hello\;?e world)
+.(msg)
+.(msg2)
+EOF
+EXPECT=<<EOF
+hello
+world
+hello
+world
+EOF
+RUN
+
+NAME=escaping echoes
+FILE=-
+CMDS=<<EOF
+?e hello\@world\|pipe
+?e one\ntwo
+EOF
+EXPECT=<<EOF
+hello@world|pipe
+one
+two
+EOF
+RUN
+
 NAME=(msg x;?e $0)
 FILE=-
 CMDS=<<EOF

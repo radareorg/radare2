@@ -2136,7 +2136,9 @@ static int cmd_write(void *data, const char *input) {
 		const char *curcs = r_config_get (core->config, "cfg.charset");
 		char *str = strdup (input);
 
+#if !SHELLFILTER
 		r_str_trim_args (str);
+#endif
 		r_str_trim_tail (str);
 
 		ut64 addr = core->offset;

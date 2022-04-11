@@ -1088,8 +1088,9 @@ static int cmd_help(void *data, const char *input) {
 		r_core_clippy (core, r_str_trim_head_ro (input + 1));
 		break;
 	case 'e': // "?e" echo
+#if !SHELLFILTER
 		r_str_trim_args ((char *)input);
-
+#endif
 		switch (input[1]) {
 		case 'a': // "?ea hello world
 			{
