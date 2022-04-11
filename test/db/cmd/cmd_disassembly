@@ -1,3 +1,16 @@
+NAME=infinite x/i disasm bug
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+x/i 32
+?e works
+EOF
+EXPECT=<<EOF
+works
+EOF
+RUN
+
 NAME=flags subst bug
 FILE=-
 CMDS=<<EOF

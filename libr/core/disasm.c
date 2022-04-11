@@ -6781,13 +6781,19 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	r_core_seek (core, address, false);
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	int midbb = r_config_get_i (core->config, "asm.bbmiddle");
+	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+	int opinc = (minopsz < opalign)? opalign: minopsz;
 	bool asmmarks = r_config_get_i (core->config, "asm.marks");
 	r_config_set_b (core->config, "asm.marks", false);
 	i = 0;
 	j = 0;
 	RAnalMetaItem *meta = NULL;
 toro:
-	for (; check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
+	if (!check_end (nb_opcodes, nb_bytes, addrbytes * i, j)) {
+		// fix infinite loop
+		j += opinc;
+	} else for (; check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
 		if (r_cons_is_breaked ()) {
 			err = 1;
 			break;
