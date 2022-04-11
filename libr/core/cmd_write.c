@@ -138,10 +138,10 @@ static const char *help_msg_wp[] = {
 	"^#", "", "comments",
 	".", "", "execute command",
 	"!", "", "execute command",
-	"", "", "offset { code block }",
-	"", "", "offset \"string\"",
-	"", "", "offset 01020304",
-	"", "", "offset : assembly",
+	"", "", "OFFSET { code block }",
+	"", "", "OFFSET \"string\"",
+	"", "", "OFFSET 01020304",
+	"", "", "OFFSET : assembly",
 	"", "", "+ {code}|\"str\"|0210|: asm",
 	NULL
 };
