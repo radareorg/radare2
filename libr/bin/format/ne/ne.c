@@ -408,14 +408,21 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 				off += 2;
 				ut8 segnum = *(bin->entry_table + off);
 				off++;
-				ut16 segoff = *(ut16 *)(bin->entry_table + off);
-				if (segnum > 0) {
+				if (off > bin->ne_header->EntryTableLength) {
+					break;
+				}
+				ut16 segoff = r_read_le16 (bin->entry_table + off);
+				if (segnum > 0 && segnum < bin->ne_header->SegCount) {
 					entry->paddr = (ut64)bin->segment_entries[segnum - 1].offset * bin->alignment + segoff;
 				}
 			} else { // Fixed
+				if (off + 2 >= bin->ne_header->EntryTableLength) {
+					break;
+				}
+				ut16 delta = r_read_le16 (bin->entry_table + off);
 				if (bundle_type < bin->ne_header->SegCount) {
 					entry->paddr = (ut64)bin->segment_entries[bundle_type - 1].offset
-						* bin->alignment + *(ut16 *)(bin->entry_table + off);
+						* bin->alignment + delta;
 				}
 			}
 			off += 2;
