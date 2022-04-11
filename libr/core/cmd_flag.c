@@ -72,15 +72,15 @@ static const char *help_msg_f[] = {
 
 static const char *help_msg_fc[] = {
 	"Usage: fc", "<flagname> [color]", " # List colors with 'ecs'",
-	"fc", "", "Same as fc.",
-	"fc", " color", "Set color to all flags in current offset",
-	"fc", " flag=color", "Set color to given flag. Same as 'fc color@flag'",
-	"fc.", "", "Get color of all flags in current offset",
-	"fc-", "", "Remove color from current offset",
-	"fc-", "flagname", "Remove color from given flag",
-	"fc-*", "", "Reset all color flags",
-	"fc*", "", "List all flags colors in r2 commands",
-	"fc.*", "", "Set color to all flags in current offset",
+	"fc", "", "same as fc.",
+	"fc", " color", "set color to all flags in current offset",
+	"fc", " flag=color", "set color to given flag. Same as 'fc color@flag'",
+	"fc.", "", "get color of all flags in current offset",
+	"fc-", "", "remove color from current offset",
+	"fc-", "flagname", "remove color from given flag",
+	"fc-*", "", "reset all color flags",
+	"fc*", "", "list all flags colors in r2 commands",
+	"fc.*", "", "set color to all flags in current offset",
 	NULL
 };
 
