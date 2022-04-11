@@ -1479,11 +1479,14 @@ static RList *xnu_desc_list(int pid) {
 #define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 	RDebugDesc *desc;
 	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
 	struct vnode_fdinfowithpath vi;
 	int i, nb, type = 0;
 	int maxfd = getMaxFiles();
 
-	for (i=0 ; i<maxfd; i++) {
+	for (i = 0 ; i < maxfd; i++) {
 		nb = proc_pidfdinfo (pid, i, PROC_PIDFDVNODEPATHINFO, &vi, sizeof (vi));
 		if (nb < 1) {
 			continue;

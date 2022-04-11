@@ -23,7 +23,9 @@
 #define PT_CONTINUE 7 /* continue the child */
 #define PT_KILL 8 /* kill the child process */
 #define PT_STEP 9 /* single step the child */
+#ifndef PT_ATTACH
 #define PT_ATTACH 10 /* trace some running process */
+#endif
 #define PT_DETACH 11 /* stop tracing a process */
 #define PT_SIGEXC 12 /* signals as exceptions for current_proc */
 #define PT_THUPDATE 13 /* signal for thread# */
@@ -274,7 +276,7 @@ bool xnu_stop(RDebug *dbg, int pid);
 bool xnu_continue(RDebug *dbg, int pid, int tid, int sig);
 RDebugMap *xnu_map_alloc(RDebug *dbg, ut64 addr, int size);
 int xnu_map_dealloc(RDebug *dbg, ut64 addr, int size);
-int xnu_map_protect(RDebug *dbg, ut64 addr, int size, int perms);
+bool xnu_map_protect(RDebug *dbg, ut64 addr, int size, int perms);
 int xnu_init(void);
 int xnu_wait(RDebug *dbg, int pid);
 RDebugPid *xnu_get_pid(int pid);
