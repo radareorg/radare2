@@ -1339,8 +1339,8 @@ static int cmd_cmp(void *data, const char *input) {
 			const char *help_message[] = {
 				"Usage: cg", "", "Graph code commands",
 				"cg", "", "diff ratio among functions (columns: off-A, match-ratio, off-B)",
-				"cgf", "[fcn]", "Compare functions (curseek vs fcn)",
-				"cgo", "", "Opcode-bytes code graph diff",
+				"cgf", "[fcn]", "compare functions (curseek vs fcn)",
+				"cgo", "", "opcode-bytes code graph diff",
 				NULL
 			};
 			r_core_cmd_help (core, help_message);
@@ -1407,13 +1407,13 @@ static int cmd_cmp(void *data, const char *input) {
 		default: {
 			const char *help_msg[] = {
 				"Usage: cu", " [offset]", "# Prints unified comparison to make hexpatches",
-				"cu", " $$+1 > p", "Compare hexpairs from  current seek and +1",
-				"cu1", " $$+1 > p", "Compare bytes from current seek and +1",
-				"cu2", " $$+1 > p", "Compare words (half, 16bit) from current seek and +1",
-				"cu4", " $$+1 > p", "Compare dwords from current seek and +1",
-				"cu8", " $$+1 > p", "Compare qwords from current seek and +1",
-				"cud", " $$+1 > p", "Compare disasm current seek and +1",
-				"wu", " p", "Apply unified hex patch (see output of cu)",
+				"cu", " $$+1 > p", "compare hexpairs from  current seek and +1",
+				"cu1", " $$+1 > p", "compare bytes from current seek and +1",
+				"cu2", " $$+1 > p", "compare words (half, 16bit) from current seek and +1",
+				"cu4", " $$+1 > p", "compare dwords from current seek and +1",
+				"cu8", " $$+1 > p", "compare qwords from current seek and +1",
+				"cud", " $$+1 > p", "compare disasm current seek and +1",
+				"wu", " p", "apply unified hex patch (see output of cu)",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
@@ -1502,7 +1502,7 @@ static int cmd_cmp(void *data, const char *input) {
 			}
 		} else if (sz == '?') {
 			eprintf ("Usage: cV[1248] [addr] @ addr2\n"
-				"Compare n bytes from one address to current one and return in $? 0 or 1\n");
+				"compare n bytes from one address to current one and return in $? 0 or 1\n");
 		}
 		sz -= '0';
 		if (sz > 0) {
