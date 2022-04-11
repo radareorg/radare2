@@ -507,15 +507,13 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 	return false;
 }
 
-/*
- * Save 4096 bytes from %esp
+/* Save 4096 bytes from the stack pointer
  * TODO: Add support for reverse stack architectures
- * Also known as r_debug_inject()
  */
 R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 	int orig_sz;
-	ut8 stackbackup[4096];
-	ut8 *backup, *orig = NULL;
+	ut8 stack_backup[4096];
+	ut8 *pc_backup, *reg_backup = NULL;
 	RRegItem *ri, *risp, *ripc;
 	ut64 rsp, rpc, ra0 = 0LL;
 	if (r_debug_is_dead (dbg)) {
@@ -525,21 +523,21 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 	risp = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_SP], R_REG_TYPE_GPR);
 	if (ripc) {
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-		orig = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &orig_sz);
-		if (!orig) {
+		reg_backup = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &orig_sz);
+		if (!reg_backup) {
 			eprintf ("Cannot get register arena bytes\n");
 			return 0LL;
 		}
 		rpc = r_reg_get_value (dbg->reg, ripc);
 		rsp = r_reg_get_value (dbg->reg, risp);
 
-		backup = malloc (len);
-		if (!backup) {
-			free (orig);
+		pc_backup = malloc (len);
+		if (!pc_backup) {
+			free (reg_backup);
 			return 0LL;
 		}
-		dbg->iob.read_at (dbg->iob.io, rpc, backup, len);
-		dbg->iob.read_at (dbg->iob.io, rsp, stackbackup, len);
+		dbg->iob.read_at (dbg->iob.io, rpc, pc_backup, len);
+		dbg->iob.read_at (dbg->iob.io, rsp, stack_backup, len);
 
 		r_bp_add_sw (dbg->bp, rpc+len, dbg->bpsize, R_BP_PROT_EXEC);
 
@@ -551,22 +549,22 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 		/* TODO: check if stopped in breakpoint or not */
 
 		r_bp_del (dbg->bp, rpc+len);
-		dbg->iob.write_at (dbg->iob.io, rpc, backup, len);
+		dbg->iob.write_at (dbg->iob.io, rpc, pc_backup, len);
 		if (restore) {
-			dbg->iob.write_at (dbg->iob.io, rsp, stackbackup, len);
+			dbg->iob.write_at (dbg->iob.io, rsp, stack_backup, len);
 		}
 
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 		ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_A0], R_REG_TYPE_GPR);
 		ra0 = r_reg_get_value (dbg->reg, ri);
 		if (restore) {
-			r_reg_read_regs (dbg->reg, orig, orig_sz);
+			r_reg_read_regs (dbg->reg, reg_backup, orig_sz);
 		} else {
 			r_reg_set_value (dbg->reg, ripc, rpc);
 		}
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true);
-		free (backup);
-		free (orig);
+		free (pc_backup);
+		free (reg_backup);
 		eprintf ("ra0=0x%08"PFMT64x"\n", ra0);
 	} else {
 		eprintf ("r_debug_execute: Cannot get program counter\n");
