@@ -17,9 +17,13 @@ static const char *help_msg_lparen[] = {
 	NULL
 };
 
-static int cmd_macro(void *data, const char *input) {
+static int cmd_macro(void *data, const char *_input) {
 	char *buf = NULL;
 	RCore *core = (RCore*)data;
+	char *input = strdup (_input);
+#if !SHELLFILTER
+	r_str_trim_args (input);
+#endif
 
 	switch (*input) {
 	case ')':
@@ -79,5 +83,6 @@ static int cmd_macro(void *data, const char *input) {
 		} break;
 	}
 	r_core_return_code (core, R_CMD_RC_SUCCESS);
+	free (input);
 	return R_CMD_RC_SUCCESS;
 }
