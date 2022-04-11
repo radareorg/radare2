@@ -254,11 +254,7 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	eprintf ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
 	eprintf ("  %s %s, [%s]\n", op, p, eq);
 #endif
-	if (type == '*') {
-		r_egg_printf (egg, "%s,%s,%s,%s,:=,", eq, p, op, p);
-	} else {
-		r_egg_printf (egg, "%s,%s,%s,%s,:=,", eq, p, op, p);
-	}
+	r_egg_printf (egg, "%s,%s,%s,%s,:=,", eq, p, op, p);
 }
 
 static const char *emit_regs(REgg *egg, int idx) {

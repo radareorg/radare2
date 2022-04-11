@@ -1536,6 +1536,7 @@ static int cmd_cmp(void *data, const char *input) {
 			} else {
 				r_core_cmd_help (core, help_msg_cmp);
 			}
+			free (argv);
 		}
 		break;
 	default:

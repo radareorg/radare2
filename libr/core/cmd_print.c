@@ -5343,7 +5343,9 @@ static bool check_string_at(RCore *core, ut64 addr) {
 				}
 			}
 			if (is_pascal1) {
-				out = r_str_ndup ((const char *)buf + 1, i);
+				char *oout = r_str_ndup ((const char *)buf + 1, i);
+				free (out);
+				out = oout;
 			}
 		}
 	}
@@ -5358,7 +5360,9 @@ static bool check_string_at(RCore *core, ut64 addr) {
 				}
 			}
 			if (is_pascal2) {
-				out = r_str_ndup ((const char *)buf + 2, i);
+				char *oout = r_str_ndup ((const char *)buf + 2, i);
+				free (out);
+				out = oout;
 			}
 		}
 	}

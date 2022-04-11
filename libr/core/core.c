@@ -1216,7 +1216,7 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 		const char *k = it->data;
 		const RCmdAliasVal *val = r_cmd_alias_get (cmd, k);
 		/* Skip aliases that don't match given data/command setting */
-		if (val->is_data != is_data) {
+		if (!val || val->is_data != is_data) {
 			continue;
 		}
 
@@ -1231,23 +1231,25 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 		/* If only 1 possible completion, use it */
 		const char *k = r_list_pop (alias_match);
 		const RCmdAliasVal *val = r_cmd_alias_get (cmd, k);
-		const char *v = (char *)val->data;
-
-		r_cons_printf ("$%s=%s\n", k, v);
-		r_cons_flush ();
-		char *completed_alias = r_str_newf ("$%s", k);
-		r_line_completion_push (completion, completed_alias);
-		free (completed_alias);
+		if (val) {
+			const char *v = (char *)val->data;
+			r_cons_printf ("$%s=%s\n", k, v);
+			r_cons_flush ();
+			char *completed_alias = r_str_newf ("$%s", k);
+			r_line_completion_push (completion, completed_alias);
+			free (completed_alias);
+		}
 	} else if (match_count > 1) {
 		/* If multiple possible completions, show them */
 		r_list_foreach_iter (alias_match, it) {
 			const char *k = it->data;
 			const RCmdAliasVal *val = r_cmd_alias_get (cmd, k);
-			const char *v = (char *)val->data;
-
-			char *line = r_str_newf ("$%s=%s", k, v);
-			r_line_completion_push (completion, line);
-			free (line);
+			if (val) {
+				const char *v = (char *)val->data;
+				char *line = r_str_newf ("$%s=%s", k, v);
+				r_line_completion_push (completion, line);
+				free (line);
+			}
 		}
 	}
 	/* If 0 possible completions, do nothing */

@@ -409,6 +409,7 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 				ut8 segnum = *(bin->entry_table + off);
 				off++;
 				if (off > bin->ne_header->EntryTableLength) {
+					free (entry);
 					break;
 				}
 				ut16 segoff = r_read_le16 (bin->entry_table + off);
@@ -417,6 +418,7 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 				}
 			} else { // Fixed
 				if (off + 2 >= bin->ne_header->EntryTableLength) {
+					free (entry);
 					break;
 				}
 				ut16 delta = r_read_le16 (bin->entry_table + off);
