@@ -3974,7 +3974,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("graph.edges", 2, "0=no edges, 1=simple edges, 2=avoid collisions");
 	SETI ("graph.layout", 0, "graph layout (0=vertical, 1=horizontal)");
 	SETI ("graph.linemode", 1, "graph edges (0=diagonal, 1=square)");
-	SETPREF ("graph.font", "courier", "Font for dot graphs");
+	SETPREF ("graph.font", "Courier", "Font for dot graphs");
 	SETBPREF ("graph.offset", "false", "show offsets in graphs");
 	SETBPREF ("graph.bytes", "false", "show opcode bytes in graphs");
 	SETBPREF ("graph.web", "false", "display graph in web browser (VV)");
