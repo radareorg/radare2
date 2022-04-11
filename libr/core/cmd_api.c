@@ -498,6 +498,10 @@ R_API void r_cmd_del(RCmd *cmd, const char *command) {
 
 static char *r_cmd_filter_special(const char *input) {
 	char *s = strdup (input);
+	// XXX workaround to call macros with quotes
+	if (*s == '(') {
+		return s;
+	}
 	r_str_trim_args (s);
 	return s;
 }

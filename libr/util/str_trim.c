@@ -106,6 +106,19 @@ R_API void r_str_trim_head(char *str) {
 	}
 }
 
+static bool is_escapable(char ch) {
+	switch (ch) {
+	case '@':
+	case '"':
+	case '\'':
+	case '|':
+	case ';':
+	case '`':
+		return true;
+	}
+	return false;
+}
+
 R_API void r_str_trim_args(char *str) {
 	r_return_if_fail (str);
 	char q = 0;
@@ -139,14 +152,7 @@ R_API void r_str_trim_args(char *str) {
 			if (e) {
 				e = false;
 			} else {
-				switch (s[1]) {
-				case 'e':
-				case 'r':
-				case 'n':
-				case 't':
-				case 'x':
-					break;
-				default:
+				if (is_escapable (s[1])) {
 					e = true;
 					s++;
 					continue;
