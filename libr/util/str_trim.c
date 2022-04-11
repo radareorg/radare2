@@ -139,9 +139,18 @@ R_API void r_str_trim_args(char *str) {
 			if (e) {
 				e = false;
 			} else {
-				e = true;
-				s++;
-				continue;
+				switch (s[1]) {
+				case 'e':
+				case 'r':
+				case 'n':
+				case 't':
+				case 'x':
+					break;
+				default:
+					e = true;
+					s++;
+					continue;
+				}
 			}
 			break;
 		default:
