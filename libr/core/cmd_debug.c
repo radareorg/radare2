@@ -175,7 +175,7 @@ static const char *help_msg_dd[] = {
 	"ddt", "[*]", "Close terminal fd (alias for `dd- 0`)",
 	"dds", "[*] <fd> [offset]", "Seek fd to offset (no offset = seek to beginning)",
 	"ddd", "[*] <oldfd> <newfd>", "Copy oldfd to newfd with dup2",
-	"ddf", "[*] <addr>", "Create pipe and write fd to (int*)addr",
+	"ddf", "[*] <addr>", "Create pipe and write fds to (int[2])addr",
 	"ddr", "[*] <fd> <addr> <size>", "Read bytes from fd into (char*)addr",
 	"ddw", "[*] <fd> <addr> <size>", "Write bytes from (const char*)addr to fd",
 	NULL
@@ -5064,6 +5064,10 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		}
 
 		addr = r_num_math (core->num, argv[1]);
+		if (!addr) {
+			eprintf ("%s is not a valid address.\n", argv[1]);
+			break;
+		}
 
 		buf = r_core_syscallf (core, "pipe", "0x%" PFMT64x, addr);
 		if (buf) {

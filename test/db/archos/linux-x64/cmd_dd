@@ -79,6 +79,30 @@ RUN
 #EOF
 #RUN
 
+NAME=ddf
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+# FIXME: dx is jank
+# dxr restores the stack, so we use unitialized memory above it
+wv8 0 @rsp-8
+# write the fds there and check it
+ddf `?v $(dr?rsp) - 8`
+dd~[0-2]:3..
+?e ---
+pv4 @rsp-8
+pv4 @rsp-4
+doc
+EOF
+EXPECT=<<EOF
+3 0x0 r-P
+4 0x0 -wP
+---
+0x00000003
+0x00000004
+EOF
+RUN
+
 NAME=dd should not affect program registers
 FILE=bins/elf/ls-focal
 ARGS=-d
