@@ -55,7 +55,7 @@ static const char *help_msg_a[] = {
 	"aL", "", "list all asm/anal plugins (e asm.arch=?)",
 	"an", "[?] [name]", "show/rename/create whatever var/flag/function is used in current instruction",
 	"ao", "[?] [len]", "analyze Opcodes (or emulate it)",
-	"aO", "[?] [len]", "Analyze N instructions in M bytes",
+	"aO", "[?] [len]", "analyze N instructions in M bytes",
 	"ap", "", "find prelude for current offset",
 	"ar", "[?]", "like 'dr' but for the esil vm. (registers)",
 	"as", "[?] [num]", "analyze syscall using dbg.reg",
@@ -79,11 +79,11 @@ static const char *help_msg_afu[] = {
 
 static const char *help_msg_aae[] = {
 	"Usage:", "aae", "[pf] ([addr]) # analyze all kind of stuff using esil",
-	"aaep", "", "Same as aepa@@@i - define anal pins by import flag names",
-	"aaep", "a", "Run 'aep ret0@@@i' and then 'aaep' - all unknown imports are faked to return 0",
-	"aaef", "", "Emulate all functions using esil to find out computed references (same as aef@@@F)",
-	"aae", " [addr]", "Same as aepa@@@i - define anal pins by import flag names",
-	"aae", "", "Honor anal.{in,from,to} and emulate all executable regions",
+	"aaep", "", "same as aepa@@@i - define anal pins by import flag names",
+	"aaep", "a", "run 'aep ret0@@@i' and then 'aaep' - all unknown imports are faked to return 0",
+	"aaef", "", "emulate all functions using esil to find out computed references (same as aef@@@F)",
+	"aae", " [addr]", "same as aepa@@@i - define anal pins by import flag names",
+	"aae", "", "honor anal.{in,from,to} and emulate all executable regions",
 	NULL
 };
 
@@ -104,21 +104,21 @@ static const char *help_msg_aan[] = {
 
 static const char *help_msg_afm[] = {
 	"Usage:", "afm", "[name]   # merge two functions.",
-	"afm", " sym.func.100003d74", "Merge current function into 0x100003d74",
+	"afm", " sym.func.100003d74", "merge current function into 0x100003d74",
 	NULL
 };
 
 static const char *help_msg_aF[] = {
 	"Usage:", "aF", " # analyze a function, but using anal.depth=1",
-	"aF", "", "Check af? for more options and information.",
+	"aF", "", "check af? for more options and information.",
 	NULL
 };
 
 static const char *help_msg_an[] = {
 	"Usage:", "an", " # analyze name for the current address",
-	"an", "", "Show flag/function/symbol name",
-	"an*", "", "Same as above but in r2 commands",
-	"anj", "", "Same as above but in json",
+	"an", "", "show flag/function/symbol name",
+	"an*", "", "same as above but in r2 commands",
+	"anj", "", "same as above but in json",
 	NULL
 };
 
@@ -137,7 +137,7 @@ static const char *help_msg_ap[] = {
 
 static const char *help_msg_avg[] = {
 	"Usage:", "avg", " # analyze variable global",
-	"avg", "", "Use ESIL emulation to find out arguments of a call (uses 'abte')",
+	"avg", "", "use ESIL emulation to find out arguments of a call (uses 'abte')",
 	"avg", " [type] [name]", "add global",
 	"avg-", "", "delete global",
 	NULL
@@ -145,8 +145,8 @@ static const char *help_msg_avg[] = {
 
 static const char *help_msg_aC[] = {
 	"Usage:", "aC[fej] [addr-of-call]", " # analyze call args",
-	"aCe", "", "Use ESIL emulation to find out arguments of a call (uses 'abte')",
-	"aCf", "", "Same as .aCe* $$ @@=`pdr~call`",
+	"aCe", "", "use ESIL emulation to find out arguments of a call (uses 'abte')",
+	"aCf", "", "same as .aCe* $$ @@=`pdr~call`",
 	NULL
 };
 
@@ -334,7 +334,7 @@ static const char *help_msg_ae[] = {
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", "[?] [..]", "handle ESIL registers like 'ar' or 'dr' does",
 	"aes", "[?]", "perform emulated debugger step",
-	"aets", "[?]", "ESIL Trace session",
+	"aets", "[?]", "esil Trace session",
 	"aev", " [esil]", "visual esil debugger for the given expression or current instruction",
 	"aex", " [hex]", "evaluate opcode expression",
 	NULL
@@ -344,13 +344,13 @@ static const char *help_detail_ae[] = {
 	"Examples:", "ESIL", " examples and documentation",
 	"=", "", "assign updating internal flags",
 	":=", "", "assign without updating internal flags",
-	"+=", "", "A+=B => B,A,+=",
-	"+", "", "A=A+B => B,A,+,A,=",
-	"++", "", "increment, 2,A,++ == 3 (see rsi,--=[1], ... )",
-	"--", "", "decrement, 2,A,-- == 1",
-	"*=", "", "A*=B => B,A,*=",
-	"/=", "", "A/=B => B,A,/=",
-	"%=", "", "A%=B => B,A,%=",
+	"+=", "", "a+=b => b,a,+=",
+	"+", "", "a=a+b => b,a,+,a,=",
+	"++", "", "increment, 2,a,++ == 3 (see rsi,--=[1], ... )",
+	"--", "", "decrement, 2,a,-- == 1",
+	"*=", "", "a*=b => b,a,*=",
+	"/=", "", "a/=b => b,a,/=",
+	"%=", "", "a%=b => b,a,%=",
 	"&=", "", "and ax, bx => bx,ax,&=",
 	"|", "", "or r0, r1, r2 => r2,r1,|,r0,=",
 	"!=", "", "negate all bits",
@@ -407,15 +407,15 @@ static const char *help_detail_ae[] = {
 
 static const char *help_msg_aea[] = {
 	"Examples:", "aea", " show regs and memory accesses used in a range",
-	"aea", "  [ops]", "Show regs/memory accesses used in N instructions ",
-	"aea*", " [ops]", "Create mem.* flags for memory accesses",
-	"aeab", "", "Show regs used in current basic block",
-	"aeaf", "", "Show regs used in current function",
-	"aear", " [ops]", "Show regs read in N instructions",
-	"aeaw", " [ops]", "Show regs written in N instructions",
-	"aean", " [ops]", "Show regs not written in N instructions",
-	"aeaj", " [ops]", "Show aea output in JSON format",
-	"aeA", "  [len]", "Show regs used in N bytes (subcommands are the same)",
+	"aea", "  [ops]", "show regs/memory accesses used in N instructions ",
+	"aea*", " [ops]", "create mem.* flags for memory accesses",
+	"aeab", "", "show regs used in current basic block",
+	"aeaf", "", "show regs used in current function",
+	"aear", " [ops]", "show regs read in N instructions",
+	"aeaw", " [ops]", "show regs written in N instructions",
+	"aean", " [ops]", "show regs not written in N instructions",
+	"aeaj", " [ops]", "show aea output in JSON format",
+	"aeA", "  [len]", "show regs used in N bytes (subcommands are the same)",
 	"Legend:", "", "",
 	"I", "", "input registers (read before being set)",
 	"A", "", "all regs accessed",
@@ -431,11 +431,11 @@ static const char *help_msg_aea[] = {
 
 static const char *help_msg_aec[] = {
 	"Examples:", "aec", " continue until ^c",
-	"aec", "", "Continue until exception",
-	"aecs", "", "Continue until syscall",
-	"aecc", "", "Continue until call",
-	"aecu", "[addr]", "Continue until address",
-	"aecue", "[addr]", "Continue until esil expression",
+	"aec", "", "continue until exception",
+	"aecs", "", "continue until syscall",
+	"aecc", "", "continue until call",
+	"aecu", "[addr]", "continue until address",
+	"aecue", "[addr]", "continue until esil expression",
 	NULL
 };
 
@@ -472,16 +472,16 @@ static const char *help_msg_aep[] = {
 
 static const char *help_msg_aek[] = {
 	"Usage:", "aek ", " [...]",
-	"aek", "", "Dump the esil.stats database contents",
-	"aek ", "sdb.query", "Evaluate sdb query on esil.stats db",
-	"aek-", "", "Clear the esil.stats sdb instance",
+	"aek", "", "dump the esil.stats database contents",
+	"aek ", "sdb.query", "evaluate sdb query on esil.stats db",
+	"aek-", "", "clear the esil.stats sdb instance",
 	NULL
 };
 
 static const char *help_msg_aets[] = {
 	"Usage:", "aets ", " [...]",
-	"aets+", "", "Start ESIL trace session",
-	"aets-", "", "Stop ESIL trace session",
+	"aets+", "", "start ESIL trace session",
+	"aets-", "", "stop ESIL trace session",
 	NULL
 };
 
@@ -519,9 +519,9 @@ static const char *help_msg_af[] = {
 };
 
 static const char *help_msg_afb[] = {
-	"Usage:", "afb", " List basic blocks of given function",
-	".afbr-", "", "Set breakpoint on every return address of the function",
-	".afbr-*", "", "Remove breakpoint on every return address of the function",
+	"Usage:", "afb", " list basic blocks of given function",
+	".afbr-", "", "set breakpoint on every return address of the function",
+	".afbr-*", "", "remove breakpoint on every return address of the function",
 	"afb", " [addr]", "list basic blocks of function",
 	"afb.", " [addr]", "show info of current basic block",
 	"afb=", "", "display ascii-art bars for basic block regions",
@@ -530,23 +530,23 @@ static const char *help_msg_afb[] = {
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afbi", "[j]", "print current basic block information",
 	"afbj", " [addr]", "show basic blocks information in json",
-	"afbr", "", "Show addresses of instructions which leave the function",
-	"afbt", "", "Show basic blocks of current function in a table",
+	"afbr", "", "show addresses of instructions which leave the function",
+	"afbt", "", "show basic blocks of current function in a table",
 	"afB", " [bits]", "define asm.bits for the given function",
 	NULL
 };
 
 static const char *help_msg_afc[] = {
 	"Usage:", "afc[agl?]", "# see also tcc command to manage all calling conventions",
-	"afc", " ccname", "Manually set calling convention for current function",
-	"afc", "", "Show Calling convention for the Current function (same as tcc)",
-	"afcr", "[j]", "Show register usage for the current function",
-	"afca", "", "Analyse function for finding the current calling convention",
-	"afcf", "[j] [name]", "Prints return type function(arg1, arg2...), see afij",
-	"afck", "", "List SDB details of call loaded calling conventions",
-	"afcl", "", "List all available calling conventions",
-	"afco", " path", "Open Calling Convention sdb profile from given path",
-	"afcR", "", "Register telescoping using the calling conventions order",
+	"afc", " ccname", "manually set calling convention for current function",
+	"afc", "", "show calling convention for the Current function (same as tcc)",
+	"afcr", "[j]", "show register usage for the current function",
+	"afca", "", "analyse function for finding the current calling convention",
+	"afcf", "[j] [name]", "prints return type function(arg1, arg2...), see afij",
+	"afck", "", "list SDB details of call loaded calling conventions",
+	"afcl", "", "list all available calling conventions",
+	"afco", " path", "open Calling Convention sdb profile from given path",
+	"afcR", "", "register telescoping using the calling conventions order",
 	NULL
 };
 
@@ -705,33 +705,33 @@ static const char *help_msg_afvs[] = {
 static const char *help_msg_ag[] = {
 	"Usage:", "ag<graphtype><format> [addr]", "",
 	"Graph commands:", "", "",
-	"aga", "[format]", "Data references graph",
-	"agA", "[format]", "Global data references graph",
-	"agc", "[format]", "Function callgraph",
-	"agC", "[format]", "Global callgraph",
-	"agd", "[format] [fcn addr]", "Diff graph",
-	"agf", "[format]", "Basic blocks function graph",
-	"agi", "[format]", "Imports graph",
-	"agr", "[format]", "References graph",
-	"agR", "[format]", "Global references graph",
-	"agx", "[format]", "Cross references graph",
-	"agg", "[format]", "Custom graph",
-	"ag-", "", "Clear the custom graph",
-	"agn", "[?] title body", "Add a node to the custom graph",
-	"age", "[?] title1 title2", "Add an edge to the custom graph",
+	"aga", "[format]", "data references graph",
+	"agA", "[format]", "global data references graph",
+	"agc", "[format]", "function callgraph",
+	"agC", "[format]", "global callgraph",
+	"agd", "[format] [fcn addr]", "diff graph",
+	"agf", "[format]", "basic blocks function graph",
+	"agi", "[format]", "imports graph",
+	"agr", "[format]", "references graph",
+	"agR", "[format]", "global references graph",
+	"agx", "[format]", "cross references graph",
+	"agg", "[format]", "custom graph",
+	"ag-", "", "clear the custom graph",
+	"agn", "[?] title body", "add a node to the custom graph",
+	"age", "[?] title1 title2", "add an edge to the custom graph",
 	"","","",
 	"Output formats:", "", "",
-	"<blank>", "", "Ascii art",
+	"<blank>", "", "ascii art",
 	"*", "", "r2 commands",
-	"b", "", "Braile art rendering (agfb)",
-	"d", "", "Graphviz dot",
-	"g", "", "Graph Modelling Language (gml)",
+	"b", "", "braile art rendering (agfb)",
+	"d", "", "graphviz dot",
+	"g", "", "graph Modelling Language (gml)",
 	"j", "", "json ('J' for formatted disassembly)",
-	"k", "", "SDB key-value",
-	"m", "", "Mermaid",
-	"t", "", "Tiny ascii art",
-	"v", "", "Interactive ascii art",
-	"w", " [path]", "Write to path or display graph image (see graph.gv.format and graph.web)",
+	"k", "", "sdb key-value",
+	"m", "", "mermaid",
+	"t", "", "tiny ascii art",
+	"v", "", "interactive ascii art",
+	"w", " [path]", "write to path or display graph image (see graph.gv.format and graph.web)",
 	NULL
 };
 
@@ -744,18 +744,18 @@ static const char *help_msg_age[] = {
 	"ageh", "", "List all the highlighted edges",
 	"ageh", " nodeA nodeB", "Highlight edge between nodeA and nodeB",
 	"ageh-", " nodeA nodeB", "Highlight edge between nodeA and nodeB",
-	"age?", "", "Show this help",
+	"age?", "", "show this help",
 	NULL
 };
 
 static const char *help_msg_agn[] = {
 	"Usage:", "agn [title] [body]", "",
 	"Examples:", "", "",
-	"agn", " title1 body1", "Add a node with title \"title1\" and body \"body1\"",
-	"agn", " \"title with space\" \"body with space\"", "Add a node with spaces in the title and in the body",
-	"agn", " title1 base64:Ym9keTE=", "Add a node with the body specified as base64",
-	"agn-", " title1", "Remove a node with title \"title1\"",
-	"agn?", "", "Show this help",
+	"agn", " title1 body1", "add a node with title \"title1\" and body \"body1\"",
+	"agn", " \"title with space\" \"body with space\"", "add a node with spaces in the title and in the body",
+	"agn", " title1 base64:Ym9keTE=", "add a node with the body specified as base64",
+	"agn-", " title1", "remove a node with title \"title1\"",
+	"agn?", "", "show this help",
 	NULL
 };
 
@@ -831,8 +831,8 @@ static const char *help_msg_ahi[] = {
 
 static const char *help_msg_aht[] = {
 	"Usage:", "aht[s] [addr|type]", "Mark immediate as type offset (moved to aho)",
-	"ahts", " <offset>", "List all matching structure offsets",
-	"aht", " <struct.member>", "Change immediate to structure offset",
+	"ahts", " <offset>", "list all matching structure offsets",
+	"aht", " <struct.member>", "change immediate to structure offset",
 	"aht?", "", "show this help",
 	NULL
 };
@@ -874,35 +874,35 @@ static const char *help_msg_ao[] = {
 
 static const char *help_msg_ar[] = {
 	"Usage: ar", "", "# Analysis Registers",
-	"ar", "", "Show 'gpr' registers",
-	"ar.", ">$snapshot", "Show r2 commands to set register values to the current state",
-	"ar,", "", "Show registers in table format (see dr,)",
-	".ar*", "", "Import register values as flags",
-	".ar-", "", "Unflag all registers",
-	"ar0", "", "Reset register arenas to 0",
-	"ara", "[?]", "Manage register arenas",
-	"arj", "", "Show 'gpr' registers in JSON format",
-	"arA", "", "Show values of function argument calls (A0, A1, A2, ..)",
-	"ar", " 16", "Show 16 bit registers",
-	"ar", " 32", "Show 32 bit registers",
-	"ar", " all", "Show all bit registers",
-	"ar", " <type>", "Show all registers of given type",
-	"arC", "", "Display register profile comments",
-	"arr", "", "Show register references (telescoping)",
-	"arrj", "", "Show register references (telescoping) in JSON format",
-	"ar=", "([size])(:[regs])", "Show register values in columns",
-	"ar?", " <reg>", "Show register value",
-	"arb", " <type>", "Display hexdump of the given arena",
-	"arc", "[cq=] <name>", "Conditional flag registers",
-	"arcc", "", "Derive calling convention from the register profile",
-	"ard", " <name>", "Show only different registers",
-	"arn", " <regalias>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
-	"aro", "", "Show old (previous) register values",
-	"arp", "[?] <file>", "Load register profile from file",
-	"ars", "", "Stack register state",
-	"arS", "", "Show the size of the register profile",
-	"art", "", "List all register types",
-	"arw", " <hexnum>", "Set contents of the register arena",
+	"ar", "", "show 'gpr' registers",
+	"ar.", ">$snapshot", "show r2 commands to set register values to the current state",
+	"ar,", "", "show registers in table format (see dr,)",
+	".ar*", "", "import register values as flags",
+	".ar-", "", "unflag all registers",
+	"ar0", "", "reset register arenas to 0",
+	"ara", "[?]", "manage register arenas",
+	"arj", "", "show 'gpr' registers in JSON format",
+	"arA", "", "show values of function argument calls (A0, A1, A2, ..)",
+	"ar", " 16", "show 16 bit registers",
+	"ar", " 32", "show 32 bit registers",
+	"ar", " all", "show all bit registers",
+	"ar", " <type>", "show all registers of given type",
+	"arC", "", "display register profile comments",
+	"arr", "", "show register references (telescoping)",
+	"arrj", "", "show register references (telescoping) in JSON format",
+	"ar=", "([size])(:[regs])", "show register values in columns",
+	"ar?", " <reg>", "show register value",
+	"arb", " <type>", "display hexdump of the given arena",
+	"arc", "[cq=] <name>", "conditional flag registers",
+	"arcc", "", "derive calling convention from the register profile",
+	"ard", " <name>", "show only different registers",
+	"arn", " <regalias>", "get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
+	"aro", "", "show old (previous) register values",
+	"arp", "[?] <file>", "load register profile from file",
+	"ars", "", "stack register state",
+	"arS", "", "show the size of the register profile",
+	"art", "", "list all register types",
+	"arw", " <hexnum>", "set contents of the register arena",
 	NULL
 };
 
