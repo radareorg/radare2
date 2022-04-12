@@ -1414,7 +1414,7 @@ static void rebase_bytes_v3(RDyldRebaseInfo3 *rebase_info, ut8 *buf, ut64 offset
 		if (first_rebase_off >= page_offset && first_rebase_off < page_offset + count) {
 			do {
 				ut64 position = in_buf + first_rebase_off - page_offset;
-				if (position >= count) {
+				if (position + 8 >= count) {
 					break;
 				}
 				ut64 raw_value = r_read_le64 (buf + position);
@@ -1832,7 +1832,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 			}
 			ut64 cursor = selrefs_offset;
 			ut64 end = cursor + selrefs_size;
-			while (cursor < end) {
+			while (cursor + 8 < end) {
 				ut64 sel_ptr = r_buf_read_le64_at (cache->buf, cursor);
 				if (sel_ptr == UT64_MAX) {
 					break;
