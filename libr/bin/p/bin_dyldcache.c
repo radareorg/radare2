@@ -2100,12 +2100,18 @@ static RList *sections(RBinFile *bf) {
 
 	RListIter *iter;
 	RDyldBinImage *bin;
+	ut32 i = 0;
+	RConsIsBreaked is_breaked = (bf->rbin && bf->rbin->consb.is_breaked)? bf->rbin->consb.is_breaked: NULL;
 	r_list_foreach (cache->bins, iter, bin) {
+		i++;
+		if (is_breaked) {
+			eprintf ("Parsing sections stopped %d / %d\n", i, r_list_length (cache->bins));
+			break;
+		}
 		sections_from_bin (ret, bf, bin);
 	}
 
 	RBinSection *ptr = NULL;
-	int i;
 	for (i = 0; i < cache->n_maps; i++) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			r_list_free (ret);
@@ -2146,7 +2152,14 @@ static RList *symbols(RBinFile *bf) {
 
 	RListIter *iter;
 	RDyldBinImage *bin;
+	ut32 i = 0;
+	RConsIsBreaked is_breaked = (bf->rbin && bf->rbin->consb.is_breaked)? bf->rbin->consb.is_breaked: NULL;
 	r_list_foreach (cache->bins, iter, bin) {
+		i++;
+		if (is_breaked) {
+			eprintf ("Parsing symbols stopped %d / %d\n", i, r_list_length (cache->bins));
+			break;
+		}
 		SetU *hash = set_u_new ();
 		if (!hash) {
 			r_list_free (ret);
@@ -2206,7 +2219,14 @@ static RList *classes(RBinFile *bf) {
 
 	RBuffer *orig_buf = bf->buf;
 	ut32 num_of_unnamed_class = 0;
+	ut32 i = 0;
+	RConsIsBreaked is_breaked = (bf->rbin && bf->rbin->consb.is_breaked)? bf->rbin->consb.is_breaked: NULL;
 	r_list_foreach (cache->bins, iter, bin) {
+		i++;
+		if (is_breaked) {
+			eprintf ("Parsing classes stopped %d / %d\n", i, r_list_length (cache->bins));
+			break;
+		}
 		struct MACH0_(obj_t) *mach0 = bin_to_mach0 (bf, bin);
 		if (!mach0) {
 			goto beach;
