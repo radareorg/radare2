@@ -2104,7 +2104,7 @@ static RList *sections(RBinFile *bf) {
 	RConsIsBreaked is_breaked = (bf->rbin && bf->rbin->consb.is_breaked)? bf->rbin->consb.is_breaked: NULL;
 	r_list_foreach (cache->bins, iter, bin) {
 		i++;
-		if (is_breaked) {
+		if (is_breaked && is_breaked ()) {
 			eprintf ("Parsing sections stopped %d / %d\n", i, r_list_length (cache->bins));
 			break;
 		}
@@ -2156,7 +2156,7 @@ static RList *symbols(RBinFile *bf) {
 	RConsIsBreaked is_breaked = (bf->rbin && bf->rbin->consb.is_breaked)? bf->rbin->consb.is_breaked: NULL;
 	r_list_foreach (cache->bins, iter, bin) {
 		i++;
-		if (is_breaked) {
+		if (is_breaked && is_breaked ()) {
 			eprintf ("Parsing symbols stopped %d / %d\n", i, r_list_length (cache->bins));
 			break;
 		}
@@ -2223,7 +2223,7 @@ static RList *classes(RBinFile *bf) {
 	RConsIsBreaked is_breaked = (bf->rbin && bf->rbin->consb.is_breaked)? bf->rbin->consb.is_breaked: NULL;
 	r_list_foreach (cache->bins, iter, bin) {
 		i++;
-		if (is_breaked) {
+		if (is_breaked && is_breaked ()) {
 			eprintf ("Parsing classes stopped %d / %d\n", i, r_list_length (cache->bins));
 			break;
 		}
