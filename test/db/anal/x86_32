@@ -159,7 +159,7 @@ aar
 axt 0x4bffb0
 EOF
 EXPECT=<<EOF
-(nofunc) 0x4bfe53 [DATA] mov edx, 0x4bffb0
+(nofunc) 0x4bfe53 [DATA:r--] mov edx, 0x4bffb0
 EOF
 RUN
 
@@ -1420,7 +1420,7 @@ aar
 axt @ str.john
 EOF
 EXPECT=<<EOF
-main 0x804831a [DATA] mov dword [var_ch], str.john
+main 0x804831a [DATA:r--] mov dword [var_ch], str.john
 EOF
 RUN
 
@@ -3404,7 +3404,7 @@ s 0x00402130
 axt
 EOF
 EXPECT=<<EOF
-(nofunc) 0x4010d1 [DATA] lea edx, [ebx*4 + 0x402130]
+(nofunc) 0x4010d1 [DATA:r--] lea edx, [ebx*4 + 0x402130]
 EOF
 RUN
 
@@ -3561,30 +3561,30 @@ EXPECT=<<EOF
 [0x0804805b]>  # fcn.0804805b ();
  ----.
 |    |
-|.-------------------------------------------.
-||  0x8048054                                |
-|| ;-- entry0:                               |
-|| ; CODE XREF from fcn.0804805b @ 0x804805b |
-|| ; '*'                                     |
-|| ; 42                                      |
-|| mov bl, 0x2a                              |
-|| xor eax, eax                              |
-|| inc eax                                   |
-|| ;-- syscall.close:                        |
-|| int 0x80                                  |
-|`-------------------------------------------'
+|.----------------------------------------------.
+||  0x8048054                                   |
+|| ;-- entry0:                                  |
+|| ; CODE XREF from fcn.0804805b @ 0x804805b(x) |
+|| ; '*'                                        |
+|| ; 42                                         |
+|| mov bl, 0x2a                                 |
+|| xor eax, eax                                 |
+|| inc eax                                      |
+|| ;-- syscall.close:                           |
+|| int 0x80                                     |
+|`----------------------------------------------'
 |    v
 |    |
-|    '----------.
-|               |
-|           .---------------------.
-|           |  0x804805b          |
-|           | 9: fcn.0804805b (); |
-|           | jmp entry0          |
-|           `---------------------'
-|               v
-|               |
-`---------------'
+|    '------------.
+|                 |
+|             .---------------------.
+|             |  0x804805b          |
+|             | 9: fcn.0804805b (); |
+|             | jmp entry0          |
+|             `---------------------'
+|                 v
+|                 |
+`-----------------'
 
 0x0804805b    2 9            fcn.0804805b
 EOF

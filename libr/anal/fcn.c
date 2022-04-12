@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2021 - nibble, alvaro, pancake */
+/* radare - LGPL - Copyright 2010-2022 - nibble, alvaro, pancake */
 
 #include <r_anal.h>
 #include <r_parse.h>
@@ -338,7 +338,8 @@ static void check_purity(HtUP *ht, RAnalFunction *fcn) {
 	ht_up_insert (ht, fcn->addr, NULL);
 	fcn->is_pure = true;
 	r_list_foreach (refs, iter, ref) {
-		if (ref->type == R_ANAL_REF_TYPE_CALL || ref->type == R_ANAL_REF_TYPE_CODE) {
+		int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+		if (rt == R_ANAL_REF_TYPE_CALL || rt == R_ANAL_REF_TYPE_CODE) {
 			RAnalFunction *called_fcn = r_anal_get_fcn_in (fcn->anal, ref->addr, 0);
 			if (!called_fcn) {
 				continue;
@@ -351,7 +352,7 @@ static void check_purity(HtUP *ht, RAnalFunction *fcn) {
 				break;
 			}
 		}
-		if (ref->type == R_ANAL_REF_TYPE_DATA) {
+		if (R_ANAL_REF_TYPE_MASK (ref->type) == R_ANAL_REF_TYPE_DATA) {
 			fcn->is_pure = false;
 			break;
 		}
@@ -880,7 +881,21 @@ repeat:
 		}
 		if (op->ptr && op->ptr != UT64_MAX && op->ptr != UT32_MAX) {
 			// swapped parameters wtf
-			r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA);
+			// its read or wr
+			int dir = 0;
+			if (op->direction & R_ANAL_OP_DIR_READ) {
+				dir |= R_ANAL_REF_TYPE_READ;
+			}
+			if (op->direction & R_ANAL_OP_DIR_REF) {
+				dir |= R_ANAL_REF_TYPE_READ;
+			}
+			if (op->direction & R_ANAL_OP_DIR_WRITE) {
+				dir |= R_ANAL_REF_TYPE_WRITE;
+			}
+			if (op->direction & R_ANAL_OP_DIR_EXEC) {
+				dir |= R_ANAL_REF_TYPE_EXEC;
+			}
+			r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA | dir);
 		}
 		if (anal->opt.vars && !varset) {
 			// XXX uses op.src/dst and fails because regprofile invalidates the regitems
@@ -1017,7 +1032,7 @@ repeat:
 					} else if (try_get_delta_jmptbl_info (anal, fcn, addr, op->addr, &table_size, &default_case, &case_shift)) {
 						ready = true;
 					}
-// TODO: -1-
+					// TODO: -1-
 					if (ready) {
 						ret = casetbl_addr == op->ptr
 							? try_walkthrough_jmptbl (anal, fcn, bb, depth, addr, case_shift, jmptbl_addr, op->ptr, 4, table_size, default_case, 4)
@@ -1068,7 +1083,7 @@ repeat:
 				gotoBeach (R_ANAL_RET_END);
 			}
 			if (anal->opt.jmpref) {
-				(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CODE);
+				(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
 			}
 			if (!anal->opt.jmpabove && (op->jump < fcn->addr)) {
 				gotoBeach (R_ANAL_RET_END);
@@ -1110,7 +1125,7 @@ repeat:
 						fcn_recurse (anal, fcn, op->jump, anal->opt.bb_max_size, depth - 1);
 					}
 				} else if (R_ABS (diff) > tc) {
-					(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CALL);
+					(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 					fcn_recurse (anal, fcn, op->jump, anal->opt.bb_max_size, depth - 1);
 					gotoBeach (R_ANAL_RET_END);
 				}
@@ -1206,7 +1221,7 @@ repeat:
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
 			/* call dst */
-			(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CALL);
+			(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 
 			if (r_anal_noreturn_at (anal, op->jump)) {
 				RAnalFunction *f = r_anal_get_function_at (anal, op->jump);
@@ -1363,7 +1378,7 @@ analopfinish:
 			last_is_push = true;
 			last_push_addr = op->val;
 			if (anal->iob.is_valid_offset (anal->iob.io, last_push_addr, 1)) {
-				(void) r_anal_xrefs_set (anal, op->addr, last_push_addr, R_ANAL_REF_TYPE_DATA);
+				(void) r_anal_xrefs_set (anal, op->addr, last_push_addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
 			}
 			break;
 		case R_ANAL_OP_TYPE_UPUSH:
@@ -1372,7 +1387,7 @@ analopfinish:
 				last_is_push = true;
 				last_push_addr = last_reg_mov_lea_val;
 				if (anal->iob.is_valid_offset (anal->iob.io, last_push_addr, 1)) {
-					(void) r_anal_xrefs_set (anal, op->addr, last_push_addr, R_ANAL_REF_TYPE_DATA);
+					(void) r_anal_xrefs_set (anal, op->addr, last_push_addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
 				}
 			}
 			break;
@@ -1514,7 +1529,8 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86"); // HACK
 
 	r_list_foreach (refs, iter, ref) {
-		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_function_contains (fcn, ref->addr)
+		int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+		if (rt == R_ANAL_REF_TYPE_CODE && r_anal_function_contains (fcn, ref->addr)
 		    && (!is_x86 || !r_anal_function_contains (fcn, ref->at))) {
 			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
 		}
@@ -1529,7 +1545,8 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 
 	r_list_foreach (refs, iter, ref) {
-		if (ref->type == R_ANAL_REF_TYPE_CODE) {
+		int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+		if (rt == R_ANAL_REF_TYPE_CODE) {
 			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
 		}
 	}
@@ -1572,7 +1589,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 		}
 	}
 	/* defines fcn. or loc. prefix */
-	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE) ? R_ANAL_FCN_TYPE_LOC : R_ANAL_FCN_TYPE_FCN;
+	fcn->type = (R_ANAL_REF_TYPE_MASK (reftype) == R_ANAL_REF_TYPE_CODE) ? R_ANAL_FCN_TYPE_LOC : R_ANAL_FCN_TYPE_FCN;
 	if (fcn->addr == UT64_MAX) {
 		fcn->addr = addr;
 	}

@@ -92,7 +92,7 @@ s main
 pdf
 EOF
 EXPECT=<<EOF
-            ; DATA XREF from entry0 @ 0x40048d
+            ; DATA XREF from entry0 @ 0x40048d(r)
 / 41: int main (int argc, char **argv, char **envp);
 |           ; var int64_t var_4h @ rbp-0x4
 |           0x00400566      55             push rbp

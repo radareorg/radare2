@@ -46,7 +46,7 @@ axt str.busybox
 EOF
 EXPECT=<<EOF
             0x00406228      fcc38424       addiu a0, a0, -0x3c04       ; 0x44c3fc ; "busybox" ; str.busybox
-(nofunc); str.busybox 0x406228 [DATA] addiu a0, a0, -str.busybox
+(nofunc); str.busybox 0x406228 [DATA:r--] addiu a0, a0, -str.busybox
 EOF
 RUN
 
@@ -83,7 +83,7 @@ aae @entry0
 axt str.Hello_World
 EOF
 EXPECT=<<EOF
-(nofunc); str.Hello_World 0x805c4 [DATA] addiu a0, v0, str.Hello_World
+(nofunc); str.Hello_World 0x805c4 [DATA:r--] addiu a0, v0, str.Hello_World
 EOF
 RUN
 
@@ -252,7 +252,7 @@ EXPECT=<<EOF
 0x80100014      00000000   nop
 0x80100018      40040408   j 0x80101100
 0x8010001c      00000000   nop
-  ; CALL XREF from fcn.80100000 @ 0x80100000
+  ; CALL XREF from fcn.80100000 @ 0x80100000(x)
 (fcn) fcn.80100020 8
 0x80100020      0800e003   jr ra
 0x80100024      00000000   nop

@@ -1286,7 +1286,7 @@ pdJ 1 @ 0x00400506
 EOF
 EXPECT=<<EOF
 [{"offset":4195590,"text":"            ;-- main:"},{"offset":4195590,"text":"            0x00400506      55             push rbp"}]
-[{"offset":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d"},{"offset":4195590,"text":"/ 16: int main (int argc, char **argv, char **envp);"},{"offset":4195590,"text":"|           0x00400506      55             push rbp"}]
+[{"offset":4195590,"text":"            ; DATA XREF from entry0 @ 0x40042d(r)"},{"offset":4195590,"text":"/ 16: int main (int argc, char **argv, char **envp);"},{"offset":4195590,"text":"|           0x00400506      55             push rbp"}]
 EOF
 RUN
 

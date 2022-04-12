@@ -72,13 +72,13 @@ EXPECT=<<EOF
 / 24: fcn.00000000 ();
 | 0x00000000      0f1f440000     nop dword [rax + rax]
 | // true: 0x00000005
-| ; CODE XREF from fcn.00000000 @ 0x11
+| ; CODE XREF from fcn.00000000 @ 0x11(x)
 | 0x00000003      0000           add byte [rax], al
 | // true: 0x00000005
 | 0x00000005      b8210000c1     mov eax, 0xc1000021                   ; '!'
 | 0x0000000a      ebfd           jmp 9
 | // true: 0x00000009
-| ; CODE XREF from fcn.00000000 @ 0xa
+| ; CODE XREF from fcn.00000000 @ 0xa(x)
 | 0x00000009      c1ebfd         shr ebx, 0xfd
 | 0x0000000c      bb2c000000     mov ebx, 0x2c                         ; ','
 \ 0x00000011      ebf0           jmp 3
@@ -122,7 +122,8 @@ EXPECT=<<EOF
     "xrefs": [
       {
         "addr": 17,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   },
@@ -163,7 +164,8 @@ EXPECT=<<EOF
     "refs": [
       {
         "addr": 9,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   },
@@ -186,7 +188,8 @@ EXPECT=<<EOF
     "xrefs": [
       {
         "addr": 10,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   },
@@ -210,7 +213,8 @@ EXPECT=<<EOF
     "refs": [
       {
         "addr": 44,
-        "type": "DATA"
+        "type": "DATA",
+        "perm": "r--"
       }
     ]
   },
@@ -233,7 +237,8 @@ EXPECT=<<EOF
     "refs": [
       {
         "addr": 3,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   }
@@ -285,7 +290,8 @@ jmp 3
     "xrefs": [
       {
         "addr": 17,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   },
@@ -326,7 +332,8 @@ jmp 3
     "refs": [
       {
         "addr": 9,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   },
@@ -349,7 +356,8 @@ jmp 3
     "xrefs": [
       {
         "addr": 10,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   },
@@ -373,7 +381,8 @@ jmp 3
     "refs": [
       {
         "addr": 44,
-        "type": "DATA"
+        "type": "DATA",
+        "perm": "r--"
       }
     ]
   },
@@ -396,7 +405,8 @@ jmp 3
     "refs": [
       {
         "addr": 3,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   }
@@ -411,7 +421,7 @@ aa
 pdr @ entry.init0
 EOF
 EXPECT=<<EOF
-| ; CODE XREF from entry.init0 @ 0x5bd4
+| ; CODE XREF from entry.init0 @ 0x5bd4(x)
 | 0x00005b40      488d3d21c701.  lea rdi, loc._edata                   ; loc.__bss_start
 |                                                                      ; 0x22268
 | 0x00005b47      488d351ac701.  lea rsi, loc._edata                   ; loc.__bss_start

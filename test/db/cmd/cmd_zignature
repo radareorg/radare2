@@ -409,7 +409,7 @@ aa
 axt 0x400536
 EOF
 EXPECT=<<EOF
-main 0x40056f [CALL] call sym.print
+main 0x40056f [CALL:--x] call sym.print
 EOF
 RUN
 

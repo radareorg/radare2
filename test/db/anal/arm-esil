@@ -12,7 +12,7 @@ EOF
 EXPECT=<<EOF
             ;-- str..._.._third_party_boringssl_src_ssl_ssl_x509.cc:
             ;-- s:
-            ; STRING XREF from f @ 0x37194e
+            ; STRN XREF from f @ 0x37194e(w)
             0x00080c62     .string "../../third_party/boringssl/src/ssl/ssl_x509.cc" ; len=48
             ;-- str..._.._third_party_boringssl_src_ssl_ssl_asn1.cc:
             0x00080c92     .string "../../third_party/boringssl/src/ssl/ssl_asn1.cc" ; len=48
@@ -33,7 +33,7 @@ EOF
 EXPECT=<<EOF
             ;-- str..._.._third_party_boringssl_src_ssl_ssl_x509.cc:
             ;-- s:
-            ; STRING XREF from f @ 0x37194e
+            ; STRN XREF from f @ 0x37194e(r)
             0x00080c62     .string "../../third_party/boringssl/src/ssl/ssl_x509.cc" ; len=48
             ;-- str..._.._third_party_boringssl_src_ssl_ssl_asn1.cc:
             0x00080c92     .string "../../third_party/boringssl/src/ssl/ssl_asn1.cc" ; len=48

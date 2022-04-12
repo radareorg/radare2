@@ -640,7 +640,7 @@ afva@sym.call
 pdf@sym.call
 EOF
 EXPECT=<<EOF
-            ; CALL XREF from main @ 0x10468
+            ; CALL XREF from main @ 0x10468(x)
 / (fcn) sym.call 44
 |           ; arg int32_t arg1 @ r0
 |           ; var int32_t var_8h @ fp-0x8
@@ -698,7 +698,7 @@ EXPECT=<<EOF
             0x00010328      .dword 0x000104e0 ; sym.__libc_csu_fini
             0x0001032c      .dword 0x00010450 ; main ; sym.main
             ;-- aav.0x00010330:
-            ; UNKNOWN XREF from section..plt @ +0x10
+            ; UNKN XREF from section..plt @ +0x10(r)
             0x00010330      .dword 0x0001047c ; sym.__libc_csu_init
 EOF
 RUN
@@ -1051,7 +1051,7 @@ af
 axt str.helloradareworld_n
 EOF
 EXPECT=<<EOF
-main 0xbf9c [STRING] add r0, pc
+main 0xbf9c [STRN:-w-] add r0, pc
 EOF
 RUN
 

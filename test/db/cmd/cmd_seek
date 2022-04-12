@@ -390,19 +390,19 @@ EXPECT=<<EOF
 --- From 0x560e97 ---
 
 -- 1 --
-|           ; CODE XREF from fcn.00560e67 @ 0x560e80
+|           ; CODE XREF from fcn.00560e67 @ 0x560e80(x)
 |           0x00560e96      0f31           rdtsc
 0x560e96
-|           ; CODE XREF from fcn.00560e67 @ 0x560e80
+|           ; CODE XREF from fcn.00560e67 @ 0x560e80(x)
 |           0x00560e96      0f31           rdtsc
 
 -- 2 --
             0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
-|           ; CODE XREF from fcn.00560e67 @ 0x560e80
+|           ; CODE XREF from fcn.00560e67 @ 0x560e80(x)
 |           0x00560e96      0f31           rdtsc
 0x560e95
             0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
-|           ; CODE XREF from fcn.00560e67 @ 0x560e80
+|           ; CODE XREF from fcn.00560e67 @ 0x560e80(x)
 |           0x00560e96      0f31           rdtsc
 
 --- From 0x560e96 ---
