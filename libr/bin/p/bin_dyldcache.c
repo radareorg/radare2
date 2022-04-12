@@ -2289,7 +2289,9 @@ static RList *classes(RBinFile *bf) {
 				bf->buf = orig_buf;
 
 				if (!klass->name) {
-					eprintf ("KLASS ERROR AT 0x%"PFMT64x", is_classlist %d\n", pointer_to_class, is_classlist);
+					if (bf->rbin->verbose) {
+						eprintf ("KLASS ERROR AT 0x%"PFMT64x", is_classlist %d\n", pointer_to_class, is_classlist);
+					}
 					klass->name = r_str_newf ("UnnamedClass%u", num_of_unnamed_class);
 					if (!klass->name) {
 						R_FREE (klass);
@@ -2478,6 +2480,7 @@ RBinPlugin r_bin_plugin_dyldcache = {
 	.baddr = &baddr,
 	.symbols = &symbols,
 	.sections = &sections,
+	.minstrlen = 5,
 	.check_buffer = &check_buffer,
 	.destroy = &destroy,
 	.classes = &classes,
