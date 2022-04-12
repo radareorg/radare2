@@ -1166,6 +1166,9 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 			r_list_free (target_lib_names);
 			return NULL;
 		}
+	} else {
+		eprintf ("bin.dyldcache: Use R_DYLDCACHE_FILTER to specify a colon ':' separated\n");
+		eprintf ("bin.dyldcache: list of names to avoid loading all the files in memory.\n");
 	}
 
 	ut32 i;
