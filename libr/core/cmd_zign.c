@@ -506,7 +506,7 @@ static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, RSignType *types, void 
 		switch (t) {
 		case R_SIGN_BYTES:
 			ctx->bytes_count++;
-			prefix = "bytes";
+			prefix = "bytes_func";
 			break;
 		case R_SIGN_GRAPH:
 			prefix = "graph";

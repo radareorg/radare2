@@ -593,7 +593,7 @@ CMDS=<<EOF
 aa
 za sym.print b 5548....48......48......48......48....bf........b8........e8........90c9c3
 z. @@ fcn*
-?v sign.bytes.sym.print_0
+?v sign.bytes_func.sym.print_0
 EOF
 EXPECT=<<EOF
 0x400536
@@ -706,7 +706,7 @@ fs sign
 e zign.bytes = true
 e zign.graph = false
 z. @ 0x400536
-f~sign.bytes.sym.print?
+f~sign.bytes_func.sym.print?
 f~sign.graph.sym.print?
 f-*
 e zign.bytes = false
@@ -1963,9 +1963,9 @@ af- $$
 zac
 z/
 afl~main?
-zi~sign.bytes_collision.badname_1?
+zi~sign.bytes_func_collision.badname_1?
 zi~sign.graph_collision.badname_1?
-zi~sign.bytes_collision.badname2_1?
+zi~sign.bytes_func_collision.badname2_1?
 zi~sign.graph_collision.badname2_1?
 EOF
 EXPECT=<<EOF
@@ -2069,5 +2069,17 @@ EOF
 EXPECT=<<EOF
 foo:
   types: void sym.bsearch (const void *key, const void *base, size_t nmemb, size_t size, int (*compar)(const void *const void *))
+EOF
+RUN
+
+NAME=Only one "bytes" flag created on match
+FILE=bins/elf/ls
+CMDS=<<EOF
+za sym._obstack_begin_1 b 804f500148894f384c8947404c894f48e93bffffff:ffffffffffffffffffffffffffffffffff00000000
+z/
+f~?sign.bytes.
+EOF
+EXPECT=<<EOF
+1
 EOF
 RUN
