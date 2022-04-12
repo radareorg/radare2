@@ -111,6 +111,7 @@ RUN
 
 NAME=grep neg begin
 FILE=malloc://1024
+ARGS=-a x86 -b 64
 CMDS=i~!^size
 EXPECT=<<EOF
 fd       3
@@ -128,6 +129,7 @@ RUN
 
 NAME=grep neg begin 
 FILE=malloc://1024
+ARGS=-a x86 -b 64
 CMDS=i~!^size
 EXPECT=<<EOF
 fd       3
@@ -145,6 +147,7 @@ RUN
 
 NAME=grep neg
 FILE=malloc://1024
+ARGS=-a x86 -b 64
 CMDS=i~!fd
 EXPECT=<<EOF
 file     malloc://1024
