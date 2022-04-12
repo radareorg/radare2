@@ -114,6 +114,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
 	int str_type = R_STRING_TYPE_DETECT;
+	bool invalid_special = false;
 
 	// if list is null it means its gonna dump
 	r_return_val_if_fail (bf, -1);
@@ -268,20 +269,34 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				}
 				rc = r_utf8_encode (tmp + i, r);
 				runes++;
-				/* Print the escape code */
 			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\033\\", (char)r)) {
-				if ((i + 32) < sizeof (tmp) && r < 93) {
-					tmp[i + 0] = '\\';
-					tmp[i + 1] = "       abtnvfr             e  "
-					             "                              "
-					             "                              "
-					             "  \\"[r];
+				/* Print the escape code */
+				if (invalid_special) {
+					rc = 2;
+					if (r && r < 0x100 && strchr ("\n\r\t\033\\", (char)r)) {
+						// eprintf ("is special\n");
+						runes++;
+						// accept it as it is
+						rc = 1;
+					} else {
+						rc = 1;
+						r = 0;
+						break;
+					}
 				} else {
-					// string too long
-					break;
+					if ((i + 32) < sizeof (tmp) && r < 93) {
+						tmp[i + 0] = '\\';
+						tmp[i + 1] = "       abtnvfr             e  "
+							"                              "
+							"                              "
+							"  \\"[r];
+					} else {
+						// string too long
+						break;
+					}
+					rc = 2;
+					runes++;
 				}
-				rc = 2;
-				runes++;
 			} else {
 				/* \0 marks the end of C-strings */
 				break;
@@ -385,7 +400,10 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			ut64 baddr = bf->loadaddr && bf->o? bf->o->baddr: bf->loadaddr;
 			bs->paddr = str_start + baddr;
 			bs->vaddr = str_start - pdelta + vdelta + baddr;
-			bs->string = r_str_ndup ((const char *)tmp, i);
+			bs->string = r_str_ndup ((const char *)tmp, i); // Use stringviews to save memory
+			if (invalid_special) {
+				r_str_trim (bs->string); // trim spaces to ease readability
+			}
 			if (list) {
 				r_list_append (list, bs);
 				if (bf->o) {
