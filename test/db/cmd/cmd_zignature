@@ -2071,3 +2071,15 @@ foo:
   types: void sym.bsearch (const void *key, const void *base, size_t nmemb, size_t size, int (*compar)(const void *const void *))
 EOF
 RUN
+
+NAME=Only one "bytes" flag created on match
+FILE=bins/elf/ls
+CMDS=<<EOF
+za sym._obstack_begin_1 b 804f500148894f384c8947404c894f48e93bffffff:ffffffffffffffffffffffffffffffffff00000000
+z/
+f~?sign.bytes.
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
