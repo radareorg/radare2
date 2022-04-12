@@ -1370,7 +1370,7 @@ static void rebase_bytes_v2(RDyldRebaseInfo2 *rebase_info, ut8 *buf, ut64 offset
 				ut32 delta = 1;
 				while (delta) {
 					ut64 position = in_buf + first_rebase_off - page_offset;
-					if (position >= count) {
+					if (position + 8 >= count) {
 						break;
 					}
 					ut64 raw_value = r_read_le64 (buf + position);
