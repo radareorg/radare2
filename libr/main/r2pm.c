@@ -69,7 +69,7 @@ static int git_pull(const char *dir) {
 }
 
 static int git_clone(const char *dir, const char *url) {
-	char *cmd = r_str_newf ("git clone --depth=3 --recursive %s %s", url, dir);
+	char *cmd = r_str_newf ("git clone --depth=10 --recursive %s %s", url, dir);
 	int rc = r_sandbox_system (cmd, 1);
 	free (cmd);
 	return rc;

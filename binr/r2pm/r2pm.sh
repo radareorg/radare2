@@ -233,11 +233,11 @@ r2pm_update() {
 	cd "${R2PM_GITDIR}" || return 1
 	if [ -d radare2-pm ]; then
 		cd radare2-pm
-		git reset --hard @^^
+		git reset --hard @^^ > /dev/null 2>&1
 		git pull
 	else
 		echo git clone https://github.com/radareorg/radare2-pm
-		git clone -q --depth=3 --recursive https://github.com/radareorg/radare2-pm
+		git clone -q --depth=10 --recursive https://github.com/radareorg/radare2-pm
 		cd radare2-pm
 		pwd
 	fi
