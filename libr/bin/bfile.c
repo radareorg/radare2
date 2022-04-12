@@ -129,8 +129,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		return -1;
 	}
 	st64 len = (st64)(to - from);
-	if (len > ST32_MAX) {
-		eprintf ("String scan range is too large\n");
+	if (len < 1 || len > ST32_MAX) {
+		eprintf ("String scan range is invalid (%"PFMT64d" bytes)\n", len);
 		return -1;
 	}
 	ut8 *buf = calloc (len, 1);
