@@ -185,18 +185,21 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 
 	const size_t prefix_len = strlen (prefix);
 	r_list_foreach (flags, iter, f) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		if (prefix_len > 0 && strncmp (f->name, prefix, prefix_len)) {
 			continue;
 		}
 		if (prefix_len > strlen (f->name)) {
 			continue;
 		}
-		if (r_cons_is_breaked ()) {
-			break;
-		}
 		const char *name = f->name;
 		int name_len = strlen (name);
 		r_list_foreach (flags, iter2, f2) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			if (prefix_len > strlen (f2->name)) {
 				continue;
 			}
@@ -224,6 +227,9 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 			const char *fname = NULL;
 			size_t fname_len = 0;
 			r_list_foreach (flags, iter2, f2) {
+				if (r_cons_is_breaked ()) {
+					break;
+				}
 				if (strncmp (f2->name, kw, kw_len)) {
 					continue;
 				}
@@ -248,6 +254,9 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 		
 		bool found = false;
 		r_list_foreach (list, iter2, fn) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			if (!strcmp (fn, kw)) {
 				found = true;
 				break;
@@ -281,6 +290,9 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 	}
 	RList *children = __childrenFlagsOf (core, flags, prefix);
 	r_list_foreach (children, iter, fn) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		if (!strcmp (fn, prefix)) {
 			continue;
 		}
@@ -291,7 +303,7 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 			r_cons_printf ("%s %s\n", r_str_pad (' ', prefix_len), fn + prefix_len);
 		}
 		//r_cons_printf (".fg %s\n", fn);
-		__printRecursive (core, flags, fn, mode, depth+1);
+		__printRecursive (core, flags, fn, mode, depth + 1);
 	}
 	r_list_free (children);
 }
@@ -299,7 +311,9 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 static void __flag_graph(RCore *core, const char *input, int mode) {
 	RList *flags = r_list_newf (NULL);
 	r_flag_foreach_space (core->flags, r_flag_space_cur (core->flags), listFlag, flags);
+	r_cons_break_push (NULL, NULL);
 	__printRecursive (core, flags, input, mode, 0);
+	r_cons_break_pop ();
 	r_list_free (flags);
 }
 

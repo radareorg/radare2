@@ -4742,6 +4742,7 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 static bool esil_anal_stop = false;
 static void cccb(void *u) {
 	esil_anal_stop = true;
+	r_cons_context_break (NULL);
 	eprintf ("^C\n");
 }
 

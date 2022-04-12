@@ -389,9 +389,26 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 	}
 }
 
+#if RADARE2_5_7_X
+
+// ABI break
+R_API void r_cons_break_push(void) {
+	r_cons_context_break_push (C, NULL, NULL, true);
+}
+
+R_API void r_cons_break_popa(void) {
+	while (!r_stack_is_empty (C->break_stack)) {
+		r_cons_context_break_pop ();
+	}
+}
+
+#else
+
 R_API void r_cons_break_push(RConsBreak cb, void *user) {
 	r_cons_context_break_push (C, cb, user, true);
 }
+
+#endif
 
 R_API void r_cons_break_pop(void) {
 	r_cons_context_break_pop (C, true);
