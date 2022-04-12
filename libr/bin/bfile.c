@@ -176,12 +176,11 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		r_charset_free (ch);
 	}
 	free (charset);
+	RConsIsBreaked is_breaked = (bin && bin->consb.is_breaked)? bin->consb.is_breaked: NULL;
 	// may oobread
 	while (needle < to) {
-		if (bin && bin->consb.is_breaked) {
-			if (bin->consb.is_breaked ()) {
-				break;
-			}
+		if (is_breaked && is_breaked ()) {
+			break;
 		}
 		// smol optimization
 		if (needle + 4 < to) {
@@ -343,6 +342,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				}
 				free (block_list);
 				if (num_blocks > R_STRING_MAX_UNI_BLOCKS) {
+					needle++;
 					continue;
 				}
 			}
