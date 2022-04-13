@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2022 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 
 #include <string.h>
 #include "r_anal.h"
@@ -1118,10 +1118,10 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 's': { // "ts"
 		switch (input[1]) {
-		case '?':
+		case '?': // "ts?"
 			r_core_cmd_help (core, help_msg_ts);
 			break;
-		case '*':
+		case '*': // "ts*"
 			if (input[2] == ' ') {
 				showFormat (core, r_str_trim_head_ro (input + 2), 1);
 			} else {
@@ -1137,7 +1137,7 @@ static int cmd_type(void *data, const char *input) {
 		case ' ':
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
 			break;
-		case 's':
+		case 's': // "tss"
 			if (input[2] == ' ') {
 				r_cons_printf ("%" PFMT64u "\n", (r_type_get_bitsize (TDB, input + 3) / 8));
 			} else {
@@ -1652,7 +1652,6 @@ static int cmd_type(void *data, const char *input) {
 				}
 				if (input[1] == 'x' && arg) { // "tpx"
 					r_core_cmdf (core, "pf %s @x:%s", fmt, arg);
-					// eprintf ("pf %s @x:%s", fmt, arg);
 				} else {
 					ut64 addr = arg ? r_num_math (core->num, arg): core->offset;
 					ut64 original_addr = addr;
@@ -1665,20 +1664,28 @@ static int cmd_type(void *data, const char *input) {
 							}
 						}
 					}
+					int type_size = r_type_get_bitsize (core->anal->sdb_types, type) / 8;
+					int obs = core->blocksize;
+					if (type_size > obs) {
+						r_core_block_size (core, type_size);
+					}
 					if (addr != UT64_MAX) {
-						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, addr);
+						r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, fmt, addr);
 					} else if (original_addr == 0) {
-						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, original_addr);
+						r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, fmt, original_addr);
+					}
+					if (type_size > obs) {
+						r_core_block_size (core, obs);
 					}
 				}
 				free (fmt);
 				free (type);
 			} else {
-				eprintf ("Usage: tp?\n");
+				r_core_cmd_help (core, help_msg_tp);
 			}
 			free (tmp);
 		} else { // "tp"
-			eprintf ("Usage: tp?\n");
+			r_core_cmd_help (core, help_msg_tp);
 		}
 		break;
 	case '-': // "t-"
