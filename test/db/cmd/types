@@ -611,6 +611,28 @@ arg int argc @ rdi
 EOF
 RUN
 
+NAME=truncated tp
+FILE=-
+CMDS=<<EOF
+"td struct foobar{uint32_t a; uint32_t b; uint32_t c; uint32_t d;}"
+b 64
+woe 1
+tp foobar
+b 4
+tp foobar
+EOF
+EXPECT=<<EOF
+ a : 0x00000000 = 50462976
+ b : 0x00000004 = 117835012
+ c : 0x00000008 = 185207048
+ d : 0x0000000c = 252579084
+ a : 0x00000000 = 50462976
+ b : 0x00000004 = 117835012
+ c : 0x00000008 = 185207048
+ d : 0x0000000c = 252579084
+EOF
+RUN
+
 NAME=tp with varname
 FILE=bins/elf/struct_sample
 CMDS=<<EOF
