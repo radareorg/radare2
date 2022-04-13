@@ -4751,10 +4751,11 @@ static int cmd_debug_step(RCore *core, const char *input) {
 	return 1;
 }
 
-static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print) {
+static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print, bool ignore_stack) {
 	ut8 *raw;
 	int raw_len;
 	char *hexpairs;
+	const char *cmd = ignore_stack? "dxrs": "dxr";
 	int ret = 0;
 	r_return_val_if_fail (core && buf, 1);
 
@@ -4772,9 +4773,9 @@ static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print) {
 
 	r_hex_bin2str (raw, raw_len, hexpairs);
 	if (print) {
-		r_cons_printf ("dxr %s\n", hexpairs);
+		r_cons_printf ("%s %s\n", cmd, hexpairs);
 	} else {
-		ret = r_core_cmdf (core, "dxr %s", hexpairs);
+		ret = r_core_cmdf (core, "%s %s", cmd, hexpairs);
 	}
 	free (hexpairs);
 	free (raw);
@@ -4894,7 +4895,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 					"\"%s\", %d, 0644",
 					filename, flags);
 			if (buf) {
-				ret = run_buffer_dxr (core, buf, print);
+				ret = run_buffer_dxr (core, buf, print, false);
 			} else {
 				eprintf ("Cannot open\n");
 			}
@@ -4925,7 +4926,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 					"%d, 0x%" PFMT64x ", 0",
 					fd, offset);
 			if (buf) {
-				ret = run_buffer_dxr (core, buf, print);
+				ret = run_buffer_dxr (core, buf, print, true);
 			} else {
 				eprintf ("Cannot seek %d to %" PFMT64x "\n", fd, offset);
 			}
@@ -4949,7 +4950,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 					"%d, %d",
 					oldfd, newfd);
 			if (buf) {
-				ret = run_buffer_dxr (core, buf, print);
+				ret = run_buffer_dxr (core, buf, print, false);
 			} else {
 				eprintf ("Cannot dup %d -> %d\n", oldfd, newfd);
 			}
@@ -4985,7 +4986,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 					"%d, 0x%" PFMT64x ", %" PFMT64d,
 					fd, addr, count);
 			if (buf) {
-				ret = run_buffer_dxr (core, buf, print);
+				ret = run_buffer_dxr (core, buf, print, true);
 			} else {
 				eprintf ("Cannot read %" PFMT64d "bytes from %d into 0x%" PFMT64x "\n",
 						count, fd, addr);
@@ -5022,7 +5023,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 					"%d, 0x%" PFMT64x ", %" PFMT64d,
 					fd, addr, count);
 			if (buf) {
-				ret = run_buffer_dxr (core, buf, print);
+				ret = run_buffer_dxr (core, buf, print, true);
 			} else {
 				eprintf ("Cannot write %" PFMT64d "bytes into %d from 0x%" PFMT64x "\n",
 						count, fd, addr);
@@ -5047,7 +5048,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		if (print || !r_debug_desc_close (core->dbg, fd)) {
 			RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
 			if (buf) {
-				ret = run_buffer_dxr (core, buf, print);
+				ret = run_buffer_dxr (core, buf, print, false);
 			} else {
 				eprintf ("Cannot close %d\n", fd);
 			}
@@ -5071,7 +5072,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 
 		buf = r_core_syscallf (core, "pipe", "0x%" PFMT64x, addr);
 		if (buf) {
-			ret = run_buffer_dxr (core, buf, print);
+			ret = run_buffer_dxr (core, buf, print, true);
 		} else {
 			eprintf ("Cannot open pipe and write fd to %" PFMT64x ".\n", addr);
 		}
