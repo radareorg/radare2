@@ -50,7 +50,9 @@ dd~[0,2]
 # copy over the read-only fd
 ddd 4 3
 dd~tmp_dd~[0,2]
-# ?e ---
+?e ---
+dd- 4
+dd~tmp_dd~[0,2]
 # cleanup
 rm .tmp_dd
 doc
@@ -64,6 +66,8 @@ EXPECT=<<EOF
 ---
 3 rw-
 4 rw-
+---
+3 rw-
 EOF
 RUN
 

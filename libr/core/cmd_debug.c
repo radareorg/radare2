@@ -4983,7 +4983,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 
 		if (print || !r_debug_desc_read (core->dbg, fd, addr, count)) {
 			RBuffer *buf = r_core_syscallf (core, "read",
-					"%d, 0x%" PFMT64x ", %" PFMT64d,
+					"%d, 0x%" PFMT64x ", %" PFMT64u,
 					fd, addr, count);
 			if (buf) {
 				ret = run_buffer_dxr (core, buf, print, true);
