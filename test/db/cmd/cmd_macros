@@ -17,7 +17,7 @@ RUN
 NAME=escaping echoes
 FILE=-
 CMDS=<<EOF
-?e hello\@world\|pipe
+?e "hello\@world\|pipe"
 ?e one\ntwo
 EOF
 EXPECT=<<EOF

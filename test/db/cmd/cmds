@@ -167,9 +167,7 @@ RUN
 
 NAME=hash comment and simple quote
 FILE=-
-CMDS=<<EOF
-?e 'before # after'
-EOF
+CMDS=?e 'before # after'
 EXPECT=<<EOF
 before # after
 EOF
