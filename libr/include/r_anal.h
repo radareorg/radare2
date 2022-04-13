@@ -915,6 +915,7 @@ typedef int (* RAnalEncode)(RAnal *anal, ut64 addr, const char *s, const ut8 *da
 typedef int (* RAnalDecode)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 typedef void (* RAnalOpInit)(RAnalOp *op);
 typedef void (* RAnalOpFini)(RAnalOp *op);
+typedef bool (* RAnalUse)(RAnal *op, const char *name); // TODO: add bits and cpu too imho
 
 typedef struct r_anal_bind_t {
 	RAnal *anal;
@@ -924,6 +925,7 @@ typedef struct r_anal_bind_t {
 	RAnalDecode decode;
 	RAnalOpInit opinit;
 	RAnalOpFini opfini;
+	RAnalUse use;
 } RAnalBind;
 
 #define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])

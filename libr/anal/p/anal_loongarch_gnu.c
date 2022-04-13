@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2021 - junchao82@qq.com;zhaojunchao@loongson.cn love lanhy*/
+/* radare - LGPL - Copyright 2021-2022 - junchao82@qq.com;zhaojunchao@loongson.cn love lanhy*/
 
 #include "../arch/loongarch/gnu/loongarch-private.h"
 #include "disas-asm.h"
@@ -13,6 +13,9 @@
 
 #define INSNLEN 4
 
+R_TH_LOCAL static ut64 insn_offset = 0;
+R_TH_LOCAL static ut8 insn_bytes[INSNLEN];
+
 //use bit[30:26] to cal hash index
 #define LA_INSN_HASH(insn) (((insn) & 0x7c000000) >> 26)
 
@@ -23,8 +26,7 @@
  *
  * This is safe to use for 16- and 8-bit types as well.
  */
-R_UNUSED static inline st32 sign_extend32(ut32 value, int index)
-{
+R_UNUSED static inline st32 sign_extend32(ut32 value, int index) {
 	ut8 shift = 31 - index;
 	return (st32)(value << shift) >> shift;
 }
@@ -34,8 +36,7 @@ R_UNUSED static inline st32 sign_extend32(ut32 value, int index)
  * @value: value to sign extend
  * @index: 0 based bit index (0<=index<64) to sign bit
  */
-static inline st64 sign_extend64(ut64 value, int index)
-{
+static inline st64 sign_extend64(ut64 value, int index) {
 	ut8 shift = 63 - index;
 	return (st64)(value << shift) >> shift;
 }
@@ -87,18 +88,16 @@ static inline st64 sign_extend64(ut64 value, int index)
 #define ES_W(x) "0xffffffff,"x",&"
 #define ES_WH(x) "32,0xffffffff00000000,"x",&,>>"
 
-struct loongarch_anal_opcode
-{
-  const ut32 match;
-  const ut32 mask; /* High 1 byte is main opcode and it must be 0xf. */
-  const char * const name;
-  const ut32 index;
-  const ut32 r_type; /*R_ANAL_OP_TYPE*/
+struct loongarch_anal_opcode {
+	const ut32 match;
+	const ut32 mask; /* High 1 byte is main opcode and it must be 0xf. */
+	const char * const name;
+	const ut32 index;
+	const ut32 r_type; /*R_ANAL_OP_TYPE*/
 };
 
 #define HT_NUM 32
-struct loongarch_ASE
-{
+struct loongarch_ASE {
 	struct loongarch_anal_opcode *const opcode;
 	struct loongarch_anal_opcode *la_opcode_ht[HT_NUM];
 	ut8 opc_htab_inited;
@@ -1169,9 +1168,6 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
 	}
 	return 0;
 }
-
-static unsigned long insn_offset = 0;
-static unsigned char insn_bytes[INSNLEN];
 
 static int insn_fprintf_func(void *stream, const char *format, ...) {
 	int ret = 1;

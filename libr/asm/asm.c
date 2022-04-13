@@ -397,6 +397,12 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 			}
 		}
 	}
+	if (a->analb.anal) {
+		if (!a->analb.use (a->analb.anal, name)) {
+			eprintf ("Cannot find arch plugin with this name. See rasm2 -L and rasm2 -LL\n");
+		}
+	}
+	// check if its a valid analysis plugin
 	sdb_free (a->pair);
 	a->pair = NULL;
 	if (strcmp (name, "null")) {
@@ -466,7 +472,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 	return true;
 }
 
-static bool __isInvalid(RAsmOp *op) {
+static bool is_invalid(RAsmOp *op) {
 	const char *buf_asm = r_strbuf_get (&op->buf_asm);
 	return (buf_asm && *buf_asm && !strcmp (buf_asm, "invalid"));
 }
@@ -524,7 +530,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 
-	if (op->size < 1 || __isInvalid (op)) {
+	if (op->size < 1 || is_invalid (op)) {
 		if (a->invhex) {
 			r_strf_buffer (32);
 			if (a->bits == 16) {
