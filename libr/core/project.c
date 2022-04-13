@@ -87,7 +87,7 @@ R_API bool r_core_is_project(RCore *core, const char *name) {
 }
 
 R_API void r_core_project_cat(RCore *core, const char *name) {
-				r_core_return_code (core, R_CMD_RC_FAILURE);
+	r_core_return_code (core, R_CMD_RC_FAILURE);
 	char *path = get_project_script_path (core, name);
 	if (path) {
 		char *data = r_file_slurp (path, NULL);
