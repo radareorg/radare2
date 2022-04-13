@@ -4973,7 +4973,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		count = r_num_math (core->num, argv[3]);
 
 		perms = r_core_cmd_strf (core, "dd~^%d[2]", fd);
-		if (!print && !(r_str_rwx (perms) & S_IRUSR)) {
+		if (!print && !(r_str_rwx (perms) & 4)) {
 			eprintf ("fd %d is not readable.\n", fd);
 			free (perms);
 			ret = 1;
@@ -5010,7 +5010,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		count = r_num_math (core->num, argv[3]);
 
 		perms = r_core_cmd_strf (core, "dd~^%d[2]", fd);
-		if (!print && !(r_str_rwx (perms) & S_IWUSR)) {
+		if (!print && !(r_str_rwx (perms) & 2)) {
 			eprintf ("fd %d is not writable.\n", fd);
 			free (perms);
 			ret = 1;
