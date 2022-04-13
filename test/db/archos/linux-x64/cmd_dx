@@ -1,3 +1,22 @@
+# FIXME: remove ~!rflags from other tests and remove this
+NAME=dxr should restore rflags
+BROKEN=1
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dr~rflags
+dxr 48c7c000010000 # mov rax, 0x100
+?e ---
+dr~rflags
+doc
+EOF
+EXPECT=<<EOF
+rflags = 0x00000200
+---
+rflags = 0x00000200
+EOF
+RUN
+
 NAME=dx always restores bytes at pc
 FILE=bins/elf/ls-focal
 ARGS=-d
@@ -15,26 +34,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-# FIXME: remove ~!rflags from other tests
-NAME=dx rflags is broken
-BROKEN=1
-FILE=bins/elf/ls-focal
-ARGS=-d
-CMDS=<<EOF
-dr~rflags
-dx 48c7c000010000 # mov rax, 0x100
-?e ---
-dr~rflags
-doc
-EOF
-EXPECT=<<EOF
-rflags = 0x00000200
----
-rflags = 0x00000200
-EOF
-RUN
-
-# FIXME: remove the rflags exclusion once it is fixed
 NAME=dx may clobber registers and stack
 FILE=bins/elf/ls-focal
 ARGS=-d
@@ -146,6 +145,23 @@ orax = 0x0000003b
 0x00000000
 ---
 0x00000000
+EOF
+RUN
+
+NAME=dxr should not advance seek
+BROKEN=1
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+s > $seek1
+dxr 90909090
+s > $seek2
+cmp $seek1 $seek2
+?! seek did not move
+doc
+EOF
+EXPECT=<<EOF
+seek did not move
 EOF
 RUN
 
