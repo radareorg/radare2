@@ -15,6 +15,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# FIXME: remove ~!rflags from other tests
 NAME=dx rflags is broken
 BROKEN=1
 FILE=bins/elf/ls-focal
@@ -202,5 +203,72 @@ orax = 0x0000003b
 0x00000000
 ---
 0x11223344
+EOF
+RUN
+
+NAME=dxa
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dr~!rip~!rsp~!rflags
+?e ---
+dxa mov rax, 0x100
+dr~!rip~!rsp~!rflags
+?e ---
+"dxa mov rbx, 0x200; mov rcx, 0x300"
+dr~!rip~!rsp~!rflags
+doc
+EOF
+EXPECT=<<EOF
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0x0000003b
+---
+rax = 0x00000100
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0xffffffffffffffff
+---
+rax = 0x00000100
+rbx = 0x00000200
+rcx = 0x00000300
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0xffffffffffffffff
 EOF
 RUN

@@ -46,7 +46,7 @@ static const char *help_msg_d[] = {
 	"dW", "", "list process windows",
 	"dWi", "", "identify window under cursor",
 #endif
-	"dx", "[?]", "inject and run code on target process (See gs)",
+	"dx", "[?][aers]", "execute code in the child process",
 	NULL
 };
 
@@ -498,17 +498,22 @@ static const char *help_msg_dts[] = {
 };
 
 static const char *help_msg_dx[] = {
-	"Usage: dx", "", " # Code injection commands",
-	"dx", " <opcode>...", "Inject opcodes",
-	"dxa", " nop", "Assemble code and inject",
-	"dxc", " addr arg1 arg2 arg3", "Compile egg expression and inject it",
-	"dxe", " egg-expr", "Compile egg expression and inject it",
-	"dxr", " <opcode>...", "Inject opcodes and restore state",
-	"dxrs", " <opcode>...", "Inject opcodes and restore state, excluding the stack",
-	"dxs", " write 1, 0x8048, 12", "Syscall injection (see gs)",
+	"Usage: dx", "[aers]", " Debug execution commands",
+	"dx", " <hexpairs>", "Execute opcodes",
+	"dxa", " <asm>", "Assemble code and execute",
+	"dxe", "[?] <egg-expr>", "Compile egg expression and execute it",
+	"dxr", " <hexpairs>", "Execute opcodes and restore state",
+	"dxrs", " <hexpairs>", "Execute opcodes and restore state, excluding the stack",
+	"dxs", " <name> [args]", "Syscall injection (see gs)",
 	"\nExamples:", "", "",
+<<<<<<< HEAD
 	"dx", " 9090", "inject two x86 nop",
 	"\"dxa mov eax,6;mov ebx,0;int 0x80\"", "", "inject and restore state",
+=======
+	"dx", " 9090", "Execute two x86 nops",
+	"\"dxa mov eax,6;mov ebx,0;\"", "", "Assemble and execute",
+	"dxs", " write 1, 0x8048, 12", "Write 12 bytes from 0x8048 into stdout",
+>>>>>>> Improve dx help and add dxa test
 	NULL
 };
 
@@ -5590,6 +5595,10 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		case 'a': { // "dxa"
 			RAsmCode *acode;
+			if (input[2] == '?' || input[2] != ' ') {
+				r_core_cmd_help_match (core, help_msg_dx, "dxa", true);
+				break;
+			}
 			r_asm_set_pc (core->rasm, core->offset);
 			acode = r_asm_massemble (core->rasm, input + 2);
 			if (acode) {
@@ -5600,8 +5609,8 @@ static int cmd_debug(void *data, const char *input) {
 			r_asm_code_free (acode);
 			break;
 		}
-		case 'e':
-			if (input[2] == '?') {
+		case 'e': // "dxe"
+			if (input[2] == '?' || input[2] != ' ') {
 				r_core_cmd_help (core, help_msg_dxe);
 			} else { // "dxe"
 				const char *program = r_str_trim_head_ro (input + 2);
