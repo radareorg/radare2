@@ -94,7 +94,7 @@ R_API void r_core_project_cat(RCore *core, const char *name) {
 		if (data) {
 			r_cons_println (data);
 			free (data);
-			core->num->value = 0;
+			r_core_return_code (core, R_CMD_RC_SUCCESS);
 		}
 		free (path);
 	}
