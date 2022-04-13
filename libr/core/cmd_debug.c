@@ -499,12 +499,13 @@ static const char *help_msg_dts[] = {
 
 static const char *help_msg_dx[] = {
 	"Usage: dx", "", " # Code injection commands",
-	"dx", " <opcode>...", "inject opcodes",
-	"dxa", " nop", "assemble code and inject",
-	"dxc", " addr arg1 arg2 arg3", "compile egg expression and inject it",
-	"dxe", " egg-expr", "compile egg expression and inject it",
-	"dxr", " <opcode>...", "inject opcodes and restore state",
-	"dxs", " write 1, 0x8048, 12", "syscall injection (see gs)",
+	"dx", " <opcode>...", "Inject opcodes",
+	"dxa", " nop", "Assemble code and inject",
+	"dxc", " addr arg1 arg2 arg3", "Compile egg expression and inject it",
+	"dxe", " egg-expr", "Compile egg expression and inject it",
+	"dxr", " <opcode>...", "Inject opcodes and restore state",
+	"dxrs", " <opcode>...", "Inject opcodes and restore state, excluding the stack",
+	"dxs", " write 1, 0x8048, 12", "Syscall injection (see gs)",
 	"\nExamples:", "", "",
 	"dx", " 9090", "inject two x86 nop",
 	"\"dxa mov eax,6;mov ebx,0;int 0x80\"", "", "inject and restore state",
@@ -5553,7 +5554,12 @@ static int cmd_debug(void *data, const char *input) {
 	case 'x': // "dx"
 		switch (input[1]) {
 		case 'r':   // "dxr"
-			if (input[2] != ' ') {
+			if (input[2] == 's') { // "dxrs"
+				if (input[3] != ' ') {
+					r_core_cmd_help_match (core, help_msg_dx, "dxrs", true);
+					break;
+				}
+			} else if (input[2] != ' ') {
 				r_core_cmd_help_match (core, help_msg_dx, "dxr", true);
 				break;
 			}
@@ -5561,15 +5567,19 @@ static int cmd_debug(void *data, const char *input) {
 		case ' ': { // "dx "
 			ut8 bytes[4096];
 			const bool is_dxr = input[1] == 'r';
+			const bool is_dxrs = is_dxr && input[2] == 's';
 			const char *hexpairs = input + 2;
 			if (is_dxr) {
 				hexpairs++;
+				if (is_dxrs) {
+					hexpairs++;
+				}
 			}
 
-			if (strlen (hexpairs) < 8192){
+			if (strlen (hexpairs) < 8192) {
 				int bytes_len = r_hex_str2bin (hexpairs, bytes);
 				if (bytes_len > 0) {
-					r_debug_execute (core->dbg, bytes, bytes_len, is_dxr);
+					r_debug_execute (core->dbg, bytes, bytes_len, is_dxr, is_dxrs);
 				} else {
 					eprintf ("Failed to parse hex pairs.\n");
 				}
@@ -5584,7 +5594,7 @@ static int cmd_debug(void *data, const char *input) {
 			acode = r_asm_massemble (core->rasm, input + 2);
 			if (acode) {
 				r_reg_arena_push (core->dbg->reg);
-				r_debug_execute (core->dbg, acode->bytes, acode->len, 0);
+				r_debug_execute (core->dbg, acode->bytes, acode->len, false, false);
 				r_reg_arena_pop (core->dbg->reg);
 			}
 			r_asm_code_free (acode);
@@ -5611,7 +5621,7 @@ static int cmd_debug(void *data, const char *input) {
 				ut64 tmpsz;
 				const ut8 *tmp = r_buf_data (b, &tmpsz);
 				if (tmpsz > 0) {
-					r_debug_execute (core->dbg, tmp, tmpsz, 0);
+					r_debug_execute (core->dbg, tmp, tmpsz, false, false);
 				} else {
 					eprintf ("No egg program compiled to execute.\n");
 				}
