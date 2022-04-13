@@ -499,21 +499,16 @@ static const char *help_msg_dts[] = {
 
 static const char *help_msg_dx[] = {
 	"Usage: dx", "[aers]", " Debug execution commands",
-	"dx", " <hexpairs>", "Execute opcodes",
-	"dxa", " <asm>", "Assemble code and execute",
-	"dxe", "[?] <egg-expr>", "Compile egg expression and execute it",
-	"dxr", " <hexpairs>", "Execute opcodes and restore state",
-	"dxrs", " <hexpairs>", "Execute opcodes and restore state, excluding the stack",
-	"dxs", " <name> [args]", "Syscall injection (see gs)",
+	"dx", " <hexpairs>", "execute opcodes",
+	"dxa", " <asm>", "assemble code and execute",
+	"dxe", "[?] <egg-expr>", "compile egg expression and execute it",
+	"dxr", " <hexpairs>", "execute opcodes and restore state",
+	"dxrs", " <hexpairs>", "execute opcodes and restore state, excluding the stack",
+	"dxs", " <name> [args]", "syscall injection (see gs)",
 	"\nExamples:", "", "",
-<<<<<<< HEAD
-	"dx", " 9090", "inject two x86 nop",
-	"\"dxa mov eax,6;mov ebx,0;int 0x80\"", "", "inject and restore state",
-=======
-	"dx", " 9090", "Execute two x86 nops",
-	"\"dxa mov eax,6;mov ebx,0;\"", "", "Assemble and execute",
-	"dxs", " write 1, 0x8048, 12", "Write 12 bytes from 0x8048 into stdout",
->>>>>>> Improve dx help and add dxa test
+	"dx", " 9090", "execute two x86 nops",
+	"\"dxa mov eax,6;mov ebx,0;\"", "", "assemble and execute",
+	"dxs", " write 1, 0x8048, 12", "write 12 bytes from 0x8048 into stdout",
 	NULL
 };
 
