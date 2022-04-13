@@ -71,17 +71,59 @@ EXPECT=<<EOF
 EOF
 RUN
 
-#NAME=dd read, write, seek
-#BROKEN=1
-#FILE=bins/elf/ls-focal
-#ARGS=-d
-#CMDS=<<EOF
-#dd test/bins/elf/ls-focal
-#doc
-#EOF
-#EXPECT=<<EOF
-#EOF
-#RUN
+NAME=dd read, write, seek
+BROKEN=1
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+echo -n test data > .tmp_dd
+dd+ .tmp_dd
+w0 20 @rsp
+# read "test data"
+ddr 3 $(dr?rsp) 9 # FIXME: syscall_get_num 0 -> 128 bug
+ps @rsp
+?e ---
+dd~^3[1] # show offset
+?e ---
+w0 20 @rsp
+# read "dat"
+dds 3 5
+ddr 3 $(dr?rsp) 3
+ps @rsp
+?e ---
+dd~^3[1] # show offset
+?e ---
+# write "data test 2"
+wz data test 2 @rsp
+ddw 3 $(dr?rsp) 11
+dd~^3[1] # show offset
+?e ---
+dd- 3
+dd~[0]
+?e ---
+cat .tmp_dd
+?e ---
+doc
+rm .tmp_dd
+EOF
+EXPECT=<<EOF
+test data
+---
+0x9
+---
+dat
+---
+0x8
+---
+0xb
+---
+0
+1
+2
+---
+data test 2
+EOF
+RUN
 
 NAME=ddf
 FILE=bins/elf/ls-focal
