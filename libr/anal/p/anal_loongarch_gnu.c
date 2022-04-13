@@ -13,8 +13,8 @@
 
 #define INSNLEN 4
 
-R_TH_LOCAL static ut64 insn_offset = 0;
-R_TH_LOCAL static ut8 insn_bytes[INSNLEN];
+static R_TH_LOCAL ut64 insn_offset = 0;
+static R_TH_LOCAL ut8 insn_bytes[INSNLEN];
 
 //use bit[30:26] to cal hash index
 #define LA_INSN_HASH(insn) (((insn) & 0x7c000000) >> 26)
