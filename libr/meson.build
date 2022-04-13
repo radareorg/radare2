@@ -109,6 +109,9 @@ if not no_user_plugins
     anal_plugins += [ 'riscv' ]
     parse_plugins += [ 'riscv_pseudo' ]
   endif
+  if user_plugins.contains('loongarch')
+    anal_plugins += [ 'loongarch_gnu' ]
+  endif
   if user_plugins.contains('elf')
     bin_plugins += [ 'elf', 'elf64' ]
   endif
@@ -144,6 +147,7 @@ anal_plugins += [
   'i8080',
   'java',
   'kvx',
+  'loongarch_gnu',
   'm68k_cs',
   'm680x_cs',
   'malbolge',
@@ -247,6 +251,7 @@ if no_user_plugins
       'z80',
       'arm_gnu',
       'mips_gnu',
+      'loongarch_gnu',
       'ppc_gnu',
       'sparc_gnu',
     ]
