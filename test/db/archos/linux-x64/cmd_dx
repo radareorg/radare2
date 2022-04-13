@@ -1,0 +1,206 @@
+NAME=dx always restores bytes at pc
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+p8 8 @rip
+dx 9090909090909090
+?e ---
+p8 8 @rip
+doc
+EOF
+EXPECT=<<EOF
+4889e7e8e80c0000
+---
+4889e7e8e80c0000
+EOF
+RUN
+
+NAME=dx rflags is broken
+BROKEN=1
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dr~rflags
+dx 48c7c000010000 # mov rax, 0x100
+?e ---
+dr~rflags
+doc
+EOF
+EXPECT=<<EOF
+rflags = 0x00000200
+---
+rflags = 0x00000200
+EOF
+RUN
+
+# FIXME: remove the rflags exclusion once it is fixed
+NAME=dx may clobber registers and stack
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dr~!rip~!rsp~!rflags
+dx 48c7c000010000 # mov rax, 0x100
+?e ---
+dr~!rip~!rsp~!rflags
+?e ---
+wv4 0 @rsp
+pv4 @rsp
+?e ---
+dx 48c7042444332211 # mov [rsp], 0x11223344
+pv4 @rsp
+doc
+EOF
+EXPECT=<<EOF
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0x0000003b
+---
+rax = 0x00000100
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0xffffffffffffffff
+---
+0x00000000
+---
+0x11223344
+EOF
+RUN
+
+NAME=dxr restores registers and stack
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dr~!rip~!rsp~!rflags
+?e ---
+dxr 48c7c000010000 # mov rax, 0x100
+dr~!rip~!rsp~!rflags
+?e ---
+wv4 0 @rsp
+pv4 @rsp
+?e ---
+dxr 48c7042444332211 # mov [rsp], 0x11223344
+pv4 @rsp
+doc
+EOF
+EXPECT=<<EOF
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0x0000003b
+---
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0x0000003b
+---
+0x00000000
+---
+0x00000000
+EOF
+RUN
+
+NAME=dxrs restores only registers
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dr~!rip~!rsp~!rflags
+?e ---
+dxrs 48c7c000010000 # mov rax, 0x100
+dr~!rip~!rsp~!rflags
+?e ---
+wv4 0 @rsp
+pv4 @rsp
+?e ---
+dxrs 48c7042444332211 # mov [rsp], 0x11223344
+pv4 @rsp
+doc
+EOF
+EXPECT=<<EOF
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0x0000003b
+---
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0x0000003b
+---
+0x00000000
+---
+0x11223344
+EOF
+RUN

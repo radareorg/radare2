@@ -507,13 +507,19 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 	return false;
 }
 
-/* Save 4096 bytes from the stack pointer
+/* Inject and execute shellcode
+ * If restore is enabled, save the program state, including 4k on the stack.
+ * This can be disabled with ignore_stack. Enabling this option results in only
+ * registers being restored. It has no effect if restore is not enabled.
+ *
+ * The bytes overwritten at the program counter are always restored.
+ *
  * TODO: Add support for reverse stack architectures
  */
-R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
+R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, bool restore, bool ignore_stack) {
 	int orig_sz;
 	ut8 stack_backup[4096];
-	ut8 *pc_backup, *reg_backup = NULL;
+	ut8 *pc_backup = NULL, *reg_backup = NULL;
 	RRegItem *ri, *risp, *ripc;
 	ut64 rsp, rpc, ra0 = 0LL;
 	if (r_debug_is_dead (dbg)) {
@@ -534,10 +540,14 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 		pc_backup = malloc (len);
 		if (!pc_backup) {
 			free (reg_backup);
-			return 0LL;
+			return 0;
 		}
+
 		dbg->iob.read_at (dbg->iob.io, rpc, pc_backup, len);
-		dbg->iob.read_at (dbg->iob.io, rsp, stack_backup, len);
+
+		if (restore && !ignore_stack) {
+			dbg->iob.read_at (dbg->iob.io, rsp, stack_backup, len);
+		}
 
 		r_bp_add_sw (dbg->bp, rpc+len, dbg->bpsize, R_BP_PROT_EXEC);
 
@@ -550,7 +560,7 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 
 		r_bp_del (dbg->bp, rpc+len);
 		dbg->iob.write_at (dbg->iob.io, rpc, pc_backup, len);
-		if (restore) {
+		if (restore && !ignore_stack) {
 			dbg->iob.write_at (dbg->iob.io, rsp, stack_backup, len);
 		}
 
