@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2022 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 
 #include <string.h>
 #include "r_anal.h"
@@ -1652,7 +1652,6 @@ static int cmd_type(void *data, const char *input) {
 				}
 				if (input[1] == 'x' && arg) { // "tpx"
 					r_core_cmdf (core, "pf %s @x:%s", fmt, arg);
-					// eprintf ("pf %s @x:%s", fmt, arg);
 				} else {
 					ut64 addr = arg ? r_num_math (core->num, arg): core->offset;
 					ut64 original_addr = addr;
@@ -1666,9 +1665,9 @@ static int cmd_type(void *data, const char *input) {
 						}
 					}
 					if (addr != UT64_MAX) {
-						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, addr);
+						r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x" @!`tss %s`", fmt, addr, type);
 					} else if (original_addr == 0) {
-						r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, original_addr);
+						r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x" @!`tss %s`", fmt, original_addr, type);
 					}
 				}
 				free (fmt);
