@@ -1427,10 +1427,17 @@ static int w_handler(RCore *core, const char *input) {
 static int wz_handler_old(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
-	char *str = strdup (input);
+	char *str = r_str_trim_dup (input);
+	int len = r_str_unescape (str) + 1;
+
 	/* write zero-terminated string */
-	int len = r_str_unescape (str);
-	if (!r_core_write_at (core, core->offset, (const ut8 *)str + 1, len)) {
+	if (*input == '?' || *input != ' ' || len < 1) {
+		free (str);
+		r_core_cmd_help_match (core, help_msg_w, "wz", true);
+		r_core_return_code (core, 0);
+		return 0;
+	}
+	if (!r_core_write_at (core, core->offset, (const ut8 *)str, len)) {
 		cmd_write_fail (core);
 	}
 	if (len > 0) {
