@@ -106,6 +106,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
+# FIXME: remove rflags when that bug is fixed
 NAME=dd should not affect program registers
 FILE=bins/elf/ls-focal
 ARGS=-d
@@ -153,41 +154,14 @@ orax = 0x0000003b
 EOF
 RUN
 
-# FIXME: r_debug_execute bug. Collapse into above test when fixed by removing
-# the ~!rflags in the dr commands.
-NAME=dd should not change rflags
+# TODO
+NAME=only run dd commands if given fd exists
 FILE=bins/elf/ls-focal
-BROKEN=1
 ARGS=-d
 CMDS=<<EOF
-dr~rflags
-?e ---
-dd bins/elf/ls-focal
-dr~rflags
 doc
 EOF
 EXPECT=<<EOF
-rflags = 0x00000200
----
-rflags = 0x00000200
-EOF
-RUN
-
-# FIXME: r_debug_execute bug. Collapse into above test when fixed.
-NAME=dd should not change seek
-FILE=bins/elf/ls-focal
-BROKEN=1
-ARGS=-d
-CMDS=<<EOF
-s > $seek1
-dd bins/elf/ls-focal
-s > $seek2
-?== `$seek1` `$seek2`
-?! echo seek did not move
-doc
-EOF
-EXPECT=<<EOF
-seek did not move
 EOF
 RUN
 
