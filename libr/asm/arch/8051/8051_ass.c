@@ -957,9 +957,148 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 		if (resolve_immediate (arg[1] + 1, &src_imm)) {
 			return singlearg_immediate (0x74, arg[1], out);
 		}
+
+		if (is_direct (arg[1])) {
+			return singlearg_direct (0xe5, arg[1], out);
+		}
+
+		if (!r_str_casecmp (arg[1], "@r0") || !r_str_casecmp (arg[1], "[r0]")) {
+			return single_byte_instr (0xe6, out);
+		}
+
+		if (!r_str_casecmp (arg[1], "@r1") || !r_str_casecmp (arg[1], "[r1]")) {
+			return single_byte_instr (0xe7, out);
+		}
+
+		if (!r_str_casecmp (arg[1], "r0")) {
+			return single_byte_instr (0xe8, out);
+		}
+
+		if (!r_str_casecmp (arg[1], "r1")) {
+			return single_byte_instr (0xe9, out);
+		}
+
+		if (!r_str_casecmp (arg[1], "r2")) {
+			return single_byte_instr (0xea, out);
+		}
+
+		if (!r_str_casecmp (arg[1], "r3")) {
+			return single_byte_instr (0xeb, out);
+		}
+
+		if (!r_str_casecmp (arg[1], "r4")) {
+			return single_byte_instr (0xec, out);
+		}
+
+		if (!r_str_casecmp (arg[1], "r5")) {
+			return single_byte_instr (0xed, out);
+		}
+
+		if (!r_str_casecmp (arg[1], "r6")) {
+			return single_byte_instr (0xee, out);
+		}
+
+		if (!r_str_casecmp (arg[1], "r7")) {
+			return single_byte_instr (0xef, out);
+		}
 	}
-	if (parse_hexadecimal (arg[0], &dst_imm)) { //TODO: write doublearg_direct_register for 3 bytes instructions
+
+	if ((!r_str_casecmp (arg[0], "@r0") || !r_str_casecmp (arg[0], "[r0]"))) {
 		if (resolve_immediate (arg[1] + 1, &src_imm)) {
+			return singlearg_immediate (0x76, arg[1], out);
+		} else if (is_direct (arg[1])) {
+			return singlearg_direct (0xa6, arg[1], out);
+		} else if (!r_str_casecmp (arg[1], "a")) {
+			return single_byte_instr (0xf6, out);
+		}
+	}
+	if ((!r_str_casecmp (arg[0], "@r1") || !r_str_casecmp (arg[0], "[r1]"))) {
+		if (resolve_immediate (arg[1] + 1, &src_imm)) {
+		    return singlearg_immediate (0x77, arg[1], out);
+		} else if (!r_str_casecmp (arg[1], "a")) {
+			return single_byte_instr (0xf7, out);
+		} else if (is_direct (arg[1])) {
+			return singlearg_direct (0xa7, arg[1], out);
+		}
+	}
+	if (!r_str_casecmp (arg[0], "r0")) {
+			if (!r_str_casecmp (arg[1], "a")) {
+				return single_byte_instr (0xf8, out);
+			} else if (is_direct (arg[1])) {
+				return singlearg_direct (0xa8, arg[1], out);
+			} else if (resolve_immediate (arg[1] + 1, &src_imm)) {
+				return singlearg_immediate (0x78, arg[1], out);
+		    }
+		}
+	if (!r_str_casecmp (arg[0], "r1")) {
+		if (resolve_immediate (arg[1] + 1, &src_imm)) {
+			return singlearg_immediate (0x79, arg[1], out);
+		} else if (is_direct (arg[1])) {
+			return singlearg_direct (0xa9, arg[1], out);
+		} else if (!r_str_casecmp (arg[1], "a")) {
+			return single_byte_instr (0xf9, out);
+		}
+	}
+	if (!r_str_casecmp (arg[0], "r2")) {
+		if (resolve_immediate (arg[1] + 1, &src_imm)) {
+		    return singlearg_immediate (0x7a, arg[1], out);
+	    } else if (is_direct(arg[1])) {
+			return singlearg_direct (0xaa, arg[1], out);
+		} else if (!r_str_casecmp (arg[1], "a")) {
+			return single_byte_instr (0xfa, out);
+		}
+	}
+
+	if (!r_str_casecmp (arg[0], "r3")) {
+		if (resolve_immediate (arg[1] + 1, &src_imm)) {
+		    return singlearg_immediate (0x7b, arg[1], out);
+	    } else if (is_direct (arg[1])) {
+    		return singlearg_direct (0xab, arg[1], out);
+	    } else if (!r_str_casecmp (arg[1], "a")) {
+			return single_byte_instr (0xfb, out);
+		}
+	}
+
+	if (!r_str_casecmp (arg[0], "r4")) {
+		if (resolve_immediate (arg[1]+1, &dst_imm)) {
+			return singlearg_direct (0x7c, arg[1]+1, out);
+		} else if (is_direct (arg[1])) {
+			return singlearg_direct (0xac, arg[1], out);
+		} else if (!r_str_casecmp (arg[1], "a")) {
+			return single_byte_instr (0xfc, out);
+		}
+	}
+
+	if (!r_str_casecmp (arg[0], "r5")) {
+		if (resolve_immediate (arg[1] + 1, &src_imm)) {
+			return singlearg_immediate (0x7d, arg[1], out);
+		} else if (is_direct (arg[1])) {
+			return singlearg_direct (0xad, arg[1], out);
+		} else if (!r_str_casecmp (arg[1], "a")) {
+			return single_byte_instr (0xfd, out);
+		}
+	}
+	if (!r_str_casecmp (arg[0], "r6")) {
+		if (resolve_immediate (arg[1] + 1, &src_imm)) {
+			return singlearg_immediate (0x7e, arg[1], out);
+		} else if (is_direct (arg[1])) {
+			return singlearg_direct (0xae, arg[1], out);
+		} else if (!r_str_casecmp (arg[1], "a")) {
+			return single_byte_instr (0xfe, out);
+		}
+	}
+	if (!r_str_casecmp (arg[0], "r7")) {
+		if (resolve_immediate (arg[1] + 1, &src_imm)) {
+			return singlearg_immediate (0x7f, arg[1], out);
+		} else if (!r_str_casecmp (arg[1], "a")) {
+			return single_byte_instr (0xff, out);
+		} else if (is_direct (arg[1])) {
+			return singlearg_direct (0xaf, arg[1], out);
+		}
+	}
+
+	if (parse_hexadecimal (arg[0], &dst_imm)) {
+		if (resolve_immediate (arg[1] + 1, &src_imm)) {//TODO: write doublearg_direct_register for 3 bytes instructions
 			//use : "arg[1][0] == '#'" ?
 			(*out)[0] = 0x75;
 			(*out)[1] = dst_imm;
@@ -967,59 +1106,7 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 			*out += 3;
 			return true;
 		}
-	}
-	if ((!r_str_casecmp (arg[0], "@r0") || !r_str_casecmp (arg[0], "[r0]"))) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x76, arg[1], out);
-		}
-	}
-	if ((!r_str_casecmp (arg[0], "@r1") || !r_str_casecmp (arg[0], "[r1]"))) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-		    return singlearg_immediate (0x77, arg[1], out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r0")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x78, arg[1], out);
-	    }
-	}
-	if (!r_str_casecmp (arg[0], "r1")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x79, arg[1], out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r2")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-		    return singlearg_immediate (0x7a, arg[1], out);
-	    }
-	}
-	if (!r_str_casecmp (arg[0], "r3")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-		    return singlearg_immediate (0x7b, arg[1], out);
-	    }
-	}
-	if (!r_str_casecmp (arg[0], "r4")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x7c, arg[1], out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r5")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x7d, arg[1], out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r6")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x7e, arg[1], out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r7")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x7f, arg[1], out);
-		}
-	}
 
-	if (parse_hexadecimal (arg[0], &dst_imm)) {
 		if (parse_hexadecimal (arg[1], &src_imm)) {
 			(*out)[0] = 0x85;
 			(*out)[1] = src_imm;
@@ -1088,140 +1175,10 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 			return singlearg_bit (0xa2, arg[1], out);
 		}
 	}
-	if ((!r_str_casecmp (arg[0], "@r0") || !r_str_casecmp (arg[0], "[r0]")) && is_direct (arg[1])) {
-		singlearg_direct (0xa6, arg[1], out);
-		return true;
-	}
-	if ((!r_str_casecmp (arg[0], "@r1") || !r_str_casecmp (arg[0], "[r1]")) && is_direct (arg[1])) {
-		singlearg_direct (0xa7, arg[1], out);
-		return true;
-	}
-	if (!r_str_casecmp (arg[0], "r0") && is_direct (arg[1])) {
-		return singlearg_direct (0xa8, arg[1], out);
-	}
-	if (!r_str_casecmp (arg[0], "r1") && is_direct (arg[1])) {
-		return singlearg_direct (0xa9, arg[1], out);
-	}
-	if (!r_str_casecmp (arg[0], "r2") && is_direct(arg[1])) {
-		return singlearg_direct (0xaa, arg[1], out);
-	}
-	if (!r_str_casecmp (arg[0], "r3") && is_direct (arg[1])) {
-		return singlearg_direct (0xab, arg[1], out);
-	}
-	if (!r_str_casecmp (arg[0], "r4") && is_direct (arg[1])) {
-		return singlearg_direct (0xac, arg[1], out);
-	}
-	if (!r_str_casecmp (arg[0], "r5") && is_direct (arg[1])) {
-		singlearg_direct (0xad, arg[1], out);
-		return true;
-	}
-	if (!r_str_casecmp (arg[0], "r6") && is_direct (arg[1])) {
-		singlearg_direct (0xae, arg[1], out);
-		return true;
-	}
-	if (!r_str_casecmp (arg[0], "r7") && is_direct (arg[1])) {
-		singlearg_direct (0xaf, arg[1], out);
-		return true;
-	}
-	if (!r_str_casecmp (arg[0], "a")) {
-		if (is_direct (arg[1])) {
-			return singlearg_direct (0xe5, arg[1], out);
-		}
-
-		if (!r_str_casecmp (arg[1], "@r0") || !r_str_casecmp (arg[1], "[r0]")) {
-			return single_byte_instr (0xe6, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "@r1") || !r_str_casecmp (arg[1], "[r1]")) {
-			return single_byte_instr (0xe7, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r0")) {
-			return single_byte_instr (0xe8, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r1")) {
-			return single_byte_instr (0xe9, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r2")) {
-			return single_byte_instr (0xea, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r3")) {
-			return single_byte_instr (0xeb, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r4")) {
-			return single_byte_instr (0xec, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r5")) {
-			return single_byte_instr (0xed, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r6")) {
-			return single_byte_instr (0xee, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r7")) {
-			return single_byte_instr (0xef, out);
-		}
-	}
 
 	if (is_direct (arg[0])) {
 		if (!r_str_casecmp (arg[1], "a")) {
 			return singlearg_direct (0xf5, arg[0], out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "@r0") || !r_str_casecmp (arg[0], "[r0]")) {
-		if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xf6, out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "@r1") || !r_str_casecmp (arg[0], "[r1]")) {
-		if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xf7, out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r0")) {
-		if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xf8, out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r1")) {
-		if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xf9, out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r2")) {
-		if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xfa, out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r3")) {
-		if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xfb, out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r4")) {
-		if (!r_str_casecmp (arg[1], "a")) {
-			single_byte_instr (0xfc, out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r5")) {
-		if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xfd, out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r6")) {
-		if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xfe, out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r7")) {
-		if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xff, out);
 		}
 	}
 
