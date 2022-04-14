@@ -1424,8 +1424,7 @@ static int w_handler(RCore *core, const char *input) {
 	return 0;
 }
 
-static int wz_handler_old(void *data, const char *input) {
-	RCore *core = (RCore *)data;
+static int wz_handler(RCore *core, const char *input) {
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *str = r_str_trim_dup (input);
 	int len = r_str_unescape (str) + 1;
@@ -1440,11 +1439,7 @@ static int wz_handler_old(void *data, const char *input) {
 	if (!r_core_write_at (core, core->offset, (const ut8 *)str, len)) {
 		cmd_write_fail (core);
 	}
-	if (len > 0) {
-		r_core_return_code (core, len);
-	} else {
-		r_core_return_code (core, 0);
-	}
+	r_core_return_code (core, len);
 	WSEEK (core, len + 1);
 	r_core_block_read (core);
 	free (str);
@@ -2176,7 +2171,7 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	}
 	case 'z': // "wz"
-		wz_handler_old (core, input + 1);
+		wz_handler (core, input + 1);
 		break;
 	case 't': // "wt"
 		wt_handler_old (core, input + 1);
