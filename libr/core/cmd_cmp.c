@@ -1270,9 +1270,16 @@ static int cmd_cmp(void *data, const char *input) {
 			free (home);
 		}
 		break;
-	case '1': // "c1"
-		cmp_bits (core, r_num_math (core->num, input + 1));
+	case '1': { // "c1"
+		const char *arg = input[1]? r_str_trim_head_ro (input + 2): NULL;
+		if (input[1] == '?' || input[1] != ' ' || R_STR_ISEMPTY (arg)) {
+			r_core_cmd_help_match (core, help_msg_c, "c1", true);
+			break;
+		}
+
+		cmp_bits (core, r_num_math (core->num, arg));
 		break;
+	}
 	case '2': // "c2"
 		wordcmp.v16 = (ut16) r_num_math (core->num, input + 1);
 		val = radare_compare (core, block, (ut8 *) &wordcmp.v16, sizeof (wordcmp.v16), 0);
