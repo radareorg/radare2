@@ -41,7 +41,7 @@ static const char *_8051_regs[] = {
 	0, 0, 0, 0, 0, 0, 0, 0  // 0xf8
 };
 
-static char* _replace_register(char* disasm, ut8 arg, ut8 val) {
+static char* _replace_register(char* disasm, ut8 arg, ut8 val) {//TODO point to bank address when necessary
 	char key[10];
 	char subst[10];
 	if (arg == A_DIRECT) {
@@ -164,11 +164,11 @@ static char *r_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 
 		// substitute direct addresses with register name
 		*olen = oplen;
-		/*if (disasm) {
+		if (disasm) {
 			disasm = _replace_register (disasm, arg1, val1);
 			disasm = _replace_register (disasm, arg2, val2);
 			return disasm;
-		}*/
+		}
 		return disasm;
 		return NULL;
 	}
