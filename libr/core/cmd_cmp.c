@@ -811,7 +811,6 @@ static int cmd_cp(void *data, const char *input) {
 static void cmp_bits(RCore *core, ut64 addr) {
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 	const bool use_color = r_config_get_b (core->config, "scr.color");
-	const char *color = use_color? pal->offset: "";
 	const char *color_end = use_color? Color_RESET: "";
 	int i;
 	ut8 a, b;
@@ -821,22 +820,20 @@ static void cmp_bits(RCore *core, ut64 addr) {
 	r_io_nread_at (core->io, core->offset, &a, 1);
 	r_io_nread_at (core->io, addr, &b, 1);
 
-	/* Set up bits and colors */
-	for (i = 7; i >= 0; i--) {
-		a_bits[i] = a & 1<<i;
-		b_bits[i] = b & 1<<i;
-	}
-
 	/* Print offset header if enabled */
 	if (r_config_get_i (core->config, "hex.header")) {
-		char *n = r_str_newf ("0x%08"PFMT64x, core->offset);
-		const char *extra = r_str_pad (' ', strlen (n) - 10);
+		const char *color = use_color? pal->offset: "";
+		char *n = r_str_newf ("0x%08" PFMT64x, core->offset);
+		const char *padding = r_str_pad (' ', strlen (n) - 10);
 		free (n);
-		r_cons_printf ("%s- offset -%s  7 6 5 4 3 2 1 0%s\n", color, extra, color_end);
+		r_cons_printf ("%s- offset -%s  7 6 5 4 3 2 1 0%s\n", color, padding, color_end);
 	}
 
-	color = use_color? pal->graph_false: "";
+	/* Set up bits and colors */
 	for (i = 7; i >= 0; i--) {
+		a_bits[i] = a & (1 << i);
+		b_bits[i] = b & (1 << i);
+
 		if (use_color && a_bits[i] != b_bits[i]) {
 			a_colors[i] = a_bits[i]? pal->graph_true: pal->graph_false;
 			b_colors[i] = b_bits[i]? pal->graph_true: pal->graph_false;
