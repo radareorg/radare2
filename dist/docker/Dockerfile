@@ -39,7 +39,7 @@ LABEL r2docker latest
 # Radare version
 ARG R2_VERSION=master
 # R2pipe python version
-ARG R2_PIPE_PY_VERSION=1.4.2
+ARG R2_PIPE_PY_VERSION=1.6.5
 
 ARG with_arm32_as
 ARG with_arm64_as
