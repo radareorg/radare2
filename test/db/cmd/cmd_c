@@ -38,8 +38,8 @@ FILE=bins/elf/ls
 CMDS=c1 0x00005ae1
 EXPECT=<<EOF
 - offset -  7 6 5 4 3 2 1 0
-0x00005ae0  1 1 1 1 0 0 1 1 
-0x00005ae1  0 0 0 0 1 1 1 1 
+0x00005ae0  1 1 1 1 0 0 1 1
+0x00005ae1  0 0 0 0 1 1 1 1
 EOF
 RUN
 
