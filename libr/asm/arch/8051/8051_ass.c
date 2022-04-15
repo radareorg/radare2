@@ -1309,6 +1309,10 @@ static bool mnem_xchd(char const*const*arg, ut16 pc, ut8**out) {
 	return singlearg_register (0xd6, arg[1], out);
 }
 
+static bool mnem_reserved(char const*const*arg, ut16 pc, ut8**out) {
+	return single_byte_instr (0xa5, out);
+}
+
 /******************************************************************************
  * ## Section 6: mnemonic token dispatcher
                  -------------------------*/
@@ -1339,6 +1343,7 @@ static parse_mnem_args mnemonic(char const *user_asm, int*nargs) {
 		mnem (1, jnz)
 		mnem (1, lcall)
 		mnem (1, ljmp)
+		mnem (0, reserved)
 /* so uh, the whitespace-independent matching sees movc and mov c as the same
  * thing...
  * My first thought was to add an exception for mov c, but later I saw that it'd
