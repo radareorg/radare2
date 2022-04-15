@@ -178,6 +178,7 @@ static _8051_op_t _8051_ops[] = {
 	{0xa2, 1, OP_MOV, T (MOV), "mov c, 0x%02x.%d", 2, M_NONE, A_BIT, 0, 0},
 	{0xa3, 2, OP_INC, T (ADD), "inc dptr", 1, M_NONE, 0, 0, 0},
 	{0xa4, 4, OP_MUL, T (MUL), "mul ab", 1, M_NONE, 0, 0, 0},
+	{0xa5, 1, OP_INVALID, T (UNK), "reserved", 1, M_NONE, 0, 0, 0},
 	{0xa6, 2, OP_MOV, T (MOV), "mov @r%d, 0x%02x", 2, M_RI, A_RI, A_DIRECT, 0},
 	{0xa8, 2, OP_MOV, T (MOV), "mov r%d, 0x%02x", 2, M_RN, A_RN, A_DIRECT, 0},
 	{0xb0, 2, OP_ANL, T (AND), "anl c, /0x%02x.%d", 2, M_NONE, A_BIT, 0, 0},

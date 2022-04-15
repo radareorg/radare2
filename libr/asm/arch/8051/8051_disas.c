@@ -170,7 +170,6 @@ static char *r_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 			return disasm;
 		}
 		return disasm;
-		return NULL;
 	}
 
 	// invalid op-code
