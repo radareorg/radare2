@@ -997,79 +997,14 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 	}
 
 	if (arg[0][0] == 'r') {
-		switch (arg[0][1]) {
-		case '0':
-			if (!r_str_casecmp (arg[1], "a")) {
-				return single_byte_instr (0xf8, out);
-			} else if (is_direct (arg[1])) {
-				return singlearg_direct (0xa8, arg[1], out);
-			} else if (resolve_immediate (arg[1] + 1, &src_imm)) {
-				return singlearg_immediate (0x78, arg[1], out);
-			}
-			break;
-		case '1':
+		if (R_BETWEEN ('0', arg[0][1], '7')) {
 			if (resolve_immediate (arg[1] + 1, &src_imm)) {
-				return singlearg_immediate (0x79, arg[1], out);
+				return singlearg_immediate (0x78 + arg[1][1]-'0', arg[1], out);
 			} else if (is_direct (arg[1])) {
-				return singlearg_direct (0xa9, arg[1], out);
+				return singlearg_direct (0xa8 + arg[1][1]-'0', arg[1], out);
 			} else if (!r_str_casecmp (arg[1], "a")) {
-				return single_byte_instr (0xf9, out);
+				return single_byte_instr (0xf8 + arg[1][1]-'0', out);
 			}
-			break;
-		case '2':
-			if (resolve_immediate (arg[1] + 1, &src_imm)) {
-				return singlearg_immediate (0x7a, arg[1], out);
-			} else if (is_direct(arg[1])) {
-				return singlearg_direct (0xaa, arg[1], out);
-			} else if (!r_str_casecmp (arg[1], "a")) {
-				return single_byte_instr (0xfa, out);
-			}
-			break;
-		case '3':
-			if (resolve_immediate (arg[1] + 1, &src_imm)) {
-				return singlearg_immediate (0x7b, arg[1], out);
-			} else if (is_direct (arg[1])) {
-				return singlearg_direct (0xab, arg[1], out);
-			} else if (!r_str_casecmp (arg[1], "a")) {
-				return single_byte_instr (0xfb, out);
-			}
-			break;
-		case '4':
-			if (resolve_immediate (arg[1]+1, &dst_imm)) {
-				return singlearg_direct (0x7c, arg[1]+1, out);
-			} else if (is_direct (arg[1])) {
-				return singlearg_direct (0xac, arg[1], out);
-			} else if (!r_str_casecmp (arg[1], "a")) {
-				return single_byte_instr (0xfc, out);
-			}
-			break;
-		case '5':
-			if (resolve_immediate (arg[1] + 1, &src_imm)) {
-				return singlearg_immediate (0x7d, arg[1], out);
-			} else if (is_direct (arg[1])) {
-				return singlearg_direct (0xad, arg[1], out);
-			} else if (!r_str_casecmp (arg[1], "a")) {
-				return single_byte_instr (0xfd, out);
-			}
-			break;
-		case '6':
-			if (resolve_immediate (arg[1] + 1, &src_imm)) {
-				return singlearg_immediate (0x7e, arg[1], out);
-			} else if (is_direct (arg[1])) {
-				return singlearg_direct (0xae, arg[1], out);
-			} else if (!r_str_casecmp (arg[1], "a")) {
-				return single_byte_instr (0xfe, out);
-			}
-			break;
-		case '7':
-			if (resolve_immediate (arg[1] + 1, &src_imm)) {
-				return singlearg_immediate (0x7f, arg[1], out);
-			} else if (!r_str_casecmp (arg[1], "a")) {
-				return single_byte_instr (0xff, out);
-			} else if (is_direct (arg[1])) {
-				return singlearg_direct (0xaf, arg[1], out);
-			}
-			break;
 		}
 	}
 
