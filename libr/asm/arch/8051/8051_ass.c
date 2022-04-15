@@ -995,79 +995,81 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 			return singlearg_direct (0xa7, arg[1], out);
 		}
 	}
-	if (!r_str_casecmp (arg[0], "r0")) {
-		if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xf8, out);
-		} else if (is_direct (arg[1])) {
-			return singlearg_direct (0xa8, arg[1], out);
-		} else if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x78, arg[1], out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r1")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x79, arg[1], out);
-		} else if (is_direct (arg[1])) {
-			return singlearg_direct (0xa9, arg[1], out);
-		} else if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xf9, out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r2")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x7a, arg[1], out);
-		} else if (is_direct(arg[1])) {
-			return singlearg_direct (0xaa, arg[1], out);
-		} else if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xfa, out);
-		}
-	}
 
-	if (!r_str_casecmp (arg[0], "r3")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x7b, arg[1], out);
-		} else if (is_direct (arg[1])) {
-			return singlearg_direct (0xab, arg[1], out);
-		} else if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xfb, out);
-		}
-	}
-
-	if (!r_str_casecmp (arg[0], "r4")) {
-		if (resolve_immediate (arg[1]+1, &dst_imm)) {
-			return singlearg_direct (0x7c, arg[1]+1, out);
-		} else if (is_direct (arg[1])) {
-			return singlearg_direct (0xac, arg[1], out);
-		} else if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xfc, out);
-		}
-	}
-
-	if (!r_str_casecmp (arg[0], "r5")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x7d, arg[1], out);
-		} else if (is_direct (arg[1])) {
-			return singlearg_direct (0xad, arg[1], out);
-		} else if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xfd, out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r6")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x7e, arg[1], out);
-		} else if (is_direct (arg[1])) {
-			return singlearg_direct (0xae, arg[1], out);
-		} else if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xfe, out);
-		}
-	}
-	if (!r_str_casecmp (arg[0], "r7")) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x7f, arg[1], out);
-		} else if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xff, out);
-		} else if (is_direct (arg[1])) {
-			return singlearg_direct (0xaf, arg[1], out);
+	if (arg[0][0] == 'r') {
+		switch (arg[0][1]) {
+		case '0':
+			if (!r_str_casecmp (arg[1], "a")) {
+				return single_byte_instr (0xf8, out);
+			} else if (is_direct (arg[1])) {
+				return singlearg_direct (0xa8, arg[1], out);
+			} else if (resolve_immediate (arg[1] + 1, &src_imm)) {
+				return singlearg_immediate (0x78, arg[1], out);
+			}
+			break;
+		case '1':
+			if (resolve_immediate (arg[1] + 1, &src_imm)) {
+				return singlearg_immediate (0x79, arg[1], out);
+			} else if (is_direct (arg[1])) {
+				return singlearg_direct (0xa9, arg[1], out);
+			} else if (!r_str_casecmp (arg[1], "a")) {
+				return single_byte_instr (0xf9, out);
+			}
+			break;
+		case '2':
+			if (resolve_immediate (arg[1] + 1, &src_imm)) {
+				return singlearg_immediate (0x7a, arg[1], out);
+			} else if (is_direct(arg[1])) {
+				return singlearg_direct (0xaa, arg[1], out);
+			} else if (!r_str_casecmp (arg[1], "a")) {
+				return single_byte_instr (0xfa, out);
+			}
+			break;
+		case '3':
+			if (resolve_immediate (arg[1] + 1, &src_imm)) {
+				return singlearg_immediate (0x7b, arg[1], out);
+			} else if (is_direct (arg[1])) {
+				return singlearg_direct (0xab, arg[1], out);
+			} else if (!r_str_casecmp (arg[1], "a")) {
+				return single_byte_instr (0xfb, out);
+			}
+			break;
+		case '4':
+			if (resolve_immediate (arg[1]+1, &dst_imm)) {
+				return singlearg_direct (0x7c, arg[1]+1, out);
+			} else if (is_direct (arg[1])) {
+				return singlearg_direct (0xac, arg[1], out);
+			} else if (!r_str_casecmp (arg[1], "a")) {
+				return single_byte_instr (0xfc, out);
+			}
+			break;
+		case '5':
+			if (resolve_immediate (arg[1] + 1, &src_imm)) {
+				return singlearg_immediate (0x7d, arg[1], out);
+			} else if (is_direct (arg[1])) {
+				return singlearg_direct (0xad, arg[1], out);
+			} else if (!r_str_casecmp (arg[1], "a")) {
+				return single_byte_instr (0xfd, out);
+			}
+			break;
+		case '6':
+			if (resolve_immediate (arg[1] + 1, &src_imm)) {
+				return singlearg_immediate (0x7e, arg[1], out);
+			} else if (is_direct (arg[1])) {
+				return singlearg_direct (0xae, arg[1], out);
+			} else if (!r_str_casecmp (arg[1], "a")) {
+				return single_byte_instr (0xfe, out);
+			}
+			break;
+		case '7':
+			if (resolve_immediate (arg[1] + 1, &src_imm)) {
+				return singlearg_immediate (0x7f, arg[1], out);
+			} else if (!r_str_casecmp (arg[1], "a")) {
+				return single_byte_instr (0xff, out);
+			} else if (is_direct (arg[1])) {
+				return singlearg_direct (0xaf, arg[1], out);
+			}
+			break;
 		}
 	}
 
@@ -1097,36 +1099,10 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 			return singlearg_direct (0x87, arg[0], out);
 		}
 
-		if (!r_str_casecmp (arg[1], "r0")) {
-			return singlearg_direct (0x88, arg[0], out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r1")) {
-			return singlearg_direct (0x89, arg[0], out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r2")) {
-			return singlearg_direct (0x8a, arg[0], out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r3")) {
-			return singlearg_direct (0x8b, arg[0], out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r4")) {
-			return singlearg_direct (0x8c, arg[0], out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r5")) {
-			return singlearg_direct (0x8d, arg[0], out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r6")) {
-			return singlearg_direct (0x8e, arg[0], out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r7")) {
-			return singlearg_direct (0x8f, arg[0], out);
+		if (arg[1][0] == 'r') {
+			if (R_BETWEEN ('0', arg[1][1], '7')) {
+				return singlearg_direct (0x88 + arg[1][1]-'0', arg[0], out);
+			}
 		}
 	}
 
