@@ -970,36 +970,10 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 			return single_byte_instr (0xe7, out);
 		}
 
-		if (!r_str_casecmp (arg[1], "r0")) {
-			return single_byte_instr (0xe8, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r1")) {
-			return single_byte_instr (0xe9, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r2")) {
-			return single_byte_instr (0xea, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r3")) {
-			return single_byte_instr (0xeb, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r4")) {
-			return single_byte_instr (0xec, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r5")) {
-			return single_byte_instr (0xed, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r6")) {
-			return single_byte_instr (0xee, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "r7")) {
-			return single_byte_instr (0xef, out);
+		if (arg[1][0] == 'r') {
+			if (R_BETWEEN ('0', arg[1][1], '7')) {
+				return single_byte_instr (0xe8 + arg[1][1]-'0', out);
+			}
 		}
 	}
 
