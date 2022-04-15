@@ -499,7 +499,7 @@ static bool address_bit(char const* addr_str, ut8* addr_out) {
 	}
 
 	ut8 addr_bytepart = 0x00;
-    if (!parse_register(bytepart, &addr_bytepart)) {
+	if (!parse_register(bytepart, &addr_bytepart)) {
 		if (!parse_address_direct (bytepart, &byte)) {
 			ret = false;
 			goto end;
@@ -1014,7 +1014,7 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 	}
 	if ((!r_str_casecmp (arg[0], "@r1") || !r_str_casecmp (arg[0], "[r1]"))) {
 		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-		    return singlearg_immediate (0x77, arg[1], out);
+			return singlearg_immediate (0x77, arg[1], out);
 		} else if (!r_str_casecmp (arg[1], "a")) {
 			return single_byte_instr (0xf7, out);
 		} else if (is_direct (arg[1])) {
@@ -1022,14 +1022,14 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 		}
 	}
 	if (!r_str_casecmp (arg[0], "r0")) {
-			if (!r_str_casecmp (arg[1], "a")) {
-				return single_byte_instr (0xf8, out);
-			} else if (is_direct (arg[1])) {
-				return singlearg_direct (0xa8, arg[1], out);
-			} else if (resolve_immediate (arg[1] + 1, &src_imm)) {
-				return singlearg_immediate (0x78, arg[1], out);
-		    }
+		if (!r_str_casecmp (arg[1], "a")) {
+			return single_byte_instr (0xf8, out);
+		} else if (is_direct (arg[1])) {
+			return singlearg_direct (0xa8, arg[1], out);
+		} else if (resolve_immediate (arg[1] + 1, &src_imm)) {
+			return singlearg_immediate (0x78, arg[1], out);
 		}
+	}
 	if (!r_str_casecmp (arg[0], "r1")) {
 		if (resolve_immediate (arg[1] + 1, &src_imm)) {
 			return singlearg_immediate (0x79, arg[1], out);
@@ -1041,8 +1041,8 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 	}
 	if (!r_str_casecmp (arg[0], "r2")) {
 		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-		    return singlearg_immediate (0x7a, arg[1], out);
-	    } else if (is_direct(arg[1])) {
+			return singlearg_immediate (0x7a, arg[1], out);
+		} else if (is_direct(arg[1])) {
 			return singlearg_direct (0xaa, arg[1], out);
 		} else if (!r_str_casecmp (arg[1], "a")) {
 			return single_byte_instr (0xfa, out);
@@ -1051,10 +1051,10 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 
 	if (!r_str_casecmp (arg[0], "r3")) {
 		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-		    return singlearg_immediate (0x7b, arg[1], out);
-	    } else if (is_direct (arg[1])) {
-    		return singlearg_direct (0xab, arg[1], out);
-	    } else if (!r_str_casecmp (arg[1], "a")) {
+			return singlearg_immediate (0x7b, arg[1], out);
+		} else if (is_direct (arg[1])) {
+			return singlearg_direct (0xab, arg[1], out);
+		} else if (!r_str_casecmp (arg[1], "a")) {
 			return single_byte_instr (0xfb, out);
 		}
 	}
@@ -1164,7 +1164,7 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 			(*out)[2] = src_imm & 0xff;
 			*out += 3;
 			return true;
-        }
+		}
 	}
 	if (address_bit (arg[0], &src_addr)) {
 		if (!r_str_casecmp (arg[1], "c")) {
@@ -1376,9 +1376,9 @@ static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
 			parse_hexadecimal (arg[0], &dest_hexadecimal);
 			(*out)[1] = dest_hexadecimal;
 			parse_hexadecimal (arg[1] + 1, &dest_hexadecimal);
-		    (*out)[2] = dest_hexadecimal;
-		    *out += 3;
-		    return true;
+			(*out)[2] = dest_hexadecimal;
+			*out += 3;
+			return true;
 		}
 	}
 	if (!r_str_casecmp (arg[0], "a")) {
