@@ -743,7 +743,7 @@ static bool mnem_cjne(char const*const*arg, ut16 pc, ut8**out) {
 		if (!resolve_immediate (arg[1] + 1, &imm)) {
 			return false;
 		}
-		(*out)[0] = 0xbf | register_number (arg[0]) ;
+		(*out)[0] = 0xb8 | register_number (arg[0]) ;
 		(*out)[1] = imm & 0x00FF;
 		// out[2] set earlier
 		*out += 3;
