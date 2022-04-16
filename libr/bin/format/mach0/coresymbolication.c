@@ -274,12 +274,12 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 				sect->vaddr += page_zero_size;
 			}
 			cursor += word_size;
-			if (cursor >= end) {
+			if (cursor + word_size >= end) {
 				break;
 			}
 			sect->size = r_read_ble (cursor, false, bits);
 			cursor += word_size;
-			if (cursor >= end) {
+			if (cursor + word_size >= end) {
 				break;
 			}
 			ut64 sect_name_off = r_read_ble (cursor, false, bits);
@@ -291,7 +291,11 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 				cursor += word_size;
 			}
 			string_origin = relative_to_strings? b + start_of_strings : sect_start;
-			sect->name = str_dup_safe (b, string_origin + (size_t)sect_name_off, end);
+			if (sect_name_off < (ut64)(size_t)(end - string_origin)) {
+				sect->name = str_dup_safe (b, string_origin + sect_name_off, end);
+			} else {
+				sect->name = strdup ("");
+			}
 		}
 	}
 	if (hdr->n_symbols) {
