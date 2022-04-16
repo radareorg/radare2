@@ -291,7 +291,7 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 				cursor += word_size;
 			}
 			string_origin = relative_to_strings? b + start_of_strings : sect_start;
-			if (sect_name_off < end) {
+			if (sect_name_off < (ut64)(size_t)(end - string_origin)) {
 				sect->name = str_dup_safe (b, string_origin + sect_name_off, end);
 			} else {
 				sect->name = strdup ("");
