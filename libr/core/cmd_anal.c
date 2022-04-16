@@ -7572,7 +7572,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			if (bb) {
 				switch (input[2]) {
 				case 'j': // "aeabj"
-					cmd_aea (core, 1 + (1<<4), bb->addr, bb->size);
+					cmd_aea (core, 1 | (1<<4), bb->addr, bb->size);
 					break;
 				default:
 					cmd_aea (core, 1, bb->addr, bb->size);
