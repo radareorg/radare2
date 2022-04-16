@@ -77,7 +77,7 @@ static char *__func_name_from_ord(const char *module, ut16 ordinal) {
 
 RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 	int i;
-	if (!bin) {
+	if (!bin || !bin->segment_entries) {
 		return NULL;
 	}
 	RList *segments = r_list_newf (free);
