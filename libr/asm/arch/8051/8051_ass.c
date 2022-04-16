@@ -340,7 +340,7 @@ static bool is_indirect_reg(char const*str)
 	return false;
 }
 
-static bool is_direct(char const*str) {
+static bool is_direct(char const *str) {
 	ut16 useless;
 	return parse_hexadecimal (str, &useless);
 }
@@ -349,8 +349,10 @@ static bool is_direct(char const*str) {
  * returns true if the given string denotes an 'r'-register
  */
 static bool is_reg(char const *str) {
-	return str && tolower ((unsigned char)str[0]) == 'r' && r_str_ansi_nlen (str, 3) == 2
-		&& '0' <= str[1] && str[1] <= '7';
+	r_return_val_if_fail (str, false);
+	return tolower (str[0]) == 'r'
+		&& R_BETWEEN ('0', str[1], '7')
+		&& !str[2];
 }
 
 /**
@@ -970,10 +972,8 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 			return single_byte_instr (0xe7, out);
 		}
 
-		if (arg[1][0] == 'r') {
-			if (R_BETWEEN ('0', arg[1][1], '7')) {
-				return single_byte_instr (0xe8 + arg[1][1]-'0', out);
-			}
+		if (is_reg (arg[1])) {
+			return single_byte_instr (0xe8 + register_number (arg[1]), out);
 		}
 	}
 
@@ -996,15 +996,13 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 		}
 	}
 
-	if (arg[0][0] == 'r') {
-		if (R_BETWEEN ('0', arg[0][1], '7')) {
-			if (resolve_immediate (arg[1] + 1, &src_imm)) {
-				return singlearg_immediate (0x78 + arg[0][1]-'0', arg[1], out);
-			} else if (is_direct (arg[1])) {
-				return singlearg_direct (0xa8 + arg[0][1]-'0', arg[1], out);
-			} else if (!r_str_casecmp (arg[1], "a")) {
-				return single_byte_instr (0xf8 + arg[0][1]-'0', out);
-			}
+	if (is_reg (arg[0])) {
+		if (resolve_immediate (arg[1] + 1, &src_imm)) {
+			return singlearg_immediate (0x78 + register_number (arg[0]), arg[1], out);
+		} else if (is_direct (arg[1])) {
+			return singlearg_direct (0xa8 + register_number (arg[0]), arg[1], out);
+		} else if (!r_str_casecmp (arg[1], "a")) {
+			return single_byte_instr (0xf8 + register_number (arg[0]), out);
 		}
 	}
 
@@ -1034,10 +1032,8 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 			return singlearg_direct (0x87, arg[0], out);
 		}
 
-		if (arg[1][0] == 'r') {
-			if (R_BETWEEN ('0', arg[1][1], '7')) {
-				return singlearg_direct (0x88 + arg[1][1]-'0', arg[0], out);
-			}
+		if (is_reg(arg[1])) {
+			return singlearg_direct (0x88 + register_number (arg[1]), arg[0], out);
 		}
 	}
 
