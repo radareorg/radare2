@@ -877,7 +877,7 @@ static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
 	to_address (arg[1], &jmp_addr);
 
 	if (!relative_address (pc + 1, jmp_addr, (*out) + 2)) {
-		eprintf ("error during the assembly: address not found\n");
+		eprintf ("error during the assembly: address %x not found\n", jmp_addr);
 		return false;
 	}
 
@@ -999,11 +999,11 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 	if (arg[0][0] == 'r') {
 		if (R_BETWEEN ('0', arg[0][1], '7')) {
 			if (resolve_immediate (arg[1] + 1, &src_imm)) {
-				return singlearg_immediate (0x78 + arg[1][1]-'0', arg[1], out);
+				return singlearg_immediate (0x78 + arg[0][1]-'0', arg[1], out);
 			} else if (is_direct (arg[1])) {
-				return singlearg_direct (0xa8 + arg[1][1]-'0', arg[1], out);
+				return singlearg_direct (0xa8 + arg[0][1]-'0', arg[1], out);
 			} else if (!r_str_casecmp (arg[1], "a")) {
-				return single_byte_instr (0xf8 + arg[1][1]-'0', out);
+				return single_byte_instr (0xf8 + arg[0][1]-'0', out);
 			}
 		}
 	}
