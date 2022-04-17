@@ -86,17 +86,18 @@ R_API bool r_core_is_project(RCore *core, const char *name) {
 	return ret;
 }
 
-R_API int r_core_project_cat(RCore *core, const char *name) {
+R_API void r_core_project_cat(RCore *core, const char *name) {
+	r_core_return_code (core, R_CMD_RC_FAILURE);
 	char *path = get_project_script_path (core, name);
 	if (path) {
 		char *data = r_file_slurp (path, NULL);
 		if (data) {
 			r_cons_println (data);
 			free (data);
+			r_core_return_code (core, R_CMD_RC_SUCCESS);
 		}
+		free (path);
 	}
-	free (path);
-	return 0;
 }
 
 R_API int r_core_project_list(RCore *core, int mode) {

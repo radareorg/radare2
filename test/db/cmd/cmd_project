@@ -648,3 +648,19 @@ EXPECT=<<EOF
 |           0x00400506      55             push rbp                    ; test
 EOF
 RUN
+
+NAME=Check Pc's return value
+FILE=bins/elf/analysis/main
+ARGS=-A -eprj.vc=false -edir.projects=.tmp/
+CMDS=<<EOF
+Pc aabb
+?v $?
+Ps hello
+Pc hello >/dev/null
+?v $?
+EOF
+EXPECT=<<EOF
+0x1
+0x0
+EOF
+RUN

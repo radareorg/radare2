@@ -248,5 +248,5 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	}
 	free (str);
-	return true;
+	return 0;
 }
