@@ -23,7 +23,7 @@ static char *r_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 		ut8 arg3 = _8051_ops[i].arg3;
 		ut8 oplen = _8051_ops[i].len;
 
-		char* disasm = 0;
+		char* disasm = NULL;
 
 		switch (oplen) {
 		case 1:

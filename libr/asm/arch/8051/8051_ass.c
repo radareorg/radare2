@@ -1413,15 +1413,15 @@ int assemble_8051(RAsm *a, RAsmOp *op, char const *user_asm) {
 	ut8 instr[4] = {0};
 	ut8 *binp = instr;
 	if (!mnem (carg, a->pc, &binp)) {
-		free (arg[0]); arg[0] = 0; carg[2] = 0;
-		free (arg[1]); arg[1] = 0; carg[1] = 0;
-		free (arg[2]); arg[2] = 0; carg[0] = 0;
+		R_FREE (arg[0]);
+		R_FREE (arg[1]);
+		R_FREE (arg[2]);
 		return 0;
 	}
 
-	free (arg[0]); arg[0] = 0; carg[2] = 0;
-	free (arg[1]); arg[1] = 0; carg[1] = 0;
-	free (arg[2]); arg[2] = 0; carg[0] = 0;
+	R_FREE (arg[0]);
+	R_FREE (arg[1]);
+	R_FREE (arg[2]);
 	size_t len = binp - instr;
 	r_strbuf_setbin (&op->buf, instr, len);
 
