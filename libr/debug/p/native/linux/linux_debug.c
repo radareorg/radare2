@@ -1308,11 +1308,10 @@ int linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 
 RList *linux_desc_list (int pid) {
 	RList *ret = NULL;
-	char path[512], file[512], buf[512];
+	char path[512], fd_file[512], fdinfo_file[512], fdinfo[512], buf[512];
 	struct dirent *de;
 	RDebugDesc *desc;
-	int type, perm;
-	int len, len2;
+	int type, perm, offset, f;
 	struct stat st;
 	DIR *dd = NULL;
 
@@ -1331,23 +1330,26 @@ RList *linux_desc_list (int pid) {
 		if (de->d_name[0] == '.') {
 			continue;
 		}
-		len = strlen (path);
-		len2 = strlen (de->d_name);
-		if (len + len2 + 1 >= sizeof(file)) {
+
+		if (snprintf (fd_file, sizeof (fd_file),
+				"/proc/%d/fd/%s", pid, de->d_name) >= sizeof (fd_file)) {
 			r_list_free (ret);
 			closedir (dd);
-			eprintf ("Filename is too long");
+			eprintf ("fd filename is too long\n");
 			return NULL;
 		}
-		memcpy (file, path, len);
-		memcpy (file + len, de->d_name, len2 + 1);
 		memset (buf, 0, sizeof (buf));
-		if (readlink (file, buf, sizeof (buf) - 1) == -1) {
+		if (readlink (fd_file, buf, sizeof (buf) - 1) == -1) {
+			r_list_free (ret);
+			closedir (dd);
+			r_sys_perror ("readlink failure");
 			return NULL;
 		}
 		buf[sizeof (buf) - 1] = 0;
 		type = perm = 0;
-		if (stat (file, &st) != -1) {
+
+		// Read file type
+		if (stat (fd_file, &st) != -1) {
 			bool isfifo = st.st_mode & S_IFIFO;
 #ifdef S_IFSOCK
 			/* Do *not* remove the == here. S_IFSOCK can be multiple
@@ -1368,7 +1370,9 @@ RList *linux_desc_list (int pid) {
 				type = '-';
 			}
 		}
-		if (lstat(file, &st) != -1) {
+
+		// Read permissions
+		if (lstat(fd_file, &st) != -1) {
 			if (st.st_mode & S_IRUSR) {
 				perm |= R_PERM_R;
 			}
@@ -1376,8 +1380,29 @@ RList *linux_desc_list (int pid) {
 				perm |= R_PERM_W;
 			}
 		}
-		//TODO: Offset
-		desc = r_debug_desc_new (atoi (de->d_name), buf, perm, type, 0);
+
+		// Get offset
+		if (snprintf (fdinfo_file, sizeof (fd_file),
+				"/proc/%d/fdinfo/%s", pid, de->d_name) >= sizeof (fdinfo_file)) {
+			r_list_free (ret);
+			closedir (dd);
+			eprintf ("fdinfo filename too long\n");
+			return NULL;
+		}
+		f = open (fdinfo_file, O_RDONLY);
+		if (read (f, fdinfo, sizeof (fdinfo) - 1) == -1) {
+			close (f);
+			r_list_free (ret);
+			closedir (dd);
+			eprintf ("failed to read %s\n", fdinfo_file);
+			return NULL;
+		}
+		fdinfo[sizeof (fdinfo) - 1] = '\0';
+		close (f);
+		/* First line of fdinfo is "pos: [offset]" */
+		offset = (int) r_num_math (NULL, r_str_trim_head_ro (fdinfo + 4));
+
+		desc = r_debug_desc_new (atoi (de->d_name), buf, perm, type, offset);
 		if (!desc) {
 			break;
 		}

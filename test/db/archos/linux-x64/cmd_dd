@@ -42,19 +42,19 @@ ARGS=-d
 CMDS=<<EOF
 # open 2 files, one in read-write
 dd bins/elf/ls-focal
-dd+ .tmp_dd
+dd+ .tmp_dd1
 # attempt to open a file that doesnt exist
 dd fakefile
 dd~[0,2]
 ?e ---
 # copy over the read-only fd
 ddd 4 3
-dd~tmp_dd~[0,2]
+dd~tmp_dd1~[0,2]
 ?e ---
 dd- 4
-dd~tmp_dd~[0,2]
+dd~tmp_dd1~[0,2]
 # cleanup
-rm .tmp_dd
+rm .tmp_dd1
 doc
 EOF
 EXPECT=<<EOF
@@ -72,15 +72,14 @@ EOF
 RUN
 
 NAME=dd read, write, seek
-BROKEN=1
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
-echo -n test data > .tmp_dd
-dd+ .tmp_dd
+echo test data > .tmp_dd2
+dd+ .tmp_dd2
 w0 20 @rsp
 # read "test data"
-ddr 3 $(dr?rsp) 9 # FIXME: syscall_get_num 0 -> 128 bug
+ddr 3 $(dr?rsp) 9
 ps @rsp
 ?e ---
 dd~^3[1] # show offset
@@ -93,18 +92,18 @@ ps @rsp
 ?e ---
 dd~^3[1] # show offset
 ?e ---
-# write "data test 2"
-wz data test 2 @rsp
-ddw 3 $(dr?rsp) 11
+# write "data test 2\n" to the file
+wz data test 2\n @rsp
+dds 3 # reset seek
+ddw 3 $(dr?rsp) 13
 dd~^3[1] # show offset
 ?e ---
 dd- 3
 dd~[0]
 ?e ---
-cat .tmp_dd
-?e ---
+cat .tmp_dd2
 doc
-rm .tmp_dd
+rm .tmp_dd2
 EOF
 EXPECT=<<EOF
 test data
@@ -115,7 +114,7 @@ dat
 ---
 0x8
 ---
-0xb
+0xd
 ---
 0
 1
@@ -262,7 +261,7 @@ dxr 554889e54881ec0008000048c7c0000000005048c7c00400000050488b3c24488b74240848c7
 ---
 dxrs 554889e54881ec0008000048c7c00001000050488b3c2448c7c0160000000f054883c408cc4881c4000800005dc3
 ---
-dxrs 554889e54881ec0008000048c7c0200000005048c7c0000100005048c7c00400000050488b3c24488b742408488b54241048c7c0800000000f054883c418cc4881c4000800005dc3
+dxrs 554889e54881ec0008000048c7c0200000005048c7c0000100005048c7c00400000050488b3c24488b742408488b54241048c7c0000000000f054883c418cc4881c4000800005dc3
 ---
 dxrs 554889e54881ec0008000048c7c0400000005048c7c0000300005048c7c00400000050488b3c24488b742408488b54241048c7c0010000000f054883c418cc4881c4000800005dc3
 EOF
