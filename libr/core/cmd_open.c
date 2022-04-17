@@ -492,7 +492,7 @@ static void map_list(RIO *io, ut64 off, int mode, RPrint *print, int fd) {
 			char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x
 					" 0x%08"PFMT64x" %s%s%s\n", map->fd, r_io_map_begin (map),
 					r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
-					R_STR_ISEMPTY (map->name)? "" : " ", r_str_get (map->name));
+					R_STR_ISEMPTY (map->name)? "": " ", r_str_get (map->name));
 			if (om_cmd) {
 				om_cmds = r_str_prepend (om_cmds, om_cmd);
 				free (om_cmd);
@@ -501,10 +501,11 @@ static void map_list(RIO *io, ut64 off, int mode, RPrint *print, int fd) {
 		}
 		default:
 			print->cb_printf ("%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
-					" - 0x%08"PFMT64x" %s %s\n",
+					" - 0x%08"PFMT64x" %s%s%s\n",
 					(check_for_current_map && r_io_map_contain (map, off)) ?
 					'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
-					r_io_map_to (map), r_str_rwx_i (map->perm), r_str_get (map->name));
+					r_io_map_to (map), r_str_rwx_i (map->perm),
+					R_STR_ISEMPTY (map->name)? "": " ",r_str_get (map->name));
 			check_for_current_map &= !r_io_map_contain (map, off);
 			break;
 		}
