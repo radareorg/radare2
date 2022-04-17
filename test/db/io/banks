@@ -12,9 +12,9 @@ omb-*
 omb -1
 EOF
 EXPECT=<<EOF
-* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx 
-* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx 
-* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx 
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
 Usage: omb[jq,+] [fd]  Operate on memory banks
 | omb          list all memory banks
 | omb [id]     switch to use a different bank

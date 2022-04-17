@@ -391,7 +391,7 @@ om*~[2]
 EOF
 EXPECT=<<EOF
  3 * r-x 0x000021da bins/elf/analysis/main
-* 1 fd: 3 +0x00000000 0x00001337 - 0x00003510 r-x 
+* 1 fd: 3 +0x00000000 0x00001337 - 0x00003510 r-x
 om 3 0x00001337 0x000021da 0x00000000 r-x
 --
 --
