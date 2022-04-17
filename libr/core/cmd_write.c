@@ -1426,7 +1426,7 @@ static int w_handler(RCore *core, const char *input) {
 
 static int wz_handler(RCore *core, const char *input) {
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
-	char *str = r_str_trim_dup (input);
+	char *str = strdup (input + 1);
 	int len = r_str_unescape (str) + 1;
 
 	/* write zero-terminated string */
