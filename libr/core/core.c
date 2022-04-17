@@ -3978,6 +3978,11 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 	}
 
 	int num = r_syscall_get_num (core->anal->syscall, name);
+	/* FIXME: hack for r_syscall_get_num() returning 128 instead of 0 for x86.
+	 * this is currently held together with duct tape and hope */
+	if (num == 128) {
+		num = 0;
+	}
 
 	//bits check
 	switch (core->rasm->bits) {
