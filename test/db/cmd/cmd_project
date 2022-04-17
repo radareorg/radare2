@@ -651,14 +651,12 @@ RUN
 
 NAME=Check Pc's return value
 FILE=bins/elf/analysis/main
+ARGS=-A -eprj.vc=false -edir.projects=.tmp/
 CMDS=<<EOF
-e prj.vc=false
-aaa > /dev/null
-e dir.projects = .tmp/
 Pc aabb
 ?v $?
 Ps hello
-Pc hello
+Pc hello >/dev/null
 ?v $?
 EOF
 EXPECT=<<EOF
