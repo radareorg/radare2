@@ -542,6 +542,20 @@ static int register_number(char const*reg) {
 	return 8; // not register 0-7, so...
 }
 
+/**
+ * translate a register name to an offset for an instruction
+ * failure case is 10
+ */
+static ut8 register_offset(const char *reg) {
+	if (!r_str_casecmp (reg, "@r0") || !r_str_casecmp (reg, "[r0]")) {
+		return 0;
+	} else if (!r_str_casecmp (reg, "@r1") || !r_str_casecmp (reg, "[r1]")) {
+		return 1;
+	} else {
+		return register_number (reg) + 2;
+	}
+}
+
 /******************************************************************************
  * ## Section 4: Generic instruction emmiters
                  ----------------------------*/
@@ -954,6 +968,7 @@ static bool mnem_mov_c(char const*const*arg, ut16 pc, ut8**out) {
 static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 	ut16 src_imm, dst_imm;
 	ut8 src_addr, dst_addr;
+	ut8 offset;
 
 	if (!r_str_casecmp (arg[0], "a")) {
 		if (resolve_immediate (arg[1] + 1, &src_imm)) {
@@ -964,45 +979,20 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 			return singlearg_direct (0xe5, arg[1], out);
 		}
 
-		if (!r_str_casecmp (arg[1], "@r0") || !r_str_casecmp (arg[1], "[r0]")) {
-			return single_byte_instr (0xe6, out);
-		}
-
-		if (!r_str_casecmp (arg[1], "@r1") || !r_str_casecmp (arg[1], "[r1]")) {
-			return single_byte_instr (0xe7, out);
-		}
-
-		if (is_reg (arg[1])) {
-			return single_byte_instr (0xe8 + register_number (arg[1]), out);
+		offset = register_offset (arg[1]);
+		if (offset < 10) {
+			return single_byte_instr (0xe6 + offset, out);
 		}
 	}
 
-	if ((!r_str_casecmp (arg[0], "@r0") || !r_str_casecmp (arg[0], "[r0]"))) {
+	offset = register_offset (arg[0]);
+	if (offset < 10) {
 		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x76, arg[1], out);
+			return singlearg_immediate (0x76 + offset, arg[1], out);
 		} else if (is_direct (arg[1])) {
-			return singlearg_direct (0xa6, arg[1], out);
+			return singlearg_direct (0xa6 + offset, arg[1], out);
 		} else if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xf6, out);
-		}
-	}
-	if ((!r_str_casecmp (arg[0], "@r1") || !r_str_casecmp (arg[0], "[r1]"))) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x77, arg[1], out);
-		} else if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xf7, out);
-		} else if (is_direct (arg[1])) {
-			return singlearg_direct (0xa7, arg[1], out);
-		}
-	}
-
-	if (is_reg (arg[0])) {
-		if (resolve_immediate (arg[1] + 1, &src_imm)) {
-			return singlearg_immediate (0x78 + register_number (arg[0]), arg[1], out);
-		} else if (is_direct (arg[1])) {
-			return singlearg_direct (0xa8 + register_number (arg[0]), arg[1], out);
-		} else if (!r_str_casecmp (arg[1], "a")) {
-			return single_byte_instr (0xf8 + register_number (arg[0]), out);
+			return single_byte_instr (0xf6 + offset, out);
 		}
 	}
 
@@ -1024,16 +1014,9 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 			return true;
 		}
 
-		if (!r_str_casecmp (arg[1], "@r0") || !r_str_casecmp (arg[1], "[r0]")) {
-			return singlearg_direct (0x86, arg[0], out);
-		}
-
-		if (!r_str_casecmp (arg[1], "@r1") || !r_str_casecmp (arg[1], "[r1]")) {
-			return singlearg_direct (0x87, arg[0], out);
-		}
-
-		if (is_reg(arg[1])) {
-			return singlearg_direct (0x88 + register_number (arg[1]), arg[0], out);
+		offset = register_offset (arg[1]);
+		if (offset < 10) {
+			return singlearg_direct (0x86 + offset, arg[0], out);
 		}
 	}
 
@@ -1248,6 +1231,7 @@ static bool mnem_swap(char const*const*arg, ut16 pc, ut8**out) {
 
 static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
 	ut16 dest_hexadecimal;
+	ut8 offset;
 	if (parse_hexadecimal (arg[0], &dest_hexadecimal)) {
 		if (!r_str_casecmp (arg[1], "a")) {
 			return singlearg_direct (0x62, arg[0], out);
@@ -1269,14 +1253,12 @@ static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
 		if (parse_hexadecimal (arg[1], &dest_hexadecimal)) {
 			return singlearg_direct (0x65, arg[1], out);
 		}
-		if (!r_str_casecmp (arg[1], "@r0") || !r_str_casecmp (arg[1], "[r0]")) {
-			return singlearg_register (0x66, arg[1], out);
-		}
-		if (!r_str_casecmp (arg[1], "@r1") || !r_str_casecmp (arg[1], "[r1]")) {
-			return singlearg_register (0x67, arg[1], out);
-		}
-		if (R_BETWEEN ('0', arg[1][1], '7')) {
-			return single_byte_instr (0x68 + arg[1][1] - '0', out);
+
+		offset = register_offset (arg[1]);
+		if (offset < 2) {
+			return singlearg_register (0x66 + offset, arg[1], out);
+		} else if (offset < 10) {
+			return single_byte_instr (0x66 + offset, out);
 		}
 	}
 	return true;
