@@ -3178,11 +3178,11 @@ EOF
 EXPECT=<<EOF
 ┌ (fcn) fcn.00000000 1645
 // void fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
-│           ; var int32_t var_30h @ esp+0x1c
-│           ; var int32_t var_20h @ esp+0x2c
 │           ; arg int32_t arg_4h @ esp+0x50
 │           ; arg int32_t arg_1ch @ esp+0x68
 │           ; arg int32_t arg_2ch @ esp+0x78
+│           ; var int32_t var_30h @ esp+0x1c
+│           ; var int32_t var_20h @ esp+0x2c
 │           0x00000000      xor eax, eax
 │           0x00000002      cmp esi, edx
 │       ┌─< 0x00000004      jb 0x50
@@ -3242,11 +3242,11 @@ EOF
 EXPECT=<<EOF
 / (fcn) fcn.00000000 1645
 // void fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
-|           ; var int32_t var_30h @ esp+0x1c
-|           ; var int32_t var_20h @ esp+0x2c
 |           ; arg int32_t arg_4h @ esp+0x50
 |           ; arg int32_t arg_1ch @ esp+0x68
 |           ; arg int32_t arg_2ch @ esp+0x78
+|           ; var int32_t var_30h @ esp+0x1c
+|           ; var int32_t var_20h @ esp+0x2c
 |           0x00000000      xor eax, eax
 |           0x00000002      cmp esi, edx
 |       ,=< 0x00000004      jb 0x50
@@ -3321,15 +3321,15 @@ EOF
 EXPECT=<<EOF
 / (fcn) fcn.00000000 89
 // void fcn.00000000 (int32_t arg_4h, int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_18h, int32_t arg_1ch);
-|           ; var int32_t var_ch @ esp+0x4
-|           ; var int32_t var_8h @ esp+0x8
-|           ; var int32_t var_4h @ esp+0xc
 |           ; arg int32_t arg_4h @ esp+0x14
 |           ; arg int32_t arg_8h @ esp+0x18
 |           ; arg int32_t arg_ch @ esp+0x1c
 |           ; arg int32_t arg_10h @ esp+0x20
 |           ; arg int32_t arg_18h @ esp+0x28
 |           ; arg int32_t arg_1ch @ esp+0x2c
+|           ; var int32_t var_ch @ esp+0x4
+|           ; var int32_t var_8h @ esp+0x8
+|           ; var int32_t var_4h @ esp+0xc
 |           0x00000000      83ec10         sub esp, 0x10
 |           0x00000003      8b442418       mov eax, dword [arg_8h]
 |           0x00000007      99             cdq

@@ -1743,7 +1743,7 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalFunction *fcn, RAnal
 	free (constr);
 }
 
-static void printVarSummary(RDisasmState *ds, RList *list) {
+static void print_var_summary(RDisasmState *ds, RList *list) {
 	const char *numColor = ds->core->cons->context->pal.num;
 	RAnalVar *var;
 	RListIter *iter;
@@ -1795,20 +1795,27 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 	if (ds->show_varsum == 2) {
 		ds_begin_line (ds);
 		ds_print_pre (ds, true);
-		r_cons_printf ("vars: %s%d%s %s%d%s %s%d%s",
-				bp_vars_color, bp_vars, COLOR_RESET (ds),
-				sp_vars_color, sp_vars, COLOR_RESET (ds),
-				rg_vars_color, rg_vars, COLOR_RESET (ds));
-		ds_newline (ds);
-		ds_begin_line (ds);
-		ds_print_pre (ds, true);
 		r_cons_printf ("args: %s%d%s %s%d%s %s%d%s",
 				bp_args_color, bp_args, COLOR_RESET (ds),
 				sp_args_color, sp_args, COLOR_RESET (ds),
 				rg_args_color, rg_args, COLOR_RESET (ds));
 		ds_newline (ds);
+		ds_begin_line (ds);
+		ds_print_pre (ds, true);
+		r_cons_printf ("vars: %s%d%s %s%d%s %s%d%s",
+				bp_vars_color, bp_vars, COLOR_RESET (ds),
+				sp_vars_color, sp_vars, COLOR_RESET (ds),
+				rg_vars_color, rg_vars, COLOR_RESET (ds));
+		ds_newline (ds);
 		return;
 	}
+	ds_begin_line (ds);
+	ds_print_pre (ds, true);
+	r_cons_printf ("rg: %s%d%s (vars %s%d%s, args %s%d%s)",
+			rg_args || rg_vars ? numColor : COLOR_RESET (ds), rg_args+rg_vars, COLOR_RESET (ds),
+			rg_vars_color, rg_vars, COLOR_RESET (ds),
+			rg_args_color, rg_args, COLOR_RESET (ds));
+	ds_newline (ds);
 	ds_begin_line (ds);
 	ds_print_pre (ds, true);
 	r_cons_printf ("bp: %s%d%s (vars %s%d%s, args %s%d%s)",
@@ -1823,13 +1830,7 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 			sp_vars_color, sp_vars, COLOR_RESET (ds),
 			sp_args_color, sp_args, COLOR_RESET (ds));
 	ds_newline (ds);
-	ds_begin_line (ds);
-	ds_print_pre (ds, true);
-	r_cons_printf ("rg: %s%d%s (vars %s%d%s, args %s%d%s)",
-			rg_args || rg_vars ? numColor : COLOR_RESET (ds), rg_args+rg_vars, COLOR_RESET (ds),
-			rg_vars_color, rg_vars, COLOR_RESET (ds),
-			rg_args_color, rg_args, COLOR_RESET (ds));
-	ds_newline (ds);
+
 }
 
 static bool empty_signature(const char *s) {
@@ -1877,8 +1878,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		R_FREE (sign);
 	}
 	if (f->type == R_ANAL_FCN_TYPE_LOC) {
-		r_cons_printf ("%s%s ", COLOR (ds, color_fline),
-			core->cons->vline[LINE_CROSS]); // |-
+		r_cons_printf ("%s%s ", COLOR (ds, color_fline), core->cons->vline[LINE_CROSS]); // |-
 		if (!showSig) {
 			r_cons_printf ("%s%s%s %"PFMT64u, COLOR (ds, color_floc),
 					fcn_name, COLOR_RESET (ds), r_anal_function_linear_size (f));
@@ -1972,14 +1972,14 @@ static void ds_show_functions(RDisasmState *ds) {
 			RList *all_vars = vars_cache.bvars;
 			r_list_join (all_vars, vars_cache.svars);
 			r_list_join (all_vars, vars_cache.rvars);
-			printVarSummary (ds, all_vars);
+			print_var_summary (ds, all_vars);
 		} else {
 			char spaces[32];
 			RAnalVar *var;
 			RListIter *iter;
-			RList *all_vars = vars_cache.bvars;
+			RList *all_vars = vars_cache.rvars;
+			r_list_join (all_vars, vars_cache.bvars);
 			r_list_join (all_vars, vars_cache.svars);
-			r_list_join (all_vars, vars_cache.rvars);
 			r_list_foreach (all_vars, iter, var) {
 				ds_begin_line (ds);
 				int idx;

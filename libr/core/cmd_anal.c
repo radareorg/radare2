@@ -1610,9 +1610,9 @@ static int var_cmd(RCore *core, const char *str) {
 	RAnalVar *v1;
 	if (!str[0]) {
 		// "afv"
+		r_core_cmd0 (core, "afvr");
 		r_core_cmd0 (core, "afvs");
 		r_core_cmd0 (core, "afvb");
-		r_core_cmd0 (core, "afvr");
 		return true;
 	}
 	if (str[1] == '?'|| str[0] == '?') {
@@ -1627,12 +1627,12 @@ static int var_cmd(RCore *core, const char *str) {
 			return false;
 		}
 		pj_o (pj);
+		pj_k (pj, "reg");
+		r_anal_var_list_show (core->anal, fcn, 'r', 'j', pj);
 		pj_k (pj, "sp");
 		r_anal_var_list_show (core->anal, fcn, 's', 'j', pj);
 		pj_k (pj, "bp");
 		r_anal_var_list_show (core->anal, fcn, 'b', 'j', pj);
-		pj_k (pj, "reg");
-		r_anal_var_list_show (core->anal, fcn, 'r', 'j', pj);
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
@@ -1643,9 +1643,9 @@ static int var_cmd(RCore *core, const char *str) {
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
 	case '-': // "afv-"
+		r_core_cmdf (core, "afvr-%s", str + 1);
 		r_core_cmdf (core, "afvs-%s", str + 1);
 		r_core_cmdf (core, "afvb-%s", str + 1);
-		r_core_cmdf (core, "afvr-%s", str + 1);
 		return true;
 	case 'x': // "afvx"
 		if (fcn) {
@@ -1686,7 +1686,7 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'a': // "afva"
 		if (fcn) {
 			char *type = r_str_newf ("func.%s.ret", fcn->name);
-			if (sdb_exists (core->anal->sdb_types, type)) {
+			if (type && sdb_exists (core->anal->sdb_types, type)) {
 				// if function type exists
 				// do not analize vars if function has a signature
 			} else {

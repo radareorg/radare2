@@ -1547,9 +1547,9 @@ pdf
 EOF
 EXPECT=<<EOF
 / 76: fcn.00012740 (int64_t arg1, int64_t arg2);
-|           ; var int64_t var_8h @ rbp-0x8
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
+|           ; var int64_t var_8h @ rbp-0x8
 |           0x00012740      push rbp
 |           0x00012741      mov rbp, rsp
 |           0x00012744      sub rsp, 0x1030
@@ -1863,11 +1863,11 @@ af
 afv
 EOF
 EXPECT=<<EOF
-var int64_t var_14h @ rbp-0x14
-var int64_t var_10h @ rbp-0x10
-var int64_t var_8h @ rbp-0x8
-arg int64_t arg2 @ rsi
 arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+var int64_t var_8h @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+var int64_t var_14h @ rbp-0x14
 EOF
 RUN
 
@@ -1980,14 +1980,14 @@ EXPECT=<<EOF
 fastcall
             ; CALL XREF from main @ 0x80484c7
 / 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
-|           ; var int32_t var_20h @ ebp-0x20
-|           ; var int32_t var_1ch @ ebp-0x1c
-|           ; var int32_t var_10h @ ebp-0x10
-|           ; var int32_t var_ch @ ebp-0xc
-|           ; arg int32_t arg_8h @ ebp+0x8
-|           ; arg int32_t arg_ch @ ebp+0xc
 |           ; arg int32_t arg1 @ ecx
 |           ; arg int32_t arg2 @ edx
+|           ; arg int32_t arg_8h @ ebp+0x8
+|           ; arg int32_t arg_ch @ ebp+0xc
+|           ; var int32_t var_ch @ ebp-0xc
+|           ; var int32_t var_10h @ ebp-0x10
+|           ; var int32_t var_1ch @ ebp-0x1c
+|           ; var int32_t var_20h @ ebp-0x20
 |           0x0804841b      55             push ebp
 |           0x0804841c      89e5           mov ebp, esp
 |           0x0804841e      83ec28         sub esp, 0x28
@@ -2027,12 +2027,12 @@ cdecl
             ; CALL XREF from main @ 0x80484db
 / (fcn) sym.nonfastcaslled 51
 // void sym.nonfastcaslled (int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_14h);
-|           ; var int32_t var_10h @ ebp-0x10
-|           ; var int32_t var_ch @ ebp-0xc
 |           ; arg int32_t arg_8h @ ebp+0x8
 |           ; arg int32_t arg_ch @ ebp+0xc
 |           ; arg int32_t arg_10h @ ebp+0x10
 |           ; arg int32_t arg_14h @ ebp+0x14
+|           ; var int32_t var_ch @ ebp-0xc
+|           ; var int32_t var_10h @ ebp-0x10
 |           0x08048456      55             push ebp
 |           0x08048457      89e5           mov ebp, esp
 |           0x08048459      83ec18         sub esp, 0x18
@@ -2082,8 +2082,8 @@ EOF
 EXPECT=<<EOF
 / (fcn) fcn.00000000 62
 // void fcn.00000000 (int64_t arg1);
-|           ; var int64_t my_local @ rbp-0x18
 |           ; arg int64_t arg1 @ rdi
+|           ; var int64_t my_local @ rbp-0x18
 |           0x00000000      0000           add byte [rax], al
 EOF
 RUN
@@ -3875,15 +3875,15 @@ pdf
 EOF
 EXPECT=<<EOF
 / 82: fcn.140001080 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4);
+|           ; arg int64_t arg1 @ rcx
+|           ; arg int64_t arg2 @ rdx
+|           ; arg int64_t arg3 @ r8
+|           ; arg int64_t arg4 @ r9
 |           ; var int64_t var_50h @ rsp+0x20
 |           ; var int64_t var_20h @ rsp+0x50
 |           ; var int64_t var_18h @ rsp+0x58
 |           ; var int64_t var_10h @ rsp+0x60
 |           ; var int64_t var_8h @ rsp+0x68
-|           ; arg int64_t arg1 @ rcx
-|           ; arg int64_t arg2 @ rdx
-|           ; arg int64_t arg3 @ r8
-|           ; arg int64_t arg4 @ r9
 |           0x140001080      48894c2408     mov qword [var_20h], rcx
 |           0x140001085      4889542410     mov qword [var_18h], rdx
 |           0x14000108a      4c89442418     mov qword [var_10h], r8
@@ -3970,12 +3970,12 @@ pd 19
 EOF
 EXPECT=<<EOF
 / 512: fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_ch);
-|           ; var int64_t var_bh @ rbp-0xb
-|           ; var int64_t var_8h @ rbp-0x8
 |           ; arg int64_t arg_8h @ rbp+0x8
 |           ; arg int64_t arg_bh @ rbp+0xb
-|           ; var int64_t var_4h @ rsp+0x4
+|           ; var int64_t var_8h @ rbp-0x8
+|           ; var int64_t var_bh @ rbp-0xb
 |           ; arg int64_t arg_ch @ rsp+0xc
+|           ; var int64_t var_4h @ rsp+0x4
 |           0x00000000      54             push rsp
 |           0x00000001      4889e5         mov rbp, rsp
 |           0x00000004      b402           mov ah, 2
@@ -4011,12 +4011,12 @@ pd 19
 EOF
 EXPECT=<<EOF
 / 512: fcn.00000000 (int64_t arg_8h, int64_t arg_bh, int64_t arg_ch);
-|           ; var int64_t var_bh @ rbp-0xb
-|           ; var int64_t var_8h @ rbp-0x8
 |           ; arg int64_t arg_8h @ rbp+0x8
 |           ; arg int64_t arg_bh @ rbp+0xb
-|           ; var int64_t var_4h @ rsp+0x4
+|           ; var int64_t var_8h @ rbp-0x8
+|           ; var int64_t var_bh @ rbp-0xb
 |           ; arg int64_t arg_ch @ rsp+0xc
+|           ; var int64_t var_4h @ rsp+0x4
 |           0x00000000      54             push  (rsp)
 |           0x00000001      4889e5         rbp = rsp
 |           0x00000004      b402           ah = 2
