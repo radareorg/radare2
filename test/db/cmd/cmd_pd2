@@ -162,11 +162,11 @@ pdf
 EOF
 EXPECT=<<EOF
 / 318: fcn.00560e67 (int32_t arg_0h);
+|       :   ; arg int32_t arg_0h @ esp+0x20
 |       :   ; var int32_t var_1ch @ esp+0x4
 |       :   ; var int32_t var_ch @ esp+0x14
 |       :   ; var int32_t var_8h @ esp+0x18
 |       :   ; var int32_t var_4h @ esp+0x1c
-|       :   ; arg int32_t arg_0h @ esp+0x20
 |       :   0x00560e67      push esi
 |      ,==< 0x00560e68      jmp 0x560e7d
 ..

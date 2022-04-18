@@ -53,10 +53,10 @@ pd1~comment
 
 EOF
 EXPECT=<<EOF
-|           ; var uint32_t var_8h @ rbp-0x8    ; comment for var_8h
-|           ; arg int arg_8h @ rbp+0x8    ; comment for arg_8h
-|           ; arg uint32_t var_sp_8h @ rsp+0x8    ; comment for var_sp_8h
 |           ; arg uint64_t var_rax @ rax    ; comment for var_rax
+|           ; arg int arg_8h @ rbp+0x8    ; comment for arg_8h
+|           ; var uint32_t var_8h @ rbp-0x8    ; comment for var_8h
+|           ; arg uint32_t var_sp_8h @ rsp+0x8    ; comment for var_sp_8h
 --
 arg_8h : comment for arg_8h
 var_8h : comment for var_8h
@@ -69,12 +69,12 @@ var_rax : comment for var_rax
 var_sp_8h : comment for var_sp_8h
 "Cvs var_sp_8h base64:Y29tbWVudCBmb3IgdmFyX3NwXzho @ 0x00000010"
 --
+|           ; arg uint64_t var_rax @ rax    ; comment for var_rax
 |           ; var uint32_t var_8h @ rbp-0x8    ; comment for var_8h
 |           ; arg uint32_t var_sp_8h @ rsp+0x8    ; comment for var_sp_8h
-|           ; arg uint64_t var_rax @ rax    ; comment for var_rax
 --
-|           ; arg uint32_t var_sp_8h @ rsp+0x8    ; comment for var_sp_8h
 |           ; arg uint64_t var_rax @ rax    ; comment for var_rax
+|           ; arg uint32_t var_sp_8h @ rsp+0x8    ; comment for var_sp_8h
 --
 |           ; arg uint64_t var_rax @ rax    ; comment for var_rax
 --

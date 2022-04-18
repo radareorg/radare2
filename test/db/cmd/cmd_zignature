@@ -2032,6 +2032,8 @@ z/f
 afv
 EOF
 EXPECT=<<EOF
+arg int ARGC @ rdi
+arg char ** ARGV @ rsi
 var int64_t XXX_8h @ rsp+0x18
 var int64_t XXX_17h @ rsp+0x27
 var int64_t XXX_18h @ rsp+0x28
@@ -2043,8 +2045,6 @@ var int64_t XXX_45h @ rsp+0x55
 var int64_t XXX_46h @ rsp+0x56
 var int64_t XXX_47h @ rsp+0x57
 var int64_t XXX_48h @ rsp+0x58
-arg char ** ARGV @ rsi
-arg int ARGC @ rdi
 EOF
 RUN
 

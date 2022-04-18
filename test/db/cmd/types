@@ -602,12 +602,12 @@ afvr rdi argc int
 afvr rsi argv char **
 
 original
-arg char ** argv @ rsi
 arg int argc @ rdi
+arg char ** argv @ rsi
 deleted
 recovered from signature
-arg char ** argv @ rsi
 arg int argc @ rdi
+arg char ** argv @ rsi
 EOF
 RUN
 
@@ -1048,9 +1048,9 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-var size_t size @ rbp-0x14
-var char * dest @ rbp-0x10
 var char * src @ rbp-0x8
+var char * dest @ rbp-0x10
+var size_t size @ rbp-0x14
 EOF
 RUN
 
@@ -1063,9 +1063,9 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-var size_t size @ rbp-0x14
-var char * ptr @ rbp-0x10
 var char * src @ rbp-0x8
+var char * ptr @ rbp-0x10
+var size_t size @ rbp-0x14
 EOF
 RUN
 
@@ -1078,10 +1078,10 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-var size_t var_1ch @ rbp-0x1c
-var char * var_18h @ rbp-0x18
-var char * s @ rbp-0x10
 var char * var_8h @ rbp-0x8
+var char * s @ rbp-0x10
+var char * var_18h @ rbp-0x18
+var size_t var_1ch @ rbp-0x1c
 EOF
 RUN
 
@@ -1094,11 +1094,11 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-var size_t var_20h @ rbp-0x20
-var size_t size @ rbp-0x1c
-var char * src @ rbp-0x18
-var char * s2 @ rbp-0x10
 var char * dest @ rbp-0x8
+var char * s2 @ rbp-0x10
+var char * src @ rbp-0x18
+var size_t size @ rbp-0x1c
+var size_t var_20h @ rbp-0x20
 EOF
 RUN
 
@@ -1112,12 +1112,12 @@ afv
 EOF
 EXPECT=<<EOF
 arg char ** argv @ esp+0x44
-var char * src @ ebp-0x1c
-var char * s2 @ ebp-0x18
-var size_t var_14h @ ebp-0x14
-var size_t size @ ebp-0x10
-var char * dest @ ebp-0xc
 var int32_t var_8h @ ebp-0x8
+var char * dest @ ebp-0xc
+var size_t size @ ebp-0x10
+var size_t var_14h @ ebp-0x14
+var char * s2 @ ebp-0x18
+var char * src @ ebp-0x1c
 EOF
 RUN
 
@@ -1129,10 +1129,10 @@ s sym.funcarg
 afvr
 EOF
 EXPECT=<<EOF
-arg int64_t arg4 @ rcx
-arg int64_t arg3 @ rdx
-arg int64_t arg2 @ rsi
 arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+arg int64_t arg3 @ rdx
+arg int64_t arg4 @ rcx
 EOF
 RUN
 
@@ -1145,10 +1145,10 @@ s sym.funcarg
 afvr
 EOF
 EXPECT=<<EOF
-arg size_t arg4 @ rcx
-arg int64_t arg3 @ rdx
-arg char * arg2 @ rsi
 arg char * arg1 @ rdi
+arg char * arg2 @ rsi
+arg int64_t arg3 @ rdx
+arg size_t arg4 @ rcx
 EOF
 RUN
 
@@ -1164,10 +1164,10 @@ pd 1
 EOF
 EXPECT=<<EOF
 154: sym.funcarg (char *arg1, uint32_t arg2);
-; var uint32_t var_ch @ rbp-0xc
-; var char *var_8h @ rbp-0x8
 ; arg char *arg1 @ rdi
 ; arg uint32_t arg2 @ rsi
+; var char *var_8h @ rbp-0x8
+; var uint32_t var_ch @ rbp-0xc
 0x0000068a      55             push rbp
 EOF
 RUN
@@ -1184,9 +1184,9 @@ pd 1
 EOF
 EXPECT=<<EOF
 147: sym.funcarg (char *arg_8h, uint32_t arg_ch);
-; var int32_t var_4h @ ebp-0x4
 ; arg char *arg_8h @ ebp+0x8
 ; arg uint32_t arg_ch @ ebp+0xc
+; var int32_t var_4h @ ebp-0x4
 0x0000054d      55             push ebp
 EOF
 RUN
@@ -1250,8 +1250,8 @@ afv~sign
 afv~uint
 EOF
 EXPECT=<<EOF
-var signed int64_t var_34h @ rbp-0x34
 var signed int64_t var_30h @ rbp-0x30
+var signed int64_t var_34h @ rbp-0x34
 var uint32_t var_28h @ rbp-0x28
 EOF
 RUN
@@ -1265,14 +1265,14 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-var int64_t var_34h @ rbp-0x34
-var signed int64_t var_30h @ rbp-0x30
-var uint32_t var_2ch @ rbp-0x2c
-var FILE * stream @ rbp-0x28
-var char * s @ rbp-0x20
-var char * var_18h @ rbp-0x18
-var char * var_10h @ rbp-0x10
 var int64_t canary @ rbp-0x8
+var char * var_10h @ rbp-0x10
+var char * var_18h @ rbp-0x18
+var char * s @ rbp-0x20
+var FILE * stream @ rbp-0x28
+var uint32_t var_2ch @ rbp-0x2c
+var signed int64_t var_30h @ rbp-0x30
+var int64_t var_34h @ rbp-0x34
 EOF
 RUN
 
@@ -1287,61 +1287,61 @@ s sym.processCmd
 afv
 EOF
 EXPECT=<<EOF
-var char ** var_14e0h @ rbp-0x14e0
-var int64_t var_14d4h @ rbp-0x14d4
-var int64_t wstatus @ rbp-0x14cc
-var int64_t options @ rbp-0x14c8
-var int64_t var_14c4h @ rbp-0x14c4
-var signed int64_t var_14c0h @ rbp-0x14c0
-var int64_t var_14bch @ rbp-0x14bc
-var pid_t pid @ rbp-0x14b8
-var uint32_t var_14b4h @ rbp-0x14b4
-var uint32_t var_14b0h @ rbp-0x14b0
-var int64_t var_14ach @ rbp-0x14ac
-var char * var_14a8h @ rbp-0x14a8
-var char * s @ rbp-0x14a0
-var char * var_1498h @ rbp-0x1498
-var char * src @ rbp-0x1490
-var char * v2 @ rbp-0x1488
-var char * var_1480h @ rbp-0x1480
-var void * var_1478h @ rbp-0x1478
-var char * dest @ rbp-0x1470
-var void * var_1420h @ rbp-0x1420
-var char * s1 @ rbp-0x1020
-var int64_t var_18h @ rbp-0x18
-arg char ** argv @ rsi
 arg int argc @ rdi
-var char * str @ rbp-0xb0
-var signed int var_a4h @ rbp-0xa4
-var signed int64_t var_a0h @ rbp-0xa0
-var uint32_t var_9ch @ rbp-0x9c
-var int64_t var_98h @ rbp-0x98
-var int64_t var_94h @ rbp-0x94
-var int64_t var_90h @ rbp-0x90
-var int64_t var_8ch @ rbp-0x8c
-var int64_t var_88h @ rbp-0x88
-var int64_t var_84h @ rbp-0x84
-var int64_t var_80h @ rbp-0x80
-var int64_t var_7ch @ rbp-0x7c
-var int64_t var_78h @ rbp-0x78
-var int64_t var_74h @ rbp-0x74
-var int64_t var_70h @ rbp-0x70
-var int64_t var_6ch @ rbp-0x6c
-var int64_t var_68h @ rbp-0x68
-var int64_t var_64h @ rbp-0x64
-var char * var_60h @ rbp-0x60
-var char * var_58h @ rbp-0x58
-var char * var_50h @ rbp-0x50
-var char * var_48h @ rbp-0x48
-var uint32_t var_40h @ rbp-0x40
-var char * s1 @ rbp-0x38
-var char * s @ rbp-0x30
-var char * var_28h @ rbp-0x28
-var char * var_20h @ rbp-0x20
+arg char ** argv @ rsi
 var int64_t var_18h @ rbp-0x18
-var int64_t var_8h @ rbp-0x8
-arg char * arg2 @ rsi
+var char * s1 @ rbp-0x1020
+var void * var_1420h @ rbp-0x1420
+var char * dest @ rbp-0x1470
+var void * var_1478h @ rbp-0x1478
+var char * var_1480h @ rbp-0x1480
+var char * v2 @ rbp-0x1488
+var char * src @ rbp-0x1490
+var char * var_1498h @ rbp-0x1498
+var char * s @ rbp-0x14a0
+var char * var_14a8h @ rbp-0x14a8
+var int64_t var_14ach @ rbp-0x14ac
+var uint32_t var_14b0h @ rbp-0x14b0
+var uint32_t var_14b4h @ rbp-0x14b4
+var pid_t pid @ rbp-0x14b8
+var int64_t var_14bch @ rbp-0x14bc
+var signed int64_t var_14c0h @ rbp-0x14c0
+var int64_t var_14c4h @ rbp-0x14c4
+var int64_t options @ rbp-0x14c8
+var int64_t wstatus @ rbp-0x14cc
+var int64_t var_14d4h @ rbp-0x14d4
+var char ** var_14e0h @ rbp-0x14e0
 arg signed int arg1 @ rdi
+arg char * arg2 @ rsi
+var int64_t var_8h @ rbp-0x8
+var int64_t var_18h @ rbp-0x18
+var char * var_20h @ rbp-0x20
+var char * var_28h @ rbp-0x28
+var char * s @ rbp-0x30
+var char * s1 @ rbp-0x38
+var uint32_t var_40h @ rbp-0x40
+var char * var_48h @ rbp-0x48
+var char * var_50h @ rbp-0x50
+var char * var_58h @ rbp-0x58
+var char * var_60h @ rbp-0x60
+var int64_t var_64h @ rbp-0x64
+var int64_t var_68h @ rbp-0x68
+var int64_t var_6ch @ rbp-0x6c
+var int64_t var_70h @ rbp-0x70
+var int64_t var_74h @ rbp-0x74
+var int64_t var_78h @ rbp-0x78
+var int64_t var_7ch @ rbp-0x7c
+var int64_t var_80h @ rbp-0x80
+var int64_t var_84h @ rbp-0x84
+var int64_t var_88h @ rbp-0x88
+var int64_t var_8ch @ rbp-0x8c
+var int64_t var_90h @ rbp-0x90
+var int64_t var_94h @ rbp-0x94
+var int64_t var_98h @ rbp-0x98
+var uint32_t var_9ch @ rbp-0x9c
+var signed int64_t var_a0h @ rbp-0xa0
+var signed int var_a4h @ rbp-0xa4
+var char * str @ rbp-0xb0
 EOF
 RUN
 
@@ -1355,28 +1355,28 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-var int32_t var_1454h @ sp+0x0
-var void * var_1438h @ fp-0x1440
-var char * s1 @ fp-0x1040
-var int32_t wstatus @ fp-0x4c
-var int32_t var_40h @ fp-0x48
-var char * var_3ch @ fp-0x44
-var int32_t var_38h @ fp-0x40
-var int32_t var_34h @ fp-0x3c
-var int32_t var_30h @ fp-0x38
-var pid_t pid @ fp-0x34
-var char * v2 @ fp-0x30
-var int32_t var_24h @ fp-0x2c
-var char * src @ fp-0x28
-var int32_t var_1ch @ fp-0x24
-var char * var_18h @ fp-0x20
-var char * s @ fp-0x1c
-var char * var_10h @ fp-0x18
-var int32_t var_ch @ fp-0x14
-var int32_t var_8h @ fp-0x10
-var char * option @ fp-0xc
 arg int argc @ r0
 arg char ** argv @ r1
+var int32_t var_1454h @ sp+0x0
+var char * option @ fp-0xc
+var int32_t var_8h @ fp-0x10
+var int32_t var_ch @ fp-0x14
+var char * var_10h @ fp-0x18
+var char * s @ fp-0x1c
+var char * var_18h @ fp-0x20
+var int32_t var_1ch @ fp-0x24
+var char * src @ fp-0x28
+var int32_t var_24h @ fp-0x2c
+var char * v2 @ fp-0x30
+var pid_t pid @ fp-0x34
+var int32_t var_30h @ fp-0x38
+var int32_t var_34h @ fp-0x3c
+var int32_t var_38h @ fp-0x40
+var char * var_3ch @ fp-0x44
+var int32_t var_40h @ fp-0x48
+var int32_t wstatus @ fp-0x4c
+var char * s1 @ fp-0x1040
+var void * var_1438h @ fp-0x1440
 EOF
 RUN
 
@@ -1389,13 +1389,13 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-var int64_t var_25h @ rbp-0x25
-var signed int64_t var_24h @ rbp-0x24
-var uint32_t var_20h @ rbp-0x20
-var int64_t var_1ch @ rbp-0x1c
-var char * var_18h @ rbp-0x18
-var long int var_10h @ rbp-0x10
 var char * var_8h @ rbp-0x8
+var long int var_10h @ rbp-0x10
+var char * var_18h @ rbp-0x18
+var int64_t var_1ch @ rbp-0x1c
+var uint32_t var_20h @ rbp-0x20
+var signed int64_t var_24h @ rbp-0x24
+var int64_t var_25h @ rbp-0x25
 EOF
 RUN
 
@@ -1408,14 +1408,14 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-var char ** var_28h @ rbp-0x28
-var char ** var_20h @ rbp-0x20
-var int64_t var_14h @ rbp-0x14
-var void * var_10h @ rbp-0x10
-var int64_t var_4h @ rbp-0x4
-arg char ** envp @ rdx
-arg char ** argv @ rsi
 arg int argc @ rdi
+arg char ** argv @ rsi
+arg char ** envp @ rdx
+var int64_t var_4h @ rbp-0x4
+var void * var_10h @ rbp-0x10
+var int64_t var_14h @ rbp-0x14
+var char ** var_20h @ rbp-0x20
+var char ** var_28h @ rbp-0x28
 EOF
 RUN
 

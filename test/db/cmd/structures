@@ -11,17 +11,17 @@ afvb*
 EOF
 EXPECT=<<EOF
 s 0x4004a6
-"afvb -288 var_120h char **"
-"afvb -276 var_114h int64_t"
-"afvb -272 var_110h int64_t"
-"afvb -268 var_10ch int64_t"
-"afvb -264 var_108h int64_t"
 "afvb -4 var_4h int64_t"
+"afvb -264 var_108h int64_t"
+"afvb -268 var_10ch int64_t"
+"afvb -272 var_110h int64_t"
+"afvb -276 var_114h int64_t"
+"afvb -288 var_120h char **"
 s-
 s 0x4004a6
-"afvb -288 var_120h char **"
-"afvb -276 var_114h int64_t"
 "afvb -272 s1 S1"
+"afvb -276 var_114h int64_t"
+"afvb -288 var_120h char **"
 s-
 EOF
 RUN
