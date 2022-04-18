@@ -3311,7 +3311,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		colon = NULL;
 	}
 	// repeat command N times
-	if (rep > 0) {
+	if ((st64)rep > 0) {
 		while (IS_DIGIT (*cmd)) {
 			cmd++;
 		}
@@ -3320,15 +3320,15 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			goto beach;
 		}
 	}
-	if (rep < 1) {
+	if ((st64)rep < 1) {
 		rep = 1;
 	}
 	// XXX if output is a pipe then we don't want to be interactive
-	if (rep > 1 && r_sandbox_enable (0)) {
+	if ((st64)rep > 1 && r_sandbox_enable (0)) {
 		eprintf ("The command repeat syntax sugar is disabled in sandbox mode (%s)\n", cmd);
 		goto beach;
 	}
-	if (rep > INTERACTIVE_MAX_REP) {
+	if ((st64)rep > 1 && rep > INTERACTIVE_MAX_REP) {
 		if (r_cons_is_interactive ()) {
 			if (!r_cons_yesno ('n', "Are you sure to repeat this %"PFMT64d" times? (y/N)", rep)) {
 				goto beach;
