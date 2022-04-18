@@ -1,4 +1,4 @@
-project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.49', version : '5.6.7')
+project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.49', version : '5.6.8')
 
 py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
