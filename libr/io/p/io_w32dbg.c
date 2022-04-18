@@ -181,6 +181,9 @@ att_exit:
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file, 0)) {
 		RIODesc *ret;
+		if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+			return NULL;
+		}
 		if (__open_proc (io, atoi (file + 9), !strncmp (file, "attach://", 9)) == -1) {
 			return NULL;
 		}

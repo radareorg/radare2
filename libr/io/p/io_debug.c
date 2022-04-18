@@ -5,6 +5,7 @@
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_cons.h>
+#include <r_core.h>
 #include <r_debug.h> /* only used for BSD PTRACE redefinitions */
 #include <string.h>
 
@@ -447,9 +448,12 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "dbg://", 6) && file[6]);
 }
 
-#include <r_core.h>
 static int get_pid_of(RIO *io, const char *procname) {
 	RCore *c = io->corebind.core;
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return -1;
+	}
+	// check sandbox
 	if (c && c->dbg && c->dbg->h) {
 		RListIter *iter;
 		RDebugPid *proc;
@@ -471,6 +475,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIOPlugin *_plugin;
 	RIODesc *ret = NULL;
 	char uri[128];
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return NULL;
+	}
 	if (!strncmp (file, "waitfor://", 10)) {
 		const char *procname = file + 10;
 		eprintf ("Waiting for %s\n", procname);

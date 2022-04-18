@@ -544,7 +544,9 @@ R_API bool r_line_hist_save(const char *file) {
 		if (p) {
 			*p = 0;
 			if (!r_sys_mkdirp (path)) {
-				eprintf ("Could not save history into %s\n", path);
+				if (r_sandbox_check (R_SANDBOX_GRAIN_FILES)) {
+					eprintf ("Could not save history into %s\n", path);
+				}
 				goto end;
 			}
 			*p = R_SYS_DIR[0];
