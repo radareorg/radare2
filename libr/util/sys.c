@@ -885,7 +885,9 @@ R_API bool r_sys_mkdirp(const char *dir) {
 		}
 		*ptr = 0;
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
-			eprintf ("r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
+			if (r_sandbox_check (R_SANDBOX_GRAIN_FILES)) {
+				eprintf ("r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
+			}
 			free (path);
 			return false;
 		}

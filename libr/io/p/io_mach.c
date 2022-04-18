@@ -383,6 +383,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (!__plugin_open (io, file, false) && !__plugin_open (io, (const char *)&file[1], false)) {
 		return NULL;
 	}
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return NULL;
+	}
 	pidfile = file + (file[0] == 'a' ? 9 : (file[0] == 's' ? 8 : 7));
 	pid = (int)strtol (pidfile, &endptr, 10);
 	if (endptr == pidfile || pid < 0) {
