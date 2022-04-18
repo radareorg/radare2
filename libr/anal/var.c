@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2020 - pancake, oddcoder */
+/* radare - LGPL - Copyright 2010-2022 - pancake, oddcoder */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -73,6 +73,7 @@ R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
 
 	r_list_foreach (var_list, it, var) {
 		// Resync delta in case the registers list changed
+		// XXX imho this is wrong. as it needs to be reordered by the calling convention not by register index
 		if (var->isarg && var->kind == 'r') {
 			RRegItem *reg = r_reg_get (a->reg, var->regname, -1);
 			if (reg) {
@@ -200,12 +201,11 @@ R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList *l) {
 
 R_API void r_anal_var_set_type(RAnalVar *var, const char *type) {
 	char *nt = strdup (type);
-	if (!nt) {
-		return;
+	if (nt) {
+		free (var->type);
+		var->type = nt;
+		shadow_var_struct_members (var);
 	}
-	free (var->type);
-	var->type = nt;
-	shadow_var_struct_members (var);
 }
 
 static void var_free(RAnalVar *var) {
@@ -1640,6 +1640,7 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 		R_NULLABLE RAnalFcnVarsCache *reuse_cache, R_NULLABLE const char *fcn_name_pre, R_NULLABLE const char *fcn_name_post) {
 	RAnalFcnVarsCache *cache = NULL;
 
+	const char *comma = "";
 	if (!fcn_name) {
 		fcn_name = fcn->name;
 		if (!fcn_name) {
@@ -1676,7 +1677,6 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 
 	if (type_fcn_name && r_type_func_exist (TDB, type_fcn_name)) {
 		int i, argc = r_type_func_args_count (TDB, type_fcn_name);
-		bool comma = true;
 		// This avoids false positives present in argument recovery
 		// and straight away print arguments fetched from types db
 		for (i = 0; i < argc; i++) {
@@ -1686,18 +1686,15 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 				eprintf ("Missing type for %s\n", type_fcn_name);
 				goto beach;
 			}
-			if (i == argc - 1) {
-				comma = false;
-			}
 			size_t len = strlen (type);
 			const char *tc = len > 0 && type[len - 1] == '*'? "": " ";
-			r_strbuf_appendf (buf, "%s%s%s%s", type, tc, name, comma? ", ": "");
+			r_strbuf_appendf (buf, "%s%s%s%s", comma, type, tc, name);
+			comma = ", ";
 			free (type);
 		}
 		goto beach;
 	}
 	R_FREE (type_fcn_name);
-
 
 	cache = reuse_cache;
 	if (!cache) {
@@ -1709,8 +1706,6 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 		r_anal_function_vars_cache_init (anal, cache, fcn);
 	}
 
-	bool comma = true;
-	bool arg_bp = false;
 	size_t tmp_len;
 	RAnalVar *var;
 	RListIter *iter;
@@ -1723,46 +1718,33 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 		}
 		tmp_len = strlen (var->type);
 		if (tmp_len > 0) {
-			r_strbuf_appendf (buf, "%s%s%s%s", var->type,
+			r_strbuf_appendf (buf, "%s%s%s%s", comma, var->type,
 				tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",
-				var->name, iter->n ? ", " : "");
+				var->name);
+			comma = ", ";
 		}
 	}
 
 	r_list_foreach (cache->bvars, iter, var) {
 		if (var->isarg) {
-			if (!r_list_empty (cache->rvars) && comma) {
-				r_strbuf_append (buf, ", ");
-				comma = false;
-			}
-			arg_bp = true;
 			tmp_len = strlen (var->type);
 			if (tmp_len > 0) {
-				r_strbuf_appendf (buf, "%s%s%s%s", var->type,
+				r_strbuf_appendf (buf, "%s%s%s%s", comma, var->type,
 						tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
-						var->name, iter->n ? ", " : "");
+						var->name);
+				comma = ", ";
 			}
 		}
 	}
 
-	comma = true;
-	const char *maybe_comma = ", ";
 	r_list_foreach (cache->svars, iter, var) {
 		if (var->isarg) {
-			if (!*maybe_comma || ((arg_bp || !r_list_empty (cache->rvars)) && comma)) {
-				comma = false;
-				r_strbuf_append (buf, ", ");
-			}
 			tmp_len = strlen (var->type);
-			if (iter->n && ((RAnalVar *)iter->n->data)->isarg) {
-				maybe_comma = ", ";
-			} else {
-				maybe_comma = "";
-			}
 			if (tmp_len > 0) {
-				r_strbuf_appendf (buf, "%s%s%s%s", var->type,
+				r_strbuf_appendf (buf, "%s%s%s%s", comma, var->type,
 					tmp_len && var->type[tmp_len - 1] == '*'? "": " ",
-					var->name, maybe_comma);
+					var->name);
+				comma = ", ";
 			}
 		}
 	}
