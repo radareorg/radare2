@@ -37,9 +37,9 @@ EXPECT=<<EOF
             ;-- main:
             ; DATA XREF from entry0 @ 0x10c1
 / 139: int dbg.main (int argc, char **argv, char **envp);
-|           ; var int output @ rbp-0x24
-|           ; var Bird *b @ rbp-0x20
 |           ; var Mammal *m @ rbp-0x18
+|           ; var Bird *b @ rbp-0x20
+|           ; var int output @ rbp-0x24
 |           0x0000123b      f30f1efa       endbr64                     ; int main();
 |           0x0000123f      55             push rbp
 |           0x00001240      4889e5         mov rbp, rsp
@@ -214,6 +214,8 @@ EXPECT=<<EOF
             ;-- dbg.bubble_sort_i32_:
             ; CALL XREF from rust::main::h523dcf5432fcfd88 @ 0x5875 ; dbg.main
 / 614: dbg.bubble_sort<i32> (int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ rdi
+|           ; arg int64_t arg2 @ rsi
 |           ; var int64_t var_fh @ rsp+0xf
 |           ; var int64_t var_10h @ rsp+0x10
 |           ; var int64_t var_18h @ rsp+0x18
@@ -236,8 +238,6 @@ EXPECT=<<EOF
 |           ; var usize val @ rsp+0xa0
 |           ; var usize __next @ rsp+0xa8
 |           ; var usize i @ rsp+0xb0
-|           ; arg int64_t arg1 @ rdi
-|           ; arg int64_t arg2 @ rsi
 |           0x00005270      4881ecb80000.  sub rsp, 0xb8               ; void bubble_sort<i32>(&mut [i32] values);
 |           0x00005277      4889bc249000.  mov qword [values], rdi     ; arg1
 |           0x0000527f      4889b4249800.  mov qword [var_98h], rsi    ; arg2
@@ -332,14 +332,14 @@ EXPECT=<<EOF
             ;-- main:
             ; DATA XREF from entry0 @ 0x2271
 / 101: int dbg.main (int argc, char **argv, char **envp);
-|           ; var char **var_28h @ rbp-0x28
-|           ; var char **var_20h @ rbp-0x20
-|           ; var int64_t var_14h @ rbp-0x14
-|           ; var system__address volatile ensure_reference @ rbp-0x10
-|           ; var ada_main__main__seh___PAD seh @ rbp-0x8
 |           ; arg int argc @ rdi
 |           ; arg char **argv @ rsi
 |           ; arg char **envp @ rdx
+|           ; var ada_main__main__seh___PAD seh @ rbp-0x8
+|           ; var system__address volatile ensure_reference @ rbp-0x10
+|           ; var int64_t var_14h @ rbp-0x14
+|           ; var char **var_20h @ rbp-0x20
+|           ; var char **var_28h @ rbp-0x28
 |           0x00002742      55             push rbp                    ; integer main(integer const argc,void * const argv,void * const envp);
 |           0x00002743      4889e5         mov rbp, rsp
 |           0x00002746      4883ec30       sub rsp, 0x30
@@ -378,11 +378,11 @@ EXPECT=<<EOF
             ;-- P$MOZGKIGYO_$$_PALYA$SMALLINT$SMALLINT:
             ; CALL XREFS from sym.main @ +0x1a87, +0x1c7d, +0x23f3, +0x3679
 / 439: dbg.palya ();
-|           ; var int64_t var_28h @ rbp-0x28
-|           ; var int64_t var_20h @ rbp-0x20
-|           ; var SmallInt i @ rbp-0x14
-|           ; var SmallInt szel @ rbp-0x10
 |           ; var SmallInt mag @ rbp-0x8
+|           ; var SmallInt szel @ rbp-0x10
+|           ; var SmallInt i @ rbp-0x14
+|           ; var int64_t var_20h @ rbp-0x20
+|           ; var int64_t var_28h @ rbp-0x28
 |           0x00401980      55             push rbp                    ; void palya(SmallInt mag,SmallInt szel);
 |           0x00401981      4889e5         mov rbp, rsp
 |           0x00401984      488d6424d0     lea rsp, [rsp - 0x30]

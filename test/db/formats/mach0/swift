@@ -103,12 +103,12 @@ cc.swift.arg9: xmm3
 cc.swift.arg10: xmm4
 cc.swift.self: r13
 cc.swift.error: r12
-var int64_t var_28h @ rbp-0x28
-var int64_t var_20h @ rbp-0x20
-var int64_t var_18h @ rbp-0x18
-var int64_t var_10h @ rbp-0x10
 arg int64_t self @ r13
 arg int64_t error @ r12
+var int64_t var_10h @ rbp-0x10
+var int64_t var_18h @ rbp-0x18
+var int64_t var_20h @ rbp-0x20
+var int64_t var_28h @ rbp-0x28
 EOF
 RUN
 
@@ -125,6 +125,6 @@ afvj
 EOF
 EXPECT=<<EOF
 {"ret":"rax","args":["rdi","rsi","rdx","rcx","r8","r9","xmm0","xmm1","xmm2","xmm3","xmm4"],"self":"r13","error":"r12"}
-{"sp":[],"bp":[{"name":"var_28h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-40}},{"name":"var_20h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-32}},{"name":"var_18h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-24}},{"name":"var_10h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-16}}],"reg":[{"name":"self","kind":"reg","type":"int64_t","ref":"r13"},{"name":"error","kind":"reg","type":"int64_t","ref":"r12"}]}
+{"reg":[{"name":"self","kind":"reg","type":"int64_t","ref":"r13"},{"name":"error","kind":"reg","type":"int64_t","ref":"r12"}],"sp":[],"bp":[{"name":"var_10h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-16}},{"name":"var_18h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-24}},{"name":"var_20h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-32}},{"name":"var_28h","kind":"var","type":"int64_t","ref":{"base":"rbp","offset":-40}}]}
 EOF
 RUN

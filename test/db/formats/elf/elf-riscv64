@@ -449,8 +449,8 @@ EOF
 EXPECT=<<EOF
 / (fcn) main 160
 // int main (int argc, char **argv, char **envp);
-|           ; var int64_t var_18h @ s0-0x18
 |           ; var int64_t var_14h @ s0-0x14
+|           ; var int64_t var_18h @ s0-0x18
 |           ; var int64_t var_10h @ sp+0x10
 |           ; var int64_t var_8h @ sp+0x18
 |           0x00010150      130101fe       addi sp, sp, -32
@@ -508,8 +508,8 @@ EXPECT=<<EOF
             ; CALL XREF from entry0 @ 0x10040
 / (fcn) main 160
 // int main (int argc, char **argv, char **envp);
-|           ; var int64_t var_bp_18h @ s0-0x18
 |           ; var int64_t var_14h @ s0-0x14
+|           ; var int64_t var_bp_18h @ s0-0x18
 |           ; var int64_t var_10h @ sp+0x10
 |           ; var int64_t var_18h @ sp+0x18
 |           0x00010150      130101fe       addi sp, sp, -32
