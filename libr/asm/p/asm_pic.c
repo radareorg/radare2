@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018 - thestr4ng3r, courk */
+/* radare2 - LGPL - Copyright 2018-2022 - thestr4ng3r, courk */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -12,12 +12,15 @@ static int asm_pic_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 	char opbuf[128];
 	const char *opstr = opbuf;
 	strcpy (opbuf, "invalid");
-	if (a->cpu && strcasecmp (a->cpu, "baseline") == 0) {
-		res = pic_baseline_disassemble (op, opbuf, b, l);
-	} else if (a->cpu && strcasecmp (a->cpu, "midrange") == 0) {
-		res = pic_midrange_disassemble (op, opbuf, b, l);
-	} else if (a->cpu && strcasecmp (a->cpu, "pic18") == 0) {
-		res = pic_pic18_disassemble (op, opbuf, b, l);
+	const char *cpu = a->config->cpu;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (strcasecmp (cpu, "baseline") == 0) {
+			res = pic_baseline_disassemble (op, opbuf, b, l);
+		} else if (strcasecmp (cpu, "midrange") == 0) {
+			res = pic_midrange_disassemble (op, opbuf, b, l);
+		} else if (strcasecmp (cpu, "pic18") == 0) {
+			res = pic_pic18_disassemble (op, opbuf, b, l);
+		}
 	}
 	r_asm_op_set_asm (op, opstr);
 	return op->size = res;

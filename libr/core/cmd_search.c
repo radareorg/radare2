@@ -4336,7 +4336,7 @@ reread:
 			int ochunksize;
 			int i, len, chunksize = r_config_get_i (core->config, "search.chunk");
 			if (chunksize < 1) {
-				chunksize = core->rasm->bits / 8;
+				chunksize = core->rasm->config->bits / 8;
 			}
 			len = r_str_unescape (str);
 			ochunksize = chunksize = R_MIN (len, chunksize);

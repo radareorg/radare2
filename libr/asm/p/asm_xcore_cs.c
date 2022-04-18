@@ -8,7 +8,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	csh handle;
 	cs_insn* insn;
 	int mode, n, ret = -1;
-	mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	mode = a->config->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	memset (op, 0, sizeof (RAsmOp));
 	op->size = 4;
 	ret = cs_open (CS_ARCH_XCORE, mode, &handle);

@@ -17,7 +17,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 	ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
 	int ret = riscv_assemble (str, a->pc, opbuf);
-	if (a->big_endian) {
+	if (a->config->big_endian) {
 		ut8 *buf = opbuf;
 		ut8 tmp = buf[0];
 		buf[0] = buf[3];

@@ -75,15 +75,16 @@ static int tms320c64x_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) 
 static R_TH_LOCAL tms320_dasm_t engine = {0};
 
 static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	if (a->cpu && r_str_casecmp (a->cpu, "c54x") == 0) {
+	const char *cpu = a->config->cpu;
+	if (cpu && r_str_casecmp (cpu, "c54x") == 0) {
 		tms320_f_set_cpu (&engine, TMS320_F_CPU_C54X);
-	} else if (a->cpu && r_str_casecmp(a->cpu, "c55x+") == 0) {
+	} else if (cpu && r_str_casecmp(cpu, "c55x+") == 0) {
 		tms320_f_set_cpu (&engine, TMS320_F_CPU_C55X_PLUS);
-	} else if (a->cpu && r_str_casecmp(a->cpu, "c55x") == 0) {
+	} else if (cpu && r_str_casecmp(cpu, "c55x") == 0) {
 		tms320_f_set_cpu (&engine, TMS320_F_CPU_C55X);
 	} else {
 #if CAPSTONE_HAS_TMS320C64X
-		if (a->cpu && !r_str_casecmp (a->cpu, "c64x")) {
+		if (cpu && !r_str_casecmp (cpu, "c64x")) {
 			return tms320c64x_disassemble (a, op, buf, len);
 		}
 #endif

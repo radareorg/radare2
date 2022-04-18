@@ -29,7 +29,10 @@ static bool the_end(void *p) {
 
 #include "asm_x86_vm.c"
 
-static bool check_features(RAsm *a, cs_insn *insn) {
+static bool check_features(const char *features, cs_insn *insn) {
+	if (!features || !*features) {
+		return false;
+	}
 	if (!insn || !insn->detail) {
 		return false;
 	}
@@ -49,7 +52,7 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 		if (!name) {
 			return true;
 		}
-		if (!strstr (a->features, name)) {
+		if (!strstr (features, name)) {
 			return false;
 		}
 	}
@@ -58,12 +61,13 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static R_TH_LOCAL int omode = 0;
-	int mode, ret;
+	int ret;
 	ut64 off = a->pc;
 
-	mode =  (a->bits == 64)? CS_MODE_64:
-		(a->bits == 32)? CS_MODE_32:
-		(a->bits == 16)? CS_MODE_16: 0;
+	const int bits = a->config->bits;
+	int mode = (bits == 64)? CS_MODE_64:
+		(bits == 32)? CS_MODE_32:
+		(bits == 16)? CS_MODE_16: 0;
 	if (cd && mode != omode) {
 		cs_close (&cd);
 		cd = 0;
@@ -78,7 +82,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			return 0;
 		}
 	}
-	if (a->features && *a->features) {
+	const char *features = a->config->features;
+	if (R_STR_ISNOTEMPTY (features)) {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_ON);
 	} else {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
@@ -88,11 +93,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 #if CS_API_MAJOR >= 4
 	cs_option (cd, CS_OPT_UNSIGNED, CS_OPT_ON);
 #endif
-	if (a->syntax == R_ASM_SYNTAX_MASM) {
+	if (a->config->syntax == R_ASM_SYNTAX_MASM) {
 #if CS_API_MAJOR >= 4
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
 #endif
-	} else if (a->syntax == R_ASM_SYNTAX_ATT) {
+	} else if (a->config->syntax == R_ASM_SYNTAX_ATT) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
 	} else {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
@@ -119,18 +124,16 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (op) {
 		op->size = 0;
 	}
-	if (a->features && *a->features) {
-		if (!check_features (a, insn)) {
-			op->size = insn->size;
-			r_asm_op_set_asm (op, "illegal");
-		}
+	if (!check_features (features, insn)) {
+		op->size = insn->size;
+		r_asm_op_set_asm (op, "illegal");
 	}
 	if (op->size == 0 && n > 0 && insn->size > 0) {
 		op->size = insn->size;
 		char *buf_asm = r_str_newf ("%s%s%s",
 				insn->mnemonic, insn->op_str[0]?" ":"",
 				insn->op_str);
-		if (a->syntax != R_ASM_SYNTAX_MASM) {
+		if (a->config->syntax != R_ASM_SYNTAX_MASM) {
 			char *ptrstr = strstr (buf_asm, "ptr ");
 			if (ptrstr) {
 				memmove (ptrstr, ptrstr + 4, strlen (ptrstr + 4) + 1);
@@ -141,7 +144,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		decompile_vm (a, op, buf, len);
 	}
-	if (a->syntax == R_ASM_SYNTAX_JZ) {
+	if (a->config->syntax == R_ASM_SYNTAX_JZ) {
 		char *buf_asm = r_strbuf_get (&op->buf_asm);
 		if (!strncmp (buf_asm, "je ", 3)) {
 			memcpy (buf_asm, "jz", 2);
@@ -164,7 +167,7 @@ RAsmPlugin r_asm_plugin_x86_cs = {
 	.desc = "Capstone "CAPSTONE_VERSION_STRING" X86 disassembler",
 	.license = "BSD",
 	.arch = "x86",
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.fini = the_end,
 	.mnemonics = mnemonics,

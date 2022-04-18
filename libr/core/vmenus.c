@@ -1685,7 +1685,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		RStrBuf *sb = r_strbuf_new ("");
 		char *msg;
 		r_list_foreach (core->ropchain, iter, msg) {
-			if (core->rasm->bits == 64) {
+			if (core->rasm->config->bits == 64) {
 				ut64 n = r_num_get (NULL, msg);
 				n = r_read_be64 (&n);
 				r_strbuf_appendf (sb, "%016"PFMT64x, n);

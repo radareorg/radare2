@@ -64,12 +64,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !a->big_endian;
+	disasm_obj.endian = !a->config->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
 	disasm_obj.mach = 0;
 	r_strbuf_set (&op->buf_asm, "");
-	if (a->bits == 16) {
+	if (a->config->bits == 16) {
 		op->size = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
 	} else {
 		op->size = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);

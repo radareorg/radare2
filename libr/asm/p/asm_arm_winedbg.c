@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2022 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -13,8 +13,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ut8 buf2[4];
 	struct winedbg_arm_insn *arminsn = arm_new();
 	arm_set_pc (arminsn, a->pc);
-	arm_set_thumb (arminsn, a->bits == 16);
-	if (a->big_endian && a->bits == 32) {
+	arm_set_thumb (arminsn, a->config->bits == 16);
+	if (a->config->big_endian && a->config->bits == 32) {
 		r_mem_swapendian (buf2, buf, 4);
 		arm_set_input_buffer (arminsn, buf2);
 	} else {
@@ -24,7 +24,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	const char *asmstr = winedbg_arm_insn_asm (arminsn);
 	if (asmstr) {
 		r_strbuf_set (&op->buf_asm, asmstr);
-		r_asm_op_set_hex(op, winedbg_arm_insn_hex (arminsn));
+		r_asm_op_set_hex (op, winedbg_arm_insn_hex (arminsn));
 	} else {
 		r_strbuf_set (&op->buf_asm, "invalid");
 		r_strbuf_set (&op->buf, "");
@@ -36,7 +36,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_arm_winedbg = {
 	.name = "arm.winedbg",
 	.arch = "arm",
-	.bits = 16|32,
+	.bits = 16 | 32,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "WineDBG's ARM disassembler",
 	.disassemble = &disassemble,

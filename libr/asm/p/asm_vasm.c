@@ -7,7 +7,7 @@
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int len = 0;
-	const char *cpu = a->cpu? a->cpu: "x86";
+	const char *cpu = a->config->cpu? a->config->cpu: "x86";
 	char *cmd = r_str_newf (
 		"r2pm -r vasm%s_std -Fbin -quiet -o /dev/stdout /dev/stdin <<__\n"
 		".org 0x%"PFMT64x"\n%s\n__", cpu, a->pc, buf);

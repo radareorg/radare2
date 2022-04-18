@@ -1,6 +1,4 @@
-/* lm32 support for radare2
- * 2-clause BSD
- * Copyright 2015 Felix Held */
+/* lm32 for r2 - BSD - Copyright 2015-2022 - Felix Held */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -39,7 +37,9 @@ static int string_to_reg_number(const char *str, ut8 *num) {
 		}
 	}
 	//register name string not found in array
-	if (match_idx == 0xff) return -1;
+	if (match_idx == 0xff) {
+		return -1;
+	}
 	*num = RAsmLm32Regs[match_idx].number;
 	return 0;
 }
@@ -54,7 +54,9 @@ static int string_to_csr_number(const char *str, ut8 *num) {
 		}
 	}
 	//csr name string not found in array
-	if (match_idx == 0xff) return -1;
+	if (match_idx == 0xff) {
+		return -1;
+	}
 	*num = RAsmLm32Csrs[match_idx].number;
 	return 0;
 }
@@ -68,7 +70,9 @@ static int string_to_opcode(const char *str, ut8 *num) {
 		}
 	}
 	//string not found in array
-	if (tmp_num == 0xff) return -1;
+	if (tmp_num == 0xff) {
+		return -1;
+	}
 	*num = tmp_num;
 	return 0;
 }
@@ -432,13 +436,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	instr.addr = a->pc;
 	if (r_asm_lm32_decode (&instr)) {
 		r_strbuf_set (&op->buf_asm, "invalid");
-		a->invhex = 1;
+		a->config->invhex = 1;
 		return -1;
 	}
 	//op->buf_asm is 256 chars long, which is more than sufficient
 	if (r_asm_lm32_stringify (&instr, r_strbuf_get (&op->buf_asm))) {
 		r_strbuf_set (&op->buf_asm, "invalid");
-		a->invhex = 1;
+		a->config->invhex = 1;
 		return -1;
 	}
 	return 4;

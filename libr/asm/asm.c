@@ -93,15 +93,16 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	if (!buf) {
 		return 0;
 	}
+	bool be = a->config->big_endian;
 	if (n == 2) {
 		s = (short)s64;
-		r_write_ble16 (buf, s, a->big_endian);
+		r_write_ble16 (buf, s, be);
 	} else if (n == 4) {
 		i = (int)s64;
-		r_write_ble32 (buf, i, a->big_endian);
+		r_write_ble32 (buf, i, be);
 	} else if (n == 8) {
 		l = (long int)s64;
-		r_write_ble64 (buf, l, a->big_endian);
+		r_write_ble64 (buf, l, be);
 	} else {
 		return 0;
 	}
@@ -204,6 +205,22 @@ static void plugin_free(RAsmPlugin *p) {
 	}
 }
 
+R_API RAsmConfig *r_asm_config_new(void) {
+	RAsmConfig *ac = R_NEW0 (RAsmConfig);
+	ac->bits = R_SYS_BITS;
+	ac->bitshift = 0;
+	ac->syntax = R_ASM_SYNTAX_INTEL;
+	ac->big_endian = 0;
+	return ac;
+}
+
+R_API void r_asm_config_free(RAsmConfig *ac) {
+	if (ac) {
+		free (ac->cpu);
+		free (ac);
+	}
+}
+
 R_API RAsm *r_asm_new(void) {
 	int i;
 	RAsm *a = R_NEW0 (RAsm);
@@ -211,14 +228,12 @@ R_API RAsm *r_asm_new(void) {
 		return NULL;
 	}
 	a->dataalign = 1;
-	a->bits = R_SYS_BITS;
-	a->bitshift = 0;
-	a->syntax = R_ASM_SYNTAX_INTEL;
 	a->plugins = r_list_newf ((RListFree)plugin_free);
 	if (!a->plugins) {
 		free (a);
 		return NULL;
 	}
+	a->config = r_asm_config_new ();
 	for (i = 0; asm_static_plugins[i]; i++) {
 		r_asm_add (a, asm_static_plugins[i]);
 	}
@@ -264,12 +279,12 @@ R_API void r_asm_free(RAsm *a) {
 	if (a->cur && a->cur->fini) {
 		a->cur->fini (a->cur->user);
 	}
+	r_asm_config_free (a->config);
 	if (a->plugins) {
 		r_list_free (a->plugins);
 		a->plugins = NULL;
 	}
 	r_syscall_free (a->syscall);
-	free (a->cpu);
 	sdb_free (a->pair);
 	ht_pp_free (a->flags);
 	a->pair = NULL;
@@ -333,8 +348,8 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 static void load_asm_descriptions(RAsm *a, RAsmPlugin *p) {
 	const char *arch = p->arch;
 	if (!arch || !strcmp (p->name, "r2ghidra")) {
-		if (a->cpu) {
-			arch = a->cpu;
+		if (a->config->cpu) {
+			arch = a->config->cpu;
 		} else {
 			arch = p->name;
 		}
@@ -413,8 +428,8 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 
 R_DEPRECATE R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
 	if (a) {
-		free (a->cpu);
-		a->cpu = cpu? strdup (cpu): NULL;
+		free (a->config->cpu);
+		a->config->cpu = cpu? strdup (cpu): NULL;
 	}
 }
 
@@ -424,7 +439,7 @@ static bool has_bits(RAsmPlugin *h, int bits) {
 
 R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 	if (has_bits (a->cur, bits)) {
-		a->bits = bits; // TODO : use OR? :)
+		a->config->bits = bits; // TODO : use OR? :)
 		return true;
 	}
 	return false;
@@ -432,24 +447,25 @@ R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 	r_return_val_if_fail (a && a->cur, false);
-	a->big_endian = false; // little endian by default
+	a->config->big_endian = false; // little endian by default
+	// TODO: Use a->config->endian the same as a->cur->endian, and save this switch
 	switch (a->cur->endian) {
 	case R_SYS_ENDIAN_NONE:
 	case R_SYS_ENDIAN_BI:
 		// TODO: not yet implemented
-		a->big_endian = b;
+		a->config->big_endian = b;
 		break;
 	case R_SYS_ENDIAN_LITTLE:
-		a->big_endian = false;
+		a->config->big_endian = false;
 		break;
 	case R_SYS_ENDIAN_BIG:
-		a->big_endian = true;
+		a->config->big_endian = true;
 		break;
 	default:
 		eprintf ("RAsmPlugin doesn't specify endianness\n");
 		break;
 	}
-	return a->big_endian;
+	return a->config->big_endian;
 }
 
 R_API bool r_asm_set_syntax(RAsm *a, int syntax) {
@@ -460,7 +476,7 @@ R_API bool r_asm_set_syntax(RAsm *a, int syntax) {
 	case R_ASM_SYNTAX_MASM:
 	case R_ASM_SYNTAX_ATT:
 	case R_ASM_SYNTAX_JZ:
-		a->syntax = syntax;
+		a->config->syntax = syntax;
 		return true;
 	default:
 		return false;
@@ -488,20 +504,20 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	op->size = 4;
 	op->bitsize = 0;
 	r_asm_op_set_asm (op, "");
-	if (a->pcalign) {
-		const int mod = a->pc % a->pcalign;
+	if (a->config->pcalign) {
+		const int mod = a->pc % a->config->pcalign;
 		if (mod) {
-			op->size = a->pcalign - mod;
+			op->size = a->config->pcalign - mod;
 			r_strbuf_set (&op->buf_asm, "unaligned");
 			return -1;
 		}
 	}
 	if (a->cur && a->cur->disassemble) {
 		// shift buf N bits
-		if (a->bitshift > 0) {
+		if (a->config->bitshift > 0) {
 			ut8 *tmp = calloc (len, 1);
 			if (tmp) {
-				r_mem_copybits_delta (tmp, 0, buf, a->bitshift, (len * 8) - a->bitshift);
+				r_mem_copybits_delta (tmp, 0, buf, a->config->bitshift, (len * 8) - a->config->bitshift);
 				ret = a->cur->disassemble (a, op, tmp, len);
 				free (tmp);
 			}
@@ -522,18 +538,18 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (op->bitsize > 0) {
 		op->size = op->bitsize / 8;
-		a->bitshift += op->bitsize % 8;
-		int count = a->bitshift / 8;
+		a->config->bitshift += op->bitsize % 8;
+		int count = a->config->bitshift / 8;
 		if (count > 0) {
 			op->size = op->size + count;
-			a->bitshift %= 8;
+			a->config->bitshift %= 8;
 		}
 	}
 
 	if (op->size < 1 || is_invalid (op)) {
-		if (a->invhex) {
+		if (a->config->invhex) {
 			r_strf_buffer (32);
-			if (a->bits == 16) {
+			if (a->config->bits == 16) {
 				ut16 b = r_read_le16 (buf);
 				r_strbuf_set (&op->buf_asm, r_strf (".word 0x%04x", b));
 			} else {
@@ -556,7 +572,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 typedef int (*Ase)(RAsm *a, RAsmOp *op, const char *buf);
 
 static bool assemblerMatches(RAsm *a, RAsmPlugin *h) {
-	if (!a || !h->arch || !h->assemble || !has_bits (h, a->bits)) {
+	if (!a || !h->arch || !h->assemble || !has_bits (h, a->config->bits)) {
 		return false;
 	}
 	return (a->cur->arch && !strncmp (a->cur->arch, h->arch, strlen (a->cur->arch)));
@@ -971,9 +987,9 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				ptr = ptr_start;
 				r_str_trim (ptr);
 				if (!strncmp (ptr, ".intel_syntax", 13)) {
-					a->syntax = R_ASM_SYNTAX_INTEL;
+					a->config->syntax = R_ASM_SYNTAX_INTEL;
 				} else if (!strncmp (ptr, ".att_syntax", 11)) {
-					a->syntax = R_ASM_SYNTAX_ATT;
+					a->config->syntax = R_ASM_SYNTAX_ATT;
 				} else if (!strncmp (ptr, ".endian", 7)) {
 					r_asm_set_big_endian (a, atoi (ptr + 7));
 				} else if (!strncmp (ptr, ".big_endian", 7 + 4)) {
@@ -1018,11 +1034,11 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 						goto fail;
 					}
 				} else if (!strncmp (ptr, ".kernel ", 8)) {
-					r_syscall_setup (a->syscall, a->cur->arch, a->bits, asmcpu, ptr + 8);
+					r_syscall_setup (a->syscall, a->cur->arch, a->config->bits, asmcpu, ptr + 8);
 				} else if (!strncmp (ptr, ".cpu ", 5)) {
 					r_asm_set_cpu (a, ptr + 5);
 				} else if (!strncmp (ptr, ".os ", 4)) {
-					r_syscall_setup (a->syscall, a->cur->arch, a->bits, asmcpu, ptr + 4);
+					r_syscall_setup (a->syscall, a->cur->arch, a->config->bits, asmcpu, ptr + 4);
 				} else if (!strncmp (ptr, ".hex ", 5)) {
 					ret = r_asm_op_set_hex (&op, ptr + 5);
 				} else if ((!strncmp (ptr, ".int16 ", 7)) || !strncmp (ptr, ".short ", 7)) {

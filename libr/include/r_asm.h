@@ -91,12 +91,27 @@ typedef struct {
 	char *value;
 } RAsmEqu;
 
-#define _RAsmPlugin struct r_asm_plugin_t
-typedef struct r_asm_t {
+typedef struct r_asm_config_t {
 	char *cpu;
 	int bits;
 	int big_endian;
 	int syntax;
+	//
+	int pcalign;
+	int dataalign;
+	int seggrn;
+	int invhex;
+	int bitshift;
+	char *features;
+} RAsmConfig;
+
+#define _RAsmPlugin struct r_asm_plugin_t
+typedef struct r_asm_t {
+	RAsmConfig *config;
+	// char *cpu;
+	// int bits;
+	// int big_endian;
+	// int syntax;
 	ut64 pc;
 	void *user;
 	_RAsmPlugin *cur;
@@ -109,14 +124,12 @@ typedef struct r_asm_t {
 	Sdb *pair;
 	RSyscall *syscall;
 	RNum *num;
-	char *features;
-	int invhex; // invalid instructions displayed in hex
-	int pcalign;
+	//int invhex; // invalid instructions displayed in hex
+	//int pcalign;
 	int dataalign;
-	int bitshift;
 	bool immdisp; // Display immediates with # symbol (for arm stuff).
 	HtPP *flags;
-	int seggrn;
+	//int seggrn;
 	bool pseudo;
 } RAsm;
 

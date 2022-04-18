@@ -797,7 +797,7 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	//if (!strcmp (node->value, "bf"))
 	//	r_config_set (core->config, "dbg.backend", "bf");
-	__setsegoff (core->config, node->value, core->rasm->bits);
+	__setsegoff (core->config, node->value, core->rasm->config->bits);
 
 	// set a default endianness
 	int bigbin = r_bin_is_big_endian (core->bin);
@@ -867,7 +867,7 @@ static bool cb_asmbits(void *user, void *data) {
 	if (!bits) {
 		return false;
 	}
-	if (bits == core->rasm->bits && bits == core->anal->bits && bits == core->dbg->bits) {
+	if (bits == core->rasm->config->bits && bits == core->anal->bits && bits == core->dbg->bits) {
 		// early optimization
 		return true;
 	}
@@ -963,9 +963,9 @@ static bool cb_asmfeatures(void *user, void *data) {
 		print_node_options (node);
 		return 0;
 	}
-	R_FREE (core->rasm->features);
+	R_FREE (core->rasm->config->features);
 	if (node->value[0]) {
-		core->rasm->features = strdup (node->value);
+		core->rasm->config->features = strdup (node->value);
 	}
 	return 1;
 }
@@ -1046,7 +1046,7 @@ static bool cb_asm_armimm(void *user, void *data) {
 static bool cb_asm_invhex(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->rasm->invhex = node->i_value;
+	core->rasm->config->invhex = node->i_value;
 	return true;
 }
 
@@ -1057,7 +1057,7 @@ static bool cb_asm_pcalign(void *user, void *data) {
 	if (align < 0) {
 		align = 0;
 	}
-	core->rasm->pcalign = align;
+	core->rasm->config->pcalign = align;
 	core->anal->pcalign = align;
 	return true;
 }
@@ -2647,7 +2647,7 @@ static bool cb_segoff(void *user, void *data) {
 static bool cb_seggrn(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->rasm->seggrn = node->i_value;
+	core->rasm->config->seggrn = node->i_value;
 	core->anal->seggrn = node->i_value;
 	core->print->seggrn = node->i_value;
 	return true;

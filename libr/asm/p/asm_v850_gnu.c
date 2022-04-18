@@ -48,16 +48,17 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	disasm_obj.buffer = bytes;
 	disasm_obj.flavour = PROCESSOR_V850E2;
-	if (!R_STR_ISEMPTY (a->cpu)) {
-		if (!strcmp (a->cpu, "e")) {
+	const char *cpu = a->config->cpu;
+	if (!R_STR_ISEMPTY (cpu)) {
+		if (!strcmp (cpu, "e")) {
 			disasm_obj.flavour = PROCESSOR_V850E;
-		} else if (!strcmp (a->cpu, "e1")) {
+		} else if (!strcmp (cpu, "e1")) {
 			disasm_obj.flavour = PROCESSOR_V850E1;
-		} else if (!strcmp (a->cpu, "e2")) {
+		} else if (!strcmp (cpu, "e2")) {
 			disasm_obj.flavour = PROCESSOR_V850E2;
-		} else if (!strcmp (a->cpu, "e2v3")) {
+		} else if (!strcmp (cpu, "e2v3")) {
 			disasm_obj.flavour = PROCESSOR_V850E2V3;
-		} else if (!strcmp (a->cpu, "e3v5")) {
+		} else if (!strcmp (cpu, "e3v5")) {
 			disasm_obj.flavour = PROCESSOR_V850E3V5;
 		}
 	}

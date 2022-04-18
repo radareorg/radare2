@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2020-2021 - pancake, aemmitt */
+/* radare2 - LGPL - Copyright 2020-2022 - pancake, aemmitt */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -11,7 +11,8 @@
 extern int disassemble_armv7(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	if (a->bits == 16 || a->bits == 32) {
+	const int bits = a->config->bits;
+	if (bits == 16 || bits == 32) {
 		return disassemble_armv7 (a, op, buf, len);
 	}
 	Instruction inst = {0};

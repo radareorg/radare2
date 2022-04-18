@@ -255,7 +255,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	}
 	r_sys_setenv ("R2_OFFSET", r_strf ("%"PFMT64d, core->offset));
 	r_sys_setenv ("R2_XOFFSET", r_strf ("0x%08"PFMT64x, core->offset));
-	r_sys_setenv ("R2_ENDIAN", core->rasm->big_endian? "big": "little");
+	r_sys_setenv ("R2_ENDIAN", core->rasm->config->big_endian? "big": "little");
 	r_sys_setenv ("R2_BSIZE", r_strf ("%d", core->blocksize));
 #if 0
 	// dump current config file so other r2 tools can use the same options
@@ -450,7 +450,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		if (!info) {
 			return false;
 		}
-		info->bits = r->rasm->bits;
+		info->bits = r->rasm->config->bits;
 		// set use of raw strings
 		r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 		// r_config_set_i (r->config, "io.va", false);
@@ -860,7 +860,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 	if (!flags) {
 		flags = R_PERM_R;
 	}
-	r->io->bits = r->rasm->bits; // TODO: we need an api for this
+	r->io->bits = r->rasm->config->bits; // TODO: we need an api for this
 	RIODesc *fd = r_io_open_nomap (r->io, file, flags, 0644);
 	if (r_cons_is_breaked()) {
 		goto beach;

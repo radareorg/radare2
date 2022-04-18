@@ -722,7 +722,7 @@ static void load_types_from(RCore *core, const char *fmt, ...) {
 
 R_API void r_core_anal_type_init(RCore *core) {
 	r_return_if_fail (core && core->anal);
-	int bits = core->rasm->bits;
+	int bits = core->rasm->config->bits;
 	Sdb *types = core->anal->sdb_types;
 	// make sure they are empty this is initializing
 	sdb_reset (types);
@@ -4358,7 +4358,7 @@ R_API bool r_core_bin_update_arch_bits(RCore *r) {
 		return 0;
 	}
 	if (r->rasm) {
-		bits = r->rasm->bits;
+		bits = r->rasm->config->bits;
 		if (r->rasm->cur) {
 			arch = r->rasm->cur->arch;
 		}

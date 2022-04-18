@@ -10,8 +10,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn;
 	int n = -1, ret = -1;
 	int mode = CS_MODE_BIG_ENDIAN;
-	if (a->cpu && *a->cpu) {
-		if (!strcmp (a->cpu, "v9")) {
+	const char *cpu = a->config->cpu;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (!strcmp (cpu, "v9")) {
 			mode |= CS_MODE_V9;
 		}
 	}
@@ -30,7 +31,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!op) {
 		return 0;
 	}
-	if (a->big_endian) {
+	if (a->config->big_endian) {
 		n = cs_disasm (cd, buf, len, a->pc, 1, &insn);
 	}
 	if (n < 1) {
@@ -64,7 +65,7 @@ RAsmPlugin r_asm_plugin_sparc_cs = {
 	.license = "BSD",
 	.arch = "sparc",
 	.cpus = "v9",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.endian = R_SYS_ENDIAN_BIG | R_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics

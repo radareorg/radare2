@@ -28,13 +28,13 @@ static int disassemble(RAsm *a, RAsmOp *opstruct, const ut8 *buf, int len) {
 		cobjs = r_list_get_n (shared, 0);
 		interned_table = r_list_get_n (shared, 1);
 	}
-	if (!opcodes_cache || !pyc_opcodes_equal (opcodes_cache, a->cpu)) {
-		opcodes_cache = get_opcode_by_version (a->cpu);
+	if (!opcodes_cache || !pyc_opcodes_equal (opcodes_cache, a->config->cpu)) {
+		opcodes_cache = get_opcode_by_version (a->config->cpu);
 		if (!opcodes_cache) {
 			opcodes_cache = get_opcode_by_version ("v3.9.0");
 		}
 		if (opcodes_cache) {
-			opcodes_cache->bits = a->bits;
+			opcodes_cache->bits = a->config->bits;
 		} else {
 			return 0;
 		}
