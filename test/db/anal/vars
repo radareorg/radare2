@@ -1,3 +1,219 @@
+NAME=pdf
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+afv
+afvj~{}
+EOF
+EXPECT=<<EOF
+arg int argc @ rdi
+arg char ** argv @ rsi
+var int64_t var_8h @ rsp+0x18
+var int64_t var_17h @ rsp+0x27
+var int64_t var_18h @ rsp+0x28
+var int64_t var_28h @ rsp+0x38
+var int64_t var_30h @ rsp+0x40
+var int64_t var_32h @ rsp+0x42
+var int64_t var_38h @ rsp+0x48
+var int64_t var_45h @ rsp+0x55
+var int64_t var_46h @ rsp+0x56
+var int64_t var_47h @ rsp+0x57
+var int64_t var_48h @ rsp+0x58
+{
+  "reg": [
+    {
+      "name": "argc",
+      "kind": "reg",
+      "type": "int",
+      "ref": "rdi"
+    },
+    {
+      "name": "argv",
+      "kind": "reg",
+      "type": "char **",
+      "ref": "rsi"
+    }
+  ],
+  "sp": [
+    {
+      "name": "var_8h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rsp",
+        "offset": 24
+      }
+    },
+    {
+      "name": "var_17h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rsp",
+        "offset": 39
+      }
+    },
+    {
+      "name": "var_18h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rsp",
+        "offset": 40
+      }
+    },
+    {
+      "name": "var_28h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rsp",
+        "offset": 56
+      }
+    },
+    {
+      "name": "var_30h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rsp",
+        "offset": 64
+      }
+    },
+    {
+      "name": "var_32h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rsp",
+        "offset": 66
+      }
+    },
+    {
+      "name": "var_38h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rsp",
+        "offset": 72
+      }
+    },
+    {
+      "name": "var_45h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rsp",
+        "offset": 85
+      }
+    },
+    {
+      "name": "var_46h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rsp",
+        "offset": 86
+      }
+    },
+    {
+      "name": "var_47h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rsp",
+        "offset": 87
+      }
+    },
+    {
+      "name": "var_48h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rsp",
+        "offset": 88
+      }
+    }
+  ],
+  "bp": [
+    
+  ]
+}
+EOF
+RUN
+
+NAME=pdf
+FILE=bins/elf/test.o
+CMDS=<<EOF
+af
+pdf
+afv
+afvj~{}
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .text:
+/ 22: sym.sub (int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ rdi
+|           ; arg int64_t arg2 @ rsi
+|           ; var int64_t var_4h @ rbp-0x4
+|           ; var int64_t var_8h @ rbp-0x8
+|           0x08000040      f30f1efa       endbr64                     ; [01] -r-x section size 22 named .text
+|           0x08000044      55             push rbp
+|           0x08000045      4889e5         mov rbp, rsp
+|           0x08000048      897dfc         mov dword [var_4h], edi     ; arg1
+|           0x0800004b      8975f8         mov dword [var_8h], esi     ; arg2
+|           0x0800004e      8b45fc         mov eax, dword [var_4h]
+|           0x08000051      2b45f8         sub eax, dword [var_8h]
+|           0x08000054      5d             pop rbp
+\           0x08000055      c3             ret
+arg int64_t arg1 @ rdi
+arg int64_t arg2 @ rsi
+var int64_t var_4h @ rbp-0x4
+var int64_t var_8h @ rbp-0x8
+{
+  "reg": [
+    {
+      "name": "arg1",
+      "kind": "reg",
+      "type": "int64_t",
+      "ref": "rdi"
+    },
+    {
+      "name": "arg2",
+      "kind": "reg",
+      "type": "int64_t",
+      "ref": "rsi"
+    }
+  ],
+  "sp": [
+    
+  ],
+  "bp": [
+    {
+      "name": "var_4h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rbp",
+        "offset": -4
+      }
+    },
+    {
+      "name": "var_8h",
+      "kind": "var",
+      "type": "int64_t",
+      "ref": {
+        "base": "rbp",
+        "offset": -8
+      }
+    }
+  ]
+}
+EOF
+RUN
+
 NAME=afvx
 FILE=bins/elf/ls.odd
 CMDS=<<EOF
