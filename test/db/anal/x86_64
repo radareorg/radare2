@@ -132,12 +132,12 @@ s 0x100000da0
 "afc amd64"
 s-
 s 0x100000da0
-"afvb -40 var_28h int64_t"
-"afvb -32 var_20h int64_t"
-"afvb -24 var_18h int64_t"
-"afvb -20 var_14h int64_t"
-"afvb -16 var_10h int64_t"
 "afvb -1 var_1h int64_t"
+"afvb -16 var_10h int64_t"
+"afvb -20 var_14h int64_t"
+"afvb -24 var_18h int64_t"
+"afvb -32 var_20h int64_t"
+"afvb -40 var_28h int64_t"
 s-
 s 0x100000da0
 "afvr rdi arg1 int64_t"

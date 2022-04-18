@@ -1446,14 +1446,69 @@ R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
 	return list;
 }
 
-static int var_comparator(const RAnalVar *a, const RAnalVar *b){
+static int regvar_comparator(const RAnalVar *a, const RAnalVar *b) {
+	if (a && b) {
+		if (a->argnum > b->argnum) {
+			return 1;
+		}
+		if (a->argnum < b->argnum) {
+			return -1;
+		}
+		return 0;
+	} else if (a) {
+		return -1;
+	} else if (b) {
+		return 1;
+	}
+	return 0;
 	// avoid NULL dereference
-	return (a && b)? (a->delta > b->delta) - (a->delta < b->delta) : 0;
+	// return (a && b)? (a->argnum > b->argnum) - (a->argnum < b->argnum): 0;
 }
 
-static int regvar_comparator(const RAnalVar *a, const RAnalVar *b){
+static int var_comparator(const RAnalVar *a, const RAnalVar *b){
+	if (a && b) {
+		if (a->isarg && !b->isarg) {
+			return -1;
+		}
+		if (!a->isarg && b->isarg) {
+			return 1;
+		}
+		if (a->kind == R_ANAL_VAR_KIND_REG && a->kind == b->kind) {
+			return regvar_comparator (a, b);
+		}
+		if (a->kind == b->kind && a->fcn) { // && a->fcn->bits == 32) {
+			if (a->kind == R_ANAL_VAR_KIND_BPV) {
+				if (a->isarg && b->isarg) {
+					if (a->delta > b->delta) {
+						return 1;
+					}
+					if (a->delta < b->delta) {
+						return -1;
+					}
+				}
+				if (a->delta > b->delta) {
+					return -1;
+				}
+				if (a->delta < b->delta) {
+					return 1;
+				}
+			}
+		}
+		if (a->delta > b->delta) {
+			return 1;
+		}
+		if (a->delta < b->delta) {
+			return -1;
+		}
+		return 0;
+	} else if (a) {
+		return 1;
+	} else if (b) {
+		return -1;
+	}
+	return 0;
 	// avoid NULL dereference
-	return (a && b)? (a->argnum > b->argnum) - (a->argnum < b->argnum): 0;
+	// return (a && b)? (a->delta > b->delta) - (a->delta < b->delta) : 0;
 }
 
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ *pj) {
