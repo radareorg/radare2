@@ -411,9 +411,13 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		if (use_json) {
 			pj = r_core_pj_new (core);
 			pj_a (pj);
-			sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo_json, pj);
+			if (core->bin->cur && core->bin->cur->sdb_addrinfo) {
+				sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo_json, pj);
+			}
 		} else {
-			sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
+			if (core->bin->cur && core->bin->cur->sdb_addrinfo) {
+				sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
+			}
 		}
 		if (filter_count == 0) {
 			print_meta_offset (core, offset, pj);
