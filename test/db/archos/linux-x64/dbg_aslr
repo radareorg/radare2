@@ -81,15 +81,15 @@ doc
 afv @ main
 EOF
 EXPECT=<<EOF
-var int64_t var_20h @ rbp-0x20
-var int64_t var_1ch @ rbp-0x1c
-var int64_t var_18h @ rbp-0x18
-var int64_t var_10h @ rbp-0x10
 var int64_t var_8h @ rbp-0x8
-var int64_t var_20h @ rbp-0x20
-var int64_t var_1ch @ rbp-0x1c
-var int64_t var_18h @ rbp-0x18
 var int64_t var_10h @ rbp-0x10
+var int64_t var_18h @ rbp-0x18
+var int64_t var_1ch @ rbp-0x1c
+var int64_t var_20h @ rbp-0x20
 var int64_t var_8h @ rbp-0x8
+var int64_t var_10h @ rbp-0x10
+var int64_t var_18h @ rbp-0x18
+var int64_t var_1ch @ rbp-0x1c
+var int64_t var_20h @ rbp-0x20
 EOF
 RUN
