@@ -711,6 +711,7 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 		b->decode = (RAnalDecode)r_anal_op;
 		b->opinit = r_anal_op_init;
 		b->opfini = r_anal_op_fini;
+		b->use = r_anal_use;
 	}
 }
 
