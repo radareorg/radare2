@@ -60,8 +60,8 @@ ret paths
          |  0x100007ed8                        |
          |   ;-- func.100007ed8:               |
          | 92: sym._retbool (int64_t arg_20h); |
-         | ; var int64_t var_10h @ sp+0x10     |
          | ; arg int64_t arg_20h @ sp+0x40     |
+         | ; var int64_t var_10h @ sp+0x10     |
          | sub sp, sp, 0x20                    |
          | stp x29, x30, [sp, 0x10]            |
          | add x29, var_10h                    |
