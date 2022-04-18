@@ -150,9 +150,9 @@ af
 afv
 EOF
 EXPECT=<<EOF
-arg int64_t arg3 @ r8
 arg const char * s @ rcx
 arg int64_t arg2 @ rdx
+arg int64_t arg3 @ r8
 EOF
 RUN
 
@@ -165,9 +165,9 @@ afv
 EOF
 EXPECT=<<EOF
 var int64_t var_20h @ rsp+0x48
-var int64_t var_10h @ rbp+0x10
-var int64_t var_18h @ rbp+0x18
 var int64_t var_bp_20h @ rbp+0x20
+var int64_t var_18h @ rbp+0x18
+var int64_t var_10h @ rbp+0x10
 EOF
 RUN
 
@@ -261,14 +261,14 @@ afvW
     var_fh  0xe
     var_4h
 / 50: fcn.00000000 (int16_t arg1, int16_t arg2, int16_t arg3);
+|           ; arg int16_t arg1 @ r0
+|           ; arg int16_t arg2 @ r1
+|           ; arg int16_t arg3 @ r2
 |           ; var int16_t var_10h @ sp+0x0
 |           ; var int8_t var_fh @ sp+0x1
 |           ; var int16_t var_eh @ sp+0x2
 |           ; var int32_t var_ch @ sp+0x4
 |           ; var int16_t var_4h @ sp+0xc
-|           ; arg int16_t arg1 @ r0
-|           ; arg int16_t arg2 @ r1
-|           ; arg int16_t arg3 @ r2
 |           0x00000000      80b4           push {r7}
 |           0x00000002      83b0           sub sp, 0xc
 |           0x00000004      00af           add r7, var_10h
@@ -310,10 +310,10 @@ EOF
 EXPECT=<<EOF
 afvR
 afvW
-var int32_t var_4h_2 @ ebp-0x4
-var int32_t var_4h @ ebp+0x0
 arg int32_t arg_8h @ ebp+0x8
 arg int32_t arg_ch @ ebp+0xc
+var int32_t var_4h @ ebp+0x0
+var int32_t var_4h_2 @ ebp-0x4
 afvR
     arg_8h  0x16
     arg_ch  0x19
