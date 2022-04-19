@@ -314,7 +314,7 @@ static void cmd_write_inc(RCore *core, int size, st64 num) {
 	}
 }
 
-static int wo_handler_old(void *data, const char *input) {
+static int cmd_wo(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut8 *buf;
 	int len;
@@ -760,7 +760,7 @@ static bool cmd_wfs(RCore *core, const char *input) {
 	return true;
 }
 
-static int wf_handler_old(void *data, const char *input) {
+static int cmd_wf(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (!core || !*input) {
 		return -1;
@@ -856,7 +856,7 @@ static void cmd_write_pcache(RCore *core, const char *input) {
 	}
 }
 
-static int wB_handler_old(void *data, const char *input) {
+static int cmd_wB(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case ' ':
@@ -872,8 +872,10 @@ static int wB_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int w0_handler_common(RCore *core, ut64 len) {
+static int cmd_w0(void *data, const char *input) {
 	int res = 0;
+	RCore *core = (RCore *)data;
+	ut64 len = r_num_math (core->num, input);
 	if (len > 0) {
 		ut8 *buf = calloc (1, len);
 		if (buf) {
@@ -891,13 +893,7 @@ static int w0_handler_common(RCore *core, ut64 len) {
 	return res;
 }
 
-static int w0_handler_old(void *data, const char *input) {
-	RCore *core = (RCore *)data;
-	ut64 len = r_num_math (core->num, input);
-	return w0_handler_common (core, len);
-}
-
-static int w_incdec_handler_old(void *data, const char *input, int inc) {
+static int w_incdec_handler(void *data, const char *input, int inc) {
 	RCore *core = (RCore *)data;
 	st64 num = 1;
 	if (input[0] && input[1]) {
@@ -916,7 +912,7 @@ static int w_incdec_handler_old(void *data, const char *input, int inc) {
 	return 0;
 }
 
-static int w6_handler_old(void *data, const char *input) {
+static int cmd_w6(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	int fail = 0;
@@ -984,7 +980,7 @@ static int w6_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wh_handler_old(void *data, const char *input) {
+static int cmd_wh(void *data, const char *input) {
 	char *p = strchr (input, ' ');
 	if (p) {
 		while (*p == ' ')
@@ -998,7 +994,7 @@ static int wh_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int we_handler_old(void *data, const char *input) {
+static int cmd_we(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 addr = 0, len = 0, b_size = 0;
 	st64 dist = 0;
@@ -1132,7 +1128,7 @@ static int we_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wp_handler_old(void *data, const char *input) {
+static int cmd_wp(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (input[0] == '-' || (input[0] == ' ' && input[1] == '-')) {
 		char *out = r_core_editor (core, NULL, NULL);
@@ -1154,7 +1150,7 @@ static int wp_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wu_handler_old(void *data, const char *input) {
+static int cmd_wu(void *data, const char *input) {
 	// TODO: implement it in an API RCore.write_unified_hexpatch() is ETOOLONG
 	if (input[0]==' ') {
 		char *data = r_file_slurp (input+1, NULL);
@@ -1211,7 +1207,7 @@ static int wu_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wr_handler_old(void *data, const char *input) {
+static int cmd_wr(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	ut64 off = r_num_math (core->num, input);
@@ -1234,7 +1230,7 @@ static int wr_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wA_handler_old(void *data, const char *input) {
+static int cmd_wA(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	int len;
@@ -1311,7 +1307,7 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 	free (sfn);
 }
 
-static int wc_handler_old(void *data, const char *input) {
+static int cmd_wc(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '\0': // "wc"
@@ -1408,7 +1404,7 @@ static int wc_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int w_handler(RCore *core, const char *input) {
+static int cmd_w(RCore *core, const char *input) {
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input);
 	/* write string */
@@ -1424,7 +1420,7 @@ static int w_handler(RCore *core, const char *input) {
 	return 0;
 }
 
-static int wz_handler(RCore *core, const char *input) {
+static int cmd_wz(RCore *core, const char *input) {
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input + 1);
 	int len = r_str_unescape (str) + 1;
@@ -1446,7 +1442,7 @@ static int wz_handler(RCore *core, const char *input) {
 	return 0;
 }
 
-static int wt_handler_old(void *data, const char *input) {
+static int cmd_wt(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *str = strdup (input);
 	char *ostr = str;
@@ -1654,7 +1650,7 @@ static int wt_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int ww_handler_old(void *data, const char *input) {
+static int cmd_ww(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input);
@@ -1690,7 +1686,7 @@ static int ww_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wx_handler_old(void *data, const char *input) {
+static int cmd_wx(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	const char *arg;
@@ -1761,7 +1757,7 @@ static int wx_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wa_handler_old(void *data, const char *input) {
+static int cmd_wa(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	switch (input[0]) {
@@ -1924,7 +1920,7 @@ repeat:
 	return 0;
 }
 
-static int wb_handler_old(void *data, const char *input) {
+static int cmd_wb(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	size_t len = strlen (input);
 	const size_t buf_size = len + 2;
@@ -1950,7 +1946,7 @@ static int wb_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wm_handler_old(void *data, const char *input) {
+static int cmd_wm(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *str = strdup (input);
 	int size = r_hex_str2bin (input, (ut8 *)str);
@@ -1984,7 +1980,7 @@ static int wm_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wd_handler_old(void *data, const char *input) {
+static int cmd_wd(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (input[0] && input[0] == ' ') {
 		char *arg, *inp = strdup (input + 1);
@@ -2008,7 +2004,7 @@ static int wd_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int ws_handler_old(void *data, const char *input) {
+static int cmd_ws(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input);
@@ -2084,28 +2080,28 @@ static int cmd_write(void *data, const char *input) {
 
 	switch (*input) {
 	case '0': // "w0"
-		w0_handler_old (data, input + 1);
+		cmd_w0 (data, input + 1);
 		break;
 	case '1': // "w1"
 	case '2': // "w2"
 	case '4': // "w4"
 	case '8': // "w8"
-		w_incdec_handler_old (data, input + 1, *input - '0');
+		w_incdec_handler (data, input + 1, *input - '0');
 		break;
 	case '6': // "w6"
-		w6_handler_old (core, input + 1);
+		cmd_w6 (core, input + 1);
 		break;
 	case 'a': // "wa"
-		wa_handler_old (core, input + 1);
+		cmd_wa (core, input + 1);
 		break;
 	case 'b': // "wb"
-		wb_handler_old (core, input + 1);
+		cmd_wb (core, input + 1);
 		break;
 	case 'B': // "wB"
-		wB_handler_old (data, input + 1);
+		cmd_wB (data, input + 1);
 		break;
 	case 'c': // "wc"
-		wc_handler_old (core, input + 1);
+		cmd_wc (core, input + 1);
 		break;
 	case 'h': // "wh"
 		if (!strcmp (input, "hoami")) {
@@ -2113,23 +2109,23 @@ static int cmd_write(void *data, const char *input) {
 			r_cons_printf ("%s\n", ui);
 			free (ui);
 		} else {
-			wh_handler_old (core, input + 1);
+			cmd_wh (core, input + 1);
 		}
 		break;
 	case 'e': // "we"
-		we_handler_old (core, input + 1);
+		cmd_we (core, input + 1);
 		break;
 	case 'p': // "wp"
-		wp_handler_old (core, input + 1);
+		cmd_wp (core, input + 1);
 		break;
 	case 'u': // "wu"
-		wu_handler_old (core, input + 1);
+		cmd_wu (core, input + 1);
 		break;
 	case 'r': // "wr"
-		wr_handler_old (core, input + 1);
+		cmd_wr (core, input + 1);
 		break;
 	case 'A': // "wA"
-		wA_handler_old (core, input + 1);
+		cmd_wA (core, input + 1);
 		break;
 	case ' ': // "w"
 	case '+': // "w+"
@@ -2146,7 +2142,7 @@ static int cmd_write(void *data, const char *input) {
 		ut64 addr = core->offset;
 		if (R_STR_ISEMPTY (curcs)) {
 			r_core_return_code (core, 0);
-			w_handler (core, str + 1);
+			cmd_w (core, str + 1);
 			addr += core->num->value;
 		} else {
 			if (len > 0) {
@@ -2158,7 +2154,7 @@ static int cmd_write(void *data, const char *input) {
 				if (out) {
 					*out = 0;
 					new_len = r_charset_decode_str (core->print->charset, out, out_len, (const ut8*) str + 1, in_len);
-					w_handler (core, (const char *)out);
+					cmd_w (core, (const char *)out);
 					free (out);
 				}
 				addr += new_len;
@@ -2171,34 +2167,34 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	}
 	case 'z': // "wz"
-		wz_handler (core, input + 1);
+		cmd_wz (core, input + 1);
 		break;
 	case 't': // "wt"
-		wt_handler_old (core, input + 1);
+		cmd_wt (core, input + 1);
 		break;
 	case 'f': // "wf"
-		wf_handler_old (core, input + 1);
+		cmd_wf (core, input + 1);
 		break;
 	case 'w': // "ww"
-		ww_handler_old (core, input + 1);
+		cmd_ww (core, input + 1);
 		break;
 	case 'x': // "wx"
-		wx_handler_old (core, input + 1);
+		cmd_wx (core, input + 1);
 		break;
 	case 'm': // "wm"
-		wm_handler_old (core, input + 1);
+		cmd_wm (core, input + 1);
 		break;
 	case 'v': // "wv"
 		cmd_write_value (core, input + 1);
 		break;
 	case 'o': // "wo"
-		wo_handler_old (core, input + 1);
+		cmd_wo (core, input + 1);
 		break;
 	case 'd': // "wd"
-		wd_handler_old (core, input + 1);
+		cmd_wd (core, input + 1);
 		break;
 	case 's': // "ws"
-		ws_handler_old (core, input + 1);
+		cmd_ws (core, input + 1);
 		break;
 	default:
 	case '?': // "w?"
