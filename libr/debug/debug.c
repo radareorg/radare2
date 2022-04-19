@@ -567,7 +567,7 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	dbg->iob.read_at (dbg->iob.io, reg_pc, pc_backup, len);
 	if (restore && !ignore_stack) {
 		/* Store bytes at stack */
-		dbg->iob.read_at (dbg->iob.io, reg_sp, stack_backup, len);
+		dbg->iob.read_at (dbg->iob.io, reg_sp, stack_backup, 4096);
 	}
 
 	bp_addr = reg_pc + len;
@@ -592,7 +592,7 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	if (restore) {
 		if (!ignore_stack) {
 			/* Restore stack */
-			dbg->iob.write_at (dbg->iob.io, reg_sp, stack_backup, len);
+			dbg->iob.write_at (dbg->iob.io, reg_sp, stack_backup, 4096);
 		}
 		/* Restore registers */
 		r_reg_read_regs (dbg->reg, reg_backup, reg_backup_sz);
