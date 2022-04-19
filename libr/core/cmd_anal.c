@@ -407,7 +407,7 @@ static const char *help_detail_ae[] = {
 
 static const char *help_msg_aea[] = {
 	"Examples:", "aea", " show regs and memory accesses used in a range",
-	"aea", "  [ops]", "show regs/memory accesses used in N instructions ",
+	"aea", "  [ops]", "show regs/memory accesses used in N instructions",
 	"aea*", " [ops]", "create mem.* flags for memory accesses",
 	"aeab", "", "show regs used in current basic block",
 	"aeaf", "", "show regs used in current function",
@@ -543,8 +543,10 @@ static const char *help_msg_afc[] = {
 	"afcr", "[j]", "show register usage for the current function",
 	"afca", "", "analyse function for finding the current calling convention",
 	"afcf", "[j] [name]", "prints return type function(arg1, arg2...), see afij",
+	"afci", "", "information about the current calling convention",
 	"afck", "", "list SDB details of call loaded calling conventions",
 	"afcl", "", "list all available calling conventions",
+	"afcll", "", "show all call conventions and its definition",
 	"afco", " path", "open Calling Convention sdb profile from given path",
 	"afcR", "", "register telescoping using the calling conventions order",
 	NULL
@@ -4008,14 +4010,19 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 #endif
 }
 
-int cmd_anal_fcn(RCore *core, const char *input) {
+static void cmd_afci(RCore *core, RAnalFunction *fcn) {
+	const char *cc = (fcn && fcn->cc)? fcn->cc: "reg";
+	r_core_cmdf (core, "afcll~%s (", cc);
+}
+
+static int cmd_af(RCore *core, const char *input) {
 	char i;
 
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
 	case '-': // "af-"
 		if (!input[2]) { // "af-"
-			cmd_anal_fcn (core, "f-$$");
+			cmd_af (core, "f-$$");
 			r_core_anal_undefine (core, core->offset);
 		} else if (!strcmp (input + 2, "*")) { // "af-*"
 			RAnalFunction *f;
@@ -4048,7 +4055,8 @@ int cmd_anal_fcn(RCore *core, const char *input) {
 				ut64 elements = r_num_math (core->num, r_list_get_n (argv, 3));
 				ut64 seg = r_num_math (core->num, r_list_get_n (argv, 4));
 				int depth = 50;
-				try_walkthrough_jmptbl (core->anal, r_list_first (block->fcns), block, depth, core->offset, 0, table, seg, sz, elements, 0, false);
+				try_walkthrough_jmptbl (core->anal, r_list_first (block->fcns), block,
+					depth, core->offset, 0, table, seg, sz, elements, 0, false);
 				free (args);
 			} else {
 				eprintf ("No function defined here\n");
@@ -4552,7 +4560,7 @@ int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'c': { // "afc"
 		RAnalFunction *fcn = NULL;
-		if (!input[2] || input[2] == ' ' || input[2] == 'r' || input[2] == 'a') {
+		if (!input[2] || input[2] == ' ' || input[2] == 'i' || input[2] == 'r' || input[2] == 'a') {
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (!fcn) {
 				eprintf ("afc: Cannot find function here\n");
@@ -4564,21 +4572,22 @@ int cmd_anal_fcn(RCore *core, const char *input) {
 			r_cons_println (fcn->cc);
 			break;
 		case ' ': { // "afc "
-			char *argument = strdup (input + 3);
-			char *cc = argument;
-			r_str_trim (cc);
-			if (!r_anal_cc_exist (core->anal, cc)) {
-				const char *asmOs = r_config_get (core->config, "asm.os");
-				eprintf ("afc: Unknown calling convention '%s' for '%s'\n"
-						"See afcl for available types\n", cc, asmOs);
-			} else {
-				fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
-			}
-			free (argument);
+				  char *cc = r_str_trim_dup (input + 3);
+				  if (!r_anal_cc_exist (core->anal, cc)) {
+					  const char *asmOs = r_config_get (core->config, "asm.os");
+					  eprintf ("afc: Unknown calling convention '%s' for '%s'\n"
+							  "See afcl for available types\n", cc, asmOs);
+				  } else {
+					  fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
+				  }
+				  free (cc);
+			  }
 			break;
-		}
 		case 'a': // "afca"
-			eprintf ("Todo\n");
+			eprintf ("TODO: afca\n");
+			break;
+		case 'i':
+			cmd_afci (core, fcn);
 			break;
 		case 'f': // "afcf" "afcfj"
 			cmd_anal_fcn_sig (core, input + 3);
@@ -4587,15 +4596,21 @@ int cmd_anal_fcn(RCore *core, const char *input) {
 			cmd_afck (core, NULL);
 			break;
 		case 'l': // "afcl" list all function Calling conventions.
-			cmd_tcc (core, input + 3);
+			if (input[3] == '?') {
+				r_core_cmd_help (core, help_msg_afc);
+			} else {
+				cmd_tcc (core, input + 3);
+			}
 			break;
 		case 'o': { // "afco"
 			char *dbpath = r_str_trim_dup (input + 3);
 			if (R_STR_ISNOTEMPTY (dbpath) && r_file_exists (dbpath)) {
 				Sdb *db = sdb_new (0, dbpath, 0);
-				sdb_merge (core->anal->sdb_cc, db);
-				sdb_close (db);
-				sdb_free (db);
+				if (db) {
+					sdb_merge (core->anal->sdb_cc, db);
+					sdb_close (db);
+					sdb_free (db);
+				}
 			} else {
 				eprintf ("Usage: afco [dbpath] - open calling conventions defined in local file.\n");
 			}
@@ -4613,7 +4628,6 @@ int cmd_anal_fcn(RCore *core, const char *input) {
 				}
 				pj_o (pj);
 			}
-
 			char *cmd = r_str_newf ("cc.%s.ret", fcn->cc);
 			const char *regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 			if (regname) {
@@ -4982,6 +4996,26 @@ int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	}
 	return true;
+}
+
+R_API void r_core_anal_undefine(RCore *core, ut64 off) {
+	// very slow
+	// RAnalFunction *f = r_anal_get_fcn_in (core->anal, off, -1);
+	RAnalFunction *f = r_anal_get_function_at (core->anal, off);
+	if (f) {
+		if (!strncmp (f->name, "fcn.", 4)) {
+			r_flag_unset_name (core->flags, f->name);
+		}
+		r_meta_del (core->anal, R_META_TYPE_ANY, r_anal_function_min_addr (f), r_anal_function_linear_size (f));
+		r_anal_function_del (core->anal, off);
+	}
+	//r_anal_function_del_locs (core->anal, off);
+	r_anal_delete_block_at (core->anal, off);
+	char *abcmd = r_str_newf ("ab-0x%"PFMT64x, off);
+	if (abcmd) {
+		cmd_af (core, abcmd);
+		free (abcmd);
+	}
 }
 
 // size: 0: bits; -1: any; >0: exact size
@@ -12305,7 +12339,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'f': // "af"
-		if (!cmd_anal_fcn (core, input)) {
+		if (!cmd_af (core, input)) {
 			return false;
 		}
 		break;
