@@ -1,0 +1,32 @@
+.console_terminal {
+        left: auto;
+        margin: auto;
+	border-left: 5px;
+	border-right: 5px;
+        border-radius: 10px;
+        background-color:black;
+        font-family: monospace;
+        color:white;
+}
+.console_output {
+        background-color: black;
+        border-radius: 10px;
+        font-family: monospace;
+        color: white;
+        white-space: pre-wrap;
+}
+.console_input {
+        color: white !important;
+        border: none;
+        position:absolute;
+        background: transparent !important;
+        padding-left:20px;
+        width:100%;
+        margin-left:-20px;
+        overflow:hidden;
+        font-family: monospace;
+	height:1.5em;
+}
+.console_prompt {
+        overflow:hidden;
+}

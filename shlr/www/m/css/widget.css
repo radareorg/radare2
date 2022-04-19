@@ -1,0 +1,75 @@
+#container {
+	clear:both;
+	position:relative;
+	height:100%;
+}
+
+.rwidget {
+	height:100%;
+	overflow:auto;
+	box-sizing: border-box;
+}
+
+.rwidget.dark {
+	background-color: #202020;
+	color: white;
+}
+
+.rwidget.full {
+}
+
+.rwidget.focus {
+}
+
+.rwidget:nth-child(2) {
+	display: none;
+}
+
+/**
+ * Horizontal widgets
+ */
+
+.rwidget.horizontal {
+	height:50%;
+}
+
+.rwidget.horizontal:first-child {
+
+}
+
+.rwidget.horizontal:last-child {
+
+}
+
+/**
+ * Vertical widgets
+ */
+
+.rwidget.vertical {
+	width:49.5%;
+	position:absolute;
+}
+
+.rwidget.vertical:first-child {
+	left:0;
+}
+
+.rwidget.vertical:nth-child(2) {
+	right:0;
+	display: block;
+}
+
+/**
+ * Ruler to set space
+ */
+
+#ruler {
+	position:absolute;
+	margin-left:50%;
+	height:100%;
+	border-right:4px solid #5C5C5C;
+	z-index:1000;
+	cursor: col-resize;
+
+	display:none;
+}

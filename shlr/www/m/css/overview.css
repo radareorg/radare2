@@ -1,0 +1,25 @@
+@media (max-width: 1024px) {
+    div.overview-tabs > a {
+        padding:0 1vw;
+    }
+}
+
+dl.infocard {
+    -webkit-column-count: 2;
+    -moz-column-count: 2;
+    column-count: 2;
+}
+
+dl.infocard dt {
+    float: left; 
+    font-weight: bold;
+    text-align: right;
+    margin-right: 10px; 
+    padding: 3px;  
+    width: 100px; 
+}
+ 
+dl.infocard dd {
+    margin: 2px 0; 
+    padding: 3px 0;
+}
