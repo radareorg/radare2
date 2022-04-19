@@ -154,8 +154,8 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
-			} else if (ptr[0] == '0' && ptr[1] == ';' && ptr[2] == '0') {
-				// wtf ?
+			} else if ((ptr[0] == '0' || ptr[0] == '1') && ptr[1] == ';' && ptr[2] == '0') {
+				// bg color is kind of ignored, but no glitch so far
 				r_cons_gotoxy (0, 0);
 				ptr += 4;
 				esc = 0;
