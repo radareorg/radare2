@@ -513,7 +513,7 @@ R_API char *r_syscmd_cat(const char *file) {
 R_API char *r_syscmd_mkdir(const char *dir) {
 	const char *suffix = r_str_trim_head_ro (strchr (dir, ' '));
 	if (!suffix || !strncmp (suffix, "-p", 3)) {
-		return r_str_dup (NULL, "Usage: mkdir [-p] [directory]\n");
+		return strdup ("Usage: mkdir [-p] [directory]\n");
 	}
 	int ret;
 	char *dirname = (!strncmp (suffix, "-p ", 3))
@@ -522,7 +522,7 @@ R_API char *r_syscmd_mkdir(const char *dir) {
 	ret = r_sys_mkdirp (dirname);
 	if (!ret) {
 		if (r_sys_mkdir_failed ()) {
-			char *res = r_str_newf ("Cannot create \"%s\"\n", dirname);
+			char *res = r_str_newf ("Cannot create '%s'\n", dirname);
 			free (dirname);
 			return res;
 		}

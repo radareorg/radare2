@@ -18,7 +18,7 @@ RUN
 NAME=mkdir -p (without specifying directory)
 FILE=-
 CMDS=mkdir -p
-EXPECT=<<EOF
+EXPECT_ERR=<<EOF
 Usage: mkdir [-p] [directory]
 EOF
 RUN
@@ -40,5 +40,7 @@ rm /tmp/foo
 EOF
 EXPECT=<<EOF
 /tmp/foo/bar/foo/./  /tmp/foo/bar/foo/../  /tmp/foo/bar/foo/fooz
+EOF
+EXPECT_ERR=<<EOF
 EOF
 RUN

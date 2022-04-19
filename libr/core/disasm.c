@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2022 - nibble, pancake, dso, lazula */
 
 #include "r_core.h"
-#include "../anal/abi.inc"
 
 #define HASRETRY 1
 #define HAVE_LOCALS 1
