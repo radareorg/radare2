@@ -252,25 +252,28 @@ a {
   -ms-flex-align: center;
   align-items: center;
 }
+
 ul {
-  list-style-type: none;
+	list-style-type: none;
 }
 
 .pre, pre {
-    font-family: "DejaVu Sans Mono", Console, Courier New, monospace;
-    color: grey;
-    white-space: pre;
+	font-family: "Roboto Mono", "DejaVu Sans Mono", Console, Courier New, monospace;
+	color: grey;
+	white-space: pre;
 }
 
-input {
-  background-color: #f0f0f0 !important;
-  color: black !important;
-  font-family: monospace;
-  width: 100%;
+textarea, input {
+	font-size: 1.2em;
+	background-color: #f0f0f0;
+	color: black;
+	padding-left:1em;
+	font-family: "Roboto Mono", monospace;
+	width: 100%;
 }
 
 td {
-  text-align:left !important;
+	text-align:left !important;
 }
 
 .output {
@@ -297,7 +300,7 @@ td {
   position:absolute;
   /* taken from .toproundbuton */
   border-top: 5px solid #238082;
-  z-index:100;
+  z-index:200;
   display:block;
   bottom:0;
   right:0;
@@ -312,11 +315,11 @@ td {
 }
 
 #statusbar {
-  line-height:2em;
+  line-height: 2em;
 }
 
 #container {
-  margin-bottom:2em;
+  margin-bottom: 2em;
 }
 
 #container.sbIsHalf {

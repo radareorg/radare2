@@ -1,5 +1,5 @@
 .hexdump {
-	background-color: rgb(32, 32, 32);
+	background-color: rgb(16, 16, 16);
 	color: white;
 	overflow: hidden !important;
 }
@@ -26,10 +26,13 @@
 }
 
 .hex.flex-body {
-	font-family: "DejaVu Sans Mono", Console, Courier New, monospace;
+	font-family: "Roboto Mono", "DejaVu Sans Mono", Console, Courier New, monospace;
+	font-weight: bold;
 }
 
 ul.listContent li {
+	line-height: 1;
+	height: 1.2em;
 	white-space: nowrap;
 }
 
@@ -60,7 +63,8 @@ ul.hexpairs li input, ul.ascii li input {
 	background:rgba(255,255,255,0.33) !important;
 	color:white !important;
 	font-size:inherit;
-	font-family:inherit;
+	font-family: "Roboto Mono", "Console";
+	font-weight: bold;
 	width:18px;
 	text-align:center;
 }
@@ -76,7 +80,7 @@ ul.hexpairs li.modified, ul.ascii li.modified  {
 }
 
 ul.hexpairs li.selected {
-	border-bottom:2px solid rgba(255,255,255,0.8);
+	border-bottom:0px solid rgba(255,255,255,0.8);
 }
 
 ul.hexpairs li.active, ul.ascii li.active {
