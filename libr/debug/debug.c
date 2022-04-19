@@ -605,7 +605,7 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 
 	/* Rewind seek from breakpoint address to real PC */
 	if (core) {
-		r_core_seek (core, reg_pc, true);
+		core->offset = reg_pc;
 	}
 
 	return true;
