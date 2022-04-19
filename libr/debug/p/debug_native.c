@@ -786,11 +786,11 @@ static int thp_mode(void) {
 }
 #endif
 
-static int linux_map_thp(RDebug *dbg, ut64 addr, int size) {
+static bool linux_map_thp(RDebug *dbg, ut64 addr, int size) {
 #if !defined(__ANDROID__) && defined(MADV_HUGEPAGE)
 	RBuffer *buf = NULL;
 	char code[1024];
-	int ret = true;
+	bool ret = true;
 	char *asm_list[] = {
 		"x86", "x86.as",
 		"x64", "x86.as",
@@ -832,10 +832,13 @@ static int linux_map_thp(RDebug *dbg, ut64 addr, int size) {
 	}
 	buf = r_egg_get_bin (dbg->egg);
 	if (buf) {
+		ut64 tmpsz, retval;
 		r_reg_arena_push (dbg->reg);
-		ut64 tmpsz;
 		const ut8 *tmp = r_buf_data (buf, &tmpsz);
-		ret = r_debug_execute (dbg, tmp, tmpsz, true, false) == 0;
+		if (!r_debug_execute (dbg, tmp, tmpsz, &retval, true, false)) {
+			eprintf ("Failed to execute code.\n");
+		}
+		ret = (retval == 0);
 		r_reg_arena_pop (dbg->reg);
 	}
 err_linux_map_thp:
@@ -891,9 +894,12 @@ static RDebugMap* linux_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 		r_reg_arena_push (dbg->reg);
 		ut64 tmpsz;
 		const ut8 *tmp = r_buf_data (buf, &tmpsz);
-		map_addr = r_debug_execute (dbg, tmp, tmpsz, true, false);
+		if (!r_debug_execute (dbg, tmp, tmpsz, &map_addr, true, false)) {
+			eprintf ("Failed to execute code.\n");
+			goto err_linux_map_alloc;
+		}
 		r_reg_arena_pop (dbg->reg);
-		if (map_addr != (ut64)-1) {
+		if (map_addr < UT64_MAX) {
 			if (thp) {
 				if (!linux_map_thp (dbg, map_addr, size)) {
 					// Not overly dramatic
@@ -911,7 +917,7 @@ err_linux_map_alloc:
 static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	RBuffer *buf = NULL;
 	char code[1024];
-	int ret = 0;
+	ut64 ret = 0;
 	char *asm_list[] = {
 		"x86", "x86.as",
 		"x64", "x86.as",
@@ -940,11 +946,13 @@ static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 		r_reg_arena_push (dbg->reg);
 		ut64 tmpsz;
 		const ut8 *tmp = r_buf_data (buf, &tmpsz);
-		ret = r_debug_execute (dbg, tmp, tmpsz, true, false) == 0;
+		if (!r_debug_execute (dbg, tmp, tmpsz, &ret, true, false)) {
+			eprintf ("Failed to execute code.\n");
+		}
 		r_reg_arena_pop (dbg->reg);
 	}
 err_linux_map_dealloc:
-	return ret;
+	return (int)ret;
 }
 #endif
 
@@ -1556,7 +1564,9 @@ static int r_debug_native_map_protect(RDebug *dbg, ut64 addr, int size, int perm
 		r_reg_arena_push (dbg->reg);
 		ut64 tmpsz;
 		const ut8 *tmp = r_buf_data (buf, &tmpsz);
-		r_debug_execute (dbg, tmp, tmpsz, true, false);
+		if (!r_debug_execute (dbg, tmp, tmpsz, NULL, true, false)) {
+			eprintf ("Failed to execute code.\n");
+		}
 		r_reg_arena_pop (dbg->reg);
 		return true;
 	}

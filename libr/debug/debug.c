@@ -516,12 +516,12 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
  *
  * TODO: Add support for reverse stack architectures
  */
-R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, bool restore, bool ignore_stack) {
+R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret, bool restore, bool ignore_stack) {
 	RCore *core;
 	ut8 stack_backup[4096];
 	ut8 *pc_backup = NULL, *reg_backup = NULL;
 	int reg_backup_sz;
-	RRegItem *ri_sp, *ri_pc;
+	RRegItem *ri_sp, *ri_pc, *ri_ret;
 	ut64 reg_sp, reg_pc, bp_addr;
 
 	r_return_val_if_fail (dbg && buf && len > 0, false);
@@ -582,6 +582,13 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, bool restore, b
 	dbg->iob.write_at (dbg->iob.io, reg_pc, pc_backup, len);
 
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+
+	/* Propagate return value */
+	if (ret) {
+		ri_ret = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_R0], R_REG_TYPE_GPR);
+		*ret = r_reg_get_value (dbg->reg, ri_ret);
+	}
+
 	if (restore) {
 		if (!ignore_stack) {
 			/* Restore stack */

@@ -5748,7 +5748,9 @@ static int cmd_debug(void *data, const char *input) {
 			if (strlen (hexpairs) < 8192) {
 				int bytes_len = r_hex_str2bin (hexpairs, bytes);
 				if (bytes_len > 0) {
-					r_debug_execute (core->dbg, bytes, bytes_len, is_dxr, is_dxrs);
+					if (!r_debug_execute (core->dbg, bytes, bytes_len, NULL, is_dxr, is_dxrs)) {
+						eprintf ("Failed to execute code.\n");
+					}
 				} else {
 					eprintf ("Failed to parse hex pairs.\n");
 				}
@@ -5767,7 +5769,9 @@ static int cmd_debug(void *data, const char *input) {
 			acode = r_asm_massemble (core->rasm, input + 2);
 			if (acode) {
 				r_reg_arena_push (core->dbg->reg);
-				r_debug_execute (core->dbg, acode->bytes, acode->len, false, false);
+				if (!r_debug_execute (core->dbg, acode->bytes, acode->len, NULL, false, false)) {
+					eprintf ("Failed to inject code.\n");
+				}
 				r_reg_arena_pop (core->dbg->reg);
 			}
 			r_asm_code_free (acode);
@@ -5794,7 +5798,9 @@ static int cmd_debug(void *data, const char *input) {
 				ut64 tmpsz;
 				const ut8 *tmp = r_buf_data (b, &tmpsz);
 				if (tmpsz > 0) {
-					r_debug_execute (core->dbg, tmp, tmpsz, false, false);
+					if (!r_debug_execute (core->dbg, tmp, tmpsz, NULL, false, false)) {
+						eprintf ("Failed to inject code.\n");
+					}
 				} else {
 					eprintf ("No egg program compiled to execute.\n");
 				}
