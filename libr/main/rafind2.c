@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +11,6 @@
 #include <r_cons.h>
 #include <r_lib.h>
 #include <r_io.h>
-
 
 typedef struct {
 	RIO *io;
@@ -279,16 +278,22 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	}
 	if (ro->mode == R_SEARCH_KEYWORD) {
 		r_list_foreach (ro->keywords, iter, kw) {
+			RSearchKeyword *k = NULL;
 			if (ro->hexstr) {
 				if (ro->mask) {
-					r_search_kw_add (rs, r_search_keyword_new_hex (kw, ro->mask, NULL));
+					k = r_search_keyword_new_hex (kw, ro->mask, NULL);
 				} else {
-					r_search_kw_add (rs, r_search_keyword_new_hexmask (kw, NULL));
+					k = r_search_keyword_new_hexmask (kw, NULL);
 				}
 			} else if (ro->widestr) {
-				r_search_kw_add (rs, r_search_keyword_new_wide (kw, ro->mask, NULL, 0));
+				k = r_search_keyword_new_wide (kw, ro->mask, NULL, 0);
 			} else {
-				r_search_kw_add (rs, r_search_keyword_new_str (kw, ro->mask, NULL, 0));
+				k = r_search_keyword_new_str (kw, ro->mask, NULL, 0);
+			}
+			if (k) {
+				r_search_kw_add (rs, k);
+			} else {
+				eprintf ("Invalid keyword\n");
 			}
 		}
 	}
@@ -472,8 +477,8 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			break;
 		case 'x':
 			ro.mode = R_SEARCH_KEYWORD;
-			ro.hexstr = 1;
-			ro.widestr = 0;
+			ro.hexstr = true;
+			ro.widestr = false;
 			r_list_append (ro.keywords, (void*)opt.arg);
 			break;
 		case 'X':
