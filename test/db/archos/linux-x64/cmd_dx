@@ -148,20 +148,18 @@ orax = 0x0000003b
 EOF
 RUN
 
-NAME=dxr should not advance seek
-BROKEN=1
+NAME=dx should not advance seek
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
 s > $seek1
-dxr 90909090
+dx 9090909090
 s > $seek2
-cmp $seek1 $seek2
-?! seek did not move
+dif $seek1 $seek2
 doc
 EOF
 EXPECT=<<EOF
-seek did not move
+
 EOF
 RUN
 

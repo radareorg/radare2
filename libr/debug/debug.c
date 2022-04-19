@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, jduck, TheLemonMan, saucec0de */
+/* radare - LGPL - Copyright 2009-2022 - pancake, jduck, TheLemonMan, saucec0de */
 
 #include <r_debug.h>
 #include <r_drx.h>
@@ -516,70 +516,94 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
  *
  * TODO: Add support for reverse stack architectures
  */
-R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, bool restore, bool ignore_stack) {
-	int orig_sz;
+R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, bool restore, bool ignore_stack) {
+	RCore *core;
 	ut8 stack_backup[4096];
 	ut8 *pc_backup = NULL, *reg_backup = NULL;
-	RRegItem *ri, *risp, *ripc;
-	ut64 rsp, rpc, ra0 = 0LL;
+	int reg_backup_sz;
+	RRegItem *ri_sp, *ri_pc;
+	ut64 reg_sp, reg_pc, bp_addr;
+
+	r_return_val_if_fail (dbg && buf && len > 0, false);
+	core = dbg->corebind.core;
+
 	if (r_debug_is_dead (dbg)) {
 		return false;
 	}
-	ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
-	risp = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_SP], R_REG_TYPE_GPR);
-	if (ripc) {
-		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-		reg_backup = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &orig_sz);
-		if (!reg_backup) {
-			eprintf ("Cannot get register arena bytes\n");
-			return 0LL;
-		}
-		rpc = r_reg_get_value (dbg->reg, ripc);
-		rsp = r_reg_get_value (dbg->reg, risp);
 
-		pc_backup = malloc (len);
-		if (!pc_backup) {
-			free (reg_backup);
-			return 0;
-		}
+	ri_pc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
+	ri_sp = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_SP], R_REG_TYPE_GPR);
 
-		dbg->iob.read_at (dbg->iob.io, rpc, pc_backup, len);
-
-		if (restore && !ignore_stack) {
-			dbg->iob.read_at (dbg->iob.io, rsp, stack_backup, len);
-		}
-
-		r_bp_add_sw (dbg->bp, rpc+len, dbg->bpsize, R_BP_PROT_EXEC);
-
-		/* execute code here */
-		dbg->iob.write_at (dbg->iob.io, rpc, buf, len);
-		//r_bp_add_sw (dbg->bp, rpc+len, 4, R_BP_PROT_EXEC);
-		r_debug_continue (dbg);
-		//r_bp_del (dbg->bp, rpc+len);
-		/* TODO: check if stopped in breakpoint or not */
-
-		r_bp_del (dbg->bp, rpc+len);
-		dbg->iob.write_at (dbg->iob.io, rpc, pc_backup, len);
-		if (restore && !ignore_stack) {
-			dbg->iob.write_at (dbg->iob.io, rsp, stack_backup, len);
-		}
-
-		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-		ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_A0], R_REG_TYPE_GPR);
-		ra0 = r_reg_get_value (dbg->reg, ri);
-		if (restore) {
-			r_reg_read_regs (dbg->reg, reg_backup, orig_sz);
-		} else {
-			r_reg_set_value (dbg->reg, ripc, rpc);
-		}
-		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true);
-		free (pc_backup);
-		free (reg_backup);
-		eprintf ("ra0=0x%08"PFMT64x"\n", ra0);
-	} else {
+	if (!ri_pc) {
 		eprintf ("r_debug_execute: Cannot get program counter\n");
+		return false;
 	}
-	return (ra0);
+
+	if (restore && !ignore_stack && !ri_sp) {
+		eprintf ("r_debug_execute: Cannot get stack pointer\n");
+		return false;
+	}
+
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+	reg_backup = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &reg_backup_sz);
+
+	if (!reg_backup) {
+		eprintf ("Cannot get register arena bytes\n");
+		return false;
+	}
+
+	reg_pc = r_reg_get_value (dbg->reg, ri_pc);
+	if (restore && !ignore_stack) {
+		reg_sp = r_reg_get_value (dbg->reg, ri_sp);
+	}
+
+	pc_backup = malloc (len);
+	if (!pc_backup) {
+		free (reg_backup);
+		return false;
+	}
+
+	/* Store bytes at PC */
+	dbg->iob.read_at (dbg->iob.io, reg_pc, pc_backup, len);
+	if (restore && !ignore_stack) {
+		/* Store bytes at stack */
+		dbg->iob.read_at (dbg->iob.io, reg_sp, stack_backup, len);
+	}
+
+	bp_addr = reg_pc + len;
+	r_bp_add_sw (dbg->bp, bp_addr, dbg->bpsize, R_BP_PROT_EXEC);
+
+	dbg->iob.write_at (dbg->iob.io, reg_pc, buf, len);
+	r_debug_continue (dbg);
+	/* TODO: check if stopped in breakpoint or not */
+
+	/* Restore bytes at PC */
+	r_bp_del (dbg->bp, bp_addr);
+	dbg->iob.write_at (dbg->iob.io, reg_pc, pc_backup, len);
+
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+	if (restore) {
+		if (!ignore_stack) {
+			/* Restore stack */
+			dbg->iob.write_at (dbg->iob.io, reg_sp, stack_backup, len);
+		}
+		/* Restore registers */
+		r_reg_read_regs (dbg->reg, reg_backup, reg_backup_sz);
+	} else {
+		/* Restore PC */
+		r_reg_set_value (dbg->reg, ri_pc, reg_pc);
+	}
+	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true);
+
+	free (pc_backup);
+	free (reg_backup);
+
+	/* Rewind seek from breakpoint address to real PC */
+	if (core) {
+		r_core_seek (core, reg_pc, true);
+	}
+
+	return true;
 }
 
 R_API int r_debug_startv(struct r_debug_t *dbg, int argc, char **argv) {

@@ -526,7 +526,7 @@ R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num);
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name);
 R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *value);
 
-R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, bool restore, bool ignore_stack);
+R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, bool restore, bool ignore_stack);
 R_API bool r_debug_map_sync(RDebug *dbg);
 
 R_API int r_debug_stop(RDebug *dbg);
