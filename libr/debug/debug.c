@@ -553,9 +553,7 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	}
 
 	reg_pc = r_reg_get_value (dbg->reg, ri_pc);
-	if (restore && !ignore_stack) {
-		reg_sp = r_reg_get_value (dbg->reg, ri_sp);
-	}
+	reg_sp = r_reg_get_value (dbg->reg, ri_sp);
 
 	pc_backup = malloc (len);
 	if (!pc_backup) {
