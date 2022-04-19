@@ -1608,18 +1608,22 @@ static void __cmd_afvf(RCore *core, const char *input) {
 static int var_cmd(RCore *core, const char *str) {
 	int delta, type = *str, res = true;
 	RAnalVar *v1;
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	if (!str[0]) {
-		// "afv"
-		r_core_cmd0 (core, "afvr");
-		r_core_cmd0 (core, "afvs");
-		r_core_cmd0 (core, "afvb");
+		if (fcn) {
+			// "afv"
+			r_core_cmd0 (core, "afvr");
+			r_core_cmd0 (core, "afvs");
+			r_core_cmd0 (core, "afvb");
+		} else {
+			eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+		}
 		return true;
 	}
 	if (str[1] == '?'|| str[0] == '?') {
 		var_help (core, *str);
 		return res;
 	}
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	PJ *pj = NULL;
 	if (str[0] == 'j') { // "afvj"
 		pj = r_core_pj_new (core);
@@ -1816,7 +1820,11 @@ static int var_cmd(RCore *core, const char *str) {
 	switch (str[1]) { // afv[bsr]
 	case '\0':
 	case '*': // "afv[bsr]*"
-		r_anal_var_list_show (core->anal, fcn, type, str[1], NULL);
+		if (fcn) {
+			r_anal_var_list_show (core->anal, fcn, type, str[1], NULL);
+		} else {
+			eprintf ("afv: Cannot find function\n");
+		}
 		break;
 	case 'j':  // "afv[bsr]j"
 		pj = r_core_pj_new (core);
