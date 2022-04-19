@@ -1,36 +1,37 @@
 .terminal {
 	left: 5;
 	right: 5;
-	width:100%;
+	width: 100%;
 	border-radius: 10px;
-	background-color:black;
-	font-family: monospace;
-	color:white;
+	background-color: black;
+	font-family: "Roboto Mono", monospace;
+	color: white;
 }
 
 .terminal_output {
 	border-radius: 10px;
 	overflow:scroll;
 	width: 100%;
-	font-family: monospace;
+	font-family: "Roboto Mono", monospace;
 	color: white;
 	white-space: pre-wrap;
 	padding-bottom: 2em;
 }
 
 .terminal_prompt {
-	overflow:hidden;
+	overflow: hidden;
+	background-color: red;
 }
 
 .terminal_input {
 	border: 2px solid #238082;
-	position:fixed;
+	position: fixed;
 	bottom: 0em;
-	height:2em;
+	height: 2em;
 	color: white;
-	background: black;
+	background-color: black;
 	font-size: 1.2em;
-	width:100%;
-	overflow:hidden;
-	font-family: monospace;
+	width: 100%;
+	overflow: hidden;
+	font-family: "Roboto Mono", monospace;
 }
