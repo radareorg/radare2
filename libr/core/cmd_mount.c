@@ -32,11 +32,19 @@ static const char *help_msg_mf[] = {
 	NULL
 };
 
-static int cmd_mkdir(void *data, const char *input) {
-	char *res = r_syscmd_mkdir (input);
-	if (res) {
-		r_cons_print (res);
-		free (res);
+static int cmd_mkdir(RCore *core, const char *input) {
+	if (R_STR_ISEMPTY (input)) {
+		eprintf ("Usage: mkdir [-p] [directory]\n");
+		r_core_return_code (core, 1);
+	} else {
+		char *res = r_syscmd_mkdir (input);
+		if (res) {
+			r_core_return_code (core, 1);
+			eprintf ("%s", res);
+			free (res);
+		} else {
+			r_core_return_code (core, 0);
+		}
 	}
 	return 0;
 }
@@ -131,6 +139,10 @@ static int cmd_mount(void *data, const char *_input) {
 	RFSPartition *part;
 	RCore *core = (RCore *)data;
 
+	if (strchr (_input, '?')) {
+		r_core_cmd_help (core, help_msg_m);
+		return 0;
+	}
 	if (!strncmp ("kdir", _input, 4)) {
 		return cmd_mkdir (data, _input);
 	}

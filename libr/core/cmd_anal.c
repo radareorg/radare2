@@ -2,7 +2,6 @@
 
 #include <r_core.h>
 #include <r_util/r_graph_drawable.h>
-#include "../anal/abi.inc"
 
 #define SLOW_ANALYSIS 1
 #define MAX_SCAN_SIZE 0x7ffffff
