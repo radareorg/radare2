@@ -28,14 +28,14 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 
 #define r_warn_if_reached() \
 	do { \
-		r_assert_log (R_LOGLVL_WARN, R_LOG_ORIGIN, "(%s:%d):%s%s code should not be reached\n", \
+		r_assert_log (R_LOGLVL_WARN, R_LOG_ORIGIN, "(%s:%d):%s%s code should not be reached", \
 			__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : ""); \
 	} while (0)
 
 #define r_warn_if_fail(expr) \
 	do { \
 		if (!(expr)) { \
-			r_assert_log (R_LOGLVL_WARN, R_LOG_ORIGIN, "WARNING (%s:%d):%s%s runtime check failed: (%s)\n", \
+			r_assert_log (R_LOGLVL_WARN, R_LOG_ORIGIN, "WARNING (%s:%d):%s%s runtime check failed: (%s)", \
 				__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : "", #expr); \
 		} \
 	} while (0)
@@ -88,7 +88,7 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 #define r_return_if_fail(expr) \
 	do { \
 		if (!(expr)) { \
-			H_LOG_ (R_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)\n", R_FUNCTION, #expr, __LINE__); \
+			H_LOG_ (R_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)", R_FUNCTION, #expr, __LINE__); \
 			return; \
 		} \
 	} while (0)
@@ -96,20 +96,20 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 #define r_return_val_if_fail(expr, val) \
 	do { \
 		if (!(expr)) { \
-			H_LOG_ (R_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)\n", R_FUNCTION, #expr, __LINE__); \
+			H_LOG_ (R_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)", R_FUNCTION, #expr, __LINE__); \
 			return (val); \
 		} \
 	} while (0)
 
 #define r_return_if_reached() \
 	do { \
-		H_LOG_ (R_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE__, R_FUNCTION); \
+		H_LOG_ (R_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached", __FILE__, __LINE__, R_FUNCTION); \
 		return; \
 	} while (0)
 
 #define r_return_val_if_reached(val) \
 	do { \
-		H_LOG_ (R_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE__, R_FUNCTION); \
+		H_LOG_ (R_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached", __FILE__, __LINE__, R_FUNCTION); \
 		return (val); \
 	} while (0)
 
