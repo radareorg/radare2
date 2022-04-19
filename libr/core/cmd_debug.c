@@ -25,7 +25,7 @@ static const char *help_msg_d[] = {
 	"db", "[?]", "breakpoints commands",
 	"dbt", "[?]", "display backtrace based on dbg.btdepth and dbg.btalgo",
 	"dc", "[?]", "continue execution",
-	"dd", "[?]", "file descriptors (!fd in r1)",
+	"dd", "[?][*+-tsdfrw]", "manage file descriptors for child process",
 	"de", "[-sc] [perm] [rm] [e]", "debug with ESIL (see de?)",
 	"dg", " <file>", "generate a core-file (WIP)",
 	"dH", " [handler]", "transplant process to a new handler",
@@ -54,30 +54,30 @@ static const char *help_msg_db[] = {
 	"Usage: db", "", " # Breakpoints commands",
 	"db", "", "list breakpoints",
 	"db*", "", "list breakpoints in r commands",
-	"db", " sym.main", "Add breakpoint into sym.main",
-	"db", " <addr>", "Add breakpoint",
-	"dbH", " <addr>", "Add hardware breakpoint",
-	"db-", " <addr>", "Remove breakpoint",
-	"db-*", "", "Remove all the breakpoints",
+	"db", " sym.main", "add breakpoint into sym.main",
+	"db", " <addr>", "add breakpoint",
+	"dbH", " <addr>", "add hardware breakpoint",
+	"db-", " <addr>", "remove breakpoint",
+	"db-*", "", "remove all the breakpoints",
 	"db.", "", "show breakpoint info in current offset",
 	"dbj", "", "list breakpoints in JSON format",
 	// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
-	"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
-	"dbC", " <addr> <cmd>", "Run command but continue until <cmd> returns zero",
+	"dbc", " <addr> <cmd>", "run command when breakpoint is hit",
+	"dbC", " <addr> <cmd>", "run command but continue until <cmd> returns zero",
 	"dbd", " <addr>", "disable breakpoint",
 	"dbe", " <addr>", "enable breakpoint",
 	"dbs", " <addr>", "toggle breakpoint",
 	"dbf", "", "put a breakpoint into every no-return function",
 	//
-	"dbm", " <module> <offset>", "Add a breakpoint at an offset from a module's base",
+	"dbm", " <module> <offset>", "add a breakpoint at an offset from a module's base",
 	"dbn", " [<name>]", "show or set name for current breakpoint",
 	//
 	"dbi", "", "list breakpoint indexes",
 	"dbi", " <addr>", "show breakpoint index in givengiven  offset",
 	"dbi.", "", "show breakpoint index in current offset",
-	"dbi-", " <idx>", "Remove breakpoint by index",
+	"dbi-", " <idx>", "remove breakpoint by index",
 	"dbix", " <idx> [expr]", "set expression for bp at given index",
-	"dbic", " <idx> <cmd>", "Run command at breakpoint index",
+	"dbic", " <idx> <cmd>", "run command at breakpoint index",
 	"dbie", " <idx>", "enable breakpoint by index",
 	"dbid", " <idx>", "disable breakpoint by index",
 	"dbis", " <idx>", "swap Nth breakpoint",
@@ -86,10 +86,10 @@ static const char *help_msg_db[] = {
 	"dbits", " <idx>", "swap Nth breakpoint trace",
 	//
 	"dbh", " x86", "set/list breakpoint plugin handlers",
-	"dbh-", " <name>", "Remove breakpoint plugin handler",
+	"dbh-", " <name>", "remove breakpoint plugin handler",
 	"dbt", "[?]", "show backtrace. See dbt? for more details",
 	"dbx", " [expr]", "set expression for bp in current offset",
-	"dbw", " <addr> <r/w/rw>", "Add watchpoint",
+	"dbw", " <addr> <r/w/rw>", "add watchpoint",
 #if __WINDOWs__
 	"dbW", " <WM_DEFINE> [?|handle|name]", "set cond. breakpoint on a window message handler",
 #endif
@@ -167,17 +167,17 @@ static const char *help_msg_dcu[] = {
 };
 
 static const char *help_msg_dd[] = {
-	"Usage: dd", "", "Manage child process files (prepend '.' to inject it)",
-	"dd", "", "list file descriptors",
-	"dd", " <file>", "open file in child process as O_RDONLY)",
-	"dd-", "<fd>", "close stdout fd",
-	"dd+", "<file>", "open file in read-write (O_RDWR)",
-	"dd*", "", "list file descriptors (in radare commands)",
-	"dds", " <fd> <off>", "seek given fd to offset",
-	"ddd", " <fd1> <fd2>", "dup2 from fd1 to fd2",
-	"ddf", " <addr>", "create pipe and write fd to address",
-	"ddr", " <fd> <size>", "Read N bytes from fd",
-	"ddw", " <fd> <hexpairs>", "Write N bytes to fd",
+	"Usage: dd", "", "Manage file descriptors for child process (* to show r2 commands)",
+	"dd", "[*]", "list file descriptors",
+	"dd", "[*] <file|addr>", "open file as read-only (r--); addr = use as char* for path",
+	"dd+", "[*] <file|addr>", "open/create file as read-write (rw-); addr = use as char* for path",
+	"dd-", "[*] <fd>", "close fd",
+	"ddt", "[*]", "close terminal fd (alias for `dd- 0`)",
+	"dds", "[*] <fd> [offset]", "seek fd to offset (no offset = seek to beginning)",
+	"ddd", "[*] <oldfd> <newfd>", "copy oldfd to newfd with dup2",
+	"ddf", "[*] <addr>", "create pipe and write fds to (int[2])addr",
+	"ddr", "[*] <fd> <addr> <size>", "read bytes from fd into (char*)addr",
+	"ddw", "[*] <fd> <addr> <size>", "write bytes from (const char*)addr to fd",
 	NULL
 };
 
@@ -216,7 +216,7 @@ static const char *help_msg_dk[] = {
 	"dk", " <signal>", "send KILL signal to child",
 	"dk", " <signal>=1", "set signal handler for <signal> in child",
 	"dk?", "<signal>", "name/signum resolver",
-	"dko", "[?] <signal>", "Reset skip or cont options for given signal",
+	"dko", "[?] <signal>", "reset skip or cont options for given signal",
 	"dko", " <signal> [|skip|cont]", "on signal SKIP handler or CONT into",
 	"dkj", "", "list all signal handlers in JSON",
 	NULL
@@ -4751,6 +4751,343 @@ static int cmd_debug_step(RCore *core, const char *input) {
 	return 1;
 }
 
+static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print, bool ignore_stack) {
+	ut8 *raw;
+	int raw_len;
+	char *hexpairs;
+	const char *cmd = ignore_stack? "dxrs": "dxr";
+	int ret = 0;
+	r_return_val_if_fail (core && buf, 1);
+
+	r_buf_seek (buf, 0, R_BUF_SET);
+	raw = r_buf_read_all (buf, &raw_len);
+	if (!raw) {
+		return 1;
+	}
+
+	hexpairs = malloc ((raw_len * 2) + 1);
+	if (!hexpairs) {
+		free (raw);
+		return 1;
+	}
+
+	r_hex_bin2str (raw, raw_len, hexpairs);
+	if (print) {
+		r_cons_printf ("%s %s\n", cmd, hexpairs);
+	} else {
+		ret = r_core_cmdf (core, "%s %s", cmd, hexpairs);
+	}
+	free (hexpairs);
+	free (raw);
+
+	return ret;
+}
+
+// TODO: dd commands need tests in archos/linux-x64/cmd_dd
+// TODO: update the book page at src/debugger/files.html
+static int cmd_debug_desc(RCore *core, const char *input) {
+	int argc;
+	char **argv;
+	bool needs_live_process = false;
+	bool print = false; // enabled with *, print the command instead of running it
+	int ret = 0;
+
+	if (input[1] == '?') { // "dd?"
+		r_core_cmd_help (core, help_msg_dd);
+		return 0;
+	}
+
+	if (!strncmp (input, "d*?", 3)) { // "dd*?"
+		r_core_cmd_help_match (core, help_msg_dd, "dd", true);
+		return 0;
+	}
+
+	argv = r_str_argv (input, &argc);
+	if (!argv) {
+		return 1;
+	}
+
+	/* Wait to move the first arg forward past the first 'd' until after argv creation.
+	 * "dd filename" results in {"", "filename"} instead of {"filename"}.
+	 *
+	 * This mimics passing input+1 but allows a possible empty argv[0]
+	 * to preserve argument positions.
+	 * NOTE: we cannot move argv[0] forward, since it needs to be freed
+	 * later, so input borrows instead */
+
+	// Process modifiers
+	for (input = argv[0] + 1; *input; input++) {
+		// Need to know if we're printing help before the cfg.debug check
+		// NB: input[0] will never start at '?', handled above
+		if (*input && input[1] == '?') {
+			if (*input == '*') {
+				/* "ddt*?" -> "ddt?" */
+				input--;
+			}
+			r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0], true);
+			goto out_free_argv;
+		}
+
+		if (*input == '*') {
+			print = true;
+		}
+	}
+
+	// See the comment above
+	input = R_BORROW argv[0] + 1;
+
+	// "dd" and "dd*" always need a live process
+	if (!print || !input[0] || (input[0] == '*' && !input[1])) {
+		needs_live_process = true;
+	}
+
+	// Error out if we need a live process and there isn't one
+	if (needs_live_process && !r_config_get_b (core->config, "cfg.debug")) {
+		eprintf ("No child process to manage files for.\n");
+		ret = 1;
+		goto out_free_argv;
+	}
+
+	// All ? help is handled in the modifier check
+	switch (input[0]) {
+	case '\0': // "dd"
+	case '*': // "dd*"
+	case '+': // "dd+"
+	case ' ': { // "dd"
+		RBuffer *buf;
+		char *filename;
+		ut64 addr;
+		int flags;
+
+		if (argc < 2) {
+			// only dd and dd* can have 1 arg here, others should error out
+			if (!input[0] || input[0] == '*') {
+				ret = r_debug_desc_list (core->dbg, print);
+			} else {
+				r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0], true);
+			}
+			break;
+		}
+
+		if (input[0] == '+') {
+			flags = O_RDWR | O_CREAT;
+		} else {
+			flags = O_RDONLY;
+		}
+
+		// Filename can be a given string or char* address in memory
+		addr = r_num_math (core->num, argv[1]);
+		if (addr) {
+			filename = r_core_cmd_strf (core, "ps @%" PFMT64x, addr);
+		} else {
+			filename = r_str_escape (argv[1]);
+		}
+
+		if (!(flags & O_CREAT) && !r_file_exists (filename)) {
+			eprintf ("File %s does not exist.\n", filename);
+			free (filename);
+			ret = 1;
+			break;
+		}
+
+		if (print || flags != O_RDONLY || !r_debug_desc_open (core->dbg, filename)) {
+			buf = r_core_syscallf (core, "open",
+					"\"%s\", %d, 0644",
+					filename, flags);
+			if (buf) {
+				ret = run_buffer_dxr (core, buf, print, false);
+			} else {
+				eprintf ("Cannot open\n");
+			}
+		}
+
+		free (filename);
+		break;
+	}
+	case 's': { // "dds"
+		int fd;
+		ut64 offset;
+
+		if (argc < 2) {
+			r_core_cmd_help_match (core, help_msg_dd, "dds", true);
+			break;
+		}
+
+		fd = (int) r_num_math (core->num, argv[1]);
+		if (argc > 2) {
+			offset = r_num_math (core->num, argv[2]);
+		} else {
+			// default to 0 if not given
+			offset = 0;
+		}
+
+		if (print || !r_debug_desc_seek (core->dbg, fd, offset)) {
+			RBuffer *buf = r_core_syscallf (core, "lseek",
+					"%d, 0x%" PFMT64x ", 0",
+					fd, offset);
+			if (buf) {
+				ret = run_buffer_dxr (core, buf, print, true);
+			} else {
+				eprintf ("Cannot seek %d to %" PFMT64x "\n", fd, offset);
+			}
+		}
+		break;
+	}
+	case 'd': { // "ddd"
+		int oldfd;
+		int newfd;
+
+		if (argc < 3) {
+			r_core_cmd_help_match (core, help_msg_dd, "ddd", true);
+			break;
+		}
+
+		oldfd = (int) r_num_math (core->num, argv[1]);
+		newfd = (int) r_num_math (core->num, argv[2]);
+
+		if (print || !r_debug_desc_dup (core->dbg, oldfd, newfd)) {
+			RBuffer *buf = r_core_syscallf (core, "dup2",
+					"%d, %d",
+					oldfd, newfd);
+			if (buf) {
+				ret = run_buffer_dxr (core, buf, print, false);
+			} else {
+				eprintf ("Cannot dup %d -> %d\n", oldfd, newfd);
+			}
+		}
+		break;
+	}
+	case 'r': { // "ddr"
+		int fd;
+		ut64 addr;
+		ut64 count;
+		char *perms;
+
+		if (argc < 4) {
+			r_core_cmd_help_match (core, help_msg_dd, "ddr", true);
+			break;
+		}
+
+		fd = (int) r_num_math (core->num, argv[1]);
+		addr = r_num_math (core->num, argv[2]);
+		count = r_num_math (core->num, argv[3]);
+
+		perms = r_core_cmd_strf (core, "dd~^%d[2]", fd);
+		if (!print && !(r_str_rwx (perms) & 4)) {
+			eprintf ("fd %d is not readable.\n", fd);
+			free (perms);
+			ret = 1;
+			break;
+		}
+		free (perms);
+
+		if (print || !r_debug_desc_read (core->dbg, fd, addr, count)) {
+			RBuffer *buf = r_core_syscallf (core, "read",
+					"%d, 0x%" PFMT64x ", %" PFMT64u,
+					fd, addr, count);
+			if (buf) {
+				ret = run_buffer_dxr (core, buf, print, true);
+			} else {
+				eprintf ("Cannot read %" PFMT64d "bytes from %d into 0x%" PFMT64x "\n",
+						count, fd, addr);
+			}
+		}
+		break;
+	}
+	case 'w': { // "ddw"
+		int fd;
+		ut64 addr;
+		ut64 count;
+		char *perms;
+
+		if (argc < 4) {
+			r_core_cmd_help_match (core, help_msg_dd, "ddw", true);
+			break;
+		}
+
+		fd = (int) r_num_math (core->num, argv[1]);
+		addr = r_num_math (core->num, argv[2]);
+		count = r_num_math (core->num, argv[3]);
+
+		perms = r_core_cmd_strf (core, "dd~^%d[2]", fd);
+		if (!print && !(r_str_rwx (perms) & 2)) {
+			eprintf ("fd %d is not writable.\n", fd);
+			free (perms);
+			ret = 1;
+			break;
+		}
+		free (perms);
+
+		if (print || !r_debug_desc_write (core->dbg, fd, addr, count)) {
+			RBuffer *buf = r_core_syscallf (core, "write",
+					"%d, 0x%" PFMT64x ", %" PFMT64d,
+					fd, addr, count);
+			if (buf) {
+				ret = run_buffer_dxr (core, buf, print, true);
+			} else {
+				eprintf ("Cannot write %" PFMT64d "bytes into %d from 0x%" PFMT64x "\n",
+						count, fd, addr);
+			}
+		}
+		break;
+	}
+	case 't': // "ddt"
+	case '-': { // "dd-"
+		int fd;
+
+		if (input[0] == 't') {
+			fd = 0;
+		} else {
+			if (argc < 2) {
+				r_core_cmd_help_match (core, help_msg_dd, "dd-", true);
+				break;
+			}
+			fd = (int) r_num_math (core->num, argv[1]);
+		}
+
+		if (print || !r_debug_desc_close (core->dbg, fd)) {
+			RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
+			if (buf) {
+				ret = run_buffer_dxr (core, buf, print, false);
+			} else {
+				eprintf ("Cannot close %d\n", fd);
+			}
+		}
+		break;
+	}
+	case 'f': { // "ddf"
+		RBuffer *buf;
+		ut64 addr;
+
+		if (argc < 2) {
+			r_core_cmd_help_match (core, help_msg_dd, "ddf", true);
+			break;
+		}
+
+		addr = r_num_math (core->num, argv[1]);
+		if (!addr) {
+			eprintf ("%s is not a valid address.\n", argv[1]);
+			break;
+		}
+
+		buf = r_core_syscallf (core, "pipe", "0x%" PFMT64x, addr);
+		if (buf) {
+			ret = run_buffer_dxr (core, buf, print, true);
+		} else {
+			eprintf ("Cannot open pipe and write fd to %" PFMT64x ".\n", addr);
+		}
+		break;
+	}
+	default:
+		r_core_cmd_help (core, help_msg_dd);
+		break;
+	}
+
+out_free_argv:
+	r_str_argv_free (argv);
+	return ret;
+}
+
 static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
 	ut8 *out = NULL;
 	int size = 0;
@@ -4780,18 +5117,6 @@ static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
 	return out;
 }
 
-static void print_buffer_hex(RBuffer *buf) {
-	int i;
-	r_return_if_fail (buf);
-
-	r_cons_print ("dxr ");
-	r_buf_seek (buf, 0, R_BUF_SET);
-	for (i = 0; i < r_buf_size (buf); i++) {
-		r_cons_printf ("%02x", r_buf_read8 (buf));
-	}
-	r_cons_newline ();
-}
-
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	RDebugTracepoint *t;
@@ -4804,6 +5129,7 @@ static int cmd_debug(void *data, const char *input) {
 	RDebugPid *p;
 	RDebugTracepoint *trace;
 	RAnalOp *op;
+	int ret = 0;
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
@@ -5054,164 +5380,7 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 'd': // "dd"
-		if (strchr (input, '?')) {
-			r_core_cmd_help (core, help_msg_dd);
-			break;
-		}
-		switch (input[1]) {
-		case '\0': // "dd"
-			r_debug_desc_list (core->dbg, 0);
-			break;
-		case '*': // "dd*"
-			r_debug_desc_list (core->dbg, 1);
-			break;
-		case 's': // "dds"
-			{
-				ut64 off = UT64_MAX;
-				int fd = atoi (input + 2);
-				char *str = strchr (input + 2, ' ');
-				if (str) off = r_num_math (core->num, str+1);
-				if (off == UT64_MAX || !r_debug_desc_seek (core->dbg, fd, off)) {
-					RBuffer *buf = r_core_syscallf (core, "lseek", "%d, 0x%" PFMT64x ", 0",
-							fd, off);
-					if (buf) {
-						print_buffer_hex (buf);
-					} else {
-						eprintf ("Cannot seek\n");
-					}
-				}
-			}
-			break;
-		case 't': // "ddt" <ttypath>
-			r_core_cmd0 (core, "dd-0");
-			break;
-		case 'd': // "ddd"
-			{
-				ut64 newfd = UT64_MAX;
-				int fd = atoi (input + 2);
-				char *str = strchr (input + 3, ' ');
-				if (str) newfd = r_num_math (core->num, str+1);
-				if (newfd == UT64_MAX || !r_debug_desc_dup (core->dbg, fd, newfd)) {
-					RBuffer *buf = r_core_syscallf (core, "dup2", "%d, %d",
-							fd, (int)newfd);
-					if (buf) {
-						print_buffer_hex (buf);
-					} else {
-						eprintf ("Cannot dup %d -> %d\n", fd, (int)newfd);
-					}
-				}
-			}
-			break;
-		case 'r': // "ddr"
-			{
-				ut64 off = UT64_MAX;
-				ut64 len = UT64_MAX;
-				int fd = atoi (input + 2);
-				char *str = strchr (input + 2, ' ');
-				if (str) {
-					off = r_num_math (core->num, str+1);
-					str = strchr (str + 1, ' ');
-					if (str) {
-						len = r_num_math (core->num, str+1);
-					}
-				}
-
-				if (len == UT64_MAX || off == UT64_MAX
-						|| !r_debug_desc_read (core->dbg, fd, off, len)) {
-					RBuffer *buf = r_core_syscallf (core, "read", "%d, 0x%"PFMT64x", %d",
-							fd, off, (int)len);
-					if (buf) {
-						print_buffer_hex (buf);
-					} else {
-						eprintf ("Cannot read\n");
-					}
-				}
-			}
-			break;
-		case 'w':  // "ddw"
-			{
-				ut64 off = UT64_MAX;
-				ut64 len = UT64_MAX;
-				int fd = atoi (input + 2);
-				char *str = strchr (input + 2, ' ');
-				if (str) off = r_num_math (core->num, str+1);
-				if (str) str = strchr (str+1, ' ');
-				if (str) len = r_num_math (core->num, str+1);
-				if (len == UT64_MAX || off == UT64_MAX
-						|| !r_debug_desc_write (core->dbg, fd, off, len)) {
-					RBuffer *buf = r_core_syscallf (core, "write", "%d, 0x%" PFMT64x ", %d",
-							fd, off, (int)len);
-					if (buf) {
-						print_buffer_hex (buf);
-					} else {
-						eprintf ("Cannot write\n");
-					}
-				}
-			}
-			break;
-		case '-': // "dd-"
-			// close file
-			//r_core_syscallf (core, "close", "%d", atoi (input + 2));
-			{
-				int fd = atoi (input + 2);
-				//r_core_cmdf (core, "dxs close %d", (int)r_num_math ( core->num, input + 2));
-				RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
-				if (buf) {
-					print_buffer_hex (buf);
-				} else {
-					eprintf ("Cannot close\n");
-				}
-			}
-			break;
-		case 'f': // "ddf"
-			{
-				RBuffer *buf = NULL;
-				ut64 addr = r_num_get (NULL, input + 2);
-
-				if (addr && addr < UT64_MAX) {
-					buf = r_core_syscallf (core, "pipe", "0x%" PFMT64x, addr);
-				}
-
-				if (buf) {
-					print_buffer_hex (buf);
-				} else {
-					eprintf ("Cannot open pipe.\n");
-				}
-			}
-			break;
-		case '+': // "dd+"
-		case ' ': // "dd"
-			{
-				RBuffer *buf;
-				int flags = (input[1] == '+')? 2: 0; // O_RDWR: O_RDONLY
-				ut64 addr = r_num_get (NULL, input + 2);
-
-				// filename can be a string literal or address in memory
-				if (addr && addr < UT64_MAX) {
-					buf = r_core_syscallf (core, "open",
-							"%" PFMT64x ", %d, %d",
-							addr, flags, 0644);
-				} else {
-					char *filename = r_str_escape (input + 2);
-					buf = r_core_syscallf (core, "open",
-							"\"%s\", %d, %d",
-							filename, flags, 0644);
-					free (filename);
-				}
-
-				if (buf) {
-					print_buffer_hex (buf);
-				} else {
-					eprintf ("Cannot open\n");
-				}
-			}
-			// open file
-			break;
-		case '?': // "dd?"
-		default:
-			r_core_cmd_help (core, help_msg_dd);
-			break;
-		}
+		ret = cmd_debug_desc (core, input);
 		break;
 	case 's': // "ds"
 		if (cmd_debug_step (core, input)) {
@@ -5663,5 +5832,5 @@ static int cmd_debug(void *data, const char *input) {
 			r_core_cmd0 (core, "sr PC");
 		}
 	}
-	return 0;
+	return ret;
 }

@@ -1,0 +1,268 @@
+NAME=basic dd usage
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+# cut off the pipe:[<unpredictable number>] part
+dd~[0-2]
+?e ---
+dd*~[0]
+?e ---
+dd bins/elf/ls-focal
+dd~[0-2]
+?e ---
+# will print full file path, so just check if it exists
+dd~bins/elf/ls-focal~?
+?e ---
+dd*~bins/elf/ls-focal~[0]
+doc # kill the process to avoid actual ls output
+EOF
+EXPECT=<<EOF
+0 0x0 r-P
+1 0x0 -wP
+2 0x0 -wP
+---
+#dd
+#dd
+#dd
+---
+0 0x0 r-P
+1 0x0 -wP
+2 0x0 -wP
+3 0x0 r--
+---
+1
+---
+dd
+EOF
+RUN
+
+NAME=dd open, close, duplicate
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+# open 2 files, one in read-write
+dd bins/elf/ls-focal
+dd+ .tmp_dd1
+# attempt to open a file that doesnt exist
+dd fakefile
+dd~[0,2]
+?e ---
+# copy over the read-only fd
+ddd 4 3
+dd~tmp_dd1~[0,2]
+?e ---
+dd- 4
+dd~tmp_dd1~[0,2]
+# cleanup
+rm .tmp_dd1
+doc
+EOF
+EXPECT=<<EOF
+0 r-P
+1 -wP
+2 -wP
+3 r--
+4 rw-
+---
+3 rw-
+4 rw-
+---
+3 rw-
+EOF
+RUN
+
+NAME=dd read, write, seek
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+echo test data > .tmp_dd2
+dd+ .tmp_dd2
+w0 20 @rsp
+# read "test data"
+ddr 3 $(dr?rsp) 9
+ps @rsp
+?e ---
+dd~^3[1] # show offset
+?e ---
+w0 20 @rsp
+# read "dat"
+dds 3 5
+ddr 3 $(dr?rsp) 3
+ps @rsp
+?e ---
+dd~^3[1] # show offset
+?e ---
+# write "data test 2\n" to the file
+wz data test 2\n @rsp
+dds 3 # reset seek
+ddw 3 $(dr?rsp) 13
+dd~^3[1] # show offset
+?e ---
+dd- 3
+dd~[0]
+?e ---
+cat .tmp_dd2
+doc
+rm .tmp_dd2
+EOF
+EXPECT=<<EOF
+test data
+---
+0x9
+---
+dat
+---
+0x8
+---
+0xd
+---
+0
+1
+2
+---
+data test 2
+EOF
+RUN
+
+NAME=ddf
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+# initialize the stack memory
+wv8 0 @rsp
+# write the fds there and check it
+ddf $(dr?rsp)
+dd~[0-2]:3..
+?e ---
+pv4 @rsp
+pv4 @rsp+4
+doc
+EOF
+EXPECT=<<EOF
+3 0x0 r-P
+4 0x0 -wP
+---
+0x00000003
+0x00000004
+EOF
+RUN
+
+# FIXME: remove rflags when that bug is fixed
+NAME=dd should not affect program registers
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dr~!rsp~!rip~!rflags # rsp/rip vary - ignore
+?e ---
+dd test/bins/elf/ls-focal
+dr~!rsp~!rip~!rflags
+doc
+EOF
+EXPECT=<<EOF
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0x0000003b
+---
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0x0000003b
+EOF
+RUN
+
+# TODO
+NAME=only run dd commands if given fd exists
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+doc
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=dd while not debugging
+CMDS=<<EOF
+# no separators needed, nothing should go to stdout
+dd
+dd filename
+dd+ filename
+dd- 1
+ddt
+dds 4 0x200
+ddd 4 0
+ddf 0x100
+ddr 4 0x100 0x20
+ddw 4 0x300 0x40
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=dd* while not debugging
+CMDS=<<EOF
+dd*
+?e ---
+dd* filename
+?e ---
+dd+* filename
+?e ---
+dd-* 1
+?e ---
+ddt*
+?e ---
+dds* 4 0x200
+?e ---
+ddd* 4 0
+?e ---
+ddf* 0x100
+?e ---
+ddr* 4 0x100 0x20
+?e ---
+ddw* 4 0x300 0x40
+EOF
+EXPECT=<<EOF
+---
+---
+dxr 554889e54881ec0008000048c7c0a40100005048c7c04200000050c7453066696c65c745346e616d65c7453800000000c7453c00000000c7454000000000488d453048898528000000488b452850488b3c24488b742408488b54241048c7c0020000000f054883c418cc4881c4000800005dc3
+---
+dxr 554889e54881ec0008000048c7c00100000050488b3c2448c7c0030000000f054883c408cc4881c4000800005dc3
+---
+dxr 554889e54881ec0008000048c7c00000000050488b3c2448c7c0030000000f054883c408cc4881c4000800005dc3
+---
+dxrs 554889e54881ec0008000048c7c0000000005048c7c0000200005048c7c00400000050488b3c24488b742408488b54241048c7c0080000000f054883c418cc4881c4000800005dc3
+---
+dxr 554889e54881ec0008000048c7c0000000005048c7c00400000050488b3c24488b74240848c7c0210000000f054883c410cc4881c4000800005dc3
+---
+dxrs 554889e54881ec0008000048c7c00001000050488b3c2448c7c0160000000f054883c408cc4881c4000800005dc3
+---
+dxrs 554889e54881ec0008000048c7c0200000005048c7c0000100005048c7c00400000050488b3c24488b742408488b54241048c7c0000000000f054883c418cc4881c4000800005dc3
+---
+dxrs 554889e54881ec0008000048c7c0400000005048c7c0000300005048c7c00400000050488b3c24488b742408488b54241048c7c0010000000f054883c418cc4881c4000800005dc3
+EOF
+RUN

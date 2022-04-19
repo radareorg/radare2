@@ -64,27 +64,30 @@ R_API int r_debug_desc_write(RDebug *dbg, int fd, ut64 addr, int len) {
 	return false;
 }
 
-R_API int r_debug_desc_list(RDebug *dbg, int rad) {
+R_API int r_debug_desc_list(RDebug *dbg, bool show_commands) {
+	RListIter *iter;
+	RDebugDesc *p;
 	int count = 0;
 
-	if (rad) {
-		if (dbg && dbg->cb_printf) {
-			dbg->cb_printf ("TODO: list target process files\n");
-		}
-	} else {
-		RListIter *iter;
-		RDebugDesc *p;
-		if (dbg && dbg->h && dbg->h->desc.list) {
-			RList *list = dbg->h->desc.list (dbg->pid);
-			r_list_foreach (list, iter, p) {
-				dbg->cb_printf ("%i 0x%"PFMT64x" %c%c%c %s\n", p->fd, p->off,
-						(p->perm & R_PERM_R)?'r':'-',
-						(p->perm & R_PERM_W)?'w':'-',
+	if (dbg && dbg->h && dbg->h->desc.list) {
+		RList *list = dbg->h->desc.list (dbg->pid);
+		r_list_foreach (list, iter, p) {
+			if (show_commands) {
+				// Skip over std streams
+				// TODO: option to select which fd to start at?
+				if (p->fd < 3) {
+					dbg->cb_printf ("#dd %s\n", p->path);
+				} else {
+					dbg->cb_printf ("dd %s\n", p->path);
+				}
+			} else {
+				dbg->cb_printf ("%d 0x%" PFMT64x " %c%c%c %s\n", p->fd, p->off,
+						(p->perm & R_PERM_R)? 'r': '-',
+						(p->perm & R_PERM_W)? 'w': '-',
 						p->type, p->path);
 			}
-			r_list_purge (list);
-			free (list);
 		}
+		r_list_free (list);
 	}
 	return count;
 }
