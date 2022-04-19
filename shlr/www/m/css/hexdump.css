@@ -1,0 +1,89 @@
+.hexdump {
+	background-color: rgb(32, 32, 32);
+	color: white;
+	overflow: hidden !important;
+}
+
+.hex.flex-controls {
+	border-bottom:1px dotted white;
+	background:white;
+	color:black;
+}
+
+.hex.flex-controls ul.controlList {
+	margin:0;
+	padding:0;
+	list-style-type: none;
+}
+
+.hex.flex-controls ul.controlList li {
+	padding:0;
+	display:inline-block;
+	width:16%;
+	height:40px;
+	padding-top:10px;
+	margin-left:3%;
+}
+
+.hex.flex-body {
+	font-family: "DejaVu Sans Mono", Console, Courier New, monospace;
+}
+
+ul.listContent li {
+	white-space: nowrap;
+}
+
+ul.offset, ul.hexpairs, ul.ascii  {
+	margin:0;
+	padding:0;
+	display: inline-block;
+	list-style-type: none;
+}
+
+ul.offset {
+	width:120px;
+	text-align:right;
+	margin-right:20px;
+}
+
+ul.hexpairs {
+	text-align:center;
+	user-select: none;
+}
+
+ul.ascii {
+	margin:0 20px 0 20px;
+}
+
+ul.hexpairs li input, ul.ascii li input {
+	border:1px dashed white;
+	background:rgba(255,255,255,0.33) !important;
+	color:white !important;
+	font-size:inherit;
+	font-family:inherit;
+	width:18px;
+	text-align:center;
+}
+
+ul.offset li, ul.hexpairs li, ul.ascii li  {
+	display:inline;
+	line-height: inherit;
+	border:1px solid transparent;
+}
+
+ul.hexpairs li.modified, ul.ascii li.modified  {
+	background-color: rgba(255,255,255,0.4);
+}
+
+ul.hexpairs li.selected {
+	border-bottom:2px solid rgba(255,255,255,0.8);
+}
+
+ul.hexpairs li.active, ul.ascii li.active {
+	border:1px dotted white;
+}
+
+ul.hexpairs.pairs > li:nth-child(2n), ul.hexpairs.words > li:nth-child(n) {
+	margin-right:0.8em;
+}
+
