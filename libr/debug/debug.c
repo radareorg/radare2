@@ -515,9 +515,10 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
  * The bytes overwritten at the program counter are always restored.
  *
  * TODO: Add support for reverse stack architectures
+ *
+ * XXX: This function will advance your seek to the end of the injected code.
  */
 R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret, bool restore, bool ignore_stack) {
-	RCore *core;
 	ut8 stack_backup[4096];
 	ut8 *pc_backup = NULL, *reg_backup = NULL;
 	int reg_backup_sz;
@@ -525,7 +526,6 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	ut64 reg_sp, reg_pc, bp_addr;
 
 	r_return_val_if_fail (dbg && buf && len > 0, false);
-	core = dbg->corebind.core;
 
 	if (r_debug_is_dead (dbg)) {
 		return false;
@@ -602,11 +602,6 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 
 	free (pc_backup);
 	free (reg_backup);
-
-	/* Rewind seek from breakpoint address to real PC */
-	if (core) {
-		core->offset = reg_pc;
-	}
 
 	return true;
 }

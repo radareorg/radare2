@@ -5130,6 +5130,7 @@ static int cmd_debug(void *data, const char *input) {
 	RDebugTracepoint *trace;
 	RAnalOp *op;
 	int ret = 0;
+	ut64 old_seek = core->offset;
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
@@ -5832,11 +5833,21 @@ static int cmd_debug(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_d);
 		break;
 	}
+
+	/* RDebug, specifically RDebug.execute() may incorrectly
+	 * advance seek, so we force it back here before processing
+	 * dbg.follow. */
+	if (core->offset != old_seek) {
+		r_core_seek (core, old_seek, false);
+	}
+
 	if (follow > 0) {
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
-		if ((pc < core->offset) || (pc > (core->offset + follow))) {
+		// Is PC before offset or after the follow cutoff?
+		if (!R_BETWEEN (core->offset, pc, core->offset + follow)) {
 			r_core_cmd0 (core, "sr PC");
 		}
 	}
+
 	return ret;
 }
