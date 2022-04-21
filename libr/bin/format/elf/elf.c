@@ -1241,7 +1241,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 #endif
 		}
 		if ((int)entry->vn_next < 0) {
-			R_LOG_DEBUG ("Invalid vn_next at 0x%08" PFMT64x, shdr->sh_offset);
+			R_LOG_DEBUG ("Invalid vn_next at 0x%08" PFMT64x, (ut64)shdr->sh_offset);
 			break;
 		}
 		i += entry->vn_next;
@@ -3764,8 +3764,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				}
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name + 1 > strtab_section->sh_size) {
-					R_LOG_DEBUG ("index out of strtab range (%d / %d)\n",
-						(int)sym[k].st_name, strtab_section->sh_size);
+					R_LOG_DEBUG ("index out of strtab range (%"PFMT64d" / %"PFMT64d")\n",
+						(ut64)sym[k].st_name, (ut64)strtab_section->sh_size);
 					continue;
 				}
 				{
