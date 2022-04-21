@@ -25,7 +25,7 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
-ERROR: Cannot write in here, check map permissions or reopen the file with oo+
+ERROR: Cannot write. Check `omp` or reopen the file with `oo+`
 EOF
 RUN
 
@@ -44,6 +44,6 @@ hello
 EOF
 EXPECT_ERR=<<EOF
 Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
-ERROR: Cannot write in here, check map permissions or reopen the file with oo+
+ERROR: Cannot write. Check `omp` or reopen the file with `oo+`
 EOF
 RUN

@@ -1337,12 +1337,11 @@ RList *linux_desc_list(int pid) {
 			r_sys_perror ("readlink failure");
 			return NULL;
 		}
-		free (fn);
 		buf[sizeof (buf) - 1] = 0;
 		type = perm = 0;
 
 		// Read file type
-		if (stat (fd_file, &st) != -1) {
+		if (stat (fn, &st) != -1) {
 			bool isfifo = st.st_mode & S_IFIFO;
 #ifdef S_IFSOCK
 			/* Do *not* remove the == here. S_IFSOCK can be multiple
@@ -1363,7 +1362,7 @@ RList *linux_desc_list(int pid) {
 			}
 		}
 		// Read permissions
-		if (lstat (fd_file, &st) != -1) {
+		if (lstat (fn, &st) != -1) {
 			if (st.st_mode & S_IRUSR) {
 				perm |= R_PERM_R;
 			}
@@ -1371,21 +1370,25 @@ RList *linux_desc_list(int pid) {
 				perm |= R_PERM_W;
 			}
 		}
-		// Get offset
-		char *fn = r_str_newf ("/proc/%d/fdinfo/%s", pid, de->d_name) >= sizeof (fdinfo_file)) {
-		f = open (fn, O_RDONLY);
-		char fdinfo[512];
-		if (read (f, fdinfo, sizeof (fdinfo) - 1) < 0) {
-			R_WARN ("failed to read %s\n", fn);
-			close (f);
-			r_list_free (ret);
-			closedir (dd);
-			free (fn);
-			return NULL;
-		}
 		free (fn);
-		fdinfo[sizeof (fdinfo) - 1] = '\0';
-		close (f);
+		// Get offset
+		fn = r_str_newf ("/proc/%d/fdinfo/%s", pid, de->d_name);
+		int f = open (fn, O_RDONLY);
+		char fdinfo[512];
+		fdinfo[0] = 0;
+		if (f >= 0) {
+			if (read (f, fdinfo, sizeof (fdinfo) - 1) < 0) {
+				R_LOG_WARN ("failed to read %s", fn);
+				close (f);
+				r_list_free (ret);
+				closedir (dd);
+				free (fn);
+				return NULL;
+			}
+			free (fn);
+			fdinfo[sizeof (fdinfo) - 1] = '\0';
+			close (f);
+		}
 		/* First line of fdinfo is "pos: [offset]" */
 		ut64 offset = (int) r_num_math (NULL, r_str_trim_head_ro (fdinfo + 4));
 		RDebugDesc *desc = r_debug_desc_new (atoi (de->d_name), buf, perm, type, offset);

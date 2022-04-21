@@ -10,7 +10,7 @@ static const char *level_tags[] = { // Log level to tag string lookup array
 	[R_LOGLVL_ERROR]     = "ERROR",
 	[R_LOGLVL_INFO]      = "INFO",
 	[R_LOGLVL_WARN]      = "WARN",
-	[R_LOGLVL_DEBUG]     = "DEBG",
+	[R_LOGLVL_DEBUG]     = "DEBUG",
 };
 
 static const char *level_name(int i) {
@@ -133,14 +133,14 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *fmt, 
 		default:
 			break;
 		}
-		r_strbuf_appendf (sb, "%s[%s] ", k, level_name (level));
+		r_strbuf_appendf (sb, "%s%s: ", k, level_name (level));
 		if (rlog->show_origin) {
 			r_strbuf_appendf (sb, Color_YELLOW "[%s] " Color_RESET, origin);
 		} else {
 			r_strbuf_appendf (sb, Color_RESET);
 		}
 	} else {
-		r_strbuf_appendf (sb, "[%s] ", level_name (level));
+		r_strbuf_appendf (sb, "%s: ", level_name (level));
 		if (rlog->show_origin) {
 			r_strbuf_appendf (sb, "[%s] ", origin);
 		}
