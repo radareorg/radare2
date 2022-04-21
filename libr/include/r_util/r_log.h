@@ -13,12 +13,12 @@ extern "C" {
 #endif
 
 typedef enum r_log_level {
-	R_LOGLVL_NONE = 0,
-	R_LOGLVL_FATAL = 1, // This will call r_sys_breakpoint() and trap the process for debugging!
+	R_LOGLVL_FATAL = 0, // This will call r_sys_breakpoint() and trap the process for debugging!
+	R_LOGLVL_ERROR = 1,
 	R_LOGLVL_INFO = 2,
 	R_LOGLVL_WARN = 3,
 	R_LOGLVL_DEBUG = 4,
-	R_LOGLVL_ERROR = 5,
+	R_LOGLVL_LAST = 5,
 } RLogLevel;
 
 #define R_LOGLVL_DEFAULT R_LOGLVL_WARN
@@ -33,7 +33,8 @@ typedef struct r_log_t {
 	char *filter;
 	bool color; // colorize depending on msg level
 	bool quiet; // be quiet in the console
-	bool ts;
+	bool show_origin;
+	bool show_ts;
 	RList *cbs;
 } RLog;
 
@@ -52,18 +53,19 @@ R_API void r_log_add_callback(RLogCallback cb);
 R_API void r_log_del_callback(RLogCallback cb);
 
 #define R_LOG(f,...) if (r_log_match(R_LOGLVL_INFO, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_INFO, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
-#define R_LOG_WARN(f,...) if (r_log_match(R_LOGLVL_WARN, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_WARN, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
-#define R_LOG_INFO(f,...) if (r_log_match(R_LOGLVL_INFO, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_INFO, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
-#define R_LOG_DEBUG(f,...) if (r_log_match(R_LOGLVL_DEBUG, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_DEBUG, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
-#define R_LOG_ERROR(f,...) if (r_log_match(R_LOGLVL_ERROR, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_ERROR, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
 #define R_LOG_FATAL(f,...) if (r_log_match(R_LOGLVL_FATAL, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_FATAL, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
+#define R_LOG_ERROR(f,...) if (r_log_match(R_LOGLVL_ERROR, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_ERROR, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
+#define R_LOG_INFO(f,...) if (r_log_match(R_LOGLVL_INFO, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_INFO, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
+#define R_LOG_WARN(f,...) if (r_log_match(R_LOGLVL_WARN, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_WARN, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
+#define R_LOG_DEBUG(f,...) if (r_log_match(R_LOGLVL_DEBUG, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_DEBUG, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
 
 R_API void r_log_set_file(const char *expr);
 R_API void r_log_set_filter(const char *expr);
 R_API void r_log_set_colors(bool show_colors);
+R_API void r_log_show_origin(bool show_origin);
 R_API void r_log_set_quiet(bool be_quiet);
 R_API void r_log_set_level(RLogLevel level);
-R_API void r_log_set_ts(bool ts);
+R_API void r_log_show_ts(bool ts);
 R_API void r_log_set_traplevel(RLogLevel level);
 R_API void r_log_set_callback(RLogCallback cbfunc);
 

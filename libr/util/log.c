@@ -6,19 +6,18 @@
 #include <stdarg.h>
 
 static const char *level_tags[] = { // Log level to tag string lookup array
-	[R_LOGLVL_NONE]      = "NONE",
-	[R_LOGLVL_INFO]      = "INFO",
-	[R_LOGLVL_WARN]      = "WARNING",
-	[R_LOGLVL_DEBUG]     = "DEBUG",
+	[R_LOGLVL_FATAL]     = "FATAL",
 	[R_LOGLVL_ERROR]     = "ERROR",
-	[R_LOGLVL_FATAL]     = "FATAL"
+	[R_LOGLVL_INFO]      = "INFO",
+	[R_LOGLVL_WARN]      = "WARN",
+	[R_LOGLVL_DEBUG]     = "DEBG",
 };
 
 static const char *level_name(int i) {
-	if (i >= 0 && i < 6) {
+	if (i >= 0 && i < R_LOGLVL_LAST) {
 		return level_tags[i];
 	}
-	return "UNKNOWN";
+	return "UNKN";
 }
 
 static R_TH_LOCAL RLog *rlog = NULL;
@@ -39,9 +38,9 @@ R_API void r_log_fini(void) {
 	}
 }
 
-R_API void r_log_set_ts(bool ts) {
+R_API void r_log_show_ts(bool ts) {
 	r_log_init ();
-	rlog->ts = ts;
+	rlog->show_ts = ts;
 }
 
 R_API void r_log_set_level(RLogLevel level) {
@@ -66,6 +65,11 @@ R_API void r_log_set_file(const char *filename) {
 	r_log_init ();
 	free (rlog->file);
 	rlog->file = strdup (filename);
+}
+
+R_API void r_log_show_origin(bool show_origin) {
+	r_log_init ();
+	rlog->show_origin = show_origin;
 }
 
 R_API void r_log_set_colors(bool color) {
@@ -94,7 +98,6 @@ R_API bool r_log_match(int level, const char *origin) { // , const char *sub_ori
 			}
 		}
 	}
-	
 	return level < rlog->level;
 }
 
@@ -112,16 +115,38 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *fmt, 
 	}
 	RStrBuf *sb = r_strbuf_new ("");
 	if (rlog->color) {
-		if (level > 3) {
-			r_strbuf_appendf (sb, Color_RED "[%s] " Color_YELLOW "[%s] " Color_RESET, level_name (level), origin);
+		const char *k = Color_YELLOW;
+		switch (level) {
+		case R_LOGLVL_FATAL:
+		case R_LOGLVL_ERROR:
+			k = Color_RED;
+			break;
+		case R_LOGLVL_INFO:
+			k = Color_YELLOW;
+			break;
+		case R_LOGLVL_WARN:
+			k = Color_MAGENTA;
+			break;
+		case R_LOGLVL_DEBUG:
+			k = Color_GREEN;
+			break;
+		default:
+			break;
+		}
+		r_strbuf_appendf (sb, "%s[%s] ", k, level_name (level));
+		if (rlog->show_origin) {
+			r_strbuf_appendf (sb, Color_YELLOW "[%s] " Color_RESET, origin);
 		} else {
-			r_strbuf_appendf (sb, Color_GREEN "[%s] " Color_YELLOW "[%s] " Color_RESET, level_name (level), origin);
+			r_strbuf_appendf (sb, Color_RESET);
 		}
 	} else {
-		r_strbuf_appendf (sb, "[%s] [%s] ", level_name (level), origin);
+		r_strbuf_appendf (sb, "[%s] ", level_name (level));
+		if (rlog->show_origin) {
+			r_strbuf_appendf (sb, "[%s] ", origin);
+		}
 	}
 	char ts[32] = {0};
-	if (rlog->ts) {
+	if (rlog->show_ts) {
 		ut64 now = r_time_now ();
 		if (rlog->color) {
 			r_strbuf_appendf (sb, ts, sizeof (ts), Color_CYAN "[ts:%" PFMT64u "] " Color_RESET, now);
