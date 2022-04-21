@@ -193,7 +193,7 @@ static const char *help_msg_wx[] = {
 };
 
 static void cmd_write_fail(RCore *core) {
-	eprintf ("ERROR: Cannot write in here, check map permissions or reopen the file with oo+\n");
+	R_LOG_ERROR ("Cannot write. Check `omp` or reopen the file with `oo+`");
 	r_core_return_code (core, R_CMD_RC_FAILURE);
 }
 
@@ -216,12 +216,13 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 			cmd_write_fail (core);
 			r_core_return_code (core, R_CMD_RC_FAILURE);
 		}
-		if (r_config_get_i (core->config, "cfg.wseek")) {
+		// call WSEEK for consistency?
+		if (r_config_get_b (core->config, "cfg.wseek")) {
 			r_core_seek_delta (core, len);
 		}
 		r_core_block_read (core);
 	} else {
-		eprintf ("Error: invalid hexpair string\n");
+		R_LOG_ERROR ("Error: invalid hexpair string");
 		r_core_return_code (core, R_CMD_RC_FAILURE);
 	}
 	free (buf);
@@ -472,7 +473,8 @@ static int cmd_wo(void *data, const char *input) {
 	return 0;
 }
 
-#define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
+#define WSEEK(x,y) if (r_config_get_b (core->config, "cfg.wseek")) { r_core_seek_delta ((x),(y)); }
+
 static void cmd_write_value_float(RCore *core, const char *input) {
 	float v = 0.0;
 	sscanf (input, "%f", &v);
@@ -495,7 +497,6 @@ static void cmd_write_value(RCore *core, const char *input) {
 	int type = 0;
 	ut64 off = 0LL;
 	ut8 buf[sizeof(ut64)];
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	bool be = r_config_get_i (core->config, "cfg.bigendian");
 
 	r_core_return_code (core, R_CMD_RC_SUCCESS);
@@ -582,7 +583,6 @@ static bool cmd_wff(RCore *core, const char *input) {
 	ut8 *buf = NULL;
 	size_t size = 0;
 	const char *arg = input + ((input[0] == ' ') ? 1 : 0);
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *p, *a = r_str_trim_dup (arg);
 	p = strchr (a, ' ');
 	if (p) {
@@ -919,7 +919,6 @@ static int w_incdec_handler(void *data, const char *input, int inc) {
 
 static int cmd_w6(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	int fail = 0;
 	ut8 *buf = NULL;
 	int len = 0, str_len;
@@ -1214,7 +1213,6 @@ static int cmd_wu(void *data, const char *input) {
 
 static int cmd_wr(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	ut64 off = r_num_math (core->num, input);
 	int len = (int)off;
 	if (len > 0) {
@@ -1237,7 +1235,6 @@ static int cmd_wr(void *data, const char *input) {
 
 static int cmd_wA(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	int len;
 	switch (input[0]) {
 	case ' ':
@@ -1410,7 +1407,6 @@ static int cmd_wc(void *data, const char *input) {
 }
 
 static int cmd_w(RCore *core, const char *input) {
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input);
 	/* write string */
 	int len = r_str_unescape (str);
@@ -1426,7 +1422,6 @@ static int cmd_w(RCore *core, const char *input) {
 }
 
 static int cmd_wz(RCore *core, const char *input) {
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input + 1);
 	int len = r_str_unescape (str) + 1;
 
@@ -1458,7 +1453,6 @@ static int cmd_wt(void *data, const char *input) {
 	char *size_sep;
 	if (*str == 's') { // "wts"
 		if (str[1] == ' ') {
-			eprintf ("Write to server\n");
 			st64 sz = r_io_size (core->io);
 			if (sz > 0) {
 				ut64 addr = 0;
@@ -1687,12 +1681,12 @@ static int cmd_ww(void *data, const char *input) {
 	} else {
 		eprintf ("Cannot malloc %d\n", len);
 	}
+	free (ostr);
 	return 0;
 }
 
 static int cmd_wx(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	const char *arg;
 	ut8 *buf;
 	int size;
@@ -1737,7 +1731,7 @@ static int cmd_wx(void *data, const char *input) {
 				eprintf ("This file doesnt contains hexpairs\n");
 			}
 		} else {
-			eprintf ("Cannot open file '%s'\n", arg);
+			R_LOG_ERROR ("Cannot open file '%s'", arg);
 		}
 		break;
 	case 's': // "wxs"
@@ -1763,7 +1757,6 @@ static int cmd_wx(void *data, const char *input) {
 
 static int cmd_wa(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	switch (input[0]) {
 	case 'o': // "wao"
 		if (input[1] == ' ') {
@@ -1929,7 +1922,6 @@ static int cmd_wb(void *data, const char *input) {
 	size_t len = strlen (input);
 	const size_t buf_size = len + 2;
 	ut8 *buf = malloc (buf_size);
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	if (buf) {
 		len = r_hex_str2bin (input, buf);
 		if (len > 0) {
@@ -1954,7 +1946,6 @@ static int cmd_wm(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *str = strdup (input);
 	int size = r_hex_str2bin (input, (ut8 *)str);
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	switch (input[0]) {
 	case '\0':
 		eprintf ("TODO: Display current write mask");
@@ -2011,7 +2002,6 @@ static int cmd_wd(void *data, const char *input) {
 
 static int cmd_ws(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input);
 	if (str && *str) {
 		char *arg = str;

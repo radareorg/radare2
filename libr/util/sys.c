@@ -921,13 +921,13 @@ R_API void r_sys_perror_str(const char *fun) {
 			0, NULL )) {
 		char *err = r_sys_conv_win_to_utf8 (lpMsgBuf);
 		if (err) {
-			eprintf ("%s: (%#lx) %s%s", fun, dw, err,
+			R_LOG_WARN ("%s: (%#lx) %s%s", fun, dw, err,
 				r_str_endswith (err, "\n") ? "" : "\n");
 			free (err);
 		}
 		LocalFree (lpMsgBuf);
 	} else {
-		eprintf ("%s\n", fun);
+		R_LOG_INFO ("%s", fun);
 	}
 #endif
 }

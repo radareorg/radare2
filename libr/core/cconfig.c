@@ -3203,7 +3203,7 @@ static bool cb_log_config_traplevel(void *coreptr, void *nodeptr) {
 
 static bool cb_log_config_ts(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
-	r_log_set_ts (node->i_value);
+	r_log_show_ts (node->i_value);
 	return true;
 }
 
@@ -3218,6 +3218,12 @@ static bool cb_log_config_file(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	const char *value = node->value;
 	r_log_set_file (value);
+	return true;
+}
+
+static bool cb_log_origin(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	r_log_show_origin (r_str_is_true (node->value));
 	return true;
 }
 
@@ -3270,7 +3276,7 @@ static bool cb_prjvctype(void *user, void *data) {
 	if (!strcmp (node->value, "rvc")) {
 		return true;
 	}
-	eprintf ("Unknown vc %s\n", node->value);
+	R_LOG_ERROR ("Unknown version control '%s'.", node->value);
 	return false;
 }
 
@@ -3715,15 +3721,13 @@ R_API int r_core_config_init(RCore *core) {
 
 	SETCB ("log.events", "false", &cb_log_events, "remote HTTP server to sync events with");
 #endif
-	SETICB ("log.level", R_LOGLVL_DEFAULT, cb_log_config_level, "Target log level/severity"\
-	 " (0:NONE, 1:INFO, 2:WARN, 3:DEBUG, 4:ERROR, 5:FATAL)"
-	);
-
+	SETICB ("log.level", R_LOGLVL_DEFAULT, cb_log_config_level, "Target log level/severity (0:FATAL 1:ERROR 2:INFO 3:WARN 4:DEBUG)");
 	SETCB ("log.ts", "false", cb_log_config_ts, "Show timestamp in log messages");
 
 	SETICB ("log.traplevel", 0, cb_log_config_traplevel, "Log level for trapping R2 when hit");
 	SETCB ("log.file", "", cb_log_config_file, "Logging output filename / path");
 	SETCB ("log.filter", "", cb_log_config_filter, "Filter only messages matching given origin");
+	SETCB ("log.origin", "false", cb_log_origin, "Show [origin] in log messages");
 	SETCB ("log.color", "false", cb_log_config_colors, "Should the log output use colors");
 	SETCB ("log.quiet", "false", cb_log_config_quiet, "Be quiet, dont log anything to console");
 
