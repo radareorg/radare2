@@ -32,6 +32,9 @@ while : ; do
 		shift
 		continue
 		;;
+	"--without-pull")
+		export WITHOUT_PULL=1
+		;;
 	-*)
 		# just for the penguin face case
 		ARGS="${ARGS} $1"
@@ -62,7 +65,7 @@ cd "$(dirname $0)"/..
 pwd
 
 # update
-if [ "$1" != "--without-pull" ]; then
+if [ -z "$WITHOUT_PULL" ]; then
 	if [ -d .git ]; then
 		git branch | grep "^\* master" > /dev/null
 		if [ $? = 0 ]; then
@@ -76,9 +79,6 @@ if [ "$1" != "--without-pull" ]; then
 			fi
 		fi
 	fi
-else
-	export WITHOUT_PULL=1
-	shift
 fi
 
 umask 0002
