@@ -5666,7 +5666,7 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'c': // "doc" : close current debug session
-			if (!core || !core->io || !core->io->desc || !r_config_get_i (core->config, "cfg.debug")) {
+			if (!core->io->desc || !r_config_get_b (core->config, "cfg.debug")) {
 				eprintf ("No open debug session\n");
 				break;
 			}

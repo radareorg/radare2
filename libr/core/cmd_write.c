@@ -155,6 +155,11 @@ static const char *help_msg_wt[] = {
 	"wts"," host:port [sz]", "send data to remote host:port via tcp://",
 	NULL
 };
+static const char *help_msg_wts[] = {
+	"Usage:", "wts host:port [sz]", " Write 'size' bytes to tcp connection at host:port",
+	"wts", " localhost:9999 1M", "Copy 1MB over tcp/ip",
+	NULL
+};
 
 static const char *help_msg_wf[] = {
 	"Usage:", "wf[fs] [-|args ..]", " Write from (file, swap, offset)",
@@ -1475,7 +1480,7 @@ static int cmd_wt(void *data, const char *input) {
 						eprintf ("Transfering file to the end-point...\n");
 						while (done < sz) {
 							int rc = r_socket_write (s, buf + done, sz - done);
-							if (rc <1) {
+							if (rc < 1) {
 								eprintf ("oops\n");
 								break;
 							}
@@ -1487,18 +1492,16 @@ static int cmd_wt(void *data, const char *input) {
 					r_socket_free (s);
 					free (buf);
 				} else {
-					eprintf ("Usage wts host:port [sz]\n");
+					r_core_cmd_help (core, help_msg_wts);
 				}
 			} else {
 				eprintf ("Unknown file size\n");
 			}
 		} else {
-			eprintf ("Usage wts host:port [sz]\n");
+			r_core_cmd_help (core, help_msg_wts);
 		}
 	} else if (*str == '?' || *str == '\0') {
 		r_core_cmd_help (core, help_msg_wt);
-		free (ostr);
-		return 0;
 	} else {
 		bool append = false;
 		bool toend = false;
@@ -1508,12 +1511,12 @@ static int cmd_wt(void *data, const char *input) {
 			str++;
 			if (*str == '?') {
 				r_core_cmd_help (core, help_msg_wt);
-				return 0;
+				goto ret;
 			}
 			if (*str == '!') {
 				if (str[1] == '?') {
 					r_core_cmd_help (core, help_msg_wt);
-					return 0;
+					goto ret;
 				}
 				RIOMap *map = r_io_map_get_at (core->io, poff);
 				toend = true;
@@ -1524,7 +1527,7 @@ static int cmd_wt(void *data, const char *input) {
 			if (*str == 'f') { // "wtff"
 				if (str[1] == '?') {
 					r_core_cmd_help (core, help_msg_wt);
-					return 0;
+					goto ret;
 				}
 				const char *prefix = r_str_trim_head_ro (str + 2);
 				if (!*prefix) {
@@ -1536,7 +1539,7 @@ static int cmd_wt(void *data, const char *input) {
 				if (*str) {
 					if (str[1] == '?') {
 						r_core_cmd_help (core, help_msg_wt);
-						return 0;
+						goto ret;
 					}
 					filename = r_str_trim_head_ro (str);
 					if (r_str_startswith (filename, "base64:")) {
@@ -1645,6 +1648,7 @@ static int cmd_wt(void *data, const char *input) {
 					sz, poff, filename);
 		}
 	}
+ret:
 	free (ostr);
 	free (hfilename);
 	return 0;
@@ -1652,8 +1656,8 @@ static int cmd_wt(void *data, const char *input) {
 
 static int cmd_ww(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
-	char *str = strdup (input);
+	char *ostr = strdup (input);
+	char *str = ostr;
 	int len = r_str_unescape (str);
 	if (len < 1) {
 		return 0;
@@ -1977,6 +1981,7 @@ static int cmd_wm(void *data, const char *input) {
 		}
 		break;
 	}
+	free (str);
 	return 0;
 }
 

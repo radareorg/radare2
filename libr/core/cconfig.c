@@ -3244,6 +3244,7 @@ static bool cb_dbg_verbose(void *user, void *data) {
 		break;
 	default:
 		core->dbg->verbose = false;
+		break;
 	}
 	return true;
 }
