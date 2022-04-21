@@ -5130,6 +5130,7 @@ static int cmd_debug(void *data, const char *input) {
 	RDebugTracepoint *trace;
 	RAnalOp *op;
 	int ret = 0;
+	ut64 old_seek = core->offset;
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
@@ -5748,7 +5749,9 @@ static int cmd_debug(void *data, const char *input) {
 			if (strlen (hexpairs) < 8192) {
 				int bytes_len = r_hex_str2bin (hexpairs, bytes);
 				if (bytes_len > 0) {
-					r_debug_execute (core->dbg, bytes, bytes_len, is_dxr, is_dxrs);
+					if (!r_debug_execute (core->dbg, bytes, bytes_len, NULL, is_dxr, is_dxrs)) {
+						eprintf ("Failed to execute code.\n");
+					}
 				} else {
 					eprintf ("Failed to parse hex pairs.\n");
 				}
@@ -5767,7 +5770,9 @@ static int cmd_debug(void *data, const char *input) {
 			acode = r_asm_massemble (core->rasm, input + 2);
 			if (acode) {
 				r_reg_arena_push (core->dbg->reg);
-				r_debug_execute (core->dbg, acode->bytes, acode->len, false, false);
+				if (!r_debug_execute (core->dbg, acode->bytes, acode->len, NULL, false, false)) {
+					eprintf ("Failed to inject code.\n");
+				}
 				r_reg_arena_pop (core->dbg->reg);
 			}
 			r_asm_code_free (acode);
@@ -5794,7 +5799,9 @@ static int cmd_debug(void *data, const char *input) {
 				ut64 tmpsz;
 				const ut8 *tmp = r_buf_data (b, &tmpsz);
 				if (tmpsz > 0) {
-					r_debug_execute (core->dbg, tmp, tmpsz, false, false);
+					if (!r_debug_execute (core->dbg, tmp, tmpsz, NULL, false, false)) {
+						eprintf ("Failed to inject code.\n");
+					}
 				} else {
 					eprintf ("No egg program compiled to execute.\n");
 				}
@@ -5826,11 +5833,21 @@ static int cmd_debug(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_d);
 		break;
 	}
+
+	/* RDebug, specifically RDebug.execute() may incorrectly
+	 * advance seek, so we force it back here before processing
+	 * dbg.follow. */
+	if (core->offset != old_seek) {
+		r_core_seek (core, old_seek, false);
+	}
+
 	if (follow > 0) {
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
-		if ((pc < core->offset) || (pc > (core->offset + follow))) {
+		// Is PC before offset or after the follow cutoff?
+		if (!R_BETWEEN (core->offset, pc, core->offset + follow)) {
 			r_core_cmd0 (core, "sr PC");
 		}
 	}
+
 	return ret;
 }
