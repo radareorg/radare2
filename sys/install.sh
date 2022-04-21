@@ -34,7 +34,6 @@ while : ; do
 		;;
 	"--without-pull")
 		export WITHOUT_PULL=1
-		continue
 		;;
 	-*)
 		# just for the penguin face case
