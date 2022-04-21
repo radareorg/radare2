@@ -269,6 +269,9 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 		for (i = 0; i < hdr->n_sections && cursor < end; i++) {
 			ut8 *sect_start = cursor;
 			RCoreSymCacheElementSection *sect = &result->sections[i];
+			if (cursor + (word_size * 4) > end) {
+				goto beach;
+			}
 			sect->vaddr = sect->paddr = r_read_ble (cursor, false, bits);
 			if (sect->vaddr < page_zero_size) {
 				sect->vaddr += page_zero_size;
@@ -359,6 +362,10 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 				continue;
 			}
 			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			if (!string_origin) {
+				cursor += R_CS_EL_SIZE_LSYM;
+				continue;
+			}
 			lsym->flc.file = str_dup_safe (b, string_origin + file_name_off, end);
 			if (!lsym->flc.file) {
 				cursor += R_CS_EL_SIZE_LSYM;
