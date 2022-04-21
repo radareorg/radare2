@@ -66,7 +66,7 @@ cd "$(dirname $0)"/..
 pwd
 
 # update
-if [ -z $WITHOUT_PULL ]; then
+if [ -z "$WITHOUT_PULL" ]; then
 	if [ -d .git ]; then
 		git branch | grep "^\* master" > /dev/null
 		if [ $? = 0 ]; then
