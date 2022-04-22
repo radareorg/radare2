@@ -24,13 +24,9 @@ while : ; do
 	"--with-capstone4")
 		export USE_CS5=1
 		rm -rf shlr/capstone
-		shift
-		continue
 		;;
 	"--install")
 		export INSTALL_TARGET="install"
-		shift
-		continue
 		;;
 	"--without-pull")
 		export WITHOUT_PULL=1
