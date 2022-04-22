@@ -549,7 +549,8 @@ static int register_number(char const*reg) {
 static ut8 register_offset(const char *reg) {
 	if (!r_str_casecmp (reg, "@r0") || !r_str_casecmp (reg, "[r0]")) {
 		return 0;
-	} else if (!r_str_casecmp (reg, "@r1") || !r_str_casecmp (reg, "[r1]")) {
+	}
+	if (!r_str_casecmp (reg, "@r1") || !r_str_casecmp (reg, "[r1]")) {
 		return 1;
 	} else {
 		return register_number (reg) + 2;
