@@ -58,7 +58,8 @@ static bool check_features(const char *features, cs_insn *insn) {
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	r_return_val_if_fail (a && op && buf, 0);
+	//op and buf can be null for aomj
+	r_return_val_if_fail (a, 0); //  && op && buf, 0);
 
 	int ret;
 	ut64 off = a->pc;
@@ -72,7 +73,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		cd = 0;
 	}
 	omode = mode;
-	op->size = 0;
+	if (op) {
+		op->size = 0;
+	}
 	if (cd == 0) {
 		ret = cs_open (CS_ARCH_X86, mode, &cd);
 		if (ret) {
@@ -104,8 +107,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
 		break;
 	}
-	op->size = 1;
+	if (op) {
+		op->size = 1;
+	}
 	cs_insn *insn = NULL;
+	if (!buf) {
+		len = 0;
+	}
 #if USE_ITER_API
 	cs_insn insnack = {0};
 	cs_detail insnack_detail = {0};
@@ -124,8 +132,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		op->size = 0;
 	}
 	if (!check_features (features, insn)) {
-		op->size = insn->size;
-		r_asm_op_set_asm (op, "illegal");
+		if (op) {
+			op->size = insn->size;
+			r_asm_op_set_asm (op, "illegal");
+		}
+	}
+	// required for aomj to work. which is hacky
+	if (!op) {
+		return 0;
 	}
 	if (op->size == 0 && n > 0 && insn->size > 0) {
 		op->size = insn->size;
