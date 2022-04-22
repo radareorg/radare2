@@ -553,7 +553,7 @@ static ut8 register_offset(const char *reg) {
 	if (!r_str_casecmp (reg, "@r1") || !r_str_casecmp (reg, "[r1]")) {
 		return 1;
 	}
-		return register_number (reg) + 2;
+	return register_number (reg) + 2;
 	}
 }
 
