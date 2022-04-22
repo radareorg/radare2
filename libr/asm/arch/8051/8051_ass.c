@@ -1257,7 +1257,8 @@ static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
 		offset = register_offset (arg[1]);
 		if (offset < 2) {
 			return singlearg_register (0x66 + offset, arg[1], out);
-		} else if (offset < 10) {
+		}
+		if (offset < 10) {
 			return single_byte_instr (0x66 + offset, out);
 		}
 	}
