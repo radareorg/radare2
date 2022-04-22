@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
 
 #include <stdio.h>
 #include <r_core.h>
@@ -36,7 +36,7 @@ static void parseHeap(RParse *p, RStrBuf *s) {
 }
 
 /* pseudo.c - private api */
-static int r_asm_pseudo_align(RAsmCode *acode, RAsmOp *op, char *input) {
+static int r_asm_pseudo_align(RAsmCode *acode, RAsmOp *op, const char *input) {
 	acode->code_align = r_num_math (NULL, input);
 	return 0;
 }
@@ -58,7 +58,7 @@ static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
 	return len;
 }
 
-static inline int r_asm_pseudo_arch(RAsm *a, char *input) {
+static inline int r_asm_pseudo_arch(RAsm *a, const char *input) {
 	if (!r_asm_use (a, input)) {
 		eprintf ("Error: Unknown plugin\n");
 		return -1;
@@ -66,7 +66,7 @@ static inline int r_asm_pseudo_arch(RAsm *a, char *input) {
 	return 0;
 }
 
-static inline int r_asm_pseudo_bits(RAsm *a, char *input) {
+static inline int r_asm_pseudo_bits(RAsm *a, const char *input) {
 	if (!(r_asm_set_bits (a, r_num_math (NULL, input)))) {
 		eprintf ("Error: Unsupported value for .bits.\n");
 		return -1;
@@ -74,7 +74,7 @@ static inline int r_asm_pseudo_bits(RAsm *a, char *input) {
 	return 0;
 }
 
-static inline int r_asm_pseudo_org(RAsm *a, char *input) {
+static inline int r_asm_pseudo_org(RAsm *a, const char *input) {
 	r_asm_set_pc (a, r_num_math (NULL, input));
 	return 0;
 }
@@ -139,8 +139,8 @@ static inline int r_asm_pseudo_byte(RAsmOp *op, char *input) {
 	return len;
 }
 
-static inline int r_asm_pseudo_fill(RAsmOp *op, char *input) {
-	int i, repeat = 0, size=0, value=0;
+static inline int r_asm_pseudo_fill(RAsmOp *op, const char *input) {
+	int i, repeat = 0, size = 0, value = 0;
 	if (strchr (input, ',')) {
 		int res = sscanf (input, "%d,%d,%d", &repeat, &size, &value); // use r_num?
 		if (res != 3) {
@@ -981,17 +981,25 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				} else if (!strncmp (ptr, ".lil_endian", 7 + 4) || !strncmp (ptr, "little_endian", 7 + 6)) {
 					r_asm_set_big_endian (a, false);
 				} else if (!strncmp (ptr, ".asciz", 6)) {
-					r_str_trim (ptr + 8);
-					ret = r_asm_pseudo_string (&op, ptr + 8, 1);
+					char *str = r_str_trim_dup (ptr + 6);
+					ret = r_asm_pseudo_string (&op, ptr + 6, 1);
+					free (str);
 				} else if (!strncmp (ptr, ".string ", 8)) {
-					r_str_trim (ptr + 8);
-					char * str = strdup (ptr + 8);
+					char *str = r_str_trim_dup (ptr + 8);
 					ret = r_asm_pseudo_string (&op, str, 1);
 					free (str);
 				} else if (!strncmp (ptr, ".ascii", 6)) {
-					ret = r_asm_pseudo_string (&op, ptr + 7, 0);
+					char *str = r_str_trim_dup (ptr + 6);
+					ret = r_asm_pseudo_string (&op, ptr + 6, 1);
+					free (str);
 				} else if (!strncmp (ptr, ".align", 6)) {
-					ret = r_asm_pseudo_align (acode, &op, ptr + 7);
+					char *str = r_str_trim_dup (ptr + 6);
+					ret = r_asm_pseudo_align (acode, &op, str);
+					free (str);
+				} else if (!strncmp (ptr, ".arm64", 6)) {
+					r_asm_use (a, "arm");
+					r_asm_set_bits (a, 64);
+					ret = 0;
 				} else if (!strncmp (ptr, ".arm", 4)) {
 					r_asm_use (a, "arm");
 					r_asm_set_bits (a, 32);
