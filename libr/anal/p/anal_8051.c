@@ -815,6 +815,8 @@ static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
+		"=SN	r0\n"
+		"=R0	r0\n"
 		"=A0	r0\n"
 		"=A1	r1\n"
 		"gpr	r0	.8	0	0\n"
@@ -1048,7 +1050,7 @@ RAnalPlugin r_anal_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
 	.esil = true,
-	.bits = 8|16,
+	.bits = 8 | 16,
 	.desc = "8051 CPU code analysis plugin",
 	.license = "LGPL3",
 	.op = &i8051_op,
