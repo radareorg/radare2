@@ -89,7 +89,7 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 /*
  * FIELDS is the 12-bit signed immediate value
  */
-#define FIELDS(word)      ((BITS(((signed int)(word)),0,5) << 6) | (BITS((word),6,11)))					\
+#define FIELDS(word)      ((BITS(((signed int)(word)),0,5) << 6) | (BITS((word),6,11)))
 
 /*
  * FIELD S9 is the 9-bit signed immediate value used for
@@ -99,15 +99,15 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 #define FIELDS9_FLAG(word)     (((BITS(((signed int)(word)),0,5) << 6) | (BITS((word),6,11))) )
 
 #define PUT_NEXT_WORD_IN(a) {		\
-	if (is_limm==1 && !NEXT_WORD(1))       	\
+	if (is_limm == 1 && !NEXT_WORD(1))       	\
 	  mwerror(state, "Illegal limm reference in last instruction!\n"); \
-          if (info->endian == BFD_ENDIAN_LITTLE) { \
-            (a) = ((state->words[1] & 0xff00) | (state->words[1] & 0xff)) << 16; \
-            (a) |= ((state->words[1] & 0xff0000) | (state->words[1] & 0xff000000)) >> 16;	\
-          } \
-          else { \
-            (a) = state->words[1]; \
-          } \
+	if (info->endian == BFD_ENDIAN_LITTLE) { \
+		(a) = ((state->words[1] & 0xff00) | (state->words[1] & 0xff)) << 16; \
+		(a) |= ((state->words[1] & 0xff0000) | (state->words[1] & 0xff000000)) >> 16;	\
+	} \
+	else { \
+		(a) = state->words[1]; \
+	} \
 	}
 
 #define CHECK_NULLIFY() do{		\
