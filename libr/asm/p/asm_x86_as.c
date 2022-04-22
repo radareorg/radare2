@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2020 pancake */
+/* radare - LGPL - Copyright 2011-2022 pancake */
 
 #include <r_lib.h>
 #include "../binutils_as.h"
@@ -12,7 +12,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	const char *as = "";
 #endif
 	const char *syntaxstr = "";
-	switch (a->syntax) {
+	switch (a->config->syntax) {
 	case R_ASM_SYNTAX_INTEL:
 		syntaxstr = ".intel_syntax noprefix\n";
 		break;
@@ -23,7 +23,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 
 	char header[4096];
 	snprintf (header, sizeof (header), "%s.code%i\n", // .org 0x%"PFMT64x"\n"
-		syntaxstr, a->bits);
+		syntaxstr, a->config->bits);
 	return binutils_assemble (a, op, buf, as, ASSEMBLER, header, "");
 }
 

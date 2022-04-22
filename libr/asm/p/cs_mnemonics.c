@@ -8,28 +8,28 @@ static char *mnemonics(RAsm *a, int id, bool json) {
 		}
 		return name? strdup (name): NULL;
 	}
-	RStrBuf *buf = r_strbuf_new ("");
+	PJ *pj = NULL;
+	RStrBuf *buf = NULL;
 	if (json) {
-		r_strbuf_append (buf, "[");
+		pj = pj_new ();
+		pj_a (pj);
+	} else {
+		r_strbuf_new ("");
 	}
 	for (i = 1; ; i++) {
 		const char *op = cs_insn_name (cd, i);
 		if (!op) {
 			break;
 		}
-		if (json) {
-			r_strbuf_append (buf, "\"");
-		}
-		r_strbuf_append (buf, op);
-		if (json) {
-			if (cs_insn_name (cd, i + 1)) {
-				r_strbuf_append (buf, "\",");
-			} else {
-				r_strbuf_append (buf, "\"]\n");
-			}
+		if (pj) {
+			pj_s (pj, op);
 		} else {
+			r_strbuf_append (buf, op);
 			r_strbuf_append (buf, "\n");
 		}
 	}
-	return r_strbuf_drain (buf);
+	if (pj) {
+		pj_end (pj);
+	}
+	return pj? pj_drain (pj): r_strbuf_drain (buf);
 }

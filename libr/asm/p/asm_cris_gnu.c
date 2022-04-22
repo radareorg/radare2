@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2018 - pancake */
+/* radare - LGPL - Copyright 2014-2022 - pancake */
 
 #if 0
 
@@ -70,33 +70,34 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options=(a->bits==64)?"64":"";
+	disasm_obj.disassembler_options = (a->config->bits == 64)?"64":"";
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &cris_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !a->big_endian;
+	disasm_obj.endian = !a->config->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
 
-	if (a->cpu && *a->cpu) {
+	const char *cpu = a->config->cpu;
+	if (R_STR_ISNOTEMPTY (cpu)) {
 		// enum cris_disass_family { cris_dis_v0_v10, cris_dis_common_v10_v32, cris_dis_v32 };
 		// 0: v0-v10
 		// 1: v10-v32
 		// 2: v32
 		mode = 0;
-		if (strstr (a->cpu,  "v10")) {
+		if (strstr (cpu,  "v10")) {
 			mode = 1;
 		}
-		if (strstr (a->cpu,  "v32")) {
+		if (strstr (cpu,  "v32")) {
 			mode = 2;
 		}
 	} else {
 		mode = 2;
 	}
 	(void)cris_parse_disassembler_options (&disasm_obj, mode);
-	if (a->syntax == R_ASM_SYNTAX_ATT) {
+	if (a->config->syntax == R_ASM_SYNTAX_ATT) {
 		switch (mode) {
 		case 0:
 			op->size = print_insn_cris_with_register_prefix ((bfd_vma)Offset, &disasm_obj);

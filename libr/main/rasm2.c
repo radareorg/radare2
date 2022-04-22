@@ -599,7 +599,7 @@ static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut
 		}
 		printf ("wx ");
 	}
-	int ret = rasm_asm (as, (char *)buf, offset, len, as->a->bits, bin, use_spp, hexwords);
+	int ret = rasm_asm (as, (char *)buf, offset, len, as->a->config->bits, bin, use_spp, hexwords);
 	if (rad) {
 		printf ("f entry = $$\n");
 		printf ("f label.main = $$ + 1\n");
@@ -875,6 +875,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	if (file) {
 		char *content;
 		size_t length = 0;
+		const int bits = as->a->config->bits;
 		if (!strcmp (file, "-")) {
 			int sz = 0;
 			ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
@@ -890,12 +891,12 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 						length -= skip;
 					}
 				}
-				ret = rasm_disasm (as, offset, (char *)buf, len, as->a->bits, bin, dis - 1);
+				ret = rasm_disasm (as, offset, (char *)buf, len, bits, bin, dis - 1);
 			} else if (analinfo) {
 				ret = show_analinfo (as, (const char *)buf, offset);
 			} else {
 				ret = print_assembly_output (as, (char *)buf, offset, len,
-					as->a->bits, bin, use_spp, rad, hexwords, arch);
+					bits, bin, use_spp, rad, hexwords, arch);
 			}
 			ret = !ret;
 			free (buf);
@@ -918,12 +919,12 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 					}
 					if (dis) {
 						ret = rasm_disasm (as, offset, content,
-								length, as->a->bits, bin, dis - 1);
+								length, bits, bin, dis - 1);
 					} else if (analinfo) {
 						ret = show_analinfo (as, (const char *)content, offset);
 					} else {
 						ret = print_assembly_output (as, content, offset, length,
-								as->a->bits, bin, use_spp, rad, hexwords, arch);
+								bits, bin, use_spp, rad, hexwords, arch);
 					}
 					ret = !ret;
 				}
@@ -962,11 +963,11 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 					}
 				}
 				if (dis) {
-					ret = rasm_disasm (as, offset, (char *)buf, length, as->a->bits, bin, dis - 1);
+					ret = rasm_disasm (as, offset, (char *)buf, length, bits, bin, dis - 1);
 				} else if (analinfo) {
 					ret = show_analinfo (as, (const char *)buf, offset);
 				} else {
-					ret = rasm_asm (as, (const char *)buf, offset, length, as->a->bits, bin, use_spp, hexwords);
+					ret = rasm_asm (as, (const char *)buf, offset, length, bits, bin, use_spp, hexwords);
 				}
 				idx += ret;
 				offset += ret;
@@ -998,12 +999,12 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 				printf ("\"wa ");
 			}
 			ret = rasm_disasm (as, offset, (char *)usrstr, len,
-					as->a->bits, bin, dis - 1);
+					as->a->config->bits, bin, dis - 1);
 			free (usrstr);
 		} else if (analinfo) {
 			ret = show_analinfo (as, (const char *)opt.argv[opt.ind], offset);
 		} else {
-			ret = print_assembly_output (as, opt.argv[opt.ind], offset, len, as->a->bits,
+			ret = print_assembly_output (as, opt.argv[opt.ind], offset, len, as->a->config->bits,
 							bin, use_spp, rad, hexwords, arch);
 		}
 		if (!ret) {

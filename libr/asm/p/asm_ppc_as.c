@@ -13,9 +13,8 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 #endif
 	char cmd_opt[4096];
 	snprintf (cmd_opt, sizeof (cmd_opt), "-mregnames -a%d %s",
-		a->bits, a->big_endian ? "-be" : "-le");
-	return binutils_assemble (a, op, buf,
-		as, ASSEMBLER, "", cmd_opt);
+		a->config->bits, a->config->big_endian ? "-be" : "-le");
+	return binutils_assemble (a, op, buf, as, ASSEMBLER, "", cmd_opt);
 }
 
 RAsmPlugin r_asm_plugin_ppc_as = {

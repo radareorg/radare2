@@ -1227,7 +1227,7 @@ static int grab_bits(RCore *core, const char *arg, int *pcbits2) {
 			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
 			if (reg) {
-				if (core->rasm->bits != reg->size)
+				if (core->rasm->config->bits != reg->size)
 					pcbits = reg->size;
 			}
 		}
@@ -1417,7 +1417,7 @@ static int r_debug_heap(RCore *core, const char *input) {
 	const char *m = r_config_get (core->config, "dbg.malloc");
 	if (m && !strcmp ("glibc", m)) {
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
-		if (core->rasm->bits == 64) {
+		if (core->rasm->config->bits == 64) {
 			cmd_dbg_map_heap_glibc_64 (core, input + 1);
 		} else {
 			cmd_dbg_map_heap_glibc_32 (core, input + 1);
@@ -1427,7 +1427,7 @@ static int r_debug_heap(RCore *core, const char *input) {
 #endif
 #if HAVE_JEMALLOC
 	} else if (m && !strcmp ("jemalloc", m)) {
-		if (core->rasm->bits == 64) {
+		if (core->rasm->config->bits == 64) {
 			cmd_dbg_map_jemalloc_64 (core, input + 1);
 		} else {
 			cmd_dbg_map_jemalloc_32 (core, input + 1);
@@ -1907,7 +1907,7 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 	HtUP *db = ht_up_new0 ();
 
 	r_list_foreach (list, iter, r) {
-		if (r->size != core->rasm->bits) {
+		if (r->size != core->rasm->config->bits) {
 			continue;
 		}
 		ut64 value = r_reg_get_value (reg, r);
@@ -1960,7 +1960,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	bool use_colors = had_colors != 0;
 	int delta = 0;
 	ut64 diff, value;
-	int bits = core->rasm->bits;
+	int bits = core->rasm->config->bits;
 	//XXX: support other RRegisterType
 	RList *list = r_reg_get_list (reg, R_REG_TYPE_GPR);
 	RListIter *iter;
@@ -2497,7 +2497,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					r_print_hexdump (core->print, 0ll, buf, len, 64, 8, 1);
 					break;
 				default:
-					if (core->rasm->bits == 64) {
+					if (core->rasm->config->bits == 64) {
 						r_print_hexdump (core->print, 0ll, buf, len, 64, 8, 1);
 					} else {
 						r_print_hexdump (core->print, 0ll, buf, len, 32, 4, 1);
@@ -3001,7 +3001,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
 			if (reg) {
-				if (core->rasm->bits != reg->size) {
+				if (core->rasm->config->bits != reg->size) {
 					pcbits = reg->size;
 				}
 			}

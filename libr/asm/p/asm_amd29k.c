@@ -15,7 +15,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ut64 offset = a->pc;
 	amd29k_instr_t instruction = {0};
 	op->size = 4;
-	if (amd29k_instr_decode (buf, len, &instruction, a->cpu)) {
+	if (amd29k_instr_decode (buf, len, &instruction, a->config->cpu)) {
 		amd29k_instr_print (buf_asm, sizeof (buf_asm), offset, &instruction);
 		r_asm_op_set_asm (op, buf_asm);
 		return 4;

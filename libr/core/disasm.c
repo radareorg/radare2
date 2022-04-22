@@ -424,7 +424,7 @@ static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
 }
 
 static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_size) {
-	if (core && f && cmt && cmt_size > 0 && f->bits && f->bits != core->rasm->bits) {
+	if (core && f && cmt && cmt_size > 0 && f->bits && f->bits != core->rasm->config->bits) {
 		const char *asm_arch = r_config_get (core->config, "asm.arch");
 		if (asm_arch && *asm_arch && strstr (asm_arch, "arm")) {
 			switch (f->bits) {
@@ -1118,7 +1118,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		if (core->parser->subrel && ds->analop.refptr) {
 			if (core->parser->subrel_addr == 0) {
 				ut64 killme = UT64_MAX;
-				const int be = core->rasm->big_endian;
+				const int be = core->rasm->config->big_endian;
 				r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be);
 				core->parser->subrel_addr = killme;
 			}
@@ -3740,7 +3740,7 @@ static ut64 get_ptr(RDisasmState *ds, ut64 addr) {
 	ut8 buf[sizeof (ut64)] = {0};
 	r_io_read_at (ds->core->io, addr, buf, sizeof (buf));
 	ut64 n64_32;
-	if (ds->core->rasm->bits == 64) {
+	if (ds->core->rasm->config->bits == 64) {
 		n64_32 = r_read_ble64 (buf, 0);
 	} else {
 		n64_32 = r_read_ble32 (buf, 0);
@@ -3750,10 +3750,10 @@ static ut64 get_ptr(RDisasmState *ds, ut64 addr) {
 
 static ut64 get_ptr_ble(RDisasmState *ds, ut64 addr) {
 	ut8 buf[sizeof (ut64)] = {0};
-	int endian = ds->core->rasm->big_endian;
+	int endian = ds->core->rasm->config->big_endian;
 	ut64 n64_32;
 	r_io_read_at (ds->core->io, addr, buf, sizeof (buf));
-	if (ds->core->rasm->bits == 64) {
+	if (ds->core->rasm->config->bits == 64) {
 		n64_32 = r_read_ble64 (buf, endian);
 	} else {
 		n64_32 = r_read_ble32 (buf, endian);
@@ -3788,10 +3788,10 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 		ut64 size;
 		RAnalMetaItem *mi = r_meta_get_at (ds->core->anal, ds->at, R_META_TYPE_ANY, &size);
 		if (mi) {
-			int obits = ds->core->rasm->bits;
-			ds->core->rasm->bits = size * 8;
+			int obits = ds->core->rasm->config->bits;
+			ds->core->rasm->config->bits = size * 8;
 			slen = ds_print_shortcut(ds, get_ptr (ds, ds->at), pos);
-			ds->core->rasm->bits = obits;
+			ds->core->rasm->config->bits = obits;
 			gotShortcut = true;
 		}
 	}
@@ -4077,7 +4077,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	}
 	// do not resolve strings on arm64 pointed with ADRP
 	if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
-		if (ds->core->rasm->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
+		if (ds->core->rasm->config->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
 			return;
 		}
 	}
@@ -4608,7 +4608,7 @@ static bool myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				ignored = true;
 				break;
 			case R_ANAL_OP_TYPE_LEA:
-				if (ds->core->rasm->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
+				if (ds->core->rasm->config->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
 					ignored = true;
 				}
 				break;
@@ -5829,9 +5829,9 @@ toro:
 			ret = ds_print_middle (ds, ret);
 
 			ds_print_asmop_payload (ds, ds_bufat (ds));
-			if (core->rasm->syntax != R_ASM_SYNTAX_INTEL) {
+			if (core->rasm->config->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
-				int os = core->rasm->syntax;
+				int os = core->rasm->config->syntax;
 				r_asm_set_syntax (core->rasm, R_ASM_SYNTAX_INTEL);
 				r_asm_disassemble (core->rasm, &ao, ds_bufat (ds), ds_left (ds) + 5);
 				r_asm_set_syntax (core->rasm, os);
@@ -5868,9 +5868,9 @@ toro:
 			ret = ds_print_middle (ds, ret);
 
 			ds_print_asmop_payload (ds, ds_bufat (ds));
-			if (core->rasm->syntax != R_ASM_SYNTAX_INTEL) {
+			if (core->rasm->config->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
-				int os = core->rasm->syntax;
+				int os = core->rasm->config->syntax;
 				r_asm_set_syntax (core->rasm, R_ASM_SYNTAX_INTEL);
 				r_asm_disassemble (core->rasm, &ao, ds_bufat (ds), ds_left (ds) + 5);
 				r_asm_set_syntax (core->rasm, os);

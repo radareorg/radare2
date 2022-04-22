@@ -47,7 +47,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options = (a->bits==64)? "64": "";
+	disasm_obj.disassembler_options = (a->config->bits == 64)? "64": "";
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &lanai_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -68,7 +68,7 @@ RAsmPlugin r_asm_plugin_lanai_gnu = {
 	.name = "lanai", // .gnu",
 	.arch = "lanai",
 	.license = "GPL3",
-	.bits = 32,
+	.bits = 32 | 64,
 	.endian = R_SYS_ENDIAN_BIG,
 	.desc = "LANAI",
 	.disassemble = &disassemble

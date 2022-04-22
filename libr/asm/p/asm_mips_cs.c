@@ -12,24 +12,25 @@ static csh cd = 0;
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn;
 	int mode, n, ret = -1;
-	mode = (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	mode = (a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (!op) {
 		return 0;
 	}
-	if (a->cpu && *a->cpu) {
-		if (!strcmp (a->cpu, "micro")) {
+	const char *cpu = a->config->cpu;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (!strcmp (cpu, "micro")) {
 			mode |= CS_MODE_MICRO;
-		} else if (!strcmp (a->cpu, "r6")) {
+		} else if (!strcmp (cpu, "r6")) {
 			mode |= CS_MODE_MIPS32R6;
-		} else if (!strcmp (a->cpu, "v3")) {
+		} else if (!strcmp (cpu, "v3")) {
 			mode |= CS_MODE_MIPS3;
-		} else if (!strcmp (a->cpu, "v2")) {
+		} else if (!strcmp (cpu, "v2")) {
 #if CS_API_MAJOR > 3
 			mode |= CS_MODE_MIPS2;
 #endif
 		}
 	}
-	mode |= (a->bits == 64)? CS_MODE_MIPS64 : CS_MODE_MIPS32;
+	mode |= (a->config->bits == 64)? CS_MODE_MIPS64 : CS_MODE_MIPS32;
 	memset (op, 0, sizeof (RAsmOp));
 	op->size = 4;
 	if (cd != 0) {
@@ -39,7 +40,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (ret) {
 		goto fin;
 	}
-	if (a->syntax == R_ASM_SYNTAX_REGNUM) {
+	if (a->config->syntax == R_ASM_SYNTAX_REGNUM) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
 	} else {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
@@ -72,7 +73,7 @@ fin:
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 	ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
 	int ret = mips_assemble (str, a->pc, opbuf);
-	if (a->big_endian) {
+	if (a->config->big_endian) {
 		ut8 *buf = opbuf;
 		ut8 tmp = buf[0];
 		buf[0] = buf[3];
@@ -90,7 +91,7 @@ RAsmPlugin r_asm_plugin_mips_cs = {
 	.license = "BSD",
 	.arch = "mips",
 	.cpus = "mips32/64,micro,r6,v3,v2",
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics,

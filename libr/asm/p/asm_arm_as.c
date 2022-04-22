@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2020 pancake */
+/* radare - LGPL - Copyright 2015-2022 pancake */
 
 #include <r_lib.h>
 #include "../binutils_as.h"
@@ -7,7 +7,7 @@
 #define ASSEMBLER64 "R2_ARM64_AS"
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	int bits = a->bits;
+	const int bits = a->config->bits;
 	char *as = "";
 #if __arm__
 	if (bits <= 32) {
@@ -21,7 +21,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char cmd_opt[4096];
 	snprintf (cmd_opt, sizeof (cmd_opt), "%s %s",
 		bits == 16 ? "-mthumb" : "",
-		a->big_endian ? "-EB" : "-EL");
+		a->config->big_endian ? "-EB" : "-EL");
 	return binutils_assemble (a, op, buf, as,
 		bits == 64 ? ASSEMBLER64 : ASSEMBLER32,
 		bits <= 32 ? ".syntax unified\n" : "", cmd_opt);

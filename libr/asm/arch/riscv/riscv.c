@@ -323,6 +323,6 @@ static int riscv_dis(RAsm *a, RAsmOp *rop, const ut8 *buf, ut64 len) {
 	if (len < insn_len) {
 		return -1;
 	}
-	riscv_disassemble (a, rop, insn, a->bits, len);
+	riscv_disassemble (a, rop, insn, a->config->bits, len);
 	return insn_len;
 }

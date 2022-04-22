@@ -31,7 +31,7 @@ void decompile_vm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	r_strf_buffer (64);
 	const char *buf_asm = "invalid";
 	if (len > 3 && buf[0] == 0x0F && buf[1] == 0x3F && (VPCEXT2 (buf, 0x01) || VPCEXT2 (buf, 0x05) || VPCEXT2 (buf, 0x07) || VPCEXT2 (buf, 0x0D) || VPCEXT2 (buf, 0x10))) {
-		if (a->syntax == R_ASM_SYNTAX_ATT) {
+		if (a->config->syntax == R_ASM_SYNTAX_ATT) {
 			buf_asm = r_strf ("vpcext $0x%x, $0x%x", buf[3], buf[2]);
 		} else {
 			buf_asm = r_strf ("vpcext %xh, %xh", buf[2], buf[3]);

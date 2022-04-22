@@ -52,8 +52,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	if (!R_STR_ISEMPTY (a->cpu)) {
-		r_str_ncpy (options, a->cpu, sizeof (options));
+	if (!R_STR_ISEMPTY (a->config->cpu)) {
+		r_str_ncpy (options, a->config->cpu, sizeof (options));
 	} else {
 		*options = 0;
 	}

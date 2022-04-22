@@ -59,7 +59,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int mode, n, ret;
 	ut64 off = a->pc;
 	cs_insn* insn = NULL;
-	mode = m680xmode (a->cpu);
+	mode = m680xmode (a->config->cpu);
 	if (cd && mode != omode) {
 		cs_close (&cd);
 		cd = 0;
@@ -97,7 +97,7 @@ RAsmPlugin r_asm_plugin_m680x_cs = {
 	.desc = "Capstone "CAPSTONE_VERSION_STRING" M680X Disassembler",
 	.license = "BSD",
 	.arch = "m680x",
-	.bits = 8|32,
+	.bits = 8 | 32,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.fini = the_end,
 	.disassemble = &disassemble,
@@ -109,7 +109,7 @@ RAsmPlugin r_asm_plugin_m680x_cs = {
 	.desc = "Capstone M680X Disassembler (Not supported)",
 	.license = "BSD",
 	.arch = "m680x",
-	.bits = 8|32,
+	.bits = 8 | 32,
 };
 #endif
 

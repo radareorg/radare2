@@ -205,7 +205,7 @@ static const char *stackPrintCommand(RCore *core) {
 		if (r_config_get_i (core->config, "stack.bytes")) {
 			return "px";
 		}
-		switch (core->rasm->bits) {
+		switch (core->rasm->config->bits) {
 		case 64: return "pxq"; break;
 		case 32: return "pxw"; break;
 		}
@@ -3450,7 +3450,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							int delta = core->rasm->bits / 8;
+							int delta = core->rasm->config->bits / 8;
 							r_core_cmdf (core, "dr %s = %s-%d\n", creg, creg, delta);
 						}
 					} else {
@@ -3493,7 +3493,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							int delta = core->rasm->bits / 8;
+							int delta = core->rasm->config->bits / 8;
 							r_core_cmdf (core, "dr %s = %s+%d\n", creg, creg, delta);
 						}
 					} else {

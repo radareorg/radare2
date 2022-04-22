@@ -52,56 +52,57 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	Offset = a->pc;
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
-	if ((a->cpu != pre_cpu) && (a->features != pre_features)) {
+	const char *cpu = a->config->cpu;
+	if ((cpu != pre_cpu) && (a->config->features != pre_features)) {
 		free (disasm_obj.disassembler_options);
 		memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	}	
 
 	/* prepare disassembler */
-	if (a->cpu && (!pre_cpu || !strcmp(a->cpu, pre_cpu))) {
-		if (!r_str_casecmp (a->cpu, "mips64r2")) {
+	if (cpu && (!pre_cpu || !strcmp (cpu, pre_cpu))) {
+		if (!r_str_casecmp (cpu, "mips64r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa64r2;
-		} else if (!r_str_casecmp (a->cpu, "mips32r2")) {
+		} else if (!r_str_casecmp (cpu, "mips32r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa32r2;
-		} else if (!r_str_casecmp (a->cpu, "mips64")) {
+		} else if (!r_str_casecmp (cpu, "mips64")) {
 			disasm_obj.mach = bfd_mach_mipsisa64;
-		} else if (!r_str_casecmp (a->cpu, "mips32")) {
+		} else if (!r_str_casecmp (cpu, "mips32")) {
 			disasm_obj.mach = bfd_mach_mipsisa32;
-		} else if (!r_str_casecmp (a->cpu, "loongson3a")) {
+		} else if (!r_str_casecmp (cpu, "loongson3a")) {
 			disasm_obj.mach = bfd_mach_mips_gs464;
-		} else if (!r_str_casecmp (a->cpu, "gs464")) {
+		} else if (!r_str_casecmp (cpu, "gs464")) {
 			disasm_obj.mach = bfd_mach_mips_gs464;
-		} else if (!r_str_casecmp (a->cpu, "gs464e")) {
+		} else if (!r_str_casecmp (cpu, "gs464e")) {
 			disasm_obj.mach = bfd_mach_mips_gs464e;
-		} else if (!r_str_casecmp (a->cpu, "gs264e")) {
+		} else if (!r_str_casecmp (cpu, "gs264e")) {
 			disasm_obj.mach = bfd_mach_mips_gs264e;
-		} else if (!r_str_casecmp (a->cpu, "loongson2e")) {
+		} else if (!r_str_casecmp (cpu, "loongson2e")) {
 			disasm_obj.mach = bfd_mach_mips_loongson_2e;
-		} else if (!r_str_casecmp (a->cpu, "loongson2f")) {
+		} else if (!r_str_casecmp (cpu, "loongson2f")) {
 			disasm_obj.mach = bfd_mach_mips_loongson_2f;
-		} else if (!r_str_casecmp (a->cpu, "mips32/64")) {
+		} else if (!r_str_casecmp (cpu, "mips32/64")) {
 			//Fallback for default config
 			disasm_obj.mach = bfd_mach_mips_loongson_2f;
 		}
-		pre_cpu = r_str_dup (pre_cpu, a->cpu);
-	}
-	else {
+		pre_cpu = r_str_dup (pre_cpu, cpu);
+	} else {
 		disasm_obj.mach = bfd_mach_mips_loongson_2f;
 	}
 
-	if (a->features && (!pre_features || !strcmp (a->features, pre_features))) {
+	const char *features = a->config->features;
+	if (features && (!pre_features || !strcmp (features, pre_features))) {
 		free (disasm_obj.disassembler_options);
-		if (strstr (a->features, "n64")) {
+		if (strstr (features, "n64")) {
 			disasm_obj.disassembler_options = r_str_new ("abi=n64");
-		} else if (strstr (a->features, "n32")) {
+		} else if (strstr (features, "n32")) {
 			disasm_obj.disassembler_options = r_str_new ("abi=n32");
-		} else if (strstr (a->features, "o32")) {
+		} else if (strstr (features, "o32")) {
 			disasm_obj.disassembler_options = r_str_new ("abi=o32");
 		}
-		pre_features = r_str_dup (pre_features, a->features);
+		pre_features = r_str_dup (pre_features, features);
 	}
 
-	mips_mode = a->bits;
+	mips_mode = a->config->bits;
 	disasm_obj.arch = CPU_LOONGSON_2F;
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &mips_buffer_read_memory;
@@ -110,7 +111,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.buffer_vma = Offset;
 	disasm_obj.buffer_length = 4;
-	disasm_obj.endian = !a->big_endian;
+	disasm_obj.endian = !a->config->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
 	op->size = (disasm_obj.endian == BFD_ENDIAN_LITTLE)
@@ -125,7 +126,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 	ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
 	int ret = mips_assemble (str, a->pc, opbuf);
-	if (a->big_endian) {
+	if (a->config->big_endian) {
 		ut8 tmp = opbuf[0];
 		opbuf[0] = opbuf[3];
 		opbuf[3] = tmp;

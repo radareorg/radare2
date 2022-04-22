@@ -218,7 +218,7 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
 			break;
 		}
 
-		if (!strcmp (r_str_get (a->cpu), "ATmega328p")) {
+		if (!strcmp (r_str_get (a->config->cpu), "ATmega328p")) {
 			switch (dInstruction.operands[operandNum]) {
 			case 0x03:
 				current_register = "pinb";
@@ -391,7 +391,7 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
 				break;
 			}
 		}
-		if (!strcmp (r_str_get (a->cpu), "AT90S1200")) {
+		if (!strcmp (r_str_get (a->config->cpu), "AT90S1200")) {
 			switch (dInstruction.operands[operandNum]) {
 			case 0x08:
 				current_register = "acsr";

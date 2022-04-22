@@ -23,7 +23,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	op->size = 4;
 
-	ut32 iw = r_read_ble32 (buf, a->big_endian);
+	ut32 iw = r_read_ble32 (buf, a->config->big_endian);
 	r_instr = rsp_instruction_decode (a->pc, iw);
 
 	r_strbuf_append (&op->buf_asm, r_instr.mnemonic);

@@ -5,7 +5,7 @@
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
-	if (a->syntax != R_ASM_SYNTAX_INTEL) {
+	if (a->config->syntax != R_ASM_SYNTAX_INTEL) {
 		eprintf ("asm.x86.nasm does not support non-intel syntax\n");
 		return -1;
 	}
@@ -21,7 +21,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		return -1;
 	}
 
-	char *asm_buf = r_str_newf ("[BITS %i]\nORG 0x%"PFMT64x"\n%s\n", a->bits, a->pc, buf);
+	char *asm_buf = r_str_newf ("[BITS %i]\nORG 0x%"PFMT64x"\n%s\n", a->config->bits, a->pc, buf);
 	if (asm_buf) {
 		int slen = strlen (asm_buf);
 		int wlen = write (ifd, asm_buf, slen);

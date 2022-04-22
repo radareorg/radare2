@@ -540,7 +540,7 @@ static int dalvik_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	for (i = 0; i < 256; i++) {
 		if (!strcmp (dalvik_opcodes[i].name, buf)) {
 			ut8 buf[4];
-			r_write_ble32 (buf, i, a->big_endian);
+			r_write_ble32 (buf, i, a->config->big_endian);
 			r_strbuf_setbin (&op->buf, buf, sizeof (buf));
 			op->size = dalvik_opcodes[i].len;
 			return op->size;

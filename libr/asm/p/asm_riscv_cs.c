@@ -11,7 +11,7 @@ static csh cd = 0;
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn;
-	int mode = (a->bits == 64)? CS_MODE_RISCV64 : CS_MODE_RISCV32;
+	int mode = (a->config->bits == 64)? CS_MODE_RISCV64 : CS_MODE_RISCV32;
 	op->size = 4;
 	if (cd != 0) {
 		cs_close (&cd);
@@ -58,7 +58,7 @@ RAsmPlugin r_asm_plugin_riscv_cs = {
 	.license = "BSD",
 	.arch = "riscv",
 	.cpus = "",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics,

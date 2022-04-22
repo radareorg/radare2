@@ -560,7 +560,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	case '[':
 {
 		ut64 n = 0LL;
-		int refsz = core->rasm->bits / 8;
+		int refsz = core->rasm->config->bits / 8;
 		const char *p = NULL;
 		if (strlen (str) > 5) {
 			p = strchr (str + 5, ':');
@@ -2297,7 +2297,7 @@ static char *getvalue(ut64 value, int bits) {
  * no json support
 */
 R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int depth) {
-	const int bits = core->rasm->bits;
+	const int bits = core->rasm->config->bits;
 	r_return_val_if_fail (core, NULL);
 	RStrBuf *s = r_strbuf_new (NULL);
 	if (pj) {
@@ -3985,7 +3985,7 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 	}
 
 	//bits check
-	switch (core->rasm->bits) {
+	switch (core->rasm->config->bits) {
 	case 32:
 		if (strcmp (name, "setup") && !num ) {
 			r_cons_eprintf ("syscall not found!\n");

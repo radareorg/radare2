@@ -3841,7 +3841,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	ut64 at;
 	char bckwrds, do_bckwrd_srch;
 	int arch = -1;
-	if (core->rasm->bits == 64) {
+	if (core->rasm->config->bits == 64) {
 		// speedup search
 		if (!strncmp (core->rasm->cur->name, "arm", 3)) {
 			arch = R2_ARCH_ARM64;
@@ -4313,7 +4313,7 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 	ut64 dstaddr = 0LL;
 	ut8 *buf = core->block;
 	int len = core->blocksize;
-	int word = wordsize ? wordsize: core->rasm->bits / 8;
+	int word = wordsize ? wordsize: core->rasm->config->bits / 8;
 	char *str;
 	int i, j;
 
@@ -4922,7 +4922,7 @@ static bool esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 			}
 		}
 	}
-	if (core->rasm->bits == 32 && strstr (core->rasm->cur->name, "arm")) {
+	if (core->rasm->config->bits == 32 && strstr (core->rasm->cur->name, "arm")) {
 		if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
 			add_string_ref (anal->coreb.core, esil->address, at);
 		}

@@ -2029,7 +2029,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 		// XXX this is a hack to make syscall args work on x86-32 and x86-64
 		// we need to shift sn first.. which is bad, but needs to be redesigned
 		int regidx = i;
-		if (core->rasm->bits == 32 && core->rasm->cur && !strcmp (core->rasm->cur->arch, "x86")) {
+		if (core->rasm->config->bits == 32 && core->rasm->cur && !strcmp (core->rasm->cur->arch, "x86")) {
 			regidx++;
 		}
 		ut64 arg = r_debug_arg_get (core->dbg, cc, regidx);
@@ -8062,7 +8062,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 			setBits = hint->bits;
 		}
 		r_anal_hint_free (hint);
-		if (setBits != core->rasm->bits) {
+		if (setBits != core->rasm->config->bits) {
 			r_config_set_i (core->config, "asm.bits", setBits);
 		}
 		if (r_anal_op (core->anal, &op, addr, buf + bufi, bsz - bufi, 0) > 0) {
@@ -10778,7 +10778,7 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 
 static bool archIsThumbable(RCore *core) {
 	RAsm *as = core ? core->rasm : NULL;
-	if (as && as->cur && as->bits <= 32 && as->cur->name) {
+	if (as && as->cur && as->config->bits <= 32 && as->cur->name) {
 		return strstr (as->cur->name, "arm");
 	}
 	return false;
@@ -10867,7 +10867,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	r_print_rowlog_done (core->print, oldstr);
 
 	int vsize = 4; // 32bit dword
-	if (core->rasm->bits == 64) {
+	if (core->rasm->config->bits == 64) {
 		vsize = 8;
 	}
 
@@ -11282,7 +11282,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-				bool isPreludableArch = core->rasm->bits == 64 && r_str_startswith (r_config_get (core->config, "asm.arch"), "arm");
+				bool isPreludableArch = core->rasm->config->bits == 64 && r_str_startswith (r_config_get (core->config, "asm.arch"), "arm");
 				
 				if (!didAap && isPreludableArch) {
 					didAap = true;
@@ -11546,7 +11546,7 @@ static bool anal_fcn_data_gaps(RCore *core, const char *input) {
 	ut64 end = UT64_MAX;
 	RAnalFunction *fcn;
 	RListIter *iter;
-	int i, wordsize = (core->rasm->bits == 64)? 8: 4;
+	int i, wordsize = (core->rasm->config->bits == 64)? 8: 4;
 	r_list_sort (core->anal->fcns, cmpaddr);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		if (end != UT64_MAX) {

@@ -3200,7 +3200,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	int blocksize = core->blocksize;
 	ut8 *heaped_block = NULL;
 	ut8 *block_end = core->block + blocksize;
-	int i, n = core->rasm->bits / 8;
+	int i, n = core->rasm->config->bits / 8;
 	int type = 'v';
 	bool fixed_size = true;
 	switch (input[0]) {
@@ -3420,14 +3420,14 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 					break;
 				default:
 					v = r_read_ble64 (block, core->print->big_endian);
-					switch (core->rasm->bits / 8) {
+					switch (core->rasm->config->bits / 8) {
 						case 1: r_cons_printf ("0x%02" PFMT64x "\n", v & UT8_MAX); break;
 						case 2: r_cons_printf ("0x%04" PFMT64x "\n", v & UT16_MAX); break;
 						case 4: r_cons_printf ("0x%08" PFMT64x "\n", v & UT32_MAX); break;
 						case 8: r_cons_printf ("0x%016" PFMT64x "\n", v & UT64_MAX); break;
 						default: break;
 					}
-					block += core->rasm->bits / 8;
+					block += core->rasm->config->bits / 8;
 					break;
 			}
 		} while (repeat > 0);
@@ -4554,14 +4554,14 @@ static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
 	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
 	while (p + 4 < core->blocksize) {
 		const bool be = core->print->big_endian;
-		if (core->rasm->bits == 64) {
+		if (core->rasm->config->bits == 64) {
 			n = r_read_ble64 (buf + p, be);
 		} else {
 			n = r_read_ble32 (buf + p, be);
 		}
 		r_cons_printf ("[0x%08"PFMT64x"] 0x%08"PFMT64x"\n", addr + p, n);
 		disasm_until_optype (core, n, type_print, R_ANAL_OP_TYPE_RET, 1024);
-		if (core->rasm->bits == 64) {
+		if (core->rasm->config->bits == 64) {
 			p += 8;
 		} else {
 			p += 4;
@@ -4934,7 +4934,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 		}
 	} else {
 		const int ocols = core->print->cols;
-		int bitsize = core->rasm->bits;
+		int bitsize = core->rasm->config->bits;
 		/* Thumb is 16bit arm but handles 32bit data */
 		if (bitsize == 16) {
 			bitsize = 32;
