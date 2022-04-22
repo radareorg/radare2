@@ -510,7 +510,7 @@ void r_SHA256_Update(R_SHA256_CTX *context, const ut8 *data, size_t len) {
 	usedspace = freespace = 0;
 }
 
-void r_SHA256_Final(ut8 *digest, R_SHA256_CTX *context) {
+void r_SHA256_Final(ut8 digest[r_SHA256_DIGEST_LENGTH], R_SHA256_CTX *context) {
 	ut32 *d = (ut32 *) digest;
 	unsigned int usedspace;
 
@@ -582,7 +582,7 @@ void r_SHA256_Final(ut8 *digest, R_SHA256_CTX *context) {
 	usedspace = 0;
 }
 
-char *r_SHA256_End(R_SHA256_CTX *context, char buffer[]) {
+char *r_SHA256_End(R_SHA256_CTX *context, char buffer[r_SHA256_DIGEST_STRING_LENGTH]) {
 	ut8 digest[r_SHA256_DIGEST_LENGTH], *d = digest;
 	int i;
 
@@ -893,7 +893,7 @@ static void SHA512_Last(R_SHA512_CTX *context) {
 	SHA512_Transform (context, (ut64 *) context->buffer);
 }
 
-void r_SHA512_Final(ut8 digest[], R_SHA512_CTX *context) {
+void r_SHA512_Final(ut8 digest[r_SHA512_DIGEST_LENGTH], R_SHA512_CTX *context) {
 	ut64 *d = (ut64 *) digest;
 
 	/* Sanity check: */
@@ -924,7 +924,7 @@ void r_SHA512_Final(ut8 digest[], R_SHA512_CTX *context) {
 	r_mem_memzero (context, sizeof(*context));
 }
 
-char *r_SHA512_End(R_SHA512_CTX *context, char buffer[]) {
+char *r_SHA512_End(R_SHA512_CTX *context, char buffer[r_SHA512_DIGEST_STRING_LENGTH]) {
 	ut8 digest[r_SHA512_DIGEST_LENGTH], *d = digest;
 	int i;
 
@@ -971,7 +971,7 @@ void r_SHA384_Update(R_SHA384_CTX *context, const ut8 *data, size_t len) {
 	r_SHA512_Update ((R_SHA512_CTX *) context, data, len);
 }
 
-void r_SHA384_Final(ut8 digest[], R_SHA384_CTX *context) {
+void r_SHA384_Final(ut8 digest[r_SHA384_DIGEST_LENGTH], R_SHA384_CTX *context) {
 	ut64 *d = (ut64 *) digest;
 
 	/* Sanity check: */
@@ -1002,7 +1002,7 @@ void r_SHA384_Final(ut8 digest[], R_SHA384_CTX *context) {
 	memset (context, 0, sizeof(*context));
 }
 
-char *r_SHA384_End(R_SHA384_CTX *context, char buffer[]) {
+char *r_SHA384_End(R_SHA384_CTX *context, char buffer[r_SHA384_DIGEST_STRING_LENGTH]) {
 	ut8 digest[r_SHA384_DIGEST_LENGTH], *d = digest;
 	int i;
 
