@@ -554,7 +554,6 @@ static ut8 register_offset(const char *reg) {
 		return 1;
 	}
 	return register_number (reg) + 2;
-	}
 }
 
 /******************************************************************************
