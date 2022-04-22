@@ -8,6 +8,7 @@
 
 static R_TH_LOCAL csh cd = 0;
 static R_TH_LOCAL int n = 0;
+static R_TH_LOCAL int omode = 0;
 
 static bool the_end(void *p) {
 #if 0
@@ -30,9 +31,6 @@ static bool the_end(void *p) {
 #include "asm_x86_vm.c"
 
 static bool check_features(const char *features, cs_insn *insn) {
-	if (!features || !*features) {
-		return false;
-	}
 	if (!insn || !insn->detail) {
 		return false;
 	}
@@ -60,7 +58,8 @@ static bool check_features(const char *features, cs_insn *insn) {
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	static R_TH_LOCAL int omode = 0;
+	r_return_val_if_fail (a && op && buf, 0);
+
 	int ret;
 	ut64 off = a->pc;
 
@@ -72,10 +71,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		cs_close (&cd);
 		cd = 0;
 	}
-	if (op) {
-		op->size = 0;
-	}
 	omode = mode;
+	op->size = 0;
 	if (cd == 0) {
 		ret = cs_open (CS_ARCH_X86, mode, &cd);
 		if (ret) {
@@ -93,17 +90,19 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 #if CS_API_MAJOR >= 4
 	cs_option (cd, CS_OPT_UNSIGNED, CS_OPT_ON);
 #endif
-	if (a->config->syntax == R_ASM_SYNTAX_MASM) {
+	const int syntax = a->config->syntax;
+	switch (syntax) {
+	case R_ASM_SYNTAX_MASM:
 #if CS_API_MAJOR >= 4
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
 #endif
-	} else if (a->config->syntax == R_ASM_SYNTAX_ATT) {
+		break;
+	case R_ASM_SYNTAX_ATT:
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
-	} else {
+		break;
+	default:
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
-	}
-	if (!op) {
-		return true;
+		break;
 	}
 	op->size = 1;
 	cs_insn *insn = NULL;

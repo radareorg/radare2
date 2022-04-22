@@ -108,14 +108,10 @@ typedef struct r_asm_config_t {
 #define _RAsmPlugin struct r_asm_plugin_t
 typedef struct r_asm_t {
 	RAsmConfig *config;
-	// char *cpu;
-	// int bits;
-	// int big_endian;
-	// int syntax;
 	ut64 pc;
 	void *user;
-	_RAsmPlugin *cur;
-	_RAsmPlugin *acur;
+	_RAsmPlugin *cur; // disassemble
+	_RAsmPlugin *acur; // assemble
 	RList *plugins;
 	RBinBind binb;
 	RAnalBind analb;
@@ -124,12 +120,9 @@ typedef struct r_asm_t {
 	Sdb *pair;
 	RSyscall *syscall;
 	RNum *num;
-	//int invhex; // invalid instructions displayed in hex
-	//int pcalign;
 	int dataalign;
 	bool immdisp; // Display immediates with # symbol (for arm stuff).
 	HtPP *flags;
-	//int seggrn;
 	bool pseudo;
 } RAsm;
 
