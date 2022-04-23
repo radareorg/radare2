@@ -236,10 +236,7 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 		//delete all submaps that are completly included in sm
 		RRBNode *next = r_rbnode_next (entry);
 		// this can be optimized, there is no need to do search here
-		bool a = r_crbtree_delete (bank->submaps, entry->data, _find_sm_by_from_vaddr_cb, NULL);
-		if (!a) {
-			break;
-		}
+		r_crbtree_delete (bank->submaps, entry->data, _find_sm_by_from_vaddr_cb, NULL);
 		entry = next;
 	}
 	if (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
