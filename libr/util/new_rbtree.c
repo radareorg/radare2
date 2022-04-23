@@ -138,9 +138,9 @@ R_API bool r_crbtree_insert(RRBTree *tree, void *data, RRBComparator cmp, void *
 	r_return_val_if_fail (tree && data && cmp, false);
 	bool inserted = false;
 
-	if (tree->root == NULL) {
+	if (!tree->root) {
 		tree->root = _node_new (data, NULL);
-		if (tree->root == NULL) {
+		if (!tree->root) {
 			return false;
 		}
 		inserted = true;
