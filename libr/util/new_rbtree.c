@@ -3,7 +3,7 @@ BSD 2-Clause License
 
 Copyright (c) 2018, lynnl
 
-Cleaned up and refactored for r2 in 2021: condret
+Cleaned up and refactored for r2 in 2021 - 2022: condret
 
 All rights reserved.
 
@@ -250,7 +250,7 @@ static void _exchange_nodes(RRBNode *node_a, RRBNode *node_b) {
 			node_b->link[0]->parent = node_b;
 		}
 		if (node_b->link[1]) {
-			node_b->link[0]->parent = node_b;
+			node_b->link[1]->parent = node_b;
 		}
 		return;
 	}
@@ -307,7 +307,7 @@ R_API void *r_crbtree_take(RRBTree *tree, void *data, RRBComparator cmp, void *u
 		q = q->link[dir];
 
 		dir = cmp (data, q->data, user);
-		if (dir == 0) {
+		if (dir == 0 && !found) {
 			found = q;
 		}
 
