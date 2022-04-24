@@ -992,7 +992,7 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 		}
 		break;
 	case ARM_OP_IMM:
-		if (a->bits == 64) {
+		if (a->config->bits == 64) {
 			// 64bit only
 			sprintf (buf, "%"PFMT64d, (ut64)
 					insn->detail->arm.operands[n].imm);
@@ -2700,7 +2700,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_MOV:
 	case ARM_INS_VMOV:
 	case ARM_INS_MOVW:
-		if (a->bits == 16) {
+		if (a->config->bits == 16) {
 			MATH32 ("=");
 		} else {
 			r_strbuf_appendf (&op->esil, "%s,%s,=", ARG (1), REG (0));
@@ -4116,9 +4116,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = IMM(0) & UT32_MAX;
 			op->fail = addr + op->size;
-			op->hint.new_bits = (a->bits == 32)? 16 : 32;
+			op->hint.new_bits = (a->config->bits == 32)? 16 : 32;
 			//switch instruction set always with blx label
-			// r_anal_hint_set_bits (a, op->jump, a->bits == 32? 16 : 32);
+			// r_anal_hint_set_bits (a, op->jump, a->config->bits == 32? 16 : 32);
 		}
 		break;
 	case ARM_INS_BL:
@@ -4127,13 +4127,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = IMM(0) & UT32_MAX;
 		op->fail = addr + op->size;
-		op->hint.new_bits = a->bits;
+		op->hint.new_bits = a->config->bits;
 		break;
 	case ARM_INS_CBZ:
 	case ARM_INS_CBNZ:
 		op->cycles = 4;
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = IMM(1) & UT32_MAX;
+		op->jump = IMM (1) & UT32_MAX;
 		op->fail = addr + op->size;
 		if (op->jump == op->fail) {
 			op->type = R_ANAL_OP_TYPE_JMP;
@@ -4155,7 +4155,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		op->jump = IMM(0) & UT32_MAX;
 		// propagate bits to create correctly hints ranges
-		op->hint.new_bits = a->bits;
+		op->hint.new_bits = a->config->bits;
 		break;
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
@@ -4441,23 +4441,23 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn *insn = NULL;
-	int mode = (a->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
+	int mode = (a->config->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
 	int n, ret;
-	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
-	if (a->cpu && strstr (a->cpu, "cortex")) {
+	mode |= (a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	if (a->config->cpu && strstr (a->config->cpu, "cortex")) {
 		mode |= CS_MODE_MCLASS;
 	}
 
-	if (mode != omode || a->bits != obits) {
+	if (mode != omode || a->config->bits != obits) {
 		cs_close (&handle);
 		handle = 0; // unnecessary
 		omode = mode;
-		obits = a->bits;
+		obits = a->config->bits;
 	}
-	op->size = (a->bits==16)? 2: 4;
+	op->size = (a->config->bits==16)? 2: 4;
 	op->addr = addr;
 	if (handle == 0) {
-		ret = (a->bits == 64)?
+		ret = (a->config->bits == 64)?
 			cs_open (CS_ARCH_ARM64, mode, &handle):
 			cs_open (CS_ARCH_ARM, mode, &handle);
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
@@ -4485,10 +4485,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				insn->op_str);
 		}
 		//bool thumb = cs_insn_group (handle, insn, ARM_GRP_THUMB);
-		bool thumb = a->bits == 16;
+		bool thumb = a->config->bits == 16;
 		op->size = insn->size;
 		op->id = insn->id;
-		if (a->bits == 64) {
+		if (a->config->bits == 64) {
 			anop64 (handle, op, insn);
 			if (mask & R_ANAL_OP_MASK_OPEX) {
 				opex64 (&op->opex, handle, insn);
@@ -4507,7 +4507,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		set_opdir (op);
 		if (mask & R_ANAL_OP_MASK_VAL) {
-			op_fillval (a, op, handle, insn, a->bits);
+			op_fillval (a, op, handle, insn, a->config->bits);
 		}
 		cs_free (insn, n);
 	}
@@ -4522,7 +4522,7 @@ static int archinfo(RAnal *anal, int q) {
 		return 4;
 	}
 	if (q == R_ANAL_ARCHINFO_ALIGN) {
-		if (anal && anal->bits == 16) {
+		if (anal && anal->config->bits == 16) {
 			return 2;
 		}
 		return 4;
@@ -4534,7 +4534,7 @@ static int archinfo(RAnal *anal, int q) {
 		return 4;
 	}
 	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
-		if (anal && anal->bits == 16) {
+		if (anal && anal->config->bits == 16) {
 			return 2;
 		}
 		return 4;
@@ -4545,7 +4545,7 @@ static int archinfo(RAnal *anal, int q) {
 static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	RAnalOp *op = NULL;
 	ut8 *ret = NULL;
-	int oplen, idx = 0, obits = anal->bits;
+	int oplen, idx = 0, obits = anal->config->bits;
 	RAnalHint *hint = NULL;
 
 	if (!data) {
@@ -4556,11 +4556,12 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	ret = malloc (size);
 	memset (ret, 0xff, size);
 
+	const bool be = anal->config->big_endian;
 	while (idx < size) {
 		hint = r_anal_hint_get (anal, at + idx);
 		if (hint) {
 			if (hint->bits != 0) {
-				anal->bits = hint->bits;
+				anal->config->bits = hint->bits;
 			}
 			free (hint);
 		}
@@ -4572,13 +4573,13 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 			if ((oplen * 8) > size - idx) {
 				break;
 			}
-			ut32 opcode = r_read_ble (data + idx, anal->big_endian, oplen * 8);
+			ut32 opcode = r_read_ble (data + idx, be, oplen * 8);
 			switch (oplen) {
 			case 2:
 				memcpy (ret + idx, "\xf0\x00", 2);
 				break;
 			case 4:
-				if (anal->bits == 64) {
+				if (anal->config->bits == 64) {
 					switch (op->id) {
 					case ARM64_INS_LDP:
 					case ARM64_INS_LDXP:
@@ -4604,7 +4605,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 					case ARM64_INS_STXR:
 					case ARM64_INS_STXRB:
 					case ARM64_INS_STXRH:
-						r_write_ble (ret + idx, 0xffffffff, anal->big_endian, 32);
+						r_write_ble (ret + idx, 0xffffffff, be, 32);
 						break;
 					case ARM64_INS_STRB:
 					case ARM64_INS_STURB:
@@ -4623,9 +4624,9 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 					case ARM64_INS_LDRSH: {
 						bool is_literal = (opcode & 0x38000000) == 0x18000000;
 						if (is_literal) {
-							r_write_ble (ret + idx, 0xff000000, anal->big_endian, 32);
+							r_write_ble (ret + idx, 0xff000000, be, 32);
 						} else {
-							r_write_ble (ret + idx, 0xffffffff, anal->big_endian, 32);
+							r_write_ble (ret + idx, 0xffffffff, be, 32);
 						}
 						break;
 					}
@@ -4634,24 +4635,24 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 					case ARM64_INS_CBZ:
 					case ARM64_INS_CBNZ:
 						if (op->type == R_ANAL_OP_TYPE_CJMP) {
-							r_write_ble (ret + idx, 0xff00001f, anal->big_endian, 32);
+							r_write_ble (ret + idx, 0xff00001f, be, 32);
 						} else {
-							r_write_ble (ret + idx, 0xfc000000, anal->big_endian, 32);
+							r_write_ble (ret + idx, 0xfc000000, be, 32);
 						}
 						break;
 					case ARM64_INS_TBZ:
 					case ARM64_INS_TBNZ:
-						r_write_ble (ret + idx, 0xfff8001f, anal->big_endian, 32);
+						r_write_ble (ret + idx, 0xfff8001f, be, 32);
 						break;
 					case ARM64_INS_ADR:
 					case ARM64_INS_ADRP:
-						r_write_ble (ret + idx, 0xff00001f, anal->big_endian, 32);
+						r_write_ble (ret + idx, 0xff00001f, be, 32);
 						break;
 					default:
-						r_write_ble (ret + idx, 0xfff00000, anal->big_endian, 32);
+						r_write_ble (ret + idx, 0xfff00000, be, 32);
 					}
 				} else {
-					r_write_ble (ret + idx, 0xfff00000, anal->big_endian, 32);
+					r_write_ble (ret + idx, 0xfff00000, be, 32);
 				}
 				break;
 			}
@@ -4659,7 +4660,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 		idx += oplen;
 	}
 
-	anal->bits = obits;
+	anal->config->bits = obits;
 	r_anal_op_free (op);
 
 	return ret;
@@ -4668,7 +4669,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 static RList *anal_preludes(RAnal *anal) {
 #define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
 	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
-	switch (anal->bits) {
+	switch (anal->config->bits) {
 	case 16:
 		KW ("\x00\xb5", 2, "\x0f\xff", 2);
 		KW ("\x08\xb5", 2, "\x0f\xff", 2);

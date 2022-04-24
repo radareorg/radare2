@@ -116,7 +116,7 @@ static void set_cpu_model(RAnal *anal, bool force) {
 		return;
 	}
 
-	const char *cpu = anal->cpu;
+	const char *cpu = anal->config->cpu;
 	if (!cpu || !cpu[0]) {
 		cpu = cpu_models[0].name;
 	}

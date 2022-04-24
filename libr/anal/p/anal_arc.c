@@ -471,7 +471,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	op->refptr = 0;
 	op->delay = 0;
 
-	if (anal->big_endian) {
+	if (anal->config->big_endian) {
 		words[0] = r_read_be32 (&data[0]);
 		words[1] = r_read_be32 (&data[4]);
 	} else {
@@ -1016,7 +1016,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	const ut8 *b = (ut8 *)data;
 
-	if (anal->bits == 16) {
+	if (anal->config->bits == 16) {
 		return arcompact_op (anal, op, addr, data, len);
 	}
 
@@ -1066,7 +1066,7 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len,
 }
 
 static int archinfo(RAnal *anal, int query) {
-	if (anal->bits != 16) {
+	if (anal->config->bits != 16) {
 		return -1;
 	}
 	switch (query) {
@@ -1083,7 +1083,7 @@ static int archinfo(RAnal *anal, int query) {
 }
 
 static bool set_reg_profile(RAnal *anal) {
-	if (anal->bits != 16) {
+	if (anal->config->bits != 16) {
 		return false;
 	}
 	const char *p16 =

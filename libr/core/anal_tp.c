@@ -161,7 +161,7 @@ static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 	memset (regname, 0, size);
 	RRegItem *ri = r_reg_get (anal->reg, op_esil, -1);
 	if (ri) {
-		if ((anal->bits == 64) && (ri->size == 32)) {
+		if ((anal->config->bits == 64) && (ri->size == 32)) {
 			const char *reg = r_reg_32_to_64 (anal->reg, op_esil);
 			if (reg) {
 				free (op_esil);
@@ -321,6 +321,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 	if (max > 7) {
 		max = DEFAULT_MAX;
 	}
+	const int bits = anal->config->bits;
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev ? (max - 1 - i) : i;
 		char *type = NULL;
@@ -446,7 +447,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 			r_anal_op_free (op);
 			r_anal_op_free (next_op);
 		}
-		size += anal->bits / 8;
+		size += bits / 8;
 		free (type);
 	}
 	r_list_free (types);

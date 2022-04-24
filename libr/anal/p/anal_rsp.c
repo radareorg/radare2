@@ -22,7 +22,6 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 
 	ParsedOperands parsed_operands[RSP_MAX_OPNDS];
 	memset (parsed_operands, 0, sizeof (ParsedOperands) * RSP_MAX_OPNDS);
-	ut32 iw;
 	rsp_instruction r_instr;
 
 	if (!op) {
@@ -34,7 +33,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	op->addr = addr;
 	r_strbuf_set (&op->esil, "TODO");
 
-	iw = r_read_ble32 (b, anal->big_endian);
+	ut32 iw = r_read_ble32 (b, anal->config->big_endian);
 	r_instr = rsp_instruction_decode (addr, iw);
 
 	/* parse operands */

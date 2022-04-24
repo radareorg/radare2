@@ -2530,7 +2530,7 @@ static int archinfo(RAnal *anal, int q) {
 		return 4;
 	}
 	if (q == R_ANAL_ARCHINFO_ALIGN) {
-		if (anal && anal->bits == 16) {
+		if (anal && anal->config->bits == 16) {
 			return 2;
 		}
 		return 4;
@@ -2539,7 +2539,7 @@ static int archinfo(RAnal *anal, int q) {
 		return 4;
 	}
 	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
-		if (anal && anal->bits == 16) {
+		if (anal && anal->config->bits == 16) {
 			return 2;
 		}
 		return 4;

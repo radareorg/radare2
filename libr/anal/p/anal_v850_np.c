@@ -41,7 +41,7 @@ static int cpumodel_from_string(const char *s) {
 }
 
 static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	int cpumodel = cpumodel_from_string (anal->cpu);
+	int cpumodel = cpumodel_from_string (anal->config->cpu);
 #if 0
 	cpumodel |= V850_CPU_OPTION_ALIAS;
 	cpumodel |= V850_CPU_OPTION_EXTENSION;

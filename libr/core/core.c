@@ -3024,7 +3024,10 @@ R_API bool r_core_init(RCore *core) {
 	core->rasm->num = core->num;
 	r_asm_set_user_ptr (core->rasm, core);
 	core->anal = r_anal_new ();
+	r_unref (core->anal->config);
+	core->anal->config = r_ref (core->rasm->config);
 	core->anal->print = core->print;
+	r_anal_set_bits (core->anal, 32);
 	r_anal_bind (core->anal, &core->rasm->analb);
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;
@@ -3114,8 +3117,10 @@ R_API bool r_core_init(RCore *core) {
 	//r_core_loadlibs (core);
 
 	// TODO: get arch from r_bin or from native arch
+#if 0
 	r_asm_use (core->rasm, R_SYS_ARCH);
 	r_anal_use (core->anal, R_SYS_ARCH);
+#endif
 	if (R_SYS_BITS & R_SYS_BITS_64) {
 		r_config_set_i (core->config, "asm.bits", 64);
 	} else {
@@ -3124,7 +3129,7 @@ R_API bool r_core_init(RCore *core) {
 		}
 	}
 	r_config_set (core->config, "asm.arch", R_SYS_ARCH);
-	r_bp_use (core->dbg->bp, R_SYS_ARCH, core->anal->bits);
+	r_bp_use (core->dbg->bp, R_SYS_ARCH, core->anal->config->bits);
 	update_sdb (core);
 	{
 		char *a = r_str_r2_prefix (R2_FLAGS);
@@ -3200,7 +3205,7 @@ R_API void r_core_fini(RCore *c) {
 	r_core_task_scheduler_fini (&c->tasks);
 	c->rcmd = r_cmd_free (c->rcmd);
 	r_list_free (c->cmd_descriptors);
-	c->anal = r_anal_free (c->anal);
+	r_anal_free (c->anal);
 	r_asm_free (c->rasm);
 	c->rasm = NULL;
 	c->print = r_print_free (c->print);

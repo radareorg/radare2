@@ -62,7 +62,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 	ut64 bval = src;
 	int i;
 	int endian = core->print->big_endian;
-	int width = (core->anal->bits == 64)? 8: 4;
+	int width = (core->anal->config->bits == 64)? 8: 4;
 	int bsize = R_MIN (64, core->blocksize);
 
 	ut8 *buf = malloc (bsize);
@@ -240,7 +240,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	RList *list = r_list_newf ((RListFree)r_anal_function_arg_free);
 	int i;
 	ut64 spv = r_reg_getv (core->anal->reg, sp);
-	ut64 s_width = (core->anal->bits == 64)? 8: 4;
+	ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
 	if (src && !strcmp (src, "stack_rev")) {
 		for (i = nargs - 1; i >= 0; i--) {
 			RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);

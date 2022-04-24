@@ -1,7 +1,7 @@
 
 static char *get_reg_profile(RAnal *anal) {
 	const char *p;
-	if (anal->bits == 64) {
+	if (anal->config->bits == 64) {
 		p = \
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -607,6 +607,10 @@ static char *get_reg_profile(RAnal *anal) {
 		"fpu	q15	.128	308	0\n"
 		;
 	}
-	const char *snReg = (!strcmp (anal->os, "android") || !strcmp (anal->os, "linux"))? "x8": "x16";
+	const char *os = anal->config->os;
+	if (!os) {
+		os = R_SYS_OS;
+	}
+	const char *snReg = (!strcmp (os, "android") || !strcmp (os, "linux"))? "x8": "x16";
 	return r_str_newf (p, snReg);
 }

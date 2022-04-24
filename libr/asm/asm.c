@@ -205,22 +205,6 @@ static void plugin_free(RAsmPlugin *p) {
 	}
 }
 
-R_API RAsmConfig *r_asm_config_new(void) {
-	RAsmConfig *ac = R_NEW0 (RAsmConfig);
-	ac->bits = R_SYS_BITS;
-	ac->bitshift = 0;
-	ac->syntax = R_ASM_SYNTAX_INTEL;
-	ac->big_endian = 0;
-	return ac;
-}
-
-R_API void r_asm_config_free(RAsmConfig *ac) {
-	if (ac) {
-		free (ac->cpu);
-		free (ac);
-	}
-}
-
 R_API RAsm *r_asm_new(void) {
 	int i;
 	RAsm *a = R_NEW0 (RAsm);
@@ -233,7 +217,7 @@ R_API RAsm *r_asm_new(void) {
 		free (a);
 		return NULL;
 	}
-	a->config = r_asm_config_new ();
+	a->config = r_arch_config_new ();
 	for (i = 0; asm_static_plugins[i]; i++) {
 		r_asm_add (a, asm_static_plugins[i]);
 	}
@@ -279,7 +263,7 @@ R_API void r_asm_free(RAsm *a) {
 	if (a->cur && a->cur->fini) {
 		a->cur->fini (a->cur->user);
 	}
-	r_asm_config_free (a->config);
+	r_unref (a->config);
 	if (a->plugins) {
 		r_list_free (a->plugins);
 		a->plugins = NULL;

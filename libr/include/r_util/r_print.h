@@ -5,6 +5,7 @@
 #include "r_cons.h"
 #include "r_bind.h"
 #include "r_io.h"
+#include "r_arch.h"
 #include "r_reg.h"
 
 #ifdef __cplusplus
@@ -99,10 +100,11 @@ typedef struct r_print_t {
 	bool scr_prompt;
 	int (*disasm)(void *p, ut64 addr);
 	PrintfCallback oprintf;
-	int big_endian;
+	RArchConfig *config; // 
+	int big_endian; // R2_570
 	int width;
 	int limit;
-	int bits;
+	int bits; // R2_570
 	bool histblock;
 	// true if the cursor is enabled, false otherwise
 	bool cur_enabled;

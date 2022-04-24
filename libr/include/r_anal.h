@@ -9,6 +9,7 @@
 
 #include <r_types.h>
 #include <r_io.h>
+#include <r_arch.h>
 #include <r_reg.h>
 #include <r_list.h>
 #include <r_util/r_print.h>
@@ -609,11 +610,8 @@ typedef struct r_anal_hint_cb_t {
 } RHintCb;
 
 typedef struct r_anal_t {
-	char *cpu;      // anal.cpu
-	char *os;       // asm.os
-	int bits;       // asm.bits
+	RArchConfig *config;
 	int lineswidth; // asm.lines.width
-	int big_endian; // cfg.bigendian
 	int sleep;      // anal.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
 	RAnalCPPABI cpp_abi; // anal.cpp.abi
 	void *user;
@@ -638,7 +636,6 @@ typedef struct r_anal_t {
 	RCoreBind coreb;
 	int maxreflines; // asm.lines.maxref
 	int esil_goto_limit; // esil.gotolimit
-	int pcalign; // asm.pcalign
 	struct r_anal_esil_t *esil;
 	struct r_anal_plugin_t *cur;
 	struct r_anal_esil_plugin_t *esil_cur; // ???
@@ -676,7 +673,6 @@ typedef struct r_anal_t {
 	bool (*log)(struct r_anal_t *anal, const char *msg);
 	bool (*read_at)(struct r_anal_t *anal, ut64 addr, ut8 *buf, int len);
 	bool verbose;
-	int seggrn;
 	RFlagGetAtAddr flag_get;
 	REvent *ev;
 	RList/*<char *>*/ *imports; // global imports
@@ -1561,7 +1557,7 @@ R_API bool r_anal_function_was_modified(RAnalFunction *fcn);
 /* anal.c */
 R_API RAnal *r_anal_new(void);
 R_API void r_anal_purge(RAnal *anal);
-R_API RAnal *r_anal_free(RAnal *r);
+R_API void r_anal_free(RAnal *r);
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API void r_anal_plugin_free(RAnalPlugin *p);
 R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo);

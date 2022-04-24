@@ -377,16 +377,16 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->addr = addr;
 	op->size = sz;
 
-	if(!anal->big_endian) {
+	if(!anal->config->big_endian) {
 		((char*)&insn)[0] = data[3];
 		((char*)&insn)[1] = data[2];
 		((char*)&insn)[2] = data[1];
 		((char*)&insn)[3] = data[0];
 	} else {
-		memcpy(&insn, data, sz);
+		memcpy (&insn, data, sz);
 	}
 
-	if (X_OP(insn) == OP_0) {
+	if (X_OP (insn) == OP_0) {
 		switch(X_OP2(insn)) {
 		case OP2_ILLTRAP:
 		case OP2_INV:

@@ -4753,11 +4753,12 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		break;
 	case 'r': // registers
 		{
+			const int bits = core->anal->config->bits;
 			for (i = 0; i < R_REG_TYPE_LAST; i++) {
 				RRegItem *item;
 				RList *head = r_reg_get_list (core->dbg->reg, i);
 				r_list_foreach (head, iter, item) {
-					if (item->size != core->anal->bits) {
+					if (item->size != bits) {
 						continue;
 					}
 					if (item->type != i) {

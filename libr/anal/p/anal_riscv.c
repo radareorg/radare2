@@ -294,15 +294,16 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	const int no_alias = 1;
 	riscv_args_t args = {0};
 	ut64 word = 0;
-	int xlen = anal->bits;
+	int xlen = anal->config->bits;
 	op->size = 4;
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
+	bool be = anal->config->big_endian;
 
 	if (len >= sizeof (ut64)) {
-		word = r_read_ble64 (data, anal->big_endian);
+		word = r_read_ble64 (data, be);
 	} else if (len >= sizeof (ut32)) {
-		word = r_read_ble16 (data, anal->big_endian);
+		word = r_read_ble16 (data, be);
 	} else {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return -1;
@@ -430,7 +431,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));
 		} else if (!strcmp (name, "lui")) {
 			esilprintf (op, "%s000,%s,=", ARG (1), ARG (0));
-			if (anal->bits == 64) {
+			if (anal->config->bits == 64) {
 				r_strbuf_appendf (&op->esil, ",32,%s,~=", ARG (0));
 			}
 		}
@@ -471,7 +472,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			esilprintf (op, "%s,%s,+,[8],%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "lw") || !strcmp (name, "lwu") || !strcmp (name, "lwsp")) {
 			esilprintf (op, "%s,%s,+,[4],%s,=", ARG (2), ARG (1), ARG (0));
-			if ((anal->bits == 64) && strcmp (name, "lwu")) {
+			if ((anal->config->bits == 64) && strcmp (name, "lwu")) {
 				r_strbuf_appendf (&op->esil, ",32,%s,~=", ARG (0));
 			}
 		} else if (!strcmp (name, "lh") || !strcmp (name, "lhu") || !strcmp (name, "lhsp")) {
@@ -674,7 +675,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 static char *get_reg_profile(RAnal *anal) {
 	const char *p = NULL;
-	switch (anal->bits) {
+	switch (anal->config->bits) {
 		case 32: p =
 			 "=PC	pc\n"
 				 "=A0	a0\n"

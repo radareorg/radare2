@@ -148,18 +148,19 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	RAnalFunction *fcn;
 	RFlagItem *flag;
 	ut64 off;
-	const int bits = p->analb.anal->bits;
-	const int seggrn = p->analb.anal->seggrn;
+	const int bits = p->analb.anal->config->bits;
+	const int seggrn = p->analb.anal->config->seggrn;
 	bool x86 = false;
 	bool arm = false;
-	if (p && p->cur && p->cur->name) {
-		if (strstr (p->cur->name, "x86")) {
+	const char *pname = (p && p->cur && p->cur->name) ? p->cur->name: NULL;
+	if (pname) {
+		if (strstr (pname, "x86")) {
 			x86 = true;
 		}
-		if (strstr (p->cur->name, "m68k")) {
-			x86 = true;
+		if (strstr (pname, "m68k")) {
+			x86 = true; /// w t f? trick or wat
 		}
-		if (strstr (p->cur->name, "arm")) {
+		if (strstr (pname, "arm")) {
 			arm = true;
 		}
 	}

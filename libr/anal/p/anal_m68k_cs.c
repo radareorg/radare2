@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2018 - pancake */
+/* radare2 - LGPL - Copyright 2015-2022 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -171,34 +171,36 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_m68k *m68k;
 	cs_detail *detail;
 
-	int mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
-
-	//mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
-	if (mode != omode || a->bits != obits) {
+	int mode = a->config->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	const int bits = a->config->bits;
+	if (mode != omode || bits != obits) {
 		cs_close (&handle);
 		handle = 0;
 		omode = mode;
-		obits = a->bits;
+		obits = bits;
 	}
-// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
+	const char *cpu = a->config->cpu;
+	// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	// replace this with the asm.features?
-	if (a->cpu && strstr (a->cpu, "68000")) {
-		mode |= CS_MODE_M68K_000;
-	}
-	if (a->cpu && strstr (a->cpu, "68010")) {
-		mode |= CS_MODE_M68K_010;
-	}
-	if (a->cpu && strstr (a->cpu, "68020")) {
-		mode |= CS_MODE_M68K_020;
-	}
-	if (a->cpu && strstr (a->cpu, "68030")) {
-		mode |= CS_MODE_M68K_030;
-	}
-	if (a->cpu && strstr (a->cpu, "68040")) {
-		mode |= CS_MODE_M68K_040;
-	}
-	if (a->cpu && strstr (a->cpu, "68060")) {
-		mode |= CS_MODE_M68K_060;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (strstr (cpu, "68000")) {
+			mode |= CS_MODE_M68K_000;
+		}
+		if (strstr (cpu, "68010")) {
+			mode |= CS_MODE_M68K_010;
+		}
+		if (strstr (cpu, "68020")) {
+			mode |= CS_MODE_M68K_020;
+		}
+		if (strstr (cpu, "68030")) {
+			mode |= CS_MODE_M68K_030;
+		}
+		if (strstr (cpu, "68040")) {
+			mode |= CS_MODE_M68K_040;
+		}
+		if (strstr (cpu, "68060")) {
+			mode |= CS_MODE_M68K_060;
+		}
 	}
 	op->size = 4;
 	if (handle == 0) {

@@ -127,6 +127,7 @@ typedef struct r_reg_t {
 	RList *allregs;
 	RList *roregs;
 	int iters;
+	// XXX R2_570 use RArchConfig here
 	int arch;
 	int bits;
 	int size;

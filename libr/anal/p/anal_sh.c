@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 eloi<limited-entropy.com> */
+/* radare - LGPL - Copyright 2010-2022 eloi<limited-entropy.com> */
 
 #include <string.h>
 #include <r_types.h>
@@ -183,8 +183,7 @@
 static ut64 disarm_12bit_offset(RAnalOp *op, unsigned int insoff) {
 	ut64 off = insoff;
 	/* sign extend if higher bit is 1 (0x0800) */
-	if ((off & 0x0800) == 0x0800)
-	{
+	if ((off & 0x0800) == 0x0800) {
 		off |= ~0xFFF;
 	}
 	return (op->addr) + (off << 1) + 4;
@@ -192,12 +191,11 @@ static ut64 disarm_12bit_offset(RAnalOp *op, unsigned int insoff) {
 
 /* for bt,bf sign-extended offsets : return PC+4+ (exts.b offset)<<1 */
 static ut64 disarm_8bit_offset(ut64 pc, ut32 offs) {
-		/* pc (really, op->addr) is 64 bits, so we need to sign-extend
-		 * to 64 bits instead of the 32 the actual CPU does */
-		ut64 off = offs;
+	/* pc (really, op->addr) is 64 bits, so we need to sign-extend
+	 * to 64 bits instead of the 32 the actual CPU does */
+	ut64 off = offs;
 	/* sign extend if higher bit is 1 (0x08) */
-	if ((off & 0x80) == 0x80)
-	{
+	if ((off & 0x80) == 0x80) {
 		off |= ~0xFF;
 	}
 	return (off << 1) + pc + 4;
@@ -1089,21 +1087,16 @@ static int(*first_nibble_decode[])(RAnal*,RAnalOp*,ut16) = {
  * routines defined in first_nibble_decode table
  */
 static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	ut8 op_MSB, op_LSB;
-	int ret;
 	if (!data || len < 2) {
 		return 0;
 	}
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
-
 	op->size = 2;
-
-	op_MSB = anal->big_endian? data[0]: data[1];
-	op_LSB = anal->big_endian? data[1]: data[0];
-	ret = first_nibble_decode[(op_MSB>>4) & 0x0F](anal, op, (ut16)(op_MSB<<8 | op_LSB));
-
-	return ret;
+	bool be = anal->config->big_endian;
+	ut8 msb = be? data[0]: data[1];
+	ut8 lsb = be? data[1]: data[0];
+	return first_nibble_decode[(msb >> 4) & 0x0F](anal, op, (ut16)(((ut16)msb << 8) | lsb));
 }
 
 /* Set the profile register */

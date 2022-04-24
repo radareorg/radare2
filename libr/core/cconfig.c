@@ -706,14 +706,13 @@ static bool cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	const char *asmos = NULL;
 	int bits = R_SYS_BITS;
 	if (!*node->value || !core || !core->rasm) {
 		return false;
 	}
-	asmos = r_config_get (core->config, "asm.os");
-	if (core && core->anal && core->anal->bits) {
-		bits = core->anal->bits;
+	const char *asmos = r_config_get (core->config, "asm.os");
+	if (core && core->anal && core->anal->config->bits) {
+		bits = core->anal->config->bits;
 	}
 	if (*node->value == '?') {
 		update_asmarch_options (core, node);
@@ -767,7 +766,7 @@ static bool cb_asmarch(void *user, void *data) {
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
 	if (core->rasm->cur && core->anal &&
-	    !(core->rasm->cur->bits & core->anal->bits)) {
+	    !(core->rasm->cur->bits & core->anal->config->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 
@@ -790,7 +789,7 @@ static bool cb_asmarch(void *user, void *data) {
 	// set pcalign
 	if (core->anal) {
 		const char *asmcpu = r_config_get (core->config, "asm.cpu");
-		if (!r_syscall_setup (core->anal->syscall, node->value, core->anal->bits, asmcpu, asmos)) {
+		if (!r_syscall_setup (core->anal->syscall, node->value, core->anal->config->bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
@@ -867,7 +866,7 @@ static bool cb_asmbits(void *user, void *data) {
 	if (!bits) {
 		return false;
 	}
-	if (bits == core->rasm->config->bits && bits == core->anal->bits && bits == core->dbg->bits) {
+	if (bits == core->rasm->config->bits && bits == core->anal->config->bits && bits == core->dbg->bits) {
 		// early optimization
 		return true;
 	}
@@ -918,9 +917,9 @@ static bool cb_asmbits(void *user, void *data) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
-		__setsegoff (core->config, asmarch, core->anal->bits);
+		__setsegoff (core->config, asmarch, core->anal->config->bits);
 		if (core->dbg) {
-			r_bp_use (core->dbg->bp, asmarch, core->anal->bits);
+			r_bp_use (core->dbg->bp, asmarch, core->anal->config->bits);
 			r_config_set_i (core->config, "dbg.bpsize", r_bp_size (core->dbg->bp));
 		}
 		/* set pcalign */
@@ -1058,7 +1057,7 @@ static bool cb_asm_pcalign(void *user, void *data) {
 		align = 0;
 	}
 	core->rasm->config->pcalign = align;
-	core->anal->pcalign = align;
+	core->anal->config->pcalign = align;
 	return true;
 }
 
@@ -1078,7 +1077,7 @@ static bool cb_asmos(void *user, void *data) {
 	asmarch = r_config_node_get (core->config, "asm.arch");
 	if (asmarch) {
 		const char *asmcpu = r_config_get (core->config, "asm.cpu");
-		r_syscall_setup (core->anal->syscall, asmarch->value, core->anal->bits, asmcpu, node->value);
+		r_syscall_setup (core->anal->syscall, asmarch->value, core->anal->config->bits, asmcpu, node->value);
 		__setsegoff (core->config, asmarch->value, asmbits);
 	}
 	r_anal_set_os (core->anal, node->value);
@@ -2647,8 +2646,10 @@ static bool cb_segoff(void *user, void *data) {
 static bool cb_seggrn(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
+	// R2_570 those two do the same as the struct is shared now
 	core->rasm->config->seggrn = node->i_value;
-	core->anal->seggrn = node->i_value;
+	core->anal->config->seggrn = node->i_value;
+	// XXX R2_570 ,. use RArchConfig in RPrint
 	core->print->seggrn = node->i_value;
 	return true;
 }

@@ -4714,7 +4714,7 @@ static int cmd_af(RCore *core, const char *input) {
 			if (fcn) {
 				int bits = atoi (input + 3);
 				r_anal_hint_set_bits (core->anal, r_anal_function_min_addr (fcn), bits);
-				r_anal_hint_set_bits (core->anal, r_anal_function_max_addr (fcn), core->anal->bits);
+				r_anal_hint_set_bits (core->anal, r_anal_function_max_addr (fcn), core->anal->config->bits);
 				fcn->bits = bits;
 			} else {
 				eprintf ("afB: Cannot find function to set bits at 0x%08"PFMT64x"\n", core->offset);
@@ -5040,10 +5040,10 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 		use_color = NULL;
 	}
 	if (bits < 0) {
-		// TODO Change the `size` argument of r_debug_reg_list to use -1 for any and 0 for anal->bits
+		// TODO Change the `size` argument of r_debug_reg_list to use -1 for any and 0 for anal->config->bits
 		bits = 0;
 	} else if (!bits) {
-		bits = core->anal->bits;
+		bits = core->anal->config->bits;
 	}
 	int mode2 = mode;
 	if (core->anal) {
@@ -5108,7 +5108,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	}
 
 	int size = 0, i, type = R_REG_TYPE_GPR;
-	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
+	int bits = (core->anal->config->bits & R_SYS_BITS_64)? 64: 32;
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	RRegItem *r = NULL;
 	const char *use_color;
@@ -5756,8 +5756,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			eprintf ("Invalid program counter PC=-1\n");
 			break;
 		}
-		if (core->anal->pcalign > 0) {
-			pc -= (pc % core->anal->pcalign);
+		if (core->anal->config->pcalign > 0) {
+			pc -= (pc % core->anal->config->pcalign);
 			r_reg_setv (core->anal->reg, pcname, pc);
 			r_reg_setv (core->dbg->reg, pcname, pc);
 		}
@@ -10834,10 +10834,10 @@ static void cmd_anal_aaw(RCore *core, const char *input) {
 	r_interval_tree_foreach (&core->anal->meta, it, item) {
 		RIntervalNode *node = r_interval_tree_iter_get (&it);
 		ut64 size = r_meta_item_size (node->start, node->end);
-		if (item->type == R_META_TYPE_DATA && size == core->anal->bits / 8) {
+		if (item->type == R_META_TYPE_DATA && size == core->anal->config->bits / 8) {
 			ut8 buf[8] = {0};
 			r_io_read_at (core->io, node->start, buf, 8);
-			ut64 n = r_read_ble (buf, core->print->big_endian, core->anal->bits);
+			ut64 n = r_read_ble (buf, core->print->big_endian, core->anal->config->bits);
 			RFlagItem *fi = r_flag_get_at (core->flags, n, false);
 			if (fi) {
 				char *fn = r_str_newf ("r.%s", fi->name);
@@ -12087,7 +12087,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 		}
 	}
 	if (go_on) {
-		ut64 s_width = (core->anal->bits == 64)? 8: 4;
+		ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
 		const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 		ut64 spv = r_reg_getv (core->anal->reg, sp);
 		r_reg_setv (core->anal->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c

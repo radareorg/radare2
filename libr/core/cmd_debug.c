@@ -1232,7 +1232,7 @@ static int grab_bits(RCore *core, const char *arg, int *pcbits2) {
 			}
 		}
 	}
-	return pcbits ? pcbits : core->anal->bits;
+	return pcbits ? pcbits : core->anal->config->bits;
 }
 
 #define MAX_MAP_SIZE 1024*1024*512
@@ -2997,7 +2997,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case 'j': // "drj"
 	case '\0': // "dr"
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
-			int pcbits = core->anal->bits;
+			int pcbits = core->anal->config->bits;
 			const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			RRegItem *reg = r_reg_get (core->anal->reg, pcname, 0);
 			if (reg) {
@@ -3810,7 +3810,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			break;
 		case ' ':
 			if (input[3]) {
-				if (!r_bp_use (core->dbg->bp, input + 3, core->anal->bits)) {
+				if (!r_bp_use (core->dbg->bp, input + 3, core->anal->config->bits)) {
 					eprintf ("Invalid name: '%s'.\n", input + 3);
 				}
 			}

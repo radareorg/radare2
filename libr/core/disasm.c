@@ -5009,7 +5009,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 					}
 				}
 			}
-			ut64 s_width = (core->anal->bits == 64)? 8: 4;
+			ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
 			const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 			ut64 spv = r_reg_getv (core->anal->reg, sp);
 			r_reg_setv (core->anal->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c

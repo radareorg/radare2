@@ -4,6 +4,7 @@
 #define R2_ASM_H
 
 #include <r_types.h>
+#include <r_arch.h>
 #include <r_bin.h> // only for binding, no hard dep required
 #include <r_util.h>
 #include <r_parse.h>
@@ -44,15 +45,6 @@ R_LIB_VERSION_HEADER(r_asm);
 		x->binb.get_name (x->binb.bin, y, z, x->pseudo): NULL
 
 enum {
-	R_ASM_SYNTAX_NONE = 0,
-	R_ASM_SYNTAX_INTEL,
-	R_ASM_SYNTAX_ATT,
-	R_ASM_SYNTAX_MASM,
-	R_ASM_SYNTAX_REGNUM, // alias for capstone's NOREGNAME
-	R_ASM_SYNTAX_JZ, // hack to use jz instead of je on x86
-};
-
-enum {
 	R_ASM_MOD_RAWVALUE = 'r',
 	R_ASM_MOD_VALUE = 'v',
 	R_ASM_MOD_DSTREG = 'd',
@@ -91,23 +83,9 @@ typedef struct {
 	char *value;
 } RAsmEqu;
 
-typedef struct r_asm_config_t {
-	char *cpu;
-	int bits;
-	int big_endian;
-	int syntax;
-	//
-	int pcalign;
-	int dataalign;
-	int seggrn;
-	int invhex;
-	int bitshift;
-	char *features;
-} RAsmConfig;
-
 #define _RAsmPlugin struct r_asm_plugin_t
 typedef struct r_asm_t {
-	RAsmConfig *config;
+	RArchConfig *config;
 	ut64 pc;
 	void *user;
 	_RAsmPlugin *cur; // disassemble

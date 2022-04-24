@@ -714,7 +714,7 @@ repeat:
 		r_anal_op_fini (op);
 		if ((oplen = r_anal_op (anal, op, at, buf, bytes_read, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) < 1) {
 			if (anal->verbose) {
-				eprintf ("Invalid instruction at 0x%"PFMT64x" with %d bits\n", at, anal->bits);
+				eprintf ("Invalid instruction at 0x%"PFMT64x" with %d bits\n", at, anal->config->bits);
 			}
 			// gotoBeach (R_ANAL_RET_ERROR);
 			// RET_END causes infinite loops somehow
@@ -1157,9 +1157,9 @@ repeat:
 					if (cmpval != UT64_MAX && default_case != UT64_MAX && (op->reg || op->ireg)) {
 						// TODO -1
 						if (op->ireg) {
-							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, 0, op->ptr, op->ptr, anal->bits >> 3, table_size, default_case, ret);
+							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, 0, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
 						} else { // op->reg
-							ret = walkthrough_arm_jmptbl_style (anal, fcn, bb, depth, op->addr, op->ptr, anal->bits >> 3, table_size, default_case, ret);
+							ret = walkthrough_arm_jmptbl_style (anal, fcn, bb, depth, op->addr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
 						}
 						// check if op->jump and op->fail contain jump table location
 						// clear jump address, because it's jump table location
@@ -1257,21 +1257,21 @@ repeat:
 							if (prev_op->type == R_ANAL_OP_TYPE_MOV && prev_op->disp && prev_op->disp != UT64_MAX && same_reg) {
 								//	movzx reg, byte [reg + case_table]
 								//	jmp dword [reg*4 + jump_table]
-								if (try_walkthrough_casetbl (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, prev_op->disp, op->ptr, anal->bits >> 3, table_size, default_case, ret)) {
+								if (try_walkthrough_casetbl (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, prev_op->disp, op->ptr, anal->config->bits >> 3, table_size, default_case, ret)) {
 									ret = case_table = true;
 								}
 							}
 						}
 						r_anal_op_free (prev_op);
 						if (!case_table) {
-							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, case_shift, op->ptr, op->ptr, anal->bits >> 3, table_size, default_case, ret);
+							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
 						}
 					}
 				} else if (op->ptr != UT64_MAX && op->reg) { // direct jump
 					ut64 table_size, default_case;
 					st64 case_shift = 0;
 					if (try_get_jmptbl_info (anal, fcn, op->addr, bb, &table_size, &default_case, &case_shift)) {
-						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, op->ptr, anal->bits >> 3, table_size, default_case, ret);
+						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
 					}
 				} else if (movdisp != UT64_MAX) {
 					st64 case_shift = 0;
@@ -1304,7 +1304,7 @@ repeat:
 					st64 case_shift;
 					if (try_get_jmptbl_info (anal, fcn, op->addr, bb, &table_size, &default_case, &case_shift)) {
 						op->ptr = movdisp;
-						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, op->ptr, anal->bits >> 3, table_size, default_case, ret);
+						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
 					}
 					movdisp = UT64_MAX;
 #endif

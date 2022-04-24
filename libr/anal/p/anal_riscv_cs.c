@@ -325,12 +325,13 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn;
-	int mode = (anal->bits==64)? CS_MODE_RISCV64: CS_MODE_RISCV32;
-	if (mode != omode || anal->bits != obits) {
+	const int bits = anal->config->bits;
+	int mode = (bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32;
+	if (mode != omode || bits != obits) {
 		cs_close (&hndl);
 		hndl = 0;
 		omode = mode;
-		obits = anal->bits;
+		obits = bits;
 	}
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
@@ -399,7 +400,7 @@ fin:
 
 static char *get_reg_profile(RAnal *anal) {
 	const char *p = NULL;
-	switch (anal->bits) {
+	switch (anal->config->bits) {
 	case 32: p =
 		"=PC	pc\n"
 		"=SP	sp\n" // ABI: stack pointer
@@ -584,7 +585,7 @@ static int archinfo(RAnal *anal, int q) {
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 		return 4;
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-		if (anal->bits == 64) {
+		if (anal->config->bits == 64) {
 			return 4;
 		}
 		return 2;
