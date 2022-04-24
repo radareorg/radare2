@@ -14,6 +14,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=cmd.hit for /caj
+FILE=bins/other/aes_192.dump
+CMDS=/caj
+EXPECT=<<EOF
+[{"offset":250,"type":"hexpair","data":"000102030405060708090a0b0c0d0e0f1011121314151617"}]
+EOF
+RUN
+
 NAME=cmd.hit for /cd
 FILE=bins/other/certificate.ber
 CMDS=/cd
