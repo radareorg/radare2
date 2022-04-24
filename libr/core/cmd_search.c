@@ -1949,7 +1949,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 	char *esp = r_str_newf ("%s,=", a0);
 	char *esp32 = NULL;
-	if (core->anal->bits == 64) {
+	if (core->anal->config->bits == 64) {
 		const char *reg = r_reg_64_to_32 (core->anal->reg, a0);
 		if (reg) {
 			esp32 = r_str_newf ("%s,=", reg);

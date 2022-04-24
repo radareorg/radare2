@@ -1153,31 +1153,36 @@ static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
 	return r_reg_set_profile_string (esil->reg, p);
 }
 
-
 static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
-		// TODO: implement
-		return -1;
-	}
-	if (anal->cpu && strcasecmp (anal->cpu, "midrange") == 0) {
-		return anal_pic_midrange_op (anal, op, addr, buf, len);
-	}
-	if (anal->cpu && strcasecmp (anal->cpu, "pic18") == 0) {
-		return anal_pic_pic18_op (anal, op, addr, buf, len);
+	const char *cpu = anal->config->cpu;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (!strcasecmp (cpu, "baseline")) {
+			// TODO: implement
+			return -1;
+		}
+		if (!strcasecmp (cpu, "midrange")) {
+			return anal_pic_midrange_op (anal, op, addr, buf, len);
+		}
+		if (!strcasecmp (cpu, "pic18")) {
+			return anal_pic_pic18_op (anal, op, addr, buf, len);
+		}
 	}
 	return -1;
 }
 
 static bool anal_pic_set_reg_profile(RAnal *anal) {
-	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
-		// TODO: We are using the midrange profile as the baseline
-		return anal_pic_midrange_set_reg_profile (anal);
-	}
-	if (anal->cpu && strcasecmp (anal->cpu, "midrange") == 0) {
-		return anal_pic_midrange_set_reg_profile (anal);
-	}
-	if (anal->cpu && strcasecmp (anal->cpu, "pic18") == 0) {
-		return anal_pic_pic18_set_reg_profile (anal);
+	const char *cpu = anal->config->cpu;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (!strcasecmp (cpu, "baseline")) {
+			// TODO: We are using the midrange profile as the baseline
+			return anal_pic_midrange_set_reg_profile (anal);
+		}
+		if (!strcasecmp (cpu, "midrange")) {
+			return anal_pic_midrange_set_reg_profile (anal);
+		}
+		if (!strcasecmp (cpu, "pic18")) {
+			return anal_pic_pic18_set_reg_profile (anal);
+		}
 	}
 	return false;
 }

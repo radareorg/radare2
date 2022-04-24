@@ -22,8 +22,9 @@ static bool test_parse_dwarf_types(void) {
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/pe/vista-glass.exe", &opt);
 	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
-	anal->cpu = strdup ("x86");
-	anal->bits = 32;
+	free (anal->config->cpu);
+	anal->config->cpu = strdup ("x86");
+	anal->config->bits = 32;
 	mu_assert ("pe/vista-glass.exe binary could not be opened", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinDwarfDebugAbbrev *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
@@ -90,8 +91,8 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
-	anal->cpu = strdup ("x86");
-	anal->bits = 64;
+	anal->config->cpu = strdup ("x86");
+	anal->config->bits = 64;
 	mu_assert ("elf/dwarf4_many_comp_units.elf binary could not be opened", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinDwarfDebugAbbrev *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
@@ -146,8 +147,8 @@ static bool test_dwarf_function_parsing_go(void) {
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf_go_tree", &opt);
 	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
-	anal->cpu = strdup ("x86");
-	anal->bits = 64;
+	anal->config->cpu = strdup ("x86");
+	anal->config->bits = 64;
 	mu_assert ("bins/elf/dwarf_go_tree", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinDwarfDebugAbbrev *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
@@ -200,8 +201,9 @@ static bool test_dwarf_function_parsing_rust(void) {
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf_rust_bubble", &opt);
 	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
-	anal->cpu = strdup ("x86");
-	anal->bits = 64;
+	free (anal->config->cpu);
+	anal->config->cpu = strdup ("x86");
+	anal->config->bits = 64;
 	mu_assert ("bins/elf/dwarf_rust_bubble", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
 	RBinDwarfDebugAbbrev *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);

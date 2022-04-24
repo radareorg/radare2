@@ -242,6 +242,8 @@ typedef struct r_debug_tracepoint_t {
 } RDebugTracepoint;
 
 typedef struct r_debug_t {
+	// R2_570
+	// use RArchConfig here
 	char *arch;
 	int bits; /// XXX: MUST SET ///
 	int hitinfo;

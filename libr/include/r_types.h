@@ -754,13 +754,14 @@ static inline void r_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, v
 typedef int RRef;
 
 #define R_REF_NAME refcount
-#define r_ref(x) x->R_REF_NAME++;
-#define r_ref_init(x) x->R_REF_NAME = 1
-#define r_unref(x,f) { assert (x->R_REF_NAME> 0); if (!--(x->R_REF_NAME)) { f(x); } }
+#define r_ref(x) ((x)->R_REF_NAME++, (x));
+#define r_ref_init(x,y) (x)->R_REF_NAME = 1;(x)->free = (void *)(y)
+// #define r_unref(x) { assert (x->R_REF_NAME > 0); if (!--(x->R_REF_NAME)) { x->free(x); } }
+#define r_unref(x) { if (x->R_REF_NAME > 0 && !--(x->R_REF_NAME)) { x->free(x); } }
 
-#define R_REF_TYPE RRef R_REF_NAME
+#define R_REF_TYPE RRef R_REF_NAME; void (*free)(void*)
 #define R_REF_FUNCTIONS(s, n) \
 static inline void n##_ref(s *x) { x->R_REF_NAME++; } \
-static inline void n##_unref(s *x) { r_unref(x, n##_free); }
+static inline void n##_unref(s *x) { r_unref(x); }
 
 #endif // R2_TYPES_H

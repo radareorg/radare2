@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2020 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2022 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -110,7 +110,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
 		}
-		if (anal->pcalign && addr % anal->pcalign) {
+		if (anal->config->pcalign && addr % anal->config->pcalign) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 			op->addr = addr;
 			// eprintf ("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", anal->bits, addr);

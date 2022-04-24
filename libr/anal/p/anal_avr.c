@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2021 - pancake, Roc Valles, condret, killabyte */
+/* radare - LGPL - Copyright 2011-2022 - pancake, Roc Valles, condret, killabyte */
 
 #if 0
 http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
@@ -1706,7 +1706,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	}
 
 	// select cpu info
-	CPU_MODEL *cpu = get_cpu_model (anal->cpu);
+	CPU_MODEL *cpu = get_cpu_model (anal->config->cpu);
 
 	// set memory layout registers
 	if (anal->esil) {
@@ -1799,7 +1799,7 @@ static bool avr_custom_spm_page_erase(RAnalEsil *esil) {
 	}
 
 	// get details about current MCU and fix input address
-	CPU_MODEL *cpu = get_cpu_model (esil->anal->cpu);
+	CPU_MODEL *cpu = get_cpu_model (esil->anal->config->cpu);
 	ut64 page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
 
 	// align base address to page_size_bits
@@ -1842,7 +1842,7 @@ static bool avr_custom_spm_page_fill(RAnalEsil *esil) {
 	r1 = i;
 
 	// get details about current MCU and fix input address
-	CPU_MODEL *cpu = get_cpu_model (esil->anal->cpu);
+	CPU_MODEL *cpu = get_cpu_model (esil->anal->config->cpu);
 	ut64 page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
 
 	// align and crop base address
@@ -1874,7 +1874,7 @@ static bool avr_custom_spm_page_write(RAnalEsil *esil) {
 
 	// get details about current MCU and fix input address and base address
 	// of the internal temporary page
-	cpu = get_cpu_model (esil->anal->cpu);
+	cpu = get_cpu_model (esil->anal->config->cpu);
 	page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
 	r_anal_esil_reg_read (esil, "_page", &tmp_page, NULL);
 
@@ -1900,7 +1900,7 @@ static bool esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val
 	}
 
 	// select cpu info
-	CPU_MODEL *cpu = get_cpu_model (esil->anal->cpu);
+	CPU_MODEL *cpu = get_cpu_model (esil->anal->config->cpu);
 
 	// crop registers and force certain values
 	if (!strcmp (name, "pc")) {
@@ -2068,7 +2068,7 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr    spmcsr  .8      64      0\n"
 	);
 
-	if (!strcmp (r_str_get (anal->cpu), "ATmega328p")) {
+	if (!strcmp (r_str_get (anal->config->cpu), "ATmega328p")) {
 		const char *section_two =
 			"gpr		pinb	.8		65		0\n"
 			"gpr		pinb0	.8		66		0\n"
@@ -2319,7 +2319,7 @@ static ut8 *anal_mask_avr(RAnal *anal, int size, const ut8 *data, ut64 at) {
 
 	memset (ret, 0xff, size);
 
-	CPU_MODEL *cpu = get_cpu_model (anal->cpu);
+	CPU_MODEL *cpu = get_cpu_model (anal->config->cpu);
 
 	for (idx = 0; idx + 1 < size; idx += op->size) {
 		OPCODE_DESC* opcode_desc = avr_op_analyze (anal, op, at + idx, data + idx, size - idx, cpu);

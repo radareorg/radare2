@@ -36,44 +36,44 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 
 	str = strstr(str, "||") ? str + 3 : str;
 
-	if (match(str, "B ")) {
+	if (match (str, "B ")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
 		if (match (str, "B AC")) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		}
-	} else if (match(str, "BCC ") || match(str, "BCCU ")) {
+	} else if (match (str, "BCC ") || match (str, "BCCU ")) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
-	} else if (match(str, "CALL ")) {
+	} else if (match (str, "CALL ")) {
 		op->type = R_ANAL_OP_TYPE_CALL;
 		if (match (str, "CALL AC")) {
 			op->type = R_ANAL_OP_TYPE_UCALL;
 		}
-	} else if (match(str, "CALLCC ")) {
+	} else if (match (str, "CALLCC ")) {
 		op->type = R_ANAL_OP_TYPE_CCALL;
-	} else if (match(str, "RET")) {
+	} else if (match (str, "RET")) {
 		op->type = R_ANAL_OP_TYPE_RET;
 		if (match (str, "RETCC")) {
 			op->type = R_ANAL_OP_TYPE_CRET;
 		}
-	} else if (match(str, "MOV ")) {
+	} else if (match (str, "MOV ")) {
 		op->type = R_ANAL_OP_TYPE_MOV;
-	} else if (match(str, "PSHBOTH ")) {
+	} else if (match (str, "PSHBOTH ")) {
 		op->type = R_ANAL_OP_TYPE_UPUSH;
-	} else if (match(str, "PSH ")) {
+	} else if (match (str, "PSH ")) {
 		op->type = R_ANAL_OP_TYPE_PUSH;
-	} else if (match(str, "POPBOTH ") || match(str, "POP ")) {
+	} else if (match (str, "POPBOTH ") || match (str, "POP ")) {
 		op->type = R_ANAL_OP_TYPE_POP;
-	} else if (match(str, "CMP ")) {
+	} else if (match (str, "CMP ")) {
 		op->type = R_ANAL_OP_TYPE_CMP;
-	} else if (match(str, "CMPAND ")) {
+	} else if (match (str, "CMPAND ")) {
 		op->type = R_ANAL_OP_TYPE_ACMP;
-	} else if (match(str, "NOP")) {
+	} else if (match (str, "NOP")) {
 		op->type = R_ANAL_OP_TYPE_NOP;
-	} else if (match(str, "INTR ")) {
+	} else if (match (str, "INTR ")) {
 		op->type = R_ANAL_OP_TYPE_SWI;
-	} else if (match(str, "TRAP ")) {
+	} else if (match (str, "TRAP ")) {
 		op->type = R_ANAL_OP_TYPE_TRAP;
-	} else if (match(str, "INVALID")) {
+	} else if (match (str, "INVALID")) {
 		op->type = R_ANAL_OP_TYPE_UNK;
 	}
 
@@ -81,21 +81,22 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 }
 
 int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len, RAnalOpMask mask) {
+	const char *cpu = anal->config->cpu;
 	TMS_ANAL_OP_FN aop = tms320_c55x_op;
-
-	if (anal->cpu && r_str_casecmp(anal->cpu, "c64x") == 0) {
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (!r_str_casecmp (cpu, "c64x")) {
 #ifdef CAPSTONE_TMS320C64X_H
-		return tms320c64x_analop (anal, op, addr, buf, len, mask);
+			return tms320c64x_analop (anal, op, addr, buf, len, mask);
 #else
-		return -1;
+			return -1;
 #endif
-	}
-	if (anal->cpu && r_str_casecmp(anal->cpu, "c54x") == 0) {
-		aop = tms320_c54x_op;
-	} else if (anal->cpu && r_str_casecmp(anal->cpu, "c55x") == 0) {
-		aop = tms320_c55x_op;
-	} else if (anal->cpu && r_str_casecmp(anal->cpu, "c55x+") == 0) {
-		aop = tms320_c55x_plus_op;
+		} else if (!r_str_casecmp (cpu, "c54x")) {
+			aop = tms320_c54x_op;
+		} else if (!r_str_casecmp (cpu, "c55x")) {
+			aop = tms320_c55x_op;
+		} else if (!r_str_casecmp (cpu, "c55x+")) {
+			aop = tms320_c55x_plus_op;
+		}
 	}
 	return aop (anal, op, addr, buf, len);
 }

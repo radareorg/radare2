@@ -59,7 +59,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_insn *insn;
 	int mode, n, ret;
 	mode = CS_MODE_BIG_ENDIAN;
-	if (!strcmp (a->cpu, "v9")) {
+	if (!strcmp (a->config->cpu, "v9")) {
 		mode |= CS_MODE_V9;
 	}
 	if (mode != omode) {

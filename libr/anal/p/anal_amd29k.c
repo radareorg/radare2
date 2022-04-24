@@ -289,7 +289,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	// delayed branch is bugged as hell. disabled for now.
 
 	amd29k_instr_t instruction = {0};
-	if (amd29k_instr_decode (buf, len, &instruction, a->cpu)) {
+	if (amd29k_instr_decode (buf, len, &instruction, a->config->cpu)) {
 		op->type = instruction.op_type;
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_JMP:

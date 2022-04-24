@@ -275,7 +275,7 @@ R_API void r_anal_data_free(RAnalData *d) {
 R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, int wordsize) {
 	ut64 dst = 0;
 	int n, nsize = 0;
-	int bits = anal->bits;
+	int bits = anal->config->bits;
 	int word = wordsize? wordsize: R_MIN (8, bits / 8);
 
 	if (size < 4) {
@@ -342,7 +342,7 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	int num = 0;
 	int i, j;
 	RAnalData *data;
-	int word = a->bits / 8;
+	int word = a->config->bits / 8;
 	for (i = j = 0; i < len; j++) {
 		if (str && !buf[i]) {
 			str++;

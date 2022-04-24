@@ -38,6 +38,7 @@ static RAsmState *__as_new(void) {
 			as->a->num = r_num_new (NULL, NULL, NULL);
 		}
 		as->anal = r_anal_new ();
+		as->anal->config = r_ref (as->a->config);
 		r_anal_bind (as->anal, &as->a->analb);
 		__load_plugins (as);
 		__as_set_archbits (as);

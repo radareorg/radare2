@@ -77,6 +77,7 @@ static void r_meta_item_free(void *_item) {
 	}
 }
 
+// Take nullable RArchConfig as argument?
 R_API RAnal *r_anal_new(void) {
 	int i;
 	RAnal *anal = R_NEW0 (RAnal);
@@ -90,7 +91,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->bb_tree = NULL;
 	anal->ht_addr_fun = ht_up_new0 ();
 	anal->ht_name_fun = ht_pp_new0 ();
-	anal->os = strdup (R_SYS_OS);
+	anal->config = r_arch_config_new ();
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
@@ -132,7 +133,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
 	anal->leaddrs = NULL;
 	anal->imports = r_list_newf (free);
-	r_anal_set_bits (anal, 32);
+// 	r_anal_set_bits (anal, 32);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {
 		for (i = 0; anal_static_plugins[i]; i++) {
@@ -151,9 +152,9 @@ R_API void r_anal_plugin_free(RAnalPlugin *p) {
 
 void __block_free_rb(RBNode *node, void *user);
 
-R_API RAnal *r_anal_free(RAnal *a) {
+R_API void r_anal_free(RAnal *a) {
 	if (!a) {
-		return NULL;
+		return;
 	}
 	/* TODO: Free anals here */
 	free (a->pincmd);
@@ -163,8 +164,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	set_u_free (a->visited);
 	r_anal_hint_storage_fini (a);
 	r_interval_tree_fini (&a->meta);
-	free (a->cpu);
-	free (a->os);
+	// R2_570 r_arch_config_free (a->config); // may cause UAF because this struct must be refcounted
 	free (a->zign_path);
 	r_list_free (a->plugins);
 	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
@@ -185,7 +185,6 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_list_free (a->imports);
 	r_str_constpool_fini (&a->constpool);
 	free (a);
-	return NULL;
 }
 
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
@@ -272,10 +271,10 @@ R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int
 		arch = anal->cur? anal->cur->arch: R_SYS_ARCH;
 	}
 	if (bits < 1) {
-		bits = anal->bits;
+		bits = anal->config->bits;
 	}
-	free (anal->os);
-	anal->os = strdup (os);
+	free (anal->config->os);
+	anal->config->os = strdup (os);
 	r_anal_set_bits (anal, bits);
 	return r_anal_use (anal, arch);
 }
@@ -313,14 +312,15 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 }
 
 R_API bool r_anal_set_bits(RAnal *anal, int bits) {
+	if (anal->config)
 	switch (bits) {
 	case 8:
 	case 16:
 	case 27:
 	case 32:
 	case 64:
-		if (anal->bits != bits) {
-			anal->bits = bits;
+		if (anal->config->bits != bits) {
+			anal->config->bits = bits;
 			r_anal_set_reg_profile (anal, NULL);
 		}
 		return true;
@@ -329,18 +329,19 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 }
 
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
-	free (anal->cpu);
-	anal->cpu = cpu ? strdup (cpu) : NULL;
+	free (anal->config->cpu);
+	anal->config->cpu = cpu ? strdup (cpu) : NULL;
 	int v = r_anal_archinfo (anal, R_ANAL_ARCHINFO_ALIGN);
 	if (v != -1) {
-		anal->pcalign = v;
+		anal->config->pcalign = v;
 	}
 }
 
 R_API void r_anal_set_big_endian(RAnal *anal, int bigend) {
 	r_return_if_fail (anal);
-	anal->big_endian = bigend;
+	anal->config->big_endian = bigend;
 	if (anal->reg) {
+		/// XXX R2_570 reuse RArchConfig from RReg
 		anal->reg->big_endian = bigend;
 	}
 }

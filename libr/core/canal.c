@@ -512,7 +512,7 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 		r_print_rowlog_done (core->print, oldstr);
 		return;
 	}
-	int ptr_size = core->anal->bits / 8;
+	int ptr_size = core->anal->config->bits / 8;
 	ut64 offset = gopclntab + 2 * ptr_size;
 	ut64 size_offset = gopclntab + 3 * ptr_size ;
 	ut8 temp_size[4] = {0};
@@ -618,7 +618,7 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 		}
 	} else {
 		ut64 offs = 0;
-		ut64 sz = core->anal->bits >> 3;
+		ut64 sz = core->anal->config->bits >> 3;
 		RAnalRef ref1;
 		ref1.type = R_ANAL_REF_TYPE_DATA;
 		ref1.at = ref->addr;
@@ -630,7 +630,7 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 		for (offs = 0; offs < offe; offs += sz, ref1.at += sz) {
 			ut8 bo[8];
 			r_io_read_at (core->io, ref->addr + offs, bo, R_MIN (sizeof (bo), sz));
-			bool be = core->anal->big_endian;
+			bool be = core->anal->config->big_endian;
 			switch (sz) {
 			case 1:
 				i8 = r_read_ble8 (bo);
@@ -774,7 +774,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		// expand 16bit for function
 		fcn->bits = 16;
 	} else {
-		fcn->bits = core->anal->bits;
+		fcn->bits = core->anal->config->bits;
 	}
 	fcn->addr = at;
 	fcn->name = get_function_name (core, at);
@@ -2666,7 +2666,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 		}
 	}
 
-	if (core->anal->bits == 64) {
+	if (core->anal->config->bits == 64) {
 		addrwidth = 16;
 	}
 
@@ -2696,7 +2696,7 @@ static int fcn_list_verbose(RCore *core, RList *fcns, const char *sortby) {
 	int headeraddr_width = 10;
 	char *headeraddr = "==========";
 
-	if (core->anal->bits == 64) {
+	if (core->anal->config->bits == 64) {
 		headeraddr_width = 18;
 		headeraddr = "==================";
 	}
@@ -3788,7 +3788,7 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 	if (depth < 0) {
 		return false;
 	}
-	int wordsize = (int)(core->anal->bits / 8);
+	int wordsize = (int)(core->anal->config->bits / 8);
 	ut64 dataptr;
 	if (!r_io_read_i (core->io, ptr, &dataptr, wordsize, false)) {
 		// eprintf ("core_anal_followptr: Cannot read word at destination\n");
@@ -4847,13 +4847,13 @@ static bool esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 		bool trace = true;
 		switch (len) {
 		case 2:
-			esilbreak_last_data = refptr = (ut64)r_read_ble16 (buf, esil->anal->big_endian);
+			esilbreak_last_data = refptr = (ut64)r_read_ble16 (buf, esil->anal->config->big_endian);
 			break;
 		case 4:
-			esilbreak_last_data = refptr = (ut64)r_read_ble32 (buf, esil->anal->big_endian);
+			esilbreak_last_data = refptr = (ut64)r_read_ble32 (buf, esil->anal->config->big_endian);
 			break;
 		case 8:
-			esilbreak_last_data = refptr = r_read_ble64 (buf, esil->anal->big_endian);
+			esilbreak_last_data = refptr = r_read_ble64 (buf, esil->anal->config->big_endian);
 			break;
 		default:
 			trace = false;
@@ -4895,12 +4895,12 @@ static bool esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	EsilBreakCtx *ctx = esil->user;
 	RAnalOp *op = ctx->op;
 	RCore *core = anal->coreb.core;
-	handle_var_stack_access (esil, *val, R_ANAL_VAR_ACCESS_TYPE_PTR, esil->anal->bits / 8);
+	handle_var_stack_access (esil, *val, R_ANAL_VAR_ACCESS_TYPE_PTR, esil->anal->config->bits / 8);
 	//specific case to handle blx/bx cases in arm through emulation
 	// XXX this thing creates a lot of false positives
 	ut64 at = *val;
 	if (anal && anal->opt.armthumb) {
-		if (anal->cur && anal->cur->arch && anal->bits < 33 &&
+		if (anal->cur && anal->cur->arch && anal->config->bits < 33 &&
 			strstr (anal->cur->arch, "arm") && !strcmp (name, "pc") && op) {
 			switch (op->type) {
 			case R_ANAL_OP_TYPE_UCALL: // BLX
@@ -5327,7 +5327,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 
 		/* realign address if needed */
 		r_core_seek_arch_bits (core, cur);
-		int opalign = core->anal->pcalign;
+		int opalign = core->anal->config->pcalign;
 		if (opalign > 0) {
 			cur -= (cur % opalign);
 		}
@@ -5454,7 +5454,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				if (cfg_anal_strings) {
 					add_string_ref (core, op.addr, dst);
 				}
-			} else if ((core->anal->bits == 32 && core->anal->cur && arch == R2_ARCH_MIPS)) {
+			} else if ((core->anal->config->bits == 32 && core->anal->cur && arch == R2_ARCH_MIPS)) {
 				ut64 dst = ESIL->cur;
 				if (!op.src[0] || !op.src[0]->reg || !op.src[0]->reg->name) {
 					break;
@@ -5651,7 +5651,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 	}
 	bool maybeThumb = false;
 	if (align && core->anal->cur && core->anal->cur->arch) {
-		if (!strcmp (core->anal->cur->arch, "arm") && core->anal->bits != 64) {
+		if (!strcmp (core->anal->cur->arch, "arm") && core->anal->config->bits != 64) {
 			maybeThumb = true;
 		}
 	}

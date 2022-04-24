@@ -179,7 +179,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 
-	if (anal->big_endian) {
+	if (anal->config->big_endian) {
 		b = data = ndata;
 		ut8 tmp = data[3];
 		ndata[0] = data[3];
@@ -187,7 +187,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		ndata[2] = data[1];
 		ndata[3] = tmp;
 	}
-	if (anal->bits == 16) {
+	if (anal->config->bits == 16) {
 		arm_free (arminsn);
 		return op_thumb (anal, op, addr, data, len);
 	}
@@ -281,7 +281,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else {
 			// ut32 oaddr = addr+8+b[0];
 			// XXX TODO ret = radare_read_at(oaddr, (ut8*)&ptr, 4);
-			if (anal->bits == 32) {
+			if (anal->config->bits == 32) {
 				b = (ut8 *) &ptr;
 				op->ptr = b[0] + (b[1] << 8) + (b[2] << 16) + (b[3] << 24);
 				// XXX data_xrefs_add(oaddr, op->ptr, 1);
@@ -399,7 +399,7 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 }
 
 static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	if (anal->bits == 64) {
+	if (anal->config->bits == 64) {
 		return arm_op64 (anal, op, addr, data, len);
 	}
 	return arm_op32 (anal, op, addr, data, len);
@@ -442,7 +442,7 @@ static bool set_reg_profile(RAnal *anal) {
 
 static int archinfo(RAnal *anal, int q) {
 	if (q == R_ANAL_ARCHINFO_ALIGN) {
-		if (anal && anal->bits == 16) {
+		if (anal && anal->config->bits == 16) {
 			return 2;
 		}
 		return 4;
@@ -451,7 +451,7 @@ static int archinfo(RAnal *anal, int q) {
 		return 4;
 	}
 	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
-		if (anal && anal->bits == 16) {
+		if (anal && anal->config->bits == 16) {
 			return 2;
 		}
 		return 4;

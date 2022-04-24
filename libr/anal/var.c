@@ -142,7 +142,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 	if (!type) {
 		type = __int_type_from_size (size);
 		if (!type) {
-			type = __int_type_from_size (fcn->anal->bits);
+			type = __int_type_from_size (fcn->anal->config->bits);
 		}
 		if (!type) {
 			type = "int32_t";
@@ -850,7 +850,7 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 	if (value && value->reg && value->reg->name) {
 		name = value->reg->name;
 		RRegItem *ri = r_reg_get (anal->reg, value->reg->name, -1);
-		if (ri && (ri->size == 32) && (anal->bits == 64)) {
+		if (ri && (ri->size == 32) && (anal->config->bits == 64)) {
 			name = r_reg_32_to_64 (anal->reg, value->reg->name);
 		}
 	}
@@ -1006,7 +1006,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 					from = fcn->cc ? r_anal_cc_max_arg (anal, fcn->cc) : 0;
 					to = r_type_func_args_count (anal->sdb_types, fname);
 				}
-				const int bytes = (fcn->bits ? fcn->bits : anal->bits) / 8;
+				const int bytes = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
 				for (i = from; stack_rev ? i >= to : i < to; stack_rev ? i-- : i++) {
 					char *tp = r_type_func_args_type (anal->sdb_types, fname, i);
 					if (!tp) {
@@ -1039,7 +1039,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 				goto beach;
 			}
 #endif
-			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, vartype, anal->bits / 8, isarg, varname);
+			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, vartype, anal->config->bits / 8, isarg, varname);
 			if (var) {
 				r_anal_var_set_access (var, reg, op->addr, rw, ptr);
 			}
@@ -1060,7 +1060,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			? r_str_newf ("%s_%" PFMT64x "h", VARPREFIX, R_ABS (frame_off))
 			: r_anal_function_autoname_var (fcn, type, VARPREFIX, -ptr);
 		if (varname) {
-			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, NULL, anal->bits / 8, false, varname);
+			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, NULL, anal->config->bits / 8, false, varname);
 			if (var) {
 				r_anal_var_set_access (var, reg, op->addr, rw, -ptr);
 			}
@@ -1156,7 +1156,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	r_return_if_fail (anal && op && fcn);
 	const char *opsreg = op->src[0] ? get_regname (anal, op->src[0]) : NULL;
 	const char *opdreg = op->dst ? get_regname (anal, op->dst) : NULL;
-	const int size = (fcn->bits ? fcn->bits : anal->bits) / 8;
+	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
 	if (!fcn->cc) {
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments\n", fcn->name);
 		return;

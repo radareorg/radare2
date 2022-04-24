@@ -256,9 +256,10 @@ static int cmd_egg(void *data, const char *input) {
 			}
 		}
 		r_cons_printf ("\nTarget options\n");
-		r_cons_printf ("arch : %s\n", core->anal->cpu);
-		r_cons_printf ("os   : %s\n", core->anal->os);
-		r_cons_printf ("bits : %d\n", core->anal->bits);
+		RArchConfig *ac = core->anal->config;
+		r_cons_printf ("arch : %s\n", ac->cpu);
+		r_cons_printf ("os   : %s\n", ac->os);
+		r_cons_printf ("bits : %d\n", ac->bits);
 	}
 	break;
 	case 'r': // "gr"

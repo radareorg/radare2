@@ -1040,13 +1040,12 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, VariableLocationKind
 
 /* returns string literal register name!
    TODO add more arches                 */
-static const char *get_dwarf_reg_name(char *arch, int reg_num, VariableLocationKind *kind, int bits) {
+static const char *get_dwarf_reg_name(const char *arch, int reg_num, VariableLocationKind *kind, int bits) {
 	if (!strcmp (arch, "x86")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_x86_64_reg (reg_num, kind);
-		} else {
-			return map_dwarf_reg_to_x86_reg (reg_num, kind);
 		}
+		return map_dwarf_reg_to_x86_reg (reg_num, kind);
 	} else if (!strcmp (arch, "ppc")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_ppc64_reg (reg_num, kind);
@@ -1107,6 +1106,9 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 	ut64 address = 0;
 	ut64 reg_num = -1;
 	const char *reg_name = NULL; /* literal */
+	const char *cpu = ctx->anal->config->cpu;
+	const bool be = ctx->anal->config->big_endian;
+	const int bits = ctx->anal->config->bits;
 	size_t i;
 	for (i = 0; i < block.length; i++) {
 		switch (block.data[i]) {
@@ -1171,7 +1173,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			/* Will mostly be used for SP based arguments */
 			/* TODO I need to find binaries that uses this so I can test it out*/
 			reg_num = block.data[i] - DW_OP_reg0; // get the reg number
-			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
+			reg_name = get_dwarf_reg_name (cpu, reg_num, &kind, bits);
 			break;
 		}
 		case DW_OP_breg0:
@@ -1216,7 +1218,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			offset = r_sleb128 (&buffer, &block.data[block.length]);
 			/* TODO do a proper expression parsing, move by the amount of bytes sleb reads */
 			i += buffer - &block.data[0];
-			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
+			reg_name = get_dwarf_reg_name (cpu, reg_num, &kind, bits);
 			break;
 		}
 		case DW_OP_bregx: {
@@ -1232,13 +1234,13 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 				return NULL;
 			}
 			offset = r_sleb128 (&buffer, buf_end);
-			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
+			reg_name = get_dwarf_reg_name (cpu, reg_num, &kind, bits);
 			break;
 		}
 		case DW_OP_addr: {
 			/* The DW_OP_addr operation has a single operand that encodes a machine address and whose
 			size is the size of an address on the target machine.  */
-			const int addr_size = ctx->anal->bits / 8;
+			const int addr_size = bits / 8;
 			const ut8 *dump = &block.data[++i];
 			/* malformed, not enough bytes to represent address */
 			if (block.length - i < addr_size) {
@@ -1249,13 +1251,13 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 				address = r_read_ble8 (dump);
 				break;
 			case 2:
-				address = r_read_ble16 (dump, ctx->anal->big_endian);
+				address = r_read_ble16 (dump, be);
 				break;
 			case 4:
-				address = r_read_ble32 (dump, ctx->anal->big_endian);
+				address = r_read_ble32 (dump, be);
 				break;
 			case 8:
-				address = r_read_ble64 (dump, ctx->anal->big_endian);
+				address = r_read_ble64 (dump, be);
 				break;
 			default:
 				r_warn_if_reached (); /* weird addr_size */

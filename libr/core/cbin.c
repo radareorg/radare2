@@ -742,7 +742,7 @@ R_API void r_core_anal_type_init(RCore *core) {
 
 R_API void r_core_anal_cc_init(RCore *core) {
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
-	int bits = core->anal->bits;
+	int bits = core->anal->config->bits;
 	if (!anal_arch) {
 		return;
 	}
@@ -1098,7 +1098,7 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 			return false;
 		}
 		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
-		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (core->bin, core->anal->bits / 8);
+		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (core->bin, core->anal->config->bits / 8);
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != R_MODE_PRINT) {
 			/* Should we do this by default? */
@@ -1110,7 +1110,7 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 		}
 		if (loc_table) {
 			if (mode == R_MODE_PRINT) {
-				r_bin_dwarf_print_loc (loc_table, core->anal->bits / 8, r_cons_printf);
+				r_bin_dwarf_print_loc (loc_table, core->anal->config->bits / 8, r_cons_printf);
 			}
 			r_bin_dwarf_free_loc (loc_table);
 		}

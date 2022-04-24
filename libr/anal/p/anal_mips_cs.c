@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2019 - pancake */
+/* radare2 - LGPL - Copyright 2013-2022 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -95,7 +95,7 @@ static ut64 t9_pre = UT64_MAX;
 
 static inline void es_sign_n_64(RAnal *a, RAnalOp *op, const char *arg, int bit)
 {
-	if (a->bits == 64) {
+	if (a->config->bits == 64) {
 		r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", bit, arg, arg);
 	} else {
 		r_strbuf_append (&op->esil,",");
@@ -731,27 +731,28 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn;
-	int mode = anal->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	int mode = anal->config->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 
-	if (anal->cpu && *anal->cpu) {
-		if (!strcmp (anal->cpu, "micro")) {
+	const char *cpu = anal->config->cpu;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (!strcmp (cpu, "micro")) {
 			mode |= CS_MODE_MICRO;
-		} else if (!strcmp (anal->cpu, "r6")) {
+		} else if (!strcmp (cpu, "r6")) {
 			mode |= CS_MODE_MIPS32R6;
-		} else if (!strcmp (anal->cpu, "v3")) {
+		} else if (!strcmp (cpu, "v3")) {
 			mode |= CS_MODE_MIPS3;
-		} else if (!strcmp (anal->cpu, "v2")) {
+		} else if (!strcmp (cpu, "v2")) {
 #if CS_API_MAJOR > 3
 			mode |= CS_MODE_MIPS2;
 #endif
 		}
 	}
-	mode |= (anal->bits==64)? CS_MODE_MIPS64: CS_MODE_MIPS32;
-	if (mode != omode || anal->bits != obits) {
+	mode |= (anal->config->bits == 64)? CS_MODE_MIPS64: CS_MODE_MIPS32;
+	if (mode != omode || anal->config->bits != obits) {
 		cs_close (&hndl);
 		hndl = 0;
 		omode = mode;
-		obits = anal->bits;
+		obits = anal->config->bits;
 	}
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
@@ -1105,7 +1106,7 @@ fin:
 
 static char *get_reg_profile(RAnal *anal) {
 	const char *p = NULL;
-	switch (anal->bits) {
+	switch (anal->config->bits) {
 	default:
 	case 32: p =
 		"=PC    pc\n"
@@ -1227,7 +1228,7 @@ RAnalPlugin r_anal_plugin_mips_cs = {
 	.get_reg_profile = get_reg_profile,
 	.archinfo = archinfo,
 	.preludes = anal_preludes,
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.op = &analop,
 };
 

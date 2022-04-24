@@ -167,17 +167,17 @@ typedef struct {
 	R_REF_TYPE;
 } TypeTest;
 
+static void r_type_test_free(TypeTest *tt) {
+	tt->name = "";
+}
+
 static TypeTest *r_type_test_new(const char *name) {
 	TypeTest *tt = R_NEW0 (TypeTest);
 	if (tt) {
-		r_ref_init (tt);
+		r_ref_init (tt, r_type_test_free);
 		tt->name = name;
 	}
 	return tt;
-}
-
-static void r_type_test_free(TypeTest *tt) {
-	tt->name = "";
 }
 
 R_REF_FUNCTIONS(TypeTest, r_type_test);

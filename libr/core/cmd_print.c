@@ -2217,7 +2217,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 R_API void r_core_print_examine(RCore *core, const char *str) {
 	char cmd[128], *p;
 	ut64 addr = core->offset;
-	int size = (core->anal->bits / 4);
+	int size = core->anal->config->bits / 4;
 	int count = atoi (str);
 	int i, n;
 	if (count < 1) {
@@ -3264,7 +3264,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		break;
 	case '*': { // "pv*"
 		for (i = 0; i < repeat; i++) {
-			const bool be = core->print->big_endian;
+			const bool be = core->anal->config->big_endian;
 			ut64 at = core->offset + (i * n);
 			ut8 buf[8];
 			r_io_read_at (core->io, at, buf, sizeof (buf));
@@ -3318,14 +3318,14 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				pj_i (pj, r_read_ble8 (buf));
 				break;
 			case 2:
-				pj_i (pj, r_read_ble16 (buf, core->print->big_endian));
+				pj_i (pj, r_read_ble16 (buf, core->anal->config->big_endian));
 				break;
 			case 4:
-				pj_n (pj, (ut64)r_read_ble32 (buf, core->print->big_endian));
+				pj_n (pj, (ut64)r_read_ble32 (buf, core->anal->config->big_endian));
 				break;
 			case 8:
 			default:
-				pj_n (pj, r_read_ble64 (buf, core->print->big_endian));
+				pj_n (pj, r_read_ble64 (buf, core->anal->config->big_endian));
 				break;
 			}
 			pj_ks (pj, "string", str);
@@ -4866,7 +4866,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 	ut64 o_offset = core->offset;
 	if (mode == 'j' || mode == ',' || mode == '*' || mode == 'q') {
 		size_t i;
-		const int be = core->anal->big_endian;
+		const int be = core->anal->config->big_endian;
 		if (pj) {
 			pj_a (pj);
 		}
@@ -7118,7 +7118,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'r': // "pxr"
 			if (l) {
 				int mode = input[2];
-				int wordsize = core->anal->bits / 8;
+				int wordsize = core->anal->config->bits / 8;
 				if (mode == '?') {
 					eprintf ("Usage: pxr[1248][*,jq] [length]\n");
 					break;

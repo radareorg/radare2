@@ -382,9 +382,9 @@ static const char *reg32_to_name(ut8 reg) {
 }
 
 static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
-	int rs = a->bits / 8;
+	int rs = a->config->bits / 8;
 	const char *pc, *sp, *bp, *si;
-	switch (a->bits) {
+	switch (a->config->bits) {
 	case 16:
 		pc = "ip";
 		sp = "sp";
@@ -408,7 +408,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	struct Getarg gop = {
 		.handle = *handle,
 		.insn = insn,
-		.bits = a->bits
+		.bits = a->config->bits
 	};
 	char *src;
 	char *src2;
@@ -421,9 +421,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	char *arg1;
 	char *arg2;
 
+	const int bits = gop.bits;
 	// counter for rep prefix
-	const char *counter = (a->bits==16)?"cx":
-		(a->bits==32)?"ecx":"rcx";
+	const char *counter = (bits == 16)?"cx": (bits == 32)? "ecx": "rcx";
 
 	bool repe = false;
 
@@ -681,14 +681,14 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 		break;
 	case X86_INS_STOSB:
-		if (a->bits<32) {
+		if (bits<32) {
 			r_strbuf_appendf (&op->esil, "al,di,=[1],df,?{,1,di,-=,},df,!,?{,1,di,+=,}");
 		} else {
 			r_strbuf_appendf (&op->esil, "al,edi,=[1],df,?{,1,edi,-=,},df,!,?{,1,edi,+=,}");
 		}
 		break;
 	case X86_INS_STOSW:
-		if (a->bits<32) {
+		if (bits<32) {
 			r_strbuf_appendf (&op->esil, "ax,di,=[2],df,?{,2,di,-=,},df,!,?{,2,di,+=,}");
 		} else {
 			r_strbuf_appendf (&op->esil, "ax,edi,=[2],df,?{,2,edi,-=,},df,!,?{,2,edi,+=,}");
@@ -783,8 +783,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				int width = INSOP(0).size;
 				src = (char *)cs_reg_name(*handle, INSOP(1).mem.base);
 				dst = (char *)cs_reg_name(*handle, INSOP(0).mem.base);
-				const char *counter = (a->bits==16)?"cx":
-					(a->bits==32)?"ecx":"rcx";
+				const char *counter = (bits==16)?"cx": (bits==32)?"ecx":"rcx";
 				esilprintf (op, "%s,!,?{,BREAK,},%s,NUM,%s,NUM,"\
 						"%s,[%d],%s,=[%d],df,?{,%d,%s,-=,%d,%s,-=,},"\
 						"df,!,?{,%d,%s,+=,%d,%s,+=,},%s,--=,%s," \
@@ -816,7 +815,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				// dst is name of register from instruction.
 				dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
 				const char *dst64 = r_reg_32_to_64 (a->reg, dst);
-				if (a->bits == 64 && dst64) {
+				if (bits == 64 && dst64) {
 					// Here it is still correct, because 'e** = X'
 					// turns into 'r** = X' (first one will keep higher bytes,
 					// second one will overwrite them with zeros).
@@ -1072,14 +1071,14 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		}
 		break;
 	case X86_INS_LES:
-		if (a->bits == 16) {
+		if (bits == 16) {
 			src = getarg (&gop, 1, 2, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
 			esilprintf (op, "%s,%s", src, dst);
 		}
 		break;
 	case X86_INS_LDS:
-		if (a->bits == 16) {
+		if (bits == 16) {
 			src = getarg (&gop, 1, 2, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
 			esilprintf (op, "%s,%s", src, dst);
@@ -1271,7 +1270,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_LOOPE:
 	case X86_INS_LOOPNE:
 		{
-			const char *cnt = (a->bits==16)?"cx":(a->bits==32)?"ecx":"rcx";
+			const char *cnt = (bits==16)?"cx":(bits==32)?"ecx":"rcx";
 			dst = getarg (&gop, 0, 2, NULL, DST_AR, NULL);
 			switch (insn->id) {
 			case X86_INS_JL:
@@ -1347,7 +1346,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	case X86_INS_CALL:
 		{
-			if (a->read_at && a->bits != 16) {
+			if (a->read_at && bits != 16) {
 				ut8 thunk[4] = {0};
 				if (a->read_at (a, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
 					/* Handle CALL ebx_pc (callpop)
@@ -1365,7 +1364,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				}
 			}
 			arg0 = getarg (&gop, 0, 0, NULL, ARG0_AR, NULL);
-			if (a->read_at && a->bits == 32) {
+			if (a->read_at && bits == 32) {
 				ut8 b[4] = {0};
 				ut64 at = addr + op->size;
 				ut64 n = r_num_get (NULL, arg0);
@@ -1496,7 +1495,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			dst = getarg (&gop, 0, 1, "^", DST_AR, &bitsize);
 			dst2 = getarg (&gop, 0, 0, NULL, DST2_AR, NULL);
 			const char *dst_reg64 = r_reg_32_to_64 (a->reg, dst2);		// 64-bit destination if exists
-			if (a->bits == 64 && dst_reg64) {
+			if (bits == 64 && dst_reg64) {
 				// (64-bit ^ 32-bit) & 0xFFFF FFFF -> 64-bit, it's alright, higher bytes will be eliminated
 				// (consider this is operation with 32-bit regs in 64-bit environment).
 				esilprintf (op, "%s,%s,^,0xffffffff,&,%s,=,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,0,cf,:=,0,of,:=",
@@ -1688,7 +1687,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			dst = getarg (&gop, 0, 1, "&", DST_AR, &bitsize);
 			dst2 = getarg (&gop, 0, 0, NULL, DST2_AR, NULL);
 			const char *dst_reg64 = r_reg_32_to_64 (a->reg, dst2);		// 64-bit destination if exists
-			if (a->bits == 64 && dst_reg64) {
+			if (bits == 64 && dst_reg64) {
 				// (64-bit & 32-bit) & 0xFFFF FFFF -> 64-bit, it's alright, higher bytes will be eliminated
 				// (consider this is operation with 32-bit regs in 64-bit environment).
 				esilprintf (op, "%s,%s,&,0xffffffff,&,%s,=,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,0,cf,:=,0,of,:=",
@@ -2555,10 +2554,10 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	struct Getarg gop = {
 		.handle = *handle,
 		.insn = insn,
-		.bits = a->bits
+		.bits = a->config->bits
 	};
 	int regsz = 4;
-	switch (a->bits) {
+	switch (gop.bits) {
 	case 64: regsz = 8; break;
 	case 16: regsz = 2; break;
 	default: regsz = 4; break; // 32
@@ -3149,7 +3148,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				ut64 seg = INSOP(0).imm;
 				ut64 off = INSOP(1).imm;
 				op->ptr = INSOP (0).mem.disp;
-				op->jump = (seg << a->seggrn) + off;
+				op->jump = (seg << a->config->seggrn) + off;
 			} else {
 				op->jump = INSOP(0).imm;
 			}
@@ -3198,7 +3197,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				ut64 seg = INSOP(0).imm;
 				ut64 off = INSOP(1).imm;
 				op->ptr = INSOP (0).mem.disp;
-				op->jump = (seg << a->seggrn) + off;
+				op->jump = (seg << a->config->seggrn) + off;
 			} else {
 				op->jump = INSOP(0).imm;
 			}
@@ -3479,9 +3478,10 @@ static int cs_len_prefix_opcode(uint8_t *item) {
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	cs_insn *insn = NULL;
-	int mode = (a->bits==64)? CS_MODE_64:
-		(a->bits==32)? CS_MODE_32:
-		(a->bits==16)? CS_MODE_16: 0;
+	const int bits = a->config->bits;
+	int mode = (bits==64)? CS_MODE_64:
+		(bits==32)? CS_MODE_32:
+		(bits==16)? CS_MODE_16: 0;
 	int n, ret;
 
 	if (handle && mode != omode) {
@@ -3529,10 +3529,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				insn->op_str[0]?" ":"",
 				insn->op_str);
 		}
-		// int rs = a->bits / 8;
-		//const char *pc = (a->bits==16)?"ip": (a->bits==32)?"eip":"rip";
-		//const char *sp = (a->bits==16)?"sp": (a->bits==32)?"esp":"rsp";
-		//const char *bp = (a->bits==16)?"bp": (a->bits==32)?"ebp":"rbp";
 		op->nopcode = cs_len_prefix_opcode (insn->detail->x86.prefix)
 			+ cs_len_prefix_opcode (insn->detail->x86.opcode);
 		op->size = insn->size;
@@ -3651,7 +3647,7 @@ static int esil_x86_cs_fini(RAnalEsil *esil) {
 
 static char *get_reg_profile(RAnal *anal) {
 	const char *p = NULL;
-	switch (anal->bits) {
+	switch (anal->config->bits) {
 	case 16: p =
 		"=PC	ip\n"
 		"=SP	sp\n"
@@ -4036,7 +4032,7 @@ static int archinfo(RAnal *anal, int q) {
 static RList *anal_preludes(RAnal *anal) {
 #define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
 	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
-	switch (anal->bits) {
+	switch (anal->config->bits) {
 	case 32:
 		KW ("\x8b\xff\x55\x8b\xec", 5, NULL, 0);
 		KW ("\x55\x89\xe5", 3, NULL, 0);

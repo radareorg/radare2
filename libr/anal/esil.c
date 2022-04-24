@@ -519,7 +519,7 @@ R_API int r_anal_esil_get_parm_size(RAnalEsil *esil, const char *str, ut64 *num,
 	case R_ANAL_ESIL_PARM_NUM:
 		*num = r_num_get (NULL, str);
 		if (size) {
-			*size = esil->anal->bits;
+			*size = esil->anal->config->bits;
 		}
 		return true;
 	case R_ANAL_ESIL_PARM_REG:
@@ -570,7 +570,7 @@ R_API bool r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num,
 	}
 	*num = 0LL;
 	if (size) {
-		*size = esil->anal->bits;
+		*size = esil->anal->config->bits;
 	}
 	if (esil->cb.hook_reg_read) {
 		ret = esil->cb.hook_reg_read (esil, regname, num, size);
@@ -786,7 +786,7 @@ static bool esil_js(RAnalEsil *esil) {
 // YES PLS KILL IT
 static bool esil_rs(RAnalEsil *esil) {
 	r_return_val_if_fail (esil && esil->anal, false);
-	return r_anal_esil_pushnum (esil, esil->anal->bits >> 3);
+	return r_anal_esil_pushnum (esil, esil->anal->config->bits >> 3);
 }
 
 //can we please deprecate this, plugins should know their current address
@@ -2032,10 +2032,10 @@ static bool esil_poke_n(RAnalEsil *esil, int bits) {
 			if (bits == 128) {
 				src2 = r_anal_esil_pop (esil);
 				if (src2 && r_anal_esil_get_parm (esil, src2, &num2)) {
-					r_write_ble (b, num, esil->anal->big_endian, 64);
+					r_write_ble (b, num, esil->anal->config->big_endian, 64);
 					ret = r_anal_esil_mem_write (esil, addr, b, bytes);
 					if (ret == 0) {
-						r_write_ble (b, num2, esil->anal->big_endian, 64);
+						r_write_ble (b, num2, esil->anal->config->big_endian, 64);
 						ret = r_anal_esil_mem_write (esil, addr + 8, b, bytes);
 					}
 					goto out;
@@ -2049,12 +2049,12 @@ static bool esil_poke_n(RAnalEsil *esil, int bits) {
 			esil->cb.hook_mem_read = NULL;
 			r_anal_esil_mem_read (esil, addr, b, bytes);
 			esil->cb.hook_mem_read = oldhook;
-			n = r_read_ble64 (b, esil->anal->big_endian);
+			n = r_read_ble64 (b, esil->anal->config->big_endian);
 			esil->old = n;
 			esil->cur = num;
 			esil->lastsz = bits;
 			num = num & bitmask;
-			r_write_ble (b, num, esil->anal->big_endian, bits);
+			r_write_ble (b, num, esil->anal->config->big_endian, bits);
 			ret = r_anal_esil_mem_write (esil, addr, b, bytes);
 		}
 	}
@@ -2114,7 +2114,7 @@ static bool esil_poke_some(RAnalEsil *esil) {
 					}
 					r_anal_esil_get_parm_size (esil, foo, &tmp, &regsize);
 					isregornum (esil, foo, &num64);
-					r_write_ble (b, num64, esil->anal->big_endian, regsize);
+					r_write_ble (b, num64, esil->anal->config->big_endian, regsize);
 					const int size_bytes = regsize / 8;
 					const ut32 written = r_anal_esil_mem_write (esil, ptr, b, size_bytes);
 					if (written != size_bytes) {
@@ -2154,8 +2154,8 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 		if (bits == 128) {
 			ut8 a[sizeof (ut64) * 2] = {0};
 			ret = r_anal_esil_mem_read (esil, addr, a, bytes);
-			ut64 b = r_read_ble64 (&a, 0); //esil->anal->big_endian);
-			ut64 c = r_read_ble64 (&a[8], 0); //esil->anal->big_endian);
+			ut64 b = r_read_ble64 (&a, 0); //esil->anal->config->big_endian);
+			ut64 c = r_read_ble64 (&a[8], 0); //esil->anal->config->big_endian);
 			sdb_itoa (b, res, 16);
 			r_anal_esil_push (esil, res);
 			sdb_itoa (c, res, 16);
@@ -2167,10 +2167,10 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 		ut8 a[sizeof(ut64)] = {0};
 		ret = !!r_anal_esil_mem_read (esil, addr, a, bytes);
 #if 0
-		ut64 b = r_read_ble64 (a, esil->anal->big_endian);
+		ut64 b = r_read_ble64 (a, esil->anal->config->big_endian);
 #else
 		ut64 b = r_read_ble64 (a, 0);
-		if (esil->anal->big_endian) {
+		if (esil->anal->config->big_endian) {
 			r_mem_swapendian ((ut8*)&b, (const ut8*)&b, bytes);
 		}
 #endif
@@ -2237,7 +2237,7 @@ static bool esil_peek_some(RAnalEsil *esil) {
 						free (count);
 						return false;
 					}
-					ut32 num32 = r_read_ble32 (a, esil->anal->big_endian);
+					ut32 num32 = r_read_ble32 (a, esil->anal->config->big_endian);
 					r_anal_esil_reg_write (esil, foo, num32);
 					ptr += 4;
 					free (foo);

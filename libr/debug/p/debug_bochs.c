@@ -361,7 +361,7 @@ static bool r_debug_bochs_detach(RDebug *dbg, int pid) {
 }
 
 static const char *r_debug_bochs_reg_profile(RDebug *dbg) {
-	int bits = dbg->anal->bits;
+	int bits = dbg->anal->config->bits;
 
 	if (bits == 16 || bits == 32 || bits == 64) {
 		return strdup (

@@ -479,6 +479,7 @@ include_files = [
   join_paths('include/r2naked.h'),
   join_paths('include/r_agraph.h'),
   join_paths('include/r_anal.h'),
+  join_paths('include/r_arch.h'),
   join_paths('include/r_asm.h'),
   join_paths('include/r_bin.h'),
   join_paths('include/r_bin_dwarf.h'),

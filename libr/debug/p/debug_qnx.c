@@ -113,7 +113,7 @@ static RList *r_debug_qnx_map_get(RDebug *dbg) {
 
 static int r_debug_qnx_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	int buflen = 0;
-	int bits = dbg->anal->bits;
+	int bits = dbg->anal->config->bits;
 	const char *pcname = r_reg_get_name (dbg->anal->reg, R_REG_NAME_PC);
 	RRegItem *reg = r_reg_get (dbg->anal->reg, pcname, 0);
 	if (!reg_buf) {
@@ -121,7 +121,7 @@ static int r_debug_qnx_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 		return -1;
 	}
 	if (reg) {
-		if (dbg->anal->bits != reg->size) {
+		if (bits != reg->size) {
 			bits = reg->size;
 		}
 	}
@@ -186,7 +186,7 @@ static bool r_debug_qnx_attach(RDebug *dbg, int pid) {
 		if (!strcmp ("qnx", d->plugin->name)) {
 			RIOQnx *g = d->data;
 			int arch = r_sys_arch_id (dbg->arch);
-			int bits = dbg->anal->bits;
+			int bits = dbg->anal->config->bits;
 			if ((desc = &g->desc)) {
 				switch (arch) {
 				case R_SYS_ARCH_X86:
@@ -228,7 +228,7 @@ static bool r_debug_qnx_detach(RDebug *dbg, int pid) {
 
 static const char *r_debug_qnx_reg_profile(RDebug *dbg) {
 	int arch = r_sys_arch_id (dbg->arch);
-	int bits = dbg->anal->bits;
+	int bits = dbg->anal->config->bits;
 	switch (arch) {
 	case R_SYS_ARCH_X86:
 		return strdup (

@@ -38,11 +38,12 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	char *str;
 
 	int mode = 0;
-	if (mode != omode || anal->bits != obits) {
+	int bits = anal->config->bits;
+	if (mode != omode || bits != obits) {
 		cs_close (&hndl);
 		hndl = 0;
 		omode = mode;
-		obits = anal->bits;
+		obits = bits;
 	}
 	op->addr = addr;
 	if (len < 1) {
