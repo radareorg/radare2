@@ -87,7 +87,7 @@ static void parse_grep_expression(const char *str) {
 		len = 0;
 	}
 	if (len > R_CONS_GREP_BUFSIZE - 1) {
-		eprintf ("r_cons_grep: too long!\n");
+		R_LOG_ERROR ("r_cons_grep: too long!\n");
 		return;
 	}
 	if (len > 0 && str[len] == '?') {
@@ -109,7 +109,7 @@ static void parse_grep_expression(const char *str) {
 		ptr = ptrs[ptrs_length];
 		ptrs_length++;
 		if (ptrs_length >= R_CONS_GREP_COUNT) {
-			eprintf ("to many nested greps\n");
+			R_LOG_ERROR ("to many nested greps\n");
 			return;
 		}
 	}
@@ -353,12 +353,12 @@ static void parse_grep_expression(const char *str) {
 					continue;
 				}
 				if (wlen >= R_CONS_GREP_WORD_SIZE - 1) {
-					eprintf ("grep string too long\n");
+					R_LOG_ERROR ("grep string too long\n");
 					continue;
 				}
 				grep->nstrings++;
 				if (grep->nstrings > R_CONS_GREP_WORDS - 1) {
-					eprintf ("too many grep strings\n");
+					R_LOG_ERROR ("too many grep strings\n");
 					break;
 				}
 				r_str_ncpy (grep->strings[grep->nstrings - 1],
@@ -893,7 +893,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			}
 			outlen = outlen > 0? outlen - 1: 0;
 			if (outlen > len) { // should never happen
-				eprintf ("r_cons_grep_line: wtf, how you reach this?\n");
+				R_LOG_ERROR ("r_cons_grep_line: wtf, how you reach this?\n");
 				free (in);
 				free (out);
 				return -1;

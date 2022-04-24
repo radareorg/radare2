@@ -20,7 +20,7 @@ R_API char *r_cons_hud_file(const char *f) {
 // the lines starting with # )
 R_API char *r_cons_hud_line_string(const char *s) {
 	if (!r_cons_is_interactive ()) {
-		eprintf ("Hud mode requires scr.interactive=true.\n");
+		R_LOG_ERROR ("Hud mode requires scr.interactive=true.");
 		return NULL;
 	}
 	char *os, *track, *ret, *o = strdup (s);
@@ -59,7 +59,7 @@ R_API char *r_cons_hud_line_string(const char *s) {
 // the lines starting with # )
 R_API char *r_cons_hud_string(const char *s) {
 	if (!r_cons_is_interactive ()) {
-		eprintf ("Hud mode requires scr.interactive=true.\n");
+		R_LOG_ERROR ("Hud mode requires scr.interactive=true.");
 		return NULL;
 	}
 	char *os, *track, *ret, *o = strdup (s);
@@ -454,7 +454,7 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 		}
 		r_list_free (files);
 	} else {
-		eprintf ("No files found\n");
+		R_LOG_ERROR ("No files found\n");
 	}
 	if (!ret) {
 		free (tmp);

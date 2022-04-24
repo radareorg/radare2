@@ -674,7 +674,7 @@ static int node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 			continue;
 		}
 		if (!anal->iob.read_at (anal->iob.io, func->addr, func_buf, (int)func_size)) {
-			eprintf ("Couldn't read function %s at 0x%"PFMT64x"\n", func->name, func->addr);
+			R_LOG_WARN ("Couldn't read function %s at 0x%"PFMT64x, func->name, func->addr);
 			free (func_buf);
 			continue;
 		}
@@ -732,9 +732,7 @@ static ut8 read_module_tail_bytes(RFlirtModule *module, RBuffer *b) {
 			goto err_exit;
 		}
 		r_list_append (module->tail_bytes, tail_byte);
-#if DEBUG
-		eprintf ("READ TAIL BYTE: %04X: %02X\n", tail_byte->offset, tail_byte->value);
-#endif
+		R_LOG_DEBUG ("READ TAIL BYTE: %04X: %02X", tail_byte->offset, tail_byte->value);
 	}
 
 	return true;

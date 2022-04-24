@@ -1209,7 +1209,7 @@ static void anop64(RAnal *a, RAnalOp *op, Instruction *insn) {
 		op->fail = addr + op->size;
 		break;
 	default:
-		R_LOG_DEBUG ("ARM64 analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->operation, op->addr);
+		R_LOG_DEBUG ("ARM64 analysis: Op type %d at 0x%" PFMT64x " not handled", insn->operation, op->addr);
 		break;
 	}
 }

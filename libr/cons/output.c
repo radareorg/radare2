@@ -211,7 +211,7 @@ static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 		if (esc == 1) {
 			// \x1b[2J
 			if (ptr[0] != '[') {
-				eprintf ("Oops invalid escape char\n");
+				R_LOG_ERROR ("Oops invalid escape char");
 				esc = 0;
 				str = ptr + 1;
 				continue;

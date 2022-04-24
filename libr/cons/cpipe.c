@@ -42,7 +42,7 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	const int fd_flags = O_BINARY | O_RDWR | O_CREAT | (append? O_APPEND: O_TRUNC);
 	int fd = r_sandbox_open (targetFile, fd_flags, 0644);
 	if (fd == -1) {
-		eprintf ("r_cons_pipe_open: Cannot open file '%s'\n", file);
+		R_LOG_ERROR ("r_cons_pipe_open: Cannot open file '%s'", file);
 		free (targetFile);
 		return -1;
 	}
@@ -52,7 +52,7 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	}
 	backup_fdn = fdn;
 	if (!__dupDescriptor (fd, fdn)) {
-		eprintf ("Cannot dup stdout to %d\n", fdn);
+		R_LOG_ERROR ("Cannot dup stdout to %d", fdn);
 		free (targetFile);
 		return -1;
 	}

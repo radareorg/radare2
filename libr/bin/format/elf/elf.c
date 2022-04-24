@@ -1374,21 +1374,21 @@ static bool elf_init(ELFOBJ *bin) {
 		return false;
 	}
 	if (!init_phdr (bin) && !is_bin_etrel (bin)) {
-		R_LOG_DEBUG ("Cannot initialize program headers\n");
+		R_LOG_DEBUG ("Cannot initialize program headers");
 	}
 	if (bin->ehdr.e_type != ET_CORE) {
 		if (!init_shdr (bin)) {
-			R_LOG_DEBUG ("Cannot initialize section headers\n");
+			R_LOG_DEBUG ("Cannot initialize section headers");
 		}
 		if (!init_strtab (bin)) {
-			R_LOG_DEBUG ("Cannot initialize strings table\n");
+			R_LOG_DEBUG ("Cannot initialize strings table");
 		}
 		if (!init_dynstr (bin) && !is_bin_etrel (bin)) {
-			R_LOG_DEBUG ("Cannot initialize dynamic strings\n");
+			R_LOG_DEBUG ("Cannot initialize dynamic strings");
 		}
 		bin->baddr = Elf_(r_bin_elf_get_baddr) (bin);
 		if (!init_dynamic_section (bin) && !Elf_(r_bin_elf_is_static) (bin) && !is_bin_etrel (bin)) {
-			R_LOG_DEBUG ("Cannot initialize dynamic section\n");
+			R_LOG_DEBUG ("Cannot initialize dynamic section");
 		}
 	}
 	bin->imports_by_ord_size = 0;

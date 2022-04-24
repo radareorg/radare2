@@ -3710,7 +3710,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		}
 		break;
 	default:
-		R_LOG_DEBUG ("ARM64 analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
+		R_LOG_DEBUG ("ARM64 analysis: Op type %d at 0x%" PFMT64x " not handled", insn->id, op->addr);
 		break;
 	}
 }
@@ -4210,7 +4210,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->ptrsize = 2;
 		break;
 	default:
-		R_LOG_DEBUG ("ARM analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
+		R_LOG_DEBUG ("ARM analysis: Op type %d at 0x%" PFMT64x " not handled", insn->id, op->addr);
 		break;
 	}
 	itcond = ht_uu_find (ht_it,  addr, &found);

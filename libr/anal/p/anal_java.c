@@ -208,8 +208,8 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		return sz;
 	}
 	IFDBG {
-		//eprintf ("Extracting op from buffer (%d byte(s)) @ 0x%04x\n", len, addr);
-		//eprintf ("Parsing op: (0x%02x) %s.\n", op_byte, JAVA_OPS[op_byte].name);
+		R_LOG_DEBUG ("Extracting op from buffer (%d byte(s)) @ 0x%04x\n", len, addr);
+		R_LOG_DEBUG ("Parsing op: (0x%02x) %s.\n", op_byte, JAVA_OPS[op_byte].name);
 	}
 	op->addr = addr;
 	op->size = sz;
@@ -312,19 +312,20 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 		r_java_new_method ();
 		break;
 	case 'u':
-		switch (*(input+1)) {
+		switch (input[1]) {
 			case 't': {java_update_anal_types (anal, obj); return true;}
 			default: break;
 		}
 		break;
 	case 's':
-		switch (*(input+1)) {
-			//case 'e': return java_resolve_cp_idx_b64 (anal, input+2);
-			default: break;
+		switch (input[1]) {
+		//case 'e': return java_resolve_cp_idx_b64 (anal, input+2);
+		default: break;
 		}
 		break;
-
-	default: eprintf("Command not supported"); break;
+	default:
+		eprintf ("Command not supported");
+		break;
 	}
 	return 0;
 }

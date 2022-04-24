@@ -173,7 +173,6 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				do {
 					ch = r_cons_readchar ();
 					// just for debugging
-					//eprintf ( "%c", ch);
 					if (sc > 0) {
 						if (ch >= '0' && ch <= '9') {
 							pos[p++] = ch;
@@ -642,7 +641,7 @@ R_API int r_cons_readchar(void) {
 	sigdelset (&sigmask, SIGWINCH);
 	while (pselect (STDIN_FILENO + 1, &readfds, NULL, NULL, NULL, &sigmask) == -1) {
 		if (errno == EBADF) {
-			eprintf ("r_cons_readchar (): EBADF\n");
+			R_LOG_ERROR ("r_cons_readchar (): EBADF");
 			return -1;
 		}
 		if (sigwinchFlag) {
