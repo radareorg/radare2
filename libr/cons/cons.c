@@ -680,7 +680,7 @@ R_API RCons *r_cons_new(void) {
 	GetConsoleMode (h, &I->term_buf);
 	I->term_raw = 0;
 	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE)) {
-		eprintf ("r_cons: Cannot set control console handler\n");
+		R_LOG_ERROR ("r_cons: Cannot set control console handler");
 	}
 #endif
 	I->pager = NULL; /* no pager by default */

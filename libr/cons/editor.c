@@ -59,7 +59,7 @@ static void filesave(void) {
 		}
 	}
 	if (!path) {
-		eprintf ("No file given.\n");
+		R_LOG_ERROR ("No file given.");
 		return;
 	}
 	if (lines) {
@@ -70,9 +70,9 @@ static void filesave(void) {
 		}
 	}
 	if (r_file_dump (path, (const ut8 *)lines, bytes, 0)) {
-		eprintf ("File '%s' saved (%d byte(s))\n", path, bytes);
+		R_LOG_INFO ("File '%s' saved (%d byte(s))", path, bytes);
 	} else {
-		eprintf ("Cannot save file\n");
+		R_LOG_ERROR ("Cannot save file");
 	}
 	nlines = r_str_split (lines, '\n');
 }
@@ -91,13 +91,12 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 		lines = r_file_slurp (file, &sz);
 		bytes = (int)sz;
 		if (!lines) {
-			eprintf ("Failed to load '%s'.\n", file);
+			R_LOG_ERROR ("Failed to load '%s'.", file);
 			R_FREE (path);
 			return NULL;
 		}
 		nlines = r_str_split (lines, '\n');
-		eprintf ("Loaded %d lines on %d byte(s)\n",
-			(nlines? (nlines - 1): 0), bytes);
+		R_LOG_INFO ("Loaded %d lines on %d byte(s)", (nlines? (nlines - 1): 0), bytes);
 	} else {
 		path = NULL;
 	}

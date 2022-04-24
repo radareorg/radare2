@@ -545,7 +545,7 @@ R_API bool r_line_hist_save(const char *file) {
 			*p = 0;
 			if (!r_sys_mkdirp (path)) {
 				if (r_sandbox_check (R_SANDBOX_GRAIN_FILES)) {
-					eprintf ("Could not save history into %s\n", path);
+					R_LOG_ERROR ("Could not save history into %s", path);
 				}
 				goto end;
 			}
@@ -1551,7 +1551,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					if (clipText) {
 						char *txt = r_sys_conv_win_to_utf8 (clipText);
 						if (!txt) {
-							R_LOG_ERROR ("Failed to allocate memory\n");
+							R_LOG_ERROR ("Failed to allocate memory");
 							break;
 						}
 						int len = strlen (txt);

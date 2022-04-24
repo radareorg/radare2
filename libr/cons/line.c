@@ -25,7 +25,7 @@ R_API RLine *r_line_new(void) {
 	I.vtmode = 2;
 #endif
 	if (!r_line_dietline_init ()) {
-		eprintf ("error: r_line_dietline_init\n");
+		R_LOG_ERROR ("r_line_dietline_init has failed");
 	}
 	r_line_completion_init (&I.completion, 4096);
 	return &I;
@@ -81,7 +81,7 @@ R_API void r_line_completion_push(RLineCompletion *completion, const char *str) 
 		}
 	} else {
 		completion->quit = true;
-		eprintf ("Warning: Maximum completion capacity reached, increase scr.maxtab");
+		R_LOG_WARN ("Maximum completion capacity reached, increase scr.maxtab");
 	}
 }
 
@@ -89,7 +89,7 @@ R_API void r_line_completion_set(RLineCompletion *completion, int argc, const ch
 	r_return_if_fail (completion && (argc >= 0));
 	r_line_completion_clear (completion);
 	if (argc > completion->args_limit) {
-		eprintf ("Warning: Maximum completion capacity reached, increase scr.maxtab");
+		R_LOG_WARN ("Maximum completion capacity reached, increase scr.maxtab");
 	}
 	size_t count = R_MIN (argc, completion->args_limit);
 	r_pvector_reserve (&completion->args, count);

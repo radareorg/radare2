@@ -325,7 +325,7 @@ R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
 				r_cons_rgb_str (out, sizeof (out), &rcolor);
 			}
 		} else {
-			eprintf ("Invalid html color code\n");
+			R_LOG_WARN ("Invalid html color code");
 		}
 	} else if (!strncmp (fgcolor, "rgb:", 4)) { // "rgb:123" rgb format
 		if (strlen (fgcolor + 4) == 3) { // "rgb:RGB"
@@ -401,7 +401,7 @@ R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
 			} else if (!strncmp(p, "blink", 5)) {
 				rcolor.attr |= R_CONS_ATTR_BLINK;
 			} else {
-				eprintf ("Failed to parse terminal attributes: %s\n", p);
+				R_LOG_ERROR ("Failed to parse terminal attributes: %s", p);
 				break;
 			}
 			p = strchr (p, ' ');
@@ -625,7 +625,7 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 			return true;
 		}
 	}
-	eprintf ("r_cons_pal_set: Invalid color %s\n", key);
+	R_LOG_ERROR ("r_cons_pal_set: Invalid color %s", key);
 	return false;
 }
 
