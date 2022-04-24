@@ -1957,10 +1957,10 @@ R_API RBinJavaAttrInfo *r_bin_java_get_attr_from_field(RBinJavaField *field, R_B
 }
 
 R_API ut8 *r_bin_java_get_attr_buf(RBinJavaObj *bin, ut64 sz, const ut64 offset, const ut8 *buf, const ut64 len) {
-	ut8 *attr_buf = NULL;
+	// XXX this pending is wrong and too expensive
 	int pending = len - offset;
 	const ut8 *a_buf = offset + buf;
-	attr_buf = (ut8 *) calloc (pending + 1, 1);
+	ut8 *attr_buf = (ut8 *) calloc (pending + 1, 1);
 	if (!attr_buf) {
 		eprintf ("Unable to allocate enough bytes (0x%04"PFMT64x
 			") to read in the attribute.\n", sz);
@@ -3559,7 +3559,9 @@ R_API RBinJavaAttrInfo *r_bin_java_constant_value_attr_new(RBinJavaObj *bin, ut8
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	if (attr) {
 		attr->type = R_BIN_JAVA_ATTR_TYPE_CONST_VALUE_ATTR;
-		attr->info.constant_value_attr.constantvalue_idx = R_BIN_JAVA_USHORT (buffer, offset);
+		if (offset + 4 < sz) {
+			attr->info.constant_value_attr.constantvalue_idx = R_BIN_JAVA_USHORT (buffer, offset);
+		}
 		offset += 2;
 		attr->size = offset;
 	}
@@ -7079,9 +7081,11 @@ R_API ut64 r_bin_java_rtv_annotations_attr_calc_size(RBinJavaAttrInfo *attr) {
 
 R_API RBinJavaAttrInfo *r_bin_java_rti_annotations_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut32 i = 0;
-	RBinJavaAttrInfo *attr = NULL;
 	ut64 offset = 0;
-	attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
+	if (buf_offset + 32 >= sz) {
+		return NULL;
+	}
+	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	offset += 6;
 	if (attr) {
 		attr->type = R_BIN_JAVA_ATTR_TYPE_RUNTIME_INVISIBLE_ANNOTATION_ATTR;
