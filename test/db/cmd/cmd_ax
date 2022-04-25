@@ -34,9 +34,9 @@ f someflag @ 0x43
 axf
 EOF
 EXPECT=<<EOF
-null 0x42 add byte [rax], al
-null 0x43 someflag
-call 0x44 add byte [rax], al
+NULL 0x42 add byte [rax], al
+NULL 0x43 someflag
+CALL 0x44 add byte [rax], al
 EOF
 RUN
 
