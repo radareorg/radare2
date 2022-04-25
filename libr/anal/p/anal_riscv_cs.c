@@ -193,13 +193,13 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			*str[i] = 0;
 			ARG (i);
 		}
+		switch (insn->id) {
+		//case RISCV_INS_NOP:
+		//	r_strbuf_setf (&op->esil, ",");
+		//	break;
+		}
 	}
 
-	switch (insn->id) {
-	//case RISCV_INS_NOP:
-	//	r_strbuf_setf (&op->esil, ",");
-	//	break;
-	}
 	return 0;
 }
 
@@ -332,6 +332,9 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		hndl = 0;
 		omode = mode;
 		obits = bits;
+	}
+	if (!op) {
+		return -1;
 	}
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
