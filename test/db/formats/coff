@@ -137,11 +137,11 @@ pd 1 @ sym.imp._TIFFFindField
 EOF
 EXPECT=<<EOF
 |           0x00008dbd      e80e000000     call sym._TIFFVGetField     ; RELOC 32 _TIFFVGetField @ 0x00008dd0
-sym._TIFFGetField 0x8dbd [CALL] call sym._TIFFVGetField
+sym._TIFFGetField 0x8dbd [CALL:--x] call sym._TIFFVGetField
 |           0x00008dde      e8ad280000     call _TIFFFindField
             ;-- reloc._TIFFFindField:
             ;-- _TIFFFindField:
-            ; CALL XREF from sym._TIFFVGetField @ 0x8dde
+            ; CALL XREF from sym._TIFFVGetField @ 0x8dde(x)
             0x0000b690      .dword 0x00000000                          ; RELOC 32 _TIFFFindField
 EOF
 RUN

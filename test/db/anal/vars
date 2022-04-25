@@ -144,7 +144,7 @@ EOF
 RUN
 
 NAME=pdf
-FILE=bins/elf/test.o
+FILE=bins/elf/test_o
 CMDS=<<EOF
 af
 pdf
@@ -346,7 +346,7 @@ EXPECT=<<EOF
 \           0x00000015      c3             ret
             0x00000016      cc             int3
             0x00000017      cc             int3
-            ; CALL XREF from fcn.00000000 @ 0x9
+            ; CALL XREF from fcn.00000000 @ 0x9(x)
 / 5: fcn.00000018 (int64_t arg1, int64_t arg2);
 |           ; arg int64_t arg1 @ rcx
 |           ; arg int64_t arg2 @ rdx

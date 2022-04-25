@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021 - Siguza, pancake, hot3eed */
+/* radare - LGPL - Copyright 2021-2022 - Siguza, pancake, hot3eed */
 
 // Context: https://raw.githubusercontent.com/Siguza/misc/master/xref.c
 

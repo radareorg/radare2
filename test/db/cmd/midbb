@@ -150,7 +150,8 @@ EXPECT=<<EOF
     "xrefs": [
       {
         "addr": 17,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   },
@@ -191,7 +192,8 @@ EXPECT=<<EOF
     "xrefs": [
       {
         "addr": 10,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   },
@@ -215,7 +217,8 @@ EXPECT=<<EOF
     "refs": [
       {
         "addr": 44,
-        "type": "DATA"
+        "type": "DATA",
+        "perm": "r--"
       }
     ]
   },
@@ -238,7 +241,8 @@ EXPECT=<<EOF
     "refs": [
       {
         "addr": 3,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   }
@@ -303,7 +307,8 @@ EXPECT=<<EOF
     "refs": [
       {
         "addr": 9,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   },
@@ -327,7 +332,8 @@ EXPECT=<<EOF
     "refs": [
       {
         "addr": 44,
-        "type": "DATA"
+        "type": "DATA",
+        "perm": "r--"
       }
     ]
   },
@@ -350,7 +356,8 @@ EXPECT=<<EOF
     "refs": [
       {
         "addr": 3,
-        "type": "CODE"
+        "type": "CODE",
+        "perm": "--x"
       }
     ]
   }
@@ -400,7 +407,8 @@ EXPECT=<<EOF
       "xrefs": [
         {
           "addr": 17,
-          "type": "CODE"
+          "type": "CODE",
+          "perm": "--x"
         }
       ]
     },
@@ -441,7 +449,8 @@ EXPECT=<<EOF
       "refs": [
         {
           "addr": 9,
-          "type": "CODE"
+          "type": "CODE",
+          "perm": "--x"
         }
       ]
     },
@@ -464,7 +473,8 @@ EXPECT=<<EOF
       "xrefs": [
         {
           "addr": 10,
-          "type": "CODE"
+          "type": "CODE",
+          "perm": "--x"
         }
       ]
     },
@@ -488,7 +498,8 @@ EXPECT=<<EOF
       "refs": [
         {
           "addr": 44,
-          "type": "DATA"
+          "type": "DATA",
+          "perm": "r--"
         }
       ]
     },
@@ -511,7 +522,8 @@ EXPECT=<<EOF
       "refs": [
         {
           "addr": 3,
-          "type": "CODE"
+          "type": "CODE",
+          "perm": "--x"
         }
       ]
     }

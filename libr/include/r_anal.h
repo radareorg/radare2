@@ -965,19 +965,27 @@ typedef struct r_anal_bb_t {
 } RAnalBlock;
 
 typedef enum {
-	R_ANAL_REF_TYPE_NULL = 0,
+	R_ANAL_REF_TYPE_NULL = 0, // find better name
 	R_ANAL_REF_TYPE_CODE = 'c', // code ref
 	R_ANAL_REF_TYPE_CALL = 'C', // code ref (call)
+	R_ANAL_REF_TYPE_JUMP = 'j', // code ref (call)
 	R_ANAL_REF_TYPE_DATA = 'd', // mem ref
-	R_ANAL_REF_TYPE_STRING='s'  // string ref
+	R_ANAL_REF_TYPE_STRING = 's',  // string ref
+	R_ANAL_REF_TYPE_READ = 4 << 8,
+	R_ANAL_REF_TYPE_WRITE = 2 << 8,
+	R_ANAL_REF_TYPE_EXEC = 1 << 8,
+	R_ANAL_REF_TYPE_MASK = 0xff,
+	R_ANAL_REF_TYPE_DIRECTION_MASK = 0xff00
 } RAnalRefType;
+
+#define R_ANAL_REF_TYPE_PERM(x) (((x)>>8) & 0xff)
+#define R_ANAL_REF_TYPE_MASK(x) ((x) & 0xff)
 
 typedef struct r_anal_ref_t {
 	ut64 addr;
 	ut64 at;
 	RAnalRefType type;
 } RAnalRef;
-R_API const char *r_anal_ref_type_tostring(RAnalRefType t);
 
 /* represents a reference line from one address (from) to another (to) */
 typedef struct r_anal_refline_t {
@@ -1720,9 +1728,15 @@ R_API bool r_anal_pin_set(RAnal *a, const char *name, const char *cmd);
 
 typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
 R_API RList *r_anal_ref_list_new(void);
+R_API const char *r_anal_ref_type_tostring(RAnalRefType t);
 R_API ut64 r_anal_xrefs_count(RAnal *anal);
-R_API const char *r_anal_xrefs_type_tostring(RAnalRefType type);
-R_API RAnalRefType r_anal_xrefs_type(char ch);
+R_DEPRECATE R_API RAnalRefType r_anal_xrefs_type(char ch);
+
+R_API const char *r_anal_ref_perm_tostring(RAnalRef *ref);
+R_API char r_anal_ref_perm_tochar(RAnalRef *ref);
+R_API char r_anal_ref_permchar_tostring(RAnalRef *ref);
+
+R_API RAnalRefType r_anal_xrefs_type_from_string(const char *s);
 R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to);
 R_API RList *r_anal_refs_get(RAnal *anal, ut64 to);
 R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 from);

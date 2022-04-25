@@ -28,8 +28,8 @@ aae @entry0
 axt sym.imp.signal
 EOF
 EXPECT=<<EOF
-sym.imp.open 0x9acc [CALL] jirl  zero, t3, 0
-(nofunc) 0x9f98 [CALL] bl  -sym.imp.signal #
+sym.imp.open 0x9acc [CALL:--x] jirl  zero, t3, 0
+(nofunc) 0x9f98 [CALL:--x] bl  -sym.imp.signal #
 EOF
 RUN
 

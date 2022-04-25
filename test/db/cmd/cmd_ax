@@ -7,11 +7,12 @@ ax~0x804969c
 axtj~{}
 EOF
 EXPECT=<<EOF
-                          section..plt+6 0x80482c6 ->      CODE -> 0x804969c section..got.plt+8
+                          section..plt+6 0x80482c6 > CODE:--x > 0x804969c section..got.plt+8
 [
   {
     "from": 134513350,
     "type": "CODE",
+    "perm": "--x",
     "opcode": "jmp dword [0x804969c]",
     "name": "section..plt+6",
     "refname": "section..got.plt+8"
@@ -20,7 +21,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=axf
+NAME=axf C44
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -33,9 +34,9 @@ f someflag @ 0x43
 axf
 EOF
 EXPECT=<<EOF
-  0x42 add byte [rax], al
-  0x43 someflag
-C 0x44 add byte [rax], al
+NULL 0x42 add byte [rax], al
+NULL 0x43 someflag
+CALL 0x44 add byte [rax], al
 EOF
 RUN
 

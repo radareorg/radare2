@@ -1078,9 +1078,8 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			RListIter *iter;
 			RAnalRef *ref;
 			r_list_foreach (list, iter, ref) {
-				if ((ref->type == R_ANAL_REF_TYPE_DATA
-					|| ref->type == R_ANAL_REF_TYPE_STRING)
-					&& ds->analop.type == R_ANAL_OP_TYPE_LEA) {
+				int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+				if ((rt == R_ANAL_REF_TYPE_DATA || rt == R_ANAL_REF_TYPE_STRING) && ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 					core->parser->subrel_addr = ref->addr;
 					break;
 				}
@@ -1374,6 +1373,8 @@ static void ds_show_refs(RDisasmState *ds) {
 }
 
 static void ds_show_xrefs(RDisasmState *ds) {
+	char xrefs_char[32]; // no more than 32 xrefs meh
+	int xci = 0;
 	RAnalRef *refi;
 	RListIter *iter, *it;
 	RCore *core = ds->core;
@@ -1412,7 +1413,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
 			ds_comment (ds, false, "%s 0x%08"PFMT64x"  ",
-				r_anal_xrefs_type_tostring (refi->type), refi->addr);
+				r_anal_ref_type_tostring (refi->type), refi->addr);
 			if (count == cols) {
 				if (iter->n) {
 					ds_print_color_reset (ds);
@@ -1436,7 +1437,8 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	RAnalFunction *fun, *next_fun;
 	RFlagItem *f, *next_f;
 	r_list_foreach (xrefs, iter, refi) {
-		if (!ds->asm_xrefs_code && refi->type == R_ANAL_REF_TYPE_CODE) {
+		int rt = R_ANAL_REF_TYPE_MASK (refi->type);
+		if (!ds->asm_xrefs_code && rt == R_ANAL_REF_TYPE_CODE) {
 			continue;
 		}
 		if (refi->at == ds->at) {
@@ -1447,6 +1449,9 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
 					next_fun = r_anal_get_fcn_in (core->anal, next_addr, -1);
 					if (next_fun && next_fun->addr == fun->addr) {
+						if (xci < 32) {
+							xrefs_char[xci++] = r_anal_ref_perm_tochar (refi);
+						}
 						r_list_append (addrs, r_num_dup (refi->addr));
 						continue;
 					}
@@ -1458,6 +1463,9 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					}
 				}
 				name = strdup (fun->name);
+				if (xci < 32) {
+					xrefs_char[xci++] = r_anal_ref_perm_tochar (refi);
+				}
 				r_list_append (addrs, r_num_dup (refi->addr));
 			} else {
 				f = r_flag_get_at (core->flags, refi->addr, true);
@@ -1466,6 +1474,9 @@ static void ds_show_xrefs(RDisasmState *ds) {
 						ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
 						next_f = r_flag_get_at (core->flags, next_addr, true);
 						if (next_f && f->offset == next_f->offset) {
+							if (xci < 32) {
+								xrefs_char[xci++] = r_anal_ref_perm_tochar (refi);
+							}
 							r_list_append (addrs, r_num_dup (refi->addr - f->offset));
 							continue;
 						}
@@ -1482,6 +1493,9 @@ static void ds_show_xrefs(RDisasmState *ds) {
 						}
 					}
 					name = strdup (f->name);
+					if (xci < 32) {
+						xrefs_char[xci++] = r_anal_ref_perm_tochar (refi);
+					}
 					r_list_append (addrs, r_num_dup (refi->addr - f->offset));
 				} else {
 					name = strdup ("unk");
@@ -1492,12 +1506,16 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			const char* plural = r_list_length (addrs) > 1 ? "S" : "";
 			const char* plus = fun ? "" : "+";
 			ds_comment (ds, false, "%s; %s XREF%s from %s @ ",
-				COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type), plural,
+				COLOR (ds, pal_comment), r_anal_ref_type_tostring (refi->type), plural,
 				realname ? realname : name);
 			ut64 *addrptr;
+
+			int i = 0;
 			r_list_foreach (addrs, it, addrptr) {
 				if (addrptr && *addrptr) {
-					ds_comment (ds, false, "%s%s0x%"PFMT64x, it == addrs->head ? "" : ", ", plus, *addrptr);
+					char ch = xrefs_char [i++];
+					ds_comment (ds, false, "%s%s0x%"PFMT64x"(%c)", 
+						it == addrs->head ? "" : ", ", plus, *addrptr, ch);
 				}
 			}
 			if (realname && (!fun || r_anal_get_function_at (core->anal, ds->at))) {
@@ -4167,7 +4185,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	RAnalRef *ref;
 	list = r_anal_refs_get (core->anal, ds->at);
 	r_list_foreach (list, iter, ref) {
-		if (ref->type == R_ANAL_REF_TYPE_STRING || ref->type == R_ANAL_REF_TYPE_DATA) {
+		int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+		if (rt == R_ANAL_REF_TYPE_STRING || rt == R_ANAL_REF_TYPE_DATA) {
 			if ((f = r_flag_get_i (core->flags, ref->addr))) {
 				refaddr = ref->addr;
 				break;
@@ -6562,7 +6581,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				r_list_foreach (refs, iter, ref) {
 					pj_o (pj);
 					pj_kn (pj, "addr", ref->addr);
-					pj_ks (pj, "type", r_anal_xrefs_type_tostring (ref->type));
+					pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
+					pj_ks (pj, "perm", r_anal_ref_perm_tostring (ref));
 					pj_end (pj);
 				}
 				pj_end (pj);
@@ -6580,7 +6600,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				r_list_foreach (xrefs, iter, ref) {
 					pj_o (pj);
 					pj_kn (pj, "addr", ref->addr);
-					pj_ks (pj, "type", r_anal_xrefs_type_tostring (ref->type));
+					pj_ks (pj, "type", r_anal_ref_type_tostring (ref->type));
+					pj_ks (pj, "perm", r_anal_ref_perm_tostring (ref));
 					pj_end (pj);
 				}
 				pj_end (pj);

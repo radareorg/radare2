@@ -374,7 +374,7 @@ aaa
 axt 0x28a
 EOF
 EXPECT=<<EOF
-fcn.0000029e 0x328 [CODE] jmp 0x28a
+fcn.0000029e 0x328 [CODE:--x] jmp 0x28a
 EOF
 RUN
 
@@ -579,7 +579,7 @@ aac @ 0
 axt 0x4ec
 EOF
 EXPECT=<<EOF
-fcn.00000360 0x3e2 [CALL] call fcn.000004ec
+fcn.00000360 0x3e2 [CALL:--x] call fcn.000004ec
 EOF
 RUN
 
@@ -592,7 +592,7 @@ aaa
 axt 0x4ec
 EOF
 EXPECT=<<EOF
-fcn.00000360 0x3e2 [CALL] call fcn.000004ec
+fcn.00000360 0x3e2 [CALL:--x] call fcn.000004ec
 EOF
 RUN
 

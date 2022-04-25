@@ -1523,7 +1523,7 @@ repeat:
 				r_str_trim (cmt);
 				r_cons_printf (" %d [%s] 0x%08"PFMT64x" 0x%08"PFMT64x " %s %sref (%s) ; %s\n",
 					idx, cstr, refi->at, refi->addr,
-					r_anal_xrefs_type_tostring (refi->type),
+					r_anal_ref_type_tostring (refi->type),
 					xref ? "x":"", name, cmt);
 				free (cmt);
 				free (name);

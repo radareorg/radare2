@@ -52,7 +52,8 @@ R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 	RList *ret = r_list_newf ((RListFree) free);
 	RList *xrefs = r_anal_function_get_xrefs (fcn);
 	r_list_foreach (xrefs, iter, refi) {
-		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
+		int rt = R_ANAL_REF_TYPE_MASK (refi->type);
+		if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
 			const char *flag = getRealRef (core, refi->addr);
 			if (flag) {
 				r_list_append (ret, r_str_new (flag));
@@ -78,7 +79,8 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	RList *ret = r_list_newf ((RListFree) free);
 	RList *refs = r_anal_function_get_refs (fcn);
 	r_list_foreach (refs, iter, refi) {
-		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
+		int rt = R_ANAL_REF_TYPE_MASK (refi->type);
+		if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
 			const char *flag = getRealRef (core, refi->addr);
 			if (flag) {
 				r_list_append (ret, r_str_new (flag));

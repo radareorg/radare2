@@ -175,42 +175,42 @@ e asm.demangle=false
 pd 1
 EOF
 EXPECT=<<EOF
-            ; CALL XREF from sym._init @ 0x8049008
-            ; CALL XREF from QtPrivate::RefCount::deref() @ 0x8049349 ; method.QtPrivate::RefCount.deref__
-            ; CALL XREF from QString::QString(char const*) @ 0x804939d ; method.QString.QString_char_const_
-            ; CALL XREF from QString::~QString() @ 0x80493e5 ; method.QString.QString__
-            ; CALL XREF from sym._fini @ 0x80495d4
+            ; CALL XREF from sym._init @ 0x8049008(x)
+            ; CALL XREF from QtPrivate::RefCount::deref() @ 0x8049349(x) ; method.QtPrivate::RefCount.deref__
+            ; CALL XREF from QString::QString(char const*) @ 0x804939d(x) ; method.QString.QString_char_const_
+            ; CALL XREF from QString::~QString() @ 0x80493e5(x) ; method.QString.QString__
+            ; CALL XREF from sym._fini @ 0x80495d4(x)
 / 4: sym.__x86.get_pc_thunk.bx ();
 |           0x08049140      mov ebx, dword [esp]
 
 [0x08049140]>  # sym.__x86.get_pc_thunk.bx ();
- --------------------------------------------------------------.
-|  0x8049140                                                   |
-|   ; CALL XREF from sym._init @ 0x8049008                     |
-|   ; CALL XREF from QtPrivate::RefCount::deref() @ 0x8049349  |
-|     ; method.QtPrivate::RefCount.deref__                     |
-|   ; CALL XREF from QString::QString(char const*) @ 0x804939d |
-|     ; method.QString.QString_char_const_                     |
-|   ; CALL XREF from QString::~QString() @ 0x80493e5           |
-|     ; method.QString.QString__                               |
-|   ; CALL XREF from sym._fini @ 0x80495d4                     |
-| 4: sym.__x86.get_pc_thunk.bx ();                             |
-| mov ebx, dword [esp]                                         |
-| ret                                                          |
-`--------------------------------------------------------------'
+ -----------------------------------------------------------------.
+|  0x8049140                                                      |
+|   ; CALL XREF from sym._init @ 0x8049008(x)                     |
+|   ; CALL XREF from QtPrivate::RefCount::deref() @ 0x8049349(x)  |
+|     ; method.QtPrivate::RefCount.deref__                        |
+|   ; CALL XREF from QString::QString(char const*) @ 0x804939d(x) |
+|     ; method.QString.QString_char_const_                        |
+|   ; CALL XREF from QString::~QString() @ 0x80493e5(x)           |
+|     ; method.QString.QString__                                  |
+|   ; CALL XREF from sym._fini @ 0x80495d4(x)                     |
+| 4: sym.__x86.get_pc_thunk.bx ();                                |
+| mov ebx, dword [esp]                                            |
+| ret                                                             |
+`-----------------------------------------------------------------'
 
-            ; CALL XREF from sym._init @ 0x8049008
-            ; CALL XREF from method.QtPrivate::RefCount.deref__ @ 0x8049349
-            ; CALL XREF from method.QString.QString_char_const_ @ 0x804939d
-            ; CALL XREF from method.QString.QString__ @ 0x80493e5
-            ; CALL XREF from sym._fini @ 0x80495d4
+            ; CALL XREF from sym._init @ 0x8049008(x)
+            ; CALL XREF from method.QtPrivate::RefCount.deref__ @ 0x8049349(x)
+            ; CALL XREF from method.QString.QString_char_const_ @ 0x804939d(x)
+            ; CALL XREF from method.QString.QString__ @ 0x80493e5(x)
+            ; CALL XREF from sym._fini @ 0x80495d4(x)
 / 4: sym.__x86.get_pc_thunk.bx ();
 |           0x08049140      mov ebx, dword [esp]
 
-|           ; CODE XREFS from QtPrivate::RefCount::deref() @ 0x8049371, 0x804937e
+|           ; CODE XREFS from QtPrivate::RefCount::deref() @ 0x8049371(x), 0x804937e(x)
 |           0x08049390      mov ebx, dword [var_4h]
 
-|           ; CODE XREFS from method.QtPrivate::RefCount.deref__ @ 0x8049371, 0x804937e
+|           ; CODE XREFS from method.QtPrivate::RefCount.deref__ @ 0x8049371(x), 0x804937e(x)
 |           0x08049390      mov ebx, dword [var_4h]
 EOF
 RUN
@@ -228,17 +228,17 @@ e asm.demangle=false
 pd 1 @ sym.imp._Unwind_Resume
 EOF
 EXPECT=<<EOF
-            ; CALL XREF from main @ +0x222
-            ; CALL XREF from fcn.00001717 @ +0xbb
-            ; CALL XREF from std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string<char*, void>(char*, char*, std::allocator<char> const&) @ +0x66 ; sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char__void__char__char__std::allocator_char__const_
-            ; CALL XREF from void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char*>(char*, char*, std::forward_iterator_tag) @ +0x116 ; sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char__char__char__std::forward_iterator_tag_
+            ; CALL XREF from main @ +0x222(x)
+            ; CALL XREF from fcn.00001717 @ +0xbb(x)
+            ; CALL XREF from std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string<char*, void>(char*, char*, std::allocator<char> const&) @ +0x66(x) ; sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char__void__char__char__std::allocator_char__const_
+            ; CALL XREF from void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char*>(char*, char*, std::forward_iterator_tag) @ +0x116(x) ; sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char__char__char__std::forward_iterator_tag_
 / 6: sym.imp._Unwind_Resume ();
 \           0x00000f10      jmp dword [ebx + 0x70]
 
-            ; CALL XREF from main @ +0x222
-            ; CALL XREF from fcn.00001717 @ +0xbb
-            ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char__void__char__char__std::allocator_char__const_ @ +0x66
-            ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char__char__char__std::forward_iterator_tag_ @ +0x116
+            ; CALL XREF from main @ +0x222(x)
+            ; CALL XREF from fcn.00001717 @ +0xbb(x)
+            ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char__void__char__char__std::allocator_char__const_ @ +0x66(x)
+            ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char__char__char__std::forward_iterator_tag_ @ +0x116(x)
 / 6: sym.imp._Unwind_Resume ();
 \           0x00000f10      jmp dword [ebx + 0x70]
 EOF
