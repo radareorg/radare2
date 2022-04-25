@@ -4741,14 +4741,16 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		break;
 	case 'R': // relocs
 		{
-			RBinReloc *rel;
-			RList *rels = r_bin_get_relocs_list (core->bin);
-			// const RList *rels = r_bin_patch_relocs_list (core->bin);
-			r_list_foreach (rels, iter, rel) {
-				ut64 addr = va? rel->vaddr: rel->paddr;
-				append_item (list, NULL, addr, UT64_MAX);
+			RRBTree *rels = r_bin_get_relocs (core->bin);
+			if (rels) {
+				RRBNode *node = r_crbtree_first_node (rels);
+				while (node) {
+					RBinReloc *rel = (RBinReloc *)node->data;
+					ut64 addr = va? rel->vaddr: rel->paddr;
+					append_item (list, NULL, addr, UT64_MAX);
+					node = r_rbnode_next (node);
+				}
 			}
-			r_list_free (rels);
 		}
 		break;
 	case 'r': // registers
