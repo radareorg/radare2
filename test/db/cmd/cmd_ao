@@ -10,6 +10,85 @@ type: mov
 EOF
 RUN
 
+NAME=aom-x86
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+aom
+aoml~?
+e asm.bits=32
+aoml~?
+e asm.bits=16
+aoml~?
+EOF
+EXPECT=<<EOF
+add
+1523
+1523
+1523
+EOF
+RUN
+
+NAME=aom-arm
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+aom
+aoml~?
+e asm.bits=32
+aoml~?
+e asm.bits=16
+aoml~?
+EOF
+EXPECT=<<EOF
+invalid
+949
+471
+471
+EOF
+RUN
+
+NAME=aom-mips
+FILE=-
+CMDS=<<EOF
+e asm.arch=mips
+e asm.bits=64
+aom
+aoml~?
+e asm.bits=32
+aoml~?
+e asm.bits=16
+aoml~?
+EOF
+EXPECT=<<EOF
+nop
+625
+625
+625
+EOF
+RUN
+
+NAME=aom-riscv
+FILE=-
+CMDS=<<EOF
+e asm.arch=riscv.cs
+e asm.bits=64
+aom
+aoml~?
+e asm.bits=32
+aoml~?
+e asm.bits=16
+aoml~?
+EOF
+EXPECT=<<EOF
+272
+272
+272
+EOF
+RUN
+
 NAME=aof
 FILE=-
 CMDS=<<EOF

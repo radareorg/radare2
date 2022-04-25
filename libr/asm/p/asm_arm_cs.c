@@ -149,7 +149,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		op->size = 4;
 		r_strbuf_set (&op->buf_asm, "");
 	}
+	bool needs_init = cd != 0;
 	if (!cd || mode != omode) {
+		if (!needs_init) {
+			cs_close (&cd);
+			cd = 0;
+		}
 		ret = (bits == 64)?
 			cs_open (CS_ARCH_ARM64, mode, &cd):
 			cs_open (CS_ARCH_ARM, mode, &cd);
@@ -158,11 +163,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			goto beach;
 		}
 	}
-	cs_option (cd, CS_OPT_SYNTAX, (a->config->syntax == R_ASM_SYNTAX_REGNUM)
-			? CS_OPT_SYNTAX_NOREGNAME
-			: CS_OPT_SYNTAX_DEFAULT);
-	cs_option (cd, CS_OPT_DETAIL, R_STR_ISNOTEMPTY (features) ? CS_OPT_ON: CS_OPT_OFF);
-	cs_option (cd, CS_OPT_DETAIL, CS_OPT_ON);
+	if (!needs_init) {
+		cs_option (cd, CS_OPT_SYNTAX, (a->config->syntax == R_ASM_SYNTAX_REGNUM)
+				? CS_OPT_SYNTAX_NOREGNAME
+				: CS_OPT_SYNTAX_DEFAULT);
+		cs_option (cd, CS_OPT_DETAIL, R_STR_ISNOTEMPTY (features) ? CS_OPT_ON: CS_OPT_OFF);
+		cs_option (cd, CS_OPT_DETAIL, CS_OPT_ON);
+	}
 	if (!buf) {
 		goto beach;
 	}
@@ -214,7 +221,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	cs_free (insn, n);
 	beach:
-	cs_close (&cd);
+	// cs_close (&cd);
 	if (op) {
 		if (!*r_strbuf_get (&op->buf_asm)) {
 			r_strbuf_set (&op->buf_asm, "invalid");

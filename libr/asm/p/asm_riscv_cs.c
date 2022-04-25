@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2019-2021 - pancake */
+/* radare2 - LGPL - Copyright 2019-2022 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -11,10 +11,11 @@ static csh cd = 0;
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn;
+	int size = 4;
 	int mode = (a->config->bits == 64)? CS_MODE_RISCV64 : CS_MODE_RISCV32;
-	op->size = 4;
 	if (cd != 0) {
 		cs_close (&cd);
+		cd = 0;
 	}
 	int ret = cs_open (CS_ARCH_RISCV, mode, &cd);
 	if (ret) {
@@ -28,6 +29,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 #endif
+	if (!op) {
+		goto fin;
+	}
 	int n = cs_disasm (cd, (ut8*)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
 		r_asm_op_set_asm (op, "invalid");
@@ -37,7 +41,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (insn->size < 1) {
 		goto beach;
 	}
-	op->size = insn->size;
+	size = op->size = insn->size;
 	char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 	if (str) {
 		r_str_replace_char (str, '$', 0);
@@ -49,7 +53,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 beach:
 	// cs_close (&cd);
 fin:
-	return op->size;
+	return size;
 }
 
 RAsmPlugin r_asm_plugin_riscv_cs = {

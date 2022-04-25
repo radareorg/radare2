@@ -7775,10 +7775,12 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			if (input[1] == ' ' && !IS_DIGIT (input[2])) {
 				r_cons_printf ("%d\n", r_asm_mnemonics_byname (core->rasm, input + 2));
 			} else {
+				// "aoml"
 				const int id = (input[1] == ' ')
 					?(int)r_num_math (core->num, input + 2): -1;
 				char *ops = r_asm_mnemonics (core->rasm, id, input[1] == 'j');
 				if (ops) {
+					r_str_trim (ops);
 					r_cons_println (ops);
 					free (ops);
 				}
