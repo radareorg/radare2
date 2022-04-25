@@ -207,22 +207,20 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 			free (mapref);
 			return false;
 		}
-		r_io_submap_set_from (bdsm, r_io_submap_to (sm) + 1);
-		r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
-		// TODO: insert and check return value, before adjusting sm size
 		if (!r_crbtree_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL)) {
 			free (sm);
 			free (bdsm);
 			free (mapref);
 			return false;
 		}
+		r_io_submap_set_from (bdsm, r_io_submap_to (sm) + 1);
 		if (!r_crbtree_insert (bank->submaps, bdsm, _find_sm_by_from_vaddr_cb, NULL)) {
 			r_crbtree_delete (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
-			free (sm);
 			free (bdsm);
 			free (mapref);
 			return false;
 		}
+		r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
 		r_list_append (bank->maprefs, mapref);
 		return true;
 	}
@@ -351,11 +349,19 @@ found:
 			return false;
 		}
 		r_io_submap_set_from (bdsm, r_io_submap_to (sm) + 1);
+		if (!r_crbtree_insert (bank->submaps, bdsm, _find_sm_by_from_vaddr_cb, NULL)) {
+			free (sm);
+			free (bdsm);
+			return false;
+		}
+		if (!r_crbtree_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL)) {
+			free (sm);
+			r_crbtree_delete (bank->submaps, bdsm, _find_sm_by_from_vaddr_cb, NULL);
+			return false;
+		}
 		r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
-		// TODO: insert and check return value, before adjusting sm size
 		r_list_iter_to_top (bank->maprefs, iter);
-		return r_crbtree_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL) &
-			r_crbtree_insert (bank->submaps, bdsm, _find_sm_by_from_vaddr_cb, NULL);
+		return true;
 	}
 
 	if (r_io_submap_from (bd) < r_io_submap_from (sm)) {
