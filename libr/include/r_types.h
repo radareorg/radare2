@@ -86,6 +86,7 @@
 #define R_PERM_PRIV	16
 #define R_PERM_ACCESS	32
 #define R_PERM_CREAT	64
+#define R_PERM_RELOC	128
 
 
 // HACK to fix capstone-android-mips build
