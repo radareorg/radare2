@@ -888,10 +888,13 @@ static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
 	}
 
 	ut16 jmp_addr;
-	to_address (arg[1], &jmp_addr);
+	if (!to_address (arg[1], &jmp_addr)) {
+		R_LOG_DEBUG ("error during the assembly: address %x not found", jmp_addr);
+		return false;
+	}
 
 	if (!relative_address (pc + 1, jmp_addr, (*out) + 2)) {
-		eprintf ("error during the assembly: address %x not found\n", jmp_addr);
+		R_LOG_DEBUG ("error during the assembly: address %x not found", jmp_addr);
 		return false;
 	}
 

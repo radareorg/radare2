@@ -1361,7 +1361,7 @@ RList *linux_desc_list(int pid) {
 				type = '-';
 			}
 		}
-		// Read permissions
+		// Read permissions // TOCTOU
 		if (lstat (fn, &st) != -1) {
 			if (st.st_mode & S_IRUSR) {
 				perm |= R_PERM_R;
@@ -1385,10 +1385,10 @@ RList *linux_desc_list(int pid) {
 				free (fn);
 				return NULL;
 			}
-			free (fn);
 			fdinfo[sizeof (fdinfo) - 1] = '\0';
 			close (f);
 		}
+		free (fn);
 		/* First line of fdinfo is "pos: [offset]" */
 		ut64 offset = (int) r_num_math (NULL, r_str_trim_head_ro (fdinfo + 4));
 		RDebugDesc *desc = r_debug_desc_new (atoi (de->d_name), buf, perm, type, offset);

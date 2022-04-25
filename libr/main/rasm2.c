@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nibble, maijin */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nibble, maijin */
 
 #include <r_anal.h>
 #include <r_asm.h>
@@ -34,10 +34,9 @@ static RAsmState *__as_new(void) {
 	if (as) {
 		as->l = r_lib_new (NULL, NULL);
 		as->a = r_asm_new ();
-		if (as->a) {
-			as->a->num = r_num_new (NULL, NULL, NULL);
-		}
 		as->anal = r_anal_new ();
+		r_unref (as->anal->config);
+		as->a->num = r_num_new (NULL, NULL, NULL);
 		as->anal->config = r_ref (as->a->config);
 		r_anal_bind (as->anal, &as->a->analb);
 		__load_plugins (as);

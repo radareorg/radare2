@@ -842,7 +842,6 @@ static int xnu_write_mem_maps_to_buffer(RBuffer *buffer, RList *mem_maps, int st
 				// xfer_foffset += xfer_size;
 			}
 		}
-
 		hoffset += segment_command_sz;
 		foffset += curr_map->size;
 		vmoffset += curr_map->size;

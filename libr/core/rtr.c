@@ -110,7 +110,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 	char buf[1024];
 	int lastmsg = 0;
 	const char *me = r_config_get (core->config, "cfg.user");
-	char *ret, msg[1024];
+	char *ret, msg[1024] = {0};
 
 	eprintf ("Type '/help' for commands and ^D to quit:\n");
 	char *oldprompt = strdup (r_line_singleton ()->prompt);

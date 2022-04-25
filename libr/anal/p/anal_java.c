@@ -208,7 +208,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		return sz;
 	}
 	IFDBG {
-		R_LOG_DEBUG ("Extracting op from buffer (%d byte(s)) @ 0x%04x\n", len, addr);
+		R_LOG_DEBUG ("Extracting op from buffer (%d byte(s)) @ 0x%04x\n", (int)len, (ut32)addr);
 		R_LOG_DEBUG ("Parsing op: (0x%02x) %s.\n", op_byte, JAVA_OPS[op_byte].name);
 	}
 	op->addr = addr;

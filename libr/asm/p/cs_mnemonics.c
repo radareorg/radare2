@@ -14,7 +14,7 @@ static char *mnemonics(RAsm *a, int id, bool json) {
 		pj = pj_new ();
 		pj_a (pj);
 	} else {
-		r_strbuf_new ("");
+		buf = r_strbuf_new ("");
 	}
 	for (i = 1; ; i++) {
 		const char *op = cs_insn_name (cd, i);

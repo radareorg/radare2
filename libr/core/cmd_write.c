@@ -1654,6 +1654,7 @@ static int cmd_ww(void *data, const char *input) {
 	char *str = ostr;
 	int len = r_str_unescape (str);
 	if (len < 1) {
+		free (ostr);
 		return 0;
 	}
 	len++;
@@ -1663,10 +1664,11 @@ static int cmd_ww(void *data, const char *input) {
 	if (tmp) {
 		int i;
 		for (i = 0; i < len; i++) {
-			if (i % 2)
+			if (i % 2) {
 				tmp[i] = 0;
-			else
+			} else {
 				tmp[i] = str[i >> 1];
+			}
 		}
 		str = tmp;
 		if (core->io->desc) {
@@ -1784,7 +1786,7 @@ static int cmd_wa(void *data, const char *input) {
 				ut64 at = core->offset;
 repeat:
 				if (!r_anal_op (core->anal, &analop, at, core->block + delta, core->blocksize - delta, R_ANAL_OP_MASK_BASIC)) {
-					eprintf ("Invalid instruction?\n");
+					R_LOG_DEBUG ("Invalid instruction?");
 					break;
 				}
 				if (delta < acode->len) {
@@ -1800,11 +1802,13 @@ repeat:
 			} else if (input[0] == 'i') { // "wai"
 				RAnalOp analop;
 				if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
-					eprintf ("Invalid instruction?\n");
+					R_LOG_DEBUG ("Invalid instruction?");
+					r_anal_op_fini (&analop);
+					r_asm_code_free (acode);
 					break;
 				}
 				if (analop.size < acode->len) {
-					eprintf ("Doesnt fit\n");
+					R_LOG_DEBUG ("Doesnt fit");
 					r_anal_op_fini (&analop);
 					r_asm_code_free (acode);
 					break;

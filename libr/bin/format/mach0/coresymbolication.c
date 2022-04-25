@@ -362,10 +362,6 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 				continue;
 			}
 			string_origin = relative_to_strings? b + start_of_strings : cursor;
-			if (!string_origin) {
-				cursor += R_CS_EL_SIZE_LSYM;
-				continue;
-			}
 			lsym->flc.file = str_dup_safe (b, string_origin + file_name_off, end);
 			if (!lsym->flc.file) {
 				cursor += R_CS_EL_SIZE_LSYM;
