@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2019 - pancake */
+/* radare - LGPL - Copyright 2014-2022 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -102,13 +102,21 @@ static RList* sections(RBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup ("relocs");
-	ptr->vsize = ptr->size = pai.num_reloc_entries * sizeof (ut32);
-	ptr->vaddr = ptr->paddr = pai.reloc_list_start;
-	ptr->perm = R_PERM_RW;
-	ptr->add = true;
-	r_list_append (ret, ptr);
-	if (ptr->vaddr < textsize) {
-		textsize = ptr->vaddr;
+	ut64 sz = pai.num_reloc_entries * sizeof (ut32);
+	ut64 ss = pai.reloc_list_start;
+	if (ss < r_buf_size (bf->buf)) {
+		if (ss + sz >= r_buf_size (bf->buf)) {
+			ut64 left = r_buf_size (bf->buf) - ss;
+			sz = left;
+		}
+		ptr->vaddr = ptr->paddr = ss;
+		ptr->vsize = ptr->size = sz;
+		ptr->perm = R_PERM_RWX;
+		ptr->add = true;
+		r_list_append (ret, ptr);
+		if (ptr->vaddr < textsize) {
+			textsize = ptr->vaddr;
+		}
 	}
 
 	// imho this must be a symbol

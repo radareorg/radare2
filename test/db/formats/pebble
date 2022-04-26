@@ -1,0 +1,29 @@
+NAME=Pebble: Open/iI
+FILE=bins/pebble/pebble-app.bin
+CMDS=iI~?pebble
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=Pebble: page perms
+FILE=bins/pebble/pebble-app.bin
+CMDS=<<EOF
+aaa
+aflc
+EOF
+EXPECT=<<EOF
+65
+EOF
+RUN
+
+NAME=Pebble: negative region bug
+FILE=bins/pebble/pebble-app2.bin
+CMDS=<<EOF
+om
+EOF
+EXPECT=<<EOF
+* 2 fd: 3 +0x00000000 0x00000000 - 0x000000d7 r-x fmap.relocs
+- 1 fd: 3 +0x00000000 0x00000000 - 0x0000007b r-- fmap.header
+EOF
+RUN
