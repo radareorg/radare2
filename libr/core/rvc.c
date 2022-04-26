@@ -239,18 +239,16 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 	i = sdb_get (db, sdb_const_get (db, CURRENTB, 0), 0);
 	if (!i) {
 		r_list_free (ret);
-		sdb_unlink (db);
-		sdb_free (db);
-		return NULL;
+		ret = NULL;
+		goto ret;
 	}
 	if (!strcmp (i, NULLVAL)) {
-		sdb_unlink (db);
-		sdb_free (db);
-		return ret;
+		goto ret;
 	}
 	while (true) {
 		if (!r_list_prepend (ret, i)) {
 			r_list_free (ret);
+			ret = NULL;
 			break;
 		}
 		i = sdb_get (db, i, 0);
@@ -263,6 +261,7 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 			break;
 		}
 	}
+ret:
 	sdb_unlink (db);
 	sdb_free (db);
 	return ret;
@@ -274,9 +273,6 @@ static bool in_rvc_ignore(const RList *ignore, const char *rpf) {
 	RListIter *iter;
 	char *p;
 	bool ret = false;
-	if (!ignore) {
-		return false;
-	}
 	r_list_foreach (ignore, iter, p) {
 		char *stripped = strip_sys_dir (p);
 		if (stripped) {
@@ -303,7 +299,7 @@ static bool update_blobs(const RList *ignore, RList *blobs, const RList *nh) {
 			continue;
 		}
 		blob->fhash = r_str_new (nh->tail->data);
-		return blob->fhash;
+		return (bool) blob->fhash;
 	}
 	blob = R_NEW (RvcBlob);
 	if (!blob) {
@@ -312,18 +308,18 @@ static bool update_blobs(const RList *ignore, RList *blobs, const RList *nh) {
 	blob->fhash = r_str_new (nh->tail->data);
 	blob->fname = r_str_new (nh->head->data);
 	if (!blob->fhash || !blob->fname) {
-		free (blob->fhash);
-		free (blob->fname);
-		free (blob);
-		return false;
+		goto fail_ret;
 	}
 	if (!r_list_append (blobs, blob)) {
-		free (blob->fhash);
-		free (blob->fname);
-		free (blob);
-		return false;
+		goto fail_ret;
 	}
 	return true;
+fail_ret:
+	free (blob->fhash);
+	free (blob->fname);
+	free (blob);
+	return false;
+
 }
 
 static int branch_exists(const char *rp, const char *bname) {
@@ -352,7 +348,7 @@ static RList *get_blobs(const char *rp, RList *ignore) {
 	}
 	RList *ret = r_list_new ();
 	if (!ret) {
-		r_list_free (commits);
+		goto ret;
 	}
 	RListIter *i;
 	char *hash;
@@ -360,37 +356,26 @@ static RList *get_blobs(const char *rp, RList *ignore) {
 		char *commit_path = r_file_new (rp, ".rvc", "commits",
 				hash, NULL);
 		if (!commit_path) {
-			free_blobs (ret);
-			ret = NULL;
-			break;
+			goto fail_ret;
 		}
 		char *content = r_file_slurp (commit_path, 0);
 		free (commit_path);
 		if (!content) {
-			free_blobs (ret);
-			ret = NULL;
-			break;
+			goto fail_ret;
 		}
 		RList *lines = r_str_split_duplist (content, "\n", true);
 		free (content);
 		if (!lines) {
-			free_blobs (ret);
-			ret = NULL;
-			break;
+			goto fail_ret;
 		}
 		RListIter *j;
 		char *ln;
 		bool found = false;
 		r_list_foreach (lines, j, ln) {
 			if (!found) {
-				found = !r_str_cmp (ln, COMMIT_BLOB_SEP, r_str_len_utf8 (COMMIT_BLOB_SEP));
+				found = !r_str_cmp (ln, COMMIT_BLOB_SEP,
+						r_str_len_utf8 (COMMIT_BLOB_SEP));
 				continue;
-			}
-			RvcBlob *blob = R_NEW (RvcBlob);
-			if (!blob) {
-				free_blobs (ret);
-				ret = NULL;
-				break;
 			}
 			RList *kv = r_str_split_list (ln, "=", 2);
 			if (!kv) {
@@ -407,8 +392,12 @@ static RList *get_blobs(const char *rp, RList *ignore) {
 		}
 		r_list_free (lines);
 	}
+ret:
 	r_list_free (commits);
 	return ret;
+fail_ret:
+	free_blobs(ret);
+	return NULL;
 }
 
 static bool rm_empty_dir(const char *rp) {
