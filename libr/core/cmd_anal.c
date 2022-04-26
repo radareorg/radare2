@@ -51,7 +51,7 @@ static const char *help_msg_a[] = {
 	"ah", "[?]", "analysis hints (force opcode size, ...)",
 	"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 	"aj", "", "same as a* but in json (aflj)",
-	"aL", "", "list all asm/anal plugins (e asm.arch=?)",
+	"aL", "[jq]", "list all asm/anal plugins (See `e asm.arch=?` and `La[jq]`)",
 	"an", "[?] [name]", "show/rename/create whatever var/flag/function is used in current instruction",
 	"ao", "[?] [len]", "analyze Opcodes (or emulate it)",
 	"aO", "[?] [len]", "analyze N instructions in M bytes",
@@ -12333,7 +12333,19 @@ static int cmd_anal(void *data, const char *input) {
 	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
 	case 'r': cmd_anal_reg (core, input + 1); break;  // "ar"
 	case 'e': cmd_anal_esil (core, input + 1, true); break; // "ae"
-	case 'L': return r_core_cmd0 (core, "e asm.arch=??"); break;
+	case 'L':
+		switch (input[1]) {
+		case 'j':
+		case 'q':
+		case 0:
+			rasm2_list (core, NULL, input[1]);
+			break;
+		default:
+			// help
+			r_core_cmd_help (core, help_msg_La);
+			break;
+		}
+		break;
 	case 'o': cmd_anal_opcode (core, input + 1); break; // "ao"
 	case 'O': cmd_anal_bytes (core, input + 1); break; // "aO"
 	case 'F': // "aF"

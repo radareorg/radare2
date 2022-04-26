@@ -132,7 +132,7 @@ static const char *has_esil(RCore *core, const char *name) {
 }
 
 // copypasta from binr/rasm2/rasm2.c
-static bool rasm2_list(RCore *core, const char *arch, int fmt) {
+bool rasm2_list(RCore *core, const char *arch, int fmt) {
 	int i;
 	const char *feat2, *feat;
 	RAsm *a = core->rasm;
@@ -736,20 +736,18 @@ static bool cb_asmarch(void *user, void *data) {
 	char *asm_cpu = strdup (r_config_get (core->config, "asm.cpu"));
 	if (core->rasm->cur) {
 		const char *new_asm_cpu = core->rasm->cur->cpus;
-		if (new_asm_cpu) {
-			if (*new_asm_cpu) {
-				char *nac = strdup (new_asm_cpu);
-				char *comma = strchr (nac, ',');
-				if (comma) {
-					if (!*asm_cpu || (*asm_cpu && !strstr(nac, asm_cpu))) {
-						*comma = 0;
-						r_config_set (core->config, "asm.cpu", nac);
-					}
+		if (R_STR_ISNOTEMPTY (new_asm_cpu)) {
+			char *nac = strdup (new_asm_cpu);
+			char *comma = strchr (nac, ',');
+			if (comma) {
+				if (!*asm_cpu || (*asm_cpu && !strstr(nac, asm_cpu))) {
+					*comma = 0;
+					r_config_set (core->config, "asm.cpu", nac);
 				}
-				free (nac);
-			} else {
-				r_config_set (core->config, "asm.cpu", "");
 			}
+			free (nac);
+		} else {
+			r_config_set (core->config, "asm.cpu", "");
 		}
 		bits = core->rasm->cur->bits;
 		if (8 & bits) {

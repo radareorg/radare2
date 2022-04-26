@@ -1,9 +1,19 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <string.h>
 #include "r_config.h"
 #include "r_cons.h"
 #include "r_core.h"
+
+bool rasm2_list(RCore *core, const char *arch, int fmt);
+
+static const char *help_msg_La[] = {
+	"Usage:", "La[qj]", " # asm/anal plugin list",
+	"La",  "", "List asm/anal pluginsh (See rasm2 -L)",
+	"Laq",  "", "Only list the plugin name",
+	"Laj",  "", "Full list, but in JSON format",
+	NULL
+};
 
 // TODO #7967 help refactor: move to another place
 static const char *help_msg_L[] = {
@@ -11,8 +21,8 @@ static const char *help_msg_L[] = {
 	"L",  "", "show this help",
 	"L", " blah."R_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name",
-	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
-	"Lc", "", "list core plugins",
+	"La", "[qj]", "list asm/anal plugins (see: aL, e asm.arch=" "??" ")",
+	"Lc", "", "list core plugins (see",
 	"Ld", "", "list debug plugins (dL)",
 	"LD", "", "list supported decompilers (e cmd.pdc=?)",
 	"Le", "", "list esil plugins",
@@ -346,7 +356,12 @@ static int cmd_plugins(void *data, const char *input) {
 		r_core_cmd0 (core, "ph"); // rahash2 -L is more verbose
 		break;
 	case 'a': // "La"
-		r_core_cmd0 (core, "e asm.arch=??");
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_La);
+		} else {
+			// r_core_cmd0 (core, "e asm.arch=??");
+			rasm2_list (core, NULL, input[1]);
+		}
 		break;
 	case 'p': // "Lp"
 		r_core_cmd0 (core, "e asm.parser=?");
