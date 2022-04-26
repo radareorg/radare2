@@ -14,6 +14,7 @@ char *get_argv(const char *l, int *argpos, int pos) {
 
 R_API int r_sys_tem_statement(const char *l) {
 #define MAXARG 16
+	l = r_str_trim_head_ro (l);
 	int argc = 0;
 	int argv[32]; // max 16 args
 	int i, pos = 0;
@@ -52,12 +53,13 @@ R_API int r_sys_tem_statement(const char *l) {
 	for (i = 0; i < argc; i++) {
 		char *s = get_argv (l, argv, i);
 		// unescape and remove heading/tail quotes if any
-		eprintf ("ARG %d %s \n", i, s);
+		// eprintf ("ARG %d %s \n", i, s);
 		if (i == 0) {
 			progname = s;
 		} else {
 			r_strbuf_append (sb, " ");
-			s = r_str_replace (s, "$FOO", "PATATA", 1);
+			// TODO: replace env vars 
+			// s = r_str_replace (s, "$FOO", "TMP", 1);
 			r_strbuf_append (sb, s);
 			free (s);
 		}
@@ -120,22 +122,34 @@ repeat:
 			}
 		} else if (lc == '|' && ld == '|') {
 			if (!inquote) {
-				if (rc) {
-					eprintf ("|| failed\n");
-					return 1;
+				if (pos == cmdpos) {
+					if (rc) {
+						nextpos = pos + 2;
+						cmdpos += 2;
+						break;
+					} else {
+						// eprintf ("|| failed\n");
+						return 1;
+					}
 				} else {
-					nextpos = pos;
+					nextpos = pos - 1;
 					break;
 				}
 			}
 		} else if (lc == '&' && ld == '&') {
 			if (!inquote) {
-				if (rc) {
-					nextpos = pos;
-					break;
+				if (pos == cmdpos) {
+					if (rc) {
+						// eprintf ("&& failed\n");
+						return 1;
+					} else {
+						cmdpos += 2;
+						nextpos = pos + 2;
+						break;
+					}
 				} else {
-					eprintf ("&& failed\n");
-					return 1;
+					nextpos = pos - 1;
+					break;
 				}
 			}
 		} else if (lc == ';') {
@@ -150,10 +164,12 @@ repeat:
 		char *s = r_str_ndup (l + cmdpos, nextpos - cmdpos);
 		rc = r_sys_tem_statement (s);
 		free (s);
+		int nc = l[nextpos];
 		cmdpos = nextpos + 1;
 		nextpos = 0;
 		goto repeat;
 	} else {
+		// eprintf ("RUN (%s)\n", l + cmdpos);
 		rc = r_sys_tem_statement (l + cmdpos);
 	}
 	//r_sys_setenv ("?", rc);
