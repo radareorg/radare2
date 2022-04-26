@@ -51,6 +51,13 @@ static const char *help_msg_sdot[] = {
 	NULL
 };
 
+static const char *help_msg_sh[] = {
+	"Usage:", "sh", "r2's posix shell compatible subset",
+	"sh", "", "enters a posix shell subset repl (requires scr.interactive)",
+	"sh", " [cmd]", "run the given line and update $?",
+	NULL
+};
+
 static const char *help_msg_sC[] = {
 	"Usage:", "sC", "Comment grep",
 	"sC", "*", "list all comments",
@@ -783,10 +790,13 @@ static int cmd_seek(void *data, const char *input) {
 	}
 	break;
 	case 'h': // "sh"
-		{
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_sh);
+		} else {
 			char *arg = r_str_trim_dup (input + 1);
 			if (R_STR_ISNOTEMPTY (arg)) {
-				r_sys_tem (arg);
+				int rc = r_sys_tem (arg);
+				r_core_return_code (core, (rc > 0)? rc: 1);
 			} else {
 				if (!r_config_get_b (core->config, "scr.interactive")) {
 					eprintf ("enable scr.interactive to use this new shell prompt\n");
@@ -799,7 +809,8 @@ static int cmd_seek(void *data, const char *input) {
 					if (!line || !strcmp (line, "exit")) {
 						break;
 					}
-					r_sys_tem (line);
+					int rc = r_sys_tem (line);
+					r_core_return_code (core, (rc > 0)? rc: 1);
 				}
 			}
 			free (arg);
