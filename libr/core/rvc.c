@@ -273,9 +273,6 @@ static bool in_rvc_ignore(const RList *ignore, const char *rpf) {
 	RListIter *iter;
 	char *p;
 	bool ret = false;
-	if (!ignore) {
-		return false;
-	}
 	r_list_foreach (ignore, iter, p) {
 		char *stripped = strip_sys_dir (p);
 		if (stripped) {
