@@ -299,7 +299,7 @@ static bool update_blobs(const RList *ignore, RList *blobs, const RList *nh) {
 			continue;
 		}
 		blob->fhash = r_str_new (nh->tail->data);
-		return blob->fhash;
+		return (bool) blob->fhash;
 	}
 	blob = R_NEW (RvcBlob);
 	if (!blob) {
@@ -308,18 +308,18 @@ static bool update_blobs(const RList *ignore, RList *blobs, const RList *nh) {
 	blob->fhash = r_str_new (nh->tail->data);
 	blob->fname = r_str_new (nh->head->data);
 	if (!blob->fhash || !blob->fname) {
-		free (blob->fhash);
-		free (blob->fname);
-		free (blob);
-		return false;
+		goto fail_ret;
 	}
 	if (!r_list_append (blobs, blob)) {
-		free (blob->fhash);
-		free (blob->fname);
-		free (blob);
-		return false;
+		goto fail_ret;
 	}
 	return true;
+fail_ret:
+	free (blob->fhash);
+	free (blob->fname);
+	free (blob);
+	return false;
+
 }
 
 static int branch_exists(const char *rp, const char *bname) {
