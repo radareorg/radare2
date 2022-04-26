@@ -322,18 +322,18 @@ fail_ret:
 
 }
 
-static bool branch_exists(const char *rp, const char *bname) {
+static int branch_exists(const char *rp, const char *bname) {
 	RList *branches = r_vc_get_branches (rp);
 	if (!branches) {
-		return false;
+		return -1;
 	}
 	RListIter *iter;
 	char *branch;
-	bool ret = false;
+	bool ret = 0;
 	r_list_foreach (branches, iter, branch) {
 		branch = branch + r_str_len_utf8 (BPREFIX);
 		if (!strcmp (branch, bname)) {
-			ret = true;
+			ret = 1;
 			break;
 		}
 	}
@@ -877,9 +877,14 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 		eprintf ("The branch name %s is invalid\n", bname);
 		return false;
 	}
-	if (!branch_exists(rp, bname)) {
-		eprintf ("The branch %s does not exist\n", bname);
-		return false;
+	{
+		int ret = branch_exists (rp, bname);
+		if (ret < 0) {
+			return false;
+		} else if (ret) {
+			eprintf ("The branch %s already exists\n", bname);
+			return false;
+		}
 	}
 	Sdb *db = vcdb_open (rp);
 	current_branch = sdb_const_get (db, CURRENTB, 0);
@@ -960,9 +965,15 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		eprintf ("No valid repo in %s\n", rp);
 		return false;
 	}
-	if (!branch_exists (rp, bname)) {
-		eprintf ("The branch %s doesn't exist.\n", bname);
-		return false;
+	{
+		int ret = branch_exists (rp, bname);
+		if (ret < 0) {
+			return false;
+		}
+		if (ret == 0) {
+			eprintf ("The branch %s doesn't exist.\n", bname);
+			return false;
+		}
 	}
 	RList *uncommitted = r_vc_get_uncommitted (rp);
 	RListIter *i;
