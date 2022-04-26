@@ -134,7 +134,7 @@ if [ -n "${CS_ARCHIVE}" ]; then
 else
 	git_assert
 	get_capstone
-	# if [ ! -d capstone/.git ]; then update_capstone_git fi
+	[ -d capstone/.git ] && update_capstone_git
 fi
 cd capstone || fatal_msg 'Cannot change working directory'
 patch_capstone
