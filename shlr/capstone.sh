@@ -80,6 +80,7 @@ get_capstone() {
 }
 
 update_capstone_git() {
+	cd capstone || fatal_msg 'Failed to chdir'
 	git checkout "${CS_BRA}" || fatal_msg "Cannot checkout to branch $CS_BRA"
 #	if [ -n "${CS_TIP}" ]; then
 #		# if our shallow clone not contains CS_TIP, clone until it
@@ -99,6 +100,7 @@ update_capstone_git() {
 		fi
 		env EDITOR=cat git revert --no-edit "${CS_REV}"
 	fi
+	cd ..
 }
 
 ### MAIN ###
