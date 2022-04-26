@@ -57,6 +57,7 @@ R_API void r_sys_perror_str(const char *fun);
 #else
 #define r_sys_mkdir_failed() (errno != EEXIST)
 #endif
+R_API int r_sys_tem(const char *s);
 R_API const char *r_sys_prefix(const char *pfx);
 R_API bool r_sys_mkdir(const char *dir);
 R_API bool r_sys_mkdirp(const char *dir);
