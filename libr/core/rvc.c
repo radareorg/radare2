@@ -239,18 +239,16 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 	i = sdb_get (db, sdb_const_get (db, CURRENTB, 0), 0);
 	if (!i) {
 		r_list_free (ret);
-		sdb_unlink (db);
-		sdb_free (db);
-		return NULL;
+		ret = NULL;
+		goto ret;
 	}
 	if (!strcmp (i, NULLVAL)) {
-		sdb_unlink (db);
-		sdb_free (db);
-		return ret;
+		goto ret;
 	}
 	while (true) {
 		if (!r_list_prepend (ret, i)) {
 			r_list_free (ret);
+			ret = NULL;
 			break;
 		}
 		i = sdb_get (db, i, 0);
@@ -263,6 +261,7 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 			break;
 		}
 	}
+ret:
 	sdb_unlink (db);
 	sdb_free (db);
 	return ret;
