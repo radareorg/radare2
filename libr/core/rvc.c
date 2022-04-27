@@ -1281,3 +1281,20 @@ R_API bool rvc_git_repo_exists(const RCore *core, const char *rp) {
 	}
 	return false;
 }
+
+R_API Rvc *r_vc_load(char *rp) {
+	Rvc *repo = R_NEW(Rvc);
+	if (repo) {
+		repo->path = r_str_new(rp);
+		if (repo->path) {
+			repo->db = vcdb_open(rp) ;
+			if (repo->db) {
+				return repo;
+			}
+			free (repo->path);
+		}
+		free(repo);
+	}
+	return NULL;
+
+}
