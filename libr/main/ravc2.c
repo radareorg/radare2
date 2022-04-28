@@ -85,9 +85,13 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		}
 		return 0;
 	}
+	Rvc *rvc = r_vc_load(rp);
+	if (!rvc) {
+		return 1;
+	}
 	if (!strcmp (action, "branch")) {
 		if (opt.argc <= 2) {
-			RList *branches = r_vc_get_branches (rp);
+			RList *branches = r_vc_get_branches (rvc);
 			if (!branches) {
 				free (rp);
 				return 1;
@@ -103,7 +107,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			r_list_free (branches);
 			return 0;
 		}
-		if (!r_vc_branch (rp, opt.argv[opt.ind + 1])) {
+		if (!r_vc_branch (rvc, opt.argv[opt.ind + 1])) {
 			free (rp);
 			return 1;
 		}
@@ -153,7 +157,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			free (rp);
 			return 1;
 		}
-		bool ret = r_vc_commit (rp, message, author, files);
+		bool ret = r_vc_commit (rvc, message, author, files);
 		free (message);
 		free (author);
 		r_list_free (files);
@@ -168,7 +172,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			free (rp);
 			return 1;
 		}
-		if (!r_vc_checkout (rp, opt.argv[opt.ind + 1])) {
+		if (!r_vc_checkout (rvc, opt.argv[opt.ind + 1])) {
 			free (rp);
 			return 1;
 		}
@@ -176,7 +180,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		return 0;
 	}
 	if (!strcmp (action, "log")) {
-		RList *commits = r_vc_log (rp);
+		RList *commits = r_vc_log (rvc);
 		if (!commits) {
 			return 1;
 		}
@@ -189,11 +193,11 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		return 0;
 	}
 	if (!strcmp (action, "status")) {
-		char *cb = r_vc_current_branch (rp);
+		char *cb = r_vc_current_branch (rvc);
 		if (!cb) {
 			return 1;
 		}
-		RList *unc = r_vc_get_uncommitted (rp);
+		RList *unc = r_vc_get_uncommitted (rvc);
 		if (!unc) {
 			free (cb);
 			return 1;
@@ -214,7 +218,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		return 0;
 	}
 	if (!strcmp (action, "reset")) {
-		if (!r_vc_reset (rp)) {
+		if (!r_vc_reset (rvc)) {
 			free (rp);
 			eprintf ("Couldn't reset\n");
 			return 1;
