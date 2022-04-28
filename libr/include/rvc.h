@@ -36,12 +36,13 @@ R_API RList *r_vc_log(Rvc *rvc);
 R_API char *r_vc_current_branch(Rvc *rvc);
 R_API bool r_vc_reset(Rvc *rvc);
 R_API bool r_vc_clone(const char *src, const char *dst);
+R_API Rvc *r_vc_load(const char *rp);
 
-R_API bool rvc_git_init(const RCore *core, const char *rp);
-R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files);
-R_API bool rvc_git_branch(const RCore *core, const char *rp, const char *bname);
-R_API bool rvc_git_checkout(const RCore *core, const char *rp, const char *bname);
-R_API bool rvc_git_repo_exists(const RCore *core, const char *rp);
+R_API bool rvc_git_init(const RCore *core, const char *path);
+R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files);
+R_API bool rvc_git_branch(const RCore *core, Rvc *rvc, const char *bname);
+R_API bool rvc_git_checkout(const RCore *core, Rvc *rvc, const char *bname);
+R_API bool rvc_git_repo_exists(const RCore *core, const char *path);
 
 #ifdef __cplusplus
 }

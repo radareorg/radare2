@@ -520,7 +520,7 @@ R_API RList *r_vc_get_uncommitted(Rvc *rvc) {
 	RListIter *iter;
 	RvcBlob *blob;
 	r_list_foreach (blobs, iter, blob) {
-		char *blob_absp = rp2absp (rvc->path, blob->fname);
+		char *blob_absp = rp2absp (rvc, blob->fname);
 		if (!blob_absp) {
 			goto fail_ret;
 		}
@@ -568,7 +568,7 @@ R_API RList *r_vc_get_uncommitted(Rvc *rvc) {
 	free_blobs (blobs);
 	blobs = NULL;
 	r_list_foreach (files, iter, file) {
-		char *rfp = absp2rp (rvc->path, file);
+		char *rfp = absp2rp (rvc, file);
 		if (!rfp) {
 			goto fail_ret;
 		}
@@ -652,7 +652,7 @@ static RvcBlob *bfadd(Rvc *rvc, const char *fname) {
 		free (ret);
 		return NULL;
 	}
-	ret->fname = absp2rp (rvc->path, absp);
+	ret->fname = absp2rp (rvc, absp);
 	if (!ret->fname) {
 		free (ret);
 		free (absp);
@@ -1055,17 +1055,19 @@ R_API char *r_vc_current_branch(Rvc *rvc) {
 }
 
 R_API bool r_vc_clone(const char *src, const char *dst) {
-	printf ("src, dst: %s, %s\n", src, dst);
 	char *drp = r_file_new (dst, ".rvc", NULL);
 	bool ret = false;
 	if (drp) {
 		char *srp = r_file_new (src, ".rvc", NULL);
 		if (srp) {
 			if (file_copyrf (srp, drp)) {
-				if (r_vc_reset (dst)) {
-					ret = true;
-				} else {
-					eprintf("Failed to reset\n");
+				Rvc *dst_repo = r_vc_load(dst);
+				if (dst_repo) {
+					if (r_vc_reset (dst_repo)) {
+						ret = true;
+					} else {
+						eprintf("Failed to reset\n");
+					}
 				}
 			} else {
 				eprintf ("Failed to copy files\n");
@@ -1160,12 +1162,12 @@ R_API bool r_vc_reset(Rvc *rvc) {
 	r_list_foreach (uncommitted, iter, fp) {
 		char *blobp;
 		{
-			char *p = absp2rp (rvc->path, fp);
+			char *p = absp2rp (rvc, fp);
 			if (!p) {
 				ret = false;
 				break;
 			}
-			char *b = find_blob_hash (rvc->path, p);
+			char *b = find_blob_hash (rvc, p);
 			if (!b || !strcmp (b, "-")) {
 				free (p);
 				if (!r_file_rm (fp)) {
@@ -1194,15 +1196,15 @@ R_API bool r_vc_reset(Rvc *rvc) {
 
 //Access both git and rvc functionality from one set of functions
 
-R_API bool rvc_git_init(const RCore *core, const char *rp) {
+R_API bool rvc_git_init(const RCore *core, const char *path) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
-		return r_vc_git_init (rp);
+		return r_vc_git_init (path);
 	}
 	printf ("rvc is just for testing please don't use it\n");
-	return r_vc_new (rp);
+	return r_vc_new (path);
 }
 
-R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
+R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files) {
 	const char *m = r_config_get (core->config, "prj.vc.message");
 	if (!*m) {
 		if (!r_cons_is_interactive ()) {
@@ -1214,38 +1216,38 @@ R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, cons
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		author = author? author : r_config_get (core->config, "cfg.user");
 		eprintf ("rvc is just for testing please don't use it\n");
-		return r_vc_commit (rp, message, author, files);
+		return r_vc_commit (rvc, message, author, files);
 	}
 	char *path;
 	RListIter *iter;
 	r_list_foreach (files, iter, path) {
-		if (!r_vc_git_add (rp, path)) {
+		if (!r_vc_git_add (rvc->path, path)) {
 			return false;
 		}
 	}
-	return r_vc_git_commit (rp, message);
+	return r_vc_git_commit (rvc->path, message);
 }
 
-R_API bool rvc_git_branch(const RCore *core, const char *rp, const char *bname) {
+R_API bool rvc_git_branch(const RCore *core, Rvc *rvc, const char *bname) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		eprintf ("rvc is just for testing please don't use it\n");
-		return r_vc_branch (rp, bname);
+		return r_vc_branch (rvc, bname);
 	}
-	return !r_vc_git_branch (rp, bname);
+	return !r_vc_git_branch (rvc->path, bname);
 }
 
-R_API bool rvc_git_checkout(const RCore *core, const char *rp, const char *bname) {
+R_API bool rvc_git_checkout(const RCore *core, Rvc *rvc, const char *bname) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		eprintf ("rvc is just for testing please don't use it\n");
-		return r_vc_checkout (rp, bname);
+		return r_vc_checkout (rvc, bname);
 	}
-	return r_vc_git_checkout (rp, bname);
+	return r_vc_git_checkout (rvc->path, bname);
 }
 
-R_API bool rvc_git_repo_exists(const RCore *core, const char *rp) {
+R_API bool rvc_git_repo_exists(const RCore *core, const char *path) {
 	char *frp = !strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")?
-		r_file_new (rp, ".rvc", NULL):
-		r_file_new (rp, ".git", NULL);
+		r_file_new (path, ".rvc", NULL):
+		r_file_new (path, ".git", NULL);
 	if (frp) {
 		bool ret = r_file_is_directory (frp);
 		free (frp);
@@ -1254,7 +1256,7 @@ R_API bool rvc_git_repo_exists(const RCore *core, const char *rp) {
 	return false;
 }
 
-R_API Rvc *r_vc_load(char *rp) {
+R_API Rvc *r_vc_load(const char *rp) {
 	Rvc *repo = R_NEW(Rvc);
 	if (repo) {
 		repo->path = r_str_new(rp);
