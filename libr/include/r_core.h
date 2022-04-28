@@ -245,9 +245,15 @@ typedef struct r_core_tasks_t {
 	bool oneshot_running;
 } RCoreTaskScheduler;
 
+typedef struct {
+	char *path;
+	Sdb *db;
+} Rvc;
+
 typedef struct r_core_project_t {
 	char *name;
 	char *path;
+	Rvc *rvc;
 } RProject;
 
 R_API RProject *r_project_new(void);

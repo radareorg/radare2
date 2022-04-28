@@ -15,11 +15,6 @@ typedef struct RvcBlob_t {
 	char *fhash;
 } RvcBlob;
 
-typedef struct {
-	char *path;
-	Sdb *db;
-} Rvc;
-
 R_API bool r_vc_git_init(const char *path);
 R_API bool r_vc_git_branch(const char *path, const char *name);
 R_API bool r_vc_git_checkout(const char *path, const char *name);
