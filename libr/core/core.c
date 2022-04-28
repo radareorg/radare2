@@ -3118,6 +3118,7 @@ R_API bool r_core_init(RCore *core) {
 
 	// TODO: get arch from r_bin or from native arch
 #if 0
+	// Seems unnecessary
 	r_asm_use (core->rasm, R_SYS_ARCH);
 	r_anal_use (core->anal, R_SYS_ARCH);
 #endif

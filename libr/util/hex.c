@@ -491,7 +491,7 @@ R_API int r_hex_str2bin_until_new(const char *in, ut8 **out) {
 
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	ut8 *ptr;
-	int ilen = strlen (in)+1;
+	int ilen = strlen (in) + 1;
 	memcpy (out, in, ilen);
 	for (ptr = out; *ptr; ptr++) {
 		if (*ptr == '.') {

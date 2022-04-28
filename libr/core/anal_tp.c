@@ -321,7 +321,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 	if (max > 7) {
 		max = DEFAULT_MAX;
 	}
-	const int bits = anal->config->bits;
+	const int bytes = anal->config->bits / 8;
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev ? (max - 1 - i) : i;
 		char *type = NULL;
@@ -447,7 +447,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 			r_anal_op_free (op);
 			r_anal_op_free (next_op);
 		}
-		size += bits / 8;
+		size += bytes;
 		free (type);
 	}
 	r_list_free (types);
