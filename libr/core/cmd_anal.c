@@ -1160,10 +1160,8 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	//	sdb_num_set (core->anal->sdb_types, args, (int)arg_count, 0);
 	if (arg_count > 0) {
 		char *k = r_str_newf ("func.%s.args", fcn->name);
-		char *v = r_str_newf ("%d", (int)arg_count);
-		sdb_set (core->anal->sdb_types, k, v, 0);
+		sdb_num_set (core->anal->sdb_types, k, (ut64)arg_count, 0);
 		free (k);
-		free (v);
  	}
 	free (args);
 	r_anal_function_vars_cache_fini (&cache);

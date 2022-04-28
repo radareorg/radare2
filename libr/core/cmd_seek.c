@@ -798,19 +798,19 @@ static int cmd_seek(void *data, const char *input) {
 				int rc = r_sys_tem (arg);
 				r_core_return_code (core, (rc > 0)? rc: 1);
 			} else {
-				if (!r_config_get_b (core->config, "scr.interactive")) {
-					eprintf ("enable scr.interactive to use this new shell prompt\n");
-					break;
-				}
-				// open shell
-				r_line_set_prompt ("sh> ");
-				for (;;) {
-					const char *line = r_line_readline ();
-					if (!line || !strcmp (line, "exit")) {
-						break;
+				if (r_config_get_b (core->config, "scr.interactive")) {
+					// open shell
+					r_line_set_prompt ("sh> ");
+					for (;;) {
+						const char *line = r_line_readline ();
+						if (!line || !strcmp (line, "exit")) {
+							break;
+						}
+						int rc = r_sys_tem (line);
+						r_core_return_code (core, (rc > 0)? rc: 1);
 					}
-					int rc = r_sys_tem (line);
-					r_core_return_code (core, (rc > 0)? rc: 1);
+				} else {
+					R_LOG_WARN ("enable scr.interactive to use this new shell prompt");
 				}
 			}
 			free (arg);

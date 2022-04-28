@@ -776,11 +776,7 @@ static void get_spec_die_type(Context *ctx, RBinDwarfDie *die, RStrBuf *ret_type
 /* For some languages linkage name is more informative like C++,
    but for Rust it's rubbish and the normal name is fine */
 static bool prefer_linkage_name(const char *lang) {
-	if (lang == NULL) {
-		return false;
-	} else if (!strcmp (lang, "rust")) {
-		return false;
-	} else if (!strcmp (lang, "ada")) {
+	if (!lang || !strcmp (lang, "rust") || !strcmp (lang, "ada")) {
 		return false;
 	}
 	return true;

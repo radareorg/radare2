@@ -883,6 +883,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
 			if (!buf || sz < 1) {
 				eprintf ("Nothing to do.\n");
+				free (buf);
 				goto beach;
 			}
 			len = (ut64)sz;

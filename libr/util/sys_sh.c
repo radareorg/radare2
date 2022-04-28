@@ -40,7 +40,7 @@ R_API int r_sys_tem_statement(const char *l) {
 			argv[1+(argc * 2)] = pos;
 			argv[2+(argc * 2)] = pos + 1;
 			argc++;
-			if (argc >= MAXARG) {
+			if (argc + 2 >= MAXARG) {
 				R_LOG_ERROR ("Too many arguments\n");
 				return -1;
 			}

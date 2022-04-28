@@ -447,7 +447,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 			r_anal_op_free (op);
 			r_anal_op_free (next_op);
 		}
-		size += bytes;
+		size += core->anal->config->bits / 8;
 		free (type);
 	}
 	r_list_free (types);
@@ -730,8 +730,7 @@ repeat:
 					}
 					if (ret_reg && (strstr (ret_reg, foo) || (tmp && strstr (ret_reg, tmp)))) {
 						resolved = true;
-					} else if (type == R_ANAL_OP_TYPE_MOV &&
-							(next_op && next_op->type == R_ANAL_OP_TYPE_MOV)){
+					} else if (type == R_ANAL_OP_TYPE_MOV && (next_op && next_op->type == R_ANAL_OP_TYPE_MOV)) {
 						// Progate return type passed using pointer
 						// int *ret; *ret = strlen(s);
 						// TODO: memref check , dest and next src match

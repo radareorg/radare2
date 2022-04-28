@@ -1373,7 +1373,7 @@ static void ds_show_refs(RDisasmState *ds) {
 }
 
 static void ds_show_xrefs(RDisasmState *ds) {
-	char xrefs_char[32]; // no more than 32 xrefs meh
+	char xrefs_char[32] = {0}; // no more than 32 xrefs meh
 	int xci = 0;
 	RAnalRef *refi;
 	RListIter *iter, *it;
@@ -1512,7 +1512,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 
 			int i = 0;
 			r_list_foreach (addrs, it, addrptr) {
-				if (addrptr && *addrptr) {
+				if (R_STR_ISNOTEMPTY (addrptr)) {
 					char ch = xrefs_char [i++];
 					ds_comment (ds, false, "%s%s0x%"PFMT64x"(%c)", 
 						it == addrs->head ? "" : ", ", plus, *addrptr, ch);
