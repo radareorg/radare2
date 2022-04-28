@@ -2941,7 +2941,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 		pj_a (pj);
 		r_list_foreach (xrefs, iter, refi) {
 			int rt = R_ANAL_REF_TYPE_MASK (refi->type);
-			if (rt == R_ANAL_REF_TYPE_CALL || rt == R_ANAL_REF_TYPE_CALL) {
+			if (rt == R_ANAL_REF_TYPE_CODE || rt == R_ANAL_REF_TYPE_CALL) {
 				indegree++;
 				pj_o (pj);
 				pj_kn (pj, "addr", refi->addr);

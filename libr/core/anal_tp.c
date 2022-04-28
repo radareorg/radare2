@@ -730,8 +730,7 @@ repeat:
 					}
 					if (ret_reg && (strstr (ret_reg, foo) || (tmp && strstr (ret_reg, tmp)))) {
 						resolved = true;
-					} else if (type == R_ANAL_OP_TYPE_MOV &&
-							(next_op && next_op->type == R_ANAL_OP_TYPE_MOV)){
+					} else if (type == R_ANAL_OP_TYPE_MOV && (next_op && next_op->type == R_ANAL_OP_TYPE_MOV)) {
 						// Progate return type passed using pointer
 						// int *ret; *ret = strlen(s);
 						// TODO: memref check , dest and next src match
