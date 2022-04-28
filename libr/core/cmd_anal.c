@@ -4715,11 +4715,15 @@ static int cmd_af(RCore *core, const char *input) {
 	case 'B': // "afB" // set function bits
 		if (input[2] == ' ') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			if (fcn) {
-				int bits = atoi (input + 3);
-				r_anal_hint_set_bits (core->anal, r_anal_function_min_addr (fcn), bits);
-				r_anal_hint_set_bits (core->anal, r_anal_function_max_addr (fcn), core->anal->config->bits);
-				fcn->bits = bits;
+			if (fcn) { // bits=0 means unset
+				int nbits = atoi (input + 3);
+				if (nbits > 0) {
+					r_anal_hint_set_bits (core->anal, r_anal_function_min_addr (fcn), bits);
+					r_anal_hint_set_bits (core->anal, r_anal_function_max_addr (fcn), core->anal->config->bits);
+					fcn->bits = nbits;
+				} else {
+					r_anal_hint_unset_bits (core->anal, r_anal_function_min_addr (fcn));
+				}
 			} else {
 				eprintf ("afB: Cannot find function to set bits at 0x%08"PFMT64x"\n", core->offset);
 			}
@@ -5104,6 +5108,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 
 // XXX dup from drp :OOO
 void cmd_anal_reg(RCore *core, const char *str) {
+#if 0
 	if (0) {
 		/* enable this block when dr and ar use the same code but just using
 		   core->dbg->reg or core->anal->reg and removing all the debugger
@@ -5114,9 +5119,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		core->dbg->reg = reg;
 		return;
 	}
-
+#endif
 	int size = 0, i, type = R_REG_TYPE_GPR;
-	int bits = (core->anal->config->bits & R_SYS_BITS_64)? 64: 32;
+	int bits = core->anal->config->bits;
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	RRegItem *r = NULL;
 	const char *use_color;
@@ -5499,7 +5504,8 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				i = j;
 			}
 		}
-	}
+		}
+		break;
 	}
 }
 

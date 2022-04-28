@@ -382,9 +382,10 @@ static const char *reg32_to_name(ut8 reg) {
 }
 
 static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
-	int rs = a->config->bits / 8;
+	const int bits = a->config->bits;
+	int rs = bits / 8;
 	const char *pc, *sp, *bp, *si;
-	switch (a->config->bits) {
+	switch (bits) {
 	case 16:
 		pc = "ip";
 		sp = "sp";
@@ -408,7 +409,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	struct Getarg gop = {
 		.handle = *handle,
 		.insn = insn,
-		.bits = a->config->bits
+		.bits = bits
 	};
 	char *src;
 	char *src2;
@@ -421,7 +422,6 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	char *arg1;
 	char *arg2;
 
-	const int bits = gop.bits;
 	// counter for rep prefix
 	const char *counter = (bits == 16)?"cx": (bits == 32)? "ecx": "rcx";
 
@@ -681,14 +681,14 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 		break;
 	case X86_INS_STOSB:
-		if (bits<32) {
+		if (bits < 32) {
 			r_strbuf_appendf (&op->esil, "al,di,=[1],df,?{,1,di,-=,},df,!,?{,1,di,+=,}");
 		} else {
 			r_strbuf_appendf (&op->esil, "al,edi,=[1],df,?{,1,edi,-=,},df,!,?{,1,edi,+=,}");
 		}
 		break;
 	case X86_INS_STOSW:
-		if (bits<32) {
+		if (bits < 32) {
 			r_strbuf_appendf (&op->esil, "ax,di,=[2],df,?{,2,di,-=,},df,!,?{,2,di,+=,}");
 		} else {
 			r_strbuf_appendf (&op->esil, "ax,edi,=[2],df,?{,2,edi,-=,},df,!,?{,2,edi,+=,}");
@@ -1120,9 +1120,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_PUSH:
 		{
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
-			rs = INSOP(0).size;
+			int oprs = INSOP(0).size;
 			esilprintf (op, "%s,%d,%s,-,=[%d],%d,%s,-=",
-				r_str_get_fail (dst, "eax"), rs, sp, rs, rs, sp);
+				r_str_get_fail (dst, "eax"), oprs, sp, rs, rs, sp);
 		}
 		break;
 	case X86_INS_PUSHF:
@@ -2551,13 +2551,14 @@ static void set_opdir(RAnalOp *op, cs_insn *insn) {
 }
 
 static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+	int bits = a->config->bits;
 	struct Getarg gop = {
 		.handle = *handle,
 		.insn = insn,
 		.bits = a->config->bits
 	};
 	int regsz = 4;
-	switch (gop.bits) {
+	switch (bits) {
 	case 64: regsz = 8; break;
 	case 16: regsz = 2; break;
 	default: regsz = 4; break; // 32

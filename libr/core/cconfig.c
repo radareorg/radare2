@@ -2646,7 +2646,6 @@ static bool cb_seggrn(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	// R2_570 those two do the same as the struct is shared now
 	core->rasm->config->seggrn = node->i_value;
-	core->anal->config->seggrn = node->i_value;
 	// XXX R2_570 ,. use RArchConfig in RPrint
 	core->print->seggrn = node->i_value;
 	return true;
