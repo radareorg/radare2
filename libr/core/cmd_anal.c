@@ -4717,27 +4717,29 @@ static int cmd_af(RCore *core, const char *input) {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) { // bits=0 means unset
 				int nbits = atoi (input + 3);
+				int obits = core->anal->config->bits;
 				if (nbits > 0) {
-					r_anal_hint_set_bits (core->anal, r_anal_function_min_addr (fcn), bits);
-					r_anal_hint_set_bits (core->anal, r_anal_function_max_addr (fcn), core->anal->config->bits);
+					r_anal_hint_set_bits (core->anal, r_anal_function_min_addr (fcn), nbits);
+					r_anal_hint_set_bits (core->anal, r_anal_function_max_addr (fcn), obits);
 					fcn->bits = nbits;
 				} else {
 					r_anal_hint_unset_bits (core->anal, r_anal_function_min_addr (fcn));
+					fcn->bits = 0;
 				}
 			} else {
 				eprintf ("afB: Cannot find function to set bits at 0x%08"PFMT64x"\n", core->offset);
 			}
 		} else {
-			eprintf ("Usage: afB [bits]\n");
+			eprintf ("Usage: afB [bits] # bits can be: 0, 8, 16, 32 or 64. when using 0, disables the hint\n");
 		}
 		break;
 	case 'b': // "afb"
 		switch (input[2]) {
 		case '-': // "afb-"
-			anal_fcn_del_bb (core, input + 3);
+			anal_fcn_del_bb (core, r_str_trim_head_ro (input + 3));
 			break;
 		case 'e': // "afbe"
-			anal_bb_edge (core, input + 3);
+			anal_bb_edge (core, r_str_trim_head_ro (input + 3));
 			break;
 		case 'F': { // "afbF"
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);

@@ -1,19 +1,15 @@
-/* radare - LGPL3 - Copyright 2016-2021 - FXTi */
+/* radare - LGPL3 - Copyright 2016-2022 - FXTi */
 
-#include <r_types.h>
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_asm.h>
-
 #include "../../asm/arch/pyc/pyc_dis.h"
 
-static pyc_opcodes *ops = NULL;
+static R_TH_LOCAL pyc_opcodes *ops = NULL;
 
 static int archinfo(RAnal *anal, int query) {
-	if (!strcmp (anal->config->cpu, "x86")) {
+	if (!strcmp (anal->config->arch, "x86")) {
 		return -1;
 	}
-
 	switch (query) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return (anal->config->bits == 16)? 1: 2;

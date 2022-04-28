@@ -46,13 +46,15 @@ static RAsmState *__as_new(void) {
 }
 
 static void __as_free(RAsmState *as) {
-	if (as->a) {
-		r_num_free (as->a->num);
+	if (as) {
+		if (as->a) {
+			r_num_free (as->a->num);
+		}
+		r_asm_free (as->a);
+		r_anal_free (as->anal);
+		r_lib_free (as->l);
+		free (as);
 	}
-	r_asm_free (as->a);
-	r_anal_free (as->anal);
-	r_lib_free (as->l);
-    	free (as);
 }
 
 static char *stackop2str(int type) {
