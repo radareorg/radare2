@@ -261,8 +261,6 @@ static RList *get_commits(Rvc *rvc, const size_t max_num) {
 		}
 	}
 ret:
-	sdb_unlink (rvc->db);
-	sdb_free (rvc->db);
 	return ret;
 }
 
@@ -778,7 +776,7 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 			return false;
 		}
 	}
-	RList *blobs = blobs_add (rvc->path, files);
+	RList *blobs = blobs_add (rvc, files);
 	if (!blobs) {
 		return false;
 	}
@@ -787,7 +785,7 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 		eprintf ("Nothing to commit\n");
 		return false;
 	}
-	commit_hash = write_commit (rvc->path, message, author, blobs);
+	commit_hash = write_commit (rvc, message, author, blobs);
 	if (!commit_hash) {
 		free_blobs (blobs);
 		return false;
@@ -796,22 +794,15 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 		const char *current_branch;
 		current_branch = sdb_const_get (rvc->db, CURRENTB, 0);
 		if (sdb_set (rvc->db, commit_hash, sdb_const_get (rvc->db, current_branch, 0), 0) < 0) {
-			sdb_unlink (rvc->db);
-			sdb_free (rvc->db);
 			free_blobs (blobs);
 			free (commit_hash);
 			return false;
 		}
 		if (sdb_set (rvc->db, current_branch, commit_hash, 0) < 0) {
-			sdb_unlink (rvc->db);
-			sdb_free (rvc->db);
 			free_blobs (blobs);
 			free (commit_hash);
 			return false;
 		}
-		sdb_sync (rvc->db);
-		sdb_unlink (rvc->db);
-		sdb_free (rvc->db);
 	}
 	free (commit_hash);
 	free_blobs (blobs);
@@ -868,7 +859,7 @@ R_API bool r_vc_branch(Rvc *rvc, const char *bname) {
 		return false;
 	}
 	{
-		int ret = branch_exists (rvc->path, bname);
+		int ret = branch_exists (rvc, bname);
 		if (ret < 0) {
 			return false;
 		} else if (ret) {
@@ -878,22 +869,15 @@ R_API bool r_vc_branch(Rvc *rvc, const char *bname) {
 	}
 	current_branch = sdb_const_get (rvc->db, CURRENTB, 0);
 	if (!current_branch) {
-		sdb_unlink (rvc->db);
-		sdb_free (rvc->db);
 		return false;
 	}
 	commits = sdb_const_get (rvc->db, current_branch, 0);
 	char *nbn = r_str_newf (BPREFIX "%s", bname);
 	if (!nbn) {
-		sdb_unlink (rvc->db);
-		sdb_free (rvc->db);
 		return false;
 	}
 	sdb_set (rvc->db, nbn, commits, 0);
 	free (nbn);
-	sdb_sync (rvc->db);
-	sdb_unlink (rvc->db);
-	sdb_free (rvc->db);
 	return true;
 }
 
@@ -963,7 +947,7 @@ R_API bool r_vc_checkout(Rvc *rvc, const char *bname) {
 		return false;
 	}
 	{
-		int ret = branch_exists (rvc->path, bname);
+		int ret = branch_exists (rvc, bname);
 		if (ret < 0) {
 			return false;
 		}
@@ -972,7 +956,7 @@ R_API bool r_vc_checkout(Rvc *rvc, const char *bname) {
 			return false;
 		}
 	}
-	RList *uncommitted = r_vc_get_uncommitted (rvc->path);
+	RList *uncommitted = r_vc_get_uncommitted (rvc);
 	RListIter *i;
 	char *file;
 	if (!uncommitted) {
@@ -1000,27 +984,21 @@ R_API bool r_vc_checkout(Rvc *rvc, const char *bname) {
 		sdb_set (rvc->db, CURRENTB, fbname, 0);
 		free (fbname);
 		if (!sdb_sync (rvc->db)) {
-			sdb_unlink (rvc->db);
-			sdb_free (rvc->db);
 			return false;
 		}
 	}
 	if (!r_vc_reset (rvc)) {
 		goto fail_ret;
 	}
-	if (!rm_empty_dir (rvc->path)) {
+	if (!rm_empty_dir (rvc)) {
 		goto fail_ret;
 	}
 	sdb_sync (rvc->db);
-	sdb_unlink (rvc->db);
-	sdb_free (rvc->db);
 	return true;
 fail_ret:
 	r_list_free (uncommitted);
 	sdb_set (rvc->db, CURRENTB, oldb, 0);
 	sdb_sync (rvc->db);
-	sdb_unlink (rvc->db);
-	sdb_free (rvc->db);
 	return false;
 }
 
