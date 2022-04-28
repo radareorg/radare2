@@ -164,7 +164,6 @@ repeat:
 		char *s = r_str_ndup (l + cmdpos, nextpos - cmdpos);
 		rc = r_sys_tem_statement (s);
 		free (s);
-		int nc = l[nextpos];
 		cmdpos = nextpos + 1;
 		nextpos = 0;
 		goto repeat;
