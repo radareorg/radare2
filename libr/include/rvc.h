@@ -26,15 +26,15 @@ R_API bool r_vc_git_checkout(const char *path, const char *name);
 R_API bool r_vc_git_add(const char *path, const char *fname);
 R_API bool r_vc_git_commit(const char *path, const char *message);
 
-R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files);
-R_API bool r_vc_branch(const char *rp, const char *bname);
-R_API bool r_vc_new(const char *path);
-R_API bool r_vc_checkout(const char *rp, const char *bname);
-R_API RList *r_vc_get_branches(const char *rp);
-R_API RList *r_vc_get_uncommitted(const char *rp);
-R_API RList *r_vc_log(const char *rp);
-R_API char *r_vc_current_branch(const char *rp);
-R_API bool r_vc_reset(const char *rp);
+R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const RList *files);
+R_API bool r_vc_branch(Rvc *rvc, const char *bname);
+R_API Rvc *r_vc_new(const char *path);
+R_API bool r_vc_checkout(Rvc *rvc, const char *bname);
+R_API RList *r_vc_get_branches(Rvc *rvc);
+R_API RList *r_vc_get_uncommitted(Rvc *rvc);
+R_API RList *r_vc_log(Rvc *rvc);
+R_API char *r_vc_current_branch(Rvc *rvc);
+R_API bool r_vc_reset(Rvc *rvc);
 R_API bool r_vc_clone(const char *src, const char *dst);
 
 R_API bool rvc_git_init(const RCore *core, const char *rp);

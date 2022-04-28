@@ -192,13 +192,13 @@ static void free_blobs(RList *blobs) {
 	r_list_free (blobs);
 }
 
-static char *absp2rp(const char *rp, const char *absp) {
+static char *absp2rp(Rvc *rvc, const char *absp) {
 	char *p;
-	char *arp = r_file_abspath (rp);
+	char *arp = r_file_abspath (rvc->path);
 	if (!arp) {
 		return NULL;
 	}
-	if (r_str_len_utf8 (arp) < r_str_len_utf8 (rp)) {
+	if (r_str_len_utf8 (arp) < r_str_len_utf8 (rvc->path)) {
 		free (arp);
 		return NULL;
 	}
@@ -212,8 +212,8 @@ static char *absp2rp(const char *rp, const char *absp) {
 	return ret;
 }
 
-char *rp2absp(const char *rp, const char *path) {
-	char *arp = r_file_abspath (rp);
+char *rp2absp(Rvc *rvc, const char *path) {
+	char *arp = r_file_abspath (rvc->path);
 	if (!arp) {
 		return NULL;
 	}
@@ -229,14 +229,13 @@ char *rp2absp(const char *rp, const char *path) {
 
 //TODO:Make the tree related functions abit cleaner & more efficient
 
-static RList *get_commits(const char *rp, const size_t max_num) {
+static RList *get_commits(Rvc *rvc, const size_t max_num) {
 	char *i;
 	RList *ret = r_list_new ();
 	if (!ret) {
 		return NULL;
 	}
-	Sdb *db = vcdb_open(rp);
-	i = sdb_get (db, sdb_const_get (db, CURRENTB, 0), 0);
+	i = sdb_get (rvc->db, sdb_const_get (rvc->db, CURRENTB, 0), 0);
 	if (!i) {
 		r_list_free (ret);
 		ret = NULL;
@@ -251,7 +250,7 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 			ret = NULL;
 			break;
 		}
-		i = sdb_get (db, i, 0);
+		i = sdb_get (rvc->db, i, 0);
 		if (!i) {
 			r_list_free (ret);
 			ret = NULL;
@@ -262,8 +261,8 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 		}
 	}
 ret:
-	sdb_unlink (db);
-	sdb_free (db);
+	sdb_unlink (rvc->db);
+	sdb_free (rvc->db);
 	return ret;
 }
 
@@ -322,8 +321,8 @@ fail_ret:
 
 }
 
-static int branch_exists(const char *rp, const char *bname) {
-	RList *branches = r_vc_get_branches (rp);
+static int branch_exists(Rvc *rvc, const char *bname) {
+	RList *branches = r_vc_get_branches (rvc);
 	if (!branches) {
 		return -1;
 	}
@@ -341,8 +340,8 @@ static int branch_exists(const char *rp, const char *bname) {
 	return ret;
 }
 
-static RList *get_blobs(const char *rp, RList *ignore) {
-	RList *commits = get_commits (rp, 0);
+static RList *get_blobs(Rvc *rvc, RList *ignore) {
+	RList *commits = get_commits (rvc, 0);
 	if (!commits) {
 		return NULL;
 	}
@@ -353,7 +352,7 @@ static RList *get_blobs(const char *rp, RList *ignore) {
 	RListIter *i;
 	char *hash;
 	r_list_foreach (commits, i, hash) {
-		char *commit_path = r_file_new (rp, ".rvc", "commits",
+		char *commit_path = r_file_new (rvc->path, ".rvc", "commits",
 				hash, NULL);
 		if (!commit_path) {
 			goto fail_ret;
@@ -400,20 +399,20 @@ fail_ret:
 	return NULL;
 }
 
-static bool rm_empty_dir(const char *rp) {
-	char *rvc = r_file_new (rp, ".rvc", NULL);
-	if (!rvc) {
+static bool rm_empty_dir(Rvc *rvc) {
+	char *path = r_file_new (rvc->path, ".rvc", NULL);
+	if (!path) {
 		return false;
 	}
-	RList *files = r_file_lsrf (rp);
+	RList *files = r_file_lsrf (rvc->path);
 	RListIter *iter;
 	const char *f;
 	r_list_foreach (files, iter, f) {
-		if (r_str_cmp (f, rvc, r_str_len_utf8 (rvc))) {
+		if (r_str_cmp (f, path, r_str_len_utf8 (path))) {
 			rmdir (f);
 		}
 	}
-	free (rvc);
+	free (path);
 	r_list_free (files);
 	return true;
 }
@@ -482,9 +481,9 @@ static RList *repo_files(const char *dir) {
 	return ret;
 }
 
-static RList *load_rvc_ignore(const char *rp) {
+static RList *load_rvc_ignore(Rvc *rvc) {
 	RList *ignore = NULL;
-	char *path = r_file_new (rp, IGNORE_NAME, NULL);
+	char *path = r_file_new (rvc->path, IGNORE_NAME, NULL);
 	if (!path) {
 		return false;
 	}
@@ -499,17 +498,17 @@ static RList *load_rvc_ignore(const char *rp) {
 }
 
 //shit function:
-R_API RList *r_vc_get_uncommitted(const char *rp) {
-	RList *ignore = load_rvc_ignore (rp);
-	if (!repo_exists (rp)) {
-		eprintf ("No valid repo in %s\n", rp);
+R_API RList *r_vc_get_uncommitted(Rvc *rvc) {
+	RList *ignore = load_rvc_ignore (rvc);
+	if (!repo_exists (rvc->path)) {
+		eprintf ("No valid repo in %s\n", rvc->path);
 		return false;
 	}
-	RList *blobs = get_blobs(rp, ignore);
+	RList *blobs = get_blobs(rvc, ignore);
 	if (!blobs) {
 		return NULL;
 	}
-	RList *files = repo_files (rp);
+	RList *files = repo_files (rvc->path);
 	if (!files) {
 		free_blobs (blobs);
 		return NULL;
@@ -523,7 +522,7 @@ R_API RList *r_vc_get_uncommitted(const char *rp) {
 	RListIter *iter;
 	RvcBlob *blob;
 	r_list_foreach (blobs, iter, blob) {
-		char *blob_absp = rp2absp (rp, blob->fname);
+		char *blob_absp = rp2absp (rvc->path, blob->fname);
 		if (!blob_absp) {
 			goto fail_ret;
 		}
@@ -571,7 +570,7 @@ R_API RList *r_vc_get_uncommitted(const char *rp) {
 	free_blobs (blobs);
 	blobs = NULL;
 	r_list_foreach (files, iter, file) {
-		char *rfp = absp2rp (rp, file);
+		char *rfp = absp2rp (rvc->path, file);
 		if (!rfp) {
 			goto fail_ret;
 		}
@@ -598,8 +597,8 @@ fail_ret:
 	return NULL;
 }
 
-static char *find_blob_hash(const char *rp, const char *fname) {
-	RList *blobs = get_blobs (rp, load_rvc_ignore(rp));
+static char *find_blob_hash(Rvc *rvc, const char *fname) {
+	RList *blobs = get_blobs (rvc, load_rvc_ignore(rvc));
 	if (blobs) {
 		RListIter *i;
 		RvcBlob *b;
@@ -614,7 +613,7 @@ static char *find_blob_hash(const char *rp, const char *fname) {
 	return NULL;
 }
 
-static char *write_commit(const char *rp, const char *message, const char *author, RList *blobs) {
+static char *write_commit(Rvc *rvc, const char *message, const char *author, RList *blobs) {
 	RvcBlob *blob;
 	RListIter *iter;
 	char *content = r_str_newf ("message=%s\nauthor=%s\ntime=%" PFMT64x "\n"
@@ -635,7 +634,7 @@ static char *write_commit(const char *rp, const char *message, const char *autho
 		free (content);
 		return false;
 	}
-	char *commit_path = r_file_new (rp, ".rvc","commits", commit_hash, NULL);
+	char *commit_path = r_file_new (rvc->path, ".rvc","commits", commit_hash, NULL);
 	if (!commit_path || !r_file_dump (commit_path, (const ut8*)content, -1, false)) {
 		free (content);
 		free (commit_hash);
@@ -645,7 +644,7 @@ static char *write_commit(const char *rp, const char *message, const char *autho
 	return commit_hash;
 }
 
-static RvcBlob *bfadd(const char *rp, const char *fname) {
+static RvcBlob *bfadd(Rvc *rvc, const char *fname) {
 	RvcBlob *ret = R_NEW (RvcBlob);
 	if (!ret) {
 		return NULL;
@@ -655,7 +654,7 @@ static RvcBlob *bfadd(const char *rp, const char *fname) {
 		free (ret);
 		return NULL;
 	}
-	ret->fname = absp2rp (rp, absp);
+	ret->fname = absp2rp (rvc->path, absp);
 	if (!ret->fname) {
 		free (ret);
 		free (absp);
@@ -674,7 +673,7 @@ static RvcBlob *bfadd(const char *rp, const char *fname) {
 		free (absp);
 		goto fail_ret;
 	}
-	char *bpath = r_file_new (rp, ".rvc", "blobs", ret->fhash, NULL);
+	char *bpath = r_file_new (rvc->path, ".rvc", "blobs", ret->fhash, NULL);
 	if (!bpath) {
 		goto fail_ret;
 	}
@@ -695,12 +694,12 @@ fail_ret:
 	return NULL;
 }
 
-static RList *blobs_add(const char *rp, const RList *files) {
+static RList *blobs_add(Rvc *rvc, const RList *files) {
 	RList *ret = r_list_new ();
 	if (!ret) {
 		return NULL;
 	}
-	RList *uncommitted = r_vc_get_uncommitted (rp);
+	RList *uncommitted = r_vc_get_uncommitted (rvc);
 	if (!uncommitted) {
 		free (ret);
 		return NULL;
@@ -722,7 +721,7 @@ static RList *blobs_add(const char *rp, const RList *files) {
 				continue;
 			}
 			found = true;
-			RvcBlob *b = bfadd (rp, ucp);
+			RvcBlob *b = bfadd (rvc, ucp);
 			if (!b) {
 				free (absp);
 				goto fail_ret;
@@ -748,10 +747,10 @@ fail_ret:
 	return NULL;
 }
 
-R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files) {
+R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const RList *files) {
 	char *commit_hash;
-	if (!repo_exists (rp)) {
-		eprintf ("No valid repo in %s\n", rp);
+	if (!repo_exists (rvc->path)) {
+		eprintf ("No valid repo in %s\n", rvc->path);
 		return false;
 	}
 	if (R_STR_ISEMPTY (message)) {
@@ -779,7 +778,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 			return false;
 		}
 	}
-	RList *blobs = blobs_add (rp, files);
+	RList *blobs = blobs_add (rvc->path, files);
 	if (!blobs) {
 		return false;
 	}
@@ -788,54 +787,52 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 		eprintf ("Nothing to commit\n");
 		return false;
 	}
-	commit_hash = write_commit (rp, message, author, blobs);
+	commit_hash = write_commit (rvc->path, message, author, blobs);
 	if (!commit_hash) {
 		free_blobs (blobs);
 		return false;
 	}
 	{
 		const char *current_branch;
-		Sdb *db = vcdb_open (rp) ;
-		current_branch = sdb_const_get (db, CURRENTB, 0);
-		if (sdb_set (db, commit_hash, sdb_const_get (db, current_branch, 0), 0) < 0) {
-			sdb_unlink (db);
-			sdb_free (db);
+		current_branch = sdb_const_get (rvc->db, CURRENTB, 0);
+		if (sdb_set (rvc->db, commit_hash, sdb_const_get (rvc->db, current_branch, 0), 0) < 0) {
+			sdb_unlink (rvc->db);
+			sdb_free (rvc->db);
 			free_blobs (blobs);
 			free (commit_hash);
 			return false;
 		}
-		if (sdb_set (db, current_branch, commit_hash, 0) < 0) {
-			sdb_unlink (db);
-			sdb_free (db);
+		if (sdb_set (rvc->db, current_branch, commit_hash, 0) < 0) {
+			sdb_unlink (rvc->db);
+			sdb_free (rvc->db);
 			free_blobs (blobs);
 			free (commit_hash);
 			return false;
 		}
-		sdb_sync (db);
-		sdb_unlink (db);
-		sdb_free (db);
+		sdb_sync (rvc->db);
+		sdb_unlink (rvc->db);
+		sdb_free (rvc->db);
 	}
 	free (commit_hash);
 	free_blobs (blobs);
 	return true;
 }
 
-R_API RList *r_vc_get_branches(const char *rp) {
-	if (!repo_exists (rp)) {
-		eprintf ("No valid repo in %s\n", rp);
+R_API RList *r_vc_get_branches(Rvc *rvc) {
+	if (!repo_exists (rvc->path)) {
+		eprintf ("No valid repo in %s\n", rvc->path);
 		return NULL;
 	}
-	Sdb *db = vcdb_open (rp);
 	RList *ret = r_list_new ();
 	if (!ret) {
-		sdb_unlink (db);
-		sdb_free (db);
+		sdb_unlink (rvc->db);
+		sdb_free (rvc->db);
 		return NULL;
 	}
-	SdbList *keys = sdb_foreach_list (db, false);
+	SdbList *keys = sdb_foreach_list (rvc->db, false);
 	if (!keys) {
-		sdb_unlink (db);
-		sdb_free (db);
+		sdb_unlink (rvc->db);
+		sdb_free (rvc->db);
 		r_list_free (ret);
 		return NULL;
 	}
@@ -854,16 +851,16 @@ R_API RList *r_vc_get_branches(const char *rp) {
 		}
 	}
 	ls_free (keys);
-	sdb_unlink (db);
-	sdb_free (db);
+	sdb_unlink (rvc->db);
+	sdb_free (rvc->db);
 	return ret;
 }
 
-R_API bool r_vc_branch(const char *rp, const char *bname) {
+R_API bool r_vc_branch(Rvc *rvc, const char *bname) {
 	const char *current_branch;
 	const char *commits;
-	if (!repo_exists (rp)) {
-		eprintf ("No valid repo in %s\n", rp);
+	if (!repo_exists (rvc->path)) {
+		eprintf ("No valid repo in %s\n", rvc->path);
 		return false;
 	}
 	if (!is_valid_branch_name (bname)) {
@@ -871,7 +868,7 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 		return false;
 	}
 	{
-		int ret = branch_exists (rp, bname);
+		int ret = branch_exists (rvc->path, bname);
 		if (ret < 0) {
 			return false;
 		} else if (ret) {
@@ -879,87 +876,94 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 			return false;
 		}
 	}
-	Sdb *db = vcdb_open (rp);
-	current_branch = sdb_const_get (db, CURRENTB, 0);
+	current_branch = sdb_const_get (rvc->db, CURRENTB, 0);
 	if (!current_branch) {
-		sdb_unlink (db);
-		sdb_free (db);
+		sdb_unlink (rvc->db);
+		sdb_free (rvc->db);
 		return false;
 	}
-	commits = sdb_const_get (db, current_branch, 0);
+	commits = sdb_const_get (rvc->db, current_branch, 0);
 	char *nbn = r_str_newf (BPREFIX "%s", bname);
 	if (!nbn) {
-		sdb_unlink (db);
-		sdb_free (db);
+		sdb_unlink (rvc->db);
+		sdb_free (rvc->db);
 		return false;
 	}
-	sdb_set (db, nbn, commits, 0);
+	sdb_set (rvc->db, nbn, commits, 0);
 	free (nbn);
-	sdb_sync (db);
-	sdb_unlink (db);
-	sdb_free (db);
+	sdb_sync (rvc->db);
+	sdb_unlink (rvc->db);
+	sdb_free (rvc->db);
 	return true;
 }
 
-R_API bool r_vc_new(const char *path) {
-	Sdb *db;
+R_API Rvc *r_vc_new(const char *path) {
 	char *commitp, *blobsp;
-	char *vcp = r_file_new (path, ".rvc", NULL);
-	if (r_file_is_directory (vcp)) {
+	Rvc *rvc = R_NEW(Rvc);
+	if (!rvc) {
+		eprintf("Failed to create repo\n");
+		return NULL;
+	}
+	rvc->path = r_file_new (path, ".rvc", NULL);
+	if (r_file_is_directory (rvc->path)) {
 		eprintf ("A repository already exists in %s\n", path);
-		free (vcp);
-		return false;
+		free (rvc);
+		return NULL;
 
 	}
-	if (!vcp) {
-		return false;
+	if (!rvc->path) {
+		free (rvc);
+		return NULL;
 	}
-	commitp = r_file_new (vcp, "commits", NULL);
-	blobsp = r_file_new (vcp, "blobs", NULL);
+	commitp = r_file_new (rvc->path, "commits", NULL);
+	blobsp = r_file_new (rvc->path, "blobs", NULL);
 	if (!commitp || !blobsp) {
 		free (commitp);
 		free (blobsp);
-		free (vcp);
+		free (rvc->path);
+		free (rvc);
 		return false;
 	}
 	if (!r_sys_mkdirp (commitp) || !r_sys_mkdir (blobsp)) {
 		eprintf ("Can't create The RVC repo directory");
 		free (commitp);
-		free (vcp);
+		free (rvc->path);
+		free (rvc);
 		free (blobsp);
 		return false;
 	}
 	free (commitp);
 	free (blobsp);
-	db = sdb_new (vcp, DBNAME, 0);
-	free (vcp);
-	if (!db) {
+	rvc->db = sdb_new (rvc->path, DBNAME, 0);
+	free (rvc->path);
+	if (!rvc->db) {
 		eprintf ("Can't create The RVC branches database");
+		free (rvc->path);
+		free (rvc);
 		return false;
 	}
-	if (!sdb_set (db, FIRST_BRANCH, NULLVAL, 0)) {
-		sdb_unlink (db);
-		sdb_free (db);
+	if (!sdb_set (rvc->db, FIRST_BRANCH, NULLVAL, 0)) {
+		sdb_unlink (rvc->db);
+		sdb_free (rvc->db);
+		free (rvc->path);
+		free (rvc);
 		return false;
 	}
-	if (!sdb_set (db, CURRENTB, FIRST_BRANCH, 0)) {
-		sdb_unlink (db);
-		sdb_free (db);
+	if (!sdb_set (rvc->db, CURRENTB, FIRST_BRANCH, 0)) {
+		sdb_unlink (rvc->db);
+		sdb_free (rvc->db);
 		return false;
 	}
-	sdb_sync (db);
-	sdb_unlink (db);
-	sdb_free (db);
-	return true;
+	return rvc;
 }
 
-R_API bool r_vc_checkout(const char *rp, const char *bname) {
-	if (!repo_exists (rp)) {
-		eprintf ("No valid repo in %s\n", rp);
+R_API bool r_vc_checkout(Rvc *rvc, const char *bname) {
+	if (!repo_exists (rvc->path)) {
+		eprintf ("No valid repo in %s\n", rvc->path);
 		return false;
 	}
 	{
-		int ret = branch_exists (rp, bname);
+		int ret = branch_exists (rvc->path, bname);
 		if (ret < 0) {
 			return false;
 		}
@@ -968,7 +972,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 			return false;
 		}
 	}
-	RList *uncommitted = r_vc_get_uncommitted (rp);
+	RList *uncommitted = r_vc_get_uncommitted (rvc->path);
 	RListIter *i;
 	char *file;
 	if (!uncommitted) {
@@ -986,59 +990,53 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 	r_list_free (uncommitted);
 	//Must set to NULL to avoid double r_list_free on fail_ret
 	uncommitted = NULL;
-	Sdb *db = vcdb_open (rp) ;
-	if (!db) {
-		return false;
-	}
 	const char *oldb;
 	{
 		char *fbname = r_str_newf (BPREFIX "%s", bname);
 		if (!fbname) {
-			sdb_unlink (db);
-			sdb_free (db);
 			return false;
 		}
-		oldb = sdb_const_get (db, CURRENTB, 0);
-		sdb_set (db, CURRENTB, fbname, 0);
+		oldb = sdb_const_get (rvc->db, CURRENTB, 0);
+		sdb_set (rvc->db, CURRENTB, fbname, 0);
 		free (fbname);
-		if (!sdb_sync (db)) {
-			sdb_unlink (db);
-			sdb_free (db);
+		if (!sdb_sync (rvc->db)) {
+			sdb_unlink (rvc->db);
+			sdb_free (rvc->db);
 			return false;
 		}
 	}
-	if (!r_vc_reset (rp)) {
+	if (!r_vc_reset (rvc)) {
 		goto fail_ret;
 	}
-	if (!rm_empty_dir (rp)) {
+	if (!rm_empty_dir (rvc->path)) {
 		goto fail_ret;
 	}
-	sdb_sync (db);
-	sdb_unlink (db);
-	sdb_free (db);
+	sdb_sync (rvc->db);
+	sdb_unlink (rvc->db);
+	sdb_free (rvc->db);
 	return true;
 fail_ret:
 	r_list_free (uncommitted);
-	sdb_set (db, CURRENTB, oldb, 0);
-	sdb_sync (db);
-	sdb_unlink (db);
-	sdb_free (db);
+	sdb_set (rvc->db, CURRENTB, oldb, 0);
+	sdb_sync (rvc->db);
+	sdb_unlink (rvc->db);
+	sdb_free (rvc->db);
 	return false;
 }
 
-R_API RList *r_vc_log(const char *rp) {
-	if (!repo_exists (rp)) {
-		eprintf ("No valid repo in %s\n", rp);
+R_API RList *r_vc_log(Rvc *rvc) {
+	if (!repo_exists (rvc->path)) {
+		eprintf ("No valid repo in %s\n", rvc->path);
 		return false;
 	}
-	RList *commits = get_commits (rp, 0);
+	RList *commits = get_commits (rvc, 0);
 	if (!commits) {
 		return NULL;
 	}
 	RListIter *iter;
 	char *ch;
 	r_list_foreach_prev (commits, iter, ch) {
-		char *cp = r_file_new (rp, ".rvc", "commits", ch, NULL);
+		char *cp = r_file_new (rvc->path, ".rvc", "commits", ch, NULL);
 		if (!cp) {
 			goto fail_ret;
 		}
@@ -1065,20 +1063,16 @@ fail_ret:
 	return NULL;
 }
 
-R_API char *r_vc_current_branch(const char *rp) {
-	if (!repo_exists (rp)) {
-		eprintf ("No valid repo in %s\n", rp);
+R_API char *r_vc_current_branch(Rvc *rvc) {
+	if (!repo_exists (rvc->path)) {
+		eprintf ("No valid repo in %s\n", rvc->path);
 		return false;
 	}
-	Sdb *db = vcdb_open (rp);
-	if (!db) {
+	if (!rvc->db) {
 		return NULL;
 	}
 	//TODO: return consistently either BPREFIX.bname or bname
-	char *ret = r_str_new (sdb_const_get (db, CURRENTB, 0) + r_str_len_utf8 (BPREFIX));
-	sdb_unlink (db);
-	sdb_close (db);
-	sdb_free (db);
+	char *ret = r_str_new (sdb_const_get (rvc->db, CURRENTB, 0) + r_str_len_utf8 (BPREFIX));
 	return ret;
 }
 
@@ -1174,12 +1168,12 @@ R_API bool r_vc_git_commit(const char *path, const char *message) {
 	return res == 0;
 }
 
-R_API bool r_vc_reset(const char *rp) {
-	if (!repo_exists (rp)) {
+R_API bool r_vc_reset(Rvc *rvc) {
+	if (!repo_exists (rvc->path)) {
 		return false;
 	}
 	bool ret = true;
-	RList *uncommitted = r_vc_get_uncommitted (rp);
+	RList *uncommitted = r_vc_get_uncommitted (rvc);
 	if (!uncommitted) {
 		return false;
 	}
@@ -1188,12 +1182,12 @@ R_API bool r_vc_reset(const char *rp) {
 	r_list_foreach (uncommitted, iter, fp) {
 		char *blobp;
 		{
-			char *p = absp2rp (rp, fp);
+			char *p = absp2rp (rvc->path, fp);
 			if (!p) {
 				ret = false;
 				break;
 			}
-			char *b = find_blob_hash (rp, p);
+			char *b = find_blob_hash (rvc->path, p);
 			if (!b || !strcmp (b, "-")) {
 				free (p);
 				if (!r_file_rm (fp)) {
@@ -1203,7 +1197,7 @@ R_API bool r_vc_reset(const char *rp) {
 				continue;
 
 			}
-			blobp = r_file_new (rp, ".rvc", "blobs", b, NULL);
+			blobp = r_file_new (rvc->path, ".rvc", "blobs", b, NULL);
 			free (b);
 		}
 		if (!blobp) {
