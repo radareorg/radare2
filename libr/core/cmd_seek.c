@@ -32,6 +32,7 @@ static const char *help_msg_s[] = {
 	"sf", " function", "seek to address of specified function",
 	"sf.", "", "seek to the beginning of current function",
 	"sg/sG", "", "seek begin (sg) or end (sG) of section or file",
+	"sh", "", "open a basic shell (aims to support basic posix syntax)",
 	"sl", "[?] [+-]line", "seek to line",
 	"sn/sp", " ([nkey])", "seek to next/prev location, as specified by scr.nkey",
 	"snp", "", "seek to next function prelude",
@@ -47,6 +48,13 @@ static const char *help_msg_sdot[] = {
 	"Usage:", "s.", "Seek here or there (near seeks)",
 	"s.", "", "seek here, same as 's $$'",
 	"s..", "32a8", "seek to the same address but replacing the lower nibbles",
+	NULL
+};
+
+static const char *help_msg_sh[] = {
+	"Usage:", "sh", "r2's posix shell compatible subset",
+	"sh", "", "enters a posix shell subset repl (requires scr.interactive)",
+	"sh", " [cmd]", "run the given line and update $?",
 	NULL
 };
 
@@ -781,6 +789,33 @@ static int cmd_seek(void *data, const char *input) {
 		}
 	}
 	break;
+	case 'h': // "sh"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_sh);
+		} else {
+			char *arg = r_str_trim_dup (input + 1);
+			if (R_STR_ISNOTEMPTY (arg)) {
+				int rc = r_sys_tem (arg);
+				r_core_return_code (core, (rc > 0)? rc: 1);
+			} else {
+				if (!r_config_get_b (core->config, "scr.interactive")) {
+					eprintf ("enable scr.interactive to use this new shell prompt\n");
+					break;
+				}
+				// open shell
+				r_line_set_prompt ("sh> ");
+				for (;;) {
+					const char *line = r_line_readline ();
+					if (!line || !strcmp (line, "exit")) {
+						break;
+					}
+					int rc = r_sys_tem (line);
+					r_core_return_code (core, (rc > 0)? rc: 1);
+				}
+			}
+			free (arg);
+		}
+		break;
 	case 'l': // "sl"
 	{
 		int sl_arg = r_num_math (core->num, input + 1);

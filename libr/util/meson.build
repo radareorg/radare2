@@ -68,6 +68,7 @@ r_util_sources = [
   'strbuf.c',
   'strpool.c',
   'sys.c',
+  'sys_sh.c',
   'syscmd.c',
   'thread.c',
   'thread_sem.c',
