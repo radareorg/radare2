@@ -447,7 +447,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 			r_anal_op_free (op);
 			r_anal_op_free (next_op);
 		}
-		size += core->anal->config->bits / 8;
+		size += bytes;
 		free (type);
 	}
 	r_list_free (types);
