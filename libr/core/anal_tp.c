@@ -575,14 +575,14 @@ repeat:
 	// TODO: Use ut64
 	size_t bblist_size = r_list_length (fcn->bbs);
 	ut64 *bblist = calloc (sizeof (ut64), bblist_size + 1);
-	int i = 0;
+	int j = 0;
 	r_list_foreach (fcn->bbs, it, bb) {
-		bblist[i++] = bb->addr;
+		bblist[j++] = bb->addr;
 	}
-	for (i = 0; i < bblist_size; i++) {
-		bb = r_anal_get_block_at (core->anal, bblist[i]);
+	for (j = 0; j < bblist_size; j++) {
+		bb = r_anal_get_block_at (core->anal, bblist[j]);
 		if (!bb) {
-			eprintf ("Warning: basic block at 0x%08"PFMT64x" was removed during analysis.\n", bblist[i]);
+			eprintf ("Warning: basic block at 0x%08"PFMT64x" was removed during analysis.\n", bblist[j]);
 			retries--;
 			free (bblist);
 			goto repeat;
@@ -698,8 +698,8 @@ repeat:
 						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_BASIC);
 						if (mop) {
 							RAnalVar *mopvar = r_anal_get_used_function_var (anal, mop->addr);
-							ut32 type = mop->type & R_ANAL_OP_TYPE_MASK;
-							if (type == R_ANAL_OP_TYPE_MOV) {
+							ut32 vt = mop->type & R_ANAL_OP_TYPE_MASK;
+							if (vt == R_ANAL_OP_TYPE_MOV) {
 								__var_rename (anal, mopvar, "canary", addr);
 							}
 						}
@@ -812,9 +812,9 @@ repeat:
 			case R_ANAL_OP_TYPE_LOAD:
 				if (aop.ptr && aop.refptr && aop.ptr != UT64_MAX) {
 					if (type == R_ANAL_OP_TYPE_LOAD) {
-						ut8 buf[256] = {0};
-						r_io_read_at (core->io, aop.ptr, buf, sizeof (buf) - 1);
-						ut64 ptr = r_read_ble (buf, core->print->big_endian, aop.refptr * 8);
+						ut8 sbuf[256] = {0};
+						r_io_read_at (core->io, aop.ptr, sbuf, sizeof (sbuf) - 1);
+						ut64 ptr = r_read_ble (sbuf, core->print->big_endian, aop.refptr * 8);
 						if (ptr && ptr != UT64_MAX) {
 							RFlagItem *f = r_flag_get_by_spaces (core->flags, ptr, R_FLAGS_FS_STRINGS, NULL);
 							if (f) {

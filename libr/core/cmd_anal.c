@@ -5124,7 +5124,6 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	}
 #endif
 	int size = 0, i, type = R_REG_TYPE_GPR;
-	int bits = core->anal->config->bits;
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	RRegItem *r = NULL;
 	const char *use_color;
@@ -5386,35 +5385,37 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case 'n': // "arn"
 		if (*(str + 1) == '\0') {
-			eprintf ("Oops. try arn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
+			eprintf ("Oops. try arn [PC|SP|BP|SN|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
 			break;
 		}
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str + 2));
 		if (name && *name) {
 			r_cons_println (name);
 		} else {
-			eprintf ("Oops. try arn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
+			eprintf ("Oops. try arn [PC|SP|BP|SN|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
 		}
 		break;
 	case 'd': // "ard"
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 3, use_color); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,
+			NULL, 3, use_color); // XXX detect which one is current usage
 		break;
 	case 'o': // "aro"
 		r_reg_arena_swap (core->dbg->reg, false);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 0, use_color); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,
+			NULL, 0, use_color); // XXX detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, false);
 		break;
 	case '=': // "ar="
 		{
 			char *p = NULL;
-			char *bits = NULL;
+			char *bitstr = NULL;
 			if (str[1]) {
 				p = strdup (str + 1);
 				if (str[1] != ':') {
 					// Bits were specified
-					bits = strtok (p, ":");
-					if (r_str_isnumber (bits)) {
-						st64 sz = r_num_math (core->num, bits);
+					bitstr = strtok (p, ":");
+					if (r_str_isnumber (bitstr)) {
+						st64 sz = r_num_math (core->num, bitstr);
 						if (sz > 0) {
 							size = sz;
 						}
@@ -5423,10 +5424,10 @@ void cmd_anal_reg(RCore *core, const char *str) {
 						break;
 					}
 				}
-				int len = bits ? strlen (bits) : 0;
+				int len = bitstr ? strlen (bitstr) : 0;
 				if (str[len + 1] == ':') {
 					// We have some regs
-					char *regs = bits ? strtok (NULL, ":") : strtok ((char *)str + 1, ":");
+					char *regs = bitstr ? strtok (NULL, ":") : strtok ((char *)str + 1, ":");
 					char *reg = strtok (regs, " ");
 					RList *q_regs = r_list_new ();
 					if (q_regs) {
@@ -5479,7 +5480,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 				//eprintf ("0x%08"PFMT64x"\n",
 				//	r_reg_get_value (core->dbg->reg, r));
-				r_core_cmdf (core, ".dr*%d", bits);
+				r_core_cmdf (core, ".dr*%d", core->anal->config->bits);
 			} else {
 				eprintf ("ar: Unknown register '%s'\n", regname);
 			}
