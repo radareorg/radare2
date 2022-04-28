@@ -133,7 +133,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
 	anal->leaddrs = NULL;
 	anal->imports = r_list_newf (free);
-// 	r_anal_set_bits (anal, 32);
+/// 	r_anal_set_bits (anal, 32);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {
 		for (i = 0; anal_static_plugins[i]; i++) {
@@ -164,7 +164,7 @@ R_API void r_anal_free(RAnal *a) {
 	set_u_free (a->visited);
 	r_anal_hint_storage_fini (a);
 	r_interval_tree_fini (&a->meta);
-	// R2_570 r_arch_config_free (a->config); // may cause UAF because this struct must be refcounted
+	r_unref (a->config);
 	free (a->zign_path);
 	r_list_free (a->plugins);
 	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
@@ -312,14 +312,13 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 }
 
 R_API bool r_anal_set_bits(RAnal *anal, int bits) {
-	if (anal->config)
 	switch (bits) {
 	case 8:
 	case 16:
 	case 27:
 	case 32:
 	case 64:
-		if (anal->config->bits != bits) {
+		if (anal->config && anal->config->bits != bits) {
 			anal->config->bits = bits;
 			r_anal_set_reg_profile (anal, NULL);
 		}
