@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -231,6 +231,9 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 			}
 #endif
 			anal->cur = h;
+			// r_arch_use (anal->config, h->arch);
+			free (anal->config->arch);
+			anal->config->arch = strdup (h->arch);
 			r_anal_set_reg_profile (anal, NULL);
 			return true;
 		}

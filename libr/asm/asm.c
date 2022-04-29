@@ -374,6 +374,8 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 					r_asm_set_cpu (a, NULL);
 				}
 				a->cur = h;
+				free (a->config->arch);
+				a->config->arch = strdup (h->name);
 				return true;
 			}
 		} else {
@@ -411,9 +413,9 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 }
 
 R_DEPRECATE R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
-	if (a) {
+	if (a && R_STR_ISNOTEMPTY (cpu)) {
 		free (a->config->cpu);
-		a->config->cpu = cpu? strdup (cpu): NULL;
+		a->config->cpu = R_STR_ISNOTEMPTY (cpu)? strdup (cpu): NULL;
 	}
 }
 
