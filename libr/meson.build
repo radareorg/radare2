@@ -176,7 +176,7 @@ anal_plugins += [
   'x86_cs',
   'xap',
   'xcore_cs',
-#  'xtensa',
+  'xtensa',
 ]
 
 asm_plugins += [
@@ -229,7 +229,7 @@ asm_plugins += [
   'x86_nz',
   'xap',
   'xcore_cs',
-#  'xtensa',
+  'xtensa',
 ]
 
 if no_user_plugins
