@@ -509,6 +509,7 @@ static bool fast_step(RCore *core, RAnalOp *aop) {
 }
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
+	const int op_tions = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT;
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
@@ -608,7 +609,7 @@ repeat:
 				// stop emulating this bb if pc is outside the basic block boundaries
 				break;
 			}
-			ret = r_anal_op (anal, &aop, addr, buf + i, bb_size - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
+			ret = r_anal_op (anal, &aop, addr, buf + i, bb_size - i, op_tions);
 			if (ret <= 0) {
 				i += minopcode;
 				addr += minopcode;
