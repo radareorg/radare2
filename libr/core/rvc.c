@@ -1272,3 +1272,9 @@ R_API Rvc *r_vc_load(const char *rp) {
 	return NULL;
 
 }
+
+R_API void r_vc_close(Rvc *vc) {
+	sdb_close (vc->db);
+	free (vc->path);
+	free (vc);
+}
