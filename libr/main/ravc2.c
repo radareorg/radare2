@@ -79,13 +79,19 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		return 1;
 	}
 	char *rp = r_sys_getdir ();
+	if (!rp) {
+		return 1;
+	}
 	if (!strcmp (action, "init")) {
 		if (!r_vc_new (rp)) {
+			free (rp);
 			return 1;
 		}
+		free (rp);
 		return 0;
 	}
 	Rvc *rvc = r_vc_load(rp);
+	free (rp);
 	if (!rvc) {
 		return 1;
 	}
@@ -93,7 +99,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		if (opt.argc <= 2) {
 			RList *branches = r_vc_get_branches (rvc);
 			if (!branches) {
-				free (rp);
+				r_vc_close (rvc);
 				return 1;
 			}
 			RListIter *iter;
@@ -108,7 +114,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			return 0;
 		}
 		if (!r_vc_branch (rvc, opt.argv[opt.ind + 1])) {
-			free (rp);
+			r_vc_close (rvc);
 			return 1;
 		}
 		return 0;
@@ -117,17 +123,17 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		int i;
 		if (opt.argc < 4) {
 			eprintf ("Usage: ravc2 commit [message] [files...]\n");
-			free (rp);
+			r_vc_close (rvc);
 			return 1;
 		}
 		char *message = r_str_new (opt.argv[opt.ind + 1]);
 		if (!message) {
-			free (rp);
+			r_vc_close (rvc);
 			return 1;
 		}
 		RList *files = r_list_new ();
 		if (!files) {
-			free (rp);
+			r_vc_close (rvc);
 			free (message);
 			return 1;
 		}
@@ -136,13 +142,13 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			if (!cf) {
 				free (message);
 				r_list_free (files);
-				free (rp);
+				r_vc_close (rvc);
 				return 1;
 			}
 			if (!r_list_append (files, cf)) {
 				free (message);
 				r_list_free (files);
-				free (rp);
+				r_vc_close (rvc);
 				return 1;
 			}
 		}
@@ -154,14 +160,14 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		if (!author) {
 			free (message);
 			r_list_free (files);
-			free (rp);
+			r_vc_close (rvc);
 			return 1;
 		}
 		bool ret = r_vc_commit (rvc, message, author, files);
 		free (message);
 		free (author);
 		r_list_free (files);
-		free (rp);
+		r_vc_close (rvc);
 		if (!ret) {
 			return 1;
 		}
@@ -169,14 +175,14 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 	if (!strcmp (action, "checkout")) {
 		if (opt.argc < 2) {
-			free (rp);
+			r_vc_close (rvc);
 			return 1;
 		}
 		if (!r_vc_checkout (rvc, opt.argv[opt.ind + 1])) {
-			free (rp);
+			r_vc_close (rvc);
 			return 1;
 		}
-		free (rp);
+		r_vc_close (rvc);
 		return 0;
 	}
 	if (!strcmp (action, "log")) {
@@ -219,20 +225,20 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 	if (!strcmp (action, "reset")) {
 		if (!r_vc_reset (rvc)) {
-			free (rp);
+			r_vc_close (rvc);
 			eprintf ("Couldn't reset\n");
 			return 1;
 		}
 		return 0;
 	}
 	if (!strcmp (action, "clone")) {
-		free (rp);
+		r_vc_close (rvc);
 		if (opt.argc < 3) {
 			eprintf ("Usage: %s <src> <dst>", argv[0]);
 			return -1;
 		}
 		return !r_vc_clone (argv[1 + opt.ind], argv[2 + opt.ind]);
 	}
-	free (rp);
+	r_vc_close (rvc);
 	return 1;
 }
