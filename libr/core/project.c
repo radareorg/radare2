@@ -13,7 +13,7 @@
 // project apis to be used from cmd_project.c
 
 static bool is_valid_project_name(const char *name) {
-	if (r_str_len_utf8 (name) >= 16) {
+	if (r_str_len_utf8 (name) >= 64) {
 		return false;
 	}
 	const char *extention = r_str_endswith (name, ".zip") ? r_str_last (name, ".zip") : NULL;
