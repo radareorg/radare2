@@ -2,8 +2,8 @@
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include <capstone.h>
-#include <sparc.h>
+#include <capstone/capstone.h>
+#include <capstone/sparc.h>
 
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported

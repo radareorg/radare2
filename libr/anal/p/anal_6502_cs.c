@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 #if CS_API_MAJOR >= 5 || (CS_API_MAJOR >= 4 && CS_API_MINOR >= 1)
 #define CAPSTONE_HAS_MOS65XX 1
@@ -14,7 +14,7 @@
 #endif
 
 #if CAPSTONE_HAS_MOS65XX
-#include <mos65xx.h>
+#include <capstone/mos65xx.h>
 
 static csh handle = 0;
 

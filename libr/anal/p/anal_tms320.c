@@ -82,7 +82,7 @@ int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int
 }
 
 // c64x
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 #ifdef CAPSTONE_TMS320C64X_H
 #define CAPSTONE_HAS_TMS320C64X 1

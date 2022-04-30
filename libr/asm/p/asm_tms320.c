@@ -11,7 +11,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #if WANT_CAPSTONE
-#include <capstone.h>
+#include <capstone/capstone.h>
 #endif
 
 #ifdef CAPSTONE_TMS320C64X_H

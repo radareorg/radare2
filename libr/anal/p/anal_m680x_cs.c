@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 #if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0
 #define CAPSTONE_HAS_M680X 1
@@ -19,7 +19,7 @@
 #endif
 
 #if CAPSTONE_HAS_M680X
-#include <m680x.h>
+#include <capstone/m680x.h>
 
 static int m680xmode(const char *str) {
 	if (R_STR_ISEMPTY (str)) {
