@@ -102,10 +102,22 @@ static void __errorFunc(void *opaque, const char *msg) {
 	}
 }
 
+static TCCState *new_tcc(RAnal *anal) {
+	TCCState *ts = tcc_new (anal->config->arch, anal->config->bits, anal->config->os);
+	if (!ts) {
+		ts = tcc_new (R_SYS_ARCH, R_SYS_BITS, R_SYS_OS);
+		if (!ts) {
+			R_LOG_ERROR ("Cannot instantiate TCC for given arch (%s)", anal->config->arch);
+			return NULL;
+		}
+	}
+	return ts;
+}
+
 R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg) {
 	char *str = NULL;
 	r_th_lock_enter (&r_tcc_lock);
-	TCCState *T = tcc_new (anal->config->cpu, anal->config->bits, anal->config->os);
+	TCCState *T = new_tcc (anal);
 	if (!T) {
 		r_th_lock_leave (&r_tcc_lock);
 		return NULL;
@@ -138,14 +150,11 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char 
 R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 	char *str = NULL;
 	r_th_lock_enter (&r_tcc_lock);
-	TCCState *T = tcc_new (anal->config->arch, anal->config->bits, anal->config->os);
+	TCCState *T = new_tcc (anal);
 	if (!T) {
-		TCCState *T = tcc_new (R_SYS_ARCH, R_SYS_BITS, R_SYS_OS);
-		if (!T) {
-			R_LOG_ERROR ("Cannot instantiate TCC for given arch (%s)", anal->config->arch);
-			r_th_lock_leave (&r_tcc_lock);
-			return NULL;
-		}
+		R_LOG_ERROR ("Cannot instantiate TCC for given arch (%s)", anal->config->arch);
+		r_th_lock_leave (&r_tcc_lock);
+		return NULL;
 	}
 	s1 = T; // XXX delete global
 	tcc_set_callback (T, &__appendString, &str);
