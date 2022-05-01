@@ -377,7 +377,6 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 				a->cur = h;
 #if 0
 				r_arch_use (a->config, h->arch);
-#else
 				r_arch_use (a->config, h->name);
 #endif
 				return true;
@@ -402,7 +401,6 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 			} else {
 				if (!strcmp (name, h->name)) {
 #if 0
-					// r_arch_use (a->config, h->arch);
 					r_arch_set_cpu (a->config, NULL);
 #else
 					h->arch = name;
