@@ -228,7 +228,6 @@ asm_plugins += [
   'x86_nz',
   'xap',
   'xcore_cs',
-  'xtensa',
 ]
 
 if no_user_plugins

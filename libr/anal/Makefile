@@ -36,9 +36,6 @@ OBJLIBS+=esil_handler.o switch.o cycles.o esil_dfg.o esil_cfg.o
 OBJLIBS+=esil_stats.o esil_trace.o flirt.o labels.o
 OBJLIBS+=pin.o vtable.o rtti.o codemeta.o anplugs.o global.o
 OBJLIBS+=rtti_msvc.o rtti_itanium.o jmptbl.o function.o
-ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-modules.o
-ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-isa.o
-ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/elf32-xtensa.o
 
 OBJS=${STATIC_OBJS} ${OBJLIBS} ${ASMOBJS}
 ifeq ($(HAVE_GPERF),1)
