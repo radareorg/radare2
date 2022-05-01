@@ -178,5 +178,7 @@ CMDS=<<EOF
 aod
 aod zap
 EOF
-EXPECT=
+EXPECT=<<EOF
+Zero and Add
+EOF
 RUN
