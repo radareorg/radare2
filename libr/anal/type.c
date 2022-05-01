@@ -10,12 +10,12 @@
 // XXX this function needs to be rewritten
 static char *is_type(char *type) {
 	char *name = NULL;
-	if ((name = strstr (type, "=type\n")) ||
-			(name = strstr (type, "=struct\n")) ||
-			(name = strstr (type, "=union\n")) ||
-			(name = strstr (type, "=enum\n")) ||
-			(name = strstr (type, "=typedef\n")) ||
-			(name = strstr (type, "=func\n"))) {
+	if ((name = strstr (type, "=type")) ||
+			(name = strstr (type, "=struct")) ||
+			(name = strstr (type, "=union")) ||
+			(name = strstr (type, "=enum")) ||
+			(name = strstr (type, "=typedef")) ||
+			(name = strstr (type, "=func"))) {
 		return name;
 	}
 	return NULL;
@@ -417,7 +417,7 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 		r_strf_var (v, KSZ, "%s,%u,%d", member->type, (unsigned int)member->offset, 0);
 		sdb_set (anal->sdb_types, k, v, 0);
 		free (member_sname);
-		r_strbuf_appendf (arglist, "%s%s", member->name, (i++ == 0) ? "" : ",");
+		r_strbuf_appendf (arglist, "%s%s", (i++ == 0) ? "" : ",", member->name);
 	}
 	// union.name=arg1,arg2,argN
 	sdb_set_owned (anal->sdb_types, r_strf ("%s.%s", kind, sname), r_strbuf_drain (arglist), 0);
@@ -478,7 +478,12 @@ static void save_atomic_type(const RAnal *anal, const RAnalBaseType *type) {
 	*/
 	char *sname = r_str_sanitize_sdb_key (type->name);
 	sdb_set (anal->sdb_types, sname, "type", 0);
+#if 0
 	sdb_num_set (anal->sdb_types, r_strf ("type.%s.size", sname), type->size, 0);
+#else
+	char *ns = r_str_newf ("%" PFMT64u, (ut64)type->size);
+	sdb_set_owned (anal->sdb_types, r_strf ("type.%s.size", sname), ns, 0);
+#endif
 	sdb_set (anal->sdb_types, r_strf ("type.%s", sname), type->type, 0);
 	free (sname);
 }
