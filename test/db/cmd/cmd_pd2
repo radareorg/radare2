@@ -413,7 +413,7 @@ EXPECT=<<EOF
         ,=< 0x00005b02      7d0a           jge 0x5b0e                  ; rip=0x5b0e -> 0x8d4890f4 ; likely
        ,==< 0x00005b04      7f08           jg 0x5b0e                   ; rip=0x5b0e -> 0x8d4890f4 ; likely
       ,===< 0x00005b06      eb00           jmp 0x5b08                  ; rip=0x5b08 -> 0xc30a15ff
-      `---> 0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0 ; rsp=0xfffffffffffffff8 ; rip=0x0
+      `---> 0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0 ; rsp=0xfffffffffffffff8 -> 0x4c457fff ; rip=0x0
        ||                                                              ; int __libc_start_main(func: unk_size_format, -1, char **: unk_size-1, func: unk_size_format, func: unk_size_format, func: unk_size_format, -1)
 EOF
 RUN
