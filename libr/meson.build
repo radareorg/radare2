@@ -200,7 +200,6 @@ asm_plugins += [
   'lm32',
   'm680x_cs',
   'malbolge',
-  'mcore',
   'mcs96',
   'mips_cs',
   'nios2',
