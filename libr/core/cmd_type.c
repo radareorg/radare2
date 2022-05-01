@@ -1392,9 +1392,7 @@ static int cmd_type(void *data, const char *input) {
 			// TODO #7967 help refactor: move to detail
 			r_core_cmd_help (core, help_msg_td);
 			r_cons_printf ("Note: The td command should be put between double quotes\n"
-				"Example: \"td struct foo {int bar;int cow;};\""
-				"\nt");
-
+				"Example: \"td struct foo {int bar;int cow;};\"\n");
 		} else if (input[1] == ' ') {
 			char *tmp = r_str_newf ("%s;", input + 2);
 			if (!tmp) {
@@ -1408,11 +1406,11 @@ static int cmd_type(void *data, const char *input) {
 				free (out);
 			}
 			if (error_msg) {
-				eprintf ("%s", error_msg);
+				R_LOG_ERROR ("%s", error_msg);
 				free (error_msg);
 			}
 		} else {
-			eprintf ("Invalid use of td. See td? for help\n");
+			R_LOG_ERROR ("Invalid use of td. See td? for help\n");
 		}
 		break;
 	case 'x': {
