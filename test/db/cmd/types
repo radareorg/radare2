@@ -1806,3 +1806,21 @@ char * strcpy (char *dest, const char *src);
 }
 EOF
 RUN
+
+NAME=typedef stuff
+FILE=--
+CMDS=<<EOF
+"td typedef int Number";
+tt
+tt Number
+tk~Number
+t Number
+EOF
+EXPECT=<<EOF
+Number
+int32_t
+Number=typedef
+typedef.Number=int32_t
+pf d
+EOF
+RUN
