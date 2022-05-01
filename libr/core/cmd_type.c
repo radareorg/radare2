@@ -1293,8 +1293,20 @@ static int cmd_type(void *data, const char *input) {
 		}
 		break;
 	}
-	case ' ':
-		showFormat (core, input + 1, 0);
+	case ' ': // "t "
+		  {
+			  const char *token = r_str_trim_head_ro (input + 1);
+			  const char *typdef = sdb_const_get (core->anal->sdb_types, token, 0);
+			  // Tresolve typedef if any
+			  if (typdef && !strcmp (typdef, "typedef")) {
+				  r_strf_var (a, 128, "typedef.%s", token);
+				  const char *tokendef = sdb_const_get (core->anal->sdb_types, a, 0);
+				  if (tokendef) {
+					  token = tokendef;
+				  }
+			  }
+			  showFormat (core, token, 0);
+		  }
 		break;
 	// t* - list all types in 'pf' syntax
 	case 'j': // "tj"
@@ -1483,7 +1495,7 @@ static int cmd_type(void *data, const char *input) {
 				r_list_free (uniqList);
 			}
 			break;
-		case 't':
+		case 't': // "txt"
 		case ' ': // "tx " -- show which function use given type
 			type = (char *)r_str_trim_head_ro (input + 2);
 			r_list_foreach (core->anal->fcns, iter, fcn) {
@@ -1734,7 +1746,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 't': {
+	case 't': { // "tt"
 		if (!input[1] || input[1] == 'j') {
 			PJ *pj = NULL;
 			if (input[1] == 'j') {
