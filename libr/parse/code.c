@@ -138,8 +138,9 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char 
 R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 	char *str = NULL;
 	r_th_lock_enter (&r_tcc_lock);
-	TCCState *T = tcc_new (anal->config->cpu, anal->config->bits, anal->config->os);
+	TCCState *T = tcc_new (anal->config->arch, anal->config->bits, anal->config->os);
 	if (!T) {
+		R_LOG_ERROR ("Cannot instantiate TCC for given arch (%s)", anal->config->arch);
 		r_th_lock_leave (&r_tcc_lock);
 		return NULL;
 	}
