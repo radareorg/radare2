@@ -12,6 +12,8 @@ static const char *help_msg_at[] = {
 	".", "cmd", "execute output of command as r2 script",
 	".:", "8080", "wait for commands on port 8080",
 	".!", "rabin2 -re $FILE", "run command output as r2 script",
+	"-", "[?]", "alias for s- aka negative relative seek and script editor",
+	"+", "[?]", "alias for s+, act as a relative seek",
 	"*", "", "output of command in r2 script format (CC*)",
 	"j", "", "output of command in JSON format (pdj)",
 	"~", "?", "count number of lines (like wc -l)",
