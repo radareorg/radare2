@@ -23,6 +23,7 @@ extern SdbGperf gperf_sh;
 extern SdbGperf gperf_sparc;
 extern SdbGperf gperf_x86;
 extern SdbGperf gperf_v810;
+extern SdbGperf gperf_s390;
 extern SdbGperf gperf_v850;
 extern SdbGperf gperf_8051;
 extern SdbGperf gperf_LH5801;
@@ -40,6 +41,7 @@ static const SdbGperf *gperfs[] = {
 	// &gperf_chip8,
 	&gperf_i8080,
 	&gperf_java,
+	&gperf_s390,
 	&gperf_lm32,
 	&gperf_m68k,
 	&gperf_malbolge,

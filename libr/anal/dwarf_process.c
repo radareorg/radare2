@@ -50,10 +50,12 @@ typedef struct dwarf_variable_t {
 } Variable;
 
 static void variable_free(Variable *var) {
-	free (var->name);
-	free (var->location);
-	free (var->type);
-	free (var);
+	if (var) {
+		free (var->name);
+		free (var->location);
+		free (var->type);
+		free (var);
+	}
 }
 
 /* return -1 if attr isn't found */

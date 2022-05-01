@@ -63,6 +63,7 @@ OBJS+=d/lm32.o
 OBJS+=d/m68k.o
 OBJS+=d/malbolge.o
 OBJS+=d/mips.o
+OBJS+=d/s390.o
 OBJS+=d/msp430.o
 OBJS+=d/pic18c.o
 OBJS+=d/ppc.o

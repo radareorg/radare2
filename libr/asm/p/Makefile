@@ -23,7 +23,7 @@ ARCHS+=ppc_gnu.mk ppc_as.mk ppc_cs.mk xap.mk x86_nasm.mk avr.mk
 ARCHS+=sh.mk arm_winedbg.mk tms320.mk gb.mk snes.mk ebc.mk malbolge.mk ws.mk
 ARCHS+=6502.mk h8300.mk cr16.mk v850.mk propeller.mk i4004.mk
 ARCHS+=lh5801.mk v810.mk mcs96.mk lm32.mk jdh8.mk
-ARCHS+=riscv.mk rsp.mk mcore.mk s390_cs.mk s390_gnu.mk
+ARCHS+=riscv.mk rsp.mk mcore.mk
 # ARCHS+=loongarch_gnu.mk
 include $(ARCHS)
 
