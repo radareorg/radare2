@@ -1,4 +1,8 @@
 OBJ_XTENSA=anal_xtensa.o
+OBJ_XTENSA+=../../asm/arch/xtensa/gnu/xtensa-dis.o
+OBJ_XTENSA+=../../asm/arch/xtensa/gnu/xtensa-isa.o
+OBJ_XTENSA+=../../asm/arch/xtensa/gnu/xtensa-modules.o
+OBJ_XTENSA+=../../asm/arch/xtensa/gnu/elf32-xtensa.o
 
 STATIC_OBJ+=${OBJ_XTENSA}
 TARGET_XTENSA=anal_xtensa.${EXT_SO}

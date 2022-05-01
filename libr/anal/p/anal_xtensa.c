@@ -8,6 +8,64 @@
 
 #include <xtensa-isa.h>
 
+
+// GNU DISASM BEGIN
+
+#include "disas-asm.h"
+
+#define INSN_BUFFER_SIZE 4
+
+static ut64 offset = 0;
+static RStrBuf *buf_global = NULL;
+static ut8 bytes[INSN_BUFFER_SIZE];
+
+static int xtensa_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+	if (length > INSN_BUFFER_SIZE) {
+		length = INSN_BUFFER_SIZE;
+	}
+	memcpy (myaddr, bytes, length);
+	return 0;
+}
+
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+	return 0;
+}
+
+static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	//--
+}
+
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
+DECLARE_GENERIC_FPRINTF_FUNC()
+
+static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	struct disassemble_info disasm_obj;
+	offset = addr;
+	if (len > INSN_BUFFER_SIZE) {
+		len = INSN_BUFFER_SIZE;
+	}
+	memcpy (bytes, buf, len); // TODO handle thumb
+
+	/* prepare disassembler */
+	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
+	disasm_obj.disassembler_options = (a->config->bits == 64)?"64":"";
+	disasm_obj.buffer = bytes;
+	disasm_obj.buffer_length = len;
+	disasm_obj.read_memory_func = &xtensa_buffer_read_memory;
+	disasm_obj.symbol_at_address_func = &symbol_at_address;
+	disasm_obj.memory_error_func = &memory_error_func;
+	disasm_obj.print_address_func = &generic_print_address_func;
+	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.fprintf_func = &generic_fprintf_func;
+	disasm_obj.stream = stdout;
+
+	op->size = print_insn_xtensa ((bfd_vma)offset, &disasm_obj);
+	if (op->size == -1) {
+		op->mnemonic = strdup ("(data)");
+	}
+	return op->size;
+}
+// GNU DISASM END
 #define CM ","
 #define XTENSA_MAX_LENGTH 8
 
@@ -1913,6 +1971,9 @@ static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origina
 	if (!op) {
 		return 1;
 	}
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		disassemble (anal, op, addr, buf_original, len_original);
+	}
 
 	op->size = xtensa_length (buf_original);
 	if (op->size > len_original) {
@@ -2019,8 +2080,9 @@ RAnalPlugin r_anal_plugin_xtensa = {
 	.name = "xtensa",
 	.desc = "Xtensa disassembler",
 	.license = "LGPL3",
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.arch = "xtensa",
-	.bits = 8,
+	.bits = 32,
 	.esil = true,
 	.op = &xtensa_op,
 	.get_reg_profile = get_reg_profile,
