@@ -140,9 +140,12 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 	r_th_lock_enter (&r_tcc_lock);
 	TCCState *T = tcc_new (anal->config->arch, anal->config->bits, anal->config->os);
 	if (!T) {
-		R_LOG_ERROR ("Cannot instantiate TCC for given arch (%s)", anal->config->arch);
-		r_th_lock_leave (&r_tcc_lock);
-		return NULL;
+		TCCState *T = tcc_new (R_SYS_ARCH, R_SYS_BITS, R_SYS_OS);
+		if (!T) {
+			R_LOG_ERROR ("Cannot instantiate TCC for given arch (%s)", anal->config->arch);
+			r_th_lock_leave (&r_tcc_lock);
+			return NULL;
+		}
 	}
 	s1 = T; // XXX delete global
 	tcc_set_callback (T, &__appendString, &str);
