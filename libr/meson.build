@@ -215,7 +215,6 @@ asm_plugins += [
   'sh',
   'snes',
   'sparc_cs',
-  's390_cs',
   'tms320',
   'tms320c64x',
   'tricore',
@@ -244,7 +243,6 @@ if no_user_plugins
       'mips_gnu',
       'ppc_gnu',
       'sparc_gnu',
-      's390_gnu',
       'v850_gnu',
     ]
     anal_plugins += [
@@ -252,6 +250,7 @@ if no_user_plugins
       'arm_gnu',
       'mips_gnu',
       'loongarch_gnu',
+      's390_gnu',
       'ppc_gnu',
       'sparc_gnu',
     ]

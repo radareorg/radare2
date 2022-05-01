@@ -299,26 +299,26 @@ pdr.
 EOF
 EXPECT=<<EOF
 / 30: fcn.00560e67 ();
-|       :   0x00560e67      56             push esi
-|      ,==< 0x00560e68      e904000000     jmp 0x560e71
+|           0x00560e67      56             push esi
+|       ,=< 0x00560e68      e904000000     jmp 0x560e71
 ..
-|      |:   ; CODE XREF from fcn.00560e67 @ 0x560e68(x)
-|      `--> 0x00560e71      90             nop
-|       :   0x00560e72      eb09           jmp 0x560e7d
+|       |   ; CODE XREF from fcn.00560e67 @ 0x560e68(x)
+|       `-> 0x00560e71      90             nop
+|           0x00560e72      eb09           jmp 0x560e7d
 ..
-|       :   ; CODE XREF from fcn.00560e67 @ 0x560e72(x)
-|       :   0x00560e7d      5e             pop esi
-|       :   0x00560e7e      50             push eax
-|       :   0x00560e7f      52             push edx
-|      ,==< 0x00560e80      e911000000     jmp 0x560e96
+|           ; CODE XREF from fcn.00560e67 @ 0x560e72(x)
+|           0x00560e7d      5e             pop esi
+|           0x00560e7e      50             push eax
+|           0x00560e7f      52             push edx
+|       ,=< 0x00560e80      e911000000     jmp 0x560e96
 ..
-|     ||:   ; CODE XREF from fcn.00560e67 @ 0x560e80(x)
-|     |`--> 0x00560e96      0f31           rdtsc
-|     | :   0x00560e98      e914000000     jmp 0x560eb1
+|      ||   ; CODE XREF from fcn.00560e67 @ 0x560e80(x)
+|      |`-> 0x00560e96      0f31           rdtsc
+|      |    0x00560e98      e914000000     jmp 0x560eb1
 ..
-|     ||:   ; CODE XREF from fcn.00560e67 @ 0x560e98(x)
-|     ||:   0x00560eb1      5a             pop edx
-\     ||`=< 0x00560eb2      e940c5edff     jmp 0x43d3f7
+|      ||   ; CODE XREF from fcn.00560e67 @ 0x560e98(x)
+|      ||   0x00560eb1      5a             pop edx
+\      ||   0x00560eb2      e940c5edff     jmp 0x43d3f7
 
 / 30: fcn.00560e67 ();
 | 0x00560e67      56             push esi
@@ -413,7 +413,7 @@ EXPECT=<<EOF
         ,=< 0x00005b02      7d0a           jge 0x5b0e                  ; rip=0x5b0e -> 0x8d4890f4 ; likely
        ,==< 0x00005b04      7f08           jg 0x5b0e                   ; rip=0x5b0e -> 0x8d4890f4 ; likely
       ,===< 0x00005b06      eb00           jmp 0x5b08                  ; rip=0x5b08 -> 0xc30a15ff
-      `---> 0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0 ; rsp=0xfffffffffffffff8 ; rip=0x0
+      `---> 0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0 ; rsp=0xfffffffffffffff8 -> 0x4c457fff ; rip=0x0
        ||                                                              ; int __libc_start_main(func: unk_size_format, -1, char **: unk_size-1, func: unk_size_format, func: unk_size_format, func: unk_size_format, -1)
 EOF
 RUN
@@ -504,11 +504,11 @@ EXPECT=<<EOF
        |    0x080485a0      mov dword [esp], str.Wrong_
        |    0x080485a7      call sym.imp.puts
        |    0x080485ac      mov eax, 1
-      ,=.-> 0x080485b1      jmp 0x80485f9
-      |`--> 0x080485b3      add dword [esp + 0x20], 1
-      | :   0x080485b8      mov ebx, dword [esp + 0x20]
-      | `=< 0x080485bc      jne 0x80485b1
-      |     0x080485be      nop
+       |,=< 0x080485b1      jmp 0x80485f9
+       `--> 0x080485b3      add dword [esp + 0x20], 1
+        |   0x080485b8      mov ebx, dword [esp + 0x20]
+        |   0x080485bc      jne 0x80485b1
+        |   0x080485be      nop
 EOF
 RUN
 

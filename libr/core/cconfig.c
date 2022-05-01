@@ -502,6 +502,9 @@ static bool cb_analcpu(void *user, void *data) {
 	r_arch_set_cpu (core->anal->config, node->value);
 	/* set pcalign */
 	int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+ 	if (v != -1) {
+ 		core->anal->config->pcalign = v;
+ 	}
 	r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	return true;
 }

@@ -60,6 +60,12 @@ static char *predotname(const char *name) {
 R_API bool r_parse_use(RParse *p, const char *name) {
 	r_return_val_if_fail (p && name, false);
 
+	// TODO: remove the alias workarounds because of missing pseudo plugins
+	// TODO: maybe we want to have a generic pseudo parser?
+	if (r_str_startswith (name, "s390.")) {
+		name = "x86.pseudo";
+	}
+
 	RListIter *iter;
 	RParsePlugin *h;
 	r_list_foreach (p->parsers, iter, h) {
