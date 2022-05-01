@@ -419,9 +419,11 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 			eprintf ("Cannot find arch plugin with this name. See rasm2 -L and rasm2 -LL\n");
 		}
 	}
+#if 0
 	// check if its a valid analysis plugin
 	sdb_free (a->pair);
 	a->pair = NULL;
+#endif
 	if (strcmp (name, "null")) {
 		return r_asm_use (a, "null");
 	}

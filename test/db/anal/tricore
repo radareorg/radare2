@@ -135,7 +135,7 @@ EXPECT=<<EOF
             0x80000018      6f010400       jz.t d1, 0, 0x80000020      ; jump if zero bit
             0x8000001c      5d006800       jl 0x800000ec               ; jump and link
             0x80000020      910000ad       movh.a sp, 53248            ; move high to address
-            0x80000024      d9aa6000       lea sp, [sp]1056 <0xd0000420> ; load effective address
+            0x80000024      d9aa6000       lea sp, [sp]1056            ; load effective address
             0x80000028      7b00000d       movh d0, 53248              ; move high
             0x8000002c      1b008200       addi d0, d0, 2080           ; add immediate
             0x80000030      cd80e20f       mtcr #0xfe28, d0            ; move to core register

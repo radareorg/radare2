@@ -214,7 +214,6 @@ asm_plugins += [
   'snes',
   'sparc_cs',
   'tms320',
-  'tricore',
   'v810',
   'v850',
   'vax',
