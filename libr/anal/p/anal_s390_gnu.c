@@ -126,7 +126,7 @@ static int archinfo(RAnal *anal, int q) {
 	return 2;
 }
 
-RAnalPlugin r_anal_plugin_s390_gnu= {
+RAnalPlugin r_anal_plugin_s390_gnu = {
 	.name = "s390.gnu",
 	.desc = "SystemZ S390 from binutils",
 	.esil = false,

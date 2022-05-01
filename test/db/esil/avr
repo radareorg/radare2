@@ -5,7 +5,7 @@ e asm.arch=avr
 e asm.bits=8
 wx f89408e00ebf0fe50dbf0e94080088950895
 aei
-aeim 0x00000100ffff avr_ram
+aeim 0x00000100 0xffff avr_ram
 6aeso
 ar pc
 ar pc = 0
