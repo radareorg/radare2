@@ -498,7 +498,8 @@ static bool cb_analcpu(void *user, void *data) {
 	if (strstr (node->value, "?")) {
 		ranal2_list (core, r_config_get (core->config, "anal.arch"), node->value[1]);
 	}
-	r_anal_set_cpu (core->anal, node->value);
+	// r_anal_set_cpu (core->anal, node->value);
+	r_arch_set_cpu (core->anal->config, node->value);
 	/* set pcalign */
 	int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);

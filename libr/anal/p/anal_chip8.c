@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2017-2021 - maijin, pancake */
+/* radare - LGPL3 - Copyright 2017-2022 - maijin, pancake */
 
 #include <string.h>
 #include <r_types.h>

@@ -218,7 +218,6 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 R_API bool r_anal_use(RAnal *anal, const char *name) {
 	RListIter *it;
 	RAnalPlugin *h;
-
 	if (anal) {
 		r_list_foreach (anal->plugins, it, h) {
 			if (!h->name || strcmp (h->name, name)) {
@@ -231,9 +230,7 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 			}
 #endif
 			anal->cur = h;
-			// r_arch_use (anal->config, h->arch);
-			free (anal->config->arch);
-			anal->config->arch = strdup (h->arch);
+			r_arch_use (anal->config, h->arch);
 			r_anal_set_reg_profile (anal, NULL);
 			return true;
 		}
@@ -330,14 +327,17 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	return false;
 }
 
+// XXX this is only used to set the arch, not the cpu
+// R2_570
+#if 0
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
-	free (anal->config->cpu);
-	anal->config->cpu = cpu ? strdup (cpu) : NULL;
+	r_arch_use (anal->config, cpu); // XXX cpu is arch, so it needs to be 
 	int v = r_anal_archinfo (anal, R_ANAL_ARCHINFO_ALIGN);
 	if (v != -1) {
 		anal->config->pcalign = v;
 	}
 }
+#endif
 
 R_API void r_anal_set_big_endian(RAnal *anal, int bigend) {
 	r_return_if_fail (anal);

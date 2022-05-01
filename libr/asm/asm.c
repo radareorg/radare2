@@ -330,8 +330,9 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 }
 
 static void load_asm_descriptions(RAsm *a, RAsmPlugin *p) {
-	const char *arch = p->arch;
-	if (!arch || !strcmp (p->name, "r2ghidra")) {
+	const char *arch = ((!p || !strcmp (p->name, "null")) && a->config->arch)
+		? a->config->arch: p->arch;
+	if (!arch || (p && !strcmp (p->name, "r2ghidra"))) {
 		if (a->config->cpu) {
 			arch = a->config->cpu;
 		} else {
@@ -374,24 +375,39 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 					r_asm_set_cpu (a, NULL);
 				}
 				a->cur = h;
-				free (a->config->arch);
-				a->config->arch = strdup (h->name);
+#if 0
+				r_arch_use (a->config, h->arch);
+#else
+				r_arch_use (a->config, h->name);
+#endif
 				return true;
 			}
 		} else {
 			char *vv = strchr (name, '.');
 			if (vv) {
 				if (!strcmp (vv + 1, h->name)) {
-					char *cpu = r_str_ndup (name, vv - name);
-					r_asm_set_cpu (a, cpu);
+					char *arch = r_str_ndup (name, vv - name);
+#if 0
+					r_arch_set_cpu (a->config, arch);
+					// r_asm_set_cpu (a, arch);
+					// h->arch = name;
+					// r_arch_use (a->config, arch);
+#else
+					r_asm_set_cpu (a, arch);
+#endif
 					a->cur = h;
-					free (cpu);
+					free (arch);
 					return true;
 				}
 			} else {
 				if (!strcmp (name, h->name)) {
+#if 0
+					// r_arch_use (a->config, h->arch);
+					r_arch_set_cpu (a->config, NULL);
+#else
 					h->arch = name;
 					r_asm_set_cpu (a, NULL);
+#endif
 					a->cur = h;
 					return true;
 				}
@@ -399,7 +415,9 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		}
 	}
 	if (a->analb.anal) {
-		if (!a->analb.use (a->analb.anal, name)) {
+		if (a->analb.use (a->analb.anal, name)) {
+			load_asm_descriptions (a, NULL);
+		} else {
 			eprintf ("Cannot find arch plugin with this name. See rasm2 -L and rasm2 -LL\n");
 		}
 	}
@@ -412,11 +430,10 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	return false;
 }
 
+// XXX this is r_arch
 R_DEPRECATE R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
-	if (a && R_STR_ISNOTEMPTY (cpu)) {
-		free (a->config->cpu);
-		a->config->cpu = R_STR_ISNOTEMPTY (cpu)? strdup (cpu): NULL;
-	}
+	r_return_if_fail (a);
+	r_arch_set_cpu (a->config, cpu);
 }
 
 static bool has_bits(RAsmPlugin *h, int bits) {
@@ -1011,6 +1028,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 					r_asm_set_bits (a, 16);
 					ret = 0;
 				} else if (!strncmp (ptr, ".arch ", 6)) {
+					// XXX should be arch_use()
 					ret = r_asm_pseudo_arch (a, ptr+6);
 				} else if (!strncmp (ptr, ".bits ", 6)) {
 					ret = r_asm_pseudo_bits (a, ptr+6);
@@ -1262,15 +1280,12 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
 }
 
 R_API RList *r_asm_cpus(RAsm *a) {
-	RList *list = NULL;
 	RListIter *iter;
 	char *item;
 	// get asm plugin
-	if (a->cur && a->cur->cpus) {
-		list = r_str_split_duplist (a->cur->cpus, ",", 0);
-	} else {
-		list = r_list_newf (free);
-	}
+	RList *list = (a->cur && a->cur->cpus)
+		? r_str_split_duplist (a->cur->cpus, ",", 0)
+		: r_list_newf (free);
 	// get anal plugin
 	if (a->analb.anal && a->analb.anal->cur && a->analb.anal->cur->cpus) {
 		char *cpus = a->analb.anal->cur->cpus;

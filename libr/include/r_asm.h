@@ -230,8 +230,6 @@ extern RAsmPlugin r_asm_plugin_sh;
 extern RAsmPlugin r_asm_plugin_snes;
 extern RAsmPlugin r_asm_plugin_sparc_cs;
 extern RAsmPlugin r_asm_plugin_sparc_gnu;
-extern RAsmPlugin r_asm_plugin_s390_cs;
-extern RAsmPlugin r_asm_plugin_s390_gnu;
 extern RAsmPlugin r_asm_plugin_tms320;
 extern RAsmPlugin r_asm_plugin_tms320c64x;
 extern RAsmPlugin r_asm_plugin_tricore;

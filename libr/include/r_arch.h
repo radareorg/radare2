@@ -15,7 +15,6 @@ enum {
 	R_ASM_SYNTAX_JZ, // hack to use jz instead of je on x86
 };
 
-
 // TODO: add reference counting and accessor APIs
 typedef struct r_arch_config_t {
 	char *arch;
@@ -44,8 +43,28 @@ static inline void my_ac_free(RArchConfig *cfg) {
 	}
 }
 
+static inline void r_arch_use(RArchConfig *config, R_NULLABLE const char *arch) {
+	r_return_if_fail (config);
+	R_LOG_DEBUG ("RArch.USE (%s)", arch);
+	if (arch && !strcmp (arch, "null")) {
+		return;
+	}
+	free (config->arch);
+	config->arch = R_STR_ISNOTEMPTY (arch) ? strdup (arch) : NULL;
+}
+
+static inline void r_arch_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu) {
+	r_return_if_fail (config);
+	R_LOG_DEBUG ("RArch.CPU (%s)", cpu);
+	free (config->cpu);
+	config->cpu = R_STR_ISNOTEMPTY (cpu) ? strdup (cpu) : NULL;
+}
+
 static inline RArchConfig *r_arch_config_new(void) {
 	RArchConfig *ac = R_NEW0 (RArchConfig);
+	if (!ac) {
+		return NULL;
+	}
 	ac->arch = strdup (R_SYS_ARCH);
 	ac->bits = R_SYS_BITS;
 	ac->bitshift = 0;

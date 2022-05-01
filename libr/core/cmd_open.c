@@ -1667,6 +1667,7 @@ static int cmd_open(void *data, const char *input) {
 					return 0;
 				}
 				if (file->o && file->o->info) {
+					free (file->o->info->arch);
 					file->o->info->arch = strdup (arch);
 					file->o->info->bits = bits;
 					r_core_bin_set_env (core, file);

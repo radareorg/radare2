@@ -161,7 +161,6 @@ static int main_help(int line) {
 		" R2_LOG_LEVEL    numeric value of the max level of messages to show\n"
 		" R2_LOG_FILE     dump all logs to a file\n"
 #if 0
-		" R2_LOGCOLOR     \n"
 		" R2_COLOR     \n"
 #endif
 		"Paths:\n"
