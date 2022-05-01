@@ -17,6 +17,9 @@ R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr) {
 // when io.va is false it only checks for the desc
 R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 	r_return_val_if_fail (io, false);
+	if (io->cached) {
+		return true;
+	}
 	if (io->mask) {
 		if (offset > io->mask && hasperm & R_PERM_X) {
 			return false;
