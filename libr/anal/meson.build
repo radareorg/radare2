@@ -89,8 +89,6 @@ r_anal_sources = [
   join_paths('p','anal_sparc_cs.c'),
   join_paths('p','anal_sparc_gnu.c'),
   join_paths('p','anal_tms320.c'),
-  join_paths('p','anal_tms320_c55x_plus.c'),
-  #join_paths('p','anal_tms320c64x.c'),
   join_paths('p','anal_tricore.c'),
   join_paths('p','anal_v810.c'),
   join_paths('p','anal_v850.c'),

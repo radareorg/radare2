@@ -1,5 +1,5 @@
 OBJ_TMS320=anal_tms320.o
-OBJ_TMS320+=anal_tms320_c55x_plus.o
+#OBJ_TMS320+=anal_tms320_c55x_plus.o
 
 STATIC_OBJ+=${OBJ_TMS320}
 #OBJ_TMS320+=../../../../../../../../../../../${LTOP}/asm/arch/tms320/tms320_dasm.o

@@ -4714,6 +4714,7 @@ RAnalPlugin r_anal_plugin_arm_cs = {
 	.license = "BSD",
 	.esil = true,
 	.arch = "arm",
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,
 	.anal_mask = anal_mask,
