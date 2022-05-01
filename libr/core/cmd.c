@@ -92,6 +92,19 @@ static const char *help_msg_l[] = {
 	NULL
 };
 
+static const char *help_msg_plus[] = {
+	"Usage:", "+", "seek forward, same as s+X (see s? and -? for more help)",
+	"+", "8", "seek 8 bytes forward, same as s+8",
+	NULL
+};
+
+static const char *help_msg_dash[] = {
+	"Usage:", "-", "open editor and run the r2 commands in the saved document",
+	"", "'-' '.-' '. -'", " those three commands do the same",
+	"-", "8", "same as s-8, but shorter to type (see +? command)",
+	NULL
+};
+
 static const char *help_msg_star[] = {
 	"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
 	"*", "entry0=cc", "write trap in entrypoint",
@@ -1433,7 +1446,6 @@ static int cmd_l(void *data, const char *input) { // "l"
 			r_core_cmd_help_match (core, help_msg_l, "ls", true);
 			break;
 		}
-
 		if (r_fs_check (core->fs, arg)) {
 			r_core_cmdf (core, "md %s", arg);
 		} else {
@@ -1507,11 +1519,24 @@ beach:
 	return 0;
 }
 
+static int cmd_plus(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	if (input[0]) {
+		r_core_cmdf (core, "s+%s", r_str_trim_head_ro (input));
+		return 0;
+	}
+	r_core_cmd_help (core, help_msg_plus);
+	return false;
+}
+
 static int cmd_stdin(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (input[0] == '?') {
-		r_cons_printf ("Usage: '-' '.-' '. -' do the same\n");
+		r_core_cmd_help (core, help_msg_dash);
 		return false;
+	} else if (input[0]) {
+		r_core_cmdf (core, "s-%s", r_str_trim_head_ro (input));
+		return 0;
 	}
 	return r_core_run_script (core, "-");
 }
@@ -5763,6 +5788,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"&", "tasks", cmd_tasks },
 		{"(", "macro", cmd_macro },
 		{"*", "pointer read/write", cmd_pointer },
+		{"+", "relative seek forward", cmd_plus },
 		{"-", "open cfg.editor and run script", cmd_stdin },
 		{".", "interpret", cmd_interpret },
 		{",", "create and manipulate tables", cmd_table },
