@@ -59,7 +59,7 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 	}
 #define MASK(bits)			((bits) == 32 ? 0xffffffff : (~((~((ut32) 0)) << (bits))))
 #define CPU_PC_MASK(cpu)		MASK((cpu)->pc)
-#define CPU_PC_SIZE(cpu)		((((cpu)->pc) >> 3) + ((((cpu)->pc) & 0x07) ? 1 : 0))
+#define CPU_PC_SIZE(cpu) cpu? ((((cpu)->pc) >> 3) + ((((cpu)->pc) & 0x07) ? 1 : 0)): 0
 
 #define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RAnal *anal, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu)
 #define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), R_ANAL_OP_TYPE_ ## T }
@@ -178,9 +178,7 @@ static CPU_MODEL *__get_cpu_model_recursive(const char *model) {
 
 static CPU_MODEL *get_cpu_model(const char *model) {
 	if (!model) {
-		model = "avr"; // "ATmega8";
-
-		return NULL;
+		model = "ATmega8";
 	}
 	// cache
 	if (Gcpu && Gcpu->model && !r_str_casecmp (model, Gcpu->model)) {
@@ -1716,7 +1714,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		ut64 offset = 0;
 		r_anal_esil_reg_write (anal->esil, "_prog", offset);
 
-		offset += (1ULL << (cpu?cpu->pc: 8));
+		offset += (1ULL << (cpu ? cpu->pc: 8));
 		r_anal_esil_reg_write (anal->esil, "_io", offset);
 
 		offset += const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "sram_start"));

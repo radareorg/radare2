@@ -1040,17 +1040,18 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, VariableLocationKind
    TODO add more arches                 */
 static const char *get_dwarf_reg_name(const char *arch, int reg_num, VariableLocationKind *kind, int bits) {
 	R_LOG_DEBUG ("get_dwarf_reg_name %s %d\n", arch, bits);
-	if (R_STR_ISEMPTY (arch) || !strcmp (arch, "x86")) {
+	if (arch && !strcmp (arch, "x86")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_x86_64_reg (reg_num, kind);
 		}
 		return map_dwarf_reg_to_x86_reg (reg_num, kind);
-	} else if (!strcmp (arch, "ppc")) {
+	} else if (arch && !strcmp (arch, "ppc")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_ppc64_reg (reg_num, kind);
 		}
 	} else {
 		// unknwown arch
+		return map_dwarf_reg_to_x86_reg (reg_num, kind);
 	}
 	R_LOG_WARN ("get_dwarf_reg_name: unsupported arch: '%s' with %d bits", arch, bits);
 	*kind = LOCATION_UNKNOWN;
