@@ -52,7 +52,7 @@ static inline RArchConfig *r_arch_config_new(void) {
 	ac->syntax = R_ASM_SYNTAX_INTEL;
 	ac->free = (void (*)(void*))my_ac_free;
 	ac->big_endian = false;
-	return ac;
+	return r_ref (ac);
 }
 
 #endif
