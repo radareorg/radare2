@@ -5613,13 +5613,19 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		} else {
 			esil->trap = 0;
 			addr = r_reg_getv (core->anal->reg, pcname);
-			//eprintf ("PC=0x%"PFMT64x"\n", (ut64)addr);
 		}
 		if (prev_addr) {
 			*prev_addr = addr;
 		}
 		if (esil->exectrap) {
 			if (!r_io_is_valid_offset (core->io, addr, R_PERM_X)) {
+				esil->trap = R_ANAL_TRAP_EXEC_ERR;
+				esil->trap_code = addr;
+				eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
+				return_tail (1);
+			}
+		} else {
+			if (!r_io_is_valid_offset (core->io, addr, 0)) {
 				esil->trap = R_ANAL_TRAP_EXEC_ERR;
 				esil->trap_code = addr;
 				eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
