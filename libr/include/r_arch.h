@@ -45,7 +45,7 @@ static inline void my_ac_free(RArchConfig *cfg) {
 
 static inline void r_arch_use(RArchConfig *config, R_NULLABLE const char *arch) {
 	r_return_if_fail (config);
-	R_LOG_DEBUG ("RArch.USE (%s)", arch);
+	// R_LOG_DEBUG ("RArch.USE (%s)", arch);
 	if (arch && !strcmp (arch, "null")) {
 		return;
 	}
@@ -55,7 +55,7 @@ static inline void r_arch_use(RArchConfig *config, R_NULLABLE const char *arch) 
 
 static inline void r_arch_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu) {
 	r_return_if_fail (config);
-	R_LOG_DEBUG ("RArch.CPU (%s)", cpu);
+	// R_LOG_DEBUG ("RArch.CPU (%s)", cpu);
 	free (config->cpu);
 	config->cpu = R_STR_ISNOTEMPTY (cpu) ? strdup (cpu) : NULL;
 }
