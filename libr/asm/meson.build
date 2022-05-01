@@ -39,7 +39,6 @@ r_asm_sources = [
   join_paths('p','asm_nios2.c'),
   join_paths('p','asm_or1k.c'),
   join_paths('p','asm_pic.c'),
-  join_paths('p','asm_mcore.c'),
   join_paths('p','asm_ppc_as.c'),
   join_paths('p','asm_ppc_cs.c'),
   join_paths('p','asm_ppc_gnu.c'),
