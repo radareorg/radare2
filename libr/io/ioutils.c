@@ -18,6 +18,13 @@ R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr) {
 R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 	r_return_val_if_fail (io, false);
 	if (io->cached) {
+		ut8 word[4];
+		if (!r_io_read_at (io, offset, (ut8*)&word, 4)) {
+			return false;
+		}
+		if (word[0] == 0xff && word[1] == 0xff && word[2] == 0xff) {
+			return false;
+		}
 		return true;
 	}
 	if (io->mask) {
