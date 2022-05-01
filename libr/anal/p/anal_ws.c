@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2018 condret */
+/* radare - LGPL - Copyright 2014-2022 condret */
 
 #include <string.h>
 #include <r_types.h>
@@ -30,10 +30,18 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	RAsmOp *aop = R_NEW0 (RAsmOp);
-	op->size = wsdis (aop, data, len);
+	if (!aop) {
+		return -1;
+	}
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		int sz = 0;
+		op->mnemonic = wsdisasm (data, len, &sz);
+		op->size = sz;
+	} else {
+		op->size = wsdis (aop, data, len);
+	}
 	if (op->size) {
-		const char *buf_asm = r_strbuf_get (&aop->buf_asm); // r_asm_op_get_asm (aop);
-		switch (*buf_asm) {
+		switch (*op->mnemonic) {
 		case 'n':
 			op->type = R_ANAL_OP_TYPE_NOP;
 			break;
@@ -121,6 +129,7 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 
 RAnalPlugin r_anal_plugin_ws = {
 	.name = "ws",
+	.author = "condret",
 	.desc = "Space, tab and linefeed analysis plugin",
 	.license = "LGPL3",
 	.arch = "ws",
