@@ -18,16 +18,12 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA
    02110-1301, USA.  */
 
-#include "sysdep.h"
-#include "disas-asm.h"
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
+// #include "sysdep.h"
+// #include "disas-asm.h"
 
-#include "bfdlink.h"
 //#include "libbfd.h"
-#include "elf-bfd.h"
-#include "elf/xtensa.h"
+// #include "mybfd.h"
+// #include "elf/xtensa.h"
 //#include "splay-tree.h"
 #include "xtensa-isa.h"
 //#include "xtensa-config.h"
@@ -147,9 +143,7 @@ typedef struct xtensa_relax_info_struct xtensa_relax_info;
 xtensa_isa xtensa_default_isa;
     // xtensa_default_isa = xtensa_isa_init (0, 0);
 
-int
-filename_cmp (const char *s1, const char *s2)
-{
+int filename_cmp(const char *s1, const char *s2) {
 #if !defined(HAVE_DOS_BASED_FILE_SYSTEM) \
     && !defined(HAVE_CASE_INSENSITIVE_FILE_SYSTEM)
   return strcmp(s1, s2);
@@ -4222,7 +4216,7 @@ insn_decode_len (bfd_byte *contents,
 /* Decode the opcode for a single slot instruction.
    Return 0 if it fails to decode or the instruction is multi-slot.  */
 
-xtensa_opcode
+static xtensa_opcode
 insn_decode_opcode (bfd_byte *contents,
 		    bfd_size_type content_len,
 		    bfd_size_type offset,
@@ -8656,7 +8650,7 @@ check_section_ebb_pcrels_fit (bfd *abfd,
 }
 
 
-static bfd_boolean
+static static bfd_boolean
 check_section_ebb_reduces (const ebb_constraint *constraint)
 {
   int removed = 0;
@@ -8675,7 +8669,7 @@ check_section_ebb_reduces (const ebb_constraint *constraint)
 }
 
 
-void
+static void
 text_action_add_proposed (text_action_list *l,
 			  const ebb_constraint *ebb_table,
 			  asection *sec)
@@ -8710,7 +8704,7 @@ text_action_add_proposed (text_action_list *l,
 }
 
 
-int
+static int
 compute_fill_extra_space (property_table_entry *entry)
 {
   int fill_extra_space;
@@ -8912,7 +8906,7 @@ get_irel_at_offset (asection *sec,
 }
 
 
-bfd_boolean
+static bfd_boolean
 is_removable_literal (const source_reloc *rel,
 		      int i,
 		      const source_reloc *src_relocs,
@@ -8948,7 +8942,7 @@ is_removable_literal (const source_reloc *rel,
 }
 
 
-bfd_boolean
+static bfd_boolean
 remove_dead_literal (bfd *abfd,
 		     asection *sec,
 		     struct bfd_link_info *link_info,
@@ -9019,7 +9013,7 @@ remove_dead_literal (bfd *abfd,
 }
 
 
-bfd_boolean
+static bfd_boolean
 identify_literal_placement (bfd *abfd,
 			    asection *sec,
 			    bfd_byte *contents,
@@ -9431,7 +9425,7 @@ action_remove_bytes_fn (splay_tree_node node, void *p)
    is a relaxable section, delete the unwanted literals and fix the
    section size.  */
 
-bfd_boolean
+static bfd_boolean
 relax_section (bfd *abfd, asection *sec, struct bfd_link_info *link_info)
 {
   Elf_Internal_Rela *internal_relocs;
@@ -11222,7 +11216,7 @@ xtensa_get_property_section (asection *sec, const char *base_name)
 }
 
 
-asection *
+static asection *
 xtensa_make_property_section (asection *sec, const char *base_name)
 {
   char *prop_sec_name;
@@ -11442,5 +11436,5 @@ static const struct bfd_elf_special_section elf_xtensa_special_sections[] =
 #define elf_backend_action_discarded	     elf_xtensa_action_discarded
 #define elf_backend_copy_indirect_symbol     elf_xtensa_copy_indirect_symbol
 
-#include "elf32-target.h"
+// #include "elf32-target.h"
 #endif

@@ -271,30 +271,30 @@ extern void xmalloc_failed (size_t) ATTRIBUTE_NORETURN;
    message to stderr (using the name set by xmalloc_set_program_name,
    if any) and then call xexit.  */
 
-extern void *xmalloc (size_t) ATTRIBUTE_MALLOC;
+//extern void *xmalloc (size_t) ATTRIBUTE_MALLOC;
 
 /* Reallocate memory without fail.  This works like xmalloc.  Note,
    realloc type functions are not suitable for attribute malloc since
    they may return the same address across multiple calls. */
 
-extern void *xrealloc (void *, size_t);
+//extern void *xrealloc (void *, size_t);
 
 /* Allocate memory without fail and set it to zero.  This works like
    xmalloc.  */
 
-extern void *xcalloc (size_t, size_t) ATTRIBUTE_MALLOC;
+//extern void *xcalloc (size_t, size_t) ATTRIBUTE_MALLOC;
 
 /* Copy a string into a memory buffer without fail.  */
 
-extern char *xstrdup (const char *) ATTRIBUTE_MALLOC;
+//extern char *xstrdup (const char *) ATTRIBUTE_MALLOC;
 
 /* Copy at most N characters from string into a buffer without fail.  */
 
-extern char *xstrndup (const char *, size_t) ATTRIBUTE_MALLOC;
+//extern char *xstrndup (const char *, size_t) ATTRIBUTE_MALLOC;
 
 /* Copy an existing memory buffer to a new memory buffer without fail.  */
 
-extern void *xmemdup (const void *, size_t, size_t) ATTRIBUTE_MALLOC;
+//extern void *xmemdup (const void *, size_t, size_t) ATTRIBUTE_MALLOC;
 
 /* Physical memory routines.  Return values are in BYTES.  */
 extern double physmem_total (void);
@@ -308,12 +308,14 @@ extern double physmem_available (void);
    as new/delete and new[]/delete[].  */
 
 /* Scalar allocators.  */
-#ifdef _MSC_VER
 #include <stdlib.h>
+#undef xmalloc
 #define xmalloc malloc
+#undef xcalloc
 #define xcalloc calloc
+#undef xrealloc
 #define xrealloc realloc
-#endif
+
 #define XNEW(T)			((T *) xmalloc (sizeof (T)))
 #define XCNEW(T)		((T *) xcalloc (1, sizeof (T)))
 #define XDELETE(P)		free ((void*) (P))

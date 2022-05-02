@@ -172,8 +172,6 @@
 #define HAVE_PTY __UNIX__ && LIBC_HAVE_FORK && !__sun
 #endif
 
-
-
 #if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__) || defined(__vinix__)
   #define __BSD__ 0
   #define __UNIX__ 1

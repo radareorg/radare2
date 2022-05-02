@@ -19,26 +19,8 @@
    Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-#include "sysdep.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <string.h>
-#include "xtensa-isa.h"
-#include "ansidecl.h"
-#include <setjmp.h>
 #include "disas-asm.h"
-#include "libiberty.h"
-
-
-#if defined(_MSC_VER)
-__declspec(dllimport)
-#endif
-extern xtensa_isa xtensa_default_isa;
-
-#ifndef MAX
-#define MAX(a,b) (((a)) > ((b)) ? ((a)) : ((b)))
-#endif
+#include "xtensa-isa.h"
 
 #if 1
 static void nothing(void) {
@@ -154,9 +136,7 @@ print_xtensa_operand (bfd_vma memaddr,
 /* Print the Xtensa instruction at address MEMADDR on info->stream.
    Returns length of the instruction in bytes.  */
 
-int
-print_insn_xtensa (bfd_vma memaddr, struct disassemble_info *info)
-{
+int print_insn_xtensa (bfd_vma memaddr, struct disassemble_info *info) {
   unsigned operand_val;
   int bytes_fetched, size, maxsize, i, n, noperands, nslots;
   xtensa_isa isa;
@@ -185,14 +165,14 @@ print_insn_xtensa (bfd_vma memaddr, struct disassemble_info *info)
      amount of whitespace depends on the chunk size.  Oh well, it's good
      enough....  Note that we set the minimum size to 4 to accommodate
      literal pools.  */
-  info->bytes_per_line = MAX (maxsize, 4);
+  info->bytes_per_line = R_MAX (maxsize, 4);
 
   /* Allocate buffers the first time through.  */
   if (!insn_buffer)
     {
       insn_buffer = xtensa_insnbuf_alloc (xtensa_default_isa);
       slot_buffer = xtensa_insnbuf_alloc (xtensa_default_isa);
-      byte_buf = (bfd_byte *) xmalloc (MAX (maxsize, 4));
+      byte_buf = (bfd_byte *) malloc (R_MAX (maxsize, 4));
     }
 
   priv.byte_buf = byte_buf;
@@ -233,8 +213,7 @@ print_insn_xtensa (bfd_vma memaddr, struct disassemble_info *info)
 	  }
     }
 
-  if (!valid_insn)
-    {
+    if (!valid_insn) {
       (*info->fprintf_func) (info->stream, ".byte %#02x", priv.byte_buf[0]);
       return 1;
     }
@@ -285,4 +264,3 @@ print_insn_xtensa (bfd_vma memaddr, struct disassemble_info *info)
 
     return size;
 }
-

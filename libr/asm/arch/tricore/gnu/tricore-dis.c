@@ -19,21 +19,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA. */
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
-#include <stdbool.h>
+#include <stdlib.h>
+#include <r_util.h>
 
 #include "ansidecl.h"
 #include "sysdep.h"
 #include "opcode/tricore.h"
 #include "disas-asm.h"
-#ifndef _MSC_VER
-#include "libiberty.h"
-#else
-#include <stdlib.h>
 #define XNEWVEC(T, N)		((T *) malloc (sizeof (T) * (N)))
 #define XCNEWVEC(T, N)		((T *) calloc ((N), sizeof (T)))
 #define XNEW(T)			((T *) malloc (sizeof (T)))
 #define xmalloc malloc
-#endif
 
 #if 0
 #define REGPREFIX "%%"
@@ -228,11 +224,9 @@ decode_absb ()
 	  case FMT_ABSB_OFF18:
 		  dec_insn.cexp[i] = extract_off18 ();
 		  break;
-
 	  case FMT_ABSB_B:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x800) >> 11;
 		  break;
-
 	  case FMT_ABSB_BPOS3:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x700) >> 8;
 		  break;
@@ -267,19 +261,15 @@ decode_bit ()
 	  case FMT_BIT_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
 		  break;
-
 	  case FMT_BIT_P2:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0f800000) >> 23;
 		  break;
-
 	  case FMT_BIT_P1:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
 		  break;
-
 	  case FMT_BIT_S2:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
 		  break;
-
 	  case FMT_BIT_S1:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -300,11 +290,9 @@ decode_bo ()
 		  o2 = (dec_insn.opcode & 0xf0000000) >> 22;
 		  dec_insn.cexp[i] = o1 | o2;
 		  break;
-
 	  case FMT_BO_S2:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
 		  break;
-
 	  case FMT_BO_S1_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -326,11 +314,9 @@ decode_bol ()
 		  o3 = (dec_insn.opcode & 0x0fc00000) >> 12;
 		  dec_insn.cexp[i] = o1 | o2 | o3;
 		  break;
-
 	  case FMT_BOL_S2:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
 		  break;
-
 	  case FMT_BOL_S1_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -348,11 +334,9 @@ decode_brc ()
 	  case FMT_BRC_DISP15:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x7fff0000) >> 16;
 		  break;
-
 	  case FMT_BRC_CONST4:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
 		  break;
-
 	  case FMT_BRC_S1:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -370,12 +354,10 @@ decode_brn ()
 	  case FMT_BRN_DISP15:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x7fff0000) >> 16;
 		  break;
-
 	  case FMT_BRN_N:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
 		  dec_insn.cexp[i] |= (dec_insn.opcode & 0x00000080) >> 3;
 		  break;
-
 	  case FMT_BRN_S1:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -393,11 +375,9 @@ decode_brr ()
 	  case FMT_BRR_DISP15:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x7fff0000) >> 16;
 		  break;
-
 	  case FMT_BRR_S2:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
 		  break;
-
 	  case FMT_BRR_S1:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -415,11 +395,9 @@ decode_rc ()
 	  case FMT_RC_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
 		  break;
-
 	  case FMT_RC_CONST9:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x001ff000) >> 12;
 		  break;
-
 	  case FMT_RC_S1:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 	  }
@@ -436,19 +414,15 @@ decode_rcpw ()
 	  case FMT_RCPW_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
 		  break;
-
 	  case FMT_RCPW_P:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0f800000) >> 23;
 		  break;
-
 	  case FMT_RCPW_W:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
 		  break;
-
 	  case FMT_RCPW_CONST4:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
 		  break;
-
 	  case FMT_RCPW_S1:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -466,15 +440,12 @@ decode_rcr ()
 	  case FMT_RCR_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
 		  break;
-
 	  case FMT_RCR_S3:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
 		  break;
-
 	  case FMT_RCR_CONST9:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x001ff000) >> 12;
 		  break;
-
 	  case FMT_RCR_S1:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -492,15 +463,12 @@ decode_rcrr ()
 	  case FMT_RCRR_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
 		  break;
-
 	  case FMT_RCRR_S3:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
 		  break;
-
 	  case FMT_RCRR_CONST4:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
 		  break;
-
 	  case FMT_RCRR_S1:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -518,19 +486,15 @@ decode_rcrw ()
 	  case FMT_RCRW_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
 		  break;
-
 	  case FMT_RCRW_S3:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x0f000000) >> 24;
 		  break;
-
 	  case FMT_RCRW_W:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x001f0000) >> 16;
 		  break;
-
 	  case FMT_RCRW_CONST4:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0000f000) >> 12;
 		  break;
-
 	  case FMT_RCRW_S1:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -548,11 +512,9 @@ decode_rlc ()
 	  case FMT_RLC_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
 		  break;
-
 	  case FMT_RLC_CONST16:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x0ffff000) >> 12;
 		  break;
-
 	  case FMT_RLC_S1:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -570,15 +532,12 @@ decode_rr ()
 	  case FMT_RR_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
 		  break;
-
 	  case FMT_RR_N:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x00030000) >> 16;
 		  break;
-
 	  case FMT_RR_S2:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
 		  break;
-
 	  case FMT_RR_S1:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -596,15 +555,12 @@ decode_rr1 ()
 	  case FMT_RR1_D:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0xf0000000) >> 28;
 		  break;
-
 	  case FMT_RR1_N:
 		  dec_insn.cexp[i] = (dec_insn.opcode & 0x00030000) >> 16;
 		  break;
-
 	  case FMT_RR1_S2:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x0000f000) >> 12;
 		  break;
-
 	  case FMT_RR1_S1:
 		  dec_insn.regs[i] = (dec_insn.opcode & 0x00000f00) >> 8;
 		  break;
@@ -1593,9 +1549,9 @@ decode_tricore_insn (memaddr, insn, len32, info)
    actually decoded bytes (2 or 4).  */
 
 static int
-decode_pcp_insn (memaddr, buffer, info)
+decode_pcp_insn (memaddr, boffer, info)
      bfd_vma memaddr;
-     bfd_byte buffer[4];
+     bfd_byte boffer[4];
      struct disassemble_info *info;
 {
   unsigned long insn = 0, insn2 = 0, val;
@@ -1611,7 +1567,7 @@ decode_pcp_insn (memaddr, buffer, info)
 #define DFILE info->stream
 
   /* Try to find the PCP instruction matching the given opcode.  */
-  insn = bfd_getl16 (buffer);
+  insn = bfd_getl16 (boffer);
   idx = (insn >> 11) & 0x1f;
   for (pinsn = pcpinsns[idx]; pinsn; pinsn = pinsn->next)
     {
@@ -1623,12 +1579,12 @@ decode_pcp_insn (memaddr, buffer, info)
 	  pop = pinsn->code;
 	  if (pop->len32) {
 		  /* This is a 32-bit insn; try to read 2 more bytes.  */
-		  fail = (*info->read_memory_func) (memaddr + 2, &buffer[2], 2, info);
+		  fail = (*info->read_memory_func) (memaddr + 2, &boffer[2], 2, info);
 		  if (fail) {
 			  DPRINT (DFILE, ".hword 0x%04lx", insn);
 			  return 2;
 		  }
-		  insn2 = bfd_getl16 (buffer + 2);
+		  insn2 = bfd_getl16 (boffer + 2);
 	}
 
       break;
@@ -1885,7 +1841,7 @@ print_insn_tricore (memaddr, info)
      bfd_vma memaddr;
      struct disassemble_info *info;
 {
-  bfd_byte buffer[4];
+  bfd_byte boffer[4];
   int len32 = 0, failure;
   unsigned long insn = 0;
 
@@ -1915,8 +1871,8 @@ print_insn_tricore (memaddr, info)
       initialized = 1;
     }
 
-  memset ((char *) buffer, 0, sizeof (buffer));
-  failure = (*info->read_memory_func) (memaddr, buffer, 1, info);
+  memset ((char *) boffer, 0, sizeof (boffer));
+  failure = (*info->read_memory_func) (memaddr, boffer, 1, info);
   if (failure)
     {
       (*info->memory_error_func) (failure, memaddr, info);
@@ -1924,25 +1880,25 @@ print_insn_tricore (memaddr, info)
     }
 
   /* Try to read the 2nd byte.  */
-  failure = (*info->read_memory_func) (memaddr + 1, &buffer[1], 1, info);
+  failure = (*info->read_memory_func) (memaddr + 1, &boffer[1], 1, info);
   if (failure)
     {
       /* Maybe MEMADDR isn't even and we reached the end of a section.  */
-      (*info->fprintf_func) (info->stream, ".byte 0x%02x", buffer[0]);
+      (*info->fprintf_func) (info->stream, ".byte 0x%02x", boffer[0]);
       return 1;
     }
 
   /* Check if we're disassembling .pcp{text,data} sections.  */
     if (info->section && (info->section->flags & SEC_ARCH_BIT_0)) {
-	    return decode_pcp_insn (memaddr, buffer, info);
+	    return decode_pcp_insn (memaddr, boffer, info);
     }
 
     /* Handle TriCore sections.  */
-    if (buffer[0] & 1) {
+    if (boffer[0] & 1) {
 	    /* Looks like this is a 32-bit insn; try to read 2 more bytes.  */
-	    failure = (*info->read_memory_func) (memaddr + 2, &buffer[2], 2, info);
+	    failure = (*info->read_memory_func) (memaddr + 2, &boffer[2], 2, info);
 	    if (failure) {
-		    insn = bfd_getl16 (buffer);
+		    insn = bfd_getl16 (boffer);
 		    (*info->fprintf_func) (info->stream, ".hword 0x%04lx", insn);
 		    return 2;
 	    } else {
@@ -1951,9 +1907,9 @@ print_insn_tricore (memaddr, info)
     }
 
     if (len32) {
-	    insn = bfd_getl32 (buffer);
+	    insn = bfd_getl32 (boffer);
     } else {
-	    insn = bfd_getl16 (buffer);
+	    insn = bfd_getl16 (boffer);
     }
 
     return decode_tricore_insn (memaddr, insn, len32, info);

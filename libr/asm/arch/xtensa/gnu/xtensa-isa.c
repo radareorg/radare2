@@ -19,17 +19,12 @@
    MA 02110-1301, USA.  */
 
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <r_types.h>
+#include <r_util.h>
 #include "../../include/disas-asm.h"
-#include "../../include/sysdep.h"
-//#include "bfd.h"
-//#include "libbfd.h"
 #include "../../include/xtensa-isa.h"
 #include "../../include/xtensa-isa-internal.h"
-#include "r_types.h"
-#include "r_util.h"
+
 extern int filename_cmp (const char *s1, const char *s2);
 xtensa_isa_status xtisa_errno;
 char xtisa_error_msg[1024];
