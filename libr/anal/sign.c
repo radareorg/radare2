@@ -156,12 +156,9 @@ static inline RList *sign_vars(RAnalFunction *fcn) {
 	return l;
 }
 
-#define ALPH(x) \
-	(x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z')
-#define ISNUM(x) \
-	(x >= '0' && x <= '9')
-#define VALID_TOKEN_CHR(x) \
-	(ALPH (x) || ISNUM (x) || x == '_' || x == '*' || x == ' ' || x == '.')
+// TODO: use primitives from r_types
+#define ALPH(x) (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z')
+#define VALID_TOKEN_CHR(x) (ALPH (x) || IS_DIGIT (x) || x == '_' || x == '*' || x == ' ' || x == '.')
 static bool types_sig_valid(const char *types) {
 	// quick state machine parser to validate types being sent to tcc_compile
 	int state = 0; // before, inside, or after ()
@@ -200,7 +197,6 @@ static bool types_sig_valid(const char *types) {
 	return state == 2? true: false;
 }
 #undef ALPH
-#undef ISNUM
 #undef VALID_TOKEN_CHR
 
 #define DBL_VAL_FAIL(x,y) \

@@ -214,6 +214,14 @@ static inline ut32 encode2regs(ArmOp *op) {
 		| encode1reg (op);
 }
 
+static inline ut32 encode3regs(ArmOp *op) {
+	ut32 data = 0;
+	int r2 = op->operands[2].reg & 7;
+	data |= encode2regs (op);
+	data |= (r2 << 8);
+	return data;
+}
+
 static inline ut32 encodeImm9(ut32 n) {
 	return (n & 0x1f0) << 4 | (n & 0xf) << 20;
 }
@@ -335,12 +343,21 @@ static ut32 cb(ArmOp *op) {
 	return data;
 }
 
+static ut32 math(ArmOp *op, ut32 data, bool is64) {
+	if (is64) {
+		data |= 0x80;
+	}
+	check_cond (op->operands[0].type == ARM_GPR);
+	check_cond (op->operands[1].type == ARM_GPR);
+	check_cond (op->operands[2].type == ARM_GPR);
+	return data | encode3regs (op);
+}
 
 static ut32 cmp(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
 	if (op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64) {
-		k =  0x1f0000eb;
+		k = 0x1f0000eb;
 	} else if (op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32) {
 		if (op->operands[2].shift_amount > 31) {
 			return UT32_MAX;
@@ -1316,6 +1333,11 @@ static bool handlePAC(ut32 *op, const char *str) {
 	return false;
 }
 
+static bool has64reg(const char *str) {
+	char *w = strchr (str, 'x');
+	return (w && IS_DIGIT (w[1]));
+}
+
 bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	ArmOp ops = {0};
 	if (!parseOpcode (str, &ops)) {
@@ -1327,6 +1349,12 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = mov (&ops);
 	} else if (!strncmp (str, "cb", 2)) {
 		*op = cb (&ops);
+	} else if (!strncmp (str, "add", 3)) {
+		*op = math (&ops, 0x8b, has64reg (str));
+	} else if (!strncmp (str, "eor", 3)) {
+		*op = math (&ops, 0x4a, has64reg (str));
+	} else if (!strncmp (str, "and", 3)) {
+		*op = math (&ops, 0xa, has64reg (str));
 	} else if (!strncmp (str, "cmp", 3)) {
 		*op = cmp (&ops);
 	} else if (!strncmp (str, "ldrb", 4)) {
