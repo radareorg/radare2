@@ -1,8 +1,8 @@
 NAME=rasm2 binary input
 FILE=-
 CMDS=<<EOF
-%R2_ARCH=arm
-%R2_BITS=64
+e asm.arch=arm
+e asm.bits=64
 !!rasm2 -d 1000000000000000000001010001011b
 !!rasm2 -d 1000001000000000000001110001011b
 EOF
