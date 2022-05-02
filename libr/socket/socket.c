@@ -20,7 +20,6 @@
 
 R_LIB_VERSION(r_socket);
 
-
 #if NETWORK_DISABLED
 /* no network */
 R_API RSocket *r_socket_new(bool is_ssl) {

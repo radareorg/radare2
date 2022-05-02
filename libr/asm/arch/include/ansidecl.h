@@ -136,7 +136,7 @@ So instead we use the macro below and test it against specific values.  */
 #define GCC_VERSION (__GNUC__ * 1000 + __GNUC_MINOR__)
 #endif /* GCC_VERSION */
 
-#if defined (__STDC__) || defined (_AIX) || (defined (__mips) && defined (_SYSTYPE_SVR4)) || defined(_WIN32) || defined(__WINDOWS__) || (defined(__alpha) && defined(__cplusplus))
+#if defined (__STDC__) || defined (_AIX) || (defined (__mips) && defined (_SYSTYPE_SVR4)) || defined(_WIN32) || defined(__WINDOWS__) || defined(_MSC_VER)|| (defined(__alpha) && defined(__cplusplus))
 /* All known AIX compilers implement these things (but don't always
    define __STDC__).  The RISC/OS MIPS compiler defines these things
    in SVR4 mode, but does not define __STDC__.  */

@@ -458,8 +458,4 @@ static void generic_print_address_func(bfd_vma address, struct disassemble_info 
 }
 #endif
 
-#ifdef _MSC_VER
-#undef xmalloc
-#endif
-
 #endif /* ! defined (DIS_ASM_H) */

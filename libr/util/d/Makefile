@@ -16,7 +16,7 @@ alle: $(F_SDB)
 	test -f $@
 
 clean:
-	rm -f *.sdb *.c *.gperf
+	rm -f *.sdb *.c *.gperf *.o *.d
 
 install:
 	mkdir -p "$(R2_CHARSETS_PATH)"

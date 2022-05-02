@@ -1,12 +1,10 @@
-#include <stdlib.h>
 #include <r_util.h>
-#include <string.h>
 #include "loongarch-private.h"
 #include "disas-asm.h"
 
 #define INSNLEN 4
 
-static RStrBuf *args_buf = NULL;
+static R_TH_LOCAL RStrBuf *args_buf = NULL;
 
 static const char * const *loongarch_r_disname = loongarch_r_lp64_name;
 static const char * const *loongarch_f_disname = loongarch_f_normal_name;
@@ -130,10 +128,10 @@ do_print_insn_loongarch (int insn,
   const struct loongarch_opcode *opc = get_loongarch_opcode_by_binfmt (insn);
 
   if (!opc) {
-		info->insn_type = dis_noninsn;
-		infprintf(is, "0x%08x", insn);
-		return INSNLEN;
-	}
+	  info->insn_type = dis_noninsn;
+	  infprintf(is, "0x%08x", insn);
+	  return INSNLEN;
+  }
 
   args_buf = r_strbuf_new("");
   info->bytes_per_line = 4;
@@ -151,28 +149,28 @@ do_print_insn_loongarch (int insn,
   infprintf(is, "%s", opc->name);
 
   {
-	char *fake_args = (char *)malloc(strlen (opc->format) + 1);
-    const char *fake_arg_strs[MAX_ARG_NUM_PLUS_2];
-    strcpy (fake_args, opc->format);
-    if (0 < loongarch_split_args_by_comma (fake_args, fake_arg_strs))
-	  infprintf(is, " ");
+	  char *fake_args = (char *)malloc(strlen (opc->format) + 1);
+	  const char *fake_arg_strs[MAX_ARG_NUM_PLUS_2];
+	  strcpy (fake_args, opc->format);
+	  if (0 < loongarch_split_args_by_comma (fake_args, fake_arg_strs))
+		  infprintf(is, " ");
 
-    info->private_data = &insn;
-    loongarch_foreach_args (opc->format, fake_arg_strs, dis_one_arg, info);
-	free(fake_args);
+	  info->private_data = &insn;
+	  loongarch_foreach_args (opc->format, fake_arg_strs, dis_one_arg, info);
+	  free(fake_args);
   }
   infprintf(is, "%s", args_buf->buf);
 
   if (info->insn_type == dis_branch || info->insn_type == dis_condbranch
-	  /* || someother if we have extra info to print */)
-	infprintf(is, " #");
+		  /* || someother if we have extra info to print */)
+	  infprintf(is, " #");
 
   if (info->insn_type == dis_branch || info->insn_type == dis_condbranch) {
 	  /* infprintf(is, " "); */
 	  /* info->print_address_func (info->target, info); */
-	}
-  r_strbuf_free(args_buf);
-	return INSNLEN;
+  }
+  r_strbuf_free (args_buf);
+  return INSNLEN;
 }
 
 int print_insn_loongarch (bfd_vma memaddr,

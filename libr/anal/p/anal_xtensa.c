@@ -1,13 +1,8 @@
 /* radare2 - LGPL - Copyright 2016-2018 - pancake */
 
-#include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-
 #include <xtensa-isa.h>
-
 
 // GNU DISASM BEGIN
 
@@ -15,9 +10,9 @@
 
 #define INSN_BUFFER_SIZE 4
 
-static ut64 offset = 0;
-static RStrBuf *buf_global = NULL;
-static ut8 bytes[INSN_BUFFER_SIZE];
+static R_TH_LOCAL ut64 offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL ut8 bytes[INSN_BUFFER_SIZE];
 
 static int xtensa_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	if (length > INSN_BUFFER_SIZE) {
@@ -66,6 +61,7 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return op->size;
 }
 // GNU DISASM END
+
 #define CM ","
 #define XTENSA_MAX_LENGTH 8
 
@@ -407,6 +403,7 @@ static XtensaOpFn xtensa_rst2_fns[] = {
 static void xtensa_rst0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	xtensa_rst0_fns[(buf[2] >> 4) & 0xf] (anal, op, addr, buf);
 }
+
 static void xtensa_rst1_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	xtensa_rst1_fns[(buf[2] >> 4) & 0xf] (anal, op, addr, buf);
 }
