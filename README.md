@@ -135,7 +135,7 @@ XAP, S390, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
 V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
 NIOS II, Java, Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
-c55+, c66), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
+c55+, c64x), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
 MCORE, mcs96, RSP, SuperH-4, VAX, KVX, Am29000, LOONGARCH.
 
 ## File Formats
