@@ -457,8 +457,10 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 		bin = true;
 		hex = false;
 		if (blen > 32) {
+			r_write_ble64 (&bbuf, n, !R_SYS_ENDIAN);
 			len = 8;
 		} else {
+			r_write_ble32 (&bbuf, n, !R_SYS_ENDIAN);
 			len = 4;
 		}
 	}
