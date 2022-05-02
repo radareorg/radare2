@@ -1351,6 +1351,20 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = cb (&ops);
 	} else if (!strncmp (str, "cmp", 3)) {
 		*op = cmp (&ops);
+	} else if (!strncmp (str, "mul", 3)) {
+		*op = math (&ops, 0x007c009b, has64reg (str));
+	} else if (!strncmp (str, "udiv", 3)) {
+		*op = math (&ops, 0x0008c09a, has64reg (str));
+	} else if (!strncmp (str, "sdiv", 3)) {
+		*op = math (&ops, 0x000cc09a, has64reg (str));
+	} else if (!strncmp (str, "lsl", 3)) {
+		*op = math (&ops, 0x0020c09a, has64reg (str));
+	} else if (!strncmp (str, "lsr", 3)) {
+		*op = math (&ops, 0x0024c09a, has64reg (str));	
+	} else if (!strncmp (str, "mvn", 2)) {
+		*op = math (&ops, 0xe00320aa, has64reg (str));
+	} else if (!strncmp (str, "tst", 2)) {
+		*op = math (&ops, 0x1f0000ea, has64reg (str));
 	} else if (!strncmp (str, "ldrb", 4)) {
 		*op = lsop (&ops, 0x00004038, -1);
 	} else if (!strncmp (str, "ldrh", 4)) {
