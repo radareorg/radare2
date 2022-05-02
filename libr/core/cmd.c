@@ -134,12 +134,14 @@ static const char *help_msg_dot[] = {
 	"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", "# define macro or interpret r2, r_lang,\n"
 	"    cparse, d, es6, exe, go, js, lsp, pl, py, rb, sh, vala or zig file",
 	".", "", "repeat last command backward",
-	".", "r2cmd", "interpret the output of the command as r2 commands",
+	".", "C*", "run 'C*' command and interpret the printed commands",
+	"..", "123", "alias for s..123 (notice the lack of space)",
 	"..", " [file]", "run the output of the execution of a script as r2 commands",
 	"...", "", "repeat last command forward (same as \\n)",
 	// ".:", "8080", "listen for commands on given tcp port",
 	".--", "", "terminate tcp server for remote commands",
 	".", " foo.r2", "interpret script",
+	".", " foo.py", "also works for running r2pipe and rlang scripts",
 	".-", "", "open cfg.editor and interpret tmp file",
 	".*", " file ...", "same as #!pipe open cfg.editor and interpret tmp file",
 	".!", "rabin -ri $FILE", "interpret output of command",
@@ -1900,14 +1902,16 @@ static int cmd_interpret(void *data, const char *input) {
 		if (input[1] == '.') { // "..." run the last command repeated
 			// same as \n with e cmd.repeat=true
 			lastcmd_repeat (core, 1);
-		} else if (input[1]) {
+		} else if (input[1] == ' ') {
 			char *str = r_core_cmd_str_pipe (core, r_str_trim_head_ro (input));
 			if (str) {
 				r_core_cmd (core, str, 0);
 				free (str);
 			}
+		} else if (input[1] && input[1] != '?') {
+			r_core_cmdf (core, "s%s", input);
 		} else {
-			eprintf ("Usage: .. ([file])\n");
+			r_core_cmd_help (core, help_msg_dot);
 		}
 		break;
 	case '*': // ".*"
