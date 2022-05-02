@@ -345,7 +345,7 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 static int rasm_show_help(int v) {
 	if (v < 2) {
 		printf ("Usage: rasm2 [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
-			"             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
+			"             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|0101b|-\n");
 	}
 	if (v != 1) {
 		printf (" -a [arch]    Set architecture to assemble/disassemble (see -L)\n"
@@ -424,6 +424,22 @@ static int rasm_show_help(int v) {
 	return 0;
 }
 
+static bool is_binary(const char *s) {
+	if (!r_str_endswith (s, "b")) {
+		return false;
+	}
+	while (*s) {
+		if (*s != '0' && *s != '1') {
+			if (*s == 'b' && !s[1]) {
+				return true;
+			}
+			return false;
+		}
+		s++;
+	}
+	return false;
+}
+
 static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int bits, int bin, int hex) {
 	RAsmCode *acode;
 	ut8 *data = NULL;
@@ -431,6 +447,20 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 	ut64 clen = 0;
 	if (bits == 1) {
 		len /= 8;
+	}
+	ut8 bbuf[8] = {0};
+	if (is_binary (buf)) {
+		int blen = strlen (buf);
+		ut64 n = r_num_get (NULL, buf);
+		memcpy (bbuf, &n, 8);
+		buf = (const char*)&bbuf;
+		bin = true;
+		hex = false;
+		if (blen > 32) {
+			len = 8;
+		} else {
+			len = 4;
+		}
 	}
 	if (bin) {
 		if (len < 0) {
