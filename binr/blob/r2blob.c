@@ -14,7 +14,7 @@ int main(int argc, const char **argv) {
 #if __WINDOWS__
 		eprintf ("Error: %s must be renamed to act as the desired radare2 program.\n"
 		" targets: r2 r2pm rax2 radiff2 rafind2 rarun2 rasm2 ragg2 rabin2 radare2 rabin2\n"
-		" cmd> copy %s radare2.exe\n", prog_name);
+		" cmd> copy %s radare2.exe\n", prog_name, prog_name);
 #else
 		eprintf ("Error: %s must be renamed or symlinked to act as the desired command\n"
 		" targets: r2 r2pm rax2 radiff2 rafind2 rarun2 rasm2 ragg2 rabin2 radare2 rabin2\n"
