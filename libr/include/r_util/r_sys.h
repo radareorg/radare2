@@ -59,6 +59,7 @@ R_API void r_sys_perror_str(const char *fun);
 #endif
 R_API int r_sys_tem(const char *s);
 R_API const char *r_sys_prefix(const char *pfx);
+R_API bool r_sys_mktemp(const char *dir);
 R_API bool r_sys_mkdir(const char *dir);
 R_API bool r_sys_mkdirp(const char *dir);
 R_API int r_sys_sleep(int secs);
@@ -139,6 +140,7 @@ R_API bool r_sys_tts(const char *txt, bool bg);
 R_API char *r_syscmd_ls(const char *input, int w);
 R_API char *r_syscmd_cat(const char *file);
 R_API char *r_syscmd_mkdir(const char *dir);
+R_API char *r_syscmd_mktemp(const char *dir);
 R_API bool r_syscmd_mv(const char *input);
 R_API char *r_syscmd_uniq(const char *file);
 R_API char *r_syscmd_head(const char *file, int count);

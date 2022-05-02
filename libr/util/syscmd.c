@@ -510,9 +510,42 @@ R_API char *r_syscmd_cat(const char *file) {
 	return NULL;
 }
 
+R_API char *r_syscmd_mktemp(const char *dir) {
+	const char *space = strchr (dir, ' ');
+	const char *suffix = space? r_str_trim_head_ro (space): "";
+	if (!*suffix || (!strncmp (suffix, "-d ", 3) && strstr (suffix, " -"))) {
+		return strdup ("Usage: mktemp [-d] [file|directory]\n"); 
+	}
+	bool dodir = (bool) strstr (suffix, "-d");
+	int ret;
+	char *dirname = (!strncmp (suffix, "-d ", 3))
+		? strdup (suffix + 3): strdup (suffix);
+	r_str_trim (dirname);
+	char *arg = NULL;
+	int fd = r_file_mkstemp (dirname, &arg);
+	if (fd != -1) {
+		ret = 1;
+		close (fd);
+	} else {
+		ret = 0;
+	}
+	if (ret && dodir) {
+		r_file_rm (arg);
+		ret = r_sys_mkdirp (arg);
+	}
+	if (!ret) {
+		char *res = r_str_newf ("Cannot create '%s'\n", dirname);
+		free (dirname);
+		return res;
+	}
+	free (dirname);
+	return NULL;
+}
+
 R_API char *r_syscmd_mkdir(const char *dir) {
-	const char *suffix = r_str_trim_head_ro (strchr (dir, ' '));
-	if (!suffix || !strncmp (suffix, "-p", 3)) {
+	const char *space = strchr (dir, ' ');
+	const char *suffix = space? r_str_trim_head_ro (space): "";
+	if (!*suffix || (!strncmp (suffix, "-p ", 3) && strstr (suffix, " -"))) {
 		return strdup ("Usage: mkdir [-p] [directory]\n");
 	}
 	int ret;

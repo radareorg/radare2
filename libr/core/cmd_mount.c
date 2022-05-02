@@ -32,6 +32,23 @@ static const char *help_msg_mf[] = {
 	NULL
 };
 
+static int cmd_mktemp(RCore *core, const char *input) {
+	if (R_STR_ISEMPTY (input)) {
+		eprintf ("Usage: mktemp [-d] [file|directory]\n");
+		r_core_return_code (core, 1);
+	} else {
+		char *res = r_syscmd_mktemp (input);
+		if (res) {
+			r_core_return_code (core, 1);
+			r_cons_printf ("%s", res);
+			free (res);
+		} else {
+			r_core_return_code (core, 0);
+		}
+	}
+	return 0;
+}
+
 static int cmd_mkdir(RCore *core, const char *input) {
 	if (R_STR_ISEMPTY (input)) {
 		eprintf ("Usage: mkdir [-p] [directory]\n");
@@ -142,6 +159,9 @@ static int cmd_mount(void *data, const char *_input) {
 	if (strchr (_input, '?')) {
 		r_core_cmd_help (core, help_msg_m);
 		return 0;
+	}
+	if (!strncmp ("ktemp", _input, 5)) {
+		return cmd_mktemp (data, _input);
 	}
 	if (!strncmp ("kdir", _input, 4)) {
 		return cmd_mkdir (data, _input);
