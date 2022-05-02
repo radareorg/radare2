@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2021 - pancake */
+/* radare - LGPL - Copyright 2015-2022 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -942,13 +942,13 @@ static ut32 arithmetic(ArmOp *op, int k) {
 		data += (op->operands[2].reg >> 6) << 8;
 	}
 
-	if (op->operands[2].type & ARM_CONSTANT  && op->operands[3].type & ARM_SHIFT) {
+	if (op->operands[2].type & ARM_CONSTANT && op->operands[3].type & ARM_SHIFT) {
 		if ((op->operands[3].shift == ARM_LSL) && (op->operands[3].shift_amount == 12)) {
 			data |= (0x4000);
 		}
 	}
 
-	if (op->operands[2].type & ARM_GPR  && op->operands[3].type & ARM_SHIFT) {
+	if (op->operands[2].type & ARM_GPR && op->operands[3].type & ARM_SHIFT) {
 		switch (op->operands[3].shift) {
 		case ARM_LSL:
 			data |= (0x00040000 * op->operands[3].shift_amount);
@@ -1333,11 +1333,6 @@ static bool handlePAC(ut32 *op, const char *str) {
 	return false;
 }
 
-static bool has64reg(const char *str) {
-	char *w = strchr (str, 'x');
-	return (w && IS_DIGIT (w[1]));
-}
-
 bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	ArmOp ops = {0};
 	if (!parseOpcode (str, &ops)) {
@@ -1349,12 +1344,6 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = mov (&ops);
 	} else if (!strncmp (str, "cb", 2)) {
 		*op = cb (&ops);
-	} else if (!strncmp (str, "add", 3)) {
-		*op = math (&ops, 0x8b, has64reg (str));
-	} else if (!strncmp (str, "eor", 3)) {
-		*op = math (&ops, 0x4a, has64reg (str));
-	} else if (!strncmp (str, "and", 3)) {
-		*op = math (&ops, 0xa, has64reg (str));
 	} else if (!strncmp (str, "cmp", 3)) {
 		*op = cmp (&ops);
 	} else if (!strncmp (str, "ldrb", 4)) {
@@ -1385,10 +1374,34 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = stp (&ops, 0x000040a9);
 	} else if (!strncmp (str, "sub", 3)) { // w
 		*op = arithmetic (&ops, 0xd1);
+	} else if (!strncmp (str, "madd x", 6)) {
+		*op = math (&ops, 0x9b, true);
 	} else if (!strncmp (str, "add x", 5)) {
+		// } else if (!strncmp (str, "add", 3)) {
+		// *op = math (&ops, 0x8b, has64reg (str));
 		*op = arithmetic (&ops, 0x91);
+	} else if (!strncmp (str, "udiv w", 6) || !strncmp (str, "div w", 5)) {
+		*op = math (&ops, 0x8c09a, false);
+	} else if (!strncmp (str, "udiv x", 5) || !strncmp (str, "div x", 5)) {
+		*op = math (&ops, 0x8c09a, true);
+	} else if (!strncmp (str, "adc x", 5)) {
+		*op = math (&ops, 0x9a, true);
+	} else if (!strncmp (str, "mul w", 5)) {
+		*op = math (&ops, 0x007c001b, false);
+	} else if (!strncmp (str, "mul x", 5)) {
+		*op = math (&ops, 0x007c001b, true);
 	} else if (!strncmp (str, "add w", 5)) {
 		*op = arithmetic (&ops, 0x11);
+#if 0
+	} else if (!strncmp (str, "eor x", 5)) {
+		*op = math (&ops, 0x4a, true);
+	} else if (!strncmp (str, "eor w", 5)) {
+		*op = math (&ops, 0x4a, false);
+	} else if (!strncmp (str, "and x", 5)) {
+		*op = math (&ops, 0xa, true);
+	} else if (!strncmp (str, "and w", 5)) {
+		*op = math (&ops, 0xa, false);
+#endif
 	} else if (!strncmp (str, "adr x", 5)) { // w
 		*op = adr (&ops, addr);
 	} else if (!strncmp (str, "adrp x", 6)) {

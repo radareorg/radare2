@@ -224,7 +224,7 @@ static int gbDisass(RAsmOp *op, const ut8 *buf, int len){
 		buf_asm = r_strf (gb_op[buf[0]].name, buf[1] + 0x100 * buf[2]);
 		break;
 	case GB_8BIT + ARG_8 + GB_IO:
-		gb_hardware_register_name(reg, buf[1]);
+		gb_hardware_register_name (reg, buf[1]);
 		buf_asm = r_strf (gb_op[buf[0]].name, reg);
 		break;
 	}

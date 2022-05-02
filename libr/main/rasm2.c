@@ -428,14 +428,16 @@ static bool is_binary(const char *s) {
 	if (!r_str_endswith (s, "b")) {
 		return false;
 	}
+	int len = 0;
 	while (*s) {
 		if (*s != '0' && *s != '1') {
-			if (*s == 'b' && !s[1]) {
+			if (*s == 'b' && !s[1] && (len % 8) == 0) {
 				return true;
 			}
 			return false;
 		}
 		s++;
+		len++;
 	}
 	return false;
 }
