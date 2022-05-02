@@ -160,7 +160,9 @@ static ut64 r_num_from_binary(const char *str) {
 	int i, j;
 	ut64 ret = 0;
 	for (j = 0, i = strlen (str) - 1; i > 0; i--, j++) {
-		if (str[i] == '1') {
+		if (str[i] == '_') {
+			j--;
+		} else if (str[i] == '1') {
 			ret |= (ut64) (1ULL << j);
 		} else if (str[i] != '0') {
 			break;
@@ -252,7 +254,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			return (ut64) ((s << 4) + a);
 		}
 	}
-	if (str[0] == '0' && str[1] == 'b') {
+	if (str[0] == '0' && str[1] == 'b') { // XXX this is wrong and causes bugs
 		ret = r_num_from_binary (str + 2);
 	} else if (str[0] == '\'') {
 		ret = str[1] & 0xff;

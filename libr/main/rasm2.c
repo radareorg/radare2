@@ -424,22 +424,45 @@ static int rasm_show_help(int v) {
 	return 0;
 }
 
-static bool is_binary(const char *s) {
-	if (!r_str_endswith (s, "b")) {
-		return false;
+static int bin_len(const char *s) {
+	int len = 0;
+	while (*s) {
+		if (*s == '_') {
+			s++;
+			continue;
+		}
+		if (*s != '0' && *s != '1') {
+			break;
+		}
+		len++;
+		s++;
+	}
+	return len? len: -1;
+}
+
+static int is_binary(const char *s) {
+	if (r_str_startswith (s, "Bx")) {
+		return bin_len (s + 2);
+	}
+	if (r_str_startswith (s, "0b") && (bin_len (s + 2) % 8) == 0) {
+		return bin_len (s + 2);
 	}
 	int len = 0;
 	while (*s) {
+		if (*s == '_') {
+			s++;
+			continue;
+		}
 		if (*s != '0' && *s != '1') {
 			if (*s == 'b' && !s[1] && (len % 8) == 0) {
-				return true;
+				return len;
 			}
-			return false;
+			return 0;
 		}
 		s++;
 		len++;
 	}
-	return false;
+	return 0;
 }
 
 static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int bits, int bin, int hex) {
@@ -451,9 +474,14 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 		len /= 8;
 	}
 	ut8 bbuf[8] = {0};
-	if (is_binary (buf)) {
-		int blen = strlen (buf);
-		ut64 n = r_num_get (NULL, buf);
+	int blen = is_binary (buf);
+	if (blen) {
+		char *nstr = r_str_newf ("0b%s", buf);
+		if (nstr[strlen (nstr)-1] == 'b') {
+			nstr[strlen (nstr)-1] = 0;
+		}
+		ut64 n = r_num_get (NULL, nstr);
+		free (nstr);
 		memcpy (bbuf, &n, 8);
 		buf = (const char*)&bbuf;
 		bin = true;
