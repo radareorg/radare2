@@ -95,6 +95,7 @@ static const char *help_msg_l[] = {
 static const char *help_msg_plus[] = {
 	"Usage:", "+", "seek forward, same as s+X (see s? and -? for more help)",
 	"+", "8", "seek 8 bytes forward, same as s+8",
+	"++", "", "seek one block forward. Same as s++ (see `b` command)",
 	NULL
 };
 
@@ -102,6 +103,7 @@ static const char *help_msg_dash[] = {
 	"Usage:", "-", "open editor and run the r2 commands in the saved document",
 	"", "'-' '.-' '. -'", " those three commands do the same",
 	"-", "8", "same as s-8, but shorter to type (see +? command)",
+	"--", "", "seek one block backward. Same as s-- (see `b` command)",
 	NULL
 };
 
@@ -255,6 +257,7 @@ static const char *help_msg_r[] = {
 	"r", " size", "expand or truncate file to given size",
 	"r-", "num", "remove num bytes, move following data down",
 	"r+", "num", "insert num bytes, move following data up",
+	"r2pm", " [...]", "run r2pm's main",
 	"rabin2", " [...]", "run rabin2's main",
 	"radare2", " [...]", "run radare2's main",
 	"radiff2", " [...]", "run radiff2's main",
