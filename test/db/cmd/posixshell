@@ -3,7 +3,8 @@ FILE=-
 CMDS=<<EOF
 cd /
 pushd dev
-pushd ../dev/fd
+pushd ../dev
+pushd /
 pushd /404
 pwd
 popd
@@ -12,14 +13,14 @@ popd
 pwd
 EOF
 EXPECT=<<EOF
-/dev/fd
+/
 /
 EOF
 EXPECT_ERR=<<EOF
 Cannot chdir
 /dev
+/dev
 /
-Cannot popd
 Cannot popd
 EOF
 RUN
