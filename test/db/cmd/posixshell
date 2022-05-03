@@ -2,19 +2,19 @@ NAME=pushd;popd
 FILE=-
 CMDS=<<EOF
 cd /
-pushd bin
-pushd ../dev
+pushd dev
+pushd ../dev/fd
 pwd
 popd
 popd
 pwd
 EOF
 EXPECT=<<EOF
-/dev
+/dev/fd
 /
 EOF
 EXPECT_ERR=<<EOF
-/bin
+/dev
 /
 EOF
 RUN
