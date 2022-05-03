@@ -2066,7 +2066,7 @@ static bool set_reg_profile(RAnal *anal) {
 		// other important MCU registers
 		//	spmcsr/spmcr
 		//		Store Program Memory Control and Status Register (SPMCSR)
-		"gpr    spmcsr  .8      64      0\n"
+		// "gpr    spmcsr  .8      64      0\n"
 	);
 
 	if (!strcmp (r_str_get (anal->config->cpu), "ATmega328p")) {
@@ -2214,7 +2214,6 @@ static bool set_reg_profile(RAnal *anal) {
 			"gpr		spcr	.8		90		0\n"
 			"gpr		spsr	.8		90		0\n"
 			"gpr		spdr	.8		90		0\n"
-			"gpr		acsr	.8		90		0\n"
 			"gpr		smcr	.8		90		0\n"
 			"gpr		mcusr	.8		90		0\n"
 			"gpr		mcucr	.8		90		0\n"
@@ -2224,12 +2223,10 @@ static bool set_reg_profile(RAnal *anal) {
 			"gpr		prr		.8		90		0\n"
 			"gpr		osccal	.8		90		0\n"
 			"gpr		acsr	.8		90		0\n"
-			"gpr		pcicr	.8		90		0\n"
 			"gpr		eicra	.8		90		0\n"
 			"gpr		pcmsk0	.8		90		0\n"
 			"gpr		pcmsk1	.8		90		0\n"
 			"gpr		pcmsk2	.8		90		0\n"
-			"gpr		pcicr	.8		90		0\n"
 			"gpr		timsk0	.8		90		0\n"
 			"gpr		timsk1	.8		90		0\n"
 			"gpr		timsk2	.8		90		0\n"
@@ -2253,7 +2250,6 @@ static bool set_reg_profile(RAnal *anal) {
 			"gpr		icr1l	.8		90		0\n"
 			"gpr		icr1h	.8		90		0\n"
 			"gpr		ocr1h	.16		90		0\n"
-			"gpr		ocr1al	.8		90		0\n"
 			"gpr		ocr1ah	.8		90		0\n"
 			"gpr		ocr1al	.8		90		0\n"
 			"gpr		ocr1b	.16		90		0\n"
@@ -2264,7 +2260,6 @@ static bool set_reg_profile(RAnal *anal) {
 			"gpr		tcnt2	.8		90		0\n"
 			"gpr		ocr2a	.8		90		0\n"
 			"gpr		ocr2b	.8		90		0\n"
-			"gpr		twbr	.8		90		0\n"
 			"gpr		twsr	.8		90		0\n"
 			"gpr		twar	.8		90		0\n"
 			"gpr		twdr	.8		90		0\n"
@@ -2277,8 +2272,6 @@ static bool set_reg_profile(RAnal *anal) {
 			"gpr		ubrr0l	.8		90		0\n"
 			"gpr		ubrr0h	.8		90		0\n"
 			"gpr		udr0	.8		90		0\n"
-			"gpr		ubrr0l	.8		90		0\n"
-			"gpr		ubrr0l	.8		90		0\n"
 			;
 		RStrBuf *sb = r_strbuf_new (registers_profile);
 		r_strbuf_append (sb, section_two);
