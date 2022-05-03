@@ -80,10 +80,13 @@ R_API int r_sys_tem_statement(const char *l) {
 			char *s = r_syscmd_ls (sbs, 80);
 			eprintf ("%s\n", s);
 			free (s);
+		} else if (!strcmp (progname, "mktemp")) {
+			char *d = r_syscmd_mktemp (sbs);
+			printf ("%s\n", d);
+			free (d);
+			return d? 0: 1;
 		} else if (!strcmp (progname, "mkdir")) {
-			char *s = r_syscmd_mkdir (sbs);
-			eprintf ("%s\n", s);
-			free (s);
+			return r_syscmd_mkdir (sbs);
 		} else if (!strcmp (progname, "pwd")) {
 			char *wd = r_sys_getdir ();
 			eprintf ("%s\n", wd);

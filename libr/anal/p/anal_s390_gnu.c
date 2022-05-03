@@ -69,7 +69,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->size = 2;
 	} else {
 		op->mnemonic = r_strbuf_drain (buf_global);
+		buf_global = NULL;
 	}
+	r_buf_free (buf_global);
 	buf_global = NULL;
 	return op->size;
 }

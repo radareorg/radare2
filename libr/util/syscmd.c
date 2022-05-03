@@ -514,7 +514,8 @@ R_API char *r_syscmd_mktemp(const char *dir) {
 	const char *space = strchr (dir, ' ');
 	const char *suffix = space? r_str_trim_head_ro (space): "";
 	if (!*suffix || (!strncmp (suffix, "-d ", 3) && strstr (suffix, " -"))) {
-		return strdup ("Usage: mktemp [-d] [file|directory]\n"); 
+		eprintf ("Usage: mktemp [-d] [file|directory]\n");
+		return NULL;
 	}
 	bool dodir = (bool) strstr (suffix, "-d");
 	int ret;
@@ -522,6 +523,10 @@ R_API char *r_syscmd_mktemp(const char *dir) {
 		? strdup (suffix + 3): strdup (suffix);
 	r_str_trim (dirname);
 	char *arg = NULL;
+	if (!*dirname || *dirname == '-') {
+		eprintf ("Usage: mktemp [-d] [file|directory]\n");
+		return NULL;
+	}
 	int fd = r_file_mkstemp (dirname, &arg);
 	if (fd != -1) {
 		ret = 1;
@@ -534,34 +539,37 @@ R_API char *r_syscmd_mktemp(const char *dir) {
 		ret = r_sys_mkdirp (arg);
 	}
 	if (!ret) {
-		char *res = r_str_newf ("Cannot create '%s'\n", dirname);
+		eprintf ("Cannot create '%s'\n", dirname);
 		free (dirname);
-		return res;
+		return NULL;
 	}
-	free (dirname);
-	return NULL;
+	return dirname;
 }
 
-R_API char *r_syscmd_mkdir(const char *dir) {
+R_API bool r_syscmd_mkdir(const char *dir) {
 	const char *space = strchr (dir, ' ');
 	const char *suffix = space? r_str_trim_head_ro (space): "";
 	if (!*suffix || (!strncmp (suffix, "-p ", 3) && strstr (suffix, " -"))) {
-		return strdup ("Usage: mkdir [-p] [directory]\n");
+		eprintf ("Usage: mkdir [-p] [directory]\n");
+		return false;
 	}
-	int ret;
 	char *dirname = (!strncmp (suffix, "-p ", 3))
 		? strdup (suffix + 3): strdup (suffix);
 	r_str_trim (dirname);
-	ret = r_sys_mkdirp (dirname);
-	if (!ret) {
+	if (!*dirname || *dirname == '-') {
+		eprintf ("Usage: mkdir [-p] [directory]\n");
+		free (dirname);
+		return false;
+	}
+	if (!r_sys_mkdirp (dirname)) {
 		if (r_sys_mkdir_failed ()) {
-			char *res = r_str_newf ("Cannot create '%s'\n", dirname);
+			eprintf ("Cannot create '%s'\n", dirname);
 			free (dirname);
-			return res;
+			return false;
 		}
 	}
 	free (dirname);
-	return NULL;
+	return true;
 }
 
 R_API bool r_syscmd_mv(const char *input) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 // pancake */
+/* radare - LGPL - Copyright 2009-2022 // pancake */
 
 static const char *help_msg_m[] = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
@@ -33,36 +33,20 @@ static const char *help_msg_mf[] = {
 };
 
 static int cmd_mktemp(RCore *core, const char *input) {
-	if (R_STR_ISEMPTY (input)) {
-		eprintf ("Usage: mktemp [-d] [file|directory]\n");
+	char *res = r_syscmd_mktemp (input);
+	if (res) {
 		r_core_return_code (core, 1);
+		r_cons_printf ("%s", res);
+		free (res);
 	} else {
-		char *res = r_syscmd_mktemp (input);
-		if (res) {
-			r_core_return_code (core, 1);
-			r_cons_printf ("%s", res);
-			free (res);
-		} else {
-			r_core_return_code (core, 0);
-		}
+		r_core_return_code (core, 0);
 	}
 	return 0;
 }
 
 static int cmd_mkdir(RCore *core, const char *input) {
-	if (R_STR_ISEMPTY (input)) {
-		eprintf ("Usage: mkdir [-p] [directory]\n");
-		r_core_return_code (core, 1);
-	} else {
-		char *res = r_syscmd_mkdir (input);
-		if (res) {
-			r_core_return_code (core, 1);
-			eprintf ("%s", res);
-			free (res);
-		} else {
-			r_core_return_code (core, 0);
-		}
-	}
+	int rc = r_syscmd_mkdir (input)? 0: 1;
+	r_core_return_code (core, rc);
 	return 0;
 }
 

@@ -331,7 +331,7 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 
 static void load_asm_descriptions(RAsm *a, RAsmPlugin *p) {
 	const char *arch = ((!p || !strcmp (p->name, "null")) && a->config->arch)
-		? a->config->arch: p->arch;
+		? a->config->arch: (p? p->arch: NULL);
 	if (!arch || (p && !strcmp (p->name, "r2ghidra"))) {
 		if (a->config->cpu) {
 			arch = a->config->cpu;
