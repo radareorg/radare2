@@ -610,10 +610,14 @@ R_API bool r_syscmd_popd(void) {
 	return true;
 }
 
-R_API void r_syscmd_popalld(void) {
+R_API bool r_syscmd_popalld(void) {
+	if (!dirstack || r_list_empty (dirstack)) {
+		return false;
+	}
 	while (r_syscmd_popd ()) {
 		// wait for it
 	}
+	return true;
 }
 
 R_API bool r_syscmd_mv(const char *input) {

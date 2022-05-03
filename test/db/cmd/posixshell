@@ -4,7 +4,9 @@ CMDS=<<EOF
 cd /
 pushd dev
 pushd ../dev/fd
+pushd /404
 pwd
+popd
 popd
 popd
 pwd
@@ -14,8 +16,11 @@ EXPECT=<<EOF
 /
 EOF
 EXPECT_ERR=<<EOF
+Cannot chdir
 /dev
 /
+Cannot popd
+Cannot popd
 EOF
 RUN
 

@@ -141,7 +141,7 @@ R_API char *r_syscmd_ls(const char *input, int w);
 R_API char *r_syscmd_cat(const char *file);
 R_API bool r_syscmd_pushd(const char *dir);
 R_API bool r_syscmd_popd(void);
-R_API void r_syscmd_popalld(void);
+R_API bool r_syscmd_popalld(void);
 R_API bool r_syscmd_mkdir(const char *dir);
 R_API char *r_syscmd_mktemp(const char *dir);
 R_API bool r_syscmd_mv(const char *input);

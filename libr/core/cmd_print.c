@@ -5468,12 +5468,15 @@ static int cmd_print(void *data, const char *input) {
 			eprintf ("Usage: popd [-a]\n");
 			r_core_return_code (core, 1);
 		} else {
-			if (all) {
-				r_syscmd_popalld ();
+			bool suc = all
+				? r_syscmd_popalld ()
+				: r_syscmd_popd ();
+			if (suc) {
+				r_core_return_code (core, 0);
 			} else {
-				r_syscmd_popd ();
+				eprintf ("Cannot popd\n");
+				r_core_return_code (core, 1);
 			}
-			r_core_return_code (core, 0);
 		}
 		return 0;
 	}
