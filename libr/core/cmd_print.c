@@ -5441,6 +5441,42 @@ static int cmd_print(void *data, const char *input) {
 		/* hijack here for now, idk how to more cleanly integrate it */
 		return cmd_pdu (core, input + 2);
 	}
+	if (!strncmp (input, "ushd", 4)) { // "pushd"
+		bool halp = true;
+		const char *arg = strchr (input, ' ');
+		if (arg) {
+			arg = r_str_trim_head_ro (arg + 1);
+			if (*arg) {
+				halp = false;
+				if (r_syscmd_pushd (arg)) {
+					r_core_return_code (core, 0);
+				} else {
+					r_core_return_code (core, 1);
+				}
+			}
+		}
+		if (halp) {
+			eprintf ("Usage: pushd [dir]\n");
+			r_core_return_code (core, 1);
+		}
+		return 0;
+	}
+	if (!strncmp (input, "opd", 3)) { // "popd"
+		bool all = strstr (input, "-a");
+		bool halp = strstr (input, "-h");
+		if (halp) {
+			eprintf ("Usage: popd [-a]\n");
+			r_core_return_code (core, 1);
+		} else {
+			if (all) {
+				r_syscmd_popalld ();
+			} else {
+				r_syscmd_popd ();
+			}
+			r_core_return_code (core, 0);
+		}
+		return 0;
+	}
 
 	r_print_init_rowoffsets (core->print);
 	off = UT64_MAX;
@@ -6827,7 +6863,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'o': // "po"
-		cmd_print_op(core, input);
+		cmd_print_op (core, input);
 		break;
 	case 'x': // "px"
 		if (input[1] == '-' && input[2] == '-') {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
 #include <r_types.h>
@@ -1217,6 +1217,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	pj_free (pj);
 	r_cons_flush ();
 	r_core_fini (&core);
+	r_syscmd_popalld ();
 
 	return 0;
 }

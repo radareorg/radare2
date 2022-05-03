@@ -9,6 +9,8 @@
 #define FMT_QUIET 'q'
 #define FMT_EMOJI 'e'
 
+R_TH_LOCAL RList *dirstack = NULL;
+
 static char *showfile(char *res, const int nth, const char *fpath, const char *name, int printfmt, bool needs_newline) {
 #if __UNIX__
 	struct stat sb;
@@ -570,6 +572,48 @@ R_API bool r_syscmd_mkdir(const char *dir) {
 	}
 	free (dirname);
 	return true;
+}
+
+R_API bool r_syscmd_pushd(const char *input) {
+	if (!dirstack) {
+		dirstack = r_list_newf (free);
+	}
+	char *cwd = r_sys_getdir ();
+	if (!cwd) {
+		eprintf ("Where am I?\n");
+		return false;
+	}
+	bool suc = r_sys_chdir (input);
+	if (suc) {
+		r_list_push (dirstack, cwd);
+	} else {
+		eprintf ("Cannot chdir\n");
+	}
+	return suc;
+}
+
+R_API bool r_syscmd_popd(void) {
+	if (!dirstack) {
+		return false;
+	}
+	char *d = r_list_pop (dirstack);
+	if (d) {
+		r_sys_chdir (d);
+		eprintf ("%s\n", d);
+		free (d);
+	}
+	if (r_list_empty (dirstack)) {
+		r_list_free (dirstack);
+		dirstack = NULL;
+		return false;
+	}
+	return true;
+}
+
+R_API void r_syscmd_popalld(void) {
+	while (r_syscmd_popd ()) {
+		// wait for it
+	}
 }
 
 R_API bool r_syscmd_mv(const char *input) {

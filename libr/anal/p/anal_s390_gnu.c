@@ -66,12 +66,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	op->size = print_insn_s390 ((bfd_vma)Offset, &disasm_obj);
 	if (op->size < 1) {
 		op->mnemonic = strdup ("invalid");
+		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 2;
 	} else {
 		op->mnemonic = r_strbuf_drain (buf_global);
 		buf_global = NULL;
 	}
-	r_buf_free (buf_global);
+	r_strbuf_free (buf_global);
 	buf_global = NULL;
 	return op->size;
 }

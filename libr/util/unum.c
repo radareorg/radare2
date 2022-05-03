@@ -787,14 +787,12 @@ R_API ut64 r_num_tail_base(RNum *num, ut64 addr, ut64 off) {
 R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	ut64 mask = 0LL;
 	ut64 n = 0;
-	char *p;
-	int i;
 
 	while (*hex && (*hex == ' ' || *hex == '.')) {
 		hex++;
 	}
-	i = strlen (hex) * 4;
-	p = malloc (strlen (hex) + 10);
+	int i = strlen (hex) * 4;
+	char *p = malloc (strlen (hex) + 10);
 	if (p) {
 		strcpy (p, "0x");
 		strcpy (p + 2, hex);
