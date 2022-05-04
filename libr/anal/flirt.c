@@ -601,7 +601,7 @@ static int module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b, 
 			if (!flirt_func->name[name_offs]) {
 				continue;
 			}
-			name = r_name_filter2 (flirt_func->name + name_offs);
+			name = r_name_filter_dup (flirt_func->name + name_offs);
 			free (next_module_function->name);
 			next_module_function->name = r_str_newf ("flirt.%s", name);
 			anal->flb.set (anal->flb.f, next_module_function->name,

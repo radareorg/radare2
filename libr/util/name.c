@@ -66,20 +66,12 @@ R_API bool r_name_validate_dash(const char ch) {
 	return false;
 }
 
-#if 0
 R_API bool r_name_validate_char(const char ch) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
 		return true;
 	}
-	switch (ch) {
-	case '.':
-	case ':':
-	case '_':
-		return true;
-	}
-	return false;
+	return (ch == ';' || ch == '.' || ch == ':' || ch == '_');
 }
-#endif
 
 R_API bool r_name_validate_first(const char ch) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
@@ -106,7 +98,7 @@ R_API bool r_name_check(const char *s) {
 }
 
 static inline bool is_special_char(char n) {
-	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
+	return (n == 's' || n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
 }
 
 R_API const char *r_name_filter_ro(const char *a) {
@@ -197,7 +189,7 @@ R_API bool r_name_filter(char *s, int maxlen) {
 #endif
 }
 
-R_API char *r_name_filter2(const char *name) {
+R_API char *r_name_filter_dup(const char *name) {
 	char *s = strdup (name);
 	r_name_filter (s, -1);
 	return s;
