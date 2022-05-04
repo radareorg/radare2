@@ -91,7 +91,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		return 0;
 	}
 	Rvc *rvc = r_vc_load(rp);
-	free (rp);
+	R_FREE (rp);
 	if (!rvc) {
 		return 1;
 	}
