@@ -29,6 +29,9 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     elif capstone_version == 'v3'
       CS_TIP = '61bf71c771680033651f16cff832446e421847b1'
       CS_BRA = 'v3'
+      patches_files = [
+        'capstone-include.patch'
+      ]
     elif capstone_version == 'v4'
       CS_TIP = 'a7cac8352f7397aa73bb2e2dcc1b6cdb2e1b8461'
       CS_BRA = 'v4'
@@ -191,9 +194,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   endif
 
   capstone_includes = [platform_inc, include_directories(join_paths('capstone','include'))]
-  if capstone_version == 'v4' or capstone_version == 'v5'
-    capstone_includes += [include_directories(join_paths('capstone','include','capstone'))]
-  endif
 
   libr2capstone = static_library('r2capstone', cs_files,
     c_args: cs_c_args,
