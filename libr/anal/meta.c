@@ -119,6 +119,7 @@ static bool meta_set(RAnal *a, RAnalMetaType type, int subtype, ut64 from, ut64 
 		}
 		return false;
 	}
+	R_DIRTY (a);
 	if (!node) {
 		r_interval_tree_insert (&a->meta, from, to, item);
 	} else if (node->end != to) {
