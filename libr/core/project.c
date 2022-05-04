@@ -486,7 +486,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	// new behaviour to project load routine (see io maps below).
 	if (opts & R_CORE_PRJ_EVAL) {
 		r_str_write (fd, "# eval\n");
-		r_config_list (core->config, NULL, true);
+		r_config_list (core->config, NULL, 'r');
 		r_cons_flush ();
 	}
 	r_core_cmd (core, "o*", 0);
