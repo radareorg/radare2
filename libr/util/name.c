@@ -70,7 +70,8 @@ R_API bool r_name_validate_char(const char ch) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
 		return true;
 	}
-	return (ch == ';' || ch == '.' || ch == ':' || ch == '_');
+	return (ch == '.' || ch == ':' || ch == '_');
+	// return (ch == ';' || ch == '.' || ch == ':' || ch == '_');
 }
 
 R_API bool r_name_validate_first(const char ch) {

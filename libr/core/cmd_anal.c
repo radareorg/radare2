@@ -3376,7 +3376,6 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 	char *name = getFunctionName (core, addr, _name, prefix);
 	char *fname = r_name_filter_dup (name);
 	// RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
-eprintf ("FUNCNAME (%s) f(%s)\n", name, fname);
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
 	if (fcn) {
 		char *oname = strdup (fcn->name);
