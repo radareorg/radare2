@@ -196,6 +196,19 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 			}
 		}
 		break;
+	case 'r':
+		r_list_foreach (cfg->nodes, iter, node) {
+			if (!str || (str && (!strncmp (str, node->name, len)))) {
+				if (r_str_startswith (node->name, "bin.laddr")) {
+					continue;
+				}
+				if (r_str_startswith (node->name, "dir.")) {
+					continue;
+				}
+				config_print_node (cfg, node, "\"e ", "\"", verbose, json);
+			}
+		}
+		break;
 	case 2:
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
@@ -259,7 +272,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		break;
 	case 'J':
 		verbose = true;
-	/* fallthrou */
+		/* fallthrou */
 	case 'j':
 		isFirst = true;
 		if (verbose) {
