@@ -3,9 +3,9 @@
 #include <r_asm.h>
 #include <r_lib.h>
 
-#include <capstone.h>
+#include <capstone/capstone.h>
 #if CS_API_MAJOR >= 5
-#include <riscv.h>
+#include <capstone/riscv.h>
 
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/RISCVir.html
 

@@ -3,9 +3,8 @@
 #include <r_anal.h>
 #include <r_lib.h>
 #include <ht_uu.h>
-#include <arm.h>
-#include <capstone.h>
-#include <arm.h>
+#include <capstone/capstone.h>
+#include <capstone/arm.h>
 #include <r_util/r_assert.h>
 #include "./anal_arm_hacks.inc"
 
