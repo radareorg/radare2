@@ -511,14 +511,14 @@ R_API void r_cons_grepbuf(void) {
 		return;
 	}
 	if (grep->code) {
-		char *buf = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
-		if (buf) {
-			char *res = r_str_tokenize_json (buf);
+		char *sbuf = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
+		if (sbuf) {
+			char *res = r_str_tokenize_json (sbuf);
 			char *nres = r_print_json_indent (res, I(context->color_mode), "  ", NULL);
 			free (res);
 			res = r_str_newf ("%s\n", nres);
 			free (nres);
-			free (buf);
+			free (sbuf);
 			if (res) {
 				cons->context->buffer_len = strlen (res);
 				cons->context->buffer_sz = cons->context->buffer_len;
@@ -541,19 +541,19 @@ R_API void r_cons_grepbuf(void) {
 		return;
 	}
 	if (grep->ascart) {
-		char *buf = strdup (cons->context->buffer);
-		r_str_ansi_filter (buf, NULL, NULL, -1);
-		char *out = r_str_ss (buf, NULL, 0);
+		char *sbuf = strdup (cons->context->buffer);
+		r_str_ansi_filter (sbuf, NULL, NULL, -1);
+		char *out = r_str_ss (sbuf, NULL, 0);
 		free (cons->context->buffer);
-		free (buf);
+		free (sbuf);
 		cons->context->buffer = out;
 		cons->context->buffer_len = strlen (out);
 		cons->context->buffer_sz = cons->context->buffer_len;
 		return;
 	}
 	if (grep->zoom) {
-		char *in = calloc (cons->context->buffer_len + 2, 4);
-		strcpy (in, cons->context->buffer);
+		char *sin = calloc (cons->context->buffer_len + 2, 4);
+		strcpy (sin, cons->context->buffer);
 		char *out = r_str_scale (in, grep->zoom * 2, grep->zoomy?grep->zoomy:grep->zoom);
 		if (out) {
 			free (cons->context->buffer);
@@ -563,7 +563,7 @@ R_API void r_cons_grepbuf(void) {
 		}
 		grep->zoom = 0;
 		grep->zoomy = 0;
-		free (in);
+		free (sin);
 		return;
 	}
 	if (grep->json) {
@@ -766,10 +766,10 @@ R_API void r_cons_grepbuf(void) {
 #define INSERT_LINES(list)\
 		do {\
 			r_list_foreach (list, iter, str) {\
-				int len = strlen (str);\
-				memcpy (ptr, str, len);\
-				memcpy (ptr + len, "\n", 2);\
-				ptr += len + 1;\
+				int slen = strlen (str);\
+				memcpy (ptr, str, slen);\
+				memcpy (ptr + slen, "\n", 2);\
+				ptr += slen + 1;\
 				nl++;\
 			}\
 		}\

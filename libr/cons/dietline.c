@@ -245,7 +245,7 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 		return -1;
 	}
 	for (i = 1; i < len; i++) {
-		int ch = r_cons_readchar ();
+		ch = r_cons_readchar ();
 		if (ch != -1) {
 			s[i] = ch;
 		}
