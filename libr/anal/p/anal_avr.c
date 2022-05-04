@@ -2066,7 +2066,7 @@ static bool set_reg_profile(RAnal *anal) {
 		// other important MCU registers
 		//	spmcsr/spmcr
 		//		Store Program Memory Control and Status Register (SPMCSR)
-		// "gpr    spmcsr  .8      64      0\n"
+		"gpr    spmcsr  .8      64      0\n"
 	);
 
 	if (!strcmp (r_str_get (anal->config->cpu), "ATmega328p")) {
@@ -2217,7 +2217,6 @@ static bool set_reg_profile(RAnal *anal) {
 			"gpr		smcr	.8		90		0\n"
 			"gpr		mcusr	.8		90		0\n"
 			"gpr		mcucr	.8		90		0\n"
-			"gpr		spmcsr	.8		90		0\n"
 			"gpr		wdtcsr	.8		90		0\n"
 			"gpr		clkpr	.8		90		0\n"
 			"gpr		prr		.8		90		0\n"
