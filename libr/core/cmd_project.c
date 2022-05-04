@@ -4,8 +4,8 @@
 
 static const char *help_msg_P[] = {
 	"Usage:", "P[?osi] [file]", "Project management",
-	"P", "", "show current loaded project (see prj.name)",
-	"P", " [file]", "open project",
+	"P", " [file]", "open project (formerly Po)",
+	"P.", "", "show current loaded project (see prj.name)",
 	"P+", " [file]", "save project (same as Ps, but doesnt checks for changes)",
 	"P-", " [file]", "delete project (alias for Pd)",
 	"Pc", " [file]", "show project script to console",
@@ -241,7 +241,7 @@ static int cmd_project(void *data, const char *input) {
 			r_cons_println (core->prj->path);
 		}
 		break;
-	case 0: // "P"
+	case '.': // "P."
 		if (file && *file) {
 			char *prj_name = r_core_project_name (core, file);
 			if (R_STR_ISNOTEMPTY (prj_name)) {
