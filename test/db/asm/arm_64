@@ -319,7 +319,7 @@ a "stur w3, [x8, -256]" 030110b8
 a "stur w3, [x8, 113]" 031107b8
 a "stur w3, [x8, 236]" 03c10eb8
 a "sub x0, xzr, x2" e00302cb
-ad "svc 6" c10000d4
+ad "svc 0x6" c10000d4
 a "mrs x3, SP_EL0" 034138d5
 a "msr 0xc208, x3" 034118d5
 a "msr SP_EL0, x3" 034118d5
