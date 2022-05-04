@@ -140,12 +140,6 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	return 0;
 }
 
-R_API void r_core_project_undirty(RCore *core) {
-	core->config->is_dirty = false;
-	core->anal->is_dirty = false;
-	core->flags->is_dirty = false;
-}
-
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot delete project in sandbox mode\n");
@@ -384,8 +378,8 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	ret = r_core_project_load (core, prj_name, prj_script);
 	free (prj_name);
 	free (prj_script);
-	if (ret)  {
-		r_core_project_undirty(core);
+	if (ret) {
+		r_core_project_undirty (core);
 	}
 	return ret;
 }
@@ -467,14 +461,13 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 #endif
 
 R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
-	char *filename, *hl, *ohl = NULL;
-	int fdold;
+	char *hl, *ohl = NULL;
 
 	if (R_STR_ISEMPTY (file)) {
 		return false;
 	}
 
-	filename = r_str_word_get_first (file);
+	char *filename = r_str_word_get_first (file);
 	int fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
 	if (fd == -1) {
 		free (filename);
@@ -486,7 +479,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		ohl = strdup (hl);
 		r_cons_highlight (NULL);
 	}
-	fdold = r_cons_singleton ()->fdout;
+	int fdold = r_cons_singleton ()->fdout;
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->context->is_interactive = false;
 	r_str_write (fd, "# r2 rdb project file\n");
@@ -608,7 +601,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		prj_dir = strdup (prj_name);
 	}
 	if (r_core_is_project (core, prj_name) && strcmp (prj_name, r_config_get (core->config, "prj.name"))) {
-		eprintf ("A project with this name already exists\n");
+		eprintf ("A project with this name already exists. Use Ps-%s to delete it.\n", prj_name);
 		free (script_path);
 		free (prj_dir);
 		return false;
@@ -640,7 +633,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		r_config_set (core->config, "prj.name", "");
 	}
 
-	if (r_config_get_i (core->config, "prj.files")) {
+	if (r_config_get_b (core->config, "prj.files")) {
 		eprintf ("TODO: prj.files: support copying more than one file into the project directory\n");
 		char *bin_file = r_core_project_name (core, prj_name);
 		const char *bin_filename = r_file_basename (bin_file);
@@ -707,9 +700,11 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	}
 	free (script_path);
 	r_config_set (core->config, "prj.name", prj_name);
-	r_core_project_undirty(core);
+	r_core_project_undirty (core);
 	return ret;
 }
+
+// dirty bits
 
 R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 	const char *prjdir = r_config_get (core->config, "dir.projects");
@@ -719,8 +714,13 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 	return notes_txt;
 }
 
-R_API bool r_core_project_is_saved(RCore *core) {
-	return !R_IS_DIRTY (core->config)
-		&& !R_IS_DIRTY (core->anal)
-		&& !R_IS_DIRTY (core->flags);
+R_API bool r_core_project_is_dirty(RCore *core) {
+	return !R_IS_DIRTY (core->config) && !R_IS_DIRTY (core->anal) && !R_IS_DIRTY (core->flags);
 }
+
+R_API void r_core_project_undirty(RCore *core) {
+	core->config->is_dirty = false;
+	core->anal->is_dirty = false;
+	core->flags->is_dirty = false;
+}
+

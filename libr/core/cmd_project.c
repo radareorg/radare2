@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include "r_config.h"
-#include "r_core.h"
-#include "r_util.h"
+#include <r_core.h>
 
 static const char *help_msg_P[] = {
 	"Usage:", "P[?osi] [file]", "Project management",
@@ -13,9 +11,10 @@ static const char *help_msg_P[] = {
 	"Pn", "[j]", "manage notes associated with the project",
 	"Pn", " -", "edit notes with cfg.editor",
 	"Po", " [file]", "open project",
-	"Ps", " [file]", "save project",
+	"Ps", " [file]", "save project (see dir.projects)",
 	"PS", " [file]", "save script file",
 	"P-", " [file]", "delete project (alias for Pd)",
+	"P+", " [file]", "save project (same as Ps, but doesnt checks for changes)",
 	"NOTE:", "", "the 'e prj.name' evar can save/open/rename/list projects.",
 	"NOTE:", "", "see the other 'e??prj.' evars for more options.",
 	"NOTE:", "", "project are stored in " R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS),
@@ -84,6 +83,8 @@ static int cmd_project(void *data, const char *input) {
 			eprintf ("Usage: Pd [prjname]   # Use P or Pl to list the available projects.\n");
 		}
 		break;
+	case '+': // "P+"
+		// xxx
 	case 's': // "Ps"
 		if (R_STR_ISEMPTY (file)) {
 			file = str;

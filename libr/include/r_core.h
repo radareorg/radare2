@@ -258,7 +258,7 @@ R_API bool r_project_open(RProject *p, const char *prjname, const char *path);
 R_API void r_project_save(RProject *p);
 R_API void r_project_free(RProject *p);
 R_API bool r_project_is_loaded(RProject *p);
-R_API bool r_core_project_is_saved(RCore *core);
+R_API bool r_core_project_is_dirty(RCore *core);
 
 struct r_core_t {
 	RBin *bin;
