@@ -34,8 +34,9 @@ static bool __isMips(RAsm *a) {
 
 static void loadGP(RCore *core) {
 	if (__isMips (core->rasm)) {
+		ut64 e0 = r_num_math (core->num, "entry0");
 		ut64 gp = r_num_math (core->num, "loc._gp");
-		if (!gp || gp == UT64_MAX) {
+		if ((!gp || gp == UT64_MAX) && (e0 && e0 != UT64_MAX)) {
 			r_config_set (core->config, "anal.roregs", "zero");
 			r_core_cmd0 (core, "10aes@entry0");
 			r_config_set (core->config, "anal.roregs", "zero,gp");
