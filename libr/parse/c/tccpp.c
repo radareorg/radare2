@@ -2694,7 +2694,7 @@ static int macro_subst_tok(TCCState *s1, TokenString *tok_str,
 {
 	Sym *args, *sa, *sa1;
 	int mstr_allocated, parlevel, *mstr, t, t1, spc;
-	const uint8_t *p;
+	const int *p;
 	TokenString str;
 	char *cstrval;
 	CValue cval;
@@ -2771,7 +2771,7 @@ redo:
 							sp = parse_comment (s1, sp);
 							s1->file->buf_ptr = sp - 1;
 						} else if (c == '/') {
-							p = parse_line_comment (s1, sp);
+							p = (int*)parse_line_comment (s1, sp);
 							s1->file->buf_ptr = sp - 1;
 						} else {
 							break;
