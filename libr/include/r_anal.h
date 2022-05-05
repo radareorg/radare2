@@ -219,14 +219,14 @@ typedef struct r_anal_struct_member_t {
 	char *name;
 	char *type;
 	size_t offset; // in bytes
-	size_t size; // in bits?
+	size_t size; // in bits? rename to 'bitsize'
 } RAnalStructMember;
 
 typedef struct r_anal_union_member_t {
 	char *name;
 	char *type;
 	size_t offset; // in bytes
-	size_t size; // in bits?
+	size_t size; // in bits? TODO rename to 'bitsize'
 } RAnalUnionMember;
 
 typedef enum {

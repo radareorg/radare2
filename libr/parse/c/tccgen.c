@@ -1975,7 +1975,6 @@ str_init:
 	case TOK_builtin_frame_address:
 	{
 		int level;
-		CType type = { 0  };
 		next (s1);
 		skip (s1, '(');
 		if (s1->tok != TOK_CINT || s1->tokc.i < 0) {
@@ -2012,7 +2011,6 @@ str_init:
 	case TOK_builtin_va_arg_types:
 		if (!(!strncmp (s1->arch, "x86", 3) && s1->bits == 64 &&
 		      !strncmp (s1->os, "windows", 7))) {
-			CType type = { 0  };
 			next (s1);
 			skip (s1, '(');
 			parse_type (s1, &type);
