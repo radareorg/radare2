@@ -888,7 +888,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	int lidx;
 
 	if (!*oname) {
-		r_cmd_macro_list (mac);
+		r_cmd_macro_list (mac, 0);
 		return false;
 	}
 
@@ -996,8 +996,32 @@ R_API bool r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
 	return ret;
 }
 
+static void macro_meta(RCmdMacro *mac) {
+	RCmdMacroItem *m;
+	int j;
+	RListIter *iter;
+	r_list_foreach (mac->macros, iter, m) {
+		mac->cb_printf ("\"(%s %s; ", m->name, m->args);
+		for (j=0; m->code[j]; j++) {
+			if (m->code[j] == '\n') {
+				mac->cb_printf (";");
+			} else {
+				mac->cb_printf ("%c", m->code[j]);
+			}
+		}
+		mac->cb_printf (")\"\n");
+	}
+}
 // TODO: use mac->cb_printf which is r_cons_printf at the end
-R_API void r_cmd_macro_list(RCmdMacro *mac) {
+R_API void r_cmd_macro_list(RCmdMacro *mac, int mode) {
+	if (mode == '*') {
+		macro_meta (mac);
+		return;
+	}
+	if (mode == 'j') {
+		eprintf ("TODO: JSON output for macros\n");
+		return;
+	}
 	RCmdMacroItem *m;
 	int j, idx = 0;
 	RListIter *iter;
@@ -1015,23 +1039,6 @@ R_API void r_cmd_macro_list(RCmdMacro *mac) {
 	}
 }
 
-// TODO: use mac->cb_printf which is r_cons_printf at the end
-R_API void r_cmd_macro_meta(RCmdMacro *mac) {
-	RCmdMacroItem *m;
-	int j;
-	RListIter *iter;
-	r_list_foreach (mac->macros, iter, m) {
-		mac->cb_printf ("(%s %s, ", m->name, m->args);
-		for (j=0; m->code[j]; j++) {
-			if (m->code[j] == '\n') {
-				mac->cb_printf ("; ");
-			} else {
-				mac->cb_printf ("%c", m->code[j]);
-			}
-		}
-		mac->cb_printf (")\n");
-	}
-}
 
 #if 0
 (define name value

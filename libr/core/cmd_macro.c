@@ -33,10 +33,9 @@ static int cmd_macro(void *data, const char *_input) {
 		r_cmd_macro_rm (&core->rcmd->macro, input + 1);
 		break;
 	case '*':
-		r_cmd_macro_meta (&core->rcmd->macro);
-		break;
+	case 'j':
 	case '\0':
-		r_cmd_macro_list (&core->rcmd->macro);
+		r_cmd_macro_list (&core->rcmd->macro, *input);
 		break;
 	case '(':
 	case '?':
