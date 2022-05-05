@@ -1,3 +1,25 @@
+NAME=Resaving fails
+FILE=bins/mach0/ls-m1
+BROKEN=1
+CMDS=<<EOF
+e prj.vc=false
+e scr.interactive=false
+e dir.projects = bins/other/projects
+p8 16
+P+ls
+P ls
+p8 16
+o
+om
+EOF
+EXPECT=<<EOF
+7f2303d5fc6fbaa9fa6701a9f85f02a9
+7f2303d5fc6fbaa9fa6701a9f85f02a9
+ 3 * r-x 0x0002daa0 bins/mach0/ls-m1
+* 2 fd: 3 +0x00000000 0x00000000 - 0x0002da9f r-x
+EOF
+RUN
+
 NAME=Import project
 FILE=malloc://512
 CMDS=<<EOF

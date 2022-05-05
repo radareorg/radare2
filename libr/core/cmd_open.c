@@ -441,7 +441,9 @@ static void cmd_open_bin(RCore *core, const char *input) {
 }
 
 // TODO: discuss the output format
-static void map_list(RIO *io, ut64 off, int mode, RPrint *print, int fd) {
+static void map_list(RCore *core, int mode, RPrint *print, int fd) {
+	RIO *io = core->io;
+	ut64 off = core->offset;
 	r_return_if_fail (io && print && print->cb_printf);
 	PJ *pj = NULL;
 	if (mode == 'j') {
@@ -658,7 +660,7 @@ static bool cmd_om(RCore *core, const char *input) {
 	} else {
 		int fd = r_io_fd_get_current (core->io);
 		if (r_io_desc_get (core->io, fd)) {
-			map_list (core->io, core->offset, 0, core->print, fd);
+			map_list (core, 0, core->print, fd);
 		} else {
 			eprintf ("Invalid fd %d\n", (int)fd);
 		}
@@ -1076,9 +1078,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 		} else {
 			if (input[1] && input[2] == 'q') { // "omqq"
-				map_list (core->io, core->offset, input[1], core->print, -2);
+				map_list (core, input[1], core->print, -2);
 			} else {
-				map_list (core->io, core->offset, input[1], core->print, -1);
+				map_list (core, input[1], core->print, -1);
 			}
 		}
 		break;

@@ -154,7 +154,13 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			free (path);
 			return false;
 		}
-		r_file_rm_rf (prj_dir);
+		bool must_rm = true;
+		if (r_config_get_b (core->config, "scr.interactive")) {
+			must_rm = r_cons_yesno ('y', "Confirm project deletion? (Y/n)");
+		}
+		if (must_rm) {
+			r_file_rm_rf (prj_dir);
+		}
 		free (prj_dir);
 	}
 	free (path);
@@ -346,10 +352,13 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const c
 
 R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	r_return_val_if_fail (core && !R_STR_ISEMPTY (prj_path), false);
-	int ret, close_current_session = 1;
+	bool interactive = r_config_get_b (core->config, "scr.interactive");
+	bool close_current_session = true;
+	bool ask_for_closing = true;
 	if (r_project_is_loaded (core->prj)) {
 		eprintf ("There's a project already opened\n");
-		bool ccs = r_cons_yesno ('y', "Close current session? (Y/n)");
+		ask_for_closing = false;
+		bool ccs = interactive? r_cons_yesno ('y', "Close current session? (Y/n)"): true;
 		if (ccs) {
 			r_core_cmd0 (core, "o--");
 		} else {
@@ -363,16 +372,16 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 		eprintf ("Invalid project name '%s'\n", prj_path);
 		return false;
 	}
-	if (r_project_is_loaded (core->prj)) {
+	if (ask_for_closing && r_project_is_loaded (core->prj)) {
 		if (r_cons_is_interactive ()) {
-			close_current_session = r_cons_yesno ('y', "Close current session? (Y/n)");
+			close_current_session = interactive? r_cons_yesno ('y', "Close current session? (Y/n)"): true;
 		}
 	}
 	if (close_current_session) {
 		r_core_cmd0 (core, "e prj.name=;o--");
 	}
 	/* load sdb stuff in here */
-	ret = r_core_project_load (core, prj_name, prj_script);
+	bool ret = r_core_project_load (core, prj_name, prj_script);
 	free (prj_name);
 	free (prj_script);
 	if (ret) {
