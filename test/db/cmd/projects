@@ -25,9 +25,9 @@ e anal.arch = x86
 mkdir .tmp
 e dir.projects = .tmp/
 CC Some test @ 0x00404890
-Ps import1
-Po import1 > /dev/null
-Pd import1
+P+import1
+P import1 > /dev/null
+P-import1
 rm .tmp
 CC*
 EOF
@@ -50,9 +50,9 @@ wx 31ed4989d15e4889e24883e4f0505449c7c09024410048c7c12024410048c7c7a0284000e857d
 af test
 afF @ test
 pdf
-Ps import2 > /dev/null
+P+import2 > /dev/null
 Pc import2~afF
-Pd import2
+P-import2
 rm .tmp
 EOF
 EXPECT=<<EOF
@@ -69,7 +69,7 @@ e prj.vc=false
 mkdir .tmp
 e dir.projects = .tmp/
 CC "Some other test" @ 0x00404890
-Ps testexp > /dev/null
+P+ testexp > /dev/null
 cat .tmp/testexp/rc.r2 | grep base64
 rmdir -p .tmp/testexp
 EOF
@@ -87,7 +87,7 @@ e dir.projects = .tmp/
 t-*
 CC "First comment" @ 0x00404890
 CC "Second comment" @ 0x00404800
-Ps testset > /dev/null
+P+ testset > /dev/null
 C- @ 0x00404890
 C- @ 0x00404800
 Po project.r2
@@ -107,7 +107,7 @@ e prj.vc=false
 ax 1
 e dir.projects = .tmp/
 axq
-Ps xrefs > /dev/null
+P+ xrefs > /dev/null
 axq
 EOF
 EXPECT=<<EOF
@@ -147,7 +147,7 @@ e prj.vc=false
 e asm.flags = false
 e asm.emu = true
 e dir.projects = .tmp/
-Ps emu > /dev/null
+P+ emu > /dev/null
 Po emu
 CC-
 om `o~[0]` 0
@@ -167,7 +167,7 @@ e dir.projects = .tmp/
 af
 afvr edi blahblah typeR @ 0x10002d8d
 afvb 8 ImageHandle blah @ 0x10002d8d
-Ps var > /dev/null
+P+ var > /dev/null
 Pc var~ImageHandle
 Pc var~blahblah
 rm .tmp/var
@@ -186,7 +186,7 @@ e prj.vc=false
 e dir.projects = .tmp/
 tk zoby  =  type
 tl char @ 0x0
-Ps types > /dev/null
+P+ types > /dev/null
 Pc types~?link.,symlink,unlink
 Pc types~?zoby
 EOF
@@ -204,7 +204,7 @@ e prj.vc=false
 e dbg.bpinmaps = false
 e dir.projects = .tmp/
 db 0x1234567
-Ps breakpoints > /dev/null
+P+ breakpoints > /dev/null
 Pc breakpoints~?0x1234567
 EOF
 EXPECT=<<EOF
@@ -218,9 +218,9 @@ CMDS=<<EOF
 e prj.vc=false
 fV 49 0x400410
 fV 50 0x400412
-Ps vmarks > /dev/null
+P+ vmarks > /dev/null
 Pc vmarks~fV
-Pd vmarks > /dev/null
+P- vmarks > /dev/null
 EOF
 EXPECT=<<EOF
 fV 49 0x400410
@@ -235,13 +235,13 @@ e prj.vc=false
 tk char **=type
 tk type.char **=**z
 tk type.char **.size=64
-Ps ctypes > /dev/null
+P+ ctypes > /dev/null
 Pc ctypes~?char **
 "td struct Foo { int bar; int x; int y; };"
-Ps ctypes > /dev/null
+P+ ctypes > /dev/null
 Pc ctypes~?char **
 Pc ctypes~?Foo
-Pd ctypes > /dev/null
+P- ctypes > /dev/null
 EOF
 EXPECT=<<EOF
 9
@@ -259,7 +259,7 @@ tk char **=type
 tk type.char **=**z
 tk type.char **.size=64
 "td struct Foo { int bar; int x; int y; };"
-Ps costom_types > /dev/null
+P+ costom_types > /dev/null
 t- char **
 t- Foo
 tk~?char **
@@ -267,7 +267,7 @@ tk~?Foo
 Po costom_types > /dev/null
 tk~?char **
 tk~?Foo
-Pd costom_types > /dev/null
+P- costom_types > /dev/null
 EOF
 EXPECT=<<EOF
 5
@@ -283,7 +283,7 @@ BROKEN=1
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
-Ps ulumulu > /dev/null
+P+ ulumulu > /dev/null
 Po ulumulu > /dev/null
 o*~?
 EOF
@@ -315,7 +315,7 @@ e prj.vc=false
 e dir.projects = .tmp/
 e scr.interactive=false
 aa
-Ps beer
+P+ beer
 e scr.interactive=false
 Po beer
 echo Info: `Pi~Info`
@@ -338,8 +338,8 @@ o
 om
 om*
 ?e --
-Pd hand
-Ps hand > /dev/null
+P- hand
+P+ hand > /dev/null
 Po hand > /dev/null
 om*
 ?e --
@@ -381,8 +381,8 @@ o
 om
 om*
 ?e --
-Pd hond
-Ps hond > /dev/null
+P- hond
+P+ hond > /dev/null
 Po hond > /dev/null
 om*
 ?e --
@@ -410,8 +410,8 @@ o
 om
 om*
 ?e --
-Pd hund
-Ps hund > /dev/null
+P- hund
+P+ hund > /dev/null
 CC-$$
 e prj.name= # close current project
 Po hund > /dev/null
@@ -420,7 +420,7 @@ om*
 ?e --
 om*~?
 om*~[2]
-Pd hund
+P- hund
 rm .tmp
 EOF
 EXPECT=<<EOF
@@ -487,8 +487,8 @@ ARGS=-n
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
-Ps cannot > /dev/null
-Pd cannot > /dev/null
+P+ cannot > /dev/null
+P- cannot > /dev/null
 Pl~cannot
 
 EOF
@@ -502,7 +502,7 @@ ARGS=-n
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
-Ps erase > /dev/null
+P+ erase > /dev/null
 P- erase > /dev/null
 Pl~erase
 EOF
@@ -516,8 +516,8 @@ ARGS=-n
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
-Ps anesthetize > /dev/null
-Pd anesthetize > /dev/null
+P+ anesthetize > /dev/null
+P- anesthetize > /dev/null
 Pl~blah
 ls -l `e dir.projects`~anesthetize
 EOF
@@ -532,7 +532,7 @@ BROKEN=1
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
-Ps lightbulb > /dev/null
+P+ lightbulb > /dev/null
 P- lightbulb > /dev/null
 Pl~lightbulb
 ls -l `e dir.projects`~lightbulb
@@ -550,7 +550,7 @@ e prj.vc=false
 e dir.projects = .tmp/
 e asm.arch=x86
 e asm.bits=16
-Ps sun > /dev/null
+P+ sun > /dev/null
 Po sun > /dev/null
 e asm.arch
 e asm.bits
@@ -566,7 +566,7 @@ FILE=malloc://512
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
-Ps namedprj > /dev/null
+P+ namedprj > /dev/null
 e prj.name=
 Po namedprj > /dev/null
 e prj.name
@@ -582,9 +582,9 @@ FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
-Ps stupid > /dev/null
+P+ stupid > /dev/null
 Po stupid > /dev/null
-Ps stupid > /dev/null
+P+ stupid > /dev/null
 Po stupid > /dev/null
 e prj.name
 EOF
@@ -603,7 +603,7 @@ e asm.bits=32
 e dir.projects = .tmp/
 wx 5031c0e801000000c3b801000000c3
 af
-Ps dream > /dev/null
+P+ dream > /dev/null
 Po dream > /dev/null
 axq
 EOF
@@ -618,7 +618,7 @@ BROKEN=1
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
-Ps bininfo > /dev/null
+P+ bininfo > /dev/null
 Po bininfo
 i~?
 ie~?
@@ -639,7 +639,7 @@ aaa > /dev/null
 e dir.projects = .tmp/
 s main > /dev/null
 CC test
-Ps lapa > /dev/null
+P+ lapa > /dev/null
 Po lapa
 pd 1 ~test
 rm .tmp/
@@ -655,7 +655,7 @@ ARGS=-A -eprj.vc=false -edir.projects=.tmp/
 CMDS=<<EOF
 Pc aabb
 ?v $?
-Ps hello
+P+ hello
 Pc hello >/dev/null
 ?v $?
 EOF
