@@ -340,11 +340,10 @@ R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		r->dbg->bp->baddr = baseaddr;
 		r_config_set (r->config, "asm.arch", arch);
 		r_config_set_i (r->config, "asm.bits", bits);
-		r_config_set (r->config, "anal.arch", arch);
 		if (info->cpu && *info->cpu) {
-			r_config_set (r->config, "anal.cpu", info->cpu);
+			r_config_set (r->config, "asm.cpu", info->cpu);
 		} else {
-			r_config_set (r->config, "anal.cpu", arch);
+			r_config_set (r->config, "asm.cpu", arch);
 		}
 		r_asm_use (r->rasm, arch);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, NULL, R_MODE_SET, va, NULL, NULL);
@@ -726,7 +725,7 @@ R_API void r_core_anal_type_init(RCore *core) {
 	Sdb *types = core->anal->sdb_types;
 	// make sure they are empty this is initializing
 	sdb_reset (types);
-	const char *anal_arch = r_config_get (core->config, "anal.arch");
+	const char *anal_arch = r_config_get (core->config, "asm.arch");
 	const char *os = r_config_get (core->config, "asm.os");
 	// spaguetti ahead
 
@@ -741,7 +740,7 @@ R_API void r_core_anal_type_init(RCore *core) {
 }
 
 R_API void r_core_anal_cc_init(RCore *core) {
-	const char *anal_arch = r_config_get (core->config, "anal.arch");
+	const char *anal_arch = r_config_get (core->config, "asm.arch");
 	int bits = core->anal->config->bits;
 	if (!anal_arch) {
 		return;
@@ -859,7 +858,7 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			if (info->features && *info->features) {
 				r_config_set (r->config, "asm.features", info->features);
 			}
-			r_config_set (r->config, "anal.arch", info->arch);
+			r_config_set (r->config, "asm.arch", info->arch);
 			snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
 			r_config_set (r->config, "asm.bits", str);
 			r_config_set (r->config, "asm.dwarf",

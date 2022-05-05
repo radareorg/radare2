@@ -459,6 +459,7 @@ static void update_analarch_options(RCore *core, RConfigNode *node) {
 	}
 }
 
+#if 0
 static bool cb_analarch(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -485,7 +486,7 @@ static bool cb_analarch(void *user, void *data) {
 		if (!aa || strcmp (aa, node->value)) {
 			eprintf ("anal.arch: cannot find '%s'\n", node->value);
 		} else {
-			r_config_set (core->config, "anal.arch", "null");
+			// r_config_set (core->config, "anal.arch", "null");
 			return true;
 		}
 	}
@@ -496,7 +497,7 @@ static bool cb_analcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (strstr (node->value, "?")) {
-		ranal2_list (core, r_config_get (core->config, "anal.arch"), node->value[1]);
+		ranal2_list (core, r_config_get (core->config, "asm.arch"), node->value[1]);
 	}
 	// r_anal_set_cpu (core->anal, node->value);
 	r_arch_set_cpu (core->anal->config, node->value);
@@ -508,6 +509,7 @@ static bool cb_analcpu(void *user, void *data) {
 	r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	return true;
 }
+#endif
 
 static bool cb_analrecont(void *user, void *data) {
 	RCore *core = (RCore*) user;
@@ -669,7 +671,7 @@ static bool cb_asmcpu(void *user, void *data) {
 		update_asmcpu_options (core, node);
 		/* print verbose help instead of plain option listing */
 		if (!rasm2_list (core, r_config_get (core->config, "asm.arch"), node->value[1])) {
-			ranal2_list (core, r_config_get (core->config, "anal.arch"), node->value[1]);
+			ranal2_list (core, r_config_get (core->config, "asm.arch"), node->value[1]);
 		}
 		return 0;
 	}
@@ -714,7 +716,6 @@ static bool cb_asmarch(void *user, void *data) {
 	if (!*node->value || !core || !core->rasm) {
 		return false;
 	}
-	const char *asmos = r_config_get (core->config, "asm.os");
 	if (core && core->anal && core->anal->config->bits) {
 		bits = core->anal->config->bits;
 	}
@@ -774,22 +775,25 @@ static bool cb_asmarch(void *user, void *data) {
 
 	//r_debug_set_arch (core->dbg, r_sys_arch_id (node->value), bits);
 	r_debug_set_arch (core->dbg, node->value, bits);
-	if (!r_config_set (core->config, "anal.arch", node->value)) {
+	if (!r_config_set (core->config, "asm.arch", node->value)) {
 		char *p, *s = strdup (node->value);
 		if (s) {
 			p = strchr (s, '.');
 			if (p) {
 				*p = 0;
 			}
-			if (!r_config_set (core->config, "anal.arch", s)) {
+#if 0
+			if (!r_config_set (core->config, "asm.arch", s)) {
 				/* fall back to the anal.null plugin */
-				r_config_set (core->config, "anal.arch", "null");
+				r_config_set (core->config, "asm.arch", "null");
 			}
+#endif
 			free (s);
 		}
 	}
 	// set pcalign
 	if (core->anal) {
+		const char *asmos = core->anal->config->os;
 		const char *asmcpu = r_config_get (core->config, "asm.cpu");
 		if (!r_syscall_setup (core->anal->syscall, node->value, core->anal->config->bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
@@ -1066,7 +1070,7 @@ static bool cb_asm_pcalign(void *user, void *data) {
 static bool cb_asmos(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	int asmbits = r_config_get_i (core->config, "asm.bits");
-	RConfigNode *asmarch, *node = (RConfigNode*) data;
+	RConfigNode *node = (RConfigNode*) data;
 
 	if (*node->value == '?') {
 		print_node_options (node);
@@ -1076,7 +1080,7 @@ static bool cb_asmos(void *user, void *data) {
 		free (node->value);
 		node->value = strdup (R_SYS_OS);
 	}
-	asmarch = r_config_node_get (core->config, "asm.arch");
+	RConfigNode *asmarch = r_config_node_get (core->config, "asm.arch");
 	if (asmarch) {
 		const char *asmcpu = r_config_get (core->config, "asm.cpu");
 		r_syscall_setup (core->anal->syscall, asmarch->value, core->anal->config->bits, asmcpu, node->value);
@@ -3384,10 +3388,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.norevisit", "false", &cb_analnorevisit, "do not visit function analysis twice (EXPERIMENTAL)");
 	SETCB ("anal.nopskip", "true", &cb_analnopskip, "skip nops at the beginning of functions");
 	SETCB ("anal.hpskip", "false", &cb_analhpskip, "skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
+#if 0
 	n = NODECB ("anal.arch", R_SYS_ARCH, &cb_analarch);
 	SETDESC (n, "select the architecture to use");
-	update_analarch_options (core, n);
 	SETCB ("anal.cpu", R_SYS_ARCH, &cb_analcpu, "specify the anal.cpu to use");
+#endif
+	update_analarch_options (core, n);
 	SETPREF ("anal.prelude", "", "specify an hexpair to find preludes in code");
 	SETCB ("anal.recont", "false", &cb_analrecont, "end block after splitting a basic block instead of error"); // testing
 	SETCB ("anal.jmp.indir", "false", &cb_analijmp, "follow the indirect jumps in function analysis"); // testing
@@ -3445,10 +3451,14 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("esil.breakoninvalid", "false", "break esil execution when instruction is invalid");
 	SETI ("esil.timeout", 0, "a timeout (in seconds) for when we should give up emulating");
 	/* asm */
-	//asm.os needs to be first, since other asm.* depend on it
+	RConfigNode *asmcpu = NODECB ("asm.cpu", R_SYS_ARCH, &cb_asmcpu);
+	SETDESC (asmcpu, "set the kind of asm.arch cpu");
+	RConfigNode *asmarch = NODECB ("asm.arch", R_SYS_ARCH, &cb_asmarch);
+	SETDESC (asmarch, "set the arch to be used by asm");
 	n = NODECB ("asm.os", R_SYS_OS, &cb_asmos);
 	SETDESC (n, "select operating system (kernel)");
 	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", "s110", NULL);
+	//asm.os needs to be first, since other asm.* depend on it
 	SETI ("asm.xrefs.fold", 5,  "maximum number of xrefs to be displayed as list (use columns above)");
 	SETBPREF ("asm.xrefs.code", "true",  "show the code xrefs (generated by jumps instead of calls)");
 	SETI ("asm.xrefs.max", 20,  "maximum number of xrefs to be displayed without folding");
@@ -3577,10 +3587,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("asm.symbol.col", 40, "columns width to show asm.section");
 	SETCB ("asm.assembler", "", &cb_asmassembler, "set the plugin name to use when assembling");
 	SETBPREF ("asm.minicols", "false", "only show the instruction in the column disasm");
-	RConfigNode *asmcpu = NODECB ("asm.cpu", R_SYS_ARCH, &cb_asmcpu);
-	SETDESC (asmcpu, "set the kind of asm.arch cpu");
-	RConfigNode *asmarch = NODECB ("asm.arch", R_SYS_ARCH, &cb_asmarch);
-	SETDESC (asmarch, "set the arch to be used by asm");
 	/* we need to have both asm.arch and asm.cpu defined before updating options */
 	update_asmarch_options (core, asmarch);
 	update_asmcpu_options (core, asmcpu);
