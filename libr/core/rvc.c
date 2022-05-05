@@ -919,7 +919,6 @@ R_API Rvc *r_vc_new(const char *path) {
 	free (commitp);
 	free (blobsp);
 	rvc->db = sdb_new (rvc->path, DBNAME, 0);
-	free (rvc->path);
 	if (!rvc->db) {
 		eprintf ("Can't create The RVC branches database");
 		free (rvc->path);
