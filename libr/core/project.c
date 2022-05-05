@@ -465,7 +465,12 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	}
 
 	char *filename = r_str_word_get_first (file);
-	int fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
+	int fd = -1;
+	if (!strcmp (file, "/dev/stdout")) {
+		fd = 1;
+	} else {
+		fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
+	}
 	if (fd == -1) {
 		free (filename);
 		return false;
@@ -479,24 +484,24 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	int fdold = r_cons_singleton ()->fdout;
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->context->is_interactive = false;
-	r_str_write (fd, "# r2 rdb project file\n");
+	r_cons_printf ("# r2 rdb project file\n");
 	// new behaviour to project load routine (see io maps below).
 	if (opts & R_CORE_PRJ_EVAL) {
-		r_str_write (fd, "# eval\n");
+		r_cons_printf ("# eval\n");
 		r_config_list (core->config, NULL, 'r');
 		r_cons_flush ();
 	}
 	r_core_cmd (core, "o*", 0);
 	r_core_cmd0 (core, "tcc*");
 	if (opts & R_CORE_PRJ_FCNS) {
-		r_str_write (fd, "# functions\n");
-		r_str_write (fd, "fs functions\n");
+		r_cons_printf ("# functions\n");
+		r_cons_printf ("fs functions\n");
 		r_core_cmd (core, "afl*", 0);
 		r_cons_flush ();
 	}
 
 	if (opts & R_CORE_PRJ_FLAGS) {
-		r_str_write (fd, "# flags\n");
+		r_cons_printf ("# flags\n");
 		r_flag_space_push (core->flags, NULL);
 		r_flag_list (core->flags, true, NULL);
 		r_flag_space_pop (core->flags);
@@ -514,7 +519,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_META) {
-		r_str_write (fd, "# meta\n");
+		r_cons_printf ("# meta\n");
 		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1, NULL);
 		r_cons_flush ();
 		r_core_cmd (core, "fV*", 0);
@@ -537,14 +542,14 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_ANAL_TYPES) {
-		r_str_write (fd, "# types\n");
+		r_cons_printf ("# types\n");
 		r_core_cmd (core, "t*", 0);
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_ANAL_MACROS) {
-		r_str_write (fd, "# macros\n");
+		r_cons_printf ("# macros\n");
 		r_core_cmd (core, "(*", 0);
-		r_str_write (fd, "# aliases\n");
+		r_cons_printf ("# aliases\n");
 		r_core_cmd (core, "$*", 0);
 		r_cons_flush ();
 	}

@@ -429,13 +429,13 @@ static int bin_len(const char *s) {
 	while (*s) {
 		if (*s == '_') {
 			s++;
-			continue;
+		} else {
+			if (*s != '0' && *s != '1') {
+				break;
+			}
+			len++;
+			s++;
 		}
-		if (*s != '0' && *s != '1') {
-			break;
-		}
-		len++;
-		s++;
 	}
 	return len? len: -1;
 }
