@@ -1360,6 +1360,34 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = math (&ops, 0xe00320aa, has64reg (str));
 	} else if (!strncmp (str, "tst", 2)) {
 		*op = math (&ops, 0x1f0000ea, has64reg (str));
+	} else if (!strncmp (str, "msub", 4)) {
+		*op = math (&ops, 0x008c001b, has64reg (str));
+	} else if (!strncmp (str, "madd", 4)) {
+		*op = math (&ops, 0x0000c09b, has64reg (str));
+	} else if (!strncmp (str, "mneg", 4)) {
+		*op = math (&ops, 0x00fc009b, has64reg (str));
+	} else if (!strncmp (str, "ngc ", 4)) {
+		*op = math (&ops, 0xe00301da, has64reg (str));
+	} else if (!strncmp (str, "sbc ", 4)) {
+		*op = math (&ops, 0x000000da, has64reg (str));	
+	} else if (!strncmp (str, "asr ", 4)) {
+		*op = math (&ops, 0x0028c09a, has64reg (str));
+	} else if (!strncmp (str, "ror ", 4)) {
+		*op = math (&ops, 0x002cc09a, has64reg (str));
+	} else if (!strncmp (str, "cls ", 4)) {
+		*op = math (&ops, 0x2014c0da, has64reg (str));
+	} else if (!strncmp (str, "clz ", 4)) {
+		*op = math (&ops, 0x2010c0da, has64reg (str));
+	} else if (!strncmp (str, "rbit", 4)) {
+		*op = math (&ops, 0x0000c0da, has64reg (str));
+	} else if (!strncmp (str, "rev ", 4)) {
+		*op = math (&ops, 0x200cc0da, has64reg (str));
+	} else if (!strncmp (str, "rev16", 5)) {
+		*op = math (&ops, 0x2004c0da, has64reg (str));
+	} else if (!strncmp (str, "rev32", 5)) {
+		*op = math (&ops, 0x2008c0da, has64reg (str));
+	} else if (!strncmp (str, "umulh", 5)) {
+		*op = math (&ops, 0x007cc09b, has64reg (str));
 	} else if (!strncmp (str, "ldrb", 4)) {
 		*op = lsop (&ops, 0x00004038, -1);
 	} else if (!strncmp (str, "ldrh", 4)) {
