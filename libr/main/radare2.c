@@ -149,6 +149,7 @@ static int main_help(int line) {
 		" R2_USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
 		" R2_USER_ZIGNS   " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
+		" R2_COLOR        sets the initial value for 'scr.color'. set to 0 for no color\n"
 		" R2_DEBUG        if defined, show error messages and crash signal.\n"
 		" R2_DEBUG_ASSERT set a breakpoint when hitting an assert.\n"
 		" R2_IGNVER       load plugins ignoring the specified version. (be careful)\n"
@@ -336,26 +337,45 @@ static void set_color_default(RCore *r) {
 		r_config_set (r->config, "log.file", log_file);
 	}
 	R_FREE (log_file);
-	char *tmp = r_sys_getenv ("COLORTERM");
-	if (tmp) {
-		if ((r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit"))) {
-			r_config_set_i (r->config, "scr.color", COLOR_MODE_16M);
+	int scr_color = -1;
+	char *r2c = r_sys_getenv ("R2_COLOR");
+	if (r2c) {
+		if (*r2c) {
+			int v = atoi (r2c);
+			if (v) {
+				r_config_set_i (r->config, "scr.color", v);
+				scr_color = v;
+			} else {
+				if (*r2c == '0') {
+					scr_color = 0;
+					r_config_set_i (r->config, "scr.color", 0);
+				}
+			}
 		}
-	} else {
-		tmp = r_sys_getenv ("TERM");
-		if (!tmp) {
-			return;
-		}
-		if (r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit")) {
-			r_config_set_i (r->config, "scr.color", COLOR_MODE_16M);
-		} else if (r_str_endswith (tmp, "256color")) {
-			r_config_set_i (r->config, "scr.color", COLOR_MODE_256);
-		} else if (!strcmp (tmp, "dumb")) {
-			// Dumb terminals don't get color by default.
-			r_config_set_i (r->config, "scr.color", COLOR_MODE_DISABLED);
-		}
+		free (r2c);
 	}
-	free (tmp);
+	if (scr_color == -1) {
+		char *tmp = r_sys_getenv ("COLORTERM");
+		if (tmp) {
+			if ((r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit"))) {
+				r_config_set_i (r->config, "scr.color", COLOR_MODE_16M);
+			}
+		} else {
+			tmp = r_sys_getenv ("TERM");
+			if (!tmp) {
+				return;
+			}
+			if (r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit")) {
+				r_config_set_i (r->config, "scr.color", COLOR_MODE_16M);
+			} else if (r_str_endswith (tmp, "256color")) {
+				r_config_set_i (r->config, "scr.color", COLOR_MODE_256);
+			} else if (!strcmp (tmp, "dumb")) {
+				// Dumb terminals don't get color by default.
+				r_config_set_i (r->config, "scr.color", COLOR_MODE_DISABLED);
+			}
+		}
+		free (tmp);
+	}
 }
 
 R_API int r_main_radare2(int argc, const char **argv) {
