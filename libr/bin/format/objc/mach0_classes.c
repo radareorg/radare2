@@ -1209,7 +1209,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 
 #if SWIFT_SUPPORT
 	if (q (c.data + n_value) & 7) {
-		eprintf ("This is a Swift class");
+		eprintf ("This is a Swift class\n");
 	}
 #endif
 	if (!is_meta_class && !dupe) {

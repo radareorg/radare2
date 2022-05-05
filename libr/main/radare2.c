@@ -73,7 +73,7 @@ static int r_main_version_verify(int show) {
 		}
 	}
 	if (ret) {
-		eprintf ("Warning: r2 library versions mismatch! Check r2 -V");
+		eprintf ("Warning: r2 library versions mismatch! Check r2 -V\n");
 	}
 	return ret;
 }
@@ -741,7 +741,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 	if (noStderr) {
 		if (-1 == close (2)) {
-			eprintf ("Failed to close stderr");
+			eprintf ("Failed to close stderr\n");
 			LISTS_FREE ();
 			R_FREE (debugbackend);
 			return 1;
@@ -749,7 +749,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		const char nul[] = R_SYS_DEVNULL;
 		int new_stderr = open (nul, O_RDWR);
 		if (-1 == new_stderr) {
-			eprintf ("Failed to open %s", nul);
+			eprintf ("Failed to open %s\n", nul);
 			LISTS_FREE ();
 			R_FREE (debugbackend);
 			return 1;
@@ -757,7 +757,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (2 != new_stderr) {
 #if !__wasi__
 			if (-1 == dup2 (new_stderr, 2)) {
-				eprintf ("Failed to dup2 stderr");
+				eprintf ("Failed to dup2 stderr\n");
 				free (envprofile);
 				LISTS_FREE ();
 				R_FREE (debugbackend);
@@ -765,7 +765,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 #endif
 			if (-1 == close (new_stderr)) {
-				eprintf ("Failed to close %s", nul);
+				eprintf ("Failed to close %s\n", nul);
 				LISTS_FREE ();
 				free (envprofile);
 				R_FREE (debugbackend);

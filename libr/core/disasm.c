@@ -2024,7 +2024,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				case R_ANAL_VAR_KIND_REG: {
 					RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 					if (!i) {
-						eprintf ("Register not found");
+						eprintf ("Register not found\n");
 						break;
 					}
 					r_cons_printf ("%sarg %s%s%s%s %s@ %s", COLOR_ARG (ds, color_func_var),

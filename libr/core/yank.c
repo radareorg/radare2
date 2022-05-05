@@ -58,11 +58,11 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 				// address the file at its physical address!
 				addr += loadaddr;
 			} else if (yankdesc) {
-				eprintf ("Unable to map the opened file: %s", filename);
+				eprintf ("Unable to map the opened file: %s\n", filename);
 				r_io_desc_close (yankdesc);
 				yankdesc = NULL;
 			} else {
-				eprintf ("Unable to open the file: %s", filename);
+				eprintf ("Unable to open the file: %s\n", filename);
 			}
 		}
 	}

@@ -1620,7 +1620,7 @@ static int var_cmd(RCore *core, const char *str) {
 			r_core_cmd0 (core, "afvs");
 			r_core_cmd0 (core, "afvb");
 		} else {
-			eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+			R_LOG_WARN ("Cannot find function in 0x%08"PFMT64x, core->offset);
 		}
 		return true;
 	}
@@ -3708,7 +3708,7 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 				ut64 nv = r_num_get (NULL, value);
 				names[idx] = r_str_newf ("%d", (int)nv);
 			} else {
-				eprintf ("Invalid column name (%s) %c", key, 10);
+				eprintf ("Invalid column name (%s)\n", key);
 			}
 		}
 		RList *items = r_list_newf (free);
@@ -8588,10 +8588,10 @@ static bool axtm_cb(void *u, const ut64 k, const void *v) {
 	RAnalRef *ref;
 	RList *list = r_anal_xrefs_get (core->anal, k);
 	if (list && r_list_length (list) > 0) {
-		r_cons_printf ("0x%"PFMT64x": %s%c", k, name? name: "?", 10);
+		r_cons_printf ("0x%"PFMT64x": %s\n", k, name? name: "?");
 		r_list_foreach (list, iter, ref) {
 			name = axtm_name (core, ref->addr);
-			r_cons_printf ("  0x%"PFMT64x": %s%c", ref->addr, name? name: "?", 10);
+			r_cons_printf ("  0x%"PFMT64x": %s\n", ref->addr, name? name: "?");
 		}
 	}
 	r_list_free (list);
@@ -10135,7 +10135,7 @@ R_API void cmd_agfb2(RCore *core, const char *s) {
 	RConsPixel *p = r_cons_pixel_new (w, h);
 	r_cons_pixel_sets (p, 0, 0, s);
 	char *pix = r_cons_pixel_drain (p);
-	r_cons_printf ("%s %c", pix, 10);
+	r_cons_printf ("%s\n", pix);
 	free (pix);
 }
 
@@ -10430,7 +10430,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'x': {// "agx" cross refs
 		RGraph *graph = r_core_anal_codexrefs (core, core->offset);
 		if (!graph) {
-			eprintf ("Couldn't create graph");
+			eprintf ("Couldn't create graph\n");
 			break;
 		}
 		r_core_graph_print (core, graph, -1, true, input + 1);
@@ -10440,7 +10440,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'i': { // "agi" import graph
 		RGraph *graph = r_core_anal_importxrefs (core);
 		if (!graph) {
-			eprintf ("Couldn't create graph");
+			eprintf ("Couldn't create graph\n");
 			break;
 		}
 		r_core_graph_print (core, graph, -1, true, input + 1);
@@ -12018,7 +12018,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case 'g': { // "acg"
 		RGraph *graph = r_anal_class_get_inheritance_graph (core->anal);
 		if (!graph) {
-			eprintf ("Couldn't create graph");
+			eprintf ("Couldn't create graph\n");
 			break;
 		}
 		r_core_graph_print (core, graph, -1, false, input + 1);

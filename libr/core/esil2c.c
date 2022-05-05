@@ -10,7 +10,7 @@ static char *esil2c(RCore *core, RAnalEsil *esil, const char *expr) {
 	RStrBuf *sb = r_strbuf_new ("");
 	user->sb = sb;
 	if (!r_anal_esil_parse (esil, expr)) {
-		eprintf ("ERROR%c", 10);
+		eprintf ("ERROR\n");
 	}
 	user->sb = NULL;
 	return r_strbuf_drain (sb);

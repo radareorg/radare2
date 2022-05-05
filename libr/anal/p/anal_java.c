@@ -324,7 +324,7 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 		}
 		break;
 	default:
-		eprintf ("Command not supported");
+		eprintf ("Command not supported\n");
 		break;
 	}
 	return 0;

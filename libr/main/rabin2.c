@@ -1202,9 +1202,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		if (bf && bf->xtr_data) {
 			rabin_extract (bin, (!arch && !arch_name && !bits));
 		} else {
-			eprintf (
-				"Cannot extract bins from '%s'. No supported "
-				"plugins found!\n", bin->file);
+			eprintf ("Cannot extract bins from '%s'. No supported plugins found!\n", bin->file);
 		}
 	}
 	if (op && action & R_BIN_REQ_OPERATION) {

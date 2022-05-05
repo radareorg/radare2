@@ -440,7 +440,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					if (!sdb_get (db, K_INDENT (fail), 0)) {
 						bb = r_anal_bb_from_offset (core->anal, fail);
 					} else {
-						eprintf (" // FAIL%c", 10);
+						eprintf (" // FAIL\n");
 					}
 				} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);

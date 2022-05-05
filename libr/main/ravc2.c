@@ -224,7 +224,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	if (!strcmp (action, "clone")) {
 		free (rp);
 		if (opt.argc < 3) {
-			eprintf ("Usage: %s <src> <dst>", argv[0]);
+			eprintf ("Usage: %s [src] [dst]\n", argv[0]);
 			return -1;
 		}
 		return !r_vc_clone (argv[1 + opt.ind], argv[2 + opt.ind]);

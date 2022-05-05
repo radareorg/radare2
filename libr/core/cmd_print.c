@@ -3502,8 +3502,9 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 			r_cons_printf ("%s%c", s, 10);
 			free (s);
 		}
-#endif
+#else
 		r_print_graphline (core->print, core->block, core->blocksize);
+#endif
 		goto cleanup;
 	case 'j': // "p-j"
 		pj = pj_new ();
@@ -3702,14 +3703,14 @@ static ut8 *analBars(RCore *core, size_t type, size_t nblocks, size_t blocksize,
 	size_t j, i = 0;
 	ut8 *ptr = calloc (1, nblocks);
 	if (!ptr) {
-		eprintf ("Error: failed to malloc memory");
+		eprintf ("Error: failed to malloc memory\n");
 		return NULL;
 	}
 	// XXX: unused memblock
 	ut8 *p = malloc (blocksize);
 	if (!p) {
 		R_FREE (ptr);
-		eprintf ("Error: failed to malloc memory");
+		eprintf ("Error: failed to malloc memory\n");
 		return NULL;
 	}
 	if (type == 'A') {
@@ -3880,13 +3881,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				ut64 i, j, k;
 				ptr = calloc (1, nblocks);
 				if (!ptr) {
-					eprintf ("Error: failed to malloc memory");
+					eprintf ("Error: failed to malloc memory\n");
 					goto beach;
 				}
 				ut8 *p = calloc (1, blocksize);
 				if (!p) {
 					R_FREE (ptr);
-					eprintf ("Error: failed to malloc memory");
+					eprintf ("Error: failed to malloc memory\n");
 					goto beach;
 				}
 				int len = 0;
@@ -3962,13 +3963,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			int i = 0;
 			ptr = calloc (1, nblocks);
 			if (!ptr) {
-				eprintf ("Error: failed to malloc memory");
+				eprintf ("Error: failed to malloc memory\n");
 				goto beach;
 			}
 			p = malloc (blocksize);
 			if (!p) {
 				R_FREE (ptr);
-				eprintf ("Error: failed to malloc memory");
+				eprintf ("Error: failed to malloc memory\n");
 				goto beach;
 			}
 			for (i = 0; i < nblocks; i++) {
@@ -4038,13 +4039,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		int j, i = 0;
 		ptr = calloc (1, nblocks);
 		if (!ptr) {
-			eprintf ("Error: failed to malloc memory");
+			eprintf ("Error: failed to malloc memory\n");
 			goto beach;
 		}
 		p = malloc (blocksize);
 		if (!p) {
 			R_FREE (ptr);
-			eprintf ("Error: failed to malloc memory");
+			eprintf ("Error: failed to malloc memory\n");
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
@@ -4065,13 +4066,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		int i = 0;
 		ptr = calloc (1, nblocks);
 		if (!ptr) {
-			eprintf ("Error: failed to malloc memory");
+			eprintf ("Error: failed to malloc memory\n");
 			goto beach;
 		}
 		p = malloc (blocksize);
 		if (!p) {
 			R_FREE (ptr);
-			eprintf ("Error: failed to malloc memory");
+			eprintf ("Error: failed to malloc memory\n");
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
@@ -4092,13 +4093,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		ut64 i, j, k;
 		ptr = calloc (1, nblocks);
 		if (!ptr) {
-			eprintf ("Error: failed to malloc memory");
+			eprintf ("Error: failed to malloc memory\n");
 			goto beach;
 		}
 		p = calloc (1, blocksize);
 		if (!p) {
 			R_FREE (ptr);
-			eprintf ("Error: failed to malloc memory");
+			eprintf ("Error: failed to malloc memory\n");
 			goto beach;
 		}
 		int len = 0;
@@ -5367,11 +5368,11 @@ static bool check_string_at(RCore *core, ut64 addr) {
 		}
 	}
 #if 0
-eprintf ("pascal %d\n", is_pascal1 + is_pascal2);
-eprintf ("utf8 %d\n", is_utf8);
-eprintf ("utf16 %d\n", is_utf16le+ is_utf16be);
-eprintf ("ascii %d\n", is_ascii);
-eprintf ("render%c", 10);
+	eprintf ("pascal %d\n", is_pascal1 + is_pascal2);
+	eprintf ("utf8 %d\n", is_utf8);
+	eprintf ("utf16 %d\n", is_utf16le+ is_utf16be);
+	eprintf ("ascii %d\n", is_ascii);
+	eprintf ("render\n");
 #endif
 	// render the stuff
 	if (out) {

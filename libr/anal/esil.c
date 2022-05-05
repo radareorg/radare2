@@ -1338,7 +1338,7 @@ static bool esil_asreq(RAnalEsil *esil) {
 			ret = true;
 		} else {
 			if (esil->verbose) {
-				eprintf ("esil_asr: empty stack");
+				eprintf ("esil_asr: empty stack\n");
 			}
 		}
 	}
@@ -3749,7 +3749,7 @@ R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 		}
 		free (popped);
 	} else {
-		eprintf ("Warning: Cannot pop because The ESIL stack is empty");
+		eprintf ("Warning: Cannot pop because The ESIL stack is empty\n");
 		return -1;
 	}
 	return ret;

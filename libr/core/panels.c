@@ -976,7 +976,7 @@ static void __panel_all_clear(RPanels *panels) {
 static void __layout_default(RPanels *panels) {
 	RPanel *p0 = __get_panel (panels, 0);
 	if (!p0){
-		eprintf("_get_panel (...,0) return null");
+		eprintf("_get_panel (...,0) return null\n");
 		return;
 	}
 	int h, w = r_cons_get_size (&h);

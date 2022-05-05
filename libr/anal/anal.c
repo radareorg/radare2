@@ -602,7 +602,7 @@ R_API bool r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 		free (tmp);
 		return true;
 	}
-	eprintf ("Can't find prototype for %s in types database", fcnname);
+	eprintf ("Can't find prototype for %s in types database\n", fcnname);
 #endif
 	return false;
 }

@@ -242,7 +242,7 @@ static void parse_type(const RAnal *anal, SType *type, RList *types) {
 	default:
 		// shouldn't happen, happens when someone modifies leafs that get here
 		// but not how they should be parsed
-		eprintf ("Unknown type record");
+		eprintf ("Unknown type record\n");
 		break;
 	}
 }
