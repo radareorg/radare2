@@ -5864,22 +5864,21 @@ static int cmd_print(void *data, const char *input) {
 	r_print_init_rowoffsets (core->print);
 	tmpseek = core->offset;
 	l = len = core->blocksize;
+	bool must_read = false;
 	if (input[0] && input[1]) {
 		int idx = (input[0] == 'h')? 2: 1;
 		const char *p = strchr (input + idx, ' ');
 		if (!p) {
 			p = strchr (input, '-');
-			if (p) {
-				p--;
-			}
 		}
 		if (p) {
-			l = (int) r_num_math (core->num, p + 1);
+			l = (int) r_num_math (core->num, p);
 			/* except disasm and memoryfmt (pd, pm) and overlay (po) */
 			if (input[0] != 'd' && input[0] != 't' && input[0] != 'D' && input[0] != 'm' &&
 				input[0] != 'a' && input[0] != 'f' && input[0] != 'i' &&
 				input[0] != 'I' && input[0] != 'o') {
 				if (l < 0) {
+					must_read = true;
 					off = core->offset + l;
 					len = l = -l;
 				} else {
@@ -5891,34 +5890,37 @@ static int cmd_print(void *data, const char *input) {
 					}
 				}
 			} else {
-				len = l;
 				if (l < 0) {
+					must_read = true;
 					off = core->offset + l;
+					len = -len;
+				} else {
+					len = l;
 				}
 			}
 		}
 	}
 	int olen = len;
 	at = off;
-	if (len < 0) {
-		len = -len;
-	}
 	const int padding = core->blocksize + 256;
 	block = malloc (len + padding);
 	// if (!block) die
 	if (block) {
-		if (len > core->blocksize) {
+		if (!must_read && len > core->blocksize) {
 			memset (block, core->io->Oxff, len + padding);
 			r_io_read_at (core->io, off, block, len);
 		} else {
 			block = calloc (1, len + padding);
 			if (block) {
+				ut64 oo = core->offset;
+				core->offset = at;
 				r_core_block_read (core);
 				memset (block, core->io->Oxff, len + padding);
 				r_io_read_at (core->io, off, block, len);
 				if (off == core->offset) {
 					memcpy (block, core->block, R_MIN (core->blocksize, len));
 				}
+				core->offset = oo;
 			}
 		}
 	} else {
