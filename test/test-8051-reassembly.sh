@@ -1,6 +1,6 @@
 BUILD_DIRECTORY=$(mktemp -d tmp.XXXXXXXXXX)
 [ -z "$BUILD_DIRECTORY" ] && exit 1
-export EXIT_CODE = 0
+export EXIT_CODE=0
 
 printf "Reassembling 8051... "
 radare2 -a 8051 -m 0x8000 -e "scr.color=0" -qf -c "pI" ./bins/8051/MP_8192E_FW_NIC.bin > $BUILD_DIRECTORY/MP_8192E_FW_NIC.asm || exit 1
