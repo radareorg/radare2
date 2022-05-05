@@ -3136,14 +3136,14 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	int stdout_fd, fds[2];
 	int child;
 #endif
-	int si, olen, ret = -1, pipecolor = -1;
+	int olen, ret = -1, pipecolor = -1;
 	char *str, *out = NULL;
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Pipes are not allowed in sandbox mode\n");
 		return -1;
 	}
-	si = r_cons_is_interactive ();
+	bool si = r_cons_is_interactive ();
 	r_config_set_b (core->config, "scr.interactive", false);
 	if (!r_config_get_i (core->config, "scr.color.pipe")) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
@@ -3207,7 +3207,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	if (pipecolor != -1) {
 		r_config_set_i (core->config, "scr.color", pipecolor);
 	}
-	r_config_set_i (core->config, "scr.interactive", si);
+	r_config_set_b (core->config, "scr.interactive", si);
 	return ret;
 }
 
