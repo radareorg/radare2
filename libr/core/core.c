@@ -3696,10 +3696,10 @@ reaccept:
 					if ((cmd = malloc (i + 1))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';
-						int scr_interactive = r_config_get_i (core->config, "scr.interactive");
-						r_config_set_i (core->config, "scr.interactive", 0);
+						bool scr_interactive = r_config_get_b (core->config, "scr.interactive");
+						r_config_set_b (core->config, "scr.interactive", false);
 						cmd_output = r_core_cmd_str (core, cmd);
-						r_config_set_i (core->config, "scr.interactive", scr_interactive);
+						r_config_set_b (core->config, "scr.interactive", scr_interactive);
 						free (cmd);
 					} else {
 						r_cons_eprintf ("rap: cannot malloc\n");

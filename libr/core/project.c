@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2010-2021 - pancake, rhl */
+/* radare - LGPL - Copyright 2010-2022 - pancake, rhl */
 
-#include <r_types.h>
-#include <r_list.h>
-#include <r_flag.h>
 #include <r_core.h>
 #include <rvc.h>
 #define USE_R2 1

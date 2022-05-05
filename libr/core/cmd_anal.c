@@ -9877,7 +9877,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 			bool ov = r_cons_is_interactive ();
 			core->graph->need_update_dim = true;
 			int update_seek = r_core_visual_graph (core, core->graph, NULL, true);
-			r_config_set_i (core->config, "scr.interactive", ov);
+			r_config_set_b (core->config, "scr.interactive", ov);
 			r_cons_show_cursor (true);
 			r_cons_enable_mouse (false);
 			if (update_seek != -1) {
@@ -10034,7 +10034,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 				bool ov = r_cons_is_interactive ();
 				agraph->need_update_dim = true;
 				int update_seek = r_core_visual_graph (core, agraph, NULL, true);
-				r_config_set_i (core->config, "scr.interactive", ov);
+				r_config_set_b (core->config, "scr.interactive", ov);
 				r_cons_show_cursor (true);
 				r_cons_enable_mouse (false);
 				if (update_seek != -1) {
