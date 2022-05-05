@@ -1950,7 +1950,7 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 		free (sdb_arg_i);
 	}
 
-	char *sane = r_name_filter2 (realname);
+	char *sane = r_name_filter_dup (realname);
 	if (sane) {
 		r_str_replace_ch (sane, ':', '_', true);
 		realname = sane;

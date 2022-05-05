@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2021 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2007-2022 - pancake, ret2libc */
 
 #include <r_flag.h>
 #include <r_util.h>
@@ -399,11 +399,9 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 		rad = pfx[0];
 		pfx = NULL;
 	}
-
 	if (pfx && !*pfx) {
 		pfx = NULL;
 	}
-
 	switch (rad) {
 	case 'q':
 		r_flag_foreach_space (f, r_flag_space_cur (f), print_flag_name, f);

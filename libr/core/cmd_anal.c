@@ -3374,6 +3374,7 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 	r_return_val_if_fail (core && _name, false);
 	_name = r_str_trim_head_ro (_name);
 	char *name = getFunctionName (core, addr, _name, prefix);
+	char *fname = r_name_filter_dup (name);
 	// RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
 	if (fcn) {
@@ -3381,7 +3382,7 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 		RFlagItem *flag = r_flag_get (core->flags, fcn->name);
 		if (flag && flag->space && strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS) == 0) {
 			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
-			r_flag_rename (core->flags, flag, name);
+			r_flag_rename (core->flags, flag, fname);
 		} else {
 			// No flag or not specific to the function, create a new one.
 			r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
@@ -3395,9 +3396,11 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 		}
 		free (oname);
 		free (name);
+		free (fname);
 		return true;
 	}
 	free (name);
+	free (fname);
 	return false;
 }
 
