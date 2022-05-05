@@ -67,8 +67,10 @@ static int cmd_project(void *data, const char *input) {
 			eprintf ("Usage: Pc [prjname]\n");
 		}
 		break;
-	case ' ': // "P [prj]"
 	case 'o': // "Po" DEPRECATED
+		eprintf ("TODO: Po is deprecated, use 'P [prjname]' instead\n");
+		// fallthru
+	case ' ': // "P [prj]"
 		if (input[1] == '&') { // "Po&"
 			r_core_cmdf (core, "& Po %s", file);
 		} else if (input[1]) { // "Po"
@@ -84,9 +86,14 @@ static int cmd_project(void *data, const char *input) {
 			char *pdir = r_file_new (
 				r_config_get (core->config, "dir.projects"),
 				r_config_get (core->config, "prj.name"), NULL);
-			r_syscmd_pushd (pdir);
-			r_sys_cmdf ("git diff @~%d", atoi (input + 1));
-			r_syscmd_popd ();
+			if (r_syscmd_pushd (pdir)) {
+				if (r_file_is_directory (".git")) {
+					r_sys_cmdf ("git diff @~%d", atoi (input + 1));
+				} else {
+					eprintf ("TODO: Not a git project. Diffing projects is WIP for now.\n");
+				}
+				r_syscmd_popd ();
+			}
 			free (pdir);
 		}
 		break;
