@@ -271,7 +271,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 
 	if (debug) {
 		eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
-		eprintf ("Creating basic blocks\b");
+		eprintf ("Creating basic blocks\n");
 	}
 	ut64 cur = 0, base = 0;
 	while (cur >= base && cur < size) {
@@ -555,7 +555,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 	}
 	if (debug) {
 		eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
-		eprintf ("Creating basic blocks\b");
+		eprintf ("Creating basic blocks\n");
 	}
 	lista[idx++] = b_start;
 	for (x = 0; x < 1024; x++) {

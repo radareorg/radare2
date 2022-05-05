@@ -246,7 +246,7 @@ static pyc_object *get_stringref_object(RBuffer *buffer) {
 	bool error = false;
 	ut32 n = get_st32 (buffer, &error);
 	if (n >= r_list_length (interned_table)) {
-		eprintf ("bad marshal data (string ref out of range)");
+		eprintf ("bad marshal data (string ref out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -415,7 +415,7 @@ static pyc_object *get_string_object(RBuffer *buffer) {
 
 	n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf ("bad marshal data (string size out of range)");
+		eprintf ("bad marshal data (string size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -441,7 +441,7 @@ static pyc_object *get_unicode_object(RBuffer *buffer) {
 
 	n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf ("bad marshal data (unicode size out of range)");
+		eprintf ("bad marshal data (unicode size out of range)\n");
 		return NULL;
 	}
 	if (error) {
@@ -464,7 +464,7 @@ static pyc_object *get_interned_object(RBuffer *buffer) {
 
 	n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf ("bad marshal data (string size out of range)");
+		eprintf ("bad marshal data (string size out of range)\n");
 		return NULL;
 	}
 	if (error) {

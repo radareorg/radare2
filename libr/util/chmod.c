@@ -53,7 +53,7 @@ static bool chmodr(const char *path, int rflag) {
 	}
 #if !__wasi__
 	if (fchmod (fd, st.st_mode) == -1) {
-		eprintf ("chmod %s:", path);
+		eprintf ("chmod %s\n", path);
 		close (fd);
 		return false;
 	}
@@ -160,7 +160,7 @@ static char *agetcwd(void) {
 		return NULL;
 	}
 	if (!getcwd (buf, 4096)) {
-		eprintf ("getcwd:");
+		eprintf ("getcwd\n");
 	}
 	return buf;
 }
@@ -174,12 +174,12 @@ static void recurse(const char *path, int rec, bool(*fn)(const char *,int)) {
 	if (lstat (path, &st) == -1 || !S_ISDIR (st.st_mode)) {
 		return;
 	} else if (!(dp = opendir (path))) {
-		eprintf ("opendir %s:", path);
+		eprintf ("opendir %s\n", path);
 		return;
 	}
 	cwd = agetcwd ();
 	if (chdir (path) == -1) {
-		eprintf ("chdir %s:", path);
+		eprintf ("chdir %s\n", path);
 		closedir (dp);
 		free (cwd);
 		return;
@@ -192,7 +192,7 @@ static void recurse(const char *path, int rec, bool(*fn)(const char *,int)) {
 
 	closedir (dp);
 	if (chdir (cwd) == -1) {
-		eprintf ("chdir %s:", cwd);
+		eprintf ("chdir %s\n", cwd);
 	}
 	free (cwd);
 }

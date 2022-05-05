@@ -707,7 +707,7 @@ static int fd_forward(int in_fd, int out_fd, char **buff) {
 
 	char *new_buff = realloc (*buff, size);
 	if (!new_buff) {
-		eprintf ("Failed to allocate buffer for redirection");
+		eprintf ("Failed to allocate buffer for redirection\n");
 		return -1;
 	}
 	*buff = new_buff;

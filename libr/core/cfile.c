@@ -103,7 +103,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		}
 	}
 	if (!ofilepath) {
-		eprintf ("Unknown file path");
+		eprintf ("Unknown file path\n");
 		free (obinfilepath);
 		return false;
 	}
@@ -161,7 +161,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 			ret = r_core_bin_load (core, obinfilepath, baddr);
 			r_core_bin_update_arch_bits (core);
 			if (!ret) {
-				eprintf ("Error: Failed to reload rbin for: %s", path);
+				eprintf ("Error: Failed to reload rbin for: %s\n", path);
 			}
 			origoff = r_num_math (core->num, "entry0");
 		}

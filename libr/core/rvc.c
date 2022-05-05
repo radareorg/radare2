@@ -923,7 +923,7 @@ R_API bool r_vc_new(const char *path) {
 		return false;
 	}
 	if (!r_sys_mkdirp (commitp) || !r_sys_mkdir (blobsp)) {
-		eprintf ("Can't create The RVC repo directory");
+		eprintf ("Can't create The RVC repo directory\n");
 		free (commitp);
 		free (vcp);
 		free (blobsp);
@@ -934,7 +934,7 @@ R_API bool r_vc_new(const char *path) {
 	db = sdb_new (vcp, DBNAME, 0);
 	free (vcp);
 	if (!db) {
-		eprintf ("Can't create The RVC branches database");
+		eprintf ("Can't create The RVC branches database\n");
 		return false;
 	}
 	if (!sdb_set (db, FIRST_BRANCH, NULLVAL, 0)) {

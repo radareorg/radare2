@@ -699,7 +699,7 @@ static bool addBBHash(RAnal *a, RAnalFunction *fcn, const char *name) {
 R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val, int len) {
 	r_return_val_if_fail (a && name && type && val && len > 0, false);
 	if (type != R_SIGN_BBHASH) {
-		eprintf ("error: hash type unknown");
+		eprintf ("error: hash type unknown\n");
 		return false;
 	}
 	int digestsize = r_hash_size (R_ZIGN_HASH) * 2;

@@ -67,12 +67,12 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		return NULL;
 	}
 	if (bin->hdr.startaddr > bin->size) {
-	    	eprintf ("corrupted dyldcache");
+		eprintf ("corrupted dyldcache\n");
 		goto ret_err;
 	}
 
 	if (bin->hdr.startaddr > bin->size || bin->hdr.baseaddroff > bin->size) {
-		eprintf ("corrupted dyldcache");
+		eprintf ("corrupted dyldcache\n");
 		goto ret_err;
 	}
 	int sz = bin->nlibs * sizeof (struct dyld_cache_image_info);

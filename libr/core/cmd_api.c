@@ -615,7 +615,7 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 		break;
 	default:
 		res = R_CMD_STATUS_INVALID;
-		R_LOG_ERROR ("RCmdDesc type not handled\n");
+		R_LOG_ERROR ("RCmdDesc type not handled");
 		break;
 	}
 	return res;

@@ -339,7 +339,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		
 		char *v = input[2] ? strdup (input + 2) : NULL;
 		if (!v) {
-			eprintf ("Invalid arguments");
+			eprintf ("Invalid arguments\n");
 			break;
 		}
 		int n = r_str_word_set0 (v);
@@ -1181,7 +1181,7 @@ static RList *__save_old_sections(RCore *core) {
 
 	// Return an empty list
 	if (!sections) {
-		eprintf ("Warning: No sections found, functions and flags won't be rebased");
+		eprintf ("Warning: No sections found, functions and flags won't be rebased\n");
 		return old_sections;
 	}
 
@@ -1693,7 +1693,7 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1] == '*') {
-			eprintf ("TODO%c", 10); // r_core_file_list (core, 'n');
+			eprintf ("TODO: on* is not yet implemented\n");
 			return 0;
 		}
 		if (input[1] == '+') { // "on+"

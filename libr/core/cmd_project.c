@@ -138,7 +138,7 @@ static int cmd_project(void *data, const char *input) {
 			}
 			r_syscmd_popd ();
 		} else {
-			R_LOG_ERROR ("P! requires scr.interactive to open a shell\n");
+			R_LOG_ERROR ("P! requires scr.interactive to open a shell");
 		}
 		break;
 	case '*': // "P*"

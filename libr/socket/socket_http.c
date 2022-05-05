@@ -236,7 +236,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	host = strstr (uri, "://");
 	if (!host) {
 		free (uri);
-		eprintf ("r_socket_http_get: Invalid URI");
+		eprintf ("r_socket_http_get: Invalid URI\n");
 		return NULL;
 	}
 	host += 3;
@@ -297,7 +297,7 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 	char *host = strstr (uri, "://");
 	if (!host) {
 		free (uri);
-		printf ("Invalid URI");
+		eprintf ("Invalid URI\n");
 		return NULL;
 	}
 	host += 3;
@@ -315,7 +315,7 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 	}
 	s = r_socket_new (ssl);
 	if (!s) {
-		printf ("Cannot create socket\n");
+		eprintf ("Cannot create socket\n");
 		free (uri);
 		return NULL;
 	}

@@ -64,7 +64,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 		if (strcmp (endtoken, "EOF") != 0) {
 			// In case there will be strings containing "EOF" inside of them, this requirement
 			// can be weakened to only apply for strings which do not contain "EOF".
-			eprintf ("Error: End token must be \"EOF\", got \"%s\" instead.", endtoken);
+			eprintf ("Error: End token must be \"EOF\", got \"%s\" instead.\n", endtoken);
 			return NULL;
 		}
 		RStrBuf *buf = r_strbuf_new ("");

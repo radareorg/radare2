@@ -3555,7 +3555,7 @@ static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 				}
 				ut8 *data = malloc (size + 1);
 				if (r_buf_read_at (bin->b, addr, data, size) == -1) {
-					eprintf ("Cannot read%c", 10);
+					eprintf ("Cannot read%c\n", 10);
 				}
 				size_t osize;
 				ut8 *odata = r_sys_unxz (data, size, &osize);

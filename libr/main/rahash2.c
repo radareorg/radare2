@@ -66,7 +66,7 @@ static void do_hash_seed(const char *seed) {
 		if (s.len < 1) {
 			strcpy ((char *) s.buf, sptr);
 			s.len = strlen (sptr);
-			eprintf ("Warning: This is not an hexpair, assuming a string, prefix it with 's:' to skip this message.");
+			eprintf ("Warning: This is not an hexpair, assuming a string, prefix it with 's:' to skip this message.\n");
 		}
 	}
 }
@@ -405,7 +405,7 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, const char *
 			if (r_crypto_set_key (cry, s.buf, s.len, 0, direction)) {
 				size_t file_size;
 				ut8 *buf;
-				if (strcmp (filename, "-") == 0) {
+				if (!strcmp (filename, "-")) {
 					int sz;
 					buf = (ut8 *)r_stdin_slurp (&sz);
 					file_size = (size_t)sz;

@@ -639,7 +639,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 
 		RDebugSnap *snap = R_NEW0 (RDebugSnap);
 		if (!snap) {
-			eprintf ("Error: failed to allocate RDebugSnap snap");
+			eprintf ("Error: failed to allocate RDebugSnap snap\n");
 			continue;
 		}
 		snap->name = strdup (namej->str_value);

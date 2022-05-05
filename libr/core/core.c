@@ -446,7 +446,7 @@ static ut64 numvar_instruction_backward(RCore *core, const char *input) {
 		n = atoi (input + 1);
 	}
 	if (n < 1) {
-		r_cons_eprintf ("Invalid negative value%c", 10);
+		eprintf ("Invalid negative value\n");
 		n = 1;
 	}
 	int numinstr = n;
@@ -495,7 +495,7 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 		n = atoi (input + 1);
 	}
 	if (n < 1) {
-		r_cons_eprintf ("Invalid negative value%c", 10);
+		eprintf ("Invalid negative value\n");
 		n = 1;
 	}
 	for (i = 0; i < n; i++) {

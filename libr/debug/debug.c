@@ -124,7 +124,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	}
 
 	if (!dbg->pc_at_bp_set) {
-		eprintf ("failed to determine position of pc after breakpoint");
+		eprintf ("failed to determine position of pc after breakpoint\n");
 	}
 
 	if (dbg->pc_at_bp) {
@@ -1021,7 +1021,7 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 			dbg->session->maxcnum++;
 			dbg->session->bp = 0;
 			if (!r_debug_trace_ins_before (dbg)) {
-				eprintf ("trace_ins_before: failed");
+				eprintf ("trace_ins_before: failed\n");
 			}
 		}
 
@@ -1037,7 +1037,7 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 
 		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 			if (!r_debug_trace_ins_after (dbg)) {
-				eprintf ("trace_ins_after: failed");
+				eprintf ("trace_ins_after: failed\n");
 			}
 			dbg->session->reasontype = dbg->reason.type;
 			dbg->session->bp = bp;

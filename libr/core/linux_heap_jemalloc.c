@@ -155,7 +155,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 
 	switch (input[0]) {
 	case '\0':
-		eprintf ("need an arena_t to associate chunks");
+		eprintf ("need an arena_t to associate chunks\n");
 		break;
 	case ' ':
 		{

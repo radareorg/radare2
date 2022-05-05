@@ -4028,7 +4028,7 @@ static void debug_trace_calls(RCore *core, const char *input) {
 	ut64 from = 0, to = UT64_MAX, final_addr = UT64_MAX;
 
 	if (r_debug_is_dead (core->dbg)) {
-		eprintf ("No process to debug.");
+		eprintf ("No process to debug.\n");
 		return;
 	}
 	if (*input == ' ') {

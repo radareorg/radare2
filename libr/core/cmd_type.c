@@ -269,7 +269,7 @@ static void cmd_tcc(RCore *core, const char *input) {
 	case ' ':
 		if (strchr (input, '(')) {
 			if (!r_anal_cc_set (core->anal, input + 1)) {
-				eprintf ("Invalid syntax in cc signature.");
+				R_LOG_ERROR ("Invalid syntax in cc signature.");
 			}
 		} else {
 			const char *ccname = r_str_trim_head_ro (input + 1);
@@ -695,7 +695,7 @@ static bool print_link_readable_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	char *fmt = r_type_format (core->anal->sdb_types, v);
 	if (!fmt) {
-		eprintf ("Can't fint type %s", v);
+		eprintf ("Can't find type %s\n", v);
 		return 1;
 	}
 	r_cons_printf ("(%s)\n", v);
@@ -708,7 +708,7 @@ static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	char *fmt = r_type_format (core->anal->sdb_types, v);
 	if (!fmt) {
-		eprintf ("Can't fint type %s", v);
+		eprintf ("Can't find type %s\n", v);
 		return true;
 	}
 	r_cons_printf ("{\"%s\":", v);
@@ -1364,7 +1364,7 @@ static int cmd_type(void *data, const char *input) {
 				if (arg) {
 					r_file_touch (arg + 1);
 				} else {
-					eprintf ("Usage: touch [filename]");
+					eprintf ("Usage: touch [filename]\n");
 				}
 			} else if (input[1] == 's') {
 				const char *dbpath = input + 3;
@@ -1422,7 +1422,7 @@ static int cmd_type(void *data, const char *input) {
 				free (error_msg);
 			}
 		} else {
-			R_LOG_ERROR ("Invalid use of td. See td? for help\n");
+			R_LOG_ERROR ("Invalid use of td. See td? for help");
 		}
 		break;
 	case 'x': {

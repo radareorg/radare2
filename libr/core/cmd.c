@@ -615,7 +615,7 @@ static int cmd_undo(void *data, const char *input) {
 				RCoreUndo *undo = r_core_undo_new (core->offset, cmd, rcmd);
 				r_core_undo_push (core, undo);
 			} else {
-				eprintf ("Usage: uc [cmd] [revert-cmd]");
+				eprintf ("Usage: uc [cmd] [revert-cmd]\n");
 			}
 			free (cmd);
 			}

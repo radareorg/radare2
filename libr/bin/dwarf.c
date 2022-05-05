@@ -402,7 +402,7 @@ static inline ut64 dwarf_read_address(size_t size, const ut8 **buf, const ut8 *b
 	default:
 		result = 0;
 		*buf += size;
-		eprintf ("Weird dwarf address size: %u.", (int)size);
+		eprintf ("Weird dwarf address size: %u.\n", (int)size);
 	}
 	return result;
 }
@@ -417,11 +417,9 @@ static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 static void line_header_fini(RBinDwarfLineHeader *hdr) {
 	if (hdr) {
 		size_t i;
-
 		for (i = 0; i < hdr->file_names_count; i ++) {
 			free (hdr->file_names[i].name);
 		}
-
 		free (hdr->std_opcode_lengths);
 		free (hdr->file_names);
 	}

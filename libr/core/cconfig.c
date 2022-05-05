@@ -2360,7 +2360,7 @@ static bool cb_pager(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
-		eprintf ("Usage: scr.pager must be '..' for internal less, or the path to a program in $PATH");
+		eprintf ("Usage: scr.pager must be '..' for internal less, or the path to a program in $PATH\n");
 		return false;
 	}
 	/* Let cons know we have a new pager. */

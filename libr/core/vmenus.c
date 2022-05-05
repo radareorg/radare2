@@ -3049,7 +3049,7 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 				{
 					RRegItem *r = r_reg_index_get (core->anal->reg, var->delta);
 					if (!r) {
-						eprintf ("Register not found");
+						eprintf ("Register not found\n");
 						break;
 					}
 					r_cons_printf ("%sarg %s %s @ %s\n",

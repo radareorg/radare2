@@ -1,10 +1,6 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include "r_crypto.h"
-#include "r_config.h"
-#include "r_cons.h"
-#include "r_core.h"
-#include "r_io.h"
+#include <r_core.h>
 
 static const char *help_msg_w[] = {
 	"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
@@ -937,7 +933,6 @@ static int cmd_w6(void *data, const char *input) {
 		case 'd': // "w6d"
 			buf = malloc (str_len);
 			if (!buf) {
-				eprintf ("Error: failed to malloc memory");
 				break;
 			}
 			len = r_base64_decode (buf, str, -1);
@@ -949,7 +944,6 @@ static int cmd_w6(void *data, const char *input) {
 		case 'e': { // "w6e"
 			ut8 *bin_buf = malloc (str_len);
 			if (!bin_buf) {
-				eprintf ("Error: failed to malloc memory");
 				break;
 			}
 			const int bin_len = r_hex_str2bin (str, bin_buf);
@@ -1577,7 +1571,7 @@ static int cmd_wt(void *data, const char *input) {
 			if (toend) {
 				sz = r_io_fd_size (core->io, core->io->desc->fd) - core->offset;
 				if (sz < 0) {
-					eprintf ("Warning: File size is unknown.");
+					eprintf ("Warning: File size is unknown.\n");
 				}
 			} else {
 				sz = (st64) r_num_math (core->num, size_sep + 1);
@@ -1594,7 +1588,8 @@ static int cmd_wt(void *data, const char *input) {
 			if (*filename == '$') {
 				if (append) {
 					if (sz > 0 && r_cmd_alias_append_raw (core->rcmd, filename+1, core->block, sz)) {
-						eprintf ("Alias \"$%s\" is a command - will not attempt to append.\n", filename+1);
+						const char *fn = r_str_trim_head_ro (filename + 1);
+						eprintf ("Alias \"$%s\" is a command - will not attempt to append.\n", fn);
 					}
 				} else {
 					if (sz > 0) {
@@ -1611,7 +1606,7 @@ static int cmd_wt(void *data, const char *input) {
 			if (toend) {
 				sz = r_io_fd_size (core->io, core->io->desc->fd);
 				if (sz < 0) {
-					eprintf ("Warning: File size is unknown.");
+					eprintf ("Warning: File size is unknown.\n");
 				}
 				if (sz != -1 && core->offset <= sz) {
 					sz -= core->offset;

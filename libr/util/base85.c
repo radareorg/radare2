@@ -117,7 +117,7 @@ R_API bool r_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 			}
 			ungetc (c, fp);
 		} else if (c == EOF) {
-			eprintf ("ascii85: missing <~");
+			eprintf ("ascii85: missing <~\n");
 			return false;
 		}
 	}
@@ -142,7 +142,7 @@ R_API bool r_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 		}
 		if (c == EOF) {
 			if (delims && !end) {
-				eprintf ("ascii85: missing ~>");
+				eprintf ("ascii85: missing ~>\n");
 				return false;
 			}
 			if (count > 0) {

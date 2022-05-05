@@ -214,7 +214,7 @@ static int cmdAdd(void *data, const char *input) {
 
 			free (args);
 			if (!fcni) {
-				eprintf ("Could not find function");
+				eprintf ("Could not find function\n");
 				return false;
 			}
 		}
@@ -1076,7 +1076,7 @@ static bool diff_zig(void *data, const char *input) {
 	}
 
 	if (strtok (NULL, " ")) {
-		eprintf ("too many arguments");
+		eprintf ("too many arguments\n");
 		free (argv);
 		return false;
 	}
