@@ -220,6 +220,7 @@ bool rasm2_list(RCore *core, const char *arch, int fmt) {
 	}
 	return any;
 }
+
 // more copypasta
 static bool ranal2_list(RCore *core, const char *arch, int fmt) {
 	int i;
@@ -238,7 +239,7 @@ static bool ranal2_list(RCore *core, const char *arch, int fmt) {
 		pj_o (pj);
 	}
 	r_list_foreach (a->plugins, iter, h) {
-		if (arch && *arch) {
+		if (R_STR_ISNOTEMPTY (arch)) {
 			if (h->cpus && !strcmp (arch, h->name)) {
 				char *c = strdup (h->cpus);
 				int n = r_str_split (c, ',');
@@ -667,10 +668,11 @@ static bool cb_asmcpu(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
 		update_asmcpu_options (core, node);
+		// XXX not working const char *asm_arch = core->anal->config->arch;
+		const char *asm_arch = r_config_get (core->config, "asm.arch");
 		/* print verbose help instead of plain option listing */
-		if (!rasm2_list (core, r_config_get (core->config, "asm.arch"), node->value[1])) {
-			ranal2_list (core, r_config_get (core->config, "anal.arch"), node->value[1]);
-		}
+		rasm2_list (core, asm_arch, node->value[1]);
+		ranal2_list (core, asm_arch, node->value[1]);
 		return 0;
 	}
 	r_asm_set_cpu (core->rasm, node->value);
