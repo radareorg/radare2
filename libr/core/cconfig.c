@@ -492,6 +492,7 @@ static bool cb_analarch(void *user, void *data) {
 	return false;
 }
 
+#if 0
 static bool cb_analcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -508,6 +509,7 @@ static bool cb_analcpu(void *user, void *data) {
 	r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	return true;
 }
+#endif
 
 static bool cb_analrecont(void *user, void *data) {
 	RCore *core = (RCore*) user;
@@ -663,6 +665,7 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 }
 
 static bool cb_asmcpu(void *user, void *data) {
+// cb_analcpu (user, data);
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
@@ -674,7 +677,12 @@ static bool cb_asmcpu(void *user, void *data) {
 		return 0;
 	}
 	r_asm_set_cpu (core->rasm, node->value);
-	r_config_set (core->config, "anal.cpu", node->value);
+	r_arch_set_cpu (core->rasm->config, node->value);
+	int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+ 	if (v != -1) {
+ 		core->anal->config->pcalign = v;
+ 	}
+	r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	return true;
 }
 
@@ -3387,7 +3395,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("anal.arch", R_SYS_ARCH, &cb_analarch);
 	SETDESC (n, "select the architecture to use");
 	update_analarch_options (core, n);
-	SETCB ("anal.cpu", R_SYS_ARCH, &cb_analcpu, "specify the anal.cpu to use");
+	// SETCB ("anal.cpu", R_SYS_ARCH, &cb_analcpu, "specify the anal.cpu to use");
 	SETPREF ("anal.prelude", "", "specify an hexpair to find preludes in code");
 	SETCB ("anal.recont", "false", &cb_analrecont, "end block after splitting a basic block instead of error"); // testing
 	SETCB ("anal.jmp.indir", "false", &cb_analijmp, "follow the indirect jumps in function analysis"); // testing
