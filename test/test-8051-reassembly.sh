@@ -7,7 +7,7 @@ radare2 -a 8051 -m 0x8000 -e "scr.color=0" -qf -c "pI" ./bins/8051/MP_8192E_FW_N
 rasm2 -a 8051 -o 0x8000 -f $BUILD_DIRECTORY/MP_8192E_FW_NIC.asm -B  > $BUILD_DIRECTORY/recompiled-firmware.bin || exit 1
 
 cmp ./bins/8051/MP_8192E_FW_NIC.bin $BUILD_DIRECTORY/recompiled-firmware.bin
-if [ $? -eq 0 ]
+if [ $? -eq 0 ]; then
 	echo "OK"
 	EXIT_CODE=0
 else
