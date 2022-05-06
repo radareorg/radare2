@@ -37,7 +37,7 @@ R_API ut64 r_anal_vtable_info_get_size(RVTableContext *context, RVTableInfo *vta
 
 R_API bool r_anal_vtable_begin(RAnal *anal, RVTableContext *context) {
 	context->anal = anal;
-	context->abi = anal->cpp_abi;
+	context->abi = anal->cxxabi;
 	context->word_size = (ut8) (anal->config->bits / 8);
 	const bool is_arm = anal->cur->arch && r_str_startswith (anal->cur->arch, "arm");
 	if (is_arm && context->word_size < 4) {

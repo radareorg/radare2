@@ -3122,7 +3122,7 @@ static bool cb_anal_bb_max_size(void *user, void *data) {
 	return true;
 }
 
-static bool cb_anal_cpp_abi(void *user, void *data) {
+static bool cb_anal_cxxabi(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 
@@ -3132,14 +3132,14 @@ static bool cb_anal_cpp_abi(void *user, void *data) {
 	}
 
 	if (*node->value) {
-		if (strcmp (node->value, "itanium") == 0) {
-			core->anal->cpp_abi = R_ANAL_CPP_ABI_ITANIUM;
+		if (!strcmp (node->value, "itanium")) {
+			core->anal->cxxabi = R_ANAL_CPP_ABI_ITANIUM;
 			return true;
-		} else if (strcmp (node->value, "msvc") == 0) {
-			core->anal->cpp_abi = R_ANAL_CPP_ABI_MSVC;
+		} else if (!strcmp (node->value, "msvc")) {
+			core->anal->cxxabi = R_ANAL_CPP_ABI_MSVC;
 			return true;
 		}
-		eprintf ("anal.cpp.abi: cannot find '%s'\n", node->value);
+		R_LOG_ERROR ("Supported values: itanium, msvc");
 	}
 	return false;
 }
@@ -3151,19 +3151,17 @@ static bool cb_linesto(void *user, void *data) {
 	int io_sz = r_io_size (core->io);
 	ut64 to = r_num_math (core->num, node->value);
 	if (to == 0) {
-		core->print->lines_cache_sz = -1; //r_core_lines_initcache (core, from, to);
+		core->print->lines_cache_sz = -1;
 		return true;
 	}
 	if (to > from + io_sz) {
-		eprintf ("ERROR: \"lines.to\" can't exceed addr 0x%08"PFMT64x
-			" 0x%08"PFMT64x" %d\n", from, to, io_sz);
+		R_LOG_ERROR ("lines.to: can't exceed addr 0x%08"PFMT64x" 0x%08"PFMT64x" %d", from, to, io_sz);
 		return true;
 	}
 	if (to > from) {
 		core->print->lines_cache_sz = r_core_lines_initcache (core, from, to);
-		//if (core->print->lines_cache_sz == -1) { eprintf ("ERROR: Can't allocate memory\n"); }
 	} else {
-		eprintf ("Invalid range 0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", from, to);
+		R_LOG_ERROR ("Invalid range 0x%08"PFMT64x" .. 0x%08"PFMT64x, from, to);
 	}
 	return true;
 }
@@ -3420,15 +3418,17 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.bb.maxsize", "512K", &cb_anal_bb_max_size, "maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "analyze push+ret as jmp");
 
-	n = NODECB ("anal.cpp.abi", "itanium", &cb_anal_cpp_abi);
-	SETDESC (n, "select C++ ABI (Compiler)");
+	n = NODECB ("anal.cxxabi", "itanium", &cb_anal_cxxabi);
+	SETDESC (n, "select C++ RTTI ABI");
 	SETOPTIONS (n, "itanium", "msvc", NULL);
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
- 	SETCB ("dbg.malloc", "glibc", &cb_malloc, "choose malloc structure parser");
+	n = NODECB ("dbg.malloc", "glibc", &cb_malloc);
 #else
-	SETCB ("dbg.malloc", "jemalloc", &cb_malloc, "choose malloc structure parser");
+	n = NODECB ("dbg.malloc", "jemalloc", &cb_malloc);
 #endif
+	SETDESC (n, "choose malloc structure parser");
+	SETOPTIONS (n, "glibc", "jemalloc", NULL);
 #if __GLIBC_MINOR__ > 25
 	SETBPREF ("dbg.glibc.tcache", "true", "parse the tcache (glibc.minor > 2.25.x)");
 #else

@@ -97,7 +97,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
-	anal->cpp_abi = R_ANAL_CPP_ABI_ITANIUM;
+	anal->cxxabi = R_ANAL_CPP_ABI_ITANIUM;
 	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
 	r_spaces_init (&anal->meta_spaces, "CS");
