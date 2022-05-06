@@ -4,8 +4,10 @@
 #include <r_lib.h>
 #include "../../asm/arch/jdh8/jdh8dis.c"
 
-static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	int dlen = jdh8Disass (r_op, buf, len);
+static int jdh8_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	int dlen = 0;
+	char *o = jdh8Disass (buf, len, &dlen);
+	op->mnemonic = strdup (o);
 	op->size = R_MAX (0, dlen);
 	// honor DISASM, add esil and more
 	return dlen;
@@ -14,13 +16,11 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 RAnalPlugin r_anal_plugin_jdh8 = {
 	.name = "jdh8",
 	.desc = "jdh-8 toy architecture",
-	.arch = "jdh-8",
 	.license = "LGPL3",
 	.arch = "jdh8",
 	.bits = 16,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.op = &jdh8_op,
-	.get_reg_profile = get_reg_profile,
 };
 
 #ifndef R2_PLUGIN_INCORE
