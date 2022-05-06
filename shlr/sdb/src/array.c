@@ -89,12 +89,11 @@ SDB_API char *sdb_array_get(Sdb *s, const char *key, int idx, ut32 *cas) {
 		return NULL;
 	}
 	if (idx < 0) {
-		int len = sdb_alen (str);
-		idx = -idx;
-		if (idx > len) {
+		int alen = sdb_alen (str);
+		if (-idx > alen) {
 			return NULL;
 		}
-		idx = len - idx;
+		idx += alen;
 	}
 	if (!idx) {
 		n = strchr ((char *)str, SDB_RS);
@@ -211,8 +210,7 @@ SDB_API int sdb_array_add_num(Sdb *s, const char *key, ut64 val, ut32 cas) {
 	char *v = sdb_itoa (val, buf, SDB_NUM_BASE);
 	if (!sdb_array_contains (s, key, v, NULL)) {
 		if (val < 256) {
-			char *v = sdb_itoa (val, buf, 10);
-			return sdb_array_add (s, key, v, cas);
+			v = sdb_itoa (val, buf, 10);
 		}
 	}
 	return sdb_array_add (s, key, v, cas);

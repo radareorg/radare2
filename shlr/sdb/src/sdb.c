@@ -640,7 +640,7 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, bool owned, ut3
 		kv = sdbkv_new2 (key, klen, val, vlen);
 	}
 	if (kv) {
-		ut32 cas = kv->cas = nextcas (kv);
+		cas = kv->cas = nextcas (kv);
 		sdb_ht_insert_kvp (s->ht, kv, true /*update*/);
 		free (kv);
 		sdb_hook_call (s, key, val);
