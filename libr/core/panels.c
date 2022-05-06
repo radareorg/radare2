@@ -6602,7 +6602,16 @@ virtualmouse:
 		__rotate_panels (core, true);
 		break;
 	case '.':
-		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
+		if (__check_panel_type (cur, PANEL_CMD_STACK)) {
+			ut64 addr = r_debug_reg_get (core->dbg, "SP");
+			if (!addr || addr == UT64_MAX) {
+				addr = r_debug_reg_get (core->dbg, "BP");
+			}
+			if (addr && addr != UT64_MAX) {
+				r_core_seek (core, addr, true);
+				__set_panel_addr (core, cur, addr);
+			}
+		} else if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
 			ut64 addr = r_debug_reg_get (core->dbg, "PC");
 			if (addr && addr != UT64_MAX) {
 				r_core_seek (core, addr, true);
