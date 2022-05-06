@@ -848,9 +848,9 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			}
 			r_config_set (r->config, "asm.os", info->os);
 			if (info->rclass && !strcmp (info->rclass, "pe")) {
-				r_config_set (r->config, "anal.cpp.abi", "msvc");
+				r_config_set (r->config, "anal.cxxabi", "msvc");
 			} else {
-				r_config_set (r->config, "anal.cpp.abi", "itanium");
+				r_config_set (r->config, "anal.cxxabi", "itanium");
 			}
 			r_config_set (r->config, "asm.arch", info->arch);
 			if (info->cpu && *info->cpu) {

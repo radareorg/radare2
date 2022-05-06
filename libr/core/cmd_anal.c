@@ -940,7 +940,7 @@ static const char *help_msg_av[] = {
 	"av", "", "search for vtables in data sections and show results",
 	"avj", "", "like av, but as json",
 	"av*", "", "like av, but as r2 commands",
-	"avr", "[j@addr]", "try to parse RTTI at vtable addr (see anal.cpp.abi)",
+	"avr", "[j@addr]", "try to parse RTTI at vtable addr (see anal.cxxabi)",
 	"avra", "[j]", "search for vtables and try to parse RTTI at each of them",
 	"avrr", "", "recover class info from all findable RTTI (see ac)",
 	"avrD", " [classname]", "demangle a class name from RTTI",

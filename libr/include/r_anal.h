@@ -600,7 +600,7 @@ typedef struct r_anal_options_t {
 } RAnalOptions;
 
 typedef enum {
-	R_ANAL_CPP_ABI_ITANIUM = 0,
+	R_ANAL_CPP_ABI_ITANIUM = 0, // default for GCC
 	R_ANAL_CPP_ABI_MSVC
 } RAnalCPPABI;
 
@@ -613,7 +613,7 @@ typedef struct r_anal_t {
 	RArchConfig *config;
 	int lineswidth; // asm.lines.width
 	int sleep;      // anal.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
-	RAnalCPPABI cpp_abi; // anal.cpp.abi
+	RAnalCPPABI cxxabi; // anal.cpp.abi
 	void *user;
 	ut64 gp;        // anal.gp, global pointer. used for mips. but can be used by other arches too in the future
 	RBTree bb_tree; // all basic blocks by address. They can overlap each other, but must never start at the same address.
