@@ -63,8 +63,8 @@ typedef struct r_panel_view_t {
 } RPanelView;
 
 typedef struct r_panel_t {
-    RPanelModel *model;
-    RPanelView *view;
+	RPanelModel *model;
+	RPanelView *view;
 } RPanel;
 
 typedef void (*RPanelAlmightyCallback)(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
