@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #ifndef R_LOG_ORIGIN
-#define R_LOG_ORIGIN __FILE__ ## R_FUNCTION
+#define R_LOG_ORIGIN __FILE__
 #endif
 
 #ifndef R_LOG_DISABLE
