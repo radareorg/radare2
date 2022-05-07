@@ -907,6 +907,7 @@ typedef struct r_anal_op_t {
 
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
 typedef RAnalHint *(* RAnalGetHint)(RAnal *anal, ut64 addr);
+typedef char *(* RAnalMnemonics)(RAnal *anal, int id, bool json);
 typedef int (* RAnalEncode)(RAnal *anal, ut64 addr, const char *s, const ut8 *data, int len);
 typedef int (* RAnalDecode)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 typedef void (* RAnalOpInit)(RAnalOp *op);
@@ -917,6 +918,7 @@ typedef struct r_anal_bind_t {
 	RAnal *anal;
 	RAnalGetFcnIn get_fcn_in;
 	RAnalGetHint get_hint;
+	RAnalMnemonics mnemonics;
 	RAnalEncode encode;
 	RAnalDecode decode;
 	RAnalOpInit opinit;
@@ -1605,6 +1607,7 @@ R_API RAnalOp *r_anal_op_new(void);
 R_API void r_anal_op_free(void *op);
 R_API void r_anal_op_init(RAnalOp *op);
 R_API void r_anal_op_fini(RAnalOp *op);
+R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json);
 R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name);
 R_API bool r_anal_op_is_eob(RAnalOp *op);
 R_API RList *r_anal_op_list_new(void);

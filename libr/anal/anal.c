@@ -215,6 +215,13 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 	return true;
 }
 
+R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
+	if (anal->cur && anal->cur->mnemonics) {
+		return anal->cur->mnemonics (anal, id, json);
+	}
+	return NULL;
+}
+
 R_API bool r_anal_use(RAnal *anal, const char *name) {
 	RListIter *it;
 	RAnalPlugin *h;
@@ -701,6 +708,7 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 		b->encode = (RAnalEncode)r_anal_opasm;
 		b->decode = (RAnalDecode)r_anal_op;
 		b->opinit = r_anal_op_init;
+		b->mnemonics = r_anal_mnemonics;
 		b->opfini = r_anal_op_fini;
 		b->use = r_anal_use;
 	}
