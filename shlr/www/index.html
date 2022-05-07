@@ -49,7 +49,7 @@
 </head>
 <body style="background: rgb(30,30,30); margin:0px;color: white; font-family: monospace;">
 	<div id="content" align="center">
-		<div class="circular" id="logo"><img style="" width="100px" src="r2.svg" onerror="this.onerror=null; this.src='icon.png'"></div>
+		<div class="circular" id="logo"><img style="" width="100px" src="r2.svg" onerror="this.onerror=null; this.src='rlogo.png'"></div>
 		<!-- <div id="title"><h1>radare2</h1></div> -->
 		<br />
 		<div style="cursor:pointer" id="fortune"></div></a>
@@ -121,7 +121,7 @@
 			function updateProjectList() {
 				window.location.assign("/");
 			}
-				r2.cmdj("Plj", function(x) {
+				r2.cmdj("Pj", function(x) {
 					var html = "<ul>";
 					for (var i in x) {
 						var filename = x[i].trim();
