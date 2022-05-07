@@ -2918,9 +2918,9 @@ static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 static RThreadFunctionRet thchan_handler(RThread *th) {
 	RCore *core = (RCore *)th->user;
 	r_cons_thready ();
-	while (r_th_is_running (core->chan_thread) && !core->chan_thread->breaked) {
+	while (r_th_is_running (th) && !th->breaked) {
 		r_th_sem_wait (core->chan->sem); // busy because stack is empty
-		if (!r_th_is_running (core->chan_thread) || core->chan_thread->breaked) {
+		if (!r_th_is_running (th) || th->breaked) {
 			break;
 		}
 		RThreadChannelMessage *cm = r_th_channel_read (core->chan);
@@ -2950,13 +2950,7 @@ R_API bool r_core_init(RCore *core) {
 		/* XXX memory leak */
 		return false;
 	}
-#if 1
 	core->chan = NULL;
-	core->chan_thread = NULL;
-#else
-	core->chan = r_th_channel_new ();
-	core->chan_thread = r_th_new (thchan_handler, core, 0);
-#endif
 	r_core_setenv (core);
 	core->ev = r_event_new (core);
 	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler, NULL);
@@ -3208,10 +3202,6 @@ R_API void r_core_fini(RCore *c) {
 		return;
 	}
 	if (c->chan) {
-		r_th_break (c->chan_thread);
-		r_th_sem_post (c->chan->sem);
-		r_th_wait (c->chan_thread);
-		r_th_free (c->chan_thread);
 		r_th_channel_free (c->chan);
 	}
 	r_core_task_break_all (&c->tasks);
@@ -4197,8 +4187,7 @@ R_API char *r_core_cmd_str_r(RCore *core, const char *cmd) {
 		return NULL;
 	}
 	if (!core->chan) {
-		core->chan = r_th_channel_new ();
-		core->chan_thread = r_th_new (thchan_handler, core, 0);
+		core->chan = r_th_channel_new (thchan_handler, core);
 	}
 	RThreadChannelMessage *message = r_th_channel_message_new (core->chan, (const ut8*)cmd, strlen (cmd) + 1);
 	RThreadChannelPromise *promise = r_th_channel_query (core->chan, message);

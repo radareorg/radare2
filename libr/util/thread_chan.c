@@ -1,9 +1,10 @@
 /* radare - LGPL - Copyright 2022 - pancake */
 
+#define R_LOG_DISABLE 1
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RThreadChannel *r_th_channel_new(void) {
+R_API RThreadChannel *r_th_channel_new(RThreadFunction consumer, void *user) {
 	R_LOG_DEBUG ("r_th_channel_new");
 	RThreadChannel *tc = R_NEW0 (RThreadChannel);
 	if (tc) {
@@ -12,6 +13,7 @@ R_API RThreadChannel *r_th_channel_new(void) {
 		tc->lock = r_th_lock_new (true);
 		tc->stack = r_list_newf ((RListFree)r_th_channel_message_free);
 		tc->responses = r_list_newf ((RListFree)r_th_channel_message_free);
+		tc->consumer = r_th_new (consumer, user, 0);
 	}
 	return tc;
 }
@@ -19,6 +21,11 @@ R_API RThreadChannel *r_th_channel_new(void) {
 R_API void r_th_channel_free(RThreadChannel *tc) {
 	R_LOG_DEBUG ("r_th_channel_free");
 	if (tc) {
+		r_th_break (tc->consumer);
+		r_th_sem_post (tc->sem);
+		r_th_wait (tc->consumer);
+		r_th_free (tc->consumer);
+		//
 		r_list_free (tc->stack);
 		r_th_sem_free (tc->sem);
 		r_th_lock_free (tc->lock);

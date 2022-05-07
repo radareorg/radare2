@@ -155,6 +155,7 @@ typedef struct {
 	RThreadSemaphore *sem; // green when there's an element in the stack
 	RList *stack; // used a stack, stores channel messages to be read by the consumer thread
 	RList *responses; // list of response messages waiting to be collected by the producer thread
+	RThread *consumer;
 } RThreadChannel;
 
 typedef struct {
@@ -177,7 +178,7 @@ R_API void r_th_channel_message_free(RThreadChannelMessage *cm);
 R_API RThreadChannelMessage *r_th_channel_write(RThreadChannel *tc, RThreadChannelMessage *cm);
 R_API RThreadChannelMessage *r_th_channel_message_read(RThreadChannel *tc, RThreadChannelMessage *cm);
 R_API RThreadChannelMessage *r_th_channel_message_new(RThreadChannel *tc, const ut8 *msg, int len);
-R_API RThreadChannel *r_th_channel_new(void);
+R_API RThreadChannel *r_th_channel_new(RThreadFunction consumer, void *user);
 R_API void r_th_channel_free(RThreadChannel *tc);
 
 // promises
