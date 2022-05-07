@@ -1358,6 +1358,7 @@ typedef struct r_anal_plugin_t {
 	RAnalEsilLoopCB esil_post_loop;	//cycle-counting, firing interrupts, ...
 	RAnalEsilTrapCB esil_trap; // traps / exceptions
 	RAnalEsilCB esil_fini; // deinitialize
+	char *(*mnemonics)(RAnal *a, int id, bool json);
 } RAnalPlugin;
 
 typedef struct r_anal_esil_plugin_t {

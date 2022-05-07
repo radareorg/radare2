@@ -2497,13 +2497,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		r_str_replace_char (output, '\t', ' ');
 		r_str_replace_char (output, '#', ' ');
 		if (r_str_startswith (output, "UNDEF")) {
-			//r_strbuf_set (&op->buf_asm, "undefined");
+			if (mask & R_ANAL_OP_MASK_DISASM) {
+				op->mnemonic = strdup ("undefined");
+			}
 			return 4;
 		}
 		//r_strbuf_set (&op->buf_asm, output);
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ANAL_OP_MASK_DISASM) {
-			op->mnemonic = strdup ("invalid");
+			op->mnemonic = strdup (output);
 		}
 		anop64 (a, op, &insn);
 		if (mask & R_ANAL_OP_MASK_OPEX) {
@@ -2556,6 +2558,50 @@ static RList *anal_preludes(RAnal *anal) {
 	return l;
 }
 
+static const char* v35_insn_name(int id) {
+	Instruction insn = { .operation = id };
+	const char *op = get_operation (&insn);
+	if (op && !strcmp (op, "error")) {
+		return NULL;
+	}
+	return op;
+}
+
+static char *mnemonics(RAnal *a, int id, bool json) {
+	int i;
+	if (id != -1) {
+		const char *name = v35_insn_name (id);
+		if (json) {
+			return name? r_str_newf ("[\"%s\"]\n", name): NULL;
+		}
+		return name? strdup (name): NULL;
+	}
+	RStrBuf *buf = r_strbuf_new ("");
+	if (json) {
+		r_strbuf_append (buf, "[");
+	}
+	for (i = 1; ; i++) {
+		const char *op = v35_insn_name (i);
+		if (!op) {
+			break;
+		}
+		if (json) {
+			r_strbuf_append (buf, "\"");
+		}
+		r_strbuf_append (buf, op);
+		if (json) {
+			if (v35_insn_name (i + 1)) {
+				r_strbuf_append (buf, "\",");
+			} else {
+				r_strbuf_append (buf, "\"]\n");
+			}
+		} else {
+			r_strbuf_append (buf, "\n");
+		}
+	}
+	return r_strbuf_drain (buf);
+}
+
 RAnalPlugin r_anal_plugin_arm_v35 = {
 	.name = "arm.v35",
 	.desc = "Vector35 ARM analyzer",
@@ -2563,10 +2609,12 @@ RAnalPlugin r_anal_plugin_arm_v35 = {
 	.esil = true,
 	.arch = "arm",
 	.archinfo = archinfo,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.get_reg_profile = get_reg_profile,
 	.preludes = anal_preludes,
 	.bits = 64,
 	.op = &analop,
+	.mnemonics = &mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE
