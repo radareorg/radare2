@@ -413,5 +413,5 @@ R_API bool r_bp_is_valid(RBreakpoint *bp, RBreakpointItem *b) {
 		return true;
 	}
 
-	return bp->corebind.isMapped (bp->corebind.core, b->addr, b->perm);
+	return bp->coreb.isMapped (bp->coreb.core, b->addr, b->perm);
 }

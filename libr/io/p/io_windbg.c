@@ -400,7 +400,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 	}
 	HRESULT hr = E_FAIL;
 	RIODesc *fd = NULL;
-	RCore *core = io->corebind.core;
+	RCore *core = io->coreb.core;
 	DbgEngContext *idbg = NULL;
 	const char *args = uri + strlen (WINDBGURI);
 	if (r_str_startswith (args, "-remote")) {
@@ -513,8 +513,8 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 		}
 	}
 	if (!symbol_path_set) {
-		const char *store = io->corebind.cfgGet (core, "pdb.symstore");
-		const char *server = io->corebind.cfgGet (core, "pdb.server");
+		const char *store = io->coreb.cfgGet (core, "pdb.symstore");
+		const char *server = io->coreb.cfgGet (core, "pdb.server");
 		char *s = strdup (server);
 		r_str_replace_ch (s, ';', '*', true);
 		char *sympath = r_str_newf ("cache*;srv*%s*%s", store, s);
@@ -568,13 +568,13 @@ remote_client:
 	fd = r_io_desc_new (io, &r_io_plugin_windbg, uri, perm | R_PERM_X, mode, idbg);
 	fd->name = strdup (args);
 	core->dbg->user = idbg;
-	io->corebind.cmd (io->corebind.core, "dL windbg");
+	io->coreb.cmd (io->coreb.core, "dL windbg");
 	return fd;
 }
 
 static bool windbg_close(RIODesc *fd) {
 	DbgEngContext *idbg = fd->data;
-	RCore *core = fd->io->corebind.core;
+	RCore *core = fd->io->coreb.core;
 	if (idbg->server) {
 		ITHISCALL (dbgClient, EndSession, DEBUG_END_DISCONNECT);
 		ITHISCALL (dbgClient, DisconnectProcessServer, idbg->server);

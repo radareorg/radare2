@@ -269,7 +269,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 		return false;
 	}
 	bool doopen = lastNdtllAddr != map->addr;
-	char *ntdllopen = dbg->corebind.cmdstrf (dbg->corebind.core, "ob~%s", ntdll);
+	char *ntdllopen = dbg->coreb.cmdstrf (dbg->coreb.core, "ob~%s", ntdll);
 	if (*ntdllopen) {
 		char *saddr = strtok (ntdllopen, " ");
 		size_t i;
@@ -279,7 +279,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 		if (doopen) {
 			// Close to reopen at the right address
 			int fd = atoi (ntdllopen);
-			dbg->corebind.cmdstrf (dbg->corebind.core, "o-%d", fd);
+			dbg->coreb.cmdstrf (dbg->coreb.core, "o-%d", fd);
 			RtlpHpHeapGlobalsOffset = RtlpLFHKeyOffset = 0;
 		}
 	}
@@ -287,19 +287,19 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	if (doopen) {
 		char *ntdllpath = r_lib_path ("ntdll");
 		eprintf ("Opening %s\n", ntdllpath);
-		dbg->corebind.cmdf (dbg->corebind.core, "o %s 0x%"PFMT64x"", ntdllpath, map->addr);
+		dbg->coreb.cmdf (dbg->coreb.core, "o %s 0x%"PFMT64x"", ntdllpath, map->addr);
 		lastNdtllAddr = map->addr;
 		free (ntdllpath);
 	}
 	r_list_free (modules);
 
 	if (!RtlpHpHeapGlobalsOffset || !RtlpLFHKeyOffset) {
-		char *res = dbg->corebind.cmdstrf (dbg->corebind.core, "idpi~RtlpHpHeapGlobals");
+		char *res = dbg->coreb.cmdstrf (dbg->coreb.core, "idpi~RtlpHpHeapGlobals");
 		if (!*res) {
 			// Try downloading the pdb
 			free (res);
-			dbg->corebind.cmd (dbg->corebind.core, "idpd");
-			res = dbg->corebind.cmdstrf (dbg->corebind.core, "idpi~RtlpHpHeapGlobals");
+			dbg->coreb.cmd (dbg->coreb.core, "idpd");
+			res = dbg->coreb.cmdstrf (dbg->coreb.core, "idpi~RtlpHpHeapGlobals");
 		}
 		if (*res) {
 			RtlpHpHeapGlobalsOffset = r_num_math (NULL, res);
@@ -308,7 +308,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 			return false;
 		}
 		free (res);
-		res = dbg->corebind.cmdstrf (dbg->corebind.core, "idpi~RtlpLFHKey");
+		res = dbg->coreb.cmdstrf (dbg->coreb.core, "idpi~RtlpLFHKey");
 		if (*res) {
 			RtlpLFHKeyOffset = r_num_math (NULL, res);
 		}
@@ -317,10 +317,10 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 
 	if (doopen) {
 		// Close ntdll.dll
-		char *res = dbg->corebind.cmdstrf (dbg->corebind.core, "o~%s", ntdll);
+		char *res = dbg->coreb.cmdstrf (dbg->coreb.core, "o~%s", ntdll);
 		int fd = atoi (res);
 		free (res);
-		dbg->corebind.cmdf (dbg->corebind.core, "o-%d", fd);
+		dbg->coreb.cmdf (dbg->coreb.core, "o-%d", fd);
 	}
 	return true;
 }
