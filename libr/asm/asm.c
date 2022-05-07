@@ -578,7 +578,7 @@ static bool assemblerMatches(RAsm *a, RAsmPlugin *h) {
 	if (!a || !h->arch || !h->assemble || !has_bits (h, a->config->bits)) {
 		return false;
 	}
-	return (a->cur->arch && !strncmp (a->cur->arch, h->arch, strlen (a->cur->arch)));
+	return (a->cur->arch && !strncmp (a->config->arch, h->arch, strlen (a->cur->arch)));
 }
 
 static Ase findAssembler(RAsm *a, const char *kw) {
