@@ -46,8 +46,8 @@ static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const c
 			? "0x%016" PFMT64x " - 0x%016" PFMT64x " %c %s %6s %c %s %s %s%s%s\n"
 			: "0x%08" PFMT64x " - 0x%08" PFMT64x " %c %s %6s %c %s %s %s%s%s\n";
 		const char *type = map->shared ? "sys": "usr";
-		const char *flagname = dbg->corebind.getName
-			? dbg->corebind.getName (dbg->corebind.core, map->addr) : NULL;
+		const char *flagname = dbg->coreb.getName
+			? dbg->coreb.getName (dbg->coreb.core, map->addr) : NULL;
 		if (!flagname) {
 			flagname = "";
 		} else if (map->name) {

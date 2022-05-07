@@ -11,6 +11,7 @@
 #include <r_reg.h>
 #include <r_egg.h>
 #include <r_bp.h>
+#include <r_cmd.h>
 #include <r_io.h>
 #include <r_syscall.h>
 
@@ -316,7 +317,7 @@ typedef struct r_debug_t {
 	RDebugSession *session;
 
 	Sdb *sgnls;
-	RCoreBind corebind;
+	RCoreBind coreb;
 	PJ *pj;
 	// internal use only
 	int _mode;
@@ -406,6 +407,7 @@ typedef struct r_debug_plugin_t {
 	bool (*init)(RDebug *dbg);
 	int (*drx)(RDebug *dbg, int n, ut64 addr, int size, int rwx, int g, int api_type);
 	RDebugDescPlugin desc;
+	RCmdCb cmd;
 	// TODO: use RList here
 } RDebugPlugin;
 
@@ -444,6 +446,7 @@ R_API const char *r_debug_reason_to_string(int type);
 /* wait for another event */
 R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp);
 
+R_API int r_debug_cmd(RDebug *dbg, const char *s);
 /* continuations */
 R_API int r_debug_step(RDebug *dbg, int steps);
 R_API int r_debug_step_over(RDebug *dbg, int steps);

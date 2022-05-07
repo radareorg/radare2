@@ -97,8 +97,8 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	bool isJson = (rad == 'j' || rad == 'J');
 	r_return_val_if_fail (!isJson || (isJson && pj), false);
 
-	if (dbg->corebind.core) {
-		pr = ((RCore*)dbg->corebind.core)->print;
+	if (dbg->coreb.core) {
+		pr = ((RCore*)dbg->coreb.core)->print;
 	}
 	if (size != 0 && !(dbg->reg->bits & size)) {
 		// TODO: verify if 32bit exists, otherwise use 64 or 8?

@@ -868,7 +868,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 		struct dirent *de;
 		DIR *dh = opendir (buf);
 		// Update the process' memory maps to set correct paths
-		dbg->corebind.syncDebugMaps (dbg->corebind.core);
+		dbg->coreb.syncDebugMaps (dbg->coreb.core);
 		while ((de = readdir (dh))) {
 			if (!strcmp (de->d_name, ".") || !strcmp (de->d_name, "..")) {
 				continue;
