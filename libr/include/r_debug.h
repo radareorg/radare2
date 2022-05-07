@@ -361,6 +361,7 @@ typedef struct r_debug_info_t {
 } RDebugInfo;
 
 /* TODO: pass dbg and user data pointer everywhere */
+typedef int (*RDebugCmdCb)(RDebug *dbg, const char *cmd);
 typedef struct r_debug_plugin_t {
 	const char *name;
 	const char *license;
@@ -407,7 +408,7 @@ typedef struct r_debug_plugin_t {
 	bool (*init)(RDebug *dbg);
 	int (*drx)(RDebug *dbg, int n, ut64 addr, int size, int rwx, int g, int api_type);
 	RDebugDescPlugin desc;
-	RCmdCb cmd;
+	RDebugCmdCb cmd;
 	// TODO: use RList here
 } RDebugPlugin;
 
