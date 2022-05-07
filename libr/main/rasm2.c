@@ -667,7 +667,9 @@ static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut
 	if (rad) {
 		printf ("f entry = $$\n");
 		printf ("f label.main = $$ + 1\n");
-		ht_pp_foreach (as->a->flags, print_label, NULL);
+		if (as->a->flags) {
+			ht_pp_foreach (as->a->flags, print_label, NULL);
+		}
 	}
 	return ret;
 }

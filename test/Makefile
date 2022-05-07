@@ -1,4 +1,4 @@
-all: r2r-tests unit_tests test-8051-reassembly
+all: r2r-tests unit_tests
 
 arm.v35:
 	${RUNTEST} db/extras/asm/arm.v35_64
@@ -16,9 +16,6 @@ RUNTEST=r2r -L -o results.json
 
 r2r-tests: bins
 	${RUNTEST}
-
-test-8051-reassembly:
-	$(SHELL) ./test-8051-reassembly.sh
 
 fuzz-tests: bins
 	r2r -LF bins/fuzzed @fuzz

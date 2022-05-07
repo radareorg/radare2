@@ -1,3 +1,4 @@
+#!/bin/sh
 BUILD_DIRECTORY=$(mktemp -d tmp.XXXXXXXXXX)
 [ -z "$BUILD_DIRECTORY" ] && exit 1
 export EXIT_CODE=0
