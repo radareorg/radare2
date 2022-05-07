@@ -71,7 +71,7 @@ typedef struct r_bp_t {
 	int endian;
 	int bits;
 	bool bpinmaps; /* Only enable breakpoints inside a valid map */
-	RCoreBind corebind;
+	RCoreBind coreb;
 	RIOBind iob; // compile time dependency
 	RBreakpointPlugin *cur;
 	RList *traces; // XXX

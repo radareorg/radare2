@@ -39,7 +39,7 @@ R_API bool r_bp_restore_except(RBreakpoint *bp, bool set, ut64 addr) {
 	RBreakpointItem *b;
 
 	if (set && bp->bpinmaps) {
-		bp->corebind.syncDebugMaps (bp->corebind.core);
+		bp->coreb.syncDebugMaps (bp->coreb.core);
 	}
 
 	r_list_foreach (bp->bps, iter, b) {

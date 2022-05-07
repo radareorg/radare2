@@ -428,10 +428,10 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			cmd = (char *) malloc (27);
 			if (!cmd) {
 				io->cb_printf ("io_r2k_linux : Malloc failed. Seeking to 0x0\n");
-				io->corebind.cmd (io->corebind.core, "s 0");
+				io->coreb.cmd (io->coreb.core, "s 0");
 			} else {
 				sprintf (cmd, "s 0x%"PFMT64x, io->off);
-				io->corebind.cmd (io->corebind.core, cmd);
+				io->coreb.cmd (io->coreb.core, cmd);
 				free (cmd);
 			}
 		}

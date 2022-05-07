@@ -52,9 +52,9 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 				int osz = mal->size;
 				io_memory_resize (io, desc, mal->size + c);
 				memcpy (mal->buf + osz, mem, c);
-				io->corebind.cmdf (io->corebind.core, "f nread_%d %d %d",
+				io->coreb.cmdf (io->coreb.core, "f nread_%d %d %d",
 					sdat->count, c, mal->size);
-				io->corebind.cmdf (io->corebind.core, "omr 1 %d", mal->size);
+				io->coreb.cmdf (io->coreb.core, "omr 1 %d", mal->size);
 				sdat->count++;
 			}
 			free (mem);
