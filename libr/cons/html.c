@@ -140,6 +140,28 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				esc = 0;
 				str = ptr;
 				continue;
+			} else if (IS_DIGIT (ptr[0]) && ptr[1] == ';' && IS_DIGIT (ptr[2])) {
+				char *m = strchr (ptr, 'm');
+				if (m) {
+					// char *s = r_str_ndup (ptr, m + 1 - ptr);
+					// eprintf ("ONE (%s)\n", s);
+					gethtmlrgb (ptr, background_color);
+					need_to_set = true;
+					ptr = m;
+					str = ptr + 1;
+					esc = 0;
+				}
+			} else if (IS_DIGIT (ptr[0]) && IS_DIGIT (ptr[1]) && ptr[2] == ';') {
+				char *m = strchr (ptr, 'm');
+				if (m) {
+					// char *s = r_str_ndup (ptr, m + 1 - ptr);
+					// eprintf ("TWO (%s)\n", s);
+					gethtmlrgb (ptr, text_color);
+					need_to_set = true;
+					ptr = m;
+					str = ptr + 1;
+					esc = 0;
+				}
 			} else if (!strncmp (ptr, "48;5;", 5) || !strncmp (ptr, "48;2;", 5)) {
 				char *end = strchr (ptr, 'm');
 				gethtmlrgb (ptr, background_color);
@@ -151,9 +173,18 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				char *end = strchr (ptr, 'm');
 				gethtmlrgb (ptr, text_color);
 				need_to_set = true;
-				ptr = end;
-				str = ptr + 1;
+				if (end) {
+					ptr = end;
+					str = ptr + 1;
+				}
 				esc = 0;
+			} else if ((ptr[0] == '0' || ptr[0] == '1') && ptr[1] == ';' && IS_DIGIT (ptr[2])) {
+				// bg color is kind of ignored, but no glitch so far
+				r_cons_gotoxy (0, 0);
+				ptr += 4;
+				esc = 0;
+				str = ptr;
+				continue;
 			} else if ((ptr[0] == '0' || ptr[0] == '1') && ptr[1] == ';' && ptr[2] == '0') {
 				// bg color is kind of ignored, but no glitch so far
 				r_cons_gotoxy (0, 0);
