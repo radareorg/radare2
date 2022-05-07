@@ -1236,6 +1236,9 @@ R_API char *r_asm_mnemonics(RAsm *a, int id, bool json) {
 	if (a->cur->mnemonics) {
 		return a->cur->mnemonics (a, id, json);
 	}
+	if (a->analb.anal && a->analb.mnemonics) {
+		return a->analb.mnemonics (a->analb.anal, id, json);
+	}
 	return NULL;
 }
 
