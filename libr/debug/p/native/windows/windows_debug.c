@@ -641,7 +641,7 @@ bool w32_select(RDebug *dbg, int pid, int tid) {
 		}	
 	}
 
-	if (dbg->corebind.cfggeti (dbg->corebind.core, "dbg.threads")) {
+	if (dbg->coreb.cfggeti (dbg->coreb.core, "dbg.threads")) {
 		// Suspend all other threads
 		r_list_foreach (dbg->threads, it, th) {
 			if (!th->bFinished && !th->bSuspended && th->tid != selected) {
@@ -685,7 +685,7 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 void w32_break_process(void *user) {
 	RDebug *dbg = (RDebug *)user;
 	RW32Dw *wrap = dbg->user;
-	if (dbg->corebind.cfggeti (dbg->corebind.core, "dbg.threads")) {
+	if (dbg->coreb.cfggeti (dbg->coreb.core, "dbg.threads")) {
 		w32_select (dbg, wrap->pi.dwProcessId, -1); // Suspend all threads
 	} else {
 		if (!r_w32_DebugBreakProcess (wrap->pi.hProcess)) {
@@ -859,7 +859,7 @@ RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid) {
 			if (ret != R_DEBUG_REASON_USERSUSP) {
 				ret = R_DEBUG_REASON_NEW_TID;
 			}
-			dbg->corebind.cmdf (dbg->corebind.core, "f teb.%d @ 0x%p", tid, de.u.CreateThread.lpThreadLocalBase);
+			dbg->coreb.cmdf (dbg->coreb.core, "f teb.%d @ 0x%p", tid, de.u.CreateThread.lpThreadLocalBase);
 			next_event = 0;
 			break;
 		case EXIT_PROCESS_DEBUG_EVENT:
@@ -873,7 +873,7 @@ RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid) {
 			} else {
 				__r_debug_thread_add (dbg, pid, tid, INVALID_HANDLE_VALUE, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, TRUE);
 			}
-			dbg->corebind.cmdf (dbg->corebind.core, "f- teb.%d", tid);
+			dbg->coreb.cmdf (dbg->coreb.core, "f- teb.%d", tid);
 			if (de.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT) {
 				exited_already = pid;
 				w32_continue (dbg, pid, tid, DBG_CONTINUE);
