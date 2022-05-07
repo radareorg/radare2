@@ -116,7 +116,7 @@ typedef enum r_th_lock_type_t {
 typedef struct r_th_lock_t {
 	R_ATOMIC_BOOL activating;
 	struct {
-		ut8 active : 1;
+		bool active : 1;
 		RThreadLockType type : 7;
 	};
 	R_TH_LOCK_T lock;
@@ -166,10 +166,10 @@ R_API void r_th_sem_post(RThreadSemaphore *sem);
 R_API void r_th_sem_wait(RThreadSemaphore *sem);
 
 R_API RThreadLock *r_th_lock_new(bool recursive);
-R_API int r_th_lock_wait(RThreadLock *th);
-R_API int r_th_lock_tryenter(RThreadLock *thl);
-R_API int r_th_lock_enter(RThreadLock *thl);
-R_API int r_th_lock_leave(RThreadLock *thl);
+R_API bool r_th_lock_wait(RThreadLock *th);
+R_API bool r_th_lock_tryenter(RThreadLock *thl);
+R_API bool r_th_lock_enter(RThreadLock *thl);
+R_API bool r_th_lock_leave(RThreadLock *thl);
 R_API void *r_th_lock_free(RThreadLock *thl);
 
 R_API RThreadCond *r_th_cond_new(void);
