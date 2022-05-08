@@ -860,6 +860,9 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 				r_config_set (r->config, "asm.features", info->features);
 			}
 			r_config_set (r->config, "anal.arch", info->arch);
+			if (R_STR_ISNOTEMPTY (info->charset)) {
+				r_config_set (r->config, "cfg.charset", info->charset);
+			}
 			snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
 			r_config_set (r->config, "asm.bits", str);
 			r_config_set (r->config, "asm.dwarf",
@@ -872,8 +875,11 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("arch %s\n", info->arch);
-		if (info->cpu && *info->cpu) {
+		if (R_STR_ISNOTEMPTY (info->cpu)) {
 			r_cons_printf ("cpu %s\n", info->cpu);
+		}
+		if (R_STR_ISNOTEMPTY (info->charset)) {
+			r_cons_printf ("charset %s\n", info->charset);
 		}
 		r_cons_printf ("bits %d\n", info->bits);
 		r_cons_printf ("os %s\n", info->os);
@@ -891,10 +897,13 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 				r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
 			int v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
 			r_cons_printf ("e asm.pcalign=%d\n", (v > 0)? v: 0);
-			if (info->lang && *info->lang) {
+			if (R_STR_ISNOTEMPTY (info->lang)) {
 				r_cons_printf ("e bin.lang=%s\n", info->lang);
 			}
-			if (info->rclass && *info->rclass) {
+			if (R_STR_ISNOTEMPTY (info->charset)) {
+				r_cons_printf ("e cfg.charset=%s\n", info->charset);
+			}
+			if (R_STR_ISNOTEMPTY (info->rclass)) {
 				r_cons_printf ("e file.type=%s\n",
 					info->rclass);
 			}
@@ -904,10 +913,10 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			if (info->arch) {
 				r_cons_printf ("e asm.arch=%s\n", info->arch);
 			}
-			if (info->cpu && *info->cpu) {
+			if (R_STR_ISNOTEMPTY (info->cpu)) {
 				r_cons_printf ("e asm.cpu=%s\n", info->cpu);
 			}
-			if (info->default_cc) {
+			if (R_STR_ISNOTEMPTY (info->default_cc)) {
 				r_cons_printf ("e anal.cc=%s", info->default_cc);
 			}
 		}
@@ -918,12 +927,15 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			pj_o (pj);
 		}
 		pair_str (pj, "arch", info->arch);
-		if (info->cpu && *info->cpu) {
+		if (R_STR_ISNOTEMPTY (info->cpu)) {
 			pair_str (pj, "cpu", info->cpu);
 		}
 		pair_ut64x (pj, "baddr", r_bin_get_baddr (r->bin));
 		pair_ut64 (pj, "binsz", r_bin_get_size (r->bin));
 		pair_str (pj, "bintype", info->rclass);
+		if (R_STR_ISNOTEMPTY (info->charset)) {
+			pair_str (pj, "charset", info->charset);
+		}
 		pair_int (pj, "bits", info->bits);
 		pair_bool (pj, "canary", info->has_canary);
 		if (info->has_retguard != -1) {
