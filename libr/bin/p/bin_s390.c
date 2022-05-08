@@ -116,7 +116,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->type = strdup ("load module");
 	ret->os = strdup ("s390");
 	ret->arch = strdup ("s390");
-	// ret->charset = strdup ("ebcdic37");
+	ret->charset = strdup ("ebcdic37");
 	ret->bits = 32;
 	ret->has_va = 1;
 	ret->big_endian = 1;

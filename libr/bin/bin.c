@@ -136,6 +136,7 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	r_list_free (rb->file_hashes);
 	free (rb->intrp);
 	free (rb->file);
+	free (rb->charset);
 	free (rb->type);
 	free (rb->bclass);
 	free (rb->rclass);
