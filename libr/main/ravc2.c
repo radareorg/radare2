@@ -95,9 +95,6 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	// commands that don't need Rvc *
 	if (!strcmp (action, "init")) {
 		Rvc *rvc = r_vc_new (rp);
-		if (rvc) {
-			r_vc_save (rvc);
-		}
 		free (rp);
 		return rvc? !r_vc_save(rvc) : 1;
 	}
