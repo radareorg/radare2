@@ -842,8 +842,6 @@ R_API RList *r_vc_get_branches(Rvc *rvc) {
 		}
 	}
 	ls_free (keys);
-	sdb_unlink (rvc->db);
-	sdb_free (rvc->db);
 	return ret;
 }
 
