@@ -40,20 +40,19 @@ static bool load(RBin *bin) {
 }
 
 static RList *extractall(RBin *bin) {
-	RList *result = NULL;
-	int nlib, i = 0;
-	RBinXtrData *data = extract (bin, i);
+	RBinXtrData *data = extract (bin, 0);
 	if (!data) {
-		return result;
+		return NULL;
 	}
 	// XXX - how do we validate a valid nlib?
-	nlib = data->file_count;
-	result = r_list_newf (r_bin_xtrdata_free);
+	int nlib = data->file_count;
+	RList *result = r_list_newf (r_bin_xtrdata_free);
 	if (!result) {
 		r_bin_xtrdata_free (data);
 		return NULL;
 	}
 	r_list_append (result, data);
+	int i = 0;
 	for (i = 1; data && i < nlib; i++) {
 		data = extract (bin, i);
 		r_list_append (result, data);
