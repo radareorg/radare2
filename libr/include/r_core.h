@@ -356,6 +356,7 @@ struct r_core_t {
 	bool allbins;
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
+	RThreadChannel *chan; // query
 
 	RMainCallback r_main_radare2;
 	// int (*r_main_radare2)(int argc, char **argv);
@@ -438,11 +439,13 @@ R_API int r_core_fgets(char *buf, int len);
 R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off);
 R_API int r_core_cmdf(RCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API int r_core_cmd0(RCore *core, const char *cmd);
+R_API void r_core_cmd_r(RCore *core, const char *cmd);
 R_API void r_core_cmd_queue(RCore *core, const char *line);
 R_API void r_core_cmd_queue_wait(RCore *core);
 R_API void r_core_cmd_init(RCore *core);
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
 R_API char *r_core_cmd_str(RCore *core, const char *cmd);
+R_API char *r_core_cmd_str_r(RCore *core, const char *cmd);
 R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd);
 R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd);
