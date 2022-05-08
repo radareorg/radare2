@@ -15,7 +15,6 @@ r_asm_sources = [
   join_paths('p','asm_arm_gnu.c'),
   join_paths('p','asm_arm_winedbg.c'),
   join_paths('p','asm_avr.c'),
-  join_paths('p','asm_bf.c'),
   join_paths('p','asm_cr16.c'),
   join_paths('p','asm_cris_gnu.c'),
   join_paths('p','asm_dalvik.c'),

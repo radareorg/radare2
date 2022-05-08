@@ -1,0 +1,8 @@
+[=loop begin
+]=loop end
+>=increment ptr
+<=decrement ptr
++=increment byte value in ptr
+-=decrementbyte value in ptr
+,=read a byte from keyboard and save it in ptr
+.=print byte stored in ptr
