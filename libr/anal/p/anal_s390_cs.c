@@ -59,6 +59,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_insn *insn = NULL;
 	int mode = CS_MODE_BIG_ENDIAN;
 	int ret = cs_open (CS_ARCH_SYSZ, mode, &handle);
+	op->addr = addr;
 	op->size = 2;
 	if (ret == CS_ERR_OK) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
@@ -79,15 +80,38 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->mnemonic = r_str_newf ("%s%s%s",
 					insn->mnemonic, insn->op_str[0]? " ": "",
 					insn->op_str);
+			// if syntax is not AT&T
+			op->mnemonic = r_str_replace (op->mnemonic, "%", "", -1);
 		}
 		op->size = insn->size;
 		switch (insn->id) {
+		case SYSZ_INS_SVC:
+			op->type = R_ANAL_OP_TYPE_SWI;
+			break;
+		case SYSZ_INS_STM:
+			op->type = R_ANAL_OP_TYPE_PUSH;
+			break;
 		case SYSZ_INS_BRCL:
 		case SYSZ_INS_BRASL:
 			op->type = R_ANAL_OP_TYPE_CALL;
 			break;
-		case SYSZ_INS_BR:
+		case SYSZ_INS_LDR:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
+		case SYSZ_INS_L:
+		case SYSZ_INS_LR:
+		case SYSZ_INS_LA:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			break;
+		case SYSZ_INS_ST:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			break;
+		case SYSZ_INS_B:
 			op->type = R_ANAL_OP_TYPE_JMP;
+			op->jump = addr + r_num_get (NULL, insn->op_str);
+			break;
+		case SYSZ_INS_BR:
+			op->type = R_ANAL_OP_TYPE_RJMP;
 			break;
 		case SYSZ_INS_BRC:
 		case SYSZ_INS_BER:
@@ -142,6 +166,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = INSOP (0).imm;
 			op->fail = addr+op->size;
+			break;
+		case SYSZ_INS_XI:
+			op->type = R_ANAL_OP_TYPE_XOR;
+			break;
+		case SYSZ_INS_OI:
+			op->type = R_ANAL_OP_TYPE_OR;
+			break;
+		case SYSZ_INS_BALR:
+			op->type = R_ANAL_OP_TYPE_RCALL;
+			//op->jump = INSOP (0).imm;
+			op->fail = addr + op->size;
 			break;
 		case SYSZ_INS_J:
 			op->type = R_ANAL_OP_TYPE_JMP;
@@ -198,7 +233,7 @@ static int archinfo(RAnal *anal, int q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_DATA_ALIGN:
 	case R_ANAL_ARCHINFO_ALIGN:
-		return 2;
+		return 1;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 		return 6;
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
