@@ -6,6 +6,7 @@ r_asm_sources = [
   'acode.c',
   'aplugs.c',
   'binutils_as.c',
+  join_paths('p','asm_null.c'),
   join_paths('p','asm_6502.c'),
   join_paths('p','asm_8051.c'),
   join_paths('p','asm_amd29k.c'),
