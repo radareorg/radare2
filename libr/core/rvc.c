@@ -1272,7 +1272,15 @@ R_API Rvc *r_vc_load(const char *rp) {
 
 }
 
-R_API void r_vc_close(Rvc *vc) {
+R_API bool r_vc_save(Rvc *vc) {
+	sdb_sync(vc->db);
+	return true;
+}
+
+R_API void r_vc_close(Rvc *vc, bool save) {
+	if (save) {
+		r_vc_save(vc);
+	}
 	sdb_close (vc->db);
 	free (vc->path);
 	free (vc);
