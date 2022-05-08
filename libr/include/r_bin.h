@@ -860,6 +860,7 @@ extern RBinPlugin r_bin_plugin_qnx;
 extern RBinPlugin r_bin_plugin_mbn;
 extern RBinPlugin r_bin_plugin_smd;
 extern RBinPlugin r_bin_plugin_msx;
+extern RBinPlugin r_bin_plugin_s390;
 extern RBinPlugin r_bin_plugin_sms;
 extern RBinPlugin r_bin_plugin_psxexe;
 extern RBinPlugin r_bin_plugin_vsf;

@@ -1,0 +1,10 @@
+OBJ_S390=bin_s390.o
+
+STATIC_OBJ+=${OBJ_S390}
+TARGET_S390=bin_s390.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_S390}
+
+${TARGET_S390}: ${OBJ_S390}
+	${CC} $(call libname,bin_s390) -shared ${CFLAGS} \
+		-o ${TARGET_S390} ${OBJ_S390} $(LINK) $(LDFLAGS)
