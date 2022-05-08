@@ -1,4 +1,5 @@
 NAME=m1slice
+ARGS=-a x86
 FILE=bins/mach0/ls-m1
 CMDS=<<EOF
 pd 2
@@ -7,11 +8,11 @@ EOF
 EXPECT=<<EOF
             ;-- main:
             ;-- entry0:
-            ;-- func.100003a90:
-            0x100003a90      7f2303d5       pacibsp
-            0x100003a94      fc6fbaa9       stp x28, x27, [sp, -0x60]!
+            ;-- func.100003c0c:
+            0x100003c0c      55             push rbp
+            0x100003c0d      4889e5         mov rbp, rsp
 [Entrypoints]
-vaddr=0x100003a90 paddr=0x0001ba90 haddr=0x00000600 type=program
+vaddr=0x100003c0c paddr=0x00007c0c haddr=0x00000658 type=program
 
 1 entrypoints
 EOF
