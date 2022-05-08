@@ -4319,7 +4319,7 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	return ret;
 }
 
-R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *arch, ut16 bits) {
+R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arch, ut16 bits) {
 	int fd = r_io_fd_get_current (r->io);
 	RIODesc *desc = r_io_desc_get (r->io, fd);
 	RBinFile *curfile, *binfile = NULL;
@@ -4329,18 +4329,27 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *arch
 		}
 		name = desc->name;
 	}
+	char *arch = strdup (_arch);
+	char *dot = strchr (arch, '.');
+	if (dot) {
+		*dot = 0;
+	}
 	/* Check if the arch name is a valid name */
 	if (!r_asm_is_valid (r->rasm, arch)) {
+		free (arch);
 		return false;
 	}
 	/* Find a file with the requested name/arch/bits */
 	binfile = r_bin_file_find_by_arch_bits (r->bin, arch, bits);
 	if (!binfile) {
+		free (arch);
 		return false;
 	}
 	if (!r_bin_use_arch (r->bin, arch, bits, name)) {
+		free (arch);
 		return false;
 	}
+	R_FREE (arch);
 	curfile = r_bin_cur (r->bin);
 	//set env if the binfile changed or we are dealing with xtr
 	if (curfile != binfile || binfile->curxtr) {

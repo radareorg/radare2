@@ -148,7 +148,6 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		r_io_fd_close (core->io, odesc->fd);
 		eprintf ("File %s reopened in %s mode\n", path,
 			(perm & R_PERM_W)? "read-write": "read-only");
-
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
 			ut64 baddr;
 			if (isdebug) {
@@ -713,7 +712,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (!r_config_get_b (r->config, "cfg.debug")) {
 		loadGP (r);
 	}
-	if (r_config_get_i (r->config, "bin.libs")) {
+	if (r_config_get_b (r->config, "bin.libs")) {
 		const char *lib;
 		RListIter *iter;
 		RList *libs = r_bin_get_libs (r->bin);
@@ -904,7 +903,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 		if (r->dbg->h && r->dbg->h->canstep) {
 			swstep = false;
 		}
-		r_config_set_i (r->config, "dbg.swstep", swstep);
+		r_config_set_b (r->config, "dbg.swstep", swstep);
 		// Set the correct debug handle
 		if (fd->plugin && fd->plugin->isdbg) {
 			char *dh = r_str_ndup (file, (strstr (file, "://") - file));
