@@ -121,6 +121,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			r_list_foreach(branches, iter, branch) {
 				printf ("%s\n", branch + (r_str_len_utf8 (BPREFIX)));
 			}
+			r_list_free(branches);
 		} else {
 			save = r_vc_branch (rvc, opt.argv[opt.ind + 1]);
 		}
@@ -157,6 +158,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	} else if (!strcmp(action, "status")) {
 		char *current_branch = r_vc_current_branch(rvc);
 		if (current_branch) {
+			printf ("Branch: %s\n", current_branch);
 			RList *uncommitted = r_vc_get_uncommitted(rvc);
 			if (r_list_empty (uncommitted)) {
 				printf("All files are committed\n");
@@ -172,6 +174,14 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		}
 	} else if (!strcmp(action, "reset")) {
 		save = r_vc_reset(rvc);
+	} else if (!strcmp(action, "log")) {
+		RList *commits = r_vc_log(rvc);
+		RListIter *iter;
+		const char *commit;
+		r_list_foreach(commits, iter, commit) {
+			printf ("%s\n****\n", commit);
+		}
+		r_list_free (commits);
 	} else {
 		printf("incorrect command");
 	}
