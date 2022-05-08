@@ -317,7 +317,7 @@ static RList *sections(RBinFile *bf) {
 			if (!su->entry0) {
 				su->text0 = x; // XXX this 0xc is hardcoded
 				su->entry0 = x + 0xc; // XXX this 0xc is hardcoded
-				add_section (ret, r_str_newf ("penerec"), x + 4, 32); // r_buf_size (bf->buf)  - x);
+				// add_section (ret, r_str_newf ("whole"), x + 4, 32); // r_buf_size (bf->buf)  - x);
 			}
 			x += lonCR;
 			left = r_buf_read_at (bf->buf, x, gbuf, sizeof (gbuf));
