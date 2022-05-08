@@ -12,7 +12,7 @@ typedef struct msx_hdr_rom {
 } MSX_Header_ROM;
 
 typedef struct msx_hdr_bin {
-	ut8 BINSignature[2]; // 'FE'
+	ut8 BINSignature; // 0xFE
 	ut16 StartAddress;
 	ut16 EndAddress;
 	ut16 InitAddress;
@@ -29,7 +29,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 		if (r_buf_size (b) > sizeof (MSX_Header_ROM)) {
 			return true;
 		}
-	} else if (!memcmp (buf, "FE", 2)) {
+	} else if (buf[0] == 0xFE) {
 		if (r_buf_size (b) > sizeof (MSX_Header_BIN)) {
 			return true;
 		}
@@ -50,10 +50,11 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->machine = strdup ("MSX");
 	ut8 tmp[16] = {0};
 	r_buf_read_at (bf->buf, 0, tmp, sizeof (tmp));
-	ret->bclass = r_str_newf ("%c%c", tmp[0], tmp[1]);
 	if (tmp[0] == 'A') {
+		ret->bclass = r_str_newf ("%c%c", tmp[0], tmp[1]);
 		ret->type = strdup ("rom");
-	} else {
+	} else if (tmp[0] == 0xFE) {
+		ret->bclass = r_str_newf ("0x%02x", tmp[0]);
 		ret->type = strdup ("bin");
 	}
 	ret->os = strdup ("msx");
@@ -83,8 +84,8 @@ static RList *symbols(RBinFile *bf) {
 		return NULL;
 	}
 
-	ut8 gbuf[32];
-	int left = r_buf_read_at (bf->buf, 0, (ut8*)&gbuf, sizeof (gbuf));
+	ut8 gbuf[16] = {0};
+	int left = r_buf_read_at (bf->buf, 0, gbuf, sizeof (gbuf));
 	if (left < sizeof (gbuf)) {
 		return NULL;
 	}
@@ -100,15 +101,16 @@ static RList *symbols(RBinFile *bf) {
 		eprintf ("RuntimeAddress: 0x%04x\n", (ut16) hdr->RuntimeAddress);
 		eprintf ("DeviceAddress: 0x%04x\n", (ut16) hdr->DeviceAddress);
 		eprintf ("PointAddress: 0x%04x\n", (ut16) hdr->PointAddress);
-	} else if (!memcmp (bf->buf, "FE", 2)) {
+	} else if (gbuf[0] == 0xFE) {
 		MSX_Header_BIN *hdr = (MSX_Header_BIN*)gbuf;
-		addsym (ret, "BINSignature", r_offsetof (MSX_Header_BIN, BINSignature));
-		addsym (ret, "InitAddress", r_read_be16 (&hdr->InitAddress));
-		addsym (ret, "EndAddress", r_read_be16 (&hdr->EndAddress));
+		addsym (ret, "BINSignature", r_read_be8 (&hdr->BINSignature));
 		addsym (ret, "StartAddress", r_read_be16 (&hdr->StartAddress));
-		eprintf ("InitAddress: 0x%04x\n", (ut16) hdr->InitAddress);
-		eprintf ("EndAddress: 0x%04x\n", (ut16) hdr->EndAddress);
+		addsym (ret, "EndAddress", r_read_be16 (&hdr->EndAddress));
+		addsym (ret, "InitAddress", r_read_be16 (&hdr->InitAddress));
+
 		eprintf ("StartAddress: 0x%04x\n", (ut16) hdr->StartAddress);
+		eprintf ("EndAddress: 0x%04x\n", (ut16) hdr->EndAddress);
+		eprintf ("InitAddress: 0x%04x\n", (ut16) hdr->InitAddress);
 	}
 	return ret;
 }
@@ -134,9 +136,9 @@ static RList *sections(RBinFile *bf) {
 		MSX_Header_ROM *hdr = (MSX_Header_ROM*)gbuf;
 		baddr = r_read_le16 (&hdr->InitAddress) & 0xff00;
 		hdrsize = ptr->vsize = sizeof (hdr);
-	} else if (!memcmp (bf->buf, "FE", 2)) {
+	} else if (gbuf[0] == 0xFE) {
 		MSX_Header_BIN *hdr = (MSX_Header_BIN*)gbuf;
-		baddr = r_read_le16 (&hdr->InitAddress);
+		baddr = r_read_le16 (&hdr->StartAddress) & 0xff00;
 		hdrsize = ptr->vsize = sizeof (hdr);
 	}
 
@@ -179,7 +181,7 @@ static RList *entries(RBinFile *bf) {
 		ptr->vaddr = init;
 		ptr->paddr = 0;
 		r_list_append (ret, ptr);
-	} else if (!memcmp (bf->buf, "FE", 2)) {
+	} else if (gbuf[0] == 0xFE) {
 		MSX_Header_BIN *hdr = (MSX_Header_BIN*)gbuf;
 		ut16 init = r_read_le16 (&hdr->InitAddress);
 		ptr->vaddr = init;
