@@ -816,14 +816,10 @@ R_API RList *r_vc_get_branches(Rvc *rvc) {
 	}
 	RList *ret = r_list_new ();
 	if (!ret) {
-		sdb_unlink (rvc->db);
-		sdb_free (rvc->db);
 		return NULL;
 	}
 	SdbList *keys = sdb_foreach_list (rvc->db, false);
 	if (!keys) {
-		sdb_unlink (rvc->db);
-		sdb_free (rvc->db);
 		r_list_free (ret);
 		return NULL;
 	}
