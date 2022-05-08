@@ -243,6 +243,7 @@ typedef struct r_bin_info_t {
 	ut64 baddr;
 	char *intrp;
 	char *compiler;
+	char *charset;
 } RBinInfo;
 
 typedef struct r_bin_object_t {
