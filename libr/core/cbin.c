@@ -4329,10 +4329,12 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arc
 		}
 		name = desc->name;
 	}
-	char *arch = strdup (_arch);
-	char *dot = strchr (arch, '.');
-	if (dot) {
-		*dot = 0;
+	char *arch = _arch? strdup (_arch): NULL;
+	if (arch) {
+		char *dot = strchr (arch, '.');
+		if (dot) {
+			*dot = 0;
+		}
 	}
 	/* Check if the arch name is a valid name */
 	if (!r_asm_is_valid (r->rasm, arch)) {
