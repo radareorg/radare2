@@ -1,7 +1,7 @@
 /* radare - LGPL3 - 2021-2022 - Jose_Ant_Romero */
 
 #include <r_bin.h>
-#include <magic/ascmagic.c>
+#include <r_magic.h>
 
 #define S390_BADDR 0xa5000
 // #define S390_BADDR 0
@@ -226,7 +226,7 @@ static RList *sections(RBinFile *bf) {
 					return NULL;
 				}
 				ut8 cad[8];
-				from_ebcdic (hdr20d.Symbol, sizeof (hdr20d.Symbol), cad);
+				r_magic_from_ebcdic (hdr20d.Symbol, sizeof (hdr20d.Symbol), cad);
 				ut32 a;
 				ut32 b;
 				a = (hdr20d.Address[0] * 65536) + (hdr20d.Address[1] * 256) + (hdr20d.Address[2]);
