@@ -16,7 +16,13 @@
 #define WANT_THREADS 1
 #endif
 
-#if defined (__GNUC__) && !__TINYC__
+#if !WANT_THREADS
+# define HAVE_TH_LOCAL 0
+# define R_TH_LOCAL
+
+# define HAVE_STDATOMIC_H 0
+# define R_ATOMIC_BOOL int
+#elif defined (__GNUC__) && !__TINYC__
 # define R_TH_LOCAL __thread
 
 # define HAVE_STDATOMIC_H 0
@@ -59,6 +65,9 @@
 
 #undef HAVE_PTHREAD
 #define HAVE_PTHREAD 1
+
+# define HAVE_STDATOMIC_H 0
+# define R_ATOMIC_BOOL int
 
 #define __GNU
 #include <semaphore.h>
