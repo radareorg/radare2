@@ -87,12 +87,26 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		op->size = insn->size;
 		switch (insn->id) {
+#if CS_API_MAJOR >= 5
 		case SYSZ_INS_SVC:
 			op->type = R_ANAL_OP_TYPE_SWI;
 			break;
 		case SYSZ_INS_STM:
 			op->type = R_ANAL_OP_TYPE_PUSH;
 			break;
+		case SYSZ_INS_BASR:
+			op->type = R_ANAL_OP_TYPE_CALL;
+			break;
+		case SYSZ_INS_BALR:
+			op->type = R_ANAL_OP_TYPE_RCALL;
+			//op->jump = INSOP (0).imm;
+			op->fail = addr + op->size;
+			break;
+		case SYSZ_INS_B:
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->jump = addr + r_num_get (NULL, insn->op_str);
+			break;
+#endif
 		case SYSZ_INS_BRCL:
 		case SYSZ_INS_BRASL:
 			op->type = R_ANAL_OP_TYPE_CALL;
@@ -107,10 +121,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case SYSZ_INS_ST:
 			op->type = R_ANAL_OP_TYPE_STORE;
-			break;
-		case SYSZ_INS_B:
-			op->type = R_ANAL_OP_TYPE_JMP;
-			op->jump = addr + r_num_get (NULL, insn->op_str);
 			break;
 		case SYSZ_INS_BR:
 			op->type = R_ANAL_OP_TYPE_RJMP;
@@ -130,7 +140,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case SYSZ_INS_BNLHR:
 		case SYSZ_INS_BNOR:
 		case SYSZ_INS_BOR:
-		case SYSZ_INS_BASR:
 		case SYSZ_INS_BRAS:
 		case SYSZ_INS_BRCT:
 		case SYSZ_INS_BRCTG:
@@ -174,11 +183,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case SYSZ_INS_OI:
 			op->type = R_ANAL_OP_TYPE_OR;
-			break;
-		case SYSZ_INS_BALR:
-			op->type = R_ANAL_OP_TYPE_RCALL;
-			//op->jump = INSOP (0).imm;
-			op->fail = addr + op->size;
 			break;
 		case SYSZ_INS_J:
 			op->type = R_ANAL_OP_TYPE_JMP;
