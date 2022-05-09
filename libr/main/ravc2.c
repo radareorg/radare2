@@ -186,6 +186,6 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 	eprintf ("Incorrect command\n");
 ret:
-	r_vc_close(rvc, save);
+	r_vc_close (rvc, save);
 	return !save;
 }
