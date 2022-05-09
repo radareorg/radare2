@@ -1154,6 +1154,10 @@ R_API int r_str_unescape(char *buf) {
 		case 'e':
 			buf[i] = 0x1b;
 			break;
+		case ' ':
+		case 's':
+			buf[i] = ' ';
+			break;
 		case '\\':
 			buf[i] = '\\';
 			break;

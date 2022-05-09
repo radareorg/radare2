@@ -3,9 +3,9 @@
 #include <r_asm.h>
 #include <r_lib.h>
 
-#include <capstone.h>
+#include <capstone/capstone.h>
 #if CS_API_MAJOR >= 5
-#include <evm.h>
+#include <capstone/evm.h>
 
 static void set_opdir(RAnalOp *op) {
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {

@@ -149,10 +149,10 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		if (i > 0) {
 			eprintf ("rap connection was successful. open %d\n", i);
-			// io->corebind.cmd (io->corebind.core, "e io.va=0");
-			io->corebind.cmd (io->corebind.core, ".=!i*");
-			io->corebind.cmd (io->corebind.core, ".=!f*");
-			io->corebind.cmd (io->corebind.core, ".=!om*");
+			// io->coreb.cmd (io->coreb.core, "e io.va=0");
+			io->coreb.cmd (io->coreb.core, ".=!i*");
+			io->coreb.cmd (io->coreb.core, ".=!f*");
+			io->coreb.cmd (io->coreb.core, ".=!om*");
 		}
 	}
 	return r_io_desc_new (io, &r_io_plugin_rap,
@@ -166,7 +166,7 @@ static int __rap_listener(RIODesc *fd) {
 static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
 	RSocket *s = RIORAP_FD (fd);
 	// TODO: bind core into RSocket instead of pass the one from io?
-	return r_socket_rap_client_command (s, command, &io->corebind);
+	return r_socket_rap_client_command (s, command, &io->coreb);
 #if 0
 	int ret, reslen = 0, cmdlen = 0;
 	unsigned int i;

@@ -154,8 +154,7 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 			break;
 		}
 		if (dbg->reason.signum != SIGTRAP && (dbg->reason.signum != SIGINT || !r_cons_is_breaked ())) {
-			eprintf ("[+] SIGNAL %d errno=%d addr=0x%08"PFMT64x
-				" code=%d si_pid=%d ret=%d\n",
+			eprintf ("[+] SIGNAL %d errno=%d addr=0x%08"PFMT64x " code=%d si_pid=%d ret=%d\n",
 				siginfo.si_signo, siginfo.si_errno,
 				(ut64) (size_t)siginfo.si_addr, siginfo.si_code, siginfo.si_pid, ret);
 		}
@@ -869,7 +868,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 		struct dirent *de;
 		DIR *dh = opendir (buf);
 		// Update the process' memory maps to set correct paths
-		dbg->corebind.syncDebugMaps (dbg->corebind.core);
+		dbg->coreb.syncDebugMaps (dbg->coreb.core);
 		while ((de = readdir (dh))) {
 			if (!strcmp (de->d_name, ".") || !strcmp (de->d_name, "..")) {
 				continue;

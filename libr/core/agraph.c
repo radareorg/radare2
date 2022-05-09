@@ -2976,10 +2976,6 @@ static void agraph_print_edges(RAGraph *g) {
 					break;
 				}
 			}
-			if (!*b->title) {
-				/// XXX non-colorized edges happen because of those ghost nodes
-				// eprintf ("%s|%s%c", a->title, b->title, 10);
-			}
 			if (!R_STR_ISEMPTY (a->title) && !R_STR_ISEMPTY (b->title)) {
 				ut64 aa = r_num_get (NULL, a->title);
 				ut64 bb = r_num_get (NULL, b->title);

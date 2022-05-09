@@ -342,9 +342,9 @@ R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		r_config_set_i (r->config, "asm.bits", bits);
 		r_config_set (r->config, "anal.arch", arch);
 		if (info->cpu && *info->cpu) {
-			r_config_set (r->config, "anal.cpu", info->cpu);
+			r_config_set (r->config, "asm.cpu", info->cpu);
 		} else {
-			r_config_set (r->config, "anal.cpu", arch);
+			r_config_set (r->config, "asm.cpu", arch);
 		}
 		r_asm_use (r->rasm, arch);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, NULL, R_MODE_SET, va, NULL, NULL);
@@ -848,9 +848,9 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			}
 			r_config_set (r->config, "asm.os", info->os);
 			if (info->rclass && !strcmp (info->rclass, "pe")) {
-				r_config_set (r->config, "anal.cpp.abi", "msvc");
+				r_config_set (r->config, "anal.cxxabi", "msvc");
 			} else {
-				r_config_set (r->config, "anal.cpp.abi", "itanium");
+				r_config_set (r->config, "anal.cxxabi", "itanium");
 			}
 			r_config_set (r->config, "asm.arch", info->arch);
 			if (info->cpu && *info->cpu) {
@@ -860,6 +860,9 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 				r_config_set (r->config, "asm.features", info->features);
 			}
 			r_config_set (r->config, "anal.arch", info->arch);
+			if (R_STR_ISNOTEMPTY (info->charset)) {
+				r_config_set (r->config, "cfg.charset", info->charset);
+			}
 			snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
 			r_config_set (r->config, "asm.bits", str);
 			r_config_set (r->config, "asm.dwarf",
@@ -872,8 +875,11 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("arch %s\n", info->arch);
-		if (info->cpu && *info->cpu) {
+		if (R_STR_ISNOTEMPTY (info->cpu)) {
 			r_cons_printf ("cpu %s\n", info->cpu);
+		}
+		if (R_STR_ISNOTEMPTY (info->charset)) {
+			r_cons_printf ("charset %s\n", info->charset);
 		}
 		r_cons_printf ("bits %d\n", info->bits);
 		r_cons_printf ("os %s\n", info->os);
@@ -891,10 +897,13 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 				r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
 			int v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
 			r_cons_printf ("e asm.pcalign=%d\n", (v > 0)? v: 0);
-			if (info->lang && *info->lang) {
+			if (R_STR_ISNOTEMPTY (info->lang)) {
 				r_cons_printf ("e bin.lang=%s\n", info->lang);
 			}
-			if (info->rclass && *info->rclass) {
+			if (R_STR_ISNOTEMPTY (info->charset)) {
+				r_cons_printf ("e cfg.charset=%s\n", info->charset);
+			}
+			if (R_STR_ISNOTEMPTY (info->rclass)) {
 				r_cons_printf ("e file.type=%s\n",
 					info->rclass);
 			}
@@ -904,10 +913,10 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			if (info->arch) {
 				r_cons_printf ("e asm.arch=%s\n", info->arch);
 			}
-			if (info->cpu && *info->cpu) {
+			if (R_STR_ISNOTEMPTY (info->cpu)) {
 				r_cons_printf ("e asm.cpu=%s\n", info->cpu);
 			}
-			if (info->default_cc) {
+			if (R_STR_ISNOTEMPTY (info->default_cc)) {
 				r_cons_printf ("e anal.cc=%s", info->default_cc);
 			}
 		}
@@ -918,12 +927,15 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			pj_o (pj);
 		}
 		pair_str (pj, "arch", info->arch);
-		if (info->cpu && *info->cpu) {
+		if (R_STR_ISNOTEMPTY (info->cpu)) {
 			pair_str (pj, "cpu", info->cpu);
 		}
 		pair_ut64x (pj, "baddr", r_bin_get_baddr (r->bin));
 		pair_ut64 (pj, "binsz", r_bin_get_size (r->bin));
 		pair_str (pj, "bintype", info->rclass);
+		if (R_STR_ISNOTEMPTY (info->charset)) {
+			pair_str (pj, "charset", info->charset);
+		}
 		pair_int (pj, "bits", info->bits);
 		pair_bool (pj, "canary", info->has_canary);
 		if (info->has_retguard != -1) {
@@ -4319,7 +4331,7 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	return ret;
 }
 
-R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *arch, ut16 bits) {
+R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arch, ut16 bits) {
 	int fd = r_io_fd_get_current (r->io);
 	RIODesc *desc = r_io_desc_get (r->io, fd);
 	RBinFile *curfile, *binfile = NULL;
@@ -4329,18 +4341,29 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *arch
 		}
 		name = desc->name;
 	}
+	char *arch = _arch? strdup (_arch): NULL;
+	if (arch) {
+		char *dot = strchr (arch, '.');
+		if (dot) {
+			*dot = 0;
+		}
+	}
 	/* Check if the arch name is a valid name */
 	if (!r_asm_is_valid (r->rasm, arch)) {
+		free (arch);
 		return false;
 	}
 	/* Find a file with the requested name/arch/bits */
 	binfile = r_bin_file_find_by_arch_bits (r->bin, arch, bits);
 	if (!binfile) {
+		free (arch);
 		return false;
 	}
 	if (!r_bin_use_arch (r->bin, arch, bits, name)) {
+		free (arch);
 		return false;
 	}
+	R_FREE (arch);
 	curfile = r_bin_cur (r->bin);
 	//set env if the binfile changed or we are dealing with xtr
 	if (curfile != binfile || binfile->curxtr) {
@@ -4398,7 +4421,10 @@ R_API bool r_core_bin_delete(RCore *core, ut32 bf_id) {
 }
 
 static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
-	r_return_val_if_fail (core && bf && bf->o, false);
+	r_return_val_if_fail (core && bf, false);
+	if (!bf->o) {
+		return false;
+	}
 	const char *name = bf ? bf->file : NULL;
 	(void)r_bin_get_info (core->bin); // XXX is this necssary for proper iniitialization
 	ut32 bin_sz = bf ? bf->size : 0;

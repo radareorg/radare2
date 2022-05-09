@@ -195,7 +195,6 @@ extern RAsmPlugin r_asm_plugin_arm_cs;
 extern RAsmPlugin r_asm_plugin_arm_gnu;
 extern RAsmPlugin r_asm_plugin_arm_winedbg;
 extern RAsmPlugin r_asm_plugin_avr;
-extern RAsmPlugin r_asm_plugin_bf;
 extern RAsmPlugin r_asm_plugin_null;
 extern RAsmPlugin r_asm_plugin_cr16;
 extern RAsmPlugin r_asm_plugin_cris_gnu;
@@ -244,13 +243,10 @@ extern RAsmPlugin r_asm_plugin_x86_nz;
 extern RAsmPlugin r_asm_plugin_xap;
 extern RAsmPlugin r_asm_plugin_xcore_cs;
 extern RAsmPlugin r_asm_plugin_xtensa;
-extern RAsmPlugin r_asm_plugin_arm_v35;
 extern RAsmPlugin r_asm_plugin_pyc;
 extern RAsmPlugin r_asm_plugin_pdp11_gnu;
 extern RAsmPlugin r_asm_plugin_alpha;
 extern RAsmPlugin r_asm_plugin_vasm;
-extern RAsmPlugin r_asm_plugin_jdh8;
-extern RAsmPlugin r_asm_plugin_loongarch_gnu;
 
 #endif
 

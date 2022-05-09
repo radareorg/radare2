@@ -219,14 +219,14 @@ typedef struct r_anal_struct_member_t {
 	char *name;
 	char *type;
 	size_t offset; // in bytes
-	size_t size; // in bits?
+	size_t size; // in bits? rename to 'bitsize'
 } RAnalStructMember;
 
 typedef struct r_anal_union_member_t {
 	char *name;
 	char *type;
 	size_t offset; // in bytes
-	size_t size; // in bits?
+	size_t size; // in bits? TODO rename to 'bitsize'
 } RAnalUnionMember;
 
 typedef enum {
@@ -600,7 +600,7 @@ typedef struct r_anal_options_t {
 } RAnalOptions;
 
 typedef enum {
-	R_ANAL_CPP_ABI_ITANIUM = 0,
+	R_ANAL_CPP_ABI_ITANIUM = 0, // default for GCC
 	R_ANAL_CPP_ABI_MSVC
 } RAnalCPPABI;
 
@@ -613,7 +613,7 @@ typedef struct r_anal_t {
 	RArchConfig *config;
 	int lineswidth; // asm.lines.width
 	int sleep;      // anal.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
-	RAnalCPPABI cpp_abi; // anal.cpp.abi
+	RAnalCPPABI cxxabi; // anal.cpp.abi
 	void *user;
 	ut64 gp;        // anal.gp, global pointer. used for mips. but can be used by other arches too in the future
 	RBTree bb_tree; // all basic blocks by address. They can overlap each other, but must never start at the same address.
@@ -907,6 +907,7 @@ typedef struct r_anal_op_t {
 
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
 typedef RAnalHint *(* RAnalGetHint)(RAnal *anal, ut64 addr);
+typedef char *(* RAnalMnemonics)(RAnal *anal, int id, bool json);
 typedef int (* RAnalEncode)(RAnal *anal, ut64 addr, const char *s, const ut8 *data, int len);
 typedef int (* RAnalDecode)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 typedef void (* RAnalOpInit)(RAnalOp *op);
@@ -917,6 +918,7 @@ typedef struct r_anal_bind_t {
 	RAnal *anal;
 	RAnalGetFcnIn get_fcn_in;
 	RAnalGetHint get_hint;
+	RAnalMnemonics mnemonics;
 	RAnalEncode encode;
 	RAnalDecode decode;
 	RAnalOpInit opinit;
@@ -1358,6 +1360,7 @@ typedef struct r_anal_plugin_t {
 	RAnalEsilLoopCB esil_post_loop;	//cycle-counting, firing interrupts, ...
 	RAnalEsilTrapCB esil_trap; // traps / exceptions
 	RAnalEsilCB esil_fini; // deinitialize
+	char *(*mnemonics)(RAnal *a, int id, bool json);
 } RAnalPlugin;
 
 typedef struct r_anal_esil_plugin_t {
@@ -1604,6 +1607,7 @@ R_API RAnalOp *r_anal_op_new(void);
 R_API void r_anal_op_free(void *op);
 R_API void r_anal_op_init(RAnalOp *op);
 R_API void r_anal_op_fini(RAnalOp *op);
+R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json);
 R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name);
 R_API bool r_anal_op_is_eob(RAnalOp *op);
 R_API RList *r_anal_op_list_new(void);
@@ -2241,6 +2245,7 @@ extern RAnalPlugin r_anal_plugin_mcore;
 extern RAnalPlugin r_anal_plugin_mips_cs;
 extern RAnalPlugin r_anal_plugin_mips_gnu;
 extern RAnalPlugin r_anal_plugin_loongarch_gnu;
+extern RAnalPlugin r_anal_plugin_jdh8;
 extern RAnalPlugin r_anal_plugin_msp430;
 extern RAnalPlugin r_anal_plugin_nios2;
 extern RAnalPlugin r_anal_plugin_or1k;

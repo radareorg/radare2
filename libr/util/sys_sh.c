@@ -7,8 +7,8 @@
 
 // sh
 char *get_argv(const char *l, int *argpos, int pos) {
-	int a0 = argpos[(pos*2)];
-	int a1 = argpos[(pos*2) + 1];
+	int a0 = argpos[(pos * 2)];
+	int a1 = argpos[(pos * 2) + 1];
 	return r_str_ndup (l + a0, a1 - a0);
 }
 
@@ -16,7 +16,7 @@ R_API int r_sys_tem_statement(const char *l) {
 #define MAXARG 16
 	l = r_str_trim_head_ro (l);
 	int argc = 0;
-	int argv[32]; // max 16 args
+	int argv[32] = {0}; // max 16 args
 	int i, pos = 0;
 	int inquote = 0;
 	bool escaped = false;

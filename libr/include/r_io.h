@@ -135,7 +135,7 @@ typedef struct r_io_t {
 	char *args;
 	REvent *event;
 	PrintfCallback cb_printf;
-	RCoreBind corebind;
+	RCoreBind coreb;
 	// TODO Wrap ... well its more like a proxy, should unify across OS instead of using separate apis
 	bool want_ptrace_wrap;
 #if __WINDOWS__
@@ -415,7 +415,7 @@ R_API bool r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence);
 R_API void r_io_fini(RIO *io);
 R_API void r_io_free(RIO *io);
-#define r_io_bind_init(x) memset(&x,0,sizeof(x))
+#define r_io_bind_init(x) memset (&(x), 0, sizeof (x))
 
 R_API bool r_io_plugin_init(RIO *io);
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin);

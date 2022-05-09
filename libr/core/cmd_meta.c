@@ -157,7 +157,7 @@ static int remove_meta_offset(RCore *core, ut64 offset) {
 	char aoffset[64];
 	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
 	if (!aoffsetptr) {
-		eprintf ("Failed to convert %"PFMT64x" to a key", offset);
+		eprintf ("Failed to convert %"PFMT64x" to a key\n", offset);
 		return -1;
 	}
 	return sdb_unset (core->bin->cur->sdb_addrinfo, aoffsetptr, 0);

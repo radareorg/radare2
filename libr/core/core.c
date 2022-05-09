@@ -446,7 +446,7 @@ static ut64 numvar_instruction_backward(RCore *core, const char *input) {
 		n = atoi (input + 1);
 	}
 	if (n < 1) {
-		r_cons_eprintf ("Invalid negative value%c", 10);
+		eprintf ("Invalid negative value\n");
 		n = 1;
 	}
 	int numinstr = n;
@@ -495,7 +495,7 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 		n = atoi (input + 1);
 	}
 	if (n < 1) {
-		r_cons_eprintf ("Invalid negative value%c", 10);
+		eprintf ("Invalid negative value\n");
 		n = 1;
 	}
 	for (i = 0; i < n; i++) {
@@ -2915,6 +2915,32 @@ static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 	}
 }
 
+static RThreadFunctionRet thchan_handler(RThread *th) {
+	RCore *core = (RCore *)th->user;
+	r_cons_thready ();
+	while (r_th_is_running (th) && !th->breaked) {
+		r_th_sem_wait (core->chan->sem); // busy because stack is empty
+		if (!r_th_is_running (th) || th->breaked) {
+			break;
+		}
+		RThreadChannelMessage *cm = r_th_channel_read (core->chan);
+		if (!cm) {
+			// eprintf ("thchan_handler no message\n");
+		//	r_th_sem_post (cm->sem);
+		//	r_th_channel_write (core->chan, NULL);
+		//r_th_lock_leave (cm->lock);
+			continue;
+		}
+		char *res = r_core_cmd_str (core, (const char *)cm->msg);
+		free (cm->msg);
+		cm->msg = (ut8 *)res;
+		cm->len = strlen (res) + 1;
+		r_th_channel_post (core->chan, cm);
+		r_th_sem_post (cm->sem);
+	}
+	return 0;
+}
+
 R_API bool r_core_init(RCore *core) {
 	r_w32_init ();
 	core->blocksize = R_CORE_BLOCKSIZE;
@@ -2924,6 +2950,7 @@ R_API bool r_core_init(RCore *core) {
 		/* XXX memory leak */
 		return false;
 	}
+	core->chan = NULL;
 	r_core_setenv (core);
 	core->ev = r_event_new (core);
 	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler, NULL);
@@ -3098,9 +3125,9 @@ R_API bool r_core_init(RCore *core) {
 
 	r_io_bind (core->io, &(core->dbg->iob));
 	r_io_bind (core->io, &(core->dbg->bp->iob));
-	r_core_bind (core, &core->dbg->corebind);
-	r_core_bind (core, &core->dbg->bp->corebind);
-	r_core_bind (core, &core->io->corebind);
+	r_core_bind (core, &core->dbg->coreb);
+	r_core_bind (core, &core->dbg->bp->coreb);
+	r_core_bind (core, &core->io->coreb);
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");
 // XXX pushing uninitialized regstate results in trashed reg values
@@ -3110,7 +3137,6 @@ R_API bool r_core_init(RCore *core) {
 	core->dbg->cb_printf = r_cons_printf;
 	core->dbg->bp->cb_printf = r_cons_printf;
 	core->dbg->ev = core->ev;
-	// initialize config before any corebind
 	r_core_config_init (core);
 
 	r_core_loadlibs_init (core);
@@ -3174,6 +3200,9 @@ R_API void r_core_bind_cons(RCore *core) {
 R_API void r_core_fini(RCore *c) {
 	if (!c) {
 		return;
+	}
+	if (c->chan) {
+		r_th_channel_free (c->chan);
 	}
 	r_core_task_break_all (&c->tasks);
 	r_core_task_join (&c->tasks, NULL, -1);
@@ -3696,10 +3725,10 @@ reaccept:
 					if ((cmd = malloc (i + 1))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';
-						int scr_interactive = r_config_get_i (core->config, "scr.interactive");
-						r_config_set_i (core->config, "scr.interactive", 0);
+						bool scr_interactive = r_config_get_b (core->config, "scr.interactive");
+						r_config_set_b (core->config, "scr.interactive", false);
 						cmd_output = r_core_cmd_str (core, cmd);
-						r_config_set_i (core->config, "scr.interactive", scr_interactive);
+						r_config_set_b (core->config, "scr.interactive", scr_interactive);
 						free (cmd);
 					} else {
 						r_cons_eprintf ("rap: cannot malloc\n");
@@ -4140,7 +4169,6 @@ R_API PJ *r_core_pj_new(RCore *core) {
 	} else if (!strcmp ("hex", config_num_encoding)) {
 		number_encoding = PJ_ENCODING_NUM_HEX;
 	}
-
 	if (!strcmp ("base64", config_string_encoding)) {
 		string_encoding = PJ_ENCODING_STR_BASE64;
 	} else if (!strcmp ("hex", config_string_encoding)) {
@@ -4151,4 +4179,25 @@ R_API PJ *r_core_pj_new(RCore *core) {
 		string_encoding = PJ_ENCODING_STR_STRIP;
 	}
 	return pj_new_with_encoding (string_encoding, number_encoding);
+}
+
+// reentrant version of RCore.cmd()
+R_API char *r_core_cmd_str_r(RCore *core, const char *cmd) {
+	if (!strncmp (cmd, "::", 2)) {
+		return NULL;
+	}
+	if (!core->chan) {
+		core->chan = r_th_channel_new (thchan_handler, core);
+	}
+	RThreadChannelMessage *message = r_th_channel_message_new (core->chan, (const ut8*)cmd, strlen (cmd) + 1);
+	RThreadChannelPromise *promise = r_th_channel_query (core->chan, message);
+	RThreadChannelMessage *response = r_th_channel_promise_wait (promise);
+	char *res = strdup ((const char *)response->msg);
+	// r_cons_printf ("%s", response->msg);
+	r_th_channel_message_free (message);
+	r_th_channel_promise_free (promise);
+	if (message != response) {
+		r_th_channel_message_free (response);
+	}
+	return res;
 }

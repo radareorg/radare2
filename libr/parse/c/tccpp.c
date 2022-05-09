@@ -2765,14 +2765,14 @@ redo:
 				while (is_space (s1->ch) || s1->ch == '\n' || s1->ch == '/') {
 					if (s1->ch == '/') {
 						int c;
-						uint8_t *p = s1->file->buf_ptr;
-						PEEKC (s1, c, p);
+						uint8_t *sp = s1->file->buf_ptr;
+						PEEKC (s1, c, sp);
 						if (c == '*') {
-							p = parse_comment (s1, p);
-							s1->file->buf_ptr = p - 1;
+							sp = parse_comment (s1, sp);
+							s1->file->buf_ptr = sp - 1;
 						} else if (c == '/') {
-							p = parse_line_comment (s1, p);
-							s1->file->buf_ptr = p - 1;
+							p = (int*)parse_line_comment (s1, sp);
+							s1->file->buf_ptr = sp - 1;
 						} else {
 							break;
 						}

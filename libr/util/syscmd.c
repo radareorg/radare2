@@ -527,6 +527,7 @@ R_API char *r_syscmd_mktemp(const char *dir) {
 	char *arg = NULL;
 	if (!*dirname || *dirname == '-') {
 		eprintf ("Usage: mktemp [-d] [file|directory]\n");
+		free (dirname);
 		return NULL;
 	}
 	int fd = r_file_mkstemp (dirname, &arg);

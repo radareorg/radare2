@@ -136,6 +136,7 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	r_list_free (rb->file_hashes);
 	free (rb->intrp);
 	free (rb->file);
+	free (rb->charset);
 	free (rb->type);
 	free (rb->bclass);
 	free (rb->rclass);
@@ -237,7 +238,10 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
 	opt.filename = bf->file;
-
+	if (!bf->buf) {
+		r_bin_file_delete (bin, bf->id);
+		return false;
+	}
 	bool res = r_bin_open_buf (bin, bf->buf, &opt);
 	r_bin_file_delete (bin, bf->id);
 	return res;

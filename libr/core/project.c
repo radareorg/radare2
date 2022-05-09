@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2010-2021 - pancake, rhl */
+/* radare - LGPL - Copyright 2010-2022 - pancake, rhl */
 
-#include <r_types.h>
-#include <r_list.h>
-#include <r_flag.h>
 #include <r_core.h>
 #include <rvc.h>
 #define USE_R2 1
@@ -157,7 +154,13 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			free (path);
 			return false;
 		}
-		r_file_rm_rf (prj_dir);
+		bool must_rm = true;
+		if (r_config_get_b (core->config, "scr.interactive")) {
+			must_rm = r_cons_yesno ('y', "Confirm project deletion? (Y/n)");
+		}
+		if (must_rm) {
+			r_file_rm_rf (prj_dir);
+		}
 		free (prj_dir);
 	}
 	free (path);
@@ -349,10 +352,13 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const c
 
 R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	r_return_val_if_fail (core && !R_STR_ISEMPTY (prj_path), false);
-	int ret, close_current_session = 1;
+	bool interactive = r_config_get_b (core->config, "scr.interactive");
+	bool close_current_session = true;
+	bool ask_for_closing = true;
 	if (r_project_is_loaded (core->prj)) {
 		eprintf ("There's a project already opened\n");
-		bool ccs = r_cons_yesno ('y', "Close current session? (Y/n)");
+		ask_for_closing = false;
+		bool ccs = interactive? r_cons_yesno ('y', "Close current session? (Y/n)"): true;
 		if (ccs) {
 			r_core_cmd0 (core, "o--");
 		} else {
@@ -366,16 +372,16 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 		eprintf ("Invalid project name '%s'\n", prj_path);
 		return false;
 	}
-	if (r_project_is_loaded (core->prj)) {
+	if (ask_for_closing && r_project_is_loaded (core->prj)) {
 		if (r_cons_is_interactive ()) {
-			close_current_session = r_cons_yesno ('y', "Close current session? (Y/n)");
+			close_current_session = interactive? r_cons_yesno ('y', "Close current session? (Y/n)"): true;
 		}
 	}
 	if (close_current_session) {
 		r_core_cmd0 (core, "e prj.name=;o--");
 	}
 	/* load sdb stuff in here */
-	ret = r_core_project_load (core, prj_name, prj_script);
+	bool ret = r_core_project_load (core, prj_name, prj_script);
 	free (prj_name);
 	free (prj_script);
 	if (ret) {
@@ -468,7 +474,12 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	}
 
 	char *filename = r_str_word_get_first (file);
-	int fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
+	int fd = -1;
+	if (!strcmp (file, "/dev/stdout")) {
+		fd = 1;
+	} else {
+		fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
+	}
 	if (fd == -1) {
 		free (filename);
 		return false;
@@ -482,24 +493,24 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	int fdold = r_cons_singleton ()->fdout;
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->context->is_interactive = false;
-	r_str_write (fd, "# r2 rdb project file\n");
+	r_cons_printf ("# r2 rdb project file\n");
 	// new behaviour to project load routine (see io maps below).
 	if (opts & R_CORE_PRJ_EVAL) {
-		r_str_write (fd, "# eval\n");
-		r_config_list (core->config, NULL, true);
+		r_cons_printf ("# eval\n");
+		r_config_list (core->config, NULL, 'r');
 		r_cons_flush ();
 	}
 	r_core_cmd (core, "o*", 0);
 	r_core_cmd0 (core, "tcc*");
 	if (opts & R_CORE_PRJ_FCNS) {
-		r_str_write (fd, "# functions\n");
-		r_str_write (fd, "fs functions\n");
+		r_cons_printf ("# functions\n");
+		r_cons_printf ("fs functions\n");
 		r_core_cmd (core, "afl*", 0);
 		r_cons_flush ();
 	}
 
 	if (opts & R_CORE_PRJ_FLAGS) {
-		r_str_write (fd, "# flags\n");
+		r_cons_printf ("# flags\n");
 		r_flag_space_push (core->flags, NULL);
 		r_flag_list (core->flags, true, NULL);
 		r_flag_space_pop (core->flags);
@@ -517,7 +528,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_META) {
-		r_str_write (fd, "# meta\n");
+		r_cons_printf ("# meta\n");
 		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1, NULL);
 		r_cons_flush ();
 		r_core_cmd (core, "fV*", 0);
@@ -540,14 +551,14 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_ANAL_TYPES) {
-		r_str_write (fd, "# types\n");
+		r_cons_printf ("# types\n");
 		r_core_cmd (core, "t*", 0);
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_ANAL_MACROS) {
-		r_str_write (fd, "# macros\n");
+		r_cons_printf ("# macros\n");
 		r_core_cmd (core, "(*", 0);
-		r_str_write (fd, "# aliases\n");
+		r_cons_printf ("# aliases\n");
 		r_core_cmd (core, "$*", 0);
 		r_cons_flush ();
 	}

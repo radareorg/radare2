@@ -384,7 +384,7 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'o': // "Lo"
 	case 'i': // "Li"
-		r_core_cmdf (core, "%cL", input[0]);
+		r_core_cmdf (core, "%cL%s", input[0], input + 1);
 		break;
 	case 'c': { // "Lc"
 		RListIter *iter;

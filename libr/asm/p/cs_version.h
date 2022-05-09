@@ -1,7 +1,7 @@
 #ifndef CS_VERSION_H
 #define CS_VERSION_H
 
-#include <capstone.h>
+#include <capstone/capstone.h>
 
 #if CS_API_MAJOR == 5
 #define CAPSTONE_VERSION_STRING "v5"

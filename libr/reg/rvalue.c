@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
+#include <math.h>
 
 typedef ut32 ut27;
 static ut27 r_read_me27(const ut8 *buf, int boff) {
@@ -123,11 +124,17 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	case 80: // long double
 	case 96: // long floating value
 		// FIXME: It is a precision loss, please implement me properly!
-		return (ut64)r_reg_get_longdouble (reg, item);
+		{
+			long double ld = r_reg_get_longdouble (reg, item);
+			return isnan (ld)? UT64_MAX: (ut64)ld;
+		}
 	case 128:
 	case 256:
 		// XXX 128 & 256 bit
-		return (ut64)r_reg_get_longdouble (reg, item);
+		{
+			long double ld = r_reg_get_longdouble (reg, item);
+			return isnan (ld)? UT64_MAX: (ut64)ld;
+		}
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
 		break;

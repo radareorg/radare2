@@ -43,7 +43,7 @@ static ut64 read_uleb128(ut8 **p, ut8 *end) {
 	ut64 v;
 	*p = (ut8 *)r_uleb128 (*p, end - *p, &v, &error);
 	if (error) {
-		eprintf ("%s", error);
+		eprintf ("%s\n", error);
 		R_FREE (error);
 		return UT64_MAX;
 	}
@@ -4230,7 +4230,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 	}
 #define READWORD() \
 		if (r_buf_read_at (buf, addr, (ut8*)wordbuf, 4) != 4) { \
-			eprintf ("Invalid address in buffer."); \
+			eprintf ("Invalid address in buffer.\n"); \
 			break; \
 		} \
 		addr += 4; \

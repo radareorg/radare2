@@ -22,6 +22,7 @@ void cmd_anal_reg (RCore *core, const char *str);
 
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
+	"d:", "[?] [cmd]", "run custom debug plugin command",
 	"db", "[?]", "breakpoints commands",
 	"dbt", "[?]", "display backtrace based on dbg.btdepth and dbg.btalgo",
 	"dc", "[?]", "continue execution",
@@ -1499,7 +1500,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'm': // "dmm"
 		if (!strcmp (input + 1, ".*")) {
 			cmd_debug_modules (core, ':');
-		} else cmd_debug_modules (core, input[1]);
+		} else {
+			cmd_debug_modules (core, input[1]);
+		}
 		break;
 	case '?': // "dm?"
 		r_core_cmd_help (core, help_msg_dm);
@@ -4028,7 +4031,7 @@ static void debug_trace_calls(RCore *core, const char *input) {
 	ut64 from = 0, to = UT64_MAX, final_addr = UT64_MAX;
 
 	if (r_debug_is_dead (core->dbg)) {
-		eprintf ("No process to debug.");
+		eprintf ("No process to debug.\n");
 		return;
 	}
 	if (*input == ' ') {
@@ -5594,6 +5597,12 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			r_debug_info_free (rdi);
 		}
+		break;
+	case ':': // "d:"
+		r_core_return_code (core,
+				r_debug_cmd (core->dbg, input + 1)
+				? R_CMD_RC_FAILURE
+				: R_CMD_RC_SUCCESS);
 		break;
 	case 'e': // "de"
 		r_core_debug_esil (core, input + 1);

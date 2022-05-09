@@ -3,7 +3,7 @@ user_plugins = get_option('plugins').split(',')
 no_user_plugins = get_option('plugins') == ''
 
 esil_plugins = [ 'dummy' ]
-asm_plugins = [ 'bf' ]
+asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
@@ -187,7 +187,6 @@ asm_plugins += [
   'arm_cs',
   'arm_winedbg',
   'avr',
-  'bf',
   'cr16',
   'dalvik',
   'dcpu16',
@@ -260,6 +259,7 @@ bin_plugins += [
   'art',
   'avr',
   'bf',
+  's390',
   'bflt',
   'bios',
   'bootimg',

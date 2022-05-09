@@ -429,13 +429,13 @@ static int bin_len(const char *s) {
 	while (*s) {
 		if (*s == '_') {
 			s++;
-			continue;
+		} else {
+			if (*s != '0' && *s != '1') {
+				break;
+			}
+			len++;
+			s++;
 		}
-		if (*s != '0' && *s != '1') {
-			break;
-		}
-		len++;
-		s++;
 	}
 	return len? len: -1;
 }
@@ -667,7 +667,9 @@ static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut
 	if (rad) {
 		printf ("f entry = $$\n");
 		printf ("f label.main = $$ + 1\n");
-		ht_pp_foreach (as->a->flags, print_label, NULL);
+		if (as->a->flags) {
+			ht_pp_foreach (as->a->flags, print_label, NULL);
+		}
 	}
 	return ret;
 }

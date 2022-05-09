@@ -1542,7 +1542,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			if (kind == R_ANAL_VAR_KIND_REG) { // registers
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf ("Register not found");
+					eprintf ("Register not found\n");
 					break;
 				}
 				anal->cb_printf ("\"afv%c %s %s %s\"\n",
@@ -1578,7 +1578,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			case R_ANAL_VAR_KIND_REG: {
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf ("Register not found");
+					eprintf ("Register not found\n");
 					break;
 				}
 				pj_o (pj);
@@ -1631,7 +1631,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			case R_ANAL_VAR_KIND_REG: {
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf ("Register not found");
+					eprintf ("Register not found\n");
 					break;
 				}
 				anal->cb_printf ("arg %s %s @ %s\n",

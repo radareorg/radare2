@@ -7,6 +7,7 @@
 
 #include "r_types.h"
 #include "r_userconf.h"
+#include <r_list.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +16,13 @@
 #define WANT_THREADS 1
 #endif
 
-#if defined (__GNUC__) && !__TINYC__
+#if !WANT_THREADS
+# define HAVE_TH_LOCAL 0
+# define R_TH_LOCAL
+
+# define HAVE_STDATOMIC_H 0
+# define R_ATOMIC_BOOL int
+#elif defined (__GNUC__) && !__TINYC__
 # define R_TH_LOCAL __thread
 
 # define HAVE_STDATOMIC_H 0
@@ -59,6 +66,9 @@
 #undef HAVE_PTHREAD
 #define HAVE_PTHREAD 1
 
+# define HAVE_STDATOMIC_H 0
+# define R_ATOMIC_BOOL int
+
 #define __GNU
 #include <semaphore.h>
 #include <pthread.h>
@@ -98,7 +108,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef enum { R_TH_FREED = -1, R_TH_STOP = 0, R_TH_REPEAT = 1 } RThreadFunctionRet;
+typedef enum {
+	R_TH_FREED = -1,
+	R_TH_STOP = 0,
+	R_TH_REPEAT = 1
+} RThreadFunctionRet;
 
 struct r_th_t;
 
@@ -116,7 +130,7 @@ typedef enum r_th_lock_type_t {
 typedef struct r_th_lock_t {
 	R_ATOMIC_BOOL activating;
 	struct {
-		ut8 active : 1;
+		bool active : 1;
 		RThreadLockType type : 7;
 	};
 	R_TH_LOCK_T lock;
@@ -144,7 +158,45 @@ typedef struct r_th_pool_t {
 	RThread **threads;
 } RThreadPool;
 
+typedef struct {
+	int nextid;
+	RThreadLock *lock; // protects the stack from race conditions
+	RThreadSemaphore *sem; // green when there's an element in the stack
+	RList *stack; // used a stack, stores channel messages to be read by the consumer thread
+	RList *responses; // list of response messages waiting to be collected by the producer thread
+	RThread *consumer;
+} RThreadChannel;
+
+typedef struct {
+	int id;
+	ut8 *msg;
+	int len;
+	RThreadLock *lock;
+	RThreadSemaphore *sem;
+} RThreadChannelMessage;
+
+typedef struct {
+	int id;
+	RThreadChannelMessage *message;
+	RThreadChannel *tc;
+} RThreadChannelPromise;
+
 #ifdef R_API
+R_API RThreadChannelMessage *r_th_channel_read(RThreadChannel *tc);
+R_API void r_th_channel_message_free(RThreadChannelMessage *cm);
+R_API RThreadChannelMessage *r_th_channel_write(RThreadChannel *tc, RThreadChannelMessage *cm);
+R_API RThreadChannelMessage *r_th_channel_message_read(RThreadChannel *tc, RThreadChannelMessage *cm);
+R_API RThreadChannelMessage *r_th_channel_message_new(RThreadChannel *tc, const ut8 *msg, int len);
+R_API RThreadChannel *r_th_channel_new(RThreadFunction consumer, void *user);
+R_API void r_th_channel_free(RThreadChannel *tc);
+
+// promises
+R_API RThreadChannelPromise *r_th_channel_query(RThreadChannel *tc, RThreadChannelMessage *cm);
+R_API void r_th_channel_post(RThreadChannel *tc, RThreadChannelMessage *cm);
+R_API RThreadChannelPromise *r_th_channel_promise_new(RThreadChannel *tc);
+R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *promise);
+R_API void r_th_channel_promise_free(RThreadChannelPromise *cp);
+
 R_API RThread *r_th_new(RThreadFunction fun, void *user, int delay);
 R_API bool r_th_start(RThread *th, int enable);
 R_API int r_th_wait(RThread *th);
@@ -166,10 +218,10 @@ R_API void r_th_sem_post(RThreadSemaphore *sem);
 R_API void r_th_sem_wait(RThreadSemaphore *sem);
 
 R_API RThreadLock *r_th_lock_new(bool recursive);
-R_API int r_th_lock_wait(RThreadLock *th);
-R_API int r_th_lock_tryenter(RThreadLock *thl);
-R_API int r_th_lock_enter(RThreadLock *thl);
-R_API int r_th_lock_leave(RThreadLock *thl);
+R_API bool r_th_lock_wait(RThreadLock *th);
+R_API bool r_th_lock_tryenter(RThreadLock *thl);
+R_API bool r_th_lock_enter(RThreadLock *thl);
+R_API bool r_th_lock_leave(RThreadLock *thl);
 R_API void *r_th_lock_free(RThreadLock *thl);
 
 R_API RThreadCond *r_th_cond_new(void);

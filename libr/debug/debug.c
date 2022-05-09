@@ -35,7 +35,7 @@ R_API void r_debug_bp_update(RDebug *dbg) {
 	RListIter *iter;
 	r_list_foreach (dbg->bp->bps, iter, bp) {
 		if (bp->expr) {
-			bp->addr = dbg->corebind.numGet (dbg->corebind.core, bp->expr);
+			bp->addr = dbg->coreb.numGet (dbg->coreb.core, bp->expr);
 		}
 	}
 }
@@ -124,7 +124,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	}
 
 	if (!dbg->pc_at_bp_set) {
-		eprintf ("failed to determine position of pc after breakpoint");
+		eprintf ("failed to determine position of pc after breakpoint\n");
 	}
 
 	if (dbg->pc_at_bp) {
@@ -182,8 +182,8 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	/* now that we've cleaned up after the breakpoint, call the other
 	 * potential breakpoint handlers
 	 */
-	if (dbg->corebind.core && dbg->corebind.bphit) {
-		dbg->corebind.bphit (dbg->corebind.core, b);
+	if (dbg->coreb.core && dbg->coreb.bphit) {
+		dbg->coreb.bphit (dbg->coreb.core, b);
 	}
 	return true;
 }
@@ -667,8 +667,8 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	}
 
 	// Synchronize with the current thread's data
-	if (dbg->corebind.core) {
-		RCore *core = (RCore *)dbg->corebind.core;
+	if (dbg->coreb.core) {
+		RCore *core = (RCore *)dbg->coreb.core;
 
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
@@ -806,7 +806,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			}
 			/* if we hit a tracing breakpoint, we need to continue in
 			 * whatever mode the user desired. */
-			if (dbg->corebind.core && b && b->cond) {
+			if (dbg->coreb.core && b && b->cond) {
 				reason = R_DEBUG_REASON_COND;
 			}
 			if (b && b->trace) {
@@ -1021,7 +1021,7 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 			dbg->session->maxcnum++;
 			dbg->session->bp = 0;
 			if (!r_debug_trace_ins_before (dbg)) {
-				eprintf ("trace_ins_before: failed");
+				eprintf ("trace_ins_before: failed\n");
 			}
 		}
 
@@ -1037,7 +1037,7 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 
 		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 			if (!r_debug_trace_ins_after (dbg)) {
-				eprintf ("trace_ins_after: failed");
+				eprintf ("trace_ins_after: failed\n");
 			}
 			dbg->session->reasontype = dbg->reason.type;
 			dbg->session->bp = bp;
@@ -1229,12 +1229,12 @@ repeat:
 		return 0;
 	}
 
-	if (dbg->corebind.core) {
-		RCore *core = (RCore *)dbg->corebind.core;
+	if (dbg->coreb.core) {
+		RCore *core = (RCore *)dbg->coreb.core;
 		RNum *num = core->num;
 		if (reason == R_DEBUG_REASON_COND) {
-			if (bp && bp->cond && dbg->corebind.cmd) {
-				dbg->corebind.cmd (dbg->corebind.core, bp->cond);
+			if (bp && bp->cond && dbg->coreb.cmd) {
+				dbg->coreb.cmd (dbg->coreb.core, bp->cond);
 			}
 			if (num->value) {
 				goto repeat;
@@ -1242,8 +1242,8 @@ repeat:
 		}
 	}
 	if (reason == R_DEBUG_REASON_BREAKPOINT &&
-	   ((bp && !bp->enabled) || (!bp && !r_cons_is_breaked () && dbg->corebind.core &&
-					dbg->corebind.cfggeti (dbg->corebind.core, "dbg.bpsysign")))) {
+	   ((bp && !bp->enabled) || (!bp && !r_cons_is_breaked () && dbg->coreb.core &&
+					dbg->coreb.cfggeti (dbg->coreb.core, "dbg.bpsysign")))) {
 		goto repeat;
 	}
 
@@ -1592,8 +1592,8 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		}
 		reg = show_syscall (dbg, "SN");
 
-		if (dbg->corebind.core && dbg->corebind.syshit) {
-			dbg->corebind.syshit (dbg->corebind.core);
+		if (dbg->coreb.core && dbg->coreb.syshit) {
+			dbg->coreb.syshit (dbg->coreb.core);
 		}
 
 		if (n_sc == -1) {
@@ -1766,6 +1766,13 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		}
 	}
 	return 0LL;
+}
+
+R_API int r_debug_cmd(RDebug *dbg, const char *s) {
+	if (dbg->h && dbg->h->cmd) {
+		return dbg->h->cmd (dbg, s);
+	}
+	return 0;
 }
 
 R_API void r_debug_bp_rebase(RDebug *dbg, ut64 old_base, ut64 new_base) {

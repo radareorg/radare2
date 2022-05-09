@@ -11,7 +11,7 @@ humansz  68K
 minopsz  2
 maxopsz  6
 invopsz  2
-pcalign  2
+pcalign  1
 mode     r-x
 format   off
 iorw     false
@@ -56,16 +56,16 @@ EXPECT=<<EOF
 0x00001928 hit0_0 47f0f024
             ;-- entry0:
             ;-- hit0_0:
-            0x00001928      47f0f024       b 0x24(%r15)
-            0x0000192c      01c3           invalid
-            0x0000192e      c5c5000000a0   bprp 0xc, 0x232e, 0x1a6e
-            0x00001934      0000           invalid
-            0x00001936      0090           invalid
-            0x00001938      47f0f001       b 1(%r15)
-            0x0000193c      58f0c31c       l %r15, 0x31c(%r12)
-            0x00001940      184e           lr %r4, %r14
-            0x00001942      05ef           balr %r14, %r15
-            0x00001944      0000           invalid
+        ,=< 0x00001928      47f0f024       b 0x24(r15)
+        |   0x0000192c      01c3           invalid
+        |   0x0000192e      c5c5000000a0   bprp 0xc, 0x232e, 0x1a6e
+        |   0x00001934      0000           invalid
+        |   0x00001936      0090           invalid
+        |   0x00001938      47f0f001       b 1(r15)
+        |   0x0000193c      58f0c31c       l r15, 0x31c(r12)
+        |   0x00001940      184e           lr r4, r14
+        |   0x00001942      05ef           balr r14, r15
+        |   0x00001944      0000           invalid
             ;-- entry0:
             ;-- hit0_0:
             0x00001928      47f0f024       b 36(%r15)
@@ -95,30 +95,30 @@ EXPECT=<<EOF
             ;-- .text:
             ;-- entry0:
             ;-- _start:
-            0x000005f0      4140f008       la %r4, 8(%r15)             ; [13] -r-x section size 640 named .text
-            0x000005f4      e330f0000004   lg %r3, 0(%r15)
-            0x000005fa      a709fff0       lghi %r0, -0x10
-            0x000005fe      b98000f0       ngr %r15, %r0
-            0x00000602      a7fbff50       aghi %r15, -0xb0
-            0x00000606      d707f000f000   xc 0(8, %r15), 0(%r15)
-            0x0000060c      ebeff0a00024   stmg %r14, %r15, 0xa0(%r15)
-            0x00000612      4170f0a0       la %r7, 0xa0(%r15)
-            0x00000616      c060000000fd   larl %r6, sym.__libc_csu_fini
-            0x0000061c      c050000000c6   larl %r5, sym.__libc_csu_init
+            0x000005f0      4140f008       la r4, 8(r15)               ; [13] -r-x section size 640 named .text
+            0x000005f4      e330f0000004   lg r3, 0(r15)
+            0x000005fa      a709fff0       lghi r0, -0x10
+            0x000005fe      b98000f0       ngr r15, r0
+            0x00000602      a7fbff50       aghi r15, -0xb0
+            0x00000606      d707f000f000   xc 0(8, r15), 0(r15)
+            0x0000060c      ebeff0a00024   stmg r14, r15, 0xa0(r15)
+            0x00000612      4170f0a0       la r7, 0xa0(r15)
+            0x00000616      c060000000fd   larl r6, sym.__libc_csu_fini
+            0x0000061c      c050000000c6   larl r5, sym.__libc_csu_init
             ;-- section..text:
             ;-- .text:
             ;-- entry0:
             ;-- _start:
-            0x000005f0      4140f008       la %r4, 8(%r15)             ; [13] -r-x section size 640 named .text
-            0x000005f4      e330f0000004   lg %r3, 0(%r15)
-            0x000005fa      a709fff0       lghi %r0, -0x10
-            0x000005fe      b98000f0       ngr %r15, %r0
-            0x00000602      a7fbff50       aghi %r15, -0xb0
-            0x00000606      d707f000f000   xc 0(8, %r15), 0(%r15)
-            0x0000060c      ebeff0a00024   stmg %r14, %r15, 0xa0(%r15)
-            0x00000612      4170f0a0       la %r7, 0xa0(%r15)
-            0x00000616      c060000000fd   larl %r6, sym.__libc_csu_fini
-            0x0000061c      c050000000c6   larl %r5, sym.__libc_csu_init
+            0x000005f0      4140f008       la r4, 8(r15)               ; [13] -r-x section size 640 named .text
+            0x000005f4      e330f0000004   lg r3, 0(r15)
+            0x000005fa      a709fff0       lghi r0, -0x10
+            0x000005fe      b98000f0       ngr r15, r0
+            0x00000602      a7fbff50       aghi r15, -0xb0
+            0x00000606      d707f000f000   xc 0(8, r15), 0(r15)
+            0x0000060c      ebeff0a00024   stmg r14, r15, 0xa0(r15)
+            0x00000612      4170f0a0       la r7, 0xa0(r15)
+            0x00000616      c060000000fd   larl r6, sym.__libc_csu_fini
+            0x0000061c      c050000000c6   larl r5, sym.__libc_csu_init
 EOF
 RUN
 
@@ -133,9 +133,9 @@ EOF
 EXPECT=<<EOF
 [
   {
-    "opcode": "la %r4, 8(%r15)",
-    "disasm": "la %r4, 8(%r15)",
-    "pseudo": "la %r4, 8 (%r15) ",
+    "opcode": "la r4, 8(r15)",
+    "disasm": "la r4, 8(r15)",
+    "pseudo": "la r4, 8 (r15) ",
     "description": "Load Address",
     "mnemonic": "la",
     "mask": "ffffffff",
@@ -158,7 +158,7 @@ EXPECT=<<EOF
     "addr": 0,
     "bytes": "4140f008",
     "size": 4,
-    "type": "null",
+    "type": "mov",
     "esilcost": 0,
     "scale": 0,
     "refptr": 0,

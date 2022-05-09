@@ -236,7 +236,7 @@ bool magic_int_within(ut32 target_magic, ut32 lower, ut32 upper, bool *error) {
 	}
 	if (ti == size) {
 		*error = true;
-		eprintf ("target_magic not found in versions[]");
+		eprintf ("target_magic not found in versions[]\n");
 		return false;
 	}
 
@@ -245,7 +245,7 @@ bool magic_int_within(ut32 target_magic, ut32 lower, ut32 upper, bool *error) {
 	}
 	if (li == size) {
 		*error = true;
-		eprintf ("lower magic_int not found in versions[]");
+		eprintf ("lower magic_int not found in versions[]\n");
 		return false;
 	}
 
@@ -254,7 +254,7 @@ bool magic_int_within(ut32 target_magic, ut32 lower, ut32 upper, bool *error) {
 	}
 	if (ui == size) {
 		*error = true;
-		eprintf ("upper magic_int not found in versions[]");
+		eprintf ("upper magic_int not found in versions[]\n");
 		return false;
 	}
 

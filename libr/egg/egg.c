@@ -464,10 +464,10 @@ R_API bool r_egg_padding(REgg *egg, const char *pad) {
 		default:
 			eprintf ("Invalid padding format (%c)\n", *p);
 			eprintf ("Valid ones are:\n");
-			eprintf ("	s S : NULL byte");
-			eprintf ("	n N : nop");
-			eprintf ("	a A : 0x41");
-			eprintf ("	t T : trap (0xcc)");
+			eprintf ("	s S : NULL byte\n");
+			eprintf ("	n N : nop\n");
+			eprintf ("	a A : 0x41\n");
+			eprintf ("	t T : trap (0xcc)\n");
 			free (o);
 			return false;
 		}

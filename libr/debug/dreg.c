@@ -47,8 +47,7 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
 			if (!buf || !dbg->h->reg_write (dbg, i, buf, size)) {
 				if (i == R_REG_TYPE_GPR) {
-					eprintf ("r_debug_reg: error writing "
-						"registers %d to %d\n", i, dbg->tid);
+					eprintf ("r_debug_reg: error writing registers %d to %d\n", i, dbg->tid);
 				}
 				if (type != R_REG_TYPE_ALL || i == R_REG_TYPE_GPR) {
 					free (buf);
@@ -98,8 +97,8 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	bool isJson = (rad == 'j' || rad == 'J');
 	r_return_val_if_fail (!isJson || (isJson && pj), false);
 
-	if (dbg->corebind.core) {
-		pr = ((RCore*)dbg->corebind.core)->print;
+	if (dbg->coreb.core) {
+		pr = ((RCore*)dbg->coreb.core)->print;
 	}
 	if (size != 0 && !(dbg->reg->bits & size)) {
 		// TODO: verify if 32bit exists, otherwise use 64 or 8?

@@ -264,12 +264,12 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 		}
 	}
 	if (!found) {
-		eprintf ("ntdll.dll not loaded.");
+		eprintf ("ntdll.dll not loaded.\n");
 		r_list_free (modules);
 		return false;
 	}
 	bool doopen = lastNdtllAddr != map->addr;
-	char *ntdllopen = dbg->corebind.cmdstrf (dbg->corebind.core, "ob~%s", ntdll);
+	char *ntdllopen = dbg->coreb.cmdstrf (dbg->coreb.core, "ob~%s", ntdll);
 	if (*ntdllopen) {
 		char *saddr = strtok (ntdllopen, " ");
 		size_t i;
@@ -279,7 +279,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 		if (doopen) {
 			// Close to reopen at the right address
 			int fd = atoi (ntdllopen);
-			dbg->corebind.cmdstrf (dbg->corebind.core, "o-%d", fd);
+			dbg->coreb.cmdstrf (dbg->coreb.core, "o-%d", fd);
 			RtlpHpHeapGlobalsOffset = RtlpLFHKeyOffset = 0;
 		}
 	}
@@ -287,19 +287,19 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	if (doopen) {
 		char *ntdllpath = r_lib_path ("ntdll");
 		eprintf ("Opening %s\n", ntdllpath);
-		dbg->corebind.cmdf (dbg->corebind.core, "o %s 0x%"PFMT64x"", ntdllpath, map->addr);
+		dbg->coreb.cmdf (dbg->coreb.core, "o %s 0x%"PFMT64x"", ntdllpath, map->addr);
 		lastNdtllAddr = map->addr;
 		free (ntdllpath);
 	}
 	r_list_free (modules);
 
 	if (!RtlpHpHeapGlobalsOffset || !RtlpLFHKeyOffset) {
-		char *res = dbg->corebind.cmdstrf (dbg->corebind.core, "idpi~RtlpHpHeapGlobals");
+		char *res = dbg->coreb.cmdstrf (dbg->coreb.core, "idpi~RtlpHpHeapGlobals");
 		if (!*res) {
 			// Try downloading the pdb
 			free (res);
-			dbg->corebind.cmd (dbg->corebind.core, "idpd");
-			res = dbg->corebind.cmdstrf (dbg->corebind.core, "idpi~RtlpHpHeapGlobals");
+			dbg->coreb.cmd (dbg->coreb.core, "idpd");
+			res = dbg->coreb.cmdstrf (dbg->coreb.core, "idpi~RtlpHpHeapGlobals");
 		}
 		if (*res) {
 			RtlpHpHeapGlobalsOffset = r_num_math (NULL, res);
@@ -308,7 +308,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 			return false;
 		}
 		free (res);
-		res = dbg->corebind.cmdstrf (dbg->corebind.core, "idpi~RtlpLFHKey");
+		res = dbg->coreb.cmdstrf (dbg->coreb.core, "idpi~RtlpLFHKey");
 		if (*res) {
 			RtlpLFHKeyOffset = r_num_math (NULL, res);
 		}
@@ -317,10 +317,10 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 
 	if (doopen) {
 		// Close ntdll.dll
-		char *res = dbg->corebind.cmdstrf (dbg->corebind.core, "o~%s", ntdll);
+		char *res = dbg->coreb.cmdstrf (dbg->coreb.core, "o~%s", ntdll);
 		int fd = atoi (res);
 		free (res);
-		dbg->corebind.cmdf (dbg->corebind.core, "o-%d", fd);
+		dbg->coreb.cmdf (dbg->coreb.core, "o-%d", fd);
 	}
 	return true;
 }
@@ -341,7 +341,7 @@ static bool GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey) 
 	}
 	if (!ReadProcessMemory (h_proc, (PVOID)lfhKeyLocation, lfhKey, sizeof (WPARAM), NULL)) {
 		r_sys_perror ("ReadProcessMemory");
-		eprintf ("LFH key not found.\n");
+		R_LOG_WARN ("LFH key not found.");
 		*lfhKey = 0;
 		return false;
 	}
@@ -479,7 +479,7 @@ static PDEBUG_BUFFER InitHeapInfo(RDebug *dbg, DWORD mask) {
 		}
 		HANDLE h_proc = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
 		if (!h_proc) {
-			R_LOG_ERROR ("OpenProcess failed\n");
+			R_LOG_ERROR ("OpenProcess failed");
 			free (heapInfo);
 			RtlDestroyQueryDebugBuffer (db);
 			return NULL;
@@ -727,12 +727,12 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 	HANDLE h_proc = NULL;
 	PDEBUG_BUFFER db = InitHeapInfo (dbg, PDI_HEAPS);
 	if (!db || !db->HeapInformation) {
-		R_LOG_ERROR ("InitHeapInfo Failed\n");
+		R_LOG_ERROR ("InitHeapInfo Failed");
 		goto err;
 	}
 	h_proc = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (!h_proc) {
-		R_LOG_ERROR ("OpenProcess failed\n");
+		R_LOG_ERROR ("OpenProcess failed");
 		goto err;
 	}
 
@@ -740,7 +740,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 	if (!GetLFHKey (dbg, h_proc, false, &lfhKey)) {
 		RtlDestroyQueryDebugBuffer (db);
 		CloseHandle (h_proc);
-		eprintf ("GetHeapBlocks: Failed to get LFH key.\n");
+		R_LOG_ERROR ("GetHeapBlocks: Failed to get LFH key.");
 		return NULL;
 	}
 
@@ -758,7 +758,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 		SIZE_T allocated = 128 * sizeof (HeapBlockBasicInfo);
 		PHeapBlockBasicInfo blocks = calloc (allocated, 1);
 		if (!blocks) {
-			R_LOG_ERROR ("Memory Allocation failed\n");
+			R_LOG_ERROR ("Memory Allocation failed");
 			goto err;
 		}
 
@@ -954,12 +954,12 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 	*/
 	PHeapBlock hb = R_NEW0 (HeapBlock);
 	if (!hb) {
-		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.\n");
+		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.");
 		return NULL;
 	}
 	PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 	if (!extra) {
-		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.\n");
+		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.");
 		goto err;
 	}
 	hb->extraInfo = extra;
@@ -1058,7 +1058,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 	PHeapBlockExtraInfo extra = NULL;
 
 	if (!hb) {
-		R_LOG_ERROR ("GetSingleBlock: Allocation failed.\n");
+		R_LOG_ERROR ("GetSingleBlock: Allocation failed.");
 		return NULL;
 	}
 	HANDLE h_proc = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
@@ -1072,7 +1072,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 	}
 	extra = R_NEW0 (HeapBlockExtraInfo);
 	if (!extra) {
-		R_LOG_ERROR ("GetSingleBlock: Allocation failed.\n");
+		R_LOG_ERROR ("GetSingleBlock: Allocation failed.");
 		goto err;
 	}
 	WPARAM NtLFHKey;
@@ -1185,7 +1185,7 @@ static void w32_list_heaps(RCore *core, const char format) {
 			db = GetHeapBlocks (pid, core->dbg);
 		}
 		if (!db) {
-			eprintf ("Couldn't get heap info.\n");
+			R_LOG_WARN ("Couldn't get heap info.");
 			return;
 		}
 	}
@@ -1239,7 +1239,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 		db = InitHeapInfo (core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	}
 	if (!db) {
-		eprintf ("Couldn't get heap info.\n");
+		R_LOG_ERROR ("Couldn't get heap info.");
 		return;
 	}
 	PHeapInformation heapInfo = db->HeapInformation;

@@ -97,7 +97,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
-	anal->cpp_abi = R_ANAL_CPP_ABI_ITANIUM;
+	anal->cxxabi = R_ANAL_CPP_ABI_ITANIUM;
 	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
 	r_spaces_init (&anal->meta_spaces, "CS");
@@ -213,6 +213,13 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 	}
 	r_list_append (anal->plugins, foo);
 	return true;
+}
+
+R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
+	if (anal->cur && anal->cur->mnemonics) {
+		return anal->cur->mnemonics (anal, id, json);
+	}
+	return NULL;
 }
 
 R_API bool r_anal_use(RAnal *anal, const char *name) {
@@ -602,7 +609,7 @@ R_API bool r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 		free (tmp);
 		return true;
 	}
-	eprintf ("Can't find prototype for %s in types database", fcnname);
+	eprintf ("Can't find prototype for %s in types database\n", fcnname);
 #endif
 	return false;
 }
@@ -701,6 +708,7 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 		b->encode = (RAnalEncode)r_anal_opasm;
 		b->decode = (RAnalDecode)r_anal_op;
 		b->opinit = r_anal_op_init;
+		b->mnemonics = r_anal_mnemonics;
 		b->opfini = r_anal_op_fini;
 		b->use = r_anal_use;
 	}

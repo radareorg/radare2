@@ -553,16 +553,16 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 			}
 			hasnext = (keys[i + 1].name) ? "\n" : "";
 			// TODO Need to replace the '.' char because this is not valid CSS
-			char *name = strdup (keys[i].name);
-			int j, len = strlen (name);
+			char *sname = strdup (keys[i].name);
+			int j, len = strlen (sname);
 			for (j = 0; j < len; j++) {
-				if (name[j] == '.') {
-					name[j] = '_';
+				if (sname[j] == '.') {
+					sname[j] = '_';
 				}
 			}
 			r_cons_printf (".%s%s { color: rgb(%d, %d, %d); }%s",
-				prefix, name, rcolor->r, rcolor->g, rcolor->b, hasnext);
-			free (name);
+				prefix, sname, rcolor->r, rcolor->g, rcolor->b, hasnext);
+			free (sname);
 			}
 			break;
 		case 'h':

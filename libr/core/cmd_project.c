@@ -3,18 +3,21 @@
 #include <r_core.h>
 
 static const char *help_msg_P[] = {
-	"Usage:", "P[?osi] [file]", "Project management",
-	"P", "", "list all projects",
+	"Usage:", "P[?.+-*cdilnsS] [file]", "Project management",
+	"P", " [file]", "open project (formerly Po)",
+	"P.", "", "show current loaded project (see prj.name)",
+	"P+", " [file]", "save project (same as Ps, but doesnt checks for changes)",
+	"P-", " [file]", "delete project (alias for Pd)",
+	"P*", "", "save project (same as Ps, but doesnt checks for changes)",
+	"P!", "([cmd])", "open a shell in the project directory",
 	"Pc", " [file]", "show project script to console",
-	"Pd", " [file]", "delete project",
+	"Pd", " [N]", "diff Nth commit",
 	"Pi", " [file]", "show project information",
+	"Pl", "", "list all projects",
+	"Pn", " -", "edit current loaded project notes using cfg.editor",
 	"Pn", "[j]", "manage notes associated with the project",
-	"Pn", " -", "edit notes with cfg.editor",
-	"Po", " [file]", "open project",
 	"Ps", " [file]", "save project (see dir.projects)",
 	"PS", " [file]", "save script file",
-	"P-", " [file]", "delete project (alias for Pd)",
-	"P+", " [file]", "save project (same as Ps, but doesnt checks for changes)",
 	"NOTE:", "", "the 'e prj.name' evar can save/open/rename/list projects.",
 	"NOTE:", "", "see the other 'e??prj.' evars for more options.",
 	"NOTE:", "", "project are stored in " R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS),
@@ -64,7 +67,10 @@ static int cmd_project(void *data, const char *input) {
 			eprintf ("Usage: Pc [prjname]\n");
 		}
 		break;
-	case 'o': // "Po"
+	case 'o': // "Po" DEPRECATED
+		eprintf ("TODO: Po is deprecated, use 'P [prjname]' instead\n");
+		// fallthru
+	case ' ': // "P [prj]"
 		if (input[1] == '&') { // "Po&"
 			r_core_cmdf (core, "& Po %s", file);
 		} else if (input[1]) { // "Po"
@@ -76,11 +82,26 @@ static int cmd_project(void *data, const char *input) {
 		}
 		break;
 	case 'd': // "Pd"
+		{
+			char *pdir = r_file_new (
+				r_config_get (core->config, "dir.projects"),
+				r_config_get (core->config, "prj.name"), NULL);
+			if (r_syscmd_pushd (pdir)) {
+				if (r_file_is_directory (".git")) {
+					r_sys_cmdf ("git diff @~%d", atoi (input + 1));
+				} else {
+					eprintf ("TODO: Not a git project. Diffing projects is WIP for now.\n");
+				}
+				r_syscmd_popd ();
+			}
+			free (pdir);
+		}
+		break;
 	case '-': // "P-"
 		if (R_STR_ISNOTEMPTY (file)) {
 			r_core_project_delete (core, file);
 		} else {
-			eprintf ("Usage: Pd [prjname]   # Use P or Pl to list the available projects.\n");
+			eprintf ("Usage: P- [prjname]   # Use Pl to list the available projects.\n");
 		}
 		break;
 	case '+': // "P+"
@@ -96,6 +117,32 @@ static int cmd_project(void *data, const char *input) {
 		} else {
 			r_cons_eprintf ("Use: Ps [projectname]\n");
 		}
+		break;
+	case '!': // "P!"
+		if (input [1] == '?') {
+			eprintf ("Usage: P!([cmd]) - run shell or command in project directory\n");
+		} else if (r_config_get_b (core->config, "scr.interactive")) {
+			char *pdir = r_file_new (
+				r_config_get (core->config, "dir.projects"),
+				r_config_get (core->config, "prj.name"), NULL);
+			r_syscmd_pushd (pdir);
+			free (pdir);
+			if (R_STR_ISNOTEMPTY (r_str_trim_head_ro (input + 1))) {
+				r_sys_cmdf ("%s", input + 1);
+			} else {
+#if __WINDOWS__
+				r_sys_cmdf ("cmd");
+#else
+				r_sys_cmdf ("sh");
+#endif
+			}
+			r_syscmd_popd ();
+		} else {
+			R_LOG_ERROR ("P! requires scr.interactive to open a shell");
+		}
+		break;
+	case '*': // "P*"
+		r_core_project_save_script (core, "/dev/stdout", R_CORE_PRJ_ALL);
 		break;
 	case 'S': // "PS"
 		if (input[1] == ' ') {
@@ -227,7 +274,7 @@ static int cmd_project(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'i': // "Pi"
+	case 'i': // "Pi" DEPRECATE
 		if (file && *file) {
 			char *prj_name = r_core_project_name (core, file);
 			if (!R_STR_ISEMPTY (prj_name)) {
@@ -239,8 +286,17 @@ static int cmd_project(void *data, const char *input) {
 			r_cons_println (core->prj->path);
 		}
 		break;
+	case '.': // "P."
+		if (file && *file) {
+			char *prj_name = r_core_project_name (core, file);
+			if (R_STR_ISNOTEMPTY (prj_name)) {
+				r_cons_println (prj_name);
+				free (prj_name);
+			}
+		}
+		break;
+	case 'P':
 	case 'l':
-	case 0:
 	case 'j': // "Pj"
 		r_core_project_list (core, input[0]);
 		break;

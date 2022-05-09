@@ -940,7 +940,7 @@ static const char *help_msg_av[] = {
 	"av", "", "search for vtables in data sections and show results",
 	"avj", "", "like av, but as json",
 	"av*", "", "like av, but as r2 commands",
-	"avr", "[j@addr]", "try to parse RTTI at vtable addr (see anal.cpp.abi)",
+	"avr", "[j@addr]", "try to parse RTTI at vtable addr (see anal.cxxabi)",
 	"avra", "[j]", "search for vtables and try to parse RTTI at each of them",
 	"avrr", "", "recover class info from all findable RTTI (see ac)",
 	"avrD", " [classname]", "demangle a class name from RTTI",
@@ -1620,7 +1620,7 @@ static int var_cmd(RCore *core, const char *str) {
 			r_core_cmd0 (core, "afvs");
 			r_core_cmd0 (core, "afvb");
 		} else {
-			eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+			R_LOG_WARN ("Cannot find function in 0x%08"PFMT64x, core->offset);
 		}
 		return true;
 	}
@@ -3374,6 +3374,7 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 	r_return_val_if_fail (core && _name, false);
 	_name = r_str_trim_head_ro (_name);
 	char *name = getFunctionName (core, addr, _name, prefix);
+	char *fname = r_name_filter_dup (name);
 	// RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
 	if (fcn) {
@@ -3381,7 +3382,7 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 		RFlagItem *flag = r_flag_get (core->flags, fcn->name);
 		if (flag && flag->space && strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS) == 0) {
 			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
-			r_flag_rename (core->flags, flag, name);
+			r_flag_rename (core->flags, flag, fname);
 		} else {
 			// No flag or not specific to the function, create a new one.
 			r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
@@ -3395,9 +3396,11 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 		}
 		free (oname);
 		free (name);
+		free (fname);
 		return true;
 	}
 	free (name);
+	free (fname);
 	return false;
 }
 
@@ -3705,7 +3708,7 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 				ut64 nv = r_num_get (NULL, value);
 				names[idx] = r_str_newf ("%d", (int)nv);
 			} else {
-				eprintf ("Invalid column name (%s) %c", key, 10);
+				eprintf ("Invalid column name (%s)\n", key);
 			}
 		}
 		RList *items = r_list_newf (free);
@@ -5124,7 +5127,6 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	}
 #endif
 	int size = 0, i, type = R_REG_TYPE_GPR;
-	int bits = core->anal->config->bits;
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	RRegItem *r = NULL;
 	const char *use_color;
@@ -5386,35 +5388,37 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case 'n': // "arn"
 		if (*(str + 1) == '\0') {
-			eprintf ("Oops. try arn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
+			eprintf ("Oops. try arn [PC|SP|BP|SN|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
 			break;
 		}
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str + 2));
 		if (name && *name) {
 			r_cons_println (name);
 		} else {
-			eprintf ("Oops. try arn [PC|SP|BP|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
+			eprintf ("Oops. try arn [PC|SP|BP|SN|A0|A1|A2|A3|A4|R0|R1|ZF|SF|NF|OF]\n");
 		}
 		break;
 	case 'd': // "ard"
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 3, use_color); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,
+			NULL, 3, use_color); // XXX detect which one is current usage
 		break;
 	case 'o': // "aro"
 		r_reg_arena_swap (core->dbg->reg, false);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 0, use_color); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, core->anal->config->bits,
+			NULL, 0, use_color); // XXX detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, false);
 		break;
 	case '=': // "ar="
 		{
 			char *p = NULL;
-			char *bits = NULL;
+			char *bitstr = NULL;
 			if (str[1]) {
 				p = strdup (str + 1);
 				if (str[1] != ':') {
 					// Bits were specified
-					bits = strtok (p, ":");
-					if (r_str_isnumber (bits)) {
-						st64 sz = r_num_math (core->num, bits);
+					bitstr = strtok (p, ":");
+					if (r_str_isnumber (bitstr)) {
+						st64 sz = r_num_math (core->num, bitstr);
 						if (sz > 0) {
 							size = sz;
 						}
@@ -5423,10 +5427,10 @@ void cmd_anal_reg(RCore *core, const char *str) {
 						break;
 					}
 				}
-				int len = bits ? strlen (bits) : 0;
+				int len = bitstr ? strlen (bitstr) : 0;
 				if (str[len + 1] == ':') {
 					// We have some regs
-					char *regs = bits ? strtok (NULL, ":") : strtok ((char *)str + 1, ":");
+					char *regs = bitstr ? strtok (NULL, ":") : strtok ((char *)str + 1, ":");
 					char *reg = strtok (regs, " ");
 					RList *q_regs = r_list_new ();
 					if (q_regs) {
@@ -5479,7 +5483,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 				//eprintf ("0x%08"PFMT64x"\n",
 				//	r_reg_get_value (core->dbg->reg, r));
-				r_core_cmdf (core, ".dr*%d", bits);
+				r_core_cmdf (core, ".dr*%d", core->anal->config->bits);
 			} else {
 				eprintf ("ar: Unknown register '%s'\n", regname);
 			}
@@ -8584,10 +8588,10 @@ static bool axtm_cb(void *u, const ut64 k, const void *v) {
 	RAnalRef *ref;
 	RList *list = r_anal_xrefs_get (core->anal, k);
 	if (list && r_list_length (list) > 0) {
-		r_cons_printf ("0x%"PFMT64x": %s%c", k, name? name: "?", 10);
+		r_cons_printf ("0x%"PFMT64x": %s\n", k, name? name: "?");
 		r_list_foreach (list, iter, ref) {
 			name = axtm_name (core, ref->addr);
-			r_cons_printf ("  0x%"PFMT64x": %s%c", ref->addr, name? name: "?", 10);
+			r_cons_printf ("  0x%"PFMT64x": %s\n", ref->addr, name? name: "?");
 		}
 	}
 	r_list_free (list);
@@ -9873,7 +9877,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 			bool ov = r_cons_is_interactive ();
 			core->graph->need_update_dim = true;
 			int update_seek = r_core_visual_graph (core, core->graph, NULL, true);
-			r_config_set_i (core->config, "scr.interactive", ov);
+			r_config_set_b (core->config, "scr.interactive", ov);
 			r_cons_show_cursor (true);
 			r_cons_enable_mouse (false);
 			if (update_seek != -1) {
@@ -10030,7 +10034,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 				bool ov = r_cons_is_interactive ();
 				agraph->need_update_dim = true;
 				int update_seek = r_core_visual_graph (core, agraph, NULL, true);
-				r_config_set_i (core->config, "scr.interactive", ov);
+				r_config_set_b (core->config, "scr.interactive", ov);
 				r_cons_show_cursor (true);
 				r_cons_enable_mouse (false);
 				if (update_seek != -1) {
@@ -10131,7 +10135,7 @@ R_API void cmd_agfb2(RCore *core, const char *s) {
 	RConsPixel *p = r_cons_pixel_new (w, h);
 	r_cons_pixel_sets (p, 0, 0, s);
 	char *pix = r_cons_pixel_drain (p);
-	r_cons_printf ("%s %c", pix, 10);
+	r_cons_printf ("%s\n", pix);
 	free (pix);
 }
 
@@ -10426,7 +10430,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'x': {// "agx" cross refs
 		RGraph *graph = r_core_anal_codexrefs (core, core->offset);
 		if (!graph) {
-			eprintf ("Couldn't create graph");
+			eprintf ("Couldn't create graph\n");
 			break;
 		}
 		r_core_graph_print (core, graph, -1, true, input + 1);
@@ -10436,7 +10440,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'i': { // "agi" import graph
 		RGraph *graph = r_core_anal_importxrefs (core);
 		if (!graph) {
-			eprintf ("Couldn't create graph");
+			eprintf ("Couldn't create graph\n");
 			break;
 		}
 		r_core_graph_print (core, graph, -1, true, input + 1);
@@ -12014,7 +12018,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case 'g': { // "acg"
 		RGraph *graph = r_anal_class_get_inheritance_graph (core->anal);
 		if (!graph) {
-			eprintf ("Couldn't create graph");
+			eprintf ("Couldn't create graph\n");
 			break;
 		}
 		r_core_graph_print (core, graph, -1, false, input + 1);

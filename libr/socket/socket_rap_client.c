@@ -163,8 +163,7 @@ R_API int r_socket_rap_client_read(RSocket *s, ut8 *buf, int count) {
 	// recv
 	int ret = r_socket_read_block (s, tmp, 5);
 	if (ret != 5 || tmp[0] != (RAP_PACKET_READ | RAP_PACKET_REPLY)) {
-		eprintf ("__rap_read: Unexpected rap read reply "
-			"(%d=0x%02x) expected (%d=0x%02x)\n",
+		eprintf ("__rap_read: Unexpected rap read reply (%d=0x%02x) expected (%d=0x%02x)\n",
 			ret, tmp[0], 2, (RAP_PACKET_READ | RAP_PACKET_REPLY));
 		return -1;
 	}

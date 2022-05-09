@@ -59,7 +59,7 @@ int file_looks_utf8(const ut8 *, size_t, unichar *, size_t *);
 static int looks_ucs16(const ut8 *, size_t, unichar *, size_t *);
 static int looks_latin1(const ut8 *, size_t, unichar *, size_t *);
 static int looks_extended(const ut8 *, size_t, unichar *, size_t *);
-static void from_ebcdic(const ut8 *, size_t, ut8 *);
+R_API void r_magic_from_ebcdic(const ut8 *, size_t, ut8 *);
 static int ascmatch(const ut8 *, const unichar *, size_t);
 static ut8 *encode_utf8(ut8 *, size_t, unichar *, size_t);
 
@@ -146,7 +146,7 @@ return 0;
 		type = "text";
 		code_mime = "unknown";
 	} else {
-		from_ebcdic(buf, nbytes, nbuf);
+		r_magic_from_ebcdic(buf, nbytes, nbuf);
 
 		if (looks_ascii(nbuf, nbytes, ubuf, &ulen)) {
 			code = "EBCDIC";
@@ -808,7 +808,7 @@ static ut8 ebcdic_1047_to_8859[] = {
 /*
  * Copy buf[0 ... nbytes-1] into out[], translating EBCDIC to ASCII.
  */
-static void from_ebcdic(const ut8 *buf, size_t nbytes, ut8 *out) {
+R_API void r_magic_from_ebcdic(const ut8 *buf, size_t nbytes, ut8 *out) {
 	size_t i;
 	for (i = 0; i < nbytes; i++) {
 		out[i] = ebcdic_to_ascii[buf[i]];

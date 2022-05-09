@@ -12,6 +12,12 @@ extern "C" {
 #define R_LOG_ORIGIN __FILE__
 #endif
 
+#ifndef R_LOG_DISABLE
+#define R_LOG_DISABLE 0
+#endif
+
+#define R_LOGLVL_DEFAULT R_LOGLVL_WARN
+
 typedef enum r_log_level {
 	R_LOGLVL_FATAL = 0, // This will call r_sys_breakpoint() and trap the process for debugging!
 	R_LOGLVL_ERROR = 1,
@@ -20,8 +26,6 @@ typedef enum r_log_level {
 	R_LOGLVL_DEBUG = 4,
 	R_LOGLVL_LAST = 5,
 } RLogLevel;
-
-#define R_LOGLVL_DEFAULT R_LOGLVL_WARN
 
 typedef bool (*RLogCallback)(void *user, int type, const char *origin, const char *msg);
 
@@ -52,12 +56,21 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *fmt, 
 R_API void r_log_add_callback(RLogCallback cb);
 R_API void r_log_del_callback(RLogCallback cb);
 
+#if R_LOG_DISABLE
+#define R_LOG(f,...) do {} while(0)
+#define R_LOG_FATAL(f,...) do {} while(0)
+#define R_LOG_ERROR(f,...) do {} while(0)
+#define R_LOG_INFO(f,...) do {} while(0)
+#define R_LOG_WARN(f,...) do {} while(0)
+#define R_LOG_DEBUG(f,...) do {} while(0)
+#else
 #define R_LOG(f,...) if (r_log_match(R_LOGLVL_INFO, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_INFO, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
 #define R_LOG_FATAL(f,...) if (r_log_match(R_LOGLVL_FATAL, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_FATAL, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
 #define R_LOG_ERROR(f,...) if (r_log_match(R_LOGLVL_ERROR, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_ERROR, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
 #define R_LOG_INFO(f,...) if (r_log_match(R_LOGLVL_INFO, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_INFO, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
 #define R_LOG_WARN(f,...) if (r_log_match(R_LOGLVL_WARN, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_WARN, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
 #define R_LOG_DEBUG(f,...) if (r_log_match(R_LOGLVL_DEBUG, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_DEBUG, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
+#endif
 
 R_API void r_log_set_file(const char *expr);
 R_API void r_log_set_filter(const char *expr);

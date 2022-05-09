@@ -1209,7 +1209,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 
 #if SWIFT_SUPPORT
 	if (q (c.data + n_value) & 7) {
-		eprintf ("This is a Swift class");
+		eprintf ("This is a Swift class\n");
 	}
 #endif
 	if (!is_meta_class && !dupe) {
@@ -1281,7 +1281,7 @@ ut32 fields_offset;
 	eprintf ("  members: 0x%08"PFMT64x"\n", NCD (NCD_MEMBERS));
 	eprintf ("  fields:  0x%08"PFMT64x"\n", NCD (NCD_NFIELDS));
 	eprintf ("  fieldsat:0x%08"PFMT64x"\n", NCD (NCD_OFIELDS));
-	char * tn = r_name_filter2 (typename);
+	char * tn = r_name_filter_dup (typename);
 	r_cons_printf ("f sym.swift.%s.init = 0x%08"PFMT64x"\n",
 		tn, bf->o->baddr + NCD (NCD_ACCESSFCNPTR));
 	free (tn);
@@ -1295,7 +1295,7 @@ ut32 fields_offset;
 
 static void parse_type(RBinFile *bf, SwiftType st) {
 	char *otypename = readstr (bf, st.name_addr);
-	char *typename = r_name_filter2 (otypename);
+	char *typename = r_name_filter_dup (otypename);
 	// eprintf ("methods:\n");
 	if (st.members != UT64_MAX) {
 		ut8 buf[512];
@@ -1317,7 +1317,7 @@ static void parse_type(RBinFile *bf, SwiftType st) {
 			r_list_foreach (symbols, iter, sym) {
 				if (sym->vaddr == method_addr) {
 					free (method_name);
-					method_name = r_name_filter2 (sym->name);
+					method_name = r_name_filter_dup (sym->name);
 					break;
 				}
 			}
@@ -1342,7 +1342,7 @@ static void parse_type(RBinFile *bf, SwiftType st) {
 			if (!field_name) {
 				break;
 			}
-			char *fn = r_name_filter2 (field_name);
+			char *fn = r_name_filter_dup (field_name);
 			r_cons_printf ("f sym.swift.%s.field.%s = 0x%08"PFMT64x"\n",
 				typename, fn, bf->o->baddr + field_method_addr);
 			free (fn);

@@ -13,7 +13,7 @@ R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 			snprintf (var, sizeof (var), "%s.%s.%s", p, kind, field);
 			int off = sdb_array_get_num (TDB, var, 1, NULL);
 			//int siz = sdb_array_get_num (DB, var, 2, NULL);
-			eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x, val, at + off);
+			eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", val, at + off);
 			return true;
 		}
 		eprintf ("Invalid kind of type\n");

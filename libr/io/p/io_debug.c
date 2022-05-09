@@ -449,7 +449,7 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 }
 
 static int get_pid_of(RIO *io, const char *procname) {
-	RCore *c = io->corebind.core;
+	RCore *c = io->coreb.core;
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 		return -1;
 	}
@@ -519,7 +519,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				return NULL;
 			}
 			if ((ret = _plugin->open (io, uri, rw, mode))) {
-				RCore *c = io->corebind.core;
+				RCore *c = io->coreb.core;
 				RW32Dw *wrap = (RW32Dw *)ret->data;
 				c->dbg->user = wrap;
 			}
@@ -548,7 +548,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			ret = _plugin->open (io, uri, rw, mode);
 #if __WINDOWS__
 			if (ret) {
-				RCore *c = io->corebind.core;
+				RCore *c = io->coreb.core;
 				RW32Dw *wrap = (RW32Dw *)ret->data;
 				c->dbg->user = wrap;
 			}

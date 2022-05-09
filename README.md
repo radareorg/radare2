@@ -3,7 +3,7 @@
 ## Radare2: Unix-Like Reverse Engineering Framework
 
 [![Latest packaged version](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions) [![Tests Status](https://github.com/radareorg/radare2/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/ci.yml?query=branch%3Amaster) [![build](https://github.com/radareorg/radare2/actions/workflows/build.yml/badge.svg)](https://github.com/radareorg/radare2/actions/workflows/build.yml) [![tcc](https://github.com/radareorg/radare2/actions/workflows/tcc.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/tcc.yml)
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) [![TODO counter](https://img.shields.io/github/search/radareorg/radare2/TODO.svg)](https://github.com/radareorg/radare2/search?q=TODO) [![Discord](https://badgen.net/discord/members/MgEdxrMnqx)](https://discord.gg/MgEdxrMnqx)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) [![TODO](https://img.shields.io/github/search/radareorg/radare2/TODO.svg)](https://github.com/radareorg/radare2/search?q=TODO) [![XXX](https://img.shields.io/github/search/radareorg/radare2/XXX.svg)](https://github.com/radareorg/radare2/search?q=XXX) [![Discord](https://badgen.net/discord/members/MgEdxrMnqx)](https://discord.gg/MgEdxrMnqx)
 
 
 See the [Releases](https://github.com/radareorg/radare2/releases) page for
@@ -137,7 +137,7 @@ V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
 NIOS II, Java, Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
 c55+, c64x), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
-MCORE, mcs96, RSP, SuperH-4, VAX, KVX, Am29000, LOONGARCH.
+MCORE, mcs96, RSP, SuperH-4, VAX, KVX, Am29000, LOONGARCH, JDH8.
 
 ## File Formats
 

@@ -903,7 +903,7 @@ R_API Rvc *r_vc_new(const char *path) {
 		return false;
 	}
 	if (!r_sys_mkdirp (commitp) || !r_sys_mkdir (blobsp)) {
-		eprintf ("Can't create The RVC repo directory");
+		eprintf ("Can't create The RVC repo directory\n");
 		free (commitp);
 		free (rvc->path);
 		free (rvc);

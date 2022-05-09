@@ -16,7 +16,7 @@ struct cEnv_t {
 	const char *TEXT;
 };
 
-static char* r_egg_Cfile_getCompiler(void) {
+static char* r_egg_cfile_getCompiler(void) {
 	size_t i;
 	const char *compilers[] = {"llvm-gcc", "clang", "gcc"};
 	char *output = r_sys_getenv ("CC");
@@ -38,13 +38,13 @@ static char* r_egg_Cfile_getCompiler(void) {
 	return NULL;
 }
 
-static inline bool r_egg_Cfile_armOrMips(const char *arch) {
+static inline bool r_egg_cfile_armOrMips(const char *arch) {
 	return (!strcmp (arch, "arm") || !strcmp (arch, "arm64") || !strcmp (arch, "aarch64")
 	  	|| !strcmp (arch, "thumb") || !strcmp (arch, "arm32") || !strcmp (arch, "mips")
 		|| !strcmp (arch, "mips32") || !strcmp (arch, "mips64"));
 }
 
-static void r_egg_Cfile_free_cEnv(struct cEnv_t *cEnv) {
+static void r_egg_cfile_free_cEnv(struct cEnv_t *cEnv) {
 	if (cEnv) {
 		free (cEnv->SFLIBPATH);
 		free (cEnv->CC);
@@ -56,7 +56,7 @@ static void r_egg_Cfile_free_cEnv(struct cEnv_t *cEnv) {
 	free (cEnv);
 }
 
-static inline bool r_egg_Cfile_check_cEnv(struct cEnv_t *cEnv) {
+static inline bool r_egg_cfile_check_cEnv(struct cEnv_t *cEnv) {
 	return (!cEnv->SFLIBPATH || !cEnv->CC || !cEnv->CFLAGS || !cEnv->LDFLAGS
 		|| !cEnv->SHDR || !cEnv->TRIPLET);
 }
@@ -66,7 +66,7 @@ static inline bool isXNU(const char *os) {
 		|| !strcmp (os, "tvos") || !strcmp (os, "watchos") || !strcmp (os, "ios"));
 }
 
-static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int bits) {
+static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int bits) {
 	struct cEnv_t *cEnv = calloc (1, sizeof (struct cEnv_t));
 	bool use_clang;
 	char *buffer = NULL;
@@ -76,7 +76,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 		return NULL;
 	}
 
-	if (!(cEnv->CC = r_egg_Cfile_getCompiler())) {
+	if (!(cEnv->CC = r_egg_cfile_getCompiler())) {
 		goto fail;
 	}
 
@@ -95,7 +95,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 		}
 	}
 
-	cEnv->JMP = r_egg_Cfile_armOrMips (arch) ? "b" : "jmp";
+	cEnv->JMP = r_egg_cfile_armOrMips (arch) ? "b" : "jmp";
 
 	// TODO: Missing -Os .. caused some rip-relative LEA to be MOVQ on PIE in CLANG.. so sad
 	if (isXNU (os)) {
@@ -193,7 +193,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 	free (cEnv->LDFLAGS);
 	cEnv->LDFLAGS = strdup (buffer);
 
-	if (r_egg_Cfile_check_cEnv (cEnv)) {
+	if (r_egg_cfile_check_cEnv (cEnv)) {
 		eprintf ("Error with cEnv allocation!\n");
 		goto fail;
 	}
@@ -205,11 +205,11 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 fail:
 	free (buffer);
 	free (output);
-	r_egg_Cfile_free_cEnv (cEnv);
+	r_egg_cfile_free_cEnv (cEnv);
 	return NULL;
 }
 
-static bool r_egg_Cfile_parseCompiled(const char *file) {
+static bool r_egg_cfile_parseCompiled(const char *file) {
 	char *fileExt = r_str_newf ("%s.tmp", file);
 	char *buffer = r_file_slurp (fileExt, NULL);
 	if (!buffer) {
@@ -244,10 +244,10 @@ fail:
 	return false;
 }
 
-R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *os, int bits) {
+R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *os, int bits) {
 	char *output = NULL;
 	char *fileExt = NULL; // "file" with extension (.s, .text, ...)
-	struct cEnv_t *cEnv = r_egg_Cfile_set_cEnv (arch, os, bits);
+	struct cEnv_t *cEnv = r_egg_cfile_set_cEnv (arch, os, bits);
 
 	if (!cEnv) {
 		goto fail;
@@ -272,7 +272,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 		goto fail;
 	}
 
-	if (!r_egg_Cfile_parseCompiled (file)) {
+	if (!r_egg_cfile_parseCompiled (file)) {
 		goto fail;
 	}
 	// Assemble
@@ -334,12 +334,12 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 	}
 
 	free (output);
-	r_egg_Cfile_free_cEnv (cEnv);
+	r_egg_cfile_free_cEnv (cEnv);
 	return fileExt;
 
 fail:
 	free (fileExt);
 	free (output);
-	r_egg_Cfile_free_cEnv (cEnv);
+	r_egg_cfile_free_cEnv (cEnv);
 	return NULL;
 }

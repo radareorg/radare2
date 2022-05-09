@@ -88,7 +88,6 @@ static const char *help_msg_l[] = {
 	"ls", " -j [path]", "list files in json format",
 	"ls", " -q [path]", "quiet output (one file per line)",
 	"le", "[ss] [path]", "same as cat file~.. (or less)",
-	"TODO: last command should honor asm.bits", "", "",
 	NULL
 };
 
@@ -113,7 +112,6 @@ static const char *help_msg_star[] = {
 	"*", "entry0+10=0x804800", "write value in delta address",
 	"*", "entry0", "read byte at given address",
 	"*", "/", "end multiline comment. (use '/*' to start mulitiline comment",
-	"TODO: last command should honor asm.bits", "", "",
 	NULL
 };
 
@@ -617,7 +615,7 @@ static int cmd_undo(void *data, const char *input) {
 				RCoreUndo *undo = r_core_undo_new (core->offset, cmd, rcmd);
 				r_core_undo_push (core, undo);
 			} else {
-				eprintf ("Usage: uc [cmd] [revert-cmd]");
+				eprintf ("Usage: uc [cmd] [revert-cmd]\n");
 			}
 			free (cmd);
 			}
@@ -1031,6 +1029,14 @@ static int cmd_rap(void *data, const char *input) {
 
 static int cmd_rap_run(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	if (input[0] == ':') {
+		char *s = r_core_cmd_str_r (core, r_str_trim_head_ro (input + 1));
+		if (s) {
+			r_cons_printf ("%s", s);
+			free (s);
+		}
+		return 0;
+	}
 	char *res = r_io_system (core->io, input);
 	if (res) {
 		int ret = atoi (res);
@@ -3138,14 +3144,14 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	int stdout_fd, fds[2];
 	int child;
 #endif
-	int si, olen, ret = -1, pipecolor = -1;
+	int olen, ret = -1, pipecolor = -1;
 	char *str, *out = NULL;
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Pipes are not allowed in sandbox mode\n");
 		return -1;
 	}
-	si = r_cons_is_interactive ();
+	bool si = r_cons_is_interactive ();
 	r_config_set_b (core->config, "scr.interactive", false);
 	if (!r_config_get_i (core->config, "scr.color.pipe")) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
@@ -3209,7 +3215,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	if (pipecolor != -1) {
 		r_config_set_i (core->config, "scr.color", pipecolor);
 	}
-	r_config_set_i (core->config, "scr.interactive", si);
+	r_config_set_b (core->config, "scr.interactive", si);
 	return ret;
 }
 

@@ -3025,7 +3025,9 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	if (paren) {
 		*paren = '\0';
 	}
-	r_cons_printf ("\"f %s %"PFMT64u" 0x%08"PFMT64x"\"\n", name, r_anal_function_linear_size (fcn), fcn->addr);
+	char *fname = r_name_filter_dup (name);
+	r_cons_printf ("\"f %s %"PFMT64u" 0x%08"PFMT64x"\"\n", fname, r_anal_function_linear_size (fcn), fcn->addr);
+	free (fname);
 	r_cons_printf ("\"af+ 0x%08"PFMT64x" %s %c %c\"\n",
 			fcn->addr, name, //r_anal_function_size (fcn), name,
 			fcn->type == R_ANAL_FCN_TYPE_LOC?'l':
@@ -3405,7 +3407,7 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
 	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, addr);
 	if (bb == dest) {
-		eprintf ("path found!");
+		eprintf ("path found!\n");
 		return NULL;
 	}
 	return recurse (core, bb, dest);

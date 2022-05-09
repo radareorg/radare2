@@ -34,8 +34,9 @@ static bool __isMips(RAsm *a) {
 
 static void loadGP(RCore *core) {
 	if (__isMips (core->rasm)) {
+		ut64 e0 = r_num_math (core->num, "entry0");
 		ut64 gp = r_num_math (core->num, "loc._gp");
-		if (!gp || gp == UT64_MAX) {
+		if ((!gp || gp == UT64_MAX) && (e0 && e0 != UT64_MAX)) {
 			r_config_set (core->config, "anal.roregs", "zero");
 			r_core_cmd0 (core, "10aes@entry0");
 			r_config_set (core->config, "anal.roregs", "zero,gp");
@@ -102,7 +103,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		}
 	}
 	if (!ofilepath) {
-		eprintf ("Unknown file path");
+		eprintf ("Unknown file path\n");
 		free (obinfilepath);
 		return false;
 	}
@@ -147,7 +148,6 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		r_io_fd_close (core->io, odesc->fd);
 		eprintf ("File %s reopened in %s mode\n", path,
 			(perm & R_PERM_W)? "read-write": "read-only");
-
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
 			ut64 baddr;
 			if (isdebug) {
@@ -160,7 +160,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 			ret = r_core_bin_load (core, obinfilepath, baddr);
 			r_core_bin_update_arch_bits (core);
 			if (!ret) {
-				eprintf ("Error: Failed to reload rbin for: %s", path);
+				eprintf ("Error: Failed to reload rbin for: %s\n", path);
 			}
 			origoff = r_num_math (core->num, "entry0");
 		}
@@ -412,7 +412,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	}
 
 	if (plugin && !strcmp (plugin->name, "dex")) {
-		r_core_cmd0 (r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"\n");
+		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"\n");
 	}
 
 	return true;
@@ -471,7 +471,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	}
 
 	if (plugin && !strcmp (plugin->name, "dex")) {
-		r_core_cmd0 (r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"\n");
+		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"\n");
 	}
 	return true;
 }
@@ -706,13 +706,13 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		desc->perm |= R_PERM_X;
 	}
 	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
-		r_core_cmd0 (r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ;"
+		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12 ;"
 			" wx `ph adler32 $s-12 @12` @8)\"\n");
 	}
 	if (!r_config_get_b (r->config, "cfg.debug")) {
 		loadGP (r);
 	}
-	if (r_config_get_i (r->config, "bin.libs")) {
+	if (r_config_get_b (r->config, "bin.libs")) {
 		const char *lib;
 		RListIter *iter;
 		RList *libs = r_bin_get_libs (r->bin);
@@ -903,7 +903,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 		if (r->dbg->h && r->dbg->h->canstep) {
 			swstep = false;
 		}
-		r_config_set_i (r->config, "dbg.swstep", swstep);
+		r_config_set_b (r->config, "dbg.swstep", swstep);
 		// Set the correct debug handle
 		if (fd->plugin && fd->plugin->isdbg) {
 			char *dh = r_str_ndup (file, (strstr (file, "://") - file));

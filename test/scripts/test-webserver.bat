@@ -2,7 +2,7 @@
 setlocal
 powershell -ExecutionPolicy bypass^
  -Command "& {$process = Start-Process $args[0] $args[1..($args.length-1)] -PassThru; exit $process.id}"^
- r2 -N -e http.port=9393 -qq -c=h bins/elf/arg
+r2 -N -e asm.cmt.right=false -e http.port=9393 -qq -c=h bins/elf/arg
 set child=%errorlevel%
 REM curl -s --retry 30 --retry-delay 1 --retry-connrefused http://127.0.0.1:9393/ > nul 2>&1
 REM r2 -N -qc '=0 pd 10' -C http://127.0.0.1:9393/cmd
