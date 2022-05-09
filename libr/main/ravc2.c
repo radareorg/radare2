@@ -31,7 +31,7 @@ static void help(void) {
 	);
 }
 
-char *get_author() {
+static char *get_author(void) {
 	char *author = r_sys_getenv ("RAVC2_USER");
 	if (R_STR_ISEMPTY(author)) {
 		free (author);
