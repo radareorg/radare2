@@ -184,47 +184,6 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		r_list_free (commits);
 		return 0;
 	}
-	if (!strcmp (action, "status")) {
-		char *cb = r_vc_current_branch (rp);
-		if (!cb) {
-			return 1;
-		}
-		RList *unc = r_vc_get_uncommitted (rp);
-		if (!unc) {
-			free (cb);
-			return 1;
-		}
-		printf ("Branch: %s\n", cb);
-		free (cb);
-		if (!r_list_empty (unc)) {
-			printf ("The follwing files are uncommitted:\n");
-			RListIter *iter;
-			const char *i;
-			r_list_foreach (unc, iter, i) {
-				printf ("%s\n", i);
-			}
-		} else {
-			printf ("All files are committed\n");
-		}
-		r_list_free (unc);
-		return 0;
-	}
-	if (!strcmp (action, "reset")) {
-		if (!r_vc_reset (rp)) {
-			free (rp);
-			eprintf ("Couldn't reset\n");
-			return 1;
-		}
-		return 0;
-	}
-	if (!strcmp (action, "clone")) {
-		free (rp);
-		if (opt.argc < 3) {
-			eprintf ("Usage: %s [src] [dst]\n", argv[0]);
-			return -1;
-		}
-		return !r_vc_clone (argv[1 + opt.ind], argv[2 + opt.ind]);
-	}
 	eprintf ("incorrect command");
 ret:
 	r_vc_close(rvc, save);
