@@ -809,6 +809,7 @@ static int archinfo(RAnal *anal, int q) {
 RAnalPlugin r_anal_plugin_m68k_cs = {
 	.name = "m68k",
 	.desc = "Capstone M68K analyzer",
+	.cpus = "68000,68010,68020,68030,68040,68060",
 	.license = "BSD",
 	.esil = false,
 	.arch = "m68k",

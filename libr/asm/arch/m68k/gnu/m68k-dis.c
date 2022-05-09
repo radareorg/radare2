@@ -750,7 +750,7 @@ print_insn_arg (const char *d,
 	  };
 	unsigned int arch_mask;
 
-	arch_mask = 0; // bfd_m68k_mach_to_features (info->mach);
+	arch_mask = info->mach; // bfd_m68k_mach_to_features (info->mach);
 	FETCH_ARG (12, val);
 	if (arch_mask & (mcfisa_b | mcfisa_c))
 	  {
@@ -1631,7 +1631,7 @@ print_insn_m68k (bfd_vma memaddr, disassemble_info *info)
   priv.max_fetched = priv.the_buffer;
   priv.insn_start = memaddr;
 
-  arch_mask = 0; // bfd_m68k_mach_to_features (info->mach);
+  arch_mask = info->mach; // 0; // bfd_m68k_mach_to_features (info->mach);
   if (!arch_mask)
     {
       /* First try printing an m680x0 instruction.  Try printing a Coldfire
