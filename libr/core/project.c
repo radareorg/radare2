@@ -324,7 +324,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 		core->prj->rvc = r_vc_load(prj_path);
 		free (prj_path);
 	} else {
-		eprintf("Failed to load rvc");
+		eprintf ( "Failed to load rvc\n");
 	}
 	r_config_set_b (core->config, "cfg.fortunes", cfg_fortunes);
 	r_config_set_b (core->config, "scr.interactive", scr_interactive);
