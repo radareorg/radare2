@@ -184,7 +184,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		r_list_free (commits);
 		return 0;
 	}
-	eprintf ("incorrect command");
+	eprintf ("Incorrect command\n");
 ret:
 	r_vc_close(rvc, save);
 	return !save;
