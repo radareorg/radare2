@@ -88,9 +88,7 @@ static int defaultCycles(RAnalOp *op) {
 }
 
 R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
-eprintf ("CALLING OPS %d\n", outlen);
 	if (anal && outbuf && outlen > 0 && anal->cur && anal->cur->opasm) {
-eprintf ("---CALLING OPS %d\n", outlen);
 		// use core binding to set asm.bits correctly based on the addr
 		// this is because of the hassle of arm/thumb
 		int ret = anal->cur->opasm (anal, addr, s, outbuf, outlen);
