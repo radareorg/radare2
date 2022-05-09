@@ -317,6 +317,15 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	} else {
 		ret = r_core_cmd_file (core, rcpath);
 	}
+	char *prj_path = r_file_dirname(rcpath);
+	if (prj_path) {
+		// don't check for null, if it is then we just assume the repo
+		// does not exist.
+		core->prj->rvc = r_vc_load(prj_path);
+		free (prj_path);
+	} else {
+		eprintf("Failed to load rvc");
+	}
 	r_config_set_b (core->config, "cfg.fortunes", cfg_fortunes);
 	r_config_set_b (core->config, "scr.interactive", scr_interactive);
 	r_config_set_b (core->config, "scr.prompt", scr_prompt);
@@ -669,7 +678,8 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		RList *paths = r_list_new ();
 		if (paths) {
 			if (r_list_append (paths, prj_dir)) {
-				if (!rvc_git_commit (core, prj_dir, NULL, NULL, paths)) {
+				if (!rvc_git_commit (core, core->prj->rvc,
+							NULL, NULL, paths)) {
 					r_list_free (paths);
 					free (prj_dir);
 					free (script_path);
