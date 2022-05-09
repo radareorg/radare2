@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(r_magic);
+R_LIB_VERSION_HEADER (r_magic);
 
 #ifdef R_API
 
@@ -282,6 +282,7 @@ R_API const char *r_magic_buffer(RMagic*, const void *, size_t);
 
 R_API const char *r_magic_error(RMagic*);
 R_API void r_magic_setflags(RMagic*, int);
+R_API void r_magic_from_ebcdic(const ut8 *, size_t, ut8 *);
 
 R_API bool r_magic_load(RMagic*, const char *);
 R_API bool r_magic_load_buffer(RMagic*, const ut8 *, size_t);

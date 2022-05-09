@@ -259,6 +259,7 @@ bin_plugins += [
   'art',
   'avr',
   'bf',
+  's390',
   'bflt',
   'bios',
   'bootimg',
