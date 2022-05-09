@@ -253,7 +253,7 @@ static RList *sections(RBinFile *bf) {
 			r_strbuf_appendf (su->sb, "Record %02d Type 0x%02x SubType 0x%02x - Count: 0x%04x (%03d) - 0x%02x\n", 
 					rec, gbuf[0], hdr80.SubType, x, lon, lon);
 			x += sizeof (S390_Header_CSECT_IDR);
-			add_section (ret, r_str_newf ("record%d", rec), x, lonCR);
+			add_section (ret, r_str_newf ("record%d", rec), x, lon);
 			eprintf ("SECTION AT 0x%08x OF LENGTH %d\n", x, lon);
 
 			// To Do something with IDR data
