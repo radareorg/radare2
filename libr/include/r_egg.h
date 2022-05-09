@@ -219,8 +219,8 @@ R_API int r_egg_run_rop(REgg *egg);
 R_API bool r_egg_patch(REgg *egg, int off, const ut8 *b, int l);
 R_API void r_egg_finalize(REgg *egg);
 
-/* r_egg_Cfile.c */
-R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *os, int bits);
+/* r_egg_cfile.c */
+R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *os, int bits);
 
 /* lang.c */
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta);
