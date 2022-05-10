@@ -216,7 +216,6 @@ asm_plugins += [
   'v810',
   'v850',
   'vax',
-  'ws',
   'x86_as',
   'x86_cs',
   'x86_nasm',

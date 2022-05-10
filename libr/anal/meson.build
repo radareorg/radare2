@@ -97,6 +97,7 @@ r_anal_sources = [
   join_paths('p','anal_jdh8.c'),
   join_paths('p','anal_wasm.c'),
   join_paths('p','anal_ws.c'),
+  # join_paths('arch/whitespace/wsdis.c'),
   join_paths('p','anal_x86_cs.c'),
   join_paths('p','anal_xap.c'),
   join_paths('p','anal_xcore_cs.c'),

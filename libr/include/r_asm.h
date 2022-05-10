@@ -235,7 +235,6 @@ extern RAsmPlugin r_asm_plugin_v850;
 extern RAsmPlugin r_asm_plugin_v850_gnu;
 extern RAsmPlugin r_asm_plugin_m68k_gnu;
 extern RAsmPlugin r_asm_plugin_vax;
-extern RAsmPlugin r_asm_plugin_ws;
 extern RAsmPlugin r_asm_plugin_x86_as;
 extern RAsmPlugin r_asm_plugin_x86_cs;
 extern RAsmPlugin r_asm_plugin_x86_nasm;
