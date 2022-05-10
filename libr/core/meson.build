@@ -72,9 +72,6 @@ r_core_sources = [
 ]
 
 r_core_inc = []
-if host_machine.system() == 'windows'
-  r_core_sources += 'windows_heap.c'
-endif
 r_core_inc = [platform_inc, include_directories(r_core_inc)]
 
 r_core_deps = [
