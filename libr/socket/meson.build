@@ -20,7 +20,6 @@ endif
 
 if use_sys_openssl
   r_util_deps += [sys_openssl]
-  r_util_static_deps += [sys_openssl]
 endif
 
 r_socket = library('r_socket', r_socket_sources,
