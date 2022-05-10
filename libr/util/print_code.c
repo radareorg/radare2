@@ -169,6 +169,15 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		}
 		p->cb_printf ("\n.equ shellcode_len, %d\n", len);
 		break;
+	case 'g': // "pcg"
+		p->cb_printf ("var BUFF = [%d]byte{", len);
+		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+			r_print_cursor (p, i, 1, 1);
+			p->cb_printf ("0x%x%s", buf[i], (i + 1 < len)? ",": "");
+			r_print_cursor (p, i, 1, 0);
+		}
+		p->cb_printf ("}\n");
+		break;
 	case 's': // "pcs"
 		p->cb_printf ("\"");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
