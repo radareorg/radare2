@@ -4580,6 +4580,9 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *bin, ut64 limit_start,
 				if (page_idx >= bin->chained_starts[i]->page_count) {
 					break;
 				}
+				if (!bin->chained_starts[i]->page_start) {
+					break;
+				}
 				ut16 page_start = bin->chained_starts[i]->page_start[page_idx];
 				if (page_start == DYLD_CHAINED_PTR_START_NONE) {
 					continue;
