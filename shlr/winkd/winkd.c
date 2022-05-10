@@ -536,6 +536,7 @@ RList *winkd_list_modules(WindCtx *ctx) {
 
 		mod->name = calloc ((ut64)length + 1, 1);
 		if (!mod->name) {
+			free (unname);
 			break;
 		}
 		wcstombs (mod->name, unname, length);

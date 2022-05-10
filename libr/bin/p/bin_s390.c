@@ -123,12 +123,12 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static void add_symbol(RList *ret, const char *name, ut64 addr) {
+static void add_symbol(RList *ret, char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 	if (!ptr) {
 		return;
 	}
-	ptr->name = strdup (r_str_get (name));
+	ptr->name = name;
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = 0;
 	ptr->ordinal = 0;

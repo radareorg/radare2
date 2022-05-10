@@ -119,9 +119,6 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 R_API bool r_th_lock_tryenter(RThreadLock *thl) {
 	r_return_val_if_fail (thl, false);
 	R_LOG_DEBUG ("r_th_lock_tryenter");
-	if (!thl) {
-		return -1;
-	}
 #if HAVE_PTHREAD
 	return pthread_mutex_trylock (&thl->lock) == 0;
 #elif __WINDOWS__
@@ -134,9 +131,6 @@ R_API bool r_th_lock_tryenter(RThreadLock *thl) {
 R_API bool r_th_lock_leave(RThreadLock *thl) {
 	r_return_val_if_fail (thl, false);
 	R_LOG_DEBUG ("r_th_lock_leave");
-	if (!thl) {
-		return -1;
-	}
 #if HAVE_PTHREAD
 	return pthread_mutex_unlock (&thl->lock) == 0;
 #elif __WINDOWS__

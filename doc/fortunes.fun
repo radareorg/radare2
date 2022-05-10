@@ -304,3 +304,5 @@ The r emblem on the front is the legendary symbol for invincibility!
 Send PR or GTFO
 If it's stupid and it works, it is not stupid
 33 + 77 = 100
+radare2[15449] Corpse failure, too many 6
+Process[15449] crashed: radare2. Too many corpses being created.
