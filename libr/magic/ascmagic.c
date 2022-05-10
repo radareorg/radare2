@@ -37,6 +37,7 @@
  * international characters, now subsumed into this file.
  */
 #include <r_userconf.h>
+#include <r_types.h>
 
 #if !USE_LIB_MAGIC
 
@@ -67,7 +68,7 @@ int file_ascmagic(RMagic *ms, const ut8 *buf, size_t nbytes) {
 return 0;
 	size_t i;
 	ut8 *nbuf = NULL, *utf8_buf = NULL, *utf8_end;
-	unichar *ubuf = NULL;	
+	unichar *ubuf = NULL;
 	size_t ulen, mlen;
 	const struct names *p;
 	int rv = -1;
@@ -729,6 +730,8 @@ static int looks_ucs16(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ule
 #undef I
 #undef X
 
+#endif
+
 /*
  * This table maps each EBCDIC character to an (8-bit extended) ASCII
  * character, as specified in the rationale for the dd(1) command in
@@ -814,4 +817,3 @@ R_API void r_magic_from_ebcdic(const ut8 *buf, size_t nbytes, ut8 *out) {
 		out[i] = ebcdic_to_ascii[buf[i]];
 	}
 }
-#endif
