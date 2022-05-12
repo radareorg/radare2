@@ -513,7 +513,6 @@ typedef struct {
 } RecurseDepthFirstCtx;
 
 R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, R_NULLABLE RAnalBlockCb on_exit, void *user) {
-	bool breaked = false;
 	if (!block) {
 		return false;
 	}
@@ -528,8 +527,7 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 	RecurseDepthFirstCtx ctx = { cur_bb, NULL };
 	r_vector_push (&path, &ctx);
 	ht_up_insert (visited, cur_bb->addr, NULL);
-	breaked = !cb (cur_bb, user);
-	if (breaked) {
+	if (!cb (cur_bb, user)) {
 		goto beach;
 	}
 	do {
@@ -556,12 +554,16 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 			cur_bb = cop ? r_anal_get_block_at (anal, cop->jump) : NULL;
 		}
 		if (cur_bb) {
-			RecurseDepthFirstCtx ctx = { cur_bb, NULL };
-			r_vector_push (&path, &ctx);
-			ht_up_insert (visited, cur_bb->addr, NULL);
-			bool breaked = !cb (cur_bb, user);
-			if (breaked) {
-				break;
+			if (!ht_up_find_kv (visited, cur_bb->addr, NULL)) {
+				RecurseDepthFirstCtx ctx = { cur_bb, NULL };
+				r_vector_push (&path, &ctx); // does memcpy
+				ht_up_insert (visited, cur_bb->addr, NULL);
+				bool breaked = !cb (cur_bb, user);
+				if (breaked) {
+					break;
+				}
+			} else {
+				eprintf ("repanocha\n");
 			}
 		} else {
 			if (on_exit) {
@@ -574,7 +576,7 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 beach:
 	ht_up_free (visited);
 	r_vector_clear (&path);
-	return !breaked;
+	return true; // false!breaked;
 }
 
 static bool recurse_list_cb(RAnalBlock *block, void *user) {

@@ -3917,11 +3917,10 @@ static void xrefs_map(RCore *core, const char *input) {
 
 R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) {
 	int depth = r_config_get_i (core->config, "anal.depth");
-	RAnalFunction *fcn = NULL;
 
 	//r_core_anal_undefine (core, core->offset);
 	r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
-	fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (fcn) {
 		/* ensure we use a proper name */
 		__setFunctionName (core, addr, fcn->name, false);
