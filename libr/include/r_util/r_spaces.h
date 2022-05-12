@@ -100,7 +100,7 @@ static inline bool r_spaces_is_empty(RSpaces *sp) {
 
 typedef RRBNode RSpaceIter;
 #define r_spaces_foreach(sp, it, s) \
-	r_crbtree_foreach ((sp)->spaces, (it), (s))
+	r_crbtree_foreach ((sp)->spaces, (it), RSpace, (s))
 
 #ifdef __cplusplus
 }
