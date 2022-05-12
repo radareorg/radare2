@@ -508,7 +508,11 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		r_core_cmd (core, "afl*", 0);
 		r_cons_flush ();
 	}
-
+	{
+		r_cons_printf ("# registers\n");
+		r_core_cmd (core, "ar*;arR", 0);
+		r_cons_flush ();
+	}
 	if (opts & R_CORE_PRJ_FLAGS) {
 		r_cons_printf ("# flags\n");
 		r_flag_space_push (core->flags, NULL);
