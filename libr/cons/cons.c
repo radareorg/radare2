@@ -1391,8 +1391,7 @@ R_API int r_cons_eprintf(const char *format, ...) {
 		break;
 	}
 	va_end (ap);
-
-	return r_strbuf_length (C->error);
+	return C->error? r_strbuf_length (C->error): 0;
 }
 
 R_API int r_cons_get_column(void) {

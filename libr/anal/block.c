@@ -563,7 +563,7 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 					break;
 				}
 			} else {
-				eprintf ("repanocha\n");
+				// eprintf ("repanocha\n");
 			}
 		} else {
 			if (on_exit) {
