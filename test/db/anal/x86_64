@@ -1337,15 +1337,18 @@ e asm.arch=x86
 e asm.bits=64
 pd 1
 Cf 1 x
+f-r*
 pd 1
 e scr.interactive=false
 Ps temp_proj
 Cf-
+f-r*
 pd 1
 e scr.interactive=false
 Ps temp_proj
 e scr.interactive=false
-Po temp_proj
+P temp_proj
+f-r*
 pd 1
 EOF
 EXPECT=<<EOF
