@@ -3819,6 +3819,9 @@ R_API const char *r_str_bool(int b) {
 }
 
 R_API bool r_str_is_true(const char *s) {
+	if (!s) {
+		return false;
+	}
 	return !r_str_casecmp ("yes", s)
 		|| !r_str_casecmp ("on", s)
 		|| !r_str_casecmp ("true", s)
@@ -3826,6 +3829,9 @@ R_API bool r_str_is_true(const char *s) {
 }
 
 R_API bool r_str_is_false(const char *s) {
+	if (!s) {
+		return true;
+	}
 	return !r_str_casecmp ("no", s)
 		|| !r_str_casecmp ("off", s)
 		|| !r_str_casecmp ("false", s)
