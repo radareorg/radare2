@@ -5704,10 +5704,17 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 				if (!r_io_map_locate (core->io, &next, 1, 0)) {
 					from += sizeof (buf);
 				} else {
-					from += (next - from);
+					if (next > from) {
+						from += (next - from);
+					} else {
+						from ++;
+					}
 				}
 				continue;
 			}
+		}
+		if (vsize > size) {
+			break;
 		}
 		for (i = 0; i <= (size - vsize); i++) {
 			void *v = (buf + i);
@@ -5777,7 +5784,11 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 		if (size == to - from) {
 			break;
 		}
-		from += size - vsize + 1;
+		if (size > vsize + 1) {
+			from += size - vsize + 1;
+		} else {
+			from += 1;
+		}
 	}
 beach:
 	r_cons_break_pop ();
