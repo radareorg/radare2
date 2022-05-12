@@ -3450,8 +3450,21 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	if (!buf) {
 		return false;
 	}
-	(void) r_io_read_at (ctx->core->io, bb->addr, buf, bb->size);
-
+	bool skip_bb = false;
+	if (r_io_read_at (ctx->core->io, bb->addr, buf, bb->size) < 1) {
+		skip_bb = true;
+	} else {
+		if (bb->size > 1024) {
+			// optimization skipping huge nop bbs
+			ut8 zbuf[8] = {0};
+			if (!memcmp (buf, zbuf, sizeof (zbuf))) {
+				skip_bb = true;
+			}
+		}
+	}
+	if (skip_bb) {
+		return false;
+	}
 	int *parent_reg_set = r_pvector_at (&ctx->reg_set, r_pvector_len (&ctx->reg_set) - 1);
 	int *reg_set = R_NEWS (int, REG_SET_SIZE);
 	memcpy (reg_set, parent_reg_set, REG_SET_SIZE * sizeof (int));
