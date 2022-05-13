@@ -80,10 +80,12 @@
 #define __POWERPC__ 1
 #endif
 
+#ifndef TARGET_OS_IPHONE
 #if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
 #define TARGET_OS_IPHONE 1
 #else
 #define TARGET_OS_IPHONE 0
+#endif
 #endif
 
 #undef LIBC_HAVE_SYSTEM
