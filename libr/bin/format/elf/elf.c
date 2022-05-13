@@ -124,7 +124,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 	ut8 ehdr[sizeof (Elf_(Ehdr))] = {0};
 	int i, len;
 	if (r_buf_read_at (bin->b, 0, e_ident, EI_NIDENT) == -1) {
-		R_LOG_ERROR ("read (magic)");
+		R_LOG_DEBUG ("read (magic)");
 		return false;
 	}
 	sdb_set (bin->kv, "elf_type.cparse", "enum elf_type { ET_NONE=0, ET_REL=1,"
@@ -188,7 +188,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
 	len = r_buf_read_at (bin->b, 0, ehdr, sizeof (ehdr));
 	if (len < 32) { // tinyelf != sizeof (Elf_(Ehdr))) {
-		R_LOG_ERROR ("read (ehdr)");
+		R_LOG_DEBUG ("read (ehdr)");
 		return false;
 	}
 	// XXX no need to check twice
@@ -257,7 +257,7 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 		const size_t rsize = bin->ehdr.e_phoff + i * sizeof (Elf_(Phdr));
 		int len = r_buf_read_at (bin->b, rsize, phdr, sizeof (Elf_(Phdr)));
 		if (len < 1) {
-			R_LOG_ERROR ("read (phdr)");
+			R_LOG_DEBUG ("read (phdr)");
 			R_FREE (bin->phdr);
 			return false;
 		}
@@ -397,7 +397,7 @@ static int init_shdr(ELFOBJ *bin) {
 		j = 0;
 		len = r_buf_read_at (bin->b, bin->ehdr.e_shoff + i * sizeof (Elf_(Shdr)), shdr, sizeof (Elf_(Shdr)));
 		if (len < 1) {
-			R_LOG_ERROR ("read (shdr) at 0x%" PFMT64x, (ut64) bin->ehdr.e_shoff);
+			R_LOG_DEBUG ("read (shdr) at 0x%" PFMT64x, (ut64) bin->ehdr.e_shoff);
 			R_FREE (bin->shdr);
 			return false;
 		}
@@ -475,7 +475,7 @@ static int init_strtab(ELFOBJ *bin) {
 	int res = r_buf_read_at (bin->b, bin->shstrtab_section->sh_offset, (ut8*)bin->shstrtab,
 		bin->shstrtab_section->sh_size);
 	if (res < 1) {
-		R_LOG_ERROR ("read (shstrtab) at 0x%" PFMT64x, (ut64) bin->shstrtab_section->sh_offset);
+		R_LOG_DEBUG ("read (shstrtab) at 0x%" PFMT64x, (ut64) bin->shstrtab_section->sh_offset);
 		R_FREE (bin->shstrtab);
 		return false;
 	}
@@ -970,7 +970,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	}
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, 1);
 	if (!defs) {
-		R_LOG_ERROR ("Cannot allocate memory (Check Elf_(Verdef))");
+		R_LOG_DEBUG ("Cannot allocate memory (Check Elf_(Verdef))");
 		return false;
 	}
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
@@ -1798,7 +1798,7 @@ ut64 Elf_(r_bin_elf_get_init_offset)(ELFOBJ *bin) {
 		return UT64_MAX;
 	}
 	if (r_buf_read_at (bin->b, entry + 16, buf, sizeof (buf)) < 1) {
-		R_LOG_ERROR ("read (init_offset)");
+		R_LOG_DEBUG ("read (init_offset)");
 		return 0;
 	}
 	if (buf[0] == 0x68) { // push // x86 only
