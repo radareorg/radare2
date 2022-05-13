@@ -2004,6 +2004,9 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 		// Change begin offset if binary starts with 'endbr64'
 		bo = 33;
 	}
+	if (buf[bo] != 0x48) {
+		bo -= 9;
+	}
 	if (buf[bo] == 0x48) {
 		ut8 ch = buf[bo + 1];
 		if (ch == 0x8d) { // lea rdi, qword [rip-0x21c4]
