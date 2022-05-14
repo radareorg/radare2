@@ -4057,6 +4057,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.name = "x86",
 	.desc = "Capstone X86 analysis",
 	.esil = true,
+	.jmpmid = true,
 	.license = "BSD",
 	.arch = "x86",
 	.bits = 16 | 32 | 64,

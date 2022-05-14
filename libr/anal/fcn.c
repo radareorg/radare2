@@ -608,7 +608,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
 
-	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid && is_x86);
+	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid && anal->cur->jmpmid);
 	if (existing_bb) {
 		bool existing_in_fcn = r_list_contains (existing_bb->fcns, fcn);
 		existing_bb = r_anal_block_split (existing_bb, addr);
@@ -756,10 +756,10 @@ repeat:
 			r_anal_hint_set_bits (anal, op->jump, op->hint.new_bits);
 		}
 		if (idx > 0 && !overlapped) {
-			bbg = bbget (anal, at, anal->opt.jmpmid && is_x86);
+			bbg = bbget (anal, at, anal->opt.jmpmid && anal->cur->jmpmid);
 			if (bbg && bbg != bb) {
 				bb->jump = at;
-				if (anal->opt.jmpmid && is_x86) {
+				if (anal->opt.jmpmid && anal->cur->jmpmid) {
 					// This happens when we purposefully walked over another block and overlapped it
 					// and now we hit an offset where the instructions match again.
 					// So we need to split the overwalked block.
@@ -1610,7 +1610,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 		RListIter *iter;
 		RAnalBlock *bb;
 		ut64 endaddr = fcn->addr;
-		const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
+		const bool can_jmpmid = (bool)anal->cur->jmpmid;
 
 		// set function size as length of continuous sequence of bbs
 		r_list_sort (fcn->bbs, &cmpaddr);
@@ -1618,7 +1618,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 			if (endaddr == bb->addr) {
 				endaddr += bb->size;
 			} else if ((endaddr < bb->addr && bb->addr - endaddr < BB_ALIGN)
-					|| (anal->opt.jmpmid && is_x86 && endaddr > bb->addr
+					|| (anal->opt.jmpmid && can_jmpmid && endaddr > bb->addr
 						&& bb->addr + bb->size > endaddr)) {
 				endaddr = bb->addr + bb->size;
 			} else {
@@ -2012,12 +2012,11 @@ R_API RAnalBlock *r_anal_function_bbget_in(const RAnal *anal, RAnalFunction *fcn
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (addr >= bb->addr && addr < (bb->addr + bb->size)
-			&& (!anal->opt.jmpmid || !is_x86 || r_anal_block_op_starts_at (bb, addr))) {
+			&& (!anal->opt.jmpmid || !anal->cur->jmpmid || r_anal_block_op_starts_at (bb, addr))) {
 			return bb;
 		}
 	}

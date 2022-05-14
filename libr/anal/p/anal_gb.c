@@ -1,5 +1,5 @@
 /* radare - LGPL - Copyright 2012 - pancake<nopcode.org>
-			     2019 - condret
+			     2022 - condret
 
 	this file was based on anal_i8080.c */
 
@@ -1571,6 +1571,7 @@ RAnalPlugin r_anal_plugin_gb = {
 	.license = "LGPL3",
 	.arch = "z80",
 	.esil = true,
+	.jmpmid = true,
 	.bits = 16,
 	.op = &gb_anop,
 	.set_reg_profile = &set_reg_profile,
