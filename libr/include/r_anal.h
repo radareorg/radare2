@@ -1333,6 +1333,7 @@ typedef struct r_anal_plugin_t {
 	char *cpus;
 	int bits;
 	int esil; // can do esil or not
+	int jmpmid;	// can do jump in the middle
 	int fileformat_type;
 	int (*init)(void *user);
 	int (*fini)(void *user);
