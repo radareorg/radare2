@@ -370,9 +370,9 @@ static void free_leaddr_pair(void *pair) {
 static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 	RList *intersecting = r_anal_get_blocks_in (anal, addr);
 	RListIter *iter;
-	RAnalBlock *bb;
+	RAnalBlock *bb, *ret = NULL;
 
-	RAnalBlock *ret = NULL;
+	jumpmid &= r_anal_is_aligned (anal, addr);
 	r_list_foreach (intersecting, iter, bb) {
 		ut64 eaddr = bb->addr + bb->size;
 		if (((bb->addr >= eaddr && addr == bb->addr)
@@ -603,7 +603,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
 
-	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid && anal->cur->jmpmid);
+	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid);
 	if (existing_bb) {
 		bool existing_in_fcn = r_list_contains (existing_bb->fcns, fcn);
 		existing_bb = r_anal_block_split (existing_bb, addr);
@@ -751,10 +751,10 @@ repeat:
 			r_anal_hint_set_bits (anal, op->jump, op->hint.new_bits);
 		}
 		if (idx > 0 && !overlapped) {
-			bbg = bbget (anal, at, anal->opt.jmpmid && anal->cur->jmpmid);
+			bbg = bbget (anal, at, anal->opt.jmpmid);
 			if (bbg && bbg != bb) {
 				bb->jump = at;
-				if (anal->opt.jmpmid && anal->cur->jmpmid) {
+				if (anal->opt.jmpmid && r_anal_is_aligned (anal, at)) {
 					// This happens when we purposefully walked over another block and overlapped it
 					// and now we hit an offset where the instructions match again.
 					// So we need to split the overwalked block.
@@ -1977,16 +1977,17 @@ R_API int r_anal_function_count(RAnal *anal, ut64 from, ut64 to) {
 
 /* return the basic block in fcn found at the given address.
  * NULL is returned if such basic block doesn't exist. */
-R_API RAnalBlock *r_anal_function_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut64 addr) {
+R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	r_return_val_if_fail (anal && fcn, NULL);
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
 	RListIter *iter;
 	RAnalBlock *bb;
+	bool jmpmid = r_anal_is_aligned (anal, addr);
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (addr >= bb->addr && addr < (bb->addr + bb->size)
-			&& (!anal->opt.jmpmid || !anal->cur->jmpmid || r_anal_block_op_starts_at (bb, addr))) {
+			&& (!anal->opt.jmpmid || !jmpmid || r_anal_block_op_starts_at (bb, addr))) {
 			return bb;
 		}
 	}
