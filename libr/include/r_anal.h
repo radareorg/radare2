@@ -1720,7 +1720,7 @@ R_API RAnalFunction *r_anal_function_next(RAnal *anal, ut64 addr);
 R_API char *r_anal_function_get_signature(RAnalFunction *function);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_function_count(RAnal *a, ut64 from, ut64 to);
-R_API RAnalBlock *r_anal_function_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut64 addr);
+R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr);
 R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_function_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize);

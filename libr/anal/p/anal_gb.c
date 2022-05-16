@@ -1562,7 +1562,7 @@ static int archinfo(RAnal *anal, int q) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return 1;
 	}
-	return 1;
+	return -1;
 }
 
 RAnalPlugin r_anal_plugin_gb = {
@@ -1571,7 +1571,6 @@ RAnalPlugin r_anal_plugin_gb = {
 	.license = "LGPL3",
 	.arch = "z80",
 	.esil = true,
-	.jmpmid = true,
 	.bits = 16,
 	.op = &gb_anop,
 	.set_reg_profile = &set_reg_profile,

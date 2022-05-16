@@ -74,7 +74,7 @@ EXPECT=<<EOF
 0x001065d8   17 198          sym.___fputwc
 0x0010669e    3 40           sym.__fputwc_r
 0x001066ca    6 84   -> 78   sym._fputwc
-0x0010672a   11 430  -> 326  fcn.0010672a
+0x0010672a   12 430  -> 328  fcn.0010672a
 0x00106b62    4 46           sym.__isatty_r
 0x00106b90    8 90           sym.__setlocale_r
 0x00106bea    1 18           sym._setlocale
@@ -223,7 +223,7 @@ EXPECT=<<EOF
 0x0010d5aa    1 26           fcn.0010d5aa
 0x0010d6bc   26 584          fcn.0010d6bc
 0x0010d91c    1 18           fcn.0010d91c
-0x0010e2a2   30 610  -> 504  sym._fileno
+0x0010e2a2   31 610  -> 506  sym._fileno
 0x0010e78e    1 20           sym.__findenv_r
 0x0010e82e    1 12           sym.__getenv_r
 0x0010e840    4 46           sym.__isatty_r

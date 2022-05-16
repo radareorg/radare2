@@ -192,7 +192,6 @@ RAnalPlugin r_anal_plugin_i8080 = {
 	.desc = "I8080 CPU code analysis plugin",
 	.license = "LGPL3",
 	.arch = "i8080",
-	.jmpmid = true,
 	.bits = 16,
 	.op = &i8080_op,
 };

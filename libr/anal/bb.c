@@ -31,7 +31,7 @@ static bool bb_from_offset_first_cb(RAnalBlock *block, void *user) {
 }
 
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
-	if (anal->opt.jmpmid && anal->cur->jmpmid) {
+	if (anal->opt.jmpmid && r_anal_is_aligned (anal, off)) {
 		BBFromOffsetJmpmidCtx ctx = { off, NULL };
 		r_anal_blocks_foreach_in (anal, off, bb_from_offset_jmpmid_cb, &ctx);
 		return ctx.ret;
