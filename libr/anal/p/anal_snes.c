@@ -6,18 +6,75 @@
 #include <r_asm.h>
 #include <r_anal.h>
 #include "../../asm/arch/snes/snes_op_table.h"
-#include "../../asm/p/asm_snes.h"
 
-static R_TH_LOCAL struct snes_asm_flags* snesflags = NULL;
+struct snes_asm_flags {
+	unsigned char M;
+	unsigned char X;
+};
+static R_TH_LOCAL struct snes_asm_flags snesflags = {0};
+
+static char *snes_disass(ut64 pc, const ut8 *buf, int len) {
+	int M_flag = snesflags.M;
+	int X_flag = snesflags.X;
+	snes_op_t *s_op = &snes_op[buf[0]];
+	int op_len = snes_op_get_size (M_flag, X_flag, s_op);
+	if (len < op_len) {
+		return 0;
+	}
+	const char *buf_asm = "invalid";
+	r_strf_buffer (64);
+	switch (s_op->len) {
+	case SNES_OP_8BIT:
+		buf_asm = s_op->name;
+		break;
+	case SNES_OP_16BIT:
+		if (*buf % 0x20 == 0x10 || *buf == 0x80) { // relative branch
+			buf_asm = r_strf (s_op->name, (ut32)(pc + 2 + (st8)buf[1]));
+		} else {
+			buf_asm = r_strf (s_op->name, buf[1]);
+		}
+		break;
+	case SNES_OP_24BIT:
+		if (*buf == 0x44 || *buf == 0x54) { // mvp and mvn
+			buf_asm = r_strf (s_op->name, buf[1], buf[2]);
+		} else if (*buf == 0x82) { // brl
+			buf_asm = r_strf (s_op->name, pc + 3 + (st16)ut8p_bw(buf + 1));
+		} else {
+			buf_asm = r_strf (s_op->name, ut8p_bw (buf + 1));
+		}
+		break;
+	case SNES_OP_32BIT:
+		buf_asm = r_strf (s_op->name, buf[1]|buf[2]<<8|buf[3]<<16);
+		break;
+	case SNES_OP_IMM_M:
+		if (M_flag) {
+			buf_asm = r_strf ("%s #0x%02x", s_op->name, buf[1]);
+		} else {
+			buf_asm = r_strf ("%s #0x%04x", s_op->name, ut8p_bw (buf + 1));
+		}
+		break;
+	case SNES_OP_IMM_X:
+		if (X_flag) {
+			buf_asm = r_strf ("%s #0x%02x", s_op->name, buf[1]);
+		} else {
+			buf_asm = r_strf ("%s #0x%04x", s_op->name, ut8p_bw (buf + 1));
+		}
+		break;
+	}
+	return strdup (buf_asm);
+}
 
 static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	op->size = snes_op_get_size(snesflags->M, snesflags->X, &snes_op[data[0]]);
+	op->size = snes_op_get_size(snesflags.M, snesflags.X, &snes_op[data[0]]);
 	if (op->size > len) {
 		return op->size = 0;
 	}
 	op->nopcode = 1;
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = snes_disass (addr, data, len);
+	}
 	switch (data[0]) {
 	case 0xea: // nop
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -220,36 +277,22 @@ static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case 0xc2: // rep
 		if (((st8)data[1]) & 0x10) {
-			snesflags->X = 0;
+			snesflags.X = 0;
 		}
 		if (((st8)data[1]) & 0x20) {
-			snesflags->M = 0;
+			snesflags.M = 0;
 		}
 		break;
 	case 0xe2: // sep
 		if (((st8)data[1]) & 0x10) {
-			snesflags->X = 1;
+			snesflags.X = 1;
 		}
 		if (((st8)data[1]) & 0x20) {
-			snesflags->M = 1;
+			snesflags.M = 1;
 		}
 		break;
 	}
 	return op->size;
-}
-
-static int snes_anal_init(void* user) {
-	if (!snesflags) {
-		snesflags = malloc (sizeof (struct snes_asm_flags));
-	}
-	memset(snesflags,0,sizeof (struct snes_asm_flags));
-	return 0;
-}
-
-static int snes_anal_fini(void* user) {
-	free(snesflags);
-	snesflags = NULL;
-	return 0;
 }
 
 RAnalPlugin r_anal_plugin_snes = {
@@ -257,9 +300,7 @@ RAnalPlugin r_anal_plugin_snes = {
 	.desc = "SNES analysis plugin",
 	.license = "LGPL3",
 	.arch = "snes",
-	.bits = 16,
-	.init = snes_anal_init,
-	.fini = snes_anal_fini,
+	.bits = 8 | 16,
 	.op = &snes_anop,
 };
 
