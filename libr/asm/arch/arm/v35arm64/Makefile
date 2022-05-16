@@ -23,7 +23,7 @@ mrproper: clean
 
 .PHONY: all clean
 
-ARCH_ARM64_COMMIT=3c5eaba46dab72ecb7d5f5b865a13fdeee95b464
+ARCH_ARM64_COMMIT=8cce1c8be0b5d930081d670a967ff8775ed1cc54
 ARCH_ARMV7_COMMIT=dde39f69ffea19fc37e681874b12cb4707bc4f30
 
 $(ALIBS): arch-arm64 arch-armv7
@@ -31,7 +31,7 @@ $(ALIBS): arch-arm64 arch-armv7
 ## ARM64
 arch-arm64:
 	git clone -q https://github.com/radareorg/vector35-arch-arm64 arch-arm64
-	cd arch-arm64 && git checkout -q radare2 > /dev/null && git reset --hard $(ARCH_ARM64_COMMIT)
+	cd arch-arm64 && git checkout -q radare2-wip > /dev/null && git reset --hard $(ARCH_ARM64_COMMIT)
 
 $(V35ARM64_HOME)/arm64dis.a arm64dis.a: $(ALIBS)
 	rm -f arm64dis.$(EXT_AR)
