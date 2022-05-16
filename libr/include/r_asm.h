@@ -225,7 +225,6 @@ extern RAsmPlugin r_asm_plugin_riscv;
 extern RAsmPlugin r_asm_plugin_riscv_cs;
 extern RAsmPlugin r_asm_plugin_rsp;
 extern RAsmPlugin r_asm_plugin_sh;
-extern RAsmPlugin r_asm_plugin_snes;
 extern RAsmPlugin r_asm_plugin_sparc_cs;
 extern RAsmPlugin r_asm_plugin_sparc_gnu;
 extern RAsmPlugin r_asm_plugin_tms320;

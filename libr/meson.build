@@ -211,7 +211,6 @@ asm_plugins += [
   'riscv',
   'rsp',
   'sh',
-  'snes',
   'sparc_cs',
   'tms320',
   'v810',
