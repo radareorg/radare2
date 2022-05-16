@@ -8,7 +8,7 @@ aac
 aflc
 EOF
 EXPECT=<<EOF
-794
+793
 EOF
 RUN
 

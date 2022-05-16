@@ -2,8 +2,8 @@ NAME=fnj shows demangled symbols
 FILE=bins/elf/demangle-test-cpp
 CMDS=<<EOF
 aaa
-fj~{261}
-fnj~{261}
+fj~{259}
+fnj~{259}
 EOF
 EXPECT=<<EOF
 {"name":"reloc.std::__throw_length_error_char_const_","realname":"std::__throw_length_error(char const*)","size":8,"offset":16424}

@@ -89,11 +89,6 @@ R_API void r_anal_function_invalidate_read_ahead_cache(void) {
 #endif
 }
 
-static int cmpaddr(const void *_a, const void *_b) {
-	const RAnalBlock *a = _a, *b = _b;
-	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
-}
-
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	RAnal *anal = fcn->anal;
 	RAnalBlock *bb;
@@ -1605,31 +1600,6 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 		if (anal->verbose) {
 			eprintf ("Failed to analyze basic block at 0x%"PFMT64x"\n", addr);
 		}
-	}
-	if (anal->opt.endsize && ret == R_ANAL_RET_END && r_anal_function_realsize (fcn)) {   // cfg analysis completed
-		RListIter *iter;
-		RAnalBlock *bb;
-		ut64 endaddr = fcn->addr;
-		const bool can_jmpmid = (bool)anal->cur->jmpmid;
-
-		// set function size as length of continuous sequence of bbs
-		r_list_sort (fcn->bbs, &cmpaddr);
-		r_list_foreach (fcn->bbs, iter, bb) {
-			if (endaddr == bb->addr) {
-				endaddr += bb->size;
-			} else if ((endaddr < bb->addr && bb->addr - endaddr < BB_ALIGN)
-					|| (anal->opt.jmpmid && can_jmpmid && endaddr > bb->addr
-						&& bb->addr + bb->size > endaddr)) {
-				endaddr = bb->addr + bb->size;
-			} else {
-				break;
-			}
-		}
-#if JAYRO_04
-		// fcn is not yet in anal => pass NULL
-		r_anal_function_resize (fcn, endaddr - fcn->addr);
-#endif
-		r_anal_trim_jmprefs (anal, fcn);
 	}
 	return ret;
 }

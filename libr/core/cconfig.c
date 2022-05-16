@@ -368,13 +368,6 @@ static bool cb_anal_delay(void *user, void *data) {
 	return true;
 }
 
-static bool cb_anal_endsize(void *user, void *data) {
-	RCore *core = (RCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
-	core->anal->opt.endsize = node->i_value;
-	return true;
-}
-
 static bool cb_analvars(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -3370,7 +3363,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.jmp.tailcall", 0, &cb_anal_jmptailcall, "consume a branch as a call if delta is big");
 
 	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
-	SETCB ("anal.endsize", "true", &cb_anal_endsize, "adjust function size at the end of the analysis (known to be buggy)");
 	SETCB ("anal.delay", "true", &cb_anal_delay, "enable delay slot analysis if supported by the architecture");
 	SETICB ("anal.depth", 64, &cb_analdepth, "max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "max depth for path search");
