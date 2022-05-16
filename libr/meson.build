@@ -38,6 +38,7 @@ if not no_user_plugins
     bin_xtr_plugins += [
       'xtr_dyldcache',
       'xtr_fatmach0',
+      'xtr_xalz',
       'xtr_sep64'
     ]
   endif
@@ -116,7 +117,7 @@ if not no_user_plugins
     bin_plugins += [ 'elf', 'elf64' ]
   endif
   if user_plugins.contains('pe')
-    bin_plugins += [ 'pe', 'pe64', 'coff', 'mz', 'ne', 'xalz' ]
+    bin_plugins += [ 'pe', 'pe64', 'coff', 'mz', 'ne' ]
     bin_xtr_plugins += [ 'xtr_pemixed' ]
   endif
   if not user_plugins.contains('nogrub')
@@ -302,7 +303,6 @@ bin_plugins += [
   'te',
   'vsf',
   'wasm',
-  'xalz',
   'xbe',
   'xnu_kernelcache',
   'z64',
@@ -316,6 +316,7 @@ bin_ldr_plugins += [
 bin_xtr_plugins += [
   'xtr_dyldcache',
   'xtr_fatmach0',
+  'xtr_xalz',
   'xtr_sep64',
 ]
 

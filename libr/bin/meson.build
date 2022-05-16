@@ -13,7 +13,6 @@ r_bin_sources = [
 
   join_paths('p','bin_any.c'),
   join_paths('p','bin_art.c'),
-  join_paths('p','bin_xalz.c'),
   join_paths('p','bin_avr.c'),
   join_paths('p','bin_s390.c'),
   join_paths('p','bin_bf.c'),
@@ -80,6 +79,7 @@ r_bin_sources = [
   join_paths('p','bin_xtr_fatmach0.c'),
   join_paths('p','bin_xtr_pemixed.c'),
   join_paths('p','bin_xtr_sep64.c'),
+  join_paths('p','bin_xtr_xalz.c'),
   join_paths('p','bin_z64.c'),
   join_paths('p','bin_zimg.c'),
 
