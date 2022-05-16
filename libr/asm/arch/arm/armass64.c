@@ -1393,6 +1393,42 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = math (&ops, 0x2008c0da, has64reg (str));
 	} else if (!strncmp (str, "umulh", 5)) {
 		*op = math (&ops, 0x007cc09b, has64reg (str));
+	} else if (!strncmp (str, "adc ", 4)) {
+		*op = math (&ops, 0x0000009a, has64reg (str));		
+        } else if (!strncmp (str, "adcs", 4)) {
+		*op = math (&ops, 0x000000ba, has64reg (str));
+        } else if (!strncmp (str, "smulh", 5)) {
+		*op = math (&ops, 0x007c409b, has64reg (str));	
+        } else if (!strncmp (str, "crc32b", 6)) {
+		*op = math (&ops, 0x0040c01a, has64reg (str));		
+        } else if (!strncmp (str, "crc32h", 6)) {
+		*op = math (&ops, 0x0044c01a, has64reg (str));		
+        } else if (!strncmp (str, "crc32w", 6)) {
+		*op = math (&ops, 0x0048c01a, has64reg (str));
+        } else if (!strncmp (str, "crc32x", 6)) {
+		*op = math (&ops, 0x004CC09a, has64reg (str));
+        } else if (!strncmp (str, "crc32cb", 7)) {
+		*op = math (&ops, 0x0050c01a, has64reg (str));	
+        } else if (!strncmp (str, "crc32ch ", 7)) {
+		*op = math (&ops, 0x0054c01a, has64reg (str));		
+        } else if (!strncmp (str, "crc32cw", 7)) {
+		*op = math (&ops, 0x0058c01a, has64reg (str));
+        } else if (!strncmp (str, "crc32cx", 7)) {
+		*op = math (&ops, 0x005cc09a, has64reg (str));
+        } else if (!strncmp (str, "sbcs", 4)) {
+		*op = math (&ops, 0x000000fa, has64reg (str));	
+        } else if (!strncmp (str, "rev64", 5)) {
+		*op = math (&ops, 0x200cc0da, has64reg (str));	
+	} else if (!strncmp (str, "smnegl", 6)) {
+		*op = math (&ops, 0x00fc209b, has64reg (str));	
+        } else if (!strncmp (str, "umnegl", 6)) {
+		*op = math (&ops, 0x00fca09b, has64reg (str));	
+        } else if (!strncmp (str, "smull", 5)) {
+		*op = math (&ops, 0x007c209b, has64reg (str));		
+        } else if (!strncmp (str, "umull", 5)) {
+		*op = math (&ops, 0x007ca09b, has64reg (str));	
+	} else if (!strncmp (str, "eret", 4)) {
+		*op = 0xe0039fd6;
 	} else if (!strncmp (str, "ldrb", 4)) {
 		*op = lsop (&ops, 0x00004038, -1);
 	} else if (!strncmp (str, "ldrh", 4)) {
@@ -1494,6 +1530,8 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = exception (&ops, 0x000020d4);
 	} else if (!strncmp (str, "hlt ", 4)) { // halt
 		*op = exception (&ops, 0x000040d4);
+	} else if (!strncmp (str, "hint", 4)) { 
+		*op = exception (&ops, 0x1f2003d5);
 	} else if (!strncmp (str, "b ", 2)) {
 		*op = branch (&ops, addr, 0x14);
 	} else if (!strncmp (str, "b.eq ", 5) || !strncmp (str, "beq ", 4)) {

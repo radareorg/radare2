@@ -383,3 +383,42 @@ ad "cmp w26, 0" 5f030071
 ad "cmp w26, 1" 5f070071
 ad "cmp x26, 0" 5f0300f1
 ad "cmp x26, 1" 5f0700f1
+ad "mul x0, x1, x2" 207c029b
+ad "udiv x0, x1, x2" 2008c29a
+ad "sdiv x0, x1, x2" 200cc29a
+ad "lsl x0, x1, x2" 2020c29a
+ad "lsr x0, x1, x2" 2024c29a
+ad "mvn x0, x1" e00321aa
+ad "tst x0, x1" 1f0001ea
+ad "msub x0, x1, x2, x3" 0x208c029b
+ad "madd x0, x1, x2, x3" 0x200c029b
+ad "mneg x0, x1, x2" 0x20fc029b
+ad "ngc x0, x1" 0xe00301da
+ad "sbc x0, x1, x2" 0x200002da
+ad "asr x0, x1, x2" 0x2028c29a
+ad "ror x0, x2, x3" 0x402cc39a
+ad "cls x0, x1 " 0x2014c0da
+ad "clz x0, x1 " 0x2010c0da
+ad "rbit x0, x1" 0x2000c0da
+ad "rev x0, x1" 0x200cc0da
+ad "rev16 x0, x1" 0x2004c0da
+ad "rev32 x0, x1" 0x2008c0da
+ad "rev64 x0, x1" 200cc0da
+ad "umulh x0, x1, x2" 0x207cc29b	
+ad "adc x0, x1, x2" 2038621e
+ad "adcs x0, x1, x2" 403c0053
+ad "crc32b w0, w1, w2" 2040c21a
+ad "crc32h w0, w1, w2" 2044c21a
+ad "crc32w w0, w1, w2" 2048c21a
+ad "smulh x0, x1, x2" 207c429b
+ad "crc32x w0, w1, x0" 204cc09a
+ad "crc32cb w0, w1, w2" 2050c21a
+ad "crc32ch w0, w1, w2" 2054c21a
+ad "crc32cw w0, w1, w2" 2058c21a
+ad "crc32cx w0, w1, x0" 205cc09a
+ad "sbcs x0, x1, x2" 200002fa
+ad "smnegl x0, w0, w1" 00fc219b
+ad "umnegl x0, w1, w2" 20fca29b
+ad "smull x0, w1, w2" 207c229b
+ad "umull x0, w1, w2" 207ca29b
+ad "hint 0x4d" bf2903d5
