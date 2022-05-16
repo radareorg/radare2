@@ -12,6 +12,8 @@
 
 HEAPTYPE (ut64);
 
+static R_TH_LOCAL RCore *mycore = NULL;
+
 // used to speedup strcmp with rconfig.get in loops
 enum {
 	R2_ARCH_THUMB,
@@ -100,8 +102,6 @@ static char *get_function_name(RCore *core, ut64 addr) {
 	RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, addr);
 	return (flag && flag->name) ? strdup (flag->name) : NULL;
 }
-
-static RCore *mycore = NULL;
 
 // XXX: copypaste from anal/data.c
 #define MINLEN 1
@@ -1262,11 +1262,11 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 	}
 }
 
-void hint_node_free(RBNode *node, void *user) {
+static void hint_node_free(RBNode *node, void *user) {
 	free (container_of (node, HintNode, rb));
 }
 
-int hint_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
+static int hint_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 ia = *(ut64 *)incoming;
 	ut64 ta = container_of (in_tree, const HintNode, rb)->addr;
 	if (ia < ta) {
@@ -1277,7 +1277,7 @@ int hint_node_cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	return 0;
 }
 
-bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ *records, void *user) {
+static bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ *records, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
 	if (!node) {
 		return false;
@@ -1289,7 +1289,7 @@ bool print_addr_hint_cb(ut64 addr, const RVector/*<const RAnalAddrHintRecord>*/ 
 	return true;
 }
 
-bool print_arch_hint_cb(ut64 addr, R_NULLABLE const char *arch, void *user) {
+static bool print_arch_hint_cb(ut64 addr, R_NULLABLE const char *arch, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
 	if (!node) {
 		return false;
@@ -1301,7 +1301,7 @@ bool print_arch_hint_cb(ut64 addr, R_NULLABLE const char *arch, void *user) {
 	return true;
 }
 
-bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
+static bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
 	HintNode *node = R_NEW0 (HintNode);
 	if (!node) {
 		return false;
@@ -2157,7 +2157,6 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
-
 #if USE_ID
 		if (bb->jump != UT64_MAX) {
 			bool found;
@@ -2440,7 +2439,7 @@ repeat:
 				r_list_append (calls, fcnr);
 			}
 		}
-		if (r_list_empty(calls)) {
+		if (r_list_empty (calls)) {
 			r_list_free (refs);
 			r_list_free (calls);
 			continue;

@@ -127,7 +127,6 @@ static const char *help_msg_a8[] = {
 	NULL
 };
 
-
 static const char *help_msg_ap[] = {
 	"Usage:", "ap[?]", " # analyze prelude in current offset",
 	"ap", "", "check if current offset contains a function prelude",
