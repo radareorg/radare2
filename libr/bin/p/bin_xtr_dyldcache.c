@@ -101,19 +101,15 @@ static RBinXtrData *extract(RBin *bin, int idx) {
 }
 
 static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
-	RBinXtrData *res = NULL;
-	struct r_bin_dyldcache_obj_t *xtr_obj;
-	struct r_bin_dyldcache_lib_t *lib;
 	int nlib = 0;
 	char *libname;
-	struct MACH0_(mach_header) *hdr;
 
 	if (!load (bin)) {
 		return NULL;
 	}
 
-	xtr_obj = bin->cur->xtr_obj;
-	lib = r_bin_dyldcache_extract (xtr_obj, idx, &nlib);
+	struct r_bin_dyldcache_obj_t *xtr_obj = bin->cur->xtr_obj;
+	struct r_bin_dyldcache_lib_t *lib = r_bin_dyldcache_extract (xtr_obj, idx, &nlib);
 	if (!lib) {
 		free_xtr (xtr_obj);
 		bin->cur->xtr_obj = NULL;
@@ -124,7 +120,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 		free (lib);
 		return NULL;
 	}
-	hdr = MACH0_(get_hdr) (lib->b);
+	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (lib->b);
 	if (!hdr) {
 		free (lib);
 		free (metadata);
@@ -134,7 +130,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 	r_bin_dydlcache_get_libname (lib, &libname);
 	metadata->libname = strdup (libname);
 
-	res = r_bin_xtrdata_new (lib->b, lib->offset, r_buf_size (lib->b), nlib, metadata);
+	RBinXtrData *res = r_bin_xtrdata_new (lib->b, lib->offset, r_buf_size (lib->b), nlib, metadata);
 	r_buf_free (lib->b);
 	free (hdr);
 	free (lib);
