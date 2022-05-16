@@ -1,11 +1,6 @@
-/* radare2 - LGPL - Copyright 2017 - pancake, condret */
+/* radare2 - LGPL - Copyright 2017-2022 - pancake, condret */
 
-#include "r_io.h"
-#include "r_lib.h"
-#include <r_util.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
+#include <r_io.h>
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !buf || count < 0 || !fd->data) {

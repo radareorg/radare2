@@ -754,8 +754,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 
 	//If type == R_BIN_TYPE_CORE, we need to create all the maps
-	if (plugin && binfile && plugin->file_type
-		 && plugin->file_type (binfile) == R_BIN_TYPE_CORE) {
+	if (plugin && binfile && plugin->file_type && plugin->file_type (binfile) == R_BIN_TYPE_CORE) {
 		ut64 sp_addr = (ut64)-1;
 		RIOMap *stack_map = NULL;
 

@@ -464,8 +464,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 		// in case of dump ignore here
 		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
 			if (bf->rbin->verbose) {
-				eprintf ("Warning: bin_strings buffer is too big (0x%08" PFMT64x "). Use -zzz or set bin.maxstrbuf (RABIN2_MAXSTRBUF) in r2 (rabin2)\n",
-					size);
+				R_LOG_WARN ("bin_strings buffer is too big (0x%08" PFMT64x "). Use -zzz or set bin.maxstrbuf (RABIN2_MAXSTRBUF) in r2 (rabin2)", size);
 			}
 			return;
 		}
@@ -551,15 +550,23 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	if (!o->info) {
 		o->info = R_NEW0 (RBinInfo);
 	}
-	free (o->info->file);
-	free (o->info->arch);
-	free (o->info->machine);
-	free (o->info->type);
+	R_FREE (o->info->file);
+	R_FREE (o->info->arch);
+	R_FREE (o->info->machine);
+	R_FREE (o->info->type);
 	o->info->file = strdup (bf->file);
-	o->info->arch = strdup (data->metadata->arch);
-	o->info->machine = strdup (data->metadata->machine);
-	o->info->type = strdup (data->metadata->type);
-	o->info->bits = data->metadata->bits;
+	if (data->metadata) {
+		if (data->metadata->arch) {
+			o->info->arch = strdup (data->metadata->arch);
+		}
+		if (data->metadata->machine) {
+			o->info->machine = strdup (data->metadata->machine);
+		}
+		if (data->metadata->type) {
+			o->info->type = strdup (data->metadata->type);
+		}
+		o->info->bits = data->metadata->bits;
+	}
 	o->info->has_crypto = bf->o->info->has_crypto;
 	data->loaded = true;
 	return true;
