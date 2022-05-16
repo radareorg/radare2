@@ -61,6 +61,30 @@ static bool is_mem(OperandClass op) {
 #define ISPREINDEX64() ((OPCOUNT64() == 3) && (insn->operands[2].operandClass == MEM_PRE_IDX))
 #define ISPOSTINDEX64() ((OPCOUNT64() == 4) && (insn->operands[2].operandClass == MEM_POST_IDX))
 
+#if 0
+// TODO: Add support for thumb2 disassembler
+// #include "armv7.h"
+#include "../../asm/arch/arm/v35arm64/arch-armv7/armv7_disasm/armv7.c"
+R_API int disassemble_armv7(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	Instruction inst = {0};
+	char output[256];
+	int fc = armv7_disassemble (&inst, output, sizeof (output));
+	if (fc != DISASM_SUCCESS) {
+		return -1;
+	}
+	op->size = 2;
+	r_str_trim_tail (output);
+	r_str_replace_char (output, '\t', ' ');
+	r_str_replace_char (output, '#', ' ');
+	if (r_str_startswith (output, "UNDEF")) {
+		r_strbuf_set (&op->buf_asm, "undefined");
+		return 2 - (a->pc % 2);
+	}
+	r_strbuf_set (&op->buf_asm, output);
+	return op->size;
+}
+#endif
+
 static ut8 get_op_count(Instruction* insn) {
 	ut8 i = 0;
 	while (insn->operands[i].operandClass != NONE) i++;
