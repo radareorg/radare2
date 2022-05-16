@@ -375,8 +375,11 @@ static int __backward_prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) 
 static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *) user;
 	int depth = r_config_get_i (core->config, "anal.depth");
-	// eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
-	r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
+	if (r_config_get_b (core->config, "anal.calls")) {
+		r_core_cmdf (core, "afr@0x%"PFMT64x, addr);
+	} else {
+		r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
+	}
 	preludecnt++;
 	return 1;
 }
