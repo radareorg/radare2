@@ -1,13 +1,8 @@
 /* radare - MIT - Copyright 2021-2022 - pancake, brainstorm */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include <r_util.h>
-#include <r_endian.h>
-
 #include "../arch/v850np/v850dis.h"
 
 #define DEFAULT_CPU_MODEL V850_CPU_E2
