@@ -3481,7 +3481,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "max depth for path search");
 	SETICB ("anal.sleep", 0, &cb_analsleep, "sleep N usecs every so often during analysis. Avoid 100% CPU usage");
 	SETCB ("anal.ignbithints", "false", &cb_anal_ignbithints, "ignore the ahb hints (only obey asm.bits)");
-	SETBPREF ("anal.calls", "false", "make basic af analysis walk into calls");
+	SETBPREF ("anal.calls", "true", "make basic af analysis walk into calls");
 	SETBPREF ("anal.autoname", "false", "speculatively set a name for the functions, may result in some false positives");
 	SETBPREF ("anal.hasnext", "false", "continue analysis after each function");
 	SETICB ("anal.nonull", 0, &cb_anal_nonull, "do not analyze regions of N null bytes");
