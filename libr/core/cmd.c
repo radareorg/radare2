@@ -5153,7 +5153,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				RStrBuf *sb = r_strbuf_new ("");
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					r_core_seek (core, fcn->addr, true);
-#if 1
+#if 0
 					r_cons_push ();
 					r_core_cmd (core, cmd, 0);
 					char *buf = (char *)r_cons_get_buffer ();
@@ -5165,10 +5165,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_strbuf_append (sb, buf);
 					free (buf);
 #else
-					r_cons_push ();
 					char *buf = r_core_cmd_str (core, cmd);
-					eprintf ("--> (%s)(%s)\n", cmd, buf);
-					r_cons_pop ();
 					r_strbuf_appendf (sb, "%s", buf);
 					free (buf);
 #endif
