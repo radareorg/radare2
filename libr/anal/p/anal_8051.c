@@ -886,7 +886,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	set_cpu_model (anal, false);
 
 	int i = 0;
-	while (_8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask))	{
+	while (buf[0] && _8051_ops[i].string && _8051_ops[i].op != (buf[0] & ~_8051_ops[i].mask))	{
 		i++;
 	}
 
@@ -946,16 +946,26 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	switch (arg1) {
 	case A_DIRECT:
-		op->ptr = map_direct_addr (anal, buf[1]);
+		if (len > 1) {
+			op->ptr = map_direct_addr (anal, buf[1]);
+		}
 		break;
 	case A_BIT:
-		op->ptr = map_direct_addr (anal, arg_bit (buf[1]));
+		if (len > 1) {
+			op->ptr = map_direct_addr (anal, arg_bit (buf[1]));
+		}
 		break;
 	case A_IMMEDIATE:
-		op->val = buf[1];
+		if (len > 1) {
+			op->val = buf[1];
+		}
 		break;
 	case A_IMM16:
-		op->val = buf[1] * 256 + buf[2];
+		if (len > 2) {
+			op->val = buf[1] * 256 + buf[2];
+		} else {
+			op->val = 0;
+		}
 		op->ptr = op->val + i8051_reg_read (anal->reg, "_xdata"); // best guess, it's a XRAM pointer
 		break;
 	}
@@ -963,9 +973,9 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	switch (arg2) {
 	case A_DIRECT:
 		if (arg1 == A_RI || arg1 == A_RN) {
-			op->ptr = map_direct_addr (anal, buf[1]);
+			op->ptr = (len > 1)? map_direct_addr (anal, buf[1]): 0;
 		} else if (arg1 != A_DIRECT) {
-			op->ptr = map_direct_addr (anal, buf[2]);
+			op->ptr = (len > 2)? map_direct_addr (anal, buf[2]): 0;
 		}
 		break;
 	case A_BIT:
@@ -973,7 +983,9 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->ptr = map_direct_addr (anal, op->ptr);
 		break;
 	case A_IMMEDIATE:
-		op->val = (arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2];
+		if (len > 2) {
+			op->val = (arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2];
+		}
 		break;
 	}
 
