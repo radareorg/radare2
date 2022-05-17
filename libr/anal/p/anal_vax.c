@@ -1,57 +1,97 @@
-/* radare - LGPL - Copyright 2015-2021 - pancake */
+/* radare - GPL - Copyright 2015-2022 - pancake, condret */
 
 #include <string.h>
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
-#include <r_asm.h>
 #include <r_anal.h>
+#include "../../asm/arch/include/disas-asm.h"
+#include "../arch/vax/vax.h"
 
 // XXX: this is just a PoC
 // XXX: do not hardcode size/type here, use proper decoding table
 // http://hotkosc.ru:8080/method-vax.doc
 
-static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	op->size = 1;
-	if (len < 1) {
-		return -1;
+static unsigned long Offset = 0;
+static RStrBuf *buf_global = NULL;
+static const ut8 *bytes = NULL;
+static int bytes_size = 0;
+
+static int vax_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1; // disable backward reads
 	}
+	memcpy (myaddr, bytes + delta, R_MIN (length, bytes_size));
+	return 0;
+}
+
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+	return 0;
+}
+
+static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	//--
+}
+
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
+DECLARE_GENERIC_FPRINTF_FUNC()
+
+static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	struct disassemble_info disasm_obj;
+	buf_global = r_strbuf_new(NULL);
+	bytes = buf;
+	bytes_size = len;
+	Offset = addr;
+
+	/* prepare disassembler */
+	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
+	disasm_obj.buffer = (ut8*)bytes;
+	disasm_obj.read_memory_func = &vax_buffer_read_memory;
+	disasm_obj.symbol_at_address_func = &symbol_at_address;
+	disasm_obj.memory_error_func = &memory_error_func;
+	disasm_obj.print_address_func = &generic_print_address_func;
+	disasm_obj.endian = BFD_ENDIAN_LITTLE;
+	disasm_obj.fprintf_func = &generic_fprintf_func;
+	disasm_obj.stream = stdout;
+	op->size = print_insn_vax ((bfd_vma)Offset, &disasm_obj);
+
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = r_strbuf_drain (buf_global);
+	} else {
+		r_strbuf_free (buf_global);
+	}
+	buf_global = NULL;
+	if (op->size == -1) {
+		return op->size;
+	}
 	switch (buf[0]) {
 	case 0x04:
 		op->type = R_ANAL_OP_TYPE_RET;
 		break;
 	case 0x2e:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		op->size = 8;
 		break;
 	case 0x78:
 		op->type = R_ANAL_OP_TYPE_SHL;
-		op->size = 8;
 		break;
 	case 0xc0:
 	case 0xc1:
 	case 0xd8:
 		op->type = R_ANAL_OP_TYPE_ADD;
-		op->size = 8;
 		break;
 	case 0xd7:
 		op->type = R_ANAL_OP_TYPE_SUB; // dec
-		op->size = 2;
 		break;
 	case 0x00:
 	case 0x01:
 		// op->type = R_ANAL_OP_TYPE_TRAP; // HALT
-		op->size = 1;
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;
 	case 0xac:
 		op->type = R_ANAL_OP_TYPE_XOR;
-		op->size = 4;
-		break;
-	case 0x5a:
-		op->size = 2;
 		break;
 	case 0x11:
 	case 0x12:
@@ -63,33 +103,24 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case 0x18:
 	case 0x19:
 	case 0x1e:
-		op->size = 2;
-		if (op->size > len) {
-			return -1;
-		}
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = op->addr + op->size + ((len > 1)? ((char)buf[1]): 0);
 		op->fail = op->addr + op->size;
 		break;
 	case 0xd0: // mcoml
-		op->size = 7;
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case 0xd4: //
-		op->size = 3;
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;
 	case 0xc2: // subl2 r0, r7
-		op->size = 3;
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case 0xca: // bicl
-		op->size = 3;
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case 0x31:
 	case 0xe9:
-		op->size = 3;
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		if (len > 2) {
 			op->jump = op->addr + op->size + ((buf[1] << 8) + buf[2]);
@@ -98,33 +129,20 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		break;
 	case 0xc6:
 	case 0xc7:
-		op->size = 8;
 		op->type = R_ANAL_OP_TYPE_DIV;
-		if (op->size > len) {
-			return -1;
-		}
 		break;
 	case 0x94: // movb
 	case 0x7d: // movb
-		op->size = 3;
 		op->type = R_ANAL_OP_TYPE_MOV;
-		if (op->size > len) {
-			return -1;
-		}
 		break;
 	case 0x90:
 	case 0x9e:
 	case 0xde:
-		op->size = 7;
 		op->type = R_ANAL_OP_TYPE_MOV;
-		if (op->size > len) {
-			return -1;
-		}
 		break;
 	case 0xdd:
 	case 0x9f:
 	case 0xdf:
-		op->size = 6;
 		op->type = R_ANAL_OP_TYPE_PUSH;
 		break;
 	case 0xd1:
@@ -133,35 +151,28 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case 0x51:
 	case 0x73:
 		op->type = R_ANAL_OP_TYPE_CMP;
-		op->size = 3;
 		break;
 	case 0x95: // tstb
 		op->type = R_ANAL_OP_TYPE_CMP;
-		op->size = 6;
 		break;
 	case 0xd6:
 	case 0x61:
-		op->size = 2;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
 	case 0x40:
-		op->size = 5;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
 	case 0x9a:
-		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case 0x83:
 		op->type = R_ANAL_OP_TYPE_SUB;
-		op->size = 5;
 		break;
 	case 0x62:
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case 0xfb: // calls
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->size = 7;
 		if (op->size <= len) {
 			int oa = 3;
 			ut32 delta = buf[oa];
@@ -174,7 +185,6 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		op->fail = op->addr + op->size;
 		break;
 	case 0xff:
-		op->size = 2;
 		break;
 	}
 	if (op->size > len) {
@@ -242,10 +252,11 @@ static int archinfo(RAnal *anal, int q) {
 RAnalPlugin r_anal_plugin_vax = {
 	.name = "vax",
 	.desc = "VAX code analysis plugin",
-	.license = "MIT",
+	.license = "GPL",
 	.arch = "vax",
-	.esil = true,
+	.esil = false,
 	.bits = 32,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.op = &vax_op,
 	.get_reg_profile = &get_reg_profile,
 	.archinfo = archinfo,

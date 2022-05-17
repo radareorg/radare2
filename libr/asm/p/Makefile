@@ -18,7 +18,7 @@ all: ${ALL_TARGETS}
 ALL_TARGETS=
 # TODO: rename to enabled plugins
 ARCHS=mips_gnu.mk x86_cs.mk sparc_cs.mk sparc_gnu.mk java.mk arm_gnu.mk dalvik.mk
-ARCHS+=x86_as.mk x86_nz.mk cris_gnu.mk vax.mk arc.mk
+ARCHS+=x86_as.mk x86_nz.mk cris_gnu.mk arc.mk
 ARCHS+=ppc_gnu.mk ppc_as.mk ppc_cs.mk xap.mk x86_nasm.mk avr.mk
 ARCHS+=sh.mk arm_winedbg.mk tms320.mk gb.mk ebc.mk malbolge.mk
 ARCHS+=6502.mk h8300.mk cr16.mk v850.mk propeller.mk i4004.mk

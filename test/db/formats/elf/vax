@@ -15,19 +15,18 @@ EXPECT=<<EOF
 |           0x00010b3f      9eef73950100.  movab loc.__init_array_end, r6
 |           0x00010b46      9eef6c950100.  movab loc.__init_array_end, r0
 |           0x00010b4d      d15650         cmpl r6, r0
-|           0x00010b50      1e23           bcc 0x00010b75
-|           0x00010b52      d05057         movl r0, r7
-|           0x00010b55      9eef5e950100.  movab 0x0002a0b9, r0
-|           0x00010b5c      c25057         subl2 r0, r7
-|           0x00010b5f      ca0357         bicl2 $0x3, r7
-|           0x00010b62      9e47ef539501.  movab loc.__CTOR_LIST_END__[r7], r7
-|           ; CODE XREF from fcn.00010b2e @ 0x10b73(x)
-|       .-> 0x00010b6a      d08650         movl (r6)+, r0
-|       :   0x00010b6d      fb0060         calls $0x0, (r0)
-|       :   0x00010b70      d15657         cmpl r6, r7
-|       `=< 0x00010b73      12f504         
-|           0x00010b74      f504           
-|           ; CODE XREF from fcn.00010b2e @ 0x10b50(x)
-\           0x00010b75      04             
+|       ,=< 0x00010b50      1e23           bcc 0x00010b75
+|       |   0x00010b52      d05057         movl r0, r7
+|       |   0x00010b55      9eef5e950100.  movab 0x0002a0b9, r0
+|       |   0x00010b5c      c25057         subl2 r0, r7
+|       |   0x00010b5f      ca0357         bicl2 $0x3, r7
+|       |   0x00010b62      9e47ef539501.  movab loc.__CTOR_LIST_END__[r7], r7
+|       |   ; CODE XREF from fcn.00010b2e @ 0x10b73(x)
+|      .--> 0x00010b6a      d08650         movl (r6)+, r0
+|      :|   0x00010b6d      fb0060         calls $0x0, (r0)
+|      :|   0x00010b70      d15657         cmpl r6, r7
+|      `==< 0x00010b73      12f5           bneq 0x00010b6a
+|       |   ; CODE XREF from fcn.00010b2e @ 0x10b50(x)
+\       `-> 0x00010b75      04             ret
 EOF
 RUN
