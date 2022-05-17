@@ -7,18 +7,6 @@
 #define MAX_SCAN_SIZE 0x7ffffff
 // should be 1 unless it makes the CI sad
 
-// R2-5.7.0 must have this as a public api
-static const char *op_direction(RAnalOp *op) {
-	if (!op) {
-		return "none";
-	}
-	int d = op->direction;
-	return d == 1 ? "read"
-		: d == 2 ? "write"
-		: d == 4 ? "exec"
-		: d == 8 ? "ref": "none";
-}
-
 static const char *help_msg_af_plus[] = {
 	"Usage:", "af+", " [addr] ([name] ([type] [diff]))",
 	"af+", "$$", "add a raw function element. See afb+ to add basic blocks to it",
@@ -2347,8 +2335,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			pj_kn (pj, "stackptr", op.stackptr);
 			if (op.direction != 0) {
-				const char *dir = op_direction (&op);
-				pj_ks (pj, "direction", dir);
+				pj_ks (pj, "direction", r_anal_op_direction_tostring (&op));
 			}
 			const char *arg = (op.type & R_ANAL_OP_TYPE_COND)
 				? r_anal_cond_tostring (op.cond): NULL;
@@ -2517,7 +2504,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				printline ("jump", "0x%08" PFMT64x "\n", op.jump);
 			}
 			if (op.direction != 0) {
-				printline ("direction", "%s\n", op_direction (&op));
+				printline ("direction", "%s\n", r_anal_op_direction_tostring (&op));
 			}
 			if (hint && hint->fail != UT64_MAX) {
 				op.fail = hint->fail;

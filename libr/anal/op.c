@@ -689,3 +689,14 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
 	}
 	return 0;
 }
+
+R_API const char *r_anal_op_direction_tostring(RAnalOp *op) {
+	if (!op) {
+		return "none";
+	}
+	int d = op->direction;
+	return d == 1 ? "read"
+		: d == 2 ? "write"
+		: d == 4 ? "exec"
+		: d == 8 ? "ref": "none";
+}
