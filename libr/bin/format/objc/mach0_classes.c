@@ -484,8 +484,9 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 					goto error;
 				}
 			}
-			property->name = r_str_newf ("%s::%s%s", klass->name,
-						"(property)", name);
+			property->name = r_str_newf ("%s::%s%s", klass->name, "(property)", name);
+			property->offset = j;
+			property->paddr = r;
 			R_FREE (name);
 		}
 #if 0
@@ -509,7 +510,11 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 			R_FREE (name);
 		}
 #endif
-		r_list_append (klass->fields, property);
+		if (property->name) {
+			r_list_append (klass->fields, property);
+		} else {
+			free (property);
+		}
 
 		p += sizeof (struct MACH0_(SObjcProperty));
 		offset += sizeof (struct MACH0_(SObjcProperty));
