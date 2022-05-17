@@ -36,6 +36,7 @@ libraries.
 * Use ACR source build for your patched code
 * Keep a --with-rpath meson build in a custom directory for running it
 * Statically build r2 (`sys/static.sh`)
+* Use `r2env` to switch between release or git builds
 
 ## Symbols
 
@@ -86,10 +87,20 @@ binary we want to execute.
 
 There are different *plugins* that can be used for different purposes:
 
+### Memory Profiling
+
+By default *valgrind* will identify `undefined behaviour`, `memory corruptions`,
+`race conditions` and more. Just call it like this:
+
+```
+$ valgrind r2 /bin/ls
+```
+
 ### Time Profiling
 
 Identifying bottlenecks is an important thing to do when looking for optimizations.
-This can be achieved with `callgrind` which is a plugin fo+r
+This can be achieved with `callgrind` which is a plugin for tracing function calls
+and profile the time spent on them, specifying how many times are called.
 
 ```
 $ valgrind --tool=callgrind --dump-instr=yes --simulate-cache=yes --collect-jumps=yes \
@@ -101,7 +112,6 @@ To visualize the generated logs use `kcachegrind`
 ```
 kcachegrind callgrind.*
 ```
-
 
 ## GPerfTools
 
@@ -117,6 +127,15 @@ $ DYLD_INSERT_LIBRARIES=/opt/homebrew/Cellar/gperftools/2.9.1_1/lib/libtcmalloc.
 $ pprof --web /usr/local/bin/radare2 /tmp/b.txt*
 ```
 
+## Frida-Trace
+
+One of the tools shipped with `frida` is `frida-trace`, and allows us to trace function
+calls easily, and visualize their arguments, what they return and its backtraec.
+
+```
+$ frida-trace -i 'r_core_cmd*' r2 /bin/ls
+```
+
 ## Debuggers
 
 You can also debug r2 using `gdb`, `lldb`, `x64dbg` or any other debugger you like.
@@ -125,6 +144,8 @@ Launching lldb and r2 in the same terminal it's usually handy, unless you are go
 a bug in visual or panels mode, because the terminal configuration may be different. In
 those cases you may want to attach to the process by calling it with `lldb -p <pidofr2>`
 
-## PostData
+## PD
 
 Read the `DEVELOPERS.md` document for more development and debugging tips!
+
+--pancake
