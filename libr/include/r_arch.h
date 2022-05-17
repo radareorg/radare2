@@ -33,53 +33,9 @@ typedef struct r_arch_config_t {
 	R_REF_TYPE;
 } RArchConfig;
 
-// TODO: create r_arch API at some point and move this from H to C
-static inline void my_ac_free(RArchConfig *cfg) {
-	if (cfg) {
-		free (cfg->arch);
-		free (cfg->cpu);
-		free (cfg->os);
-		free (cfg);
-	}
-}
-
-static inline void r_arch_use(RArchConfig *config, R_NULLABLE const char *arch) {
-	r_return_if_fail (config);
-	// R_LOG_DEBUG ("RArch.USE (%s)", arch);
-	if (arch && !strcmp (arch, "null")) {
-		return;
-	}
-	free (config->arch);
-	config->arch = R_STR_ISNOTEMPTY (arch) ? strdup (arch) : NULL;
-}
-
-static inline void r_arch_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu) {
-	r_return_if_fail (config);
-	// R_LOG_DEBUG ("RArch.CPU (%s)", cpu);
-	free (config->cpu);
-	config->cpu = R_STR_ISNOTEMPTY (cpu) ? strdup (cpu) : NULL;
-}
-
-static inline void r_arch_set_bits(RArchConfig *config, int bits) {
-	r_return_if_fail (config);
-	config->bits = bits;
-	// callback
-	// r_signal_now (config->events, "bits"
-	// r_signal_on (config->events, "bits", &cb_bitschange);
-}
-
-static inline RArchConfig *r_arch_config_new(void) {
-	RArchConfig *ac = R_NEW0 (RArchConfig);
-	if (!ac) {
-		return NULL;
-	}
-	ac->arch = strdup (R_SYS_ARCH);
-	ac->bits = R_SYS_BITS;
-	ac->bitshift = 0;
-	ac->syntax = R_ASM_SYNTAX_INTEL;
-	ac->free = (void (*)(void*))my_ac_free;
-	ac->big_endian = false;
-	return r_ref (ac);
-}
+R_API void r_arch_use(RArchConfig *config, R_NULLABLE const char *arch);
+R_API void r_arch_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu);
+R_API void r_arch_set_bits(RArchConfig *config, int bits);
+R_API RArchConfig *r_arch_config_new(void);
 
 #endif
