@@ -60,6 +60,14 @@ static inline void r_arch_set_cpu(RArchConfig *config, R_NULLABLE const char *cp
 	config->cpu = R_STR_ISNOTEMPTY (cpu) ? strdup (cpu) : NULL;
 }
 
+static inline void r_arch_set_bits(RArchConfig *config, int bits) {
+	r_return_if_fail (config);
+	config->bits = bits;
+	// callback
+	// r_signal_now (config->events, "bits"
+	// r_signal_on (config->events, "bits", &cb_bitschange);
+}
+
 static inline RArchConfig *r_arch_config_new(void) {
 	RArchConfig *ac = R_NEW0 (RArchConfig);
 	if (!ac) {

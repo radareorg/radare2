@@ -3051,10 +3051,10 @@ R_API bool r_core_init(RCore *core) {
 	core->rasm->num = core->num;
 	r_asm_set_user_ptr (core->rasm, core);
 	core->anal = r_anal_new ();
-	r_unref (core->anal->config);
-	core->anal->config = r_ref (core->rasm->config);
+	r_ref_set (core->anal->config, core->rasm->config);
+	r_ref_set (core->anal->reg->config, core->rasm->config);
 	core->anal->print = core->print;
-	r_anal_set_bits (core->anal, 32);
+	r_anal_set_bits (core->anal, 32); // core->rasm->config->bits);
 	r_anal_bind (core->anal, &core->rasm->analb);
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;

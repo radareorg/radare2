@@ -907,7 +907,6 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		if (isbig && !canbebig) {
 			eprintf ("Warning: This architecture can't swap to big endian.\n");
 		}
-		r_anal_set_big_endian (as->anal, canbebig);
 	}
 	if (whatsop) {
 		const char *s = r_asm_describe (as->a, opt.argv[opt.ind]);

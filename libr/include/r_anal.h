@@ -1582,7 +1582,6 @@ R_API char *r_anal_get_reg_profile(RAnal *anal);
 R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr);
 R_API bool r_anal_set_bits(RAnal *anal, int bits);
 R_API bool r_anal_set_os(RAnal *anal, const char *os);
-R_API void r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_functiontype_tostring(int type);
