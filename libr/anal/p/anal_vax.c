@@ -122,6 +122,9 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		}
 		break;
 	case 0xdd:
+		op->size = 2;
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		break;
 	case 0x9f:
 	case 0xdf:
 		op->size = 6;
