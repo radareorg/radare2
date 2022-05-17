@@ -156,7 +156,6 @@ sub () {
   n="" ; for a in $1 ; do [ $a = $2 ] && continue ; n="$n $a" ; done ; echo $n
 }
 
-
 echo | sort -t. > /dev/null 2>&1
 if [ $? = 0 ]; then
   SORT="sort -t."
@@ -186,10 +185,22 @@ make_shared () {
 
 make_ () { : ; }
 
-
 MODE=""
 DONOTHING=0
 DEFCFG=dist/plugins-cfg/plugins.def.cfg
+
+check_conflicts () {
+  CONFLICT=0
+  for a in $STATIC ; do
+    for b in $SHARED ; do
+      if [ "$a" = "$b" ]; then
+        echo "\x1b[1mError\x1b[0m: Conflict \x1b[44m$a\x1b[0m is defined as STATIC and SHARED"
+        CONFLICT=1
+      fi
+    done
+  done
+  return $CONFLICT
+}
 
 rmstatic() {
   C=0
@@ -243,6 +254,8 @@ if [ - != "${RMSTATIC}" ]; then
   fi
   exit 0
 fi
+
+check_conflicts || exit 1
 
 [ ${DONOTHING} = 0 ] && generate
 
