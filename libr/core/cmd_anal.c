@@ -11231,7 +11231,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			// Run afvn in all fcns
 			if (r_config_get_b (core->config, "anal.vars")) {
 				oldstr = r_print_rowlog (core->print, "Analyze all functions arguments/locals");
-				r_core_cmd0 (core, "afva@@f");
+				// r_core_cmd0 (core, "afva@@f");
+				r_core_cmd0 (core, "afva@@@F");
 				r_print_rowlog_done (core->print, oldstr);
 			}
 
@@ -11255,7 +11256,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_print_rowlog_done (core->print, oldstr);
 					r_core_anal_autoname_all_golang_fcns (core);
 					oldstr = r_print_rowlog (core->print, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
-					r_core_cmd0 (core, "aF @@f:sym.go.*");
+					r_core_cmd0 (core, "aF @@@F:sym.go.*");
 					r_print_rowlog_done (core->print, oldstr);
 				}
 				r_core_task_yield (&core->tasks);
