@@ -455,6 +455,11 @@ R_API int r_anal_archinfo(RAnal *anal, int query) {
 	return -1;
 }
 
+R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr) {
+	const int align = r_anal_archinfo (anal, R_ANAL_ARCHINFO_ALIGN);
+	return align <= 1 || !(addr % align);
+}
+
 static bool __nonreturn_print_commands(void *p, const char *k, const char *v) {
 	RAnal *anal = (RAnal *)p;
 	if (!strncmp (v, "func", strlen ("func") + 1)) {
