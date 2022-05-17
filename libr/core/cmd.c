@@ -4408,8 +4408,8 @@ next_arroba:
 		if (core->fixedblock) {
 			r_core_block_read (core);
 		}
-		if (ptr[1] == '@') { // @@
-			if (ptr[2] == '@') { // @@@
+		if (ptr[1] == '@') { // "@@"
+			if (ptr[2] == '@') { // "@@@"
 				char *rule = ptr + 3;
 				while (*rule && *rule == ' ') {
 					rule++;
@@ -5039,9 +5039,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	RFlagItem *flag;
 	ut64 oseek, addr;
 
-	for (; *cmd == ' '; cmd++) {
-		;
-	}
+	cmd = r_str_trim_head_ro (cmd);
 
 	oseek = core->offset;
 	ostr = str = strdup (each);
@@ -5152,22 +5150,32 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			RListIter *iter;
 			if (core->anal) {
 				RConsGrep grep = core->cons->context->grep;
+				RStrBuf *sb = r_strbuf_new ("");
 				r_list_foreach (core->anal->fcns, iter, fcn) {
-					char *buf;
 					r_core_seek (core, fcn->addr, true);
+#if 0
 					r_cons_push ();
 					r_core_cmd (core, cmd, 0);
-					buf = (char *)r_cons_get_buffer ();
+					char *buf = (char *)r_cons_get_buffer ();
 					if (buf) {
 						buf = strdup (buf);
 					}
 					r_cons_pop ();
-					r_cons_strcat (buf);
+					// r_cons_strcat (buf);
+					r_strbuf_append (sb, buf);
 					free (buf);
+#else
+					char *buf = r_core_cmd_str (core, cmd);
+					r_strbuf_appendf (sb, "%s", buf);
+					free (buf);
+#endif
 					if (!foreach_newline (core)) {
 						break;
 					}
 				}
+				char *s = r_strbuf_drain (sb);
+				r_cons_strcat (s);
+				free (s);
 				core->cons->context->grep = grep;
 			}
 			goto out_finish;
