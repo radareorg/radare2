@@ -78,6 +78,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	if (!regset->arena) {
 		return 0LL;
 	}
+	bool be = (reg->config)? reg->config->big_endian: false;
 	switch (item->size) {
 	case 1: {
 		int offset = item->offset / 8;
@@ -101,7 +102,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		break;
 	case 16:
 		if (regset->arena->size - off - 2 >= 0) {
-			return r_read_ble16 (regset->arena->bytes + off, reg->big_endian);
+			return r_read_ble16 (regset->arena->bytes + off, be);
 		}
 		break;
 	case 27:
@@ -111,13 +112,13 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		break;
 	case 32:
 		if (off + 4 <= regset->arena->size) {
-			return r_read_ble32 (regset->arena->bytes + off, reg->big_endian);
+			return r_read_ble32 (regset->arena->bytes + off, be);
 		}
 		eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
 		break;
 	case 64:
 		if (regset->arena && regset->arena->bytes && (off + 8 <= regset->arena->size)) {
-			return r_read_ble64 (regset->arena->bytes + off, reg->big_endian);
+			return r_read_ble64 (regset->arena->bytes + off, be);
 		}
 		//eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		break;
@@ -163,31 +164,20 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	if (!arena) {
 		return false;
 	}
+	bool be = (reg->config)? reg->config->big_endian: false;
 	switch (item->size) {
 	case 80:
 	case 96: // long floating value
 		r_reg_set_longdouble (reg, item, (long double)value);
 		break;
 	case 64:
-		if (reg->big_endian) {
-			r_write_be64 (src, value);
-		} else {
-			r_write_le64 (src, value);
-		}
+		r_write_ble64 (src, value, be);
 		break;
 	case 32:
-		if (reg->big_endian) {
-			r_write_be32 (src, value);
-		} else {
-			r_write_le32 (src, value);
-		}
+		r_write_ble32 (src, value, be);
 		break;
 	case 16:
-		if (reg->big_endian) {
-			r_write_be16 (src, value);
-		} else {
-			r_write_le16 (src, value);
-		}
+		r_write_ble16 (src, value, be);
 		break;
 	case 8:
 		r_write_ble8 (src, (ut8) (value & UT8_MAX));

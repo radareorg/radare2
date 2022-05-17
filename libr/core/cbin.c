@@ -806,7 +806,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		cc->path = strdup (dbpath);
 	}
 	if (anal_arch && sdb_isempty (core->anal->sdb_cc)) {
-		eprintf ("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", anal_arch);
+		eprintf ("Warning: Missing calling conventions for '%s' %d. Deriving it from the regprofile.\n", anal_arch, bits);
 	}
 	free (dbpath);
 	free (dbhomepath);

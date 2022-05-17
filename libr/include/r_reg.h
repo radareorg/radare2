@@ -2,6 +2,7 @@
 #define R2_REG_H
 
 #include <r_types.h>
+#include <r_arch.h>
 #include <r_list.h>
 #include <r_util/r_hex.h>
 #include <r_util/r_assert.h>
@@ -127,14 +128,15 @@ typedef struct r_reg_t {
 	RList *allregs;
 	RList *roregs;
 	int iters;
-	// XXX R2_570 use RArchConfig here
-	int arch;
-	int bits;
 	int size;
 	int bits_default;
-	bool is_thumb;
-	bool big_endian;
+	ut64 hasbits;
+	RArchConfig *config;
 } RReg;
+
+R_API bool r_reg_hasbits_check(RReg *reg, int size);
+R_API bool r_reg_hasbits_use(RReg *reg, int size);
+R_API void r_reg_hasbits_clear(RReg *reg);
 
 typedef struct r_reg_flags_t {
 	bool s; // sign, negative number (msb)

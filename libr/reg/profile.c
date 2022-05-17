@@ -93,8 +93,10 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		return "Invalid packed size";
 	}
 
-	// Dynamically update the list of supported bit sizes
-	reg->bits |= item->size;
+	// Update the list of supported bit sizes
+	if (!r_reg_hasbits_use (reg, item->size)) {
+		R_LOG_DEBUG ("r_reg_hasbits_use failed with %d", item->size);
+	}
 
 	// This is optional
 	if (n == 6) {

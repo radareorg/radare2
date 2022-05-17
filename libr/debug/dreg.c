@@ -100,9 +100,15 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	if (dbg->coreb.core) {
 		pr = ((RCore*)dbg->coreb.core)->print;
 	}
-	if (size != 0 && !(dbg->reg->bits & size)) {
-		// TODO: verify if 32bit exists, otherwise use 64 or 8?
-		size = 32;
+	if (size != 0 && !r_reg_hasbits_check (dbg->reg, size)) {
+		if (r_reg_hasbits_check (dbg->reg, 64)) {
+			size = 64;
+		} else if (r_reg_hasbits_check (dbg->reg, 32)) {
+			size = 32;
+		} else {
+			// TODO: verify if 32bit exists too?
+			size = 16;
+		}
 	}
 	if (dbg->bits & R_SYS_BITS_64) {
 		//fmt = "%s = 0x%08"PFMT64x"%s";

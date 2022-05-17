@@ -1314,8 +1314,6 @@ static bool cb_bigendian(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	// Try to set endian based on preference, restrict by RAsmPlugin
 	bool isbig = r_asm_set_big_endian (core->rasm, node->i_value);
-	// Set anal endianness the same as asm
-	r_anal_set_big_endian (core->anal, isbig);
 	// the big endian should also be assigned to dbg->bp->endian
 	if (core->dbg && core->dbg->bp) {
 		core->dbg->bp->endian = isbig;

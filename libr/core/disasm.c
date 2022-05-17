@@ -3807,9 +3807,9 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 		RAnalMetaItem *mi = r_meta_get_at (ds->core->anal, ds->at, R_META_TYPE_ANY, &size);
 		if (mi) {
 			int obits = ds->core->rasm->config->bits;
-			ds->core->rasm->config->bits = size * 8;
+			r_arch_set_bits (ds->core->rasm->config, size * 8);
 			slen = ds_print_shortcut(ds, get_ptr (ds, ds->at), pos);
-			ds->core->rasm->config->bits = obits;
+			r_arch_set_bits (ds->core->rasm->config, obits);
 			gotShortcut = true;
 		}
 	}
