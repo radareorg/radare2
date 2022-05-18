@@ -1683,7 +1683,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 		mode &= ~R_PRINT_UNIONMODE;
 	}
 
-	int p_bits = p? p->bits: 32;
+	int p_bits = (p && p->config)? p->config->bits: 32;
 	int words = r_str_word_set0_stack (args);
 	fmt_len = strlen (fmt);
 	for (; i < fmt_len; i++) {
@@ -2038,7 +2038,8 @@ static char *get_format_type(const char fmt, const char arg) {
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
-	const int old_bits = p? p->bits: 32;
+	const int old_bits = (p && p->config)? p->config->bits: 32;
+	int p_bits = old_bits;
 	char *args = NULL, *bracket, tmp, last = 0;
 	ut64 addr = 0, addr64 = 0, seeki = 0;
 	// XXX delete global
@@ -2086,7 +2087,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		return 0;
 	}
 	memcpy (buf, b, len);
-	endian = p->big_endian;
+	endian = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
 
 	if (ofield && ofield != MINUSONE) {
 		field = strdup (ofield);
@@ -2208,7 +2209,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			seeki = seek + i;
 			addr = 0LL;
 			invalid = 0;
-			p->bits = old_bits;
+			p_bits = old_bits;
 			if (arg[0] == '[') {
 				char *end = strchr (arg,']');
 				if (!end) {
@@ -2237,7 +2238,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				} else {
 					updateAddr (buf + i, len - i, endian, &addr, &addr64);
 				}
-				if (p->bits == 64) {
+				if (p_bits == 64) {
 					addr = addr64;
 				}
 			} else {
@@ -2319,7 +2320,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			switch (isptr) {
 			case PTRSEEK:
 				{
-				nexti = i + (p->bits / 8);
+				nexti = i + (p_bits / 8);
 				i = 0;
 				if (tmp == '?') {
 					seeki = addr;
@@ -2400,7 +2401,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					tmp = 'q';
 					arg++;
 				} else { // If pointer reference is not mentioned explicitly
-					switch (p->bits) {
+					switch (p_bits) {
 					case 16: tmp = 'w'; break;
 					case 32: tmp = 'x'; break;
 					default: tmp = 'q'; break;
@@ -2474,7 +2475,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					p->cb_printf ("*");
 				}
 				p->cb_printf ("\",\"offset\":%"PFMT64d",\"value\":",
-					(isptr)? (seek + nexti - (p->bits / 8)) : seek + i);
+					(isptr)? (seek + nexti - (p_bits / 8)) : seek + i);
 			}
 
 			/* c struct */
@@ -2577,7 +2578,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						eprintf ("Set val not implemented yet for disassembler!\n");
 					}
 					{
-						ut64 at = isptr? ((p->bits == 64)? addr64: addr): seeki;
+						ut64 at = isptr? ((p_bits == 64)? addr64: addr): seeki;
 						i += r_print_format_disasm (p, at, size);
 					}
 					break;
@@ -2736,7 +2737,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						s = r_print_format_struct (p, seeki,
 									buf + i, len - i, fmtname, slide,
 									mode, setval, nxtfield, anon);
-						i += (isptr) ? (p->bits / 8) : s;
+						i += (isptr) ? (p_bits / 8) : s;
 						if (MUSTSEEJSON) {
 							if (!isptr && (!arg[1] || arg[1] == ' ')) {
 								p->cb_printf ("]}");
@@ -2769,7 +2770,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 							if (elem > -1) {
 								elem--;
 							}
-							i += (isptr) ? (p->bits / 8) : s;
+							i += (isptr) ? (p_bits / 8) : s;
 						}
 						if (mode & R_PRINT_ISFIELD) {
 							if (!SEEVALUE) {

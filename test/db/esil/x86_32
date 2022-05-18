@@ -2369,6 +2369,7 @@ CMDS=<<EOF
 # Common parts
 #
 e asm.arch=x86
+e asm.bits=32
 ?== x86 `e asm.arch`
 ?!e asm.assembler=x86.as
 ??e asm.assembler=x86.nz
@@ -2430,8 +2431,8 @@ CMDS=<<EOF
 # Common parts
 #
 e asm.arch=x86
-e asm.assembler=x86.as
 e asm.bits=32
+e asm.assembler=x86.as
 wa bsr eax, ebx
 #
 # BSR: test ZF

@@ -1033,6 +1033,7 @@ static const char *get_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
 
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
+	bool be = core->rasm->config->big_endian;
 	if (ds->use_esil) {
 		free (ds->opstr);
 		if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
@@ -1117,7 +1118,6 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		if (core->parser->subrel && ds->analop.refptr) {
 			if (core->parser->subrel_addr == 0) {
 				ut64 killme = UT64_MAX;
-				const int be = core->rasm->config->big_endian;
 				r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be);
 				core->parser->subrel_addr = killme;
 			}
@@ -1130,7 +1130,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		if (ds->subjmp) {
 			char *input = strdup (ds->opstr? ds->opstr: ds->str);
 			r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, input, // asm_str,
-					ds->str, sizeof (ds->str), core->print->big_endian);
+					ds->str, sizeof (ds->str), be);
 			free (input);
 			//ds->opstr = strdup (ds->str);
 		} else {
@@ -2688,7 +2688,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			default: {
 				char *op_hex = r_asm_op_get_hex (&ds->asmop);
 				r_asm_op_set_asm (&ds->asmop, r_strf (".hex %s%s", op_hex, tail));
-				bool be = ds->core->print->big_endian;
+				bool be = core->rasm->config->big_endian;
 				int immbase = (ds->hint && ds->hint->immbase)? ds->hint->immbase: 0;
 				switch (meta_size) {
 				case 2:
@@ -2960,7 +2960,7 @@ static void ds_print_offset(RDisasmState *ds) {
 		RFlagItem *fi;
 		int delta = -1;
 		bool show_trace = false;
-		unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
+		// unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
 
 		if (ds->show_reloff) {
 			RAnalFunction *f = r_anal_get_function_at (core->anal, at);
@@ -3008,7 +3008,6 @@ static void ds_print_offset(RDisasmState *ds) {
 		if (hasCustomColor) {
 			int of = core->print->flags;
 			core->print->flags = 0;
-			core->print->seggrn = seggrn;
 			r_print_offset (core->print, at, (at == ds->dest) || show_trace,
 					delta, label);
 			core->print->flags = of;
@@ -3086,7 +3085,8 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 	ut8 buf[sizeof(ut64)] = {0};
 	memcpy (buf, obuf, R_MIN (sizeof (ut64), size));
 	// adjust alignment
-	ut64 n = r_read_ble (buf, core->print->big_endian, size * 8);
+	bool be = core->rasm->config->big_endian;
+	ut64 n = r_read_ble (buf, be, size * 8);
 	if (ds->asm_hint_imm) { // thats not really an imm.. but well dont add more hints for now
 		(void) ds_print_shortcut (ds, n, ds->asm_hint_pos);
 	}
@@ -4132,6 +4132,7 @@ static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
 /* convert numeric value in opcode to ascii char or number */
 static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	RCore *core = ds->core;
+	const bool be = core->rasm->config->big_endian;
 	ut64 p = ds->analop.ptr;
 	ut64 v = ds->analop.val;
 	ut64 refaddr = p;
@@ -4152,7 +4153,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	if ((char)v > 0 && v >= '!') {
 		ds->chref = (char)v;
 		if (ds->immstr) {
-			char *str = r_str_from_ut64 (r_read_ble64 (&v, core->print->big_endian));
+			char *str = r_str_from_ut64 (r_read_ble64 (&v, be));
 			if (str && *str) {
 				bool printable = true;
 				const char *ptr = str;
@@ -4232,7 +4233,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		}
 		r_io_read_at (core->io, refaddr, (ut8*)msg, len - 1);
 		if (refptr && ds->show_refptr) {
-			ut64 num = r_read_ble (msg, core->print->big_endian, refptr * 8);
+			ut64 num = r_read_ble (msg, be, refptr * 8);
 			st64 n = (st64)num;
 			st32 n32 = (st32)(n & UT32_MAX);
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
@@ -5406,8 +5407,8 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 			ptr = nptr;
 			const char* arch = r_config_get (ds->core->config, "asm.arch");
 			const bool x86 = !strncmp (arch, "x86", 3);
-			const int bits = r_config_get_i (ds->core->config, "asm.bits");
-			const int seggrn = r_config_get_i (ds->core->config, "asm.seggrn");
+			const int bits = ds->core->rasm->config->bits;
+			const int seggrn = ds->core->rasm->config->seggrn;
 			char* colon = strchr (ptr, ':');
 			if (x86 && bits == 16 && colon) {
 				*colon = '\0';
@@ -6379,6 +6380,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	// k = delta from addr
 	ds = ds_init (core);
 	bool result = false;
+	const bool be = core->rasm->config->big_endian;
 
 	for (;;) {
 		bool end_nbopcodes, end_nbbytes;
@@ -6458,7 +6460,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		{
 			ut64 killme = UT64_MAX;
-			bool be = core->print->big_endian;
 			if (r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be)) {
 				core->parser->subrel_addr = killme;
 			}
@@ -6470,7 +6471,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				strcpy (buf, aop);
 				buf = ds_sub_jumps (ds, buf);
 				r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, buf,
-					str, sizeof (str) - 1, core->print->big_endian);
+					str, sizeof (str) - 1, be);
 				str[sizeof (str) - 1] = '\0';
 				r_asm_op_set_asm (&asmop, buf);
 				free (buf);
@@ -6660,6 +6661,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		}
 		pj_a (pj);
 	}
+	const bool be = core->rasm->config->big_endian;
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	r_cons_break_push (NULL, NULL);
@@ -6695,7 +6697,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			switch (mode) {
 			case 'i':
 				r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, r_asm_op_get_asm (&asmop),
-						str, sizeof (str), core->print->big_endian);
+						str, sizeof (str), be);
 				if (scr_color) {
 					RAnalOp aop;
 					RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
@@ -6824,8 +6826,6 @@ toro:
 				RFlagItem *item = r_flag_get_i (core->flags, at);
 				if (item) {
 					if (show_offset) {
-						unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
-						core->print->seggrn = seggrn;
 						r_print_offset (core->print, at, 0, 0, NULL);
 					}
 					r_cons_printf ("  %s:\n", item->name);
@@ -6833,8 +6833,6 @@ toro:
 			} // do not show flags in pie
 		}
 		if (show_offset) {
-			unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
-			core->print->seggrn = seggrn;
 			r_print_offset (core->print, at, 0, 0, NULL);
 		}
 		ut64 meta_start = at;
@@ -6975,9 +6973,10 @@ toro:
 					}
 				}
 				if (subnames) {
+					const bool be = core->rasm->config->big_endian;
 					RAnalHint *hint = r_anal_hint_get (core->anal, at);
 					r_parse_filter (core->parser, at, core->flags, hint,
-						asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);
+						asm_str, opstr, sizeof (opstr) - 1, be);
 					r_anal_hint_free (hint);
 					asm_str = (char *)&opstr;
 				}

@@ -2059,6 +2059,7 @@ beach:
 
 static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct search_parameters *param) {
 	const int size = 12;
+	bool be = core->print->config->big_endian;
 	char str[512];
 	RAnalFunction *fcn;
 	RAnalRef *ref;
@@ -2074,7 +2075,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 			RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
 			r_parse_filter (core->parser, ref->addr, core->flags, hint, r_strbuf_get (&asmop.buf_asm),
-				str, sizeof (str), core->print->big_endian);
+				str, sizeof (str), be);
 			r_anal_hint_free (hint);
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 			char *print_comment = NULL;
@@ -2403,6 +2404,7 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode, RInterval search_itv) {
 	RCoreAsmHit *hit;
 	RListIter *iter, *itermap;
+	bool be = core->rasm->config->big_endian;
 	int count = 0, maxhits = 0, filter = 0;
 	int kwidx = core->search->n_kws; // (int)r_config_get_i (core->config, "search.kwidx")-1;
 	RList *hits;
@@ -2481,8 +2483,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 							0
 						};
 						RAnalHint *hint = r_anal_hint_get (core->anal, hit->addr);
-						r_parse_filter (core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp),
-								core->print->big_endian);
+						r_parse_filter (core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp), be);
 						r_anal_hint_free (hint);
 						if (param->outmode == R_MODE_SIMPLE) {
 							r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, tmp);

@@ -811,8 +811,6 @@ static bool cb_asmarch(void *user, void *data) {
 
 	// try to set endian of RAsm to match binary
 	r_asm_set_big_endian (core->rasm, bigbin);
-	// set endian of display to match binary
-	core->print->big_endian = bigbin;
 
 	r_asm_set_cpu (core->rasm, asm_cpu);
 	free (asm_cpu);
@@ -871,7 +869,7 @@ static bool cb_asmbits(void *user, void *data) {
 	if (!bits) {
 		return false;
 	}
-	if (bits == core->rasm->config->bits && bits == core->anal->config->bits && bits == core->dbg->bits) {
+	if (bits == core->rasm->config->bits && bits == core->dbg->bits) {
 		// early optimization
 		return true;
 	}
@@ -889,7 +887,6 @@ static bool cb_asmbits(void *user, void *data) {
 			eprintf ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
 			ret = false;
 		}
-		core->print->bits = bits;
 	}
 	if (core->dbg && core->anal && core->anal->cur) {
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, bits);
@@ -1318,8 +1315,6 @@ static bool cb_bigendian(void *user, void *data) {
 	if (core->dbg && core->dbg->bp) {
 		core->dbg->bp->endian = isbig;
 	}
-	// Set printing endian to user's choice
-	core->print->big_endian = node->i_value;
 	return true;
 }
 
@@ -2649,10 +2644,7 @@ static bool cb_segoff(void *user, void *data) {
 static bool cb_seggrn(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	// R2_570 those two do the same as the struct is shared now
 	core->rasm->config->seggrn = node->i_value;
-	// XXX R2_570 ,. use RArchConfig in RPrint
-	core->print->seggrn = node->i_value;
 	return true;
 }
 
@@ -3008,7 +3000,7 @@ static bool cb_anal_gp(RCore *core, RConfigNode *node) {
 
 static bool cb_anal_cs(RCore *core, RConfigNode *node) {
 	// core->anal->cs = node->i_value;
-	core->print->segbas = node->i_value;
+	core->rasm->config->segbas = node->i_value;
 	return true;
 }
 

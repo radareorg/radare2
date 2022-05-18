@@ -26,6 +26,7 @@ typedef struct r_arch_config_t {
 	//
 	int pcalign;
 	int dataalign;
+	int segbas;
 	int seggrn;
 	int invhex;
 	int bitshift;
