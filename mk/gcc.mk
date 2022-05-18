@@ -33,6 +33,7 @@ LDFLAGS_LIB=${LDFLAGS} -shared
 #endif
 LDFLAGS_SONAME=-Wl,-soname=
 endif
+LDFLAGS_LIB+=-fPIC
 # XXX
 #LDFLAGS_SONAME=-D_
 

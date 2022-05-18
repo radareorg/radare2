@@ -27,9 +27,12 @@ ifeq (${BUILD_OS},dragonfly)
   LDFLAGS+=-lkvm
 endif
 
-.PHONY: pre
+.PHONY: pre pos
 pre: libr_io.${EXT_SO} libr_io.${EXT_AR}
-	@${MAKE} -C p
+	@$(MAKE) -C p
+	$(MAKE) pos
+
+pos: $(SHARED_IO_TARGETS)
 
 include ${STATIC_IO_PLUGINS}
 include $(LTOP)/rules.mk

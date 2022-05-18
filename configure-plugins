@@ -8,6 +8,8 @@
 LANG=C
 LC_ALL=C
 LOADLIBS=1
+EXT=so
+[ "`uname`" = Darwin ] && EXT=dylib
 
 export LANG
 export LC_ALL
@@ -61,11 +63,7 @@ generate_configh () {
     if [ ! "$oldlib" = "$lib" ]; then
       [ -n "$oldlib" ] && echo "     0"
       oldlib=$lib
-      if type perl > /dev/null 2>&1 ; then
-        uclib=$(echo $lib | perl -pe 'tr/[a-z]/[A-Z]/')
-      else
-        uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
-      fi
+      uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
       echo
       echo "#define R_${uclib}_STATIC_PLUGINS \\"
       plugins="${plugins} __${uclib}"
@@ -74,17 +72,13 @@ generate_configh () {
   done
   [ -n "$oldlib" ] && echo "     0"
 
-  # FILL EMPTY PLUGIN ARRAYS WITH LOVE
+  # CAREFULLY FILL EMPTY PLUGIN ARRAYS
   for a in ${SHARED} ; do
     lib=$(echo $a | cut -d . -f 1) # library
     plg=$(echo $a | cut -d . -f 2) # plugin name
     if [ ! "$oldlib" = "$lib" ]; then
       oldlib=$lib
-      if type perl > /dev/null 2>&1; then
-        uclib=$(echo $lib | perl -pe 'tr/[a-z]/[A-Z]/')
-      else
-        uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
-      fi
+      uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
       if [ -z "`echo ${plugins} | grep __${uclib}`" ]; then
         plugins="${plugins} __${uclib}"
         echo
@@ -105,40 +99,35 @@ generate_asmdinc() {
 }
 
 generate_configmk () {
+  splugins=""
   plugins=""
   oldlib=""
-  for a in ${STATIC} ; do
+  for a in `echo "${STATIC} ${SHARED}" | tr " " "\n" | sort` ; do
     lib=$(echo $a | cut -d . -f 1) # library
     plg=$(echo $a | cut -d . -f 2) # plugin name
     if [ ! "$oldlib" = "$lib" ]; then
       [ -n "$oldlib" ] && printf "\n"
       oldlib=$lib
-      if type perl > /dev/null 2>&1 ; then
-        uclib=$(echo $lib | perl -pe 'tr/[a-z]/[A-Z]/')
-      else
-        uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
-      fi
-      printf "STATIC_${uclib}_PLUGINS= "
+      uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
+      printf "STATIC_${uclib}_PLUGINS="
       plugins="${plugins} __${uclib}"
     fi
-    printf "p/${plg}.mk "
+    printf " p/${plg}.mk"
   done
 
   echo
 
-  # fill the holes with love
   for a in ${SHARED} ; do
     lib=$(echo $a | cut -d . -f 1) # library
-    if type perl > /dev/null 2>&1 ; then
-      uclib=$(echo $lib | perl -pe 'tr/[a-z]/[A-Z]/')
-    else
-      uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
+    plg=$(echo $a | cut -d . -f 2) # plugin name
+    uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
+    if [ -z "`echo ${splugins} | grep __${uclib}`" ]; then
+      splugins="${splugins} __${uclib}"
+      printf "SHARED_${uclib}_TARGETS="
     fi
-    if [ -z "`echo ${plugins} | grep __${uclib}`" ]; then
-      plugins="${plugins} __${uclib}"
-      echo "STATIC_${uclib}_PLUGINS="
-    fi
+    printf " p/io_${plg}.${EXT}"
   done
+  echo
 }
 
 generate () {
@@ -166,7 +155,6 @@ add () {
 sub () {
   n="" ; for a in $1 ; do [ $a = $2 ] && continue ; n="$n $a" ; done ; echo $n
 }
-
 
 echo | sort -t. > /dev/null 2>&1
 if [ $? = 0 ]; then
@@ -197,10 +185,22 @@ make_shared () {
 
 make_ () { : ; }
 
-
 MODE=""
 DONOTHING=0
 DEFCFG=dist/plugins-cfg/plugins.def.cfg
+
+check_conflicts () {
+  CONFLICT=0
+  for a in $STATIC ; do
+    for b in $SHARED ; do
+      if [ "$a" = "$b" ]; then
+        echo "\x1b[1mError\x1b[0m: Conflict \x1b[44m$a\x1b[0m is defined as STATIC and SHARED"
+        CONFLICT=1
+      fi
+    done
+  done
+  return $CONFLICT
+}
 
 rmstatic() {
   C=0
@@ -254,6 +254,8 @@ if [ - != "${RMSTATIC}" ]; then
   fi
   exit 0
 fi
+
+check_conflicts || exit 1
 
 [ ${DONOTHING} = 0 ] && generate
 
