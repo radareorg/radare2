@@ -427,7 +427,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 R_IPI RRBTree *r_bin_object_patch_relocs(RBin *bin, RBinObject *bo) {
 	r_return_val_if_fail (bin && bo, NULL);
 
-	static bool first = true;
+	static R_TH_LOCAL bool first = true;
 	// r_bin_object_set_items set o->relocs but there we don't have access
 	// to io so we need to be run from bin_relocs, free the previous reloc and get
 	// the patched ones

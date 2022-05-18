@@ -751,21 +751,22 @@ static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int co
 	if (obj->rebasing_buffer) {
 		return obj->original_io_read (io, fd, buf, count);
 	}
-	static ut8 *internal_buffer = NULL;
-	static int internal_buf_size = 0;
-	if (count > internal_buf_size) {
-		if (internal_buffer) {
-			R_FREE (internal_buffer);
-			internal_buffer = NULL;
+	if (count > obj->internal_buffer_size) {
+		if (obj->internal_buffer) {
+			R_FREE (obj->internal_buffer);
 		}
-		internal_buf_size = R_MAX (count, 8);
-		internal_buffer = (ut8 *) malloc (internal_buf_size);
+		obj->internal_buffer_size = R_MAX (count, 8);
+		obj->internal_buffer = (ut8 *) calloc (1, obj->internal_buffer_size);
+		if (!obj->internal_buffer) {
+			obj->internal_buffer_size = 0;
+			return -1;
+		}
 	}
 	ut64 io_off = io->off;
-	int result = obj->original_io_read (io, fd, internal_buffer, count);
+	int result = obj->original_io_read (io, fd, obj->internal_buffer, count);
 	if (result == count) {
-		rebase_buffer (obj, io_off - bf->o->boffset, fd, internal_buffer, count);
-		memcpy (buf, internal_buffer, result);
+		rebase_buffer (obj, io_off - bf->o->boffset, fd, obj->internal_buffer, obj->internal_buffer_size);
+		memcpy (buf, obj->internal_buffer, result);
 	}
 	return result;
 }

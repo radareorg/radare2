@@ -196,6 +196,8 @@ struct MACH0_(obj_t) {
 	bool rebasing_buffer;
 	RList *symbols_cache;
 	RList *sections_cache;
+	ut8 *internal_buffer;
+	int internal_buffer_size;
 };
 
 typedef struct {
