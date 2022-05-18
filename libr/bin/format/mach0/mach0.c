@@ -2126,6 +2126,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->intrp);
 	free (mo->compiler);
 	r_list_free (mo->symbols_cache);
+	r_list_free (mo->sections_cache);
 	if (mo->chained_starts) {
 		for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
 			if (mo->chained_starts[i]) {
