@@ -215,7 +215,6 @@ asm_plugins += [
   'tms320',
   'v810',
   'v850',
-  'vax',
   'x86_as',
   'x86_cs',
   'x86_nasm',
