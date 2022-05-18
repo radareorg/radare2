@@ -810,6 +810,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		if (bank) {
 			r_list_foreach (bank->maprefs, iter, mapref) {
 				RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+				if (!map) {
+					continue;
+				}
 				const ut64 from = r_io_map_begin (map);
 				const ut64 to = r_io_map_end (map);
 				const int rwx = map->perm;
