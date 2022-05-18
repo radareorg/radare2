@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2020 - inisider, pancake */
+/* radare - LGPL - Copyright 2015-2022 - inisider, pancake */
 
 #include "../../i/private.h"
 #include "mach0_classes.h"
@@ -130,10 +130,7 @@ static bool is_thumb(RBinFile *bf) {
 static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, 0);
 
-	mach0_ut r;
-	mach0_ut addr;
-
-	static RList *sctns = NULL;
+	mach0_ut addr, r;
 	RListIter *iter = NULL;
 	RBinSection *s = NULL;
 	RBinObject *obj = bf->o;
@@ -142,7 +139,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	if (bin->va2pa) {
 		return bin->va2pa (p, offset, left, bf);
 	}
-
+	RList *sctns = bin->sections_cache;
 	if (!sctns) {
 		sctns = r_bin_plugin_mach.sections (bf);
 		if (!sctns) {
@@ -150,6 +147,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 			// eprintf ("there is no sections\n");
 			return 0;
 		}
+		bin->sections_cache = sctns;
 	}
 
 	addr = p;

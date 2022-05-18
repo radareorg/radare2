@@ -195,6 +195,7 @@ struct MACH0_(obj_t) {
 	int (*original_io_read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 	bool rebasing_buffer;
 	RList *symbols_cache;
+	RList *sections_cache;
 };
 
 typedef struct {
