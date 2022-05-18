@@ -2125,6 +2125,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->signature);
 	free (mo->intrp);
 	free (mo->compiler);
+	r_list_free (mo->symbols_cache);
 	if (mo->chained_starts) {
 		for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
 			if (mo->chained_starts[i]) {
@@ -2665,20 +2666,17 @@ static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 
 	r_list_append (list, sym);
 }
 
-// TODO: Return RList<RBinSymbol> // 2x speedup
 const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
-	static RList * cache = NULL; // XXX DONT COMMIT WITH THIS
 	struct symbol_t *symbols;
-	size_t j, s, symbols_size, symbols_count;
+	size_t i, j, s, symbols_size, symbols_count;
 	ut32 to, from;
-	size_t i;
 
 	r_return_val_if_fail (bin, NULL);
-	if (cache) {
-		return cache;
+	if (bin->symbols_cache) {
+		return bin->symbols_cache;
 	}
 	RList *list = r_list_newf ((RListFree)r_bin_symbol_free);
-	cache = list;
+	bin->symbols_cache = list;
 
 	HtPP *hash = ht_pp_new0 ();
 	if (!hash) {
