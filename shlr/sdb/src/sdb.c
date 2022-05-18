@@ -536,6 +536,9 @@ SDB_API SdbKv* sdbkv_new2(const char *k, int kl, const char *v, int vl) {
 		return NULL;
 	}
 	kv = R_NEW0 (SdbKv);
+	if (!kv) {
+		return NULL;
+	}
 	kv->base.key_len = kl;
 	kv->base.key = malloc (kv->base.key_len + 1);
 	if (!kv->base.key) {
@@ -640,7 +643,7 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, bool owned, ut3
 		kv = sdbkv_new2 (key, klen, val, vlen);
 	}
 	if (kv) {
-		ut32 cas = kv->cas = nextcas (kv);
+		cas = kv->cas = nextcas (kv);
 		sdb_ht_insert_kvp (s->ht, kv, true /*update*/);
 		free (kv);
 		sdb_hook_call (s, key, val);
@@ -740,6 +743,9 @@ static bool sdb_foreach_match_cb(void *user, const char *k, const char *v) {
 	tkv.base.value = (char *)v;
 	if (sdbkv_match (&tkv, o->expr)) {
 		SdbKv *kv = R_NEW0 (SdbKv);
+		if (!kv) {
+			return false;
+		}
 		kv->base.key = strdup (k);
 		kv->base.value = strdup (v);
 		ls_append (o->list, kv);

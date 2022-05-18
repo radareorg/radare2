@@ -493,12 +493,12 @@ static int sdb_dump(MainOptions *mo) {
 		SdbKv *kv;
 		SdbListIter *it;
 		ls_foreach_cast (l, it, SdbKv*, kv) {
-			const char *k = sdbkv_key (kv);
-			const char *v = sdbkv_value (kv);
-			if (v && *v && grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
+			const char *sk = sdbkv_key (kv);
+			const char *sv = sdbkv_value (kv);
+			if (sv && *sv && grep && !strstr (sk, expgrep) && !strstr (sv, expgrep)) {
 				continue;
 			}
-			sdb_dump_cb (mo, k, v, comma);
+			sdb_dump_cb (mo, sk, sv, comma);
 			comma = ",";
 		}
 		ls_free (l);
@@ -541,14 +541,14 @@ static int sdb_dump(MainOptions *mo) {
 	return ret;
 }
 
-static int insertkeys(Sdb *s, const char **args, int nargs, int mode) {
+static int insertkeys(Sdb *db, const char **args, int nargs, int mode) {
 	int must_save = 0;
 	if (args && nargs > 0) {
 		int i;
 		for (i = 0; i < nargs; i++) {
 			switch (mode) {
 			case '-':
-				must_save |= sdb_query (s, args[i]);
+				must_save |= sdb_query (db, args[i]);
 				break;
 			case '=':
 				if (strchr (args[i], '=')) {
@@ -556,7 +556,7 @@ static int insertkeys(Sdb *s, const char **args, int nargs, int mode) {
 					v = strchr (kv, '=');
 					if (v) {
 						*v++ = 0;
-						sdb_disk_insert (s, kv, v);
+						sdb_disk_insert (db, kv, v);
 					}
 					free (kv);
 				}

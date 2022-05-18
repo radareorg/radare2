@@ -153,8 +153,8 @@ SDB_IPI Rangstr json_find (const char *s, Rangstr *rs) {
 		PFREE (res);
 		return rsn;
 	} else {
-		for (i=0; res[i]; i+=4) {
-			Rangstr rsn = rangstr_news (s, res, i);
+		for (i = 0; res[i]; i += 4) {
+			rsn = rangstr_news (s, res, i);
 			if (!rangstr_cmp (rs, &rsn)) {
 				rsn = rangstr_news (s, res, i+2);
 				PFREE (res);
