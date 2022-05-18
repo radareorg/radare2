@@ -747,11 +747,10 @@ static RBinElfSection* get_section_by_name(ELFOBJ *bin, const char *section_name
 	return NULL;
 }
 
-static char *get_ver_flags(ut32 flags) {
+static const char *get_ver_flags(char *buff, size_t buff_size, ut32 flags) {
 	if (!flags) {
 		return "none";
 	}
-	static char buff[32];
 	buff[0] = 0;
 	if (flags & VER_FLG_BASE) {
 		strcpy (buff, "BASE ");
@@ -952,6 +951,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	const char *link_section_name = "";
 	char *end = NULL;
 	ut8 dfs[sizeof (Elf_(Verdef))] = {0};
+	char verbuf[64];
 	ut32 cnt;
 	size_t i;
 	if (shdr->sh_link >= bin->ehdr.e_shnum) {
@@ -1051,7 +1051,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		sdb_num_set (sdb_verdef, "vd_ndx", verdef->vd_ndx, 0);
 		sdb_num_set (sdb_verdef, "vd_cnt", verdef->vd_cnt, 0);
 		sdb_set (sdb_verdef, "vda_name", &bin->dynstr[aux.vda_name], 0);
-		sdb_set (sdb_verdef, "flags", get_ver_flags (verdef->vd_flags), 0);
+		sdb_set (sdb_verdef, "flags", get_ver_flags (verbuf, sizeof (verbuf), verdef->vd_flags), 0);
 
 		for (j = 1; j < verdef->vd_cnt; j++) {
 			int k;
@@ -1161,6 +1161,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	if (i < 1) {
 		goto beach;
 	}
+	char verbuf[64] = {0};
 	//XXX we should use DT_VERNEEDNUM instead of sh_info
 	//TODO https://sourceware.org/ml/binutils/2014-11/msg00353.html
 	for (i = 0, cnt = 0; cnt < shdr->sh_info; cnt++) {
@@ -1222,11 +1223,11 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 			sdb_num_set (sdb_vernaux, "idx", isum, 0);
 			if (aux->vna_name > 0 && aux->vna_name + 8 < bin->dynstr_size) {
 				char name [16];
-				strncpy (name, &bin->dynstr[aux->vna_name], sizeof (name)-1);
-				name[sizeof (name)-1] = 0;
+				strncpy (name, &bin->dynstr[aux->vna_name], sizeof (name) - 1);
+				name[sizeof (name) - 1] = 0;
 				sdb_set (sdb_vernaux, "name", name, 0);
 			}
-			sdb_set (sdb_vernaux, "flags", get_ver_flags (aux->vna_flags), 0);
+			sdb_set (sdb_vernaux, "flags", get_ver_flags (verbuf, sizeof (verbuf), aux->vna_flags), 0);
 			sdb_num_set (sdb_vernaux, "version", aux->vna_other, 0);
 			isum += aux->vna_next;
 			vstart += aux->vna_next;
