@@ -756,7 +756,7 @@ next_quote:
 				if (*cmd) {
 					int clen = strlen (cmd) - 1;
 					while (clen >= 0 && isspace (cmd[clen])) {
-						cmd[i] = '\0';
+						cmd[clen] = '\0';
 						clen--;
 					}
 					ok = sdb_set (s, cmd, val, 0);

@@ -536,6 +536,9 @@ SDB_API SdbKv* sdbkv_new2(const char *k, int kl, const char *v, int vl) {
 		return NULL;
 	}
 	kv = R_NEW0 (SdbKv);
+	if (!kv) {
+		return NULL;
+	}
 	kv->base.key_len = kl;
 	kv->base.key = malloc (kv->base.key_len + 1);
 	if (!kv->base.key) {
@@ -740,6 +743,9 @@ static bool sdb_foreach_match_cb(void *user, const char *k, const char *v) {
 	tkv.base.value = (char *)v;
 	if (sdbkv_match (&tkv, o->expr)) {
 		SdbKv *kv = R_NEW0 (SdbKv);
+		if (!kv) {
+			return false;
+		}
 		kv->base.key = strdup (k);
 		kv->base.value = strdup (v);
 		ls_append (o->list, kv);
