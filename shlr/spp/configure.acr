@@ -1,6 +1,8 @@
 PKGNAME spp
-VERSION 1.2.0
+VERSION 1.3.0
 CONTACT pancake ; pancake@nopcode.org
+
+USE_PKGCONFIG
 
 ARG_WITHOUT HAVE_FORK fork build without depending on fork syscall ;
 ARG_ENABLE WANT_R2 r2 compile against r2 r_util ;
