@@ -332,6 +332,7 @@ R_API const char *r_anal_ref_perm_tostring(RAnalRef *ref) {
 
 R_API const char *r_anal_ref_type_tostring(RAnalRefType type) {
 	switch (R_ANAL_REF_TYPE_MASK (type)) {
+	case ' ':
 	case R_ANAL_REF_TYPE_NULL:
 		return "NULL";
 	case R_ANAL_REF_TYPE_CODE:
