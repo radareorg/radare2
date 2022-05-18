@@ -194,6 +194,7 @@ struct MACH0_(obj_t) {
 	ut64 main_addr;
 	int (*original_io_read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 	bool rebasing_buffer;
+	RList *symbols_cache;
 };
 
 typedef struct {
