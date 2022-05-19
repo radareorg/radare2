@@ -8,21 +8,18 @@
 #include "../../asm/arch/pic/pic_baseline.h"
 #include "../../asm/arch/pic/pic_pic18.h"
 
-static char *asm_pic_disassemble(const ut8 *b, int l) {
-	int res = -1;
-	char opbuf[128];
-	strcpy (opbuf, "invalid");
-	const char *cpu = a->config->cpu;
+static char *asm_pic_disassemble(const char *cpu, const ut8 *b, int l, int *opsz) {
+	char *opstr = NULL;
 	if (R_STR_ISNOTEMPTY (cpu)) {
-		if (strcasecmp (cpu, "baseline") == 0) {
-			res = pic_baseline_disassemble (op, opbuf, b, l);
-		} else if (strcasecmp (cpu, "midrange") == 0) {
-			res = pic_midrange_disassemble (op, opbuf, b, l);
-		} else if (strcasecmp (cpu, "pic18") == 0) {
-			res = pic_pic18_disassemble (op, opbuf, b, l);
+		if (!strcasecmp (cpu, "baseline")) {
+			opstr = pic_baseline_disassemble (b, l, opsz);
+		} else if (!strcasecmp (cpu, "midrange")) {
+			opstr = pic_midrange_disassemble (b, l, opsz);
+		} else if (!strcasecmp (cpu, "pic18")) {
+			opstr = pic_pic18_disassemble (b, l, opsz);
 		}
 	}
-	return strdup (opbuf);
+	return opstr;
 }
 
 typedef struct _pic_midrange_op_args_val {
@@ -1174,8 +1171,9 @@ static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
 
 static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	const char *cpu = anal->config->cpu;
+	int opsz = -1;
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		op->mnemonic = asm_pic_disassemble (buf, len);
+		op->mnemonic = asm_pic_disassemble (cpu, buf, len, &opsz);
 	}
 	if (R_STR_ISNOTEMPTY (cpu)) {
 		if (!strcasecmp (cpu, "baseline")) {
@@ -1189,7 +1187,7 @@ static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 			return anal_pic_pic18_op (anal, op, addr, buf, len);
 		}
 	}
-	return -1;
+	return opsz;
 }
 
 static bool anal_pic_set_reg_profile(RAnal *anal) {
