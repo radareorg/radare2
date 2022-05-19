@@ -72,12 +72,12 @@ static size_t consume_u1_r(RBuffer *b, ut64 bound, ut8 *out) {
 	return n;
 }
 
-static bool consume_str_r(RBuffer *b, ut64 bound, size_t len, ut8 *out) {
+static bool consume_str_r(RBuffer *b, ut64 bound, size_t len, char *out) {
 	r_return_val_if_fail (b && bound > 0 && bound < r_buf_size (b), 0);
 	*out = 0;
 
 	if (r_buf_tell (b) + len <= bound) {
-		if (r_buf_read (b, out, len) == len) {
+		if (r_buf_read (b, (ut8 *)out, len) == len) {
 			out[len] = 0;
 			return true;
 		}
@@ -85,7 +85,7 @@ static bool consume_str_r(RBuffer *b, ut64 bound, size_t len, ut8 *out) {
 	return false;
 }
 
-static bool consume_str_new(RBuffer *b, ut64 bound, ut32 *len_out, ut8 **str_out) {
+static bool consume_str_new(RBuffer *b, ut64 bound, ut32 *len_out, char **str_out) {
 	r_return_val_if_fail (str_out, false);
 	*str_out = NULL;
 	if (len_out) {
@@ -95,7 +95,7 @@ static bool consume_str_new(RBuffer *b, ut64 bound, ut32 *len_out, ut8 **str_out
 	ut32 len = 0;
 	// module_str
 	if (consume_u32_r (b, bound, &len)) {
-		ut8 *str = (ut8 *)malloc (len + 1);
+		char *str = (char *)malloc (len + 1);
 		if (str && consume_str_r (b, bound, len, str)) {
 			if (len_out) {
 				*len_out = len;
@@ -331,25 +331,11 @@ static void *parse_import_entry(RBuffer *b, ut64 bound) {
 		return NULL;
 	}
 
-	// module_str
-	if (!(consume_u32_r (b, bound, &ptr->module_len))) {
-		goto beach;
-	}
-	if (ptr->module_len > sizeof (ptr->module_str) / sizeof (*ptr->module_str)) {
-		goto beach;
-	}
-	if (!consume_str_r (b, bound, ptr->module_len, ptr->module_str)) {
+	if (!consume_str_new (b, bound, &ptr->module_len, &ptr->module_str)) {
 		goto beach;
 	}
 
-	// field_str
-	if (!(consume_u32_r (b, bound, &ptr->field_len))) {
-		goto beach;
-	}
-	if (ptr->field_len > sizeof (ptr->field_str) / sizeof (*ptr->field_str)) {
-		goto beach;
-	}
-	if (!consume_str_r (b, bound, ptr->field_len, ptr->field_str)) {
+	if (!consume_str_new (b, bound, &ptr->field_len, &ptr->field_str)) {
 		goto beach;
 	}
 
@@ -492,7 +478,7 @@ static bool parse_namemap(RBuffer *b, ut64 bound, RIDStorage *map, ut32 *count) 
 			return false;
 		}
 
-		if (!consume_str_new (b, bound, &name->len, &name->name)) {
+		if (!consume_str_new (b, bound, &name->len, (char **)&name->name)) {
 			R_FREE (name);
 			return false;
 		}
@@ -527,7 +513,7 @@ static void *parse_custom_name_entry(RBuffer *b, ut64 bound) {
 		if (!ptr->mod_name) {
 			goto beach;
 		}
-		if (!consume_str_new (b, bound, &ptr->mod_name->len, &ptr->mod_name->name)) {
+		if (!consume_str_new (b, bound, &ptr->mod_name->len, (char **)&ptr->mod_name->name)) {
 			goto beach;
 		}
 		break;
@@ -686,12 +672,20 @@ beach:
 	return NULL;
 }
 
+static void import_entry_free(RBinWasmImportEntry *entry) {
+	if (entry) {
+		free (entry->module_str);
+		free (entry->field_str);
+		free (entry);
+	}
+}
+
 static RList *r_bin_wasm_get_type_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
 	return get_entries_from_section (bin, sec, parse_type_entry, (RListFree)r_bin_wasm_free_types);
 }
 
 static RList *r_bin_wasm_get_import_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
-	return get_entries_from_section (bin, sec, parse_import_entry, (RListFree)free);
+	return get_entries_from_section (bin, sec, parse_import_entry, (RListFree)import_entry_free);
 }
 
 static RList *r_bin_wasm_get_export_entries(RBinWasmObj *bin, RBinWasmSection *sec) {

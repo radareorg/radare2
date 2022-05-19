@@ -107,9 +107,9 @@ struct r_bin_wasm_memory_type_t {
 
 typedef struct r_bin_wasm_import_t {
 	ut32 module_len;
-	char module_str[R_BIN_WASM_STRING_LENGTH];
+	char *module_str;
 	ut32 field_len;
-	char field_str[R_BIN_WASM_STRING_LENGTH];
+	char *field_str;
 	ut8 kind;
 	union {
 		ut32 type_f;
