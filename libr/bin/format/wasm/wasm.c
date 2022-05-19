@@ -72,23 +72,21 @@ static size_t consume_u1_r(RBuffer *b, ut64 bound, ut8 *out) {
 	return n;
 }
 
-static size_t consume_str_r(RBuffer *b, ut64 bound, size_t sz, char *out) {
-	r_return_val_if_fail (b, 0);
-	ut64 cur = r_buf_tell (b);
+/*
+ * `bound` is last index in buffer that is an acceptable location, so bound
+ * could be the buffer end or the end of the current section
+ * `len` is the string length, thus the *out buffer is expected to have at least len+1 space
+ */
+static bool consume_str_r(RBuffer *b, ut64 bound, size_t len, char *out) {
+	r_return_val_if_fail (b && bound > 0 && bound < r_buf_size (b), 0);
 	*out = 0;
-	bound = R_MIN (bound, sz);
-	if (bound >= r_buf_size (b) || cur > bound) {
-		return 0;
+
+	if (r_buf_tell (b) + len <= bound) {
+		if (r_buf_read (b, (ut8 *)out, len) == len) {
+			return true;
+		}
 	}
-	if (!(cur + sz - 1 <= bound)) {
-		return 0;
-	}
-	if (sz > 0) {
-		r_buf_read (b, (ut8 *)out, sz);
-	} else {
-		*out = 0;
-	}
-	return sz;
+	return false;
 }
 
 static size_t consume_init_expr_r(RBuffer *b, ut64 bound, ut8 eoc, void *out) {
@@ -313,19 +311,29 @@ static void *parse_import_entry(RBuffer *b, ut64 bound) {
 	if (!ptr) {
 		return NULL;
 	}
+
+	// module_str
 	if (!(consume_u32_r (b, bound, &ptr->module_len))) {
 		goto beach;
 	}
-	bound = R_MIN (bound, ptr->module_len);
-	if (consume_str_r (b, bound, ptr->module_len, ptr->module_str) < ptr->module_len) {
+	if (ptr->module_len > sizeof (ptr->module_str) / sizeof (*ptr->module_str)) {
 		goto beach;
 	}
+	if (!consume_str_r (b, bound, ptr->module_len, ptr->module_str)) {
+		goto beach;
+	}
+
+	// field_str
 	if (!(consume_u32_r (b, bound, &ptr->field_len))) {
 		goto beach;
 	}
-	if (consume_str_r (b, bound, ptr->field_len, ptr->field_str) < ptr->field_len) {
+	if (ptr->field_len > sizeof (ptr->field_str) / sizeof (*ptr->field_str)) {
 		goto beach;
 	}
+	if (!consume_str_r (b, bound, ptr->field_len, ptr->field_str)) {
+		goto beach;
+	}
+
 	if (!(consume_u7_r (b, bound, &ptr->kind))) {
 		goto beach;
 	}
@@ -374,7 +382,10 @@ static void *parse_export_entry(RBuffer *b, ut64 bound) {
 	if (!(consume_u32_r (b, bound, &ptr->field_len))) {
 		goto beach;
 	}
-	if (consume_str_r (b, bound, ptr->field_len, ptr->field_str) < ptr->field_len) {
+	if (ptr->field_len > sizeof (ptr->field_str) / sizeof (*ptr->field_str)) {
+		goto beach;
+	}
+	if (!consume_str_r (b, bound, ptr->field_len, ptr->field_str)) {
 		goto beach;
 	}
 	if (!(consume_u7_r (b, bound, &ptr->kind))) {
@@ -471,8 +482,7 @@ static bool parse_namemap(RBuffer *b, ut64 bound, RIDStorage *map, ut32 *count) 
 			R_FREE (name);
 			return false;
 		}
-		if (!(consume_str_r (b, R_MIN (bound, name->len),
-			name->len, (char *)name->name))) {
+		if (!consume_str_r (b, bound, name->len, (char *)name->name)) {
 			R_FREE (name);
 			return false;
 		}
@@ -512,8 +522,7 @@ static void *parse_custom_name_entry(RBuffer *b, ut64 bound) {
 			goto beach;
 		}
 		ptr->mod_name->name = malloc (ptr->mod_name->len + 1);
-		if (!(consume_str_r (b, R_MIN (bound, ptr->mod_name->len),
-			ptr->mod_name->len, (char *)ptr->mod_name->name))) {
+		if (!consume_str_r (b, bound, ptr->mod_name->len, (char *)ptr->mod_name->name)) {
 			goto beach;
 		}
 		ptr->mod_name->name[ptr->mod_name->len] = 0;
@@ -886,8 +895,7 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 				goto beach;
 			}
 			ptr->name = malloc (ptr->name_len + 1);
-			if (consume_str_r (b, R_MIN (ptr->name_len, bound),
-				ptr->name_len, (char *)ptr->name) < ptr->name_len) {
+			if (!consume_str_r (b, bound, ptr->name_len, (char *)ptr->name)) {
 				goto beach;
 			}
 			break;
