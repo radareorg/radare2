@@ -361,6 +361,8 @@ repeat:
 	case R_ANAL_OP_TYPE_IRCALL: return "ircall";
 	case R_ANAL_OP_TYPE_UCCALL: return "uccall";
 	case R_ANAL_OP_TYPE_UCJMP : return "ucjmp";
+	case R_ANAL_OP_TYPE_MCJMP : return "mcjmp";
+	case R_ANAL_OP_TYPE_RCJMP : return "rcjmp";
 	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
 	case R_ANAL_OP_TYPE_RJMP  : return "rjmp";
 	case R_ANAL_OP_TYPE_IJMP  : return "ijmp";
@@ -372,6 +374,8 @@ repeat:
 	case R_ANAL_OP_TYPE_CASE  : return "case";
 	case R_ANAL_OP_TYPE_CPL   : return "cpl";
 	case R_ANAL_OP_TYPE_CRYPTO: return "crypto";
+	case R_ANAL_OP_TYPE_LENGTH: return "lenght";
+	case R_ANAL_OP_TYPE_ABS   : return "abs";
 	}
 	if (once) {
 		once = false;
