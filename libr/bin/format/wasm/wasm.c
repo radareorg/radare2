@@ -72,19 +72,38 @@ static size_t consume_u1_r(RBuffer *b, ut64 bound, ut8 *out) {
 	return n;
 }
 
-/*
- * `bound` is last index in buffer that is an acceptable location, so bound
- * could be the buffer end or the end of the current section
- * `len` is the string length, thus the *out buffer is expected to have at least len+1 space
- */
-static bool consume_str_r(RBuffer *b, ut64 bound, size_t len, char *out) {
+static bool consume_str_r(RBuffer *b, ut64 bound, size_t len, ut8 *out) {
 	r_return_val_if_fail (b && bound > 0 && bound < r_buf_size (b), 0);
 	*out = 0;
 
 	if (r_buf_tell (b) + len <= bound) {
-		if (r_buf_read (b, (ut8 *)out, len) == len) {
+		if (r_buf_read (b, out, len) == len) {
+			out[len] = 0;
 			return true;
 		}
+	}
+	return false;
+}
+
+static bool consume_str_new(RBuffer *b, ut64 bound, ut32 *len_out, ut8 **str_out) {
+	r_return_val_if_fail (str_out, false);
+	*str_out = NULL;
+	if (len_out) {
+		*len_out = 0;
+	}
+
+	ut32 len = 0;
+	// module_str
+	if (consume_u32_r (b, bound, &len)) {
+		ut8 *str = (ut8 *)malloc (len + 1);
+		if (str && consume_str_r (b, bound, len, str)) {
+			if (len_out) {
+				*len_out = len;
+			}
+			*str_out = str;
+			return true;
+		}
+		free (str);
 	}
 	return false;
 }
@@ -473,20 +492,10 @@ static bool parse_namemap(RBuffer *b, ut64 bound, RIDStorage *map, ut32 *count) 
 			return false;
 		}
 
-		if (!(consume_u32_r (b, bound, &name->len))) {
+		if (!consume_str_new (b, bound, &name->len, &name->name)) {
 			R_FREE (name);
 			return false;
 		}
-		name->name = malloc (name->len + 1);
-		if (!name->name) {
-			R_FREE (name);
-			return false;
-		}
-		if (!consume_str_r (b, bound, name->len, (char *)name->name)) {
-			R_FREE (name);
-			return false;
-		}
-		name->name[name->len] = 0;
 
 		if (!r_id_storage_add (map, name, &idx)) {
 			R_FREE (name);
@@ -518,14 +527,9 @@ static void *parse_custom_name_entry(RBuffer *b, ut64 bound) {
 		if (!ptr->mod_name) {
 			goto beach;
 		}
-		if (!(consume_u32_r (b, bound, &ptr->mod_name->len))) {
+		if (!consume_str_new (b, bound, &ptr->mod_name->len, &ptr->mod_name->name)) {
 			goto beach;
 		}
-		ptr->mod_name->name = malloc (ptr->mod_name->len + 1);
-		if (!consume_str_r (b, bound, ptr->mod_name->len, (char *)ptr->mod_name->name)) {
-			goto beach;
-		}
-		ptr->mod_name->name[ptr->mod_name->len] = 0;
 		break;
 	case R_BIN_WASM_NAMETYPE_Function:
 		ptr->func = R_NEW0 (RBinWasmCustomNameFunctionNames);
@@ -891,11 +895,7 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 		switch (ptr->id) {
 		case R_BIN_WASM_SECTION_CUSTOM:
 			// eprintf("custom section: 0x%x, ", (ut32)b->cur);
-			if (!(consume_u32_r (b, bound, &ptr->name_len))) {
-				goto beach;
-			}
-			ptr->name = malloc (ptr->name_len + 1);
-			if (!consume_str_r (b, bound, ptr->name_len, (char *)ptr->name)) {
+			if (!consume_str_new (b, bound, &ptr->name_len, &ptr->name)) {
 				goto beach;
 			}
 			break;
