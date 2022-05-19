@@ -327,6 +327,7 @@ struct r_bin_t {
 	int debase64;
 	int minstrlen;
 	int maxstrlen;
+	int maxsymlen;
 	ut64 maxstrbuf;
 	int rawstr;
 	Sdb *sdb;
