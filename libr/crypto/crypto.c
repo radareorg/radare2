@@ -193,15 +193,16 @@ R_API ut8 *r_crypto_get_output(RCrypto *cry, int *size) {
 		*size = cry->output_len;
 		memcpy (buf, cry->output, *size);
 	} else {
-		ut8 *newbuf = realloc (buf, 4096);
+		size_t newlen = 4096;
+		ut8 *newbuf = realloc (buf, newlen);
 		if (!newbuf) {
 			free (buf);
 			return NULL;
 		}
+		*size = 4096;
 		cry->output = newbuf;
-		cry->output_len = 0;
-		cry->output_size = size;
-
+		cry->output_len = newlen;
+		cry->output_size = newlen;
 		return NULL;
 	}
 	return buf;
