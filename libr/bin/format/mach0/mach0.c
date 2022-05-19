@@ -10,6 +10,8 @@
 #define bprintf if (bin->verbose) eprintf
 #define Eprintf if (mo->verbose) eprintf
 
+// Microsoft C++: 2048 characters; Intel C++: 2048 characters; g++: No limit
+#define MAXSYMBOLNAME 2048
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
@@ -2485,6 +2487,9 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 			break;
 		}
 	}
+	if (len > MAXSYMBOLNAME) {
+		return NULL;
+	}
 	if (len > 0) {
 		char *res = r_str_ndup (symstr, len);
 		if (filter) {
@@ -2945,6 +2950,10 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 					: R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
 				stridx = bin->symtab[i].n_strx;
 				symbols[j].name = get_name (bin, stridx, false);
+				if (!symbols[j].name) {
+					j--;
+					continue;
+				}
 				symbols[j].last = false;
 
 				const char *name = symbols[j].name;
