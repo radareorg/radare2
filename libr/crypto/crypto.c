@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include "r_crypto.h"
 #include "config.h"
@@ -199,9 +199,9 @@ R_API ut8 *r_crypto_get_output(RCrypto *cry, int *size) {
 			free (buf);
 			return NULL;
 		}
-		*size = 4096;
+		buf = newbuf;
 		cry->output = newbuf;
-		cry->output_len = newlen;
+		cry->output_len = 0;
 		cry->output_size = newlen;
 		return NULL;
 	}
