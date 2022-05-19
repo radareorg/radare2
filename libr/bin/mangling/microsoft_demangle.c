@@ -67,8 +67,10 @@ typedef struct SDataType {
 } SDataType;
 
 static void sstrinfo_free(SStrInfo *sstrinfo) {
-	free (sstrinfo->str_ptr);
-	free (sstrinfo);
+	if (sstrinfo) {
+		free (sstrinfo->str_ptr);
+		free (sstrinfo);
+	}
 }
 
 #define DECL_STATE_ACTION(action) static void tc_state_##action(SStateInfo *state, STypeCodeStr *type_code_str);

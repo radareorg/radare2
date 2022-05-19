@@ -28,6 +28,8 @@ typedef struct _RKernelCacheObj {
 	bool rebase_info_populated;
 	bool rebasing_buffer;
 	bool kexts_initialized;
+	ut8 *internal_buffer;
+	int internal_buffer_size;
 } RKernelCacheObj;
 
 typedef struct _RFileRange {
@@ -740,8 +742,7 @@ static RKextIndex *r_kext_index_new(RList *kexts) {
 	if (!index) {
 		return NULL;
 	}
-
-	index->entries = malloc (length *sizeof(RKext*));
+	index->entries = calloc (length, sizeof (RKext*));
 	if (!index->entries) {
 		R_FREE (index);
 		return NULL;
@@ -2021,7 +2022,6 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			}
 		}
 	}
-
 	if (!cache || !cache->original_io_read || cache->rebasing_buffer) {
 		if (cache) {
 			if ((!cache->rebasing_buffer && fd->plugin->read == &kernelcache_io_read) ||
@@ -2044,31 +2044,31 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (cache->rebase_info) {
 		r_rebase_info_populate (cache->rebase_info, cache);
 	}
-
-	static ut8 *internal_buffer = NULL;
-	static int internal_buf_size = 0;
-	if (count > internal_buf_size) {
-		if (internal_buffer) {
-			R_FREE (internal_buffer);
-			internal_buffer = NULL;
-		}
-		internal_buffer = (ut8 *) malloc (count);
-		internal_buf_size = count;
-	}
-
 	if (!cache->original_io_read) {
 		return -1;
 	}
-	ut64 io_off = io->off;
-	int result = cache->original_io_read (io, fd, internal_buffer, count);
 
+	// move into 
+	if (count > cache->internal_buffer_size) {
+		if (cache->internal_buffer) {
+			R_FREE (cache->internal_buffer);
+		}
+		cache->internal_buffer_size = R_MAX (count, 8);
+		cache->internal_buffer = (ut8 *) calloc (1, cache->internal_buffer_size);
+		if (!cache->internal_buffer) {
+			cache->internal_buffer_size = 0;
+			return -1;
+		}
+	}
+	ut64 io_off = io->off;
+	int result = cache->original_io_read (io, fd, cache->internal_buffer, count);
 	if (result == count) {
 		if (cache->mach0->chained_starts) {
-			rebase_buffer_fixup (cache, io_off, fd, internal_buffer, count);
+			rebase_buffer_fixup (cache, io_off, fd, cache->internal_buffer, count);
 		} else if (cache->rebase_info) {
-			rebase_buffer (cache, io_off, fd, internal_buffer, count);
+			rebase_buffer (cache, io_off, fd, cache->internal_buffer, count);
 		}
-		memcpy (buf, internal_buffer, result);
+		memcpy (buf, cache->internal_buffer, result);
 	}
 
 	return result;

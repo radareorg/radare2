@@ -4197,7 +4197,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 
 		    case 'A':
 		      {
-			static const unsigned char enc[16] =
+			static const uint8_t enc[16] =
 			{
 			  0x4, 0x14, /* st4 0,1 */
 			  0x4, /* st1 2 */

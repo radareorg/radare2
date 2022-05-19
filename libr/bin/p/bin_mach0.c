@@ -748,6 +748,9 @@ static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int co
 		}
 		return fd->plugin->read (io, fd, buf, count);
 	}
+	if (!obj->original_io_read) {
+		return -1;
+	}
 	if (obj->rebasing_buffer) {
 		return obj->original_io_read (io, fd, buf, count);
 	}
