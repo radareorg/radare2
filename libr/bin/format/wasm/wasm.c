@@ -262,6 +262,13 @@ static void export_entry_free(RBinWasmExportEntry *entry) {
 	}
 }
 
+static void wasm_sec_free(RBinWasmSection *sec) {
+	if (sec) {
+		free (sec->name);
+		free (sec);
+	}
+}
+
 // Parsing
 static RList *get_entries_from_section(RBinWasmObj *bin, RBinWasmSection *sec, ParseEntryFcn parse_entry, RListFree free_entry) {
 	r_return_val_if_fail (sec && bin, NULL);
@@ -860,7 +867,7 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 	if (bin->g_sections) {
 		return bin->g_sections;
 	}
-	if (!(ret = r_list_newf ((RListFree)free))) {
+	if (!(ret = r_list_newf ((RListFree)wasm_sec_free))) {
 		return NULL;
 	}
 	RBuffer *b = bin->buf;
