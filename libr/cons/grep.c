@@ -69,7 +69,8 @@ R_API void r_cons_grep_help(void) {
 #define R_CONS_GREP_BUFSIZE 4096
 
 static void parse_grep_expression(const char *str) {
-	static char buf[R_CONS_GREP_BUFSIZE], *ptrs[R_CONS_GREP_COUNT];
+	static R_TH_LOCAL char buf[R_CONS_GREP_BUFSIZE];
+	static R_TH_LOCAL char *ptrs[R_CONS_GREP_COUNT];
 	int wlen, len, is_range, num_is_parsed, fail = false;
 	char *ptr, *optr, *ptr2, *ptr3, *end_ptr = NULL, last;
 	ut64 range_begin, range_end;

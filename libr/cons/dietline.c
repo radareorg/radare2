@@ -1106,7 +1106,7 @@ static void __vi_mode(void) {
 	I.vi_mode = CONTROL_MODE;
 	__update_prompt_color ();
 	const char *gcomp_line = "";
-	static int gcomp = 0;
+	static R_TH_LOCAL int gcomp = 0;
 	for (;;) {
 		int rep = 0;
 		if (I.echo) {
@@ -1344,9 +1344,9 @@ static void dietline_print_risprompt(const char *gcomp_line) {
 R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int rows;
 	const char *gcomp_line = "";
-	static int gcomp_idx = 0;
-	static bool yank_flag = 0;
-	static int gcomp = 0;
+	static R_TH_LOCAL int gcomp_idx = 0;
+	static R_TH_LOCAL bool yank_flag = 0;
+	static R_TH_LOCAL int gcomp = 0;
 	signed char buf[10];
 #if USE_UTF8
 	int utflen;

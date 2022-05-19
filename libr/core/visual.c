@@ -8,16 +8,18 @@
 static void visual_refresh(RCore *core);
 
 // remove globals pls
-static int obs = 0;
-static int blocksize = 0;
-static bool autoblocksize = true;
-static int disMode = 0;
-static int hexMode = 0;
-static int printMode = 0;
-static bool snowMode = false;
-static RList *snows = NULL;
-static int color = 1;
-static int zoom = 0;
+static R_TH_LOCAL int obs = 0;
+static R_TH_LOCAL int blocksize = 0;
+static R_TH_LOCAL bool autoblocksize = true;
+static R_TH_LOCAL int disMode = 0;
+static R_TH_LOCAL int hexMode = 0;
+static R_TH_LOCAL int printMode = 0;
+static R_TH_LOCAL bool snowMode = false;
+static R_TH_LOCAL RList *snows = NULL;
+static R_TH_LOCAL int color = 1;
+static R_TH_LOCAL int zoom = 0;
+static R_TH_LOCAL int currentFormat = 0;
+static R_TH_LOCAL int current0format = 0;
 
 typedef struct {
 	int x;
@@ -48,8 +50,6 @@ static const char *printfmtColumns[NPF] = {
 #define PRINT_4_FORMATS 9
 #define PRINT_5_FORMATS 8
 
-static int currentFormat = 0;
-static int current0format = 0;
 static const char *printHexFormats[PRINT_HEX_FORMATS] = {
 	"px", "pxa", "pxr", "prx", "pxb", "pxh", "pxw", "pxq", "pxd", "pxr",
 };

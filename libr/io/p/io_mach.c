@@ -113,8 +113,8 @@ static task_t task_for_pid_ios9pangu(int pid) {
 
 static task_t pid_to_task(RIODesc *fd, int pid) {
 	task_t task = 0;
-	static task_t old_task = 0;
-	static int old_pid = -1;
+	static R_TH_LOCAL task_t old_task = 0;
+	static R_TH_LOCAL int old_pid = -1;
 	kern_return_t kr;
 
 	RIOMachData *iodd = fd? (RIOMachData *)fd->data: NULL;
@@ -163,7 +163,7 @@ static bool task_is_dead(RIODesc *fd, int pid) {
 	return (kr != KERN_SUCCESS || !count);
 }
 
-static ut64 the_lower = UT64_MAX;
+static R_TH_LOCAL ut64 the_lower = UT64_MAX;
 
 static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 	struct vm_region_submap_info_64 info;
@@ -293,7 +293,7 @@ static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
 static int tsk_pagesize(RIODesc *desc) {
 	int tid = __get_pid (desc);
 	task_t task = pid_to_task (desc, tid);
-	static vm_size_t pagesize = 0;
+	static R_TH_LOCAL vm_size_t pagesize = 0;
 	return pagesize
 		? pagesize
 		: (host_page_size (task, &pagesize) == KERN_SUCCESS)

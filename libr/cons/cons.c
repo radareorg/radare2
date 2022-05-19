@@ -965,7 +965,7 @@ static bool lastMatters(void) {
 }
 
 R_API void r_cons_echo(const char *msg) {
-	static RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
+	static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
 	if (msg) {
 		if (echodata) {
 			r_strbuf_append (echodata, msg);
@@ -1185,7 +1185,7 @@ R_API void r_cons_visual_flush(void) {
 
 R_API void r_cons_print_fps(int col) {
 	int fps = 0, w = r_cons_get_size (NULL);
-	static ut64 prev = 0LL; //r_time_now_mono ();
+	static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
 	fps = 0;
 	if (prev) {
 		ut64 now = r_time_now_mono ();
@@ -1776,8 +1776,8 @@ R_API void r_cons_show_cursor(int cursor) {
 		}
 #if __WINDOWS__
 	} else {
-		static HANDLE hStdout = NULL;
-		static DWORD size = -1;
+		static R_TH_LOCAL HANDLE hStdout = NULL;
+		static R_TH_LOCAL DWORD size = -1;
 		CONSOLE_CURSOR_INFO cursor_info;
 		if (!hStdout) {
 			hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
@@ -1806,7 +1806,7 @@ R_API void r_cons_show_cursor(int cursor) {
  *
  */
 R_API void r_cons_set_raw(bool is_raw) {
-	static int oldraw = -1;
+	static R_TH_LOCAL int oldraw = -1;
 	if (oldraw != -1) {
 		if (is_raw == oldraw) {
 			return;

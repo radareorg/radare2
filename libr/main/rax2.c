@@ -532,8 +532,7 @@ dotherax:
 		r_print_hex_from_bin (NULL, str);
 		return true;
 	} else if (flags & (1 << 21)) { // -i
-		static const char start[] = "unsigned char buf[] = {";
-		printf (start);
+		printf ("unsigned char buf[] = {");
 		/* reasonable amount of bytes per line */
 		const int byte_per_col = 12;
 		for (i = 0; i < len-1; i++) {
