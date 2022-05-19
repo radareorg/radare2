@@ -91,10 +91,6 @@ R_API bool r_th_lock_wait(RThreadLock *thl) {
 
 #if WANT_THREADS
 R_API bool r_th_lock_enter(RThreadLock *thl) {
-	return false;
-}
-#else
-R_API bool r_th_lock_enter(RThreadLock *thl) {
 	r_return_val_if_fail (thl, false);
 	R_LOG_DEBUG ("r_th_lock_enter");
 
@@ -119,13 +115,6 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 	return 0;
 #endif
 }
-#endif
-
-#if WANT_THREADS
-R_API bool r_th_lock_tryenter(RThreadLock *thl) {
-	return false;
-}
-#else
 R_API bool r_th_lock_tryenter(RThreadLock *thl) {
 	r_return_val_if_fail (thl, false);
 	R_LOG_DEBUG ("r_th_lock_tryenter");
@@ -137,13 +126,6 @@ R_API bool r_th_lock_tryenter(RThreadLock *thl) {
 	return false;
 #endif
 }
-#endif
-
-#if WANT_THREADS
-R_API bool r_th_lock_leave(RThreadLock *thl) {
-	return false;
-}
-#else
 R_API bool r_th_lock_leave(RThreadLock *thl) {
 	r_return_val_if_fail (thl, false);
 	R_LOG_DEBUG ("r_th_lock_leave");
@@ -155,6 +137,16 @@ R_API bool r_th_lock_leave(RThreadLock *thl) {
 #else
 	return false;
 #endif
+}
+#else
+R_API bool r_th_lock_enter(RThreadLock *thl) {
+	return false;
+}
+R_API bool r_th_lock_tryenter(RThreadLock *thl) {
+	return false;
+}
+R_API bool r_th_lock_leave(RThreadLock *thl) {
+	return false;
 }
 #endif
 
