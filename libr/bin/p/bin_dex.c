@@ -12,10 +12,10 @@
 
 // globals to kill
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
-static bool dexdump = false;
-static Sdb *mdb = NULL;
-static const char *dexSubsystem = NULL;
-static bool simplifiedDemangling = false; // depends on asm.pseudo
+static R_TH_LOCAL bool dexdump = false;
+static R_TH_LOCAL Sdb *mdb = NULL;
+static R_TH_LOCAL const char *dexSubsystem = NULL;
+static R_TH_LOCAL bool simplifiedDemangling = false; // depends on asm.pseudo
 
 static ut64 get_method_flags(ut64 MA) {
 	ut64 flags = 0;

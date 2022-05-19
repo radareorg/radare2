@@ -95,8 +95,8 @@ DECLARE_GENERIC_FPRINTF_FUNC()
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	const int bits = a->config->bits;
-	static char *oldcpu = NULL;
-	static int oldcpucode = 0;
+	static R_TH_LOCAL char *oldcpu = NULL;
+	static R_TH_LOCAL int oldcpucode = 0;
 	int opsize;
 	struct disassemble_info obj;
 	char *options = (bits == 16)? "force-thumb": "no-force-thumb";

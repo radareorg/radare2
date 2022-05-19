@@ -408,7 +408,7 @@ static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RList *sy
 		if (symstr) {
 			sym->name = symstr;
 		} else {
-			static ut32 k = 0;
+			static R_TH_LOCAL ut32 k = 0;
 			sym->name = r_str_newf ("unk_local%d", k++);
 		}
 
@@ -485,10 +485,10 @@ static struct MACH0_(obj_t) *bin_to_mach0(RBinFile *bf, RDyldBinImage *bin) {
 	opts.symbols_off = bin->symbols_off;
 
 	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (buf, &opts);
-
-	mach0->user = cache;
-	mach0->va2pa = &bin_obj_va2pa;
-
+	if (mach0) {
+		mach0->user = cache;
+		mach0->va2pa = &bin_obj_va2pa;
+	}
 	r_buf_free (buf);
 
 	return mach0;

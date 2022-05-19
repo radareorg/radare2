@@ -3347,7 +3347,7 @@ char* PE_(r_bin_pe_get_arch)(RBinPEObj* pe) {
 
 struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* pe) {
 	struct r_bin_pe_addr_t* entry = NULL;
-	static bool debug = false;
+	static R_TH_LOCAL bool debug = false;
 	int i;
 	ut64 base_addr = PE_(r_bin_pe_get_image_base) (pe);
 	if (!pe || !pe->optional_header) {

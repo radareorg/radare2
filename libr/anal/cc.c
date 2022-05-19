@@ -214,9 +214,9 @@ R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	int i = 0;
 	r_return_val_if_fail (anal && DB && cc, 0);
-	static void *oldDB = NULL;
-	static char *oldCC = NULL;
-	static int oldArg = 0;
+	static R_TH_LOCAL void *oldDB = NULL;
+	static R_TH_LOCAL char *oldCC = NULL;
+	static R_TH_LOCAL int oldArg = 0;
 	if (oldDB == DB && !strcmp (cc, oldCC)) {
 		return oldArg;
 	}
