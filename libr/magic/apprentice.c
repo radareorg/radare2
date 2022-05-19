@@ -170,7 +170,7 @@ static int get_type(const char *l, const char **t) {
 }
 
 static void init_file_tables(void) {
-	static bool done = false;
+	static R_TH_LOCAL bool done = false;
 	const struct type_tbl_s *p;
 	if (done) {
 		return;
@@ -887,18 +887,19 @@ static int get_op(char c) {
 	}
 }
 
+static const struct cond_tbl_s {
+	char name[8];
+	size_t len;
+	int cond;
+} cond_tbl[] = {
+	{ "if",		2,	COND_IF },
+	{ "elif",	4,	COND_ELIF },
+	{ "else",	4,	COND_ELSE },
+	{ "",		0,	COND_NONE },
+};
+
 static int get_cond(const char *l, const char **t) {
 	const struct cond_tbl_s *p;
-	static const struct cond_tbl_s {
-		char name[8];
-		size_t len;
-		int cond;
-	} cond_tbl[] = {
-		{ "if",		2,	COND_IF },
-		{ "elif",	4,	COND_ELIF },
-		{ "else",	4,	COND_ELSE },
-		{ "",		0,	COND_NONE },
-	};
 
 	for (p = cond_tbl; p->len; p++) {
 		if (strncmp (l, p->name, p->len) == 0 &&
@@ -957,7 +958,7 @@ static int check_cond(RMagic *ms, int cond, ut32 cont_level) {
  * parse one line from magic file, put into magic[index++] if valid
  */
 static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, const char *line, size_t lineno, int action) {
-	static ut32 last_cont_level = 0;
+	static R_TH_LOCAL ut32 last_cont_level = 0;
 	size_t i;
 	struct r_magic_entry *me;
 	struct r_magic *m;

@@ -36,8 +36,8 @@ in(B),t=c*h*g-f*        e;int x=40+30*D*
 // global iterators
 R_API char *r_str_donut(int osize) {
 	int size = osize;
-	static float A = 0;
-	static float B = 0;
+	static R_TH_LOCAL float A = 0;
+	static R_TH_LOCAL float B = 0;
 	float i,j,z[1760];
 	int k;
 	char b[1760];

@@ -785,32 +785,29 @@ static int decode_sign_ext(arm64_extender extender) {
 	return 0;
 }
 
-static const char *decode_shift(arm_shifter shift) {
-	static const char *E_OP_SR = ">>";
-	static const char *E_OP_SL = "<<";
-	static const char *E_OP_RR = ">>>";
-	static const char *E_OP_ASR = ">>>>";
-	static const char *E_OP_VOID = "";
+static const char *E_OP_SR = ">>";
+static const char *E_OP_SL = "<<";
+static const char *E_OP_RR = ">>>";
+static const char *E_OP_ASR = ">>>>";
+static const char *E_OP_AR = ">>>>";
+static const char *E_OP_VOID = "";
 
+static const char *decode_shift(arm_shifter shift) {
 	switch (shift) {
 	case ARM_SFT_ASR:
 	case ARM_SFT_ASR_REG:
 		return E_OP_ASR;
-
 	case ARM_SFT_LSR:
 	case ARM_SFT_LSR_REG:
 		return E_OP_SR;
-
 	case ARM_SFT_LSL:
 	case ARM_SFT_LSL_REG:
 		return E_OP_SL;
-
 	case ARM_SFT_ROR:
 	case ARM_SFT_RRX:
 	case ARM_SFT_ROR_REG:
 	case ARM_SFT_RRX_REG:
 		return E_OP_RR;
-
 	default:
 		break;
 	}
@@ -818,25 +815,16 @@ static const char *decode_shift(arm_shifter shift) {
 }
 
 static const char *decode_shift_64(arm64_shifter shift) {
-	static const char *E_OP_SR = ">>";
-	static const char *E_OP_SL = "<<";
-	static const char *E_OP_RR = ">>>";
-	static const char *E_OP_AR = ">>>>";
-	static const char *E_OP_VOID = "";
-
 	switch (shift) {
 	case ARM64_SFT_ASR:
 		return E_OP_AR;
 	case ARM64_SFT_LSR:
 		return E_OP_SR;
-
 	case ARM64_SFT_LSL:
 	case ARM64_SFT_MSL:
 		return E_OP_SL;
-
 	case ARM64_SFT_ROR:
 		return E_OP_RR;
-
 	default:
 		break;
 	}

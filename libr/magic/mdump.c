@@ -84,17 +84,18 @@ void file_mdump(struct r_magic *m) {
 			if (m->str_flags & REGEX_OFFSET_START)
 				(void) fputc(CHAR_REGEX_OFFSET_START, stderr);
 		}
-		if (m->str_range)
+		if (m->str_range) {
 			(void) eprintf ("/%u", m->str_range);
-	}
-	else {
-		if ((m->mask_op & FILE_OPS_MASK) < SZOF(optyp))
-			(void) fputc(optyp[m->mask_op & FILE_OPS_MASK], stderr);
-		else
-			(void) fputc('?', stderr);
-
-		if (m->num_mask)
+		}
+	} else {
+		if ((m->mask_op & FILE_OPS_MASK) < SZOF(optyp)) {
+			(void) fputc (optyp[m->mask_op & FILE_OPS_MASK], stderr);
+		} else {
+			(void) fputc ('?', stderr);
+		}
+		if (m->num_mask) {
 			(void) eprintf ("%08"PFMT64x, (ut64)m->num_mask);
+		}
 	}
 	(void) eprintf (",%c", m->reln);
 

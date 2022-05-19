@@ -187,35 +187,6 @@ static void rcc_reset_callname(REgg *egg) {
 #define FRAME_END_FMT "__%d_%d_end_frame%d"
 #endif
 
-#if 0
-static char *get_frame_label(int type) {
-	static char label[128];
-	int nf = egg->lang.nfunctions;
-	int nb = egg->lang.nbrackets;
-	int ct = context;
-	/* TODO: this type hack to substruct nb and ctx looks weird */
-#if 1
-	if (type == 1) {
-		nb--;
-	} else if (type == 2) {
-		ct--;
-	}
-#endif
-	/* THIS IS GAS_ONLY */
-	snprintf (label, sizeof (label), FRAME_FMT, nf, nb, ct);
-	return label;
-}
-
-static char *get_end_frame_label(REgg *egg) {
-	static char label[128];
-	snprintf (label, sizeof (label) - 1, FRAME_END_FMT,
-		egg->lang.nfunctions, egg->lang.nbrackets, context - 1);
-// eprintf ("--> (egg->lang.endframe: %d %d %d)\n", egg->lang.nfunctions, egg->lang.nbrackets, context);
-	// snprintf (label, sizeof (label)-1, "frame_end_%d_%d", egg->lang.nfunctions, egg->lang.nbrackets);
-	return label;
-}
-#endif
-
 static const char *find_alias(REgg *egg, const char *str) {
 	// do not forget to free return strings to avoid memory leak
 	char *p = (char *) str;

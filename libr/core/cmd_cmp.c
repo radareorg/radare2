@@ -1049,7 +1049,7 @@ static int cmd_cmp_posix(RCore *core, const char *a, const char *b) {
 }
 
 static int cmd_cmp(void *data, const char *input) {
-	static char *oldcwd = NULL;
+	static R_TH_LOCAL char *oldcwd = NULL;
 	int ret = 0, i, mode = 0;
 	RCore *core = (RCore *)data;
 	ut64 val = UT64_MAX;

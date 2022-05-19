@@ -270,7 +270,7 @@ R_API char *r_asn1_to_string(RASN1Object *object, ut32 depth, RStrBuf *sb) {
 	}
 	//this shall not be freed. it's a pointer into the buffer.
 	RASN1String* asn1str = NULL;
-	static char temp_name[4096] = {0};
+	static R_TH_LOCAL char temp_name[4096] = {0};
 	const char* name = "";
 	const char* string = "";
 

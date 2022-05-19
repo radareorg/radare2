@@ -3595,7 +3595,7 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 }
 
 static bool __stepOut(RAnalEsil *esil, const char *cmd) {
-	static bool inCmdStep = false;
+	static R_TH_LOCAL bool inCmdStep = false;
 	if (cmd && esil && esil->cmd && !inCmdStep) {
 		inCmdStep = true;
 		if (esil->cmd (esil, cmd, esil->address, 0)) {

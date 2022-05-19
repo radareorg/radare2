@@ -94,7 +94,7 @@ static int rabin_show_help(int v) {
 }
 
 static char *stdin_gets(bool liberate) {
-	static char *stdin_buf = NULL;
+	static R_TH_LOCAL char *stdin_buf = NULL;
 #define STDIN_BUF_SIZE 96096
 	if (liberate) {
 		free (stdin_buf);

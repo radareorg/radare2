@@ -751,7 +751,7 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	if (len < 0) {
 		len = strlen ((const char *)str);
 	}
-	static int block_freq[r_utf_blocks_count] = {0};
+	static R_TH_LOCAL int block_freq[r_utf_blocks_count] = {0};
 	int *list = R_NEWS (int, len + 1);
 	if (!list) {
 		return NULL;

@@ -52,7 +52,7 @@ static ut64 cache_addr = UT64_MAX;
 
 // TODO: move into io :?
 static int read_ahead(RAnal *anal, ut64 addr, ut8 *buf, int len) {
-	static ut8 cache[1024];
+	static R_TH_LOCAL ut8 cache[1024];
 	const int cache_len = sizeof (cache);
 
 	if (len < 1) {
@@ -558,7 +558,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	int oplen, idx = 0;
 	size_t lea_cnt = 0;
 	size_t nop_prefix_cnt = 0;
-	static ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
+	static R_TH_LOCAL ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
 	struct {
 		int cnt;
 		int idx;
@@ -636,7 +636,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			gotoBeach (R_ANAL_RET_ERROR);
 		}
 	}
-	static ut64 lea_jmptbl_ip = UT64_MAX;
+	static R_TH_LOCAL ut64 lea_jmptbl_ip = UT64_MAX;
 	ut64 last_reg_mov_lea_val = UT64_MAX;
 	bool last_is_reg_mov_lea = false;
 	bool last_is_push = false;
