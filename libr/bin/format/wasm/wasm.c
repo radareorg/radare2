@@ -247,6 +247,21 @@ static void r_bin_wasm_free_codes(RBinWasmCodeEntry *ptr) {
 	}
 }
 
+static void import_entry_free(RBinWasmImportEntry *entry) {
+	if (entry) {
+		free (entry->module_str);
+		free (entry->field_str);
+		free (entry);
+	}
+}
+
+static void export_entry_free(RBinWasmExportEntry *entry) {
+	if (entry) {
+		free (entry->field_str);
+		free (entry);
+	}
+}
+
 // Parsing
 static RList *get_entries_from_section(RBinWasmObj *bin, RBinWasmSection *sec, ParseEntryFcn parse_entry, RListFree free_entry) {
 	r_return_val_if_fail (sec && bin, NULL);
@@ -384,13 +399,7 @@ static void *parse_export_entry(RBuffer *b, ut64 bound) {
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_u32_r (b, bound, &ptr->field_len))) {
-		goto beach;
-	}
-	if (ptr->field_len > sizeof (ptr->field_str) / sizeof (*ptr->field_str)) {
-		goto beach;
-	}
-	if (!consume_str_r (b, bound, ptr->field_len, ptr->field_str)) {
+	if (!consume_str_new (b, bound, &ptr->field_len, &ptr->field_str)) {
 		goto beach;
 	}
 	if (!(consume_u7_r (b, bound, &ptr->kind))) {
@@ -672,14 +681,6 @@ beach:
 	return NULL;
 }
 
-static void import_entry_free(RBinWasmImportEntry *entry) {
-	if (entry) {
-		free (entry->module_str);
-		free (entry->field_str);
-		free (entry);
-	}
-}
-
 static RList *r_bin_wasm_get_type_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
 	return get_entries_from_section (bin, sec, parse_type_entry, (RListFree)r_bin_wasm_free_types);
 }
@@ -689,7 +690,7 @@ static RList *r_bin_wasm_get_import_entries(RBinWasmObj *bin, RBinWasmSection *s
 }
 
 static RList *r_bin_wasm_get_export_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
-	return get_entries_from_section (bin, sec, parse_export_entry, (RListFree)free);
+	return get_entries_from_section (bin, sec, parse_export_entry, (RListFree)export_entry_free);
 }
 
 static RList *r_bin_wasm_get_code_entries(RBinWasmObj *bin, RBinWasmSection *sec) {

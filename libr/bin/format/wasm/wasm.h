@@ -141,7 +141,7 @@ typedef struct r_bin_wasm_global_t {
 
 typedef struct r_bin_wasm_export_t {
 	ut32 field_len;
-	char field_str[R_BIN_WASM_STRING_LENGTH];
+	char *field_str;
 	ut8 kind;
 	ut32 index;
 } RBinWasmExportEntry;
