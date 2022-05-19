@@ -122,6 +122,7 @@ struct MACH0_(opts_t) {
 	bool verbose;
 	ut64 header_at;
 	ut64 symbols_off;
+	int maxsymlen;
 };
 
 struct MACH0_(obj_t) {
@@ -144,6 +145,7 @@ struct MACH0_(obj_t) {
 	int nsymtab;
 	ut32 *indirectsyms;
 	int nindirectsyms;
+	int maxsymlen;
 
 	RBinImport **imports_by_ord;
 	size_t imports_by_ord_size;

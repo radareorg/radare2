@@ -2874,6 +2874,16 @@ static bool cb_binmaxstrbuf(void *user, void *data) {
 	return true;
 }
 
+static bool cb_binmaxsymlen(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core->bin) {
+		core->bin->maxsymlen = node->i_value;
+		return true;
+	}
+	return true;
+}
+
 static bool cb_binmaxstr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3640,6 +3650,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.dbginfo", "true", &cb_bindbginfo, "load debug information at startup if available");
 	SETBPREF ("bin.relocs", "true", "load relocs information at startup if available");
 	SETICB ("bin.minstr", 0, &cb_binminstr, "minimum string length for r_bin");
+	SETICB ("bin.maxsymlen", 0, &cb_binmaxsymlen, "maximum length for symbol names");
 	SETICB ("bin.maxstr", 0, &cb_binmaxstr, "maximum string length for r_bin");
 	SETICB ("bin.maxstrbuf", 1024*1024*10, & cb_binmaxstrbuf, "maximum size of range to load strings from");
 	n = NODECB ("bin.str.enc", "guess", &cb_binstrenc);

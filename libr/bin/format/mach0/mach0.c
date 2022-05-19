@@ -11,7 +11,8 @@
 #define Eprintf if (mo->verbose) eprintf
 
 // Microsoft C++: 2048 characters; Intel C++: 2048 characters; g++: No limit
-#define MAXSYMBOLNAME 2048
+// see -e bin.maxsymlen
+
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
@@ -2148,6 +2149,7 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
 	options->header_at = 0;
 	options->symbols_off = 0;
 	options->verbose = bf->rbin->verbose;
+	options->maxsymlen = bf->rbin->maxsymlen;
 }
 
 static void *duplicate_ptr(void *p) {
@@ -2208,6 +2210,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 		if (options) {
 			bin->verbose = options->verbose;
 			bin->header_at = options->header_at;
+			bin->maxsymlen = options->maxsymlen;
 			bin->symbols_off = options->symbols_off;
 		}
 		if (!init (bin)) {
@@ -2487,7 +2490,7 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 			break;
 		}
 	}
-	if (len > MAXSYMBOLNAME) {
+	if (mo->maxsymlen > 0 && len > mo->maxsymlen) {
 		return NULL;
 	}
 	if (len > 0) {
@@ -2793,6 +2796,9 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 		if (parse_import_stub (bin, &symbol, i)) {
 			j++;
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			if (!sym) {
+				break;
+			}
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset;
 			sym->name = symbol.name;
@@ -2811,16 +2817,15 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 		// 2 is for func.eh (exception handlers?)
 		int section = st->n_sect;
 		if (section == 1 && j < symbols_count) { // text ??st->n_type == 1) maybe wrong
-			RBinSymbol *sym = R_NEW0(RBinSymbol);
+			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			if (!sym) {
+				break;
+			}
 			/* is symbol */
 			sym->vaddr = st->n_value;
 			sym->paddr = addr_to_offset (bin, symbols[j].addr);
 			sym->is_imported = symbols[j].is_imported;
-			if (st->n_type & N_EXT) {
-				sym->type = "EXT";
-			} else {
-				sym->type = "LOCAL";
-			}
+			sym->type = (st->n_type & N_EXT)? "EXT": "LOCAL";
 			char *sym_name = get_name (bin, st->n_strx, false);
 			if (sym_name) {
 				sym->name = sym_name;
