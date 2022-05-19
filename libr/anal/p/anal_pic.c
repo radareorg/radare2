@@ -1,10 +1,29 @@
-/* radare2 - LGPL - Copyright 2015-2018 - oddcoder, thestr4ng3r, courk */
+/* radare2 - LGPL - Copyright 2015-2022 - oddcoder, thestr4ng3r, courk */
 
 #include <r_types.h>
 #include <r_anal.h>
 #include <r_lib.h>
 
 #include "../../asm/arch/pic/pic_midrange.h"
+#include "../../asm/arch/pic/pic_baseline.h"
+#include "../../asm/arch/pic/pic_pic18.h"
+
+static char *asm_pic_disassemble(const ut8 *b, int l) {
+	int res = -1;
+	char opbuf[128];
+	strcpy (opbuf, "invalid");
+	const char *cpu = a->config->cpu;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		if (strcasecmp (cpu, "baseline") == 0) {
+			res = pic_baseline_disassemble (op, opbuf, b, l);
+		} else if (strcasecmp (cpu, "midrange") == 0) {
+			res = pic_midrange_disassemble (op, opbuf, b, l);
+		} else if (strcasecmp (cpu, "pic18") == 0) {
+			res = pic_pic18_disassemble (op, opbuf, b, l);
+		}
+	}
+	return strdup (opbuf);
+}
 
 typedef struct _pic_midrange_op_args_val {
 	ut16 f;
@@ -1155,6 +1174,9 @@ static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
 
 static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	const char *cpu = anal->config->cpu;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = asm_pic_disassemble (buf, len);
+	}
 	if (R_STR_ISNOTEMPTY (cpu)) {
 		if (!strcasecmp (cpu, "baseline")) {
 			// TODO: implement
@@ -1190,6 +1212,7 @@ static bool anal_pic_set_reg_profile(RAnal *anal) {
 RAnalPlugin r_anal_plugin_pic = {
 	.name = "pic",
 	.desc = "PIC analysis plugin",
+	.cpus = "baseline,midrange,pic18",
 	.license = "LGPL3",
 	.arch = "pic",
 	.bits = 8,

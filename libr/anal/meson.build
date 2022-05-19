@@ -126,6 +126,8 @@ r_anal_sources = [
   join_paths('..','asm','arch','mcore','mcore.c'),
   join_paths('..','asm','arch','or1k','or1k_disas.c'),
   join_paths('..','asm','arch','pic','pic_midrange.c'),
+  join_paths('..','asm','arch','pic','pic_baseline.c'),
+  join_paths('..','asm','arch','pic','pic_pic18.c'),
   join_paths('..','asm','arch','ppc','libvle','vle.c'),
   join_paths('..','asm','arch','propeller','propeller_disas.c'),
   join_paths('..','asm','arch','rsp','rsp_idec.c'),
