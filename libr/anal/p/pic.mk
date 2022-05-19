@@ -2,6 +2,8 @@ OBJ_PIC=anal_pic.o
 
 STATIC_OBJ+=$(OBJ_PIC)
 OBJ_PIC+=../../asm/arch/pic/pic_midrange.o
+OBJ_PIC+=../../asm/arch/pic/pic_baseline.o
+OBJ_PIC+=../../asm/arch/pic/pic_pic18.o
 TARGET_PIC=anal_pic.$(EXT_SO)
 
 ALL_TARTGETS+=$(TARGET_PIC)

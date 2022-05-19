@@ -109,29 +109,26 @@ static struct {
 	{0x0, 0xffff, "invalid", NO_ARG},
 };
 
-int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
+char *pic_pic18_disassemble(const ut8 *b, int blen, int *opsz) {
 	int i;
 	if (blen < 2) { //well noone loves reading bitstream of size zero or 1 !!
-		strcpy (opbuf, "invalid");
-		op->size = blen;
-		return -1;
+		return strdup ("invalid");
+		return NULL;
 	}
+	*opsz = 2;
 	ut16 instr = 0 ; // instruction
 	memcpy (&instr, b, sizeof (instr));
 	r_strf_buffer (64);
 	// if still redundan code is reported think of this of instr=0x2
 	const char *buf_asm = "invalid";
-	strcpy (opbuf, buf_asm);
 
 	for (i = 0; ops[i].opmin != (ops[i].opmin & instr) || ops[i].opmax != (ops[i].opmax | instr); i++) {
 		;
 	}
 	if (ops[i].opmin == 0 && ops[i].opmax == 0xffff) {
-		strcpy (opbuf, ops[i].name);
-		op->size = 2;
-		return -1;
+		return strdup (ops[i].name);
 	}
-	op->size = 2;
+	*opsz = 2;
 	switch (ops[i].optype) {
 	case NO_ARG:
 		buf_asm = ops[i].name;
@@ -154,15 +151,15 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		break;
 	case CALL_T:
 		if (blen < 4) {
-			return -1;
+			return NULL;
 		}
-		op->size = 4;
+		*opsz = 4;
 		{
 		ut32 dword_instr = *(ut32 *)b;
 		//I dont even know how the bits are arranged but it works !!!
 		//`the wierdness of little endianess`
 		if (dword_instr >> 28 != 0xf) {
-			return -1;
+			return NULL;
 		}
 		buf_asm = r_strf ("%s 0x%x, %d", ops[i].name,
 			  (dword_instr & 0xff) | (dword_instr >> 8 & 0xfff00), (dword_instr >> 8) & 0x1);
@@ -170,13 +167,13 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		break;
 	case GOTO_T:
 		if (blen < 4) {
-			return -1;
+			return NULL;
 		}
 		{
-		op->size = 4;
+		*opsz = 4;
 		ut32 dword_instr = *(ut32 *)b;
 		if (dword_instr >> 28 != 0xf) {
-			return -1;
+			return NULL;
 		}
 		buf_asm = r_strf ("%s 0x%x", ops[i].name,
 			  ((dword_instr & 0xff) | ((dword_instr &  0xfff0000) >>8) )*2);
@@ -184,13 +181,13 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		break;
 	case F32_T:
 		if (blen < 4) {
-			return -1;
+			return NULL;
 		}
-		op->size = 4;
+		*opsz = 4;
 		{
 		ut32 dword_instr = *(ut32 *)b;
 		if (dword_instr >> 28 != 0xf) {
-			return -1;
+			return NULL;
 		}
 		buf_asm = r_strf ("%s 0x%x, 0x%x", ops[i].name,
 			  dword_instr & 0xfff, (dword_instr >> 16) & 0xfff);
@@ -203,10 +200,10 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		buf_asm = r_strf ("%s %d", ops[i].name, instr & 0x1);
 		break;
 	case LFSR_T: {
-		op->size = 4;
+		*opsz = 4;
 		ut32 dword_instr = *(ut32 *)b;
 		if (dword_instr >> 28 != 0xf) {
-			return -1;
+			return NULL;
 		}
 		ut8 reg_n = (dword_instr >> 4) & 0x3;
 		buf_asm = r_strf ("%s %s, %d", ops[i].name, fsr[reg_n],
@@ -216,6 +213,5 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 	default:
 		buf_asm = "unknown args";
 	};
-	strcpy (opbuf, buf_asm);
-	return op->size;
+	return strdup (buf_asm);
 }

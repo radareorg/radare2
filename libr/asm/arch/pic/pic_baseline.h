@@ -1,9 +1,8 @@
-/* radare2 - LGPL - Copyright 2018 - thestr4ng3r */
+/* radare2 - LGPL - Copyright 2018-2022 - thestr4ng3r */
 
 #ifndef PIC_BASELINE_H
 #define PIC_BASELINE_H
 
-#include <r_types.h>
 #include <r_asm.h>
 
 typedef enum {
@@ -74,8 +73,8 @@ typedef enum {
 	PIC_BASELINE_OPCODE_INVALID
 } PicBaselineOpcode;
 
-PicBaselineOpcode pic_baseline_get_opcode(ut16 instr);
-const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode);
-int pic_baseline_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l);
+// PicBaselineOpcode pic_baseline_get_opcode(ut16 instr);
+// const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode);
+char *pic_baseline_disassemble(const ut8 *b, int l, int *opsz);
 
 #endif //PIC_BASELINE_H
