@@ -22,7 +22,11 @@ static int vax_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length
 	if (delta < 0) {
 		return -1; // disable backward reads
 	}
-	memcpy (myaddr, bytes + delta, R_MIN (length, bytes_size));
+	if (delta >= bytes_size) {
+		return -1;
+	}
+	const int left = bytes_size - delta;
+	memcpy (myaddr, bytes + delta, R_MIN (length, left));
 	return 0;
 }
 
