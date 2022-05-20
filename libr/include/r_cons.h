@@ -166,6 +166,7 @@ typedef struct r_cons_palette_t {
 	RColor other;
 	RColor pop;
 	RColor prompt;
+	RColor bgprompt;
 	RColor push;
 	RColor crypto;
 	RColor reg;
@@ -241,6 +242,7 @@ typedef struct r_cons_printable_palette_t {
 	char *other;
 	char *pop;
 	char *prompt;
+	char *bgprompt;
 	char *push;
 	char *crypto;
 	char *reg;

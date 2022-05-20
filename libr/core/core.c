@@ -3360,7 +3360,7 @@ static void set_prompt(RCore *r) {
 		remote = "=!";
 	}
 
-	if (r_config_get_i (r->config, "scr.color")) {
+	if (r_config_get_i (r->config, "scr.color") > 0) {
 		BEGIN = r->cons->context->pal.prompt;
 		END = r->cons->context->pal.reset;
 	}
@@ -3395,7 +3395,7 @@ static void set_prompt(RCore *r) {
 	}
 
 	chop_prompt (filename, tmp, 128);
-	char *prompt = r_str_newf ("%s%s[%s%s]>%s ", filename, BEGIN, remote,
+	char *prompt = r_str_newf ("%s%s[%s%s]> %s", filename, BEGIN, remote,
 		tmp, END);
 	r_line_set_prompt (r_str_get (prompt));
 

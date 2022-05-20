@@ -42,6 +42,7 @@ ec help rgb:a0b070
 ec flow rgb:c0a060
 ec flow2 rgb:f0e0c0
 ec prompt rgb:906000
+ec bgprompt rgb:000000
 ec offset rgb:906000
 ec input rgb:c0a060
 ec invalid rgb:c06040
@@ -154,6 +155,7 @@ EXPECT=<<EOF
  [36m##[0m  flow
  [34m##[0m  flow2
  [33m##[0m  prompt
+ [0m##[0m  bgprompt
  [32m##[0m  offset
  [37m##[0m  input
  [1;91m##[0m  invalid
@@ -224,6 +226,7 @@ EXPECT=<<EOF
  [96m##[0m  flow
  [94m##[0m  flow2
  [93m##[0m  prompt
+ [0m##[0m  bgprompt
  [92m##[0m  offset
  [97m##[0m  input
  [1;91m##[0m  invalid
