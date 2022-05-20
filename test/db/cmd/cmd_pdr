@@ -84,165 +84,188 @@ EXPECT=<<EOF
 \ 0x00000011      ebf0           jmp 3
 | // true: 0x00000003
 
-[
-  {
-    "offset": 0,
-    "esil": ",",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 14,
-    "size": 5,
-    "opcode": "nop dword [rax + rax]",
-    "disasm": "nop dword [rax + rax]",
-    "bytes": "0f1f440000",
-    "family": "cpu",
-    "type": "nop",
-    "reloc": false,
-    "type_num": 8,
-    "type2_num": 0,
-    "flags": [
-      "fcn.00000000"
-    ]
-  },
-  {
-    "offset": 3,
-    "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
-    "refptr": true,
-    "fcn_addr": 0,
-    "fcn_last": 17,
-    "size": 2,
-    "opcode": "add byte [rax], al",
-    "disasm": "add byte [rax], al",
-    "bytes": "0000",
-    "family": "cpu",
-    "type": "add",
-    "reloc": false,
-    "type_num": 17,
-    "type2_num": 0,
-    "xrefs": [
-      {
-        "addr": 17,
-        "type": "CODE",
-        "perm": "--x"
-      }
-    ]
-  },
-  {
-    "offset": 5,
-    "ptr": 3238002721,
-    "val": 3238002721,
-    "esil": "3238002721,rax,=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 14,
-    "size": 5,
-    "opcode": "mov eax, 0xc1000021",
-    "disasm": "mov eax, 0xc1000021",
-    "bytes": "b8210000c1",
-    "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
-  },
-  {
-    "offset": 10,
-    "esil": "0x9,rip,=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 17,
-    "size": 2,
-    "opcode": "jmp 9",
-    "disasm": "jmp 9",
-    "bytes": "ebfd",
-    "family": "cpu",
-    "type": "jmp",
-    "reloc": false,
-    "type_num": 1,
-    "type2_num": 0,
-    "jump": 9,
-    "refs": [
-      {
-        "addr": 9,
-        "type": "CODE",
-        "perm": "--x"
-      }
-    ]
-  },
-  {
-    "offset": 9,
-    "val": 253,
-    "esil": "0,cf,:=,1,253,-,1,<<,ebx,&,?{,1,cf,:=,},253,ebx,>>,ebx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 16,
-    "size": 3,
-    "opcode": "shr ebx, 0xfd",
-    "disasm": "shr ebx, 0xfd",
-    "bytes": "c1ebfd",
-    "family": "cpu",
-    "type": "shr",
-    "reloc": false,
-    "type_num": 22,
-    "type2_num": 0,
-    "xrefs": [
-      {
-        "addr": 10,
-        "type": "CODE",
-        "perm": "--x"
-      }
-    ]
-  },
-  {
-    "offset": 12,
-    "ptr": 44,
-    "val": 44,
-    "esil": "44,rbx,=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 14,
-    "size": 5,
-    "opcode": "mov ebx, 0x2c",
-    "disasm": "mov ebx, 0x2c",
-    "bytes": "bb2c000000",
-    "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0,
-    "refs": [
-      {
-        "addr": 44,
-        "type": "DATA",
-        "perm": "r--"
-      }
-    ]
-  },
-  {
-    "offset": 17,
-    "esil": "0x3,rip,=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 17,
-    "size": 2,
-    "opcode": "jmp 3",
-    "disasm": "jmp 3",
-    "bytes": "ebf0",
-    "family": "cpu",
-    "type": "jmp",
-    "reloc": false,
-    "type_num": 1,
-    "type2_num": 0,
-    "jump": 3,
-    "refs": [
-      {
-        "addr": 3,
-        "type": "CODE",
-        "perm": "--x"
-      }
-    ]
-  }
-]
+{
+  "name": "fcn.00000000",
+  "bbs": [
+    {
+      "addr": 0,
+      "ops": [
+        {
+          "offset": 0,
+          "esil": ",",
+          "refptr": false,
+          "fcn_addr": 0,
+          "fcn_last": 14,
+          "size": 5,
+          "opcode": "nop dword [rax + rax]",
+          "disasm": "nop dword [rax + rax]",
+          "bytes": "0f1f440000",
+          "family": "cpu",
+          "type": "nop",
+          "reloc": false,
+          "type_num": 8,
+          "type2_num": 0,
+          "flags": [
+            "fcn.00000000"
+          ]
+        }
+      ]
+    },
+    {
+      "addr": 3,
+      "ops": [
+        {
+          "offset": 3,
+          "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
+          "refptr": true,
+          "fcn_addr": 0,
+          "fcn_last": 17,
+          "size": 2,
+          "opcode": "add byte [rax], al",
+          "disasm": "add byte [rax], al",
+          "bytes": "0000",
+          "family": "cpu",
+          "type": "add",
+          "reloc": false,
+          "type_num": 17,
+          "type2_num": 0,
+          "xrefs": [
+            {
+              "addr": 17,
+              "type": "CODE",
+              "perm": "--x"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "addr": 5,
+      "ops": [
+        {
+          "offset": 5,
+          "ptr": 3238002721,
+          "val": 3238002721,
+          "esil": "3238002721,rax,=",
+          "refptr": false,
+          "fcn_addr": 0,
+          "fcn_last": 14,
+          "size": 5,
+          "opcode": "mov eax, 0xc1000021",
+          "disasm": "mov eax, 0xc1000021",
+          "bytes": "b8210000c1",
+          "family": "cpu",
+          "type": "mov",
+          "reloc": false,
+          "type_num": 9,
+          "type2_num": 0
+        },
+        {
+          "offset": 10,
+          "esil": "0x9,rip,=",
+          "refptr": false,
+          "fcn_addr": 0,
+          "fcn_last": 17,
+          "size": 2,
+          "opcode": "jmp 9",
+          "disasm": "jmp 9",
+          "bytes": "ebfd",
+          "family": "cpu",
+          "type": "jmp",
+          "reloc": false,
+          "type_num": 1,
+          "type2_num": 0,
+          "jump": 9,
+          "refs": [
+            {
+              "addr": 9,
+              "type": "CODE",
+              "perm": "--x"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "addr": 9,
+      "ops": [
+        {
+          "offset": 9,
+          "val": 253,
+          "esil": "0,cf,:=,1,253,-,1,<<,ebx,&,?{,1,cf,:=,},253,ebx,>>,ebx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=",
+          "refptr": false,
+          "fcn_addr": 0,
+          "fcn_last": 16,
+          "size": 3,
+          "opcode": "shr ebx, 0xfd",
+          "disasm": "shr ebx, 0xfd",
+          "bytes": "c1ebfd",
+          "family": "cpu",
+          "type": "shr",
+          "reloc": false,
+          "type_num": 22,
+          "type2_num": 0,
+          "xrefs": [
+            {
+              "addr": 10,
+              "type": "CODE",
+              "perm": "--x"
+            }
+          ]
+        },
+        {
+          "offset": 12,
+          "ptr": 44,
+          "val": 44,
+          "esil": "44,rbx,=",
+          "refptr": false,
+          "fcn_addr": 0,
+          "fcn_last": 14,
+          "size": 5,
+          "opcode": "mov ebx, 0x2c",
+          "disasm": "mov ebx, 0x2c",
+          "bytes": "bb2c000000",
+          "family": "cpu",
+          "type": "mov",
+          "reloc": false,
+          "type_num": 9,
+          "type2_num": 0,
+          "refs": [
+            {
+              "addr": 44,
+              "type": "DATA",
+              "perm": "r--"
+            }
+          ]
+        },
+        {
+          "offset": 17,
+          "esil": "0x3,rip,=",
+          "refptr": false,
+          "fcn_addr": 0,
+          "fcn_last": 17,
+          "size": 2,
+          "opcode": "jmp 3",
+          "disasm": "jmp 3",
+          "bytes": "ebf0",
+          "family": "cpu",
+          "type": "jmp",
+          "reloc": false,
+          "type_num": 1,
+          "type2_num": 0,
+          "jump": 3,
+          "refs": [
+            {
+              "addr": 3,
+              "type": "CODE",
+              "perm": "--x"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
 
 nop dword [rax + rax]
 add byte [rax], al
@@ -252,165 +275,188 @@ shr ebx, 0xfd
 mov ebx, 0x2c
 jmp 3
 
-[
-  {
-    "offset": 0,
-    "esil": ",",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 14,
-    "size": 5,
-    "opcode": "nop dword [rax + rax]",
-    "disasm": "nop dword [rax + rax]",
-    "bytes": "0f1f440000",
-    "family": "cpu",
-    "type": "nop",
-    "reloc": false,
-    "type_num": 8,
-    "type2_num": 0,
-    "flags": [
-      "fcn.00000000"
-    ]
-  },
-  {
-    "offset": 3,
-    "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
-    "refptr": true,
-    "fcn_addr": 0,
-    "fcn_last": 17,
-    "size": 2,
-    "opcode": "add byte [rax], al",
-    "disasm": "add byte [rax], al",
-    "bytes": "0000",
-    "family": "cpu",
-    "type": "add",
-    "reloc": false,
-    "type_num": 17,
-    "type2_num": 0,
-    "xrefs": [
-      {
-        "addr": 17,
-        "type": "CODE",
-        "perm": "--x"
-      }
-    ]
-  },
-  {
-    "offset": 5,
-    "ptr": 3238002721,
-    "val": 3238002721,
-    "esil": "3238002721,rax,=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 14,
-    "size": 5,
-    "opcode": "mov eax, 0xc1000021",
-    "disasm": "mov eax, 0xc1000021",
-    "bytes": "b8210000c1",
-    "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0
-  },
-  {
-    "offset": 10,
-    "esil": "0x9,rip,=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 17,
-    "size": 2,
-    "opcode": "jmp 9",
-    "disasm": "jmp 9",
-    "bytes": "ebfd",
-    "family": "cpu",
-    "type": "jmp",
-    "reloc": false,
-    "type_num": 1,
-    "type2_num": 0,
-    "jump": 9,
-    "refs": [
-      {
-        "addr": 9,
-        "type": "CODE",
-        "perm": "--x"
-      }
-    ]
-  },
-  {
-    "offset": 9,
-    "val": 253,
-    "esil": "0,cf,:=,1,253,-,1,<<,ebx,&,?{,1,cf,:=,},253,ebx,>>,ebx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 16,
-    "size": 3,
-    "opcode": "shr ebx, 0xfd",
-    "disasm": "shr ebx, 0xfd",
-    "bytes": "c1ebfd",
-    "family": "cpu",
-    "type": "shr",
-    "reloc": false,
-    "type_num": 22,
-    "type2_num": 0,
-    "xrefs": [
-      {
-        "addr": 10,
-        "type": "CODE",
-        "perm": "--x"
-      }
-    ]
-  },
-  {
-    "offset": 12,
-    "ptr": 44,
-    "val": 44,
-    "esil": "44,rbx,=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 14,
-    "size": 5,
-    "opcode": "mov ebx, 0x2c",
-    "disasm": "mov ebx, 0x2c",
-    "bytes": "bb2c000000",
-    "family": "cpu",
-    "type": "mov",
-    "reloc": false,
-    "type_num": 9,
-    "type2_num": 0,
-    "refs": [
-      {
-        "addr": 44,
-        "type": "DATA",
-        "perm": "r--"
-      }
-    ]
-  },
-  {
-    "offset": 17,
-    "esil": "0x3,rip,=",
-    "refptr": false,
-    "fcn_addr": 0,
-    "fcn_last": 17,
-    "size": 2,
-    "opcode": "jmp 3",
-    "disasm": "jmp 3",
-    "bytes": "ebf0",
-    "family": "cpu",
-    "type": "jmp",
-    "reloc": false,
-    "type_num": 1,
-    "type2_num": 0,
-    "jump": 3,
-    "refs": [
-      {
-        "addr": 3,
-        "type": "CODE",
-        "perm": "--x"
-      }
-    ]
-  }
-]
+{
+  "name": "fcn.00000000",
+  "bbs": [
+    {
+      "addr": 0,
+      "ops": [
+        {
+          "offset": 0,
+          "esil": ",",
+          "refptr": false,
+          "fcn_addr": 0,
+          "fcn_last": 14,
+          "size": 5,
+          "opcode": "nop dword [rax + rax]",
+          "disasm": "nop dword [rax + rax]",
+          "bytes": "0f1f440000",
+          "family": "cpu",
+          "type": "nop",
+          "reloc": false,
+          "type_num": 8,
+          "type2_num": 0,
+          "flags": [
+            "fcn.00000000"
+          ]
+        }
+      ]
+    },
+    {
+      "addr": 3,
+      "ops": [
+        {
+          "offset": 3,
+          "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
+          "refptr": true,
+          "fcn_addr": 0,
+          "fcn_last": 17,
+          "size": 2,
+          "opcode": "add byte [rax], al",
+          "disasm": "add byte [rax], al",
+          "bytes": "0000",
+          "family": "cpu",
+          "type": "add",
+          "reloc": false,
+          "type_num": 17,
+          "type2_num": 0,
+          "xrefs": [
+            {
+              "addr": 17,
+              "type": "CODE",
+              "perm": "--x"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "addr": 5,
+      "ops": [
+        {
+          "offset": 5,
+          "ptr": 3238002721,
+          "val": 3238002721,
+          "esil": "3238002721,rax,=",
+          "refptr": false,
+          "fcn_addr": 0,
+          "fcn_last": 14,
+          "size": 5,
+          "opcode": "mov eax, 0xc1000021",
+          "disasm": "mov eax, 0xc1000021",
+          "bytes": "b8210000c1",
+          "family": "cpu",
+          "type": "mov",
+          "reloc": false,
+          "type_num": 9,
+          "type2_num": 0
+        },
+        {
+          "offset": 10,
+          "esil": "0x9,rip,=",
+          "refptr": false,
+          "fcn_addr": 0,
+          "fcn_last": 17,
+          "size": 2,
+          "opcode": "jmp 9",
+          "disasm": "jmp 9",
+          "bytes": "ebfd",
+          "family": "cpu",
+          "type": "jmp",
+          "reloc": false,
+          "type_num": 1,
+          "type2_num": 0,
+          "jump": 9,
+          "refs": [
+            {
+              "addr": 9,
+              "type": "CODE",
+              "perm": "--x"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "addr": 9,
+      "ops": [
+        {
+          "offset": 9,
+          "val": 253,
+          "esil": "0,cf,:=,1,253,-,1,<<,ebx,&,?{,1,cf,:=,},253,ebx,>>,ebx,=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=",
+          "refptr": false,
+          "fcn_addr": 0,
+          "fcn_last": 16,
+          "size": 3,
+          "opcode": "shr ebx, 0xfd",
+          "disasm": "shr ebx, 0xfd",
+          "bytes": "c1ebfd",
+          "family": "cpu",
+          "type": "shr",
+          "reloc": false,
+          "type_num": 22,
+          "type2_num": 0,
+          "xrefs": [
+            {
+              "addr": 10,
+              "type": "CODE",
+              "perm": "--x"
+            }
+          ]
+        },
+        {
+          "offset": 12,
+          "ptr": 44,
+          "val": 44,
+          "esil": "44,rbx,=",
+          "refptr": false,
+          "fcn_addr": 0,
+          "fcn_last": 14,
+          "size": 5,
+          "opcode": "mov ebx, 0x2c",
+          "disasm": "mov ebx, 0x2c",
+          "bytes": "bb2c000000",
+          "family": "cpu",
+          "type": "mov",
+          "reloc": false,
+          "type_num": 9,
+          "type2_num": 0,
+          "refs": [
+            {
+              "addr": 44,
+              "type": "DATA",
+              "perm": "r--"
+            }
+          ]
+        },
+        {
+          "offset": 17,
+          "esil": "0x3,rip,=",
+          "refptr": false,
+          "fcn_addr": 0,
+          "fcn_last": 17,
+          "size": 2,
+          "opcode": "jmp 3",
+          "disasm": "jmp 3",
+          "bytes": "ebf0",
+          "family": "cpu",
+          "type": "jmp",
+          "reloc": false,
+          "type_num": 1,
+          "type2_num": 0,
+          "jump": 3,
+          "refs": [
+            {
+              "addr": 3,
+              "type": "CODE",
+              "perm": "--x"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
 EOF
 RUN
 
