@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2012-2021 - pancake */
+/* radare - LGPL - Copyright 2012-2022 - pancake */
 
 #include <r_main.h>
-#include <r_util.h>
 
 R_LIB_VERSION(r_main);
 

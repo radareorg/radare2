@@ -23,7 +23,7 @@ static char* get_file_in_cur_dir(const char *filepath) {
 	return NULL;
 }
 
-static int r_main_version_verify(int show) {
+static int r_main_version_verify(bool show, bool json) {
 	int i, ret;
 	typedef const char* (*vc)();
 	const char *base = R2_GITTAP;
@@ -59,21 +59,48 @@ static int r_main_version_verify(int show) {
 		{NULL,NULL}
 	};
 
-	if (show) {
-		printf ("%s  r2\n", base);
-	}
-	for (i = ret = 0; vcs[i].name; i++) {
-		struct vcs_t *v = &vcs[i];
-		const char *name = v->callback ();
-		if (!ret && strcmp (base, name)) {
-			ret = 1;
-		}
+	if (json) {
+		PJ *pj = pj_new ();
+		pj_o (pj);
+		pj_ko (pj, "versions");
 		if (show) {
-			printf ("%s  %s\n", name, v->name);
+			pj_ks (pj, "r2", base);
 		}
-	}
-	if (ret) {
-		eprintf ("Warning: r2 library versions mismatch! Check r2 -V\n");
+		for (i = ret = 0; vcs[i].name; i++) {
+			struct vcs_t *v = &vcs[i];
+			const char *name = v->callback ();
+			if (!ret && strcmp (base, name)) {
+				ret = 1;
+			}
+			if (show) {
+				pj_ks (pj, v->name, name);
+			}
+		}
+		pj_end (pj);
+		if (ret) {
+			pj_ks (pj, "warning", "r2 library versions mismatch! Check r2 -V\n");
+		}
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		printf ("%s\n", s);
+		free (s);
+	} else {
+		if (show) {
+			printf ("%s  r2\n", base);
+		}
+		for (i = ret = 0; vcs[i].name; i++) {
+			struct vcs_t *v = &vcs[i];
+			const char *name = v->callback ();
+			if (!ret && strcmp (base, name)) {
+				ret = 1;
+			}
+			if (show) {
+				printf ("%s  %s\n", name, v->name);
+			}
+		}
+		if (ret) {
+			eprintf ("Warning: r2 library versions mismatch! Check r2 -V\n");
+		}
 	}
 	return ret;
 }
@@ -502,6 +529,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	set_color_default (r);
 	bool show_version = false;
+	bool show_versions = false;
 	bool json = false;
 	bool load_l = true;
 	char *debugbackend = strdup ("native");
@@ -713,7 +741,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			show_version = true;
 			break;
 		case 'V':
-			return r_main_version_verify (1);
+			show_versions = true;
+			break;
 		case 'w':
 			perms |= R_PERM_W;
 			break;
@@ -724,6 +753,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		default:
 			help++;
 		}
+	}
+	if (show_versions) {
+		return r_main_version_verify (1, json);
 	}
 	if (show_version) {
 		if (json) {
@@ -751,7 +783,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			free (debugbackend);
 			free (customRarunProfile);
 		} else {
-			r_main_version_verify (0);
+			r_main_version_verify (0, json);
 			LISTS_FREE ();
 			free (customRarunProfile);
 			free (debugbackend);
