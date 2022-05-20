@@ -936,6 +936,10 @@ static inline void delete_till_end(void) {
 	I.buffer.index = I.buffer.index > 0 ? I.buffer.index - 1 : 0;
 }
 
+static const char *promptcolor (void) {
+	return r_cons_singleton ()->context->pal.bgprompt;
+}
+
 static void __print_prompt(void) {
 	RCons *cons = r_cons_singleton ();
 	int columns = r_cons_get_size (NULL) - 2;
@@ -944,16 +948,17 @@ static void __print_prompt(void) {
 		r_cons_gotoxy (0,  cons->rows);
 		r_cons_flush ();
 	}
+	printf ("%s", promptcolor ());
 	r_cons_clear_line (0);
 	if (cons->context->color_mode > 0) {
-		printf ("\r%s%s", Color_RESET, I.prompt);
+		printf ("\r%s%s%s", Color_RESET, promptcolor (), I.prompt);
 	} else {
 		printf ("\r%s", I.prompt);
 	}
 	if (I.buffer.length > 0) {
 		fwrite (I.buffer.data, I.buffer.length, 1, stdout);
 	}
-	printf ("\r%s", I.prompt);
+	printf ("\r%s%s%s", promptcolor (), I.prompt, promptcolor ());
 	if (I.buffer.index > cols) {
 		printf ("< ");
 		i = I.buffer.index - cols;
@@ -1094,7 +1099,7 @@ static void __update_prompt_color(void) {
 		} else {
 			BEGIN = cons->context->pal.prompt;
 		}
-		END = cons->context->pal.reset;
+	//	END = cons->context->pal.reset;
 	}
 	char *prompt = r_str_escape (I.prompt);		// remote the color
 	free (I.prompt);
@@ -2058,7 +2063,7 @@ _end:
 	r_cons_set_raw (0);
 	r_cons_enable_mouse (mouse_status);
 	if (I.echo) {
-		printf ("\r%s%s\n", I.prompt, I.buffer.data);
+		printf ("\r%s%s%s%s\n", I.prompt, promptcolor (), I.buffer.data, Color_RESET);
 		fflush (stdout);
 	}
 
