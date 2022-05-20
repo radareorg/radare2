@@ -3486,9 +3486,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 			w - title_len, 1, ' ');
 	}
 
-
 	r_cons_canvas_print_region (g->can);
-
 
 	if (is_interactive) {
 		r_cons_newline ();

@@ -7,6 +7,7 @@
 
 static void visual_refresh(RCore *core);
 
+static const char *promptstr = "> ";
 // remove globals pls
 static R_TH_LOCAL int obs = 0;
 static R_TH_LOCAL int blocksize = 0;
@@ -800,11 +801,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 	if (PIDX != 2) {
 		core->seltab = 0;
 	}
-#if __UNIX__
-	r_line_set_prompt (Color_RESET ":> ");
-#else
-	r_line_set_prompt (":> ");
-#endif
+	r_line_set_prompt (promptstr);
 	r_core_visual_showcursor (core, true);
 	r_cons_fgets (buf, sizeof (buf), 0, NULL);
 	if (!strcmp (buf, "q")) {
@@ -1357,7 +1354,7 @@ static void addComment(RCore *core, ut64 addr) {
 	r_core_visual_showcursor (core, true);
 	r_cons_flush ();
 	r_cons_set_raw (false);
-	r_line_set_prompt (":> ");
+	r_line_set_prompt (promptstr);
 	r_cons_enable_mouse (false);
 	if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
 		buf[0] = '\0';
@@ -2604,7 +2601,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_cons_flush ();
 			r_cons_set_raw (false);
 			strcpy (buf, "\"wa ");
-			r_line_set_prompt (":> ");
+			r_line_set_prompt (promptstr);
 			r_cons_enable_mouse (false);
 			if (r_cons_fgets (buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
 				buf[0] = '\0';
