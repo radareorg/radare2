@@ -4637,19 +4637,20 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		}
 	}
 	r_list_sort (f->bbs, (RListComparator) bbcmp);
-	if (input == 'j' && b) {
+	if (input == 'j' && b) { // "pdrj"
 		pj = pj_new ();
 		if (!pj) {
 			return;
 		}
-		pj_a (pj);
+		pj_o (pj);
+		pj_ks (pj, "name", f->name);
+		pj_ka (pj, "bbs");
 		r_list_foreach (f->bbs, iter, b) {
+			pj_o (pj);
+			pj_kn (pj, "addr", b->addr);
+			pj_ka (pj, "ops");
 			if (fromHere) {
-				if (b->addr < core->offset) {
-					core->cons->null = true;
-				} else {
-					core->cons->null = false;
-				}
+				core->cons->null = (b->addr < core->offset);
 			}
 			ut8 *buf = malloc (b->size);
 			if (buf) {
@@ -4659,7 +4660,10 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			} else {
 				eprintf ("cannot allocate %"PFMT64u" byte(s)\n", b->size);
 			}
+			pj_end (pj);
+			pj_end (pj);
 		}
+		pj_end (pj);
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
