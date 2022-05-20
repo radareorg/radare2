@@ -3,14 +3,16 @@
 #include <r_io.h>
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	if (!fd || !buf || count < 0 || !fd->data) {
-		return -1;
+	r_return_val_if_fail (io && fd && buf && fd->data, -1);
+	if (count >= 0 && fd->perm & R_PERM_W) {
+		RBuffer *b = fd->data;
+		return r_buf_write (b, buf, count);
 	}
-	RBuffer *b = fd->data;
-	return r_buf_write (b, buf, count);
+	return -1;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+	r_return_val_if_fail (io && fd && buf, -1);
 	RBuffer *b = fd->data;
 	return r_buf_read (b, buf, count);
 }
@@ -31,21 +33,26 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
+	r_return_val_if_fail (io && pathname, NULL);
+	if (r_sandbox_enable (false)) {
+		R_LOG_ERROR ("rbuf:// doesnt work with sandbox enabled");
+		return NULL;
+	}
 	RIODesc *desc;
-	RBuffer *buf = r_buf_new ();
-	if (buf && (desc = r_io_desc_new (io, &r_io_plugin_rbuf, pathname, 7, 0, buf))) {
+	RBuffer *buf = (RBuffer *)(void *)r_num_get (NULL, pathname + 7);
+	if (buf && (desc = r_io_desc_new (io, &r_io_plugin_rbuf, pathname, rw, 0, buf))) {
 		return desc;
 	}
-	r_buf_free (buf);
 	return NULL;
 }
 
 RIOPlugin r_io_plugin_rbuf = {
 	.name = "rbuf",
-	.desc = "RBuffer IO plugin",
+	.desc = "Unsafe RBuffer IO plugin",
 	.uris = "rbuf://",
 	.license = "LGPL",
 	.open = __open,
+	.author = "pancake",
 	.close = __close,
 	.read = __read,
 	.seek = __lseek,
