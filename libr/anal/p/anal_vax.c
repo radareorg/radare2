@@ -173,8 +173,8 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		break;
 	case 0xfb: // calls
 		op->type = R_ANAL_OP_TYPE_CALL;
-		if (len > 3 && op->size <= len) {
-			int oa = 3;
+		if (len > 6 && op->size <= len) {
+			const int oa = 3;
 			ut32 delta = buf[oa];
 			delta |= (ut32)(buf[oa + 1]) << 8;
 			delta |= (ut32)(buf[oa + 2]) << 16;
