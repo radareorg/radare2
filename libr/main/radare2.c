@@ -12,7 +12,7 @@
 #include <r_core.h>
 
 static bool is_valid_gdb_file(RIODesc *d) {
-	return d && strncmp (d->name, "gdb://", 6);
+	return d && !strncmp (d->name, "gdb://", 6);
 }
 
 static char* get_file_in_cur_dir(const char *filepath) {
