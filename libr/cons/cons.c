@@ -436,6 +436,7 @@ R_API bool r_cons_is_breaked(void) {
 	if (I->timeout) {
 		if (r_time_now_mono () > I->timeout) {
 			C->breaked = true;
+			C->was_breaked = true;
 			eprintf ("\nTimeout!\n");
 			I->timeout = 0;
 		}

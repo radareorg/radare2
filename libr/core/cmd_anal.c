@@ -11214,6 +11214,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_anal_all (core);
 			r_print_rowlog_done (core->print, oldstr);
 			r_core_task_yield (&core->tasks);
+			if (r_cons_is_breaked ()) {
+				goto jacuzzi;
+			}
 
 			// Run afvn in all fcns
 			if (r_config_get_b (core->config, "anal.vars")) {
