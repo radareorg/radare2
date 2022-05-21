@@ -84,6 +84,7 @@ R_API void r_charset_free(RCharset *c) {
 }
 
 R_API void r_charset_close(RCharset *c) {
+	r_return_if_fail (c);
 	c->loaded = false;
 }
 

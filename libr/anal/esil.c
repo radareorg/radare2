@@ -745,7 +745,10 @@ static bool esil_sf(RAnalEsil *esil) {
 	r_return_val_if_fail (esil, false);
 
 	char *p_size = r_anal_esil_pop (esil);
-	r_return_val_if_fail (p_size, false);
+	if (!p_size) {
+		R_LOG_WARN ("$sf cannot pop value");
+		return false;
+	}
 
 	if (r_anal_esil_get_parm_type (esil, p_size) != R_ANAL_ESIL_PARM_NUM) {
 		free (p_size);
@@ -760,8 +763,7 @@ static bool esil_sf(RAnalEsil *esil) {
 	} else {
 		num = (esil->cur >> size) & 1;
 	}
-	ut64 res = r_anal_esil_pushnum (esil, num);
-	return res;
+	return r_anal_esil_pushnum (esil, num);
 }
 
 static bool esil_ds(RAnalEsil *esil) {
