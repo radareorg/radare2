@@ -740,12 +740,25 @@ R_API void r_core_anal_type_init(RCore *core) {
 	load_types_from (core, "types-%s-%s-%d", anal_arch, os, bits);
 }
 
+static R_TH_LOCAL int old_bits = -1;
+static R_TH_LOCAL char *old_arch = NULL;
+
 R_API void r_core_anal_cc_init(RCore *core) {
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
-	int bits = core->anal->config->bits;
+	const int bits = core->anal->config->bits;
 	if (!anal_arch) {
 		return;
 	}
+	if (old_bits != -1) {
+		if (old_bits == bits) {
+			if (!strcmp (old_arch, anal_arch)) {
+				return;
+			}
+		}
+	}
+	old_bits = bits;
+	free (old_arch);
+	old_arch = strdup (anal_arch);
 #if HAVE_GPERF
 	char *k = r_str_newf ("cc_%s_%d", anal_arch, bits);
 	SdbGperf *gp = r_anal_get_gperf_cc (k);
