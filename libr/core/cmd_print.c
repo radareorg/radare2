@@ -7110,6 +7110,8 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'w': // "pxw"
 			if (l != 0) {
+				// XXX must be fixed
+				core->print->config->big_endian = r_config_get_b (core->config, "cfg.bigendian");
 				if (input[2] == 'j') {
 					r_print_jsondump (core->print, core->block, len, 32);
 				} else {

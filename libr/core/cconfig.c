@@ -1309,6 +1309,7 @@ static bool cb_dirzigns(void *user, void *data) {
 static bool cb_bigendian(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
+	core->rasm->config->big_endian = node->i_value;
 	// Try to set endian based on preference, restrict by RAsmPlugin
 	bool isbig = r_asm_set_big_endian (core->rasm, node->i_value);
 	// the big endian should also be assigned to dbg->bp->endian
