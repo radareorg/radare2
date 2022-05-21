@@ -84,6 +84,7 @@ R_API SdbGperf *r_anal_get_gperf_cc(const char *k) {
 	while (*gp) {
 		SdbGperf *g = *gp;
 		if (!strcmp (kk, g->name)) {
+			free (kk);
 			return *gp;
 		}
 		gp++;
