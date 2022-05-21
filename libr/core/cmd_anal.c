@@ -7507,7 +7507,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				if (!esil->trace) {
 					break;
 				}
-				r_config_set_i (core->config, "dbg.trace", true);
+				r_config_set_b (core->config, "dbg.trace", true);
 				break;
 			case '-': // "aets-"
 				if (!esil) {
@@ -7520,7 +7520,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				}
 				r_anal_esil_trace_free (esil->trace);
 				esil->trace = NULL;
-				r_config_set_i (core->config, "dbg.trace", false);
+				r_config_set_b (core->config, "dbg.trace", false);
 				break;
 			default:
 				r_core_cmd_help (core, help_msg_aets);

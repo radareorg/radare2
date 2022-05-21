@@ -73,6 +73,7 @@ typedef bool (*HT_(ForeachCallback))(void *user, const KEY_TYPE, const VALUE_TYP
 typedef struct Ht_(bucket_t) {
 	HT_(Kv) *arr;
 	ut32 count;
+	ut32 size;
 } HT_(Bucket);
 
 /* Options contain all the settings of the hashtable */

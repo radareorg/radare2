@@ -27,6 +27,14 @@ extern "C" {
 # define R_ALIGNED(x) __attribute__((aligned(x)))
 #endif
 
+#if 1
+#define R_LIKELY(x)       __builtin_expect((x),1)
+#define R_UNLIKELY(x)     __builtin_expect((x),0)
+#else
+#define R_LIKELY(x)       (x)
+#define R_UNLIKELY(x)     (x)
+#endif
+
 #define R_IGNORE_RETURN(x) if ((x)) {;}
 
 typedef R_ALIGNED(1) ut16 uut16;
