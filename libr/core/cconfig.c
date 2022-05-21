@@ -1316,6 +1316,7 @@ static bool cb_bigendian(void *user, void *data) {
 	if (core->dbg && core->dbg->bp) {
 		core->dbg->bp->endian = isbig;
 	}
+	core->rasm->config->big_endian = node->i_value;
 	return true;
 }
 
