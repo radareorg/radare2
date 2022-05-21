@@ -27,7 +27,7 @@ extern "C" {
 # define R_ALIGNED(x) __attribute__((aligned(x)))
 #endif
 
-#if 1
+#if defined(__GNUC__)
 #define R_LIKELY(x)       __builtin_expect((x),1)
 #define R_UNLIKELY(x)     __builtin_expect((x),0)
 #else
