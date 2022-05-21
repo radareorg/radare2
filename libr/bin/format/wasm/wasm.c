@@ -511,90 +511,90 @@ static bool parse_namemap(RBuffer *b, ut64 bound, RIDStorage *map, ut32 *count) 
 }
 
 static void *parse_custom_name_entry(RBuffer *b, ut64 bound) {
-	RBinWasmCustomNameEntry *ptr = NULL;
 	size_t i;
-	if (!(ptr = R_NEW0 (RBinWasmCustomNameEntry))) {
+	RBinWasmCustomNameEntry *cust = R_NEW0 (RBinWasmCustomNameEntry);
+	if (!cust) {
 		return NULL;
 	}
 
-	if (!consume_u7_r (b, bound, &ptr->type)) {
+	if (!consume_u7_r (b, bound, &cust->type)) {
 		goto beach;
 	};
 
-	if (!consume_u32_r (b, bound, &ptr->size)) {
+	if (!consume_u32_r (b, bound, &cust->size)) {
 		goto beach;
 	};
 
-	switch (ptr->type) {
+	switch (cust->type) {
 	case R_BIN_WASM_NAMETYPE_Module:
-		ptr->mod_name = R_NEW0 (struct r_bin_wasm_name_t);
-		if (!ptr->mod_name) {
+		cust->mod_name = R_NEW0 (struct r_bin_wasm_name_t);
+		if (!cust->mod_name) {
 			goto beach;
 		}
-		if (!consume_str_new (b, bound, &ptr->mod_name->len, (char **)&ptr->mod_name->name)) {
+		if (!consume_str_new (b, bound, &cust->mod_name->len, (char **)&cust->mod_name->name)) {
 			goto beach;
 		}
 		break;
 	case R_BIN_WASM_NAMETYPE_Function:
-		ptr->func = R_NEW0 (RBinWasmCustomNameFunctionNames);
-		if (!ptr->func) {
+		cust->func = R_NEW0 (RBinWasmCustomNameFunctionNames);
+		if (!cust->func) {
 			goto beach;
 		}
 
-		ptr->func->names = r_id_storage_new (0, UT32_MAX);
+		cust->func->names = r_id_storage_new (0, UT32_MAX);
 
-		if (!ptr->func->names) {
+		if (!cust->func->names) {
 			goto beach;
 		}
 
-		if (!parse_namemap (b, bound, ptr->func->names, &ptr->func->count)) {
+		if (!parse_namemap (b, bound, cust->func->names, &cust->func->count)) {
 			goto beach;
 		}
 		break;
 	case R_BIN_WASM_NAMETYPE_Local:
-		ptr->local = R_NEW0 (RBinWasmCustomNameLocalNames);
-		if (!ptr->local) {
+		cust->local = R_NEW0 (RBinWasmCustomNameLocalNames);
+		if (!cust->local) {
 			goto beach;
 		}
-		if (!consume_u32_r (b, bound, &ptr->local->count)) {
-			free (ptr->local);
+		if (!consume_u32_r (b, bound, &cust->local->count)) {
+			free (cust->local);
 			goto beach;
 		}
 
-		ptr->local->locals = r_list_new ();
+		cust->local->locals = r_list_new ();
 
-		for (i = 0; i < ptr->local->count; i++) {
+		for (i = 0; i < cust->local->count; i++) {
 			RBinWasmCustomNameLocalName *local_name = R_NEW0 (RBinWasmCustomNameLocalName);
 			if (!local_name) {
-				free (ptr->local);
-				free (ptr);
+				free (cust->local);
+				free (cust);
 				return NULL;
 			}
 
 			if (!consume_u32_r (b, bound, &local_name->index)) {
-				r_list_free (ptr->local->locals);
-				free (ptr->local);
+				r_list_free (cust->local->locals);
+				free (cust->local);
 				free (local_name);
 				goto beach;
 			}
 
 			local_name->names = r_id_storage_new (0, UT32_MAX);
 			if (!local_name->names) {
-				r_list_free (ptr->local->locals);
-				free (ptr->local);
+				r_list_free (cust->local->locals);
+				free (cust->local);
 				free (local_name);
 				goto beach;
 			}
 
 			if (!parse_namemap (b, bound, local_name->names, &local_name->names_count)) {
 				r_id_storage_free (local_name->names);
-				r_list_free (ptr->local->locals);
-				free (ptr->local);
+				r_list_free (cust->local->locals);
+				free (cust->local);
 				free (local_name);
 				goto beach;
 			}
 
-			if (!r_list_append (ptr->local->locals, local_name)) {
+			if (!r_list_append (cust->local->locals, local_name)) {
 				free (local_name);
 				goto beach;
 			};
@@ -602,9 +602,9 @@ static void *parse_custom_name_entry(RBuffer *b, ut64 bound) {
 		break;
 	}
 
-	return ptr;
+	return cust;
 beach:
-	free (ptr);
+	free (cust);
 	return NULL;
 }
 
