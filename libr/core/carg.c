@@ -61,7 +61,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 	char opt;
 	ut64 bval = src;
 	int i;
-	int endian = core->rasm->config->big_endian;
+	const int endian = core->rasm->config->big_endian;
 	int width = (core->anal->config->bits == 64)? 8: 4;
 	int bsize = R_MIN (64, core->blocksize);
 

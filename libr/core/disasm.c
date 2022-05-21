@@ -1033,7 +1033,7 @@ static const char *get_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
 
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
-	bool be = core->rasm->config->big_endian;
+	const bool be = core->rasm->config->big_endian;
 	if (ds->use_esil) {
 		free (ds->opstr);
 		if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
@@ -2688,7 +2688,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			default: {
 				char *op_hex = r_asm_op_get_hex (&ds->asmop);
 				r_asm_op_set_asm (&ds->asmop, r_strf (".hex %s%s", op_hex, tail));
-				bool be = core->rasm->config->big_endian;
+				const bool be = core->rasm->config->big_endian;
 				int immbase = (ds->hint && ds->hint->immbase)? ds->hint->immbase: 0;
 				switch (meta_size) {
 				case 2:
@@ -2960,7 +2960,6 @@ static void ds_print_offset(RDisasmState *ds) {
 		RFlagItem *fi;
 		int delta = -1;
 		bool show_trace = false;
-		// unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
 
 		if (ds->show_reloff) {
 			RAnalFunction *f = r_anal_get_function_at (core->anal, at);
@@ -3085,7 +3084,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 	ut8 buf[sizeof(ut64)] = {0};
 	memcpy (buf, obuf, R_MIN (sizeof (ut64), size));
 	// adjust alignment
-	bool be = core->rasm->config->big_endian;
+	const bool be = core->rasm->config->big_endian;
 	ut64 n = r_read_ble (buf, be, size * 8);
 	if (ds->asm_hint_imm) { // thats not really an imm.. but well dont add more hints for now
 		(void) ds_print_shortcut (ds, n, ds->asm_hint_pos);

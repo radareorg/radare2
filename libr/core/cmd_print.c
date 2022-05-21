@@ -7201,7 +7201,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'H': // "pxH"
 			if (l != 0) {
-				bool be = core->rasm->config->big_endian;
+				const bool be = core->rasm->config->big_endian;
 				len = len - (len % 2);
 				for (i = 0; i < len; i += 2) {
 					const char *a, *b;
@@ -7250,7 +7250,7 @@ static int cmd_print(void *data, const char *input) {
 			// TODO. show if flag name, or inside function
 			if (l) {
 				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
-				bool be = core->rasm->config->big_endian;
+				const bool be = core->rasm->config->big_endian;
 				len = len - (len % 8);
 				for (i = 0; i < len; i += 8) {
 					const char *a, *b;
