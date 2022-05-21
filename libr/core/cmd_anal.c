@@ -2122,7 +2122,7 @@ static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 }
 
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
-	bool be = core->print->big_endian;
+	bool be = core->rasm->config->big_endian;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
 	int ret, i, j, idx, size;
@@ -8536,10 +8536,11 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	ut8 buf[12];
 	RAsmOp asmop = {0};
 	char *buf_asm = NULL;
-	bool asm_subvar = r_config_get_i (core->config, "asm.sub.var");
-	core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
+	bool asm_subvar = r_config_get_b (core->config, "asm.sub.var");
+	bool be = core->rasm->config->big_endian;
+	core->parser->pseudo = r_config_get_b (core->config, "asm.pseudo");
 	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
-	core->parser->localvar_only = r_config_get_i (core->config, "asm.sub.varonly");
+	core->parser->localvar_only = r_config_get_b (core->config, "asm.sub.varonly");
 
 	if (core->parser->subrel) {
 		core->parser->subrel_addr = from;
@@ -8559,7 +8560,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	}
 	RAnalHint *hint = r_anal_hint_get (core->anal, addr);
 	r_parse_filter (core->parser, addr, core->flags, hint,
-			ba, str, sizeof (str), core->print->big_endian);
+			ba, str, sizeof (str), be);
 	r_anal_hint_free (hint);
 	r_asm_op_set_asm (&asmop, ba);
 	free (ba);
@@ -8613,6 +8614,7 @@ static void axfm(RCore *core) {
 }
 
 static bool cmd_anal_refs(RCore *core, const char *input) {
+	bool be = core->print->config->big_endian;
 	ut64 addr = core->offset;
 	switch (input[0]) {
 	case '-': { // "ax-"
@@ -9018,7 +9020,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							r_asm_disassemble (core->rasm, &asmop, buf, sizeof(buf));
 							RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
 							r_parse_filter (core->parser, ref->addr, core->flags, hint, r_asm_op_get_asm (&asmop),
-									str, sizeof (str), core->print->big_endian);
+									str, sizeof (str), be);
 							r_anal_hint_free (hint);
 							if (has_color) {
 								desc = desc_to_free = r_print_colorize_opcode (core->print, str,
@@ -10871,6 +10873,8 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user
 }
 
 static void cmd_anal_aaw(RCore *core, const char *input) {
+	bool be = core->print->config->big_endian;
+	int bits = core->anal->config->bits;
 	RIntervalTreeIter it;
 	RAnalMetaItem *item;
 	r_interval_tree_foreach (&core->anal->meta, it, item) {
@@ -10879,7 +10883,7 @@ static void cmd_anal_aaw(RCore *core, const char *input) {
 		if (item->type == R_META_TYPE_DATA && size == core->anal->config->bits / 8) {
 			ut8 buf[8] = {0};
 			r_io_read_at (core->io, node->start, buf, 8);
-			ut64 n = r_read_ble (buf, core->print->big_endian, core->anal->config->bits);
+			ut64 n = r_read_ble (buf, be, bits);
 			RFlagItem *fi = r_flag_get_at (core->flags, n, false);
 			if (fi) {
 				char *fn = r_str_newf ("r.%s", fi->name);

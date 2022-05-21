@@ -727,6 +727,8 @@ static int cmd_help(void *data, const char *input) {
 				pj = r_core_pj_new (core);
 				pj_o (pj);
 			}
+			const int segbas = core->rasm->config->segbas;
+			const int seggrn = core->rasm->config->seggrn;
 			for (i = 0; i < list_len; i++) {
 				const char *str = r_list_pop_head (list);
 				if (!*str) {
@@ -739,7 +741,7 @@ static int cmd_help(void *data, const char *input) {
 				char *asnum  = r_num_as_string (NULL, n, false);
 
 				ut32 s = 0, a = 0;
-				r_num_segaddr (n, core->print->segbas, core->print->seggrn, &s, &a);
+				r_num_segaddr (n, segbas, seggrn, &s, &a);
 				r_num_units (unit, sizeof (unit), n);
 				if (*input ==  'j') {
 					pj_ks (pj, "int32", r_strf ("%d", (st32)(n & UT32_MAX)));

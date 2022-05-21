@@ -419,7 +419,6 @@ dotherax:
 		}
 		ut32 n = r_num_math (num, ts);
 		RPrint *p = r_print_new ();
-		p->big_endian = R_SYS_ENDIAN;
 		if (gmt) {
 			p->datezone = r_num_math (num, gmt);
 		}

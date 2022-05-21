@@ -135,8 +135,9 @@ R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 	time_t t = 0;
 	int ret = 0;
 
+	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
 	if (p && len >= sizeof (ut32)) {
-		t = r_read_ble32 (buf, p->big_endian);
+		t = r_read_ble32 (buf, be);
 		if (p->datefmt[0]) {
 			t += p->datezone * (60*60);
 			t += hfs_unix_delta;
@@ -152,8 +153,9 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 	time_t t = 0;
 	int ret = 0;
 
+	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
 	if (p && len >= sizeof (ut32)) {
-		t = r_read_ble32 (buf, p->big_endian);
+		t = r_read_ble32 (buf, be);
 		if (p->datefmt[0]) {
 			t += p->datezone * (60*60);
 			char *datestr = r_time_stamp_to_str (t);
@@ -185,8 +187,9 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 	time_t t;
 	int ret = 0;
 
+	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
 	if (p && len >= sizeof (ut64)) {
-		l = r_read_ble64 (buf, p->big_endian);
+		l = r_read_ble64 (buf, be);
 		l /= 10000000; // 100ns to s
 		l = (l > L ? l-L : 0); // isValidUnixTime?
 		t = (time_t) l; // TODO limit above!

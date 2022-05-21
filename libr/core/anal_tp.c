@@ -551,6 +551,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	dtrace->ht = ht_pp_new_size (fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
 	dtrace->ht->opt = opt;
 
+	const bool be = core->rasm->config->big_endian;
 	char *fcn_name = NULL;
 	char *ret_type = NULL;
 	bool str_flag = false;
@@ -814,7 +815,7 @@ repeat:
 					if (type == R_ANAL_OP_TYPE_LOAD) {
 						ut8 sbuf[256] = {0};
 						r_io_read_at (core->io, aop.ptr, sbuf, sizeof (sbuf) - 1);
-						ut64 ptr = r_read_ble (sbuf, core->print->big_endian, aop.refptr * 8);
+						ut64 ptr = r_read_ble (sbuf, be, aop.refptr * 8);
 						if (ptr && ptr != UT64_MAX) {
 							RFlagItem *f = r_flag_get_by_spaces (core->flags, ptr, R_FLAGS_FS_STRINGS, NULL);
 							if (f) {

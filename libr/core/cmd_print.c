@@ -3197,6 +3197,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	const char *stack[] = {
 		"ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL
 	};
+	const bool be = core->print->config->big_endian;
 	ut8 *block = core->block;
 	int blocksize = core->blocksize;
 	ut8 *heaped_block = NULL;
@@ -3379,6 +3380,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	default:
 		do {
 			repeat--;
+			const int p_bits = core->rasm->config->bits / 8;
 			if (block + 8 >= block_end) {
 				int blockdelta = block - core->block;
 				if (heaped_block) {
@@ -3399,37 +3401,37 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				n = 0;
 			}
 			switch (n) {
-				case 1:
-					v = r_read_ble8 (block);
-					r_cons_printf ("0x%02" PFMT64x "\n", v);
-					block += 1;
-					break;
-				case 2:
-					v = r_read_ble16 (block, core->print->big_endian);
-					r_cons_printf ("0x%04" PFMT64x "\n", v);
-					block += 2;
-					break;
-				case 4:
-					v = r_read_ble32 (block, core->print->big_endian);
-					r_cons_printf ("0x%08" PFMT64x "\n", v);
-					block += 4;
-					break;
-				case 8:
-					v = r_read_ble64 (block, core->print->big_endian);
-					r_cons_printf ("0x%016" PFMT64x "\n", v);
-					block += 8;
-					break;
-				default:
-					v = r_read_ble64 (block, core->print->big_endian);
-					switch (core->rasm->config->bits / 8) {
-						case 1: r_cons_printf ("0x%02" PFMT64x "\n", v & UT8_MAX); break;
-						case 2: r_cons_printf ("0x%04" PFMT64x "\n", v & UT16_MAX); break;
-						case 4: r_cons_printf ("0x%08" PFMT64x "\n", v & UT32_MAX); break;
-						case 8: r_cons_printf ("0x%016" PFMT64x "\n", v & UT64_MAX); break;
-						default: break;
-					}
-					block += core->rasm->config->bits / 8;
-					break;
+			case 1:
+				v = r_read_ble8 (block);
+				r_cons_printf ("0x%02" PFMT64x "\n", v);
+				block += 1;
+				break;
+			case 2:
+				v = r_read_ble16 (block, be);
+				r_cons_printf ("0x%04" PFMT64x "\n", v);
+				block += 2;
+				break;
+			case 4:
+				v = r_read_ble32 (block, be);
+				r_cons_printf ("0x%08" PFMT64x "\n", v);
+				block += 4;
+				break;
+			case 8:
+				v = r_read_ble64 (block, be);
+				r_cons_printf ("0x%016" PFMT64x "\n", v);
+				block += 8;
+				break;
+			default:
+				v = r_read_ble64 (block, be);
+				switch (p_bits) { // core->rasm->config->bits / 8) {
+				case 1: r_cons_printf ("0x%02" PFMT64x "\n", v & UT8_MAX); break;
+				case 2: r_cons_printf ("0x%04" PFMT64x "\n", v & UT16_MAX); break;
+				case 4: r_cons_printf ("0x%08" PFMT64x "\n", v & UT32_MAX); break;
+				case 8: r_cons_printf ("0x%016" PFMT64x "\n", v & UT64_MAX); break;
+				default: break;
+				}
+				block += p_bits;
+				break;
 			}
 		} while (repeat > 0);
 		free (heaped_block);
@@ -4554,8 +4556,8 @@ static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
 	ut64 n = 0;
 	ut8 *buf = calloc (core->blocksize, 1);
 	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
+	const bool be = core->print->config->big_endian;
 	while (p + 4 < core->blocksize) {
-		const bool be = core->print->big_endian;
 		if (core->rasm->config->bits == 64) {
 			n = r_read_ble64 (buf + p, be);
 		} else {
@@ -7118,13 +7120,14 @@ static int cmd_print(void *data, const char *input) {
 		case 'W': // "pxW"
 			if (l) {
 				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
+				bool be = core->print->config->big_endian;
 				len = len - (len % 4);
 				for (i = 0; i < len; i += 4) {
 					const char *a, *b;
 					char *fn;
 					RPrint *p = core->print;
 					RFlagItem *f;
-					ut32 v = r_read_ble32 (core->block + i, core->print->big_endian);
+					ut32 v = r_read_ble32 (core->block + i, be);
 					if (p && p->colorfor) {
 						a = p->colorfor (p->user, core->offset + i, v, true);
 						if (a && *a) {
@@ -7198,13 +7201,14 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'H': // "pxH"
 			if (l != 0) {
+				const bool be = core->rasm->config->big_endian;
 				len = len - (len % 2);
 				for (i = 0; i < len; i += 2) {
 					const char *a, *b;
 					char *fn;
 					RPrint *p = core->print;
 					RFlagItem *f;
-					ut64 v = (ut64) r_read_ble16 (core->block + i, p->big_endian);
+					ut64 v = (ut64) r_read_ble16 (core->block + i, be);
 					if (p && p->colorfor) {
 						a = p->colorfor (p->user, core->offset + i, v, true);
 						if (a && *a) {
@@ -7246,13 +7250,14 @@ static int cmd_print(void *data, const char *input) {
 			// TODO. show if flag name, or inside function
 			if (l) {
 				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
+				const bool be = core->rasm->config->big_endian;
 				len = len - (len % 8);
 				for (i = 0; i < len; i += 8) {
 					const char *a, *b;
 					char *fn;
 					RPrint *p = core->print;
 					RFlagItem *f;
-					ut64 v = r_read_ble64 (core->block + i, p->big_endian);
+					ut64 v = r_read_ble64 (core->block + i, be);
 					if (p && p->colorfor) {
 						a = p->colorfor (p->user, core->offset + i, v, true);
 						if (a && *a) {
@@ -7733,6 +7738,8 @@ static int lenof(ut64 off, int two) {
 
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char *label) {
 	int offdec = (p->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
+	const int segbas = p->config->segbas;
+	const int seggrn = p->config->seggrn;
 	const int offseg = (p->flags & R_PRINT_FLAGS_SEGOFF) != 0;
 	char space[32] = {
 		0
@@ -7748,7 +7755,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 		}
 		if (offseg) {
 			ut32 s, a;
-			r_num_segaddr (off, p->segbas, p->seggrn, &s, &a);
+			r_num_segaddr (off, segbas, seggrn, &s, &a);
 			if (offdec) {
 				snprintf (space, sizeof (space), "%d:%d", s, a);
 				r_cons_printf ("%s%s%9s%s", k, inv, space, reset);
@@ -7797,7 +7804,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 	} else {
 		if (offseg) {
 			ut32 s, a;
-			r_num_segaddr (off, p->segbas, p->seggrn, &s, &a);
+			r_num_segaddr (off, segbas, seggrn, &s, &a);
 			if (offdec) {
 				snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
 				r_cons_printf ("%9s%s", space, reset);
