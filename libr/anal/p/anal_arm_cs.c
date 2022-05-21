@@ -1500,7 +1500,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_SCVTF:
 		r_strbuf_setf (&op->esil, "%d,", REGBITS64 (0));
 		ARG64_SIGN_APPEND (&op->esil, 1, REGBITS64 (1));
-		r_strbuf_appendf (&op->esil, ",S2D,D2F,");
+		r_strbuf_appendf (&op->esil, ",I2D,D2F,");
 		VEC64_DST_APPEND (&op->esil, 0, -1);
 		r_strbuf_appendf (&op->esil, ",=");
 		break;

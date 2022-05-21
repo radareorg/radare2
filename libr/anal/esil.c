@@ -782,6 +782,7 @@ static bool esil_js(RAnalEsil *esil) {
 }
 
 //regsize
+#if 0
 //can we please deprecate this, it's neither accurate, nor needed
 //plugins should know regsize, and since this is a const even users should know this: ?´e anal.bits´/8
 //	- condret
@@ -790,6 +791,7 @@ static bool esil_rs(RAnalEsil *esil) {
 	r_return_val_if_fail (esil && esil->anal, false);
 	return r_anal_esil_pushnum (esil, esil->anal->config->bits >> 3);
 }
+#endif
 
 //can we please deprecate this, plugins should know their current address
 //even if they don't know it, $$ should be equal to PC register at the begin of each expression
@@ -3793,7 +3795,7 @@ R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("$ds", esil_ds, 1, 0, OT_UNK);
 	OP ("$jt", esil_jt, 1, 0, OT_UNK);
 	OP ("$js", esil_js, 1, 0, OT_UNK);
-	OP ("$r", esil_rs, 1, 0, OT_UNK);
+	//OP ("$r", esil_rs, 1, 0, OT_UNK); // R_DEPRECATE
 	OP ("$$", esil_address, 1, 0, OT_UNK);
 	OP ("~", esil_signext, 1, 2, OT_MATH);
 	OP ("~=", esil_signexteq, 0, 2, OT_MATH);
@@ -3915,14 +3917,15 @@ R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
 
 	/* we all float down here */
 	OP ("NAN", esil_is_nan, 1, 1, OT_MATH);
+	// XXX I2D and S2D do the same, kill one
 	OP ("I2D", esil_signed_to_double, 1, 1, OT_MATH);
-	OP ("S2D", esil_signed_to_double, 1, 1, OT_MATH);
+	// OP ("S2D", esil_signed_to_double, 1, 1, OT_MATH); R_DEPRECATE
 	OP ("U2D", esil_unsigned_to_double, 1, 1, OT_MATH);
 	OP ("D2I", esil_double_to_int, 1, 1, OT_MATH);
 	OP ("D2F", esil_double_to_float, 1, 2, OT_MATH);
 	OP ("F2D", esil_float_to_double, 1, 2, OT_MATH);
 	OP ("F==", esil_float_cmp, 1, 2, OT_MATH);
-	OP ("F!=", esil_float_negcmp, 1, 2, OT_MATH);
+	OP ("F!=", esil_float_negcmp, 1, 2, OT_MATH); // DEPRECATE
 	OP ("F<", esil_float_less, 1, 2, OT_MATH);
 	OP ("F<=", esil_float_lesseq, 1, 2, OT_MATH);
 	OP ("F+", esil_float_add, 1, 2, OT_MATH);
