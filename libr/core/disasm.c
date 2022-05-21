@@ -1162,13 +1162,12 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 							if (fi->space && fi->space->name && (!strcmp (fi->space->name, "format") || !strcmp (fi->space->name, "segments") || !strcmp (fi->space->name, "sections"))) {
 								// ignore
 							} else {
-								if (fi->realname) {
-									r_str_cpy (ox, fi->realname);
-								} else {
-									r_str_cpy (ox, fi->name);
+								const char *n = (fi->realname) ? fi->realname: fi->name;
+								if (strlen (n) > 3) {
+									r_str_cpy (ox, n);
+									r_str_cat (ox, e);
+									break;
 								}
-								r_str_cat (ox, e);
-								break;
 							}
 						}
 					}
@@ -6769,7 +6768,7 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
 	bool show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int decode = r_config_get_i (core->config, "asm.decode");
-	int subnames = r_config_get_i (core->config, "asm.sub.names");
+	bool subnames = r_config_get_b (core->config, "asm.sub.names");
 	int show_color = r_config_get_i (core->config, "scr.color");
 	bool asm_ucase = r_config_get_i (core->config, "asm.ucase");
 	bool asm_instr = r_config_get_i (core->config, "asm.instr");
