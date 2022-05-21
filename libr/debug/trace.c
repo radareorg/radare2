@@ -185,9 +185,9 @@ R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
 				eprintf ("Run aeim to get dbg->anal->esil initialized\n");
 			}
 		}
-	}
-	if (oldpc != UT64_MAX) {
-		r_debug_trace_add (dbg, oldpc, op->size); //XXX review what this line really do
+		if (oldpc != UT64_MAX) {
+			r_debug_trace_add (dbg, oldpc, op->size); //XXX review what this line really do
+		}
 	}
 	oldpc = op->addr;
 }
@@ -263,7 +263,7 @@ R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset) {
 }
 
 // XXX: find better name, make it public?
-static int r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
+static bool r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
 	if (dbg->trace->addresses) {
 		char addr_str[32];
 		snprintf (addr_str, sizeof (addr_str), "0x%08"PFMT64x, addr);

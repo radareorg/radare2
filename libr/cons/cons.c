@@ -433,7 +433,7 @@ R_API bool r_cons_is_breaked(void) {
 	if (I->cb_break) {
 		I->cb_break (I->user);
 	}
-	if (I->timeout) {
+	if (R_UNLIKELY (I->timeout)) {
 		if (r_time_now_mono () > I->timeout) {
 			C->breaked = true;
 			C->was_breaked = true;
@@ -441,7 +441,7 @@ R_API bool r_cons_is_breaked(void) {
 			I->timeout = 0;
 		}
 	}
-	if (!C->was_breaked) {
+	if (R_UNLIKELY (!C->was_breaked)) {
 		C->was_breaked = C->breaked;
 	}
 	return C && C->breaked;
@@ -477,9 +477,9 @@ R_API int r_cons_get_cur_line(void) {
 	if (isatty (fileno (stdin))) {
 		if (write (1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION)) != -1) {
 			if (read (0, buf, sizeof (buf)) != sizeof (buf)) {
-				if (isdigit ((unsigned char)buf[2])) {
+				if (isdigit ((ut8)buf[2])) {
 					curline = (buf[2] - '0');
-				} if (isdigit ((unsigned char)buf[3])) {
+				} if (isdigit ((ut8)buf[3])) {
 					curline = curline * 10 + (buf[3] - '0');
 				}
 			}
