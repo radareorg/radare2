@@ -271,6 +271,41 @@ static void wasm_sec_free(RBinWasmSection *sec) {
 	}
 }
 
+static void wasm_custom_name_free(RBinWasmCustomNameEntry *cust) {
+	if (cust) {
+		switch (cust->type) {
+		case R_BIN_WASM_NAMETYPE_Module:
+			R_FREE (cust->mod_name);
+			break;
+		case R_BIN_WASM_NAMETYPE_Function:
+			if (cust->func) {
+				r_id_storage_free (cust->func->names);
+				R_FREE (cust->func);
+			}
+			break;
+		case R_BIN_WASM_NAMETYPE_Local:
+			if (cust->local && cust->local->locals) {
+				RListIter *iter;
+				RBinWasmCustomNameLocalName *local;
+				r_list_foreach (cust->local->locals, iter, local) {
+					if (local->names) {
+						r_id_storage_free (local->names);
+					}
+				}
+
+				r_list_free (cust->local->locals);
+			}
+			break;
+		case R_BIN_WASM_NAMETYPE_None:
+			break;
+		default:
+			eprintf ("Unkown type: 0x%x\n", cust->type);
+			r_warn_if_reached ();
+		}
+		R_FREE (cust);
+	}
+}
+
 // Parsing
 static RList *get_entries_from_section(RBinWasmObj *bin, RBinWasmSection *sec, ParseEntryFcn parse_entry, RListFree free_entry) {
 	r_return_val_if_fail (sec && bin, NULL);
@@ -516,6 +551,7 @@ static void *parse_custom_name_entry(RBuffer *b, ut64 bound) {
 	if (!cust) {
 		return NULL;
 	}
+	cust->type = R_BIN_WASM_NAMETYPE_None;
 
 	if (!consume_u7_r (b, bound, &cust->type)) {
 		goto beach;
@@ -537,7 +573,7 @@ static void *parse_custom_name_entry(RBuffer *b, ut64 bound) {
 		break;
 	case R_BIN_WASM_NAMETYPE_Function:
 		cust->func = R_NEW0 (RBinWasmCustomNameFunctionNames);
-		if (!cust->func) {
+		if (cust->func) {
 			goto beach;
 		}
 
@@ -604,7 +640,7 @@ static void *parse_custom_name_entry(RBuffer *b, ut64 bound) {
 
 	return cust;
 beach:
-	free (cust);
+	wasm_custom_name_free (cust);
 	return NULL;
 }
 
@@ -745,7 +781,7 @@ static RList *r_bin_wasm_get_element_entries(RBinWasmObj *bin, RBinWasmSection *
 }
 
 static RList *r_bin_wasm_get_custom_name_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
-	RList *ret = r_list_new ();
+	RList *ret = r_list_newf ((RListFree)wasm_custom_name_free);
 
 	RBuffer *buf = bin->buf;
 
@@ -819,36 +855,7 @@ void r_bin_wasm_destroy(RBinFile *bf) {
 	r_list_free (bin->g_globals);
 	r_list_free (bin->g_codes);
 	r_list_free (bin->g_datas);
-
-	RListIter *iter;
-	RBinWasmCustomNameEntry *nam;
-	r_list_foreach (bin->g_names, iter, nam) {
-		switch (nam->type) {
-		case R_BIN_WASM_NAMETYPE_Module:
-			R_FREE (nam->mod_name);
-			break;
-		case R_BIN_WASM_NAMETYPE_Function:
-			if (nam->func) {
-				r_id_storage_free (nam->func->names);
-			}
-			break;
-		case R_BIN_WASM_NAMETYPE_Local:
-			if (nam->local && nam->local->locals) {
-				RListIter *iter;
-				RBinWasmCustomNameLocalName *local;
-				r_list_foreach (nam->local->locals, iter, local) {
-					if (local->names) {
-						r_id_storage_free (local->names);
-					}
-				}
-
-				r_list_free (nam->local->locals);
-			}
-			break;
-		}
-	}
 	r_list_free (bin->g_names);
-
 	free (bin->g_start);
 	free (bin);
 	bf->o->bin_obj = NULL;
