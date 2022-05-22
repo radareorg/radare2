@@ -31,12 +31,27 @@ disassemble any binary.
 
 ## Installation
 
-r2 can be installed via `git` or `pip`.
+* r2 can be installed from `git` or via `pip` using `r2env`.
+* Default installation uses symlinks and acr + make on UNIX systems
+* Windows builds can be done with msvc (meson+vs|ninja) or sys/mingw32.sh
+* To uninstall the current build of r2 run `make uninstall`
+* To uninstall ALL the system installations of r2 do: `sudo make purge`
 
 ```sh
 git clone https://github.com/radareorg/radare2
 radare2/sys/install.sh
 ```
+
+Default Windows builds use MSVC, so run those `.bat`:
+
+```sh
+preconfigure.bat       REM setup python, meson, ninja
+configure.bat          REM run meson b + vs project
+make.bat               REM run ninja -C b
+prefix\bin\radare2.exe
+```
+
+Alternatively you can use r2env to switch between different versions.
 
 ```sh
 pip install -U r2env
