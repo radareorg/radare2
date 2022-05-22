@@ -1,0 +1,29 @@
+NAME=pfb
+FILE=bins/other/cows128.data
+CMDS=<<EOF
+pfb 3b4b1b foo bar cow
+s+1
+pfb 3b4b1b foo bar cow
+pfb 2b5b4b2b3b foo bar cow low mow
+EOF
+EXPECT=<<EOF
+00110111     big bit endian
+\_/\__/v
+ |   | `--------------- cow=1   (offset 7, size 1)
+ |   `----------------- bar=11   (offset 3, size 4)
+ `--------------------- foo=1   (offset 0, size 3)
+01011000     big bit endian
+\_/\__/v
+ |   | `--------------- cow=0   (offset 7, size 1)
+ |   `----------------- bar=12   (offset 3, size 4)
+ `--------------------- foo=2   (offset 0, size 3)
+0101100010000110     big bit endian
+\/\___/\__/\/\_/
+ |  |    |  | `-------- mow=6   (offset 13, size 3)
+ |  |    |  `---------- low=0   (offset 11, size 2)
+ |  |    `------------- cow=4   (offset 7, size 4)
+ |  `------------------ bar=12   (offset 2, size 5)
+ `--------------------- foo=1   (offset 0, size 2)
+EOF
+RUN
+

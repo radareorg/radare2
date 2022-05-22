@@ -4190,9 +4190,10 @@ static void visual_refresh(RCore *core) {
 		r_cons_printf (R_CONS_CLEAR_LINE"\n");
 	}
 	vi = r_config_get (core->config, "cmd.vprompt");
-	if (vi && *vi) {
+	if (R_STR_ISNOTEMPTY (vi)) {
+#if 1
 		r_core_cmd0 (core, vi);
-#if 0
+#else
 		char *output = r_core_cmd_str (core, vi);
 		r_cons_strcat_at (output, 10, 5, 20, 20);
 		free (output);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
 #include <r_util.h>
@@ -175,6 +175,10 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
 			analopType = analop.type & R_ANAL_OP_TYPE_MASK;
 			r_cons_printf ("r2's esil debugger:\n\n");
+			const char *vi = r_config_get (core->config, "cmd.vprompt");
+			if (R_STR_ISNOTEMPTY (vi)) {
+				r_core_cmd0 (core, vi);
+			}
 			r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset);
 			r_cons_printf ("pos: %d\n", x);
 			{
@@ -257,6 +261,20 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			r_core_cmd0 (core, "so-1");
 			r_anal_esil_set_pc (esil, core->offset);
 			break;
+		case '=':
+		{ // TODO: edit
+			r_core_visual_showcursor (core, true);
+			const char *buf = NULL;
+			#define I core->cons
+			const char *cmd = r_config_get (core->config, "cmd.vprompt");
+			r_line_set_prompt ("cmd.vprompt> ");
+			I->line->contents = strdup (cmd);
+			buf = r_line_readline ();
+			I->line->contents = NULL;
+			(void)r_config_set (core->config, "cmd.vprompt", buf);
+			r_core_visual_showcursor (core, false);
+		}
+		break;
 		case 'e':
 			{
 				char *s = r_cons_input ("esil: ");
@@ -303,6 +321,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			" e     - type a new esil expression to debug\n"
 			" j/k   - toggle bit value (same as space key)\n"
 			" n/p   - go next/prev instruction\n"
+			" =     - enter cmd.vprompt command\n"
 			" :     - enter command\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
@@ -477,7 +496,11 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		str_pos[55] = ' ';
 		str_pos[64] = ' ';
 		r_cons_printf ("pos: %s\n", str_pos);
-		r_cons_newline ();
+		const char *vi = r_config_get (core->config, "cmd.vprompt");
+		if (R_STR_ISNOTEMPTY (vi)) {
+			memcpy (core->block, buf, 8);
+			r_core_cmd0 (core, vi);
+		}
 		r_cons_visual_flush ();
 
 		int ch = r_cons_readchar ();
@@ -487,6 +510,8 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		if (ch != 10) {
 			ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		}
+		// input
+		r_cons_newline ();
 		switch (ch) {
 		case 'Q':
 		case 'q':
@@ -551,6 +576,20 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 				r_core_cmd0 (core, "ecn");
 			}
 			break;
+		case '=':
+		{ // TODO: edit
+			r_core_visual_showcursor (core, true);
+			const char *buf = NULL;
+			#define I core->cons
+			const char *cmd = r_config_get (core->config, "cmd.vprompt");
+			r_line_set_prompt ("cmd.vprompt> ");
+			I->line->contents = strdup (cmd);
+			buf = r_line_readline ();
+			I->line->contents = NULL;
+			(void)r_config_set (core->config, "cmd.vprompt", buf);
+			r_core_visual_showcursor (core, false);
+		}
+		break;
 		case '+':
 			buf[(x/8)]++;
 			break;
@@ -578,7 +617,8 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			" +/-   - increment or decrement byte value\n"
 			" </>   - rotate left/right byte value\n"
 			" i     - insert numeric value of byte\n"
-			" :     - enter command\n");
+			" =     - set cmd.vprompt command\n"
+			" :     - run r2 command\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
 			break;
