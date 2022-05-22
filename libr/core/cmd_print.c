@@ -1489,9 +1489,9 @@ static void cmd_pfo_help(RCore *core) {
 	free (buf);
 }
 
-static int read_val(RBitmap *bm, int pos, int sz) {
+static ut64 read_val(RBitmap *bm, int pos, int sz) {
 	int i;
-	int n = 0;
+	ut64 n = 0;
 #if 0
 0 1 2 3 4 5 6 7
     ^
@@ -1509,9 +1509,9 @@ static int read_val(RBitmap *bm, int pos, int sz) {
 			epos = bytepos + (7 - w);
 		}
 		bool bitset = r_bitmap_test (bm, epos);
-// eprintf ("chk %d %d\n", epos, bitset);
+		// eprintf ("chk %d %d\n", epos, bitset);
 		if (bitset) {
-			n += (1 << (sz - 1 - i));
+			n += (1ULL << (sz - 1 - i));
 		}
 	}
 	return n;
@@ -1525,11 +1525,11 @@ enum {
 typedef struct {
 	int sz;
 	int pos;
-	int value;
+	ut64 value;
 	const char *name;
 } RLart;
 
-static RLart *lart_add(RList *list, const char *name, int pos, int sz, int value) {
+static RLart *lart_add(RList *list, const char *name, int pos, int sz, ut64 value) {
 	RLart *la = R_NEW0 (RLart);
 	if (la) {
 		la->sz = sz;
@@ -1560,7 +1560,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 	int mode = PFB_ART;
 	int i = 0;
 	int bpos = 0;
-	int v = 0;
+	ut64 v = 0;
 	// bigbitendian
 	// r_core_cmd0 (core, "pb 8");
 	RBitmap *bm = r_bitmap_new (64);
@@ -1570,10 +1570,22 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 	while (*arg && *arg != ' ') {
 		if (IS_DIGIT (*arg)) {
 			n = atoi (arg);
+			if (n > 63) {
+				eprintf ("Too large. Max is 63\n");
+				return;
+			}
+			while (IS_DIGIT (*arg)) {
+				arg += 1;
+			}
+			arg--;
 		} else if (*arg == '+') {
 			// used to separate tokens
 			// for example 3+3:4b  -> [0..3] + [6..10]
 		} else if (*arg == 'b') {
+			if (n < 1) {
+				eprintf ("Invalid bitformat string\n");
+				return;
+			}
 			char *name = lnames? r_list_get_n (lnames, i): NULL;
 			v = read_val (bm, bpos, n);
 			switch (mode) {
@@ -1584,7 +1596,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 				}
 				r_cons_printf ("  off: %d\n", bpos);
 				r_cons_printf ("  siz: %d\n", n);
-				r_cons_printf ("  val: %d\n", v);
+				r_cons_printf ("  val: %"PFMT64d"\n", v);
 				break;
 			case PFB_ART:
 				lart_add (lart, name, bpos, n, v);
@@ -1597,14 +1609,14 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 	}
 	if (mode == PFB_ART) {
 		for (i = 0; i < bpos; i++) {
-			int v = read_val (bm, i, 1);
+			bool v = read_val (bm, i, 1);
 			r_cons_printf ("%d", v);
 		}
 		r_cons_printf ("     big bit endian\n");
 		RLart *la;
 		RListIter *iter;
-		char firstline[128] = {0};
-		memset (firstline, ' ', 127);
+		char firstline[1024] = {0};
+		memset (firstline, ' ', sizeof (firstline) - 1);
 		int padsz = 0;
 		r_list_foreach (lart, iter, la) {
 			if (la->sz == 1) {
@@ -1625,11 +1637,14 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 		r_list_reverse (lart);
 		r_list_foreach (lart, iter, la) {
 			int padsz = la->pos - 1 + (la->sz / 2);
-			char *v = r_str_newf ("%s=%d", la->name?la->name:"", la->value);
-			char *pad2 = strdup (r_str_pad ('-', 20 - padsz));
-			char *pad = r_str_ndup (firstline, padsz );
-			r_cons_printf ("%s `-%s %s=%d   (offset %d, size %d)\n", pad, pad2,
-					la->name?la->name: "", la->value, la->pos, la->sz);
+			char *v = r_str_newf ("%s= %"PFMT64d" (0x%"PFMT64x")", la->name?la->name:"", la->value, la->value);
+			char *pad2 = strdup (r_str_pad ('-', 50 - padsz));
+			char *pad = r_str_ndup (firstline, padsz + 1);
+			r_cons_printf ("%s`-%s %"PFMT64d" 0x%"PFMT64x"   (offset %d, size %d%s%s)\n", pad?pad:"", pad2,
+					la->value, la->value, la->pos, la->sz, 
+					la->name?" name ": "",
+					la->name?la->name: ""
+				      );
 			free (pad);
 			free (pad2);
 			free (v);
