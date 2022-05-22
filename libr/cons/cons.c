@@ -461,10 +461,11 @@ R_API void r_cons_line(int x, int y, int x2, int y2, int ch) {
 R_API int r_cons_get_cur_line(void) {
 	int curline = 0;
 #if __WINDOWS__
-	POINT point;
-	if (GetCursorPos (&point)) {
-		curline = point.y;
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	if (!GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &info)) {
+		return 0;
 	}
+	curline = info.dwCursorPosition.Y - info.srWindow.Top;
 #endif
 #if __UNIX__ && !__wasi__
 	char buf[8];
