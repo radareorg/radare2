@@ -286,7 +286,35 @@ char *distillate(v850np_inst *inst, const char *esilfmt) {
 		esilfmt++;
 	}
 	r_list_free (args);
-	return r_strbuf_drain (sb);
+	char *res = r_strbuf_drain (sb);
+	if (r_str_startswith (res, "DISPOSE,")) {
+		RList *regs = r_str_split_list (res + 8, ",", 0);
+		RListIter *iter;
+		char *reg;
+		RStrBuf *sb2 = r_strbuf_new ("");
+		int count = 0;
+		r_list_foreach (regs, iter, reg) {
+			r_strbuf_appendf (sb2, "%ssp,[4],%s,:=,4,sp,+=", count?",":"", reg);
+			count ++;
+		}
+		free (res);
+		res = r_strbuf_drain (sb2);
+		r_list_free (regs);
+	} else if (r_str_startswith (res, "PREPARE,")) {
+		RList *regs = r_str_split_list (res + 8, ",", 0);
+		RListIter *iter;
+		char *reg;
+		RStrBuf *sb2 = r_strbuf_new ("");
+		int count = 0;
+		r_list_foreach (regs, iter, reg) {
+			r_strbuf_appendf (sb2, "%s4,sp,-=,%s,sp,=[4]", count?",":"", reg);
+			count ++;
+		}
+		free (res);
+		res = r_strbuf_drain (sb2);
+		r_list_free (regs);
+	}
+	return res;
 }
 
 static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, const ut8* buffer, int buffer_size, unsigned long insn) {
