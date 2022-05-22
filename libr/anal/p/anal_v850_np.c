@@ -97,8 +97,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=OF	ov\n"
 		"=CF	cy\n"
 
-		"gpr	zero	.32	?   0\n"
-		"gpr	r0	.32	0   0\n"
+		"gpr	r0	.32	?   0\n"
 		"gpr	r1	.32	4   0\n"
 		"gpr	r2	.32	8   0\n"
 		"gpr	sp	.32	12  0\n"
