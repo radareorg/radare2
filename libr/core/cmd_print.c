@@ -326,6 +326,7 @@ static const char *help_msg_pf[] = {
 	"pf.", "fmt_name.field_name[i]", "show element i of array field_name",
 	"pf.", "fmt_name [0|cnt]fmt", "define a new named format",
 	"pf?", "fmt_name", "show the definition of a named format",
+	"pfb ", "binfmt", "binary format",
 	"pfc ", "fmt_name|fmt", "show data using (named) format as C string",
 	"pfd.", "fmt_name", "show data using named format as graphviz commands",
 	"pfj ", "fmt_name|fmt", "show data using (named) format in JSON",
@@ -1488,6 +1489,170 @@ static void cmd_pfo_help(RCore *core) {
 	free (buf);
 }
 
+static ut64 read_val(RBitmap *bm, int pos, int sz) {
+	int i;
+	ut64 n = 0;
+#if 0
+0 1 2 3 4 5 6 7
+    ^
+7 6 5 4 3 2 1 0
+          ^
+7-2 = 5
+7-3 = 4
+#endif
+	bool be = true;
+	for (i = 0; i < sz; i++) {
+		int epos = pos + i;
+		if (be) {
+			int w = (pos + i) % 8;
+			int bytepos = (pos + i) - w;
+			epos = bytepos + (7 - w);
+		}
+		bool bitset = r_bitmap_test (bm, epos);
+		// eprintf ("chk %d %d\n", epos, bitset);
+		if (bitset) {
+			n += (1ULL << (sz - 1 - i));
+		}
+	}
+	return n;
+}
+
+enum {
+	PFB_VERBOSE,
+	PFB_ART
+};
+
+typedef struct {
+	int sz;
+	int pos;
+	ut64 value;
+	const char *name;
+} RLart;
+
+static RLart *lart_add(RList *list, const char *name, int pos, int sz, ut64 value) {
+	RLart *la = R_NEW0 (RLart);
+	if (la) {
+		la->sz = sz;
+		la->pos = pos;
+		la->name = name;
+		la->value = value;
+		r_list_append (list, la);
+	}
+	return la;
+}
+
+static RList *lart_new(void) {
+	return r_list_newf (free);
+}
+
+static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
+	// r_io_read_at (core->io, core->offset, buf, sizeof (buf));
+	const char *fmt = arg;
+	int n = 0;
+	char *names = strchr (fmt, ' ');
+	RList *lnames = NULL;
+	if (names) {
+		names = strdup (names + 1);
+		lnames = r_str_split_list (names, " ", 0);
+	}
+	int mode = PFB_ART;
+	int i = 0;
+	int bpos = 0;
+	ut64 v = 0;
+	// bigbitendian
+	// r_core_cmd0 (core, "pb 8");
+	RBitmap *bm = r_bitmap_new (core->blocksize * 8);
+	r_bitmap_set_bytes (bm, core->block, core->blocksize);
+	RList *lart = lart_new ();
+	
+	while (*arg && *arg != ' ') {
+		if (IS_DIGIT (*arg)) {
+			n = atoi (arg);
+			if (n > 63) {
+				eprintf ("Too large. Max is 63\n");
+				return;
+			}
+			while (IS_DIGIT (*arg)) {
+				arg += 1;
+			}
+			arg--;
+		} else if (*arg == '+') {
+			// used to separate tokens
+			// for example 3+3:4b  -> [0..3] + [6..10]
+		} else if (*arg == 'b') {
+			if (n < 1) {
+				eprintf ("Invalid bitformat string\n");
+				return;
+			}
+			char *name = lnames? r_list_get_n (lnames, i): NULL;
+			v = read_val (bm, bpos, n);
+			switch (mode) {
+			case PFB_VERBOSE:
+				r_cons_printf ("field: %d\n", i);
+				if (name) {
+					r_cons_printf (" name: %s\n", name);
+				}
+				r_cons_printf ("  off: %d\n", bpos);
+				r_cons_printf ("  siz: %d\n", n);
+				r_cons_printf ("  val: %"PFMT64d"\n", v);
+				break;
+			case PFB_ART:
+				lart_add (lart, name, bpos, n, v);
+				break;
+			}
+			i++;
+			bpos += n;
+		}
+		arg++;
+	}
+	if (mode == PFB_ART) {
+		for (i = 0; i < bpos; i++) {
+			bool v = read_val (bm, i, 1);
+			r_cons_printf ("%d", v);
+		}
+		r_cons_printf ("     big bit endian\n");
+		RLart *la;
+		RListIter *iter;
+		char firstline[1024] = {0};
+		memset (firstline, ' ', sizeof (firstline) - 1);
+		int padsz = 0;
+		r_list_foreach (lart, iter, la) {
+			if (la->sz == 1) {
+				r_cons_printf ("v");
+			} else {
+				r_cons_printf ("\\");
+				int i;
+				for (i = 0; i < la->sz - 2; i++) {
+					r_cons_printf ("_");
+				}
+				r_cons_printf ("/");
+			}
+			padsz = la->pos - 1 + (la->sz / 2);
+			firstline[padsz + 1] = '|';
+		}
+		firstline[padsz + 2] = 0;
+		int totalpad = padsz + 4;
+		r_cons_newline ();
+		r_list_reverse (lart);
+		r_list_foreach (lart, iter, la) {
+			int padsz = la->pos - 1 + (la->sz / 2);
+			char *v = r_str_newf ("%s= %"PFMT64d" (0x%"PFMT64x")", la->name?la->name:"", la->value, la->value);
+			char *pad2 = strdup (r_str_pad ('-', totalpad - padsz));
+			char *pad = r_str_ndup (firstline, padsz + 1);
+			r_cons_printf ("%s`-%s %"PFMT64d" 0x%"PFMT64x"   (offset %d, size %d%s%s)\n", pad?pad:"", pad2,
+					la->value, la->value, la->pos, la->sz, 
+					la->name?" name ": "",
+					la->name?la->name: ""
+				      );
+			free (pad);
+			free (pad2);
+			free (v);
+		}
+	}
+	r_bitmap_free (bm);
+	r_list_free (lnames);
+}
+
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
 	char *input = NULL;
 	int mode = R_PRINT_MUSTSEE;
@@ -1567,6 +1732,13 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			}
 		} else {
 			r_core_cmd_help (core, help_msg_pf);
+		}
+		return;
+	case 'b': // "pfb"
+		if (_input[2] == ' ') {
+			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 2));
+		} else {
+			eprintf ("Usage: pfb [binfmt] [names...]\n");
 		}
 		return;
 	case 'o': // "pfo"

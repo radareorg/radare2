@@ -4,7 +4,7 @@
 
 #define BITMAP_TEST 0
 
-#define BITWORD_BITS (sizeof(RBitword) * 8)
+#define BITWORD_BITS (sizeof (RBitword) * 8)
 #define BITWORD_BITS_MASK (BITWORD_BITS - 1)
 #define BITWORD_MULT(bit)  (((bit) + (BITWORD_BITS_MASK)) & ~(BITWORD_BITS_MASK))
 #define BITWORD_TEST(x, y) (((x)>>(y)) & 1)
