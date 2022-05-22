@@ -7,23 +7,37 @@ pfb 3b4b1b foo bar cow
 pfb 2b5b4b2b3b foo bar cow low mow
 EOF
 EXPECT=<<EOF
-00110111     big bit endian
-\_/\__/v
- |   | `----- 1 0x1   (offset 7, size 1 name cow)
- |   `------- 11 0xb   (offset 3, size 4 name bar)
- `----------- 1 0x1   (offset 0, size 3 name foo)
-01011000     big bit endian
-\_/\__/v
- |   | `----- 0 0x0   (offset 7, size 1 name cow)
- |   `------- 12 0xc   (offset 3, size 4 name bar)
- `----------- 2 0x2   (offset 0, size 3 name foo)
-0101100010000110     big bit endian
+00110111     (big bit endian)
+\_/\__/V
+ |   | `-----      cow =    1o     1   0x01 @ 7 + 1
+ |   `-------      bar =   13o    11   0x0b @ 3 + 4
+ `-----------      foo =    1o     1   0x01 @ 0 + 3
+01011000     (big bit endian)
+\_/\__/V
+ |   | `-----      cow =    0o     0   0x00 @ 7 + 1
+ |   `-------      bar =   14o    12   0x0c @ 3 + 4
+ `-----------      foo =    2o     2   0x02 @ 0 + 3
+0101100010000110     (big bit endian)
 \/\___/\__/\/\_/
- |  |    |  | `----- 6 0x6   (offset 13, size 3 name mow)
- |  |    |  `------- 0 0x0   (offset 11, size 2 name low)
- |  |    `---------- 4 0x4   (offset 7, size 4 name cow)
- |  `--------------- 12 0xc   (offset 2, size 5 name bar)
- `------------------ 1 0x1   (offset 0, size 2 name foo)
+ |  |    |  | `-----      mow =    6o     6   0x06 @ 13 + 3
+ |  |    |  `-------      low =    0o     0   0x00 @ 11 + 2
+ |  |    `----------      cow =    4o     4   0x04 @ 7 + 4
+ |  `---------------      bar =   14o    12   0x0c @ 2 + 5
+ `------------------      foo =    1o     1   0x01 @ 0 + 2
+EOF
+RUN
+
+NAME=pfb 64
+FILE=bins/other/cows128.data
+CMDS=<<EOF
+pfb 1b4b64b
+EOF
+EXPECT=<<EOF
+001101110101100010000110001101000101010110000110001011000100111110000     (big bit endian)
+V\__/\______________________________________________________________/
+|  |                                 `-----          = 0xeb10c68ab0c589f0 @ 5 + 64
+|  `---------------------------------------          =    6o     6   0x06 @ 1 + 4
+`------------------------------------------          =    0o     0   0x00 @ 0 + 1
 EOF
 RUN
 

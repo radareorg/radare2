@@ -1518,7 +1518,7 @@ static ut64 read_val(RBitmap *bm, int pos, int sz) {
 }
 
 enum {
-	PFB_VERBOSE,
+	PFB_DBG,
 	PFB_ART
 };
 
@@ -1568,8 +1568,8 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 	while (*arg && *arg != ' ') {
 		if (IS_DIGIT (*arg)) {
 			n = atoi (arg);
-			if (n > 63) {
-				eprintf ("Too large. Max is 63\n");
+			if (n > 64) {
+				eprintf ("Too large. Max is 64\n");
 				return;
 			}
 			while (IS_DIGIT (*arg)) {
@@ -1581,13 +1581,13 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 			// for example 3+3:4b  -> [0..3] + [6..10]
 		} else if (*arg == 'b') {
 			if (n < 1) {
-				eprintf ("Invalid bitformat string\n");
+				eprintf ("Invalid bitformat string.\n");
 				return;
 			}
 			char *name = lnames? r_list_get_n (lnames, i): NULL;
 			v = read_val (bm, bpos, n);
 			switch (mode) {
-			case PFB_VERBOSE:
+			case PFB_DBG:
 				r_cons_printf ("field: %d\n", i);
 				if (name) {
 					r_cons_printf (" name: %s\n", name);
@@ -1610,7 +1610,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 			bool v = read_val (bm, i, 1);
 			r_cons_printf ("%d", v);
 		}
-		r_cons_printf ("     big bit endian\n");
+		r_cons_printf ("     (big bit endian)\n");
 		RLart *la;
 		RListIter *iter;
 		char firstline[1024] = {0};
@@ -1618,7 +1618,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 		int padsz = 0;
 		r_list_foreach (lart, iter, la) {
 			if (la->sz == 1) {
-				r_cons_printf ("v");
+				r_cons_printf ("V");
 			} else {
 				r_cons_printf ("\\");
 				int i;
@@ -1639,11 +1639,21 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 			char *v = r_str_newf ("%s= %"PFMT64d" (0x%"PFMT64x")", la->name?la->name:"", la->value, la->value);
 			char *pad2 = strdup (r_str_pad ('-', totalpad - padsz));
 			char *pad = r_str_ndup (firstline, padsz + 1);
-			r_cons_printf ("%s`-%s %"PFMT64d" 0x%"PFMT64x"   (offset %d, size %d%s%s)\n", pad?pad:"", pad2,
-					la->value, la->value, la->pos, la->sz, 
-					la->name?" name ": "",
-					la->name?la->name: ""
-				      );
+			if (la->value > 0xffff) {
+				r_cons_printf ("%s`-%s %8s = 0x%016"PFMT64x" @ %d + %d\n",
+						pad?pad:"", pad2,
+						la->name?la->name: "",
+						la->value, 
+						la->pos, la->sz
+					      );
+			} else {
+				r_cons_printf ("%s`-%s %8s = %4"PFMT64o"o %5"PFMT64d"   0x%02"PFMT64x" @ %d + %d\n",
+						pad?pad:"", pad2,
+						la->name?la->name: "",
+						la->value, la->value, la->value, 
+						la->pos, la->sz
+					      );
+			}
 			free (pad);
 			free (pad2);
 			free (v);
