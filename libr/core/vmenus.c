@@ -382,7 +382,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		analop.type = -1;
 		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
 		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
-		r_cons_printf ("r2's bit editor:\n\n");
+		r_cons_printf ("r2's bit editor: (=pfb 3b4b formatting)\n\n");
 		r_cons_printf ("offset: 0x%08"PFMT64x"\n"Color_RESET, core->offset + cur);
 		{
 			char *op_hex = r_asm_op_get_hex (&asmop);
