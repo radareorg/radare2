@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2021 - GustavoLCR */
+/* radare - LGPL - Copyright 2019-2022 - GustavoLCR */
 
 #include "le.h"
 #include <r_bin.h>
@@ -34,7 +34,7 @@ const char *__get_cpu_type(r_bin_le_obj_t *bin) {
 	case 0x40: return "R3000";
 	case 0x41: return "R6000";
 	case 0x42: return "R4000";
-	default: return "Unknown";
+	default: return "";
 	}
 }
 
@@ -52,7 +52,7 @@ const char *__get_arch(r_bin_le_obj_t *bin) {
 	case 0x42:
 		return "mips";
 	default:
-		return "Unknown";
+		return "";
 	}
 }
 
@@ -93,9 +93,15 @@ RList *__get_entries(r_bin_le_obj_t *bin) {
 		return NULL;
 	}
 	while (true) {
-		LE_entry_bundle_header header;
-		LE_entry_bundle_entry e;
+		LE_entry_bundle_header header = {0};
+		LE_entry_bundle_entry e = {0};
+#if 0
 		r_buf_read_at (bin->buf, offset, (ut8 *)&header, sizeof (header));
+#else
+		if (r_buf_fread_at (bin->buf, offset, (ut8*)&header, "ccs", 1) < 1) {
+			break;
+		}
+#endif
 		if (!header.count) {
 			break;
 		}
@@ -345,7 +351,7 @@ RList *r_bin_le_get_sections(r_bin_le_obj_t *bin) {
 		} else {
 			sec->bits = R_SYS_BITS_16;
 		}
-		sec->is_data = entry->flags & O_RESOURCE || !(sec->perm & R_PERM_X);
+		sec->is_data = (entry->flags & O_RESOURCE) || !(sec->perm & R_PERM_X);
 		if (!entry->page_tbl_entries) {
 			r_list_append (l, sec);
 		}
@@ -355,7 +361,7 @@ RList *r_bin_le_get_sections(r_bin_le_obj_t *bin) {
 		ut32 objmaptbloff = h->objmap + bin->headerOff;
 		ut64 objpageentrysz =  bin->is_le ? sizeof (ut32) : sizeof (LE_object_page_entry);
 		for (j = 0; j < entry->page_tbl_entries; j++) {
-			LE_object_page_entry page;
+			LE_object_page_entry page = {0};
 			RBinSection *s = R_NEW0 (RBinSection);
 			if (!s) {
 				r_bin_section_free (sec);
@@ -366,11 +372,15 @@ RList *r_bin_le_get_sections(r_bin_le_obj_t *bin) {
 
 			int cur_idx = entry->page_tbl_idx + j - 1;
 			ut64 page_entry_off = objpageentrysz * cur_idx + objmaptbloff;
+#if 0
 			int r = r_buf_read_at (bin->buf, page_entry_off, (ut8 *)&page, sizeof (page));
-			if (r < sizeof (page)) {
-				R_LOG_WARN ("Cannot read out of bounds page table entry.");
+#else
+			int r = r_buf_fread_at (bin->buf, page_entry_off, (ut8 *)&page, "iss", 1);
+#endif
+			if (r < (int)sizeof (page)) {
+				R_LOG_WARN ("Cannot read out of bounds page table entry");
 				r_bin_section_free (s);
-				break;
+				return l;
 			}
 			if (cur_idx < next_idx) { // If not true rest of pages will be zeroes
 				if (bin->is_le) {
@@ -444,7 +454,8 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 		}
 		LE_fixup_record_header header;
 		int ret = r_buf_read_at (bin->buf, offset, (ut8 *)&header, sizeof (header));
-		if (ret != sizeof (header)) {
+		// XXX this is endiandy unsafe
+		if (ret < (int)sizeof (header)) {
 			eprintf ("Warning: oobread in LE header parsing relocs\n");
 			break;
 		}
@@ -626,7 +637,11 @@ static bool __init_header(r_bin_le_obj_t *bin, RBuffer *buf) {
 	}
 	bin->header = R_NEW0 (LE_image_header);
 	if (bin->header) {
+#if 0
 		r_buf_read_at (buf, bin->headerOff, (ut8 *)bin->header, sizeof (LE_image_header));
+#else
+		r_buf_fread_at (buf, bin->headerOff, (ut8*)bin->header, "2s41i", 1);
+#endif
 	} else {
 		R_LOG_ERROR ("Failed to allocate memory");
 		return false;
@@ -635,11 +650,12 @@ static bool __init_header(r_bin_le_obj_t *bin, RBuffer *buf) {
 }
 
 void r_bin_le_free(r_bin_le_obj_t *bin) {
-	r_return_if_fail (bin);
-	free (bin->header);
-	free (bin->objtbl);
-	free (bin->filename);
-	free (bin);
+	if (bin) {
+		free (bin->header);
+		free (bin->objtbl);
+		free (bin->filename);
+		free (bin);
+	}
 }
 
 r_bin_le_obj_t *r_bin_le_new_buf(RBuffer *buf) {
@@ -664,7 +680,13 @@ r_bin_le_obj_t *r_bin_le_new_buf(RBuffer *buf) {
 	}
 	ut64 offset = (ut64)bin->headerOff + h->restab;
 	bin->filename = __read_nonnull_str_at (buf, &offset);
+#if 0
 	r_buf_read_at (buf, (ut64)h->objtab + bin->headerOff, (ut8 *)bin->objtbl, h->objcnt * sizeof (LE_object_entry));
+#else
+	char *fmt = r_str_newf ("%di", 6 * h->objcnt);
+	r_buf_fread_at (buf, h->objtab + bin->headerOff, (ut8*)bin->objtbl, fmt, 1);
+	free (fmt);
+#endif
 
 	bin->buf = buf;
 	return bin;
