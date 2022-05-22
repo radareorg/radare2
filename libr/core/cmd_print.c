@@ -1546,8 +1546,6 @@ static RList *lart_new(void) {
 }
 
 static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
-	ut8 buf[8]; // max binformat buffer size supported
-	memcpy (buf, core->block, R_MIN (sizeof (buf), core->blocksize));
 	// r_io_read_at (core->io, core->offset, buf, sizeof (buf));
 	const char *fmt = arg;
 	int n = 0;
@@ -1563,8 +1561,8 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 	ut64 v = 0;
 	// bigbitendian
 	// r_core_cmd0 (core, "pb 8");
-	RBitmap *bm = r_bitmap_new (64);
-	r_bitmap_set_bytes (bm, buf, sizeof (buf));
+	RBitmap *bm = r_bitmap_new (core->blocksize * 8);
+	r_bitmap_set_bytes (bm, core->block, core->blocksize);
 	RList *lart = lart_new ();
 	
 	while (*arg && *arg != ' ') {
@@ -1633,12 +1631,13 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 			firstline[padsz + 1] = '|';
 		}
 		firstline[padsz + 2] = 0;
+		int totalpad = padsz + 4;
 		r_cons_newline ();
 		r_list_reverse (lart);
 		r_list_foreach (lart, iter, la) {
 			int padsz = la->pos - 1 + (la->sz / 2);
 			char *v = r_str_newf ("%s= %"PFMT64d" (0x%"PFMT64x")", la->name?la->name:"", la->value, la->value);
-			char *pad2 = strdup (r_str_pad ('-', 50 - padsz));
+			char *pad2 = strdup (r_str_pad ('-', totalpad - padsz));
 			char *pad = r_str_ndup (firstline, padsz + 1);
 			r_cons_printf ("%s`-%s %"PFMT64d" 0x%"PFMT64x"   (offset %d, size %d%s%s)\n", pad?pad:"", pad2,
 					la->value, la->value, la->pos, la->sz, 

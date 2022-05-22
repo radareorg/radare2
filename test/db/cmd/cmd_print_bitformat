@@ -9,21 +9,21 @@ EOF
 EXPECT=<<EOF
 00110111     big bit endian
 \_/\__/v
- |   | `--------------- cow=1   (offset 7, size 1)
- |   `----------------- bar=11   (offset 3, size 4)
- `--------------------- foo=1   (offset 0, size 3)
+ |   | `----- 1 0x1   (offset 7, size 1 name cow)
+ |   `------- 11 0xb   (offset 3, size 4 name bar)
+ `----------- 1 0x1   (offset 0, size 3 name foo)
 01011000     big bit endian
 \_/\__/v
- |   | `--------------- cow=0   (offset 7, size 1)
- |   `----------------- bar=12   (offset 3, size 4)
- `--------------------- foo=2   (offset 0, size 3)
+ |   | `----- 0 0x0   (offset 7, size 1 name cow)
+ |   `------- 12 0xc   (offset 3, size 4 name bar)
+ `----------- 2 0x2   (offset 0, size 3 name foo)
 0101100010000110     big bit endian
 \/\___/\__/\/\_/
- |  |    |  | `-------- mow=6   (offset 13, size 3)
- |  |    |  `---------- low=0   (offset 11, size 2)
- |  |    `------------- cow=4   (offset 7, size 4)
- |  `------------------ bar=12   (offset 2, size 5)
- `--------------------- foo=1   (offset 0, size 2)
+ |  |    |  | `----- 6 0x6   (offset 13, size 3 name mow)
+ |  |    |  `------- 0 0x0   (offset 11, size 2 name low)
+ |  |    `---------- 4 0x4   (offset 7, size 4 name cow)
+ |  `--------------- 12 0xc   (offset 2, size 5 name bar)
+ `------------------ 1 0x1   (offset 0, size 2 name foo)
 EOF
 RUN
 
