@@ -832,7 +832,7 @@ BROKEN=1
 FILE=malloc://1024
 CMDS=<<EOF
 e cfg.bigendian=true
-wb 4142434431323334
+wX 4142434431323334
 "td enum ascii{ LETTER_A=0x41, LETTER_D=0x44, DIGIT_1=0x31, DIGIT_4=0x34}"
 pf.somestring [1]E[1]E[1]E[1]E[1]E[1]E[1]E[1]E (ascii)B1 (ascii)B2 (ascii)B3 (ascii)B4 (ascii)B5 (ascii)B6 (ascii)B7 (ascii)B8
 pf.somestring
