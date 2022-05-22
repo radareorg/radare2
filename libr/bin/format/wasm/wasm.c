@@ -271,6 +271,20 @@ static void wasm_sec_free(RBinWasmSection *sec) {
 	}
 }
 
+static void wasm_custom_name_local_free(RBinWasmCustomNameLocalName *name) {
+	if (name) {
+		r_id_storage_free (name->names);
+		R_FREE (name);
+	}
+}
+
+static inline void wasm_custom_local_names_free(RBinWasmCustomNameLocalNames *local) {
+	if (local) {
+		r_list_free (local->locals);
+		R_FREE (local);
+	}
+}
+
 static void wasm_custom_name_free(RBinWasmCustomNameEntry *cust) {
 	if (cust) {
 		switch (cust->type) {
@@ -284,17 +298,7 @@ static void wasm_custom_name_free(RBinWasmCustomNameEntry *cust) {
 			}
 			break;
 		case R_BIN_WASM_NAMETYPE_Local:
-			if (cust->local && cust->local->locals) {
-				RListIter *iter;
-				RBinWasmCustomNameLocalName *local;
-				r_list_foreach (cust->local->locals, iter, local) {
-					if (local->names) {
-						r_id_storage_free (local->names);
-					}
-				}
-
-				r_list_free (cust->local->locals);
-			}
+			wasm_custom_local_names_free (cust->local);
 			break;
 		case R_BIN_WASM_NAMETYPE_None:
 			break;
@@ -520,7 +524,7 @@ static bool parse_namemap(RBuffer *b, ut64 bound, RIDStorage *map, ut32 *count) 
 	}
 
 	for (i = 0; i < *count; i++) {
-		RBinWasmName*name = R_NEW0 (RBinWasmName);
+		RBinWasmName *name = R_NEW0 (RBinWasmName);
 		if (!name) {
 			return false;
 		}
@@ -545,8 +549,57 @@ static bool parse_namemap(RBuffer *b, ut64 bound, RIDStorage *map, ut32 *count) 
 	return true;
 }
 
-static void *parse_custom_name_entry(RBuffer *b, ut64 bound) {
-	size_t i;
+static inline RBinWasmCustomNameLocalName *parse_local_name(RBuffer *b, ut64 bound) {
+	RBinWasmCustomNameLocalName *local_name = R_NEW0 (RBinWasmCustomNameLocalName);
+	if (local_name) {
+		if (!consume_u32_r (b, bound, &local_name->index)) {
+			goto beach;
+		}
+
+		local_name->names = r_id_storage_new (0, UT32_MAX);
+		if (!local_name->names) {
+			goto beach;
+		}
+
+		if (!parse_namemap (b, bound, local_name->names, &local_name->names_count)) {
+			goto beach;
+		}
+
+		return local_name;
+	}
+beach:
+	wasm_custom_name_local_free (local_name);
+	return NULL;
+}
+
+static inline RBinWasmCustomNameLocalNames *parse_custom_names_local(RBuffer *b, ut64 bound) {
+	RBinWasmCustomNameLocalNames *local = R_NEW0 (RBinWasmCustomNameLocalNames);
+	if (!local) {
+		return NULL;
+	}
+	if (!consume_u32_r (b, bound, &local->count)) {
+		goto beach;
+	}
+
+	local->locals = r_list_newf ((RListFree)wasm_custom_name_local_free);
+	if (local->locals) {
+		size_t i;
+		for (i = 0; i < local->count; i++) {
+			RBinWasmCustomNameLocalName *local_name = parse_local_name (b, bound);
+			if (!local_name || !r_list_append (local->locals, local_name)) {
+				wasm_custom_name_local_free (local_name);
+				goto beach;
+			}
+		}
+		return local;
+	}
+
+beach:
+	wasm_custom_local_names_free (local);
+	return NULL;
+}
+
+static RBinWasmCustomNameEntry *parse_custom_name_entry(RBuffer *b, ut64 bound) {
 	RBinWasmCustomNameEntry *cust = R_NEW0 (RBinWasmCustomNameEntry);
 	if (!cust) {
 		return NULL;
@@ -588,52 +641,9 @@ static void *parse_custom_name_entry(RBuffer *b, ut64 bound) {
 		}
 		break;
 	case R_BIN_WASM_NAMETYPE_Local:
-		cust->local = R_NEW0 (RBinWasmCustomNameLocalNames);
+		cust->local = parse_custom_names_local (b, bound);
 		if (!cust->local) {
 			goto beach;
-		}
-		if (!consume_u32_r (b, bound, &cust->local->count)) {
-			free (cust->local);
-			goto beach;
-		}
-
-		cust->local->locals = r_list_new ();
-
-		for (i = 0; i < cust->local->count; i++) {
-			RBinWasmCustomNameLocalName *local_name = R_NEW0 (RBinWasmCustomNameLocalName);
-			if (!local_name) {
-				free (cust->local);
-				free (cust);
-				return NULL;
-			}
-
-			if (!consume_u32_r (b, bound, &local_name->index)) {
-				r_list_free (cust->local->locals);
-				free (cust->local);
-				free (local_name);
-				goto beach;
-			}
-
-			local_name->names = r_id_storage_new (0, UT32_MAX);
-			if (!local_name->names) {
-				r_list_free (cust->local->locals);
-				free (cust->local);
-				free (local_name);
-				goto beach;
-			}
-
-			if (!parse_namemap (b, bound, local_name->names, &local_name->names_count)) {
-				r_id_storage_free (local_name->names);
-				r_list_free (cust->local->locals);
-				free (cust->local);
-				free (local_name);
-				goto beach;
-			}
-
-			if (!r_list_append (cust->local->locals, local_name)) {
-				free (local_name);
-				goto beach;
-			};
 		}
 		break;
 	}
