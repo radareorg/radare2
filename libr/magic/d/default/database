@@ -238,3 +238,5 @@
 # URL:  http://www.grc.nasa.gov/WWW/cgns/adf/
 # From: Nicolas Chauvat <nicolas.chauvat@logilab.fr>
 #0	string	@(#)ADF\ Database	CGNS Advanced Data Format
+
+0	string	\x0d\x0aYARA	Compiled Yara Rules
