@@ -744,10 +744,14 @@ static R_TH_LOCAL int old_bits = -1;
 static R_TH_LOCAL char *old_arch = NULL;
 
 R_API void r_core_anal_cc_init(RCore *core) {
-	const char *anal_arch = r_config_get (core->config, "anal.arch");
+	char *anal_arch = strdup (r_config_get (core->config, "anal.arch"));
 	const int bits = core->anal->config->bits;
 	if (!anal_arch) {
 		return;
+	}
+	char *dot = strchr (anal_arch, '.');
+	if (dot) {
+		*dot = 0;
 	}
 	if (old_bits != -1) {
 		if (old_bits == bits) {
