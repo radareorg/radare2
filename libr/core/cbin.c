@@ -756,6 +756,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	if (old_bits != -1) {
 		if (old_bits == bits) {
 			if (!strcmp (old_arch, anal_arch)) {
+				free (anal_arch);
 				return;
 			}
 		}
@@ -796,6 +797,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	Sdb *cc = core->anal->sdb_cc;
 	// Avoid sdb reloading
 	if (cc->path && (!strcmp (cc->path, dbpath) || !strcmp (cc->path, dbhomepath))) {
+		free (anal_arch);
 		free (dbpath);
 		free (dbhomepath);
 		return;
@@ -825,6 +827,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	if (anal_arch && sdb_isempty (core->anal->sdb_cc)) {
 		eprintf ("Warning: Missing calling conventions for '%s' %d. Deriving it from the regprofile.\n", anal_arch, bits);
 	}
+	free (anal_arch);
 	free (dbpath);
 	free (dbhomepath);
 #endif
