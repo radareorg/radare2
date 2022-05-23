@@ -375,6 +375,106 @@ static ut32 cl(ArmOp *op) {
 	return data;
 }
 
+static ut32 ngc(ArmOp *op) {
+	ut32 data = UT32_MAX;
+	int k = 0;
+	if (!strncmp (op->mnemonic, "ngc", 3)) {
+		if (op->operands[0].reg_type & ARM_REG64) {
+			k =  0xe00300da;
+		} else if (op->operands[0].reg_type & ARM_REG32) {
+			k =  0xe003005a;
+		} else {
+			return UT32_MAX;
+		}
+	}
+	data  = k | op->operands[0].reg << 24;
+	data |= op->operands[1].reg << 8;
+	return data;
+}
+
+static ut32 rev(ArmOp *op) {
+	ut32 data = UT32_MAX;
+	int k = 0;
+	if (!strncmp (op->mnemonic, "rev ", 4)) {
+		if (op->operands[0].reg_type & ARM_REG64) {
+			k =  0x000cc0da;
+		} else if (op->operands[0].reg_type & ARM_REG32) {
+			k =  0x0008c05a;
+		} else {
+			return UT32_MAX;
+		}
+	} else if (!strncmp (op->mnemonic, "rev16", 5)) {
+		if (op->operands[0].reg_type & ARM_REG64) {
+			k =  0x0004c0da;
+		} else if (op->operands[0].reg_type & ARM_REG32) {
+			k =  0x0004c05a;
+		} else {
+			return UT32_MAX;
+		}
+	} else if (!strncmp (op->mnemonic, "rev32", 5)) {
+			k =  0x0008c0da;
+			
+	} else {
+		        return UT32_MAX;
+	}
+	
+	data  = k | op->operands[0].reg << 24;
+	data |= (op->operands[1].reg & 0x7) << 29 | (op->operands[1].reg & 0x18) << 13;
+	return data;
+}
+
+static ut32 rbit(ArmOp *op) {
+	ut32 data = UT32_MAX;
+	int k = 0;
+	if (!strncmp (op->mnemonic, "rbit", 4)) {
+		if (op->operands[0].reg_type & ARM_REG64) {
+			k =  0x0000c0da;
+		} else if (op->operands[0].reg_type & ARM_REG32) {
+			k =  0x0000c05a;
+		} else {
+			return UT32_MAX;
+		}
+	}
+        data  = k | op->operands[0].reg << 24;
+	data |= (op->operands[1].reg & 0x7) << 29 | (op->operands[1].reg & 0x18) << 13;
+	return data;
+}
+
+static ut32 mvn(ArmOp *op) {
+	ut32 data = UT32_MAX;
+	int k = 0;
+	if (!strncmp (op->mnemonic, "mvn", 3)) {
+		if (op->operands[0].reg_type & ARM_REG64) {
+			k =  0xe00320aa;
+		} else if (op->operands[0].reg_type & ARM_REG32) {
+			k =  0xe003202a;
+		} else {
+			return UT32_MAX;
+		}
+	}
+        data  = k | op->operands[0].reg << 24;
+        data |= op->operands[1].reg << 8;
+	return data;
+}
+
+static ut32 r_n_math(ArmOp *op, ut32 data_64, ut32 data_32 , bool is64) {
+        ut32 data = UT32_MAX;
+	int k = 0;
+	if (is64) {
+	       k = data_64;
+	}else { 
+	       k = data_32;	        
+	}
+	check_cond (op->operands[0].type == ARM_GPR);
+	check_cond (op->operands[1].type == ARM_GPR);
+	check_cond (op->operands[2].type == ARM_GPR);
+	
+	data  = k | op->operands[0].reg << 24;
+	data |= (op->operands[1].reg & 0x7) << 0x29 | (op->operands[1].reg & 0x18) << 0x13;
+	data |=  op->operands[2].reg << 8;
+	return data;
+}
+
 static ut32 math(ArmOp *op, ut32 data, bool is64) {
 	if (is64) {
 		data |= 0x80;
@@ -1378,7 +1478,22 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = cb (&ops);
 	} else if (!strncmp (str, "cmp", 3)) {
 		*op = cmp (&ops);
-	} else if (!strncmp (str, "mul ", 4)) {
+	 } else if (!strncmp (str, "mul ", 4)) {                                 
+		*op = r_n_math (&ops, 0x007c009b, 0x007c001b, has64reg (str));
+        } else if (!strncmp (str, "ngc ", 4)) {
+		*op = ngc (&ops);
+        } else if (!strncmp (str, "rev ", 4)) {
+		*op = rev (&ops);
+        } else if (!strncmp (str, "rev16", 5)) {
+		*op = rev (&ops);
+        } else if (!strncmp (str, "rev32", 5)) {
+		*op = rev (&ops);
+        } else if (!strncmp (str, "rbit", 4)) {
+		*op = rbit (&ops);
+        } else if (!strncmp (str, "tst", 3)) {
+		*op = tst (&ops);
+        } else if (!strncmp (str, "mvn", 3)) {
+		*op = mvn (&ops);
 		*op = math (&ops, 0x007c009b, has64reg (str));
 	} else if (!strncmp (str, "udiv", 4)) {
 		*op = math (&ops, 0x0008c09a, has64reg (str));
@@ -1388,18 +1503,12 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = math (&ops, 0x0020c09a, has64reg (str));
 	} else if (!strncmp (str, "lsr ", 4)) {
 		*op = math (&ops, 0x0024c09a, has64reg (str));	
-	} else if (!strncmp (str, "mvn ", 4)) {
-		*op = math (&ops, 0xe00320aa, has64reg (str));
-	} else if (!strncmp (str, "tst ", 4)) {
-		*op = math (&ops, 0x1f0000ea, has64reg (str));
 	} else if (!strncmp (str, "msub", 4)) {
 		*op = math (&ops, 0x008c001b, has64reg (str));
 	} else if (!strncmp (str, "madd", 4)) {
 		*op = math (&ops, 0x0000c09b, has64reg (str));
 	} else if (!strncmp (str, "mneg", 4)) {
 		*op = math (&ops, 0x00fc009b, has64reg (str));
-	} else if (!strncmp (str, "ngc ", 4)) {
-		*op = math (&ops, 0xe00301da, has64reg (str));
 	} else if (!strncmp (str, "sbc ", 4)) {
 		*op = math (&ops, 0x000000da, has64reg (str));	
 	} else if (!strncmp (str, "asr ", 4)) {
@@ -1410,14 +1519,6 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = cl (&ops);
 	} else if (!strncmp (str, "clz", 3)) {
 		*op = cl (&ops);
-	} else if (!strncmp (str, "rbit", 4)) {
-		*op = math (&ops, 0x0000c0da, has64reg (str));
-	} else if (!strncmp (str, "rev ", 4)) {
-		*op = math (&ops, 0x200cc0da, has64reg (str));
-	} else if (!strncmp (str, "rev16", 5)) {
-		*op = math (&ops, 0x2004c0da, has64reg (str));
-	} else if (!strncmp (str, "rev32", 5)) {
-		*op = math (&ops, 0x2008c0da, has64reg (str));
 	} else if (!strncmp (str, "umulh", 5)) {
 		*op = math (&ops, 0x007cc09b, has64reg (str));
 	} else if (!strncmp (str, "ldrb", 4)) {
