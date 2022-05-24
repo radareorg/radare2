@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -7,9 +7,7 @@
 static const char *parse_alias(RReg *reg, char **tok, const int n) {
 	if (n == 2) {
 		int role = r_reg_get_name_idx (tok[0] + 1);
-		return r_reg_set_name (reg, role, tok[1])
-			? NULL
-			: "Invalid alias";
+		return r_reg_set_name (reg, role, tok[1]) ? NULL : "Invalid alias";
 	}
 	return "Invalid syntax";
 }
@@ -33,7 +31,7 @@ static ut64 parse_size(char *s, char **end) {
 
 //TODO: implement bool r_reg_set_def_string()
 static const char *parse_def(RReg *reg, char **tok, const int n) {
-	char *end;
+	char *end = "";
 	int type, type2;
 
 	if (n != 5 && n != 6) {
@@ -57,13 +55,10 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	if (type < 0 || type2 < 0) {
 		return "Invalid register type";
 	}
-#if 1
 	if (r_reg_get (reg, tok[1], R_REG_TYPE_ALL)) {
-		eprintf ("Ignoring duplicated register definition '%s'\n", tok[1]);
+		eprintf ("Duplicated register definition for '%s' has been ignored.\n", tok[1]);
 		return NULL;
-		//return "Duplicate register definition";
 	}
-#endif
 
 	RRegItem *item = R_NEW0 (RRegItem);
 	if (!item) {
@@ -74,21 +69,34 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	item->name = strdup (tok[1]);
 	// All the numeric arguments are strictly checked
 	item->size = parse_size (tok[2], &end);
-	if (*end != '\0' || !item->size) {
+	if (*end || !item->size) {
 		r_reg_item_free (item);
 		return "Invalid size";
 	}
 	if (!strcmp (tok[3], "?")) {
 		item->offset = -1;
+	} else if (!strcmp (tok[3], "$")) {
+		RRegItem *ri;
+		RListIter *iter;
+		int last = 0;
+		r_list_foreach (reg->regset[type].regs, iter, ri) {
+			if (ri->size >= 8 && ri->offset >= 0) {
+				int pos = ri->offset + ri->size;
+				if (pos > last) {
+					last = pos;
+				}
+			}
+		}
+		item->offset = last;
 	} else {
 		item->offset = parse_size (tok[3], &end);
 	}
-	if (*end != '\0') {
+	if (*end) {
 		r_reg_item_free (item);
 		return "Invalid offset";
 	}
 	item->packed_size = parse_size (tok[4], &end);
-	if (*end != '\0') {
+	if (*end) {
 		r_reg_item_free (item);
 		return "Invalid packed size";
 	}
@@ -123,7 +131,7 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		reg->size = item->offset + item->size;
 	}
 	// Update the overall type of registers into a regset
-	reg->regset[type2].maskregstype |= ((int)1 << type);
+	reg->regset[type2].maskregstype |= (1ULL << type);
 	return NULL;
 }
 

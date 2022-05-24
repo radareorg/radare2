@@ -2040,7 +2040,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	}
 }
 
-static void show_drpi(RCore *core) {
+static void cmd_drpi(RCore *core) {
 	int i;
 	RListIter *iter;
 	RRegItem *ri;
@@ -2115,7 +2115,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 		}
 		break;
 	case 'i': // "drpi" "arpi"
-		show_drpi (core);
+		cmd_drpi (core);
 		break;
 	case 's': // "drps" "arps"
 		if (str[2] == ' ') {
