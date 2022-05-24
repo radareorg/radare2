@@ -12,21 +12,21 @@ static unsigned long G_pos;
 #define V850NP_INSERT(n) ut64 insert_##n(ut64 insn, long value, const char ** errmsg)
 
 /* Regular opcodes.  */
-#define OP(x)		((x & 0x3f) << 5)
-#define OP_MASK		OP (0x3f)
+#define OP(x) ((x & 0x3f) << 5)
+#define OP_MASK OP (0x3f)
 
 /* Conditional branch opcodes (Format III).  */
-#define BOP(x)		((0x58 << 4) | (x & 0x0f))
-#define BOP_MASK	((0x78 << 4) | 0x0f)
+#define BOP(x) ((0x58 << 4) | (x & 0x0f))
+#define BOP_MASK ((0x78 << 4) | 0x0f)
 
 /* Conditional branch opcodes (Format VII).  */
-#define BOP7(x)		(0x107e0 | (x & 0xf))
-#define BOP7_MASK	(0x1ffe0 | 0xf)
+#define BOP7(x)	(0x107e0 | (x & 0xf))
+#define BOP7_MASK (0x1ffe0 | 0xf)
 
-#define one(x)		((unsigned int) (x))
-#define two(x,y)	((unsigned int) (x) | ((unsigned int) (y) << 16))
+#define one(x) ((unsigned int) (x))
+#define two(x,y) ((unsigned int) (x) | ((unsigned int) (y) << 16))
 
-static const char *not_valid    = "displacement value is not in range and is not aligned";
+static const char *not_valid = "displacement value is not in range and is not aligned";
 static const char *out_of_range = "displacement value is out of range";
 static const char *not_aligned  = "displacement value is not aligned";
 static const char *immediate_out_of_range = "immediate value is out of range";
@@ -41,9 +41,11 @@ static const char *vector5_out_of_range = "vector5 is out of range";
 static const char *imm10_out_of_range = "imm10 is out of range";
 static const char *sr_selid_out_of_range = "SR/SelID is out of range";
 
-bool v850_msg_is_out_of_range(const char* msg) {
+#if 0
+static bool v850_msg_is_out_of_range(const char* msg) {
 	return msg == out_of_range || msg == immediate_out_of_range || msg == branch_out_of_range;
 }
+#endif
 
 static V850NP_INSERT(i5div1) {
 	if (value > 30 || value < 2) {
@@ -81,7 +83,7 @@ static V850NP_EXTRACT(i5div2) {
 
 static V850NP_INSERT(i5div3) {
 	if (value > 32 || value < 2) {
-		* errmsg = (value&1)? not_valid: out_of_range;
+		* errmsg = (value & 1)? not_valid: out_of_range;
 	} else if (value & 1) {
 		* errmsg = not_aligned;
 	}
@@ -98,7 +100,7 @@ static V850NP_EXTRACT(i5div3) {
 
 static V850NP_INSERT(d5_4) {
 	if (value > 0x1f || value < 0) {
-		*errmsg = (value&1)? not_valid: out_of_range;
+		*errmsg = (value & 1)? not_valid: out_of_range;
 	} else if (value & 1) {
 		*errmsg = not_aligned;
 	}
@@ -242,7 +244,7 @@ static V850NP_INSERT(d23) {
 
 static V850NP_INSERT(d23_align1) {
 	if (value > 0x3fffff || value < -0x400000) {
-		*errmsg = (value&1)? not_valid: out_of_range;
+		*errmsg = (value & 1)? not_valid: out_of_range;
 	} else if (value & 0x1) {
 		*errmsg = not_aligned;
 	}

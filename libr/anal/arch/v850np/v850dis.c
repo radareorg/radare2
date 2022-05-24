@@ -35,6 +35,10 @@ static void print_value(RStrBuf *sb, int flags, ut64 memaddr, long value) {
 
 static long get_operand_value(const struct v850_operand *operand, unsigned long insn, const ut8* buffer, size_t len, bool *invalid) {
 	if ((operand->flags & V850E_IMMEDIATE16) || (operand->flags & V850E_IMMEDIATE16HI)) {
+		if (len < 2) {
+			// truncated
+			return 0;
+		}
 		ut32 value = r_read_le16 (buffer);
 		if (operand->flags & V850E_IMMEDIATE16HI) {
 			value <<= 16;
@@ -45,21 +49,29 @@ static long get_operand_value(const struct v850_operand *operand, unsigned long 
 	}
 
 	if (operand->flags & V850E_IMMEDIATE23) {
+		if (len < 2) {
+			// truncated
+			return 0;
+		}
 		ut32 value = r_read_le16 (buffer);
 		return (operand->extract) (value, invalid);
 	}
 	if (operand->flags & V850E_IMMEDIATE32) {
+		if (len < 4) {
+			// truncated
+			return 0;
+		}
 		// len += 4;
 		return r_read_le32 (buffer);
 	}
 	if (operand->extract) {
-		return (operand->extract) (insn, invalid);
+		return operand->extract (insn, invalid);
 	}
 	ut64 value = (operand->bits == -1)
 		? (insn & operand->shift)
-		: (insn >> operand->shift) & ((1ul << operand->bits) - 1);
+		: (insn >> operand->shift) & ((1UL << operand->bits) - 1);
 	if (operand->flags & V850_OPERAND_SIGNED) {
-		unsigned long sign = 1ul << (operand->bits - 1);
+		unsigned long sign = 1UL << (operand->bits - 1);
 		value = (value ^ sign) - sign;
 	}
 	return value;
@@ -594,6 +606,10 @@ int v850np_disasm(v850np_inst *inst, int cpumodel, ut64 addr, const ut8* buffer,
 	}
 
 	if (length == 4 || (length == 0 && (insn & 0x0600) == 0x0600)) {
+		if (len < 4) {
+			inst->text = r_str_newf ("truncated from %d to %d", code_length, length);
+			return -1;
+		}
 		/* This is a 4 byte insn.  */
 		insn = r_read_le32 (buffer);
 		length = code_length = 4;
