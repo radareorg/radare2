@@ -145,7 +145,39 @@ static char *get_reg_profile(RAnal *anal) {
 		"flg	cy  .1 132.28 0 carry\n" // carry or borrow
 		"flg	ov  .1 132.29 0 overflow\n" // overflow
 		"flg	s   .1 132.30 0 sign\n" // signed result
-		"flg	z   .1 132.31 0 zero\n"; // zero result
+		"flg	z   .1 132.31 0 zero\n" // zero result
+
+		"gpr	eipc	.32	$	0\n"
+		"gpr	eipsw	.32	$	0\n"
+		"gpr	fepc	.32	$	0\n"
+		"gpr	fepsw	.32	$	0\n"
+		"gpr	ecr	.32	$	0\n"
+		"gpr	sr6	.32	$	0\n"
+		"gpr	sr7	.32	$	0\n"
+		"gpr	sr8	.32	$	0\n"
+		"gpr	sr9	.32	$	0\n"
+		"gpr	sr10	.32	$	0\n"
+		"gpr	sr11	.32	$	0\n"
+		"gpr	sr12	.32	$	0\n"
+		"gpr	eiic	.32	$	0\n"
+		"gpr	feic	.32	$	0\n"
+		"gpr	dbic	.32	$	0\n"
+		"gpr	ctpc	.32	$	0\n"
+		"gpr	ctpcw	.32	$	0\n"
+		"gpr	dbpc	.32	$	0\n"
+		"gpr	dbpsw	.32	$	0\n"
+		"gpr	ctbp	.32	$	0\n"
+		"gpr	dir	.32	$	0\n"
+		"gpr	bpc	.32	$	0\n"
+		"gpr	asid	.32	$	0\n"
+		"gpr	bpav	.32	$	0\n"
+		"gpr	bpam	.32	$	0\n"
+		"gpr	bpdv	.32	$	0\n"
+		"gpr	bpdm	.32	$	0\n"
+		"gpr	eiwr	.32	$	0\n"
+		"gpr	fewr	.32	$	0\n"
+		"gpr	dbwr	.32	$	0\n"
+		"gpr	bsel	.32	$	0\n";
 	return strdup (p);
 }
 

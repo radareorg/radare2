@@ -66,6 +66,7 @@ static long get_operand_value(const struct v850_operand *operand, unsigned long 
 }
 
 static const char *get_v850_sreg_name(size_t reg) {
+#if 0
 	static const char *const v850_sreg_names[] = {
 		"eipc/vip/mpm", "eipsw/mpc", "fepc/tid", "fepsw/ppa", "ecr/vmecr", "psw/vmtid",
 		"sr6/fpsr/vmadr/dcc", "sr7/fpepc/dc0",
@@ -76,6 +77,18 @@ static const char *get_v850_sreg_name(size_t reg) {
 		"bpav/dpa1u", "bpam/dpa2l", "bpdv/dpa2u", "bpdm/dpa3l", "eiwr/dpa3u",
 		"fewr", "dbwr", "bsel"
 	};
+#else
+	static const char *const v850_sreg_names[] = {
+		"eipc", "eipsw", "fepc", "fepsw", "ecr", "psw",
+		"sr6", "sr7",
+		"sr8", "sr9", "sr10", "sr11",
+		"sr12", "eiic", "feic", "dbic",
+		"ctpc", "ctpsw", "dbpc", "dbpsw", "ctbp",
+		"dir", "bpc", "asid",
+		"bpav", "bpam", "bpdv", "bpdm", "eiwr",
+		"fewr", "dbwr", "bsel"
+	};
+#endif
 	if (reg < R_ARRAY_SIZE (v850_sreg_names)) {
 		return v850_sreg_names[reg];
 	}
