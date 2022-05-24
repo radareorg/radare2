@@ -610,12 +610,13 @@ R_API bool r_anal_esil_signext(RAnalEsil *esil, bool assign) {
 	}
 	free (p_dst);
 	
-	//Make sure the other bits are 0
-	src &= UT64_MAX >> (64 - dst);
-
+	// Make sure the other bits are 0
 	ut64 m = 0;
-	if (dst < 64) {
+	if (dst > 0 && dst < 64) {
+		src &= UT64_MAX >> (64 - dst);
 		m = 1ULL << (dst - 1);
+	} else if (dst == 0) {
+		src = 0;
 	}
 
 	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
