@@ -2201,12 +2201,15 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		return;
 	}
 	RFlagItem *item = r_flag_get_i (core->flags, ds->at);
+	if (!item && ds->analop.ptr && ds->analop.ptr != UT64_MAX) {
+		item = r_flag_get_i (core->flags, ds->analop.ptr);
+	}
 	const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
 	const char *vartype = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, ds->at);
 	if (!comment) {
 		if (vartype) {
 			ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_func_var_type), vartype);
-		} else if (item && item->comment && *item->comment) {
+		} else if (item && R_STR_ISNOTEMPTY (item->comment)) {
 			ds->ocomment = item->comment;
 			ds->comment = strdup (item->comment);
 		}
