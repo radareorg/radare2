@@ -56,6 +56,13 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		}
 	}
 	switch (op->type) {
+	case R_ANAL_OP_TYPE_MOV:
+		op->val = inst.value;
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+	case R_ANAL_OP_TYPE_LOAD:
+		op->ptr = inst.value;
+		break;
 	case R_ANAL_OP_TYPE_JMP:
 		op->jump = addr + inst.value;
 		break;
