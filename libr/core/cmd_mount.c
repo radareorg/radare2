@@ -32,6 +32,31 @@ static const char *help_msg_mf[] = {
 	NULL
 };
 
+static const char *help_msg_md[] = {
+	"Usage:", "md /", "list directory contents for path",
+	NULL
+};
+
+static const char *help_msg_mp[] = {
+	"Usage:", "mp msdos 0", "show partitions in msdos format at offset 0",
+	NULL
+};
+
+static const char *help_msg_ms[] = {
+	"Usage:", "ms /mnt", "open filesystem prompt at /mnt",
+	NULL
+};
+
+static const char *help_msg_mL[] = {
+	"Usage:", "mL", "list filesystem plugins (Same as Lm)",
+	NULL
+};
+
+static const char *help_msg_mo[] = {
+	"Usage:", "mo /foo/bar", "open given file into a malloc://",
+	NULL
+};
+
 static int cmd_mktemp(RCore *core, const char *input) {
 	char *res = r_syscmd_mktemp (input);
 	if (res) {
@@ -140,10 +165,6 @@ static int cmd_mount(void *data, const char *_input) {
 	RFSPartition *part;
 	RCore *core = (RCore *)data;
 
-	if (strchr (_input, '?')) {
-		r_core_cmd_help (core, help_msg_m);
-		return 0;
-	}
 	if (!strncmp ("ktemp", _input, 5)) {
 		return cmd_mktemp (data, _input);
 	}
@@ -239,16 +260,28 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'L': // "mL" list of plugins
+		if (input[1] == '?') { // "mL?"
+			r_core_cmd_help (core, help_msg_mL);
+			break;
+		}
 		r_list_foreach (core->fs->plugins, iter, plug) {
 			r_cons_printf ("%10s  %s\n", plug->name, plug->desc);
 		}
 		break;
 	case 'l': // "ml"
 	case 'd': // "md"
+		if (input[1] == '?') { // "md?"
+				r_core_cmd_help (core, help_msg_md);
+				break;
+		}
 		cmd_mount_ls (core, input + 1);
 		break;
-	case 'p':
+	case 'p': // "mp"
 		input = (char *)r_str_trim_head_ro (input + 1);
+		if (*input == '?') { // "mp?"
+			r_core_cmd_help (core, help_msg_mp);
+			break;
+		}
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr = 0;
@@ -268,6 +301,10 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'o': // "mo"
 		input = (char *)r_str_trim_head_ro (input + 1);
+		if (*input == '?') { // "mo?"
+			r_core_cmd_help (core, help_msg_mo);
+			break;
+		}
 		file = r_fs_open (core->fs, input, false);
 		if (file) {
 			r_fs_read (core->fs, file, 0, file->size);
@@ -384,7 +421,7 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'f':
 		input++;
 		switch (*input) {
-		case '?':
+		case '?': // "mf?"
 			r_core_cmd_help (core, help_msg_mf);
 			break;
 		case 'n':
@@ -426,6 +463,10 @@ static int cmd_mount(void *data, const char *_input) {
 			return false;
 		}
 		input = (char *)r_str_trim_head_ro (input + 1);
+		if (*input == '?') { // "ms?"
+			r_core_cmd_help (core, help_msg_ms);
+			break;
+		};
 		r_cons_set_raw (false);
 		{
 			RFSShell shell = {
