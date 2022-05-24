@@ -342,6 +342,9 @@ char *distillate(v850np_inst *inst, const char *esilfmt) {
 	return res;
 }
 
+// do absolute addressing on references relative to r0
+#define ABS_R0REF 1
+
 static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, const ut8* buffer, int buffer_size, unsigned long insn) {
 	const v850_opcode *op = (v850_opcode *) v850_opcodes;
 	const struct v850_operand *operand = NULL;
@@ -414,13 +417,17 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 		inst->value = 0;
 		opindex_ptr = op->operands;
 		opnum = 1;
+		long prevalue = 0;
+		long value = 0;
 		for (; *opindex_ptr; opindex_ptr++, opnum++) {
 			bool square = false;
 
+			bool done = false;
 			operand = &v850_operands[*opindex_ptr];
+			prevalue = value;
 
 			bool invalid = false;
-			long value = get_operand_value (operand, insn, buffer + 2, buffer_size - 2, &invalid);
+			value = get_operand_value (operand, insn, buffer + 2, buffer_size - 2, &invalid);
 			if (invalid) {
 				// eprintf ("Warning: Cannot get operand value.\n");
 				break;
@@ -441,8 +448,20 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 			} else if (opnum > 1
 					&& (v850_operands[*(opindex_ptr - 1)].flags & V850_OPERAND_DISP)
 					&& opnum == memop) {
+#if ABS_R0REF
+				if (value == 0) { // "-X[r0]"
+					ut32 addr = UT32_MAX + 1 + prevalue;
+					r_strbuf_appendf (sb, "0x%08"PFMT32x, addr);
+					inst->value = addr;
+					done = true;
+				} else {
+					r_strbuf_appendf (sb, "%s[", prefix);
+					square = true;
+				}
+#else
 				r_strbuf_appendf (sb, "%s[", prefix);
 				square = true;
+#endif
 			} else if (opnum == 2 && (op->opcode == 0x00e407e0 /* clr1 */
 						|| op->opcode == 0x00e207e0 /* not1 */
 						|| op->opcode == 0x00e007e0 /* set1 */
@@ -467,6 +486,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 					| V850_OPERAND_PREFOP
 					| V850_OPERAND_FLOAT_CC);
 
+			if (!done)
 			switch (flag) {
 			case V850_OPERAND_REG:
 				r_strbuf_append (sb, get_v850_reg_name (value));
@@ -501,8 +521,23 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 				r_strbuf_append (sb, get_v850_vreg_name (value));
 				break;
 			default:
-				print_value (sb, operand->flags, memaddr, value);
-				inst->value = value;
+				{
+#if ABS_R0REF
+					const struct v850_operand *nextop = &v850_operands[opindex_ptr[1]];
+					long nextvalue = get_operand_value (nextop, insn, buffer + 2, buffer_size - 2, &invalid);
+					if (opnum > 0 && (v850_operands[*(opindex_ptr)].flags & V850_OPERAND_DISP)
+							&& opnum + 1 == memop && nextvalue == 0) {
+						// dont print coz we replace later
+						//r_strbuf_append (sb, "?");
+					} else {
+						print_value (sb, operand->flags, memaddr, value);
+						inst->value = value;
+					}
+#else
+					print_value (sb, operand->flags, memaddr, value);
+#endif
+					inst->value = value;
+				}
 				break;
 			}
 			inst->args[opnum - 1].atype = atype;

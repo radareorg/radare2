@@ -37,7 +37,7 @@ typedef struct {
 	char *text;
 	char *esil;
 	int size;
-	int value;
+	long value; // used to save references, values, immedaites, ..
 	const v850_opcode *op;
 	v850_arg args[4];
 } v850np_inst;
