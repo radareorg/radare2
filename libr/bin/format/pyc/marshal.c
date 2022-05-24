@@ -30,7 +30,7 @@ static ut8 get_ut8(RBuffer *buffer, bool *error) {
 }
 
 static ut16 get_ut16(RBuffer *buffer, bool *error) {
-	ut8 data[2];
+	ut8 data[2] = {0};
 	*error = false;
 	int size = r_buf_read (buffer, (ut8 *)&data, sizeof (data));
 	if (size != sizeof (data)) {
@@ -40,7 +40,7 @@ static ut16 get_ut16(RBuffer *buffer, bool *error) {
 }
 
 static ut32 get_ut32(RBuffer *buffer, bool *error) {
-	ut8 data[4];
+	ut8 data[4] = {0};
 	*error = false;
 	int size = r_buf_read (buffer, (ut8 *)&data, sizeof (data));
 	if (size != sizeof (data)) {
@@ -321,13 +321,12 @@ static pyc_object *get_binary_float_object(RBuffer *buffer) {
 }
 
 static pyc_object *get_complex_object(RBuffer *buffer) {
-	pyc_object *ret = NULL;
 	bool error = false;
 	ut32 size = 0;
 	st32 n1 = 0;
 	st32 n2 = 0;
 
-	ret = R_NEW0 (pyc_object);
+	pyc_object *ret = R_NEW0 (pyc_object);
 	if (!ret) {
 		return NULL;
 	}
@@ -463,9 +462,7 @@ static pyc_object *get_unicode_object(RBuffer *buffer) {
 static pyc_object *get_interned_object(RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
-	ut32 n = 0;
-
-	n = get_ut32 (buffer, &error);
+	ut32 n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
 		R_LOG_DEBUG ("bad marshal data (string size out of range)");
 		return NULL;

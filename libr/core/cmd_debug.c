@@ -4564,6 +4564,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 			r_cons_break_pop ();
 			return 1;
 		}
+		break;
 	case 'u': // "dcu"
 		if (input[2] == '?') {
 			r_core_cmd_help (core, help_msg_dcu);

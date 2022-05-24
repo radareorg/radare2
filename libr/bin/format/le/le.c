@@ -380,6 +380,7 @@ RList *r_bin_le_get_sections(r_bin_le_obj_t *bin) {
 			if (r < (int)sizeof (page)) {
 				R_LOG_WARN ("Cannot read out of bounds page table entry");
 				r_bin_section_free (s);
+				r_bin_section_free (sec);
 				return l;
 			}
 			if (cur_idx < next_idx) { // If not true rest of pages will be zeroes

@@ -1545,7 +1545,11 @@ static RList *lart_new(void) {
 	return r_list_newf (free);
 }
 
-static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
+static void lart_free(RList *list) {
+	r_list_free (list);
+}
+
+static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 	// r_io_read_at (core->io, core->offset, buf, sizeof (buf));
 	const char *fmt = arg;
 	int n = 0;
@@ -1555,7 +1559,6 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 		names = strdup (names + 1);
 		lnames = r_str_split_list (names, " ", 0);
 	}
-	int mode = PFB_ART;
 	int i = 0;
 	int bpos = 0;
 	ut64 v = 0;
@@ -1570,6 +1573,8 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 			n = atoi (arg);
 			if (n > 64) {
 				eprintf ("Too large. Max is 64\n");
+				lart_free (lart);
+				r_bitmap_free (bm);
 				return;
 			}
 			while (IS_DIGIT (*arg)) {
@@ -1582,6 +1587,8 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 		} else if (*arg == 'b') {
 			if (n < 1) {
 				eprintf ("Invalid bitformat string.\n");
+				lart_free (lart);
+				r_bitmap_free (bm);
 				return;
 			}
 			char *name = lnames? r_list_get_n (lnames, i): NULL;
@@ -1660,6 +1667,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg) {
 		}
 	}
 	r_bitmap_free (bm);
+	lart_free (lart);
 	r_list_free (lnames);
 }
 
@@ -1746,7 +1754,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		return;
 	case 'b': // "pfb"
 		if (_input[2] == ' ') {
-			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 2));
+			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 2), PFB_ART);
 		} else {
 			eprintf ("Usage: pfb [binfmt] [names...]\n");
 		}

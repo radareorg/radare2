@@ -1,10 +1,7 @@
-/* radare2 - LGPL - Copyright 2017 - pancake, cgvwzq */
+/* radare2 - LGPL - Copyright 2017-2022 - pancake, cgvwzq, Dennis Goodlett */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-
 #include "wasm.h"
 
 typedef size_t (*ConsumeFcn) (const ut8 *p, const ut8 *bound, ut32 *out_value);
@@ -626,12 +623,10 @@ static RBinWasmCustomNameEntry *parse_custom_name_entry(RBuffer *b, ut64 bound) 
 		break;
 	case R_BIN_WASM_NAMETYPE_Function:
 		cust->func = R_NEW0 (RBinWasmCustomNameFunctionNames);
-		if (cust->func) {
+		if (!cust->func) {
 			goto beach;
 		}
-
 		cust->func->names = r_id_storage_new (0, UT32_MAX);
-
 		if (!cust->func->names) {
 			goto beach;
 		}
