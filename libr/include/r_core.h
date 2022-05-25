@@ -245,8 +245,14 @@ typedef struct r_core_tasks_t {
 	bool oneshot_running;
 } RCoreTaskScheduler;
 
+typedef enum {
+	VC_RVC,
+	VC_GIT
+} VcType;
+
 typedef struct {
 	char *path;
+	VcType type;
 	Sdb *db;
 } Rvc;
 

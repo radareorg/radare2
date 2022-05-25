@@ -1074,6 +1074,29 @@ R_API bool r_vc_clone(const char *src, const char *dst) {
 
 // GIT commands as APIs
 
+//TODO: unify the rvc and git apis
+
+R_API Rvc *r_vc_git_load(const char *path) {
+	char *git_path = r_file_new (path, ".git", NULL);
+	if (!git_path || !r_file_is_directory (git_path)) {
+		free (git_path);
+		return NULL;
+	}
+	free (git_path);
+	Rvc *vc = R_NEW (Rvc);
+	if (!vc) {
+		return NULL;
+	}
+	vc->path = r_str_new (path);
+	if (!vc->path) {
+		free (vc);
+		return NULL;
+	}
+	vc->db = NULL;
+	vc->type = VC_GIT;
+	return vc;
+}
+
 R_API bool r_vc_git_init(const char *path) {
 	char *escpath = r_str_escape (path);
 	int ret = r_sys_cmdf ("git init \"%s\"", escpath);

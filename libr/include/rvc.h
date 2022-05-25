@@ -20,6 +20,7 @@ R_API bool r_vc_git_branch(const char *path, const char *name);
 R_API bool r_vc_git_checkout(const char *path, const char *name);
 R_API bool r_vc_git_add(const char *path, const char *fname);
 R_API bool r_vc_git_commit(const char *path, const char *message);
+R_API Rvc *r_vc_git_load(const char *path);
 
 R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const RList *files);
 R_API bool r_vc_branch(Rvc *rvc, const char *bname);
