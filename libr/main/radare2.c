@@ -1636,5 +1636,5 @@ beach:
 	r_core_free (r);
 	LISTS_FREE ();
 	R_FREE (pfile);
-	return ret;
+	return (ret < 0 ? 0 : ret);
 }
