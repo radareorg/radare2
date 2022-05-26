@@ -2092,10 +2092,10 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 			char *r2profile = r_reg_parse_gdb_profile (ptr);
 			if (r2profile) {
 				r_cons_println (r2profile);
-				r_core_return_code (core, R_CMD_RC_SUCCESS);
+				r_core_return_value (core, R_CMD_RC_SUCCESS);
 				free (r2profile);
 			} else {
-				r_core_return_code (core, R_CMD_RC_FAILURE);
+				r_core_return_value (core, R_CMD_RC_FAILURE);
 				eprintf ("Warning: Cannot parse gdb profile.\n");
 			}
 		} else {
@@ -2562,7 +2562,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					RRegFlags* rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
 					if (rf) {
 						int o = r_reg_cond_bits (core->dbg->reg, id, rf);
-						r_core_return_code (core, o);
+						r_core_return_value (core, o);
 						// orly?
 						r_cons_printf ("%d\n", o);
 						free (rf);
@@ -5624,7 +5624,7 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case ':': // "d:"
-		r_core_return_code (core,
+		r_core_return_value (core,
 				r_debug_cmd (core->dbg, input + 1)
 				? R_CMD_RC_FAILURE
 				: R_CMD_RC_SUCCESS);
