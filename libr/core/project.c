@@ -320,9 +320,9 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	char *prj_path = r_file_dirname(rcpath);
 	if (prj_path) {
 		//check if the project uses git
-		if (!(core->prj->rvc = r_vc_git_load (prj_path))) {
+		if (!(core->prj->rvc = r_vc_git_open (prj_path))) {
 			// if the project does not use git, try rvc
-			core->prj->rvc = r_vc_load(prj_path);
+			core->prj->rvc = r_vc_open (prj_path);
 		}
 		free (prj_path);
 	} else {

@@ -1053,7 +1053,7 @@ R_API bool r_vc_clone(const char *src, const char *dst) {
 		char *srp = r_file_new (src, ".rvc", NULL);
 		if (srp) {
 			if (file_copyrf (srp, drp)) {
-				Rvc *dst_repo = r_vc_load(dst);
+				Rvc *dst_repo = r_vc_open (dst);
 				if (dst_repo) {
 					if (r_vc_reset (dst_repo)) {
 						ret = true;
@@ -1075,7 +1075,7 @@ R_API bool r_vc_clone(const char *src, const char *dst) {
 
 //TODO: unify the rvc and git apis
 
-R_API Rvc *r_vc_git_load(const char *path) {
+R_API Rvc *r_vc_git_open(const char *path) {
 	char *git_path = r_file_new (path, ".git", NULL);
 	if (!git_path || !r_file_is_directory (git_path)) {
 		free (git_path);
@@ -1278,12 +1278,12 @@ R_API bool rvc_git_repo_exists(const RCore *core, const char *path) {
 	return false;
 }
 
-R_API Rvc *r_vc_load(const char *rp) {
+R_API Rvc *r_vc_open(const char *rp) {
 	Rvc *repo = R_NEW(Rvc);
 	if (repo) {
-		repo->path = r_str_new(rp);
+		repo->path = r_str_new (rp);
 		if (repo->path) {
-			repo->db = vcdb_open(rp) ;
+			repo->db = vcdb_open (rp) ;
 			if (repo->db) {
 				return repo;
 			}
