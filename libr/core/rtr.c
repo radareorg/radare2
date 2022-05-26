@@ -801,7 +801,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				return;
 			}
 			// eprintf ("Connected to: 'http://%s:%s'\n", host, port);
-			r_core_return_code (core, R_CMD_RC_SUCCESS);
+			r_core_return_value (core, R_CMD_RC_SUCCESS);
 			free (str);
 		}
 		break;
@@ -817,32 +817,32 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		break;
 	case RTR_PROTOCOL_UNIX:
 		if (!r_socket_connect_unix (fd, host)) {
-			r_core_return_code (core, R_CMD_RC_FAILURE);
+			r_core_return_value (core, R_CMD_RC_FAILURE);
 			eprintf ("Error: Cannot connect to 'unix://%s'\n", host);
 			r_socket_free (fd);
 			return;
 		}
-		r_core_return_code (core, R_CMD_RC_SUCCESS);
+		r_core_return_value (core, R_CMD_RC_SUCCESS);
 		eprintf ("Connected to: 'unix://%s'\n", host);
 		break;
 	case RTR_PROTOCOL_TCP:
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
-			r_core_return_code (core, R_CMD_RC_FAILURE);
+			r_core_return_value (core, R_CMD_RC_FAILURE);
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			r_socket_free (fd);
 			return;
 		}
-		r_core_return_code (core, R_CMD_RC_SUCCESS);
+		r_core_return_value (core, R_CMD_RC_SUCCESS);
 		eprintf ("Connected to: %s at port %s\n", host, port);
 		break;
 	case RTR_PROTOCOL_UDP:
 		if (!r_socket_connect_udp (fd, host, port, timeout)) { //TODO: Use rap.ssl
-			r_core_return_code (core, R_CMD_RC_FAILURE);
+			r_core_return_value (core, R_CMD_RC_FAILURE);
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			r_socket_free (fd);
 			return;
 		}
-		r_core_return_code (core, R_CMD_RC_SUCCESS);
+		r_core_return_value (core, R_CMD_RC_SUCCESS);
 		eprintf ("Connected to: %s at port %s\n", host, port);
 		break;
 	}
@@ -862,7 +862,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		rtr_n = i;
 		break;
 	}
-	r_core_return_code (core, ret);
+	r_core_return_value (core, ret);
 	// double free wtf is freed this here? r_socket_free(fd);
 	//r_core_rtr_list (core);
 }
@@ -1026,7 +1026,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 
 	if (!rtr_host[rtr_n].fd) {
 		eprintf ("Error: Unknown host\n");
-		r_core_return_code (core, R_CMD_RC_FAILURE);
+		r_core_return_value (core, R_CMD_RC_FAILURE);
 		return;
 	}
 
@@ -1072,7 +1072,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 			eprintf ("Cannot find '%s'\n", uri);
 			return;
 		}
-		r_core_return_code (core, R_CMD_RC_SUCCESS);
+		r_core_return_value (core, R_CMD_RC_SUCCESS);
 		str[len] = 0;
 		r_cons_print (str);
 		free ((void *)str);
@@ -1081,7 +1081,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	}
 
 	if (rtr_host[rtr_n].proto == RTR_PROTOCOL_RAP) {
-		r_core_return_code (core, R_CMD_RC_SUCCESS);
+		r_core_return_value (core, R_CMD_RC_SUCCESS);
 		cmd = r_str_trim_head_ro (cmd);
 		RSocket *fh = rtr_host[rtr_n].fd;
 		if (!strlen (cmd)) {

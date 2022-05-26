@@ -53,6 +53,16 @@ yara: bins
 clean:
 	rm -rf tmp
 
+rc:
+	echo q | r2 -c '?V' -
+	echo q12 | r2 -c '?V' - ; if [ $$? = 12 ]; then echo "Test q12" OK ; exit 0 ; else exit 1 ; fi
+	echo q2 | r2 - ; if [ $$? = 2 ]; then echo "Test - q2 OK" ; exit 0 ; else exit 1 ; fi
+	echo q2 | r2 -cq - ; if [ $$? = 2 ]; then echo "Test -cq q2 OK" ; exit 0 ; else exit 1 ; fi
+	r2 -qcq2 - ; if [ $$? = 2 ]; then echo "Test q2 OK" ; exit 0 ; else exit 1 ; fi
+	r2 -qcq -
+	r2 -qqcq -
+	echo q2 | r2 -qqcq - # input is ignored
+
 symstall:
 
 install:
@@ -60,7 +70,7 @@ install:
 uninstall:
 
 unit unit_tests: bins
-	$(MAKE) -C unit
+	$(MAKE) rc
 	$(MAKE) -C unit run
 
 .PHONY: all clean unit install uninstall r2r-tests fuzz-tests keystone swf dwarf yara

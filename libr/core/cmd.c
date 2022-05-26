@@ -1041,7 +1041,7 @@ static int cmd_rap_run(void *data, const char *input) {
 	if (res) {
 		int ret = atoi (res);
 		free (res);
-		r_core_return_code (core, ret);
+		r_core_return_value (core, ret);
 		return ret;
 	}
 	return false;
@@ -1055,7 +1055,7 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_yank (core, core->offset, r_num_math (core->num, input + 1));
 		break;
 	case 'l': // "yl"
-		r_core_return_code (core, r_buf_size (core->yank_buf));
+		r_core_return_value (core, r_buf_size (core->yank_buf));
 		break;
 	case 'y': // "yy"
 		while (input[1] == ' ') {
@@ -1961,9 +1961,9 @@ static int cmd_interpret(void *data, const char *input) {
 			} else {
 				if (!r_core_run_script (core, script_file)) {
 					eprintf ("Cannot find script '%s'\n", script_file);
-					r_core_return_code (core, R_CMD_RC_FAILURE);
+					r_core_return_value (core, R_CMD_RC_FAILURE);
 				} else {
-					r_core_return_code (core, R_CMD_RC_SUCCESS);
+					r_core_return_value (core, R_CMD_RC_SUCCESS);
 				}
 			}
 		}
@@ -2382,7 +2382,8 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 		return false;
 	}
 	free (input);
-	r_core_return_code (core, rc);
+	r_core_return_value (core, rc);
+	// r_core_return_code (core, rc);
 	return true;
 }
 
@@ -3749,7 +3750,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 							free (res);
 						}
 					}
-					r_core_return_code (core, value);
+					r_core_return_value (core, value);
 					r_list_free (tmpenvs);
 					return 0;
 				} else { // "|"
@@ -3985,7 +3986,7 @@ next2:
 			}
 			str = r_str_append (str, ptr2 + 1);
 			cmd = r_str_append (strdup (cmd), str);
-			r_core_return_code (core, value);
+			r_core_return_value (core, value);
 			ret = r_core_cmd_subst (core, cmd);
 			free (cmd);
 			if (scr_html != -1) {
@@ -4530,7 +4531,7 @@ fuji:
 		rc = 0;
 	}
 	if (rc == 1) {
-		r_core_return_code (core, rc);
+		r_core_return_value (core, rc);
 	}
 beach:
 	if (grep) {

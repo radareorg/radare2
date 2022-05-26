@@ -45,14 +45,12 @@ static int cmd_quit(void *data, const char *input) {
 	case '!': // "q!"
 		return cmd_Quit (core, input);
 	case '\0': // "q"
-		r_core_return_code (core, R_CMD_RC_QUIT);
+		r_core_return_code (core, 0);
 		return R_CMD_RC_QUIT;
 	default:
-		while (*input == ' ') {
-			input++;
-		}
+		input = r_str_trim_head_ro (input);
 		if (*input) {
-			r_num_math (core->num, input);
+			r_core_return_code (core, r_num_math (core->num, input));
 		} else {
 			core->num->value = 0LL;
 			r_core_return_code (core, 0);
