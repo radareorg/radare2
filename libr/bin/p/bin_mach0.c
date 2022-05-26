@@ -21,7 +21,6 @@ typedef struct {
 extern RBinWrite r_bin_write_mach0;
 
 static RBinInfo *info(RBinFile *bf);
-
 static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io);
 static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);

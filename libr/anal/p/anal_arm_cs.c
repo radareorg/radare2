@@ -12,9 +12,6 @@ typedef char RStringShort[32];
 
 static R_TH_LOCAL HtUU *ht_itblock = NULL;
 static R_TH_LOCAL HtUU *ht_it = NULL;
-static R_TH_LOCAL csh handle = 0;
-static R_TH_LOCAL int omode = -1;
-static R_TH_LOCAL int obits = 32;
 
 /* arm64 */
 #define IMM64(x) (ut64)(insn->detail->arm64.operands[x].imm)
@@ -4427,6 +4424,9 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	static R_TH_LOCAL csh handle = 0;
+	static R_TH_LOCAL int omode = -1;
+	static R_TH_LOCAL int obits = 32;
 	cs_insn *insn = NULL;
 	int mode = (a->config->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
 	int n, ret;
