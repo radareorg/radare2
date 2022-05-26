@@ -5174,7 +5174,7 @@ static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
 
 static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 	char ch = input[1];
-	if (ch == '+' || ch == '-') {
+	if (ch == '+' || ch == '-' || IS_DIGIT (ch)) {
 		ch = ' ';
 		l = r_num_math (core->num, input + 1);
 	}
@@ -6116,7 +6116,9 @@ static int cmd_print(void *data, const char *input) {
 		} else {
 			sp = strchr (input + 1, ' ');
 		}
-		if (!sp && input[1] == '-') {
+		if (IS_DIGIT (input[1])) {
+			sp = input + 1;
+		} else if (!sp && input[1] == '-') {
 			sp = input + 1;
 		}
 		if (sp) {
