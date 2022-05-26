@@ -225,6 +225,7 @@ typedef struct r_io_bank_t {
 	RQueue *todo;	// needed for operating on submap tree
 	RRBNode *last_used;
 	ut32 id;	// for fast selection with RIDStorage
+	bool drain_me;	// speedup r_io_nread_at
 } RIOBank;
 
 typedef struct r_io_cache_t {

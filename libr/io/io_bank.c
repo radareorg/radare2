@@ -231,7 +231,7 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 		entry = r_rbnode_next (entry);
 	}
 	while (entry && r_io_submap_to (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
-		//delete all submaps that are completly included in sm
+		// delete all submaps that are completly included in sm
 		RRBNode *next = r_rbnode_next (entry);
 		// this can be optimized, there is no need to do search here
 		r_crbtree_delete (bank->submaps, entry->data, _find_sm_by_from_vaddr_cb, NULL);
@@ -361,6 +361,7 @@ found:
 		}
 		r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
 		r_list_iter_to_top (bank->maprefs, iter);
+		bank->drain_me = true;
 		return true;
 	}
 
@@ -380,6 +381,7 @@ found:
 		r_io_submap_set_from (bd, r_io_submap_to (sm) + 1);
 	}
 	r_list_iter_to_top (bank->maprefs, iter);
+	bank->drain_me = true;
 	return r_crbtree_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
 }
 
@@ -441,6 +443,7 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 				// case 4 and 2
 				r_io_submap_set_from (bd, r_io_submap_from (sm));
 				r_crbtree_insert (bank->submaps, bd, _find_sm_by_from_vaddr_cb, NULL);
+				bank->drain_me = true;
 				if (r_io_submap_to (sm) <= r_io_map_to (map)) {
 					// case 2
 					r_io_submap_set_to (bd, r_io_submap_to (sm));
@@ -457,6 +460,7 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 				// adjust sm upper boundary to avoid hitting again on sm in further iterations
 				r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
 				r_crbtree_insert (bank->submaps, bd, _find_sm_by_from_vaddr_cb, NULL);
+				bank->drain_me = true;
 				continue;
 			}
 			// case 5 because all other cases are already handled
@@ -464,6 +468,7 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 			r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
 			r_io_submap_set_from (bdsm, r_io_submap_to (bd) + 1);
 			r_crbtree_insert (bank->submaps, bd, _find_sm_by_from_vaddr_cb, NULL);
+			bank->drain_me = true;
 			r_queue_enqueue (bank->todo, bdsm);
 		}
 		free (sm);
@@ -574,6 +579,7 @@ found:
 		// since it only fails, if allocation fails and a delete was performed before, so it should just be fine
 		return true;
 	}
+	bank->drain_me = true;
 
 	RIOSubMap *bd = (RIOSubMap *)entry->data;
 	// check if sm has higher priority than bd by comparing their maprefs
@@ -950,7 +956,7 @@ R_API void r_io_bank_del(RIO *io, const ut32 bankid) {
 R_API void r_io_bank_drain(RIO *io, const ut32 bankid) {
 	r_return_if_fail (io);
 	RIOBank *bank = r_io_bank_get (io, bankid);
-	if (!bank) {
+	if (!bank || !bank->drain_me) {
 		return;
 	}
 	bank->last_used = NULL;
@@ -969,6 +975,7 @@ R_API void r_io_bank_drain(RIO *io, const ut32 bankid) {
 		}
 		node = next;
 	}
+	bank->drain_me = false;
 }
 
 R_IPI bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid) {
