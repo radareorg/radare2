@@ -250,8 +250,10 @@ static int cmd_mount(void *data, const char *_input) {
 		cmd_mount_ls (core, input + 1);
 		break;
 	case 'p': // "mp"
-		if (input[1] == '?') { // "mp?"
+		input = (char *)r_str_trim_head_ro (input + 1);
+		if (input[0] == '?') { // "mp?"
 			r_core_cmd_help_match_spec(core, help_msg_m, "mp", 0, true);
+			break;
 		}
 		ptr = strchr (input, ' ');
 		if (ptr) {
