@@ -23,6 +23,7 @@ static struct {
 	{ "flow", r_offsetof (RConsPrintablePalette, flow), r_offsetof (RConsPalette, flow) },
 	{ "flow2", r_offsetof (RConsPrintablePalette, flow2), r_offsetof (RConsPalette, flow2) },
 	{ "prompt", r_offsetof (RConsPrintablePalette, prompt), r_offsetof (RConsPalette, prompt) },
+	{ "bgprompt", r_offsetof (RConsPrintablePalette, bgprompt), r_offsetof (RConsPalette, bgprompt) },
 	{ "offset", r_offsetof (RConsPrintablePalette, offset), r_offsetof (RConsPalette, offset) },
 	{ "input", r_offsetof (RConsPrintablePalette, input), r_offsetof (RConsPalette, input) },
 	{ "invalid", r_offsetof (RConsPrintablePalette, invalid), r_offsetof (RConsPalette, invalid) },
@@ -205,6 +206,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.pop                = (RColor) RColor_MAGENTA;
 	// ctx->cpal.pop.attr           = R_CONS_ATTR_BOLD;
 	ctx->cpal.prompt             = (RColor) RColor_YELLOW;
+	ctx->cpal.bgprompt           = (RColor) RColor_NULL;
 	ctx->cpal.push               = (RColor) RColor_MAGENTA;
 	ctx->cpal.crypto             = (RColor) RColor_BGBLUE;
 	ctx->cpal.reg                = (RColor) RColor_CYAN;

@@ -319,28 +319,12 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 }
 
 R_API bool r_anal_set_bits(RAnal *anal, int bits) {
-	switch (bits) {
-	case 8:
-	case 16:
-	case 27:
-	case 32:
-	case 64:
-		if (anal->config && anal->config->bits != bits) {
-			anal->config->bits = bits;
-			r_anal_set_reg_profile (anal, NULL);
-		}
-		return true;
+	int obits = anal->config->bits;
+	r_arch_set_bits (anal->config, bits);
+	if (bits != obits) {
+		r_anal_set_reg_profile (anal, NULL);
 	}
-	return false;
-}
-
-R_API void r_anal_set_big_endian(RAnal *anal, int bigend) {
-	r_return_if_fail (anal);
-	anal->config->big_endian = bigend;
-	if (anal->reg) {
-		/// XXX R2_570 reuse RArchConfig from RReg
-		anal->reg->big_endian = bigend;
-	}
+	return true;
 }
 
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
@@ -469,6 +453,11 @@ R_API int r_anal_archinfo(RAnal *anal, int query) {
 		break;
 	}
 	return -1;
+}
+
+R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr) {
+	const int align = r_anal_archinfo (anal, R_ANAL_ARCHINFO_ALIGN);
+	return align <= 1 || !(addr % align);
 }
 
 static bool __nonreturn_print_commands(void *p, const char *k, const char *v) {

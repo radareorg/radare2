@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include "r_crypto.h"
 #include "config.h"
@@ -193,16 +193,16 @@ R_API ut8 *r_crypto_get_output(RCrypto *cry, int *size) {
 		*size = cry->output_len;
 		memcpy (buf, cry->output, *size);
 	} else {
-		/* initialize */
-		const int size = 4096;
-		cry->output = realloc (buf, size);
-		if (!cry->output) {
+		size_t newlen = 4096;
+		ut8 *newbuf = realloc (buf, newlen);
+		if (!newbuf) {
 			free (buf);
 			return NULL;
 		}
+		buf = newbuf;
+		cry->output = newbuf;
 		cry->output_len = 0;
-		cry->output_size = size;
-
+		cry->output_size = newlen;
 		return NULL;
 	}
 	return buf;

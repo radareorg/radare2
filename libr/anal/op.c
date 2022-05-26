@@ -88,9 +88,7 @@ static int defaultCycles(RAnalOp *op) {
 }
 
 R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
-eprintf ("CALLING OPS %d\n", outlen);
 	if (anal && outbuf && outlen > 0 && anal->cur && anal->cur->opasm) {
-eprintf ("---CALLING OPS %d\n", outlen);
 		// use core binding to set asm.bits correctly based on the addr
 		// this is because of the hassle of arm/thumb
 		int ret = anal->cur->opasm (anal, addr, s, outbuf, outlen);
@@ -363,6 +361,8 @@ repeat:
 	case R_ANAL_OP_TYPE_IRCALL: return "ircall";
 	case R_ANAL_OP_TYPE_UCCALL: return "uccall";
 	case R_ANAL_OP_TYPE_UCJMP : return "ucjmp";
+	case R_ANAL_OP_TYPE_MCJMP : return "mcjmp";
+	case R_ANAL_OP_TYPE_RCJMP : return "rcjmp";
 	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
 	case R_ANAL_OP_TYPE_RJMP  : return "rjmp";
 	case R_ANAL_OP_TYPE_IJMP  : return "ijmp";
@@ -374,6 +374,8 @@ repeat:
 	case R_ANAL_OP_TYPE_CASE  : return "case";
 	case R_ANAL_OP_TYPE_CPL   : return "cpl";
 	case R_ANAL_OP_TYPE_CRYPTO: return "crypto";
+	case R_ANAL_OP_TYPE_LENGTH: return "lenght";
+	case R_ANAL_OP_TYPE_ABS   : return "abs";
 	}
 	if (once) {
 		once = false;
@@ -610,24 +612,24 @@ R_API const char *r_anal_op_family_to_string(int n) {
 	return NULL;
 }
 
-R_API int r_anal_op_family_from_string(const char *f) {
-	struct op_family {
-		const char *name;
-		int id;
-	};
-	static const struct op_family of[] = {
-		{"cpu", R_ANAL_OP_FAMILY_CPU},
-		{"fpu", R_ANAL_OP_FAMILY_FPU},
-		{"mmx", R_ANAL_OP_FAMILY_MMX},
-		{"sse", R_ANAL_OP_FAMILY_SSE},
-		{"priv", R_ANAL_OP_FAMILY_PRIV},
-		{"virt", R_ANAL_OP_FAMILY_VIRT},
-		{"crpt", R_ANAL_OP_FAMILY_CRYPTO},
-		{"io", R_ANAL_OP_FAMILY_IO},
-		{"sec", R_ANAL_OP_FAMILY_SECURITY},
-		{"thread", R_ANAL_OP_FAMILY_THREAD},
-	};
+struct op_family {
+	const char *name;
+	int id;
+};
+static const struct op_family of[] = {
+	{"cpu", R_ANAL_OP_FAMILY_CPU},
+	{"fpu", R_ANAL_OP_FAMILY_FPU},
+	{"mmx", R_ANAL_OP_FAMILY_MMX},
+	{"sse", R_ANAL_OP_FAMILY_SSE},
+	{"priv", R_ANAL_OP_FAMILY_PRIV},
+	{"virt", R_ANAL_OP_FAMILY_VIRT},
+	{"crpt", R_ANAL_OP_FAMILY_CRYPTO},
+	{"io", R_ANAL_OP_FAMILY_IO},
+	{"sec", R_ANAL_OP_FAMILY_SECURITY},
+	{"thread", R_ANAL_OP_FAMILY_THREAD},
+};
 
+R_API int r_anal_op_family_from_string(const char *f) {
 	int i;
 	for (i = 0; i < sizeof (of) / sizeof (of[0]); i ++) {
 		if (!strcmp (f, of[i].name)) {
@@ -690,4 +692,15 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
 		}
 	}
 	return 0;
+}
+
+R_API const char *r_anal_op_direction_tostring(RAnalOp *op) {
+	if (!op) {
+		return "none";
+	}
+	int d = op->direction;
+	return d == 1 ? "read"
+		: d == 2 ? "write"
+		: d == 4 ? "exec"
+		: d == 8 ? "ref": "none";
 }

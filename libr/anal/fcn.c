@@ -52,7 +52,7 @@ static ut64 cache_addr = UT64_MAX;
 
 // TODO: move into io :?
 static int read_ahead(RAnal *anal, ut64 addr, ut8 *buf, int len) {
-	static ut8 cache[1024];
+	static R_TH_LOCAL ut8 cache[1024];
 	const int cache_len = sizeof (cache);
 
 	if (len < 1) {
@@ -87,11 +87,6 @@ R_API void r_anal_function_invalidate_read_ahead_cache(void) {
 #if READ_AHEAD
 	cache_addr = UT64_MAX;
 #endif
-}
-
-static int cmpaddr(const void *_a, const void *_b) {
-	const RAnalBlock *a = _a, *b = _b;
-	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
@@ -375,9 +370,9 @@ static void free_leaddr_pair(void *pair) {
 static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 	RList *intersecting = r_anal_get_blocks_in (anal, addr);
 	RListIter *iter;
-	RAnalBlock *bb;
+	RAnalBlock *bb, *ret = NULL;
 
-	RAnalBlock *ret = NULL;
+	jumpmid &= r_anal_is_aligned (anal, addr);
 	r_list_foreach (intersecting, iter, bb) {
 		ut64 eaddr = bb->addr + bb->size;
 		if (((bb->addr >= eaddr && addr == bb->addr)
@@ -563,7 +558,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	int oplen, idx = 0;
 	size_t lea_cnt = 0;
 	size_t nop_prefix_cnt = 0;
-	static ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
+	static R_TH_LOCAL ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
 	struct {
 		int cnt;
 		int idx;
@@ -608,7 +603,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
 
-	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid && is_x86);
+	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid);
 	if (existing_bb) {
 		bool existing_in_fcn = r_list_contains (existing_bb->fcns, fcn);
 		existing_bb = r_anal_block_split (existing_bb, addr);
@@ -641,7 +636,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			gotoBeach (R_ANAL_RET_ERROR);
 		}
 	}
-	static ut64 lea_jmptbl_ip = UT64_MAX;
+	static R_TH_LOCAL ut64 lea_jmptbl_ip = UT64_MAX;
 	ut64 last_reg_mov_lea_val = UT64_MAX;
 	bool last_is_reg_mov_lea = false;
 	bool last_is_push = false;
@@ -756,10 +751,10 @@ repeat:
 			r_anal_hint_set_bits (anal, op->jump, op->hint.new_bits);
 		}
 		if (idx > 0 && !overlapped) {
-			bbg = bbget (anal, at, anal->opt.jmpmid && is_x86);
+			bbg = bbget (anal, at, anal->opt.jmpmid);
 			if (bbg && bbg != bb) {
 				bb->jump = at;
-				if (anal->opt.jmpmid && is_x86) {
+				if (anal->opt.jmpmid && r_anal_is_aligned (anal, at)) {
 					// This happens when we purposefully walked over another block and overlapped it
 					// and now we hit an offset where the instructions match again.
 					// So we need to split the overwalked block.
@@ -1606,31 +1601,6 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 			eprintf ("Failed to analyze basic block at 0x%"PFMT64x"\n", addr);
 		}
 	}
-	if (anal->opt.endsize && ret == R_ANAL_RET_END && r_anal_function_realsize (fcn)) {   // cfg analysis completed
-		RListIter *iter;
-		RAnalBlock *bb;
-		ut64 endaddr = fcn->addr;
-		const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
-
-		// set function size as length of continuous sequence of bbs
-		r_list_sort (fcn->bbs, &cmpaddr);
-		r_list_foreach (fcn->bbs, iter, bb) {
-			if (endaddr == bb->addr) {
-				endaddr += bb->size;
-			} else if ((endaddr < bb->addr && bb->addr - endaddr < BB_ALIGN)
-					|| (anal->opt.jmpmid && is_x86 && endaddr > bb->addr
-						&& bb->addr + bb->size > endaddr)) {
-				endaddr = bb->addr + bb->size;
-			} else {
-				break;
-			}
-		}
-#if JAYRO_04
-		// fcn is not yet in anal => pass NULL
-		r_anal_function_resize (fcn, endaddr - fcn->addr);
-#endif
-		r_anal_trim_jmprefs (anal, fcn);
-	}
 	return ret;
 }
 
@@ -2007,17 +1977,17 @@ R_API int r_anal_function_count(RAnal *anal, ut64 from, ut64 to) {
 
 /* return the basic block in fcn found at the given address.
  * NULL is returned if such basic block doesn't exist. */
-R_API RAnalBlock *r_anal_function_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut64 addr) {
+R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	r_return_val_if_fail (anal && fcn, NULL);
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	const bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 	RListIter *iter;
 	RAnalBlock *bb;
+	bool jmpmid = r_anal_is_aligned (anal, addr);
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (addr >= bb->addr && addr < (bb->addr + bb->size)
-			&& (!anal->opt.jmpmid || !is_x86 || r_anal_block_op_starts_at (bb, addr))) {
+			&& (!anal->opt.jmpmid || !jmpmid || r_anal_block_op_starts_at (bb, addr))) {
 			return bb;
 		}
 	}

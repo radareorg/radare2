@@ -1,13 +1,8 @@
 /* radare - MIT - Copyright 2021-2022 - pancake, brainstorm */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include <r_util.h>
-#include <r_endian.h>
-
 #include "../arch/v850np/v850dis.h"
 
 #define DEFAULT_CPU_MODEL V850_CPU_E2
@@ -61,6 +56,13 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		}
 	}
 	switch (op->type) {
+	case R_ANAL_OP_TYPE_MOV:
+		op->val = inst.value;
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+	case R_ANAL_OP_TYPE_LOAD:
+		op->ptr = inst.value;
+		break;
 	case R_ANAL_OP_TYPE_JMP:
 		op->jump = addr + inst.value;
 		break;
@@ -102,14 +104,13 @@ static char *get_reg_profile(RAnal *anal) {
 		"=OF	ov\n"
 		"=CF	cy\n"
 
-		"gpr	zero	.32	?   0\n"
-		"gpr	r0	.32	0   0\n"
+		"gpr	r0	.32	?   0\n"
 		"gpr	r1	.32	4   0\n"
 		"gpr	r2	.32	8   0\n"
-		"gpr	r3	.32	12  0\n"
 		"gpr	sp	.32	12  0\n"
-		"gpr	r4	.32	16  0\n"
+		"gpr	r3	.32	12  0\n"
 		"gpr	gp	.32	16  0\n"
+		"gpr	r4	.32	16  0\n"
 		"gpr	r5	.32	20  0\n"
 		"gpr	tp	.32	20  0\n"
 		"gpr	r6	.32	24  0\n"
@@ -151,7 +152,39 @@ static char *get_reg_profile(RAnal *anal) {
 		"flg	cy  .1 132.28 0 carry\n" // carry or borrow
 		"flg	ov  .1 132.29 0 overflow\n" // overflow
 		"flg	s   .1 132.30 0 sign\n" // signed result
-		"flg	z   .1 132.31 0 zero\n"; // zero result
+		"flg	z   .1 132.31 0 zero\n" // zero result
+
+		"gpr	eipc	.32	$	0\n"
+		"gpr	eipsw	.32	$	0\n"
+		"gpr	fepc	.32	$	0\n"
+		"gpr	fepsw	.32	$	0\n"
+		"gpr	ecr	.32	$	0\n"
+		"gpr	sr6	.32	$	0\n"
+		"gpr	sr7	.32	$	0\n"
+		"gpr	sr8	.32	$	0\n"
+		"gpr	sr9	.32	$	0\n"
+		"gpr	sr10	.32	$	0\n"
+		"gpr	sr11	.32	$	0\n"
+		"gpr	sr12	.32	$	0\n"
+		"gpr	eiic	.32	$	0\n"
+		"gpr	feic	.32	$	0\n"
+		"gpr	dbic	.32	$	0\n"
+		"gpr	ctpc	.32	$	0\n"
+		"gpr	ctpcw	.32	$	0\n"
+		"gpr	dbpc	.32	$	0\n"
+		"gpr	dbpsw	.32	$	0\n"
+		"gpr	ctbp	.32	$	0\n"
+		"gpr	dir	.32	$	0\n"
+		"gpr	bpc	.32	$	0\n"
+		"gpr	asid	.32	$	0\n"
+		"gpr	bpav	.32	$	0\n"
+		"gpr	bpam	.32	$	0\n"
+		"gpr	bpdv	.32	$	0\n"
+		"gpr	bpdm	.32	$	0\n"
+		"gpr	eiwr	.32	$	0\n"
+		"gpr	fewr	.32	$	0\n"
+		"gpr	dbwr	.32	$	0\n"
+		"gpr	bsel	.32	$	0\n";
 	return strdup (p);
 }
 

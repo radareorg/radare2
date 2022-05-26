@@ -1,20 +1,22 @@
 <img src="doc/images/r2emoji.png" alt="screenshot" align="left" width="128px">
 
-## Radare2: Unix-Like Reverse Engineering Framework
+## Radare2: The Libre Unix-Like Reverse Engineering Framework
 
 [![Latest packaged version](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions) [![Tests Status](https://github.com/radareorg/radare2/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/ci.yml?query=branch%3Amaster) [![build](https://github.com/radareorg/radare2/actions/workflows/build.yml/badge.svg)](https://github.com/radareorg/radare2/actions/workflows/build.yml) [![tcc](https://github.com/radareorg/radare2/actions/workflows/tcc.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/tcc.yml)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) [![TODO](https://img.shields.io/github/search/radareorg/radare2/TODO.svg)](https://github.com/radareorg/radare2/search?q=TODO) [![XXX](https://img.shields.io/github/search/radareorg/radare2/XXX.svg)](https://github.com/radareorg/radare2/search?q=XXX) [![Discord](https://badgen.net/discord/members/MgEdxrMnqx)](https://discord.gg/MgEdxrMnqx)
 
-
 See the [Releases](https://github.com/radareorg/radare2/releases) page for
-downloads. The current git `master` branch is `5.6.9`, next release will be `5.7.0`.
+downloads. The current git `master` branch is `5.6.9`, next will be `5.7.0`.
 
 We ensure ABI stability for all the patch releases, you can mix/swap libraries
 and plugins without the need to recompile them if major and minor numbers are
 the same (X.Y.?).
 
+### Description
+
 r2 is a complete rewrite of radare. It provides a set of libraries, tools and
-plugins to ease reverse engineering tasks.
+plugins to ease reverse engineering tasks. Distributed mostly under LGPLv3,
+each plugin can have different licenses (see r2 -L, rasm2 -L, ...).
 
 The radare project started as a simple command-line hexadecimal editor focused
 on forensics. Today, r2 is a featureful low-level command-line tool with
@@ -29,12 +31,27 @@ disassemble any binary.
 
 ## Installation
 
-r2 can be installed via `git` or `pip`.
+* r2 can be installed from `git` or via `pip` using `r2env`.
+* Default installation uses symlinks and acr + make on UNIX systems
+* Windows builds can be done with msvc (meson+vs|ninja) or sys/mingw32.sh
+* To uninstall the current build of r2 run `make uninstall`
+* To uninstall ALL the system installations of r2 do: `sudo make purge`
 
 ```sh
 git clone https://github.com/radareorg/radare2
 radare2/sys/install.sh
 ```
+
+Default Windows builds use MSVC, so run those `.bat`:
+
+```sh
+preconfigure.bat       REM setup python, meson, ninja
+configure.bat          REM run meson b + vs project
+make.bat               REM run ninja -C b
+prefix\bin\radare2.exe
+```
+
+Alternatively you can use r2env to switch between different versions.
 
 ```sh
 pip install -U r2env

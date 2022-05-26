@@ -516,10 +516,22 @@ kern_return_t mach_vm_region_recurse (
 	vm_region_recurse_info_t info,
 	mach_msg_type_number_t *infoCnt
 );
-// TODO: unify that implementation in a single reusable place
-void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max) {
-	kern_return_t kret;
 
+static const char *share_mode[] = {
+	"null",
+	"cow",
+	"private",
+	"empty",
+	"shared",
+	"true shared",
+	"prv aliased",
+	"shm aliased",
+	"large",
+};
+
+// TODO: unify that implementation in a single reusable place
+void macosx_debug_regions(RIO *io, task_t task, mach_vm_address_t address, int max) {
+	kern_return_t kret;
 	struct vm_region_submap_info_64 info;
 	mach_vm_size_t size;
 
@@ -527,17 +539,6 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 	mach_msg_type_number_t count;
 
 	int num_printed = 0;
-	static const char *share_mode[] = {
-		"null",
-		"cow",
-		"private",
-		"empty",
-		"shared",
-		"true shared",
-		"prv aliased",
-		"shm aliased",
-		"large",
-	};
 
 	for (;;) {
 		count = VM_REGION_SUBMAP_INFO_COUNT_64;

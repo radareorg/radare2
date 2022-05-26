@@ -76,28 +76,6 @@ static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool up
 	return it;
 }
 
-/*
-static void _check1(RBNode *x, int depth, int black, bool leftmost) {
-	static int black_;
-	if (x) {
-		black += !x->red;
-		if (x->red && ((x->child[0] && x->child[0]->red) || (x->child[1] && x->child[1]->red))) {
-			printf ("error: red violation\n");
-		}
-		_check1 (x->child[0], depth + 1, black, leftmost);
-		_check1 (x->child[1], depth + 1, black, false);
-	} else if (leftmost) {
-		black_ = black;
-	} else if (black_ != black) {
-		printf ("error: different black height\n");
-	}
-}
-
-static void _check(RBNode *x) {
-	_check1 (x, 0, 0, true);
-}
-*/
-
 // Returns true if a node with an equal key is deleted
 R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user, RBNodeSum sum) {
 	RBNode head, *del = NULL, **del_link = NULL, *g = NULL, *p = NULL, *q = &head, *path[R_RBTREE_MAX_HEIGHT];

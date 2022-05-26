@@ -130,7 +130,6 @@ static const char *help_msg_dc[] = {
 	"dc", "", "continue execution of all children",
 	"dc", " <pid>", "continue execution of pid",
 	"dc", "[-pid]", "stop execution of pid",
-	"dca", " [sym] [sym].", "continue at every hit on any given symbol",
 	"dcb", "", "continue back until breakpoint",
 	"dcc", "", "continue until call (use step into)",
 	"dccu", "", "continue until unknown call (call reg)",
@@ -2041,7 +2040,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	}
 }
 
-static void show_drpi(RCore *core) {
+static void cmd_drpi(RCore *core) {
 	int i;
 	RListIter *iter;
 	RRegItem *ri;
@@ -2093,10 +2092,10 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 			char *r2profile = r_reg_parse_gdb_profile (ptr);
 			if (r2profile) {
 				r_cons_println (r2profile);
-				r_core_return_code (core, R_CMD_RC_SUCCESS);
+				r_core_return_value (core, R_CMD_RC_SUCCESS);
 				free (r2profile);
 			} else {
-				r_core_return_code (core, R_CMD_RC_FAILURE);
+				r_core_return_value (core, R_CMD_RC_FAILURE);
 				eprintf ("Warning: Cannot parse gdb profile.\n");
 			}
 		} else {
@@ -2116,7 +2115,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 		}
 		break;
 	case 'i': // "drpi" "arpi"
-		show_drpi (core);
+		cmd_drpi (core);
 		break;
 	case 's': // "drps" "arps"
 		if (str[2] == ' ') {
@@ -2563,7 +2562,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					RRegFlags* rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
 					if (rf) {
 						int o = r_reg_cond_bits (core->dbg->reg, id, rf);
-						r_core_return_code (core, o);
+						r_core_return_value (core, o);
 						// orly?
 						r_cons_printf ("%d\n", o);
 						free (rf);
@@ -4447,11 +4446,10 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		}
 		r_debug_continue (core->dbg);
 		break;
-	case 'a': // "dca"
-		eprintf ("TODO: dca\n");
-		break;
 	case 'b': // "dcb"
-		{
+		if (input[2] == '?') {
+			eprintf ("Usage: dcb : continue back until breakpoint\n");
+		} else {
 			if (!core->dbg->session) {
 				eprintf ("Error: Session has not started\n");
 				break;
@@ -4463,45 +4461,64 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		}
 #if __WINDOWS__
 	case 'e': // "dce"
-		r_reg_arena_swap (core->dbg->reg, true);
-		r_debug_continue_pass_exception (core->dbg);
+		if (input[2] == '?') {
+			eprintf ("Usage: dce: pass windows exceptions\n");
+		} else {
+			r_reg_arena_swap (core->dbg->reg, true);
+			r_debug_continue_pass_exception (core->dbg);
+		}
 		break;
 #endif
 	case 'f': // "dcf"
-		eprintf ("[+] Running 'dcs vfork fork clone' behind the scenes...\n");
-		// we should stop in fork and vfork syscalls
-		//TODO: multiple syscalls not handled yet
-		// r_core_cmd0 (core, "dcs vfork fork");
-		r_core_cmd0 (core, "dcs vfork fork clone");
-		break;
-	case 'c': // "dcc"
-		r_reg_arena_swap (core->dbg->reg, true);
-		if (input[2] == 'u') {
-			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
+		if (input[2] == '?') {
+			eprintf ("Usage: dcf: same as dcs vfork fork clone\n");
 		} else {
-			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
+			// we should stop in fork and vfork syscalls
+			//TODO: multiple syscalls not handled yet
+			// r_core_cmd0 (core, "dcs vfork fork");
+			r_core_cmd0 (core, "dcs vfork fork clone");
 		}
 		break;
-	case 'r':
-		r_reg_arena_swap (core->dbg->reg, true);
-		r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
+	case 'c': // "dcc"
+		if (input[2] == '?') {
+			eprintf ("Usage: dcc: step into until CALL instruction is found\n");
+		} else {
+			r_reg_arena_swap (core->dbg->reg, true);
+			if (input[2] == 'u') {
+				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
+			} else {
+				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
+			}
+		}
+		break;
+	case 'r': // "dcr"
+		if (input[2] == '?') {
+			eprintf ("Usage: dcr: step over until ret instruction is found\n");
+		} else {	
+			r_reg_arena_swap (core->dbg->reg, true);
+			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
+		}
 		break;
 	case 'k':
-		// select pid and r_debug_continue_kill (core->dbg,
-		r_reg_arena_swap (core->dbg->reg, true);
-		signum = r_num_math (core->num, input + 2);
-		ptr = strchr (input + 3, ' ');
-		if (ptr) {
-			int old_pid = core->dbg->pid;
-			int old_tid = core->dbg->tid;
-			int pid = atoi (ptr+1);
-			int tid = pid; // XXX
-			*ptr = 0;
-			r_debug_select (core->dbg, pid, tid);
-			r_debug_continue_kill (core->dbg, signum);
-			r_debug_select (core->dbg, old_pid, old_tid);
+		if (input[2] == '?') {
+			eprintf ("Usage: dck: continue sending signal to process\n");
 		} else {
-			r_debug_continue_kill (core->dbg, signum);
+			// select pid and r_debug_continue_kill (core->dbg,
+			r_reg_arena_swap (core->dbg->reg, true);
+			signum = r_num_math (core->num, input + 2);
+			ptr = strchr (input + 3, ' ');
+			if (ptr) {
+				int old_pid = core->dbg->pid;
+				int old_tid = core->dbg->tid;
+				int pid = atoi (ptr+1);
+				int tid = pid; // XXX
+				*ptr = 0;
+				r_debug_select (core->dbg, pid, tid);
+				r_debug_continue_kill (core->dbg, signum);
+				r_debug_select (core->dbg, old_pid, old_tid);
+			} else {
+				r_debug_continue_kill (core->dbg, signum);
+			}
 		}
 		break;
 	case 's': // "dcs"
@@ -4522,7 +4539,10 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		}
 		break;
 	case 'p': // "dcp"
-		{ // XXX: this is very slow
+		if (input[2] == '?') {
+			eprintf ("Usage: dcp: continue until program code (mapped io section)\n");
+		} else {
+			// XXX: this is very slow
 			RIOMap *s;
 			ut64 pc;
 			int n = 0;
@@ -4544,6 +4564,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 			r_cons_break_pop ();
 			return 1;
 		}
+		break;
 	case 'u': // "dcu"
 		if (input[2] == '?') {
 			r_core_cmd_help (core, help_msg_dcu);
@@ -4562,7 +4583,11 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		r_debug_select (core->dbg, old_pid, core->dbg->tid);
 		break;
 	case 't':
-		cmd_debug_backtrace (core, input + 2);
+		if (input[2] == '?') {
+			eprintf ("Usage: dbt: show backtrace (see dbt.bt* variables)\n");
+		} else {
+			cmd_debug_backtrace (core, input + 2);
+		}
 		break;
 	case '?': // "dc?"
 	default:
@@ -5599,7 +5624,7 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case ':': // "d:"
-		r_core_return_code (core,
+		r_core_return_value (core,
 				r_debug_cmd (core->dbg, input + 1)
 				? R_CMD_RC_FAILURE
 				: R_CMD_RC_SUCCESS);

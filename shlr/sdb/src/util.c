@@ -21,7 +21,7 @@ struct timezone {
 SDB_API int gettimeofday(struct timeval* p, struct timezone * tz) {
 	//ULARGE_INTEGER ul; // As specified on MSDN.
 	ut64 ul = 0;
-	static int tzflag = 0;
+	static bool tzflag = false;
 	FILETIME ft;
 	if (p) {
 		// Returns a 64-bit value representing the number of
@@ -49,7 +49,7 @@ SDB_API int gettimeofday(struct timeval* p, struct timezone * tz) {
 	if (tz) {
 		if (!tzflag) {
 			_tzset ();
-			tzflag++;
+			tzflag = true;
 		}
 		tz->tz_minuteswest = _timezone / 60;
 		tz->tz_dsttime = _daylight;

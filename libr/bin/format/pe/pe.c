@@ -1234,7 +1234,7 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 		goto fail;
 	}
 
-	eprintf ("Metadata Signature: 0x%"PFMT64x" 0x%"PFMT64x" %d\n",
+	R_LOG_DEBUG ("Metadata Signature: 0x%"PFMT64x" 0x%"PFMT64x" %d\n",
 		(ut64)metadata_directory, (ut64)metadata->Signature, (int)metadata->VersionStringLength);
 
 	// read the version string
@@ -1247,12 +1247,12 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 
 		rr = r_buf_read_at (pe->b, metadata_directory + 16, (ut8*)(metadata->VersionString), len);
 		if (rr != len) {
-			eprintf ("Warning: read (metadata header) - cannot parse version string\n");
+			R_LOG_DEBUG ("read (metadata header) - cannot parse version string");
 			free (metadata->VersionString);
 			free (metadata);
 			return 0;
 		}
-		eprintf (".NET Version: %s\n", metadata->VersionString);
+		R_LOG_DEBUG (".NET Version: %s\n", metadata->VersionString);
 	}
 
 	// read the header after the string
@@ -1261,10 +1261,8 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 	if (rr < 1) {
 		goto fail;
 	}
-
-	eprintf ("Number of Metadata Streams: %d\n", metadata->NumberOfStreams);
+	R_LOG_DEBUG ("Number of Metadata Streams: %d\n", metadata->NumberOfStreams);
 	pe->metadata_header = metadata;
-
 
 	// read metadata streams
 	int stream_addr = metadata_directory + 20 + metadata->VersionStringLength;
@@ -1281,7 +1279,7 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 			goto fail;
 		}
 		if (r_buf_size (pe->b) < (stream_addr + 8 + MAX_METADATA_STRING_LENGTH)) {
-			eprintf ("Truncated\n");
+			R_LOG_DEBUG ("metadata strnig truncated");
 			free (stream);
 			free (streams);
 			goto fail;
@@ -1291,7 +1289,7 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 			free (streams);
 			goto fail;
 		}
-		eprintf ("DirectoryAddress: %x Size: %x\n", stream->Offset, stream->Size);
+		R_LOG_DEBUG ("DirectoryAddress: %x Size: %x", stream->Offset, stream->Size);
 		char* stream_name = calloc (1, MAX_METADATA_STRING_LENGTH + 1);
 
 		if (!stream_name) {
@@ -1307,7 +1305,7 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 			free (streams);
 			goto fail;
 		}
-		eprintf ("Stream name: %s %d\n", stream_name, c);
+		R_LOG_DEBUG ("Stream name: %s %d\n", stream_name, c);
 		stream->Name = stream_name;
 		streams[count] = stream;
 		stream_addr += 8 + c;
@@ -1315,7 +1313,7 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 	pe->streams = streams;
 	return true;
 fail:
-	eprintf ("Warning: read (metadata header)\n");
+	R_LOG_DEBUG ("Warning: read (metadata header)");
 	free (metadata);
 	return false;
 }
@@ -3349,7 +3347,7 @@ char* PE_(r_bin_pe_get_arch)(RBinPEObj* pe) {
 
 struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* pe) {
 	struct r_bin_pe_addr_t* entry = NULL;
-	static bool debug = false;
+	static R_TH_LOCAL bool debug = false;
 	int i;
 	ut64 base_addr = PE_(r_bin_pe_get_image_base) (pe);
 	if (!pe || !pe->optional_header) {

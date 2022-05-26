@@ -5,17 +5,18 @@
 #include <r_util.h>
 #include "pager_private.h"
 
+static const char *r_cons_more_help = \
+	" space    - page up\n"
+	" j        - line down\n"
+	" /        - search in buffer\n"
+	" _        - enter the hud mode\n"
+	" n        - next search result\n"
+	" q        - quit\n"
+	" ?        - show this help\n"
+	"\n";
+
 R_API int r_cons_more_str(const char *str, const char *exitkeys) {
-	static bool inHelp = false;
-	static const char *r_cons_more_help = \
-		" space    - page up\n"
-		" j        - line down\n"
-		" /        - search in buffer\n"
-		" _        - enter the hud mode\n"
-		" n        - next search result\n"
-		" q        - quit\n"
-		" ?        - show this help\n"
-		"\n";
+	bool inHelp = false;
 	int lines_count = 0;
 	RRegex *rx = NULL;
 	int w, h, ch, to, ui = 1, from = 0, i;

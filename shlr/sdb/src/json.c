@@ -150,12 +150,12 @@ SDB_API bool sdb_json_set(Sdb *s, const char *k, const char *p, const char *v, u
 		if (buf) {
 			int curlen, is_str = isstring (v);
 			const char *quote = is_str ? "\"" : "";
-			const char *end = ""; // XX: or comma
+			const char *comma = ""; // XX: or comma
 			if (js[0] && js[1] != '}') {
-				end = ",";
+				comma = ",";
 			}
 			curlen = sprintf (buf, "{\"%s\":%s%s%s%s",
-				p, quote, v, quote, end);
+				p, quote, v, quote, comma);
 			strcpy (buf + curlen, js + 1);
 			// transfer ownership
 			sdb_set_owned (s, k, buf, cas);

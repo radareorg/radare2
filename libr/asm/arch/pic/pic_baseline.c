@@ -189,14 +189,13 @@ const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode) {
 	return &pic_baseline_op_info[opcode];
 }
 
-int pic_baseline_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l) {
+char *pic_baseline_disassemble(const ut8 *b, int l, int *opsz) {
 #define EMIT_INVALID { \
-	op->size = 1; \
-	strcpy (opbuf, "invalid"); \
-	return 1; \
+	*opsz = 1; \
+	return NULL; \
 }
 	if (!b || l < 2) {
-		EMIT_INVALID
+		return NULL;
 	}
 
 	ut16 instr = r_read_le16 (b);
@@ -212,7 +211,7 @@ int pic_baseline_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 
 #undef EMIT_INVALID
 
-	op->size = 2;
+	*opsz = 2;
 
 	const char *buf_asm = "invalid";
 	r_strf_buffer (64);
@@ -247,7 +246,5 @@ int pic_baseline_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 		buf_asm = r_strf ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_9K_MASK_K);
 		break;
 	}
-	strcpy (opbuf, buf_asm);
-
-	return op->size;
+	return strdup (buf_asm);
 }

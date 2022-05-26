@@ -311,10 +311,8 @@ R_API RPrint* r_print_new(void) {
 	p->cb_printf = libc_printf;
 	p->cb_eprintf = libc_eprintf;
 	p->oprintf = nullprinter;
-	p->bits = 32;
 	p->stride = 0;
 	p->bytespace = 0;
-	p->big_endian = false;
 	p->datezone = 0;
 	p->col = 0;
 	p->width = 78;
@@ -328,7 +326,7 @@ R_API RPrint* r_print_new(void) {
 		R_PRINT_FLAGS_OFFSET |
 		R_PRINT_FLAGS_HEADER |
 		R_PRINT_FLAGS_ADDRMOD;
-	p->seggrn = 4;
+	// p->seggrn = 4;
 	p->zoom = R_NEW0 (RPrintZoom);
 	p->reg = NULL;
 	p->get_register = NULL;
@@ -452,7 +450,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	if (use_segoff) {
 		ut32 s, a;
 		a = addr & 0xffff;
-		s = (addr - a) >> (p? p->seggrn: 0);
+		s = (addr - a) >> ((p && p->config)? p->config->seggrn: 4);
 		if (dec) {
 			snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
 			white = r_str_pad (' ', 9 - strlen (space));
@@ -953,7 +951,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 				}
 				if (use_segoff) {
-					int seggrn = p? p->seggrn: 4;
+					int seggrn = (p && p->config)? p->config->seggrn: 4;
 					ut32 s, a;
 					a = addr & 0xffff;
 					s = ((addr - a) >> seggrn) & 0xffff;
@@ -1046,6 +1044,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool printValue = true;
 	bool oPrintValue = true;
 	bool isPxr = (p && p->flags & R_PRINT_FLAGS_REFS);
+	bool be = p->config? p->config->big_endian: R_SYS_ENDIAN;
 
 	for (i = j = 0; i < len; i += (stride? stride: inc)) {
 		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
@@ -1139,7 +1138,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						j += sz_n;
 						continue;
 					}
-					r_mem_swaporcopy ((ut8 *) &n, buf + j, sz_n, p && p->big_endian);
+					r_mem_swaporcopy ((ut8 *) &n, buf + j, sz_n, be);
 					r_print_cursor (p, j, sz_n, 1);
 					// stub for colors
 					if (p && p->colorfor) {
@@ -1190,7 +1189,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					oPrintValue = printValue;
 					j += step - 1;
 				} else if (base == -8) {
-					long long w = r_read_ble64 (buf + j, p && p->big_endian);
+					long long w = r_read_ble64 (buf + j, be);
 					r_print_cursor (p, j, 8, 1);
 					printfmt ("%23" PFMT64d " ", (st64)w);
 					r_print_cursor (p, j, 8, 0);
@@ -1202,7 +1201,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					r_print_cursor (p, j, 1, 0);
 				} else if (base == -10) {
 					if (j + 1 < len) {
-						st16 w = r_read_ble16 (buf + j, p && p->big_endian);
+						st16 w = r_read_ble16 (buf + j, be);
 						r_print_cursor (p, j, 2, 1);
 						printfmt ("%7d ", w);
 						r_print_cursor (p, j, 2, 0);
@@ -1210,7 +1209,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					j += 1;
 				} else if (base == 10) { // "pxd"
 					if (j + 3 < len) {
-						int w = r_read_ble32 (buf + j, p && p->big_endian);
+						int w = r_read_ble32 (buf + j, be);
 						r_print_cursor (p, j, 4, 1);
 						printfmt ("%13d ", w);
 						r_print_cursor (p, j, 4, 0);
@@ -2401,6 +2400,7 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	}
 	int i, words = (len / bytesize);
 	p->cb_printf ("[");
+	bool be = p->config? p->config->big_endian: R_SYS_ENDIAN;
 	for (i = 0; i < words; i++) {
 		switch (wordsize) {
 		case 8: {
@@ -2408,17 +2408,17 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 			break;
 		}
 		case 16: {
-			ut16 w16 = r_read_ble16 (&buf16[i], p->big_endian);
+			ut16 w16 = r_read_ble16 (&buf16[i], be);
 			p->cb_printf ("%s%hd", i ? "," : "", w16);
 			break;
 		}
 		case 32: {
-			ut32 w32 = r_read_ble32 (&buf32[i], p->big_endian);
+			ut32 w32 = r_read_ble32 (&buf32[i], be);
 			p->cb_printf ("%s%d", i ? "," : "", w32);
 			break;
 		}
 		case 64: {
-			ut64 w64 = r_read_ble64 (&buf64[i], p->big_endian);
+			ut64 w64 = r_read_ble64 (&buf64[i], be);
 			p->cb_printf ("%s%"PFMT64d, i ? "," : "", w64);
 			break;
 		}

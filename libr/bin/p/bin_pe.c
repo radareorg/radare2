@@ -2,6 +2,8 @@
 
 #include "bin_pe.inc"
 
+extern struct r_bin_write_t r_bin_write_pe;
+
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length <= 0x3d) {
@@ -399,9 +401,38 @@ static void header(RBinFile *bf) {
 			cb_printf ("  Size : 0x%x\n", pe->nt_headers->optional_header.DataDirectory[i].Size);
 		}
 	}
+	if (pe->metadata_header) {
+		PE_(image_metadata_header) *mh = pe->metadata_header;
+		cb_printf ("Metadata Header:\n");
+		cb_printf ("  Signature: 0x%08"PFMT64x"\n", mh->Signature);
+		cb_printf ("  Version: %d.%d\n", mh->MajorVersion, mh->MinorVersion);
+		cb_printf ("  VersionString: %s\n", mh->VersionString);
+		cb_printf ("  Flags: 0x%x\n", mh->Flags);
+		cb_printf ("  Streams: %d\n", mh->NumberOfStreams);
+		if (pe->streams) {
+			for (i = 0; i < mh->NumberOfStreams; i++) {
+				PE_(image_metadata_stream) * stream = pe->streams[i];
+				cb_printf ("  Stream %d: %s\n", i, stream->Name);
+				cb_printf ("    offset: 0x%08"PFMT64x" size: 0x%x\n", (ut64)stream->Offset, stream->Size);
+			}
+		}
+	}
+	if (pe->clr_hdr) {
+		PE_(image_clr_header) *clr = pe->clr_hdr;
+		cb_printf ("Common Language Runtime Header (CLR):\n");
+		cb_printf ("  Header Size: %d\n", clr->HeaderSize);
+		cb_printf ("  CLR RuntimeVersion: %d.%d\n", clr->MajorRuntimeVersion, clr->MinorRuntimeVersion);
+		cb_printf ("  MetadataDirectory: 0x%08"PFMT64x" (%d)\n", (ut64) clr->MetaDataDirectoryAddress, clr->MetaDataDirectorySize);
+		cb_printf ("  Flags: 0x%x\n", clr->Flags);
+		cb_printf ("  EntryPointToken: 0x%x\n", clr->EntryPointToken);
+		cb_printf ("  ResourceDirectory: 0x%"PFMT64x" (%d)\n", (ut64)clr->ResourcesDirectoryAddress, clr->ResourcesDirectorySize);
+		cb_printf ("  StrongNameSignature: 0x%"PFMT64x" (%d)\n", (ut64)clr->StrongNameSignatureAddress, clr->StrongNameSignatureSize);
+		cb_printf ("  CodeManagerTable: 0x%"PFMT64x" (%d)\n", (ut64)clr->StrongNameSignatureAddress, clr->StrongNameSignatureSize);
+		cb_printf ("  VTableFixups: 0x%"PFMT64x" (%d)\n", (ut64)clr->VTableFixupsAddress, clr->VTableFixupsSize);
+		cb_printf ("  ExportAddressTableJumps: 0x%"PFMT64x" (%d)\n", (ut64)clr->ExportAddressTableJumpsAddress, clr->ExportAddressTableJumpsSize);
+		cb_printf ("  ManagedNativeHeader: 0x%"PFMT64x" (%d)\n", (ut64)clr->ManagedNativeHeaderAddress, clr->ManagedNativeHeaderSize);
+	}
 }
-
-extern struct r_bin_write_t r_bin_write_pe;
 
 RBinPlugin r_bin_plugin_pe = {
 	.name = "pe",

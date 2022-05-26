@@ -20,6 +20,7 @@ FILE=-
 CMDS=<<EOF
 wx b841424300
 e asm.arch=x86
+e asm.bits=32
 ahi s
 e cfg.bigendian=false
 pi 1

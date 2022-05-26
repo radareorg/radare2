@@ -158,7 +158,7 @@ static void get_insn_args(riscv_args_t *args, const char *d, insn_t _l, ut64 pc)
 				break;
 			case 'u':
 				snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x",
-						(int) (EXTRACT_RVC_IMM (l) & (RISCV_BIGIMM_REACH-1)));
+						(int) (EXTRACT_RVC_IMM (l) & (RISCV_BIGIMM_REACH - 1)));
 				break;
 			case '>':
 				snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x", (int) EXTRACT_RVC_IMM (l) & 0x3f);

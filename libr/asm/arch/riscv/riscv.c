@@ -200,10 +200,10 @@ static void get_insn_args(char *buf, const char *d, insn_t l, uint64_t pc) {
 			break;
 		case 'o':
 		case 'j':
-			sprintf (buf+strlen (buf), "%d", (int) EXTRACT_ITYPE_IMM (l));
+			sprintf (buf + strlen (buf), "%d", (int) EXTRACT_ITYPE_IMM (l));
 			break;
 		case 'q':
-			sprintf (buf+strlen (buf), "%d", (int) EXTRACT_STYPE_IMM (l));
+			sprintf (buf + strlen (buf), "%d", (int) EXTRACT_STYPE_IMM (l));
 			break;
 		case 'a':
 			target = EXTRACT_UJTYPE_IMM (l) + pc;

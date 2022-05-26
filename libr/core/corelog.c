@@ -101,8 +101,8 @@ R_API char *r_core_log_get(RCore *core, int index) {
 	return NULL;
 }
 
+static R_TH_LOCAL bool inProcess = false;
 R_API void r_core_log_add(RCore *core, const char *msg) {
-	static bool inProcess = false;
 	r_strpool_append (core->log->sp, msg);
 	core->log->last++;
 	if (core->cmdlog && *core->cmdlog) {

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2021 - condret, pancake, alvaro_fe */
+/* radare2 - LGPL - Copyright 2008-2022 - condret, pancake, alvaro_fe */
 
 #include <r_io.h>
 #include <sdb.h>
@@ -38,6 +38,7 @@ R_API void r_io_free(RIO *io) {
 }
 
 R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
+#if 0
 	ut64 bufSize = r_buf_size (b);
 	char *uri = r_str_newf ("malloc://%" PFMT64d, bufSize);
 	RIODesc *desc = r_io_open_nomap (io, uri, perm, mode);
@@ -47,6 +48,12 @@ R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
 	}
 	free (uri);
 	return desc;
+#else
+	char *uri = r_str_newf ("rbuf://%p", b);
+	RIODesc *desc = r_io_open_nomap (io, uri, perm, mode);
+	free (uri);
+	return desc;
+#endif
 }
 
 R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int perm, int mode) {

@@ -1192,7 +1192,7 @@ FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-wb 054b
+wX 054b
 pd 10
 EOF
 EXPECT=<<EOF

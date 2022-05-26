@@ -33,7 +33,7 @@ static bool lock_init(RThreadLock *thl, bool recursive) {
 	return true;
 }
 
-static bool r_atomic_exchange(volatile R_ATOMIC_BOOL *data, bool v) {
+R_API bool r_atomic_exchange(volatile R_ATOMIC_BOOL *data, bool v) {
 #if HAVE_STDATOMIC_H
 	return atomic_exchange_explicit (data, v, memory_order_acquire);
 #elif __GNUC__ && !__TINYC__
@@ -51,7 +51,7 @@ static bool r_atomic_exchange(volatile R_ATOMIC_BOOL *data, bool v) {
 #endif
 }
 
-static void r_atomic_store(volatile R_ATOMIC_BOOL *data, bool v) {
+R_API void r_atomic_store(volatile R_ATOMIC_BOOL *data, bool v) {
 #if HAVE_STDATOMIC_H
 	atomic_store_explicit (data, v, memory_order_release);
 #elif __GNUC__ && !__TINYC__
@@ -89,7 +89,7 @@ R_API bool r_th_lock_wait(RThreadLock *thl) {
 	return true;
 }
 
-// TODO: return bool
+#if WANT_THREADS
 R_API bool r_th_lock_enter(RThreadLock *thl) {
 	r_return_val_if_fail (thl, false);
 	R_LOG_DEBUG ("r_th_lock_enter");
@@ -115,13 +115,9 @@ R_API bool r_th_lock_enter(RThreadLock *thl) {
 	return 0;
 #endif
 }
-
 R_API bool r_th_lock_tryenter(RThreadLock *thl) {
 	r_return_val_if_fail (thl, false);
 	R_LOG_DEBUG ("r_th_lock_tryenter");
-	if (!thl) {
-		return -1;
-	}
 #if HAVE_PTHREAD
 	return pthread_mutex_trylock (&thl->lock) == 0;
 #elif __WINDOWS__
@@ -130,13 +126,9 @@ R_API bool r_th_lock_tryenter(RThreadLock *thl) {
 	return false;
 #endif
 }
-
 R_API bool r_th_lock_leave(RThreadLock *thl) {
 	r_return_val_if_fail (thl, false);
 	R_LOG_DEBUG ("r_th_lock_leave");
-	if (!thl) {
-		return -1;
-	}
 #if HAVE_PTHREAD
 	return pthread_mutex_unlock (&thl->lock) == 0;
 #elif __WINDOWS__
@@ -146,6 +138,17 @@ R_API bool r_th_lock_leave(RThreadLock *thl) {
 	return false;
 #endif
 }
+#else
+R_API bool r_th_lock_enter(RThreadLock *thl) {
+	return false;
+}
+R_API bool r_th_lock_tryenter(RThreadLock *thl) {
+	return false;
+}
+R_API bool r_th_lock_leave(RThreadLock *thl) {
+	return false;
+}
+#endif
 
 R_API void *r_th_lock_free(RThreadLock *thl) {
 	R_LOG_DEBUG ("r_th_lock_free");

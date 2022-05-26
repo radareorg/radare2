@@ -1,9 +1,20 @@
-/* radare2 - LGPL - Copyright 2014-2019 - pancake, Judge_Dredd */
+/* radare2 - LGPL - Copyright 2014-2022 - pancake, Judge_Dredd */
 
 #include <r_cons.h>
 #include <r_regex.h>
 #include <r_util.h>
 #include "pager_private.h"
+
+static const char *r_cons_less_help = \
+	" u/space  - page up/down\n"
+	" jk       - line down/up\n"
+	" gG       - begin/end buffer\n"
+	" /        - search in buffer\n"
+	" _        - enter the hud mode\n"
+	" n/p      - next/prev search result\n"
+	" q        - quit\n"
+	" ?        - show this help\n"
+	"\n";
 
 R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	r_return_val_if_fail (str && *str, 0);
@@ -12,17 +23,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		return 0;
 	}
 
-	static int in_help = false;
-	static const char *r_cons_less_help = \
-		" u/space  - page up/down\n"
-		" jk       - line down/up\n"
-		" gG       - begin/end buffer\n"
-		" /        - search in buffer\n"
-		" _        - enter the hud mode\n"
-		" n/p      - next/prev search result\n"
-		" q        - quit\n"
-		" ?        - show this help\n"
-		"\n";
+	int in_help = false;
 	int lines_count = 0;
 	RRegex *rx = NULL;
 	int w, h, ch, to, ui = 1, from = 0, i;

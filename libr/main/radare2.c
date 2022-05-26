@@ -23,7 +23,7 @@ static char* get_file_in_cur_dir(const char *filepath) {
 	return NULL;
 }
 
-static int r_main_version_verify(int show) {
+static int r_main_version_verify(bool show, bool json) {
 	int i, ret;
 	typedef const char* (*vc)();
 	const char *base = R2_GITTAP;
@@ -59,21 +59,48 @@ static int r_main_version_verify(int show) {
 		{NULL,NULL}
 	};
 
-	if (show) {
-		printf ("%s  r2\n", base);
-	}
-	for (i = ret = 0; vcs[i].name; i++) {
-		struct vcs_t *v = &vcs[i];
-		const char *name = v->callback ();
-		if (!ret && strcmp (base, name)) {
-			ret = 1;
-		}
+	if (json) {
+		PJ *pj = pj_new ();
+		pj_o (pj);
+		pj_ko (pj, "versions");
 		if (show) {
-			printf ("%s  %s\n", name, v->name);
+			pj_ks (pj, "r2", base);
 		}
-	}
-	if (ret) {
-		eprintf ("Warning: r2 library versions mismatch! Check r2 -V\n");
+		for (i = ret = 0; vcs[i].name; i++) {
+			struct vcs_t *v = &vcs[i];
+			const char *name = v->callback ();
+			if (!ret && strcmp (base, name)) {
+				ret = 1;
+			}
+			if (show) {
+				pj_ks (pj, v->name, name);
+			}
+		}
+		pj_end (pj);
+		if (ret) {
+			pj_ks (pj, "warning", "r2 library versions mismatch! Check r2 -V\n");
+		}
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		printf ("%s\n", s);
+		free (s);
+	} else {
+		if (show) {
+			printf ("%s  r2\n", base);
+		}
+		for (i = ret = 0; vcs[i].name; i++) {
+			struct vcs_t *v = &vcs[i];
+			const char *name = v->callback ();
+			if (!ret && strcmp (base, name)) {
+				ret = 1;
+			}
+			if (show) {
+				printf ("%s  %s\n", name, v->name);
+			}
+		}
+		if (ret) {
+			eprintf ("Warning: r2 library versions mismatch! Check r2 -V\n");
+		}
 	}
 	return ret;
 }
@@ -243,7 +270,6 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 	RListIter *iter;
 	const char *cmdn;
 	const char *file;
-	int ret;
 	/* -i */
 	bool has_failed = false;
 	r_list_foreach (files, iter, file) {
@@ -251,7 +277,7 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 			eprintf ("Script '%s' not found.\n", file);
 			goto beach;
 		}
-		ret = r_core_run_script (r, file);
+		int ret = r_core_run_script (r, file);
 		r_cons_flush ();
 		if (ret == -2) {
 			eprintf ("[c] Cannot open '%s'\n", file);
@@ -278,7 +304,7 @@ beach:
 			return true;
 		}
 	}
-	return false;
+	return has_failed;
 }
 
 static bool mustSaveHistory(RConfig *c) {
@@ -502,6 +528,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	set_color_default (r);
 	bool show_version = false;
+	bool show_versions = false;
 	bool json = false;
 	bool load_l = true;
 	char *debugbackend = strdup ("native");
@@ -713,7 +740,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			show_version = true;
 			break;
 		case 'V':
-			return r_main_version_verify (1);
+			show_versions = true;
+			break;
 		case 'w':
 			perms |= R_PERM_W;
 			break;
@@ -724,6 +752,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		default:
 			help++;
 		}
+	}
+	if (show_versions) {
+		return r_main_version_verify (1, json);
 	}
 	if (show_version) {
 		if (json) {
@@ -751,7 +782,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			free (debugbackend);
 			free (customRarunProfile);
 		} else {
-			r_main_version_verify (0);
+			r_main_version_verify (0, json);
 			LISTS_FREE ();
 			free (customRarunProfile);
 			free (debugbackend);
@@ -1459,14 +1490,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r_list_free (evals);
 	r_list_free (files);
 	cmds = evals = files = NULL;
-	if (forcequit) {
-		ret = 1;
-	}
-	if (ret) {
-		ret = 0;
+	if (forcequit || quietLeak) {
+		ret = r->rc;
 		goto beach;
 	}
-	if (r_config_get_i (r->config, "scr.prompt")) {
+	if (ret) {
+		ret = r->rc;
+		goto beach;
+	}
+	if (r_config_get_b (r->config, "scr.prompt")) {
 		if (run_rc && r_config_get_i (r->config, "cfg.fortunes")) {
 			r_core_fortune_print_random (r);
 			r_cons_flush ();
@@ -1589,7 +1621,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	ret = r->num->value;
 beach:
 	if (quietLeak) {
-		exit (ret);
+		exit (r->rc);
 		return ret;
 	}
 
@@ -1604,5 +1636,5 @@ beach:
 	r_core_free (r);
 	LISTS_FREE ();
 	R_FREE (pfile);
-	return ret;
+	return (ret < 0 ? 0 : ret);
 }

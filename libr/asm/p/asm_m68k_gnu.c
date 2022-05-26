@@ -38,6 +38,43 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
+typedef struct {
+	const char *name;
+	int v;
+} CpuKv;
+
+static CpuKv cpus[] = {
+	{ "m68000", 1 },
+	{ "m68010", 2 },
+	{ "m68020", 4 },
+	{ "m68030", 8 },
+	{ "m68040", 0x10 },
+	{ "m68060", 0x20 },
+	{ "m68881", 0x40 },
+	{ "m68851", 0x80 },
+
+	{ "m68000up", m68010up },
+	{ "m68010up", m68010up },
+	{ "m68020up", m68020up },
+	{ "m68030up", m68030up },
+	{ "m68040up", m68040up },
+	{ NULL, 0 }
+};
+
+static int detect_cpu(const char *cpu) {
+	int i;
+	const int isa = mcfisa_b | mcfisa_a | mcfisa_c;
+	const int default_cpu = 0; // m68040up;
+	if (cpu) {
+		for (i = 0; cpus[i].name; i++) {
+			if (!strcmp (cpus[i].name, cpu)) {
+				return cpus[i].v | isa;
+			}
+		}
+	}
+	return default_cpu | isa;
+}
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	buf_global = &op->buf_asm;
@@ -47,29 +84,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	disasm_obj.buffer = bytes;
-#if 0
-	disasm_obj.flavour = PROCESSOR_V850E2;
-	if (!R_STR_ISEMPTY (a->cpu)) {
-		if (!strcmp (a->cpu, "e")) {
-			disasm_obj.flavour = PROCESSOR_V850E;
-		} else if (!strcmp (a->cpu, "e1")) {
-			disasm_obj.flavour = PROCESSOR_V850E1;
-		} else if (!strcmp (a->cpu, "e2")) {
-			disasm_obj.flavour = PROCESSOR_V850E2;
-		} else if (!strcmp (a->cpu, "e2v3")) {
-			disasm_obj.flavour = PROCESSOR_V850E2V3;
-		} else if (!strcmp (a->cpu, "e3v5")) {
-			disasm_obj.flavour = PROCESSOR_V850E3V5;
-		}
-	}
-#endif
 	disasm_obj.read_memory_func = &m68k_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = BFD_ENDIAN_LITTLE;
+	disasm_obj.endian = BFD_ENDIAN_BIG;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
+	disasm_obj.mach = detect_cpu (a->config->cpu);
 
 	op->size = print_insn_m68k ((bfd_vma)Offset, &disasm_obj);
 	if (op->size == -1) {
@@ -85,10 +107,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_m68k_gnu = {
 	.name = "m68k.gnu",
 	.arch = "m68k",
-	// .cpus = "",
+	.cpus = "m68000,m68010,m68020,m68030,m68040,m68060,m68881,m68851"
+		"m68000up,m68010up,m68020up,m68030up,m68040up",
 	.license = "GPL3",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = R_SYS_ENDIAN_BIG,
 	.desc = "Binutils 2.36 based m68k disassembler",
 	.disassemble = &disassemble
 };

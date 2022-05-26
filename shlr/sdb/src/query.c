@@ -289,9 +289,9 @@ next_quote:
 		slash = strchr (cmd, '/');
 	}
 	if (*cmd == '?') {
-		const char *val = sdb_const_get (s, cmd+1, 0);
-		const char *type = sdb_type (val);
-		out_concat (type);
+		const char *v = sdb_const_get (s, cmd + 1, 0);
+		const char *t = sdb_type (v);
+		out_concat (t);
 	} else if (*cmd == '*') {
 		if (!strcmp (cmd, "***")) {
 			char root[1024]; // limit namespace length?
@@ -397,15 +397,15 @@ next_quote:
 			if (eq) {
 				/* +[idx]key=n  -->  key[idx] += n */
 				/* -[idx]key=n  -->  key[idx] -= n */
-				st64 n = sdb_atoi (eq);
-				if (*cmd=='+') {
-					curnum += n;
-				} else if (*cmd=='-') {
-					curnum -= n;
+				st64 neq = sdb_atoi (eq);
+				if (*cmd == '+') {
+					curnum += neq;
+				} else if (*cmd == '-') {
+					curnum -= neq;
 				} else {
-					// never happens
+					// should never happens
 				}
-				sdb_array_set_num (s, eb+1, idx, curnum, 0);
+				sdb_array_set_num (s, eb + 1, idx, curnum, 0);
 			} else {
 				/* +[idx]key    -->  key[idx] + 1 */
 				/* -[idx]key    -->  key[idx] - 1 */
@@ -597,20 +597,20 @@ next_quote:
 				if (eq) {
 					/* [+3]foo=bla */
 					if (i < 0) {
-						char *tmp = sdb_array_get (s, p, -i, NULL);
-						if (tmp) {
+						char *arr = sdb_array_get (s, p, -i, NULL);
+						if (arr) {
 							if (encode) {
-								char *newtmp = (char*)sdb_decode (tmp, NULL);
+								char *newtmp = (char*)sdb_decode (arr, NULL);
 								if (!newtmp) {
 									goto fail;
 								}
-								free (tmp);
-								tmp = newtmp;
+								free (arr);
+								arr = newtmp;
 							}
 							ok = 0;
-							out_concat (tmp);
+							out_concat (arr);
 							sdb_array_delete (s, p, -i, 0);
-							free (tmp);
+							free (arr);
 						} else goto fail;
 					} else {
 						if (encode) {
@@ -638,19 +638,19 @@ next_quote:
 						}
 					} else if (i<0) {
 						/* [-3]foo */
-						char *tmp = sdb_array_get (s, p, -i, NULL);
-						if (tmp && *tmp) {
-							out_concat (tmp);
+						char *arr = sdb_array_get (s, p, -i, NULL);
+						if (arr && *arr) {
+							out_concat (arr);
 							sdb_array_delete (s, p, -i, 0);
 						}
-						free (tmp);
+						free (arr);
 					} else {
 						/* [+3]foo */
-						char *tmp = sdb_array_get (s, p, i, NULL);
-						if (tmp && *tmp) {
-							out_concat (tmp);
+						char *arr = sdb_array_get (s, p, i, NULL);
+						if (arr && *arr) {
+							out_concat (arr);
 						}
-						free (tmp);
+						free (arr);
 					}
 				}
 			}
@@ -753,12 +753,14 @@ next_quote:
 				while (*val && isspace (*val)) {
 					val++;
 				}
-				int i = strlen (cmd) - 1;
-				while (i >= 0 && isspace (cmd[i])) {
-					cmd[i] = '\0';
-					i--;
+				if (*cmd) {
+					int clen = strlen (cmd) - 1;
+					while (clen >= 0 && isspace (cmd[clen])) {
+						cmd[clen] = '\0';
+						clen--;
+					}
+					ok = sdb_set (s, cmd, val, 0);
 				}
-				ok = sdb_set (s, cmd, val, 0);
 			}
 			if (encode) {
 				free ((void*)val);

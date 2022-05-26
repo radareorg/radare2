@@ -80,10 +80,12 @@
 #define __POWERPC__ 1
 #endif
 
+#ifndef TARGET_OS_IPHONE
 #if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
 #define TARGET_OS_IPHONE 1
 #else
 #define TARGET_OS_IPHONE 0
+#endif
 #endif
 
 #undef LIBC_HAVE_SYSTEM
@@ -753,6 +755,7 @@ typedef int RRef;
 
 #define R_REF_NAME refcount
 #define r_ref(x) ((x)->R_REF_NAME++, (x));
+#define r_ref_set(x,y) do { if(x) { (x)->R_REF_NAME--; } (x)=(y); (x)->R_REF_NAME++;} while(0)
 #define r_ref_init(x,y) (x)->R_REF_NAME = 1;(x)->free = (void *)(y)
 // #define r_unref(x) { assert (x->R_REF_NAME > 0); if (!--(x->R_REF_NAME)) { x->free(x); } }
 #define r_unref(x) { if (x->R_REF_NAME > 0 && !--(x->R_REF_NAME)) { x->free(x); } }

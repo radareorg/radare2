@@ -35,18 +35,18 @@ static const char *help_msg_mf[] = {
 static int cmd_mktemp(RCore *core, const char *input) {
 	char *res = r_syscmd_mktemp (input);
 	if (res) {
-		r_core_return_code (core, 1);
+		r_core_return_value (core, 1);
 		r_cons_printf ("%s", res);
 		free (res);
 	} else {
-		r_core_return_code (core, 0);
+		r_core_return_value (core, 0);
 	}
 	return 0;
 }
 
 static int cmd_mkdir(RCore *core, const char *input) {
 	int rc = r_syscmd_mkdir (input)? 0: 1;
-	r_core_return_code (core, rc);
+	r_core_return_value (core, rc);
 	return 0;
 }
 

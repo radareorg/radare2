@@ -328,10 +328,10 @@ nop
 EOF
 RUN
 
-NAME=wb
+NAME=wX
 FILE=-
 CMDS=<<EOF
-wb 0102 @!20
+wX 0102 @!20
 p8 20
 EOF
 EXPECT=<<EOF
@@ -343,7 +343,7 @@ NAME=wm
 FILE=-
 CMDS=<<EOF
 wm f0ff
-wb 010203 @!20
+wX 010203 @!20
 p8 20
 EOF
 EXPECT=<<EOF

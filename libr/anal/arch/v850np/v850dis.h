@@ -37,7 +37,7 @@ typedef struct {
 	char *text;
 	char *esil;
 	int size;
-	int value;
+	long value; // used to save references, values, immedaites, ..
 	const v850_opcode *op;
 	v850_arg args[4];
 } v850np_inst;
@@ -191,7 +191,6 @@ extern const struct v850_operand v850_operands[];
 /* A PC-relative displacement where a positive value indicates a backwards displacement.  */
 #define V850_INVERSE_PCREL	0x1000000
 
-extern bool v850_msg_is_out_of_range(const char *);
 int v850np_disasm(v850np_inst *inst, int cpumodel, ut64 addr, const ut8* buffer, size_t len);
 
 #ifdef __cplusplus

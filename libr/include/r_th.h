@@ -230,6 +230,8 @@ R_API void r_th_cond_signal_all(RThreadCond *cond);
 R_API void r_th_cond_wait(RThreadCond *cond, RThreadLock *lock);
 R_API void r_th_cond_free(RThreadCond *cond);
 
+R_API void r_atomic_store(volatile R_ATOMIC_BOOL *data, bool v);
+R_API bool r_atomic_exchange(volatile R_ATOMIC_BOOL *data, bool v);
 #endif
 
 #ifdef __cplusplus

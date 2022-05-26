@@ -201,12 +201,14 @@ static HT_(Kv) *reserve_kv(HtName_(Ht) *ht, const KEY_TYPE key, const int key_le
 		}
 	}
 
-	HT_(Kv) *newkvarr = (HT_(Kv)*)realloc (bt->arr, (bt->count + 1) * ht->opt.elem_size);
-	if (!newkvarr) {
-		return NULL;
+	if (bt->count + 1 >= bt->size) {
+		bt->size = (bt->count + 5) * 2;
+		HT_(Kv) *newkvarr = (HT_(Kv)*)realloc (bt->arr, (bt->size) * ht->opt.elem_size);
+		if (!newkvarr) {
+			return NULL;
+		}
+		bt->arr = newkvarr;
 	}
-
-	bt->arr = newkvarr;
 	bt->count++;
 	ht->count++;
 	return kv_at (ht, bt, bt->count - 1);

@@ -1705,7 +1705,7 @@ redo:
 		post_type (s1, type, ad);
 		s1->nocode_wanted = saved_nocode_wanted;
 	} else {
-		static char kind[1024];
+		static R_TH_LOCAL char kind[1024]; // XXX
 		char *name = get_tok_str (s1, *v, NULL);
 		type_to_str (s1, kind, sizeof(kind), type, NULL);
 		// eprintf ("---%d %s STATIC %s\n", td, kind, name);

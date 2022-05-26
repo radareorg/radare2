@@ -740,12 +740,30 @@ R_API void r_core_anal_type_init(RCore *core) {
 	load_types_from (core, "types-%s-%s-%d", anal_arch, os, bits);
 }
 
+static R_TH_LOCAL int old_bits = -1;
+static R_TH_LOCAL char *old_arch = NULL;
+
 R_API void r_core_anal_cc_init(RCore *core) {
-	const char *anal_arch = r_config_get (core->config, "anal.arch");
-	int bits = core->anal->config->bits;
+	char *anal_arch = strdup (r_config_get (core->config, "anal.arch"));
+	const int bits = core->anal->config->bits;
 	if (!anal_arch) {
 		return;
 	}
+	char *dot = strchr (anal_arch, '.');
+	if (dot) {
+		*dot = 0;
+	}
+	if (old_bits != -1) {
+		if (old_bits == bits) {
+			if (!strcmp (old_arch, anal_arch)) {
+				free (anal_arch);
+				return;
+			}
+		}
+	}
+	old_bits = bits;
+	free (old_arch);
+	old_arch = strdup (anal_arch);
 #if HAVE_GPERF
 	char *k = r_str_newf ("cc_%s_%d", anal_arch, bits);
 	SdbGperf *gp = r_anal_get_gperf_cc (k);
@@ -779,6 +797,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	Sdb *cc = core->anal->sdb_cc;
 	// Avoid sdb reloading
 	if (cc->path && (!strcmp (cc->path, dbpath) || !strcmp (cc->path, dbhomepath))) {
+		free (anal_arch);
 		free (dbpath);
 		free (dbhomepath);
 		return;
@@ -806,8 +825,9 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		cc->path = strdup (dbpath);
 	}
 	if (anal_arch && sdb_isempty (core->anal->sdb_cc)) {
-		eprintf ("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", anal_arch);
+		eprintf ("Warning: Missing calling conventions for '%s' %d. Deriving it from the regprofile.\n", anal_arch, bits);
 	}
+	free (anal_arch);
 	free (dbpath);
 	free (dbhomepath);
 #endif
@@ -1778,7 +1798,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 
 	RRBNode *node;
 	RBinReloc *reloc;
-	r_crbtree_foreach (relocs, node, reloc) {
+	r_crbtree_foreach (relocs, node, RBinReloc, reloc) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SET (mode) && (is_section_reloc (reloc) || is_file_reloc (reloc))) {
 			/*
@@ -4334,7 +4354,7 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arch, ut16 bits) {
 	int fd = r_io_fd_get_current (r->io);
 	RIODesc *desc = r_io_desc_get (r->io, fd);
-	RBinFile *curfile, *binfile = NULL;
+	RBinFile *curfile = NULL;
 	if (!name) {
 		if (!desc || !desc->name) {
 			return false;
@@ -4354,7 +4374,7 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arc
 		return false;
 	}
 	/* Find a file with the requested name/arch/bits */
-	binfile = r_bin_file_find_by_arch_bits (r->bin, arch, bits);
+	RBinFile *binfile = r_bin_file_find_by_arch_bits (r->bin, arch, bits);
 	if (!binfile) {
 		free (arch);
 		return false;
@@ -4365,7 +4385,20 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arc
 	}
 	R_FREE (arch);
 	curfile = r_bin_cur (r->bin);
-	//set env if the binfile changed or we are dealing with xtr
+	// how bin.xtr plugins can inform
+	// if the binbuffer is bigger than the io allocated space, that means that rbin have
+	// an uncompressed buffer for us. that's hacky and need a proper way to report that
+	// io subsystem manipulation from the rbin side
+	if (curfile && curfile->buf && r_buf_size (curfile->buf) > r_io_size (r->io)) {
+		if (binfile && binfile->curxtr && binfile->curxtr->loadbuf) {
+			RIODesc *d = r_io_open_buffer (r->io, curfile->buf, R_PERM_RWX, 0);
+			if (d) {
+				r_io_desc_close (desc);
+				curfile = r_bin_cur (r->bin);
+			}
+		}
+	}
+	// set env if the binfile changed or we are dealing with xtr
 	if (curfile != binfile || binfile->curxtr) {
 		r_core_bin_set_cur (r, binfile);
 		return r_core_bin_set_env (r, binfile);

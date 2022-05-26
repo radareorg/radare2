@@ -108,7 +108,7 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 
 	char *name = NULL;
 	if (pool->flags & FLAG_UTF8) {
-		if ((ut64)start > (ut64)data + data_size - sizeof(ut16)) {
+		if (start > data + data_size - sizeof (ut16)) {
 			return NULL;
 		}
 
@@ -119,7 +119,7 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 		}
 		(void)n;
 
-		if ((ut64)start > (ut64)data + data_size - sizeof(ut16)) {
+		if (start > data + data_size - sizeof(ut16)) {
 			return NULL;
 		}
 
@@ -143,7 +143,7 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 			return name;
 		}
 
-		if ((ut64)start > (ut64)data + data_size - sizeof(ut32) - n - 1) {
+		if (start > data + data_size - sizeof (ut32) - n - 1) {
 			free (name);
 			return NULL;
 		}
@@ -154,7 +154,7 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 			*length = n;
 		}
 	} else {
-		if ((ut64)start > (ut64)data + data_size - sizeof(ut32)) {
+		if (start > data + data_size - sizeof (ut32)) {
 			return NULL;
 		}
 
@@ -175,7 +175,7 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 
 		name = calloc (n + 1, 2);
 
-		if ((ut64)start16 > (ut64)data + data_size - sizeof(ut32) - n - 1) {
+		if ((const ut8*)start16 > data + data_size - sizeof (ut32) - n - 1) {
 			free (name);
 			return NULL;
 		}

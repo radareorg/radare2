@@ -19,7 +19,7 @@ static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 of
 	}
 	if (anal->flb.set) {
 		char flagname[0x30];
-		int iid = R_ABS((int)id);
+		int iid = R_ABS ((int)id);
 		snprintf (flagname, sizeof (flagname), "case.0x%"PFMT64x ".%d", (ut64)switch_addr, iid);
 		anal->flb.set (anal->flb.f, flagname, case_addr, 1);
 	}
@@ -191,8 +191,8 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	if (!jmptbl) {
 		return false;
 	}
-	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
-	bool is_x86 = !is_arm && anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
+	bool is_arm = anal->cur->arch && r_str_startswith (anal->cur->arch, "arm");
+	bool is_x86 = !is_arm && anal->cur->arch && r_str_startswith (anal->cur->arch, "x86");
 	const bool is_v850 = !is_arm && !is_x86 && ((anal->cur->arch && !strncmp (anal->cur->arch, "v850", 4)) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4));
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptblsz);
@@ -213,6 +213,9 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 		default:
 			jmpptr = r_read_le64 (jmptbl + offs);
 			break;
+		}
+		if (is_arm && anal->config->bits == 64 && ip > 4096 && jmpptr < 4096 && jmpptr < ip) {
+			jmpptr += ip;
 		}
 		// eprintf ("WALKING %llx\n", jmpptr);
 		// if we don't check for 0 here, the next check with ptr+jmpptr

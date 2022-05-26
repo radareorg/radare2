@@ -1330,7 +1330,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 
 	if ((file = r_core_file_open (core, uri, R_PERM_RW, addr))) {
 		fd = file->fd;
-		r_core_return_code (core, fd);
+		r_core_return_value (core, fd);
 		// if no baddr is defined, use the one provided by the file
 		if (addr == 0) {
 			desc = r_io_desc_get (core->io, file->fd);
@@ -1738,7 +1738,7 @@ static int cmd_open(void *data, const char *input) {
 			eprintf ("Cannot open file '%s'\n", ptr);
 		}
 		r_str_argv_free (argv);
-		r_core_return_code (core, fd);
+		r_core_return_value (core, fd);
 		r_core_block_read (core);
 		return 0;
 	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
@@ -1755,7 +1755,7 @@ static int cmd_open(void *data, const char *input) {
 				perms = r_str_rwx (argv[1]);
 			}
 			fd = r_io_fd_open (core->io, argv[0], perms, 0);
-			r_core_return_code (core, fd);
+			r_core_return_value (core, fd);
 			r_str_argv_free (argv);
 		} else {
 			eprintf ("Usage: of [arg...]\n");
@@ -1831,7 +1831,7 @@ static int cmd_open(void *data, const char *input) {
 			const char *argv0 = argv ? argv[0] : ptr;
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
-				r_core_return_code (core, fd);
+				r_core_return_value (core, fd);
 				if (addr == 0) { // if no baddr defined, use the one provided by the file
 					addr = UT64_MAX;
 				}
@@ -1984,7 +1984,7 @@ static int cmd_open(void *data, const char *input) {
 			r_io_read_at (core->io, core->offset, data, len);
 			if ((file = r_core_file_open (core, uri, R_PERM_RWX, 0))) {
 				fd = file->fd;
-				r_core_return_code (core, fd);
+				r_core_return_value (core, fd);
 				r_core_bin_load (core, uri, 0);
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {

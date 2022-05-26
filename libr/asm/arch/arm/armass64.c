@@ -348,6 +348,33 @@ static ut32 cb(ArmOp *op) {
 	return data;
 }
 
+static ut32 cl(ArmOp *op) {
+	ut32 data = UT32_MAX;
+	int k = 0;
+	if (!strncmp (op->mnemonic, "cls", 3)) {
+		if (op->operands[0].reg_type & ARM_REG64) {
+			k =  0x0014c0da;
+		} else if (op->operands[0].reg_type & ARM_REG32) {
+			k =  0x0014c05a;
+		} else {
+			return UT32_MAX;
+		}
+	} else if (!strncmp (op->mnemonic, "clz", 3)) {
+		if (op->operands[0].reg_type & ARM_REG64) {
+			k =  0x0010c0da;
+		} else if (op->operands[0].reg_type & ARM_REG32) {
+			k =  0x0010c05a;
+		} else {
+			return UT32_MAX;
+		}
+	} else {
+		return UT32_MAX;
+	}
+	data  = k | op->operands[0].reg << 24;
+	data |= (op->operands[1].reg & 0x7) << 29 | (op->operands[1].reg & 0x18) << 13;
+	return data;
+}
+
 static ut32 math(ArmOp *op, ut32 data, bool is64) {
 	if (is64) {
 		data |= 0x80;
@@ -1379,10 +1406,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = math (&ops, 0x0028c09a, has64reg (str));
 	} else if (!strncmp (str, "ror ", 4)) {
 		*op = math (&ops, 0x002cc09a, has64reg (str));
-	} else if (!strncmp (str, "cls ", 4)) {
-		*op = math (&ops, 0x2014c0da, has64reg (str));
-	} else if (!strncmp (str, "clz ", 4)) {
-		*op = math (&ops, 0x2010c0da, has64reg (str));
+	} else if (!strncmp (str, "cls", 3)) {
+		*op = cl (&ops);
+	} else if (!strncmp (str, "clz", 3)) {
+		*op = cl (&ops);
 	} else if (!strncmp (str, "rbit", 4)) {
 		*op = math (&ops, 0x0000c0da, has64reg (str));
 	} else if (!strncmp (str, "rev ", 4)) {

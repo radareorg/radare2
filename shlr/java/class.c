@@ -3029,7 +3029,7 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 	bin->lang = "java";
 	if (bin->cf.major[1] >= 46) {
 		switch (bin->cf.major[1]) {
-			static char lang[32];
+			static R_TH_LOCAL char lang[32];
 			int langid;
 			case 46:
 			case 47:

@@ -30,57 +30,60 @@ static ut8 get_ut8(RBuffer *buffer, bool *error) {
 }
 
 static ut16 get_ut16(RBuffer *buffer, bool *error) {
-	ut16 ret = 0;
-
-	int size = r_buf_read (buffer, (ut8 *)&ret, sizeof (ret));
-	if (size != sizeof (ret)) {
+	ut8 data[2] = {0};
+	*error = false;
+	int size = r_buf_read (buffer, (ut8 *)&data, sizeof (data));
+	if (size != sizeof (data)) {
 		*error = true;
 	}
-	return ret;
+	return r_read_le16 (data);
 }
 
 static ut32 get_ut32(RBuffer *buffer, bool *error) {
-	ut32 ret = 0;
-	int size = r_buf_read (buffer, (ut8 *)&ret, sizeof (ret));
-	if (size != sizeof (ret)) {
+	ut8 data[4] = {0};
+	*error = false;
+	int size = r_buf_read (buffer, (ut8 *)&data, sizeof (data));
+	if (size != sizeof (data)) {
 		*error = true;
 	}
-	return ret;
+	return r_read_le32 (data);
 }
 
 static st32 get_st32(RBuffer *buffer, bool *error) {
-	st32 ret = 0;
-	int size = r_buf_read (buffer, (ut8 *)&ret, sizeof (ret));
-	if (size < sizeof (ret)) {
-		*error = true;
-	}
-	return ret;
+	return (st32)get_ut32 (buffer, error);
 }
 
 static st64 get_st64(RBuffer *buffer, bool *error) {
-	st64 ret = 0;
-	int size = r_buf_read (buffer, (ut8 *)&ret, sizeof (ret));
-	if (size < sizeof (ret)) {
+	ut8 data[8];
+	*error = false;
+	int size = r_buf_read (buffer, (ut8 *)&data, sizeof (data));
+	if (size != sizeof (data)) {
 		*error = true;
 	}
-	return ret;
+	return (st64)r_read_le64 (data);
 }
 
+typedef union {
+	double d;
+	ut64 n;
+	ut8 b[8];
+} du64;
+
+/// XXX this is probably wrong as native double representation depends on the cpu, not the target file format
 static double get_float64(RBuffer *buffer, bool *error) {
-	double ret = 0;
-	int size = r_buf_read (buffer, (ut8 *)&ret, sizeof (ret));
-	if (size < sizeof (ret)) {
+	du64 doubledata = {0};
+	*error = false;
+	int size = r_buf_read (buffer, doubledata.b, sizeof (doubledata));
+	if (size != sizeof (doubledata)) {
 		*error = true;
 	}
-	return ret;
+	doubledata.n = r_read_le64 (doubledata.b);
+	return doubledata.d;
 }
 
 static ut8 *get_bytes(RBuffer *buffer, ut32 size) {
 	ut8 *ret = R_NEWS0 (ut8, size + 1);
-	if (!ret) {
-		return NULL;
-	}
-	if (r_buf_read (buffer, ret, size) < size) {
+	if (ret && r_buf_read (buffer, ret, size) < size) {
 		free (ret);
 		return NULL;
 	}
@@ -246,7 +249,7 @@ static pyc_object *get_stringref_object(RBuffer *buffer) {
 	bool error = false;
 	ut32 n = get_st32 (buffer, &error);
 	if (n >= r_list_length (interned_table)) {
-		eprintf ("bad marshal data (string ref out of range)\n");
+		R_LOG_DEBUG ("bad marshal data (string ref out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -318,13 +321,12 @@ static pyc_object *get_binary_float_object(RBuffer *buffer) {
 }
 
 static pyc_object *get_complex_object(RBuffer *buffer) {
-	pyc_object *ret = NULL;
 	bool error = false;
 	ut32 size = 0;
 	st32 n1 = 0;
 	st32 n2 = 0;
 
-	ret = R_NEW0 (pyc_object);
+	pyc_object *ret = R_NEW0 (pyc_object);
 	if (!ret) {
 		return NULL;
 	}
@@ -415,7 +417,7 @@ static pyc_object *get_string_object(RBuffer *buffer) {
 
 	n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf ("bad marshal data (string size out of range)\n");
+		R_LOG_DEBUG ("bad marshal data (string size out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -441,7 +443,7 @@ static pyc_object *get_unicode_object(RBuffer *buffer) {
 
 	n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf ("bad marshal data (unicode size out of range)\n");
+		R_LOG_DEBUG ("bad marshal data (unicode size out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -460,11 +462,9 @@ static pyc_object *get_unicode_object(RBuffer *buffer) {
 static pyc_object *get_interned_object(RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
-	ut32 n = 0;
-
-	n = get_ut32 (buffer, &error);
+	ut32 n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf ("bad marshal data (string size out of range)\n");
+		R_LOG_DEBUG ("bad marshal data (string size out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -533,7 +533,7 @@ static pyc_object *get_tuple_object(RBuffer *buffer) {
 	bool error = false;
 	ut32 n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf ("bad marshal data (tuple size out of range)\n");
+		R_LOG_DEBUG ("bad marshal data (tuple size out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -551,7 +551,7 @@ static pyc_object *get_list_object(RBuffer *buffer) {
 	bool error = false;
 	ut32 n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf ("bad marshal data (list size out of range)\n");
+		R_LOG_DEBUG ("bad marshal data (list size out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -608,7 +608,7 @@ static pyc_object *get_set_object(RBuffer *buffer) {
 	bool error = false;
 	ut32 n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
-		eprintf ("bad marshal data (set size out of range)\n");
+		R_LOG_DEBUG ("bad marshal data (set size out of range)");
 		return NULL;
 	}
 	if (error) {
@@ -738,10 +738,10 @@ static void free_object(pyc_object *object) {
 	case TYPE_LONG:
 	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
-		eprintf ("Free not implemented for type %x\n", object->type);
+		R_LOG_DEBUG ("Free not implemented for type %x", object->type);
 		break;
 	default:
-		eprintf ("Undefined type in free_object (%x)\n", object->type);
+		R_LOG_DEBUG ("Undefined type in free_object (%x)", object->type);
 		break;
 	}
 	free (object);
@@ -814,10 +814,10 @@ static pyc_object *copy_object(pyc_object *object) {
 	case TYPE_SET:
 	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
-		eprintf ("Copy not implemented for type %x\n", object->type);
+		R_LOG_DEBUG ("Copy not implemented for type %x", object->type);
 		break;
 	default:
-		eprintf ("Undefined type in copy_object (%x)\n", object->type);
+		R_LOG_DEBUG ("Undefined type in copy_object (%x)", object->type);
 		break;
 	}
 	if (!copy->data) {
@@ -1084,7 +1084,7 @@ static pyc_object *get_object(RBuffer *buffer) {
 		ret = R_NEW0 (pyc_object);
 		break;
 	case TYPE_UNKNOWN:
-		eprintf ("Get not implemented for type 0x%x\n", type);
+		R_LOG_DEBUG ("Get not implemented for type 0x%x", type);
 		// r_list_pop (refs);
 		free_object (ret);
 		return NULL;
@@ -1092,7 +1092,7 @@ static pyc_object *get_object(RBuffer *buffer) {
 		// nop
 		break;
 	default:
-		eprintf ("Undefined type in get_object (0x%x)\n", type);
+		R_LOG_DEBUG ("Undefined type in get_object (0x%x)", type);
 		// r_list_pop (refs);
 		return NULL;
 	}

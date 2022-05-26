@@ -465,7 +465,7 @@ R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 		a->config->big_endian = true;
 		break;
 	default:
-		eprintf ("RAsmPlugin doesn't specify endianness\n");
+		R_LOG_WARN ("RAsmPlugin doesn't specify endianness");
 		break;
 	}
 	return a->config->big_endian;

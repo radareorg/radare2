@@ -1177,11 +1177,6 @@ R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *tes
 	const char *cmd = "aaa";
 	RList *files = r_list_new ();
 	r_list_push (files, test->file);
-#if ASAN
-	if (r_str_endswith (test->file, "/swift_read")) {
-		cmd = "?F";
-	}
-#endif
 	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, cmd, files, NULL, false, runner, user);
 	r_list_free (files);
 	return ret;
@@ -1229,7 +1224,6 @@ static bool check_cmd_asan_result(R2RProcessOutput *out) {
 			&& !strstr (out->out, "FATAL:"));
 	bool stderr_success = !out->err || (!strstr (out->err, "Sanitizer")
 			&& !strstr (out->err, "runtime error:");
-
 	return stdout_success && stderr_success;
 }
 #endif

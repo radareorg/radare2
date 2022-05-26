@@ -1,22 +1,19 @@
-/* radare2 - LGPL - Copyright 2017 - pancake, cgvwzq */
+/* radare2 - LGPL - Copyright 2017-2022 - pancake, cgvwzq, Dennis Goodlett */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-
 #include "wasm.h"
 
-typedef size_t (*ConsumeFcn) (const ut8 *p, const ut8 *max, ut32 *out_value);
-typedef void *(*ParseEntryFcn) (RBuffer *b, ut64 max);
+typedef size_t (*ConsumeFcn) (const ut8 *p, const ut8 *bound, ut32 *out_value);
+typedef void *(*ParseEntryFcn) (RBuffer *b, ut64 bound);
 
 // RBuffer consume functions
-static ut32 consume_r(RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_fcn) {
+static ut32 consume_r(RBuffer *b, ut64 bound, size_t *n_out, ConsumeFcn consume_fcn) {
 	r_return_val_if_fail (b && n_out && consume_fcn, 0);
 
 	ut32 tmp;
 	ut64 cur = r_buf_tell (b);
-	if (max >= r_buf_size (b) || cur > max) {
+	if (bound >= r_buf_size (b) || cur > bound) {
 		return 0;
 	}
 	// 16 bytes are enough to store 128bits values
@@ -25,7 +22,7 @@ static ut32 consume_r(RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_fc
 		return 0;
 	}
 	r_buf_read (b, buf, 16);
-	size_t n = consume_fcn (buf, buf + max + 1, &tmp);
+	size_t n = consume_fcn (buf, buf + bound + 1, &tmp);
 	if (!n) {
 		free (buf);
 		return 0;
@@ -36,68 +33,85 @@ static ut32 consume_r(RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_fc
 	return tmp;
 }
 
-static size_t consume_u32_r(RBuffer *b, ut64 max, ut32 *out) {
+static size_t consume_u32_r(RBuffer *b, ut64 bound, ut32 *out) {
 	size_t n = 0;
-	ut32 tmp = consume_r (b, max, &n, read_u32_leb128);
+	ut32 tmp = consume_r (b, bound, &n, read_u32_leb128);
 	if (out) {
 		*out = tmp;
 	}
 	return n;
 }
 
-static size_t consume_u7_r(RBuffer *b, ut64 max, ut8 *out) {
+static size_t consume_u7_r(RBuffer *b, ut64 bound, ut8 *out) {
 	size_t n = 0;
-	ut32 tmp = consume_r (b, max, &n, read_u32_leb128);
+	ut32 tmp = consume_r (b, bound, &n, read_u32_leb128);
 	if (out) {
 		*out = (ut8) (tmp & 0x7f);
 	}
 	return n;
 }
 
-static size_t consume_s7_r(RBuffer *b, ut64 max, st8 *out) {
+static size_t consume_s7_r(RBuffer *b, ut64 bound, st8 *out) {
 	size_t n = 0;
-	ut32 tmp = consume_r (b, max, &n, (ConsumeFcn)read_i32_leb128);
+	ut32 tmp = consume_r (b, bound, &n, (ConsumeFcn)read_i32_leb128);
 	if (out) {
 		*out = (st8) (((tmp & 0x10000000) << 7) | (tmp & 0x7f));
 	}
 	return n;
 }
 
-static size_t consume_u1_r(RBuffer *b, ut64 max, ut8 *out) {
+static size_t consume_u1_r(RBuffer *b, ut64 bound, ut8 *out) {
 	size_t n = 0;
-	ut32 tmp = consume_r (b, max, &n, read_u32_leb128);
+	ut32 tmp = consume_r (b, bound, &n, read_u32_leb128);
 	if (out) {
 		*out = (ut8) (tmp & 0x1);
 	}
 	return n;
 }
 
-static size_t consume_str_r(RBuffer *b, ut64 max, size_t sz, char *out) {
-	r_return_val_if_fail (b, 0);
-	ut64 cur = r_buf_tell (b);
+static bool consume_str_r(RBuffer *b, ut64 bound, size_t len, char *out) {
+	r_return_val_if_fail (b && bound > 0 && bound < r_buf_size (b), 0);
 	*out = 0;
-	max = R_MIN (max, sz);
-	if (max >= r_buf_size (b) || cur > max) {
-		return 0;
+
+	if (r_buf_tell (b) + len <= bound + 1) {
+		if (r_buf_read (b, (ut8 *)out, len) == len) {
+			out[len] = 0;
+			return true;
+		}
 	}
-	if (!(cur + sz - 1 <= max)) {
-		return 0;
-	}
-	if (sz > 0) {
-		r_buf_read (b, (ut8 *)out, sz);
-	} else {
-		*out = 0;
-	}
-	return sz;
+	return false;
 }
 
-static size_t consume_init_expr_r(RBuffer *b, ut64 max, ut8 eoc, void *out) {
-	if (!b || max >= r_buf_size (b) || r_buf_tell (b) > max) {
+static bool consume_str_new(RBuffer *b, ut64 bound, ut32 *len_out, char **str_out) {
+	r_return_val_if_fail (str_out, false);
+	*str_out = NULL;
+	if (len_out) {
+		*len_out = 0;
+	}
+
+	ut32 len = 0;
+	// module_str
+	if (consume_u32_r (b, bound, &len)) {
+		char *str = (char *)malloc (len + 1);
+		if (str && consume_str_r (b, bound, len, str)) {
+			if (len_out) {
+				*len_out = len;
+			}
+			*str_out = str;
+			return true;
+		}
+		free (str);
+	}
+	return false;
+}
+
+static size_t consume_init_expr_r(RBuffer *b, ut64 bound, ut8 eoc, void *out) {
+	if (!b || bound >= r_buf_size (b) || r_buf_tell (b) > bound) {
 		return 0;
 	}
 	size_t res = 0;
 	ut8 cur = r_buf_read8 (b);
-	while (r_buf_tell (b) <= max && cur != eoc) {
+	while (r_buf_tell (b) <= bound && cur != eoc) {
 		cur = r_buf_read8 (b);
 		res++;
 	}
@@ -107,23 +121,25 @@ static size_t consume_init_expr_r(RBuffer *b, ut64 max, ut8 eoc, void *out) {
 	return res + 1;
 }
 
-static size_t consume_locals_r(RBuffer *b, ut64 max, RBinWasmCodeEntry *out) {
+static size_t consume_locals_r(RBuffer *b, ut64 bound, RBinWasmCodeEntry *out) {
 	ut64 cur = r_buf_tell (b);
-	if (!b || max >= r_buf_size (b) || cur > max) {
+	if (!b || bound >= r_buf_size (b) || cur > bound) {
 		return 0;
 	}
-	ut32 count = out ? out->local_count : 0;
+	ut32 count = out? out->local_count: 0;
 	if (count > 0) {
 		if (!(out->locals = R_NEWS0 (struct r_bin_wasm_local_entry_t, count))) {
 			return 0;
 		}
 	}
 	ut32 j = 0;
-	while (r_buf_tell (b) <= max && j < count) {
-		if (!(consume_u32_r (b, max, (out ? &out->locals[j].count : NULL)))) {
+	while (r_buf_tell (b) <= bound && j < count) {
+		ut32 *_tmp = out? &out->locals[j].count: NULL;
+		if (!consume_u32_r (b, bound, _tmp)) {
 			goto beach;
 		}
-		if (!(consume_s7_r (b, max, (out ? (st8 *)&out->locals[j].type : NULL)))) {
+		st8 *_tmp2 = out? (st8 *)&out->locals[j].type: NULL;
+		if (!consume_s7_r (b, bound, _tmp2)) {
 			goto beach;
 		}
 		j++;
@@ -137,19 +153,19 @@ beach:
 	return 0;
 }
 
-static size_t consume_limits_r(RBuffer *b, ut64 max, struct r_bin_wasm_resizable_limits_t *out) {
+static size_t consume_limits_r(RBuffer *b, ut64 bound, struct r_bin_wasm_resizable_limits_t *out) {
 	r_return_val_if_fail (b && out, 0);
-	if (max >= r_buf_size (b) || r_buf_tell (b) > max || !out) {
+	if (bound >= r_buf_size (b) || r_buf_tell (b) > bound || !out) {
 		return 0;
 	}
 	ut32 i = r_buf_tell (b);
-	if (!(consume_u7_r (b, max, &out->flags))) {
+	if (!consume_u7_r (b, bound, &out->flags)) {
 		return 0;
 	}
-	if (!(consume_u32_r (b, max, &out->initial))) {
+	if (!consume_u32_r (b, bound, &out->initial)) {
 		return 0;
 	}
-	if (out->flags && (!(consume_u32_r (b, max, &out->maximum)))) {
+	if (out->flags && !consume_u32_r (b, bound, &out->maximum)) {
 		return 0;
 	}
 	int delta = r_buf_tell (b) - i;
@@ -230,6 +246,67 @@ static void r_bin_wasm_free_codes(RBinWasmCodeEntry *ptr) {
 	}
 }
 
+static void import_entry_free(RBinWasmImportEntry *entry) {
+	if (entry) {
+		free (entry->module_str);
+		free (entry->field_str);
+		free (entry);
+	}
+}
+
+static void export_entry_free(RBinWasmExportEntry *entry) {
+	if (entry) {
+		free (entry->field_str);
+		free (entry);
+	}
+}
+
+static void wasm_sec_free(RBinWasmSection *sec) {
+	if (sec) {
+		free (sec->name);
+		free (sec);
+	}
+}
+
+static void wasm_custom_name_local_free(RBinWasmCustomNameLocalName *name) {
+	if (name) {
+		r_id_storage_free (name->names);
+		R_FREE (name);
+	}
+}
+
+static inline void wasm_custom_local_names_free(RBinWasmCustomNameLocalNames *local) {
+	if (local) {
+		r_list_free (local->locals);
+		R_FREE (local);
+	}
+}
+
+static void wasm_custom_name_free(RBinWasmCustomNameEntry *cust) {
+	if (cust) {
+		switch (cust->type) {
+		case R_BIN_WASM_NAMETYPE_Module:
+			R_FREE (cust->mod_name);
+			break;
+		case R_BIN_WASM_NAMETYPE_Function:
+			if (cust->func) {
+				r_id_storage_free (cust->func->names);
+				R_FREE (cust->func);
+			}
+			break;
+		case R_BIN_WASM_NAMETYPE_Local:
+			wasm_custom_local_names_free (cust->local);
+			break;
+		case R_BIN_WASM_NAMETYPE_None:
+			break;
+		default:
+			eprintf ("Unkown type: 0x%x\n", cust->type);
+			r_warn_if_reached ();
+		}
+		R_FREE (cust);
+	}
+}
+
 // Parsing
 static RList *get_entries_from_section(RBinWasmObj *bin, RBinWasmSection *sec, ParseEntryFcn parse_entry, RListFree free_entry) {
 	r_return_val_if_fail (sec && bin, NULL);
@@ -241,12 +318,12 @@ static RList *get_entries_from_section(RBinWasmObj *bin, RBinWasmSection *sec, P
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data, R_BUF_SET);
 	ut32 r = 0;
-	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
-	if (!(max < r_buf_size (b))) {
+	ut64 bound = r_buf_tell (b) + sec->payload_len - 1;
+	if (bound >= r_buf_size (b)) {
 		goto beach;
 	}
-	while (r_buf_tell (b) <= max && r < sec->count) {
-		void *entry = parse_entry (b, max);
+	while (r_buf_tell (b) <= bound && r < sec->count) {
+		void *entry = parse_entry (b, bound);
 		if (!entry) {
 			goto beach;
 		}
@@ -263,20 +340,20 @@ beach:
 	return ret;
 }
 
-static void *parse_type_entry(RBuffer *b, ut64 max) {
+static void *parse_type_entry(RBuffer *b, ut64 bound) {
 	RBinWasmTypeEntry *ptr = R_NEW0 (RBinWasmTypeEntry);
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_u7_r (b, max, &ptr->form))) {
+	if (!consume_u7_r (b, bound, &ptr->form)) {
 		goto beach;
 	}
 	// check valid type?
-	if (!(consume_u32_r (b, max, &ptr->param_count))) {
+	if (!consume_u32_r (b, bound, &ptr->param_count)) {
 		goto beach;
 	}
-	ut32 count = ptr ? ptr->param_count : 0;
-	if (!(r_buf_tell (b) + count <= max)) {
+	ut32 count = ptr? ptr->param_count: 0;
+	if (r_buf_tell (b) + count > bound) {
 		goto beach;
 	}
 	if (count > 0) {
@@ -286,18 +363,18 @@ static void *parse_type_entry(RBuffer *b, ut64 max) {
 	}
 	ut32 j;
 	for (j = 0; j < count; j++) {
-		if (!(consume_s7_r (b, max, (st8 *)&ptr->param_types[j]))) {
+		if (!consume_s7_r (b, bound, (st8 *)&ptr->param_types[j])) {
 			goto beach;
 		}
 	}
-	if (!(consume_u1_r (b, max, (ut8 *)&ptr->return_count))) {
+	if (!consume_u1_r (b, bound, (ut8 *)&ptr->return_count)) {
 		goto beach;
 	}
 	if (ptr->return_count > 1) {
 		goto beach;
 	}
 	if (ptr->return_count == 1) {
-		if (!(consume_s7_r (b, max, (st8 *)&ptr->return_type))) {
+		if (!consume_s7_r (b, bound, (st8 *)&ptr->return_type)) {
 			goto beach;
 		}
 	}
@@ -308,51 +385,47 @@ beach:
 	return NULL;
 }
 
-static void *parse_import_entry(RBuffer *b, ut64 max) {
+static void *parse_import_entry(RBuffer *b, ut64 bound) {
 	RBinWasmImportEntry *ptr = R_NEW0 (RBinWasmImportEntry);
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_u32_r (b, max, &ptr->module_len))) {
+
+	if (!consume_str_new (b, bound, &ptr->module_len, &ptr->module_str)) {
 		goto beach;
 	}
-	max = R_MIN (max, ptr->module_len);
-	if (consume_str_r (b, max, ptr->module_len, ptr->module_str) < ptr->module_len) {
+
+	if (!consume_str_new (b, bound, &ptr->field_len, &ptr->field_str)) {
 		goto beach;
 	}
-	if (!(consume_u32_r (b, max, &ptr->field_len))) {
-		goto beach;
-	}
-	if (consume_str_r (b, max, ptr->field_len, ptr->field_str) < ptr->field_len) {
-		goto beach;
-	}
-	if (!(consume_u7_r (b, max, &ptr->kind))) {
+
+	if (!consume_u7_r (b, bound, &ptr->kind)) {
 		goto beach;
 	}
 	switch (ptr->kind) {
 	case 0: // Function
-		if (!(consume_u32_r (b, max, &ptr->type_f))) {
+		if (!consume_u32_r (b, bound, &ptr->type_f)) {
 			goto beach;
 		}
 		break;
 	case 1: // Table
-		if (!(consume_s7_r (b, max, (st8 *)&ptr->type_t.elem_type))) {
+		if (!consume_s7_r (b, bound, (st8 *)&ptr->type_t.elem_type)) {
 			goto beach;
 		}
-		if (!(consume_limits_r (b, max, &ptr->type_t.limits))) {
+		if (!consume_limits_r (b, bound, &ptr->type_t.limits)) {
 			goto beach;
 		}
 		break;
 	case 2: // Memory
-		if (!(consume_limits_r (b, max, &ptr->type_m.limits))) {
+		if (!consume_limits_r (b, bound, &ptr->type_m.limits)) {
 			goto beach;
 		}
 		break;
 	case 3: // Global
-		if (!(consume_s7_r (b, max, (st8 *)&ptr->type_g.content_type))) {
+		if (!consume_s7_r (b, bound, (st8 *)&ptr->type_g.content_type)) {
 			goto beach;
 		}
-		if (!(consume_u1_r (b, max, (ut8 *)&ptr->type_g.mutability))) {
+		if (!consume_u1_r (b, bound, (ut8 *)&ptr->type_g.mutability)) {
 			goto beach;
 		}
 		break;
@@ -366,21 +439,18 @@ beach:
 	return NULL;
 }
 
-static void *parse_export_entry(RBuffer *b, ut64 max) {
+static void *parse_export_entry(RBuffer *b, ut64 bound) {
 	RBinWasmExportEntry *ptr = R_NEW0 (RBinWasmExportEntry);
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_u32_r (b, max, &ptr->field_len))) {
+	if (!consume_str_new (b, bound, &ptr->field_len, &ptr->field_str)) {
 		goto beach;
 	}
-	if (consume_str_r (b, max, ptr->field_len, ptr->field_str) < ptr->field_len) {
+	if (!consume_u7_r (b, bound, &ptr->kind)) {
 		goto beach;
 	}
-	if (!(consume_u7_r (b, max, &ptr->kind))) {
-		goto beach;
-	}
-	if (!(consume_u32_r (b, max, &ptr->index))) {
+	if (!consume_u32_r (b, bound, &ptr->index)) {
 		goto beach;
 	}
 	return ptr;
@@ -389,22 +459,22 @@ beach:
 	return NULL;
 }
 
-static void *parse_code_entry(RBuffer *b, ut64 max) {
+static void *parse_code_entry(RBuffer *b, ut64 bound) {
 	RBinWasmCodeEntry *ptr = R_NEW0 (RBinWasmCodeEntry);
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_u32_r (b, max, &ptr->body_size))) {
+	if (!consume_u32_r (b, bound, &ptr->body_size)) {
 		goto beach;
 	}
 	ut32 j = r_buf_tell (b);
-	if (!(r_buf_tell (b) + ptr->body_size - 1 <= max)) {
+	if (r_buf_tell (b) + ptr->body_size - 1 > bound) {
 		goto beach;
 	}
-	if (!(consume_u32_r (b, max, &ptr->local_count))) {
+	if (!consume_u32_r (b, bound, &ptr->local_count)) {
 		goto beach;
 	}
-	if (consume_locals_r (b, max, ptr) < ptr->local_count) {
+	if (consume_locals_r (b, bound, ptr) < ptr->local_count) {
 		goto beach;
 	}
 	ptr->code = r_buf_tell (b);
@@ -421,18 +491,18 @@ beach:
 	return NULL;
 }
 
-static void *parse_data_entry(RBuffer *b, ut64 max) {
+static void *parse_data_entry(RBuffer *b, ut64 bound) {
 	RBinWasmDataEntry *ptr = R_NEW0 (RBinWasmDataEntry);
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_u32_r (b, max, &ptr->index))) {
+	if (!consume_u32_r (b, bound, &ptr->index)) {
 		goto beach;
 	}
-	if (!(ptr->offset.len = consume_init_expr_r (b, max, R_BIN_WASM_END_OF_CODE, NULL))) {
+	if (!(ptr->offset.len = consume_init_expr_r (b, bound, R_BIN_WASM_END_OF_CODE, NULL))) {
 		goto beach;
 	}
-	if (!(consume_u32_r (b, max, &ptr->size))) {
+	if (!consume_u32_r (b, bound, &ptr->size)) {
 		goto beach;
 	}
 	ptr->data = r_buf_tell (b);
@@ -444,39 +514,28 @@ beach:
 	return NULL;
 }
 
-static bool parse_namemap(RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
+static bool parse_namemap(RBuffer *b, ut64 bound, RIDStorage *map, ut32 *count) {
 	size_t i;
-	if (!(consume_u32_r (b, max, count))) {
+	if (!consume_u32_r (b, bound, count)) {
 		return false;
 	}
 
 	for (i = 0; i < *count; i++) {
-		RBinWasmName*name = R_NEW0 (RBinWasmName);
+		RBinWasmName *name = R_NEW0 (RBinWasmName);
 		if (!name) {
 			return false;
 		}
 
 		ut32 idx;
-		if (!(consume_u32_r (b, max, &idx))) {
+		if (!consume_u32_r (b, bound, &idx)) {
 			R_FREE (name);
 			return false;
 		}
 
-		if (!(consume_u32_r (b, max, &name->len))) {
+		if (!consume_str_new (b, bound, &name->len, (char **)&name->name)) {
 			R_FREE (name);
 			return false;
 		}
-		name->name = malloc (name->len + 1);
-		if (!name->name) {
-			R_FREE (name);
-			return false;
-		}
-		if (!(consume_str_r (b, R_MIN (max, name->len),
-			name->len, (char *)name->name))) {
-			R_FREE (name);
-			return false;
-		}
-		name->name[name->len] = 0;
 
 		if (!r_id_storage_add (map, name, &idx)) {
 			R_FREE (name);
@@ -487,116 +546,115 @@ static bool parse_namemap(RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
 	return true;
 }
 
-static void *parse_custom_name_entry(RBuffer *b, ut64 max) {
-	RBinWasmCustomNameEntry *ptr = NULL;
-	size_t i;
-	if (!(ptr = R_NEW0 (RBinWasmCustomNameEntry))) {
+static inline RBinWasmCustomNameLocalName *parse_local_name(RBuffer *b, ut64 bound) {
+	RBinWasmCustomNameLocalName *local_name = R_NEW0 (RBinWasmCustomNameLocalName);
+	if (local_name) {
+		if (!consume_u32_r (b, bound, &local_name->index)) {
+			goto beach;
+		}
+
+		local_name->names = r_id_storage_new (0, UT32_MAX);
+		if (!local_name->names) {
+			goto beach;
+		}
+
+		if (!parse_namemap (b, bound, local_name->names, &local_name->names_count)) {
+			goto beach;
+		}
+
+		return local_name;
+	}
+beach:
+	wasm_custom_name_local_free (local_name);
+	return NULL;
+}
+
+static inline RBinWasmCustomNameLocalNames *parse_custom_names_local(RBuffer *b, ut64 bound) {
+	RBinWasmCustomNameLocalNames *local = R_NEW0 (RBinWasmCustomNameLocalNames);
+	if (!local) {
 		return NULL;
 	}
+	if (!consume_u32_r (b, bound, &local->count)) {
+		goto beach;
+	}
 
-	if (!(consume_u7_r (b, max, &ptr->type))) {
+	local->locals = r_list_newf ((RListFree)wasm_custom_name_local_free);
+	if (local->locals) {
+		size_t i;
+		for (i = 0; i < local->count; i++) {
+			RBinWasmCustomNameLocalName *local_name = parse_local_name (b, bound);
+			if (!local_name || !r_list_append (local->locals, local_name)) {
+				wasm_custom_name_local_free (local_name);
+				goto beach;
+			}
+		}
+		return local;
+	}
+
+beach:
+	wasm_custom_local_names_free (local);
+	return NULL;
+}
+
+static RBinWasmCustomNameEntry *parse_custom_name_entry(RBuffer *b, ut64 bound) {
+	RBinWasmCustomNameEntry *cust = R_NEW0 (RBinWasmCustomNameEntry);
+	if (!cust) {
+		return NULL;
+	}
+	cust->type = R_BIN_WASM_NAMETYPE_None;
+
+	if (!consume_u7_r (b, bound, &cust->type)) {
 		goto beach;
 	};
 
-	if (!(consume_u32_r (b, max, &ptr->size))) {
+	if (!consume_u32_r (b, bound, &cust->size)) {
 		goto beach;
 	};
 
-	switch (ptr->type) {
+	switch (cust->type) {
 	case R_BIN_WASM_NAMETYPE_Module:
-		ptr->mod_name = R_NEW0 (struct r_bin_wasm_name_t);
-		if (!ptr->mod_name) {
+		cust->mod_name = R_NEW0 (struct r_bin_wasm_name_t);
+		if (!cust->mod_name) {
 			goto beach;
 		}
-		if (!(consume_u32_r (b, max, &ptr->mod_name->len))) {
+		if (!consume_str_new (b, bound, &cust->mod_name->len, (char **)&cust->mod_name->name)) {
 			goto beach;
 		}
-		ptr->mod_name->name = malloc (ptr->mod_name->len + 1);
-		if (!(consume_str_r (b, R_MIN (max, ptr->mod_name->len),
-			ptr->mod_name->len, (char *)ptr->mod_name->name))) {
-			goto beach;
-		}
-		ptr->mod_name->name[ptr->mod_name->len] = 0;
 		break;
 	case R_BIN_WASM_NAMETYPE_Function:
-		ptr->func = R_NEW0 (RBinWasmCustomNameFunctionNames);
-		if (!ptr->func) {
+		cust->func = R_NEW0 (RBinWasmCustomNameFunctionNames);
+		if (!cust->func) {
+			goto beach;
+		}
+		cust->func->names = r_id_storage_new (0, UT32_MAX);
+		if (!cust->func->names) {
 			goto beach;
 		}
 
-		ptr->func->names = r_id_storage_new (0, UT32_MAX);
-
-		if (!ptr->func->names) {
-			goto beach;
-		}
-
-		if (!parse_namemap (b, max, ptr->func->names, &ptr->func->count)) {
+		if (!parse_namemap (b, bound, cust->func->names, &cust->func->count)) {
 			goto beach;
 		}
 		break;
 	case R_BIN_WASM_NAMETYPE_Local:
-		ptr->local = R_NEW0 (RBinWasmCustomNameLocalNames);
-		if (!ptr->local) {
+		cust->local = parse_custom_names_local (b, bound);
+		if (!cust->local) {
 			goto beach;
-		}
-		if (!(consume_u32_r (b, max, &ptr->local->count))) {
-			free (ptr->local);
-			goto beach;
-		}
-
-		ptr->local->locals = r_list_new ();
-
-		for (i = 0; i < ptr->local->count; i++) {
-			RBinWasmCustomNameLocalName *local_name = R_NEW0 (RBinWasmCustomNameLocalName);
-			if (!local_name) {
-				free (ptr->local);
-				free (ptr);
-				return NULL;
-			}
-
-			if (!(consume_u32_r (b, max, &local_name->index))) {
-				r_list_free (ptr->local->locals);
-				free (ptr->local);
-				free (local_name);
-				goto beach;
-			}
-
-			local_name->names = r_id_storage_new (0, UT32_MAX);
-			if (!local_name->names) {
-				r_list_free (ptr->local->locals);
-				free (ptr->local);
-				free (local_name);
-				goto beach;
-			}
-
-			if (!parse_namemap (b, max, local_name->names, &local_name->names_count)) {
-				r_id_storage_free (local_name->names);
-				r_list_free (ptr->local->locals);
-				free (ptr->local);
-				free (local_name);
-				goto beach;
-			}
-
-			if (!r_list_append (ptr->local->locals, local_name)) {
-				free (local_name);
-				goto beach;
-			};
 		}
 		break;
 	}
 
-	return ptr;
+	return cust;
 beach:
-	free (ptr);
+	wasm_custom_name_free (cust);
 	return NULL;
 }
 
-static void *parse_memory_entry(RBuffer *b, ut64 max) {
+static void *parse_memory_entry(RBuffer *b, ut64 bound) {
 	RBinWasmMemoryEntry *ptr = R_NEW0 (RBinWasmMemoryEntry);
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_limits_r (b, max, &ptr->limits))) {
+	if (!consume_limits_r (b, bound, &ptr->limits)) {
 		goto beach;
 	}
 	return ptr;
@@ -606,15 +664,15 @@ beach:
 	return NULL;
 }
 
-static void *parse_table_entry(RBuffer *b, ut64 max) {
+static void *parse_table_entry(RBuffer *b, ut64 bound) {
 	RBinWasmTableEntry *ptr = R_NEW0 (RBinWasmTableEntry);
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_s7_r (b, max, (st8 *)&ptr->element_type))) {
+	if (!consume_s7_r (b, bound, (st8 *)&ptr->element_type)) {
 		goto beach;
 	}
-	if (!(consume_limits_r (b, max, &ptr->limits))) {
+	if (!consume_limits_r (b, bound, &ptr->limits)) {
 		goto beach;
 	}
 	return ptr;
@@ -624,18 +682,18 @@ beach:
 	return NULL;
 }
 
-static void *parse_global_entry(RBuffer *b, ut64 max) {
+static void *parse_global_entry(RBuffer *b, ut64 bound) {
 	RBinWasmGlobalEntry *ptr = R_NEW0 (RBinWasmGlobalEntry);
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_u7_r (b, max, (ut8 *)&ptr->content_type))) {
+	if (!consume_u7_r (b, bound, (ut8 *)&ptr->content_type)) {
 		goto beach;
 	}
-	if (!(consume_u1_r (b, max, &ptr->mutability))) {
+	if (!consume_u1_r (b, bound, &ptr->mutability)) {
 		goto beach;
 	}
-	if (!(consume_init_expr_r (b, max, R_BIN_WASM_END_OF_CODE, NULL))) {
+	if (!consume_init_expr_r (b, bound, R_BIN_WASM_END_OF_CODE, NULL)) {
 		goto beach;
 	}
 	return ptr;
@@ -645,24 +703,24 @@ beach:
 	return NULL;
 }
 
-static void *parse_element_entry(RBuffer *b, ut64 max) {
+static void *parse_element_entry(RBuffer *b, ut64 bound) {
 	RBinWasmElementEntry *ptr = R_NEW0 (RBinWasmElementEntry);
 	if (!ptr) {
 		return NULL;
 	}
-	if (!(consume_u32_r (b, max, &ptr->index))) {
+	if (!consume_u32_r (b, bound, &ptr->index)) {
 		goto beach;
 	}
-	if (!(consume_init_expr_r (b, max, R_BIN_WASM_END_OF_CODE, NULL))) {
+	if (!consume_init_expr_r (b, bound, R_BIN_WASM_END_OF_CODE, NULL)) {
 		goto beach;
 	}
-	if (!(consume_u32_r (b, max, &ptr->num_elem))) {
+	if (!consume_u32_r (b, bound, &ptr->num_elem)) {
 		goto beach;
 	}
 	ut32 j = 0;
-	while (r_buf_tell (b) <= max && j < ptr->num_elem) {
+	while (r_buf_tell (b) <= bound && j < ptr->num_elem) {
 		// TODO: allocate space and fill entry
-		if (!(consume_u32_r (b, max, NULL))) {
+		if (!consume_u32_r (b, bound, NULL)) {
 			goto beach;
 		}
 	}
@@ -678,11 +736,11 @@ static RList *r_bin_wasm_get_type_entries(RBinWasmObj *bin, RBinWasmSection *sec
 }
 
 static RList *r_bin_wasm_get_import_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
-	return get_entries_from_section (bin, sec, parse_import_entry, (RListFree)free);
+	return get_entries_from_section (bin, sec, parse_import_entry, (RListFree)import_entry_free);
 }
 
 static RList *r_bin_wasm_get_export_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
-	return get_entries_from_section (bin, sec, parse_export_entry, (RListFree)free);
+	return get_entries_from_section (bin, sec, parse_export_entry, (RListFree)export_entry_free);
 }
 
 static RList *r_bin_wasm_get_code_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
@@ -702,15 +760,10 @@ static RBinWasmStartEntry *r_bin_wasm_get_start(RBinWasmObj *bin, RBinWasmSectio
 
 	RBuffer *b = bin->buf;
 	r_buf_seek (b, sec->payload_data, R_BUF_SET);
-	ut64 max = r_buf_tell (b) + sec->payload_len - 1;
-	if (!(max < r_buf_size (b))) {
-		goto beach;
+	ut64 bound = r_buf_tell (b) + sec->payload_len - 1;
+	if (bound < r_buf_size (b) && consume_u32_r (b, bound, &ptr->index)) {
+		return ptr;
 	}
-	if (!(consume_u32_r (b, max, &ptr->index))) {
-		goto beach;
-	}
-	return ptr;
-beach:
 	eprintf ("[wasm] header parsing error.\n");
 	free (ptr);
 	return NULL;
@@ -733,19 +786,19 @@ static RList *r_bin_wasm_get_element_entries(RBinWasmObj *bin, RBinWasmSection *
 }
 
 static RList *r_bin_wasm_get_custom_name_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
-	RList *ret = r_list_new ();
+	RList *ret = r_list_newf ((RListFree)wasm_custom_name_free);
 
 	RBuffer *buf = bin->buf;
 
 	r_buf_seek (buf, sec->payload_data, R_BUF_SET);
-	ut64 max = sec->payload_data + sec->payload_len - 1;
+	ut64 bound = sec->payload_data + sec->payload_len - 1;
 
-	if (max > r_buf_size (buf)) {
+	if (bound > r_buf_size (buf)) {
 		goto beach;
 	}
 
-	while (r_buf_tell (buf) < max) {
-		RBinWasmCustomNameEntry *nam = parse_custom_name_entry (buf, max);
+	while (r_buf_tell (buf) < bound) {
+		RBinWasmCustomNameEntry *nam = parse_custom_name_entry (buf, bound);
 
 		if (!nam) {
 			goto beach;
@@ -807,36 +860,7 @@ void r_bin_wasm_destroy(RBinFile *bf) {
 	r_list_free (bin->g_globals);
 	r_list_free (bin->g_codes);
 	r_list_free (bin->g_datas);
-
-	RListIter *iter;
-	RBinWasmCustomNameEntry *nam;
-	r_list_foreach (bin->g_names, iter, nam) {
-		switch (nam->type) {
-		case R_BIN_WASM_NAMETYPE_Module:
-			R_FREE (nam->mod_name);
-			break;
-		case R_BIN_WASM_NAMETYPE_Function:
-			if (nam->func) {
-				r_id_storage_free (nam->func->names);
-			}
-			break;
-		case R_BIN_WASM_NAMETYPE_Local:
-			if (nam->local && nam->local->locals) {
-				RListIter *iter;
-				RBinWasmCustomNameLocalName *local;
-				r_list_foreach (nam->local->locals, iter, local) {
-					if (local->names) {
-						r_id_storage_free (local->names);
-					}
-				}
-
-				r_list_free (nam->local->locals);
-			}
-			break;
-		}
-	}
 	r_list_free (bin->g_names);
-
 	free (bin->g_start);
 	free (bin);
 	bf->o->bin_obj = NULL;
@@ -852,20 +876,20 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 	if (bin->g_sections) {
 		return bin->g_sections;
 	}
-	if (!(ret = r_list_newf ((RListFree)free))) {
+	if (!(ret = r_list_newf ((RListFree)wasm_sec_free))) {
 		return NULL;
 	}
 	RBuffer *b = bin->buf;
-	ut64 max = r_buf_size (b) - 1;
+	ut64 bound = r_buf_size (b) - 1;
 	r_buf_seek (b, 8, R_BUF_SET);
-	while (r_buf_tell (b) <= max) {
+	while (r_buf_tell (b) <= bound) {
 		if (!(ptr = R_NEW0 (RBinWasmSection))) {
 			return ret;
 		}
-		if (!(consume_u7_r (b, max, &ptr->id))) {
+		if (!consume_u7_r (b, bound, &ptr->id)) {
 			goto beach;
 		}
-		if (!(consume_u32_r (b, max, &ptr->size))) {
+		if (!consume_u32_r (b, bound, &ptr->size)) {
 			goto beach;
 		}
 		// against spec. TODO: choose criteria for parsing
@@ -874,7 +898,7 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 			// free (ptr);
 			// continue;
 		}
-		if (!(r_buf_tell (b) + (ut64)ptr->size - 1 <= max)) {
+		if (r_buf_tell (b) + (ut64)ptr->size - 1 > bound) {
 			goto beach;
 		}
 		ptr->count = 0;
@@ -882,12 +906,7 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 		switch (ptr->id) {
 		case R_BIN_WASM_SECTION_CUSTOM:
 			// eprintf("custom section: 0x%x, ", (ut32)b->cur);
-			if (!(consume_u32_r (b, max, &ptr->name_len))) {
-				goto beach;
-			}
-			ptr->name = malloc (ptr->name_len + 1);
-			if (consume_str_r (b, R_MIN (ptr->name_len, max),
-				ptr->name_len, (char *)ptr->name) < ptr->name_len) {
+			if (!consume_str_new (b, bound, &ptr->name_len, &ptr->name)) {
 				goto beach;
 			}
 			break;
@@ -952,7 +971,7 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 			continue;
 		}
 		if (ptr->id != R_BIN_WASM_SECTION_START && ptr->id != R_BIN_WASM_SECTION_CUSTOM) {
-			if (!(consume_u32_r (b, max, &ptr->count))) {
+			if (!consume_u32_r (b, bound, &ptr->count)) {
 				goto beach;
 			}
 			// eprintf("count %d\n", ptr->count);

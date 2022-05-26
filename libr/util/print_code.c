@@ -30,6 +30,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 
 	const int orig_align = p->coreb.cfggeti (p->coreb.core, "asm.cmt.col") - 40;
 	size_t k, i = 0;
+	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
 
 	while (!r_print_is_interrupted () && i < len) {
 		ut64 at = addr + i;
@@ -43,7 +44,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 		size_t limit = R_MIN (i + inst_size, len);
 		for (k = i; k < limit; k++) {
 			r_print_cursor (p, k, 1, true);
-			p->cb_printf (fmtstr, r_read_ble (buf++, p->big_endian, 8));
+			p->cb_printf (fmtstr, r_read_ble (buf++, be, 8));
 			r_print_cursor (p, k, 1, false);
 			p->cb_printf (", ");
 		}
@@ -65,9 +66,11 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 }
 
 static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w) {
+	r_return_if_fail (p && p->cb_printf);
 	size_t i;
 
 	ws = R_MAX (1, R_MIN (ws, 8));
+	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
 	int bits = ws * 8;
 	const char *fmtstr = bits_to_c_code_fmtstr (bits);
 	len /= ws;
@@ -80,7 +83,7 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 			p->cb_printf ("\n  ");
 		}
 		r_print_cursor (p, i, 1, 1);
-		p->cb_printf (fmtstr, r_read_ble (buf, p->big_endian, bits));
+		p->cb_printf (fmtstr, r_read_ble (buf, be, bits));
 		if ((i + 1) < len) {
 			p->cb_printf (",");
 
@@ -168,6 +171,15 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 			p->cb_printf ("0x%02x", buf[i]);
 		}
 		p->cb_printf ("\n.equ shellcode_len, %d\n", len);
+		break;
+	case 'g': // "pcg"
+		p->cb_printf ("var BUFF = [%d]byte{", len);
+		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+			r_print_cursor (p, i, 1, 1);
+			p->cb_printf ("0x%x%s", buf[i], (i + 1 < len)? ",": "");
+			r_print_cursor (p, i, 1, 0);
+		}
+		p->cb_printf ("}\n");
 		break;
 	case 's': // "pcs"
 		p->cb_printf ("\"");

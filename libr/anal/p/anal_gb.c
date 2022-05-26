@@ -1,5 +1,5 @@
 /* radare - LGPL - Copyright 2012 - pancake<nopcode.org>
-			     2019 - condret
+			     2022 - condret
 
 	this file was based on anal_i8080.c */
 
@@ -1562,7 +1562,7 @@ static int archinfo(RAnal *anal, int q) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return 1;
 	}
-	return 1;
+	return -1;
 }
 
 RAnalPlugin r_anal_plugin_gb = {

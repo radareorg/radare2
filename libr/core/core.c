@@ -595,13 +595,14 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		ut8 buf[sizeof (ut64)] = {0};
 		(void)r_io_read_at (core->io, n, buf, R_MIN (sizeof (buf), refsz));
+		bool be = core->rasm->config->big_endian;
 		switch (refsz) {
 		case 8:
-			return r_read_ble64 (buf, core->print->big_endian);
+			return r_read_ble64 (buf, be);
 		case 4:
-			return r_read_ble32 (buf, core->print->big_endian);
+			return r_read_ble32 (buf, be);
 		case 2:
-			return r_read_ble16 (buf, core->print->big_endian);
+			return r_read_ble16 (buf, be);
 		case 1:
 			return r_read_ble8 (buf);
 		default:
@@ -2999,9 +3000,11 @@ R_API bool r_core_init(RCore *core) {
 	core->lastcmd = NULL;
 	core->cmdlog = NULL;
 
-	sdb_free (core->print->charset->db);
-	core->print->charset->db = sdb_ns (core->sdb, "charset", 1);
-	core->print->charset->db->refs++; // increase reference counter to avoid double-free
+	if (core->print->charset) {
+		sdb_free (core->print->charset->db);
+		core->print->charset->db = sdb_ns (core->sdb, "charset", 1);
+		core->print->charset->db->refs++; // increase reference counter to avoid double-free
+	}
 	// ideally sdb_ns_set should be used here, but it doesnt seems to work well. must fix
 	// sdb_ns_set (DB, "charset", core->print->charset->db);
 	core->stkcmd = NULL;
@@ -3051,10 +3054,12 @@ R_API bool r_core_init(RCore *core) {
 	core->rasm->num = core->num;
 	r_asm_set_user_ptr (core->rasm, core);
 	core->anal = r_anal_new ();
-	r_unref (core->anal->config);
-	core->anal->config = r_ref (core->rasm->config);
+	r_ref_set (core->print->config, core->rasm->config);
+	r_ref_set (core->anal->config, core->rasm->config);
+	r_ref_set (core->anal->reg->config, core->rasm->config);
+	// RAnal.new() doesnt initializes this field. but it should be refcounted
 	core->anal->print = core->print;
-	r_anal_set_bits (core->anal, 32);
+	r_anal_set_bits (core->anal, 32); // core->rasm->config->bits);
 	r_anal_bind (core->anal, &core->rasm->analb);
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;
@@ -3360,7 +3365,7 @@ static void set_prompt(RCore *r) {
 		remote = "=!";
 	}
 
-	if (r_config_get_i (r->config, "scr.color")) {
+	if (r_config_get_i (r->config, "scr.color") > 0) {
 		BEGIN = r->cons->context->pal.prompt;
 		END = r->cons->context->pal.reset;
 	}
@@ -3395,7 +3400,7 @@ static void set_prompt(RCore *r) {
 	}
 
 	chop_prompt (filename, tmp, 128);
-	char *prompt = r_str_newf ("%s%s[%s%s]>%s ", filename, BEGIN, remote,
+	char *prompt = r_str_newf ("%s%s[%s%s]> %s", filename, BEGIN, remote,
 		tmp, END);
 	r_line_set_prompt (r_str_get (prompt));
 
@@ -3452,7 +3457,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	if (r->scr_gadgets && *line && *line != 'q') {
 		r_core_cmd0 (r, "pg");
 	}
-	r->num->value = r->rc;
+	// r->num->value = r->rc;
 	return true;
 }
 
@@ -3472,11 +3477,9 @@ R_API int r_core_prompt_exec(RCore *r) {
 			r_core_cmd_queue (r, NULL);
 			break;
 		}
-		r->rc = r->num->value;
-		// int ret = r_core_cmd (r, cmd, true);
 		if (r->cons && r->cons->context->use_tts) {
 			const char *buf = r_cons_get_buffer ();
-			if (buf && *buf) {
+			if (R_STR_ISNOTEMPTY (buf)) {
 				r_sys_tts (buf, true);
 			}
 			r->cons->context->use_tts = false;

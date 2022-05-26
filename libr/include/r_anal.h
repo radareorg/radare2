@@ -593,7 +593,6 @@ typedef struct r_anal_options_t {
 	int nonull;
 	bool pushret; // analyze push+ret as jmp
 	bool armthumb; //
-	bool endsize; // chop function size which is known to be buggy but goodie too
 	bool delay;
 	int tailcall;
 	bool retpoline;
@@ -1333,6 +1332,7 @@ typedef struct r_anal_plugin_t {
 	char *cpus;
 	int bits;
 	int esil; // can do esil or not
+	int jmpmid;	// can do jump in the middle
 	int fileformat_type;
 	int (*init)(void *user);
 	int (*fini)(void *user);
@@ -1402,6 +1402,7 @@ R_API void r_anal_type_list(RAnal *a, short category, short enabled);
 R_API const char *r_anal_datatype_to_string(RAnalDataType t);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
 R_API bool r_anal_op_nonlinear(int t);
+R_API const char *r_anal_op_direction_tostring(RAnalOp *op);
 R_API bool r_anal_op_ismemref(int t);
 R_API const char *r_anal_optype_to_string(int t);
 R_API int r_anal_optype_from_string(const char *type);
@@ -1574,6 +1575,7 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API void r_anal_plugin_free(RAnalPlugin *p);
 R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo);
 R_API int r_anal_archinfo(RAnal *anal, int query);
+R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr);
 R_API bool r_anal_use(RAnal *anal, const char *name);
 R_API bool r_anal_esil_use(RAnal *anal, const char *name);
 R_API const char *r_anal_esil_trapstr(int type);
@@ -1582,7 +1584,6 @@ R_API char *r_anal_get_reg_profile(RAnal *anal);
 R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr);
 R_API bool r_anal_set_bits(RAnal *anal, int bits);
 R_API bool r_anal_set_os(RAnal *anal, const char *os);
-R_API void r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_functiontype_tostring(int type);
@@ -1719,7 +1720,7 @@ R_API RAnalFunction *r_anal_function_next(RAnal *anal, ut64 addr);
 R_API char *r_anal_function_get_signature(RAnalFunction *function);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_function_count(RAnal *a, ut64 from, ut64 to);
-R_API RAnalBlock *r_anal_function_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut64 addr);
+R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr);
 R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_function_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize);

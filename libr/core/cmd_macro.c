@@ -75,13 +75,13 @@ static int cmd_macro(void *data, const char *_input) {
 				r_cmd_macro_call (&core->rcmd->macro, buf);
 			} else {
 				eprintf ("Invalid syntax for macro\n");
-				r_core_return_code (core, R_CMD_RC_FAILURE);
+				r_core_return_value (core, R_CMD_RC_FAILURE);
 			}
 		}
 		free (buf);
 		} break;
 	}
-	r_core_return_code (core, R_CMD_RC_SUCCESS);
+	r_core_return_value (core, R_CMD_RC_SUCCESS);
 	free (input);
 	return R_CMD_RC_SUCCESS;
 }

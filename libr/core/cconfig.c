@@ -368,13 +368,6 @@ static bool cb_anal_delay(void *user, void *data) {
 	return true;
 }
 
-static bool cb_anal_endsize(void *user, void *data) {
-	RCore *core = (RCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
-	core->anal->opt.endsize = node->i_value;
-	return true;
-}
-
 static bool cb_analvars(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -818,8 +811,6 @@ static bool cb_asmarch(void *user, void *data) {
 
 	// try to set endian of RAsm to match binary
 	r_asm_set_big_endian (core->rasm, bigbin);
-	// set endian of display to match binary
-	core->print->big_endian = bigbin;
 
 	r_asm_set_cpu (core->rasm, asm_cpu);
 	free (asm_cpu);
@@ -878,7 +869,7 @@ static bool cb_asmbits(void *user, void *data) {
 	if (!bits) {
 		return false;
 	}
-	if (bits == core->rasm->config->bits && bits == core->anal->config->bits && bits == core->dbg->bits) {
+	if (bits == core->rasm->config->bits && bits == core->dbg->bits) {
 		// early optimization
 		return true;
 	}
@@ -896,7 +887,6 @@ static bool cb_asmbits(void *user, void *data) {
 			eprintf ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
 			ret = false;
 		}
-		core->print->bits = bits;
 	}
 	if (core->dbg && core->anal && core->anal->cur) {
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, bits);
@@ -1319,16 +1309,14 @@ static bool cb_dirzigns(void *user, void *data) {
 static bool cb_bigendian(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
+	core->rasm->config->big_endian = node->i_value;
 	// Try to set endian based on preference, restrict by RAsmPlugin
 	bool isbig = r_asm_set_big_endian (core->rasm, node->i_value);
-	// Set anal endianness the same as asm
-	r_anal_set_big_endian (core->anal, isbig);
 	// the big endian should also be assigned to dbg->bp->endian
 	if (core->dbg && core->dbg->bp) {
 		core->dbg->bp->endian = isbig;
 	}
-	// Set printing endian to user's choice
-	core->print->big_endian = node->i_value;
+	core->rasm->config->big_endian = node->i_value;
 	return true;
 }
 
@@ -2658,10 +2646,7 @@ static bool cb_segoff(void *user, void *data) {
 static bool cb_seggrn(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	// R2_570 those two do the same as the struct is shared now
 	core->rasm->config->seggrn = node->i_value;
-	// XXX R2_570 ,. use RArchConfig in RPrint
-	core->print->seggrn = node->i_value;
 	return true;
 }
 
@@ -2883,6 +2868,16 @@ static bool cb_binmaxstrbuf(void *user, void *data) {
 	return true;
 }
 
+static bool cb_binmaxsymlen(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core->bin) {
+		core->bin->maxsymlen = node->i_value;
+		return true;
+	}
+	return true;
+}
+
 static bool cb_binmaxstr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3007,7 +3002,7 @@ static bool cb_anal_gp(RCore *core, RConfigNode *node) {
 
 static bool cb_anal_cs(RCore *core, RConfigNode *node) {
 	// core->anal->cs = node->i_value;
-	core->print->segbas = node->i_value;
+	core->rasm->config->segbas = node->i_value;
 	return true;
 }
 
@@ -3370,7 +3365,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.jmp.tailcall", 0, &cb_anal_jmptailcall, "consume a branch as a call if delta is big");
 
 	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
-	SETCB ("anal.endsize", "true", &cb_anal_endsize, "adjust function size at the end of the analysis (known to be buggy)");
 	SETCB ("anal.delay", "true", &cb_anal_delay, "enable delay slot analysis if supported by the architecture");
 	SETICB ("anal.depth", 64, &cb_analdepth, "max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "max depth for path search");
@@ -3650,6 +3644,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.dbginfo", "true", &cb_bindbginfo, "load debug information at startup if available");
 	SETBPREF ("bin.relocs", "true", "load relocs information at startup if available");
 	SETICB ("bin.minstr", 0, &cb_binminstr, "minimum string length for r_bin");
+	SETICB ("bin.maxsymlen", 0, &cb_binmaxsymlen, "maximum length for symbol names");
 	SETICB ("bin.maxstr", 0, &cb_binmaxstr, "maximum string length for r_bin");
 	SETICB ("bin.maxstrbuf", 1024*1024*10, & cb_binmaxstrbuf, "maximum size of range to load strings from");
 	n = NODECB ("bin.str.enc", "guess", &cb_binstrenc);
@@ -3801,7 +3796,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.wrap", "false", &cb_dbg_wrap, "enable the ptrace-wrap abstraction layer (needed for debugging from iaito)");
 	SETCB ("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
 	SETBPREF ("dbg.skipover", "false", "make dso perform a dss (same goes for esil and visual/graph");
+#if __APPLE__
+	SETBPREF ("dbg.hwbp", "true", "use hardware breakpoints instead of software ones when enabled");
+#else
 	SETBPREF ("dbg.hwbp", "false", "use hardware breakpoints instead of software ones when enabled");
+#endif
 	SETCB ("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
 	SETCB ("dbg.verbose", "false", &cb_dbg_verbose, "Verbose debug output");
 	SETBPREF ("dbg.slow", "false", "show stack and regs in visual mode in a slow but verbose mode");

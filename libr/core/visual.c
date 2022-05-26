@@ -7,17 +7,20 @@
 
 static void visual_refresh(RCore *core);
 
+static const char *promptstr = "> ";
 // remove globals pls
-static int obs = 0;
-static int blocksize = 0;
-static bool autoblocksize = true;
-static int disMode = 0;
-static int hexMode = 0;
-static int printMode = 0;
-static bool snowMode = false;
-static RList *snows = NULL;
-static int color = 1;
-static int zoom = 0;
+static R_TH_LOCAL int obs = 0;
+static R_TH_LOCAL int blocksize = 0;
+static R_TH_LOCAL bool autoblocksize = true;
+static R_TH_LOCAL int disMode = 0;
+static R_TH_LOCAL int hexMode = 0;
+static R_TH_LOCAL int printMode = 0;
+static R_TH_LOCAL bool snowMode = false;
+static R_TH_LOCAL RList *snows = NULL;
+static R_TH_LOCAL int color = 1;
+static R_TH_LOCAL int zoom = 0;
+static R_TH_LOCAL int currentFormat = 0;
+static R_TH_LOCAL int current0format = 0;
 
 typedef struct {
 	int x;
@@ -48,8 +51,6 @@ static const char *printfmtColumns[NPF] = {
 #define PRINT_4_FORMATS 9
 #define PRINT_5_FORMATS 8
 
-static int currentFormat = 0;
-static int current0format = 0;
 static const char *printHexFormats[PRINT_HEX_FORMATS] = {
 	"px", "pxa", "pxr", "prx", "pxb", "pxh", "pxw", "pxq", "pxd", "pxr",
 };
@@ -800,11 +801,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 	if (PIDX != 2) {
 		core->seltab = 0;
 	}
-#if __UNIX__
-	r_line_set_prompt (Color_RESET ":> ");
-#else
-	r_line_set_prompt (":> ");
-#endif
+	r_line_set_prompt (promptstr);
 	r_core_visual_showcursor (core, true);
 	r_cons_fgets (buf, sizeof (buf), 0, NULL);
 	if (!strcmp (buf, "q")) {
@@ -1357,7 +1354,7 @@ static void addComment(RCore *core, ut64 addr) {
 	r_core_visual_showcursor (core, true);
 	r_cons_flush ();
 	r_cons_set_raw (false);
-	r_line_set_prompt (":> ");
+	r_line_set_prompt (promptstr);
 	r_cons_enable_mouse (false);
 	if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
 		buf[0] = '\0';
@@ -2604,7 +2601,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_cons_flush ();
 			r_cons_set_raw (false);
 			strcpy (buf, "\"wa ");
-			r_line_set_prompt (":> ");
+			r_line_set_prompt (promptstr);
 			r_cons_enable_mouse (false);
 			if (r_cons_fgets (buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
 				buf[0] = '\0';
@@ -4152,6 +4149,7 @@ static void visual_refresh(RCore *core) {
 	}
 	r_cons_flush ();
 	r_cons_print_clear ();
+	r_cons_strcat (core->cons->context->pal.bgprompt);
 	core->cons->context->noflush = true;
 
 	int hex_cols = r_config_get_i (core->config, "hex.cols");
@@ -4192,9 +4190,10 @@ static void visual_refresh(RCore *core) {
 		r_cons_printf (R_CONS_CLEAR_LINE"\n");
 	}
 	vi = r_config_get (core->config, "cmd.vprompt");
-	if (vi && *vi) {
+	if (R_STR_ISNOTEMPTY (vi)) {
+#if 1
 		r_core_cmd0 (core, vi);
-#if 0
+#else
 		char *output = r_core_cmd_str (core, vi);
 		r_cons_strcat_at (output, 10, 5, 20, 20);
 		free (output);

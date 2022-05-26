@@ -21,7 +21,7 @@ dirlist = [
 
 skiplist = [
     "/gnu/",
-    "librz/asm/arch/vax/",
+    "librz/anal/arch/vax/",
     "librz/asm/arch/riscv/",
     "librz/asm/arch/sh/gnu/",
     "librz/asm/arch/i8080/",

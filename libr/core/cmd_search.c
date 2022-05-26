@@ -375,8 +375,11 @@ static int __backward_prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) 
 static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *) user;
 	int depth = r_config_get_i (core->config, "anal.depth");
-	// eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
-	r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
+	if (r_config_get_b (core->config, "anal.calls")) {
+		r_core_cmdf (core, "afr@0x%"PFMT64x, addr);
+	} else {
+		r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
+	}
 	preludecnt++;
 	return 1;
 }
@@ -807,6 +810,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		if (bank) {
 			r_list_foreach (bank->maprefs, iter, mapref) {
 				RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+				if (!map) {
+					continue;
+				}
 				const ut64 from = r_io_map_begin (map);
 				const ut64 to = r_io_map_end (map);
 				const int rwx = map->perm;
@@ -2053,6 +2059,7 @@ beach:
 
 static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct search_parameters *param) {
 	const int size = 12;
+	bool be = core->print->config->big_endian;
 	char str[512];
 	RAnalFunction *fcn;
 	RAnalRef *ref;
@@ -2068,7 +2075,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 			RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
 			r_parse_filter (core->parser, ref->addr, core->flags, hint, r_strbuf_get (&asmop.buf_asm),
-				str, sizeof (str), core->print->big_endian);
+				str, sizeof (str), be);
 			r_anal_hint_free (hint);
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 			char *print_comment = NULL;
@@ -2397,6 +2404,7 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode, RInterval search_itv) {
 	RCoreAsmHit *hit;
 	RListIter *iter, *itermap;
+	bool be = core->rasm->config->big_endian;
 	int count = 0, maxhits = 0, filter = 0;
 	int kwidx = core->search->n_kws; // (int)r_config_get_i (core->config, "search.kwidx")-1;
 	RList *hits;
@@ -2475,8 +2483,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 							0
 						};
 						RAnalHint *hint = r_anal_hint_get (core->anal, hit->addr);
-						r_parse_filter (core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp),
-								core->print->big_endian);
+						r_parse_filter (core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp), be);
 						r_anal_hint_free (hint);
 						if (param->outmode == R_MODE_SIMPLE) {
 							r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, tmp);
@@ -2616,7 +2623,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			}
 			print_search_progress (at, to1, search->nhits, param);
 			r_cons_clear_line (1);
-			r_core_return_code (core, search->nhits);
+			r_core_return_value (core, search->nhits);
 			if (param->outmode != R_MODE_JSON) {
 				eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 			}
@@ -3698,10 +3705,10 @@ reread:
 							}
 						}
 						free (hashValue);
-						r_core_return_code (core, 0);
+						r_core_return_value (core, 0);
 					} else {
 						eprintf ("Cannot allocate memory.\n");
-						r_core_return_code (core, 1);
+						r_core_return_value (core, 1);
 					}
 				} else {
 					eprintf ("Usage: /cc [hashname] [hexpairhashvalue]\n");
@@ -4082,7 +4089,7 @@ reread:
 		}
 		if (input[param_offset - 1] != ' ') {
 			eprintf ("Missing ' ' after /i\n");
-			r_core_return_code (core, R_CMD_RC_FAILURE);
+			r_core_return_value (core, R_CMD_RC_FAILURE);
 			goto beach;
 		}
 		ignorecase = true;
@@ -4224,7 +4231,7 @@ reread:
 			st64 coff = core->offset;
 			RInterval itv = {core->offset, -coff};
 			if (!r_itv_overlap (search_itv, itv)) {
-				r_core_return_code (core, R_CMD_RC_SUCCESS);
+				r_core_return_value (core, R_CMD_RC_SUCCESS);
 				goto beach;
 			} else {
 				search_itv = r_itv_intersect (search_itv, itv);
@@ -4428,9 +4435,9 @@ again:
 	}
 beach:
 	if (errcode != -1) {
-		r_core_return_code (core, errcode);
+		r_core_return_value (core, errcode);
 	} else {
-		r_core_return_code (core, search->nhits);
+		r_core_return_value (core, search->nhits);
 	}
 	core->in_search = false;
 	r_flag_space_pop (core->flags);

@@ -19,9 +19,11 @@ static void __fill_tail(int cols, int lines) {
 	}
 }
 
+static HANDLE hStdout = NULL;
+static HANDLE hStderr = NULL;
+static CONSOLE_SCREEN_BUFFER_INFO csbi;
+
 R_API void r_cons_w32_clear(void) {
-	static HANDLE hStdout = NULL;
-	static CONSOLE_SCREEN_BUFFER_INFO csbi;
 	COORD startCoords;
 	DWORD dummy;
 	if (I->vtmode) {
@@ -48,9 +50,7 @@ R_API void r_cons_w32_clear(void) {
 }
 
 R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
-	static HANDLE hStdout = NULL;
-	static HANDLE hStderr = NULL;
-	HANDLE *hConsole = fd == 1 ? &hStdout : &hStderr;
+	HANDLE *hConsole = (fd == 1)? &hStdout : &hStderr;
 	COORD coord;
 	coord.X = x;
 	coord.Y = y;
@@ -62,7 +62,8 @@ R_API void r_cons_w32_gotoxy(int fd, int x, int y) {
 		write (fd, "\x1b[0;0H", 6);
 	}
 	if (!*hConsole) {
-		*hConsole = GetStdHandle (fd == 1 ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
+		*hConsole = GetStdHandle ((fd == 1)?
+			STD_OUTPUT_HANDLE: STD_ERROR_HANDLE);
 	}
 	CONSOLE_SCREEN_BUFFER_INFO info;
 	GetConsoleScreenBufferInfo (*hConsole, &info);

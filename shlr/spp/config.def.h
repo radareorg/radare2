@@ -4,15 +4,15 @@
 
 #if HAVE_FORK
 # if TARGET_OS_IPHONE || APPLE_SDK_IPHONEOS || APPLE_SDK_IPHONESIMULATOR
-#  define HAVE_SYSTEM 0
+#  define SPP_HAVE_SYSTEM 0
 # else
-#  define HAVE_SYSTEM 1
+#  define SPP_HAVE_SYSTEM 1
 # endif
 #else
-# define HAVE_SYSTEM 0
+# define SPP_HAVE_SYSTEM 0
 #endif
 
-#if HAVE_SYSTEM
+#if SPP_HAVE_SYSTEM
 #include "p/sh.h"
 #endif
 
@@ -26,7 +26,7 @@ struct Proc *procs[] = {
 	&cpp_proc,
 	&pod_proc,
 	&acr_proc,
-#if HAVE_SYSTEM
+#if SPP_HAVE_SYSTEM
 	&sh_proc,
 #endif
 	NULL

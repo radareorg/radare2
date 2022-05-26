@@ -52,6 +52,7 @@ typedef enum {
 	R_BIN_WASM_NAMETYPE_Module = 0x0,
 	R_BIN_WASM_NAMETYPE_Function = 0x1,
 	R_BIN_WASM_NAMETYPE_Local = 0x2,
+	R_BIN_WASM_NAMETYPE_None = 0xff,
 } r_bin_wasm_custom_name_type_t;
 
 struct r_bin_wasm_init_expr_t {
@@ -107,9 +108,9 @@ struct r_bin_wasm_memory_type_t {
 
 typedef struct r_bin_wasm_import_t {
 	ut32 module_len;
-	char module_str[R_BIN_WASM_STRING_LENGTH];
+	char *module_str;
 	ut32 field_len;
-	char field_str[R_BIN_WASM_STRING_LENGTH];
+	char *field_str;
 	ut8 kind;
 	union {
 		ut32 type_f;
@@ -141,7 +142,7 @@ typedef struct r_bin_wasm_global_t {
 
 typedef struct r_bin_wasm_export_t {
 	ut32 field_len;
-	char field_str[R_BIN_WASM_STRING_LENGTH];
+	char *field_str;
 	ut8 kind;
 	ut32 index;
 } RBinWasmExportEntry;
@@ -207,7 +208,7 @@ typedef struct r_bin_wasm_custom_name_entry_t {
 
 	ut8 payload_data;
 	union {
-		struct r_bin_wasm_name_t* mod_name;
+		RBinWasmName *mod_name;
 		RBinWasmCustomNameFunctionNames *func;
 		RBinWasmCustomNameLocalNames *local;
 	};

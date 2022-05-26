@@ -81,25 +81,21 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	RBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
-	RList *ret = NULL;
-	RList *secs = NULL;
+	RBinWasmObj *bin = bf && bf->o? bf->o->bin_obj: NULL;
+	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
+	RList *secs = r_bin_wasm_get_sections (bin);
+	if (!ret || !secs) {
+		goto alloc_err;
+	}
+
 	RBinSection *ptr = NULL;
 	RBinWasmSection *sec;
 
-	if (!(ret = r_list_newf ((RListFree)free))) {
-		return NULL;
-	}
-	if (!(secs = r_bin_wasm_get_sections (bin))) {
-		r_list_free (ret);
-		return NULL;
-	}
 	RListIter *iter;
 	r_list_foreach (secs, iter, sec) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			r_list_free (secs);
-			r_list_free (ret);
-			return NULL;
+		ptr = R_NEW0 (RBinSection);
+		if (!ptr) {
+			goto alloc_err;
 		}
 		ptr->name = strdup ((char *)sec->name);
 		if (sec->id == R_BIN_WASM_SECTION_DATA || sec->id == R_BIN_WASM_SECTION_MEMORY) {
@@ -115,6 +111,11 @@ static RList *sections(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 	return ret;
+
+alloc_err:
+	r_list_free (secs);
+	r_list_free (ret);
+	return NULL;
 }
 
 static RList *symbols(RBinFile *bf) {

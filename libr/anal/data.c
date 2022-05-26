@@ -55,13 +55,12 @@ static int is_invalid(const ut8 *buf, int size) {
 
 #define USE_IS_VALID_OFFSET 1
 static ut64 is_pointer(RAnal *anal, const ut8 *buf, int size) {
-	ut64 n;
 	ut8 buf2[32];
 	RIOBind *iob = &anal->iob;
 	if (size > sizeof (buf2)) {
 		size = sizeof (buf2);
 	}
-	n = r_mem_get_num (buf, size);
+	ut64 n = r_mem_get_num (buf, size);
 	if (!n) {
 		return 1; // null pointer
 	}
@@ -73,10 +72,15 @@ static ut64 is_pointer(RAnal *anal, const ut8 *buf, int size) {
 	// this makes disasm 5x faster, but can result in some false positives
 	// we should compare with current offset, to avoid
 	// short/long references. and discard invalid ones
-	if (n < 0x1000) return 0;	// probably wrong
-	if (n > 0xffffffffffffLL) return 0; // probably wrong
-
-	if (iob->read_at (iob->io, n, buf2, size) != size) return 0;
+	if (n < 0x1000) {
+		return 0;	// probably wrong
+	}
+	if (n > 0xffffffffffffLL) {
+		return 0; // probably wrong
+	}
+	if (iob->read_at (iob->io, n, buf2, size) != size) {
+		return 0;
+	}
 	return is_invalid (buf2, size)? 0: n;
 #endif
 }
@@ -96,7 +100,6 @@ static bool is_bin(const ut8 *buf, int size) {
 }
 
 // TODO: add is_flag, is comment?
-
 R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
 	int i, len, mallocsz = 1024;
 	ut32 n32;

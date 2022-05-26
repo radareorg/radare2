@@ -1,10 +1,9 @@
-/* radare2 - LGPL - Copyright 2018 - courk */
+/* radare2 - LGPL - Copyright 2018-2022 - courk */
 
 #ifndef PIC_MIDRANGE_H
 #define PIC_MIDRANGE_H
 
 #include <r_asm.h>
-#include <r_types.h>
 
 typedef enum {
 	PIC_MIDRANGE_OP_ARGS_NONE = 0,
@@ -96,8 +95,8 @@ typedef enum {
 	PIC_MIDRANGE_OPCODE_INVALID
 } PicMidrangeOpcode;
 
-PicMidrangeOpcode pic_midrange_get_opcode (ut16 instr);
-const PicMidrangeOpInfo *pic_midrange_get_op_info (PicMidrangeOpcode opcode);
-int pic_midrange_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l);
+PicMidrangeOpcode pic_midrange_get_opcode(ut16 instr);
+// const PicMidrangeOpInfo *pic_midrange_get_op_info (PicMidrangeOpcode opcode);
+char *pic_midrange_disassemble(const ut8 *b, int l, int *opsz);
 
 #endif // PIC_MIDRANGE_H

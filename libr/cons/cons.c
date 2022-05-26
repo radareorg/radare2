@@ -433,14 +433,15 @@ R_API bool r_cons_is_breaked(void) {
 	if (I->cb_break) {
 		I->cb_break (I->user);
 	}
-	if (I->timeout) {
+	if (R_UNLIKELY (I->timeout)) {
 		if (r_time_now_mono () > I->timeout) {
 			C->breaked = true;
+			C->was_breaked = true;
 			eprintf ("\nTimeout!\n");
 			I->timeout = 0;
 		}
 	}
-	if (!C->was_breaked) {
+	if (R_UNLIKELY (!C->was_breaked)) {
 		C->was_breaked = C->breaked;
 	}
 	return C && C->breaked;
@@ -460,10 +461,11 @@ R_API void r_cons_line(int x, int y, int x2, int y2, int ch) {
 R_API int r_cons_get_cur_line(void) {
 	int curline = 0;
 #if __WINDOWS__
-	POINT point;
-	if (GetCursorPos (&point)) {
-		curline = point.y;
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	if (!GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &info)) {
+		return 0;
 	}
+	curline = info.dwCursorPosition.Y - info.srWindow.Top;
 #endif
 #if __UNIX__ && !__wasi__
 	char buf[8];
@@ -476,9 +478,9 @@ R_API int r_cons_get_cur_line(void) {
 	if (isatty (fileno (stdin))) {
 		if (write (1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION)) != -1) {
 			if (read (0, buf, sizeof (buf)) != sizeof (buf)) {
-				if (isdigit ((unsigned char)buf[2])) {
+				if (isdigit ((ut8)buf[2])) {
 					curline = (buf[2] - '0');
-				} if (isdigit ((unsigned char)buf[3])) {
+				} if (isdigit ((ut8)buf[3])) {
 					curline = curline * 10 + (buf[3] - '0');
 				}
 			}
@@ -965,7 +967,7 @@ static bool lastMatters(void) {
 }
 
 R_API void r_cons_echo(const char *msg) {
-	static RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
+	static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
 	if (msg) {
 		if (echodata) {
 			r_strbuf_append (echodata, msg);
@@ -1185,7 +1187,7 @@ R_API void r_cons_visual_flush(void) {
 
 R_API void r_cons_print_fps(int col) {
 	int fps = 0, w = r_cons_get_size (NULL);
-	static ut64 prev = 0LL; //r_time_now_mono ();
+	static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
 	fps = 0;
 	if (prev) {
 		ut64 now = r_time_now_mono ();
@@ -1391,8 +1393,7 @@ R_API int r_cons_eprintf(const char *format, ...) {
 		break;
 	}
 	va_end (ap);
-
-	return r_strbuf_length (C->error);
+	return C->error? r_strbuf_length (C->error): 0;
 }
 
 R_API int r_cons_get_column(void) {
@@ -1777,8 +1778,8 @@ R_API void r_cons_show_cursor(int cursor) {
 		}
 #if __WINDOWS__
 	} else {
-		static HANDLE hStdout = NULL;
-		static DWORD size = -1;
+		static R_TH_LOCAL HANDLE hStdout = NULL;
+		static R_TH_LOCAL DWORD size = -1;
 		CONSOLE_CURSOR_INFO cursor_info;
 		if (!hStdout) {
 			hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
@@ -1807,7 +1808,7 @@ R_API void r_cons_show_cursor(int cursor) {
  *
  */
 R_API void r_cons_set_raw(bool is_raw) {
-	static int oldraw = -1;
+	static R_TH_LOCAL int oldraw = -1;
 	if (oldraw != -1) {
 		if (is_raw == oldraw) {
 			return;

@@ -1,0 +1,62 @@
+NAME=pfb
+FILE=bins/other/cows128.data
+CMDS=<<EOF
+pfb 3b4b1b foo bar cow
+s+1
+pfb 3b4b1b foo bar cow
+pfb 2b5b4b2b3b foo bar cow low mow
+EOF
+EXPECT=<<EOF
+00110111     (big bit endian)
+\_/\__/V
+ |   | `-----      cow =    1o     1   0x01 @ 7 + 1
+ |   `-------      bar =   13o    11   0x0b @ 3 + 4
+ `-----------      foo =    1o     1   0x01 @ 0 + 3
+01011000     (big bit endian)
+\_/\__/V
+ |   | `-----      cow =    0o     0   0x00 @ 7 + 1
+ |   `-------      bar =   14o    12   0x0c @ 3 + 4
+ `-----------      foo =    2o     2   0x02 @ 0 + 3
+0101100010000110     (big bit endian)
+\/\___/\__/\/\_/
+ |  |    |  | `-----      mow =    6o     6   0x06 @ 13 + 3
+ |  |    |  `-------      low =    0o     0   0x00 @ 11 + 2
+ |  |    `----------      cow =    4o     4   0x04 @ 7 + 4
+ |  `---------------      bar =   14o    12   0x0c @ 2 + 5
+ `------------------      foo =    1o     1   0x01 @ 0 + 2
+EOF
+RUN
+
+NAME=pfb 64
+FILE=bins/other/cows128.data
+CMDS=<<EOF
+pfb 1b4b64b
+EOF
+EXPECT=<<EOF
+001101110101100010000110001101000101010110000110001011000100111110000     (big bit endian)
+V\__/\______________________________________________________________/
+|  |                                 `-----          = 0xeb10c68ab0c589f0 @ 5 + 64
+|  `---------------------------------------          =    6o     6   0x06 @ 1 + 4
+`------------------------------------------          =    0o     0   0x00 @ 0 + 1
+EOF
+RUN
+
+NAME=pbwb
+FILE=-
+CMDS=<<EOF
+pb 8
+wb 110
+pb 8
+wb 0001
+pb 8
+wb 1010001
+pb 8
+EOF
+EXPECT=<<EOF
+00000000
+11000000
+00010000
+10110010
+EOF
+RUN
+

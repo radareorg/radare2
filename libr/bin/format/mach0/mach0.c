@@ -10,6 +10,9 @@
 #define bprintf if (bin->verbose) eprintf
 #define Eprintf if (mo->verbose) eprintf
 
+// Microsoft C++: 2048 characters; Intel C++: 2048 characters; g++: No limit
+// see -e bin.maxsymlen
+
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
@@ -2125,6 +2128,8 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->signature);
 	free (mo->intrp);
 	free (mo->compiler);
+	r_list_free (mo->symbols_cache);
+	r_list_free (mo->sections_cache);
 	if (mo->chained_starts) {
 		for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
 			if (mo->chained_starts[i]) {
@@ -2144,6 +2149,7 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
 	options->header_at = 0;
 	options->symbols_off = 0;
 	options->verbose = bf->rbin->verbose;
+	options->maxsymlen = bf->rbin->maxsymlen;
 }
 
 static void *duplicate_ptr(void *p) {
@@ -2204,6 +2210,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 		if (options) {
 			bin->verbose = options->verbose;
 			bin->header_at = options->header_at;
+			bin->maxsymlen = options->maxsymlen;
 			bin->symbols_off = options->symbols_off;
 		}
 		if (!init (bin)) {
@@ -2483,6 +2490,9 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 			break;
 		}
 	}
+	if (mo->maxsymlen > 0 && len > mo->maxsymlen) {
+		return NULL;
+	}
 	if (len > 0) {
 		char *res = r_str_ndup (symstr, len);
 		if (filter) {
@@ -2665,20 +2675,17 @@ static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 
 	r_list_append (list, sym);
 }
 
-// TODO: Return RList<RBinSymbol> // 2x speedup
 const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
-	static RList * cache = NULL; // XXX DONT COMMIT WITH THIS
 	struct symbol_t *symbols;
-	size_t j, s, symbols_size, symbols_count;
+	size_t i, j, s, symbols_size, symbols_count;
 	ut32 to, from;
-	size_t i;
 
 	r_return_val_if_fail (bin, NULL);
-	if (cache) {
-		return cache;
+	if (bin->symbols_cache) {
+		return bin->symbols_cache;
 	}
 	RList *list = r_list_newf ((RListFree)r_bin_symbol_free);
-	cache = list;
+	bin->symbols_cache = list;
 
 	HtPP *hash = ht_pp_new0 ();
 	if (!hash) {
@@ -2789,6 +2796,9 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 		if (parse_import_stub (bin, &symbol, i)) {
 			j++;
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			if (!sym) {
+				break;
+			}
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset;
 			sym->name = symbol.name;
@@ -2807,16 +2817,15 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 		// 2 is for func.eh (exception handlers?)
 		int section = st->n_sect;
 		if (section == 1 && j < symbols_count) { // text ??st->n_type == 1) maybe wrong
-			RBinSymbol *sym = R_NEW0(RBinSymbol);
+			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			if (!sym) {
+				break;
+			}
 			/* is symbol */
 			sym->vaddr = st->n_value;
 			sym->paddr = addr_to_offset (bin, symbols[j].addr);
 			sym->is_imported = symbols[j].is_imported;
-			if (st->n_type & N_EXT) {
-				sym->type = "EXT";
-			} else {
-				sym->type = "LOCAL";
-			}
+			sym->type = (st->n_type & N_EXT)? "EXT": "LOCAL";
 			char *sym_name = get_name (bin, st->n_strx, false);
 			if (sym_name) {
 				sym->name = sym_name;
@@ -2946,6 +2955,10 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 					: R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
 				stridx = bin->symtab[i].n_strx;
 				symbols[j].name = get_name (bin, stridx, false);
+				if (!symbols[j].name) {
+					j--;
+					continue;
+				}
 				symbols[j].last = false;
 
 				const char *name = symbols[j].name;
@@ -4578,6 +4591,9 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *bin, ut64 limit_start,
 			ut64 page_end_idx = (R_MIN (limit_end, end) - start) / page_size;
 			for (; page_idx <= page_end_idx; page_idx++) {
 				if (page_idx >= bin->chained_starts[i]->page_count) {
+					break;
+				}
+				if (!bin->chained_starts[i]->page_start) {
 					break;
 				}
 				ut16 page_start = bin->chained_starts[i]->page_start[page_idx];

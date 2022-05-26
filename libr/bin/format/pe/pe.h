@@ -61,7 +61,6 @@ struct r_bin_pe_lib_t {
 	int last;
 };
 
-
 typedef struct _PE_RESOURCE {
 	char *timestr;
 	char *type;

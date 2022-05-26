@@ -38,6 +38,7 @@ if not no_user_plugins
     bin_xtr_plugins += [
       'xtr_dyldcache',
       'xtr_fatmach0',
+      'xtr_xalz',
       'xtr_sep64'
     ]
   endif
@@ -116,7 +117,7 @@ if not no_user_plugins
     bin_plugins += [ 'elf', 'elf64' ]
   endif
   if user_plugins.contains('pe')
-    bin_plugins += [ 'pe', 'pe64', 'coff', 'mz', 'ne', 'xalz' ]
+    bin_plugins += [ 'pe', 'pe64', 'coff', 'mz', 'ne' ]
     bin_xtr_plugins += [ 'xtr_pemixed' ]
   endif
   if not user_plugins.contains('nogrub')
@@ -128,6 +129,49 @@ endif
 
 # else
 if no_user_plugins
+
+asm_plugins += [
+  '6502',
+  '8051',
+  'amd29k',
+#  'arc',
+  'arm_as',
+  'arm_cs',
+  'arm_winedbg',
+  'avr',
+  'cr16',
+  'dalvik',
+  'dcpu16',
+  'gb',
+  'h8300',
+  'i4004',
+  'i8080',
+  'java',
+  'lh5801',
+  'lm32',
+  'm680x_cs',
+  'malbolge',
+  'mcs96',
+  'mips_cs',
+  'nios2',
+  'or1k',
+  'ppc_as',
+  'ppc_cs',
+  'propeller',
+  'riscv',
+  'rsp',
+  'sh',
+  'sparc_cs',
+  'tms320',
+  'v810',
+  'v850',
+  'x86_as',
+  'x86_cs',
+  'x86_nasm',
+  'x86_nz',
+  'xap',
+  'xcore_cs',
+]
 anal_plugins += [
   '6502',
   '8051',
@@ -176,53 +220,6 @@ anal_plugins += [
   'xap',
   'xcore_cs',
   'xtensa',
-]
-
-asm_plugins += [
-  '6502',
-  '8051',
-  'amd29k',
-#  'arc',
-  'arm_as',
-  'arm_cs',
-  'arm_winedbg',
-  'avr',
-  'cr16',
-  'dalvik',
-  'dcpu16',
-  'gb',
-  'h8300',
-  'i4004',
-  'i8080',
-  'java',
-  'lh5801',
-  'lm32',
-  'm680x_cs',
-  'malbolge',
-  'mcs96',
-  'mips_cs',
-  'nios2',
-  'or1k',
-  'pic',
-  'ppc_as',
-  'ppc_cs',
-  'propeller',
-  'riscv',
-  'rsp',
-  'sh',
-  'snes',
-  'sparc_cs',
-  'tms320',
-  'v810',
-  'v850',
-  'vax',
-  'ws',
-  'x86_as',
-  'x86_cs',
-  'x86_nasm',
-  'x86_nz',
-  'xap',
-  'xcore_cs',
 ]
 
 if no_user_plugins
@@ -303,7 +300,6 @@ bin_plugins += [
   'te',
   'vsf',
   'wasm',
-  'xalz',
   'xbe',
   'xnu_kernelcache',
   'z64',
@@ -317,6 +313,7 @@ bin_ldr_plugins += [
 bin_xtr_plugins += [
   'xtr_dyldcache',
   'xtr_fatmach0',
+  'xtr_xalz',
   'xtr_sep64',
 ]
 

@@ -253,14 +253,14 @@ fcn.1000b8e0:
     sym.imp.free
     sym.imp.__assert_fail
 
-loc.1000c6a8:
+fcn.1000c650:
     sym.imp.free
 
 fcn.1000cbf0:
     fcn.1000c730
     sym.imp.calloc
 
-loc.1000ce88:
+fcn.1000ce30:
     sym.imp.memset
 
 fcn.1000d410:

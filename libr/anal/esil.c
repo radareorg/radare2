@@ -610,12 +610,13 @@ R_API bool r_anal_esil_signext(RAnalEsil *esil, bool assign) {
 	}
 	free (p_dst);
 	
-	//Make sure the other bits are 0
-	src &= UT64_MAX >> (64 - dst);
-
+	// Make sure the other bits are 0
 	ut64 m = 0;
-	if (dst < 64) {
+	if (dst > 0 && dst < 64) {
+		src &= UT64_MAX >> (64 - dst);
 		m = 1ULL << (dst - 1);
+	} else if (dst == 0) {
+		src = 0;
 	}
 
 	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
@@ -745,7 +746,10 @@ static bool esil_sf(RAnalEsil *esil) {
 	r_return_val_if_fail (esil, false);
 
 	char *p_size = r_anal_esil_pop (esil);
-	r_return_val_if_fail (p_size, false);
+	if (!p_size) {
+		R_LOG_WARN ("$sf cannot pop value");
+		return false;
+	}
 
 	if (r_anal_esil_get_parm_type (esil, p_size) != R_ANAL_ESIL_PARM_NUM) {
 		free (p_size);
@@ -760,8 +764,7 @@ static bool esil_sf(RAnalEsil *esil) {
 	} else {
 		num = (esil->cur >> size) & 1;
 	}
-	ut64 res = r_anal_esil_pushnum (esil, num);
-	return res;
+	return r_anal_esil_pushnum (esil, num);
 }
 
 static bool esil_ds(RAnalEsil *esil) {
@@ -780,6 +783,7 @@ static bool esil_js(RAnalEsil *esil) {
 }
 
 //regsize
+#if 0
 //can we please deprecate this, it's neither accurate, nor needed
 //plugins should know regsize, and since this is a const even users should know this: ?´e anal.bits´/8
 //	- condret
@@ -788,6 +792,7 @@ static bool esil_rs(RAnalEsil *esil) {
 	r_return_val_if_fail (esil && esil->anal, false);
 	return r_anal_esil_pushnum (esil, esil->anal->config->bits >> 3);
 }
+#endif
 
 //can we please deprecate this, plugins should know their current address
 //even if they don't know it, $$ should be equal to PC register at the begin of each expression
@@ -3587,7 +3592,7 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 	}
 	if (esil->parse_stop) {
 		if (esil->parse_stop == 2) {
-			eprintf ("[esil at 0x%08"PFMT64x"] TODO: %s\n", esil->address, *str + 1);
+			R_LOG_DEBUG ("[esil at 0x%08"PFMT64x"] TODO: %s", esil->address, *str + 1);
 		}
 		return 1;
 	}
@@ -3595,7 +3600,7 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 }
 
 static bool __stepOut(RAnalEsil *esil, const char *cmd) {
-	static bool inCmdStep = false;
+	static R_TH_LOCAL bool inCmdStep = false;
 	if (cmd && esil && esil->cmd && !inCmdStep) {
 		inCmdStep = true;
 		if (esil->cmd (esil, cmd, esil->address, 0)) {
@@ -3791,7 +3796,7 @@ R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("$ds", esil_ds, 1, 0, OT_UNK);
 	OP ("$jt", esil_jt, 1, 0, OT_UNK);
 	OP ("$js", esil_js, 1, 0, OT_UNK);
-	OP ("$r", esil_rs, 1, 0, OT_UNK);
+	//OP ("$r", esil_rs, 1, 0, OT_UNK); // R_DEPRECATE
 	OP ("$$", esil_address, 1, 0, OT_UNK);
 	OP ("~", esil_signext, 1, 2, OT_MATH);
 	OP ("~=", esil_signexteq, 0, 2, OT_MATH);
@@ -3913,14 +3918,15 @@ R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
 
 	/* we all float down here */
 	OP ("NAN", esil_is_nan, 1, 1, OT_MATH);
+	// XXX I2D and S2D do the same, kill one
 	OP ("I2D", esil_signed_to_double, 1, 1, OT_MATH);
-	OP ("S2D", esil_signed_to_double, 1, 1, OT_MATH);
+	// OP ("S2D", esil_signed_to_double, 1, 1, OT_MATH); R_DEPRECATE
 	OP ("U2D", esil_unsigned_to_double, 1, 1, OT_MATH);
 	OP ("D2I", esil_double_to_int, 1, 1, OT_MATH);
 	OP ("D2F", esil_double_to_float, 1, 2, OT_MATH);
 	OP ("F2D", esil_float_to_double, 1, 2, OT_MATH);
 	OP ("F==", esil_float_cmp, 1, 2, OT_MATH);
-	OP ("F!=", esil_float_negcmp, 1, 2, OT_MATH);
+	OP ("F!=", esil_float_negcmp, 1, 2, OT_MATH); // DEPRECATE
 	OP ("F<", esil_float_less, 1, 2, OT_MATH);
 	OP ("F<=", esil_float_lesseq, 1, 2, OT_MATH);
 	OP ("F+", esil_float_add, 1, 2, OT_MATH);

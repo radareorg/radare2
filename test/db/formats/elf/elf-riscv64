@@ -461,6 +461,7 @@ EXPECT=<<EOF
 |           0x00010164      2326f4fe       sw a5, -20(s0)
 |           0x00010168      9307f0ff       li a5, -1
 |           0x0001016c      2324f4fe       sw a5, -24(s0)
+|           ; CODE XREFS from main @ 0x101c8(x), 0x101d8(x)
 |      ..-> 0x00010170      b7170200       lui a5, 0x21
 |      ::   0x00010174      1385874f       addi a0, a5, 1272
 |      ::   0x00010178      ef00c01f       jal ra, sym.printf
@@ -488,6 +489,7 @@ EXPECT=<<EOF
 |    |  :   0x000101d0      13858753       addi a0, a5, 1336
 |    |  :   0x000101d4      ef00002a       jal ra, sym.puts
 |    |  `=< 0x000101d8      6ff09ff9       j 0x10170
+|    |      ; CODE XREF from main @ 0x101ac(x)
 |    `----> 0x000101dc      13850700       mv a0, a5
 |           0x000101e0      83308101       ld ra, 24(sp)
 |           0x000101e4      03340101       ld s0, 16(sp)

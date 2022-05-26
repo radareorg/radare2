@@ -124,7 +124,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 	ut8 ehdr[sizeof (Elf_(Ehdr))] = {0};
 	int i, len;
 	if (r_buf_read_at (bin->b, 0, e_ident, EI_NIDENT) == -1) {
-		R_LOG_ERROR ("read (magic)");
+		R_LOG_DEBUG ("read (magic)");
 		return false;
 	}
 	sdb_set (bin->kv, "elf_type.cparse", "enum elf_type { ET_NONE=0, ET_REL=1,"
@@ -188,7 +188,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
 	len = r_buf_read_at (bin->b, 0, ehdr, sizeof (ehdr));
 	if (len < 32) { // tinyelf != sizeof (Elf_(Ehdr))) {
-		R_LOG_ERROR ("read (ehdr)");
+		R_LOG_DEBUG ("read (ehdr)");
 		return false;
 	}
 	// XXX no need to check twice
@@ -257,7 +257,7 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 		const size_t rsize = bin->ehdr.e_phoff + i * sizeof (Elf_(Phdr));
 		int len = r_buf_read_at (bin->b, rsize, phdr, sizeof (Elf_(Phdr)));
 		if (len < 1) {
-			R_LOG_ERROR ("read (phdr)");
+			R_LOG_DEBUG ("read (phdr)");
 			R_FREE (bin->phdr);
 			return false;
 		}
@@ -397,7 +397,7 @@ static int init_shdr(ELFOBJ *bin) {
 		j = 0;
 		len = r_buf_read_at (bin->b, bin->ehdr.e_shoff + i * sizeof (Elf_(Shdr)), shdr, sizeof (Elf_(Shdr)));
 		if (len < 1) {
-			R_LOG_ERROR ("read (shdr) at 0x%" PFMT64x, (ut64) bin->ehdr.e_shoff);
+			R_LOG_DEBUG ("read (shdr) at 0x%" PFMT64x, (ut64) bin->ehdr.e_shoff);
 			R_FREE (bin->shdr);
 			return false;
 		}
@@ -475,7 +475,7 @@ static int init_strtab(ELFOBJ *bin) {
 	int res = r_buf_read_at (bin->b, bin->shstrtab_section->sh_offset, (ut8*)bin->shstrtab,
 		bin->shstrtab_section->sh_size);
 	if (res < 1) {
-		R_LOG_ERROR ("read (shstrtab) at 0x%" PFMT64x, (ut64) bin->shstrtab_section->sh_offset);
+		R_LOG_DEBUG ("read (shstrtab) at 0x%" PFMT64x, (ut64) bin->shstrtab_section->sh_offset);
 		R_FREE (bin->shstrtab);
 		return false;
 	}
@@ -747,11 +747,10 @@ static RBinElfSection* get_section_by_name(ELFOBJ *bin, const char *section_name
 	return NULL;
 }
 
-static char *get_ver_flags(ut32 flags) {
+static const char *get_ver_flags(char *buff, size_t buff_size, ut32 flags) {
 	if (!flags) {
 		return "none";
 	}
-	static char buff[32];
 	buff[0] = 0;
 	if (flags & VER_FLG_BASE) {
 		strcpy (buff, "BASE ");
@@ -952,6 +951,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	const char *link_section_name = "";
 	char *end = NULL;
 	ut8 dfs[sizeof (Elf_(Verdef))] = {0};
+	char verbuf[64];
 	ut32 cnt;
 	size_t i;
 	if (shdr->sh_link >= bin->ehdr.e_shnum) {
@@ -970,7 +970,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	}
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, 1);
 	if (!defs) {
-		R_LOG_ERROR ("Cannot allocate memory (Check Elf_(Verdef))");
+		R_LOG_DEBUG ("Cannot allocate memory (Check Elf_(Verdef))");
 		return false;
 	}
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
@@ -1051,7 +1051,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		sdb_num_set (sdb_verdef, "vd_ndx", verdef->vd_ndx, 0);
 		sdb_num_set (sdb_verdef, "vd_cnt", verdef->vd_cnt, 0);
 		sdb_set (sdb_verdef, "vda_name", &bin->dynstr[aux.vda_name], 0);
-		sdb_set (sdb_verdef, "flags", get_ver_flags (verdef->vd_flags), 0);
+		sdb_set (sdb_verdef, "flags", get_ver_flags (verbuf, sizeof (verbuf), verdef->vd_flags), 0);
 
 		for (j = 1; j < verdef->vd_cnt; j++) {
 			int k;
@@ -1161,6 +1161,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	if (i < 1) {
 		goto beach;
 	}
+	char verbuf[64] = {0};
 	//XXX we should use DT_VERNEEDNUM instead of sh_info
 	//TODO https://sourceware.org/ml/binutils/2014-11/msg00353.html
 	for (i = 0, cnt = 0; cnt < shdr->sh_info; cnt++) {
@@ -1222,11 +1223,11 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 			sdb_num_set (sdb_vernaux, "idx", isum, 0);
 			if (aux->vna_name > 0 && aux->vna_name + 8 < bin->dynstr_size) {
 				char name [16];
-				strncpy (name, &bin->dynstr[aux->vna_name], sizeof (name)-1);
-				name[sizeof (name)-1] = 0;
+				strncpy (name, &bin->dynstr[aux->vna_name], sizeof (name) - 1);
+				name[sizeof (name) - 1] = 0;
 				sdb_set (sdb_vernaux, "name", name, 0);
 			}
-			sdb_set (sdb_vernaux, "flags", get_ver_flags (aux->vna_flags), 0);
+			sdb_set (sdb_vernaux, "flags", get_ver_flags (verbuf, sizeof (verbuf), aux->vna_flags), 0);
 			sdb_num_set (sdb_vernaux, "version", aux->vna_other, 0);
 			isum += aux->vna_next;
 			vstart += aux->vna_next;
@@ -1798,7 +1799,7 @@ ut64 Elf_(r_bin_elf_get_init_offset)(ELFOBJ *bin) {
 		return UT64_MAX;
 	}
 	if (r_buf_read_at (bin->b, entry + 16, buf, sizeof (buf)) < 1) {
-		R_LOG_ERROR ("read (init_offset)");
+		R_LOG_DEBUG ("read (init_offset)");
 		return 0;
 	}
 	if (buf[0] == 0x68) { // push // x86 only
@@ -2003,6 +2004,9 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	if (buf[0] == 0xf3 && buf[1] == 0x0f && buf[2] == 0x1e && buf[3] == 0xfa) {
 		// Change begin offset if binary starts with 'endbr64'
 		bo = 33;
+	}
+	if (buf[bo] != 0x48) {
+		bo -= 9;
 	}
 	if (buf[bo] == 0x48) {
 		ut8 ch = buf[bo + 1];

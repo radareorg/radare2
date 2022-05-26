@@ -585,7 +585,7 @@ static int cmd_help(void *data, const char *input) {
 				r_prof_start (&prof);
 				r_core_cmd (core, input + 1, 0);
 				r_prof_end (&prof);
-				r_core_return_code (core, (ut64)(int)prof.result);
+				r_core_return_value (core, (ut64)(int)prof.result);
 				eprintf ("%lf\n", prof.result);
 				break;
 			}
@@ -619,7 +619,7 @@ static int cmd_help(void *data, const char *input) {
 			r = UT32_MAX >> 1;
 		}
 		ut64 n = (ut64)b + r_num_rand (r);
-		r_core_return_code (core, n);
+		r_core_return_value (core, n);
 		r_cons_printf ("0x%"PFMT64x"\n", n);
 		}
 		break;
@@ -727,6 +727,8 @@ static int cmd_help(void *data, const char *input) {
 				pj = r_core_pj_new (core);
 				pj_o (pj);
 			}
+			const int segbas = core->rasm->config->segbas;
+			const int seggrn = core->rasm->config->seggrn;
 			for (i = 0; i < list_len; i++) {
 				const char *str = r_list_pop_head (list);
 				if (!*str) {
@@ -739,7 +741,7 @@ static int cmd_help(void *data, const char *input) {
 				char *asnum  = r_num_as_string (NULL, n, false);
 
 				ut32 s = 0, a = 0;
-				r_num_segaddr (n, core->print->segbas, core->print->seggrn, &s, &a);
+				r_num_segaddr (n, segbas, seggrn, &s, &a);
 				r_num_units (unit, sizeof (unit), n);
 				if (*input ==  'j') {
 					pj_ks (pj, "int32", r_strf ("%d", (st32)(n & UT32_MAX)));
@@ -822,7 +824,7 @@ static int cmd_help(void *data, const char *input) {
 			} else {
 				n = r_num_math (core->num, "$?");
 			}
-			r_core_return_code (core, n); // redundant
+			r_core_return_value (core, n);
 		}
 		break;
 	case 'v': // "?v"
@@ -879,7 +881,7 @@ static int cmd_help(void *data, const char *input) {
 		default:
 			r_cons_printf ("0x%"PFMT64x"\n", n);
 		}
-		r_core_return_code (core, n); // redundant
+		r_core_return_value (core, n); // redundant
 		break;
 	case '=': // "?=" set num->value
 		if (input[1] == '=') { // ?==
@@ -891,7 +893,7 @@ static int cmd_help(void *data, const char *input) {
 					*e++ = 0;
 					e = (char *)r_str_trim_head_ro (e);
 					int val = strcmp (s, e);
-					r_core_return_code (core, val);
+					r_core_return_value (core, val);
 				} else {
 					eprintf ("Missing secondary word in expression to compare\n");
 				}
@@ -935,7 +937,7 @@ static int cmd_help(void *data, const char *input) {
 					return 0;
 				}
 				int cmdres = r_core_cmd (core, input + 1, 0);
-				r_core_return_code (core, cmdres);
+				r_core_return_value (core, cmdres);
 				return cmdres;
 			}
 		} else {
@@ -1043,10 +1045,10 @@ static int cmd_help(void *data, const char *input) {
 	case 'l': // "?l"
 		if (input[1] == 'q') {
 			for (input += 2; input[0] == ' '; input++);
-			r_core_return_code (core, strlen (input));
+			r_core_return_value (core, strlen (input));
 		} else {
 			for (input++; input[0] == ' '; input++);
-			r_core_return_code (core, strlen (input));
+			r_core_return_value (core, strlen (input));
 			r_cons_printf ("%" PFMT64d "\n", core->num->value);
 		}
 		break;
@@ -1299,25 +1301,25 @@ static int cmd_help(void *data, const char *input) {
 		} else {
 			switch (input[1]) {
 			case 'f': // "?if"
-				r_core_return_code (core, !r_num_conditional (core->num, input + 2));
+				r_core_return_value (core, !r_num_conditional (core->num, input + 2));
 				eprintf ("%s\n", r_str_bool (!core->num->value));
 				break;
 			case 'm': // "?im"
 				r_cons_message (input + 2);
 				break;
 			case 'p': // "?ip"
-				r_core_return_code (core, r_core_yank_hud_path (core, input + 2, 0) == true);
+				r_core_return_value (core, r_core_yank_hud_path (core, input + 2, 0) == true);
 				break;
 			case 'k': // "?ik"
 				 r_cons_any_key (NULL);
 				 break;
 			case 'y': // "?iy"
 				 for (input += 2; *input == ' '; input++);
-				 r_core_return_code (core, r_cons_yesno (1, "%s? (Y/n)", input));
+				 r_core_return_value (core, r_cons_yesno (1, "%s? (Y/n)", input));
 				 break;
 			case 'n': // "?in"
 				 for (input += 2; *input==' '; input++);
-				 r_core_return_code (core, r_cons_yesno (0, "%s? (y/N)", input));
+				 r_core_return_value (core, r_cons_yesno (0, "%s? (y/N)", input));
 				 break;
 			default: {
 				char foo[1024];
@@ -1329,7 +1331,7 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_fgets (foo, sizeof (foo), 0, NULL);
 				foo[sizeof (foo) - 1] = 0;
 				r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
-				r_core_return_code (core, r_num_math (core->num, foo));
+				r_core_return_value (core, r_num_math (core->num, foo));
 				}
 				break;
 			}
@@ -1363,7 +1365,7 @@ static int cmd_help(void *data, const char *input) {
 			return 0;
 		} else if (input[1]) {
 			if (core->num->value) {
-				r_core_return_code (core, r_core_cmd (core, input + 1, 0));
+				r_core_return_value (core, r_core_cmd (core, input + 1, 0));
 			}
 		} else {
 			if (core->num->dbz) {
@@ -1381,4 +1383,3 @@ static int cmd_help(void *data, const char *input) {
 	}
 	return 0;
 }
-

@@ -1,38 +1,41 @@
-/* radare - LGPL - Copyright 2014-2018 condret */
+/* radare - LGPL - Copyright 2014-2022 condret */
 
 #include <string.h>
 #include <r_types.h>
-#include <r_asm.h>
 #include <r_anal.h>
 #include <r_lib.h>
 #include <r_io.h>
-#define WS_API static
-#include "../../asm/arch/whitespace/wsdis.c"
+#include "../arch/whitespace/wsdis.c"
 
 static ut64 ws_find_label(int l, const RIOBind *iob) {
 	RIO *io = iob->io;
-	ut64 cur = 0, size = iob->desc_size (io->desc);
+	ut64 cur = 0ULL;
 	ut8 buf[128];
-	RAsmOp aop;
+	ut32 opsize = 0;
+	RStrBuf *mn = r_strbuf_new (NULL);
 	iob->read_at (iob->io, cur, buf, 128);
-	while (cur <= size && wsdis (&aop, buf, 128)) {
-		const char *buf_asm = r_strbuf_get (&aop.buf_asm); // r_asm_op_get_asm (&aop);
-		if (buf_asm && (strlen (buf_asm) > 4) && buf_asm[0] == 'm' && buf_asm[1] == 'a' && l == atoi (buf_asm + 5)) {
+	while (iob->is_valid_offset (io, cur, R_PERM_R) && (opsize = wsdis (mn, buf, 128))) {
+	// TODO: also check for R_PERM_X, but would probably break with io.va = false, because text files are usually not opened as exec
+//	while (iob.is_valid_offset (iob->io, cur, R_PERM_R | R_PERM_X) && (opsize = wsdis (mn, buf, 128))) {
+		const char *buf_asm = r_strbuf_get (mn);
+		if (buf_asm && r_str_startswith (buf_asm, "mark ") && l == atoi (buf_asm + 5)) {
+			r_strbuf_free (mn);
 			return cur;
 		}
-		cur = cur + aop.size;
+		cur = cur + opsize;
 		iob->read_at (iob->io, cur, buf, 128);
 	}
+	r_strbuf_free (mn);
 	return 0;
 }
 
 static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
-	RAsmOp *aop = R_NEW0 (RAsmOp);
-	op->size = wsdis (aop, data, len);
+	RStrBuf *mn = r_strbuf_new (NULL);
+	op->size = wsdis (mn, data, len);
 	if (op->size) {
-		const char *buf_asm = r_strbuf_get (&aop->buf_asm); // r_asm_op_get_asm (aop);
+		char *buf_asm = r_strbuf_drain (mn);
 		switch (*buf_asm) {
 		case 'n':
 			op->type = R_ANAL_OP_TYPE_NOP;
@@ -61,7 +64,7 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 'c':
 			if (buf_asm[1] == 'a') {
 				op->type = R_ANAL_OP_TYPE_CALL;
-				op->fail = addr + aop->size;
+				op->fail = addr + op->size;
 				op->jump = ws_find_label (atoi (buf_asm + 5), &anal->iob);
 			} else {
 				op->type = R_ANAL_OP_TYPE_UPUSH;
@@ -75,7 +78,7 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 				op->type = R_ANAL_OP_TYPE_CJMP;
 				op->jump = ws_find_label(atoi(buf_asm + 3), &anal->iob);
 			}
-			op->fail = addr + aop->size;
+			op->fail = addr + op->size;
 			break;
 		case 'g':
 			op->type = R_ANAL_OP_TYPE_IO;
@@ -114,8 +117,15 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			}
 			break;
 		}
+
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = buf_asm;
+		} else {
+			free (buf_asm);
+		}
+	} else {
+		r_strbuf_free (mn);
 	}
-	free (aop);
 	return op->size;
 }
 

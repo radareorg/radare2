@@ -418,7 +418,8 @@ typedef int RCmdReturnCode;
 #define R_CMD_RC_SUCCESS 0
 #define R_CMD_RC_QUIT -2
 #define R_CMD_RC_FASTQUIT -1
-#define r_core_return_code(core, val) (core)->num->value = (val)
+#define r_core_return_value(core, val) (core)->num->value = (val)
+#define r_core_return_code(core, val) (core)->rc = (val)
 
 R_API RList *r_core_list_themes(RCore *core);
 R_API char *r_core_get_theme(RCore *core);

@@ -1049,7 +1049,7 @@ static int cmd_cmp_posix(RCore *core, const char *a, const char *b) {
 }
 
 static int cmd_cmp(void *data, const char *input) {
-	static char *oldcwd = NULL;
+	static R_TH_LOCAL char *oldcwd = NULL;
 	int ret = 0, i, mode = 0;
 	RCore *core = (RCore *)data;
 	ut64 val = UT64_MAX;
@@ -1434,9 +1434,9 @@ static int cmd_cmp(void *data, const char *input) {
 			ut8 n = (ut8) r_num_math (core->num, input + 2);
 			if (block[0] == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
-				r_core_return_code (core, 0);
+				r_core_return_value (core, 0);
 			} else {
-				r_core_return_code (core, 1);
+				r_core_return_value (core, 1);
 			}
 			break;
 		}
@@ -1444,9 +1444,9 @@ static int cmd_cmp(void *data, const char *input) {
 			ut16 n = (ut16) r_num_math (core->num, input + 2);
 			if (core->blocksize >= 2 && *(ut16*)block == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
-				r_core_return_code (core, 0);
+				r_core_return_value (core, 0);
 			} else {
-				r_core_return_code (core, 1);
+				r_core_return_value (core, 1);
 			}
 			break;
 		}
@@ -1454,9 +1454,9 @@ static int cmd_cmp(void *data, const char *input) {
 			ut32 n = (ut32) r_num_math (core->num, input + 2);
 			if (core->blocksize >= 4 && *(ut32*)block == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
-				r_core_return_code (core, 0);
+				r_core_return_value (core, 0);
 			} else {
-				r_core_return_code (core, 1);
+				r_core_return_value (core, 1);
 			}
 			break;
 		}
@@ -1464,14 +1464,14 @@ static int cmd_cmp(void *data, const char *input) {
 			ut64 n = (ut64) r_num_math (core->num, input + 2);
 			if (core->blocksize >= 8 && *(ut64*)block == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
-				r_core_return_code (core, 0);
+				r_core_return_value (core, 0);
 			} else {
-				r_core_return_code (core, 1);
+				r_core_return_value (core, 1);
 			}
 			break;
 		}
 		default:
-			r_core_return_code (core, 1);
+			r_core_return_value (core, 1);
 			// fallthrough
 		case '?':
 			eprintf ("Usage: cv[1248] [num]\n"
@@ -1504,7 +1504,7 @@ static int cmd_cmp(void *data, const char *input) {
 			ut8 buf[8] = {0};
 			r_io_read_at (core->io, at, buf, sizeof (buf));
 			int val = memcmp (buf, core->block, sz)? 1: 0;
-			r_core_return_code (core, val);
+			r_core_return_value (core, val);
 		}
 		break;
 	}
@@ -1526,7 +1526,7 @@ static int cmd_cmp(void *data, const char *input) {
 			char **argv = r_str_argv (r_str_trim_head_ro (input + 2), &argc);
 			if (argc == 2) {
 				int res = cmd_cmp_posix (core, argv[0], argv[1]);
-				r_core_return_code (core, res);
+				r_core_return_value (core, res);
 			} else {
 				r_core_cmd_help (core, help_msg_cmp);
 			}
@@ -1538,7 +1538,7 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	}
 	if (val != UT64_MAX) {
-		r_core_return_code (core, val);
+		r_core_return_value (core, val);
 	}
 	return 0;
 }

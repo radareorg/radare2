@@ -101,10 +101,8 @@ typedef struct r_print_t {
 	int (*disasm)(void *p, ut64 addr);
 	PrintfCallback oprintf;
 	RArchConfig *config; // 
-	int big_endian; // R2_570
 	int width;
 	int limit;
-	int bits; // R2_570
 	bool histblock;
 	// true if the cursor is enabled, false otherwise
 	bool cur_enabled;
@@ -166,8 +164,6 @@ typedef struct r_print_t {
 	RCharset *charset;
 
 	// segmented memory addressing
-	int seggrn;
-	int segbas;
 	int nbcolor;
 } RPrint;
 

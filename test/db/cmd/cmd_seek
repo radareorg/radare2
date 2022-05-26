@@ -208,9 +208,9 @@ FILE=malloc://0x4000
 CMDS=<<EOF
 s 0
 b 64
-wb 38
+wX 38
 s 64
-wb deadbeef
+wX deadbeef
 s-32
 px
 EOF

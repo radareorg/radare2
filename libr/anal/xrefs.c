@@ -228,7 +228,10 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		pj_a (pj);
 	}
 	r_list_foreach (list, iter, ref) {
-		int t = ref->type ? R_ANAL_REF_TYPE_MASK (ref->type): ' ';
+		int t = R_ANAL_REF_TYPE_MASK (ref->type);
+		if (!t) {
+			t = ' ';
+		}
 		switch (rad) {
 		case '*':
 			// TODO: export/import the read-write-exec information
@@ -329,6 +332,7 @@ R_API const char *r_anal_ref_perm_tostring(RAnalRef *ref) {
 
 R_API const char *r_anal_ref_type_tostring(RAnalRefType type) {
 	switch (R_ANAL_REF_TYPE_MASK (type)) {
+	case ' ':
 	case R_ANAL_REF_TYPE_NULL:
 		return "NULL";
 	case R_ANAL_REF_TYPE_CODE:

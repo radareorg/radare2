@@ -708,6 +708,8 @@ RUN
 NAME=Cd4
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 s+4
 pd+1
 Cd4

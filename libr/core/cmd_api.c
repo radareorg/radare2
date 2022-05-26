@@ -1182,7 +1182,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	int nargs = 0;
 	char *str, *ptr, *ptr2;
 	RListIter *iter;
-	static int macro_level = 0;
+	static R_TH_LOCAL int macro_level = 0;
 	RCmdMacroItem *m;
 	/* labels */
 	int labels_n = 0;
@@ -1228,7 +1228,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 			char *end = strchr (ptr, '\n');
 			if (m->nargs != 0 && nargs != m->nargs) {
 				eprintf ("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
-				macro_level --;
+				macro_level--;
 				free (str);
 				r_cons_break_pop ();
 				return false;

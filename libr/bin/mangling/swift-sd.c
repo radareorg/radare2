@@ -87,7 +87,7 @@ static const char *numpos(const char* n) {
 }
 
 static const char *getstring(const char *s, int len) {
-	static char buf[256] = {0};
+	static R_TH_LOCAL char buf[256] = {0};
 	if (len < 0 || len > sizeof (buf) - 2) {
 		return "";
 	}
@@ -116,7 +116,7 @@ static int have_swift_demangle = -1;
 
 static char *swift_demangle_cmd(const char *s) {
 	/* XXX: command injection issue here */
-	static char *swift_demangle = NULL;
+	static R_TH_LOCAL char *swift_demangle = NULL;
 	if (have_swift_demangle == -1) {
 		if (!swift_demangle) {
 			have_swift_demangle = 0;
@@ -154,8 +154,8 @@ static char *swift_demangle_cmd(const char *s) {
 
 static char *swift_demangle_lib(const char *s) {
 #if __UNIX__
-	static bool haveSwiftCore = false;
-	static char *(*swift_demangle)(const char *sym, int symlen, void *out, int *outlen, int flags, int unk) = NULL;
+	static R_TH_LOCAL bool haveSwiftCore = false;
+	static R_TH_LOCAL char *(*swift_demangle)(const char *sym, int symlen, void *out, int *outlen, int flags, int unk) = NULL;
 	if (!haveSwiftCore) {
 		void *lib = r_lib_dl_open ("/usr/lib/swift/libswiftCore.dylib");
 		if (lib) {

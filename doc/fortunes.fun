@@ -231,7 +231,7 @@ What is the most complex r2 command? q - then you have to deal with real life /o
 If you're having fun using radare2, odds are that you're doing something wrong.
 Don't trust what can't be compiled
 Coffee time!
-Can you you challenge a perfect immortal machine?
+Can you challenge a perfect immortal machine?
 Add more blockchains to your life.
 Congratulations! You got the segfault 1.000.000! Click [here] to win a prize!
 Well, it looks like it's working.
@@ -304,3 +304,7 @@ The r emblem on the front is the legendary symbol for invincibility!
 Send PR or GTFO
 If it's stupid and it works, it is not stupid
 33 + 77 = 100
+radare2[15449] Corpse failure, too many 6
+Process[15449] crashed: radare2. Too many corpses being created.
+You can't sleep now there are monsters nearby
+Every journey begins with a choice

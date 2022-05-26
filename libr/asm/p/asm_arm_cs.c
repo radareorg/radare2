@@ -111,8 +111,8 @@ static void check_itblock(RAsm *a, cs_insn *insn) {
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	static int omode = -1;
-	static int obits = 32;
+	static R_TH_LOCAL int omode = -1;
+	static R_TH_LOCAL int obits = 32;
 	bool disp_hash = a->immdisp;
 	cs_insn* insn = NULL;
 	int ret, n = 0;

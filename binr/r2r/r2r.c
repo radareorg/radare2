@@ -131,7 +131,19 @@ static bool r2r_chdir(const char *argv0) {
 }
 
 static bool r2r_test_run_unit(void) {
-	return r_sandbox_system ("make -C unit all run", 1) == 0;
+	char *make = r_file_path ("gmake");
+	if (!make) {
+		make = r_file_path ("make");
+		if (!make) {
+			eprintf ("Cannot find `make` in PATH\n");
+			return false;
+		}
+	}
+	char *cmd = r_str_newf ("%s -C unit run", make);
+	int rc = r_sandbox_system (cmd, 1) == 0;
+	free (cmd);
+	free (make);
+	return rc == 0;
 }
 
 static bool r2r_chdir_fromtest(const char *test_path) {
@@ -517,9 +529,14 @@ int main(int argc, char **argv) {
 
 	if (output_file) {
 		pj_end (state.test_results);
-		char *results = pj_drain (state.test_results);
-		r_file_dump (output_file, (ut8 *)results, strlen (results), false);
-		free (results);
+		if (r_file_exists (output_file)) {
+			pj_free (state.test_results);
+			eprintf ("Cannot overwrite output file '%s'\n", output_file);
+		} else {
+			char *results = pj_drain (state.test_results);
+			r_file_dump (output_file, (ut8 *)results, strlen (results), false);
+			free (results);
+		}
 	}
 
 	if (interactive) {

@@ -61,7 +61,11 @@ static int cmd_project(void *data, const char *input) {
 	file = arg;
 	switch (input[0]) {
 	case 'c': // "Pc"
-		if (input[1] == ' ') {
+		if (input[1] == '?') {
+			eprintf ("Usage: Pc [prjname]\n");
+		} else if (input[1] == '\0' && fileproject) {
+			r_core_project_cat (core, fileproject);
+		} else if (input[1] == ' ') {
 			r_core_project_cat (core, input + 2);
 		} else {
 			eprintf ("Usage: Pc [prjname]\n");
