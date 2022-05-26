@@ -10916,8 +10916,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	if (core->rasm->config->bits == 64) {
 		vsize = 8;
 	}
-
-	// body
 	oldstr = r_print_rowlog (core->print, "Analyze value pointers (aav)");
 	r_print_rowlog_done (core->print, oldstr);
 	r_cons_break_push (NULL, NULL);
@@ -10932,9 +10930,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			r_strf_var (msg, 128, "... from 0x%"PFMT64x" to 0x%"PFMT64x"", r_io_map_begin (map), r_io_map_end (map));
-			oldstr = r_print_rowlog (core->print, msg);
-			r_print_rowlog_done (core->print, oldstr);
 			(void)r_core_search_value_in_range (core, relative, map->itv,
 				r_io_map_begin (map), r_io_map_end (map), vsize, _CbInRangeAav, (void *)(size_t)asterisk);
 		}
@@ -10956,13 +10951,10 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			//TODO: Reduce multiple hits for same addr
 			from = r_itv_begin (map2->itv);
 			to = r_itv_end (map2->itv);
-			r_strf_var (msg, 128, "... from 0x%"PFMT64x" to 0x%"PFMT64x"", from, to);
-			oldstr = r_print_rowlog (core->print, msg);
 			if ((to - from) > MAX_SCAN_SIZE) {
 				eprintf ("Warning: Skipping large region\n");
 				continue;
 			}
-			r_print_rowlog_done (core->print, oldstr);
 			r_list_foreach (list, iter, map) {
 				ut64 begin = r_io_map_begin (map);
 				ut64 end = r_io_map_end (map);
@@ -10974,7 +10966,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 					r_print_rowlog_done (core->print, oldstr);
 					continue;
 				}
-				r_strf_var (msg2, 128, "0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x" (aav)", from, to, begin, end);
+				r_strf_var (msg2, 128, "aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x, from, to, begin, end);
 				oldstr = r_print_rowlog (core->print, msg2);
 				r_print_rowlog_done (core->print, oldstr);
 				(void)r_core_search_value_in_range (core, relative, map->itv, from, to, vsize, _CbInRangeAav, (void *)(size_t)asterisk);
@@ -10984,7 +10976,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	}
 beach:
 	r_cons_break_pop ();
-	// end
 	r_config_set (core->config, "anal.in", tmp);
 	free (tmp);
 	seti ("search.align", o_align);

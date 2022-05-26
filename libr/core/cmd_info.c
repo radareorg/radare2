@@ -474,6 +474,10 @@ static int cmd_info(void *data, const char *input) {
 	Sdb *db;
 	PJ *pj = NULL;
 
+	if (r_str_startswith (input, "ddqd")) {
+		r_cons_printf ("GOD MODE ON\n");
+		return 0;
+	}
 	for (i = 0; input[i] && input[i] != ' '; i++)
 		;
 	if (i > 0) {
