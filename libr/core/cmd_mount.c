@@ -236,7 +236,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'L': // "mL" list of plugins
 		if (input[1] == '?') { // "mL?"
-			r_core_cmd_help_match_spec(core, help_msg_m, "mL", 0, true);
+			r_core_cmd_help_match_spec (core, help_msg_m, "mL", 0, true);
 		}
 		r_list_foreach (core->fs->plugins, iter, plug) {
 			r_cons_printf ("%10s  %s\n", plug->name, plug->desc);
@@ -245,14 +245,14 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'l': // "ml"
 	case 'd': // "md"
 		if (input[1] == '?') { // "md?"
-			r_core_cmd_help_match_spec(core, help_msg_m, "md", 0, true);
+			r_core_cmd_help_match_spec (core, help_msg_m, "md", 0, true);
 		}
 		cmd_mount_ls (core, input + 1);
 		break;
 	case 'p': // "mp"
 		input = (char *)r_str_trim_head_ro (input + 1);
 		if (input[0] == '?') { // "mp?"
-			r_core_cmd_help_match_spec(core, help_msg_m, "mp", 0, true);
+			r_core_cmd_help_match_spec (core, help_msg_m, "mp", 0, true);
 			break;
 		}
 		ptr = strchr (input, ' ');
@@ -275,7 +275,7 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'o': // "mo"
 		input = (char *)r_str_trim_head_ro (input + 1);
 		if (*input == '?') { // "mo?"
-			r_core_cmd_help_match_spec(core, help_msg_m, "mo", 0, true);
+			r_core_cmd_help_match_spec (core, help_msg_m, "mo", 0, true);
 		}
 		file = r_fs_open (core->fs, input, false);
 		if (file) {
@@ -436,7 +436,7 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		input = (char *)r_str_trim_head_ro (input + 1);
 		if (*input == '?') { // "ms?"
-			r_core_cmd_help_match_spec(core, help_msg_m, "ms", 0, true);
+			r_core_cmd_help_match_spec (core, help_msg_m, "ms", 0, true);
 			break;
 		};
 		r_cons_set_raw (false);
