@@ -3457,7 +3457,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	if (r->scr_gadgets && *line && *line != 'q') {
 		r_core_cmd0 (r, "pg");
 	}
-	r->num->value = r->rc;
+	// r->num->value = r->rc;
 	return true;
 }
 
@@ -3477,11 +3477,9 @@ R_API int r_core_prompt_exec(RCore *r) {
 			r_core_cmd_queue (r, NULL);
 			break;
 		}
-		r->rc = r->num->value;
-		// int ret = r_core_cmd (r, cmd, true);
 		if (r->cons && r->cons->context->use_tts) {
 			const char *buf = r_cons_get_buffer ();
-			if (buf && *buf) {
+			if (R_STR_ISNOTEMPTY (buf)) {
 				r_sys_tts (buf, true);
 			}
 			r->cons->context->use_tts = false;

@@ -270,7 +270,6 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 	RListIter *iter;
 	const char *cmdn;
 	const char *file;
-	int ret;
 	/* -i */
 	bool has_failed = false;
 	r_list_foreach (files, iter, file) {
@@ -278,7 +277,7 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 			eprintf ("Script '%s' not found.\n", file);
 			goto beach;
 		}
-		ret = r_core_run_script (r, file);
+		int ret = r_core_run_script (r, file);
 		r_cons_flush ();
 		if (ret == -2) {
 			eprintf ("[c] Cannot open '%s'\n", file);
@@ -305,7 +304,7 @@ beach:
 			return true;
 		}
 	}
-	return false;
+	return has_failed;
 }
 
 static bool mustSaveHistory(RConfig *c) {
@@ -1491,14 +1490,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r_list_free (evals);
 	r_list_free (files);
 	cmds = evals = files = NULL;
-	if (forcequit) {
-		ret = 1;
-	}
-	if (ret) {
-		ret = 0;
+	if (forcequit || quietLeak) {
+		ret = r->rc;
 		goto beach;
 	}
-	if (r_config_get_i (r->config, "scr.prompt")) {
+	if (ret) {
+		ret = r->rc;
+		goto beach;
+	}
+	if (r_config_get_b (r->config, "scr.prompt")) {
 		if (run_rc && r_config_get_i (r->config, "cfg.fortunes")) {
 			r_core_fortune_print_random (r);
 			r_cons_flush ();
@@ -1621,7 +1621,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	ret = r->num->value;
 beach:
 	if (quietLeak) {
-		exit (ret);
+		exit (r->rc);
 		return ret;
 	}
 

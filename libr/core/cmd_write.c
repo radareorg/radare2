@@ -191,7 +191,7 @@ static const char *help_msg_wx[] = {
 
 static void cmd_write_fail(RCore *core) {
 	R_LOG_ERROR ("Cannot write. Check `omp` or reopen the file with `oo+`");
-	r_core_return_code (core, R_CMD_RC_FAILURE);
+	r_core_return_value (core, R_CMD_RC_FAILURE);
 }
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
@@ -208,10 +208,10 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 				buf[len - 1] |= core->block[len - 1] & 0xf;
 			}
 		}
-		r_core_return_code (core, R_CMD_RC_SUCCESS);
+		r_core_return_value (core, R_CMD_RC_SUCCESS);
 		if (!r_core_write_at (core, core->offset, buf, len)) {
 			cmd_write_fail (core);
-			r_core_return_code (core, R_CMD_RC_FAILURE);
+			r_core_return_value (core, R_CMD_RC_FAILURE);
 		}
 		// call WSEEK for consistency?
 		if (r_config_get_b (core->config, "cfg.wseek")) {
@@ -220,7 +220,7 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 		r_core_block_read (core);
 	} else {
 		R_LOG_ERROR ("Error: invalid hexpair string");
-		r_core_return_code (core, R_CMD_RC_FAILURE);
+		r_core_return_value (core, R_CMD_RC_FAILURE);
 	}
 	free (buf);
 	return len;
@@ -450,7 +450,7 @@ static int cmd_wo(void *data, const char *input) {
 			} else if (input[2] == ' ') {
 				value = r_num_get (core->num, input + 3);
 				int offset = r_debruijn_offset (value, r_config_get_i (core->config, "cfg.bigendian"));
-				r_core_return_code (core, offset);
+				r_core_return_value (core, offset);
 				r_cons_printf ("%"PFMT64d"\n", core->num->value);
 			}
 			break;
@@ -496,7 +496,7 @@ static void cmd_write_value(RCore *core, const char *input) {
 	ut8 buf[sizeof(ut64)];
 	bool be = r_config_get_i (core->config, "cfg.bigendian");
 
-	r_core_return_code (core, R_CMD_RC_SUCCESS);
+	r_core_return_value (core, R_CMD_RC_SUCCESS);
 
 	switch (input[0]) {
 	case '?': // "wv?"
@@ -1412,7 +1412,7 @@ static int cmd_w(RCore *core, const char *input) {
 	free (str);
 	WSEEK (core, len);
 	r_core_block_read (core);
-	r_core_return_code (core, len);
+	r_core_return_value (core, len);
 	return 0;
 }
 
@@ -1424,13 +1424,13 @@ static int cmd_wz(RCore *core, const char *input) {
 	if (*input == '?' || *input != ' ' || len < 1) {
 		free (str);
 		r_core_cmd_help_match (core, help_msg_w, "wz", true);
-		r_core_return_code (core, 0);
+		r_core_return_value (core, 0);
 		return 0;
 	}
 	if (!r_core_write_at (core, core->offset, (const ut8 *)str, len)) {
 		cmd_write_fail (core);
 	}
-	r_core_return_code (core, len);
+	r_core_return_value (core, len);
 	WSEEK (core, len + 1);
 	r_core_block_read (core);
 	free (str);
@@ -1706,9 +1706,9 @@ static int cmd_wx(void *data, const char *input) {
 						if (!r_io_write_at (core->io, core->offset, out, len)) {
 							eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
 						}
-						r_core_return_code (core, len);
+						r_core_return_value (core, len);
 					} else {
-						r_core_return_code (core, 0);
+						r_core_return_value (core, 0);
 					}
 					free (out);
 				}
@@ -1718,7 +1718,7 @@ static int cmd_wx(void *data, const char *input) {
 			if ((buf = r_file_slurp_hexpairs (arg, &size))) {
 				r_io_use_fd (core->io, core->io->desc->fd);
 				if (r_io_write_at (core->io, core->offset, buf, size) > 0) {
-					r_core_return_code (core, size);
+					r_core_return_value (core, size);
 					WSEEK (core, size);
 				} else {
 					eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
@@ -1740,9 +1740,9 @@ static int cmd_wx(void *data, const char *input) {
 			int len = cmd_write_hexpair (core, input + 1);
 			if (len > 0) {
 				r_core_seek_delta (core, len);
-				r_core_return_code (core, len);
+				r_core_return_value (core, len);
 			} else {
-				r_core_return_code (core, 0);
+				r_core_return_value (core, 0);
 			}
 		}
 		break;
@@ -2161,7 +2161,7 @@ static int cmd_write(void *data, const char *input) {
 
 		ut64 addr = core->offset;
 		if (R_STR_ISEMPTY (curcs)) {
-			r_core_return_code (core, 0);
+			r_core_return_value (core, 0);
 			cmd_w (core, str + 1);
 			addr += core->num->value;
 		} else {
