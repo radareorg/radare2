@@ -123,6 +123,7 @@ struct MACH0_(opts_t) {
 	ut64 header_at;
 	ut64 symbols_off;
 	int maxsymlen;
+	RBinFile *bf;
 };
 
 struct MACH0_(obj_t) {

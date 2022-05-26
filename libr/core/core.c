@@ -613,10 +613,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		break;
 	case '$':
 		if (ok) {
-			*ok = 1;
+			*ok = true;
 		}
 		switch (str[1]) {
 		case 'e':
+		case 'j':
 		case 'f':
 		case 'm':
 		case 'v':

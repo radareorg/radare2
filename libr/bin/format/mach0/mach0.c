@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2021 - nibble, mrmacete, pancake */
+/* radare - LGPL - Copyright 2010-2022 - nibble, mrmacete, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -881,9 +881,12 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 			bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			break;
 		}
-		struct blob_index_t bi;
+		struct blob_index_t bi = { 0 };
 		if (r_buf_read_at (bin->b, data + 12 + (i * sizeof (struct blob_index_t)),
 			(ut8*)&bi, sizeof (struct blob_index_t)) < sizeof (struct blob_index_t)) {
+			break;
+		}
+		if (i > 32 && idx.type == 0 && idx.offset == 0) {
 			break;
 		}
 		idx.type = r_read_ble32 (&bi.type, mach0_endian);
@@ -2146,6 +2149,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
 	r_return_if_fail (options && bf && bf->rbin);
+	options->bf = bf;
 	options->header_at = 0;
 	options->symbols_off = 0;
 	options->verbose = bf->rbin->verbose;
@@ -2206,7 +2210,12 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 		bin->b = r_buf_ref (buf);
 		bin->main_addr = UT64_MAX;
 		bin->kv = sdb_new (NULL, "bin.mach0", 0);
-		bin->size = r_buf_size (bin->b);
+		ut64 sz = r_buf_size (buf); // bin->b);
+		if (options->bf->loadaddr == UT64_MAX - sz) {
+			// handle the negative binsize problem when source io returns -1 as size. assume its 2MB
+			// sz = 4 * 1024 * 1024;
+		}
+		bin->size = sz;
 		if (options) {
 			bin->verbose = options->verbose;
 			bin->header_at = options->header_at;
