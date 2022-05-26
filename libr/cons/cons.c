@@ -1091,7 +1091,7 @@ R_API void r_cons_flush(void) {
 				r_sys_cmd_str_full (I->pager, C->buffer, -1, NULL, NULL, NULL);
 				r_cons_reset ();
 			}
-		} else if (I->maxpage > 0 || C->buffer_len > I->maxpage) {
+		} else if (I->maxpage > 0 && C->buffer_len > I->maxpage) {
 #if COUNT_LINES
 			int i, lines = 0;
 			for (i = 0; C->buffer[i]; i++) {
