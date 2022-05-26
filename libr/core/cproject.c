@@ -2,6 +2,7 @@
 
 // project class definition to be used by project.c
 
+#include "rvc.h"
 #include <r_core.h>
 
 R_API RProject *r_project_new(void) {
@@ -38,6 +39,7 @@ R_API void r_project_close(RProject *p) {
 	// close the current project
 	R_FREE (p->name);
 	R_FREE (p->path);
+	r_vc_close (p->rvc, true);
 }
 
 R_API bool r_project_open(RProject *p, const char *name, const char *path) {
