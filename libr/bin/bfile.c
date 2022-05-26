@@ -178,13 +178,19 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	free (charset);
 	RConsIsBreaked is_breaked = (bin && bin->consb.is_breaked)? bin->consb.is_breaked: NULL;
 	// may oobread
-	while (needle < to) {
+	while (needle < to && needle + 4 < UT64_MAX) {
 		if (is_breaked && is_breaked ()) {
+			break;
+		}
+		if (!UT64_ADD_OVFCHK (needle, 4)) {
 			break;
 		}
 		// smol optimization
 		if (needle + 4 < to) {
-			ut32 n1 = r_read_le32 (buf + needle - from);
+			if (!UT64_SUB_OVFCHK (needle, from)) {
+				break;
+			}
+			ut32 n1 = r_read_le32 (buf + (needle - from));
 			if (!n1) {
 				needle += 4;
 				continue;
