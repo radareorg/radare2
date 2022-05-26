@@ -671,7 +671,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Check Pc's return value
+NAME=Check Pc\'s return value
 FILE=bins/elf/analysis/main
 ARGS=-A -eprj.vc=false -edir.projects=.tmp/
 CMDS=<<EOF
@@ -684,5 +684,20 @@ EOF
 EXPECT=<<EOF
 0x1
 0x0
+EOF
+RUN
+
+NAME=Close project
+FILE=bins/elf/analysis/main
+ARGS=-A -eprj.vc=false -edir.projects=.tmp/
+CMDS=<<EOF
+e prj.vc=false
+P+ hjkl
+Pi~!/
+Px
+Pi
+EOF
+EXPECT=<<EOF
+hjkl
 EOF
 RUN
