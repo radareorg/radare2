@@ -675,7 +675,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		free (prj_bin_dir);
 		free (bin_file);
 	}
-	if (r_config_get_b (core->config, "prj.vc") || core->prj->rvc) {
+	if (core->prj->rvc || r_config_get_b (core->config, "prj.vc")) {
 		// assume that if the repo is not loaded, the repo doesn't exist
 		if (!core->prj->rvc) {
 			if (!(core->prj->rvc = rvc_git_init (core, prj_dir))) {
