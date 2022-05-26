@@ -2780,6 +2780,8 @@ static bool cb_prjname(void *user, void *data) {
 				return true;
 			}
 			eprintf ("Cannot open project.\n");
+		} else {
+			return true;
 		}
 	}
 	return false;
