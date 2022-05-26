@@ -39,7 +39,7 @@ R_API void r_project_close(RProject *p) {
 	// close the current project
 	R_FREE (p->name);
 	R_FREE (p->path);
-	r_vc_close(p->rvc, true);
+	r_vc_close (p->rvc, true);
 }
 
 R_API bool r_project_open(RProject *p, const char *name, const char *path) {
