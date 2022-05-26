@@ -67,8 +67,6 @@ static int cmd_quit(void *data, const char *input) {
 		} else if (input[1] == 'n') {
 			core->num->value += 2;	
 		}
-		//exit (*input?r_num_math (core->num, input+1):0);
-		//if (core->http_up) return false; // cancel quit when http is running
 		return R_CMD_RC_QUIT;
 	}
 	return R_CMD_RC_SUCCESS;
