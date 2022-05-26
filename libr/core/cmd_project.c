@@ -18,6 +18,7 @@ static const char *help_msg_P[] = {
 	"Pn", "[j]", "manage notes associated with the project",
 	"Ps", " [file]", "save project (see dir.projects)",
 	"PS", " [file]", "save script file",
+	"Px", "-", "close the opened project",
 	"NOTE:", "", "the 'e prj.name' evar can save/open/rename/list projects.",
 	"NOTE:", "", "see the other 'e??prj.' evars for more options.",
 	"NOTE:", "", "project are stored in " R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS),
@@ -301,6 +302,7 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case 'x':
 		r_project_close (core->prj);
+		r_config_set (core->config, "prj.name", "");
 		break;
 	case 'P':
 	case 'l':
