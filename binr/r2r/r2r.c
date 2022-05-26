@@ -529,9 +529,14 @@ int main(int argc, char **argv) {
 
 	if (output_file) {
 		pj_end (state.test_results);
-		char *results = pj_drain (state.test_results);
-		r_file_dump (output_file, (ut8 *)results, strlen (results), false);
-		free (results);
+		if (r_file_exists (output_file)) {
+			pj_free (state.test_results);
+			eprintf ("Cannot overwrite output file '%s'\n", output_file);
+		} else {
+			char *results = pj_drain (state.test_results);
+			r_file_dump (output_file, (ut8 *)results, strlen (results), false);
+			free (results);
+		}
 	}
 
 	if (interactive) {
