@@ -299,6 +299,9 @@ static int cmd_project(void *data, const char *input) {
 			}
 		}
 		break;
+	case 'x':
+		r_project_close (core->prj);
+		break;
 	case 'P':
 	case 'l':
 	case 'j': // "Pj"
