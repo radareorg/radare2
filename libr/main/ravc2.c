@@ -106,7 +106,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		}
 		return !r_vc_clone (argv[1 + opt.ind], argv[2 + opt.ind]);
 	}
-	Rvc *rvc = r_vc_load(rp);
+	Rvc *rvc = r_vc_open (rp);
 	R_FREE (rp);
 	if (!rvc) {
 		return 1;

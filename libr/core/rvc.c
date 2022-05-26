@@ -1100,7 +1100,7 @@ R_API Rvc *r_vc_git_init(const char *path) {
 	char *escpath = r_str_escape (path);
 	int ret = r_sys_cmdf ("git init \"%s\"", escpath);
 	free (escpath);
-	return !ret? r_vc_git_load (path) : NULL;
+	return !ret? r_vc_git_open (path) : NULL;
 }
 
 R_API bool r_vc_git_branch(const char *path, const char *name) {
