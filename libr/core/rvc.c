@@ -771,8 +771,9 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 	}
 	const char *m;
 	for (m = message; *m; m++) {
-		if (*m < ' ') {
-			eprintf ("commit messages must not contain unprintable charecters\n");
+		if (*m < ' ' && *m != '\n') {
+			eprintf ("commit messages must not contain unprintable charecters %c\n", 
+					*m);
 			return false;
 		}
 	}
@@ -877,24 +878,22 @@ R_API bool r_vc_branch(Rvc *rvc, const char *bname) {
 
 R_API Rvc *r_vc_new(const char *path) {
 	char *commitp, *blobsp;
+	if (repo_exists (path)) {
+		eprintf("A repo already exists in %s", path);
+		return NULL;
+	}
 	Rvc *rvc = R_NEW(Rvc);
 	if (!rvc) {
 		eprintf("Failed to create repo\n");
 		return NULL;
 	}
-	rvc->path = r_file_new (path, ".rvc", NULL);
-	if (r_file_is_directory (rvc->path)) {
-		eprintf ("A repository already exists in %s\n", path);
-		free (rvc);
-		return NULL;
-
-	}
-	if (!rvc->path) {
+	rvc->path = r_str_new (path);
+	if (!path) {
 		free (rvc);
 		return NULL;
 	}
-	commitp = r_file_new (rvc->path, "commits", NULL);
-	blobsp = r_file_new (rvc->path, "blobs", NULL);
+	commitp = r_file_new (rvc->path, ".rvc", "commits", NULL);
+	blobsp = r_file_new (rvc->path, ".rvc","blobs", NULL);
 	if (!commitp || !blobsp) {
 		free (commitp);
 		free (blobsp);
@@ -912,7 +911,7 @@ R_API Rvc *r_vc_new(const char *path) {
 	}
 	free (commitp);
 	free (blobsp);
-	rvc->db = sdb_new (rvc->path, DBNAME, 0);
+	rvc->db = sdb_new (rvc->path, "/.rvc/" DBNAME, 0);
 	if (!rvc->db) {
 		eprintf ("Can't create The RVC branches database");
 		free (rvc->path);
@@ -1097,11 +1096,11 @@ R_API Rvc *r_vc_git_load(const char *path) {
 	return vc;
 }
 
-R_API bool r_vc_git_init(const char *path) {
+R_API Rvc *r_vc_git_init(const char *path) {
 	char *escpath = r_str_escape (path);
 	int ret = r_sys_cmdf ("git init \"%s\"", escpath);
 	free (escpath);
-	return !ret;
+	return !ret? r_vc_git_load (path) : NULL;
 }
 
 R_API bool r_vc_git_branch(const char *path, const char *name) {
@@ -1212,12 +1211,16 @@ R_API bool r_vc_reset(Rvc *rvc) {
 
 //Access both git and rvc functionality from one set of functions
 
-R_API bool rvc_git_init(const RCore *core, const char *path) {
+R_API Rvc *rvc_git_init(const RCore *core, const char *path) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
 		return r_vc_git_init (path);
 	}
 	printf ("rvc is just for testing please don't use it\n");
-	return r_vc_new (path);
+	Rvc *rvc = r_vc_new (path);
+	if (!rvc || !r_vc_save (rvc)) {
+		return NULL;
+	}
+	return rvc;
 }
 
 R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files) {
@@ -1229,10 +1232,11 @@ R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char
 		}
 	}
 	message = R_STR_ISEMPTY (message)? m : message;
-	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+	if (rvc->type == VC_RVC) {
 		author = author? author : r_config_get (core->config, "cfg.user");
 		eprintf ("rvc is just for testing please don't use it\n");
-		return r_vc_commit (rvc, message, author, files);
+		r_vc_commit (rvc, message, author, files);
+		return r_vc_save (rvc);
 	}
 	char *path;
 	RListIter *iter;
@@ -1244,18 +1248,20 @@ R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char
 	return r_vc_git_commit (rvc->path, message);
 }
 
-R_API bool rvc_git_branch(const RCore *core, Rvc *rvc, const char *bname) {
-	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+R_API bool rvc_git_branch(Rvc *rvc, const char *bname) {
+	if (rvc->type == VC_RVC) {
 		eprintf ("rvc is just for testing please don't use it\n");
-		return r_vc_branch (rvc, bname);
+		r_vc_branch (rvc, bname);
+		return r_vc_save(rvc);
 	}
 	return !r_vc_git_branch (rvc->path, bname);
 }
 
 R_API bool rvc_git_checkout(const RCore *core, Rvc *rvc, const char *bname) {
-	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+	if (rvc->type == VC_GIT) {
 		eprintf ("rvc is just for testing please don't use it\n");
-		return r_vc_checkout (rvc, bname);
+		r_vc_checkout (rvc, bname);
+		return r_vc_save(rvc);
 	}
 	return r_vc_git_checkout (rvc->path, bname);
 }
