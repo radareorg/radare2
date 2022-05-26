@@ -772,7 +772,7 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 	const char *m;
 	for (m = message; *m; m++) {
 		if (*m < ' ' && *m != '\n') {
-			eprintf ("commit messages must not contain unprintable charecters %c\n", 
+			eprintf ("commit messages must not contain unprintable charecters %c\n",
 					*m);
 			return false;
 		}
@@ -888,7 +888,7 @@ R_API Rvc *r_vc_new(const char *path) {
 		return NULL;
 	}
 	rvc->path = r_str_new (path);
-	if (!path) {
+	if (!rvc->path) {
 		free (rvc);
 		return NULL;
 	}
