@@ -131,7 +131,19 @@ static bool r2r_chdir(const char *argv0) {
 }
 
 static bool r2r_test_run_unit(void) {
-	return r_sandbox_system ("make -C unit all run", 1) == 0;
+	char *make = r_file_path ("gmake");
+	if (!make) {
+		make = r_file_path ("make");
+		if (!make) {
+			eprintf ("Cannot find `make` in PATH\n");
+			return false;
+		}
+	}
+	char *cmd = r_str_newf ("%s -C unit run", make);
+	int rc = r_sandbox_system (cmd, 1) == 0;
+	free (cmd);
+	free (make);
+	return rc == 0;
 }
 
 static bool r2r_chdir_fromtest(const char *test_path) {

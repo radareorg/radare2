@@ -19,7 +19,7 @@ $(BINDIR)/%: %.c
 	mkdir -p "$(BINDIR)"
 	$(CC) $< -o $@ $(CFLAGS) $(LDFLAGS)
 
-run:
+run: $(BINS)
 	r=0 ; cd .. ; for a in $(BINS) ; do $(ASAN_LD_PRELOAD) ./unit/$$a || r=1; done ; echo unit$$r ; exit $$r
 
 clean:
