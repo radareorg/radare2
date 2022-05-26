@@ -1301,10 +1301,12 @@ R_API bool r_vc_save(Rvc *vc) {
 }
 
 R_API void r_vc_close(Rvc *vc, bool save) {
-	if (save) {
-		r_vc_save(vc);
+	if (vc) {
+		if (save) {
+			r_vc_save(vc);
+		}
+		sdb_close (vc->db);
+		free (vc->path);
+		free (vc);
 	}
-	sdb_close (vc->db);
-	free (vc->path);
-	free (vc);
 }
