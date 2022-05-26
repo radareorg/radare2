@@ -653,6 +653,7 @@ R_API RCons *r_cons_new(void) {
 	I->fdout = 1;
 	I->break_lines = false;
 	I->lines = 0;
+	I->maxpage = 102400;
 
 	r_cons_context_reset ();
 	cons_context_init (C, NULL);
@@ -1090,7 +1091,7 @@ R_API void r_cons_flush(void) {
 				r_sys_cmd_str_full (I->pager, C->buffer, -1, NULL, NULL, NULL);
 				r_cons_reset ();
 			}
-		} else if (C->buffer_len > CONS_MAX_USER) {
+		} else if (I->maxpage > 0 || C->buffer_len > I->maxpage) {
 #if COUNT_LINES
 			int i, lines = 0;
 			for (i = 0; C->buffer[i]; i++) {
