@@ -53,7 +53,9 @@ static const char *help_msg_i[] = {
 	"iw", "", "show try/catch blocks",
 	"iX", "", "display source files used (via dwarf)",
 	"iz", "[?][j]", "strings in data sections (in JSON/Base64)",
+	"iz*", "", "print flags and comments r2 commands for all the strings",
 	"izz", "", "search for Strings in the whole binary",
+	"izz*", "", "same as iz* but exposing the strings of the whole binary",
 	"izzz", "", "dump Strings from whole binary to r2 shell (for huge files)",
 	"iz-", " [addr]", "purge string via bin.str.purge",
 	"iZ", "", "guess size of binary program",
@@ -1205,8 +1207,11 @@ static int cmd_info(void *data, const char *input) {
 				bool validcmd = true;
 				switch (input[1]) {
 				case 'J':
-				case '*':
 					validcmd = false;
+					break;
+				case '*':
+				case 'j':
+					validcmd = true;
 					break;
 				case 'q':
 					// "izq"
@@ -1214,6 +1219,9 @@ static int cmd_info(void *data, const char *input) {
 					? R_MODE_SIMPLEST
 					: R_MODE_SIMPLE;
 					input++;
+					break;
+				default:
+					// invalid subcommand handler?
 					break;
 				}
 				if (validcmd) {
@@ -1229,6 +1237,8 @@ static int cmd_info(void *data, const char *input) {
 					}
 					core->bin->cur = cur;
 					r_list_free (objs);
+				} else {
+					//
 				}
 			}
 			break;
