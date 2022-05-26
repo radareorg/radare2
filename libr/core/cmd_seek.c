@@ -343,7 +343,7 @@ static void cmd_seek_opcode(RCore *core, const char *input) {
 	int val = (n < 0)
 		? cmd_seek_opcode_backward (core, -n)
 		: cmd_seek_opcode_forward (core, n);
-	r_core_return_code (core, val);
+	r_core_return_value (core, val);
 }
 
 static int cmd_seek(void *data, const char *input) {
@@ -796,7 +796,7 @@ static int cmd_seek(void *data, const char *input) {
 			char *arg = r_str_trim_dup (input + 1);
 			if (R_STR_ISNOTEMPTY (arg)) {
 				int rc = r_sys_tem (arg);
-				r_core_return_code (core, (rc > 0)? rc: 1);
+				r_core_return_value (core, (rc > 0)? rc: 1);
 			} else {
 				if (r_config_get_b (core->config, "scr.interactive")) {
 					// open shell
@@ -807,7 +807,7 @@ static int cmd_seek(void *data, const char *input) {
 							break;
 						}
 						int rc = r_sys_tem (line);
-						r_core_return_code (core, (rc > 0)? rc: 1);
+						r_core_return_value (core, (rc > 0)? rc: 1);
 					}
 				} else {
 					R_LOG_WARN ("enable scr.interactive to use this new shell prompt");

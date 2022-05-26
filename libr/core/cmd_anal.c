@@ -5322,7 +5322,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 					RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
 					if (rf) {
 						int o = r_reg_cond_bits (core->dbg->reg, id, rf);
-						r_core_return_code (core, o);
+						r_core_return_value (core, o);
 						// ORLY?
 						r_cons_printf ("%d\n", o);
 						free (rf);
@@ -7685,10 +7685,10 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				char *str2 = r_str_newf (" %s", str);
 				cmd_anal_esil (core, str2, false);
 				free (str2);
-				r_core_return_code (core, 1);
+				r_core_return_value (core, 1);
 			} else {
 				// fail to exevute, update code
-				r_core_return_code (core, 0);
+				r_core_return_value (core, 0);
 			}
 			r_anal_op_fini (&aop);
 		} else if (input[1] == 'a') { // "aexa"

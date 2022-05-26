@@ -2623,7 +2623,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			}
 			print_search_progress (at, to1, search->nhits, param);
 			r_cons_clear_line (1);
-			r_core_return_code (core, search->nhits);
+			r_core_return_value (core, search->nhits);
 			if (param->outmode != R_MODE_JSON) {
 				eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
 			}
@@ -3705,10 +3705,10 @@ reread:
 							}
 						}
 						free (hashValue);
-						r_core_return_code (core, 0);
+						r_core_return_value (core, 0);
 					} else {
 						eprintf ("Cannot allocate memory.\n");
-						r_core_return_code (core, 1);
+						r_core_return_value (core, 1);
 					}
 				} else {
 					eprintf ("Usage: /cc [hashname] [hexpairhashvalue]\n");
@@ -4089,7 +4089,7 @@ reread:
 		}
 		if (input[param_offset - 1] != ' ') {
 			eprintf ("Missing ' ' after /i\n");
-			r_core_return_code (core, R_CMD_RC_FAILURE);
+			r_core_return_value (core, R_CMD_RC_FAILURE);
 			goto beach;
 		}
 		ignorecase = true;
@@ -4231,7 +4231,7 @@ reread:
 			st64 coff = core->offset;
 			RInterval itv = {core->offset, -coff};
 			if (!r_itv_overlap (search_itv, itv)) {
-				r_core_return_code (core, R_CMD_RC_SUCCESS);
+				r_core_return_value (core, R_CMD_RC_SUCCESS);
 				goto beach;
 			} else {
 				search_itv = r_itv_intersect (search_itv, itv);
@@ -4435,9 +4435,9 @@ again:
 	}
 beach:
 	if (errcode != -1) {
-		r_core_return_code (core, errcode);
+		r_core_return_value (core, errcode);
 	} else {
-		r_core_return_code (core, search->nhits);
+		r_core_return_value (core, search->nhits);
 	}
 	core->in_search = false;
 	r_flag_space_pop (core->flags);
