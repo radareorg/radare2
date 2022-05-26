@@ -50,7 +50,6 @@ extern "C" {
 #endif
 
 /* constants */
-#define CONS_MAX_USER 102400
 #define CONS_BUFSZ 0x4f00
 #define STR_IS_NULL(x) (!x || !x[0])
 
@@ -497,6 +496,7 @@ typedef struct r_cons_t {
 	bool dotted_lines;
 	int linesleep;
 	int pagesize;
+	int maxpage;
 	char *break_word;
 	int break_word_len;
 	ut64 timeout; // must come from r_time_now_mono()

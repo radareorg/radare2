@@ -2496,9 +2496,15 @@ static bool cb_scrlinesleep(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scr_maxpage(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton ()->maxpage = node->i_value;
+	return true;
+}
+
 static bool cb_scrpagesize(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->pagesize= node->i_value;
+	r_cons_singleton ()->pagesize = node->i_value;
 	return true;
 }
 
@@ -4046,6 +4052,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("scr.loopnl", "false", "add a newline after every command executed in @@ loops");
 	SETICB ("scr.linesleep", 0, &cb_scrlinesleep, "flush sleeping some ms in every line");
 	SETICB ("scr.maxtab", 4096, &cb_completion_maxtab, "change max number of auto completion suggestions");
+	SETICB ("scr.maxpage", 102400, &cb_scr_maxpage, "change max chars to print before prompting the user");
 	SETICB ("scr.pagesize", 1, &cb_scrpagesize, "flush in pages when scr.linesleep is != 0");
 	SETCB ("scr.flush", "false", &cb_scrflush, "force flush to console in realtime (breaks scripting)");
 	SETBPREF ("scr.slow", "true", "do slow stuff on visual mode like RFlag.get_at(true)");
