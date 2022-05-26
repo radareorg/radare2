@@ -238,7 +238,6 @@ static bool internal_r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	return ret;
 }
 
-// Deprecated, use either r_io_read_at_mapped or r_io_nread_at instead.
 // For virtual mode, returns true if all reads on mapped regions are successful
 // and complete.
 // For physical mode, the interface is broken because the actual read bytes are
@@ -303,6 +302,7 @@ R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		if (io->ff) {
 			memset (buf, io->Oxff, len);
 		}
+		r_io_bank_drain (io, io->bank);
 		ret = r_io_bank_read_from_submap_at (io, io->bank, addr, buf, len);
 	} else {
 		ret = r_io_pread_at (io, addr, buf, len);
