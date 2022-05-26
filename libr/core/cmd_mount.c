@@ -9,7 +9,7 @@ static const char *help_msg_m[] = {
 	"m-/", "", "umount given path (/)",
 	"mL", "", "list filesystem plugins (Same as Lm)",
 	"mc", " [file]", "cat: Show the contents of the given file",
-	"md", " /", "list directory contents for path",
+	"md", " /", "list files and directory on the virtual r2's fs",
 	"mf", "[?] [o|n]", "search files for given filename or for offset",
 	"mg", " /foo [offset size]", "get fs file/dir and dump to disk (support base64:)",
 	"mi", " /foo/bar", "get offset and size of given file",
@@ -140,10 +140,6 @@ static int cmd_mount(void *data, const char *_input) {
 	RFSPartition *part;
 	RCore *core = (RCore *)data;
 
-	if (strchr (_input, '?')) {
-		r_core_cmd_help (core, help_msg_m);
-		return 0;
-	}
 	if (!strncmp ("ktemp", _input, 5)) {
 		return cmd_mktemp (data, _input);
 	}
@@ -239,16 +235,26 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'L': // "mL" list of plugins
+		if (input[1] == '?') { // "mL?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "mL", 0, true);
+		}
 		r_list_foreach (core->fs->plugins, iter, plug) {
 			r_cons_printf ("%10s  %s\n", plug->name, plug->desc);
 		}
 		break;
 	case 'l': // "ml"
 	case 'd': // "md"
+		if (input[1] == '?') { // "md?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "md", 0, true);
+		}
 		cmd_mount_ls (core, input + 1);
 		break;
-	case 'p':
+	case 'p': // "mp"
 		input = (char *)r_str_trim_head_ro (input + 1);
+		if (input[0] == '?') { // "mp?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "mp", 0, true);
+			break;
+		}
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr = 0;
@@ -268,6 +274,9 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'o': // "mo"
 		input = (char *)r_str_trim_head_ro (input + 1);
+		if (*input == '?') { // "mo?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "mo", 0, true);
+		}
 		file = r_fs_open (core->fs, input, false);
 		if (file) {
 			r_fs_read (core->fs, file, 0, file->size);
@@ -384,7 +393,7 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'f':
 		input++;
 		switch (*input) {
-		case '?':
+		case '?': // "mf?"
 			r_core_cmd_help (core, help_msg_mf);
 			break;
 		case 'n':
@@ -426,6 +435,10 @@ static int cmd_mount(void *data, const char *_input) {
 			return false;
 		}
 		input = (char *)r_str_trim_head_ro (input + 1);
+		if (*input == '?') { // "ms?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "ms", 0, true);
+			break;
+		};
 		r_cons_set_raw (false);
 		{
 			RFSShell shell = {
