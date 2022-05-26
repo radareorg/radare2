@@ -178,19 +178,19 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	free (charset);
 	RConsIsBreaked is_breaked = (bin && bin->consb.is_breaked)? bin->consb.is_breaked: NULL;
 	// may oobread
-	while (needle < to) {
+	while (needle < to && needle < UT64_MAX - 4) {
 		if (is_breaked && is_breaked ()) {
 			break;
 		}
 		// smol optimization
-		if (needle + 4 < to) {
-			ut32 n1 = r_read_le32 (buf + needle - from);
+		if (needle < to - 4) {
+			ut32 n1 = r_read_le32 (buf + (needle - from));
 			if (!n1) {
 				needle += 4;
 				continue;
 			}
 		}
-		rc = r_utf8_decode (buf + needle - from, to - needle, NULL);
+		rc = r_utf8_decode (buf + (needle - from), to - needle, NULL);
 		if (!rc) {
 			needle++;
 			continue;
@@ -198,7 +198,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		bool addr_aligned = !(needle % 4);
 
 		if (type == R_STRING_TYPE_DETECT) {
-			char *w = (char *)buf + needle + rc - from;
+			char *w = (char *)buf + (needle + rc - from);
 			if (((to - needle) > 8 + rc)) {
 				// TODO: support le and be
 				bool is_wide32le = (needle + rc + 2 < to) && (!w[0] && !w[1] && !w[2] && w[3] && !w[4]);
@@ -248,7 +248,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 					rc = 2;
 				}
 			} else {
-				rc = r_utf8_decode (buf + needle - from, to - needle, &r);
+				rc = r_utf8_decode (buf + (needle - from), to - needle, &r);
 				if (rc > 1) {
 					str_type = R_STRING_TYPE_UTF8;
 				}
