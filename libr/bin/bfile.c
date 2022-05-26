@@ -183,7 +183,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			break;
 		}
 		// smol optimization
-		if (needle < to - 4) {
+		if (to > 4 && needle < to - 4) {
 			ut32 n1 = r_read_le32 (buf + (needle - from));
 			if (!n1) {
 				needle += 4;
