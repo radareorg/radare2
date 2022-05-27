@@ -466,7 +466,10 @@ static void SHA256_Transform(R_SHA256_CTX *context, const ut32 *data) {
 #endif /* SHA2_UNROLL_TRANSFORM */
 
 void r_SHA256_Update(R_SHA256_CTX *context, const ut8 *data, size_t len) {
-	r_return_if_fail (context && data && len > 0);
+	r_return_if_fail (context);
+	if (!data || len == 0) {
+		return;
+	}
 
 	unsigned int usedspace = (context->bitcount >> 3) % SHA256_BLOCK_LENGTH;
 	if (usedspace > 0) {
