@@ -81,12 +81,13 @@ static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 				continue;
 			}
 			if (subret_len > retmax - retlen - 1) {
-				tmp3 = NULL;
-				if (!(tmp3 = realloc (ret, retmax + subret_len))) {
+				int ptrdiff = tmp - ret;
+				tmp3 = realloc (ret, retmax + subret_len);
+				if (!tmp3) {
 					free (subret);
 					goto exit_err;
 				}
-				tmp = tmp3 + (tmp - ret);
+				tmp = tmp3 + ptrdiff;
 				ret = tmp3;
 				retmax += subret_len + 1;
 			}

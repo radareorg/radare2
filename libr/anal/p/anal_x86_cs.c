@@ -36,7 +36,7 @@ call = 4
 #define ISIMM(x) insn->detail->x86.operands[x].type == X86_OP_IMM
 #define ISMEM(x) insn->detail->x86.operands[x].type == X86_OP_MEM
 
-#define BUF_SZ      64
+#define BUF_SZ      512
 
 #define AR_DIM       4
 
