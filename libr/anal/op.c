@@ -129,7 +129,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 	} else if (!memcmp (data, "\xff\xff\xff\xff", R_MIN (4, len))) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-	} else {
+		op->size = 1;
 		op->type = R_ANAL_OP_TYPE_MOV;
 		if (op->cycles == 0) {
 			op->cycles = defaultCycles (op);
