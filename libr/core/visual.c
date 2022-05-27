@@ -3845,7 +3845,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		r_cons_strcat (BEGIN);
 	}
 	const char *cmd_visual = r_config_get (core->config, "cmd.visual");
-	if (cmd_visual && *cmd_visual) {
+	if (R_STR_ISNOTEMPTY (cmd_visual)) {
 		r_str_ncpy (bar, cmd_visual, sizeof (bar) - 1);
 		bar[10] = '.'; // chop cmdfmt
 		bar[11] = '.'; // chop cmdfmt

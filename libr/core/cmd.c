@@ -2581,7 +2581,6 @@ static int cmd_panels(void *data, const char *input) {
 				eprintf ("Cannot open file (%s)\n", sp + 1);
 			}
 		}
-		////r_sys_cmdf ("v%s", input);
 		return false;
 	}
 	r_core_panels_root (core, core->panels_root);
@@ -2590,6 +2589,10 @@ static int cmd_panels(void *data, const char *input) {
 
 static int cmd_visual(void *data, const char *input) {
 	RCore *core = (RCore*) data;
+	if (*input == '?') { // "mL?"
+		r_core_cmd_help_match_spec (core, help_msg_root, "V", 0, true);
+		return true;
+	}
 	if (core->http_up) {
 		return false;
 	}
