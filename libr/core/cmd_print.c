@@ -5943,7 +5943,11 @@ static int cmd_print(void *data, const char *input) {
 				break;
 			}
 		} else if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_pa);
+			if (input[2] == 'j') {
+				r_cons_cmd_help_json (help_msg_pa);
+			} else {
+				r_core_cmd_help (core, help_msg_pa);
+			}
 		} else {
 			r_asm_set_pc (core->rasm, core->offset);
 			RAsmCode *acode = r_asm_massemble (core->rasm, input + 1);
@@ -7893,7 +7897,11 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_p);
+		if (*input && input[1] == 'j') {
+			r_cons_cmd_help_json (help_msg_p);
+		} else {	
+			r_core_cmd_help (core, help_msg_p);
+		}
 		break;
 	}
 beach:
