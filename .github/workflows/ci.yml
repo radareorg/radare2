@@ -239,7 +239,7 @@ jobs:
     - name: Build on a directory with spaces (meson only)
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
-        sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf
+        sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract
         sudo pip3 install meson ninja
         git config --global pull.rebase false
         git clone --depth 1 . "spa ces"
