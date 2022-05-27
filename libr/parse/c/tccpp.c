@@ -232,8 +232,8 @@ ST_FUNC TokenSym *tok_alloc(TCCState *s1, const char *str, int len) {
 /* XXX: buffer overflow */
 /* XXX: float tokens */
 ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv) {
-	static char buf[STRING_MAX_SIZE + 1];
-	static CString cstr_buf;
+	static R_TH_LOCAL char buf[STRING_MAX_SIZE + 1];
+	static R_TH_LOCAL CString cstr_buf;
 	CString *cstr;
 	char *p;
 	int i, len;
@@ -2368,7 +2368,7 @@ str_const:
 
 			/* eval the escape (should be done as TOK_PPNUM) */
 			cstr_reset (&s1->tokcstr);
-			parse_escape_string (s1, &s1->tokcstr, str.data, is_long);
+			parse_escape_string (s1, &s1->tokcstr, (const ut8 *)str.data, is_long);
 			cstr_free (&str);
 
 			if (sep == '\'') {
