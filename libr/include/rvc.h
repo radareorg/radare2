@@ -16,10 +16,10 @@ typedef struct RvcBlob_t {
 } RvcBlob;
 
 R_API Rvc *r_vc_git_init(const char *path);
-R_API bool r_vc_git_branch(const char *path, const char *name);
-R_API bool r_vc_git_checkout(const char *path, const char *name);
-R_API bool r_vc_git_add(const char *path, const char *fname);
-R_API bool r_vc_git_commit(const char *path, const char *message);
+R_API bool r_vc_git_branch(Rvc *vc, const char *name);
+R_API bool r_vc_git_checkout(Rvc *vc, const char *name);
+R_API bool r_vc_git_add(Rvc *vc, const RList *files);
+R_API bool r_vc_git_commit(Rvc *rvc, const char *message, const char *author, const RList *files);
 R_API Rvc *r_vc_git_open(const char *path);
 
 R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const RList *files);

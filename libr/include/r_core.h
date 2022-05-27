@@ -250,10 +250,21 @@ typedef enum {
 	VC_GIT
 } VcType;
 
-typedef struct {
+typedef struct Rvc_t{
 	char *path;
-	VcType type;
 	Sdb *db;
+	bool (*commit) (struct Rvc_t *rvc, const char *message, const char *author, const RList *files);
+	bool (*branch) (struct Rvc_t *rvc, const char *bname);
+	bool (*checkout)(struct Rvc_t *rvc, const char *bname);
+	RList *(*get_branches) (struct Rvc_t *rvc);
+	RList *(*get_uncommitted) (struct Rvc_t *rvc);
+	RList *(*log) (struct Rvc_t *rvc);
+	char *(*current_branch)(struct Rvc_t *rvc);
+	bool (*reset)(struct Rvc_t *rvc);
+	bool (*clone) (const char *src, const char *dst);
+	void (*close)(struct Rvc_t *vc, bool save);
+	bool (*save)(struct Rvc_t *vc);
+
 } Rvc;
 
 typedef struct r_core_project_t {
