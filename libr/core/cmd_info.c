@@ -1462,7 +1462,9 @@ static int cmd_info(void *data, const char *input) {
 			cmd_info_here (core, pj, input[1]);
 			goto done;
 		default:
-			cmd_info_bin (core, va, pj, mode);
+	//		cmd_info_bin (core, va, pj, mode);
+			eprintf ("Invalid subcommand '%c'\n", input[0]);
+			goto done;
 			break;
 		}
 		// input can be overwritten like the 'input = " ";' a few lines above
