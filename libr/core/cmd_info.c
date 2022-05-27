@@ -1211,6 +1211,7 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				case '*':
 				case 'j':
+				case 0:
 					validcmd = true;
 					break;
 				case 'q':
