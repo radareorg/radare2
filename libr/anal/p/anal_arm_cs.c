@@ -4434,6 +4434,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (a->config->cpu && strstr (a->config->cpu, "cortex")) {
 		mode |= CS_MODE_MCLASS;
 	}
+	if (!memcmp (buf, "\xff\xff\xff\xff", R_MIN (len, 4))) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->size = 4;
+		return -1;
+	}
 	if (mode != omode || a->config->bits != obits) {
 		if (handle != 0) {
 			cs_close (&handle);
