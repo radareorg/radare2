@@ -7237,7 +7237,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		case 'p': //"aesp"
 			n = strchr (input, ' ');
 			n1 = n ? strchr (n + 1, ' ') : NULL;
-			if ((!n || !n1) || (!(n + 1) || !(n1 + 1))) {
+			if ((!n || !n1) || (!*n || !*n1)) {
 				eprintf ("aesp [offset] [num]\n");
 				break;
 			}

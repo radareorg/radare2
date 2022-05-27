@@ -32,8 +32,8 @@
  * $Id: sha2.c,v 1.1 2001/11/08 00:01:51 adg Exp adg $
  */
 
-#include <string.h>     /* memcpy()/memset() or bcopy()/bzero() */
-#include "r_hash.h"
+#include <r_hash.h>
+#include <r_util/r_assert.h>
 #include "sha2.h"
 
 #define WEAK_ALIASING 0
@@ -466,17 +466,15 @@ static void SHA256_Transform(R_SHA256_CTX *context, const ut32 *data) {
 #endif /* SHA2_UNROLL_TRANSFORM */
 
 void r_SHA256_Update(R_SHA256_CTX *context, const ut8 *data, size_t len) {
-	unsigned int freespace, usedspace;
-
-	/* Sanity check: */
-	if (!context || !data || len == 0) {
+	r_return_if_fail (context);
+	if (!data || len == 0) {
 		return;
 	}
 
-	usedspace = (context->bitcount >> 3) % SHA256_BLOCK_LENGTH;
+	unsigned int usedspace = (context->bitcount >> 3) % SHA256_BLOCK_LENGTH;
 	if (usedspace > 0) {
 		/* Calculate how much free space is available in the buffer */
-		freespace = SHA256_BLOCK_LENGTH - usedspace;
+		unsigned int freespace = SHA256_BLOCK_LENGTH - usedspace;
 
 		if (len >= freespace) {
 			/* Fill the buffer completely and process it */
@@ -489,8 +487,6 @@ void r_SHA256_Update(R_SHA256_CTX *context, const ut8 *data, size_t len) {
 			/* The buffer is not yet full */
 			memcpy (&context->buffer[usedspace], data, len);
 			context->bitcount += len << 3;
-			/* Clean up: */
-			usedspace = freespace = 0;
 			return;
 		}
 	}
@@ -506,18 +502,12 @@ void r_SHA256_Update(R_SHA256_CTX *context, const ut8 *data, size_t len) {
 		memcpy (context->buffer, data, len);
 		context->bitcount += len << 3;
 	}
-	/* Clean up: */
-	usedspace = freespace = 0;
 }
 
 void r_SHA256_Final(ut8 digest[r_SHA256_DIGEST_LENGTH], R_SHA256_CTX *context) {
+	r_return_if_fail (context);
 	ut32 *d = (ut32 *) digest;
 	unsigned int usedspace;
-
-	/* Sanity check: */
-	if (!context) {
-		return;
-	}
 
 	/* If no digest buffer is passed, we don't bother doing this: */
 	if (digest != (ut8 *) 0) {
@@ -562,7 +552,6 @@ void r_SHA256_Final(ut8 digest[r_SHA256_DIGEST_LENGTH], R_SHA256_CTX *context) {
 
 		/* Final transform: */
 		SHA256_Transform (context, (ut32 *) context->buffer);
-
 #if BYTE_ORDER == LITTLE_ENDIAN
 		{
 			/* Convert TO host byte order */
@@ -599,7 +588,7 @@ char *r_SHA256_End(R_SHA256_CTX *context, char buffer[r_SHA256_DIGEST_STRING_LEN
 		}
 		*buffer = (char) 0;
 	} else {
-		r_mem_memzero (context, sizeof(*context));
+		r_mem_memzero (context, sizeof (*context));
 	}
 	r_mem_memzero (digest, r_SHA256_DIGEST_LENGTH);
 	return buffer;
@@ -607,12 +596,10 @@ char *r_SHA256_End(R_SHA256_CTX *context, char buffer[r_SHA256_DIGEST_STRING_LEN
 
 char *r_SHA256_Data(const ut8 *data, size_t len, char digest[r_SHA256_DIGEST_STRING_LENGTH]) {
 	R_SHA256_CTX context;
-
 	r_SHA256_Init (&context);
 	r_SHA256_Update (&context, data, len);
 	return r_SHA256_End (&context, digest);
 }
-
 
 /*** SHA-512: *********************************************************/
 void r_SHA512_Init(R_SHA512_CTX *context) {
@@ -716,19 +703,18 @@ static void SHA512_Transform(R_SHA512_CTX *context, const ut64 *data) {
 #else /* SHA2_UNROLL_TRANSFORM */
 
 static void SHA512_Transform(R_SHA512_CTX *context, const ut64 *data) {
-	ut64 a, b, c, d, e, f, g, h, s0, s1;
-	ut64 T1, T2, *W512 = (ut64 *) context->buffer;
+	ut64 s0, s1, T1, T2, *W512 = (ut64 *) context->buffer;
 	int j;
 
 	/* Initialize registers with the prev. intermediate value */
-	a = context->state[0];
-	b = context->state[1];
-	c = context->state[2];
-	d = context->state[3];
-	e = context->state[4];
-	f = context->state[5];
-	g = context->state[6];
-	h = context->state[7];
+	ut64 a = context->state[0];
+	ut64 b = context->state[1];
+	ut64 c = context->state[2];
+	ut64 d = context->state[3];
+	ut64 e = context->state[4];
+	ut64 f = context->state[5];
+	ut64 g = context->state[6];
+	ut64 h = context->state[7];
 
 	j = 0;
 	do {

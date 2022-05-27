@@ -3421,7 +3421,7 @@ reread:
 					int mode = 0;
 
 					// Options, like JSON, linear, ...
-					if (input + 1) {
+					if (input[1]) {
 						mode = *(input + 1);
 					}
 
