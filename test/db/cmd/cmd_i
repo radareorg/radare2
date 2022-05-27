@@ -4202,3 +4202,24 @@ EXPECT=<<EOF
 0
 EOF
 RUN
+
+NAME=iz star
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+iz
+iz*
+iz*~?
+izz*~?
+EOF
+EXPECT=<<EOF
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+fs strings
+f str.Hello_world_ 13 0x080484b0
+Cs 13 @ 0x080484b0
+3
+163
+EOF
+RUN
