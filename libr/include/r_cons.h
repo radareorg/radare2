@@ -895,6 +895,7 @@ R_API void r_cons_visual_write(char *buffer);
 R_API bool r_cons_is_utf8(void);
 R_API bool r_cons_is_windows(void);
 R_API void r_cons_cmd_help(const char *help[], bool use_color);
+R_API void r_cons_cmd_help_json(const char *help[]);
 R_API void r_cons_cmd_help_match(const char *help[], bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact);
 R_API void r_cons_log_stub(const char *output, const char *funcname, const char *filename,
  unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(7, 8);
