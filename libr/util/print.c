@@ -1707,7 +1707,7 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 	bool isFirst = true;
 	for (j = 0; j < cols; j++) {
 		ut64 startB = min + (j * mul);
-		ut64 endB = min + ((j + 1) * mul);
+		ut64 endB = min + (((ut64)j + 1) * (ut64)mul);
 		if (startA <= endB && endA >= startB) {
 			if (show_colors & isFirst) {
 				p->cb_printf (Color_GREEN);
