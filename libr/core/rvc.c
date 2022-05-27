@@ -1157,6 +1157,9 @@ R_API bool r_vc_git_add(Rvc *vc, const RList *files) {
 }
 
 R_API bool r_vc_git_commit(Rvc *vc, const char *message, const char *author, const RList *files) {
+	if (!r_vc_git_add (vc, files)) {
+		return false;
+	}
 	char *escauth = r_str_escape (author);
 	if (!escauth) {
 		return false;
@@ -1164,7 +1167,7 @@ R_API bool r_vc_git_commit(Rvc *vc, const char *message, const char *author, con
 	if (R_STR_ISEMPTY (message)) {
 		char *epath = r_str_escape (vc->path);
 		if (epath) {
-			int res = r_sys_cmdf ("git -C \"%s\" commit -a %s", 
+			int res = r_sys_cmdf ("git -C \"%s\" commit -a %s",
 					epath, escauth);
 			free (escauth);
 			free (epath);
@@ -1176,7 +1179,7 @@ R_API bool r_vc_git_commit(Rvc *vc, const char *message, const char *author, con
 	if (epath) {
 		char *emsg = r_str_escape (message);
 		if (emsg) {
-			int res = r_sys_cmdf ("git -C %s commit -m %s -a %s", 
+			int res = r_sys_cmdf ("git -C %s commit -m %s -a %s",
 					epath, emsg, escauth);
 			free (escauth);
 			free (epath);
