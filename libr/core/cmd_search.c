@@ -790,11 +790,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	if (perm == -1) {
 		perm = R_PERM_RWX;
 	}
-#if 0
-	if (!r_config_get_b (core->config, "cfg.debug") && !core->io->va) {
-		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
-	} else 
-#endif
 	if (!strcmp (mode, "flag")) {
 		const RList *ls = r_flag_get_list (core->flags, core->offset);
 		RFlagItem *fi;
@@ -804,6 +799,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				append_bound (list, core->io, search_itv, fi->offset, fi->size, 7);
 			}
 		}
+	} else if (!r_config_get_b (core->config, "cfg.debug") && !core->io->va) {
+		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
 	} else if (!strcmp (mode, "file")) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
 	} else if (!strcmp (mode, "block")) {
