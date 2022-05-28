@@ -663,7 +663,8 @@ int v850np_disasm(v850np_inst *inst, int cpumodel, ut64 addr, const ut8* buffer,
 		insn &= 0xffff;
 	}
 
-	if (!v850np_disassemble (inst, cpumodel, addr, buffer, length, insn)) {
+	// length is unused
+	if (!v850np_disassemble (inst, cpumodel, addr, buffer, len, insn)) {
 		return -1;
 	}
 	inst->size = code_length;
