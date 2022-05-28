@@ -521,18 +521,13 @@ static bool parse_namemap(RBuffer *b, ut64 bound, RIDStorage *map, ut32 *count) 
 	}
 
 	for (i = 0; i < *count; i++) {
-		RBinWasmName *name = R_NEW0 (RBinWasmName);
-		if (!name) {
-			return false;
-		}
-
 		ut32 idx;
 		if (!consume_u32_r (b, bound, &idx)) {
-			R_FREE (name);
 			return false;
 		}
 
-		if (!consume_str_new (b, bound, &name->len, (char **)&name->name)) {
+		char *name;
+		if (!consume_str_new (b, bound, NULL, &name)) {
 			R_FREE (name);
 			return false;
 		}
@@ -613,11 +608,7 @@ static RBinWasmCustomNameEntry *parse_custom_name_entry(RBuffer *b, ut64 bound) 
 
 	switch (cust->type) {
 	case R_BIN_WASM_NAMETYPE_Module:
-		cust->mod_name = R_NEW0 (struct r_bin_wasm_name_t);
-		if (!cust->mod_name) {
-			goto beach;
-		}
-		if (!consume_str_new (b, bound, &cust->mod_name->len, (char **)&cust->mod_name->name)) {
+		if (!consume_str_new (b, bound, NULL, &cust->mod_name)) {
 			goto beach;
 		}
 		break;
@@ -1281,10 +1272,9 @@ const char *r_bin_wasm_get_function_name(RBinWasmObj *bin, ut32 idx) {
 	RBinWasmCustomNameEntry *nam;
 	r_list_foreach (bin->g_names, iter, nam) {
 		if (nam->type == R_BIN_WASM_NAMETYPE_Function) {
-			struct r_bin_wasm_name_t *n = NULL;
-
-			if ((n = r_id_storage_get (nam->func->names, idx))) {
-				return (const char *)n->name;
+			const char *n = r_id_storage_get (nam->func->names, idx);
+			if (n) {
+				return n;
 			}
 		}
 	}

@@ -66,11 +66,6 @@ struct r_bin_wasm_resizable_limits_t {
 	ut32 maximum;
 };
 
-typedef struct r_bin_wasm_name_t {
-	ut32 len;
-	ut8 *name;
-} RBinWasmName;
-
 typedef struct r_bin_wasm_section_t {
 	ut8 id;
 	ut32 size;
@@ -208,7 +203,7 @@ typedef struct r_bin_wasm_custom_name_entry_t {
 
 	ut8 payload_data;
 	union {
-		RBinWasmName *mod_name;
+		char *mod_name;
 		RBinWasmCustomNameFunctionNames *func;
 		RBinWasmCustomNameLocalNames *local;
 	};
