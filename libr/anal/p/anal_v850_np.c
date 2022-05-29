@@ -92,7 +92,8 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 static char *get_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
-		"=SP	r3\n"
+		"=SP	sp\n"
+		"=BP	ep\n"
 		"=SN	r1\n"
 		"=ZF	z\n"
 		"=A0	r1\n"
