@@ -3274,6 +3274,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (key_s && *key_s) {
 				r_core_cmd0 (core, key_s);
 			} else {
+				// r_core_cmd0 (core, "dsb");
 				__core_visual_step_over (core);
 			}
 			break;

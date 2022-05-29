@@ -17,7 +17,11 @@ static void htup_vector_free(HtUPKv *kv) {
 }
 
 R_API RAnalEsilTrace *r_anal_esil_trace_new(RAnalEsil *esil) {
-	r_return_val_if_fail (esil && esil->stack_addr && esil->stack_size, NULL);
+	r_return_val_if_fail (esil, NULL);
+	if (!esil->stack_addr || !esil->stack_size) {
+		eprintf ("Run `aeim` to initialize a stack for the ESIL vm\n");
+		return NULL;
+	}
 	size_t i;
 	RAnalEsilTrace *trace = R_NEW0 (RAnalEsilTrace);
 	if (!trace) {

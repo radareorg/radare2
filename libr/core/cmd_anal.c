@@ -5837,14 +5837,18 @@ tail_return:
 	return tail_return_value;
 }
 
-R_API int r_core_esil_step_back(RCore *core) {
-	r_return_val_if_fail (core->anal->esil && core->anal->esil->trace, -1);
+R_API bool r_core_esil_step_back(RCore *core) {
+	r_return_val_if_fail (core && core->anal, false);
+	if (!core->anal->esil || !core->anal->esil->trace) {
+		eprintf ("Run `aeim` to initialize the esil VM and enable e dbg.trace=true\n");
+		return false;
+	}
 	RAnalEsil *esil = core->anal->esil;
 	if (esil->trace->idx > 0) {
 		r_anal_esil_trace_restore (esil, esil->trace->idx - 1);
-		return 1;
+		return true;
 	}
-	return -1;
+	return false;
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
@@ -7150,7 +7154,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		} break;
 		case 'b': // "aesb"
 			if (!r_core_esil_step_back (core)) {
-				eprintf ("cannnot step back\n");
+				eprintf ("Cannot step back\n");
 			}
 			r_core_cmd0 (core, ".ar*");
 			break;

@@ -4618,7 +4618,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 	switch (input[1]) {
 	case 0: // "ds"
 	case ' ':
-		if (r_config_get_i (core->config, "cfg.debug")) {
+		if (r_config_get_b (core->config, "cfg.debug")) {
 			r_reg_arena_swap (core->dbg->reg, true);
 			// sync registers for BSD PT_STEP/PT_CONT
 			// XXX(jjd): is this necessary?
