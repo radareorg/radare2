@@ -3573,7 +3573,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.tabs.once", "false", "only tabulate the opcode, not the arguments");
 	SETI ("asm.tabs.off", 0, "tabulate spaces after the offset");
 	SETBPREF ("asm.trace", "false", "show execution traces for each opcode");
-	SETBPREF ("asm.tracespace", "false", "indent disassembly with trace.count information");
+	SETBPREF ("asm.trace.space", "false", "indent disassembly with trace.count information");
 	SETBPREF ("asm.ucase", "false", "use uppercase syntax at disassembly");
 	SETBPREF ("asm.capitalize", "false", "use camelcase at disassembly");
 	SETBPREF ("asm.var", "true", "show local function variables in disassembly");
@@ -3826,7 +3826,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.profile", "", &cb_runprofile, "path to RRunProfile file");
 	SETCB ("dbg.args", "", &cb_dbg_args, "set the args of the program to debug");
 	SETCB ("dbg.follow.child", "false", &cb_dbg_follow_child, "continue tracing the child process on fork. By default the parent process is traced");
-	SETCB ("dbg.trace_continue", "true", &cb_dbg_trace_continue, "trace every instruction between the initial PC position and the PC position at the end of continue's execution");
+	SETCB ("dbg.trace.continue", "true", &cb_dbg_trace_continue, "trace every instruction between the initial PC position and the PC position at the end of continue's execution");
+	SETBPREF ("dbg.trace.inrange", "false", "while tracing, avoid following calls outside specified range");
+	SETBPREF ("dbg.trace.libs", "true", "trace library code too");
+	SETCB ("dbg.trace", "false", &cb_trace, "trace program execution (see asm.trace)");
+	SETICB ("dbg.trace.tag", 0, &cb_tracetag, "trace tag");
 	/* debug */
 	SETCB ("dbg.status", "false", &cb_dbgstatus, "set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;s-'");
 #if DEBUGGER
@@ -3845,8 +3849,6 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "dbg.follow", "follow program counter when pc > core->offset + dbg.follow");
 	SETBPREF ("dbg.rebase", "true", "rebase anal/meta/comments/flags when reopening file in debugger");
 	SETCB ("dbg.swstep", "false", &cb_swstep, "force use of software steps (code analysis+breakpoint)");
-	SETBPREF ("dbg.trace.inrange", "false", "while tracing, avoid following calls outside specified range");
-	SETBPREF ("dbg.trace.libs", "true", "trace library code too");
 	SETBPREF ("dbg.exitkills", "true", "kill process on exit");
 	SETPREF ("dbg.exe.path", "", "path to binary being debugged");
 	SETCB ("dbg.execs", "false", &cb_dbg_execs, "stop execution if new thread is created");
@@ -3864,8 +3866,6 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETBPREF ("dbg.bpsysign", "false", "ignore system breakpoints");
 	SETICB ("dbg.btdepth", 128, &cb_dbgbtdepth, "depth of backtrace");
-	SETCB ("dbg.trace", "false", &cb_trace, "trace program execution (see asm.trace)");
-	SETICB ("dbg.trace.tag", 0, &cb_tracetag, "trace tag");
 
 
 	/* cmd */
