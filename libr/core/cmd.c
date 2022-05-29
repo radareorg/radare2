@@ -1370,6 +1370,8 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
+				} else {
+					ret = r_core_cmd_file (core, file);
 				}
 			} else {
 				char *abspath = r_file_path (file);
@@ -1951,7 +1953,7 @@ static int cmd_interpret(void *data, const char *input) {
 			if (*script_file == '$' && !script_file[1]) {
 				eprintf ("No alias name given.\n");
 			} else if (*script_file == '$') {
-				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, script_file+1);
+				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, script_file + 1);
 				if (v) {
 					char *cmd_text = r_cmd_alias_val_strdup (v);
 					r_core_cmd0 (core, cmd_text);
