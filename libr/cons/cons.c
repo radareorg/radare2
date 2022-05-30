@@ -1038,6 +1038,9 @@ static void optimize(void) {
 }
 
 R_API void r_cons_flush(void) {
+	if (!r_cons_instance) {
+		r_cons_instance = &g_cons_instance;
+	}
 	const char *tee = I->teefile;
 	if (!C) {
 		r_cons_context_reset ();
