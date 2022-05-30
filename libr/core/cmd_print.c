@@ -282,6 +282,8 @@ static const char *help_msg_pdp[] = {
 static const char *help_msg_ph[] = {
 	"Usage:", "ph", " [algorithm] ([size])",
 	"ph", " md5", "compute md5 hash of current block",
+	"ph", "", "list available hash plugins",
+	"phj", "", "list available hash plugins in json",
 	"ph.", " sha1 32 @ 0x1000", "calculate sha1 of 32 bytes starting at 0x1000",
 	NULL
 };
@@ -3299,18 +3301,27 @@ restore_conf:
 
 static void algolist(int mode) {
 	int i;
+	PJ *pj = (mode == 'j')? pj_new (): NULL;
+	pj_a (pj);
 	for (i = 0; i < R_HASH_NBITS; i++) {
 		ut64 bits = 1ULL << i;
 		const char *name = r_hash_name (bits);
 		if (name && *name) {
-			if (mode) {
+			if (mode == 'j') {
+				pj_s (pj, name);
+			} else if (mode) {
 				r_cons_println (name);
 			} else {
 				r_cons_printf ("%s ", name);
 			}
 		}
 	}
-	if (!mode) {
+	if (pj) {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	} else if (!mode) {
 		r_cons_newline ();
 	}
 }
@@ -3327,6 +3338,10 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	}
 	if (!*input) {
 		algolist (1);
+		return true;
+	}
+	if (*input == 'j') {
+		algolist ('j');
 		return true;
 	}
 	if (*input == '=') {
