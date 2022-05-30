@@ -137,7 +137,7 @@ static bool consume_encoded_name_new(RBuffer *b, ut64 bound, ut32 *len_out, char
 	}
 
 	size_t i, oi = 0;
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < len && oi + 4 < maxsize; i++) {
 		if (WASM_IS_OK (orig, i, len)) {
 			sout[oi++] = orig[i];
 		} else {
