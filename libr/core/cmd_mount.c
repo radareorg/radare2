@@ -7,7 +7,7 @@ static const char *help_msg_m[] = {
 	"m", "", "list all mountpoints in human readable format",
 	"m*", "", "same as above, but in r2 commands",
 	"m-/", "", "umount given path (/)",
-	"mL", "", "list filesystem plugins (Same as Lm)",
+	"mL", "[j]", "list filesystem plugins (Same as Lm)",
 	"mc", " [file]", "cat: Show the contents of the given file",
 	"md", " /", "list files and directory on the virtual r2's fs",
 	"mf", "[?] [o|n]", "search files for given filename or for offset",
@@ -231,7 +231,7 @@ static int cmd_mount(void *data, const char *_input) {
 	case '*':
 		r_list_foreach (core->fs->roots, iter, root) {
 			r_cons_printf ("m %s %s 0x%"PFMT64x"\n",
-				root-> path, root->p->name, root->delta);
+				root->path, root->p->name, root->delta);
 		}
 		break;
 	case '\0':
@@ -243,6 +243,19 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'L': // "mL" list of plugins
 		if (input[1] == '?') { // "mL?"
 			r_core_cmd_help_match_spec (core, help_msg_m, "mL", 0, true);
+		} else if (input[1] == 'j') {
+			PJ *pj = r_core_pj_new (core);
+			pj_a (pj);
+			r_list_foreach (core->fs->plugins, iter, plug) {
+				pj_o (pj);
+				pj_ks (pj, "name", plug->name);
+				pj_ks (pj, "description", plug->desc);
+				pj_end (pj);
+			}
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_printf ("%s\n", s);
+			free (s);
 		} else {
 			r_list_foreach (core->fs->plugins, iter, plug) {
 				r_cons_printf ("%10s  %s\n", plug->name, plug->desc);
