@@ -229,7 +229,6 @@ if no_user_plugins
       'm68k_gnu',
       'lanai_gnu',
       'mips_gnu',
-      'ppc_gnu',
       'sparc_gnu'
     ]
     anal_plugins += [
