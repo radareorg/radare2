@@ -8679,7 +8679,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'j': // "axj"
 	case 'q': // "axq"
 	case '*': // "ax*"
-		r_anal_xrefs_list (core->anal, input[0]);
+	case ',': // "ax,"
+		r_anal_xrefs_list (core->anal, input[0], *input? r_str_trim_head_ro (input + 1): "");
 		break;
 	case '.': { // "ax."
 		char *tInput = strdup (input);
