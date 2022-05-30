@@ -11,7 +11,7 @@ There exist many different interpretations of problems and solutions.
 What might make total sense to one community member may not make sense to
 others. The divergence of opinions and ideas can be great for creativity,
 collaboration and decision making and rules or conflicts shouldn't be an
-excuse to frustrate or make angry contributors.
+excuse to frustrate or upset community members.
 
 However, this can also bring its own set of challenges, necessitating we
 work together to continue to build an evolving tool that the community
