@@ -392,3 +392,19 @@ r9 = r0
 EOF
 RUN
 
+NAME=v850.np r0ref
+FILE=-
+CMDS=<<EOF
+e asm.arch=v850.np
+e asm.bits=32
+wx 830c
+pd 1
+wx e00f71f0
+f mmio.ICC = 0xfffff070
+pd 1
+EOF
+EXPECT=<<EOF
+            0x00000000      830c           sst.h r1,  6[ep]
+            0x00000000      e00f71f0       ld.hu mmio.ICC,  r1         ; 0xfffff070
+EOF
+RUN
