@@ -343,8 +343,8 @@ static const char *help_detail_ae[] = {
 	"%", "", "module",
 	"%=", "", "a%=b => b,a,%=",
 	"&=", "", "and ax, bx => bx,ax,&=",
-	"^", "", "xor"
-	"&", "", "and"
+	"^", "", "xor",
+	"&", "", "and",
 	"|", "", "or r0, r1, r2 => r2,r1,|,r0,=",
 	"!=", "", "negate all bits",
 	"^=", "", "xor ax, bx => bx,ax,^=",
