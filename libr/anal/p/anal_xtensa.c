@@ -35,6 +35,7 @@ DECLARE_GENERIC_FPRINTF_FUNC()
 
 static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
+	buf_global = r_strbuf_new ("");
 	offset = addr;
 	if (len > INSN_BUFFER_SIZE) {
 		len = INSN_BUFFER_SIZE;
@@ -57,6 +58,9 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	op->size = print_insn_xtensa ((bfd_vma)offset, &disasm_obj);
 	if (op->size == -1) {
 		op->mnemonic = strdup ("(data)");
+	} else {
+		op->mnemonic = r_strbuf_drain (buf_global);
+		buf_global = NULL;
 	}
 	return op->size;
 }
