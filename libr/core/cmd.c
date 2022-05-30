@@ -2805,7 +2805,7 @@ static void cmd_autocomplete_help(RCore *core) {
 		}
 	}
 	r_core_cmd_help (core, help);
-	free (help);
+	free ((void*)help);
 }
 
 static void cmd_autocomplete(RCore *core, const char *input) {
