@@ -129,7 +129,7 @@ static bool consume_encoded_name_new(RBuffer *b, ut64 bound, ut32 *len_out, char
 	}
 
 	// room for even every character getting encoded
-	ut32 maxsize = len * 4 + 2;
+	size_t maxsize = (len * 4) + 2;
 	char *sout = malloc (maxsize);
 	if (!sout) {
 		free (orig);
