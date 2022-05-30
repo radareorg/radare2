@@ -49,6 +49,7 @@ r_asm_sources = [
   join_paths('p','asm_sparc_gnu.c'),
   join_paths('p','asm_tms320.c'),
   join_paths('p','asm_v810.c'),
+  join_paths('p','asm_v850.c'),
   join_paths('p','asm_x86_as.c'),
   join_paths('p','asm_x86_cs.c'),
   join_paths('p','asm_x86_nasm.c'),
