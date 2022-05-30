@@ -28,8 +28,8 @@ static const char *help_msg_L[] = {
 	"Le", "", "list esil plugins",
 	"Lg", "", "list egg plugins",
 	"Lh", "", "list hash plugins (ph)",
-	"Li", "", "list bin plugins (iL)",
-	"Lt", "", "list color themes (eco)",
+	"Li", "[j]", "list bin plugins (iL)",
+	"Lt", "[j]", "list color themes (eco)",
 	"Ll", "", "list lang plugins (#!)",
 	"LL", "", "lock screen",
 	"Lm", "", "list fs plugins (mL)",
@@ -341,7 +341,11 @@ static int cmd_plugins(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_L);
 		break;
 	case 't': // "Lt"
-		r_core_cmd0 (core, "eco");
+		if (input[1] == 'j') {
+			r_core_cmd0 (core, "ecoj");
+		} else {
+			r_core_cmd0 (core, "eco");
+		}
 		break;
 	case 'm': // "Lm"
 		r_core_cmdf (core, "mL%s", input + 1);
@@ -353,7 +357,11 @@ static int cmd_plugins(void *data, const char *input) {
 		r_core_cmdf (core, "dL%s", input + 1);
 		break;
 	case 'h': // "Lh"
-		r_core_cmd0 (core, "ph"); // rahash2 -L is more verbose
+		if (input[1] == 'j') { // "Lhj"
+			r_core_cmd0 (core, "phj");
+		} else {
+			r_core_cmd0 (core, "ph");
+		}
 		break;
 	case 'a': // "La"
 		if (input[1] == '?') {
