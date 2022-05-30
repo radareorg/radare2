@@ -146,19 +146,37 @@ R_API bool r_lang_add(RLang *lang, RLangPlugin *foo) {
 }
 
 /* TODO: deprecate all list methods */
-R_API bool r_lang_list(RLang *lang) {
+R_API void r_lang_list(RLang *lang, int mode) {
 	RListIter *iter;
 	RLangPlugin *h;
 	if (!lang) {
-		return false;
+		return;
+	}
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = pj_new ();
+		pj_a (pj);
 	}
 	r_list_foreach (lang->langs, iter, h) {
 		const char *license = h->license
 			? h->license : "???";
-		lang->cb_printf ("%s: (%s) %s\n",
-			h->name, license, h->desc);
+		if (mode == 'j') {
+			pj_o (pj);
+			pj_ks (pj, "name", h->name);
+			pj_ks (pj, "license", h->license);
+			pj_ks (pj, "description", h->desc);
+			pj_end (pj);
+		} else {
+			lang->cb_printf ("%s: (%s) %s\n",
+				h->name, license, h->desc);
+		}
 	}
-	return true;
+	if (pj) {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		lang->cb_printf ("%s\n", s);
+		free (s);
+	}
 }
 
 R_API RLangPlugin *r_lang_get_by_extension(RLang *lang, const char *ext) {

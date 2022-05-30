@@ -30,7 +30,7 @@ static const char *help_msg_L[] = {
 	"Lh", "", "list hash plugins (ph)",
 	"Li", "[j]", "list bin plugins (iL)",
 	"Lt", "[j]", "list color themes (eco)",
-	"Ll", "", "list lang plugins (#!)",
+	"Ll", "[j]", "list lang plugins (#!)",
 	"LL", "", "lock screen",
 	"Lm", "[j]", "list fs plugins (mL)",
 	"Lo", "", "list io plugins (oL)",
@@ -423,7 +423,11 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'l': // "Ll"
-		r_core_cmd0 (core, "#!");
+		if (input[1] == 'j') {
+			r_core_cmd0 (core, "#!?j");
+		} else {
+			r_core_cmd0 (core, "#!");
+		}
 		break;
 	case 'L': // "LL"
 		screenlock (core);

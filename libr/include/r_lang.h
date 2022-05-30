@@ -51,7 +51,7 @@ R_API RLang *r_lang_new(void);
 R_API void r_lang_free(RLang *lang);
 R_API bool r_lang_setup(RLang *lang);
 R_API bool r_lang_add(RLang *lang, RLangPlugin *foo);
-R_API bool r_lang_list(RLang *lang);
+R_API void r_lang_list(RLang *lang, int mode);
 R_API bool r_lang_use(RLang *lang, const char *name);
 R_API bool r_lang_run(RLang *lang, const char *code, int len);
 R_API bool r_lang_run_string(RLang *lang, const char *code);
