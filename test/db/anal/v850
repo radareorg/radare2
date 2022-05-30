@@ -411,3 +411,16 @@ EXPECT=<<EOF
             0x00000000      e00f71f0       ld.hu mmio.ICC,  r1         ; 0xfffff070
 EOF
 RUN
+
+NAME=v850.np proper imm32 handling
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch = v850.np
+wx 210674060000210674061234
+pi 2 @0
+EOF
+EXPECT=<<EOF
+mov 0x674, r1
+mov 0x34120674, r1
+EOF
+RUN
