@@ -395,8 +395,9 @@ RUN
 NAME=v850.np r0ref
 FILE=-
 CMDS=<<EOF
-e asm.arch=v850.np
+e anal.arch=?~v850
 e asm.bits=32
+e asm.arch=v850.np
 wx 830c
 pd 1
 wx e00f71f0
