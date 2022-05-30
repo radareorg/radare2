@@ -433,7 +433,11 @@ static int cmd_plugins(void *data, const char *input) {
 		screenlock (core);
 		break;
 	case 'g': // "Lg"
-		r_core_cmd0 (core, "gL");
+		if (input[1] == 'j') {
+			r_core_cmd0 (core, "gLj");
+		} else {
+			r_core_cmd0 (core, "gL");
+		}
 		break;
 	case 'o': // "Lo"
 	case 'i': // "Li"
