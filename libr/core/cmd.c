@@ -1358,11 +1358,26 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "py")) {
-					char *cmd = cmdstr ("python");
-					r_lang_use (core->lang, "pipe");
-					lang_run_file (core, core->lang, cmd);
-					free (cmd);
-					ret = 1;
+					char *fp = r_file_path ("python3");
+					if (!fp) {
+						fp = r_file_path ("python2");
+						if (!fp) {
+							fp = r_file_path ("python");
+						}
+					}
+					if (fp) {
+#if __WINDOWS__
+						char *cmd = r_str_newf ("%s %s", fp, file);
+#else
+						char *cmd = r_str_newf ("%s '%s'", fp, file);
+#endif
+						r_lang_use (core->lang, "pipe");
+						lang_run_file (core, core->lang, cmd);
+						free (cmd);
+						ret = 1;
+					} else {
+						R_LOG_ERROR ("Cannot find python in PATH");
+					}
 				} else {
 					ret = r_core_cmd_file (core, file);
 				}
