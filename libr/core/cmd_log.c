@@ -32,9 +32,9 @@ static const char *help_msg_L[] = {
 	"Lt", "[j]", "list color themes (eco)",
 	"Ll", "", "list lang plugins (#!)",
 	"LL", "", "lock screen",
-	"Lm", "", "list fs plugins (mL)",
+	"Lm", "[j]", "list fs plugins (mL)",
 	"Lo", "", "list io plugins (oL)",
-	"Lp", "", "list parser plugins (e asm.parser=?)",
+	"Lp", "[j]", "list parser plugins (e asm.parser=?)",
 	NULL
 };
 
@@ -376,7 +376,24 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'p': // "Lp"
-		r_core_cmd0 (core, "e asm.parser=?");
+		if (input[1] == 'j') { // "Lpj"
+			RConfigNode *node = r_config_node_get (core->config, "asm.parser");
+			if (node && node->options) {
+				char *opt;
+				RListIter *iter;
+				PJ *pj = r_core_pj_new (core);
+				pj_a (pj);
+				r_list_foreach (node->options, iter, opt) {
+					pj_s (pj, opt);
+				}
+				pj_end (pj);
+				char *s = pj_drain (pj);
+				r_cons_printf ("%s\n", s);
+				free (s);
+			}
+		} else {
+			r_core_cmd0 (core, "e asm.parser=?");
+		}
 		break;
 	case 'D': // "LD"
 		if (input[1] == ' ') {
