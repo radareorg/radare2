@@ -154,7 +154,7 @@ static bool consume_encoded_name_new(RBuffer *b, ut64 bound, ut32 *len_out, char
 	}
 	*str_out = tmp;
 	if (len_out) {
-		len_out = len;
+		*len_out = len;
 	}
 	return true;
 }
