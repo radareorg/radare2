@@ -348,7 +348,11 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'm': // "Lm"
-		r_core_cmdf (core, "mL%s", input + 1);
+		if (input[1] == 'j') {
+			r_core_cmd0 (core, "mLj");
+		} else {
+			r_core_cmd0 (core, "mL");
+		}
 		break;
 	case 'e': // "Le"
 		r_core_cmdf (core, "aeL%s", input + 1);
