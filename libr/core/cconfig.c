@@ -3528,7 +3528,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("asm.flags.limit", 0, "maximum number of flags to show in a single offset");
 	SETBPREF ("asm.flags.offset", "false", "show offset in flags");
 	SETBPREF ("asm.flags.inbytes", "false",  "display flags inside the bytes space");
-	SETBPREF ("asm.flags.inline", "false",  "display flags in line separated by commas instead of newlines");
+	SETBPREF ("asm.flags.inline", "true",  "display flags in line separated by commas instead of newlines");
 	n = NODEICB ("asm.flags.middle", 2, &cb_midflags);
 	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag",
 		"3 = realign at middle flag if sym.*", NULL);
