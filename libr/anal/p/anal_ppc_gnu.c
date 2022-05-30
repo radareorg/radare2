@@ -1,9 +1,79 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
+#include "disas-asm.h"
+
+static R_TH_LOCAL unsigned long Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL ut8 bytes[4];
+
+static int ppc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 4) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, length);
+	return 0;
+}
+
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+	return 0;
+}
+
+static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	//--
+}
+
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
+DECLARE_GENERIC_FPRINTF_FUNC()
+
+static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	char options[64];
+	struct disassemble_info disasm_obj;
+	if (len < 4) {
+		return -1;
+	}
+	buf_global = r_strbuf_new ("");
+	Offset = addr;
+	memcpy (bytes, buf, 4); // TODO handle thumb
+
+	/* prepare disassembler */
+	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
+	*options = 0;
+	const int bits = a->config->bits;
+	if (!R_STR_ISEMPTY (a->config->cpu)) {
+		snprintf (options, sizeof (options), "%s,%s",
+			(bits == 64)? "64": "", a->config->cpu);
+	} else if (bits == 64) {
+		r_str_ncpy (options, "64", sizeof (options));
+	}
+	disasm_obj.disassembler_options = options;
+	disasm_obj.buffer = bytes;
+	disasm_obj.read_memory_func = &ppc_buffer_read_memory;
+	disasm_obj.symbol_at_address_func = &symbol_at_address;
+	disasm_obj.memory_error_func = &memory_error_func;
+	disasm_obj.print_address_func = &generic_print_address_func;
+	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.fprintf_func = &generic_fprintf_func;
+	disasm_obj.stream = stdout;
+	if (a->config->big_endian) {
+		op->size = print_insn_big_powerpc ((bfd_vma)Offset, &disasm_obj);
+	} else {
+		op->size = print_insn_little_powerpc ((bfd_vma)Offset, &disasm_obj);
+	}
+	if (op->size == -1) {
+		op->mnemonic = strdup ("(data)");
+	} else {
+		op->mnemonic = r_strbuf_drain (buf_global);
+		buf_global = NULL;
+	}
+	return op->size;
+}
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
@@ -11,11 +81,14 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 //int arch_ppc_op(ut64 addr, const u8 *bytes, struct op_t *op)
 	// XXX hack
 	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
-	short baddr = ((bytes[2]<<8) | (bytes[3]&0xfc));// 16-29
+	short baddr = (((ut32) bytes[2] << 8) | (bytes[3] & 0xfc));// 16-29
 	int aa = bytes[3]&0x2;
 	int lk = bytes[3]&0x1;
 	//if (baddr>0x7fff)
 	//      baddr = -baddr;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		disassemble (anal, op, addr, bytes, len);
+	}
 
 	op->addr = addr;
 	op->type = 0;
@@ -32,7 +105,7 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 		if (bytes[0] == 0x4e) {
 			// bctr
 		} else {
-			op->jump = (aa)?(baddr):(addr+baddr);
+			op->jump = aa? baddr: addr + baddr;
 			if (lk) {
 				op->fail = addr + 4;
 			}
@@ -41,7 +114,7 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 		break;
 	case 6: // bc // conditional jump
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = (aa)?(baddr):(addr+baddr+4);
+		op->jump = aa? baddr: addr + baddr + 4;
 		op->eob = 1;
 		break;
 #if 0
@@ -68,7 +141,7 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	case 19: // bclr/bcr/bcctr/bcc
 		op->type = R_ANAL_OP_TYPE_RET; // jump to LR
 		if (lk) {
-			op->jump = 0xFFFFFFFF; // LR ?!?
+			op->jump = UT32_MAX; // LR ?!?
 			op->fail = addr+4;
 		}
 		op->eob = 1;
@@ -143,10 +216,12 @@ static int archinfo(RAnal *anal, int q) {
 RAnalPlugin r_anal_plugin_ppc_gnu = {
 	.name = "ppc.gnu",
 	.desc = "PowerPC analysis plugin",
+	.cpus = "booke,e300,e500,e500x2,e500mc,e440,e464,efs,ppcps,power4,power5,power6,power7,vsx",
 	.license = "LGPL3",
 	.arch = "ppc",
 	.archinfo = archinfo,
-	.bits = 32|64,
+	.bits = 32 | 64,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.op = &ppc_op,
 	.set_reg_profile = &set_reg_profile,
 };
