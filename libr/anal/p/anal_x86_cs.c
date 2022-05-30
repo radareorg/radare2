@@ -3503,7 +3503,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	// capstone-next
 #if USE_ITER_API
-	cs_detail insnack_detail = {0};
+	cs_detail insnack_detail = {{0}};
 	cs_insn insnack = {0};
 	insnack.detail = &insnack_detail;
 	ut64 naddr = addr;

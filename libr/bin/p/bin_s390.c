@@ -183,7 +183,7 @@ static RList *sections(RBinFile *bf) {
 	su->sb = r_strbuf_new ("");
 
 	S390_Header_CESD hdr20 = {0};
-	S390_Header_CESD_DATA hdr20d = {0};
+	S390_Header_CESD_DATA hdr20d = {{0}};
 	S390_Header_CSECT_IDR hdr80 = {0};
 	S390_Header_ControlRecord hdrCR = {0};
 	S390_Header_ControlRecord_Data hdrCRd = {0};

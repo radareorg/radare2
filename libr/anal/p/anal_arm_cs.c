@@ -2422,7 +2422,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	int i;
 	const char *postfix = NULL;
 	// char str[32][32];
-	RStringShort str[32] = {0};
+	RStringShort str[32] = {{0}};
 	int msr_flags;
 	int pcdelta = (thumb? 4: 8);
 	ut32 mask = UT32_MAX;
