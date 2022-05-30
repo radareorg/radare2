@@ -5736,6 +5736,10 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 
 /* return: pointer to a buffer with the output of the command */
 R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
+	if (*cmd != '"' && strchr (cmd, '>')) {
+		r_core_cmd0 (core, cmd);
+		return strdup ("");
+	}
 	r_cons_push ();
 	core->cons->context->noflush = true;
 	core->cons->context->cmd_str_depth++;
