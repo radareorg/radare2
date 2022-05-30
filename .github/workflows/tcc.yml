@@ -22,7 +22,7 @@ jobs:
       working-directory: tinycc
       run: |
           sh ./configure --prefix=/usr
-          make
+          make -j
           sudo make install
 
     - uses: actions/checkout@v2
@@ -42,7 +42,7 @@ jobs:
           CC: tcc
       run: |
           ./configure --prefix=/usr --with-compiler=tcc
-          make
+          make -j
           sudo make install
 
     - name: Run tests
@@ -70,7 +70,7 @@ jobs:
       working-directory: tinycc
       run: |
           sh ./configure --prefix=/usr --without-debugger
-          make && sudo make install
+          make -j && sudo make install
     - uses: actions/checkout@v2
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v2
@@ -82,7 +82,7 @@ jobs:
           CC: tcc
       run: |
           ./configure --prefix=/usr --with-compiler=tcc
-          make
+          make -j
           sudo make install
 
     - name: Run tests

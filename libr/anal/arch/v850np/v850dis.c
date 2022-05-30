@@ -54,7 +54,7 @@ static long get_operand_value(const struct v850_operand *operand, unsigned long 
 			return 0;
 		}
 		ut32 value = r_read_le16 (buffer);
-		return (operand->extract) (value, invalid);
+		return operand->extract (value, invalid);
 	}
 	if (operand->flags & V850E_IMMEDIATE32) {
 		if (len < 4) {
@@ -92,8 +92,7 @@ static const char *get_v850_sreg_name(size_t reg) {
 #else
 	static const char *const v850_sreg_names[] = {
 		"eipc", "eipsw", "fepc", "fepsw", "ecr", "psw",
-		"sr6", "sr7",
-		"sr8", "sr9", "sr10", "sr11",
+		"sr6", "sr7", "sr8", "sr9", "sr10", "sr11",
 		"sr12", "eiic", "feic", "dbic",
 		"ctpc", "ctpsw", "dbpc", "dbpsw", "ctbp",
 		"dir", "bpc", "asid",
@@ -449,13 +448,14 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 					&& (v850_operands[*(opindex_ptr - 1)].flags & V850_OPERAND_DISP)
 					&& opnum == memop) {
 #if ABS_R0REF
-				if (value == 0) { // "-X[r0]"
+				if (opnum == 2 && value == 0) { // "-X[r0]"
 					ut32 addr = UT32_MAX + 1 + prevalue;
 					r_strbuf_appendf (sb, "0x%08"PFMT32x, addr);
 					inst->value = addr;
 					done = true;
 				} else {
 					r_strbuf_appendf (sb, "%s[", prefix);
+					done = false;
 					square = true;
 				}
 #else
@@ -526,7 +526,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 					const struct v850_operand *nextop = &v850_operands[opindex_ptr[1]];
 					long nextvalue = get_operand_value (nextop, insn, buffer + 2, buffer_size - 2, &invalid);
 					if (opnum > 0 && (v850_operands[*(opindex_ptr)].flags & V850_OPERAND_DISP)
-							&& opnum + 1 == memop && nextvalue == 0) {
+							&& opnum + 1 == memop && nextvalue == 0 && value < 1) {
 						// dont print coz we replace later
 						//r_strbuf_append (sb, "?");
 					} else {
@@ -535,8 +535,8 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 					}
 #else
 					print_value (sb, operand->flags, memaddr, value);
-#endif
 					inst->value = value;
+#endif
 				}
 				break;
 			}
