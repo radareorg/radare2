@@ -524,7 +524,7 @@ static bool print_aliases(void *use_b64, const void *key, const void *val){
 }
 
 static int cmd_uname(void *data, const char *input) { // "uniq"
-	RSysInfo *si = r_sys_info();
+	RSysInfo *si = r_sys_info ();
 	if (si) {
 		r_cons_printf ("%s", si->sysname);
 		if (strstr (input, "-r")) {
@@ -662,19 +662,13 @@ static int cmd_undo(void *data, const char *input) {
 		return 1;
 	default:
 	case '?': // "u?"
-		r_core_cmd_help (data, help_msg_u);
+		if (*input && input[1] == 'j') {
+			r_cons_cmd_help_json (help_msg_u);
+		} else {
+			r_core_cmd_help (data, help_msg_u);
+		}
 		return 1;
 	}
-#if __UNIX__
-	struct utsname un;
-	uname (&un);
-	r_cons_printf ("%s %s %s %s\n", un.sysname,
-		un.nodename, un.release, un.machine);
-#elif __WINDOWS__
-	r_cons_printf ("windows\n");
-#else
-	r_cons_printf ("unknown\n");
-#endif
 	return 0;
 }
 
@@ -799,7 +793,6 @@ static int cmd_alias(void *data, const char *input) {
 			/* Commands are always strings */
 			r_cons_println ((char *)v->data);
 			r_cons_flush ();
-
 			free (buf);
 			return 1;
 		} else if (v) {
@@ -839,7 +832,7 @@ static int cmd_alias(void *data, const char *input) {
 				r_core_cmd0 (core, (char *)v->data);
 			}
 		} else {
-			eprintf ("No such alias \"$%s\"\n", buf);
+			R_LOG_WARN ("No such alias \"$%s\"", buf);
 		}
 	}
 	free (buf);

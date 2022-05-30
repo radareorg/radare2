@@ -12518,15 +12518,15 @@ static int cmd_anal(void *data, const char *input) {
 	case 0: // "a"
 		r_core_cmd0 (core, "aai");
 		break;
+	case '?':
+		if (input[1] == 'j') {
+			r_cons_cmd_help_json (help_msg_a);
+		} else {
+			r_core_cmd_help (core, help_msg_a);
+		}
+		break;
 	default:
 		r_core_cmd_help (core, help_msg_a);
-#if 0
-		r_cons_printf ("Examples:\n"
-			" f ts @ `S*~text:0[3]`; f t @ section..text\n"
-			" f ds @ `S*~data:0[3]`; f d @ section..data\n"
-			" .ad t t+ts @ d:ds\n",
-			NULL);
-#endif
 		break;
 	}
 	if (tbs != core->blocksize) {

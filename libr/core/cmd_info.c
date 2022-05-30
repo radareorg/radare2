@@ -1437,7 +1437,11 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case '?': // "i?"
-			r_core_cmd_help (core, help_msg_i);
+			if (input[1] == 'j') {
+				r_cons_cmd_help_json (help_msg_i);
+			} else {
+				r_core_cmd_help (core, help_msg_i);
+			}
 			goto redone;
 		case '*': // "i*"
 			if (mode == R_MODE_RADARE) {

@@ -1222,7 +1222,7 @@ static void cmd_pDj(RCore *core, const char *arg) {
 		r_core_print_disasm_json (core, core->offset, buf, bsize, 0, pj);
 		free (buf);
 	} else {
-		eprintf ("cannot allocate %d byte(s)\n", bsize);
+		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 	}
 	pj_end (pj);
 	r_cons_println (pj_string (pj));
@@ -4850,7 +4850,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 				free (buf);
 			} else {
-				eprintf ("cannot allocate %"PFMT64u" byte(s)\n", b->size);
+				eprintf ("Cannot allocate %"PFMT64u" byte(s)\n", b->size);
 			}
 			pj_end (pj);
 			pj_end (pj);
@@ -6358,7 +6358,7 @@ static int cmd_print(void *data, const char *input) {
 							r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 							free (buf);
 						} else {
-							eprintf ("cannot allocate %"PFMT64u" byte(s)\n", b->size);
+							eprintf ("Cannot allocate %"PFMT64u" byte(s)\n", b->size);
 						}
 					}
 					pj_end (pj);
@@ -6923,7 +6923,7 @@ static int cmd_print(void *data, const char *input) {
 			cmd_pCx (core, input + 2, "pc");
 			break;
 		default:
-			eprintf ("Usage: pCd\n");
+			eprintf ("Usage: pC[dDaAxwc] - column output for pxa, pxA, pxw, ..\n");
 			break;
 		}
 		break;
