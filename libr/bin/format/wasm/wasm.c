@@ -140,7 +140,7 @@ static bool consume_encoded_name_new(RBuffer *b, ut64 bound, ut32 *len_out, char
 		if (WASM_IS_OK (orig, i, len)) {
 			sout[oi++] = orig[i];
 		} else {
-			oi += sprintf (sout + oi, "_%02x_", orig[i]);
+			oi += snprintf (sout + oi, len - oi, "_%02x_", orig[i]);
 		}
 	}
 	sout[oi++] = '\0';
