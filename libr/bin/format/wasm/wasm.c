@@ -82,7 +82,7 @@ static bool consume_str_r(RBuffer *b, ut64 bound, size_t len, char *out) {
 	return false;
 }
 
-static bool consume_str_new(RBuffer *b, ut64 bound, ut32 *len_out, char **str_out) {
+static bool inline consume_str_new(RBuffer *b, ut64 bound, ut32 *len_out, char **str_out) {
 	r_return_val_if_fail (str_out, false);
 	*str_out = NULL;
 	if (len_out) {
@@ -103,6 +103,60 @@ static bool consume_str_new(RBuffer *b, ut64 bound, ut32 *len_out, char **str_ou
 		free (str);
 	}
 	return false;
+}
+
+/*
+ * Wasm Names are utf-8 character strings. This means '7\x00' is a valid name 2
+ * byte name. R2 uses tcc to do C like function declarations, so we encode
+ * these functions in a way that can be decoded 1 to 1. Encoding is for char
+ * '\xXX' that is not allowed, we encode it as "_XX_" Where XX is [0-9A-Z] (no
+ * lower). Should the original function have a substring of the form "_XX_" we
+ * encode it as "_5F_XX_".
+ */
+#define WASM_IS_DIGIT(c) (c >= '0' && c <= '9')
+#define WASM_IS_ENC_HEX(c) (WASM_IS_DIGIT (c) || (c >= 'A' && c <= 'F'))
+#define WASM_AFTER_U_NOT_HEX(str, i) (!WASM_IS_ENC_HEX (str[i + 1]) || !WASM_IS_ENC_HEX (str[i + 2]))
+#define WASM_AFTER_UNDERSCORE_OK(str, i) (WASM_AFTER_U_NOT_HEX (str, i) || str[i + 3] != '_')
+#define WASM_IS_ALPH(c) ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
+#define WASM_IS_OK_EXCEPT__(loc, c) (WASM_IS_ALPH (c) || (loc != 0 && WASM_IS_DIGIT (c))) // C functions can't start with [0-9]
+#define WASM_UNDERSCORE_OK(str, i, max) (str[i] == '_' && (max - i < 4 || WASM_AFTER_UNDERSCORE_OK (str, i)))
+#define WASM_IS_OK(str, i, max) (WASM_IS_OK_EXCEPT__ (i, str[i]) || WASM_UNDERSCORE_OK (str, i, max))
+static bool consume_encoded_name_new(RBuffer *b, ut64 bound, ut32 *len_out, char **str_out) {
+	ut32 len;
+	char *orig = NULL;
+	if (!consume_str_new (b, bound, &len, &orig)) {
+		return false;
+	}
+
+	// room for even every character getting encoded
+	char *sout = malloc (len * 4 + 2);
+	if (!sout) {
+		free (orig);
+		return false;
+	}
+
+	size_t i, oi = 0;
+	for (i = 0; i < len; i++) {
+		if (WASM_IS_OK (orig, i, len)) {
+			sout[oi++] = orig[i];
+		} else {
+			oi += sprintf (sout + oi, "_%02x_", orig[i]);
+		}
+	}
+	sout[oi++] = '\0';
+	free (orig);
+
+	char *tmp = realloc (sout, oi);
+	if (!tmp) {
+		free (sout);
+		free (tmp);
+		return false;
+	}
+	*str_out = tmp;
+	if (len_out) {
+		len_out = len;
+	}
+	return true;
 }
 
 static size_t consume_init_expr_r(RBuffer *b, ut64 bound, ut8 eoc, void *out) {
@@ -391,11 +445,11 @@ static void *parse_import_entry(RBuffer *b, ut64 bound) {
 		return NULL;
 	}
 
-	if (!consume_str_new (b, bound, &ptr->module_len, &ptr->module_str)) {
+	if (!consume_encoded_name_new (b, bound, &ptr->module_len, &ptr->module_str)) {
 		goto beach;
 	}
 
-	if (!consume_str_new (b, bound, &ptr->field_len, &ptr->field_str)) {
+	if (!consume_encoded_name_new (b, bound, &ptr->field_len, &ptr->field_str)) {
 		goto beach;
 	}
 
@@ -444,7 +498,7 @@ static void *parse_export_entry(RBuffer *b, ut64 bound) {
 	if (!ptr) {
 		return NULL;
 	}
-	if (!consume_str_new (b, bound, &ptr->field_len, &ptr->field_str)) {
+	if (!consume_encoded_name_new (b, bound, &ptr->field_len, &ptr->field_str)) {
 		goto beach;
 	}
 	if (!consume_u7_r (b, bound, &ptr->kind)) {
@@ -526,8 +580,8 @@ static bool parse_namemap(RBuffer *b, ut64 bound, RIDStorage *map, ut32 *count) 
 			return false;
 		}
 
-		char *name;
-		if (!consume_str_new (b, bound, NULL, &name)) {
+		char *name = NULL;
+		if (!consume_encoded_name_new (b, bound, NULL, &name)) {
 			R_FREE (name);
 			return false;
 		}
@@ -608,7 +662,7 @@ static RBinWasmCustomNameEntry *parse_custom_name_entry(RBuffer *b, ut64 bound) 
 
 	switch (cust->type) {
 	case R_BIN_WASM_NAMETYPE_Module:
-		if (!consume_str_new (b, bound, NULL, &cust->mod_name)) {
+		if (!consume_encoded_name_new (b, bound, NULL, &cust->mod_name)) {
 			goto beach;
 		}
 		break;
@@ -897,7 +951,7 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 		switch (ptr->id) {
 		case R_BIN_WASM_SECTION_CUSTOM:
 			// eprintf("custom section: 0x%x, ", (ut32)b->cur);
-			if (!consume_str_new (b, bound, &ptr->name_len, &ptr->name)) {
+			if (!consume_encoded_name_new (b, bound, &ptr->name_len, &ptr->name)) {
 				goto beach;
 			}
 			break;
