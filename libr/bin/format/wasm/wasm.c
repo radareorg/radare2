@@ -129,7 +129,8 @@ static bool consume_encoded_name_new(RBuffer *b, ut64 bound, ut32 *len_out, char
 	}
 
 	// room for even every character getting encoded
-	char *sout = malloc (len * 4 + 2);
+	ut32 maxsize = len * 4 + 2;
+	char *sout = malloc (maxsize);
 	if (!sout) {
 		free (orig);
 		return false;
@@ -140,7 +141,7 @@ static bool consume_encoded_name_new(RBuffer *b, ut64 bound, ut32 *len_out, char
 		if (WASM_IS_OK (orig, i, len)) {
 			sout[oi++] = orig[i];
 		} else {
-			oi += snprintf (sout + oi, len - oi, "_%02x_", orig[i]);
+			oi += snprintf (sout + oi, maxsize - oi, "_%02x_", orig[i]);
 		}
 	}
 	sout[oi++] = '\0';
