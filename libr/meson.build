@@ -69,9 +69,6 @@ if not no_user_plugins
   endif
   if user_plugins.contains('v850')
     asm_plugins += [ 'v850', 'v810' ]
-    if use_gpl
-      asm_plugins += [ 'v850_gnu' ]
-    endif
     anal_plugins += [ 'v850', 'v850_np', 'v810' ]
     parse_plugins += [ 'v850_pseudo' ]
   endif
@@ -232,8 +229,7 @@ if no_user_plugins
       'm68k_gnu',
       'lanai_gnu',
       'mips_gnu',
-      'sparc_gnu',
-      'v850_gnu',
+      'sparc_gnu'
     ]
     anal_plugins += [
       'z80',
