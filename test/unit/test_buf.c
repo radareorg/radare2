@@ -109,7 +109,9 @@ bool test_r_buf_file(void) {
 	// Prepare file
 	int fd = r_file_mkstemp ("", &filename);
 	mu_assert_neq ((ut64)fd, (ut64)-1, "mkstemp failed...");
-	write (fd, content, length);
+	if (write (fd, content, length) != length) {
+		return false;
+	}
 	close (fd);
 
 	b = r_buf_new_file (filename, O_RDWR, 0);
@@ -152,20 +154,22 @@ bool test_r_buf_mmap(void) {
 	// Prepare file
 	int fd = r_file_mkstemp ("", &filename);
 	mu_assert_neq ((long long)fd, -1LL, "mkstemp failed...");
-	write (fd, content, length);
+	if (write (fd, content, length) != length) {
+		return false;
+	}
 	close (fd);
 
 	b = r_buf_new_mmap (filename, R_PERM_RW);
 	mu_assert_notnull (b, "r_buf_new_mmap failed");
 
 	if (test_buf (b) != MU_PASSED) {
-		unlink(filename);
+		unlink (filename);
 		mu_fail ("test failed");
 	}
 
 	// Cleanup
 	r_buf_free (b);
-	unlink(filename);
+	unlink (filename);
 	free (filename);
 	mu_end;
 }
