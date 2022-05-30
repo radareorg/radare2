@@ -51,6 +51,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 	if (inst.op) {
 		op->type = inst.op->type;
+		op->family = inst.op->family;
 		if (!memcmp (buf, "\x7f\x00", 2)) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		}
@@ -78,6 +79,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	op->size = inst.size;
 	if (mask & R_ANAL_OP_MASK_DISASM) {
 		if (anal->config->syntax == R_ASM_SYNTAX_ATT) {
+			op->mnemonic = r_str_replace (inst.text, "[r", "[%r", -1);
 			op->mnemonic = r_str_replace (inst.text, " r", " %r", -1);
 			op->mnemonic = r_str_replace (op->mnemonic, "(r", "(%r", -1);
 		} else {

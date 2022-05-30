@@ -25,6 +25,7 @@ typedef struct v850_opcode {
 	unsigned int processors; // mask for cpu models
 	int type; // R_ANAL_OP_TYPE_xxx
 	char *esil;
+	int family; // R_ANAL_OP_FAMILY_xxx
 } v850_opcode;
 
 typedef struct {
