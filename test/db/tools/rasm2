@@ -31,9 +31,7 @@ FILE=-
 CMDS=<<EOF
 !!rasm2 -L~4004
 EOF
-EXPECT=<<EOF
-adAe  4          i4004       LGPL3   Intel 4004 microprocessor
-EOF
+EXPECT=
 RUN
 
 NAME=rasm2 arm asm/dis endian
