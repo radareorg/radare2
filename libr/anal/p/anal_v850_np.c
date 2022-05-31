@@ -83,7 +83,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			op->mnemonic = r_str_replace (op->mnemonic, " r", " %r", -1);
 			op->mnemonic = r_str_replace (op->mnemonic, "(r", "(%r", -1);
 		} else {
-			op->mnemonic = strdup (inst.text);
+			op->mnemonic = inst.text;
 		}
 	} else {
 		free (inst.text);
