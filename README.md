@@ -6,7 +6,7 @@
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) [![TODO](https://img.shields.io/github/search/radareorg/radare2/TODO.svg)](https://github.com/radareorg/radare2/search?q=TODO) [![XXX](https://img.shields.io/github/search/radareorg/radare2/XXX.svg)](https://github.com/radareorg/radare2/search?q=XXX) [![Discord](https://badgen.net/discord/members/MgEdxrMnqx)](https://discord.gg/MgEdxrMnqx)
 
 See the [Releases](https://github.com/radareorg/radare2/releases) page for
-downloads. The current git `master` branch is `5.6.9`, next will be `5.7.0`.
+downloads. The current git `master` branch is `5.7.1`, next will be `5.7.2`.
 
 We ensure ABI stability for all the patch releases, you can mix/swap libraries
 and plugins without the need to recompile them if major and minor numbers are
