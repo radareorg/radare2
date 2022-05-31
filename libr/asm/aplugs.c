@@ -8,7 +8,6 @@
 #if HAVE_GPERF
 extern SdbGperf gperf_z80;
 extern SdbGperf gperf_6502;
-extern SdbGperf gperf_i4004;
 extern SdbGperf gperf_avr;
 //extern SdbGperf gperf_chip8;
 extern SdbGperf gperf_i8080;
@@ -37,7 +36,6 @@ extern SdbGperf gperf_pic18c;
 static const SdbGperf *gperfs[] = {
 	&gperf_z80,
 	&gperf_6502,
-	&gperf_i4004,
 	&gperf_avr,
 	// &gperf_chip8,
 	&gperf_i8080,

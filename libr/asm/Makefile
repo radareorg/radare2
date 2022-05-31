@@ -56,7 +56,6 @@ OBJS+=d/arc.o
 OBJS+=d/arm.o
 OBJS+=d/avr.o
 OBJS+=d/chip8.o
-OBJS+=d/i4004.o
 OBJS+=d/i8080.o
 OBJS+=d/java.o
 OBJS+=d/lm32.o
