@@ -470,7 +470,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 				r_strbuf_appendf (sb, ", %s[", prefix);
 				square = true;
 			} else if (opnum > 1) {
-				r_strbuf_appendf (sb, ", %s ", prefix);
+				r_strbuf_appendf (sb, ", %s", prefix);
 			}
 
 			/* Extract the flags, ignoring ones which do not

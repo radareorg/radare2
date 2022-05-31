@@ -408,8 +408,8 @@ EOF
 EXPECT=<<EOF
 v850
 v850.np
-            0x00000000      830c           sst.h r1,  6[ep]
-            0x00000000      e00f71f0       ld.hu mmio.ICC,  r1         ; 0xfffff070
+            0x00000000      830c           sst.h r1, 6[ep]
+            0x00000000      e00f71f0       ld.hu mmio.ICC, r1          ; 0xfffff070
 EOF
 RUN
 
@@ -421,7 +421,7 @@ wx 210674060000210674061234
 pi 2 @0
 EOF
 EXPECT=<<EOF
-mov 0x674,  r1
-mov 0x34120674,  r1
+mov 0x674, r1
+mov 0x34120674, r1
 EOF
 RUN
