@@ -2211,17 +2211,19 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 		bin->main_addr = UT64_MAX;
 		bin->kv = sdb_new (NULL, "bin.mach0", 0);
 		ut64 sz = r_buf_size (buf); // bin->b);
-		if (options->bf->loadaddr == UT64_MAX - sz) {
-			// handle the negative binsize problem when source io returns -1 as size. assume its 2MB
-			// sz = 4 * 1024 * 1024;
-		}
-		bin->size = sz;
 		if (options) {
+#if 0
+			if (options->bf->loadaddr == UT64_MAX - sz) {
+				// handle the negative binsize problem when source io returns -1 as size. assume its 2MB
+				// sz = 4 * 1024 * 1024;
+			}
+#endif
 			bin->verbose = options->verbose;
 			bin->header_at = options->header_at;
 			bin->maxsymlen = options->maxsymlen;
 			bin->symbols_off = options->symbols_off;
 		}
+		bin->size = sz;
 		if (!init (bin)) {
 			return MACH0_(mach0_free)(bin);
 		}

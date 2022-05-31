@@ -394,7 +394,6 @@ RUN
 
 # somehow the CI cant disasm with those plugins, while it runs in local and the plugin is there
 NAME=v850.np r0ref
-BROKEN=1
 FILE=-
 CMDS=<<EOF
 e anal.arch=?~v850
@@ -407,6 +406,8 @@ f mmio.ICC = 0xfffff070
 pd 1
 EOF
 EXPECT=<<EOF
+v850
+v850.np
             0x00000000      830c           sst.h r1,  6[ep]
             0x00000000      e00f71f0       ld.hu mmio.ICC,  r1         ; 0xfffff070
 EOF
