@@ -22,6 +22,23 @@ export GLOBAL=0
 export R2PM_JOBS=4
 export R2PMCACHE="$HOME/.r2pm.cache"
 
+if [ -z "${PYTHON}" ]; then
+	python3 --version > /dev/null 2>&1
+	if [ $? = 0 ]; then
+		export PYTHON=python3
+	else
+		python --version > /dev/null 2>&1
+		if [ $? = 0 ]; then
+			export PYTHON=python
+		else
+			python2 --version > /dev/null 2>&1
+			if [ $? = 0 ]; then
+				export PYTHON=python2
+			fi
+		fi
+	fi
+fi
+
 # Set R2_* Vars
 eval $(r2 -H 2> /dev/null)
 export R2_VERSION
@@ -123,6 +140,7 @@ if [ -f "d/baleful" ]; then
 	R2PM_DBDIR="$(pwd)/d/"
 fi
 
+# R2_580 - deprecate `install`, `info`... just use flags like in the C program
 help() {
 	cat <<HELP
 Usage: r2pm [init|update|cmd] [...]

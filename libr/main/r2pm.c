@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021 - pancake */
+/* radare - LGPL - Copyright 2021-2022 - pancake */
 
 #include <r_main.h>
 
@@ -247,10 +247,25 @@ static void r2pm_setenv(void) {
 	char *r2_prefix = r_str_home (R2_HOME_DATADIR "/prefix");
 	r_sys_setenv ("R2PM_PREFIX", r2_prefix);
 	free (r2_prefix);
+
+	char *python = r_sys_getenv ("PYTHON");
+	if (!python) {
+		python = r_file_path ("python3");
+		if (!python) {
+			python = r_file_path ("python");
+			if (!python) {
+				python = r_file_path ("python2");
+			}
+		}
+		if (python) {
+			r_sys_setenv ("PYTHON", python);
+		}
+	}
+	free (python);
 }
 
 static int r2pm_install_pkg(const char *pkg) {
-	printf ("Installing %s ...\n", pkg);
+	printf ("[r2pm] Installing %s ...\n", pkg);
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {", TT_CODEBLOCK);
 	if (!script) {
 		eprintf ("Cannot parse package\n");
@@ -277,7 +292,7 @@ static int r2pm_doc_pkg(const char *pkg) {
 }
 
 static int r2pm_clean_pkg(const char *pkg) {
-	printf ("Cleaning %s ...\n", pkg);
+	printf ("[r2pm] Cleaning %s ...\n", pkg);
 	// TODO. make clean/mrproper instead maybe better?
 	char *srcdir = r2pm_gitdir ();
 	if (R_STR_ISNOTEMPTY (srcdir)) {
@@ -293,7 +308,7 @@ static int r2pm_clean_pkg(const char *pkg) {
 }
 
 static int r2pm_uninstall_pkg(const char *pkg) {
-	printf ("Uninstalling %s ...\n", pkg);
+	printf ("[r2pm] Uninstalling %s ...\n", pkg);
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL() {", TT_CODEBLOCK);
 	if (!script) {
 		eprintf ("Cannot parse package\n");
@@ -336,6 +351,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean) {
 	RListIter *iter;
 	const char *t;
 	int rc = 0;
+	printf ("[r2pm] Using r2-"R2_VERSION"\n");
 	r_list_foreach (targets, iter, t) {
 		if (uninstall) {
 			r2pm_uninstall_pkg (t);
