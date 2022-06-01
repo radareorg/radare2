@@ -14,6 +14,8 @@ ad "add r2" 82
 ad "sub r3" 93
 ad "ld r15" af
 ad "xch r12" bc
+ad "bbl 0x5" c5
+ad "ldm 0xe" de
 
 ad "wrm" e0
 ad "wmp" e1
