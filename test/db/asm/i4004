@@ -1,10 +1,10 @@
 d "invalid" 01
 ad "nop" 00
-ad "jcn 4 0xab" 14ab
-ad "fim r4, 0xab" 24ab
-ad "src r14" 2f
-ad "fin r6" 36
-ad "jin r6" 37
+ad "jcn 0x4 0xab" 14ab
+ad "fim r4r5, 0xab" 24ab
+ad "src r7" 2f
+ad "fin r6r7" 36
+ad "jin r6r7" 37
 ad "jun 0xa2b" 4a2b
 ad "jms 0x1f5" 51f5
 ad "inc r0" 60
@@ -14,8 +14,6 @@ ad "add r2" 82
 ad "sub r3" 93
 ad "ld r15" af
 ad "xch r12" bc
-ad "bbl 5" c5
-ad "ldm 14" de
 
 ad "wrm" e0
 ad "wmp" e1
