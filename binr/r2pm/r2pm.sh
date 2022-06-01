@@ -530,7 +530,11 @@ R2PM_DEPS() {
 		if [ "$doInstall" = 1 ]; then
 			${R2PM} clean "$a"
 			export R2PM_CLEAN_INSTALL=1
-			${R2PM} install "$a"
+			if [ "${GLOBAL}" = 1 ]; then
+				${R2PM} global-install "$a"
+			else
+				${R2PM} install "$a"
+			fi
 		fi
 	done
 }
