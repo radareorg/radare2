@@ -2121,6 +2121,7 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	case EM_AVR: return strdup ("avr");
 	case EM_BA2_NON_STANDARD:
 	case EM_BA2: return strdup ("ba2");
+	case EM_BPF: return strdup ("bpf");
 	case EM_CRIS: return strdup ("cris");
 	case EM_68K: return strdup ("m68k");
 	case EM_MIPS:
@@ -2397,6 +2398,7 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	case EM_FT32:          return strdup ("FTDI Chip FT32 high performance 32-bit RISC architecture");
 	case EM_MOXIE:         return strdup ("Moxie processor family");
 	case EM_AMDGPU:        return strdup ("AMD GPU architecture");
+	case EM_BPF:           return strdup ("Berkeley Packet Filter");
 	case EM_LOONGARCH:     return strdup ("Loongson Loongarch");
 
 	default:             return r_str_newf ("<unknown>: 0x%x", bin->ehdr.e_machine);
