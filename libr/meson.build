@@ -251,7 +251,6 @@ bin_plugins += [
   'art',
   'avr',
   'bf',
-  'bpf',
   's390',
   'bflt',
   'bios',
