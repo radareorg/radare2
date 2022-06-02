@@ -711,8 +711,19 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_PPC_GLOB_DAT:    ADD (32, 0);
 		case R_PPC_JMP_SLOT:    ADD (32, 0);
 		default:
-			eprintf ("unimplemented ELF/PPC reloc type %d\n", rel->type);
+			R_LOG_DEBUG ("unimplemented ELF/PPC reloc type %d", rel->type);
 		break;
+		}
+		break;
+	case EM_BPF: switch (rel->type) {
+		case R_BPF_NONE: break;
+		case R_BPF_64_64: r->vaddr += 4; ADD (32, 0); break;
+		case R_BPF_64_ABS64: ADD (64, 0); break;
+		case R_BPF_64_ABS32: ADD (32, 0); break;
+		case R_BPF_64_NODYLD32: ADD (32, 0); break;
+		default:
+			R_LOG_DEBUG ("unimplemented ELF/BPF reloc type %d", rel->type);
+			break;
 		}
 		break;
 	default:
