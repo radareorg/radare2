@@ -1247,7 +1247,6 @@ RList *r_bin_wasm_get_elements(RBinWasmObj *bin) {
 
 RList *r_bin_wasm_get_codes(RBinWasmObj *bin) {
 	RBinWasmSection *code = NULL;
-	;
 	RList *codes = NULL;
 
 	if (!bin || !bin->g_sections) {
