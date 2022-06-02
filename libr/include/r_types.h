@@ -647,6 +647,7 @@ typedef enum {
 	R_SYS_ARCH_LM32,
 	R_SYS_ARCH_RISCV,
 	R_SYS_ARCH_ESIL,
+	R_SYS_ARCH_BPF,
 } RSysArch;
 
 #define MONOTONIC_LINUX (__linux__ && _POSIX_C_SOURCE >= 199309L)

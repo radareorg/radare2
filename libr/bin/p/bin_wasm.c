@@ -118,6 +118,43 @@ alloc_err:
 	return NULL;
 }
 
+static bool sym_add_exports(RList *exports, RList *syms) {
+	RBinWasmExportEntry *exp;
+	RListIter *iter;
+	r_list_foreach (exports, iter, exp) {
+		RBinSymbol *binsym = R_NEW0 (RBinSymbol);
+		if (!binsym) {
+			return false;
+		}
+		binsym->name = strdup (exp->field_str);
+		binsym->libname = NULL;
+		binsym->is_imported = false;
+		binsym->forwarder = "NONE";
+		binsym->bind = "NONE";
+		switch (exp->kind) {
+		case R_BIN_WASM_EXTERNALKIND_Function:
+			binsym->type = R_BIN_TYPE_FUNC_STR;
+			binsym->bind = R_BIN_BIND_GLOBAL_STR;
+			break;
+		case R_BIN_WASM_EXTERNALKIND_Table:
+			binsym->type = "TABLE";
+			break;
+		case R_BIN_WASM_EXTERNALKIND_Memory:
+			binsym->type = "MEMORY";
+			break;
+		case R_BIN_WASM_EXTERNALKIND_Global:
+			binsym->type = R_BIN_BIND_GLOBAL_STR;
+			break;
+		}
+		binsym->size = 0;
+		binsym->vaddr = -1;
+		binsym->paddr = -1;
+		binsym->ordinal = exp->index;
+		r_list_append (syms, binsym);
+	}
+	return true;
+}
+
 static RList *symbols(RBinFile *bf) {
 	RList *ret = NULL, *codes = NULL, *imports = NULL, *exports = NULL;
 	RBinSymbol *ptr = NULL;
@@ -180,6 +217,10 @@ static RList *symbols(RBinFile *bf) {
 		ptr->ordinal = i;
 		i += 1;
 		r_list_append (ret, ptr);
+	}
+
+	if (!sym_add_exports (exports, ret)) {
+		goto bad_alloc;
 	}
 
 	RListIter *is_exp = NULL;
