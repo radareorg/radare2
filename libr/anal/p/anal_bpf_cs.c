@@ -6,8 +6,6 @@
 #include <capstone/capstone.h>
 #if CS_API_MAJOR >= 5
 
-static R_TH_LOCAL csh cd = 0;
-
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static R_TH_LOCAL csh handle = 0;
 	static R_TH_LOCAL int omode = -1;

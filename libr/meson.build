@@ -177,6 +177,7 @@ anal_plugins += [
   'bf',
   'chip8',
   'cr16',
+  'bpf',
   'cris',
   'dalvik',
   'ebc',
