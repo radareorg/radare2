@@ -2787,6 +2787,31 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_VMOVNTDQ:
 	case X86_INS_VMOVNTPD:
 	case X86_INS_VMOVNTPS:
+	case X86_INS_VMOVQ:
+	case X86_INS_VMOVDDUP:
+	case X86_INS_VMOVD:
+	case X86_INS_VMOVDQA32:
+	case X86_INS_VMOVDQA64:
+	case X86_INS_VMOVDQA:
+	case X86_INS_VMOVDQU16:
+	case X86_INS_VMOVDQU32:
+	case X86_INS_VMOVDQU64:
+	case X86_INS_VMOVDQU8:
+	case X86_INS_VMOVDQU:
+	case X86_INS_VMOVHLPS:
+	case X86_INS_VMOVHPD:
+	case X86_INS_VMOVHPS:
+	case X86_INS_VMOVLHPS:
+	case X86_INS_VMOVLPD:
+	case X86_INS_VMOVLPS:
+	case X86_INS_VMOVMSKPD:
+	case X86_INS_VMOVMSKPS:
+	case X86_INS_VMOVSD:
+	case X86_INS_VMOVSHDUP:
+	case X86_INS_VMOVSLDUP:
+	case X86_INS_VMOVSS:
+	case X86_INS_VMOVUPD:
+	case X86_INS_VMOVUPS:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->family = R_ANAL_OP_FAMILY_SSE;
 		break;
