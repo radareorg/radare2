@@ -15,7 +15,6 @@ r_bin_sources = [
   join_paths('p','bin_art.c'),
   join_paths('p','bin_avr.c'),
   join_paths('p','bin_bf.c'),
-  join_paths('p','bin_bpf.c'),
   join_paths('p','bin_bflt.c'),
   join_paths('p','bin_bios.c'),
   join_paths('p','bin_bootimg.c'),
