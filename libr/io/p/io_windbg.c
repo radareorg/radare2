@@ -466,7 +466,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 			ITHISCALL (dbgCtrl, RemoveEngineOptions, DEBUG_ENGOPT_FINAL_BREAK);
 			break;
 		case 'h':
-			if (strcmp (opt.arg, "d")) {
+			if (!strcmp (opt.arg, "d")) {
 				spawn_options |= DEBUG_CREATE_PROCESS_NO_DEBUG_HEAP;
 			}
 			break;
@@ -475,9 +475,9 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 			image_path_set = true;
 			break;
 		case 'k':
-			if (strcmp (opt.arg, "l")) {
+			if (!strcmp (opt.arg, "l")) {
 				target = TARGET_LOCAL_KERNEL;
-			} else if (strcmp (opt.arg, "qm")) {
+			} else if (!strcmp (opt.arg, "qm")) {
 				ITHISCALL (dbgCtrl, AddEngineOptions, DEBUG_ENGOPT_KD_QUIET_MODE);
 			} else {
 				target = TARGET_KERNEL;
@@ -493,11 +493,11 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 				target = TARGET_LOCAL_ATTACH;
 				pid = atoi (opt.arg);
 			} else {
-				if (strcmp (opt.arg, "b")) {
+				if (!strcmp (opt.arg, "b")) {
 					attach_options |= DEBUG_ATTACH_INVASIVE_NO_INITIAL_BREAK;
-				} else if (strcmp (opt.arg, "e")) {
+				} else if (!strcmp (opt.arg, "e")) {
 					attach_options |= DEBUG_ATTACH_EXISTING;
-				} else if (strcmp (opt.arg, "v")) {
+				} else if (!strcmp (opt.arg, "v")) {
 					attach_options |= DEBUG_ATTACH_NONINVASIVE;
 				}
 			}
