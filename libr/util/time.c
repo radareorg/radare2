@@ -50,7 +50,8 @@ R_API ut64 r_time_now_mono(void) {
 #endif
 }
 
-R_API char *r_time_stamp_to_str(ut32 timeStamp) {
+// R_API char *r_time_stamp_to_str(ut32 timeStamp) {
+R_API char *r_time_stamp_to_str(time_t timeStamp) {
 #if __WINDOWS__
 	time_t rawtime;
 	struct tm *tminfo;
@@ -69,7 +70,7 @@ R_API char *r_time_stamp_to_str(ut32 timeStamp) {
 	gettimeofday (&tv, (void*) &tz);
 	gmtoff = (int) (tz.tz_minuteswest * 60); // in seconds
 	ts += (time_t)gmtoff;
-	char *res = malloc(ASCTIME_BUF_MINLEN);
+	char *res = malloc (ASCTIME_BUF_MAXLEN);
 	if (res) {
 		ctime_r (&ts, res);
 		r_str_trim (res); // XXX we probably need an r_str_trim_dup()
@@ -139,7 +140,7 @@ R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 	if (p && len >= sizeof (ut32)) {
 		t = r_read_ble32 (buf, be);
 		if (p->datefmt[0]) {
-			t += p->datezone * (60*60);
+			t += p->datezone * 60 * 60;
 			t += hfs_unix_delta;
 
 			p->cb_printf ("%s\n", r_time_stamp_to_str (t));
@@ -169,7 +170,8 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API int r_print_date_get_now(RPrint *p, char *str) {
+R_DEPRECATE R_API int r_print_date_get_now(RPrint *p, char *str) {
+	eprintf ("This function is wrong in so many ways, dont use it, will be removed in r2-5.8\n");
 	int ret = 0;
 	time_t l;
 
@@ -209,7 +211,7 @@ R_API const char *r_time_to_string(ut64 ts) {
 
 R_API char *r_asctime_r(const struct tm *tm, char *buf) {
 #if __WINDOWS__
-	errno_t err = asctime_s (buf, ASCTIME_BUF_MINLEN, tm);
+	errno_t err = asctime_s (buf, ASCTIME_BUF_MAXLEN, tm);
 	return err? NULL: buf;
 #else
 	return asctime_r (tm, buf);
@@ -218,7 +220,7 @@ R_API char *r_asctime_r(const struct tm *tm, char *buf) {
 
 R_API char *r_ctime_r(const time_t *timer, char *buf) {
 #if __WINDOWS__
-	errno_t err = ctime_s (buf, ASCTIME_BUF_MINLEN, timer);
+	errno_t err = ctime_s (buf, ASCTIME_BUF_MAXLEN, timer);
 	return err? NULL: buf;
 #else
 	return ctime_r (timer, buf);

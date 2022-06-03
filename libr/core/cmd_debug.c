@@ -5164,11 +5164,10 @@ static int cmd_debug(void *data, const char *input) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
 		return 0;
 	}
-	if (!strncmp (input, "ate", 3)) {
-		char str[128];
-		str[0] = 0;
-		r_print_date_get_now (core->print, str);
-		r_cons_println (str);
+	if (!strncmp (input, "ate", 3)) { // "date" -- same as pt.
+		char *nostr = r_time_stamp_to_str (time (0));
+		r_cons_println (nostr);
+		free (nostr);
 		return 0;
 	}
 
