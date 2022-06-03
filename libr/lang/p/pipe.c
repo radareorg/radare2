@@ -234,7 +234,7 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 		close (safe_in);
 	}
 #ifndef __wasi__
-	waitpid (child, NULL, WNOHANG);
+	waitpid (child, NULL, WUNTRACED);
 #endif
 	return true;
 #else
