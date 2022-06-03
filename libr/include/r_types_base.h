@@ -10,6 +10,7 @@ extern "C" {
 #include <limits.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <math.h>
 
 #define cut8 const uint8_t
 #define ut64 uint64_t
@@ -193,11 +194,11 @@ typedef struct _utX {
 #define B4(a,b,c,d) ((a<<12)|(b<<8)|(c<<4)|(d))
 
 /* portable non-c99 inf/nan types */
-#if !defined(INFINITY)
+#ifndef INFINITY
 #define INFINITY (1.0f/0.0f)
 #endif
 
-#if !defined(NAN)
+#ifndef NAN
 #define NAN (0.0f/0.0f)
 #endif
 

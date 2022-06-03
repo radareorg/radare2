@@ -1,20 +1,19 @@
 /* radare - LGPL - Copyright 2008-2022 - pancake */
 
-#include "r_lib.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include <r_io.h>
+#include <r_lib.h>
 #include "../io_memory.h"
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	const char **uris = {
+	const char *uris[] = {
 		"slurp://", "malloc://", "hex://", "stdin://", NULL
 	};
-	const char *uri;
-	while (uri) {
-		if (r_str_startswith (pathname, uri)) {
+	size_t i = 0;
+	while (uris[i]) {
+		if (r_str_startswith (pathname, uris[i])) {
 			return true;
 		}
-		uri++;
+		i++;
 	}
 	return false;
 }
