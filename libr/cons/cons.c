@@ -952,7 +952,9 @@ R_API void r_cons_last(void) {
 		return;
 	}
 	C->lastMode = true;
-	r_cons_write (C->lastOutput, C->lastLength);
+	if (C->lastLength > 0) {
+		r_cons_write (C->lastOutput, C->lastLength);
+	}
 }
 
 static bool lastMatters(void) {

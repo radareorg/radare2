@@ -1148,10 +1148,12 @@ static int cmd_yank(void *data, const char *input) {
 				sig = strdup ("wx 10203040");
 			}
 			char *data = r_core_editor (core, NULL, sig);
-			(void) strtok (data, ";\n");
-			r_core_cmdf (core, "y%s", data);
+			if (data) {
+				(void) strtok (data, ";\n");
+				r_core_cmdf (core, "y%s", data);
+				free (data);
+			}
 			free (sig);
-			free (data);
 		}
 		break;
 	case '*': // "y*"

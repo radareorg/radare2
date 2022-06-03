@@ -3618,7 +3618,10 @@ R_API bool r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	int dorunword;
 	char word[64];
 	const char *ostr = str;
-	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str), 0);
+	r_return_val_if_fail (esil, false);
+	if (R_STR_ISEMPTY (str)) {
+		return false;
+	}
 
 	if (__stepOut (esil, esil->cmd_step)) {
 		(void)__stepOut (esil, esil->cmd_step_out);

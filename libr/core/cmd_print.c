@@ -5754,7 +5754,7 @@ static int cmd_print(void *data, const char *input) {
 		if (i && l > i) {
 			eprintf ("This block size is too big (0x%"PFMT64x
 				" < 0x%" PFMT64x "). Did you mean 'p%c @ %s' instead?\n",
-				n, l, *input, input + 2);
+				n, l, *input, *input? r_str_trim_head_ro (input + 1): "");
 			goto beach;
 		}
 	}

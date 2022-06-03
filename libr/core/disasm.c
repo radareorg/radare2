@@ -913,7 +913,6 @@ static void ds_free(RDisasmState *ds) {
 	}
 	if (ds->show_emu_stack) {
 		// TODO: destroy fake stack in here
-		eprintf ("Free fake stack\n");
 		if (ds->stackFd != -1) {
 			r_io_fd_close (ds->core->io, ds->stackFd);
 		}
