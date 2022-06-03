@@ -35,7 +35,9 @@ typedef struct { // Keep in sync with debug_windbg.c
 } DbgEngContext;
 
 #define THISCALL(dbginterface, function, ...) dbginterface->lpVtbl->function (dbginterface, __VA_ARGS__)
+#define THISCALL0(dbginterface, function) dbginterface->lpVtbl->function (dbginterface)
 #define ITHISCALL(dbginterface, function, ...) THISCALL (idbg->dbginterface, function, __VA_ARGS__)
+#define ITHISCALL0(dbginterface, function) THISCALL0 (idbg->dbginterface, function)
 
 #define DECLARE_CALLBACKS_IMPL(Type, IFace)           \
 typedef struct IFace##_impl {                         \
@@ -71,7 +73,7 @@ static P##IFace IFace##_impl_new(                     \
 }
 
 #define DECLARE_QUERYINTERFACE(IFace, IFaceIID)       \
-static STDMETHODIMP IFace##_QueryInterface_impl(     \
+static STDMETHODIMP IFace##_QueryInterface_impl(      \
 	P##IFace This,                                    \
 	_In_ REFIID InterfaceId,                          \
 	_Out_ PVOID *Interface) {                         \
@@ -79,7 +81,7 @@ static STDMETHODIMP IFace##_QueryInterface_impl(     \
 	if (IsEqualIID (InterfaceId, &IID_IUnknown) ||    \
 		IsEqualIID (InterfaceId, &IFaceIID)) {        \
 		*Interface = This;                            \
-		THISCALL (This, AddRef);                      \
+		THISCALL0 (This, AddRef);                     \
 		return S_OK;                                  \
 	} else {                                          \
 		return E_NOINTERFACE;                         \
@@ -211,7 +213,7 @@ DECLARE_NEW (DEBUG_OUTPUT_CALLBACKS, IDebugOutputCallbacksVtbl)
 static void __free_context(DbgEngContext *idbg) {
 #define RELEASE(I)               \
 	if (idbg->I) {               \
-		ITHISCALL (I, Release);  \
+		ITHISCALL0 (I, Release);  \
 		idbg->I = NULL;          \
 	}
 	RELEASE (dbgAdvanced);
@@ -226,7 +228,7 @@ static void __free_context(DbgEngContext *idbg) {
 }
 
 static bool init_callbacks(DbgEngContext *idbg) {
-#define RELEASE(I) if (I) THISCALL (I, Release);
+#define RELEASE(I) if (I) THISCALL0 (I, Release);
 	if (!idbg->dbgClient) {
 		return false;
 	}
@@ -419,7 +421,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 			}
 			goto remote_client;
 		}
-	}	
+	}
 	if (!idbg) {
 		return NULL;
 	}
@@ -541,7 +543,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 		hr = ITHISCALL (dbgClient, AttachProcess, 0ULL, pid, attach_options);
 		break;
 	case TARGET_LOCAL_KERNEL: // -kl
-		if (ITHISCALL (dbgClient, IsKernelDebuggerEnabled) == S_FALSE) {
+		if (ITHISCALL0 (dbgClient, IsKernelDebuggerEnabled) == S_FALSE) {
 			eprintf ("Live Kernel debug not available. Set the /debug boot switch to enable it\n");
 		} else {
 			hr = ITHISCALL (dbgClient, AttachKernel, DEBUG_ATTACH_LOCAL_KERNEL, args);
@@ -561,7 +563,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 	}
 	ITHISCALL (dbgCtrl, WaitForEvent, DEBUG_WAIT_DEFAULT, INFINITE);
 	if (command) {
-		ITHISCALL (dbgCtrl, Execute, DEBUG_OUTCTL_ALL_CLIENTS, command, DEBUG_EXECUTE_DEFAULT);	
+		ITHISCALL (dbgCtrl, Execute, DEBUG_OUTCTL_ALL_CLIENTS, command, DEBUG_EXECUTE_DEFAULT);
 	}
 	r_str_argv_free (argv);
 remote_client:

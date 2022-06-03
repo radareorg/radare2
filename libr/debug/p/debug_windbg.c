@@ -24,7 +24,9 @@
 
 #define TIMEOUT 500
 #define THISCALL(dbginterface, function, ...) dbginterface->lpVtbl->function (dbginterface, __VA_ARGS__)
+#define THISCALL0(dbginterface, function) dbginterface->lpVtbl->function (dbginterface)
 #define ITHISCALL(dbginterface, function, ...) THISCALL (idbg->dbginterface, function, __VA_ARGS__)
+#define ITHISCALL0(dbginterface, function) THISCALL0 (idbg->dbginterface, function)
 #define RELEASE(I) if (I) THISCALL (I, Release);
 
 typedef struct { // Keep in sync with io_windbg.c
@@ -489,7 +491,7 @@ static bool windbg_attach(RDebug *dbg, int pid) {
 static bool windbg_detach(RDebug *dbg, int pid) {
 	DbgEngContext *idbg = dbg->user;
 	r_return_val_if_fail (idbg && idbg->initialized, 0);
-	return SUCCEEDED (ITHISCALL (dbgClient, DetachProcesses));
+	return SUCCEEDED (ITHISCALL0 (dbgClient, DetachProcesses));
 }
 
 static bool windbg_kill(RDebug *dbg, int pid, int tid, int sig) {
@@ -510,7 +512,7 @@ static bool windbg_kill(RDebug *dbg, int pid, int tid, int sig) {
 		}
 		return exit_code == STILL_ACTIVE;
 	}
-	HRESULT hr = ITHISCALL (dbgClient, TerminateProcesses);
+	HRESULT hr = ITHISCALL0 (dbgClient, TerminateProcesses);
 	return SUCCEEDED (hr);
 }
 
