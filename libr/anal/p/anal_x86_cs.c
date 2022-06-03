@@ -2179,6 +2179,30 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			}
 		}
 		break;
+	case X86_INS_VMOVDQU16:
+	case X86_INS_VMOVDQU32:
+	case X86_INS_VMOVDQU64:
+	case X86_INS_VMOVDQU8:
+	case X86_INS_VMOVDQU:
+		{
+			const char *src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
+			if (is_xmm_reg (INSOP (1))) {
+				if (is_xmm_reg (INSOP (0))) {
+					r_strbuf_appendf (&op->esil, "%sl,%sh", src, src);
+				} else {
+					r_strbuf_appendf (&op->esil, "%sh,%sl", src, src);
+				}
+			} else {
+				r_strbuf_append (&op->esil, src);
+			}
+			const char *dst = getarg (&gop, 0, 0, NULL, DST_R_AR, NULL);
+			if (is_xmm_reg (INSOP (0))) {
+				r_strbuf_appendf (&op->esil, ",%sh,:=,%sl,:=", dst, dst);
+			} else {
+				r_strbuf_appendf (&op->esil, ",%s", dst);
+			}
+		}
+		break;
 	}
 
 	if (op->prefix & R_ANAL_OP_PREFIX_REP) {
