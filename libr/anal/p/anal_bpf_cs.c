@@ -221,7 +221,7 @@ static int archinfo(RAnal *anal, int q) {
 }
 
 RAnalPlugin r_anal_plugin_bpf_cs = {
-	.name = "bpf.cs",
+	.name = "bpf",
 	.desc = "Capstone BPF arch plugin",
 	.license = "BSD",
 	.author = "terorie",

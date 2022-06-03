@@ -1242,7 +1242,7 @@ static int archinfo(RAnal *anal, int q) {
 	return (bits == 64)? 8: 4;
 }
 RAnalPlugin r_anal_plugin_bpf = {
-	.name = "bpf",
+	.name = "bpf.mr",
 	.desc = "Berkely packet filter analysis plugin",
 	.license = "LGPLv3",
 	.arch = "bpf",
