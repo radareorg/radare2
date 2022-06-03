@@ -187,7 +187,7 @@ static RLangPlugin r_lang_plugin_v = {
 	.run_file = (void*)lang_v_file,
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_LANG,
 	.data = &r_lang_plugin_v,

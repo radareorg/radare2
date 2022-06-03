@@ -1258,7 +1258,7 @@ RAnalPlugin r_anal_plugin_bpf = {
 */
 };
 
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_bpf,
