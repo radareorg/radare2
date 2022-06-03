@@ -254,20 +254,31 @@ out:
 	return res;
 }
 
+// This struct exists to store the index during hashtable foreach.
+typedef struct {
+	const char **keys;
+	size_t current_key;
+} AliasKeylist;
+
 static bool get_keys(void *keylist_in, const void *k, const void *v) {
-	RList *keylist = (RList *) keylist_in;
-	return r_list_append (keylist, (char *) k);
+	AliasKeylist *keylist = keylist_in;
+	keylist->keys[keylist->current_key++] = (const char *)k;
+	return true;
 }
 
-R_API RList *r_cmd_alias_keys(RCmd *cmd) {
-	RList *keylist = r_list_new ();
-	if (!keylist) {
+R_API const char **r_cmd_alias_keys(RCmd *cmd) {
+	AliasKeylist keylist;
+
+	keylist.keys = R_NEWS (const char *, cmd->aliases->count);
+	if (!keylist.keys) {
 		return NULL;
 	}
 
-	ht_pp_foreach (cmd->aliases, get_keys, keylist);
+	keylist.current_key = 0;
+	ht_pp_foreach (cmd->aliases, get_keys, &keylist);
 
-	return keylist;
+	// We don't need to return a count - it's already in cmd->aliases.
+	return keylist.keys;
 }
 
 R_API void r_cmd_alias_free(RCmd *cmd) {

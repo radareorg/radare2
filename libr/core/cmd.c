@@ -58,20 +58,21 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_help.c"
 
 static const char *help_msg_dollar[] = {
-	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
+	"Usage:", "$alias[=cmd] [args...]", "Alias commands and data (See ?$? for help on $variables)",
 	"$", "", "list all defined aliases",
-	"$*", "", "list all defined aliases and their respective values, unprintable characters escaped",
-	"$**", "", "same as above, but if an alias has unprintable characters, b64 encode it",
+	"$*", "", "list all defined aliases and their values, with unprintable characters escaped",
+	"$**", "", "same as above, but if an alias contains unprintable characters, b64 encode it",
 	"$", "foo:=123", "alias for 'f foo=123'",
 	"$", "foo-=4", "alias for 'f foo-=4'",
 	"$", "foo+=4", "alias for 'f foo+=4'",
 	"$", "foo", "alias for 's foo' (note that command aliases can override flag resolution)",
-	"$", "dis=base64:AAA=", "alias $dis to the raw byte output from decoding this base64 string",
-	"$", "dis=$hello world", "alias $dis to the string after '$' (accepts double-backslash and hex escaping)",
-	"$", "dis=-", "edit $dis in cfg.editor (accepts backslash and hex escaping)",
+	"$", "dis=base64:AAA=", "alias $dis to the raw bytes from decoding this base64 string",
+	"$", "dis=$hello world", "alias $dis to the string after '$'",
+	"$", "dis=$hello\\\\nworld\\\\0a", "string aliases accept double-backslash and hex escaping",
+	"$", "dis=-", "edit $dis in cfg.editor (use single-backslashes for escaping)",
 	"$", "dis=af", "alias $dis to the af command",
-	"$", "dis=af;pdf", "alias $dis to the af command, then run pdf",
-	"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
+	"\"$", "dis=af;pdf\"", "alias $dis to run af, then pdf. you must quote the whole command.",
+	"$", "test=. /tmp/test.js", "create command - rlangpipe script",
 	"$", "dis=", "undefine alias",
 	"$", "dis", "execute a defined command alias, or print a data alias with unprintable characters escaped",
 	"$", "dis?", "show commands aliased by $dis",
@@ -804,13 +805,13 @@ static int cmd_alias(void *data, const char *input) {
 		bool use_b64 = (buf[1] == '*');
 		ht_pp_foreach (core->rcmd->aliases, print_aliases, &use_b64);
 	} else if (!*buf) {
-		RList *keys = r_cmd_alias_keys (core->rcmd);
+		const char **keys = r_cmd_alias_keys (core->rcmd);
 		if (keys) {
-			RListIter *it;
-			r_list_foreach_iter (keys, it) {
-				r_cons_printf ("$%s\n", (char *)it->data);
+			int i;
+			for (i = 0; i < core->rcmd->aliases->count; i++) {
+				r_cons_printf ("$%s\n", keys[i]);
 			}
-			r_list_free (keys);
+			free (keys);
 		}
 	} else {
 		/* Execute or evaluate alias */
