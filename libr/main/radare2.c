@@ -182,6 +182,7 @@ static int main_help(int line) {
 		" R2_IGNVER       load plugins ignoring the specified version. (be careful)\n"
 		" R2_MAGICPATH    " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
 		" R2_NOPLUGINS    do not load r2 shared plugins\n"
+		" R2_HISTORY      " R2_HOME_HISTORY "\n"
 		" R2_RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 		" R2_CURL         set to '1' to use system curl program instead of r2 apis\n"
 		" R2_RDATAHOME    %s\n" // TODO: rename to RHOME R2HOME?
@@ -218,6 +219,7 @@ static int main_print_var(const char *var_name) {
 	char *homezigns = r_str_home (R2_HOME_ZIGNS);
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
+	char *historyhome = r_str_home (R2_HOME_HISTORY);
 	struct radare2_var_t {
 		const char *name;
 		const char *value;
@@ -230,6 +232,7 @@ static int main_print_var(const char *var_name) {
 		{ "R2_LIBEXT", R_LIB_EXT },
 		{ "R2_RCONFIGHOME", confighome },
 		{ "R2_RDATAHOME", datahome },
+		{ "R2_HISTORY", historyhome },
 		{ "R2_RCACHEHOME", cachehome },
 		{ "R2_LIBR_PLUGINS", plugins },
 		{ "R2_USER_PLUGINS", homeplugins },
@@ -257,6 +260,7 @@ static int main_print_var(const char *var_name) {
 	free (incdir);
 	free (libdir);
 	free (confighome);
+	free (historyhome);
 	free (datahome);
 	free (cachehome);
 	free (homeplugins);
