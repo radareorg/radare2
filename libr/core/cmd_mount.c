@@ -177,14 +177,14 @@ static int cmd_mount(void *data, const char *_input) {
 				fstype = input;
 			}
 
-			if (!r_fs_mount (core->fs, fstype, mountp, off)) {
+			if (fstype && !r_fs_mount (core->fs, fstype, mountp, off)) {
 				eprintf ("Cannot mount %s\n", input);
 			}
 		} else {
 			if (!(ptr = r_fs_name (core->fs, core->offset))) {
 				eprintf ("Unknown filesystem type\n");
 			}
-			if (!r_fs_mount (core->fs, ptr, input, core->offset)) {
+			if (ptr && !r_fs_mount (core->fs, ptr, input, core->offset)) {
 				eprintf ("Cannot mount %s\n", input);
 			}
 			free (ptr);

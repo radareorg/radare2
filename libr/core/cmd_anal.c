@@ -6734,6 +6734,9 @@ static void __core_anal_appcall(RCore *core, const char *input) {
 static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp) {
 	// TODO: add support for 32 bit
 	RBuffer *b = r_buf_new ();
+	if (!b) {
+		return;
+	}
 	ut64 sp = core->offset;
 	int i;
 	ut64 dyld_call_from = UT64_MAX;
@@ -6765,7 +6768,7 @@ static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp
 		r_buf_append_string (b, envp[i]);
 		r_buf_append_ut8 (b, 0);
 	}
-	int slen;
+	int slen = 0;
 	ut8 *s = r_buf_read_all (b, &slen);
 	char *x = r_hex_bin2strdup (s, slen);
 	r_cons_printf ("wx %s\n", x);

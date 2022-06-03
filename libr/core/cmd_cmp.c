@@ -1502,7 +1502,10 @@ static int cmd_cmp(void *data, const char *input) {
 		if (sz > 0) {
 			ut64 at = r_num_math (core->num, input + 2);
 			ut8 buf[8] = {0};
-			r_io_read_at (core->io, at, buf, sizeof (buf));
+			if (r_io_read_at (core->io, at, buf, sizeof (buf)) < 1) {
+				r_core_return_value (core, -1);
+				break;
+			}
 			int val = memcmp (buf, core->block, sz)? 1: 0;
 			r_core_return_value (core, val);
 		}

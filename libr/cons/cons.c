@@ -47,11 +47,11 @@ static void break_stack_free(void *ptr) {
 
 static void cons_stack_free(void *ptr) {
 	RConsStack *s = (RConsStack *)ptr;
-	free (s->buf);
+	R_FREE (s->buf);
 	if (s->grep) {
 		R_FREE (s->grep->str);
 	}
-	free (s->grep);
+	R_FREE (s->grep);
 	free (s);
 }
 
@@ -101,11 +101,13 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 }
 
 static void cons_grep_reset(RConsGrep *grep) {
-	R_FREE (grep->str);
-	ZERO_FILL (*grep);
-	grep->line = -1;
-	grep->sort = -1;
-	grep->sort_invert = false;
+	if (grep) {
+		R_FREE (grep->str);
+		ZERO_FILL (*grep);
+		grep->line = -1;
+		grep->sort = -1;
+		grep->sort_invert = false;
+	}
 }
 
 static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *parent) {
