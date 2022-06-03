@@ -87,7 +87,7 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 		op->type = X86_OP_REG;
 		op->reg = X86_REG_EFLAGS;
 		op->size = regsz;
-#if CS_API_MAJOR >=4
+#if CS_API_MAJOR >= 4
 		if (id == X86_INS_PUSHF || id == X86_INS_PUSHFD || id == X86_INS_PUSHFQ) {
 			op->access = 1;
 		} else {
@@ -800,7 +800,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		case X86_OP_REG:
 		default:
 			if (INSOP(0).type == X86_OP_MEM) {
-				op->direction = 1; // read
+				op->direction = R_ANAL_OP_DIR_READ;
 			}
 			if (INSOP(1).type == X86_OP_MEM) {
 				// MOV REG, [PTR + IREG*SCALE]
@@ -3294,9 +3294,19 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_KXORW:
 	case X86_INS_PXOR:
 		op->type = R_ANAL_OP_TYPE_XOR;
+		if (INSOP(0).type == X86_OP_MEM) {
+			op->direction = R_ANAL_OP_DIR_WRITE;
+		} else if (INSOP(1).type == X86_OP_MEM) {
+			op->direction = R_ANAL_OP_DIR_READ;
+		}
 		break;
 	case X86_INS_XOR:
 		op->type = R_ANAL_OP_TYPE_XOR;
+		if (INSOP(0).type == X86_OP_MEM) {
+			op->direction = R_ANAL_OP_DIR_WRITE;
+		} else if (INSOP(1).type == X86_OP_MEM) {
+			op->direction = R_ANAL_OP_DIR_READ;
+		}
 		// TODO: Add stack indexing handling chang
 		op0_memimmhandle (op, insn, addr, regsz);
 		op1_memimmhandle (op, insn, addr, regsz);
