@@ -1215,56 +1215,88 @@ out:
 	free (basename);
 }
 
-static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const char *needle, bool is_data) {
-	const int needle_len = strlen (needle);
+typedef struct {
+	const char *needle;
+	int needle_len;
+	bool must_be_data;
 
-	RList *alias_keys = r_cmd_alias_keys (cmd);
-	RList *alias_match = r_list_new ();
-	RListIter *it;
+	const char **valid_completions;
+	const RCmdAliasVal **valid_completion_vals;
+	int num_completions;
+} AliasAutocompletions;
 
-	/* Get possible completions */
-	r_list_foreach_iter (alias_keys, it) {
-		const char *k = it->data;
-		const RCmdAliasVal *val = r_cmd_alias_get (cmd, k);
-		/* Skip aliases that don't match given data/command setting */
-		if (!val || val->is_data != is_data) {
-			continue;
-		}
+static bool check_alias_completion(void *in, const void *k, const void *v) {
+	// This repetition kind of sucks but we need
+	// to carry state somehow
+	AliasAutocompletions *c = in;
+	const char *needle = c->needle;
+	const int needle_len = c->needle_len;
 
-		if (!needle_len || !strncmp (k, needle, needle_len)) {
-			r_list_append (alias_match, (void *)k);
-		}
+	const RCmdAliasVal *val = v;
+
+	/* Skip command aliases if we're filtering them out */
+	if (c->must_be_data && !val->is_data) {
+		return true;
 	}
-	r_list_free (alias_keys);
 
-	const int match_count = r_list_length (alias_match);
+	if (!needle_len || !strncmp (k, needle, needle_len)) {
+		c->valid_completions[c->num_completions] = k;
+		c->valid_completion_vals[c->num_completions] = v;
+		c->num_completions++;
+	}
+
+	return true;
+}
+
+static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const char *needle, bool must_be_data) {
+	AliasAutocompletions c;
+	const int needle_len = strlen (needle);
+	int i;
+
+
+	c.needle = needle;
+	c.needle_len = needle_len;
+	// Filter out command aliases?
+	c.must_be_data = must_be_data;
+	// Single block, borrowed pointers
+	c.valid_completions = R_NEWS (const char *, cmd->aliases->count);
+	c.valid_completion_vals = R_NEWS (const RCmdAliasVal *, cmd->aliases->count);
+	c.num_completions = 0;
+
+	ht_pp_foreach (cmd->aliases, check_alias_completion, &c);
+
+	const int match_count = c.num_completions;
 	if (match_count == 1) {
 		/* If only 1 possible completion, use it */
-		const char *k = r_list_pop (alias_match);
-		const RCmdAliasVal *val = r_cmd_alias_get (cmd, k);
-		if (val) {
-			const char *v = (char *)val->data;
-			r_cons_printf ("$%s=%s\n", k, v);
-			r_cons_flush ();
-			char *completed_alias = r_str_newf ("$%s", k);
-			r_line_completion_push (completion, completed_alias);
-			free (completed_alias);
-		}
+		const char *k = c.valid_completions[0];
+		const RCmdAliasVal *val = c.valid_completion_vals[0];
+
+		char *v = r_cmd_alias_val_strdup ((RCmdAliasVal *)val);
+		r_cons_printf ("$%s=%s%s\n", k, val->is_data? "$": "", v);
+		r_cons_flush ();
+
+		char *completed_alias = r_str_newf ("$%s", k);
+		r_line_completion_push (completion, completed_alias);
+
+		free (completed_alias);
+		free (v);
 	} else if (match_count > 1) {
 		/* If multiple possible completions, show them */
-		r_list_foreach_iter (alias_match, it) {
-			const char *k = it->data;
-			const RCmdAliasVal *val = r_cmd_alias_get (cmd, k);
-			if (val) {
-				const char *v = (char *)val->data;
-				char *line = r_str_newf ("$%s=%s", k, v);
-				r_line_completion_push (completion, line);
-				free (line);
-			}
+		for (i = 0; i < c.num_completions; i++) {
+			const char *k = c.valid_completions[i];
+			const RCmdAliasVal *val = c.valid_completion_vals[i];
+
+			char *v = r_cmd_alias_val_strdup ((RCmdAliasVal *)val);
+			char *line = r_str_newf ("$%s=%s%s", k, val->is_data? "$": "", v);
+			r_line_completion_push (completion, line);
+
+			free (line);
+			free (v);
 		}
 	}
 	/* If 0 possible completions, do nothing */
-	r_list_free (alias_match);
+	free (c.valid_completions);
+	free (c.valid_completion_vals);
 }
 
 static void autocomplete_process_path(RLineCompletion *completion, const char *str, const char *path) {
@@ -1390,7 +1422,8 @@ static void autocomplete_filename(RLineCompletion *completion, RLineBuffer *buf,
 	const char *tinput = r_str_trim_head_ro (input);
 
 	if (input[0] == '$') {
-		autocomplete_alias (completion, cmd, input+1, true);
+		// Only show existing data aliases
+		autocomplete_alias (completion, cmd, input + 1, true);
 		goto out;
 	}
 
@@ -1501,16 +1534,16 @@ static void autocomplete_project(RCore *core, RLineCompletion *completion, const
 static void autocomplete_minus(RCore *core, RLineCompletion *completion, const char *str) {
 	r_return_if_fail (str);
 	int length = strlen (str);
+	int i;
 
-	RList *keys = r_cmd_alias_keys (core->rcmd);
-	RListIter *it;
-	r_list_foreach_iter (keys, it) {
-		if (!strncmp (it->data, str, length)) {
-			r_line_completion_push (completion, it->data);
+	const char **keys = r_cmd_alias_keys (core->rcmd);
+	for (i = 0; i < core->rcmd->aliases->count; i++) {
+		if (!strncmp (keys[i], str, length)) {
+			r_line_completion_push (completion, keys[i]);
 		}
 	}
 
-	r_list_free (keys);
+	free (keys);
 }
 
 static void autocomplete_breakpoints(RCore *core, RLineCompletion *completion, const char *str) {
