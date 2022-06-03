@@ -34,13 +34,13 @@ typedef struct { // Keep in sync with io_windbg.c
 	ULONG64 server;
 	ULONG64 processBase;
 	DWORD lastExecutionStatus;
-	PDEBUG_CLIENT5 dbgClient;
-	PDEBUG_CONTROL4 dbgCtrl;
-	PDEBUG_DATA_SPACES4 dbgData;
-	PDEBUG_REGISTERS2 dbgReg;
-	PDEBUG_SYSTEM_OBJECTS4 dbgSysObj;
-	PDEBUG_SYMBOLS3 dbgSymbols;
-	PDEBUG_ADVANCED3 dbgAdvanced;
+	PDEBUG_CLIENT4 dbgClient;
+	PDEBUG_CONTROL3 dbgCtrl;
+	PDEBUG_DATA_SPACES3 dbgData;
+	PDEBUG_REGISTERS dbgReg;
+	PDEBUG_SYSTEM_OBJECTS3 dbgSysObj;
+	PDEBUG_SYMBOLS2 dbgSymbols;
+	PDEBUG_ADVANCED dbgAdvanced;
 } DbgEngContext;
 
 static bool __is_target_kernel(DbgEngContext *idbg) {

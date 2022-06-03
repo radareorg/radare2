@@ -25,13 +25,13 @@ typedef struct { // Keep in sync with debug_windbg.c
 	ULONG64 server;
 	ULONG64 processBase;
 	DWORD lastExecutionStatus;
-	PDEBUG_CLIENT5 dbgClient;
-	PDEBUG_CONTROL4 dbgCtrl;
-	PDEBUG_DATA_SPACES4 dbgData;
-	PDEBUG_REGISTERS2 dbgReg;
-	PDEBUG_SYSTEM_OBJECTS4 dbgSysObj;
-	PDEBUG_SYMBOLS3 dbgSymbols;
-	PDEBUG_ADVANCED3 dbgAdvanced;
+	PDEBUG_CLIENT4 dbgClient;
+	PDEBUG_CONTROL3 dbgCtrl;
+	PDEBUG_DATA_SPACES3 dbgData;
+	PDEBUG_REGISTERS dbgReg;
+	PDEBUG_SYSTEM_OBJECTS3 dbgSysObj;
+	PDEBUG_SYMBOLS2 dbgSymbols;
+	PDEBUG_ADVANCED dbgAdvanced;
 } DbgEngContext;
 
 #define THISCALL(dbginterface, function, ...) dbginterface->lpVtbl->function (dbginterface, __VA_ARGS__)
@@ -272,25 +272,25 @@ static DbgEngContext *create_remote_context(const char *opts) {
 	LPWSTR wopts = (LPWSTR)r_utf8_to_utf16 (opts);
 
 	// Initialize interfaces
-	if (w32_DebugConnectWide (wopts, &IID_IDebugClient5, (PVOID *)&idbg->dbgClient) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugClient4, (PVOID *)&idbg->dbgClient) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide (wopts, &IID_IDebugControl4, (PVOID *)&idbg->dbgCtrl) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugControl3, (PVOID *)&idbg->dbgCtrl) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide (wopts, &IID_IDebugDataSpaces4, (PVOID *)&idbg->dbgData) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugDataSpaces3, (PVOID *)&idbg->dbgData) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide (wopts, &IID_IDebugRegisters2, (PVOID *)&idbg->dbgReg) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugRegisters, (PVOID *)&idbg->dbgReg) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide (wopts, &IID_IDebugSystemObjects4, (PVOID *)&idbg->dbgSysObj) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugSystemObjects3, (PVOID *)&idbg->dbgSysObj) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide (wopts, &IID_IDebugAdvanced3, (PVOID *)&idbg->dbgAdvanced) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugAdvanced, (PVOID *)&idbg->dbgAdvanced) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugConnectWide (wopts, &IID_IDebugSymbols3, (PVOID *)&idbg->dbgSymbols) != S_OK) {
+	if (w32_DebugConnectWide (wopts, &IID_IDebugSymbols2, (PVOID *)&idbg->dbgSymbols) != S_OK) {
 		goto fail;
 	}
 	if (!init_callbacks (idbg)) {
@@ -311,25 +311,25 @@ static DbgEngContext *create_context(void) {
 	}
 
 	// Initialize interfaces
-	if (w32_DebugCreate (&IID_IDebugClient5, (PVOID *)&idbg->dbgClient) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugClient4, (PVOID *)&idbg->dbgClient) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugControl4, (PVOID *)&idbg->dbgCtrl) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugControl3, (PVOID *)&idbg->dbgCtrl) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugDataSpaces4, (PVOID *)&idbg->dbgData) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugDataSpaces3, (PVOID *)&idbg->dbgData) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugRegisters2, (PVOID *)&idbg->dbgReg) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugRegisters, (PVOID *)&idbg->dbgReg) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugSystemObjects4, (PVOID *)&idbg->dbgSysObj) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugSystemObjects3, (PVOID *)&idbg->dbgSysObj) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugAdvanced3, (PVOID *)&idbg->dbgAdvanced) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugAdvanced, (PVOID *)&idbg->dbgAdvanced) != S_OK) {
 		goto fail;
 	}
-	if (w32_DebugCreate (&IID_IDebugSymbols3, (PVOID *)&idbg->dbgSymbols) != S_OK) {
+	if (w32_DebugCreate (&IID_IDebugSymbols2, (PVOID *)&idbg->dbgSymbols) != S_OK) {
 		goto fail;
 	}
 	if (!init_callbacks (idbg)) {
