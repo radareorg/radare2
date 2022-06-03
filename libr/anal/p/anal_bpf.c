@@ -1,12 +1,6 @@
-/*
- *
- * Copyright 2015-2022 - mrmacete <mrmacete@protonmail.ch>
- * Licensed under the GNU General Public License, version 2.0 (GPLv2)
- */
+/* radare2 - LGPL - Copyright 2015-2022 - mrmacete, pancake*/
 
-#include <r_types.h>
 #include <r_lib.h>
-#include <r_asm.h>
 #include <r_anal.h>
 #include "../arch/bpf/bpf.h"
 
@@ -826,15 +820,15 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	switch (f->code) {
 	case BPF_RET | BPF_A:
 		op->type = R_ANAL_OP_TYPE_RET;
-		esilprintf (op, "A,R0,=,0,$");
+		esilprintf (op, "A,r0,=,0,$");
 		break;
 	case BPF_RET | BPF_K:
 	case BPF_RET | BPF_X:
 		op->type = R_ANAL_OP_TYPE_RET;
 		if (BPF_SRC (f->code) == BPF_K) {
-			esilprintf (op, "%" PFMT64d ",R0,=,0,$", (ut64)f->k);
+			esilprintf (op, "%" PFMT64d ",r0,=,0,$", (ut64)f->k);
 		} else if (BPF_SRC (f->code) == BPF_X) {
-			esilprintf (op, "X,R0,=,0,$");
+			esilprintf (op, "X,r0,=,0,$");
 		}
 		break;
 	case BPF_MISC_TAX:
@@ -879,14 +873,14 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		EMIT_LOAD (op, anal->gp + f->k, 4);
 		SET_A_DST (op);
 		esilprintf (op,
-			"len,%" PFMT64d ",>,?{,0,R0,=,0,$,BREAK,},%" PFMT64d ",[4],A,=",
+			"len,%" PFMT64d ",>,?{,0,r0,=,0,$,BREAK,},%" PFMT64d ",[4],A,=",
 			(ut64)f->k + 4, op->ptr);
 		break;
 	case BPF_LD_H | BPF_ABS:
 		EMIT_LOAD (op, anal->gp + f->k, 2);
 		SET_A_DST (op);
 		esilprintf (op,
-			"len,%" PFMT64d ",>,?{,0,R0,=,0,$,BREAK,},"
+			"len,%" PFMT64d ",>,?{,0,r0,=,0,$,BREAK,},"
 			"%" PFMT64d ",[2],A,=",
 			(ut64)f->k + 2, op->ptr);
 		break;
@@ -894,7 +888,7 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		EMIT_LOAD (op, anal->gp + f->k, 1);
 		SET_A_DST (op);
 		esilprintf (op,
-			"len,%" PFMT64d ",>,?{,0,R0,=,0,$,BREAK,},"
+			"len,%" PFMT64d ",>,?{,0,r0,=,0,$,BREAK,},"
 			"%" PFMT64d ",[1],A,=",
 			(ut64)f->k + 1, op->ptr);
 		break;
@@ -903,7 +897,7 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->ptrsize = 4;
 		SET_A_DST (op);
 		esilprintf (op,
-			"len,%" PFMT64d ",X,+,0xffffffff,&,>,?{,0,R0,=,0,$,BREAK,},"
+			"len,%" PFMT64d ",X,+,0xffffffff,&,>,?{,0,r0,=,0,$,BREAK,},"
 			"%" PFMT64d ",X,+,0xffffffff,&,[4],A,=",
 			(st64)f->k + 4, anal->gp + (st32)f->k);
 		break;
@@ -912,7 +906,7 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->ptrsize = 2;
 		SET_A_DST (op);
 		esilprintf (op,
-			"len,%" PFMT64d ",X,+,0xffffffff,&,>,?{,0,R0,=,0,$,BREAK,},"
+			"len,%" PFMT64d ",X,+,0xffffffff,&,>,?{,0,r0,=,0,$,BREAK,},"
 			"%" PFMT64d ",X,+,0xffffffff,&,[2],A,=",
 			(st64)f->k + 2, anal->gp + (st32)f->k);
 		break;
@@ -921,7 +915,7 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->ptrsize = 1;
 		SET_A_DST (op);
 		esilprintf (op,
-			"len,%" PFMT64d ",X,+,0xffffffff,&,>,?{,0,R0,=,0,$,BREAK,},"
+			"len,%" PFMT64d ",X,+,0xffffffff,&,>,?{,0,r0,=,0,$,BREAK,},"
 			"%" PFMT64d ",X,+,0xffffffff,&,[1],A,=",
 			(st64)f->k + 1, anal->gp + (st32)f->k);
 		break;
@@ -1102,13 +1096,13 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->val = f->k;
 			SET_REG_DST_IMM (op, "A", (ut64)f->k);
 			if (f->k == 0) {
-				esilprintf (op, "0,R0,=,0,$");
+				esilprintf (op, "0,r0,=,0,$");
 			} else {
 				esilprintf (op, "%" PFMT64d ",A,/=", (ut64)f->k);
 			}
 		} else {
 			SET_REG_SRC_DST (op, "X", "A");
-			esilprintf (op, "0,X,==,$z,?{,0,R0,=,0,$,BREAK,},X,A,/=");
+			esilprintf (op, "0,X,==,$z,?{,0,r0,=,0,$,BREAK,},X,A,/=");
 		}
 		break;
 	case BPF_ALU_MOD | BPF_X:
@@ -1118,7 +1112,7 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->val = f->k;
 			SET_REG_DST_IMM (op, "A", (ut64)f->k);
 			if (f->k == 0) {
-				esilprintf (op, "0,R0,=,0,$");
+				esilprintf (op, "0,r0,=,0,$");
 			} else {
 				esilprintf (op, "%" PFMT64d ",A,%%=", (ut64)f->k);
 			}
@@ -1167,39 +1161,41 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_ILL;
 		break;
 	}
-
 	return op->size;
 }
 
 static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC    pc\n"
-		"gpr    A        .32 0    0\n"
-		"gpr    X        .32 4    0\n"
-		"gpr    M[0]     .32 8    0\n"
-		"gpr    M[1]     .32 12   0\n"
-		"gpr    M[2]     .32 16   0\n"
-		"gpr    M[3]     .32 20   0\n"
-		"gpr    M[4]     .32 24   0\n"
-		"gpr    M[5]     .32 28   0\n"
-		"gpr    M[6]     .32 32   0\n"
-		"gpr    M[7]     .32 36   0\n"
-		"gpr    M[8]     .32 40   0\n"
-		"gpr    M[9]     .32 44   0\n"
-		"gpr    M[10]    .32 48   0\n"
-		"gpr    M[11]    .32 52   0\n"
-		"gpr    M[12]    .32 56   0\n"
-		"gpr    M[13]    .32 60   0\n"
-		"gpr    M[14]    .32 64   0\n"
-		"gpr    M[15]    .32 68   0\n"
+		"=A0    z\n"
+		"=R0    z\n"
+		"gpr    z        .32 ?    0\n"
+		"gpr    a        .32 0    0\n"
+		"gpr    x        .32 4    0\n"
+		"gpr    m[0]     .32 8    0\n"
+		"gpr    m[1]     .32 12   0\n"
+		"gpr    m[2]     .32 16   0\n"
+		"gpr    m[3]     .32 20   0\n"
+		"gpr    m[4]     .32 24   0\n"
+		"gpr    m[5]     .32 28   0\n"
+		"gpr    m[6]     .32 32   0\n"
+		"gpr    m[7]     .32 36   0\n"
+		"gpr    m[8]     .32 40   0\n"
+		"gpr    m[9]     .32 44   0\n"
+		"gpr    m[10]    .32 48   0\n"
+		"gpr    m[11]    .32 52   0\n"
+		"gpr    m[12]    .32 56   0\n"
+		"gpr    m[13]    .32 60   0\n"
+		"gpr    m[14]    .32 64   0\n"
+		"gpr    m[15]    .32 68   0\n"
 		"gpr    pc       .32 72   0\n"
 		"gpr    len      .32 76   0\n"
-		"gpr    R0       .32 80   0\n"
-		"gpr    R1       .32 84   0\n"
-		"gpr    R2       .32 88   0\n"
-		"gpr    R3       .32 92   0\n"
-		"gpr    R4       .32 96   0\n"
-		"gpr    R5       .32 100  0\n";
+		"gpr    r0       .32 80   0\n"
+		"gpr    r1       .32 84   0\n"
+		"gpr    r2       .32 88   0\n"
+		"gpr    r3       .32 92   0\n"
+		"gpr    r4       .32 96   0\n"
+		"gpr    r5       .32 100  0\n";
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
@@ -1234,7 +1230,18 @@ static int esil_bpf_fini(RAnalEsil *esil) {
 }
 */
 
-struct r_anal_plugin_t r_anal_plugin_bpf = {
+static int archinfo(RAnal *anal, int q) {
+	const int bits = anal->config->bits;
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
+		return 1;
+	}
+	//case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	//case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	return (bits == 64)? 8: 4;
+}
+RAnalPlugin r_anal_plugin_bpf = {
 	.name = "bpf",
 	.desc = "Berkely packet filter analysis plugin",
 	.license = "LGPLv3",
@@ -1242,6 +1249,7 @@ struct r_anal_plugin_t r_anal_plugin_bpf = {
 	.bits = 32,
 	.esil = true,
 	.op = &bpf_anal,
+	.archinfo = archinfo,
 //	.opasm = &bf_opasm,
 	.set_reg_profile = &set_reg_profile,
 /*
@@ -1251,7 +1259,7 @@ struct r_anal_plugin_t r_anal_plugin_bpf = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_bpf,
 	.version = R2_VERSION
