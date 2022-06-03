@@ -1375,6 +1375,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 						lang_run_file (core, core->lang, cmd);
 						free (cmd);
 						ret = 1;
+						free (fp);
 					} else {
 						R_LOG_ERROR ("Cannot find python in PATH");
 					}
