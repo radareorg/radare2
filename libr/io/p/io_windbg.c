@@ -477,8 +477,6 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 		case 'k':
 			if (!strcmp (opt.arg, "l")) {
 				target = TARGET_LOCAL_KERNEL;
-			} else if (!strcmp (opt.arg, "qm")) {
-				ITHISCALL (dbgCtrl, AddEngineOptions, DEBUG_ENGOPT_KD_QUIET_MODE);
 			} else {
 				target = TARGET_KERNEL;
 				args = opt.arg;
