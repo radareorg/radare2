@@ -1,9 +1,7 @@
-/* radare - LGPL - Copyright 2008-2021 - pancake */
+/* radare - LGPL - Copyright 2008-2022 - pancake */
 
 #include <r_io.h>
 #include "config.h"
-
-static volatile RIOPlugin *default_plugin = NULL;
 
 static RIOPlugin *io_static_plugins[] = {
 	R_IO_STATIC_PLUGINS
@@ -39,25 +37,21 @@ R_API bool r_io_plugin_init(RIO *io) {
 	return true;
 }
 
-R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool many) {
-	if (!default_plugin || !default_plugin->check || !default_plugin->check (io, filename, many) ) {
-		return NULL;
-	}
-	return (RIOPlugin*) default_plugin;
-}
-
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
-	SdbListIter *iter;
-	RIOPlugin *ret;
-	ls_foreach (io->plugins, iter, ret) {
-		if (!ret || !ret->check) {
-			continue;
-		}
-		if (ret->check (io, filename, many)) {
-			return ret;
+	// TODO: optimization 
+	if (strstr (filename, "://")) {
+		RIOPlugin *ret;
+		SdbListIter *iter;
+		ls_foreach (io->plugins, iter, ret) {
+			if (!ret || !ret->check) {
+				continue;
+			}
+			if (ret->check (io, filename, many)) {
+				return ret;
+			}
 		}
 	}
-	return r_io_plugin_get_default (io, filename, many);
+	return &r_io_plugin_default;
 }
 
 R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
@@ -68,7 +62,7 @@ R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
 			return iop;
 		}
 	}
-	return r_io_plugin_get_default (io, name, false);
+	return NULL;
 }
 
 R_API int r_io_plugin_list(RIO *io) {
