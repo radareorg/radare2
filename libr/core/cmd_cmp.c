@@ -1506,7 +1506,7 @@ static int cmd_cmp(void *data, const char *input) {
 				r_core_return_value (core, -1);
 				break;
 			}
-			int val = memcmp (buf, core->block, sz)? 1: 0;
+			int val = memcmp (buf, core->block, R_MIN (core->blocksize, sz))? 1: 0;
 			r_core_return_value (core, val);
 		}
 		break;

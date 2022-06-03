@@ -505,8 +505,7 @@ static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 
 	return 0;
 }
 
-static void r_print_format_time(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+static void r_print_format_time(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	struct tm timestruct;
 	int elem = -1;
@@ -518,7 +517,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 	if (MUSTSET) {
 		p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
 	} else if (MUSTSEE) {
-		char *timestr = malloc (ASCTIME_BUF_MINLEN);
+		char *timestr = malloc (ASCTIME_BUF_MAXLEN);
 		if (!timestr) {
 			return;
 		}
@@ -536,7 +535,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
 				r_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr);
-				*(timestr+24) = '\0';
+				timestr[24] = 0;
 				if (elem == -1 || elem == 0) {
 					p->cb_printf ("%s", timestr);
 					if (elem == 0) {
@@ -557,35 +556,36 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 		}
 		free (timestr);
 	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
-		char *timestr = malloc (ASCTIME_BUF_MINLEN);
+		char *timestr = malloc (ASCTIME_BUF_MAXLEN);
 		if (!timestr) {
 			return;
 		}
 		r_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr);
-		*(timestr+24) = '\0';
-		if (size==-1) {
+		timestr[24] = 0;
+		if (size == -1) {
 			p->cb_printf ("\"%s\"", timestr);
 		} else {
-			p->cb_printf ("[ ");
+			PJ *pj = pj_new ();
+			pj_a (pj);
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
 				r_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr);
 				*(timestr+24) = '\0';
 				if (elem == -1 || elem == 0) {
-					p->cb_printf ("\"%s\"", timestr);
+					pj_s (pj, timestr);
 					if (elem == 0) {
 						elem = -2;
 					}
-				}
-				if (size != 0 && elem == -1) {
-					p->cb_printf (", ");
 				}
 				if (elem > -1) {
 					elem--;
 				}
 				i += 4;
 			}
-			p->cb_printf (" ]");
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			p->cb_printf ("%s", s);
+			free (s);
 		}
 		free (timestr);
 		if (MUSTSEEJSON) {
@@ -595,8 +595,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode,
 }
 
 // TODO: support unsigned int?
-static void r_print_format_hex(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+static void r_print_format_hex(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -677,8 +676,7 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void r_print_format_int(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+static void r_print_format_int(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -763,8 +761,7 @@ static int r_print_format_disasm(const RPrint* p, ut64 seeki, int size) {
 	return seeki - prevseeki;
 }
 
-static void r_print_format_octal(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+static void r_print_format_octal(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -836,8 +833,7 @@ static void r_print_format_octal(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void r_print_format_hexflag(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+static void r_print_format_hexflag(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr = 0;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -911,8 +907,7 @@ static void r_print_format_hexflag(const RPrint* p, int endian, int mode,
 	}
 }
 
-static int r_print_format_10bytes(const RPrint* p, int mode, const char *setval,
-		ut64 seeki, ut64 addr, ut8* buf) {
+static int r_print_format_10bytes(const RPrint* p, int mode, const char *setval, ut64 seeki, ut64 addr, ut8* buf) {
 	ut8 buffer[255];
 	int j;
 	if (MUSTSET) {
@@ -966,8 +961,7 @@ static int r_print_format_10bytes(const RPrint* p, int mode, const char *setval,
 	return 0;
 }
 
-static int r_print_format_hexpairs(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+static int r_print_format_hexpairs(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int j;
 	size = (size == -1) ? 1 : size;
 	if (MUSTSET) {
@@ -1013,8 +1007,7 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode,
 	return size;
 }
 
-static void r_print_format_float(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, const ut8* buf, int i, int size) {
+static void r_print_format_float(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, const ut8* buf, int i, int size) {
 	ut64 addr = 0;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -1066,8 +1059,7 @@ static void r_print_format_float(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void r_print_format_long_double(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+static void r_print_format_long_double(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	long double val_f = 0.0;
 	ut64 addr = 0;
 	int elem = -1;
@@ -1123,8 +1115,7 @@ static void r_print_format_long_double(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void r_print_format_double(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+static void r_print_format_double(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	double val_f = 0.0;
 	ut64 addr = 0;
 	int elem = -1;
@@ -1180,8 +1171,7 @@ static void r_print_format_double(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void r_print_format_word(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, ut8* buf, int i, int size, bool sign) {
+static void r_print_format_word(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size, bool sign) {
 	ut64 addr;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
