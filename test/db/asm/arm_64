@@ -407,7 +407,7 @@ ad "adds x30, x30, x30" DE031EAB
 ad "adds x15, x25, x19" 2F0313AB
 ad "adds x5, x11, x22" 650116AB
 ad "adds x1, x2, x3" 410003AB
-ad "adds  x10, x16, x13" 0A020DAB
+ad "adds x10, x16, x13" 0A020DAB
 ad "adds w30, w30, w30" DE031E2B
 ad "adds w15, w25, w19" 2F03132B
 ad "adds w5, w11, w22" 6501162B
@@ -417,7 +417,7 @@ ad "asr x30, x30, x30" DE2BDE9A
 ad "asr x15, x25, x19" 2F2BD39A
 ad "asr x5, x11, x22" 6529D69A
 ad "asr x1, x2, x3" 4128C39A
-ad "asr  x10, x16, x13" 0A2ACD9A
+ad "asr x10, x16, x13" 0A2ACD9A
 ad "asr w30, w30, w30" DE2BDE1A
 ad "asr w15, w25, w19" 2F2BD31A
 ad "asr w5, w11, w22" 6529D61A
@@ -427,7 +427,7 @@ ad "adc x30, x30, x30" DE031E9A
 ad "adc x15, x25, x19" 2F03139A
 ad "adc x5, x11, x22" 6501169A
 ad "adc x1, x2, x3" 4100039A
-ad "adc  x10, x16, x13" 0A020D9A
+ad "adc x10, x16, x13" 0A020D9A
 ad "adc w30, w30, w30" DE031E1A
 ad "adc w15, w25, w19" 2F03131A
 ad "adc w5, w11, w22" 6501161A
@@ -437,7 +437,7 @@ ad "adcs x30, x30, x30" DE031EBA
 ad "adcs x15, x25, x19" 2F0313BA
 ad "adcs x5, x11, x22" 650116BA
 ad "adcs x1, x2, x3" 410003BA
-ad "adcs  x10, x16, x13" 0A020DBA
+ad "adcs x10, x16, x13" 0A020DBA
 ad "adcs w30, w30, w30" DE031E3A
 ad "adcs w15, w25, w19" 2F03133A
 ad "adcs w5, w11, w22" 6501163A
@@ -447,7 +447,7 @@ ad "sbc x30, x30, x30" DE031EDA
 ad "sbc x15, x25, x19" 2F0313DA
 ad "sbc x5, x11, x22" 650116DA
 ad "sbc x1, x2, x3" 410003DA
-ad "sbc  x10, x16, x13" 0A020DDA
+ad "sbc x10, x16, x13" 0A020DDA
 ad "sbc w30, w30, w30" DE031E5A
 ad "sbc w15, w25, w19" 2F03135A
 ad "sbc w5, w11, w22" 6501165A
@@ -457,7 +457,7 @@ ad "mul x30, x30, x30" DE7F1E9B
 ad "mul x15, x25, x19" 2F7F139B
 ad "mul x5, x11, x22" 657D169B
 ad "mul x1, x2, x3" 417C039B
-ad "mul  x10, x16, x13" 0A7E0D9B
+ad "mul x10, x16, x13" 0A7E0D9B
 ad "mul w30, w30, w30" DE7F1E1B
 ad "mul w15, w25, w19" 2F7F131B
 ad "mul w5, w11, w22" 657D161B
@@ -467,7 +467,7 @@ ad "udiv x30, x30, x30" DE0BDE9A
 ad "udiv x15, x25, x19" 2F0BD39A
 ad "udiv x5, x11, x22" 6509D69A
 ad "udiv x1, x2, x3" 4108C39A
-ad "udiv  x10, x16, x13" 0A0ACD9A
+ad "udiv x10, x16, x13" 0A0ACD9A
 ad "udiv w30, w30, w30" DE0BDE1A
 ad "udiv w15, w25, w19" 2F0BD31A
 ad "udiv w5, w11, w22" 6509D61A
@@ -477,7 +477,7 @@ ad "sdiv x30, x30, x30" DE0FDE9A
 ad "sdiv x15, x25, x19" 2F0FD39A
 ad "sdiv x5, x11, x22" 650DD69A
 ad "sdiv x1, x2, x3" 410CC39A
-ad "sdiv  x10, x16, x13" 0A0ECD9A
+ad "sdiv x10, x16, x13" 0A0ECD9A
 ad "sdiv w30, w30, w30" DE0FDE1A
 ad "sdiv w15, w25, w19" 2F0FD31A
 ad "sdiv w5, w11, w22" 650DD61A
@@ -487,7 +487,7 @@ ad "lsl x30, x30, x30" DE23DE9A
 ad "lsl x15, x25, x19" 2F23D39A
 ad "lsl x5, x11, x22" 6521D69A
 ad "lsl x1, x2, x3" 4120C39A
-ad "lsl  x10, x16, x13" 0A22CD9A
+ad "lsl x10, x16, x13" 0A22CD9A
 ad "lsl w30, w30, w30" DE23DE1A
 ad "lsl w15, w25, w19" 2F23D31A
 ad "lsl w5, w11, w22" 6521D61A
@@ -497,7 +497,7 @@ ad "lsr x30, x30, x30" DE27DE9A
 ad "lsr x15, x25, x19" 2F27D39A
 ad "lsr x5, x11, x22" 6525D69A
 ad "lsr x1, x2, x3" 4124C39A
-ad "lsr  x10, x16, x13" 0A26CD9A
+ad "lsr x10, x16, x13" 0A26CD9A
 ad "lsr w30, w30, w30" DE27DE1A
 ad "lsr w15, w25, w19" 2F27D31A
 ad "lsr w5, w11, w22" 6525D61A
@@ -507,7 +507,7 @@ ad "ror x30, x30, x30" DE2FDE9A
 ad "ror x15, x25, x19" 2F2FD39A
 ad "ror x5, x11, x22" 652DD69A
 ad "ror x1, x2, x3" 412CC39A
-ad "ror  x10, x16, x13" 0A2ECD9A
+ad "ror x10, x16, x13" 0A2ECD9A
 ad "ror w30, w30, w30" DE2FDE1A
 ad "ror w15, w25, w19" 2F2FD31A
 ad "ror w5, w11, w22" 652DD61A
