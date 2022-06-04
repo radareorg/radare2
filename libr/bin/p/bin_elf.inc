@@ -612,114 +612,114 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	switch (bin->ehdr.e_machine) {
 	case EM_386: switch (rel->type) {
 		case R_386_NONE:     break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case R_386_32:       ADD(32, 0);
-		case R_386_PC32:     ADD(32,-(st64)P);
-		case R_386_GLOB_DAT: SET(32);
-		case R_386_JMP_SLOT: SET(32);
-		case R_386_RELATIVE: ADD(32, B);
-		case R_386_GOTOFF:   ADD(32, -(st64)got_addr);
-		case R_386_GOTPC:    ADD(32, got_addr - P);
-		case R_386_16:       ADD(16, 0);
-		case R_386_PC16:     ADD(16,-(st64)P);
-		case R_386_8:        ADD(8,  0);
-		case R_386_PC8:      ADD(8, -(st64)P);
-		case R_386_COPY:     ADD(32, 0); // XXX: copy symbol at runtime
+		case R_386_32:       ADD(32, 0); break;
+		case R_386_PC32:     ADD(32,-(st64)P); break;
+		case R_386_GLOB_DAT: SET(32); break;
+		case R_386_JMP_SLOT: SET(32); break;
+		case R_386_RELATIVE: ADD(32, B); break;
+		case R_386_GOTOFF:   ADD(32, -(st64)got_addr); break;
+		case R_386_GOTPC:    ADD(32, got_addr - P); break;
+		case R_386_16:       ADD(16, 0); break;
+		case R_386_PC16:     ADD(16,-(st64)P); break;
+		case R_386_8:        ADD(8,  0); break;
+		case R_386_PC8:      ADD(8, -(st64)P); break;
+		case R_386_COPY:     ADD(32, 0); break; // XXX: copy symbol at runtime
 		case R_386_IRELATIVE: r->is_ifunc = true; SET(32);
 		default: break;
 		}
 		break;
 	case EM_X86_64: switch (rel->type) {
-		case R_X86_64_NONE:	break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case R_X86_64_64:	ADD(64, 0);
-		case R_X86_64_PLT32:	ADD(32,-(st64)P /* +L */);
-		case R_X86_64_GOT32:	ADD(32, got_addr);
-		case R_X86_64_PC32:	ADD(32,-(st64)P);
-		case R_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
-		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
-		case R_X86_64_RELATIVE:	ADD(64, B);
-		case R_X86_64_32:	ADD(32, 0);
-		case R_X86_64_32S:	ADD(32, 0);
-		case R_X86_64_16:	ADD(16, 0);
-		case R_X86_64_PC16:	ADD(16,-(st64)P);
-		case R_X86_64_8:	ADD(8,  0);
-		case R_X86_64_PC8:	ADD(8, -(st64)P);
-		case R_X86_64_GOTPCREL:	ADD(64, got_addr - P);
-		case R_X86_64_COPY:	ADD(64, 0); // XXX: copy symbol at runtime
-		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
+		case R_X86_64_NONE:      break; // malloc then free. meh. then again, there's no real world use for _NONE.
+		case R_X86_64_64:        ADD(64, 0); break;
+		case R_X86_64_PLT32:     ADD(32,-(st64)P /* +L */); break;
+		case R_X86_64_GOT32:     ADD(32, got_addr); break;
+		case R_X86_64_PC32:      ADD(32,-(st64)P); break;
+		case R_X86_64_GLOB_DAT:  r->vaddr -= rel->sto; SET(64); break;
+		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64); break;
+		case R_X86_64_RELATIVE:  ADD(64, B); break;
+		case R_X86_64_32:        ADD(32, 0); break;
+		case R_X86_64_32S:       ADD(32, 0); break;
+		case R_X86_64_16:        ADD(16, 0); break;
+		case R_X86_64_PC16:      ADD(16,-(st64)P); break;
+		case R_X86_64_8:         ADD(8,  0); break;
+		case R_X86_64_PC8:       ADD(8, -(st64)P); break;
+		case R_X86_64_GOTPCREL:  ADD(64, got_addr - P); break;
+		case R_X86_64_COPY:      ADD(64, 0); break; // XXX: copy symbol at runtime
+		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64); break;
 		default: break;
 		}
 		break;
 	case EM_ARM:
 		switch (rel->type) {
-		case R_ARM_NONE:	break;
-		case R_ARM_ABS32:	ADD(32, 0);
-		case R_ARM_REL32:	ADD(32,-(st64)P);
-		case R_ARM_ABS16:	ADD(16, 0);
-		case R_ARM_ABS8:	ADD(8,  0);
-		case R_ARM_SBREL32:	ADD(32, -(st64)B);
-		case R_ARM_GLOB_DAT:	ADD(32, 0);
-		case R_ARM_JUMP_SLOT:	ADD(32, 0);
-		case R_ARM_COPY:       ADD(32, 0); // copy symbol at runtime
-		case R_ARM_RELATIVE:	ADD(32, B);
-		case R_ARM_GOTOFF:	ADD(32,-(st64)got_addr);
-		case R_ARM_GOTPC:      ADD(32, got_addr - P);
-		case R_ARM_CALL: ADD(24, -P);
-		case R_ARM_JUMP24: ADD(24, -P);
-		case R_ARM_THM_JUMP24: ADD(24, -P);
-		case R_ARM_PREL31: ADD(32, -P);
-		case R_ARM_MOVW_PREL_NC: ADD(16, -P);
-		case R_ARM_MOVT_PREL: ADD(32, -P);
-		case R_ARM_THM_MOVW_PREL_NC: ADD(16, -P);
-		case R_ARM_REL32_NOI: ADD(32, -P);
-		case R_ARM_ABS32_NOI: ADD(32, 0);
-		case R_ARM_ALU_PC_G0_NC: ADD(32, -P);
-		case R_ARM_ALU_PC_G0: ADD(32, -P);
-		case R_ARM_ALU_PC_G1_NC: ADD(32, -P);
-		case R_ARM_ALU_PC_G1: ADD(32, -P);
-		case R_ARM_ALU_PC_G2: ADD(32, -P);
-		case R_ARM_LDR_PC_G1: ADD(32, -P);
-		case R_ARM_LDR_PC_G2: ADD(32, -P);
-		case R_ARM_LDRS_PC_G0: ADD(32, -P);
-		case R_ARM_LDRS_PC_G1: ADD(32, -P);
-		case R_ARM_LDRS_PC_G2: ADD(32, -P);
-		case R_ARM_LDC_PC_G0: ADD(32, -P);
-		case R_ARM_LDC_PC_G1: ADD(32, -P);
-		case R_ARM_LDC_PC_G2: ADD(32, -P);
+		case R_ARM_NONE:             break;
+		case R_ARM_ABS32:            ADD(32, 0); break;
+		case R_ARM_REL32:            ADD(32,-(st64)P); break;
+		case R_ARM_ABS16:            ADD(16, 0); break;
+		case R_ARM_ABS8:             ADD(8,  0); break;
+		case R_ARM_SBREL32:          ADD(32, -(st64)B); break;
+		case R_ARM_GLOB_DAT:         ADD(32, 0); break;
+		case R_ARM_JUMP_SLOT:        ADD(32, 0); break;
+		case R_ARM_COPY:             ADD(32, 0); break; // copy symbol at runtime
+		case R_ARM_RELATIVE:         ADD(32, B); break;
+		case R_ARM_GOTOFF:           ADD(32,-(st64)got_addr); break;
+		case R_ARM_GOTPC:            ADD(32, got_addr - P); break;
+		case R_ARM_CALL:             ADD(24, -P); break;
+		case R_ARM_JUMP24:           ADD(24, -P); break;
+		case R_ARM_THM_JUMP24:       ADD(24, -P); break;
+		case R_ARM_PREL31:           ADD(32, -P); break;
+		case R_ARM_MOVW_PREL_NC:     ADD(16, -P); break;
+		case R_ARM_MOVT_PREL:        ADD(32, -P); break;
+		case R_ARM_THM_MOVW_PREL_NC: ADD(16, -P); break;
+		case R_ARM_REL32_NOI:        ADD(32, -P); break;
+		case R_ARM_ABS32_NOI:        ADD(32, 0); break;
+		case R_ARM_ALU_PC_G0_NC:     ADD(32, -P); break;
+		case R_ARM_ALU_PC_G0:        ADD(32, -P); break;
+		case R_ARM_ALU_PC_G1_NC:     ADD(32, -P); break;
+		case R_ARM_ALU_PC_G1:        ADD(32, -P); break;
+		case R_ARM_ALU_PC_G2:        ADD(32, -P); break;
+		case R_ARM_LDR_PC_G1:        ADD(32, -P); break;
+		case R_ARM_LDR_PC_G2:        ADD(32, -P); break;
+		case R_ARM_LDRS_PC_G0:       ADD(32, -P); break;
+		case R_ARM_LDRS_PC_G1:       ADD(32, -P); break;
+		case R_ARM_LDRS_PC_G2:       ADD(32, -P); break;
+		case R_ARM_LDC_PC_G0:        ADD(32, -P); break;
+		case R_ARM_LDC_PC_G1:        ADD(32, -P); break;
+		case R_ARM_LDC_PC_G2:        ADD(32, -P); break;
 		default: ADD(32, got_addr); break; // reg relocations
 		}
 		break;
 	case EM_RISCV:
 		switch (rel->type) {
-		case R_RISCV_NONE: break;
-		case R_RISCV_JUMP_SLOT: ADD(64, 0);
-		case R_RISCV_RELATIVE: ADD(64, B);
+		case R_RISCV_NONE:      break;
+		case R_RISCV_JUMP_SLOT: ADD(64, 0); break;
+		case R_RISCV_RELATIVE:  ADD(64, B); break;
 		default: ADD(64, got_addr); break; // reg relocations
 		}
 		break;
 	case EM_AARCH64: switch (rel->type) {
-		case R_AARCH64_NONE: break;
-		case R_AARCH64_ABS32: ADD (32, 0);
-		case R_AARCH64_ABS16: ADD (16, 0);
-		case R_AARCH64_GLOB_DAT: SET (64);
-		case R_AARCH64_JUMP_SLOT: SET (64);
-		case R_AARCH64_RELATIVE: ADD (64, B);
+		case R_AARCH64_NONE:      break;
+		case R_AARCH64_ABS32:     ADD (32, 0); break;
+		case R_AARCH64_ABS16:     ADD (16, 0); break;
+		case R_AARCH64_GLOB_DAT:  SET (64); break;
+		case R_AARCH64_JUMP_SLOT: SET (64); break;
+		case R_AARCH64_RELATIVE:  ADD (64, B); break;
 		default: break; // reg relocations
 		}
 		break;
 	case EM_PPC: switch (rel->type) {
-		case R_PPC_NONE:    	break;
-		case R_PPC_GLOB_DAT:    ADD (32, 0);
-		case R_PPC_JMP_SLOT:    ADD (32, 0);
+		case R_PPC_NONE:        break;
+		case R_PPC_GLOB_DAT:    ADD (32, 0); break;
+		case R_PPC_JMP_SLOT:    ADD (32, 0); break;
 		default:
 			R_LOG_DEBUG ("unimplemented ELF/PPC reloc type %d", rel->type);
 		break;
 		}
 		break;
 	case EM_BPF: switch (rel->type) {
-		case R_BPF_NONE: break;
-		case R_BPF_64_64: r->vaddr += 4; ADD (32, 0); break;
-		case R_BPF_64_ABS64: ADD (64, 0); break;
-		case R_BPF_64_ABS32: ADD (32, 0); break;
+		case R_BPF_NONE:        break;
+		case R_BPF_64_64:       r->vaddr += 4; ADD (32, 0); break;
+		case R_BPF_64_ABS64:    ADD (64, 0); break;
+		case R_BPF_64_ABS32:    ADD (32, 0); break;
 		case R_BPF_64_NODYLD32: ADD (32, 0); break;
 		default:
 			R_LOG_DEBUG ("unimplemented ELF/BPF reloc type %d", rel->type);
