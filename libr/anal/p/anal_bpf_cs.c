@@ -4,10 +4,71 @@
 #include <r_lib.h>
 
 #include <capstone/capstone.h>
+
 #if CS_API_MAJOR >= 5
 
-// calculate jump address from immediate, the "& 0xffff" is for some weird CS bug in JMP
-#define JUMP(n) (addr + insn->size * ((1 + insn->detail->bpf.operands[n].imm) & 0xffff))
+#define OP(n) insn->detail->bpf.operands[n]
+// the "& 0xffff" is for some weird CS bug in JMP
+#define IMM(n) (insn->detail->bpf.operands[n].imm & 0xffff)
+#define OPCOUNT insn->detail->bpf.op_count
+
+// calculate jump address from immediate
+#define JUMP(n) (addr + insn->size * (1 + IMM (n)))
+
+void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr);
+
+static char* regname(uint8_t reg) {
+	switch (reg) {
+	///< cBPF
+	case BPF_REG_A:
+		return "a";
+	case BPF_REG_X:
+		return "x";
+
+	///< eBPF
+	case BPF_REG_R0:
+		return "r0";
+	case BPF_REG_R1:
+		return "r1";
+	case BPF_REG_R2:
+		return "r2";
+	case BPF_REG_R3:
+		return "r3";
+	case BPF_REG_R4:
+		return "r4";
+	case BPF_REG_R5:
+		return "r5";
+	case BPF_REG_R6:
+		return "r6";
+	case BPF_REG_R7:
+		return "r7";
+	case BPF_REG_R8:
+		return "r8";
+	case BPF_REG_R9:
+		return "r9";
+	case BPF_REG_R10:
+		return "r10";
+
+	default:
+		return "";
+	}
+}
+
+#define REG(n) (regname(OP(n).reg))
+
+// cBPF ALU instruction ESIL
+#define CALU(c) (OP (0).type == BPF_OP_IMM) ? esilprintf (op, "%" PFMT64d ",a," c "=", IMM (0)) : esilprintf (op, "x,a," c "=")
+ 
+void ebpf_alu(RAnalOp *op, cs_insn *insn, const char* operation) {
+	if (OP (1).type == BPF_OP_IMM) {
+		esilprintf (op, "%" PFMT64d ",%s,%s=", IMM (1), REG (0), operation);
+	} else {
+		esilprintf (op, "%s,%s,%s=", REG (1), REG (0), operation);
+	}
+}
+
+// eBPF ALU instruction ESIL
+#define EALU(c) ebpf_alu(op, insn, c)
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static R_TH_LOCAL csh handle = 0;
@@ -172,12 +233,216 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				op->type = R_ANAL_OP_TYPE_STORE;
 				break;
 			}
+
+			if (mask & R_ANAL_OP_MASK_ESIL) {
+				analop_esil(a, op, insn, addr);
+			}
 		}
+
 		op->size = insn->size;
 		op->id = insn->id;
 		cs_free (insn, n);
 	}
 	return op->size;
+}
+
+void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
+	switch (insn->id) {
+	case BPF_INS_JMP:
+		esilprintf (op, "%" PFMT64d ",pc,=", op->jump);
+		break;
+	case BPF_INS_JEQ:
+		if (OP (0).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",a,==,$z,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", IMM (0), op->jump, op->fail);
+		} else {
+			esilprintf (op, "x,a,==,$z,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", op->jump, op->fail);
+		}
+		break;
+	case BPF_INS_JGT:
+		if (OP (0).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",a,>,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", IMM (0), op->jump, op->fail);
+		} else {
+			esilprintf (op, "x,a,>,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", op->jump, op->fail);
+		}
+		break;
+	case BPF_INS_JGE:
+		if (OP (0).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",a,>=,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", IMM (0), op->jump, op->fail);
+		} else {
+			esilprintf (op, "x,a,>=,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", op->jump, op->fail);
+		}
+		break;
+	case BPF_INS_JSET:
+		if (OP (0).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",a,&,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", IMM (0), op->jump, op->fail);
+		} else {
+			esilprintf (op, "x,a,&,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", op->jump, op->fail);
+		}
+		break;
+	case BPF_INS_JNE:	///< eBPF only
+		if (OP (1).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%s,-,?{,%" PFMT64d ",pc,=,}", IMM (1), REG (0), op->jump);
+		} else {
+			esilprintf (op, "%s,%s,-,?{,%" PFMT64d ",pc,=,}", REG (1), REG (0), op->jump);
+		}
+		break;
+	case BPF_INS_JSGT:	///< eBPF only
+		if (OP (1).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%s,>,?{,%" PFMT64d ",pc,=,}", IMM (1), REG (0), op->jump);
+		} else {
+			esilprintf (op, "%s,%s,>,?{,%" PFMT64d ",pc,=,}", REG (1), REG (0), op->jump);
+		}
+		break;
+	case BPF_INS_JSGE:	///< eBPF only
+		if (OP (1).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%s,>=,?{,%" PFMT64d ",pc,=,}", IMM (1), REG (0), op->jump);
+		} else {
+			esilprintf (op, "%s,%s,>=,?{,%" PFMT64d ",pc,=,}", REG (1), REG (0), op->jump);
+		}
+		break;
+	// TODO fix the unsigned versions
+	case BPF_INS_JLT:	///< eBPF only
+	case BPF_INS_JSLT:	///< eBPF only
+		if (OP (1).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%s,<,?{,%" PFMT64d ",pc,=,}", IMM (1), REG (0), op->jump);
+		} else {
+			esilprintf (op, "%s,%s,<,?{,%" PFMT64d ",pc,=,}", REG (1), REG (0), op->jump);
+		}
+		break;
+	case BPF_INS_JLE:	///< eBPF only
+	case BPF_INS_JSLE:	///< eBPF only
+		if (OP (1).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%s,<=,?{,%" PFMT64d ",pc,=,}", IMM (1), REG (0), op->jump);
+		} else {
+			esilprintf (op, "%s,%s,<=,?{,%" PFMT64d ",pc,=,}", REG (1), REG (0), op->jump);
+		}
+		break;
+	case BPF_INS_CALL:	///< eBPF only
+	case BPF_INS_EXIT:	///< eBPF only
+	case BPF_INS_RET:
+		esilprintf (op, "$"); // not sure yet
+		break;
+	case BPF_INS_TAX:
+		esilprintf (op, "a,x,="); 
+		break;
+	case BPF_INS_TXA:
+		esilprintf (op, "x,a,="); 
+		break;
+	case BPF_INS_ADD:
+		CALU ("+");
+		break;
+	case BPF_INS_ADD64:
+		EALU ("+");
+		break;
+	case BPF_INS_SUB:
+		CALU ("-");
+		break;
+	case BPF_INS_SUB64:
+		EALU ("-");
+		break;
+	case BPF_INS_MUL:
+		CALU ("*");
+		break;
+	case BPF_INS_MUL64:
+		EALU ("*");
+		break;
+	case BPF_INS_DIV:
+		CALU ("/");
+		break;
+	case BPF_INS_DIV64:
+		EALU ("/");
+		break;
+	case BPF_INS_MOD:
+		CALU ("%");
+		break;
+	case BPF_INS_MOD64:
+		EALU ("%");
+		break;
+	case BPF_INS_OR:
+		CALU ("|");
+		break;
+	case BPF_INS_OR64:
+		EALU ("|");
+		break;
+	case BPF_INS_AND:
+		CALU ("&");
+		break;
+	case BPF_INS_AND64:
+		EALU ("&");
+		break;
+	case BPF_INS_LSH:
+		CALU ("<<");
+		break;
+	case BPF_INS_LSH64:
+		break; // TODO
+	case BPF_INS_RSH:
+		CALU (">>");
+		break;
+	case BPF_INS_RSH64:
+		break; // TODO
+	case BPF_INS_XOR:
+		CALU ("^");
+		break;
+	case BPF_INS_XOR64:
+		EALU ("^");
+		break;
+	case BPF_INS_NEG:
+		esilprintf (op, "-1,a,^=");
+		break;
+	case BPF_INS_NEG64:
+		esilprintf (op, "-1,%s,^=", REG (0));
+		break;
+	case BPF_INS_ARSH:	///< eBPF only
+				///< ALU64: eBPF only
+	case BPF_INS_ARSH64:
+		break; // TODO
+	case BPF_INS_MOV:	///< eBPF only
+	case BPF_INS_MOV64:
+		if (OP (1).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%s,=", IMM (1), REG (0));
+		} else {
+			esilprintf (op, "%s,%s,=", REG (1), REG (0));
+		}
+		break;
+		///< Byteswap: eBPF only
+	case BPF_INS_LE16:
+	case BPF_INS_LE32:
+	case BPF_INS_LE64:
+	case BPF_INS_BE16:
+	case BPF_INS_BE32:
+	case BPF_INS_BE64:
+		break; // TODO
+
+		///< Load
+	case BPF_INS_LDW:	///< eBPF only
+	case BPF_INS_LDH:
+	case BPF_INS_LDB:
+	case BPF_INS_LDXW:	///< eBPF only
+	case BPF_INS_LDXH:	///< eBPF only
+	case BPF_INS_LDXB:	///< eBPF only
+	case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
+	case BPF_INS_LDXDW:	///< eBPF only
+		break;
+
+		///< Store
+	case BPF_INS_STW:	///< eBPF only
+		// esilprintf (op, "a,m[%d],=", IMM (0));
+		break;
+
+	case BPF_INS_STH:	///< eBPF only
+	case BPF_INS_STB:	///< eBPF only
+	case BPF_INS_STDW:	///< eBPF only
+		break;
+	case BPF_INS_STXW:	///< eBPF only
+		// esilprintf (op, "x,m[%d],=", IMM (0));
+		break;
+	case BPF_INS_STXH:	///< eBPF only
+	case BPF_INS_STXB:	///< eBPF only
+	case BPF_INS_STXDW:	///< eBPF only
+	case BPF_INS_XADDW:	///< eBPF only
+	case BPF_INS_XADDDW:	///< eBPF only
+		break;
+	}
 }
 
 static bool set_reg_profile(RAnal *anal) {
@@ -186,6 +451,7 @@ static bool set_reg_profile(RAnal *anal) {
 		"=A0    r1\n"
 		"=R0    r0\n"
 		"=SP    sp\n"
+		"=BP    sp\n"
 		"gpr    z        .32 ?    0\n"
 		"gpr    a        .32 0    0\n"
 		"gpr    x        .32 4    0\n"
