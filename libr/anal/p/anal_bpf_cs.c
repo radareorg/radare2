@@ -7,7 +7,7 @@
 #if CS_API_MAJOR >= 5
 
 // calculate jump address from immediate, the "& 0xffff" is for some weird CS bug in JMP
-#define JUMP(n) (addr + insn->size * (1 + insn->detail->bpf.operands[n].imm & 0xffff))
+#define JUMP(n) (addr + insn->size * ((1 + insn->detail->bpf.operands[n].imm) & 0xffff))
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static R_TH_LOCAL csh handle = 0;
