@@ -6,6 +6,9 @@
 #include <capstone/capstone.h>
 #if CS_API_MAJOR >= 5
 
+// calculate jump address from immediate, the "& 0xffff" is for some weird CS bug in JMP
+#define JUMP(n) (addr + insn->size * (1 + insn->detail->bpf.operands[n].imm & 0xffff))
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static R_TH_LOCAL csh handle = 0;
 	static R_TH_LOCAL int omode = -1;
@@ -50,12 +53,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			switch (insn->id) {
 			case BPF_INS_JMP:
 				op->type = R_ANAL_OP_TYPE_JMP;
-				op->jump = insn->detail->bpf.operands[0].imm;
+				op->jump = JUMP (0);
 				break;
 			case BPF_INS_JEQ:
 			case BPF_INS_JGT:
 			case BPF_INS_JGE:
 			case BPF_INS_JSET:
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->jump = JUMP (1);
+				op->fail = (insn->detail->bpf.op_count == 3) ? JUMP(2) : addr + insn->size;
+				break;
 			case BPF_INS_JNE:	///< eBPF only
 			case BPF_INS_JSGT:	///< eBPF only
 			case BPF_INS_JSGE:	///< eBPF only
@@ -64,7 +71,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			case BPF_INS_JSLT:	///< eBPF only
 			case BPF_INS_JSLE:	///< eBPF only
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->jump = insn->detail->bpf.operands[1].imm;
+				op->jump = JUMP (2);
 				op->fail = addr + insn->size;
 				break;
 			case BPF_INS_CALL:	///< eBPF only
@@ -176,8 +183,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC    pc\n"
-		"=A0    z\n"
-		"=R0    z\n"
+		"=A0    r1\n"
+		"=R0    r0\n"
+		"=SP    sp\n"
 		"gpr    z        .32 ?    0\n"
 		"gpr    a        .32 0    0\n"
 		"gpr    x        .32 4    0\n"
@@ -198,13 +206,18 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr    m[14]    .32 64   0\n"
 		"gpr    m[15]    .32 68   0\n"
 		"gpr    pc       .32 72   0\n"
-		"gpr    len      .32 76   0\n"
-		"gpr    r0       .32 80   0\n"
-		"gpr    r1       .32 84   0\n"
-		"gpr    r2       .32 88   0\n"
-		"gpr    r3       .32 92   0\n"
-		"gpr    r4       .32 96   0\n"
-		"gpr    r5       .32 100  0\n";
+		"gpr    sp       .32 76   0\n"
+		"gpr    r0       .64 80   0\n" // eBPF registers are 64 bits
+		"gpr    r1       .64 88   0\n"
+		"gpr    r2       .64 96   0\n"
+		"gpr    r3       .64 104  0\n"
+		"gpr    r4       .64 112  0\n"
+		"gpr    r5       .64 120  0\n"
+		"gpr    r6       .64 128  0\n"
+		"gpr    r7       .64 136  0\n"
+		"gpr    r8       .64 144  0\n"
+		"gpr    r9       .64 152  0\n";
+
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
