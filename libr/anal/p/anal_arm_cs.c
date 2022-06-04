@@ -3590,10 +3590,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 			op->stackptr = -IMM64 (2);
 		}
 		if (REGID(0) == ARM_REG_PC) {
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = R_ANAL_OP_TYPE_MJMP;
 			if (insn->detail->arm.cc != ARM_CC_AL) {
-				//op->type = R_ANAL_OP_TYPE_MCJMP;
-				op->type = R_ANAL_OP_TYPE_UCJMP;
+				op->type = R_ANAL_OP_TYPE_MCJMP;
 			}
 		} else {
 			op->type = R_ANAL_OP_TYPE_LOAD;
@@ -3874,10 +3873,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_ADC:
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == ARM_REG_PC) {
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = R_ANAL_OP_TYPE_RJMP;
 			if (REGID(1) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
-				//op->type = R_ANAL_OP_TYPE_RCJMP;
-				op->type = R_ANAL_OP_TYPE_UCJMP;
+				op->type = R_ANAL_OP_TYPE_RCJMP;
 				op->fail = addr+op->size;
 				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
 				op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1);
@@ -3920,7 +3918,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			if (REGID(1) == ARM_REG_LR) {
 				op->type = op->cond == R_ANAL_COND_AL ? R_ANAL_OP_TYPE_RET : R_ANAL_OP_TYPE_CRET;
 			} else {
-				op->type = op->cond == R_ANAL_COND_AL ? R_ANAL_OP_TYPE_UJMP : R_ANAL_OP_TYPE_UCJMP;
+				op->type = op->cond == R_ANAL_COND_AL ? R_ANAL_OP_TYPE_RJMP : R_ANAL_OP_TYPE_RCJMP;
 			}
 		} else {
 			op->type = op->cond == R_ANAL_COND_AL ? R_ANAL_OP_TYPE_MOV : R_ANAL_OP_TYPE_CMOV;
@@ -4054,10 +4052,10 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 // 0x000082a8    28301be5     ldr r3, [fp, -0x28]
 		if (REGID(0) == ARM_REG_PC) {
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = R_ANAL_OP_TYPE_MJMP;
 			if (insn->detail->arm.cc != ARM_CC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
-				op->type = R_ANAL_OP_TYPE_UCJMP;
+				op->type = R_ANAL_OP_TYPE_MCJMP;
 			}
 		} else {
 			op->type = R_ANAL_OP_TYPE_LOAD;
@@ -4293,6 +4291,8 @@ static void set_opdir(RAnalOp *op) {
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_JMP:
 	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_MJMP:
 	case R_ANAL_OP_TYPE_UCALL:
 		op->direction = R_ANAL_OP_DIR_EXEC;
 		break;
