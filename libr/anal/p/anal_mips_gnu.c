@@ -7,7 +7,7 @@
 #include <r_anal.h>
 
 
-static ut64 t9_pre = UT64_MAX;
+static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
 #define REG_BUF_MAX 32
 // ESIL macros:
 
