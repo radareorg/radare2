@@ -13,12 +13,12 @@
 #include "opcode/mips.h"
 int mips_assemble(const char *str, ut64 pc, ut8 *out);
 
-static int mips_mode = 0;
-static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
-static unsigned char bytes[4];
-static char *pre_cpu = NULL;
-static char *pre_features = NULL;
+static R_TH_LOCAL int mips_mode = 0;
+static R_TH_LOCAL unsigned long Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL unsigned char bytes[4];
+static R_TH_LOCAL char *pre_cpu = NULL;
+static R_TH_LOCAL char *pre_features = NULL;
 
 static int mips_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
