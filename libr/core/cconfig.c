@@ -3457,6 +3457,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("esil.addr.size", 64, "maximum address size in accessed by the ESIL VM");
 	SETBPREF ("esil.breakoninvalid", "false", "break esil execution when instruction is invalid");
 	SETI ("esil.timeout", 0, "a timeout (in seconds) for when we should give up emulating");
+	SETCB ("cfg.debug", "false", &cb_cfgdebug, "debugger mode");
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
 	n = NODECB ("asm.os", R_SYS_OS, &cb_asmos);
@@ -3685,7 +3686,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("time.zone", 0, &cb_timezone, "time zone, in hours relative to GMT: +2, -1,..");
 	SETCB ("cfg.corelog", "false", &cb_cfgcorelog, "log changes using the T api needed for realtime syncing");
 	SETBPREF ("cfg.newtab", "false", "show descriptions in command completion");
-	SETCB ("cfg.debug", "false", &cb_cfgdebug, "debugger mode");
 	p = r_sys_getenv ("EDITOR");
 #if __WINDOWS__
 	r_config_set (cfg, "cfg.editor", r_str_get_fail (p, "notepad"));
