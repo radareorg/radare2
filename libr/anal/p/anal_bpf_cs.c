@@ -449,6 +449,7 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 			esilprintf (op, "%s,0xffffffff,&,%s,=", REG (1), REG (0));
 		}
 		break;
+	case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
 	case BPF_INS_MOV64:
 		if (OP (1).type == BPF_OP_IMM) {
 			esilprintf (op, "%" PFMT64d ",%s,=", IMM (1), REG (0));
@@ -460,12 +461,42 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	case BPF_INS_LE16:
 	case BPF_INS_LE32:
 	case BPF_INS_LE64:
-		break; // TODO we are assuming host is LE right now
+		break; // TODO we are assuming host is LE right now and maybe forever
 	case BPF_INS_BE16:
+	{
+		const char *r0 = REG (0);
+		esilprintf (op, "8,%s,>>,0xff,&,8,%s,<<,0xffff,&,&,%s,=", r0, r0, r0);
+		break;
+	}
 	case BPF_INS_BE32:
-	case BPF_INS_BE64:
-		break; // TODO
+	{
+		const char *r0 = REG (0);
+		esilprintf (op,
+				"0xffffffff,%s,&=,"
+				"24,0xff,%s,&,<<,tmp,=,"
+				"16,0xff,8,%s,>>,&,<<,tmp,|=,"
+				"8,0xff,16,%s,>>,&,<<,tmp,|=,"
+				"0xff,24,%s,>>,&,tmp,|=,tmp,%s,=",
+				r0, r0, r0, r0, r0, r0);
+		
+		break;
+	}
+	case BPF_INS_BE64:	
+	{
+		const char *r0 = REG (0);
+		esilprintf (op,
+			"56,0xff,%s,&,<<,tmp,=,"
+			"48,0xff,8,%s,>>,&,<<,tmp,|=,"
+			"40,0xff,16,%s,>>,&,<<,tmp,|=,"
+			"32,0xff,24,%s,>>,&,<<,tmp,|=,"
+			"24,0xff,32,%s,>>,&,<<,tmp,|=,"
+			"16,0xff,40,%s,>>,&,<<,tmp,|=,"
+			"8,0xff,48,%s,>>,&,<<,tmp,|=,"
+			"0xff,56,%s,>>,&,tmp,|=,tmp,%s,=",
+			r0, r0, r0, r0, r0, r0, r0, r0, r0);
 
+		break;
+	}
 		///< Load
 	case BPF_INS_LDW:	///< eBPF only
 		LOAD ("a", 4);
@@ -485,7 +516,6 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	case BPF_INS_LDXB:	///< eBPF only
 		LOAD ("x", 1);
 		break;
-	case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
 	case BPF_INS_LDXDW:	///< eBPF only
 		LOAD ("a", 8); // reg never used here 
 		break;
@@ -554,7 +584,9 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr    r7       .64 136  0\n"
 		"gpr    r8       .64 144  0\n"
 		"gpr    r9       .64 152  0\n"
-		"gpr    r10      .64 160  0\n";
+		"gpr    r10      .64 160  0\n"
+		"gpr    tmp      .64 168  0\n";
+
 
 	return r_reg_set_profile_string (anal->reg, p);
 }
