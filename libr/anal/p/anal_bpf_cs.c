@@ -146,6 +146,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			case BPF_INS_MOV:	///< eBPF only
 			case BPF_INS_MOV64:
 				op->type = R_ANAL_OP_TYPE_MOV;
+				if (OPCOUNT > 1 && OP (1).type == BPF_OP_IMM) {
+					op->val = OP (1).imm;
+				}
 				break;
 				///< Byteswap: eBPF only
 			case BPF_INS_LE16:
@@ -277,8 +280,13 @@ void bpf_store(RAnalOp *op, cs_insn *insn, char *reg, int size) {
 	if (OPCOUNT > 0 && OP (0).type == BPF_OP_MMEM) { // cBPF
 		esilprintf (op, "%s,m[%d],=", reg, OP (0).mmem);
 	} else if (OPCOUNT > 1) { // eBPF
-		esilprintf (op, "%s,%d,%s,+,=[%d]", 
-			REG (1), OP (0).mem.disp, regname(OP (0).mem.base), size);
+		if (OP (1).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%d,%s,+,=[%d]", 
+				IMM (1), OP (0).mem.disp, regname(OP (0).mem.base), size);
+		} else {
+			esilprintf (op, "%s,%d,%s,+,=[%d]", 
+				REG (1), OP (0).mem.disp, regname(OP (0).mem.base), size);
+		}
 	}
 }
 
@@ -291,11 +299,11 @@ void bpf_jump(RAnalOp *op, cs_insn *insn, char *condition, int targets) {
 			esilprintf (op, "x,NUM,%s,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", 
 				condition, op->jump, op->fail);
 		}
-	} else { // eBPF
-		if (OPCOUNT > 1 && OP (1).type == BPF_OP_IMM) {
+	} else if (OPCOUNT > 1) { // eBPF
+		if (OP (1).type == BPF_OP_IMM) {
 			esilprintf (op, "%" PFMT64d ",%s,%s,?{,%" PFMT64d ",pc,=,}", 
 				IMM (1), REG (0), condition, op->jump);
-		} else if (OPCOUNT > 1) {
+		} else {
 			esilprintf (op, "%s,%s,%s,?{,%" PFMT64d ",pc,=,}", 
 				REG (1), REG (0), condition, op->jump);
 		}
@@ -333,12 +341,15 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	case BPF_INS_JSGE:	///< eBPF only
 		JMP (">=", 1);
 		break;
-	// TODO fix the unsigned versions
 	case BPF_INS_JLT:	///< eBPF only
+		JMP ("==,63,$c", 1);
+		break;
 	case BPF_INS_JSLT:	///< eBPF only
 		JMP ("<", 1);
 		break;
 	case BPF_INS_JLE:	///< eBPF only
+		JMP ("==,63,$c,$z,|", 1);
+		break;
 	case BPF_INS_JSLE:	///< eBPF only
 		JMP ("<=", 1);
 		break;
