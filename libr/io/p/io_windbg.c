@@ -605,19 +605,21 @@ static ut64 windbg_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 static int windbg_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	DbgEngContext *idbg = fd->data;
 	ULONG bytesRead = 0ULL;
-	if (FAILED (ITHISCALL (dbgData, ReadVirtual, io->off, (PVOID)buf, count, &bytesRead))) {
-		ULONG64 ValidBase;
-		ULONG ValidSize;
-		if (SUCCEEDED (ITHISCALL (dbgData, GetValidRegionVirtual, io->off, count, &ValidBase, &ValidSize))) {
-			if (ValidSize && ValidBase < io->off + count) {
-				const ULONG64 skipped = ValidBase - io->off;
-				const ULONG toRead = count - skipped;
-				ITHISCALL (dbgData, ReadVirtual, ValidBase, (PVOID)(buf + skipped), toRead, &bytesRead);
-				bytesRead += skipped;
-			}
+	ULONG pageSize = 1;
+	bool pageAligned = false;
+	ULONG64 skip = 0;
+
+	while (skip < count && (FAILED (ITHISCALL (dbgData, ReadVirtual, io->off + skip, buf + skip, count - skip, &bytesRead)) || bytesRead < count - skip)) {
+		if (!pageAligned) {
+			pageAligned = true;
+			ITHISCALL (dbgCtrl, GetPageSize, &pageSize);
+			skip = pageSize - io->off % pageSize;
+		} else {
+			skip += pageSize;
 		}
 	}
-	return bytesRead;
+
+	return count;
 }
 
 static int windbg_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
