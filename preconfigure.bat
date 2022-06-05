@@ -57,7 +57,6 @@ cl --help > NUL 2> NUL
 if %ERRORLEVEL% == 0 (
   echo FOUND
 ) else (
-C:\Program Files\Microsoft Visual Studio\2022\Enterprise\
   if EXIST "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" (
     echo "Found 2022 Enterprise edition"
     call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
