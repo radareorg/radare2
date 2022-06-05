@@ -280,9 +280,30 @@ void bpf_store(RAnalOp *op, cs_insn *insn, char *reg, int size) {
 	}
 }
 
+void bpf_jump(RAnalOp *op, cs_insn *insn, char *condition, int targets) {
+	if (targets == 2) {
+		if (OP (0).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%s,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", 
+				IMM (0), condition, op->jump, op->fail);
+		} else {
+			esilprintf (op, "x,NUM,%s,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", 
+				condition, op->jump, op->fail);
+		}
+	} else {
+		if (OP (1).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%s,%s,?{,%" PFMT64d ",pc,=,}", 
+				IMM (1), REG (0), condition, op->jump);
+		} else {
+			esilprintf (op, "%s,%s,%s,?{,%" PFMT64d ",pc,=,}", 
+				REG (1), REG (0), condition, op->jump);
+		}
+	}
+}
+
 #define ALU(c, b) bpf_alu(op, insn, c, b)
 #define LOAD(c, s) bpf_load(op, insn, c, s)
 #define STORE(c, s) bpf_store(op, insn, c, s)
+#define JMP(c, s) bpf_jump(op, insn, c, s)
 
 void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	switch (insn->id) {
@@ -290,70 +311,34 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 		esilprintf (op, "%" PFMT64d ",pc,=", op->jump);
 		break;
 	case BPF_INS_JEQ:
-		if (OP (0).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",a,==,$z,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", IMM (0), op->jump, op->fail);
-		} else {
-			esilprintf (op, "x,a,==,$z,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", op->jump, op->fail);
-		}
+		JMP ("a,==,$z", 2);
 		break;
 	case BPF_INS_JGT:
-		if (OP (0).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",a,>,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", IMM (0), op->jump, op->fail);
-		} else {
-			esilprintf (op, "x,a,>,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", op->jump, op->fail);
-		}
+		JMP ("a,NUM,>", 2);
 		break;
 	case BPF_INS_JGE:
-		if (OP (0).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",a,>=,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", IMM (0), op->jump, op->fail);
-		} else {
-			esilprintf (op, "x,a,>=,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", op->jump, op->fail);
-		}
+		JMP ("a,NUM,>=", 2);
 		break;
 	case BPF_INS_JSET:
-		if (OP (0).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",a,&,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", IMM (0), op->jump, op->fail);
-		} else {
-			esilprintf (op, "x,a,&,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", op->jump, op->fail);
-		}
+		JMP ("a,&", 2);
 		break;
 	case BPF_INS_JNE:	///< eBPF only
-		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,-,?{,%" PFMT64d ",pc,=,}", IMM (1), REG (0), op->jump);
-		} else {
-			esilprintf (op, "%s,%s,-,?{,%" PFMT64d ",pc,=,}", REG (1), REG (0), op->jump);
-		}
+		JMP ("-", 1);
 		break;
 	case BPF_INS_JSGT:	///< eBPF only
-		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,>,?{,%" PFMT64d ",pc,=,}", IMM (1), REG (0), op->jump);
-		} else {
-			esilprintf (op, "%s,%s,>,?{,%" PFMT64d ",pc,=,}", REG (1), REG (0), op->jump);
-		}
+		JMP (">", 1);
 		break;
 	case BPF_INS_JSGE:	///< eBPF only
-		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,>=,?{,%" PFMT64d ",pc,=,}", IMM (1), REG (0), op->jump);
-		} else {
-			esilprintf (op, "%s,%s,>=,?{,%" PFMT64d ",pc,=,}", REG (1), REG (0), op->jump);
-		}
+		JMP (">=", 1);
 		break;
 	// TODO fix the unsigned versions
 	case BPF_INS_JLT:	///< eBPF only
 	case BPF_INS_JSLT:	///< eBPF only
-		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,<,?{,%" PFMT64d ",pc,=,}", IMM (1), REG (0), op->jump);
-		} else {
-			esilprintf (op, "%s,%s,<,?{,%" PFMT64d ",pc,=,}", REG (1), REG (0), op->jump);
-		}
+		JMP ("<", 1);
 		break;
 	case BPF_INS_JLE:	///< eBPF only
 	case BPF_INS_JSLE:	///< eBPF only
-		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,<=,?{,%" PFMT64d ",pc,=,}", IMM (1), REG (0), op->jump);
-		} else {
-			esilprintf (op, "%s,%s,<=,?{,%" PFMT64d ",pc,=,}", REG (1), REG (0), op->jump);
-		}
+		JMP ("<=", 1);
 		break;
 	case BPF_INS_CALL:	///< eBPF only
 		esilprintf (op, "pc,sp,=[8],8,sp,-=,%" PFMT64d ",pc,=", IMM (0)); 
