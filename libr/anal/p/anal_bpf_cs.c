@@ -553,7 +553,8 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr    r6       .64 128  0\n"
 		"gpr    r7       .64 136  0\n"
 		"gpr    r8       .64 144  0\n"
-		"gpr    r9       .64 152  0\n";
+		"gpr    r9       .64 152  0\n"
+		"gpr    r10      .64 160  0\n";
 
 	return r_reg_set_profile_string (anal->reg, p);
 }
