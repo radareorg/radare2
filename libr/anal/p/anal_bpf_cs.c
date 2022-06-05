@@ -240,6 +240,7 @@ void bpf_alu(RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
 	if (OPCOUNT == 2) { // eBPF
 		if (bits == 64) {
 			if (OP (1).type == BPF_OP_IMM) {
+				op->val = IMM (1);
 				esilprintf (op, "%" PFMT64d ",%s,%s=", IMM (1), REG (0), operation);
 			} else {
 				esilprintf (op, "%s,%s,%s=", REG (1), REG (0), operation);
