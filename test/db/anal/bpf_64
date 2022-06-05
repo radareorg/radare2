@@ -85,7 +85,37 @@ size: 8
 sign: false
 type: add
 cycles: 0
-esil: 0xffffffff,1,0xffffffff,&,r0,0xffffffff,&,+,&,r0,=
+esil: 1,r0,0xffffffff,&,+,0xffffffff,&,r0,=
+family: cpu
+EOF
+RUN
+
+NAME=add reg, imm
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=bpf
+e asm.bits=64
+wx 6392100000000000
+ao@0
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: stxw [r2+0x10], r9
+esilcost: 12
+disasm: stxw [r2+0x10], r9
+pseudo: stxw [r2+0x10],r9 
+mnemonic: stxw
+description: adds src to dst (32-bit)
+mask: ffffffffffffffff
+prefix: 0
+id: 45
+bytes: 6392100000000000
+refptr: 0
+size: 8
+sign: false
+type: store
+cycles: 0
+esil: r9,16,r2,+,=[4]
 family: cpu
 EOF
 RUN
