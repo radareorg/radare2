@@ -4,10 +4,18 @@
 #include <r_lib.h>
 
 #include <capstone/capstone.h>
+
 #if CS_API_MAJOR >= 5
 
-// calculate jump address from immediate, the "& 0xffff" is for some weird CS bug in JMP
-#define JUMP(n) (addr + insn->size * ((1 + insn->detail->bpf.operands[n].imm) & 0xffff))
+#define OP(n) insn->detail->bpf.operands[n]
+// the "& 0xffffffff" is for some weird CS bug in JMP
+#define IMM(n) (insn->detail->bpf.operands[n].imm & 0xffffffff)
+#define OPCOUNT insn->detail->bpf.op_count
+
+// calculate jump address from immediate
+#define JUMP(n) (addr + insn->size * (1 + IMM (n)))
+
+void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr);
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static R_TH_LOCAL csh handle = 0;
@@ -78,7 +86,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				op->type = R_ANAL_OP_TYPE_CALL;
 				break;
 			case BPF_INS_EXIT:	///< eBPF only
-				op->type = R_ANAL_OP_TYPE_TRAP;
+				//op->type = R_ANAL_OP_TYPE_TRAP;
+				op->type = R_ANAL_OP_TYPE_RET;
 				break;
 			case BPF_INS_RET:
 				op->type = R_ANAL_OP_TYPE_RET;
@@ -136,7 +145,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				break;
 			case BPF_INS_MOV:	///< eBPF only
 			case BPF_INS_MOV64:
+			case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
 				op->type = R_ANAL_OP_TYPE_MOV;
+				if (OPCOUNT > 1 && OP (1).type == BPF_OP_IMM) {
+					op->val = OP (1).imm;
+				} else if (insn->size == 16) { // lddw
+					op->val = r_read_ble64((insn->bytes)+8, 0);
+				}
 				break;
 				///< Byteswap: eBPF only
 			case BPF_INS_LE16:
@@ -151,7 +166,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			case BPF_INS_LDW:	///< eBPF only
 			case BPF_INS_LDH:
 			case BPF_INS_LDB:
-			case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
 			case BPF_INS_LDXW:	///< eBPF only
 			case BPF_INS_LDXH:	///< eBPF only
 			case BPF_INS_LDXB:	///< eBPF only
@@ -172,7 +186,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				op->type = R_ANAL_OP_TYPE_STORE;
 				break;
 			}
+
+			if (mask & R_ANAL_OP_MASK_ESIL) {
+				analop_esil(a, op, insn, addr);
+			}
 		}
+
 		op->size = insn->size;
 		op->id = insn->id;
 		cs_free (insn, n);
@@ -180,12 +199,386 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	return op->size;
 }
 
+static char* regname(uint8_t reg) {
+	switch (reg) {
+	///< cBPF
+	case BPF_REG_A:
+		return "a";
+	case BPF_REG_X:
+		return "x";
+
+	///< eBPF
+	case BPF_REG_R0:
+		return "r0";
+	case BPF_REG_R1:
+		return "r1";
+	case BPF_REG_R2:
+		return "r2";
+	case BPF_REG_R3:
+		return "r3";
+	case BPF_REG_R4:
+		return "r4";
+	case BPF_REG_R5:
+		return "r5";
+	case BPF_REG_R6:
+		return "r6";
+	case BPF_REG_R7:
+		return "r7";
+	case BPF_REG_R8:
+		return "r8";
+	case BPF_REG_R9:
+		return "r9";
+	case BPF_REG_R10:
+		return "r10";
+
+	default:
+		return "0"; // hax
+	}
+}
+
+#define REG(n) (regname(OP(n).reg))
+ 
+void bpf_alu(RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
+	if (OPCOUNT == 2) { // eBPF
+		if (bits == 64) {
+			if (OP (1).type == BPF_OP_IMM) {
+				op->val = IMM (1);
+				esilprintf (op, "%" PFMT64d ",%s,%s=", IMM (1), REG (0), operation);
+			} else {
+				esilprintf (op, "%s,%s,%s=", REG (1), REG (0), operation);
+			}
+		} else {
+			if (OP (1).type == BPF_OP_IMM) {
+				op->val = IMM (1);
+				esilprintf (op, "%" PFMT64d ",%s,0xffffffff,&,%s,0xffffffff,&,%s,=", 
+					IMM (1), REG (0), operation, REG (0));
+			} else {
+				esilprintf (op, "%s,%s,0xffffffff,&,%s,0xffffffff,&,%s,=", 
+					REG (1), REG (0), operation, REG (0));
+			}
+		}
+	} else { // cBPF
+		if (OPCOUNT > 0 && OP (0).type == BPF_OP_IMM) {
+			op->val = IMM (0);
+			esilprintf (op, "%" PFMT64d ",a,%s=", IMM (0), operation);
+		} else { 
+			esilprintf (op, "x,a,%s=", operation);
+		}
+	}
+}
+
+void bpf_load(RAnalOp *op, cs_insn *insn, char* reg, int size) {
+	if (OPCOUNT > 1 && OP (0).type == BPF_OP_REG) {
+		esilprintf (op, "%d,%s,+,[%d],%s,=", 
+			OP (1).mem.disp, regname(OP (1).mem.base), size, REG (0));
+	} else if (OPCOUNT > 0 && OP (0).type == BPF_OP_MMEM) { // cBPF
+		esilprintf (op, "m[%d],%s,=", OP (0).mmem, reg);
+	} else if (OPCOUNT > 0) {
+		esilprintf (op, "%d,%s,+,[%d],%s,=", 
+			OP (0).mem.disp, regname(OP (0).mem.base), size, reg);
+	}
+}
+
+void bpf_store(RAnalOp *op, cs_insn *insn, char *reg, int size) {
+	if (OPCOUNT > 0 && OP (0).type == BPF_OP_MMEM) { // cBPF
+		esilprintf (op, "%s,m[%d],=", reg, OP (0).mmem);
+	} else if (OPCOUNT > 1) { // eBPF
+		if (OP (1).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%d,%s,+,=[%d]", 
+				IMM (1), OP (0).mem.disp, regname(OP (0).mem.base), size);
+		} else {
+			esilprintf (op, "%s,%d,%s,+,=[%d]", 
+				REG (1), OP (0).mem.disp, regname(OP (0).mem.base), size);
+		}
+	}
+}
+
+void bpf_jump(RAnalOp *op, cs_insn *insn, char *condition, int targets) {
+	if (OPCOUNT > 2 && targets == 2) { // cBPF
+		if (OP (0).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=", 
+				IMM (0), condition, op->jump, op->fail);
+		} else {
+			esilprintf (op, "x,NUM,%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=", 
+				condition, op->jump, op->fail);
+		}
+	} else if (OPCOUNT > 1) { // eBPF
+		if (OP (1).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%s,%s,?{,0x%" PFMT64x ",pc,=,}", 
+				IMM (1), REG (0), condition, op->jump);
+		} else {
+			esilprintf (op, "%s,%s,%s,?{,0x%" PFMT64x ",pc,=,}", 
+				REG (1), REG (0), condition, op->jump);
+		}
+	}
+}
+
+#define ALU(c, b) bpf_alu(op, insn, c, b)
+#define LOAD(c, s) bpf_load(op, insn, c, s)
+#define STORE(c, s) bpf_store(op, insn, c, s)
+#define JMP(c, s) bpf_jump(op, insn, c, s)
+
+void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
+	switch (insn->id) {
+	case BPF_INS_JMP:
+		esilprintf (op, "0x%" PFMT64x ",pc,=", op->jump);
+		break;
+	case BPF_INS_JEQ:
+		JMP ("a,==,$z", 2);
+		break;
+	case BPF_INS_JGT:
+		JMP ("a,NUM,>", 2);
+		break;
+	case BPF_INS_JGE:
+		JMP ("a,NUM,>=", 2);
+		break;
+	case BPF_INS_JSET:
+		JMP ("a,&", 2);
+		break;
+	case BPF_INS_JNE:	///< eBPF only
+		JMP ("-", 1);
+		break;
+	case BPF_INS_JSGT:	///< eBPF only
+		JMP (">", 1);
+		break;
+	case BPF_INS_JSGE:	///< eBPF only
+		JMP (">=", 1);
+		break;
+	case BPF_INS_JLT:	///< eBPF only
+		JMP ("==,63,$c", 1);
+		break;
+	case BPF_INS_JSLT:	///< eBPF only
+		JMP ("<", 1);
+		break;
+	case BPF_INS_JLE:	///< eBPF only
+		JMP ("==,63,$c,$z,|", 1);
+		break;
+	case BPF_INS_JSLE:	///< eBPF only
+		JMP ("<=", 1);
+		break;
+	case BPF_INS_CALL:	///< eBPF only
+		esilprintf (op, "pc,sp,=[8],8,sp,-=,0x%" PFMT64x ",pc,=", IMM (0)); 
+		break;
+	case BPF_INS_EXIT:	///< eBPF only
+		esilprintf (op, "8,sp,+=,sp,[8],pc,="); 
+		break;
+	case BPF_INS_RET:
+		// cBPF shouldnt really need the stack, but gonna leave it
+		esilprintf (op, "%" PFMT64d ",r0,=,8,sp,+=,sp,[8],pc,=", IMM (0)); 
+		break;
+	case BPF_INS_TAX:
+		esilprintf (op, "a,x,="); 
+		break;
+	case BPF_INS_TXA:
+		esilprintf (op, "x,a,="); 
+		break;
+	case BPF_INS_ADD:
+		ALU ("+", 32);
+		break;
+	case BPF_INS_ADD64:
+		ALU ("+", 64);
+		break;
+	case BPF_INS_SUB:
+		ALU ("-", 32);
+		break;
+	case BPF_INS_SUB64:
+		ALU ("-", 64);
+		break;
+	case BPF_INS_MUL:
+		ALU ("*", 32);
+		break;
+	case BPF_INS_MUL64:
+		ALU ("*", 64);
+		break;
+	case BPF_INS_DIV:
+		ALU ("/", 32);
+		break;
+	case BPF_INS_DIV64:
+		ALU ("/", 64);
+		break;
+	case BPF_INS_MOD:
+		ALU ("%", 32);
+		break;
+	case BPF_INS_MOD64:
+		ALU ("%", 64);
+		break;
+	case BPF_INS_OR:
+		ALU ("|", 32);
+		break;
+	case BPF_INS_OR64:
+		ALU ("|", 64);
+		break;
+	case BPF_INS_AND:
+		ALU ("&", 32);
+		break;
+	case BPF_INS_AND64:
+		ALU ("&", 64);
+		break;
+	case BPF_INS_LSH:
+		ALU ("<<", 32);
+		break;
+	case BPF_INS_LSH64:
+		ALU ("<<", 64);
+		break;
+	case BPF_INS_RSH:
+		ALU (">>", 32);
+		break;
+	case BPF_INS_RSH64:
+		ALU (">>", 64);
+		break;
+	case BPF_INS_XOR:
+		ALU ("^", 32);
+		break;
+	case BPF_INS_XOR64:
+		ALU ("^", 64);
+		break;
+	case BPF_INS_NEG:
+		if (OPCOUNT == 1) {
+			esilprintf (op, "0xffffffff,%s,0xffffffff,&,^,%s,=", REG (0), REG (0));
+			break;
+		} else {
+			esilprintf (op, "-1,a,^=");
+			break;
+		}
+	case BPF_INS_NEG64:
+		esilprintf (op, "-1,%s,^=", REG (0));
+		break;
+	case BPF_INS_ARSH:	///< eBPF only
+		ALU (">>>>", 32);
+		break;
+	case BPF_INS_ARSH64:
+		ALU (">>>>", 64);
+		break;
+	case BPF_INS_MOV:	///< eBPF only
+		if (OP (1).type == BPF_OP_IMM) {
+			// i already truncate IMM to 32 bits
+			esilprintf (op, "%" PFMT64d ",%s,=", IMM (1), REG (0));
+		} else {
+			esilprintf (op, "%s,0xffffffff,&,%s,=", REG (1), REG (0));
+		}
+		break;
+	case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
+	{
+		char *reg = regname(insn->bytes[1]+3);
+		ut64 val = r_read_ble64((insn->bytes)+8, 0);
+		esilprintf (op, "%" PFMT64d ",%s,=", val, reg);
+		break;
+	}
+	case BPF_INS_MOV64:
+		if (OP (1).type == BPF_OP_IMM) {
+			esilprintf (op, "%" PFMT64d ",%s,=", OP (1).imm, REG (0));
+		} else {
+			esilprintf (op, "%s,%s,=", REG (1), REG (0));
+		}
+		break;
+		///< Byteswap: eBPF only
+	case BPF_INS_LE16:
+	case BPF_INS_LE32:
+	case BPF_INS_LE64:
+		break; // TODO we are assuming host is LE right now and maybe forever
+	case BPF_INS_BE16:
+	{
+		const char *r0 = REG (0);
+		esilprintf (op, "8,%s,>>,0xff,&,8,%s,<<,0xffff,&,|,%s,=", r0, r0, r0);
+		break;
+	}
+	case BPF_INS_BE32:
+	{
+		const char *r0 = REG (0);
+		esilprintf (op,
+				"0xffffffff,%s,&=,"
+				"24,0xff,%s,&,<<,tmp,=,"
+				"16,0xff,8,%s,>>,&,<<,tmp,|=,"
+				"8,0xff,16,%s,>>,&,<<,tmp,|=,"
+				"0xff,24,%s,>>,&,tmp,|=,tmp,%s,=",
+				r0, r0, r0, r0, r0, r0);
+		
+		break;
+	}
+	case BPF_INS_BE64:	
+	{
+		const char *r0 = REG (0);
+		esilprintf (op,
+			"56,0xff,%s,&,<<,tmp,=,"
+			"48,0xff,8,%s,>>,&,<<,tmp,|=,"
+			"40,0xff,16,%s,>>,&,<<,tmp,|=,"
+			"32,0xff,24,%s,>>,&,<<,tmp,|=,"
+			"24,0xff,32,%s,>>,&,<<,tmp,|=,"
+			"16,0xff,40,%s,>>,&,<<,tmp,|=,"
+			"8,0xff,48,%s,>>,&,<<,tmp,|=,"
+			"0xff,56,%s,>>,&,tmp,|=,tmp,%s,=",
+			r0, r0, r0, r0, r0, r0, r0, r0, r0);
+
+		break;
+	}
+		///< Load
+	case BPF_INS_LDW:	///< eBPF only
+		LOAD ("a", 4);
+		break;
+	case BPF_INS_LDXW:	///< eBPF only
+		LOAD ("x", 4);
+		break;
+	case BPF_INS_LDH:
+		LOAD ("a", 2);
+		break;
+	case BPF_INS_LDXH:	///< eBPF only
+		LOAD ("x", 2);
+		break;
+	case BPF_INS_LDB:
+		LOAD ("a", 1);
+		break;
+	case BPF_INS_LDXB:	///< eBPF only
+		LOAD ("x", 1);
+		break;
+	case BPF_INS_LDXDW:	///< eBPF only
+		LOAD ("a", 8); // reg never used here 
+		break;
+
+		///< Store
+	case BPF_INS_STW:	///< eBPF only
+		STORE ("a", 4);
+		break;
+	case BPF_INS_STXW:	///< eBPF only
+		STORE ("x", 4);
+		break;
+	case BPF_INS_STH:	///< eBPF only
+	case BPF_INS_STXH:	///< eBPF only
+		STORE ("a", 2);
+		break;
+	case BPF_INS_STB:	///< eBPF only
+	case BPF_INS_STXB:	///< eBPF only
+		STORE ("a", 1);
+		break;
+	case BPF_INS_STDW:	///< eBPF only
+	case BPF_INS_STXDW:	///< eBPF only
+		STORE ("a", 8);
+		break;
+
+	case BPF_INS_XADDW:	///< eBPF only
+		esilprintf (op, "%s,0xffffffff,&,%d,%s,+,[4],DUP,%s,=,+,%d,%s,+,=[4]", 
+			REG (1), OP (0).mem.disp, regname(OP (0).mem.base), 
+			REG (1), OP (0).mem.disp, regname(OP (0).mem.base));
+
+		break;
+	case BPF_INS_XADDDW: ///< eBPF only
+		esilprintf (op, "%s,NUM,%d,%s,+,[8],DUP,%s,=,+,%d,%s,+,=[8]", 
+			REG (1), OP (0).mem.disp, regname(OP (0).mem.base), 
+			REG (1), OP (0).mem.disp, regname(OP (0).mem.base));
+
+		break;
+	}
+}
+
 static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC    pc\n"
 		"=A0    r1\n"
+		"=A1    r2\n"
+		"=A2    r3\n"
+		"=A3    r4\n"
 		"=R0    r0\n"
 		"=SP    sp\n"
+		"=BP    sp\n"
 		"gpr    z        .32 ?    0\n"
 		"gpr    a        .32 0    0\n"
 		"gpr    x        .32 4    0\n"
@@ -205,18 +598,22 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr    m[13]    .32 60   0\n"
 		"gpr    m[14]    .32 64   0\n"
 		"gpr    m[15]    .32 68   0\n"
-		"gpr    pc       .32 72   0\n"
-		"gpr    sp       .32 76   0\n"
-		"gpr    r0       .64 80   0\n" // eBPF registers are 64 bits
-		"gpr    r1       .64 88   0\n"
-		"gpr    r2       .64 96   0\n"
-		"gpr    r3       .64 104  0\n"
-		"gpr    r4       .64 112  0\n"
-		"gpr    r5       .64 120  0\n"
-		"gpr    r6       .64 128  0\n"
-		"gpr    r7       .64 136  0\n"
-		"gpr    r8       .64 144  0\n"
-		"gpr    r9       .64 152  0\n";
+		"gpr    pc       .64 72   0\n"
+		"gpr    sp       .64 80   0\n" // eBPF registers are 64 bits
+		"gpr    r0       .64 88   0\n"
+		"gpr    r1       .64 96   0\n"
+		"gpr    r2       .64 104  0\n"
+		"gpr    r3       .64 112  0\n"
+		"gpr    r4       .64 120  0\n"
+		"gpr    r5       .64 128  0\n"
+		"gpr    r6       .64 136  0\n"
+		"gpr    r7       .64 144  0\n"
+		"gpr    r8       .64 152  0\n"
+		"gpr    r9       .64 160  0\n"
+		"gpr    r10      .64 168  0\n"
+		"gpr    tmp      .64 176  0\n";
+
+
 
 	return r_reg_set_profile_string (anal->reg, p);
 }
