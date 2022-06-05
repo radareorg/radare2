@@ -243,6 +243,7 @@ void bpf_alu(RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
 			}
 		} else {
 			if (OP (1).type == BPF_OP_IMM) {
+				op->val = IMM (1);
 				esilprintf (op, "%" PFMT64d ",%s,0xffffffff,&,%s,0xffffffff,&,%s,=", 
 					IMM (1), REG (0), operation, REG (0));
 			} else {
@@ -251,7 +252,8 @@ void bpf_alu(RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
 			}
 		}
 	} else { // cBPF
-		if (OP (0).type == BPF_OP_IMM) {
+		if (OPCOUNT > 0 && OP (0).type == BPF_OP_IMM) {
+			op->val = IMM (0);
 			esilprintf (op, "%" PFMT64d ",a,%s=", IMM (0), operation);
 		} else { 
 			esilprintf (op, "x,a,%s=", operation);
@@ -260,28 +262,28 @@ void bpf_alu(RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
 }
 
 void bpf_load(RAnalOp *op, cs_insn *insn, char* reg, int size) {
-	if (OP (0).type == BPF_OP_REG) {
+	if (OPCOUNT > 1 && OP (0).type == BPF_OP_REG) {
 		esilprintf (op, "%d,%s,+,[%d],%s,=", 
 			OP (1).mem.disp, regname(OP (1).mem.base), size, REG (0));
-	} else if (OP (0).type == BPF_OP_MMEM) {
+	} else if (OPCOUNT > 0 && OP (0).type == BPF_OP_MMEM) { // cBPF
 		esilprintf (op, "m[%d],%s,=", OP (0).mmem, reg);
-	} else {
+	} else if (OPCOUNT > 0) {
 		esilprintf (op, "%d,%s,+,[%d],%s,=", 
 			OP (0).mem.disp, regname(OP (0).mem.base), size, reg);
 	}
 }
 
 void bpf_store(RAnalOp *op, cs_insn *insn, char *reg, int size) {
-	if (OP (0).type == BPF_OP_MMEM) {
+	if (OPCOUNT > 0 && OP (0).type == BPF_OP_MMEM) { // cBPF
 		esilprintf (op, "%s,m[%d],=", reg, OP (0).mmem);
-	} else {
+	} else if (OPCOUNT > 1) { // eBPF
 		esilprintf (op, "%s,%d,%s,+,=[%d]", 
 			REG (1), OP (0).mem.disp, regname(OP (0).mem.base), size);
 	}
 }
 
 void bpf_jump(RAnalOp *op, cs_insn *insn, char *condition, int targets) {
-	if (targets == 2) {
+	if (OPCOUNT > 2 && targets == 2) { // cBPF
 		if (OP (0).type == BPF_OP_IMM) {
 			esilprintf (op, "%" PFMT64d ",%s,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", 
 				IMM (0), condition, op->jump, op->fail);
@@ -289,11 +291,11 @@ void bpf_jump(RAnalOp *op, cs_insn *insn, char *condition, int targets) {
 			esilprintf (op, "x,NUM,%s,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", 
 				condition, op->jump, op->fail);
 		}
-	} else {
-		if (OP (1).type == BPF_OP_IMM) {
+	} else { // eBPF
+		if (OPCOUNT > 1 && OP (1).type == BPF_OP_IMM) {
 			esilprintf (op, "%" PFMT64d ",%s,%s,?{,%" PFMT64d ",pc,=,}", 
 				IMM (1), REG (0), condition, op->jump);
-		} else {
+		} else if (OPCOUNT > 1) {
 			esilprintf (op, "%s,%s,%s,?{,%" PFMT64d ",pc,=,}", 
 				REG (1), REG (0), condition, op->jump);
 		}
@@ -456,7 +458,7 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	case BPF_INS_BE16:
 	{
 		const char *r0 = REG (0);
-		esilprintf (op, "8,%s,>>,0xff,&,8,%s,<<,0xffff,&,&,%s,=", r0, r0, r0);
+		esilprintf (op, "8,%s,>>,0xff,&,8,%s,<<,0xffff,&,|,%s,=", r0, r0, r0);
 		break;
 	}
 	case BPF_INS_BE32:
@@ -550,6 +552,9 @@ static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC    pc\n"
 		"=A0    r1\n"
+		"=A1    r2\n"
+		"=A2    r3\n"
+		"=A3    r4\n"
 		"=R0    r0\n"
 		"=SP    sp\n"
 		"=BP    sp\n"

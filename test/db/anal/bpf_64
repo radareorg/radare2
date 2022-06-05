@@ -105,7 +105,7 @@ esilcost: 12
 disasm: stxw [r2+0x10], r9
 pseudo: stxw [r2+0x10],r9 
 mnemonic: stxw
-description: add src to dst (32-bit)
+description: store word from register
 mask: ffffffffffffffff
 prefix: 0
 id: 45
