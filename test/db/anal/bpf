@@ -13,7 +13,7 @@ esilcost: 0
 disasm: add 0x1
 pseudo: 0x1 += 
 mnemonic: add
-description: adds src to dst (32-bit)
+description: add src to dst (32-bit)
 mask: ffffffffffffffff
 prefix: 0
 id: 1
