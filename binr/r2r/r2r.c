@@ -334,7 +334,7 @@ int main(int argc, char **argv) {
 
 	if (get_bins) {
 		if (r_file_is_directory ("bins")) {
-			r_sys_cmd ("cd bins ; git pull");
+			r_sys_cmd ("cd bins && git pull");
 		} else {
 			r_sys_cmd ("git clone --depth 1 https://github.com/radareorg/radare2-testbins bins");
 		}
