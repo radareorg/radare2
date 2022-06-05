@@ -242,10 +242,10 @@ void bpf_alu(RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
 			}
 		} else {
 			if (OP (1).type == BPF_OP_IMM) {
-				esilprintf (op, "%" PFMT64d ",%s,0xffffffff,&,%s,xffffffff,&,%s,=", 
+				esilprintf (op, "%" PFMT64d ",%s,0xffffffff,&,%s,0xffffffff,&,%s,=", 
 					IMM (1), REG (0), operation, REG (0));
 			} else {
-				esilprintf (op, "%s,%s,0xffffffff,&,%s,xffffffff,&,%s,=", 
+				esilprintf (op, "%s,%s,0xffffffff,&,%s,0xffffffff,&,%s,=", 
 					REG (1), REG (0), operation, REG (0));
 			}
 		}
