@@ -2958,7 +2958,6 @@ static void ds_print_offset(RDisasmState *ds) {
 	if (ds->show_offset) {
 		static RFlagItem sfi = {0};
 		const char *label = NULL;
-		RFlagItem *fi;
 		int delta = -1;
 		bool show_trace = false;
 
@@ -2976,7 +2975,7 @@ static void ds_print_offset(RDisasmState *ds) {
 			} else {
 				if (ds->show_reloff_flags) {
 					/* XXX: this is wrong if starting to disasm after a flag */
-					fi = r_flag_get_i (core->flags, at);
+					RFlagItem *fi = r_flag_get_i (core->flags, at);
 					if (fi) {
 						ds->lastflag = fi;
 					}
@@ -3008,13 +3007,11 @@ static void ds_print_offset(RDisasmState *ds) {
 		if (hasCustomColor) {
 			int of = core->print->flags;
 			core->print->flags = 0;
-			r_print_offset (core->print, at, (at == ds->dest) || show_trace,
-					delta, label);
+			r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
 			core->print->flags = of;
 			r_cons_strcat (Color_RESET);
 		} else {
-			r_print_offset (core->print, at, (at == ds->dest) || show_trace,
-					delta, label);
+			r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
 		}
 	}
 	if (ds->atabsoff > 0 && ds->show_offset) {

@@ -8030,11 +8030,26 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 			int sz = lenof (off, 0);
 			int sz2 = lenof (delta, 1);
 			const char *pad = r_str_pad (' ', sz - 5 - sz2 - 3);
-			if (delta > 0) {
-				if (offdec) {
-					r_cons_printf ("%s+%d%s", pad, delta, reset);
+			if (delta > 0 || label) {
+				if (label) {
+					const int label_padding = 10;
+					if (delta > 0) {
+						const char *pad = r_str_pad (' ', sz - sz2 + label_padding);
+						if (offdec) {
+							r_cons_printf ("%s+%d%s", label, delta, pad);
+						} else {
+							r_cons_printf ("%s+0x%x%s", label, delta, pad);
+						}
+					} else {
+						const char *pad = r_str_pad (' ', sz + label_padding);
+						r_cons_printf ("%s%s", label, pad);
+					}
 				} else {
-					r_cons_printf ("%s+0x%x%s", pad, delta, reset);
+					if (offdec) {
+						r_cons_printf ("%s+%d%s", pad, delta, reset);
+					} else {
+						r_cons_printf ("%s+0x%x%s", pad, delta, reset);
+					}
 				}
 			} else {
 				if (offdec) {
@@ -8047,11 +8062,3 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 		}
 	}
 }
-
-#if 0
-// TODO : move to r_util? .. depends on r_cons...
-// XXX: dupe of r_print_addr
-R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int offdec, int delta, const char *label) {
-	r_print_offset_sg(p, off, invert, offseg, 4, offdec, delta, label);
-}
-#endif
