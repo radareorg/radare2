@@ -86,7 +86,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				op->type = R_ANAL_OP_TYPE_CALL;
 				break;
 			case BPF_INS_EXIT:	///< eBPF only
-				op->type = R_ANAL_OP_TYPE_TRAP;
+				//op->type = R_ANAL_OP_TYPE_TRAP;
+				op->type = R_ANAL_OP_TYPE_RET;
 				break;
 			case BPF_INS_RET:
 				op->type = R_ANAL_OP_TYPE_RET;
@@ -355,9 +356,11 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 		}
 		break;
 	case BPF_INS_CALL:	///< eBPF only
+		esilprintf (op, "pc,sp,=[8],8,sp,-=,%" PFMT64d ",pc,=", IMM (0)); 
+		break;
 	case BPF_INS_EXIT:	///< eBPF only
 	case BPF_INS_RET:
-		esilprintf (op, "$"); // not sure yet
+		esilprintf (op, "8,sp,+=,sp,[8],pc,="); 
 		break;
 	case BPF_INS_TAX:
 		esilprintf (op, "a,x,="); 
@@ -541,7 +544,16 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 		break;
 
 	case BPF_INS_XADDW:	///< eBPF only
-	case BPF_INS_XADDDW:	///< eBPF only
+		esilprintf (op, "%s,0xffffffff,&,%d,%s,+,[4],DUP,%s,=,+,%d,%s,+,=[4]", 
+			REG (1), OP (0).mem.disp, regname(OP (0).mem.base), 
+			REG (1), OP (0).mem.disp, regname(OP (0).mem.base));
+
+		break;
+	case BPF_INS_XADDDW: ///< eBPF only
+		esilprintf (op, "%s,NUM,%d,%s,+,[8],DUP,%s,=,+,%d,%s,+,=[8]", 
+			REG (1), OP (0).mem.disp, regname(OP (0).mem.base), 
+			REG (1), OP (0).mem.disp, regname(OP (0).mem.base));
+
 		break;
 	}
 }
