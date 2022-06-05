@@ -260,21 +260,21 @@ void bpf_alu(RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
 
 void bpf_load(RAnalOp *op, cs_insn *insn, char* reg, int size) {
 	if (OP (0).type == BPF_OP_REG) {
-		esilprintf (op, "%" PFMT64d ",%s,+,[%d],%s,=", 
+		esilprintf (op, "%d,%s,+,[%d],%s,=", 
 			OP (1).mem.disp, regname(OP (1).mem.base), size, REG (0));
 	} else if (OP (0).type == BPF_OP_MMEM) {
-		esilprintf (op, "m[%" PFMT64d "],%s,=", OP (0).mmem, reg);
+		esilprintf (op, "m[%d],%s,=", OP (0).mmem, reg);
 	} else {
-		esilprintf (op, "%" PFMT64d ",%s,+,[%d],%s,=", 
+		esilprintf (op, "%d,%s,+,[%d],%s,=", 
 			OP (0).mem.disp, regname(OP (0).mem.base), size, reg);
 	}
 }
 
 void bpf_store(RAnalOp *op, cs_insn *insn, char *reg, int size) {
 	if (OP (0).type == BPF_OP_MMEM) {
-		esilprintf (op, "%s,m[%" PFMT64d "],=", reg, OP (0).mmem);
+		esilprintf (op, "%s,m[%d],=", reg, OP (0).mmem);
 	} else {
-		esilprintf (op, "%s,%" PFMT64d ",%s,+,=[%d]", 
+		esilprintf (op, "%s,%d,%s,+,=[%d]", 
 			REG (1), OP (0).mem.disp, regname(OP (0).mem.base), size);
 	}
 }
@@ -452,7 +452,7 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
 	case BPF_INS_MOV64:
 		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,=", IMM (1), REG (0));
+			esilprintf (op, "%" PFMT64d ",%s,=", OP (1).imm, REG (0));
 		} else {
 			esilprintf (op, "%s,%s,=", REG (1), REG (0));
 		}
