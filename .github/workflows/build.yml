@@ -270,7 +270,7 @@ jobs:
       run: |
         cd /tmp
         rm -rf android-dir/include android-dir/lib
-        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -cvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
+        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -czvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
     - uses: actions/upload-artifact@v2
       with:
         name: android-meson-${{ matrix.name }}
