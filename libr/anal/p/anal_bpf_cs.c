@@ -344,8 +344,11 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 		esilprintf (op, "pc,sp,=[8],8,sp,-=,%" PFMT64d ",pc,=", IMM (0)); 
 		break;
 	case BPF_INS_EXIT:	///< eBPF only
-	case BPF_INS_RET:
 		esilprintf (op, "8,sp,+=,sp,[8],pc,="); 
+		break;
+	case BPF_INS_RET:
+		// cBPF shouldnt really need the stack, but gonna leave it
+		esilprintf (op, "%" PFMT64d ",r0,=,8,sp,+=,sp,[8],pc,=", IMM (0)); 
 		break;
 	case BPF_INS_TAX:
 		esilprintf (op, "a,x,="); 
