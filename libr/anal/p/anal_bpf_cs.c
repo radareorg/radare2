@@ -145,9 +145,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				break;
 			case BPF_INS_MOV:	///< eBPF only
 			case BPF_INS_MOV64:
+			case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
 				op->type = R_ANAL_OP_TYPE_MOV;
 				if (OPCOUNT > 1 && OP (1).type == BPF_OP_IMM) {
 					op->val = OP (1).imm;
+				} else if (insn->size == 16) { // lddw
+					op->val = r_read_ble64((insn->bytes)+8, 0);
 				}
 				break;
 				///< Byteswap: eBPF only
@@ -163,7 +166,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			case BPF_INS_LDW:	///< eBPF only
 			case BPF_INS_LDH:
 			case BPF_INS_LDB:
-			case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
 			case BPF_INS_LDXW:	///< eBPF only
 			case BPF_INS_LDXH:	///< eBPF only
 			case BPF_INS_LDXB:	///< eBPF only
@@ -294,18 +296,18 @@ void bpf_store(RAnalOp *op, cs_insn *insn, char *reg, int size) {
 void bpf_jump(RAnalOp *op, cs_insn *insn, char *condition, int targets) {
 	if (OPCOUNT > 2 && targets == 2) { // cBPF
 		if (OP (0).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", 
+			esilprintf (op, "%" PFMT64d ",%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=", 
 				IMM (0), condition, op->jump, op->fail);
 		} else {
-			esilprintf (op, "x,NUM,%s,?{,%" PFMT64d ",}{,%" PFMT64d ",},pc,=", 
+			esilprintf (op, "x,NUM,%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=", 
 				condition, op->jump, op->fail);
 		}
 	} else if (OPCOUNT > 1) { // eBPF
 		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,%s,?{,%" PFMT64d ",pc,=,}", 
+			esilprintf (op, "%" PFMT64d ",%s,%s,?{,0x%" PFMT64x ",pc,=,}", 
 				IMM (1), REG (0), condition, op->jump);
 		} else {
-			esilprintf (op, "%s,%s,%s,?{,%" PFMT64d ",pc,=,}", 
+			esilprintf (op, "%s,%s,%s,?{,0x%" PFMT64x ",pc,=,}", 
 				REG (1), REG (0), condition, op->jump);
 		}
 	}
@@ -319,7 +321,7 @@ void bpf_jump(RAnalOp *op, cs_insn *insn, char *condition, int targets) {
 void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	switch (insn->id) {
 	case BPF_INS_JMP:
-		esilprintf (op, "%" PFMT64d ",pc,=", op->jump);
+		esilprintf (op, "0x%" PFMT64x ",pc,=", op->jump);
 		break;
 	case BPF_INS_JEQ:
 		JMP ("a,==,$z", 2);
@@ -355,7 +357,7 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 		JMP ("<=", 1);
 		break;
 	case BPF_INS_CALL:	///< eBPF only
-		esilprintf (op, "pc,sp,=[8],8,sp,-=,%" PFMT64d ",pc,=", IMM (0)); 
+		esilprintf (op, "pc,sp,=[8],8,sp,-=,0x%" PFMT64x ",pc,=", IMM (0)); 
 		break;
 	case BPF_INS_EXIT:	///< eBPF only
 		esilprintf (op, "8,sp,+=,sp,[8],pc,="); 
@@ -449,12 +451,19 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 		break;
 	case BPF_INS_MOV:	///< eBPF only
 		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",0xffffffff,&,%s,=", IMM (1), REG (0));
+			// i already truncate IMM to 32 bits
+			esilprintf (op, "%" PFMT64d ",%s,=", IMM (1), REG (0));
 		} else {
 			esilprintf (op, "%s,0xffffffff,&,%s,=", REG (1), REG (0));
 		}
 		break;
 	case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
+	{
+		char *reg = regname(insn->bytes[1]+3);
+		ut64 val = r_read_ble64((insn->bytes)+8, 0);
+		esilprintf (op, "%" PFMT64d ",%s,=", val, reg);
+		break;
+	}
 	case BPF_INS_MOV64:
 		if (OP (1).type == BPF_OP_IMM) {
 			esilprintf (op, "%" PFMT64d ",%s,=", OP (1).imm, REG (0));
@@ -589,20 +598,21 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr    m[13]    .32 60   0\n"
 		"gpr    m[14]    .32 64   0\n"
 		"gpr    m[15]    .32 68   0\n"
-		"gpr    pc       .32 72   0\n"
-		"gpr    sp       .32 76   0\n"
-		"gpr    r0       .64 80   0\n" // eBPF registers are 64 bits
-		"gpr    r1       .64 88   0\n"
-		"gpr    r2       .64 96   0\n"
-		"gpr    r3       .64 104  0\n"
-		"gpr    r4       .64 112  0\n"
-		"gpr    r5       .64 120  0\n"
-		"gpr    r6       .64 128  0\n"
-		"gpr    r7       .64 136  0\n"
-		"gpr    r8       .64 144  0\n"
-		"gpr    r9       .64 152  0\n"
-		"gpr    r10      .64 160  0\n"
-		"gpr    tmp      .64 168  0\n";
+		"gpr    pc       .64 72   0\n"
+		"gpr    sp       .64 80   0\n" // eBPF registers are 64 bits
+		"gpr    r0       .64 88   0\n"
+		"gpr    r1       .64 96   0\n"
+		"gpr    r2       .64 104  0\n"
+		"gpr    r3       .64 112  0\n"
+		"gpr    r4       .64 120  0\n"
+		"gpr    r5       .64 128  0\n"
+		"gpr    r6       .64 136  0\n"
+		"gpr    r7       .64 144  0\n"
+		"gpr    r8       .64 152  0\n"
+		"gpr    r9       .64 160  0\n"
+		"gpr    r10      .64 168  0\n"
+		"gpr    tmp      .64 176  0\n";
+
 
 
 	return r_reg_set_profile_string (anal->reg, p);
