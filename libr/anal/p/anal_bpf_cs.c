@@ -9,6 +9,20 @@
 // calculate jump address from immediate, the "& 0xffff" is for some weird CS bug in JMP
 #define JUMP(n) (addr + insn->size * ((1 + insn->detail->bpf.operands[n].imm) & 0xffff))
 
+static const char *cbpf_gpr_names[] = {
+	"w0",
+	"w1",
+	"w2",
+	"w3",
+	"w4",
+	"w5",
+	"w6",
+	"w7",
+	"w8",
+	"w9",
+	"w10",
+};
+
 static const char *ebpf_gpr_names[] = {
 	"r0",
 	"r1",
@@ -23,33 +37,40 @@ static const char *ebpf_gpr_names[] = {
 	"r10",
 };
 
-static const char *get_ebpf_gpr_name (uint8_t reg) {
+static const char *get_gpr_name (uint8_t reg, bool ebpf) {
+	const char **gpr_names;
+	if (ebpf) {
+		gpr_names = ebpf_gpr_names;
+	} else {
+		gpr_names = cbpf_gpr_names;
+	}
 	switch (reg) {
 	// cbpf
 	case BPF_REG_A: return "a";
 	case BPF_REG_X: return "x";
 	// ebpf
-	case BPF_REG_R0: return ebpf_gpr_names[0];
-	case BPF_REG_R1: return ebpf_gpr_names[1];
-	case BPF_REG_R2: return ebpf_gpr_names[2];
-	case BPF_REG_R3: return ebpf_gpr_names[3];
-	case BPF_REG_R4: return ebpf_gpr_names[4];
-	case BPF_REG_R5: return ebpf_gpr_names[5];
-	case BPF_REG_R6: return ebpf_gpr_names[6];
-	case BPF_REG_R7: return ebpf_gpr_names[7];
-	case BPF_REG_R8: return ebpf_gpr_names[8];
-	case BPF_REG_R9: return ebpf_gpr_names[9];
-	case BPF_REG_R10: return ebpf_gpr_names[10];
+	case BPF_REG_R0: return gpr_names[0];
+	case BPF_REG_R1: return gpr_names[1];
+	case BPF_REG_R2: return gpr_names[2];
+	case BPF_REG_R3: return gpr_names[3];
+	case BPF_REG_R4: return gpr_names[4];
+	case BPF_REG_R5: return gpr_names[5];
+	case BPF_REG_R6: return gpr_names[6];
+	case BPF_REG_R7: return gpr_names[7];
+	case BPF_REG_R8: return gpr_names[8];
+	case BPF_REG_R9: return gpr_names[9];
+	case BPF_REG_R10: return gpr_names[10];
 	// invalid
 	default: return NULL;
 	}
 }
 
-static RRegItem *get_ebpf_gpr (RAnal *a, uint8_t reg) {
-	return r_reg_get (a->reg, get_ebpf_gpr_name (reg), R_REG_TYPE_GPR);
+static RRegItem *get_gpr (RAnal *a, uint8_t reg, bool ebpf) {
+	return r_reg_get (a->reg, get_gpr_name (reg, ebpf), R_REG_TYPE_GPR);
 }
 
-static RAnalValue *new_ebpf_op (RAnal *a, cs_bpf_op *op) {
+static RAnalValue *new_op (RAnal *a, cs_bpf_op *op) {
+	bool ebpf = a->config->bits == 64;
 	RAnalValue *val = r_anal_value_new ();
 	if (!val) {
 		return NULL;
@@ -57,7 +78,7 @@ static RAnalValue *new_ebpf_op (RAnal *a, cs_bpf_op *op) {
 	switch (op->type) {
 	case CS_OP_REG:
 		val->type = R_ANAL_VAL_REG;
-		val->reg = get_ebpf_gpr (a, op->reg);
+		val->reg = get_gpr (a, op->reg, ebpf);
 		if ((op->access & CS_AC_READ) != 0) {
 			val->access |= R_ANAL_ACC_R;
 		}
@@ -76,30 +97,53 @@ static RAnalValue *new_ebpf_op (RAnal *a, cs_bpf_op *op) {
 	}
 }
 
+static RAnalValue *new_cbpf_dest (RAnal *a, cs_detail *detail) {
+	// Dest operand is implied by instruction type.
+	bool is_alu = false;
+	for (ut8 i = 0; i < detail->groups_count; i++) {
+		if (detail->groups[i] == BPF_GRP_ALU) {
+			is_alu = true;
+			break;
+		}
+	}
+	if (is_alu) {
+		RAnalValue *dst = r_anal_value_new ();
+		dst->reg = r_reg_get (a->reg, "a", R_REG_TYPE_GPR);
+		return dst;
+	}
+	return NULL;
+}
+
 static RAnalValue *new_ebpf_dest (RAnal *a, cs_bpf *bpf) {
+	// First Capstone operand is RAnalOp dest operand
 	if (bpf->op_count < 1) {
 		return NULL;
 	}
-	return new_ebpf_op (a, &bpf->operands[0]);
+	return new_op (a, &bpf->operands[0]);
 }
 
-static void new_ebpf_operands (RAnal *a, RAnalOp *op, cs_insn *insn) {
+static void new_operands (RAnal *a, RAnalOp *op, cs_insn *insn) {
+	ut8 op_idx = 0;
+
+	if (a->config->bits == 64) {
+		op->dst = new_ebpf_dest (a, &insn->detail->bpf);
+		if (op->dst) {
+			op_idx++;
+		}
+	} else {
+		op->dst = new_cbpf_dest (a, insn->detail);
+	}
+
 	cs_bpf *bpf = &insn->detail->bpf;
 
-	// First Capstone operand is RAnalOp dest operand
-	op->dst = new_ebpf_dest (a, bpf);
-	if (!op->dst) {
-		return;
+	// RAnalOp can currently only handle 3 source operands and one dest
+	ut8 argc = bpf->op_count;
+	ut8 max_argc = (ut8)(sizeof (op->src) / sizeof (RAnalValue *)) + 1;
+	if (argc > max_argc) {
+		argc = max_argc;
 	}
-
-	// RAnalOp can currently only handle 3 source operands
-	ut8 argc = insn->detail->bpf.op_count;
-	ut8 max_argc = (ut8)(sizeof (op->src) / sizeof (RAnalValue *));
-	if (argc > max_argc + 1) {
-		argc = max_argc + 1;
-	}
-	for (ut8 i = 1; i < argc; i++) {
-		op->src[i - 1] = new_ebpf_op (a, &bpf->operands[i]);
+	for (int i = 0; op_idx < argc; op_idx++, i++) {
+		op->src[i] = new_op (a, &bpf->operands[op_idx]);
 	}
 
 	// Set immediate.
@@ -208,7 +252,7 @@ static int analop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RA
 				insn->op_str);
 		}
 		if (insn->detail) {
-			new_ebpf_operands (a, op, insn);
+			new_operands (a, op, insn);
 			switch (insn->id) {
 			case BPF_INS_JMP:
 				op->type = R_ANAL_OP_TYPE_JMP;
@@ -384,45 +428,64 @@ static int analop (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RA
 }
 
 static bool set_reg_profile (RAnal *anal) {
-	if (anal->config->bits != 64) {
-		return false;
+	const char *p;
+	if (anal->config->bits == 64) {
+		p =
+			"=PC    pc\n"
+			"=A0    r1\n"
+			"=R0    r0\n"
+			"=SP    sp\n"
+			"gpr    z        .32 ?    0\n"
+			"gpr    pc       .32 72   0\n"
+			"gpr    sp       .32 76   0\n"
+			"gpr    r0       .64 80   0\n" // eBPF registers are 64 bits
+			"gpr    r1       .64 88   0\n"
+			"gpr    r2       .64 96   0\n"
+			"gpr    r3       .64 104  0\n"
+			"gpr    r4       .64 112  0\n"
+			"gpr    r5       .64 120  0\n"
+			"gpr    r6       .64 128  0\n"
+			"gpr    r7       .64 136  0\n"
+			"gpr    r8       .64 144  0\n"
+			"gpr    r9       .64 152  0\n";
+	} else {
+		p =
+			"=PC    pc\n"
+			"=A0    r1\n"
+			"=R0    r0\n"
+			"=SP    sp\n"
+			"gpr    z        .32 ?    0\n"
+			"gpr    a        .32 0    0\n"
+			"gpr    x        .32 4    0\n"
+			"gpr    m[0]     .32 8    0\n"
+			"gpr    m[1]     .32 12   0\n"
+			"gpr    m[2]     .32 16   0\n"
+			"gpr    m[3]     .32 20   0\n"
+			"gpr    m[4]     .32 24   0\n"
+			"gpr    m[5]     .32 28   0\n"
+			"gpr    m[6]     .32 32   0\n"
+			"gpr    m[7]     .32 36   0\n"
+			"gpr    m[8]     .32 40   0\n"
+			"gpr    m[9]     .32 44   0\n"
+			"gpr    m[10]    .32 48   0\n"
+			"gpr    m[11]    .32 52   0\n"
+			"gpr    m[12]    .32 56   0\n"
+			"gpr    m[13]    .32 60   0\n"
+			"gpr    m[14]    .32 64   0\n"
+			"gpr    m[15]    .32 68   0\n"
+			"gpr    pc       .32 72   0\n"
+			"gpr    sp       .32 76   0\n"
+			"gpr    r0       .64 80   0\n" // eBPF registers are 64 bits
+			"gpr    r1       .64 88   0\n"
+			"gpr    r2       .64 96   0\n"
+			"gpr    r3       .64 104  0\n"
+			"gpr    r4       .64 112  0\n"
+			"gpr    r5       .64 120  0\n"
+			"gpr    r6       .64 128  0\n"
+			"gpr    r7       .64 136  0\n"
+			"gpr    r8       .64 144  0\n"
+			"gpr    r9       .64 152  0\n";
 	}
-	const char *p =
-		"=PC    pc\n"
-		"=A0    r1\n"
-		"=R0    r0\n"
-		"=SP    sp\n"
-		"gpr    z        .32 ?    0\n"
-		"gpr    a        .32 0    0\n"
-		"gpr    x        .32 4    0\n"
-		"gpr    m[0]     .32 8    0\n"
-		"gpr    m[1]     .32 12   0\n"
-		"gpr    m[2]     .32 16   0\n"
-		"gpr    m[3]     .32 20   0\n"
-		"gpr    m[4]     .32 24   0\n"
-		"gpr    m[5]     .32 28   0\n"
-		"gpr    m[6]     .32 32   0\n"
-		"gpr    m[7]     .32 36   0\n"
-		"gpr    m[8]     .32 40   0\n"
-		"gpr    m[9]     .32 44   0\n"
-		"gpr    m[10]    .32 48   0\n"
-		"gpr    m[11]    .32 52   0\n"
-		"gpr    m[12]    .32 56   0\n"
-		"gpr    m[13]    .32 60   0\n"
-		"gpr    m[14]    .32 64   0\n"
-		"gpr    m[15]    .32 68   0\n"
-		"gpr    pc       .32 72   0\n"
-		"gpr    sp       .32 76   0\n"
-		"gpr    r0       .64 80   0\n" // eBPF registers are 64 bits
-		"gpr    r1       .64 88   0\n"
-		"gpr    r2       .64 96   0\n"
-		"gpr    r3       .64 104  0\n"
-		"gpr    r4       .64 112  0\n"
-		"gpr    r5       .64 120  0\n"
-		"gpr    r6       .64 128  0\n"
-		"gpr    r7       .64 136  0\n"
-		"gpr    r8       .64 144  0\n"
-		"gpr    r9       .64 152  0\n";
 
 	return r_reg_set_profile_string (anal->reg, p);
 }

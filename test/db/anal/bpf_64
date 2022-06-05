@@ -13,6 +13,7 @@ esilcost: 0
 disasm: add64 r0, r1
 pseudo: add64 r0,r1 
 mnemonic: add64
+description: adds src to dst (64-bit)
 mask: ffffffffffffffff
 prefix: 0
 id: 14
@@ -42,6 +43,7 @@ esilcost: 0
 disasm: add64 r0, 0x1
 pseudo: add64 r0,0x1 
 mnemonic: add64
+description: adds src to dst (64-bit)
 mask: ffffffffffffffff
 prefix: 0
 id: 14
@@ -72,6 +74,7 @@ esilcost: 0
 disasm: add r0, 0x1
 pseudo: r0 += 0x1
 mnemonic: add
+description: adds src to dst (32-bit)
 mask: ffffffffffffffff
 prefix: 0
 id: 1
