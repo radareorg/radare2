@@ -15,6 +15,45 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pd+reloff+colors
+FILE=bins/elf/analysis/ls-alxchk
+CMDS=<<EOF
+af
+e asm.reloff=true
+pd 10
+e scr.color=1
+pd 10
+EOF
+EXPECT=<<EOF
+/ 41: entry0 (int64_t arg3, void *stack_end);
+|           ; arg int64_t arg3 @ rdx
+|           ; arg void *stack_end @ xmm0
+|           entry0                         31ed           xor ebp, ebp
+|           entry0+0x2                     4989d1         mov r9, rdx  ; arg3
+|           entry0+0x5                     5e             pop rsi
+|           entry0+0x6                     4889e2         mov rdx, rsp
+|           entry0+0x9                     4883e4f0       and rsp, 0xfffffffffffffff0
+|           entry0+0xd                     50             push rax
+|           entry0+0xe                     54             push rsp
+|           entry0+0xf                     4c8b05e69301.  mov r8, qword [section..got] ; [0x1f220:8]=0x16ee0
+|           entry0+0x16                    488b0de79301.  mov rcx, qword [0x0001f228] ; [0x1f228:8]=0x16e60
+|           entry0+0x1d                    488b3de89301.  mov rdi, qword [0x0001f230] ; [0x1f230:8]=0x3bd0 main
+[36m/[0m 41: [31mentry0[0m (int64_t arg3, void *stack_end);
+[36m|[0m           [37m; [37marg [34mint64_t arg3 [36m@ rdx[0m
+[36m|[0m           [37m; [37marg [34mvoid *stack_end [36m@ xmm0[0m
+[36m|[0m           [32mentry0[0m                          [33m31[37med[0m           [33mxor[36m ebp[0m,[36m ebp[0m[0m[0m
+[36m|[0m           [32mentry0[0m+0x2                      [33m49[37m89[37md1[0m         [37mmov[36m r9[0m,[36m rdx[0m[0m[0m [34m; arg3[0m
+[36m|[0m           [32mentry0[0m+0x5                      [33m5e[0m             [35mpop[36m rsi[0m[0m[0m
+[36m|[0m           [32mentry0[0m+0x6                      [33m48[37m89[37me2[0m         [37mmov[36m rdx[0m,[36m rsp[0m[0m[0m
+[36m|[0m           [32mentry0[0m+0x9                      [33m48[37m83[37me4[37mf0[0m       [33mand[36m rsp[0m,[36m[36m [33m0xfffffffffffffff0[0m[0m[0m
+[36m|[0m           [32mentry0[0m+0xd                      [33m50[0m             [35mpush[36m rax[0m[0m[0m
+[36m|[0m           [32mentry0[0m+0xe                      [33m54[0m             [35mpush[36m rsp[0m[0m[0m
+[36m|[0m           [32mentry0[0m+0xf                      [33m4c[37m8b[37m05[37me6[37m93[37m01[37m.[0m  [37mmov[36m r8[0m,[36m qword[36m [0m[[36msection..got[0m][36m[0m[0m[31m [31m; [[31m0x1f220[31m:8]=0x16ee0[0m
+[36m|[0m           [32mentry0[0m+0x16                     [33m48[37m8b[37m0d[37me7[37m93[37m01[37m.[0m  [37mmov[36m rcx[0m,[36m qword[36m [0m[[33m0x0001f228[0m][36m[0m[0m[31m [31m; [[31m0x1f228[31m:8]=0x16e60[0m
+[36m|[0m           [32mentry0[0m+0x1d                     [33m48[37m8b[33m3d[37me8[37m93[37m01[37m.[0m  [37mmov[36m rdi[0m,[36m qword[36m [0m[[33m0x0001f230[0m][36m[0m[0m[31m [31m; [[31m0x1f230[31m:8]=0x3bd0 main[0m
+EOF
+RUN
+
 NAME=pd arm cortex 0
 FILE=-
 ARGS=-a arm -b 16
