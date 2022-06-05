@@ -5,6 +5,7 @@ sdb_files = [
   'arm',
   'avr',
   'bf',
+  'bpf',
   'dalvik',
   'i4004',
   'i8080',

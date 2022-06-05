@@ -1,0 +1,2 @@
+add=adds src to dst (32-bit)
+add64=adds src to dst (64-bit)

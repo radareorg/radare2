@@ -1,0 +1,88 @@
+NAME=add64 reg, reg
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=bpf
+e asm.bits=64
+wx 0x0f10000000000000
+ao@0
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: add64 r0, r1
+esilcost: 0
+disasm: add64 r0, r1
+pseudo: add64 r0,r1 
+mnemonic: add64
+mask: ffffffffffffffff
+prefix: 0
+id: 14
+bytes: 0f10000000000000
+refptr: 0
+size: 8
+sign: false
+type: add
+cycles: 0
+esil: r1,r0,+=
+family: cpu
+EOF
+RUN
+
+NAME=add64 reg, imm
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=bpf
+e asm.bits=64
+wx 0x0700000001000000
+ao@0
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: add64 r0, 0x1
+esilcost: 0
+disasm: add64 r0, 0x1
+pseudo: add64 r0,0x1 
+mnemonic: add64
+mask: ffffffffffffffff
+prefix: 0
+id: 14
+bytes: 0700000001000000
+val: 0x00000001
+refptr: 0
+size: 8
+sign: false
+type: add
+cycles: 0
+esil: 1,r0,+=
+family: cpu
+EOF
+RUN
+
+NAME=add reg, imm
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=bpf
+e asm.bits=64
+wx 0400000001000000
+ao@0
+EOF
+EXPECT=<<EOF
+address: 0x0
+opcode: add r0, 0x1
+esilcost: 0
+disasm: add r0, 0x1
+pseudo: r0 += 0x1
+mnemonic: add
+mask: ffffffffffffffff
+prefix: 0
+id: 1
+bytes: 0400000001000000
+val: 0x00000001
+refptr: 0
+size: 8
+sign: false
+type: add
+cycles: 0
+esil: 0xffffffff,1,0xffffffff,&,r0,0xffffffff,&,+,&,r0,=
+family: cpu
+EOF
+RUN
