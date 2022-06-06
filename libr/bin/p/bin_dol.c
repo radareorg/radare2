@@ -160,6 +160,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->arch = strdup ("ppc");
 	ret->has_va = true;
 	ret->bits = 32;
+	ret->cpu = "ps";
 
 	return ret;
 }
