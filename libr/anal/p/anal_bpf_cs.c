@@ -21,6 +21,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	static R_TH_LOCAL csh handle = 0;
 	static R_TH_LOCAL int omode = -1;
 	static R_TH_LOCAL int obits = 32;
+
 	cs_insn *insn = NULL;
 	int mode = (a->config->bits == 32)? CS_MODE_BPF_CLASSIC: CS_MODE_BPF_EXTENDED;
 	int n, ret;
@@ -67,10 +68,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			case BPF_INS_JGT:
 			case BPF_INS_JGE:
 			case BPF_INS_JSET:
-				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->jump = JUMP (1);
-				op->fail = (insn->detail->bpf.op_count == 3) ? JUMP(2) : addr + insn->size;
-				break;
 			case BPF_INS_JNE:	///< eBPF only
 			case BPF_INS_JSGT:	///< eBPF only
 			case BPF_INS_JSGE:	///< eBPF only
@@ -79,8 +76,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			case BPF_INS_JSLT:	///< eBPF only
 			case BPF_INS_JSLE:	///< eBPF only
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->jump = JUMP (2);
-				op->fail = addr + insn->size;
+				if (mode == CS_MODE_BPF_CLASSIC) {
+					op->jump = JUMP (1);
+					op->fail = (insn->detail->bpf.op_count == 3) ? JUMP(2) : addr + insn->size;
+				} else {
+					op->jump = JUMP (2);
+					op->fail = addr + insn->size;
+				}
 				break;
 			case BPF_INS_CALL:	///< eBPF only
 				op->type = R_ANAL_OP_TYPE_CALL;
@@ -149,8 +151,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				op->type = R_ANAL_OP_TYPE_MOV;
 				if (OPCOUNT > 1 && OP (1).type == BPF_OP_IMM) {
 					op->val = OP (1).imm;
-				} else if (insn->size == 16) { // lddw
-					op->val = r_read_ble64((insn->bytes)+8, 0);
+				} else if (insn->size == 16) { // lddw wtf
+					op->val = r_read_ble64((insn->bytes)+8, 0) + IMM (0);
 				}
 				break;
 				///< Byteswap: eBPF only
@@ -238,8 +240,8 @@ static char* regname(uint8_t reg) {
 
 #define REG(n) (regname(OP(n).reg))
  
-void bpf_alu(RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
-	if (OPCOUNT == 2) { // eBPF
+void bpf_alu(RAnal *a, RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
+	if (OPCOUNT == 2 && a->config->bits == 64) { // eBPF
 		if (bits == 64) {
 			if (OP (1).type == BPF_OP_IMM) {
 				op->val = IMM (1);
@@ -267,7 +269,7 @@ void bpf_alu(RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
 	}
 }
 
-void bpf_load(RAnalOp *op, cs_insn *insn, char* reg, int size) {
+void bpf_load(RAnal *a, RAnalOp *op, cs_insn *insn, char* reg, int size) {
 	if (OPCOUNT > 1 && OP (0).type == BPF_OP_REG) {
 		esilprintf (op, "%d,%s,+,[%d],%s,=", 
 			OP (1).mem.disp, regname(OP (1).mem.base), size, REG (0));
@@ -279,8 +281,8 @@ void bpf_load(RAnalOp *op, cs_insn *insn, char* reg, int size) {
 	}
 }
 
-void bpf_store(RAnalOp *op, cs_insn *insn, char *reg, int size) {
-	if (OPCOUNT > 0 && OP (0).type == BPF_OP_MMEM) { // cBPF
+void bpf_store(RAnal *a, RAnalOp *op, cs_insn *insn, char *reg, int size) {
+	if (OPCOUNT > 0 && a->config->bits == 32) { // cBPF
 		esilprintf (op, "%s,m[%d],=", reg, OP (0).mmem);
 	} else if (OPCOUNT > 1) { // eBPF
 		if (OP (1).type == BPF_OP_IMM) {
@@ -293,13 +295,13 @@ void bpf_store(RAnalOp *op, cs_insn *insn, char *reg, int size) {
 	}
 }
 
-void bpf_jump(RAnalOp *op, cs_insn *insn, char *condition, int targets) {
-	if (OPCOUNT > 2 && targets == 2) { // cBPF
+void bpf_jump(RAnal *a, RAnalOp *op, cs_insn *insn, char *condition) {
+	if (OPCOUNT > 0 && a->config->bits == 32) { // cBPF
 		if (OP (0).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=", 
+			esilprintf (op, "%" PFMT64d ",a,NUM,%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=", 
 				IMM (0), condition, op->jump, op->fail);
 		} else {
-			esilprintf (op, "x,NUM,%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=", 
+			esilprintf (op, "x,NUM,a,NUM,%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=", 
 				condition, op->jump, op->fail);
 		}
 	} else if (OPCOUNT > 1) { // eBPF
@@ -313,10 +315,10 @@ void bpf_jump(RAnalOp *op, cs_insn *insn, char *condition, int targets) {
 	}
 }
 
-#define ALU(c, b) bpf_alu(op, insn, c, b)
-#define LOAD(c, s) bpf_load(op, insn, c, s)
-#define STORE(c, s) bpf_store(op, insn, c, s)
-#define JMP(c, s) bpf_jump(op, insn, c, s)
+#define ALU(c, b) bpf_alu(a, op, insn, c, b)
+#define LOAD(c, s) bpf_load(a, op, insn, c, s)
+#define STORE(c, s) bpf_store(a, op, insn, c, s)
+#define CJMP(c) bpf_jump(a, op, insn, c)
 
 void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	switch (insn->id) {
@@ -324,40 +326,42 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 		esilprintf (op, "0x%" PFMT64x ",pc,=", op->jump);
 		break;
 	case BPF_INS_JEQ:
-		JMP ("a,==,$z", 2);
+		CJMP ("==,$z");
 		break;
 	case BPF_INS_JGT:
-		JMP ("a,NUM,>", 2);
+		CJMP ("==,63,$c,$z,|,!");
 		break;
 	case BPF_INS_JGE:
-		JMP ("a,NUM,>=", 2);
+		CJMP ("==,63,$c,!");
 		break;
 	case BPF_INS_JSET:
-		JMP ("a,&", 2);
+		CJMP ("&");
 		break;
 	case BPF_INS_JNE:	///< eBPF only
-		JMP ("-", 1);
+		CJMP ("-");
 		break;
 	case BPF_INS_JSGT:	///< eBPF only
-		JMP (">", 1);
+		CJMP (">");
 		break;
 	case BPF_INS_JSGE:	///< eBPF only
-		JMP (">=", 1);
+		CJMP (">=");
 		break;
 	case BPF_INS_JLT:	///< eBPF only
-		JMP ("==,63,$c", 1);
+		CJMP ("==,63,$c");
 		break;
 	case BPF_INS_JSLT:	///< eBPF only
-		JMP ("<", 1);
+		CJMP ("<");
 		break;
 	case BPF_INS_JLE:	///< eBPF only
-		JMP ("==,63,$c,$z,|", 1);
+		CJMP ("==,63,$c,$z,|");
 		break;
 	case BPF_INS_JSLE:	///< eBPF only
-		JMP ("<=", 1);
+		CJMP ("<=");
 		break;
 	case BPF_INS_CALL:	///< eBPF only
-		esilprintf (op, "pc,sp,=[8],8,sp,-=,0x%" PFMT64x ",pc,=", IMM (0)); 
+		// the call immediate is almost never used as an addr so its an INT
+		// maybe this will change in the future once the relocs are added?
+		esilprintf (op, "pc,sp,=[8],8,sp,-=,0x%" PFMT64x ",$", IMM (0)); 
 		break;
 	case BPF_INS_EXIT:	///< eBPF only
 		esilprintf (op, "8,sp,+=,sp,[8],pc,="); 
@@ -434,14 +438,14 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 		break;
 	case BPF_INS_NEG:
 		if (OPCOUNT == 1) {
-			esilprintf (op, "0xffffffff,%s,0xffffffff,&,^,%s,=", REG (0), REG (0));
+			esilprintf (op, "-1,%s,*,0xffffffff,&,%s,=", REG (0), REG (0));
 			break;
 		} else {
-			esilprintf (op, "-1,a,^=");
+			esilprintf (op, "-1,a,*=");
 			break;
 		}
 	case BPF_INS_NEG64:
-		esilprintf (op, "-1,%s,^=", REG (0));
+		esilprintf (op, "-1,%s,*=", REG (0));
 		break;
 	case BPF_INS_ARSH:	///< eBPF only
 		ALU (">>>>", 32);
@@ -460,13 +464,13 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
 	{
 		char *reg = regname(insn->bytes[1]+3);
-		ut64 val = r_read_ble64((insn->bytes)+8, 0);
+		ut64 val = r_read_ble64((insn->bytes)+8, 0) + IMM (0); // wtf
 		esilprintf (op, "%" PFMT64d ",%s,=", val, reg);
 		break;
 	}
 	case BPF_INS_MOV64:
 		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,=", OP (1).imm, REG (0));
+			esilprintf (op, "%" PFMT64d ",%s,=", IMM (1), REG (0));
 		} else {
 			esilprintf (op, "%s,%s,=", REG (1), REG (0));
 		}
