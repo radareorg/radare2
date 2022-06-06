@@ -1255,6 +1255,19 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				}
 				bool fullGraph = true;
+				if (input[3] != ' ') {
+					bool fullGraph = false;
+					r_list_foreach (obj->classes, iter, cls) {
+					        if (cls->super && strstr (cls->super, input + 3)) {
+							r_cons_printf ("agn %s\n", cls->super);
+							r_cons_printf ("agn %s\n", cls->name);
+							r_cons_printf ("age %s %s\n", cls->super, cls->name);
+						} else if (strstr (cls->name, input + 3)){
+							r_cons_printf ("agn %s\n", cls->name);
+						}
+					}
+					goto done;
+				}
 				if (fullGraph) {
 					r_list_foreach (obj->classes, iter, cls) {
 						if (cls->super) {
