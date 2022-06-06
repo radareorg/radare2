@@ -631,7 +631,7 @@ static bool set_reg_profile(RAnal *anal) {
 		"=A2    r3\n"
 		"=A3    r4\n"
 		"=R0    r0\n"
-		"=SP    sp\n"
+		"=SP    r10\n"
 		"=BP    sp\n"
 		"gpr    z        .32 ?    0\n"
 		"gpr    a        .32 0    0\n"
@@ -653,20 +653,18 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr    m[14]    .32 64   0\n"
 		"gpr    m[15]    .32 68   0\n"
 		"gpr    pc       .64 72   0\n"
-		"gpr    sp       .64 80   0\n" // eBPF registers are 64 bits
-		"gpr    r0       .64 88   0\n"
-		"gpr    r1       .64 96   0\n"
-		"gpr    r2       .64 104  0\n"
-		"gpr    r3       .64 112  0\n"
-		"gpr    r4       .64 120  0\n"
-		"gpr    r5       .64 128  0\n"
-		"gpr    r6       .64 136  0\n"
-		"gpr    r7       .64 144  0\n"
-		"gpr    r8       .64 152  0\n"
-		"gpr    r9       .64 160  0\n"
-		"gpr    r10      .64 168  0\n"
-		"gpr    tmp      .64 176  0\n";
-
+		"gpr    r0       .64 80   0\n"
+		"gpr    r1       .64 88   0\n"
+		"gpr    r2       .64 96   0\n"
+		"gpr    r3       .64 104  0\n"
+		"gpr    r4       .64 112  0\n"
+		"gpr    r5       .64 120  0\n"
+		"gpr    r6       .64 128  0\n"
+		"gpr    r7       .64 136  0\n"
+		"gpr    r8       .64 144  0\n"
+		"gpr    r9       .64 152  0\n"
+		"gpr    r10       .64 160  0\n"
+		"gpr    tmp      .64 168  0\n";
 
 
 	return r_reg_set_profile_string (anal->reg, p);
