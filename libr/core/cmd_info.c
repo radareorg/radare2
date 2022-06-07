@@ -1255,14 +1255,14 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				}
 				bool fullGraph = true;
-				if (input[3] != ' ') {
-					bool fullGraph = false;
+				if (input[2] == 's') {
+					const char *match = input + 4;
 					r_list_foreach (obj->classes, iter, cls) {
-					        if (cls->super && strstr (cls->super, input + 3)) {
+					        if (cls->super && strstr (cls->super, match)) {
 							r_cons_printf ("agn %s\n", cls->super);
 							r_cons_printf ("agn %s\n", cls->name);
 							r_cons_printf ("age %s %s\n", cls->super, cls->name);
-						} else if (strstr (cls->name, input + 3)){
+						} else if (strstr (cls->name, match)) {
 							r_cons_printf ("agn %s\n", cls->name);
 						}
 					}
