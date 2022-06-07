@@ -563,3 +563,21 @@ ad "mvn w15, w25" EF03392A
 ad "mvn w5, w11" E5032B2A
 ad "mvn w1, w2" E103222A
 ad "mvn w10, w16" EA03302A
+ad "ccmn x30, x30, 0xf, eq" cf035eba
+ad "ccmn x30, x30, 0xf, ne" cf135eba
+ad "ccmn w30, w30, 0xf, eq" cf035e3a
+ad "ccmn w30, w30, 0xf, ne" cf135e3a
+ad "ccmn x30, 0x1f, 0xf, eq" cf0b5fba
+ad "ccmn x30, 0x1f, 0xf, ne" cf1b5fba
+ad "ccmn w30, 0x1f, 0xf, eq" cf0b5f3a
+ad "ccmn w30, 0x1f, 0xf, ne" cf1b5f3a
+ad "csel x30, x30, x30, eq" DE039E9A
+ad "csel x15, x25, x19, ne" 2F13939A
+ad "csel x5, x11, x22, eq" 6501969A
+ad "csel x1, x2, x3, ne" 4110839A
+ad "csel x10, x16, x13, eq" 0A028D9A
+ad "csel w30, w30, w30, ne" DE139E1A
+ad "csel w15, w25, w19, eq" 2F03931A
+ad "csel w5, w11, w22, ne" 6511961A
+ad "csel w1, w2, w3, eq" 4100831A
+ad "csel w10, w16, w13, ne" 0A128D1A
