@@ -226,9 +226,11 @@ regset 4 (xmm)
 * arena xmm size 1
 regset 5 (ymm)
 * arena ymm size 1
-regset 6 (flg)
+regset 6 (vec)
+* arena vec size 1
+regset 7 (flg)
 * arena flg size 1
-regset 7 (seg)
+regset 8 (seg)
 * arena seg size 216
    cs seg @ seg (offset: 136  size: 8)
    ss seg @ seg (offset: 160  size: 8)
