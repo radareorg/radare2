@@ -253,7 +253,7 @@ const char *r_bin_wasm_valuetype_to_string (r_bin_wasm_value_type_t type) {
 		return "f32";
 	case R_BIN_WASM_VALUETYPE_f64:
 		return "f64";
-	case R_BIN_WASM_VALUETYPE_ANYFUNC:
+	case R_BIN_WASM_VALUETYPE_REFTYPE:
 		return "ANYFUNC";
 	case R_BIN_WASM_VALUETYPE_FUNC:
 		return "FUNC";

@@ -30,15 +30,22 @@
 #define R_BIN_WASM_SECTION_CODE 0xa
 #define R_BIN_WASM_SECTION_DATA 0xb
 
+/*
+ * Value types From:
+ * https://webassembly.github.io/spec/core/binary/types.html#value-types,
+ * https://webassembly.github.io/spec/core/binary/types.html#binary-numtype
+ * https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md#type-encoding-type
+ */
 typedef enum {
-	R_BIN_WASM_VALUETYPE_i32 = 0x1,
-	R_BIN_WASM_VALUETYPE_i64 = 0x2,
-	R_BIN_WASM_VALUETYPE_f32 = 0x3,
-	R_BIN_WASM_VALUETYPE_f64 = 0x4,
-	R_BIN_WASM_VALUETYPE_v128 = 0x5,
-	R_BIN_WASM_VALUETYPE_ANYFUNC = 0x10,
-	R_BIN_WASM_VALUETYPE_FUNC = 0x20,
-	R_BIN_WASM_VALUETYPE_EMPTY = 0x40,
+	R_BIN_WASM_VALUETYPE_i32 = 0x7f,
+	R_BIN_WASM_VALUETYPE_i64 = 0x7e,
+	R_BIN_WASM_VALUETYPE_f32 = 0x7d,
+	R_BIN_WASM_VALUETYPE_f64 = 0x7c,
+	R_BIN_WASM_VALUETYPE_v128 = 0x7b,
+	R_BIN_WASM_VALUETYPE_REFTYPE = 0x70,
+	R_BIN_WASM_VALUETYPE_EXTERNREF = 0x6f,
+	R_BIN_WASM_VALUETYPE_FUNC = 0x60,
+	R_BIN_WASM_VALUETYPE_VOID = 0x40,
 } r_bin_wasm_value_type_t;
 
 typedef enum {
