@@ -40,19 +40,19 @@ bool test_r_stack_grow(void) {
 	r_stack_push (stack, (void*)(intptr_t)0x1337);
 	r_stack_push (stack, (void*)(intptr_t)0x8888);
 	r_stack_push (stack, (void*)(intptr_t)0xB00B5);
-	mu_assert_eq (stack->n_elems, 4, "stack grew!");
+	mu_assert_neq (stack->n_elems, 2, "stack grew!");
 	r_stack_free (stack);
 	mu_end;
 }
 
 int all_tests() {
-	mu_run_test(test_r_stack_pop_empty);
-	mu_run_test(test_r_stack_push_pop);
-	mu_run_test(test_r_stack_push_pop_multi);
-	mu_run_test(test_r_stack_grow);
+	mu_run_test (test_r_stack_pop_empty);
+	mu_run_test (test_r_stack_push_pop);
+	mu_run_test (test_r_stack_push_pop_multi);
+	mu_run_test (test_r_stack_grow);
 	return tests_passed != tests_run;
 }
 
 int main(int argc, char **argv) {
-	return all_tests();
+	return all_tests ();
 }
