@@ -517,7 +517,7 @@ static void cmd_write_value(RCore *core, const char *input) {
 	case '8': type = 8; break;
 	}
 	ut64 addr = core->offset;
-	char *inp = r_str_trim_dup (input + 1);
+	char *inp = r_str_trim_dup (input[0] ? input + 1: input);
 	RList *list = r_str_split_list (inp, " ", 0); // or maybe comma :?
 	char *cinp;
 	RListIter *iter;
