@@ -115,9 +115,9 @@ else
 fi
 
 NEED_CAPSTONE=1
-pkg-config --cflags capstone 2>&1 > /dev/null
+pkg-config --cflags capstone > /dev/null 2>&1
 if [ $? = 0 ]; then
-	pkg-config --atleast-version=5.0.0 capstone 2>/dev/null
+	pkg-config --atleast-version=5.0.0 capstone >/dev/null 2>&1
 	if [ $? = 0 ]; then
 		pkg-config --variable=archs capstone 2> /dev/null | grep -q riscv
 		if [ $? = 0 ]; then
