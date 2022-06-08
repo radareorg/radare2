@@ -1,4 +1,4 @@
-/* libgdbr - LGPL - Copyright 2014-2016 - defragger */
+/* libgdbr - LGPL - Copyright 2014-2022 - defragger, pancake */
 
 #include "packet.h"
 #include "utils.h"
@@ -14,19 +14,19 @@ enum {
 
 struct parse_ctx {
 	ut32 flags;
-	ut8  last;
-	ut8  sum;
-	int  chksum_nibble;
+	ut8 last;
+	ut8 sum;
+	int chksum_nibble;
 };
 
 static bool append(libgdbr_t *g, const char ch) {
-	char *ptr;
+	r_return_val_if_fail (g, -1);
 	if (g->data_len == g->data_max - 1) {
 		int newsize = g->data_max * 2;
 		if (newsize < 1) {
 			return false;
 		}
-		ptr = realloc (g->data, newsize);
+		char *ptr = realloc (g->data, newsize);
 		if (!ptr) {
 			eprintf ("%s: Failed to reallocate buffer\n",
 				 __func__);
@@ -40,6 +40,7 @@ static bool append(libgdbr_t *g, const char ch) {
 }
 
 static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
+	r_return_val_if_fail (g, -1);
 	int i = 0;
 	int j = 0;
 	bool first = true;
@@ -140,12 +141,9 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 }
 
 int read_packet(libgdbr_t *g, bool vcont) {
+	r_return_val_if_fail (g, -1);
 	struct parse_ctx ctx = {0};
 	int ret, i;
-	if (!g) {
-		eprintf ("Initialize libgdbr_t first\n");
-		return -1;
-	}
 	g->data_len = 0;
 	if (g->read_len > 0) {
 		if (unpack (g, &ctx, g->read_len) == 0) {
@@ -190,10 +188,7 @@ int read_packet(libgdbr_t *g, bool vcont) {
 }
 
 int send_packet(libgdbr_t *g) {
-	if (!g) {
-		eprintf ("Initialize libgdbr_t first\n");
-		return -1;
-	}
+	r_return_val_if_fail (g, -1);
 	if (g->server_debug) {
 		g->send_buff[g->send_len] = '\0';
 		eprintf ("putpkt (\"%s\");  %s\n", g->send_buff,
@@ -203,13 +198,11 @@ int send_packet(libgdbr_t *g) {
 }
 
 int pack(libgdbr_t *g, const char *msg) {
+	r_return_val_if_fail (g && msg, -1);
 	int run_len;
 	size_t msg_len;
 	const char *src;
 	char prev;
-	if (!g || !msg) {
-		return -1;
-	}
 	msg_len = strlen (msg);
 	if (msg_len > g->send_max + 5) {
 		eprintf ("%s: message too long: %s", __func__, msg);
@@ -259,7 +252,7 @@ int pack(libgdbr_t *g, const char *msg) {
 		src += run_len - 29;
 	}
 	g->send_buff[g->send_len] = '\0';
-	snprintf (g->send_buff + g->send_len, 4, "#%.2x", cmd_checksum(g->send_buff + 1));
+	snprintf (g->send_buff + g->send_len, 4, "#%.2x", cmd_checksum (g->send_buff + 1));
 	g->send_len += 3;
 	return g->send_len;
 }
