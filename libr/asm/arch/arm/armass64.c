@@ -711,7 +711,7 @@ static ut32 csel(ArmOp *op, const char *str) {
 		}
 	} else {
          	if (check1) {
-			is64 = 1;
+			is64 = true;
 			data_64 = 0x0010809a;
 			data_32 = 0;
 		} else if (check2) {
