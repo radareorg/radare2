@@ -302,7 +302,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'o':
 			free (output_file);
-			output_file = strdup (opt.arg);
+			output_file = r_file_abspath (opt.arg);
 			break;
 		default:
 			ret = help (false);
@@ -533,10 +533,12 @@ int main(int argc, char **argv) {
 			eprintf ("Overwrite output file '%s'\n", output_file);
 		}
 		char *results = pj_drain (state.test_results);
-		if (!r_file_dump (output_file, (ut8 *)results, strlen (results), false)) {
+		char *output = r_str_newf ("%s\n", results);
+		free (results);
+		if (!r_file_dump (output_file, (ut8 *)output, strlen (output), false)) {
 			eprintf ("Cannot write to %s\n", output_file);
 		}
-		free (results);
+		free (output);
 	}
 
 	if (interactive) {
