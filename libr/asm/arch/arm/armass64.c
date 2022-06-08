@@ -640,12 +640,7 @@ static ut32 tst(ArmOp *op) {
 static ut32 ccmn(ArmOp *op, const char *str) {
         ut32 data = UT32_MAX;
 	int k = 0;
-	bool isEq = false;
 	
-	const char *buf = strstr(str, "eq");
-	if (buf) {
-		isEq = true;
-	}
 
 	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].type & ARM_CONSTANT;
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].type & ARM_CONSTANT;
@@ -653,7 +648,7 @@ static ut32 ccmn(ArmOp *op, const char *str) {
 	bool check4 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
 	
 	if (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR) {
-		if (isEq) {
+		if (strstr (str, "eq")) {
 			if (check1) {
 				k = 0x000040ba;
 			} else if (check2) {
@@ -661,7 +656,7 @@ static ut32 ccmn(ArmOp *op, const char *str) {
 			} else {
 				return data;
 			}			
-		} else if (!isEq) {
+		} else {
 		  	 if (check1) {
 				k = 0x001040ba;
 			} else if (check2) {
@@ -671,7 +666,7 @@ static ut32 ccmn(ArmOp *op, const char *str) {
 			}	
 		}
 	} else if (op->operands[1].type & ARM_CONSTANT) {
-		if (isEq) {
+		if (strstr (str, "eq")) {
 			if (check3) {
 				k = 0x000840BA;
 			} else if (check4) {
@@ -679,8 +674,7 @@ static ut32 ccmn(ArmOp *op, const char *str) {
 			} else {
 				return data;
 			}
-						
-		} else if (!isEq) {
+		} else {
 		  	 if (check3) {
 				k = 0x001840BA;
 			} else if (check4) {
@@ -700,21 +694,16 @@ static ut32 ccmn(ArmOp *op, const char *str) {
 }
 
 static ut32 csel(ArmOp *op, const char *str) {
-        ut32 data = UT32_MAX;        
-        ut32 data_32;
-        ut32 data_64;
+        ut32 data_32 = 0;
+        ut32 data_64 = 0;
         bool is64 = false;
         bool isEq = false;
 	
-	const char *buf = strstr(str, "eq");
-	if (buf) {
-		isEq = true;
-	}
 
 	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
 	
-	if (isEq) {
+	if (strstr (str, "eq")) {
 		if (check1) {
 			is64 = true;
 			data_64 = 0x0000809a;
@@ -724,7 +713,7 @@ static ut32 csel(ArmOp *op, const char *str) {
 			data_32 = 0x0000801a;
 		} else {
 			return data;
-			}			
+		}
 	} else if (!isEq) {
          	if (check1) {
 			is64 = 1;
@@ -735,10 +724,9 @@ static ut32 csel(ArmOp *op, const char *str) {
 			data_32 = 0x0010801a;
 		} else {
 			return data;
-		}	
+		}
 	}
-	data = r_n_math (op, data_64, data_32, is64);
-	return data;
+	return r_n_math (op, data_64, data_32, is64);
 }
 
 static ut32 math(ArmOp *op, ut32 data, bool is64) {
