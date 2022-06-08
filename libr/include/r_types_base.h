@@ -240,6 +240,10 @@ typedef struct _utX {
 		return m? *m = n, m: m; \
 	}
 
+#define R_DIRTY(x) (x)->is_dirty = true
+#define R_IS_DIRTY(x) (x)->is_dirty
+#define R_DIRTY_VAR bool is_dirty
+
 #ifdef __cplusplus
 }
 #endif
