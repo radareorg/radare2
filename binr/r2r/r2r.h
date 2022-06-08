@@ -1,31 +1,11 @@
-/* radare - LGPL - Copyright 2020 - thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2022 - pancake, thestr4ng3r */
 
 #ifndef RADARE2_R2R_H
 #define RADARE2_R2R_H
 
 #include <r_util.h>
 
-#if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
-#define R2R_OS "freebsd"
-#elif defined(__linux__)
-#define R2R_OS "linux"
-#elif defined(__APPLE__)
-#define R2R_OS "darwin"
-#elif __WINDOWS__
-#define R2R_OS "windows"
-#else
-#define R2R_OS "unknown"
-#endif
-
-#if __i386__
-#define R2R_ARCH "x86"
-#elif __x86_64__
-#define R2R_ARCH "x64"
-#else
-#define R2R_ARCH "unknown"
-#endif
-
-#define R2R_ARCH_OS R2R_OS"-"R2R_ARCH
+#define R2R_ARCH_OS R_SYS_OS "-"R_SYS_ARCH
 
 typedef struct r2r_cmd_test_string_record {
 	char *value;

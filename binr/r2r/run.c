@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2021 - thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2022 - pancake, thestr4ng3r */
 
 #include "r2r.h"
 
@@ -47,11 +47,11 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 	return true;
 }
 
-R_API bool r2r_subprocess_init(void) {
+R_DEPRECATE R_API bool r2r_subprocess_init(void) {
 	return true;
 }
 
-R_API void r2r_subprocess_fini(void) {
+R_DPRECATE R_API void r2r_subprocess_fini(void) {
 	// nothing to do
 }
 
@@ -644,11 +644,10 @@ error:
 }
 
 R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
-	ut64 timeout_abs;
+	ut64 timeout_abs = 0;
 	if (timeout_ms != UT64_MAX) {
 		timeout_abs = r_time_now_mono () + timeout_ms * R_USEC_PER_MSEC;
 	}
-
 	int r = 0;
 	bool stdout_eof = false;
 	bool stderr_eof = false;
@@ -738,7 +737,9 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 }
 
 R_API void r2r_subprocess_kill(R2RSubprocess *proc) {
-	kill (proc->pid, SIGKILL);
+	if (kill (proc->pid, SIGKILL) == -1) {
+		r_sys_perror ("kill");
+	}
 }
 
 R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_t buf_size) {
@@ -884,8 +885,10 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, cons
 	r_pvector_push (&args, "-N");
 	RListIter *it;
 	void *extra_arg, *file_arg;
-	r_list_foreach (extra_args, it, extra_arg) {
-		r_pvector_push (&args, extra_arg);
+	if (extra_args) {
+		r_list_foreach (extra_args, it, extra_arg) {
+			r_pvector_push (&args, extra_arg);
+		}
 	}
 	r_pvector_push (&args, "-Qc");
 #if __WINDOWS__
@@ -1094,6 +1097,9 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 			goto rip;
 		}
 		ut8 *bytes = malloc (hexlen);
+		if (!bytes) {
+			goto rip;
+		}
 		int byteslen = r_hex_str2bin (hex, bytes);
 		if (byteslen <= 0) {
 			free (bytes);
