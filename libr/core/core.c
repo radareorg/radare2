@@ -3511,7 +3511,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 		if (!cmd) {
 			break;
 		}
-		ret = r_core_cmd (r, cmd, true);
+		ret = r_core_cmd (r, cmd, true); // initial free
 		free (cmd);
 		if (ret < 0) {
 			if (r->cons && r->cons->line && r->cons->line->zerosep) {
@@ -3528,7 +3528,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 			r->cons->context->use_tts = false;
 		}
 		r_cons_echo (NULL);
-		r_cons_flush ();
+		r_cons_flush (); // double free
 		if (r->cons && r->cons->line && r->cons->line->zerosep) {
 			r_cons_zero ();
 		}
