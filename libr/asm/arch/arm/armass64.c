@@ -637,6 +637,92 @@ static ut32 tst(ArmOp *op) {
 	return data;
 }
 
+static ut32 ccmn(ArmOp *op, const char *str) {
+        ut32 data = UT32_MAX;
+	int k = 0;
+	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].type & ARM_CONSTANT;
+	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].type & ARM_CONSTANT;
+	bool check3 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
+	bool check4 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
+	
+	if (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR) {
+		if (strstr (str, "eq")) {
+			if (check1) {
+				k = 0x000040ba;
+			} else if (check2) {
+				k = 0x0000403a;
+			} else {
+				return data;
+			}			
+		} else {
+		  	 if (check1) {
+				k = 0x001040ba;
+			} else if (check2) {
+				k = 0x0010403a;
+			} else {
+				return data;
+			}	
+		}
+	} else if (op->operands[1].type & ARM_CONSTANT) {
+		if (strstr (str, "eq")) {
+			if (check3) {
+				k = 0x000840BA;
+			} else if (check4) {
+				k = 0x0008403A;
+			} else {
+				return data;
+			}
+		} else {
+		  	 if (check3) {
+				k = 0x001840BA;
+			} else if (check4) {
+				k = 0x0018403A;
+			} else {
+				return data;
+			}
+		}
+	} else {
+		return data;
+	}
+	data = k | (op->operands[0].reg & 0x7) << 29;
+	data |= (op->operands[0].reg & 0x18) << 13;
+	data |= (op->operands[1].reg & 0x1f) << 8;
+	data |= (op->operands[2].immediate & 0xf) << 24;
+	return data;
+}
+
+static ut32 csel(ArmOp *op, const char *str) {
+        ut32 data_32 = 0;
+        ut32 data_64 = 0;
+        bool is64 = false;
+	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
+	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
+	
+	if (strstr (str, "eq")) {
+		if (check1) {
+			is64 = true;
+			data_64 = 0x0000809a;
+			data_32 = 0;
+		} else if (check2) {
+		  	data_64 = 0;
+			data_32 = 0x0000801a;
+		} else {
+			return UT32_MAX;
+		}
+	} else {
+         	if (check1) {
+			is64 = true;
+			data_64 = 0x0010809a;
+			data_32 = 0;
+		} else if (check2) {
+			data_64 = 0;
+			data_32 = 0x0010801a;
+		} else {
+			return UT32_MAX;
+		}
+	}
+	return r_n_math (op, data_64, data_32, is64);
+}
 
 static ut32 math(ArmOp *op, ut32 data, bool is64) {
 	if (is64) {
@@ -1677,6 +1763,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = cl (&ops);
 	} else if (!strncmp (str, "clz", 3)) {
 		*op = cl (&ops);
+	} else if (!strncmp (str, "ccmn", 4)) {
+		*op = ccmn (&ops, str);
+	} else if (!strncmp (str, "csel", 4)) {
+		*op = csel (&ops, str);
 	} else if (!strncmp (str, "ldrb", 4)) {
 		*op = lsop (&ops, 0x00004038, -1);
 	} else if (!strncmp (str, "ldrh", 4)) {
