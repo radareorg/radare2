@@ -11,6 +11,7 @@ fpu
 mmx
 xmm
 ymm
+vec
 flg
 seg
 EOF
