@@ -16,7 +16,7 @@ static const char *help_msg_i[] = {
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
 	"ic", "", "List classes, methods and fields",
 	"icc", "", "List classes, methods and fields in Header Format",
-	"icg", "", "List classes as agn/age commands to create class hirearchy graphs",
+	"icg", " [strstr]", "List classes as agn/age commands to create class hirearchy graphs",
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
 	"iC", "[j]", "show signature info (entitlements, ...)",
