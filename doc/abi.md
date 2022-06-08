@@ -17,15 +17,20 @@ introduce new features or simplify the usage of some apis.
 
 What you **CANNOT** do between X.Y.0 and X.Y.8:
 
-* Add, remove or rename public functions, structs or enums
+* Add, Remove or rename public functions, structs or enums
 * Change function signature (adding or removing arguments)
 * Add, remove or reorder fields in structs
 * Remove or change r2 commands (must be documented in release)
 
 What you **CAN** do between X.Y.0 and X.Y.8:
 
+* Remove global symbols (they shouldnt be accessed directly anyway)
 * Change internal structs or functions (static)
+* Refactor the programs (those are not libraries and dont expose apis)
+* If you really need to add a new public function use `R2_XY0 static inline`
+  * This way the function is inlined and no new symbols are exposed.
 * Add new r2 commands
+* Add, rename or remove plugins
 * Extend r2 commands with new arguments, not breaking previous behaviour)
 * Fix memleaks, race conditions, bugs, improve performance, usability, documentation, etc
 * Add breaking code under `#if R2_XY0` to be removed when .9 arrives
