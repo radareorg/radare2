@@ -11,10 +11,6 @@
 
 #include <r_core.h>
 
-static bool is_valid_gdb_file(RIODesc *d) {
-	return d && !strncmp (d->name, "gdb://", 6);
-}
-
 static char* get_file_in_cur_dir(const char *filepath) {
 	filepath = r_file_basename (filepath);
 	if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
@@ -441,7 +437,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	ut64 mapaddr = 0LL;
 	bool quiet = false;
 	bool quietLeak = false;
-	int is_gdb = false;
+	bool is_gdb = false;
 	const char * s_seek = NULL;
 	bool compute_hashes = true;
 	RList *cmds = r_list_new ();
@@ -795,32 +791,32 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		return 0;
 	}
 	if (noStderr) {
-		if (-1 == close (2)) {
-			eprintf ("Failed to close stderr\n");
+		if (close (2) == -1) {
+			R_LOG_ERROR ("Failed to close stderr");
 			LISTS_FREE ();
 			R_FREE (debugbackend);
 			return 1;
 		}
 		const char nul[] = R_SYS_DEVNULL;
 		int new_stderr = open (nul, O_RDWR);
-		if (-1 == new_stderr) {
-			eprintf ("Failed to open %s\n", nul);
+		if (new_stderr == -1) {
+			R_LOG_ERROR ("Failed to open %s for stderr", nul);
 			LISTS_FREE ();
 			R_FREE (debugbackend);
 			return 1;
 		}
-		if (2 != new_stderr) {
+		if (new_stderr == 2) {
 #if !__wasi__
-			if (-1 == dup2 (new_stderr, 2)) {
-				eprintf ("Failed to dup2 stderr\n");
+			if (dup2 (new_stderr, 2) == -1) {
+				R_LOG_ERROR ("Failed to dup2 stderr");
 				free (envprofile);
 				LISTS_FREE ();
 				R_FREE (debugbackend);
 				return 1;
 			}
 #endif
-			if (-1 == close (new_stderr)) {
-				eprintf ("Failed to close %s\n", nul);
+			if (close (new_stderr) == -1) {
+				R_LOG_ERROR ("Failed to close %s", nul);
 				LISTS_FREE ();
 				free (envprofile);
 				R_FREE (debugbackend);
@@ -1079,9 +1075,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				return 1;
 			}
 			if (debug == 2) {
-				// autodetect backend with -D
+				// autodetect backend with -D when it's not native or esil
 				r_config_set (r->config, "dbg.backend", debugbackend);
-				if (strcmp (debugbackend, "native")) {
+				if (strcmp (debugbackend, "native") && strcmp (debugbackend, "esil")) {
 					if (!haveRarunProfile) {
 						pfile = strdup (argv[opt.ind++]);
 					}
@@ -1092,14 +1088,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					}
 #if __WINDOWS__
 					pfile = r_acp_to_utf8 (pfile);
-#endif // __WINDOWS__
+#endif
 					fh = r_core_file_open (r, pfile, perms, mapaddr);
 					iod = (r->io && fh) ? r_io_desc_get (r->io, fh->fd) : NULL;
 					if (!strcmp (debugbackend, "gdb")) {
 						const char *filepath = r_config_get (r->config, "dbg.exe.path");
 						if (!R_STR_ISEMPTY (filepath)) {
 							ut64 addr = baddr;
-							if (addr == UINT64_MAX) {
+							if (addr == UT64_MAX) {
 								addr = r_config_get_i (r->config, "bin.baddr");
 							}
 							if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
@@ -1109,15 +1105,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 										free (iod->name);
 										iod->name = newpath;
 									}
-									if (addr == UINT64_MAX) {
+									if (addr == UT64_MAX) {
 										addr = r_debug_get_baddr (r->dbg, newpath);
 									}
 									r_core_bin_load (r, NULL, addr);
 								}
-							} else if (is_valid_gdb_file (fh)) {
+							} else if (r_str_startswith (fh, "gdb://")) {
 								filepath = iod->name;
 								if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
-									if (addr == UINT64_MAX) {
+									if (addr == UT64_MAX) {
 										addr = r_debug_get_baddr (r->dbg, filepath);
 									}
 									r_core_bin_load (r, filepath, addr);
@@ -1127,7 +1123,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 										free (iod->name);
 										iod->name = (char*) filepath;
 									}
-									if (addr == UINT64_MAX) {
+									if (addr == UT64_MAX) {
 										addr = r_debug_get_baddr (r->dbg, filepath);
 									}
 									r_core_bin_load (r, NULL, addr);
@@ -1138,7 +1134,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 			} else {
 				char *f = (haveRarunProfile && pfile)? strdup (pfile): strdup (argv[opt.ind]);
-				is_gdb = (!memcmp (f, "gdb://", R_MIN (f? strlen (f):0, 6)));
+				is_gdb = r_str_startswith (f, "gdb://");
 				if (!is_gdb) {
 					free (pfile);
 					pfile = strdup ("dbg://");
@@ -1164,12 +1160,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					R_FREE (escaped_path);
 					R_FREE (path);
 				}
-#else
-#	if __WINDOWS__
+#elif __WINDOWS__
 				char *f2 = r_acp_to_utf8 (f);
 				free (f);
 				f = f2;
-#	endif // __WINDOWS__
+#endif
 				if (f) {
 					char *escaped_path = r_str_arg_escape (f);
 					pfile = r_str_append (pfile, escaped_path);
