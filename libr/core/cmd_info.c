@@ -1258,7 +1258,7 @@ static int cmd_info(void *data, const char *input) {
 				const char *match = r_str_trim_head_ro (input + 2);
 				if (*match) {
 					r_list_foreach (obj->classes, iter, cls) {
-					        if (cls->super && strstr (cls->super, match)) {
+					    if (cls->super && strstr (cls->super, match)) {
 							r_cons_printf ("agn %s\n", cls->super);
 							r_cons_printf ("agn %s\n", cls->name);
 							r_cons_printf ("age %s %s\n", cls->super, cls->name);
@@ -1266,9 +1266,8 @@ static int cmd_info(void *data, const char *input) {
 							r_cons_printf ("agn %s\n", cls->name);
 						}
 					}
-					goto done;
 				}
-				if (fullGraph) {
+                else if (fullGraph) {
 					r_list_foreach (obj->classes, iter, cls) {
 						if (cls->super) {
 							r_cons_printf ("agn %s\n", cls->super);
