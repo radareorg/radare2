@@ -640,8 +640,6 @@ static ut32 tst(ArmOp *op) {
 static ut32 ccmn(ArmOp *op, const char *str) {
         ut32 data = UT32_MAX;
 	int k = 0;
-	
-
 	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].type & ARM_CONSTANT;
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].type & ARM_CONSTANT;
 	bool check3 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
@@ -686,7 +684,7 @@ static ut32 ccmn(ArmOp *op, const char *str) {
 	} else {
 		return data;
 	}
-	data = k | (op->operands[0].reg & 0x7) << 29;
+	ut32 data = k | (op->operands[0].reg & 0x7) << 29;
 	data |= (op->operands[0].reg & 0x18) << 13;
 	data |= (op->operands[1].reg & 0x1f) << 8;
 	data |= (op->operands[2].immediate & 0xf) << 24;
@@ -697,9 +695,6 @@ static ut32 csel(ArmOp *op, const char *str) {
         ut32 data_32 = 0;
         ut32 data_64 = 0;
         bool is64 = false;
-        bool isEq = false;
-	
-
 	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
 	
