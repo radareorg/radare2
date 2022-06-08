@@ -707,7 +707,7 @@ static ut32 csel(ArmOp *op, const char *str) {
 		  	data_64 = 0;
 			data_32 = 0x0000801a;
 		} else {
-			return data;
+			return UT32_MAX;
 		}
 	} else {
          	if (check1) {
@@ -718,7 +718,7 @@ static ut32 csel(ArmOp *op, const char *str) {
 			data_64 = 0;
 			data_32 = 0x0010801a;
 		} else {
-			return data;
+			return UT32_MAX;
 		}
 	}
 	return r_n_math (op, data_64, data_32, is64);
