@@ -93,6 +93,7 @@ static void gdbr_break_process(void *arg) {
 }
 
 bool gdbr_lock_tryenter(libgdbr_t *g) {
+	r_return_val_if_fail (g, false);
 	if (!r_th_lock_tryenter (g->gdbr_lock)) {
 		return false;
 	}
@@ -102,18 +103,17 @@ bool gdbr_lock_tryenter(libgdbr_t *g) {
 }
 
 bool gdbr_lock_enter(libgdbr_t *g) {
+	r_return_val_if_fail (g, false);
 	r_cons_break_push (gdbr_break_process, g);
 	void *bed = r_cons_sleep_begin ();
 	r_th_lock_enter (g->gdbr_lock);
 	g->gdbr_lock_depth++;
 	r_cons_sleep_end (bed);
-	if (g->isbreaked) {
-		return false;
-	}
-	return true;
+	return !g->isbreaked;
 }
 
 void gdbr_lock_leave(libgdbr_t *g) {
+	r_return_if_fail (g);
 	r_cons_break_pop ();
 	if (g->gdbr_lock_depth < 1) {
 		return;

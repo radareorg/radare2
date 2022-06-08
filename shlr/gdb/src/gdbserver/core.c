@@ -9,23 +9,16 @@
 #include "libgdbr.h"
 #include "packet.h"
 #include "utils.h"
-#include "r_util/r_str.h"
+#include <r_util.h>
 
 static int _server_handle_qSupported(libgdbr_t *g) {
 	int ret;
-	char *buf;
-	if (!(buf = malloc (128))) {
-		return -1;
-	}
-	snprintf (buf, 127, "PacketSize=%x;QStartNoAckMode+;qXfer:exec-file:read+",
-		  (ut32) (g->read_max - 1));
+	char buf[128];
+	snprintf (buf, sizeof (buf), "PacketSize=%x;QStartNoAckMode+;qXfer:exec-file:read+", (ut32) (g->read_max - 1));
 	if ((ret = handle_qSupported (g)) < 0) {
-		free (buf);
 		return -1;
 	}
-	ret = send_msg (g, buf);
-	free (buf);
-	return ret;
+	return send_msg (g, buf);
 }
 
 static int _server_handle_qTStatus(libgdbr_t *g) {
@@ -40,7 +33,7 @@ static int _server_handle_qTStatus(libgdbr_t *g) {
 
 static int _server_handle_qOffsets(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 	char buf[64], *ptr;
-	ptr = buf + sprintf (buf, "TextSeg=");
+	ptr = buf + snprintf (buf, sizeof (buf), "TextSeg=");
 	if (send_ack (g) < 0) {
 		return -1;
 	}
@@ -492,13 +485,12 @@ static int _server_handle_qTfV(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *co
 }
 
 int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	int ret;
-	if (!g) {
-		return -1;
-	}
-	while (1) {
+	r_return_val_if_fail (g, -1);
+	int ret = -1;
+	for (;;) {
 		if (read_packet (g, false) < 0) {
-			continue;
+			break;
+			// continue;
 		}
 		if (g->data_len == 0) {
 			continue;

@@ -2,6 +2,7 @@
 
 #include "packet.h"
 #include "utils.h"
+#include <r_util.h>
 
 #define READ_TIMEOUT (250 * 1000)
 
