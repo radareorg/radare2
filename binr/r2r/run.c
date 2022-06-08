@@ -51,7 +51,7 @@ R_DEPRECATE R_API bool r2r_subprocess_init(void) {
 	return true;
 }
 
-R_DPRECATE R_API void r2r_subprocess_fini(void) {
+R_DEPRECATE R_API void r2r_subprocess_fini(void) {
 	// nothing to do
 }
 
