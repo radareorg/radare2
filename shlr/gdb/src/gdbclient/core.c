@@ -8,9 +8,9 @@
 #include "libgdbr.h"
 #include "gdbr_common.h"
 #include "packet.h"
-#include "r_util/r_strbuf.h"
-#include "r_cons.h"
-#include "r_debug.h"
+#include <r_util/r_strbuf.h>
+#include <r_cons.h>
+#include <r_debug.h>
 
 #if __UNIX__
 #include <errno.h>
@@ -1944,10 +1944,10 @@ end:
 }
 
 ut64 gdbr_get_baddr(libgdbr_t *g) {
-	ut64 off, min = UINT64_MAX;
+	ut64 off, min = UT64_MAX;
 	char *ptr;
 	if (!g) {
-		return UINT64_MAX;
+		return UT64_MAX;
 	}
 
 	if (!gdbr_lock_enter (g)) {
@@ -1955,7 +1955,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 	}
 	if (send_msg (g, "qOffsets") < 0 || read_packet (g, false) < 0
 		    || send_ack (g) < 0 || g->data_len == 0) {
-		min = UINT64_MAX;
+		min = UT64_MAX;
 		goto end;
 	}
 	if (r_str_startswith (g->data, "TextSeg=")) {
@@ -1995,12 +1995,12 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 		min = off;
 	}
 	if (!(ptr = strchr (ptr, ';')) || !r_str_startswith (ptr + 1, "Data=")) {
-		min = UINT64_MAX;
+		min = UT64_MAX;
 		goto end;
 	}
 	ptr += strlen (";Data=");
 	if (!isxdigit ((unsigned char)*ptr)) {
-		min = UINT64_MAX;
+		min = UT64_MAX;
 		goto end;
 	}
 	off = strtoull (ptr, NULL, 16);
