@@ -1257,7 +1257,6 @@ static int cmd_info(void *data, const char *input) {
 				bool fullGraph = true;
 				const char *match = r_str_trim_head_ro (input + 2);
 				if (*match) {
-					const char *match = r_str_trim_head_ro (input + 3);
 					r_list_foreach (obj->classes, iter, cls) {
 					        if (cls->super && strstr (cls->super, match)) {
 							r_cons_printf ("agn %s\n", cls->super);
