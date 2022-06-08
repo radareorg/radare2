@@ -653,6 +653,7 @@ static RBinWasmCustomNameEntry *parse_custom_name_entry(RBuffer *b, ut64 bound) 
 	}
 	cust->type = R_BIN_WASM_NAMETYPE_None;
 
+	size_t start = r_buf_tell (b);
 	if (!consume_u7_r (b, bound, &cust->type)) {
 		goto beach;
 	};
@@ -687,6 +688,10 @@ static RBinWasmCustomNameEntry *parse_custom_name_entry(RBuffer *b, ut64 bound) 
 			goto beach;
 		}
 		break;
+	default:
+		eprintf ("[wasm] Halting custom name section parsing at unknown type 0x%x offset 0x%" PFMT64x "\n", cust->type, start);
+		cust->type = R_BIN_WASM_NAMETYPE_None;
+		goto beach;
 	}
 
 	return cust;
@@ -847,7 +852,7 @@ static RList *r_bin_wasm_get_custom_name_entries(RBinWasmObj *bin, RBinWasmSecti
 		RBinWasmCustomNameEntry *nam = parse_custom_name_entry (buf, bound);
 
 		if (!nam) {
-			goto beach;
+			break; // allow partial parsing of section
 		}
 
 		if (!r_list_append (ret, nam)) {

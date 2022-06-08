@@ -804,10 +804,10 @@ static const char *M[] = {
 
 static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	RBpfSockFilter *f = (RBpfSockFilter *)data;
-	memset (op, '\0', sizeof (RAnalOp));
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;
-	op->ptr = op->val = UT64_MAX;
+	op->ptr = UT64_MAX;
+	op->val = -1;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 8;
 	op->addr = addr;

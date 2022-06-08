@@ -351,8 +351,7 @@ jobs:
     - name: preconfigure
       continue-on-error: true
       shell: cmd
-      run: |
-        preconfigure
+      run: preconfigure
     - name: Build with meson + ninja
       shell: cmd
       run: |
