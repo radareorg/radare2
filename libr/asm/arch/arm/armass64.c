@@ -684,7 +684,7 @@ static ut32 ccmn(ArmOp *op, const char *str) {
 	} else {
 		return data;
 	}
-	ut32 data = k | (op->operands[0].reg & 0x7) << 29;
+	data = k | (op->operands[0].reg & 0x7) << 29;
 	data |= (op->operands[0].reg & 0x18) << 13;
 	data |= (op->operands[1].reg & 0x1f) << 8;
 	data |= (op->operands[2].immediate & 0xf) << 24;
