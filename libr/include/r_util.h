@@ -91,7 +91,5 @@ R_LIB_VERSION_HEADER (r_util);
 #ifdef __cplusplus
 }
 #endif
-#define R_DIRTY(x) (x)->is_dirty = true
-#define R_IS_DIRTY(x) (x)->is_dirty
-#define R_DIRTY_VAR bool is_dirty
+
 #endif
