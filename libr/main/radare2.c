@@ -1110,7 +1110,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 									}
 									r_core_bin_load (r, NULL, addr);
 								}
-							} else if (r_str_startswith (fh, "gdb://")) {
+							} else if (fh->name && r_str_startswith (fh->name, "gdb://")) {
 								filepath = iod->name;
 								if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
 									if (addr == UT64_MAX) {
@@ -1164,7 +1164,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				char *f2 = r_acp_to_utf8 (f);
 				free (f);
 				f = f2;
-#endif
+#else
 				if (f) {
 					char *escaped_path = r_str_arg_escape (f);
 					pfile = r_str_append (pfile, escaped_path);
