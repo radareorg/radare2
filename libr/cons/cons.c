@@ -40,6 +40,16 @@ typedef struct {
 	void *event_interrupt_data;
 } RConsBreakStack;
 
+static void cons_grep_reset(RConsGrep *grep) {
+	if (grep) {
+		R_FREE (grep->str); // double-free
+		ZERO_FILL (*grep);
+		grep->line = -1;
+		grep->sort = -1;
+		grep->sort_invert = false;
+	}
+}
+
 static void break_stack_free(void *ptr) {
 	RConsBreakStack *b = (RConsBreakStack*)ptr;
 	free (b);
@@ -48,11 +58,16 @@ static void break_stack_free(void *ptr) {
 static void cons_stack_free(void *ptr) {
 	RConsStack *s = (RConsStack *)ptr;
 	R_FREE (s->buf);
+/*
 	if (s->grep) {
-		R_FREE (s->grep->str);
+		R_FREE (s->grep->str); // FREE
 	}
+*/
+	cons_grep_reset (s->grep);
 	R_FREE (s->grep);
 	free (s);
+	C->grep.str = NULL;
+	cons_grep_reset (&C->grep);
 }
 
 static RConsStack *cons_stack_dump(bool recreate) {
@@ -97,16 +112,6 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 	if (data->grep) {
 		free (C->grep.str);
 		memcpy (&C->grep, data->grep, sizeof (RConsGrep));
-	}
-}
-
-static void cons_grep_reset(RConsGrep *grep) {
-	if (grep) {
-		R_FREE (grep->str);
-		ZERO_FILL (*grep);
-		grep->line = -1;
-		grep->sort = -1;
-		grep->sort_invert = false;
 	}
 }
 
@@ -843,7 +848,7 @@ R_API void r_cons_reset(void) {
 }
 
 R_API const char *r_cons_get_buffer(void) {
-	//check len otherwise it will return trash
+	// check len otherwise it will return trash
 	return C->buffer_len? C->buffer : NULL;
 }
 
