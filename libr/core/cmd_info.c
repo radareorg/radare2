@@ -1266,8 +1266,7 @@ static int cmd_info(void *data, const char *input) {
 							r_cons_printf ("agn %s\n", cls->name);
 						}
 					}
-				}
-                else if (fullGraph) {
+				} else if (fullGraph) {
 					r_list_foreach (obj->classes, iter, cls) {
 						if (cls->super) {
 							r_cons_printf ("agn %s\n", cls->super);
