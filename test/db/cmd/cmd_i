@@ -515,6 +515,7 @@ CMDS=<<EOF
 icg
 ?e 
 icg _JNIEnv
+?e 
 icg System
 EOF
 EXPECT=<<EOF
@@ -540,6 +541,7 @@ agn std::bad_cast
 agn std::bad_typeid
 
 agn _JNIEnv
+
 agn SystemClassLoaderInjector
 EOF
 RUN
