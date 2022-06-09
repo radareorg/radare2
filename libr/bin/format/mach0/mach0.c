@@ -2131,7 +2131,11 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->signature);
 	free (mo->intrp);
 	free (mo->compiler);
+#if FEATURE_SYMLIST
+	// nothing
+#else
 	r_list_free (mo->symbols_cache);
+#endif
 	r_list_free (mo->sections_cache);
 	if (mo->chained_starts) {
 		for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
@@ -2687,7 +2691,6 @@ static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 
 }
 
 const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
-	struct symbol_t *symbols;
 	size_t i, j, s, symbols_size, symbols_count;
 	ut32 to, from;
 
@@ -2723,12 +2726,12 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	symbols_count += bin->nsymtab;
 	symbols_size = (symbols_count + 1) * 2 * sizeof (struct symbol_t);
 
-	if (symbols_size < 1 || !(symbols = calloc (1, symbols_size))) {
+	if (symbols_size < 1) {
 		ht_pp_free (hash);
 		return NULL;
 	}
 	j = 0; // symbol_idx
-	bin->main_addr = 0;
+	bin->main_addr = UT64_MAX;
 	int bits = MACH0_(get_bits_from_hdr) (&bin->hdr);
 	for (s = 0; s < 2; s++) {
 		switch (s) {
@@ -2763,7 +2766,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			sym->vaddr = bin->symtab[i].n_value;
 			sym->paddr = addr_to_offset (bin, sym->vaddr);
-			symbols[j].size = 0; /* TODO: Is it anywhere? */
+			sym->size = 0; /* TODO: Is it anywhere? */
 			sym->bits = bin->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
 
 			if (bin->symtab[i].n_type & N_EXT) {
@@ -2775,6 +2778,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			char *sym_name = get_name (bin, stridx, false);
 			if (sym_name) {
 				sym->name = sym_name;
+#if 0
 				if (!bin->main_addr || bin->main_addr == UT64_MAX) {
 					const char *name = sym->name;
 					if (!strcmp (name, "__Dmain")) {
@@ -2787,6 +2791,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 						bin->main_addr = symbols[j].addr;
 					}
 				}
+#endif
 			} else {
 				sym->name = r_str_newf ("unk%u", (ut32)i);
 			}
@@ -2821,6 +2826,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 		}
 	}
 
+#if 1
 	for (i = 0; i < bin->nsymtab && i < symbols_count; i++) {
 		struct MACH0_(nlist) *st = &bin->symtab[i];
 		// 0 is for imports
@@ -2834,8 +2840,8 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			}
 			/* is symbol */
 			sym->vaddr = st->n_value;
-			sym->paddr = addr_to_offset (bin, symbols[j].addr);
-			sym->is_imported = symbols[j].is_imported;
+			sym->paddr = 0; // addr_to_offset (bin, symbols[j].addr);
+			sym->is_imported = false; // symbols[j].is_imported;
 			sym->type = (st->n_type & N_EXT)? "EXT": "LOCAL";
 			char *sym_name = get_name (bin, st->n_strx, false);
 			if (sym_name) {
@@ -2844,6 +2850,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 					r_bin_symbol_free (sym);
 					continue;
 				}
+#if 0
 				if (!bin->main_addr || bin->main_addr == UT64_MAX) {
 					const char *name = sym->name;
 					if (!strcmp (name, "__Dmain")) {
@@ -2854,16 +2861,15 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 						bin->main_addr = symbols[i].addr;
 					}
 				}
+#endif
 			} else {
 				sym->name = r_str_newf ("unk%u", (ut32)i);
 			}
 			r_list_append (list, sym);
-			j++;
 		}
 	}
+#endif
 	ht_pp_free (hash);
-	// bin->symbols = symbols;
-    free (symbols);
 	return list;
 }
 
@@ -4181,7 +4187,7 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin) {
 	// dummy call to initialize things
 	free (MACH0_(get_entrypoint)(bin));
 
-	bin->main_addr = 0;
+	bin->main_addr = UT64_MAX;
 
 	if (addr == UT64_MAX && bin->main_cmd.cmd == LC_MAIN) {
 		addr = bin->entry + bin->baddr;

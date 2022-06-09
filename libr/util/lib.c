@@ -419,7 +419,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 		}
 		snprintf (file, sizeof (file), "%s/%s", path, de->d_name);
 		if (__lib_dl_check_filename (file)) {
-			IFDBG eprintf ("Loading %s\n", file);
+			R_LOG_DEBUG ("Loading %s", file);
 			r_lib_open (lib, file);
 		} else {
 			IFDBG eprintf ("Cannot open %s\n", file);

@@ -6,7 +6,7 @@
 #define _INCLUDE_R_BIN_MACH0_H_
 
 // 20% faster loading times for macho if enabled
-#define FEATURE_SYMLIST 0
+#define FEATURE_SYMLIST 1
 
 #define R_BIN_MACH0_STRING_LENGTH 256
 
@@ -195,6 +195,7 @@ struct MACH0_(obj_t) {
 	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);
 	struct symbol_t *symbols;
 	ut64 main_addr;
+	bool symbols_parsed;
 	int (*original_io_read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 	bool rebasing_buffer;
 	RList *symbols_cache;
