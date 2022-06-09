@@ -39,6 +39,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_BPF, mode, &handle);
 		if (ret != CS_ERR_OK) {
+			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_BPF, %x, ...): %s\n", mode, cs_strerror (ret));
 			handle = 0;
 			return -1;
 		}

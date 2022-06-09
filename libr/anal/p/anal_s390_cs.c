@@ -192,6 +192,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		cs_free (insn, n);
 		cs_close (&handle);
+	} else {
+		R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_SYSZ, %x, ...): %s\n", mode, cs_strerror (ret));
 	}
 	return op->size;
 }
