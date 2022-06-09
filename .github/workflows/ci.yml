@@ -64,7 +64,11 @@ jobs:
         export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
         sys/install.sh
     - name: Running tests
-      run: r2r test/db/cmd
+      run: r2r -o /tmp/r2r.json test/db/cmd
+    - uses: actions/upload-artifact@v2
+      with:
+        name: r2r.json
+        path: /tmp/r2r.json
   build-syscapstone:
     name: linux-sys-capstone
     runs-on: ubuntu-20.04
