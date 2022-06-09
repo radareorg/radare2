@@ -84,10 +84,12 @@ static ut64 baddr(RBinFile *bf) {
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 buf[8] = {0};
-	r_buf_read_at (b, 0, buf, sizeof (buf));
-	if (buf[0] == 0x20) {
+	if (r_buf_read_at (b, 0, buf, sizeof (buf)) != sizeof (buf)) {
+		return false;
+	}
+	if (!memcmp (buf, "\x20\x00\x00\x00\x01\x00", 6)) {
 		S390_Header_CESD *hdr = (S390_Header_CESD*)buf; 
-		if (r_buf_size (b) > sizeof (S390_Header_CESD) + r_read_be16(&hdr->Count)) {
+		if (r_buf_size (b) > sizeof (S390_Header_CESD) + r_read_be16 (&hdr->Count)) {
 			return true;
 		}
 	}
@@ -98,9 +100,11 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	bool res = check_buffer (bf, b);
 	if (res) {
 		s390user *su = R_NEW0 (s390user);
-		su->sb = r_strbuf_new ("");
-		su->symbols = r_list_newf (r_bin_symbol_free);
-		*bin_obj = (void*)su;
+		if (su) {
+			su->sb = r_strbuf_new ("");
+			su->symbols = r_list_newf (r_bin_symbol_free);
+			*bin_obj = (void*)su;
+		}
 	}
 	return res;
 }
