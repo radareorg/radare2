@@ -18,7 +18,7 @@ DEVDIR=dist/debian/radare2-dev/root
 # clean
 rm -rf "${PKGDIR}" "${DEVDIR}"
 
-source `dirname $0`/make-jobs.inc.sh
+. `dirname $0`/make-jobs.inc.sh
 
 export CFLAGS="-Wno-cpp -Wno-unused-result ${CFLAGS} -O2"
 # build
