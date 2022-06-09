@@ -665,4 +665,4 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-#endif
+#endif // CS_API_MAJOR
