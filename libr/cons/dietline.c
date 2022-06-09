@@ -514,19 +514,27 @@ R_API void r_line_hist_free(void) {
 }
 
 /* load history from file. TODO: if file == NULL load from ~/.<prg>.history or so */
+#if R2_580
+R_API bool r_line_hist_load(const char *file) {
+#else
 R_API int r_line_hist_load(const char *file) {
-	FILE *fd;
-	char buf[R_LINE_BUFSIZE], *path = r_str_home (file);
+#endif
+	r_return_val_if_fail (file, false);
+	char buf[R_LINE_BUFSIZE] = {0};
+	char *path = r_str_home (file);
 	if (!path) {
 		return false;
 	}
-	if (!(fd = r_sandbox_fopen (path, "r"))) {
+	FILE *fd = r_sandbox_fopen (path, "rb");
+	if (!fd) {
 		free (path);
 		return false;
 	}
-	while (fgets (buf, sizeof (buf), fd)) {
+	buf[0] = 0;
+	while (fgets (buf, sizeof (buf) - 1, fd)) {
 		r_str_trim_tail (buf);
 		r_line_hist_add (buf);
+		buf[0] = 0;
 	}
 	fclose (fd);
 	free (path);

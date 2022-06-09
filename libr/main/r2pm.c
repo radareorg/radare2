@@ -381,8 +381,8 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 		srcdir, pkg, script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
-	free (srcdir);
 #endif
+	free (srcdir);
 	return res;
 }
 

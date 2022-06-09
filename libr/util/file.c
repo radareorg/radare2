@@ -696,7 +696,7 @@ R_API char *r_file_slurp_lines(const char *file, int line, int count) {
 			return NULL;
 		}
 		lines = line - 1;
-		for (i = 0; str[i]&&lines; i++) {
+		for (i = 0; str[i] && lines; i++) {
 			if (str[i] == '\n') {
 				lines--;
 			}
@@ -1398,7 +1398,6 @@ R_API bool r_file_rm_rf(const char *dir) {
 	}
 	return r_file_rm (dir);
 }
-
 
 static void recursive_glob(const char *path, const char *glob, RList* list, int depth) {
 	if (depth < 1) {

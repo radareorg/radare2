@@ -584,11 +584,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case 'C':
 			do_connect = true;
 			break;
+		case 'd':
 #if DEBUGGER
-		case 'd': debug = 1; break;
+			debug = 1;
 #else
-		case 'd': eprintf ("Sorry. No debugger backend available.\n"); return 1;
+			eprintf ("Sorry. No debugger backend available.\n");
+			return 1;
 #endif
+			break;
 		case 'D':
 			debug = 2;
 			free (debugbackend);
