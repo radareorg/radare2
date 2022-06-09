@@ -2,7 +2,7 @@
 
 #include "libbochs.h"
 
-static char *lpTmpBuffer; //[0x2800u];
+static R_TH_LOCAL char *lpTmpBuffer = NULL;
 
 #define SIZE_BUF 0x5800 * 2
 
@@ -10,7 +10,7 @@ static char *lpTmpBuffer; //[0x2800u];
 #ifdef _MSC_VER
 #pragma comment(lib, "user32.lib")
 #endif
-int RunRemoteThread_(libbochs_t* b, const ut8 *lpBuffer, ut32 dwSize, int a4, ut32 *lpExitCode) {
+static int RunRemoteThread_(libbochs_t* b, const ut8 *lpBuffer, ut32 dwSize, int a4, ut32 *lpExitCode) {
 	LPVOID pProcessMemory;
 	HANDLE hInjectThread = NULL;
 	int result = 0;
