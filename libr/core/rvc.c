@@ -1344,3 +1344,17 @@ R_API bool r_vc_use(Rvc *vc, VcType type) {
 	}
 	return true;
 }
+
+R_API Rvc *rvc_git_open(const char *path) {
+	if (repo_exists (path)) {
+		return r_vc_open (path);
+	}
+	return r_vc_git_open (path);
+}
+
+R_API Rvc *rvc_git_init(const RCore *core, const char *path) {
+	if (!strcmp ("git", r_config_get (core->config, "prj.vc.type"))) {
+		return r_vc_git_init (path);
+	}
+	return r_vc_new (path);
+}

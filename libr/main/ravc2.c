@@ -173,7 +173,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			r_list_free (uncommitted);
 		}
 	} else if (!strcmp(action, "reset")) {
-		save = r_vc_reset(rvc);
+		save = r_vc_reset (rvc);
 	} else if (!strcmp(action, "log")) {
 		RList *commits = r_vc_log(rvc);
 		RListIter *iter;
