@@ -60,7 +60,7 @@ bool bochs_cmd_stop(libbochs_t * b) {
 	};
 	hKernel = GetModuleHandle (TEXT ("kernel32"));
 	FARPROC apiOffset = (FARPROC)GetProcAddress (hKernel, "GenerateConsoleCtrlEvent");
-	*((DWORD *)&buffer[20]) = apiOffset;
+	*((DWORD *)&buffer[20]) = (DWORD)apiOffset;
 	ExitCode = RunRemoteThread_(b, (const ut8*)&buffer, 0x1Eu, 0, &ExitCode) && ExitCode;
 	return ExitCode;
 #else
