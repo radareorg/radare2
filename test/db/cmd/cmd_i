@@ -538,6 +538,7 @@ agn __gnu_cxx::__concurrence_lock_error
 agn __gnu_cxx::__concurrence_unlock_error
 agn std::bad_cast
 agn std::bad_typeid
+
 agn _JNIEnv
 agn SystemClassLoaderInjector
 EOF
