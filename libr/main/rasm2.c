@@ -3,10 +3,6 @@
 #include <r_anal.h>
 #include <r_asm.h>
 #include <r_lib.h>
-#include <r_types.h>
-#include <r_util.h>
-#include <stdio.h>
-#include <string.h>
 #include <r_main.h>
 
 typedef struct {
@@ -230,7 +226,7 @@ static void ranal2_list(RAsmState *as, const char *arch) {
 			pj_ks (pj, "features", feat);
 			pj_end (pj);
 		} else {
-			printf ("%s%s  %-9s  %-11s %-7s %s",
+			printf ("%s%s %-11s %-11s %-7s %s",
 					feat, feat2, bits, h->name,
 					r_str_get_fail (h->license, "unknown"), h->desc);
 			if (h->author) {
@@ -322,7 +318,7 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 				pj_ks (pj, "features", feat);
 				pj_end (pj);
 			} else {
-				printf ("%s%s  %-9s  %-11s %-7s %s",
+				printf ("%s%s %-11s %-11s %-7s %s",
 					feat, feat2, bits, h->name,
 					r_str_get_fail (h->license, "unknown"), h->desc);
 				if (h->author) {

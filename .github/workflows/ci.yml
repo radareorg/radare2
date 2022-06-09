@@ -48,6 +48,10 @@ jobs:
       run: |
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
         ./configure --without-capstone && make -j
+    - name: Building muon/samu
+      run: |
+        r2pm -gci muon samu
+        muon m && samu -C m -j5
   build-acr-gperf:
     name: linux-acr-gperf
     runs-on: ubuntu-20.04
