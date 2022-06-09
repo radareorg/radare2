@@ -6,7 +6,7 @@ static const char *cmp_op[] = { "<", "<=", "==", "!=", ">", ">=", "in", "not in"
 
 static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt);
 
-int r_pyc_disasm(RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *ops) {
+int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *ops) {
 	pyc_code_object *cobj = NULL, *t = NULL;
 	ut32 extended_arg = 0, i = 0, oparg;
 	st64 start_offset, end_offset;
@@ -38,7 +38,7 @@ int r_pyc_disasm(RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interne
 		return 0;
 	}
 	r_str_case (name, 0);
-	r_strbuf_set (&opstruct->buf_asm, name);
+	opstruct->mnemonic = strdup (name);
 	free (name);
 	if (op >= ops->have_argument) {
 		if (ops->bits == 16) {
@@ -60,7 +60,9 @@ int r_pyc_disasm(RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interne
 			consts, varnames, interned_table, freevars, cellvars,
 			ops->opcode_arg_fmt);
 		if (arg) {
-			r_strbuf_appendf (&opstruct->buf_asm, " %s", arg);
+			char *nm = r_str_newf ("%s %s", opstruct->mnemonic, arg);
+			free (opstruct->mnemonic);
+			opstruct->mnemonic = nm;
 			free ((char *)arg);
 		}
 	} else if (ops->bits == 8) {

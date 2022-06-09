@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
 
-#include <stdio.h>
 #include <r_core.h>
 #include <r_types.h>
 #include <r_util.h>

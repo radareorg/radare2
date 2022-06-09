@@ -166,6 +166,8 @@ asm_plugins += [
   'xap',
   'xcore_cs',
 ]
+
+# TODO: add the pyc plugin for meson builds too
 anal_plugins += [
   '6502',
   '8051',
