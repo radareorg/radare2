@@ -1047,11 +1047,11 @@ R_API char *r_vc_current_branch(Rvc *rvc) {
 	return ret;
 }
 
-R_API bool r_vc_clone(const char *src, const char *dst) {
+R_API bool r_vc_clone(const Rvc *rvc, const char *dst) {
 	char *drp = r_file_new (dst, ".rvc", NULL);
 	bool ret = false;
 	if (drp) {
-		char *srp = r_file_new (src, ".rvc", NULL);
+		char *srp = r_file_new (rvc->path, ".rvc", NULL);
 		if (srp) {
 			if (file_copyrf (srp, drp)) {
 				Rvc *dst_repo = r_vc_open (dst);
@@ -1295,7 +1295,7 @@ R_API bool r_vc_git_reset(Rvc *rvc) {
 	return NULL;
 }
 
-R_API bool r_vc_git_clone(const char *src, const char *dst) {
+R_API bool r_vc_git_clone(const Rvc *rvc, const char *dst) {
 	assert("TODO: Implement r_vc_git_clone");
 	return NULL;
 }
@@ -1308,7 +1308,7 @@ R_API void r_vc_git_close(Rvc *vc, bool save) {
 }
 
 R_API bool r_vc_git_save(Rvc *vc) {
-	//do nothing, since git commands are automaticly executed
+	//do nothing, since git commands are automatically executed
 	return true;
 }
 R_API bool r_vc_use(Rvc *vc, VcType type) {

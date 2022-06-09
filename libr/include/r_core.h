@@ -261,7 +261,7 @@ typedef struct Rvc_t{
 	RList *(*log) (struct Rvc_t *rvc);
 	char *(*current_branch)(struct Rvc_t *rvc);
 	bool (*reset)(struct Rvc_t *rvc);
-	bool (*clone) (const char *src, const char *dst);
+	bool (*clone) (const struct Rvc_t *rvc, const char *dst);
 	void (*close)(struct Rvc_t *vc, bool save);
 	bool (*save)(struct Rvc_t *vc);
 
