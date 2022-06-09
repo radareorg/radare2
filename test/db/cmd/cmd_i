@@ -513,6 +513,7 @@ NAME=icg
 FILE=bins/elf/libmagic.so
 CMDS=<<EOF
 icg
+?e 
 icg _JNIEnv
 icg System
 EOF
