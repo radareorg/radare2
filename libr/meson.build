@@ -176,6 +176,8 @@ anal_plugins += [
   'arm_cs',
   'avr',
   'bf',
+  'bpf',
+  'bpf_cs',
   'chip8',
   'cr16',
   'bpf',
@@ -235,6 +237,7 @@ if no_user_plugins
     anal_plugins += [
       'z80',
       'arm_gnu',
+      'bpf',
       'mips_gnu',
       'loongarch_gnu',
       's390_gnu',
