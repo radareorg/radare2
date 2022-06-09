@@ -2,7 +2,11 @@
 
 #include <r_main.h>
 
+#if R2_580
+#define R2PM_DEFAULT_NATIVE 1
+#else
 #define R2PM_DEFAULT_NATIVE 0
+#endif
 
 static int r_main_r2pm_sh(int argc, const char **argv) {
 #if __WINDOWS__
@@ -24,33 +28,24 @@ static int r_main_r2pm_sh(int argc, const char **argv) {
 static const char *helpmsg = \
 "Usage: r2pm [-flags] [pkgs...]\n"\
 "Commands:\n"\
-" -c ([git/dir])      clear source cache (GITDIR)\n"\
-" -ci <pkgname>       clean + install\n"\
-" -cp                 clean the user's home plugin directory\n"\
-" -d,doc [pkgname]    show documentation for given package\n"\
-" -f                  force operation (install, uninstall, ..)\n"\
-" -gi <pkg>           global install (system-wide)\n"\
-" -h                  show this message\n"\
-" -H variable         show value of given variable\n"\
-" -I                  information about repository and installed packages\n"\
-" -i <pkgname>        install or update package in your home (pkgname=all)\n"\
-" -l                  list installed pkgs\n"\
-" -r [cmd ...args]    run shell command with R2PM_BINDIR in PATH\n"\
-" -s [<keyword>]      search in database\n"\
-" -uci <pkgname>      uninstall + clean + install\n"\
-" -ui <pkgname>       uninstall + install\n"\
-" -u <pkgname>        r2pm -u baleful (See -f to force uninstall)\n"\
-" -U                  r2pm -U (upgrade all outdated packages)\n"\
-" -v                  show version\n"\
-"Environment:\n"\
-" SUDO=sudo           use this tool as sudo\n"\
-" R2PM_PLUGDIR=${R2PM_PLUGDIR}\n"\
-" R2PM_BINDIR=${R2PM_BINDIR}\n"\
-" R2PM_OFFLINE=0      disabled by default, avoid init/update calls if set to !=0\n"\
-" R2PM_NATIVE=0       set to 1 to use the native C codepath for r2pm\n"\
-" R2PM_DBDIR=${R2PM_DBDIR}\n"\
-" R2PM_GITDIR=${R2PM_GITDIR}\n"\
-" R2PM_GITSKIP=${R2PM_GITSKIP}\n";
+" -c ([git/dir])    clear source cache (GITDIR)\n"\
+" -ci <pkgname>     clean + install\n"\
+" -cp               clean the user's home plugin directory\n"\
+" -d,doc [pkgname]  show documentation for given package\n"\
+" -f                force operation (install, uninstall, ..)\n"\
+" -gi <pkg>         global install (system-wide)\n"\
+" -h                show this message\n"\
+" -H variable       show value of given variable\n"\
+" -I                information about repository and installed packages\n"\
+" -i <pkgname>      install/update package and its dependencies (see -c, -g)\n"\
+" -l                list installed pkgs\n"\
+" -r [cmd ...args]  run shell command with R2PM_BINDIR in PATH\n"\
+" -s [<keyword>]    search in database\n"\
+" -uci <pkgname>    uninstall + clean + install\n"\
+" -ui <pkgname>     uninstall + install\n"\
+" -u <pkgname>      r2pm -u baleful (See -f to force uninstall)\n"\
+" -U                r2pm -U (upgrade all outdated packages)\n"\
+" -v                show version\n";
 
 typedef struct r_r2pm_t {
 	bool help;
@@ -251,8 +246,20 @@ static void r2pm_setenv(void) {
 	r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
 	free (r2_plugdir);
 
+	char *dbdir = r2pm_dbdir ();
+	r_sys_setenv ("R2PM_DBDIR", dbdir);
+	free (dbdir);
+
+	char *gdir = r2pm_gitdir ();
+	r_sys_setenv ("R2PM_GITDIR", gdir);
+	free (gdir);
+
 	char *r2_prefix = r_str_home (R2_HOME_DATADIR "/prefix");
 	r_sys_setenv ("R2PM_PREFIX", r2_prefix);
+
+	char *r2pm_bindir = r_str_newf ("%s/bin", r2_prefix);
+	r_sys_setenv ("R2PM_BINDIR", r2pm_bindir);
+	free (r2pm_bindir);
 
 	char *oldpath = r_sys_getenv ("PATH");
 	if (!strstr (oldpath, r2_prefix)) {
@@ -369,7 +376,6 @@ static int r2pm_clone(const char *pkg) {
 		git_pull (srcdir);
 	} else {
 		char *url = r2pm_get (pkg, "\nR2PM_GIT ", TT_TEXTLINE);
-eprintf ("PULING FROM GIT\n");
 		if (url) {
 			git_clone (srcdir, url);
 			free (url);
@@ -568,7 +574,28 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		}
 	}
 	if (r2pm.help || argc == 1) {
+		r2pm_setenv ();
+		char *r2pm_plugdir = r_sys_getenv ("R2PM_PLUGDIR");
+		char *r2pm_bindir = r_sys_getenv ("R2PM_BINDIR");
+		char *r2pm_dbdir = r_sys_getenv ("R2PM_DBDIR");
+		char *r2pm_gitdir = r_sys_getenv ("R2PM_GITDIR");
+		char *r2pm_gitskip = strdup ("");
 		printf ("%s", helpmsg);
+		printf ("Environment:\n"\
+				" SUDO=sudo         use this tool as sudo\n"\
+				" R2PM_PLUGDIR=%s\n"\
+				" R2PM_BINDIR=%s\n"\
+				" R2PM_OFFLINE=0    disabled by default, avoid init/update calls if set to !=0\n"\
+				" R2PM_NATIVE=0     set to 1 to use the native C codepath for r2pm\n"\
+				" R2PM_DBDIR=%s\n"\
+				" R2PM_GITDIR=%s\n"\
+				" R2PM_GITSKIP=%s\n",
+				r2pm_plugdir,
+				r2pm_bindir,
+				r2pm_dbdir,
+				r2pm_gitdir,
+				r2pm_gitskip
+		       );
 		return 0;
 	}
 	if (r2pm.init) {
