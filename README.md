@@ -8,9 +8,7 @@
 See the [Releases](https://github.com/radareorg/radare2/releases) page for
 downloads. The current git `master` branch is `5.7.1`, next will be `5.7.2`.
 
-We ensure ABI stability for all the patch releases, you can mix/swap libraries
-and plugins without the need to recompile them if major and minor numbers are
-the same (X.Y.?).
+* Since 5.6.0 it's [abi stable](doc/abi.md) for all the patch releases.
 
 ### Description
 
@@ -32,8 +30,9 @@ disassemble any binary.
 ## Installation
 
 * r2 can be installed from `git` or via `pip` using `r2env`.
-* Default installation uses symlinks and acr + make on UNIX systems
-* Windows builds can be done with msvc (meson+vs|ninja) or sys/mingw32.sh
+* Run `sys/install.sh` for the default acr+make+symlink installation
+* meson/ninja (muon/samu also works) and make builds are supported.
+* Windows builds require meson and msvc or mingw as compilers
 * To uninstall the current build of r2 run `make uninstall`
 * To uninstall ALL the system installations of r2 do: `sudo make purge`
 
@@ -148,9 +147,9 @@ Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Andro
 
 ## Architectures
 
-i386, x86-64, ARM, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, m680x, AVR,
-XAP, S390, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
-V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
+i386, x86-64, ARM, BPF, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, m680x,
+AVR, XAP, S390, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
+V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller, EVM,
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
 NIOS II, Java, Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
 c55+, c64x), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
