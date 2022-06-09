@@ -4135,7 +4135,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("scr.tts", "false", "use tts if available by a command (see ic)");
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "show user prompt (used by r2 -q)");
 	SETCB ("scr.tee", "", &cb_teefile, "pipe output to file of this name");
-	SETPREF ("scr.seek", "", "seek to the specified address on startup");
 	SETICB ("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?COLOR_MODE_16:COLOR_MODE_DISABLED, &cb_color, "enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
 	r_config_set_getter (cfg, "scr.color", (RConfigCallback)cb_color_getter);
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "enable colors when using ~grep");
