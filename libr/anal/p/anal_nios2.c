@@ -30,13 +30,13 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
-static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
+static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	if (len < 4) {
 		return -1;
 	}
-	buf_global = &op->buf_asm;
-	Offset = a->pc;
+	buf_global = r_strbuf_new ("");
+	Offset = addr;
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
@@ -57,7 +57,10 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) 
 		op->size = print_insn_little_nios2 ((bfd_vma)Offset, &disasm_obj);
 	}
 	if (op->size == -1) {
-		r_asm_op_set_asm (op, "(data)");
+		op->mnemonic = strdup ("(data)");
+	} else {
+		op->mnemonic = r_strbuf_drain (buf_global);
+		buf_global = NULL;
 	}
 	return op->size;
 }
@@ -65,6 +68,9 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) 
 static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	if (!op) {
 		return 1;
+	}
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		disassemble (anal, op, addr, bytes, len);
 	}
 	op->size = 4;
 
