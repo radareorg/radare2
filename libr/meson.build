@@ -148,7 +148,6 @@ asm_plugins += [
   'malbolge',
   'mcs96',
   'mips_cs',
-  'nios2',
   'or1k',
   'ppc_as',
   'ppc_cs',

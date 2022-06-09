@@ -15,7 +15,15 @@ static R_TH_LOCAL RStrBuf *buf_global = NULL;
 static R_TH_LOCAL unsigned char bytes[4];
 
 static int nios2_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-	memcpy (myaddr, bytes, length);
+	//memcpy (myaddr, bytes, length);
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 4) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, length);
 	return 0;
 }
 
@@ -37,7 +45,7 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	}
 	buf_global = r_strbuf_new ("");
 	Offset = addr;
-	memcpy (bytes, buf, 4); // TODO handle thumb
+	memcpy (bytes, buf, R_MIN (len, 4)); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
@@ -70,7 +78,7 @@ static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, 
 		return 1;
 	}
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		disassemble (anal, op, addr, bytes, len);
+		disassemble (anal, op, addr, b, len);
 	}
 	op->size = 4;
 
