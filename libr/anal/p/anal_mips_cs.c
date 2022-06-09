@@ -763,6 +763,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	if (hndl == 0) {
 		ret = cs_open (CS_ARCH_MIPS, mode, &hndl);
 		if (ret != CS_ERR_OK) {
+			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_MIPS, %x, ...): %s\n", mode, cs_strerror (ret));
 			goto fin;
 		}
 		cs_option (hndl, CS_OPT_DETAIL, CS_OPT_ON);
