@@ -254,6 +254,11 @@ static void r2pm_setenv(void) {
 	r_sys_setenv ("R2PM_GITDIR", gdir);
 	free (gdir);
 
+	char *pd = r_sys_cmd_str ("radare2 -H R2_USER_PLUGINS", NULL, NULL);
+	r_str_trim (pd);
+	r_sys_setenv ("R2_USER_PLUGINS", pd);
+	free (pd);
+
 	char *r2_prefix = r_str_home (R2_HOME_DATADIR "/prefix");
 	r_sys_setenv ("R2PM_PREFIX", r2_prefix);
 
@@ -353,11 +358,22 @@ static int r2pm_clean_pkg(const char *pkg) {
 
 static int r2pm_uninstall_pkg(const char *pkg) {
 	printf ("[r2pm] Uninstalling %s ...\n", pkg);
+#if __WINDOWS__
+	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL_WINDOWS() {", TT_CODEBLOCK);
+	if (!script) {
+		eprintf ("This package does not have R2PM_UNINSTALL_WINDOWS instructions\n");
+		return 1;
+	}
+	char *s = r_str_newf ("cd %s\ncd %s\n%s", srcdir, pkg, script);
+	int res = r_sandbox_system (s, 1);
+	free (s);
+#else
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL() {", TT_CODEBLOCK);
 	if (!script) {
 		eprintf ("Cannot parse package\n");
 		return 1;
 	}
+#endif
 	r2pm_setenv ();
 	char *srcdir = r2pm_gitdir ();
 	char *s = r_str_newf ("cd %s/%s\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s",
@@ -400,7 +416,10 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool global)
 	RListIter *iter;
 	const char *t;
 	int rc = 0;
-	printf ("[r2pm] Using r2-"R2_VERSION"\n");
+	char *r2v = r_sys_cmd_str ("radare2 -qv", NULL, NULL);
+	r_str_trim (r2v);
+	printf ("Using r2-%s and r2pm-"R2_VERSION"\n", r2v);
+	free (r2v);
 	if (global) {
 		r_sys_setenv ("GLOBAL", "1");
 	} else {
