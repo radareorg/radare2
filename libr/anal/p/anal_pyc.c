@@ -1,15 +1,45 @@
 /* radare - LGPL3 - Copyright 2016-2022 - FXTi */
 
 #include <r_lib.h>
-#include <r_asm.h>
+#include <r_anal.h>
 #include "../../asm/arch/pyc/pyc_dis.h"
 
 static R_TH_LOCAL pyc_opcodes *ops = NULL;
 
-static int archinfo(RAnal *anal, int query) {
-	if (!strcmp (anal->config->arch, "x86")) {
-		return -1;
+static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	RList *shared = NULL;
+
+	RBin *bin = a->binb.bin;
+
+	RBinPlugin *plugin = bin && bin->cur && bin->cur->o? bin->cur->o->plugin: NULL;
+
+	if (plugin) {
+		if (!strcmp (plugin->name, "pyc")) {
+			shared = bin->cur->o->bin_obj;
+		}
 	}
+	RList *cobjs = NULL;
+	RList *interned_table = NULL;
+	if (shared) {
+		cobjs = r_list_get_n (shared, 0);
+		interned_table = r_list_get_n (shared, 1);
+	}
+	if (!ops || !pyc_opcodes_equal (ops, a->config->cpu)) {
+		ops = get_opcode_by_version (a->config->cpu);
+		if (!ops) {
+			ops = get_opcode_by_version ("v3.9.0");
+			if (!ops) {
+				return 0;
+			}
+		}
+		ops->bits = a->config->bits;
+	}
+	int r = r_pyc_disasm (op, buf, cobjs, interned_table, addr, ops);
+	op->size = r;
+	return r;
+}
+
+static int archinfo(RAnal *anal, int query) {
 	switch (query) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return (anal->config->bits == 16)? 1: 2;
@@ -76,6 +106,9 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 		return -1;
 	}
 
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		disassemble (a, op, addr, data, len);
+	}
 	ut64 func_base = func->start_offset;
 	ut32 extended_arg = 0, oparg = 0;
 	ut8 op_code = data[0];
@@ -155,7 +188,7 @@ RAnalPlugin r_anal_plugin_pyc = {
 	.desc = "Python bytecode analysis plugin",
 	.license = "LGPL3",
 	.arch = "pyc",
-	.bits = 16 | 8, // Partially agree with this
+	.bits = 32,
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,
 	.set_reg_profile = &set_reg_profile,
