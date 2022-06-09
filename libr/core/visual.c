@@ -4378,7 +4378,6 @@ static void flush_stdin(void) {
 
 R_API int r_core_visual(RCore *core, const char *input) {
 	const char *teefile;
-	ut64 scrseek;
 	int flags, ch;
 	bool skip;
 	char arg[2] = {
@@ -4470,11 +4469,6 @@ dodo:
 		}
 		flags |= R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
 		r_print_set_flags (core->print, flags);
-		scrseek = r_num_math (core->num,
-			r_config_get (core->config, "scr.seek"));
-		if (scrseek != 0LL) {
-			r_core_seek (core, scrseek, true);
-		}
 		if (r_config_get_b (core->config, "cfg.debug")) {
 			r_core_cmd (core, ".dr*", 0);
 		}
