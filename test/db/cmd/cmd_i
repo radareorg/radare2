@@ -4103,6 +4103,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ic (file Java)
+FILE=bins/java/Hello.class
+CMDS=<<EOF
+icg
+icg Hello
+icg no_match
+EOF
+EXPECT=<<EOF
+agn java/lang/Object
+agn Hello
+age java/lang/Object Hello
+agn Hello
+EOF
+RUN
+
 NAME=icq (file Java)
 FILE=bins/java/Hello.class
 CMDS=icq
