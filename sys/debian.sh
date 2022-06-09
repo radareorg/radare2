@@ -19,10 +19,10 @@ DEVDIR=dist/debian/radare2-dev/root
 rm -rf "${PKGDIR}" "${DEVDIR}"
 
 if [ -z "$CFLAGS" ]; then
-  export CFLAGS="-O2 -Werror -Wno-cpp"
-  export CFLAGS="${CFLAGS} -Wno-unused-result"
+  export CFLAGS="-Wno-cpp -Wno-unused-result"
 ## export CFLAGS="${CFLAGS} -Wno-stringop-truncation"
 fi
+CFLAGS="-O2 ${CFLAGS}"
 # build
 export
 ./configure --prefix=/usr --with-checks-level=0
