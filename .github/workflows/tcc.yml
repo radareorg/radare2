@@ -129,4 +129,4 @@ jobs:
     - name: Install muon
       run: r2pm -i muon
     - name: Install muon (native)
-      run: R2PM_NATIVE=1 r2pm -i samu
+      run: R2PM_NATIVE=1 r2pm -i muon
