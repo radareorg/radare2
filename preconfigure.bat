@@ -98,7 +98,7 @@ if EXIST "libr\asm\arch\arm\v35arm64\arch-arm64" (
   git clone https://github.com/radareorg/vector35-arch-arm64 arch-arm64
   cd arch-arm64
   git checkout radare2-wip
-  git reset --hard fddb6d0fb0489c4e797a61b1553ac0d771fbf657
+  git reset --hard 9ab2b0bedde459dc86e079718333de4a63bbbacb
   popd
 )
 

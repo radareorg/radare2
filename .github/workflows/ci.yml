@@ -47,7 +47,7 @@ jobs:
     - name: Building without capstone
       run: |
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
-        ./configure --without-capstone && make -j
+        ./configure --without-capstone --with-rpath && make -j
         sudo make symstall
     - name: Building muon/samu
       run: |

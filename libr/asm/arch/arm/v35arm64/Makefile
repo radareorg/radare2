@@ -23,7 +23,7 @@ mrproper: clean
 
 .PHONY: all clean
 
-ARCH_ARM64_COMMIT=fddb6d0fb0489c4e797a61b1553ac0d771fbf657
+ARCH_ARM64_COMMIT=9ab2b0bedde459dc86e079718333de4a63bbbacb
 ARCH_ARMV7_COMMIT=dde39f69ffea19fc37e681874b12cb4707bc4f30
 
 $(ALIBS): arch-arm64 arch-armv7
