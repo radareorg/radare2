@@ -18,13 +18,10 @@ DEVDIR=dist/debian/radare2-dev/root
 # clean
 rm -rf "${PKGDIR}" "${DEVDIR}"
 
-if [ -z "$CFLAGS" ]; then
-  export CFLAGS="-Wno-cpp -Wno-unused-result"
-## export CFLAGS="${CFLAGS} -Wno-stringop-truncation"
-fi
-CFLAGS="-O2 ${CFLAGS}"
+source `dirname $0`/make-jobs.inc.sh
+
+export CFLAGS="-Wno-cpp -Wno-unused-result ${CFLAGS} -O2"
 # build
-export
 ./configure --prefix=/usr --with-checks-level=0
 [ $? != 0 ] && exit 1
 make -j4
