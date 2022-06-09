@@ -582,7 +582,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	r_core_cmd (core, "wc*", 0);
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
 		r_cons_printf ("# seek\n"
-			       "s 0x%08" PFMT64x "\n",
+				"s 0x%08" PFMT64x "\n",
 			core->offset);
 		r_cons_flush ();
 	}
@@ -687,8 +687,8 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		RList *paths = r_list_new ();
 		if (paths) {
 			if (r_list_append (paths, prj_dir)) {
-				if (!rvc_git_commit (core, core->prj->rvc,
-							NULL, NULL, paths)) {
+				if (core->prj->rvc->commit (core->prj->rvc, NULL,
+							NULL, paths)) {
 					r_list_free (paths);
 					free (prj_dir);
 					free (script_path);
