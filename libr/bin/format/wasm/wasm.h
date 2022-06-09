@@ -14,7 +14,6 @@
 #define R_BIN_WASM_MAGIC_BYTES "\x00" \
 			       "asm"
 #define R_BIN_WASM_VERSION 0x1
-#define R_BIN_WASM_STRING_LENGTH 256
 #define R_BIN_WASM_END_OF_CODE 0xb
 
 #define R_BIN_WASM_SECTION_CUSTOM 0x0
@@ -84,13 +83,18 @@ typedef struct r_bin_wasm_section_t {
 	ut32 count;
 } RBinWasmSection;
 
+typedef struct r_bin_wasm_type_vector_t {
+	ut32 count;
+	ut8 *types;
+} RBinWasmTypeVec;
+
 typedef struct r_bin_wasm_type_t {
+	size_t file_offset;
+	ut32 index;
 	ut8 form;
-	ut32 param_count;
-	r_bin_wasm_value_type_t *param_types;
-	st8 return_count; // MVP = 1
-	r_bin_wasm_value_type_t return_type;
-	char to_str[R_BIN_WASM_STRING_LENGTH];
+	RBinWasmTypeVec *args;
+	RBinWasmTypeVec *rets;
+	char *to_str;
 } RBinWasmTypeEntry;
 
 // Other Types
@@ -224,8 +228,8 @@ typedef struct r_bin_wasm_obj_t {
 	ut32 entrypoint;
 
 	// cache purposes
+	RPVector *g_types;
 	RList *g_sections;
-	RList *g_types;
 	RList *g_imports;
 	RList *g_exports;
 	RList *g_tables;
@@ -244,7 +248,7 @@ typedef struct r_bin_wasm_obj_t {
 RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf);
 void r_bin_wasm_destroy(RBinFile *bf);
 RList *r_bin_wasm_get_sections(RBinWasmObj *bin);
-RList *r_bin_wasm_get_types(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_types(RBinWasmObj *bin);
 RList *r_bin_wasm_get_imports(RBinWasmObj *bin);
 RList *r_bin_wasm_get_exports(RBinWasmObj *bin);
 RList *r_bin_wasm_get_tables(RBinWasmObj *bin);
