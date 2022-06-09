@@ -917,19 +917,28 @@ R_API Rvc *r_vc_new(const char *path) {
 		eprintf ("Can't create The RVC branches database");
 		free (rvc->path);
 		free (rvc);
-		return false;
+		return NULL;
 	}
 	if (!sdb_set (rvc->db, FIRST_BRANCH, NULLVAL, 0)) {
 		sdb_unlink (rvc->db);
 		sdb_free (rvc->db);
 		free (rvc->path);
 		free (rvc);
-		return false;
+		return NULL;
 	}
 	if (!sdb_set (rvc->db, CURRENTB, FIRST_BRANCH, 0)) {
 		sdb_unlink (rvc->db);
 		sdb_free (rvc->db);
-		return false;
+		free (rvc->path);
+		free (rvc);
+		return NULL;
+	}
+	if (!r_vc_use (rvc, VC_RVC)) {
+		sdb_unlink (rvc->db);
+		sdb_free (rvc->db);
+		free (rvc->path);
+		free (rvc);
+		return NULL;
 	}
 	return rvc;
 }
@@ -1093,6 +1102,7 @@ R_API Rvc *r_vc_git_open(const char *path) {
 		return NULL;
 	}
 	vc->db = NULL;
+	r_vc_use(vc, VC_GIT);
 	return vc;
 }
 
@@ -1161,15 +1171,22 @@ R_API bool r_vc_git_commit(Rvc *vc, const char *message, const char *author, con
 	if (!r_vc_git_add (vc, files)) {
 		return false;
 	}
-	char *escauth = r_str_escape (author);
+	char *escauth;
+	if (!author) {
+		char *user = r_sys_whoami ();
+		escauth = r_str_escape (user);
+		free (user);
+	} else {
+		escauth = r_str_escape (author);
+	}
 	if (!escauth) {
 		return false;
 	}
 	if (R_STR_ISEMPTY (message)) {
 		char *epath = r_str_escape (vc->path);
 		if (epath) {
-			int res = r_sys_cmdf ("git -C \"%s\" commit -a %s",
-					epath, escauth);
+			int res = r_sys_cmdf ("git -C \"%s\" commit --author \"%s <%s@localhost>\"",
+					epath, escauth, escauth);
 			free (escauth);
 			free (epath);
 			return res == 0;
@@ -1180,8 +1197,8 @@ R_API bool r_vc_git_commit(Rvc *vc, const char *message, const char *author, con
 	if (epath) {
 		char *emsg = r_str_escape (message);
 		if (emsg) {
-			int res = r_sys_cmdf ("git -C %s commit -m %s -a %s",
-					epath, emsg, escauth);
+			int res = r_sys_cmdf ("git -C %s commit -m %s --author \"%s <%s@localhost>\"",
+					epath, emsg, escauth, escauth);
 			free (escauth);
 			free (epath);
 			free (emsg);
@@ -1243,7 +1260,7 @@ R_API Rvc *r_vc_open(const char *rp) {
 		repo->path = r_str_new (rp);
 		if (repo->path) {
 			repo->db = vcdb_open (rp) ;
-			if (repo->db) {
+			if (repo->db && r_vc_use (repo, VC_RVC)) {
 				return repo;
 			}
 			free (repo->path);

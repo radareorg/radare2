@@ -46,6 +46,7 @@ R_API void r_vc_git_close(Rvc *vc, bool save);
 
 R_API Rvc *rvc_git_init(const RCore *core, const char *path);
 R_API Rvc *rvc_git_open(const char *path);
+R_API bool r_vc_use(Rvc *vc, VcType);
 
 #ifdef __cplusplus
 }
