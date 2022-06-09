@@ -2,6 +2,7 @@
 
 #include "r_config.h"
 #include "r_core.h"
+#include "r_types.h"
 #include "types.h"
 #include <rvc.h>
 #include <r_util.h>
@@ -1269,6 +1270,47 @@ R_API void r_vc_close(Rvc *vc, bool save) {
 	}
 }
 
+R_API RList *r_vc_git_get_branches(Rvc *rvc) {
+	assert("TODO: Implement r_vc_git_get_branches");
+	return NULL;
+}
+
+R_API RList *r_vc_git_get_uncommitted(Rvc *rvc) {
+	assert("TODO: Implement r_vc_git_get_uncommitted");
+	return NULL;
+}
+
+R_API RList *r_vc_git_log(Rvc *rvc) {
+	assert("TODO: Implement r_vc_git_log");
+	return NULL;
+}
+
+R_API char *r_vc_git_current_branch(Rvc *rvc) {
+	assert("TODO: Implement r_vc_git_current_branch");
+	return NULL;
+}
+
+R_API bool r_vc_git_reset(Rvc *rvc) {
+	assert("TODO: Implement r_vc_git_reset");
+	return NULL;
+}
+
+R_API bool r_vc_git_clone(const char *src, const char *dst) {
+	assert("TODO: Implement r_vc_git_clone");
+	return NULL;
+}
+
+R_API void r_vc_git_close(Rvc *vc, bool save) {
+	if (vc) {
+		free (vc->path);
+		free (vc);
+	}
+}
+
+R_API bool r_vc_git_save(Rvc *vc) {
+	//do nothing, since git commands are automaticly executed
+	return true;
+}
 R_API bool r_vc_use(Rvc *vc, VcType type) {
 	switch (type) {
 	case VC_GIT:

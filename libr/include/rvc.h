@@ -36,6 +36,14 @@ R_API Rvc *r_vc_open(const char *rp);
 R_API void r_vc_close(Rvc *vc, bool save);
 R_API bool r_vc_save(Rvc *vc);
 
+R_API RList *r_vc_git_get_branches(Rvc *rvc);
+R_API RList *r_vc_git_get_uncommitted(Rvc *rvc);
+R_API RList *r_vc_git_log(Rvc *rvc);
+R_API char *r_vc_git_current_branch(Rvc *rvc);
+R_API bool r_vc_git_reset(Rvc *rvc);
+R_API bool r_vc_git_clone(const char *src, const char *dst);
+
+R_API void r_vc_git_close(Rvc *vc, bool save);
 R_API Rvc *rvc_git_init(const RCore *core, const char *path);
 R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files);
 R_API bool rvc_git_branch(Rvc *rvc, const char *bname);
