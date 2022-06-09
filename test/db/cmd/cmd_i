@@ -509,6 +509,43 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=icg
+FILE=bins/elf/libmagic.so
+CMDS=<<EOF
+icg
+?e 
+icg _JNIEnv
+?e 
+icg System
+EOF
+EXPECT=<<EOF
+agn _JNIEnv
+agn SystemClassLoaderInjector
+agn std
+agn std::exception
+agn std::bad_exception
+agn __cxxabiv1::__forced_unwind
+agn __cxxabiv1::__foreign_exception
+agn __eh_globals_init
+agn __cxxabiv1
+agn __cxxabiv1::__fundamental_type_info
+agn std::type_info
+agn __cxxabiv1::__pointer_type_info
+agn __cxxabiv1::__pbase_type_info
+agn __cxxabiv1::__si_class_type_info
+agn __cxxabiv1::__class_type_info
+agn __gnu_cxx
+agn __gnu_cxx::__concurrence_lock_error
+agn __gnu_cxx::__concurrence_unlock_error
+agn std::bad_cast
+agn std::bad_typeid
+
+agn _JNIEnv
+
+agn SystemClassLoaderInjector
+EOF
+RUN
+
 NAME=icl
 FILE=bins/elf/libmagic.so
 CMDS=icl
@@ -4037,7 +4074,7 @@ CMDS=ic?~List
 EXPECT=<<EOF
 | ic                 List classes, methods and fields
 | icc                List classes, methods and fields in Header Format
-| icg                List classes as agn/age commands to create class hirearchy graphs
+| icg [str]          List classes as agn/age commands to create class hirearchy graphs (matches str if provided)
 | icq                List classes, in quiet mode (just the classname)
 | icqq               List classes, in quieter mode (only show non-system classnames)
 EOF
@@ -4067,6 +4104,21 @@ EXPECT=<<EOF
 0x0000022b method 0      <init>
 0x00000263 method 1      say
 0x000002aa method 2      main
+EOF
+RUN
+
+NAME=ic (file Java)
+FILE=bins/java/Hello.class
+CMDS=<<EOF
+icg
+icg Hello
+icg no_match
+EOF
+EXPECT=<<EOF
+agn java/lang/Object
+agn Hello
+age java/lang/Object Hello
+agn Hello
 EOF
 RUN
 
