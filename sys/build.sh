@@ -2,7 +2,7 @@
 
 OSNAME=$(uname)
 
-source `dirname $0`/make-jobs.inc.sh
+. `dirname $0`/make-jobs.inc.sh
 
 if [ -z "${MAKE}" ]; then
 	MAKE=make
