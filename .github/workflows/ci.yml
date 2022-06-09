@@ -48,6 +48,7 @@ jobs:
       run: |
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
         ./configure --without-capstone && make -j
+        sudo make symstall
     - name: Building muon/samu
       run: |
         r2pm -gci muon samu

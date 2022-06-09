@@ -2,7 +2,13 @@
 
 #include <r_main.h>
 
+#define R2PM_DEFAULT_NATIVE 0
+
 static int r_main_r2pm_sh(int argc, const char **argv) {
+#if __WINDOWS__
+	eprintf ("r2pm.sh: not implemented\n");
+	return 1;
+#else
 	int i;
 	RStrBuf *sb = r_strbuf_new ("r2pm.sh");
 	for (i = 1; i < argc; i++) {
@@ -12,6 +18,7 @@ static int r_main_r2pm_sh(int argc, const char **argv) {
 	int res = r_sandbox_system (cmd, 1);
 	free (cmd);
 	return res;
+#endif
 }
 
 static const char *helpmsg = \
@@ -107,7 +114,7 @@ static char *r2pm_pkgdir(void) {
 }
 
 typedef enum {
-	TT_OPT_QUOTED_LINE,
+	TT_TEXTLINE,
 	TT_CODEBLOCK,
 	TT_ENDQUOTE,
 } R2pmTokenType;
@@ -127,7 +134,7 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 	if (descptr) {
 		char *nl = NULL;
 		switch (type) {
-		case TT_OPT_QUOTED_LINE:
+		case TT_TEXTLINE:
 			descptr += strlen (needle);
 			nl = strchr (descptr, '\n');
 			if (nl) {
@@ -175,7 +182,7 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 }
 
 static char *r2pm_desc(const char *file) {
-	return r2pm_get (file, "\nR2PM_DESC ", TT_OPT_QUOTED_LINE);
+	return r2pm_get (file, "\nR2PM_DESC ", TT_TEXTLINE);
 }
 
 static int r2pm_list(void) {
@@ -246,8 +253,17 @@ static void r2pm_setenv(void) {
 
 	char *r2_prefix = r_str_home (R2_HOME_DATADIR "/prefix");
 	r_sys_setenv ("R2PM_PREFIX", r2_prefix);
+
+	char *oldpath = r_sys_getenv ("PATH");
+	if (!strstr (oldpath, r2_prefix)) {
+		char *newpath = r_str_newf ("%s/bin:%s", r2_prefix, oldpath);
+		r_sys_setenv ("PATH", newpath);
+		free (newpath);
+	}
+	free (oldpath);
 	free (r2_prefix);
 
+	// GLOBAL=0 # depends on r2pm.global, which is set on r2pm_install
 	char *python = r_sys_getenv ("PYTHON");
 	if (!python) {
 		python = r_file_path ("python3");
@@ -266,16 +282,37 @@ static void r2pm_setenv(void) {
 
 static int r2pm_install_pkg(const char *pkg) {
 	printf ("[r2pm] Installing %s ...\n", pkg);
-	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {", TT_CODEBLOCK);
+	char *deps = r2pm_get (pkg, "\nR2PM_DEPS ", TT_TEXTLINE);
+	if (deps) {
+		char *dep;
+		RListIter *iter;
+		RList *l = r_str_split_list (deps, " ", 0);
+		r_list_foreach (l, iter, dep) {
+			eprintf ("(%s)\n", dep);
+			r2pm_install_pkg (dep);
+		}
+	}
+	char *srcdir = r2pm_gitdir ();
+	r2pm_setenv ();
+#if __WINDOWS__
+	char *script = r2pm_get (pkg, "\nR2PM_INSTALL_WINDOWS() {", TT_CODEBLOCK);
 	if (!script) {
-		eprintf ("Cannot parse package\n");
+		eprintf ("This package does not have R2PM_INSTALL_WINDOWS instructions\n");
 		return 1;
 	}
-	r2pm_setenv ();
-	char *srcdir = r2pm_gitdir ();
+	char *s = r_str_newf ("cd %s\ncd %s\n%s", srcdir, pkg, script);
+	int res = r_sandbox_system (s, 1);
+	free (s);
+#else
+	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {", TT_CODEBLOCK);
+	if (!script) {
+		eprintf ("Invalid package name or script\n");
+		return 1;
+	}
 	char *s = r_str_newf ("cd '%s/%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
+#endif
 	free (srcdir);
 	return res;
 }
@@ -331,13 +368,19 @@ static int r2pm_clone(const char *pkg) {
 	if (r_file_is_directory (srcdir)) {
 		git_pull (srcdir);
 	} else {
-		char *url = r2pm_get (pkg, "\nR2PM_GIT ", TT_OPT_QUOTED_LINE);
+		char *url = r2pm_get (pkg, "\nR2PM_GIT ", TT_TEXTLINE);
+eprintf ("PULING FROM GIT\n");
 		if (url) {
 			git_clone (srcdir, url);
 			free (url);
 		} else {
-			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_OPT_QUOTED_LINE);
-			eprintf ("TODO: wget tarball from '%s'\n", url); 
+			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_TEXTLINE);
+			bool use_c_impl = false;
+			if (use_c_impl) {
+				eprintf ("TODO: wget tarball from '%s'\n", url); 
+			} else {
+				// TODO. run wget
+			}
 			free (srcdir);
 			free (url);
 			return 1;
@@ -347,11 +390,16 @@ static int r2pm_clone(const char *pkg) {
 	return 0;
 }
 
-static int r2pm_install(RList *targets, bool uninstall, bool clean) {
+static int r2pm_install(RList *targets, bool uninstall, bool clean, bool global) {
 	RListIter *iter;
 	const char *t;
 	int rc = 0;
 	printf ("[r2pm] Using r2-"R2_VERSION"\n");
+	if (global) {
+		r_sys_setenv ("GLOBAL", "1");
+	} else {
+		r_sys_setenv ("GLOBAL", "0");
+	}
 	r_list_foreach (targets, iter, t) {
 		if (uninstall) {
 			r2pm_uninstall_pkg (t);
@@ -449,6 +497,7 @@ static int r2pm_info(void) {
 }
 
 static int r2pm_search(const char *grep) {
+eprintf ("Pene\n");
 	char *path = r2pm_dbdir ();
 	RList *files = r_sys_dir (path);
 	free (path);
@@ -460,10 +509,12 @@ static int r2pm_search(const char *grep) {
 	r_list_foreach (files, iter, file) {
 		if (*file != '.') {
 			char *desc = r2pm_desc (file);
-			if (!grep || (strstr (desc, grep) || strstr (file, grep))) {
-				eprintf ("%s%s%s\n", file, r_str_pad (' ', 20 - strlen (file)), desc);
+			if (desc) {
+				if (!grep || (strstr (desc, grep) || strstr (file, grep))) {
+					eprintf ("%s%s%s\n", file, r_str_pad (' ', 20 - strlen (file)), desc);
+				}
+				free (desc);
 			}
-			free (desc);
 		}
 	}
 	r_list_free (files);
@@ -556,7 +607,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	} else if (r2pm.doc) {
 		res = r2pm_doc (targets);
 	} else if (r2pm.install) {
-		res = r2pm_install (targets, r2pm.uninstall, r2pm.clean);
+		res = r2pm_install (targets, r2pm.uninstall, r2pm.clean, r2pm.global);
 	} else if (r2pm.uninstall) {
 		res = r2pm_uninstall (targets);
 	} else if (r2pm.clean) {
@@ -571,7 +622,6 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	if (opt.ind == 1) {
 		return 0;
 	}
-	eprintf ("TODO\n");
 #if __WINDOWS__
 	bool use_c_impl = true;
 #else
@@ -584,7 +634,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 }
 
 R_API int r_main_r2pm(int argc, const char **argv) {
-#if __WINDOWS__
+#if __WINDOWS__ || R2PM_DEFAULT_NATIVE
 	bool use_c_impl = true;
 #else
 	bool use_c_impl = r_sys_getenv_asbool ("R2PM_NATIVE");
