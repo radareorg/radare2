@@ -2183,7 +2183,7 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 		return strdup ("loongarch");
 	case EM_386:
 	case EM_X86_64:
-		return strdup("x86");
+		return strdup ("x86");
 	case EM_NONE:
 		return strdup ("null");
 	default: return strdup ("Unknown or unsupported arch");
