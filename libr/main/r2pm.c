@@ -358,10 +358,13 @@ static int r2pm_clean_pkg(const char *pkg) {
 
 static int r2pm_uninstall_pkg(const char *pkg) {
 	printf ("[r2pm] Uninstalling %s ...\n", pkg);
+	char *srcdir = r2pm_gitdir ();
+	r2pm_setenv ();
 #if __WINDOWS__
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL_WINDOWS() {", TT_CODEBLOCK);
 	if (!script) {
 		eprintf ("This package does not have R2PM_UNINSTALL_WINDOWS instructions\n");
+		free (srcdir);
 		return 1;
 	}
 	char *s = r_str_newf ("cd %s\ncd %s\n%s", srcdir, pkg, script);
@@ -371,16 +374,15 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL() {", TT_CODEBLOCK);
 	if (!script) {
 		eprintf ("Cannot parse package\n");
+		free (srcdir);
 		return 1;
 	}
-#endif
-	r2pm_setenv ();
-	char *srcdir = r2pm_gitdir ();
 	char *s = r_str_newf ("cd %s/%s\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s",
 		srcdir, pkg, script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 	free (srcdir);
+#endif
 	return res;
 }
 
