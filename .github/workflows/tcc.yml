@@ -95,7 +95,7 @@ jobs:
         export R2R_SKIP_ARCHOS=1
         make -C test
   r2pm:
-    name: ubuntu-tcc-test
+    name: r2pm-tcc
     runs-on: ubuntu-latest
     steps:
     - name: Checkout TinyCC repository
@@ -104,19 +104,27 @@ jobs:
           cd tinycc
           git checkout mob
           git reset --hard 917aad3bcfbb534875aa6d66609bdb36459460a4
-
     - name: Compiling and installing TinyCC
       working-directory: tinycc
       run: |
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-    - name: Install samu
-      run: r2pm -i samu
-    - name: Install samu (clean)
-      run: r2pm -ci samu
-    - name: Install samu (native)
-      run: R2PM_NATIVE=1 r2pm -i samu
+    - uses: actions/checkout@v2
+    - name: Configure, build and install
+      env:
+          CC: tcc
+          CFLAGS: -O0
+      run: |
+          ./configure --prefix=/usr --with-compiler=tcc
+          make -j
+          sudo make install
+    - name: Install samurai
+      run: r2pm -i samurai
+    - name: Install samurai (clean)
+      run: r2pm -ci samurai
+    - name: Install samurai (native)
+      run: R2PM_NATIVE=1 r2pm -i samurai
 
     - name: Install muon
       run: r2pm -i muon
