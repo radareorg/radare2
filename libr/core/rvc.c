@@ -1294,8 +1294,24 @@ R_API void r_vc_close(Rvc *vc, bool save) {
 }
 
 R_API RList *r_vc_git_get_branches(Rvc *rvc) {
-	assert("TODO: Implement r_vc_git_get_branches");
-	return NULL;
+	RList *ret = NULL;
+	char *esc_path = r_str_escape (rvc->path);
+	if (esc_path) {
+		char *output = r_sys_cmd_strf ("git -C %s branch --color=never",
+				esc_path);
+		free (esc_path);
+		if (!R_STR_ISEMPTY (output)) {
+			ret = r_str_split_duplist (output, "\n", true);
+			RListIter *iter;
+			char *name;
+			r_list_foreach (ret, iter, name) {
+				iter->data = r_str_new (name + 2);
+				free (name);
+			}
+		}
+
+	}
+	return ret;
 }
 
 R_API RList *r_vc_git_get_uncommitted(Rvc *rvc) {
