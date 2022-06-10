@@ -10,6 +10,7 @@ extern "C" {
 #include <limits.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <math.h>
 
 #define cut8 const uint8_t
 #define ut64 uint64_t
@@ -193,11 +194,11 @@ typedef struct _utX {
 #define B4(a,b,c,d) ((a<<12)|(b<<8)|(c<<4)|(d))
 
 /* portable non-c99 inf/nan types */
-#if !defined(INFINITY)
+#ifndef INFINITY
 #define INFINITY (1.0f/0.0f)
 #endif
 
-#if !defined(NAN)
+#ifndef NAN
 #define NAN (0.0f/0.0f)
 #endif
 
@@ -214,8 +215,6 @@ typedef struct _utX {
 
 #ifdef _MSC_VER
 #define R_PACKED( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
-#undef INFINITY
-#undef NAN
 #elif defined(__GNUC__) || defined(__TINYC__)
 #define R_PACKED( __Declaration__ ) __Declaration__ __attribute__((__packed__))
 #endif
@@ -240,6 +239,10 @@ typedef struct _utX {
 		x *m = malloc(sizeof (x));\
 		return m? *m = n, m: m; \
 	}
+
+#define R_DIRTY(x) (x)->is_dirty = true
+#define R_IS_DIRTY(x) (x)->is_dirty
+#define R_DIRTY_VAR bool is_dirty
 
 #ifdef __cplusplus
 }

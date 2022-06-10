@@ -646,7 +646,10 @@ R_API RColor r_cons_pal_get(const char *key) {
 
 /* Get the RColor at specified index */
 R_API RColor r_cons_pal_get_i(int index) {
-	return *(RCOLOR_AT (index));
+	if (index >= 0 && index < keys_len) {
+		return *(RCOLOR_AT (index));
+	}
+	return *(RCOLOR_AT (0));
 }
 
 /* Get color name at index */

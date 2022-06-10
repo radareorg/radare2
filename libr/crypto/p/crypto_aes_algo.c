@@ -119,7 +119,8 @@ void aes_expkey(const RCryptoAESState *st, RCryptoAESExponent *exp) {
 // in         - The plaintext
 // result     - The ciphertext generated from a plaintext using the key
 void aes_encrypt(RCryptoAESState *st, ut8 *in, ut8 *result) {
-	RCryptoAESExponent exp = {0};
+	RCryptoAESExponent exp;
+	memset (&exp, 0, sizeof (exp));
 	aes_expkey (st, &exp);
 
 	ut32 t0, t1, t2, t3, tt;
@@ -197,7 +198,8 @@ void aes_encrypt(RCryptoAESState *st, ut8 *in, ut8 *result) {
 // in         - The ciphertext.
 // result     - The plaintext generated from a ciphertext using the session key.
 void aes_decrypt(RCryptoAESState *st, ut8 *in, ut8 *result) {
-	RCryptoAESExponent exp = {0};
+	RCryptoAESExponent exp;
+	memset (&exp, 0, sizeof (exp));
 
 	aes_expkey (st, &exp);
 

@@ -343,8 +343,8 @@ static const char *help_detail_ae[] = {
 	"%", "", "module",
 	"%=", "", "a%=b => b,a,%=",
 	"&=", "", "and ax, bx => bx,ax,&=",
-	"^", "", "xor"
-	"&", "", "and"
+	"^", "", "xor",
+	"&", "", "and",
 	"|", "", "or r0, r1, r2 => r2,r1,|,r0,=",
 	"!=", "", "negate all bits",
 	"^=", "", "xor ax, bx => bx,ax,^=",
@@ -5837,14 +5837,18 @@ tail_return:
 	return tail_return_value;
 }
 
-R_API int r_core_esil_step_back(RCore *core) {
-	r_return_val_if_fail (core->anal->esil && core->anal->esil->trace, -1);
+R_API bool r_core_esil_step_back(RCore *core) {
+	r_return_val_if_fail (core && core->anal, false);
+	if (!core->anal->esil || !core->anal->esil->trace) {
+		eprintf ("Run `aeim` to initialize the esil VM and enable e dbg.trace=true\n");
+		return false;
+	}
 	RAnalEsil *esil = core->anal->esil;
 	if (esil->trace->idx > 0) {
 		r_anal_esil_trace_restore (esil, esil->trace->idx - 1);
-		return 1;
+		return true;
 	}
-	return -1;
+	return false;
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
@@ -6730,6 +6734,9 @@ static void __core_anal_appcall(RCore *core, const char *input) {
 static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp) {
 	// TODO: add support for 32 bit
 	RBuffer *b = r_buf_new ();
+	if (!b) {
+		return;
+	}
 	ut64 sp = core->offset;
 	int i;
 	ut64 dyld_call_from = UT64_MAX;
@@ -6761,7 +6768,7 @@ static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp
 		r_buf_append_string (b, envp[i]);
 		r_buf_append_ut8 (b, 0);
 	}
-	int slen;
+	int slen = 0;
 	ut8 *s = r_buf_read_all (b, &slen);
 	char *x = r_hex_bin2strdup (s, slen);
 	r_cons_printf ("wx %s\n", x);
@@ -7150,7 +7157,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		} break;
 		case 'b': // "aesb"
 			if (!r_core_esil_step_back (core)) {
-				eprintf ("cannnot step back\n");
+				eprintf ("Cannot step back\n");
 			}
 			r_core_cmd0 (core, ".ar*");
 			break;
@@ -7237,7 +7244,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		case 'p': //"aesp"
 			n = strchr (input, ' ');
 			n1 = n ? strchr (n + 1, ' ') : NULL;
-			if ((!n || !n1) || (!(n + 1) || !(n1 + 1))) {
+			if ((!n || !n1) || (!*n || !*n1)) {
 				eprintf ("aesp [offset] [num]\n");
 				break;
 			}
@@ -8675,7 +8682,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'j': // "axj"
 	case 'q': // "axq"
 	case '*': // "ax*"
-		r_anal_xrefs_list (core->anal, input[0]);
+	case ',': // "ax,"
+		r_anal_xrefs_list (core->anal, input[0], *input? r_str_trim_head_ro (input + 1): "");
 		break;
 	case '.': { // "ax."
 		char *tInput = strdup (input);
@@ -12514,15 +12522,15 @@ static int cmd_anal(void *data, const char *input) {
 	case 0: // "a"
 		r_core_cmd0 (core, "aai");
 		break;
+	case '?':
+		if (input[1] == 'j') {
+			r_cons_cmd_help_json (help_msg_a);
+		} else {
+			r_core_cmd_help (core, help_msg_a);
+		}
+		break;
 	default:
 		r_core_cmd_help (core, help_msg_a);
-#if 0
-		r_cons_printf ("Examples:\n"
-			" f ts @ `S*~text:0[3]`; f t @ section..text\n"
-			" f ds @ `S*~data:0[3]`; f d @ section..data\n"
-			" .ad t t+ts @ d:ds\n",
-			NULL);
-#endif
 		break;
 	}
 	if (tbs != core->blocksize) {

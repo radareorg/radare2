@@ -6,11 +6,9 @@
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) [![TODO](https://img.shields.io/github/search/radareorg/radare2/TODO.svg)](https://github.com/radareorg/radare2/search?q=TODO) [![XXX](https://img.shields.io/github/search/radareorg/radare2/XXX.svg)](https://github.com/radareorg/radare2/search?q=XXX) [![Discord](https://badgen.net/discord/members/MgEdxrMnqx)](https://discord.gg/MgEdxrMnqx)
 
 See the [Releases](https://github.com/radareorg/radare2/releases) page for
-downloads. The current git `master` branch is `5.6.9`, next will be `5.7.0`.
+downloads. The current git `master` branch is `5.7.1`, next will be `5.7.2`.
 
-We ensure ABI stability for all the patch releases, you can mix/swap libraries
-and plugins without the need to recompile them if major and minor numbers are
-the same (X.Y.?).
+* Since 5.6.0 it's [abi stable](doc/abi.md) for all the patch releases.
 
 ### Description
 
@@ -32,8 +30,9 @@ disassemble any binary.
 ## Installation
 
 * r2 can be installed from `git` or via `pip` using `r2env`.
-* Default installation uses symlinks and acr + make on UNIX systems
-* Windows builds can be done with msvc (meson+vs|ninja) or sys/mingw32.sh
+* Run `sys/install.sh` for the default acr+make+symlink installation
+* meson/ninja (muon/samu also works) and make builds are supported.
+* Windows builds require meson and msvc or mingw as compilers
 * To uninstall the current build of r2 run `make uninstall`
 * To uninstall ALL the system installations of r2 do: `sudo make purge`
 
@@ -148,9 +147,9 @@ Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Andro
 
 ## Architectures
 
-i386, x86-64, ARM, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, m680x, AVR,
-XAP, S390, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
-V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
+i386, x86-64, ARM, BPF, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, m680x,
+AVR, XAP, S390, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
+V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller, EVM,
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
 NIOS II, Java, Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
 c55+, c64x), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
@@ -169,9 +168,9 @@ Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems
 * [![Termux package](https://repology.org/badge/version-for-repo/termux/radare2.svg)](https://repology.org/project/radare2/versions)
 * [![Alpine Linux Edge package](https://repology.org/badge/version-for-repo/alpine_edge/radare2.svg)](https://repology.org/project/radare2/versions) [![Alpine Linux 3.13 package](https://repology.org/badge/version-for-repo/alpine_3_13/radare2.svg)](https://repology.org/project/radare2/versions) [![Alpine Linux 3.12 package](https://repology.org/badge/version-for-repo/alpine_3_12/radare2.svg)](https://repology.org/project/radare2/versions)
 * [![Arch package](https://repology.org/badge/version-for-repo/arch/radare2.svg)](https://repology.org/project/radare2/versions) [![AUR package](https://repology.org/badge/version-for-repo/aur/radare2.svg)](https://repology.org/project/radare2/versions)
-* [![Fedora 34 package](https://repology.org/badge/version-for-repo/fedora_34/radare2.svg)](https://repology.org/project/radare2/versions) [![Fedora 32 package](https://repology.org/badge/version-for-repo/fedora_32/radare2.svg)](https://repology.org/project/radare2/versions)
+* [![Fedora Dev](https://repology.org/badge/version-for-repo/fedora_rawhide/radare2.svg)](https://repology.org/project/radare2/versions) [![Fedora 36](https://repology.org/badge/version-for-repo/fedora_36/radare2.svg)](https://repology.org/project/radare2/versions) [![Fedora 34](https://repology.org/badge/version-for-repo/fedora_34/radare2.svg)](https://repology.org/project/radare2/versions)
 * [![FreeBSD port](https://repology.org/badge/version-for-repo/freebsd/radare2.svg)](https://repology.org/project/radare2/versions) [![OpenBSD port](https://repology.org/badge/version-for-repo/openbsd/radare2.svg)](https://repology.org/project/radare2/versions) [![pkgsrc current package](https://repology.org/badge/version-for-repo/pkgsrc_current/radare2.svg)](https://repology.org/project/radare2/versions)
 * [![Homebrew package](https://repology.org/badge/version-for-repo/homebrew/radare2.svg)](https://repology.org/project/radare2/versions) [![MacPorts package](https://repology.org/badge/version-for-repo/macports/radare2.svg)](https://repology.org/project/radare2/versions)
-* [![HaikuPorts master package](https://repology.org/badge/version-for-repo/haikuports_master/radare2.svg)](https://repology.org/project/radare2/versions)
-* [![Ubuntu 20.04 package](https://repology.org/badge/version-for-repo/ubuntu_20_04/radare2.svg)](https://repology.org/project/radare2/versions) [![Ubuntu 18.04 package](https://repology.org/badge/version-for-repo/ubuntu_18_04/radare2.svg)](https://repology.org/project/radare2/versions)
+* [![Haiku Ports](https://repology.org/badge/version-for-repo/haikuports_master/radare2.svg)](https://repology.org/project/radare2/versions) [![Void Linux](https://repology.org/badge/version-for-repo/void_x86_64/radare2.svg)](https://repology.org/project/radare2/versions)
+* [![Ubuntu 22.10 package](https://repology.org/badge/version-for-repo/ubuntu_22_10_proposed/radare2.svg)](https://repology.org/project/radare2/versions) [![Ubuntu 20.04 package](https://repology.org/badge/version-for-repo/ubuntu_20_04/radare2.svg)](https://repology.org/project/radare2/versions) [![Ubuntu 18.04 package](https://repology.org/badge/version-for-repo/ubuntu_18_04/radare2.svg)](https://repology.org/project/radare2/versions)
 * [![Debian Unstable package](https://repology.org/badge/version-for-repo/debian_unstable/radare2.svg)](https://repology.org/project/radare2/versions) [![Raspbian Stable package](https://repology.org/badge/version-for-repo/raspbian_stable/radare2.svg)](https://repology.org/project/radare2/versions) [![Kali Linux Rolling package](https://repology.org/badge/version-for-repo/kali_rolling/radare2.svg)](https://repology.org/project/radare2/versions)

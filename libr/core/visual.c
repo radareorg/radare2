@@ -773,7 +773,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	r_cons_reset_colors ();
 	//r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
 	r_cons_show_cursor (true);
-	core->vmode = false;
+	core->vmode = 0;
 
 	int curbs = core->blocksize;
 	if (autoblocksize) {
@@ -790,7 +790,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	}
 
 	r_cons_show_cursor (false);
-	core->vmode = true;
+	core->vmode = 1;
 	r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 	r_cons_show_cursor (true);
 }
@@ -3274,6 +3274,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (key_s && *key_s) {
 				r_core_cmd0 (core, key_s);
 			} else {
+				// r_core_cmd0 (core, "dsb");
 				__core_visual_step_over (core);
 			}
 			break;
@@ -3845,7 +3846,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		r_cons_strcat (BEGIN);
 	}
 	const char *cmd_visual = r_config_get (core->config, "cmd.visual");
-	if (cmd_visual && *cmd_visual) {
+	if (R_STR_ISNOTEMPTY (cmd_visual)) {
 		r_str_ncpy (bar, cmd_visual, sizeof (bar) - 1);
 		bar[10] = '.'; // chop cmdfmt
 		bar[11] = '.'; // chop cmdfmt
@@ -4397,7 +4398,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		// show V? help message, disables oneliner to open visual help
 		return 0;
 	}
-	core->vmode = false;
+	core->vmode = 0;
 	/* honor vim */
 	if (!strncmp (input, "im", 2)) {
 		char *cmd = r_str_newf ("!v%s", input);
@@ -4412,8 +4413,10 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		}
 		input += len;
 	}
-	core->vmode = true;
 
+	int vtmode = r_config_get_i (core->config, "scr.vtmode");
+	r_config_set_i (core->config, "scr.vtmode", core->vmode);
+	core->vmode = 2;
 	// disable tee in cons
 	teefile = r_cons_singleton ()->teefile;
 	r_cons_singleton ()->teefile = "";
@@ -4548,10 +4551,11 @@ dodo:
 	r_cons_singleton ()->teefile = teefile;
 	r_cons_set_cup (false);
 	r_cons_clear00 ();
-	core->vmode = false;
+	core->vmode = 0;
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
 	r_cons_show_cursor (true);
+	r_config_set_i (core->config, "scr.vtmode", vtmode);
 	return 0;
 }
 

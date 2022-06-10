@@ -58,20 +58,21 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_help.c"
 
 static const char *help_msg_dollar[] = {
-	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
+	"Usage:", "$alias[=cmd] [args...]", "Alias commands and data (See ?$? for help on $variables)",
 	"$", "", "list all defined aliases",
-	"$*", "", "list all defined aliases and their respective values, unprintable characters escaped",
-	"$**", "", "same as above, but if an alias has unprintable characters, b64 encode it",
+	"$*", "", "list all defined aliases and their values, with unprintable characters escaped",
+	"$**", "", "same as above, but if an alias contains unprintable characters, b64 encode it",
 	"$", "foo:=123", "alias for 'f foo=123'",
 	"$", "foo-=4", "alias for 'f foo-=4'",
 	"$", "foo+=4", "alias for 'f foo+=4'",
 	"$", "foo", "alias for 's foo' (note that command aliases can override flag resolution)",
-	"$", "dis=base64:AAA=", "alias $dis to the raw byte output from decoding this base64 string",
-	"$", "dis=$hello world", "alias $dis to the string after '$' (accepts double-backslash and hex escaping)",
-	"$", "dis=-", "edit $dis in cfg.editor (accepts backslash and hex escaping)",
+	"$", "dis=base64:AAA=", "alias $dis to the raw bytes from decoding this base64 string",
+	"$", "dis=$hello world", "alias $dis to the string after '$'",
+	"$", "dis=$hello\\\\nworld\\\\0a", "string aliases accept double-backslash and hex escaping",
+	"$", "dis=-", "edit $dis in cfg.editor (use single-backslashes for escaping)",
 	"$", "dis=af", "alias $dis to the af command",
-	"$", "dis=af;pdf", "alias $dis to the af command, then run pdf",
-	"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
+	"\"$", "dis=af;pdf\"", "alias $dis to run af, then pdf. you must quote the whole command.",
+	"$", "test=. /tmp/test.js", "create command - rlangpipe script",
 	"$", "dis=", "undefine alias",
 	"$", "dis", "execute a defined command alias, or print a data alias with unprintable characters escaped",
 	"$", "dis?", "show commands aliased by $dis",
@@ -354,6 +355,7 @@ static const char *help_msg_v[] = {
 };
 
 R_API void r_core_cmd_help(const RCore *core, const char *help[]) {
+	// r_cons_cmd_help_json (help);
 	r_cons_cmd_help (help, core->print->flags & R_PRINT_FLAGS_COLOR);
 }
 
@@ -523,7 +525,7 @@ static bool print_aliases(void *use_b64, const void *key, const void *val){
 }
 
 static int cmd_uname(void *data, const char *input) { // "uniq"
-	RSysInfo *si = r_sys_info();
+	RSysInfo *si = r_sys_info ();
 	if (si) {
 		r_cons_printf ("%s", si->sysname);
 		if (strstr (input, "-r")) {
@@ -661,19 +663,13 @@ static int cmd_undo(void *data, const char *input) {
 		return 1;
 	default:
 	case '?': // "u?"
-		r_core_cmd_help (data, help_msg_u);
+		if (*input && input[1] == 'j') {
+			r_cons_cmd_help_json (help_msg_u);
+		} else {
+			r_core_cmd_help (data, help_msg_u);
+		}
 		return 1;
 	}
-#if __UNIX__
-	struct utsname un;
-	uname (&un);
-	r_cons_printf ("%s %s %s %s\n", un.sysname,
-		un.nodename, un.release, un.machine);
-#elif __WINDOWS__
-	r_cons_printf ("windows\n");
-#else
-	r_cons_printf ("unknown\n");
-#endif
 	return 0;
 }
 
@@ -798,7 +794,6 @@ static int cmd_alias(void *data, const char *input) {
 			/* Commands are always strings */
 			r_cons_println ((char *)v->data);
 			r_cons_flush ();
-
 			free (buf);
 			return 1;
 		} else if (v) {
@@ -810,13 +805,13 @@ static int cmd_alias(void *data, const char *input) {
 		bool use_b64 = (buf[1] == '*');
 		ht_pp_foreach (core->rcmd->aliases, print_aliases, &use_b64);
 	} else if (!*buf) {
-		RList *keys = r_cmd_alias_keys (core->rcmd);
+		const char **keys = r_cmd_alias_keys (core->rcmd);
 		if (keys) {
-			RListIter *it;
-			r_list_foreach_iter (keys, it) {
-				r_cons_printf ("$%s\n", (char *)it->data);
+			int i;
+			for (i = 0; i < core->rcmd->aliases->count; i++) {
+				r_cons_printf ("$%s\n", keys[i]);
 			}
-			r_list_free (keys);
+			free (keys);
 		}
 	} else {
 		/* Execute or evaluate alias */
@@ -838,7 +833,7 @@ static int cmd_alias(void *data, const char *input) {
 				r_core_cmd0 (core, (char *)v->data);
 			}
 		} else {
-			eprintf ("No such alias \"$%s\"\n", buf);
+			R_LOG_WARN ("No such alias \"$%s\"", buf);
 		}
 	}
 	free (buf);
@@ -1154,10 +1149,12 @@ static int cmd_yank(void *data, const char *input) {
 				sig = strdup ("wx 10203040");
 			}
 			char *data = r_core_editor (core, NULL, sig);
-			(void) strtok (data, ";\n");
-			r_core_cmdf (core, "y%s", data);
+			if (data) {
+				(void) strtok (data, ";\n");
+				r_core_cmdf (core, "y%s", data);
+				free (data);
+			}
 			free (sig);
-			free (data);
 		}
 		break;
 	case '*': // "y*"
@@ -1364,11 +1361,29 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "py")) {
-					char *cmd = cmdstr ("python");
-					r_lang_use (core->lang, "pipe");
-					lang_run_file (core, core->lang, cmd);
-					free (cmd);
-					ret = 1;
+					char *fp = r_file_path ("python3");
+					if (!fp) {
+						fp = r_file_path ("python2");
+						if (!fp) {
+							fp = r_file_path ("python");
+						}
+					}
+					if (fp) {
+#if __WINDOWS__
+						char *cmd = r_str_newf ("%s %s", fp, file);
+#else
+						char *cmd = r_str_newf ("%s '%s'", fp, file);
+#endif
+						r_lang_use (core->lang, "pipe");
+						lang_run_file (core, core->lang, cmd);
+						free (cmd);
+						ret = 1;
+						free (fp);
+					} else {
+						R_LOG_ERROR ("Cannot find python in PATH");
+					}
+				} else {
+					ret = r_core_cmd_file (core, file);
 				}
 			} else {
 				char *abspath = r_file_path (file);
@@ -1950,7 +1965,7 @@ static int cmd_interpret(void *data, const char *input) {
 			if (*script_file == '$' && !script_file[1]) {
 				eprintf ("No alias name given.\n");
 			} else if (*script_file == '$') {
-				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, script_file+1);
+				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, script_file + 1);
 				if (v) {
 					char *cmd_text = r_cmd_alias_val_strdup (v);
 					r_core_cmd0 (core, cmd_text);
@@ -2581,7 +2596,6 @@ static int cmd_panels(void *data, const char *input) {
 				eprintf ("Cannot open file (%s)\n", sp + 1);
 			}
 		}
-		////r_sys_cmdf ("v%s", input);
 		return false;
 	}
 	r_core_panels_root (core, core->panels_root);
@@ -2590,6 +2604,10 @@ static int cmd_panels(void *data, const char *input) {
 
 static int cmd_visual(void *data, const char *input) {
 	RCore *core = (RCore*) data;
+	if (*input == '?') { // "mL?"
+		r_core_cmd_help_match_spec (core, help_msg_root, "V", 0, true);
+		return true;
+	}
 	if (core->http_up) {
 		return false;
 	}
@@ -2806,7 +2824,7 @@ static void cmd_autocomplete_help(RCore *core) {
 		}
 	}
 	r_core_cmd_help (core, help);
-	free (help);
+	free ((void*)help);
 }
 
 static void cmd_autocomplete(RCore *core, const char *input) {
@@ -5722,6 +5740,10 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 
 /* return: pointer to a buffer with the output of the command */
 R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
+	if (*cmd != '"' && strchr (cmd, '>')) {
+		r_core_cmd0 (core, cmd);
+		return strdup ("");
+	}
 	r_cons_push ();
 	core->cons->context->noflush = true;
 	core->cons->context->cmd_str_depth++;

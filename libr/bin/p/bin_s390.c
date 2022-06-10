@@ -84,23 +84,27 @@ static ut64 baddr(RBinFile *bf) {
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 buf[8] = {0};
-	r_buf_read_at (b, 0, buf, sizeof (buf));
-	if (buf[0] == 0x20) {
-		S390_Header_CESD *hdr = (S390_Header_CESD*)buf; 
-		if (r_buf_size (b) > sizeof (S390_Header_CESD) + r_read_be16(&hdr->Count)) {
+	if (r_buf_read_at (b, 0, buf, sizeof (buf)) != sizeof (buf)) {
+		return false;
+	}
+	if (!memcmp (buf, "\x20\x00\x00\x00\x01\x00", 6)) {
+		S390_Header_CESD *hdr = (S390_Header_CESD*)buf;
+		if (r_buf_size (b) > sizeof (S390_Header_CESD) + r_read_be16 (&hdr->Count)) {
 			return true;
 		}
 	}
-	return false; 
+	return false;
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
 	bool res = check_buffer (bf, b);
 	if (res) {
 		s390user *su = R_NEW0 (s390user);
-		su->sb = r_strbuf_new ("");
-		su->symbols = r_list_newf (r_bin_symbol_free);
-		*bin_obj = (void*)su;
+		if (su) {
+			su->sb = r_strbuf_new ("");
+			su->symbols = r_list_newf (r_bin_symbol_free);
+			*bin_obj = (void*)su;
+		}
 	}
 	return res;
 }
@@ -183,7 +187,7 @@ static RList *sections(RBinFile *bf) {
 	su->sb = r_strbuf_new ("");
 
 	S390_Header_CESD hdr20 = {0};
-	S390_Header_CESD_DATA hdr20d = {0};
+	S390_Header_CESD_DATA hdr20d = {{0}};
 	S390_Header_CSECT_IDR hdr80 = {0};
 	S390_Header_ControlRecord hdrCR = {0};
 	S390_Header_ControlRecord_Data hdrCRd = {0};
@@ -215,8 +219,8 @@ static RList *sections(RBinFile *bf) {
 			}
 			lon = r_read_be16 (&hdr20.Count);
 			rec++;
-			r_strbuf_appendf (su->sb, "Record %02d Type 0x%02x - Count: 0x%04x - (%03d) 0x%04x - %02ld\n", 
-					rec, gbuf[0], x, lon, lon, lon / sizeof(S390_Header_CESD_DATA));
+			r_strbuf_appendf (su->sb, "Record %02d Type 0x%02x - Count: 0x%04x - (%03d) 0x%04x - %02d\n",
+					rec, gbuf[0], x, lon, lon, (int)(lon / sizeof (S390_Header_CESD_DATA)));
 			x += sizeof (S390_Header_CESD);
 			// process each symbols with their datas
 			sym = 0;
@@ -232,8 +236,8 @@ static RList *sections(RBinFile *bf) {
 				a = (hdr20d.Address[0] * 65536) + (hdr20d.Address[1] * 256) + (hdr20d.Address[2]);
 				b = (hdr20d.ID_or_Length[0] * 65536) + (hdr20d.ID_or_Length[1] * 256) + (hdr20d.ID_or_Length[2]);
 				sym++;
-				r_strbuf_appendf (su->sb, "       %02d   %s   0x%02x   0x%04x   (%5u) 0x%04x\n", 
-						sym, r_str_ndup ((char *) cad, 8), hdr20d.Type, a, b, b); 
+				r_strbuf_appendf (su->sb, "       %02d   %s   0x%02x   0x%04x   (%5u) 0x%04x\n",
+						sym, r_str_ndup ((char *) cad, 8), hdr20d.Type, a, b, b);
 				add_symbol (su->symbols, r_str_ndup ((char *)cad, 8), a);
 				x += sizeof (S390_Header_CESD_DATA);
 			}
@@ -250,7 +254,7 @@ static RList *sections(RBinFile *bf) {
 			}
 			lon = hdr80.Count - 2;	// Count include Count & SubType fields
 			rec++;
-			r_strbuf_appendf (su->sb, "Record %02d Type 0x%02x SubType 0x%02x - Count: 0x%04x (%03d) - 0x%02x\n", 
+			r_strbuf_appendf (su->sb, "Record %02d Type 0x%02x SubType 0x%02x - Count: 0x%04x (%03d) - 0x%02x\n",
 					rec, gbuf[0], hdr80.SubType, x, lon, lon);
 			x += sizeof (S390_Header_CSECT_IDR);
 			add_section (ret, r_str_newf ("record%d", rec), x, lon);
@@ -294,8 +298,8 @@ static RList *sections(RBinFile *bf) {
 			}
 			lon = r_read_be16(&hdrCR.Count);
 			rec++;
-			r_strbuf_appendf (su->sb, "Record %02d Type 0x%02x - Count: 0x%04x - 0x%04x - %04ld\n", 
-					rec, gbuf[0], x, lon, lon / sizeof(S390_Header_ControlRecord_Data));
+			r_strbuf_appendf (su->sb, "Record %02d Type 0x%02x - Count: 0x%04x - 0x%04x - %04d\n",
+					rec, gbuf[0], x, lon, (int)(lon / sizeof (S390_Header_ControlRecord_Data)));
 			x += sizeof (S390_Header_ControlRecord);
 
 			lonCR = 0;
@@ -304,8 +308,8 @@ static RList *sections(RBinFile *bf) {
 				if (left < sizeof (S390_Header_ControlRecord_Data)) {
 					return NULL;
 				}
-				r_strbuf_appendf (su->sb, "    CESD 0x%02x - 0x%04x\n", 
-						r_read_be16 (&hdrCRd.EntryNumber), r_read_be16 (&hdrCRd.Length)); 
+				r_strbuf_appendf (su->sb, "    CESD 0x%02x - 0x%04x\n",
+						r_read_be16 (&hdrCRd.EntryNumber), r_read_be16 (&hdrCRd.Length));
 				lonCR += r_read_be16 (&hdrCRd.Length);
 				x += sizeof (S390_Header_ControlRecord_Data);
 			}
@@ -335,7 +339,7 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *entries(RBinFile *bf) { 
+static RList *entries(RBinFile *bf) {
 	s390user *su = bf->o->bin_obj;
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = R_NEW0 (RBinAddr);

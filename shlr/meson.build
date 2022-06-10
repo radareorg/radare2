@@ -1,8 +1,6 @@
 # handle capstone dependency
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
-  message('Use bundled capstone')
-
   if get_option('capstone_in_builddir')
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   else
@@ -10,6 +8,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   endif
 
   capstone_version = get_option('use_capstone_version')
+  message('Use bundled capstone: ' + capstone_version)
 
   res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
   if res.returncode() == 0
@@ -20,7 +19,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     patches_files = []
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
     if capstone_version == 'v5'
-      CS_TIP = 'c57915c8fd281b68ffa373fa646251fda552e38f'
+      CS_TIP = '68cc30db6693073b27cb071fcdcb2a905667fced'
       CS_BRA = 'next'
       patches_files = [
         'fix-x86-16.patch',
@@ -128,6 +127,14 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/TMS320C64x/TMS320C64xModule.c',
   ]
   rel_cs5_files = [
+    'arch/BPF/BPFDisassembler.c',
+    'arch/BPF/BPFInstPrinter.c',
+    'arch/BPF/BPFMapping.c',
+    'arch/BPF/BPFModule.c',
+    'arch/EVM/EVMDisassembler.c',
+    'arch/EVM/EVMInstPrinter.c',
+    'arch/EVM/EVMMapping.c',
+    'arch/EVM/EVMModule.c',
     'arch/X86/X86InstPrinterCommon.c',
     # Add riscv files
     'arch/RISCV/RISCVMapping.c',
@@ -190,7 +197,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     foreach rel_cs_file : rel_cs5_files
       cs_files += [join_paths(capstone_path, rel_cs_file)]
     endforeach
-    cs_c_args += [ '-DCAPSTONE_HAS_RISCV' ]
+    cs_c_args += [ '-DCAPSTONE_HAS_BPF', '-DCAPSTONE_HAS_EVM', '-DCAPSTONE_HAS_RISCV' ]
   endif
 
   capstone_includes = [platform_inc, include_directories(join_paths('capstone','include'))]

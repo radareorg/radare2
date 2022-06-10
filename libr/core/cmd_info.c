@@ -16,7 +16,7 @@ static const char *help_msg_i[] = {
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
 	"ic", "", "List classes, methods and fields",
 	"icc", "", "List classes, methods and fields in Header Format",
-	"icg", "", "List classes as agn/age commands to create class hirearchy graphs",
+	"icg", " [str]", "List classes as agn/age commands to create class hirearchy graphs (matches str if provided)",
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
 	"iC", "[j]", "show signature info (entitlements, ...)",
@@ -1255,7 +1255,18 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				}
 				bool fullGraph = true;
-				if (fullGraph) {
+				const char *match = r_str_trim_head_ro (input + 2);
+				if (*match) {
+					r_list_foreach (obj->classes, iter, cls) {
+					    if (cls->super && strstr (cls->super, match)) {
+							r_cons_printf ("agn %s\n", cls->super);
+							r_cons_printf ("agn %s\n", cls->name);
+							r_cons_printf ("age %s %s\n", cls->super, cls->name);
+						} else if (strstr (cls->name, match)) {
+							r_cons_printf ("agn %s\n", cls->name);
+						}
+					}
+				} else if (fullGraph) {
 					r_list_foreach (obj->classes, iter, cls) {
 						if (cls->super) {
 							r_cons_printf ("agn %s\n", cls->super);
@@ -1437,7 +1448,11 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case '?': // "i?"
-			r_core_cmd_help (core, help_msg_i);
+			if (input[1] == 'j') {
+				r_cons_cmd_help_json (help_msg_i);
+			} else {
+				r_core_cmd_help (core, help_msg_i);
+			}
 			goto redone;
 		case '*': // "i*"
 			if (mode == R_MODE_RADARE) {
@@ -1462,7 +1477,9 @@ static int cmd_info(void *data, const char *input) {
 			cmd_info_here (core, pj, input[1]);
 			goto done;
 		default:
-			cmd_info_bin (core, va, pj, mode);
+	//		cmd_info_bin (core, va, pj, mode);
+			eprintf ("Invalid subcommand '%c'\n", input[0]);
+			goto done;
 			break;
 		}
 		// input can be overwritten like the 'input = " ";' a few lines above

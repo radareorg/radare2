@@ -137,21 +137,18 @@ ST_FUNC void cstr_new(CString *cstr) {
 }
 
 /* free string and reset it to NULL */
-ST_FUNC void cstr_free(CString *cstr)
-{
+ST_FUNC void cstr_free(CString *cstr) {
 	free (cstr->data_allocated);
 	cstr_new (cstr);
 }
 
 /* reset string to empty */
-ST_FUNC void cstr_reset(CString *cstr)
-{
+ST_FUNC void cstr_reset(CString *cstr) {
 	cstr->size = 0;
 }
 
 /* XXX: unicode ? */
-static void add_char(CString *cstr, int c)
-{
+static void add_char(CString *cstr, int c) {
 	if (c == '\'' || c == '\"' || c == '\\') {
 		/* XXX: could be more precise if char or string */
 		cstr_ccat (cstr, '\\');
@@ -232,8 +229,8 @@ ST_FUNC TokenSym *tok_alloc(TCCState *s1, const char *str, int len) {
 /* XXX: buffer overflow */
 /* XXX: float tokens */
 ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv) {
-	static char buf[STRING_MAX_SIZE + 1];
-	static CString cstr_buf;
+	static R_TH_LOCAL char buf[STRING_MAX_SIZE + 1];
+	static R_TH_LOCAL CString cstr_buf;
 	CString *cstr;
 	char *p;
 	int i, len;
@@ -785,8 +782,7 @@ ST_FUNC void save_parse_state(TCCState *s1, ParseState *s) {
 }
 
 /* restore parse state from 's'
-ST_FUNC void restore_parse_state(ParseState *s)
-{
+ST_FUNC void restore_parse_state(ParseState *s) {
 	file->line_num = s->line_num;
 	macro_ptr = s->macro_ptr;
 	tok = s->tok;
@@ -824,21 +820,18 @@ static inline int tok_ext_size(TCCState *s1, int t) {
 
 /* token string handling */
 
-ST_INLN void tok_str_new(TokenString *s)
-{
+ST_INLN void tok_str_new(TokenString *s) {
 	s->str = NULL;
 	s->len = 0;
 	s->allocated_len = 0;
 	s->last_line_num = -1;
 }
 
-ST_FUNC void tok_str_free(int *str)
-{
+ST_FUNC void tok_str_free(int *str) {
 	free (str);
 }
 
-static int *tok_str_realloc(TokenString *s)
-{
+static int *tok_str_realloc(TokenString *s) {
 	int *str, len;
 
 	if (s->allocated_len == 0) {
@@ -1073,8 +1066,7 @@ ST_FUNC void free_defines(TCCState *s1, Sym *b) {
 
 
 /* eval an expression for #if/#elif */
-static int expr_preprocess(TCCState *s1)
-{
+static int expr_preprocess(TCCState *s1) {
 	int c, t;
 	TokenString str;
 
@@ -1235,8 +1227,7 @@ static CachedInclude *search_cached_include(TCCState *s1, const char *filename) 
 	return NULL;
 }
 
-static inline void add_cached_include(TCCState *s1, const char *filename, int ifndef_macro)
-{
+static inline void add_cached_include(TCCState *s1, const char *filename, int ifndef_macro) {
 	CachedInclude *e;
 	int h;
 
@@ -1781,8 +1772,7 @@ add_char_nonext:
 #define BN_SIZE 2
 
 /* bn = (bn << shift) | or_val */
-static void bn_lshift(unsigned int *bn, int shift, int or_val)
-{
+static void bn_lshift(unsigned int *bn, int shift, int or_val) {
 	int i;
 	unsigned int v;
 	for (i = 0; i < BN_SIZE; i++) {
@@ -1792,8 +1782,7 @@ static void bn_lshift(unsigned int *bn, int shift, int or_val)
 	}
 }
 
-static void bn_zero(unsigned int *bn)
-{
+static void bn_zero(unsigned int *bn) {
 	int i;
 	for (i = 0; i < BN_SIZE; i++) {
 		bn[i] = 0;
@@ -2368,7 +2357,7 @@ str_const:
 
 			/* eval the escape (should be done as TOK_PPNUM) */
 			cstr_reset (&s1->tokcstr);
-			parse_escape_string (s1, &s1->tokcstr, str.data, is_long);
+			parse_escape_string (s1, &s1->tokcstr, (const ut8 *)str.data, is_long);
 			cstr_free (&str);
 
 			if (sep == '\'') {
@@ -2679,8 +2668,7 @@ add_var:
 	return str.str;
 }
 
-static char const ab_month_name[12][4] =
-{
+static char const ab_month_name[12][4] = {
 	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
@@ -2689,9 +2677,7 @@ static char const ab_month_name[12][4] =
    result to (s1->tok_str,tok_len). 'nested_list' is the list of all
    macros we got inside to avoid recursing. Return non zero if no
    substitution needs to be done */
-static int macro_subst_tok(TCCState *s1, TokenString *tok_str,
-			   Sym **nested_list, Sym *s, struct macro_level **can_read_stream)
-{
+static int macro_subst_tok(TCCState *s1, TokenString *tok_str, Sym **nested_list, Sym *s, struct macro_level **can_read_stream) {
 	Sym *args, *sa, *sa1;
 	int mstr_allocated, parlevel, *mstr, t, t1, spc;
 	const int *p;
@@ -2957,9 +2943,7 @@ static inline int *macro_twosharps(TCCState *s1, const int *macro_str) {
 /* do macro substitution of macro_str and add result to
    (tok_str,tok_len). 'nested_list' is the list of all macros we got
    inside to avoid recursing. */
-static void macro_subst(TCCState *s1, TokenString *tok_str, Sym **nested_list,
-			const int *macro_str, struct macro_level **can_read_stream)
-{
+static void macro_subst(TCCState *s1, TokenString *tok_str, Sym **nested_list, const int *macro_str, struct macro_level **can_read_stream) {
 	Sym *s;
 	int *macro_str1;
 	const int *ptr;

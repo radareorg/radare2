@@ -316,7 +316,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	ut64 t = 0;
  	char *buf = NULL;
 	union VALUETYPE *p = &ms->ms_value;
-	char pp[ASCTIME_BUF_MINLEN];
+	char pp[ASCTIME_BUF_MAXLEN];
 
   	switch (m->type) {
   	case FILE_BYTE:

@@ -63,23 +63,23 @@ static int help(bool verbose) {
 	printf ("Usage: r2r [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
 		printf (
-		" -h           print this help\n"
-		" -v           show version\n"
-		" -q           quiet\n"
-		" -V           verbose\n"
-		" -i           interactive mode\n"
-		" -u           do not git pull/clone test/bins\n"
-		" -n           do nothing (don't run any test, just load/parse them)\n"
-		" -L           log mode (better printing for CI, logfiles, etc.)\n"
-		" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
-		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
-		" -r [radare2] path to radare2 executable (default is "RADARE2_CMD_DEFAULT")\n"
-		" -m [rasm2]   path to rasm2 executable (default is "RASM2_CMD_DEFAULT")\n"
-		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
 		" -C [dir]     chdir before running r2r (default follows executable symlink + test/new\n"
-		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
+		" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
+		" -L           log mode (better printing for CI, logfiles, etc.)\n"
+		" -V           verbose\n"
+		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
+		" -h           print this help\n"
+		" -i           interactive mode\n"
+		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
+		" -m [rasm2]   path to rasm2 executable (default is "RASM2_CMD_DEFAULT")\n"
+		" -n           do nothing (don't run any test, just load/parse them)\n"
 		" -o [file]    output test run information in JSON format to file\n"
+		" -q           quiet\n"
+		" -r [radare2] path to radare2 executable (default is "RADARE2_CMD_DEFAULT")\n"
 		" -s [ignore]  Set R2R_SKIP_(xxx)=1 to skip running those tests\n"
+		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
+		" -u           do not git pull/clone test/bins\n"
+		" -v           show version\n"
 		"\n"
 		"R2R_SKIP_ARCHOS=1  # do not run the arch-os-specific tests\n"
 		"R2R_SKIP_JSON=1    # do not run the JSON tests\n"
@@ -302,7 +302,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'o':
 			free (output_file);
-			output_file = strdup (opt.arg);
+			output_file = r_file_abspath (opt.arg);
 			break;
 		default:
 			ret = help (false);
@@ -334,7 +334,7 @@ int main(int argc, char **argv) {
 
 	if (get_bins) {
 		if (r_file_is_directory ("bins")) {
-			r_sys_cmd ("cd bins ; git pull");
+			r_sys_cmd ("cd bins && git pull");
 		} else {
 			r_sys_cmd ("git clone --depth 1 https://github.com/radareorg/radare2-testbins bins");
 		}
@@ -530,13 +530,15 @@ int main(int argc, char **argv) {
 	if (output_file) {
 		pj_end (state.test_results);
 		if (r_file_exists (output_file)) {
-			pj_free (state.test_results);
-			eprintf ("Cannot overwrite output file '%s'\n", output_file);
-		} else {
-			char *results = pj_drain (state.test_results);
-			r_file_dump (output_file, (ut8 *)results, strlen (results), false);
-			free (results);
+			eprintf ("Overwrite output file '%s'\n", output_file);
 		}
+		char *results = pj_drain (state.test_results);
+		char *output = r_str_newf ("%s\n", results);
+		free (results);
+		if (!r_file_dump (output_file, (ut8 *)output, strlen (output), false)) {
+			eprintf ("Cannot write to %s\n", output_file);
+		}
+		free (output);
 	}
 
 	if (interactive) {

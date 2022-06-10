@@ -94,7 +94,7 @@ RList *__get_entries(r_bin_le_obj_t *bin) {
 	}
 	while (true) {
 		LE_entry_bundle_header header = {0};
-		LE_entry_bundle_entry e = {0};
+		LE_entry_bundle_entry e = {{0}};
 #if 0
 		r_buf_read_at (bin->buf, offset, (ut8 *)&header, sizeof (header));
 #else

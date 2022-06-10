@@ -47,7 +47,13 @@ jobs:
     - name: Building without capstone
       run: |
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
-        ./configure --without-capstone && make -j
+        ./configure --without-capstone --with-rpath && make -j
+        sudo make symstall
+    - name: Building muon/samu
+      run: |
+        r2pm -gci muon # installs samurai as dependency
+        # ./preconfigure
+        # XXX muon setup m && samu -C m -j5
   build-acr-gperf:
     name: linux-acr-gperf
     runs-on: ubuntu-20.04
@@ -64,7 +70,11 @@ jobs:
         export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
         sys/install.sh
     - name: Running tests
-      run: r2r test/db/cmd
+      run: r2r -o /tmp/r2r.json test/db/cmd
+    - uses: actions/upload-artifact@v2
+      with:
+        name: r2r.json
+        path: /tmp/r2r.json
   build-syscapstone:
     name: linux-sys-capstone
     runs-on: ubuntu-20.04

@@ -14,7 +14,6 @@
 #define R_BIN_WASM_MAGIC_BYTES "\x00" \
 			       "asm"
 #define R_BIN_WASM_VERSION 0x1
-#define R_BIN_WASM_STRING_LENGTH 256
 #define R_BIN_WASM_END_OF_CODE 0xb
 
 #define R_BIN_WASM_SECTION_CUSTOM 0x0
@@ -30,15 +29,22 @@
 #define R_BIN_WASM_SECTION_CODE 0xa
 #define R_BIN_WASM_SECTION_DATA 0xb
 
+/*
+ * Value types From:
+ * https://webassembly.github.io/spec/core/binary/types.html#value-types,
+ * https://webassembly.github.io/spec/core/binary/types.html#binary-numtype
+ * https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md#type-encoding-type
+ */
 typedef enum {
-	R_BIN_WASM_VALUETYPE_i32 = 0x1,
-	R_BIN_WASM_VALUETYPE_i64 = 0x2,
-	R_BIN_WASM_VALUETYPE_f32 = 0x3,
-	R_BIN_WASM_VALUETYPE_f64 = 0x4,
-	R_BIN_WASM_VALUETYPE_v128 = 0x5,
-	R_BIN_WASM_VALUETYPE_ANYFUNC = 0x10,
-	R_BIN_WASM_VALUETYPE_FUNC = 0x20,
-	R_BIN_WASM_VALUETYPE_EMPTY = 0x40,
+	R_BIN_WASM_VALUETYPE_i32 = 0x7f,
+	R_BIN_WASM_VALUETYPE_i64 = 0x7e,
+	R_BIN_WASM_VALUETYPE_f32 = 0x7d,
+	R_BIN_WASM_VALUETYPE_f64 = 0x7c,
+	R_BIN_WASM_VALUETYPE_v128 = 0x7b,
+	R_BIN_WASM_VALUETYPE_REFTYPE = 0x70,
+	R_BIN_WASM_VALUETYPE_EXTERNREF = 0x6f,
+	R_BIN_WASM_VALUETYPE_FUNC = 0x60,
+	R_BIN_WASM_VALUETYPE_VOID = 0x40,
 } r_bin_wasm_value_type_t;
 
 typedef enum {
@@ -66,11 +72,6 @@ struct r_bin_wasm_resizable_limits_t {
 	ut32 maximum;
 };
 
-typedef struct r_bin_wasm_name_t {
-	ut32 len;
-	ut8 *name;
-} RBinWasmName;
-
 typedef struct r_bin_wasm_section_t {
 	ut8 id;
 	ut32 size;
@@ -82,13 +83,18 @@ typedef struct r_bin_wasm_section_t {
 	ut32 count;
 } RBinWasmSection;
 
+typedef struct r_bin_wasm_type_vector_t {
+	ut32 count;
+	ut8 *types;
+} RBinWasmTypeVec;
+
 typedef struct r_bin_wasm_type_t {
+	size_t file_offset;
+	ut32 index;
 	ut8 form;
-	ut32 param_count;
-	r_bin_wasm_value_type_t *param_types;
-	st8 return_count; // MVP = 1
-	r_bin_wasm_value_type_t return_type;
-	char to_str[R_BIN_WASM_STRING_LENGTH];
+	RBinWasmTypeVec *args;
+	RBinWasmTypeVec *rets;
+	char *to_str;
 } RBinWasmTypeEntry;
 
 // Other Types
@@ -208,7 +214,7 @@ typedef struct r_bin_wasm_custom_name_entry_t {
 
 	ut8 payload_data;
 	union {
-		RBinWasmName *mod_name;
+		char *mod_name;
 		RBinWasmCustomNameFunctionNames *func;
 		RBinWasmCustomNameLocalNames *local;
 	};
@@ -222,8 +228,8 @@ typedef struct r_bin_wasm_obj_t {
 	ut32 entrypoint;
 
 	// cache purposes
+	RPVector *g_types;
 	RList *g_sections;
-	RList *g_types;
 	RList *g_imports;
 	RList *g_exports;
 	RList *g_tables;
@@ -242,7 +248,7 @@ typedef struct r_bin_wasm_obj_t {
 RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf);
 void r_bin_wasm_destroy(RBinFile *bf);
 RList *r_bin_wasm_get_sections(RBinWasmObj *bin);
-RList *r_bin_wasm_get_types(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_types(RBinWasmObj *bin);
 RList *r_bin_wasm_get_imports(RBinWasmObj *bin);
 RList *r_bin_wasm_get_exports(RBinWasmObj *bin);
 RList *r_bin_wasm_get_tables(RBinWasmObj *bin);

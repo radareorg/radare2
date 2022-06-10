@@ -335,7 +335,7 @@ else
 	-${STRIP} -s "${DESTDIR}${LIBDIR}/libr_"*".${EXT_SO}"
 endif
 
-purge: purge-doc purge-dev user-uninstall
+purge: purge-doc purge-dev uninstall user-uninstall
 	for FILE in ${R2BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$FILE" ; done
 	rm -f "${DESTDIR}${BINDIR}/ragg2-cc"
 	rm -f "${DESTDIR}${BINDIR}/r2"

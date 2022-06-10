@@ -170,11 +170,9 @@ static RLangPlugin r_lang_plugin_go = {
 	.run_file = (void*)lang_go_file,
 };
 
-/*
-#ifndef CORELIB
+#ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_LANG,
 	.data = &r_lang_plugin_go,
 };
 #endif
-*/

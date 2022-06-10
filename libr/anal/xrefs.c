@@ -212,14 +212,19 @@ R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
 	return list;
 }
 
-R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
+R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg) {
 	r_return_if_fail (anal);
 	RListIter *iter;
 	RAnalRef *ref;
 	PJ *pj = NULL;
+	RTable *table = NULL;
 	RList *list = r_anal_ref_list_new ();
 	listxrefs (anal->dict_refs, UT64_MAX, list);
 	sortxrefs (list);
+	if (rad == ',') {
+		table = r_table_new ("xrefs");
+		r_table_set_columnsf (table, "ddssss", "from", "to", "type", "perm", "fromname", "toname");
+	}
 	if (rad == 'j') {
 		pj = anal->coreb.pjWithEncoding (anal->coreb.core);
 		if (!pj) {
@@ -233,6 +238,18 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 			t = ' ';
 		}
 		switch (rad) {
+		case ',':
+			{
+				char *fromname = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
+				char *toname = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
+				r_table_add_rowf (table, "ddssss",
+						ref->at, ref->addr,
+						r_anal_ref_type_tostring (t),
+						r_anal_ref_perm_tostring (ref),
+						toname, fromname
+				);
+			}
+			break;
 		case '*':
 			// TODO: export/import the read-write-exec information
 			anal->cb_printf ("ax%c 0x%"PFMT64x" 0x%"PFMT64x"\n", t, ref->addr, ref->at);
@@ -289,7 +306,15 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 			break;
 		}
 	}
-	if (rad == 'j') {
+	if (rad == ',') {
+		if (R_STR_ISNOTEMPTY (arg)) {
+			r_table_query (table, arg);
+		}
+		char *s = r_table_tofancystring (table);
+		r_cons_println (s);
+		free (s);
+		r_table_free (table);
+	} else if (rad == 'j') {
 		pj_end (pj);
 		anal->cb_printf ("%s\n", pj_string (pj));
 		pj_free (pj);

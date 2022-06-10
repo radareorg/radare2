@@ -39,7 +39,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		return NULL;
 	}
 	RIODesc *desc;
-	RBuffer *buf = (RBuffer *)(void *)r_num_get (NULL, pathname + 7);
+	RBuffer *buf = (RBuffer *)(void *)(size_t)r_num_get (NULL, pathname + 7);
 	if (buf && (desc = r_io_desc_new (io, &r_io_plugin_rbuf, pathname, rw, 0, buf))) {
 		return desc;
 	}

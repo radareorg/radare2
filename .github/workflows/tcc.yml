@@ -22,7 +22,7 @@ jobs:
       working-directory: tinycc
       run: |
           sh ./configure --prefix=/usr
-          make
+          make -j
           sudo make install
 
     - uses: actions/checkout@v2
@@ -42,7 +42,7 @@ jobs:
           CC: tcc
       run: |
           ./configure --prefix=/usr --with-compiler=tcc
-          make
+          make -j
           sudo make install
 
     - name: Run tests
@@ -70,7 +70,7 @@ jobs:
       working-directory: tinycc
       run: |
           sh ./configure --prefix=/usr --without-debugger
-          make && sudo make install
+          make -j && sudo make install
     - uses: actions/checkout@v2
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v2
@@ -82,7 +82,7 @@ jobs:
           CC: tcc
       run: |
           ./configure --prefix=/usr --with-compiler=tcc
-          make
+          make -j
           sudo make install
 
     - name: Run tests
@@ -94,3 +94,39 @@ jobs:
         export R2R_SKIP_ASM=1
         export R2R_SKIP_ARCHOS=1
         make -C test
+  r2pm:
+    name: r2pm-tcc
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout TinyCC repository
+      run: |
+          git clone https://github.com/mirror/tinycc.git
+          cd tinycc
+          git checkout mob
+          git reset --hard 917aad3bcfbb534875aa6d66609bdb36459460a4
+    - name: Compiling and installing TinyCC
+      working-directory: tinycc
+      run: |
+          sh ./configure --prefix=/usr
+          make -j
+          sudo make install
+    - uses: actions/checkout@v2
+    - name: Configure, build and install
+      env:
+          CC: tcc
+          CFLAGS: -O0
+      run: |
+          ./configure --prefix=/usr --with-compiler=tcc
+          make -j
+          sudo make install
+    - name: Install samurai
+      run: r2pm -i samurai
+    - name: Install samurai (clean)
+      run: r2pm -ci samurai
+    - name: Install samurai (native)
+      run: R2PM_NATIVE=1 r2pm -i samurai
+
+    - name: Install muon
+      run: r2pm -i muon
+    - name: Install muon (native)
+      run: R2PM_NATIVE=1 r2pm -i muon

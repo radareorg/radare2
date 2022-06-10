@@ -59,4 +59,4 @@ if [ "$1" = "-u" ]; then
 	shift
 	SCRIPT=user.sh
 fi
-exec sys/${SCRIPT} $*
+exec sys/${SCRIPT} --with-check-level=0 $*

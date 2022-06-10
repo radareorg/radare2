@@ -116,7 +116,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 #if USE_ITER_API
 	cs_insn insnack = {0};
-	cs_detail insnack_detail = {0};
+	cs_detail insnack_detail = {{0}};
 	insnack.detail = &insnack_detail;
 	size_t size = len;
 	insn = &insnack;

@@ -822,7 +822,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "dbret", two (0x07e0, 0x0146), two (0xffff, 0xffff), {0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_RET },
 	{ "dbtag", two (0xcfe0, 0x0160), two (0xffe0, 0x07ff), {IMM10U}, 0, V850_CPU_E3V5_UP },
 	{ "dbtrap", one (0xf840), one (0xffff), {0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_TRAP },
-	{ "di", two (0x07e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SWI },
+	{ "di", two (0x07e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SWI, "", R_ANAL_OP_FAMILY_PRIV },
 	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x0000), {IMM5, LIST12, R2_DISPOSE},3, V850_CPU_NON0, R_ANAL_OP_TYPE_POP, "DISPOSE,#1" },
 	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x001f), {IMM5, LIST12}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_POP, "DISPOSE,#1" },
 
@@ -840,7 +840,7 @@ const struct v850_opcode v850_opcodes[] = {
 
 	{ "dst", two (0x07e0, 0x0134), two (0xfffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
 
-	{ "ei", two (0x87e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL },
+	{ "ei", two (0x87e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SWI, "", R_ANAL_OP_FAMILY_PRIV },
 	{ "eiret", two (0x07e0, 0x0148), two (0xffff, 0xffff), {0}, 0, V850_CPU_E2_UP },
 
 	{ "est", two (0x07e0, 0x0132), two (0xfffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
@@ -1011,14 +1011,14 @@ const struct v850_opcode v850_opcodes[] = {
 
 	{ "sld.b", one (0x0300), one (0x0780), {D7U, EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "1,#0,>>,#1,ep,+,[1],4,#1,=" },
 	{ "sld.bu", one (0x0060), one (0x07f0), {D4U, EP, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD },
-	{ "sld.h", one (0x0400), one (0x0780), {D8_7U,EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD },
-	{ "sld.hu", one (0x0070), one (0x07f0), {D5_4U,EP, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD },
-	{ "sld.w", one (0x0500), one (0x0781), {D8_6U,EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD },
+	{ "sld.h", one (0x0400), one (0x0780), {D8_7U, EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD },
+	{ "sld.hu", one (0x0070), one (0x07f0), {D5_4U, EP, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD },
+	{ "sld.w", one (0x0500), one (0x0781), {D8_6U, EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD },
 
 	{ "snooze", two (0x0fe0, 0x0120), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
-	{ "sst.b", one (0x0380), one (0x0780), {R2, D7U, EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,[1],ep,~,=[1]"},
-	{ "sst.h", one (0x0480), one (0x0780), {R2, D8_7U,EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE },
-	{ "sst.w", one (0x0501), one (0x0781), {R2, D8_6U,EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE },
+	{ "sst.b", one (0x0380), one (0x0780), {R2, D7U, EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,[1],ep,=[1]"},
+	{ "sst.h", one (0x0480), one (0x0780), {R2, D8_7U, EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,[2],ep,=[2]" },
+	{ "sst.w", one (0x0501), one (0x0781), {R2, D8_6U, EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,[4],ep,=[4]" },
 	{ "stacch", two (0x07e0, 0x0bca), two (0x07ff, 0xffff), {R2}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_EXTENSION },
 	{ "staccl", two (0x07e0, 0x0bc8), two (0x07ff, 0xffff), {R2}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_EXTENSION },
 	{ "st.b", two (0x0740, 0x0000), two (0x07e0, 0x0000), {R2, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#1,#0,=[1]" },
@@ -1170,7 +1170,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "syncp", one (0x001f), one (0xffff), {0}, 0, V850_CPU_E2V3_UP, R_ANAL_OP_TYPE_SYNC },
 	{ "syscall", two (0xd7e0, 0x0160), two (0xffe0, 0xc7ff), {V8}, 0, V850_CPU_E2V3_UP , R_ANAL_OP_TYPE_SWI },
 	/* Alias of syncp. */
-	{ "sync", one (0x001f), one (0xffff), {0}, 0, V850_CPU_E2V3_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_SYNC },
+	{ "sync", one (0x001f), one (0xffff), {0}, 0, V850_CPU_E2V3_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_SYNC, "", R_ANAL_OP_FAMILY_THREAD },
 	{ "rmtrap", one (0xf040), one (0xffff), {0}, 0, V850_CPU_E2V3_UP },
 	{ "rie", one (0x0040), one (0xffff), {0}, 0, V850_CPU_E2V3_UP },
 	{ "rie", two (0x07f0, 0x0000), two (0x07f0, 0xffff), {RIE_IMM5,RIE_IMM4}, 0, V850_CPU_E2V3_UP },

@@ -282,6 +282,8 @@ static const char *help_msg_pdp[] = {
 static const char *help_msg_ph[] = {
 	"Usage:", "ph", " [algorithm] ([size])",
 	"ph", " md5", "compute md5 hash of current block",
+	"ph", "", "list available hash plugins",
+	"phj", "", "list available hash plugins in json",
 	"ph.", " sha1 32 @ 0x1000", "calculate sha1 of 32 bytes starting at 0x1000",
 	NULL
 };
@@ -1222,7 +1224,7 @@ static void cmd_pDj(RCore *core, const char *arg) {
 		r_core_print_disasm_json (core, core->offset, buf, bsize, 0, pj);
 		free (buf);
 	} else {
-		eprintf ("cannot allocate %d byte(s)\n", bsize);
+		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 	}
 	pj_end (pj);
 	r_cons_println (pj_string (pj));
@@ -3299,18 +3301,27 @@ restore_conf:
 
 static void algolist(int mode) {
 	int i;
+	PJ *pj = (mode == 'j')? pj_new (): NULL;
+	pj_a (pj);
 	for (i = 0; i < R_HASH_NBITS; i++) {
 		ut64 bits = 1ULL << i;
 		const char *name = r_hash_name (bits);
 		if (name && *name) {
-			if (mode) {
+			if (mode == 'j') {
+				pj_s (pj, name);
+			} else if (mode) {
 				r_cons_println (name);
 			} else {
 				r_cons_printf ("%s ", name);
 			}
 		}
 	}
-	if (!mode) {
+	if (pj) {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	} else if (!mode) {
 		r_cons_newline ();
 	}
 }
@@ -3327,6 +3338,10 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	}
 	if (!*input) {
 		algolist (1);
+		return true;
+	}
+	if (*input == 'j') {
+		algolist ('j');
 		return true;
 	}
 	if (*input == '=') {
@@ -4850,7 +4865,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 				free (buf);
 			} else {
-				eprintf ("cannot allocate %"PFMT64u" byte(s)\n", b->size);
+				eprintf ("Cannot allocate %"PFMT64u" byte(s)\n", b->size);
 			}
 			pj_end (pj);
 			pj_end (pj);
@@ -5739,7 +5754,7 @@ static int cmd_print(void *data, const char *input) {
 		if (i && l > i) {
 			eprintf ("This block size is too big (0x%"PFMT64x
 				" < 0x%" PFMT64x "). Did you mean 'p%c @ %s' instead?\n",
-				n, l, *input, input + 2);
+				n, l, *input, *input? r_str_trim_head_ro (input + 1): "");
 			goto beach;
 		}
 	}
@@ -5943,7 +5958,11 @@ static int cmd_print(void *data, const char *input) {
 				break;
 			}
 		} else if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_pa);
+			if (input[2] == 'j') {
+				r_cons_cmd_help_json (help_msg_pa);
+			} else {
+				r_core_cmd_help (core, help_msg_pa);
+			}
 		} else {
 			r_asm_set_pc (core->rasm, core->offset);
 			RAsmCode *acode = r_asm_massemble (core->rasm, input + 1);
@@ -6354,7 +6373,7 @@ static int cmd_print(void *data, const char *input) {
 							r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 							free (buf);
 						} else {
-							eprintf ("cannot allocate %"PFMT64u" byte(s)\n", b->size);
+							eprintf ("Cannot allocate %"PFMT64u" byte(s)\n", b->size);
 						}
 					}
 					pj_end (pj);
@@ -6919,7 +6938,7 @@ static int cmd_print(void *data, const char *input) {
 			cmd_pCx (core, input + 2, "pc");
 			break;
 		default:
-			eprintf ("Usage: pCd\n");
+			eprintf ("Usage: pC[dDaAxwc] - column output for pxa, pxA, pxw, ..\n");
 			break;
 		}
 		break;
@@ -7761,11 +7780,11 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 't': // "pt"
 		switch (input[1]) {
-		case '.':
+		case '.': // "pt." same as "date"
 			{
-				char nowstr[64] = {0};
-				r_print_date_get_now (core->print, nowstr);
-				r_cons_printf ("%s\n", nowstr);
+				char *nostr = r_time_stamp_to_str (time (0));
+				r_cons_println (nostr);
+				free (nostr);
 			}
 			break;
 		case ' ':
@@ -7893,7 +7912,11 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	default:
-		r_core_cmd_help (core, help_msg_p);
+		if (*input && input[1] == 'j') {
+			r_cons_cmd_help_json (help_msg_p);
+		} else {	
+			r_core_cmd_help (core, help_msg_p);
+		}
 		break;
 	}
 beach:
@@ -8007,11 +8030,26 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 			int sz = lenof (off, 0);
 			int sz2 = lenof (delta, 1);
 			const char *pad = r_str_pad (' ', sz - 5 - sz2 - 3);
-			if (delta > 0) {
-				if (offdec) {
-					r_cons_printf ("%s+%d%s", pad, delta, reset);
+			if (delta > 0 || label) {
+				if (label) {
+					const int label_padding = 10;
+					if (delta > 0) {
+						const char *pad = r_str_pad (' ', sz - sz2 + label_padding);
+						if (offdec) {
+							r_cons_printf ("%s+%d%s", label, delta, pad);
+						} else {
+							r_cons_printf ("%s+0x%x%s", label, delta, pad);
+						}
+					} else {
+						const char *pad = r_str_pad (' ', sz + label_padding);
+						r_cons_printf ("%s%s", label, pad);
+					}
 				} else {
-					r_cons_printf ("%s+0x%x%s", pad, delta, reset);
+					if (offdec) {
+						r_cons_printf ("%s+%d%s", pad, delta, reset);
+					} else {
+						r_cons_printf ("%s+0x%x%s", pad, delta, reset);
+					}
 				}
 			} else {
 				if (offdec) {
@@ -8024,11 +8062,3 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 		}
 	}
 }
-
-#if 0
-// TODO : move to r_util? .. depends on r_cons...
-// XXX: dupe of r_print_addr
-R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int offdec, int delta, const char *label) {
-	r_print_offset_sg(p, off, invert, offseg, 4, offdec, delta, label);
-}
-#endif

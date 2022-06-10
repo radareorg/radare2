@@ -65,10 +65,10 @@ static const struct arm_arch_option_table arm_archs[] = {
 };
 #endif
 
-static int arm_mode = 0;
-static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
-static unsigned char bytes[8];
+static R_TH_LOCAL int arm_mode = 0;
+static R_TH_LOCAL unsigned long Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL unsigned char bytes[8];
 
 static int arm_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);

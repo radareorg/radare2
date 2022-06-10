@@ -8,9 +8,9 @@
 #include "libgdbr.h"
 #include "gdbr_common.h"
 #include "packet.h"
-#include "r_util/r_strbuf.h"
-#include "r_cons.h"
-#include "r_debug.h"
+#include <r_util/r_strbuf.h>
+#include <r_cons.h>
+#include <r_debug.h>
 
 #if __UNIX__
 #include <errno.h>
@@ -93,6 +93,7 @@ static void gdbr_break_process(void *arg) {
 }
 
 bool gdbr_lock_tryenter(libgdbr_t *g) {
+	r_return_val_if_fail (g, false);
 	if (!r_th_lock_tryenter (g->gdbr_lock)) {
 		return false;
 	}
@@ -102,18 +103,17 @@ bool gdbr_lock_tryenter(libgdbr_t *g) {
 }
 
 bool gdbr_lock_enter(libgdbr_t *g) {
+	r_return_val_if_fail (g, false);
 	r_cons_break_push (gdbr_break_process, g);
 	void *bed = r_cons_sleep_begin ();
 	r_th_lock_enter (g->gdbr_lock);
 	g->gdbr_lock_depth++;
 	r_cons_sleep_end (bed);
-	if (g->isbreaked) {
-		return false;
-	}
-	return true;
+	return !g->isbreaked;
 }
 
 void gdbr_lock_leave(libgdbr_t *g) {
+	r_return_if_fail (g);
 	r_cons_break_pop ();
 	if (g->gdbr_lock_depth < 1) {
 		return;
@@ -1944,10 +1944,10 @@ end:
 }
 
 ut64 gdbr_get_baddr(libgdbr_t *g) {
-	ut64 off, min = UINT64_MAX;
+	ut64 off, min = UT64_MAX;
 	char *ptr;
 	if (!g) {
-		return UINT64_MAX;
+		return UT64_MAX;
 	}
 
 	if (!gdbr_lock_enter (g)) {
@@ -1955,7 +1955,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 	}
 	if (send_msg (g, "qOffsets") < 0 || read_packet (g, false) < 0
 		    || send_ack (g) < 0 || g->data_len == 0) {
-		min = UINT64_MAX;
+		min = UT64_MAX;
 		goto end;
 	}
 	if (r_str_startswith (g->data, "TextSeg=")) {
@@ -1995,12 +1995,12 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 		min = off;
 	}
 	if (!(ptr = strchr (ptr, ';')) || !r_str_startswith (ptr + 1, "Data=")) {
-		min = UINT64_MAX;
+		min = UT64_MAX;
 		goto end;
 	}
 	ptr += strlen (";Data=");
 	if (!isxdigit ((unsigned char)*ptr)) {
-		min = UINT64_MAX;
+		min = UT64_MAX;
 		goto end;
 	}
 	off = strtoull (ptr, NULL, 16);

@@ -647,7 +647,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input);
 R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input);
 R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2);
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
-R_API int r_core_esil_step_back(RCore *core);
+R_API bool r_core_esil_step_back(RCore *core);
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr);
 R_API bool r_core_anal_bb_seek(RCore *core, ut64 addr);
 R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth);
@@ -885,6 +885,7 @@ R_API char *r_str_widget_list(void *user, RList *list, int rows, int cur, PrintI
 R_API PJ *r_core_pj_new(RCore *core);
 /* help */
 R_API void r_core_cmd_help(const RCore *core, const char *help[]);
+R_API void r_core_cmd_help_json(const RCore *core, const char *help[]);
 R_API void r_core_cmd_help_match(const RCore *core, const char *help[], R_BORROW R_NONNULL char *cmd, bool exact);
 R_API void r_core_cmd_help_match_spec(const RCore *core, const char *help[], R_BORROW R_NONNULL char *cmd, char spec, bool exact);
 

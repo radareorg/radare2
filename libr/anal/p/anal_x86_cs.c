@@ -36,7 +36,7 @@ call = 4
 #define ISIMM(x) insn->detail->x86.operands[x].type == X86_OP_IMM
 #define ISMEM(x) insn->detail->x86.operands[x].type == X86_OP_MEM
 
-#define BUF_SZ      64
+#define BUF_SZ      512
 
 #define AR_DIM       4
 
@@ -87,7 +87,7 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 		op->type = X86_OP_REG;
 		op->reg = X86_REG_EFLAGS;
 		op->size = regsz;
-#if CS_API_MAJOR >=4
+#if CS_API_MAJOR >= 4
 		if (id == X86_INS_PUSHF || id == X86_INS_PUSHFD || id == X86_INS_PUSHFQ) {
 			op->access = 1;
 		} else {
@@ -800,7 +800,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		case X86_OP_REG:
 		default:
 			if (INSOP(0).type == X86_OP_MEM) {
-				op->direction = 1; // read
+				op->direction = R_ANAL_OP_DIR_READ;
 			}
 			if (INSOP(1).type == X86_OP_MEM) {
 				// MOV REG, [PTR + IREG*SCALE]
@@ -2179,6 +2179,30 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			}
 		}
 		break;
+	case X86_INS_VMOVDQU16:
+	case X86_INS_VMOVDQU32:
+	case X86_INS_VMOVDQU64:
+	case X86_INS_VMOVDQU8:
+	case X86_INS_VMOVDQU:
+		{
+			const char *src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
+			if (is_xmm_reg (INSOP (1))) {
+				if (is_xmm_reg (INSOP (0))) {
+					r_strbuf_appendf (&op->esil, "%sl,%sh", src, src);
+				} else {
+					r_strbuf_appendf (&op->esil, "%sh,%sl", src, src);
+				}
+			} else {
+				r_strbuf_append (&op->esil, src);
+			}
+			const char *dst = getarg (&gop, 0, 0, NULL, DST_R_AR, NULL);
+			if (is_xmm_reg (INSOP (0))) {
+				r_strbuf_appendf (&op->esil, ",%sh,:=,%sl,:=", dst, dst);
+			} else {
+				r_strbuf_appendf (&op->esil, ",%s", dst);
+			}
+		}
+		break;
 	}
 
 	if (op->prefix & R_ANAL_OP_PREFIX_REP) {
@@ -2787,6 +2811,31 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_VMOVNTDQ:
 	case X86_INS_VMOVNTPD:
 	case X86_INS_VMOVNTPS:
+	case X86_INS_VMOVQ:
+	case X86_INS_VMOVDDUP:
+	case X86_INS_VMOVD:
+	case X86_INS_VMOVDQA32:
+	case X86_INS_VMOVDQA64:
+	case X86_INS_VMOVDQA:
+	case X86_INS_VMOVDQU16:
+	case X86_INS_VMOVDQU32:
+	case X86_INS_VMOVDQU64:
+	case X86_INS_VMOVDQU8:
+	case X86_INS_VMOVDQU:
+	case X86_INS_VMOVHLPS:
+	case X86_INS_VMOVHPD:
+	case X86_INS_VMOVHPS:
+	case X86_INS_VMOVLHPS:
+	case X86_INS_VMOVLPD:
+	case X86_INS_VMOVLPS:
+	case X86_INS_VMOVMSKPD:
+	case X86_INS_VMOVMSKPS:
+	case X86_INS_VMOVSD:
+	case X86_INS_VMOVSHDUP:
+	case X86_INS_VMOVSLDUP:
+	case X86_INS_VMOVSS:
+	case X86_INS_VMOVUPD:
+	case X86_INS_VMOVUPS:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->family = R_ANAL_OP_FAMILY_SSE;
 		break;
@@ -3269,9 +3318,19 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_KXORW:
 	case X86_INS_PXOR:
 		op->type = R_ANAL_OP_TYPE_XOR;
+		if (INSOP(0).type == X86_OP_MEM) {
+			op->direction = R_ANAL_OP_DIR_WRITE;
+		} else if (INSOP(1).type == X86_OP_MEM) {
+			op->direction = R_ANAL_OP_DIR_READ;
+		}
 		break;
 	case X86_INS_XOR:
 		op->type = R_ANAL_OP_TYPE_XOR;
+		if (INSOP(0).type == X86_OP_MEM) {
+			op->direction = R_ANAL_OP_DIR_WRITE;
+		} else if (INSOP(1).type == X86_OP_MEM) {
+			op->direction = R_ANAL_OP_DIR_READ;
+		}
 		// TODO: Add stack indexing handling chang
 		op0_memimmhandle (op, insn, addr, regsz);
 		op1_memimmhandle (op, insn, addr, regsz);
@@ -3495,6 +3554,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_X86, mode, &handle);
 		if (ret != CS_ERR_OK) {
+			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_X86, %x, ...): %s\n", mode, cs_strerror (ret));
 			handle = 0;
 			return 0;
 		}
@@ -3503,7 +3563,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	// capstone-next
 #if USE_ITER_API
-	cs_detail insnack_detail = {0};
+	cs_detail insnack_detail = {{0}};
 	cs_insn insnack = {0};
 	insnack.detail = &insnack_detail;
 	ut64 naddr = addr;

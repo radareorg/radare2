@@ -52,7 +52,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Packaging for Debian
-      run: sys/debian.sh
+      run: |
+        export CFLAGS="-Werror"
+        sys/debian.sh
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
@@ -67,8 +69,8 @@ jobs:
     - name: Packaging for 32bit Debian
       run: |
         sudo apt --assume-yes update
-        sudo apt install gcc-multilib gperf
-        export CFLAGS=-m32
+        sudo apt install -y gcc-multilib gperf
+        export CFLAGS="-m32 -Werror"
         export LDFLAGS=-m32
         export ARCH=i386
         sys/debian.sh
@@ -247,8 +249,9 @@ jobs:
         name: android-acr-arm
         path: radare2*android*arm.tar.gz
 
+  # disabled because the ndk link is broken for a while
   android-meson:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    if: contains(github.ref, 'android')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -270,7 +273,7 @@ jobs:
       run: |
         cd /tmp
         rm -rf android-dir/include android-dir/lib
-        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -cvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
+        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -czvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
     - uses: actions/upload-artifact@v2
       with:
         name: android-meson-${{ matrix.name }}
@@ -351,8 +354,7 @@ jobs:
     - name: preconfigure
       continue-on-error: true
       shell: cmd
-      run: |
-        preconfigure
+      run: preconfigure
     - name: Build with meson + ninja
       shell: cmd
       run: |

@@ -1,19 +1,14 @@
-/* radare - LGPL - Copyright 2021 - pancake */
+/* radare - LGPL - Copyright 2021-2022 - pancake */
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <r_types.h>
-#include "../arch/include/opcode/m68k.h"
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_asm.h>
+#include "../arch/include/opcode/m68k.h"
 #include <mybfd.h>
 #include "disas-asm.h"
 
-static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
-static ut8 bytes[8];
+static R_TH_LOCAL unsigned long Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL ut8 bytes[8];
 
 static int m68k_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);

@@ -24,17 +24,17 @@ static const char *help_msg_L[] = {
 	"La", "[qj]", "list asm/anal plugins (see: aL, e asm.arch=" "??" ")",
 	"Lc", "", "list core plugins (see",
 	"Ld", "", "list debug plugins (dL)",
-	"LD", "", "list supported decompilers (e cmd.pdc=?)",
+	"LD", "[j]", "list supported decompilers (e cmd.pdc=?)",
 	"Le", "", "list esil plugins",
 	"Lg", "", "list egg plugins",
 	"Lh", "", "list hash plugins (ph)",
-	"Li", "", "list bin plugins (iL)",
-	"Lt", "", "list color themes (eco)",
-	"Ll", "", "list lang plugins (#!)",
+	"Li", "[j]", "list bin plugins (iL)",
+	"Lt", "[j]", "list color themes (eco)",
+	"Ll", "[j]", "list lang plugins (#!)",
 	"LL", "", "lock screen",
-	"Lm", "", "list fs plugins (mL)",
+	"Lm", "[j]", "list fs plugins (mL)",
 	"Lo", "", "list io plugins (oL)",
-	"Lp", "", "list parser plugins (e asm.parser=?)",
+	"Lp", "[j]", "list parser plugins (e asm.parser=?)",
 	NULL
 };
 
@@ -341,10 +341,18 @@ static int cmd_plugins(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_L);
 		break;
 	case 't': // "Lt"
-		r_core_cmd0 (core, "eco");
+		if (input[1] == 'j') {
+			r_core_cmd0 (core, "ecoj");
+		} else {
+			r_core_cmd0 (core, "eco");
+		}
 		break;
 	case 'm': // "Lm"
-		r_core_cmdf (core, "mL%s", input + 1);
+		if (input[1] == 'j') {
+			r_core_cmd0 (core, "mLj");
+		} else {
+			r_core_cmd0 (core, "mL");
+		}
 		break;
 	case 'e': // "Le"
 		r_core_cmdf (core, "aeL%s", input + 1);
@@ -353,7 +361,11 @@ static int cmd_plugins(void *data, const char *input) {
 		r_core_cmdf (core, "dL%s", input + 1);
 		break;
 	case 'h': // "Lh"
-		r_core_cmd0 (core, "ph"); // rahash2 -L is more verbose
+		if (input[1] == 'j') { // "Lhj"
+			r_core_cmd0 (core, "phj");
+		} else {
+			r_core_cmd0 (core, "ph");
+		}
 		break;
 	case 'a': // "La"
 		if (input[1] == '?') {
@@ -364,23 +376,68 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'p': // "Lp"
-		r_core_cmd0 (core, "e asm.parser=?");
+		if (input[1] == 'j') { // "Lpj"
+			RConfigNode *node = r_config_node_get (core->config, "asm.parser");
+			if (node && node->options) {
+				char *opt;
+				RListIter *iter;
+				PJ *pj = r_core_pj_new (core);
+				pj_a (pj);
+				r_list_foreach (node->options, iter, opt) {
+					pj_s (pj, opt);
+				}
+				pj_end (pj);
+				char *s = pj_drain (pj);
+				r_cons_printf ("%s\n", s);
+				free (s);
+			}
+		} else {
+			r_core_cmd0 (core, "e asm.parser=?");
+		}
 		break;
 	case 'D': // "LD"
 		if (input[1] == ' ') {
 			r_core_cmdf (core, "e cmd.pdc=%s", r_str_trim_head_ro (input + 2));
+		} else if (input[1] == 'j') {
+			char *deco;
+			RListIter *iter;
+			char *decos = r_core_cmd_str (core, "e cmd.pdc=?");
+			RList *list = r_str_split_list (decos, "\n", 0);
+			PJ *pj = r_core_pj_new (core);
+			pj_o (pj);
+			pj_ka (pj, "decompilers");
+			r_list_foreach (list, iter, deco) {
+				if (*deco) {
+					pj_s (pj, deco);
+				}
+			}
+			pj_end (pj);
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_printf ("%s\n", s);
+			free (s);
+			r_list_free (list);
+			free (decos);
 		} else {
 			r_core_cmd0 (core, "e cmd.pdc=?");
 		}
 		break;
 	case 'l': // "Ll"
-		r_core_cmd0 (core, "#!");
+		if (input[1] == 'j') {
+			r_core_cmd0 (core, "#!?j");
+		} else {
+			r_core_cmd0 (core, "#!");
+		}
 		break;
 	case 'L': // "LL"
 		screenlock (core);
 		break;
 	case 'g': // "Lg"
-		r_core_cmd0 (core, "gL");
+		if (input[1] == 'j') {
+			r_core_cmd0 (core, "gLj");
+		} else {
+			r_core_cmd0 (core, "gL");
+		}
 		break;
 	case 'o': // "Lo"
 	case 'i': // "Li"

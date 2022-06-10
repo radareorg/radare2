@@ -694,7 +694,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->linesright = r_config_get_i (core->config, "asm.lines.right");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
 	ds->indent_space = r_config_get_i (core->config, "asm.indentspace");
-	ds->tracespace = r_config_get_i (core->config, "asm.tracespace");
+	ds->tracespace = r_config_get_i (core->config, "asm.trace.space");
 	ds->cyclespace = r_config_get_i (core->config, "asm.cyclespace");
 	ds->show_dwarf = r_config_get_i (core->config, "asm.dwarf");
 	ds->dwarfFile = r_config_get_i (ds->core->config, "asm.dwarf.file");
@@ -913,7 +913,6 @@ static void ds_free(RDisasmState *ds) {
 	}
 	if (ds->show_emu_stack) {
 		// TODO: destroy fake stack in here
-		eprintf ("Free fake stack\n");
 		if (ds->stackFd != -1) {
 			r_io_fd_close (ds->core->io, ds->stackFd);
 		}
@@ -2959,7 +2958,6 @@ static void ds_print_offset(RDisasmState *ds) {
 	if (ds->show_offset) {
 		static RFlagItem sfi = {0};
 		const char *label = NULL;
-		RFlagItem *fi;
 		int delta = -1;
 		bool show_trace = false;
 
@@ -2977,7 +2975,7 @@ static void ds_print_offset(RDisasmState *ds) {
 			} else {
 				if (ds->show_reloff_flags) {
 					/* XXX: this is wrong if starting to disasm after a flag */
-					fi = r_flag_get_i (core->flags, at);
+					RFlagItem *fi = r_flag_get_i (core->flags, at);
 					if (fi) {
 						ds->lastflag = fi;
 					}
@@ -3009,13 +3007,11 @@ static void ds_print_offset(RDisasmState *ds) {
 		if (hasCustomColor) {
 			int of = core->print->flags;
 			core->print->flags = 0;
-			r_print_offset (core->print, at, (at == ds->dest) || show_trace,
-					delta, label);
+			r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
 			core->print->flags = of;
 			r_cons_strcat (Color_RESET);
 		} else {
-			r_print_offset (core->print, at, (at == ds->dest) || show_trace,
-					delta, label);
+			r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
 		}
 	}
 	if (ds->atabsoff > 0 && ds->show_offset) {

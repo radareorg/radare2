@@ -790,7 +790,16 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	if (perm == -1) {
 		perm = R_PERM_RWX;
 	}
-	if (!r_config_get_b (core->config, "cfg.debug") && !core->io->va) {
+	if (!strcmp (mode, "flag")) {
+		const RList *ls = r_flag_get_list (core->flags, core->offset);
+		RFlagItem *fi;
+		RListIter *iter;
+		r_list_foreach (ls, iter, fi) {
+			if (fi->size > 1) {
+				append_bound (list, core->io, search_itv, fi->offset, fi->size, 7);
+			}
+		}
+	} else if (!r_config_get_b (core->config, "cfg.debug") && !core->io->va) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
 	} else if (!strcmp (mode, "file")) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
@@ -846,6 +855,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		if (bank) {
 			r_list_foreach (bank->maprefs, iter, mapref) {
 				RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+				if (!map) {
+					continue;
+				}
 				const ut64 from = r_io_map_begin (map);
 				const int rwx = map->perm;
 				if ((rwx & mask) != mask) {
@@ -900,6 +912,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 				if (bank) {
 					r_list_foreach (bank->maprefs, iter, mapref) {
 						RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+						if (!map) {
+							continue;
+						}
 						const ut64 from = r_io_map_begin (map);
 						const ut64 size = r_io_map_size (map);
 						const int rwx = map->perm;
@@ -3421,7 +3436,7 @@ reread:
 					int mode = 0;
 
 					// Options, like JSON, linear, ...
-					if (input + 1) {
+					if (input[1]) {
 						mode = *(input + 1);
 					}
 

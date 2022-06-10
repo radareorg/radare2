@@ -2921,7 +2921,8 @@ static char* _resource_type_str(int type) {
 	case 24:
 		typeName = "MANIFEST";
 		break;
-	default: return r_str_newf ("UNKNOWN (%d)",type);
+	default:
+		return r_str_newf ("UNKNOWN (%d)",type);
 	}
 	return strdup (typeName);
 }

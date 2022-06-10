@@ -11,10 +11,9 @@
 
 #include "disas-asm.h"
 
-
-static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
-static unsigned char bytes[4];
+static R_TH_LOCAL unsigned long Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL unsigned char bytes[4];
 
 static int hppa_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 #if 0 // XXX wtf ?!

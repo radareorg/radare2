@@ -9,7 +9,7 @@ typedef void (*RStackFree)(void *ptr);
 
 typedef struct r_stack_t {
 	void **elems;
-	unsigned int n_elems;
+	int n_elems;
 	int top;
 	RStackFree free;
 } RStack;

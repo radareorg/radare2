@@ -782,18 +782,6 @@ static bool esil_js(RAnalEsil *esil) {
 	return r_anal_esil_pushnum (esil, esil->jump_target_set);
 }
 
-//regsize
-#if 0
-//can we please deprecate this, it's neither accurate, nor needed
-//plugins should know regsize, and since this is a const even users should know this: ?´e anal.bits´/8
-//	- condret
-// YES PLS KILL IT
-static bool esil_rs(RAnalEsil *esil) {
-	r_return_val_if_fail (esil && esil->anal, false);
-	return r_anal_esil_pushnum (esil, esil->anal->config->bits >> 3);
-}
-#endif
-
 //can we please deprecate this, plugins should know their current address
 //even if they don't know it, $$ should be equal to PC register at the begin of each expression
 //	- condret
@@ -3618,7 +3606,10 @@ R_API bool r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	int dorunword;
 	char word[64];
 	const char *ostr = str;
-	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str), 0);
+	r_return_val_if_fail (esil, false);
+	if (R_STR_ISEMPTY (str)) {
+		return false;
+	}
 
 	if (__stepOut (esil, esil->cmd_step)) {
 		(void)__stepOut (esil, esil->cmd_step_out);

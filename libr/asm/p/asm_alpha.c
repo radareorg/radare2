@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2021 - pancake */
+/* radare - LGPL - Copyright 2015-2022 - pancake */
 
 // TODO: no assembler support
 
@@ -14,10 +14,10 @@
 #include "disas-asm.h"
 #include "../arch/include/opcode/alpha.h"
 
-static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
-static const ut8 *bytes = NULL;
-static int bytes_size = 0;
+static R_TH_LOCAL unsigned long Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL const ut8 *bytes = NULL;
+static R_TH_LOCAL int bytes_size = 0;
 
 static int alpha_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);

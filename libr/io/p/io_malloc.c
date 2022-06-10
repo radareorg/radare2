@@ -1,14 +1,21 @@
-/* radare - LGPL - Copyright 2008-2021 - pancake */
+/* radare - LGPL - Copyright 2008-2022 - pancake */
 
-#include "r_lib.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include <r_io.h>
+#include <r_lib.h>
 #include "../io_memory.h"
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "slurp://", 8)
-		|| !strncmp (pathname, "malloc://", 9))
-		|| (!strncmp (pathname, "hex://", 6));
+	const char *uris[] = {
+		"slurp://", "malloc://", "hex://", "stdin://", NULL
+	};
+	size_t i = 0;
+	while (uris[i]) {
+		if (r_str_startswith (pathname, uris[i])) {
+			return true;
+		}
+		i++;
+	}
+	return false;
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
@@ -17,7 +24,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (!mal) {
 			return NULL;
 		}
-		if (!strncmp (pathname, "slurp://", 8)) {
+		if (r_str_startswith (pathname, "slurp://")) {
 			size_t size;
 			char *buf = r_file_slurp (pathname + 8, &size);
 			if (!buf || size < 1) {
@@ -27,7 +34,17 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			}
 			mal->size = size;
 			mal->buf = (ut8*)buf;
-		} else if (!strncmp (pathname, "hex://", 6)) {
+		} else if (r_str_startswith (pathname, "stdin://")) {
+			int size;
+			char *buf = r_stdin_slurp (&size);
+			if (!buf || size < 1) {
+				free (mal);
+				free (buf);
+				return NULL;
+			}
+			mal->size = size;
+			mal->buf = (ut8*)buf;
+		} else if (r_str_startswith (pathname, "hex://")) {
 			mal->size = strlen (pathname);
 			mal->buf = calloc (1, mal->size + 1);
 			if (!mal->buf) {
@@ -60,7 +77,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_malloc = {
 	.name = "malloc",
 	.desc = "Memory allocation plugin",
-	.uris = "malloc://,hex://,slurp://",
+	.uris = "malloc://,hex://,slurp://,stdin://",
 	.license = "LGPL3",
 	.open = __open,
 	.close = io_memory_close,

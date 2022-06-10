@@ -390,7 +390,7 @@ found:
 // so that the function can insert new submaps that fill the gaps. The iter represents the priority of the mapref.
 // this function DOES NOT delete the iter from the list. (that way it can be used for delete and relocate)
 static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *prio, RIOMap *map) {
-	RIOSubMap fake_sm = {0};
+	RIOSubMap fake_sm = {{0}};
 	fake_sm.itv = map->itv;
 	fake_sm.mapref.id = map->id;
 	RRBNode *entry = _find_entry_submap_node (bank, &fake_sm);
@@ -759,7 +759,7 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 	if (!bank) {
 		return false;
 	}
-	RIOSubMap fake_sm = {0};
+	RIOSubMap fake_sm = {{0}};
 	fake_sm.itv.addr = addr;
 	fake_sm.itv.size = len;
 	RRBNode *node;
@@ -801,7 +801,7 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 	if (!bank) {
 		return false;
 	}
-	RIOSubMap fake_sm = {0};
+	RIOSubMap fake_sm = {{0}};
 	fake_sm.itv.addr = addr;
 	fake_sm.itv.size = len;
 	RRBNode *node;

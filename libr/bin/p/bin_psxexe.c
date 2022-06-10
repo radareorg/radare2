@@ -21,7 +21,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 
 static RBinInfo* info(RBinFile* bf) {
 	RBinInfo* ret = NULL;
-	psxexe_header psxheader = {0};
+	psxexe_header psxheader = {{0}};
 
 	if (r_buf_read_at (bf->buf, 0, (ut8*)&psxheader, sizeof(psxexe_header)) < sizeof(psxexe_header)) {
 		eprintf ("Truncated Header\n");

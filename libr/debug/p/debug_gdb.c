@@ -115,7 +115,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 	if (desc->get_baddr) {
 		desc->get_baddr = false;
 		ut64 baddr;
-		if ((baddr = gdbr_get_baddr (desc)) != UINT64_MAX) {
+		if ((baddr = gdbr_get_baddr (desc)) != UT64_MAX) {
 			if (!(retlist = r_list_new ())) {
 				return NULL;
 			}

@@ -394,7 +394,7 @@ static int cmd_eval(void *data, const char *input) {
 				r_str_trim (k);
 				r_str_trim (v);
 				char *last = k + strlen (k) - 1;
-				if (*last == '%') {
+				if (*k && *last == '%') {
 					*last = 0;
 					r_str_trim (k);
 				}

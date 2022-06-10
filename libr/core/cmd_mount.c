@@ -7,7 +7,7 @@ static const char *help_msg_m[] = {
 	"m", "", "list all mountpoints in human readable format",
 	"m*", "", "same as above, but in r2 commands",
 	"m-/", "", "umount given path (/)",
-	"mL", "", "list filesystem plugins (Same as Lm)",
+	"mL", "[j]", "list filesystem plugins (Same as Lm)",
 	"mc", " [file]", "cat: Show the contents of the given file",
 	"md", " /", "list files and directory on the virtual r2's fs",
 	"mf", "[?] [o|n]", "search files for given filename or for offset",
@@ -177,25 +177,31 @@ static int cmd_mount(void *data, const char *_input) {
 				fstype = input;
 			}
 
-			if (!r_fs_mount (core->fs, fstype, mountp, off)) {
+			if (fstype && !r_fs_mount (core->fs, fstype, mountp, off)) {
 				eprintf ("Cannot mount %s\n", input);
 			}
 		} else {
 			if (!(ptr = r_fs_name (core->fs, core->offset))) {
 				eprintf ("Unknown filesystem type\n");
 			}
-			if (!r_fs_mount (core->fs, ptr, input, core->offset)) {
+			if (ptr && !r_fs_mount (core->fs, ptr, input, core->offset)) {
 				eprintf ("Cannot mount %s\n", input);
 			}
 			free (ptr);
 		}
 		break;
 	case '-':
-		r_fs_umount (core->fs, input + 1);
+		if (input[1] == '?') { // "mL?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "m-", 0, true);
+		} else {
+			r_fs_umount (core->fs, input + 1);
+		}
 		break;
 	case 'j':
-		{
-			PJ *pj = pj_new ();
+		if (input[1] == '?') { // "mL?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "mj", 0, true);
+		} else {
+			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
 			pj_k (pj, "mountpoints");
 			pj_a (pj);
@@ -225,7 +231,7 @@ static int cmd_mount(void *data, const char *_input) {
 	case '*':
 		r_list_foreach (core->fs->roots, iter, root) {
 			r_cons_printf ("m %s %s 0x%"PFMT64x"\n",
-				root-> path, root->p->name, root->delta);
+				root->path, root->p->name, root->delta);
 		}
 		break;
 	case '\0':
@@ -237,17 +243,32 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'L': // "mL" list of plugins
 		if (input[1] == '?') { // "mL?"
 			r_core_cmd_help_match_spec (core, help_msg_m, "mL", 0, true);
-		}
-		r_list_foreach (core->fs->plugins, iter, plug) {
-			r_cons_printf ("%10s  %s\n", plug->name, plug->desc);
+		} else if (input[1] == 'j') {
+			PJ *pj = r_core_pj_new (core);
+			pj_a (pj);
+			r_list_foreach (core->fs->plugins, iter, plug) {
+				pj_o (pj);
+				pj_ks (pj, "name", plug->name);
+				pj_ks (pj, "description", plug->desc);
+				pj_end (pj);
+			}
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_printf ("%s\n", s);
+			free (s);
+		} else {
+			r_list_foreach (core->fs->plugins, iter, plug) {
+				r_cons_printf ("%10s  %s\n", plug->name, plug->desc);
+			}
 		}
 		break;
 	case 'l': // "ml"
 	case 'd': // "md"
 		if (input[1] == '?') { // "md?"
 			r_core_cmd_help_match_spec (core, help_msg_m, "md", 0, true);
+		} else {
+			cmd_mount_ls (core, input + 1);
 		}
-		cmd_mount_ls (core, input + 1);
 		break;
 	case 'p': // "mp"
 		input = (char *)r_str_trim_head_ro (input + 1);
@@ -276,50 +297,63 @@ static int cmd_mount(void *data, const char *_input) {
 		input = (char *)r_str_trim_head_ro (input + 1);
 		if (*input == '?') { // "mo?"
 			r_core_cmd_help_match_spec (core, help_msg_m, "mo", 0, true);
-		}
-		file = r_fs_open (core->fs, input, false);
-		if (file) {
-			r_fs_read (core->fs, file, 0, file->size);
-			char *uri = r_str_newf ("malloc://%d", file->size);
-			RIODesc *fd = r_io_open (core->io, uri, R_PERM_RW, 0);
-			if (fd) {
-				r_io_desc_write (fd, file->data, file->size);
-			}
 		} else {
-			eprintf ("Cannot open file\n");
+			file = r_fs_open (core->fs, input, false);
+			if (file) {
+				r_fs_read (core->fs, file, 0, file->size);
+				char *uri = r_str_newf ("malloc://%d", file->size);
+				RIODesc *fd = r_io_open (core->io, uri, R_PERM_RW, 0);
+				if (fd) {
+					r_io_desc_write (fd, file->data, file->size);
+				}
+			} else {
+				eprintf ("Cannot open file\n");
+			}
 		}
 		break;
 	case 'i':
-		input = (char *)r_str_trim_head_ro (input + 1);
-		file = r_fs_open (core->fs, input, false);
-		if (file) {
-			// XXX: dump to file or just pipe?
-			r_fs_read (core->fs, file, 0, file->size);
-			r_cons_printf ("f file %d 0x%08"PFMT64x"\n", file->size, file->off);
-			r_fs_close (core->fs, file);
+		if (input[1] == '?') { // "mi?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "mi", 0, true);
 		} else {
-			eprintf ("Cannot open file\n");
+			input = (char *)r_str_trim_head_ro (input + 1);
+			file = r_fs_open (core->fs, input, false);
+			if (file) {
+				// XXX: dump to file or just pipe?
+				r_fs_read (core->fs, file, 0, file->size);
+				r_cons_printf ("f file %d 0x%08"PFMT64x"\n", file->size, file->off);
+				r_fs_close (core->fs, file);
+			} else {
+				eprintf ("Cannot open file\n");
+			}
 		}
 		break;
 	case 'c': // "mc"
-		input = (char *)r_str_trim_head_ro (input + 1);
-		ptr = strchr (input, ' ');
-		if (ptr) {
-			*ptr++ = 0;
+		if (input[1] == '?') { // "mi?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "mc", 0, true);
 		} else {
-			ptr = "./";
-		}
-		file = r_fs_open (core->fs, input, false);
-		if (file) {
-			r_fs_read (core->fs, file, 0, file->size);
-			r_cons_write ((const char *)file->data, file->size);
-			r_fs_close (core->fs, file);
-			r_cons_write ("\n", 1);
-		} else if (!r_fs_dir_dump (core->fs, input, ptr)) {
-			eprintf ("Cannot open file\n");
+			input = (char *)r_str_trim_head_ro (input + 1);
+			ptr = strchr (input, ' ');
+			if (ptr) {
+				*ptr++ = 0;
+			} else {
+				ptr = "./";
+			}
+			file = r_fs_open (core->fs, input, false);
+			if (file) {
+				r_fs_read (core->fs, file, 0, file->size);
+				r_cons_write ((const char *)file->data, file->size);
+				r_fs_close (core->fs, file);
+				r_cons_write ("\n", 1);
+			} else if (!r_fs_dir_dump (core->fs, input, ptr)) {
+				eprintf ("Cannot open file\n");
+			}
 		}
 		break;
 	case 'g': // "mg"
+		if (input[1] == '?') { // "mg?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "mg", 0, true);
+			break;
+		}
 		input = (char *)r_str_trim_head_ro (input + 1);
 		int offset = 0;
 		int size = 0;
@@ -430,15 +464,15 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 's': // "ms"
+		if (input[1] == '?') { // "ms?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "ms", 0, true);
+			break;
+		};
 		if (core->http_up) {
 			free (oinput);
 			return false;
 		}
 		input = (char *)r_str_trim_head_ro (input + 1);
-		if (*input == '?') { // "ms?"
-			r_core_cmd_help_match_spec (core, help_msg_m, "ms", 0, true);
-			break;
-		};
 		r_cons_set_raw (false);
 		{
 			RFSShell shell = {
@@ -457,6 +491,10 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'w': // "mw"
+		if (input[1] == '?') { // "ms?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "mw", 0, true);
+			break;
+		}
 		if (input[1] == 'f') { // "mwf"
 			char *arg0 = r_str_trim_dup (input + 1);
 			char *arg1 = strchr (arg0, ' ');
@@ -499,7 +537,25 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'y':
-		eprintf ("TODO: my command not implemented.\n");
+		if (input[1] == '?') { // "ms?"
+			r_core_cmd_help_match_spec (core, help_msg_m, "my", 0, true);
+			break;
+		}
+		input = (char *)r_str_trim_head_ro (input + 1);
+		ptr = strchr (input, ' ');
+		if (ptr) {
+			*ptr++ = 0;
+		} else {
+			ptr = "./";
+		}
+		file = r_fs_open (core->fs, input, false);
+		if (file) {
+			r_fs_read (core->fs, file, 0, file->size);
+			r_core_yank_set (core, 0, file->data, file->size);
+			r_fs_close (core->fs, file);
+		} else {
+			eprintf ("Cannot open file\n");
+		}
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_m);

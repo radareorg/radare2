@@ -119,9 +119,9 @@ typedef int nwchar_t;
 
 typedef struct CString {
 	int size; /* size in bytes */
-	void *data; /* either 'char *' or 'nwchar_t *' */
+	char *data; /* either 'char *' or 'nwchar_t *' */
 	int size_allocated;
-	void *data_allocated; /* if non NULL, data has been malloced */
+	char *data_allocated; /* if non NULL, data has been malloced */
 } CString;
 
 /* type definition */

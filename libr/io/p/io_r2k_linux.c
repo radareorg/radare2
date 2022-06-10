@@ -164,13 +164,13 @@ static void arm64_ctrl_reg_pretty_print(RIO *io, struct r2k_control_reg ctrl) {
 	io->cb_printf ("TTBR0_EL1: 0x%"PFMTSZx"\n", ctrl.ttbr0_el1);
 	io->cb_printf (" [*] ASID [63:48]:    0x%"PFMT64x"\n"
 		       " [*] BADDR [47:10]:   0x%"PFMT64x"\n",
-		       (ctrl.ttbr0_el1 & 0xffff000000000000LLU) >> 48, (ctrl.ttbr0_el1 & ((((ut64) 1) << (47 + 1)) - (1 << 10))) >> 10);
+		       (ut64)(ctrl.ttbr0_el1 & 0xffff000000000000LLU) >> 48, (ctrl.ttbr0_el1 & ((((ut64) 1) << (47 + 1)) - (1 << 10))) >> 10);
 	io->cb_printf ("\n");
 
 	io->cb_printf ("TTBR1_EL1: 0x%"PFMTSZx"\n", ctrl.ttbr1_el1);
 	io->cb_printf (" [*] ASID [63:48]:    0x%"PFMT64x"\n"
 		       " [*] BADDR [47:10]:   0x%"PFMT64x"\n",
-		       (ctrl.ttbr1_el1 & 0xffff000000000000LLU) >> 48, (ctrl.ttbr1_el1 & ((((ut64) 1) << (47 + 1)) - (1 << 10))) >> 10);
+		       (ut64)(ctrl.ttbr1_el1 & 0xffff000000000000LLU) >> 48, (ctrl.ttbr1_el1 & ((((ut64) 1) << (47 + 1)) - (1 << 10))) >> 10);
 	io->cb_printf ("\n");
 
 	io->cb_printf ("TCR_EL1: 0x%"PFMTSZx"\n", ctrl.tcr_el1);

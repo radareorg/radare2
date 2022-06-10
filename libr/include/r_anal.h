@@ -1745,7 +1745,7 @@ R_API RAnalRefType r_anal_xrefs_type_from_string(const char *s);
 R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to);
 R_API RList *r_anal_refs_get(RAnal *anal, ut64 to);
 R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 from);
-R_API void r_anal_xrefs_list(RAnal *anal, int rad);
+R_API void r_anal_xrefs_list(RAnal *anal, int rad, const char *arg);
 R_API RList *r_anal_function_get_refs(RAnalFunction *fcn);
 R_API RList *r_anal_function_get_xrefs(RAnalFunction *fcn);
 R_API bool r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr);
@@ -2228,6 +2228,7 @@ extern RAnalPlugin r_anal_plugin_arm_cs;
 extern RAnalPlugin r_anal_plugin_arm_gnu;
 extern RAnalPlugin r_anal_plugin_avr;
 extern RAnalPlugin r_anal_plugin_bf;
+extern RAnalPlugin r_anal_plugin_bpf_cs;
 extern RAnalPlugin r_anal_plugin_chip8;
 extern RAnalPlugin r_anal_plugin_cr16;
 extern RAnalPlugin r_anal_plugin_cris;
@@ -2283,6 +2284,7 @@ extern RAnalPlugin r_anal_plugin_arm_v35;
 extern RAnalPlugin r_anal_plugin_z80;
 extern RAnalPlugin r_anal_plugin_pyc;
 extern RAnalPlugin r_anal_plugin_evm_cs;
+extern RAnalPlugin r_anal_plugin_bpf;
 extern RAnalEsilPlugin r_esil_plugin_dummy;
 
 #ifdef __cplusplus

@@ -6,6 +6,8 @@ const char *help_msg_hash[] = {
 	"Usage:", "#!<interpreter>", "[<args>] [<file] [<<eof]",
 	"#", "", "comment - do nothing",
 	"#!", "", "list all available interpreters",
+	"#!?", "", "show this help message",
+	"#!?j", "", "list all available interpreters in JSON",
 	"#!v?", "", "show vlang script example",
 	"#!python?", "", "show python script example",
 	"#!python", "", "run python commandline",
@@ -403,11 +405,13 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 					eprintf ("Error: scr.interactive required to run the rlang prompt\n");
 				}
 			}
+		} else if (av[0][0] == '?' && av[0][1] == 'j') {
+			r_lang_list (core->lang, 'j');
 		} else if (av[0][0] == '?' || av[0][0] == '*') {
-			r_lang_list (core->lang);
+			r_lang_list (core->lang, 0);
 		}
 	} else {
-		r_lang_list (core->lang);
+		r_lang_list (core->lang, 0);
 	}
 	r_str_argv_free (av);
 	return true;

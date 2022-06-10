@@ -31,7 +31,7 @@ char *r2_asmjs_cmd(void *kore, const char *cmd) {
 }
 
 static void wget_cb(const char *f) {
-	r_core_cmdf (core, "o %s", f);
+	r_core_cmdf (core, "\"o %s\"", f);
 }
 
 void r2_asmjs_openurl(void *kore, const char *url) {
@@ -45,8 +45,13 @@ void r2_asmjs_openurl(void *kore, const char *url) {
 }
 #else
 static void r2cmd(int in, int out, const char *cmd) {
-	write (out, cmd, strlen (cmd) + 1);
-	write (out, "\n", 1);
+	size_t cmd_len = strlen (cmd) + 1;
+	if (write (out, cmd, cmd_len) != cmd_len) {
+		return;
+	}
+	if (write (out, "\n", 1) != 1) {
+		return;
+	}
 	int bufsz = (1024 * 64);
 	unsigned char *buf = malloc (bufsz);
 	if (!buf) {
@@ -54,13 +59,16 @@ static void r2cmd(int in, int out, const char *cmd) {
 	}
 	while (1) {
 		int n = read (in, buf, bufsz);
+		if (n != bufsz) {
+			break;
+		}
 		buf[bufsz - 1] = '\0';
 		int len = strlen ((const char *)buf);
 		n = len;
 		if (n < 1) {
 			break;
 		}
-		write (1, buf, n);
+		n = write (1, buf, n);
 		if (n != bufsz) {
 			break;
 		}
