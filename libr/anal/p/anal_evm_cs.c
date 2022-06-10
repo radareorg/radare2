@@ -7,6 +7,9 @@
 #if CS_API_MAJOR >= 5
 #include <capstone/evm.h>
 
+#define CSINC EVM
+#include "capstone.inc"
+
 static void set_opdir(RAnalOp *op) {
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
@@ -30,33 +33,20 @@ static void set_opdir(RAnalOp *op) {
 }
 
 static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	int n, ret, opsize = -1;
-	static csh hndl = 0;
-	static int omode = -1;
-	static int obits = 32;
+	csh hndl = init_capstone (anal);
+	if (hndl == 0) {
+		return -1;
+	}
+	
+	int n, opsize = -1;
 	cs_insn* insn;
 	char *str;
 
-	int mode = 0;
-	int bits = anal->config->bits;
-	if (mode != omode || bits != obits) {
-		cs_close (&hndl);
-		hndl = 0;
-		omode = mode;
-		obits = bits;
-	}
 	op->addr = addr;
 	if (len < 1) {
 		return -1;
 	}
 	op->size = 4;
-	if (hndl == 0) {
-		ret = cs_open (CS_ARCH_EVM, mode, &hndl);
-		if (ret != CS_ERR_OK) {
-			goto fin;
-		}
-		cs_option (hndl, CS_OPT_DETAIL, CS_OPT_ON);
-	}
 	op->type = R_ANAL_OP_TYPE_UNK;
 	n = cs_disasm (hndl, (ut8*)buf, len, addr, 1, &insn);
 	opsize = 1;
@@ -248,8 +238,6 @@ beach:
 	}
 #endif
 	cs_free (insn, n);
-	//cs_close (&handle);
-fin:
 	return opsize;
 }
 
@@ -290,6 +278,7 @@ RAnalPlugin r_anal_plugin_evm_cs = {
 	.archinfo = archinfo,
 	.bits = 32,
 	.op = &analop,
+	.mnemonics = cs_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE

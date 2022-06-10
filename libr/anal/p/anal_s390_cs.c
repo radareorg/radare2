@@ -54,15 +54,20 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
+#define CSINC SYSZ
+#define CSINC_MODE CS_MODE_BIG_ENDIAN
+#include "capstone.inc"
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	csh handle = 0;
+	csh handle = init_capstone (a);
+	if (handle == 0) {
+		return -1;
+	}
+	
 	cs_insn *insn = NULL;
-	int mode = CS_MODE_BIG_ENDIAN;
-	int ret = cs_open (CS_ARCH_SYSZ, mode, &handle);
 	op->addr = addr;
 	op->size = 2;
-	if (ret == CS_ERR_OK) {
-		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
+
 		// capstone-next
 		int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 		if (n < 1) {
@@ -70,7 +75,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				op->mnemonic = strdup ("invalid");
 			}
 			op->type = R_ANAL_OP_TYPE_ILL;
-			cs_close (&handle);
 			return -1;
 		}
 		if (mask & R_ANAL_OP_MASK_OPEX) {
@@ -191,10 +195,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		}
 		cs_free (insn, n);
-		cs_close (&handle);
-	} else {
-		R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_SYSZ, %x, ...): %s\n", mode, cs_strerror (ret));
-	}
 	return op->size;
 }
 
@@ -261,6 +261,7 @@ RAnalPlugin r_anal_plugin_s390_cs = {
 	.op = &analop,
 	.archinfo = archinfo,
 	.set_reg_profile = &set_reg_profile,
+	.mnemonics = cs_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE

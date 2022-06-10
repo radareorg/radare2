@@ -319,20 +319,18 @@ static void set_opdir(RAnalOp *op) {
 	}
 }
 
+#define CSINC RISCV
+#define CSINC_MODE (a->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32
+#include "capstone.inc"
+
 static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	int n, ret, opsize = -1;
-	static csh hndl = 0;
-	static int omode = -1;
-	static int obits = 32;
-	cs_insn* insn;
-	const int bits = anal->config->bits;
-	int mode = (bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32;
-	if (mode != omode || bits != obits) {
-		cs_close (&hndl);
-		hndl = 0;
-		omode = mode;
-		obits = bits;
+	csh hndl = init_capstone (anal);
+	if (hndl == 0) {
+		return -1;
 	}
+	
+	int n, opsize = -1;
+	cs_insn* insn;
 	if (!op) {
 		return -1;
 	}
@@ -342,14 +340,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		return -1;
 	}
 	op->size = 4;
-	if (hndl == 0) {
-		ret = cs_open (CS_ARCH_RISCV, mode, &hndl);
-		if (ret != CS_ERR_OK) {
-			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_RISCV, %x, ...): %s\n", mode, cs_strerror (ret));
-			goto fin;
-		}
-		cs_option (hndl, CS_OPT_DETAIL, CS_OPT_ON);
-	}
 	n = cs_disasm (hndl, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		goto beach;
@@ -397,8 +387,6 @@ beach:
 		op_fillval (anal, op, &hndl, insn);
 	}
 	cs_free (insn, n);
-	//cs_close (&handle);
-fin:
 	return opsize;
 }
 
@@ -607,6 +595,7 @@ RAnalPlugin r_anal_plugin_riscv_cs = {
 	.archinfo = archinfo,
 	.bits = 32|64,
 	.op = &analop,
+	.mnemonics = cs_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE
