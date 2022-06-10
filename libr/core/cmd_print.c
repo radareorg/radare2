@@ -347,7 +347,7 @@ static const char *help_detail_pf[] = {
 	" ", "B", "resolve enum bitfield (see t?)",
 	" ", "c", "char (signed byte)",
 	" ", "C", "byte in decimal",
-	" ", "d", "0xHEX value (4 bytes) (see 'i' and 'x')",
+	" ", "d", "dword (4 bytes in hex) (see 'i' and 'x')",
 	" ", "D", "disassemble one opcode",
 	" ", "e", "temporally swap endian",
 	" ", "E", "resolve enum name (see t?)",

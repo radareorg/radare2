@@ -214,12 +214,13 @@ RUN
 
 NAME=mac ls pfc
 FILE=bins/mach0/mac-ls
+BROKEN=1
 CMDS=pfc zdq foo bar cow
 EXPECT=<<EOF
 struct {
     char* foo; // "UH..AWAVAUATSH..H."
-    int32_t bar; // 4085860352
-    uint64_t cow; // -450213120875525823
+    int32_t bar; // 0xf3894800
+    uint64_t cow; // 0xf9c0858d48fe8941
 }
 EOF
 RUN
