@@ -10,23 +10,17 @@ type: mov
 EOF
 RUN
 
-NAME=aom-x86
+NAME=aom-6502.cs
 FILE=-
 CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
+e asm.arch=6502.cs
+e asm.bits=8
 aom
-aoml~?
-e asm.bits=32
-aoml~?
-e asm.bits=16
 aoml~?
 EOF
 EXPECT=<<EOF
-add
-1523
-1523
-1523
+brk
+96
 EOF
 RUN
 
@@ -50,6 +44,46 @@ invalid
 EOF
 RUN
 
+NAME=aom-evm.cs
+FILE=-
+CMDS=<<EOF
+e asm.arch=evm.cs
+e asm.bits=32
+aom
+aoml~?
+EOF
+EXPECT=<<EOF
+stop
+134
+EOF
+RUN
+
+NAME=aom-m680x
+FILE=-
+CMDS=<<EOF
+e asm.arch=m680x
+aom
+aoml~?
+EOF
+EXPECT=<<EOF
+fcb
+356
+EOF
+RUN
+
+NAME=aom-m68k
+FILE=-
+CMDS=<<EOF
+e asm.arch=m68k
+aom
+aoml~?
+EOF
+EXPECT=<<EOF
+ori.b
+374
+EOF
+RUN
+
 NAME=aom-mips
 FILE=-
 CMDS=<<EOF
@@ -70,6 +104,19 @@ nop
 EOF
 RUN
 
+NAME=aom-ppc
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+aom
+aoml~?
+EOF
+EXPECT=<<EOF
+invalid
+1688
+EOF
+RUN
+
 NAME=aom-riscv
 FILE=-
 CMDS=<<EOF
@@ -86,6 +133,66 @@ EXPECT=<<EOF
 272
 272
 272
+EOF
+RUN
+
+NAME=aom-sparc
+FILE=-
+CMDS=<<EOF
+e asm.arch=sparc
+e cfg.bigendian=true
+aom
+aoml~?
+EOF
+EXPECT=<<EOF
+unimp
+278
+EOF
+RUN
+
+NAME=aom-s390
+FILE=-
+CMDS=<<EOF
+e asm.arch=s390
+e cfg.bigendian=true
+aom
+aoml~?
+EOF
+EXPECT=<<EOF
+2345
+EOF
+RUN
+
+NAME=aom-x86
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+aom
+aoml~?
+e asm.bits=32
+aoml~?
+e asm.bits=16
+aoml~?
+EOF
+EXPECT=<<EOF
+add
+1523
+1523
+1523
+EOF
+RUN
+
+NAME=aom-xcore
+FILE=-
+CMDS=<<EOF
+e asm.arch=xcore
+aom
+aoml~?
+EOF
+EXPECT=<<EOF
+stw
+120
 EOF
 RUN
 
