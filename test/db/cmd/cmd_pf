@@ -79,12 +79,12 @@ RUN
 NAME=seteq
 FILE=malloc://1024
 CMDS=<<EOF
-pf.foo xd foo bar
+pf.foo xi foo bar
 pf.foo
 EOF
 EXPECT=<<EOF
  foo : 0x00000000 = 0x00000000
- bar : 0x00000004 = 0x00000000
+ bar : 0x00000004 = 0
 EOF
 RUN
 
@@ -109,12 +109,12 @@ RUN
 NAME=seteq2
 FILE=malloc://1024
 CMDS=<<EOF
-pf.foo=xd foo bar
+pf.foo=xi foo bar
 pf.foo
 EOF
 EXPECT=<<EOF
  foo : 0x00000000 = 0x00000000
- bar : 0x00000004 = 0x00000000
+ bar : 0x00000004 = 0
 EOF
 RUN
 
