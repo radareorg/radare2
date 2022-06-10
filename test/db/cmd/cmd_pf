@@ -84,7 +84,7 @@ pf.foo
 EOF
 EXPECT=<<EOF
  foo : 0x00000000 = 0x00000000
- bar : 0x00000004 = 0
+ bar : 0x00000004 = 0x00000000
 EOF
 RUN
 
@@ -114,7 +114,7 @@ pf.foo
 EOF
 EXPECT=<<EOF
  foo : 0x00000000 = 0x00000000
- bar : 0x00000004 = 0
+ bar : 0x00000004 = 0x00000000
 EOF
 RUN
 

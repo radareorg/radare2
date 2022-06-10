@@ -218,7 +218,7 @@ CMDS=pfc zdq foo bar cow
 EXPECT=<<EOF
 struct {
     char* foo; // "UH..AWAVAUATSH..H."
-    int32_t bar; // 4085860352
+    int32_t bar; // 0xf3894800
     uint64_t cow; // -450213120875525823
 }
 EOF
