@@ -136,7 +136,8 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/EVM/EVMMapping.c',
     'arch/EVM/EVMModule.c',
     'arch/X86/X86InstPrinterCommon.c',
-    # Add riscv files
+    'arch/MOS65XX/MOS65XXDisassembler.c',
+    'arch/MOS65XX/MOS65XXModule.c',
     'arch/RISCV/RISCVMapping.c',
     'arch/RISCV/RISCVModule.c',
     'arch/RISCV/RISCVInstPrinter.c',
@@ -197,7 +198,12 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     foreach rel_cs_file : rel_cs5_files
       cs_files += [join_paths(capstone_path, rel_cs_file)]
     endforeach
-    cs_c_args += [ '-DCAPSTONE_HAS_BPF', '-DCAPSTONE_HAS_EVM', '-DCAPSTONE_HAS_RISCV' ]
+    cs_c_args += [
+      '-DCAPSTONE_HAS_BPF',
+      '-DCAPSTONE_HAS_EVM',
+      '-DCAPSTONE_HAS_MOS65XX',
+      '-DCAPSTONE_HAS_RISCV',
+    ]
   endif
 
   capstone_includes = [platform_inc, include_directories(join_paths('capstone','include'))]
