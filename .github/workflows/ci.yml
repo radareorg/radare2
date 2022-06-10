@@ -51,6 +51,7 @@ jobs:
         sudo make symstall
     - name: Building muon/samu
       run: |
+        ./preconfigure
         r2pm -gci muon samu
         muon setup m && samu -C m -j5
   build-acr-gperf:
