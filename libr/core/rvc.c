@@ -1315,8 +1315,20 @@ R_API RList *r_vc_git_get_branches(Rvc *rvc) {
 }
 
 R_API RList *r_vc_git_get_uncommitted(Rvc *rvc) {
-	assert("TODO: Implement r_vc_git_get_uncommitted");
-	return NULL;
+	RList *ret = NULL;
+	char *esc_path = r_str_escape (rvc->path);
+	if (esc_path) {
+		char *output = r_sys_cmd_strf ("git -C %s diff --name-only",
+				esc_path);
+		free (esc_path);
+		if (!R_STR_ISEMPTY (output)) {
+			ret = r_str_split_duplist (output, "\n", true);
+		} else {
+			ret = r_list_new ();
+		}
+
+	}
+	return ret;
 }
 
 R_API RList *r_vc_git_log(Rvc *rvc) {
