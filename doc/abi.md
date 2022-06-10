@@ -8,7 +8,7 @@ In order to achieve this, the contributions need to follow some new rules in
 order to be merged, so we ensure that binaries keep stable.
 
 As it's said, odd version numbers are development versions that are only available
-in `git` form. The releases are always a pair number (0, 2, 4, 6, 8).
+in `git` form. The releases are always an even number (0, 2, 4, 6, 8).
 
 When `X.Y.9` is reached, it's time to merge all the pull requests tagged for
 the next big release, the .9 versions are always the most unstable as they focus
