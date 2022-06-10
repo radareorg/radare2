@@ -683,8 +683,8 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		RList *paths = r_list_new ();
 		if (paths) {
 			if (r_list_append (paths, prj_dir)) {
-				if (core->prj->rvc->commit (core->prj->rvc, NULL,
-							NULL, paths)) {
+				if (!core->prj->rvc->commit (core->prj->rvc, 
+							NULL, NULL, paths)) {
 					r_list_free (paths);
 					free (prj_dir);
 					free (script_path);
