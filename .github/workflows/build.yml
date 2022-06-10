@@ -249,8 +249,9 @@ jobs:
         name: android-acr-arm
         path: radare2*android*arm.tar.gz
 
+  # disabled because the ndk link is broken for a while
   android-meson:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    if: contains(github.ref, 'android')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

@@ -52,7 +52,7 @@ jobs:
     - name: Building muon/samu
       run: |
         r2pm -gci muon samu
-        muon m && samu -C m -j5
+        muon setup m && samu -C m -j5
   build-acr-gperf:
     name: linux-acr-gperf
     runs-on: ubuntu-20.04
