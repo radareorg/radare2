@@ -2560,7 +2560,7 @@ static int opret(RAsm *a, ut8 *data, const Opcode *op) {
 		data[l++] = 0xc2;
 		immediate = op->operands[0].immediate * op->operands[0].sign;
 		data[l++] = immediate;
-		data[l++] = immediate << 8;
+		data[l++] = 0; // always zero and UB shifts (immediate << 8);
 	}
 	return l;
 }
