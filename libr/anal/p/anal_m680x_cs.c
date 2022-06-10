@@ -55,33 +55,23 @@ static int m680xmode(const char *str) {
 	return CS_MODE_M680X_6800;
 }
 
+#define CSINC M680X
+#define CSINC_MODE m680xmode(a->config->cpu)
+#include "capstone.inc"
+
 #define IMM(x) insn->detail->m680x.operands[x].imm
 #define REL(x) insn->detail->m680x.operands[x].rel
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	int n, ret, opsize = -1;
-	static csh handle = 0;
-	static int omode = -1;
-	static int obits = 32;
+	csh handle = init_capstone (a);
+	if (handle == 0) {
+		return -1;
+	}
+	
+	int n, opsize = -1;
 	cs_insn* insn;
 
-	int mode = m680xmode (a->config->cpu);
-
-	if (mode != omode || a->config->bits != obits) {
-		cs_close (&handle);
-		handle = 0;
-		omode = mode;
-		obits = a->config->bits;
-	}
 	op->size = 4;
-	if (handle == 0) {
-		ret = cs_open (CS_ARCH_M680X, mode, &handle);
-		if (ret != CS_ERR_OK) {
-			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_M680X, %x, ...): %s\n", mode, cs_strerror (ret));
-			goto fin;
-		}
-		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
-	}
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -509,8 +499,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	}
 beach:
 	cs_free (insn, n);
-	//cs_close (&handle);
-fin:
 	return opsize;
 }
 
@@ -537,6 +525,7 @@ RAnalPlugin r_anal_plugin_m680x_cs = {
 	.set_reg_profile = &set_reg_profile,
 	.bits = 16 | 32,
 	.op = &analop,
+	.mnemonics = cs_mnemonics,
 };
 #else
 RAnalPlugin r_anal_plugin_m680x_cs = {

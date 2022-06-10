@@ -7,6 +7,12 @@
 
 #if CS_API_MAJOR >= 5
 
+#define CSINC BPF
+#define CSINC_MODE \
+	((a->config->bits == 32)? CS_MODE_BPF_CLASSIC: CS_MODE_BPF_EXTENDED) \
+	| ((a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
+#include "capstone.inc"
+
 #define OP(n) insn->detail->bpf.operands[n]
 // the "& 0xffffffff" is for some weird CS bug in JMP
 #define IMM(n) (insn->detail->bpf.operands[n].imm & 0xffffffff)
@@ -17,33 +23,6 @@
 
 void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr);
 
-static csh init_capstone (RAnal *a) {
-	static R_TH_LOCAL int omode = -1;
-	static R_TH_LOCAL int obits = 32;
-	static R_TH_LOCAL csh handle = 0;
-
-	int mode = (a->config->bits == 32)? CS_MODE_BPF_CLASSIC: CS_MODE_BPF_EXTENDED;
-	int ret;
-	mode |= (a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
-	if (mode != omode || a->config->bits != obits) {
-		if (handle != 0) {
-			cs_close (&handle);
-			handle = 0; // unnecessary
-		}
-		omode = mode;
-		obits = a->config->bits;
-	}
-	if (handle == 0) {
-		ret = cs_open (CS_ARCH_BPF, mode, &handle);
-		if (ret != CS_ERR_OK) {
-			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_BPF, %x, ...): %s\n", mode, cs_strerror (ret));
-			handle = 0;
-		}
-	}
-
-	return handle;
-}
-
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh handle = init_capstone (a);
 	if (handle == 0) {
@@ -53,7 +32,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	op->size = 8;
 	op->addr = addr;
 
-	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	cs_insn *insn = NULL;
 	int n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
@@ -583,46 +561,6 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	}
 }
 
-static char *mnemonics(RAnal *a, int id, bool json) {
-	csh handle = init_capstone (a);
-	if (handle == 0) {
-		return NULL;
-	}
-
-	if (id != -1) {
-		const char *name = cs_insn_name (handle, id);
-		if (json) {
-			return name? r_str_newf ("[\"%s\"]\n", name): NULL;
-		}
-		return name? strdup (name): NULL;
-	}
-
-	PJ *pj = NULL;
-	RStrBuf *buf = NULL;
-	if (json) {
-		pj = pj_new ();
-		pj_a (pj);
-	} else {
-		buf = r_strbuf_new ("");
-	}
-	for (int i = 1; i < BPF_INS_ENDING; i++) {
-		const char *op = cs_insn_name (handle, i);
-		if (!op) {
-			break;
-		}
-		if (pj) {
-			pj_s (pj, op);
-		} else {
-			r_strbuf_append (buf, op);
-			r_strbuf_append (buf, "\n");
-		}
-	}
-	if (pj) {
-		pj_end (pj);
-	}
-	return pj? pj_drain (pj): r_strbuf_drain (buf);
-}
-
 static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC    pc\n"
@@ -701,7 +639,7 @@ RAnalPlugin r_anal_plugin_bpf_cs = {
 	.archinfo = archinfo,
 	.set_reg_profile = &set_reg_profile,
 	.op = &analop,
-	.mnemonics = &mnemonics,
+	.mnemonics = &cs_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE
