@@ -1333,8 +1333,15 @@ R_API bool r_vc_git_reset(Rvc *rvc) {
 }
 
 R_API bool r_vc_git_clone(const Rvc *rvc, const char *dst) {
-	assert("TODO: Implement r_vc_git_clone");
-	return NULL;
+	char *esc_src = r_str_escape (rvc->path);
+	char *esc_dst = r_str_escape (dst);
+	bool ret = false;
+	if (esc_src && esc_dst) {
+		ret = !r_sys_cmdf ("git clone %s %s", esc_src, esc_dst);
+	}
+	free (esc_src);
+	free (esc_dst);
+	return ret;
 }
 
 R_API void r_vc_git_close(Rvc *vc, bool save) {
