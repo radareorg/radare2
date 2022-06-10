@@ -12,9 +12,9 @@
 
 /* defines ripped from linux/filter.h : */
 
-#define         BPF_A           0x10
-#define         BPF_TAX         0x00
-#define         BPF_TXA         0x80
+#define BPF_A 0x10
+#define BPF_TAX 0x00
+#define BPF_TXA 0x80
 
 /*  defines ripped from bpf_dbg.c : */
 
@@ -71,12 +71,11 @@ static const char * const r_bpf_op_table[] = {
 	[BPF_RET]	= "ret",
 };
 
-
 typedef struct r_bpf_sock_filter {	/* Filter block */
-	ut16 	code;   /* Actual filter code */
-	st8		jt;	/* Jump true */
-	st8		jf;	/* Jump false */
-	ut32	k;      /* Generic multiuse field */
+	ut16 code; /* Actual filter code */
+	st8 jt;	/* Jump true */
+	st8 jf;	/* Jump false */
+	ut32 k; /* Generic multiuse field */
 } RBpfSockFilter;
 
 #endif
