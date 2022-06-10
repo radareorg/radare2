@@ -1309,8 +1309,17 @@ R_API RList *r_vc_git_log(Rvc *rvc) {
 }
 
 R_API char *r_vc_git_current_branch(Rvc *rvc) {
-	assert("TODO: Implement r_vc_git_current_branch");
-	return NULL;
+	char *ret = NULL;
+	char *esc_path = r_str_escape (rvc->path);
+	if (esc_path) {
+		char *branch = r_sys_cmd_strf ("git -C %s rev-parse --abbrev-ref HEAD",
+				esc_path);
+		if (!R_STR_ISEMPTY (branch)) {
+			ret = r_str_ndup (branch, strlen (branch) - 1);
+		}
+		free (branch);
+	}
+	return ret;
 }
 
 R_API bool r_vc_git_reset(Rvc *rvc) {
