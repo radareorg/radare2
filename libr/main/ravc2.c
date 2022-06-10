@@ -98,14 +98,6 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		free (rp);
 		return rvc? !r_vc_save(rvc) : 1;
 	}
-	if (!strcmp (action, "clone")) {
-		free (rp);
-		if (opt.argc < 3) {
-			eprintf ("Usage: %s [src] [dst]\n", argv[0]);
-			return -1;
-		}
-		return !r_vc_clone (argv[1 + opt.ind], argv[2 + opt.ind]);
-	}
 	Rvc *rvc = r_vc_open (rp);
 	R_FREE (rp);
 	if (!rvc) {
@@ -183,8 +175,16 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		}
 		r_list_free (commits);
 		return 0;
+	} else if (!strcmp (action, "clone")) {
+		free (rp);
+		if (opt.argc < 3) {
+			eprintf ("Usage: %s [src] [dst]\n", argv[0]);
+			return -1;
+		}
+		return !r_vc_clone (rvc, argv[2 + opt.ind]);
+	} else {
+		eprintf ("Incorrect command\n");
 	}
-	eprintf ("Incorrect command\n");
 ret:
 	r_vc_close (rvc, save);
 	return !save;
