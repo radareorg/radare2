@@ -17,14 +17,13 @@
 
 void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr);
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	static R_TH_LOCAL csh handle = 0;
+static csh init_capstone (RAnal *a) {
 	static R_TH_LOCAL int omode = -1;
 	static R_TH_LOCAL int obits = 32;
+	static R_TH_LOCAL csh handle = 0;
 
-	cs_insn *insn = NULL;
 	int mode = (a->config->bits == 32)? CS_MODE_BPF_CLASSIC: CS_MODE_BPF_EXTENDED;
-	int n, ret;
+	int ret;
 	mode |= (a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->config->bits != obits) {
 		if (handle != 0) {
@@ -34,19 +33,29 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		omode = mode;
 		obits = a->config->bits;
 	}
-	op->size = 8;
-	op->addr = addr;
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_BPF, mode, &handle);
 		if (ret != CS_ERR_OK) {
 			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_BPF, %x, ...): %s\n", mode, cs_strerror (ret));
 			handle = 0;
-			return -1;
 		}
 	}
 
+	return handle;
+}
+
+static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	csh handle = init_capstone (a);
+	if (handle == 0) {
+		return -1;
+	}
+
+	op->size = 8;
+	op->addr = addr;
+
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
-	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
+	cs_insn *insn = NULL;
+	int n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ANAL_OP_MASK_DISASM) {
@@ -77,7 +86,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			case BPF_INS_JSLT:	///< eBPF only
 			case BPF_INS_JSLE:	///< eBPF only
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				if (mode == CS_MODE_BPF_CLASSIC) {
+				if (a->config->bits == 32) {
 					op->jump = JUMP (1);
 					op->fail = (insn->detail->bpf.op_count == 3) ? JUMP(2) : addr + insn->size;
 				} else {
@@ -574,6 +583,46 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	}
 }
 
+static char *mnemonics(RAnal *a, int id, bool json) {
+	csh handle = init_capstone (a);
+	if (handle == 0) {
+		return NULL;
+	}
+
+	if (id != -1) {
+		const char *name = cs_insn_name (handle, id);
+		if (json) {
+			return name? r_str_newf ("[\"%s\"]\n", name): NULL;
+		}
+		return name? strdup (name): NULL;
+	}
+
+	PJ *pj = NULL;
+	RStrBuf *buf = NULL;
+	if (json) {
+		pj = pj_new ();
+		pj_a (pj);
+	} else {
+		buf = r_strbuf_new ("");
+	}
+	for (int i = 1; i < BPF_INS_ENDING; i++) {
+		const char *op = cs_insn_name (handle, i);
+		if (!op) {
+			break;
+		}
+		if (pj) {
+			pj_s (pj, op);
+		} else {
+			r_strbuf_append (buf, op);
+			r_strbuf_append (buf, "\n");
+		}
+	}
+	if (pj) {
+		pj_end (pj);
+	}
+	return pj? pj_drain (pj): r_strbuf_drain (buf);
+}
+
 static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC    pc\n"
@@ -647,6 +696,7 @@ RAnalPlugin r_anal_plugin_bpf_cs = {
 	.archinfo = archinfo,
 	.set_reg_profile = &set_reg_profile,
 	.op = &analop,
+	.mnemonics = &mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE
