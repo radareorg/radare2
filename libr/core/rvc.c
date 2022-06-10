@@ -1323,8 +1323,13 @@ R_API char *r_vc_git_current_branch(Rvc *rvc) {
 }
 
 R_API bool r_vc_git_reset(Rvc *rvc) {
-	assert("TODO: Implement r_vc_git_reset");
-	return NULL;
+	char *esc_path = r_str_escape (rvc->path);
+	if (esc_path) {
+		bool ret = r_sys_cmdf ("git -C %s checkout .", esc_path);
+		free (esc_path);
+		return !ret;
+	}
+	return false;
 }
 
 R_API bool r_vc_git_clone(const Rvc *rvc, const char *dst) {
