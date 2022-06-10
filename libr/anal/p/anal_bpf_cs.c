@@ -632,7 +632,7 @@ static bool set_reg_profile(RAnal *anal) {
 		"=A3    r4\n"
 		"=R0    r0\n"
 		"=SP    r10\n"
-		"=BP    sp\n"
+		"=BP    r10\n"
 		"gpr    z        .32 ?    0\n"
 		"gpr    a        .32 0    0\n"
 		"gpr    x        .32 4    0\n"
@@ -663,7 +663,8 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr    r7       .64 136  0\n"
 		"gpr    r8       .64 144  0\n"
 		"gpr    r9       .64 152  0\n"
-		"gpr    r10       .64 160  0\n"
+		"gpr    r10      .64 160  0\n"
+		"gpr    sp       .64 160  0\n"
 		"gpr    tmp      .64 168  0\n";
 
 
