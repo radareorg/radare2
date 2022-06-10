@@ -787,7 +787,13 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 		eprintf ("Nothing to commit\n");
 		return false;
 	}
-	commit_hash = write_commit (rvc, message, author, blobs);
+	if (R_STR_ISEMPTY (author)) {
+		char *au = r_sys_whoami ();
+		commit_hash = write_commit (rvc, message, au, blobs);
+		free (au);
+	} else {
+		commit_hash = write_commit (rvc, message, author, blobs);
+	}
 	if (!commit_hash) {
 		free_blobs (blobs);
 		return false;
@@ -940,7 +946,7 @@ R_API Rvc *r_vc_new(const char *path) {
 		free (rvc);
 		return NULL;
 	}
-	return rvc;
+	return r_vc_save (rvc)? rvc : NULL;
 }
 
 R_API bool r_vc_checkout(Rvc *rvc, const char *bname) {
