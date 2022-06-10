@@ -211,7 +211,12 @@ static ut32 encodeBitMasksWithSize(ut64 imm, ut32 reg_size) {
 }
 
 static inline ut32 encode1reg(ArmOp *op) {
-	return op->operands[0].reg << 24;
+	int r = op->operands[0].reg;
+	if (r < 1 || r > 128) {
+		eprintf ("Invalid register to encode\n");
+		return 0;
+	}
+	return (r << 24);
 }
 
 static inline ut32 encode2regs(ArmOp *op) {
