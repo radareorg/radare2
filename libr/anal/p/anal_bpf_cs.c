@@ -675,13 +675,18 @@ static bool set_reg_profile(RAnal *anal) {
 static int archinfo(RAnal *anal, int q) {
 	const int bits = anal->config->bits;
 	switch (q) {
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 8;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return (bits == 64)? 16: 8;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 8;
 	case R_ANAL_ARCHINFO_ALIGN:
+		return 8;
 	case R_ANAL_ARCHINFO_DATA_ALIGN:
 		return 1;
 	}
-	//case R_ANAL_ARCHINFO_MAX_OP_SIZE:
-	//case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-	return (bits == 64)? 8: 4;
+	return 0;
 }
 
 RAnalPlugin r_anal_plugin_bpf_cs = {
