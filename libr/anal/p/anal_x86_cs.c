@@ -962,7 +962,6 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		esilprintf (op, "$z,DUP,zf,=,al,=");
 		break;
 	case X86_INS_SHR:
-	case X86_INS_SHRD:
 	case X86_INS_SHRX:
 		// TODO: Set CF: See case X86_INS_SAL for more details.
 		{
@@ -972,6 +971,28 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			dst_w = getarg (&gop, 0, 1, NULL, DST_W_AR, &bitsize);
 			esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,>>,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=",
 					src, dst_r, src, dst_r, dst_w, bitsize - 1);
+		}
+		break;
+	case X86_INS_SHRD:
+		{
+			ut32 bitsize;
+			char shft[32];
+			cs_x86_op operand = insn->detail->x86.operands[2];
+			if (operand.type == X86_OP_IMM) {
+				sprintf(shft, "%" PFMT64d, operand.imm);
+			} else {
+				strcpy(shft, "cl"); 
+			}
+			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
+			dst_r = getarg (&gop, 0, 0, NULL, DST_R_AR, NULL);
+			dst_w = getarg (&gop, 0, 1, NULL, DST_W_AR, &bitsize);
+			esilprintf (op, 
+				"1,%s,-,!,?{,%s,%d,%s,>>,&,!,of,:=,}{,0,of,:=,}," // set OF if sign changes 
+				"%s,?{,1,1,%s,-,%s,>>,&,cf,:=," // set CF to last bit shifted out
+				"%s,%d,-,%s,<<,%s,%s,>>,|,1,%d,1,<<,-,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}", 
+				shft, src, bitsize-1, dst_r, shft, shft, dst_r, 
+				shft, bitsize, src, shft, dst_r, bitsize, dst_w, bitsize-1);
+			
 		}
 		break;
 	case X86_INS_PSLLDQ:
