@@ -51,9 +51,9 @@ jobs:
         sudo make symstall
     - name: Building muon/samu
       run: |
-        ./preconfigure
-        r2pm -gci muon samu
-        muon setup m && samu -C m -j5
+        r2pm -gci muon # installs samurai as dependency
+        # ./preconfigure
+        # XXX muon setup m && samu -C m -j5
   build-acr-gperf:
     name: linux-acr-gperf
     runs-on: ubuntu-20.04
