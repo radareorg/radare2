@@ -986,11 +986,10 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst_r = getarg (&gop, 0, 0, NULL, DST_R_AR, NULL);
 			dst_w = getarg (&gop, 0, 1, NULL, DST_W_AR, &bitsize);
-			esilprintf (op, 
-				"1,%s,-,!,?{,%s,%d,%s,>>,&,!,of,:=,}{,0,of,:=,}," // set OF if sign changes 
-				"%s,?{,1,1,%s,-,%s,>>,&,cf,:=," // set CF to last bit shifted out
+			esilprintf (op,  // set CF to last bit shifted out, OF if sign changes
+				"%s,?{,1,1,%s,-,%s,>>,&,cf,:=,1,%s,-,!,%s,%d,%s,>>,^,!,&,of,:=,"
 				"%s,%d,-,%s,<<,%s,%s,>>,|,1,%d,1,<<,-,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}", 
-				shft, src, bitsize-1, dst_r, shft, shft, dst_r, 
+				shft, shft, dst_r, shft, src, bitsize-1, dst_r,
 				shft, bitsize, src, shft, dst_r, bitsize, dst_w, bitsize-1);
 			
 		}
