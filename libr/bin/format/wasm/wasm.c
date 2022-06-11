@@ -418,7 +418,12 @@ static RList *get_entries_from_section(RBinWasmObj *bin, RBinWasmSection *sec, P
 	if (bound >= r_buf_size (b)) {
 		goto beach;
 	}
-	while (r_buf_tell (b) <= bound && r < sec->count) {
+
+	ut32 count;
+	if (!consume_u32_r (b, bound, &count)) {
+		return NULL;
+	}
+	while (r_buf_tell (b) <= bound && r < count) {
 		void *entry = parse_entry (b, bound);
 		if (!entry) {
 			goto beach;
@@ -845,11 +850,16 @@ static RPVector *r_bin_wasm_get_type_entries(RBinWasmObj *bin, RBinWasmSection *
 		return NULL;
 	}
 
+	ut32 count;
+	if (!consume_u32_r (b, bound, &count)) {
+		return NULL;
+	}
+
 	RPVector *ret = r_pvector_new ((RPVectorFree)free_type_entry);
 	if (!ret) {
 		return NULL;
 	}
-	r_pvector_reserve (ret, sec->count);
+	r_pvector_reserve (ret, count);
 
 	ut32 i;
 	for (i = 0; i < sec->count; i++) {
@@ -1030,7 +1040,6 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 		if (r_buf_tell (b) + (ut64)ptr->size - 1 > bound) {
 			goto beach;
 		}
-		ptr->count = 0;
 		ptr->offset = r_buf_tell (b);
 		switch (ptr->id) {
 		case R_BIN_WASM_SECTION_CUSTOM:
@@ -1098,12 +1107,6 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 			eprintf ("[wasm] error: unkown section id: %d\n", ptr->id);
 			r_buf_seek (b, ptr->size - 1, R_BUF_CUR);
 			continue;
-		}
-		if (ptr->id != R_BIN_WASM_SECTION_START && ptr->id != R_BIN_WASM_SECTION_CUSTOM) {
-			if (!consume_u32_r (b, bound, &ptr->count)) {
-				goto beach;
-			}
-			// eprintf("count %d\n", ptr->count);
 		}
 		ptr->payload_data = r_buf_tell (b);
 		ptr->payload_len = ptr->size - (ptr->payload_data - ptr->offset);

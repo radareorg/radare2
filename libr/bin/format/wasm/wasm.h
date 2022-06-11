@@ -80,7 +80,6 @@ typedef struct r_bin_wasm_section_t {
 	ut32 offset;
 	ut32 payload_data;
 	ut32 payload_len;
-	ut32 count;
 } RBinWasmSection;
 
 typedef struct r_bin_wasm_type_vector_t {
