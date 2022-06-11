@@ -581,3 +581,32 @@ ad "csel w15, w25, w19, eq" 2F03931A
 ad "csel w5, w11, w22, ne" 6511961A
 ad "csel w1, w2, w3, eq" 4100831A
 ad "csel w10, w16, w13, ne" 0A128D1A
+ad "cset x0, eq" E0179F9A
+ad "cset x11, eq" EB179F9A
+ad "cset x30, ne" FE079F9A
+ad "cset x22, eq" F6179F9A
+ad "cset x7, ne" E7079F9A
+ad "cset x9, eq" E9179F9A
+ad "cset x17, ne" F1079F9A
+ad "cset w0, eq" E0179F1A
+ad "cset w11, eq" EB179F1A
+ad "cset w30, ne" FE079F1A
+ad "cset w22, eq" F6179F1A
+ad "cset w7, ne" E7079F1A
+ad "cset w9, eq" E9179F1A
+ad "cset w17, ne" F1079F1A
+ad "sxtb x30, w30" DE1F4093
+ad "sxtb x1, w12" 811D4093
+ad "sxtb x22, w3" 761C4093
+ad "sxtb w30, w30" DE1F0013
+ad "sxtb w5, w7" E51C0013
+ad "sxtb w9, w8" 091D0013
+ad "sxth x30, w30" DE3F4093 
+ad "sxth x1, w12" 813D4093
+ad "sxth x22, w3" 763C4093
+ad "sxth w30, w30" DE3F0013
+ad "sxth w5, w7" E53C0013
+ad "sxth w9, w8" 093D0013
+ad "sxtw x30, w30" DE7F4093
+ad "sxtw x25, w15" F97D4093
+ad "sxtw x5, w11" 657D4093
