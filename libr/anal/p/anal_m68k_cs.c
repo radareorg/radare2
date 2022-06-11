@@ -797,6 +797,13 @@ static int archinfo(RAnal *anal, int q) {
 		return 2;
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return 2;
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
+		const char *cpu = anal->config->cpu;
+		if (strstr (cpu, "68030") || strstr (cpu, "68040") || strstr (cpu, "68060")) {
+			return 1;
+		} else {
+			return 2;
+		}
 	}
 	return 2;
 }
