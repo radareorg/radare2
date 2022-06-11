@@ -441,15 +441,6 @@ beach:
 	return ret;
 }
 
-static inline ut8 *buf_read_new(RBuffer *b, ut64 len) {
-	ut8 *buf = malloc (len);
-	if (buf && r_buf_read (b, buf, len) < len) {
-		free (buf);
-		buf = NULL;
-	}
-	return buf;
-}
-
 static inline RBinWasmTypeVec *parse_type_vector(RBuffer *b, ut64 bound) {
 	RBinWasmTypeVec *vec = R_NEW0 (RBinWasmTypeVec);
 	// types are all ut8, so leb128 shouldn't be needed, we can reuse consume_str_new
