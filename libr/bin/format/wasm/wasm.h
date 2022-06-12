@@ -88,7 +88,7 @@ typedef struct r_bin_wasm_type_vector_t {
 } RBinWasmTypeVec;
 
 typedef struct r_bin_wasm_type_t {
-	size_t file_offset;
+	ut64 file_offset;
 	ut32 index;
 	ut8 form;
 	RBinWasmTypeVec *args;
@@ -127,7 +127,9 @@ typedef struct r_bin_wasm_import_t {
 } RBinWasmImportEntry;
 
 typedef struct r_bin_wasm_function_t {
-	ut32 type_index; // index to Type entries
+	ut64 file_offset;
+	ut32 index;
+	ut32 typeindex;
 } RBinWasmFunctionEntry;
 
 typedef struct r_bin_wasm_table_t {
@@ -230,6 +232,7 @@ typedef struct r_bin_wasm_obj_t {
 	RPVector *g_types;
 	RList *g_sections;
 	RList *g_imports;
+	RPVector *g_funcs;
 	RList *g_exports;
 	RList *g_tables;
 	RList *g_memories;
@@ -249,6 +252,7 @@ void r_bin_wasm_destroy(RBinFile *bf);
 RList *r_bin_wasm_get_sections(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_types(RBinWasmObj *bin);
 RList *r_bin_wasm_get_imports(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_functions(RBinWasmObj *bin);
 RList *r_bin_wasm_get_exports(RBinWasmObj *bin);
 RList *r_bin_wasm_get_tables(RBinWasmObj *bin);
 RList *r_bin_wasm_get_memories(RBinWasmObj *bin);
