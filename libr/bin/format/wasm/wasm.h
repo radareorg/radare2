@@ -140,6 +140,8 @@ typedef struct r_bin_wasm_table_t {
 } RBinWasmTableEntry;
 
 typedef struct r_bin_wasm_memory_t {
+	ut32 index;
+	ut64 file_offset;
 	struct r_bin_wasm_resizable_limits_t limits;
 } RBinWasmMemoryEntry;
 
@@ -237,7 +239,7 @@ typedef struct r_bin_wasm_obj_t {
 	RPVector *g_funcs;
 	RList *g_exports;
 	RPVector *g_tables;
-	RList *g_memories;
+	RPVector *g_memories;
 	RList *g_globals;
 	RList *g_elements;
 	RList *g_codes;
@@ -257,7 +259,7 @@ RList *r_bin_wasm_get_imports(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_functions(RBinWasmObj *bin);
 RList *r_bin_wasm_get_exports(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_tables(RBinWasmObj *bin);
-RList *r_bin_wasm_get_memories(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_memories(RBinWasmObj *bin);
 RList *r_bin_wasm_get_globals(RBinWasmObj *bin);
 RList *r_bin_wasm_get_elements(RBinWasmObj *bin);
 RList *r_bin_wasm_get_codes(RBinWasmObj *bin);
