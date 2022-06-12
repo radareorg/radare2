@@ -225,9 +225,7 @@ static int disassemble(RAnalOp *r_op, ut64 pc, const ut8 *buf, int len) {
 		break;
 	}
 
-	memset (vbuf, 0, sizeof (vbuf));
 	snprintf (vbuf, sizeof (vbuf), fmt, val);
-	vbuf[sizeof (vbuf) - 1] = 0;
 
 	if ((BPF_CLASS (f->code) == BPF_JMP && BPF_OP (f->code) != BPF_JA)) {
 		r_op->mnemonic = r_str_newf ("%s %s, 0x%08" PFMT64x ", 0x%08" PFMT64x "", op, vbuf,
