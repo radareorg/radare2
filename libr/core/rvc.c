@@ -1398,7 +1398,7 @@ R_API bool r_vc_use(Rvc *vc, VcType type) {
 		vc->checkout = r_vc_git_checkout;
 		vc->get_branches = r_vc_git_get_branches;
 		vc->get_uncommitted = r_vc_git_get_uncommitted;
-		vc->log = r_vc_git_log;
+		vc->print_commits = r_vc_git_log;
 		vc->current_branch = r_vc_git_current_branch;
 		vc->reset = r_vc_git_reset;
 		vc->clone = r_vc_git_clone;
@@ -1411,7 +1411,7 @@ R_API bool r_vc_use(Rvc *vc, VcType type) {
 		vc->checkout = r_vc_checkout;
 		vc->get_branches = r_vc_get_branches;
 		vc->get_uncommitted = r_vc_get_uncommitted;
-		vc->log = r_vc_log;
+		vc->print_commits = r_vc_log;
 		vc->current_branch = r_vc_current_branch;
 		vc->reset = r_vc_reset;
 		vc->clone = r_vc_clone;

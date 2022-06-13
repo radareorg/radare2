@@ -107,7 +107,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	// commands that need Rvc *
 	if (!strcmp(action, "branch")) {
 		if (opt.argc <= 2) {
-			RList *branches = r_vc_get_branches(rvc);
+			RList *branches = rvc->get_branches(rvc);
 			RListIter *iter;
 			char *branch;
 			r_list_foreach(branches, iter, branch) {
@@ -115,7 +115,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			}
 			r_list_free(branches);
 		} else {
-			save = r_vc_branch (rvc, opt.argv[opt.ind + 1]);
+			save = rvc->branch (rvc, opt.argv[opt.ind + 1]);
 		}
 	} else if (!strcmp(action, "commit")) {
 		if (opt.argc < 4) {
@@ -137,7 +137,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 				}
 				char *author = get_author();
 				if (author) {
-					save = r_vc_commit (rvc, message, author,
+					save = rvc->commit (rvc, message, author,
 							files);
 					free (author);
 				}
@@ -146,12 +146,12 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			free (message);
 		}
 	} else if (!strcmp(action, "checkout") && opt.argc > 2) {
-		save =  r_vc_checkout(rvc, opt.argv[opt.ind + 1]);
+		save =  rvc->checkout (rvc, opt.argv[opt.ind + 1]);
 	} else if (!strcmp(action, "status")) {
-		char *current_branch = r_vc_current_branch(rvc);
+		char *current_branch = rvc->current_branch (rvc);
 		if (current_branch) {
 			printf ("Branch: %s\n", current_branch);
-			RList *uncommitted = r_vc_get_uncommitted(rvc);
+			RList *uncommitted = rvc->get_uncommitted (rvc);
 			if (r_list_empty (uncommitted)) {
 				printf("All files are committed\n");
 			} else {
@@ -165,9 +165,9 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			r_list_free (uncommitted);
 		}
 	} else if (!strcmp(action, "reset")) {
-		save = r_vc_reset (rvc);
+		save = rvc->reset (rvc);
 	} else if (!strcmp(action, "log")) {
-		if (!r_vc_log(rvc)) {
+		if (!rvc->print_commits (rvc)) {
 			save = false;
 		}
 		goto ret;
@@ -177,11 +177,11 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			eprintf ("Usage: %s [src] [dst]\n", argv[0]);
 			return -1;
 		}
-		return !r_vc_clone (rvc, argv[2 + opt.ind]);
+		return !rvc->clone (rvc, argv[2 + opt.ind]);
 	} else {
 		eprintf ("Incorrect command\n");
 	}
 ret:
-	r_vc_close (rvc, save);
+	rvc->close (rvc, save);
 	return !save;
 }

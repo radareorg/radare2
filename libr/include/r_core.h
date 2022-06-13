@@ -258,7 +258,7 @@ typedef struct r_vc_t {
 	bool (*checkout)(struct r_vc_t *rvc, const char *bname);
 	RList *(*get_branches) (struct r_vc_t *rvc);
 	RList *(*get_uncommitted) (struct r_vc_t *rvc);
-	bool (*log) (struct r_vc_t *rvc);
+	bool (*print_commits) (struct r_vc_t *rvc);
 	char *(*current_branch)(struct r_vc_t *rvc);
 	bool (*reset)(struct r_vc_t *rvc);
 	bool (*clone) (const struct r_vc_t *rvc, const char *dst);
