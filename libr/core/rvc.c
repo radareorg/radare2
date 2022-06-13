@@ -1433,6 +1433,7 @@ R_API Rvc *rvc_git_open(const char *path) {
 }
 
 R_API Rvc *rvc_git_init(const RCore *core, const char *path) {
+	r_return_val_if_fail (core && path, NULL);
 	if (!strcmp ("git", r_config_get (core->config, "prj.vc.type"))) {
 		return r_vc_git_init (path);
 	}
