@@ -1165,7 +1165,7 @@ R_API bool r_vc_git_add(Rvc *vc, const RList *files) {
 			ret = false;
 			break;
 		}
-		ret = ret && !r_sys_cmdf ("git add \"%s\"", escfname);
+		ret &= !r_sys_cmdf ("git add \"%s\"", escfname);
 		free (escfname);
 	}
 	if (!r_sys_chdir (cwd)) {
