@@ -1334,9 +1334,14 @@ R_API RList *r_vc_git_get_uncommitted(Rvc *rvc) {
 	return ret;
 }
 
-R_API RList *r_vc_git_log(Rvc *rvc) {
-	assert("TODO: Implement r_vc_git_log");
-	return NULL;
+R_API bool r_vc_git_log(Rvc *rvc) {
+	bool ret = true;
+	char *esc_path = r_str_escape (rvc->path);
+	if (esc_path) {
+		ret = !r_sys_cmdf ("git -C %s log", esc_path);
+		free (esc_path);
+	}
+	return ret;
 }
 
 R_API char *r_vc_git_current_branch(Rvc *rvc) {

@@ -38,7 +38,7 @@ R_API bool r_vc_save(Rvc *vc);
 
 R_API RList *r_vc_git_get_branches(Rvc *rvc);
 R_API RList *r_vc_git_get_uncommitted(Rvc *rvc);
-R_API RList *r_vc_git_log(Rvc *rvc);
+R_API bool r_vc_git_log(Rvc *rvc);
 R_API char *r_vc_git_current_branch(Rvc *rvc);
 R_API bool r_vc_git_reset(Rvc *rvc);
 R_API bool r_vc_git_clone(const Rvc *rvc, const char *dst);
