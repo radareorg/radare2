@@ -497,7 +497,7 @@ static RBinWasmTypeEntry *parse_type_entry(RBuffer *b, ut64 bound, ut32 index) {
 	if (!type) {
 		return NULL;
 	}
-	type->index = index;
+	type->sec_i = index;
 	type->file_offset = r_buf_tell (b);
 	if (!consume_u7_r (b, bound, &type->form)) {
 		goto beach;
@@ -582,7 +582,7 @@ beach:
 static RBinWasmFunctionEntry *parse_function_entry(RBuffer *b, ut64 bound, ut32 index) {
 	RBinWasmFunctionEntry *func = R_NEW0 (RBinWasmFunctionEntry);
 	if (func && consume_u32_r (b, bound, &func->typeindex)) {
-		func->index = index;
+		func->sec_i = index;
 		func->file_offset = r_buf_tell (b);
 		return func;
 	}
@@ -799,7 +799,7 @@ beach:
 static RBinWasmMemoryEntry *parse_memory_entry(RBuffer *b, ut64 bound, ut32 index) {
 	RBinWasmMemoryEntry *ptr = R_NEW0 (RBinWasmMemoryEntry);
 	if (ptr) {
-		ptr->index = index;
+		ptr->sec_i = index;
 		ptr->file_offset = r_buf_tell (b);
 		if (!consume_limits_r (b, bound, &ptr->limits)) {
 			free (ptr);
@@ -812,8 +812,8 @@ static RBinWasmMemoryEntry *parse_memory_entry(RBuffer *b, ut64 bound, ut32 inde
 static RBinWasmTableEntry *parse_table_entry(RBuffer *b, ut64 bound, ut32 index) {
 	RBinWasmTableEntry *table = R_NEW0 (RBinWasmTableEntry);
 	if (table) {
+		table->sec_i = index;
 		table->file_offset = r_buf_tell (b);
-		table->index = index;
 		if (!consume_s7_r (b, bound, (st8 *)&table->element_type)) {
 			goto beach;
 		}
@@ -831,7 +831,7 @@ beach:
 static RBinWasmGlobalEntry *parse_global_entry(RBuffer *b, ut64 bound, ut32 index) {
 	RBinWasmGlobalEntry *ptr = R_NEW0 (RBinWasmGlobalEntry);
 	if (!ptr) {
-		ptr->index = index;
+		ptr->sec_i = index;
 		ptr->file_offset = r_buf_tell (b);
 		if (!consume_u7_r (b, bound, (ut8 *)&ptr->content_type)) {
 			goto beach;
