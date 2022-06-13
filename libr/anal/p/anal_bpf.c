@@ -225,9 +225,7 @@ static int disassemble(RAnalOp *r_op, ut64 pc, const ut8 *buf, int len) {
 		break;
 	}
 
-	memset (vbuf, 0, sizeof (vbuf));
 	snprintf (vbuf, sizeof (vbuf), fmt, val);
-	vbuf[sizeof (vbuf) - 1] = 0;
 
 	if ((BPF_CLASS (f->code) == BPF_JMP && BPF_OP (f->code) != BPF_JA)) {
 		r_op->mnemonic = r_str_newf ("%s %s, 0x%08" PFMT64x ", 0x%08" PFMT64x "", op, vbuf,
@@ -1231,16 +1229,21 @@ static int esil_bpf_fini(RAnalEsil *esil) {
 */
 
 static int archinfo(RAnal *anal, int q) {
-	const int bits = anal->config->bits;
 	switch (q) {
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 8;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 8;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 8;
 	case R_ANAL_ARCHINFO_ALIGN:
+		return 8;
 	case R_ANAL_ARCHINFO_DATA_ALIGN:
 		return 1;
 	}
-	//case R_ANAL_ARCHINFO_MAX_OP_SIZE:
-	//case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-	return (bits == 64)? 8: 4;
+	return 0;
 }
+
 RAnalPlugin r_anal_plugin_bpf = {
 	.name = "bpf.mr",
 	.desc = "Berkely packet filter analysis plugin",

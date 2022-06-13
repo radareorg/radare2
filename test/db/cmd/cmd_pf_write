@@ -1,7 +1,7 @@
-NAME=pf xxd=123
+NAME=pf xxi=123
 FILE=-
 CMDS=<<EOF
-pf foo=xxd foo bar cow
+pf foo=xxi foo bar cow
 pf.foo
 pf.foo.foo
 .pf.foo.foo=123
@@ -20,10 +20,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pf xxd.cow=123
+NAME=pf xxi.cow=123
 FILE=-
 CMDS=<<EOF
-pf foo=[2]xxd foo bar cow
+pf foo=[2]xxi foo bar cow
 pf.foo.cow
 .pf.foo.cow=123
 pf.foo.cow

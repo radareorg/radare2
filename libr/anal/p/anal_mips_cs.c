@@ -725,14 +725,8 @@ static void set_opdir(RAnalOp *op) {
 	}
 }
 
-static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	int n, ret, opsize = -1;
-	static csh hndl = 0;
-	static int omode = -1;
-	static int obits = 32;
-	cs_insn* insn;
+static int get_capstone_mode (RAnal *anal) {
 	int mode = anal->config->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
-
 	const char *cpu = anal->config->cpu;
 	if (R_STR_ISNOTEMPTY (cpu)) {
 		if (!strcmp (cpu, "micro")) {
@@ -748,26 +742,28 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		}
 	}
 	mode |= (anal->config->bits == 64)? CS_MODE_MIPS64: CS_MODE_MIPS32;
-	if (mode != omode || anal->config->bits != obits) {
-		cs_close (&hndl);
-		hndl = 0;
-		omode = mode;
-		obits = anal->config->bits;
+	return mode;
+}
+
+#define CSINC MIPS
+#define CSINC_MODE get_capstone_mode(a)
+#include "capstone.inc"
+
+static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	csh hndl = init_capstone (anal);
+	if (hndl == 0) {
+		return -1;
 	}
+
+	int n, opsize = -1;
+	cs_insn* insn;
+
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
 	if (len < 4) {
 		return -1;
 	}
 	op->size = 4;
-	if (hndl == 0) {
-		ret = cs_open (CS_ARCH_MIPS, mode, &hndl);
-		if (ret != CS_ERR_OK) {
-			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_MIPS, %x, ...): %s\n", mode, cs_strerror (ret));
-			goto fin;
-		}
-		cs_option (hndl, CS_OPT_DETAIL, CS_OPT_ON);
-	}
 	n = cs_disasm (hndl, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		if (mask & R_ANAL_OP_MASK_DISASM) {
@@ -1100,8 +1096,6 @@ beach:
 		op_fillval (anal, op, &hndl, insn);
 	}
 	cs_free (insn, n);
-	//cs_close (&handle);
-fin:
 	return opsize;
 }
 
@@ -1231,6 +1225,7 @@ RAnalPlugin r_anal_plugin_mips_cs = {
 	.preludes = anal_preludes,
 	.bits = 16 | 32 | 64,
 	.op = &analop,
+	.mnemonics = cs_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE

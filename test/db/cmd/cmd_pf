@@ -79,7 +79,7 @@ RUN
 NAME=seteq
 FILE=malloc://1024
 CMDS=<<EOF
-pf.foo xd foo bar
+pf.foo xi foo bar
 pf.foo
 EOF
 EXPECT=<<EOF
@@ -109,7 +109,7 @@ RUN
 NAME=seteq2
 FILE=malloc://1024
 CMDS=<<EOF
-pf.foo=xd foo bar
+pf.foo=xi foo bar
 pf.foo
 EOF
 EXPECT=<<EOF

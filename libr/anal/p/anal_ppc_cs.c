@@ -596,15 +596,21 @@ static char *shrink(char *op) {
 	return op;
 }
 
+#define CSINC PPC
+#define CSINC_MODE \
+	((a->config->bits == 64) ? CS_MODE_64 : (a->config->bits == 32) ? CS_MODE_32 : 0) \
+	| (a->config->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN)
+#include "capstone.inc"
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	static csh handle = 0;
-	static int omode = -1, obits = -1;
+	csh handle = init_capstone (a);
+	if (handle == 0) {
+		return -1;
+	}
+
 	int n, ret;
 	cs_insn *insn;
 	char *op1;
-	const int bits = a->config->bits;
-	int mode = (bits == 64) ? CS_MODE_64 : (bits == 32) ? CS_MODE_32 : 0;
-	mode |= a->config->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
 	if (a->config->cpu && strncmp (a->config->cpu, "vle", 3) == 0) {
 		// vle is big-endian only
@@ -617,20 +623,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 	}
 
-	if (mode != omode || bits != obits) {
-		cs_close (&handle);
-		handle = 0;
-		omode = mode;
-		obits = bits;
-	}
-	if (handle == 0) {
-		ret = cs_open (CS_ARCH_PPC, mode, &handle);
-		if (ret != CS_ERR_OK) {
-			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_PPC, %x, ...): %s\n", mode, cs_strerror (ret));
-			return -1;
-		}
-		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
-	}
 	op->size = 4;
 
 	// capstone-next
@@ -644,7 +636,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		struct Getarg gop = {
 			.handle = handle,
 			.insn = insn,
-			.bits = bits
+			.bits = a->config->bits
 		};
 		op->size = insn->size;
 		op->id = insn->id;
@@ -1361,6 +1353,7 @@ RAnalPlugin r_anal_plugin_ppc_cs = {
 	.preludes = anal_preludes,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,
+	.mnemonics = cs_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE

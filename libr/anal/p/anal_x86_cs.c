@@ -30,6 +30,13 @@ call = 4
 #error Old Capstone not supported
 #endif
 
+#define CSINC X86
+#define CSINC_MODE \
+	(a->config->bits==64)? CS_MODE_64: \
+	(a->config->bits==32)? CS_MODE_32: \
+	(a->config->bits==16)? CS_MODE_16: 0
+#include "capstone.inc"
+
 #define opexprintf(op, fmt, ...) r_strbuf_setf (&op->opex, fmt, ##__VA_ARGS__)
 #define INSOP(n) insn->detail->x86.operands[n]
 #define INSOPS insn->detail->x86.op_count
@@ -56,9 +63,6 @@ struct Getarg {
 	cs_insn *insn;
 	int bits;
 };
-
-static R_TH_LOCAL csh handle = 0;
-static R_TH_LOCAL int omode = 0;
 
 static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 	unsigned int id = insn->id;
@@ -105,6 +109,8 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 }
 
 static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
+	csh handle = cs_handle;
+
 	int i;
 	PJ *pj = pj_new ();
 	if (!pj) {
@@ -962,7 +968,6 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		esilprintf (op, "$z,DUP,zf,=,al,=");
 		break;
 	case X86_INS_SHR:
-	case X86_INS_SHRD:
 	case X86_INS_SHRX:
 		// TODO: Set CF: See case X86_INS_SAL for more details.
 		{
@@ -972,6 +977,27 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			dst_w = getarg (&gop, 0, 1, NULL, DST_W_AR, &bitsize);
 			esilprintf (op, "0,cf,:=,1,%s,-,1,<<,%s,&,?{,1,cf,:=,},%s,%s,>>,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=",
 					src, dst_r, src, dst_r, dst_w, bitsize - 1);
+		}
+		break;
+	case X86_INS_SHRD:
+		{
+			ut32 bitsize;
+			char shft[32];
+			cs_x86_op operand = insn->detail->x86.operands[2];
+			if (operand.type == X86_OP_IMM) {
+				sprintf(shft, "%" PFMT64d, operand.imm);
+			} else {
+				strcpy(shft, "cl"); 
+			}
+			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
+			dst_r = getarg (&gop, 0, 0, NULL, DST_R_AR, NULL);
+			dst_w = getarg (&gop, 0, 1, NULL, DST_W_AR, &bitsize);
+			esilprintf (op,  // set CF to last bit shifted out, OF if sign changes
+				"%s,?{,1,1,%s,-,%s,>>,&,cf,:=,1,%s,-,!,%s,%d,%s,>>,^,!,&,of,:=,"
+				"%s,%d,-,%s,<<,%s,%s,>>,|,1,%d,1,<<,-,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}", 
+				shft, shft, dst_r, shft, src, bitsize-1, dst_r,
+				shft, bitsize, src, shft, dst_r, bitsize, dst_w, bitsize-1);
+			
 		}
 		break;
 	case X86_INS_PSLLDQ:
@@ -3537,28 +3563,15 @@ static int cs_len_prefix_opcode(uint8_t *item) {
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	cs_insn *insn = NULL;
-	const int bits = a->config->bits;
-	int mode = (bits==64)? CS_MODE_64:
-		(bits==32)? CS_MODE_32:
-		(bits==16)? CS_MODE_16: 0;
-	int n, ret;
-
-	if (handle && mode != omode) {
-		if (handle != 0) {
-			cs_close (&handle);
-			handle = 0;
-		}
-	}
-	omode = mode;
+	csh handle = init_capstone (a);
 	if (handle == 0) {
-		ret = cs_open (CS_ARCH_X86, mode, &handle);
-		if (ret != CS_ERR_OK) {
-			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_X86, %x, ...): %s\n", mode, cs_strerror (ret));
-			handle = 0;
-			return 0;
-		}
+		return -1;
 	}
+	int mode = cs_omode;
+	
+	cs_insn *insn = NULL;
+	int n;
+
 	op->cycles = 1; // aprox
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	// capstone-next
@@ -3686,19 +3699,6 @@ static int esil_x86_cs_init(RAnalEsil *esil) {
 	// r_anal_esil_set_interrupt (esil, 0x80, x86_int_0x80);
 	/* disable by default */
 //	r_anal_esil_set_interrupt (esil, 0x80, NULL);	// this is stupid, don't do this
-	return true;
-}
-
-static int init(void *p) {
-	handle = 0;
-	return true;
-}
-
-static int fini(void *p) {
-	if (handle != 0) {
-		cs_close (&handle);
-		handle = 0;
-	}
 	return true;
 }
 
@@ -4124,11 +4124,10 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.preludes = anal_preludes,
 	.archinfo = archinfo,
 	.get_reg_profile = &get_reg_profile,
-	.init = init,
-	.fini = fini,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
 //	.esil_intr = esil_x86_cs_intr,
+	.mnemonics = cs_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE

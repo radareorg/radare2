@@ -606,7 +606,7 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode, const char
 	if (MUSTSET) {
 		p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
-		p->cb_printf ("%"PFMT64d, addr);
+		p->cb_printf ("0x%08"PFMT64x, addr);
 	} else if (MUSTSEE) {
 		if (!SEEVALUE && !ISQUIET) {
 			p->cb_printf ("0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 4 : 0));
@@ -615,7 +615,7 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode, const char
 			if (addr == UT64_MAX || addr == UT32_MAX) {
 				p->cb_printf ("-1");
 			} else {
-				p->cb_printf ("%"PFMT64d, addr);
+				p->cb_printf ("0x%08"PFMT64x, addr);
 			}
 		} else {
 			if (!SEEVALUE) {
@@ -628,10 +628,10 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode, const char
 						if (addr == UT64_MAX || addr == UT32_MAX) {
 							p->cb_printf ("-1");
 						} else {
-							p->cb_printf ("%"PFMT64d, addr);
+							p->cb_printf ("0x%08"PFMT64x, addr);
 						}
 					} else {
-						p->cb_printf ("%"PFMT64d, addr);
+						p->cb_printf ("0x%08"PFMT64x, addr);
 					}
 					if (elem == 0) {
 						elem = -2;
@@ -651,13 +651,13 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode, const char
 		}
 	} else if (MUSTSEEJSON) {
 		if (size == -1) {
-			p->cb_printf ("%"PFMT64d, addr);
+			p->cb_printf ("0x%08"PFMT64x, addr);
 		} else {
 			p->cb_printf ("[ ");
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
 				if (elem == -1 || elem == 0) {
-					p->cb_printf ("%"PFMT64d, addr);
+					p->cb_printf ("0x%08"PFMT64x, addr);
 					if (elem == 0) {
 						elem = -2;
 					}
@@ -2559,7 +2559,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					r_print_format_int (p, endian, mode, setval, seeki, buf, i, size);
 					i+= (size == -1)? 4: 4 * size;
 					break;
-				case 'd': //WHY?? help says: 0x%%08x hexadecimal value (4 bytes)
+				case 'd':
 					r_print_format_hex (p, endian, mode, setval, seeki, buf, i, size);
 					i+= (size == -1)? 4: 4 * size;
 					break;

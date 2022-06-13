@@ -211,7 +211,12 @@ static ut32 encodeBitMasksWithSize(ut64 imm, ut32 reg_size) {
 }
 
 static inline ut32 encode1reg(ArmOp *op) {
-	return op->operands[0].reg << 24;
+	int r = op->operands[0].reg;
+	if (r < 1 || r > 128) {
+		eprintf ("Invalid register to encode\n");
+		return 0;
+	}
+	return (r << 24);
 }
 
 static inline ut32 encode2regs(ArmOp *op) {
@@ -351,10 +356,10 @@ static ut32 cb(ArmOp *op) {
 static ut32 cl(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
-	
+
 	check_cond (op->operands[0].type == ARM_GPR);
 	check_cond (op->operands[1].type == ARM_GPR);
-	
+
 	if (!strncmp (op->mnemonic, "cls", 3)) {
 		if (op->operands[0].reg_type & ARM_REG64) {
 			k =  0x0014c0da;
@@ -390,7 +395,7 @@ static ut32 r_n_math(ArmOp *op, ut32 data_64, ut32 data_32 , bool is64) {
 	check_cond (op->operands[0].type == ARM_GPR);
 	check_cond (op->operands[1].type == ARM_GPR);
 	check_cond (op->operands[2].type == ARM_GPR);
-	
+
 	data = k | op->operands[0].reg << 24;
 	data |= (op->operands[1].reg & 0x7) << 29;
 	data |= (op->operands[1].reg & 0x18) << 13;
@@ -401,11 +406,10 @@ static ut32 r_n_math(ArmOp *op, ut32 data_64, ut32 data_32 , bool is64) {
 static ut32 adds(ArmOp *op) {
         ut32 data = UT32_MAX;
 	int k = 0;
-	
-	ut8 check1 = op->operands[0].reg_type &ARM_REG64 && op->operands[1].reg_type &ARM_REG64 && op->operands[2].reg_type &ARM_REG64;
-	ut8 check2 = op->operands[0].reg_type &ARM_REG32 && op->operands[1].reg_type &ARM_REG32 && op->operands[2].reg_type &ARM_REG32;
-	ut8 check3 = op->operands[0].reg_type &ARM_REG64 && op->operands[1].reg_type &ARM_REG64 && op->operands[2].type &ARM_CONSTANT;
-	ut8 check4 = op->operands[0].reg_type &ARM_REG32 && op->operands[1].reg_type &ARM_REG32 && op->operands[2].type &ARM_CONSTANT;
+	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
+	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
+	bool check3 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].type & ARM_CONSTANT;
+	bool check4 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].type & ARM_CONSTANT;
 
 	if (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR && op->operands[2].type == ARM_GPR) {
         	if (check1) {
@@ -418,8 +422,8 @@ static ut32 adds(ArmOp *op) {
 		data |= (op->operands[1].reg & 0x18) << 13;
 		data |= op->operands[2].reg << 8;
 		return data;
-		
-	} else if (op->operands[2].type &ARM_CONSTANT) {
+
+	} else if (op->operands[2].type & ARM_CONSTANT) {
 		check_cond(op->operands[2].immediate <= 0xfff);
 		if (check3) {
 			k = 0x000000b1;
@@ -439,11 +443,10 @@ static ut32 adds(ArmOp *op) {
 static ut32 asr(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
-
-	ut8 check1 = op->operands[0].reg_type &ARM_REG64 && op->operands[1].reg_type &ARM_REG64 && op->operands[2].reg_type &ARM_REG64;
-	ut8 check2 = op->operands[0].reg_type &ARM_REG32 && op->operands[1].reg_type &ARM_REG32 && op->operands[2].reg_type &ARM_REG32;
-	ut8 check3 = op->operands[0].reg_type &ARM_REG64 && op->operands[1].reg_type &ARM_REG64 && op->operands[2].type &ARM_CONSTANT;
-	ut8 check4 = op->operands[0].reg_type &ARM_REG32 && op->operands[1].reg_type &ARM_REG32 && op->operands[2].type &ARM_CONSTANT;
+	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
+	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
+	bool check3 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].type & ARM_CONSTANT;
+	bool check4 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].type & ARM_CONSTANT;
 
 	if (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR && op->operands[2].type == ARM_GPR) {
 		if (check1) {
@@ -456,7 +459,7 @@ static ut32 asr(ArmOp *op) {
 		data |= (op->operands[1].reg & 0x18) << 13;
 		data |= op->operands[2].reg << 8;
 		return data;
-	} else if (op->operands[2].type &ARM_CONSTANT) {
+	} else if (op->operands[2].type & ARM_CONSTANT) {
 		check_cond(op->operands[2].immediate <= 0x3f);
 		if (check3) {
 			k = 0x00fc4093;
@@ -475,11 +478,10 @@ static ut32 asr(ArmOp *op) {
 static ut32 ror(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
-
-	ut8 check1 = op->operands[0].reg_type &ARM_REG64 && op->operands[1].reg_type &ARM_REG64 && op->operands[2].reg_type &ARM_REG64;
-	ut8 check2 = op->operands[0].reg_type &ARM_REG32 && op->operands[1].reg_type &ARM_REG32 && op->operands[2].reg_type &ARM_REG32;
-	ut8 check3 = op->operands[0].reg_type &ARM_REG64 && op->operands[1].reg_type &ARM_REG64 && op->operands[2].type &ARM_CONSTANT;
-	ut8 check4 = op->operands[0].reg_type &ARM_REG32 && op->operands[1].reg_type &ARM_REG32 && op->operands[2].type &ARM_CONSTANT;
+	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
+	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
+	bool check3 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].type & ARM_CONSTANT;
+	bool check4 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].type & ARM_CONSTANT;
 
 	if (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR && op->operands[2].type == ARM_GPR) {
 		if (check1) {
@@ -492,7 +494,7 @@ static ut32 ror(ArmOp *op) {
 		data |= (op->operands[1].reg & 0x18) << 13;
 		data |= op->operands[2].reg << 8;
 		return data;
-	} else if (op->operands[2].type &ARM_CONSTANT) {
+	} else if (op->operands[2].type & ARM_CONSTANT) {
 		check_cond(op->operands[2].immediate <= 0x3f);
 		if (check3) {
 			k = 0x0000c093;
@@ -512,14 +514,14 @@ static ut32 ror(ArmOp *op) {
 static ut32 ngc(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
-
+	
 	check_cond(op->operands[0].type == ARM_GPR);
 	check_cond(op->operands[1].type == ARM_GPR);
 
 	if (!strncmp(op->mnemonic, "ngc", 3)) {
-		if (op->operands[0].reg_type &ARM_REG64) {
+		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0xe00300da;
-		} else if (op->operands[0].reg_type &ARM_REG32) {
+		} else if (op->operands[0].reg_type & ARM_REG32) {
 			k = 0xe003005a;
 		} else {
 		  	return UT32_MAX;
@@ -538,9 +540,9 @@ static ut32 rev(ArmOp *op) {
 	check_cond(op->operands[1].type == ARM_GPR);
 
 	if (!strncmp(op->mnemonic, "rev", 3)) {
-		if (op->operands[0].reg_type &ARM_REG64) {
+		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0x000cc0da;
-		} else if (op->operands[0].reg_type &ARM_REG32) {
+		} else if (op->operands[0].reg_type & ARM_REG32) {
 			k = 0x0008c05a;
 		} else {
 			return UT32_MAX;
@@ -560,9 +562,9 @@ static ut32 rbit(ArmOp *op) {
 
 	int k = 0;
 	if (!strncmp(op->mnemonic, "rbit", 4)) {
-		if (op->operands[0].reg_type &ARM_REG64) {
+		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0x0000c0da;
-		} else if (op->operands[0].reg_type &ARM_REG32) {
+		} else if (op->operands[0].reg_type & ARM_REG32) {
 			k = 0x0000c05a;
 		} else {
 			return UT32_MAX;
@@ -582,9 +584,9 @@ static ut32 mvn(ArmOp *op) {
 
 	int k = 0;
 	if (!strncmp(op->mnemonic, "mvn", 3)) {
-		if (op->operands[0].reg_type &ARM_REG64) {
+		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0xe00320aa;
-		} else if (op->operands[0].reg_type &ARM_REG32) {
+		} else if (op->operands[0].reg_type & ARM_REG32) {
 			k = 0xe003202a;
 		} else {
 			return UT32_MAX;
@@ -598,11 +600,10 @@ static ut32 mvn(ArmOp *op) {
 static ut32 tst(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
-
-	ut8 check1 = op->operands[0].reg_type &ARM_REG64 && op->operands[1].reg_type &ARM_REG64;
-	ut8 check2 = op->operands[0].reg_type &ARM_REG32 && op->operands[1].reg_type &ARM_REG32;
-	// ut8 check3 = op->operands[0].reg_type &ARM_REG64 && op->operands[1].type &ARM_CONSTANT;
-	// ut8 check4 = op->operands[0].reg_type &ARM_REG32 && op->operands[1].type &ARM_CONSTANT;
+	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64;
+	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32;
+	// bool check3 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].type & ARM_CONSTANT;
+	// bool check4 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].type & ARM_CONSTANT;
 
 	if (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR) {
 		if (check1) {
@@ -614,9 +615,8 @@ static ut32 tst(ArmOp *op) {
 		data |= (op->operands[0].reg & 0x18) << 13;
 		data |= op->operands[1].reg << 8;
 		return data;
-
 		// not implemented yet
-	} else if (op->operands[1].type &ARM_CONSTANT) {
+	} else if (op->operands[1].type & ARM_CONSTANT) {
 		return data;
 		/*
              check_cond (op->operands[1].immediate <= 0xfffffffffffffff);
@@ -644,7 +644,7 @@ static ut32 ccmn(ArmOp *op, const char *str) {
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].type & ARM_CONSTANT;
 	bool check3 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
 	bool check4 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
-	
+
 	if (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR) {
 		if (strstr (str, "eq")) {
 			if (check1) {
@@ -653,7 +653,7 @@ static ut32 ccmn(ArmOp *op, const char *str) {
 				k = 0x0000403a;
 			} else {
 				return data;
-			}			
+			}
 		} else {
 		  	 if (check1) {
 				k = 0x001040ba;
@@ -661,7 +661,7 @@ static ut32 ccmn(ArmOp *op, const char *str) {
 				k = 0x0010403a;
 			} else {
 				return data;
-			}	
+			}
 		}
 	} else if (op->operands[1].type & ARM_CONSTANT) {
 		if (strstr (str, "eq")) {
@@ -697,14 +697,12 @@ static ut32 csel(ArmOp *op, const char *str) {
         bool is64 = false;
 	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
-	
+
 	if (strstr (str, "eq")) {
 		if (check1) {
 			is64 = true;
 			data_64 = 0x0000809a;
-			data_32 = 0;
 		} else if (check2) {
-		  	data_64 = 0;
 			data_32 = 0x0000801a;
 		} else {
 			return UT32_MAX;
@@ -713,15 +711,82 @@ static ut32 csel(ArmOp *op, const char *str) {
          	if (check1) {
 			is64 = true;
 			data_64 = 0x0010809a;
-			data_32 = 0;
 		} else if (check2) {
-			data_64 = 0;
 			data_32 = 0x0010801a;
 		} else {
 			return UT32_MAX;
 		}
 	}
 	return r_n_math (op, data_64, data_32, is64);
+}
+
+static ut32 cset(ArmOp *op, const char *str) {
+	ut32 data = UT32_MAX;
+	int k = 0;
+	bool reg_64 = op->operands[0].reg_type & ARM_REG64;
+	bool reg_32 = op->operands[0].reg_type & ARM_REG32;
+
+	check_cond (op->operands[0].type == ARM_GPR);
+
+	if (strstr (str, "eq")) {
+		if (reg_64) {
+			k = 0xe0179f9a;
+		} else if (reg_32) {
+			k = 0xe0179f1a;
+		} else {
+			return data;
+		}
+	} else {
+         	if (reg_64) {
+			k = 0xe0079f9a;
+		} else if (reg_32) {
+			k = 0xe0079f1a;
+		} else {
+			return data;
+		}
+	}
+	data = k | (op->operands[0].reg & 0x1f) << 24;
+	return data;
+}
+
+static ut32 sxt(ArmOp *op) {
+	ut32 data = UT32_MAX;
+	int k = 0;
+	bool r64_32 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG32;
+	bool reg_32 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32;
+
+	check_cond (op->operands[0].type == ARM_GPR);
+	check_cond (op->operands[1].type == ARM_GPR);
+
+	if (!strncmp(op->mnemonic, "sxtb", 4)) {
+		if (r64_32) {
+			k = 0x001c4093;
+		} else if (reg_32) {
+			k = 0x001c0013;
+		} else {
+			return UT32_MAX;
+		}
+	} else if (!strncmp(op->mnemonic, "sxth", 4)) {
+	  	if (r64_32) {
+			k = 0x003c4093;
+		} else if (reg_32) {
+			k = 0x003c0013;
+		} else {
+			return UT32_MAX;
+		}
+	} else if (!strncmp(op->mnemonic, "sxtw", 4)) {
+	  	if (r64_32) {
+			k = 0x007c4093;
+		} else {
+			return UT32_MAX;
+		}
+	} else {
+		return data;
+	}
+	data = k | op->operands[0].reg << 24;
+	data |= (op->operands[1].reg & 0x7) << 29;
+	data |= (op->operands[1].reg & 0x18) << 13;
+	return data;
 }
 
 static ut32 math(ArmOp *op, ut32 data, bool is64) {
@@ -1767,6 +1832,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = ccmn (&ops, str);
 	} else if (!strncmp (str, "csel", 4)) {
 		*op = csel (&ops, str);
+	} else if (!strncmp (str, "cset", 4)) {
+		*op = cset (&ops, str);
+	} else if (!strncmp (str, "sxt", 3)) {
+		*op = sxt (&ops);
 	} else if (!strncmp (str, "ldrb", 4)) {
 		*op = lsop (&ops, 0x00004038, -1);
 	} else if (!strncmp (str, "ldrh", 4)) {

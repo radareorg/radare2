@@ -7,6 +7,12 @@
 
 #if CS_API_MAJOR >= 5
 
+#define CSINC BPF
+#define CSINC_MODE \
+	((a->config->bits == 32)? CS_MODE_BPF_CLASSIC: CS_MODE_BPF_EXTENDED) \
+	| ((a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
+#include "capstone.inc"
+
 #define OP(n) insn->detail->bpf.operands[n]
 // the "& 0xffffffff" is for some weird CS bug in JMP
 #define IMM(n) (insn->detail->bpf.operands[n].imm & 0xffffffff)
@@ -18,35 +24,16 @@
 void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr);
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	static R_TH_LOCAL csh handle = 0;
-	static R_TH_LOCAL int omode = -1;
-	static R_TH_LOCAL int obits = 32;
-
-	cs_insn *insn = NULL;
-	int mode = (a->config->bits == 32)? CS_MODE_BPF_CLASSIC: CS_MODE_BPF_EXTENDED;
-	int n, ret;
-	mode |= (a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
-	if (mode != omode || a->config->bits != obits) {
-		if (handle != 0) {
-			cs_close (&handle);
-			handle = 0; // unnecessary
-		}
-		omode = mode;
-		obits = a->config->bits;
+	csh handle = init_capstone (a);
+	if (handle == 0) {
+		return -1;
 	}
+
 	op->size = 8;
 	op->addr = addr;
-	if (handle == 0) {
-		ret = cs_open (CS_ARCH_BPF, mode, &handle);
-		if (ret != CS_ERR_OK) {
-			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_BPF, %x, ...): %s\n", mode, cs_strerror (ret));
-			handle = 0;
-			return -1;
-		}
-	}
 
-	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
-	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
+	cs_insn *insn = NULL;
+	int n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ANAL_OP_MASK_DISASM) {
@@ -77,7 +64,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			case BPF_INS_JSLT:	///< eBPF only
 			case BPF_INS_JSLE:	///< eBPF only
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				if (mode == CS_MODE_BPF_CLASSIC) {
+				if (a->config->bits == 32) {
 					op->jump = JUMP (1);
 					op->fail = (insn->detail->bpf.op_count == 3) ? JUMP(2) : addr + insn->size;
 				} else {
@@ -582,8 +569,8 @@ static bool set_reg_profile(RAnal *anal) {
 		"=A2    r3\n"
 		"=A3    r4\n"
 		"=R0    r0\n"
-		"=SP    sp\n"
-		"=BP    sp\n"
+		"=SP    r10\n"
+		"=BP    r10\n"
 		"gpr    z        .32 ?    0\n"
 		"gpr    a        .32 0    0\n"
 		"gpr    x        .32 4    0\n"
@@ -604,20 +591,19 @@ static bool set_reg_profile(RAnal *anal) {
 		"gpr    m[14]    .32 64   0\n"
 		"gpr    m[15]    .32 68   0\n"
 		"gpr    pc       .64 72   0\n"
-		"gpr    sp       .64 80   0\n" // eBPF registers are 64 bits
-		"gpr    r0       .64 88   0\n"
-		"gpr    r1       .64 96   0\n"
-		"gpr    r2       .64 104  0\n"
-		"gpr    r3       .64 112  0\n"
-		"gpr    r4       .64 120  0\n"
-		"gpr    r5       .64 128  0\n"
-		"gpr    r6       .64 136  0\n"
-		"gpr    r7       .64 144  0\n"
-		"gpr    r8       .64 152  0\n"
-		"gpr    r9       .64 160  0\n"
-		"gpr    r10      .64 168  0\n"
-		"gpr    tmp      .64 176  0\n";
-
+		"gpr    r0       .64 80   0\n"
+		"gpr    r1       .64 88   0\n"
+		"gpr    r2       .64 96   0\n"
+		"gpr    r3       .64 104  0\n"
+		"gpr    r4       .64 112  0\n"
+		"gpr    r5       .64 120  0\n"
+		"gpr    r6       .64 128  0\n"
+		"gpr    r7       .64 136  0\n"
+		"gpr    r8       .64 144  0\n"
+		"gpr    r9       .64 152  0\n"
+		"gpr    r10      .64 160  0\n"
+		"gpr    sp       .64 160  0\n"
+		"gpr    tmp      .64 168  0\n";
 
 
 	return r_reg_set_profile_string (anal->reg, p);
@@ -626,13 +612,18 @@ static bool set_reg_profile(RAnal *anal) {
 static int archinfo(RAnal *anal, int q) {
 	const int bits = anal->config->bits;
 	switch (q) {
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 8;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return (bits == 64)? 16: 8;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 8;
 	case R_ANAL_ARCHINFO_ALIGN:
+		return 8;
 	case R_ANAL_ARCHINFO_DATA_ALIGN:
 		return 1;
 	}
-	//case R_ANAL_ARCHINFO_MAX_OP_SIZE:
-	//case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-	return (bits == 64)? 8: 4;
+	return 0;
 }
 
 RAnalPlugin r_anal_plugin_bpf_cs = {
@@ -647,6 +638,7 @@ RAnalPlugin r_anal_plugin_bpf_cs = {
 	.archinfo = archinfo,
 	.set_reg_profile = &set_reg_profile,
 	.op = &analop,
+	.mnemonics = &cs_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE

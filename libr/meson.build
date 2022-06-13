@@ -170,6 +170,7 @@ asm_plugins += [
 # TODO: add the pyc plugin for meson builds too
 anal_plugins += [
   '6502',
+  '6502_cs',
   '8051',
   'amd29k',
   #'arc',
@@ -184,6 +185,7 @@ anal_plugins += [
   'cris',
   'dalvik',
   'ebc',
+  'evm_cs',
   'gb',
   'h8300',
   'i4004',
@@ -203,6 +205,7 @@ anal_plugins += [
   'ppc_cs',
   'propeller',
   'riscv',
+  'riscv_cs',
   'rsp',
   'sh',
   'snes',
