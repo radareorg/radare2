@@ -1312,7 +1312,6 @@ R_API RList *r_vc_git_get_branches(Rvc *rvc) {
 				free (name);
 			}
 		}
-
 	}
 	return ret;
 }
