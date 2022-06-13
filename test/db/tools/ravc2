@@ -3,7 +3,7 @@ FILE=-
 CMDS=<<EOF
 mkdir ravc2_init_test
 cd ravc2_init_test
-!!ravc2 init
+!!ravc2 init rvc
 lr
 !!ravc2 status
 cd ../
@@ -23,7 +23,7 @@ NAME=ravc2 commit
 CMDS=<<EOF
 mkdir ravc2_commit_test
 cd ravc2_commit_test
-!!ravc2 init
+!!ravc2 init rvc
 echo hello > hello
 !!ravc2 commit "hello world!" hello
 !!ravc2 log~!author~!time~!hash
@@ -42,7 +42,7 @@ NAME=ravc2 branch
 CMDS=<<EOF
 mkdir ravc2_branch_test
 cd ravc2_branch_test
-!!ravc2 init
+!!ravc2 init rvc
 !!ravc2 branch hello
 echo hello > hello
 !!ravc2 commit "hello world!" hello
@@ -64,7 +64,7 @@ NAME=ravc2 log
 CMDS=<<EOF
 mkdir ravc2_log_test
 cd ravc2_log_test
-!!ravc2 init
+!!ravc2 init rvc
 echo hello > hello
 !!ravc2 commit "hello world!" hello
 !!ravc2 log~!hash~!author~!time

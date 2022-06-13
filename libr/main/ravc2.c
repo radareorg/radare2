@@ -16,7 +16,7 @@ static void help(void) {
 		" -q                 Be quiet\n"
 		" -v                 Show version\n"
 		" RAVC2_USER=[n]     Override cfg.user value to author commit.\n"
-		" init               Initialize repository in current directory\n"
+		" init [git | rvc]   Initialize repository in current directory\n"
 		" add [file ..]      Add files to the current repository\n"
 		" checkout [name]    Checkout given branch name\n"
 		" log                List commits in current branch\n"
@@ -43,7 +43,6 @@ static char *get_author(void) {
 R_API int r_main_ravc2(int argc, const char **argv) {
 	RGetopt opt;
 	int c;
-	bool git = false;
 	bool quiet = false;
 	bool version = false;
 
@@ -54,9 +53,6 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	r_getopt_init (&opt, argc, argv, "gqvh");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
-		case 'g':
-			git = true;
-			break;
 		case 'q':
 			quiet = true;
 			break;
@@ -80,10 +76,6 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		return r_main_version_print ("ravc2");
 	}
 
-	if (git) {
-		eprintf ("TODO: r_vc_git APIs should be called from r_vc\n");
-		eprintf ("TODO: r_vc_new should accept options argument\n");
-	}
 	const char *action = opt.argv[opt.ind];
 	if (!action) {
 		return 1;
@@ -94,11 +86,20 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 	// commands that don't need Rvc *
 	if (!strcmp (action, "init")) {
-		Rvc *rvc = r_vc_new (rp);
+		Rvc *rvc = NULL;
+		if (opt.argc <= 2) {
+			eprintf("Usage: ravc2 <git | rvc>");
+		} else if (!strcmp (opt.argv[opt.ind + 1], "git")) {
+			rvc = r_vc_git_init (rp);
+		} else if (!strcmp (opt.argv[opt.ind + 1], "rvc")) {
+			rvc = r_vc_new (rp);
+		} else {
+			eprintf ("unkown option %s", opt.argv[opt.ind + 1]);
+		}
 		free (rp);
 		return rvc? !r_vc_save(rvc) : 1;
 	}
-	Rvc *rvc = r_vc_open (rp);
+	Rvc *rvc = rvc_git_open (rp);
 	R_FREE (rp);
 	if (!rvc) {
 		return 1;

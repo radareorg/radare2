@@ -1111,7 +1111,7 @@ R_API Rvc *r_vc_git_open(const char *path) {
 		return NULL;
 	}
 	vc->db = NULL;
-	r_vc_use(vc, VC_GIT);
+	r_vc_use (vc, VC_GIT);
 	return vc;
 }
 
