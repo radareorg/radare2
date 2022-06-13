@@ -1010,43 +1010,46 @@ fail_ret:
 	return false;
 }
 
-R_API RList *r_vc_log(Rvc *rvc) {
+R_API bool r_vc_log(Rvc *rvc) {
 	if (!repo_exists (rvc->path)) {
 		eprintf ("No valid repo in %s\n", rvc->path);
 		return false;
 	}
 	RList *commits = get_commits (rvc, 0);
 	if (!commits) {
-		return NULL;
+		return false;
 	}
+	bool ret = true;
 	RListIter *iter;
 	char *ch;
 	r_list_foreach_prev (commits, iter, ch) {
 		char *cp = r_file_new (rvc->path, ".rvc", "commits", ch, NULL);
 		if (!cp) {
-			goto fail_ret;
+			ret = false;
+			break;
 		}
 		char *contnet = r_file_slurp (cp, 0);
 		free (cp);
 		if (!contnet) {
-			goto fail_ret;
+			ret = false;
+			break;
 		}
-		iter->data = r_str_newf ("hash=%s", (char *) iter->data);
+		printf ("hash=%s", (char *) iter->data);
 		if (!iter->data) {
 			free (contnet);
-			goto fail_ret;
+			ret = false;
+			break;
 		}
 		free (ch);
-		iter->data = r_str_appendf (iter->data, "\n%s", contnet);
+		printf ("\n%s\n****\n", contnet);
 		free (contnet);
 		if (!iter->data) {
-			goto fail_ret;
+			ret = false;
+			break;
 		}
 	}
-	return commits;
-fail_ret:
 	r_list_free (commits);
-	return NULL;
+	return ret;
 }
 
 R_API char *r_vc_current_branch(Rvc *rvc) {

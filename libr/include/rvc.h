@@ -28,7 +28,7 @@ R_API Rvc *r_vc_new(const char *path);
 R_API bool r_vc_checkout(Rvc *rvc, const char *bname);
 R_API RList *r_vc_get_branches(Rvc *rvc);
 R_API RList *r_vc_get_uncommitted(Rvc *rvc);
-R_API RList *r_vc_log(Rvc *rvc);
+R_API bool r_vc_log(Rvc *rvc);
 R_API char *r_vc_current_branch(Rvc *rvc);
 R_API bool r_vc_reset(Rvc *rvc);
 R_API bool r_vc_clone(const Rvc *rvc, const char *dst);

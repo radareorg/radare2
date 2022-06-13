@@ -167,14 +167,10 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	} else if (!strcmp(action, "reset")) {
 		save = r_vc_reset (rvc);
 	} else if (!strcmp(action, "log")) {
-		RList *commits = r_vc_log(rvc);
-		RListIter *iter;
-		const char *commit;
-		r_list_foreach(commits, iter, commit) {
-			printf ("%s\n****\n", commit);
+		if (!r_vc_log(rvc)) {
+			save = false;
 		}
-		r_list_free (commits);
-		return 0;
+		goto ret;
 	} else if (!strcmp (action, "clone")) {
 		free (rp);
 		if (opt.argc < 3) {
