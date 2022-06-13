@@ -9,8 +9,12 @@
 #include "c/tccpp.c"
 #include "c/libtcc.c"
 
-static R_TH_LOCAL RThreadLock r_tcc_lock = R_THREAD_LOCK_INIT;
-static R_TH_LOCAL TCCState *s1 = NULL;
+// used to pass anal and s1 to loader
+typedef struct {
+	RAnal *anal;
+	TCCState *s1;
+} LoadData;
+
 extern int tcc_sym_push(TCCState *s1, char *typename, int typesize, int meta);
 
 /* parse C code and return it in key-value form */
@@ -31,14 +35,15 @@ static void __appendString(const char *msg, char **s) {
 	}
 }
 
-// NOTE: must hold r_tcc_lock
 static bool __typeLoad(void *p, const char *k, const char *v) {
 	r_strf_buffer (128);
 	if (!p) {
 		return false;
 	}
 	int btype = 0;
-	RAnal *anal = (RAnal*)p;
+	LoadData *loader = (LoadData *)p;
+	RAnal *anal = loader->anal;
+	TCCState *s1 = loader->s1;
 	// TCCState *s1 = NULL; // XXX THIS WILL MAKE IT CRASH
 	//r_cons_printf ("tk %s=%s\n", k, v);
 	// TODO: Add unions support
@@ -116,23 +121,21 @@ static TCCState *new_tcc(RAnal *anal) {
 
 R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg) {
 	char *str = NULL;
-	r_th_lock_enter (&r_tcc_lock);
-	TCCState *T = new_tcc (anal);
-	if (!T) {
-		r_th_lock_leave (&r_tcc_lock);
+	TCCState *s1 = new_tcc (anal);
+	if (!s1) {
 		return NULL;
 	}
-	s1 = T; // XXX delete global
-	tcc_set_callback (T, &__appendString, &str);
-	tcc_set_error_func (T, (void *)error_msg, __errorFunc);
-	sdb_foreach (anal->sdb_types, __typeLoad, anal); // why is this needed??
+	tcc_set_callback (s1, &__appendString, &str);
+	tcc_set_error_func (s1, (void *)error_msg, __errorFunc);
+	LoadData load = {anal, s1};
+	sdb_foreach (anal->sdb_types, __typeLoad, (void *)&load); // why is this needed??
 	char *d = strdup (dir);
 	RList *dirs = r_str_split_list (d, ":", 0);
 	RListIter *iter;
 	char *di;
 	bool found = false;
 	r_list_foreach (dirs, iter, di) {
-		if (tcc_add_file (T, path, di) != -1) {
+		if (tcc_add_file (s1, path, di) != -1) {
 			found = true;
 			break;
 		}
@@ -142,28 +145,23 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char 
 	}
 	r_list_free (dirs);
 	free (d);
-	tcc_delete (T);
-	r_th_lock_leave (&r_tcc_lock);
+	tcc_delete (s1);
 	return str;
 }
 
 R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 	char *str = NULL;
-	r_th_lock_enter (&r_tcc_lock);
-	TCCState *T = new_tcc (anal);
-	if (!T) {
+	TCCState *s1 = new_tcc (anal);
+	if (!s1) {
 		R_LOG_ERROR ("Cannot instantiate TCC for given arch (%s)", anal->config->arch);
-		r_th_lock_leave (&r_tcc_lock);
 		return NULL;
 	}
-	s1 = T; // XXX delete global
-	tcc_set_callback (T, &__appendString, &str);
-	tcc_set_error_func (T, (void *)error_msg, __errorFunc);
+	tcc_set_callback (s1, &__appendString, &str);
+	tcc_set_error_func (s1, (void *)error_msg, __errorFunc);
 	sdb_foreach (anal->sdb_types, __typeLoad, NULL);
-	if (tcc_compile_string (T, code) != 0) {
+	if (tcc_compile_string (s1, code) != 0) {
 		R_FREE (str);
 	}
-	tcc_delete (T);
-	r_th_lock_leave (&r_tcc_lock);
+	tcc_delete (s1);
 	return str;
 }

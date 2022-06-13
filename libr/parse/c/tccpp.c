@@ -229,17 +229,15 @@ ST_FUNC TokenSym *tok_alloc(TCCState *s1, const char *str, int len) {
 /* XXX: buffer overflow */
 /* XXX: float tokens */
 ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv) {
-	static R_TH_LOCAL char buf[STRING_MAX_SIZE + 1];
-	static R_TH_LOCAL CString cstr_buf;
 	CString *cstr;
 	char *p;
 	int i, len;
 
 	/* NOTE: to go faster, we give a fixed buffer for small strings */
-	cstr_reset (&cstr_buf);
-	cstr_buf.data = buf;
-	cstr_buf.size_allocated = sizeof (buf);
-	p = buf;
+	cstr_reset (&s1->tok_cstr_buf);
+	s1->tok_cstr_buf.data = s1->tok_buf;
+	s1->tok_cstr_buf.size_allocated = sizeof (s1->tok_buf);
+	p = s1->tok_buf;
 
 	switch (v) {
 	case TOK_CINT:
@@ -257,14 +255,14 @@ ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv) {
 		}
 		break;
 	case TOK_LCHAR:
-		cstr_ccat (&cstr_buf, 'L');
+		cstr_ccat (&s1->tok_cstr_buf, 'L');
 	case TOK_CCHAR:
-		cstr_ccat (&cstr_buf, '\'');
+		cstr_ccat (&s1->tok_cstr_buf, '\'');
 		if (cv) {
-			add_char (&cstr_buf, cv->i);
+			add_char (&s1->tok_cstr_buf, cv->i);
 		}
-		cstr_ccat (&cstr_buf, '\'');
-		cstr_ccat (&cstr_buf, '\0');
+		cstr_ccat (&s1->tok_cstr_buf, '\'');
+		cstr_ccat (&s1->tok_cstr_buf, '\0');
 		break;
 	case TOK_PPNUM:
 		// last crash this is handled in "td enum { FOO=1, BAR };"
@@ -275,29 +273,29 @@ ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv) {
 			len = 0;
 		}
 		for (i = 0; i < len; i++) {
-			add_char (&cstr_buf, ((ut8 *) cstr->data)[i]);
+			add_char (&s1->tok_cstr_buf, ((ut8 *) cstr->data)[i]);
 		}
-		cstr_ccat (&cstr_buf, '\0');
+		cstr_ccat (&s1->tok_cstr_buf, '\0');
 		break;
 	case TOK_LSTR:
-		cstr_ccat (&cstr_buf, 'L');
+		cstr_ccat (&s1->tok_cstr_buf, 'L');
 	case TOK_STR:
 		if (cv) {
 			cstr = cv->cstr;
-			cstr_ccat (&cstr_buf, '\"');
+			cstr_ccat (&s1->tok_cstr_buf, '\"');
 			if (v == TOK_STR) {
 				len = cstr->size - 1;
 				for (i = 0; i < len; i++) {
-					add_char (&cstr_buf, ((ut8 *) cstr->data)[i]);
+					add_char (&s1->tok_cstr_buf, ((ut8 *) cstr->data)[i]);
 				}
 			} else {
 				len = (cstr->size / sizeof (nwchar_t)) - 1;
 				for (i = 0; i < len; i++) {
-					add_char (&cstr_buf, ((nwchar_t *) cstr->data)[i]);
+					add_char (&s1->tok_cstr_buf, ((nwchar_t *) cstr->data)[i]);
 				}
 			}
-			cstr_ccat (&cstr_buf, '\"');
-			cstr_ccat (&cstr_buf, '\0');
+			cstr_ccat (&s1->tok_cstr_buf, '\"');
+			cstr_ccat (&s1->tok_cstr_buf, '\0');
 		} else {
 			eprintf ("cv = nil\n");
 		}
@@ -323,7 +321,7 @@ ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv) {
 					*p++ = q[0];
 					*p++ = q[1];
 					*p = '\0';
-					return buf;
+					return s1->tok_buf;
 				}
 				q += 3;
 			}
@@ -341,7 +339,7 @@ addv:
 		}
 		break;
 	}
-	return cstr_buf.data;
+	return s1->tok_cstr_buf.data;
 }
 
 /* fill input buffer and peek next char */
