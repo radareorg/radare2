@@ -19,6 +19,60 @@
 #include <capstone/m68k.h>
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/M68Kir.html
 
+// clang-format off
+// Source: https://wiki.neogeodev.org/index.php?title=68k_instructions_timings
+
+#define CYCLES_MOVE_LUT_SRCS 12
+#define CYCLES_MOVE_LUT_DSTS 9
+typedef ut8 cycles_move_lut[CYCLES_MOVE_LUT_SRCS][CYCLES_MOVE_LUT_DSTS];
+
+// move.b, move.w
+static cycles_move_lut cycles_move_w = {
+   /*  Dn, An, (An), (An)+, -(An), d(An), d(An,ix), xxx.W, xxx.L */
+    {   4,  4,    8,     8,     8,    12,       14,    12,    16 }, /* Dn       */
+    {   4,  4,    8,     8,     8,    12,       14,    12,    16 }, /* An       */
+    {   8,  8,   12,    12,    12,    16,       18,    16,    20 }, /* (An)     */
+    {   8,  8,   12,    12,    12,    16,       18,    16,    20 }, /* (An)+    */
+    {  10, 10,   14,    14,    14,    18,       20,    18,    22 }, /* -(An)    */
+    {  12, 12,   16,    16,    16,    20,       22,    20,    24 }, /* d(An)    */
+    {  14, 14,   18,    18,    18,    22,       24,    22,    26 }, /* d(An,ix) */
+    {  12, 12,   16,    16,    16,    20,       22,    20,    24 }, /* xxx.W    */
+    {  16, 16,   20,    20,    20,    24,       26,    24,    28 }, /* xxx.L    */
+    {  12, 12,   16,    16,    16,    20,       22,    20,    24 }, /* d(PC)    */
+    {  14, 14,   18,    18,    18,    22,       24,    22,    26 }, /* d(PC,ix) */
+    {  8,   8,   12,    12,    12,    16,       18,    16,    20 }, /* #xxx     */
+};
+
+// move.l
+static cycles_move_lut cycles_move_l = {
+   /*  Dn, An, (An), (An)+, -(An), d(An), d(An,ix), xxx.W, xxx.L */
+    {   4,  4,   12,    12,    12,    16,       18,    16,    20 }, /* Dn       */
+    {   4,  4,   12,    12,    12,    16,       18,    16,    20 }, /* An       */
+    {  12, 12,   20,    20,    20,    24,       26,    24,    28 }, /* (An)     */
+    {  12, 12,   20,    20,    20,    24,       26,    24,    28 }, /* (An)+    */
+    {  14, 14,   22,    22,    22,    26,       28,    26,    30 }, /* -(An)    */
+    {  16, 16,   24,    24,    24,    28,       30,    28,    32 }, /* d(An)    */
+    {  18, 18,   26,    26,    26,    30,       32,    30,    34 }, /* d(An,ix) */
+    {  16, 16,   24,    24,    24,    28,       30,    28,    32 }, /* xxx.W    */
+    {  20, 20,   28,    28,    28,    32,       34,    32,    36 }, /* xxx.L    */
+    {  16, 16,   24,    24,    24,    28,       30,    28,    32 }, /* d(PC)    */
+    {  18, 18,   26,    26,    26,    30,       32,    30,    34 }, /* d(PC,ix) */
+    {  12, 12,   20,    20,    20,    24,       26,    24,    28 }  /* #xxx     */
+};
+
+static int get_move_cycles (m68k_address_mode dst, m68k_address_mode src, bool is_long) {
+	ut8 dst_idx = ((ut8) dst) - 1;
+	ut8 src_idx = ((ut8) src) - 1;
+	if (dst_idx >= CYCLES_MOVE_LUT_DSTS || src_idx > CYCLES_MOVE_LUT_SRCS) {
+		return 0;
+	}
+	cycles_move_lut *lut = is_long? & cycles_move_l: & cycles_move_w;
+	return (*lut)[src_idx][dst_idx];
+}
+
+// End of instruction timings
+// clang-format on
+
 static int get_capstone_mode (RAnal *a) {
 	int mode = a->config->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
@@ -590,6 +644,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->type = R_ANAL_OP_TYPE_LEA;
 		break;
 	case M68K_INS_MOVE:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		assert (m68k->op_count >= 2);
+		assert (m68k->op_size.type == M68K_SIZE_TYPE_CPU);
+		bool is_long = m68k->op_size.cpu_size == M68K_CPU_SIZE_LONG;
+		op->cycles = get_move_cycles (m68k->operands[0].address_mode, m68k->operands[1].address_mode, is_long);
+		break;
 	case M68K_INS_MOVEA:
 	case M68K_INS_MOVEC:
 	case M68K_INS_MOVEM:
