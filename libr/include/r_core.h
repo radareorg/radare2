@@ -250,7 +250,7 @@ typedef enum {
 	VC_GIT
 } VcType;
 
-typedef struct Rvc_t{
+typedef struct r_vc_t {
 	char *path;
 	Sdb *db;
 	bool (*commit) (struct Rvc_t *rvc, const char *message, const char *author, const RList *files);
