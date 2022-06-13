@@ -13,7 +13,7 @@
 typedef struct {
 	RAnal *anal;
 	TCCState *s1;
-} LoadData;
+} LoadContext;
 
 extern int tcc_sym_push(TCCState *s1, char *typename, int typesize, int meta);
 
@@ -41,7 +41,7 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 		return false;
 	}
 	int btype = 0;
-	LoadData *loader = (LoadData *)p;
+	LoadContext *loader = (LoadContext *)p;
 	RAnal *anal = loader->anal;
 	TCCState *s1 = loader->s1;
 	// TCCState *s1 = NULL; // XXX THIS WILL MAKE IT CRASH
@@ -127,8 +127,11 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char 
 	}
 	tcc_set_callback (s1, &__appendString, &str);
 	tcc_set_error_func (s1, (void *)error_msg, __errorFunc);
-	LoadData load = {anal, s1};
-	sdb_foreach (anal->sdb_types, __typeLoad, (void *)&load); // why is this needed??
+
+	// load saved types from sdb into the tcc context
+	LoadContext ctx = {anal, s1};
+	sdb_foreach (anal->sdb_types, __typeLoad, (void *)&ctx);
+
 	char *d = strdup (dir);
 	RList *dirs = r_str_split_list (d, ":", 0);
 	RListIter *iter;
@@ -158,7 +161,11 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 	}
 	tcc_set_callback (s1, &__appendString, &str);
 	tcc_set_error_func (s1, (void *)error_msg, __errorFunc);
-	sdb_foreach (anal->sdb_types, __typeLoad, NULL);
+
+	// load saved types from sdb into the tcc context
+	LoadContext ctx = {anal, s1};
+	sdb_foreach (anal->sdb_types, __typeLoad, (void *)&ctx);
+
 	if (tcc_compile_string (s1, code) != 0) {
 		R_FREE (str);
 	}
