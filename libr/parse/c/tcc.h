@@ -393,6 +393,18 @@ anon_sym: anonymous symbol index
 	const char *global_type;
 	const char *global_symname;
 
+	RPVector *typedefs;
+
+	// callback for appendf
+	void (*cb)(const char *, char **);
+	char **cb_user_data;
+
+	char decl_kind[1024];
+
+	// used to store current token information in the preprocessor
+	char tok_buf[STRING_MAX_SIZE + 1];
+	CString tok_cstr_buf;
+
 	Sym *global_stack;
 	Sym *local_stack;
 	Sym *define_stack;
@@ -720,7 +732,6 @@ static inline int toup(int c) {
 #define ST_INLN
 #define ST_FUNC
 #define ST_DATA extern
-extern char **tcc_cb_ptr;
 #endif
 
 /* ------------ libtcc.c ------------ */
@@ -834,9 +845,9 @@ ST_FUNC long long expr_const(TCCState *s1);
 #define ST_DATA
 #endif
 /********************************************************/
-PUB_FUNC void tcc_appendf(const char *fmt, ...);
-PUB_FUNC void tcc_typedef_appendf(const char *fmt, ...);
-PUB_FUNC void tcc_typedef_alias_fields(const char *alias);
+PUB_FUNC void tcc_appendf(TCCState *s, const char *fmt, ...);
+PUB_FUNC void tcc_typedef_appendf(TCCState *s, const char *fmt, ...);
+PUB_FUNC void tcc_typedef_alias_fields(TCCState *s, const char *alias);
 
 extern void (*tcc_cb)(const char *, char **);
 
