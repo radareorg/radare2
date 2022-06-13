@@ -88,8 +88,8 @@ typedef struct r_bin_wasm_type_vector_t {
 } RBinWasmTypeVec;
 
 typedef struct r_bin_wasm_type_t {
+	ut32 sec_i;
 	ut64 file_offset;
-	ut32 index;
 	ut8 form;
 	RBinWasmTypeVec *args;
 	RBinWasmTypeVec *rets;
@@ -127,26 +127,26 @@ typedef struct r_bin_wasm_import_t {
 } RBinWasmImportEntry;
 
 typedef struct r_bin_wasm_function_t {
+	ut32 sec_i;
 	ut64 file_offset;
-	ut32 index;
 	ut32 typeindex;
 } RBinWasmFunctionEntry;
 
 typedef struct r_bin_wasm_table_t {
-	ut32 index;
+	ut32 sec_i;
 	ut64 file_offset;
 	ut8 element_type; // only anyfunc
 	struct r_bin_wasm_resizable_limits_t limits;
 } RBinWasmTableEntry;
 
 typedef struct r_bin_wasm_memory_t {
-	ut32 index;
+	ut32 sec_i;
 	ut64 file_offset;
 	struct r_bin_wasm_resizable_limits_t limits;
 } RBinWasmMemoryEntry;
 
 typedef struct r_bin_wasm_global_t {
-	ut32 index;
+	ut32 sec_i;
 	ut64 file_offset;
 	r_bin_wasm_value_type_t content_type;
 	ut8 mutability; // 0 if immutable, 1 if mutable
