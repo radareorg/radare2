@@ -601,7 +601,7 @@ static Ase findAssembler(RAsm *a, const char *kw) {
 	return ase;
 }
 
-static char *replace_directives_for(char *str, char *token) {
+static char *replace_directives_for(char *str, const char *token) {
 	RStrBuf *sb = r_strbuf_new ("");
 	char *p = NULL;
 	char *q = str;
@@ -639,7 +639,7 @@ static char *replace_directives_for(char *str, char *token) {
 
 static char *replace_directives(char *str) {
 	int i = 0;
-	char *dir = directives[i++];
+	const char *dir = directives[i++];
 	char *o = replace_directives_for (str, dir);
 	while (dir) {
 		o = replace_directives_for (o, dir);
@@ -650,7 +650,7 @@ static char *replace_directives(char *str) {
 
 R_API void r_asm_list_directives(void) {
 	int i = 0;
-	char *dir = directives[i++];
+	const char *dir = directives[i++];
 	while (dir) {
 		printf ("%s\n", dir);
 		dir = directives[i++];
