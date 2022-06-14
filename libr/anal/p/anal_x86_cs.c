@@ -235,7 +235,7 @@ static bool is_xmm_reg(cs_x86_op op) {
  * @return         Pointer to esil operand in static array
  */
 static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel, ut32 *bitsize) {
-	static char buf[AR_DIM][BUF_SZ];
+	static R_TH_LOCAL char buf[AR_DIM][BUF_SZ];
 	char *out = buf[sel];
 	const char *setarg = r_str_get (setop);
 	cs_insn *insn = gop->insn;
