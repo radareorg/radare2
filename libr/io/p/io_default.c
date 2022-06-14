@@ -1,9 +1,7 @@
-/* radare - LGPL - Copyright 2008-2021 - pancake */
+/* radare - LGPL - Copyright 2008-2022 - pancake */
 
-#include <r_userconf.h>
 #include <r_io.h>
 #include <r_lib.h>
-#include <stdio.h>
 
 typedef struct r_io_mmo_t {
 	char *filename;
@@ -60,13 +58,11 @@ static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int wh
 
 static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	RIO* io = mmo->io_backref;
-	ut64 cur;
+	ut64 cur = 0;
 	if (mmo->buf) {
 		cur = r_buf_tell (mmo->buf);
 		r_buf_free (mmo->buf);
 		mmo->buf = NULL;
-	} else {
-		cur = 0;
 	}
 	st64 sz = r_file_size (mmo->filename);
 	if (sz > ST32_MAX) {
@@ -86,17 +82,15 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	if (mmo->buf) {
 		r_io_def_mmap_seek (io, mmo, cur, SEEK_SET);
 		return true;
-	} else {
-		mmo->rawio = true;
-		mmo->fd = __io_posix_open (mmo->filename, mmo->perm, mmo->mode);
-		if (mmo->nocache) {
-#ifdef F_NOCACHE
-			fcntl (mmo->fd, F_NOCACHE, 1);
-#endif
-		}
-		return mmo->fd != -1;
 	}
-	return false;
+	mmo->rawio = true;
+	mmo->fd = __io_posix_open (mmo->filename, mmo->perm, mmo->mode);
+	if (mmo->nocache) {
+#ifdef F_NOCACHE
+		fcntl (mmo->fd, F_NOCACHE, 1);
+#endif
+	}
+	return mmo->fd != -1;
 }
 
 static void r_io_def_mmap_free(RIOMMapFileObj *mmo) {
