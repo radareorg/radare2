@@ -619,15 +619,16 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		if (anal->opt.recont) {
 			return R_ANAL_RET_END;
 		}
-		if (anal->verbose) {
-			eprintf ("r_anal_function_bb() fails at 0x%"PFMT64x "\n", addr);
-		}
+		R_LOG_DEBUG ("r_anal_function_bb() fails at 0x%"PFMT64x, addr);
 		return R_ANAL_RET_ERROR; // MUST BE NOT DUP
 	}
 
 	bb = fcn_append_basic_block (anal, fcn, addr);
-	// we checked before whether there is a bb at addr, so the create should have succeeded
-	r_return_val_if_fail (bb, R_ANAL_RET_ERROR);
+	if (!bb) {
+		// we checked before whether there is a bb at addr, so the create should have succeeded
+		R_LOG_DEBUG ("Missing basic block assertion failed");
+		return R_ANAL_RET_ERROR;
+	}
 
 	if (!anal->leaddrs) {
 		anal->leaddrs = r_list_newf (free_leaddr_pair);
