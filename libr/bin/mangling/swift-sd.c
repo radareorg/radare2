@@ -98,7 +98,7 @@ static const char *getstring(const char *s, int len) {
 	return buf;
 }
 
-static const char *resolve(struct Type *t, const char *foo, const char **bar) {
+static const char *resolve(const struct Type *t, const char *foo, const char **bar) {
 	if (!t || !foo || !*foo) {
 		return NULL;
 	}
