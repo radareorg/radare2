@@ -63,7 +63,7 @@ static cycles_move_lut cycles_move_l = {
 static int get_move_cycles (m68k_address_mode dst, m68k_address_mode src, bool is_long) {
 	ut8 dst_idx = ((ut8) dst) - 1;
 	ut8 src_idx = ((ut8) src) - 1;
-	if (dst_idx >= CYCLES_MOVE_LUT_DSTS || src_idx > CYCLES_MOVE_LUT_SRCS) {
+	if (dst_idx >= CYCLES_MOVE_LUT_DSTS || src_idx >= CYCLES_MOVE_LUT_SRCS) {
 		return 0;
 	}
 	cycles_move_lut *lut = is_long? & cycles_move_l: & cycles_move_w;
