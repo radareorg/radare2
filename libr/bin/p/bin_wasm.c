@@ -15,11 +15,41 @@ static bool check_buffer(RBinFile *bf, RBuffer *rbuf) {
 	return rbuf && r_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
 }
 
-static bool find_export(const ut32 *p, const RBinWasmExportEntry *q) {
-	if (q->kind != R_BIN_WASM_EXTERNALKIND_Function) {
-		return true;
+struct search_fields {
+	ut8 kind;
+	ut32 index;
+};
+
+static int _export_finder(const void *_exp, const void *_needle) {
+	const RBinWasmExportEntry *exp = _exp;
+	const struct search_fields *needle = _needle;
+	st64 diff = (st64)exp->kind - needle->kind;
+	if (!diff) {
+		diff = (st64)exp->index - needle->index;
+		if (!diff) {
+			return 0;
+		}
 	}
-	return q->index != *p;
+	return diff > 0? 1: -1;
+}
+
+static int _export_sorter(const void *_a, const void *_b) {
+	const RBinWasmExportEntry *a = _a;
+	const RBinWasmExportEntry *b = _b;
+	st64 diff = (st64)a->kind - b->kind;
+	if (!diff) {
+		diff = (st64)a->index - b->index;
+		if (!diff) { // index collision shouldn't happen
+			diff = (st64)a->sec_i - b->sec_i;
+		}
+	}
+	return diff > 0? 1: -1;
+}
+
+static RBinWasmExportEntry *find_export(RPVector *exports, ut8 kind, ut32 index) {
+	struct search_fields sf = { .kind = kind, .index = index };
+	int n = r_pvector_bsearch (exports, (void *)&sf, _export_finder);
+	return n >= 0? r_pvector_at (exports, n): NULL;
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
@@ -43,8 +73,6 @@ static ut64 baddr(RBinFile *bf) {
 static RBinAddr *binsym(RBinFile *bf, int type) {
 	return NULL; // TODO
 }
-
-static RList *sections(RBinFile *bf);
 
 static RList *entries(RBinFile *bf) {
 	RBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
@@ -118,63 +146,22 @@ alloc_err:
 	return NULL;
 }
 
-static bool sym_add_exports(RList *exports, RList *syms) {
-	RBinWasmExportEntry *exp;
-	RListIter *iter;
-	r_list_foreach (exports, iter, exp) {
-		RBinSymbol *binsym = R_NEW0 (RBinSymbol);
-		if (!binsym) {
-			return false;
-		}
-		binsym->name = strdup (exp->field_str);
-		binsym->libname = NULL;
-		binsym->is_imported = false;
-		binsym->forwarder = "NONE";
-		binsym->bind = "NONE";
-		switch (exp->kind) {
-		case R_BIN_WASM_EXTERNALKIND_Function:
-			binsym->type = R_BIN_TYPE_FUNC_STR;
-			binsym->bind = R_BIN_BIND_GLOBAL_STR;
-			break;
-		case R_BIN_WASM_EXTERNALKIND_Table:
-			binsym->type = "TABLE";
-			break;
-		case R_BIN_WASM_EXTERNALKIND_Memory:
-			binsym->type = "MEMORY";
-			break;
-		case R_BIN_WASM_EXTERNALKIND_Global:
-			binsym->type = R_BIN_BIND_GLOBAL_STR;
-			break;
-		}
-		binsym->size = 0;
-		binsym->vaddr = -1;
-		binsym->paddr = -1;
-		binsym->ordinal = exp->index;
-		r_list_append (syms, binsym);
-	}
-	return true;
-}
-
 static RList *symbols(RBinFile *bf) {
-	RList *ret = NULL, *codes = NULL, *imports = NULL, *exports = NULL;
 	RBinSymbol *ptr = NULL;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	RBinWasmObj *bin = bf->o->bin_obj;
-	if (!(ret = r_list_newf ((RListFree)free))) {
-		return NULL;
-	}
-	if (!(codes = r_bin_wasm_get_codes (bin))) {
+	RList *ret = r_list_newf ((RListFree)free);
+	RList *codes = r_bin_wasm_get_codes (bin);
+	RList *imports = r_bin_wasm_get_imports (bin);
+	RPVector *exports = r_bin_wasm_get_exports (bin);
+
+	if (!ret || !codes || !imports || !exports) {
 		goto bad_alloc;
 	}
-	if (!(imports = r_bin_wasm_get_imports (bin))) {
-		goto bad_alloc;
-	}
-	if (!(exports = r_bin_wasm_get_exports (bin))) {
-		goto bad_alloc;
-	}
+	r_pvector_sort (exports, _export_sorter);
 
 	ut32 fcn_idx = 0,
 	     table_idx = 0,
@@ -219,33 +206,23 @@ static RList *symbols(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 
-	if (!sym_add_exports (exports, ret)) {
-		goto bad_alloc;
-	}
-
-	RListIter *is_exp = NULL;
+	RBinWasmExportEntry *exp;
 	RBinWasmCodeEntry *func;
 	r_list_foreach (codes, iter, func) {
-		if (!(ptr = R_NEW0 (RBinSymbol))) {
+		ptr = R_NEW0 (RBinSymbol);
+		if (!ptr) {
 			goto bad_alloc;
 		}
-		const char *fcn_name = r_bin_wasm_get_function_name (bin, fcn_idx);
-		if (fcn_name) {
-			ptr->name = strdup (fcn_name);
-
-			is_exp = r_list_find (exports, &fcn_idx, (RListComparator)find_export);
-			if (is_exp) {
-				ptr->bind = R_BIN_BIND_GLOBAL_STR;
-			}
+		exp = find_export (exports, R_BIN_WASM_EXTERNALKIND_Function, fcn_idx);
+		if (exp) {
+			ptr->name = strdup (exp->field_str);
+			ptr->bind = R_BIN_BIND_GLOBAL_STR;
 		} else {
-			// fallback if symbol is not found.
-			ptr->name = r_str_newf ("fcn.%d", fcn_idx);
-		}
-
-		ptr->forwarder = "NONE";
-		if (!ptr->bind) {
 			ptr->bind = "NONE";
+			const char *name = r_bin_wasm_get_function_name (bin, fcn_idx);
+			ptr->name = name? strdup (name): r_str_newf ("fcn.%d", fcn_idx);
 		}
+		ptr->forwarder = "NONE";
 		ptr->type = R_BIN_TYPE_FUNC_STR;
 		ptr->size = func->len;
 		ptr->vaddr = (ut64)func->code;
@@ -260,7 +237,7 @@ static RList *symbols(RBinFile *bf) {
 	return ret;
 bad_alloc:
 	// not so sure if imports should be freed.
-	r_list_free (exports);
+	r_pvector_free (exports);
 	r_list_free (codes);
 	r_list_free (ret);
 	return NULL;
