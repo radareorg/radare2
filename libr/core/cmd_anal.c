@@ -10715,7 +10715,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	return res;
 }
 
-static const char *oldstr = NULL;
+static R_TH_LOCAL const char *oldstr = NULL;
 
 static int compute_coverage(RCore *core) {
 	RListIter *iter;

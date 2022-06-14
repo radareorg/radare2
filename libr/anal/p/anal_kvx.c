@@ -7,7 +7,7 @@
 
 #include "kvx.h"
 
-const char *kvx_reg_profile = ""
+static const char *kvx_reg_profile = ""
 	"=PC	pc\n"
 	"=SP	r12\n"
 	"=LR	ra\n"

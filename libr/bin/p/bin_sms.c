@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2018 - shengdi */
+/* radare - LGPL - Copyright 2015-2022 - shengdi */
 
 #include <r_bin.h>
 
@@ -11,7 +11,7 @@ typedef struct gen_hdr {
 	ut8 RegionRomSize; //Low 4 bits RomSize, Top 4 bits Region
 } SMS_Header;
 
-static ut32 cb = 0;
+static R_TH_LOCAL ut32 cb = 0;
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut32 *off, offs[] = { 0x2000, 0x4000, 0x8000, 0x9000, 0 };

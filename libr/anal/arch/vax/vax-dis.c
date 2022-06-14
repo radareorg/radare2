@@ -30,8 +30,8 @@
 
 #if _MSC_VER || _WIN32
 #define OPCODES_SIGJMP_BUF void*
-static int OPCODES_SIGSETJMP(void *x) { return 0; }
-static void OPCODES_SIGLONGJMP(void *buf,int val)	{ /* nothing */ }
+static inline int OPCODES_SIGSETJMP(void *x) { return 0; }
+static inline void OPCODES_SIGLONGJMP(void *buf, int val) { /* nothing */ }
 #else
 #define OPCODES_SIGSETJMP(buf) sigsetjmp((buf), 0)
 #define OPCODES_SIGJMP_BUF sigjmp_buf
@@ -39,15 +39,13 @@ static void OPCODES_SIGLONGJMP(void *buf,int val)	{ /* nothing */ }
 #endif
 #define BSF_SYNTHETIC           (1 << 21)
 
-static char *reg_names[] =
-{
+static const char *reg_names[] = {
   "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
   "r8", "r9", "r10", "r11", "ap", "fp", "sp", "pc"
 };
 
 /* Definitions for the function entry mask bits.  */
-static char *entry_mask_bit[] =
-{
+static const char *entry_mask_bit[] = {
   /* Registers 0 and 1 shall not be saved, since they're used to pass back
      a function's result to its caller...  */
   "~r0~", "~r1~",

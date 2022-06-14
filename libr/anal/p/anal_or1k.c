@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2019 - v3l0c1r4pt0r */
+/* radare2 - LGPL - Copyright 2019-2022 - v3l0c1r4pt0r */
 
 #include <r_asm.h>
 #include <r_anal.h>
@@ -17,9 +17,8 @@ struct operands {
 	ut32 l;
 };
 
-static ut32 cpu[32] = {0}; /* register contents */
-static ut32 cpu_enable; /* allows to treat only registers with known value as
-	valid */
+static R_TH_LOCAL ut32 cpu[32] = {0}; /* register contents */
+static R_TH_LOCAL ut32 cpu_enable; /* allows to treat only registers with known value as valid */
 
 /**
  * \brief Convert raw N operand to complete address
@@ -172,15 +171,14 @@ static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, R
 
 	/* if name is null, but extra is present, it means 6 most significant bits
 	 * are not enough to decode instruction */
-	if ((insn_descr->name == NULL) && (insn_descr->extra)) {
-		extra_descr = find_extra_descriptor(insn_descr->extra, insn);
+	if (!insn_descr->name && (insn_descr->extra)) {
+		extra_descr = find_extra_descriptor (insn_descr->extra, insn);
 		if (extra_descr) {
-			insn_to_op(a, op, addr, insn_descr, extra_descr, insn);
+			insn_to_op (a, op, addr, insn_descr, extra_descr, insn);
 		}
-	}
-	else {
+	} else {
 		/* otherwise basic descriptor is enough */
-		insn_to_op(a, op, addr, insn_descr, NULL, insn);
+		insn_to_op (a, op, addr, insn_descr, NULL, insn);
 	}
 
 	return op->size;

@@ -1926,8 +1926,8 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 #define MYDB 1
 /* this is a VERY VERY VERY hacky and bad workaround that needs proper refactoring in Rbin to use Sdb */
 #if MYDB
-R_DEPRECATE static Sdb *mydb = NULL;
-R_DEPRECATE static RList *osymbols = NULL;
+R_DEPRECATE static R_TH_LOCAL Sdb *mydb = NULL;
+R_DEPRECATE static R_TH_LOCAL RList *osymbols = NULL;
 
 R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RList *symbols, const char *name, ut64 addr) {
 	r_strf_buffer(64);

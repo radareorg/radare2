@@ -252,7 +252,7 @@ static int cmd_egg(void *data, const char *input) {
 		break;
 	case 'S': // "gS"
 	{
-		static const char *configList[] = {
+		const char *configList[] = {
 			"egg.shellcode",
 			"egg.encoder",
 			"egg.padding",

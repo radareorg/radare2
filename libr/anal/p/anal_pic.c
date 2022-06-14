@@ -8,6 +8,9 @@
 #include "../../asm/arch/pic/pic_baseline.h"
 #include "../../asm/arch/pic/pic_pic18.h"
 
+static R_TH_LOCAL RIODesc *mem_sram = NULL;
+static R_TH_LOCAL RIODesc *mem_stack = NULL;
+
 static char *asm_pic_disassemble(const char *cpu, const ut8 *b, int l, int *opsz) {
 	char *opstr = NULL;
 	if (R_STR_ISNOTEMPTY (cpu)) {
@@ -646,9 +649,6 @@ static void anal_pic_midrange_extract_args(ut16 instr,
 	}
 }
 
-static RIODesc *mem_sram = 0;
-static RIODesc *mem_stack = 0;
-
 static RIODesc *cpu_memory_map(RIOBind *iob, RIODesc *desc, ut32 addr,
 				ut32 size) {
 	char *mstr = r_str_newf ("malloc://%d", size);
@@ -673,7 +673,7 @@ static bool pic_midrange_reg_write(RReg *reg, const char *regname, ut32 num) {
 }
 
 static void anal_pic_midrange_malloc(RAnal *anal, bool force) {
-	static bool init_done = false;
+	static R_TH_LOCAL bool init_done = false;
 
 	if (!init_done || force) {
 		// Allocate memory as needed.

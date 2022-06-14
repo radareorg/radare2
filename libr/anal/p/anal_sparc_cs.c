@@ -74,10 +74,10 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 }
 
 static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
-	static RRegItem reg;
+	static R_TH_LOCAL RRegItem reg;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
-		if (INSOP(0).type == SPARC_OP_MEM) {
+		if (INSOP (0).type == SPARC_OP_MEM) {
 			ZERO_FILL (reg);
 			op->src[0] = r_anal_value_new ();
 			op->src[0]->reg = &reg;
@@ -86,7 +86,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
-		if (INSOP(1).type == SPARC_OP_MEM) {
+		if (INSOP (1).type == SPARC_OP_MEM) {
 			ZERO_FILL (reg);
 			op->dst = r_anal_value_new ();
 			op->dst->reg = &reg;

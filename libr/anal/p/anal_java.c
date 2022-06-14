@@ -1,9 +1,5 @@
-/* radare - Apache 2.0 - Copyright 2010-2019 - pancake and
- Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - Apache 2.0 - Copyright 2010-2022 - pancake and Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
-#include <string.h>
-
-#include <r_types.h>
 #include <r_lib.h>
 #include <r_anal.h>
 
@@ -14,14 +10,11 @@
 #define DO_THE_DBG 0
 #define IFDBG  if(DO_THE_DBG)
 
-static ut64 METHOD_START = 0;
+static R_TH_LOCAL ut64 METHOD_START = 0;
 
 static void java_update_anal_types(RAnal *anal, RBinJavaObj *bin_obj);
-
 static int java_cmd_ext(RAnal *anal, const char* input);
-
 static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
-
 static RBinJavaObj *get_java_bin_obj(RAnal *anal);
 
 static RBinJavaObj *get_java_bin_obj(RAnal *anal) {

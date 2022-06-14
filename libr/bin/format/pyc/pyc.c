@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016-2020 - c0riolis, x0urc3 */
+/* radare - LGPL3 - Copyright 2016-2022 - c0riolis, x0urc3 */
 
 #include "pyc.h"
 #include "marshal.h"
@@ -7,7 +7,7 @@ bool pyc_get_sections_symbols(RList *sections, RList *symbols, RList *cobjs, RBu
 	return get_sections_symbols_from_code_objects (buf, sections, symbols, cobjs, magic);
 }
 
-static bool pyc_is_object(ut8 b, pyc_marshal_type type) {
+static inline bool pyc_is_object(ut8 b, pyc_marshal_type type) {
 	return b == type;
 }
 

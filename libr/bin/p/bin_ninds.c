@@ -1,14 +1,11 @@
-/* radare - LGPL - 2015-2019 - a0rtega */
+/* radare - LGPL - 2015-2022 - a0rtega */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-#include <string.h>
 
 #include "../format/nin/nds.h"
 
-static struct nds_hdr loaded_header;
+static R_TH_LOCAL struct nds_hdr loaded_header = {0};
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 ninlogohead[6];

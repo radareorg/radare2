@@ -18,7 +18,7 @@ typedef struct {
 	ut32 map_pdata;
 } i8051_cpu_model;
 
-static i8051_cpu_model cpu_models[] = {
+static const i8051_cpu_model cpu_models[] = {
 	{
 		.name = "8051-generic",
 		.map_code	= 0,
@@ -40,8 +40,8 @@ static i8051_cpu_model cpu_models[] = {
 	}
 };
 
-static bool i8051_is_init = false;
-static const i8051_cpu_model *cpu_curr_model = NULL;
+static R_TH_LOCAL bool i8051_is_init = false;
+static R_TH_LOCAL const i8051_cpu_model *cpu_curr_model = NULL;
 
 static bool i8051_reg_write(RReg *reg, const char *regname, ut32 num) {
 	if (reg) {
@@ -70,9 +70,9 @@ typedef struct {
 	const char *name;
 } i8051_map_entry;
 
-static const int I8051_IDATA = 0;
-static const int I8051_SFR = 1;
-static const int I8051_XDATA = 2;
+static R_TH_LOCAL const int I8051_IDATA = 0;
+static R_TH_LOCAL const int I8051_SFR = 1;
+static R_TH_LOCAL const int I8051_XDATA = 2;
 
 static i8051_map_entry mem_map[3] = {
 	{ NULL, UT32_MAX, "idata" },
