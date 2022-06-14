@@ -225,10 +225,10 @@ static const char *help_msg_slash_x[] = {
 	NULL
 };
 
-static int preludecnt = 0;
-static int searchflags = 0;
-static int searchshow = 0;
-static const char *searchprefix = NULL;
+static R_TH_LOCAL int preludecnt = 0;
+static R_TH_LOCAL int searchflags = 0;
+static R_TH_LOCAL int searchshow = 0;
+static R_TH_LOCAL const char *searchprefix = NULL;
 
 struct search_parameters {
 	RCore *core;

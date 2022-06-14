@@ -3,7 +3,7 @@
 #include "kvx.h"
 #include "kvx-reg.h"
 
-char *kv3_reg_srf[] = {
+static const char *kv3_reg_srf[] = {
 	"$pc",
 	"$ps",
 	"$pcr",

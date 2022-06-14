@@ -14,7 +14,7 @@ typedef struct {
 	bool canRight;
 } RCoreVisualViewZigns;
 
-static const char *cur_name = NULL;
+static R_TH_LOCAL const char *cur_name = NULL;
 
 static char *print_item(void *_core, void *_item, bool selected) {
 	RSignItem *item = _item;

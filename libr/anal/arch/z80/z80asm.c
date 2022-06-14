@@ -29,8 +29,8 @@
 /* hack */
 // must remove: equ, include, incbin, macro
 // static void wrt_ref (int val, int type, int count);
-static unsigned char *obuf;
-static int obuflen = 0;
+static R_TH_LOCAL unsigned char *obuf = NULL;
+static R_TH_LOCAL int obuflen = 0;
 #define write_one_byte(x, y) obuf[obuflen++] = x
 #define wrtb(x) obuf[obuflen++] = x
 
@@ -51,41 +51,43 @@ static const char *mnemonics[] = {
 };
 
 /* current line, address and file */
-static int addr = 0, file;
+static R_TH_LOCAL int addr = 0, file;
 /* current number of characters in list file, for indentation */
 // static int listdepth;
 
 /* use readbyte instead of (hl) if writebyte is true */
-static int writebyte;
-static const char *readbyte;
+static R_TH_LOCAL int writebyte;
+static R_TH_LOCAL const char *readbyte;
 /* variables which are filled by rd_* functions and used later,
  * like readbyte */
-static const char *readword, *indexjmp, *bitsetres;
+static R_TH_LOCAL const char *readword;
+static R_TH_LOCAL const char *indexjmp;
+static R_TH_LOCAL const char *bitsetres;
 
 /* 0, 0xdd or 0xfd depening on which index prefix should be given */
-static int indexed;
+static R_TH_LOCAL int indexed;
 
 /* increased for every -v option on the command line */
-static int verbose = 0;
+static R_TH_LOCAL int verbose = 0;
 
 /* read commas after indx() if comma > 1. increase for every call */
-static int comma;
+static R_TH_LOCAL int comma;
 
 /* address at start of line (for references) */
-static int baseaddr;
+static R_TH_LOCAL int baseaddr;
 
 /* set by readword and readbyte, used for new_reference */
-static char mem_delimiter;
+static R_TH_LOCAL char mem_delimiter;
 
 /* line currently being parsed */
-static char *z80buffer = NULL;
+static R_TH_LOCAL char *z80buffer = NULL;
 
 /* if a macro is currently being defined */
-static int define_macro = 0;
+static R_TH_LOCAL int define_macro = 0;
 
 /* file (and macro) stack */
-static int sp;
-static struct stack stack[MAX_INCLUDE];	/* maximum level of includes */
+static R_TH_LOCAL int sp;
+static R_TH_LOCAL struct stack stack[MAX_INCLUDE]; /* maximum level of includes */
 
 /* hack */
 #include "expressions.c"
@@ -111,8 +113,7 @@ static void printerr(int error, const char *fmt, ...) {
 
 /* skip over spaces in string */
 static const char *delspc(const char *ptr) {
-	while (*ptr && isspace ((const unsigned char) *ptr))
-		ptr++;
+	ptr = r_str_trim_head_ro (ptr);
 	if (*ptr == ';') {
 		ptr = "";
 	}

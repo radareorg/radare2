@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 - LGPL, SkUaTeR, All rights reserved.
+// Copyright (c) 2016-2022 - LGPL, SkUaTeR, All rights reserved.
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -9,8 +9,8 @@ typedef struct {
 	libbochs_t desc;
 } RIOBochs;
 
-static libbochs_t *desc = NULL;
-static RIODesc *riobochs = NULL;
+static R_TH_LOCAL libbochs_t *desc = NULL;
+static R_TH_LOCAL RIODesc *riobochs = NULL;
 extern RIOPlugin r_io_plugin_bochs; // forward declaration
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
@@ -19,7 +19,6 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIOBochs  *riob;
-	lprintf("io_open\n");
 	const char *i;
 	char * fileBochs = NULL;
 	char * fileCfg = NULL;
@@ -28,7 +27,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	if (r_sandbox_enable (false)) {
-		eprintf ("sandbox exit\n");
 		return NULL;
 	}
 	if (riobochs) {
@@ -56,7 +54,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		free(fileCfg);
 		return riobochs;
 	}
-	lprintf ("bochsio.open: Cannot connect to bochs.\n");
 	free (riob);
 	free (fileBochs);
 	free (fileCfg);
@@ -64,12 +61,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	lprintf("io_write\n");
 	return -1;
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	lprintf("io_seek %016"PFMT64x" \n",offset);
 	return offset;
 }
 
@@ -79,7 +74,6 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!desc || !desc->data) {
 		return -1;
 	}
-	lprintf ("io_read ofs= %016"PFMT64x" count= %x\n", io->off, count);
 	bochs_read (desc,addr,count,buf);
 	return count;
 }
@@ -95,7 +89,6 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		lprintf ("Usage: =!cmd args\n"
 				" =!:<bochscmd>      - Send a bochs command.\n"
 				" =!dobreak	  - pause bochs.\n");
-		lprintf ("io_system: Enviando commando bochs\n");
 		bochs_send_cmd (desc, &cmd[1], true);
 		io->cb_printf ("%s\n", desc->data);
 	} else if (!strncmp (cmd, "dobreak", 7)) {

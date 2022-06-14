@@ -14,7 +14,7 @@ static R_TH_LOCAL ut32 symbols_ordinal = 0;
 static R_TH_LOCAL RList *refs = NULL; // If you don't have a good reason, do not change this. And also checkout !refs in get_code_object()
 
 /* interned_table is used to handle TYPE_INTERNED object */
-extern RList *interned_table;
+extern R_TH_LOCAL RList *interned_table = NULL;
 
 static pyc_object *get_object(RBuffer *buffer);
 static pyc_object *copy_object(pyc_object *object);

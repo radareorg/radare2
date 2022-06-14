@@ -12,9 +12,9 @@
 #define RISCVARGSIZE (64)
 #define RISCVARGN(x) ((x)->arg[(x)->num++])
 
-static bool init = false;
-static const char *const *riscv_gpr_names = riscv_gpr_names_abi;
-static const char *const *riscv_fpr_names = riscv_fpr_names_abi;
+static R_TH_LOCAL bool init = false;
+static R_TH_LOCAL const char *const *riscv_gpr_names = riscv_gpr_names_abi;
+static R_TH_LOCAL const char *const *riscv_fpr_names = riscv_fpr_names_abi;
 
 typedef struct riscv_args {
 	int num;
@@ -47,7 +47,7 @@ static void arg_p2(char *buf, unsigned long val, const char* const* array, size_
 
 static struct riscv_opcode *get_opcode(insn_t word) {
 	struct riscv_opcode *op = NULL;
-	static const struct riscv_opcode *riscv_hash[OP_MASK_OP + 1] = {0};
+	static R_TH_LOCAL const struct riscv_opcode *riscv_hash[OP_MASK_OP + 1] = {0};
 
 #define OP_HASH_IDX(i) ((i) & (riscv_insn_length (i) == 2 ? 3 : OP_MASK_OP))
 

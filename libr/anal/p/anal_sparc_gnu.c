@@ -42,10 +42,12 @@ enum {
 	GPR_I7 = 31,
 };
 
-const char * gpr_regs[] = {"g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
+static const char * gpr_regs[] = {
+	"g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
 	"o0", "o1", "o2", "o3", "o4", "o5", "o6", "o7",
 	"l0", "l1", "l2", "l3", "l4", "l5", "l6", "l7",
-	"i0", "i1", "i2", "i3", "i4", "i5", "i6","i7"};
+	"i0", "i1", "i2", "i3", "i4", "i5", "i6","i7"
+};
 
 enum {
 	ICC_A = 0x8,
@@ -307,27 +309,21 @@ static void anal_jmpl(RAnal const *const anal, RAnalOp *op, const ut32 insn, con
 	if (X_LDST_I (insn)) {
 		disp = get_immed_sgnext (insn, 12);
 	}
-
-	if (X_RD(insn) == GPR_O7) {
+	if (X_RD (insn) == GPR_O7) {
 		op->type = R_ANAL_OP_TYPE_UCALL;
 		op->fail = addr + 4;
-	} else if (X_RD(insn) == GPR_G0
-		&& X_LDST_I(insn) == 1
-		&& (X_RS1(insn) == GPR_I7 || X_RS1(insn) == GPR_O7)
-		&& disp == 8) {
-			op->type = R_ANAL_OP_TYPE_RET;
-			op->eob = true;
-			return;
-		 }
-	else {
-		op->type = R_ANAL_OP_TYPE_UJMP;
+	} else if (X_RD (insn) == GPR_G0 && X_LDST_I (insn) == 1 && (X_RS1 (insn) == GPR_I7 || X_RS1 (insn) == GPR_O7) && disp == 8) {
+		op->type = R_ANAL_OP_TYPE_RET;
 		op->eob = true;
+		return;
 	}
+	op->type = R_ANAL_OP_TYPE_UJMP;
+	op->eob = true;
 
-	if(X_LDST_I(insn)) {
-		op->dst = value_fill_addr_reg_disp(anal, X_RS1(insn), disp);
+	if (X_LDST_I(insn)) {
+		op->dst = value_fill_addr_reg_disp (anal, X_RS1 (insn), disp);
 	} else {
-		op->dst = value_fill_addr_reg_regdelta(anal, X_RS1(insn), X_RS2(insn));
+		op->dst = value_fill_addr_reg_regdelta (anal, X_RS1 (insn), X_RS2 (insn));
 	}
 }
 
@@ -337,11 +333,11 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 	op->eob = true;
 
 	/* handle the conditions */
-	if(X_OP2(insn) == OP2_Bicc || X_OP2(insn) == OP2_BPcc) {
+	if (X_OP2(insn) == OP2_Bicc || X_OP2(insn) == OP2_BPcc) {
 		r_cond = icc_to_r_cond (X_COND(insn));
-	} else if(X_OP2(insn) == OP2_FBfcc || X_OP2(insn) == OP2_FBPfcc) {
+	} else if (X_OP2(insn) == OP2_FBfcc || X_OP2(insn) == OP2_FBPfcc) {
 		r_cond = fcc_to_r_cond (X_COND(insn));
-	} else if(X_OP2(insn) == OP2_BPr) {
+	} else if (X_OP2(insn) == OP2_BPr) {
 		r_cond = R_ANAL_COND_UNKNOWN;
 	}
 
@@ -350,11 +346,9 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 	} else if (r_cond == R_ANAL_COND_NEVER) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return;
-	} else {
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->fail = addr + 4;
 	}
-
+	op->type = R_ANAL_OP_TYPE_CJMP;
+	op->fail = addr + 4;
 
 	/* handle displacement */
 	if (X_OP2 (insn) == OP2_Bicc || X_OP2 (insn) == OP2_FBfcc) {
@@ -377,7 +371,7 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->addr = addr;
 	op->size = sz;
 
-	if(!anal->config->big_endian) {
+	if (!anal->config->big_endian) {
 		((char*)&insn)[0] = data[3];
 		((char*)&insn)[1] = data[2];
 		((char*)&insn)[2] = data[1];
@@ -387,7 +381,7 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 
 	if (X_OP (insn) == OP_0) {
-		switch(X_OP2(insn)) {
+		switch(X_OP2 (insn)) {
 		case OP2_ILLTRAP:
 		case OP2_INV:
 			op->type = R_ANAL_OP_TYPE_ILL;
@@ -401,9 +395,9 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			anal_branch(op, insn, addr);
 			break;
 		}
-	} else if(X_OP(insn) == OP_1) {
+	} else if (X_OP (insn) == OP_1) {
 		anal_call(op, insn, addr);
-	} else if(X_OP(insn) == OP_2) {
+	} else if (X_OP (insn) == OP_2) {
 		switch(X_OP3(insn))
 		 {
 		case OP32_INV1:
@@ -415,19 +409,19 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			sz = 0; /* make r_core_anal_bb stop */
 			break;
 		case OP32_CONDINV1:
-			if(X_RD(insn) == 1) {
+			if (X_RD (insn) == 1) {
 				op->type = R_ANAL_OP_TYPE_ILL;
 				sz = 0; /* make r_core_anal_bb stop */
 			}
 			break;
 		case OP32_CONDINV2:
-			if(X_RS1(insn) == 1) {
+			if (X_RS1(insn) == 1) {
 				op->type = R_ANAL_OP_TYPE_ILL;
 				sz = 0; /* make r_core_anal_bb stop */
 			}
 			break;
 		case OP32_CONDINV3:
-			if(X_RS1(insn) != 0) {
+			if (X_RS1(insn) != 0) {
 				op->type = R_ANAL_OP_TYPE_ILL;
 				sz = 0; /* make r_core_anal_bb stop */
 			}
@@ -437,8 +431,8 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			anal_jmpl(anal, op, insn, addr);
 			break;
 		 }
-	} else if (X_OP(insn) == OP_3) {
-		switch(X_OP3(insn)) {
+	} else if (X_OP (insn) == OP_3) {
+		switch(X_OP3 (insn)) {
 		case OP33_INV1:
 		case OP33_INV2:
 		case OP33_INV3:

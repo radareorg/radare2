@@ -12,8 +12,8 @@
 #define IMPOSSIBLE_LEN (MICROSOFT_NAME_LEN + MICROSOFR_CLASS_NAMESPACE_LEN)
 
 // TODO: it will be good to change this to some kind of map data structure
-static RList *abbr_types = NULL;
-static RList *abbr_names = NULL;
+static R_TH_LOCAL RList *abbr_types = NULL;
+static R_TH_LOCAL RList *abbr_names = NULL;
 
 typedef enum EObjectType {
 	eObjectTypeStaticClassMember = 2,
@@ -353,42 +353,42 @@ static size_t get_operator_code(const char *buf, RList *names_l, bool memorize) 
 	SStrInfo *str_info;
 	size_t read_len = 1;
 	switch (*++buf) {
-	case '0': SET_OPERATOR_CODE("constructor"); break;
-	case '1': SET_OPERATOR_CODE("~destructor"); break;
-	case '2': SET_OPERATOR_CODE("operator new"); break;
-	case '3': SET_OPERATOR_CODE("operator delete"); break;
-	case '4': SET_OPERATOR_CODE("operator="); break;
-	case '5': SET_OPERATOR_CODE("operator>>"); break;
-	case '6': SET_OPERATOR_CODE("operator<<"); break;
-	case '7': SET_OPERATOR_CODE("operator!"); break;
-	case '8': SET_OPERATOR_CODE("operator=="); break;
-	case '9': SET_OPERATOR_CODE("operator!="); break;
-	case 'A': SET_OPERATOR_CODE("operator[]"); break;
-	case 'B': SET_OPERATOR_CODE("operator #{return_type}"); break;
-	case 'C': SET_OPERATOR_CODE("operator->"); break;
-	case 'D': SET_OPERATOR_CODE("operator*"); break;
-	case 'E': SET_OPERATOR_CODE("operator++"); break;
-	case 'F': SET_OPERATOR_CODE("operator--"); break;
-	case 'G': SET_OPERATOR_CODE("operator-"); break;
-	case 'H': SET_OPERATOR_CODE("operator+"); break;
-	case 'I': SET_OPERATOR_CODE("operator&"); break;
-	case 'J': SET_OPERATOR_CODE("operator->*"); break;
-	case 'K': SET_OPERATOR_CODE("operator/"); break;
-	case 'L': SET_OPERATOR_CODE("operator%"); break;
-	case 'M': SET_OPERATOR_CODE("operator<"); break;
-	case 'N': SET_OPERATOR_CODE("operator<="); break;
-	case 'O': SET_OPERATOR_CODE("operator>"); break;
-	case 'P': SET_OPERATOR_CODE("operator>="); break;
-	case 'Q': SET_OPERATOR_CODE("operator,"); break;
-	case 'R': SET_OPERATOR_CODE("operator()"); break;
-	case 'S': SET_OPERATOR_CODE("operator~"); break;
-	case 'T': SET_OPERATOR_CODE("operator^"); break;
-	case 'U': SET_OPERATOR_CODE("operator|"); break;
-	case 'V': SET_OPERATOR_CODE("operator&"); break;
-	case 'W': SET_OPERATOR_CODE("operator||"); break;
-	case 'X': SET_OPERATOR_CODE("operator*="); break;
-	case 'Y': SET_OPERATOR_CODE("operator+="); break;
-	case 'Z': SET_OPERATOR_CODE("operator-="); break;
+	case '0': SET_OPERATOR_CODE ("constructor"); break;
+	case '1': SET_OPERATOR_CODE ("~destructor"); break;
+	case '2': SET_OPERATOR_CODE ("operator new"); break;
+	case '3': SET_OPERATOR_CODE ("operator delete"); break;
+	case '4': SET_OPERATOR_CODE ("operator="); break;
+	case '5': SET_OPERATOR_CODE ("operator>>"); break;
+	case '6': SET_OPERATOR_CODE ("operator<<"); break;
+	case '7': SET_OPERATOR_CODE ("operator!"); break;
+	case '8': SET_OPERATOR_CODE ("operator=="); break;
+	case '9': SET_OPERATOR_CODE ("operator!="); break;
+	case 'A': SET_OPERATOR_CODE ("operator[]"); break;
+	case 'B': SET_OPERATOR_CODE ("operator #{return_type}"); break;
+	case 'C': SET_OPERATOR_CODE ("operator->"); break;
+	case 'D': SET_OPERATOR_CODE ("operator*"); break;
+	case 'E': SET_OPERATOR_CODE ("operator++"); break;
+	case 'F': SET_OPERATOR_CODE ("operator--"); break;
+	case 'G': SET_OPERATOR_CODE ("operator-"); break;
+	case 'H': SET_OPERATOR_CODE ("operator+"); break;
+	case 'I': SET_OPERATOR_CODE ("operator&"); break;
+	case 'J': SET_OPERATOR_CODE ("operator->*"); break;
+	case 'K': SET_OPERATOR_CODE ("operator/"); break;
+	case 'L': SET_OPERATOR_CODE ("operator%"); break;
+	case 'M': SET_OPERATOR_CODE ("operator<"); break;
+	case 'N': SET_OPERATOR_CODE ("operator<="); break;
+	case 'O': SET_OPERATOR_CODE ("operator>"); break;
+	case 'P': SET_OPERATOR_CODE ("operator>="); break;
+	case 'Q': SET_OPERATOR_CODE ("operator,"); break;
+	case 'R': SET_OPERATOR_CODE ("operator()"); break;
+	case 'S': SET_OPERATOR_CODE ("operator~"); break;
+	case 'T': SET_OPERATOR_CODE ("operator^"); break;
+	case 'U': SET_OPERATOR_CODE ("operator|"); break;
+	case 'V': SET_OPERATOR_CODE ("operator&"); break;
+	case 'W': SET_OPERATOR_CODE ("operator||"); break;
+	case 'X': SET_OPERATOR_CODE ("operator*="); break;
+	case 'Y': SET_OPERATOR_CODE ("operator+="); break;
+	case 'Z': SET_OPERATOR_CODE ("operator-="); break;
 	case '$':
 	{
 		str_info = malloc (sizeof (SStrInfo));
@@ -809,8 +809,7 @@ ONE_LETTER_ACTIION(N, "double")
 ONE_LETTER_ACTIION(Z, "varargs ...")
 ONE_LETTER_ACTIION(O, "long double")
 
-DEF_STATE_ACTION(_)
-{
+DEF_STATE_ACTION(_) {
 #define PROCESS_CASE(letter, type_str) \
 	case CHAR_WITH_QUOTES(letter): \
 		copy_string(type_code_str, type_str, 0); \
@@ -854,8 +853,7 @@ DEF_STATE_ACTION(_)
 	} \
 }
 
-DEF_STATE_ACTION(T)
-{
+DEF_STATE_ACTION(T) {
 #define PROCESS_CASE(case_string, type_str) { \
 	check_len = strlen (case_string); \
 	if ((check_len < buff_len) && \
@@ -884,8 +882,7 @@ DEF_STATE_ACTION(T)
 #undef PROCESS_CASE
 }
 
-DEF_STATE_ACTION(U)
-{
+DEF_STATE_ACTION(U) {
 #define PROCESS_CASE(case_string, type_str) { \
 	check_len = strlen (case_string); \
 	if ((check_len < buff_len) && \
@@ -910,8 +907,7 @@ DEF_STATE_ACTION(U)
 #undef PROCESS_CASE
 }
 
-DEF_STATE_ACTION(W)
-{
+DEF_STATE_ACTION(W) {
 	//W4X@@ -> enum X, W4X@Y@@ -> enum Y::X
 	size_t check_len = 0;
 	state->state = eTCStateEnd;
@@ -926,8 +922,7 @@ DEF_STATE_ACTION(W)
 	GET_USER_DEF_TYPE_NAME("enum ");
 }
 
-DEF_STATE_ACTION(V)
-{
+DEF_STATE_ACTION(V) {
 	// VX@@ -> class X
 	size_t check_len = 0;
 	state->state = eTCStateEnd;
@@ -1125,27 +1120,26 @@ MODIFIER_err:
 	free_type_code_str_struct (&modifier);
 }
 
-DEF_STATE_ACTION(S)
-{
+DEF_STATE_ACTION(S) {
 	parse_type_modifier (state, type_code_str, "* const volatile");
 }
 
 static inline const char *get_calling_convention(char calling_convention) {
 	switch (calling_convention) {
-		case 'A': return "__cdecl";
-		case 'B': return "__cdecl __declspec(dllexport)";
-		case 'C': return "__pascal";
-		case 'D': return "__pascal __declspec(dllexport)";
-		case 'E': return "__thiscall";
-		case 'F': return "__thiscall __declspec(dllexport)";
-		case 'G': return "__stdcall";
-		case 'H': return "__stdcall __declspec(dllexport)";
-		case 'I': return "__fastcall";
-		case 'J': return "__fastcall __declspec(dllexport)";
-		case 'K': return "default (none given)";
-		case 'L': return "default (none given) __declspec(dllexport)";
-		case 'M': return "__clrcall";
-		default: return NULL;
+	case 'A': return "__cdecl";
+	case 'B': return "__cdecl __declspec(dllexport)";
+	case 'C': return "__pascal";
+	case 'D': return "__pascal __declspec(dllexport)";
+	case 'E': return "__thiscall";
+	case 'F': return "__thiscall __declspec(dllexport)";
+	case 'G': return "__stdcall";
+	case 'H': return "__stdcall __declspec(dllexport)";
+	case 'I': return "__fastcall";
+	case 'J': return "__fastcall __declspec(dllexport)";
+	case 'K': return "default (none given)";
+	case 'L': return "default (none given) __declspec(dllexport)";
+	case 'M': return "__clrcall";
+	default: return NULL;
 	}
 }
 

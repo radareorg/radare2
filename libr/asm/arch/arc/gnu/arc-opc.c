@@ -104,54 +104,54 @@ EXTRACT_FN (extract_unopmacro);
 /* -------------------------------------------------------------------------- */
 
 /* Nonzero if we've seen an 'f' suffix (in certain insns).  */
-static int flag_p;
+static R_TH_LOCAL int flag_p;
 
 /* Nonzero if we've finished processing the 'f' suffix.  */
-static int flagshimm_handled_p;
+static R_TH_LOCAL int flagshimm_handled_p;
 
 /* Nonzero if we've seen a 'a' suffix (address writeback).  */
-static int addrwb_p;
+static R_TH_LOCAL int addrwb_p;
 
 /* Nonzero if we've inserted a nullify condition.  */
-static int nullify_p;
+static R_TH_LOCAL int nullify_p;
 
 /* The value of the a nullify condition we inserted.  */
-static int nullify;
+static R_TH_LOCAL int nullify;
 
 /* Nonzero if we've inserted jumpflags.  */
-static int jumpflags_p;
+static R_TH_LOCAL int jumpflags_p;
 
 /* Nonzero if we've inserted a shimm.  */
-static int shimm_p;
+static R_TH_LOCAL int shimm_p;
 
 /* The value of the shimm we inserted (each insn only gets one but it can
    appear multiple times).  */
-static int shimm;
+static R_TH_LOCAL int shimm;
 
 /* Nonzero if we've inserted a limm (during assembly) or seen a limm
    (during disassembly).  */
-static int limm_p;
+static R_TH_LOCAL int limm_p;
 
 /* The value of the limm we inserted.  Each insn only gets one but it can
    appear multiple times.  */
-static long limm;
+static R_TH_LOCAL long limm;
 
 
 /* Configuration flags.  */
 
 /* Various ARC_HAVE_XXX bits.  */
-static int cpu_type;
+static R_TH_LOCAL int cpu_type;
 
 
 /* Given a format letter, yields the index into `arc_operands'.
    eg: arc_operand_map['a'] = REGA, for ARCtangent-A4.  */
-static unsigned char arc_operand_map_a4[256];
-static unsigned char arc_operand_map_ac[256];
+static R_TH_LOCAL unsigned char arc_operand_map_a4[256];
+static R_TH_LOCAL unsigned char arc_operand_map_ac[256];
 
 
 #define OPERANDS 3
 
-static enum operand ls_operand[OPERANDS];
+static R_TH_LOCAL enum operand ls_operand[OPERANDS];
 
 
 /* Various types of ARC operands, including insn suffixes.  */

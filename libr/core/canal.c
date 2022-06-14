@@ -4864,10 +4864,9 @@ static bool esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int 
 }
 
 /* TODO: move into RCore? */
-static ut64 esilbreak_last_read = UT64_MAX;
-static ut64 esilbreak_last_data = UT64_MAX;
-
-static ut64 ntarget = UT64_MAX;
+static R_TH_LOCAL ut64 esilbreak_last_read = UT64_MAX;
+static R_TH_LOCAL ut64 esilbreak_last_data = UT64_MAX;
+static R_TH_LOCAL ut64 ntarget = UT64_MAX;
 
 // TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
 static bool esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {

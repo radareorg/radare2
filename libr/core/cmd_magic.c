@@ -1,12 +1,12 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
 
-/* ugly global vars */
-static int magicdepth = 99; //XXX: do not use global var here
-static RMagic *ck = NULL; // XXX: Use RCore->magic
-static char *ofile = NULL;
-static int kw_count = 0;
+#define NAH 32
+static R_TH_LOCAL int magicdepth = 99;
+static R_TH_LOCAL RMagic *ck = NULL; // XXX: Use RCore->magic
+static R_TH_LOCAL char *ofile = NULL;
+static R_TH_LOCAL int kw_count = 0;
 
 static void r_core_magic_reset(RCore *core) {
 	kw_count = 0;
@@ -22,20 +22,17 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	if (maxHits > 0 && *hits >= maxHits) {
 		return 0;
 	}
-#define NAH 32
 
-	if (--depth<0) {
+	if (--depth < 0) {
 		ret = 0;
 		goto seek_exit;
 	}
 	if (addr != core->offset) {
-#if 1
 		if (addr >= core->offset && (addr+NAH) < (core->offset + core->blocksize)) {
 			delta = addr - core->offset;
 		} else {
 			r_core_seek (core, addr, true);
 		}
-#endif
 	}
 	if (core->search->align) {
 		int mod = addr % core->search->align;
@@ -83,7 +80,6 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			}
 		}
 	}
-//repeat:
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, r_str_get (file), addr);
 	if (delta + 2 > core->blocksize) {
 		eprintf ("EOB\n");

@@ -1416,7 +1416,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	free (binpath);
 }
 
-static int fdsz = 0;
+static R_TH_LOCAL int fdsz = 0;
 
 static bool init_desc_list_visual_cb(void *user, void *data, ut32 id) {
 	RIODesc *desc = (RIODesc *)data;

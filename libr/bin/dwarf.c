@@ -10,8 +10,8 @@
 #define STANDARD_OPERAND_COUNT_DWARF3 12
 #define R_BIN_DWARF_INFO 1
 
-// endianness setting global
-static bool big_end = false;
+// TODO: kill this global
+static R_TH_LOCAL bool big_end = false;
 
 /* This macro seems bad regarding to endianess XXX, use only for single byte */
 #define READ(buf, type)                                             \

@@ -90,25 +90,13 @@ typedef struct reginfo {
 	ut32 regdelta;
 } reginfo_t;
 
-static reginfo_t reginf[ARCH_LEN] = {
+static const reginfo_t reginf[ARCH_LEN] = {
 	{ 160, 0x5c },
 	{ 216, 0x84 },
 	{ 72, 0x5c },
 	{ 272, 0x84 },
 	{ 272, 0x84 }
 };
-
-static inline int __strnlen(const char *str, int len) {
-	int l = 0;
-	while (IS_PRINTABLE (*str) && --len) {
-		if (((ut8)*str) == 0xff) {
-			break;
-		}
-		str++;
-		l++;
-	}
-	return l + 1;
-}
 
 static bool is_bin_etrel(ELFOBJ *bin) {
 	return bin->ehdr.e_type == ET_REL;
@@ -3280,7 +3268,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 			if (st_name < 0 || st_name >= maxsize) {
 				ret[ret_ctr].name[0] = 0;
 			} else {
-				const int len = __strnlen (bin->strtab + st_name, rest);
+				const int len = r_str_nlen (bin->strtab + st_name, rest);
 				memcpy (ret[ret_ctr].name, &bin->strtab[st_name], len);
 			}
 		}

@@ -3124,12 +3124,12 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 	return addr;
 }
 
-static int level = 0;
-static st64 delta = 0;
-static int option = 0;
-static int variable_option = 0;
-static int printMode = 0;
-static bool selectPanel = false;
+static R_TH_LOCAL int level = 0;
+static R_TH_LOCAL st64 delta = 0;
+static R_TH_LOCAL int option = 0;
+static R_TH_LOCAL int variable_option = 0;
+static R_TH_LOCAL int printMode = 0;
+static R_TH_LOCAL bool selectPanel = false;
 #define lastPrintMode 6
 static const char *printCmds[lastPrintMode] = {
 	"pdf", "pd $r", "afi", "pdsf", "pdc", "pdr"
@@ -3641,7 +3641,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		case '!':
 			// TODO: use aflsn/aflsb/aflss/...
 			{
-			static int sortMode = 0;
+			static R_TH_LOCAL int sortMode = 0;
 			const char *sortModes[4] = { "aflsa", "aflss", "aflsb", "aflsn" };
 			r_core_cmd0 (core, sortModes[sortMode%4]);
 			sortMode++;
