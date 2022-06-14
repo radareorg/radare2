@@ -154,6 +154,8 @@ typedef struct r_bin_wasm_global_t {
 } RBinWasmGlobalEntry;
 
 typedef struct r_bin_wasm_export_t {
+	ut32 sec_i;
+	ut64 file_offset;
 	ut32 field_len;
 	char *field_str;
 	ut8 kind;
@@ -239,10 +241,10 @@ typedef struct r_bin_wasm_obj_t {
 	RList *g_sections;
 	RList *g_imports;
 	RPVector *g_funcs;
-	RList *g_exports;
 	RPVector *g_tables;
 	RPVector *g_memories;
 	RPVector *g_globals;
+	RPVector *g_exports;
 	RList *g_elements;
 	RList *g_codes;
 	RList *g_datas;
@@ -259,10 +261,10 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_types(RBinWasmObj *bin);
 RList *r_bin_wasm_get_imports(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_functions(RBinWasmObj *bin);
-RList *r_bin_wasm_get_exports(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_tables(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_memories(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_globals(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_exports(RBinWasmObj *bin);
 RList *r_bin_wasm_get_elements(RBinWasmObj *bin);
 RList *r_bin_wasm_get_codes(RBinWasmObj *bin);
 RList *r_bin_wasm_get_datas(RBinWasmObj *bin);
