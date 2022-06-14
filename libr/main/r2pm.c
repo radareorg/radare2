@@ -319,6 +319,7 @@ static int r2pm_install_pkg(const char *pkg) {
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {", TT_CODEBLOCK);
 	if (!script) {
 		eprintf ("Invalid package name or script\n");
+		free (srcdir);
 		return 1;
 	}
 	char *s = r_str_newf ("cd '%s/%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script);
