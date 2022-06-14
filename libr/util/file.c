@@ -199,7 +199,7 @@ R_API bool r_file_fexists(const char *fmt, ...) {
 R_API bool r_file_exists(const char *str) {
 	struct stat buf = {0};
 #if 1
-	if (file_stat (str, &buf) == -1) {
+	if (file_stat (str, &buf) != 0) {
 		return false;
 	}
 #else
@@ -217,7 +217,7 @@ R_API bool r_file_exists(const char *str) {
 R_API ut64 r_file_size(const char *str) {
 	r_return_val_if_fail (!R_STR_ISEMPTY (str), 0);
 	struct stat buf = {0};
-	if (file_stat (str, &buf) == -1) {
+	if (file_stat (str, &buf) != 0) {
 		return 0;
 	}
 	return (ut64)buf.st_size;
