@@ -11,7 +11,7 @@
 
 R_LIB_VERSION (r_asm);
 
-static char *directives[] = {
+static const char *directives[] = {
 	".include", ".error", ".warning",
 	".echo", ".if", ".ifeq", ".endif",
 	".else", ".set", ".get", NULL
