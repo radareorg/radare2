@@ -35,7 +35,7 @@ static const RCmdDescHelp root_help = {
 	.description = "",
 };
 
-static int value = 0;
+static R_TH_LOCAL int value = 0;
 
 #define NCMDS (sizeof (cmd->cmds)/sizeof(*cmd->cmds))
 R_LIB_VERSION (r_cmd);
@@ -1188,12 +1188,12 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 }
 
 /* TODO: add support for spaced arguments */
+static R_TH_LOCAL int macro_level = 0;
 R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	char *args;
 	int nargs = 0;
 	char *str, *ptr, *ptr2;
 	RListIter *iter;
-	static R_TH_LOCAL int macro_level = 0;
 	RCmdMacroItem *m;
 	/* labels */
 	int labels_n = 0;

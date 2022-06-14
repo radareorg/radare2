@@ -23,10 +23,10 @@ SECURITY IMPLICATIONS
 #define rtr_n core->rtr_n
 #define rtr_host core->rtr_host
 
-static RSocket *s = NULL;
-static RThread *httpthread = NULL;
-static RThread *rapthread = NULL;
-static const char *listenport = NULL;
+static R_TH_LOCAL RSocket *s = NULL;
+static R_TH_LOCAL RThread *httpthread = NULL;
+static R_TH_LOCAL RThread *rapthread = NULL;
+static R_TH_LOCAL const char *listenport = NULL;
 
 typedef struct {
 	const char *host;

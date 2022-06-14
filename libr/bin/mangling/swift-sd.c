@@ -13,12 +13,14 @@
 
 // $ echo "..." | xcrun swift-demangle
 
+static R_TH_LOCAL int have_swift_demangle = -1;
+
 struct Type {
 	const char *code;
 	const char *name;
 };
 
-static struct Type types[] = {
+static const struct Type types[] = {
 	/* basic types */
 	{ "Sb", "Bool" },
 	{ "SS", "Swift.String" },
@@ -44,7 +46,7 @@ static struct Type types[] = {
 	{ NULL, NULL }
 };
 
-static struct Type metas [] = {
+static const struct Type metas [] = {
 	/* attributes */
 	{ "FC", "ClassFunc" },
 	{ "S0_FT", "?" },
@@ -57,7 +59,7 @@ static struct Type metas [] = {
 	{ NULL, NULL }
 };
 
-static struct Type flags [] = {
+static const struct Type flags [] = {
 	//{ "f", "function" }, // this is not an accessor
 	{ "s", "setter" },
 	{ "g", "getter" },
@@ -96,7 +98,7 @@ static const char *getstring(const char *s, int len) {
 	return buf;
 }
 
-static const char *resolve(struct Type *t, const char *foo, const char **bar) {
+static const char *resolve(const struct Type *t, const char *foo, const char **bar) {
 	if (!t || !foo || !*foo) {
 		return NULL;
 	}
@@ -111,8 +113,6 @@ static const char *resolve(struct Type *t, const char *foo, const char **bar) {
 	}
 	return NULL;
 }
-
-static int have_swift_demangle = -1;
 
 static char *swift_demangle_cmd(const char *s) {
 	/* XXX: command injection issue here */

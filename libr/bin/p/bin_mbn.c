@@ -22,7 +22,7 @@ typedef struct sbl_header {
 } SblHeader;
 
 // TODO avoid globals
-static SblHeader sb = {0};
+static R_TH_LOCAL SblHeader sb = {0};
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	r_return_val_if_fail (b, false);

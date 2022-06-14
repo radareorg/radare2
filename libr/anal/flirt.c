@@ -316,7 +316,7 @@ typedef struct RFlirtNode {
 	ut8 *variant_bool_array; // bool array, if true, byte in pattern_bytes is a variant byte
 } RFlirtNode;
 
-static ut8 version; // version of the sig file being parsed
+static R_TH_LOCAL ut8 version; // version of the sig file being parsed
 // used in some cases to parse the right way
 
 // This is from flair tools flair/crc16.cpp
@@ -348,8 +348,8 @@ ut16 crc16(const unsigned char *data_p, size_t length) {
 }
 
 // this is ugly, but we can't afford to change the return size of read_byte
-static bool buf_eof;
-static bool buf_err;
+static R_TH_LOCAL bool buf_eof = false;
+static R_TH_LOCAL bool buf_err = false;
 
 static ut8 read_byte(RBuffer *b) {
 	ut8 r = 0;
