@@ -25,8 +25,7 @@
    Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
 
 #include "sysdep.h"
-#include <stdio.h>
-#include <string.h>
+#include <r_util.h>
 #include "ansidecl.h"
 #include "arc.h"
 #include "opintl.h"
@@ -145,8 +144,8 @@ static R_TH_LOCAL int cpu_type;
 
 /* Given a format letter, yields the index into `arc_operands'.
    eg: arc_operand_map['a'] = REGA, for ARCtangent-A4.  */
-static R_TH_LOCAL unsigned char arc_operand_map_a4[256];
-static R_TH_LOCAL unsigned char arc_operand_map_ac[256];
+static unsigned char arc_operand_map_a4[256];
+static unsigned char arc_operand_map_ac[256];
 
 
 #define OPERANDS 3
@@ -207,11 +206,10 @@ static R_TH_LOCAL enum operand ls_operand[OPERANDS];
 static const struct arc_operand arc_operands_a4[] =
 {
 /* Place holder (??? not sure if needed).  */
-#define UNUSED 0
   { 0, 0, 0, 0, 0, 0 },
 
 /* Register A or shimm/limm indicator.  */
-#define REGA (UNUSED + 1)
+#define REGA (1)
   { 'a', 6, ARC_SHIFT_REGA, ARC_OPERAND_SIGNED | ARC_OPERAND_ERROR, insert_reg, extract_reg },
 
 /* Register B or shimm/limm indicator.  */

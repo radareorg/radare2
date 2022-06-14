@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2015-2016 - inisider */
+/* radare - LGPL - Copyright 2015-2022 - inisider */
 
 #include "microsoft_demangle.h"
 #include <ctype.h>
 #include <r_cons.h>
+#include <r_util.h>
 
 #define _R_LIST_C
 #include <r_list.h>
