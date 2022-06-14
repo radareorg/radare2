@@ -249,10 +249,10 @@ static RBinWasmSection *section_by_id_unique(RList *sections, ut8 id) {
 	if (l) {
 		int len = r_list_length (l);
 		if (len) {
-			if (len > 1) {
+			sec = r_list_first (l);
+			if (sec && len > 1) {
 				eprintf ("[wasm] Using first %s section of %d\n", sec->name, len);
 			}
-			sec = r_list_first (l);
 		}
 	}
 	r_list_free (l);
@@ -462,6 +462,7 @@ static RList *get_entries_from_section(RBinWasmObj *bin, RBinWasmSection *sec, P
 
 	ut32 count;
 	if (!consume_u32_r (b, bound, &count)) {
+		r_list_free (ret);
 		return NULL;
 	}
 	while (r_buf_tell (b) <= bound && r < count) {
@@ -831,7 +832,7 @@ beach:
 
 static RBinWasmGlobalEntry *parse_global_entry(RBuffer *b, ut64 bound, ut32 index) {
 	RBinWasmGlobalEntry *ptr = R_NEW0 (RBinWasmGlobalEntry);
-	if (!ptr) {
+	if (ptr) {
 		ptr->sec_i = index;
 		ptr->file_offset = r_buf_tell (b);
 		if (!consume_u7_r (b, bound, (ut8 *)&ptr->content_type)) {

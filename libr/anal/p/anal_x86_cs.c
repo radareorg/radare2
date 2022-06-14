@@ -3589,7 +3589,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 #endif
 	//XXX: capstone lcall seg:off workaround, remove when capstone will be fixed
 	if (n >= 1 && mode == CS_MODE_16 && !strncmp (insn->mnemonic, "lcall", 5)) {
-		(void) r_str_replace (insn->op_str, ", ", ":", 0);
+		char *opstr = strdup (insn->op_str);
+		opstr = r_str_replace (opstr, ", ", ":", 0);
+		r_str_ncpy (insn->op_str, opstr, sizeof (insn->op_str));
+		free (opstr);
 	}
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
