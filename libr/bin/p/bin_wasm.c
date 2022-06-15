@@ -10,6 +10,14 @@
 #include "wasm/wasm.h"
 #include "../format/wasm/wasm.h"
 
+static inline void *vector_at(RPVector *vec, ut64 n) {
+	// If the file is corrupted, the section may not have as many entries as it should
+	if (n < r_pvector_len (vec)) {
+		return r_pvector_at (vec, n);
+	}
+	return NULL;
+}
+
 static bool check_buffer(RBinFile *bf, RBuffer *rbuf) {
 	ut8 buf[4] = {0};
 	return rbuf && r_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
@@ -52,7 +60,7 @@ static inline RBinWasmExportEntry *find_export(RPVector *exports, ut8 kind, ut32
 	}
 	struct search_fields sf = { .kind = kind, .index = index };
 	int n = r_pvector_bsearch (exports, (void *)&sf, _export_finder);
-	return n >= 0? r_pvector_at (exports, n): NULL;
+	return n >= 0? vector_at (exports, n): NULL;
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
@@ -85,7 +93,7 @@ static RList *entries(RBinFile *bf) {
 	if (!addr) {
 		RPVector *codes = r_bin_wasm_get_codes (bin);
 		if (codes) {
-			RBinWasmCodeEntry *func = r_pvector_at (codes, 0);
+			RBinWasmCodeEntry *func = vector_at (codes, 0);
 			if (func) {
 				addr = func->code;
 			}
@@ -337,7 +345,7 @@ static int get_fcn_offset_from_id(RBinFile *bf, int fcn_idx) {
 	RBinWasmObj *bin = bf->o->bin_obj;
 	RPVector *codes = r_bin_wasm_get_codes (bin);
 	if (codes) {
-		RBinWasmCodeEntry *func = r_pvector_at (codes, fcn_idx);
+		RBinWasmCodeEntry *func = vector_at (codes, fcn_idx);
 		if (func) {
 			return func->code;
 		}
