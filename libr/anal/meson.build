@@ -74,6 +74,7 @@ r_anal_sources = [
   join_paths('p','anal_malbolge.c'),
   join_paths('p','anal_mcore.c'),
   join_paths('p','anal_mips_cs.c'),
+  join_paths('../asm/arch','mips','mipsasm.c'),
   join_paths('p','anal_mips_gnu.c'),
   join_paths('p','anal_loongarch_gnu.c'),
   join_paths('p','anal_msp430.c'),

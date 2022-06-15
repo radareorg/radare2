@@ -85,7 +85,6 @@ if not no_user_plugins
     # missing parse_plugins += [ 'sparc_pseudo' ]
   endif
   if user_plugins.contains('mips')
-    asm_plugins += [ 'mips_cs' ]
     anal_plugins += [ 'mips_cs' ]
     if use_gpl
       asm_plugins += [ 'mips_gnu' ]
@@ -136,7 +135,6 @@ asm_plugins += [
   'java',
   'm680x_cs',
   'mcs96',
-  'mips_cs',
   'or1k',
   'ppc_as',
   'ppc_cs',
