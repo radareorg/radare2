@@ -598,7 +598,7 @@ static RBinWasmCodeEntry *parse_code_entry(RBinWasmObj *bin, ut64 bound, ut32 in
 	ut8 end;
 	r_buf_read (b, &end, 1);
 	if (end != R_BIN_WASM_END_OF_CODE) {
-		eprintf ("[wasm] Code entry at starting at 0x%" PFMT64x " has ending byte 0x%x at 0x%x, should be 0x%x\n",
+		eprintf ("[wasm] Code entry at starting at 0x%" PFMT64x " has ending byte 0x%x at 0x" PFMT64x ", should be 0x%x\n",
 			ptr->file_offset, end, r_buf_tell (b) - 1, R_BIN_WASM_END_OF_CODE);
 		goto beach;
 	}
