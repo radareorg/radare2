@@ -172,6 +172,8 @@ struct r_bin_wasm_local_entry_t {
 };
 
 typedef struct r_bin_wasm_element_t {
+	ut32 sec_i;
+	ut64 file_offset;
 	ut32 index;
 	struct r_bin_wasm_init_expr_t init;
 	ut32 num_elem;
@@ -245,7 +247,7 @@ typedef struct r_bin_wasm_obj_t {
 	RPVector *g_memories;
 	RPVector *g_globals;
 	RPVector *g_exports;
-	RList *g_elements;
+	RPVector *g_elements;
 	RList *g_codes;
 	RList *g_datas;
 	RBinWasmStartEntry *g_start;
@@ -265,7 +267,7 @@ RPVector *r_bin_wasm_get_tables(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_memories(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_globals(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_exports(RBinWasmObj *bin);
-RList *r_bin_wasm_get_elements(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_elements(RBinWasmObj *bin);
 RList *r_bin_wasm_get_codes(RBinWasmObj *bin);
 RList *r_bin_wasm_get_datas(RBinWasmObj *bin);
 RList *r_bin_wasm_get_custom_names(RBinWasmObj *bin);

@@ -863,32 +863,33 @@ beach:
 	return NULL;
 }
 
-static void *parse_element_entry(RBinWasmObj *bin, ut64 bound) {
+static RBinWasmElementEntry *parse_element_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
 	RBuffer *b = bin->buf;
-	RBinWasmElementEntry *ptr = R_NEW0 (RBinWasmElementEntry);
-	if (!ptr) {
-		return NULL;
-	}
-	if (!consume_u32_r (b, bound, &ptr->index)) {
-		goto beach;
-	}
-	if (!consume_init_expr_r (b, bound, R_BIN_WASM_END_OF_CODE, NULL)) {
-		goto beach;
-	}
-	if (!consume_u32_r (b, bound, &ptr->num_elem)) {
-		goto beach;
-	}
-	ut32 j = 0;
-	while (r_buf_tell (b) <= bound && j < ptr->num_elem) {
-		// TODO: allocate space and fill entry
-		if (!consume_u32_r (b, bound, NULL)) {
+	RBinWasmElementEntry *elem = R_NEW0 (RBinWasmElementEntry);
+	if (elem) {
+		elem->sec_i = index;
+		elem->file_offset = r_buf_tell (b);
+		if (!consume_u32_r (b, bound, &elem->index)) {
 			goto beach;
 		}
+		if (!consume_init_expr_r (b, bound, R_BIN_WASM_END_OF_CODE, NULL)) {
+			goto beach;
+		}
+		if (!consume_u32_r (b, bound, &elem->num_elem)) {
+			goto beach;
+		}
+		ut32 j = 0;
+		while (r_buf_tell (b) <= bound && j < elem->num_elem) {
+			// TODO: allocate space and fill entry
+			if (!consume_u32_r (b, bound, NULL)) {
+				goto beach;
+			}
+		}
 	}
-	return ptr;
+	return elem;
 
 beach:
-	free (ptr);
+	free (elem);
 	return NULL;
 }
 
@@ -920,10 +921,6 @@ static RBinWasmStartEntry *r_bin_wasm_get_start(RBinWasmObj *bin, RBinWasmSectio
 	eprintf ("[wasm] header parsing error.\n");
 	free (ptr);
 	return NULL;
-}
-
-static RList *r_bin_wasm_get_element_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
-	return get_entries_from_section (bin, sec, parse_element_entry, (RListFree)free);
 }
 
 static RList *r_bin_wasm_get_custom_name_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
@@ -997,6 +994,7 @@ void wasm_obj_free(RBinWasmObj *bin) {
 		r_pvector_free (bin->g_memories);
 		r_pvector_free (bin->g_globals);
 		r_pvector_free (bin->g_exports);
+		r_pvector_free (bin->g_elements);
 		r_list_free (bin->g_codes);
 		r_list_free (bin->g_datas);
 		r_list_free (bin->g_names);
@@ -1226,6 +1224,10 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 		pfree = (RPVectorFree)free_export_entry;
 		cache = &bin->g_exports;
 		break;
+	case R_BIN_WASM_SECTION_ELEMENT:
+		parser = (ParseEntryVFcn)parse_element_entry;
+		cache = &bin->g_elements;
+		break;
 	default:
 		return NULL;
 	}
@@ -1287,27 +1289,9 @@ RPVector *r_bin_wasm_get_exports(RBinWasmObj *bin) {
 	return bin->g_exports? bin->g_exports: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_EXPORT);
 }
 
-RList *r_bin_wasm_get_elements(RBinWasmObj *bin) {
-	RBinWasmSection *element = NULL;
-	RList *elements = NULL;
-
-	if (!bin || !bin->g_sections) {
-		return NULL;
-	}
-	if (bin->g_elements) {
-		return bin->g_elements;
-	}
-	if (!(elements = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_ELEMENT))) {
-		return r_list_new ();
-	}
-	// support for multiple export sections against spec
-	if (!(element = (RBinWasmSection *)r_list_first (elements))) {
-		r_list_free (elements);
-		return r_list_new ();
-	}
-	bin->g_elements = r_bin_wasm_get_element_entries (bin, element);
-	r_list_free (elements);
-	return bin->g_elements;
+RPVector *r_bin_wasm_get_elements(RBinWasmObj *bin) {
+	r_return_val_if_fail (bin && bin->g_sections, NULL);
+	return bin->g_elements? bin->g_elements: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_ELEMENT);
 }
 
 RList *r_bin_wasm_get_codes(RBinWasmObj *bin) {
