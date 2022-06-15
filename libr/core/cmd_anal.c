@@ -10859,7 +10859,7 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user
 				return;
 			}
 			if (core->anal->verbose) {
-				R_LOG_WARN ("Warning: aav: false positive in 0x%08"PFMT64x, from);
+				R_LOG_DEBUG ("Warning: aav: false positive in 0x%08"PFMT64x, from);
 			}
 		}
 	}
@@ -10903,7 +10903,7 @@ static void cmd_anal_aaw(RCore *core, const char *input) {
 				r_flag_set (core->flags, fn, node->start, true);
 				free (fn);
 			} else if (core->anal->verbose) {
-				R_LOG_WARN ("Unknown pointer 0x%"PFMT64x" at 0x%"PFMT64x, n, (ut64)node->start);
+				R_LOG_DEBUG ("Unknown pointer 0x%"PFMT64x" at 0x%"PFMT64x, n, (ut64)node->start);
 			}
 		}
 	}
