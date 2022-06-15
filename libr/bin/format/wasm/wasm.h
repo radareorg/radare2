@@ -191,6 +191,8 @@ typedef struct r_bin_wasm_code_t {
 } RBinWasmCodeEntry;
 
 typedef struct r_bin_wasm_data_t {
+	ut32 sec_i;
+	ut64 file_offset;
 	ut32 index; // linear memory index (0 in MVP)
 	struct r_bin_wasm_init_expr_t offset; // bytecode evaluated at runtime
 	ut32 size;
@@ -248,7 +250,7 @@ typedef struct r_bin_wasm_obj_t {
 	RPVector *g_exports;
 	RPVector *g_elements;
 	RPVector *g_codes;
-	RList *g_datas;
+	RPVector *g_datas;
 	ut32 g_start;
 
 	RList *g_names;
@@ -268,7 +270,7 @@ RPVector *r_bin_wasm_get_globals(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_exports(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_elements(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_codes(RBinWasmObj *bin);
-RList *r_bin_wasm_get_datas(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_datas(RBinWasmObj *bin);
 RList *r_bin_wasm_get_custom_names(RBinWasmObj *bin);
 ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin);
 const char *r_bin_wasm_get_function_name(RBinWasmObj *bin, ut32 idx);
