@@ -1,4 +1,5 @@
 N=anal_mips_gnu
+OBJ_MIPS+=../../asm/arch/mips/mipsasm.o
 OBJ_MIPS=$(N).o
 
 include p/capstone.mk
