@@ -4224,7 +4224,7 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			RAnalFunction *fcn = r_anal_create_function (core->anal, name, addr, type, diff);
 			if (!fcn) {
-				R_LOG_WARN ("Cannot add function '%s' (duplicated) at 0x%08"PFMT64x"\n", name, addr);
+				R_LOG_ERROR ("Cannot add function '%s' (duplicated) at 0x%08"PFMT64x, name, addr);
 			}
 			free (hname);
 		}
@@ -7306,7 +7306,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				r_anal_op_free (op);
 				op = NULL;
 				if (core->anal->esil->trap || core->anal->esil->trap_code) {
-					r_cons_printf ("esil trap '%s' (%d) at 0x%08" PFMT64x "\n",
+					R_LOG_WARN ("esil trap '%s' (%d) at 0x%08" PFMT64x "\n",
 							r_anal_esil_trapstr (core->anal->esil->trap),
 							core->anal->esil->trap_code, addr);
 					break;
