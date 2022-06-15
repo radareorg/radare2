@@ -895,22 +895,19 @@ static RList *r_bin_wasm_get_data_entries(RBinWasmObj *bin, RBinWasmSection *sec
 	return get_entries_from_section (bin, sec, parse_data_entry, (RListFree)free);
 }
 
-static RBinWasmStartEntry *r_bin_wasm_get_start(RBinWasmObj *bin, RBinWasmSection *sec) {
-	RBinWasmStartEntry *ptr;
-
-	if (!(ptr = R_NEW0 (RBinWasmStartEntry))) {
-		return NULL;
+static ut32 r_bin_wasm_get_start(RBinWasmObj *bin) {
+	if (bin->g_start == UT32_MAX) {
+		RBinWasmSection *sec = section_by_id_unique (bin->g_sections, R_BIN_WASM_SECTION_START);
+		if (sec) {
+			RBuffer *b = bin->buf;
+			r_buf_seek (b, sec->payload_data, R_BUF_SET);
+			ut64 bound = r_buf_tell (b) + sec->payload_len - 1;
+			if (!consume_u32_r (b, bound, &bin->g_start)) {
+				bin->g_start = UT32_MAX;
+			}
+		}
 	}
-
-	RBuffer *b = bin->buf;
-	r_buf_seek (b, sec->payload_data, R_BUF_SET);
-	ut64 bound = r_buf_tell (b) + sec->payload_len - 1;
-	if (bound < r_buf_size (b) && consume_u32_r (b, bound, &ptr->index)) {
-		return ptr;
-	}
-	eprintf ("[wasm] header parsing error.\n");
-	free (ptr);
-	return NULL;
+	return bin->g_start;
 }
 
 static RList *r_bin_wasm_get_custom_name_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
@@ -946,30 +943,29 @@ beach:
 // Public functions
 RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf) {
 	RBinWasmObj *bin = R_NEW0 (RBinWasmObj);
-	if (!bin) {
-		return NULL;
+	if (bin) {
+		bin->g_start = UT32_MAX;
+		bin->buf = r_buf_ref (buf);
+		bin->size = (ut32)r_buf_size (bf->buf);
+		bin->g_sections = r_bin_wasm_get_sections (bin);
+		// TODO: recursive invocation more natural with streamed parsing
+		// but dependency problems when sections are disordered (against spec)
+
+		bin->g_types = r_bin_wasm_get_types (bin);
+		bin->g_imports = r_bin_wasm_get_imports (bin);
+		bin->g_funcs = r_bin_wasm_get_functions (bin);
+		bin->g_tables = r_bin_wasm_get_tables (bin);
+		bin->g_memories = r_bin_wasm_get_memories (bin);
+		bin->g_globals = r_bin_wasm_get_globals (bin);
+		bin->g_exports = r_bin_wasm_get_exports (bin);
+		bin->g_codes = r_bin_wasm_get_codes (bin);
+		bin->g_datas = r_bin_wasm_get_datas (bin);
+
+		bin->g_names = r_bin_wasm_get_custom_names (bin);
+
+		// entrypoint from Start section
+		bin->entrypoint = r_bin_wasm_get_entrypoint (bin);
 	}
-	bin->buf = r_buf_ref (buf);
-	bin->size = (ut32)r_buf_size (bf->buf);
-	bin->g_sections = r_bin_wasm_get_sections (bin);
-	// TODO: recursive invocation more natural with streamed parsing
-	// but dependency problems when sections are disordered (against spec)
-
-	bin->g_types = r_bin_wasm_get_types (bin);
-	bin->g_imports = r_bin_wasm_get_imports (bin);
-	bin->g_funcs = r_bin_wasm_get_functions (bin);
-	bin->g_tables = r_bin_wasm_get_tables (bin);
-	bin->g_memories = r_bin_wasm_get_memories (bin);
-	bin->g_globals = r_bin_wasm_get_globals (bin);
-	bin->g_exports = r_bin_wasm_get_exports (bin);
-	bin->g_codes = r_bin_wasm_get_codes (bin);
-	bin->g_datas = r_bin_wasm_get_datas (bin);
-
-	bin->g_names = r_bin_wasm_get_custom_names (bin);
-
-	// entrypoint from Start section
-	bin->entrypoint = r_bin_wasm_get_entrypoint (bin);
-
 	return bin;
 }
 
@@ -988,7 +984,6 @@ void wasm_obj_free(RBinWasmObj *bin) {
 		r_pvector_free (bin->g_codes);
 		r_list_free (bin->g_datas);
 		r_list_free (bin->g_names);
-		free (bin->g_start);
 		free (bin);
 	}
 }
@@ -1124,38 +1119,19 @@ beach:
 }
 
 ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin) {
-	RList *secs = NULL;
-	RBinWasmStartEntry *start = NULL;
-	RBinWasmSection *sec = NULL;
+	r_return_val_if_fail (bin && bin->g_sections, 0);
 
-	if (!bin || !bin->g_sections) {
-		return 0;
-	}
 	if (bin->entrypoint) {
 		return bin->entrypoint;
 	}
-	if (bin->g_start) {
-		start = bin->g_start;
-	} else if (!(secs = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_START))) {
-		return 0;
-	} else if (!(sec = (RBinWasmSection *)r_list_first (secs))) {
-		r_list_free (secs);
-		return 0;
-	} else {
-		start = r_bin_wasm_get_start (bin, sec);
-		bin->g_start = start;
-	}
-	r_list_free (secs);
-	if (!start) {
-		return 0;
-	}
+	ut32 start = r_bin_wasm_get_start (bin);
 	RPVector *code = r_bin_wasm_get_codes (bin);
 	// FIX: entrypoint can be also an import
-	if (code) {
-		return 0;
+	if (code && start != UT32_MAX) {
+		RBinWasmCodeEntry *func = r_pvector_at (code, start);
+		return func? func->code: 0;
 	}
-	RBinWasmCodeEntry *func = r_pvector_at (code, start->index);
-	return func? func->code: 0;
+	return 0;
 }
 
 RList *r_bin_wasm_get_imports(RBinWasmObj *bin) {
