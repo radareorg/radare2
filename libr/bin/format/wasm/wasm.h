@@ -168,7 +168,7 @@ typedef struct r_bin_wasm_start_t {
 
 struct r_bin_wasm_local_entry_t {
 	ut32 count;
-	r_bin_wasm_value_type_t type;
+	st8 type; // r_bin_wasm_value_type_t
 };
 
 typedef struct r_bin_wasm_element_t {
@@ -181,14 +181,13 @@ typedef struct r_bin_wasm_element_t {
 } RBinWasmElementEntry;
 
 typedef struct r_bin_wasm_code_t {
+	ut32 sec_i;
+	ut64 file_offset;
 	ut32 body_size;
 	ut32 local_count; // numer of local entries
 	struct r_bin_wasm_local_entry_t *locals;
 	ut32 code; // offset
 	ut32 len; // real bytecode length
-	ut8 byte; // 0xb, indicating end of the body
-	char *name;
-	char *signature;
 } RBinWasmCodeEntry;
 
 typedef struct r_bin_wasm_data_t {
@@ -248,7 +247,7 @@ typedef struct r_bin_wasm_obj_t {
 	RPVector *g_globals;
 	RPVector *g_exports;
 	RPVector *g_elements;
-	RList *g_codes;
+	RPVector *g_codes;
 	RList *g_datas;
 	RBinWasmStartEntry *g_start;
 
@@ -268,7 +267,7 @@ RPVector *r_bin_wasm_get_memories(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_globals(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_exports(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_elements(RBinWasmObj *bin);
-RList *r_bin_wasm_get_codes(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_codes(RBinWasmObj *bin);
 RList *r_bin_wasm_get_datas(RBinWasmObj *bin);
 RList *r_bin_wasm_get_custom_names(RBinWasmObj *bin);
 ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin);
