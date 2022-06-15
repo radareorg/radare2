@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../../asm/arch/snes/snes_op_table.h"
+#include "../arch/snes/snes_op_table.h"
 
 struct snes_asm_flags {
 	unsigned char M;

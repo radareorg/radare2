@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2015-2016 - pancake, condret, riq, qnix */
 
-#include <r_asm.h>
+#include <r_anal.h>
 #include <r_lib.h>
 #include <string.h>
 #include "../snes/snesdis.c"
@@ -134,45 +134,43 @@ static struct {
 	{0x53, "sre (0x%02x),y", 2},
 	{-1, NULL, 0}};
 
-static int _6502Disass(ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
+static int _6502Disass(ut64 pc, RAnalOp *op, const ut8 *buf, ut64 len) {
 	int i;
-	r_strf_buffer (64);
 	for (i = 0; ops[i].name; i++) {
 		if (ops[i].op == buf[0]) {
-			const char *buf_asm = "invalid";
+			op->mnemonic = strdup ("invalid");
 			int len = ops[i].len;
 			switch (ops[i].len) {
 			case 1:
-				buf_asm = r_strf ("%s", ops[i].name);
+				op->mnemonic = strdup (ops[i].name);
 				break;
 			case 2:
 				if (len > 1) {
-					buf_asm = r_strf (ops[i].name, buf[1]);
+					op->mnemonic = r_str_newf (ops[i].name, buf[1]);
 				} else {
-					buf_asm = "truncated";
+					op->mnemonic = strdup ("truncated");
 					len = -1;
 				}
 				break;
 			case 3:
 				if (len > 2) {
-					buf_asm = r_strf (ops[i].name, buf[1] + 0x100 * buf[2]);
+					op->mnemonic = r_str_newf (ops[i].name, buf[1] + 0x100 * buf[2]);
 				} else {
-					buf_asm = "truncated";
+					op->mnemonic = strdup ("truncated");
 					len = -1;
 				}
 				break;
 			case 4:
 				if (len > 3) {
-					buf_asm = r_strf (ops[i].name, buf[1]+0x100*buf[2]+0x10000*buf[3]);
+					op->mnemonic = r_str_newf (ops[i].name, buf[1]+0x100*buf[2]+0x10000*buf[3]);
 				} else {
-					buf_asm = "truncated";
+					op->mnemonic = strdup ("truncated");
 					len = -1;
 				}
 				break;
 			default:
 				goto beach;
 			}
-			r_strbuf_set (&op->buf_asm, buf_asm);
 			return len;
 		}
 	}
