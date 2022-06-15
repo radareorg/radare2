@@ -249,7 +249,7 @@ typedef struct r_bin_wasm_obj_t {
 	RPVector *g_elements;
 	RPVector *g_codes;
 	RList *g_datas;
-	RBinWasmStartEntry *g_start;
+	ut32 g_start;
 
 	RList *g_names;
 	// etc...
