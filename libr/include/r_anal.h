@@ -2252,6 +2252,7 @@ extern RAnalPlugin r_anal_plugin_msp430;
 extern RAnalPlugin r_anal_plugin_nios2;
 extern RAnalPlugin r_anal_plugin_or1k;
 extern RAnalPlugin r_anal_plugin_pic;
+extern RAnalPlugin r_anal_plugin_pdp11_gnu;
 extern RAnalPlugin r_anal_plugin_ppc_cs;
 extern RAnalPlugin r_anal_plugin_ppc_gnu;
 extern RAnalPlugin r_anal_plugin_propeller;
