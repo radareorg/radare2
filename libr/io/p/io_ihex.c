@@ -323,13 +323,6 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 		case 4:	//extended linear address rec
 			//both rec types are handled the same except :
 			//	new address = seg_reg <<4 for type 02; new address = lin_addr <<16 for type 04.
-			//write current section
-			if (sec_size && at) {
-				if (r_buf_write_at (rbuf, at, sec_tmp, sec_size) != sec_size) {
-					eprintf ("sparse buffer problem, giving up\n");
-					goto fail;
-				}
-			}
 			sec_size = 0;
 
 			eol = strchr (str + 1, ':');
