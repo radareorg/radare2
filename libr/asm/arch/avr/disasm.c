@@ -93,7 +93,7 @@ int avr_anal(RAnal *a, char *out, int out_size, ut64 addr, cut8 *buf, int len) {
 		return -1;
 	}
 	if (out[0] == '.' || !out[0]) {
-		strcpy (out, "invalid");
+		r_str_ncpy (out, "invalid", out_size);
 	}
 	return opsize;
 }

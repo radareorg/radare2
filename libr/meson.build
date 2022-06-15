@@ -131,7 +131,6 @@ asm_plugins += [
   'arm_as',
   'arm_cs',
   'arm_winedbg',
-  'avr',
   'dalvik',
   'dcpu16',
   'gb',
