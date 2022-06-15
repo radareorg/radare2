@@ -46,7 +46,10 @@ static int _export_sorter(const void *_a, const void *_b) {
 	return diff > 0? 1: -1;
 }
 
-static RBinWasmExportEntry *find_export(RPVector *exports, ut8 kind, ut32 index) {
+static inline RBinWasmExportEntry *find_export(RPVector *exports, ut8 kind, ut32 index) {
+	if (!exports) {
+		return NULL;
+	}
 	struct search_fields sf = { .kind = kind, .index = index };
 	int n = r_pvector_bsearch (exports, (void *)&sf, _export_finder);
 	return n >= 0? r_pvector_at (exports, n): NULL;
@@ -149,59 +152,62 @@ static RList *symbols(RBinFile *bf) {
 	}
 	RBinWasmObj *bin = bf->o->bin_obj;
 	RList *ret = r_list_newf ((RListFree)free);
-	RPVector *codes = r_bin_wasm_get_codes (bin);
-	RList *imports = r_bin_wasm_get_imports (bin);
-	RPVector *exports = r_bin_wasm_get_exports (bin);
-
-	if (!ret || !codes || !imports || !exports) {
+	if (!ret) {
 		goto bad_alloc;
 	}
-	r_pvector_sort (exports, _export_sorter);
 
-	ut32 fcn_idx = 0,
-	     table_idx = 0,
-	     mem_idx = 0,
-	     global_idx = 0;
-
-	ut32 i = 0;
-	RBinWasmImportEntry *imp;
-	RListIter *iter;
-	r_list_foreach (imports, iter, imp) {
-		if (!(ptr = R_NEW0 (RBinSymbol))) {
-			goto bad_alloc;
-		}
-		ptr->name = strdup (imp->field_str);
-		ptr->libname = strdup (imp->module_str);
-		ptr->is_imported = true;
-		ptr->forwarder = "NONE";
-		ptr->bind = "NONE";
-		switch (imp->kind) {
-		case R_BIN_WASM_EXTERNALKIND_Function:
-			ptr->type = R_BIN_TYPE_FUNC_STR;
-			fcn_idx++;
-			break;
-		case R_BIN_WASM_EXTERNALKIND_Table:
-			ptr->type = "TABLE";
-			table_idx++;
-			break;
-		case R_BIN_WASM_EXTERNALKIND_Memory:
-			ptr->type = "MEMORY";
-			mem_idx++;
-			break;
-		case R_BIN_WASM_EXTERNALKIND_Global:
-			ptr->type = R_BIN_BIND_GLOBAL_STR;
-			global_idx++;
-			break;
-		}
-		ptr->size = 0;
-		ptr->vaddr = -1;
-		ptr->paddr = -1;
-		ptr->ordinal = i;
-		i += 1;
-		r_list_append (ret, ptr);
-	}
+	ut32 fcn_idx = 0;
+	ut32 table_idx = 0;
+	ut32 mem_idx = 0;
+	ut32 global_idx = 0;
 
 	void **p;
+	RPVector *imports = r_bin_wasm_get_imports (bin);
+	if (imports) {
+		r_pvector_foreach (imports, p) {
+			RBinWasmImportEntry *imp = *p;
+			if (!(ptr = R_NEW0 (RBinSymbol))) {
+				goto bad_alloc;
+			}
+			ptr->name = strdup (imp->field_str);
+			ptr->libname = strdup (imp->module_str);
+			ptr->is_imported = true;
+			ptr->forwarder = "NONE";
+			ptr->bind = "NONE";
+			switch (imp->kind) {
+			case R_BIN_WASM_EXTERNALKIND_Function:
+				ptr->type = R_BIN_TYPE_FUNC_STR;
+				ptr->ordinal = fcn_idx++;
+				break;
+			case R_BIN_WASM_EXTERNALKIND_Table:
+				ptr->type = "TABLE";
+				ptr->ordinal = table_idx++;
+				break;
+			case R_BIN_WASM_EXTERNALKIND_Memory:
+				ptr->type = "MEMORY";
+				ptr->ordinal = mem_idx++;
+				break;
+			case R_BIN_WASM_EXTERNALKIND_Global:
+				ptr->type = R_BIN_BIND_GLOBAL_STR;
+				ptr->ordinal = global_idx++;
+				break;
+			}
+			ptr->size = 0;
+			ptr->vaddr = -1;
+			ptr->paddr = -1;
+			r_list_append (ret, ptr);
+		}
+	}
+
+	RPVector *codes = r_bin_wasm_get_codes (bin);
+	if (!codes) {
+		return ret;
+	}
+	RPVector *exports = r_bin_wasm_get_exports (bin);
+	if (exports) {
+		r_pvector_sort (exports, _export_sorter);
+	}
+
 	RBinWasmExportEntry *exp;
 	r_pvector_foreach (codes, p) {
 		RBinWasmCodeEntry *func = *p;
@@ -223,9 +229,7 @@ static RList *symbols(RBinFile *bf) {
 		ptr->size = func->len;
 		ptr->vaddr = (ut64)func->code;
 		ptr->paddr = (ut64)func->code;
-		ptr->ordinal = i;
-		i++;
-		fcn_idx++;
+		ptr->ordinal = fcn_idx++;
 		r_list_append (ret, ptr);
 	}
 
@@ -236,53 +240,52 @@ bad_alloc:
 	return NULL;
 }
 
-static RList *imports(RBinFile *bf) {
-	RBinWasmObj *bin = NULL;
-	RList *imports = NULL;
-	RBinImport *ptr = NULL;
-	RList *ret = NULL;
+static RList *get_imports(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	RBinWasmObj *bin = bf->o->bin_obj;
+	RPVector *imports = r_bin_wasm_get_imports (bin);
+	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
 
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
-	bin = bf->o->bin_obj;
-	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
-		return NULL;
-	}
-	if (!(imports = r_bin_wasm_get_imports (bin))) {
+	if (!ret || !imports) {
 		goto bad_alloc;
 	}
 
-	RBinWasmImportEntry *import = NULL;
-	ut32 i = 0;
-	RListIter *iter;
-	r_list_foreach (imports, iter, import) {
-		if (!(ptr = R_NEW0 (RBinImport))) {
+	ut32 fcn_idx = 0;
+	ut32 table_idx = 0;
+	ut32 mem_idx = 0;
+	ut32 global_idx = 0;
+	void **p;
+	r_pvector_foreach (imports, p) {
+		RBinWasmImportEntry *import = *p;
+		RBinImport *ptr = R_NEW0 (RBinImport);
+		if (!ptr) {
 			goto bad_alloc;
 		}
 		ptr->name = strdup (import->field_str);
 		ptr->classname = strdup (import->module_str);
-		ptr->ordinal = i;
 		ptr->bind = "NONE";
 		switch (import->kind) {
 		case R_BIN_WASM_EXTERNALKIND_Function:
 			ptr->type = "FUNC";
+			ptr->ordinal = fcn_idx++;
 			break;
 		case R_BIN_WASM_EXTERNALKIND_Table:
 			ptr->type = "TABLE";
+			ptr->ordinal = table_idx++;
 			break;
 		case R_BIN_WASM_EXTERNALKIND_Memory:
 			ptr->type = "MEM";
+			ptr->ordinal = mem_idx++;
 			break;
 		case R_BIN_WASM_EXTERNALKIND_Global:
 			ptr->type = "GLOBAL";
+			ptr->ordinal = global_idx++;
 			break;
 		}
 		r_list_append (ret, ptr);
 	}
 	return ret;
 bad_alloc:
-	r_list_free (imports);
 	r_list_free (ret);
 	return NULL;
 }
@@ -375,7 +378,7 @@ RBinPlugin r_bin_plugin_wasm = {
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
-	.imports = &imports,
+	.imports = &get_imports,
 	.info = &info,
 	.libs = &libs,
 	.get_offset = &getoffset,
