@@ -178,35 +178,27 @@ static size_t consume_init_expr_r(RBuffer *b, ut64 bound, ut8 eoc, void *out) {
 }
 
 static size_t consume_locals_r(RBuffer *b, ut64 bound, RBinWasmCodeEntry *out) {
-	ut64 cur = r_buf_tell (b);
-	if (!b || bound >= r_buf_size (b) || cur > bound) {
+	r_return_val_if_fail (out, 0);
+	ut32 count = out->local_count;
+	if (count <= 0) {
 		return 0;
 	}
-	ut32 count = out? out->local_count: 0;
-	if (count > 0) {
-		if (!(out->locals = R_NEWS0 (struct r_bin_wasm_local_entry_t, count))) {
+	out->locals = R_NEWS0 (struct r_bin_wasm_local_entry_t, count);
+	if (!out->locals) {
+		return 0;
+	}
+
+	ut32 i = 0;
+	for (i = 0; i < count; i++) {
+		struct r_bin_wasm_local_entry_t *local = &out->locals[i];
+		if (!consume_u32_r (b, bound, &local->count)) {
+			return 0;
+		}
+		if (!consume_s7_r (b, bound, &local->type)) {
 			return 0;
 		}
 	}
-	ut32 j = 0;
-	while (r_buf_tell (b) <= bound && j < count) {
-		ut32 *_tmp = out? &out->locals[j].count: NULL;
-		if (!consume_u32_r (b, bound, _tmp)) {
-			goto beach;
-		}
-		st8 *_tmp2 = out? (st8 *)&out->locals[j].type: NULL;
-		if (!consume_s7_r (b, bound, _tmp2)) {
-			goto beach;
-		}
-		j++;
-	}
-	if (j != count) {
-		goto beach;
-	}
-	return j;
-beach:
-	R_FREE (out->locals);
-	return 0;
+	return i;
 }
 
 static size_t consume_limits_r(RBuffer *b, ut64 bound, struct r_bin_wasm_resizable_limits_t *out) {
@@ -351,10 +343,9 @@ static void free_type_entry(RBinWasmTypeEntry *ptr) {
 	}
 }
 
-static void r_bin_wasm_free_codes(RBinWasmCodeEntry *ptr) {
+static void free_code_entry(RBinWasmCodeEntry *ptr) {
 	if (ptr) {
 		free (ptr->locals);
-		free (ptr->name);
 		free (ptr);
 	}
 }
@@ -617,12 +608,14 @@ beach:
 	return NULL;
 }
 
-static void *parse_code_entry(RBinWasmObj *bin, ut64 bound) {
+static RBinWasmCodeEntry *parse_code_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
 	RBuffer *b = bin->buf;
 	RBinWasmCodeEntry *ptr = R_NEW0 (RBinWasmCodeEntry);
 	if (!ptr) {
 		return NULL;
 	}
+	ptr->sec_i = index;
+	ptr->file_offset = r_buf_tell (b);
 	if (!consume_u32_r (b, bound, &ptr->body_size)) {
 		goto beach;
 	}
@@ -639,14 +632,15 @@ static void *parse_code_entry(RBinWasmObj *bin, ut64 bound) {
 	ptr->code = r_buf_tell (b);
 	ptr->len = ptr->body_size - ptr->code + j;
 	r_buf_seek (b, ptr->len - 1, R_BUF_CUR); // consume bytecode
-	r_buf_read (b, &ptr->byte, 1);
-	if (ptr->byte != R_BIN_WASM_END_OF_CODE) {
+	ut8 end;
+	r_buf_read (b, &end, 1);
+	if (end != R_BIN_WASM_END_OF_CODE) {
 		goto beach;
 	}
 	return ptr;
 
 beach:
-	r_bin_wasm_free_codes (ptr);
+	free_code_entry (ptr);
 	return NULL;
 }
 
@@ -897,10 +891,6 @@ static RList *r_bin_wasm_get_import_entries(RBinWasmObj *bin, RBinWasmSection *s
 	return get_entries_from_section (bin, sec, parse_import_entry, (RListFree)import_entry_free);
 }
 
-static RList *r_bin_wasm_get_code_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
-	return get_entries_from_section (bin, sec, parse_code_entry, (RListFree)r_bin_wasm_free_codes);
-}
-
 static RList *r_bin_wasm_get_data_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
 	return get_entries_from_section (bin, sec, parse_data_entry, (RListFree)free);
 }
@@ -995,7 +985,7 @@ void wasm_obj_free(RBinWasmObj *bin) {
 		r_pvector_free (bin->g_globals);
 		r_pvector_free (bin->g_exports);
 		r_pvector_free (bin->g_elements);
-		r_list_free (bin->g_codes);
+		r_pvector_free (bin->g_codes);
 		r_list_free (bin->g_datas);
 		r_list_free (bin->g_names);
 		free (bin->g_start);
@@ -1137,7 +1127,6 @@ ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin) {
 	RList *secs = NULL;
 	RBinWasmStartEntry *start = NULL;
 	RBinWasmSection *sec = NULL;
-	RBinWasmCodeEntry *func = NULL;
 
 	if (!bin || !bin->g_sections) {
 		return 0;
@@ -1156,18 +1145,17 @@ ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin) {
 		start = r_bin_wasm_get_start (bin, sec);
 		bin->g_start = start;
 	}
-	if (!start) {
-		r_list_free (secs);
-		return 0;
-	}
-	// FIX: entrypoint can be also an import
-	if (!bin->g_codes) {
-		r_list_free (secs);
-		return 0;
-	}
-	func = r_list_get_n (bin->g_codes, start->index);
 	r_list_free (secs);
-	return (ut32) (func ? func->code : 0);
+	if (!start) {
+		return 0;
+	}
+	RPVector *code = r_bin_wasm_get_codes (bin);
+	// FIX: entrypoint can be also an import
+	if (code) {
+		return 0;
+	}
+	RBinWasmCodeEntry *func = r_pvector_at (code, start->index);
+	return func? func->code: 0;
 }
 
 RList *r_bin_wasm_get_imports(RBinWasmObj *bin) {
@@ -1227,6 +1215,11 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 	case R_BIN_WASM_SECTION_ELEMENT:
 		parser = (ParseEntryVFcn)parse_element_entry;
 		cache = &bin->g_elements;
+		break;
+	case R_BIN_WASM_SECTION_CODE:
+		parser = (ParseEntryVFcn)parse_code_entry;
+		pfree = (RPVectorFree)free_code_entry;
+		cache = &bin->g_codes;
 		break;
 	default:
 		return NULL;
@@ -1294,27 +1287,9 @@ RPVector *r_bin_wasm_get_elements(RBinWasmObj *bin) {
 	return bin->g_elements? bin->g_elements: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_ELEMENT);
 }
 
-RList *r_bin_wasm_get_codes(RBinWasmObj *bin) {
-	RBinWasmSection *code = NULL;
-	RList *codes = NULL;
-
-	if (!bin || !bin->g_sections) {
-		return NULL;
-	}
-	if (bin->g_codes) {
-		return bin->g_codes;
-	}
-	if (!(codes = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_CODE))) {
-		return r_list_new ();
-	}
-	// support for multiple export sections against spec
-	if (!(code = (RBinWasmSection *)r_list_first (codes))) {
-		r_list_free (codes);
-		return r_list_new ();
-	}
-	bin->g_codes = r_bin_wasm_get_code_entries (bin, code);
-	r_list_free (codes);
-	return bin->g_codes;
+RPVector *r_bin_wasm_get_codes(RBinWasmObj *bin) {
+	r_return_val_if_fail (bin && bin->g_sections, NULL);
+	return bin->g_codes? bin->g_codes: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_CODE);
 }
 
 RList *r_bin_wasm_get_datas(RBinWasmObj *bin) {

@@ -75,36 +75,31 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 }
 
 static RList *entries(RBinFile *bf) {
-	RBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	RBinWasmObj *bin = (RBinWasmObj *)bf->o->bin_obj;
 	// TODO
-	RList *ret = NULL;
-	RBinAddr *ptr = NULL;
-
-	if (!(ret = r_list_newf ((RListFree)free))) {
-		return NULL;
-	}
-
 	ut64 addr = (ut64)r_bin_wasm_get_entrypoint (bin);
 	if (!addr) {
-		RList *codes = r_bin_wasm_get_codes (bin);
+		RPVector *codes = r_bin_wasm_get_codes (bin);
 		if (codes) {
-			RListIter *iter;
-			RBinWasmCodeEntry *func;
-			r_list_foreach (codes, iter, func) {
+			RBinWasmCodeEntry *func = r_pvector_at (codes, 0);
+			if (func) {
 				addr = func->code;
-				break;
 			}
 		}
 		if (!addr) {
-			r_list_free (ret);
 			return NULL;
 		}
 	}
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = addr;
-		ptr->vaddr = addr;
-		r_list_append (ret, ptr);
+
+	RList *ret = r_list_newf ((RListFree)free);
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	if (!ptr || !ret || !r_list_append (ret, ptr)) {
+		r_list_free (ret);
+		R_FREE (ptr);
 	}
+	ptr->paddr = addr;
+	ptr->vaddr = addr;
 	return ret;
 }
 
@@ -154,7 +149,7 @@ static RList *symbols(RBinFile *bf) {
 	}
 	RBinWasmObj *bin = bf->o->bin_obj;
 	RList *ret = r_list_newf ((RListFree)free);
-	RList *codes = r_bin_wasm_get_codes (bin);
+	RPVector *codes = r_bin_wasm_get_codes (bin);
 	RList *imports = r_bin_wasm_get_imports (bin);
 	RPVector *exports = r_bin_wasm_get_exports (bin);
 
@@ -206,9 +201,10 @@ static RList *symbols(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 
+	void **p;
 	RBinWasmExportEntry *exp;
-	RBinWasmCodeEntry *func;
-	r_list_foreach (codes, iter, func) {
+	r_pvector_foreach (codes, p) {
+		RBinWasmCodeEntry *func = *p;
 		ptr = R_NEW0 (RBinSymbol);
 		if (!ptr) {
 			goto bad_alloc;
@@ -236,9 +232,6 @@ static RList *symbols(RBinFile *bf) {
 	// TODO: globals, tables and memories
 	return ret;
 bad_alloc:
-	// not so sure if imports should be freed.
-	r_pvector_free (exports);
-	r_list_free (codes);
 	r_list_free (ret);
 	return NULL;
 }
@@ -337,10 +330,11 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 static int get_fcn_offset_from_id(RBinFile *bf, int fcn_idx) {
+	// XXX shouldn't the number of functions in imports be considered?
 	RBinWasmObj *bin = bf->o->bin_obj;
-	RList *codes = r_bin_wasm_get_codes (bin);
+	RPVector *codes = r_bin_wasm_get_codes (bin);
 	if (codes) {
-		RBinWasmCodeEntry *func = r_list_get_n (codes, fcn_idx);
+		RBinWasmCodeEntry *func = r_pvector_at (codes, fcn_idx);
 		if (func) {
 			return func->code;
 		}
