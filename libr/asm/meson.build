@@ -55,6 +55,8 @@ r_asm_sources = [
   join_paths('arch','amd29k','amd29k.c'),
   #join_paths('arch','8051','8051_disas.c'),
   join_paths('arch','8051','8051_ass.c'),
+  join_paths('arch','alpha','gnu','alpha-dis.c'),
+  join_paths('arch','alpha','gnu','alpha-opc.c'),
   join_paths('arch','ppc','libvle','vle.c'),
   join_paths('arch','ppc','libps','libps.c'),
   #join_paths('arch','arc','gnu','arc-dis.c'),

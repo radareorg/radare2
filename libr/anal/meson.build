@@ -45,6 +45,7 @@ r_anal_sources = [
   join_paths('p','anal_6502.c'),
   join_paths('p','anal_6502_cs.c'),
   join_paths('p','anal_8051.c'),
+  join_paths('p','anal_alpha.c'),
   join_paths('p','anal_amd29k.c'),
   #join_paths('p','anal_arc.c'),
   join_paths('p','anal_arm_cs.c'),

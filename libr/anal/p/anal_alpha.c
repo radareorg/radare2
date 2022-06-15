@@ -12,7 +12,7 @@
 #include <r_asm.h>
 
 #include "disas-asm.h"
-#include "../arch/include/opcode/alpha.h"
+#include "../../asm/arch/include/opcode/alpha.h"
 
 static R_TH_LOCAL unsigned long Offset = 0;
 static R_TH_LOCAL RStrBuf *buf_global = NULL;
@@ -39,18 +39,19 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	struct disassemble_info disasm_obj;
+static int alpha_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	struct disassemble_info disasm_obj = {};
 	if (len < 4) {
 		return -1;
 	}
-	buf_global = &op->buf_asm;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		buf_global = r_strbuf_new (NULL);
+	}
 	bytes = buf;
 	bytes_size = len;
-	Offset = a->pc;
+	Offset = addr;
 
 	/* prepare disassembler */
-	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	disasm_obj.buffer = (ut8*)bytes;
 	disasm_obj.read_memory_func = &alpha_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -61,26 +62,37 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.stream = stdout;
 	op->size = print_insn_alpha ((bfd_vma)Offset, &disasm_obj);
 
-	if (op->size == -1) {
-		r_asm_op_set_asm (op, "(data)");
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (op->size > 0) {
+			op->mnemonic = r_strbuf_drain (buf_global);
+			for (char *c = op->mnemonic; *c != 0; c++) {
+				if (*c == '\t') {
+					*c = ' ';
+				}
+			}
+		} else {
+			op->mnemonic = strdup ("(data)");
+		}
+		buf_global = NULL;
 	}
+
 	return op->size;
 }
 
-RAsmPlugin r_asm_plugin_alpha = {
+RAnalPlugin r_anal_plugin_alpha = {
 	.name = "alpha",
 	.arch = "alpha",
 	.license = "GPL",
 	.bits = 64,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.desc = "ALPHA architecture disassembler",
-	.disassemble = &disassemble
+	.op = &alpha_op
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_alpha,
+	.type = R_LIB_TYPE_ANAL,
+	.data = &r_anal_plugin_alpha,
 	.version = R2_VERSION
 };
 #endif
