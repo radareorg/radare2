@@ -1360,11 +1360,10 @@ static parse_mnem_args mnemonic(char const *user_asm, int*nargs) {
  * ## Section 7: radare2 glue and mnemonic tokenization
                  --------------------------------------*/
 
-int assemble_8051(RAsm *a, RAsmOp *op, char const *user_asm) {
-	if (!a || !op || !user_asm) {
+int assemble_8051(RAnal *a, ut64 pc, char const *user_asm, ut8 *outbuf, int outlen) {
+	if (!a || !outbuf || !user_asm) {
 		return 0;
 	}
-	r_strbuf_set (&op->buf_asm, user_asm);
 	while (!terminates_asm_line (*user_asm)
 		&& (*user_asm == ' ' || *user_asm == '\t')) {
 		user_asm += 1;
@@ -1396,7 +1395,7 @@ int assemble_8051(RAsm *a, RAsmOp *op, char const *user_asm) {
 
 	ut8 instr[4] = {0};
 	ut8 *binp = instr;
-	if (!mnem (carg, a->pc, &binp)) {
+	if (!mnem (carg, pc, &binp)) {
 		R_FREE (arg[0]);
 		R_FREE (arg[1]);
 		R_FREE (arg[2]);
@@ -1407,7 +1406,7 @@ int assemble_8051(RAsm *a, RAsmOp *op, char const *user_asm) {
 	R_FREE (arg[1]);
 	R_FREE (arg[2]);
 	size_t len = binp - instr;
-	r_strbuf_setbin (&op->buf, instr, len);
+	memcpy (outbuf, instr, len);
 
 	return binp - instr;
 }
