@@ -38,3 +38,14 @@ ffffffffffffffffffffffffffffffff
 EOF
 RUN
 
+NAME=IHEX: segment boundaries
+FILE=ihex://bins/other/td.hex
+CMDS=<<EOF
+px 0x20 @ 0x70000
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00070000  5d1b 4153 2000 1d40 1007 75a0 103c ead2  ].AS ..@..u..<..
+0x00070010  2000 0000 1007 0040 1007 7594 0000 0000   ......@..u.....
+EOF
+RUN
