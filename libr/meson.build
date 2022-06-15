@@ -128,7 +128,6 @@ endif
 if no_user_plugins
 
 asm_plugins += [
-  '6502',
   '8051',
   'amd29k',
   'arm_as',
