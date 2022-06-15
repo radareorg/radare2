@@ -130,7 +130,6 @@ asm_plugins += [
   'arm_cs',
   'arm_winedbg',
   'dalvik',
-  'java',
   'mips_cs',
   'or1k',
   'ppc_as',
