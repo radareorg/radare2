@@ -5,8 +5,7 @@
 #include "wasm.h"
 
 typedef size_t (*ConsumeFcn) (const ut8 *p, const ut8 *bound, ut32 *out_value);
-typedef void *(*ParseEntryFcn) (RBinWasmObj *bin, ut64 bound);
-typedef void *(*ParseEntryVFcn) (RBinWasmObj *bin, ut64 bound, ut32 index);
+typedef void *(*ParseEntryFcn) (RBinWasmObj *bin, ut64 bound, ut32 index);
 
 // RBuffer consume functions
 static ut32 consume_r(RBuffer *b, ut64 bound, size_t *n_out, ConsumeFcn consume_fcn) {
@@ -343,14 +342,7 @@ static void free_type_entry(RBinWasmTypeEntry *ptr) {
 	}
 }
 
-static void free_code_entry(RBinWasmCodeEntry *ptr) {
-	if (ptr) {
-		free (ptr->locals);
-		free (ptr);
-	}
-}
-
-static void import_entry_free(RBinWasmImportEntry *entry) {
+static void free_import_entry(RBinWasmImportEntry *entry) {
 	if (entry) {
 		free (entry->module_str);
 		free (entry->field_str);
@@ -362,6 +354,13 @@ static void free_export_entry(RBinWasmExportEntry *entry) {
 	if (entry) {
 		free (entry->field_str);
 		free (entry);
+	}
+}
+
+static void free_code_entry(RBinWasmCodeEntry *ptr) {
+	if (ptr) {
+		free (ptr->locals);
+		free (ptr);
 	}
 }
 
@@ -412,7 +411,7 @@ static void wasm_custom_name_free(RBinWasmCustomNameEntry *cust) {
 }
 
 // Parsing
-static inline RPVector *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryVFcn parse_entry, RPVectorFree free_entry) {
+static inline RPVector *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryFcn parse_entry, RPVectorFree free_entry) {
 	RBuffer *buf = bin->buf;
 	ut64 start = r_buf_tell (buf);
 
@@ -435,44 +434,6 @@ static inline RPVector *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryVFcn p
 		}
 	}
 	return vec;
-}
-
-static RList *get_entries_from_section(RBinWasmObj *bin, RBinWasmSection *sec, ParseEntryFcn parse_entry, RListFree free_entry) {
-	r_return_val_if_fail (sec && bin, NULL);
-
-	RList *ret = r_list_newf (free_entry);
-	if (!ret) {
-		return NULL;
-	}
-	RBuffer *b = bin->buf;
-	r_buf_seek (b, sec->payload_data, R_BUF_SET);
-	ut32 r = 0;
-	ut64 bound = r_buf_tell (b) + sec->payload_len - 1;
-	if (bound >= r_buf_size (b)) {
-		goto beach;
-	}
-
-	ut32 count;
-	if (!consume_u32_r (b, bound, &count)) {
-		r_list_free (ret);
-		return NULL;
-	}
-	while (r_buf_tell (b) <= bound && r < count) {
-		void *entry = parse_entry (bin, bound);
-		if (!entry) {
-			goto beach;
-		}
-
-		if (!r_list_append (ret, entry)) {
-			free_entry (entry);
-			// should this jump to beach?
-		}
-		r++;
-	}
-	return ret;
-beach:
-	eprintf ("[wasm] error: beach reading entries for section %s\n", sec->name);
-	return ret;
 }
 
 static inline RBinWasmTypeVec *parse_type_vector(RBuffer *b, ut64 bound) {
@@ -519,12 +480,14 @@ beach:
 	return NULL;
 }
 
-static void *parse_import_entry(RBinWasmObj *bin, ut64 bound) {
+static void *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
 	RBuffer *b = bin->buf;
 	RBinWasmImportEntry *ptr = R_NEW0 (RBinWasmImportEntry);
 	if (!ptr) {
 		return NULL;
 	}
+	ptr->sec_i = index;
+	ptr->file_offset = r_buf_tell (b);
 
 	if (!consume_encoded_name_new (b, bound, &ptr->module_len, &ptr->module_str)) {
 		goto beach;
@@ -889,10 +852,6 @@ beach:
 	return NULL;
 }
 
-static RList *r_bin_wasm_get_import_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
-	return get_entries_from_section (bin, sec, parse_import_entry, (RListFree)import_entry_free);
-}
-
 static ut32 r_bin_wasm_get_start(RBinWasmObj *bin) {
 	if (bin->g_start == UT32_MAX) {
 		RBinWasmSection *sec = section_by_id_unique (bin->g_sections, R_BIN_WASM_SECTION_START);
@@ -972,7 +931,7 @@ void wasm_obj_free(RBinWasmObj *bin) {
 		r_buf_free (bin->buf);
 		r_list_free (bin->g_sections);
 		r_pvector_free (bin->g_types);
-		r_list_free (bin->g_imports);
+		r_pvector_free (bin->g_imports);
 		r_pvector_free (bin->g_funcs);
 		r_pvector_free (bin->g_tables);
 		r_pvector_free (bin->g_memories);
@@ -1132,71 +1091,53 @@ ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin) {
 	return 0;
 }
 
-RList *r_bin_wasm_get_imports(RBinWasmObj *bin) {
-	RBinWasmSection *import = NULL;
-	RList *imports = NULL;
-
-	if (!bin || !bin->g_sections) {
-		return NULL;
-	}
-	if (bin->g_imports) {
-		return bin->g_imports;
-	}
-	if (!(imports = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_IMPORT))) {
-		return r_list_new ();
-	}
-	// support for multiple import sections against spec
-	if (!(import = (RBinWasmSection *)r_list_first (imports))) {
-		r_list_free (imports);
-		return r_list_new ();
-	}
-	bin->g_imports = r_bin_wasm_get_import_entries (bin, import);
-	r_list_free (imports);
-	return bin->g_imports;
-}
-
 static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 	RPVector **cache = NULL;
 	RPVectorFree pfree = (RPVectorFree)free;
-	ParseEntryVFcn parser;
+	ParseEntryFcn parser;
 	switch (sec->id) {
 	case R_BIN_WASM_SECTION_TYPE:
-		parser = (ParseEntryVFcn)parse_type_entry;
+		parser = (ParseEntryFcn)parse_type_entry;
 		pfree = (RPVectorFree)free_type_entry;
 		cache = &bin->g_types;
 		break;
+	case R_BIN_WASM_SECTION_IMPORT:
+		parser = (ParseEntryFcn)parse_import_entry;
+		pfree = (RPVectorFree)free_import_entry;
+		cache = &bin->g_imports;
+		break;
 	case R_BIN_WASM_SECTION_FUNCTION:
-		parser = (ParseEntryVFcn)parse_function_entry;
+		parser = (ParseEntryFcn)parse_function_entry;
 		cache = &bin->g_funcs;
 		break;
 	case R_BIN_WASM_SECTION_TABLE:
-		parser = (ParseEntryVFcn)parse_table_entry;
+		parser = (ParseEntryFcn)parse_table_entry;
 		cache = &bin->g_tables;
 		break;
 	case R_BIN_WASM_SECTION_MEMORY:
-		parser = (ParseEntryVFcn)parse_memory_entry;
+		parser = (ParseEntryFcn)parse_memory_entry;
 		cache = &bin->g_memories;
 		break;
 	case R_BIN_WASM_SECTION_GLOBAL:
-		parser = (ParseEntryVFcn)parse_global_entry;
+		parser = (ParseEntryFcn)parse_global_entry;
 		cache = &bin->g_globals;
 		break;
 	case R_BIN_WASM_SECTION_EXPORT:
-		parser = (ParseEntryVFcn)parse_export_entry;
+		parser = (ParseEntryFcn)parse_export_entry;
 		pfree = (RPVectorFree)free_export_entry;
 		cache = &bin->g_exports;
 		break;
 	case R_BIN_WASM_SECTION_ELEMENT:
-		parser = (ParseEntryVFcn)parse_element_entry;
+		parser = (ParseEntryFcn)parse_element_entry;
 		cache = &bin->g_elements;
 		break;
 	case R_BIN_WASM_SECTION_CODE:
-		parser = (ParseEntryVFcn)parse_code_entry;
+		parser = (ParseEntryFcn)parse_code_entry;
 		pfree = (RPVectorFree)free_code_entry;
 		cache = &bin->g_codes;
 		break;
 	case R_BIN_WASM_SECTION_DATA:
-		parser = (ParseEntryVFcn)parse_data_entry;
+		parser = (ParseEntryFcn)parse_data_entry;
 		cache = &bin->g_datas;
 		break;
 	default:
@@ -1233,6 +1174,11 @@ static inline RPVector *parse_unique_subsec_vec_by_id(RBinWasmObj *bin, ut8 id) 
 RPVector *r_bin_wasm_get_types(RBinWasmObj *bin) {
 	r_return_val_if_fail (bin && bin->g_sections, NULL);
 	return bin->g_types? bin->g_types: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_TYPE);
+}
+
+RPVector *r_bin_wasm_get_imports(RBinWasmObj *bin) {
+	r_return_val_if_fail (bin && bin->g_sections, NULL);
+	return bin->g_imports? bin->g_imports: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_IMPORT);
 }
 
 RPVector *r_bin_wasm_get_functions(RBinWasmObj *bin) {

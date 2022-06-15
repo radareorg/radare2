@@ -112,6 +112,8 @@ struct r_bin_wasm_memory_type_t {
 };
 
 typedef struct r_bin_wasm_import_t {
+	ut32 sec_i;
+	ut64 file_offset;
 	ut32 module_len;
 	char *module_str;
 	ut32 field_len;
@@ -123,7 +125,6 @@ typedef struct r_bin_wasm_import_t {
 		struct r_bin_wasm_table_type_t type_t;
 		struct r_bin_wasm_memory_type_t type_m;
 	};
-
 } RBinWasmImportEntry;
 
 typedef struct r_bin_wasm_function_t {
@@ -240,9 +241,9 @@ typedef struct r_bin_wasm_obj_t {
 	ut32 entrypoint;
 
 	// cache purposes
-	RPVector *g_types;
 	RList *g_sections;
-	RList *g_imports;
+	RPVector *g_types;
+	RPVector *g_imports;
 	RPVector *g_funcs;
 	RPVector *g_tables;
 	RPVector *g_memories;
@@ -262,7 +263,7 @@ RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf);
 void r_bin_wasm_destroy(RBinFile *bf);
 RList *r_bin_wasm_get_sections(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_types(RBinWasmObj *bin);
-RList *r_bin_wasm_get_imports(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_imports(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_functions(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_tables(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_memories(RBinWasmObj *bin);
