@@ -5,8 +5,8 @@
 #include "wasm.h"
 
 typedef size_t (*ConsumeFcn) (const ut8 *p, const ut8 *bound, ut32 *out_value);
-typedef void *(*ParseEntryFcn) (RBuffer *b, ut64 bound);
-typedef void *(*ParseEntryVFcn) (RBuffer *b, ut64 bound, ut32 index);
+typedef void *(*ParseEntryFcn) (RBinWasmObj *bin, ut64 bound);
+typedef void *(*ParseEntryVFcn) (RBinWasmObj *bin, ut64 bound, ut32 index);
 
 // RBuffer consume functions
 static ut32 consume_r(RBuffer *b, ut64 bound, size_t *n_out, ConsumeFcn consume_fcn) {
@@ -421,7 +421,8 @@ static void wasm_custom_name_free(RBinWasmCustomNameEntry *cust) {
 }
 
 // Parsing
-static inline RPVector *parse_vec(RBuffer *buf, ut64 bound, ParseEntryVFcn parse_entry, RPVectorFree free_entry) {
+static inline RPVector *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryVFcn parse_entry, RPVectorFree free_entry) {
+	RBuffer *buf = bin->buf;
 	ut64 start = r_buf_tell (buf);
 
 	ut32 count;
@@ -434,7 +435,7 @@ static inline RPVector *parse_vec(RBuffer *buf, ut64 bound, ParseEntryVFcn parse
 		r_pvector_reserve (vec, count);
 		ut32 i;
 		for (i = 0; i < count; i++) {
-			void *e = parse_entry (buf, bound, i);
+			void *e = parse_entry (bin, bound, i);
 			if (!e || !r_pvector_push (vec, e)) {
 				eprintf ("[wasm] Failed to parse entry %u/%u of vec at 0x%" PFMT64x "\n", i, count, start);
 				free_entry (e);
@@ -466,7 +467,7 @@ static RList *get_entries_from_section(RBinWasmObj *bin, RBinWasmSection *sec, P
 		return NULL;
 	}
 	while (r_buf_tell (b) <= bound && r < count) {
-		void *entry = parse_entry (b, bound);
+		void *entry = parse_entry (bin, bound);
 		if (!entry) {
 			goto beach;
 		}
@@ -493,7 +494,8 @@ static inline RBinWasmTypeVec *parse_type_vector(RBuffer *b, ut64 bound) {
 	return vec;
 }
 
-static RBinWasmTypeEntry *parse_type_entry(RBuffer *b, ut64 bound, ut32 index) {
+static RBinWasmTypeEntry *parse_type_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
+	RBuffer *b = bin->buf;
 	RBinWasmTypeEntry *type = R_NEW0 (RBinWasmTypeEntry);
 	if (!type) {
 		return NULL;
@@ -526,7 +528,8 @@ beach:
 	return NULL;
 }
 
-static void *parse_import_entry(RBuffer *b, ut64 bound) {
+static void *parse_import_entry(RBinWasmObj *bin, ut64 bound) {
+	RBuffer *b = bin->buf;
 	RBinWasmImportEntry *ptr = R_NEW0 (RBinWasmImportEntry);
 	if (!ptr) {
 		return NULL;
@@ -580,7 +583,8 @@ beach:
 	return NULL;
 }
 
-static RBinWasmFunctionEntry *parse_function_entry(RBuffer *b, ut64 bound, ut32 index) {
+static RBinWasmFunctionEntry *parse_function_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
+	RBuffer *b = bin->buf;
 	RBinWasmFunctionEntry *func = R_NEW0 (RBinWasmFunctionEntry);
 	if (func && consume_u32_r (b, bound, &func->typeindex)) {
 		func->sec_i = index;
@@ -591,7 +595,8 @@ static RBinWasmFunctionEntry *parse_function_entry(RBuffer *b, ut64 bound, ut32 
 	return NULL;
 }
 
-static RBinWasmExportEntry *parse_export_entry(RBuffer *b, ut64 bound, ut32 index) {
+static RBinWasmExportEntry *parse_export_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
+	RBuffer *b = bin->buf;
 	RBinWasmExportEntry *export = R_NEW0 (RBinWasmExportEntry);
 	if (export) {
 		export->sec_i = index;
@@ -612,7 +617,8 @@ beach:
 	return NULL;
 }
 
-static void *parse_code_entry(RBuffer *b, ut64 bound) {
+static void *parse_code_entry(RBinWasmObj *bin, ut64 bound) {
+	RBuffer *b = bin->buf;
 	RBinWasmCodeEntry *ptr = R_NEW0 (RBinWasmCodeEntry);
 	if (!ptr) {
 		return NULL;
@@ -644,7 +650,8 @@ beach:
 	return NULL;
 }
 
-static void *parse_data_entry(RBuffer *b, ut64 bound) {
+static void *parse_data_entry(RBinWasmObj *bin, ut64 bound) {
+	RBuffer *b = bin->buf;
 	RBinWasmDataEntry *ptr = R_NEW0 (RBinWasmDataEntry);
 	if (!ptr) {
 		return NULL;
@@ -744,7 +751,8 @@ beach:
 	return NULL;
 }
 
-static RBinWasmCustomNameEntry *parse_custom_name_entry(RBuffer *b, ut64 bound) {
+static RBinWasmCustomNameEntry *parse_custom_name_entry(RBinWasmObj *bin, ut64 bound) {
+	RBuffer *b = bin->buf;
 	RBinWasmCustomNameEntry *cust = R_NEW0 (RBinWasmCustomNameEntry);
 	if (!cust) {
 		return NULL;
@@ -798,7 +806,8 @@ beach:
 	return NULL;
 }
 
-static RBinWasmMemoryEntry *parse_memory_entry(RBuffer *b, ut64 bound, ut32 index) {
+static RBinWasmMemoryEntry *parse_memory_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
+	RBuffer *b = bin->buf;
 	RBinWasmMemoryEntry *ptr = R_NEW0 (RBinWasmMemoryEntry);
 	if (ptr) {
 		ptr->sec_i = index;
@@ -811,7 +820,8 @@ static RBinWasmMemoryEntry *parse_memory_entry(RBuffer *b, ut64 bound, ut32 inde
 	return ptr;
 }
 
-static RBinWasmTableEntry *parse_table_entry(RBuffer *b, ut64 bound, ut32 index) {
+static RBinWasmTableEntry *parse_table_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
+	RBuffer *b = bin->buf;
 	RBinWasmTableEntry *table = R_NEW0 (RBinWasmTableEntry);
 	if (table) {
 		table->sec_i = index;
@@ -830,7 +840,8 @@ beach:
 	return NULL;
 }
 
-static RBinWasmGlobalEntry *parse_global_entry(RBuffer *b, ut64 bound, ut32 index) {
+static RBinWasmGlobalEntry *parse_global_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
+	RBuffer *b = bin->buf;
 	RBinWasmGlobalEntry *ptr = R_NEW0 (RBinWasmGlobalEntry);
 	if (ptr) {
 		ptr->sec_i = index;
@@ -852,7 +863,8 @@ beach:
 	return NULL;
 }
 
-static void *parse_element_entry(RBuffer *b, ut64 bound) {
+static void *parse_element_entry(RBinWasmObj *bin, ut64 bound) {
+	RBuffer *b = bin->buf;
 	RBinWasmElementEntry *ptr = R_NEW0 (RBinWasmElementEntry);
 	if (!ptr) {
 		return NULL;
@@ -927,7 +939,7 @@ static RList *r_bin_wasm_get_custom_name_entries(RBinWasmObj *bin, RBinWasmSecti
 	}
 
 	while (r_buf_tell (buf) < bound) {
-		RBinWasmCustomNameEntry *nam = parse_custom_name_entry (buf, bound);
+		RBinWasmCustomNameEntry *nam = parse_custom_name_entry (bin, bound);
 
 		if (!nam) {
 			break; // allow partial parsing of section
@@ -1232,7 +1244,7 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 		return NULL;
 	}
 
-	*cache = parse_vec (buf, bound, parser, pfree);
+	*cache = parse_vec (bin, bound, parser, pfree);
 	return *cache;
 }
 
