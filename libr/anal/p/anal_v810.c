@@ -58,6 +58,9 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	if (ret <= 0) {
 		return ret;
 	}
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
+	}
 	const bool be = anal->config->big_endian;
 	ut16 word1 = r_read_ble16 (buf, be);
 	if (ret == 4) {
