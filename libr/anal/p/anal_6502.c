@@ -15,7 +15,7 @@
 #include <r_anal.h>
 #include "../arch/snes/snes_op_table.h"
 
-#include "../../asm/arch/6502/6502dis.c"
+#include "../arch/6502/6502dis.inc"
 
 enum {
 	_6502_FLAGS_C = (1 << 0),

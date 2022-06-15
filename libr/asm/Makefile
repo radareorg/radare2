@@ -49,6 +49,7 @@ OBJS=${STATIC_OBJS} asm.o acode.o aop.o binutils_as.o aplugs.o
 OBJS+=${SHARED2_OBJ}
 
 ifeq ($(HAVE_GPERF),1)
+OBJS+=d/6502.o
 OBJS+=d/8051.o
 OBJS+=d/LH5801.o
 OBJS+=d/arc.o
