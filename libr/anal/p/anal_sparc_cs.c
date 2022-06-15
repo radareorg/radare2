@@ -119,10 +119,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_insn *insn;
 	int n;
 
-	if (!a->config->big_endian) {
-		return -1;
-	}
-
 	// capstone-next
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
@@ -135,6 +131,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->mnemonic = r_str_newf ("%s%s%s",
 					insn->mnemonic, insn->op_str[0]? " ": "",
 					insn->op_str);
+			r_str_replace_char (op->mnemonic, '%', 0);
 		}
 		op->size = insn->size;
 		op->id = insn->id;
@@ -395,6 +392,7 @@ RAnalPlugin r_anal_plugin_sparc_cs = {
 	.license = "BSD",
 	.arch = "sparc",
 	.bits = 32|64,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.archinfo = archinfo,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,
