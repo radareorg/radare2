@@ -14,6 +14,7 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <r_anal.h>
 
 #include "../../asm/arch/avr/disasm.h"
+#include "../../asm/arch/avr/assemble.h"
 
 typedef struct _cpu_const_tag {
 	const char *const key;
@@ -1692,18 +1693,18 @@ INVALID_OP:
 }
 
 //TODO: remove register analysis comment when each avr cpu will be implemented in asm plugin
-static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	char mnemonic[32] = {0};
+static int avr_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	const int mnemonic_len = 32;
+	op->mnemonic = calloc (mnemonic_len, 1);
 
 	set_invalid_op (op, addr);
 
-	int size = avr_anal (anal, mnemonic, sizeof (mnemonic), addr, buf, len);
+	int size = avr_anal (anal, op->mnemonic, mnemonic_len, addr, buf, len);
 
-	if (!strcmp (mnemonic, "invalid") || !strcmp (mnemonic, "truncated")) {
+	if (!strcmp (op->mnemonic, "invalid") || !strcmp (op->mnemonic, "truncated")) {
 		op->eob = true;
-		op->mnemonic = strdup (mnemonic);
 		op->size = 2;
-		return -1;//R_MIN (len, 2);
+		return 2;//R_MIN (len, 2);
 	}
 
 	// select cpu info
@@ -1729,9 +1730,10 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	// process opcode
 	avr_op_analyze (anal, op, addr, buf, len, cpu);
 
-	free (op->mnemonic);
-	op->mnemonic = op->size > 1? strdup (mnemonic): strdup ("invalid");
 	op->size = size;
+	if (op->size <= 0) {
+		op->mnemonic = strdup ("invalid");
+	}
 
 	return size;
 }
@@ -2353,6 +2355,7 @@ RAnalPlugin r_anal_plugin_avr = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.bits = 8 | 16, // 24 big regs conflicts
 	.op = &avr_op,
+	.opasm = &avr_encode,
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_avr_init,
 	.esil_fini = esil_avr_fini,
