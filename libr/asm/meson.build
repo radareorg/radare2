@@ -24,7 +24,6 @@ r_asm_sources = [
   join_paths('p','asm_h8300.c'),
   #join_paths('p','asm_hppa_gnu.c'),
   join_paths('p','asm_i8080.c'),
-  join_paths('p','asm_java.c'),
   join_paths('p','asm_lanai_gnu.c'),
   join_paths('p','asm_lh5801.c'),
   join_paths('p','asm_lm32.c'),

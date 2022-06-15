@@ -214,6 +214,25 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		java_switch_op (anal, op, addr, data, len);
 		// IN_SWITCH_OP = 1;
 	}
+
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		RBinJavaObj *obj = NULL;
+		RBin *bin = anal->binb.bin;
+		RBinPlugin *plugin = bin && bin->cur && bin->cur->o ?
+			bin->cur->o->plugin : NULL;
+		if (plugin && plugin->name) {
+			if (!strcmp (plugin->name, "java")) { // XXX slow
+				obj = bin->cur->o->bin_obj; //o;
+				//eprintf("Handling: %s disasm.\n", b->cur.file);
+			}
+		}
+		const int buf_asm_len = 256;
+		op->mnemonic = calloc(buf_asm_len, 1);
+		if (op->mnemonic) {
+			r_java_disasm (obj, addr, data, len, op->mnemonic, buf_asm_len);
+		}
+	}
+
 	/* TODO:
 	// not sure how to handle the states for IN_SWITCH_OP, SWITCH_OP_CASES,
 	// and NUM_CASES_SEEN, because these are dependent on whether or not we
@@ -243,7 +262,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 
 	if (len < 4) {
 		// incomplete analysis here
-		return 0;
+		return op->size;
 	}
 	if (op->type == R_ANAL_OP_TYPE_POP) {
 		op->stackop = R_ANAL_STACK_INC;
@@ -271,6 +290,10 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	//r_java_disasm(addr, data, len, output, outlen);
 	//IFDBG eprintf ("%s\n", output);
 	return op->size;
+}
+
+static int java_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
+	return r_java_assemble (addr, outbuf, str);
 }
 
 
@@ -330,6 +353,7 @@ RAnalPlugin r_anal_plugin_java = {
 	.arch = "java",
 	.bits = 32,
 	.op = &java_op,
+	.opasm = &java_opasm,
 	.cmd_ext = java_cmd_ext,
 	0
 };
