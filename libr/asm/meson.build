@@ -116,7 +116,6 @@ r_asm_inc = [
     join_paths('arch','rsp'),
     join_paths('arch','v850'),
     join_paths('arch','propeller'),
-    join_paths('arch','8051'),
     join_paths('arch','v810'),
     join_paths('arch','or1k')
   )

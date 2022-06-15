@@ -6,9 +6,9 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#include <8051_ops.h>
-#include "../asm/arch/8051/8051_ass.c"
-#include "../asm/arch/8051/8051_disas.c"
+#include "../arch/8051/8051_ops.h"
+#include "../arch/8051/8051_ass.c"
+#include "../arch/8051/8051_disas.c"
 
 typedef struct {
 	const char *name;
