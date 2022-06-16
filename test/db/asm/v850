@@ -1,0 +1,3 @@
+d "satsubr r16, r18" 9090
+d "subr r16, r18" 9091
+d "satsubr r16, r21" 90a8
