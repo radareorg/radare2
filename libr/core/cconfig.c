@@ -3699,15 +3699,12 @@ R_API int r_core_config_init(RCore *core) {
 	free (whoami);
 	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "if enabled show tips at start");
 	RList *fortune_types = r_core_fortune_types ();
-	RStrBuf *tmp_sb = r_strbuf_new ("");
-	RListIter *iter;
-	char *fortune_type;
-	r_list_foreach (fortune_types, iter, fortune_type) {
-		r_strbuf_appendf (tmp_sb, ",%s", fortune_type);
-	}
+	char *fts = r_str_list_join(fortune_types, ",");
 	r_list_free (fortune_types);
-	SETCB ("cfg.fortunes.type", &(r_strbuf_get (tmp_sb)[1]), &cb_cfg_fortunes_type, "type of fortunes to show");
-	r_strbuf_free (tmp_sb);
+	char *fortune_desc = r_str_newf ("type of fortunes to show(%s)", fts);
+	SETCB ("cfg.fortunes.type", fts, &cb_cfg_fortunes_type, fortune_desc);
+	free (fts);
+	free (fortune_desc);
 	SETBPREF ("cfg.fortunes.clippy", "false", "use ?E instead of ?e");
 	SETBPREF ("cfg.fortunes.tts", "false", "speak out the fortune");
 	SETPREF ("cfg.prefixdump", "dump", "filename prefix for automated dumps");
