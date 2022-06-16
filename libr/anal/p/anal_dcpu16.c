@@ -6,42 +6,42 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
-#include <r_asm.h>
+#include <r_anal.h>
 #include "../arch/dcpu16/dcpu16.h"
 #include "../arch/dcpu16/dis.c"
 #include "../arch/dcpu16/asm.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int dcpu16_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	char buf_asm[96];
 	if (len < 2) {
 		return -1; // at least 2 bytes!
 	}
 	op->size = dcpu16_disasm (buf_asm, sizeof (buf_asm), (const ut16*)buf, len, NULL);
-	r_strbuf_set (&op->buf_asm, (op->size > 0) ? buf_asm: "(data)");
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = strdup ((op->size > 0)? buf_asm: "data");
+	}
 	return op->size;
 }
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	int len = dcpu16_assemble ((ut8*)r_strbuf_get (&op->buf), buf);
-	op->buf.len = len;
-	return len;
+static int dcpu16_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
+	return dcpu16_assemble (outbuf, str);
 }
 
-RAsmPlugin r_asm_plugin_dcpu16 = {
+RAnalPlugin r_anal_plugin_dcpu16 = {
 	.name = "dcpu16",
 	.arch = "dpcu",
 	.bits = 16,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.desc = "Mojang's DCPU-16",
 	.license = "PD",
-	.disassemble = &disassemble,
-	.assemble = &assemble
+	.op = &dcpu16_op,
+	.opasm = &dcpu16_opasm
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_dcpu16,
+	.type = R_LIB_TYPE_ANAL,
+	.data = &r_anal_plugin_dcpu16,
 	.version = R2_VERSION
 };
 #endif
