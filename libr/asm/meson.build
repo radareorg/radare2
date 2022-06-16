@@ -15,7 +15,6 @@ r_asm_sources = [
   join_paths('p','asm_arm_gnu.c'),
   join_paths('p','asm_arm_winedbg.c'),
   join_paths('p','asm_avr.c'),
-  join_paths('p','asm_cr16.c'),
   join_paths('p','asm_cris_gnu.c'),
   join_paths('p','asm_dalvik.c'),
   join_paths('p','asm_dcpu16.c'),
@@ -73,7 +72,6 @@ r_asm_sources = [
   join_paths('arch','avr','format.c'),
   join_paths('arch','avr','disasm.c'),
   join_paths('arch','avr','assemble.c'),
-  join_paths('arch','cr16','cr16_disas.c'),
   join_paths('arch','cris','gnu','cris-dis.c'),
   join_paths('arch','cris','gnu','cris-opc.c'),
   #join_paths('arch','dcpu16','asm.c'),
@@ -132,7 +130,6 @@ r_asm_inc = [
     join_paths('arch','rsp'),
     join_paths('arch','v850'),
     join_paths('arch','propeller'),
-    join_paths('arch','cr16'),
     join_paths('arch','8051'),
     join_paths('arch','v810'),
     join_paths('arch','or1k')
