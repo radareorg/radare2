@@ -4,7 +4,7 @@ ec args rgb:20b0c0
 ec fname rgb:0693c9
 ec floc rgb:00ffff
 ec fline rgb:5f8700
-ec flag rgb:0a8ab0 0 bold
+ec flag rgb:0a8ab0
 ec label rgb:0068bd
 ec help rgb:005f87
 ec flow rgb:5f8700
