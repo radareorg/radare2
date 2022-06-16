@@ -68,7 +68,6 @@ if not no_user_plugins
     parse_plugins += [ 'arm_pseudo' ]
   endif
   if user_plugins.contains('v850')
-    asm_plugins += [ 'v850' ]
     anal_plugins += [ 'v850', 'v850_np', 'v810' ]
     parse_plugins += [ 'v850_pseudo' ]
   endif
@@ -155,7 +154,6 @@ asm_plugins += [
   'sh',
   'sparc_cs',
   'tms320',
-  'v850',
   'x86_as',
   'x86_cs',
   'x86_nasm',
