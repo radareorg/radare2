@@ -11,8 +11,8 @@ ec nop black
 ec jmp blue
 ec cjmp magenta
 ec ujmp green
-ec call magenta bold
-ec ucall magenta bold
+ec call magenta
+ec ucall magenta
 ec input black
 ec fline green
 ec prompt black
