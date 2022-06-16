@@ -575,6 +575,7 @@ R_API int r_core_set_file_by_name(RBin * bin, const char *name);
 R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode);
 
 /* fortune */
+R_API RList *r_core_fortune_types(void);
 R_API void r_core_fortune_list_types(void);
 R_API void r_core_fortune_list(RCore *core);
 R_API void r_core_fortune_print_random(RCore *core);
