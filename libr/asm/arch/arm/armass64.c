@@ -535,18 +535,36 @@ static ut32 ngc(ArmOp *op) {
 static ut32 rev(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
+	bool reg64 = op->operands[0].reg_type & ARM_REG64 && op->operands[0].reg_type & ARM_REG64;
+	bool reg32 = op->operands[0].reg_type & ARM_REG32 && op->operands[0].reg_type & ARM_REG32;
 
 	check_cond(op->operands[0].type == ARM_GPR);
 	check_cond(op->operands[1].type == ARM_GPR);
 
-	if (!strncmp(op->mnemonic, "rev", 3)) {
-		if (op->operands[0].reg_type & ARM_REG64) {
+	if (!strcmp(op->mnemonic, "rev")) {
+		if (reg64) {
 			k = 0x000cc0da;
-		} else if (op->operands[0].reg_type & ARM_REG32) {
+		} else if (reg32) {
 			k = 0x0008c05a;
 		} else {
 			return UT32_MAX;
 		}
+	} else if (!strcmp(op->mnemonic, "rev16")) {
+		if (reg64) {
+			k = 0x0004c0da;
+		} else if (reg32) {
+			k = 0x0004c05a;
+		} else {
+			return UT32_MAX;
+		}
+	} else if (!strcmp(op->mnemonic, "rev32")) {
+		if (reg64) {
+			k = 0x0008c0da;
+		} else {
+			return UT32_MAX;
+		}
+	} else {
+	  	return UT32_MAX;
 	}
 	data = k | op->operands[0].reg << 24;
 	data |= (op->operands[1].reg & 0x7) << 29;
@@ -786,6 +804,41 @@ static ut32 sxt(ArmOp *op) {
 	data = k | op->operands[0].reg << 24;
 	data |= (op->operands[1].reg & 0x7) << 29;
 	data |= (op->operands[1].reg & 0x18) << 13;
+	return data;
+}
+
+static ut32 tb(ArmOp *op) {
+	ut32 data = UT32_MAX;
+	int k = 0;
+	bool reg64_imm = op->operands[0].reg_type & ARM_REG64 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
+	bool reg32_imm = op->operands[0].reg_type & ARM_REG32 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
+
+	check_cond(op->operands[0].type == ARM_GPR);
+
+	if (!strncmp(op->mnemonic, "tbz", 3)) {
+		if (reg64_imm) {
+			k = 0x000000B6;
+		} else if (reg32_imm) {
+			k = 0x00000036;
+		} else {
+		  	return UT32_MAX;
+		}
+	} else if (!strncmp(op->mnemonic, "tbnz", 4)) {
+	  	if (reg64_imm) {
+			k = 0x000000B7;
+		} else if (reg32_imm) {
+			k = 0x00000037;
+		} else {
+		  	return UT32_MAX;
+		}
+	} else {
+	  	return UT32_MAX;
+	}
+	data = k | (op->operands[0].reg & 0x1f) << 24;
+	data |= (op->operands[1].immediate & 0x1f) << 11;
+	data |= (op->operands[2].immediate & 0x1c) << 27;
+	data |= (op->operands[2].immediate & 0x1fe0) << 11;
+	data |= (op->operands[2].immediate & 0x1fe000) >> 5;
 	return data;
 }
 
@@ -1836,6 +1889,8 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = cset (&ops, str);
 	} else if (!strncmp (str, "sxt", 3)) {
 		*op = sxt (&ops);
+	} else if (!strncmp (str, "tb", 2)) {
+		*op = tb (&ops);
 	} else if (!strncmp (str, "ldrb", 4)) {
 		*op = lsop (&ops, 0x00004038, -1);
 	} else if (!strncmp (str, "ldrh", 4)) {
