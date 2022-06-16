@@ -6191,25 +6191,39 @@ static int cmd_print(void *data, const char *input) {
 			processed_cmd = true;
 			break;
 		case ',': // "pd,"
-		case 't': // "pdt"
-			r_core_disasm_table (core, l, r_str_trim_head_ro (input + 2));
-			pd_result = 0;
-			processed_cmd = true;
+		case 't': // "pdt" // R_DEPRECATE pdt imho
+			if (input[2] == '?') {
+				R_LOG_WARN ("Missing help for pd,? command\n");
+				return 0;
+			} else {
+				r_core_disasm_table (core, l, r_str_trim_head_ro (input + 2));
+				pd_result = 0;
+				processed_cmd = true;
+			}
 			break;
 		case 'k': // "pdk" -print class
-		{
-			int len = 0;
-			ut64 at = findClassBounds (core, r_str_trim_head_ro (input + 2), &len);
-			return r_core_cmdf (core, "pD %d @ %"PFMT64u, len, at);
-		}
-		case 'i': // "pdi" // "pDi"
-			processed_cmd = true;
-			if (*input == 'D') {
-				r_core_disasm_pdi (core, 0, l, 0);
+			if (input[2] == '?') {
+				R_LOG_WARN ("Missing help for pdk? command\n");
+				return 0;
 			} else {
-				r_core_disasm_pdi (core, l, 0, 0);
+				int len = 0;
+				ut64 at = findClassBounds (core, r_str_trim_head_ro (input + 2), &len);
+				return r_core_cmdf (core, "pD %d @ %"PFMT64u, len, at);
 			}
-			pd_result = 0;
+			break;
+		case 'i': // "pdi" // "pDi"
+			if (input[2] == '?') {
+				R_LOG_WARN ("Missing help for pdi? command\n");
+				return 0;
+			} else {
+				processed_cmd = true;
+				if (*input == 'D') {
+					r_core_disasm_pdi (core, 0, l, 0);
+				} else {
+					r_core_disasm_pdi (core, l, 0, 0);
+				}
+				pd_result = 0;
+			}
 			break;
 		case 'a': // "pda"
 			processed_cmd = true;
@@ -6221,9 +6235,14 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = true;
 			break;
 		case 'o': // "pdo"
-			core_print_decompile (core, input + 2);
-			pd_result = true;
-			processed_cmd = true;
+			if (input[2] == '?') {
+				R_LOG_WARN ("Missing help for pdo? command\n");
+				return 0;
+			} else {
+				core_print_decompile (core, input + 2);
+				pd_result = true;
+				processed_cmd = true;
+			}
 			break;
 		case 'e': // "pde"
 			processed_cmd = true;
@@ -6232,7 +6251,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			if (input[2] == '?') { // "pde?"
 				r_core_cmd_help (core, help_msg_pde);
-				break;
+				return 0;
 			};
 			int mode = R_MODE_PRINT;
 			if (input[2] == 'j') {
