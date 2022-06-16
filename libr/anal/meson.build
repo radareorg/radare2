@@ -65,6 +65,7 @@ r_anal_sources = [
   join_paths('p','anal_i8080.c'),
   join_paths('p','anal_java.c'),
   join_paths('p','anal_kvx.c'),
+  join_paths('p','anal_lh5801.c'),
   join_paths('p','anal_m680x_cs.c'),
   join_paths('p','anal_m68k_cs.c'),
   join_paths('p','anal_malbolge.c'),
