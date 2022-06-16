@@ -2241,6 +2241,9 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 }
 
 R_API size_t r_str_utf8_codepoint(const char* s, size_t left) {
+	if (!s || left <= 0) {
+		return 0;
+	}
 	if ((*s & 0x80) != 0x80) {
 		return 0;
 	} else if ((*s & 0xe0) == 0xc0 && left >= 1) {
@@ -2254,6 +2257,9 @@ R_API size_t r_str_utf8_codepoint(const char* s, size_t left) {
 }
 
 R_API bool r_str_char_fullwidth(const char* s, size_t left) {
+	if (!s || left <= 0) {
+		return false;
+	}
 	size_t codepoint = r_str_utf8_codepoint (s, left);
 	return (codepoint >= 0x1100 &&
 		 (codepoint <= 0x115f ||                  /* Hangul Jamo init. consonants */
