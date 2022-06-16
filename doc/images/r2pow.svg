@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (https://www.inkscape.org/) -->
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   xmlns:dc="https://purl.org/dc/elements/1.1/"
-   xmlns:cc="https://creativecommons.org/ns#"
-   xmlns:rdf="https://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="https://www.w3.org/2000/svg"
-   xmlns="https://www.w3.org/2000/svg"
-   xmlns:sodipodi="https://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="https://www.inkscape.org/namespaces/inkscape"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    version="1.1"
    width="500"
    height="300"
@@ -37,7 +37,7 @@
      inkscape:current-layer="svg3004" /><metadata
      id="metadata3010"><rdf:RDF><cc:Work
          rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-           rdf:resource="https://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><defs
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><defs
      id="defs3008"><clipPath
    id="clipPath3018"><path
      d="m 0,841.89 1190.55,0 L 1190.55,0 0,0 0,841.89 z"
