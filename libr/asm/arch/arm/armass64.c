@@ -535,13 +535,13 @@ static ut32 ngc(ArmOp *op) {
 static ut32 rev(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
-	bool reg64 = op->operands[0].reg_type & ARM_REG64 && op->operands[0].reg_type & ARM_REG64;
-	bool reg32 = op->operands[0].reg_type & ARM_REG32 && op->operands[0].reg_type & ARM_REG32;
+	const bool reg64 = op->operands[0].reg_type & ARM_REG64 && op->operands[0].reg_type & ARM_REG64;
+	const bool reg32 = op->operands[0].reg_type & ARM_REG32 && op->operands[0].reg_type & ARM_REG32;
 
-	check_cond(op->operands[0].type == ARM_GPR);
+	check_cond (op->operands[0].type == ARM_GPR);
 	check_cond(op->operands[1].type == ARM_GPR);
 
-	if (!strcmp(op->mnemonic, "rev")) {
+	if (!strcmp (op->mnemonic, "rev")) {
 		if (reg64) {
 			k = 0x000cc0da;
 		} else if (reg32) {
@@ -549,7 +549,7 @@ static ut32 rev(ArmOp *op) {
 		} else {
 			return UT32_MAX;
 		}
-	} else if (!strcmp(op->mnemonic, "rev16")) {
+	} else if (!strcmp (op->mnemonic, "rev16")) {
 		if (reg64) {
 			k = 0x0004c0da;
 		} else if (reg32) {
@@ -557,7 +557,7 @@ static ut32 rev(ArmOp *op) {
 		} else {
 			return UT32_MAX;
 		}
-	} else if (!strcmp(op->mnemonic, "rev32")) {
+	} else if (!strcmp (op->mnemonic, "rev32")) {
 		if (reg64) {
 			k = 0x0008c0da;
 		} else {
@@ -810,12 +810,12 @@ static ut32 sxt(ArmOp *op) {
 static ut32 tb(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
-	bool reg64_imm = op->operands[0].reg_type & ARM_REG64 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
-	bool reg32_imm = op->operands[0].reg_type & ARM_REG32 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
+	const bool reg64_imm = op->operands[0].reg_type & ARM_REG64 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
+	const bool reg32_imm = op->operands[0].reg_type & ARM_REG32 && op->operands[1].type & ARM_CONSTANT && op->operands[2].type & ARM_CONSTANT;
 
-	check_cond(op->operands[0].type == ARM_GPR);
+	check_cond (op->operands[0].type == ARM_GPR);
 
-	if (!strncmp(op->mnemonic, "tbz", 3)) {
+	if (r_str_startswith (op->mnemonic, "tbz")) {
 		if (reg64_imm) {
 			k = 0x000000B6;
 		} else if (reg32_imm) {
@@ -823,7 +823,7 @@ static ut32 tb(ArmOp *op) {
 		} else {
 		  	return UT32_MAX;
 		}
-	} else if (!strncmp(op->mnemonic, "tbnz", 4)) {
+	} else if (r_str_startswith (op->mnemonic, "tbnz")) {
 	  	if (reg64_imm) {
 			k = 0x000000B7;
 		} else if (reg32_imm) {
