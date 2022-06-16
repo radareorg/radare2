@@ -8,7 +8,7 @@
 #include <r_anal.h>
 #include <r_util.h>
 
-#include <cr16_disas.h>
+#include "../arch/cr16/cr16_disas.h"
 
 static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		const ut8 *buf, int len, RAnalOpMask mask)
@@ -19,12 +19,14 @@ static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	memset(&cmd, 0, sizeof (cmd));
 
 	ret = op->size = cr16_decode_command(buf, &cmd, len);
-
 	if (ret <= 0) {
 		return ret;
 	}
 
 	op->addr = addr;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
+	}
 
 	switch (cmd.type) {
 	case CR16_TYPE_MOV:

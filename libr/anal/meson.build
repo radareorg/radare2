@@ -130,7 +130,7 @@ r_anal_sources = [
   join_paths('..','asm','arch','avr','avr_disasm.c'),
   join_paths('..','asm','arch','avr','format.c'),
   join_paths('..','asm','arch','avr','disasm.c'),
-  join_paths('..','asm','arch','cr16','cr16_disas.c'),
+  join_paths('arch','cr16','cr16_disas.c'),
   join_paths('..','asm','arch','h8300','h8300_disas.c'),
   join_paths('..','asm','arch','mcore','mcore.c'),
   join_paths('..','asm','arch','or1k','or1k_disas.c'),
