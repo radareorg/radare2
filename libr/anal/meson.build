@@ -60,6 +60,7 @@ r_anal_sources = [
   join_paths('p','anal_cr16.c'),
   join_paths('p','anal_cris.c'),
   join_paths('p','anal_dalvik.c'),
+  join_paths('p','anal_dcpu16.c'),
   join_paths('p','anal_ebc.c'),
   join_paths('p','anal_evm_cs.c'),
   join_paths('p','anal_gb.c'),
