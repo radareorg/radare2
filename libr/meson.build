@@ -144,7 +144,6 @@ asm_plugins += [
   'lh5801',
   'lm32',
   'm680x_cs',
-  'malbolge',
   'mcs96',
   'mips_cs',
   'or1k',

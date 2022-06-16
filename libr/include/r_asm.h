@@ -208,7 +208,6 @@ extern RAsmPlugin r_asm_plugin_lanai_gnu;
 extern RAsmPlugin r_asm_plugin_lh5801;
 extern RAsmPlugin r_asm_plugin_lm32;
 extern RAsmPlugin r_asm_plugin_m680x_cs;
-extern RAsmPlugin r_asm_plugin_malbolge;
 extern RAsmPlugin r_asm_plugin_mcs96;
 extern RAsmPlugin r_asm_plugin_mips_cs;
 extern RAsmPlugin r_asm_plugin_mips_gnu;
