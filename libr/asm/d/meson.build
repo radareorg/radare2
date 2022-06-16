@@ -13,6 +13,7 @@ sdb_files = [
   'LH5801',
   'lm32',
   'm68k',
+  'malbolge',
   'mips',
   'msp430',
   'pic18c',
