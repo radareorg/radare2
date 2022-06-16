@@ -3,7 +3,7 @@
 
 #define MyAppName "radare2"
 #define MyAppPublisher "radare.org"
-#define MyAppURL "https://radare.org/"
+#define MyAppURL "http://radare.org/"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
