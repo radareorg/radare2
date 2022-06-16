@@ -549,10 +549,14 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr,
 
 	op->addr = addr;
 	ret = op->size = h8300_decode_command(buf, &cmd);
-
 	if (ret < 0) {
 		return ret;
 	}
+
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
+	}
+
 	switch (opcode >> 4) {
 	case H8300_MOV_4BIT_2:
 	case H8300_MOV_4BIT_3:
