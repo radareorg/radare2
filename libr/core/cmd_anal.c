@@ -581,6 +581,16 @@ static const char *help_msg_afi[] = {
 	NULL
 };
 
+static const char *help_msg_afis[] = {
+	"Usage:", "afis[ft]", "",
+	"afis", "", "enumerate unique opcodes in function",
+	"afisa", "[fo]", "enumerate all the meta of all the functions",
+	"afisf", "", "enumerate unique opcode families in function",
+	"afiso", "", "enumerate unique opcode types in function",
+	"afist", " [query]", "list in table format",
+	NULL
+};
+
 static const char *help_msg_afl[] = {
 	"Usage:", "afl", " List all functions",
 	"afl", "", "list functions",
@@ -3584,12 +3594,7 @@ static Sdb *__core_cmd_anal_fcn_stats(RCore *core, const char *input) {
 	}
 	switch (*input) {
 	case '?':
-		eprintf ("Usage: afis[ft]\n");
-		eprintf (" afis           enumerate unique opcodes in function\n");
-		eprintf (" afisa[fo]      enumerate all the meta of all the functions\n");
-		eprintf (" afisf          enumerate unique opcode families in function\n");
-		eprintf (" afiso          enumerate unique opcode types in function\n");
-		eprintf (" afist [query]  list in table format\n");
+		r_core_cmd_help (core, help_msg_afis);
 		return NULL;
 	case 'f':
 	case 'o':
