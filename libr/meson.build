@@ -136,7 +136,6 @@ asm_plugins += [
   'dalvik',
   'dcpu16',
   'gb',
-  'h8300',
   'i8080',
   'java',
   'lm32',
