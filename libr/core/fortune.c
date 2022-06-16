@@ -4,11 +4,38 @@
 #include <r_util.h>
 
 static char *getFortuneFile(RCore *core, const char *type) {
+	char *home = r_sys_getenv (R_SYS_HOME);
+	if (!home) {
+		return NULL;
+	}
+	char *path = r_str_newf (R_JOIN_3_PATHS ("%s", R2_HOME_FORTUNES, "fortunes.%s"),
+		home, type);
+	free (home);
+	if (path && r_file_exists (path)) {
+		return path;
+	}
+	free (path);
 	return r_str_newf (R_JOIN_3_PATHS ("%s", R2_FORTUNES, "fortunes.%s"),
 		r_sys_prefix (NULL), type);
 }
 
-R_API RList *r_core_fortune_types(void) {
+static bool _push_types(RList *type_list, char *fortune_dir) {
+	RList *files = r_sys_dir (fortune_dir);
+	if (!files) {
+		return false;
+	}
+	RListIter *iter;
+	char *file;
+	r_list_foreach (files, iter, file) {
+		if (r_str_startswith (file, "fortunes.") && file[9]) {
+			r_list_push (type_list, r_str_new (file + 9));
+		}
+	}
+	r_list_free (files);
+	return true;
+}
+
+R_IPI RList *r_core_fortune_types(void) {	// R_API 5.8
 	RList *types = r_list_newf (free);
 	if (!types) {
 		return NULL;
@@ -16,32 +43,28 @@ R_API RList *r_core_fortune_types(void) {
 	char *fortune_dir = r_str_newf (R_JOIN_2_PATHS ("%s", R2_FORTUNES), r_sys_prefix (NULL));
 	if (!fortune_dir) {
 		r_list_free (types);
+		return NULL;
 	}
-	RList *files = r_sys_dir (fortune_dir);
-	free (fortune_dir);
-	if (!files) {
+	if (!_push_types (types, fortune_dir)) {
+		free (fortune_dir);
 		r_list_free (types);
 		return NULL;
 	}
-	RListIter *iter;
-	char *file;
-	r_list_foreach (files, iter, file) {
-		if (r_str_startswith (file, "fortunes.") && file[9]) {
-			r_list_append (types, r_str_new (&file[9]));
-		}
+	free (fortune_dir);
+	fortune_dir = r_str_home (R2_HOME_FORTUNES);
+	if (fortune_dir) {
+		_push_types (types, fortune_dir);
+		free (fortune_dir);
 	}
-	r_list_free (files);
 	return types;
 }
 
 R_API void r_core_fortune_list_types(void) {
 	RList *types = r_core_fortune_types ();
-	while (!r_list_empty (types)) {
-		char *type = r_list_pop (types);
-		r_cons_printf ("%s\n", type);
-		free (type);
-	}
+	char *fts = r_str_list_join (types, "\n");
 	r_list_free (types);
+	r_cons_println (fts);
+	free (fts);
 }
 
 R_API void r_core_fortune_list(RCore *core) {
@@ -61,7 +84,7 @@ R_API void r_core_fortune_list(RCore *core) {
 				free (file);
 				continue;
 			}
-			r_cons_printf ("%s\n", str);
+			r_cons_println (str);
 			free (str);
 			free (file);
 		}
@@ -81,7 +104,7 @@ static char *getrandomline(RCore *core) {
 	r_list_foreach (ftypes, iter, fortunes) {
 		if (strstr (types, fortunes)) {
 			int lines = 0;
-			char *file = getFortuneFile(core, fortunes);
+			char *file = getFortuneFile (core, fortunes);
 			templine = r_file_slurp_random_line_count (file, &lines);
 			if (templine && *templine) {
 				free (line);
