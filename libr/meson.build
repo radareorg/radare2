@@ -128,7 +128,6 @@ if no_user_plugins
 
 asm_plugins += [
   '8051',
-  'amd29k',
   'arm_as',
   'arm_cs',
   'arm_winedbg',
