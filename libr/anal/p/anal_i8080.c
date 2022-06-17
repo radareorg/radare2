@@ -15,7 +15,7 @@ static int i8080_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	char out[32];
 	int ilen = i8080_disasm (data, out, len);
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		op->mnemonic = strndup (out, sizeof(out));
+		op->mnemonic = r_str_ndup (out, sizeof(out));
 	}
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
