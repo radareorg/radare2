@@ -135,7 +135,6 @@ asm_plugins += [
   'dalvik',
   'dcpu16',
   'gb',
-  'i8080',
   'java',
   'lm32',
   'm680x_cs',
