@@ -153,7 +153,6 @@ asm_plugins += [
   'x86_cs',
   'x86_nasm',
   'x86_nz',
-  'xap',
 ]
 
 # TODO: add the pyc plugin for meson builds too
