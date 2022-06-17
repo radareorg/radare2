@@ -200,7 +200,6 @@ extern RAsmPlugin r_asm_plugin_dcpu16;
 extern RAsmPlugin r_asm_plugin_gb;
 extern RAsmPlugin r_asm_plugin_h8300;
 extern RAsmPlugin r_asm_plugin_hppa_gnu;
-extern RAsmPlugin r_asm_plugin_i8080;
 extern RAsmPlugin r_asm_plugin_java;
 extern RAsmPlugin r_asm_plugin_lanai_gnu;
 extern RAsmPlugin r_asm_plugin_lm32;

@@ -1,0 +1,244 @@
+d "nop" 00
+d "lxi b, 0403" 010304
+d "stax b" 02
+d "inx b" 03
+d "inr b" 04
+d "dcr b" 05
+d "mvi b, 69" 0669
+d "rlc" 07
+d "dad b" 09
+d "ldax b" 0a
+d "dcx b" 0b
+d "inr c" 0c
+d "dcr c" 0d
+d "mvi c, 04" 0e04
+d "rrc" 0f
+d "lxi d, 0908" 110809
+d "stax d" 12
+d "inx d" 13
+d "inr d" 14
+d "dcr d" 15
+d "mvi d, 08" 1608
+d "ral" 17
+d "dad d" 19
+d "ldax d" 1a
+d "dcx d" 1b
+d "inr e" 1c
+d "dcr e" 1d
+d "mvi e, 59" 1e59
+d "rar" 1f
+d "lxi h, 0201" 210102
+d "shld 0102" 220201
+d "inx h" 23
+d "inr h" 24
+d "dcr h" 25
+d "mvi h, 08" 2608
+d "daa" 27
+d "dad h" 29
+d "lhld EDAD" 2aaded
+d "dcx h" 2b
+d "inr l" 2c
+d "dcr l" 2d
+d "mvi l, 09" 2e09
+d "cma" 2f
+d "lxi sp, 0009" 310900
+d "sta 3939" 323939
+d "inx sp" 33
+d "inr m" 34
+d "dcr m" 35
+d "mvi m, 99" 3699
+d "stc" 37
+d "dad sp" 39
+d "lda 0032" 3a3200
+d "dcx sp" 3b
+d "inr a" 3c
+d "dcr a" 3d
+d "mvi a, 39" 3e39
+d "cmc" 3f
+d "mov b, b" 40
+d "mov b, c" 41
+d "mov b, d" 42
+d "mov b, e" 43
+d "mov b, h" 44
+d "mov b, l" 45
+d "mov b, m" 46
+d "mov b, a" 47
+d "mov c, b" 48
+d "mov c, c" 49
+d "mov c, d" 4a
+d "mov c, e" 4b
+d "mov c, h" 4c
+d "mov c, l" 4d
+d "mov c, m" 4e
+d "mov c, a" 4f
+d "mov d, b" 50
+d "mov d, c" 51
+d "mov d, d" 52
+d "mov d, e" 53
+d "mov d, h" 54
+d "mov d, l" 55
+d "mov d, m" 56
+d "mov d, a" 57
+d "mov e, b" 58
+d "mov e, c" 59
+d "mov e, d" 5a
+d "mov e, e" 5b
+d "mov e, h" 5c
+d "mov e, l" 5d
+d "mov e, m" 5e
+d "mov e, a" 5f
+d "mov h, b" 60
+d "mov h, c" 61
+d "mov h, d" 62
+d "mov h, e" 63
+d "mov h, h" 64
+d "mov h, l" 65
+d "mov h, m" 66
+d "mov h, a" 67
+d "mov l, b" 68
+d "mov l, c" 69
+d "mov l, d" 6a
+d "mov l, e" 6b
+d "mov l, h" 6c
+d "mov l, l" 6d
+d "mov l, m" 6e
+d "mov l, a" 6f
+d "mov m, b" 70
+d "mov m, c" 71
+d "mov m, d" 72
+d "mov m, e" 73
+d "mov m, h" 74
+d "mov m, l" 75
+d "hlt" 76
+d "mov m, a" 77
+d "mov a, b" 78
+d "mov a, c" 79
+d "mov a, d" 7a
+d "mov a, e" 7b
+d "mov a, h" 7c
+d "mov a, l" 7d
+d "mov a, m" 7e
+d "mov a, a" 7f
+d "add b" 80
+d "add c" 81
+d "add d" 82
+d "add e" 83
+d "add h" 84
+d "add l" 85
+d "add m" 86
+d "add a" 87
+d "adc b" 88
+d "adc c" 89
+d "adc d" 8a
+d "adc e" 8b
+d "adc h" 8c
+d "adc l" 8d
+d "adc m" 8e
+d "adc a" 8f
+d "sub b" 90
+d "sub c" 91
+d "sub d" 92
+d "sub e" 93
+d "sub h" 94
+d "sub l" 95
+d "sub m" 96
+d "sub a" 97
+d "sbb b" 98
+d "sbb c" 99
+d "sbb d" 9a
+d "sbb e" 9b
+d "sbb h" 9c
+d "sbb l" 9d
+d "sbb m" 9e
+d "sbb a" 9f
+d "ana b" a0
+d "ana c" a1
+d "ana d" a2
+d "ana e" a3
+d "ana h" a4
+d "ana l" a5
+d "ana m" a6
+d "ana a" a7
+d "xra b" a8
+d "xra c" a9
+d "xra d" aa
+d "xra e" ab
+d "xra h" ac
+d "xra l" ad
+d "xra m" ae
+d "xra a" af
+d "ora b" b0
+d "ora c" b1
+d "ora d" b2
+d "ora e" b3
+d "ora h" b4
+d "ora l" b5
+d "ora m" b6
+d "ora a" b7
+d "cmp b" b8
+d "cmp c" b9
+d "cmp d" ba
+d "cmp e" bb
+d "cmp h" bc
+d "cmp l" bd
+d "cmp m" be
+d "cmp a" bf
+d "rnz" c0
+d "pop b" c1
+d "jnz FFFF" c2ffff
+d "jmp FFFE" c3feff
+d "cnz 9393" c49393
+d "push b" c5
+d "adi D8" c6d8
+d "rst 0" c7
+d "rz" c8
+d "ret" c9
+d "jz 3829" ca2938
+d "cz A848" cc48a8
+d "call 9492" cd9294
+d "aci 94" ce94
+d "rst 1" cf
+d "rnc" d0
+d "pop d" d1
+d "jnc 8484" d28484
+d "out DD" d3dd
+d "cnc 9900" d40099
+d "push d" d5
+d "sui 33" d633
+d "rst 2" d7
+d "rc" d8
+d "jc 9994" da9499
+d "in D9" dbd9
+d "cc DCDC" dcdcdc
+d "sbi 39" de39
+d "rst 3" df
+d "rpo" e0
+d "pop h" e1
+d "jpo 5664" e26456
+d "xthl" e3
+d "cpo 4448" e44844
+d "push h" e5
+d "ani 29" e629
+d "rst 4" e7
+d "rpe" e8
+d "pchl" e9
+d "jpe 7573" ea7375
+d "xchg" eb
+d "cpe 4994" ec9449
+d "xri 39" ee39
+d "rst 5" ef
+d "rp" f0
+d "pop psw" f1
+d "jp 6158" f25861
+d "di" f3
+d "cp A289" f489a2
+d "push psw" f5
+d "ori 29" f629
+d "rst 6" f7
+d "rm" f8
+d "sphl" f9
+d "jm 3838" fa3838
+d "ei" fb
+d "cm 3929" fc2939
+d "cpi 32" fe32
+d "rst 7" ff
