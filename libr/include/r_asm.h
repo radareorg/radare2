@@ -230,7 +230,6 @@ extern RAsmPlugin r_asm_plugin_x86_cs;
 extern RAsmPlugin r_asm_plugin_x86_nasm;
 extern RAsmPlugin r_asm_plugin_x86_nz;
 extern RAsmPlugin r_asm_plugin_xap;
-extern RAsmPlugin r_asm_plugin_xcore_cs;
 extern RAsmPlugin r_asm_plugin_xtensa;
 extern RAsmPlugin r_asm_plugin_alpha;
 extern RAsmPlugin r_asm_plugin_vasm;

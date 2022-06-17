@@ -75,6 +75,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		if (mask & R_ANAL_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
 		}
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = r_str_newf ("%s%s%s",
+				insn->mnemonic, insn->op_str[0]? " ": "",
+				insn->op_str);
+		}
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
