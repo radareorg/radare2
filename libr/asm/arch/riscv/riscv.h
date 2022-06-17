@@ -59,7 +59,7 @@ static const char *const riscv_pred_succ[16] =
 #define RVC_BRANCH_REACH ((1ULL << RVC_BRANCH_BITS) * RISCV_BRANCH_ALIGN)
 
 #define RV_X(x, s, n)  (((x) >> (s)) & ((1 << (n)) - 1))
-#define RV_IMM_SIGN(x) (-(long long)(((x) >> 31) & 1))
+#define RV_IMM_SIGN(x) (-(long long)((((unsigned long long)x) >> 31) & 1))
 
 #define EXTRACT_ITYPE_IMM(x) \
   (RV_X(x, 20, 12) | (RV_IMM_SIGN(x) << 12))
