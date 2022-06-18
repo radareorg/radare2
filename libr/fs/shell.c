@@ -270,6 +270,22 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				free (f);
 			}
 			free (s);
+		} else if (!memcmp (buf, "open ", 5)) {
+			input = (char *)r_str_trim_head_ro (buf + 5);
+			file = r_fs_open (fs, input, false);
+			if (file) {
+				r_fs_read (fs, file, 0, file->size);
+				char *uri = r_str_newf ("malloc://%d", file->size);
+				RIODesc *fd = r_io_open (fs->iob.io, uri, R_PERM_RW, 0);
+				free (uri);
+				if (fd) {
+					r_io_desc_write (fd, file->data, file->size);
+					r_list_free (list);
+					return true;
+				}
+			} else {
+				eprintf ("Cannot open file\n");
+			}
 		} else if (!memcmp (buf, "help", 4) || !strcmp (buf, "?")) {
 			cb_printf (
 				"Usage: [command (arguments)]([~grep-expression])\n"
@@ -279,6 +295,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				" cd path     ; change current directory\n"
 				" cat file    ; print contents of file\n"
 				" get file    ; dump file to disk\n"
+				" open file   ; open file with r2\n"
 				" mount       ; list mount points\n"
 				" q/exit      ; leave prompt mode\n"
 				" ?/help      ; show this help\n");
