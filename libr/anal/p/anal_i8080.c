@@ -13,7 +13,7 @@
 
 static int i8080_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	char out[32];
-	unsigned char code[3] = {0};
+	ut8 code[3] = {0};
 	memcpy (code, data, R_MIN (sizeof(code), len));
 	int ilen = i8080_disasm (code, out, len);
 	if (mask & R_ANAL_OP_MASK_DISASM) {
