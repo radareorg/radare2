@@ -149,7 +149,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			free (me);
 		} else if (!r_str_cmp (buf, "pwd", 3)) {
 			cb_printf ("%s\n", path);
-		} else if (!r_str_cmp (buf, "cd ", 3)) {
+		} else if (r_str_startswith (buf, "cd ")) {
 			char opath[PROMPT_PATH_BUFSIZE];
 			r_str_ncpy (opath, path, sizeof (opath));
 			input = buf + 3;
@@ -187,7 +187,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					}
 				}
 			}
-		} else if (!r_str_cmp (buf, "cat ", 4)) {
+		} else if (r_str_startswith (buf, "cat ")) {
 			input = buf + 3;
 			while (input[0] == ' ') {
 				input++;
@@ -228,7 +228,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			r_list_foreach (fs->roots, iter, r) {
 				cb_printf ("%s %s\n", r->path, r->p->name);
 			}
-		} else if (!r_str_cmp (buf, "get ", 4)) {
+		} else if (r_str_startswith (buf, "get ")) {
 			char* s = 0;
 			input = buf + 3;
 			while (input[0] == ' ') {
@@ -270,7 +270,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				free (f);
 			}
 			free (s);
-		} else if (!r_str_cmp (buf, "o ", 2) || !r_str_cmp (buf, "open ", 5)) {
+		} else if (r_str_startswith (buf, "o ") || r_str_startswith (buf, "open ")) {
 			input = r_str_nextword (buf, ' ');
 			input = (char *)r_str_trim_head_ro (input);
 			file = r_fs_open (fs, input, false);
