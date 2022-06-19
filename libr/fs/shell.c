@@ -270,8 +270,9 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				free (f);
 			}
 			free (s);
-		} else if (!r_str_cmp (buf, "open ", 5)) {
-			input = (char *)r_str_trim_head_ro (buf + 5);
+		} else if (!r_str_cmp (buf, "o ", 2) || !r_str_cmp (buf, "open ", 5)) {
+			input = r_str_nextword (buf, ' ');
+			input = (char *)r_str_trim_head_ro (input);
 			file = r_fs_open (fs, input, false);
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
@@ -295,7 +296,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				" cd path     ; change current directory\n"
 				" cat file    ; print contents of file\n"
 				" get file    ; dump file to disk\n"
-				" open file   ; open file with r2\n"
+				" o/open file ; open file with r2\n"
 				" mount       ; list mount points\n"
 				" q/exit      ; leave prompt mode\n"
 				" ?/help      ; show this help\n");
