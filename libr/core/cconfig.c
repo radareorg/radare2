@@ -4068,6 +4068,8 @@ R_API int r_core_config_init(RCore *core) {
 #if __WINDOWS__
 	SETICB ("scr.vtmode", r_cons_singleton ()->vtmode,
 		&scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Output, 2: Input & Output)");
+#else
+	SETI ("scr.vtmode", 0, "windows specific configuration that have no effect on other OSs");
 #endif
 #if __ANDROID__
 	// SETBPREF ("scr.responsive", "true", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
