@@ -2376,7 +2376,8 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 		}
 	}
 	ut64 type = r_core_anal_address (core, value);
-	RBinSection *sect = value? r_bin_get_section_at (r_bin_cur_object (core->bin), value, true): NULL;
+	RBinObject *bo = r_bin_cur_object (core->bin);
+	RBinSection *sect = (bo && value)? r_bin_get_section_at (bo, value, true): NULL;
 	if ((int)value < 0 && ((int)value > -0xffff)) {
 		ut64 dst = core->offset + (st32)value;
 		if (r_io_is_valid_offset (core->io, dst, false)) {
