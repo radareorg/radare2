@@ -19,7 +19,7 @@ static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 	}
 	RFSFile *f = r_fs_open (fs, red, true);
 	if (!f) {
-		eprintf ("Cannot open %s for writing\n", red);
+		R_LOG_ERROR ("Cannot open %s for writing", red);
 		free (red);
 		return true;
 	}
@@ -148,7 +148,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			}
 			free (me);
 		} else if (!r_str_cmp (buf, "pwd", 3)) {
-			eprintf ("%s\n", path);
+			cb_printf ("%s\n", path);
 		} else if (!r_str_cmp (buf, "cd ", 3)) {
 			char opath[PROMPT_PATH_BUFSIZE];
 			r_str_ncpy (opath, path, sizeof (opath));
@@ -221,7 +221,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				cb_printf ("\n");
 				r_fs_close (fs, file);
 			} else {
-				eprintf ("Cannot open file\n");
+				R_LOG_ERROR ("Cannot open file");
 			}
 		} else if (!r_str_cmp (buf, "mount", 5)) {
 			RFSRoot* r;
@@ -265,7 +265,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			} else {
 				char *f = r_str_newf ("./%s", input);
 				if (!r_fs_dir_dump (fs, s, f)) {
-					eprintf ("Cannot open file\n");
+					R_LOG_ERROR ("Cannot open file");
 				}
 				free (f);
 			}
@@ -284,7 +284,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					return true;
 				}
 			} else {
-				eprintf ("Cannot open file\n");
+				R_LOG_ERROR ("Cannot open file");
 			}
 		} else if (!r_str_cmp (buf, "help", 4) || !r_str_cmp (buf, "?", -1)) {
 			cb_printf (
@@ -301,7 +301,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				" ?/help      ; show this help\n");
 		} else {
 			if (*buf) {
-				eprintf ("Unknown command %s\n", buf);
+				R_LOG_ERROR ("Unknown command %s", buf);
 			}
 		}
 		if (wave) {
