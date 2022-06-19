@@ -91,7 +91,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			*wave++ = 0;
 		}
 
-		if (!strcmp (buf, "q") || !strcmp (buf, "exit")) {
+		if (!r_str_cmp (buf, "q", -1) || !r_str_cmp (buf, "exit", -1)) {
 			r_list_free (list);
 			return true;
 		}
@@ -104,13 +104,13 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			free (msg);
 		} else if (buf[0] == '!') {
 			r_sandbox_system (buf + 1, 1);
-		} else if (!strncmp (buf, "echo", 4)) {
+		} else if (!r_str_cmp (buf, "echo", 4)) {
 			char *msg = r_str_trim_dup (buf + 4);
 			if (!handlePipes (fs, msg, NULL, path)) {
 				cb_printf ("%s\n", msg);
 			}
 			free (msg);
-		} else if (!strncmp (buf, "ls", 2)) {
+		} else if (!r_str_cmp (buf, "ls", 2)) {
 			char *ptr = str;
 			r_list_free (list);
 			if (buf[2] == ' ') {
@@ -141,15 +141,15 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					*ls = 0;
 				}
 				// TODO: adjust contents between //
-				if (!strcmp (me, base)) {
+				if (!r_str_cmp (me, base, -1)) {
 					cb_printf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
 				}
 				free (base);
 			}
 			free (me);
-		} else if (!strncmp (buf, "pwd", 3)) {
+		} else if (!r_str_cmp (buf, "pwd", 3)) {
 			eprintf ("%s\n", path);
-		} else if (!memcmp (buf, "cd ", 3)) {
+		} else if (!r_str_cmp (buf, "cd ", 3)) {
 			char opath[PROMPT_PATH_BUFSIZE];
 			r_str_ncpy (opath, path, sizeof (opath));
 			input = buf + 3;
@@ -187,7 +187,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					}
 				}
 			}
-		} else if (!memcmp (buf, "cat ", 4)) {
+		} else if (!r_str_cmp (buf, "cat ", 4)) {
 			input = buf + 3;
 			while (input[0] == ' ') {
 				input++;
@@ -223,12 +223,12 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			} else {
 				eprintf ("Cannot open file\n");
 			}
-		} else if (!memcmp (buf, "mount", 5)) {
+		} else if (!r_str_cmp (buf, "mount", 5)) {
 			RFSRoot* r;
 			r_list_foreach (fs->roots, iter, r) {
 				cb_printf ("%s %s\n", r->path, r->p->name);
 			}
-		} else if (!memcmp (buf, "get ", 4)) {
+		} else if (!r_str_cmp (buf, "get ", 4)) {
 			char* s = 0;
 			input = buf + 3;
 			while (input[0] == ' ') {
@@ -270,7 +270,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				free (f);
 			}
 			free (s);
-		} else if (!memcmp (buf, "open ", 5)) {
+		} else if (!r_str_cmp (buf, "open ", 5)) {
 			input = (char *)r_str_trim_head_ro (buf + 5);
 			file = r_fs_open (fs, input, false);
 			if (file) {
@@ -286,7 +286,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			} else {
 				eprintf ("Cannot open file\n");
 			}
-		} else if (!memcmp (buf, "help", 4) || !strcmp (buf, "?")) {
+		} else if (!r_str_cmp (buf, "help", 4) || !r_str_cmp (buf, "?", -1)) {
 			cb_printf (
 				"Usage: [command (arguments)]([~grep-expression])\n"
 				" !cmd        ; escape to system\n"
