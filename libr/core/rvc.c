@@ -1320,11 +1320,27 @@ R_API RList *r_vc_git_get_uncommitted(Rvc *rvc) {
 	RList *ret = NULL;
 	char *esc_path = r_str_escape (rvc->path);
 	if (esc_path) {
-		char *output = r_sys_cmd_strf ("git -C %s diff --name-only",
+		char *output = r_sys_cmd_strf ("git -C %s status --short",
 				esc_path);
 		free (esc_path);
 		if (!R_STR_ISEMPTY (output)) {
+			r_str_trim(output);
 			ret = r_str_split_duplist (output, "\n", true);
+			free (output);
+			RListIter *iter;
+			char *i;
+			r_list_foreach (ret, iter, i) {
+				//after we add one to the output, there maybe
+				//a space so trim that
+				char *ni = r_str_trim_dup (i + 2);
+				if (!ni) {
+					r_list_free (ret);
+					ret = NULL;
+					break;
+				}
+				free (i);
+				iter->data = ni;
+			}
 		} else {
 			ret = r_list_new ();
 		}
