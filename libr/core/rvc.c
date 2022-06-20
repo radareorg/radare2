@@ -735,8 +735,8 @@ static RList *blobs_add(Rvc *rvc, const RList *files) {
 		}
 		if (!found) {
 			eprintf ("File %s is already committed\n", path);
-			free (absp);
 		}
+		free (absp);
 	}
 	return ret;
 fail_ret:
