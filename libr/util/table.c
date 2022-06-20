@@ -50,7 +50,6 @@ static void __table_adjust(RTable *t) {
 		int ncol = 0;
 		r_list_foreach (row->items, iter2, item) {
 			int itemLength = r_str_len_utf8_ansi (item) + 1;
-eprintf ("LEN (%s) %d\n", item, itemLength);
 			RTableColumn *c = r_list_get_n (t->cols, ncol);
 			if (c) {
 				c->width = R_MAX (c->width, itemLength);
