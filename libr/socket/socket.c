@@ -233,7 +233,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 	r_sys_usleep (timeout);
 
 	char aport[32];
-	sprintf (aport, "%d", port);
+	snprintf (aport, sizeof (aport), "%d", port);
 	// redirect stdin/stdout/stderr
 	bool sock = r_socket_connect (s, "127.0.0.1", aport, R_SOCKET_PROTO_TCP, 2000);
 	if (!sock) {
@@ -244,7 +244,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 	r_sys_usleep (timeout);
 
 	int status = 0;
-	int ret = waitpid (childPid, &status, WNOHANG);
+	int ret = waitpid (childPid, &status, WNOHANG | WUNTRACED);
 	if (ret != 0) {
 		r_socket_close (s);
 		return false;
