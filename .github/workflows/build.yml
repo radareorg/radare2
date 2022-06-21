@@ -150,22 +150,20 @@ jobs:
         path: dist/macos/*.pkg
         name: macos-acr
 
-#   macos-acr-m1:
-#     runs-on: macos-latest
-#     steps:
-#     - name: Checkout
-#       uses: actions/checkout@v2
-#     - name: Packaging
-#       run: export CC="xcrun --sdk macosx11.1 gcc -arch arm64" ; dist/macos/build-pkg.sh
-#     - name: Pub
-#       uses: actions/upload-artifact@v2
-#       with:
-#         path: dist/macos/*.pkg
-#         name: macos-acr-m1
-#
-
-
-  # iOS
+  macos-acr-m1:
+     runs-on: macos-12
+     steps:
+     - name: Checkout
+       uses: actions/checkout@v2
+     - name: Packaging
+       env:
+         ARCHFLAGS: '-arch arm64'
+       run: export CC="gcc -arch arm64" ; dist/macos/build-pkg.sh
+     - name: Pub
+       uses: actions/upload-artifact@v2
+       with:
+         path: dist/macos/*.pkg
+         name: macos-acr-m1
   ios-cydia32:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: macos-latest
