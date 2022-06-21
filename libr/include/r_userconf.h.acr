@@ -35,7 +35,7 @@
 #define R2_SDB "@SDB@"
 #define R2_ZIGNS "@ZIGNS@"
 #define R2_THEMES "@THEMES@"
-#define R2_FORTUNES "@FORTUNES@"
+#define R2_FORTUNES R_JOIN_3_PATHS ("@DATADIR@", "doc", "radare2")
 #define R2_FLAGS "@FLAGS@"
 #define R2_HUD "@HUD@"
 #else
