@@ -519,9 +519,6 @@ R_API bool r_line_hist_load(const char *file) {
 #else
 R_API int r_line_hist_load(const char *file) {
 #endif
-#if __WINDOWS__
-	return false;
-#else
 	r_return_val_if_fail (file, false);
 	char *buf = calloc (1, R_LINE_BUFSIZE);
 	char *path = r_str_home (file);
@@ -547,7 +544,6 @@ R_API int r_line_hist_load(const char *file) {
 	free (path);
 	free (buf);
 	return true;
-#endif
 }
 
 R_API bool r_line_hist_save(const char *file) {

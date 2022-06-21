@@ -4392,10 +4392,13 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		return 0;
 	}
 
+	int ovtmode = r_config_get_i (core->config, "scr.vtmode");
+	r_config_set_i (core->config, "scr.vtmode", 2);
 	obs = core->blocksize;
 	//r_cons_set_cup (true);
 	if (strchr (input, '?')) {
 		// show V? help message, disables oneliner to open visual help
+		r_config_set_i (core->config, "scr.vtmode", ovtmode);
 		return 0;
 	}
 	core->vmode = false;
@@ -4404,11 +4407,13 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		char *cmd = r_str_newf ("!v%s", input);
 		int ret = r_core_cmd0 (core, cmd);
 		free (cmd);
+		r_config_set_i (core->config, "scr.vtmode", ovtmode);
 		return ret;
 	}
 	while (*input) {
 		int len = *input == 'd'? 2: 1;
 		if (!r_core_visual_cmd (core, input)) {
+			r_config_set_i (core->config, "scr.vtmode", ovtmode);
 			return 0;
 		}
 		input += len;
@@ -4553,6 +4558,7 @@ dodo:
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
 	r_cons_show_cursor (true);
+	r_config_set_i (core->config, "scr.vtmode", ovtmode);
 	return 0;
 }
 
