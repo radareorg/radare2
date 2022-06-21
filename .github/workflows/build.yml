@@ -176,7 +176,7 @@ jobs:
          ARCHFLAGS: '-arch arm64'
          MACOSX_DEPLOYMENT_TARGET: '11.0'
          SDKROOT: '/Applications/Xcode_12.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.0.sdk'
-       run: export CC="xcrun --sdk macosx11.0 gcc -arch arm64" ; dist/macos/build-pkg.sh
+       run: export CC="gcc -arch arm64" ; dist/macos/build-pkg.sh
      - name: Pub
        uses: actions/upload-artifact@v2
        with:
