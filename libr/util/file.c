@@ -42,7 +42,7 @@ static int file_stat(const char *file, struct stat* const pStat) {
 	if (!wfile) {
 		return -1;
 	}
-	int ret = _wstat (wfile, pStat);
+	int ret = _wstat (wfile, (struct _stat64i32 *)pStat);
 	free (wfile);
 	return ret;
 #else
