@@ -4,7 +4,7 @@
 #include <r_util.h>
 
 static char *getFortuneFile(RCore *core, const char *type) {
-	char *ft = r_str_newf (".cache/radare2/fortunes.%s", type);
+	char *ft = r_str_newf(R_JOIN_2_PATHS (R2_HOME_FORTUNES, "fortunes.%s"), type);
 	char *path = r_str_home (ft);
 	free (ft);
 	if (path && r_file_exists (path)) {
