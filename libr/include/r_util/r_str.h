@@ -237,7 +237,9 @@ R_API char *r_str_between(const char *str, const char *prefix, const char *suffi
 #undef r_str_startswith
 R_API bool r_str_startswith(const char *str, const char *needle);
 R_UNUSED static bool r_str_startswith_inline(const char *str, const char *needle) {
-	r_return_val_if_fail (str && needle, false);
+	if (!str || !needle) {
+		return false;
+	}
 	if (str == needle) {
 		return true;
 	}
