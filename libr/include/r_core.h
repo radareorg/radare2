@@ -284,7 +284,7 @@ struct r_core_t {
 	RBuffer *yank_buf;
 	ut64 yank_addr;
 	bool tmpseek;
-	bool vmode;
+	bool vmode; // is r2 in visual or panels mode?
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
 	RCons *cons;
