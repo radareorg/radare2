@@ -774,6 +774,8 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	//r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
 	r_cons_show_cursor (true);
 	core->vmode = false;
+	int ovtmode = r_config_get_i (core->config, "scr.vtmode");
+	r_config_set_i (core->config, "scr.vtmode", 1);
 
 	int curbs = core->blocksize;
 	if (autoblocksize) {
@@ -793,6 +795,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	core->vmode = true;
 	r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 	r_cons_show_cursor (true);
+	r_config_set_i (core->config, "scr.vtmode", ovtmode);
 }
 
 R_API int r_core_visual_prompt(RCore *core) {
