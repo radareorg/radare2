@@ -519,26 +519,35 @@ R_API bool r_line_hist_load(const char *file) {
 #else
 R_API int r_line_hist_load(const char *file) {
 #endif
+#if __WINDOWS__
+	return false;
+#else
 	r_return_val_if_fail (file, false);
-	char buf[R_LINE_BUFSIZE] = {0};
+	char *buf = calloc (1, R_LINE_BUFSIZE);
 	char *path = r_str_home (file);
 	if (!path) {
+		free (buf);
 		return false;
 	}
 	FILE *fd = r_sandbox_fopen (path, "rb");
 	if (!fd) {
 		free (path);
+		free (buf);
 		return false;
 	}
-	buf[0] = 0;
-	while (fgets (buf, sizeof (buf) - 1, fd)) {
+	memset (buf, 0, R_LINE_BUFSIZE);
+	while (fgets (buf, R_LINE_BUFSIZE - 1, fd)) {
 		r_str_trim_tail (buf);
-		r_line_hist_add (buf);
-		buf[0] = 0;
+		if (*buf) {
+			r_line_hist_add (buf);
+		}
+		memset (buf, 0, R_LINE_BUFSIZE);
 	}
 	fclose (fd);
 	free (path);
+	free (buf);
 	return true;
+#endif
 }
 
 R_API bool r_line_hist_save(const char *file) {
