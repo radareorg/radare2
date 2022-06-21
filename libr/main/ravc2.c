@@ -112,7 +112,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			RListIter *iter;
 			char *branch;
 			r_list_foreach(branches, iter, branch) {
-				printf ("%s\n", branch + (r_str_len_utf8 (BPREFIX)));
+				printf ("%s\n", branch);
 			}
 			r_list_free(branches);
 		} else {

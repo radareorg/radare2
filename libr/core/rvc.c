@@ -329,7 +329,6 @@ static int branch_exists(Rvc *rvc, const char *bname) {
 	char *branch;
 	bool ret = 0;
 	r_list_foreach (branches, iter, branch) {
-		branch = branch + r_str_len_utf8 (BPREFIX);
 		if (!strcmp (branch, bname)) {
 			ret = 1;
 			break;
@@ -834,11 +833,12 @@ R_API RList *r_vc_get_branches(Rvc *rvc) {
 	SdbListIter *i;
 	SdbKv *kv;
 	ls_foreach (keys, i, kv) {
+		size_t bplen = r_str_len_utf8 (BPREFIX);
 		if (r_str_cmp ((char *)kv->base.key,
-					BPREFIX, r_str_len_utf8 (BPREFIX))) {
+					BPREFIX, bplen)) {
 			continue;
 		}
-		if (!r_list_append (ret, r_str_new (kv->base.key))
+		if (!r_list_append (ret, r_str_new (kv->base.key + bplen))
 				&& !ret->head->data) {
 			r_list_free (ret);
 			ret = NULL;
@@ -1060,8 +1060,8 @@ R_API char *r_vc_current_branch(Rvc *rvc) {
 	if (!rvc->db) {
 		return NULL;
 	}
-	//TODO: return consistently either BPREFIX.bname or bname
-	char *ret = r_str_new (sdb_const_get (rvc->db, CURRENTB, 0) + r_str_len_utf8 (BPREFIX));
+	char *ret = r_str_new (sdb_const_get (rvc->db, CURRENTB, 0)
+			+ r_str_len_utf8 (BPREFIX));
 	return ret;
 }
 
@@ -1302,6 +1302,7 @@ R_API RList *r_vc_git_get_branches(Rvc *rvc) {
 	if (esc_path) {
 		char *output = r_sys_cmd_strf ("git -C %s branch --color=never",
 				esc_path);
+		r_str_trim (output);
 		free (esc_path);
 		if (!R_STR_ISEMPTY (output)) {
 			ret = r_str_split_duplist (output, "\n", true);
