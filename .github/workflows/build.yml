@@ -159,8 +159,8 @@ jobs:
      - name: Packaging
        env:
          ARCHFLAGS: '-arch arm64'
-         MACOSX_DEPLOYMENT_TARGET: '12.4'
-         SDKROOT: '/Applications/Xcode_13.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk'
+         iMACOSX_DEPLOYMENT_TARGET: '12.4'
+         iSDKROOT: '/Applications/Xcode_13.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk'
        run: gcc -v; ls -l $SDKROOT ; echo "main() {}" > a.c ; gcc a.c ; gcc -arch arm64 a.c ; export CC="gcc -arch arm64" ; dist/macos/build-pkg.sh
      - name: Pub
        uses: actions/upload-artifact@v2
