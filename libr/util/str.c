@@ -3769,6 +3769,7 @@ R_API void r_str_stripLine(char *str, const char *key) {
 }
 
 R_API char *r_str_list_join(RList *str, const char *sep) {
+	r_return_val_if_fail (str && sep, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
 	const char *p;
 	while ((p = r_list_pop_head (str))) {

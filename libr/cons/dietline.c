@@ -545,9 +545,9 @@ R_API bool r_line_hist_save(const char *file) {
 	r_return_val_if_fail (file && *file, false);
 	int i;
 	bool ret = false;
-	char *p, *path = r_str_home (file);
+	char *path = r_str_home (file);
 	if (path) {
-		p = (char *) r_str_lastbut (path, R_SYS_DIR[0], NULL);	// TODO: use fs
+		char *p = (char *) r_str_lastbut (path, R_SYS_DIR[0], NULL);	// TODO: use fs
 		if (p) {
 			*p = 0;
 			if (!r_sys_mkdirp (path)) {
@@ -565,11 +565,9 @@ R_API bool r_line_hist_save(const char *file) {
 					fputs (I.history.data[i], fd);
 					fputs ("\n", fd);
 				}
-				fclose (fd);
 				ret = true;
-			} else {
-				fclose (fd);
 			}
+			fclose (fd);
 		}
 	}
 end:

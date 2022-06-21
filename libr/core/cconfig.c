@@ -3699,7 +3699,12 @@ R_API int r_core_config_init(RCore *core) {
 	free (whoami);
 	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "if enabled show tips at start");
 	RList *fortune_types = r_core_fortune_types ();
-	char *fts = r_str_list_join(fortune_types, ",");
+	if (!fortune_types) {
+		fortune_types = r_list_newf (free);
+		r_list_append (fortune_types, "tips");
+		r_list_append (fortune_types, "fun");
+	}
+	char *fts = r_str_list_join (fortune_types, ",");
 	r_list_free (fortune_types);
 	char *fortune_desc = r_str_newf ("type of fortunes to show(%s)", fts);
 	SETCB ("cfg.fortunes.type", fts, &cb_cfg_fortunes_type, fortune_desc);
