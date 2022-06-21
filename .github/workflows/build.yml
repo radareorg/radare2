@@ -150,7 +150,6 @@ jobs:
         path: dist/macos/*.pkg
         name: macos-acr
 
-  # macos-m1
   macos-acr-m1:
      runs-on: macos-12
      steps:
@@ -159,9 +158,7 @@ jobs:
      - name: Packaging
        env:
          ARCHFLAGS: '-arch arm64'
-         iMACOSX_DEPLOYMENT_TARGET: '12.4'
-         iSDKROOT: '/Applications/Xcode_13.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.0.sdk'
-       run: gcc -v; ls -l $SDKROOT ; echo "main() {}" > a.c ; gcc a.c ; gcc -arch arm64 a.c ; export CC="gcc -arch arm64" ; dist/macos/build-pkg.sh
+       run: export CC="gcc -arch arm64" ; dist/macos/build-pkg.sh
      - name: Pub
        uses: actions/upload-artifact@v2
        with:
