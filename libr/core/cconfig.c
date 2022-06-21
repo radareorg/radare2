@@ -4071,8 +4071,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.flush", "false", &cb_scrflush, "force flush to console in realtime (breaks scripting)");
 	SETBPREF ("scr.slow", "true", "do slow stuff on visual mode like RFlag.get_at(true)");
 #if __WINDOWS__
-	SETICB ("scr.vtmode", r_cons_singleton ()->vtmode,
-		&scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Output, 2: Input & Output)");
+	SETICB ("scr.vtmode", r_cons_singleton ()->vtmode? 1: 0,
+		&scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Shell, 2: Visual)");
 #else
 	SETI ("scr.vtmode", 0, "windows specific configuration that have no effect on other OSs");
 #endif
