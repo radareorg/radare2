@@ -3367,14 +3367,6 @@ R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffi
 	return NULL;
 }
 
-R_API bool r_str_startswith(const char *str, const char *needle) {
-	r_return_val_if_fail (str && needle, false);
-	if (str == needle) {
-		return true;
-	}
-	return !strncmp (str, needle, strlen (needle));
-}
-
 R_API bool r_str_endswith(const char *str, const char *needle) {
 	r_return_val_if_fail (str && needle, false);
 	if (!*needle) {
@@ -3988,3 +3980,13 @@ R_API int r_str_size(const char *s, int *rows) {
 	}
 	return cols;
 }
+
+#undef r_str_startswith
+R_API bool r_str_startswith(const char *str, const char *needle) {
+	r_return_val_if_fail (str && needle, false);
+	if (str == needle) {
+		return true;
+	}
+	return !strncmp (str, needle, strlen (needle));
+}
+
