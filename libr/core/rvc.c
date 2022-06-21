@@ -838,7 +838,7 @@ R_API RList *r_vc_get_branches(Rvc *rvc) {
 					BPREFIX, bplen)) {
 			continue;
 		}
-		if (!r_list_append (ret, r_str_new (kv->base.key + bplen))
+		if (!r_list_append (ret, r_str_new ((char *)kv->base.key + bplen))
 				&& !ret->head->data) {
 			r_list_free (ret);
 			ret = NULL;
@@ -1309,8 +1309,11 @@ R_API RList *r_vc_git_get_branches(Rvc *rvc) {
 			RListIter *iter;
 			char *name;
 			r_list_foreach (ret, iter, name) {
-				iter->data = r_str_new (name + 2);
-				free (name);
+				if (*(char *)iter->data == '*') {
+					iter->data = r_str_new (name + 2);
+					free (name);
+				}
+
 			}
 		}
 	}
