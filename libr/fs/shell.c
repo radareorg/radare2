@@ -277,7 +277,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
 				char *uri = r_str_newf ("malloc://%d", file->size);
-				RIODesc *fd = r_io_open (fs->iob.io, uri, R_PERM_RW, 0);
+				RIODesc *fd = fs->iob.open_at (fs->iob.io, uri, R_PERM_RW, 0, 0);
 				free (uri);
 				if (fd) {
 					r_io_desc_write (fd, file->data, file->size);
