@@ -3930,7 +3930,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("hex.header", "true", &cb_hex_header, "show header in hexdump");
 	SETCB ("hex.bytes", "true", &cb_hex_bytes, "show bytes column in hexdump");
 	SETCB ("hex.ascii", "true", &cb_hex_ascii, "show ascii column in hexdump");
-	SETCB ("hex.hdroff", "false", &cb_hex_hdroff, "show aligned 1 byte in header instead of delta nibble");
+	SETCB ("hex.hdroff", "true", &cb_hex_hdroff, "show aligned 1 byte in header instead of delta nibble");
 	SETCB ("hex.style", "false", &cb_hex_style, "improve the hexdump header style");
 	SETCB ("hex.pairs", "true", &cb_hex_pairs, "show bytes paired in 'px' hexdump");
 	SETCB ("hex.align", "false", &cb_hex_align, "align hexdump with flag + flagsize");

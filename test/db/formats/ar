@@ -20,7 +20,7 @@ NAME=ar file content
 FILE=ar://bins/ar/libgdbr.a//xml.o
 CMDS=px 64
 EXPECT=<<EOF
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+- offset -  4041 4243 4445 4647 4849 4A4B 4C4D 4E4F  0123456789ABCDEF
 0x08000040  5548 89e5 4883 ec30 4889 7dd8 6448 8b04  UH..H..0H.}.dH..
 0x08000050  2528 0000 0048 8945 f831 c048 8b45 d80f  %(...H.E.1.H.E..
 0x08000060  b640 7e83 f001 84c0 7407 b8ff ffff ffeb  .@~.....t.......
@@ -32,7 +32,7 @@ NAME=ar file content
 FILE=ar://bins/ar/libgdbr.a//core.o
 CMDS=px 64
 EXPECT=<<EOF
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+- offset -  4041 4243 4445 4647 4849 4A4B 4C4D 4E4F  0123456789ABCDEF
 0x08000040  5548 89e5 4883 ec20 4889 7de8 bf80 0000  UH..H.. H.}.....
 0x08000050  00e8 0000 0000 4889 45f8 4883 7df8 0075  ......H.E.H.}..u
 0x08000060  07b8 ffff ffff eb77 488b 45e8 488b 4020  .......wH.E.H.@ 

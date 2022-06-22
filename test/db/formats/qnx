@@ -33,7 +33,7 @@ NAME=sections 16 bits content
 FILE=bins/qnx/test.x
 CMDS=px 16 @ 0x00000152
 EXPECT=<<EOF
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+- offset -  5253 5455 5657 5859 5A5B 5C5D 5E5F 6061  23456789ABCDEF01
 0x00000152  0000 0000 0000 cd00 9090 9090 0000 0000  ................
 EOF
 RUN

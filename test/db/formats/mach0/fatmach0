@@ -7,7 +7,7 @@ x 16
 ps
 EOF
 EXPECT=<<EOF
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+- offset -   C D  E F 1011 1213 1415 1617 1819 1A1B  CDEF0123456789AB
 0x0002520c  7061 7273 696e 6720 6669 6e69 7368 6564  parsing finished
 parsing finished
 EOF
@@ -22,7 +22,7 @@ x 16
 ps
 EOF
 EXPECT=<<EOF
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+- offset -  1819 1A1B 1C1D 1E1F 2021 2223 2425 2627  89ABCDEF01234567
 0x0002be18  7061 7273 696e 6720 6669 6e69 7368 6564  parsing finished
 parsing finished
 EOF
