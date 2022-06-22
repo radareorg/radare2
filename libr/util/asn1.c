@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2017-2022 - wargio, pancake */
 
 #include <r_cons.h>
+#include <r_util.h>
 
 static R_TH_LOCAL int ASN1_STD_FORMAT = 1;
 

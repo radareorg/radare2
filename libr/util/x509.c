@@ -1,7 +1,8 @@
 /* radare2 - LGPL - Copyright 2017-2022 - wargio */
 
 #include <r_cons.h>
-#include "./x509.h"
+#include <r_util.h>
+#include "x509.h"
 
 static bool r_x509_parse_validity(RX509Validity *validity, RASN1Object *object) {
 	RASN1Object *o;
