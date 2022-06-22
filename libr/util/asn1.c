@@ -1,12 +1,8 @@
-/* radare2 - LGPL - Copyright 2017-2018 - wargio */
+/* radare2 - LGPL - Copyright 2017-2022 - wargio, pancake */
 
-#include <r_util.h>
 #include <r_cons.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
-static int ASN1_STD_FORMAT  = 1;
+static R_TH_LOCAL int ASN1_STD_FORMAT = 1;
 
 R_API void asn1_setformat(int fmt) {
 	ASN1_STD_FORMAT = fmt;
@@ -97,7 +93,8 @@ out_error:
 }
 
 static ut32 r_asn1_count_objects(const ut8 *buffer, ut32 length) {
-	if (!buffer || !length) {
+	r_return_val_if_fail (buffer, 0);
+	if (!length) {
 		return 0;
 	}
 	ut32 counter = 0;

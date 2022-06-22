@@ -1,9 +1,6 @@
-/* radare2 - LGPL - Copyright 2017-2021 - wargio */
+/* radare2 - LGPL - Copyright 2017-2022 - wargio */
 
-#include <r_util.h>
 #include <r_cons.h>
-#include <stdlib.h>
-#include <string.h>
 #include "./x509.h"
 
 static bool r_x509_parse_validity(RX509Validity *validity, RASN1Object *object) {
@@ -128,7 +125,7 @@ R_API bool r_x509_parse_extension(RX509Extension *ext, RASN1Object *object) {
 		ext->extnID = r_asn1_stringify_oid (o->sector, o->length);
 		o = object->list.objects[1];
 		if (o->tag == TAG_BOOLEAN && object->list.length > 2) {
-			//This field is optional (so len must be 3)
+			// This field is optional (so len must be 3)
 			ext->critical = o->sector[0] != 0;
 			o = object->list.objects[2];
 		}
