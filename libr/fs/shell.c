@@ -91,7 +91,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			*wave++ = 0;
 		}
 
-		if (!r_str_cmp (buf, "q", -1) || !r_str_cmp (buf, "exit", -1)) {
+		if (r_str_startswith (buf, "q") || r_str_startswith (buf, "exit")) {
 			r_list_free (list);
 			return true;
 		}
@@ -104,13 +104,13 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			free (msg);
 		} else if (buf[0] == '!') {
 			r_sandbox_system (buf + 1, 1);
-		} else if (!r_str_cmp (buf, "echo", 4)) {
+		} else if (r_str_startswith (buf, "echo")) {
 			char *msg = r_str_trim_dup (buf + 4);
 			if (!handlePipes (fs, msg, NULL, path)) {
 				cb_printf ("%s\n", msg);
 			}
 			free (msg);
-		} else if (!r_str_cmp (buf, "ls", 2)) {
+		} else if (r_str_startswith (buf, "ls")) {
 			char *ptr = str;
 			r_list_free (list);
 			if (buf[2] == ' ') {
@@ -141,13 +141,13 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					*ls = 0;
 				}
 				// TODO: adjust contents between //
-				if (!r_str_cmp (me, base, -1)) {
+				if (r_str_startswith (me, base)) {
 					cb_printf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
 				}
 				free (base);
 			}
 			free (me);
-		} else if (!r_str_cmp (buf, "pwd", 3)) {
+		} else if (r_str_startswith (buf, "pwd")) {
 			cb_printf ("%s\n", path);
 		} else if (r_str_startswith (buf, "cd ")) {
 			char opath[PROMPT_PATH_BUFSIZE];
@@ -223,7 +223,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			} else {
 				R_LOG_ERROR ("Cannot open file");
 			}
-		} else if (!r_str_cmp (buf, "mount", 5)) {
+		} else if (r_str_startswith (buf, "mount")) {
 			RFSRoot* r;
 			r_list_foreach (fs->roots, iter, r) {
 				cb_printf ("%s %s\n", r->path, r->p->name);
@@ -287,7 +287,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			} else {
 				R_LOG_ERROR ("Cannot open file");
 			}
-		} else if (!r_str_cmp (buf, "help", 4) || !r_str_cmp (buf, "?", -1)) {
+		} else if (r_str_startswith (buf, "help") || r_str_startswith (buf, "?")) {
 			cb_printf (
 				"Usage: [command (arguments)]([~grep-expression])\n"
 				" !cmd        ; escape to system\n"
