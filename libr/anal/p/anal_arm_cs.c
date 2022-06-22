@@ -4669,23 +4669,45 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 static RList *anal_preludes(RAnal *anal) {
 #define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
 	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
-	switch (anal->config->bits) {
-	case 16:
-		KW ("\x00\xb5", 2, "\x0f\xff", 2);
-		KW ("\x08\xb5", 2, "\x0f\xff", 2);
-		break;
-	case 32:
-		KW("\x00\x00\x2d\xe9", 4, "\x0f\x0f\xff\xff", 4);
-		break;
-	case 64:
-		KW ("\xf0\x0f\x00\xf8", 4, "\xf0\x0f\x00\xff", 4);
-		KW ("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
-		KW ("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
-		KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0);
-		break;
-	default:
-		r_list_free (l);
-		l = NULL;
+	if (anal->config->big_endian) {
+		switch (anal->config->bits) {
+		case 16:
+			KW ("\xb5\x00", 2, "\xff\x0f", 2);
+			KW ("\xb5\x08", 2, "\xff\x0f", 2);
+			break;
+		case 32:
+			KW("\xe9\x2d\x00\x00", 4, "\xff\xff\x0f\x0f", 4);
+			break;
+		case 64:
+			KW ("\xf8\x00\x0f\xf0", 4, "\xff\x00\x0f\xf0", 4);
+			KW ("\xf0\x00\x00\xd1", 4, "\xff\x00\x00\xf0", 4);
+			KW ("\xf0\x00\x00\xa9", 4, "\xff\x00\x00\xf0", 4);
+			KW ("\xd5\x03\x23\x7f\x00\x00\x00\xff", 8,
+				"\xff\xff\xff\xff\x00\x00\x00\xff", 8);
+			break;
+		default:
+			r_list_free (l);
+			l = NULL;
+		}
+	} else {
+		switch (anal->config->bits) {
+		case 16:
+			KW ("\x00\xb5", 2, "\x0f\xff", 2);
+			KW ("\x08\xb5", 2, "\x0f\xff", 2);
+			break;
+		case 32:
+			KW("\x00\x00\x2d\xe9", 4, "\x0f\x0f\xff\xff", 4);
+			break;
+		case 64:
+			KW ("\xf0\x0f\x00\xf8", 4, "\xf0\x0f\x00\xff", 4);
+			KW ("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
+			KW ("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
+			KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0);
+			break;
+		default:
+			r_list_free (l);
+			l = NULL;
+		}
 	}
 	return l;
 }
