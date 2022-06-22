@@ -513,13 +513,13 @@ jobs:
       - ios-cydia32
       - ios-cydia
       - android-acr-arm
-      - android-meson
       - android-acr-aarch64
       - linux-static
       - linux-acr-deb-64
       - linux-acr-deb-32
       - linux-wasi
       - freebsd
+#      - android-meson
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
