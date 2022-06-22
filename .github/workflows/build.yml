@@ -641,15 +641,15 @@ jobs:
           asset_path: dist/artifacts/android-acr-arm/radare2-${{ steps.r2v.outputs.branch }}-android-arm.tar.gz
           asset_name: radare2-${{ steps.r2v.outputs.branch }}-android-arm.tar.gz
           asset_content_type: application/gzip
-      - name: Upload asset for Android (x86_64)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/android-meson-x86_64/radare2-android-x86_64.tar.gz
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}-android-x86_64.tar.gz
-          asset_content_type: application/x-tar
+#      - name: Upload asset for Android (x86_64)
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: dist/artifacts/android-meson-x86_64/radare2-android-x86_64.tar.gz
+#          asset_name: radare2-${{ steps.r2v.outputs.branch }}-android-x86_64.tar.gz
+#          asset_content_type: application/x-tar
       - name: Upload asset for Android (aarch64)
         uses: actions/upload-release-asset@v1
         env:
