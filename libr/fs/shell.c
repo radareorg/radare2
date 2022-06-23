@@ -280,7 +280,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				RIODesc *fd = fs->iob.open_at (fs->iob.io, uri, R_PERM_RW, 0, 0);
 				free (uri);
 				if (fd) {
-					r_io_desc_write (fd, file->data, file->size);
+					fs->iob.fd_write (fs->iob.io, fd->fd, file->data, file->size);
 					r_list_free (list);
 					return true;
 				}
