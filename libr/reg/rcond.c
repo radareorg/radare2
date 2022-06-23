@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2020 - pancake */
+/* radare - LGPL - Copyright 2014-2022 - pancake */
 
 #include <r_reg.h>
 
@@ -14,10 +14,10 @@
 #define P f->p
 
 R_API RRegItem *r_reg_cond_get(RReg *reg, const char *name) {
+	r_return_val_if_fail (reg && name, NULL);
 	int i = R_REG_TYPE_GPR;
 	RListIter *iter;
 	RRegItem *r;
-	r_return_val_if_fail (reg && name, NULL);
 
 	r_list_foreach (reg->regset[i].regs, iter, r) {
 		if (r->flags && !strcmp (name, r->flags)) {
@@ -38,7 +38,6 @@ R_API bool r_reg_cond_set(RReg *r, const char *name, bool val) {
 		r_reg_set_value (r, item, val);
 		return true;
 	}
-	// eprintf ("Cannot find '%s'\n", name);
 	return false;
 }
 
@@ -113,6 +112,7 @@ R_API int r_reg_cond_from_string(const char *str) {
 	return -1;
 }
 
+// R2_580: R_API bool r_reg_cond_bits(RReg *r, int type, RRegFlags *f) {
 R_API int r_reg_cond_bits(RReg *r, int type, RRegFlags *f) {
 	switch (type) {
 	case R_REG_COND_EQ: return Z;
@@ -224,7 +224,9 @@ R_API bool r_reg_cond_bits_set(RReg *r, int type, RRegFlags *f, bool v) {
 	return true;
 }
 
+// R2_580: R_API bool r_reg_cond(RReg *r, int type) {
 R_API int r_reg_cond(RReg *r, int type) {
+	r_return_val_if_fail (r, false);
 	RRegFlags f = {0};
 	r_reg_cond_retrieve (r, &f);
 	return r_reg_cond_bits (r, type, &f);
@@ -233,9 +235,9 @@ R_API int r_reg_cond(RReg *r, int type) {
 R_API RRegFlags *r_reg_cond_retrieve(RReg *r, RRegFlags *f) {
 	if (!f) {
 		f = R_NEW0 (RRegFlags);
-	}
-	if (!f) {
-		return NULL;
+		if (!f) {
+			return NULL;
+		}
 	}
 	f->s = r_reg_cond_get_value (r, "sign"); // sign, negate flag, less than zero
 	f->z = r_reg_cond_get_value (r, "zero"); // zero flag
