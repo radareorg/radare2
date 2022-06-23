@@ -238,7 +238,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 				}
 				// Warn the user if something went wrong
 				if (r) {
-					R_LOG_WARN ("Parse error @ line %d (%s)", l, r);
+					R_LOG_ERROR ("Parse error @ line %d (%s)", l, r);
 					// Clean up
 					r_reg_free_internal (reg, false);
 					r_reg_init (reg);
@@ -248,7 +248,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 		}
 	} while (*p++);
 	if (!have_a0) {
-		R_LOG_WARN ("=A0 not defined");
+		R_LOG_ERROR ("=A0 not defined");
 		//r_reg_free_internal (reg, false);
 		///return false;
 	}
