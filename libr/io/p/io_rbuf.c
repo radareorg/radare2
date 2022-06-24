@@ -18,8 +18,6 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static bool __close(RIODesc *fd) {
-	RBuffer *b = fd->data;
-	r_buf_free (b);
 	return true;
 }
 
