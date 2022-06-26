@@ -76,7 +76,6 @@ if not no_user_plugins
     parse_plugins += [ 'wasm_pseudo' ]
   endif
   if user_plugins.contains('sparc')
-    asm_plugins += [ 'sparc_cs' ]
     anal_plugins += [ 'sparc_cs' ]
     if use_gpl
       asm_plugins += [ 'sparc_gnu' ]
@@ -145,7 +144,6 @@ asm_plugins += [
   'riscv',
   'rsp',
   'sh',
-  'sparc_cs',
   'tms320',
   'x86_as',
   'x86_cs',
