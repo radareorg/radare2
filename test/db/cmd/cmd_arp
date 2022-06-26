@@ -260,7 +260,7 @@ EXPECT=<<EOF
 0x00000000
 EOF
 EXPECT_ERR=<<EOF
-ERROR: [profile.c] =A0 not defined
+ERROR: [r_reg_set_profile_string] =A0 not defined
 EOF
 RUN
 
@@ -282,7 +282,7 @@ EXPECT=<<EOF
 0x00000000
 EOF
 EXPECT_ERR=<<EOF
-ERROR: =A0 not defined
+ERROR: [r_reg_set_profile_string] =A0 not defined
 EOF
 RUN
 
@@ -302,7 +302,7 @@ EXPECT=<<EOF
 1
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Parse error @ line 3 (Invalid syntax: Wrong number of columns)
+ERROR: [r_reg_set_profile_string] Parse error @ line 3 (Invalid syntax: Wrong number of columns)
 EOF
 RUN
 
@@ -325,6 +325,6 @@ EXPECT=<<EOF
 160
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Parse error @ line 3 (Invalid syntax: Wrong number of columns)
+ERROR: [r_reg_set_profile_string] Parse error @ line 3 (Invalid syntax: Wrong number of columns)
 EOF
 RUN

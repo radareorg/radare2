@@ -72,6 +72,11 @@ R_API void r_log_show_origin(bool show_origin) {
 	rlog->show_origin = show_origin;
 }
 
+R_API void r_log_show_source(bool show_source) {
+	r_log_init ();
+	rlog->show_source = show_source;
+}
+
 R_API void r_log_set_colors(bool color) {
 	r_log_init ();
 	rlog->color = color;
@@ -84,7 +89,7 @@ R_API void r_log_set_quiet(bool bq) {
 
 R_API bool r_log_match(int level, const char *origin) { // , const char *sub_origin, const char *fmt, ...) {
 	r_log_init ();
-	if (R_STR_ISNOTEMPTY (rlog->filter)) {
+	if (R_STR_ISNOTEMPTY (origin) && R_STR_ISNOTEMPTY (rlog->filter)) {
 		if (strstr (origin, rlog->filter)) {
 			return false;
 		}
@@ -101,7 +106,7 @@ R_API bool r_log_match(int level, const char *origin) { // , const char *sub_ori
 	return level < rlog->level;
 }
 
-R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *fmt, va_list ap) {
+R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap) {
 	char out[512];
 	r_log_init ();
 	int type = 3;
@@ -135,26 +140,32 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *fmt, 
 		}
 		r_strbuf_appendf (sb, "%s%s: ", k, level_name (level));
 		if (rlog->show_origin) {
-			r_strbuf_appendf (sb, Color_YELLOW "[%s] " Color_RESET, origin);
+			r_strbuf_appendf (sb, Color_YELLOW "[%s]" Color_RESET, origin);
 		} else {
 			r_strbuf_appendf (sb, Color_RESET);
+		}
+		if (rlog->show_source) {
+			r_strbuf_appendf (sb, "[%s:%d]", func, line);
 		}
 	} else {
 		r_strbuf_appendf (sb, "%s: ", level_name (level));
 		if (rlog->show_origin) {
-			r_strbuf_appendf (sb, "[%s] ", origin);
+			r_strbuf_appendf (sb, "[%s]", origin);
+		}
+		if (rlog->show_source) {
+			r_strbuf_appendf (sb, "[%s:%d]", func, line);
 		}
 	}
 	char ts[32] = {0};
 	if (rlog->show_ts) {
 		ut64 now = r_time_now ();
 		if (rlog->color) {
-			r_strbuf_appendf (sb, ts, sizeof (ts), Color_CYAN "[ts:%" PFMT64u "] " Color_RESET, now);
+			r_strbuf_appendf (sb, ts, sizeof (ts), Color_CYAN "[ts:%" PFMT64u "]" Color_RESET, now);
 		} else {
-			r_strbuf_appendf (sb, ts, sizeof (ts), "[ts:%" PFMT64u "] ", now);
+			r_strbuf_appendf (sb, ts, sizeof (ts), "[ts:%" PFMT64u "]", now);
 		}
 	}
-	r_strbuf_appendf (sb, "%s%s\n", ts, out);
+	r_strbuf_appendf (sb, "%s %s\n", ts, out);
 	char * s = r_strbuf_drain (sb);
 	sb = NULL;
 	if (!rlog->quiet) {
@@ -169,10 +180,10 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *fmt, 
 	}
 }
 
-R_API void r_log_message(RLogLevel level, const char *origin, const char *fmt, ...) {
+R_API void r_log_message(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
-	r_log_vmessage (level, origin, fmt, ap);
+	r_log_vmessage (level, origin, func, line, fmt, ap);
 	va_end (ap);
 }
 
@@ -194,6 +205,6 @@ R_API void r_log_del_callback(RLogCallback cb) {
 R_API void r_log(const char *funcname, const char *filename, ut32 lineno, RLogLevel level, const char *origin, const char *fmtstr, ...) {
 	va_list args;
 	va_start (args, fmtstr);
-	r_log_vmessage (level, origin, fmtstr, args);
+	r_log_vmessage (level, origin? origin: filename, funcname, lineno, fmtstr, args);
 	va_end (args);
 }

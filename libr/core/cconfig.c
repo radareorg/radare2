@@ -3241,6 +3241,12 @@ static bool cb_log_origin(void *coreptr, void *nodeptr) {
 	return true;
 }
 
+static bool cb_log_source(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	r_log_show_source (r_str_is_true (node->value));
+	return true;
+}
+
 static bool cb_log_config_colors(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	r_log_set_colors (r_str_is_true (node->value));
@@ -3752,9 +3758,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("log.ts", "false", cb_log_config_ts, "Show timestamp in log messages");
 
 	SETICB ("log.traplevel", 0, cb_log_config_traplevel, "Log level for trapping R2 when hit");
-	SETCB ("log.file", "", cb_log_config_file, "Logging output filename / path");
+	SETCB ("log.file", "", cb_log_config_file, "Save log messages to given filename"); // 580 -rename to file.log ?)
 	SETCB ("log.filter", "", cb_log_config_filter, "Filter only messages matching given origin");
-	SETCB ("log.origin", "false", cb_log_origin, "Show [origin] in log messages");
+	SETCB ("log.origin", "true", cb_log_origin, "Show [origin] in log messages");
+	SETCB ("log.source", "false", cb_log_source, "Show source [file:line] in the log message");
 	SETCB ("log.color", "false", cb_log_config_colors, "Should the log output use colors");
 	SETCB ("log.quiet", "false", cb_log_config_quiet, "Be quiet, dont log anything to console");
 
