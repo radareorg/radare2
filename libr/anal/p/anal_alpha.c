@@ -65,11 +65,7 @@ static int alpha_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	if (mask & R_ANAL_OP_MASK_DISASM) {
 		if (op->size > 0) {
 			op->mnemonic = r_strbuf_drain (buf_global);
-			for (char *c = op->mnemonic; *c != 0; c++) {
-				if (*c == '\t') {
-					*c = ' ';
-				}
-			}
+			r_str_replace_char (op->mnemonic, '\t', ' ', 0);
 		} else {
 			op->mnemonic = strdup ("(data)");
 		}
