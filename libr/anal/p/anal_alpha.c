@@ -40,7 +40,7 @@ DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
 static int alpha_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	struct disassemble_info disasm_obj = {};
+	struct disassemble_info disasm_obj = {0};
 	if (len < 4) {
 		return -1;
 	}
