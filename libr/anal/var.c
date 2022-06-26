@@ -54,7 +54,7 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	return true;
 }
 
-static const char *__int_type_from_size(int size) {
+static const char * __int_type_from_size(int size) {
 	switch (size) {
 	case 1: return "int8_t";
 	case 2: return "int16_t";
@@ -199,7 +199,7 @@ R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList *l) {
 	return true;
 }
 
-R_API void r_anal_var_set_type(RAnalVar *var, const char *type) {
+R_API void r_anal_var_set_type(RAnalVar *var, const char * const type) {
 	char *nt = strdup (type);
 	if (nt) {
 		free (var->type);
@@ -409,7 +409,7 @@ R_API char *r_anal_var_prot_serialize(RList *l, bool spaces) {
 	}
 	r_strbuf_reserve (sb, r_list_length (l) * 0x10);
 
-	char *sep = spaces? ", ": ",";
+	const char * const sep = spaces? ", ": ",";
 	size_t len = strlen (sep);
 	RAnalVarProt *v;
 	RAnalVarProt *top = (RAnalVarProt *)r_list_get_top (l);

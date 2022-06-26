@@ -268,7 +268,7 @@ Error: There's a missing space before the opening parenthesis '('
 WARNING: r_list_length: assertion 'list' failed (line 55)
 This accessory is not supported by this version of radare2.
 When can we have an official anime mascot for radare2?
-Iaito became Cutter the same way Iai-giri became Cut.
+Radare2, we need you to ctrl+s the world.
 Sorry, radare2 has experienced an internal error.
 Segmentation fault (core dumped)
 Use rabin2 to discover the real TRUTH
@@ -308,3 +308,4 @@ radare2[15449] Corpse failure, too many 6
 Process[15449] crashed: radare2. Too many corpses being created.
 You can't sleep now there are monsters nearby
 Every journey begins with a choice
+Do 'r2pm -i r2premium; echo "e cfg.fortunes.type = nsfw" >> ~/.radare2rc' for a even more fun with r2

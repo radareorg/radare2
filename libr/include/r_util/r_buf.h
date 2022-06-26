@@ -45,6 +45,7 @@ struct r_buf_t {
 	bool readonly;
 	ut8 Oxff_priv;
 	int refctr;
+	// 580 R_REF_TYPE instead of refcnt;
 };
 
 // XXX: this should not be public

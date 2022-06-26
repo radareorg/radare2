@@ -3698,7 +3698,18 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cfg.user", whoami, "set current username/pid");
 	free (whoami);
 	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "if enabled show tips at start");
-	SETCB ("cfg.fortunes.type", "tips,fun", &cb_cfg_fortunes_type, "type of fortunes to show (tips, fun)");
+	RList *fortune_types = r_core_fortune_types ();
+	if (!fortune_types) {
+		fortune_types = r_list_newf (free);
+		r_list_append (fortune_types, "tips");
+		r_list_append (fortune_types, "fun");
+	}
+	char *fts = r_str_list_join (fortune_types, ",");
+	r_list_free (fortune_types);
+	char *fortune_desc = r_str_newf ("type of fortunes to show(%s)", fts);
+	SETCB ("cfg.fortunes.type", fts, &cb_cfg_fortunes_type, fortune_desc);
+	free (fts);
+	free (fortune_desc);
 	SETBPREF ("cfg.fortunes.clippy", "false", "use ?E instead of ?e");
 	SETBPREF ("cfg.fortunes.tts", "false", "speak out the fortune");
 	SETPREF ("cfg.prefixdump", "dump", "filename prefix for automated dumps");
@@ -4060,8 +4071,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.flush", "false", &cb_scrflush, "force flush to console in realtime (breaks scripting)");
 	SETBPREF ("scr.slow", "true", "do slow stuff on visual mode like RFlag.get_at(true)");
 #if __WINDOWS__
-	SETICB ("scr.vtmode", r_cons_singleton ()->vtmode,
-		&scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Output, 2: Input & Output)");
+	SETICB ("scr.vtmode", r_cons_singleton ()->vtmode? 1: 0,
+		&scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Shell, 2: Visual)");
+#else
+	SETI ("scr.vtmode", 0, "windows specific configuration that have no effect on other OSs");
 #endif
 #if __ANDROID__
 	// SETBPREF ("scr.responsive", "true", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");

@@ -1,66 +1,121 @@
-/* radare2 - LGPL - Copyright 2009-2020 - pancake */
+/* radare2 - LGPL - Copyright 2009-2022 - pancake, condret */
 
 #include <r_core.h>
-
-static const char *fortunes[] = {
-	"tips", "fun",
-};
+#include <r_util.h>
 
 static char *getFortuneFile(RCore *core, const char *type) {
-	return r_str_newf (R_JOIN_3_PATHS ("%s", R2_FORTUNES, "fortunes.%s"),
+	char *ft = r_str_newf(R_JOIN_2_PATHS (R2_HOME_FORTUNES, "fortunes.%s"), type);
+	char *path = r_str_home (ft);
+	free (ft);
+	if (path && r_file_exists (path)) {
+		return path;
+	}
+	free (path);
+	path = r_str_newf (R_JOIN_3_PATHS ("%s", R2_FORTUNES, "fortunes.%s"),
 		r_sys_prefix (NULL), type);
+	if (path && r_file_exists (path)) {
+		return path;
+	}
+	return NULL;
+}
+
+static bool _push_types(RList *type_list, char *fortune_dir) {
+	RList *files = r_sys_dir (fortune_dir);
+	if (!files) {
+		return false;
+	}
+	RListIter *iter;
+	char *file;
+	r_list_foreach (files, iter, file) {
+		if (r_str_startswith (file, "fortunes.") && file[9]) {
+			r_list_push (type_list, r_str_new (file + 9));
+		}
+	}
+	r_list_free (files);
+	return true;
+}
+
+R_IPI RList *r_core_fortune_types(void) {	// R_API 5.8
+	RList *types = r_list_newf (free);
+	if (!types) {
+		return NULL;
+	}
+	char *fortune_dir = r_str_newf (R_JOIN_2_PATHS ("%s", R2_FORTUNES), r_sys_prefix (NULL));
+	if (!fortune_dir) {
+		r_list_free (types);
+		return NULL;
+	}
+	if (!_push_types (types, fortune_dir)) {
+		free (fortune_dir);
+		r_list_free (types);
+		return NULL;
+	}
+	free (fortune_dir);
+	fortune_dir = r_str_home (R2_HOME_FORTUNES);
+	if (fortune_dir) {
+		_push_types (types, fortune_dir);
+		free (fortune_dir);
+	}
+	return types;
 }
 
 R_API void r_core_fortune_list_types(void) {
-	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (fortunes); i++) {
-		r_cons_printf ("%s\n", fortunes[i]);
-	}
+	RList *types = r_core_fortune_types ();
+	char *fts = r_str_list_join (types, "\n");
+	r_list_free (types);
+	r_cons_println (fts);
+	free (fts);
 }
 
 R_API void r_core_fortune_list(RCore *core) {
 	// TODO: use file.fortunes // can be dangerous in sandbox mode
 	const char *types = (char *)r_config_get (core->config, "cfg.fortunes.type");
-	size_t i, j;
-	for (i = 0; i < R_ARRAY_SIZE (fortunes); i++) {
-		if (strstr (types, fortunes[i])) {
-			char *file = getFortuneFile (core, fortunes[i]);
+	RList *ftypes = r_core_fortune_types ();
+	if (!ftypes) {
+		return;
+	}
+	RListIter *iter;
+	char *fortunes;
+	r_list_foreach (ftypes, iter, fortunes) {
+		if (strstr (types, fortunes)) {
+			char *file = getFortuneFile (core, fortunes);
 			char *str = r_file_slurp (file, NULL);
 			if (!str) {
 				free (file);
 				continue;
 			}
-			for (j = 0; str[j]; j++) {
-				if (str[j] == '\n') {
-					if (i < j) {
-						str[j] = '\0';
-						r_cons_printf ("%s\n", str + i);
-					}
-					i = j + 1;
-				}
-			}
+			r_cons_println (str);
 			free (str);
 			free (file);
 		}
 	}
+	r_list_free (ftypes);
 }
 
 static char *getrandomline(RCore *core) {
-	size_t i;
 	const char *types = (char *)r_config_get (core->config, "cfg.fortunes.type");
 	char *line = NULL, *templine;
-	for (i = 0; i < R_ARRAY_SIZE (fortunes); i++) {
-		if (strstr (types, fortunes[i])) {
+	RList *ftypes = r_core_fortune_types ();
+	if (!ftypes) {
+		return NULL;
+	}
+	RListIter *iter;
+	char *fortunes;
+	r_list_foreach (ftypes, iter, fortunes) {
+		if (strstr (types, fortunes)) {
 			int lines = 0;
-			char *file = getFortuneFile(core, fortunes[i]);
-			templine = r_file_slurp_random_line_count (file, &lines);
-			if (templine && *templine) {
-				free (line);
-				line = templine;
+			char *file = getFortuneFile (core, fortunes);
+			if (file) {
+				templine = r_file_slurp_random_line_count (file, &lines);
+				if (templine && *templine) {
+					free (line);
+					line = templine;
+				}
+				free (file);
 			}
-			free (file);
 		}
 	}
+	r_list_free (ftypes);
 	return line;
 }
 

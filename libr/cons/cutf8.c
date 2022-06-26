@@ -88,7 +88,7 @@ int current_tty(void) {
  * Actual errno will be unchanged.
  */
 static int cursor_position(const int tty, int *const rowptr, int *const colptr) {
-	struct termios  saved, temporary;
+	struct termios saved, temporary;
 	int ret, res, rows, cols, saved_errno;
 
 	/* Bad tty? */

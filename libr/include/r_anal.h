@@ -2240,6 +2240,7 @@ extern RAnalPlugin r_anal_plugin_i4004;
 extern RAnalPlugin r_anal_plugin_i8080;
 extern RAnalPlugin r_anal_plugin_java;
 extern RAnalPlugin r_anal_plugin_kvx;
+extern RAnalPlugin r_anal_plugin_lh5801;
 extern RAnalPlugin r_anal_plugin_m68k_cs;
 extern RAnalPlugin r_anal_plugin_m680x_cs;
 extern RAnalPlugin r_anal_plugin_malbolge;
@@ -2252,6 +2253,7 @@ extern RAnalPlugin r_anal_plugin_msp430;
 extern RAnalPlugin r_anal_plugin_nios2;
 extern RAnalPlugin r_anal_plugin_or1k;
 extern RAnalPlugin r_anal_plugin_pic;
+extern RAnalPlugin r_anal_plugin_pdp11_gnu;
 extern RAnalPlugin r_anal_plugin_ppc_cs;
 extern RAnalPlugin r_anal_plugin_ppc_gnu;
 extern RAnalPlugin r_anal_plugin_propeller;
@@ -2285,6 +2287,7 @@ extern RAnalPlugin r_anal_plugin_z80;
 extern RAnalPlugin r_anal_plugin_pyc;
 extern RAnalPlugin r_anal_plugin_evm_cs;
 extern RAnalPlugin r_anal_plugin_bpf;
+extern RAnalPlugin r_anal_plugin_lm32;
 extern RAnalEsilPlugin r_esil_plugin_dummy;
 
 #ifdef __cplusplus

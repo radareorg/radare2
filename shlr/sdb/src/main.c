@@ -332,7 +332,7 @@ static void cgen_header(MainOptions *mo, const char *cname) {
 		printf ("#include <string.h>\n");
 		printf ("\n");
 		printf ("struct kv { const char *name; const char *value; };\n");
-		printf ("static struct kv kvs[] = {\n");
+		printf ("static const struct kv kvs[] = {\n");
 	} else {
 		printf ("%%{\n");
 		printf ("// gperf -aclEDCIG --null-strings -H sdb_hash_c_%s -N sdb_get_c_%s -t %s.gperf > %s.c\n", cname, cname, cname, cname);

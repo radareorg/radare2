@@ -3626,6 +3626,16 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			r_list_foreach (c->methods, iter2, sym) {
 				pj_o (pj);
 				pj_ks (pj, "name", sym->name);
+				RFlagItem *fi = r_flag_get_at (r->flags, sym->vaddr, false);
+				if (fi) {
+					pj_ks (pj, "flag", fi->realname? fi->realname: fi->name);
+				}
+				char *s = r_core_cmd_strf (r, "isqq.@0x%08"PFMT64x"@e:bin.demangle=false", sym->vaddr);
+				r_str_trim (s);
+				if (R_STR_ISNOTEMPTY (s)) {
+					pj_ks (pj, "realname", s);
+				}
+				free (s);
 				if (sym->method_flags) {
 					char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
 					pj_k (pj, "flags");

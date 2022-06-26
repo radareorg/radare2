@@ -112,6 +112,8 @@ struct r_bin_wasm_memory_type_t {
 };
 
 typedef struct r_bin_wasm_import_t {
+	ut32 sec_i;
+	ut64 file_offset;
 	ut32 module_len;
 	char *module_str;
 	ut32 field_len;
@@ -123,7 +125,6 @@ typedef struct r_bin_wasm_import_t {
 		struct r_bin_wasm_table_type_t type_t;
 		struct r_bin_wasm_memory_type_t type_m;
 	};
-
 } RBinWasmImportEntry;
 
 typedef struct r_bin_wasm_function_t {
@@ -168,10 +169,12 @@ typedef struct r_bin_wasm_start_t {
 
 struct r_bin_wasm_local_entry_t {
 	ut32 count;
-	r_bin_wasm_value_type_t type;
+	st8 type; // r_bin_wasm_value_type_t
 };
 
 typedef struct r_bin_wasm_element_t {
+	ut32 sec_i;
+	ut64 file_offset;
 	ut32 index;
 	struct r_bin_wasm_init_expr_t init;
 	ut32 num_elem;
@@ -179,17 +182,18 @@ typedef struct r_bin_wasm_element_t {
 } RBinWasmElementEntry;
 
 typedef struct r_bin_wasm_code_t {
+	ut32 sec_i;
+	ut64 file_offset;
 	ut32 body_size;
 	ut32 local_count; // numer of local entries
 	struct r_bin_wasm_local_entry_t *locals;
 	ut32 code; // offset
 	ut32 len; // real bytecode length
-	ut8 byte; // 0xb, indicating end of the body
-	char *name;
-	char *signature;
 } RBinWasmCodeEntry;
 
 typedef struct r_bin_wasm_data_t {
+	ut32 sec_i;
+	ut64 file_offset;
 	ut32 index; // linear memory index (0 in MVP)
 	struct r_bin_wasm_init_expr_t offset; // bytecode evaluated at runtime
 	ut32 size;
@@ -237,18 +241,18 @@ typedef struct r_bin_wasm_obj_t {
 	ut32 entrypoint;
 
 	// cache purposes
-	RPVector *g_types;
 	RList *g_sections;
-	RList *g_imports;
+	RPVector *g_types;
+	RPVector *g_imports;
 	RPVector *g_funcs;
 	RPVector *g_tables;
 	RPVector *g_memories;
 	RPVector *g_globals;
 	RPVector *g_exports;
-	RList *g_elements;
-	RList *g_codes;
-	RList *g_datas;
-	RBinWasmStartEntry *g_start;
+	RPVector *g_elements;
+	RPVector *g_codes;
+	RPVector *g_datas;
+	ut32 g_start;
 
 	RList *g_names;
 	// etc...
@@ -259,15 +263,15 @@ RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf);
 void r_bin_wasm_destroy(RBinFile *bf);
 RList *r_bin_wasm_get_sections(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_types(RBinWasmObj *bin);
-RList *r_bin_wasm_get_imports(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_imports(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_functions(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_tables(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_memories(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_globals(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_exports(RBinWasmObj *bin);
-RList *r_bin_wasm_get_elements(RBinWasmObj *bin);
-RList *r_bin_wasm_get_codes(RBinWasmObj *bin);
-RList *r_bin_wasm_get_datas(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_elements(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_codes(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_datas(RBinWasmObj *bin);
 RList *r_bin_wasm_get_custom_names(RBinWasmObj *bin);
 ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin);
 const char *r_bin_wasm_get_function_name(RBinWasmObj *bin, ut32 idx);

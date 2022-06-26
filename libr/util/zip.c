@@ -8,7 +8,7 @@
 #define MAXOUT 50000000
 
 static const char *gzerr(int n) {
-	const char *errors[] = {
+	const char * const errors[] = {
 		"",
 		"file error",          /* Z_ERRNO         (-1) */
 		"stream error",        /* Z_STREAM_ERROR  (-2) */

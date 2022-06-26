@@ -182,9 +182,11 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	memset (&cmd, 0, sizeof (cmd));
 
 	ret = op->size = v850_decode_command (buf, len, &cmd);
-
 	if (ret < 1) {
 		return ret;
+	}
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
 	}
 
 	op->addr = addr;

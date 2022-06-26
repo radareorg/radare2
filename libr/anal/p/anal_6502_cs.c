@@ -21,7 +21,7 @@
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 #if USE_ITER_API
-	static
+	static R_TH_LOCAL
 #endif
 	cs_insn *insn = NULL;
 	

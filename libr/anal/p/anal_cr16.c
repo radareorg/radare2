@@ -1,30 +1,25 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake
+/* radare - LGPL - Copyright 2012-2022 - pancake
 	2014 - Fedor Sakharov <fedor.sakharov@gmail.com> */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include <r_util.h>
+#include "../arch/cr16/cr16_disas.h"
 
-#include <cr16_disas.h>
+static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	struct cr16_cmd cmd = {0};
 
-static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr,
-		const ut8 *buf, int len, RAnalOpMask mask)
-{
-	int ret;
-	struct cr16_cmd cmd;
-
-	memset(&cmd, 0, sizeof (cmd));
-
-	ret = op->size = cr16_decode_command(buf, &cmd, len);
-
+	op->size = 2;
+	int ret = op->size = cr16_decode_command (buf, &cmd, len);
 	if (ret <= 0) {
 		return ret;
 	}
+	op->size = ret;
 
 	op->addr = addr;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
+	}
 
 	switch (cmd.type) {
 	case CR16_TYPE_MOV:
@@ -119,11 +114,26 @@ static int cr16_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	return ret;
 }
 
+static int archinfo(RAnal *anal, int q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 2;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	}
+	return 0;
+}
+
 RAnalPlugin r_anal_plugin_cr16 = {
 	.name = "cr16",
 	.desc = "CR16 code analysis plugin",
 	.license = "LGPL3",
 	.arch = "cr16",
+	.archinfo = archinfo,
 	.bits = 16,
 	.op = cr16_op,
 };

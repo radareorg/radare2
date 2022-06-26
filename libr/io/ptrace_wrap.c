@@ -22,7 +22,53 @@
 #include <errno.h>
 #include <signal.h>
 
-static void *th_run(ptrace_wrap_instance *inst);
+static void wrap_ptrace(ptrace_wrap_instance *inst) {
+	inst->ptrace_result = ptrace (
+			inst->request.ptrace.request,
+			inst->request.ptrace.pid,
+			inst->request.ptrace.addr,
+			inst->request.ptrace.data);
+	if (inst->request.ptrace._errno) {
+		*inst->request.ptrace._errno = errno;
+	}
+}
+
+static void wrap_fork(ptrace_wrap_instance *inst) {
+	pid_t r = fork ();
+	if (r == 0) {
+		inst->request.fork.child_callback (inst->request.fork.child_callback_user);
+	} else {
+		inst->fork_result = r;
+	}
+}
+
+static void wrap_func(ptrace_wrap_instance *inst) {
+	inst->func_result = inst->request.func.func (inst->request.func.user);
+}
+
+static void *th_run(ptrace_wrap_instance *inst) {
+	for (;;) {
+		sem_wait (&inst->request_sem);
+
+		switch (inst->request.type) {
+		case PTRACE_WRAP_REQUEST_TYPE_STOP:
+			goto stop;
+		case PTRACE_WRAP_REQUEST_TYPE_PTRACE:
+			wrap_ptrace (inst);
+			break;
+		case PTRACE_WRAP_REQUEST_TYPE_FORK:
+			wrap_fork (inst);
+			break;
+		case PTRACE_WRAP_REQUEST_TYPE_FUNC:
+			wrap_func (inst);
+			break;
+		}
+
+		sem_post (&inst->result_sem);
+	}
+stop:
+	return NULL;
+}
 
 int ptrace_wrap_instance_start(ptrace_wrap_instance *inst) {
 	int r = sem_init (&inst->request_sem, 0, 0);
@@ -52,54 +98,6 @@ void ptrace_wrap_instance_stop(ptrace_wrap_instance *inst) {
 	pthread_join (inst->th, NULL);
 	sem_destroy (&inst->request_sem);
 	sem_destroy (&inst->result_sem);
-}
-
-static void wrap_ptrace(ptrace_wrap_instance *inst) {
-	inst->ptrace_result = ptrace (
-			inst->request.ptrace.request,
-			inst->request.ptrace.pid,
-			inst->request.ptrace.addr,
-			inst->request.ptrace.data);
-	if (inst->request.ptrace._errno) {
-		*inst->request.ptrace._errno = errno;
-	}
-}
-
-static void wrap_fork(ptrace_wrap_instance *inst) {
-	pid_t r = fork();
-	if (r == 0) {
-		inst->request.fork.child_callback (inst->request.fork.child_callback_user);
-	} else {
-		inst->fork_result = r;
-	}
-}
-
-static void wrap_func(ptrace_wrap_instance *inst) {
-	inst->func_result = inst->request.func.func (inst->request.func.user);
-}
-
-static void *th_run(ptrace_wrap_instance *inst) {
-	while (1) {
-		sem_wait (&inst->request_sem);
-
-		switch (inst->request.type) {
-		case PTRACE_WRAP_REQUEST_TYPE_STOP:
-			goto stop;
-		case PTRACE_WRAP_REQUEST_TYPE_PTRACE:
-			wrap_ptrace (inst);
-			break;
-		case PTRACE_WRAP_REQUEST_TYPE_FORK:
-			wrap_fork (inst);
-			break;
-		case PTRACE_WRAP_REQUEST_TYPE_FUNC:
-			wrap_func (inst);
-			break;
-		}
-
-		sem_post (&inst->result_sem);
-	}
-stop:
-	return NULL;
 }
 
 long ptrace_wrap(ptrace_wrap_instance *inst, ptrace_wrap_ptrace_request request, pid_t pid, void *addr, void *data) {
@@ -145,7 +143,6 @@ void *ptrace_wrap_func(ptrace_wrap_instance *inst, ptrace_wrap_func_func func, v
 	if (inst->th == pthread_self ()) {
 		return func (user);
 	}
-
 	inst->request.type = PTRACE_WRAP_REQUEST_TYPE_FUNC;
 	inst->request.func.func = func;
 	inst->request.func.user = user;

@@ -1731,6 +1731,12 @@ R_API int r_cons_is_vtcompat(void) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
+	char *cmd_session = r_sys_getenv ("SESSIONNAME");
+	if (cmd_session) {
+		free (cmd_session);
+		return 2;
+	}
+	// Windows Terminal
 	char *wt_session = r_sys_getenv ("WT_SESSION");
 	if (wt_session) {
 		free (wt_session);

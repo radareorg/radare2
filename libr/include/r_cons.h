@@ -863,7 +863,7 @@ R_API void r_cons_line(int x, int y, int x2, int y2, int ch);
 R_API void r_cons_show_cursor(int cursor);
 R_API char *r_cons_swap_ground(const char *col);
 R_API bool r_cons_drop(int n);
-R_API void r_cons_chop(void);
+R_API void r_cons_chop(void); // XXX R2_580 this function hasnt been implemented and nobody miss it, just rimraf't
 R_API void r_cons_set_raw(bool b);
 R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_last_interactive(void);
@@ -1093,7 +1093,7 @@ struct r_line_t {
 	RLineHud *hud;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
-	int vtmode;
+	int vtmode; // R2_580 duplicated and unused from the global RCons.vtmode
 }; /* RLine */
 
 #ifdef R_API

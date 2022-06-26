@@ -149,7 +149,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	switch (buf[0]) {
 	case '[':
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->fail = addr+1;
+		op->fail = addr + 1;
 		buf = r_mem_dup ((void *)buf, len);
 		if (!buf) {
 			break;

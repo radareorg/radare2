@@ -214,7 +214,8 @@ R_API char *r_str_utf16_encode(const char *s, int len);
 R_API char *r_str_escape_utf8_for_json(const char *s, int len);
 R_API char *r_str_escape_utf8_for_json_strip(const char *buf, int buf_size);
 R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding);
-R_API char *r_str_home(const char *str);
+R_API char *r_str_home(const char *str); // R2_580 : rename to r_file_home() ?
+// R2_580: implement r_file_homef() for format string purposes
 R_API char *r_str_r2_prefix(const char *str);
 R_API size_t r_str_nlen(const char *s, int n);
 R_API size_t r_str_nlen_w(const char *s, int n);
@@ -234,7 +235,18 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 R_API bool r_str_glob(const char *str, const char *glob);
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);
 R_API char *r_str_between(const char *str, const char *prefix, const char *suffix);
+#undef r_str_startswith
 R_API bool r_str_startswith(const char *str, const char *needle);
+R_UNUSED static bool r_str_startswith_inline(const char *str, const char *needle) {
+	if (!str || !needle) {
+		return false;
+	}
+	if (str == needle) {
+		return true;
+	}
+	return !strncmp (str, needle, strlen (needle));
+}
+#define r_str_startswith r_str_startswith_inline
 R_API bool r_str_endswith(const char *str, const char *needle);
 R_API bool r_str_isnumber(const char *str);
 R_API const char *r_str_last(const char *in, const char *ch);

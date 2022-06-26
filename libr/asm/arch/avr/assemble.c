@@ -8,7 +8,7 @@ extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
 typedef struct {
 	char ens[3][MAX_TOKEN_SIZE];
 } AvrToken;
-static int search_instruction(RAsm *a, AvrToken *tok, int args);
+static int search_instruction(RAnal *a, AvrToken *tok, int args);
 // char instr[3][MAX_TOKEN_SIZE], int args);
 /* the next few functions and structures uses for detecting
    AVR special regs, like X+, -Y, Z+3 in st(d), ld(d) and
@@ -41,7 +41,7 @@ specialregs RegsTable[REGS_TABLE] = {
 };
 
 
-int avr_encode(RAsm *a, RAsmOp *ao, const char *str) {
+int avr_encode(RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outlen) {
 	AvrToken tok;
 	char *token;
 	uint32_t coded = 0;
@@ -78,7 +78,7 @@ int avr_encode(RAsm *a, RAsmOp *ao, const char *str) {
 				ORing with the last 16 bits(/2 for jmp/call) */
 			} else if (instructionSet[instr_idx].numOperands == 1 && tokens_cnt == 2) {
 
-				if (assemble_operand (a, tok.ens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0) {
+				if (assemble_operand (pc, tok.ens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0) {
 					// jmp and call has 4-byte opcode
 					if (instructionSet[instr_idx].operandTypes[0] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
 						op1 = op1/2;
@@ -104,8 +104,8 @@ int avr_encode(RAsm *a, RAsmOp *ao, const char *str) {
 				}
 
 			} else if (instructionSet[instr_idx].numOperands == 2 && tokens_cnt == 3) {
-				if (assemble_operand(a, tok.ens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0 &&
-				   assemble_operand(a, tok.ens[2], instructionSet[instr_idx].operandTypes[1], &op2) >= 0) {
+				if (assemble_operand(pc, tok.ens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0 &&
+				   assemble_operand(pc, tok.ens[2], instructionSet[instr_idx].operandTypes[1], &op2) >= 0) {
 
 					coded = instructionSet[instr_idx].opcodeMask
 						| packDataByMask(op1, instructionSet[instr_idx].operandMasks[0])
@@ -128,7 +128,7 @@ int avr_encode(RAsm *a, RAsmOp *ao, const char *str) {
 
 	// copying result to radare struct
 	if (len > 0) {
-		r_strbuf_setbin (&ao->buf, (const ut8*)&coded, len);
+		memcpy (outbuf, (const ut8*)&coded, len);
 	}
 	return len;
 }
@@ -171,7 +171,7 @@ static int assemble_general_io_operand(const char *operand, uint32_t *res) {
 }
 
 // assembles instruction argument (operand) based on its type
-int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *res) {
+int assemble_operand(ut64 pc, const char *operand, int type, uint32_t *res) {
 	int ret = -1;
 	int temp;
 
@@ -197,10 +197,10 @@ int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *res) {
 		- target address (will be calculated in according to current pc of assemble), ex: 0x4, 200, 0x1000
 		or
 		- relative address, ex: +2, -1, +60, -49 */
-		if (a->pc || (operand[0] != '+' && operand[0] != '-')) { // for series of commands
+		if (pc || (operand[0] != '+' && operand[0] != '-')) { // for series of commands
 			/* +2 from documentation:
 			If Rd != Rr (Z = 0) then PC <- PC + k + 1, else PC <- PC + 1 */
-			temp -= a->pc + 2;
+			temp -= pc + 2;
 		}
 		temp /= 2; // in WORDs
 		if (temp >= -64 && temp <= 63) {
@@ -296,7 +296,7 @@ uint16_t packDataByMask(uint16_t data, uint16_t mask) {
 /* this function searches from instruction in instructionSet table
    (see avr_disasm.h for more info)
    returns index of the instruction in the table */
-static int search_instruction(RAsm *a, AvrToken *tok, int args) {
+static int search_instruction(RAnal *a, AvrToken *tok, int args) {
 	int i, op1 = 0, op2 = 0;
 
 	for (i = 0; i < AVR_TOTAL_INSTRUCTIONS - 1; i++) {
