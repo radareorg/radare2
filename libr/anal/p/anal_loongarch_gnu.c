@@ -1217,7 +1217,8 @@ static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int l
 					ase->la_opcode_ht[LA_INSN_HASH(it->match)] = it;
 				}
 			}
-			for (int i=0; i<HT_NUM; i++) {
+			int i;
+			for (i = 0; i < HT_NUM; i++) {
 				if(!ase->la_opcode_ht[i]){
 					ase->la_opcode_ht[i]=it;
 				}

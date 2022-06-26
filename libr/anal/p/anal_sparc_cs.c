@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2017 - pancake */
+/* radare2 - LGPL - Copyright 2014-2022 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -97,8 +97,14 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
-static int get_capstone_mode (RAnal *a) {
+static int get_capstone_mode(RAnal *a) {
 	int mode = CS_MODE_LITTLE_ENDIAN;
+#if 0
+	// XXX capstone doesnt support big endian sparc, this code does nothing, so we need to swap around
+	if (a->config->big_endian) {
+		mode = CS_MODE_BIG_ENDIAN;
+	}
+#endif
 	const char *cpu = a->config->cpu;
 	if (cpu && !strcmp (cpu, "v9")) {
 		mode |= CS_MODE_V9;
@@ -117,10 +123,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	}
 
 	cs_insn *insn;
-	int n;
+	if (!a->config->big_endian) {
+		// little endian sparc is not supported by capstone, so we emulate it here
+		ut8 ibuf[4] = {0};
+		r_mem_swapendian (ibuf, buf, R_MIN (len, 4));
+		buf = (const ut8*)ibuf;
+	}
 
 	// capstone-next
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
