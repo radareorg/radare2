@@ -96,6 +96,7 @@ r_anal_sources = [
   join_paths('../asm/arch/s390/gnu/s390-opc.c'),
   join_paths('p','anal_sh.c'),
   join_paths('p','anal_snes.c'),
+  join_paths('p','anal_lm32.c'),
   join_paths('p','anal_sparc_cs.c'),
   join_paths('p','anal_sparc_gnu.c'),
   join_paths('p','anal_tms320.c'),
