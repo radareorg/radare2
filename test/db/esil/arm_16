@@ -563,6 +563,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rors r1, r2
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar > /dev/null
+ar r1=0x80000001
+ar r2=0x1
+"wa rors r1, r2;rors r1, r2"
+aes
+ar r1
+ar cpsr
+aes
+ar r1
+ar cpsr
+EOF
+EXPECT=<<EOF
+0xc0000000
+0xa0000000
+0x60000000
+0x00000000
+EOF
+RUN
+
 NAME=asrs r4, r4, 2
 FILE=malloc://0x200
 CMDS=<<EOF

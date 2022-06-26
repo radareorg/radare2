@@ -2532,6 +2532,16 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		MATH32 ("<<");
 		break;
+	case ARM_INS_ROR:
+		if (insn->detail->arm.update_flags) {
+			if (OPCOUNT () == 2) {
+				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<<,&,!,!,cf,:=,},", ARG (1), ARG (0), ARG (1));
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,!,!,?{,%s,1,%s,-,0x1,<<<,&,!,!,cf,:=,},", ARG (2), ARG (1), ARG (2));
+			}
+		}
+		MATH32 (">>>");
+		break;
 	case ARM_INS_SVC:
 		r_strbuf_setf (&op->esil, "%s,$", ARG (0));
 		break;
