@@ -521,14 +521,8 @@ R_API int r_line_hist_load(const char *file) {
 #endif
 	r_return_val_if_fail (file, false);
 	char *buf = calloc (1, R_LINE_BUFSIZE);
-	char *path = r_str_home (file);
-	if (!path) {
-		free (buf);
-		return false;
-	}
-	FILE *fd = r_sandbox_fopen (path, "rb");
+	FILE *fd = r_sandbox_fopen (file, "rb");
 	if (!fd) {
-		free (path);
 		free (buf);
 		return false;
 	}
@@ -541,7 +535,6 @@ R_API int r_line_hist_load(const char *file) {
 		memset (buf, 0, R_LINE_BUFSIZE);
 	}
 	fclose (fd);
-	free (path);
 	free (buf);
 	return true;
 }
