@@ -13,7 +13,7 @@ extern SdbGperf gperf_iso8859_1;
 extern SdbGperf gperf_katakana;
 extern SdbGperf gperf_pokered;
 
-static const SdbGperf *gperfs[] = {
+static const SdbGperf * const gperfs[] = {
 	&gperf_ascii,
 	&gperf_ebcdic37,
 	&gperf_hiragana,

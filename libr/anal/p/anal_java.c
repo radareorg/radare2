@@ -56,13 +56,12 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 				r_anal_switch_op_add_case (op->switch_op, addr + pos, cur_case + min_val, addr + offset);
 			}
 		} else {
-			eprintf ("Invalid switch boundaries at 0x%"PFMT64x"\n", addr);
+			R_LOG_ERROR ("Invalid switch boundaries at 0x%"PFMT64x, addr);
 		}
 	}
 	op->size = pos;
 	return op->size;
 }
-
 
 static ut64 extract_bin_op(ut64 ranal2_op_type) {
 	ut64 bin_op_val = ranal2_op_type & (R_ANAL_JAVA_BIN_OP | 0x80000);
@@ -89,10 +88,7 @@ static ut64 extract_bin_op(ut64 ranal2_op_type) {
 	return R_ANAL_OP_TYPE_UNK;
 }
 
-
-
-
-ut64 extract_unknown_op(ut64 ranal2_op_type) {
+static ut64 extract_unknown_op(ut64 ranal2_op_type) {
 	if ((ranal2_op_type & R_ANAL_JAVA_CODEOP_JMP) == R_ANAL_JAVA_CODEOP_JMP) {
 		return R_ANAL_OP_TYPE_UJMP;
 	}
@@ -120,7 +116,7 @@ static ut64 extract_code_op(ut64 ranal2_op_type) {
 	return R_ANAL_OP_TYPE_UNK;
 }
 
-ut64 extract_load_store_op(ut64 ranal2_op_type) {
+static ut64 extract_load_store_op(ut64 ranal2_op_type) {
 	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_PUSH) == R_ANAL_JAVA_LDST_OP_PUSH) {
 		return R_ANAL_OP_TYPE_PUSH;
 	}
@@ -186,7 +182,6 @@ static int r_anal_java_is_op_type_eop(ut64 x) {
 			 (x & R_ANAL_JAVA_CODEOP_SWITCH) == R_ANAL_JAVA_CODEOP_SWITCH);
 }
 
-
 static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	/* get opcode size */
 	if (len < 1) {
@@ -201,8 +196,8 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		return sz;
 	}
 	IFDBG {
-		R_LOG_DEBUG ("Extracting op from buffer (%d byte(s)) @ 0x%04x\n", (int)len, (ut32)addr);
-		R_LOG_DEBUG ("Parsing op: (0x%02x) %s.\n", op_byte, JAVA_OPS[op_byte].name);
+		R_LOG_DEBUG ("Extracting op from buffer (%d byte(s)) @ 0x%04x", (int)len, (ut32)addr);
+		R_LOG_DEBUG ("Parsing op: (0x%02x) %s.", op_byte, JAVA_OPS[op_byte].name);
 	}
 	op->addr = addr;
 	op->size = sz;
@@ -235,7 +230,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->eob = r_anal_java_is_op_type_eop (op->type2);
 	IFDBG {
 		const char *ot_str = r_anal_optype_to_string (op->type);
-		eprintf ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s.\n",
+		R_LOG_DEBUG ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s.",
 			JAVA_OPS[op_byte].name, addr, (ut64)op->type2, (ut64)op->type,  ot_str);
 		//eprintf ("op_eob: 0x%02x.\n", op->eob);
 		//eprintf ("op_byte @ 0: 0x%02x op_byte @ 0x%04x: 0x%02x.\n", data[0], addr, data[addr]);
@@ -267,12 +262,10 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		op->fail = addr + sz;
 		//IFDBG eprintf ("%s callto 0x%04x  failto 0x%04x.\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
 	}
-
 	//r_java_disasm(addr, data, len, output, outlen);
 	//IFDBG eprintf ("%s\n", output);
 	return op->size;
 }
-
 
 static void java_update_anal_types(RAnal *anal, RBinJavaObj *bin_obj) {
 	Sdb *D = anal->sdb_types;
@@ -294,9 +287,8 @@ static void java_update_anal_types(RAnal *anal, RBinJavaObj *bin_obj) {
 
 static int java_cmd_ext(RAnal *anal, const char* input) {
 	RBinJavaObj *obj = (RBinJavaObj *) get_java_bin_obj (anal);
-
 	if (!obj) {
-		eprintf ("Execute \"af\" to set the current bin, and this will bind the current bin\n");
+		R_LOG_INFO ("Execute \"af\" to set the current bin, and this will bind the current bin");
 		return -1;
 	}
 	switch (*input) {
@@ -305,19 +297,21 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 		r_java_new_method ();
 		break;
 	case 'u':
-		switch (input[1]) {
-			case 't': {java_update_anal_types (anal, obj); return true;}
-			default: break;
+		if (input[1] == 't') {
+			java_update_anal_types (anal, obj);
+			return true;
 		}
 		break;
+#if 0
 	case 's':
 		switch (input[1]) {
 		//case 'e': return java_resolve_cp_idx_b64 (anal, input+2);
 		default: break;
 		}
 		break;
+#endif
 	default:
-		eprintf ("Command not supported\n");
+		R_LOG_ERROR ("Unknown java command");
 		break;
 	}
 	return 0;

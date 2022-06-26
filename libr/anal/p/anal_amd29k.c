@@ -6,7 +6,7 @@
 
 
 static bool set_reg_profile(RAnal *anal) {
-	const char *p =
+	const char * const p =
 			"=PC	pc\n"
 			"=SP	gp1\n"
 			"=BP	gp2\n"
