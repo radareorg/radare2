@@ -2,9 +2,9 @@
 #define FS_TYPES_H
 
 typedef struct r_fs_type_t {
-	const char *name;
+	const char * const name;
 	int bufoff;
-	const char *buf;
+	const char * const buf;
 	int buflen;
 	int byteoff;
 	ut8 byte;

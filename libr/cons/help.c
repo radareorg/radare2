@@ -150,4 +150,3 @@ R_API void r_cons_cmd_help_match(const char *help[], bool use_color, R_BORROW R_
 		free (cmd);
 	}
 }
-

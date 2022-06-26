@@ -576,7 +576,7 @@ R_API bool r_sys_aslr(int val) {
 	int fd = r_sandbox_open (rva, O_WRONLY, 0644);
 	if (fd != -1) {
 		if (r_sandbox_write (fd, (ut8 *)buf, sizeof (buf)) != sizeof (buf)) {
-			eprintf ("Failed to set RVA\n");
+			R_LOG_ERROR ("Failed to set RVA");
 			ret = false;
 		}
 		close (fd);
@@ -584,26 +584,26 @@ R_API bool r_sys_aslr(int val) {
 #elif __FreeBSD__ && __FreeBSD_version >= 1300000
 	size_t vlen = sizeof (val);
 	if (sysctlbyname ("kern.elf32.aslr.enable", NULL, 0, &val, vlen) == -1) {
-		eprintf ("Failed to set RVA 32 bits\n");
+		R_LOG_ERROR ("Failed to set RVA 32 bits");
 		return false;
 	}
 
 #if __LP64__
 	if (sysctlbyname ("kern.elf64.aslr.enable", NULL, 0, &val, vlen) == -1) {
-		eprintf ("Failed to set RVA 64 bits\n");
+		R_LOG_ERROR ("Failed to set RVA 64 bits");
 		ret = false;
 	}
 #endif
 #elif __NetBSD__
 	size_t vlen = sizeof (val);
 	if (sysctlbyname ("security.pax.aslr.enabled", NULL, 0, &val, vlen) == -1) {
-		eprintf ("Failed to set RVA\n");
+		R_LOG_ERROR ("Failed to set RVA");
 		ret = false;
 	}
 #elif __DragonFly__
 	size_t vlen = sizeof (val);
 	if (sysctlbyname ("vm.randomize_mmap", NULL, 0, &val, vlen) == -1) {
-		eprintf ("Failed to set RVA\n");
+		R_LOG_ERROR ("Failed to set RVA");
 		ret = false;
 	}
 #elif __DragonFly__
@@ -786,7 +786,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 }
 #else
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
-	eprintf ("r_sys_cmd_str: not yet implemented for this platform\n");
+	R_LOG_ERROR ("RSyscmd.strFull() is not yet implemented for this platform");
 	return false;
 }
 #endif
@@ -859,7 +859,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 	char slash = R_SYS_DIR[0];
 	char *path = strdup (dir), *ptr = path;
 	if (!path) {
-		eprintf ("r_sys_mkdirp: Unable to allocate memory\n");
+		R_LOG_ERROR ("Unable to allocate memory");
 		return false;
 	}
 	if (*ptr == slash) {
@@ -887,7 +887,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 		*ptr = 0;
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
 			if (r_sandbox_check (R_SANDBOX_GRAIN_FILES)) {
-				eprintf ("r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
+				R_LOG_ERROR ("fail '%s' of '%s'", path, dir);
 			}
 			free (path);
 			return false;
@@ -988,7 +988,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 		ptr += (4096 - pdelta);
 	}
 	if (!ptr || !buf) {
-		eprintf ("r_sys_run: Cannot run empty buffer\n");
+		R_LOG_ERROR ("Cannot run empty buffer");
 		free (p);
 		return false;
 	}
@@ -1014,7 +1014,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	waitpid (pid, &st, 0);
 	if (WIFSIGNALED (st)) {
 		int num = WTERMSIG(st);
-		eprintf ("Got signal %d\n", num);
+		R_LOG_INFO ("Child process received signal %d", num);
 		ret = num;
 	} else {
 		ret = WEXITSTATUS (st);

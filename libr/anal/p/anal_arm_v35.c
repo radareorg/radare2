@@ -258,13 +258,12 @@ static int decode_sign_ext64(ShiftType extender) {
 	}
 }
 
-
 static const char *decode_shift_64(ShiftType shift) {
-	static const char *E_OP_SR = ">>";
-	static const char *E_OP_SL = "<<";
-	static const char *E_OP_RR = ">>>";
-	static const char *E_OP_AR = ">>>>";
-	static const char *E_OP_VOID = "";
+	const char * const E_OP_SR = ">>";
+	const char * const E_OP_SL = "<<";
+	const char * const E_OP_RR = ">>>";
+	const char * const E_OP_AR = ">>>>";
+	const char * const E_OP_VOID = "";
 
 	switch (shift) {
 	case ShiftType_ASR:

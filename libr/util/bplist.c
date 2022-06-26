@@ -127,7 +127,7 @@ static bool parse_uint_node(RBPlist *bplist, const char **bnode, ut8 size) {
 		break;
 	default:
 		//free(data);
-		eprintf ("%s: Invalid byte size for integer node\n", __func__);
+		R_LOG_ERROR ("Invalid byte size for integer node");
 		return false;
 	};
 #endif
@@ -153,7 +153,7 @@ static double parse_real(const char **bnode, ut8 size) {
 		realval = *(double *) buf;
 		break;
 	default:
-		eprintf ("%s: Invalid byte size for real node\n", __func__);
+		R_LOG_ERROR ("Invalid byte size for real node");
 		return false;
 	}
 	return realval;
