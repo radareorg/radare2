@@ -1619,8 +1619,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_line_hist_save (R2_HOME_HISTORY);
 	}
 
-	/* capture return value */
-	ret = r->num->value;
+	ret = r->rc;
 beach:
 	if (quietLeak) {
 		exit (r->rc);

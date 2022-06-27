@@ -30,7 +30,7 @@ static int cmd_Quit(void *data, const char *input) {
 	if (IS_DIGIT (input[0]) || input[0] == ' ') {
 		r_core_return_code (core, r_num_math (core->num, input));
 	} else {
-		r_core_return_code (core, R_CMD_RC_QUIT);
+		r_core_return_code (core, 0);
 	}
 	return R_CMD_RC_QUIT;
 }
