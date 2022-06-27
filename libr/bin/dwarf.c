@@ -2088,7 +2088,7 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		}
 
 		if (da->decls->count >= da->capacity) {
-			R_LOG_WARN ("Warning: malformed dwarf have not enough buckets for decls.");
+			R_LOG_WARN ("malformed dwarf have not enough buckets for decls.");
 		}
 		r_warn_if_fail (da->count <= da->capacity);
 

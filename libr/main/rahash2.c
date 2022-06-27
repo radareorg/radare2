@@ -66,7 +66,7 @@ static void do_hash_seed(const char *seed) {
 		if (s.len < 1) {
 			strcpy ((char *) s.buf, sptr);
 			s.len = strlen (sptr);
-			R_LOG_WARN ("Warning: This is not an hexpair, assuming a string, prefix it with 's:' to skip this message.");
+			R_LOG_WARN ("This is not an hexpair, assuming a string, prefix it with 's:' to skip this message.");
 		}
 	}
 }
@@ -252,7 +252,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 	} else {
 		/* iterate over all algorithm bits */
 		if (s.buf) {
-			R_LOG_WARN ("Warning: Seed ignored on per-block hashing.");
+			R_LOG_WARN ("Seed ignored on per-block hashing.");
 		}
 		for (i = 1; i < R_HASH_ALL; i <<= 1) {
 			ut64 f, t, ofrom, oto;
@@ -379,7 +379,7 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 				ut8 *result = r_crypto_get_output (cry, &result_size);
 				if (result) {
 					if (write (1, result, result_size) != result_size) {
-						R_LOG_WARN ("Warning: cannot write result");
+						R_LOG_WARN ("cannot write result");
 					}
 					free (result);
 				}

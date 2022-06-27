@@ -226,7 +226,7 @@ static int r2pm_update(void) {
 				char *src = r_str_newf ("%s/%s", pmpath, file);
 				char *dst = r_str_newf ("%s/%s", dbpath, file);
 				if (!r_file_copy (src, dst)) {
-					R_LOG_WARN ("Warning: Cannot copy '%s' into '%s'.", file, dbpath);
+					R_LOG_WARN ("Cannot copy '%s' into '%s'.", file, dbpath);
 				}
 				free (src);
 				free (dst);
@@ -477,7 +477,7 @@ static bool is_valid_package(const char *dbdir, const char *pkg) {
 	}
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {", TT_CODEBLOCK);
 	if (!script) {
-		R_LOG_WARN ("Warning: Unable to find R2PM_INSTALL script in '%s'", pkg);
+		R_LOG_WARN ("Unable to find R2PM_INSTALL script in '%s'", pkg);
 		return false;
 	}
 	free (script);

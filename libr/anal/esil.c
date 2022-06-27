@@ -441,15 +441,15 @@ static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname
 	const char *bp = r_reg_get_name (esil->anal->reg, R_REG_NAME_BP);
 
 	if (!pc) {
-		R_LOG_WARN ("Warning: RReg profile does not contain PC register");
+		R_LOG_WARN ("RReg profile does not contain PC register");
 		return false;
 	}
 	if (!sp) {
-		R_LOG_WARN ("Warning: RReg profile does not contain SP register");
+		R_LOG_WARN ("RReg profile does not contain SP register");
 		return false;
 	}
 	if (!bp) {
-		R_LOG_WARN ("Warning: RReg profile does not contain BP register");
+		R_LOG_WARN ("RReg profile does not contain BP register");
 		return false;
 	}
 	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp(reg->name, bp)) || num)) { //I trust k-maps
@@ -3745,7 +3745,7 @@ R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 		}
 		free (popped);
 	} else {
-		R_LOG_WARN ("Warning: Cannot pop because The ESIL stack is empty");
+		R_LOG_WARN ("Cannot pop because The ESIL stack is empty");
 		return -1;
 	}
 	return ret;

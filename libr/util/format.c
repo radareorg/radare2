@@ -1328,7 +1328,7 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 			vallen -= 2;
 		}
 		if (vallen > buflen) {
-			R_LOG_WARN ("Warning: new string is longer than previous one");
+			R_LOG_WARN ("new string is longer than previous one");
 		}
 		p->cb_printf ("wx ");
 		for (i = 0; i < vallen; i++) {
@@ -1402,7 +1402,7 @@ static void r_print_format_nulltermwidestring(const RPrint* p, const int len, in
 			vallen -= 2;
 		}
 		if ((size = vallen) > r_wstr_clen((char*)(buf+seeki))) {
-			R_LOG_WARN ("Warning: new string is longer than previous one");
+			R_LOG_WARN ("new string is longer than previous one");
 		}
 		p->cb_printf ("ww %s @ 0x%08"PFMT64x"\n", newstring, seeki);
 		free(ons);

@@ -188,7 +188,7 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 		if ((pos + num_pages) > tmp_data_max_size) {
 			R_FREE (data);
 			R_FREE (sizes);
-			R_LOG_WARN ("Warning: looks like there is no correct values of stream size in PDB file.");
+			R_LOG_WARN ("looks like there is no correct values of stream size in PDB file.");
 			return 0;
 		}
 
@@ -212,7 +212,7 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 // fclose(tmp_file);
 			page->stream_size = sizes[i];
 			if (sizes[i] == 0) {
-				//R_LOG_WARN ("Warning: stream_size (%d) is 0", i);
+				//R_LOG_WARN ("stream_size (%d) is 0", i);
 			}
 			page->stream_pages = tmp;
 			page->num_pages = num_pages;
@@ -220,7 +220,7 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 			page->stream_size = 0;
 			page->stream_pages = 0;
 			page->num_pages = 0;
-			//R_LOG_WARN ("Warning: stream_size (%d) is 0", i);
+			//R_LOG_WARN ("stream_size (%d) is 0", i);
 			free (tmp);
 		}
 
@@ -349,7 +349,7 @@ static int pdb_read_root(RPdb *pdb) {
 	while (r_list_iter_next (it)) {
 		page = (SPage *) r_list_iter_get (it);
 		if (page->stream_pages == 0) {
-			//R_LOG_WARN ("Warning: no stream pages. Skipping.");
+			//R_LOG_WARN ("no stream pages. Skipping.");
 			r_list_append (pList, NULL);
 			i++;
 			continue;
@@ -481,7 +481,7 @@ static bool pdb7_parse(RPdb *pdb) {
 	}
 	root_page_data = (int *) calloc (page_size, num_root_index_pages);
 	if (!root_page_data) {
-		R_LOG_ERROR ("Error: memory allocation of root_page_data.");
+		R_LOG_ERROR ("memory allocation of root_page_data.");
 		goto error;
 	}
 	p_tmp = root_page_data;
@@ -496,7 +496,7 @@ static bool pdb7_parse(RPdb *pdb) {
 	}
 	root_page_list = (int *) calloc (sizeof(int), num_root_pages);
 	if (!root_page_list) {
-		R_LOG_ERROR ("Error: memory allocation of root page.");
+		R_LOG_ERROR ("memory allocation of root page.");
 		goto error;
 	}
 

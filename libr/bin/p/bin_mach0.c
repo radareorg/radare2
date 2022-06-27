@@ -547,7 +547,7 @@ static bool _patch_reloc(struct MACH0_(obj_t) *bin, RIOBind *iob, struct reloc_t
 			ins_len = 5;
 			break;
 		default:
-			R_LOG_WARN ("Warning: unsupported reloc type for X86_64 (%d), please file a bug.", reloc->type);
+			R_LOG_WARN ("unsupported reloc type for X86_64 (%d), please file a bug.", reloc->type);
 			return false;
 		}
 		break;
@@ -560,7 +560,7 @@ static bool _patch_reloc(struct MACH0_(obj_t) *bin, RIOBind *iob, struct reloc_t
 	case CPU_TYPE_ARM:
 		break;
 	default:
-		R_LOG_WARN ("Warning: unsupported architecture for patching relocs, please file a bug. %s", MACH0_(get_cputype_from_hdr)(&bin->hdr));
+		R_LOG_WARN ("unsupported architecture for patching relocs, please file a bug. %s", MACH0_(get_cputype_from_hdr)(&bin->hdr));
 		return false;
 	}
 
@@ -619,7 +619,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 
 	if (!io->cached) {
-		R_LOG_WARN ("Warning: run r2 with -e bin.cache=true to fix relocations in disassembly");
+		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
 		goto beach;
 	}
 

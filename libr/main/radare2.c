@@ -95,7 +95,7 @@ static int r_main_version_verify(bool show, bool json) {
 			}
 		}
 		if (ret) {
-			R_LOG_WARN ("Warning: r2 library versions mismatch! Check r2 -V");
+			R_LOG_WARN ("r2 library versions mismatch! Check r2 -V");
 		}
 	}
 	return ret;
@@ -732,7 +732,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #if ALLOW_THREADED
 			threaded = true;
 #else
-			R_LOG_WARN ("Warning: -t is temporarily disabled!");
+			R_LOG_WARN ("-t is temporarily disabled!");
 #endif
 			break;
 #endif
@@ -1000,7 +1000,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	if (pfile && r_file_is_directory (pfile)) {
 		if (debug) {
-			R_LOG_ERROR ("Error: Cannot debug directories, yet.");
+			R_LOG_ERROR ("Cannot debug directories, yet.");
 			LISTS_FREE ();
 			free (pfile);
 			R_FREE (debugbackend);
@@ -1260,7 +1260,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 								RBinFile *bi = r_bin_cur (r->bin);
 								bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
 								if (!haveBinInfo && baddr != UT64_MAX) {
-									R_LOG_WARN ("Warning: Don't use -B on unknown files. Consider using -m.");
+									R_LOG_WARN ("Don't use -B on unknown files. Consider using -m.");
 								}
 							}
 						} else {
@@ -1295,7 +1295,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 			if (mapaddr) {
 				if (r_config_get_i (r->config, "file.info")) {
-					R_LOG_WARN ("Warning: using oba to load the syminfo from different mapaddress.");
+					R_LOG_WARN ("using oba to load the syminfo from different mapaddress.");
 					// load symbols when using r2 -m 0x1000 /bin/ls
 					r_core_cmdf (r, "oba 0 0x%"PFMT64x, mapaddr);
 					r_core_cmd0 (r, ".ies*");

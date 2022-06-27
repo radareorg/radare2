@@ -76,7 +76,7 @@ R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 			break;
 		case R_ANAL_VAL_MEM:
 			if (val->memref > 32) {
-				R_LOG_ERROR ("Error: adding changes to %d bytes in memory.", val->memref);
+				R_LOG_ERROR ("adding changes to %d bytes in memory.", val->memref);
 				r_list_delete (dbg->cur_op->access, it);
 				break;
 			}

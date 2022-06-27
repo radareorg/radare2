@@ -1355,7 +1355,7 @@ static bool cb_cfgcharset(void *user, void *data) {
 		if (rc) {
 			r_sys_setenv ("RABIN2_CHARSET", cf);
 		} else {
-			R_LOG_WARN ("Warning: Cannot load charset file '%s'.", cf);
+			R_LOG_WARN ("Cannot load charset file '%s'.", cf);
 		}
 	}
 	return rc;
@@ -1746,7 +1746,7 @@ static bool cb_dbg_execs(void *user, void *data) {
 	}
 #else
 	if (node->i_value) {
-		R_LOG_WARN ("Warning: dbg.execs is not supported in this platform.");
+		R_LOG_WARN ("dbg.execs is not supported in this platform.");
 	}
 #endif
 	return true;
@@ -2287,7 +2287,7 @@ static bool cb_io_pava(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->pava = node->i_value;
 	if (node->i_value && core->io->va) {
-		R_LOG_WARN ("Warning: You may probably want to disable io.va too.");
+		R_LOG_WARN ("You may probably want to disable io.va too.");
 	}
 	return true;
 }

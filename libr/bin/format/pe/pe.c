@@ -2973,7 +2973,7 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			break;
 		}
 		if (read_image_resource_directory_entry (pe->b, off, &entry) < 0) {
-			R_LOG_WARN ("Warning: read resource entry");
+			R_LOG_WARN ("read resource entry");
 			break;
 		}
 		if (entry.u1.Name >> 31) {
@@ -3004,7 +3004,7 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			off = rsrc_base + OffsetToDirectory;
 			int len = read_image_resource_directory (pe->b, off, &identEntry);
 			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
-				R_LOG_WARN ("Warning: parsing resource directory");
+				R_LOG_WARN ("parsing resource directory");
 			}
 			_parse_resource_directory (pe, &identEntry, OffsetToDirectory, type, entry.u1.Name & 0xffff, dirs, resourceEntryName);
 			R_FREE (resourceEntryName);
@@ -3022,7 +3022,7 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			break;
 		}
 		if (read_image_resource_data_entry (pe->b, off, data) != sizeof (*data)) {
-			R_LOG_WARN ("Warning: read (resource data entry)");
+			R_LOG_WARN ("read (resource data entry)");
 			free (data);
 			break;
 		}
@@ -3150,7 +3150,7 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 			break;
 		}
 		if (read_image_resource_directory_entry (pe->b, off, &typeEntry) < 0) {
-			R_LOG_WARN ("Warning: read resource directory entry");
+			R_LOG_WARN ("read resource directory entry");
 			break;
 		}
 		if (typeEntry.u2.OffsetToData >> 31) {
@@ -3159,7 +3159,7 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 			off = rsrc_base + OffsetToDirectory;
 			int len = read_image_resource_directory (pe->b, off, &identEntry);
 			if (len != sizeof (identEntry)) {
-				R_LOG_WARN ("Warning: parsing resource directory");
+				R_LOG_WARN ("parsing resource directory");
 			}
 			(void)_parse_resource_directory (pe, &identEntry, OffsetToDirectory, typeEntry.u1.Name & 0xffff, 0, dirs, NULL);
 		}
@@ -3276,11 +3276,11 @@ static int bin_pe_init(RBinPEObj* pe) {
 	pe->cms = NULL;
 	pe->spcinfo = NULL;
 	if (!bin_pe_init_hdr (pe)) {
-		R_LOG_WARN ("Warning: File is not PE");
+		R_LOG_WARN ("File is not PE");
 		return false;
 	}
 	if (!bin_pe_init_sections (pe)) {
-		R_LOG_WARN ("Warning: Cannot initialize sections");
+		R_LOG_WARN ("Cannot initialize sections");
 		return false;
 	}
 	pe->sections = PE_(r_bin_pe_get_sections) (pe);
@@ -4148,7 +4148,7 @@ void PE_(r_bin_pe_check_sections)(RBinPEObj* pe, struct r_bin_pe_section_t* * se
 					if (addr_beg <= entry->vaddr || entry->vaddr < addr_end) {
 						if (!(sections[j].perm & PE_IMAGE_SCN_MEM_EXECUTE)) {
 							if (pe->verbose) {
-								R_LOG_WARN ("Warning: Found entrypoint in non-executable section.");
+								R_LOG_WARN ("Found entrypoint in non-executable section.");
 							}
 							sections[j].perm |= PE_IMAGE_SCN_MEM_EXECUTE;
 						}

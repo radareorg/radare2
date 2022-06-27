@@ -1739,7 +1739,7 @@ static int r_cmd_java_print_method_num_name(RBinJavaObj *obj) {
 static int r_cmd_java_print_field_summary(RBinJavaObj *obj, ut16 idx) {
 	int res = r_bin_java_print_field_idx_summary (obj, idx);
 	if (res == false) {
-		R_LOG_ERROR ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.", idx);
+		R_LOG_ERROR ("Field or Method @ index (%d) not found in the RBinJavaObj.", idx);
 		res = true;
 	}
 	return res;
@@ -1757,7 +1757,7 @@ static int r_cmd_java_print_field_name(RBinJavaObj *obj, ut16 idx) {
 	if (res) {
 		r_cons_println (res);
 	} else {
-		R_LOG_ERROR ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.", idx);
+		R_LOG_ERROR ("Field or Method @ index (%d) not found in the RBinJavaObj.", idx);
 	}
 	free (res);
 	return true;
@@ -1766,7 +1766,7 @@ static int r_cmd_java_print_field_name(RBinJavaObj *obj, ut16 idx) {
 static int r_cmd_java_print_method_summary(RBinJavaObj *obj, ut16 idx) {
 	int res = r_bin_java_print_method_idx_summary (obj, idx);
 	if (res == false) {
-		R_LOG_ERROR ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.", idx);
+		R_LOG_ERROR ("Field or Method @ index (%d) not found in the RBinJavaObj.", idx);
 		res = true;
 	}
 	return res;
@@ -1784,7 +1784,7 @@ static int r_cmd_java_print_method_name(RBinJavaObj *obj, ut16 idx) {
 	if (res) {
 		r_cons_println (res);
 	} else {
-		R_LOG_ERROR ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.", idx);
+		R_LOG_ERROR ("Field or Method @ index (%d) not found in the RBinJavaObj.", idx);
 	}
 	free (res);
 	return true;

@@ -667,7 +667,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	}
 	if ((maxlen - (addrbytes * idx)) > MAX_SCAN_SIZE) {
 		if (anal->verbose) {
-			R_LOG_WARN ("Warning: Skipping large memory region.");
+			R_LOG_WARN ("Skipping large memory region.");
 		}
 		maxlen = 0;
 	}
@@ -704,7 +704,7 @@ repeat:
 		}
 		if (is_invalid_memory (anal, buf, bytes_read)) {
 			if (anal->verbose) {
-				R_LOG_WARN ("Warning: FFFF opcode at 0x%08"PFMT64x, at);
+				R_LOG_WARN ("FFFF opcode at 0x%08"PFMT64x, at);
 			}
 			gotoBeach (R_ANAL_RET_ERROR)
 		}
@@ -1690,12 +1690,12 @@ R_API RAnalFunction *r_anal_get_function_byname(RAnal *a, const char *name) {
 R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff) {
 	D eprintf ("Add bb\n");
 	if (size == 0) { // empty basic blocks allowed?
-		R_LOG_WARN ("Warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.", addr);
+		R_LOG_WARN ("empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.", addr);
 		r_warn_if_reached ();
 		return false;
 	}
 	if (size > a->opt.bb_max_size) {
-		R_LOG_WARN ("Warning: can't allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x"", (st64)size, addr);
+		R_LOG_WARN ("can't allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x"", (st64)size, addr);
 		r_warn_if_reached ();
 		return false;
 	}
@@ -1720,7 +1720,7 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 	}
 
 	if (!block) {
-		D R_LOG_WARN ("Warning: r_anal_function_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x, fcn->addr, addr);
+		D R_LOG_WARN ("r_anal_function_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x, fcn->addr, addr);
 		return false;
 	}
 
@@ -1775,7 +1775,7 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		N++; // nodes
 		if ((!anal || anal->verbose) && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
-			R_LOG_WARN ("Warning: invalid bb jump/fail pair at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x, bb->addr, fcn->addr);
+			R_LOG_WARN ("invalid bb jump/fail pair at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x, bb->addr, fcn->addr);
 		}
 		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
 			P++; // exit nodes
@@ -1792,7 +1792,7 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 
 	int result = E - N + (2 * P);
 	if (result < 1 && (!anal || anal->verbose)) {
-		R_LOG_WARN ("Warning: CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08"PFMT64x, E, N, P, fcn->addr);
+		R_LOG_WARN ("CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08"PFMT64x, E, N, P, fcn->addr);
 	}
 	// r_return_val_if_fail (result > 0, 0);
 	return result;

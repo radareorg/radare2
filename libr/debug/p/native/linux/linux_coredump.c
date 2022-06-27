@@ -822,7 +822,7 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 	}
 	if (!p->num_threads || p->num_threads < 1) {
 		free (p);
-		R_LOG_WARN ("Warning: number of threads is < 1");
+		R_LOG_WARN ("number of threads is < 1");
 		return NULL;
 	}
 	file = r_strf ("/proc/%d/status", dbg->pid);

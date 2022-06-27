@@ -358,7 +358,7 @@ static void emit_get_var(REgg *egg, int type, char *out, int idx) {
 		break;
 	case 1: /* argument */
 // OMG WE CAN'T stuff found in relative address in stack in the stack
-		R_LOG_WARN ("Warning: Using stack vars in naked functions");
+		R_LOG_WARN ("Using stack vars in naked functions");
 		idx = 8; // HACK to make arg0, arg4, ... work
 		if (idx > 0) {
 			sprintf (out, "[" R_SP "+%d]", idx);

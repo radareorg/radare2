@@ -901,7 +901,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	{
 		bool canbebig = r_asm_set_big_endian (as->a, isbig);
 		if (isbig && !canbebig) {
-			R_LOG_WARN ("Warning: This architecture can't swap to big endian.");
+			R_LOG_WARN ("This architecture can't swap to big endian.");
 		}
 	}
 	if (whatsop) {

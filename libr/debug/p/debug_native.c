@@ -97,7 +97,7 @@ static int r_debug_handle_signals(RDebug *dbg) {
 #if __KFBSD__
 	return bsd_handle_signals (dbg);
 #else
-	R_LOG_WARN ("Warning: signal handling is not supported on this platform");
+	R_LOG_WARN ("signal handling is not supported on this platform");
 	return 0;
 #endif
 }
@@ -239,7 +239,7 @@ static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		r_list_foreach (dbg->threads, it, th) {
 			ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, 0, 0);
 			if (ret) {
-				R_LOG_ERROR ("Error: (%d) is running or dead.", th->pid);
+				R_LOG_ERROR ("(%d) is running or dead.", th->pid);
 			}
 		}
 	} else {

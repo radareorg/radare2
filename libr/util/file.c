@@ -461,7 +461,7 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 	}
 	size_t rsz = fread (ret, 1, sz, fd);
 	if (rsz != sz) {
-		R_LOG_WARN ("Warning: r_file_slurp: fread: truncated read (%d / %d)", (int)rsz, (int)sz);
+		R_LOG_WARN ("r_file_slurp: fread: truncated read (%d / %d)", (int)rsz, (int)sz);
 		sz = rsz;
 	}
 	fclose (fd);

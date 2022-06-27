@@ -90,7 +90,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	ut64 usrimm = r_num_math (core->num, inp);
 	ut64 usrimm2 = inp_arg? r_num_math (core->num, inp_arg): usrimm;
 	if (usrimm > usrimm2) {
-		R_LOG_ERROR ("Error: /ci : Invalid range");
+		R_LOG_ERROR ("/ci : Invalid range");
 		return NULL;
 	}
 
@@ -249,7 +249,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					if (maxhits) {
 						count++;
 						if (count >= maxhits) {
-							//R_LOG_ERROR ("Error: search.maxhits reached");
+							//R_LOG_ERROR ("search.maxhits reached");
 							goto beach;
 						}
 					}

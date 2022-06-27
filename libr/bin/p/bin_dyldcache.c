@@ -1075,7 +1075,7 @@ static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtPU *pat
 			const char *key = (const char *) cursor + 24;
 			size_t dep_index = (size_t)ht_pu_find (path_to_idx, key, &found);
 			if (!found || dep_index >= cache->hdr->imagesCount) {
-				R_LOG_WARN ("Warning: alien dep '%s'", key);
+				R_LOG_WARN ("alien dep '%s'", key);
 				continue;
 			}
 			deps[dep_index]++;

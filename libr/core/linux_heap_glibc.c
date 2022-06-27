@@ -446,9 +446,9 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 
 	if (libc_addr_sta == GHT_MAX || libc_addr_end == GHT_MAX) {
 		if (r_config_get_b (core->config, "cfg.debug")) {
-			R_LOG_WARN ("Warning: Can't find glibc mapped in memory (see dm)");
+			R_LOG_WARN ("Can't find glibc mapped in memory (see dm)");
 		} else {
-			R_LOG_WARN ("Warning: Can't find arena mapped in memory (see om)");
+			R_LOG_WARN ("Can't find arena mapped in memory (see om)");
 		}
 		return false;
 	}
@@ -487,7 +487,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		}
 		addr_srch += sizeof (GHT);
 	}
-	R_LOG_WARN ("Warning: Can't find main_arena in mapped memory");
+	R_LOG_WARN ("Can't find main_arena in mapped memory");
 	free (ta);
 	return false;
 }
@@ -762,7 +762,7 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 	case 'g': // dmhbg [bin_num]
 		num_bin = r_num_get (NULL, input + j) - 1;
 		if (num_bin > NBINS - 2) {
-			R_LOG_ERROR ("Error: 0 < bin <= %d", NBINS - 1);
+			R_LOG_ERROR ("0 < bin <= %d", NBINS - 1);
 			break;
 		}
 		PRINTF_YA ("  Bin %03"PFMT64u":\n", (ut64)num_bin + 1);
@@ -889,7 +889,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 	case ' ': // dmhf [bin_num]
 		num_bin = r_num_get (NULL, input) - 1;
 		if (num_bin >= NFASTBINS) {
-			R_LOG_ERROR ("Error: 0 < bin <= %d", NFASTBINS);
+			R_LOG_ERROR ("0 < bin <= %d", NFASTBINS);
 			break;
 		}
 		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin, demangle)) {

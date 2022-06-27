@@ -72,7 +72,7 @@ ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
 		return 0LL;
 	}
 	if (r_buf_read_at (bin->b, entry->paddr, buf, sizeof (buf)) == -1) {
-		R_LOG_ERROR ("Error: read (entry)");
+		R_LOG_ERROR ("read (entry)");
 	} else {
 		if (buf[367] == 0xe8) {
 			int delta = (buf[368] | buf[369]<<8 | buf[370]<<16 | buf[371]<<24);
@@ -115,7 +115,7 @@ static int r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
 	}
 	if (r_buf_read_at (bin->b, sizeof(TE_image_file_header),
 				(ut8*)bin->section_header, sections_size) == -1) {
-		R_LOG_ERROR ("Error: read (sections headers)");
+		R_LOG_ERROR ("read (sections headers)");
 		return false;
 	}
 	return true;

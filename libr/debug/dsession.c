@@ -220,7 +220,7 @@ R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut6
 	if (!vreg) {
 		vreg = r_vector_new (sizeof (RDebugChangeReg), NULL, NULL);
 		if (!vreg) {
-			R_LOG_ERROR ("Error: creating a register vector.");
+			R_LOG_ERROR ("creating a register vector.");
 			return false;
 		}
 		ht_up_insert (session->registers, offset | (arena << 16), vreg);
@@ -235,7 +235,7 @@ R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8
 	if (!vmem) {
 		vmem = r_vector_new (sizeof (RDebugChangeMem), NULL, NULL);
 		if (!vmem) {
-			R_LOG_ERROR ("Error: creating a memory vector.");
+			R_LOG_ERROR ("creating a memory vector.");
 			return false;
 		}
 		ht_up_insert (session->memory, addr, vmem);
@@ -412,7 +412,7 @@ R_API void r_debug_session_serialize(RDebugSession *session, Sdb *db) {
 static bool session_sdb_save(Sdb *db, const char *path) {
 	char *filename;
 	if (!r_file_is_directory (path)) {
-		R_LOG_ERROR ("Error: %s is not a directory", path);
+		R_LOG_ERROR ("%s is not a directory", path);
 		return false;
 	}
 
@@ -481,7 +481,7 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 	// Insert a new vector into `memory` HtUP at `addr`
 	RVector *vmem = r_vector_new (sizeof (RDebugChangeMem), NULL, NULL);
 	if (!vmem) {
-		R_LOG_ERROR ("Error: failed to allocate RVector vmem.");
+		R_LOG_ERROR ("failed to allocate RVector vmem.");
 		free (json_str);
 		r_json_free (reg_json);
 		return false;
@@ -530,7 +530,7 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 	HtUP *registers = user;
 	RVector *vreg = r_vector_new (sizeof (RDebugChangeReg), NULL, NULL);
 	if (!vreg) {
-		R_LOG_ERROR ("Error: failed to allocate RVector vreg.");
+		R_LOG_ERROR ("failed to allocate RVector vreg.");
 		r_json_free (reg_json);
 		free (json_str);
 		return true;
@@ -639,7 +639,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 
 		RDebugSnap *snap = R_NEW0 (RDebugSnap);
 		if (!snap) {
-			R_LOG_ERROR ("Error: failed to allocate RDebugSnap snap");
+			R_LOG_ERROR ("failed to allocate RDebugSnap snap");
 			continue;
 		}
 		snap->name = strdup (namej->str_value);
@@ -667,7 +667,7 @@ static void deserialize_checkpoints(Sdb *db, RVector *checkpoints) {
 static bool session_sdb_load_ns(Sdb *db, const char *nspath, const char *filename) {
 	Sdb *tmpdb = sdb_new0 ();
 	if (sdb_open (tmpdb, filename) == -1) {
-		R_LOG_ERROR ("Error: failed to load %s into sdb", filename);
+		R_LOG_ERROR ("failed to load %s into sdb", filename);
 		sdb_free (tmpdb);
 		return false;
 	}
@@ -711,7 +711,7 @@ R_API void r_debug_session_deserialize(RDebugSession *session, Sdb *db) {
 #define DESERIALIZE(ns, func) do { \
 		subdb = sdb_ns (db, ns, false); \
 		if (!subdb) { \
-			R_LOG_ERROR ("Error: missing " ns " namespace"); \
+			R_LOG_ERROR ("missing " ns " namespace"); \
 			return; \
 		} \
 		func; \

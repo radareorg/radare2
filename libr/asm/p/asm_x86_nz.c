@@ -232,7 +232,7 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 	} else if (op->operands[0].type & OT_BYTE) {
 		if (op->operands[1].immediate > 255) {
-			R_LOG_ERROR ("Error: Immediate exceeds bounds");
+			R_LOG_ERROR ("Immediate exceeds bounds");
 			return -1;
 		}
 		data[l++] = 0x80;
@@ -314,7 +314,7 @@ static int process_group_2(RAsm *a, ut8 *data, const Opcode *op) {
 
 	st32 immediate = op->operands[1].immediate * op->operands[1].sign;
 	if (immediate > 255 || immediate < -128) {
-		R_LOG_ERROR ("Error: Immediate exceeds bounds");
+		R_LOG_ERROR ("Immediate exceeds bounds");
 		return -1;
 	}
 
@@ -406,7 +406,7 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 				&& op->operands[1].type & (OT_DWORD | OT_QWORD)) {
 			data[l++] = op1 + 0x1;
 		} else {
-			R_LOG_ERROR ("Error: mismatched operand sizes");
+			R_LOG_ERROR ("mismatched operand sizes");
 			return -1;
 		}
 		reg = op->operands[1].reg;
@@ -434,7 +434,7 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 					&& op->operands[1].type & (OT_DWORD | OT_QWORD)) {
 				data[l++] = op1 + 0x3;
 			} else {
-				R_LOG_ERROR ("Error: mismatched operand sizes");
+				R_LOG_ERROR ("mismatched operand sizes");
 				return -1;
 			}
 			reg = op->operands[0].reg;
@@ -999,7 +999,7 @@ static int opaam(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type) {
-		R_LOG_ERROR ("Error: Invalid operands");
+		R_LOG_ERROR ("Invalid operands");
 		return -1;
 	}
 	is_valid_registers (op);
@@ -1231,7 +1231,7 @@ static int opimul(RAsm *a, ut8 *data, const Opcode *op) {
 		if ((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) {
 			if (op->operands[1].type & OT_CONSTANT) {
 				if (op->operands[1].immediate == -1) {
-					R_LOG_ERROR ("Error: Immediate exceeds max");
+					R_LOG_ERROR ("Immediate exceeds max");
 					return -1;
 				}
 				immediate = op->operands[1].immediate * op->operands[1].sign;
@@ -1414,7 +1414,7 @@ static int opclflush(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opinc(RAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type) {
-		R_LOG_ERROR ("Error: Invalid operands");
+		R_LOG_ERROR ("Invalid operands");
 		return -1;
 	}
 	is_valid_registers (op);
@@ -2663,7 +2663,7 @@ static int optest(RAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	if (!op->operands[0].type || !op->operands[1].type) {
-		R_LOG_ERROR ("Error: Invalid operands");
+		R_LOG_ERROR ("Invalid operands");
 		return -1;
 	}
 	if (a->config->bits == 64) {

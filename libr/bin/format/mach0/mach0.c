@@ -467,7 +467,7 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 	}
 	int len = r_buf_read_at (mo->b, off, symt, sizeof (struct symtab_command));
 	if (len != sizeof (struct symtab_command)) {
-		R_LOG_ERROR ("Error: read (symtab)");
+		R_LOG_ERROR ("read (symtab)");
 		return false;
 	}
 	st.cmd = r_read_ble32 (symt, be);
@@ -2098,7 +2098,7 @@ static bool init(struct MACH0_(obj_t) *mo) {
 		return false;
 	}
 	if (!init_items (mo)) {
-		R_LOG_WARN ("Warning: Cannot initialize items");
+		R_LOG_WARN ("Cannot initialize items");
 	}
 	mo->baddr = MACH0_(get_baddr)(mo);
 	return true;

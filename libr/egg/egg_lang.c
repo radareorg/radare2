@@ -585,7 +585,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		str++;
 		len = strlen (str) - 1;
 		if (!egg->lang.stackfixed || egg->lang.stackfixed < len) {
-			R_LOG_WARN ("Warning: No room in the static stackframe! (%d must be %d)",
+			R_LOG_WARN ("No room in the static stackframe! (%d must be %d)",
 				egg->lang.stackfixed, len);
 		}
 		str[len] = '\0';

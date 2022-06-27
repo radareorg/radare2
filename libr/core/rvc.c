@@ -134,7 +134,7 @@ static bool repo_exists(const char *path) {
 			break;
 		}
 		if (!r_file_is_directory (files[i]) && !r_file_exists (files[i])) {
-			R_LOG_ERROR ("Error: Corrupt repo: %s doesn't exist",
+			R_LOG_ERROR ("Corrupt repo: %s doesn't exist",
 					files[i]);
 			r = false;
 			break;

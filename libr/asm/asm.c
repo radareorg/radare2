@@ -59,7 +59,7 @@ static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
 
 static inline int r_asm_pseudo_arch(RAsm *a, const char *input) {
 	if (!r_asm_use (a, input)) {
-		R_LOG_ERROR ("Error: Unknown plugin");
+		R_LOG_ERROR ("Unknown plugin");
 		return -1;
 	}
 	return 0;
@@ -67,7 +67,7 @@ static inline int r_asm_pseudo_arch(RAsm *a, const char *input) {
 
 static inline int r_asm_pseudo_bits(RAsm *a, const char *input) {
 	if (!(r_asm_set_bits (a, r_num_math (NULL, input)))) {
-		R_LOG_ERROR ("Error: Unsupported value for .bits.");
+		R_LOG_ERROR ("Unsupported value for .bits.");
 		return -1;
 	}
 	return 0;

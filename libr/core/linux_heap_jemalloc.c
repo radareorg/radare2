@@ -109,14 +109,14 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 		}
 	}
 	if (!path) {
-		R_LOG_WARN ("Warning: cannot find jemalloc mapped in memory (see `dm`)");
+		R_LOG_WARN ("cannot find jemalloc mapped in memory (see `dm`)");
 		return false;
 	}
 #if __linux__
 	bool is_debug_file = GH(je_matched)(path, "/usr/local/lib");
 
 	if (!is_debug_file) {
-		R_LOG_WARN ("Warning: Cannot find libjemalloc.so.2 in /usr/local/lib");
+		R_LOG_WARN ("Cannot find libjemalloc.so.2 in /usr/local/lib");
 		return false;
 	}
 	if (r_file_exists (path)) {

@@ -201,7 +201,7 @@ static bool types_sig_valid(const char *types) {
 
 #define DBL_VAL_FAIL(x,y) \
 	if (x) { \
-		R_LOG_WARN ("Warning: Skipping signature with multiple %c signatures (%s)", y, k); \
+		R_LOG_WARN ("Skipping signature with multiple %c signatures (%s)", y, k); \
 		success = false; \
 		goto out; \
 	}
@@ -219,12 +219,12 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 	// Deserialize key: zign|space|name
 	int n = r_str_split (k2, '|');
 	if (n != 3) {
-		R_LOG_WARN ("Warning: Skipping signature with invalid key (%s)", k);
+		R_LOG_WARN ("Skipping signature with invalid key (%s)", k);
 		success = false;
 		goto out;
 	}
 	if (strcmp (r_str_word_get0 (k2, 0), "zign")) {
-		R_LOG_WARN ("Warning: Skipping signature with invalid value (%s)", k);
+		R_LOG_WARN ("Skipping signature with invalid value (%s)", k);
 		success = false;
 		goto out;
 	}
@@ -251,7 +251,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			continue;
 		}
 		if (strlen (word) < 3 || word[1] != ':') {
-			R_LOG_WARN ("Warning: Skipping signature with corrupted serialization (%s:%s)", k, word);
+			R_LOG_WARN ("Skipping signature with corrupted serialization (%s:%s)", k, word);
 			success = false;
 			goto out;
 		}
@@ -982,7 +982,7 @@ R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignT
 		}
 		break;
 	default:
-		R_LOG_ERROR ("Error: %s Can not handle type %c", __FUNCTION__, type);
+		R_LOG_ERROR ("%s Can not handle type %c", __FUNCTION__, type);
 	}
 
 	return false;
@@ -2993,7 +2993,7 @@ R_API bool r_sign_save(RAnal *a, const char *file) {
 	r_return_val_if_fail (a && file, false);
 
 	if (sdb_isempty (a->sdb_zigns)) {
-		R_LOG_WARN ("Warning: no zignatures to save");
+		R_LOG_WARN ("no zignatures to save");
 		return false;
 	}
 

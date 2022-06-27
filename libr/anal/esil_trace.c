@@ -88,7 +88,7 @@ static void add_reg_change(RAnalEsilTrace *trace, int idx, RRegItem *ri, ut64 da
 	if (!vreg) {
 		vreg = r_vector_new (sizeof (RAnalEsilRegChange), NULL, NULL);
 		if (!vreg) {
-			R_LOG_ERROR ("Error: creating a register vector.");
+			R_LOG_ERROR ("creating a register vector.");
 			return;
 		}
 		ht_up_insert (trace->registers, addr, vreg);
@@ -103,7 +103,7 @@ static void add_mem_change(RAnalEsilTrace *trace, int idx, ut64 addr, ut8 data) 
 	if (!vmem) {
 		vmem = r_vector_new (sizeof (RAnalEsilMemChange), NULL, NULL);
 		if (!vmem) {
-			R_LOG_ERROR ("Error: creating a memory vector.");
+			R_LOG_ERROR ("creating a memory vector.");
 			return;
 		}
 		ht_up_insert (trace->memory, addr, vmem);

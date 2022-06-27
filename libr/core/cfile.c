@@ -160,7 +160,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 			ret = r_core_bin_load (core, obinfilepath, baddr);
 			r_core_bin_update_arch_bits (core);
 			if (!ret) {
-				R_LOG_ERROR ("Error: Failed to reload rbin for: %s", path);
+				R_LOG_ERROR ("Failed to reload rbin for: %s", path);
 			}
 			origoff = r_num_math (core->num, "entry0");
 		}
