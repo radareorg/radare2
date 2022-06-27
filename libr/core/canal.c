@@ -4134,7 +4134,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		}
 		memset (block, 0, bsz);
 		if (!memcmp (buf, block, bsz)) {
-		//	R_LOG_ERROR ("Error: skipping uninitialized block ");
+		//	R_LOG_ERROR ("Error: skipping uninitialized block");
 			at += ret;
 			continue;
 		}
@@ -5994,12 +5994,12 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 			continue;
 		}
 		if (a0 > a1) {
-			R_LOG_WARN ("Warning: unsorted flag list 0x%"PFMT64x" 0x%"PFMT64x"", a0, a1);
+			R_LOG_WARN ("Warning: unsorted flag list 0x%"PFMT64x" 0x%"PFMT64x, a0, a1);
 			continue;
 		}
 		st64 sz = a1 - a0;
 		if (sz < 1 || sz > core->anal->opt.bb_max_size) {
-			R_LOG_WARN ("Warning: invalid flag range from 0x%08"PFMT64x" to 0x%08"PFMT64x"", a0, a1);
+			R_LOG_WARN ("Warning: invalid flag range from 0x%08"PFMT64x" to 0x%08"PFMT64x, a0, a1);
 			continue;
 		}
 		if (simple) {

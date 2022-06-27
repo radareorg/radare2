@@ -280,7 +280,7 @@ static bool objc_find_refs(RCore *core) {
 
 		}
 		if (classMethodsVA > to) {
-			R_LOG_WARN ("Warning: Fuzzed binary or bug in here, checking next %"PFMT64x" !< %"PFMT64x"", classMethodsVA, to);
+			R_LOG_WARN ("Warning: Fuzzed binary or bug in here, checking next %"PFMT64x" !< %"PFMT64x, classMethodsVA, to);
 			break;
 		}
 		for (va = classMethodsVA; va < to; va += objc2ClassMethSize) {

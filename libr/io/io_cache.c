@@ -46,7 +46,7 @@ R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 			if (r_io_write_at (io, r_itv_begin (c->itv), c->data, r_itv_size (c->itv))) {
 				c->written = true;
 			} else {
-				R_LOG_ERROR ("Error writing change at 0x%08"PFMT64x"", r_itv_begin (c->itv));
+				R_LOG_ERROR ("Error writing change at 0x%08"PFMT64x, r_itv_begin (c->itv));
 			}
 			io->cached = cached;
 			// break; // XXX old behavior, revisit this

@@ -762,7 +762,7 @@ static RBinWasmCustomNameEntry *parse_custom_name_entry(RBinWasmObj *bin, ut64 b
 		}
 		break;
 	default:
-		R_LOG_WARN ("[wasm] Halting custom name section parsing at unknown type 0x%x offset 0x%" PFMTSZx "", cust->type, start);
+		R_LOG_WARN ("[wasm] Halting custom name section parsing at unknown type 0x%x offset 0x%" PFMTSZx, cust->type, start);
 		cust->type = R_BIN_WASM_NAMETYPE_None;
 		goto beach;
 	}

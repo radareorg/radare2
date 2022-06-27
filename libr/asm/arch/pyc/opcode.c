@@ -294,6 +294,6 @@ void (rm_op)(struct op_parameter par) {
 		op_obj->op_name = r_str_newf ("<%u>", par.op_code);
 		op_obj->type = op_obj->op_pop = op_obj->op_push = 0;
 	} else {
-		R_LOG_ERROR ("Error in rm_op() while constructing opcodes for .pyc file:  .op_code = %u, .op_name = %s", par.op_code, par.op_name);
+		R_LOG_ERROR ("Error in rm_op() while constructing opcodes for .pyc file: \n .op_code = %u, .op_name = %s", par.op_code, par.op_name);
 	}
 }

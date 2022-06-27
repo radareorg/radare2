@@ -336,7 +336,7 @@ RBinAddr *r_bin_mz_get_main_vaddr (struct r_bin_mz_obj_t *bin) {
 	}
 	ZERO_FILL (b);
 	if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) < 0) {
-		R_LOG_WARN ("Warning: Cannot read entry at 0x%16" PFMT64x "", (ut64)entry->paddr);
+		R_LOG_WARN ("Warning: Cannot read entry at 0x%16" PFMT64x, (ut64)entry->paddr);
 		free (entry);
 		return NULL;
 	}
