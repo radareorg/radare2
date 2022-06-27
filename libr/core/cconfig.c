@@ -316,7 +316,7 @@ static bool ranal2_list(RCore *core, const char *arch, int fmt) {
 }
 
 static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
-	int autoseg = (!strncmp (asmarch, "x86", 3) && asmbits == 16);
+	int autoseg = r_str_startswith (asmarch, "x86") && asmbits == 16;
 	r_config_set (cfg, "asm.segoff", r_str_bool (autoseg));
 }
 
@@ -735,7 +735,7 @@ static bool cb_asmarch(void *user, void *data) {
 	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
 
 	if (!r_asm_use (core->rasm, node->value)) {
-		eprintf ("asm.arch: cannot find (%s)\n", node->value);
+		R_LOG_ERROR ("asm.arch: cannot find '%s'", node->value);
 		return false;
 	}
 	//we should strdup here otherwise will crash if any r_config_set
@@ -770,8 +770,10 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
-	if (core->rasm->cur && core->anal &&
-	    !(core->rasm->cur->bits & core->anal->config->bits)) {
+
+	if (core->rasm->cur && core->anal && !(core->anal->cur->bits & core->anal->config->bits)) {
+		r_config_set_i (core->config, "asm.bits", bits);
+	} else if (core->rasm->cur && core->anal && !(core->rasm->cur->bits & core->anal->config->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 
