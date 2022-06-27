@@ -1125,7 +1125,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			}
 			if (stage == STAGES - 1) {
 				if (ret < 1) {
-					R_LOG_ERROR ("Cannot assemble '%s' at line %d", ptr_start, linenum);
+					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
 					goto fail;
 				}
 				acode->len = idx + ret;
