@@ -7,7 +7,6 @@ r_asm_sources = [
   'aplugs.c',
   'binutils_as.c',
   join_paths('p','asm_null.c'),
-  join_paths('p','asm_8051.c'),
 #  join_paths('p','asm_arc.c'),
   join_paths('p','asm_arm_as.c'),
   join_paths('p','asm_arm_cs.c'),
@@ -41,8 +40,6 @@ r_asm_sources = [
   join_paths('p','asm_x86_nz.c'),
   #join_paths('p','asm_x86_vm.c'),
   # join_paths('p','asm_z80.c'),
-  #join_paths('arch','8051','8051_disas.c'),
-  join_paths('arch','8051','8051_ass.c'),
   join_paths('arch','ppc','libvle','vle.c'),
   join_paths('arch','ppc','libps','libps.c'),
   #join_paths('arch','arc','gnu','arc-dis.c'),
@@ -118,7 +115,6 @@ r_asm_inc = [
     join_paths('arch','rsp'),
     join_paths('arch','v850'),
     join_paths('arch','propeller'),
-    join_paths('arch','8051'),
     join_paths('arch','v810'),
     join_paths('arch','or1k')
   )

@@ -121,6 +121,10 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		ret = anal->cur->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
+			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			if (op->size < 0) {
+				op->size = 1;
+			}
 		}
 		op->addr = addr;
 		/* consider at least 1 byte to be part of the opcode */
