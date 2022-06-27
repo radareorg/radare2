@@ -121,14 +121,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (handle == 0) {
 		return -1;
 	}
-
-	cs_insn *insn;
-	if (!a->config->big_endian) {
-		// little endian sparc is not supported by capstone, so we emulate it here
-		ut8 ibuf[4] = {0};
-		r_mem_swapendian (ibuf, buf, R_MIN (len, 4));
-		buf = (const ut8*)ibuf;
-	}
+	cs_insn *insn = NULL;
+#if 0
+SPARC-V9 supports both little- and big-endian byte orders for data accesses only; instruction accesses
+are always performed using big-endian byte order. In SPARC-V8, all data and instruction accesses are
+performed in big-endian byte order.
+#endif
 
 	// capstone-next
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
