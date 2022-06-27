@@ -355,6 +355,14 @@ static void free_import_entry(RBinWasmImportEntry *entry) {
 	}
 }
 
+static inline void free_all_imports(RBinWasmObj *bin) {
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
+		r_pvector_free (bin->g_imports_arr[i]);
+	}
+	memset (bin->g_imports_arr, 0, sizeof (bin->g_imports_arr));
+}
+
 static void free_export_entry(RBinWasmExportEntry *entry) {
 	if (entry) {
 		free (entry->field_str);
@@ -485,7 +493,7 @@ beach:
 	return NULL;
 }
 
-static void *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
+static RBinWasmImportEntry *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
 	RBuffer *b = bin->buf;
 	RBinWasmImportEntry *ptr = R_NEW0 (RBinWasmImportEntry);
 	if (!ptr) {
@@ -506,12 +514,12 @@ static void *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
 		goto beach;
 	}
 	switch (ptr->kind) {
-	case 0: // Function
+	case R_BIN_WASM_EXTERNALKIND_Function:
 		if (!consume_u32_r (b, bound, &ptr->type_f)) {
 			goto beach;
 		}
 		break;
-	case 1: // Table
+	case R_BIN_WASM_EXTERNALKIND_Table:
 		if (!consume_s7_r (b, bound, (st8 *)&ptr->type_t.elem_type)) {
 			goto beach;
 		}
@@ -519,12 +527,12 @@ static void *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
 			goto beach;
 		}
 		break;
-	case 2: // Memory
+	case R_BIN_WASM_EXTERNALKIND_Memory:
 		if (!consume_limits_r (b, bound, &ptr->type_m.limits)) {
 			goto beach;
 		}
 		break;
-	case 3: // Global
+	case R_BIN_WASM_EXTERNALKIND_Global:
 		if (!consume_s7_r (b, bound, (st8 *)&ptr->type_g.content_type)) {
 			goto beach;
 		}
@@ -905,6 +913,63 @@ beach:
 	return NULL;
 }
 
+static bool parse_import_sec(RBinWasmObj *bin) {
+	r_return_val_if_fail (bin && bin->g_sections, NULL);
+	// each import type has seperate index space, so we parse them into 4 vecs
+	free_all_imports (bin); // ensure all are empty
+
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
+		bin->g_imports_arr[i] = r_pvector_new ((RPVectorFree)free_import_entry);
+		if (!bin->g_imports_arr[i]) {
+			return false;
+		}
+	}
+
+	RBinWasmSection *sec = section_by_id_unique (bin->g_sections, R_BIN_WASM_SECTION_IMPORT);
+	if (!sec) {
+		return true; // not an error, empty import section
+	}
+
+	RBuffer *buf = bin->buf;
+	ut64 offset = sec->payload_data;
+	ut64 len = sec->payload_len;
+	ut64 bound = offset + len - 1;
+
+	if (r_buf_seek (buf, offset, R_BUF_SET) != offset) {
+		return false;
+	}
+
+	ut32 count;
+	if (!consume_u32_r (buf, bound, &count)) {
+		return false;
+	}
+
+	// over estimate size, shrink later
+	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
+		r_pvector_reserve (bin->g_imports_arr[i], count);
+	}
+
+	for (i = 0; i < count; i++) {
+		ut64 start = r_buf_tell (buf);
+		RBinWasmImportEntry *imp = parse_import_entry (bin, bound, i);
+		if (imp && imp->kind < R_ARRAY_SIZE (bin->g_imports_arr)) {
+			r_pvector_push (bin->g_imports_arr[imp->kind], imp);
+		} else {
+			eprintf ("[wasm] Failed to parse import entry %u/%u of vec at 0x%" PFMT64x "\n", i, count, start);
+			free_import_entry (imp);
+			break;
+		}
+	}
+
+	ut32 seen = 0;
+	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
+		r_pvector_shrink (bin->g_imports_arr[i]);
+		seen += r_pvector_len (bin->g_imports_arr[i]);
+	}
+	return seen == count? true: false;
+}
+
 // Public functions
 RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf) {
 	RBinWasmObj *bin = R_NEW0 (RBinWasmObj);
@@ -917,7 +982,7 @@ RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf) {
 		// but dependency problems when sections are disordered (against spec)
 
 		bin->g_types = r_bin_wasm_get_types (bin);
-		bin->g_imports = r_bin_wasm_get_imports (bin);
+		parse_import_sec (bin);
 		bin->g_funcs = r_bin_wasm_get_functions (bin);
 		bin->g_tables = r_bin_wasm_get_tables (bin);
 		bin->g_memories = r_bin_wasm_get_memories (bin);
@@ -939,7 +1004,7 @@ void wasm_obj_free(RBinWasmObj *bin) {
 		r_buf_free (bin->buf);
 		r_list_free (bin->g_sections);
 		r_pvector_free (bin->g_types);
-		r_pvector_free (bin->g_imports);
+		free_all_imports (bin);
 		r_pvector_free (bin->g_funcs);
 		r_pvector_free (bin->g_tables);
 		r_pvector_free (bin->g_memories);
@@ -1112,11 +1177,6 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 		pfree = (RPVectorFree)free_type_entry;
 		cache = &bin->g_types;
 		break;
-	case R_BIN_WASM_SECTION_IMPORT:
-		parser = (ParseEntryFcn)parse_import_entry;
-		pfree = (RPVectorFree)free_import_entry;
-		cache = &bin->g_imports;
-		break;
 	case R_BIN_WASM_SECTION_FUNCTION:
 		parser = (ParseEntryFcn)parse_function_entry;
 		cache = &bin->g_funcs;
@@ -1187,9 +1247,13 @@ RPVector *r_bin_wasm_get_types(RBinWasmObj *bin) {
 	return bin->g_types? bin->g_types: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_TYPE);
 }
 
-RPVector *r_bin_wasm_get_imports(RBinWasmObj *bin) {
-	r_return_val_if_fail (bin && bin->g_sections, NULL);
-	return bin->g_imports? bin->g_imports: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_IMPORT);
+RPVector *r_bin_wasm_get_imports_kind(RBinWasmObj *bin, ut32 kind) {
+	r_return_val_if_fail (bin && bin->g_sections && kind < R_ARRAY_SIZE (bin->g_imports_arr), NULL);
+	RPVector **vec = &bin->g_imports_arr[kind];
+	if (!*vec) {
+		parse_import_sec (bin);
+	}
+	return *vec;
 }
 
 RPVector *r_bin_wasm_get_functions(RBinWasmObj *bin) {
