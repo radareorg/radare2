@@ -1967,7 +1967,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	if (core->io->va) {
 		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
 			if (core->anal->verbose) {
-				R_LOG_WARN ("Warning: Address not mapped or not executable at 0x%08"PFMT64x"", at);
+				R_LOG_WARN ("Warning: Address not mapped or not executable at 0x%08"PFMT64x, at);
 			}
 			return false;
 		}
