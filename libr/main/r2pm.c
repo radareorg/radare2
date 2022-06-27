@@ -204,7 +204,7 @@ static int r2pm_update(void) {
 	r_sys_mkdirp (gpath);
 	if (r_file_exists (pmpath)) {
 		if (git_pull (pmpath) != 0) {
-			R_LOG_ERROR ("Error");
+			eprintf ("Error\n");
 			free (pmpath);
 			free (gpath);
 			return 1;
@@ -226,7 +226,7 @@ static int r2pm_update(void) {
 				char *src = r_str_newf ("%s/%s", pmpath, file);
 				char *dst = r_str_newf ("%s/%s", dbpath, file);
 				if (!r_file_copy (src, dst)) {
-					R_LOG_WARN ("Cannot copy '%s' into '%s'.", file, dbpath);
+					eprintf ("Warning: Cannot copy '%s' into '%s'.\n", file, dbpath);
 				}
 				free (src);
 				free (dst);
@@ -477,7 +477,7 @@ static bool is_valid_package(const char *dbdir, const char *pkg) {
 	}
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {", TT_CODEBLOCK);
 	if (!script) {
-		R_LOG_WARN ("Unable to find R2PM_INSTALL script in '%s'", pkg);
+		eprintf ("Warning: Unable to find R2PM_INSTALL script in '%s'\n", pkg);
 		return false;
 	}
 	free (script);

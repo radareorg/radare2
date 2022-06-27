@@ -137,7 +137,7 @@ static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
 		if (r_anal_op (as->anal, &aop, offset, buf + ret, len - ret, R_ANAL_OP_MASK_BASIC) < 1) {
-			R_LOG_ERROR ("Error analyzing instruction at 0x%08"PFMT64x"", offset);
+			eprintf ("Error analyzing instruction at 0x%08"PFMT64x"\n", offset);
 			break;
 		}
 		if (aop.size < 1) {
@@ -901,7 +901,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	{
 		bool canbebig = r_asm_set_big_endian (as->a, isbig);
 		if (isbig && !canbebig) {
-			R_LOG_WARN ("This architecture can't swap to big endian.");
+			eprintf ("Warning: This architecture can't swap to big endian.\n");
 		}
 	}
 	if (whatsop) {

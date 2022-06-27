@@ -168,7 +168,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	}
 	bytes = malloc (bin_size);
 	if (!bytes) {
-		R_LOG_ERROR ("error: BinFile buffer is empty");
+		eprintf ("error: BinFile buffer is empty\n");
 		return false;
 	}
 	nb = r_buf_read_at (data->buf, 0, bytes, bin_size);
@@ -188,7 +188,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	if (!outpath || !r_sys_mkdirp (outpath)) {
 		free (path);
 		free (outpath);
-		R_LOG_ERROR ("Error creating dir structure");
+		eprintf ("Error creating dir structure\n");
 		return false;
 	}
 
@@ -197,7 +197,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		: r_str_newf ("%s/%s.%s_%i.%d", outpath, ptr, arch, bits, idx);
 
 	if (!outfile || !r_file_dump (outfile, bytes, bin_size, 0)) {
-		R_LOG_ERROR ("Error extracting %s", outfile);
+		eprintf ("Error extracting %s\n", outfile);
 		res = false;
 	} else {
 		printf ("%s created (%"PFMT64d")\n", outfile, bin_size);
@@ -989,7 +989,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 					tmpsz, file);
 				(void)r_file_chmod (file, "+x", 0);
 			} else {
-				R_LOG_ERROR ("Error dumping into a.out");
+				eprintf ("Error dumping into a.out\n");
 			}
 			r_buf_free (b);
 		} else {
