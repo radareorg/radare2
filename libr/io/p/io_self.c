@@ -226,7 +226,7 @@ static int update_self_regions(RIO *io, int pid) {
 	HANDLE h = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
 	LPTSTR name = calloc (name_size, sizeof (TCHAR));
 	if (!name) {
-		R_LOG_ERROR ("io_self/update_self_regions: Failed to allocate memory.\n");
+		R_LOG_ERROR ("io_self/update_self_regions: Failed to allocate memory.");
 		CloseHandle (h);
 		return false;
 	}

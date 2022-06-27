@@ -38,7 +38,7 @@ static bool __is_data_block_cb(RAnalBlock *block, void *user) {
 
 static int __isdata(RCore *core, ut64 addr) {
 	if (!r_io_is_valid_offset (core->io, addr, false)) {
-		// eprintf ("Warning: Invalid memory address at 0x%08"PFMT64x"\n", addr);
+		// R_LOG_WARN ("Warning: Invalid memory address at 0x%08"PFMT64x"", addr);
 		return 4;
 	}
 

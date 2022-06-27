@@ -481,7 +481,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			if (buf && l > 0) {
 				r_egg_raw (es->e, (const ut8 *)buf, (int)l);
 			} else {
-				eprintf ("Error loading '%s'\n", textFile);
+				R_LOG_ERROR ("Error loading '%s'", textFile);
 			}
 
 			r_file_rm (textFile);
@@ -533,7 +533,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		if (buf && l > 0) {
 			r_egg_raw (es->e, (const ut8 *)buf, (int)l);
 		} else {
-			eprintf ("Error loading '%s'\n", contents);
+			R_LOG_ERROR ("Error loading '%s'", contents);
 		}
 		free (buf);
 	}

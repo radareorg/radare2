@@ -28,7 +28,7 @@ static MachoPointers findLastCommand(RBinFile *bf) {
 		//r_buf_seek (bin->b, off, R_BUF_SET);
 		int len = loadc[1]; // r_buf_read_le32 (loadc[1]); // bin->b); //
 		if (len < 1) {
-			eprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
+			R_LOG_ERROR ("Error: read (lc) at 0x%08"PFMT64x, off);
 			break;
 		}
 		int size = r_read_ble32 (&loadc[1], bin->big_endian);
@@ -59,7 +59,7 @@ static bool MACH0_(write_addlib)(RBinFile *bf, const char *lib) {
 
 	size_t lib_len = strlen (lib);
 	if (lib_len > 22) {
-		eprintf ("Warning: Adjusting cmdsize too long libname\n");
+		R_LOG_WARN ("Warning: Adjusting cmdsize too long libname");
 		size_of_lib += lib_len + 1 - 22;
 		size_of_lib += 8 - (size_of_lib % 8);
 	}

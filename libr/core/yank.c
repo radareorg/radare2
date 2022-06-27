@@ -419,13 +419,13 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 	adv = consume_chars (input, ' ');
 	len = r_num_math (core->num, input + adv);
 	if (len == 0) {
-		eprintf ("ERROR: Number of bytes read must be > 0\n");
+		R_LOG_ERROR ("ERROR: Number of bytes read must be > 0");
 		return res;
 	}
 	// get the addr/offset from in the file we want to read
 	adv += find_next_char (input + adv, ' ');
 	if (adv == 0) {
-		eprintf ("ERROR: Address must be specified\n");
+		R_LOG_ERROR ("ERROR: Address must be specified");
 		return res;
 	}
 	adv++;
@@ -435,7 +435,7 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 
 	adv += find_next_char (input + adv, ' ');
 	if (adv == 0) {
-		eprintf ("ERROR: File must be specified\n");
+		R_LOG_ERROR ("ERROR: File must be specified");
 		return res;
 	}
 	adv++;

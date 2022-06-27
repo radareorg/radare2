@@ -984,7 +984,7 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	if (!io->cached) {
-		eprintf ("Warning: run r2 with -e bin.cache=true to fix relocations in disassembly\n");
+		R_LOG_WARN ("Warning: run r2 with -e bin.cache=true to fix relocations in disassembly");
 		return NULL;
 	}
 	ut64 n_vaddr = g->itv.addr + g->itv.size;

@@ -759,7 +759,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	const char *cc = r_anal_cc_default (core->anal);
 	if (!cc) {
 		if (r_anal_cc_once (core->anal)) {
-			eprintf ("Warning: set your favourite calling convention in `e anal.cc=?`\n");
+			R_LOG_WARN ("Warning: set your favourite calling convention in `e anal.cc=?`");
 		}
 		cc = "reg";
 	}
@@ -997,7 +997,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	if (!op->mnemonic && mask & R_ANAL_OP_MASK_DISASM) {
 		RAsmOp asmop;
 		if (core->anal->verbose) {
-			eprintf ("Warning: Implement RAnalOp.MASK_DISASM for current anal.arch. Using the sluggish RAsmOp fallback for now.\n");
+			R_LOG_WARN ("Warning: Implement RAnalOp.MASK_DISASM for current anal.arch. Using the sluggish RAsmOp fallback for now.");
 		}
 		r_asm_set_pc (core->rasm, addr);
 		r_asm_op_init (&asmop);
@@ -1967,7 +1967,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	if (core->io->va) {
 		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
 			if (core->anal->verbose) {
-				eprintf ("Warning: Address not mapped or not executable at 0x%08"PFMT64x"\n", at);
+				R_LOG_WARN ("Warning: Address not mapped or not executable at 0x%08"PFMT64x"", at);
 			}
 			return false;
 		}
@@ -3990,7 +3990,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 			}
 		}
 	} else {
-		eprintf ("error: block size too small\n");
+		R_LOG_ERROR ("error: block size too small");
 	}
 	r_cons_break_pop ();
 	free (buf);
@@ -4085,17 +4085,17 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	}
 
 	if (core->blocksize <= OPSZ) {
-		eprintf ("Error: block size too small\n");
+		R_LOG_ERROR ("Error: block size too small");
 		return -1;
 	}
 	ut8 *buf = malloc (bsz);
 	if (!buf) {
-		eprintf ("Error: cannot allocate a block\n");
+		R_LOG_ERROR ("Error: cannot allocate a block");
 		return -1;
 	}
 	ut8 *block = malloc (bsz);
 	if (!block) {
-		eprintf ("Error: cannot allocate a temp block\n");
+		R_LOG_ERROR ("Error: cannot allocate a temp block");
 		free (buf);
 		return -1;
 	}
@@ -4112,7 +4112,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	}
 	if (bsz < maxopsz) {
 		// wtf
-		eprintf ("Error: Something is really wrong deep inside\n");
+		R_LOG_ERROR ("Error: Something is really wrong deep inside");
 		free (block);
 		return -1;
 	}
@@ -4128,13 +4128,13 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		(void)r_io_read_at (core->io, at, buf, bsz);
 		memset (block, -1, bsz);
 		if (!memcmp (buf, block, bsz)) {
-		//	eprintf ("Error: skipping uninitialized block \n");
+		//	R_LOG_ERROR ("Error: skipping uninitialized block ");
 			at += ret;
 			continue;
 		}
 		memset (block, 0, bsz);
 		if (!memcmp (buf, block, bsz)) {
-		//	eprintf ("Error: skipping uninitialized block \n");
+		//	R_LOG_ERROR ("Error: skipping uninitialized block ");
 			at += ret;
 			continue;
 		}
@@ -5239,7 +5239,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		return;
 	}
 	if (iend > MAX_SCAN_SIZE) {
-		eprintf ("Warning: Not going to analyze 0x%08"PFMT64x" bytes.\n", (ut64)iend);
+		R_LOG_WARN ("Warning: Not going to analyze 0x%08"PFMT64x" bytes.", (ut64)iend);
 		return;
 	}
 	buf = malloc ((size_t)iend + 2);
@@ -5261,7 +5261,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	}
 	const char *kspname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	if (R_STR_ISEMPTY (kspname)) {
-		eprintf ("Error: No =SP defined in the reg profile.\n");
+		R_LOG_ERROR ("Error: No =SP defined in the reg profile.");
 		return;
 	}
 	char *spname = strdup (kspname);
@@ -5420,7 +5420,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 		if (!sn) {
-			eprintf ("Warning: No SN reg alias for current architecture.\n");
+			R_LOG_WARN ("Warning: No SN reg alias for current architecture.");
 		}
 		if (sn && op.type == R_ANAL_OP_TYPE_SWI) {
 			r_strf_buffer (64);
@@ -5679,7 +5679,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 	ut32 v32;
 	ut16 v16;
 	if (from >= to) {
-		eprintf ("Error: from must be lower than to\n");
+		R_LOG_ERROR ("Error: from must be lower than to");
 		return -1;
 	}
 	bool maybeThumb = false;
@@ -5690,11 +5690,11 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 	}
 
 	if (vmin >= vmax) {
-		eprintf ("Error: vmin must be lower than vmax\n");
+		R_LOG_ERROR ("Error: vmin must be lower than vmax");
 		return -1;
 	}
 	if (to == UT64_MAX) {
-		eprintf ("Error: Invalid destination boundary\n");
+		R_LOG_ERROR ("Error: Invalid destination boundary");
 		return -1;
 	}
 	r_cons_break_push (NULL, NULL);
@@ -5994,12 +5994,12 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 			continue;
 		}
 		if (a0 > a1) {
-			eprintf ("Warning: unsorted flag list 0x%"PFMT64x" 0x%"PFMT64x"\n", a0, a1);
+			R_LOG_WARN ("Warning: unsorted flag list 0x%"PFMT64x" 0x%"PFMT64x"", a0, a1);
 			continue;
 		}
 		st64 sz = a1 - a0;
 		if (sz < 1 || sz > core->anal->opt.bb_max_size) {
-			eprintf ("Warning: invalid flag range from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", a0, a1);
+			R_LOG_WARN ("Warning: invalid flag range from 0x%08"PFMT64x" to 0x%08"PFMT64x"", a0, a1);
 			continue;
 		}
 		if (simple) {

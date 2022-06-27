@@ -40,7 +40,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		fileCfg = strdup (i + 1);
 	} else {
 		free (fileCfg);
-		eprintf ("Error can't find :\n");
+		R_LOG_ERROR ("Error can't find :");
 		return NULL;
 	}
 	riob = R_NEW0 (RIOBochs);

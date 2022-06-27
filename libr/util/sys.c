@@ -754,7 +754,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 		bool ret = true;
 		if (status) {
 			// char *escmd = r_str_escape (cmd);
-			// eprintf ("error code %d (%s): %s\n", WEXITSTATUS (status), escmd, *sterr);
+			// R_LOG_ERROR ("error code %d (%s): %s", WEXITSTATUS (status), escmd, *sterr);
 			// eprintf ("(%s)\n", output);
 			// eprintf ("%s: failed command '%s'\n", __func__, escmd);
 			// free (escmd);

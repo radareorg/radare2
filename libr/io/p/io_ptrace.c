@@ -239,7 +239,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		} else if (__waitpid (pid)) {
 			ret = pid;
 		} else {
-			eprintf ("Error in waitpid\n");
+			R_LOG_ERROR ("Error in waitpid");
 			return NULL;
 		}
 	}

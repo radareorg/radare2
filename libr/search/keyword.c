@@ -103,7 +103,7 @@ R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *b
 		RRune ch;
 		int num_utf8_bytes = r_utf8_decode ((const ut8 *)p2, kwbuf + len - p2, &ch);
 		if (num_utf8_bytes < 1) {
-			eprintf ("Warning: Malformed UTF8 at pos %d\n", (int)(p2 - kwbuf));
+			R_LOG_WARN ("Warning: Malformed UTF8 at pos %d", (int)(p2 - kwbuf));
 			p[0] = *p2;
 			p[1] = 0;
 			p2++;

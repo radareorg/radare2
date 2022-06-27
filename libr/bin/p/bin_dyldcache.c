@@ -1075,7 +1075,7 @@ static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtPU *pat
 			const char *key = (const char *) cursor + 24;
 			size_t dep_index = (size_t)ht_pu_find (path_to_idx, key, &found);
 			if (!found || dep_index >= cache->hdr->imagesCount) {
-				eprintf ("Warning: alien dep '%s'\n", key);
+				R_LOG_WARN ("Warning: alien dep '%s'", key);
 				continue;
 			}
 			deps[dep_index]++;
@@ -1564,7 +1564,7 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			result = R_MIN (count, internal_result);
 			memcpy (buf, internal_buf + page_offset, result);
 		} else {
-			eprintf ("ERROR rebasing\n");
+			R_LOG_ERROR ("ERROR rebasing");
 			result = cache->original_io_read (io, fd, buf, count);
 		}
 

@@ -1355,7 +1355,7 @@ static bool cb_cfgcharset(void *user, void *data) {
 		if (rc) {
 			r_sys_setenv ("RABIN2_CHARSET", cf);
 		} else {
-			eprintf ("Warning: Cannot load charset file '%s'.\n", cf);
+			R_LOG_WARN ("Warning: Cannot load charset file '%s'.", cf);
 		}
 	}
 	return rc;
@@ -1746,7 +1746,7 @@ static bool cb_dbg_execs(void *user, void *data) {
 	}
 #else
 	if (node->i_value) {
-		eprintf ("Warning: dbg.execs is not supported in this platform.\n");
+		R_LOG_WARN ("Warning: dbg.execs is not supported in this platform.");
 	}
 #endif
 	return true;
@@ -2287,7 +2287,7 @@ static bool cb_io_pava(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->pava = node->i_value;
 	if (node->i_value && core->io->va) {
-		eprintf ("Warning: You may probably want to disable io.va too.\n");
+		R_LOG_WARN ("Warning: You may probably want to disable io.va too.");
 	}
 	return true;
 }
@@ -3182,7 +3182,7 @@ static bool cb_linesabs(void *user, void *data) {
 		ut64 to = r_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
 		core->print->lines_cache_sz = r_core_lines_initcache (core, from, to);
 		if (core->print->lines_cache_sz == -1) {
-			eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
+			R_LOG_ERROR ("ERROR: \"lines.from\" and \"lines.to\" must be set");
 		} else {
 			eprintf ("Found %d lines\n", core->print->lines_cache_sz-1);
 		}

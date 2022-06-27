@@ -463,7 +463,7 @@ static RBinWasmTypeEntry *parse_type_entry(RBinWasmObj *bin, ut64 bound, ut32 in
 		goto beach;
 	}
 	if (type->form != R_BIN_WASM_VALUETYPE_FUNC) {
-		R_LOG_WARN ("Halting types section parsing at invalid type 0x%02x at offset: 0x%" PFMTSZx "\n", type->form, type->file_offset);
+		R_LOG_WARN ("Halting types section parsing at invalid type 0x%02x at offset: 0x%" PFMTSZx, type->form, type->file_offset);
 		goto beach;
 	}
 
@@ -762,7 +762,7 @@ static RBinWasmCustomNameEntry *parse_custom_name_entry(RBinWasmObj *bin, ut64 b
 		}
 		break;
 	default:
-		R_LOG_WARN ("[wasm] Halting custom name section parsing at unknown type 0x%x offset 0x%" PFMTSZx "\n", cust->type, start);
+		R_LOG_WARN ("[wasm] Halting custom name section parsing at unknown type 0x%x offset 0x%" PFMTSZx "", cust->type, start);
 		cust->type = R_BIN_WASM_NAMETYPE_None;
 		goto beach;
 	}

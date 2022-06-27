@@ -262,12 +262,12 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	// size of the list, in 16 bit entries
 	ut32 list_size = r_read_le32 (params_buf);
 	if (list_size >= ST32_MAX) {
-		eprintf ("Warning: function prototype contains too many parameters (> 2 million).\n");
+		R_LOG_WARN ("Warning: function prototype contains too many parameters (> 2 million).");
 		list_size = ST32_MAX;
 	}
 	size_t typeidx_bufsize = (list_size * sizeof (ut16));
 	if (params_off + typeidx_bufsize > bin->size) {
-		eprintf ("Warning: truncated typeidx buffer from %d to %d\n",
+		R_LOG_WARN ("Warning: truncated typeidx buffer from %d to %d",
 			(int)(params_off + typeidx_bufsize), (int)(bin->size - params_off));
 		typeidx_bufsize = bin->size - params_off;
 		// early return as this may result on so many trashy symbols that take too much time to load
@@ -1152,19 +1152,19 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		encoded_method_addr = r_buf_tell (bf->buf);
 		MI = peek_uleb (bf->buf, &err, &skip);
 		if (err) {
-			eprintf ("Error\n");
+			R_LOG_ERROR ("Error");
 			break;
 		}
 		MI += omi;
 		omi = MI;
 		MA = peek_uleb (bf->buf, &err, &skip);
 		if (err) {
-			eprintf ("Error\n");
+			R_LOG_ERROR ("Error");
 			break;
 		}
 		MC = peek_uleb (bf->buf, &err, &skip);
 		if (err) {
-			eprintf ("Error\n");
+			R_LOG_ERROR ("Error");
 			break;
 		}
 		// TODO: MOVE CHECKS OUTSIDE!
@@ -1925,27 +1925,27 @@ static void add_segment(RList *ret, const char *name, Section s, int perm) {
 static bool validate_section(const char *name, Section *pre, Section *cur, Section *nex, Section *all) {
 	r_return_val_if_fail (cur && all, false);
 	if (pre && cur->addr < (pre->addr + pre->size)) {
-		eprintf ("Warning: %s Section starts before the previous.\n", name);
+		R_LOG_WARN ("Warning: %s Section starts before the previous.", name);
 	}
 	if (cur->addr >= all->size) {
-		eprintf ("Warning: %s section starts beyond the end of the file.\n", name);
+		R_LOG_WARN ("Warning: %s section starts beyond the end of the file.", name);
 		return false;
 	}
 	if (cur->addr == UT64_MAX) {
-		eprintf ("Warning: %s invalid region size.\n", name);
+		R_LOG_WARN ("Warning: %s invalid region size.", name);
 		return false;
 	}
 	if ((cur->addr + cur->size) > all->size) {
-		eprintf ("Warning: %s truncated section because of file size.\n", name);
+		R_LOG_WARN ("Warning: %s truncated section because of file size.", name);
 		cur->size = all->size - cur->addr;
 	}
 	if (nex) {
 		if (cur->addr >= nex->addr) {
-			eprintf ("Warning: invalid %s section address.\n", name);
+			R_LOG_WARN ("Warning: invalid %s section address.", name);
 			return false;
 		}
 		if ((cur->addr + cur->size) > nex->addr) {
-			eprintf ("Warning: truncated %s with next section size.\n", name);
+			R_LOG_WARN ("Warning: truncated %s with next section size.", name);
 			cur->size = nex->addr - cur->addr;
 		}
 	}

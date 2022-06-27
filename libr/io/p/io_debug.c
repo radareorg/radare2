@@ -181,7 +181,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	return pid;
 
 err_fork:
-	eprintf ("Error: Cannot create new process.\n");
+	R_LOG_ERROR ("Error: Cannot create new process.");
 	TerminateProcess (pi.hProcess, 1);
 	r_w32dw_free (io->dbgwrap);
 	io->dbgwrap = NULL;

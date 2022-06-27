@@ -196,7 +196,7 @@ static RCoreObjc *core_objc_new(RCore *core) {
 	}
 	o->word_size = (core->rasm->config->bits == 64)? 8: 4;
 	if (o->word_size != 8) {
-		eprintf ("Warning: aao experimental on 32bit binaries\n");
+		R_LOG_WARN ("Warning: aao experimental on 32bit binaries");
 	}
 
 	RBinSection *s;
@@ -280,7 +280,7 @@ static bool objc_find_refs(RCore *core) {
 
 		}
 		if (classMethodsVA > to) {
-			eprintf ("Warning: Fuzzed binary or bug in here, checking next %"PFMT64x" !< %"PFMT64x"\n", classMethodsVA, to);
+			R_LOG_WARN ("Warning: Fuzzed binary or bug in here, checking next %"PFMT64x" !< %"PFMT64x"", classMethodsVA, to);
 			break;
 		}
 		for (va = classMethodsVA; va < to; va += objc2ClassMethSize) {

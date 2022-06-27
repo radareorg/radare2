@@ -941,7 +941,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 				const char *rn = op->dst->reg ? op->dst->reg->name : NULL;
 				if (rn && ((bp && !strcmp (bp, rn)) || (sp && !strcmp (sp, rn)))) {
 					if (anal->verbose) {
-						eprintf ("Warning: Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x ".\n", op->addr);
+						R_LOG_WARN ("Warning: Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x ".", op->addr);
 					}
 					goto beach;
 				}
@@ -969,7 +969,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	}
 
 	if (anal->verbose && (!op->src[0] || !op->dst)) {
-		eprintf ("Warning: Analysis didn't fill op->src/dst at 0x%" PFMT64x ".\n", op->addr);
+		R_LOG_WARN ("Warning: Analysis didn't fill op->src/dst at 0x%" PFMT64x ".", op->addr);
 	}
 
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_ANAL_VAR_ACCESS_TYPE_WRITE : R_ANAL_VAR_ACCESS_TYPE_READ;
@@ -1158,7 +1158,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	const char *opdreg = op->dst ? get_regname (anal, op->dst) : NULL;
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
 	if (!fcn->cc) {
-		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments\n", fcn->name);
+		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
 		return;
 	}
 	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);

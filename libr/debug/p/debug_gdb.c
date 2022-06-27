@@ -382,7 +382,7 @@ static bool r_debug_gdb_attach(RDebug *dbg, int pid) {
 			int bits = dbg->anal->config->bits;
 			gdbr_set_architecture (desc, arch, bits);
 		} else {
-			eprintf ("ERROR: Underlying IO descriptor is not a GDB one..\n");
+			R_LOG_ERROR ("ERROR: Underlying IO descriptor is not a GDB one..");
 		}
 	}
 	return true;

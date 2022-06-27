@@ -314,7 +314,7 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 
 	RBuffer *buffer = r_buf_new_with_pointers (data, data_size, false);
 	if (!buffer) {
-		eprintf ("Error allocating RBuffer\n");
+		R_LOG_ERROR ("Error allocating RBuffer");
 		goto error;
 	}
 

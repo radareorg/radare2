@@ -198,7 +198,7 @@ static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, i
 	}
 	int available = r_buf_read_at (buf, off, b, size);
 	if (available != size) {
-		eprintf ("Warning: r_buf_read_at failed\n");
+		R_LOG_WARN ("Warning: r_buf_read_at failed");
 		return NULL;
 	}
 #if 0
@@ -235,7 +235,7 @@ static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, i
 		// hack for C22F7494
 		available = r_buf_read_at (buf, off - 8, b, size);
 		if (available != size) {
-			eprintf ("Warning: r_buf_read_at failed\n");
+			R_LOG_WARN ("Warning: r_buf_read_at failed");
 			return NULL;
 		}
 		if (!memcmp ("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?

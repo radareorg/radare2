@@ -44,20 +44,20 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 
 	if (!iob) {
-		eprintf ("Error: Invalid WinDBG path\n");
+		R_LOG_ERROR ("Error: Invalid WinDBG path");
 		return NULL;
 	}
 
 	void *io_ctx = iob->open (file + 8);
 	if (!io_ctx) {
-		eprintf ("Error: Could not open the %s\n", iob->name);
+		R_LOG_ERROR ("Error: Could not open the %s", iob->name);
 		return NULL;
 	}
 	eprintf ("Opened %s %s with fd %p\n", iob->name, file + 8, io_ctx);
 
 	io_desc_t *desc = io_desc_new (iob, io_ctx);
 	if (!desc) {
-		eprintf ("Error: Could not create io_desc_t\n");
+		R_LOG_ERROR ("Error: Could not create io_desc_t");
 		return NULL;
 	}
 

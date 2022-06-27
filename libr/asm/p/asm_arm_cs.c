@@ -243,7 +243,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	} else {
 		opcode = armass_assemble (buf, a->pc, is_thumb);
 		if (bits != 32 && bits != 16) {
-			eprintf ("Error: ARM assembler only supports 16 or 32 bits\n");
+			R_LOG_ERROR ("Error: ARM assembler only supports 16 or 32 bits");
 			return -1;
 		}
 	}

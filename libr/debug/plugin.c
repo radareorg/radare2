@@ -44,7 +44,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 			r_reg_set_profile_string (dbg->reg, p);
 			free (p);
 		} else {
-			eprintf ("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->h->name);
+			R_LOG_ERROR ("Cannot retrieve reg profile from debug plugin (%s)", dbg->h->name);
 		}
 	}
 	return (dbg && dbg->h);
@@ -103,7 +103,7 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
 R_API bool r_debug_plugin_set_reg_profile(RDebug *dbg, const char *profile) {
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
-		eprintf ("r_debug_plugin_set_reg_profile: Cannot find '%s'\n", profile);
+		R_LOG_ERROR ("r_debug_plugin_set_reg_profile: Cannot find '%s'", profile);
 		return false;
 	}
 	if (dbg && dbg->h && dbg->h->set_reg_profile) {

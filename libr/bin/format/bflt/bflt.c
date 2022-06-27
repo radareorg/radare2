@@ -22,17 +22,17 @@ static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
 	
 	len = r_buf_read_at (bin->b, 0, bhdr, BFLT_HDR_SIZE);
 	if (len < 1) {
-		eprintf ("Warning: read bFLT hdr failed\n");
+		R_LOG_WARN ("Warning: read bFLT hdr failed");
 		goto fail;
 	}
 	
 	if (strncmp ((const char *)bhdr, "bFLT", 4)) {
-		eprintf ("Warning: wrong magic number in bFLT file\n");
+		R_LOG_WARN ("Warning: wrong magic number in bFLT file");
 		goto fail;
 	}
 	p_hdr = R_NEW0 (struct bflt_hdr);
 	if (!p_hdr) {
-		eprintf ("Warning: couldn't allocate memory\n");
+		R_LOG_WARN ("Warning: couldn't allocate memory");
 		goto fail;
 	}
 	
@@ -49,7 +49,7 @@ static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
 	p_hdr->build_date = READ (bhdr, i);
 
 	if (p_hdr->rev != FLAT_VERSION) {
-		eprintf ("Warning: only v4 is supported!\n");
+		R_LOG_WARN ("Warning: only v4 is supported!");
 		R_FREE (p_hdr);
 		goto fail;
 	}

@@ -1208,7 +1208,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 
 	r_list_foreach (core->scriptstack, iter, name) {
 		if (!strcmp (file, name)) {
-			eprintf ("Warning: ignored nested source: %s\n", file);
+			R_LOG_WARN ("Warning: ignored nested source: %s", file);
 			return false;
 		}
 	}
@@ -1344,14 +1344,14 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					if (r_lang_use (core->lang, "qjs")) {
 						r_lang_run_file (core->lang, file);
 					} else {
-						eprintf ("Error: r2pm -ci rlang-qjs\n");
+						R_LOG_ERROR ("Error: r2pm -ci rlang-qjs");
 					}
 					ret = 1;
 				} else if (!strcmp (ext, "wren")) {
 					if (r_lang_use (core->lang, "wren")) {
 						r_lang_run_file (core->lang, file);
 					} else {
-						eprintf ("Error: r2pm -ci rlang-wren\n");
+						R_LOG_ERROR ("Error: r2pm -ci rlang-wren");
 					}
 					ret = 1;
 				} else if (!strcmp (ext, "pl")) {
@@ -1674,7 +1674,7 @@ static void load_table_asciiart(RCore *core, RTable *t, RList *lines) {
 			RListIter *iter2;
 			ncols = 0;
 			if (r_list_length (t->cols) > 0) {
-				eprintf ("Warning: Not re-adding headers. Use ,- to reset the table.\n");
+				R_LOG_WARN ("Warning: Not re-adding headers. Use ,- to reset the table.");
 				continue;
 			}
 			r_list_foreach (args, iter2, arg) {
@@ -2960,7 +2960,7 @@ static int cmd_system(void *data, const char *input) {
 					r_cons_write (out, olen);
 					free (out);
 					free (cmd);
-				} //else eprintf ("Error setting up system environment\n");
+				} //else R_LOG_ERROR ("Error setting up system environment");
 			} else {
 				eprintf ("History saved to "R2_HOME_HISTORY"\n");
 				r_line_hist_save (R2_HOME_HISTORY);
@@ -2991,7 +2991,7 @@ static int cmd_system(void *data, const char *input) {
 			if (cmd) {
 				r_core_cmd0 (core, cmd);
 			}
-			//else eprintf ("Error setting up system environment\n");
+			//else R_LOG_ERROR ("Error setting up system environment");
 		} else {
 			char *cmd = r_core_sysenv_begin (core, input);
 			if (cmd) {
@@ -3004,7 +3004,7 @@ static int cmd_system(void *data, const char *input) {
 				r_core_sysenv_end (core, input);
 				free (cmd);
 			} else {
-				eprintf ("Error setting up system environment\n");
+				R_LOG_ERROR ("Error setting up system environment");
 			}
 		}
 		break;
@@ -4291,7 +4291,7 @@ repeat_arroba:
 								r_core_block_read (core);
 							}
 						} else {
-							eprintf ("Error: Invalid hexpairs for @x:\n");
+							R_LOG_ERROR ("Error: Invalid hexpairs for @x:");
 						}
 						free (buf);
 					} else {
