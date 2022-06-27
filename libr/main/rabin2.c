@@ -690,7 +690,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		case 't': set_action (R_BIN_REQ_HASHES); break;
 		case 'w': set_action (R_BIN_REQ_TRYCATCH); break;
 		case 'q':
-			rad = (rad & R_MODE_SIMPLE ?
+			rad = ((rad & R_MODE_SIMPLE || (rad & R_MODE_SIMPLEST))?
 				R_MODE_SIMPLEST : R_MODE_SIMPLE);
 			break;
 		case 'j': rad = R_MODE_JSON; break;
