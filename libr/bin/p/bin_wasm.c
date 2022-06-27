@@ -347,12 +347,13 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static int get_fcn_offset_from_id(RBinFile *bf, int fcn_idx) {
-	// XXX shouldn't the number of functions in imports be considered?
+static int get_fcn_offset_from_id(RBinFile *bf, int ordinal) {
 	RBinWasmObj *bin = bf->o->bin_obj;
+	ut32 min = first_ord_not_import (bin, R_BIN_WASM_EXTERNALKIND_Function);
 	RPVector *codes = r_bin_wasm_get_codes (bin);
-	if (codes) {
-		RBinWasmCodeEntry *func = vector_at (codes, fcn_idx);
+	if (min <= ordinal && codes) {
+		ordinal -= min;
+		RBinWasmCodeEntry *func = vector_at (codes, ordinal);
 		if (func) {
 			return func->code;
 		}
