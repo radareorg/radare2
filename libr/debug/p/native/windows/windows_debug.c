@@ -220,8 +220,8 @@ static void __printwincontext(HANDLE th, CONTEXT *ctx) {
 #if _WIN64
 	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FltSave.ControlWord, ctx->FltSave.StatusWord);
 	eprintf ("MxCsr         = %08lx TagWord      = %08x\n", ctx->MxCsr, ctx->FltSave.TagWord);
-	R_LOG_ERROR ("ErrorOffset   = %08lx DataOffset   = %08lx", ctx->FltSave.ErrorOffset, ctx->FltSave.DataOffset);
-	R_LOG_ERROR ("ErrorSelector = %08x DataSelector = %08x", ctx->FltSave.ErrorSelector, ctx->FltSave.DataSelector);
+	eprintf ("ErrorOffset   = %08lx DataOffset   = %08lx\n", ctx->FltSave.ErrorOffset, ctx->FltSave.DataOffset);
+	eprintf ("ErrorSelector = %08x DataSelector = %08x\n", ctx->FltSave.ErrorSelector, ctx->FltSave.DataSelector);
 	for (x = 0; x < 8; x++) {
 		st[x].Low = ctx->FltSave.FloatRegisters[x].Low;
 		st[x].High = (ut16)ctx->FltSave.FloatRegisters[x].High;
