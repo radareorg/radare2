@@ -5533,7 +5533,8 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 		if (p) {
 			core->asmqjmps_size = R_CORE_ASMQJMPS_NUM;
 			core->asmqjmps = p;
-			for (int i = 0; i < R_CORE_ASMQJMPS_NUM; i++) {
+			int i;
+			for (i = 0; i < R_CORE_ASMQJMPS_NUM; i++) {
 				core->asmqjmps[i] = UT64_MAX;
 			}
 		}

@@ -135,7 +135,8 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		if (message) {
 			RList *files = r_list_new();
 			if (files) {
-				for (size_t i = 2; i < argc - 1; i++) {
+				size_t i;
+				for (i = 2; i < argc - 1; i++) {
 					char *file = r_str_new(argv[opt.ind + i]);
 					if (!file || !r_list_append (files, file)) {
 						free (message);
