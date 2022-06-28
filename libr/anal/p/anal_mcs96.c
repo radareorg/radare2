@@ -106,12 +106,12 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	int len = disassemble (anal, op, data, len);
+static int _op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+	int ilen = disassemble (anal, op, data, len);
 	if (mask & R_ANAL_OP_MASK_DISASM) {
 		// do nothing
 	}
-	return len;
+	return ilen;
 }
 
 RAnalPlugin r_anal_plugin_mcs96 = {
