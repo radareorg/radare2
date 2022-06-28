@@ -193,7 +193,6 @@ extern RAsmPlugin r_asm_plugin_arm_gnu;
 extern RAsmPlugin r_asm_plugin_arm_winedbg;
 extern RAsmPlugin r_asm_plugin_null;
 extern RAsmPlugin r_asm_plugin_dalvik;
-extern RAsmPlugin r_asm_plugin_dcpu16;
 extern RAsmPlugin r_asm_plugin_gb;
 extern RAsmPlugin r_asm_plugin_h8300;
 extern RAsmPlugin r_asm_plugin_hppa_gnu;
