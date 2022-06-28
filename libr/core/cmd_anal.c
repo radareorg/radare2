@@ -1368,7 +1368,7 @@ static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, PJ *pj, int acc
 	RAnalVarAccess *acc;
 	bool first = true;
 	if (r_vector_empty (&var->accesses)) {
-		eprintf ("Warning: Variable '%s' have no references?\n", name);
+		R_LOG_WARN ("Variable '%s' have no references?", name);
 	}
 	if (pj) {
 		pj_o (pj);
@@ -2389,7 +2389,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					r_anal_esil_stack_free (esil);
 					esil = NULL;
 				} else {
-					eprintf ("Error: ESIL is not initialized. Run `aei`.\n");
+					R_LOG_ERROR ("ESIL is not initialized. Run `aei`.");
 					break;
 				}
 			} else {
@@ -3942,7 +3942,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 		__add_vars_sdb (core, fcn);
 	} else {
 		if (core->anal->verbose) {
-			eprintf ("Warning: Unable to analyze function at 0x%08"PFMT64x"\n", addr);
+			R_LOG_WARN ("Unable to analyze function at 0x%08"PFMT64x, addr);
 		}
 	}
 	if (anal_calls) {
@@ -4561,14 +4561,14 @@ static int cmd_af(RCore *core, const char *input) {
 			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0))) {
 				r_cons_printf ("%i\n", r_anal_function_complexity (fcn));
 			} else {
-				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
+				R_LOG_ERROR ("Cannot find function at 0x08%" PFMT64x, core->offset);
 			}
 		} else if (input[2] == 'l') {
 			RAnalFunction *fcn;
 			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0))) {
 				r_cons_printf ("%d\n", r_anal_function_loops (fcn));
 			} else {
-				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
+				R_LOG_ERROR ("Cannot find function at 0x08%" PFMT64x, core->offset);
 			}
 		} else if (input[2] == '?') {
 			r_core_cmd_help (core, help_msg_afC);
@@ -7529,7 +7529,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			switch (input[2]) {
 			case '+': // "aets+"
 				if (!esil) {
-					eprintf ("Error: ESIL is not initialized. Use `aeim` first.\n");
+					R_LOG_ERROR ("ESIL is not initialized. Use `aeim` first.");
 					break;
 				}
 				if (esil->trace) {
@@ -7544,7 +7544,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				break;
 			case '-': // "aets-"
 				if (!esil) {
-					eprintf ("Error: ESIL is not initialized. Use `aeim` first.\n");
+					R_LOG_ERROR ("ESIL is not initialized. Use `aeim` first.");
 					break;
 				}
 				if (!esil->trace) {
@@ -8078,7 +8078,6 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 	ut8 *block0 = calloc (1, bsz);
 	ut8 *block1 = malloc (bsz);
 	if (!buf || !block0 || !block1) {
-		eprintf ("Error: cannot allocate buf or block\n");
 		free (buf);
 		free (block0);
 		free (block1);
@@ -8100,7 +8099,6 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 			(void)r_io_read_at (core->io, addr, buf, bsz);
 		}
 		if (!memcmp (buf, block0, bsz) || !memcmp (buf, block1, bsz)) {
-			//eprintf ("Error: skipping uninitialized block \n");
 			addr += bsz;
 			continue;
 		}

@@ -1850,11 +1850,11 @@ static int cmd_open(void *data, const char *input) {
 						}
 						r_list_free (maplist);
 					} else {
-						eprintf ("Error: %s is not writable\n", argv0);
+						R_LOG_ERROR ("%s is not writable", argv0);
 					}
 				}
 			} else {
-				eprintf ("cannot open file %s\n", argv0);
+				R_LOG_ERROR ("cannot open file %s", argv0);
 			}
 		}
 		r_core_block_read (core);

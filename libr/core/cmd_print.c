@@ -37,6 +37,12 @@ static const char *help_msg_pdf[] = {
 	NULL
 };
 
+static const char *help_msg_pdo[] = {
+	"Usage: pdo", "", "convert esil to C for N instructions",
+	"pdo", " [count]", "print decompiled opcodes using esil",
+	NULL
+};
+
 static const char *help_msg_pp[] = {
 	"Usage: pp[d]", "", "print patterns",
 	"pp0", "", "print buffer filled with zeros",
@@ -608,7 +614,7 @@ static void __cmd_pad(RCore *core, const char *arg) {
 		r_cons_print (acode->assembly);
 		r_asm_code_free (acode);
 	} else {
-		eprintf ("Invalid hexstr\n");
+		R_LOG_ERROR ("Invalid hexstr");
 	}
 }
 
@@ -1359,7 +1365,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		} else {
 			PJ *pj = r_core_pj_new (core);
 			if (!r_bplist_parse (pj, data, size)) {
-				eprintf ("Parse error\n");
+				R_LOG_ERROR ("bplist parse error");
 			}
 			char *s = pj_drain (pj);
 			if (input[1] == 'j') {
@@ -1574,7 +1580,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 		if (IS_DIGIT (*arg)) {
 			n = atoi (arg);
 			if (n > 64) {
-				eprintf ("Too large. Max is 64\n");
+				R_LOG_ERROR ("Too large. Max is 64");
 				lart_free (lart);
 				r_bitmap_free (bm);
 				return;
@@ -1588,7 +1594,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 			// for example 3+3:4b  -> [0..3] + [6..10]
 		} else if (*arg == 'b') {
 			if (n < 1) {
-				eprintf ("Invalid bitformat string.\n");
+				R_LOG_ERROR ("Invalid bitformat string");
 				lart_free (lart);
 				r_bitmap_free (bm);
 				return;
@@ -3911,14 +3917,14 @@ static ut8 *analBars(RCore *core, size_t type, size_t nblocks, size_t blocksize,
 	size_t j, i = 0;
 	ut8 *ptr = calloc (1, nblocks);
 	if (!ptr) {
-		eprintf ("Error: failed to malloc memory\n");
+		R_LOG_ERROR ("failed to malloc memory");
 		return NULL;
 	}
 	// XXX: unused memblock
 	ut8 *p = malloc (blocksize);
 	if (!p) {
 		R_FREE (ptr);
-		eprintf ("Error: failed to malloc memory\n");
+		R_LOG_ERROR ("failed to malloc");
 		return NULL;
 	}
 	if (type == 'A') {
@@ -4089,13 +4095,11 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				ut64 i, j, k;
 				ptr = calloc (1, nblocks);
 				if (!ptr) {
-					eprintf ("Error: failed to malloc memory\n");
 					goto beach;
 				}
 				ut8 *p = calloc (1, blocksize);
 				if (!p) {
 					R_FREE (ptr);
-					eprintf ("Error: failed to malloc memory\n");
 					goto beach;
 				}
 				int len = 0;
@@ -4171,13 +4175,11 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			int i = 0;
 			ptr = calloc (1, nblocks);
 			if (!ptr) {
-				eprintf ("Error: failed to malloc memory\n");
 				goto beach;
 			}
 			p = malloc (blocksize);
 			if (!p) {
 				R_FREE (ptr);
-				eprintf ("Error: failed to malloc memory\n");
 				goto beach;
 			}
 			for (i = 0; i < nblocks; i++) {
@@ -4247,13 +4249,11 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		int j, i = 0;
 		ptr = calloc (1, nblocks);
 		if (!ptr) {
-			eprintf ("Error: failed to malloc memory\n");
 			goto beach;
 		}
 		p = malloc (blocksize);
 		if (!p) {
 			R_FREE (ptr);
-			eprintf ("Error: failed to malloc memory\n");
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
@@ -4274,13 +4274,11 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		int i = 0;
 		ptr = calloc (1, nblocks);
 		if (!ptr) {
-			eprintf ("Error: failed to malloc memory\n");
 			goto beach;
 		}
 		p = malloc (blocksize);
 		if (!p) {
 			R_FREE (ptr);
-			eprintf ("Error: failed to malloc memory\n");
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
@@ -4301,13 +4299,11 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		ut64 i, j, k;
 		ptr = calloc (1, nblocks);
 		if (!ptr) {
-			eprintf ("Error: failed to malloc memory\n");
 			goto beach;
 		}
 		p = calloc (1, blocksize);
 		if (!p) {
 			R_FREE (ptr);
-			eprintf ("Error: failed to malloc memory\n");
 			goto beach;
 		}
 		int len = 0;
@@ -6022,7 +6018,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 				free (buf);
 			} else {
-				eprintf ("ERROR: Cannot malloc %d byte(s)\n", size);
+				R_LOG_ERROR ("Cannot allocate %d byte(s)", size);
 			}
 		}
 	}
@@ -6043,7 +6039,7 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_println (buf);
 				free (buf);
 			} else {
-				eprintf ("ERROR: Cannot malloc %d byte(s)\n", size);
+				R_LOG_ERROR ("Cannot allocate %d byte(s)", size);
 			}
 		}
 	}
@@ -6083,6 +6079,7 @@ static int cmd_print(void *data, const char *input) {
 			if (l) {
 				r_core_print_disasm_instructions (core, l, 0);
 			}
+			break;
 		}
 		break;
 	case 'i': // "pi"
@@ -6170,19 +6167,19 @@ static int cmd_print(void *data, const char *input) {
 			processed_cmd = true;
 			break;
 		case 'v': // "pdv" // east decompiler
-			eprintf ("Error: r2pm -ci east\n");
+			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci east");
 			processed_cmd = true;
 			break;
 		case 'd': // "pdd" // r2dec
-			eprintf ("Error: r2pm -ci r2dec\n");
+			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2dec");
 			processed_cmd = true;
 			break;
 		case 'z': // "pdz" // retdec
-			eprintf ("Error: r2pm -ci r2retdec\n");
+			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2retdec");
 			processed_cmd = true;
 			break;
 		case 'g': // "pdg" // r2ghidra
-			eprintf ("Error: r2pm -ci r2ghidra\n");
+			R_LOG_ERROR ("Missing plugin. Run: r2pm -ci r2ghidra");
 			processed_cmd = true;
 			break;
 		case 'c': // "pdc" // "pDc"
@@ -6193,7 +6190,7 @@ static int cmd_print(void *data, const char *input) {
 		case ',': // "pd,"
 		case 't': // "pdt" // R_DEPRECATE pdt imho
 			if (input[2] == '?') {
-				R_LOG_WARN ("Missing help for pd,? command\n");
+				R_LOG_WARN ("Missing help for pd,? command");
 				return 0;
 			} else {
 				r_core_disasm_table (core, l, r_str_trim_head_ro (input + 2));
@@ -6203,7 +6200,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'k': // "pdk" -print class
 			if (input[2] == '?') {
-				R_LOG_WARN ("Missing help for pdk? command\n");
+				R_LOG_WARN ("Missing help for pdk? command");
 				return 0;
 			} else {
 				int len = 0;
@@ -6213,7 +6210,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'i': // "pdi" // "pDi"
 			if (input[2] == '?') {
-				R_LOG_WARN ("Missing help for pdi? command\n");
+				R_LOG_WARN ("Missing help for pdi? command");
 				return 0;
 			} else {
 				processed_cmd = true;
@@ -6236,13 +6233,12 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'o': // "pdo"
 			if (input[2] == '?') {
-				R_LOG_WARN ("Missing help for pdo? command\n");
+				r_core_cmd_help (core, help_msg_pdo);
 				return 0;
-			} else {
-				core_print_decompile (core, input + 2);
-				pd_result = true;
-				processed_cmd = true;
 			}
+			core_print_decompile (core, input + 2);
+			pd_result = true;
+			processed_cmd = true;
 			break;
 		case 'e': // "pde"
 			processed_cmd = true;
@@ -6819,7 +6815,7 @@ static int cmd_print(void *data, const char *input) {
 				const bool json = input[2] == 'j'; // ps+j
 				ut64 bitness = r_config_get_i (core->config, "asm.bits");
 				if (bitness != 32 && bitness != 64) {
-					eprintf ("Error: bitness of %" PFMT64u " not supported\n", bitness);
+					R_LOG_ERROR ("bitness of %" PFMT64u " not supported", bitness);
 					break;
 				}
 				if (*core->block & 0x1) { // "long" string

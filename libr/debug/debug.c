@@ -1483,7 +1483,7 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
 	RVector *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
 	if (!vreg) {
-		eprintf ("Error: cannot find PC change vector");
+		R_LOG_ERROR ("cannot find PC change vector");
 		return false;
 	}
 	RDebugChangeReg *reg;

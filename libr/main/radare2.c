@@ -1000,7 +1000,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	if (pfile && r_file_is_directory (pfile)) {
 		if (debug) {
-			eprintf ("Error: Cannot debug directories, yet.\n");
+			R_LOG_ERROR ("Cannot debug directories, yet.");
 			LISTS_FREE ();
 			free (pfile);
 			R_FREE (debugbackend);
@@ -1009,7 +1009,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			return 1;
 		}
 		if (r_sys_chdir (argv[opt.ind])) {
-			eprintf ("[d] Cannot open directory\n");
+			R_LOG_ERROR ("Cannot open directory");
 			LISTS_FREE ();
 			free (pfile);
 			R_FREE (debugbackend);
@@ -1040,7 +1040,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (!fh) {
 				r_cons_flush ();
 				free (buf);
-				eprintf ("[=] Cannot open '%s'\n", path);
+				R_LOG_ERROR ("Cannot open '%s'", path);
 				LISTS_FREE ();
 				free (path);
 				free (envprofile);
@@ -1055,7 +1055,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			free (path);
 			// TODO: load rbin thing
 		} else {
-			eprintf ("Cannot slurp from stdin\n");
+			R_LOG_ERROR ("Cannot slurp from stdin");
 			free (buf);
 			LISTS_FREE ();
 			free (envprofile);

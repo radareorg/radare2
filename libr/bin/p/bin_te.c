@@ -117,6 +117,7 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
+	r_return_val_if_fail (bf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -125,17 +126,16 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->bclass = strdup ("TE");
 	ret->rclass = strdup ("te");
 	ret->os = r_bin_te_get_os (bf->o->bin_obj);
-	ret->arch = r_bin_te_get_arch (bf->o->bin_obj);
+	const char *arch = r_bin_te_get_arch (bf->o->bin_obj);
+	ret->arch = arch? strdup (arch): NULL;
 	ret->machine = r_bin_te_get_machine (bf->o->bin_obj);
 	ret->subsystem = r_bin_te_get_subsystem (bf->o->bin_obj);
 	ret->type = strdup ("EXEC (Executable file)");
 	ret->bits = r_bin_te_get_bits (bf->o->bin_obj);
-	ret->big_endian = 1;
+	ret->big_endian = true;
 	ret->dbg_info = 0;
 	ret->has_va = true;
-
 	sdb_num_set (bf->sdb, "te.bits", ret->bits, 0);
-
 	return ret;
 }
 

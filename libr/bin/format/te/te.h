@@ -43,9 +43,9 @@ struct r_bin_te_obj_t {
 	Sdb *kv;
 };
 
-char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin);
+R_IPI const char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin);
 RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin);
-ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin);
+R_IPI ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin);
 ut64 r_bin_te_get_image_base(struct r_bin_te_obj_t* bin);
 int r_bin_te_get_image_size(struct r_bin_te_obj_t* bin);
 char* r_bin_te_get_machine(struct r_bin_te_obj_t* bin);

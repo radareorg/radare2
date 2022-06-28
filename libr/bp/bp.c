@@ -77,7 +77,7 @@ repeat:
 		/* if not found try to pad with the first one */
 		b = &bp->cur->bps[0];
 		if (len % b->length) {
-			eprintf ("No matching bpsize\n");
+			R_LOG_WARN ("No matching bpsize");
 			return 0;
 		}
 		for (i = 0; i < len; i++) {
@@ -111,7 +111,6 @@ R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int perm) {
 	RBreakpointItem *b;
 	RListIter *iter;
 	r_list_foreach (bp->bps, iter, b) {
-		// eprintf ("---ataddr--- 0x%08"PFMT64x" %d %d %x\n", b->addr, b->size, b->recoil, b->perm);
 		// Check addr within range and provided perm matches (or null)
 		if (inRange (b, addr) && matchProt (b, perm)) {
 			return b;
@@ -162,7 +161,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		return NULL;
 	}
 	if (r_bp_get_in (bp, addr, perm)) {
-		eprintf ("Breakpoint already set at this address.\n");
+		R_LOG_WARN ("Breakpoint already set at this address.");
 		return NULL;
 	}
 	b = r_bp_item_new (bp);
@@ -171,11 +170,10 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	}
 	b->addr = addr + bp->delta;
 	if (bp->baddr > addr) {
-		eprintf ("base addr should not be larger than the breakpoint address.\n");
+		R_LOG_WARN ("base addr should not be larger than the breakpoint address.");
 	}
 	if (bp->bpinmaps && !r_bp_is_valid (bp, b)) {
-		R_LOG_WARN ("Breakpoint won't be placed since it's not in a valid map.\n"
-			 "You can bypass this check by setting dbg.bpinmaps to false.");
+		R_LOG_WARN ("Cannot set breakpoint outside maps. Use dbg.bpinmaps to false.");
 	}
 	b->delta = addr - bp->baddr;
 	b->size = size;
@@ -200,7 +198,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		}
 		ret = r_bp_get_bytes (bp, b->bbytes, size, bp->endian, 0);
 		if (ret != size) {
-			eprintf ("Cannot get breakpoint bytes. No architecture selected?\n");
+			R_LOG_WARN ("Cannot get breakpoint bytes. No architecture selected?");
 		}
 	}
 	bp->nbps++;
@@ -214,19 +212,16 @@ R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int perm) {
 }
 
 R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int perm) {
-	RBreakpointItem *item;
-	ut8 *bytes;
+	r_return_val_if_fail (bp && bp->iob.read_at, NULL);
 	if (size < 1) {
 		size = 1;
 	}
-	if (!(bytes = calloc (1, size))) {
+	ut8 *bytes = calloc (1, size);
+	if (!bytes) {
 		return NULL;
 	}
-	memset (bytes, 0, size);
-	if (bp->iob.read_at) {
-		bp->iob.read_at (bp->iob.io, addr, bytes, size);
-	}
-	item = r_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, perm);
+	bp->iob.read_at (bp->iob.io, addr, bytes, size);
+	RBreakpointItem *item = r_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, perm);
 	free (bytes);
 	return item;
 }
@@ -235,6 +230,7 @@ R_API RBreakpointItem* r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int per
 	return r_bp_add (bp, NULL, addr, size, R_BP_TYPE_HW, perm);
 }
 
+// R2_580 bool
 R_API int r_bp_del_all(RBreakpoint *bp) {
 	int i;
 	if (!r_list_empty (bp->bps)) {
@@ -247,6 +243,7 @@ R_API int r_bp_del_all(RBreakpoint *bp) {
 	return false;
 }
 
+// R2_580 bool
 R_API int r_bp_del(RBreakpoint *bp, ut64 addr) {
 	RListIter *iter;
 	RBreakpointItem *b;
@@ -261,6 +258,7 @@ R_API int r_bp_del(RBreakpoint *bp, ut64 addr) {
 	return false;
 }
 
+// R2_580 bool
 R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set) {
 	RBreakpointItem *b = r_bp_get_in (bp, addr, 0);
 	if (b) {
@@ -270,6 +268,7 @@ R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set) {
 	return false;
 }
 
+// R2_580 void
 R_API int r_bp_set_trace_all(RBreakpoint *bp, int set) {
 	RListIter *iter;
 	RBreakpointItem *b;
@@ -292,7 +291,6 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 		}
 		pj_a (pj);
 	}
-	//eprintf ("Breakpoint list:\n");
 	r_list_foreach (bp->bps, iter, b) {
 		if (pj) {
 			pj_o (pj);

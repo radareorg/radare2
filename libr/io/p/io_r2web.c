@@ -128,7 +128,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		free (mal);
 		free (out);
 		free (path);
-		eprintf ("Error: Try http://localhost:9090/cmd/");
+		R_LOG_WARN ("Try http://localhost:9090/cmd/");
 	}
 	return NULL;
 }
