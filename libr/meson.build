@@ -216,7 +216,6 @@ if no_user_plugins
     asm_plugins += [
       # 'z80',
       'arm_gnu',
-      'cris_gnu',
   #    'hppa_gnu',
       'm68k_gnu',
       'lanai_gnu',

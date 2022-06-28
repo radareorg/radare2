@@ -106,12 +106,8 @@ bfd_boolean
 cris_parse_disassembler_options (disassemble_info *info,
 				 enum cris_disass_family distype)
 {
-  struct cris_disasm_data *disdata = (struct cris_disasm_data *) info->private_data;
-  if (!disdata) {
-	  return FALSE;
-  }
-
   info->private_data = calloc (1, sizeof (struct cris_disasm_data));
+  struct cris_disasm_data *disdata = (struct cris_disasm_data *) info->private_data;
 
   /* Default true.  */
   disdata->trace_case

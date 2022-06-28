@@ -59,6 +59,8 @@ r_anal_sources = [
   join_paths('p','anal_chip8.c'),
   join_paths('p','anal_cr16.c'),
   join_paths('p','anal_cris.c'),
+  join_paths('../asm/arch','cris','gnu','cris-dis.c'),
+  join_paths('../asm/arch','cris','gnu','cris-opc.c'),
   join_paths('p','anal_dalvik.c'),
   join_paths('p','anal_ebc.c'),
   join_paths('p','anal_evm_cs.c'),
