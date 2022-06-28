@@ -134,7 +134,6 @@ asm_plugins += [
   'gb',
   'java',
   'm680x_cs',
-  'mcs96',
   'mips_cs',
   'or1k',
   'ppc_as',
@@ -154,6 +153,7 @@ asm_plugins += [
 anal_plugins += [
   '6502',
   '6502_cs',
+  'mcs96',
   '8051',
   'alpha',
   'amd29k',

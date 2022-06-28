@@ -1,5 +1,4 @@
 #include <r_util.h>
-#include <r_types.h>
 
 typedef struct mcs96_op_t {
 	const char *ins;
@@ -26,7 +25,7 @@ typedef struct mcs96_op_t {
 #define	MCS96_FE	0x2000	//0xfe extension
 
 
-static Mcs96Op mcs96_op[] = {
+static const Mcs96Op mcs96_op[] = {
 	{"skip",	MCS96_1B},
 	{"invalid",	MCS96_1B},
 	{"invalid",	MCS96_1B},
@@ -286,5 +285,5 @@ static Mcs96Op mcs96_op[] = {
 	{"rst",		MCS96_1B}
 };
 
-static const char *mcs96_fe_op[] = { "mul", "mulb", "mul", "mulb", "div", "divb", "invalid", "invalid" };
+static const char * const mcs96_fe_op[] = { "mul", "mulb", "mul", "mulb", "div", "divb", "invalid", "invalid" };
 // in theory these invalids can never happen

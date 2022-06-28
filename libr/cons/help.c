@@ -79,7 +79,7 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 		help_args = help[i + 1];
 		help_desc = help[i + 2];
 
-		if (!strncmp (help_cmd, usage_str, strlen (usage_str))) {
+		if (r_str_startswith (help_cmd, usage_str)) {
 			/* Usage header */
 			r_cons_printf ("%s%s",pal_args_color, help_cmd);
 			if (help_args[0]) {
