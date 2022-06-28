@@ -288,9 +288,9 @@ static const char *help_msg_pdp[] = {
 static const char *help_msg_ph[] = {
 	"Usage:", "ph", " [algorithm] ([size])",
 	"ph", " md5", "compute md5 hash of current block",
+	"ph", " sha1 32 @ 0x1000", "calculate sha1 of 32 bytes starting at 0x1000",
 	"ph", "", "list available hash plugins",
 	"phj", "", "list available hash plugins in json",
-	"ph.", " sha1 32 @ 0x1000", "calculate sha1 of 32 bytes starting at 0x1000",
 	NULL
 };
 
