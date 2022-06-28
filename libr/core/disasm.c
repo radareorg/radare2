@@ -1361,7 +1361,7 @@ static void ds_show_refs(RDisasmState *ds) {
 				if (fcn) {
 					ds_comment (ds, true, "; %s", fcn->name);
 				} else {
-					ds_comment (ds, true, "; 0x%" PFMT64x"", ref->addr);
+					ds_comment (ds, true, "; 0x%" PFMT64x, ref->addr);
 				}
 			}
 		}

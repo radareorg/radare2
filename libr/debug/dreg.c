@@ -200,16 +200,16 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 			value = r_reg_get_value_big (dbg->reg, item, &valueBig);
 			switch (regSize) {
 			case 80:
-				snprintf (strvalue, sizeof (strvalue), "0x%04x%016"PFMT64x"", valueBig.v80.High, valueBig.v80.Low);
+				snprintf (strvalue, sizeof (strvalue), "0x%04x%016"PFMT64x, valueBig.v80.High, valueBig.v80.Low);
 				break;
 			case 96:
-				snprintf (strvalue, sizeof (strvalue), "0x%08x%016"PFMT64x"", valueBig.v96.High, valueBig.v96.Low);
+				snprintf (strvalue, sizeof (strvalue), "0x%08x%016"PFMT64x, valueBig.v96.High, valueBig.v96.Low);
 				break;
 			case 128:
-				snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x"", valueBig.v128.High, valueBig.v128.Low);
+				snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x, valueBig.v128.High, valueBig.v128.Low);
 				break;
 			case 256:
-				snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"",
+				snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"%016"PFMT64x,
 						valueBig.v256.High.High, valueBig.v256.High.Low, valueBig.v256.Low.High, valueBig.v256.Low.Low);
 				break;
 			default:

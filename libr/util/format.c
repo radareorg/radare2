@@ -90,10 +90,10 @@ static void r_print_format_u128(const RPrint* p, int endian, int mode,
 		p->cb_printf ("0x%08"PFMT64x" = (uint128_t)", seeki);
 	}
 	if (endian) {
-		p->cb_printf ("0x%016"PFMT64x"", low);
+		p->cb_printf ("0x%016"PFMT64x, low);
 		p->cb_printf ("%016"PFMT64x, hig);
 	} else {
-		p->cb_printf ("0x%016"PFMT64x"", hig);
+		p->cb_printf ("0x%016"PFMT64x, hig);
 		p->cb_printf ("%016"PFMT64x, low);
 	}
 	if (MUSTSEEJSON) {

@@ -1386,7 +1386,7 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 	sdb_set (sdb, sname, "fcn", 0);
 
 	char *addr_key = r_str_newf ("fcn.%s.addr", sname);
-	char *addr_val = r_str_newf ("0x%" PFMT64x "", dwarf_fcn->addr);
+	char *addr_val = r_str_newf ("0x%" PFMT64x, dwarf_fcn->addr);
 	sdb_set (sdb, addr_key, addr_val, 0);
 	free (addr_key);
 	free (addr_val);

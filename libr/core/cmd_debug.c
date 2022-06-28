@@ -4709,7 +4709,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 			char delb[128] = {0};
 			addr = r_debug_reg_get (core->dbg, "PC");
 			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
-			sprintf(delb, "db 0x%"PFMT64x"", addr);
+			sprintf(delb, "db 0x%"PFMT64x, addr);
 			r_reg_arena_swap (core->dbg->reg, true);
 			for (i = 0; i < times; i++) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
@@ -4740,7 +4740,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 				char delb[128] = {0};
 				addr = r_debug_reg_get (core->dbg, "PC");
 				RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
-				sprintf(delb, "db 0x%"PFMT64x"", addr);
+				sprintf(delb, "db 0x%"PFMT64x, addr);
 				r_bp_del (core->dbg->bp, addr);
 				r_reg_arena_swap (core->dbg->reg, true);
 				r_debug_step_over (core->dbg, times);

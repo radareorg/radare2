@@ -2058,7 +2058,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 		if (item->sargs) {
 			switch (item->sargs[i]) {
 			case 'p': // pointer
-				res = r_str_appendf (res, "0x%08" PFMT64x "", arg);
+				res = r_str_appendf (res, "0x%08" PFMT64x, arg);
 				break;
 			case 'i':
 				res = r_str_appendf (res, "%" PFMT64u "", arg);
@@ -2083,10 +2083,10 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 				break;
 			}
 			default:
-				res = r_str_appendf (res, "0x%08" PFMT64x "", arg);
+				res = r_str_appendf (res, "0x%08" PFMT64x, arg);
 			}
 		} else {
-			res = r_str_appendf (res, "0x%08" PFMT64x "", arg);
+			res = r_str_appendf (res, "0x%08" PFMT64x, arg);
 		}
 		if (i + 1 < item->args) {
 			res = r_str_appendf (res, ", ");

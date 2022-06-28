@@ -229,7 +229,7 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 	/* 	__reset_status (status); */
 	/* } */
 
-	char *title = r_str_newf ("[r2-visual-browser] addr=0x%08"PFMT64x" faddr=0x%08"PFMT64x"", status->addr, status->fcn ? status->fcn->addr : 0);
+	char *title = r_str_newf ("[r2-visual-browser] addr=0x%08"PFMT64x" faddr=0x%08"PFMT64x, status->addr, status->fcn ? status->fcn->addr : 0);
 	if (title) {
 		r_cons_strcat_at (title, 0, 0, w - 1, 2);
 		free (title);

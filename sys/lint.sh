@@ -9,8 +9,9 @@
 
 # pending cleanups
 # (git grep 'strncmp' libr) # && exit 1 # use r_str_startswith()
-# (git grep 'x ""' libr) # && exit 1
-# (git grep 'x""' libr) # && exit 1
+(git grep 'x ""' libr) && exit 1
+(git grep 'x""' libr) && exit 1
+(git grep '4d""' libr) && exit 1
 # (git grep 'eprintf' libr | grep 'Warning:') # && exit 1
 # (git grep 'eprintf' | grep 'Usage:' | grep -v sys/) # && exit 1
 
