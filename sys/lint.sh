@@ -13,7 +13,7 @@
 # pending cleanups
 # (git grep 'TODO' libr) # && exit 1 # use r_str_startswith()
 # (git grep 'XXX' libr) # && exit 1 # use r_str_startswith()
-(git grep 'strncmp' libr) # && exit 1 # use r_str_startswith()
+# (git grep 'strncmp' libr) # && exit 1 # use r_str_startswith()
 # (git grep 'eprintf' libr | grep 'Warning:') # && exit 1
 # (git grep 'eprintf' | grep 'Usage:' | grep -v sys/) # && exit 1
 
