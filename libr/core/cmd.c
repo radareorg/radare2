@@ -5317,7 +5317,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				}
 				addr = core->rcmd->macro._brk_value;
 				r_core_seek (core, addr, true);
-				r_core_cmdf (core, "%s @ 0x%08"PFMT64x"", cmd, addr);
+				r_core_cmdf (core, "%s @ 0x%08"PFMT64x, cmd, addr);
 				if (!foreach_newline (core)) {
 					break;
 				}
@@ -5338,7 +5338,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						if (*buf) {
 							addr = r_num_math (core->num, buf);
 							r_core_seek (core, addr, true); // XXX
-							r_core_cmdf (core, "%s @ 0x%08"PFMT64x"", cmd, addr);
+							r_core_cmdf (core, "%s @ 0x%08"PFMT64x, cmd, addr);
 							if (!foreach_newline (core)) {
 								break;
 							}

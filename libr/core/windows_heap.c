@@ -287,7 +287,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	if (doopen) {
 		char *ntdllpath = r_lib_path ("ntdll");
 		eprintf ("Opening %s\n", ntdllpath);
-		dbg->coreb.cmdf (dbg->coreb.core, "o %s 0x%"PFMT64x"", ntdllpath, map->addr);
+		dbg->coreb.cmdf (dbg->coreb.core, "o %s 0x%"PFMT64x, ntdllpath, map->addr);
 		lastNdtllAddr = map->addr;
 		free (ntdllpath);
 	}
@@ -1277,7 +1277,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 				switch (format) {
 				case 'f':
 				{
-					char *name = r_str_newf ("alloc.%"PFMT64x"", address);
+					char *name = r_str_newf ("alloc.%"PFMT64x, address);
 					r_flag_set (core->flags, name, address, block->dwSize);
 					free (name);
 					break;

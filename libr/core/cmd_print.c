@@ -3795,7 +3795,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 				|| (as->block[p].comments)
 				|| (as->block[p].symbols)
 				|| (as->block[p].strings)) {
-				r_strf_var (atstr, 32, "0x%09"PFMT64x"", at);
+				r_strf_var (atstr, 32, "0x%09"PFMT64x, at);
 				r_table_add_rowf (t, "sddddd", atstr, as->block[p].flags,
 						  as->block[p].functions, as->block[p].comments, as->block[p].symbols,  as->block[p].strings);
 			}
@@ -4726,7 +4726,7 @@ static void disasm_until_optype(RCore *core, ut64 addr, char type_print, int opt
 			} else {
 				if (show_color) {
 					const char *offsetColor = r_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
-					r_cons_printf ("%s0x%08"PFMT64x""Color_RESET"  %10s %s\n",
+					r_cons_printf ("%s0x%08"PFMT64x Color_RESET"  %10s %s\n",
 							offsetColor, addr + p, "", m);
 				} else {
 					r_cons_printf ("0x%08"PFMT64x"  %10s %s\n", addr + p, "", m);

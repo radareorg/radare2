@@ -1897,7 +1897,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				if (show_color) {
 					// XXX parsing fails to read this ansi-offset
 					// const char *offsetColor = r_cons_singleton ()->context->pal.offset; // TODO etooslow. must cache
-					// r_list_push (core->ropchain, r_str_newf ("%s0x%08"PFMT64x""Color_RESET"  %s", offsetColor, addr + delta, line));
+					// r_list_push (core->ropchain, r_str_newf ("%s0x%08"PFMT64x Color_RESET"  %s", offsetColor, addr + delta, line));
 					r_list_push (core->ropchain, r_str_newf ("0x%08"PFMT64x"  %s", addr + delta, line));
 				} else {
 					r_list_push (core->ropchain, r_str_newf ("0x%08"PFMT64x"  %s", addr + delta, line));
@@ -3020,7 +3020,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 			if (show) {
 				char *tmp;
 				if (color) {
-					var_functions = r_str_newf ("%c%c %s0x%08"PFMT64x"" Color_RESET" %4"PFMT64d" %s%s"Color_RESET"",
+					var_functions = r_str_newf ("%c%c %s0x%08"PFMT64x Color_RESET" %4"PFMT64d" %s%s"Color_RESET"",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
 							color_addr, fcn->addr, r_anal_function_realsize (fcn),
@@ -3262,7 +3262,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		if (color) {
 			r_cons_strcat (core->cons->context->pal.prompt);
 		}
-		r_cons_printf ("-[ variables ]----- 0x%08"PFMT64x"", addr);
+		r_cons_printf ("-[ variables ]----- 0x%08"PFMT64x, addr);
 		if (color) {
 			r_cons_strcat ("\n" Color_RESET);
 		}

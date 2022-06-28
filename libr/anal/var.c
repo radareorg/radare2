@@ -744,22 +744,22 @@ R_API char *r_anal_var_get_constraints_readable(RAnalVar *var) {
 			if (high) {
 				r_strbuf_append (&sb, " && ");
 			}
-			r_strbuf_appendf (&sb, "<= 0x%"PFMT64x "", constr->val);
+			r_strbuf_appendf (&sb, "<= 0x%"PFMT64x, constr->val);
 			low = true;
 			break;
 		case R_ANAL_COND_LT:
 			if (high) {
 				r_strbuf_append (&sb, " && ");
 			}
-			r_strbuf_appendf (&sb, "< 0x%"PFMT64x "", constr->val);
+			r_strbuf_appendf (&sb, "< 0x%"PFMT64x, constr->val);
 			low = true;
 			break;
 		case R_ANAL_COND_GE:
-			r_strbuf_appendf (&sb, ">= 0x%"PFMT64x "", constr->val);
+			r_strbuf_appendf (&sb, ">= 0x%"PFMT64x, constr->val);
 			high = true;
 			break;
 		case R_ANAL_COND_GT:
-			r_strbuf_appendf (&sb, "> 0x%"PFMT64x "", constr->val);
+			r_strbuf_appendf (&sb, "> 0x%"PFMT64x, constr->val);
 			high = true;
 			break;
 		default:
