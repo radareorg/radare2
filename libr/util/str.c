@@ -1,20 +1,11 @@
 /* radare - LGPL - Copyright 2007-2022 - pancake */
 
-#include "r_types.h"
-#include "r_util.h"
-#include "r_cons.h"
-#include "r_bin.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <r_util/r_base64.h>
+#include <r_bin.h>
 
 /* stable code */
-static const char *nullstr = "";
-static const char *nullstr_c = "(null)";
-static const char *rwxstr[] = {
+static const char * const nullstr = "";
+static const char * const nullstr_c = "(null)";
+static const char * const rwxstr[] = {
 	[0] = "---",
 	[1] = "--x",
 	[2] = "-w-",
@@ -33,7 +24,6 @@ static const char *rwxstr[] = {
 	[14] = "rw-",
 	[15] = "rwx",
 };
-
 
 R_API int r_str_casecmp(const char *s1, const char *s2) {
 #ifdef _MSC_VER

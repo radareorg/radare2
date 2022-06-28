@@ -317,7 +317,7 @@ R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
 		if (!outcol) {
 			r_cons_rgb_str (out, sizeof (out), &rcolor);
 		}
-	} else if (!strncmp (fgcolor, "#", 1)) { // "#00ff00" HTML format
+	} else if (fgcolor[0] == '#') { // "#00ff00" HTML format
 		if (strlen (fgcolor + 1) == 6) {
 			const char *kule = fgcolor + 1;
 			rcolor.r = rgbnum (kule[0], kule[1]);
@@ -329,7 +329,7 @@ R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
 		} else {
 			R_LOG_WARN ("Invalid html color code");
 		}
-	} else if (!strncmp (fgcolor, "rgb:", 4)) { // "rgb:123" rgb format
+	} else if (r_str_startswith (fgcolor, "rgb:")) { // "rgb:123" rgb format
 		if (strlen (fgcolor + 4) == 3) { // "rgb:RGB"
 			rcolor.r = rgbnum (fgcolor[4], '0');
 			rcolor.g = rgbnum (fgcolor[5], '0');
@@ -347,7 +347,7 @@ R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
 		}
 	}
 	// Handle second color (bgcolor)
-	if (bgcolor && !strncmp (bgcolor, "rgb:", 4)) { // "rgb:123" rgb format
+	if (bgcolor && r_str_startswith (bgcolor, "rgb:")) { // "rgb:123" rgb format
 		rcolor.a |= ALPHA_BG;
 		if (strlen (bgcolor + 4) == 3) {
 			rcolor.r2 = rgbnum (bgcolor[4], '0');
@@ -392,15 +392,15 @@ R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
 		// Parse extra attributes.
 		const char *p = attr;
 		while (p) {
-			if (!strncmp(p, "bold", 4)) {
+			if (r_str_startswith (p, "bold")) {
 				rcolor.attr |= R_CONS_ATTR_BOLD;
-			} else if (!strncmp(p, "dim", 3)) {
+			} else if (r_str_startswith (p, "dim")) {
 				rcolor.attr |= R_CONS_ATTR_DIM;
-			} else if (!strncmp(p, "italic", 6)) {
+			} else if (r_str_startswith (p, "italic")) {
 				rcolor.attr |= R_CONS_ATTR_ITALIC;
-			} else if (!strncmp(p, "underline", 9)) {
+			} else if (r_str_startswith (p, "underline")) {
 				rcolor.attr |= R_CONS_ATTR_UNDERLINE;
-			} else if (!strncmp(p, "blink", 5)) {
+			} else if (r_str_startswith (p, "blink")) {
 				rcolor.attr |= R_CONS_ATTR_BLINK;
 			} else {
 				R_LOG_ERROR ("Failed to parse terminal attributes: %s", p);

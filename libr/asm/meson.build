@@ -21,7 +21,6 @@ r_asm_sources = [
   join_paths('p','asm_lanai_gnu.c'),
   join_paths('p','asm_m68k_gnu.c'),
   join_paths('p','asm_m680x_cs.c'),
-  join_paths('p','asm_mcs96.c'),
   join_paths('p','asm_mips_cs.c'),
   join_paths('p','asm_mips_gnu.c'),
   join_paths('p','asm_or1k.c'),

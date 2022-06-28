@@ -162,14 +162,14 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 					str = ptr + 1;
 					esc = 0;
 				}
-			} else if (!strncmp (ptr, "48;5;", 5) || !strncmp (ptr, "48;2;", 5)) {
+			} else if (r_str_startswith (ptr, "48;5;") || r_str_startswith (ptr, "48;2;")) {
 				char *end = strchr (ptr, 'm');
 				gethtmlrgb (ptr, background_color);
 				need_to_set = true;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
-			} else if (!strncmp (ptr, "38;5;", 5) || !strncmp (ptr, "38;2;", 5)) {
+			} else if (r_str_startswith (ptr, "38;5;") || r_str_startswith (ptr, "38;2;")) {
 				char *end = strchr (ptr, 'm');
 				gethtmlrgb (ptr, text_color);
 				need_to_set = true;
@@ -201,7 +201,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				need_to_set = need_to_clear = true;
 				continue;
 				// reset color
-			} else if (!strncmp (ptr, "27m", 3)) {
+			} else if (r_str_startswith (ptr, "27m")) {
 				inv = false;
 				need_to_set = true;
 				ptr = ptr + 2;

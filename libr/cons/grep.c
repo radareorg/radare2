@@ -150,17 +150,17 @@ static void parse_grep_expression(const char *str) {
 				if (ptr[1] == ':') {
 					grep->human = true; // human friendly indentation ij~{:
 					grep->json = 1;
-					if (!strncmp (ptr, "{:...", 5)) {
+					if (r_str_startswith (ptr, "{:...")) {
 						grep->hud = true;
-					} else if (!strncmp (ptr, "{:..", 4)) {
+					} else if (r_str_startswith (ptr, "{:..")) {
 						grep->less = 1;
 					}
 				} else if (ptr[1] == '}') {
 					// standard json indentation
 					grep->json = 1;
-					if (!strncmp (ptr, "{}...", 5)) {
+					if (r_str_startswith (ptr, "{}...")) {
 						grep->hud = true;
-					} else if (!strncmp (ptr, "{}..", 4)) {
+					} else if (r_str_startswith (ptr, "{}..")) {
 						grep->less = 1;
 					}
 				} else {
