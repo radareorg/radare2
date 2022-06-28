@@ -117,7 +117,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	B (code, codelen);
 
 	if (data && datalen>0) {
-		eprintf ("Warning: DATA section not support for ELF yet\n");
+		R_LOG_WARN ("DATA section not support for ELF yet");
 		B (data, datalen);
 	}
 	return buf;

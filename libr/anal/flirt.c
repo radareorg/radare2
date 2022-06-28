@@ -917,7 +917,7 @@ static ut8 parse_leaf(const RAnal *anal, RBuffer *b, RFlirtNode *node) {
 		}
 #if DEBUG
 		if (crc_length == 0x00 && crc16 != 0x0000) {
-			eprintf ("Warning: non zero crc of zero length @ %04X\n",
+			R_LOG_WARN ("non zero crc of zero length @ %04X",
 				r_buf_tell (b) + header_size);
 		}
 		eprintf ("crc_len: %02X crc16: %04X\n", crc_length, crc16);
@@ -1467,7 +1467,7 @@ R_API void r_sign_flirt_scan(RAnal *anal, const char *flirt_file) {
 	r_buf_free (flirt_buf);
 	if (node) {
 		if (!node_match_functions (anal, node)) {
-			eprintf ("Error while scanning the file %s\n", flirt_file);
+			R_LOG_ERROR ("Error while scanning the file %s", flirt_file);
 		}
 		node_free (node);
 		return;

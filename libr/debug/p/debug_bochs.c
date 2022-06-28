@@ -24,7 +24,7 @@ static bool isBochs(RDebug *dbg) {
 			return true;
 		}
 	}
-	eprintf ("error: the iodesc data is not bochs friendly\n");
+	R_LOG_ERROR ("error: the iodesc data is not bochs friendly");
 	return false;
 }
 

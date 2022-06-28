@@ -97,7 +97,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 	if (data && datalen > 0) {
 		//ut32 data_section = buf->length;
-		eprintf ("Warning: DATA section not support for PE yet\n");
+		R_LOG_WARN ("DATA section not support for PE yet");
 		B (data, datalen);
 	}
 	return buf;

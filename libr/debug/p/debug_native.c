@@ -97,7 +97,7 @@ static int r_debug_handle_signals(RDebug *dbg) {
 #if __KFBSD__
 	return bsd_handle_signals (dbg);
 #else
-	eprintf ("Warning: signal handling is not supported on this platform\n");
+	R_LOG_WARN ("signal handling is not supported on this platform");
 	return 0;
 #endif
 }
@@ -239,7 +239,7 @@ static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		r_list_foreach (dbg->threads, it, th) {
 			ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, 0, 0);
 			if (ret) {
-				eprintf ("Error: (%d) is running or dead.\n", th->pid);
+				R_LOG_ERROR ("(%d) is running or dead.", th->pid);
 			}
 		}
 	} else {
@@ -301,7 +301,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	RW32Dw *wrap = dbg->user;
 
 	if (pid == -1) {
-		eprintf ("ERROR: r_debug_native_wait called with pid -1\n");
+		R_LOG_ERROR ("ERROR: r_debug_native_wait called with pid -1");
 		return R_DEBUG_REASON_ERROR;
 	}
 
@@ -428,7 +428,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 
 	if (pid == -1) {
-		eprintf ("ERROR: r_debug_native_wait called with pid -1\n");
+		R_LOG_ERROR ("ERROR: r_debug_native_wait called with pid -1");
 		return R_DEBUG_REASON_ERROR;
 	}
 
@@ -441,7 +441,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 
 	if (pid == -1) {
-		eprintf ("ERROR: r_debug_native_wait called with pid -1\n");
+		R_LOG_ERROR ("ERROR: r_debug_native_wait called with pid -1");
 		return R_DEBUG_REASON_ERROR;
 	}
 
@@ -1587,7 +1587,7 @@ static int r_debug_setup_ownership(int fd, RDebug *dbg) {
 	RDebugInfo *info = r_debug_info (dbg, NULL);
 
 	if (!info) {
-		eprintf ("Error while getting debug info.\n");
+		R_LOG_ERROR ("Error while getting debug info.");
 		return -1;
 	}
 	fchown (fd, info->uid, info->gid);

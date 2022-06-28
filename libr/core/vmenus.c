@@ -4075,7 +4075,7 @@ onemoretime:
 		int rc = r_anal_op (core->anal, &op, off,
 			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
 		if (rc < 1) {
-			eprintf ("Error analyzing opcode at 0x%08"PFMT64x"\n", off);
+			R_LOG_ERROR ("Error analyzing opcode at 0x%08"PFMT64x, off);
 		} else {
 			tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 			RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr);

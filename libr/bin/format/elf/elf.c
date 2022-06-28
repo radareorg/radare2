@@ -1316,7 +1316,7 @@ static bool init_dynstr(ELFOBJ *bin) {
 		section_name = &bin->shstrtab[bin->shdr[i].sh_name];
 		if (bin->shdr[i].sh_type == SHT_STRTAB && !strcmp (section_name, ".dynstr")) {
 			if (!(bin->dynstr = (char*) calloc (bin->shdr[i].sh_size + 1, sizeof (char)))) {
-				R_LOG_ERROR ("Cannot allocate memory for dynamic strings\n");
+				R_LOG_ERROR ("Cannot allocate memory for dynamic strings");
 				return false;
 			}
 			if (bin->shdr[i].sh_offset > bin->size) {
@@ -3763,7 +3763,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				}
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name + 1 > strtab_section->sh_size) {
-					R_LOG_DEBUG ("index out of strtab range (%"PFMT64d" / %"PFMT64d")\n",
+					R_LOG_DEBUG ("index out of strtab range (%"PFMT64d" / %"PFMT64d")",
 						(ut64)sym[k].st_name, (ut64)strtab_section->sh_size);
 					continue;
 				}

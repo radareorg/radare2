@@ -260,7 +260,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 								fmtsize, v, 0, NULL, NULL);
 						free (buf);
 						if (res < 0) {
-							eprintf ("Warning: Cannot register invalid format (%s)\n", v);
+							R_LOG_WARN ("Cannot register invalid format (%s)", v);
 						}
 					}
 				}
@@ -781,11 +781,11 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		char *s = r_reg_profile_to_cc (core->anal->reg);
 		if (s) {
 			if (!r_anal_cc_set (core->anal, s)) {
-				eprintf ("Warning: Invalid CC from reg profile.\n");
+				R_LOG_WARN ("Invalid CC from reg profile.");
 			}
 			free (s);
 		} else {
-			eprintf ("Warning: Cannot derive CC from reg profile.\n");
+			R_LOG_WARN ("Cannot derive CC from reg profile.");
 		}
 	}
 #else
@@ -808,11 +808,11 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		char *s = r_reg_profile_to_cc (core->anal->reg);
 		if (s) {
 			if (!r_anal_cc_set (core->anal, s)) {
-				eprintf ("Warning: Invalid CC from reg profile.\n");
+				R_LOG_WARN ("Invalid CC from reg profile.");
 			}
 			free (s);
 		} else {
-			eprintf ("Warning: Cannot derive CC from reg profile.\n");
+			R_LOG_WARN ("Cannot derive CC from reg profile.");
 		}
 	}
 	R_FREE (cc->path);
@@ -825,7 +825,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		cc->path = strdup (dbpath);
 	}
 	if (anal_arch && sdb_isempty (core->anal->sdb_cc)) {
-		eprintf ("Warning: Missing calling conventions for '%s' %d. Deriving it from the regprofile.\n", anal_arch, bits);
+		R_LOG_WARN ("Missing calling conventions for '%s' %d. Deriving it from the regprofile.", anal_arch, bits);
 	}
 	free (anal_arch);
 	free (dbpath);
@@ -1266,7 +1266,7 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->baddr) {
 		baddr = core->bin->cur->o->baddr;
 	} else if (baddr == UT64_MAX) {
-		eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
+		R_LOG_WARN ("Cannot find base address, flags will probably be misplaced");
 		baddr = 0LL;
 	}
 
@@ -3893,7 +3893,7 @@ static void bin_pe_versioninfo(RCore *r, PJ *pj, int mode) {
 					ut8 *val_utf8 = calloc (lenval * 2, 1);
 					if (r_str_utf16_to_utf8 (key_utf8, lenkey * 2, key_utf16, lenkey, true) < 0
 						|| r_str_utf16_to_utf8 (val_utf8, lenval * 2, val_utf16, lenval, true) < 0) {
-						eprintf ("Warning: Cannot decode utf16 to utf8\n");
+						R_LOG_WARN ("Cannot decode utf16 to utf8");
 					} else if (IS_MODE_JSON (mode)) {
 						pj_ks (pj, (char*)key_utf8, (char*)val_utf8);
 					} else {

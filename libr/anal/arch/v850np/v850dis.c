@@ -428,7 +428,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 			bool invalid = false;
 			value = get_operand_value (operand, insn, buffer + 2, buffer_size - 2, &invalid);
 			if (invalid) {
-				// eprintf ("Warning: Cannot get operand value.\n");
+				// R_LOG_WARN ("Cannot get operand value.");
 				break;
 			}
 

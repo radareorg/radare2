@@ -260,7 +260,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	WSADATA wsadata;
 
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
-		eprintf ("Error creating socket.\n");
+		R_LOG_ERROR ("Error creating socket.");
 		return false;
 	}
 #endif
@@ -551,7 +551,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 #if __WINDOWS__
 	WSADATA wsadata;
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
-		eprintf ("Error creating socket.\n");
+		R_LOG_ERROR ("Error creating socket.");
 		return false;
 	}
 #endif

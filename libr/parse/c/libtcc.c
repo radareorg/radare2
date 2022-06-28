@@ -229,7 +229,7 @@ ST_FUNC bool tcc_open_bf(TCCState *s1, const char *filename, int initlen) {
 	BufferedFile *bf = malloc (sizeof (BufferedFile) + buflen);
 	if (!bf) {
 		// err
-		eprintf ("Error\n");
+		R_LOG_ERROR ("Error");
 		return false;
 	}
 	bf->buf_ptr = bf->buffer;

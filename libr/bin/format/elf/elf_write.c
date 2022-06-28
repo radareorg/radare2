@@ -205,7 +205,7 @@ bool Elf_(r_bin_elf_del_rpath)(RBinFile *bf) {
 			return false;
 		}
 		if (r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->phdr[i].p_filesz) == -1) {
-			eprintf ("Error: read (dyn)\n");
+			R_LOG_ERROR ("read (dyn)");
 			free (dyn);
 			return false;
 		}
@@ -220,7 +220,7 @@ bool Elf_(r_bin_elf_del_rpath)(RBinFile *bf) {
 				if (dyn[j].d_tag == DT_RPATH || dyn[j].d_tag == DT_RUNPATH) {
 					if (r_buf_write_at (bin->b, stroff + dyn[j].d_un.d_val,
 								(ut8*)"", 1) == -1) {
-						eprintf ("Error: write (rpath)\n");
+						R_LOG_ERROR ("write (rpath)");
 						free (dyn);
 						return false;
 					}

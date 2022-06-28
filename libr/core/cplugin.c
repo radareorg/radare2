@@ -42,7 +42,7 @@ R_API bool r_core_plugin_init(RCmd *cmd) {
 	cmd->plist = r_list_newf (NULL); // memleak or dblfree
 	for (i = 0; cmd_static_plugins[i]; i++) {
 		if (!r_core_plugin_add (cmd, cmd_static_plugins[i])) {
-			eprintf ("Error loading cmd plugin\n");
+			R_LOG_ERROR ("Error loading cmd plugin");
 			return false;
 		}
 	}

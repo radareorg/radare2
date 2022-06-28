@@ -882,7 +882,7 @@ static bool mnem_jb(char const*const*arg, ut16 pc, ut8**out) {
 static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
 	ut8 cmp_addr;
 	if (!address_bit (arg[0], &cmp_addr)) {
-		eprintf ("error during the assembly: address bit not found\n");
+		R_LOG_ERROR ("error during the assembly: address bit not found");
 		return false;
 	}
 

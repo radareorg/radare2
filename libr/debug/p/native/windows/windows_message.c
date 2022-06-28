@@ -316,7 +316,7 @@ R_API void r_w32_identify_window(void) {
 		return;
 	}
 	if (!win) {
-		eprintf ("Error trying to get information from 0x%08"PFMT64x"\n", (ut64)hwnd);
+		R_LOG_ERROR ("Error trying to get information from 0x%08"PFMT64x, (ut64)hwnd);
 		return;
 	}
 	RTable *tbl = __create_window_table ();

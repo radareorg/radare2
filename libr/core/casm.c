@@ -90,12 +90,12 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	ut64 usrimm = r_num_math (core->num, inp);
 	ut64 usrimm2 = inp_arg? r_num_math (core->num, inp_arg): usrimm;
 	if (usrimm > usrimm2) {
-		eprintf ("Error: /ci : Invalid range\n");
+		R_LOG_ERROR ("/ci : Invalid range");
 		return NULL;
 	}
 
 	if (core->blocksize < 8) {
-		eprintf ("error: block size too small\n");
+		R_LOG_ERROR ("error: block size too small");
 		return NULL;
 	}
 	if (!(buf = (ut8 *)calloc (core->blocksize, 1))) {
@@ -249,7 +249,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					if (maxhits) {
 						count++;
 						if (count >= maxhits) {
-							//eprintf ("Error: search.maxhits reached\n");
+							//R_LOG_ERROR ("search.maxhits reached");
 							goto beach;
 						}
 					}

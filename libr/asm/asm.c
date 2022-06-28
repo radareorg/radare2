@@ -59,7 +59,7 @@ static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
 
 static inline int r_asm_pseudo_arch(RAsm *a, const char *input) {
 	if (!r_asm_use (a, input)) {
-		eprintf ("Error: Unknown plugin\n");
+		R_LOG_ERROR ("Unknown plugin");
 		return -1;
 	}
 	return 0;
@@ -67,7 +67,7 @@ static inline int r_asm_pseudo_arch(RAsm *a, const char *input) {
 
 static inline int r_asm_pseudo_bits(RAsm *a, const char *input) {
 	if (!(r_asm_set_bits (a, r_num_math (NULL, input)))) {
-		eprintf ("Error: Unsupported value for .bits.\n");
+		R_LOG_ERROR ("Unsupported value for .bits.");
 		return -1;
 	}
 	return 0;
@@ -84,7 +84,7 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	long int l;
 	ut64 s64 = r_num_math (NULL, input);
 	if (n != 8 && s64 >> (n * 8)) {
-		eprintf ("int16 Out is out of range\n");
+		R_LOG_ERROR ("int16 Out is out of range");
 		return 0;
 	}
 	// XXX honor endian here
@@ -144,8 +144,8 @@ static inline int r_asm_pseudo_fill(RAsmOp *op, const char *input) {
 	if (strchr (input, ',')) {
 		int res = sscanf (input, "%d,%d,%d", &repeat, &size, &value); // use r_num?
 		if (res != 3) {
-			eprintf ("Invalid usage of .fill repeat,size,value\n");
-			eprintf ("for example: .fill 1,0x100,0\n");
+			R_LOG_ERROR ("Invalid usage of .fill repeat,size,value");
+			R_LOG_ERROR ("for example: .fill 1,0x100,0");
 			return -1;
 		}
 	} else {
@@ -179,7 +179,7 @@ static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
 	size_t count = (size_t)r_num_math (NULL,r_str_word_get0 (input, 2));
 	char *content = r_file_slurp (input, &bytes_read);
 	if (!content) {
-		eprintf ("Could not open '%s'.\n", input);
+		R_LOG_ERROR ("Could not open '%s'.", input);
 		return -1;
 	}
 	if (skip > 0) {
@@ -415,7 +415,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		if (a->analb.use (a->analb.anal, name)) {
 			load_asm_descriptions (a, NULL);
 		} else {
-			eprintf ("Cannot find arch plugin with this name. See rasm2 -L and rasm2 -LL\n");
+			R_LOG_ERROR ("Cannot find arch plugin with this name. See rasm2 -L and rasm2 -LL");
 		}
 	}
 #if 0
@@ -863,12 +863,12 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			const size_t new_tokens_size = tokens_size * 2;
 			if (sizeof (char*) * new_tokens_size <= sizeof (char*) * tokens_size) {
 				// overflow
-				eprintf ("Too many tokens\n");
+				R_LOG_ERROR ("Too many tokens");
 				goto fail;
 			}
 			char **new_tokens = realloc (tokens, sizeof (char*) * new_tokens_size);
 			if (!new_tokens) {
-				eprintf ("Too many tokens\n");
+				R_LOG_ERROR ("Too many tokens");
 				goto fail;
 			}
 			tokens_size = new_tokens_size;
@@ -1057,7 +1057,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				} else if ((!strncmp (ptr, ".byte ", 6)) || (!strncmp (ptr, ".int8 ", 6))) {
 					ret = r_asm_pseudo_byte (&op, ptr + 6);
 				} else if (!strncmp (ptr, ".glob", 5)) { // .global .globl
-									 //	eprintf (".global directive not yet implemented\n");
+									 //	R_LOG_ERROR (".global directive not yet implemented");
 					ret = 0;
 					continue;
 				} else if (!strncmp (ptr, ".equ ", 5)) {
@@ -1072,32 +1072,32 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 						*ptr2 = '\0';
 						r_asm_code_set_equ (acode, ptr + 5, ptr2 + 1);
 					} else {
-						eprintf ("Invalid syntax for '.equ': Use '.equ <word> <word>'\n");
+						R_LOG_ERROR ("Invalid syntax for '.equ': Use '.equ <word> <word>'");
 					}
 				} else if (!strncmp (ptr, ".org ", 5)) {
 					ret = r_asm_pseudo_org (a, ptr + 5);
 					off = a->pc;
 				} else if (r_str_startswith (ptr, ".offset ")) {
-					eprintf ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'.\n");
+					R_LOG_ERROR ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'.");
 				} else if (!strncmp (ptr, ".text", 5)) {
 					acode->code_offset = a->pc;
 				} else if (!strncmp (ptr, ".data", 5)) {
 					acode->data_offset = a->pc;
 				} else if (!strncmp (ptr, ".incbin", 7)) {
 					if (ptr[7] != ' ') {
-						eprintf ("incbin missing filename\n");
+						R_LOG_ERROR ("incbin missing filename");
 						continue;
 					}
 					ret = r_asm_pseudo_incbin (&op, ptr + 8);
 				} else {
-					eprintf ("Unknown directive (%s)\n", ptr);
+					R_LOG_ERROR ("Unknown directive (%s)", ptr);
 					goto fail;
 				}
 				if (!ret) {
 					continue;
 				}
 				if (ret < 0) {
-					eprintf ("!!! Oops (%s)\n", ptr);
+					R_LOG_ERROR ("!!! Oops (%s)", ptr);
 					goto fail;
 				}
 			} else { /* Instruction */
