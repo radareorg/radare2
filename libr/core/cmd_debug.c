@@ -892,12 +892,12 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 			pc = r_debug_reg_get (core->dbg, core->dbg->reg->name[R_REG_NAME_PC]);
 			// 'Copy' from r_debug_step_soft
 			if (!core->dbg->iob.read_at) {
-				eprintf ("ERROR\n");
+				R_LOG_ERROR ("cannot read");
 				res = false;
 				goto cleanup_after_push;
 			}
 			if (!core->dbg->iob.read_at (core->dbg->iob.io, pc, buf, sizeof (buf))) {
-				eprintf ("ERROR\n");
+				R_LOG_ERROR ("cannot read");
 				res = false;
 				goto cleanup_after_push;
 			}
@@ -911,7 +911,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 		r_io_read_at (core->io, pc, buf, sizeof (buf));
 
 		if (!r_anal_op (core->dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC)) {
-			eprintf ("Error: r_anal_op failed\n");
+			R_LOG_ERROR ("r_anal_op failed");
 			res = false;
 			goto cleanup_after_push;
 		}
@@ -1681,7 +1681,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						get_bin_info (core, file, baddr, pj, mode, symbols_only, &filter);
 						if (newfile) {
 							if (!r_file_rm (newfile)) {
-								eprintf ("Error when removing %s\n", newfile);
+								R_LOG_ERROR ("Cannot remove %s", newfile);
 							}
 							free (newfile);
 						}
@@ -4111,7 +4111,7 @@ static void r_core_debug_esil(RCore *core, const char *input) {
 		break;
 	case 'c': // "dec"
 		if (r_debug_esil_watch_empty (core->dbg)) {
-			eprintf ("Error: no esil watchpoints defined\n");
+			R_LOG_ERROR ("no esil watchpoints defined");
 		} else {
 			r_core_cmd0 (core, "aei");
 			r_debug_esil_prestep (core->dbg, r_config_get_i (core->config, "esil.prestep"));
@@ -4451,11 +4451,9 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 			eprintf ("Usage: dcb : continue back until breakpoint\n");
 		} else {
 			if (!core->dbg->session) {
-				eprintf ("Error: Session has not started\n");
-				break;
-			}
-			if (!r_debug_continue_back (core->dbg)) {
-				eprintf ("cannot continue back\n");
+				R_LOG_ERROR ("Session has not started");
+			} else if (!r_debug_continue_back (core->dbg)) {
+				R_LOG_ERROR ("cannot continue back");
 			}
 			break;
 		}
@@ -4755,15 +4753,15 @@ static int cmd_debug_step(RCore *core, const char *input) {
 	case 'b': // "dsb"
 		if (r_config_get_i (core->config, "cfg.debug")) {
 			if (!core->dbg->session) {
-				eprintf ("Session has not started\n");
+				R_LOG_ERROR ("Session has not started");
 			} else if (r_debug_step_back (core->dbg, times) < 0) {
-				eprintf ("Error: stepping back failed\n");
+				R_LOG_ERROR ("stepping back failed");
 			}
 		} else {
 			if (r_core_esil_step_back (core)) {
 				r_core_cmd0 (core, ".dr*");
 			} else {
-				eprintf ("cannot step back\n");
+				R_LOG_ERROR ("cannot step back");
 			}
 		}
 		break;
@@ -4798,7 +4796,6 @@ static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print, bool ignore_sta
 		free (raw);
 		return 1;
 	}
-
 	r_hex_bin2str (raw, raw_len, hexpairs);
 	if (print) {
 		r_cons_printf ("%s %s\n", cmd, hexpairs);
