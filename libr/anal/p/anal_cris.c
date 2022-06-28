@@ -14,7 +14,7 @@ http://developer.axis.com/old/documentation/hw/etraxfs/iop_howto/iop_howto.pdf
 
 static R_TH_LOCAL unsigned long Offset = 0;
 static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL unsigned char bytes[8];
+static R_TH_LOCAL ut8 bytes[8];
 
 static int cris_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
@@ -39,15 +39,15 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
-bfd_boolean cris_parse_disassembler_options (disassemble_info *info, int distype);
+bfd_boolean cris_parse_disassembler_options(disassemble_info *info, int distype);
 
 // TODO: refactor the gnu code to have a getter instead of exposing so many disasm entrypoints
-int print_insn_crisv10_v32_with_register_prefix (bfd_vma vma, disassemble_info *info);
-int print_insn_crisv10_v32_without_register_prefix (bfd_vma vma, disassemble_info *info);
-int print_insn_cris_with_register_prefix (bfd_vma vma, disassemble_info *info);
-int print_insn_cris_without_register_prefix (bfd_vma vma, disassemble_info *info);
-int print_insn_crisv32_with_register_prefix (bfd_vma vma, disassemble_info *info);
-int print_insn_crisv32_without_register_prefix (bfd_vma vma, disassemble_info *info);
+int print_insn_crisv10_v32_with_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_crisv10_v32_without_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_cris_with_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_cris_without_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_crisv32_with_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_crisv32_without_register_prefix(bfd_vma vma, disassemble_info *info);
 
 static char *disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
