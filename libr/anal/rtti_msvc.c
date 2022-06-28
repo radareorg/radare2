@@ -896,7 +896,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 
 	if (!col->td) {
 		if (context->vt_context->anal->verbose) {
-			R_LOG_WARN ("no td for col at 0x%"PFMT64x"", col->addr);
+			R_LOG_WARN ("no td for col at 0x%"PFMT64x, col->addr);
 		}
 		return NULL;
 	}

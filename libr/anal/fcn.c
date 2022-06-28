@@ -1695,7 +1695,7 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 		return false;
 	}
 	if (size > a->opt.bb_max_size) {
-		R_LOG_WARN ("can't allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x"", (st64)size, addr);
+		R_LOG_WARN ("can't allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x, (st64)size, addr);
 		r_warn_if_reached ();
 		return false;
 	}
