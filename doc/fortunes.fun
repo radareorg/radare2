@@ -29,7 +29,7 @@ No such file or directory.
 Default scripting languages are NodeJS and Python.
 -bash: r2: command not found
 Press any key to continue ...
-Ilo ni li pona li pali e lipu. mi wile e ni: sina kama jo e musi
+ilo ni li pona li pali e lipu. o musi!
 radare2 for FideOS, now with extra potato
 Your project name should contain an uppercase letter, 8 vowels, some numbers, and the first 5 characters of your private bitcoin key.
 This computer has gone to sleep.
