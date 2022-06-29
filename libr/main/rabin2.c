@@ -88,6 +88,7 @@ static int rabin_show_help(int v) {
 		" RABIN2_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		" RABIN2_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
 		" RABIN2_SWIFTLIB:  1|0|               # load Swift libsto demangle (default: true)\n"
+		" RABIN2_VERBOSE:   e bin.verbose      # show debugging messages from the parser\n"
 		);
 	}
 	return 1;
@@ -633,6 +634,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	if ((tmp = r_sys_getenv ("RABIN2_LANG"))) {
 		r_config_set (core.config, "bin.lang", tmp);
 		free (tmp);
+	}
+	if (r_sys_getenv_asbool ("RABIN2_VERBOSE")) {
+		r_config_set_b (core.config, "bin.verbose", true);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_DEMANGLE"))) {
 		r_config_set (core.config, "bin.demangle", tmp);
