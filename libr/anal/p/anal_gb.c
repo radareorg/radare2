@@ -9,8 +9,8 @@
 #include <r_asm.h>
 #include <r_anal.h>
 #include <r_reg.h>
-#define GB_DIS_LEN_ONLY
-#include "../../asm/arch/gb/gbdis.c"
+#include "../arch/gb/gbdis.c"
+#include "../arch/gb/gbasm.c"
 #include "../arch/gb/gb_makros.h"
 #include "../arch/gb/meta_gb_cmt.c"
 #include <gb_makros.h>
@@ -705,29 +705,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		return 0;
 	}
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		char mn[32];
-		memset (mn, '\0', sizeof (char) * sizeof (mn));
-		char reg[32];
-		memset (reg, '\0', sizeof (char) * sizeof (reg));
-		switch (gb_op[data[0]].type) {
-		case GB_8BIT:
-			sprintf (mn, "%s", gb_op[data[0]].name);
-			break;
-		case GB_16BIT:
-			sprintf (mn, "%s %s", cb_ops[data[1] >> 3], cb_regs[data[1] & 7]);
-			break;
-		case GB_8BIT + ARG_8:
-			sprintf (mn, gb_op[data[0]].name, data[1]);
-			break;
-		case GB_8BIT + ARG_16:
-			sprintf (mn, gb_op[data[0]].name, data[1] | (data[2] << 8));
-			break;
-		case GB_8BIT + ARG_8 + GB_IO:
-			gb_hardware_register_name (reg, data[1]);
-			sprintf (mn, gb_op[data[0]].name, reg);
-			break;
-		}
-		op->mnemonic = strdup (mn);
+		gbDisass (op, data);
 	}
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
@@ -1474,6 +1452,13 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	return op->size;
 }
 
+static int gb_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
+	if (outsize < 3) {
+		return 0;
+	}
+	return gbAsm (str, outbuf);
+}
+
 /*
 	The reg-profile below does not represent the real gameboy registers.
 		->There is no such thing like m, mpc or mbc. there is only pc.
@@ -1573,6 +1558,7 @@ RAnalPlugin r_anal_plugin_gb = {
 	.esil = true,
 	.bits = 16,
 	.op = &gb_anop,
+	.opasm = &gb_opasm,
 	.set_reg_profile = &set_reg_profile,
 	.archinfo = archinfo,
 	.esil_init = esil_gb_init,
