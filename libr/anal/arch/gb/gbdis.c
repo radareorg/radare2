@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - condret, pancake */
+/* radare - LGPL - Copyright 2013-2022 - condret, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -23,7 +23,7 @@ static int gbOpLength(int gboptype){
 	}
 }
 
-static void gb_hardware_register_name(char *reg, ut8 offset) {
+static void gb_hardware_register_name(char *reg, ut8 offset) {	
 	switch (offset) {
 	case 0x00: // Joy pad info
 		r_str_cpy (reg, "rP1")
@@ -200,35 +200,27 @@ static void gb_hardware_register_name(char *reg, ut8 offset) {
 	}
 }
 
-#ifndef GB_DIS_LEN_ONLY
-static int gbDisass(RAsmOp *op, const ut8 *buf, int len){
-	r_strf_buffer (64);
-	int foo = gbOpLength (gb_op[buf[0]].type);
-	if (len < foo) {
-		return 0;
-	}
-	const char *buf_asm = "invalid";
+static void gbDisass(RAnalOp *op, const ut8 *buf){
 	char reg[32];
 	memset (reg, '\0', sizeof (reg));
 	switch (gb_op[buf[0]].type) {
 	case GB_8BIT:
-		buf_asm = r_strf ("%s", gb_op[buf[0]].name);
+		op->mnemonic = r_str_newf ("%s", gb_op[buf[0]].name);
 		break;
 	case GB_16BIT:
-		buf_asm = r_strf ("%s %s", cb_ops[buf[1] >> 3u], cb_regs[buf[1] & 7u]);
+		op->mnemonic = r_str_newf ("%s %s", cb_ops[buf[1] >> 3u], cb_regs[buf[1] & 7u]);
 		break;
 	case GB_8BIT + ARG_8:
-		buf_asm = r_strf (gb_op[buf[0]].name, buf[1]);
+		op->mnemonic = r_str_newf (gb_op[buf[0]].name, buf[1]);
 		break;
 	case GB_8BIT + ARG_16:
-		buf_asm = r_strf (gb_op[buf[0]].name, buf[1] + 0x100 * buf[2]);
+		op->mnemonic = r_str_newf (gb_op[buf[0]].name, buf[1] + 0x100 * buf[2]);
 		break;
 	case GB_8BIT + ARG_8 + GB_IO:
-		gb_hardware_register_name (reg, buf[1]);
-		buf_asm = r_strf (gb_op[buf[0]].name, reg);
+		gb_hardware_register_name (reg, buf[1]);	//XXX
+		op->mnemonic = r_str_newf (gb_op[buf[0]].name, reg);
 		break;
+	default:
+		op->mnemonic = strdup ("invalid");
 	}
-	r_strbuf_set (&op->buf_asm, buf_asm);
-	return foo;
 }
-#endif
