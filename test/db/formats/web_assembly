@@ -188,3 +188,14 @@ nth paddr      vaddr      bind   type size lib name
 29  0x000002d3 0x000002d3 GLOBAL FUNC 11       f64_nearest_hi
 EOF
 RUN
+
+NAME=WASM get function offset
+FILE=bins/wasm/sections.wasm
+CMDS=<<EOF
+s 0x2e8
+pd 2~sym.static_int_sum[4]
+EOF
+EXPECT=<<EOF
+0x3b9
+EOF
+RUN
