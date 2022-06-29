@@ -131,7 +131,6 @@ asm_plugins += [
   'arm_winedbg',
   'dalvik',
   'java',
-  'm680x_cs',
   'mips_cs',
   'or1k',
   'ppc_as',
