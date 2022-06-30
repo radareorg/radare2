@@ -7,7 +7,7 @@
 
 static void visual_refresh(RCore *core);
 
-#define PROMPTSTR "> ";
+#define PROMPTSTR "> "
 // remove globals pls
 static R_TH_LOCAL int obs = 0;
 static R_TH_LOCAL int blocksize = 0;
