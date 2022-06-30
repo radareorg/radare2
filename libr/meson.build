@@ -135,7 +135,6 @@ asm_plugins += [
   'or1k',
   'ppc_as',
   'ppc_cs',
-  'propeller',
   'riscv',
   'rsp',
   'sh',
