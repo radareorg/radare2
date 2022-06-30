@@ -67,7 +67,6 @@ OBJS+=d/s390.o
 OBJS+=d/msp430.o
 OBJS+=d/pic18c.o
 OBJS+=d/ppc.o
-OBJS+=d/propeller.o
 OBJS+=d/riscv.o
 OBJS+=d/sh.o
 OBJS+=d/sparc.o

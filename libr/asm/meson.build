@@ -23,7 +23,6 @@ r_asm_sources = [
   join_paths('p','asm_or1k.c'),
   join_paths('p','asm_ppc_as.c'),
   join_paths('p','asm_ppc_cs.c'),
-  join_paths('p','asm_propeller.c'),
   join_paths('p','asm_riscv.c'),
   join_paths('p','asm_rsp.c'),
   join_paths('p','asm_sh.c'),
@@ -71,7 +70,6 @@ r_asm_sources = [
   join_paths('arch','mips','gnu','micromips-opc.c'),
   join_paths('arch','mips','mipsasm.c'),
   join_paths('arch','or1k','or1k_disas.c'),
-  join_paths('arch','propeller','propeller_disas.c'),
   #join_paths('arch','riscv','riscv-opc.c'),
   #join_paths('arch','riscv','riscv.c'),
   join_paths('arch','rsp','rsp_idec.c'),
@@ -104,7 +102,6 @@ r_asm_inc = [
     join_paths('arch','h8300'),
     join_paths('arch','rsp'),
     join_paths('arch','v850'),
-    join_paths('arch','propeller'),
     join_paths('arch','v810'),
     join_paths('arch','or1k')
   )
