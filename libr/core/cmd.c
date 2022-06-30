@@ -3217,7 +3217,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 				r_sandbox_system (shell_cmd, 0);
 			}
 		} else {
-			eprintf ("r_core_cmd_pipe: Could not pipe\n");
+			R_LOG_ERROR ("Cannot pipe");
 		}
 		close (stdout_fd);
 	}
@@ -3229,7 +3229,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #else
 #warning r_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM
 #endif
-	eprintf ("r_core_cmd_pipe: unimplemented for this platform\n");
+	R_LOG_ERROR ("unimplemented for this platform");
 #endif
 	if (pipecolor != -1) {
 		r_config_set_i (core->config, "scr.color", pipecolor);
@@ -3270,7 +3270,7 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 			r_config_set (core->config, kv, eq + 1);
 			*eq = '=';
 		} else {
-			eprintf ("Missing '=' in e: expression (%s)\n", kv);
+			R_LOG_ERROR ("Missing '=' in e: expression (%s)", kv);
 		}
 	}
 	free (s);
@@ -3382,7 +3382,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	// XXX if output is a pipe then we don't want to be interactive
 	if ((st64)rep > 1 && r_sandbox_enable (0)) {
-		eprintf ("The command repeat syntax sugar is disabled in sandbox mode (%s)\n", cmd);
+		R_LOG_ERROR ("The command repeat syntax sugar is disabled in sandbox mode (%s)", cmd);
 		goto beach;
 	}
 	if ((st64)rep > 1 && rep > INTERACTIVE_MAX_REP) {
@@ -3587,7 +3587,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				cmd++;
 				p = *cmd ? find_eoq (cmd) : NULL;
 				if (!p || !*p) {
-					eprintf ("Missing \" in (%s).", cmd);
+					R_LOG_ERROR ("Missing \" in (%s)", cmd);
 					r_list_free (tmpenvs);
 					return false;
 				}
@@ -3790,7 +3790,7 @@ escape_pipe:
 		*ptr = '\0';
 		ret = r_cmd_call (core->rcmd, cmd);
 		if (ret == -1) {
-			eprintf ("command error(%s)\n", cmd);
+			R_LOG_ERROR ("command error(%s)", cmd);
 			if (scr_html != -1) {
 				r_config_set_b (core->config, "scr.html", scr_html);
 			}
@@ -3856,7 +3856,7 @@ escape_pipe:
 		str = ptr + 1 + (ptr[1] == '>');
 		r_str_trim (str);
 		if (!*str) {
-			eprintf ("No output?\n");
+			R_LOG_ERROR ("No output?");
 			goto next2;
 		}
 		/* r_cons_flush() handles interactive output (to the terminal)
@@ -3884,7 +3884,7 @@ escape_pipe:
 		}
 		const bool appendResult = (ptr[1] == '>');
 		if (*str == '$' && !str[1]) {
-			eprintf ("No alias name given.\n");
+			R_LOG_ERROR ("No alias name given");
 		} else if (*str == '$') {
 			// pipe to alias variable
 			// register output of command as an alias
@@ -3962,14 +3962,13 @@ next2:
 		if (!backquote) {
 			memmove (ptr + 1, ptr + 2, strlen (ptr) - 1);
 		}
-		if ((ptr[1] == '`' && backquote) ||
-				(ptr[1] == ')' && !backquote)) {
+		if ((ptr[1] == '`' && backquote) || (ptr[1] == ')' && !backquote)) {
 			memmove (ptr, ptr + 2, strlen (ptr) - 1);
 			goto escape_backtick;
 		}
 		ptr2 = r_core_cmd_find_subcmd_end (ptr + 1, backquote);
 		if (!ptr2) {
-			eprintf ("parse: Missing sub-command closing in expression.\n");
+			R_LOG_ERROR ("parse: Missing sub-command closing in expression");
 			goto fail;
 		} else {
 			int value = core->num->value;
@@ -3991,7 +3990,7 @@ next2:
 			}
 			// ignore contents if first char is pipe or comment
 			if (*str == '|' || *str == '*') {
-				eprintf ("r_core_cmd_subst_i: invalid sub-command\n");
+				R_LOG_ERROR ("invalid sub-command");
 				free (str);
 				goto fail;
 			}
@@ -5437,7 +5436,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 	int ret = false;
 
 	if (core->cons->context->cmd_depth < 1) {
-		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
+		R_LOG_ERROR ("That '%s' was too deep...", cmd);
 		return false;
 	}
 	core->cons->context->cmd_depth--;
@@ -5448,7 +5447,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 		}
 		ret = r_core_cmd_subst (core, rcmd);
 		if (ret == -1) {
-			r_cons_eprintf ("|ERROR| Invalid command '%s' (0x%02x)\n", rcmd, *rcmd);
+			R_LOG_ERROR ("Invalid command '%s' (0x%02x)", rcmd, *rcmd);
 			break;
 		}
 		if (!ptr) {

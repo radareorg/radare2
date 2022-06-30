@@ -238,12 +238,12 @@ R_API int __core_visual_view_graph_update(RCore *core, RCoreVisualViewGraph *sta
 	r_cons_strcat_at (mainColstr, colx, 2, colw*2, colh);
 	r_cons_strcat_at (refsColstr, colx * 2, 2, colw, colh);
 
-	char *output = r_core_cmd_strf (core, "pd %d @e:asm.flags=0@ 0x%08"PFMT64x"; pds 256 @ 0x%08"PFMT64x"\n",
+	char *output = r_core_cmd_strf (core, "pd %d @e:asm.flags=0@ 0x%08"PFMT64x"; pds 256 @ 0x%08"PFMT64x,
 		32, status->addr, status->addr);
 	int disy = colh + 2;
 	r_cons_strcat_at (output, 10, disy, w, h - disy);
 	free (output);
-	r_cons_flush();
+	r_cons_flush ();
 
 	free (xrefsColstr);
 	free (mainColstr);

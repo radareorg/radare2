@@ -78,12 +78,12 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 	}
 
 	if (r_sandbox_enable (0)) {
-		eprintf ("Cannot reopen in sandbox\n");
+		R_LOG_ERROR ("Cannot reopen in sandbox");
 		free (obinfilepath);
 		return false;
 	}
 	if (!odesc) {
-		eprintf ("No file opened to reopen\n");
+		R_LOG_ERROR ("No file opened to reopen");
 		free (ofilepath);
 		free (obinfilepath);
 		return false;
@@ -103,7 +103,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		}
 	}
 	if (!ofilepath) {
-		eprintf ("Unknown file path\n");
+		R_LOG_ERROR ("Unknown file path");
 		free (obinfilepath);
 		return false;
 	}
@@ -171,12 +171,11 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		}
 		// close old file
 	} else if (odesc) {
-		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%x,"
-			" attempting to open read-only.\n", path, perm);
+		R_LOG_ERROR ("Cannot reopen file: %s with perms 0x%x, attempting to open read-only", path, perm);
 		// lower it down back
 		//ofile = r_core_file_open (core, path, R_PERM_R, addr);
 	} else {
-		eprintf ("Cannot reopen\n");
+		R_LOG_ERROR ("Cannot reopen");
 	}
 	if (core->io->desc) {
 		core->switch_file_view = 1;
@@ -412,7 +411,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	}
 
 	if (plugin && !strcmp (plugin->name, "dex")) {
-		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"\n");
+		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"");
 	}
 
 	return true;
@@ -434,7 +433,6 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	// opt.fd = fd;
 	opt.xtr_idx = xtr_idx;
 	if (!r_bin_open_io (r->bin, &opt)) {
-		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return false;
 	}
 	binfile = r_bin_cur (r->bin);
@@ -471,7 +469,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	}
 
 	if (plugin && !strcmp (plugin->name, "dex")) {
-		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"\n");
+		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"");
 	}
 	return true;
 }
@@ -706,8 +704,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		desc->perm |= R_PERM_X;
 	}
 	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
-		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12 ;"
-			" wx `ph adler32 $s-12 @12` @8)\"\n");
+		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12;wx `ph adler32 $s-12 @12` @8)\"");
 	}
 	if (!r_config_get_b (r->config, "cfg.debug")) {
 		loadGP (r);
@@ -728,7 +725,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		}
 		r_core_cmd0 (r, "obb 0;s entry0");
 		r_config_set_i (r->config, "bin.at", true);
-		eprintf ("[bin.libs] Linking imports...\n");
+		R_LOG_INFO ("[bin.libs] Linking imports...");
 		RBinImport *imp;
 		const RList *imports = r_bin_get_imports (r->bin);
 		r_list_foreach (imports, iter, imp) {
@@ -768,9 +765,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		}
 		if (binfile->o->regstate) {
 			if (r_reg_arena_set_bytes (r->anal->reg, binfile->o->regstate)) {
-				eprintf ("Setting up coredump: Problem while setting the registers\n");
+				R_LOG_INFO ("Setting up coredump: Problem while setting the registers");
 			} else {
-				eprintf ("Setting up coredump: Registers have been set\n");
+				R_LOG_INFO ("Setting up coredump: Registers have been set");
 				const char *regname = r_reg_get_name (r->anal->reg, R_REG_NAME_SP);
 				if (regname) {
 					RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);

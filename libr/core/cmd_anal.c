@@ -3571,7 +3571,7 @@ static void __updateStats(RCore *core, Sdb *db, ut64 addr, int statsMode) {
 	//sdb_set (db, family, "1", 0);
 	//r_cons_printf ("0x%08"PFMT64x" %s\n", addr, family);
 	r_anal_op_free (op);
-	// r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x"\n", addr);
+	// r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr);
 }
 
 static Sdb *__core_cmd_anal_fcn_stats(RCore *core, const char *input) {
@@ -10867,7 +10867,7 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user
 	} else {
 		r_anal_xrefs_set (core->anal, from, to, R_ANAL_REF_TYPE_NULL);
 		// r_meta_set (core->anal, 'd', from, from + vsize, NULL);
-		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x "\n", vsize, from);
+		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x, vsize, from);
 		if (!r_flag_get_at (core->flags, to, false)) {
 			char *name = r_str_newf ("aav.0x%08"PFMT64x, to);
 			r_flag_set (core->flags, name, to, vsize);

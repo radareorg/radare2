@@ -311,7 +311,7 @@ static void showFormat(RCore *core, const char *name, int mode) {
 			}
 			free (fmt);
 		} else {
-			eprintf ("Cannot find '%s' type\n", name);
+			R_LOG_ERROR ("Cannot find '%s' type", name);
 		}
 	}
 }
@@ -699,7 +699,7 @@ static bool print_link_readable_cb(void *p, const char *k, const char *v) {
 		return 1;
 	}
 	r_cons_printf ("(%s)\n", v);
-	r_core_cmdf (core, "pf %s @ 0x%s\n", fmt, k + strlen ("link."));
+	r_core_cmdf (core, "pf %s @ 0x%s", fmt, k + strlen ("link."));
 	return true;
 }
 
@@ -708,11 +708,11 @@ static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	char *fmt = r_type_format (core->anal->sdb_types, v);
 	if (!fmt) {
-		eprintf ("Can't find type %s\n", v);
+		R_LOG_ERROR ("Can't find type %s", v);
 		return true;
 	}
 	r_cons_printf ("{\"%s\":", v);
-	r_core_cmdf (core, "pfj %s @ 0x%s\n", fmt, k + strlen ("link."));
+	r_core_cmdf (core, "pfj %s @ 0x%s", fmt, k + strlen ("link."));
 	r_cons_printf ("}");
 	return true;
 }
@@ -1175,7 +1175,7 @@ static int cmd_type(void *data, const char *input) {
 			*member_name++ = 0;
 		}
 		if (name && (r_type_kind (TDB, name) != R_TYPE_ENUM)) {
-			eprintf ("%s is not an enum\n", name);
+			R_LOG_ERROR ("%s is not an enum", name);
 			free (name);
 			break;
 		}
@@ -1633,7 +1633,7 @@ static int cmd_type(void *data, const char *input) {
 			char *fmt = r_type_format (TDB, type_name);
 			if (fmt && *fmt) {
 				ut64 val = core->offset;
-				r_core_cmdf (core, "pf %s @v:0x%08" PFMT64x "\n", fmt, val);
+				r_core_cmdf (core, "pf %s @v:0x%08" PFMT64x, fmt, val);
 			} else {
 				eprintf ("Usage: tpv [type] @ [value]\n");
 			}

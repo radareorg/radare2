@@ -2983,16 +2983,14 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 					}
 				}
 				if (!loaded && !inDebugger) {
-					r_core_cmdf (r, "on malloc://%d 0x%"PFMT64x" # bss\n",
-						section->vsize, addr);
+					r_core_cmdf (r, "on malloc://%d 0x%"PFMT64x, section->vsize, addr);
 				}
 			}
 #endif
 			if (section->format) {
 				// This is damn slow if section vsize is HUGE
 				if (section->vsize < 1024 * 1024 * 2) {
-					r_core_cmdf (r, "%s @ 0x%" PFMT64x,
-							section->format, section->vaddr);
+					r_core_cmdf (r, "%s @ 0x%" PFMT64x, section->format, section->vaddr);
 				}
 			}
 			if (r->bin->prefix) {
@@ -3696,7 +3694,7 @@ static int bin_size(RCore *r, PJ *pj, int mode) {
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_printf ("f bin_size @ %"PFMT64u"\n", size);
 	} else if (IS_MODE_SET (mode)) {
-		r_core_cmdf (r, "f bin_size @ %"PFMT64u"\n", size);
+		r_core_cmdf (r, "f bin_size @ %"PFMT64u, size);
 	} else {
 		r_cons_printf ("%"PFMT64u"\n", size);
 	}
