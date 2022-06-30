@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2021 - pancake */
+/* radare - LGPL - Copyright 2011-2022 - pancake */
 
 #include <r_core.h>
 
@@ -32,13 +32,13 @@ R_API bool r_core_hack_dalvik(RCore *core, const char *op, const RAnalOp *analop
 	} else if (!strcmp (op, "ret2")) {
 		r_core_cmdf (core, "wx 12200f00"); // mov v0, 2;ret v0
 	} else if (!strcmp (op, "jinf")) {
-		r_core_cmd0 (core, "wx 2800\n");
+		r_core_cmd0 (core, "wx 2800");
 	} else if (!strcmp (op, "ret1")) {
 		r_core_cmdf (core, "wx 12100f00"); // mov v0, 1;ret v0
 	} else if (!strcmp (op, "ret0")) {
 		r_core_cmdf (core, "wx 12000f00"); // mov v0, 0;ret v0
 	} else {
-		eprintf ("Unsupported operation '%s'\n", op);
+		R_LOG_ERROR ("Unsupported operation '%s'", op);
 		return false;
 	}
 	return true;
@@ -52,18 +52,18 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 	} else if (!strcmp (op, "trap")) {
 		r_core_cmdf (core, "wx 000020d4");
 	} else if (!strcmp (op, "jz") || !strcmp (op, "je")) {
-		eprintf ("ARM jz hack not supported\n");
+		R_LOG_ERROR ("ARM jz hack not supported");
 		return false;
 	} else if (!strcmp (op, "jinf")) {
 		r_core_cmdf (core, "wx 00000014");
 	} else if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
-		eprintf ("ARM jnz hack not supported\n");
+		R_LOG_ERROR ("ARM jnz hack not supported");
 		return false;
 	} else if (!strcmp (op, "nocj")) {
-		eprintf ("ARM jnz hack not supported\n");
+		R_LOG_ERROR ("ARM jnz hack not supported");
 		return false;
 	} else if (!strcmp (op, "recj")) {
-		eprintf ("TODO: use jnz or jz\n");
+		R_LOG_ERROR ("TODO: use jnz or jz");
 		return false;
 	} else if (!strcmp (op, "ret1")) {
 		r_core_cmdf (core, "wa mov x0, 1,,ret");
@@ -72,7 +72,7 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 	} else if (!strcmp (op, "retn")) {
 		r_core_cmdf (core, "wa mov x0, -1,,ret");
 	} else {
-		eprintf ("Invalid operation '%s'\n", op);
+		R_LOG_ERROR ("Invalid operation '%s'", op);
 		return false;
 	}
 	return true;
@@ -104,10 +104,10 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 		r_core_cmdf (core, "wx %s", str);
 		free (str);
 	} else if (!strcmp (op, "jinf")) {
-		r_core_cmdf (core, "wx %s\n", (bits==16)? "fee7": "feffffea");
+		r_core_cmdf (core, "wx %s", (bits==16)? "fee7": "feffffea");
 	} else if (!strcmp (op, "trap")) {
 		const char* trapcode = (bits==16)? "bebe": "fedeffe7";
-		r_core_cmdf (core, "wx %s\n", trapcode);
+		r_core_cmdf (core, "wx %s", trapcode);
 	} else if (!strcmp (op, "jz") || !strcmp (op, "je")) {
 		if (bits == 16) {
 			switch (b[1]) {
@@ -121,7 +121,7 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 				r_core_cmd0 (core, "wx d0 @ $$+1"); //BEQ
 				break;
 			default:
-				eprintf ("Current opcode is not conditional\n");
+				R_LOG_ERROR ("Current opcode is not conditional");
 				return false;
 			}
 		} else {
@@ -158,7 +158,7 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 			case 0xb9: // CBNZ
 			case 0xbb: // CBNZ
 			case 0xd1: // BNE
-				r_core_cmd0 (core, "wx e0 @ $$+1\n"); //BEQ
+				r_core_cmd0 (core, "wx e0 @ $$+1"); //BEQ
 				break;
 			default:
 				R_LOG_ERROR ("Current opcode is not conditional");
@@ -173,21 +173,21 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 		return false;
 	} else if (!strcmp (op, "ret1")) {
 		if (bits == 16) {
-			r_core_cmd0 (core, "wx 01207047\n"); // mov r0, 1; bx lr
+			r_core_cmd0 (core, "wx 01207047"); // mov r0, 1; bx lr
 		} else {
-			r_core_cmd0 (core, "wx 0100b0e31eff2fe1\n"); // movs r0, 1; bx lr
+			r_core_cmd0 (core, "wx 0100b0e31eff2fe1"); // movs r0, 1; bx lr
 		}
 	} else if (!strcmp (op, "ret0")) {
 		if (bits == 16) {
-			r_core_cmd0 (core, "wx 00207047\n"); // mov r0, 0; bx lr
+			r_core_cmd0 (core, "wx 00207047"); // mov r0, 0; bx lr
 		} else {
-			r_core_cmd0 (core, "wx 0000a0e31eff2fe1\n"); // movs r0, 0; bx lr
+			r_core_cmd0 (core, "wx 0000a0e31eff2fe1"); // movs r0, 0; bx lr
 		}
 	} else if (!strcmp (op, "retn")) {
 		if (bits == 16) {
-			r_core_cmd0 (core, "wx ff207047\n"); // mov r0, -1; bx lr
+			r_core_cmd0 (core, "wx ff207047"); // mov r0, -1; bx lr
 		} else {
-			r_core_cmd0 (core, "wx ff00a0e31eff2fe1\n"); // movs r0, -1; bx lr
+			r_core_cmd0 (core, "wx ff00a0e31eff2fe1"); // movs r0, -1; bx lr
 		}
 	} else {
 		R_LOG_ERROR ("Invalid operation");
@@ -211,22 +211,22 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 			memcpy (str + (i * 2), "90", 2);
 		}
 		str[size*2] = '\0';
-		r_core_cmdf (core, "wx %s\n", str);
+		r_core_cmdf (core, "wx %s", str);
 		free (str);
 	} else if (!strcmp (op, "trap")) {
-		r_core_cmd0 (core, "wx cc\n");
+		r_core_cmd0 (core, "wx cc");
 	} else if (!strcmp (op, "jz") || !strcmp (op, "je")) {
 		if (b[0] == 0x75) {
-			r_core_cmd0 (core, "wx 74\n");
+			r_core_cmd0 (core, "wx 74");
 		} else {
 			R_LOG_ERROR ("Current opcode is not conditional");
 			return false;
 		}
 	} else if (!strcmp (op, "jinf")) {
-		r_core_cmd0 (core, "wx ebfe\n");
+		r_core_cmd0 (core, "wx ebfe");
 	} else if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
 		if (b[0] == 0x74) {
-			r_core_cmd0 (core, "wx 75\n");
+			r_core_cmd0 (core, "wx 75");
 		} else {
 			R_LOG_ERROR ("Current opcode is not conditional");
 			return false;
@@ -243,19 +243,19 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 	} else if (!strcmp (op, "recj")) {
 		int is_near = (*b == 0xf);
 		if (b[0] < 0x80 && b[0] >= 0x70) { // short jmps: jo, jno, jb, jae, je, jne, jbe, ja, js, jns
-				r_core_cmdf (core, "wx %x\n", (b[0]%2)? b[0] - 1: b[0] + 1);
+				r_core_cmdf (core, "wx %x", (b[0]%2)? b[0] - 1: b[0] + 1);
 		} else if (is_near && b[1] < 0x90 && b[1] >= 0x80) { // near jmps: jo, jno, jb, jae, je, jne, jbe, ja, js, jns
-				r_core_cmdf (core, "wx 0f%x\n", (b[1]%2)? b[1] - 1: b[1] + 1);
+				r_core_cmdf (core, "wx 0f%x", (b[1]%2)? b[1] - 1: b[1] + 1);
 		} else {
 			R_LOG_ERROR ("Invalid conditional jump opcode");
 			return false;
 		}
 	} else if (!strcmp (op, "ret1")) {
-		r_core_cmd0 (core, "wx c20100\n");
+		r_core_cmd0 (core, "wx c20100");
 	} else if (!strcmp (op, "ret0")) {
-		r_core_cmd0 (core, "wx c20000\n");
+		r_core_cmd0 (core, "wx c20000");
 	} else if (!strcmp (op, "retn")) {
-		r_core_cmd0 (core, "wx c2ffff\n");
+		r_core_cmd0 (core, "wx c2ffff");
 	} else {
 		R_LOG_ERROR ("Invalid operation '%s'", op);
 		return false;
