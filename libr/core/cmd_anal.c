@@ -1891,7 +1891,7 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			r_str_trim (p);
 			ut64 addr = core->offset;
-			if ((vaddr = strchr (p , ' '))) {
+			if ((vaddr = strchr (p, ' '))) {
 				addr = r_num_math (core->num, vaddr);
 			}
 			RAnalVar *var = r_anal_function_get_var (fcn, str[0], idx);
@@ -10259,8 +10259,14 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 static void cmd_anal_graph(RCore *core, const char *input) {
 	core->graph->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
 	r_cons_enable_highlight (false);
-	if (strchr (input, '?')) {
+	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_ag);
+		return;
+	}
+	if (strchr (input, '?')) {
+		// causes infinite recursion in ?*
+		// r_core_cmd_help (core, help_msg_ag);
+		// eprintf ("See ag?");
 		return;
 	}
 	switch (input[0]) {
@@ -10273,23 +10279,22 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			cmd_agfb (core);
 			break;
 		case 'm': /// "agfm" // mermaid
-		{
-			bool add_asm = input[2] == 'a'? true: false;
-			cmd_graph_mermaid (core, add_asm);
-		} break;
+			cmd_graph_mermaid (core, input[2] == 'a');
+			break;
 		case ' ': { // "agf "
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			r_core_visual_graph (core, NULL, fcn, false);
 			break;
 		}
 		case 'v': // "agfv"
-			eprintf ("\rRendering graph...\n");
+		{
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ROOT);
 			if (fcn) {
 				r_core_visual_graph (core, NULL, fcn, 1);
 			}
 			r_cons_enable_mouse (false);
 			r_cons_show_cursor (true);
+		}
 			break;
 		case 't': { // "agft" - tiny graph
 			int e = r_config_get_i (core->config, "graph.edges");
