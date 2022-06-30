@@ -7,7 +7,7 @@
 #include <r_anal.h>
 #include <r_util.h>
 
-#include <propeller_disas.h>
+#include "propeller/propeller_disas.h"
 
 static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	if (len < 4) {

@@ -9,12 +9,12 @@
 #include <r_asm.h>
 #include <r_anal.h>
 #include <r_reg.h>
-#include "../arch/gb/gbdis.c"
-#include "../arch/gb/gbasm.c"
-#include "../arch/gb/gb_makros.h"
-#include "../arch/gb/meta_gb_cmt.c"
-#include <gb_makros.h>
-#include <gb.h>
+#include "gb/gbdis.c"
+#include "gb/gbasm.c"
+#include "gb/gb_makros.h"
+#include "gb/meta_gb_cmt.c"
+#include "gb/gb_makros.h"
+#include "gb/gb.h"
 
 static const char *regs_1[] = { "Z", "N", "H", "C"};
 static const char *regs_8[] = { "b", "c", "d", "e", "h", "l", "a", "a"};				//deprecate this and rename regs_x

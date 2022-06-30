@@ -1,6 +1,6 @@
 OBJ_KVX=anal_kvx.o
 OBJ_KVX+=../arch/kvx/kvx-dis.o ../arch/kvx/kvx-reg.o
-CFLAGS+=-Iarch/kvx
+CFLAGS+=-Iarch
 
 STATIC_OBJ+=$(OBJ_KVX)
 
