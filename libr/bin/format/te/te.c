@@ -148,15 +148,14 @@ R_IPI const char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin) {
 	case TE_IMAGE_FILE_MACHINE_POWERPCFP:
 		return "ppc";
 	default:
+		// return "unknown";
 		return "x86";
 	}
-	return "unknown";
 }
 
 int r_bin_te_get_bits(struct r_bin_te_obj_t* bin) {
 	return 32; // It is always 32 bit by now
 }
-
 
 RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 	RBinAddr *entry = NULL;
@@ -176,8 +175,7 @@ RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 	return entry;
 }
 
-ut64 r_bin_te_get_image_base(struct r_bin_te_obj_t* bin)
-{
+ut64 r_bin_te_get_image_base(struct r_bin_te_obj_t* bin) {
 	if (bin && bin->header) {
 		return (ut64)bin->header->ImageBase;
 	}

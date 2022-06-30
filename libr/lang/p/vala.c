@@ -70,9 +70,10 @@ static bool lang_vala_file(RLang *lang, const char *file, bool silent) {
 	if (r_sandbox_system (cmdbuf, 1) != 0) {
 		free (libname);
 		free (name);
+		free (cmdbuf);
 		return false;
 	}
-
+	free (cmdbuf);
 	cmdbuf = r_str_newf ("./lib%s." R_LIB_EXT, libname);
 	free (libname);
 
