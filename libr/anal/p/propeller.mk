@@ -1,5 +1,5 @@
 OBJ_propeller=anal_propeller.o
-CFLAGS+=-Iarch/propeller/
+CFLAGS+=-Iarch
 
 STATIC_OBJ+=${OBJ_propeller}
 OBJ_propeller+=../arch/propeller/propeller_disas.o

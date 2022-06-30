@@ -175,9 +175,6 @@ r_anal_sources = [
   join_paths('..','asm','arch','pyc','pyc_dis.c')
 ]
 incdirs = [
-    join_paths ('arch', 'gb'),
-    join_paths ('arch', 'kvx'),
-    join_paths ('arch', 'propeller'),
     'arch'
 ]
 
