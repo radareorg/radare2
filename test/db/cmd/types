@@ -180,7 +180,7 @@ EXPECT=<<EOF
 pf d
 EOF
 EXPECT_ERR=<<EOF
-Cannot find 'int' type
+ERROR: Cannot find 'int' type
 EOF
 RUN
 
