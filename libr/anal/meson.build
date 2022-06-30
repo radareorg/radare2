@@ -152,7 +152,7 @@ r_anal_sources = [
   join_paths('../asm/arch','ppc','gnu','ppc-opc.c'),
  # join_paths('arch','ppc','libvle','vle.c'),
  # join_paths('arch','ppc','libps','libps.c'),
-  join_paths('..','asm','arch','rsp','rsp_idec.c'),
+  join_paths('arch','rsp','rsp_idec.c'),
   join_paths('..','asm','arch','tms320','tms320_dasm.c'),
   join_paths('..','asm','arch','tms320','c55x_plus','ins.c'),
   join_paths('..','asm','arch','tms320','c55x_plus','c55plus.c'),
@@ -177,7 +177,8 @@ r_anal_sources = [
 incdirs = [
     join_paths ('arch', 'gb'),
     join_paths ('arch', 'kvx'),
-    join_paths ('arch', 'propeller')
+    join_paths ('arch', 'propeller'),
+    'arch'
 ]
 
 if get_option('use_v35')

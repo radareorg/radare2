@@ -309,3 +309,4 @@ Process[15449] crashed: radare2. Too many corpses being created.
 You can't sleep now there are monsters nearby
 Every journey begins with a choice
 Do 'r2pm -i r2premium; echo "e cfg.fortunes.type = nsfw" >> ~/.radare2rc' for a even more fun with r2
+pneumonic
