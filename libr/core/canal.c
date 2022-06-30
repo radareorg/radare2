@@ -3050,9 +3050,9 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	}
 	if (fcn) {
 		/* show variables  and arguments */
-		r_core_cmdf (core, "afvb* @ 0x%"PFMT64x"\n", fcn->addr);
-		r_core_cmdf (core, "afvr* @ 0x%"PFMT64x"\n", fcn->addr);
-		r_core_cmdf (core, "afvs* @ 0x%"PFMT64x"\n", fcn->addr);
+		r_core_cmdf (core, "afvb* @ 0x%"PFMT64x, fcn->addr);
+		r_core_cmdf (core, "afvr* @ 0x%"PFMT64x, fcn->addr);
+		r_core_cmdf (core, "afvs* @ 0x%"PFMT64x, fcn->addr);
 	}
 	/* Show references */
 	RListIter *refiter;
@@ -3476,23 +3476,18 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	ut64 opaddr = bb->addr;
 	const int mask = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT;
 	int pos;
-#if 1
 	int i = 0;
 	for (i = 0; i < bb->ninstr; i++) {
 		pos = i? bb->op_pos[i - 1]: 0;
 		ut64 addr = bb->addr + pos;
 		if (addr != opaddr) {
 			if (ctx->core->anal->verbose) {
-				eprintf ("Inconsistency 0x%" PFMT64x " vs 0x%" PFMT64x " \n", addr, opaddr);
+				R_LOG_WARN ("Inconsistency 0x%" PFMT64x " vs 0x%" PFMT64x, addr, opaddr);
 			}
 		}
 		if (addr < bb->addr || addr >= bb->addr + bb->size) {
 			break;
 		}
-#else
-	ut64 endaddr = bb->addr + bb->size;
-	while (opaddr < endaddr) {
-#endif
 		if (opaddr < bb->addr || opaddr >= bb->addr + bb->size) {
 			break;
 		}
@@ -4696,7 +4691,7 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 	}
 	// join all basic blocks from f1 into f2 if they are not
 	// delete f2
-	eprintf ("Merge 0x%08"PFMT64x" into 0x%08"PFMT64x"\n", addr, addr2);
+	R_LOG_INFO ("Merge 0x%08"PFMT64x" into 0x%08"PFMT64x, addr, addr2);
 	r_list_foreach (f1->bbs, iter, bb) {
 		if (first) {
 			min = bb->addr;
@@ -6007,15 +6002,15 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 			r_core_cmdf (core, "af+ %s fcn.%s", addr, fi? fi->name: addr);
 			r_core_cmdf (core, "afb+ %s %s %d", addr, addr, (int)sz);
 		} else {
-			r_core_cmdf (core, "aab@%s!%s-%s\n", addr, addr2, addr);
+			r_core_cmdf (core, "aab@%s!%s-%s", addr, addr2, addr);
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, r_num_math (core->num, addr), 0);
 			if (fcn) {
 				eprintf ("%s  %s %"PFMT64d"    # %s\n", addr, "af", sz, fcn->name);
 			} else {
 				if (a2f) {
-					r_core_cmdf (core, "a2f@%s!%s-%s\n", addr, addr2, addr);
+					r_core_cmdf (core, "a2f@%s!%s-%s", addr, addr2, addr);
 				} else {
-					r_core_cmdf (core, "af@%s!%s-%s\n", addr, addr2, addr);
+					r_core_cmdf (core, "af@%s!%s-%s", addr, addr2, addr);
 				}
 				fcn = r_anal_get_fcn_in (core->anal, r_num_math (core->num, addr), 0);
 				eprintf ("%s  %s %.4"PFMT64d"   # %s\n", addr, "aab", sz, fcn?fcn->name: "");

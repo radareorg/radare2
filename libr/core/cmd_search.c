@@ -2832,8 +2832,8 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 		pj_kN (param->pj, "value", to);
 		pj_end (param->pj);
 	}
-	r_core_cmdf (core, "f %s.value.0x%08"PFMT64x" %d = 0x%08"PFMT64x" \n", prefix, to, vsize, to); // flag at value of hit
-	r_core_cmdf (core, "f %s.offset.0x%08"PFMT64x" %d = 0x%08"PFMT64x " \n", prefix, from, vsize, from); // flag at offset of hit
+	r_core_cmdf (core, "f %s.value.0x%08"PFMT64x" %d = 0x%08"PFMT64x, prefix, to, vsize, to); // flag at value of hit
+	r_core_cmdf (core, "f %s.offset.0x%08"PFMT64x" %d = 0x%08"PFMT64x, prefix, from, vsize, from); // flag at offset of hit
 	const char *cmdHit = r_config_get (core->config, "cmd.hit");
 	if (cmdHit && *cmdHit) {
 		ut64 addr = core->offset;

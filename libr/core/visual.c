@@ -7,7 +7,7 @@
 
 static void visual_refresh(RCore *core);
 
-static const char *promptstr = "> ";
+#define PROMPTSTR "> "
 // remove globals pls
 static R_TH_LOCAL int obs = 0;
 static R_TH_LOCAL int blocksize = 0;
@@ -804,7 +804,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 	if (PIDX != 2) {
 		core->seltab = 0;
 	}
-	r_line_set_prompt (promptstr);
+	r_line_set_prompt (PROMPTSTR);
 	r_core_visual_showcursor (core, true);
 	r_cons_fgets (buf, sizeof (buf), 0, NULL);
 	if (!strcmp (buf, "q")) {
@@ -1357,7 +1357,7 @@ static void addComment(RCore *core, ut64 addr) {
 	r_core_visual_showcursor (core, true);
 	r_cons_flush ();
 	r_cons_set_raw (false);
-	r_line_set_prompt (promptstr);
+	r_line_set_prompt (PROMPTSTR);
 	r_cons_enable_mouse (false);
 	if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
 		buf[0] = '\0';
@@ -2604,7 +2604,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_cons_flush ();
 			r_cons_set_raw (false);
 			strcpy (buf, "\"wa ");
-			r_line_set_prompt (promptstr);
+			r_line_set_prompt (PROMPTSTR);
 			r_cons_enable_mouse (false);
 			if (r_cons_fgets (buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
 				buf[0] = '\0';
@@ -2869,7 +2869,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (*buf) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							r_core_cmdf (core, "dr %s = %s\n", creg, buf);
+							r_core_cmdf (core, "dr %s = %s", creg, buf);
 						}
 					}
 					return true;
@@ -3382,7 +3382,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							r_core_cmdf (core, "dr %s = %s-1\n", creg, creg);
+							r_core_cmdf (core, "dr %s = %s-1", creg, creg);
 						}
 					} else {
 						int w = r_config_get_i (core->config, "hex.cols");
@@ -3416,7 +3416,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							r_core_cmdf (core, "dr %s = %s+1\n", creg, creg);
+							r_core_cmdf (core, "dr %s = %s+1", creg, creg);
 						}
 					} else {
 						int w = r_config_get_i (core->config, "hex.cols");
@@ -3452,7 +3452,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
 							int delta = core->rasm->config->bits / 8;
-							r_core_cmdf (core, "dr %s = %s-%d\n", creg, creg, delta);
+							r_core_cmdf (core, "dr %s = %s-%d", creg, creg, delta);
 						}
 					} else {
 						int w = r_config_get_i (core->config, "hex.cols");
@@ -3495,7 +3495,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
 							int delta = core->rasm->config->bits / 8;
-							r_core_cmdf (core, "dr %s = %s+%d\n", creg, creg, delta);
+							r_core_cmdf (core, "dr %s = %s+%d", creg, creg, delta);
 						}
 					} else {
 						int w = r_config_get_i (core->config, "hex.cols");
