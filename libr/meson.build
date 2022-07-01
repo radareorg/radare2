@@ -136,7 +136,6 @@ asm_plugins += [
   'ppc_as',
   'ppc_cs',
   'riscv',
-  'sh',
   'tms320',
   'x86_as',
   'x86_cs',
