@@ -10,6 +10,7 @@
 (git grep 'x""' libr) && exit 1
 (git grep '4d""' libr) && exit 1
 (git grep 'r_core_cmd' libr | grep -v /lang/ | grep '\\n') && exit 1
+(git grep 'r_str_startswith ("' libr ) && exit 1
 
 # pending cleanups
 # (git grep 'TODO' libr) # && exit 1 # use r_str_startswith()

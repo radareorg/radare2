@@ -1,13 +1,13 @@
-/* radare - LGPL - Copyright 2008-2021 - pancake */
+/* radare - LGPL - Copyright 2008-2022 - pancake */
 
-#include "r_io.h"
-#include "r_lib.h"
+#include <r_io.h>
+#include <r_lib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "../io_memory.h"
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "http://", 7));
+	return r_str_startswith (pathname, "http://");
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
@@ -23,7 +23,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			mal->size = rlen;
 			return r_io_desc_new (io, &r_io_plugin_malloc, pathname, R_PERM_RW | rw, mode, mal);
 		}
-		eprintf ("No HTTP response\n");
+		R_LOG_ERROR ("No HTTP response");
 		free (mal);
 	}
 	return NULL;

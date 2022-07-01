@@ -304,7 +304,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		stack_rev = true;
 	}
 	place = r_anal_cc_arg (anal, cc, 0);
-	if (place && r_str_startswith ("stack", place)) {
+	if (place && r_str_startswith (place, "stack")) {
 		in_stack = true;
 	}
 	if (verbose && !strncmp (fcn_name, "sym.imp.", 8)) {
@@ -341,7 +341,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		if (!in_stack) {
 			//XXX: param arg_num must be fixed to support floating point register
 			place = r_anal_cc_arg (anal, cc, arg_num);
-			if (place && r_str_startswith ("stack", place)) {
+			if (place && r_str_startswith (place, "stack")) {
 				in_stack = true;
 			}
 		}
