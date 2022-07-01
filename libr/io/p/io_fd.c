@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2020 - pancake */
+/* radare - LGPL - Copyright 2020-2022 - pancake */
 
-#include "r_io.h"
-#include "r_lib.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <r_cons.h>
+#include <r_io.h>
+#include <r_lib.h>
 #include <sys/types.h>
 
 #if __WINDOWS__
@@ -58,12 +55,12 @@ static ut64 __lseek(RIO* io, RIODesc *desc, ut64 offset, int whence) {
 }
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return !strncmp (pathname, FDURI, strlen (FDURI));
+	return r_str_startswith (pathname, FDURI);
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (r_sandbox_enable (false)) {
-		eprintf ("Do not permit " FDURI " in sandbox mode.\n");
+		R_LOG_ERROR ("Do not permit " FDURI " in sandbox mode");
 		return NULL;
 	}
 	if (!__check (io, pathname, 0)) {

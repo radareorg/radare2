@@ -89,19 +89,18 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 }
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	if (!strncmp (file, "attach://", 9)) {
+	if (r_str_startswith (file, "attach://")) {
 		return true;
 	}
-	return !strncmp (file, "w32dbg://", 9);
+	return r_str_startswith (file, "w32dbg://");
 }
 
 static int __w32_first_thread(int pid) {
-	HANDLE th;
 	HANDLE thid;
-	THREADENTRY32 te32;
-	te32.dwSize = sizeof (THREADENTRY32);
-
-	th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
+	THREADENTRY32 te32 = {
+		.dwSize = sizeof (THREADENTRY32);
+	};
+	HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
 	if (th == INVALID_HANDLE_VALUE) {
 		return -1;
 	}
@@ -122,7 +121,7 @@ static int __w32_first_thread(int pid) {
 		}
 	} while (Thread32Next (th, &te32));
 err_first_th:
-	eprintf ("Could not find an active thread for pid %d\n", pid);
+	R_LOG_ERROR ("Could not find an active thread for pid %d", pid);
 	CloseHandle (th);
 	return pid;
 }
@@ -162,7 +161,7 @@ static int __open_proc(RIO *io, int pid, bool attach) {
 			goto att_exit;
 		}
 		if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
-			eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
+			R_LOG_ERROR ("exception code 0x%04x", (ut32)de.dwDebugEventCode);
 			goto att_exit;
 		}
 		wrap->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
@@ -184,7 +183,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 			return NULL;
 		}
-		if (__open_proc (io, atoi (file + 9), !strncmp (file, "attach://", 9)) == -1) {
+		bool must_attach = r_str_startswith (file, "attach://");
+		if (__open_proc (io, atoi (file + 9), must_attach) == -1) {
 			return NULL;
 		}
 		RW32Dw *wrap = io->dbgwrap;
@@ -233,7 +233,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "")) {
 		// do nothing
-	} else if (!strncmp (cmd, "pid", 3)) {
+	} else if (r_str_startswith (cmd, "pid")) {
 		if (cmd[3] == ' ') {
 			int pid = atoi (cmd + 3);
 			if (pid > 0 && pid != wrap->pi.dwThreadId && pid != wrap->pi.dwProcessId) {

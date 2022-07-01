@@ -22,7 +22,7 @@ static bool r_io_ar_plugin_open(RIO *io, const char *file, bool many) {
 	if (many) {
 		return (r_io_get_individual_schema (file));
 	}
-	return !strncmp ("ar://", file, 5) || !strncmp ("lib://", file, 6);
+	return r_str_startswith ("ar://", file) || r_str_startswith ("lib://", file);
 }
 
 static bool r_io_ar_close(RIODesc *fd) {

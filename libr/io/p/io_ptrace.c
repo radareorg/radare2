@@ -178,10 +178,10 @@ static void close_pidmem(RIOPtrace *iop) {
 }
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	if (!strncmp (file, "ptrace://", 9)) {
+	if (r_str_startswith (file, "ptrace://")) {
 		return true;
 	}
-	if (!strncmp (file, "attach://", 9)) {
+	if (r_str_startswith (file, "attach://")) {
 		return true;
 	}
 	return false;
@@ -312,7 +312,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "mem")) {
 		open_pidmem (iop);
 	} else
-	if (!strncmp (cmd, "pid", 3)) {
+	if (r_str_startswith (cmd, "pid")) {
 		if (iop) {
 			if (cmd[3] == ' ') {
 				int pid = atoi (cmd + 4);

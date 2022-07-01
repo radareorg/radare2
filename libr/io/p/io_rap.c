@@ -66,10 +66,10 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!__rap_plugin_open (io, pathname, 0)) {
 		return NULL;
 	}
-	bool is_ssl = (!strncmp (pathname, "raps://", 7));
+	bool is_ssl = r_str_startswith (pathname, "raps://");
 	const char *host = pathname + (is_ssl? 7: 6);
 	if (!(port = strchr (host, ':'))) {
-		eprintf ("rap: wrong uri\n");
+		R_LOG_ERROR ("rap: wrong uri");
 		return NULL;
 	}
 	listenmode = (*host == ':');
@@ -83,7 +83,7 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		file++;
 	}
 	if (r_sandbox_enable (0)) {
-		eprintf ("sandbox: Cannot use network\n");
+		R_LOG_ERROR ("sandbox: Cannot use network");
 		return NULL;
 	}
 	if (listenmode) {

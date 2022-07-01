@@ -88,7 +88,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	const char *uri = "r2web://";
-	return (!strncmp (pathname, uri, strlen (uri)));
+	return r_str_startswith (pathname, uri);
 }
 
 static inline int getmalfd(RIOR2Web *mal) {

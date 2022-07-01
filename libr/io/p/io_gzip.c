@@ -158,24 +158,28 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "gzip://", 7));
+	return r_str_startswith (pathname, "gzip://");
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
-		RIOGzip *mal = R_NEW0 (RIOGzip);
-		if (!mal) {
+		size_t len;
+		ut8 *data = (ut8 *)r_file_slurp (pathname + 7, &len); //memleak here?
+		if (!data) {
 			return NULL;
 		}
-		size_t len;
-		ut8 *data = (ut8 *)r_file_slurp (pathname+7, &len);	//memleak here?
+		RIOGzip *mal = R_NEW0 (RIOGzip);
+		if (!mal) {
+			free (data);
+			return NULL;
+		}
 		int *size = (int*)&mal->size;
 		mal->buf = r_inflate (data, (int)len, NULL, size);
 		free (data);
 		if (mal->buf) {
 			return r_io_desc_new (io, &r_io_plugin_gzip, pathname, rw, mode, mal);
 		}
-		eprintf ("Cannot allocate (%s) %d byte(s)\n", pathname+9, mal->size);
+		R_LOG_ERROR ("Cannot allocate %d bytes for %s\n", mal->size, pathname + 9);
 		free (mal);
 	}
 	return NULL;

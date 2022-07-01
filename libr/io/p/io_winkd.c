@@ -21,7 +21,7 @@
 #include <winkd.h>
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	return (!strncmp (file, "winkd://", 8));
+	return r_str_startswith (file, "winkd://");
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {

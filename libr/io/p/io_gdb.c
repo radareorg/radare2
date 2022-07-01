@@ -21,7 +21,7 @@ static bool __close(RIODesc *fd);
 static libgdbr_t *desc = NULL;
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	return (!strncmp (file, "gdb://", 6));
+	return r_str_startswith (file, "gdb://");
 }
 
 static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {

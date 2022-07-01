@@ -72,12 +72,12 @@ static bool __close(RIODesc *desc) {
 }
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return !strncmp (pathname, ISOTPURI, strlen (ISOTPURI));
+	return r_str_startswith (pathname, ISOTPURI);
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (r_sandbox_enable (false)) {
-		eprintf ("The " ISOTPURI " uri is not permitted in sandbox mode.\n");
+		R_LOG_ERROR ("The " ISOTPURI " uri is not permitted in sandbox mode");
 		return NULL;
 	}
 	if (!__check (io, pathname, 0)) {
@@ -105,7 +105,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	pathname += strlen (ISOTPURI);
 
 	if (*pathname == '?') {
-		eprintf ("Usage: r2 isotp://interface/source/destination\n");
+		R_LOG_ERROR ("Usage: r2 isotp://interface/source/destination");
 	} else {
 		char *host = strdup (pathname);
 		const char *port = "";
@@ -116,7 +116,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		data->sc = r_socket_new (false);
 		if (!r_socket_connect (data->sc, host, port, R_SOCKET_PROTO_CAN, 0)) {
-			eprintf ("Cannot connect\n");
+			R_LOG_ERROR ("Cannot connect");
 			free (host);
 			free_socketdata (data);
 			return NULL;
