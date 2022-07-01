@@ -96,9 +96,8 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 }
 
 static int __w32_first_thread(int pid) {
-	HANDLE thid;
 	THREADENTRY32 te32 = {
-		.dwSize = sizeof (THREADENTRY32);
+		.dwSize = sizeof (THREADENTRY32)
 	};
 	HANDLE th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
 	if (th == INVALID_HANDLE_VALUE) {
@@ -111,7 +110,7 @@ static int __w32_first_thread(int pid) {
 	do {
 		/* get all threads of process */
 		if (te32.th32OwnerProcessID == pid) {
-			thid = OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
+			HANDLE thid = OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
 			if (!thid) {
 				r_sys_perror ("__w32_first_thread/OpenThread");
 				goto err_first_th;
