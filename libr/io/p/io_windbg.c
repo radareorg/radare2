@@ -663,7 +663,7 @@ static bool windbg_getbase(RIODesc *fd, ut64 *base) {
 
 static char *windbg_system(RIO *io, RIODesc *fd, const char *cmd) {
 	DbgEngContext *idbg = fd->data;
-	if (R_STR_ISEMPTY (cmd) || r_str_startswith ("pid", cmd)) {
+	if (R_STR_ISEMPTY (cmd) || r_str_startswith (cmd, "pid")) {
 		return NULL;
 	}
 	ITHISCALL (dbgCtrl, Execute, DEBUG_OUTCTL_ALL_CLIENTS, cmd, DEBUG_EXECUTE_DEFAULT);
