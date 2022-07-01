@@ -328,7 +328,7 @@ struct r_core_t {
 	bool keep_asmqjmps;
 	RCoreVisual visual;
 	// visual // TODO: move them into RCoreVisual
-	int http_up;
+	int http_up; // R2_580 bool
 	int gdbserver_up;
 	RCoreVisualMode printidx;
 	char *stkcmd;

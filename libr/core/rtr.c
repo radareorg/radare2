@@ -227,7 +227,7 @@ static void activateDieTime(RCore *core) {
 		r_sys_signal (SIGALRM, dietime);
 		alarm (dt);
 #else
-		eprintf ("http.dietime only works on *nix systems\n");
+		R_LOG_ERROR ("http.dietime only works on *nix systems");
 #endif
 	}
 }

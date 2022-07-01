@@ -12,7 +12,7 @@
 #define DB core->sdb
 
 extern void r_core_echo(RCore *core, const char *input);
-extern bool r_core_is_project (RCore *core, const char *name);
+extern bool r_core_is_project(RCore *core, const char *name);
 
 R_LIB_VERSION (r_core);
 
