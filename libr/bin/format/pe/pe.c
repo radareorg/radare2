@@ -1,14 +1,9 @@
 /* radare - LGPL - Copyright 2008-2022 nibble, pancake, inisider */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <r_hash.h>
-#include <r_types.h>
 #include <r_util.h>
-#include "pe.h"
-#include <time.h>
 #include <ht_uu.h>
+#include "pe.h"
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
 #define MAX_METADATA_STRING_LENGTH 256
@@ -3138,7 +3133,9 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 	curRes = rs_directory->NumberOfNamedEntries;
 	totalRes = curRes + rs_directory->NumberOfIdEntries;
 	if (totalRes > R_PE_MAX_RESOURCES) {
-		R_LOG_ERROR ("Error parsing resource directory");
+		if (pe->verbose) {
+			R_LOG_ERROR ("Error parsing resource directory");
+		}
 		ht_uu_free (dirs);
 		return;
 	}
