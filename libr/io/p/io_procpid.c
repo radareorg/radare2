@@ -119,7 +119,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		io->cb_printf ("%d\n", iop->pid);
 	} else {
-		R_LOG_ERROR ("Try: '=!pid'\n");
+		R_LOG_ERROR ("Try: '=!pid'");
 	}
 	return NULL;
 }

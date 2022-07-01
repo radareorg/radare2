@@ -1,9 +1,7 @@
-/* radare - LGPL - Copyright 2008-2021 - pancake */
+/* radare - LGPL - Copyright 2008-2022 - pancake */
 
-#include "r_io.h"
-#include "r_lib.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include <r_io.h>
+#include <r_lib.h>
 #include <sys/types.h>
 
 typedef struct {
@@ -179,7 +177,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (mal->buf) {
 			return r_io_desc_new (io, &r_io_plugin_gzip, pathname, rw, mode, mal);
 		}
-		R_LOG_ERROR ("Cannot allocate %d bytes for %s\n", mal->size, pathname + 9);
+		R_LOG_ERROR ("Cannot allocate %d bytes for %s", mal->size, pathname + 9);
 		free (mal);
 	}
 	return NULL;
