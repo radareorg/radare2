@@ -1132,7 +1132,7 @@ R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff
 	r_config_set_i (core->config, "asm.bits", bits);
 	// XXX - this needs to be done here, because
 	// if arch == x86 and bits == 16, segoff automatically changes
-	r_config_set_i (core->config, "asm.segoff", segoff);
+	r_config_set_i (core->config, "asm.offset.segment", segoff);
 }
 
 static int cmd_pdu(RCore *core, const char *input) {
