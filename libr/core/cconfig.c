@@ -3983,6 +3983,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.maxport", "9999", "last HTTP server port");
 	SETPREF ("http.ui", "m", "default webui (m, t, f)");
 	SETBPREF ("http.sandbox", "true", "sandbox the HTTP server");
+	SETBPREF ("http.channel", "false", "use the new threadchannel based webserver (EXPERIMENTAL)");
 	SETI ("http.timeout", 3, "disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "kill server after N seconds with no client");
 	SETBPREF ("http.verbose", "false", "output server logs to stdout");
