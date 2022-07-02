@@ -1551,7 +1551,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 
 		//parse system registers
 		if ((strcmp (op->mnemonic, "mrs") == 0 && operand == 1) || (strcmp (op->mnemonic, "msr") == 0 && operand == 0)) {
-			for(msr_op_index = 0; msr_const[msr_op_index].name; msr_op_index++) {
+			for (msr_op_index = 0; msr_const[msr_op_index].name; msr_op_index++) {
 				if (strcasecmp (token, msr_const[msr_op_index].name) == 0) {
 					op->operands_count ++;
 					op->operands[operand].type = ARM_CONSTANT;

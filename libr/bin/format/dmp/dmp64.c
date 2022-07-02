@@ -82,7 +82,7 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 	r_bitmap_set_bytes (bitmap, obj->bitmap, num_pages / 8);
 
 	ut64 num_bitset = 0;
-	for(i = 0; i < num_pages; i++) {
+	for (i = 0; i < num_pages; i++) {
 		if (!r_bitmap_test(bitmap, i)) {
 			continue;
 		}

@@ -3894,7 +3894,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		} else {
 			char pm[32] = "[XADVC]";
 			int i;
-			for(i=0;i<6;i++) {
+			for (i = 0; i < 6; i++) {
 				if (core->printidx == i) {
 					pm[i + 1] = toupper((unsigned char)pm[i + 1]);
 				} else {

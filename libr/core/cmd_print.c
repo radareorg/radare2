@@ -3048,7 +3048,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				int raw_len = qoe - qo - 1;
 				int actual_len = 0;
 				char *ptr = qo + 1;
-				for(; ptr < qoe; ptr++) {
+				for (; ptr < qoe; ptr++) {
 					if (*ptr == '\\' && ptr + 1 < qoe) {
 						int i, body_len;
 						switch (*(ptr + 1)) {

@@ -547,7 +547,7 @@ static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 	}
 
 	ut64 cursor = kmod_start;
-	for(; cursor < kmod_end; cursor += 8) {
+	for (; cursor < kmod_end; cursor += 8) {
 		ut8 bytes[8];
 		if (r_buf_read_at (obj->cache_buf, cursor, bytes, 8) < 8) {
 			goto beach;
