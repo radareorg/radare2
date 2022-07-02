@@ -2778,7 +2778,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			char *sym_name = get_name (bin, stridx, false);
 			if (sym_name) {
 				sym->name = sym_name;
-#if 0
+#if 1
 				if (!bin->main_addr || bin->main_addr == UT64_MAX) {
 					const char *name = sym->name;
 					if (!strcmp (name, "__Dmain")) {
