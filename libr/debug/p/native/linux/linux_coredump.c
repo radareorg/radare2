@@ -1082,7 +1082,7 @@ static int *get_unique_thread_id(RDebug *dbg, int n_threads) {
 
 void detach_threads (RDebug *dbg, int *thread_id, int n_threads) {
 	int i;
-	for(i = 0; i < n_threads ; i++) {
+	for (i = 0; i < n_threads ; i++) {
 		if (dbg->pid != thread_id[i]) {
 			if (r_debug_ptrace (dbg, PTRACE_DETACH, thread_id[i], 0, 0) < 0) {
 				r_sys_perror ("PTRACE_DETACH");

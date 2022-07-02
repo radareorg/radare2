@@ -346,8 +346,9 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 			}
 			printf ("e file.write=true\n"); // XXX
 			printf ("wx ");
-			for(i=0;i<len;i++)
+			for (i = 0; i < len; i++) {
 				printf ("%02x", bl[lb].l[i]);
+			}
 			printf (" @ 0x%"PFMT64x"\n", (ut64)offa);
 			rb += 12 + len;
 #endif
