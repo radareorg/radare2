@@ -439,7 +439,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	bool quietLeak = false;
 	bool is_gdb = false;
 	const char * s_seek = NULL;
-	bool compute_hashes = true;
+	// bool compute_hashes = true;
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
 	RList *files = r_list_new ();
@@ -737,7 +737,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 #endif
 		case 'T':
-			compute_hashes = false;
+//R2_580 remove this shitty flag compute_hashes = false;
 			break;
 		case 'v':
 			show_version = true;
@@ -1404,11 +1404,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 			}
 		}
+#if 0
 		if (o && o->info && compute_hashes) {
 			// TODO: recall with limit=0 ?
 			ut64 limit = r_config_get_i (r->config, "bin.hashlimit");
 			r_bin_file_set_hashes (r->bin, r_bin_file_compute_hashes (r->bin, limit));
 		}
+#endif
 		if (s_seek) {
 			seek = r_num_math (r->num, s_seek);
 			if (seek != UT64_MAX) {
