@@ -31,7 +31,7 @@
 }
 
 ul.listContent li {
-	line-height: 1;
+	line-height: 1em;
 	height: 1.2em;
 	white-space: nowrap;
 }
@@ -71,7 +71,7 @@ ul.hexpairs li input, ul.ascii li input {
 
 ul.offset li, ul.hexpairs li, ul.ascii li  {
 	display:inline;
-	line-height: inherit;
+	line-height: 1em;
 	border:1px solid transparent;
 }
 
