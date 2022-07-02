@@ -439,7 +439,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	bool quietLeak = false;
 	bool is_gdb = false;
 	const char * s_seek = NULL;
-	bool compute_hashes = true;
+	// bool compute_hashes = true;
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
 	RList *files = r_list_new ();
@@ -737,7 +737,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 #endif
 		case 'T':
-			compute_hashes = false;
+//R2_580 remove this shitty flag compute_hashes = false;
 			break;
 		case 'v':
 			show_version = true;
