@@ -31,7 +31,15 @@ extern "C" {
 #define SZT_ADD_OVFCHK(x, y) ((SIZE_MAX - (x)) <= (y))
 #endif
 
-	/* printf format check attributes */
+#if defined(__GNUC__)
+#define SDB_LIKELY(x) __builtin_expect((size_t)(x),1)
+#define SDB_UNLIKELY(x) __builtin_expect((size_t)(x),0)
+#else
+#define SDB_LIKELY(x) (x)
+#define SDB_UNLIKELY(x) (x)
+#endif
+
+/* printf format check attributes */
 #if defined(__clang__) || defined(__GNUC__)
 #define SDB_PRINTF_CHECK(fmt, dots) __attribute__ ((format (printf, fmt, dots)))
 #else
