@@ -2182,5 +2182,6 @@ R_API void r_cons_thready(void) {
 		r_cons_new ();
 	}
 	C->unbreakable = true;
+	r_sys_signable (false); // disable signal handling
 	r_th_lock_leave (&r_cons_lock);
 }

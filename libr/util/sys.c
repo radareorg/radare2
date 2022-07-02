@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_userconf.h>
 #include <stdlib.h>
@@ -30,7 +30,8 @@
 #include <r_util.h>
 #include <r_lib.h>
 
-static char** env = NULL;
+static R_TH_LOCAL char** env = NULL;
+static R_TH_LOCAL char *prefix = NULL;
 
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
   defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun
@@ -189,7 +190,16 @@ R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 	return 0;
 }
 #else
+static R_TH_LOCAL bool unsignable = false;
+
+R_API void r_sys_signable(bool v) {
+	unsignable = !v;
+}
+
 R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
+	if (unsignable) {
+		return -1;
+	}
 	if (!sig) {
 		return -EINVAL;
 	}
@@ -1319,8 +1329,6 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	}
 	return false;
 }
-
-static R_TH_LOCAL char *prefix = NULL;
 
 R_API const char *r_sys_prefix(const char *pfx) {
 	if (!prefix) {
