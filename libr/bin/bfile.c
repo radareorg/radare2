@@ -922,6 +922,7 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 	return false;
 }
 
+// TODO: do not compute md5 or sha1, those are weak and vulnerable hashes
 R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	r_return_val_if_fail (bin && bin->cur && bin->cur->o, NULL);
 	ut64 buf_len = 0, r = 0;

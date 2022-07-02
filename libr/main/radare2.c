@@ -1404,11 +1404,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 			}
 		}
+#if 0
 		if (o && o->info && compute_hashes) {
 			// TODO: recall with limit=0 ?
 			ut64 limit = r_config_get_i (r->config, "bin.hashlimit");
 			r_bin_file_set_hashes (r->bin, r_bin_file_compute_hashes (r->bin, limit));
 		}
+#endif
 		if (s_seek) {
 			seek = r_num_math (r->num, s_seek);
 			if (seek != UT64_MAX) {
