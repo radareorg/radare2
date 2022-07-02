@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_userconf.h>
 #include <stdlib.h>
@@ -30,7 +30,9 @@
 #include <r_util.h>
 #include <r_lib.h>
 
-static char** env = NULL;
+static R_TH_LOCAL char** env = NULL;
+static R_TH_LOCAL char *prefix = NULL;
+static R_TH_LOCAL bool unsignable = false;
 
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
   defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun
@@ -140,6 +142,10 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {NULL, 0}
 };
 
+R_API void r_sys_signable(bool v) {
+	unsignable = !v;
+}
+
 R_API int r_sys_fork(void) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 		return false;
@@ -167,6 +173,9 @@ R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 	struct sigaction sigact = { };
 	int ret, i;
+	if (unsignable) {
+		return -1;
+	}
 
 	if (!sig) {
 		return -EINVAL;
@@ -190,6 +199,9 @@ R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 }
 #else
 R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
+	if (unsignable) {
+		return -1;
+	}
 	if (!sig) {
 		return -EINVAL;
 	}
@@ -472,7 +484,6 @@ static int checkcmd(const char *c) {
 R_API int r_sys_crash_handler(const char *cmd) {
 #ifndef __WINDOWS__
 	int sig[] = { SIGINT, SIGSEGV, SIGBUS, SIGQUIT, SIGHUP, 0 };
-
 	if (!checkcmd (cmd)) {
 		return false;
 	}
@@ -481,10 +492,8 @@ R_API int r_sys_crash_handler(const char *cmd) {
 	/* call this outside of the signal handler to init it safely */
 	backtrace (array, 1);
 #endif
-
 	free (crash_handler_cmd);
 	crash_handler_cmd = strdup (cmd);
-
 	r_sys_sigaction (sig, signal_handler);
 #else
 #pragma message ("r_sys_crash_handler : unimplemented for this platform")
@@ -1319,8 +1328,6 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	}
 	return false;
 }
-
-static R_TH_LOCAL char *prefix = NULL;
 
 R_API const char *r_sys_prefix(const char *pfx) {
 	if (!prefix) {
