@@ -36,11 +36,15 @@ static void flag_skiplist_free(void *data) {
 }
 
 static int flag_skiplist_cmp(const void *va, const void *vb) {
-	const RFlagsAtOffset *a = (RFlagsAtOffset *)va, *b = (RFlagsAtOffset *)vb;
-	if (a->off == b->off) {
-		return 0;
+	const ut64 ao = ((RFlagsAtOffset *)va)->off;
+	const ut64 bo = ((RFlagsAtOffset *)vb)->off;
+	if (R_LIKELY (ao < bo)) {
+		return -1;
 	}
-	return a->off < b->off? -1: 1;
+	if (R_LIKELY (ao > bo)) {
+		return 1;
+	}
+	return 0;
 }
 
 static ut64 num_callback(RNum *user, const char *name, int *ok) {
