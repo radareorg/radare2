@@ -178,7 +178,7 @@ static int show_help(const char *argv0, int line) {
 	" -h         show this help\n"
 	" -i         identify filetype (r2 -nqcpm file)\n"
 	" -j         output in JSON\n"
-	" -L         List all io plugins (same as r2 for now)\n"
+	" -L         list all io plugins (same as r2 for now)\n"
 	" -m         magic search, file-type carver\n"
 	" -M [str]   set a binary mask to be applied on keywords\n"
 	" -n         do not stop on read errors\n"
