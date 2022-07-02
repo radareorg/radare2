@@ -208,10 +208,8 @@ extern RAsmPlugin r_asm_plugin_v810;
 extern RAsmPlugin r_asm_plugin_v850;
 extern RAsmPlugin r_asm_plugin_m68k_gnu;
 extern RAsmPlugin r_asm_plugin_x86_as;
-extern RAsmPlugin r_asm_plugin_x86_cs;
 extern RAsmPlugin r_asm_plugin_x86_nasm;
 extern RAsmPlugin r_asm_plugin_x86_nz;
-extern RAsmPlugin r_asm_plugin_xtensa;
 extern RAsmPlugin r_asm_plugin_vasm;
 
 #endif
