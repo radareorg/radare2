@@ -222,9 +222,12 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			}
 		}
 		const int buf_asm_len = 256;
-		op->mnemonic = calloc(buf_asm_len, 1);
+		op->mnemonic = calloc (buf_asm_len, 1);
 		if (op->mnemonic) {
-			r_java_disasm (obj, addr, data, len, op->mnemonic, buf_asm_len);
+			op->size = r_java_disasm (obj, addr, data, len, op->mnemonic, buf_asm_len);
+			if (op->mnemonic[0] == 0) {
+				R_FREE (op->mnemonic);
+			}
 		}
 	}
 
@@ -257,7 +260,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 
 	if (len < 4) {
 		// incomplete analysis here
-		return op->size;
+		return op->size; // 0
 	}
 	if (op->type == R_ANAL_OP_TYPE_POP) {
 		op->stackop = R_ANAL_STACK_INC;
