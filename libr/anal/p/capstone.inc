@@ -35,6 +35,9 @@ static csh init_capstone (RAnal *a) {
 			cs_handle = 0;
 		} else {
 			cs_option (cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
+#if CS_API_MAJOR >= 4
+			cs_option (cs_handle, CS_OPT_UNSIGNED, CS_OPT_ON);
+#endif
 		}
 	}
 	if (cs_handle) {

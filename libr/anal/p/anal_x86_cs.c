@@ -3605,6 +3605,18 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				insn->mnemonic,
 				insn->op_str[0]?" ":"",
 				insn->op_str);
+			if (op->mnemonic) {
+				if (a->config->syntax != R_ASM_SYNTAX_MASM) {
+					op->mnemonic = r_str_replace (op->mnemonic, "ptr ", "", true);
+				}
+				if (a->config->syntax == R_ASM_SYNTAX_JZ) {
+					if (r_str_startswith (op->mnemonic, "je ")) {
+						op->mnemonic[1] = 'z';
+					} else if (r_str_startswith (op->mnemonic, "jne ")) {
+						op->mnemonic[2] = 'z';
+					}
+				}
+			}
 		}
 		op->nopcode = cs_len_prefix_opcode (insn->detail->x86.prefix)
 			+ cs_len_prefix_opcode (insn->detail->x86.opcode);

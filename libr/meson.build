@@ -52,7 +52,7 @@ if not no_user_plugins
     ]
   endif
   if user_plugins.contains('x86')
-    asm_plugins += [ 'x86_cs', 'x86_nz' ]
+    asm_plugins += [ 'x86_nz' ]
     anal_plugins += [ 'x86_cs' ]
     bp_plugins += [ 'x86' ]
     parse_plugins += [ 'x86_pseudo' ]
@@ -133,7 +133,6 @@ asm_plugins += [
   'ppc_cs',
   'riscv',
   'x86_as',
-  'x86_cs',
   'x86_nasm',
   'x86_nz',
 ]
