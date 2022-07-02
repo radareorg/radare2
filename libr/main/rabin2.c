@@ -63,7 +63,7 @@ static int rabin_show_help(int v) {
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
 		" -U              resoUrces\n"
 		" -v              display version and quit\n"
-		" -V              Show binary version information\n"
+		" -V              show binary version information\n"
 		" -w              display try/catch blocks\n"
 		" -x              extract bins contained in file\n"
 		" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
