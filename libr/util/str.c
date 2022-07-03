@@ -3,8 +3,6 @@
 #include <r_bin.h>
 
 /* stable code */
-static const char * const nullstr = "";
-static const char * const nullstr_c = "(null)";
 static const char * const rwxstr[] = {
 	[0] = "---",
 	[1] = "--x",
@@ -516,7 +514,7 @@ R_API const char *r_str_word_get0(const char *str, int idx) {
 	int i;
 	const char *ptr = str;
 	if (!ptr || idx < 0 /* prevent crashes with negative index */) {
-		return (char *)nullstr;
+		return (char *)"";
 	}
 	for (i = 0; i != idx; i++) {
 		ptr += strlen (ptr) + 1;
@@ -824,7 +822,7 @@ R_API char *r_str_word_get_first(const char *text) {
 }
 
 R_API const char *r_str_get(const char *str) {
-	return str? str: nullstr;
+	return str? str: "";
 }
 
 R_API const char *r_str_get_fail(const char *str, const char *failstr) {
@@ -832,7 +830,7 @@ R_API const char *r_str_get_fail(const char *str, const char *failstr) {
 }
 
 R_API const char *r_str_getf(const char *str) {
-	return str? str: nullstr_c;
+	return str? str: "(null)";
 }
 
 R_API char *r_str_ndup(const char *ptr, int len) {

@@ -6102,6 +6102,7 @@ toro:
 		r_asm_set_pc (core->rasm, ds->at);
 		// XXX copypasta from main disassembler function
 		// r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		// 580 - remove this call, because ranalop give us the disasssembly now! this is doing work twice
 		ret = r_asm_disassemble (core->rasm, &ds->asmop,
 			buf + addrbytes * i, nb_bytes - addrbytes * i);
 		ds->oplen = ret;
@@ -6187,9 +6188,11 @@ toro:
 				free (ds->opstr);
 				ds->opstr = strdup (ds->str);
 				asm_str = colorize_asm_string (core, ds, true);
-				core->parser->flagspace = ofs;
-				free (ds->opstr);
-				ds->opstr = asm_str;
+				if (asm_str) {
+					core->parser->flagspace = ofs;
+					free (ds->opstr);
+					ds->opstr = asm_str;
+				}
 			} else {
 				ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
 			}
@@ -6343,7 +6346,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			count = R_MIN (nb_bytes, nbytes);
 			if (count > 0) {
 				r_io_read_at (core->io, addr, buf, count);
-				r_io_read_at (core->io, addr+count, buf+count, nb_bytes-count);
+				r_io_read_at (core->io, addr + count, buf + count, nb_bytes - count);
 			} else {
 				if (nb_bytes > 0) {
 					memset (buf, 0xff, nb_bytes);

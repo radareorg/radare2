@@ -332,11 +332,7 @@ static void load_asm_descriptions(RAsm *a, RAsmPlugin *p) {
 	const char *arch = ((!p || !strcmp (p->name, "null")) && a->config->arch)
 		? a->config->arch: (p? p->arch: NULL);
 	if (!arch || (p && !strcmp (p->name, "r2ghidra"))) {
-		if (a->config->cpu) {
-			arch = a->config->cpu;
-		} else {
-			arch = p->name;
-		}
+		arch = (a->config->cpu)? a->config->cpu: p->name;
 	}
 #if HAVE_GPERF
 	SdbGperf *gp = r_asm_get_gperf (arch); // p->name);
@@ -532,7 +528,11 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		a->analb.opinit (&aop);
 		ret = a->analb.decode (a->analb.anal, &aop, a->pc, buf, len, R_ANAL_OP_MASK_DISASM);
 		op->size = aop.size;
-		r_strbuf_set (&op->buf_asm, aop.mnemonic);
+		if (aop.mnemonic) {
+			r_strbuf_set (&op->buf_asm, aop.mnemonic);
+		} else {
+			r_strbuf_set (&op->buf_asm, "");
+		}
 		a->analb.opfini (&aop);
 	}
 	if (ret < 0) {
