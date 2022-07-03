@@ -61,12 +61,12 @@ R_API void r_debug_signal_init(RDebug *dbg) {
 }
 
 static bool siglistcb(void *p, const char *k, const char *v) {
-	static char key[32] = "cfg.";
 	RDebug *dbg = (RDebug *)p;
-	int opt, mode = dbg->_mode;
 	if (atoi (k) > 0) {
-		strncpy (key + 4, k, 20);
-		opt = sdb_num_get (DB, key, 0);
+		int mode = dbg->_mode;
+		char *key = r_str_newf ("cfg.%s", k);
+		int opt = sdb_num_get (DB, key, 0);
+		free (key);
 		if (opt) {
 			r_cons_printf ("%s %s", k, v);
 			if (opt & R_DBG_SIGNAL_CONT) {

@@ -291,7 +291,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		if (fd == -1) {
 			return false;
 		}
-		static struct can_isotp_options opts = {
+		struct can_isotp_options opts = {
 			.txpad_content = 0xcc,
 			.rxpad_content = 0xcc,
 			.frame_txtime = 0x1000,
@@ -300,14 +300,14 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 			close (fd);
 			return false;
 		}
-		static struct can_isotp_fc_options fcopts = {
+		struct can_isotp_fc_options fcopts = {
 			.stmin = 0xf3
 		};
 		if (setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_RECV_FC, &fcopts, sizeof (fcopts)) == -1) {
 			close (fd);
 			return false;
 		}
-		static struct can_isotp_ll_options llopts = {
+		struct can_isotp_ll_options llopts = {
 			.mtu = 8,
 			.tx_dl = 8,
 		};

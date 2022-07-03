@@ -3794,7 +3794,7 @@ reaccept:
 					cmd_len = 0;
 				}
 #if DEMO_SERVER_SENDS_CMD_TO_CLIENT
-				static bool once = true;
+				static R_TH_LOCAL bool once = true;
 				/* TODO: server can reply a command request to the client only here */
 				if (once) {
 					const char *cmd = "pd 4";

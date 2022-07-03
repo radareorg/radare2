@@ -1149,7 +1149,7 @@ DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
 static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
-	static struct disassemble_info disasm_obj = {0};
+	struct disassemble_info disasm_obj = {0};
 	if (len < 2) {
 		return -1;
 	}

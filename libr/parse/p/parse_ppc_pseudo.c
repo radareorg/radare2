@@ -120,7 +120,7 @@ static int can_replace(const char *str, int idx, int max_operands) {
 }
 
 static const char* getspr(const char *reg) {
-	static char cspr[16];
+	static R_TH_LOCAL char cspr[16];
 	ut32 spr = 0;
 	if (!reg) {
 		return NULL;
