@@ -5370,8 +5370,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				r_core_print_disasm_instructions (core, fsz, 0);
 				r_core_block_size (core, bsz);
 			} else {
-				r_core_print_disasm_instructions (core,
-						core->blocksize, l);
+				r_core_print_disasm_instructions (core, core->blocksize, l);
 			}
 		}
 		break;

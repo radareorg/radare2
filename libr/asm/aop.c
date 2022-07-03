@@ -38,7 +38,8 @@ R_API char *r_asm_op_get_hex(RAsmOp *op) {
 
 R_API char *r_asm_op_get_asm(RAsmOp *op) {
 	r_return_val_if_fail (op, NULL);
-	return r_strbuf_get (&op->buf_asm);
+	char *s = r_strbuf_get (&op->buf_asm);
+	return s? s: strdup ("");
 }
 
 R_API ut8 *r_asm_op_get_buf(RAsmOp *op) {
