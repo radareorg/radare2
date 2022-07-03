@@ -799,7 +799,7 @@ static void print_function_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
 }
 
 static int cmd_flag(void *data, const char *input) {
-	static int flagenum = 0;
+	static R_TH_LOCAL int flagenum = 0;
 	RCore *core = (RCore *)data;
 	ut64 off = core->offset;
 	char *ptr, *str = NULL;

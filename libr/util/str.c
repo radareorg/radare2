@@ -3315,7 +3315,7 @@ R_API int r_str_do_until_token(str_operation op, char *str, const char tok) {
 }
 
 R_API const char *r_str_pad(const char ch, int sz) {
-	static char pad[1024];
+	static R_TH_LOCAL char pad[1024];
 	if (sz < 0) {
 		sz = 0;
 	}
@@ -3323,7 +3323,7 @@ R_API const char *r_str_pad(const char ch, int sz) {
 	if (sz < sizeof (pad)) {
 		pad[sz] = 0;
 	}
-	pad[sizeof(pad) - 1] = 0;
+	pad[sizeof (pad) - 1] = 0;
 	return pad;
 }
 

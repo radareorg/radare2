@@ -38,7 +38,7 @@ DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	static struct disassemble_info disasm_obj;
+	struct disassemble_info disasm_obj;
 	if (len < 4) {
 		return -1;
 	}

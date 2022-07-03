@@ -45,7 +45,7 @@
 
 #ifndef COMPILE_ONLY
 void file_mdump(struct r_magic *m) {
-	static const char optyp[] = { FILE_OPS };
+	static R_TH_LOCAL const char optyp[] = { FILE_OPS };
 	char pp[ASCTIME_BUF_MAXLEN];
 
 	(void) eprintf ("[%u", m->lineno);
@@ -196,9 +196,9 @@ const char *file_fmttime(ut32 v, int local, char *pp) {
 		r_ctime_r (&t, pp);
 	} else {
 #ifndef HAVE_DAYLIGHT
-		static int daylight = 0;
+		static R_TH_LOCAL int daylight = 0;
 #ifdef HAVE_TM_ISDST
-		static time_t now = (time_t)0;
+		static R_TH_LOCAL time_t now = (time_t)0;
 
 		if (now == (time_t)0) {
 			struct tm *tm1;

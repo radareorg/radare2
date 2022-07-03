@@ -38,7 +38,7 @@ static bool aes_wrap_use(const char *algo) {
 static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	struct aes_state st;
 	ut64 blocks = len / BLOCK_SIZE;
-	static ut8 tmp[16];
+	ut8 tmp[16] = {0};
 	long *tmp_ptr = (long *)tmp;
 	ut64 t = 0;
 	int i, j;
