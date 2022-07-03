@@ -298,8 +298,8 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 }
 
 R_API bool r_asm_is_valid(RAsm *a, const char *name) {
-	r_return_val_if_fail (a && name, false);
-	if (R_STR_ISNOTEMPTY (name)) {
+	// r_return_val_if_fail (a && name, false);
+	if (a && R_STR_ISNOTEMPTY (name)) {
 		RAsmPlugin *h;
 		RListIter *iter;
 		r_list_foreach (a->plugins, iter, h) {
