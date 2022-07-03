@@ -5,7 +5,7 @@
 #include "../arch/bpf/bpf.h"
 
 // disassembly
-static int disassemble (RAnalOp *r_op, ut64 pc, const ut8 *buf, int len) {
+static int disassemble(RAnalOp *r_op, ut64 pc, const ut8 *buf, int len) {
 	const char *op, *fmt;
 	RBpfSockFilter *f = (RBpfSockFilter *)buf;
 	int val = f->k;
