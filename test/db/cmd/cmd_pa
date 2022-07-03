@@ -18,7 +18,9 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 pa call eax
-e asm.assembler=java
+e asm.arch=java
+# XXX asm.assembler only works if the assembler is in asm plugin, wont fallback on anal ones
+# e asm.assembler=java
 pa bipush 33
 EOF
 EXPECT=<<EOF
