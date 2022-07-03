@@ -1,20 +1,11 @@
 /* radare - LGPL - Copyright 2007-2022 - pancake */
 
-#include "r_types.h"
-#include "r_util.h"
-#include "r_cons.h"
-#include "r_bin.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <r_util/r_base64.h>
+#include <r_bin.h>
 
 /* stable code */
-static const char *nullstr = "";
-static const char *nullstr_c = "(null)";
-static const char *rwxstr[] = {
+static const char * const nullstr = "";
+static const char * const nullstr_c = "(null)";
+static const char * const rwxstr[] = {
 	[0] = "---",
 	[1] = "--x",
 	[2] = "-w-",
@@ -33,7 +24,6 @@ static const char *rwxstr[] = {
 	[14] = "rw-",
 	[15] = "rwx",
 };
-
 
 R_API int r_str_casecmp(const char *s1, const char *s2) {
 #ifdef _MSC_VER
@@ -1200,7 +1190,7 @@ R_API int r_str_unescape(char *buf) {
 			err |= r_hex_to_byte (&ch,  buf[i + 2]);
 			err |= r_hex_to_byte (&ch2, buf[i + 3]);
 			if (err) {
-				eprintf ("Error: Non-hexadecimal chars in input.\n");
+				R_LOG_ERROR ("Non-hexadecimal chars in input.");
 				return 0; // -1?
 			}
 			buf[i] = (ch << 4) + ch2;
@@ -3325,7 +3315,7 @@ R_API int r_str_do_until_token(str_operation op, char *str, const char tok) {
 }
 
 R_API const char *r_str_pad(const char ch, int sz) {
-	static char pad[1024];
+	static R_TH_LOCAL char pad[1024];
 	if (sz < 0) {
 		sz = 0;
 	}
@@ -3333,7 +3323,7 @@ R_API const char *r_str_pad(const char ch, int sz) {
 	if (sz < sizeof (pad)) {
 		pad[sz] = 0;
 	}
-	pad[sizeof(pad) - 1] = 0;
+	pad[sizeof (pad) - 1] = 0;
 	return pad;
 }
 

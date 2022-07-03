@@ -31,7 +31,7 @@ static csh init_capstone (RAnal *a) {
 	if (cs_handle == 0) {
 		int ret = cs_open (CSINC_ARCH, mode, &cs_handle);
 		if (ret != CS_ERR_OK) {
-			R_LOG_ERROR ("Capstone failed: cs_open(%#x, %#x): %s\n", CSINC_ARCH, mode, cs_strerror (ret));
+			R_LOG_ERROR ("Capstone failed: cs_open(%#x, %#x): %s", CSINC_ARCH, mode, cs_strerror (ret));
 			cs_handle = 0;
 		} else {
 			cs_option (cs_handle, CS_OPT_DETAIL, CS_OPT_ON);

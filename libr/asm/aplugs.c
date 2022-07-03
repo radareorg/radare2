@@ -30,7 +30,6 @@ extern SdbGperf gperf_LH5801;
 extern SdbGperf gperf_arc;
 extern SdbGperf gperf_arm;
 extern SdbGperf gperf_msp430;
-extern SdbGperf gperf_propeller;
 extern SdbGperf gperf_pic18c;
 
 static const SdbGperf *gperfs[] = {
@@ -58,7 +57,6 @@ static const SdbGperf *gperfs[] = {
 	&gperf_arc,
 	&gperf_arm,
 	&gperf_msp430,
-	&gperf_propeller,
 	&gperf_pic18c,
 	NULL
 };

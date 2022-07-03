@@ -316,7 +316,7 @@ static bool ranal2_list(RCore *core, const char *arch, int fmt) {
 }
 
 static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
-	int autoseg = (!strncmp (asmarch, "x86", 3) && asmbits == 16);
+	int autoseg = r_str_startswith (asmarch, "x86") && asmbits == 16;
 	r_config_set (cfg, "asm.segoff", r_str_bool (autoseg));
 }
 
@@ -735,7 +735,7 @@ static bool cb_asmarch(void *user, void *data) {
 	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
 
 	if (!r_asm_use (core->rasm, node->value)) {
-		eprintf ("asm.arch: cannot find (%s)\n", node->value);
+		R_LOG_ERROR ("asm.arch: cannot find '%s'", node->value);
 		return false;
 	}
 	//we should strdup here otherwise will crash if any r_config_set
@@ -770,8 +770,10 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
-	if (core->rasm->cur && core->anal &&
-	    !(core->rasm->cur->bits & core->anal->config->bits)) {
+
+	if (core->rasm->cur && core->anal && !(core->anal->cur->bits & core->anal->config->bits)) {
+		r_config_set_i (core->config, "asm.bits", bits);
+	} else if (core->rasm->cur && core->anal && !(core->rasm->cur->bits & core->anal->config->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 
@@ -1353,7 +1355,7 @@ static bool cb_cfgcharset(void *user, void *data) {
 		if (rc) {
 			r_sys_setenv ("RABIN2_CHARSET", cf);
 		} else {
-			eprintf ("Warning: Cannot load charset file '%s'.\n", cf);
+			R_LOG_WARN ("Cannot load charset file '%s'.", cf);
 		}
 	}
 	return rc;
@@ -1744,7 +1746,7 @@ static bool cb_dbg_execs(void *user, void *data) {
 	}
 #else
 	if (node->i_value) {
-		eprintf ("Warning: dbg.execs is not supported in this platform.\n");
+		R_LOG_WARN ("dbg.execs is not supported in this platform.");
 	}
 #endif
 	return true;
@@ -2285,7 +2287,7 @@ static bool cb_io_pava(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->pava = node->i_value;
 	if (node->i_value && core->io->va) {
-		eprintf ("Warning: You may probably want to disable io.va too.\n");
+		R_LOG_WARN ("You may probably want to disable io.va too.");
 	}
 	return true;
 }
@@ -3180,7 +3182,7 @@ static bool cb_linesabs(void *user, void *data) {
 		ut64 to = r_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
 		core->print->lines_cache_sz = r_core_lines_initcache (core, from, to);
 		if (core->print->lines_cache_sz == -1) {
-			eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
+			R_LOG_ERROR ("ERROR: \"lines.from\" and \"lines.to\" must be set");
 		} else {
 			eprintf ("Found %d lines\n", core->print->lines_cache_sz-1);
 		}
@@ -3981,6 +3983,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.maxport", "9999", "last HTTP server port");
 	SETPREF ("http.ui", "m", "default webui (m, t, f)");
 	SETBPREF ("http.sandbox", "true", "sandbox the HTTP server");
+	SETBPREF ("http.channel", "false", "use the new threadchannel based webserver (EXPERIMENTAL)");
 	SETI ("http.timeout", 3, "disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "kill server after N seconds with no client");
 	SETBPREF ("http.verbose", "false", "output server logs to stdout");
@@ -4017,7 +4020,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.font", "Courier", "Font for dot graphs");
 	SETBPREF ("graph.offset", "false", "show offsets in graphs");
 	SETBPREF ("graph.bytes", "false", "show opcode bytes in graphs");
-	SETBPREF ("graph.web", "false", "display graph in web browser (VV)");
+	SETBPREF ("graph.web", "false", "display graph in web browser (VV)"); // R2_580 deprecate!
 	SETI ("graph.from", UT64_MAX, "lower bound address when drawing global graphs");
 	SETI ("graph.to", UT64_MAX, "upper bound address when drawing global graphs");
 	SETI ("graph.scroll", 5, "scroll speed in ascii-art graph");

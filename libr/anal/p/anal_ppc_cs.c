@@ -49,7 +49,7 @@ static const char* cmask64(const char *mb_c, const char *me_c) {
 	if (me_c) {
 		me = strtol (me_c, NULL, 16);
 	}
-	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x"", mask64 (mb, me));
+	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x, mask64 (mb, me));
 	return cmask;
 }
 
@@ -63,7 +63,7 @@ static const char* cmask32(const char *mb_c, const char *me_c) {
 	if (me_c) {
 		me = strtol (me_c, NULL, 16);
 	}
-	snprintf (cmask, sizeof (cmask), "0x%"PFMT32x"", mask32 (mb, me));
+	snprintf (cmask, sizeof (cmask), "0x%"PFMT32x, mask32 (mb, me));
 	return cmask;
 }
 

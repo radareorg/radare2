@@ -110,14 +110,14 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 	s = r_socket_new (false);
 	s->local = listenlocal;
 	if (!r_socket_listen (s, port, NULL)) {
-		eprintf ("Cannot listen on %d\n", s->port);
+		R_LOG_ERROR ("Cannot listen on %d", s->port);
 		r_socket_free (s);
 		return 1;
 	}
 
 	eprintf ("http://localhost:%d/\n", s->port);
 	if (dosandbox && !r_sandbox_enable (true)) {
-		eprintf ("sandbox: Cannot be enabled.\n");
+		R_LOG_ERROR ("Cannot enable the sandbox");
 		free (pfile);
 		r_list_free (so.authtokens);
 		r_socket_free (s);

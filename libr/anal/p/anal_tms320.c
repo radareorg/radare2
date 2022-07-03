@@ -145,8 +145,8 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 }
 
 static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	static csh handle = 0;
-	static int omode;
+	static R_TH_LOCAL csh handle = 0;
+	static R_TH_LOCAL int omode;
 	cs_insn *insn;
 	int mode = 0, n, ret;
 

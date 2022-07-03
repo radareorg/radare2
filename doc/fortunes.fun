@@ -29,7 +29,7 @@ No such file or directory.
 Default scripting languages are NodeJS and Python.
 -bash: r2: command not found
 Press any key to continue ...
-Ilo ni li pona li pali e lipu. mi wile e ni: sina kama jo e musi
+ilo ni li pona li pali e lipu. o musi!
 radare2 for FideOS, now with extra potato
 Your project name should contain an uppercase letter, 8 vowels, some numbers, and the first 5 characters of your private bitcoin key.
 This computer has gone to sleep.
@@ -309,3 +309,4 @@ Process[15449] crashed: radare2. Too many corpses being created.
 You can't sleep now there are monsters nearby
 Every journey begins with a choice
 Do 'r2pm -i r2premium; echo "e cfg.fortunes.type = nsfw" >> ~/.radare2rc' for a even more fun with r2
+pneumonic

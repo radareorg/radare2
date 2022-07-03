@@ -1,13 +1,9 @@
-/* radare - LGPL - Copyright 2007-2021 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #include <errno.h>
-#include <r_io.h>
 #include <r_lib.h>
-#include <r_util.h>
-#include <r_cons.h>
 #include <r_core.h>
 #include <r_debug.h> /* only used for BSD PTRACE redefinitions */
-#include <string.h>
 
 #if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__
 #define DEBUGGER_SUPPORTED 1
@@ -181,7 +177,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	return pid;
 
 err_fork:
-	eprintf ("Error: Cannot create new process.\n");
+	R_LOG_ERROR ("Cannot create new process.");
 	TerminateProcess (pi.hProcess, 1);
 	r_w32dw_free (io->dbgwrap);
 	io->dbgwrap = NULL;
@@ -439,13 +435,13 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #endif
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	if (!strncmp (file, "waitfor://", 10)) {
+	if (r_str_startswith (file, "waitfor://")) {
 		return true;
 	}
-	if (!strncmp (file, "pidof://", 8)) {
+	if (r_str_startswith (file, "pidof://")) {
 		return true;
 	}
-	return (!strncmp (file, "dbg://", 6) && file[6]);
+	return r_str_startswith (file, "dbg://") && file[6];
 }
 
 static int get_pid_of(RIO *io, const char *procname) {

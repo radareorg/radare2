@@ -457,7 +457,7 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 		int ret = r_buf_read_at (bin->buf, offset, (ut8 *)&header, sizeof (header));
 		// XXX this is endiandy unsafe
 		if (ret < (int)sizeof (header)) {
-			eprintf ("Warning: oobread in LE header parsing relocs\n");
+			R_LOG_WARN ("oobread in LE header parsing relocs");
 			break;
 		}
 		offset += sizeof (header);

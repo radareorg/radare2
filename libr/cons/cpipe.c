@@ -35,7 +35,7 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	if (fdn < 1) {
 		return -1;
 	}
-	char *targetFile = (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2))
+	char *targetFile = (r_str_startswith (file, "~/") || r_str_startswith (file, "~\\"))
 		? r_str_home (file + 2): strdup (file);
 	const int fd_flags = O_BINARY | O_RDWR | O_CREAT | (append? O_APPEND: O_TRUNC);
 	int fd = r_sandbox_open (targetFile, fd_flags, 0644);

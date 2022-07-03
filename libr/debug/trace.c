@@ -76,7 +76,7 @@ R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 			break;
 		case R_ANAL_VAL_MEM:
 			if (val->memref > 32) {
-				eprintf ("Error: adding changes to %d bytes in memory.\n", val->memref);
+				R_LOG_ERROR ("adding changes to %d bytes in memory.", val->memref);
 				r_list_delete (dbg->cur_op->access, it);
 				break;
 			}
@@ -122,7 +122,7 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 		case R_ANAL_VAL_REG:
 		{
 			if (!val->reg) {
-				R_LOG_ERROR("invalid register, unable to trace register state\n");
+				R_LOG_ERROR ("invalid register, unable to trace register state");
 				continue;
 			}
 			ut64 data = r_reg_get_value (dbg->reg, val->reg);
@@ -135,7 +135,7 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 		{
 			ut8 buf[32] = {0};
 			if (!dbg->iob.read_at (dbg->iob.io, val->base, buf, val->memref)) {
-				eprintf ("Error reading memory at 0x%"PFMT64x"\n", val->base);
+				R_LOG_ERROR ("Error reading memory at 0x%"PFMT64x, val->base);
 				break;
 			}
 
@@ -162,12 +162,12 @@ R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	ut8 buf[32];
 	RAnalOp op = {0};
 	if (!dbg->iob.is_valid_offset (dbg->iob.io, pc, 0)) {
-		eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", pc);
+		R_LOG_ERROR ("trace_pc: cannot read memory at 0x%"PFMT64x, pc);
 		return false;
 	}
 	(void)dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ESIL) < 1) {
-		eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
+		R_LOG_ERROR ("trace_pc: cannot get opcode size at 0x%"PFMT64x, pc);
 		return false;
 	}
 	r_debug_trace_op (dbg, &op);
@@ -182,7 +182,7 @@ R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
 			r_anal_esil_trace_op (dbg->anal->esil, op);
 		} else {
 			if (dbg->verbose) {
-				eprintf ("Run aeim to get dbg->anal->esil initialized\n");
+				R_LOG_ERROR ("Run aeim to get dbg->anal->esil initialized");
 			}
 		}
 		if (oldpc != UT64_MAX) {

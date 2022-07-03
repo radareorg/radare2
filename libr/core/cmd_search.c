@@ -1307,10 +1307,10 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 	const bool rop_db = r_config_get_i (core->config, "rop.db");
 
 	if (rop_db) {
-		db = sdb_ns (core->sdb, "rop", true);
 		ropList = r_list_newf (free);
+		db = sdb_ns (core->sdb, "rop", true);
 		if (!db) {
-			eprintf ("Error: Could not create SDB 'rop' namespace\n");
+			R_LOG_ERROR ("Could not create SDB 'rop' namespace");
 			r_list_free (ropList);
 			return;
 		}
@@ -1980,11 +1980,11 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
 		if (from >= to) {
-			eprintf ("Error: from must be lower than to\n");
+			R_LOG_ERROR ("from must be lower than to");
 			goto beach;
 		}
 		if (to == UT64_MAX) {
-			eprintf ("Error: Invalid destination boundary\n");
+			R_LOG_ERROR ("Invalid destination boundary");
 			goto beach;
 		}
 		for (i = 0, at = from; at < to; at++, i++) {
@@ -2657,15 +2657,15 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 
 static void rop_kuery(void *data, const char *input, PJ *pj) {
 	RCore *core = (RCore *) data;
-	Sdb *db_rop = sdb_ns (core->sdb, "rop", false);
 	SdbListIter *sdb_iter, *it;
 	SdbList *sdb_list;
 	SdbNs *ns;
 	SdbKv *kv;
 	char *out;
 
+	Sdb *db_rop = sdb_ns (core->sdb, "rop", false);
 	if (!db_rop) {
-		eprintf ("Error: could not find SDB 'rop' namespace\n");
+		R_LOG_ERROR ("could not find SDB 'rop' namespace");
 		return;
 	}
 
@@ -2832,8 +2832,8 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 		pj_kN (param->pj, "value", to);
 		pj_end (param->pj);
 	}
-	r_core_cmdf (core, "f %s.value.0x%08"PFMT64x" %d = 0x%08"PFMT64x" \n", prefix, to, vsize, to); // flag at value of hit
-	r_core_cmdf (core, "f %s.offset.0x%08"PFMT64x" %d = 0x%08"PFMT64x " \n", prefix, from, vsize, from); // flag at offset of hit
+	r_core_cmdf (core, "f %s.value.0x%08"PFMT64x" %d = 0x%08"PFMT64x, prefix, to, vsize, to); // flag at value of hit
+	r_core_cmdf (core, "f %s.offset.0x%08"PFMT64x" %d = 0x%08"PFMT64x, prefix, from, vsize, from); // flag at offset of hit
 	const char *cmdHit = r_config_get (core->config, "cmd.hit");
 	if (cmdHit && *cmdHit) {
 		ut64 addr = core->offset;
@@ -4416,7 +4416,7 @@ again:
 		}
 		min = r_num_math (core->num, input + 2);
 		if (!r_search_set_string_limits (core->search, min, max)) {
-			eprintf ("Error: min must be lower than max\n");
+			R_LOG_ERROR ("min must be lower than max");
 			break;
 		}
 		r_search_reset (core->search, R_SEARCH_STRING);

@@ -62,11 +62,11 @@ static bool __plugin_open(struct r_io_t *io, const char *pathname, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
-	if (__plugin_open (io, pathname,0)) {
+	if (__plugin_open (io, pathname, 0)) {
 		RIOSparse *mal = R_NEW0 (RIOSparse);
 		int size = (int)r_num_math (NULL, pathname + 9);
 		if (size < 1) {
-			eprintf ("Invalid size. Use sparse://<number>\n");
+			R_LOG_ERROR ("Invalid size. Use sparse://<number>");
 			return NULL;
 		}
 		mal->buf = r_buf_new_sparse (io->Oxff);
@@ -77,8 +77,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (size > 0) {
 			ut8 *data = malloc (size);
 			if (!data) {
-				eprintf ("Cannot allocate (%s) %d byte(s)\n",
-					pathname+9, size);
+				R_LOG_ERROR ("Cannot allocate %d bytes", size);
 				mal->offset = 0;
 			} else {
 				memset (data, 0x00, size);

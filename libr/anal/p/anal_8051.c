@@ -6,8 +6,9 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#include <8051_ops.h>
-#include "../asm/arch/8051/8051_disas.c"
+#include "../arch/8051/8051_ops.h"
+#include "../arch/8051/8051_ass.c"
+#include "../arch/8051/8051_disas.c"
 
 typedef struct {
 	const char *name;
@@ -1058,6 +1059,22 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return op->size;
 }
 
+static int archinfo(RAnal *anal, int q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 3;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 1;
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 1;
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
+		return 1;
+	}
+	return 0;
+}
+
 RAnalPlugin r_anal_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
@@ -1066,9 +1083,11 @@ RAnalPlugin r_anal_plugin_8051 = {
 	.desc = "8051 CPU code analysis plugin",
 	.license = "LGPL3",
 	.op = &i8051_op,
+	.opasm = &assemble_8051,
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_i8051_init,
-	.esil_fini = esil_i8051_fini
+	.esil_fini = esil_i8051_fini,
+	.archinfo = archinfo
 };
 
 #ifndef R2_PLUGIN_INCORE

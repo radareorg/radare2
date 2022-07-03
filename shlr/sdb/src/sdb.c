@@ -818,7 +818,7 @@ SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
 	}
 
 	ut32 i;
-	for (i = 0; i < s->ht->size; ++i) {
+	for (i = 0; i < s->ht->size; i++) {
 		HtPPBucket *bt = &s->ht->table[i];
 		SdbKv *kv;
 		ut32 j, count;
@@ -865,7 +865,7 @@ SDB_API bool sdb_sync(Sdb* s) {
 	}
 
 	/* append new keyvalues */
-	for (i = 0; i < s->ht->size; ++i) {
+	for (i = 0; i < s->ht->size; i++) {
 		HtPPBucket *bt = &s->ht->table[i];
 		SdbKv *kv;
 		ut32 j, count;

@@ -227,7 +227,7 @@ static void activateDieTime(RCore *core) {
 		r_sys_signal (SIGALRM, dietime);
 		alarm (dt);
 #else
-		eprintf ("http.dietime only works on *nix systems\n");
+		R_LOG_ERROR ("http.dietime only works on *nix systems");
 #endif
 	}
 }
@@ -659,7 +659,7 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 			}
 		}
 		if (!(cmd = strchr (input, ' '))) {
-			eprintf ("Error\n");
+			R_LOG_ERROR ("Error");
 			return;
 		}
 	} else {
@@ -667,18 +667,18 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 	}
 
 	if (!rtr_host[rtr_n].fd || !rtr_host[rtr_n].fd->fd) {
-		eprintf ("Error: Unknown host\n");
+		R_LOG_ERROR ("Unknown host");
 		return;
 	}
 
 	if (!(str = r_core_cmd_str (core, cmd))) {
-		eprintf ("Error: radare_cmd_str returned NULL\n");
+		R_LOG_ERROR ("radare_cmd_str returned NULL");
 		return;
 	}
 
 	switch (rtr_host[rtr_n].proto) {
 	case RTR_PROTOCOL_RAP:
-		eprintf ("Error: Cannot use '=<' to a rap connection.\n");
+		R_LOG_ERROR ("Cannot use '=<' to a rap connection.");
 		break;
 	case RTR_PROTOCOL_UNIX:
 		r_socket_write (rtr_host[rtr_n].fd, str, strlen (str));
@@ -774,7 +774,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			// it's fine to listen without serving a file
 		} else {
 			file = "cmd/";
-			eprintf ("Error: Missing '/'\n");
+			R_LOG_ERROR ("Missing '/'");
 			//c:wreturn;
 		}
 	}
@@ -786,7 +786,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 
 	fd = r_socket_new (false);
 	if (!fd) {
-		eprintf ("Error: Cannot create new socket\n");
+		R_LOG_ERROR ("Cannot create new socket");
 		return;
 	}
 	switch (proto) {
@@ -807,7 +807,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		break;
 	case RTR_PROTOCOL_RAP:
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
-			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
+			R_LOG_ERROR ("Cannot connect to '%s' (%s)", host, port);
 			r_socket_free (fd);
 			return;
 		} else {
@@ -818,7 +818,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	case RTR_PROTOCOL_UNIX:
 		if (!r_socket_connect_unix (fd, host)) {
 			r_core_return_value (core, R_CMD_RC_FAILURE);
-			eprintf ("Error: Cannot connect to 'unix://%s'\n", host);
+			R_LOG_ERROR ("Cannot connect to 'unix://%s'", host);
 			r_socket_free (fd);
 			return;
 		}
@@ -828,7 +828,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	case RTR_PROTOCOL_TCP:
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			r_core_return_value (core, R_CMD_RC_FAILURE);
-			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
+			R_LOG_ERROR ("Cannot connect to '%s' (%s)", host, port);
 			r_socket_free (fd);
 			return;
 		}
@@ -838,7 +838,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	case RTR_PROTOCOL_UDP:
 		if (!r_socket_connect_udp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			r_core_return_value (core, R_CMD_RC_FAILURE);
-			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
+			R_LOG_ERROR ("Cannot connect to '%s' (%s)", host, port);
 			r_socket_free (fd);
 			return;
 		}
@@ -1025,7 +1025,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	}
 
 	if (!rtr_host[rtr_n].fd) {
-		eprintf ("Error: Unknown host\n");
+		R_LOG_ERROR ("Unknown host");
 		r_core_return_value (core, R_CMD_RC_FAILURE);
 		return;
 	}
@@ -1039,7 +1039,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		r_socket_close (s);
 		r_strf_var (portstr, 32, "%d", rh->port);
 		if (!r_socket_connect (s, rh->host, portstr, R_SOCKET_PROTO_TCP, 0)) {
-			eprintf ("Error: Cannot connect to '%s' (%d)\n", rh->host, rh->port);
+			R_LOG_ERROR ("Cannot connect to '%s' (%d)", rh->host, rh->port);
 			r_socket_free (s);
 			return;
 		}
@@ -1048,7 +1048,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		int maxlen = 4096; // r_read_le32 (blen);
 		char *cmd_output = calloc (1, maxlen + 1);
 		if (!cmd_output) {
-			eprintf ("Error: Allocating cmd output\n");
+			R_LOG_ERROR ("Allocating cmd output");
 			return;
 		}
 		(void)r_socket_read_block (s, (ut8*)cmd_output, maxlen);
@@ -1094,7 +1094,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		free (cmd_output);
 		return;
 	}
-	eprintf ("Error: Unknown protocol\n");
+	R_LOG_ERROR ("Unknown protocol");
 }
 
 // TODO: support len for binary data?
@@ -1345,7 +1345,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	s->local = r_config_get_i (core->config, "tcp.islocal");
 
 	if (!r_socket_listen (s, port, NULL)) {
-		eprintf ("Error listening on port %s\n", port);
+		R_LOG_ERROR ("Error listening on port %s", port);
 		r_socket_free (s);
 		return false;
 	}

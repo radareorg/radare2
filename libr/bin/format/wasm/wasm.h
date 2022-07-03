@@ -243,7 +243,7 @@ typedef struct r_bin_wasm_obj_t {
 	// cache purposes
 	RList *g_sections;
 	RPVector *g_types;
-	RPVector *g_imports;
+	RPVector *g_imports_arr[4];
 	RPVector *g_funcs;
 	RPVector *g_tables;
 	RPVector *g_memories;
@@ -263,7 +263,7 @@ RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf);
 void r_bin_wasm_destroy(RBinFile *bf);
 RList *r_bin_wasm_get_sections(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_types(RBinWasmObj *bin);
-RPVector *r_bin_wasm_get_imports(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_imports_kind(RBinWasmObj *bin, ut32 kind);
 RPVector *r_bin_wasm_get_functions(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_tables(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_memories(RBinWasmObj *bin);

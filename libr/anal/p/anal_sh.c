@@ -1,10 +1,13 @@
 /* radare - LGPL - Copyright 2010-2022 eloi<limited-entropy.com> */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
+#include "disas-asm.h"
+
+static R_TH_LOCAL unsigned long Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL unsigned char bytes[4];
 
 #define API static
 
@@ -1063,7 +1066,7 @@ static int fpu_insn(RAnal* anal, RAnalOp* op, ut16 code) {
 }
 
 /* Table of routines for further analysis based on 1st nibble */
-static int(*first_nibble_decode[])(RAnal*,RAnalOp*,ut16) = {
+static int (*first_nibble_decode[])(RAnal*,RAnalOp*,ut16) = {
 	first_nibble_is_0,
 	movl_reg_rdisp,
 	first_nibble_is_2,
@@ -1081,23 +1084,6 @@ static int(*first_nibble_decode[])(RAnal*,RAnalOp*,ut16) = {
 	mov_imm_reg,
 	fpu_insn
 };
-
-
-/* This is the basic operation analysis. Just initialize and jump to
- * routines defined in first_nibble_decode table
- */
-static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	if (!data || len < 2) {
-		return 0;
-	}
-	op->addr = addr;
-	op->type = R_ANAL_OP_TYPE_UNK;
-	op->size = 2;
-	bool be = anal->config->big_endian;
-	ut8 msb = be? data[0]: data[1];
-	ut8 lsb = be? data[1]: data[0];
-	return first_nibble_decode[(msb >> 4) & 0x0F](anal, op, (ut16)(((ut16)msb << 8) | lsb));
-}
 
 /* Set the profile register */
 static bool sh_set_reg_profile(RAnal* anal) {
@@ -1135,23 +1121,91 @@ static bool sh_set_reg_profile(RAnal* anal) {
 		"gpr	vbr	.32	80	0\n"
 		"gpr	mach	.32	84	0\n"
 		"gpr	macl	.32	88	0\n";
-	return r_reg_set_profile_string(anal->reg, p);
+	return r_reg_set_profile_string (anal->reg, p);
 }
 
 static int archinfo(RAnal *anal, int q) {
-#if 0
-	if (q == R_ANAL_ARCHINFO_ALIGN) {
-		return 4;
-	}
-#endif
-	return 2; /* :) */
+	return 2;
 }
 
+static int sh_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
+	//this is obviously wrong. but how can we read arbitrary data @ memaddr from here?
+	memcpy (myaddr, bytes, length);
+	return 0;
+}
+
+int print_insn_shl(bfd_vma memaddr, struct disassemble_info *info);
+int print_insn_shb(bfd_vma memaddr, struct disassemble_info *info);
+
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+	return 0;
+}
+
+static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	//--
+}
+
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
+DECLARE_GENERIC_FPRINTF_FUNC()
+
+static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+	struct disassemble_info disasm_obj = {0};
+	if (len < 2) {
+		return -1;
+	}
+	buf_global = r_strbuf_new ("");
+	Offset = op->addr;
+	memcpy (bytes, buf, 2);
+
+	/* prepare disassembler */
+	disasm_obj.buffer = bytes;
+	disasm_obj.read_memory_func = &sh_buffer_read_memory;
+	disasm_obj.symbol_at_address_func = &symbol_at_address;
+	disasm_obj.memory_error_func = &memory_error_func;
+	disasm_obj.print_address_func = &generic_print_address_func;
+	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.fprintf_func = &generic_fprintf_func;
+	disasm_obj.stream = stdout;
+
+	if (disasm_obj.endian == BFD_ENDIAN_BIG) {
+		op->size = print_insn_shb ((bfd_vma)Offset, &disasm_obj);
+	} else {
+		op->size = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
+	}
+	if (op->size == -1) {
+		op->mnemonic = strdup ("(data)");
+		r_strbuf_free (buf_global);
+	} else {
+		op->mnemonic = r_strbuf_drain (buf_global);
+	}
+	return op->size;
+}
+
+/* This is the basic operation analysis. Just initialize and jump to
+ * routines defined in first_nibble_decode table
+ */
+static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+	if (!op || !data || len < 2) {
+		return 0;
+	}
+	op->addr = addr;
+	op->type = R_ANAL_OP_TYPE_UNK;
+	op->size = 2;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->size = disassemble (anal, op, data, len);
+		// should be always 2?
+	}
+	bool be = anal->config->big_endian;
+	ut8 msb = be? data[0]: data[1];
+	ut8 lsb = be? data[1]: data[0];
+	return first_nibble_decode[(msb >> 4) & 0x0F](anal, op, (ut16)(((ut16)msb << 8) | lsb));
+}
 
 RAnalPlugin r_anal_plugin_sh = {
 	.name = "sh",
 	.desc = "SH-4 code analysis plugin",
 	.license = "LGPL3",
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.arch = "sh",
 	.archinfo = archinfo,
 	.bits = 32,

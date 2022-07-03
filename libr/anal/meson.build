@@ -54,11 +54,14 @@ r_anal_sources = [
   join_paths('p','anal_arm_gnu.c'),
   join_paths('p','anal_avr.c'),
   join_paths('p','anal_bf.c'),
+  join_paths('p','anal_mcs96.c'),
   join_paths('p','anal_bpf.c'),
   join_paths('p','anal_bpf_cs.c'),
   join_paths('p','anal_chip8.c'),
   join_paths('p','anal_cr16.c'),
   join_paths('p','anal_cris.c'),
+  join_paths('../asm/arch','cris','gnu','cris-dis.c'),
+  join_paths('../asm/arch','cris','gnu','cris-opc.c'),
   join_paths('p','anal_dalvik.c'),
   join_paths('p','anal_dcpu16.c'),
   join_paths('p','anal_ebc.c'),
@@ -99,7 +102,8 @@ r_anal_sources = [
   join_paths('p','anal_s390_gnu.c'),
   join_paths('../asm/arch/s390/gnu/s390-dis.c'),
   join_paths('../asm/arch/s390/gnu/s390-opc.c'),
-  join_paths('p','anal_sh.c'),
+  join_paths('p/anal_sh.c'),
+  join_paths('../asm/arch/sh/gnu/sh-dis.c'),
   join_paths('p','anal_snes.c'),
   join_paths('p','anal_lm32.c'),
   join_paths('p','anal_sparc_cs.c'),
@@ -131,6 +135,7 @@ r_anal_sources = [
   join_paths('arch','loongarch','gnu','loongarch-dis.c'),
   join_paths('arch','loongarch','gnu','loongarch-opc.c'),
   join_paths('arch','msp430','msp430_disas.c'),
+  join_paths('arch','propeller','propeller_disas.c'),
   join_paths('..','asm','arch','amd29k','amd29k.c'),
   join_paths('..','asm','arch','v850','v850_disas.c'),
   join_paths('..','asm','arch','arm','winedbg','be_arm.c'),
@@ -150,8 +155,7 @@ r_anal_sources = [
   join_paths('../asm/arch','ppc','gnu','ppc-opc.c'),
  # join_paths('arch','ppc','libvle','vle.c'),
  # join_paths('arch','ppc','libps','libps.c'),
-  join_paths('..','asm','arch','propeller','propeller_disas.c'),
-  join_paths('..','asm','arch','rsp','rsp_idec.c'),
+  join_paths('arch','rsp','rsp_idec.c'),
   join_paths('..','asm','arch','tms320','tms320_dasm.c'),
   join_paths('..','asm','arch','tms320','c55x_plus','ins.c'),
   join_paths('..','asm','arch','tms320','c55x_plus','c55plus.c'),
@@ -174,8 +178,7 @@ r_anal_sources = [
   join_paths('..','asm','arch','pyc','pyc_dis.c')
 ]
 incdirs = [
-    'arch/gb',
-    'arch/kvx'
+    'arch'
 ]
 
 if get_option('use_v35')

@@ -1255,6 +1255,6 @@ UISupportedInterfaceOrientations~ipad:
 EOF
 EXPECT_ERR=<<EOF
 offset table offset points outside of valid range
-Parse error
+ERROR: bplist parse error
 EOF
 RUN

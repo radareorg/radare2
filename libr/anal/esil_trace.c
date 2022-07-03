@@ -62,7 +62,7 @@ R_API RAnalEsilTrace *r_anal_esil_trace_new(RAnalEsil *esil) {
 	}
 	return trace;
 error:
-	eprintf ("error\n");
+	R_LOG_ERROR ("error");
 	r_anal_esil_trace_free (trace);
 	return NULL;
 }
@@ -88,7 +88,7 @@ static void add_reg_change(RAnalEsilTrace *trace, int idx, RRegItem *ri, ut64 da
 	if (!vreg) {
 		vreg = r_vector_new (sizeof (RAnalEsilRegChange), NULL, NULL);
 		if (!vreg) {
-			eprintf ("Error: creating a register vector.\n");
+			R_LOG_ERROR ("creating a register vector.");
 			return;
 		}
 		ht_up_insert (trace->registers, addr, vreg);
@@ -103,7 +103,7 @@ static void add_mem_change(RAnalEsilTrace *trace, int idx, ut64 addr, ut8 data) 
 	if (!vmem) {
 		vmem = r_vector_new (sizeof (RAnalEsilMemChange), NULL, NULL);
 		if (!vmem) {
-			eprintf ("Error: creating a memory vector.\n");
+			R_LOG_ERROR ("creating a memory vector.");
 			return;
 		}
 		ht_up_insert (trace->memory, addr, vmem);

@@ -12,7 +12,7 @@
 #define DB core->sdb
 
 extern void r_core_echo(RCore *core, const char *input);
-extern bool r_core_is_project (RCore *core, const char *name);
+extern bool r_core_is_project(RCore *core, const char *name);
 
 R_LIB_VERSION (r_core);
 
@@ -1553,7 +1553,7 @@ static void autocomplete_breakpoints(RCore *core, RLineCompletion *completion, c
 	RBreakpointItem *b;
 	int n = strlen (str);
 	r_list_foreach (bp->bps, iter, b) {
-		char *addr = r_str_newf ("0x%"PFMT64x"", b->addr);
+		char *addr = r_str_newf ("0x%"PFMT64x, b->addr);
 		if (!strncmp (addr, str, n)) {
 			r_line_completion_push (completion, addr);
 		}
@@ -1985,7 +1985,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			}
 			autocomplete_flags (core, completion, ptr+2);
 		}
-	} else if (!strncmp (buf->data, "#!pipe ", 7)) {
+	} else if (r_str_startswith (buf->data, "#!pipe ")) {
 		if (strchr (buf->data + 7, ' ')) {
 			autocomplete_filename (completion, buf, core->rcmd, NULL, 2);
 		} else {
@@ -1997,7 +1997,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			ADDARG ("perl");
 			ADDARG ("python");
 		}
-	} else if (!strncmp (buf->data, "ec ", 3)) {
+	} else if (r_str_startswith (buf->data, "ec ")) {
 		if (strchr (buf->data + 3, ' ')) {
 			autocomplete_filename (completion, buf, core->rcmd, NULL, 2);
 		} else {
@@ -2148,8 +2148,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			}
 		}
 		ls_free (l);
-	} else if (!strncmp (buf->data, "zo ", 3)
-			|| !strncmp (buf->data, "zoz ", 4)) {
+	} else if (r_str_startswith (buf->data, "zo ") || r_str_startswith (buf->data, "zoz ")) {
 		if (core->anal->zign_path && core->anal->zign_path[0]) {
 			char *zignpath = r_file_abspath (core->anal->zign_path);
 			char *paths[2] = { zignpath, NULL };
@@ -3334,7 +3333,7 @@ R_API bool r_core_prompt_loop(RCore *r) {
 			return false;
 		}
 		/* -1 means invalid command, -2 means quit prompt loop */
-		if ((ret = r_core_prompt_exec (r)) == -2) {
+		if ((ret = r_core_prompt_exec (r)) == R_CMD_RC_QUIT) {
 			break;
 		}
 	} while (ret != R_CORE_CMD_EXIT);
@@ -3795,7 +3794,7 @@ reaccept:
 					cmd_len = 0;
 				}
 #if DEMO_SERVER_SENDS_CMD_TO_CLIENT
-				static bool once = true;
+				static R_TH_LOCAL bool once = true;
 				/* TODO: server can reply a command request to the client only here */
 				if (once) {
 					const char *cmd = "pd 4";

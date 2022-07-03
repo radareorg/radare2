@@ -146,7 +146,7 @@ static bool r_io_def_mmap_check_default(const char *filename) {
 	if (r_str_startswith (filename, "file://")) {
 		filename += strlen ("file://");
 	}
-	const char * peekaboo = (!strncmp (filename, "nocache://", 10))
+	const char * peekaboo = r_str_startswith (filename, "nocache://")
 		? NULL : strstr (filename, "://");
 	return (!peekaboo || (peekaboo - filename) > 10);
 }

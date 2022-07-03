@@ -94,15 +94,6 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	memcpy ((void*)(volatile void*)buf, desc->data, R_MIN (copy_size, size));
 	memset ((void*)(volatile void*)reg_buf, 0, buflen);
 	memcpy ((void*)(volatile void*)reg_buf, desc->data, copy_size);
-#if 0
-	int i;
-	//for(i=0;i<168;i++) {
-	for(i=0;i<copy_size;i++) {
-		if (!(i%16)) printf ("\n0x%08x  ", i);
-		printf ("%02x ", buf[i]); //(ut8)desc->data[i]);
-	}
-	printf("\n");
-#endif
 	return desc->data_len;
 }
 
@@ -382,7 +373,7 @@ static bool r_debug_gdb_attach(RDebug *dbg, int pid) {
 			int bits = dbg->anal->config->bits;
 			gdbr_set_architecture (desc, arch, bits);
 		} else {
-			eprintf ("ERROR: Underlying IO descriptor is not a GDB one..\n");
+			R_LOG_ERROR ("ERROR: Underlying IO descriptor is not a GDB one..");
 		}
 	}
 	return true;

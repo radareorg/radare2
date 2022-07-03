@@ -1,12 +1,9 @@
-/* radare - LGPL - Copyright 2012-2016 - pancake
-   io_zip.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
- */
+/* radare - LGPL - Copyright 2012-2022 - dso, pancake */
 
 // TODO: wrap with r_sandbox api
 
 #include <r_io.h>
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_cons.h>
 #include <zip.h>
 
@@ -57,7 +54,7 @@ typedef struct r_io_zfo_t {
 	RIO * io_backref;
 } RIOZipFileObj;
 
-static int r_io_zip_has_uri_substr(const char *file) {
+static bool r_io_zip_has_uri_substr(const char *file) {
 	return (file && strstr (file, "://"));
 }
 
@@ -96,28 +93,26 @@ static bool r_io_zip_plugin_open(RIO *io, const char *file, bool many) {
 }
 
 struct zip *r_io_zip_open_archive(const char *archivename, ut32 perm, int mode, int rw) {
-	struct zip * zipArch = NULL;
+	r_return_val_if_fail (archivename, NULL);
 	int zip_errorp;
-	if (!archivename) {
-		return NULL;
-	}
-	if ((zipArch = zip_open (archivename, perm, &zip_errorp))) {
+	struct zip * zipArch = zip_open (archivename, perm, &zip_errorp);
+	if (zipArch) {
 		return zipArch;
 	}
 	if (zip_errorp == ZIP_ER_INVAL) {
-		eprintf ("ZIP File Error: Invalid file name (NULL).\n");
+		R_LOG_ERROR ("Invalid file name (NULL)");
 	} else if (zip_errorp == ZIP_ER_OPEN) {
-		eprintf ("ZIP File Error: File could not be opened file name.\n");
+		R_LOG_ERROR ("File could not be opened file name");
 	} else if (zip_errorp == ZIP_ER_NOENT) {
-		eprintf ("ZIP File Error: File does not exist.\n");
+		R_LOG_ERROR ("File does not exist");
 	} else if (zip_errorp == ZIP_ER_READ) {
-		eprintf ("ZIP File Error: Read error occurred.\n");
+		R_LOG_ERROR ("Read error occurred");
 	} else if (zip_errorp == ZIP_ER_NOZIP) {
-		eprintf ("ZIP File Error: File is not a valid ZIP archive.\n");
+		R_LOG_ERROR ("File is not a valid ZIP archive");
 	} else if (zip_errorp == ZIP_ER_INCONS) {
-		eprintf ("ZIP File Error: ZIP file had some inconsistencies archive.\n");
+		R_LOG_ERROR ("ZIP file had some inconsistencies archive");
 	} else {
-		eprintf ("ZIP File Error: Something bad happened, get your debug on.\n");
+		R_LOG_ERROR ("Something bad happened, get your debug on");
 	}
 	return NULL;
 }
@@ -326,7 +321,7 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 			filename_in_zipfile, ZIP_CREATE, mode, rw);
 
 		if (zfo && zfo->entry == -1) {
-			eprintf ("Warning: File did not exist, creating a new one.\n");
+			R_LOG_WARN ("File did not exist, creating a new one.");
 		}
 		if (zfo) {
 			zfo->io_backref = io;
@@ -504,7 +499,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	RIOZipFileObj *zfo = r_io_zip_alloc_zipfileobj (zip_filename, filename_in_zipfile, ZIP_CREATE, mode, rw);
 	if (zfo) {
 		if (zfo->entry == -1) {
-			eprintf ("Warning: File did not exist, creating a new one.\n");
+			R_LOG_WARN ("File did not exist, creating a new one.");
 		}
 		zfo->io_backref = io;
 		res = r_io_desc_new (io, &r_io_plugin_zip, zfo->name, rw, mode, zfo);

@@ -1,5 +1,4 @@
 /* radare - LGPL - Copyright 2009-2019 - hmht */
-#include"8051_ass.h"
 
 /*****************************************************************************\
  *              Architecture
@@ -883,7 +882,7 @@ static bool mnem_jb(char const*const*arg, ut16 pc, ut8**out) {
 static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
 	ut8 cmp_addr;
 	if (!address_bit (arg[0], &cmp_addr)) {
-		eprintf ("error during the assembly: address bit not found\n");
+		R_LOG_ERROR ("error during the assembly: address bit not found");
 		return false;
 	}
 
@@ -1360,11 +1359,10 @@ static parse_mnem_args mnemonic(char const *user_asm, int*nargs) {
  * ## Section 7: radare2 glue and mnemonic tokenization
                  --------------------------------------*/
 
-int assemble_8051(RAsm *a, RAsmOp *op, char const *user_asm) {
-	if (!a || !op || !user_asm) {
+int assemble_8051(RAnal *a, ut64 pc, char const *user_asm, ut8 *outbuf, int outlen) {
+	if (!a || !outbuf || !user_asm) {
 		return 0;
 	}
-	r_strbuf_set (&op->buf_asm, user_asm);
 	while (!terminates_asm_line (*user_asm)
 		&& (*user_asm == ' ' || *user_asm == '\t')) {
 		user_asm += 1;
@@ -1396,7 +1394,7 @@ int assemble_8051(RAsm *a, RAsmOp *op, char const *user_asm) {
 
 	ut8 instr[4] = {0};
 	ut8 *binp = instr;
-	if (!mnem (carg, a->pc, &binp)) {
+	if (!mnem (carg, pc, &binp)) {
 		R_FREE (arg[0]);
 		R_FREE (arg[1]);
 		R_FREE (arg[2]);
@@ -1407,7 +1405,7 @@ int assemble_8051(RAsm *a, RAsmOp *op, char const *user_asm) {
 	R_FREE (arg[1]);
 	R_FREE (arg[2]);
 	size_t len = binp - instr;
-	r_strbuf_setbin (&op->buf, instr, len);
+	memcpy (outbuf, instr, len);
 
 	return binp - instr;
 }

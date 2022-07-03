@@ -125,22 +125,14 @@ endif
 if no_user_plugins
 
 asm_plugins += [
-  '8051',
   'arm_as',
   'arm_cs',
   'arm_winedbg',
   'dalvik',
-  'gb',
-  'java',
-  'm680x_cs',
-  'mcs96',
   'or1k',
   'ppc_as',
   'ppc_cs',
-  'propeller',
   'riscv',
-  'rsp',
-  'sh',
   'tms320',
   'x86_as',
   'x86_cs',
@@ -152,6 +144,7 @@ asm_plugins += [
 anal_plugins += [
   '6502',
   '6502_cs',
+  'mcs96',
   '8051',
   'alpha',
   'amd29k',
@@ -215,7 +208,6 @@ if no_user_plugins
     asm_plugins += [
       # 'z80',
       'arm_gnu',
-      'cris_gnu',
   #    'hppa_gnu',
       'm68k_gnu',
       'lanai_gnu',

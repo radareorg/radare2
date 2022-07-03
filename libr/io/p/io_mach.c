@@ -370,7 +370,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 }
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	return (!strncmp (file, "attach://", 9) || !strncmp (file, "mach://", 7));
+	return r_str_startswith (file, "attach://") || r_str_startswith (file, "mach://");
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
@@ -396,9 +396,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	if (!task) {
-		if (pid > 0 && !strncmp (file, "smach://", 8)) {
+		if (pid > 0 && r_str_startswith (file, "smach://")) {
 			kill (pid, SIGKILL);
-			eprintf ("Child killed\n");
 		}
 #if 0
 		/* this is broken, referer gets set in the riodesc after this function returns the riodesc
@@ -411,15 +410,14 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 #endif
 		switch (errno) {
 		case EPERM:
-			eprintf ("Operation not permitted\n");
+			R_LOG_ERROR ("Operation not permitted");
 			break;
 		case EINVAL:
 			r_sys_perror ("ptrace: Cannot attach");
 			eprintf ("Possibly unsigned r2. Please see doc/macos.md\n");
-			eprintf ("ERRNO: %d (EINVAL)\n", errno);
 			break;
 		default:
-			eprintf ("unknown error in debug_attach\n");
+			R_LOG_ERROR ("unknown error in debug_attach");
 			break;
 		}
 		return NULL;
@@ -439,10 +437,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	iodd->magic = r_str_hash ("mach");
 	iodd->data = riom;
 	// sleep 1s to get proper path (program name instead of ls) (racy)
-	pidpath = pid
-		? r_sys_pid_to_path (pid)
-		: strdup ("kernel");
-	if (!strncmp (file, "smach://", 8)) {
+	pidpath = pid ? r_sys_pid_to_path (pid): strdup ("kernel");
+	if (r_str_startswith (file, "smach://")) {
 		ret = r_io_desc_new (io, &r_io_plugin_mach, &file[1],
 			       rw | R_PERM_X, mode, iodd);
 	} else {
@@ -499,7 +495,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "")) {
 		return NULL;
 	}
-	if (!strncmp (cmd, "perm", 4)) {
+	if (r_str_startswith (cmd, "perm")) {
 		int perm = r_str_rwx (cmd + 4);
 		if (perm) {
 			int pagesize = tsk_pagesize (fd);
@@ -510,7 +506,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		return NULL;
 	}
-	if (!strncmp (cmd, "pid", 3)) {
+	if (r_str_startswith (cmd, "pid")) {
 		RIOMachData *iodd = fd->data;
 		RIOMach *riom = iodd->data;
 		const char *pidstr = r_str_trim_head_ro (cmd + 3);

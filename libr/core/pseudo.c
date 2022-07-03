@@ -230,7 +230,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_hold (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
 	r_config_hold (hc, "io.cache", NULL);
 	if (!fcn) {
-		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, core->offset);
 		r_config_hold_free (hc);
 		return false;
 	}
@@ -307,13 +307,13 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_cons_push ();
 		bool html = r_config_get_b (core->config, "scr.html");
 		r_config_set_b (core->config, "scr.html", false);
-		char *code = r_core_cmd_str (core, r_strf ("pD %"PFMT64d" @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
+		char *code = r_core_cmd_str (core, r_strf ("pD %"PFMT64d" @ 0x%08"PFMT64x, bb->size, bb->addr));
 		r_cons_pop ();
 		r_config_set_b (core->config, "scr.html", html);
 		indent = 2;
 		SET_INDENT (indent);
 		if (!code) {
-			eprintf ("No code here\n");
+			R_LOG_ERROR ("No code here");
 			break;
 		}
 		code = r_str_replace (code, ";", "//", true);
@@ -445,7 +445,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);
 					if (!bb) {
-						eprintf ("failed to retrieve block at 0x%"PFMT64x"\n", jump);
+						R_LOG_ERROR ("Failed to retrieve block at 0x%"PFMT64x, jump);
 						break;
 					}
 					if (fail != UT64_MAX) {
@@ -453,7 +453,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						indent++;
 						if (sdb_get (db, K_INDENT (bb->fail), 0)) {
 							/* do nothing here */
-							eprintf ("BlockAlready 0x%"PFMT64x"\n", bb->addr);
+							R_LOG_DEBUG ("There's already a block at 0x%"PFMT64x, bb->addr);
 						} else {
 							// r_cons_printf (" { RADICAL %llx\n", bb->addr);
 							sdb_array_push_num (db, "indent", fail, 0);

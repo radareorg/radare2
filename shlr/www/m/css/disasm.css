@@ -18,7 +18,7 @@
 
 .disasm.flex-body {
 	top:80px;
-	line-height: 1.2em;
+	line-height: 1em;
 }
 
 .disasm.flex-body {
@@ -47,7 +47,7 @@ ul#disasm-history {
 
 ul#disasm-history li {
 	display: inline-block;
-	line-height: 18px;
+	line-height: 1em;
 	font-size:85%;
 	padding: 0 4px;
 	margin: 0 3px;

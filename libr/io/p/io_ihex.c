@@ -211,7 +211,7 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "ihex://", 7));
+	return r_str_startswith (pathname, "ihex://");
 }
 
 //ihex_parse : parse ihex file loaded at *str, fill sparse buffer "rbuf"
