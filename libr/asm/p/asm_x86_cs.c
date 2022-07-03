@@ -147,10 +147,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				insn->mnemonic, insn->op_str[0]?" ":"",
 				insn->op_str);
 		if (a->config->syntax != R_ASM_SYNTAX_MASM) {
-			char *ptrstr = strstr (buf_asm, "ptr ");
-			if (ptrstr) {
-				memmove (ptrstr, ptrstr + 4, strlen (ptrstr + 4) + 1);
-			}
+			buf_asm = r_str_replace (buf_asm, "ptr ", "", true);
 		}
 		r_asm_op_set_asm (op, buf_asm);
 		free (buf_asm);
@@ -160,9 +157,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->config->syntax == R_ASM_SYNTAX_JZ) {
 		char *buf_asm = r_strbuf_get (&op->buf_asm);
 		if (!strncmp (buf_asm, "je ", 3)) {
-			memcpy (buf_asm, "jz", 2);
+			buf_asm[1] = 'z';
 		} else if (!strncmp (buf_asm, "jne ", 4)) {
-			memcpy (buf_asm, "jnz", 3);
+			buf_asm[2] = 'z';
 		}
 	}
 #if USE_ITER_API
