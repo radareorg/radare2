@@ -296,7 +296,7 @@ static bool is_arithmetic (char c) {
 	return c == '+' || c == '-';
 }
 
-static const char *token_next (BPFAsmParser *t) {
+static const char *token_next(BPFAsmParser *t) {
 	token_fini (t);
 
 	// Seek to token
