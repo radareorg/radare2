@@ -54,7 +54,7 @@ static int cmd_mv(void *data, const char *input) {
 	return r_syscmd_mv (input)? 1: 0;
 }
 
-static char *cwd = NULL;
+static R_TH_LOCAL char *cwd = NULL;
 #define av_max 1024
 
 static const char *t2s(const char ch) {

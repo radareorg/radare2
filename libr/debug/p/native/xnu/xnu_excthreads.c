@@ -18,7 +18,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	int ret;
 	ret = xnu_thread_get_gpr (dbg, th);
 	if (!ret) {
-		eprintf ("error to get gpr registers in trace bit intel\n");
+		R_LOG_ERROR ("error to get gpr registers in trace bit intel");
 		return false;
 	}
 	state = (R_REG_T *)&th->gpr;
@@ -33,7 +33,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		return false;
 	}
 	if (!xnu_thread_set_gpr (dbg, th)) {
-		eprintf ("error xnu_thread_set_gpr in modify_trace_bit intel\n");
+		R_LOG_ERROR ("error xnu_thread_set_gpr in modify_trace_bit intel");
 		return false;
 	}
 	return true;
@@ -54,14 +54,14 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 	kr = thread_get_state (th->tid, R_REG_STATE_T,
 			(thread_state_t)&state, &state_count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("error modify_trace_bit\n");
+		R_LOG_ERROR ("error modify_trace_bit");
 		return false;
 	}
 	state.srr1 = (state.srr1 & ~0x400UL) | (enable ? 0x400UL : 0);
 	kr = thread_set_state (th->tid, R_REG_STATE_T,
 			(thread_state_t)&state, state_count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Error to set thread state modificy_trace_bit ppc\n");
+		R_LOG_ERROR ("Error to set thread state modificy_trace_bit ppc");
 		return false;
 	}
 	return true;
@@ -114,7 +114,7 @@ static bool is_thumb_32(ut16 op) {
 static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	int ret = xnu_thread_get_drx (dbg, th);
 	if (!ret) {
-		eprintf ("error to get drx registers modificy_trace_bit arm\n");
+		R_LOG_ERROR ("error to get drx registers modificy_trace_bit arm");
 		return false;
 	}
 #if __arm64 || __arm64__ || __aarch64 || __aarch64__
@@ -140,7 +140,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		R_REG_T *regs;
 		ret = xnu_thread_get_gpr (dbg, th);
 		if (!ret) {
-			eprintf ("error to get gpr register modificy_trace_bit arm\n");
+			R_LOG_ERROR ("error to get gpr register modificy_trace_bit arm");
 			return false;
 		}
 		regs = (R_REG_T*)&th->gpr;
@@ -203,7 +203,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	}
 	//set state
 	if (!xnu_thread_set_drx (dbg, th)) {
-		eprintf ("error to set drx modificy_trace_bit arm\n");
+		R_LOG_ERROR ("error to set drx modificy_trace_bit arm");
 		return false;
 	}
 	return true;

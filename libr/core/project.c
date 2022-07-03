@@ -669,7 +669,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		char *prj_bin_file = r_str_newf ("%s" R_SYS_DIR "%s", prj_bin_dir, bin_filename);
 		r_sys_mkdirp (prj_bin_dir);
 		if (!r_file_copy (bin_file, prj_bin_file)) {
-			eprintf ("Warning: Cannot copy '%s' into '%s'\n", bin_file, prj_bin_file);
+			R_LOG_WARN ("Cannot copy '%s' into '%s'", bin_file, prj_bin_file);
 		}
 		free (prj_bin_file);
 		free (prj_bin_dir);

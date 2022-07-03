@@ -33,7 +33,7 @@ typedef struct {
 #define KVX_OPER_TYPE_REG 1
 #define KVX_OPER_TYPE_IMM 2
 #define KVX_OPER_TYPE_OFF 3
-	char *reg;
+	const char *reg;
 	ut64 imm;
 } operand_t;
 

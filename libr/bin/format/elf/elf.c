@@ -90,25 +90,13 @@ typedef struct reginfo {
 	ut32 regdelta;
 } reginfo_t;
 
-static reginfo_t reginf[ARCH_LEN] = {
+static const reginfo_t reginf[ARCH_LEN] = {
 	{ 160, 0x5c },
 	{ 216, 0x84 },
 	{ 72, 0x5c },
 	{ 272, 0x84 },
 	{ 272, 0x84 }
 };
-
-static inline int __strnlen(const char *str, int len) {
-	int l = 0;
-	while (IS_PRINTABLE (*str) && --len) {
-		if (((ut8)*str) == 0xff) {
-			break;
-		}
-		str++;
-		l++;
-	}
-	return l + 1;
-}
 
 static bool is_bin_etrel(ELFOBJ *bin) {
 	return bin->ehdr.e_type == ET_REL;
@@ -1328,7 +1316,7 @@ static bool init_dynstr(ELFOBJ *bin) {
 		section_name = &bin->shstrtab[bin->shdr[i].sh_name];
 		if (bin->shdr[i].sh_type == SHT_STRTAB && !strcmp (section_name, ".dynstr")) {
 			if (!(bin->dynstr = (char*) calloc (bin->shdr[i].sh_size + 1, sizeof (char)))) {
-				R_LOG_ERROR ("Cannot allocate memory for dynamic strings\n");
+				R_LOG_ERROR ("Cannot allocate memory for dynamic strings");
 				return false;
 			}
 			if (bin->shdr[i].sh_offset > bin->size) {
@@ -3280,7 +3268,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 			if (st_name < 0 || st_name >= maxsize) {
 				ret[ret_ctr].name[0] = 0;
 			} else {
-				const int len = __strnlen (bin->strtab + st_name, rest);
+				const int len = r_str_nlen (bin->strtab + st_name, rest);
 				memcpy (ret[ret_ctr].name, &bin->strtab[st_name], len);
 			}
 		}
@@ -3775,7 +3763,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				}
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name + 1 > strtab_section->sh_size) {
-					R_LOG_DEBUG ("index out of strtab range (%"PFMT64d" / %"PFMT64d")\n",
+					R_LOG_DEBUG ("index out of strtab range (%"PFMT64d" / %"PFMT64d")",
 						(ut64)sym[k].st_name, (ut64)strtab_section->sh_size);
 					continue;
 				}

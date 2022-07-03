@@ -209,7 +209,7 @@ bool xnu_attach(RDebug *dbg, int pid) {
 	}
 #else
 	if (!xnu_create_exception_thread (dbg, pid)) {
-		eprintf ("error setting up exception thread\n");
+		R_LOG_ERROR ("error setting up exception thread");
 		return false;
 	}
 	dbg->pid = pid;
@@ -310,7 +310,7 @@ bool xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 	//disable trace bit if enable
 	if (th->stepping) {
 		if (!clear_trace_bit (dbg, th)) {
-			eprintf ("error clearing trace bit in xnu_continue\n");
+			R_LOG_ERROR ("error clearing trace bit in xnu_continue");
 			return false;
 		}
 	}
@@ -474,7 +474,7 @@ RDebugInfo *xnu_info(RDebug *dbg, const char *arg) {
 	}
 	int kinfo_proc_error = xnu_get_kinfo_proc(dbg->pid, &kp);
 	if (kinfo_proc_error) {
-		eprintf ("Error while querying the process info to sysctl\n");
+		R_LOG_ERROR ("Error while querying the process info to sysctl");
 		return NULL;
 	}
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this w/o libproc ?

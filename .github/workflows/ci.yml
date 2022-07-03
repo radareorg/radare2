@@ -44,6 +44,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Linting
+      run: sys/lint.sh
     - name: Building without capstone
       run: |
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
@@ -301,7 +303,7 @@ jobs:
       shell: cmd
       run: |
         REM preconfigure
-        call configure
+        call configure release
         call make
     - name: Test executable
       # continue-on-error: true

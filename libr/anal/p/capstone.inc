@@ -19,9 +19,7 @@ static R_TH_LOCAL int cs_omode = 0;
 static R_TH_LOCAL csh cs_handle = 0;
 
 static csh init_capstone (RAnal *a) {
-    int mode = (CSINC_MODE);
-
-	int ret;
+	int mode = (CSINC_MODE);
 	if (mode != cs_omode || a->config->bits != cs_obits) {
 		if (cs_handle != 0) {
 			cs_close (&cs_handle);
@@ -31,9 +29,9 @@ static csh init_capstone (RAnal *a) {
 		cs_obits = a->config->bits;
 	}
 	if (cs_handle == 0) {
-		ret = cs_open (CSINC_ARCH, mode, &cs_handle);
+		int ret = cs_open (CSINC_ARCH, mode, &cs_handle);
 		if (ret != CS_ERR_OK) {
-			R_LOG_ERROR ("Capstone failed: cs_open(%#x, %#x): %s\n", CSINC_ARCH, mode, cs_strerror (ret));
+			R_LOG_ERROR ("Capstone failed: cs_open(%#x, %#x): %s", CSINC_ARCH, mode, cs_strerror (ret));
 			cs_handle = 0;
 		} else {
 			cs_option (cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
@@ -44,20 +42,28 @@ static csh init_capstone (RAnal *a) {
 }
 
 static char *cs_mnemonics(RAnal *a, int id, bool json) {
+	int i;
 	csh cs_handle = init_capstone (a);
 	if (cs_handle == 0) {
 		return NULL;
 	}
 
+	PJ *pj = NULL;
 	if (id != -1) {
 		const char *name = cs_insn_name (cs_handle, id);
-		if (json) {
-			return name? r_str_newf ("[\"%s\"]\n", name): NULL;
+		if (name) {
+			if (json) {
+				pj = pj_new ();
+				pj_a (pj);
+				pj_s (pj, name);
+				pj_end (pj);
+				return pj_drain (pj);
+			}
+			return strdup (name);
 		}
-		return name? strdup (name): NULL;
+		return NULL;
 	}
 
-	PJ *pj = NULL;
 	RStrBuf *buf = NULL;
 	if (json) {
 		pj = pj_new ();
@@ -65,7 +71,7 @@ static char *cs_mnemonics(RAnal *a, int id, bool json) {
 	} else {
 		buf = r_strbuf_new ("");
 	}
-	for (int i = 1; i < CSINC_INS_ENDING; i++) {
+	for (i = 1; i < CSINC_INS_ENDING; i++) {
 		const char *op = cs_insn_name (cs_handle, i);
 		if (!op) {
 			continue;

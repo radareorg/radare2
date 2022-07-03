@@ -1,4 +1,4 @@
-/* radare - GPL - Copyright 2010-2016 pancake */
+/* radare - GPL - Copyright 2010-2022 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -17,7 +17,7 @@ static libqnxr_t *desc = NULL;
 static RIODesc *rioqnx = NULL;
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	return (!strncmp (file, "qnx://", 6));
+	return r_str_startswith (file, "qnx://");
 }
 
 /* hacky cache to speedup io a bit */

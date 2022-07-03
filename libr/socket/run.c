@@ -872,7 +872,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 	}
 #else
 	if (p->_docore || p->_maxfd || p->_maxproc || p->_maxstack)
-		eprintf ("Warning: setrlimits not supported for this platform\n");
+		R_LOG_WARN ("setrlimits not supported for this platform");
 #endif
 	if (p->_connect) {
 		char *q = strchr (p->_connect, ':');
@@ -1048,7 +1048,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 #endif
 	if (p->_r2preload) {
 		if (p->_preload) {
-			eprintf ("Warning: Only one library can be opened at a time\n");
+			R_LOG_WARN ("Only one library can be opened at a time");
 		}
 #ifdef __WINDOWS__
 		p->_preload = r_str_r2_prefix (R_JOIN_2_PATHS (R2_LIBDIR, "libr2."R_LIB_EXT));
@@ -1242,7 +1242,7 @@ R_API int r_run_start(RRunProfile *p) {
 #endif
 		} else {
 			if (p->_pidfile) {
-				eprintf ("Warning: pidfile doesnt work with 'system'.\n");
+				R_LOG_WARN ("pidfile doesnt work with 'system'.");
 			}
 			rc = r_sys_cmd (p->_system);
 		}

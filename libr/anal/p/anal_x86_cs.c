@@ -235,7 +235,7 @@ static bool is_xmm_reg(cs_x86_op op) {
  * @return         Pointer to esil operand in static array
  */
 static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel, ut32 *bitsize) {
-	static char buf[AR_DIM][BUF_SZ];
+	static R_TH_LOCAL char buf[AR_DIM][BUF_SZ];
 	char *out = buf[sel];
 	const char *setarg = r_str_get (setop);
 	cs_insn *insn = gop->insn;
@@ -953,7 +953,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			val = 0x8000000000000000;
 			break;
 		default:
-			eprintf ("Error: unknown operand size: %d\n", gop.insn->detail->x86.operands[0].size);
+			R_LOG_ERROR ("unknown operand size: %d", gop.insn->detail->x86.operands[0].size);
 			val = 256;
 		}
 		ut32 bitsize;
@@ -3589,7 +3589,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 #endif
 	//XXX: capstone lcall seg:off workaround, remove when capstone will be fixed
 	if (n >= 1 && mode == CS_MODE_16 && !strncmp (insn->mnemonic, "lcall", 5)) {
-		(void) r_str_replace (insn->op_str, ", ", ":", 0);
+		char *opstr = strdup (insn->op_str);
+		opstr = r_str_replace (opstr, ", ", ":", 0);
+		r_str_ncpy (insn->op_str, opstr, sizeof (insn->op_str));
+		free (opstr);
 	}
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;

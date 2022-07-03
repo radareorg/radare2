@@ -548,7 +548,6 @@ static const char *help_msg_afc[] = {
 	"afc", " ccname", "manually set calling convention for current function",
 	"afc", "", "show calling convention for the Current function (same as tcc)",
 	"afcr", "[j]", "show register usage for the current function",
-	"afca", "", "analyse function for finding the current calling convention",
 	"afcf", "[j] [name]", "prints return type function(arg1, arg2...), see afij",
 	"afci", "", "information about the current calling convention",
 	"afck", "", "list SDB details of call loaded calling conventions",
@@ -578,6 +577,16 @@ static const char *help_msg_afi[] = {
 	"afip", "", "show whether the function is pure or not",
 	"afiq", "", "show quite few info about the function",
 	"afis", "", "show function stats (opcode, meta)",
+	NULL
+};
+
+static const char *help_msg_afis[] = {
+	"Usage:", "afis[ft]", "",
+	"afis", "", "enumerate unique opcodes in function",
+	"afisa", "[fo]", "enumerate all the meta of all the functions",
+	"afisf", "", "enumerate unique opcode families in function",
+	"afiso", "", "enumerate unique opcode types in function",
+	"afist", " [query]", "list in table format",
 	NULL
 };
 
@@ -1185,7 +1194,7 @@ static bool cmd_anal_aaft(RCore *core) {
 	const char *io_cache_key = "io.pcache.write";
 	bool io_cache = r_config_get_b (core->config, io_cache_key);
 	if (r_config_get_b (core->config, "cfg.debug")) {
-		eprintf ("TOFIX: aaft can't run in debugger mode.\n");
+		R_LOG_WARN ("aaft is disabled in debugger mode.");
 		return false;
 	}
 	if (!io_cache) {
@@ -1224,7 +1233,7 @@ static bool cmd_anal_aaft(RCore *core) {
 static void type_cmd(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	if (!fcn && *input != '?') {
-		eprintf ("cant find function here\n");
+		R_LOG_WARN ("cant find function here");
 		return;
 	}
 	ut64 seek;
@@ -1255,7 +1264,7 @@ static void find_refs(RCore *core, const char *glob) {
 		eprintf ("Usage: axF [flag-str-filter]\n");
 		return;
 	}
-	eprintf ("Finding references of flags matching '%s'...\n", glob);
+	R_LOG_WARN ("Finding references of flags matching '%s'...", glob);
 	char *cmd = r_str_newf (".(findstref) @@=`f~%s[0]`", glob);
 	r_core_cmd0 (core, "(findstref;f here=$$;s entry0;/r here;f-here)");
 	r_core_cmd0 (core, cmd);
@@ -1326,7 +1335,6 @@ static void single_block_analysis(RCore *core) {
 static void flag_every_function(RCore *core) {
 	RListIter *iter;
 	RAnalFunction *fcn;
-	// eprintf ("flag every(%d) %c", r_list_length (core->anal->fcns, 10);
 	r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_flag_set (core->flags, fcn->name,
@@ -1346,11 +1354,9 @@ static void var_help(RCore *core, char ch) {
 	case 'r':
 		r_core_cmd_help (core, help_msg_afvr);
 		break;
-	case '?':
+	default:
 		r_core_cmd_help (core, help_msg_afv);
 		break;
-	default:
-		eprintf ("See afv?, afvb?, afvr? and afvs?\n");
 	}
 }
 
@@ -1358,7 +1364,7 @@ static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, PJ *pj, int acc
 	RAnalVarAccess *acc;
 	bool first = true;
 	if (r_vector_empty (&var->accesses)) {
-		eprintf ("Warning: Variable '%s' have no references?\n", name);
+		R_LOG_WARN ("Variable '%s' have no references?", name);
 	}
 	if (pj) {
 		pj_o (pj);
@@ -1667,7 +1673,7 @@ static int var_cmd(RCore *core, const char *str) {
 		if (fcn) {
 			cmd_afvx (core, fcn, str[1] == 'j');
 		} else {
-			eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+			R_LOG_WARN ("Cannot find function in 0x%08"PFMT64x, core->offset);
 		}
 		free (ostr);
 		return true;
@@ -1695,7 +1701,7 @@ static int var_cmd(RCore *core, const char *str) {
 			free (ostr);
 			return true;
 		} else {
-			eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+			R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, core->offset);
 			free (ostr);
 			return false;
 		}
@@ -1713,7 +1719,7 @@ static int var_cmd(RCore *core, const char *str) {
 			free (p);
 			return true;
 		} else {
-			eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+			R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, core->offset);
 			return false;
 		}
 	case 'n':
@@ -1731,7 +1737,7 @@ static int var_cmd(RCore *core, const char *str) {
 				if (var) {
 					old_name = var->name;
 				} else {
-					eprintf ("Cannot find var @ 0x%08"PFMT64x"\n", core->offset);
+					R_LOG_ERROR ("Cannot find var @ 0x%08"PFMT64x, core->offset);
 					r_anal_op_free (op);
 					free (ostr);
 					return false;
@@ -1745,10 +1751,10 @@ static int var_cmd(RCore *core, const char *str) {
 				if (v1) {
 					r_anal_var_rename (v1, new_name, true);
 				} else {
-					eprintf ("Cant find var by name\n");
+					R_LOG_ERROR ("Cant find var by name");
 				}
 			} else {
-				eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+				R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, core->offset);
 				r_anal_op_free (op);
 				free (ostr);
 				return false;
@@ -1767,7 +1773,7 @@ static int var_cmd(RCore *core, const char *str) {
 		return true;
 	case 'd': // "afvd"
 		if (!fcn) {
-			eprintf ("afvd: Cannot find function.\n");
+			R_LOG_ERROR ("Cannot find function");
 		} else if (str[1]) {
 			p = strchr (ostr, ' ');
 			if (!p) {
@@ -1817,7 +1823,7 @@ static int var_cmd(RCore *core, const char *str) {
 			*type++ = 0;
 			v1 = r_anal_function_get_var_byname (fcn, p);
 			if (!v1) {
-				eprintf ("Cant find get by name %s\n", p);
+				R_LOG_ERROR ("Cant find get by name %s", p);
 				free (ostr);
 				return false;
 			}
@@ -1825,7 +1831,7 @@ static int var_cmd(RCore *core, const char *str) {
 			free (ostr);
 			return true;
 		} else {
-			eprintf ("afvt: Cannot find function\n");
+			R_LOG_ERROR ("Cannot find function");
 			return false;
 		}
 	}
@@ -1835,7 +1841,7 @@ static int var_cmd(RCore *core, const char *str) {
 		if (fcn) {
 			r_anal_var_list_show (core->anal, fcn, type, str[1], NULL);
 		} else {
-			eprintf ("afv: Cannot find function\n");
+			R_LOG_ERROR ("Cannot find function");
 		}
 		break;
 	case 'j':  // "afv[bsr]j"
@@ -1852,7 +1858,7 @@ static int var_cmd(RCore *core, const char *str) {
 		break;
 	case '-': // "afv[bsr]-"
 		if (!fcn) {
-			eprintf ("afv: Cannot find function\n");
+			R_LOG_ERROR ("afv: Cannot find function");
 			return false;
 		}
 		if (str[2] == '*') {
@@ -1873,12 +1879,6 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 		}
 		break;
-	case 'd': // "afv[bsr]d"
-		eprintf ("This command is deprecated, use afvd instead\n");
-		break;
-	case 't': // "afv[bsr]t"
-		eprintf ("This command is deprecated use afvt instead\n");
-		break;
 	case 's': // "afv[bsr]s"
 	case 'g': // "afv[bsr]g"
 		if (str[2] != '\0') {
@@ -1891,12 +1891,12 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			r_str_trim (p);
 			ut64 addr = core->offset;
-			if ((vaddr = strchr (p , ' '))) {
+			if ((vaddr = strchr (p, ' '))) {
 				addr = r_num_math (core->num, vaddr);
 			}
 			RAnalVar *var = r_anal_function_get_var (fcn, str[0], idx);
 			if (!var) {
-				eprintf ("Cannot find variable with delta %d\n", idx);
+				R_LOG_ERROR ("Cannot find variable with delta %d", idx);
 				res = false;
 				break;
 			}
@@ -1907,7 +1907,7 @@ static int var_cmd(RCore *core, const char *str) {
 			r_anal_var_set_access (var, ireg, addr, rw, ptr);
 			r_anal_op_free (op);
 		} else {
-			eprintf ("Missing argument\n");
+			R_LOG_ERROR ("Missing argument");
 		}
 		break;
 	case ' ': { // "afv[bsr]"
@@ -1919,14 +1919,14 @@ static int var_cmd(RCore *core, const char *str) {
 			break;
 		}
 		if (!fcn) {
-			eprintf ("Missing function at 0x%08" PFMT64x "\n", core->offset);
+			R_LOG_ERROR ("Missing function at 0x%08" PFMT64x, core->offset);
 			break;
 		}
 		*p++ = 0;
 		r_str_trim_head (p);
 		char *name = strchr (p, ' ');
 		if (!name) {
-			eprintf ("Missing name\n");
+			R_LOG_ERROR ("Missing name");
 			break;
 		}
 		*name++ = 0;
@@ -1935,7 +1935,7 @@ static int var_cmd(RCore *core, const char *str) {
 		if (type == 'r') { //registers
 			RRegItem *i = r_reg_get (core->anal->reg, p, -1);
 			if (!i) {
-				eprintf ("Register not found");
+				R_LOG_ERROR ("Register not found");
 				break;
 			}
 			delta = i->index;
@@ -2048,7 +2048,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 		if (item->sargs) {
 			switch (item->sargs[i]) {
 			case 'p': // pointer
-				res = r_str_appendf (res, "0x%08" PFMT64x "", arg);
+				res = r_str_appendf (res, "0x%08" PFMT64x, arg);
 				break;
 			case 'i':
 				res = r_str_appendf (res, "%" PFMT64u "", arg);
@@ -2073,10 +2073,10 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 				break;
 			}
 			default:
-				res = r_str_appendf (res, "0x%08" PFMT64x "", arg);
+				res = r_str_appendf (res, "0x%08" PFMT64x, arg);
 			}
 		} else {
-			res = r_str_appendf (res, "0x%08" PFMT64x "", arg);
+			res = r_str_appendf (res, "0x%08" PFMT64x, arg);
 		}
 		if (i + 1 < item->args) {
 			res = r_str_appendf (res, ", ");
@@ -2183,11 +2183,12 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 		}
 		if (ret < 1 && fmt != 'd') {
-			eprintf ("Oops at 0x%08" PFMT64x " (", core->offset + idx);
+			RStrBuf *sb = r_strbuf_new ("");
 			for (i = idx, j = 0; i < core->blocksize && j < 3; i++, j++) {
-				eprintf ("%02x ", buf[i]);
+				r_strbuf_appendf (sb, "%02x ", buf[i]);
 			}
-			eprintf ("...)\n");
+			R_LOG_ERROR ("Oops at 0x%08" PFMT64x " (%s...)", core->offset + idx, r_strbuf_get (sb));
+			r_strbuf_free (sb);
 			free (mnem);
 			break;
 		}
@@ -2201,7 +2202,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					r_cons_printf ("%s: %s\n", opname, d);
 					free (d);
 				} else {
-					eprintf ("Unknown opcode\n");
+					R_LOG_ERROR ("Unknown opcode");
 				}
 				free (opname);
 			}
@@ -2379,7 +2380,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					r_anal_esil_stack_free (esil);
 					esil = NULL;
 				} else {
-					eprintf ("Error: ESIL is not initialized. Run `aei`.\n");
+					R_LOG_ERROR ("ESIL is not initialized. Run `aei`.");
 					break;
 				}
 			} else {
@@ -2941,7 +2942,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		if (mode == 'i' && input && *input == 'j') {
 			r_cons_println ("{}");
 		}
-		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", addr);
+		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, addr);
 		return false;
 	}
 	if (mode == '*') {
@@ -3106,7 +3107,7 @@ static bool anal_fcn_del_bb(RCore *core, const char *input) {
 					return true;
 				}
 			}
-			eprintf ("Cannot find basic block\n");
+			R_LOG_ERROR ("Cannot find basic block");
 		}
 	}
 	return false;
@@ -3128,7 +3129,7 @@ static int cmd_afbplus(RCore *core, const char *input) {
 	case 6:
 		ptr2 = r_str_word_get0 (ptr, 6);
 		if (!(diff = r_anal_diff_new ())) {
-			eprintf ("error: Cannot init RAnalDiff\n");
+			R_LOG_ERROR ("Cannot init RAnalDiff");
 			free (ptr);
 			return false;
 		}
@@ -3150,13 +3151,11 @@ static int cmd_afbplus(RCore *core, const char *input) {
 	}
 	fcn = r_anal_get_function_at (core->anal, fcnaddr);
 	if (fcn) {
-		if (!r_anal_function_add_bb (core->anal, fcn, addr, size, jump, fail, diff))
-		//if (!r_anal_function_add_bb_raw (core->anal, fcn, addr, size, jump, fail, type, diff))
-		{
-			eprintf ("afb+: Cannot add basic block at 0x%08"PFMT64x" with size %d\n", addr, (int)size);
+		if (!r_anal_function_add_bb (core->anal, fcn, addr, size, jump, fail, diff)) {
+			R_LOG_ERROR ("afb+: Cannot add basic block at 0x%08"PFMT64x" with size %d", addr, (int)size);
 		}
 	} else {
-		eprintf ("afb+ No function at 0x%" PFMT64x " from 0x%08"PFMT64x" -> 0x%08"PFMT64x"\n",
+		R_LOG_ERROR ("afb+ No function at 0x%" PFMT64x " from 0x%08"PFMT64x" -> 0x%08"PFMT64x,
 				fcnaddr, addr, jump);
 	}
 	r_anal_diff_free (diff);
@@ -3430,7 +3429,7 @@ static void afCc(RCore *core, const char *input) {
 		// cf. canal.c
 		r_cons_printf ("%d\n", totalCycles);
 	} else {
-		eprintf ("afCc: Cannot find function\n");
+		R_LOG_ERROR ("afCc: Cannot find function");
 	}
 }
 
@@ -3572,7 +3571,7 @@ static void __updateStats(RCore *core, Sdb *db, ut64 addr, int statsMode) {
 	//sdb_set (db, family, "1", 0);
 	//r_cons_printf ("0x%08"PFMT64x" %s\n", addr, family);
 	r_anal_op_free (op);
-	// r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x"\n", addr);
+	// r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr);
 }
 
 static Sdb *__core_cmd_anal_fcn_stats(RCore *core, const char *input) {
@@ -3584,12 +3583,7 @@ static Sdb *__core_cmd_anal_fcn_stats(RCore *core, const char *input) {
 	}
 	switch (*input) {
 	case '?':
-		eprintf ("Usage: afis[ft]\n");
-		eprintf (" afis           enumerate unique opcodes in function\n");
-		eprintf (" afisa[fo]      enumerate all the meta of all the functions\n");
-		eprintf (" afisf          enumerate unique opcode families in function\n");
-		eprintf (" afiso          enumerate unique opcode types in function\n");
-		eprintf (" afist [query]  list in table format\n");
+		r_core_cmd_help (core, help_msg_afis);
 		return NULL;
 	case 'f':
 	case 'o':
@@ -3600,7 +3594,7 @@ static Sdb *__core_cmd_anal_fcn_stats(RCore *core, const char *input) {
 
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	if (!fcn) {
-		eprintf ("Cannot find any function at 0x%08"PFMT64x"\n", core->offset);
+		R_LOG_ERROR ("Cannot find any function at 0x%08"PFMT64x, core->offset);
 		return NULL;
 	}
 	Sdb *db = sdb_new0 ();
@@ -3715,7 +3709,7 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 				ut64 nv = r_num_get (NULL, value);
 				names[idx] = r_str_newf ("%d", (int)nv);
 			} else {
-				eprintf ("Invalid column name (%s)\n", key);
+				R_LOG_ERROR ("Invalid column name (%s)", key);
 			}
 		}
 		RList *items = r_list_newf (free);
@@ -3810,7 +3804,7 @@ static void cmd_afsr(RCore *core, const char *input) {
 		}
 		free (res);
 	} else {
-		eprintf ("No function defined at 0x%08" PFMT64x "\n", addr);
+		R_LOG_ERROR ("No function defined at 0x%08" PFMT64x, addr);
 	}
 }
 
@@ -3823,7 +3817,7 @@ static void cmd_afsj(RCore *core, const char *arg) {
 		r_cons_printf ("%s\n", s);
 		free (s);
 	} else {
-		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", addr);
+		R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, addr);
 	}
 }
 
@@ -3861,7 +3855,7 @@ static void cmd_afbc(RCore *core, const char *input) {
 				bb->color = color;
 			}
 		} else {
-			eprintf ("Invalid color? (%s)\n", ptr);
+			R_LOG_ERROR ("Invalid color: '%s'", ptr);
 		}
 	}
 	free (ptr);
@@ -3937,7 +3931,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 		__add_vars_sdb (core, fcn);
 	} else {
 		if (core->anal->verbose) {
-			eprintf ("Warning: Unable to analyze function at 0x%08"PFMT64x"\n", addr);
+			R_LOG_WARN ("Unable to analyze function at 0x%08"PFMT64x, addr);
 		}
 	}
 	if (anal_calls) {
@@ -3948,7 +3942,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 			RList *refs = r_anal_function_get_refs (fcn);
 			r_list_foreach (refs, iter, ref) {
 				if (ref->addr == UT64_MAX) {
-					//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
+					R_LOG_DEBUG ("ignore 0x%08"PFMT64x" call 0x%08"PFMT64x, ref->at, ref->addr);
 					continue;
 				}
 				int rt = R_ANAL_REF_TYPE_MASK (ref->type);
@@ -3988,7 +3982,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 						f = r_anal_get_function_at (core->anal, fcn->addr);
 					}
 					if (!f) {
-						eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", fcn->addr);
+						R_LOG_ERROR ("af: Cannot find function at 0x%08" PFMT64x, fcn->addr);
 					}
 				}
 #endif
@@ -4001,7 +3995,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 	}
 	if (name) {
 		if (*name && !__setFunctionName (core, addr, name, true)) {
-			eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", addr);
+			R_LOG_ERROR ("af: Cannot find function at 0x%08" PFMT64x, addr);
 		}
 	}
 #if SLOW_ANALYSIS
@@ -4072,7 +4066,7 @@ static int cmd_af(RCore *core, const char *input) {
 					depth, core->offset, 0, table, seg, sz, elements, 0, false);
 				free (args);
 			} else {
-				eprintf ("No function defined here\n");
+				R_LOG_ERROR ("No function defined here");
 			}
 			r_list_free (blocks);
 		}
@@ -4132,14 +4126,14 @@ static int cmd_af(RCore *core, const char *input) {
 		}
 
 		if (input[2] != ' ') {
-			eprintf ("Missing argument\n");
+			R_LOG_ERROR ("Missing argument");
 			return false;
 		}
 
 		ut64 addr = core->offset;
 		ut64 addr_end = r_num_math (core->num, input + 2);
 		if (addr_end < addr) {
-			eprintf ("Invalid address ranges\n");
+			R_LOG_ERROR ("Invalid address ranges");
 		} else {
 			ut64 a, b;
 			const char *c;
@@ -4182,7 +4176,7 @@ static int cmd_af(RCore *core, const char *input) {
 			case 4:
 				ptr2 = r_str_word_get0 (ptr, 3);
 				if (!(diff = r_anal_diff_new ())) {
-					eprintf ("error: Cannot init RAnalDiff\n");
+					R_LOG_ERROR ("Cannot initialize RAnalDiff");
 					free (ptr);
 					return false;
 				}
@@ -4219,7 +4213,7 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			RAnalFunction *fcn = r_anal_create_function (core->anal, name, addr, type, diff);
 			if (!fcn) {
-				eprintf ("Cannot add function '%s' (duplicated) at 0x%08"PFMT64x"\n", name, addr);
+				R_LOG_ERROR ("Cannot add function '%s' (duplicated) at 0x%08"PFMT64x, name, addr);
 			}
 			free (hname);
 		}
@@ -4324,7 +4318,7 @@ static int cmd_af(RCore *core, const char *input) {
 					}
 					r_list_append (fcn->imports, r_str_trim_dup (input + 4));
 				} else {
-					eprintf ("No function found\n");
+					R_LOG_ERROR ("No function found");
 				}
 			} else {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
@@ -4482,7 +4476,7 @@ static int cmd_af(RCore *core, const char *input) {
 				}
 				free (type);
 			} else {
-				eprintf ("There's no function defined in here.\n");
+				R_LOG_ERROR ("There's no function defined here");
 			}
 			break;
 		}
@@ -4524,7 +4518,7 @@ static int cmd_af(RCore *core, const char *input) {
 					}
 				}
 			} else {
-				eprintf ("No function defined at 0x%08" PFMT64x "\n", addr);
+				R_LOG_ERROR ("No function defined at 0x%08" PFMT64x, addr);
 			}
 			break;
 		}
@@ -4556,14 +4550,14 @@ static int cmd_af(RCore *core, const char *input) {
 			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0))) {
 				r_cons_printf ("%i\n", r_anal_function_complexity (fcn));
 			} else {
-				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
+				R_LOG_ERROR ("Cannot find function at 0x08%" PFMT64x, core->offset);
 			}
 		} else if (input[2] == 'l') {
 			RAnalFunction *fcn;
 			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0))) {
 				r_cons_printf ("%d\n", r_anal_function_loops (fcn));
 			} else {
-				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
+				R_LOG_ERROR ("Cannot find function at 0x08%" PFMT64x, core->offset);
 			}
 		} else if (input[2] == '?') {
 			r_core_cmd_help (core, help_msg_afC);
@@ -4576,7 +4570,7 @@ static int cmd_af(RCore *core, const char *input) {
 		if (!input[2] || input[2] == ' ' || input[2] == 'i' || input[2] == 'r' || input[2] == 'a') {
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (!fcn) {
-				eprintf ("afc: Cannot find function here\n");
+				R_LOG_ERROR ("afc: Cannot find function here");
 				break;
 			}
 		}
@@ -4588,16 +4582,12 @@ static int cmd_af(RCore *core, const char *input) {
 				  char *cc = r_str_trim_dup (input + 3);
 				  if (!r_anal_cc_exist (core->anal, cc)) {
 					  const char *asmOs = r_config_get (core->config, "asm.os");
-					  eprintf ("afc: Unknown calling convention '%s' for '%s'\n"
-							  "See afcl for available types\n", cc, asmOs);
+					  R_LOG_ERROR ("afc: Unknown calling convention '%s' for '%s'. See afcl for available types", cc, asmOs);
 				  } else {
 					  fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
 				  }
 				  free (cc);
 			  }
-			break;
-		case 'a': // "afca"
-			eprintf ("TODO: afca\n");
 			break;
 		case 'i':
 			cmd_afci (core, fcn);
@@ -6582,7 +6572,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 
 	// eprintf ("   aesB %llx %llx %d\n", addr, until_addr, off); // 0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
 	if (!esil) {
-		// eprintf ("Warning: cmd_espc: creating new esil instance\n");
+		R_LOG_DEBUG ("cmd_espc: creating new esil instance");
 		if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 			return;
 		}
@@ -6606,7 +6596,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 		}
 		if (i >= (bsize - 32)) {
 			i = 0;
-			eprintf ("Warning: Chomp %d of %d\n", i, bsize);
+			R_LOG_WARN ("Chomp %d of %d", i, bsize);
 		}
 		if (!i) {
 			r_io_read_at (core->io, addr, buf, bsize);
@@ -7524,7 +7514,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			switch (input[2]) {
 			case '+': // "aets+"
 				if (!esil) {
-					eprintf ("Error: ESIL is not initialized. Use `aeim` first.\n");
+					R_LOG_ERROR ("ESIL is not initialized. Use `aeim` first.");
 					break;
 				}
 				if (esil->trace) {
@@ -7539,7 +7529,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				break;
 			case '-': // "aets-"
 				if (!esil) {
-					eprintf ("Error: ESIL is not initialized. Use `aeim` first.\n");
+					R_LOG_ERROR ("ESIL is not initialized. Use `aeim` first.");
 					break;
 				}
 				if (!esil->trace) {
@@ -7912,7 +7902,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 					free (s);
 				}
 			} else {
-				eprintf ("Warning: Unable to analyze instruction\n");
+				R_LOG_WARN ("Unable to analyze instruction");
 			}
 		}
 		break;
@@ -8073,7 +8063,6 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 	ut8 *block0 = calloc (1, bsz);
 	ut8 *block1 = malloc (bsz);
 	if (!buf || !block0 || !block1) {
-		eprintf ("Error: cannot allocate buf or block\n");
 		free (buf);
 		free (block0);
 		free (block1);
@@ -8095,7 +8084,6 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 			(void)r_io_read_at (core->io, addr, buf, bsz);
 		}
 		if (!memcmp (buf, block0, bsz) || !memcmp (buf, block1, bsz)) {
-			//eprintf ("Error: skipping uninitialized block \n");
 			addr += bsz;
 			continue;
 		}
@@ -9922,7 +9910,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		break;
 	case 'J':
 	case 'j': {
-		PJ *pj = pj_new ();
+		PJ *pj = r_core_pj_new (core);
 		if (!pj) {
 			return;
 		}
@@ -9934,7 +9922,8 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		pj_end (pj);
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
-	} break;
+	break;
+		}
 	case 'g':
 		r_cons_printf ("graph\n[\n"
 			       "hierarchic 1\n"
@@ -9944,7 +9933,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		r_agraph_foreach_edge (core->graph, agraph_print_edge_gml, NULL);
 		r_cons_print ("]\n");
 		break;
-	case 'w': { // "aggw"
+	case 'w': // "aggw"
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
@@ -9952,9 +9941,9 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 			convert_dotcmd_to_image (core, "aggd", filename);
 		}
 		break;
-	}
 	default:
-		eprintf ("Usage: see ag?\n");
+		r_core_cmd_help (core, help_msg_ag);
+		break;
 	}
 }
 
@@ -10117,12 +10106,13 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 			free (dot_text);
 		}
 		break;
-	}
+		}
 	case 'm':
 		mermaid_graph (graph, mermaid_nodeinfo_body);
 		break;
 	default:
-		eprintf ("Usage: see ag?\n");
+		r_core_cmd_help (core, help_msg_ag);
+		break;
 	}
 }
 
@@ -10269,6 +10259,16 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 static void cmd_anal_graph(RCore *core, const char *input) {
 	core->graph->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
 	r_cons_enable_highlight (false);
+	if (*input == '?') {
+		r_core_cmd_help (core, help_msg_ag);
+		return;
+	}
+	if (strchr (input, '?')) {
+		// causes infinite recursion in ?*
+		// r_core_cmd_help (core, help_msg_ag);
+		// eprintf ("See ag?");
+		return;
+	}
 	switch (input[0]) {
 	case 'f': // "agf"
 		switch (input[1]) {
@@ -10279,23 +10279,22 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			cmd_agfb (core);
 			break;
 		case 'm': /// "agfm" // mermaid
-		{
-			bool add_asm = input[2] == 'a'? true: false;
-			cmd_graph_mermaid (core, add_asm);
-		} break;
+			cmd_graph_mermaid (core, input[2] == 'a');
+			break;
 		case ' ': { // "agf "
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			r_core_visual_graph (core, NULL, fcn, false);
 			break;
 		}
 		case 'v': // "agfv"
-			eprintf ("\rRendering graph...\n");
+		{
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ROOT);
 			if (fcn) {
 				r_core_visual_graph (core, NULL, fcn, 1);
 			}
 			r_cons_enable_mouse (false);
 			r_cons_show_cursor (true);
+		}
 			break;
 		case 't': { // "agft" - tiny graph
 			int e = r_config_get_i (core->config, "graph.edges");
@@ -10345,7 +10344,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			}
 		case 'w': // "agfw"
 			if (r_config_get_i (core->config, "graph.web")) {
-				r_core_cmd0 (core, "=H /graph/");
+				R_LOG_ERROR ("graph.web is deprecated");
 			} else {
 				char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
 				convert_dotcmd_to_image (core, cmdargs, input + 2);
@@ -10353,7 +10352,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			}
 			break;
 		default:
-			eprintf ("Usage: see ag?\n");
+			r_core_cmd_help (core, help_msg_ag);
 			break;
 		}
 		break;
@@ -10380,13 +10379,12 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'k':
 		case 'w':
 		case ' ':
-		case 0: {
+		case 0:
 			core->graph->is_callgraph = true;
 			r_core_cmdf (core, "ag-; .agC*;");
 			r_core_agraph_print(core, -1, input + 1);
 			core->graph->is_callgraph = false;
 			break;
-			}
 		case 'J':
 		case 'j':
 			r_core_anal_callgraph (core, UT64_MAX, R_GRAPH_FORMAT_JSON);
@@ -10401,23 +10399,21 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_anal_callgraph (core, UT64_MAX, R_GRAPH_FORMAT_CMD);
 			break;
 		default:
-			eprintf ("Usage: see ag?\n");
+			r_core_cmd_help (core, help_msg_ag);
 			break;
 		}
 		break;
 	case 'r': // "agr" references graph
 		switch (input[1]) {
-		case '*': {
+		case '*':
 			r_core_anal_coderefs (core, core->offset);
-			}
 			break;
-		default: {
+		default:
 			core->graph->is_callgraph = true;
 			r_core_cmdf (core, "ag-; .agr* @ %"PFMT64u";", core->offset);
 			r_core_agraph_print(core, -1, input + 1);
 			core->graph->is_callgraph = false;
 			break;
-			}
 		}
 		break;
 	case 'R': // "agR" global refs
@@ -10446,7 +10442,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'x': {// "agx" cross refs
 		RGraph *graph = r_core_anal_codexrefs (core, core->offset);
 		if (!graph) {
-			eprintf ("Couldn't create graph\n");
+			R_LOG_ERROR ("Cannot create graph");
 			break;
 		}
 		r_core_graph_print (core, graph, -1, true, input + 1);
@@ -10456,7 +10452,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'i': { // "agi" import graph
 		RGraph *graph = r_core_anal_importxrefs (core);
 		if (!graph) {
-			eprintf ("Couldn't create graph\n");
+			R_LOG_ERROR ("Cannot create graph");
 			break;
 		}
 		r_core_graph_print (core, graph, -1, true, input + 1);
@@ -10499,7 +10495,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		}
 		default:
-			eprintf ("Usage: see ag?\n");
+			r_core_cmd_help (core, help_msg_ag);
 			break;
 		}
 		break;
@@ -10599,7 +10595,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		break;
 	case 'w':// "agw"
 		if (r_config_get_i (core->config, "graph.web")) {
-			r_core_cmd0 (core, "=H /graph/");
+			R_LOG_ERROR ("graph.web is deprecated");
 		} else {
 			char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
 			convert_dotcmd_to_image (core, cmdargs, input + 1);
@@ -10715,7 +10711,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	return res;
 }
 
-static const char *oldstr = NULL;
+static R_TH_LOCAL const char *oldstr = NULL;
 
 static int compute_coverage(RCore *core) {
 	RListIter *iter;
@@ -10854,7 +10850,7 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user
 				return;
 			}
 			if (core->anal->verbose) {
-				eprintf ("Warning: aav: false positive in 0x%08"PFMT64x"\n", from);
+				R_LOG_WARN ("aav: false positive in 0x%08"PFMT64x, from);
 			}
 		}
 	}
@@ -10871,7 +10867,7 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user
 	} else {
 		r_anal_xrefs_set (core->anal, from, to, R_ANAL_REF_TYPE_NULL);
 		// r_meta_set (core->anal, 'd', from, from + vsize, NULL);
-		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x "\n", vsize, from);
+		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x, vsize, from);
 		if (!r_flag_get_at (core->flags, to, false)) {
 			char *name = r_str_newf ("aav.0x%08"PFMT64x, to);
 			r_flag_set (core->flags, name, to, vsize);
@@ -10960,7 +10956,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			from = r_itv_begin (map2->itv);
 			to = r_itv_end (map2->itv);
 			if ((to - from) > MAX_SCAN_SIZE) {
-				eprintf ("Warning: Skipping large region\n");
+				R_LOG_WARN ("Skipping large region");
 				continue;
 			}
 			r_list_foreach (list, iter, map) {
@@ -10996,7 +10992,8 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 		int n = 1;
 		char *p = strchr (input + 1, ' ');
 		if (!p) {
-			eprintf ("Usage: abte [addr] # emulate from beginning of function to the given address.\n");
+			// TODO use r_cons_cmd_help_match () instead
+			r_core_cmd_help (core, help_msg_abt);
 			return;
 		}
 		ut64 addr = r_num_math (core->num, p + 1);
@@ -11038,7 +11035,7 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 			break;
 		}
 		RList *path = r_anal_block_shortest_path (block, addr);
-		PJ *pj = pj_new ();
+		PJ *pj = r_core_pj_new (core);
 		if (pj) {
 			pj_a (pj);
 			if (path) {
@@ -11057,11 +11054,11 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 	case ' ': {
 		ut64 addr = r_num_math (core->num, input + 1);
 		if (addr == UT64_MAX || addr == 0) {
-			eprintf ("Invalid or missing address passed as argument\n");
+			R_LOG_ERROR ("Invalid or missing address passed as argument");
 		} else {
 			RAnalBlock *block = r_anal_get_block_at (core->anal, core->offset);
 			if (!block) {
-				eprintf ("No basic block at\n");
+				R_LOG_ERROR ("No basic block at");
 				break;
 			}
 			RList *path = r_anal_block_shortest_path (block, addr);
@@ -11456,11 +11453,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			if (fcn) {
 				r_core_link_stroff (core, fcn);
 			} else {
-				eprintf ("Cannot find function at %08" PFMT64x "\n", addr);
+				R_LOG_ERROR ("Cannot find function at %08" PFMT64x, addr);
 			}
 		} else {
 			if (r_list_empty (core->anal->fcns)) {
-				eprintf ("Couldn't find any functions\n");
+				R_LOG_ERROR ("Couldn't find any functions");
 				break;
 			}
 			r_list_foreach (core->anal->fcns, it, fcn) {
@@ -11519,7 +11516,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_anal_esil (core, len, NULL);
 					free (len);
 				} else {
-					eprintf ("Assert: anal.from > anal.to\n");
+					R_LOG_ERROR ("Assert: anal.from > anal.to");
 				}
 			} else {
 				r_list_foreach (list, iter, map) {
@@ -11653,7 +11650,7 @@ static void cmd_avg(RCore *core, const char* input) {
 			} else {
 				RFlagItem *fi = r_anal_global_get (core->anal, core->offset);
 				if (fi) {
-					eprintf ("type %s\n", fi->type);
+					R_LOG_INFO ("type %s", fi->type);
 				}
 			}
 			free (a);
@@ -11698,7 +11695,7 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 	case 'n': { // "acmn"
 		const char *str = r_str_trim_head_ro (input + 1);
 		if (!*str) {
-			eprintf ("No class name given.\n");
+			R_LOG_ERROR ("No class name given");
 			break;
 		}
 		char *cstr = strdup (str);
@@ -11707,7 +11704,7 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 		}
 		char *end = strchr (cstr, ' ');
 		if (!end) {
-			eprintf ("No method name given.\n");
+			R_LOG_ERROR ("No method name given");
 			free (cstr);
 			break;
 		}
@@ -11718,9 +11715,9 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 			end = strchr (name_str, ' ');
 			if (!end) {
 				if (c == ' ') {
-					eprintf ("No offset given.\n");
+					R_LOG_ERROR ("No offset given.");
 				} else if (c == 'n') {
-					eprintf ("No new method name given.\n");
+					R_LOG_ERROR ("No new method name given.");
 				}
 				free (cstr);
 				break;
@@ -11764,14 +11761,14 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 	}
 
 	switch (err) {
-		case R_ANAL_CLASS_ERR_NONEXISTENT_CLASS:
-			eprintf ("Class does not exist.\n");
-			break;
-		case R_ANAL_CLASS_ERR_NONEXISTENT_ATTR:
-			eprintf ("Method does not exist.\n");
-			break;
-		default:
-			break;
+	case R_ANAL_CLASS_ERR_NONEXISTENT_CLASS:
+		R_LOG_ERROR ("Class does not exist");
+		break;
+	case R_ANAL_CLASS_ERR_NONEXISTENT_ATTR:
+		R_LOG_ERROR ("Method does not exist");
+		break;
+	default:
+		break;
 	}
 }
 
@@ -11783,7 +11780,7 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 	case '-': { // "acb-"
 		const char *str = r_str_trim_head_ro (input + 1);
 		if (!*str) {
-			eprintf ("No class name given.\n");
+			R_LOG_ERROR ("No class name given");
 			return;
 		}
 		char *cstr = strdup (str);
@@ -11800,7 +11797,7 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 			if (c == ' ') {
 				r_anal_class_list_bases (core->anal, cstr);
 			} else /*if (c == '-')*/ {
-				eprintf ("No base id given.\n");
+				R_LOG_ERROR ("No base id given");
 			}
 			free (cstr);
 			break;
@@ -11838,7 +11835,7 @@ static void cmd_anal_class_base(RCore *core, const char *input) {
 	}
 
 	if (err == R_ANAL_CLASS_ERR_NONEXISTENT_CLASS) {
-		eprintf ("Class does not exist.\n");
+		R_LOG_ERROR ("Class does not exist");
 	}
 }
 
@@ -11849,7 +11846,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 	case 'f': {// "acvf" [offset] ([class_name])
 		const char *str = r_str_trim_head_ro (input + 1);
 		if (!*str) {
-			eprintf ("No offset given\n");
+			R_LOG_ERROR ("No offset given");
 			return;
 		}
 		char *cstr = strdup (str);
@@ -11880,7 +11877,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 	case '-': { // "acv-"
 		const char *str = r_str_trim_head_ro (input + 1);
 		if (!*str) {
-			eprintf ("No class name given.\n");
+			R_LOG_ERROR ("No class name given");
 			return;
 		}
 		char *cstr = strdup (str);
@@ -11897,7 +11894,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 			if (c == ' ') {
 				r_anal_class_list_vtables (core->anal, cstr);
 			} else /*if (c == '-')*/ {
-				eprintf ("No vtable id given. See acv [class name].\n");
+				R_LOG_ERROR ("No vtable id given. See acv [class name]");
 			}
 			free (cstr);
 			break;
@@ -11942,9 +11939,8 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_ac);
 		break;
 	}
-
 	if (err == R_ANAL_CLASS_ERR_NONEXISTENT_CLASS) {
-		eprintf ("Class does not exist.\n");
+		R_LOG_ERROR ("Class does not exist");
 	}
 }
 
@@ -11997,9 +11993,9 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		}
 		if (input[0] == '-') {
 			r_anal_class_delete (core->anal, cstr);
-		} else if(input[0] == 'n') {
+		} else if (input[0] == 'n') {
 			if (!end) {
-				eprintf ("No new class name given.\n");
+				R_LOG_ERROR ("No new class name given");
 			} else {
 				char *new_name = end + 1;
 				end = strchr (new_name, ' ');
@@ -12008,9 +12004,9 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 				}
 				RAnalClassErr err = r_anal_class_rename (core->anal, cstr, new_name);
 				if (err == R_ANAL_CLASS_ERR_NONEXISTENT_CLASS) {
-					eprintf ("Class does not exist.\n");
+					R_LOG_ERROR ("Class does not exist");
 				} else if (err == R_ANAL_CLASS_ERR_CLASH) {
-					eprintf ("A class with this name already exists.\n");
+					R_LOG_ERROR ("A class with this name already exists");
 				}
 			}
 		} else {
@@ -12031,7 +12027,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	case 'g': { // "acg"
 		RGraph *graph = r_anal_class_get_inheritance_graph (core->anal);
 		if (!graph) {
-			eprintf ("Couldn't create graph\n");
+			R_LOG_ERROR ("Couldn't create graph");
 			break;
 		}
 		r_core_graph_print (core, graph, -1, false, input + 1);
@@ -12122,7 +12118,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 					r_strbuf_appendf (sb, "void)\n");
 				}
 			} else {
-				eprintf ("Cannot find any function type..lets just use some standards?\n");
+				R_LOG_ERROR ("Cannot find any function signature");
 			}
 			free (key);
 		} else {
@@ -12223,7 +12219,7 @@ static bool core_anal_abf(RCore *core, const char* input) {
 	RList *bbs = r_anal_get_blocks_in (core->anal, addr);
 	r_list_foreach (bbs, bbiter, bb) {
 		if (!bb) {
-			eprintf ("Cannot find basic block\n");
+			R_LOG_ERROR ("Cannot find basic block");
 			return false;
 		}
 		r_list_foreach (bb->fcns, iter, fcn) {
@@ -12268,11 +12264,11 @@ static int cmd_anal(void *data, const char *input) {
 			const ut8 *pos = r_mem_mem (buf, bufsz, prelude, prelude_sz);
 			if (pos) {
 				int delta = (size_t)(pos - buf);
-				eprintf ("POS = %d\n", delta);
-				eprintf ("HIT = 0x%"PFMT64x"\n", off - delta);
+				// R_LOG_DEBUG ("POS = %d", delta);
+				// R_LOG_DEBUG ("HIT = 0x%"PFMT64x, off - delta);
 				r_cons_printf ("0x%08"PFMT64x"\n", off - delta);
 			} else {
-				eprintf ("Cannot find prelude\n");
+				R_LOG_ERROR ("Cannot find prelude");
 			}
 			free (buf);
 		}
@@ -12393,7 +12389,7 @@ static int cmd_anal(void *data, const char *input) {
 			RListIter *iter;
 			char *c;
 			r_list_foreach (l, iter, c) {
-				eprintf ("- %s\n", c);
+				r_cons_printf ("- %s\n", c);
 			}
 			r_list_free (l);
 		}

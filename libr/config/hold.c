@@ -13,7 +13,7 @@ typedef struct r_config_holder_t {
 } RConfigHolder;
 
 static void r_config_holder_free(RConfigHolder *hc) {
-	if (hc) {
+	if (R_LIKELY (hc)) {
 		free (hc->key);
 		if (hc->flags & CN_STR) {
 			free (hc->data.str);
@@ -24,7 +24,7 @@ static void r_config_holder_free(RConfigHolder *hc) {
 
 static RConfigHolder *node_to_holder(RConfigNode *node) {
 	RConfigHolder *hc = R_NEW0 (RConfigHolder);
-	if (hc) {
+	if (R_LIKELY (hc)) {
 		hc->key = strdup (node->name);
 		hc->flags = node->flags;
 		if (node->flags & CN_STR) {
@@ -43,8 +43,9 @@ R_API bool r_config_hold(RConfigHold *h, ...) {
 	va_start (ap, h);
 	while ((key = va_arg (ap, char *))) {
 		RConfigNode *node = r_config_node_get (h->cfg, key);
-		r_return_val_if_fail (node, false);
-		r_list_append (h->list, node_to_holder (node));
+		if (R_LIKELY (node)) {
+			r_list_append (h->list, node_to_holder (node));
+		}
 	}
 	va_end (ap);
 	return true;

@@ -211,7 +211,7 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "ihex://", 7));
+	return r_str_startswith (pathname, "ihex://");
 }
 
 //ihex_parse : parse ihex file loaded at *str, fill sparse buffer "rbuf"
@@ -323,13 +323,6 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 		case 4:	//extended linear address rec
 			//both rec types are handled the same except :
 			//	new address = seg_reg <<4 for type 02; new address = lin_addr <<16 for type 04.
-			//write current section
-			if (sec_size && at) {
-				if (r_buf_write_at (rbuf, at, sec_tmp, sec_size) != sec_size) {
-					eprintf ("sparse buffer problem, giving up\n");
-					goto fail;
-				}
-			}
 			sec_size = 0;
 
 			eol = strchr (str + 1, ':');

@@ -1731,6 +1731,12 @@ R_API int r_cons_is_vtcompat(void) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
+	char *cmd_session = r_sys_getenv ("SESSIONNAME");
+	if (cmd_session) {
+		free (cmd_session);
+		return 2;
+	}
+	// Windows Terminal
 	char *wt_session = r_sys_getenv ("WT_SESSION");
 	if (wt_session) {
 		free (wt_session);
@@ -2176,5 +2182,6 @@ R_API void r_cons_thready(void) {
 		r_cons_new ();
 	}
 	C->unbreakable = true;
+	r_sys_signable (false); // disable signal handling
 	r_th_lock_leave (&r_cons_lock);
 }

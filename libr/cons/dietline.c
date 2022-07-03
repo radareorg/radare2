@@ -224,11 +224,6 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 		return -1;
 	}
 	*s = ch;
-#if 0
-	if ((t = read (0, s, 1)) != 1) {
-		return t;
-	}
-#endif
 	*s = r_cons_controlz (*s);
 	if (*s < 0x80) {
 		len = 1;
@@ -520,24 +515,22 @@ R_API bool r_line_hist_load(const char *file) {
 R_API int r_line_hist_load(const char *file) {
 #endif
 	r_return_val_if_fail (file, false);
-	char buf[R_LINE_BUFSIZE] = {0};
-	char *path = r_str_home (file);
-	if (!path) {
-		return false;
-	}
-	FILE *fd = r_sandbox_fopen (path, "rb");
+	char *buf = calloc (1, R_LINE_BUFSIZE);
+	FILE *fd = r_sandbox_fopen (file, "rb");
 	if (!fd) {
-		free (path);
+		free (buf);
 		return false;
 	}
-	buf[0] = 0;
-	while (fgets (buf, sizeof (buf) - 1, fd)) {
+	memset (buf, 0, R_LINE_BUFSIZE);
+	while (fgets (buf, R_LINE_BUFSIZE - 1, fd)) {
 		r_str_trim_tail (buf);
-		r_line_hist_add (buf);
-		buf[0] = 0;
+		if (*buf) {
+			r_line_hist_add (buf);
+		}
+		memset (buf, 0, R_LINE_BUFSIZE);
 	}
 	fclose (fd);
-	free (path);
+	free (buf);
 	return true;
 }
 
@@ -545,9 +538,9 @@ R_API bool r_line_hist_save(const char *file) {
 	r_return_val_if_fail (file && *file, false);
 	int i;
 	bool ret = false;
-	char *p, *path = r_str_home (file);
+	char *path = r_str_home (file);
 	if (path) {
-		p = (char *) r_str_lastbut (path, R_SYS_DIR[0], NULL);	// TODO: use fs
+		char *p = (char *) r_str_lastbut (path, R_SYS_DIR[0], NULL);	// TODO: use fs
 		if (p) {
 			*p = 0;
 			if (!r_sys_mkdirp (path)) {
@@ -565,11 +558,9 @@ R_API bool r_line_hist_save(const char *file) {
 					fputs (I.history.data[i], fd);
 					fputs ("\n", fd);
 				}
-				fclose (fd);
 				ret = true;
-			} else {
-				fclose (fd);
 			}
+			fclose (fd);
 		}
 	}
 end:
@@ -2076,9 +2067,8 @@ _end:
 
 	R_FREE (I.sel_widget);
 
-	// should be here or not?
-	if (!memcmp (I.buffer.data, "!history", 8)) {
-		// if (I.buffer.data[0]=='!' && I.buffer.data[1]=='\0') {
+	// shouldnt be here
+	if (r_str_startswith (I.buffer.data, "!history")) {
 		r_line_hist_list ();
 		return "";
 	}

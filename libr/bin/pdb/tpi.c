@@ -1,9 +1,11 @@
+/* radare - LGPL - Copyright 2014-2020 - inisider */
+
 #include "types.h"
 #include "tpi.h"
 #include "stream_file.h"
 
-static unsigned int base_idx = 0;
-static RList *p_types_list;
+static R_TH_LOCAL unsigned int base_idx = 0;
+static R_TH_LOCAL RList *p_types_list;
 
 static bool is_simple_type(int idx) {
 	ut32 value = (ut32) idx;
@@ -2039,7 +2041,7 @@ static void get_nesttype_print_type(void *type, char **name) {
 			//	this is possible because there is no support for
 			// parsing METHODLIST...
 			// need to investigate for this theme
-			//eprintf ("warning: strange for nesttype\n");
+			//R_LOG_WARN ("strange for nesttype");
 		}
 	}
 

@@ -1,14 +1,10 @@
-/* radare - LGPL - Copyright 2008-2013 nibble, pancake, xvilka */
+/* radare - LGPL - Copyright 2008-2022 nibble, pancake, xvilka */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <r_types.h>
 #include <r_util.h>
 #include "te_specs.h"
 #include "te.h"
 
-ut64 r_bin_te_get_stripped_delta(struct r_bin_te_obj_t *bin) {
+static ut64 r_bin_te_get_stripped_delta(struct r_bin_te_obj_t *bin) {
 	if (bin && bin->header) {
 		return bin->header->StrippedSize - sizeof (TE_image_file_header);
 	}
@@ -19,19 +15,16 @@ static int r_bin_te_init_hdr(struct r_bin_te_obj_t *bin) {
 	if (!bin) {
 		return false;
 	}
-	if (!(bin->header = malloc (sizeof(TE_image_file_header)))) {
-		r_sys_perror ("malloc (header)");
+	if (!(bin->header = malloc (sizeof (TE_image_file_header)))) {
 		return false;
 	}
 	if (r_buf_read_at (bin->b, 0, (ut8*)bin->header, sizeof (TE_image_file_header)) == -1) {
-		eprintf("Error: read (header)\n");
 		return false;
 	}
 	if (!bin->kv) {
-		eprintf("Error: sdb instance is empty\n");
+		R_LOG_ERROR ("uninitialized sdb instance");
 		return false;
 	}
-
 	sdb_set (bin->kv, "te_machine.cparse", "enum te_machine { TE_IMAGE_FILE_MACHINE_UNKNOWN=0x0, TE_IMAGE_FILE_MACHINE_ALPHA=0x184, "
 	"TE_IMAGE_FILE_MACHINE_ALPHA64=0x284, TE_IMAGE_FILE_MACHINE_AM33=0x1d3, TE_IMAGE_FILE_MACHINE_AMD64=0x8664, "
 	"TE_IMAGE_FILE_MACHINE_ARM=0x1c0, TE_IMAGE_FILE_MACHINE_AXP64=0x184, TE_IMAGE_FILE_MACHINE_CEE=0xc0ee, "
@@ -64,7 +57,7 @@ static int r_bin_te_init_hdr(struct r_bin_te_obj_t *bin) {
 	return true;
 }
 
-ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
+R_IPI ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
 	RBinAddr *entry = r_bin_te_get_entrypoint (bin);
 	ut64 addr = 0LL;
 	ut8 buf[512];
@@ -72,7 +65,7 @@ ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
 		return 0LL;
 	}
 	if (r_buf_read_at (bin->b, entry->paddr, buf, sizeof (buf)) == -1) {
-		eprintf ("Error: read (entry)\n");
+		R_LOG_ERROR ("read (entry)");
 	} else {
 		if (buf[367] == 0xe8) {
 			int delta = (buf[368] | buf[369]<<8 | buf[370]<<16 | buf[371]<<24);
@@ -103,19 +96,18 @@ static TE_DWord r_bin_te_vaddr_to_paddr(struct r_bin_te_obj_t* bin, TE_DWord vad
 	return 0;
 }
 
-static int r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
-	int sections_size = sizeof(TE_image_section_header) * bin->header->NumberOfSections;
+static bool r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
+	int sections_size = sizeof (TE_image_section_header) * bin->header->NumberOfSections;
 	if (sections_size > bin->size) {
-		eprintf ("Invalid NumberOfSections value\n");
+		R_LOG_WARN ("Invalid NumberOfSections value");
 		return false;
 	}
 	if (!(bin->section_header = malloc (sections_size))) {
-		r_sys_perror ("malloc (sections headers)");
 		return false;
 	}
 	if (r_buf_read_at (bin->b, sizeof(TE_image_file_header),
 				(ut8*)bin->section_header, sections_size) == -1) {
-		eprintf ("Error: read (sections headers)\n");
+		R_LOG_ERROR ("read (sections headers)");
 		return false;
 	}
 	return true;
@@ -126,53 +118,44 @@ static int r_bin_te_init(struct r_bin_te_obj_t* bin) {
 	bin->section_header = NULL;
 	bin->endian = 0;
 	if (!r_bin_te_init_hdr (bin)) {
-		eprintf("Warning: File is not TE\n");
+		R_LOG_WARN ("File is not TE");
 		return false;
 	}
 	if (!r_bin_te_init_sections (bin)) {
-		eprintf("Warning: Cannot initialize sections\n");
+		R_LOG_WARN ("Cannot initialize sections");
 		return false;
 	}
 	return true;
 }
 
-char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin) {
-	char *arch;
-	if (!bin) {
-		return NULL;
-	}
+R_IPI const char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin) {
+	r_return_val_if_fail (bin, NULL);
 	switch (bin->header->Machine) {
 	case TE_IMAGE_FILE_MACHINE_ALPHA:
 	case TE_IMAGE_FILE_MACHINE_ALPHA64:
-		arch = strdup ("alpha");
-		break;
+		return "alpha";
 	case TE_IMAGE_FILE_MACHINE_ARM:
 	case TE_IMAGE_FILE_MACHINE_THUMB:
-		arch = strdup ("arm");
-		break;
+		return "arm";
 	case TE_IMAGE_FILE_MACHINE_M68K:
-		arch = strdup ("m68k");
-		break;
+		return "m68k";
 	case TE_IMAGE_FILE_MACHINE_MIPS16:
 	case TE_IMAGE_FILE_MACHINE_MIPSFPU:
 	case TE_IMAGE_FILE_MACHINE_MIPSFPU16:
 	case TE_IMAGE_FILE_MACHINE_WCEMIPSV2:
-		arch = strdup ("mips");
-		break;
+		return "mips";
 	case TE_IMAGE_FILE_MACHINE_POWERPC:
 	case TE_IMAGE_FILE_MACHINE_POWERPCFP:
-		arch = strdup ("ppc");
-		break;
+		return "ppc";
 	default:
-		arch = strdup ("x86");
+		// return "unknown";
+		return "x86";
 	}
-	return arch;
 }
 
 int r_bin_te_get_bits(struct r_bin_te_obj_t* bin) {
 	return 32; // It is always 32 bit by now
 }
-
 
 RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 	RBinAddr *entry = NULL;
@@ -192,8 +175,7 @@ RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 	return entry;
 }
 
-ut64 r_bin_te_get_image_base(struct r_bin_te_obj_t* bin)
-{
+ut64 r_bin_te_get_image_base(struct r_bin_te_obj_t* bin) {
 	if (bin && bin->header) {
 		return (ut64)bin->header->ImageBase;
 	}

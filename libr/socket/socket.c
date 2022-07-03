@@ -233,7 +233,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 	r_sys_usleep (timeout);
 
 	char aport[32];
-	sprintf (aport, "%d", port);
+	snprintf (aport, sizeof (aport), "%d", port);
 	// redirect stdin/stdout/stderr
 	bool sock = r_socket_connect (s, "127.0.0.1", aport, R_SOCKET_PROTO_TCP, 2000);
 	if (!sock) {
@@ -244,7 +244,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 	r_sys_usleep (timeout);
 
 	int status = 0;
-	int ret = waitpid (childPid, &status, WNOHANG);
+	int ret = waitpid (childPid, &status, WNOHANG | WUNTRACED);
 	if (ret != 0) {
 		r_socket_close (s);
 		return false;
@@ -260,7 +260,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	WSADATA wsadata;
 
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
-		eprintf ("Error creating socket.\n");
+		R_LOG_ERROR ("Error creating socket.");
 		return false;
 	}
 #endif
@@ -291,7 +291,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		if (fd == -1) {
 			return false;
 		}
-		static struct can_isotp_options opts = {
+		struct can_isotp_options opts = {
 			.txpad_content = 0xcc,
 			.rxpad_content = 0xcc,
 			.frame_txtime = 0x1000,
@@ -300,14 +300,14 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 			close (fd);
 			return false;
 		}
-		static struct can_isotp_fc_options fcopts = {
+		struct can_isotp_fc_options fcopts = {
 			.stmin = 0xf3
 		};
 		if (setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_RECV_FC, &fcopts, sizeof (fcopts)) == -1) {
 			close (fd);
 			return false;
 		}
-		static struct can_isotp_ll_options llopts = {
+		struct can_isotp_ll_options llopts = {
 			.mtu = 8,
 			.tx_dl = 8,
 		};
@@ -551,7 +551,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 #if __WINDOWS__
 	WSADATA wsadata;
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
-		eprintf ("Error creating socket.\n");
+		R_LOG_ERROR ("Error creating socket.");
 		return false;
 	}
 #endif

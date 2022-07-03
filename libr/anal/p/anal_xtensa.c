@@ -69,8 +69,8 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 #define CM ","
 #define XTENSA_MAX_LENGTH 8
 
+static const int length_table[16] = { 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 8, 8 };
 static int xtensa_length(const ut8 *insn) {
-	static int length_table[16] = { 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 8, 8 };
 	return length_table[*insn & 0xf];
 }
 
@@ -1997,8 +1997,8 @@ static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origina
 	xtensa_format format;
 	int nslots;
 
-	static xtensa_insnbuf insn_buffer = NULL;
-	static xtensa_insnbuf slot_buffer = NULL;
+	static R_TH_LOCAL xtensa_insnbuf insn_buffer = NULL;
+	static R_TH_LOCAL xtensa_insnbuf slot_buffer = NULL;
 
 	if (!insn_buffer) {
 		insn_buffer = xtensa_insnbuf_alloc (isa);

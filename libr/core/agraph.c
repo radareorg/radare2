@@ -6,10 +6,10 @@
 #include <ctype.h>
 #include <limits.h>
 
-static int mousemode = 0;
-static int disMode = 0;
-static int discroll = 0;
-static bool graphCursor = false;
+static R_TH_LOCAL int mousemode = 0;
+static R_TH_LOCAL int disMode = 0;
+static R_TH_LOCAL int discroll = 0;
+static R_TH_LOCAL bool graphCursor = false;
 static const char *mousemodes[] = {
 	"canvas-y",
 	"canvas-x",

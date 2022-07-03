@@ -179,7 +179,7 @@ int Init (const char * driverPath) {
 				ret = InitDriver ();
 			}
 		} else {
-			eprintf ("Error initalizating driver, try r2k://pathtodriver\nEx: radare2.exe r2k://c:\\r2k.sys");
+			eprintf ("Error initalizating driver, try r2k://pathtodriver\nEx: radare2.exe r2k://c:\\r2k.sys\n");
 		}
 	} else {
 		eprintf ("Driver present [OK]\n");

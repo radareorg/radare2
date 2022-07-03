@@ -38,7 +38,7 @@ static bool __is_data_block_cb(RAnalBlock *block, void *user) {
 
 static int __isdata(RCore *core, ut64 addr) {
 	if (!r_io_is_valid_offset (core->io, addr, false)) {
-		// eprintf ("Warning: Invalid memory address at 0x%08"PFMT64x"\n", addr);
+		// R_LOG_WARN ("Invalid memory address at 0x%08"PFMT64x, addr);
 		return 4;
 	}
 
@@ -245,7 +245,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	}
 }
 
-#define Fhandled(x) r_strf ("handled.%"PFMT64x"", x)
+#define Fhandled(x) r_strf ("handled.%"PFMT64x, x)
 R_API bool core_anal_bbs(RCore *core, const char* input) {
 	if (!r_io_is_valid_offset (core->io, core->offset, false)) {
 		eprintf ("No valid offset given to analyze\n");

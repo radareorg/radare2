@@ -289,7 +289,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 			free (argv0);
 			return rc;
 		}
-		eprintf ("Error parsing command arguments\n");
+		R_LOG_ERROR ("Error parsing command arguments");
 		return -1;
 	}
 #endif

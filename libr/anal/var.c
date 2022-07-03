@@ -54,7 +54,7 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	return true;
 }
 
-static const char *__int_type_from_size(int size) {
+static const char * __int_type_from_size(int size) {
 	switch (size) {
 	case 1: return "int8_t";
 	case 2: return "int16_t";
@@ -199,7 +199,7 @@ R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList *l) {
 	return true;
 }
 
-R_API void r_anal_var_set_type(RAnalVar *var, const char *type) {
+R_API void r_anal_var_set_type(RAnalVar *var, const char * const type) {
 	char *nt = strdup (type);
 	if (nt) {
 		free (var->type);
@@ -409,7 +409,7 @@ R_API char *r_anal_var_prot_serialize(RList *l, bool spaces) {
 	}
 	r_strbuf_reserve (sb, r_list_length (l) * 0x10);
 
-	char *sep = spaces? ", ": ",";
+	const char * const sep = spaces? ", ": ",";
 	size_t len = strlen (sep);
 	RAnalVarProt *v;
 	RAnalVarProt *top = (RAnalVarProt *)r_list_get_top (l);
@@ -744,22 +744,22 @@ R_API char *r_anal_var_get_constraints_readable(RAnalVar *var) {
 			if (high) {
 				r_strbuf_append (&sb, " && ");
 			}
-			r_strbuf_appendf (&sb, "<= 0x%"PFMT64x "", constr->val);
+			r_strbuf_appendf (&sb, "<= 0x%"PFMT64x, constr->val);
 			low = true;
 			break;
 		case R_ANAL_COND_LT:
 			if (high) {
 				r_strbuf_append (&sb, " && ");
 			}
-			r_strbuf_appendf (&sb, "< 0x%"PFMT64x "", constr->val);
+			r_strbuf_appendf (&sb, "< 0x%"PFMT64x, constr->val);
 			low = true;
 			break;
 		case R_ANAL_COND_GE:
-			r_strbuf_appendf (&sb, ">= 0x%"PFMT64x "", constr->val);
+			r_strbuf_appendf (&sb, ">= 0x%"PFMT64x, constr->val);
 			high = true;
 			break;
 		case R_ANAL_COND_GT:
-			r_strbuf_appendf (&sb, "> 0x%"PFMT64x "", constr->val);
+			r_strbuf_appendf (&sb, "> 0x%"PFMT64x, constr->val);
 			high = true;
 			break;
 		default:
@@ -941,7 +941,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 				const char *rn = op->dst->reg ? op->dst->reg->name : NULL;
 				if (rn && ((bp && !strcmp (bp, rn)) || (sp && !strcmp (sp, rn)))) {
 					if (anal->verbose) {
-						eprintf ("Warning: Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x ".\n", op->addr);
+						R_LOG_WARN ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x ".", op->addr);
 					}
 					goto beach;
 				}
@@ -969,7 +969,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	}
 
 	if (anal->verbose && (!op->src[0] || !op->dst)) {
-		eprintf ("Warning: Analysis didn't fill op->src/dst at 0x%" PFMT64x ".\n", op->addr);
+		R_LOG_WARN ("Analysis didn't fill op->src/dst at 0x%" PFMT64x ".", op->addr);
 	}
 
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_ANAL_VAR_ACCESS_TYPE_WRITE : R_ANAL_VAR_ACCESS_TYPE_READ;
@@ -1158,7 +1158,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	const char *opdreg = op->dst ? get_regname (anal, op->dst) : NULL;
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
 	if (!fcn->cc) {
-		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments\n", fcn->name);
+		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
 		return;
 	}
 	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);

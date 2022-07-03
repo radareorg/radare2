@@ -12,10 +12,10 @@
 // XXX: do not hardcode size/type here, use proper decoding table
 // http://hotkosc.ru:8080/method-vax.doc
 
-static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
-static const ut8 *bytes = NULL;
-static int bytes_size = 0;
+static R_TH_LOCAL unsigned long Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL const ut8 *bytes = NULL;
+static R_TH_LOCAL int bytes_size = 0;
 
 static int vax_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);

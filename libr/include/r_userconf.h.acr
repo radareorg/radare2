@@ -35,7 +35,7 @@
 #define R2_SDB "@SDB@"
 #define R2_ZIGNS "@ZIGNS@"
 #define R2_THEMES "@THEMES@"
-#define R2_FORTUNES "@FORTUNES@"
+#define R2_FORTUNES R_JOIN_3_PATHS ("@DATADIR@", "doc", "radare2")
 #define R2_FLAGS "@FLAGS@"
 #define R2_HUD "@HUD@"
 #else
@@ -79,6 +79,7 @@
 #define R2_HOME_CACHEDIR    R_JOIN_2_PATHS (".cache", "radare2")
 
 #define R2_HOME_THEMES      R_JOIN_2_PATHS (R2_HOME_DATADIR, "cons")
+#define R2_HOME_FORTUNES    R_JOIN_2_PATHS (R2_HOME_DATADIR, "fortunes")
 #define R2_HOME_PLUGINS     R_JOIN_2_PATHS (R2_HOME_DATADIR, "plugins")
 #define R2_HOME_ZIGNS       R_JOIN_2_PATHS (R2_HOME_DATADIR, "zigns")
 #define R2_HOME_PDB         R_JOIN_2_PATHS (R2_HOME_DATADIR, "pdb")

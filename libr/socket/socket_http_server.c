@@ -123,6 +123,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 }
 
 R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *out, int len, const char *headers) {
+	r_return_if_fail (rs);
 	const char *strcode = \
 		code==200?"ok":
 		code==301?"Moved permanently":
@@ -192,18 +193,22 @@ R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 }
 
 R_API void r_socket_http_close(RSocketHTTPRequest *rs) {
-	r_socket_close (rs->s);
+	if (rs) {
+		r_socket_close (rs->s);
+	}
 }
 
 /* close client socket and free struct */
 R_API void r_socket_http_free(RSocketHTTPRequest *rs) {
-	r_socket_free (rs->s);
-	free (rs->path);
-	free (rs->host);
-	free (rs->agent);
-	free (rs->method);
-	free (rs->data);
-	free (rs);
+	if (rs) {
+		r_socket_free (rs->s);
+		free (rs->path);
+		free (rs->host);
+		free (rs->agent);
+		free (rs->method);
+		free (rs->data);
+		free (rs);
+	}
 }
 
 #if MAIN

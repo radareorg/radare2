@@ -134,7 +134,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 "eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc",
 "hi", "ls", "ge", "lt", "gt", "le", "al", "nv",
 #endif
-static int iconds[] = {
+static const int iconds[] = {
 	R_ANAL_COND_EQ,
 	R_ANAL_COND_NE,
 	0, // cs

@@ -304,11 +304,11 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		stack_rev = true;
 	}
 	place = r_anal_cc_arg (anal, cc, 0);
-	if (place && r_str_startswith ("stack", place)) {
+	if (place && r_str_startswith (place, "stack")) {
 		in_stack = true;
 	}
 	if (verbose && !strncmp (fcn_name, "sym.imp.", 8)) {
-		eprintf ("Warning: Missing function definition for '%s'\n", fcn_name + 8);
+		R_LOG_WARN ("Missing function definition for '%s'", fcn_name + 8);
 	}
 	if (!max) {
 		if (!in_stack) {
@@ -341,7 +341,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		if (!in_stack) {
 			//XXX: param arg_num must be fixed to support floating point register
 			place = r_anal_cc_arg (anal, cc, arg_num);
-			if (place && r_str_startswith ("stack", place)) {
+			if (place && r_str_startswith (place, "stack")) {
 				in_stack = true;
 			}
 		}
@@ -583,7 +583,7 @@ repeat:
 	for (j = 0; j < bblist_size; j++) {
 		bb = r_anal_get_block_at (core->anal, bblist[j]);
 		if (!bb) {
-			eprintf ("Warning: basic block at 0x%08"PFMT64x" was removed during analysis.\n", bblist[j]);
+			R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis.", bblist[j]);
 			retries--;
 			free (bblist);
 			goto repeat;
@@ -636,7 +636,7 @@ repeat:
 			if (i < bblist_size) {
 				bb = r_anal_get_block_at (core->anal, bb_addr);
 				if (!bb) {
-					eprintf ("Warning: basic block at 0x%08"PFMT64x" was removed during analysis.\n", bblist[i]);
+					R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis.", bblist[i]);
 					retries--;
 					free (bblist);
 					goto repeat;

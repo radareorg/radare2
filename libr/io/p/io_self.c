@@ -226,7 +226,7 @@ static int update_self_regions(RIO *io, int pid) {
 	HANDLE h = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
 	LPTSTR name = calloc (name_size, sizeof (TCHAR));
 	if (!name) {
-		R_LOG_ERROR ("io_self/update_self_regions: Failed to allocate memory.\n");
+		R_LOG_ERROR ("io_self/update_self_regions: Failed to allocate memory.");
 		CloseHandle (h);
 		return false;
 	}
@@ -260,7 +260,7 @@ static int update_self_regions(RIO *io, int pid) {
 }
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	return (!strncmp (file, "self://", 7));
+	return r_str_startswith (file, "self://");
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
@@ -324,21 +324,21 @@ static void got_alarm(int sig) {
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "pid")) {
 		return r_str_newf ("%d", fd->fd);
-	} else if (!strncmp (cmd, "pid", 3)) {
+	} else if (r_str_startswith (cmd, "pid")) {
 		/* do nothing here */
 #if !defined(__WINDOWS__)
-	} else if (!strncmp (cmd, "kill", 4)) {
+	} else if (r_str_startswith (cmd, "kill")) {
 		if (r_sandbox_enable (false)) {
-			eprintf ("This is unsafe, so disabled by the sandbox\n");
+			R_LOG_ERROR ("This is unsafe, so disabled by the sandbox");
 			return NULL;
 		}
 		/* do nothing here */
 		kill (r_sys_getpid (), SIGKILL);
 #endif
-	} else if (!strncmp (cmd, "call ", 5)) {
+	} else if (r_str_startswith (cmd, "call ")) {
 		size_t cbptr = 0;
 		if (r_sandbox_enable (false)) {
-			eprintf ("This is unsafe, so disabled by the sandbox\n");
+			R_LOG_ERROR ("This is unsafe, so disabled by the sandbox");
 			return NULL;
 		}
 		ut64 result = 0;
@@ -419,15 +419,15 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cb) {
 				result = cb (a0, a1, a2, a3, a4);
 			} else {
-				eprintf ("No callback defined\n");
+				R_LOG_ERROR ("No callback defined");
 			}
 		} else {
-			eprintf ("Unsupported number of arguments in call\n");
+			R_LOG_ERROR ("Unsupported number of arguments in call");
 		}
 		eprintf ("RES %"PFMT64d"\n", result);
 		free (argv);
 #if !defined(__WINDOWS__)
-	} else if (!strncmp (cmd, "alarm ", 6)) {
+	} else if (r_str_startswith (cmd, "alarm ")) {
 		struct itimerval tmout;
 		int secs = atoi (cmd + 6);
 		r_return_val_if_fail (secs >= 0, NULL);
@@ -443,7 +443,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	#warning "self:// alarm is not implemented for this platform yet"
 #endif
 #endif
-	} else if (!strncmp (cmd, "dlsym ", 6)) {
+	} else if (r_str_startswith (cmd, "dlsym ")) {
 		const char *symbol = cmd + 6;
 		void *lib = r_lib_dl_open (NULL);
 		void *ptr = r_lib_dl_sym (lib, symbol);

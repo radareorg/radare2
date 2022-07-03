@@ -20,13 +20,6 @@
 #include <r_util.h>
 #include "tcc.h"
 
-/********************************************************/
-/* global variables */
-/* XXX: get rid of this ASAP */
-ST_DATA R_TH_LOCAL RPVector *tcc_typedefs;
-
-/********************************************************/
-
 #ifdef __WINDOWS__
 // GCC appears to use '/' for relative paths and '\\' for absolute paths on Windows
 static char *normalize_slashes(char *path) {
@@ -236,7 +229,7 @@ ST_FUNC bool tcc_open_bf(TCCState *s1, const char *filename, int initlen) {
 	BufferedFile *bf = malloc (sizeof (BufferedFile) + buflen);
 	if (!bf) {
 		// err
-		eprintf ("Error\n");
+		R_LOG_ERROR ("Error");
 		return false;
 	}
 	bf->buf_ptr = bf->buffer;
@@ -294,22 +287,22 @@ static int tcc_compile(TCCState *s1) {
 	s1->funcname = "";
 
 	/* define some often used types */
-	int8_type.t = VT_INT8;
-	int16_type.t = VT_INT16;
-	int32_type.t = VT_INT32;
-	int64_type.t = VT_INT64;
+	s1->int8_type.t = VT_INT8;
+	s1->int16_type.t = VT_INT16;
+	s1->int32_type.t = VT_INT32;
+	s1->int64_type.t = VT_INT64;
 
-	char_pointer_type.t = VT_INT8;
-	mk_pointer (s1, &char_pointer_type);
+	s1->char_pointer_type.t = VT_INT8;
+	mk_pointer (s1, &s1->char_pointer_type);
 
 	if (s1->bits != 64) {
-		size_type.t = VT_INT32;
+		s1->size_type.t = VT_INT32;
 	} else {
-		size_type.t = VT_INT64;
+		s1->size_type.t = VT_INT64;
 	}
 
-	func_old_type.t = VT_FUNC;
-	func_old_type.ref = sym_push (s1, SYM_FIELD, &int32_type, FUNC_CDECL, FUNC_OLD);
+	s1->func_old_type.t = VT_FUNC;
+	s1->func_old_type.ref = sym_push (s1, SYM_FIELD, &s1->int32_type, FUNC_CDECL, FUNC_OLD);
 
 // FIXME: Should depend on the target options too
 #ifdef TCC_TARGET_ARM
@@ -669,49 +662,47 @@ typedef struct FlagDef {
 	const char *name;
 } FlagDef;
 
-void (*tcc_cb)(const char *, char **) = NULL;
-
 PUB_FUNC void tcc_set_callback(TCCState *s, void (*cb)(const char *, char **), char **p) {
 	if (cb) {
-		tcc_cb = cb;
-		tcc_cb_ptr = p;
+		s->cb = cb;
+		s->cb_user_data = p;
 		tcc_init_defines (s);
 	}
 }
 
-PUB_FUNC void tcc_appendf(const char *fmt, ...) {
+PUB_FUNC void tcc_appendf(TCCState *s, const char *fmt, ...) {
 	char b[1024];
 	va_list ap;
 	va_start (ap, fmt);
 	vsnprintf (b, sizeof (b), fmt, ap);
-	if (tcc_cb) {
-		tcc_cb (b, tcc_cb_ptr);
+	if (s->cb) {
+		s->cb (b, s->cb_user_data);
 	} else {
 		// eprintf ("Missing callback for tcc_cb\n");
 	}
 	va_end (ap);
 }
 
-PUB_FUNC void tcc_typedef_appendf(const char *fmt, ...) {
-	if (!tcc_typedefs) {
-		tcc_typedefs = r_pvector_new ((RPVectorFree) free);
+PUB_FUNC void tcc_typedef_appendf(TCCState *s, const char *fmt, ...) {
+	if (!s->typedefs) {
+		s->typedefs = r_pvector_new ((RPVectorFree) free);
 	}
 	char typedefs_tail[1024];
 	va_list ap;
 	va_start (ap, fmt);
 	if (vsnprintf (typedefs_tail, sizeof (typedefs_tail), fmt, ap) > 0) {
-		r_pvector_push (tcc_typedefs, strdup (typedefs_tail));
+		r_pvector_push (s->typedefs, strdup (typedefs_tail));
 	} // XXX else? how this should behave if sizeof (typedefs_tail) is not enough?
 	va_end (ap);
 }
 
-PUB_FUNC void tcc_typedef_alias_fields(const char *alias) {
-	if (tcc_typedefs) {
+PUB_FUNC void tcc_typedef_alias_fields(TCCState *s, const char *alias) {
+	if (s->typedefs) {
 		void **it;
-		r_pvector_foreach (tcc_typedefs, it) {
-			tcc_appendf (*it, alias);
+		r_pvector_foreach (s->typedefs, it) {
+			tcc_appendf (s, *it, alias);
 		}
-		r_pvector_free (tcc_typedefs);
-		tcc_typedefs = NULL;
+		r_pvector_free (s->typedefs);
+		s->typedefs = NULL;
 	}
 }

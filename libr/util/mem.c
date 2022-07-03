@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2021 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #include <r_util.h>
 #if __UNIX__
@@ -17,6 +17,7 @@ R_API int r_mem_count(const ut8 **addr) {
 	return i;
 }
 
+// R2580 return bool
 R_API int r_mem_eq(ut8 *a, ut8 *b, int len) {
 	register int i;
 	for (i = 0; i < len; i++) {

@@ -134,7 +134,7 @@ static bool repo_exists(const char *path) {
 			break;
 		}
 		if (!r_file_is_directory (files[i]) && !r_file_exists (files[i])) {
-			eprintf ("Error: Corrupt repo: %s doesn't exist\n",
+			R_LOG_ERROR ("Corrupt repo: %s doesn't exist",
 					files[i]);
 			r = false;
 			break;
@@ -735,8 +735,8 @@ static RList *blobs_add(Rvc *rvc, const RList *files) {
 		}
 		if (!found) {
 			eprintf ("File %s is already committed\n", path);
-			free (absp);
 		}
+		free (absp);
 	}
 	return ret;
 fail_ret:

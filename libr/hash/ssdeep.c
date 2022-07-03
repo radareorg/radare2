@@ -26,7 +26,7 @@ typedef struct {
 	int hs2_len;
 } State;
 
-static const char *b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static const char * const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 static inline ut32 sum_hash(ut8 c, ut32 h) {
 	return (h * HASH_PRIME) ^ c;
@@ -82,9 +82,10 @@ static inline int get_blocksize(int n) {
 }
 
 R_API char *r_hash_ssdeep(const ut8 *buf, size_t len) {
-	State s = {0};
-	s.bh1 = HASH_INIT;
-	s.bh2 = HASH_INIT;
+	State s = {
+		.bh1 = HASH_INIT,
+		.bh2 = HASH_INIT
+	};
 	s.bs = get_blocksize (len);
 	for (;;) {
 		size_t i;

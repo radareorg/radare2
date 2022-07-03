@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - curly */
+/* radare - LGPL - Copyright 2020-2022 - curly */
 
 #include <string.h>
 #include <r_types.h>
@@ -9,9 +9,9 @@
 
 #include "disas-asm.h"
 
-static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
-static ut8 bytes[128];
+static R_TH_LOCAL unsigned long Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL ut8 bytes[128];
 enum {
 	TRICORE_GENERIC = 0x00000000,
 	TRICORE_RIDER_A = 0x00000001,

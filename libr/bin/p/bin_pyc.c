@@ -1,15 +1,12 @@
-/* radare - LGPL3 - Copyright 2016-2021 - c0riolis, x0urc3 */
+/* radare - LGPL3 - Copyright 2016-2022 - c0riolis, x0urc3 */
 
 #include <r_bin.h>
 #include "../format/pyc/pyc.h"
 
-// XXX: to not use globals
-
-static ut64 code_start_offset = 0;
-static struct pyc_version version;
-/* used from marshall.c */
-RList *interned_table = NULL;
-static RList *sections_cache = NULL;
+static R_TH_LOCAL ut64 code_start_offset = 0;
+static R_TH_LOCAL struct pyc_version version;
+static R_TH_LOCAL RList *sections_cache = NULL;
+RList R_TH_LOCAL *interned_table = NULL; // used from marshall.c
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 4) {

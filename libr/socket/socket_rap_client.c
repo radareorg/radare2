@@ -93,17 +93,17 @@ R_API char *r_socket_rap_client_command(RSocket *s, const char *cmd, RCoreBind *
 		(void) r_socket_read_block (s, (ut8*)bufr, 5);
 	}
 	if (bufr[0] != (char)(RAP_PACKET_CMD | RAP_PACKET_REPLY)) {
-		eprintf ("Error: Wrong reply for command 0x%02x\n", bufr[0]);
+		R_LOG_ERROR ("Wrong reply for command 0x%02x", bufr[0]);
 		return NULL;
 	}
 	size_t cmd_len = r_read_at_be32 (bufr, 1);
 	if (cmd_len < 1 || cmd_len > 16384) {
-		eprintf ("Error: cmd_len is wrong\n");
+		R_LOG_ERROR ("cmd_len is wrong");
 		return NULL;
 	}
 	char *cmd_output = calloc (1, cmd_len + 1);
 	if (!cmd_output) {
-		eprintf ("Error: Allocating cmd output\n");
+		R_LOG_ERROR ("Allocating cmd output");
 		return NULL;
 	}
 	r_socket_read_block (s, (ut8*)cmd_output, cmd_len);

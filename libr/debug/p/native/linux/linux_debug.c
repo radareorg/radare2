@@ -1027,7 +1027,7 @@ static void print_fpu(void *f){
 	r_cons_printf ("foo = 0x%08x\n", (ut32)fpxregs.foo);
 	r_cons_printf ("fos = 0x%08x\n", (ut32)fpxregs.fos);
 	r_cons_printf ("mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
-	for(i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) {
 		ut32 *a = (ut32*)(&fpxregs.xmm_space);
 		ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
 		ut32 *c = (ut32*)&fpxregs.st_space;
@@ -1046,7 +1046,7 @@ static void print_fpu(void *f){
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
 	r_cons_printf ("---- x86-32-noxmm ----\n");
 	PRINT_FPU_NOXMM (fpregs);
-	for(i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) {
 		ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
 		double *d = (double*)b;
 		ut32 *c = (ut32*)&fpregs.st_space;

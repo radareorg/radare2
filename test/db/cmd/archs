@@ -78,7 +78,7 @@ pi 1
 EOF
 EXPECT=<<EOF
 call 0x55222794
-invalid
+call 0x55222794
 EOF
 RUN
 

@@ -1,10 +1,12 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_cons.h>
+#include <r_th.h>
 #include <r_util/r_assert.h>
 #define I r_cons_singleton ()
 
 #if __WINDOWS__
+
 static void __fill_tail(int cols, int lines) {
 	lines++;
 	if (lines > 0) {
@@ -19,9 +21,9 @@ static void __fill_tail(int cols, int lines) {
 	}
 }
 
-static HANDLE hStdout = NULL;
-static HANDLE hStderr = NULL;
-static CONSOLE_SCREEN_BUFFER_INFO csbi;
+static R_TH_LOCAL HANDLE hStdout = NULL;
+static R_TH_LOCAL HANDLE hStderr = NULL;
+static R_TH_LOCAL CONSOLE_SCREEN_BUFFER_INFO csbi;
 
 R_API void r_cons_w32_clear(void) {
 	COORD startCoords;

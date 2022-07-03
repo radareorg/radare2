@@ -615,6 +615,7 @@ R_API st64 r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len) {
 	return r;
 }
 
+// XXX 580 use r_ref api instead
 R_API void r_buf_fini(RBuffer *b) {
 	if (!b) {
 		return;
@@ -635,6 +636,7 @@ R_API void r_buf_fini(RBuffer *b) {
 	buf_fini (b);
 }
 
+// XXX 580 use r_ref api instead
 R_API void r_buf_free(RBuffer *b) {
 	if (b) {
 		bool unreferenced = b && b->refctr == 0;
@@ -655,6 +657,7 @@ R_API bool r_buf_resize(RBuffer *b, ut64 newsize) {
 	return buf_resize (b, newsize);
 }
 
+// XXX 580 use r_ref api instead
 R_API RBuffer *r_buf_ref(RBuffer *b) {
 	if (b) {
 		b->refctr++;

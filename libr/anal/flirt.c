@@ -316,7 +316,7 @@ typedef struct RFlirtNode {
 	ut8 *variant_bool_array; // bool array, if true, byte in pattern_bytes is a variant byte
 } RFlirtNode;
 
-static ut8 version; // version of the sig file being parsed
+static R_TH_LOCAL ut8 version; // version of the sig file being parsed
 // used in some cases to parse the right way
 
 // This is from flair tools flair/crc16.cpp
@@ -348,8 +348,8 @@ ut16 crc16(const unsigned char *data_p, size_t length) {
 }
 
 // this is ugly, but we can't afford to change the return size of read_byte
-static bool buf_eof;
-static bool buf_err;
+static R_TH_LOCAL bool buf_eof = false;
+static R_TH_LOCAL bool buf_err = false;
 
 static ut8 read_byte(RBuffer *b) {
 	ut8 r = 0;
@@ -917,7 +917,7 @@ static ut8 parse_leaf(const RAnal *anal, RBuffer *b, RFlirtNode *node) {
 		}
 #if DEBUG
 		if (crc_length == 0x00 && crc16 != 0x0000) {
-			eprintf ("Warning: non zero crc of zero length @ %04X\n",
+			R_LOG_WARN ("non zero crc of zero length @ %04X",
 				r_buf_tell (b) + header_size);
 		}
 		eprintf ("crc_len: %02X crc16: %04X\n", crc_length, crc16);
@@ -1467,7 +1467,7 @@ R_API void r_sign_flirt_scan(RAnal *anal, const char *flirt_file) {
 	r_buf_free (flirt_buf);
 	if (node) {
 		if (!node_match_functions (anal, node)) {
-			eprintf ("Error while scanning the file %s\n", flirt_file);
+			R_LOG_ERROR ("Error while scanning the file %s", flirt_file);
 		}
 		node_free (node);
 		return;

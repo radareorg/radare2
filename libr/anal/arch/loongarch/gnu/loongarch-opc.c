@@ -111,7 +111,7 @@ const char *const loongarch_x_normal_name[32] =
   "xr24", "xr25", "xr26", "xr27", "xr28", "xr29", "xr30", "xr31",
 };
 
-static struct loongarch_opcode loongarch_macro_opcodes[] =
+static const struct loongarch_opcode loongarch_macro_opcodes[] =
 {
   /* match,    mask,       name, format, macro, include, exclude, pinfo.  */
   { 0, 0, "li.w", "r,sc", "%f", 0, 0, 0},
@@ -267,7 +267,7 @@ static struct loongarch_opcode loongarch_macro_opcodes[] =
   {0} /* Terminate the list.  */
 };
 
-static struct loongarch_opcode loongarch_fix_opcodes[] =
+static const struct loongarch_opcode loongarch_fix_opcodes[] =
 {
   /* match,	mask,		name,		format,				macro,			include, exclude, pinfo.  */
   { 0x00001000, 0xfffffc00,	"clo.w",	"r0:5,r5:5",			0,			0,	0,	0 },
@@ -743,7 +743,7 @@ static struct loongarch_opcode loongarch_float_jmp_opcodes[] =
   {0} /* Terminate the list.  */
 };
 
-static struct loongarch_opcode loongarch_jmp_opcodes[] =
+static const struct loongarch_opcode loongarch_jmp_opcodes[] =
 {
   /* match,	mask,		name,		format,				macro,			include, exclude, pinfo.  */
   { 0x0,	0x0,		"bltz",		"r,la",				"bltz %1,%%pcrel(%2)",		0, 0, 0 },
@@ -787,8 +787,7 @@ static struct loongarch_opcode loongarch_jmp_opcodes[] =
   {0} /* Terminate the list.  */
 };
 
-struct loongarch_ase loongarch_ASEs[] =
-{
+struct loongarch_ase loongarch_ASEs[] = {
   { &LARCH_opts.ase_ilp32, loongarch_macro_opcodes,		0, 0, {0}, 0, 0 },
   { &LARCH_opts.ase_ilp32, loongarch_imm_opcodes,		0, 0, {0}, 0, 0 },
   { &LARCH_opts.ase_ilp32, loongarch_privilege_opcodes,		0, 0, {0}, 0, 0 },

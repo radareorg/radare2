@@ -1,16 +1,14 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_cons.h>
-#include <limits.h>
-
-// TODO: kill globals, and make this stackable
-// cons_pipe should be using a stack pipe_push, pipe_pop
-static int backup_fd = -1;
-static int backup_fdn = 1;
-
+#include <r_th.h>
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
+
+// cons_pipe should be using a stack pipe_push, pipe_pop
+static R_TH_LOCAL int backup_fd = -1;
+static R_TH_LOCAL int backup_fdn = 1;
 
 static bool __dupDescriptor(int fd, int fdn) {
 	if (fd == fdn) {
@@ -37,12 +35,12 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	if (fdn < 1) {
 		return -1;
 	}
-	char *targetFile = (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2))
+	char *targetFile = (r_str_startswith (file, "~/") || r_str_startswith (file, "~\\"))
 		? r_str_home (file + 2): strdup (file);
 	const int fd_flags = O_BINARY | O_RDWR | O_CREAT | (append? O_APPEND: O_TRUNC);
 	int fd = r_sandbox_open (targetFile, fd_flags, 0644);
 	if (fd == -1) {
-		R_LOG_ERROR ("r_cons_pipe_open: Cannot open file '%s'", file);
+		R_LOG_ERROR ("Cannot open file '%s'", file);
 		free (targetFile);
 		return -1;
 	}

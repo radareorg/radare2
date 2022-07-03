@@ -40,7 +40,7 @@ static ut32 mask32(ut32 mb, ut32 me) {
 }
 
 static const char* cmask64(const char *mb_c, const char *me_c) {
-	static char cmask[32];
+	static R_TH_LOCAL char cmask[32];
 	ut64 mb = 0;
 	ut64 me = 0;
 	if (mb_c) {
@@ -49,12 +49,12 @@ static const char* cmask64(const char *mb_c, const char *me_c) {
 	if (me_c) {
 		me = strtol (me_c, NULL, 16);
 	}
-	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x"", mask64 (mb, me));
+	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x, mask64 (mb, me));
 	return cmask;
 }
 
 static const char* cmask32(const char *mb_c, const char *me_c) {
-	static char cmask[32];
+	static R_TH_LOCAL char cmask[32];
 	ut32 mb = 0;
 	ut32 me = 0;
 	if (mb_c) {
@@ -63,14 +63,14 @@ static const char* cmask32(const char *mb_c, const char *me_c) {
 	if (me_c) {
 		me = strtol (me_c, NULL, 16);
 	}
-	snprintf (cmask, sizeof (cmask), "0x%"PFMT32x"", mask32 (mb, me));
+	snprintf (cmask, sizeof (cmask), "0x%"PFMT32x, mask32 (mb, me));
 	return cmask;
 }
 
 static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
 	cs_insn *insn = gop->insn;
 	csh handle = gop->handle;
-	static char words[8][64];
+	static R_TH_LOCAL char words[8][64];
 	cs_ppc_op op;
 
 	if (n < 0 || n >= 8) {
@@ -134,7 +134,7 @@ static ut64 getarg(struct Getarg *gop, int n) {
 }
 
 static const char* getspr(struct Getarg *gop, int n) {
-	static char cspr[16];
+	static R_TH_LOCAL char cspr[16];
 	ut32 spr = 0;
 	if (n < 0 || n >= 8) {
 		return NULL;

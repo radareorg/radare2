@@ -201,7 +201,7 @@ static bool types_sig_valid(const char *types) {
 
 #define DBL_VAL_FAIL(x,y) \
 	if (x) { \
-		eprintf ("Warning: Skipping signature with multiple %c signatures (%s)\n", y, k); \
+		R_LOG_WARN ("Skipping signature with multiple %c signatures (%s)", y, k); \
 		success = false; \
 		goto out; \
 	}
@@ -219,12 +219,12 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 	// Deserialize key: zign|space|name
 	int n = r_str_split (k2, '|');
 	if (n != 3) {
-		eprintf ("Warning: Skipping signature with invalid key (%s)\n", k);
+		R_LOG_WARN ("Skipping signature with invalid key (%s)", k);
 		success = false;
 		goto out;
 	}
 	if (strcmp (r_str_word_get0 (k2, 0), "zign")) {
-		eprintf ("Warning: Skipping signature with invalid value (%s)\n", k);
+		R_LOG_WARN ("Skipping signature with invalid value (%s)", k);
 		success = false;
 		goto out;
 	}
@@ -251,7 +251,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			continue;
 		}
 		if (strlen (word) < 3 || word[1] != ':') {
-			eprintf ("Warning: Skipping signature with corrupted serialization (%s:%s)\n", k, word);
+			R_LOG_WARN ("Skipping signature with corrupted serialization (%s:%s)", k, word);
 			success = false;
 			goto out;
 		}
@@ -699,12 +699,12 @@ static bool addBBHash(RAnal *a, RAnalFunction *fcn, const char *name) {
 R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val, int len) {
 	r_return_val_if_fail (a && name && type && val && len > 0, false);
 	if (type != R_SIGN_BBHASH) {
-		eprintf ("error: hash type unknown\n");
+		R_LOG_ERROR ("error: hash type unknown");
 		return false;
 	}
 	int digestsize = r_hash_size (R_ZIGN_HASH) * 2;
 	if (len != digestsize) {
-		eprintf ("error: invalid hash size: %d (%s digest size is %d)\n", len, ZIGN_HASH, digestsize);
+		R_LOG_ERROR ("error: invalid hash size: %d (%s digest size is %d)", len, ZIGN_HASH, digestsize);
 		return false;
 	}
 	return addHash (a, name, type, val);
@@ -982,7 +982,7 @@ R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignT
 		}
 		break;
 	default:
-		eprintf ("Error: %s Can not handle type %c\n", __FUNCTION__, type);
+		R_LOG_ERROR ("%s Can not handle type %c", __FUNCTION__, type);
 	}
 
 	return false;
@@ -2031,7 +2031,7 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 			keep_going = ctx->cb (it, ctx->user);
 		}
 	} else {
-		eprintf ("error: cannot deserialize zign\n");
+		R_LOG_ERROR ("error: cannot deserialize zign");
 	}
 	if (ctx->freeit) {
 		r_sign_item_free (it);
@@ -2873,7 +2873,7 @@ static bool loadCB(void *user, const char *k, const char *v) {
 			}
 		}
 	} else {
-		eprintf ("error: cannot deserialize zign\n");
+		R_LOG_ERROR ("error: cannot deserialize zign");
 	}
 	r_sign_item_free (it);
 	return true;
@@ -2921,7 +2921,7 @@ R_API bool r_sign_load(RAnal *a, const char *file, bool merge) {
 	}
 	char *path = r_sign_path (a, file);
 	if (!r_file_exists (path)) {
-		eprintf ("error: file %s does not exist\n", file);
+		R_LOG_ERROR ("error: file %s does not exist", file);
 		free (path);
 		return false;
 	}
@@ -2946,37 +2946,37 @@ R_API bool r_sign_load_gz(RAnal *a, const char *filename, bool merge) {
 
 	char *path = r_sign_path (a, filename);
 	if (!r_file_exists (path)) {
-		eprintf ("error: file %s does not exist\n", filename);
+		R_LOG_ERROR ("error: file %s does not exist", filename);
 		retval = false;
 		goto out;
 	}
 
 	if (!(buf = r_file_gzslurp (path, &size, 0))) {
-		eprintf ("error: cannot decompress file\n");
+		R_LOG_ERROR ("error: cannot decompress file");
 		retval = false;
 		goto out;
 	}
 
 	if (!(tmpfile = r_file_temp ("r2zign"))) {
-		eprintf ("error: cannot create temp file\n");
+		R_LOG_ERROR ("error: cannot create temp file");
 		retval = false;
 		goto out;
 	}
 
 	if (!r_file_dump (tmpfile, buf, size, 0)) {
-		eprintf ("error: cannot dump file\n");
+		R_LOG_ERROR ("error: cannot dump file");
 		retval = false;
 		goto out;
 	}
 
 	if (!r_sign_load (a, tmpfile, merge)) {
-		eprintf ("error: cannot load file\n");
+		R_LOG_ERROR ("error: cannot load file");
 		retval = false;
 		goto out;
 	}
 
 	if (!r_file_rm (tmpfile)) {
-		eprintf ("error: cannot delete temp file\n");
+		R_LOG_ERROR ("error: cannot delete temp file");
 		retval = false;
 		goto out;
 	}
@@ -2993,7 +2993,7 @@ R_API bool r_sign_save(RAnal *a, const char *file) {
 	r_return_val_if_fail (a && file, false);
 
 	if (sdb_isempty (a->sdb_zigns)) {
-		eprintf ("Warning: no zignatures to save\n");
+		R_LOG_WARN ("no zignatures to save");
 		return false;
 	}
 

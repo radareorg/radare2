@@ -256,7 +256,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	RDebugMap *map;
 	bool found = false;
 	const char ntdll[] = "ntdll.dll";
-	static ut64 lastNdtllAddr = 0;
+	static R_TH_LOCAL ut64 lastNdtllAddr = 0;
 	r_list_foreach (modules, it, map) {
 		if (!strncmp(map->name, ntdll, sizeof (ntdll))) {
 			found = true;
@@ -287,7 +287,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	if (doopen) {
 		char *ntdllpath = r_lib_path ("ntdll");
 		eprintf ("Opening %s\n", ntdllpath);
-		dbg->coreb.cmdf (dbg->coreb.core, "o %s 0x%"PFMT64x"", ntdllpath, map->addr);
+		dbg->coreb.cmdf (dbg->coreb.core, "o %s 0x%"PFMT64x, ntdllpath, map->addr);
 		lastNdtllAddr = map->addr;
 		free (ntdllpath);
 	}
@@ -1277,7 +1277,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 				switch (format) {
 				case 'f':
 				{
-					char *name = r_str_newf ("alloc.%"PFMT64x"", address);
+					char *name = r_str_newf ("alloc.%"PFMT64x, address);
 					r_flag_set (core->flags, name, address, block->dwSize);
 					free (name);
 					break;

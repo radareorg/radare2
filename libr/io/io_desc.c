@@ -1,8 +1,6 @@
-/* radare2 - LGPL - Copyright 2017-2021 - condret, pancake, alvaro */
+/* radare2 - LGPL - Copyright 2017-2022 - condret, pancake, alvaro */
 
 #include <r_io.h>
-#include <sdb.h>
-#include <string.h>
 
 // shall be used by plugins for creating descs
 R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int perm, int mode, void* data) {
@@ -169,7 +167,6 @@ R_API RIODesc *r_io_desc_open_plugin(RIO *io, RIOPlugin *plugin, const char *uri
 	return desc;
 }
 
-
 R_API bool r_io_desc_close(RIODesc *desc) {
 	if (!desc || !desc->io || !desc->plugin) {
 		return false;
@@ -178,7 +175,7 @@ R_API bool r_io_desc_close(RIODesc *desc) {
 	if (desc->plugin->close && !desc->plugin->close (desc)) {
 		return false;
 	}
-	// remove entry from idstorage and free the desc-struct
+	// remove entry from idstorage and free the desc struct
 	r_io_desc_del (io, desc->fd);
 	return true;
 }
@@ -189,7 +186,7 @@ R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
 	if (len < 0) {
 		return -1;
 	}
-	//check pointers and pcache
+	// check pointers and pcache
 	if (desc->io && (desc->io->p_cache & 2)) {
 		return r_io_desc_cache_write (desc,
 				r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR), buf, len);

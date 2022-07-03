@@ -23,6 +23,7 @@
 #define _LOONGARCH_H_
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -125,16 +126,16 @@ dec2 : [1-9][0-9]?
   struct loongarch_ase
   {
     const int *enabled;
-    struct loongarch_opcode *const opcodes;
+    const struct loongarch_opcode *const opcodes;
     const int *include;
     const int *exclude;
 
     /* For disassemble to create main opcode hash table.  */
     const struct loongarch_opcode *opc_htab[16];
-    unsigned char opc_htab_inited;
+    bool opc_htab_inited;
 
     /* For GAS to create hash table.  */
-    struct htab *name_hash_entry;
+    const struct htab *name_hash_entry;
   };
 
   extern int is_unsigned (const char *);

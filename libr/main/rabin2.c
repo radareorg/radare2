@@ -63,7 +63,7 @@ static int rabin_show_help(int v) {
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
 		" -U              resoUrces\n"
 		" -v              display version and quit\n"
-		" -V              Show binary version information\n"
+		" -V              show binary version information\n"
 		" -w              display try/catch blocks\n"
 		" -x              extract bins contained in file\n"
 		" -X [fmt] [f] .. package in fat or zip the given files and bins contained in file\n"
@@ -88,6 +88,7 @@ static int rabin_show_help(int v) {
 		" RABIN2_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		" RABIN2_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
 		" RABIN2_SWIFTLIB:  1|0|               # load Swift libsto demangle (default: true)\n"
+		" RABIN2_VERBOSE:   e bin.verbose      # show debugging messages from the parser\n"
 		);
 	}
 	return 1;
@@ -634,6 +635,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		r_config_set (core.config, "bin.lang", tmp);
 		free (tmp);
 	}
+	if (r_sys_getenv_asbool ("RABIN2_VERBOSE")) {
+		r_config_set_b (core.config, "bin.verbose", true);
+	}
 	if ((tmp = r_sys_getenv ("RABIN2_DEMANGLE"))) {
 		r_config_set (core.config, "bin.demangle", tmp);
 		free (tmp);
@@ -690,7 +694,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		case 't': set_action (R_BIN_REQ_HASHES); break;
 		case 'w': set_action (R_BIN_REQ_TRYCATCH); break;
 		case 'q':
-			rad = (rad & R_MODE_SIMPLE ?
+			rad = ((rad & R_MODE_SIMPLE || (rad & R_MODE_SIMPLEST))?
 				R_MODE_SIMPLEST : R_MODE_SIMPLE);
 			break;
 		case 'j': rad = R_MODE_JSON; break;

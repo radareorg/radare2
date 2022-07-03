@@ -1,10 +1,11 @@
-/* radare2 - LGPL - Copyright 2008-2020 - pancake */
+/* radare2 - LGPL - Copyright 2008-2022 - pancake */
 
 #include <r_cons.h>
+#include <r_th.h>
 
-static ut8 twok_buf[4][4];
-static int score = 0;
-static int moves = 0;
+static R_TH_LOCAL ut8 twok_buf[4][4];
+static R_TH_LOCAL int score = 0;
+static R_TH_LOCAL int moves = 0;
 
 static void twok_init(void) {
 	int i, j;
@@ -99,9 +100,9 @@ static void getval(bool color, char *val0, int i, int x) {
 	};
 	if (twok_buf[i][x]) {
 		if (color) {
-			snprintf (val0,31, "%s%4d"Color_RESET, colorarray [twok_buf [i][x] % 8 ], 1 << twok_buf[i][x]);
+			snprintf (val0, 31, "%s%4d"Color_RESET, colorarray [twok_buf [i][x] % 8 ], 1 << twok_buf[i][x]);
 		} else {
-			snprintf (val0,31, "%4d", 1 << twok_buf[i][x]);
+			snprintf (val0, 31, "%4d", 1 << twok_buf[i][x]);
 		}
 	} else {
 		strcpy (val0, "    ");

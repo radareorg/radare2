@@ -454,7 +454,7 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 		}
 		r_list_free (files);
 	} else {
-		R_LOG_ERROR ("No files found\n");
+		R_LOG_ERROR ("No files found");
 	}
 	if (!ret) {
 		free (tmp);

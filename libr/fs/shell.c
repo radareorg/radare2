@@ -19,11 +19,11 @@ static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 	}
 	RFSFile *f = r_fs_open (fs, red, true);
 	if (!f) {
-		eprintf ("Cannot open %s for writing\n", red);
+		R_LOG_ERROR ("Cannot open %s for writing", red);
 		free (red);
 		return true;
 	}
-	r_fs_write (fs, f, 0, data ? data : (ut8*)msg, strlen (data ? (char*)data : msg));
+	r_fs_write (fs, f, 0, data? data: (ut8*)msg, strlen (data? (char*)data: msg));
 	free (red);
 	r_fs_close (fs, f);
 	r_fs_file_free (f);
@@ -91,7 +91,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			*wave++ = 0;
 		}
 
-		if (!strcmp (buf, "q") || !strcmp (buf, "exit")) {
+		if (r_str_startswith (buf, "q") || r_str_startswith (buf, "exit")) {
 			r_list_free (list);
 			return true;
 		}
@@ -104,13 +104,13 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			free (msg);
 		} else if (buf[0] == '!') {
 			r_sandbox_system (buf + 1, 1);
-		} else if (!strncmp (buf, "echo", 4)) {
+		} else if (r_str_startswith (buf, "echo")) {
 			char *msg = r_str_trim_dup (buf + 4);
 			if (!handlePipes (fs, msg, NULL, path)) {
 				cb_printf ("%s\n", msg);
 			}
 			free (msg);
-		} else if (!strncmp (buf, "ls", 2)) {
+		} else if (r_str_startswith (buf, "ls")) {
 			char *ptr = str;
 			r_list_free (list);
 			if (buf[2] == ' ') {
@@ -141,15 +141,15 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					*ls = 0;
 				}
 				// TODO: adjust contents between //
-				if (!strcmp (me, base)) {
+				if (r_str_startswith (me, base)) {
 					cb_printf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
 				}
 				free (base);
 			}
 			free (me);
-		} else if (!strncmp (buf, "pwd", 3)) {
-			eprintf ("%s\n", path);
-		} else if (!memcmp (buf, "cd ", 3)) {
+		} else if (r_str_startswith (buf, "pwd")) {
+			cb_printf ("%s\n", path);
+		} else if (r_str_startswith (buf, "cd ")) {
 			char opath[PROMPT_PATH_BUFSIZE];
 			r_str_ncpy (opath, path, sizeof (opath));
 			input = buf + 3;
@@ -187,7 +187,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					}
 				}
 			}
-		} else if (!memcmp (buf, "cat ", 4)) {
+		} else if (r_str_startswith (buf, "cat ")) {
 			input = buf + 3;
 			while (input[0] == ' ') {
 				input++;
@@ -221,14 +221,14 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				cb_printf ("\n");
 				r_fs_close (fs, file);
 			} else {
-				eprintf ("Cannot open file\n");
+				R_LOG_ERROR ("Cannot open file");
 			}
-		} else if (!memcmp (buf, "mount", 5)) {
+		} else if (r_str_startswith (buf, "mount")) {
 			RFSRoot* r;
 			r_list_foreach (fs->roots, iter, r) {
 				cb_printf ("%s %s\n", r->path, r->p->name);
 			}
-		} else if (!memcmp (buf, "get ", 4)) {
+		} else if (r_str_startswith (buf, "get ")) {
 			char* s = 0;
 			input = buf + 3;
 			while (input[0] == ' ') {
@@ -265,12 +265,29 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			} else {
 				char *f = r_str_newf ("./%s", input);
 				if (!r_fs_dir_dump (fs, s, f)) {
-					eprintf ("Cannot open file\n");
+					R_LOG_ERROR ("Cannot open file");
 				}
 				free (f);
 			}
 			free (s);
-		} else if (!memcmp (buf, "help", 4) || !strcmp (buf, "?")) {
+		} else if (r_str_startswith (buf, "o ") || r_str_startswith (buf, "open ")) {
+			input = r_str_nextword (buf, ' ');
+			input = (char *)r_str_trim_head_ro (input);
+			file = r_fs_open (fs, input, false);
+			if (file) {
+				r_fs_read (fs, file, 0, file->size);
+				char *uri = r_str_newf ("malloc://%d", file->size);
+				RIODesc *fd = fs->iob.open_at (fs->iob.io, uri, R_PERM_RW, 0, 0);
+				free (uri);
+				if (fd) {
+					fs->iob.fd_write (fs->iob.io, fd->fd, file->data, file->size);
+					r_list_free (list);
+					return true;
+				}
+			} else {
+				R_LOG_ERROR ("Cannot open file");
+			}
+		} else if (r_str_startswith (buf, "help") || r_str_startswith (buf, "?")) {
 			cb_printf (
 				"Usage: [command (arguments)]([~grep-expression])\n"
 				" !cmd        ; escape to system\n"
@@ -279,12 +296,13 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				" cd path     ; change current directory\n"
 				" cat file    ; print contents of file\n"
 				" get file    ; dump file to disk\n"
+				" o/open file ; open file with r2\n"
 				" mount       ; list mount points\n"
 				" q/exit      ; leave prompt mode\n"
 				" ?/help      ; show this help\n");
 		} else {
 			if (*buf) {
-				eprintf ("Unknown command %s\n", buf);
+				R_LOG_ERROR ("Unknown command %s", buf);
 			}
 		}
 		if (wave) {

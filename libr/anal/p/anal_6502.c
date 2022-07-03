@@ -13,7 +13,9 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../../asm/arch/snes/snes_op_table.h"
+#include "../arch/snes/snes_op_table.h"
+
+#include "../arch/6502/6502dis.inc"
 
 enum {
 	_6502_FLAGS_C = (1 << 0),
@@ -209,8 +211,8 @@ static void _6502_anal_esil_inc_reg(RAnalOp *op, ut8 data0, char* sign) {
 }
 
 static void _6502_anal_esil_mov(RAnalOp *op, ut8 data0) {
-	const char* src="unk";
-	const char* dst="unk";
+	const char* src = "unk";
+	const char* dst = "unk";
 	switch(data0) {
 	case 0xaa: // tax
 		src="a";
@@ -310,6 +312,10 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	const int buffsize = sizeof (addrbuf) - 1;
 	if (len < 1) {
 		return -1;
+	}
+
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		(void) _6502Disass (addr, op, data, len);
 	}
 
 	op->size = snes_op_get_size (1, 1, &snes_op[data[0]]);	//snes-arch is similar to nes/6502

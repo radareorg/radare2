@@ -284,7 +284,7 @@ struct r_core_t {
 	RBuffer *yank_buf;
 	ut64 yank_addr;
 	bool tmpseek;
-	bool vmode;
+	bool vmode; // is r2 in visual or panels mode?
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
 	RCons *cons;
@@ -328,7 +328,7 @@ struct r_core_t {
 	bool keep_asmqjmps;
 	RCoreVisual visual;
 	// visual // TODO: move them into RCoreVisual
-	int http_up;
+	int http_up; // R2_580 bool
 	int gdbserver_up;
 	RCoreVisualMode printidx;
 	char *stkcmd;
@@ -564,6 +564,7 @@ R_API int r_core_set_file_by_name(RBin * bin, const char *name);
 R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode);
 
 /* fortune */
+R_IPI RList *r_core_fortune_types(void);
 R_API void r_core_fortune_list_types(void);
 R_API void r_core_fortune_list(RCore *core);
 R_API void r_core_fortune_print_random(RCore *core);

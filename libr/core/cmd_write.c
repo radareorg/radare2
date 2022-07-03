@@ -219,7 +219,7 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 		}
 		r_core_block_read (core);
 	} else {
-		R_LOG_ERROR ("Error: invalid hexpair string");
+		R_LOG_ERROR ("invalid hexpair string");
 		r_core_return_value (core, R_CMD_RC_FAILURE);
 	}
 	free (buf);

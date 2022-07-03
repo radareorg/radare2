@@ -120,7 +120,7 @@ static int can_replace(const char *str, int idx, int max_operands) {
 }
 
 static const char* getspr(const char *reg) {
-	static char cspr[16];
+	static R_TH_LOCAL char cspr[16];
 	ut32 spr = 0;
 	if (!reg) {
 		return NULL;
@@ -1487,26 +1487,26 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							//MASK(MB+32, ME+32)
 							ut64 MB = PPC_UT64(argv[4]) + 32;
 							ut64 ME = PPC_UT64(argv[5]) + 32;
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x"", mask64 (MB, ME));
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
 						} else if (letter == 4 && (!strncmp (argv[0], "rldcl", 5) || !strncmp (argv[0], "rldicl", 6))) {
 							// { "rld[i]cl", "A = rol64(B, C) & D", 4},
 							w = ppc_mask;
 							//MASK(MB, 63)
 							ut64 MB = PPC_UT64(argv[4]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x"", mask64 (MB, 63));
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, 63));
 						} else if (letter == 4 && !strncmp (argv[0], "rldic", 5)) {
 							// { "rldic", "A = rol64(B, C) & D", 4},
 							w = ppc_mask;
 							//MASK(MB, 63 - SH)
 							ut64 MB = PPC_UT64(argv[4]);
 							ut64 ME = 63 - PPC_UT64(argv[3]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x"", mask64 (MB, ME));
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
 						} else if (letter == 4 && (!strncmp (argv[0], "rldcr", 5) || !strncmp (argv[0], "rldicr", 6))) {
 							// { "rld[i]cr", "A = rol64(B, C) & D", 4},
 							w = ppc_mask;
 							//MASK(0, ME)
 							ut64 ME = PPC_UT64(argv[4]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x"", mask64 (0, ME));
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (0, ME));
 						} else if (letter == 4 && !strncmp (argv[0], "rldimi", 6)) {
 							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
 							// first mask (normal)
@@ -1514,7 +1514,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							//MASK(MB, 63 - SH)
 							ut64 MB = PPC_UT64(argv[4]);
 							ut64 ME = 63 - PPC_UT64(argv[3]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x"", mask64 (MB, ME));
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, mask64 (MB, ME));
 						} else if (letter == 5 && !strncmp (argv[0], "rldimi", 6)) {
 							// { "rldimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
 							// second mask (inverted)
@@ -1523,7 +1523,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut64 MB = PPC_UT64(argv[4]);
 							ut64 ME = 63 - PPC_UT64(argv[3]);
 							ut64 inverted = ~ (mask64 (MB, ME));
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x"", inverted);
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x, inverted);
 						} else if (letter == 4 && !strncmp (argv[0], "rlwimi", 6)) {
 							// { "rlwimi", "A = (rol64(B, C) & D) | (A & E)", 5}, //32
 							// first mask (normal)
@@ -1531,7 +1531,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							//MASK(MB, ME)
 							ut32 MB = PPC_UT32(argv[4]);
 							ut32 ME = PPC_UT32(argv[5]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x"", mask32 (MB, ME));
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, mask32 (MB, ME));
 						} else if (letter == 5 && !strncmp (argv[0], "rlwimi", 6)) {
 							// { "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5}, //32
 							// second mask (inverted)
@@ -1540,14 +1540,14 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut32 MB = PPC_UT32(argv[4]);
 							ut32 ME = PPC_UT32(argv[5]);
 							ut32 inverted = ~mask32 (MB, ME);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x"", inverted);
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, inverted);
 						} else if (letter == 4 && !strncmp (argv[0], "rlwnm", 5)) {
 							// { "rlwnm", "A = rol32(B, C) & D", 5}, //32
 							w = ppc_mask;
 							//MASK(MB, ME)
 							ut32 MB = PPC_UT32(argv[4]);
 							ut32 ME = PPC_UT32(argv[5]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x"", mask32 (MB, ME));
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x, mask32 (MB, ME));
 						} else if (letter == 1 && i >= 36 && i <= 43) {
 							int to = atoi (w);
 							switch(to) {

@@ -16,6 +16,8 @@ extern "C" {
 #define R_LOG_DISABLE 0
 #endif
 
+#define etrace(m) eprintf ("--> %s:%d : %s\n", __FUNCTION__, __LINE__, m)
+
 #define R_LOGLVL_DEFAULT R_LOGLVL_WARN
 
 typedef enum r_log_level {

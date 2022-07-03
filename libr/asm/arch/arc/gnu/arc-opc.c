@@ -25,8 +25,7 @@
    Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
 
 #include "sysdep.h"
-#include <stdio.h>
-#include <string.h>
+#include <r_util.h>
 #include "ansidecl.h"
 #include "arc.h"
 #include "opintl.h"
@@ -104,43 +103,43 @@ EXTRACT_FN (extract_unopmacro);
 /* -------------------------------------------------------------------------- */
 
 /* Nonzero if we've seen an 'f' suffix (in certain insns).  */
-static int flag_p;
+static R_TH_LOCAL int flag_p;
 
 /* Nonzero if we've finished processing the 'f' suffix.  */
-static int flagshimm_handled_p;
+static R_TH_LOCAL int flagshimm_handled_p;
 
 /* Nonzero if we've seen a 'a' suffix (address writeback).  */
-static int addrwb_p;
+static R_TH_LOCAL int addrwb_p;
 
 /* Nonzero if we've inserted a nullify condition.  */
-static int nullify_p;
+static R_TH_LOCAL int nullify_p;
 
 /* The value of the a nullify condition we inserted.  */
-static int nullify;
+static R_TH_LOCAL int nullify;
 
 /* Nonzero if we've inserted jumpflags.  */
-static int jumpflags_p;
+static R_TH_LOCAL int jumpflags_p;
 
 /* Nonzero if we've inserted a shimm.  */
-static int shimm_p;
+static R_TH_LOCAL int shimm_p;
 
 /* The value of the shimm we inserted (each insn only gets one but it can
    appear multiple times).  */
-static int shimm;
+static R_TH_LOCAL int shimm;
 
 /* Nonzero if we've inserted a limm (during assembly) or seen a limm
    (during disassembly).  */
-static int limm_p;
+static R_TH_LOCAL int limm_p;
 
 /* The value of the limm we inserted.  Each insn only gets one but it can
    appear multiple times.  */
-static long limm;
+static R_TH_LOCAL long limm;
 
 
 /* Configuration flags.  */
 
 /* Various ARC_HAVE_XXX bits.  */
-static int cpu_type;
+static R_TH_LOCAL int cpu_type;
 
 
 /* Given a format letter, yields the index into `arc_operands'.
@@ -151,7 +150,7 @@ static unsigned char arc_operand_map_ac[256];
 
 #define OPERANDS 3
 
-static enum operand ls_operand[OPERANDS];
+static R_TH_LOCAL enum operand ls_operand[OPERANDS];
 
 
 /* Various types of ARC operands, including insn suffixes.  */
@@ -207,11 +206,10 @@ static enum operand ls_operand[OPERANDS];
 static const struct arc_operand arc_operands_a4[] =
 {
 /* Place holder (??? not sure if needed).  */
-#define UNUSED 0
   { 0, 0, 0, 0, 0, 0 },
 
 /* Register A or shimm/limm indicator.  */
-#define REGA (UNUSED + 1)
+#define REGA (1)
   { 'a', 6, ARC_SHIFT_REGA, ARC_OPERAND_SIGNED | ARC_OPERAND_ERROR, insert_reg, extract_reg },
 
 /* Register B or shimm/limm indicator.  */

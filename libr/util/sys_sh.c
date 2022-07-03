@@ -33,7 +33,7 @@ R_API int r_sys_tem_statement(const char *l) {
 		} else if (lc == ';') {
 			if (!inquote) {
 				// XXX shouldnt have this char
-				R_LOG_ERROR ("Too many arguments\n");
+				R_LOG_ERROR ("Too many arguments");
 				return -1;
 			}
 		} else if (lc == ' ') {
@@ -41,7 +41,7 @@ R_API int r_sys_tem_statement(const char *l) {
 			argv[2+(argc * 2)] = pos + 1;
 			argc++;
 			if (argc + 2 >= MAXARG) {
-				R_LOG_ERROR ("Too many arguments\n");
+				R_LOG_ERROR ("Too many arguments");
 				return -1;
 			}
 		}

@@ -64,6 +64,10 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 2;
 
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = r_str_ndup (d.d_asm, sizeof (d.d_asm));
+	}
+
 	switch (i2ut16 (in)) {
 	case INST_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -215,6 +219,7 @@ RAnalPlugin r_anal_plugin_xap = {
 	.license = "LGPL3",
 	.arch = "xap",
 	.bits = 16,
+	.endian = R_SYS_ENDIAN_LITTLE,
 	.op = &xap_op,
 };
 

@@ -3,7 +3,7 @@
 #include "kvx.h"
 #include "kvx-reg.h"
 
-char *kv3_reg_srf[] = {
+static const char *kv3_reg_srf[] = {
 	"$pc",
 	"$ps",
 	"$pcr",
@@ -806,22 +806,19 @@ void kv3_decode_ry(operand_t *o, const ut32 *b) {
 }
 
 void kv3_decode_ru(operand_t *o, const ut32 *b) {
-	int r;
-	r = extract_field (5, 19, b[0]);
+	int r = extract_field (5, 19, b[0]);
 	o->reg = kv3_reg_grf_pair[r];
 	o->type = KVX_OPER_TYPE_REG;
 }
 
 void kv3_decode_rv(operand_t *o, const ut32 *b) {
-	int r;
-	r = extract_field (4, 20, b[0]);
+	int r = extract_field (4, 20, b[0]);
 	o->reg = kv3_reg_grf_quad[r];
 	o->type = KVX_OPER_TYPE_REG;
 }
 
 void kv3_decode_rr(operand_t *o, const ut32 *b) {
-	int r;
-	r = extract_field (4, 2, b[0]);
+	int r = extract_field (4, 2, b[0]);
 	o->reg = kv3_reg_srf[r];
 	o->type = KVX_OPER_TYPE_REG;
 }

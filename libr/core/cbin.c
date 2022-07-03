@@ -260,7 +260,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 								fmtsize, v, 0, NULL, NULL);
 						free (buf);
 						if (res < 0) {
-							eprintf ("Warning: Cannot register invalid format (%s)\n", v);
+							R_LOG_WARN ("Cannot register invalid format (%s)", v);
 						}
 					}
 				}
@@ -781,11 +781,11 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		char *s = r_reg_profile_to_cc (core->anal->reg);
 		if (s) {
 			if (!r_anal_cc_set (core->anal, s)) {
-				eprintf ("Warning: Invalid CC from reg profile.\n");
+				R_LOG_WARN ("Invalid CC from reg profile.");
 			}
 			free (s);
 		} else {
-			eprintf ("Warning: Cannot derive CC from reg profile.\n");
+			R_LOG_WARN ("Cannot derive CC from reg profile.");
 		}
 	}
 #else
@@ -808,11 +808,11 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		char *s = r_reg_profile_to_cc (core->anal->reg);
 		if (s) {
 			if (!r_anal_cc_set (core->anal, s)) {
-				eprintf ("Warning: Invalid CC from reg profile.\n");
+				R_LOG_WARN ("Invalid CC from reg profile.");
 			}
 			free (s);
 		} else {
-			eprintf ("Warning: Cannot derive CC from reg profile.\n");
+			R_LOG_WARN ("Cannot derive CC from reg profile.");
 		}
 	}
 	R_FREE (cc->path);
@@ -825,7 +825,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		cc->path = strdup (dbpath);
 	}
 	if (anal_arch && sdb_isempty (core->anal->sdb_cc)) {
-		eprintf ("Warning: Missing calling conventions for '%s' %d. Deriving it from the regprofile.\n", anal_arch, bits);
+		R_LOG_WARN ("Missing calling conventions for '%s' %d. Deriving it from the regprofile.", anal_arch, bits);
 	}
 	free (anal_arch);
 	free (dbpath);
@@ -1266,7 +1266,7 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->baddr) {
 		baddr = core->bin->cur->o->baddr;
 	} else if (baddr == UT64_MAX) {
-		eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
+		R_LOG_WARN ("Cannot find base address, flags will probably be misplaced");
 		baddr = 0LL;
 	}
 
@@ -1926,8 +1926,8 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 #define MYDB 1
 /* this is a VERY VERY VERY hacky and bad workaround that needs proper refactoring in Rbin to use Sdb */
 #if MYDB
-R_DEPRECATE static Sdb *mydb = NULL;
-R_DEPRECATE static RList *osymbols = NULL;
+R_DEPRECATE static R_TH_LOCAL Sdb *mydb = NULL;
+R_DEPRECATE static R_TH_LOCAL RList *osymbols = NULL;
 
 R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RList *symbols, const char *name, ut64 addr) {
 	r_strf_buffer(64);
@@ -2983,16 +2983,14 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 					}
 				}
 				if (!loaded && !inDebugger) {
-					r_core_cmdf (r, "on malloc://%d 0x%"PFMT64x" # bss\n",
-						section->vsize, addr);
+					r_core_cmdf (r, "on malloc://%d 0x%"PFMT64x, section->vsize, addr);
 				}
 			}
 #endif
 			if (section->format) {
 				// This is damn slow if section vsize is HUGE
 				if (section->vsize < 1024 * 1024 * 2) {
-					r_core_cmdf (r, "%s @ 0x%" PFMT64x,
-							section->format, section->vaddr);
+					r_core_cmdf (r, "%s @ 0x%" PFMT64x, section->format, section->vaddr);
 				}
 			}
 			if (r->bin->prefix) {
@@ -3626,6 +3624,16 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			r_list_foreach (c->methods, iter2, sym) {
 				pj_o (pj);
 				pj_ks (pj, "name", sym->name);
+				RFlagItem *fi = r_flag_get_at (r->flags, sym->vaddr, false);
+				if (fi) {
+					pj_ks (pj, "flag", fi->realname? fi->realname: fi->name);
+				}
+				char *s = r_core_cmd_strf (r, "isqq.@0x%08"PFMT64x"@e:bin.demangle=false", sym->vaddr);
+				r_str_trim (s);
+				if (R_STR_ISNOTEMPTY (s)) {
+					pj_ks (pj, "realname", s);
+				}
+				free (s);
 				if (sym->method_flags) {
 					char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
 					pj_k (pj, "flags");
@@ -3686,7 +3694,7 @@ static int bin_size(RCore *r, PJ *pj, int mode) {
 	} else if (IS_MODE_RAD (mode)) {
 		r_cons_printf ("f bin_size @ %"PFMT64u"\n", size);
 	} else if (IS_MODE_SET (mode)) {
-		r_core_cmdf (r, "f bin_size @ %"PFMT64u"\n", size);
+		r_core_cmdf (r, "f bin_size @ %"PFMT64u, size);
 	} else {
 		r_cons_printf ("%"PFMT64u"\n", size);
 	}
@@ -3883,7 +3891,7 @@ static void bin_pe_versioninfo(RCore *r, PJ *pj, int mode) {
 					ut8 *val_utf8 = calloc (lenval * 2, 1);
 					if (r_str_utf16_to_utf8 (key_utf8, lenkey * 2, key_utf16, lenkey, true) < 0
 						|| r_str_utf16_to_utf8 (val_utf8, lenval * 2, val_utf16, lenval, true) < 0) {
-						eprintf ("Warning: Cannot decode utf16 to utf8\n");
+						R_LOG_WARN ("Cannot decode utf16 to utf8");
 					} else if (IS_MODE_JSON (mode)) {
 						pj_ks (pj, (char*)key_utf8, (char*)val_utf8);
 					} else {

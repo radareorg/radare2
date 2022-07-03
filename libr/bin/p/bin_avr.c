@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2021 - pancake */
+/* radare - LGPL - Copyright 2016-2022 - pancake */
 
 #include <r_bin.h>
 #include <r_lib.h>
@@ -18,7 +18,7 @@
 		return false;             \
 	}
 
-static ut64 tmp_entry = UT64_MAX;
+static R_TH_LOCAL ut64 tmp_entry = UT64_MAX;
 
 static bool rjmp(RBuffer* b, ut64 addr) {
 	return (r_buf_read8_at (b, addr + 1) & 0xf0) == 0xc0;

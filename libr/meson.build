@@ -68,7 +68,6 @@ if not no_user_plugins
     parse_plugins += [ 'arm_pseudo' ]
   endif
   if user_plugins.contains('v850')
-    asm_plugins += [ 'v850', 'v810' ]
     anal_plugins += [ 'v850', 'v850_np', 'v810' ]
     parse_plugins += [ 'v850_pseudo' ]
   endif
@@ -77,7 +76,6 @@ if not no_user_plugins
     parse_plugins += [ 'wasm_pseudo' ]
   endif
   if user_plugins.contains('sparc')
-    asm_plugins += [ 'sparc_cs' ]
     anal_plugins += [ 'sparc_cs' ]
     if use_gpl
       asm_plugins += [ 'sparc_gnu' ]
@@ -128,50 +126,30 @@ endif
 if no_user_plugins
 
 asm_plugins += [
-  '6502',
-  '8051',
-  'amd29k',
   'arm_as',
   'arm_cs',
   'arm_winedbg',
-  'avr',
-  'cr16',
   'dalvik',
-  'dcpu16',
-  'gb',
-  'h8300',
-  'i8080',
   'java',
-  'lh5801',
-  'lm32',
-  'm680x_cs',
-  'malbolge',
-  'mcs96',
   'mips_cs',
   'or1k',
   'ppc_as',
   'ppc_cs',
-  'propeller',
   'riscv',
-  'rsp',
-  'sh',
-  'sparc_cs',
   'tms320',
-  'v810',
-  'v850',
   'x86_as',
   'x86_cs',
   'x86_nasm',
   'x86_nz',
-  'xap',
-  'xcore_cs',
 ]
 
 # TODO: add the pyc plugin for meson builds too
 anal_plugins += [
   '6502',
   '6502_cs',
+  'mcs96',
   '8051',
+  'alpha',
   'amd29k',
   #'arc',
   'arm_cs',
@@ -192,6 +170,8 @@ anal_plugins += [
   'i8080',
   'java',
   'kvx',
+  'lh5801',
+  'lm32',
   'loongarch_gnu',
   'm68k_cs',
   'm680x_cs',
@@ -230,7 +210,6 @@ if no_user_plugins
     asm_plugins += [
       # 'z80',
       'arm_gnu',
-      'cris_gnu',
   #    'hppa_gnu',
       'm68k_gnu',
       'lanai_gnu',
@@ -244,6 +223,7 @@ if no_user_plugins
       'mips_gnu',
       'loongarch_gnu',
       's390_gnu',
+      'pdp11_gnu',
       'ppc_gnu',
       'sparc_gnu',
     ]
