@@ -15,6 +15,7 @@
 (git grep 'r_str_startswith ("' libr ) && exit 1
 
 # pending cleanups
+# git grep -e "`printf '\x09static'`" libr | grep -v R_TH_LOCAL|grep -v const | grep -v '(' && exit 1
 # (git grep 'TODO' libr) # && exit 1 # use r_str_startswith()
 # (git grep 'XXX' libr) # && exit 1 # use r_str_startswith()
 # (git grep 'strncmp' libr) # && exit 1 # use r_str_startswith()
