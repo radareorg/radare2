@@ -57,7 +57,7 @@ static int make_projects_directory(RCore *core) {
 	char *prjdir = r_file_abspath (r_config_get (core->config, "dir.projects"));
 	int ret = r_sys_mkdirp (prjdir);
 	if (!ret) {
-		eprintf ("Cannot mkdir dir.projects\n");
+		R_LOG_ERROR ("Cannot mkdir dir.projects");
 	}
 	free (prjdir);
 	return ret;
@@ -139,18 +139,18 @@ R_API int r_core_project_list(RCore *core, int mode) {
 
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	if (r_sandbox_enable (0)) {
-		eprintf ("Cannot delete project in sandbox mode\n");
+		R_LOG_ERROR ("Cannot delete project in sandbox mode");
 		return 0;
 	}
 	char *path = get_project_script_path (core, prjfile);
 	if (!path) {
-		eprintf ("Invalid project name '%s'\n", prjfile);
+		R_LOG_ERROR ("Invalid project name '%s'", prjfile);
 		return false;
 	}
 	if (r_core_is_project (core, prjfile)) {
 		char *prj_dir = r_file_dirname (path);
 		if (!prj_dir) {
-			eprintf ("Cannot resolve directory\n");
+			R_LOG_ERROR ("Cannot resolve directory");
 			free (path);
 			return false;
 		}
@@ -328,7 +328,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 		core->prj->rvc = vc;
 		free (prj_path);
 	} else {
-		eprintf ( "Failed to load rvc\n");
+		R_LOG_ERROR ("Failed to load rvc");
 	}
 	r_config_set_b (core->config, "cfg.fortunes", cfg_fortunes);
 	r_config_set_b (core->config, "scr.interactive", scr_interactive);
@@ -369,20 +369,20 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	bool close_current_session = true;
 	bool ask_for_closing = true;
 	if (r_project_is_loaded (core->prj)) {
-		eprintf ("There's a project already opened\n");
+		R_LOG_ERROR ("There's a project already opened");
 		ask_for_closing = false;
 		bool ccs = interactive? r_cons_yesno ('y', "Close current session? (Y/n)"): true;
 		if (ccs) {
 			r_core_cmd0 (core, "o--");
 		} else {
-			eprintf ("Project not loaded.\n");
+			R_LOG_ERROR ("Project not loaded");
 			return false;
 		}
 	}
 	char *prj_name = r_core_project_name (core, prj_path);
 	char *prj_script = get_project_script_path (core, prj_path);
 	if (!prj_script) {
-		eprintf ("Invalid project name '%s'\n", prj_path);
+		R_LOG_ERROR ("Invalid project name '%s'", prj_path);
 		return false;
 	}
 	if (ask_for_closing && r_project_is_loaded (core->prj)) {
@@ -410,7 +410,7 @@ R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 	}
 	char *prj = get_project_script_path (core, prjfile);
 	if (!prj) {
-		eprintf ("Invalid project name '%s'\n", prjfile);
+		R_LOG_ERROR ("Invalid project name '%s'", prjfile);
 		return NULL;
 	}
 	FILE *fd = r_sandbox_fopen (prj, "r");
@@ -430,7 +430,7 @@ R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 		}
 		fclose (fd);
 	} else {
-		eprintf ("Cannot open project info (%s)\n", prj);
+		R_LOG_ERROR ("Cannot open project info (%s)", prj);
 	}
 	free (prj);
 	if (R_STR_ISEMPTY (file)) {
@@ -514,6 +514,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 		r_cons_flush ();
 	}
 	r_core_cmd (core, "o*", 0);
+	// save maps // r_core_cmd (core, "om*", 0);
 	r_core_cmd0 (core, "tcc*");
 	if (opts & R_CORE_PRJ_FCNS) {
 		r_cons_printf ("# functions\n");
@@ -609,12 +610,12 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	r_return_val_if_fail (prj_name && *prj_name, false);
 
 	if (r_config_get_b (core->config, "cfg.debug")) {
-		eprintf ("radare2 does not support projects on debugged bins.\n");
+		R_LOG_ERROR ("radare2 does not support projects on debugged bins");
 		return false;
 	}
 	char *script_path = get_project_script_path (core, prj_name);
 	if (!script_path) {
-		eprintf ("Invalid project name '%s'\n", prj_name);
+		R_LOG_ERROR ("Invalid project name '%s'", prj_name);
 		return false;
 	}
 	char *prj_dir = r_str_endswith (script_path, R_SYS_DIR "rc.r2")
@@ -622,14 +623,14 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		: r_str_newf ("%s.d", script_path);
 	if (r_file_exists (script_path)) {
 		if (r_file_is_directory (script_path)) {
-			eprintf ("Structural error: rc.r2 shouldnt be a directory.\n");
+			R_LOG_ERROR ("Structural error: rc.r2 shouldnt be a directory");
 		}
 	}
 	if (!prj_dir) {
 		prj_dir = strdup (prj_name);
 	}
 	if (r_core_is_project (core, prj_name) && strcmp (prj_name, r_config_get (core->config, "prj.name"))) {
-		eprintf ("A project with this name already exists. Use Ps-%s to delete it.\n", prj_name);
+		R_LOG_ERROR ("A project with this name already exists. Use Ps-%s to delete it", prj_name);
 		free (script_path);
 		free (prj_dir);
 		return false;
@@ -637,8 +638,8 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	if (!r_file_is_directory (prj_dir)) {
 		r_sys_mkdirp (prj_dir);
 	}
-	if (r_config_get_i (core->config, "scr.null")) {
-		r_config_set_i (core->config, "scr.null", false);
+	if (r_config_get_b (core->config, "scr.null")) {
+		r_config_set_b (core->config, "scr.null", false);
 		scr_null = true;
 	}
 	make_projects_directory (core);
@@ -656,13 +657,12 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 
 	r_config_set (core->config, "prj.name", prj_name);
 	if (!r_core_project_save_script (core, script_path, R_CORE_PRJ_ALL)) {
-		eprintf ("Cannot open '%s' for writing\n", prj_name);
+		R_LOG_ERROR ("Cannot open '%s' for writing", prj_name);
 		ret = false;
 		r_config_set (core->config, "prj.name", "");
 	}
 
 	if (r_config_get_b (core->config, "prj.files")) {
-		eprintf ("TODO: prj.files: support copying more than one file into the project directory\n");
 		char *bin_file = r_core_project_name (core, prj_name);
 		const char *bin_filename = r_file_basename (bin_file);
 		char *prj_bin_dir = r_str_newf ("%s" R_SYS_DIR "bin", prj_dir);
@@ -715,10 +715,10 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 				r_sys_cmdf ("rm -f '%s.zip'; zip -r '%s'.zip '%s'",
 					prj_name, prj_name, prj_name);
 			} else {
-				eprintf ("Command injection attempt?\n");
+				R_LOG_WARN ("Command injection attempt?");
 			}
 		} else {
-			eprintf ("Cannot chdir %s\n", prj_dir);
+			R_LOG_ERROR ("Cannot chdir %s", prj_dir);
 		}
 		r_sys_chdir (cwd);
 		free (cwd);
@@ -726,7 +726,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	// LEAK : not always in heap free (prj_name);
 	free (prj_dir);
 	if (scr_null) {
-		r_config_set_i (core->config, "scr.null", true);
+		r_config_set_b (core->config, "scr.null", true);
 	}
 	free (script_path);
 	r_config_set (core->config, "prj.name", prj_name);
@@ -753,4 +753,3 @@ R_API void r_core_project_undirty(RCore *core) {
 	core->anal->is_dirty = false;
 	core->flags->is_dirty = false;
 }
-

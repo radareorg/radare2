@@ -10,9 +10,9 @@
 #include "r_skyline.h"
 #include <r_util/r_w32dw.h>
 
-#define R_IO_SEEK_SET	0
-#define R_IO_SEEK_CUR	1
-#define R_IO_SEEK_END	2
+#define R_IO_SEEK_SET 0
+#define R_IO_SEEK_CUR 1
+#define R_IO_SEEK_END 2
 
 #define R_IO_UNDOS 64
 
@@ -328,7 +328,7 @@ R_API bool r_io_map_exists_for_id(RIO *io, ut32 id);
 R_API RIOMap *r_io_map_get(RIO *io, ut32 id);
 R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
-R_API RIOMap *r_io_map_get_at(RIO *io, ut64 addr);		//returns the map at vaddr with the highest priority
+R_API RIOMap *r_io_map_get_at(RIO *io, ut64 vaddr); // returns the map at vaddr with the highest priority
 R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref);
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr);
 R_API RIOMap *r_io_map_get_paddr(RIO *io, ut64 paddr);		//returns the map at paddr with the highest priority

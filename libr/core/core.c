@@ -1219,19 +1219,15 @@ typedef struct {
 	const char *needle;
 	int needle_len;
 	bool must_be_data;
-
-	char **valid_completions;
-	RCmdAliasVal **valid_completion_vals;
+	const char **valid_completions;
+	const RCmdAliasVal **valid_completion_vals;
 	int num_completions;
 } AliasAutocompletions;
 
 static bool check_alias_completion(void *in, const void *k, const void *v) {
-	// This repetition kind of sucks but we need
-	// to carry state somehow
 	AliasAutocompletions *c = in;
 	const char *needle = c->needle;
 	const int needle_len = c->needle_len;
-
 	const RCmdAliasVal *val = v;
 
 	/* Skip command aliases if we're filtering them out */
@@ -1259,8 +1255,8 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 	// Filter out command aliases?
 	c.must_be_data = must_be_data;
 	// Single block, borrowed pointers
-	c.valid_completions = R_NEWS (char *, cmd->aliases->count);
-	c.valid_completion_vals = R_NEWS (RCmdAliasVal *, cmd->aliases->count);
+	c.valid_completions = R_NEWS (const char *, cmd->aliases->count);
+	c.valid_completion_vals = R_NEWS (const RCmdAliasVal *, cmd->aliases->count);
 	c.num_completions = 0;
 
 	ht_pp_foreach (cmd->aliases, check_alias_completion, &c);
@@ -1295,8 +1291,8 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 		}
 	}
 	/* If 0 possible completions, do nothing */
-	free (c.valid_completions);
-	free (c.valid_completion_vals);
+	free ((void*)c.valid_completions);
+	free ((void*)c.valid_completion_vals);
 }
 
 static void autocomplete_process_path(RLineCompletion *completion, const char *str, const char *path) {

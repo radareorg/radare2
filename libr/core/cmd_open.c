@@ -606,7 +606,7 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 	r_table_free (t);
 }
 
-static bool cmd_om(RCore *core, const char *input) {
+static bool cmd_om(RCore *core, const char *input, int arg) {
 	char *s = strdup (input + 2);
 	if (!s) {
 		return false;
@@ -640,7 +640,7 @@ static bool cmd_om(RCore *core, const char *input) {
 			break;
 		}
 		if (fd < 3) {
-			eprintf ("Wrong fd, it must be greater than 3.\n");
+			R_LOG_ERROR ("Wrong fd, it must be greater than 3");
 			return false;
 		}
 		desc = r_io_desc_get (core->io, fd);
@@ -648,13 +648,27 @@ static bool cmd_om(RCore *core, const char *input) {
 			if (!size) {
 				size = r_io_fd_size (core->io, fd);
 			}
-			RIOMap *map = r_io_map_add (core->io, fd, rwx_arg ? rwx : desc->perm, paddr, vaddr, size);
-			if (map) {
-				if (name) {
-					r_io_map_set_name (map, name);
+			bool addmap = true;
+			if (arg == 'u') {
+				// check if map exists before adding it
+				RIOMap *map = r_io_map_get_at (core->io, vaddr);
+				if (map) {
+					ut64 ms = r_itv_size (map->itv);
+					ut64 mp = map->delta; // itv.addr; // map->delta + map->itv.addr;
+					if (mp == paddr && ms == size && map->fd == fd) {
+						addmap = false;
+					}
 				}
-			} else {
-				eprintf ("Cannot add map.\n");
+			}
+			if (addmap) {
+				RIOMap *map = r_io_map_add (core->io, fd, rwx_arg ? rwx : desc->perm, paddr, vaddr, size);
+				if (map) {
+					if (name) {
+						r_io_map_set_name (map, name);
+					}
+				} else {
+					R_LOG_ERROR ("Cannot add map");
+				}
 			}
 		}
 	} else {
@@ -662,7 +676,7 @@ static bool cmd_om(RCore *core, const char *input) {
 		if (r_io_desc_get (core->io, fd)) {
 			map_list (core, 0, core->print, fd);
 		} else {
-			eprintf ("Invalid fd %d\n", (int)fd);
+			R_LOG_ERROR ("Invalid fd %d", (int)fd);
 		}
 	}
 	free (s);
@@ -942,7 +956,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		r_core_cmd_omt (core, input + 2);
 		break;
 	case ' ': // "om"
-		cmd_om (core, input);
+		cmd_om (core, input, 0);
 		break;
 	case 'n': // "omn"
 		if (input[2] == '?') { // "omn?"
@@ -1045,6 +1059,10 @@ static void cmd_open_map(RCore *core, const char *input) {
 		} else {
 			r_io_map_del (core->io, r_num_math (core->num, input + 2));
 		}
+		break;
+	case 'u': // "omu"
+		// same as "om", but checks if already exists
+		cmd_om (core, input + 1, 'u');
 		break;
 	case 'd': // "omd"
 		cmd_omd (core, input + 2);

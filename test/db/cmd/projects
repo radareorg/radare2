@@ -1,3 +1,31 @@
+NAME=Resaving maps fails
+FILE=-
+BROKEN=1
+CMDS=<<EOF
+om 3 0x8000 0x200 0x200 r--
+om 3 0xc000 0x100 0x300 r--
+rm a.r2
+PS a.r2
+om*
+?e dos
+o-*
+cat a.r2~^om
+?e tre
+. a.r2
+om*
+rm a.r2
+EOF
+EXPECT=<<EOF
+om 3 0x00000000 0x00000200 0x00000000 rwx
+om 3 0x00008000 0x00000200 0x00000200 r--
+om 3 0x0000c000 0x00000100 0x00000300 r--
+dos
+om 3 0x00000000 0x00000200 0x00000000 rwx
+om 3 0x00008000 0x00000200 0x00000200 r--
+om 3 0x0000c000 0x00000100 0x00000300 r--
+EOF
+RUN
+
 NAME=Resaving fails
 FILE=bins/mach0/ls-m1
 BROKEN=1
@@ -362,7 +390,7 @@ om*
 ?e --
 P- hand
 P+ hand > /dev/null
-Po hand > /dev/null
+P hand > /dev/null
 om*
 ?e --
 om*~?
@@ -405,7 +433,7 @@ om*
 ?e --
 P- hond
 P+ hond > /dev/null
-Po hond > /dev/null
+P hond > /dev/null
 om*
 ?e --
 om*~?
@@ -692,6 +720,7 @@ FILE=bins/elf/analysis/main
 ARGS=-A -eprj.vc=false -edir.projects=.tmp/
 CMDS=<<EOF
 e prj.vc=false
+P- hjkl
 P+ hjkl
 Pi~!/
 Px
