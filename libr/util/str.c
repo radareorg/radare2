@@ -1188,7 +1188,7 @@ R_API int r_str_unescape(char *buf) {
 			err |= r_hex_to_byte (&ch,  buf[i + 2]);
 			err |= r_hex_to_byte (&ch2, buf[i + 3]);
 			if (err) {
-				R_LOG_ERROR ("Non-hexadecimal chars in input.");
+				R_LOG_ERROR ("Non-hexadecimal chars in input");
 				return 0; // -1?
 			}
 			buf[i] = (ch << 4) + ch2;
