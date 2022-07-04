@@ -269,7 +269,7 @@ static void cmd_tcc(RCore *core, const char *input) {
 	case ' ':
 		if (strchr (input, '(')) {
 			if (!r_anal_cc_set (core->anal, input + 1)) {
-				R_LOG_ERROR ("Invalid syntax in cc signature.");
+				R_LOG_ERROR ("Invalid syntax in cc signature");
 			}
 		} else {
 			const char *ccname = r_str_trim_head_ro (input + 1);

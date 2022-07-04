@@ -79,7 +79,7 @@ static void dyn_init(void) {
 	if (!(dyn_openpty && dyn_login_tty && dyn_forkpty)) {
 		void *libutil;
 		if (!(libutil = r_lib_dl_open ("libutil." R_LIB_EXT))) {
-			eprintf ("[ERROR] rarun2: Could not find PTY utils, failed to load %s\n", "libutil." R_LIB_EXT);
+			R_LOG_ERROR ("rarun2: Could not find PTY utils, failed to load libutil" R_LIB_EXT);
 			return;
 		}
 		if (!dyn_openpty) {
@@ -1242,7 +1242,7 @@ R_API int r_run_start(RRunProfile *p) {
 #endif
 		} else {
 			if (p->_pidfile) {
-				R_LOG_WARN ("pidfile doesnt work with 'system'.");
+				R_LOG_WARN ("pidfile doesnt work with 'system'");
 			}
 			rc = r_sys_cmd (p->_system);
 		}

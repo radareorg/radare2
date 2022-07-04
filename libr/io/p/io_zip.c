@@ -321,7 +321,7 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 			filename_in_zipfile, ZIP_CREATE, mode, rw);
 
 		if (zfo && zfo->entry == -1) {
-			R_LOG_WARN ("File did not exist, creating a new one.");
+			R_LOG_WARN ("File did not exist, creating a new one");
 		}
 		if (zfo) {
 			zfo->io_backref = io;
@@ -499,7 +499,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	RIOZipFileObj *zfo = r_io_zip_alloc_zipfileobj (zip_filename, filename_in_zipfile, ZIP_CREATE, mode, rw);
 	if (zfo) {
 		if (zfo->entry == -1) {
-			R_LOG_WARN ("File did not exist, creating a new one.");
+			R_LOG_WARN ("File did not exist, creating a new one");
 		}
 		zfo->io_backref = io;
 		res = r_io_desc_new (io, &r_io_plugin_zip, zfo->name, rw, mode, zfo);

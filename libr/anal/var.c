@@ -941,7 +941,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 				const char *rn = op->dst->reg ? op->dst->reg->name : NULL;
 				if (rn && ((bp && !strcmp (bp, rn)) || (sp && !strcmp (sp, rn)))) {
 					if (anal->verbose) {
-						R_LOG_WARN ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x ".", op->addr);
+						R_LOG_WARN ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
 					}
 					goto beach;
 				}
@@ -969,7 +969,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	}
 
 	if (anal->verbose && (!op->src[0] || !op->dst)) {
-		R_LOG_WARN ("Analysis didn't fill op->src/dst at 0x%" PFMT64x ".", op->addr);
+		R_LOG_WARN ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
 	}
 
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_ANAL_VAR_ACCESS_TYPE_WRITE : R_ANAL_VAR_ACCESS_TYPE_READ;
@@ -1741,7 +1741,7 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			const char *name = r_type_func_args_name (TDB, type_fcn_name, i);
 			if (!type || !*type || !name) {
 				// USE RLOG API
-				R_LOG_WARN ("Missing type for '%s'.", type_fcn_name);
+				R_LOG_WARN ("Missing type for '%s'", type_fcn_name);
 				goto beach;
 			}
 			size_t len = strlen (type);

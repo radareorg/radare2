@@ -161,7 +161,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		return NULL;
 	}
 	if (r_bp_get_in (bp, addr, perm)) {
-		R_LOG_WARN ("Breakpoint already set at this address.");
+		R_LOG_WARN ("Breakpoint already set at this address");
 		return NULL;
 	}
 	b = r_bp_item_new (bp);
@@ -170,10 +170,10 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	}
 	b->addr = addr + bp->delta;
 	if (bp->baddr > addr) {
-		R_LOG_WARN ("base addr should not be larger than the breakpoint address.");
+		R_LOG_WARN ("base addr should not be larger than the breakpoint address");
 	}
 	if (bp->bpinmaps && !r_bp_is_valid (bp, b)) {
-		R_LOG_WARN ("Cannot set breakpoint outside maps. Use dbg.bpinmaps to false.");
+		R_LOG_WARN ("Cannot set breakpoint outside maps. Use dbg.bpinmaps to false");
 	}
 	b->delta = addr - bp->baddr;
 	b->size = size;

@@ -678,20 +678,20 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 
 	switch (rtr_host[rtr_n].proto) {
 	case RTR_PROTOCOL_RAP:
-		R_LOG_ERROR ("Cannot use '=<' to a rap connection.");
+		R_LOG_ERROR ("Cannot use '=<' to a rap connection");
 		break;
 	case RTR_PROTOCOL_UNIX:
 		r_socket_write (rtr_host[rtr_n].fd, str, strlen (str));
 		break;
 	case RTR_PROTOCOL_HTTP:
-		eprintf ("TODO\n");
+		R_LOG_INFO ("TODO");
 		break;
 	case RTR_PROTOCOL_TCP:
 	case RTR_PROTOCOL_UDP:
 		r_socket_write (rtr_host[rtr_n].fd, str, strlen (str));
 		break;
 	default:
-		eprintf ("Unknown protocol\n");
+		R_LOG_ERROR ("Unknown protocol");
 		break;
 	}
 	free (str);

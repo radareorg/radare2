@@ -56,7 +56,7 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		return "Invalid register type";
 	}
 	if (r_reg_get (reg, tok[1], R_REG_TYPE_ALL)) {
-		R_LOG_WARN ("Duplicated register definition for '%s' has been ignored.", tok[1]);
+		R_LOG_WARN ("Duplicated register definition for '%s' has been ignored", tok[1]);
 		return NULL;
 	}
 

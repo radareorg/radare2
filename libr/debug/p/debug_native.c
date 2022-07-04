@@ -239,7 +239,7 @@ static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		r_list_foreach (dbg->threads, it, th) {
 			ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, 0, 0);
 			if (ret) {
-				R_LOG_ERROR ("(%d) is running or dead.", th->pid);
+				R_LOG_ERROR ("(%d) is running or dead", th->pid);
 			}
 		}
 	} else {
@@ -1587,7 +1587,7 @@ static int r_debug_setup_ownership(int fd, RDebug *dbg) {
 	RDebugInfo *info = r_debug_info (dbg, NULL);
 
 	if (!info) {
-		R_LOG_ERROR ("Error while getting debug info.");
+		R_LOG_ERROR ("Error while getting debug info");
 		return -1;
 	}
 	fchown (fd, info->uid, info->gid);

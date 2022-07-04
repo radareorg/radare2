@@ -21,7 +21,7 @@ int utf32len (ut32 *input) {
 
 ut8 *utf32toutf8 (ut32 *input) {
 	if (!input) {
-		R_LOG_ERROR ("ERROR input is null");
+		R_LOG_ERROR ("input is null");
 		return NULL;
 	}
 
@@ -30,7 +30,6 @@ ut8 *utf32toutf8 (ut32 *input) {
 	int len = utf32len (input);
 	ut8 *result = calloc (4, len + 1);
 	if (!result) {
-		R_LOG_ERROR ("ERROR: out of memory");
 		return NULL;
 	}
 
@@ -54,7 +53,7 @@ ut8 *utf32toutf8 (ut32 *input) {
 			result[j] = 0xf0 | ((input[i] >> 18) & 0x7);
 			j += 4;
 		} else {
-			R_LOG_ERROR ("ERROR in toutf8. Seems like input is invalid");
+			R_LOG_ERROR ("toutf8: invalid input");
 			free (result);
 			return NULL;
 		}
@@ -66,7 +65,6 @@ ut8 *utf32toutf8 (ut32 *input) {
 
 ut32 *utf8toutf32 (const ut8 *input) {
 	if (!input) {
-		R_LOG_ERROR ("ERROR input is null");
 		return NULL;
 	}
 
@@ -77,7 +75,6 @@ ut32 *utf8toutf32 (const ut8 *input) {
 	ut32 *result = calloc (strlen ((const char *) input) + 1, 4);
 
 	if (!result) {
-		R_LOG_ERROR ("ERROR: out of memory");
 		return NULL;
 	}
 
@@ -101,7 +98,7 @@ ut32 *utf8toutf32 (const ut8 *input) {
 			(input[i + 3] & 0x3f);
 			i += 4;
 		} else {
-			R_LOG_ERROR ("ERROR in toutf32. Seems like input is invalid.");
+			R_LOG_ERROR ("toutf32: invalid input");
 			free (result);
 			return NULL;
 		}
@@ -354,7 +351,7 @@ R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen) {
 	if (finaldst) {
 		*dstlen = strlen ((const char *) finaldst);
 	} else {
-		R_LOG_ERROR ("ERROR: finaldst is null");
+		R_LOG_ERROR ("finaldst can't be null");
 		return NULL;
 	}
 	return (char *) finaldst;

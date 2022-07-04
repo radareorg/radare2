@@ -1194,7 +1194,7 @@ static bool cmd_anal_aaft(RCore *core) {
 	const char *io_cache_key = "io.pcache.write";
 	bool io_cache = r_config_get_b (core->config, io_cache_key);
 	if (r_config_get_b (core->config, "cfg.debug")) {
-		R_LOG_WARN ("aaft is disabled in debugger mode.");
+		R_LOG_WARN ("aaft is disabled in debugger mode");
 		return false;
 	}
 	if (!io_cache) {
@@ -1264,7 +1264,7 @@ static void find_refs(RCore *core, const char *glob) {
 		eprintf ("Usage: axF [flag-str-filter]\n");
 		return;
 	}
-	R_LOG_WARN ("Finding references of flags matching '%s'...", glob);
+	R_LOG_WARN ("Finding references of flags matching '%s'", glob);
 	char *cmd = r_str_newf (".(findstref) @@=`f~%s[0]`", glob);
 	r_core_cmd0 (core, "(findstref;f here=$$;s entry0;/r here;f-here)");
 	r_core_cmd0 (core, cmd);
@@ -2380,7 +2380,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					r_anal_esil_stack_free (esil);
 					esil = NULL;
 				} else {
-					R_LOG_ERROR ("ESIL is not initialized. Run `aei`.");
+					R_LOG_ERROR ("ESIL is not initialized. Run `aei`");
 					break;
 				}
 			} else {
@@ -7514,11 +7514,11 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			switch (input[2]) {
 			case '+': // "aets+"
 				if (!esil) {
-					R_LOG_ERROR ("ESIL is not initialized. Use `aeim` first.");
+					R_LOG_ERROR ("ESIL is not initialized. Use `aeim` first");
 					break;
 				}
 				if (esil->trace) {
-					eprintf ("ESIL trace already started\n");
+					R_LOG_INFO ("ESIL trace already started");
 					break;
 				}
 				esil->trace = r_anal_esil_trace_new (esil);
@@ -7529,7 +7529,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				break;
 			case '-': // "aets-"
 				if (!esil) {
-					R_LOG_ERROR ("ESIL is not initialized. Use `aeim` first.");
+					R_LOG_ERROR ("ESIL is not initialized. Use `aeim` first");
 					break;
 				}
 				if (!esil->trace) {
@@ -11715,9 +11715,9 @@ static void cmd_anal_class_method(RCore *core, const char *input) {
 			end = strchr (name_str, ' ');
 			if (!end) {
 				if (c == ' ') {
-					R_LOG_ERROR ("No offset given.");
+					R_LOG_ERROR ("No offset given");
 				} else if (c == 'n') {
-					R_LOG_ERROR ("No new method name given.");
+					R_LOG_ERROR ("No new method name given");
 				}
 				free (cstr);
 				break;

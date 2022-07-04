@@ -171,7 +171,7 @@ static CPU_MODEL *__get_cpu_model_recursive(const char *model) {
 	if (cpu && cpu->inherit && !cpu->inherit_cpu_p) {
 		cpu->inherit_cpu_p = get_cpu_model (cpu->inherit);
 		if (!cpu->inherit_cpu_p) {
-			R_LOG_ERROR ("Cannot inherit from unknown CPU model '%s'.", cpu->inherit);
+			R_LOG_ERROR ("Cannot inherit from unknown CPU model '%s'", cpu->inherit);
 		}
 	}
 	return cpu;
@@ -209,7 +209,7 @@ static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 	if (cpu->inherit_cpu_p) {
 		return const_by_name (cpu->inherit_cpu_p, type, c);
 	}
-	R_LOG_ERROR ("CONSTANT key[%s] NOT FOUND.", c);
+	R_LOG_ERROR ("CONSTANT key[%s] NOT FOUND", c);
 	return NULL;
 }
 

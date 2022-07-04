@@ -169,7 +169,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 
 	if (num_base_classes > BASE_CLASSES_MAX) {
 		if (context->anal->verbose) {
-			R_LOG_WARN ("Length of base class array at 0x%08"PFMT64x" exceeds %d.", addr, BASE_CLASSES_MAX);
+			R_LOG_WARN ("Length of base class array at 0x%08"PFMT64x" exceeds %d", addr, BASE_CLASSES_MAX);
 		}
 		num_base_classes = BASE_CLASSES_MAX;
 	}
@@ -769,7 +769,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 		}
 		if (!td->valid) {
 			if (context->vt_context->anal->verbose) {
-				R_LOG_WARN ("type descriptor of base is invalid.");
+				R_LOG_WARN ("type descriptor of base is invalid");
 			}
 			continue;
 		}
@@ -865,7 +865,7 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 		const char *base_class_name;
 		if (!base_td->col) {
 			if (context->vt_context->anal->verbose) {
-				R_LOG_WARN ("Base td %s has no col. Falling back to recovery from td only.", base_td->td.name);
+				R_LOG_WARN ("Base td %s has no col. Falling back to recovery from td only", base_td->td.name);
 			}
 			base_class_name = recovery_apply_type_descriptor (context, base_td);
 		} else {
@@ -874,7 +874,7 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 
 		if (!base_class_name) {
 			if (context->vt_context->anal->verbose) {
-				eprintf ("Failed to convert !base td->col or td to a class\n");
+				R_LOG_WARN ("Failed to convert !base td->col or td to a class");
 			}
 			continue;
 		}

@@ -372,7 +372,7 @@ R_API bool r_egg_compile(REgg *egg) {
 	for (; b; ) {
 		r_egg_lang_parsechar (egg, b);
 		if (egg->lang.elem_n >= sizeof (egg->lang.elem)) {
-			R_LOG_ERROR ("ERROR: elem too large.");
+			R_LOG_ERROR ("too large element");
 			break;
 		}
 		size_t r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
@@ -382,7 +382,7 @@ R_API bool r_egg_compile(REgg *egg) {
 		// XXX: some parse fail errors are false positives :(
 	}
 	if (egg->context > 0) {
-		R_LOG_ERROR ("ERROR: expected '}' at the end of the file. %d left", egg->context);
+		R_LOG_ERROR ("expected '}' at the end of the file. %d left", egg->context);
 		return false;
 	}
 	// TODO: handle errors here

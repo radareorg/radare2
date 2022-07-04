@@ -1674,7 +1674,7 @@ static void load_table_asciiart(RCore *core, RTable *t, RList *lines) {
 			RListIter *iter2;
 			ncols = 0;
 			if (r_list_length (t->cols) > 0) {
-				R_LOG_WARN ("Not re-adding headers. Use ,- to reset the table.");
+				R_LOG_WARN ("Not re-adding headers. Use ,- to reset the table");
 				continue;
 			}
 			r_list_foreach (args, iter2, arg) {
@@ -5436,7 +5436,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 	int ret = false;
 
 	if (core->cons->context->cmd_depth < 1) {
-		R_LOG_ERROR ("That '%s' was too deep...", cmd);
+		R_LOG_ERROR ("That '%s' was too deep", cmd);
 		return false;
 	}
 	core->cons->context->cmd_depth--;

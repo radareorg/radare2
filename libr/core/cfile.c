@@ -438,7 +438,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	binfile = r_bin_cur (r->bin);
 	if (r_core_bin_set_env (r, binfile)) {
 		if (r->anal->verbose && !sdb_const_get (r->anal->sdb_cc, "default.cc", 0)) {
-			R_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate.");
+			R_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate");
 		}
 	}
 	plugin = r_bin_file_cur_plugin (binfile);
@@ -725,7 +725,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		}
 		r_core_cmd0 (r, "obb 0;s entry0");
 		r_config_set_i (r->config, "bin.at", true);
-		R_LOG_INFO ("[bin.libs] Linking imports...");
+		R_LOG_INFO ("[bin.libs] Linking imports");
 		RBinImport *imp;
 		const RList *imports = r_bin_get_imports (r->bin);
 		r_list_foreach (imports, iter, imp) {

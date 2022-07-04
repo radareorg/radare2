@@ -273,7 +273,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 		*visited = su;
 	}
 	if (visited && set_u_contains (*visited, offset)) {
-		R_LOG_WARN ("anal.dwarf.parse_type: infinite recursion detected.");
+		R_LOG_WARN ("anal.dwarf.parse_type: infinite recursion detected");
 		return -1;
 	}
 	set_u_add (*visited, offset);

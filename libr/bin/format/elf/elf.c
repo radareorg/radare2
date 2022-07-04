@@ -2631,7 +2631,7 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 			return buf;
 		}
 	}
-	R_LOG_DEBUG ("Cannot find NOTE section.");
+	R_LOG_DEBUG ("Cannot find NOTE section");
 	return NULL;
 }
 
@@ -3720,7 +3720,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			}
 			void *rett = realloc (ret, (ret_size + nsym) * sizeof (RBinElfSymbol));
 			if (!rett) {
-				R_LOG_ERROR ("Cannot allocate %d symbols.", (int)(nsym + ret_size));
+				R_LOG_ERROR ("Cannot allocate %d symbols", (int)(nsym + ret_size));
 				goto beach;
 			}
 			ret = rett;

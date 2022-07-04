@@ -997,7 +997,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	if (!op->mnemonic && mask & R_ANAL_OP_MASK_DISASM) {
 		RAsmOp asmop;
 		if (core->anal->verbose) {
-			R_LOG_WARN ("Implement RAnalOp.MASK_DISASM for current anal.arch. Using the sluggish RAsmOp fallback for now.");
+			R_LOG_WARN ("Implement RAnalOp.MASK_DISASM for current anal.arch. Using the sluggish RAsmOp fallback for now");
 		}
 		r_asm_set_pc (core->rasm, addr);
 		r_asm_op_init (&asmop);
@@ -5234,7 +5234,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		return;
 	}
 	if (iend > MAX_SCAN_SIZE) {
-		R_LOG_WARN ("Not going to analyze 0x%08"PFMT64x" bytes.", (ut64)iend);
+		R_LOG_WARN ("Not going to analyze 0x%08"PFMT64x" bytes", (ut64)iend);
 		return;
 	}
 	buf = malloc ((size_t)iend + 2);
@@ -5256,7 +5256,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	}
 	const char *kspname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	if (R_STR_ISEMPTY (kspname)) {
-		R_LOG_ERROR ("No =SP defined in the reg profile.");
+		R_LOG_ERROR ("No =SP defined in the reg profile");
 		return;
 	}
 	char *spname = strdup (kspname);
@@ -5415,7 +5415,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 		if (!sn) {
-			R_LOG_WARN ("No SN reg alias for current architecture.");
+			R_LOG_WARN ("No SN reg alias for current architecture");
 		}
 		if (sn && op.type == R_ANAL_OP_TYPE_SWI) {
 			r_strf_buffer (64);

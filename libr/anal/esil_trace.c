@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2020 - pancake, rkx1209 */
+/* radare - LGPL - Copyright 2015-2022 - pancake, rkx1209 */
 
 #include <r_anal.h>
 
@@ -19,7 +19,7 @@ static void htup_vector_free(HtUPKv *kv) {
 R_API RAnalEsilTrace *r_anal_esil_trace_new(RAnalEsil *esil) {
 	r_return_val_if_fail (esil, NULL);
 	if (!esil->stack_addr || !esil->stack_size) {
-		eprintf ("Run `aeim` to initialize a stack for the ESIL vm\n");
+		R_LOG_ERROR ("Run `aeim` to initialize a stack for the ESIL vm");
 		return NULL;
 	}
 	size_t i;
@@ -88,7 +88,7 @@ static void add_reg_change(RAnalEsilTrace *trace, int idx, RRegItem *ri, ut64 da
 	if (!vreg) {
 		vreg = r_vector_new (sizeof (RAnalEsilRegChange), NULL, NULL);
 		if (!vreg) {
-			R_LOG_ERROR ("creating a register vector.");
+			R_LOG_ERROR ("creating a register vector");
 			return;
 		}
 		ht_up_insert (trace->registers, addr, vreg);
@@ -103,7 +103,7 @@ static void add_mem_change(RAnalEsilTrace *trace, int idx, ut64 addr, ut8 data) 
 	if (!vmem) {
 		vmem = r_vector_new (sizeof (RAnalEsilMemChange), NULL, NULL);
 		if (!vmem) {
-			R_LOG_ERROR ("creating a memory vector.");
+			R_LOG_ERROR ("creating a memory vector");
 			return;
 		}
 		ht_up_insert (trace->memory, addr, vmem);

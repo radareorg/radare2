@@ -245,7 +245,7 @@ void (store_opN)(struct op_parameter par) {
 		def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 		break;
 	default:
-		R_LOG_ERROR ("Error in store_op in opcode.c, call function %u.", par.func);
+		R_LOG_ERROR ("Error in store_op in opcode.c, call function %u", par.func);
 		return;
 	}
 	par.op_obj[par.op_code].type |= HASSTORE;

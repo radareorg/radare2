@@ -781,11 +781,11 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		char *s = r_reg_profile_to_cc (core->anal->reg);
 		if (s) {
 			if (!r_anal_cc_set (core->anal, s)) {
-				R_LOG_WARN ("Invalid CC from reg profile.");
+				R_LOG_WARN ("Invalid CC from reg profile");
 			}
 			free (s);
 		} else {
-			R_LOG_WARN ("Cannot derive CC from reg profile.");
+			R_LOG_WARN ("Cannot derive CC from reg profile");
 		}
 	}
 #else
@@ -808,11 +808,11 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		char *s = r_reg_profile_to_cc (core->anal->reg);
 		if (s) {
 			if (!r_anal_cc_set (core->anal, s)) {
-				R_LOG_WARN ("Invalid CC from reg profile.");
+				R_LOG_WARN ("Invalid CC from reg profile");
 			}
 			free (s);
 		} else {
-			R_LOG_WARN ("Cannot derive CC from reg profile.");
+			R_LOG_WARN ("Cannot derive CC from reg profile");
 		}
 	}
 	R_FREE (cc->path);
@@ -825,7 +825,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		cc->path = strdup (dbpath);
 	}
 	if (anal_arch && sdb_isempty (core->anal->sdb_cc)) {
-		R_LOG_WARN ("Missing calling conventions for '%s' %d. Deriving it from the regprofile.", anal_arch, bits);
+		R_LOG_WARN ("Missing calling conventions for '%s' %d. Deriving it from the regprofile", anal_arch, bits);
 	}
 	free (anal_arch);
 	free (dbpath);
