@@ -177,7 +177,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	return pid;
 
 err_fork:
-	R_LOG_ERROR ("Cannot create new process.");
+	R_LOG_ERROR ("Cannot create new process");
 	TerminateProcess (pi.hProcess, 1);
 	r_w32dw_free (io->dbgwrap);
 	io->dbgwrap = NULL;
@@ -257,7 +257,7 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	rp->_dodebug = true;
 	if (io->runprofile && *io->runprofile) {
 		if (!r_run_parsefile (rp, io->runprofile)) {
-			eprintf ("Can't find profile '%s'\n", io->runprofile);
+			R_LOG_ERROR ("Can't find profile '%s'", io->runprofile);
 			r_run_free (rp);
 			return NULL;
 		}
@@ -266,19 +266,19 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 		}
 	} else if (io->envprofile) {
 		if (!r_run_parse (rp, io->envprofile)) {
-			eprintf ("Can't parse default rarun2 profile\n");
+			R_LOG_ERROR ("Can't parse default rarun2 profile");
 			r_run_free (rp);
 			return NULL;
 		}
 	}
 	if (bits == 64) {
-		r_run_parseline (rp, expr=strdup ("bits=64"));
+		r_run_parseline (rp, expr = strdup ("bits=64"));
 	} else if (bits == 32) {
-		r_run_parseline (rp, expr=strdup ("bits=32"));
+		r_run_parseline (rp, expr = strdup ("bits=32"));
 	}
 	free (expr);
 	if (r_run_config_env (rp)) {
-		eprintf ("Can't config the environment.\n");
+		R_LOG_ERROR ("Cannot configure the environment");
 		r_run_free (rp);
 		return NULL;
 	}

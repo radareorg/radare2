@@ -4145,7 +4145,7 @@ void PE_(r_bin_pe_check_sections)(RBinPEObj* pe, struct r_bin_pe_section_t* * se
 					if (addr_beg <= entry->vaddr || entry->vaddr < addr_end) {
 						if (!(sections[j].perm & PE_IMAGE_SCN_MEM_EXECUTE)) {
 							if (pe->verbose) {
-								R_LOG_WARN ("Found entrypoint in non-executable section.");
+								R_LOG_WARN ("Found entrypoint in non-executable section");
 							}
 							sections[j].perm |= PE_IMAGE_SCN_MEM_EXECUTE;
 						}

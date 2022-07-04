@@ -59,7 +59,7 @@ static void filesave(void) {
 		}
 	}
 	if (!path) {
-		R_LOG_ERROR ("No file given.");
+		R_LOG_ERROR ("No file given");
 		return;
 	}
 	if (lines) {
@@ -91,7 +91,7 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 		lines = r_file_slurp (file, &sz);
 		bytes = (int)sz;
 		if (!lines) {
-			R_LOG_ERROR ("Failed to load '%s'.", file);
+			R_LOG_ERROR ("Failed to load '%s'", file);
 			R_FREE (path);
 			return NULL;
 		}

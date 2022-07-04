@@ -13,6 +13,7 @@
 (git grep '4d""' libr) && exit 1
 (git grep 'r_core_cmd' libr | grep -v /lang/ | grep '\\n') && exit 1
 (git grep 'r_str_startswith ("' libr ) && exit 1
+(git grep R_LOG | grep '\."' | grep -v sys/) && exit 1
 
 # pending cleanups
 # git grep -e "`printf '\x09static'`" libr | grep -v R_TH_LOCAL|grep -v const | grep -v '(' && exit 1

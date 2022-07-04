@@ -667,7 +667,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	}
 	if ((maxlen - (addrbytes * idx)) > MAX_SCAN_SIZE) {
 		if (anal->verbose) {
-			R_LOG_WARN ("Skipping large memory region.");
+			R_LOG_WARN ("Skipping large memory region");
 		}
 		maxlen = 0;
 	}
@@ -1690,7 +1690,7 @@ R_API RAnalFunction *r_anal_get_function_byname(RAnal *a, const char *name) {
 R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff) {
 	D eprintf ("Add bb\n");
 	if (size == 0) { // empty basic blocks allowed?
-		R_LOG_WARN ("empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.", addr);
+		R_LOG_WARN ("empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion", addr);
 		r_warn_if_reached ();
 		return false;
 	}

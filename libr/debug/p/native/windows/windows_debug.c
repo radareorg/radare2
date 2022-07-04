@@ -48,7 +48,6 @@ static PTHREAD_ITEM __r_debug_thread_add(RDebug *dbg, DWORD pid, DWORD tid, HAND
 	}
 	pthread = R_NEW0 (THREAD_ITEM);
 	if (!pthread) {
-		R_LOG_ERROR ("__r_debug_thread_add: Memory allocation failed.");
 		return NULL;
 	}
 	*pthread = th;

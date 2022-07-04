@@ -197,7 +197,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	}
 	IFDBG {
 		R_LOG_DEBUG ("Extracting op from buffer (%d byte(s)) @ 0x%04x", (int)len, (ut32)addr);
-		R_LOG_DEBUG ("Parsing op: (0x%02x) %s.", op_byte, JAVA_OPS[op_byte].name);
+		R_LOG_DEBUG ("Parsing op: (0x%02x) %s", op_byte, JAVA_OPS[op_byte].name);
 	}
 	op->addr = addr;
 	op->size = sz;
@@ -252,7 +252,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->eob = r_anal_java_is_op_type_eop (op->type2);
 	IFDBG {
 		const char *ot_str = r_anal_optype_to_string (op->type);
-		R_LOG_DEBUG ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s.",
+		R_LOG_DEBUG ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s",
 			JAVA_OPS[op_byte].name, addr, (ut64)op->type2, (ut64)op->type,  ot_str);
 		//eprintf ("op_eob: 0x%02x.\n", op->eob);
 		//eprintf ("op_byte @ 0: 0x%02x op_byte @ 0x%04x: 0x%02x.\n", data[0], addr, data[addr]);

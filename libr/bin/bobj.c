@@ -155,7 +155,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 			return NULL;
 		}
 	} else {
-		R_LOG_WARN ("Plugin %s should implement load_buffer method.", plugin->name);
+		R_LOG_WARN ("Plugin %s should implement load_buffer method", plugin->name);
 		sdb_free (bo->kv);
 		free (bo);
 		return NULL;

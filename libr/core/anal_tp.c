@@ -583,7 +583,7 @@ repeat:
 	for (j = 0; j < bblist_size; j++) {
 		bb = r_anal_get_block_at (core->anal, bblist[j]);
 		if (!bb) {
-			R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis.", bblist[j]);
+			R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", bblist[j]);
 			retries--;
 			free (bblist);
 			goto repeat;
@@ -636,7 +636,7 @@ repeat:
 			if (i < bblist_size) {
 				bb = r_anal_get_block_at (core->anal, bb_addr);
 				if (!bb) {
-					R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis.", bblist[i]);
+					R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", bblist[i]);
 					retries--;
 					free (bblist);
 					goto repeat;

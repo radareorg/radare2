@@ -1000,7 +1000,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	if (pfile && r_file_is_directory (pfile)) {
 		if (debug) {
-			R_LOG_ERROR ("Cannot debug directories, yet.");
+			R_LOG_ERROR ("Cannot debug directories, yet");
 			LISTS_FREE ();
 			free (pfile);
 			R_FREE (debugbackend);

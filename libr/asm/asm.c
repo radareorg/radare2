@@ -67,7 +67,7 @@ static inline int r_asm_pseudo_arch(RAsm *a, const char *input) {
 
 static inline int r_asm_pseudo_bits(RAsm *a, const char *input) {
 	if (!(r_asm_set_bits (a, r_num_math (NULL, input)))) {
-		R_LOG_ERROR ("Unsupported value for .bits.");
+		R_LOG_ERROR ("Unsupported value for .bits");
 		return -1;
 	}
 	return 0;
@@ -179,7 +179,7 @@ static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
 	size_t count = (size_t)r_num_math (NULL,r_str_word_get0 (input, 2));
 	char *content = r_file_slurp (input, &bytes_read);
 	if (!content) {
-		R_LOG_ERROR ("Could not open '%s'.", input);
+		R_LOG_ERROR ("Could not open '%s'", input);
 		return -1;
 	}
 	if (skip > 0) {
@@ -1078,7 +1078,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 					ret = r_asm_pseudo_org (a, ptr + 5);
 					off = a->pc;
 				} else if (r_str_startswith (ptr, ".offset ")) {
-					R_LOG_ERROR ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'.");
+					R_LOG_ERROR ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'");
 				} else if (!strncmp (ptr, ".text", 5)) {
 					acode->code_offset = a->pc;
 				} else if (!strncmp (ptr, ".data", 5)) {

@@ -547,7 +547,7 @@ static bool _patch_reloc(struct MACH0_(obj_t) *bin, RIOBind *iob, struct reloc_t
 			ins_len = 5;
 			break;
 		default:
-			R_LOG_WARN ("unsupported reloc type for X86_64 (%d), please file a bug.", reloc->type);
+			R_LOG_WARN ("unsupported reloc type for X86_64 (%d), please file a bug", reloc->type);
 			return false;
 		}
 		break;
