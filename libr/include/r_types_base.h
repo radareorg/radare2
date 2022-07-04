@@ -29,11 +29,13 @@ extern "C" {
 #endif
 
 #if defined(__GNUC__)
-#define R_LIKELY(x)       __builtin_expect((size_t)(x),1)
-#define R_UNLIKELY(x)     __builtin_expect((size_t)(x),0)
+#define R_LIKELY(x) __builtin_expect((size_t)(x),1)
+#define R_UNLIKELY(x) __builtin_expect((size_t)(x),0)
+#define R_MUSTUSE __attribute__((warn_unused_result))
 #else
-#define R_LIKELY(x)       (size_t)(x)
-#define R_UNLIKELY(x)     (size_t)(x)
+#define R_LIKELY(x) (size_t)(x)
+#define R_UNLIKELY(x) (size_t)(x)
+#define R_MUSTUSE
 #endif
 
 #define R_IGNORE_RETURN(x) if ((x)) {;}

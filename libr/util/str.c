@@ -936,7 +936,7 @@ R_API char *r_str_appendch(char *x, char y) {
 	return r_str_append (x, b);
 }
 
-R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
+R_API R_MUSTUSE char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	if (g == 'i') {
 		return r_str_replace_icase (str, key, val, g, true);
 	}
@@ -988,7 +988,7 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	return str;
 }
 
-R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case) {
+R_API R_MUSTUSE char *r_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case) {
 	r_return_val_if_fail (str && key && val, NULL);
 
 	int off, i, klen, vlen, slen;
@@ -1042,9 +1042,7 @@ R_API char *r_str_replace_icase(char *str, const char *key, const char *val, int
 		}
 	}
 	return str;
-
 alloc_fail:
-	eprintf ("alloc fail\n");
 	free (str);
 	return NULL;
 }
@@ -1061,7 +1059,7 @@ alloc_fail:
  * g     - if true, replace all occurrences of key
  *
  * It returns a pointer to the modified string */
-R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
+R_API R_MUSTUSE char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 				  const char *key, const char *val, int g) {
 	int i, klen, vlen, slen, delta = 0, bias;
 	char *newstr, *scnd, *p = clean, *str_p;
@@ -1097,7 +1095,6 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 		// HACK: this 32 avoids overwrites wtf
 		newstr = realloc (str, slen + klen);
 		if (!newstr) {
-			eprintf ("realloc fail\n");
 			R_FREE (str);
 			free (scnd);
 			break;
@@ -1116,10 +1113,9 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 	return str;
 }
 
+// R580 - return void to avoid confusion imho
 R_API char *r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g) {
-	if (!str || !key || !val) {
-		return NULL;
-	}
+	r_return_val_if_fail (str && key && val, NULL);
 	char *heaped = r_str_replace (strdup (str), key, val, g);
 	if (heaped) {
 		strncpy (str, heaped, sz);
@@ -1182,7 +1178,7 @@ R_API int r_str_unescape(char *buf) {
 		case 'x':
 			err = ch2 = ch = 0;
 			if (!buf[i + 2] || !buf[i + 3]) {
-				eprintf ("Unexpected end of string.\n");
+				R_LOG_ERROR ("Unexpected end of string");
 				return 0;
 			}
 			err |= r_hex_to_byte (&ch,  buf[i + 2]);
@@ -2642,7 +2638,7 @@ R_API const char *r_str_firstbut(const char *s, char ch, const char *but) {
 		return strchr (s, ch);
 	}
 	if (strlen (but) >= bsz) {
-		eprintf ("r_str_firstbut: but string too long\n");
+		R_LOG_ERROR ("but string too long");
 		return NULL;
 	}
 	for (p = s; *p; p++) {
@@ -2668,7 +2664,7 @@ R_API const char *r_str_firstbut_escape(const char *s, char ch, const char *but)
 		return strchr (s, ch);
 	}
 	if (strlen (but) >= bsz) {
-		eprintf ("r_str_firstbut: but string too long\n");
+		R_LOG_ERROR ("r_str_firstbut: but string too long");
 		return NULL;
 	}
 	for (p = s; *p; p++) {
@@ -2708,7 +2704,7 @@ R_API const char *r_str_lastbut(const char *s, char ch, const char *but) {
 		return r_str_lchr (s, ch);
 	}
 	if (strlen (but) >= bsz) {
-		eprintf ("r_str_lastbut: but string too long\n");
+		R_LOG_ERROR ("r_str_lastbut: but string too long");
 		return NULL;
 	}
 	for (p = s; *p; p++) {
