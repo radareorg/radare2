@@ -2091,7 +2091,7 @@ static int cmd_open(void *data, const char *input) {
 				r_core_file_reopen_debug (core, r_str_trim_head_ro (input + 2));
 			}
 			break;
-		case 'c': // "oob" : reopen with bin info
+		case 'c': // "ooc"
 			r_core_cmd0 (core, "oc `o.`");
 			break;
 		case 'b': // "oob" : reopen with bin info
