@@ -4378,8 +4378,21 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arc
 	}
 	/* Check if the arch name is a valid name */
 	if (!r_asm_is_valid (r->rasm, arch)) {
-		free (arch);
-		return false;
+		bool found_anal_plugin = false;
+		if (arch && r->anal && r->anal->plugins) {
+			RAnalPlugin *anal_plugin;
+			RListIter *iter;
+			r_list_foreach (r->anal->plugins, iter, anal_plugin) {	//XXX: fix this properly after 5.8
+				if (!strcmp (anal_plugin->arch, arch)) {
+					found_anal_plugin = true;
+					break;
+				}
+			}
+		}
+		if (!found_anal_plugin) {
+			free (arch);
+			return false;
+		}
 	}
 	/* Find a file with the requested name/arch/bits */
 	RBinFile *binfile = r_bin_file_find_by_arch_bits (r->bin, arch, bits);
