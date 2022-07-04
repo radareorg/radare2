@@ -763,7 +763,7 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 	fake_sm.itv.addr = addr;
 	fake_sm.itv.size = len;
 	RRBNode *node;
-	if (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), addr)) {
+	if (R_LIKELY (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), addr))) {
 		node = bank->last_used;
 	} else {
 		node = _find_entry_submap_node (bank, &fake_sm);
