@@ -4433,11 +4433,15 @@ R_API bool r_core_bin_update_arch_bits(RCore *r) {
 	if (!r) {
 		return 0;
 	}
-	if (r->rasm) {
+	if (r->rasm) {	//XXX: refactor when RArch is done
 		bits = r->rasm->config->bits;
 		if (r->rasm->cur) {
 			arch = r->rasm->cur->arch;
 		}
+	}
+	if (!arch && r->anal && r->anal->cur) {
+		bits = r->anal->config->bits;
+		arch = r->anal->cur->arch;
 	}
 	binfile = r_bin_cur (r->bin);
 	name = binfile ? binfile->file : NULL;
