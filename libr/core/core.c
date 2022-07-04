@@ -1220,8 +1220,8 @@ typedef struct {
 	int needle_len;
 	bool must_be_data;
 
-	const char **valid_completions;
-	const RCmdAliasVal **valid_completion_vals;
+	char **valid_completions;
+	RCmdAliasVal **valid_completion_vals;
 	int num_completions;
 } AliasAutocompletions;
 
@@ -1259,8 +1259,8 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 	// Filter out command aliases?
 	c.must_be_data = must_be_data;
 	// Single block, borrowed pointers
-	c.valid_completions = R_NEWS (const char *, cmd->aliases->count);
-	c.valid_completion_vals = R_NEWS (const RCmdAliasVal *, cmd->aliases->count);
+	c.valid_completions = R_NEWS (char *, cmd->aliases->count);
+	c.valid_completion_vals = R_NEWS (RCmdAliasVal *, cmd->aliases->count);
 	c.num_completions = 0;
 
 	ht_pp_foreach (cmd->aliases, check_alias_completion, &c);
@@ -1536,7 +1536,7 @@ static void autocomplete_minus(RCore *core, RLineCompletion *completion, const c
 	int length = strlen (str);
 	int i;
 
-	const char **keys = r_cmd_alias_keys (core->rcmd);
+	char **keys = (char **)r_cmd_alias_keys (core->rcmd);
 	for (i = 0; i < core->rcmd->aliases->count; i++) {
 		if (!strncmp (keys[i], str, length)) {
 			r_line_completion_push (completion, keys[i]);

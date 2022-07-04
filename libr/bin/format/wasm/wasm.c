@@ -914,7 +914,7 @@ beach:
 }
 
 static bool parse_import_sec(RBinWasmObj *bin) {
-	r_return_val_if_fail (bin && bin->g_sections, NULL);
+	r_return_val_if_fail (bin && bin->g_sections, false);
 	// each import type has seperate index space, so we parse them into 4 vecs
 	free_all_imports (bin); // ensure all are empty
 
