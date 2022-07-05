@@ -272,7 +272,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 		case R_SIGN_TYPES:
 			DBL_VAL_FAIL (it->types, R_SIGN_TYPES);
 			if (!types_sig_valid (token)) {
-				eprintf ("Invalid types: ```%s``` in signatuer for %s\n", token, k);
+				R_LOG_ERROR ("Invalid types: ```%s``` in signatuer for %s", token, k);
 				success = false;
 				goto out;
 			}
@@ -336,7 +336,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			}
 			break;
 		default:
-			eprintf ("Unsupported (%c)\n", st);
+			R_LOG_ERROR ("Unsupported (%c)", st);
 			break;
 		}
 	}
@@ -607,23 +607,23 @@ static bool validate_item(RSignItem *it) {
 	r_return_val_if_fail (it, false);
 	// TODO: validate more
 	if (!r_name_check (it->name)) {
-		eprintf ("Bad name in signature: %s\n", it->name);
+		R_LOG_ERROR ("Bad name in signature: %s", it->name);
 		return false;
 	}
 
 	if (it->space && it->space->name && !r_name_check (it->space->name)) {
-		eprintf ("Bad space name in signature: %s\n", it->space->name);
+		R_LOG_ERROR ("Bad space name in signature: %s", it->space->name);
 		return false;
 	}
 
 	if (it->bytes) {
 		RSignBytes *b = it->bytes;
 		if (!b->mask || !b->bytes || b->size <= 0) {
-			eprintf ("Signature '%s' has empty byte field\n", it->name);
+			R_LOG_ERROR ("Signature '%s' has empty byte field", it->name);
 			return false;
 		}
 		if (b->mask[0] == '\0') {
-			eprintf ("Signature '%s' mask starts empty\n", it->name);
+			R_LOG_ERROR ("Signature '%s' mask starts empty", it->name);
 			return false;
 		}
 	}
@@ -1016,7 +1016,7 @@ R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname) {
 	r_return_val_if_fail (a && name && realname, false);
 
 	if (strchr (realname, ' ')) {
-		eprintf ("Realname sig can't contain spaces\n");
+		R_LOG_ERROR ("Realname sig can't contain spaces");
 		return false;
 	}
 
@@ -1032,7 +1032,7 @@ R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname) {
 R_API bool r_sign_add_types(RAnal *a, const char *name, const char *types) {
 	r_return_val_if_fail (a && name && types, false);
 	if (!types_sig_valid (types)) {
-		eprintf ("Invalid types signature: %s\n", types);
+		R_LOG_ERROR ("Invalid types signature: %s", types);
 		return false;
 	}
 
@@ -1405,7 +1405,7 @@ R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_
 		return false;
 	}
 
-	eprintf ("Diff %d %d\n", (int)ls_length (la), (int)ls_length (lb));
+	R_LOG_INFO ("Diff %d %d", (int)ls_length (la), (int)ls_length (lb));
 
 	RListIter *itr;
 	RListIter *itr2;
@@ -1462,7 +1462,7 @@ R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions *options, const char *othe
 		return false;
 	}
 
-	eprintf ("Diff by name %d %d (%s)\n", (int)ls_length (la), (int)ls_length (lb), not_matching? "not matching" : "matching");
+	R_LOG_INFO ("Diff by name %d %d (%s)", (int)ls_length (la), (int)ls_length (lb), not_matching? "not matching" : "matching");
 
 	RListIter *itr;
 	RListIter *itr2;
@@ -1528,7 +1528,7 @@ static void list_sanitise_warn(char *s, const char *name, const char *field) {
 			}
 		}
 		if (sanitized) {
-			eprintf ("%s->%s needed sanitized\n", name, field);
+			R_LOG_INFO ("%s->%s needs to be sanitized", name, field);
 			r_warn_if_reached ();
 		}
 	}
@@ -2138,7 +2138,7 @@ static bool addSearchKwCB(RSignItem *it, void *user) {
 	RSignBytes *bytes = it->bytes;
 
 	if (!bytes) {
-		eprintf ("Cannot find bytes for this signature: %s\n", it->name);
+		R_LOG_ERROR ("Cannot find bytes for this signature: %s", it->name);
 		r_sign_item_free (it);
 		return true;
 	}

@@ -1,6 +1,5 @@
-/* radare - Copyright 2012-2018 - pancake */
+/* radare - Copyright 2012-2022 - pancake */
 
-#include <r_types.h>
 #include <r_util.h>
 
 static const char *const regs[33] = {
@@ -121,7 +120,7 @@ static int mips_j(ut8 *b, int op, int addr) {
 static int getreg(const char *p) {
 	int n;
 	if (!p || !*p) {
-		eprintf ("Missing argument\n");
+		R_LOG_ERROR ("Missing argument");
 		return -1;
 	}
 	/* check if it's a register */
@@ -140,7 +139,7 @@ static int getreg(const char *p) {
 	if (n != 0 || p[0] == '0') {
 		return n;
 	}
-	eprintf ("Invalid reg name (%s) at pos %d\n", p, n);
+	R_LOG_ERROR ("Invalid reg name (%s) at pos %d", p, n);
 	return -1;
 }
 

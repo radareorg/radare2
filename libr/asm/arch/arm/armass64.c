@@ -213,7 +213,7 @@ static ut32 encodeBitMasksWithSize(ut64 imm, ut32 reg_size) {
 static inline ut32 encode1reg(ArmOp *op) {
 	int r = op->operands[0].reg;
 	if (r < 1 || r > 128) {
-		eprintf ("Invalid register to encode\n");
+		R_LOG_ERROR ("Invalid register to encode");
 		return 0;
 	}
 	return (r << 24);
@@ -1341,7 +1341,7 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 	if (op->operands[0].type == ARM_GPR) {
 		data |= encode1reg (op);
 	} else {
-		eprintf ("Usage: adrp x0, addr\n");
+		R_LOG_ERROR ("Invalid syntax for adrp, use: adrp x0, addr");
 		return UT32_MAX;
 	}
 	if (op->operands[1].type == ARM_CONSTANT) {
@@ -1352,7 +1352,7 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 		}
 		at = imm / 4096;
 	} else {
-		eprintf ("Usage: adrp, x0, addr\n");
+		R_LOG_ERROR ("Invalid syntax for adrp, use: adrp x0, addr");
 		return UT32_MAX;
 	}
 #if 0
@@ -1529,7 +1529,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			token++;
 		}
 		if (operand >= MAX_OPERANDS) {
-			eprintf ("Too many operands\n");
+			R_LOG_ERROR ("Too many operands");
 			return false;
 		}
 		op->operands[operand].type = ARM_NOTYPE;

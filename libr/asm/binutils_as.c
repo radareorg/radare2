@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, eagleoflqj */
+/* radare - LGPL - Copyright 2009-2022 - pancake, eagleoflqj */
 
 #include "binutils_as.h"
 
@@ -8,7 +8,7 @@ int binutils_assemble(RAsm *a, RAsmOp *op, const char *buf, const char *as, cons
 		as = user_as;
 	}
 	if (R_STR_ISEMPTY (as)) {
-		eprintf ("Please set %s env to define a %s assembler program\n", env, a->cur->arch);
+		R_LOG_ERROR ("Please set %s env to define a %s assembler program", env, a->cur->arch);
 		return 1;
 	}
 
@@ -57,7 +57,7 @@ int binutils_assemble(RAsm *a, RAsmOp *op, const char *buf, const char *as, cons
 		begin = r_mem_mem (obuf, len, (const ut8*)"BEGINMARK", 9);
 		end = r_mem_mem (obuf, len, (const ut8*)"ENDMARK", 7);
 		if (!begin || !end || begin > end) {
-			eprintf ("Cannot find water marks\n");
+			R_LOG_ERROR ("Cannot find water marks");
 			len = 0;
 		} else {
 			len = (int)(size_t)(end - begin - 9);
@@ -69,9 +69,8 @@ int binutils_assemble(RAsm *a, RAsmOp *op, const char *buf, const char *as, cons
 		}
 		res = op->size = len;
 	} else {
-		eprintf ("Error running: %s", cmd);
+		R_LOG_ERROR ("Error running: %s", cmd);
 	}
-
 beach:
 	close (ofd);
 skip_ofd:

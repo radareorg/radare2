@@ -10,6 +10,7 @@ R_API RIO* r_io_new(void) {
 	return r_io_init (R_NEW0 (RIO));
 }
 
+// R2_580 - just return bool
 R_API RIO* r_io_init(RIO* io) {
 	r_return_val_if_fail (io, NULL);
 	io->addrbytes = 1;
@@ -166,7 +167,7 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 		}
 		return true;
 	}
-	eprintf ("Cannot reopen\n");
+	R_LOG_ERROR ("Cannot reopen");
 	return false;
 }
 #endif

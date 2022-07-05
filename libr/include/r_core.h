@@ -4,32 +4,32 @@
 #define R2_CORE_H
 
 #include <r_main.h>
-#include "r_socket.h"
-#include "r_types.h"
-#include "r_magic.h"
-#include "r_agraph.h"
-#include "r_io.h"
-#include "r_fs.h"
-#include "r_lib.h"
-#include "r_egg.h"
-#include "r_lang.h"
-#include "r_asm.h"
-#include "r_parse.h"
-#include "r_anal.h"
-#include "r_cmd.h"
-#include "r_cons.h"
-#include "r_search.h"
-#include "r_sign.h"
-#include "r_debug.h"
-#include "r_flag.h"
-#include "r_config.h"
-#include "r_bin.h"
-#include "r_hash.h"
-#include "r_util.h"
-#include "r_util/r_print.h"
-#include "r_crypto.h"
-#include "r_bind.h"
-#include "r_codemeta.h"
+#include <r_socket.h>
+#include <r_types.h>
+#include <r_magic.h>
+#include <r_agraph.h>
+#include <r_io.h>
+#include <r_fs.h>
+#include <r_lib.h>
+#include <r_egg.h>
+#include <r_lang.h>
+#include <r_asm.h>
+#include <r_parse.h>
+#include <r_anal.h>
+#include <r_cmd.h>
+#include <r_cons.h>
+#include <r_search.h>
+#include <r_sign.h>
+#include <r_debug.h>
+#include <r_flag.h>
+#include <r_config.h>
+#include <r_bin.h>
+#include <r_hash.h>
+#include <r_util.h>
+#include <r_util/r_print.h>
+#include <r_crypto.h>
+#include <r_bind.h>
+#include <r_codemeta.h>
 
 // TODO: thois var should be 1 at some point :D
 #define SHELLFILTER 0
@@ -220,7 +220,6 @@ typedef struct r_core_visual_t {
 	RList *tabs;
 	int tab;
 } RCoreVisual;
-// #define RCoreVisual Visual
 
 typedef struct {
 	int x;
@@ -285,7 +284,7 @@ struct r_core_t {
 	ut64 yank_addr;
 	bool tmpseek;
 	bool vmode; // is r2 in visual or panels mode?
-	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
+	int interrupted; // XXX R2_580 - this variable is unused and must be removed
 	/* files */
 	RCons *cons;
 	RIO *io;

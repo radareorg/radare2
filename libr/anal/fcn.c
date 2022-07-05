@@ -266,9 +266,7 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 
 static ut64 try_get_cmpval_from_parents(RAnal *anal, RAnalFunction *fcn, RAnalBlock *my_bb, const char *cmp_reg) {
 	if (!cmp_reg) {
-		if (anal->verbose) {
-			eprintf ("try_get_cmpval_from_parents: cmp_reg not defined.\n");
-		}
+		R_LOG_DEBUG ("try_get_cmpval_from_parents: cmp_reg not defined");
 		return UT64_MAX;
 	}
 	r_return_val_if_fail (fcn && fcn->bbs, UT64_MAX);
@@ -541,9 +539,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	char *op_dst = NULL;
 	char *op_src = NULL;
 	if (depth < 1) {
-		if (anal->verbose) {
-			eprintf ("Too deep fcn_recurse at 0x%"PFMT64x "\n", addr);
-		}
+		R_LOG_DEBUG ("Too deep fcn_recurse at 0x%"PFMT64x, addr);
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 	// TODO Store all this stuff in the heap so we save memory in the stack
@@ -591,9 +587,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	// check if address is readable //:
 	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
 		if (addr != UT64_MAX && !anal->iob.io->va) {
-			if (anal->verbose) {
-				eprintf ("Invalid address 0x%"PFMT64x ". Try with io.va=true\n", addr);
-			}
+			R_LOG_DEBUG ("Invalid address 0x%"PFMT64x ". Try with io.va=true", addr);
 		}
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
@@ -633,7 +627,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	if (!anal->leaddrs) {
 		anal->leaddrs = r_list_newf (free_leaddr_pair);
 		if (!anal->leaddrs) {
-			eprintf ("Cannot create leaddr list\n");
+			R_LOG_ERROR ("Cannot create leaddr list");
 			gotoBeach (R_ANAL_RET_ERROR);
 		}
 	}
@@ -763,9 +757,7 @@ repeat:
 					r_anal_block_unref (split);
 				}
 				overlapped = true;
-				if (anal->verbose) {
-					eprintf ("Overlapped at 0x%08"PFMT64x "\n", at);
-				}
+				R_LOG_DEBUG ("Overlapped at 0x%08"PFMT64x, at);
 			}
 		}
 		if (!overlapped) {
@@ -1112,7 +1104,6 @@ repeat:
 			ret = r_anal_function_bb (anal, fcn, op->jump, depth);
 			int tc = anal->opt.tailcall;
 			if (tc) {
-				// eprintf ("TAIL CALL AT 0x%llx\n", op->addr);
 				int diff = op->jump - op->addr;
 				if (tc < 0) {
 					ut8 buf[32];
@@ -1574,7 +1565,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 			anal->visited = set_u_new ();
 		}
 		if (set_u_contains (anal->visited, addr)) {
-			eprintf ("r_anal_function: anal.norevisit at 0x%08"PFMT64x" %c\n", addr, reftype);
+			R_LOG_ERROR ("visit at 0x%08"PFMT64x" %c", addr, reftype);
 			return R_ANAL_RET_END;
 		}
 		set_u_add (anal->visited, addr);
@@ -1598,9 +1589,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 	// XXX -1 here results in lots of errors
 	int ret = r_anal_function_bb (anal, fcn, addr, anal->opt.depth);
 	if (ret < 0) {
-		if (anal->verbose) {
-			eprintf ("Failed to analyze basic block at 0x%"PFMT64x"\n", addr);
-		}
+		R_LOG_DEBUG ("Failed to analyze basic block at 0x%"PFMT64x, addr);
 	}
 	return ret;
 }
@@ -1688,7 +1677,6 @@ R_API RAnalFunction *r_anal_get_function_byname(RAnal *a, const char *name) {
 
 /* rename RAnalFunctionBB.add() */
 R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff) {
-	D eprintf ("Add bb\n");
 	if (size == 0) { // empty basic blocks allowed?
 		R_LOG_WARN ("empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion", addr);
 		r_warn_if_reached ();
@@ -1944,7 +1932,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 		r_anal_save_parsed_type (a, out);
 	}
 	if (error_msg) {
-		eprintf ("%s", error_msg);
+		R_LOG_ERROR ("%s", error_msg);
 		free (error_msg);
 	}
 

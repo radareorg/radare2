@@ -12,7 +12,7 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	char *fmt = r_type_format (anal->sdb_types, var->type);
 	RRegItem *i;
 	if (!fmt) {
-		eprintf ("type:%s doesn't exist\n", var->type);
+		R_LOG_ERROR ("type:%s doesn't exist", var->type);
 		return false;
 	}
 	bool usePxr = !strcmp (var->type, "int"); // hacky but useful
@@ -26,7 +26,7 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 				anal->cb_printf ("pf r (%s)\n", i->name);
 			}
 		} else {
-			eprintf ("register not found\n");
+			R_LOG_ERROR ("register not found");
 		}
 		break;
 	case R_ANAL_VAR_KIND_BPV: {
@@ -149,14 +149,14 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 		}
 	}
 	if (!valid_var_kind (kind)) {
-		eprintf ("Invalid var kind '%c'\n", kind);
+		R_LOG_ERROR ("Invalid var kind '%c'", kind);
 		return NULL;
 	}
 	if (kind == R_ANAL_VAR_KIND_REG) {
 		reg = r_reg_index_get (fcn->anal->reg, R_ABS (delta));
 		if (!reg) {
 			if (fcn->anal->verbose) {
-				eprintf ("No register at index %d\n", delta);
+				R_LOG_ERROR ("No register at index %d", delta);
 			}
 			return NULL;
 		}
@@ -554,7 +554,7 @@ R_API bool r_anal_var_rename(RAnalVar *var, const char *new_name, bool verbose) 
 	RAnalVar *v1 = r_anal_function_get_var_byname (var->fcn, new_name);
 	if (v1) {
 		if (verbose) {
-			eprintf ("variable or arg with name `%s` already exist\n", new_name);
+			R_LOG_ERROR ("variable or arg with name `%s` already exist", new_name);
 		}
 		return false;
 	}
@@ -1542,7 +1542,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			if (kind == R_ANAL_VAR_KIND_REG) { // registers
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf ("Register not found\n");
+					R_LOG_ERROR ("Register not found");
 					break;
 				}
 				anal->cb_printf ("\"afv%c %s %s %s\"\n",
@@ -1578,7 +1578,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			case R_ANAL_VAR_KIND_REG: {
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf ("Register not found\n");
+					R_LOG_ERROR ("Register not found");
 					break;
 				}
 				pj_o (pj);
@@ -1631,7 +1631,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			case R_ANAL_VAR_KIND_REG: {
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf ("Register not found\n");
+					R_LOG_ERROR ("Register not found");
 					break;
 				}
 				anal->cb_printf ("arg %s %s @ %s\n",

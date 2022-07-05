@@ -3,7 +3,6 @@
 #include <errno.h>
 #include <r_lib.h>
 #include <r_core.h>
-#include <r_debug.h> /* only used for BSD PTRACE redefinitions */
 
 #if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__
 #define DEBUGGER_SUPPORTED 1
@@ -47,12 +46,6 @@
 #include <psapi.h>
 #include <r_util/r_w32dw.h>
 #endif
-
-/*
- * Creates a new process and returns the result:
- * -1 : error
- *  0 : ok
- */
 
 #if __WINDOWS__
 typedef struct {
@@ -163,7 +156,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 
 	/* check if is a create process debug event */
 	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
-		eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
+		R_LOG_ERROR ("exception code 0x%04x", (ut32)de.dwDebugEventCode);
 		goto err_fork;
 	}
 
@@ -173,7 +166,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	wrap->pi.hThread = pi.hThread;
 	wrap->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
 
-	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
+	R_LOG_INFO ("Spawned new process with pid %d, tid = %d", pid, tid);
 	return pid;
 
 err_fork:
@@ -191,7 +184,7 @@ err_fork:
 
 #if __APPLE__ || __BSD__
 static void inferior_abort_handler(int pid) {
-	eprintf ("Inferior received signal SIGABRT. Executing BKPT.\n");
+	R_LOG_ERROR ("Inferior received signal SIGABRT. Executing BKPT");
 }
 #endif
 
@@ -220,17 +213,16 @@ static void trace_me(void) {
 #if __APPLE__ && !__POWERPC__
 static void handle_posix_error(int err) {
 	switch (err) {
-	case 0:
-		// eprintf ("Success\n");
+	case 0: // success, no error so far
 		break;
 	case 22:
-		eprintf ("posix_spawnp: Invalid argument\n");
+		R_LOG_ERROR ("posix_spawnp: Invalid argument");
 		break;
 	case 86:
-		eprintf ("Unsupported architecture. Please specify -b 32\n");
+		R_LOG_ERROR ("Unsupported architecture. Please specify -b 32");
 		break;
 	default:
-		eprintf ("posix_spawnp: unknown error %d\n", err);
+		R_LOG_ERROR ("posix_spawnp: unknown error %d", err);
 		r_sys_perror ("posix_spawnp");
 		break;
 	}
@@ -411,7 +403,7 @@ static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 		return -1;
 	}
 	if (WEXITSTATUS (status) == MAGIC_EXIT || r_cons_is_breaked ()) {
-		eprintf ("Killing child process %d due to an error\n", (int)child_pid);
+		R_LOG_INFO ("Killing child process %d due to an error", (int)child_pid);
 		kill (child_pid, SIGSTOP);
 		return -1;
 	}
@@ -457,12 +449,12 @@ static int get_pid_of(RIO *io, const char *procname) {
 		RList *pids = d->h->pids (d, 0);
 		r_list_foreach (pids, iter, proc) {
 			if (strstr (proc->path, procname)) {
-				eprintf ("Matching PID %d %s\n", proc->pid, proc->path);
+				R_LOG_INFO ("Matching PID %d %s", proc->pid, proc->path);
 				return proc->pid;
 			}
 		}
 	} else {
-		eprintf ("Cannot enumerate processes\n");
+		R_LOG_ERROR ("Cannot enumerate processes");
 	}
 	return -1;
 }
@@ -476,7 +468,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 	if (!strncmp (file, "waitfor://", 10)) {
 		const char *procname = file + 10;
-		eprintf ("Waiting for %s\n", procname);
+		R_LOG_INFO ("Waiting for %s", procname);
 		while (true) {
 			int target_pid = get_pid_of (io, procname);
 			if (target_pid != -1) {
@@ -490,7 +482,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		const char *procname = file + 8;
 		int target_pid = get_pid_of (io, procname);
 		if (target_pid == -1) {
-			eprintf ("Cannot find matching process for %s\n", file);
+			R_LOG_ERROR ("Cannot find matching process for %s", file);
 			return NULL;
 		}
 		snprintf (uri, sizeof (uri), "dbg://%d", target_pid);
