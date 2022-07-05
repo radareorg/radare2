@@ -1,6 +1,5 @@
 NAME=Resaving maps fails
 FILE=-
-BROKEN=1
 CMDS=<<EOF
 om 3 0x8000 0x200 0x200 r--
 om 3 0xc000 0x100 0x300 r--
@@ -16,17 +15,21 @@ om*
 rm a.r2
 EOF
 EXPECT=<<EOF
-om 3 0x00000000 0x00000200 0x00000000 rwx
-om 3 0x00008000 0x00000200 0x00000200 r--
-om 3 0x0000c000 0x00000100 0x00000300 r--
+omu 3 0x00000000 0x00000200 0x00000000 rwx
+omu 3 0x00008000 0x00000200 0x00000200 r--
+omu 3 0x0000c000 0x00000100 0x00000300 r--
 dos
-om 3 0x00000000 0x00000200 0x00000000 rwx
-om 3 0x00008000 0x00000200 0x00000200 r--
-om 3 0x0000c000 0x00000100 0x00000300 r--
+omu 3 0x00000000 0x00000200 0x00000000 rwx
+omu 3 0x00008000 0x00000200 0x00000200 r--
+omu 3 0x0000c000 0x00000100 0x00000300 r--
+tre
+omu 3 0x00000000 0x00000200 0x00000000 rwx
+omu 3 0x00008000 0x00000200 0x00000200 r--
+omu 3 0x0000c000 0x00000100 0x00000300 r--
 EOF
 RUN
 
-NAME=Resaving fails
+NAME=Reloading a project twice fails
 FILE=bins/mach0/ls-m1
 BROKEN=1
 CMDS=<<EOF
@@ -34,8 +37,22 @@ e prj.vc=false
 e scr.interactive=false
 e dir.projects = bins/other/projects
 p8 16
+P-ls
+P-
 P+ls
+p8 16
+P-
+p8 16
+pd 10
 P ls
+b 64
+s+10
+s-10
+s
+o
+s
+pd 10
+om.
 p8 16
 o
 om
@@ -402,15 +419,15 @@ EXPECT=<<EOF
 * 3 fd: 3 +0x00000000 0x00001337 - 0x00001a12 r-x fmap.LOAD0
 - 2 fd: 3 +0x000006e0 0x00201a17 - 0x00201c46 r-- fmap.LOAD1
 - 1 fd: 4 +0x00000000 0x00201c47 - 0x00201c4e rw- mmap.LOAD1
-om 4 0x00201c47 0x00000008 0x00000000 rw- mmap.LOAD1
-om 3 0x00201a17 0x00000230 0x000006e0 r-- fmap.LOAD1
-om 3 0x00001337 0x000006dc 0x00000000 r-x fmap.LOAD0
+omu 4 0x00201c47 0x00000008 0x00000000 rw- mmap.LOAD1
+omu 3 0x00201a17 0x00000230 0x000006e0 r-- fmap.LOAD1
+omu 3 0x00001337 0x000006dc 0x00000000 r-x fmap.LOAD0
 --
-om 4 0x00201c47 0x00000008 0x00000000 rw- mmap.LOAD1
-om 3 0x00201a17 0x00000230 0x000006e0 r-- fmap.LOAD1
-om 3 0x00001337 0x000006dc 0x00000000 r-x fmap.LOAD0
-om 3 0x002020f7 0x00000230 0x00000000 r-- fmap.LOAD1
-om 3 0x00001337 0x000006dc 0x00000000 r-x fmap.LOAD0
+omu 4 0x00201c47 0x00000008 0x00000000 rw- mmap.LOAD1
+omu 3 0x00201a17 0x00000230 0x000006e0 r-- fmap.LOAD1
+omu 3 0x00001337 0x000006dc 0x00000000 r-x fmap.LOAD0
+omu 3 0x002020f7 0x00000230 0x00000000 r-- fmap.LOAD1
+omu 3 0x00001337 0x000006dc 0x00000000 r-x fmap.LOAD0
 --
 5
 0x00201c47
@@ -420,10 +437,6 @@ om 3 0x00001337 0x000006dc 0x00000000 r-x fmap.LOAD0
 0x00001337
 EOF
 RUN
-
-NAME=Save project with maddr
-FILE=bins/elf/analysis/main
-ARGS=-n -m 0x1337
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
@@ -431,21 +444,30 @@ o
 om
 om*
 ?e --
-P- hond
+e prj.name
+P-hond
 P+ hond > /dev/null
+P-
 P hond > /dev/null
 om*
 ?e --
 om*~?
 om*~[2]
 EOF
+?e --
+om*~?
+om*~[2]
+EOF
 EXPECT=<<EOF
- 3 * r-x 0x000021da bins/elf/analysis/main
-* 1 fd: 3 +0x00000000 0x00001337 - 0x00003510 r-x
-om 3 0x00001337 0x000021da 0x00000000 r-x
+ 3 * rwx 0x00000200 malloc://512
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx
+omu 3 0x00000000 0x00000200 0x00000000 rwx
 --
+
+omu 3 0x00000000 0x00000200 0x00000000 rwx
 --
-0
+1
+0x00000000
 EOF
 RUN
 
@@ -493,30 +515,30 @@ EXPECT=<<EOF
 - 3 fd: 3 +0x0001ec00 0x140022000 - 0x140022fff r-- fmap..pdata
 - 2 fd: 3 +0x0001fc00 0x140023000 - 0x1400231ff r-- fmap..reloc
 - 1 fd: 4 +0x00000000 0x140023200 - 0x140023fff r-- mmap..reloc
-om 4 0x140023200 0x00000e00 0x00000000 r-- mmap..reloc
-om 3 0x140023000 0x00000200 0x0001fc00 r-- fmap..reloc
-om 3 0x140022000 0x00001000 0x0001ec00 r-- fmap..pdata
-om 5 0x14001fe00 0x00002200 0x00000000 rw- mmap..data
-om 3 0x14001e000 0x00001e00 0x0001ce00 r-- fmap..data
-om 6 0x14001dc00 0x00000400 0x00000000 r-- mmap..rdata
-om 3 0x14001b000 0x00002c00 0x0001a200 r-- fmap..rdata
-om 7 0x14001ae00 0x00000200 0x00000000 r-x mmap..text
-om 3 0x140001000 0x00019e00 0x00000400 r-x fmap..text
+omu 4 0x140023200 0x00000e00 0x00000000 r-- mmap..reloc
+omu 3 0x140023000 0x00000200 0x0001fc00 r-- fmap..reloc
+omu 3 0x140022000 0x00001000 0x0001ec00 r-- fmap..pdata
+omu 5 0x14001fe00 0x00002200 0x00000000 rw- mmap..data
+omu 3 0x14001e000 0x00001e00 0x0001ce00 r-- fmap..data
+omu 6 0x14001dc00 0x00000400 0x00000000 r-- mmap..rdata
+omu 3 0x14001b000 0x00002c00 0x0001a200 r-- fmap..rdata
+omu 7 0x14001ae00 0x00000200 0x00000000 r-x mmap..text
+omu 3 0x140001000 0x00019e00 0x00000400 r-x fmap..text
 --
         :   ;-- entry0:
         :   0x14001a1d4      4883ec28       sub rsp, 0x28              ; hello world
         :   0x14001a1d8      e85b050000     call 0x14001a738
         :   0x14001a1dd      4883c428       add rsp, 0x28
         `=< 0x14001a1e1      e972feffff     jmp 0x14001a058
-om 4 0x140023200 0x00000e00 0x00000000 r-- mmap..reloc
-om 3 0x140023000 0x00000200 0x0001fc00 r-- fmap..reloc
-om 3 0x140022000 0x00001000 0x0001ec00 r-- fmap..pdata
-om 5 0x14001fe00 0x00002200 0x00000000 rw- mmap..data
-om 3 0x14001e000 0x00001e00 0x0001ce00 r-- fmap..data
-om 6 0x14001dc00 0x00000400 0x00000000 r-- mmap..rdata
-om 3 0x14001b000 0x00002c00 0x0001a200 r-- fmap..rdata
-om 7 0x14001ae00 0x00000200 0x00000000 r-x mmap..text
-om 3 0x140001000 0x00019e00 0x00000400 r-x fmap..text
+omu 4 0x140023200 0x00000e00 0x00000000 r-- mmap..reloc
+omu 3 0x140023000 0x00000200 0x0001fc00 r-- fmap..reloc
+omu 3 0x140022000 0x00001000 0x0001ec00 r-- fmap..pdata
+omu 5 0x14001fe00 0x00002200 0x00000000 rw- mmap..data
+omu 3 0x14001e000 0x00001e00 0x0001ce00 r-- fmap..data
+omu 6 0x14001dc00 0x00000400 0x00000000 r-- mmap..rdata
+omu 3 0x14001b000 0x00002c00 0x0001a200 r-- fmap..rdata
+omu 7 0x14001ae00 0x00000200 0x00000000 r-x mmap..text
+omu 3 0x140001000 0x00019e00 0x00000400 r-x fmap..text
 --
 9
 0x140023200

@@ -6,11 +6,11 @@ static const char *help_msg_P[] = {
 	"Usage:", "P[?.+-*cdilnsS] [file]", "Project management",
 	"P", " [file]", "open project (formerly Po)",
 	"P.", "", "show current loaded project (see prj.name)",
-	"P+", " [file]", "save project (same as Ps, but doesnt checks for changes)",
-	"P-", " [file]", "delete project (alias for Pd)",
+	"P+", " [name]", "save project (same as Ps, but doesnt checks for changes)",
+	"P-", " [name]", "delete project",
 	"P*", "", "save project (same as Ps, but doesnt checks for changes)",
 	"P!", "([cmd])", "open a shell in the project directory",
-	"Pc", " [file]", "show project script to console",
+	"Pc", " [file]", "show project script to console (R2_580 -> PS*)",
 	"Pd", " [N]", "diff Nth commit",
 	"Pi", " [file]", "show project information",
 	"Pl", "", "list all projects",
@@ -18,7 +18,8 @@ static const char *help_msg_P[] = {
 	"Pn", "[j]", "manage notes associated with the project",
 	"Ps", " [file]", "save project (see dir.projects)",
 	"PS", " [file]", "save script file",
-	"Px", "-", "close the opened project",
+	"PS*", "", "print the project script file (Like PS /dev/stdout)",
+	"Px", "-", "close the opened project (R2_580 -> Pc)",
 	"NOTE:", "", "the 'e prj.name' evar can save/open/rename/list projects.",
 	"NOTE:", "", "see the other 'e??prj.' evars for more options.",
 	"NOTE:", "", "project are stored in " R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS),
@@ -62,6 +63,7 @@ static int cmd_project(void *data, const char *input) {
 	file = arg;
 	switch (input[0]) {
 	case 'c': // "Pc"
+		// R2_580 - old Px code moves here..
 		if (input[1] == '?') {
 			eprintf ("Usage: Pc [prjname]\n");
 		} else if (input[1] == '\0' && fileproject) {
@@ -73,7 +75,7 @@ static int cmd_project(void *data, const char *input) {
 		}
 		break;
 	case 'o': // "Po" DEPRECATED
-		eprintf ("TODO: Po is deprecated, use 'P [prjname]' instead\n");
+		R_LOG_WARN ("Po is deprecated, use 'P [prjname]' instead");
 		// fallthru
 	case ' ': // "P [prj]"
 		if (input[1] == '&') { // "Po&"
@@ -103,10 +105,19 @@ static int cmd_project(void *data, const char *input) {
 		}
 		break;
 	case '-': // "P-"
-		if (R_STR_ISNOTEMPTY (file)) {
-			r_core_project_delete (core, file);
+		if (!strcmp (input + 1, "-")) {
+			//r_project_close (core->prj);
+			r_config_set (core->config, "prj.name", "");
+		} else if (input[1]) {
+			if (R_STR_ISNOTEMPTY (file)) {
+				r_core_project_delete (core, file);
+			} else {
+			//	r_project_close (core->prj);
+				r_config_set (core->config, "prj.name", "");
+			}
 		} else {
-			eprintf ("Usage: P- [prjname]   # Use Pl to list the available projects.\n");
+			// r_project_close (core->prj);
+			r_config_set (core->config, "prj.name", "");
 		}
 		break;
 	case '+': // "P+"
@@ -151,16 +162,18 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case 'S': // "PS"
 		if (input[1] == ' ') {
-			r_core_project_save_script (core, input + 2, R_CORE_PRJ_ALL);
+			r_core_project_save_script (core, r_str_trim_head_ro (input + 2), R_CORE_PRJ_ALL);
+		} else if (input[1] == '*') {
+			r_core_project_save_script (core, "/dev/stdout", R_CORE_PRJ_ALL);
 		} else {
-			r_cons_eprintf ("Usage: PS [file]\n");
+			r_cons_eprintf ("Usage: PS[*] [projectname]\n");
 		}
 		break;
 	case 'n': // "Pn"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_Pn);
-		} else if (!fileproject || !*fileproject) {
-			r_cons_eprintf ("No project\n");
+		} else if (R_STR_ISEMPTY (fileproject)) {
+			R_LOG_ERROR ("No project");
 		} else {
 			switch (input[1]) {
 			case '-': // "Pn-"
@@ -168,7 +181,7 @@ static int cmd_project(void *data, const char *input) {
 			{
 				FILE *fd = r_sandbox_fopen (str, "w");
 				if (!fd) {
-					eprintf ("Cannot open %s\n", str);
+					R_LOG_ERROR ("Cannot open %s", str);
 				} else {
 					char *str = r_core_project_notes_file (core, fileproject);
 					char *data = r_file_slurp (str, NULL);
@@ -189,7 +202,7 @@ static int cmd_project(void *data, const char *input) {
 						free (data);
 					}
 					if (del > 0) {
-						eprintf ("Deleted %d lines\n", del);
+						R_LOG_ERROR ("Deleted %d lines", del);
 					}
 					free (str);
 					fclose (fd);
@@ -204,7 +217,7 @@ static int cmd_project(void *data, const char *input) {
 					if (str && *str && editor && *editor) {
 						r_sys_cmdf ("%s %s", editor, str);
 					} else {
-						eprintf ("No cfg.editor configured\n");
+						R_LOG_ERROR ("No cfg.editor configured");
 					}
 					free (str);
 				} else {
@@ -292,18 +305,13 @@ static int cmd_project(void *data, const char *input) {
 		}
 		break;
 	case '.': // "P."
-		if (file && *file) {
-			char *prj_name = r_core_project_name (core, file);
-			if (R_STR_ISNOTEMPTY (prj_name)) {
-				r_cons_println (prj_name);
-				free (prj_name);
-			}
-		}
+		r_cons_printf ("%s\n", fileproject);
 		break;
 	case 'x':
 		r_project_close (core->prj);
 		r_config_set (core->config, "prj.name", "");
 		break;
+	case 0: // "P"
 	case 'P':
 	case 'l':
 	case 'j': // "Pj"

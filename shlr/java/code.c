@@ -103,13 +103,16 @@ static int handle_switch_op(ut64 addr, const ut8 * bytes, char *output, int outl
 }
 
 R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, int len, char *output, int outlen) {
-	char *arg = NULL; //(char *) malloc (1024);
+	if (idx < 0 || idx >= JAVA_OPS_COUNT) {
+		return -1;
+	}
+	char *arg = NULL;
 	int sz = 0;
 	ut32 val_one = 0;
 	ut32 val_two = 0;
 	ut8 op_byte = JAVA_OPS[idx].byte;
 	if (IN_SWITCH_OP) {
-		return handle_switch_op (addr, bytes, output, outlen );
+		return handle_switch_op (addr, bytes, output, outlen);
 	}
 
 #if 0
@@ -264,8 +267,12 @@ R_API void U(r_java_set_obj)(RBinJavaObj *obj) {
 }
 
 R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen) {
+	r_return_val_if_fail (bytes && output && outlen > 0, -1);
 	//r_cons_printf ("r_java_disasm (allowed %d): 0x%02x, 0x%0x.\n", outlen, bytes[0], addr);
-	return java_print_opcode (obj, addr, bytes[0], bytes, len, output, outlen);
+	if (len > 0) {
+		return java_print_opcode (obj, addr, bytes[0], bytes, len, output, outlen);
+	}
+	return -1;
 }
 
 static int parseJavaArgs(char *str, ut64 *args, int args_sz) {
