@@ -617,11 +617,11 @@ static bool parse_instruction (RBpfSockFilter *f, BPFAsmParser *p, ut64 pc) {
 		R_LOG_ERROR ("invalid mnemonic");
 	}
 
-	char mnemonic[5] = {};
+	char mnemonic[5] = {0};
 	strncpy (mnemonic, mnemonic_tok, 4);
 
 	int opc;
-	bpf_token op[11] = {};
+	bpf_token op[11] = {0};
 	for (opc = 0; opc < (sizeof (op) / sizeof (op[0]));) {
 		const char *t = token_next (p);
 		if (t == NULL) {
@@ -685,7 +685,7 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 		return -1;
 	}
 
-	RBpfSockFilter f = {};
+	RBpfSockFilter f = {0};
 	BPFAsmParser p = { .str = str };
 
 	bool ret = parse_instruction (&f, &p, pc);
