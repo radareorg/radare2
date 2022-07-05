@@ -284,8 +284,6 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		op->fail = addr + sz;
 		//IFDBG eprintf ("%s callto 0x%04x  failto 0x%04x.\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
 	}
-	//r_java_disasm(addr, data, len, output, outlen);
-	//IFDBG eprintf ("%s\n", output);
 	return op->size;
 }
 

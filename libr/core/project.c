@@ -294,7 +294,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	}
 	if (r_project_is_loaded (core->prj)) {
 		eprintf ("o--;e prj.name=\n");
-		return false;
+	//	return false;
 	}
 	if (!r_project_open (core->prj, prj_name, rcpath)) {
 		return false;
@@ -374,6 +374,7 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 		bool ccs = interactive? r_cons_yesno ('y', "Close current session? (Y/n)"): true;
 		if (ccs) {
 			r_core_cmd0 (core, "o--");
+			r_core_cmd0 (core, "P-");
 		} else {
 			R_LOG_ERROR ("Project not loaded");
 			return false;
@@ -391,7 +392,8 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 		}
 	}
 	if (close_current_session) {
-		r_core_cmd0 (core, "e prj.name=;o--");
+		r_config_set (core->config, "prj.name", "");
+		r_core_cmd0 (core, "o--");
 	}
 	/* load sdb stuff in here */
 	bool ret = r_core_project_load (core, prj_name, prj_script);
@@ -403,17 +405,10 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	return ret;
 }
 
-R_API char *r_core_project_name(RCore *core, const char *prjfile) {
-	char buf[256], *file = NULL;
-	if (*prjfile != '/') {
-		return strdup (prjfile);
-	}
-	char *prj = get_project_script_path (core, prjfile);
-	if (!prj) {
-		R_LOG_ERROR ("Invalid project name '%s'", prjfile);
-		return NULL;
-	}
-	FILE *fd = r_sandbox_fopen (prj, "r");
+static char *get_project_name(const char *prj_script) {
+	char buf[1024];
+	char *file = NULL;
+	FILE *fd = r_sandbox_fopen (prj_script, "r");
 	if (fd) {
 		for (;;) {
 			if (!fgets (buf, sizeof (buf), fd)) {
@@ -430,8 +425,21 @@ R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 		}
 		fclose (fd);
 	} else {
-		R_LOG_ERROR ("Cannot open project info (%s)", prj);
+		R_LOG_ERROR ("Cannot open project info (%s)", prj_script);
 	}
+	return file;
+}
+
+R_API char *r_core_project_name(RCore *core, const char *prjfile) {
+	if (*prjfile != '/') {
+		return strdup (prjfile);
+	}
+	char *prj = get_project_script_path (core, prjfile);
+	if (!prj) {
+		R_LOG_ERROR ("Invalid project name '%s'", prjfile);
+		return NULL;
+	}
+	char *file = get_project_name (prj);
 	free (prj);
 	if (R_STR_ISEMPTY (file)) {
 		free (file);
@@ -479,6 +487,21 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 }
 #endif
 
+static char *r_cons_drain(void) {
+	const char *buf = r_cons_get_buffer();
+	size_t buf_size = r_cons_get_buffer_len();
+	char *s = r_str_ndup (buf, buf_size);
+	r_cons_reset ();
+	return s;
+}
+static void flush(RStrBuf *sb) {
+	char * s = r_cons_drain ();
+	if (s) {
+		r_strbuf_append (sb, s);
+		free (s);
+	}
+}
+
 R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	char *hl, *ohl = NULL;
 
@@ -487,116 +510,113 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	}
 
 	char *filename = r_str_word_get_first (file);
-	int fd = -1;
-	if (!strcmp (file, "/dev/stdout")) {
-		fd = 1;
-	} else {
-		fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
-	}
-	if (fd == -1) {
-		free (filename);
-		return false;
-	}
 
 	hl = r_cons_singleton ()->highlight;
 	if (hl) {
 		ohl = strdup (hl);
 		r_cons_highlight (NULL);
 	}
-	int fdold = r_cons_singleton ()->fdout;
-	r_cons_singleton ()->fdout = fd;
+	RStrBuf *sb = r_strbuf_new ("");
 	r_cons_singleton ()->context->is_interactive = false;
 	r_cons_printf ("# r2 rdb project file\n");
 	// new behaviour to project load routine (see io maps below).
 	if (opts & R_CORE_PRJ_EVAL) {
 		r_cons_printf ("# eval\n");
 		r_config_list (core->config, NULL, 'r');
-		r_cons_flush ();
+		flush (sb);
 	}
 	r_core_cmd (core, "o*", 0);
-	// save maps // r_core_cmd (core, "om*", 0);
+	r_core_cmd (core, "om*", 0);
 	r_core_cmd0 (core, "tcc*");
 	if (opts & R_CORE_PRJ_FCNS) {
 		r_cons_printf ("# functions\n");
 		r_cons_printf ("fs functions\n");
 		r_core_cmd (core, "afl*", 0);
-		r_cons_flush ();
+		flush (sb);
 	}
 	{
 		r_cons_printf ("# registers\n");
-		r_core_cmd (core, "ar*;arR", 0);
-		r_cons_flush ();
+		r_core_cmd (core, "ar*", 0);
+		flush (sb);
+		r_core_cmd (core, "arR", 0);
+		flush (sb);
 	}
 	if (opts & R_CORE_PRJ_FLAGS) {
 		r_cons_printf ("# flags\n");
 		r_flag_space_push (core->flags, NULL);
 		r_flag_list (core->flags, true, NULL);
 		r_flag_space_pop (core->flags);
-		r_cons_flush ();
+		flush (sb);
 	}
 #if PROJECT_EXPERIMENTAL
 	if (opts & R_CORE_PRJ_IO_MAPS && core->io && core->io->files) {
 		fdc = 3;
 		r_id_storage_foreach (core->io->files, (RIDStorageForeachCb)store_files_and_maps, core);
-		r_cons_flush ();
+		flush (sb);
 	}
 #endif
 	{
 		r_core_cmd (core, "fz*", 0);
-		r_cons_flush ();
+		flush (sb);
 	}
 	if (opts & R_CORE_PRJ_META) {
 		r_cons_printf ("# meta\n");
 		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1, NULL);
-		r_cons_flush ();
+		flush (sb);
 		r_core_cmd (core, "fV*", 0);
-		r_cons_flush ();
+		flush (sb);
 	}
 	if (opts & R_CORE_PRJ_XREFS) {
 		r_core_cmd (core, "ax*", 0);
-		r_cons_flush ();
+		flush (sb);
 	}
 	if (opts & R_CORE_PRJ_FLAGS) {
 		r_core_cmd (core, "f.**", 0);
-		r_cons_flush ();
+		flush (sb);
 	}
 	if (opts & R_CORE_PRJ_DBG_BREAK) {
 		r_core_cmd (core, "db*", 0);
-		r_cons_flush ();
+		flush (sb);
 	}
 	if (opts & R_CORE_PRJ_ANAL_HINTS) {
 		r_core_cmd (core, "ah*", 0);
-		r_cons_flush ();
+		flush (sb);
 	}
 	if (opts & R_CORE_PRJ_ANAL_TYPES) {
 		r_cons_printf ("# types\n");
 		r_core_cmd (core, "t*", 0);
-		r_cons_flush ();
+		flush (sb);
 	}
 	if (opts & R_CORE_PRJ_ANAL_MACROS) {
 		r_cons_printf ("# macros\n");
 		r_core_cmd (core, "(*", 0);
 		r_cons_printf ("# aliases\n");
 		r_core_cmd (core, "$*", 0);
-		r_cons_flush ();
+		flush (sb);
 	}
 	r_core_cmd (core, "wc*", 0);
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
 		r_cons_printf ("# seek\n"
 			       "s 0x%08" PFMT64x "\n",
 			core->offset);
-		r_cons_flush ();
+		flush (sb);
 	}
-
-	r_cons_singleton ()->fdout = fdold;
 	r_cons_singleton ()->context->is_interactive = true;
+	flush (sb);
+	char *s = r_strbuf_drain (sb);
+	if (!strcmp (filename, "/dev/stdout")) {
+		r_cons_printf ("%s\n", s);
+	} else {
+		if (!r_file_dump (filename, (const ut8*)s, strlen (s), 0)) {
+			R_LOG_ERROR ("Cannot save file");
+		}
+	}
+	free (s);
 
 	if (ohl) {
 		r_cons_highlight (ohl);
 		free (ohl);
 	}
-
-	close (fd);
 	free (filename);
 
 	return true;
@@ -630,7 +650,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		prj_dir = strdup (prj_name);
 	}
 	if (r_core_is_project (core, prj_name) && strcmp (prj_name, r_config_get (core->config, "prj.name"))) {
-		R_LOG_ERROR ("A project with this name already exists. Use Ps-%s to delete it", prj_name);
+		R_LOG_ERROR ("A project with this name already exists. Use P-%s to delete it", prj_name);
 		free (script_path);
 		free (prj_dir);
 		return false;

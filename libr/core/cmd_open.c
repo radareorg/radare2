@@ -491,7 +491,7 @@ static void map_list(RCore *core, int mode, RPrint *print, int fd) {
 		case '*':
 		case 'r': {
 			// Need FIFO order here
-			char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x
+			char *om_cmd = r_str_newf ("omu %d 0x%08"PFMT64x" 0x%08"PFMT64x
 					" 0x%08"PFMT64x" %s%s%s\n", map->fd, r_io_map_begin (map),
 					r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
 					R_STR_ISEMPTY (map->name)? "": " ", r_str_get (map->name));
@@ -1959,6 +1959,7 @@ static int cmd_open(void *data, const char *input) {
 		case '-': // "o--"
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
+			r_core_cmd0 (core, "o-*;om-*");
 			r_anal_purge (core->anal);
 			r_flag_unset_all (core->flags);
 			break;

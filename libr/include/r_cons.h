@@ -884,6 +884,7 @@ R_API int r_cons_write(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
+// R2_580 - R_API char *r_cons_drain(void);
 R_API void r_cons_print_fps(int col);
 R_API void r_cons_last(void);
 R_API int r_cons_less_str(const char *str, const char *exitkeys);
