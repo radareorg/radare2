@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #include <r_io.h>
 
@@ -127,7 +127,7 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 
 	idx = io->undo.idx;
 	start = (idx - undos + R_IO_UNDOS) % R_IO_UNDOS;
-	end = (idx + redos + 1 - 1) % R_IO_UNDOS; // +1 slot for current position, -1 due to inclusive end
+	end = (idx + redos) % R_IO_UNDOS;
 
 	j = 0;
 	switch (mode) {
@@ -160,7 +160,7 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 			break;
 		case 0:
 			if (list) {
-				RIOUndos  *u = R_NEW0 (RIOUndos);
+				RIOUndos *u = R_NEW0 (RIOUndos);
 				if (u) {
 					if (!(j == undos && redos == 0)) {
 						// Current position gets pushed before seek, so there
@@ -277,8 +277,8 @@ R_API void r_io_wundo_apply_all(RIO *io, int set) {
 	RIOUndoWrite *u;
 
 	r_list_foreach_prev (io->undo.w_list, iter, u) {
-		r_io_wundo_apply (io, u, set); //UNDO_WRITE_UNSET);
-		eprintf ("%s 0x%08"PFMT64x"\n", set?"redo":"undo", u->off);
+		r_io_wundo_apply (io, u, set);
+		R_LOG_INFO ("%s 0x%08"PFMT64x, set? "redo": "undo", u->off);
 	}
 }
 
@@ -298,9 +298,9 @@ R_API int r_io_wundo_set(RIO *io, int n, int set) {
 			r_io_wundo_apply (io, u, set);
 			return true;
 		}
-		eprintf ("invalid undo-write index\n");
+		R_LOG_ERROR ("invalid undo-write index");
 	} else {
-		eprintf ("no writes done\n");
+		R_LOG_INFO ("no writes done");
 	}
 	return false;
 }

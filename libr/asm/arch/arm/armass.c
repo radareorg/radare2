@@ -6213,14 +6213,14 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						// TODO: control if branch out of range
 						ret = (getnum (ao->a[0]) - (int)ao->off - 8) / 4;
 						if (ret >= 0x00800000 || ret < (int)0xff800000) {
-							eprintf ("Branch into out of range\n");
+							R_LOG_ERROR ("Branch into out of range");
 							return 0;
 						}
 						ao->o |= ((ret >> 16) & 0xff) << 8;
 						ao->o |= ((ret >> 8) & 0xff) << 16;
 						ao->o |= ((ret)&0xff) << 24;
 					} else {
-						eprintf ("This branch does not accept reg as arg\n");
+						R_LOG_ERROR ("This branch does not accept reg as arg");
 						return 0;
 					}
 					break;
@@ -6429,7 +6429,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						ao->o |= (y << 24);
 						ao->o |= (z << 16);
 					} else {
-						eprintf ("Parameter %d out of range (0-255)\n", (int)b);
+						R_LOG_ERROR ("Parameter %d out of range (0-255)", (int)b);
 						return 0;
 					}
 				} else {
@@ -6442,7 +6442,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				if (ao->a[2]) {
 					int n = getnum (ao->a[2]);
 					if (n & 1) {
-						eprintf ("Invalid multiplier\n");
+						R_LOG_ERROR ("Invalid multiplier");
 						return 0;
 					}
 					ao->o |= (n >> 1) << 16;
@@ -6578,7 +6578,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 }
 
 typedef int (*AssembleFunction)(ArmOpcode *, ut64, const char *);
-static AssembleFunction assemble[2] = { &arm_assemble, &thumb_assemble };
+static const AssembleFunction assemble[2] = { &arm_assemble, &thumb_assemble };
 
 ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 	int i, j, ret;
@@ -6586,7 +6586,8 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 	ArmOpcode aop = {.off = off};
 	for (i = j = 0; i < sizeof (buf) - 1 && str[j]; i++, j++) {
 		if (str[j] == '#') {
-			i--; continue;
+			i--;
+			continue;
 		}
 		buf[i] = tolower ((const ut8)str[j]);
 	}
@@ -6598,13 +6599,11 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 		goto free_owned;
 	}
 	if (assemble[thumb] (&aop, off, buf) <= 0) {
-		//eprintf ("armass: Unknown opcode (%s)\n", buf);
+		R_LOG_DEBUG ("armass: Unknown opcode (%s)", buf);
 		ret = -1;
 		goto free_owned;
 	}
-
 	ret = aop.o;
-
 free_owned:
 	for (i = 0; i < 16; i++) {
 		if (aop.a_owned[i]) {
@@ -6619,7 +6618,7 @@ void thisplay(const char *str) {
 	char cmd[32];
 	int op = armass_assemble (str, 0x1000, 1);
 	printf ("[%04x] %s\n", op, str);
-	snprintf (cmd, sizeof(cmd), "rasm2 -d -b 16 -a arm %04x", op);
+	snprintf (cmd, sizeof (cmd), "rasm2 -d -b 16 -a arm %04x", op);
 	system (cmd);
 }
 
@@ -6627,10 +6626,11 @@ void display(const char *str) {
 	char cmd[32];
 	int op = armass_assemble (str, 0x1000, 0);
 	printf ("[%08x] %s\n", op, str);
-	snprintf (cmd, sizeof(cmd), "rasm2 -d -a arm %08x", op);
+	snprintf (cmd, sizeof (cmd), "rasm2 -d -a arm %08x", op);
 	system (cmd);
 }
 
+#if 0
 int main() {
 	thisplay ("ldmia r1!, {r3, r4, r5}");
 	thisplay ("stmia r1!, {r3, r4, r5}");
@@ -6754,4 +6754,5 @@ return 0;
 #endif
 	return 0;
 }
+#endif
 #endif

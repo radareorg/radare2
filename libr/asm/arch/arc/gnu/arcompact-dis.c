@@ -33,10 +33,6 @@
 #include "elf-bfd.h"
 #include "r_types.h"
 
-  /*
-    warning: implicit declaration of function `eprintf'
-    if dbg is 1 then this definition is required
-  */
 static bfd_vma bfd_getm32(unsigned int);
 static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 
@@ -45,11 +41,6 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 #define dbg	(0)
 #endif
 
-  /*
-    Ravi:
-    : undefined reference to `eprintf'
-    if dbg is 1 then this definition is required
-  */
 #undef _NELEM
 #define _NELEM(ary)	(sizeof(ary) / sizeof((ary)[0]))
 
@@ -2779,10 +2770,12 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldC = FIELDD9(state->words[0]);
       fieldCisReg = 0;
 
+#if 0
       if (dbg) {
 	      eprintf ("6:b reg %d %d c 0x%x  \n",
 		      fieldBisReg, fieldB, fieldC);
       }
+#endif
       state->_ea_present = 1;
       state->_offset = fieldC;
       state->_mem_load = 1;
@@ -2832,15 +2825,17 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldAisReg=0;
 
       /* [B,A offset] */
+#if 0
       if (dbg) {
 	      eprintf ("7:b reg %d %x off %x\n",
 		      fieldBisReg, fieldB, fieldA);
       }
+#endif
       state->_ea_present = 1;
       state->_offset = fieldA;
       if (fieldBisReg) {
 	      state->ea_reg1 = fieldB;
-	      /*
+      /*
        * field B is either a shimm (same as fieldA) or limm (different!)
        * Say ea is not present, so only one of us will do the name lookup.
        * (for is_limm we do the name translation here).

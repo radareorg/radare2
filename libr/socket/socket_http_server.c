@@ -59,35 +59,33 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 			}
 			hr->method = strdup (buf);
 			if (p) {
-				q = strstr (p+1, " HTTP"); //strchr (p+1, ' ');
+				q = strstr (p + 1, " HTTP");
 				if (q) {
 					*q = 0;
 				}
-				hr->path = strdup (p+1);
+				hr->path = r_str_trim_dup (p + 1);
 			}
 		} else {
-			if (!hr->referer && !strncmp (buf, "Referer: ", 9)) {
+			if (!hr->referer && r_str_startswith (buf, "Referer: ")) {
 				hr->referer = strdup (buf + 9);
-			} else if (!hr->agent && !strncmp (buf, "User-Agent: ", 12)) {
+			} else if (!hr->agent && r_str_startswith (buf, "User-Agent: ")) {
 				hr->agent = strdup (buf + 12);
-			} else if (!hr->host && !strncmp (buf, "Host: ", 6)) {
+			} else if (!hr->host && r_str_startswith (buf, "Host: ")) {
 				hr->host = strdup (buf + 6);
-			} else if (!strncmp (buf, "Content-Length: ", 16)) {
+			} else if (r_str_startswith (buf, "Content-Length: ")) {
 				content_length = atoi (buf + 16);
-			} else if (so->httpauth && !strncmp (buf, "Authorization: Basic ", 21)) {
+			} else if (so->httpauth && r_str_startswith (buf, "Authorization: Basic ")) {
 				char *authtoken = buf + 21;
 				size_t authlen = strlen (authtoken);
-				char *curauthtoken;
-				RListIter *iter;
 				char *decauthtoken = calloc (4, authlen + 1);
 				if (!decauthtoken) {
-					eprintf ("Could not allocate decoding buffer\n");
 					return hr;
 				}
-
 				if (r_base64_decode ((ut8 *)decauthtoken, authtoken, authlen) == -1) {
-					eprintf ("Could not decode authorization token\n");
+					R_LOG_ERROR ("Could not decode authorization token");
 				} else {
+					RListIter *iter;
+					char *curauthtoken;
 					r_list_foreach (so->authtokens, iter, curauthtoken) {
 						if (!strcmp (decauthtoken, curauthtoken)) {
 							hr->auth = true;
@@ -95,11 +93,9 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 						}
 					}
 				}
-
 				free (decauthtoken);
-
 				if (!hr->auth) {
-					eprintf ("Failed attempt login from '%s'\n", hr->host);
+					R_LOG_ERROR ("Failed attempt login from '%s'", hr->host);
 				}
 			}
 		}
@@ -108,7 +104,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 		r_socket_read_block (hr->s, (ut8*)buf, 1); // one missing byte wtf
 		if (content_length >= ST32_MAX) {
 			r_socket_http_close (hr);
-			eprintf ("Could not allocate hr data\n");
+			R_LOG_ERROR ("Could not allocate hr data");
 			return NULL;
 		}
 		content_length++;

@@ -181,7 +181,7 @@ static char *getstr(const char *src) {
 					ret[len] = 0;
 					return ret;
 				}
-				eprintf ("Missing \"\n");
+				R_LOG_ERROR ("Missing \"");
 			}
 			free (ret);
 		}
@@ -197,7 +197,7 @@ static char *getstr(const char *src) {
 					r_str_unescape (ret);
 					return ret;
 				}
-				eprintf ("Missing \"\n");
+				R_LOG_ERROR ("Missing \"");
 			}
 			free (ret);
 		}
@@ -256,7 +256,7 @@ static char *getstr(const char *src) {
 			ret[len] = 0;
 			return ret;
 		}
-		eprintf ("Invalid hexpair string\n");
+		R_LOG_ERROR ("Invalid hexpair string");
 		free (ret);
 		return NULL;
 	}
@@ -414,26 +414,26 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 	}
 	if (cmd[0] == '"') {
 #ifdef __wasi__
-		eprintf ("[ERROR] rarun2: Cannot create pipe\n");
+		R_LOG_ERROR ("Cannot create pipe");
 #elif __UNIX__
 		if (in) {
 			int pipes[2];
 			if (pipe (pipes) != -1) {
 				size_t cmdl = strlen (cmd)-2;
 				if (write (pipes[1], cmd + 1, cmdl) != cmdl) {
-					eprintf ("[ERROR] rarun2: Cannot write to the pipe\n");
+					R_LOG_ERROR ("Cannot write to the pipe");
 					close (0);
 					return 1;
 				}
 				if (write (pipes[1], "\n", 1) != 1) {
-					eprintf ("[ERROR] rarun2: Cannot write to the pipe\n");
+					R_LOG_ERROR ("Cannot write to the pipe");
 					close (0);
 					return 1;
 				}
 				close (0);
 				dup2 (pipes[0], 0);
 			} else {
-				eprintf ("[ERROR] rarun2: Cannot create pipe\n");
+				R_LOG_ERROR ("Cannot create pipe");
 			}
 		}
 #else
@@ -459,7 +459,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #endif
 		f = open (cmd, flag, mode);
 		if (f < 0) {
-			eprintf ("[ERROR] rarun2: Cannot open: %s\n", cmd);
+			R_LOG_ERROR ("Cannot open: %s", cmd);
 			return 1;
 		}
 #ifndef __wasi__
@@ -591,14 +591,14 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 			p->_args[n] = getstr (e);
 			p->_argc++;
 		} else {
-			eprintf ("Out of bounds args index: %d\n", n);
+			R_LOG_ERROR ("Out of bounds args index: %d", n);
 		}
 	} else if (!strcmp (b, "envfile")) {
 		char *p, buf[1024];
 		size_t len;
 		FILE *fd = r_sandbox_fopen (e, "r");
 		if (!fd) {
-			eprintf ("Cannot open '%s'\n", e);
+			R_LOG_ERROR ("Cannot open '%s'", e);
 			if (must_free == true) {
 				free (e);
 			}
@@ -707,7 +707,7 @@ static int fd_forward(int in_fd, int out_fd, char **buff) {
 
 	char *new_buff = realloc (*buff, size);
 	if (!new_buff) {
-		eprintf ("Failed to allocate buffer for redirection\n");
+		R_LOG_ERROR ("Failed to allocate buffer for redirection");
 		return -1;
 	}
 	*buff = new_buff;
@@ -738,7 +738,6 @@ static int redirect_socket_to_stdio(RSocket *sock) {
 
 #if __WINDOWS__
 static RThreadFunctionRet exit_process(RThread *th) {
-	// eprintf ("\nrarun2: Interrupted by timeout\n");
 	exit (0);
 }
 #endif
@@ -757,7 +756,7 @@ static int redirect_socket_to_pty(RSocket *sock) {
 	pid_t child_pid = r_sys_fork ();
 
 	if (child_pid == -1) {
-		eprintf ("cannot fork\n");
+		R_LOG_ERROR ("cannot fork");
 		if (fdm != -1) {
 			close (fdm);
 		}
@@ -838,7 +837,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 #endif
 
 	if (!p->_program && !p->_system && !p->_runlib) {
-		eprintf ("No program, system or runlib rule defined\n");
+		R_LOG_ERROR ("No program, system or runlib rule defined");
 		return 1;
 	}
 	// when IO is redirected to a process, handle them together
@@ -880,13 +879,13 @@ R_API int r_run_config_env(RRunProfile *p) {
 			RSocket *fd = r_socket_new (0);
 			*q = 0;
 			if (!r_socket_connect_tcp (fd, p->_connect, q+1, 30)) {
-				eprintf ("Cannot connect\n");
+				R_LOG_ERROR ("Cannot connect");
 				r_socket_free (fd);
 				return 1;
 			}
 			if (p->_pty) {
 				if (redirect_socket_to_pty (fd) != 0) {
-					eprintf ("socket redirection failed\n");
+					R_LOG_ERROR ("socket redirection failed");
 					r_socket_free (fd);
 					return 1;
 				}
@@ -894,7 +893,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 				redirect_socket_to_stdio (fd);
 			}
 		} else {
-			eprintf ("Invalid format for connect. missing ':'\n");
+			R_LOG_ERROR ("Invalid format for connect. missing ':'");
 			return 1;
 		}
 	}
@@ -902,7 +901,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 		RSocket *child, *fd = r_socket_new (0);
 		bool is_child = false;
 		if (!r_socket_listen (fd, p->_listen, NULL)) {
-			eprintf ("rarun2: cannot listen\n");
+			R_LOG_ERROR ("Cannot listen");
 			r_socket_free (fd);
 			return 1;
 		}
@@ -914,7 +913,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 				if (p->_dofork && !p->_dodebug) {
 					pid_t child_pid = r_sys_fork ();
 					if (child_pid == -1) {
-						eprintf("rarun2: cannot fork\n");
+						R_LOG_ERROR ("cannot fork");
 						r_socket_free (child);
 						r_socket_free (fd);
 						return 1;
@@ -926,10 +925,10 @@ R_API int r_run_config_env(RRunProfile *p) {
 
 				if (is_child) {
 					r_socket_close_fd (fd);
-					eprintf ("connected\n");
+					R_LOG_ERROR ("connected");
 					if (p->_pty) {
 						if (redirect_socket_to_pty (child) != 0) {
-							eprintf ("socket redirection failed\n");
+							R_LOG_ERROR ("socket redirection failed");
 							r_socket_free (child);
 							r_socket_free (fd);
 							return 1;
@@ -954,21 +953,21 @@ R_API int r_run_config_env(RRunProfile *p) {
 #if __UNIX__ && !__wasi__
 	if (p->_chroot) {
 		if (chdir (p->_chroot) == -1) {
-			eprintf ("Cannot chdir to chroot in %s\n", p->_chroot);
+			R_LOG_ERROR ("Cannot chdir to chroot in %s", p->_chroot);
 			return 1;
 		} else {
 			if (chroot (".") == -1) {
-				eprintf ("Cannot chroot to %s\n", p->_chroot);
+				R_LOG_ERROR ("Cannot chroot to %s", p->_chroot);
 				return 1;
 			} else {
 				// Silenting pedantic meson flags...
 				if (chdir ("/") == -1) {
-					eprintf ("Cannot chdir to /\n");
+					R_LOG_ERROR ("Cannot chdir to /");
 					return 1;
 				}
 				if (p->_chgdir) {
 					if (chdir (p->_chgdir) == -1) {
-						eprintf ("Cannot chdir after chroot to %s\n", p->_chgdir);
+						R_LOG_ERROR ("Cannot chdir after chroot to %s", p->_chgdir);
 						return 1;
 					}
 				}
@@ -976,7 +975,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 		}
 	} else if (p->_chgdir) {
 		if (chdir (p->_chgdir) == -1) {
-			eprintf ("Cannot chdir after chroot to %s\n", p->_chgdir);
+			R_LOG_ERROR ("Cannot chdir after chroot to %s", p->_chgdir);
 			return 1;
 		}
 	}
@@ -1030,19 +1029,19 @@ R_API int r_run_config_env(RRunProfile *p) {
 			dup2 (f2[0], 0);
 #endif
 		} else {
-			eprintf ("[ERROR] rarun2: Cannot create pipe\n");
+			R_LOG_ERROR ("Cannot create pipe");
 			return 1;
 		}
 		inp = getstr (p->_input);
 		if (inp) {
 			size_t inpl = strlen (inp);
 			if  (write (f2[1], inp, inpl) != inpl) {
-				eprintf ("[ERROR] rarun2: Cannot write to the pipe\n");
+				R_LOG_ERROR ("Cannot write to the pipe");
 			}
 			close (f2[1]);
 			free (inp);
 		} else {
-			eprintf ("Invalid input\n");
+			R_LOG_ERROR ("Invalid input");
 		}
 	}
 #endif
@@ -1058,7 +1057,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 	}
 	if (p->_libpath) {
 #if __WINDOWS__
-		eprintf ("rarun2: libpath unsupported for this platform\n");
+		R_LOG_ERROR ("libpath is not supported in this platform");
 #elif __HAIKU__
 		char *orig = r_sys_getenv ("LIBRARY_PATH");
 		char *newlib = r_str_newf ("%s:%s", p->_libpath, orig);
@@ -1105,7 +1104,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 		if (p->_timeout_sig < 1 || p->_timeout_sig == 9) {
 			r_th_new (exit_process, NULL, p->_timeout);
 		} else {
-			eprintf ("timeout with signal not supported for this platform\n");
+			R_LOG_ERROR ("timeout with signal not supported for this platform");
 		}
 #endif
 	}
@@ -1115,7 +1114,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 static void time_end(bool chk, ut64 time_begin) {
 	if (chk) {
 		ut64 now = r_time_now ();
-		eprintf ("%"PFMT64d"\n", now - time_begin);
+		R_LOG_INFO ("%"PFMT64d, now - time_begin);
 	}
 }
 
@@ -1164,13 +1163,13 @@ R_API int r_run_start(RRunProfile *p) {
 		case 0:
 			break;
 		case 22:
-			eprintf ("posix_spawnp: Invalid argument\n");
+			R_LOG_ERROR ("posix_spawnp: Invalid argument");
 			break;
 		case 86:
-			eprintf ("posix_spawnp: Unsupported architecture\n");
+			R_LOG_ERROR ("posix_spawnp: Unsupported architecture");
 			break;
 		default:
-			eprintf ("posix_spawnp: unknown error %d\n", ret);
+			R_LOG_ERROR ("posix_spawnp: unknown error %d", ret);
 			r_sys_perror ("posix_spawnp");
 			break;
 		}
@@ -1223,7 +1222,7 @@ R_API int r_run_start(RRunProfile *p) {
 					exit (0);
 				}
 #else
-				eprintf ("timeout not supported for this platform\n");
+				R_LOG_ERROR ("timeout not supported for this platform");
 #endif
 			}
 #endif
@@ -1257,7 +1256,7 @@ R_API int r_run_start(RRunProfile *p) {
 				p->_program = progpath;
 			} else {
 				free (progpath);
-				eprintf ("rarun2: %s: file not found\n", p->_program);
+				R_LOG_ERROR ("file not found: %s", p->_program);
 				return 1;
 			}
 		}
@@ -1280,7 +1279,7 @@ R_API int r_run_start(RRunProfile *p) {
 			}
 		}
 		if (p->_pid) {
-			eprintf ("PID: %d\n", r_sys_getpid ());
+			R_LOG_INFO ("PID: %d", r_sys_getpid ());
 		}
 		if (p->_pidfile) {
 			char pidstr[32];
@@ -1297,12 +1296,12 @@ R_API int r_run_start(RRunProfile *p) {
 				return 1;
 			}
 #else
-			eprintf ("nice not supported for this platform\n");
+			R_LOG_ERROR ("nice not supported for this platform");
 #endif
 		}
 		if (p->_daemon) {
 #if __WINDOWS__
-			eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
+			R_LOG_ERROR ("PID: Cannot determine pid with 'system' directive. Use 'program'");
 #else
 			pid_t child = r_sys_fork ();
 			if (child == -1) {
@@ -1335,17 +1334,17 @@ R_API int r_run_start(RRunProfile *p) {
 	}
 	if (p->_runlib) {
 		if (!p->_runlib_fcn) {
-			eprintf ("No function specified. Please set runlib.fcn\n");
+			R_LOG_ERROR ("No function specified. Please set runlib.fcn");
 			return 1;
 		}
 		void *addr = r_lib_dl_open (p->_runlib);
 		if (!addr) {
-			eprintf ("Could not load the library '%s'\n", p->_runlib);
+			R_LOG_ERROR ("Could not load the library '%s'", p->_runlib);
 			return 1;
 		}
 		void (*fcn)(void) = r_lib_dl_sym (addr, p->_runlib_fcn);
 		if (!fcn) {
-			eprintf ("Could not find the function '%s'\n", p->_runlib_fcn);
+			R_LOG_ERROR ("Could not find the function '%s'", p->_runlib_fcn);
 			return 1;
 		}
 		switch (p->_argc) {
@@ -1389,7 +1388,7 @@ R_API int r_run_start(RRunProfile *p) {
 				p->_args[5], p->_args[6], p->_args[7], p->_args[8], p->_args[9], p->_args[10]);
 			break;
 		default:
-			eprintf ("Too many arguments.\n");
+			R_LOG_ERROR ("Too many arguments");
 			return 1;
 		}
 		r_lib_dl_close (addr);

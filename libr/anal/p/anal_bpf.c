@@ -262,14 +262,14 @@ typedef struct bpf_asm_parser {
 	RStrBuf *token;
 } BPFAsmParser;
 
-static void token_fini (BPFAsmParser *t) {
+static void token_fini(BPFAsmParser *t) {
 	if (t->token) {
 		r_strbuf_free (t->token);
 		t->token = NULL;
 	}
 }
 
-static const char *trim_input (const char *p) {
+static const char *trim_input(const char *p) {
 	while (*p) {
 		switch (*p) {
 		// Skip the whitespace
@@ -288,11 +288,11 @@ static const char *trim_input (const char *p) {
 	return NULL;
 }
 
-static bool is_single_char_token (char c) {
+static inline bool is_single_char_token(char c) {
 	return c == '(' || c == ')' || c == '[' || c == ']';
 }
 
-static bool is_arithmetic (char c) {
+static inline bool is_arithmetic(char c) {
 	return c == '+' || c == '-';
 }
 
@@ -336,17 +336,17 @@ static const char *token_next(BPFAsmParser *t) {
 	return r_strbuf_get (token);
 }
 
-static bool is_k_tok (const char *tok) {
+static bool is_k_tok(const char *tok) {
 	return is_arithmetic (tok[0]) || R_BETWEEN ('0', tok[0], '9');
 }
 
-static bool parse_k (RBpfSockFilter *f, const char *t) {
+static bool parse_k(RBpfSockFilter *f, const char *t) {
 	char *t2;
 	f->k = strtol (t, &t2, 0);
 	return t != t2;
 }
 
-static bool parse_k_or_x (RBpfSockFilter *f, const char *t) {
+static bool parse_k_or_x(RBpfSockFilter *f, const char *t) {
 	if (TOKEN_EQ (t, "x")) {
 		f->code |= BPF_X;
 		return true;
@@ -356,17 +356,20 @@ static bool parse_k_or_x (RBpfSockFilter *f, const char *t) {
 	}
 }
 
-static bool parse_label_value (ut64 *out, const char *t) {
+static bool parse_label_value(ut64 *out, const char *t) {
 	char *t2;
 	*out = strtoul (t, &t2, 0);
 	return t != t2;
 }
 
-static bool parse_label (RBpfSockFilter *f, const char *t) {
-	return parse_label_value (&f->k, t);
+static bool parse_label(RBpfSockFilter *f, const char *t) {
+	ut64 k = 0;
+	bool r = parse_label_value (&k, t);
+	f->k = k;
+	return r;
 }
 
-static bool parse_jump_targets (RBpfSockFilter *f, int opc, const bpf_token *op, ut64 pc) {
+static bool parse_jump_targets(RBpfSockFilter *f, int opc, const bpf_token *op, ut64 pc) {
 	PARSE_NEED (opc >= 1);
 	PARSE_NEED (parse_k_or_x (f, op[0]));
 	ut64 label;
