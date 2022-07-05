@@ -55,7 +55,7 @@ R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 	case 4:
 	case 8:
 		//anal->bio ...
-		R_LOG_INFO ("memref for to_ut64 is not supported\n");
+		R_LOG_INFO ("memref for to_ut64 is not supported");
 		break;
 	}
 	return num;
