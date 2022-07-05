@@ -721,6 +721,12 @@ static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int co
 	struct MACH0_(obj_t) *obj = NULL;
 	RListIter *iter;
 	RBinFile *bf;
+	if (!obj || !obj->original_io_read) {
+		if (fd->plugin->read == &rebasing_and_stripping_io_read) {
+			return -1;
+		}
+		return fd->plugin->read (io, fd, buf, count);
+	}
 	r_list_foreach (core->bin->binfiles, iter, bf) {
 		if (bf->fd == fd->fd) {
 			/* The first field of MACH0_(obj_t) is
@@ -740,12 +746,6 @@ static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int co
 			}
 			break;
 		}
-	}
-	if (!obj || !obj->original_io_read) {
-		if (fd->plugin->read == &rebasing_and_stripping_io_read) {
-			return -1;
-		}
-		return fd->plugin->read (io, fd, buf, count);
 	}
 	if (!obj->original_io_read) {
 		return -1;
