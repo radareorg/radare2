@@ -517,7 +517,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	rtti_complete_object_locator col;
 	if (!rtti_msvc_read_complete_object_locator (context, colAddr, &col)) {
 		if (!strict) {
-			R_LOG_ER_ROR ("Failed to parse Complete Object Locator at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")", colAddr, colRefAddr);
+			R_LOG_ERROR ("Failed to parse Complete Object Locator at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")", colAddr, colRefAddr);
 		}
 		return false;
 	}
