@@ -46,7 +46,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 		r_str_trim_path (buf);
 		list = r_fs_root (fs, buf);
 		if (r_list_empty (list)) {
-			printf ("Unknown root\n");
+			R_LOG_ERROR ("Unknown root");
 			r_list_free (list);
 			return false;
 		}
@@ -140,8 +140,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					ls++;
 					*ls = 0;
 				}
-				// TODO: adjust contents between //
-				if (r_str_startswith (me, base)) {
+				if (r_str_startswith (base, path)) {
 					cb_printf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
 				}
 				free (base);

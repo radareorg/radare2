@@ -3,7 +3,6 @@
 #include <r_fs.h>
 #include <config.h>
 #include "types.h"
-#include <errno.h>
 
 #if WITH_GPL
 # ifndef USE_GRUB
@@ -22,7 +21,7 @@ static RFSPlugin* fs_static_plugins[] = {
 	R_FS_STATIC_PLUGINS
 };
 
-R_API RFS* r_fs_new(void) {
+R_API R_MUSTUSE RFS* r_fs_new(void) {
 	int i;
 	RFSPlugin* static_plugin;
 	RFS* fs = R_NEW0 (RFS);
@@ -67,14 +66,13 @@ R_API RFSPlugin* r_fs_plugin_get(RFS* fs, const char* name) {
 }
 
 R_API void r_fs_free(RFS* fs) {
-	if (!fs) {
-		return;
+	if (fs) {
+		//r_io_free (fs->iob.io);
+		//root makes use of plugin so revert to avoid UaF
+		r_list_free (fs->roots);
+		r_list_free (fs->plugins);
+		free (fs);
 	}
-	//r_io_free (fs->iob.io);
-	//root makes use of plugin so revert to avoid UaF
-	r_list_free (fs->roots);
-	r_list_free (fs->plugins);
-	free (fs);
 }
 
 /* plugins */
@@ -579,13 +577,8 @@ R_API RList* r_fs_partitions(RFS* fs, const char* ptype, ut64 delta) {
 		return list;
 	}
 	if (R_STR_ISNOTEMPTY (ptype)) {
-		R_LOG_ERROR ("Unknown partition type '%s'", ptype);
+		R_LOG_ERROR ("Unknown partition type '%s'. Use 'mL' command to list them all", ptype);
 	}
-	eprintf ("Supported types:\n");
-	for (i = 0; partitions[i].name; i++) {
-		eprintf (" %s", partitions[i].name);
-	}
-	eprintf ("\n");
 	return NULL;
 }
 
