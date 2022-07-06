@@ -21,10 +21,10 @@ static const char *help_msg_c[] = {
 	"Usage:", "c[?dfx] [argument]", " # Compare",
 	"c", " [string]", "compare a plain with escaped chars string",
 	"c*", " [string]", "same as above, but printing r2 commands instead",
-	"c1", " [addr]", "compare 8 bits from current offset",
-	"c2", " [value]", "compare a word from a math expression",
-	"c4", " [value]", "compare a doubleword from a math expression",
-	"c8", " [value]", "compare a quadword from a math expression",
+	"c1", " [addr]", "compare byte at addr with current offset",
+	"c2", "* [value]", "compare word at offset with given value",
+	"c4", "* [value]", "compare doubleword at offset with given value",
+	"c8", "* [value]", "compare quadword at offset with given value",
 	"cat", " [file]", "show contents of file (see pwd, ls)",
 	"cc", " [at]", "compares in two hexdump columns of block size",
 	"ccc", " [at]", "same as above, but only showing different lines",
@@ -788,7 +788,7 @@ static int cmd_cp(void *data, const char *input) {
  * If scr.color is enabled, when bytes differ 1 is colored graph_true and 0 is
  * colored graph_false.
  */
-static void cmp_bits(RCore *core, ut64 addr) {
+static int cmp_bits(RCore *core, ut64 addr) {
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 	const bool use_color = r_config_get_b (core->config, "scr.color");
 	const char *color_end = use_color? Color_RESET: "";
@@ -833,6 +833,10 @@ static void cmp_bits(RCore *core, ut64 addr) {
 		r_cons_printf ("%s%d%s%s", b_colors[i], b_bits[i], color_end, i? " ": "");
 	}
 	r_cons_newline ();
+
+	// 0 if equal, 1 if not equal
+	// same return pattern as ?==
+	return a != b;
 }
 
 static const RList *symbols_of(RCore *core, int id0) {
@@ -1247,28 +1251,41 @@ static int cmd_cmp(void *data, const char *input) {
 			free (home);
 		}
 		break;
-	case '1': { // "c1"
-		const char *arg = input[1]? r_str_trim_head_ro (input + 2): NULL;
-		if (input[1] == '?' || input[1] != ' ' || R_STR_ISEMPTY (arg)) {
-			r_core_cmd_help_match (core, help_msg_c, "c1", true);
+	case '1':
+	case '2':
+	case '4':
+	case '8': {
+		const char width = *input++;
+		const char mode = *input == '*'? '*': 0;
+		const char *arg;
+		utAny cmp_val;
+
+		arg = *input? r_str_trim_head_ro (input + 1): NULL;
+
+		if (input[0] == '?' || R_STR_ISEMPTY (arg)) {
+			r_core_cmd_help_match_spec (core, help_msg_c, "c", width, true);
 			break;
 		}
 
-		cmp_bits (core, r_num_math (core->num, arg));
+		if (width == '1') {
+			if (mode == '*') {
+				R_LOG_ERROR ("c1 does not support * mode");
+				r_core_cmd_help_match (core, help_msg_c, "c1", true);
+			} else {
+				val = cmp_bits (core, r_num_math (core->num, arg));
+			}
+		} else if (width == '2') {
+			cmp_val.v16 = (ut16) r_num_math (core->num, arg);
+			val = radare_compare (core, block, (ut8 *) &cmp_val.v16, sizeof (wordcmp.v16), mode);
+		} else if (width == '4') {
+			cmp_val.v32 = (ut32) r_num_math (core->num, arg);
+			val = radare_compare (core, block, (ut8 *) &cmp_val.v32, sizeof (wordcmp.v32), mode);
+		} else if (width == '8') {
+			cmp_val.v64 = r_num_math (core->num, arg);
+			val = radare_compare (core, block, (ut8 *) &cmp_val.v64, sizeof (wordcmp.v64), mode);
+		}
 		break;
 	}
-	case '2': // "c2"
-		wordcmp.v16 = (ut16) r_num_math (core->num, input + 1);
-		val = radare_compare (core, block, (ut8 *) &wordcmp.v16, sizeof (wordcmp.v16), 0);
-		break;
-	case '4': // "c4"
-		wordcmp.v32 = (ut32) r_num_math (core->num, input + 1);
-		val = radare_compare (core, block, (ut8 *) &wordcmp.v32, sizeof (wordcmp.v32), 0);
-		break;
-	case '8': // "c8"
-		wordcmp.v64 = r_num_math (core->num, input + 1);
-		val = radare_compare (core, block, (ut8 *) &wordcmp.v64, sizeof (wordcmp.v64), 0);
-		break;
 	case 'c': // "cc"
 		if (input[1] == '?') { // "cc?"
 			r_core_cmd0 (core, "c?~cc");
