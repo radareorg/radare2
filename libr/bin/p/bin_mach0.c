@@ -70,7 +70,9 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	origplugin->read = origread;
+	if (origplugin) {
+		origplugin->read = origread;
+	}
 	MACH0_(mach0_free) (bf->o->bin_obj);
 }
 

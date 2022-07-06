@@ -494,9 +494,13 @@ RUN
 NAME=oc
 FILE=bins/elf/true32
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 i
 oc -
 ?e --
+e asm.arch=x86
+e asm.bits=64
 i
 EOF
 EXPECT=<<EOF
