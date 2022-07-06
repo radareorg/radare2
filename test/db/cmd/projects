@@ -31,7 +31,6 @@ RUN
 
 NAME=Reloading a project twice fails
 FILE=bins/mach0/ls-m1
-BROKEN=1
 CMDS=<<EOF
 e prj.vc=false
 e scr.interactive=false
@@ -58,10 +57,46 @@ o
 om
 EOF
 EXPECT=<<EOF
-7f2303d5fc6fbaa9fa6701a9f85f02a9
-7f2303d5fc6fbaa9fa6701a9f85f02a9
+554889e54157415641554154534881ec
+554889e54157415641554154534881ec
+554889e54157415641554154534881ec
+            ;-- main:
+            ;-- entry0:
+            ;-- func.100003c0c:
+            0x100003c0c      55             push rbp
+            0x100003c0d      4889e5         mov rbp, rsp
+            0x100003c10      4157           push r15
+            0x100003c12      4156           push r14
+            0x100003c14      4155           push r13
+            0x100003c16      4154           push r12
+            0x100003c18      53             push rbx
+            0x100003c19      4881ec380600.  sub rsp, 0x638
+            0x100003c20      4989f7         mov r15, rsi
+            0x100003c23      4189fe         mov r14d, edi
+0x100003c0c
  3 * r-x 0x0002daa0 bins/mach0/ls-m1
-* 2 fd: 3 +0x00000000 0x00000000 - 0x0002da9f r-x
+0x100003c0c
+            ;-- main:
+            ;-- entry0:
+            ;-- func.100003c0c:
+            0x100003c0c      55             push rbp
+            0x100003c0d      4889e5         mov rbp, rsp
+            0x100003c10      4157           push r15
+            0x100003c12      4156           push r14
+            0x100003c14      4155           push r13
+            0x100003c16      4154           push r12
+            0x100003c18      53             push rbx
+            0x100003c19      4881ec380600.  sub rsp, 0x638
+            0x100003c20      4989f7         mov r15, rsi
+            0x100003c23      4189fe         mov r14d, edi
+ 4 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT
+554889e54157415641554154534881ec
+ 3 * r-x 0x0002daa0 bins/mach0/ls-m1
+- 5 fd: 3 +0x00000000 0x00000000 - 0x0002da9f r-x
+* 4 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT
+- 3 fd: 3 +0x0000c000 0x100008000 - 0x10000bfff r-- fmap.__DATA
+- 2 fd: 3 +0x00010000 0x10000c000 - 0x100013fff r-- fmap.__LINKEDIT
+- 1 fd: 3 +0x00000000 0x100000000 - 0x10002da9f r-x
 EOF
 RUN
 
@@ -346,16 +381,37 @@ RUN
 
 NAME=Save project for a binary and checking opened files
 FILE=bins/elf/analysis/main
-BROKEN=1
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
+o
+?e --
+P- ulumulu
 P+ ulumulu > /dev/null
+PS*~^o
+Px
+o--
 Po ulumulu > /dev/null
+?e ooo
+o
+?e ooo
 o*~?
 EOF
 EXPECT=<<EOF
-1
+ 3 * r-x 0x000021da bins/elf/analysis/main
+ 4 - rw- 0x00000008 null://8
+--
+o bins/elf/analysis/main 0x00400000 r-x
+om $d 0x00600dc0 0x00000230 0x00000000 r-- fmap.LOAD1
+onnu null://8 rw-
+omu 4 0x00600910 0x00000008 0x00000000 rw- mmap.LOAD1
+omu 3 0x006006e0 0x00000230 0x000006e0 r-- fmap.LOAD1
+omu 3 0x00400000 0x000006dc 0x00000000 r-x fmap.LOAD0
+ooo
+ 3 - r-x 0x000021da bins/elf/analysis/main
+ 4 - rw- 0x00000008 null://8
+ooo
+4
 EOF
 RUN
 
@@ -450,10 +506,6 @@ P+ hond > /dev/null
 P-
 P hond > /dev/null
 om*
-?e --
-om*~?
-om*~[2]
-EOF
 ?e --
 om*~?
 om*~[2]
@@ -616,7 +668,6 @@ RUN
 
 NAME=Save project for a file with x86_16 and check the value after loading again
 FILE=bins/src/hello.c
-ARGS=
 CMDS=<<EOF
 e prj.vc=false
 e dir.projects = .tmp/
