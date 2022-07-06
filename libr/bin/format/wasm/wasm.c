@@ -225,23 +225,25 @@ static size_t consume_limits_r(RBuffer *b, ut64 bound, struct r_bin_wasm_resizab
 }
 
 // Utils
+#define CUST_NAME_START "\x04name"
+#define CUST_NAME_START_LEN sizeof CUST_NAME_START - 1
 static inline RBinWasmSection *sections_first_custom_name(RBinWasmObj *bin) {
 	RBuffer *buf = bin->buf;
 	RListIter *iter;
 	RBinWasmSection *sec;
 	r_list_foreach (bin->g_sections, iter, sec) {
 		if (sec->id == R_BIN_WASM_SECTION_CUSTOM && sec->size > 6) {
-			const ut8 start[] = "\x04name";
-			ut64 size = R_ARRAY_SIZE (start);
-			ut8 _tmp[size--]; // storage, remove null byte for comparison
-			r_buf_read_at (buf, sec->offset, _tmp, size);
-			if (!memcmp (start, _tmp, size)) {
+			ut8 _tmp[CUST_NAME_START_LEN];
+			r_buf_read_at (buf, sec->offset, _tmp, CUST_NAME_START_LEN);
+			if (!memcmp (CUST_NAME_START, _tmp, CUST_NAME_START_LEN)) {
 				return sec;
 			}
 		}
 	}
 	return NULL;
 }
+#undef CUST_NAME_START
+#undef CUST_NAME_START_LEN
 
 static inline RBinWasmSection *section_first_with_id(RList *sections, ut8 id) {
 	RBinWasmSection *sec;
