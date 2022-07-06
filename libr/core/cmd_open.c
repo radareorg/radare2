@@ -36,10 +36,12 @@ static const char *help_msg_of[] = {
 	"of"," \"/bin/ls\" r-x", " open /bin/ls with r-x perms without creating maps",
 	NULL
 };
+
 static const char *help_msg_on[] = {
 	"Usage: on","[n+*] [file] ([addr] [rwx])","Open file without parsing headers",
 	"on"," /bin/ls 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"onn"," [file] ([rwx])","open file without creating any map or parsing headers with rbin)",
+	"onnu"," [file] ([rwx])","same as onn, but unique, will return previos fd if already opened",
 	"on+"," [file] ([rwx])","open file in rw mode without parsing headers",
 	"on*", "", "list open files as r2 commands",
 	NULL
