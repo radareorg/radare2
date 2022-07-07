@@ -53,7 +53,6 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 	RFSFile *file;
 	RListIter *iter;
 	PrintfCallback cb_printf = fs->csb.cb_printf;
-	// char buf[PROMPT_PATH_BUFSIZE];
 	char path[PROMPT_PATH_BUFSIZE];
 	if (*buf == ':') {
 		char *msg = fs->cob.cmdstr (fs->cob.core, buf + 1);
@@ -124,9 +123,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		free (*shell->cwd);
 		*shell->cwd = abspath;
 #if 0
-		r_str_trim_path (path);
-		r_list_free (list);
-		list = r_fs_dir (fs, path);
+		RList *list = r_fs_dir (fs, path);
 		if (r_list_empty (list)) {
 			RFSRoot *r;
 			RListIter *iter;
@@ -136,6 +133,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 				}
 			}
 		}
+		r_list_free (list);
 #endif
 	} else if (r_str_startswith (buf, "mount")) {
 		RFSRoot* r;
@@ -227,7 +225,9 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 	return true;
 }
 
+// TODO R2_580 return bool
 R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
+	r_return_val_if_fail (shell & fs, false);
 	char buf[PROMPT_PATH_BUFSIZE];
 	char prompt[PROMPT_PATH_BUFSIZE];
 	if (R_STR_ISNOTEMPTY (root)) {
