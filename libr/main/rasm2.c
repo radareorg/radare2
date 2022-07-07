@@ -209,7 +209,7 @@ static void ranal2_list(RAsmState *as, const char *arch) {
 				strcat (bits, "64 ");
 			}
 		}
-		const char *feat = "__";
+		const char *feat = h->opasm? "ad": "_d";
 		const char *feat2 = has_esil (as, h->name);
 		if (as->quiet) {
 			printf ("%s\n", h->name);

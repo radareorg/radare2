@@ -10,7 +10,7 @@
 
 static R_TH_LOCAL unsigned long Offset = 0;
 static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL ut8 *bytes = NULL;
+static R_TH_LOCAL ut8 bytes[8] = {0};
 static R_TH_LOCAL char *pre_cpu = NULL;
 static R_TH_LOCAL char *pre_features = NULL;
 static R_TH_LOCAL int mips_mode = 0;
@@ -1085,7 +1085,8 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		return -1;
 	}
 	Offset = op->addr;
-	memcpy (bytes, buf, 4); // TODO handle thumb
+	buf_global = r_strbuf_new ("");
+	memcpy (&bytes, buf, R_MIN (len, 8));
 
 	const char *cpu = a->config->cpu;
 	if ((cpu != pre_cpu) && (a->config->features != pre_features)) {
@@ -1139,7 +1140,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 
 	mips_mode = a->config->bits;
 	disasm_obj.arch = CPU_LOONGSON_2F;
-	disasm_obj.buffer = bytes;
+	disasm_obj.buffer = &bytes;
 	disasm_obj.read_memory_func = &mips_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
@@ -1163,7 +1164,6 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 
 static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	ut32 opcode;
-	// WIP char buf[10]; int reg; int family;
 	int oplen = (anal->config->bits == 16)? 2: 4;
 	const ut8 * buf;
 	gnu_insn insn;
