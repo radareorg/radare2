@@ -1609,7 +1609,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 	bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
 	const char *lang = r_config_get (r->config, "bin.lang");
 	bool is_pe = true;
-	int is_sandbox = r_sandbox_enable (0);
+	bool is_sandbox = r_sandbox_enable (0);
 	r_strf_buffer (64);
 
 	if (is_pe && !is_sandbox && reloc->import
@@ -1759,12 +1759,12 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	//this has been created for reloc object files
 	bool bin_cache = r_config_get_i (r->config, "bin.cache");
 	if (bin_cache) {
-		r_config_set (r->config, "io.cache", "true");
+		r_config_set_b (r->config, "io.cache", true);
 	}
 	RRBTree *relocs = r_bin_patch_relocs (r->bin);
 	if (!relocs) {
 		if (bin_cache) {
-			r_config_set (r->config, "io.cache", "false");
+			r_config_set_b (r->config, "io.cache", false);
 			bin_cache = false;
 		}
 		relocs = r_bin_get_relocs (r->bin);
@@ -1779,9 +1779,9 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	}
 	if (bin_cache) {
 		if (r_pvector_len (&r->io->cache) == 0) {
-			r_config_set (r->config, "io.cache", "false");
+			r_config_set_b (r->config, "io.cache", false);
 		} else {
-			r_config_set (r->config, "io.cache.read", "true");
+			r_config_set_b (r->config, "io.cache.read", true);
 		}
 	}
 
