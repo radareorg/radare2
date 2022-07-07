@@ -62,7 +62,7 @@ R_API RAnalEsilTrace *r_anal_esil_trace_new(RAnalEsil *esil) {
 	}
 	return trace;
 error:
-	R_LOG_ERROR ("error");
+	R_LOG_ERROR ("trace initialization failed");
 	r_anal_esil_trace_free (trace);
 	return NULL;
 }
@@ -323,11 +323,8 @@ static int cmp_strings_by_leading_number(void *data1, void *data2) {
 	while (b[j] >= '0' && b[j] <= '9') {
 		j++;
 	}
-	if (!i) {
+	if (!i || !j) {
 		return 1;
-	}
-	if (!j) {
-		return -1;
 	}
 	i--;
 	j--;

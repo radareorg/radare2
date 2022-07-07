@@ -3182,9 +3182,9 @@ static bool cb_linesabs(void *user, void *data) {
 		ut64 to = r_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
 		core->print->lines_cache_sz = r_core_lines_initcache (core, from, to);
 		if (core->print->lines_cache_sz == -1) {
-			R_LOG_ERROR ("ERROR: \"lines.from\" and \"lines.to\" must be set");
+			R_LOG_ERROR ("\"lines.from\" and \"lines.to\" must be set");
 		} else {
-			eprintf ("Found %d lines\n", core->print->lines_cache_sz-1);
+			R_LOG_INFO ("Found %d lines", core->print->lines_cache_sz - 1);
 		}
 	}
 	return true;
@@ -3193,14 +3193,12 @@ static bool cb_linesabs(void *user, void *data) {
 static bool cb_malloc(void *user, void *data) {
  	RCore *core = (RCore*) user;
  	RConfigNode *node = (RConfigNode*) data;
-
  	if (node->value) {
  		if (!strcmp ("jemalloc", node->value) || !strcmp ("glibc", node->value)) {
 			if (core->dbg) {
 				core->dbg->malloc = data;
 			}
  		}
-
  	}
 	return true;
 }

@@ -874,7 +874,7 @@ static int r_cmd_java_handle_replace_classname_value(RCore *core, const char *cm
 						core, obj, idx, addr,
 						(const ut8 *)result, res_len);
 					if (res == false) {
-						R_LOG_ERROR ("ERROR: r_cmd_java: Failed to write bytes or reload the binary");
+						R_LOG_ERROR ("r_cmd_java: Failed to write bytes or reload the binary");
 					}
 				}
 				free (result);

@@ -3134,7 +3134,7 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 	totalRes = curRes + rs_directory->NumberOfIdEntries;
 	if (totalRes > R_PE_MAX_RESOURCES) {
 		if (pe->verbose) {
-			R_LOG_ERROR ("Error parsing resource directory");
+			R_LOG_ERROR ("parsing resource directory");
 		}
 		ht_uu_free (dirs);
 		return;

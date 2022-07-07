@@ -228,8 +228,7 @@ ST_FUNC bool tcc_open_bf(TCCState *s1, const char *filename, int initlen) {
 
 	BufferedFile *bf = malloc (sizeof (BufferedFile) + buflen);
 	if (!bf) {
-		// err
-		R_LOG_ERROR ("Error");
+		R_LOG_ERROR ("too large buflen");
 		return false;
 	}
 	bf->buf_ptr = bf->buffer;

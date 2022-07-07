@@ -882,18 +882,18 @@ static bool mnem_jb(char const*const*arg, ut16 pc, ut8**out) {
 static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
 	ut8 cmp_addr;
 	if (!address_bit (arg[0], &cmp_addr)) {
-		R_LOG_ERROR ("error during the assembly: address bit not found");
+		R_LOG_ERROR ("address bit not found");
 		return false;
 	}
 
 	ut16 jmp_addr;
 	if (!to_address (arg[1], &jmp_addr)) {
-		R_LOG_DEBUG ("error during the assembly: address %x not found", jmp_addr);
+		R_LOG_DEBUG ("address %x not found", jmp_addr);
 		return false;
 	}
 
 	if (!relative_address (pc + 1, jmp_addr, (*out) + 2)) {
-		R_LOG_DEBUG ("error during the assembly: address %x not found", jmp_addr);
+		R_LOG_DEBUG ("address %x not found", jmp_addr);
 		return false;
 	}
 

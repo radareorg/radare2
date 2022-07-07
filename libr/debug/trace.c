@@ -135,7 +135,7 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 		{
 			ut8 buf[32] = {0};
 			if (!dbg->iob.read_at (dbg->iob.io, val->base, buf, val->memref)) {
-				R_LOG_ERROR ("Error reading memory at 0x%"PFMT64x, val->base);
+				R_LOG_ERROR ("reading memory at 0x%"PFMT64x, val->base);
 				break;
 			}
 

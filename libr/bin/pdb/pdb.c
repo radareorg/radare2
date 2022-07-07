@@ -91,7 +91,7 @@ static int read_int_var(char *var_name, int *var, RPdb *pdb) {
 	}
 	int bytes_read = r_buf_read (pdb->buf, (ut8 *) var, 4);
 	if (bytes_read != 4) {
-		R_LOG_ERROR ("Error while reading from file '%s'", var_name);
+		R_LOG_ERROR ("reading from file '%s'", var_name);
 		return 0;
 	}
 	return bytes_read;
@@ -438,7 +438,7 @@ static bool pdb7_parse(RPdb *pdb) {
 
 	bytes_read = r_buf_read (pdb->buf, (unsigned char *) signature, PDB7_SIGNATURE_LEN);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
-		//R_LOG_ERROR ("Error while reading PDB7_SIGNATURE");
+		//R_LOG_ERROR ("while reading PDB7_SIGNATURE");
 		goto error;
 	}
 	if (!read_int_var ("page_size", &page_size, pdb)) {
@@ -465,18 +465,18 @@ static bool pdb7_parse(RPdb *pdb) {
 	num_root_index_pages = count_pages ((num_root_pages * 4), page_size);
 	root_index_pages = (int *) calloc (sizeof (int), R_MAX (num_root_index_pages, 1));
 	if (!root_index_pages) {
-		R_LOG_ERROR ("Error memory allocation");
+		R_LOG_ERROR ("memory allocation");
 		goto error;
 	}
 
 	bytes_read = r_buf_read (pdb->buf, (unsigned char *) root_index_pages, 4 * num_root_index_pages);
 	// fread(root_index_pages, 4, num_root_index_pages, pdb->fp);
 	if (bytes_read != 4 * num_root_index_pages) {
-		R_LOG_ERROR ("Error while reading root_index_pages");
+		R_LOG_ERROR ("reading root_index_pages");
 		goto error;
 	}
 	if (page_size < 1 || num_root_index_pages < 1) {
-		eprintf ("Invalid root index pages size.\n");
+		R_LOG_ERROR ("Invalid root index pages size");
 		goto error;
 	}
 	root_page_data = (int *) calloc (page_size, num_root_index_pages);

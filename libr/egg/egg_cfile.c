@@ -194,7 +194,7 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 	cEnv->LDFLAGS = strdup (buffer);
 
 	if (r_egg_cfile_check_cEnv (cEnv)) {
-		R_LOG_ERROR ("Error with cEnv allocation!");
+		R_LOG_ERROR ("invalid cEnv allocation");
 		goto fail;
 	}
 
@@ -230,7 +230,7 @@ static bool r_egg_cfile_parseCompiled(const char *file) {
 	free (fileExt);
 	fileExt = r_str_newf ("%s.s", file);
 	if (!r_file_dump (fileExt, (const ut8*) buffer, strlen (buffer), true)) {
-		R_LOG_ERROR ("Error while opening %s.s", file);
+		R_LOG_ERROR ("while opening %s.s", file);
 		goto fail;
 	}
 
@@ -268,7 +268,7 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 	}
 
 	if (!r_file_dump (fileExt, (const ut8*) cEnv->SHDR, strlen (cEnv->SHDR), false)) {
-		R_LOG_ERROR ("Error while opening %s.s", file);
+		R_LOG_ERROR ("while opening %s.s", file);
 		goto fail;
 	}
 
@@ -286,8 +286,7 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 
 	// Link
 	printf ("rabin2 -o '%s.text' -O d/S/'%s' '%s.o'\n", file, cEnv->TEXT, file);
-	output = r_sys_cmd_strf ("rabin2 -o '%s.text' -O d/S/'%s' '%s'.o",
-		   		file, cEnv->TEXT, file);
+	output = r_sys_cmd_strf ("rabin2 -o '%s.text' -O d/S/'%s' '%s'.o", file, cEnv->TEXT, file);
 	if (!output) {
 		eprintf ("Linkage failed!\n");
 		goto fail;

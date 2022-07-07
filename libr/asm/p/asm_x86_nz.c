@@ -4895,7 +4895,6 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		bool first_reg = true;
 		while (str[pos] != ']') {
 			if (pos > nextpos) {
-			//	R_LOG_ERROR ("Error parsing instruction");
 				break;
 			}
 			pos = nextpos;

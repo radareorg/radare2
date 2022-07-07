@@ -3985,7 +3985,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 			}
 		}
 	} else {
-		R_LOG_ERROR ("error: block size too small");
+		R_LOG_ERROR ("block size too small");
 	}
 	r_cons_break_pop ();
 	free (buf);

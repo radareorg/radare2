@@ -346,7 +346,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		hints.ai_protocol = proto;
 		int gai = getaddrinfo (host, port, &hints, &res);
 		if (gai != 0) {
-			R_LOG_ERROR ("Error in getaddrinfo: %s (%s:%s)",
+			R_LOG_ERROR ("getaddrinfo: %s (%s:%s)",
 				gai_strerror (gai), host, port);
 			return false;
 		}

@@ -1152,19 +1152,19 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		encoded_method_addr = r_buf_tell (bf->buf);
 		MI = peek_uleb (bf->buf, &err, &skip);
 		if (err) {
-			R_LOG_ERROR ("Error");
+			R_LOG_ERROR ("peek-uleb0");
 			break;
 		}
 		MI += omi;
 		omi = MI;
 		MA = peek_uleb (bf->buf, &err, &skip);
 		if (err) {
-			R_LOG_ERROR ("Error");
+			R_LOG_ERROR ("peek-uleb1");
 			break;
 		}
 		MC = peek_uleb (bf->buf, &err, &skip);
 		if (err) {
-			R_LOG_ERROR ("Error");
+			R_LOG_ERROR ("peek-uleb2");
 			break;
 		}
 		// TODO: MOVE CHECKS OUTSIDE!

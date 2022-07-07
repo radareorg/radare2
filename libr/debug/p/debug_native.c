@@ -301,7 +301,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	RW32Dw *wrap = dbg->user;
 
 	if (pid == -1) {
-		R_LOG_ERROR ("ERROR: r_debug_native_wait called with pid -1");
+		R_LOG_ERROR ("r_debug_native_wait called with pid -1");
 		return R_DEBUG_REASON_ERROR;
 	}
 
@@ -428,7 +428,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 
 	if (pid == -1) {
-		R_LOG_ERROR ("ERROR: r_debug_native_wait called with pid -1");
+		R_LOG_ERROR ("r_debug_native_wait called with pid -1");
 		return R_DEBUG_REASON_ERROR;
 	}
 
@@ -441,7 +441,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 
 	if (pid == -1) {
-		R_LOG_ERROR ("ERROR: r_debug_native_wait called with pid -1");
+		R_LOG_ERROR ("r_debug_native_wait called with pid -1");
 		return R_DEBUG_REASON_ERROR;
 	}
 
@@ -1587,7 +1587,7 @@ static int r_debug_setup_ownership(int fd, RDebug *dbg) {
 	RDebugInfo *info = r_debug_info (dbg, NULL);
 
 	if (!info) {
-		R_LOG_ERROR ("Error while getting debug info");
+		R_LOG_ERROR ("getting debug info");
 		return -1;
 	}
 	fchown (fd, info->uid, info->gid);

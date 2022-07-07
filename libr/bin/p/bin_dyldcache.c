@@ -147,43 +147,34 @@ static void free_bin(RDyldBinImage *bin) {
 }
 
 static void rebase_info3_free(RDyldRebaseInfo3 *rebase_info) {
-	if (!rebase_info) {
-		return;
+	if (rebase_info) {
+		R_FREE (rebase_info->page_starts);
+		R_FREE (rebase_info);
 	}
-
-	R_FREE (rebase_info->page_starts);
-	R_FREE (rebase_info);
 }
 
 static void rebase_info2_free(RDyldRebaseInfo2 *rebase_info) {
-	if (!rebase_info) {
-		return;
+	if (rebase_info) {
+		R_FREE (rebase_info->page_starts);
+		R_FREE (rebase_info->page_extras);
+		R_FREE (rebase_info);
 	}
-
-	R_FREE (rebase_info->page_starts);
-	R_FREE (rebase_info->page_extras);
-	R_FREE (rebase_info);
 }
 
 static void rebase_info1_free(RDyldRebaseInfo1 *rebase_info) {
-	if (!rebase_info) {
-		return;
+	if (rebase_info) {
+		R_FREE (rebase_info->toc);
+		R_FREE (rebase_info->entries);
+		R_FREE (rebase_info);
 	}
-
-	R_FREE (rebase_info->toc);
-	R_FREE (rebase_info->entries);
-	R_FREE (rebase_info);
 }
 
 static void rebase_info_free(RDyldRebaseInfo *rebase_info) {
 	if (!rebase_info) {
 		return;
 	}
-
 	R_FREE (rebase_info->one_page_buf);
-
 	ut8 version = rebase_info->version;
-
 	if (version == 1) {
 		rebase_info1_free ((RDyldRebaseInfo1*) rebase_info);
 	} else if (version == 2 || version == 4) {
@@ -1564,7 +1555,7 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			result = R_MIN (count, internal_result);
 			memcpy (buf, internal_buf + page_offset, result);
 		} else {
-			R_LOG_ERROR ("ERROR rebasing");
+			R_LOG_ERROR ("rebasing");
 			result = cache->original_io_read (io, fd, buf, count);
 		}
 

@@ -95,7 +95,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	}
 
 	if (core->blocksize < 8) {
-		R_LOG_ERROR ("error: block size too small");
+		R_LOG_ERROR ("block size too small");
 		return NULL;
 	}
 	if (!(buf = (ut8 *)calloc (core->blocksize, 1))) {
