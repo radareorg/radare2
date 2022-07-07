@@ -220,16 +220,16 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 		if (ret == -1) {
 #ifdef __ANDROID__
-			eprintf ("ptrace_attach: Operation not permitted\n");
+			R_LOG_ERROR ("ptrace_attach: Operation not permitted");
 #else
 			switch (errno) {
 			case EPERM:
 				ret = pid;
-				eprintf ("ptrace_attach: Operation not permitted\n");
+				R_LOG_ERROR ("ptrace_attach: Operation not permitted");
 				break;
 			case EINVAL:
 				r_sys_perror ("ptrace: Cannot attach");
-				eprintf ("ERRNO: %d (EINVAL)\n", errno);
+				R_LOG_ERROR ("errno: %d (EINVAL)", errno);
 				break;
 			default:
 				break;
@@ -239,7 +239,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		} else if (__waitpid (pid)) {
 			ret = pid;
 		} else {
-			R_LOG_ERROR ("Error in waitpid");
+			R_LOG_ERROR ("waitpid");
 			return NULL;
 		}
 	}

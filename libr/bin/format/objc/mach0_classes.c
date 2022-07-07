@@ -291,7 +291,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 		if (offset_at != 0 && left >= sizeof (mach0_ut)) {
 			len = r_buf_read_at (bf->buf, offset_at, offs, sizeof (mach0_ut));
 			if (len != sizeof (mach0_ut)) {
-				R_LOG_ERROR ("Error reading");
+				R_LOG_ERROR ("reading");
 				goto error;
 			}
 			ivar_offset = r_read_ble (offs, bigendian, 8 * sizeof (mach0_ut));
@@ -315,7 +315,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 				name = malloc (name_len + 1);
 				len = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
 				if (len < 1) {
-					R_LOG_ERROR ("Error reading");
+					R_LOG_ERROR ("reading2");
 					R_FREE (name);
 					goto error;
 				}

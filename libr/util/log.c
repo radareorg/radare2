@@ -26,6 +26,7 @@ static R_TH_LOCAL RLog *rlog = NULL;
 R_API void r_log_init(void) {
 	if (!rlog) {
 		rlog = R_NEW0 (RLog);
+		rlog->level = R_LOGLVL_DEFAULT;
 	}
 }
 

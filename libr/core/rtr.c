@@ -636,12 +636,12 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path) {
 	int ret;
 	if (r_sandbox_enable (0)) {
-		eprintf ("sandbox: connect disabled\n");
+		R_LOG_ERROR ("connect disable the sandbox");
 		return -1;
 	}
 	// TODO: do stuff with launch
 	if (core->gdbserver_up) {
-		eprintf ("gdbserver is already running\n");
+		R_LOG_INFO ("the gdbserver is already running");
 		return -1;
 	}
 	ret = r_core_rtr_gdb_run (core, launch, path);
@@ -659,7 +659,7 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 			}
 		}
 		if (!(cmd = strchr (input, ' '))) {
-			R_LOG_ERROR ("Error");
+			R_LOG_ERROR ("Missing space");
 			return;
 		}
 	} else {
@@ -1345,7 +1345,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	s->local = r_config_get_i (core->config, "tcp.islocal");
 
 	if (!r_socket_listen (s, port, NULL)) {
-		R_LOG_ERROR ("Error listening on port %s", port);
+		R_LOG_ERROR ("listening on port %s", port);
 		r_socket_free (s);
 		return false;
 	}

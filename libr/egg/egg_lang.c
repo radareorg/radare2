@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake */
+/* radare - LGPL - Copyright 2010-2022 - pancake */
 
 #include <r_egg.h>
 
@@ -1020,7 +1020,7 @@ static void rcc_next(REgg *egg) {
 		if (!strcmp (str, "while")) {
 			char var[128];
 			if (egg->lang.lastctxdelta >= 0) {
-				R_LOG_ERROR ("ERROR: Unsupported while syntax");
+				R_LOG_ERROR ("Unsupported while syntax");
 				return;
 			}
 			sprintf (var, "__begin_%d_%d_%d\n", egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX - 1]);

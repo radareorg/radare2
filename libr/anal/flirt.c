@@ -1448,7 +1448,7 @@ R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
 		node_free (node);
 		return;
 	} else {
-		eprintf ("We encountered an error while parsing the file. Sorry.\n");
+		R_LOG_ERROR ("We encountered a problem while parsing the file");
 		return;
 	}
 }
@@ -1467,12 +1467,12 @@ R_API void r_sign_flirt_scan(RAnal *anal, const char *flirt_file) {
 	r_buf_free (flirt_buf);
 	if (node) {
 		if (!node_match_functions (anal, node)) {
-			R_LOG_ERROR ("Error while scanning the file %s", flirt_file);
+			R_LOG_ERROR ("scanning file %s", flirt_file);
 		}
 		node_free (node);
 		return;
 	} else {
-		eprintf ("We encountered an error while parsing the file %s. Sorry.\n", flirt_file);
+		R_LOG_ERROR ("We encountered an error while parsing the file %s", flirt_file);
 		return;
 	}
 }

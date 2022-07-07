@@ -69,7 +69,7 @@ int binutils_assemble(RAsm *a, RAsmOp *op, const char *buf, const char *as, cons
 		}
 		res = op->size = len;
 	} else {
-		R_LOG_ERROR ("Error running: %s", cmd);
+		R_LOG_ERROR ("running: %s", cmd);
 	}
 beach:
 	close (ofd);

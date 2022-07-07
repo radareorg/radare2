@@ -699,12 +699,12 @@ static bool addBBHash(RAnal *a, RAnalFunction *fcn, const char *name) {
 R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val, int len) {
 	r_return_val_if_fail (a && name && type && val && len > 0, false);
 	if (type != R_SIGN_BBHASH) {
-		R_LOG_ERROR ("error: hash type unknown");
+		R_LOG_ERROR ("hash type unknown");
 		return false;
 	}
 	int digestsize = r_hash_size (R_ZIGN_HASH) * 2;
 	if (len != digestsize) {
-		R_LOG_ERROR ("error: invalid hash size: %d (%s digest size is %d)", len, ZIGN_HASH, digestsize);
+		R_LOG_ERROR ("invalid hash size: %d (%s digest size is %d)", len, ZIGN_HASH, digestsize);
 		return false;
 	}
 	return addHash (a, name, type, val);
@@ -2031,7 +2031,7 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 			keep_going = ctx->cb (it, ctx->user);
 		}
 	} else {
-		R_LOG_ERROR ("error: cannot deserialize zign");
+		R_LOG_ERROR ("cannot deserialize zign");
 	}
 	if (ctx->freeit) {
 		r_sign_item_free (it);
@@ -2873,7 +2873,7 @@ static bool loadCB(void *user, const char *k, const char *v) {
 			}
 		}
 	} else {
-		R_LOG_ERROR ("error: cannot deserialize zign");
+		R_LOG_ERROR ("cannot deserialize zign");
 	}
 	r_sign_item_free (it);
 	return true;
@@ -2921,7 +2921,7 @@ R_API bool r_sign_load(RAnal *a, const char *file, bool merge) {
 	}
 	char *path = r_sign_path (a, file);
 	if (!r_file_exists (path)) {
-		R_LOG_ERROR ("error: file %s does not exist", file);
+		R_LOG_ERROR ("file %s does not exist", file);
 		free (path);
 		return false;
 	}
@@ -2943,44 +2943,37 @@ R_API bool r_sign_load_gz(RAnal *a, const char *filename, bool merge) {
 	int size = 0;
 	char *tmpfile = NULL;
 	bool retval = true;
-
 	char *path = r_sign_path (a, filename);
 	if (!r_file_exists (path)) {
-		R_LOG_ERROR ("error: file %s does not exist", filename);
+		R_LOG_ERROR ("file %s does not exist", filename);
 		retval = false;
 		goto out;
 	}
-
 	if (!(buf = r_file_gzslurp (path, &size, 0))) {
-		R_LOG_ERROR ("error: cannot decompress file");
+		R_LOG_ERROR ("cannot decompress file");
 		retval = false;
 		goto out;
 	}
-
 	if (!(tmpfile = r_file_temp ("r2zign"))) {
-		R_LOG_ERROR ("error: cannot create temp file");
+		R_LOG_ERROR ("cannot create temp file");
 		retval = false;
 		goto out;
 	}
-
 	if (!r_file_dump (tmpfile, buf, size, 0)) {
-		R_LOG_ERROR ("error: cannot dump file");
+		R_LOG_ERROR ("cannot dump file");
 		retval = false;
 		goto out;
 	}
-
 	if (!r_sign_load (a, tmpfile, merge)) {
-		R_LOG_ERROR ("error: cannot load file");
+		R_LOG_ERROR ("cannot load file");
 		retval = false;
 		goto out;
 	}
-
 	if (!r_file_rm (tmpfile)) {
-		R_LOG_ERROR ("error: cannot delete temp file");
+		R_LOG_ERROR ("cannot delete temp file");
 		retval = false;
 		goto out;
 	}
-
 out:
 	free (buf);
 	free (tmpfile);

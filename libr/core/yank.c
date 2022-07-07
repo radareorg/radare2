@@ -58,11 +58,11 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 				// address the file at its physical address!
 				addr += loadaddr;
 			} else if (yankdesc) {
-				eprintf ("Unable to map the opened file: %s\n", filename);
+				R_LOG_ERROR ("Unable to map the opened file: %s", filename);
 				r_io_desc_close (yankdesc);
 				yankdesc = NULL;
 			} else {
-				eprintf ("Unable to open the file: %s\n", filename);
+				R_LOG_ERROR ("Unable to open the file: %s", filename);
 			}
 		}
 	}
@@ -86,16 +86,9 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 			r_core_yank_set (core, R_CORE_FOREIGN_ADDR, buf, len);
 			res = true;
 		} else if (res != addr) {
-			eprintf (
-				"ERROR: Unable to yank data from file: (loadaddr (0x%"
-				PFMT64x ") (addr (0x%"
-				PFMT64x ") > file_sz (0x%"PFMT64x ")\n", res, addr,
-				yank_file_sz );
+			R_LOG_ERROR ("Unable to yank data from file: (loadaddr (0x%" PFMT64x ") (addr (0x%" PFMT64x ") > file_sz (0x%"PFMT64x ")", res, addr, yank_file_sz);
 		} else if (actual_len == 0) {
-			eprintf (
-				"ERROR: Unable to yank from file: addr+len (0x%"
-				PFMT64x ") > file_sz (0x%"PFMT64x ")\n", addr + len,
-				yank_file_sz );
+			R_LOG_ERROR ("Unable to yank from file: addr+len (0x%" PFMT64x ") > file_sz (0x%"PFMT64x ")", addr + len, yank_file_sz);
 		}
 		r_io_desc_close (yankdesc);
 		free (buf);
@@ -419,13 +412,13 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 	adv = consume_chars (input, ' ');
 	len = r_num_math (core->num, input + adv);
 	if (len == 0) {
-		R_LOG_ERROR ("ERROR: Number of bytes read must be > 0");
+		R_LOG_ERROR ("Number of bytes read must be > 0");
 		return res;
 	}
 	// get the addr/offset from in the file we want to read
 	adv += find_next_char (input + adv, ' ');
 	if (adv == 0) {
-		R_LOG_ERROR ("ERROR: Address must be specified");
+		R_LOG_ERROR ("Address must be specified");
 		return res;
 	}
 	adv++;
@@ -435,7 +428,7 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 
 	adv += find_next_char (input + adv, ' ');
 	if (adv == 0) {
-		R_LOG_ERROR ("ERROR: File must be specified");
+		R_LOG_ERROR ("File must be specified");
 		return res;
 	}
 	adv++;

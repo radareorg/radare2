@@ -482,7 +482,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	} else if (!strcmp (enc, "utf32le")) {
 		type = R_STRING_TYPE_WIDE32;
 	} else { // TODO utf16be, utf32be
-		R_LOG_ERROR ("ERROR: encoding %s not supported", enc);
+		R_LOG_ERROR ("encoding %s not supported", enc);
 		return;
 	}
 	string_scan_range (list, bf, min, from, to, type, raw, section);

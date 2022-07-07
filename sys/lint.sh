@@ -14,6 +14,7 @@
 (git grep 'r_core_cmd' libr | grep -v /lang/ | grep '\\n') && exit 1
 (git grep 'r_str_startswith ("' libr ) && exit 1
 (git grep R_LOG | grep '\."' | grep -v sys/) && exit 1
+(git grep -i 'R_LOG_ERROR ("ERROR' | grep -v sys) && exit 1
 
 # pending cleanups
 # ( git grep 'desc = "[A-Z]' ) && exit 1

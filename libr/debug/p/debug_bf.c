@@ -34,7 +34,7 @@ static bool is_io_bf(RDebug *dbg) {
 			return true;
 		}
 	}
-	R_LOG_ERROR ("error: the iodesc data is not brainfuck friendly");
+	R_LOG_ERROR ("the iodesc data is not brainfuck friendly");
 	return false;
 }
 
