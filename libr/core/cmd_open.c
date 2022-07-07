@@ -1626,7 +1626,7 @@ static bool cmd_onn(RCore *core, const char* input) {
 		*arg_perm++ = 0;
 		perms = r_str_rwx (arg_perm);
 	}
-	Onn on = {arg0, core, ptr};
+	Onn on = {arg0, NULL, core};
 	ut64 addr = 0LL;
 	// check if file is opened already
 	if (r_str_startswith (input, "nnu")) {
