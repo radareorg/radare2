@@ -31,6 +31,7 @@ RUN
 
 NAME=Reloading a project twice fails
 FILE=bins/mach0/ls-m1
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 e prj.vc=false
 e scr.interactive=false
@@ -391,10 +392,11 @@ P+ ulumulu > /dev/null
 PS*~^o
 Px
 o--
-Po ulumulu > /dev/null
-?e ooo
 o
-?e ooo
+Po ulumulu > /dev/null
+?e files:
+o
+?e count:
 o*~?
 EOF
 EXPECT=<<EOF
@@ -407,10 +409,10 @@ onnu null://8 rw-
 omu 4 0x00600910 0x00000008 0x00000000 rw- mmap.LOAD1
 omu 3 0x006006e0 0x00000230 0x000006e0 r-- fmap.LOAD1
 omu 3 0x00400000 0x000006dc 0x00000000 r-x fmap.LOAD0
-ooo
+files:
  3 - r-x 0x000021da bins/elf/analysis/main
- 4 - rw- 0x00000008 null://8
-ooo
+ 4 * rw- 0x00000008 null://8
+count:
 4
 EOF
 RUN

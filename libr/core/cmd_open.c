@@ -21,7 +21,7 @@ static const char *help_msg_o[] = {
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
 	"of","[?] [file]","open file and map it at addr 0 as read-only",
-	"oj","[?]	","list opened files in JSON format",
+	"oj","[?]","list opened files in JSON format",
 	"om","[?]","create, list, remove IO maps",
 	"on","[?][n] [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"oo","[?][+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
@@ -1619,11 +1619,17 @@ static bool cmd_onn(RCore *core, const char* input) {
 	while (*arg0 && *arg0 != ' ') {
 		arg0++;
 	}
+	arg0 = r_str_trim_head_ro (arg0);
+	if (!*arg0) {
+		eprintf ("Usage: onn[u] [file] [perm]\n");
+		return false;
+	}
 	char *ptr = r_str_trim_dup (arg0);
 	int perms = R_PERM_R;
 	char *arg_perm = strchr (ptr, ' ');
 	if (arg_perm) {
 		*arg_perm++ = 0;
+		arg0 = ptr;
 		perms = r_str_rwx (arg_perm);
 	}
 	Onn on = {arg0, NULL, core};
