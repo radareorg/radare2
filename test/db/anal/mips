@@ -90,7 +90,7 @@ RUN
 NAME=assembler
 FILE=-
 CMDS=<<EOF
-e asm.arch=mips.gnu
+e asm.arch=mips
 e asm.bits=32
 e cfg.bigendian=0
 pa lui t9, 0x41
@@ -112,7 +112,7 @@ RUN
 NAME=with-spaces
 FILE=-
 CMDS=<<EOF
-e asm.arch=mips.gnu
+e asm.arch=mips
 e asm.bits=32
 e cfg.bigendian=0
 pa addiu v0, v1, 33

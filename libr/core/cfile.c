@@ -28,12 +28,13 @@ R_API bool r_core_file_close_all_but(RCore *core) {
        return true;
 }
 
-static bool __isMips(RAsm *a) {
-	return a && a->cur && a->cur->arch && strstr (a->cur->arch, "mips");
+static bool its_a_mips(RCore *core) {
+	RArchConfig *cfg = core->rasm->config;
+	return cfg && cfg->arch && !strcmp (cfg->arch, "mips");
 }
 
 static void loadGP(RCore *core) {
-	if (__isMips (core->rasm)) {
+	if (its_a_mips (core)) {
 		ut64 e0 = r_num_math (core->num, "entry0");
 		ut64 gp = r_num_math (core->num, "loc._gp");
 		if ((!gp || gp == UT64_MAX) && (e0 && e0 != UT64_MAX)) {
