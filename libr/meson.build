@@ -85,10 +85,8 @@ if not no_user_plugins
     # missing parse_plugins += [ 'sparc_pseudo' ]
   endif
   if user_plugins.contains('mips')
-    asm_plugins += [ 'mips_cs' ]
     anal_plugins += [ 'mips_cs' ]
     if use_gpl
-      asm_plugins += [ 'mips_gnu' ]
       anal_plugins += [ 'mips_gnu' ]
     endif
     bp_plugins += [ 'mips' ]
@@ -130,7 +128,6 @@ asm_plugins += [
   'arm_cs',
   'arm_winedbg',
   'dalvik',
-  'mips_cs',
   'or1k',
   'ppc_as',
   'ppc_cs',
@@ -211,7 +208,6 @@ if no_user_plugins
   #    'hppa_gnu',
       'm68k_gnu',
       'lanai_gnu',
-      'mips_gnu',
       'sparc_gnu'
     ]
     anal_plugins += [

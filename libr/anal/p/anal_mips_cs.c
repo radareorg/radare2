@@ -5,6 +5,8 @@
 #include <capstone/capstone.h>
 #include <capstone/mips.h>
 
+R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
+
 static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 
@@ -753,6 +755,12 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		return -1;
 	}
 
+	if (anal->config->syntax == R_ASM_SYNTAX_REGNUM) {
+		cs_option (hndl, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
+	} else {
+		cs_option (hndl, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
+	}
+
 	int n, opsize = -1;
 	cs_insn* insn;
 
@@ -762,10 +770,11 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		return -1;
 	}
 	op->size = 4;
-	n = cs_disasm (hndl, (ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (hndl, buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		if (mask & R_ANAL_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
+			opsize = 4;
 		}
 		goto beach;
 	}
@@ -774,6 +783,9 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 			insn->mnemonic,
 			insn->op_str[0]?" ":"",
 			insn->op_str);
+		if (op->mnemonic) {
+			r_str_replace_char (op->mnemonic, '$', 0);
+		}
 	}
 	op->id = insn->id;
 	opsize = op->size = insn->size;
@@ -1212,17 +1224,33 @@ static RList *anal_preludes(RAnal *anal) {
 	return l;
 }
 
+static int mips_cs_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *buf, int len) {
+	int ret = mips_assemble (s, addr, buf);
+	if (anal->config->big_endian) {
+		ut8 tmp = buf[0];
+		buf[0] = buf[3];
+		buf[3] = tmp;
+		tmp = buf[1];
+		buf[1] = buf[2];
+		buf[2] = tmp;
+	}
+	return ret;
+}
+
 RAnalPlugin r_anal_plugin_mips_cs = {
 	.name = "mips",
 	.desc = "Capstone MIPS analyzer",
 	.license = "BSD",
 	.esil = true,
 	.arch = "mips",
+	.cpus = "mips32/64,micro,r6,v3,v2",
 	.get_reg_profile = get_reg_profile,
 	.archinfo = archinfo,
 	.preludes = anal_preludes,
 	.bits = 16 | 32 | 64,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.op = &analop,
+	.opasm = &mips_cs_opasm,
 	.mnemonics = cs_mnemonics,
 };
 
