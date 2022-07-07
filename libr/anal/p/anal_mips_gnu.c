@@ -1140,7 +1140,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 
 	mips_mode = a->config->bits;
 	disasm_obj.arch = CPU_LOONGSON_2F;
-	disasm_obj.buffer = &bytes;
+	disasm_obj.buffer = (ut8*)&bytes;
 	disasm_obj.read_memory_func = &mips_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
