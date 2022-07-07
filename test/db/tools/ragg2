@@ -29,7 +29,7 @@ EXPECT=<<EOF
 41414141414141414141
 EOF
 EXPECT_ERR=<<EOF
-Cannot patch outside
+ERROR: Cannot patch outside
 EOF
 RUN
 
