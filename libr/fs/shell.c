@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018-2021 - pancake */
+/* radare2 - LGPL - Copyright 2018-2022 - pancake */
 
 #include <r_fs.h>
 
@@ -36,12 +36,11 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 	char prompt[PROMPT_PATH_BUFSIZE];
 	char str[2048];
 	char* input;
-	const char* ptr;
 	RList* list = NULL;
 	RListIter* iter;
 	RFSFile* file = NULL;
 
-	if (root && *root) {
+	if (R_STR_ISNOTEMPTY (root)) {
 		strncpy (buf, root, sizeof (buf) - 1);
 		r_str_trim_path (buf);
 		list = r_fs_root (fs, buf);
@@ -52,7 +51,11 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 		}
 		r_str_ncpy (path, buf, sizeof (path) - 1);
 	} else {
-		strcpy (path, "/");
+		if (R_STR_ISNOTEMPTY (shell->cwd)) {
+			r_str_ncpy (path, *shell->cwd, sizeof (path) - 1);
+		} else {
+			strcpy (path, "/");
+		}
 	}
 
 	PrintfCallback cb_printf = fs->csb.cb_printf;
@@ -65,7 +68,8 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				shell->set_prompt (prompt);
 			}
 			if (shell->readline) {
-				if ((ptr = shell->readline ()) == NULL) {
+				const char* ptr = shell->readline ();
+				if (!ptr) {
 					break;
 				}
 				r_str_ncpy (buf, ptr, sizeof (buf) - 1);
