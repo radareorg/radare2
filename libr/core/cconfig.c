@@ -3917,7 +3917,8 @@ R_API int r_core_config_init(RCore *core) {
 	/* filesystem */
 	n = NODECB ("fs.view", "normal", &cb_fsview);
 	SETDESC (n, "set visibility options for filesystems");
-	SETOPTIONS (n, "all", "deleted", "special", NULL);
+	SETOPTIONS (n, "all", "normal", "deleted", "special", NULL);
+	n = SETPREF ("fs.cwd", "/", "current working directory (see 'ms' command)");
 
 	/* hexdump */
 	SETCB ("hex.header", "true", &cb_hex_header, "show header in hexdump");

@@ -54,7 +54,6 @@ static int cmd_mv(void *data, const char *input) {
 	return r_syscmd_mv (input)? 1: 0;
 }
 
-static R_TH_LOCAL char *cwd = NULL;
 #define av_max 1024
 
 static const char *t2s(const char ch) {
@@ -475,6 +474,7 @@ static int cmd_mount(void *data, const char *_input) {
 		input = (char *)r_str_trim_head_ro (input + 1);
 		r_cons_set_raw (false);
 		{
+			char *cwd = strdup (r_config_get (core->config, "fs.cwd"));
 			RFSShell shell = {
 				.cwd = &cwd,
 				.set_prompt = r_line_set_prompt,
@@ -487,6 +487,7 @@ static int cmd_mount(void *data, const char *_input) {
 			r_fs_shell_prompt (&shell, core->fs, input);
 			core->autocomplete_type = AUTOCOMPLETE_DEFAULT;
 			r_core_autocomplete_reload (core);
+			r_config_set (core->config, "fs.cwd", cwd);
 			R_FREE (cwd);
 		}
 		break;
