@@ -233,7 +233,7 @@ static inline RBinWasmSection *sections_first_custom_name(RBinWasmObj *bin) {
 	RBinWasmSection *sec;
 	r_list_foreach (bin->g_sections, iter, sec) {
 		if (sec->id == R_BIN_WASM_SECTION_CUSTOM && sec->size > 6) {
-			ut8 _tmp[CUST_NAME_START_LEN];
+			ut8 _tmp[CUST_NAME_START_LEN] = {0};
 			r_buf_read_at (buf, sec->offset, _tmp, CUST_NAME_START_LEN);
 			if (!memcmp (CUST_NAME_START, _tmp, CUST_NAME_START_LEN)) {
 				return sec;
