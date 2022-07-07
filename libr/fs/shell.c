@@ -227,7 +227,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 
 // TODO R2_580 return bool
 R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
-	r_return_val_if_fail (shell & fs, false);
+	r_return_val_if_fail (shell && fs, false);
 	char buf[PROMPT_PATH_BUFSIZE];
 	char prompt[PROMPT_PATH_BUFSIZE];
 	if (R_STR_ISNOTEMPTY (root)) {
