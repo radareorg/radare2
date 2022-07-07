@@ -36,10 +36,12 @@ static const char *help_msg_of[] = {
 	"of"," \"/bin/ls\" r-x", " open /bin/ls with r-x perms without creating maps",
 	NULL
 };
+
 static const char *help_msg_on[] = {
 	"Usage: on","[n+*] [file] ([addr] [rwx])","Open file without parsing headers",
 	"on"," /bin/ls 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"onn"," [file] ([rwx])","open file without creating any map or parsing headers with rbin)",
+	"onnu"," [file] ([rwx])","same as onn, but unique, will return previos fd if already opened",
 	"on+"," [file] ([rwx])","open file in rw mode without parsing headers",
 	"on*", "", "list open files as r2 commands",
 	NULL
@@ -654,8 +656,8 @@ static bool cmd_om(RCore *core, const char *input, int arg) {
 				RIOMap *map = r_io_map_get_at (core->io, vaddr);
 				if (map) {
 					ut64 ms = r_itv_size (map->itv);
-					ut64 mp = map->delta; // itv.addr; // map->delta + map->itv.addr;
-					if (mp == paddr && ms == size && map->fd == fd) {
+					ut64 mp = map->delta;
+					if (mp == paddr && ms == size) {
 						addmap = false;
 					}
 				}
@@ -1495,7 +1497,7 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	if (bf) {
 		p->cb_printf ("o %s 0x%08"PFMT64x" %s\n", desc->uri, bf->o->baddr, r_str_rwx_i (desc->perm));
 	} else {
-		p->cb_printf ("onn %s %s\n", desc->uri, r_str_rwx_i (desc->perm));
+		p->cb_printf ("onnu %s %s\n", desc->uri, r_str_rwx_i (desc->perm));
 	}
 	if (strstr (desc->uri, "null://")) {
 		// null descs dont want to be mapped
@@ -1594,18 +1596,50 @@ static bool cmd_op(RCore *core, char mode, int fd) {
 	return next_fd != -1;
 }
 
+
+typedef struct {
+	const char *name;
+	RIODesc *desc;
+	RCore *core;
+} Onn;
+
+static bool find_desc_by_name(void *user, void *data, ut32 id) {
+	Onn *on = (Onn *)user;
+	RIODesc *desc = (RIODesc *)data;
+	if (!strcmp (desc->name, on->name)) {
+		on->desc = desc;
+		return false;
+	}
+	// eprintf ("%s %c", desc->name, 10);
+	return true;
+}
+
 static bool cmd_onn(RCore *core, const char* input) {
-	char *ptr = r_str_trim_dup (input + 2);
+	const char *arg0 = input;
+	while (*arg0 && *arg0 != ' ') {
+		arg0++;
+	}
+	char *ptr = r_str_trim_dup (arg0);
 	int perms = R_PERM_R;
 	char *arg_perm = strchr (ptr, ' ');
 	if (arg_perm) {
 		*arg_perm++ = 0;
 		perms = r_str_rwx (arg_perm);
 	}
+	Onn on = {arg0, NULL, core};
 	ut64 addr = 0LL;
+	// check if file is opened already
+	if (r_str_startswith (input, "nnu")) {
+		r_id_storage_foreach (core->io->files, find_desc_by_name, &on);
+		if (on.desc) {
+			core->io->desc = on.desc;
+			return true;
+		}
+	}
+	
 	RIODesc *desc = r_io_open_at (core->io, ptr, perms, 0644, addr);
 	if (!desc || desc->fd == -1) {
-		eprintf ("Cannot open file '%s'\n", ptr);
+		R_LOG_ERROR ("Cannot open file '%s'", ptr);
 		free (ptr);
 		return false;
 	}
@@ -1706,11 +1740,11 @@ static int cmd_open(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_on);
 			return 0;
 		}
-		if (input[1] == 'n') {
+		if (input[1] == 'n') { // "onn"
 			cmd_onn (core, input);
 			return 0;
 		}
-		if (input[1] == '*') {
+		if (input[1] == '*') { // "on*"
 			eprintf ("TODO: on* is not yet implemented\n");
 			return 0;
 		}
