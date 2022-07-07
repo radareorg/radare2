@@ -110,31 +110,33 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
-	cs_tms320c64x *x = &insn->detail->tms320c64x;
-	for (i = 0; i < x->op_count; i++) {
-		cs_tms320c64x_op *op = x->operands + i;
-		pj_o (pj);
-		switch (op->type) {
-		case TMS320C64X_OP_REG:
-			pj_ks (pj, "type", "reg");
-			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
-			break;
-		case TMS320C64X_OP_IMM:
-			pj_ks (pj, "type", "imm");
-			pj_ki (pj, "value", op->imm);
-			break;
-		case TMS320C64X_OP_MEM:
-			pj_ks (pj, "type", "mem");
-			if (op->mem.base != SPARC_REG_INVALID) {
-				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
+	if (insn->detail) {
+		cs_tms320c64x *x = &insn->detail->tms320c64x;
+		for (i = 0; i < x->op_count; i++) {
+			cs_tms320c64x_op *op = x->operands + i;
+			pj_o (pj);
+			switch (op->type) {
+				case TMS320C64X_OP_REG:
+					pj_ks (pj, "type", "reg");
+					pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+					break;
+				case TMS320C64X_OP_IMM:
+					pj_ks (pj, "type", "imm");
+					pj_ki (pj, "value", op->imm);
+					break;
+				case TMS320C64X_OP_MEM:
+					pj_ks (pj, "type", "mem");
+					if (op->mem.base != SPARC_REG_INVALID) {
+						pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
+					}
+					pj_kN (pj, "disp", (st64)op->mem.disp);
+					break;
+				default:
+					pj_ks (pj, "type", "invalid");
+					break;
 			}
-			pj_kN (pj, "disp", (st64)op->mem.disp);
-			break;
-		default:
-			pj_ks (pj, "type", "invalid");
-			break;
+			pj_end (pj); /* o operand */
 		}
-		pj_end (pj); /* o operand */
 	}
 	pj_end (pj); /* a operands */
 	pj_end (pj);
@@ -144,6 +146,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
+#define CSINC_MODE CS_MODE_BIG_ENDIAN
 #define CSINC TMS320C64X
 #include "capstone.inc"
 
@@ -153,21 +156,33 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 		return -1;
 	}
 
-	cs_insn *insn;
-
-	// capstone-next
+	cs_open (CS_ARCH_TMS320C64X, 0, &handle);
+	cs_insn *insn = NULL;
+	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
 	} else {
 		if (mask & R_ANAL_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
 		}
 		if (mask & R_ANAL_OP_MASK_DISASM) {
-			char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
-			r_str_replace_char (str, '%', 0);
-			r_str_case (str, false);
-			op->mnemonic = str;
+			// this is a bug in capstone, disassembling needs to use detail=off to avoid appending the instruction suffix
+			cs_insn *deinsn = NULL;
+			cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
+			int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &deinsn);
+			if (n > 0) {
+				char *str = r_str_newf ("%s%s%s", deinsn->mnemonic, deinsn->op_str[0]? " ": "", deinsn->op_str);
+				r_str_replace_char (str, '%', 0);
+				r_str_case (str, false);
+				op->mnemonic = str;
+			} else {
+				op->mnemonic = strdup ("invalid");
+			}
+			cs_free (deinsn, n);
 		}
 		op->size = insn->size;
 		op->id = insn->id;
@@ -207,7 +222,9 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 		case TMS320C64X_INS_B:
 			op->type = R_ANAL_OP_TYPE_JMP;
 			// higher 32bits of the 64bit address is lost, lets clone
-			op->jump = INSOP(0).imm + (addr & 0xFFFFFFFF00000000);
+			if (insn->detail) {
+				op->jump = INSOP(0).imm + (addr & 0xFFFFFFFF00000000);
+			}
 			break;
 		case TMS320C64X_INS_LDB:
 		case TMS320C64X_INS_LDBU:
