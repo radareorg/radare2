@@ -1,0 +1,16 @@
+#!/bin/sh 
+TAGS=`git tag| grep -e  '^\d\..\.' | grep -v '\d-'`
+control_c() {
+  echo "^C"
+  rm -rf r2loc
+  exit 1
+}
+trap control_c 2
+rm -rf r2loc
+git clone -q . r2loc || exit 1
+for a in $TAGS ; do
+	(cd r2loc && git checkout -q $a)
+	printf "$a "
+	find r2loc/libr r2loc/binr -type f -iname '*.c'|xargs cat |wc -l
+done
+rm -rf r2loc
