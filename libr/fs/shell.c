@@ -30,14 +30,36 @@ static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 	return true;
 }
 
-static void r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
-	const char *file;
+static char *fs_abspath(RFSShell *shell, const char *input) {
+	char *path = strdup (*shell->cwd);
+	if (!strcmp (input, "..")) {
+		char* p = (char*) r_str_lchr (path, '/');
+		if (p) {
+			p[(p == path)? 1: 0] = 0;
+		}
+	} else if (*input == '/') {
+		// absolute path
+		free (path);
+		path = strdup (input);
+	} else {
+		char *npath = r_str_newf ("%s/%s", path, input);
+		free (path);
+		path = npath;
+	}
+	return path;
+}
+
+static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
+	RFSFile *file;
 	RListIter *iter;
-	if (buf[0] == ':') {
+	PrintfCallback cb_printf = fs->csb.cb_printf;
+	// char buf[PROMPT_PATH_BUFSIZE];
+	char path[PROMPT_PATH_BUFSIZE];
+	if (*buf == ':') {
 		char *msg = fs->cob.cmdstr (fs->cob.core, buf + 1);
 		printf ("%s\n", msg);
 		free (msg);
-	} else if (buf[0] == '!') {
+	} else if (*buf == '!') {
 		r_sandbox_system (buf + 1, 1);
 	} else if (r_str_startswith (buf, "echo")) {
 		char *msg = r_str_trim_dup (buf + 4);
@@ -45,26 +67,39 @@ static void r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			cb_printf ("%s\n", msg);
 		}
 		free (msg);
-	} else if (r_str_startswith (buf, "ls")) {
-		char *ptr = str;
-		r_list_free (list);
-		if (buf[2] == ' ') {
-			if (buf[3] != '/') {
-				snprintf (str, sizeof (str), "%s/%s", path, buf + 3);
-				list = r_fs_dir (fs, str);
+	} else if (r_str_startswith (buf, "getall")) {
+		RList *list = r_fs_dir (fs, *shell->cwd);
+		r_list_foreach (list, iter, file) {
+			if (file->type == 'f') {
+				R_LOG_INFO ("Downloading: %s", file->name);
+				char *cmd = r_str_newf ("get %s", file->name);
+				r_fs_shell_command (shell, fs, cmd);
+				free (cmd);
 			} else {
-				list = r_fs_dir (fs, buf + 3);
-				ptr = buf + 3;
+				R_LOG_INFO ("Not a file: %s", file->name);
+			}
+		}
+		r_list_free (list);
+	} else if (r_str_startswith (buf, "ls")) {
+		const char *cwd = NULL;
+		char str[2048];
+		char *ptr = str;
+		if (buf[2] == ' ') {
+			if (buf[3] == '/') {
+				cwd = strdup (buf + 3);
+			} else {
+				cwd = r_str_newf ("%s/%s", *shell->cwd, buf + 3);
 			}
 		} else {
-			ptr = path;
-			list = r_fs_dir (fs, path);
+			cwd = strdup (*(shell->cwd));
 		}
+		RList *list = r_fs_dir (fs, cwd);
 		if (list) {
 			r_list_foreach (list, iter, file) {
 				cb_printf ("%c %s\n", file->type, file->name);
 			}
 		}
+		r_list_free (list);
 		// mountpoints if any
 		RFSRoot *r;
 		char *me = strdup (ptr);
@@ -82,33 +117,13 @@ static void r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		}
 		free (me);
 	} else if (r_str_startswith (buf, "pwd")) {
-		cb_printf ("%s\n", path);
+		cb_printf ("%s\n", *shell->cwd);
 	} else if (r_str_startswith (buf, "cd ")) {
-		char opath[PROMPT_PATH_BUFSIZE];
-		r_str_ncpy (opath, path, sizeof (opath));
-		input = buf + 3;
-		while (*input == ' ') {
-			input++;
-		}
-		if (!strcmp (input, "..")) {
-			char* p = (char*) r_str_lchr (path, '/');
-			if (p) {
-				p[(p == path)? 1: 0] = 0;
-			}
-		} else {
-			strcat (path, "/");
-			if (*input == '/') {
-				strncpy (path, input, sizeof (opath) - 1);
-			} else {
-				if ((strlen (path) + strlen (input)) >= sizeof (path)) {
-					// overflow
-					path[0] = 0;
-				} else {
-					strcat (path, input);
-				}
-			}
-			path[sizeof (path) - 1] = 0;
-		}
+		const char *input = r_str_trim_head_ro (buf + 3);
+		char *abspath = fs_abspath (shell, input);
+		free (*shell->cwd);
+		*shell->cwd = abspath;
+#if 0
 		r_str_trim_path (path);
 		r_list_free (list);
 		list = r_fs_dir (fs, path);
@@ -121,91 +136,60 @@ static void r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 				}
 			}
 		}
-	} else if (r_str_startswith (buf, "cat ")) {
-		input = buf + 3;
-		while (input[0] == ' ') {
-			input++;
-		}
-		if (input[0] == '/') {
-			if (root) {
-				strncpy (str, root, sizeof (str) - 1);
-			} else {
-				str[0] = 0;
-			}
-		} else {
-			strncpy (str, path, sizeof (str) - 1);
-		}
-		size_t n = strlen (str);
-		snprintf (str + n, sizeof (str) - n, "/%s", input);
-		char *p = strchr (str, '>');
-		if (p) {
-			*p = 0;
-		}
-		file = r_fs_open (fs, str, false);
-		if (file) {
-			if (p) {
-				*p = '>';
-			}
-			r_fs_read (fs, file, 0, file->size);
-			if (file->data && !handlePipes (fs, str, file->data, path)) {
-				char *s = r_str_ndup ((const char *)file->data, file->size);
-				cb_printf ("%s\n", s);
-				free (s);
-			}
-			cb_printf ("\n");
-			r_fs_close (fs, file);
-		} else {
-			R_LOG_ERROR ("Cannot open file");
-		}
+#endif
 	} else if (r_str_startswith (buf, "mount")) {
 		RFSRoot* r;
 		r_list_foreach (fs->roots, iter, r) {
 			cb_printf ("%s %s\n", r->path, r->p->name);
 		}
-	} else if (r_str_startswith (buf, "get ")) {
-		char* s = 0;
-		input = buf + 3;
-		while (input[0] == ' ') {
-			input++;
+	} else if (r_str_startswith (buf, "cat ")) {
+		const char *input = r_str_trim_head_ro (buf + 3);
+		char *abspath = fs_abspath (shell, input);
+		char *p = strchr (abspath, '>');
+		if (p) {
+			*p = 0;
+			r_str_trim (abspath);
 		}
-		if (input[0] == '/') {
-			if (root) {
-				s = malloc (strlen (root) + strlen (input) + 2);
-				if (!s) {
-					goto beach;
-				}
-				strcpy (s, root);
-			}
-		} else {
-			s = malloc (strlen (path) + strlen (input) + 2);
-			if (!s) {
-				goto beach;
-			}
-			strcpy (s, path);
-		}
-		if (!s) {
-			s = calloc (strlen (input) + 32, 1);
-			if (!s) {
-				goto beach;
-			}
-		}
-		strcat (s, "/");
-		strcat (s, input);
-		file = r_fs_open (fs, s, false);
+		file = r_fs_open (fs, abspath, false);
 		if (file) {
 			r_fs_read (fs, file, 0, file->size);
-			r_file_dump (input, file->data, file->size, 0);
+			char *fname = (char *)r_str_lchr (abspath, '/');
+			if (fname) {
+				fname++;
+			}
+			if (file->data && !handlePipes (fs, abspath, file->data, fname)) {
+				char *s = r_str_ndup ((const char *)file->data, file->size);
+				cb_printf ("%s\n", s);
+				free (s);
+			}
 			r_fs_close (fs, file);
 		} else {
-			char *f = r_str_newf ("./%s", input);
-			if (!r_fs_dir_dump (fs, s, f)) {
+			R_LOG_ERROR ("Cannot open file");
+		}
+		free (abspath);
+	} else if (r_str_startswith (buf, "get ")) {
+		const char *input = r_str_trim_head_ro (buf + 3);
+		char *abspath = fs_abspath (shell, input);
+		const char *fname = r_str_lchr (abspath, '/');
+		if (fname) {
+			fname++;
+		}
+		file = r_fs_open (fs, abspath, false);
+		if (file) {
+			r_fs_read (fs, file, 0, file->size);
+			r_file_dump (fname, file->data, file->size, 0);
+			r_fs_close (fs, file);
+		} else {
+			char *f = r_str_newf ("./%s", fname);
+			if (!r_fs_dir_dump (fs, abspath, f)) {
 				R_LOG_ERROR ("Cannot open file");
 			}
 			free (f);
 		}
-		free (s);
+		free (abspath);
 	} else if (r_str_startswith (buf, "o ") || r_str_startswith (buf, "open ")) {
-		input = r_str_nextword (buf, ' ');
+		char *data = strdup (buf);
+		const char *input = r_str_nextword (data, ' ');
 		input = (char *)r_str_trim_head_ro (input);
 		file = r_fs_open (fs, input, false);
 		if (file) {
@@ -215,12 +199,12 @@ static void r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			free (uri);
 			if (fd) {
 				fs->iob.fd_write (fs->iob.io, fd->fd, file->data, file->size);
-				r_list_free (list);
 				return true;
 			}
 		} else {
 			R_LOG_ERROR ("Cannot open file");
 		}
+		free (data);
 	} else if (r_str_startswith (buf, "help") || r_str_startswith (buf, "?")) {
 		cb_printf (
 			"Usage: [command (arguments)]([~grep-expression])\n"
@@ -229,9 +213,10 @@ static void r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			" ls [path]   ; list current directory\n"
 			" cd path     ; change current directory\n"
 			" cat file    ; print contents of file\n"
-			" get file    ; dump file to disk\n"
+			" get file    ; dump file to local disk\n"
+			" getall      ; fetch all files in current rfs directory to local cwd\n"
 			" o/open file ; open file with r2\n"
-			" mount       ; list mount points\n"
+			" mount       ; show mount points\n"
 			" q/exit      ; leave prompt mode\n"
 			" ?/help      ; show this help\n");
 	} else {
@@ -239,42 +224,18 @@ static void r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			R_LOG_ERROR ("Unknown command %s", buf);
 		}
 	}
+	return true;
 }
 
 R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 	char buf[PROMPT_PATH_BUFSIZE];
-	char path[PROMPT_PATH_BUFSIZE];
 	char prompt[PROMPT_PATH_BUFSIZE];
-	char str[2048];
-	char* input;
-	RList* list = NULL;
-	RListIter* iter;
-	RFSFile* file = NULL;
-
 	if (R_STR_ISNOTEMPTY (root)) {
-		strncpy (buf, root, sizeof (buf) - 1);
-		r_str_trim_path (buf);
-		list = r_fs_root (fs, buf);
-		if (r_list_empty (list)) {
-			R_LOG_ERROR ("Unknown root");
-			r_list_free (list);
-			return false;
-		}
-		r_str_ncpy (path, buf, sizeof (path) - 1);
-	} else {
-		if (R_STR_ISNOTEMPTY (shell->cwd)) {
-			r_str_ncpy (path, *shell->cwd, sizeof (path) - 1);
-		} else {
-			strcpy (path, "/");
-		}
+		r_fs_root (fs, root);
 	}
-
-	PrintfCallback cb_printf = fs->csb.cb_printf;
 	for (;;) {
-		snprintf (prompt, sizeof (prompt), "[%.*s]> ", (int)sizeof (prompt) - 5, path);
+		snprintf (prompt, sizeof (prompt), "[%.*s]> ", (int)sizeof (prompt) - 5, *shell->cwd);
 		if (shell) {
-			free (*shell->cwd);
-			*shell->cwd = strdup (path);
 			if (shell->set_prompt) {
 				shell->set_prompt (prompt);
 			}
@@ -310,19 +271,16 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			continue;
 		}
 		if (r_str_startswith (buf, "q") || r_str_startswith (buf, "exit")) {
-			r_list_free (list);
 			return true;
 		}
-		r_fs_shell_command (fs, buf);
+		if (!r_fs_shell_command (shell, fs, buf)) {
+			break;
+		}
 		if (wave) {
 			fs->csb.cb_grep (wave);
 		}
 		fs->csb.cb_flush ();
 	}
-beach:
 	clearerr (stdin);
-	printf ("\n");
-	r_list_free (list);
 	return true;
 }
-
