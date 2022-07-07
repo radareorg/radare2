@@ -308,12 +308,11 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	op->size = tms320_dasm (&engine, buf, len);
 	op->type = R_ANAL_OP_TYPE_NULL;
 
-	str = strstr(str, "||") ? str + 3 : str;
-
 	if (mask & R_ANAL_OP_MASK_DISASM) {
 		op->mnemonic = strdup (str);
 	}
 
+	str = strstr(str, "||") ? str + 3 : str;
 	if (match (str, "B ")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
 		if (match (str, "B AC")) {
