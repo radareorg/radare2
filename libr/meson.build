@@ -87,7 +87,6 @@ if not no_user_plugins
   if user_plugins.contains('mips')
     anal_plugins += [ 'mips_cs' ]
     if use_gpl
-      asm_plugins += [ 'mips_gnu' ]
       anal_plugins += [ 'mips_gnu' ]
     endif
     bp_plugins += [ 'mips' ]
@@ -158,7 +157,6 @@ anal_plugins += [
   'bpf',
   'cris',
   'dalvik',
-  'dcpu16',
   'ebc',
   'evm_cs',
   'gb',
@@ -210,7 +208,6 @@ if no_user_plugins
   #    'hppa_gnu',
       'm68k_gnu',
       'lanai_gnu',
-      'mips_gnu',
       'sparc_gnu'
     ]
     anal_plugins += [

@@ -1,6 +1,10 @@
 N=anal_mips_gnu
-OBJ_MIPS+=../../asm/arch/mips/mipsasm.o
 OBJ_MIPS=$(N).o
+# OBJ_MIPS+=../../asm/arch/mips/mipsasm.o
+OBJ_MIPS+=../../asm/arch/mips/gnu/mips-dis.o
+OBJ_MIPS+=../../asm/arch/mips/gnu/mips16-opc.o
+OBJ_MIPS+=../../asm/arch/mips/gnu/micromips-opc.o
+OBJ_MIPS+=../../asm/arch/mips/gnu/mips-opc.o
 
 include p/capstone.mk
 
