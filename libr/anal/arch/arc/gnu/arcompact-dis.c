@@ -20,10 +20,6 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
-#include <ctype.h>
-#include <stdarg.h>
-#include <ansidecl.h>
-#include <string.h>
 
 #include "disas-asm.h"
 #include "arc.h"
@@ -3925,7 +3921,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
   /* We print max bytes for instruction */
   info->bytes_per_line = 8;
 
-  return bytes; //s.instructionLen;
+  return s.instructionLen + bytes-bytes;
 }
 
 /*

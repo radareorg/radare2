@@ -5,7 +5,7 @@ d "add3 r20, r19, 41" 5623542a
 d "add_s sp, sp, 12" a3c0
 d "asl r4, 1, r13" 002e447300000100
 d "asr_s r14, r14, 2" da6e
-dB "beq 0x0000002a" 2a000100
+dB "bz 0x0000002a" 2a000100
 d "bic r13, r13, 7" 4625cd11
 d "bl 0x00000104" a60fcfff 0x160
 d "breq r15, 0,0x00000534" 450f1010 0x4f2
