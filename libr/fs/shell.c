@@ -46,6 +46,9 @@ static char *fs_abspath(RFSShell *shell, const char *input) {
 		free (path);
 		path = npath;
 	}
+	while (strstr (path, "//")) {
+		path = r_str_replace (path, "//", "/", true);
+	}
 	return path;
 }
 
@@ -53,16 +56,15 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 	RFSFile *file;
 	RListIter *iter;
 	PrintfCallback cb_printf = fs->csb.cb_printf;
-	char path[PROMPT_PATH_BUFSIZE];
 	if (*buf == ':') {
 		char *msg = fs->cob.cmdstr (fs->cob.core, buf + 1);
-		printf ("%s\n", msg);
+		printf ("%s", msg);
 		free (msg);
 	} else if (*buf == '!') {
 		r_sandbox_system (buf + 1, 1);
 	} else if (r_str_startswith (buf, "echo")) {
 		char *msg = r_str_trim_dup (buf + 4);
-		if (!handlePipes (fs, msg, NULL, path)) {
+		if (!handlePipes (fs, msg, NULL, *shell->cwd)) {
 			cb_printf ("%s\n", msg);
 		}
 		free (msg);
@@ -80,9 +82,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		}
 		r_list_free (list);
 	} else if (r_str_startswith (buf, "ls")) {
-		const char *cwd = NULL;
-		char str[2048];
-		char *ptr = str;
+		char *cwd = NULL;
 		if (buf[2] == ' ') {
 			if (buf[3] == '/') {
 				cwd = strdup (buf + 3);
@@ -101,7 +101,6 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		r_list_free (list);
 		// mountpoints if any
 		RFSRoot *r;
-		char *me = strdup (ptr);
 		r_list_foreach (fs->roots, iter, r) {
 			char *base = strdup (r->path);
 			char *ls = (char *)r_str_lchr (base, '/');
@@ -109,12 +108,12 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 				ls++;
 				*ls = 0;
 			}
-			if (r_str_startswith (base, path)) {
+			if (r_str_startswith (base, *shell->cwd)) {
 				cb_printf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
 			}
 			free (base);
 		}
-		free (me);
+		free (cwd);
 	} else if (r_str_startswith (buf, "pwd")) {
 		cb_printf ("%s\n", *shell->cwd);
 	} else if (r_str_startswith (buf, "cd ")) {
@@ -135,6 +134,30 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		}
 		r_list_free (list);
 #endif
+	} else if (r_str_startswith (buf, "mount ")) {
+		char *arg = r_str_trim_dup (buf + 6);
+		char *path = strchr (arg, ' ');
+		if (path) {
+			*path++ = 0;
+			path = (char *)r_str_trim_head_ro (path);
+			char *off = strchr (path, ' ');
+			ut64 n = 0;
+			if (off) {
+				*off = 0;
+			}
+			bool res = r_fs_mount (fs, arg, path, 0); // XXX the 0 should be the 3rd arg
+			if (!res) {
+				R_LOG_ERROR ("cannot mount");
+			}
+		} else {
+			RFSPlugin *plug;
+			eprintf ("Usage: mount [fstype] [path]\nfstypes:");
+			r_list_foreach (fs->plugins, iter, plug) {
+				eprintf (" %s", plug->name);
+			}
+			eprintf ("\n");
+		}
+		free (arg);
 	} else if (r_str_startswith (buf, "mount")) {
 		RFSRoot* r;
 		r_list_foreach (fs->roots, iter, r) {
@@ -157,7 +180,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			}
 			if (file->data && !handlePipes (fs, abspath, file->data, fname)) {
 				char *s = r_str_ndup ((const char *)file->data, file->size);
-				cb_printf ("%s\n", s);
+				cb_printf ("%s", s);
 				free (s);
 			}
 			r_fs_close (fs, file);
@@ -165,6 +188,8 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			R_LOG_ERROR ("Cannot open file");
 		}
 		free (abspath);
+	} else if (r_str_startswith (buf, "cat")) {
+		eprintf ("Usage: cat [filename] ([> localfile])\n");
 	} else if (r_str_startswith (buf, "get ")) {
 		const char *input = r_str_trim_head_ro (buf + 3);
 		char *abspath = fs_abspath (shell, input);
@@ -228,11 +253,12 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 // TODO R2_580 return bool
 R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 	r_return_val_if_fail (shell && fs, false);
+	if (R_STR_ISNOTEMPTY (root)) {
+		free (*shell->cwd);
+		*shell->cwd = strdup (root);
+	}
 	char buf[PROMPT_PATH_BUFSIZE];
 	char prompt[PROMPT_PATH_BUFSIZE];
-	if (R_STR_ISNOTEMPTY (root)) {
-		r_fs_root (fs, root);
-	}
 	for (;;) {
 		snprintf (prompt, sizeof (prompt), "[%.*s]> ", (int)sizeof (prompt) - 5, *shell->cwd);
 		if (shell) {

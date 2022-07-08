@@ -7,7 +7,7 @@ static const char *help_msg_m[] = {
 	"m", "", "list all mountpoints in human readable format",
 	"m*", "", "same as above, but in r2 commands",
 	"m-/", "", "umount given path (/)",
-	"mL", "[j]", "list filesystem plugins (Same as Lm)",
+	"mL", "[Lj]", "list filesystem plugins (Same as Lm), mLL shows only fs plugin names",
 	"mc", " [file]", "cat: Show the contents of the given file",
 	"md", " /", "list files and directory on the virtual r2's fs",
 	"mf", "[?] [o|n]", "search files for given filename or for offset",
@@ -17,7 +17,7 @@ static const char *help_msg_m[] = {
 	"mo", " /foo/bar", "open given file into a malloc://",
 	"mp", " msdos 0", "show partitions in msdos format at offset 0",
 	"mp", "", "list all supported partition types",
-	"ms", " /mnt", "open filesystem prompt at /mnt",
+	"ms", " /mnt", "open filesystem shell at /mnt (or fs.cwd if not defined)",
 	"mw", " [file] [data]", "write data into file", // TODO: add mwf
 	"mwf", " [diskfile] [r2filepath]", "write contents of local diskfile into r2fs mounted path",
 	"my", "", "yank contents of file into clipboard",
@@ -151,7 +151,7 @@ static int cmd_mount(void *data, const char *_input) {
 	input = oinput = strdup (_input);
 
 	switch (*input) {
-	case ' ':
+	case ' ': // "m "
 		input = (char *)r_str_trim_head_ro (input + 1);
 		ptr = strchr (input, ' ');
 		if (ptr) {
@@ -175,7 +175,6 @@ static int cmd_mount(void *data, const char *_input) {
 				mountp = ptr;
 				fstype = input;
 			}
-
 			if (fstype && !r_fs_mount (core->fs, fstype, mountp, off)) {
 				eprintf ("Cannot mount %s\n", input);
 			}
@@ -227,13 +226,13 @@ static int cmd_mount(void *data, const char *_input) {
 			pj_free (pj);
 		}
 		break;
-	case '*':
+	case '*': // "m*"
 		r_list_foreach (core->fs->roots, iter, root) {
 			r_cons_printf ("m %s %s 0x%"PFMT64x"\n",
 				root->path, root->p->name, root->delta);
 		}
 		break;
-	case '\0':
+	case '\0': // "m"
 		r_list_foreach (core->fs->roots, iter, root) {
 			r_cons_printf ("%s\t0x%"PFMT64x"\t%s\n",
 				root->p->name, root->delta, root->path);
@@ -242,6 +241,10 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'L': // "mL" list of plugins
 		if (input[1] == '?') { // "mL?"
 			r_core_cmd_help_match_spec (core, help_msg_m, "mL", 0, true);
+		} else if (input[1] == 'L') {
+			r_list_foreach (core->fs->plugins, iter, plug) {
+				r_cons_printf ("%s\n", plug->name);
+			}
 		} else if (input[1] == 'j') {
 			PJ *pj = r_core_pj_new (core);
 			pj_a (pj);

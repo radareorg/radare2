@@ -316,7 +316,7 @@ bool xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 	}
 	kern_return_t kr = task_resume (task);
 	if (kr != KERN_SUCCESS) {
-		R_LOG_ERROR ("xnu_continue: Warning: Failed to resume task");
+		R_LOG_ERROR ("xnu_continue: Failed to resume task");
 	}
 	return true;
 #endif

@@ -1059,8 +1059,7 @@ alloc_fail:
  * g     - if true, replace all occurrences of key
  *
  * It returns a pointer to the modified string */
-R_API R_MUSTUSE char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
-				  const char *key, const char *val, int g) {
+R_API R_MUSTUSE char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen, const char *key, const char *val, int g) {
 	int i, klen, vlen, slen, delta = 0, bias;
 	char *newstr, *scnd, *p = clean, *str_p;
 
