@@ -3921,7 +3921,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
   /* We print max bytes for instruction */
   info->bytes_per_line = 8;
 
-  return bytes; //s.instructionLen;
+  return s.instructionLen + bytes-bytes;
 }
 
 /*

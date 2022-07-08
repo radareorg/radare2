@@ -67,7 +67,8 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	if (a->config->bits == 16) {
 		op->size = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
 	} else {
-		op->size = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+		ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+		//op->size = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
 	}
 	if (op->size == -1) {
 		op->mnemonic = strdup ("(data)");
@@ -320,6 +321,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	case 0x15: /* add with left shift by 2 */
 	case 0x16: /* add with left shift by 3 */
 		op->type = R_ANAL_OP_TYPE_ADD;
+		op->size = 8;
 		break;
 	case 0x02: /* subtract */
 	case 0x03: /* subtract with carry */
@@ -1025,6 +1027,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			break;
 		case 3: /* Add gp-relative (32-bit aligned) to r0 */
 			op->type = R_ANAL_OP_TYPE_ADD;
+			op->size = 8;
 			break;
 		}
 		op->type = R_ANAL_OP_TYPE_UNK;
@@ -1091,15 +1094,18 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len,
 	const ut8 *b = (ut8 *)data;
 
 	op->addr = addr;
-	if (mask & R_ANAL_OP_TYPE_MASK) {
+	op->size = len;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
 		disassemble (anal, op, data, len);
+		//op->size = disassemble (anal, op, data, len);
 	}
 	if (anal->config->bits == 16) {
-		return arcompact_op (anal, op, addr, data, len);
+		int r = arcompact_op (anal, op, addr, data, len);
+		// eprintf ("%d %d\n", r, op->size);
+		return op->size;
 	}
 
 	/* ARCtangent A4 */
-	op->size = 4;
 	op->fail = addr + 4;
 	ut8 basecode = (len > 3)? ((b[3] & 0xf8) >> 3): 0;
 	switch (basecode) {
@@ -1116,6 +1122,7 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len,
 	case 0x08:
 	case 0x09:
 		op->type = R_ANAL_OP_TYPE_ADD;
+		op->size = 8;
 		break;
 	case 0x0a:
 	case 0x0b:
