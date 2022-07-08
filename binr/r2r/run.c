@@ -1264,11 +1264,12 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			R2RAsmTest *at = test->asm_test;
 			R2RAsmTestOutput *out = r2r_run_asm_test (config, at);
 			success = r2r_check_asm_test (out, at);
-			if (!success) {
-				eprintf ("\n[rasm2:error] code: %s vs %s\n", at->disasm, out->disasm);
+			const bool is_broken = at->mode & R2R_ASM_TEST_MODE_BROKEN;
+			if (!success && !is_broken) {
 				char *b0 = r_hex_bin2strdup (at->bytes, at->bytes_size);
 				char *b1 = r_hex_bin2strdup (out->bytes, out->bytes_size);
-				eprintf ("[rasm2:error] data: %s vs %s\n", b0, b1);
+				eprintf ("\n"Color_RED"- %s"Color_RESET" # %s\n", at->disasm, b0);
+				eprintf (Color_GREEN"+ %s"Color_RESET" # %s\n", out->disasm, b1);
 				free (b0);
 				free (b1);
 			}

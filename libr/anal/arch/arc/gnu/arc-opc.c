@@ -4502,7 +4502,7 @@ arc_opcode_lookup_suffix (const struct arc_operand *type, int value)
     }
 
   /* ??? This is a little slow and can be speeded up.  */
-    for (v = arc_suffixes, end = arc_suffixes + arc_suffixes_count; v < end; ++v) {
+    for (v = arc_suffixes, end = arc_suffixes + arc_suffixes_count; v < end; v++) {
 	    if (type == &arc_operands[v->type] && value == v->value) {
 		    return v;
 	    }

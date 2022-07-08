@@ -10,7 +10,7 @@
 
 static int r_main_r2pm_sh(int argc, const char **argv) {
 #if __WINDOWS__
-	eprintf ("r2pm.sh: not implemented\n");
+	R_LOG_ERROR ("r2pm.sh: not implemented");
 	return 1;
 #else
 	int i;
@@ -19,7 +19,7 @@ static int r_main_r2pm_sh(int argc, const char **argv) {
 		r_strbuf_appendf (sb, " %s", argv[i]);
 	}
 	char *cmd = r_strbuf_drain (sb);
-	int res = r_sandbox_system (cmd, 1);
+	int res = r_sandbox_system (cmd, 0);
 	free (cmd);
 	return res;
 #endif
@@ -64,7 +64,7 @@ typedef struct r_r2pm_t {
 } R2Pm;
 
 static int git_pull(const char *dir) {
-	char *s = r_str_newf ("cd %s\ngit pull", dir);
+	char *s = r_str_newf ("cd %s && git pull", dir);
 	int rc = r_sandbox_system (s, 1);
 	free (s);
 	return rc;
@@ -152,7 +152,7 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 				if (eoc) {
 					return r_str_ndup (begin, eoc-begin);
 				} else {
-					eprintf ("Cannot find end of thing\n");
+					R_LOG_ERROR ("Cannot find end of thing");
 					return NULL;
 				}
 			}
@@ -165,7 +165,7 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 				if (eoc) {
 					return r_str_ndup (begin, eoc-begin);
 				} else {
-					eprintf ("Cannot find end of thing\n");
+					R_LOG_ERROR ("Cannot find end of thing");
 					return NULL;
 				}
 			}
@@ -204,7 +204,7 @@ static int r2pm_update(void) {
 	r_sys_mkdirp (gpath);
 	if (r_file_exists (pmpath)) {
 		if (git_pull (pmpath) != 0) {
-			eprintf ("Error\n");
+			R_LOG_ERROR ("git pull");
 			free (pmpath);
 			free (gpath);
 			return 1;
@@ -226,7 +226,7 @@ static int r2pm_update(void) {
 				char *src = r_str_newf ("%s/%s", pmpath, file);
 				char *dst = r_str_newf ("%s/%s", dbpath, file);
 				if (!r_file_copy (src, dst)) {
-					eprintf ("Warning: Cannot copy '%s' into '%s'.\n", file, dbpath);
+					R_LOG_WARN ("Cannot copy '%s' into '%s'", file, dbpath);
 				}
 				free (src);
 				free (dst);
@@ -309,7 +309,7 @@ static int r2pm_install_pkg(const char *pkg) {
 #if __WINDOWS__
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL_WINDOWS() {", TT_CODEBLOCK);
 	if (!script) {
-		eprintf ("This package does not have R2PM_INSTALL_WINDOWS instructions\n");
+		R_LOG_ERROR ("This package does not have R2PM_INSTALL_WINDOWS instructions");
 		return 1;
 	}
 	char *s = r_str_newf ("cd %s\ncd %s\n%s", srcdir, pkg, script);
@@ -318,7 +318,7 @@ static int r2pm_install_pkg(const char *pkg) {
 #else
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {", TT_CODEBLOCK);
 	if (!script) {
-		eprintf ("Invalid package name or script\n");
+		R_LOG_ERROR ("Invalid package name or script");
 		free (srcdir);
 		return 1;
 	}
@@ -337,7 +337,7 @@ static int r2pm_doc_pkg(const char *pkg) {
 		free (docstr);
 		return 0;
 	}
-	eprintf ("Cannot find documentation for '%s'\n", pkg);
+	R_LOG_ERROR ("Cannot find documentation for '%s'", pkg);
 	return 1;
 }
 
@@ -348,7 +348,6 @@ static int r2pm_clean_pkg(const char *pkg) {
 	if (R_STR_ISNOTEMPTY (srcdir)) {
 		char *d = r_file_new (srcdir, pkg, NULL);
 		if (d && r_file_exists (d)) {
-			eprintf ("rm -rf '%s'\n", d);
 			r_file_rm_rf (d);
 		}
 		free (d);
@@ -364,7 +363,7 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 #if __WINDOWS__
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL_WINDOWS() {", TT_CODEBLOCK);
 	if (!script) {
-		eprintf ("This package does not have R2PM_UNINSTALL_WINDOWS instructions\n");
+		R_LOG_ERROR ("This package does not have R2PM_UNINSTALL_WINDOWS instructions");
 		free (srcdir);
 		return 1;
 	}
@@ -374,7 +373,7 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 #else
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL() {", TT_CODEBLOCK);
 	if (!script) {
-		eprintf ("Cannot parse package\n");
+		R_LOG_ERROR ("Cannot parse package");
 		free (srcdir);
 		return 1;
 	}
@@ -402,7 +401,7 @@ static int r2pm_clone(const char *pkg) {
 			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_TEXTLINE);
 			bool use_c_impl = false;
 			if (use_c_impl) {
-				eprintf ("TODO: wget tarball from '%s'\n", url); 
+				R_LOG_INFO ("TODO: wget tarball from '%s'", url); 
 			} else {
 				// TODO. run wget
 			}
@@ -477,7 +476,7 @@ static bool is_valid_package(const char *dbdir, const char *pkg) {
 	}
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {", TT_CODEBLOCK);
 	if (!script) {
-		eprintf ("Warning: Unable to find R2PM_INSTALL script in '%s'\n", pkg);
+		R_LOG_WARN ("Unable to find R2PM_INSTALL script in '%s'", pkg);
 		return false;
 	}
 	free (script);
@@ -525,7 +524,6 @@ static int r2pm_info(void) {
 }
 
 static int r2pm_search(const char *grep) {
-eprintf ("Pene\n");
 	char *path = r2pm_dbdir ();
 	RList *files = r_sys_dir (path);
 	free (path);

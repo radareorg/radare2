@@ -4393,6 +4393,10 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arc
 			return false;
 		}
 	}
+	if (!strcmp (arch, "null")) {
+		free (arch);
+		arch = strdup (R_SYS_ARCH);
+	}
 	/* Find a file with the requested name/arch/bits */
 	RBinFile *binfile = r_bin_file_find_by_arch_bits (r->bin, arch, bits);
 	if (!binfile) {
@@ -4433,11 +4437,15 @@ R_API bool r_core_bin_update_arch_bits(RCore *r) {
 	if (!r) {
 		return 0;
 	}
-	if (r->rasm) {
+	if (r->rasm) {	//XXX: refactor when RArch is done
 		bits = r->rasm->config->bits;
 		if (r->rasm->cur) {
 			arch = r->rasm->cur->arch;
 		}
+	}
+	if (!arch && r->anal && r->anal->cur) {
+		bits = r->anal->config->bits;
+		arch = r->anal->cur->arch;
 	}
 	binfile = r_bin_cur (r->bin);
 	name = binfile ? binfile->file : NULL;

@@ -1145,7 +1145,7 @@ ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info)
     s.instName = _instName;
 
     /* Disassemble.  */
-    dsmOneArcInst (address, (void *)&s);
+    int bytes = dsmOneArcInst (address, (void *)&s);
 
     /* Display the disassembly instruction.  */
     /*
@@ -1163,7 +1163,8 @@ ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info)
 	    (*func) (stream, "%s", s.operandBuffer);
     }
 
-    return s.instructionLen;
+    //return s.instructionLen;
+return bytes;
 
 }
 

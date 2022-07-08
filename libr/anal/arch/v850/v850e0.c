@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2014-2018 - Fedor Sakharov */
+/* radare - LGPL - Copyright 2014-2022 - Fedor Sakharov */
 
-#include <r_types.h>
 #include <r_util.h>
-#include <r_endian.h>
-
-#include "v850_disas.h"
+#include "v850e0.h"
 
 static const char *instrs[] = {
 	[V850_MOV]	= "mov",

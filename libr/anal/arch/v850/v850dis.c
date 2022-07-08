@@ -258,7 +258,7 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 	return true;
 }
 
-char *distillate(v850np_inst *inst, const char *esilfmt) {
+static char *distillate(v850np_inst *inst, const char *esilfmt) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RList *args = NULL;
 	char *arg = strchr (inst->text, ' ');
@@ -556,7 +556,6 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 		inst->text = r_strbuf_drain (sb);
 		if (op->esil) {
 			// take advantage of the arguments parsed and honor the formats tring below
-			// eprintf ("ESIL (%s)\n", op->esil);
 			inst->esil = distillate (inst, op->esil);
 		}
 	} else {
