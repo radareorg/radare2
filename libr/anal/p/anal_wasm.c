@@ -27,10 +27,6 @@ static ut64 get_cf_offset(RAnal *anal, const ut8 *data, int len) {
 	return anal->binb.get_offset (anal->binb.bin, 'f', fcn_id);
 }
 
-static inline clean_op(WasmOp *wop) {
-	free (wop->txt);
-}
-
 static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 expected_type, ut32 depth, bool use_else) {
 	ut8 buffer[16];
 	ut8 *ptr = buffer;
