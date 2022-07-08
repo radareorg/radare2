@@ -238,7 +238,7 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		update_flags (op, V850_FLAG_OV | V850_FLAG_S | V850_FLAG_Z);
 		break;
 	case V850_JMP:
-		if (F1_REG1(word1) == 31) {
+		if (F1_REG1 (word1) == 31) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		} else {
 			op->type = R_ANAL_OP_TYPE_UJMP;
@@ -557,7 +557,8 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		op->fail = addr + inst.size;
 		break;
 	case R_ANAL_OP_TYPE_POP:
-		if (strstr (inst.esil, "lp")) {
+		// if (inst.op->memop == 3) { 
+		if (strstr (inst.op->esil, "#2")) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		}
 		break;
