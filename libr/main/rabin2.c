@@ -350,6 +350,10 @@ static int rabin_do_operation(RBin *bin, const char *op, int rad, const char *ou
 	}
 	RBinFile *bf = r_bin_cur (bin);
 	if (bf) {
+		if (!bf->buf) {
+			R_LOG_ERROR ("Missing data buffer");
+			return false;
+		}
 		RBuffer *nb = r_buf_new_with_buf (bf->buf);
 		r_buf_free (bf->buf);
 		bf->buf = nb;
