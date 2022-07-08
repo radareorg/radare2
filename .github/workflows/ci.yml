@@ -50,10 +50,10 @@ jobs:
       run: |
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
         ./configure --without-capstone --with-rpath && make -j
-        sudo make symstall
+        sudo make install
     - name: Building muon/samu
       run: |
-        PATH="/usr/local/bin:$PATH" r2pm -gci muon # installs samurai as dependency
+        r2pm -gci muon # installs samurai as dependency
         # ./preconfigure
         # XXX muon setup m && samu -C m -j5
   build-acr-gperf:
