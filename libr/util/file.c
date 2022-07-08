@@ -2,9 +2,7 @@
 
 #define R_LOG_ORIGIN "filter"
 
-#include "r_types.h"
-#include "r_util.h"
-#include <stdio.h>
+#include <r_util.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
