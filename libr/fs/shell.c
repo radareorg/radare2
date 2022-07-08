@@ -143,9 +143,11 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			char *off = strchr (path, ' ');
 			ut64 n = 0;
 			if (off) {
-				*off = 0;
+				*off++ = 0;
+				off = r_str_trim_head_ro (off);
+				n = r_num_math (NULL, off);
 			}
-			bool res = r_fs_mount (fs, arg, path, 0); // XXX the 0 should be the 3rd arg
+			bool res = r_fs_mount (fs, arg, path, n);
 			if (!res) {
 				R_LOG_ERROR ("cannot mount");
 			}
