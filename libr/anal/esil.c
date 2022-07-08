@@ -1,9 +1,6 @@
-/* radare - LGPL - Copyright 2014-2021 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2022 - pancake, condret */
 
 #include <r_anal.h>
-#include <r_types.h>
-#include <r_util.h>
-#include <r_bind.h>
 
 #if __wasi__ || EMSCRIPTEN
 #define FE_OVERFLOW 0
