@@ -159,36 +159,34 @@ static void clear_flags(RAnalOp *op, int flags) {
 }
 
 static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	int ret = 0;
 	ut8 opcode = 0;
 	const char *reg1 = NULL;
 	const char *reg2 = NULL;
 	ut32 bitmask = 0;
 	ut16 destaddr = 0;
 	st16 destaddrs = 0;
-	ut16 word1 = 0, word2 = 0;
-	struct v850_cmd cmd;
+	struct v850_cmd cmd = {0};
 
-	if (len < 1 || (len > 0 && !memcmp (buf, "\xff\xff\xff\xff\xff\xff", R_MIN (len, 6)))) {
+	if (len < 1 || !memcmp (buf, "\xff\xff\xff\xff\xff\xff", R_MIN (len, 6))) {
 		return -1;
 	}
 
-	memset (&cmd, 0, sizeof (cmd));
-
-	ret = op->size = v850_decode_command (buf, len, &cmd);
+	int ret = op->size = v850_decode_command (buf, len, &cmd);
 	if (ret < 1) {
 		return ret;
 	}
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
+		if (R_STR_ISNOTEMPTY (cmd.operands)) {
+			op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
+ 		} else {
+			op->mnemonic = r_str_newf ("%s", cmd.instr);
+		}
 	}
 
 	op->addr = addr;
 
-	word1 = r_read_le16 (buf);
-	if (ret == 4) {
-		word2 = r_read_le16 (buf + 2);
-	}
+	ut16 word1 = r_read_le16 (buf);
+	ut16 word2 = (ret == 4)? r_read_le16 (buf + 2): 0;
 	opcode = get_opcode (word1);
 
 	switch (opcode) {
@@ -539,7 +537,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	if (inst.op) {
 		op->type = inst.op->type;
 		op->family = inst.op->family;
-		if (!memcmp (buf, "\x7f\x00", 2)) {
+		if (len >= 2 && !memcmp (buf, "\x7f\x00", 2)) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		}
 	}
@@ -557,6 +555,11 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case R_ANAL_OP_TYPE_CJMP:
 		op->jump = addr + inst.value;
 		op->fail = addr + inst.size;
+		break;
+	case R_ANAL_OP_TYPE_POP:
+		if (strstr (inst.esil, "lp")) {
+			op->type = R_ANAL_OP_TYPE_RET;
+		}
 		break;
 	case R_ANAL_OP_TYPE_CALL:
 		op->jump = addr + inst.value;

@@ -364,6 +364,7 @@ BROKEN=1
 CMDS=<<EOF
 s+128
 e asm.arch=v850
+e asm.cpu=e0
 e asm.parser=v850.pseudo
 e asm.pseudo=true
 b 64
@@ -398,7 +399,7 @@ FILE=-
 CMDS=<<EOF
 e anal.arch=?~v850
 e asm.bits=32
-e asm.arch=v850.np
+e asm.arch=v850
 wx 830c
 pd 1
 wx e00f71f0
@@ -407,7 +408,6 @@ pd 1
 EOF
 EXPECT=<<EOF
 v850
-v850.np
             0x00000000      830c           sst.h r1, 6[ep]
             0x00000000      e00f71f0       ld.hu mmio.ICC, r1          ; 0xfffff070
 EOF
@@ -416,7 +416,7 @@ RUN
 NAME=v850.np proper imm32 handling
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.arch = v850.np
+e asm.arch = v850
 wx 210674060000210674061234
 pi 2 @0
 EOF

@@ -6,7 +6,7 @@
 #include "mybfd.h"
 
 // TODO: delete this global
-static unsigned long G_pos;
+static R_TH_LOCAL unsigned long G_pos;
 
 #define V850NP_EXTRACT(n) ut64 extract_##n(ut64 insn, bool *invalid)
 #define V850NP_INSERT(n) ut64 insert_##n(ut64 insn, long value, const char ** errmsg)
@@ -823,7 +823,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "dbtag", two (0xcfe0, 0x0160), two (0xffe0, 0x07ff), {IMM10U}, 0, V850_CPU_E3V5_UP },
 	{ "dbtrap", one (0xf840), one (0xffff), {0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_TRAP },
 	{ "di", two (0x07e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SWI, "", R_ANAL_OP_FAMILY_PRIV },
-	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x0000), {IMM5, LIST12, R2_DISPOSE},3, V850_CPU_NON0, R_ANAL_OP_TYPE_POP, "DISPOSE,#1" },
+	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x0000), {IMM5, LIST12, R2_DISPOSE},3, V850_CPU_NON0, R_ANAL_OP_TYPE_POP, "DISPOSE,#1,#2" },
 	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x001f), {IMM5, LIST12}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_POP, "DISPOSE,#1" },
 
 	{ "div", two (0x07e0, 0x02c0), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_DIV, "#2,#1,/,#2,=,#2,#1,%,#3,=" },

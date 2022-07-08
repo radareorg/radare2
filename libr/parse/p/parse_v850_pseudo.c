@@ -214,7 +214,9 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			return true;
 		}
 	}
-	strcpy (str, data);
+	if (str != data) {
+		r_str_cpy (str, data);
+	}
 	return false;
 }
 
