@@ -133,4 +133,4 @@ jobs:
     - name: Building r2 with muon+samu
       run: |
           R2PM_NATIVE=1 r2pm -r muon setup b
-          R2PM_NATIVE=1 r2pm -r samu -C b
+          R2PM_NATIVE=1 r2pm -r samu -C b 2>/dev/null
