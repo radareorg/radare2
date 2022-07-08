@@ -865,8 +865,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		//  - Set flags
 		{
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
-			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
-			esilprintf (op, "%s,%s,<<<,%s,=", src, dst, dst);
+			src2 = getarg (&gop, 0, 0, NULL, SRC2_AR, NULL);
+			dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
+			esilprintf (op, "%s,%s,<<<,%s", src, src2, dst);
 		}
 		break;
 	case X86_INS_ROR:
@@ -875,8 +876,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		//  - Set flags
 		{
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
-			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
-			esilprintf (op, "%s,%s,>>>,%s,=", src, dst, dst);
+			src2 = getarg (&gop, 0, 0, NULL, SRC2_AR, NULL);
+			dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
+			esilprintf (op, "%s,%s,>>>,%s", src, src2, dst);
 		}
 		break;
 	case X86_INS_CPUID:
