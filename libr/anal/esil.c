@@ -3585,6 +3585,17 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 }
 
 static bool __stepOut(RAnalEsil *esil, const char *cmd) {
+#if R2_580
+	if (cmd && esil && esil->cmd && !esil->in_cmd_step) {
+		esil->in_cmd_step = true;
+		if (esil->cmd (esil, cmd, esil->address, 0)) {
+			inCmdStep = false;
+			// if returns 1 we skip the impl
+			return true;
+		}
+		esil->in_cmd_step = false;
+	}
+#else
 	static R_TH_LOCAL bool inCmdStep = false;
 	if (cmd && esil && esil->cmd && !inCmdStep) {
 		inCmdStep = true;
@@ -3595,6 +3606,7 @@ static bool __stepOut(RAnalEsil *esil, const char *cmd) {
 		}
 		inCmdStep = false;
 	}
+#endif
 	return false;
 }
 

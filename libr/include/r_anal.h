@@ -1224,6 +1224,9 @@ typedef struct r_anal_esil_t {
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd;	// ahem, let's not do this
+#if R2_580
+	bool in_cmd_step;
+#endif
 } RAnalEsil;
 
 #undef ESIL
