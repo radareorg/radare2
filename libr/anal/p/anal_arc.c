@@ -1100,7 +1100,7 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len,
 		//op->size = disassemble (anal, op, data, len);
 	}
 	if (anal->config->bits == 16) {
-		int r = arcompact_op (anal, op, addr, data, len);
+		(void)arcompact_op (anal, op, addr, data, len);
 		// eprintf ("%d %d\n", r, op->size);
 		return op->size;
 	}
