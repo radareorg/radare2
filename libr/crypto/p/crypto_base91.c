@@ -44,7 +44,7 @@ static bool final(RCrypto *cry, const ut8 *buf, int len) {
 
 RCryptoPlugin r_crypto_plugin_base91 = {
 	.name = "base91",
-	// R2_580 .author = "pene",
+	// R2_580 .author = "pancake",
 	.set_key = base91_set_key,
 	.get_key_size = base91_get_key_size,
 	.use = base91_use,

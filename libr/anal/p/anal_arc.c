@@ -6,6 +6,83 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
+//////////////////
+#include "disas-asm.h"
+#include <mybfd.h>
+
+/* extern */
+int decodeInstr (bfd_vma address, disassemble_info * info);
+int ARCTangent_decodeInstr (bfd_vma address, disassemble_info * info);
+int ARCompact_decodeInstr (bfd_vma address, disassemble_info * info);
+
+/* ugly globals */
+static R_TH_LOCAL ut32 Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL int buf_len = 0;
+static R_TH_LOCAL ut8 bytes[32] = {0};
+
+static int arc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1; // disable backward reads
+	}
+	if ((delta + length) > sizeof (bytes)) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, R_MIN (buf_len - delta, length));
+	return 0;
+}
+
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+	return 0;
+}
+
+static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	//--
+}
+
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
+DECLARE_GENERIC_FPRINTF_FUNC()
+
+static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+	struct disassemble_info disasm_obj = {0};
+	if (len < 2) {
+		return -1;
+	}
+	buf_global = r_strbuf_new ("");
+	Offset = op->addr;
+	if (len > sizeof (bytes)) {
+		len = sizeof (bytes);
+	}
+	memcpy (bytes, buf, len); // TODO handle compact
+	buf_len = len;
+	/* prepare disassembler */
+	disasm_obj.buffer = bytes;
+	disasm_obj.buffer_length = len;
+	disasm_obj.read_memory_func = &arc_buffer_read_memory;
+	disasm_obj.symbol_at_address_func = &symbol_at_address;
+	disasm_obj.memory_error_func = &memory_error_func;
+	disasm_obj.print_address_func = &generic_print_address_func;
+	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.fprintf_func = &generic_fprintf_func;
+	disasm_obj.stream = stdout;
+	disasm_obj.mach = 0;
+	if (a->config->bits == 16) {
+		op->size = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+	} else {
+		op->size = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+	}
+	if (op->size == -1) {
+		op->mnemonic = strdup ("(data)");
+		r_strbuf_free (buf_global);
+	} else {
+		op->mnemonic = r_strbuf_drain (buf_global);
+	}
+	buf_global = NULL;
+	return op->size;
+}
+//////////////////
+
 #define ARC_REG_ILINK1 0x1d
 #define ARC_REG_ILINK2 0x1e
 #define ARC_REG_BLINK 0x1f
@@ -1016,6 +1093,10 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	const ut8 *b = (ut8 *)data;
 
+	op->addr = addr;
+	if (mask & R_ANAL_OP_TYPE_MASK) {
+		disassemble (anal, op, data, len);
+	}
 	if (anal->config->bits == 16) {
 		return arcompact_op (anal, op, addr, data, len);
 	}
