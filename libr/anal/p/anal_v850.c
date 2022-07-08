@@ -2,10 +2,8 @@
 
 #include <r_lib.h>
 #include <r_anal.h>
-#include "../arch/v850np/v850dis.h"
-
-// V850E0
-#include <v850_disas.h>
+#include "../arch/v850/v850dis.h"
+#include "../arch/v850/v850e0.h"
 
 // Format I
 #define F1_REG1(instr) ((instr) & 0x1F)
