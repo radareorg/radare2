@@ -717,7 +717,6 @@ static bool cb_asmarch(void *user, void *data) {
 	if (!*node->value || !core || !core->rasm) {
 		return false;
 	}
-	const char *asmos = r_config_get (core->config, "asm.os");
 	if (core && core->anal && core->anal->config->bits) {
 		bits = core->anal->config->bits;
 	}
@@ -796,6 +795,7 @@ static bool cb_asmarch(void *user, void *data) {
 	// set pcalign
 	if (core->anal) {
 		const char *asmcpu = r_config_get (core->config, "asm.cpu");
+		const char *asmos = r_config_get (core->config, "asm.os");
 		if (!r_syscall_setup (core->anal->syscall, node->value, core->anal->config->bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
@@ -852,6 +852,7 @@ static bool cb_dbgbtdepth(void *user, void *data) {
 }
 
 static bool cb_asmbits(void *user, void *data) {
+	r_return_val_if_fail (user && data, false);
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 
@@ -862,11 +863,6 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 
 	bool ret = false;
-	if (!core) {
-		eprintf ("user can't be NULL\n");
-		return false;
-	}
-
 	int bits = node->i_value;
 	if (!bits) {
 		return false;
@@ -904,9 +900,11 @@ static bool cb_asmbits(void *user, void *data) {
 #endif
 #endif
 				char *rp = core->dbg->h->reg_profile (core->dbg);
-				r_reg_set_profile_string (core->dbg->reg, rp);
-				r_reg_set_profile_string (core->anal->reg, rp);
-				free (rp);
+				if (rp) {
+					r_reg_set_profile_string (core->dbg->reg, rp);
+					r_reg_set_profile_string (core->anal->reg, rp);
+					free (rp);
+				}
 			}
 		} else {
 			(void)r_anal_set_reg_profile (core->anal, NULL);
@@ -934,12 +932,10 @@ static bool cb_asmbits(void *user, void *data) {
 }
 
 static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
-	int i, argc;
-
 	if (core && core->rasm && core->rasm->cur) {
 		if (core->rasm->cur->features) {
 			char *features = strdup (core->rasm->cur->features);
-			argc = r_str_split (features, ',');
+			int i, argc = r_str_split (features, ',');
 			for (i = 0; i < argc; i++) {
 				const char *feature = r_str_word_get0 (features, i);
 				if (feature) {
@@ -1060,7 +1056,6 @@ static bool cb_asm_pcalign(void *user, void *data) {
 	if (align < 0) {
 		align = 0;
 	}
-	core->rasm->config->pcalign = align;
 	core->anal->config->pcalign = align;
 	return true;
 }
@@ -1364,7 +1359,7 @@ static bool cb_cfgcharset(void *user, void *data) {
 static bool cb_cfgdatefmt(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	snprintf (core->print->datefmt, 32, "%s", node->value);
+	r_str_ncpy (core->print->datefmt, node->value, sizeof (core->print->datefmt));
 	return true;
 }
 

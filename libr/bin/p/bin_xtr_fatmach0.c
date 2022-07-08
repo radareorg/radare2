@@ -122,7 +122,7 @@ static RList *oneshotall_buffer(RBin *bin, RBuffer *b) {
 	RBinXtrData *data = oneshot_buffer (bin, b, 0);
 	if (data) {
 		// XXX - how do we validate a valid narch?
-		int  narch = data->file_count;
+		int narch = data->file_count;
 		RList *res = r_list_newf (r_bin_xtrdata_free);
 		if (!res) {
 			r_bin_xtrdata_free (data);
