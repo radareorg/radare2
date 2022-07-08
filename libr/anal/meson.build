@@ -115,7 +115,6 @@ r_anal_sources = [
   join_paths('p','anal_tricore.c'),
   join_paths('p','anal_v810.c'),
   join_paths('p','anal_v850.c'),
-  join_paths('p','anal_v850_np.c'),
   join_paths('p','anal_vax.c'),
   join_paths('arch/vax/vax-dis.c'),
   join_paths('p','anal_jdh8.c'),

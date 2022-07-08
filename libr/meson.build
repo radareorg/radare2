@@ -68,7 +68,7 @@ if not no_user_plugins
     parse_plugins += [ 'arm_pseudo' ]
   endif
   if user_plugins.contains('v850')
-    anal_plugins += [ 'v850', 'v850_np', 'v810' ]
+    anal_plugins += [ 'v850', 'v810' ]
     parse_plugins += [ 'v850_pseudo' ]
   endif
   if user_plugins.contains('wasm')
@@ -189,7 +189,6 @@ anal_plugins += [
   'tricore',
   'v810',
   'v850',
-  'v850_np',
   'vax',
   'wasm',
   'ws',
