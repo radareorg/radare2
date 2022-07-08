@@ -1,6 +1,5 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include <stdio.h>
 #include <r_asm.h>
 
 R_API RAsmCode *r_asm_code_new(void) {

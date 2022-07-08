@@ -1,7 +1,5 @@
-/* radare - LGPL - Copyright 2021 - pancake */
+/* radare - LGPL - Copyright 2021-2022 - pancake */
 
-#include <stdio.h>
-#include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
 
