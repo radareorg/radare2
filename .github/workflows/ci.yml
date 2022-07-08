@@ -53,7 +53,7 @@ jobs:
         sudo make symstall
     - name: Building muon/samu
       run: |
-        r2pm -gci muon # installs samurai as dependency
+        PATH="/usr/local/bin:$PATH" r2pm -gci muon # installs samurai as dependency
         # ./preconfigure
         # XXX muon setup m && samu -C m -j5
   build-acr-gperf:

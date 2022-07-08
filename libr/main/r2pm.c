@@ -19,7 +19,7 @@ static int r_main_r2pm_sh(int argc, const char **argv) {
 		r_strbuf_appendf (sb, " %s", argv[i]);
 	}
 	char *cmd = r_strbuf_drain (sb);
-	int res = r_sandbox_system (cmd, 1);
+	int res = r_sandbox_system (cmd, 0);
 	free (cmd);
 	return res;
 #endif
