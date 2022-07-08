@@ -1,9 +1,6 @@
 /* radare - LGPL - Copyright 2007-2020 - pancake */
 
-#include "r_types.h"
-#include "r_util.h"
-#include <stdio.h>
-#include <ctype.h>
+#include <r_util.h>
 
 /* int c; ret = hex_to_byte(&c, 'c'); */
 R_API bool r_hex_to_byte(ut8 *val, ut8 c) {

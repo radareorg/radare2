@@ -4362,7 +4362,6 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arch, ut16 bits) {
 	int fd = r_io_fd_get_current (r->io);
 	RIODesc *desc = r_io_desc_get (r->io, fd);
-	RBinFile *curfile = NULL;
 	if (!name) {
 		if (!desc || !desc->name) {
 			return false;
@@ -4405,11 +4404,11 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arc
 		return false;
 	}
 	R_FREE (arch);
-	curfile = r_bin_cur (r->bin);
 	// how bin.xtr plugins can inform
 	// if the binbuffer is bigger than the io allocated space, that means that rbin have
 	// an uncompressed buffer for us. that's hacky and need a proper way to report that
 	// io subsystem manipulation from the rbin side
+	RBinFile *curfile = r_bin_cur (r->bin);
 	if (curfile && curfile->buf && r_buf_size (curfile->buf) > r_io_size (r->io)) {
 		if (binfile && binfile->curxtr && binfile->curxtr->loadbuf) {
 			RIODesc *d = r_io_open_buffer (r->io, curfile->buf, R_PERM_RWX, 0);

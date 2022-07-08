@@ -858,7 +858,7 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 	r_vector_foreach (base_descs, base_desc) {
 		RecoveryTypeDescriptor *base_td = base_desc->td;
 		if (!base_td->valid) {
-			R_LOG_WARN ("Warning Base td is invalid!");
+			R_LOG_WARN ("Invalid base td");
 			continue;
 		}
 

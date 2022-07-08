@@ -1308,7 +1308,7 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 	pe->streams = streams;
 	return true;
 fail:
-	R_LOG_DEBUG ("Warning: read (metadata header)");
+	R_LOG_DEBUG ("read (metadata header)");
 	free (metadata);
 	return false;
 }

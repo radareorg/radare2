@@ -155,8 +155,10 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 	if (handle == 0) {
 		return -1;
 	}
-
-	cs_open (CS_ARCH_TMS320C64X, 0, &handle);
+	int ret = cs_open (CS_ARCH_TMS320C64X, 0, &handle);
+	if (ret != CS_ERR_OK) {
+		return -1;
+	}
 	cs_insn *insn = NULL;
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);

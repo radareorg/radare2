@@ -178,20 +178,21 @@ static bool checkFunction(fcn_t *fcn) {
 	return false;
 }
 
-static void printFunctionCommands(RCore *core, fcn_t* fcn, const char *name) {
-	r_return_if_fail (core && fcn && name);
-	RListIter *fcn_iter;
-	bb_t *cur = NULL;
+static R_MUSTUSE char *function_name(RCore *core, const char *name, ut64 addr) {
 	const char *pfx = r_config_get (core->config, "anal.fcnprefix");
 	if (!pfx) {
 		pfx = "fcn";
 	}
+	return name? (char *) strdup (name): r_str_newf ("%s.%" PFMT64x, pfx, addr);
+}
 
-	char *_name = name? (char *) name: r_str_newf ("%s.%" PFMT64x, pfx, fcn->addr);
+static void printFunctionCommands(RCore *core, fcn_t* fcn, const char *name) {
+	r_return_if_fail (core && fcn);
+	RListIter *fcn_iter;
+	bb_t *cur = NULL;
+	char *_name = function_name (core, name, fcn->addr);
 	r_cons_printf ("af+ 0x%08" PFMT64x " %s\n", fcn->addr, _name);
-	if (!name) {
-		free (_name);
-	}
+	free (_name);
 
 	r_list_foreach (fcn->bbs, fcn_iter, cur) {
 		r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %"PFMT64u" 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
