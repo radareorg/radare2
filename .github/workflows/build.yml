@@ -133,7 +133,7 @@ jobs:
 
 
   # macOS
-  macos-acr:
+  macos-acr-x64:
     runs-on: macos-latest
     steps:
     - name: Checkout
@@ -148,7 +148,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         path: dist/macos/*.pkg
-        name: macos-acr
+        name: macos-acr-x64
 
   macos-acr-m1:
      runs-on: macos-12
@@ -508,7 +508,7 @@ jobs:
       - w64-static
       - w64-meson
       - w32-meson
-      - macos-acr
+      - macos-acr-x64
       - macos-acr-m1
       - ios-cydia
       - ios-cydia32
@@ -603,7 +603,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/macos-acr/radare2-x64-${{ steps.r2v.outputs.branch }}.pkg
+          asset_path: dist/artifacts/macos-acr-x64/radare2-x64-${{ steps.r2v.outputs.branch }}.pkg
           asset_name: radare2-x64-${{ steps.r2v.outputs.branch }}.pkg
           asset_content_type: application/x-xar
       - name: Upload asset for macOS-m1
