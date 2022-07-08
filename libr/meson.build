@@ -145,7 +145,7 @@ anal_plugins += [
   '8051',
   'alpha',
   'amd29k',
-  'arc',
+  # 'arc',
   'arm_cs',
   'avr',
   'bf',
