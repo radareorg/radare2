@@ -25,9 +25,9 @@ main@global(128, 128) {
 
 	// line comment
 	if (.var0 == 0) {
-		goto(PENE);
+		goto(LAB);
 		break();
 		break;
 	}
-	:PENE:
+	:LAB:
 }
