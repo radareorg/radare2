@@ -1,14 +1,10 @@
-/* radare - LGPL - Copyright 2012-2021 - pancake
-	2014 - Fedor Sakharov <fedor.sakharov@gmail.com> */
+/* radare - MIT - Copyright 2021-2022 - pancake, brainstorm */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
-#include <r_asm.h>
 #include <r_anal.h>
-#include <r_util.h>
-#include <r_endian.h>
+#include "../arch/v850np/v850dis.h"
 
+// V850E0
 #include <v850_disas.h>
 
 // Format I
@@ -164,7 +160,7 @@ static void clear_flags(RAnalOp *op, int flags) {
 	}
 }
 
-static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int ret = 0;
 	ut8 opcode = 0;
 	const char *reg1 = NULL;
@@ -490,10 +486,104 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	return ret;
 }
 
+// V850NP
+
+#define DEFAULT_CPU_MODEL V850_CPU_E2
+static int cpumodel_from_string(const char *s) {
+	if (R_STR_ISEMPTY (s) || !strcmp (s, "v850")) {
+		return DEFAULT_CPU_MODEL;
+	}
+	if (!strcmp (s, "all")) {
+		return V850_CPU_ALL;
+	}
+	if (!strcmp (s, "e2v3")) {
+		return V850_CPU_E2V3;
+	}
+	if (!strcmp (s, "e3v5")) {
+		return V850_CPU_E3V5;
+	}
+	if (!strcmp (s, "e2")) {
+		return V850_CPU_E2;
+	}
+	if (!strcmp (s, "e1")) {
+		return V850_CPU_E1;
+	}
+	if (!strcmp (s, "e0")) {
+		return V850_CPU_E0;
+	}
+	if (!strcmp (s, "e")) {
+		return V850_CPU_E;
+	}
+	if (!strcmp (s, "0")) {
+		return V850_CPU_0;
+	}
+	int num = r_num_get (NULL, s);
+	return num? num: DEFAULT_CPU_MODEL;
+}
+
+static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	int cpumodel = cpumodel_from_string (anal->config->cpu);
+	if (cpumodel == V850_CPU_E0) {
+		return v850e0_op (anal, op, addr, buf, len, mask);
+	}
+#if 0
+	cpumodel |= V850_CPU_OPTION_ALIAS;
+	cpumodel |= V850_CPU_OPTION_EXTENSION;
+#endif
+	v850np_inst inst = {0};
+	op->size = v850np_disasm (&inst, cpumodel, addr, buf, len);
+	if (op->size < 2) {
+		op->size = 2;
+	}
+	if (mask & R_ANAL_OP_MASK_ESIL) {
+		r_strbuf_set (&op->esil, inst.esil);
+	}
+	if (inst.op) {
+		op->type = inst.op->type;
+		op->family = inst.op->family;
+		if (!memcmp (buf, "\x7f\x00", 2)) {
+			op->type = R_ANAL_OP_TYPE_RET;
+		}
+	}
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_MOV:
+		op->val = inst.value;
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+	case R_ANAL_OP_TYPE_LOAD:
+		op->ptr = inst.value;
+		break;
+	case R_ANAL_OP_TYPE_JMP:
+		op->jump = addr + inst.value;
+		break;
+	case R_ANAL_OP_TYPE_CJMP:
+		op->jump = addr + inst.value;
+		op->fail = addr + inst.size;
+		break;
+	case R_ANAL_OP_TYPE_CALL:
+		op->jump = addr + inst.value;
+		op->fail = addr + inst.size;
+		break;
+	}
+	op->size = inst.size;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (anal->config->syntax == R_ASM_SYNTAX_ATT) {
+			op->mnemonic = r_str_replace (inst.text, "[r", "[%r", -1);
+			op->mnemonic = r_str_replace (op->mnemonic, " r", " %r", -1);
+			op->mnemonic = r_str_replace (op->mnemonic, "(r", "(%r", -1);
+		} else {
+			op->mnemonic = inst.text;
+		}
+	} else {
+		free (inst.text);
+	}
+	return inst.size;
+}
+
 static char *get_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
-		"=SP	r3\n"
+		"=SP	sp\n"
 		"=BP	ep\n"
 		"=SN	r1\n"
 		"=ZF	z\n"
@@ -506,13 +596,13 @@ static char *get_reg_profile(RAnal *anal) {
 		"=OF	ov\n"
 		"=CF	cy\n"
 
-		"gpr	r0	.32	?   0\n" // r0' is always zero
+		"gpr	r0	.32	?   0\n"
 		"gpr	r1	.32	4   0\n"
 		"gpr	r2	.32	8   0\n"
-		"gpr	r3	.32	12  0\n"
 		"gpr	sp	.32	12  0\n"
-		"gpr	r4	.32	16  0\n"
+		"gpr	r3	.32	12  0\n"
 		"gpr	gp	.32	16  0\n"
+		"gpr	r4	.32	16  0\n"
 		"gpr	r5	.32	20  0\n"
 		"gpr	tp	.32	20  0\n"
 		"gpr	r6	.32	24  0\n"
@@ -551,10 +641,42 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	epi  .1 132.17 0\n" // exception processing interrupt
 		"gpr	id   .1 132.18 0\n" // :? should be id
 		"gpr	sat  .1 132.19 0\n" // saturation detection
-		"flg	cy  .1 132.28 0\n" // carry or borrow
-		"flg	ov  .1 132.29 0\n" // overflow
-		"flg	s   .1 132.30 0\n" // signed result
-		"flg	z   .1 132.31 0\n"; // zero result
+		"flg	cy  .1 132.28 0 carry\n" // carry or borrow
+		"flg	ov  .1 132.29 0 overflow\n" // overflow
+		"flg	s   .1 132.30 0 sign\n" // signed result
+		"flg	z   .1 132.31 0 zero\n" // zero result
+
+		"gpr	eipc	.32	$	0\n"
+		"gpr	eipsw	.32	$	0\n"
+		"gpr	fepc	.32	$	0\n"
+		"gpr	fepsw	.32	$	0\n"
+		"gpr	ecr	.32	$	0\n"
+		"gpr	sr6	.32	$	0\n"
+		"gpr	sr7	.32	$	0\n"
+		"gpr	sr8	.32	$	0\n"
+		"gpr	sr9	.32	$	0\n"
+		"gpr	sr10	.32	$	0\n"
+		"gpr	sr11	.32	$	0\n"
+		"gpr	sr12	.32	$	0\n"
+		"gpr	eiic	.32	$	0\n"
+		"gpr	feic	.32	$	0\n"
+		"gpr	dbic	.32	$	0\n"
+		"gpr	ctpc	.32	$	0\n"
+		"gpr	ctpcw	.32	$	0\n"
+		"gpr	dbpc	.32	$	0\n"
+		"gpr	dbpsw	.32	$	0\n"
+		"gpr	ctbp	.32	$	0\n"
+		"gpr	dir	.32	$	0\n"
+		"gpr	bpc	.32	$	0\n"
+		"gpr	asid	.32	$	0\n"
+		"gpr	bpav	.32	$	0\n"
+		"gpr	bpam	.32	$	0\n"
+		"gpr	bpdv	.32	$	0\n"
+		"gpr	bpdm	.32	$	0\n"
+		"gpr	eiwr	.32	$	0\n"
+		"gpr	fewr	.32	$	0\n"
+		"gpr	dbwr	.32	$	0\n"
+		"gpr	bsel	.32	$	0\n";
 	return strdup (p);
 }
 
@@ -579,14 +701,25 @@ static int archinfo(RAnal *anal, int q) {
 	return 0;
 }
 
+static int v850_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *buf, int len) {
+	r_return_val_if_fail (anal && s && buf && len >= 0, -1);
+	if (!strcmp (s, "nop")) {
+		memset (buf, 0, R_MIN (len, 2));
+		return 2;
+	}
+	return 0;
+}
+
 RAnalPlugin r_anal_plugin_v850 = {
 	.name = "v850",
 	.desc = "V850 code analysis plugin",
-	.license = "LGPL3",
+	.license = "MIT",
 	.preludes = anal_preludes,
+	.cpus = "e0,0,e,e1,e2,e2v3,e3v5,all",
 	.arch = "v850",
 	.bits = 32,
 	.op = v850_op,
+	.opasm = v850_opasm,
 	.esil = true,
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,

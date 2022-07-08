@@ -64,6 +64,7 @@ enum {
 #define V850_CPU_E2     (1 << (arch_V850E2))   /* Just the V850E2.  */
 #define V850_CPU_E2V3   (1 << (arch_V850E2V3)) /* Just the V850E2V3.  */
 #define V850_CPU_E3V5   (1 << (arch_V850E3V5)) /* Just the V850E3V5.  */
+#define V850_CPU_E0     (1 << 8) // used by the old v850 plugin
 
 /* UPPERS */
 #define V850_CPU_E3V5_UP (V850_CPU_E3V5)
