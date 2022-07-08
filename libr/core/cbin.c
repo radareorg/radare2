@@ -4393,6 +4393,10 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arc
 			return false;
 		}
 	}
+	if (!strcmp (arch, "null")) {
+		free (arch);
+		arch = strdup (R_SYS_ARCH);
+	}
 	/* Find a file with the requested name/arch/bits */
 	RBinFile *binfile = r_bin_file_find_by_arch_bits (r->bin, arch, bits);
 	if (!binfile) {
