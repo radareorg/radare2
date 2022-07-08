@@ -1,9 +1,6 @@
-/* radare - LGPL - Copyright 2012-2016 - pancake */
+/* radare - LGPL - Copyright 2012-2022 - pancake */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
-#include <r_asm.h>
 #include <r_anal.h>
 
 //////////////////
@@ -11,9 +8,9 @@
 #include <mybfd.h>
 
 /* extern */
-int decodeInstr (bfd_vma address, disassemble_info * info);
-int ARCTangent_decodeInstr (bfd_vma address, disassemble_info * info);
-int ARCompact_decodeInstr (bfd_vma address, disassemble_info * info);
+extern int decodeInstr(bfd_vma address, disassemble_info * info);
+extern int ARCTangent_decodeInstr(bfd_vma address, disassemble_info * info);
+extern int ARCompact_decodeInstr(bfd_vma address, disassemble_info * info);
 
 /* ugly globals */
 static R_TH_LOCAL ut32 Offset = 0;
@@ -1221,6 +1218,7 @@ static bool set_reg_profile(RAnal *anal) {
 RAnalPlugin r_anal_plugin_arc = {
 	.name = "arc",
 	.arch = "arc",
+	.author = "pancake",
 	.license = "LGPL3",
 	.bits = 16 | 32,
 	.desc = "ARC code analysis plugin",
