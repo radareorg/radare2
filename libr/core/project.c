@@ -13,7 +13,8 @@ static bool is_valid_project_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 64) {
 		return false;
 	}
-	const char *extention = r_str_endswith (name, ".zip") ? r_str_last (name, ".zip") : NULL;
+	const char *extention = r_str_endswith (name, ".zip") ?
+		r_str_last (name, ".zip") : NULL;
 	for (; *name && name != extention; name++) {
 		if (IS_DIGIT (*name) || IS_LOWER (*name) || *name == '_') {
 			continue;
@@ -102,7 +103,8 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	RListIter *iter;
 	RList *list;
 
-	char *foo, *path = r_file_abspath (r_config_get (core->config, "dir.projects"));
+	char *foo, *path = r_file_abspath (r_config_get (core->config,
+				"dir.projects"));
 	if (!path) {
 		return 0;
 	}
@@ -309,7 +311,8 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 		// enable sandbox (only allow file access, no network or program exec)
 		// projects can also tweak the cmd. eval vars to run code after the project is loaded
 		// users must be careful on that.
-		int oldgrain = r_sandbox_grain (R_SANDBOX_GRAIN_DISK | R_SANDBOX_GRAIN_FILES);
+		int oldgrain = r_sandbox_grain (R_SANDBOX_GRAIN_DISK |
+				R_SANDBOX_GRAIN_FILES);
 		r_sandbox_enable (true);
 		ret = r_core_cmd_file (core, rcpath);
 		r_sandbox_disable (true);
@@ -371,7 +374,8 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	if (r_project_is_loaded (core->prj)) {
 		R_LOG_ERROR ("There's a project already opened");
 		ask_for_closing = false;
-		bool ccs = interactive? r_cons_yesno ('y', "Close current session? (Y/n)"): true;
+		bool ccs = interactive? r_cons_yesno ('y',
+				"Close current session? (Y/n)"): true;
 		if (ccs) {
 			r_core_cmd0 (core, "o--");
 			r_core_cmd0 (core, "P-");
@@ -388,7 +392,8 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	}
 	if (ask_for_closing && r_project_is_loaded (core->prj)) {
 		if (r_cons_is_interactive ()) {
-			close_current_session = interactive? r_cons_yesno ('y', "Close current session? (Y/n)"): true;
+			close_current_session = interactive? r_cons_yesno ('y',
+					"Close current session? (Y/n)"): true;
 		}
 	}
 	if (close_current_session) {
@@ -472,12 +477,17 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 	if (desc) {
 		// reload bin info
 		r_cons_printf ("\"obf %s\"\n", desc->uri);
-		r_cons_printf ("\"of \\\"%s\\\" %s\"\n", desc->uri, r_str_rwx_i (desc->perm));
+		r_cons_printf ("\"of \\\"%s\\\" %s\"\n", desc->uri,
+				r_str_rwx_i (desc->perm));
 		if ((maps = r_io_map_get_by_fd (core->io, id))) { //wtf
 			r_list_foreach (maps, iter, map) {
-				r_cons_printf ("om %d 0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x " %s%s%s\n", fdc,
-					r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
-					map->name ? " " : "", r_str_get (map->name));
+				r_cons_printf ("om %d 0x%" PFMT64x " 0x%"
+						PFMT64x " 0x%" PFMT64x
+						" %s%s%s\n", fdc,
+					r_io_map_begin (map), r_io_map_size (map),
+					map->delta, r_str_rwx_i (map->perm),
+					map->name ? " " : "",
+					r_str_get (map->name));
 			}
 			r_list_free (maps);
 		}
@@ -551,7 +561,8 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 #if PROJECT_EXPERIMENTAL
 	if (opts & R_CORE_PRJ_IO_MAPS && core->io && core->io->files) {
 		fdc = 3;
-		r_id_storage_foreach (core->io->files, (RIDStorageForeachCb)store_files_and_maps, core);
+		r_id_storage_foreach (core->io->files,
+				(RIDStorageForeachCb)store_files_and_maps, core);
 		flush (sb);
 	}
 #endif
@@ -597,7 +608,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	r_core_cmd (core, "wc*", 0);
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
 		r_cons_printf ("# seek\n"
-			       "s 0x%08" PFMT64x "\n",
+				"s 0x%08" PFMT64x "\n",
 			core->offset);
 		flush (sb);
 	}
@@ -649,8 +660,10 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	if (!prj_dir) {
 		prj_dir = strdup (prj_name);
 	}
-	if (r_core_is_project (core, prj_name) && strcmp (prj_name, r_config_get (core->config, "prj.name"))) {
-		R_LOG_ERROR ("A project with this name already exists. Use P-%s to delete it", prj_name);
+	if (r_core_is_project (core, prj_name) &&
+			strcmp (prj_name, r_config_get (core->config, "prj.name"))) {
+		R_LOG_ERROR ("A project with this name already exists. Use P-%s to delete it",
+				prj_name);
 		free (script_path);
 		free (prj_dir);
 		return false;
@@ -668,7 +681,8 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	if (rop_db) {
 		/* set filepath for all the rop sub-dbs */
 		ls_foreach (rop_db->ns, it, ns) {
-			char *rop_path = r_str_newf ("%s" R_SYS_DIR "rop.d" R_SYS_DIR "%s", prj_dir, ns->name);
+			char *rop_path = r_str_newf ("%s" R_SYS_DIR "rop.d"
+					R_SYS_DIR "%s", prj_dir, ns->name);
 			sdb_file (ns->sdb, rop_path);
 			sdb_sync (ns->sdb);
 			free (rop_path);
@@ -686,7 +700,8 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		char *bin_file = r_core_project_name (core, prj_name);
 		const char *bin_filename = r_file_basename (bin_file);
 		char *prj_bin_dir = r_str_newf ("%s" R_SYS_DIR "bin", prj_dir);
-		char *prj_bin_file = r_str_newf ("%s" R_SYS_DIR "%s", prj_bin_dir, bin_filename);
+		char *prj_bin_file = r_str_newf ("%s" R_SYS_DIR "%s", prj_bin_dir,
+				bin_filename);
 		r_sys_mkdirp (prj_bin_dir);
 		if (!r_file_copy (bin_file, prj_bin_file)) {
 			R_LOG_WARN ("Cannot copy '%s' into '%s'", bin_file, prj_bin_file);
@@ -765,7 +780,8 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 }
 
 R_API bool r_core_project_is_dirty(RCore *core) {
-	return !R_IS_DIRTY (core->config) && !R_IS_DIRTY (core->anal) && !R_IS_DIRTY (core->flags);
+	return !R_IS_DIRTY (core->config) && !R_IS_DIRTY (core->anal) &&
+		!R_IS_DIRTY (core->flags);
 }
 
 R_API void r_core_project_undirty(RCore *core) {
