@@ -11,12 +11,15 @@
 
 static R_TH_LOCAL tms320_dasm_t engine = {0};
 
-int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	ut16 *ins = (ut16*)buf;
-
-	if (!buf || len <= 0) {
+int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_buf, int len, RAnalOpMask mask) {
+	if (!_buf || len < 1) {
 		return 0;
 	}
+	ut8 buf[16] = {0};
+	memcpy (buf, _buf, R_MIN (len, sizeof (buf)));
+	ut16 _ins = r_read_le16 (buf);
+	ut16 *ins = &_ins;
+
 
 	int ins_len = tms320_dasm (&engine, buf, len);
 	if (ins_len <= 0) {
