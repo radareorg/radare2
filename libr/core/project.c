@@ -13,8 +13,8 @@ static bool is_valid_project_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 64) {
 		return false;
 	}
-	const char *extention = r_str_endswith (name, ".zip") ?
-		r_str_last (name, ".zip") : NULL;
+	const char *extention = r_str_endswith (name, ".zip")?
+		r_str_last (name, ".zip"): NULL;
 	for (; *name && name != extention; name++) {
 		if (IS_DIGIT (*name) || IS_LOWER (*name) || *name == '_') {
 			continue;
@@ -66,12 +66,13 @@ static int make_projects_directory(RCore *core) {
 
 R_API bool r_core_is_project(RCore *core, const char *name) {
 	bool ret = false;
-	if (name && *name && *name != '.') {
+	if (!R_STR_ISEMPTY (name) && *name != '.') {
 		char *path = get_project_script_path (core, name);
 		if (!path) {
 			return false;
 		}
-		if (r_str_endswith (path, R_SYS_DIR "rc.r2") && r_file_exists (path)) {
+		if (r_str_endswith (path, R_SYS_DIR "rc.r2") &&
+				r_file_exists (path)) {
 			ret = true;
 		} else {
 			path = r_str_append (path, ".d");
@@ -114,7 +115,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 		pj = pj_new ();
 		if (!pj) {
 			break;
-		}
+	}
 		pj_a (pj);
 		r_list_foreach (list, iter, foo) {
 			// todo. escape string
