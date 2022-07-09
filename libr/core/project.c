@@ -499,8 +499,8 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 #endif
 
 static char *r_cons_drain(void) {
-	const char *buf = r_cons_get_buffer();
-	size_t buf_size = r_cons_get_buffer_len();
+	const char *buf = r_cons_get_buffer ();
+	size_t buf_size = r_cons_get_buffer_len ();
 	char *s = r_str_ndup (buf, buf_size);
 	r_cons_reset ();
 	return s;
