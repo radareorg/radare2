@@ -109,7 +109,7 @@ enum {
 
 #define R_ANAL_GET_NAME(x,y,z) \
         (x && x->binb.bin && x->binb.get_name)? \
-                x->binb.get_name (x->binb.bin, y, z): NULL
+                x->binb.get_name (x->binb.bin, y, z, true ): NULL
 
 /* type = (R_ANAL_VAR_TYPE_BYTE & R_ANAL_VAR_TYPE_SIZE_MASK) |
  *			( RANAL_VAR_TYPE_SIGNED & RANAL_VAR_TYPE_SIGN_MASK) |
