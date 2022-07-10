@@ -2,7 +2,6 @@
 
 #include <r_io.h>
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_util/r_print.h>
 
 #define USE_OWNTIMER 1

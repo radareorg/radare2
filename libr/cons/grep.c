@@ -88,7 +88,7 @@ static void parse_grep_expression(const char *str) {
 		len = 0;
 	}
 	if (len > R_CONS_GREP_BUFSIZE - 1) {
-		R_LOG_ERROR ("r_cons_grep: too long!\n");
+		R_LOG_ERROR ("r_cons_grep: too long!");
 		return;
 	}
 	if (len > 0 && str[len] == '?') {
@@ -110,7 +110,7 @@ static void parse_grep_expression(const char *str) {
 		ptr = ptrs[ptrs_length];
 		ptrs_length++;
 		if (ptrs_length >= R_CONS_GREP_COUNT) {
-			R_LOG_ERROR ("to many nested greps\n");
+			R_LOG_ERROR ("too many nested greps");
 			return;
 		}
 	}
@@ -150,17 +150,17 @@ static void parse_grep_expression(const char *str) {
 				if (ptr[1] == ':') {
 					grep->human = true; // human friendly indentation ij~{:
 					grep->json = 1;
-					if (!strncmp (ptr, "{:...", 5)) {
+					if (r_str_startswith (ptr, "{:...")) {
 						grep->hud = true;
-					} else if (!strncmp (ptr, "{:..", 4)) {
+					} else if (r_str_startswith (ptr, "{:..")) {
 						grep->less = 1;
 					}
 				} else if (ptr[1] == '}') {
 					// standard json indentation
 					grep->json = 1;
-					if (!strncmp (ptr, "{}...", 5)) {
+					if (r_str_startswith (ptr, "{}...")) {
 						grep->hud = true;
-					} else if (!strncmp (ptr, "{}..", 4)) {
+					} else if (r_str_startswith (ptr, "{}..")) {
 						grep->less = 1;
 					}
 				} else {
@@ -354,12 +354,12 @@ static void parse_grep_expression(const char *str) {
 					continue;
 				}
 				if (wlen >= R_CONS_GREP_WORD_SIZE - 1) {
-					R_LOG_ERROR ("grep string too long\n");
+					R_LOG_ERROR ("grep string too long");
 					continue;
 				}
 				grep->nstrings++;
 				if (grep->nstrings > R_CONS_GREP_WORDS - 1) {
-					R_LOG_ERROR ("too many grep strings\n");
+					R_LOG_ERROR ("too many grep strings");
 					break;
 				}
 				r_str_ncpy (grep->strings[grep->nstrings - 1],
@@ -894,7 +894,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			}
 			outlen = outlen > 0? outlen - 1: 0;
 			if (outlen > len) { // should never happen
-				R_LOG_ERROR ("r_cons_grep_line: wtf, how you reach this?\n");
+				R_LOG_ERROR ("r_cons_grep_line: wtf, how you reach this?");
 				free (in);
 				free (out);
 				return -1;

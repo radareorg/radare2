@@ -450,8 +450,8 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 		// enum.name.arg1=type,offset,???
 		char *case_sname = r_str_sanitize_sdb_key (cas->name);
 		r_strf_var (param_key, KSZ, "enum.%s.%s", sname, case_sname);
-		r_strf_var (param_val, KSZ, "0x%" PFMT32x "", cas->val);
-		r_strf_var (param_key2, KSZ, "enum.%s.0x%" PFMT32x "", sname, cas->val);
+		r_strf_var (param_val, KSZ, "0x%" PFMT32x, cas->val);
+		r_strf_var (param_key2, KSZ, "enum.%s.0x%" PFMT32x, sname, cas->val);
 		sdb_set (anal->sdb_types, param_key, param_val, 0);
 		sdb_set (anal->sdb_types, param_key2, case_sname, 0);
 		free (case_sname);

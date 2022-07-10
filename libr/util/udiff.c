@@ -263,29 +263,42 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 	return 0;
 }
 
-// XXX: temporary files are
 R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
-	r_file_dump (".a", a, la, 0);
-	r_file_dump (".b", b, lb, 0);
+	char *fa = NULL;
+	char *fb = NULL;
+	int fd = r_file_mkstemp ("r_diff", &fa);
+	int fe = r_file_mkstemp ("r_diff", &fb);
+	if (fd == -1 || fe == -1) {
+		R_LOG_ERROR ("Failed to create temporary files");
+		return NULL;
+	}
+	if (!fa || !fb) {
+		R_LOG_ERROR ("fafb nul");
+		return NULL;
+	}
+	r_file_dump (fa, a, la, 0);
+	r_file_dump (fb, b, lb, 0);
 #if 0
 	if (r_mem_is_printable (a, R_MIN (5, la))) {
-		r_file_dump (".a", a, la, 0);
-		r_file_dump (".b", b, lb, 0);
+		r_file_dump (fa, a, la, 0);
+		r_file_dump (fb, b, lb, 0);
 	} else {
-		r_file_hexdump (".a", a, la, 0);
-		r_file_hexdump (".b", b, lb, 0);
+		r_file_hexdump (fa, a, la, 0);
+		r_file_hexdump (fb, b, lb, 0);
 	}
 #endif
 	char *err = NULL;
 	char *out = NULL;
 	int out_len;
-	char *diff_cmdline = r_str_newf ("%s .a .b", d->diff_cmd);
+	char *diff_cmdline = r_str_newf ("%s %s %s", d->diff_cmd, fa, fb);
 	if (diff_cmdline) {
 		(void)r_sys_cmd_str_full (diff_cmdline, NULL, 0, &out, &out_len, &err);
 		free (diff_cmdline);
 	}
-	r_file_rm (".a");
-	r_file_rm (".b");
+	close (fd);
+	close (fe);
+	r_file_rm (fa);
+	r_file_rm (fb);
 	free (err);
 	return out;
 }

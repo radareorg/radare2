@@ -646,7 +646,7 @@ R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
 			}
 		}
 	} else {
-		eprintf ("Warning: This should be an assert probably.\n");
+		R_LOG_WARN ("This should be an assert probably");
 	}
 	// XXX - update all the infos?
 	// maybe in RBinFile.rebase() ?
@@ -1109,7 +1109,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 				"0x%08" PFMT64x ":%" PFMT64u ":%s:%d",
 				boffset, obj_size, "unk", 0);
 		} else {
-			eprintf ("Error: Invalid RBinFile.\n");
+			R_LOG_ERROR ("Invalid RBinFile");
 		}
 		//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
 	}
@@ -1151,11 +1151,11 @@ R_API RBuffer *r_bin_create(RBin *bin, const char *p,
 
 	RBinPlugin *plugin = r_bin_get_binplugin_by_name (bin, p);
 	if (!plugin) {
-		R_LOG_WARN ("Cannot find RBin plugin named '%s'.", p);
+		R_LOG_WARN ("Cannot find RBin plugin named '%s'", p);
 		return NULL;
 	}
 	if (!plugin->create) {
-		R_LOG_WARN ("RBin plugin '%s' does not implement \"create\" method.", p);
+		R_LOG_WARN ("RBin plugin '%s' does not implement \"create\" method", p);
 		return NULL;
 	}
 	codelen = R_MAX (codelen, 0);

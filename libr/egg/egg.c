@@ -372,7 +372,7 @@ R_API bool r_egg_compile(REgg *egg) {
 	for (; b; ) {
 		r_egg_lang_parsechar (egg, b);
 		if (egg->lang.elem_n >= sizeof (egg->lang.elem)) {
-			eprintf ("ERROR: elem too large.\n");
+			R_LOG_ERROR ("too large element");
 			break;
 		}
 		size_t r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
@@ -382,7 +382,7 @@ R_API bool r_egg_compile(REgg *egg) {
 		// XXX: some parse fail errors are false positives :(
 	}
 	if (egg->context > 0) {
-		eprintf ("ERROR: expected '}' at the end of the file. %d left\n", egg->context);
+		R_LOG_ERROR ("expected '}' at the end of the file. %d left", egg->context);
 		return false;
 	}
 	// TODO: handle errors here
@@ -526,16 +526,15 @@ R_API bool r_egg_shellcode(REgg *egg, const char *name) {
 R_API bool r_egg_encode(REgg *egg, const char *name) {
 	REggPlugin *p;
 	RListIter *iter;
-	RBuffer *b;
 	r_list_foreach (egg->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->name)) {
-			b = p->build (egg);
-			if (!b) {
-				return false;
+			RBuffer *b = p->build (egg);
+			if (b) {
+				r_buf_free (egg->bin);
+				egg->bin = b;
+				return true;
 			}
-			r_buf_free (egg->bin);
-			egg->bin = b;
-			return true;
+			return false;
 		}
 	}
 	return false;
@@ -573,11 +572,11 @@ R_API void r_egg_finalize(REgg *egg) {
 			const ut8 *buf = r_buf_data (ep->b, &sz);
 			int r = r_buf_write_at (egg->bin, ep->off, buf, sz);
 			if (r < sz) {
-				eprintf ("Error during patch\n");
+				R_LOG_ERROR ("cannot write");
 				return;
 			}
 		} else {
-			eprintf ("Cannot patch outside\n");
+			R_LOG_ERROR ("Cannot patch outside");
 			return;
 		}
 	}
@@ -589,6 +588,6 @@ R_API void r_egg_pattern(REgg *egg, int size) {
 		r_egg_prepend_bytes (egg, (const ut8*)ret, strlen(ret));
 		free (ret);
 	} else {
-		eprintf ("Invalid debruijn pattern length.\n");
+		R_LOG_ERROR ("Invalid debruijn pattern length");
 	}
 }

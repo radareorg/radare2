@@ -300,13 +300,13 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 				}
 				perm = ((map->perm & 1) << 2) | (map->perm & 2) | ((map->perm & 4) >> 2);
 				if (!(perm & R_BP_PROT_EXEC)) {
-					eprintf ("Warning: setting bp within mapped memory without exec perm\n");
+					R_LOG_WARN ("setting bp within mapped memory without exec perm");
 				}
 				break;
 			}
 		}
 		if (!valid) {
-			eprintf ("Warning: module's base addr + delta is not a valid address\n");
+			R_LOG_WARN ("module's base addr + delta is not a valid address");
 			free (module_name);
 			return NULL;
 		}
@@ -1140,7 +1140,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 R_API bool r_debug_goto_cnum(RDebug *dbg, ut32 cnum) {
 	if (cnum > dbg->session->maxcnum) {
-		eprintf ("Error: out of cnum range\n");
+		R_LOG_ERROR ("out of cnum range");
 		return false;
 	}
 	dbg->session->cnum = cnum;
@@ -1483,7 +1483,7 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	RRegItem *ripc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
 	RVector *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
 	if (!vreg) {
-		eprintf ("Error: cannot find PC change vector");
+		R_LOG_ERROR ("cannot find PC change vector");
 		return false;
 	}
 	RDebugChangeReg *reg;

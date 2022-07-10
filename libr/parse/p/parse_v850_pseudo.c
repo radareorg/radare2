@@ -204,7 +204,7 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		char *neg = strstr (data, " -");
 		if (neg && neg < r0) {
 			char *n = r_str_ndup (r_str_trim_head_ro (neg), (int)(size_t)(r0 - neg - 1));
-			int negdelta = strstr (n, "0x")? -r_num_get (NULL, n + 1): atoi (n);
+			int negdelta = strstr (n, "0x")? -((int)r_num_get (NULL, n + 1)): atoi (n);
 			free (n);
 			*neg = 0;
 			ut64 addr = UT32_MAX + negdelta + 1;
@@ -214,7 +214,9 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			return true;
 		}
 	}
-	strcpy (str, data);
+	if (str != data) {
+		r_str_cpy (str, data);
+	}
 	return false;
 }
 

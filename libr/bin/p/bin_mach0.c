@@ -25,6 +25,9 @@ static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io);
 static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 
+
+static R_TH_LOCAL void *origread = NULL;
+static R_TH_LOCAL RIOPlugin *origplugin = NULL;
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
@@ -67,6 +70,9 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
+	if (origplugin) {
+		origplugin->read = origread;
+	}
 	MACH0_(mach0_free) (bf->o->bin_obj);
 }
 
@@ -547,7 +553,7 @@ static bool _patch_reloc(struct MACH0_(obj_t) *bin, RIOBind *iob, struct reloc_t
 			ins_len = 5;
 			break;
 		default:
-			eprintf ("Warning: unsupported reloc type for X86_64 (%d), please file a bug.\n", reloc->type);
+			R_LOG_WARN ("unsupported reloc type for X86_64 (%d), please file a bug", reloc->type);
 			return false;
 		}
 		break;
@@ -560,7 +566,7 @@ static bool _patch_reloc(struct MACH0_(obj_t) *bin, RIOBind *iob, struct reloc_t
 	case CPU_TYPE_ARM:
 		break;
 	default:
-		eprintf ("Warning: unsupported architecture for patching relocs, please file a bug. %s\n", MACH0_(get_cputype_from_hdr)(&bin->hdr));
+		R_LOG_WARN ("unsupported architecture for patching relocs, please file a bug. %s", MACH0_(get_cputype_from_hdr)(&bin->hdr));
 		return false;
 	}
 
@@ -619,7 +625,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 
 	if (!io->cached) {
-		eprintf ("Warning: run r2 with -e bin.cache=true to fix relocations in disassembly\n");
+		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
 		goto beach;
 	}
 
@@ -709,7 +715,9 @@ static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io) {
 	r_return_if_fail (io && io->desc && io->desc->plugin);
 	RIOPlugin *plugin = io->desc->plugin;
 	obj->original_io_read = plugin->read;
+	origread = plugin->read;
 	plugin->read = &rebasing_and_stripping_io_read;
+	origplugin = plugin;
 }
 
 static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
@@ -754,9 +762,7 @@ static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int co
 		return obj->original_io_read (io, fd, buf, count);
 	}
 	if (count > obj->internal_buffer_size) {
-		if (obj->internal_buffer) {
-			R_FREE (obj->internal_buffer);
-		}
+		R_FREE (obj->internal_buffer);
 		obj->internal_buffer_size = R_MAX (count, 8);
 		obj->internal_buffer = (ut8 *) calloc (1, obj->internal_buffer_size);
 		if (!obj->internal_buffer) {
@@ -778,17 +784,17 @@ static bool rebase_buffer_callback(void * context, RFixupEventDetails * event_de
 
 	ut64 in_buf = event_details->offset - ctx->off;
 	switch (event_details->type) {
-		case R_FIXUP_EVENT_BIND:
-		case R_FIXUP_EVENT_BIND_AUTH:
-			r_write_le64 (&ctx->buf[in_buf], 0);
-			break;
-		case R_FIXUP_EVENT_REBASE:
-		case R_FIXUP_EVENT_REBASE_AUTH:
-			r_write_le64 (&ctx->buf[in_buf], ((RFixupRebaseEventDetails *) event_details)->ptr_value);
-			break;
-		default:
-			eprintf ("Unexpected event while rebasing buffer\n");
-			return false;
+	case R_FIXUP_EVENT_BIND:
+	case R_FIXUP_EVENT_BIND_AUTH:
+		r_write_le64 (&ctx->buf[in_buf], 0);
+		break;
+	case R_FIXUP_EVENT_REBASE:
+	case R_FIXUP_EVENT_REBASE_AUTH:
+		r_write_le64 (&ctx->buf[in_buf], ((RFixupRebaseEventDetails *) event_details)->ptr_value);
+		break;
+	default:
+		R_LOG_ERROR ("Unexpected event while rebasing buffer");
+		return false;
 	}
 
 	return true;

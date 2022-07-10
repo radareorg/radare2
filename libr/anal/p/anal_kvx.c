@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include <r_anal.h>
 
-#include "kvx.h"
+#include "kvx/kvx.h"
 
 static const char *kvx_reg_profile = ""
 	"=PC	pc\n"

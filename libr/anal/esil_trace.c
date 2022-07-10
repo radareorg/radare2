@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2020 - pancake, rkx1209 */
+/* radare - LGPL - Copyright 2015-2022 - pancake, rkx1209 */
 
 #include <r_anal.h>
 
@@ -19,7 +19,7 @@ static void htup_vector_free(HtUPKv *kv) {
 R_API RAnalEsilTrace *r_anal_esil_trace_new(RAnalEsil *esil) {
 	r_return_val_if_fail (esil, NULL);
 	if (!esil->stack_addr || !esil->stack_size) {
-		eprintf ("Run `aeim` to initialize a stack for the ESIL vm\n");
+		R_LOG_ERROR ("Run `aeim` to initialize a stack for the ESIL vm");
 		return NULL;
 	}
 	size_t i;
@@ -62,7 +62,7 @@ R_API RAnalEsilTrace *r_anal_esil_trace_new(RAnalEsil *esil) {
 	}
 	return trace;
 error:
-	eprintf ("error\n");
+	R_LOG_ERROR ("trace initialization failed");
 	r_anal_esil_trace_free (trace);
 	return NULL;
 }
@@ -88,7 +88,7 @@ static void add_reg_change(RAnalEsilTrace *trace, int idx, RRegItem *ri, ut64 da
 	if (!vreg) {
 		vreg = r_vector_new (sizeof (RAnalEsilRegChange), NULL, NULL);
 		if (!vreg) {
-			eprintf ("Error: creating a register vector.\n");
+			R_LOG_ERROR ("creating a register vector");
 			return;
 		}
 		ht_up_insert (trace->registers, addr, vreg);
@@ -103,7 +103,7 @@ static void add_mem_change(RAnalEsilTrace *trace, int idx, ut64 addr, ut8 data) 
 	if (!vmem) {
 		vmem = r_vector_new (sizeof (RAnalEsilMemChange), NULL, NULL);
 		if (!vmem) {
-			eprintf ("Error: creating a memory vector.\n");
+			R_LOG_ERROR ("creating a memory vector");
 			return;
 		}
 		ht_up_insert (trace->memory, addr, vmem);
@@ -323,11 +323,8 @@ static int cmp_strings_by_leading_number(void *data1, void *data2) {
 	while (b[j] >= '0' && b[j] <= '9') {
 		j++;
 	}
-	if (!i) {
+	if (!i || !j) {
 		return 1;
-	}
-	if (!j) {
-		return -1;
 	}
 	i--;
 	j--;

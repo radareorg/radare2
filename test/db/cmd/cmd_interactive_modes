@@ -5,7 +5,7 @@ e scr.interactive=false
 pd 1~..
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Internal less requires scr.interactive=true.
+ERROR: Internal less requires scr.interactive=true
 EOF
 RUN
 
@@ -16,6 +16,6 @@ e scr.interactive=false
 pd 1~...
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Hud mode requires scr.interactive=true.
+ERROR: Hud mode requires scr.interactive=true
 EOF
 RUN

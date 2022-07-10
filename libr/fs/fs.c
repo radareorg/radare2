@@ -1,9 +1,8 @@
-/* radare2 - LGPL - Copyright 2011-2021 - pancake */
+/* radare2 - LGPL - Copyright 2011-2022 - pancake */
 
 #include <r_fs.h>
-#include "config.h"
+#include <config.h>
 #include "types.h"
-#include <errno.h>
 
 #if WITH_GPL
 # ifndef USE_GRUB
@@ -22,7 +21,7 @@ static RFSPlugin* fs_static_plugins[] = {
 	R_FS_STATIC_PLUGINS
 };
 
-R_API RFS* r_fs_new(void) {
+R_API R_MUSTUSE RFS* r_fs_new(void) {
 	int i;
 	RFSPlugin* static_plugin;
 	RFS* fs = R_NEW0 (RFS);
@@ -67,14 +66,13 @@ R_API RFSPlugin* r_fs_plugin_get(RFS* fs, const char* name) {
 }
 
 R_API void r_fs_free(RFS* fs) {
-	if (!fs) {
-		return;
+	if (fs) {
+		//r_io_free (fs->iob.io);
+		//root makes use of plugin so revert to avoid UaF
+		r_list_free (fs->roots);
+		r_list_free (fs->plugins);
+		free (fs);
 	}
-	//r_io_free (fs->iob.io);
-	//root makes use of plugin so revert to avoid UaF
-	r_list_free (fs->roots);
-	r_list_free (fs->plugins);
-	free (fs);
 }
 
 /* plugins */
@@ -105,7 +103,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	char *heapFsType = NULL;
 
 	if (path[0] != '/') {
-		eprintf ("r_fs_mount: invalid mountpoint %s\n", path);
+		R_LOG_ERROR ("invalid mountpoint %s", path);
 		return NULL;
 	}
 	if (!fstype || !*fstype) {
@@ -113,7 +111,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		fstype = (const char *)heapFsType;
 	}
 	if (!(p = r_fs_plugin_get (fs, fstype))) {
-		// eprintf ("r_fs_mount: Invalid filesystem type\n");
+		R_LOG_ERROR ("Invalid filesystem type");
 		free (heapFsType);
 		return NULL;
 	}
@@ -124,7 +122,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	}
 	r_str_trim_path (str);
 	if (*str && strchr (str + 1, '/')) {
-		eprintf ("r_fs_mount: mountpoint must have no subdirectories\n");
+		R_LOG_ERROR ("mountpoint must have no subdirectories");
 		free (heapFsType);
 		return NULL;
 	}
@@ -139,7 +137,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 			if (len > lenstr && root->path[lenstr] == '/') {
 				continue;
 			}
-			eprintf ("r_fs_mount: Invalid mount point\n");
+			R_LOG_ERROR ("Invalid mount point");
 			free (str);
 			free (heapFsType);
 			return NULL;
@@ -148,7 +146,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	RFSFile* file = r_fs_open (fs, str, false);
 	if (file) {
 		r_fs_close (fs, file);
-		eprintf ("r_fs_mount: Invalid mount point\n");
+		R_LOG_ERROR ("Invalid mount point");
 		free (heapFsType);
 		free (str);
 		return NULL;
@@ -156,7 +154,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	RList *list = r_fs_dir (fs, str);
 	if (!r_list_empty (list)) {
 		//XXX: list need free ??
-		eprintf ("r_fs_mount: Invalid mount point\n");
+		R_LOG_ERROR ("r_fs_mount: Invalid mount point");
 		free (str);
 		free (heapFsType);
 		return NULL;
@@ -173,7 +171,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		return NULL;
 	}
 	r_list_append (fs->roots, root);
-	eprintf ("Mounted %s on %s at 0x%" PFMT64x "\n", fstype, str, delta);
+	R_LOG_INFO ("Mounted %s on %s at 0x%" PFMT64x, fstype, str, delta);
 	free (str);
 	free (heapFsType);
 	return root;
@@ -280,7 +278,7 @@ R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len
 		if (file->p && file->p->write) {
 			return file->p->write (file, addr, data, len);;
 		}
-		eprintf ("r_fs_write: null file->p->write\n");
+		R_LOG_ERROR ("null file->p->write");
 	}
 	return -1;
 }
@@ -294,7 +292,7 @@ R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
 		}
 		return file->p->read (file, addr, len);
 	}
-	eprintf ("r_fs_read: null file->p->read\n");
+	R_LOG_ERROR ("null file->p->read");
 	return -1;
 }
 
@@ -335,7 +333,7 @@ R_API bool r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 	}
 	if (!r_sys_mkdir (name)) {
 		if (r_sys_mkdir_failed ()) {
-			eprintf ("Cannot create \"%s\"\n", name);
+			R_LOG_ERROR ("Cannot create \"%s\"", name);
 			return false;
 		}
 	}
@@ -375,12 +373,11 @@ R_API bool r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 }
 
 static void r_fs_find_off_aux(RFS* fs, const char* name, ut64 offset, RList* list) {
-	RList* dirs;
 	RListIter* iter;
 	RFSFile* item, * file;
 	char* found = NULL;
 
-	dirs = r_fs_dir (fs, name);
+	RList* dirs = r_fs_dir (fs, name);
 	r_list_foreach (dirs, iter, item) {
 		if (!strcmp (item->name, ".") || !strcmp (item->name, "..")) {
 			continue;
@@ -421,12 +418,11 @@ R_API RList* r_fs_find_off(RFS* fs, const char* name, ut64 off) {
 }
 
 static void r_fs_find_name_aux(RFS* fs, const char* name, const char* glob, RList* list) {
-	RList* dirs;
 	RListIter* iter;
 	RFSFile* item;
 	char* found;
 
-	dirs = r_fs_dir (fs, name);
+	RList* dirs = r_fs_dir (fs, name);
 	r_list_foreach (dirs, iter, item) {
 		if (r_str_glob (item->name, glob)) {
 			found = (char*) malloc (strlen (name) + strlen (item->name) + 2);
@@ -478,15 +474,15 @@ R_API RFSFile* r_fs_slurp(RFS* fs, const char* path) {
 			file = root->p->open (root, path, false);
 			if (file) {
 				root->p->read (file, 0, file->size); //file->data
-			}else {
-				eprintf ("r_fs_slurp: cannot open file\n");
+			} else {
+				R_LOG_ERROR ("cannot open file");
 			}
 		} else {
 			if (root->p->slurp) {
 				free (roots);
 				return root->p->slurp (root, path);
 			}
-			eprintf ("r_fs_slurp: null root->p->slurp\n");
+			R_LOG_ERROR ("null root->p->slurp");
 		}
 	}
 	free (roots);
@@ -581,13 +577,8 @@ R_API RList* r_fs_partitions(RFS* fs, const char* ptype, ut64 delta) {
 		return list;
 	}
 	if (R_STR_ISNOTEMPTY (ptype)) {
-		eprintf ("Unknown partition type '%s'.\n", ptype);
+		R_LOG_ERROR ("Unknown partition type '%s'. Use 'mL' command to list them all", ptype);
 	}
-	eprintf ("Supported types:\n");
-	for (i = 0; partitions[i].name; i++) {
-		eprintf (" %s", partitions[i].name);
-	}
-	eprintf ("\n");
 	return NULL;
 }
 
@@ -618,24 +609,18 @@ R_API const char* r_fs_partition_type(const char* part, int type) {
 	case GRUB_PC_PARTITION_TYPE_FAT32_LBA:
 	case GRUB_PC_PARTITION_TYPE_FAT16_LBA:
 		return strdup ("fat");
-
 	case GRUB_PC_PARTITION_TYPE_EXT2FS:
 		return strdup ("ext2");
-
 	case GRUB_PC_PARTITION_TYPE_MINIX:
 	case GRUB_PC_PARTITION_TYPE_LINUX_MINIX:
 		return strdup ("minix");
-
 	case GRUB_PC_PARTITION_TYPE_NTFS:
 		return strdup ("ntfs");
-
 	case GRUB_PC_PARTITION_TYPE_EXTENDED:
 	case GRUB_PC_PARTITION_TYPE_LINUX_EXTENDED:
 		return strdup ("ext3"); // XXX
-
 	case GRUB_PC_PARTITION_TYPE_HFS:
 		return strdup ("hfs");
-
 	case GRUB_PC_PARTITION_TYPE_WIN95_EXTENDED: // fat?
 	case GRUB_PC_PARTITION_TYPE_EZD:
 	case GRUB_PC_PARTITION_TYPE_VSTAFS:

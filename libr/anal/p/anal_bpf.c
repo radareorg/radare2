@@ -5,7 +5,6 @@
 #include "../arch/bpf/bpf.h"
 
 // disassembly
-// static int disassemble(RAsm *a, RAsmOp *r_op, const ut8 *buf, int len) {
 static int disassemble(RAnalOp *r_op, ut64 pc, const ut8 *buf, int len) {
 	const char *op, *fmt;
 	RBpfSockFilter *f = (RBpfSockFilter *)buf;
@@ -59,15 +58,15 @@ static int disassemble(RAnalOp *r_op, ut64 pc, const ut8 *buf, int len) {
 		break;
 	case BPF_LD_W | BPF_IND:
 		op = r_bpf_op_table[BPF_LD_W];
-		fmt = "[x+%d]";
+		fmt = "[x%+d]";
 		break;
 	case BPF_LD_H | BPF_IND:
 		op = r_bpf_op_table[BPF_LD_H];
-		fmt = "[x+%d]";
+		fmt = "[x%+d]";
 		break;
 	case BPF_LD_B | BPF_IND:
 		op = r_bpf_op_table[BPF_LD_B];
-		fmt = "[x+%d]";
+		fmt = "[x%+d]";
 		break;
 	case BPF_LD | BPF_IMM:
 		op = r_bpf_op_table[BPF_LD_W];
@@ -228,7 +227,7 @@ static int disassemble(RAnalOp *r_op, ut64 pc, const ut8 *buf, int len) {
 	snprintf (vbuf, sizeof (vbuf), fmt, val);
 
 	if ((BPF_CLASS (f->code) == BPF_JMP && BPF_OP (f->code) != BPF_JA)) {
-		r_op->mnemonic = r_str_newf ("%s %s, 0x%08" PFMT64x ", 0x%08" PFMT64x "", op, vbuf,
+		r_op->mnemonic = r_str_newf ("%s %s, 0x%08" PFMT64x ", 0x%08" PFMT64x, op, vbuf,
 			pc + 8 + f->jt * 8, pc + 8 + f->jf * 8);
 	} else {
 		r_op->mnemonic = r_str_newf ("%s %s", op, vbuf);
@@ -237,541 +236,500 @@ static int disassemble(RAnalOp *r_op, ut64 pc, const ut8 *buf, int len) {
 	return r_op->size = 8;
 }
 
-#if 0
 /* start of ASSEMBLER code */
 
-#define PARSER_MAX_TOKENS 4
+#define TOKEN_MAX_LEN 15
+typedef char bpf_token[TOKEN_MAX_LEN + 1];
 
-#define COPY_AND_RET(pc, b)\
-	r_strbuf_setbin (&a, (const ut8 *)b, sizeof (*b) + 1);\
-	return 0;
-
-#define PARSE_FAILURE(message, arg...)\
-	{\
-		eprintf ("PARSE FAILURE: " message "\n", ##arg);\
-		return -1;\
-	}
-
-#define CMP4(tok, n, x, y, z, w)\
-	(tok[n][0] == x && tok[n][1] == y && tok[n][2] == z && tok[n][3] == w)
-
-#define CMP3(tok, n, x, y, z)\
-	(tok[n][0] == x && tok[n][1] == y && tok[n][2] == z)
-
-#define CMP2(tok, n, x, y)\
-	(tok[n][0] == x && tok[n][1] == y)
-
-#define IS_K_TOK(tok, n)\
-	(tok[n][0] == '-' || R_BETWEEN ('0', tok[n][0], '9'))
-
-#define IS_LEN(tok, n)\
-	CMP4 (tok, n, 'l', 'e', 'n', '\0')
-
-#define PARSE_K_OR_FAIL(dst, tok, n)\
-	dst = strtol (&tok[n][0], &end, 0);\
-	if (*end != '\0' && *end != ',')\
-		PARSE_FAILURE ("could not parse k");
-
-#define PARSE_LABEL_OR_FAIL(dst, tok, n)\
-	dst = strtoul (&tok[n][0], &end, 0);\
-	if (*end != '\0' && *end != ',') {\
-		return -1;\
-	}
-
-#define PARSE_OFFSET_OR_FAIL(dst, tok, n, off)\
-	dst = strtoul (&tok[n][off], &end, 10);\
-	if (*end != ']')\
-		PARSE_FAILURE ("could not parse offset value");
-
-#define PARSE_IND_ABS_OR_FAIL(f, tok, n)\
-	if (CMP3 (tok, 1, '[', 'x', '+')) {\
-		f->code = f->code | BPF_IND;\
-		PARSE_OFFSET_OR_FAIL (f->k, tok, 1, 3);\
-		return 0;\
-	} else if (tok[1][0] == '[') {\
-		f->code = f->code | BPF_ABS;\
-		PARSE_OFFSET_OR_FAIL (f->k, tok, 1, 1);\
-		return 0;\
-	}\
-	PARSE_FAILURE ("could not parse addressing mode");
-
-#define PARSE_K_OR_X_OR_FAIL(f, tok)\
-	if (IS_K_TOK (tok, 1)) {\
-		PARSE_K_OR_FAIL (f->k, tok, 1);\
-		f->code = f->code | BPF_K;\
-	} else if (tok[1][0] == 'x' && (tok[1][1] == '\0' || tok[1][1] == ',')) {\
-		f->code = f->code | BPF_X;\
-	} else {\
-		PARSE_FAILURE ("could not parse k or x: %s", tok[1]);\
-	}
-
-#define PARSE_A_OR_X_OR_FAIL(f, tok)\
-	if (tok[1][0] == 'x' && (tok[1][1] == '\0' || tok[1][1] == ',')) {\
-		f->code = f->code | BPF_X;\
-	} else if (tok[1][0] == 'a' && (tok[1][1] == '\0' || tok[1][1] == ',')) {\
-		f->code = f->code | BPF_A;\
-	} else {\
-		PARSE_FAILURE ("could not parse a or x");\
-	}
-
-#define PARSE_JUMP_TARGETS(pc, f, tok, count)\
-	PARSE_K_OR_X_OR_FAIL (f, tok);\
-	if (count >= 3) {\
-		PARSE_LABEL_OR_FAIL (label, tok, 2);\
-		f->jt = (st64) (label - pc - 8) / 8;\
-		f->jf = (pc >> 3) + 1;\
-	}\
-	if (count == 4) {\
-		PARSE_LABEL_OR_FAIL (label, tok, 3);\
-		f->jf = (st64) (label - pc - 8) / 8;\
-	}
-
-#define SWAP_JUMP_TARGETS(f)\
-	temp = f->jt;\
-	f->jt = f->jf;\
+#define SWAP_JUMP_TARGETS(f) \
+	temp = f->jt; \
+	f->jt = f->jf; \
 	f->jf = temp;
 
-#define ENFORCE_COUNT(count, n)\
-	if (count != n)\
-		PARSE_FAILURE ("invalid argument count, try to omit '#'");
+#define TOKEN_EQ(x, s) (strcmp ((x), (s)) == 0)
 
-#define ENFORCE_COUNT_GE(count, n)\
-	if (count < n)\
-		PARSE_FAILURE ("invalid argument count, try to omit '#'");
+#define PARSE_NEED_TOKEN(x) \
+	if (x == NULL) { \
+		return false; \
+	}
+#define PARSE_NEED(x) \
+	if (!(x)) { \
+		return false; \
+	}
+#define PARSE_STR(x, s) PARSE_NEED (TOKEN_EQ (x, s))
+typedef struct bpf_asm_parser {
+	const char *str;
+	RStrBuf *token;
+} BPFAsmParser;
 
-static int assemble_ld(RAsm *a, RAsmOp *op, char *tok[PARSER_MAX_TOKENS], int count, RBpfSockFilter *f) {
-	char *end;
+static void token_fini(BPFAsmParser *t) {
+	if (t->token) {
+		r_strbuf_free (t->token);
+		t->token = NULL;
+	}
+}
 
-	switch (tok[0][2]) {
+static const char *trim_input(const char *p) {
+	while (*p) {
+		switch (*p) {
+		// Skip the whitespace
+		case ' ':
+		case '\t':
+			p++;
+			continue;
+		// Skip the rest of the line is a comment is encountered
+		case ';':
+			return NULL;
+		default:
+			return p;
+		}
+	}
+	// Nothing left
+	return NULL;
+}
+
+static inline bool is_single_char_token(char c) {
+	return c == '(' || c == ')' || c == '[' || c == ']';
+}
+
+static inline bool is_arithmetic(char c) {
+	return c == '+' || c == '-';
+}
+
+static const char *token_next(BPFAsmParser *t) {
+	token_fini (t);
+
+	// Seek to token
+	t->str = trim_input (t->str);
+	if (!t->str) {
+		return NULL;
+	}
+
+	// Allocate scratch space for token
+	RStrBuf *token = r_strbuf_new (NULL);
+	if (token == NULL) {
+		return NULL;
+	}
+	if (!r_strbuf_reserve (token, TOKEN_MAX_LEN + 1)) {
+		r_strbuf_free (token);
+		return NULL;
+	}
+	t->token = token;
+
+	if (is_single_char_token (t->str[0])) {
+		r_strbuf_append_n (token, t->str++, 1);
+		return r_strbuf_get (token);
+	}
+
+	// Gather a handful of chars
+	// Use isgraph instead of isprint because the latter considers ' ' printable
+	int i;
+	for (i = 0; i < TOKEN_MAX_LEN; i++) {
+		if (!isgraph (t->str[0]) || is_single_char_token (t->str[0]) || (is_arithmetic (t->str[0]) && i != 0)) {
+			break;
+		}
+		r_strbuf_append_n (token, t->str++, 1);
+	}
+	if (i == TOKEN_MAX_LEN) {
+		return NULL; // token too long
+	}
+	return r_strbuf_get (token);
+}
+
+static bool is_k_tok(const char *tok) {
+	return is_arithmetic (tok[0]) || R_BETWEEN ('0', tok[0], '9');
+}
+
+static bool parse_k(RBpfSockFilter *f, const char *t) {
+	char *t2;
+	f->k = strtol (t, &t2, 0);
+	return t != t2;
+}
+
+static bool parse_k_or_x(RBpfSockFilter *f, const char *t) {
+	if (TOKEN_EQ (t, "x")) {
+		f->code |= BPF_X;
+		return true;
+	} else {
+		f->code |= BPF_K;
+		return parse_k (f, t);
+	}
+}
+
+static bool parse_label_value(ut64 *out, const char *t) {
+	char *t2;
+	*out = strtoul (t, &t2, 0);
+	return t != t2;
+}
+
+static bool parse_label(RBpfSockFilter *f, const char *t) {
+	ut64 k = 0;
+	bool r = parse_label_value (&k, t);
+	f->k = k;
+	return r;
+}
+
+static bool parse_jump_targets(RBpfSockFilter *f, int opc, const bpf_token *op, ut64 pc) {
+	PARSE_NEED (opc >= 1);
+	PARSE_NEED (parse_k_or_x (f, op[0]));
+	ut64 label;
+	if (opc >= 2) {
+		parse_label_value (&label, op[1]);
+		f->jt = (st64)(label - pc - 8) / 8;
+		f->jf = (pc >> 3) + 1;
+	}
+	if (opc == 3) {
+		parse_label_value (&label, op[2]);
+		f->jf = (st64)(label - pc - 8) / 8;
+	}
+	return true;
+}
+
+static bool parse_ind_or_abs (RBpfSockFilter *f, int opc, const bpf_token *op) {
+	PARSE_NEED (opc >= 2);
+	PARSE_STR (op[0], "[");
+	if (TOKEN_EQ (op[1], "x")) {
+		PARSE_NEED (opc == 4);
+		f->code |= BPF_IND;
+		PARSE_NEED (parse_k (f, op[2]));
+		PARSE_STR (op[3], "]");
+	} else {
+		PARSE_NEED (opc == 3);
+		f->code |= BPF_ABS;
+		PARSE_NEED (parse_k (f, op[1]));
+		PARSE_STR (op[2], "]");
+	}
+	return true;
+}
+
+static bool parse_ld (RBpfSockFilter *f, const char *mnemonic, int opc, const bpf_token *op) {
+	switch (mnemonic[2]) {
 	case '\0':
-		if (CMP2 (tok, 1, 'm', '[')) {
+		PARSE_NEED (opc >= 2);
+		if (TOKEN_EQ (op[1], "m")) {
 			f->code = BPF_LD | BPF_MEM;
-			PARSE_OFFSET_OR_FAIL (f->k, tok, 1, 2);
-		} else if (IS_K_TOK (tok, 1)) {
+			PARSE_NEED (opc == 4);
+			PARSE_STR (op[1], "[");
+			PARSE_NEED (parse_k (f, op[2]));
+			PARSE_STR (op[3], "]");
+			return true;
+		} else if (is_k_tok (op[1])) {
 			f->code = BPF_LD | BPF_IMM;
-			PARSE_K_OR_FAIL (f->k, tok, 1);
-		} else if (IS_LEN (tok, 1)) {
+			return parse_k (f, op[1]);
+		} else if (TOKEN_EQ (op[1], "len")) {
 			f->code = BPF_LD | BPF_LEN;
+			return true;
 		} else {
 			f->code = BPF_LD_W;
-			PARSE_IND_ABS_OR_FAIL (f, tok, 1);
+			return parse_ind_or_abs (f, opc, op);
 		}
 		break;
 	case 'i':
-		if (IS_K_TOK (tok, 1)) {
-			f->code = BPF_LD | BPF_IMM;
-			PARSE_K_OR_FAIL (f->k, tok, 1);
-		} else {
-			PARSE_FAILURE ("ldi without k");
-		}
-		break;
+		f->code = BPF_LD | BPF_IMM;
+		PARSE_NEED (opc == 2);
+		return parse_k (f, op[1]);
 	case 'b':
 		f->code = BPF_LD_B;
-		PARSE_IND_ABS_OR_FAIL (f, tok, 1);
-		break;
+		return parse_ind_or_abs (f, opc, op);
 	case 'h':
 		f->code = BPF_LD_H;
-		PARSE_IND_ABS_OR_FAIL (f, tok, 1);
-		break;
+		return parse_ind_or_abs (f, opc, op);
 	case 'x':
-		switch (tok[0][3]) {
+		switch (mnemonic[3]) {
 		case '\0':
-			if (CMP2 (tok, 1, 'm', '[')) {
+			PARSE_NEED (opc >= 2);
+			if (TOKEN_EQ (op[1], "m")) {
 				f->code = BPF_LDX | BPF_MEM;
-				PARSE_OFFSET_OR_FAIL (f->k, tok, 1, 2);
-			} else if (IS_K_TOK (tok, 1)) {
+				PARSE_NEED (opc == 4);
+				PARSE_STR (op[1], "[")
+				PARSE_NEED (parse_k (f, op[2]));
+				PARSE_STR (op[3], "]");
+				return true;
+			} else if (is_k_tok (op[1])) {
 				f->code = BPF_LDX | BPF_IMM;
-				PARSE_K_OR_FAIL (f->k, tok, 1);
-			} else if (IS_LEN (tok, 1)) {
+				return parse_k (f, op[1]);
+			} else if (TOKEN_EQ (op[1], "len")) {
 				f->code = BPF_LDX | BPF_LEN;
+				return true;
 			} else {
 				f->code = BPF_LDX_W;
-				PARSE_IND_ABS_OR_FAIL (f, tok, 1);
+				return parse_ind_or_abs (f, opc, op);
 			}
 			break;
 		case 'i':
-			if (IS_K_TOK (tok, 1)) {
-				f->code = BPF_LDX | BPF_IMM;
-				PARSE_K_OR_FAIL (f->k, tok, 1);
-			} else {
-				PARSE_FAILURE ("ldxi without k");
-			}
-			break;
+			f->code = BPF_LDX | BPF_IMM;
+			PARSE_NEED (opc == 2);
+			return parse_k (f, op[1]);
 		case 'b':
 			f->code = BPF_LDX_B | BPF_MSH;
-			if (sscanf (tok[1], "4*([%d]&0xf)", &f->k) != 1) {
-				PARSE_FAILURE ("invalid nibble addressing");
-			}
+			PARSE_NEED (opc == 10);
+			PARSE_STR (op[1], "4");
+			PARSE_STR (op[2], "*");
+			PARSE_STR (op[3], "(");
+			PARSE_STR (op[4], "[");
+			PARSE_NEED (parse_k (f, op[5]));
+			PARSE_STR (op[6], "]");
+			PARSE_STR (op[7], "&");
+			PARSE_STR (op[8], "0xf");
+			PARSE_STR (op[9], ")");
 			break;
 		}
-		break;
-	default:
-		PARSE_FAILURE ("unsupported load instruction");
+		return false;
 	}
-
-	return 0;
+	return false;
 }
 
-static int assemble_j(ut64 pc, RAsmOp *op, char *tok[PARSER_MAX_TOKENS], int count, RBpfSockFilter *f) {
-	int label;
-	ut8 temp;
-	char *end;
+static bool parse_j (RBpfSockFilter *f, const char *m, int opc, const bpf_token *op, ut64 pc) {
+	st8 temp;
 
-	if (CMP4 (tok, 0, 'j', 'm', 'p', '\0') ||
-		CMP3 (tok, 0, 'j', 'a', '\0')) {
-		ENFORCE_COUNT (count, 2);
+	if (TOKEN_EQ (m, "jmp") || TOKEN_EQ (m, "ja")) {
 		f->code = BPF_JMP_JA;
-		PARSE_LABEL_OR_FAIL (f->k, tok, 1);
-		return 0;
+		PARSE_NEED (opc == 1);
+		PARSE_NEED (parse_label (f, op[0]))
+		return true;
 	}
 
-	if (CMP4 (tok, 0, 'j', 'n', 'e', '\0') ||
-		CMP4 (tok, 0, 'j', 'n', 'e', 'q')) {
-		ENFORCE_COUNT_GE (count, 3);
+	if (TOKEN_EQ (m, "jne") || TOKEN_EQ (m, "jneq")) {
 		f->code = BPF_JMP_JEQ;
-		PARSE_JUMP_TARGETS (pc, f, tok, count);
+		PARSE_NEED (parse_jump_targets (f, opc, op, pc));
 		SWAP_JUMP_TARGETS (f);
-		return 0;
+		return true;
 	}
-
-	if (CMP4 (tok, 0, 'j', 'e', 'q', '\0')) {
-		ENFORCE_COUNT_GE (count, 3);
+	if (TOKEN_EQ (m, "jeq")) {
 		f->code = BPF_JMP_JEQ;
-		PARSE_JUMP_TARGETS (pc, f, tok, count);
-		return 0;
+		PARSE_NEED (parse_jump_targets (f, opc, op, pc));
+		return true;
 	}
 
-	if (CMP4 (tok, 0, 'j', 'l', 't', '\0')) {
-		ENFORCE_COUNT_GE (count, 3);
+	if (TOKEN_EQ (m, "jlt")) {
 		f->code = BPF_JMP_JGE;
-		PARSE_JUMP_TARGETS (pc, f, tok, count);
+		PARSE_NEED (parse_jump_targets (f, opc, op, pc));
 		SWAP_JUMP_TARGETS (f);
-		return 0;
+		return true;
 	}
-
-	if (CMP4 (tok, 0, 'j', 'l', 'e', '\0')) {
-		ENFORCE_COUNT_GE (count, 3);
-		f->code = BPF_JMP_JGT;
-		PARSE_JUMP_TARGETS (pc, f, tok, count);
-		SWAP_JUMP_TARGETS (f);
-		return 0;
-	}
-
-	if (CMP4 (tok, 0, 'j', 'g', 't', '\0')) {
-		ENFORCE_COUNT_GE (count, 3);
-		f->code = BPF_JMP_JGT;
-		PARSE_JUMP_TARGETS (pc, f, tok, count);
-		return 0;
-	}
-
-	if (CMP4 (tok, 0, 'j', 'g', 'e', '\0')) {
-		ENFORCE_COUNT_GE (count, 3);
+	if (TOKEN_EQ (m, "jge")) {
 		f->code = BPF_JMP_JGE;
-		PARSE_JUMP_TARGETS (pc, f, tok, count);
-		return 0;
+		PARSE_NEED (parse_jump_targets (f, opc, op, pc));
+		return true;
 	}
 
-	if (CMP4 (tok, 0, 'j', 's', 'e', 't')) {
-		ENFORCE_COUNT_GE (count, 3);
+	if (TOKEN_EQ (m, "jle")) {
+		f->code = BPF_JMP_JGT;
+		PARSE_NEED (parse_jump_targets (f, opc, op, pc));
+		SWAP_JUMP_TARGETS (f);
+		return true;
+	}
+	if (TOKEN_EQ (m, "jgt")) {
+		f->code = BPF_JMP_JGT;
+		PARSE_NEED (parse_jump_targets (f, opc, op, pc));
+		return true;
+	}
+
+	if (TOKEN_EQ (m, "jge")) {
+		f->code = BPF_JMP_JGE;
+		PARSE_NEED (parse_jump_targets (f, opc, op, pc));
+		return true;
+	}
+
+	if (TOKEN_EQ (m, "jset")) {
 		f->code = BPF_JMP_JSET;
-		PARSE_JUMP_TARGETS (pc, f, tok, count);
-		return 0;
+		PARSE_NEED (parse_jump_targets (f, opc, op, pc));
+		return true;
 	}
 
-	return -1;
+	return false;
 }
 
-static int assemble_alu(RAsm *a, RAsmOp *op, char *tok[PARSER_MAX_TOKENS], int count, RBpfSockFilter *f) {
-	char *end;
-
-	if (CMP4 (tok, 0, 'a', 'd', 'd', '\0')) {
-		ENFORCE_COUNT (count, 2);
+static bool parse_alu (RBpfSockFilter *f, const char *m, int opc, const bpf_token *op) {
+	if (TOKEN_EQ (m, "add")) {
 		f->code = BPF_ALU_ADD;
-		PARSE_K_OR_X_OR_FAIL (f, tok);
-		return 0;
+		PARSE_NEED (opc == 1);
+		PARSE_NEED (parse_k_or_x (f, op[0]));
+		return true;
 	}
-
-	if (CMP4 (tok, 0, 's', 'u', 'b', '\0')) {
-		ENFORCE_COUNT (count, 2);
+	if (TOKEN_EQ (m, "sub")) {
 		f->code = BPF_ALU_SUB;
-		PARSE_K_OR_X_OR_FAIL (f, tok);
-		return 0;
+		PARSE_NEED (opc == 1);
+		PARSE_NEED (parse_k_or_x (f, op[0]));
+		return true;
 	}
-
-	if (CMP4 (tok, 0, 'm', 'u', 'l', '\0')) {
-		ENFORCE_COUNT (count, 2);
+	if (TOKEN_EQ (m, "mul")) {
 		f->code = BPF_ALU_MUL;
-		PARSE_K_OR_X_OR_FAIL (f, tok);
-		return 0;
+		PARSE_NEED (opc == 1);
+		PARSE_NEED (parse_k_or_x (f, op[0]));
+		return true;
 	}
-
-	if (CMP4 (tok, 0, 'd', 'i', 'v', '\0')) {
-		ENFORCE_COUNT (count, 2);
+	if (TOKEN_EQ (m, "div")) {
 		f->code = BPF_ALU_DIV;
-		PARSE_K_OR_X_OR_FAIL (f, tok);
-		return 0;
+		PARSE_NEED (opc == 1);
+		PARSE_NEED (parse_k_or_x (f, op[0]));
+		return true;
 	}
-
-	if (CMP4 (tok, 0, 'm', 'o', 'd', '\0')) {
-		ENFORCE_COUNT (count, 2);
+	if (TOKEN_EQ (m, "mod")) {
 		f->code = BPF_ALU_MOD;
-		PARSE_K_OR_X_OR_FAIL (f, tok);
-		return 0;
+		PARSE_NEED (opc == 1);
+		PARSE_NEED (parse_k_or_x (f, op[0]));
+		return true;
 	}
-
-	if (CMP4 (tok, 0, 'n', 'e', 'g', '\0')) {
-		ENFORCE_COUNT (count, 1);
+	if (TOKEN_EQ (m, "neg")) {
 		f->code = BPF_ALU_NEG;
-		return 0;
+		PARSE_NEED (opc == 0);
+		return true;
 	}
-
-	if (CMP4 (tok, 0, 'a', 'n', 'd', '\0')) {
-		ENFORCE_COUNT (count, 2);
+	if (TOKEN_EQ (m, "and")) {
 		f->code = BPF_ALU_AND;
-		PARSE_K_OR_X_OR_FAIL (f, tok);
-		return 0;
+		PARSE_NEED (opc == 1);
+		PARSE_NEED (parse_k_or_x (f, op[0]));
+		return true;
 	}
-
-	if (CMP3 (tok, 0, 'o', 'r', '\0')) {
-		ENFORCE_COUNT (count, 2);
+	if (TOKEN_EQ (m, "or")) {
 		f->code = BPF_ALU_OR;
-		PARSE_K_OR_X_OR_FAIL (f, tok);
-		return 0;
+		PARSE_NEED (opc == 1);
+		PARSE_NEED (parse_k_or_x (f, op[0]));
+		return true;
 	}
-
-	if (CMP4 (tok, 0, 'x', 'o', 'r', '\0')) {
-		ENFORCE_COUNT (count, 2);
+	if (TOKEN_EQ (m, "xor")) {
 		f->code = BPF_ALU_XOR;
-		PARSE_K_OR_X_OR_FAIL (f, tok);
-		return 0;
+		PARSE_NEED (opc == 1);
+		PARSE_NEED (parse_k_or_x (f, op[0]));
+		return true;
 	}
-
-	if (CMP4 (tok, 0, 'l', 's', 'h', '\0')) {
-		ENFORCE_COUNT (count, 2);
+	if (TOKEN_EQ (m, "lsh")) {
 		f->code = BPF_ALU_LSH;
-		PARSE_K_OR_X_OR_FAIL (f, tok);
-		return 0;
+		PARSE_NEED (opc == 1);
+		PARSE_NEED (parse_k_or_x (f, op[0]));
+		return true;
 	}
-
-	if (CMP4 (tok, 0, 'r', 's', 'h', '\0')) {
-		ENFORCE_COUNT (count, 2);
+	if (TOKEN_EQ (m, "rsh")) {
 		f->code = BPF_ALU_RSH;
-		PARSE_K_OR_X_OR_FAIL (f, tok);
-		return 0;
+		PARSE_NEED (opc == 1);
+		PARSE_NEED (parse_k_or_x (f, op[0]));
+		return true;
 	}
-
-	return -1;
+	return false;
 }
 
-static int assemble_tok(ut64 pc, char *buf, char *tok[PARSER_MAX_TOKENS], int count) {
-	char *end;
-	int oplen = 0;
-	RBpfSockFilter f = { 0, 0, 0, 0 };
-	oplen = strnlen (tok[0], 5);
-
-	if (oplen < 2 || oplen > 4) {
-		PARSE_FAILURE ("mnemonic length not valid");
+static bool parse_instruction (RBpfSockFilter *f, BPFAsmParser *p, ut64 pc) {
+	const char *mnemonic_tok = token_next (p);
+	PARSE_NEED_TOKEN (mnemonic_tok);
+	int mlen = strnlen (mnemonic_tok, 5);
+	if (mlen < 2 || mlen > 4) {
+		R_LOG_ERROR ("invalid mnemonic");
 	}
 
-	if (CMP4 (tok, 0, 't', 'x', 'a', '\0')) {
-		ENFORCE_COUNT (count, 1);
-		f.code = BPF_MISC_TXA;
-		COPY_AND_RET (buf, &f);
+	char mnemonic[5] = {0};
+	strncpy (mnemonic, mnemonic_tok, 4);
+
+	int opc;
+	bpf_token op[11] = {0};
+	for (opc = 0; opc < (sizeof (op) / sizeof (op[0]));) {
+		const char *t = token_next (p);
+		if (t == NULL) {
+			break;
+		}
+		strncpy (op[opc++], t, TOKEN_MAX_LEN);
 	}
 
-	if (CMP4 (tok, 0, 't', 'a', 'x', '\0')) {
-		ENFORCE_COUNT (count, 1);
-		f.code = BPF_MISC_TAX;
-		COPY_AND_RET (buf, &f);
+	if (TOKEN_EQ (mnemonic, "txa")) {
+		f->code = BPF_MISC_TXA;
+		return true;
+	}
+	if (TOKEN_EQ (mnemonic, "tax")) {
+		f->code = BPF_MISC_TAX;
+		return true;
 	}
 
-	if (CMP4 (tok, 0, 'r', 'e', 't', '\0')) {
-		ENFORCE_COUNT (count, 2);
-		if (IS_K_TOK (tok, 1)) {
-			f.code = BPF_RET | BPF_K;
-			PARSE_K_OR_FAIL (f.k, tok, 1);
-		} else if (tok[1][0] == 'x') {
-			f.code = BPF_RET | BPF_X;
-		} else if (tok[1][0] == 'a') {
-			f.code = BPF_RET | BPF_A;
+	if (TOKEN_EQ (mnemonic, "ret")) {
+		f->code = BPF_RET;
+		PARSE_NEED (opc == 1);
+		if (is_k_tok (op[0])) {
+			f->code |= BPF_K;
+			return parse_k (f, op[0]);
+		} else if (TOKEN_EQ (op[0], "x")) {
+			f->code |= BPF_X;
+			return true;
+		} else if (TOKEN_EQ (op[0], "a")) {
+			f->code |= BPF_A;
+			return true;
 		} else {
-			PARSE_FAILURE ("unsupported ret instruction");
-		}
-		COPY_AND_RET (buf, &f);
-	}
-
-	if (CMP2 (tok, 0, 'l', 'd')) {
-		ENFORCE_COUNT (count, 2);
-		if (assemble_ld (pc, op, tok, count, &f) == 0) {
-			COPY_AND_RET (buf, &f);
-		} else {
-			return -1;
+			return false;
 		}
 	}
 
-	if (CMP2 (tok, 0, 's', 't')) {
-		ENFORCE_COUNT (count, 2);
-		if (tok[0][2] == '\0') {
-			f.code = BPF_ST;
-		} else if (tok[0][2] == 'x') {
-			f.code = BPF_STX;
-		}
-
-		if (CMP2 (tok, 1, 'm', '[')) {
-			PARSE_OFFSET_OR_FAIL (f.k, tok, 1, 2);
-			if (f.k > 15) {
-				PARSE_FAILURE ("mem addressing out of bounds");
-			}
-			COPY_AND_RET (buf, &f);
-		} else {
-			PARSE_FAILURE ("invalid store addressing");
-		}
+	if (strncmp (mnemonic, "ld", 2) == 0) {
+		return parse_ld (f, mnemonic, opc, op);
 	}
 
-	if (tok[0][0] == 'j') {
-		if (assemble_j (pc, op, tok, count, &f) == 0) {
-			COPY_AND_RET (buf, &f);
-		} else {
-			return -1;
+	if (strncmp (mnemonic, "st", 2) == 0) {
+		switch (mnemonic[2]) {
+		case '\0': f->code = BPF_ST; break;
+		case 'x': f->code = BPF_STX; break;
+		default: return false;
 		}
+		PARSE_NEED (opc == 4);
+		PARSE_STR (op[1], "[")
+		PARSE_NEED (parse_k (f, op[2]));
+		PARSE_STR (op[3], "]");
+		return true;
 	}
 
-	if (assemble_alu (pc, op, tok, count, &f) == 0) {
-		COPY_AND_RET (buf, &f);
-	} else {
+	if (mnemonic[0] == 'j') {
+		return parse_j (f, mnemonic, opc, op, pc);
+	}
+
+	return parse_alu (f, mnemonic, opc, op);
+}
+
+static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsize) {
+	if (outsize < 8) {
 		return -1;
 	}
-}
 
-static void lower_op(char *c) {
-	if ((c[0] <= 'Z') && (c[0] >= 'A')) {
-		c[0] += 0x20;
-	}
-}
+	RBpfSockFilter f = {0};
+	BPFAsmParser p = { .str = str };
 
-#define R_TRUE 1
-static void normalize(RStrBuf *buf) {
-	int i;
-	char *buf_asm;
-	if (!buf)
-		return;
-	buf_asm = r_strbuf_get (buf);
-
-	/* this normalization step is largely sub-optimal */
-
-	i = strlen (buf_asm);
-	while (strstr (buf_asm, "  ")) {
-		r_str_replace_in (buf_asm, (ut32)i, "  ", " ", R_TRUE);
-	}
-	r_str_replace_in (buf_asm, (ut32)i, " ,", ",", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, "[ ", "[", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, " ]", "]", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, "( ", "(", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, " )", ")", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, "+ ", "+", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, " +", "+", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, "* ", "*", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, " *", "*", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, "& ", "&", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, " &", "&", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, "%", "", R_TRUE);
-	r_str_replace_in (buf_asm, (ut32)i, "#", "", R_TRUE);
-	r_str_do_until_token (lower_op, buf_asm, '\0');
-	r_strbuf_set (buf, buf_asm);
-}
-
-static int bf_opasm(RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsize) {
-	char *tok[PARSER_MAX_TOKENS];
-	char tmp[128];
-	int i, j, l;
-	const char *p = NULL;
-
-	RStrBuf *sb = r_strbuf_new (str);
-	normalize (sb);
-
-	// tokenization, copied from profile.c
-	j = 0;
-	p = r_strbuf_get (sb);
-
-	// For every word
-	while (*p) {
-		// Skip the whitespace
-		while (*p == ' ' || *p == '\t') {
-			p++;
-		}
-		// Skip the rest of the line is a comment is encountered
-		if (*p == ';') {
-			while (*p != '\0') {
-				p++;
-			}
-		}
-		// EOL ?
-		if (*p == '\0') {
-			break;
-		}
-		// Gather a handful of chars
-		// Use isgraph instead of isprint because the latter considers ' ' printable
-		for (i = 0; isgraph ((const unsigned char)*p) && i < sizeof (tmp) - 1;) {
-			tmp[i++] = *p++;
-		}
-		tmp[i] = '\0';
-		// Limit the number of tokens
-		if (j > PARSER_MAX_TOKENS - 1) {
-			break;
-		}
-		// Save the token
-		tok[j++] = strdup (tmp);
+	bool ret = parse_instruction (&f, &p, pc);
+	token_fini (&p);
+	if (!ret) {
+		return -1;
 	}
 
-	if (j) {
-		if (assemble_tok (pc, p, tok, j) < 0) {
-			return -1;
-		}
-
-		// Clean up
-		for (i = 0; i < j; i++) {
-			free (tok[i]);
-		}
-	}
-	r_str_ncpy (outbuf, r_strbuf_get (sb), outsize);
-	r_strbuf_free (sb);
-
+	memcpy (outbuf, &f, 8);
 	return 8;
 }
-#endif
 
 /// analysis
 
-#define EMIT_CJMP(op, addr, f)\
-	(op)->type = R_ANAL_OP_TYPE_CJMP;\
-	(op)->jump = (addr) + 8 + (st8) (f)->jt * 8;\
-	(op)->fail = (addr) + 8 + (st8) (f)->jf * 8;
+#define EMIT_CJMP(op, addr, f) \
+	(op)->type = R_ANAL_OP_TYPE_CJMP; \
+	(op)->jump = (addr) + 8 + (st8)(f)->jt * 8; \
+	(op)->fail = (addr) + 8 + (st8)(f)->jf * 8;
 
-#define EMIT_LOAD(op, addr, size)\
-	(op)->type = R_ANAL_OP_TYPE_LOAD;\
-	(op)->ptr = (addr);\
+#define EMIT_LOAD(op, addr, size) \
+	(op)->type = R_ANAL_OP_TYPE_LOAD; \
+	(op)->ptr = (addr); \
 	(op)->ptrsize = (size);
 
-#define NEW_SRC_DST(op)\
-	(op)->src[0] = r_anal_value_new ();\
+#define NEW_SRC_DST(op) \
+	(op)->src[0] = r_anal_value_new (); \
 	(op)->dst = r_anal_value_new ();
 
-#define SET_REG_SRC_DST(op, _src, _dst)\
-	NEW_SRC_DST ((op));\
-	(op)->src[0]->reg = r_reg_get (anal->reg, (_src), R_REG_TYPE_GPR);\
+#define SET_REG_SRC_DST(op, _src, _dst) \
+	NEW_SRC_DST ((op)); \
+	(op)->src[0]->reg = r_reg_get (anal->reg, (_src), R_REG_TYPE_GPR); \
 	(op)->dst->reg = r_reg_get (anal->reg, (_dst), R_REG_TYPE_GPR);
 
-#define SET_REG_DST_IMM(op, _dst, _imm)\
-	NEW_SRC_DST ((op));\
-	(op)->dst->reg = r_reg_get (anal->reg, (_dst), R_REG_TYPE_GPR);\
+#define SET_REG_DST_IMM(op, _dst, _imm) \
+	NEW_SRC_DST ((op)); \
+	(op)->dst->reg = r_reg_get (anal->reg, (_dst), R_REG_TYPE_GPR); \
 	(op)->src[0]->imm = (_imm);
 
-#define SET_A_SRC(op)\
-	(op)->src[0] = r_anal_value_new ();\
+#define SET_A_SRC(op) \
+	(op)->src[0] = r_anal_value_new (); \
 	(op)->src[0]->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
 
-#define SET_A_DST(op)\
-	(op)->dst = r_anal_value_new ();\
+#define SET_A_DST(op) \
+	(op)->dst = r_anal_value_new (); \
 	(op)->dst->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
 
 #define INSIDE_M(k) ((k) >= 0 && (k) <= 16)
@@ -800,7 +758,7 @@ static const char *M[] = {
 	"m[15]"
 };
 
-static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	RBpfSockFilter *f = (RBpfSockFilter *)data;
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;
@@ -812,7 +770,7 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 	r_strbuf_init (&op->esil);
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		(void) disassemble (op, addr, data, len);
+		(void)disassemble (op, addr, data, len);
 	}
 
 	switch (f->code) {
@@ -860,12 +818,12 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	case BPF_LD_W | BPF_LEN:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		SET_REG_SRC_DST (op, "len", "a");
-		esilprintf (op, "%"PFMT64d",a,=", (ut64)f->k);
+		esilprintf (op, "%" PFMT64d ",a,=", (ut64)f->k);
 		break;
 	case BPF_LDX | BPF_LEN:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		SET_REG_SRC_DST (op, "len", "x");
-		esilprintf (op, "%"PFMT64d",x,=", (ut64)f->k);
+		esilprintf (op, "%" PFMT64d ",x,=", (ut64)f->k);
 		break;
 	case BPF_LD_W | BPF_ABS:
 		EMIT_LOAD (op, anal->gp + f->k, 4);
@@ -1017,7 +975,7 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 				(st64)op->val, op->jump, op->fail);
 		} else {
 			esilprintf (op,
-				"%"PFMT64d",a,&,!,?{,%" PFMT64d ",pc,=,BREAK,},%" PFMT64d ",pc,=",
+				"%" PFMT64d ",a,&,!,?{,%" PFMT64d ",pc,=,BREAK,},%" PFMT64d ",pc,=",
 				(st64)op->val, op->jump, op->fail);
 		}
 		break;
@@ -1162,7 +1120,7 @@ static int bpf_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return op->size;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static bool set_reg_profile (RAnal *anal) {
 	const char *p =
 		"=PC    pc\n"
 		"=A0    z\n"
@@ -1228,7 +1186,7 @@ static int esil_bpf_fini(RAnalEsil *esil) {
 }
 */
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo (RAnal *anal, int q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return 8;
@@ -1246,19 +1204,19 @@ static int archinfo(RAnal *anal, int q) {
 
 RAnalPlugin r_anal_plugin_bpf = {
 	.name = "bpf.mr",
-	.desc = "Berkely packet filter analysis plugin",
+	.desc = "Classic BPF analysis plugin",
 	.license = "LGPLv3",
 	.arch = "bpf",
 	.bits = 32,
 	.esil = true,
 	.op = &bpf_anal,
 	.archinfo = archinfo,
-//	.opasm = &bf_opasm,
+	.opasm = &bpf_opasm,
 	.set_reg_profile = &set_reg_profile,
-/*
-	.esil_init = &esil_bpf_init,
-	.esil_fini = &esil_bpf_fini
-*/
+	/*
+		.esil_init = &esil_bpf_init,
+		.esil_fini = &esil_bpf_fini
+	*/
 };
 
 #ifndef R2_PLUGIN_INCORE

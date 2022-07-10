@@ -209,7 +209,7 @@ bool xnu_attach(RDebug *dbg, int pid) {
 	}
 #else
 	if (!xnu_create_exception_thread (dbg, pid)) {
-		eprintf ("error setting up exception thread\n");
+		R_LOG_ERROR ("setting up exception thread");
 		return false;
 	}
 	dbg->pid = pid;
@@ -304,19 +304,19 @@ bool xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 	//TODO free refs count threads
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th) {
-		eprintf ("failed to get thread in xnu_continue\n");
+		R_LOG_ERROR ("failed to get thread in xnu_continue");
 		return false;
 	}
 	//disable trace bit if enable
 	if (th->stepping) {
 		if (!clear_trace_bit (dbg, th)) {
-			eprintf ("error clearing trace bit in xnu_continue\n");
+			R_LOG_ERROR ("clearing trace bit in xnu_continue");
 			return false;
 		}
 	}
 	kern_return_t kr = task_resume (task);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("xnu_continue: Warning: Failed to resume task\n");
+		R_LOG_ERROR ("xnu_continue: Failed to resume task");
 	}
 	return true;
 #endif
@@ -474,7 +474,7 @@ RDebugInfo *xnu_info(RDebug *dbg, const char *arg) {
 	}
 	int kinfo_proc_error = xnu_get_kinfo_proc(dbg->pid, &kp);
 	if (kinfo_proc_error) {
-		eprintf ("Error while querying the process info to sysctl\n");
+		R_LOG_ERROR ("Error while querying the process info to sysctl");
 		return NULL;
 	}
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this w/o libproc ?
@@ -513,8 +513,7 @@ static void xnu_free_threads_ports(RDebugPid *p) {
 	if (p->pid != old_pid) {
 		kr = mach_port_deallocate (old_pid, p->pid);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("error mach_port_deallocate in "
-				"xnu_free_threads ports\n");
+			R_LOG_ERROR ("mach_port_deallocate in xnu_free_threads ports");
 		}
 	}
 }

@@ -1,9 +1,6 @@
-/* radare - LGPL - Copyright 2014-2021 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2022 - pancake, condret */
 
 #include <r_anal.h>
-#include <r_types.h>
-#include <r_util.h>
-#include <r_bind.h>
 
 #if __wasi__ || EMSCRIPTEN
 #define FE_OVERFLOW 0
@@ -441,15 +438,15 @@ static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname
 	const char *bp = r_reg_get_name (esil->anal->reg, R_REG_NAME_BP);
 
 	if (!pc) {
-		eprintf ("Warning: RReg profile does not contain PC register\n");
+		R_LOG_WARN ("RReg profile does not contain PC register");
 		return false;
 	}
 	if (!sp) {
-		eprintf ("Warning: RReg profile does not contain SP register\n");
+		R_LOG_WARN ("RReg profile does not contain SP register");
 		return false;
 	}
 	if (!bp) {
-		eprintf ("Warning: RReg profile does not contain BP register\n");
+		R_LOG_WARN ("RReg profile does not contain BP register");
 		return false;
 	}
 	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp(reg->name, bp)) || num)) { //I trust k-maps
@@ -3588,6 +3585,17 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 }
 
 static bool __stepOut(RAnalEsil *esil, const char *cmd) {
+#if R2_580
+	if (cmd && esil && esil->cmd && !esil->in_cmd_step) {
+		esil->in_cmd_step = true;
+		if (esil->cmd (esil, cmd, esil->address, 0)) {
+			inCmdStep = false;
+			// if returns 1 we skip the impl
+			return true;
+		}
+		esil->in_cmd_step = false;
+	}
+#else
 	static R_TH_LOCAL bool inCmdStep = false;
 	if (cmd && esil && esil->cmd && !inCmdStep) {
 		inCmdStep = true;
@@ -3598,6 +3606,7 @@ static bool __stepOut(RAnalEsil *esil, const char *cmd) {
 		}
 		inCmdStep = false;
 	}
+#endif
 	return false;
 }
 
@@ -3745,7 +3754,7 @@ R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 		}
 		free (popped);
 	} else {
-		eprintf ("Warning: Cannot pop because The ESIL stack is empty\n");
+		R_LOG_WARN ("Cannot pop because The ESIL stack is empty");
 		return -1;
 	}
 	return ret;

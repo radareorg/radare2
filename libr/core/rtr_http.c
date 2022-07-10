@@ -1,6 +1,20 @@
 // included from rtr.c
 
-// return 1 on error
+#define WEBCONFIG 1
+
+static const char *guess_filetype(const char *path) {
+	const char *ct = NULL;
+	if (strstr (path, ".js")) {
+		ct = "Content-Type: application/javascript\n";
+	} else if (strstr (path, ".css")) {
+		ct = "Content-Type: text/css\n";
+	} else if (strstr (path, ".html")) {
+		ct = "Content-Type: text/html\n";
+	}
+	return ct;
+}
+
+// return 1 on error WHY
 static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path) {
 	RConfig *newcfg = NULL, *origcfg = NULL;
 	char headers[128] = {0};
@@ -24,7 +38,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 
 	if (!r_file_is_directory (root)) {
 		if (!r_file_is_directory (homeroot)) {
-			eprintf ("Cannot find http.root or http.homeroot\n");
+			R_LOG_ERROR ("Cannot find http.root or http.homeroot");
 		}
 	}
 	if (!path) {
@@ -77,7 +91,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	}
 	if (!r_socket_listen (s, port, NULL)) {
 		r_socket_free (s);
-		eprintf ("Cannot listen on http.port\n");
+		R_LOG_ERROR ("Cannot listen on http.port");
 		return 1;
 	}
 
@@ -92,7 +106,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	if (so.httpauth) {
 		if (!httpauthfile) {
 			r_socket_free (s);
-			eprintf ("No user list set for HTTP Authentication\n");
+			R_LOG_ERROR ("No user list set for HTTP Authentication");
 			return 1;
 		}
 
@@ -102,7 +116,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			so.authtokens = r_str_split_list (pfile, "\n", 0);
 		} else {
 			r_socket_free (s);
-			eprintf ("Empty list of HTTP users\n");
+			R_LOG_ERROR ("Empty list of HTTP users");
 			return 1;
 		}
 
@@ -113,18 +127,19 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	origcfg = core->config;
 	newcfg = r_config_clone (core->config);
 	core->config = newcfg;
-#if 0
-	// WHY
-	r_config_set (core->config, "asm.cmt.right", "false");
-	r_config_set (core->config, "scr.html", "true");
-#endif
+#if WEBCONFIG
+	const bool orig_scr_html = r_config_get_b (core->config, "scr.html");
+	const int orig_scr_color = r_config_get_i (core->config, "scr.color");
+	const bool orig_scr_interactive = r_config_get_b (core->config, "scr.interactive");
 	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-	r_config_set (core->config, "asm.bytes", "false");
-	r_config_set (core->config, "scr.interactive", "false");
+	r_config_set_b (core->config, "asm.bytes", false);
+	r_config_set_b (core->config, "scr.interactive", false);
+#endif
 	bool restoreSandbox = false;
-	if (r_config_get_i (core->config, "http.sandbox")) {
+	bool oldSandbox = r_config_get_b (core->config, "cfg.sandbox");
+	if (r_config_get_b (core->config, "http.sandbox")) {
 		//(void)r_config_get_i (core->config, "cfg.sandbox");
-		r_config_set (core->config, "cfg.sandbox", "true");
+		r_config_set_b (core->config, "cfg.sandbox", true);
 		restoreSandbox = true;
 	}
 	eprintf ("Starting http server...\n");
@@ -151,9 +166,11 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	while (!r_cons_is_breaked ()) {
 		/* restore environment */
 		core->config = origcfg;
-		r_config_set (origcfg, "scr.html", r_config_get (origcfg, "scr.html"));
+#if WEBCONFIG
+		r_config_set_b (origcfg, "scr.html", r_config_get_b (origcfg, "scr.html"));
 		r_config_set_i (origcfg, "scr.color", r_config_get_i (origcfg, "scr.color"));
-		r_config_set (origcfg, "scr.interactive", r_config_get (origcfg, "scr.interactive"));
+		r_config_set_b (origcfg, "scr.interactive", r_config_get_b (origcfg, "scr.interactive"));
+#endif
 		core->http_up = 0; // DAT IS NOT TRUE AT ALL.. but its the way to enable visual
 
 		newoff = core->offset;
@@ -164,14 +181,29 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		core->block = origblk;
 		core->blocksize = origblksz;
 
-// backup and restore offset and blocksize
-
+		// backup and restore offset and blocksize
 		/* this is blocking */
 		activateDieTime (core);
 
 		void *bed = r_cons_sleep_begin ();
 		rs = r_socket_http_accept (s, &so);
 		r_cons_sleep_end (bed);
+		if (!rs) {
+			bed = r_cons_sleep_begin ();
+			r_sys_usleep (100);
+			r_cons_sleep_end (bed);
+			continue;
+		}
+
+		if (r_config_get_b (core->config, "http.channel")) {
+			// start a new thread with 
+			// char *res = r_core_cmd_str_r (core, cmd);
+			if (rs) {
+				r_socket_http_response (rs, 200, "TODO", 0, headers);
+				r_socket_http_close (rs);
+			}
+			continue;
+		}
 
 		if (*basepath && strcmp (basepath, "/")) {
 			if (R_STR_ISEMPTY (rs->path) || !strcmp (rs->path, "/")) {
@@ -194,19 +226,14 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		core->block = newblk;
 		core->blocksize = newblksz;
 		/* set environment */
-// backup and restore offset and blocksize
-		core->http_up = 1;
+		// backup and restore offset and blocksize
+		core->http_up = true;
 		core->config = newcfg;
-		r_config_set (newcfg, "scr.html", r_config_get (newcfg, "scr.html"));
+#if WEBCONFIG
+		r_config_set_b (newcfg, "scr.html", r_config_get_b (newcfg, "scr.html"));
 		r_config_set_i (newcfg, "scr.color", r_config_get_i (newcfg, "scr.color"));
-		r_config_set (newcfg, "scr.interactive", r_config_get (newcfg, "scr.interactive"));
-
-		if (!rs) {
-			bed = r_cons_sleep_begin ();
-			r_sys_usleep (100);
-			r_cons_sleep_end (bed);
-			continue;
-		}
+		r_config_set_b (newcfg, "scr.interactive", r_config_get_b (newcfg, "scr.interactive"));
+#endif
 		if (allow && *allow) {
 			bool accepted = false;
 			const char *allows_host;
@@ -243,26 +270,27 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		if (!rs->auth) {
 			r_socket_http_response (rs, 401, "", 0, NULL);
 		}
-
-		if (r_config_get_i (core->config, "http.verbose")) {
+		if (r_config_get_b (core->config, "http.verbose")) {
 			char *peer = r_socket_to_string (rs->s);
 			http_logf (core, "[HTTP] %s %s\n", peer, rs->path);
 			free (peer);
 		}
-		if (r_config_get_i (core->config, "http.dirlist")) {
+		if (r_config_get_b (core->config, "http.dirlist")) {
 			if (r_file_is_directory (rs->path)) {
 				dir = strdup (rs->path);
 			}
 		}
-		if (r_config_get_i (core->config, "http.cors")) {
+		if (r_config_get_b (core->config, "http.cors")) {
 			strcpy (headers, "Access-Control-Allow-Origin: *\n"
 				"Access-Control-Allow-Headers: Origin, "
 				"X-Requested-With, Content-Type, Accept\n");
+		} else {
+			headers[0] = 0;
 		}
 		if (!strcmp (rs->method, "OPTIONS")) {
 			r_socket_http_response (rs, 200, "", 0, headers);
 		} else if (!strcmp (rs->method, "GET")) {
-			if (!strncmp (rs->path, "/up/", 4)) {
+			if (r_str_startswith (rs->path, "/up/")) {
 				if (r_config_get_i (core->config, "http.upget")) {
 					const char *uproot = r_config_get (core->config, "http.uproot");
 					if (!rs->path[3] || (rs->path[3]=='/' && !rs->path[4])) {
@@ -296,8 +324,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 				} else {
 					r_socket_http_response (rs, 403, "", 0, NULL);
 				}
-			} else if (!strncmp (rs->path, "/cmd/", 5)) {
-				const bool colon = r_config_get_i (core->config, "http.colon");
+			} else if (r_str_startswith (rs->path, "/cmd/")) {
+				const bool colon = r_config_get_b (core->config, "http.colon");
 				if (colon && rs->path[5] != ':') {
 					r_socket_http_response (rs, 403, "Permission denied", 0, headers);
 				} else {
@@ -334,7 +362,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 						} else {
 							char *out, *cmd = rs->path + 5;
 							r_str_uri_decode (cmd);
-							r_config_set (core->config, "scr.interactive", "false");
+							// r_config_set_b (core->config, "scr.interactive", false);
 
 							if (!r_sandbox_enable (0) &&
 									(!strcmp (cmd, "=h*") ||
@@ -428,16 +456,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 					size_t sz = 0;
 					char *f = r_file_slurp (path, &sz);
 					if (f) {
-						const char *ct = NULL;
-						if (strstr (path, ".js")) {
-							ct = "Content-Type: application/javascript\n";
-						}
-						if (strstr (path, ".css")) {
-							ct = "Content-Type: text/css\n";
-						}
-						if (strstr (path, ".html")) {
-							ct = "Content-Type: text/html\n";
-						}
+						const char *ct = guess_filetype (path);
 						char *hdr = r_str_newf ("%s%s", ct, headers);
 						r_socket_http_response (rs, 200, f, (int)sz, hdr);
 						free (hdr);
@@ -513,12 +532,17 @@ the_end:
 	r_socket_free (s);
 	r_config_free (newcfg);
 	if (restoreSandbox) {
-		r_sandbox_disable (true);
+		if (!oldSandbox) {
+			r_sandbox_disable (true);
+		}
+		r_config_set_b (core->config, "cfg.sandbox", oldSandbox);
 	}
+#if WEBCONFIG
 	/* refresh settings - run callbacks */
-	r_config_set (origcfg, "scr.html", r_config_get (origcfg, "scr.html"));
-	r_config_set_i (origcfg, "scr.color", r_config_get_i (origcfg, "scr.color"));
-	r_config_set (origcfg, "scr.interactive", r_config_get (origcfg, "scr.interactive"));
+	r_config_set_b (core->config, "scr.html", orig_scr_html);
+	r_config_set_i (core->config, "scr.color", orig_scr_color);
+	r_config_set_b (core->config, "scr.interactive", orig_scr_interactive);
+#endif
 	return ret;
 }
 
@@ -531,7 +555,7 @@ static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 	if (!ht || !ht->core) {
 		return false;
 	}
-	eprintf ("Warning: Background webserver requires http.sandbox=false to run properly\n");
+	R_LOG_WARN ("Background webserver requires http.sandbox=false to run properly");
 	int ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
 	R_FREE (ht->path);
 	if (ret) {
@@ -548,21 +572,21 @@ static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path) {
 	int ret;
 	if (r_sandbox_enable (0)) {
-		eprintf ("sandbox: connect disabled\n");
+		R_LOG_ERROR ("sandbox: connect is not permitted");
 		return 1;
 	}
 	if (launch == '-') {
 		if (httpthread) {
-			eprintf ("Press ^C to stop the webserver\n");
+			R_LOG_INFO ("Press ^C to stop the webserver");
 			r_th_kill_free (httpthread);
 			httpthread = NULL;
 		} else {
-			eprintf ("No webserver running\n");
+			R_LOG_ERROR ("No webserver running");
 		}
 		return 0;
 	}
 	if (core->http_up) {
-		eprintf ("http server is already running\n");
+		R_LOG_ERROR ("http server is already running");
 		return 1;
 	}
 	if (launch == '&') {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake */
+/* radare - LGPL - Copyright 2010-2022 - pancake */
 
 #include <r_egg.h>
 
@@ -585,7 +585,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		str++;
 		len = strlen (str) - 1;
 		if (!egg->lang.stackfixed || egg->lang.stackfixed < len) {
-			eprintf ("Warning: No room in the static stackframe! (%d must be %d)\n",
+			R_LOG_WARN ("No room in the static stackframe! (%d must be %d)",
 				egg->lang.stackfixed, len);
 		}
 		str[len] = '\0';
@@ -1020,7 +1020,7 @@ static void rcc_next(REgg *egg) {
 		if (!strcmp (str, "while")) {
 			char var[128];
 			if (egg->lang.lastctxdelta >= 0) {
-				eprintf ("ERROR: Unsupported while syntax\n");
+				R_LOG_ERROR ("Unsupported while syntax");
 				return;
 			}
 			sprintf (var, "__begin_%d_%d_%d\n", egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX - 1]);

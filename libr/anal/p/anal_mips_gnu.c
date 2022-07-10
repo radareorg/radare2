@@ -5,7 +5,38 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
+#include "disas-asm.h"
+#include "opcode/mips.h"
 
+static R_TH_LOCAL unsigned long Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL ut8 bytes[8] = {0};
+static R_TH_LOCAL char *pre_cpu = NULL;
+static R_TH_LOCAL char *pre_features = NULL;
+static R_TH_LOCAL int mips_mode = 0;
+
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+	return 0;
+}
+
+static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	//--
+}
+
+static int mips_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 4) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, length);
+	return 0;
+}
+
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
+DECLARE_GENERIC_FPRINTF_FUNC()
 
 static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
 #define REG_BUF_MAX 32
@@ -1048,16 +1079,101 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn*insn) {
 	return 0;
 }
 
+static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+	struct disassemble_info disasm_obj = {0};
+	if (len < 4) {
+		return -1;
+	}
+	Offset = op->addr;
+	buf_global = r_strbuf_new ("");
+	memcpy (&bytes, buf, R_MIN (len, 8));
+
+	const char *cpu = a->config->cpu;
+	if ((cpu != pre_cpu) && (a->config->features != pre_features)) {
+		free (disasm_obj.disassembler_options);
+		memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
+	}	
+
+	/* prepare disassembler */
+	if (cpu && (!pre_cpu || !strcmp (cpu, pre_cpu))) {
+		if (!r_str_casecmp (cpu, "mips64r2")) {
+			disasm_obj.mach = bfd_mach_mipsisa64r2;
+		} else if (!r_str_casecmp (cpu, "mips32r2")) {
+			disasm_obj.mach = bfd_mach_mipsisa32r2;
+		} else if (!r_str_casecmp (cpu, "mips64")) {
+			disasm_obj.mach = bfd_mach_mipsisa64;
+		} else if (!r_str_casecmp (cpu, "mips32")) {
+			disasm_obj.mach = bfd_mach_mipsisa32;
+		} else if (!r_str_casecmp (cpu, "loongson3a")) {
+			disasm_obj.mach = bfd_mach_mips_gs464;
+		} else if (!r_str_casecmp (cpu, "gs464")) {
+			disasm_obj.mach = bfd_mach_mips_gs464;
+		} else if (!r_str_casecmp (cpu, "gs464e")) {
+			disasm_obj.mach = bfd_mach_mips_gs464e;
+		} else if (!r_str_casecmp (cpu, "gs264e")) {
+			disasm_obj.mach = bfd_mach_mips_gs264e;
+		} else if (!r_str_casecmp (cpu, "loongson2e")) {
+			disasm_obj.mach = bfd_mach_mips_loongson_2e;
+		} else if (!r_str_casecmp (cpu, "loongson2f")) {
+			disasm_obj.mach = bfd_mach_mips_loongson_2f;
+		} else if (!r_str_casecmp (cpu, "mips32/64")) {
+			//Fallback for default config
+			disasm_obj.mach = bfd_mach_mips_loongson_2f;
+		}
+		pre_cpu = r_str_dup (pre_cpu, cpu);
+	} else {
+		disasm_obj.mach = bfd_mach_mips_loongson_2f;
+	}
+
+	const char *features = a->config->features;
+	if (features && (!pre_features || !strcmp (features, pre_features))) {
+		free (disasm_obj.disassembler_options);
+		if (strstr (features, "n64")) {
+			disasm_obj.disassembler_options = r_str_new ("abi=n64");
+		} else if (strstr (features, "n32")) {
+			disasm_obj.disassembler_options = r_str_new ("abi=n32");
+		} else if (strstr (features, "o32")) {
+			disasm_obj.disassembler_options = r_str_new ("abi=o32");
+		}
+		pre_features = r_str_dup (pre_features, features);
+	}
+
+	mips_mode = a->config->bits;
+	disasm_obj.arch = CPU_LOONGSON_2F;
+	disasm_obj.buffer = (ut8*)&bytes;
+	disasm_obj.read_memory_func = &mips_buffer_read_memory;
+	disasm_obj.symbol_at_address_func = &symbol_at_address;
+	disasm_obj.memory_error_func = &memory_error_func;
+	disasm_obj.print_address_func = &generic_print_address_func;
+	disasm_obj.buffer_vma = Offset;
+	disasm_obj.buffer_length = 4;
+	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.fprintf_func = &generic_fprintf_func;
+	disasm_obj.stream = stdout;
+	op->size = (disasm_obj.endian == BFD_ENDIAN_LITTLE)
+		? print_insn_little_mips ((bfd_vma)Offset, &disasm_obj)
+		: print_insn_big_mips ((bfd_vma)Offset, &disasm_obj);
+	if (op->size == -1) {
+		op->mnemonic = strdup ("(data)");
+	} else {
+		op->mnemonic = r_strbuf_drain (buf_global);
+		buf_global = NULL;
+	}
+	return op->size;
+}
 
 static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	ut32 opcode;
-	// WIP char buf[10]; int reg; int family;
 	int oplen = (anal->config->bits == 16)? 2: 4;
 	const ut8 * buf;
 	gnu_insn insn;
 
 	if (!op) {
 		return oplen;
+	}
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->addr = addr;
+		disassemble (anal, op, b, len);
 	}
 	
 	op->type = R_ANAL_OP_TYPE_UNK;

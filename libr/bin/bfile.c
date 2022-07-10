@@ -482,7 +482,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	} else if (!strcmp (enc, "utf32le")) {
 		type = R_STRING_TYPE_WIDE32;
 	} else { // TODO utf16be, utf32be
-		eprintf ("ERROR: encoding %s not supported\n", enc);
+		R_LOG_ERROR ("encoding %s not supported", enc);
 		return;
 	}
 	string_scan_range (list, bf, min, from, to, type, raw, section);
@@ -922,6 +922,7 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 	return false;
 }
 
+// TODO: do not compute md5 or sha1, those are weak and vulnerable hashes
 R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	r_return_val_if_fail (bin && bin->cur && bin->cur->o, NULL);
 	ut64 buf_len = 0, r = 0;
@@ -937,7 +938,7 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
 		if (bin->verbose) {
-			eprintf ("Warning: r_bin_file_hash: file exceeds bin.hashlimit\n");
+			R_LOG_WARN ("r_bin_file_hash: file exceeds bin.hashlimit");
 		}
 		return NULL;
 	}

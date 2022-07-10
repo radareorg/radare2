@@ -37,7 +37,7 @@ R_API ut64 r_time_now_mono(void) {
 	return v.QuadPart;
 #elif __APPLE__ && !defined(MAC_OS_X_VERSION_10_12)
 	ut64 ticks = mach_absolute_time ();
-	static mach_timebase_info_data_t tb;
+	static R_TH_LOCAL mach_timebase_info_data_t tb;
 	mach_timebase_info (&tb);
 	return ((ticks * tb.numer) / tb.denom) / R_NSEC_PER_USEC;
 #elif HAS_CLOCK_MONOTONIC

@@ -7,7 +7,7 @@
 
 static void visual_refresh(RCore *core);
 
-static const char *promptstr = "> ";
+#define PROMPTSTR "> "
 // remove globals pls
 static R_TH_LOCAL int obs = 0;
 static R_TH_LOCAL int blocksize = 0;
@@ -773,7 +773,9 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	r_cons_reset_colors ();
 	//r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
 	r_cons_show_cursor (true);
-	core->vmode = 0;
+	core->vmode = false;
+	int ovtmode = r_config_get_i (core->config, "scr.vtmode");
+	r_config_set_i (core->config, "scr.vtmode", 1);
 
 	int curbs = core->blocksize;
 	if (autoblocksize) {
@@ -790,9 +792,10 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	}
 
 	r_cons_show_cursor (false);
-	core->vmode = 1;
+	core->vmode = true;
 	r_cons_enable_mouse (mouse_state && r_config_get_i (core->config, "scr.wheel"));
 	r_cons_show_cursor (true);
+	r_config_set_i (core->config, "scr.vtmode", ovtmode);
 }
 
 R_API int r_core_visual_prompt(RCore *core) {
@@ -801,7 +804,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 	if (PIDX != 2) {
 		core->seltab = 0;
 	}
-	r_line_set_prompt (promptstr);
+	r_line_set_prompt (PROMPTSTR);
 	r_core_visual_showcursor (core, true);
 	r_cons_fgets (buf, sizeof (buf), 0, NULL);
 	if (!strcmp (buf, "q")) {
@@ -1354,7 +1357,7 @@ static void addComment(RCore *core, ut64 addr) {
 	r_core_visual_showcursor (core, true);
 	r_cons_flush ();
 	r_cons_set_raw (false);
-	r_line_set_prompt (promptstr);
+	r_line_set_prompt (PROMPTSTR);
 	r_cons_enable_mouse (false);
 	if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 0) {
 		buf[0] = '\0';
@@ -2601,7 +2604,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_cons_flush ();
 			r_cons_set_raw (false);
 			strcpy (buf, "\"wa ");
-			r_line_set_prompt (promptstr);
+			r_line_set_prompt (PROMPTSTR);
 			r_cons_enable_mouse (false);
 			if (r_cons_fgets (buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
 				buf[0] = '\0';
@@ -2866,7 +2869,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (*buf) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							r_core_cmdf (core, "dr %s = %s\n", creg, buf);
+							r_core_cmdf (core, "dr %s = %s", creg, buf);
 						}
 					}
 					return true;
@@ -3379,7 +3382,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							r_core_cmdf (core, "dr %s = %s-1\n", creg, creg);
+							r_core_cmdf (core, "dr %s = %s-1", creg, creg);
 						}
 					} else {
 						int w = r_config_get_i (core->config, "hex.cols");
@@ -3413,7 +3416,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (core->seltab) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							r_core_cmdf (core, "dr %s = %s+1\n", creg, creg);
+							r_core_cmdf (core, "dr %s = %s+1", creg, creg);
 						}
 					} else {
 						int w = r_config_get_i (core->config, "hex.cols");
@@ -3449,7 +3452,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
 							int delta = core->rasm->config->bits / 8;
-							r_core_cmdf (core, "dr %s = %s-%d\n", creg, creg, delta);
+							r_core_cmdf (core, "dr %s = %s-%d", creg, creg, delta);
 						}
 					} else {
 						int w = r_config_get_i (core->config, "hex.cols");
@@ -3492,7 +3495,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
 							int delta = core->rasm->config->bits / 8;
-							r_core_cmdf (core, "dr %s = %s+%d\n", creg, creg, delta);
+							r_core_cmdf (core, "dr %s = %s+%d", creg, creg, delta);
 						}
 					} else {
 						int w = r_config_get_i (core->config, "hex.cols");
@@ -3891,7 +3894,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		} else {
 			char pm[32] = "[XADVC]";
 			int i;
-			for(i=0;i<6;i++) {
+			for (i = 0; i < 6; i++) {
 				if (core->printidx == i) {
 					pm[i + 1] = toupper((unsigned char)pm[i + 1]);
 				} else {
@@ -4392,31 +4395,34 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		return 0;
 	}
 
+	int ovtmode = r_config_get_i (core->config, "scr.vtmode");
+	r_config_set_i (core->config, "scr.vtmode", 2);
 	obs = core->blocksize;
 	//r_cons_set_cup (true);
 	if (strchr (input, '?')) {
 		// show V? help message, disables oneliner to open visual help
+		r_config_set_i (core->config, "scr.vtmode", ovtmode);
 		return 0;
 	}
-	core->vmode = 0;
+	core->vmode = false;
 	/* honor vim */
 	if (!strncmp (input, "im", 2)) {
 		char *cmd = r_str_newf ("!v%s", input);
 		int ret = r_core_cmd0 (core, cmd);
 		free (cmd);
+		r_config_set_i (core->config, "scr.vtmode", ovtmode);
 		return ret;
 	}
 	while (*input) {
 		int len = *input == 'd'? 2: 1;
 		if (!r_core_visual_cmd (core, input)) {
+			r_config_set_i (core->config, "scr.vtmode", ovtmode);
 			return 0;
 		}
 		input += len;
 	}
 
-	int vtmode = r_config_get_i (core->config, "scr.vtmode");
-	r_config_set_i (core->config, "scr.vtmode", core->vmode);
-	core->vmode = 2;
+	core->vmode = true;
 	// disable tee in cons
 	teefile = r_cons_singleton ()->teefile;
 	r_cons_singleton ()->teefile = "";
@@ -4551,11 +4557,11 @@ dodo:
 	r_cons_singleton ()->teefile = teefile;
 	r_cons_set_cup (false);
 	r_cons_clear00 ();
-	core->vmode = 0;
+	core->vmode = false;
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
 	r_cons_show_cursor (true);
-	r_config_set_i (core->config, "scr.vtmode", vtmode);
+	r_config_set_i (core->config, "scr.vtmode", ovtmode);
 	return 0;
 }
 

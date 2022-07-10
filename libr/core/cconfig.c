@@ -316,7 +316,7 @@ static bool ranal2_list(RCore *core, const char *arch, int fmt) {
 }
 
 static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
-	int autoseg = (!strncmp (asmarch, "x86", 3) && asmbits == 16);
+	int autoseg = r_str_startswith (asmarch, "x86") && asmbits == 16;
 	r_config_set (cfg, "asm.segoff", r_str_bool (autoseg));
 }
 
@@ -717,7 +717,6 @@ static bool cb_asmarch(void *user, void *data) {
 	if (!*node->value || !core || !core->rasm) {
 		return false;
 	}
-	const char *asmos = r_config_get (core->config, "asm.os");
 	if (core && core->anal && core->anal->config->bits) {
 		bits = core->anal->config->bits;
 	}
@@ -735,7 +734,7 @@ static bool cb_asmarch(void *user, void *data) {
 	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
 
 	if (!r_asm_use (core->rasm, node->value)) {
-		eprintf ("asm.arch: cannot find (%s)\n", node->value);
+		R_LOG_ERROR ("asm.arch: cannot find '%s'", node->value);
 		return false;
 	}
 	//we should strdup here otherwise will crash if any r_config_set
@@ -770,8 +769,10 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
-	if (core->rasm->cur && core->anal &&
-	    !(core->rasm->cur->bits & core->anal->config->bits)) {
+
+	if (core->rasm->cur && core->anal && !(core->anal->cur->bits & core->anal->config->bits)) {
+		r_config_set_i (core->config, "asm.bits", bits);
+	} else if (core->rasm->cur && core->anal && !(core->rasm->cur->bits & core->anal->config->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 
@@ -794,6 +795,7 @@ static bool cb_asmarch(void *user, void *data) {
 	// set pcalign
 	if (core->anal) {
 		const char *asmcpu = r_config_get (core->config, "asm.cpu");
+		const char *asmos = r_config_get (core->config, "asm.os");
 		if (!r_syscall_setup (core->anal->syscall, node->value, core->anal->config->bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
@@ -850,6 +852,7 @@ static bool cb_dbgbtdepth(void *user, void *data) {
 }
 
 static bool cb_asmbits(void *user, void *data) {
+	r_return_val_if_fail (user && data, false);
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 
@@ -860,11 +863,6 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 
 	bool ret = false;
-	if (!core) {
-		eprintf ("user can't be NULL\n");
-		return false;
-	}
-
 	int bits = node->i_value;
 	if (!bits) {
 		return false;
@@ -902,9 +900,11 @@ static bool cb_asmbits(void *user, void *data) {
 #endif
 #endif
 				char *rp = core->dbg->h->reg_profile (core->dbg);
-				r_reg_set_profile_string (core->dbg->reg, rp);
-				r_reg_set_profile_string (core->anal->reg, rp);
-				free (rp);
+				if (rp) {
+					r_reg_set_profile_string (core->dbg->reg, rp);
+					r_reg_set_profile_string (core->anal->reg, rp);
+					free (rp);
+				}
 			}
 		} else {
 			(void)r_anal_set_reg_profile (core->anal, NULL);
@@ -932,12 +932,10 @@ static bool cb_asmbits(void *user, void *data) {
 }
 
 static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
-	int i, argc;
-
 	if (core && core->rasm && core->rasm->cur) {
 		if (core->rasm->cur->features) {
 			char *features = strdup (core->rasm->cur->features);
-			argc = r_str_split (features, ',');
+			int i, argc = r_str_split (features, ',');
 			for (i = 0; i < argc; i++) {
 				const char *feature = r_str_word_get0 (features, i);
 				if (feature) {
@@ -1058,7 +1056,6 @@ static bool cb_asm_pcalign(void *user, void *data) {
 	if (align < 0) {
 		align = 0;
 	}
-	core->rasm->config->pcalign = align;
 	core->anal->config->pcalign = align;
 	return true;
 }
@@ -1353,7 +1350,7 @@ static bool cb_cfgcharset(void *user, void *data) {
 		if (rc) {
 			r_sys_setenv ("RABIN2_CHARSET", cf);
 		} else {
-			eprintf ("Warning: Cannot load charset file '%s'.\n", cf);
+			R_LOG_WARN ("Cannot load charset file '%s'", cf);
 		}
 	}
 	return rc;
@@ -1362,7 +1359,7 @@ static bool cb_cfgcharset(void *user, void *data) {
 static bool cb_cfgdatefmt(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	snprintf (core->print->datefmt, 32, "%s", node->value);
+	r_str_ncpy (core->print->datefmt, node->value, sizeof (core->print->datefmt));
 	return true;
 }
 
@@ -1744,7 +1741,7 @@ static bool cb_dbg_execs(void *user, void *data) {
 	}
 #else
 	if (node->i_value) {
-		eprintf ("Warning: dbg.execs is not supported in this platform.\n");
+		R_LOG_WARN ("dbg.execs is not supported in this platform");
 	}
 #endif
 	return true;
@@ -2285,7 +2282,7 @@ static bool cb_io_pava(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->pava = node->i_value;
 	if (node->i_value && core->io->va) {
-		eprintf ("Warning: You may probably want to disable io.va too.\n");
+		R_LOG_WARN ("You may probably want to disable io.va too");
 	}
 	return true;
 }
@@ -3180,9 +3177,9 @@ static bool cb_linesabs(void *user, void *data) {
 		ut64 to = r_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
 		core->print->lines_cache_sz = r_core_lines_initcache (core, from, to);
 		if (core->print->lines_cache_sz == -1) {
-			eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
+			R_LOG_ERROR ("\"lines.from\" and \"lines.to\" must be set");
 		} else {
-			eprintf ("Found %d lines\n", core->print->lines_cache_sz-1);
+			R_LOG_INFO ("Found %d lines", core->print->lines_cache_sz - 1);
 		}
 	}
 	return true;
@@ -3191,14 +3188,12 @@ static bool cb_linesabs(void *user, void *data) {
 static bool cb_malloc(void *user, void *data) {
  	RCore *core = (RCore*) user;
  	RConfigNode *node = (RConfigNode*) data;
-
  	if (node->value) {
  		if (!strcmp ("jemalloc", node->value) || !strcmp ("glibc", node->value)) {
 			if (core->dbg) {
 				core->dbg->malloc = data;
 			}
  		}
-
  	}
 	return true;
 }
@@ -3290,7 +3285,7 @@ static bool cb_prjvctype(void *user, void *data) {
 	if (!strcmp (node->value, "rvc")) {
 		return true;
 	}
-	R_LOG_ERROR ("Unknown version control '%s'.", node->value);
+	R_LOG_ERROR ("Unknown version control '%s'", node->value);
 	return false;
 }
 
@@ -3699,7 +3694,12 @@ R_API int r_core_config_init(RCore *core) {
 	free (whoami);
 	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "if enabled show tips at start");
 	RList *fortune_types = r_core_fortune_types ();
-	char *fts = r_str_list_join(fortune_types, ",");
+	if (!fortune_types) {
+		fortune_types = r_list_newf (free);
+		r_list_append (fortune_types, "tips");
+		r_list_append (fortune_types, "fun");
+	}
+	char *fts = r_str_list_join (fortune_types, ",");
 	r_list_free (fortune_types);
 	char *fortune_desc = r_str_newf ("type of fortunes to show(%s)", fts);
 	SETCB ("cfg.fortunes.type", fts, &cb_cfg_fortunes_type, fortune_desc);
@@ -3910,7 +3910,8 @@ R_API int r_core_config_init(RCore *core) {
 	/* filesystem */
 	n = NODECB ("fs.view", "normal", &cb_fsview);
 	SETDESC (n, "set visibility options for filesystems");
-	SETOPTIONS (n, "all", "deleted", "special", NULL);
+	SETOPTIONS (n, "all", "normal", "deleted", "special", NULL);
+	n = SETPREF ("fs.cwd", "/", "current working directory (see 'ms' command)");
 
 	/* hexdump */
 	SETCB ("hex.header", "true", &cb_hex_header, "show header in hexdump");
@@ -3976,6 +3977,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.maxport", "9999", "last HTTP server port");
 	SETPREF ("http.ui", "m", "default webui (m, t, f)");
 	SETBPREF ("http.sandbox", "true", "sandbox the HTTP server");
+	SETBPREF ("http.channel", "false", "use the new threadchannel based webserver (EXPERIMENTAL)");
 	SETI ("http.timeout", 3, "disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "kill server after N seconds with no client");
 	SETBPREF ("http.verbose", "false", "output server logs to stdout");
@@ -4012,7 +4014,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.font", "Courier", "Font for dot graphs");
 	SETBPREF ("graph.offset", "false", "show offsets in graphs");
 	SETBPREF ("graph.bytes", "false", "show opcode bytes in graphs");
-	SETBPREF ("graph.web", "false", "display graph in web browser (VV)");
+	SETBPREF ("graph.web", "false", "display graph in web browser (VV)"); // R2_580 deprecate!
 	SETI ("graph.from", UT64_MAX, "lower bound address when drawing global graphs");
 	SETI ("graph.to", UT64_MAX, "upper bound address when drawing global graphs");
 	SETI ("graph.scroll", 5, "scroll speed in ascii-art graph");
@@ -4066,8 +4068,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.flush", "false", &cb_scrflush, "force flush to console in realtime (breaks scripting)");
 	SETBPREF ("scr.slow", "true", "do slow stuff on visual mode like RFlag.get_at(true)");
 #if __WINDOWS__
-	SETICB ("scr.vtmode", r_cons_singleton ()->vtmode,
-		&scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Output, 2: Input & Output)");
+	SETICB ("scr.vtmode", r_cons_singleton ()->vtmode? 1: 0,
+		&scr_vtmode, "use VT sequences on Windows (0: Disable, 1: Shell, 2: Visual)");
 #else
 	SETI ("scr.vtmode", 0, "windows specific configuration that have no effect on other OSs");
 #endif

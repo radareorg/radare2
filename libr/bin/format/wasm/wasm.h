@@ -200,41 +200,28 @@ typedef struct r_bin_wasm_data_t {
 	ut32 data; // offset
 } RBinWasmDataEntry;
 
-// TODO: custom sections
+typedef struct r_bin_wasm_custom_module {
+	ut64 file_offset;
+	char *name;
+} RBinWasmCustomModule;
 
+typedef struct r_bin_wasm_custom_function {
+	ut64 file_offset;
+	RIDStorage *store; // RIDStorage of char *
+} RBinWasmCustomFunction;
 
-typedef struct r_bin_wasm_custom_name_function_names_t {
-	ut32 count;
-	RIDStorage *names;
-} RBinWasmCustomNameFunctionNames;
+typedef struct r_bin_wasm_custom_locals {
+	ut64 file_offset;
+	RIDStorage *store; // 2d idstore, RIDStorage of RIDStorage of char *
+} RBinWasmCustomLocals;
 
-typedef struct r_bin_wasm_custom_name_local_name_t {
-	ut32 index; // function index
-
-	ut32 names_count;
-	RIDStorage *names; // local names
-} RBinWasmCustomNameLocalName;
-
-typedef struct r_bin_wasm_custom_name_local_names_t {
-	ut32 count;
-	RList *locals; // RBinWasmCustomNameLocalName
-} RBinWasmCustomNameLocalNames;
-
-// "name" section entry
-typedef struct r_bin_wasm_custom_name_entry_t {
-	ut8 type;
-	ut32 size;
-
-	ut8 payload_data;
-	union {
-		char *mod_name;
-		RBinWasmCustomNameFunctionNames *func;
-		RBinWasmCustomNameLocalNames *local;
-	};
-} RBinWasmCustomNameEntry;
+typedef struct r_bin_wasm_custom_names {
+	RBinWasmCustomModule mod;
+	RBinWasmCustomFunction funcs;
+	RBinWasmCustomLocals locals;
+} RBinWasmCustomNames;
 
 typedef struct r_bin_wasm_obj_t {
-
 	RBuffer *buf;
 	size_t size;
 
@@ -243,7 +230,7 @@ typedef struct r_bin_wasm_obj_t {
 	// cache purposes
 	RList *g_sections;
 	RPVector *g_types;
-	RPVector *g_imports;
+	RPVector *g_imports_arr[4];
 	RPVector *g_funcs;
 	RPVector *g_tables;
 	RPVector *g_memories;
@@ -254,16 +241,15 @@ typedef struct r_bin_wasm_obj_t {
 	RPVector *g_datas;
 	ut32 g_start;
 
-	RList *g_names;
-	// etc...
-
+	// custom sections
+	RBinWasmCustomNames *names;
 } RBinWasmObj;
 
 RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf);
 void r_bin_wasm_destroy(RBinFile *bf);
 RList *r_bin_wasm_get_sections(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_types(RBinWasmObj *bin);
-RPVector *r_bin_wasm_get_imports(RBinWasmObj *bin);
+RPVector *r_bin_wasm_get_imports_kind(RBinWasmObj *bin, ut32 kind);
 RPVector *r_bin_wasm_get_functions(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_tables(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_memories(RBinWasmObj *bin);
@@ -272,7 +258,7 @@ RPVector *r_bin_wasm_get_exports(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_elements(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_codes(RBinWasmObj *bin);
 RPVector *r_bin_wasm_get_datas(RBinWasmObj *bin);
-RList *r_bin_wasm_get_custom_names(RBinWasmObj *bin);
+RBinWasmCustomNames *r_bin_wasm_get_custom_names(RBinWasmObj *bin);
 ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin);
 const char *r_bin_wasm_get_function_name(RBinWasmObj *bin, ut32 idx);
 const char *r_bin_wasm_valuetype_to_string(r_bin_wasm_value_type_t type);

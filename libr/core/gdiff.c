@@ -1,10 +1,5 @@
-/* radare - LGPL - Copyright 2010-2019 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2022 - nibble, pancake */
 
-#include <stdio.h>
-#include <string.h>
-#include <r_anal.h>
-#include <r_list.h>
-#include <r_util.h>
 #include <r_core.h>
 
 R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {

@@ -2,6 +2,7 @@
 
 #include <r_util.h>
 
+// R2_580 - return bool instead of int
 R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	const char *kind;
 	char var[128];
@@ -22,7 +23,9 @@ R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 }
 
 R_API int r_type_kind(Sdb *TDB, const char *name) {
+	r_return_val_if_fail (TDB, -1);
 	if (!name) {
+		// XXX should assert too
 		return -1;
 	}
 	const char *type = sdb_const_get (TDB, name, 0);

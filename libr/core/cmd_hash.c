@@ -402,7 +402,7 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 				if (r_cons_is_interactive ()) {
 					r_lang_prompt (core->lang);
 				} else {
-					eprintf ("Error: scr.interactive required to run the rlang prompt\n");
+					R_LOG_ERROR ("scr.interactive required to run the rlang prompt");
 				}
 			}
 		} else if (av[0][0] == '?' && av[0][1] == 'j') {

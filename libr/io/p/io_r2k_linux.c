@@ -226,39 +226,39 @@ static size_t getvalue(const char *buf, int pos) {
 static void print_help(RIO *io, char *cmd, int p_usage) {
 	int i = 0;
 	int cmd_len = cmd ? strlen (cmd) : 0;
-	const char* usage = "Usage:   \\[MprRw][lpP] [args...]";
+	const char* usage = "Usage: :[MprRw][lpP] [args...]";
 	const char* help_msg[] = {
-		"\\dm              Print kernel memory map (or process if r2k.io==1)",
-		"\\dr              Print control registers",
-		"\\dR              Print control registers in detailed mode",
-		"\\dp [pid]        Print current selected pid or change it",
-		"\\e r2k.io=[012]  Read/Write from 0: Linear, 1: Process, 2: Physical addresses"
+		":dm              Print kernel memory map (or process if r2k.io==1)",
+		":dr              Print control registers",
+		":dR              Print control registers in detailed mode",
+		":dp [pid]        Print current selected pid or change it",
+		":e r2k.io=[012]  Read/Write from 0: Linear, 1: Process, 2: Physical addresses"
 	};
 	const char *help_msg_old[] = {
-		"\\M                      Print kernel memory map",
-		"\\b      beid [pid]      Change r2k backend. pid is required when beid is 1.",
+		":M                      Print kernel memory map",
+		":b      beid [pid]      Change r2k backend. pid is required when beid is 1.",
 		"                         0: linear address; 1: process address; 2: physical address",
-		"\\p      pid             Print process information",
-		"\\rl     addr len        Read from linear address",
-		"\\rp     pid addr len    Read from process address",
-		"\\rP     addr len        Read physical address",
-		"\\R[p]                   Print control registers. Use =!Rp for detailed description",
-		"\\wl[x]  addr input      Write at linear address. Use =!wlx for input in hex",
-		"\\wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex",
-		"\\wP[x]  addr input      Write at physical address. Use =!wPx for input in hex",
-		"\\W      1|0             Honor arch write protect (1 enable WP, 0 disable WP)"
+		":p      pid             Print process information",
+		":rl     addr len        Read from linear address",
+		":rp     pid addr len    Read from process address",
+		":rP     addr len        Read physical address",
+		":R[p]                   Print control registers. Use =!Rp for detailed description",
+		":wl[x]  addr input      Write at linear address. Use =!wlx for input in hex",
+		":wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex",
+		":wP[x]  addr input      Write at physical address. Use =!wPx for input in hex",
+		":W      1|0             Honor arch write protect (1 enable WP, 0 disable WP)"
 	};
 	if (p_usage) {
 		io->cb_printf ("%s\n", usage);
 	}
 	for (i = 0; i < (sizeof (help_msg) / sizeof (char*)); i++) {
-		if (!cmd || !strncmp (cmd, help_msg[i]+1, cmd_len)) {
+		if (!cmd || !strncmp (cmd, help_msg[i] + 1, cmd_len)) {
 			io->cb_printf ("%s\n", help_msg[i]);
 		}
 	}
 	io->cb_printf ("\nOld Commands: (deprecated)\n");
 	for (i = 0; i < (sizeof (help_msg_old) / sizeof (char*)); i++) {
-		if (!cmd || !strncmp (cmd, help_msg_old[i]+1, cmd_len)) {
+		if (!cmd || !strncmp (cmd, help_msg_old[i] + 1, cmd_len)) {
 			io->cb_printf ("%s\n", help_msg_old[i]);
 		}
 	}
@@ -580,8 +580,6 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				len = r_str_unescape ((char *) databuf);
 			}
 			ret = WriteMemory (io, iodesc, ioctl_n, pid, addr, (const ut8 *) databuf, len);
-		} else {
-			eprintf ("Failed to allocate buffer.\n");
 		}
 		break;
 	case 'M':
@@ -595,12 +593,10 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 
 			ioctl_n = IOCTL_GET_KERNEL_MAP;
 			ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &map_data);
-
 			if (ret < 0) {
 				io->cb_printf ("ioctl err: %s\n", strerror (errno));
 				break;
 			}
-
 			io->cb_printf ("map_data.size: %d, map_data.n_entries: %d\n", map_data.size, map_data.n_entries);
 			info = mmap (0, map_data.size, PROT_READ, MAP_SHARED, (int)(size_t)iodesc->data, 0);
 			if (info == MAP_FAILED) {

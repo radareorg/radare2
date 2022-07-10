@@ -30,7 +30,7 @@ html, body {
   color: rgba(0, 0, 0, 0.54);
 }
 .mdl-layout__drawer {
-    z-index:105 !important;
+  z-index:105 !important;
 }
 .mdl-layout__drawer .avatar {
   margin-bottom: 16px;
@@ -254,26 +254,26 @@ a {
 }
 
 ul {
-	list-style-type: none;
+  list-style-type: none;
 }
 
 .pre, pre {
-	font-family: "Roboto Mono", "DejaVu Sans Mono", Console, Courier New, monospace;
-	color: grey;
-	white-space: pre;
+  font-family: "Roboto Mono", "DejaVu Sans Mono", Console, Courier New, monospace;
+  color: grey;
+  white-space: pre;
 }
 
 textarea, input {
-	font-size: 1.2em;
-	background-color: #f0f0f0;
-	color: black;
-	padding-left:1em;
-	font-family: "Roboto Mono", monospace;
-	width: 100%;
+  font-size: 1.2em;
+  background-color: #f0f0f0;
+  color: black;
+  padding-left:1em;
+  font-family: "Roboto Mono", monospace;
+  width: 100%;
 }
 
 td {
-	text-align:left !important;
+  text-align:left !important;
 }
 
 .output {
@@ -315,7 +315,7 @@ td {
 }
 
 #statusbar {
-  line-height: 2em;
+  line-height: 1em;
 }
 
 #container {

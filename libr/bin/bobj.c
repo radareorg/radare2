@@ -148,14 +148,14 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	if (plugin && plugin->load_buffer) {
 		if (!plugin->load_buffer (bf, &bo->bin_obj, bf->buf, loadaddr, sdb)) {
 			if (bf->rbin->verbose) {
-				eprintf ("Error in r_bin_object_new: load_buffer failed for %s plugin\n", plugin->name);
+				R_LOG_ERROR ("r_bin_object_new: load_buffer failed for %s plugin", plugin->name);
 			}
 			sdb_free (bo->kv);
 			free (bo);
 			return NULL;
 		}
 	} else {
-		R_LOG_WARN ("Plugin %s should implement load_buffer method.", plugin->name);
+		R_LOG_WARN ("Plugin %s should implement load_buffer method", plugin->name);
 		sdb_free (bo->kv);
 		free (bo);
 		return NULL;

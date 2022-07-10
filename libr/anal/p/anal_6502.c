@@ -211,8 +211,8 @@ static void _6502_anal_esil_inc_reg(RAnalOp *op, ut8 data0, char* sign) {
 }
 
 static void _6502_anal_esil_mov(RAnalOp *op, ut8 data0) {
-	const char* src="unk";
-	const char* dst="unk";
+	const char* src = "unk";
+	const char* dst = "unk";
 	switch(data0) {
 	case 0xaa: // tax
 		src="a";

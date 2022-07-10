@@ -18,7 +18,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	int ret;
 	ret = xnu_thread_get_gpr (dbg, th);
 	if (!ret) {
-		eprintf ("error to get gpr registers in trace bit intel\n");
+		R_LOG_ERROR ("to get gpr registers in trace bit intel");
 		return false;
 	}
 	state = (R_REG_T *)&th->gpr;
@@ -29,11 +29,11 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		state->uts.ts64.__rflags = (state->uts.ts64.__rflags & \
 					~0x100UL) | (enable ? 0x100UL : 0);
 	} else {
-		eprintf ("Invalid bit size\n");
+		R_LOG_ERROR ("Invalid bit size");
 		return false;
 	}
 	if (!xnu_thread_set_gpr (dbg, th)) {
-		eprintf ("error xnu_thread_set_gpr in modify_trace_bit intel\n");
+		R_LOG_ERROR ("xnu_thread_set_gpr in modify_trace_bit intel");
 		return false;
 	}
 	return true;
@@ -54,14 +54,14 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 	kr = thread_get_state (th->tid, R_REG_STATE_T,
 			(thread_state_t)&state, &state_count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("error modify_trace_bit\n");
+		R_LOG_ERROR ("modify_trace_bit");
 		return false;
 	}
 	state.srr1 = (state.srr1 & ~0x400UL) | (enable ? 0x400UL : 0);
 	kr = thread_set_state (th->tid, R_REG_STATE_T,
 			(thread_state_t)&state, state_count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Error to set thread state modificy_trace_bit ppc\n");
+		R_LOG_ERROR ("set thread state modificy_trace_bit ppc");
 		return false;
 	}
 	return true;
@@ -114,7 +114,7 @@ static bool is_thumb_32(ut16 op) {
 static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	int ret = xnu_thread_get_drx (dbg, th);
 	if (!ret) {
-		eprintf ("error to get drx registers modificy_trace_bit arm\n");
+		R_LOG_ERROR ("to get drx registers modificy_trace_bit arm");
 		return false;
 	}
 #if __arm64 || __arm64__ || __aarch64 || __aarch64__
@@ -140,7 +140,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		R_REG_T *regs;
 		ret = xnu_thread_get_gpr (dbg, th);
 		if (!ret) {
-			eprintf ("error to get gpr register modificy_trace_bit arm\n");
+			R_LOG_ERROR ("to get gpr register modificy_trace_bit arm");
 			return false;
 		}
 		regs = (R_REG_T*)&th->gpr;
@@ -203,7 +203,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	}
 	//set state
 	if (!xnu_thread_set_drx (dbg, th)) {
-		eprintf ("error to set drx modificy_trace_bit arm\n");
+		R_LOG_ERROR ("to set drx modificy_trace_bit arm");
 		return false;
 	}
 	return true;
@@ -454,18 +454,18 @@ bool xnu_create_exception_thread(RDebug *dbg, int pid) {
 	}
 	r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0);
 	if (!MACH_PORT_VALID (task_self)) {
-		eprintf ("error to get the task for the current process"
+		eprintf ("to get the task for the current process"
 				" xnu_start_exception_thread\n");
 		return false;
 	}
 	// Allocate an exception port that we will use to track our child process
 	kr = mach_port_allocate (task_self, MACH_PORT_RIGHT_RECEIVE,
 			&exception_port);
-	RETURN_ON_MACH_ERROR ("error to allocate mach_port exception\n", false);
+	RETURN_ON_MACH_ERROR ("to allocate mach_port exception\n", false);
 	// Add the ability to send messages on the new exception port
 	kr = mach_port_insert_right (task_self, exception_port, exception_port,
 			MACH_MSG_TYPE_MAKE_SEND);
-	RETURN_ON_MACH_ERROR ("error to allocate insert right\n", false);
+	RETURN_ON_MACH_ERROR ("allocate insert right", false);
 	// Atomically swap out (and save) the child process's exception ports
 	// for the one we just created. We'll want to receive all exceptions.
 	ex.count = (sizeof (ex.ports) / sizeof (*ex.ports));
@@ -477,7 +477,7 @@ bool xnu_create_exception_thread(RDebug *dbg, int pid) {
 	kr = mach_port_request_notification (task_self, task, MACH_NOTIFY_DEAD_NAME,
 			0, exception_port, MACH_MSG_TYPE_MAKE_SEND_ONCE, &req_port);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Termination notification request failed\n");
+		R_LOG_ERROR ("Termination notification request failed");
 	}
 	ex.exception_port = exception_port;
 	return true;

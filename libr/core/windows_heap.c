@@ -287,7 +287,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	if (doopen) {
 		char *ntdllpath = r_lib_path ("ntdll");
 		eprintf ("Opening %s\n", ntdllpath);
-		dbg->coreb.cmdf (dbg->coreb.core, "o %s 0x%"PFMT64x"", ntdllpath, map->addr);
+		dbg->coreb.cmdf (dbg->coreb.core, "o %s 0x%"PFMT64x, ntdllpath, map->addr);
 		lastNdtllAddr = map->addr;
 		free (ntdllpath);
 	}
@@ -341,7 +341,7 @@ static bool GetLFHKey(RDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey) 
 	}
 	if (!ReadProcessMemory (h_proc, (PVOID)lfhKeyLocation, lfhKey, sizeof (WPARAM), NULL)) {
 		r_sys_perror ("ReadProcessMemory");
-		R_LOG_WARN ("LFH key not found.");
+		R_LOG_WARN ("LFH key not found");
 		*lfhKey = 0;
 		return false;
 	}
@@ -740,7 +740,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RDebug *dbg) {
 	if (!GetLFHKey (dbg, h_proc, false, &lfhKey)) {
 		RtlDestroyQueryDebugBuffer (db);
 		CloseHandle (h_proc);
-		R_LOG_ERROR ("GetHeapBlocks: Failed to get LFH key.");
+		R_LOG_ERROR ("GetHeapBlocks: Failed to get LFH key");
 		return NULL;
 	}
 
@@ -954,12 +954,12 @@ static PHeapBlock GetSingleSegmentBlock(RDebug *dbg, HANDLE h_proc, PSEGMENT_HEA
 	*/
 	PHeapBlock hb = R_NEW0 (HeapBlock);
 	if (!hb) {
-		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.");
+		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed");
 		return NULL;
 	}
 	PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
 	if (!extra) {
-		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.");
+		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed");
 		goto err;
 	}
 	hb->extraInfo = extra;
@@ -1058,7 +1058,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 	PHeapBlockExtraInfo extra = NULL;
 
 	if (!hb) {
-		R_LOG_ERROR ("GetSingleBlock: Allocation failed.");
+		R_LOG_ERROR ("GetSingleBlock: Allocation failed");
 		return NULL;
 	}
 	HANDLE h_proc = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
@@ -1072,7 +1072,7 @@ static PHeapBlock GetSingleBlock(RDebug *dbg, ut64 offset) {
 	}
 	extra = R_NEW0 (HeapBlockExtraInfo);
 	if (!extra) {
-		R_LOG_ERROR ("GetSingleBlock: Allocation failed.");
+		R_LOG_ERROR ("GetSingleBlock: Allocation failed");
 		goto err;
 	}
 	WPARAM NtLFHKey;
@@ -1185,7 +1185,7 @@ static void w32_list_heaps(RCore *core, const char format) {
 			db = GetHeapBlocks (pid, core->dbg);
 		}
 		if (!db) {
-			R_LOG_WARN ("Couldn't get heap info.");
+			R_LOG_WARN ("Couldn't get heap info");
 			return;
 		}
 	}
@@ -1239,7 +1239,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 		db = InitHeapInfo (core->dbg, PDI_HEAPS | PDI_HEAP_BLOCKS);
 	}
 	if (!db) {
-		R_LOG_ERROR ("Couldn't get heap info.");
+		R_LOG_ERROR ("Couldn't get heap info");
 		return;
 	}
 	PHeapInformation heapInfo = db->HeapInformation;
@@ -1277,7 +1277,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 				switch (format) {
 				case 'f':
 				{
-					char *name = r_str_newf ("alloc.%"PFMT64x"", address);
+					char *name = r_str_newf ("alloc.%"PFMT64x, address);
 					r_flag_set (core->flags, name, address, block->dwSize);
 					free (name);
 					break;

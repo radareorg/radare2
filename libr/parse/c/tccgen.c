@@ -1785,7 +1785,7 @@ static void unary(TCCState *s1) {
 	CType type = {0};
 	Sym *s;
 	AttributeDef ad;
-	static int in_sizeof = 0;
+	static R_TH_LOCAL int in_sizeof = 0;
 
 	sizeof_caller = in_sizeof;
 	in_sizeof = 0;

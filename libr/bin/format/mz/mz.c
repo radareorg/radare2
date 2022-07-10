@@ -24,7 +24,7 @@ RBinAddr *r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
 	la = r_bin_mz_va_to_la (mz->cs, mz->ip);
 	la &= 0xfffff;
 	if (la >= bin->load_module_size) {
-		eprintf ("Error: entry point outside load module\n");
+		R_LOG_ERROR ("entry point outside load module");
 		return NULL;
 	}
 	entrypoint = R_NEW0 (RBinAddr);
@@ -146,7 +146,7 @@ RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin) {
 	return seg_list;
 
 err_out:
-	eprintf ("Error: alloc (RBinSection)\n");
+	R_LOG_ERROR ("alloc (RBinSection)");
 	r_list_free (seg_list);
 
 	return NULL;
@@ -159,7 +159,7 @@ struct r_bin_mz_reloc_t *r_bin_mz_get_relocs (const struct r_bin_mz_obj_t *bin) 
 
 	struct r_bin_mz_reloc_t *relocs = calloc (num_relocs + 1, sizeof (*relocs));
 	if (!relocs) {
-		eprintf ("Error: calloc (struct r_bin_mz_reloc_t)\n");
+		R_LOG_ERROR ("calloc (struct r_bin_mz_reloc_t)");
 		return NULL;
 	}
 	for (i = 0, j = 0; i < num_relocs; i++) {
@@ -200,7 +200,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 	bin->dos_header = mz;
 	// TODO: read field by field to avoid endian and alignment issues
 	if (r_buf_read_at (bin->b, 0, (ut8 *)mz, sizeof (*mz)) == -1) {
-		eprintf ("Error: read (MZ_image_dos_header)\n");
+		R_LOG_ERROR ("read (MZ_image_dos_header)");
 		return false;
 	}
 	// dos_header is not endian safe here in this point
@@ -255,7 +255,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 		if (r_buf_read_at (bin->b, sizeof (MZ_image_dos_header),
 			    (ut8 *)bin->dos_extended_header,
 			    bin->dos_extended_header_size) == -1) {
-			eprintf ("Error: read (dos extended header)\n");
+			R_LOG_ERROR ("read (dos extended header)");
 			return false;
 		}
 	}
@@ -267,7 +267,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 		}
 		if (r_buf_read_at (bin->b, bin->dos_header->reloc_table_offset,
 			    (ut8 *)bin->relocation_entries, relocations_size) == -1) {
-			eprintf ("Error: read (dos relocation entries)\n");
+			R_LOG_ERROR ("read (dos relocation entries)");
 			R_FREE (bin->relocation_entries);
 			return false;
 		}
@@ -281,7 +281,7 @@ static bool r_bin_mz_init(struct r_bin_mz_obj_t *bin) {
 	bin->relocation_entries = NULL;
 	bin->kv = sdb_new0 ();
 	if (!r_bin_mz_init_hdr (bin)) {
-		eprintf ("Warning: File is not MZ\n");
+		R_LOG_WARN ("File is not MZ");
 		return false;
 	}
 	return true;
@@ -336,7 +336,7 @@ RBinAddr *r_bin_mz_get_main_vaddr (struct r_bin_mz_obj_t *bin) {
 	}
 	ZERO_FILL (b);
 	if (r_buf_read_at (bin->b, entry->paddr, b, sizeof (b)) < 0) {
-		eprintf ("Warning: Cannot read entry at 0x%16" PFMT64x "\n", (ut64)entry->paddr);
+		R_LOG_WARN ("Cannot read entry at 0x%16" PFMT64x, (ut64)entry->paddr);
 		free (entry);
 		return NULL;
 	}

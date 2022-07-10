@@ -58,6 +58,7 @@ rc:
 	echo q12 | r2 -c '?V' - ; if [ $$? = 12 ]; then echo "Test q12" OK ; exit 0 ; else exit 1 ; fi
 	echo q2 | r2 - ; if [ $$? = 2 ]; then echo "Test - q2 OK" ; exit 0 ; else exit 1 ; fi
 	echo q2 | r2 -cq - ; if [ $$? = 2 ]; then echo "Test -cq q2 OK" ; exit 0 ; else exit 1 ; fi
+	echo q | r2 /bin/ls # bins/fuzzed/pe12
 	r2 -qcq2 - ; if [ $$? = 2 ]; then echo "Test q2 OK" ; exit 0 ; else exit 1 ; fi
 	r2 -qcq -
 	r2 -qqcq -

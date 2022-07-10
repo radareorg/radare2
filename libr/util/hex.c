@@ -1,9 +1,6 @@
 /* radare - LGPL - Copyright 2007-2020 - pancake */
 
-#include "r_types.h"
-#include "r_util.h"
-#include <stdio.h>
-#include <ctype.h>
+#include <r_util.h>
 
 /* int c; ret = hex_to_byte(&c, 'c'); */
 R_API bool r_hex_to_byte(ut8 *val, ut8 c) {
@@ -465,9 +462,9 @@ R_API int r_hex_str2bin_until_new(const char *in, ut8 **out) {
 
 	int ret = -1;
 	size_t nibbles = 0;
-	ut8 *buf = malloc (len);
+	ut8 *buf = calloc (1, len);
 	if (buf) {
-		while (!r_hex_to_byte (buf + nibbles / 2, *in)) {
+		while (!r_hex_to_byte (buf + (nibbles / 2), *in)) {
 			nibbles++;
 			in++;
 		}

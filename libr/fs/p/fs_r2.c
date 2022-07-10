@@ -120,7 +120,6 @@ static int fs_r2_read(RFSFile *file, ut64 addr, int len) {
 }
 
 static void fs_r2_close(RFSFile *file) {
-	// eprintf ("TODO: fs.r2.close\n");
 	//fclose (file->ptr);
 }
 

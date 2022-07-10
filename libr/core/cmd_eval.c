@@ -21,6 +21,7 @@ static const char *help_msg_e[] = {
 	"ee", "var", "open editor to change the value of var",
 	"ed", "", "open editor to change the ~/.radare2rc",
 	"ej", "", "list config vars in JSON",
+	"en", "", "list environment vars",
 	"env", " [k[=v]]", "get/set environment variable",
 	"er", " [key]", "set config key as readonly. no way back",
 	"es", " [space]", "list all eval spaces [or keys]",
@@ -368,7 +369,10 @@ static int cmd_eval(void *data, const char *input) {
 		}
 		break;
 	case 'n': // "en" "env"
-		if (!strchr (input, '=')) {
+		if (strchr (input, '?')) {
+			r_core_cmd_help_match_spec (core, help_msg_e, "en", 0, false);
+			break;
+		} else if (!strchr (input, '=')) {
 			char *var, *p;
 			var = strchr (input, ' ');
 			if (var) while (*var==' ') var++;

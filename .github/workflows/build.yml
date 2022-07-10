@@ -133,7 +133,7 @@ jobs:
 
 
   # macOS
-  macos-acr:
+  macos-acr-x64:
     runs-on: macos-latest
     steps:
     - name: Checkout
@@ -148,24 +148,22 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         path: dist/macos/*.pkg
-        name: macos-acr
+        name: macos-acr-x64
 
-#   macos-acr-m1:
-#     runs-on: macos-latest
-#     steps:
-#     - name: Checkout
-#       uses: actions/checkout@v2
-#     - name: Packaging
-#       run: export CC="xcrun --sdk macosx11.1 gcc -arch arm64" ; dist/macos/build-pkg.sh
-#     - name: Pub
-#       uses: actions/upload-artifact@v2
-#       with:
-#         path: dist/macos/*.pkg
-#         name: macos-acr-m1
-#
-
-
-  # iOS
+  macos-acr-m1:
+     runs-on: macos-12
+     steps:
+     - name: Checkout
+       uses: actions/checkout@v2
+     - name: Packaging
+       env:
+         ARCHFLAGS: '-arch arm64'
+       run: export CC="gcc -arch arm64" ; dist/macos/build-pkg.sh
+     - name: Pub
+       uses: actions/upload-artifact@v2
+       with:
+         path: dist/macos/*.pkg
+         name: macos-acr-m1
   ios-cydia32:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: macos-latest
@@ -510,18 +508,19 @@ jobs:
       - w64-static
       - w64-meson
       - w32-meson
-      - macos-acr
+      - macos-acr-x64
+      - macos-acr-m1
       - ios-cydia
       - ios-cydia32
       - ios-cydia
       - android-acr-arm
-      - android-meson
       - android-acr-aarch64
       - linux-static
       - linux-acr-deb-64
       - linux-acr-deb-32
       - linux-wasi
       - freebsd
+#      - android-meson
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -598,14 +597,23 @@ jobs:
           asset_path: dist/artifacts/w32-meson/radare2-${{ steps.r2v.outputs.branch }}-w32.zip
           asset_name: radare2-${{ steps.r2v.outputs.branch }}-w32.zip
           asset_content_type: application/zip
-      - name: Upload asset for macOS
+      - name: Upload asset for macOS-x64
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/macos-acr/radare2-${{ steps.r2v.outputs.branch }}.pkg
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}.pkg
+          asset_path: dist/artifacts/macos-acr-x64/radare2-x64-${{ steps.r2v.outputs.branch }}.pkg
+          asset_name: radare2-x64-${{ steps.r2v.outputs.branch }}.pkg
+          asset_content_type: application/x-xar
+      - name: Upload asset for macOS-m1
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/artifacts/macos-acr-m1/radare2-m1-${{ steps.r2v.outputs.branch }}.pkg
+          asset_name: radare2-m1-${{ steps.r2v.outputs.branch }}.pkg
           asset_content_type: application/x-xar
       - name: Upload asset for iPhoneOS (arm)
         uses: actions/upload-release-asset@v1
@@ -643,15 +651,15 @@ jobs:
           asset_path: dist/artifacts/android-acr-arm/radare2-${{ steps.r2v.outputs.branch }}-android-arm.tar.gz
           asset_name: radare2-${{ steps.r2v.outputs.branch }}-android-arm.tar.gz
           asset_content_type: application/gzip
-      - name: Upload asset for Android (x86_64)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/android-meson-x86_64/radare2-android-x86_64.tar.gz
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}-android-x86_64.tar.gz
-          asset_content_type: application/x-tar
+#      - name: Upload asset for Android (x86_64)
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: dist/artifacts/android-meson-x86_64/radare2-android-x86_64.tar.gz
+#          asset_name: radare2-${{ steps.r2v.outputs.branch }}-android-x86_64.tar.gz
+#          asset_content_type: application/x-tar
       - name: Upload asset for Android (aarch64)
         uses: actions/upload-release-asset@v1
         env:

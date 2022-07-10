@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 5.7.1
+VERSION 5.7.5
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!

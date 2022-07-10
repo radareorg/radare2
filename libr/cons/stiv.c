@@ -1,12 +1,13 @@
-/* tiv - terminal image viewer - MIT 2013-2019 - pancake */
+/* tiv - terminal image viewer - MIT 2013-2022 - pancake */
 
 #include <r_cons.h>
+#include <r_th.h>
 
 #define XY(b,x,y) ( b+((y)*(w*3))+(x*3) )
 #define ABS(x) (((x)<0)?-(x):(x))
 #define POND(x,y) (ABS((x)) * (y))
 
-void (*renderer)(PrintfCallback cb_printf, const ut8*, const ut8 *);
+static R_TH_LOCAL void (*renderer)(PrintfCallback cb_printf, const ut8*, const ut8 *);
 
 static int reduce8(int r, int g, int b) {
 	int colors_len = 8;

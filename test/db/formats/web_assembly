@@ -88,26 +88,25 @@ FILE=bins/wasm/sections.wasm
 CMDS=aa;afl
 EXPECT=<<EOF
 0x00000207    1 3            entry0
-0x0000053d    1 4            sym.__errno_location
-0x0000023d    3 209          sym.main
-0x00000415    6 148          sym.__main_void
-0x000004ab    1 3            sym.__original_main
-0x000004df    1 12           sym.exit
-0x000004f5    1 3            sym.stackSave
-0x000004fa    1 5            sym.stackRestore
 0x00000516    1 19           sym.emscripten_stack_init
+0x0000023d    3 209          sym.main
 0x0000032d    1 126          sym.atoi_via_import
 0x000003b9    1 54           sym.static_int_sum
 0x000003f3    3 14           fcn.000003f3
-0x000003f1    1 2            sym._start
-0x000004ed    1 6            sym._Exit
-0x00000505    1 15           sym.stackAlloc
-0x00000403    1 7            sym.main_2e_1
+0x000004ab    1 3            sym.__original_main
+0x00000415    6 148          sym.__main_void
+0x000004df    1 12           sym.exit
 0x000004b0    1 1            sym.dummy
 0x000004b5    3 40           sym.libc_exit_fini
+0x000004ed    1 6            sym._Exit
+0x00000403    1 7            sym.main_2e_1
+0x000004f5    1 3            sym.stackSave
+0x000004fa    1 5            sym.stackRestore
+0x00000505    1 15           sym.stackAlloc
 0x0000052b    1 6            sym.emscripten_stack_get_free
 0x00000533    1 3            sym.emscripten_stack_get_base
 0x00000538    1 3            sym.emscripten_stack_get_end
+0x0000053d    1 4            sym.__errno_location
 EOF
 RUN
 
@@ -187,5 +186,16 @@ nth paddr      vaddr      bind   type size lib name
 27  0x000002b9 0x000002b9 GLOBAL FUNC 11       f64_trunc
 28  0x000002c6 0x000002c6 GLOBAL FUNC 11       f64_nearest_lo
 29  0x000002d3 0x000002d3 GLOBAL FUNC 11       f64_nearest_hi
+EOF
+RUN
+
+NAME=WASM get function offset
+FILE=bins/wasm/sections.wasm
+CMDS=<<EOF
+s 0x2e8
+pd 2~sym.static_int_sum[4]
+EOF
+EXPECT=<<EOF
+0x3b9
 EOF
 RUN

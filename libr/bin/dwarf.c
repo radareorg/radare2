@@ -830,7 +830,7 @@ static const ut8 *parse_spec_opcode(
 	regs->line += line_increment;
 	if (mode == R_MODE_PRINT) {
 		print ("  Special opcode %d: ", adj_opcode);
-		print ("advance Address by %"PFMT64d" to 0x%"PFMT64x" and Line by %d to %"PFMT64d"\n",
+		print ("advance Address by %"PFMT64d " to 0x%"PFMT64x" and Line by %d to %"PFMT64d"\n",
 			advance_adr, regs->address, line_increment, regs->line);
 	}
 	if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
@@ -1457,10 +1457,10 @@ static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print
 		print ("%u", val->flag);
 		break;
 	case DW_FORM_sdata:
-		print ("%"PFMT64d"", val->sconstant);
+		print ("%"PFMT64d, val->sconstant);
 		break;
 	case DW_FORM_udata:
-		print ("%"PFMT64u"", val->uconstant);
+		print ("%"PFMT64u, val->uconstant);
 		break;
 	case DW_FORM_ref_addr:
 	case DW_FORM_ref1:
@@ -1496,10 +1496,10 @@ static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print
 	case DW_FORM_addrx4:
 	case DW_FORM_loclistx:
 	case DW_FORM_rnglistx:
-		print ("0x%"PFMT64x"", val->address);
+		print ("0x%"PFMT64x, val->address);
 		break;
 	case DW_FORM_implicit_const:
-		print ("0x%"PFMT64d"", val->uconstant);
+		print ("0x%"PFMT64d, val->uconstant);
 		break;
 	default:
 		print ("Unknown attr value form %"PFMT64d"\n", val->attr_form);
@@ -2088,7 +2088,7 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		}
 
 		if (da->decls->count >= da->capacity) {
-			eprintf ("Warning: malformed dwarf have not enough buckets for decls.\n");
+			R_LOG_WARN ("malformed dwarf have not enough buckets for decls");
 		}
 		r_warn_if_fail (da->count <= da->capacity);
 

@@ -12,7 +12,7 @@ all: ${ALL_TARGETS}
 
 ALL_TARGETS=
 # TODO: rename to enabled plugins
-ARCHS=null.mk arc.mk ppc_gnu.mk ppc_cs.mk arm_gnu.mk avr.mk xap.mk bpf.mk dalvik.mk sh.mk ebc.mk gb.mk lh5801.mk malbolge.mk ws.mk h8300.mk cr16.mk v850.mk v850_np.mk msp430.mk sparc_gnu.mk sparc_cs.mk x86_cs.mk cris.mk 6502.mk snes.mk riscv.mk vax.mk xtensa.mk rsp.mk mcore.mk tricore.mk s390_cs.mk
+ARCHS=null.mk arc.mk ppc_gnu.mk ppc_cs.mk arm_gnu.mk avr.mk xap.mk bpf.mk dalvik.mk sh.mk ebc.mk gb.mk lh5801.mk malbolge.mk ws.mk h8300.mk cr16.mk v850.mk msp430.mk sparc_gnu.mk sparc_cs.mk x86_cs.mk cris.mk 6502.mk snes.mk riscv.mk vax.mk xtensa.mk rsp.mk mcore.mk tricore.mk s390_cs.mk
 include $(ARCHS)
 
 clean:

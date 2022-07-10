@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2007-2021 pancake */
+/* radare2 - LGPL - Copyright 2007-2022 pancake */
 
 #include <r_hash.h>
 #include <r_util.h>
@@ -11,7 +11,7 @@
 R_LIB_VERSION (r_hash);
 
 static const struct {
-	const char *name;
+	const char * const name;
 	ut64 bit;
 } hash_name_bytes[] = {
 	{ "all", UT64_MAX },

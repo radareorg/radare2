@@ -322,8 +322,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 		free (mm0);
 		free (mm1);
 		if (mismatch) {
-			eprintf ("Module version mismatch %s (%s) vs (%s)\n",
-					file, stru->version, R2_VERSION);
+			R_LOG_WARN ("Module version mismatch %s (%s) vs (%s)", file, stru->version, R2_VERSION);
 			const char *dot = strchr (stru->version, '.');
 			int major = atoi (stru->version);
 			int minor = dot ? atoi (dot + 1) : 0;
@@ -346,7 +345,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 
 	int ret = r_lib_run_handler (lib, p, stru);
 	if (ret == -1) {
-		IFDBG eprintf ("Library handler has failed for '%s'\n", file);
+		R_LOG_DEBUG ("Library handler has failed for '%s'", file);
 		free (p->file);
 		free (p);
 		r_lib_dl_close (handler);

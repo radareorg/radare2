@@ -1,15 +1,8 @@
 /* Apache 2.0 - Copyright 2007-2022 - pancake and dso
    class.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
  */
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <r_types.h>
-#include <r_util.h>
 #include <r_bin.h>
 #include <math.h>
-#include <sdb.h>
 #include "class.h"
 
 #ifdef IFDBG

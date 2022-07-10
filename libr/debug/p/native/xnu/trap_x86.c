@@ -8,22 +8,20 @@ static bool xnu_x86_hwstep_enable64(RDebug *dbg, bool enable) {
 	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
 	ret = xnu_thread_get_gpr (dbg, th);
 	if (!ret) {
-		eprintf ("error to get gpr registers in trace bit intel\n");
+		R_LOG_ERROR ("cannot get gpr registers in trace bit intel");
 		return false;
 	}
 	state = (R_REG_T *)&th->gpr;
 	if (state->tsh.flavor == x86_THREAD_STATE32) {
-		state->uts.ts32.__eflags = (state->uts.ts32.__eflags & \
-					~0x100UL) | (enable ? 0x100UL : 0);
+		state->uts.ts32.__eflags = (state->uts.ts32.__eflags & ~0x100UL) | (enable ? 0x100UL : 0);
 	} else if (state->tsh.flavor == x86_THREAD_STATE64) {
-		state->uts.ts64.__rflags = (state->uts.ts64.__rflags & \
-					~0x100UL) | (enable ? 0x100UL : 0);
+		state->uts.ts64.__rflags = (state->uts.ts64.__rflags & ~0x100UL) | (enable ? 0x100UL : 0);
 	} else {
-		eprintf ("Invalid bit size\n");
+		R_LOG_ERROR ("Invalid bit size");
 		return false;
 	}
 	if (!xnu_thread_set_gpr (dbg, th)) {
-		eprintf ("error xnu_thread_set_gpr in modify_trace_bit intel\n");
+		R_LOG_ERROR ("xnu_thread_set_gpr in modify_trace_bit intel");
 		return false;
 	}
 	return true;
@@ -34,27 +32,27 @@ static bool xnu_x86_hwstep_enable32(RDebug *dbg, bool enable) {
 	xnu_thread_t *th = get_xnu_thread (dbg, dbg->tid);
 	int ret = xnu_thread_get_gpr (dbg, th);
 	if (!ret) {
-		eprintf ("error to get gpr registers in trace bit intel\n");
+		R_LOG_ERROR ("cannot get gpr registers in trace bit intel");
 		return false;
 	}
 	state = (R_REG_T *)&th->gpr;
 	if (state->tsh.flavor == x86_THREAD_STATE32) {
-		state->uts.ts32.__eflags = (state->uts.ts32.__eflags & \
-					~0x100UL) | (enable ? 0x100UL : 0);
+		state->uts.ts32.__eflags = (state->uts.ts32.__eflags & ~0x100UL) | (enable ? 0x100UL : 0);
 	} else {
-		eprintf ("Invalid bit size\n");
+		R_LOG_ERROR ("Invalid bit size");
 		return false;
 	}
 	if (!xnu_thread_set_gpr (dbg, th)) {
-		eprintf ("error xnu_thread_set_gpr in modify_trace_bit intel\n");
+		R_LOG_ERROR ("xnu_thread_set_gpr in modify_trace_bit intel");
 		return false;
 	}
 	return true;
 }
 
 bool xnu_native_hwstep_enable(RDebug *dbg, bool enable) {
-	if (dbg->bits == R_SYS_BITS_64)
+	if (dbg->bits == R_SYS_BITS_64) {
 		return xnu_x86_hwstep_enable64 (dbg, enable);
+	}
 	return xnu_x86_hwstep_enable32 (dbg, enable);
 }
 #endif

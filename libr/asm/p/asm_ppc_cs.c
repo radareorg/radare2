@@ -54,7 +54,8 @@ static int decompile_ps(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	static int omode = -1, obits = -1;
+	static R_TH_LOCAL int omode = -1;
+	static R_TH_LOCAL int obits = -1;
 	int n, ret;
 	ut64 off = a->pc;
 	cs_insn* insn;

@@ -186,48 +186,29 @@ R_API void r_asm_op_set_buf(RAsmOp *op, const ut8 *str, int len);
 R_API ut8 *r_asm_op_get_buf(RAsmOp *op);
 
 /* plugin pointers */
-extern RAsmPlugin r_asm_plugin_8051;
-extern RAsmPlugin r_asm_plugin_arc;
 extern RAsmPlugin r_asm_plugin_arm_as;
 extern RAsmPlugin r_asm_plugin_arm_cs;
 extern RAsmPlugin r_asm_plugin_arm_gnu;
 extern RAsmPlugin r_asm_plugin_arm_winedbg;
 extern RAsmPlugin r_asm_plugin_null;
-extern RAsmPlugin r_asm_plugin_cris_gnu;
 extern RAsmPlugin r_asm_plugin_dalvik;
-extern RAsmPlugin r_asm_plugin_dcpu16;
-extern RAsmPlugin r_asm_plugin_gb;
 extern RAsmPlugin r_asm_plugin_h8300;
 extern RAsmPlugin r_asm_plugin_hppa_gnu;
-extern RAsmPlugin r_asm_plugin_java;
 extern RAsmPlugin r_asm_plugin_lanai_gnu;
-extern RAsmPlugin r_asm_plugin_lm32;
-extern RAsmPlugin r_asm_plugin_m680x_cs;
-extern RAsmPlugin r_asm_plugin_mcs96;
-extern RAsmPlugin r_asm_plugin_mips_cs;
-extern RAsmPlugin r_asm_plugin_mips_gnu;
 extern RAsmPlugin r_asm_plugin_nios2;
 extern RAsmPlugin r_asm_plugin_or1k;
 extern RAsmPlugin r_asm_plugin_pic;
 extern RAsmPlugin r_asm_plugin_ppc_as;
 extern RAsmPlugin r_asm_plugin_ppc_cs;
-extern RAsmPlugin r_asm_plugin_propeller;
 extern RAsmPlugin r_asm_plugin_riscv;
-extern RAsmPlugin r_asm_plugin_rsp;
-extern RAsmPlugin r_asm_plugin_sh;
-extern RAsmPlugin r_asm_plugin_sparc_cs;
 extern RAsmPlugin r_asm_plugin_sparc_gnu;
-extern RAsmPlugin r_asm_plugin_tms320;
 extern RAsmPlugin r_asm_plugin_tricore;
 extern RAsmPlugin r_asm_plugin_v810;
 extern RAsmPlugin r_asm_plugin_v850;
 extern RAsmPlugin r_asm_plugin_m68k_gnu;
 extern RAsmPlugin r_asm_plugin_x86_as;
-extern RAsmPlugin r_asm_plugin_x86_cs;
 extern RAsmPlugin r_asm_plugin_x86_nasm;
 extern RAsmPlugin r_asm_plugin_x86_nz;
-extern RAsmPlugin r_asm_plugin_xtensa;
-extern RAsmPlugin r_asm_plugin_alpha;
 extern RAsmPlugin r_asm_plugin_vasm;
 
 #endif

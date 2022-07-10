@@ -273,7 +273,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 		*visited = su;
 	}
 	if (visited && set_u_contains (*visited, offset)) {
-		eprintf ("Warning: anal.dwarf.parse_type: infinite recursion detected.\n");
+		R_LOG_WARN ("anal.dwarf.parse_type: infinite recursion detected");
 		return -1;
 	}
 	set_u_add (*visited, offset);
@@ -1039,7 +1039,7 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, VariableLocationKind
 /* returns string literal register name!
    TODO add more arches                 */
 static const char *get_dwarf_reg_name(const char *arch, int reg_num, VariableLocationKind *kind, int bits) {
-	R_LOG_DEBUG ("get_dwarf_reg_name %s %d\n", arch, bits);
+	R_LOG_DEBUG ("get_dwarf_reg_name %s %d", arch, bits);
 	if (arch && !strcmp (arch, "x86")) {
 		if (bits == 64) {
 			return map_dwarf_reg_to_x86_64_reg (reg_num, kind);
@@ -1386,7 +1386,7 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 	sdb_set (sdb, sname, "fcn", 0);
 
 	char *addr_key = r_str_newf ("fcn.%s.addr", sname);
-	char *addr_val = r_str_newf ("0x%" PFMT64x "", dwarf_fcn->addr);
+	char *addr_val = r_str_newf ("0x%" PFMT64x, dwarf_fcn->addr);
 	sdb_set (sdb, addr_key, addr_val, 0);
 	free (addr_key);
 	free (addr_val);

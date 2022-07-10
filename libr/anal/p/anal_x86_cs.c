@@ -865,8 +865,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		//  - Set flags
 		{
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
-			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
-			esilprintf (op, "%s,%s,<<<,%s,=", src, dst, dst);
+			src2 = getarg (&gop, 0, 0, NULL, SRC2_AR, NULL);
+			dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
+			esilprintf (op, "%s,%s,<<<,%s", src, src2, dst);
 		}
 		break;
 	case X86_INS_ROR:
@@ -875,8 +876,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		//  - Set flags
 		{
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
-			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
-			esilprintf (op, "%s,%s,>>>,%s,=", src, dst, dst);
+			src2 = getarg (&gop, 0, 0, NULL, SRC2_AR, NULL);
+			dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
+			esilprintf (op, "%s,%s,>>>,%s", src, src2, dst);
 		}
 		break;
 	case X86_INS_CPUID:
@@ -953,7 +955,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			val = 0x8000000000000000;
 			break;
 		default:
-			eprintf ("Error: unknown operand size: %d\n", gop.insn->detail->x86.operands[0].size);
+			R_LOG_ERROR ("unknown operand size: %d", gop.insn->detail->x86.operands[0].size);
 			val = 256;
 		}
 		ut32 bitsize;
@@ -3605,6 +3607,18 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				insn->mnemonic,
 				insn->op_str[0]?" ":"",
 				insn->op_str);
+			if (op->mnemonic) {
+				if (a->config->syntax != R_ASM_SYNTAX_MASM) {
+					op->mnemonic = r_str_replace (op->mnemonic, "ptr ", "", true);
+				}
+				if (a->config->syntax == R_ASM_SYNTAX_JZ) {
+					if (r_str_startswith (op->mnemonic, "je ")) {
+						op->mnemonic[1] = 'z';
+					} else if (r_str_startswith (op->mnemonic, "jne ")) {
+						op->mnemonic[2] = 'z';
+					}
+				}
+			}
 		}
 		op->nopcode = cs_len_prefix_opcode (insn->detail->x86.prefix)
 			+ cs_len_prefix_opcode (insn->detail->x86.opcode);

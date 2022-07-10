@@ -201,7 +201,7 @@ static bool types_sig_valid(const char *types) {
 
 #define DBL_VAL_FAIL(x,y) \
 	if (x) { \
-		eprintf ("Warning: Skipping signature with multiple %c signatures (%s)\n", y, k); \
+		R_LOG_WARN ("Skipping signature with multiple %c signatures (%s)", y, k); \
 		success = false; \
 		goto out; \
 	}
@@ -219,12 +219,12 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 	// Deserialize key: zign|space|name
 	int n = r_str_split (k2, '|');
 	if (n != 3) {
-		eprintf ("Warning: Skipping signature with invalid key (%s)\n", k);
+		R_LOG_WARN ("Skipping signature with invalid key (%s)", k);
 		success = false;
 		goto out;
 	}
 	if (strcmp (r_str_word_get0 (k2, 0), "zign")) {
-		eprintf ("Warning: Skipping signature with invalid value (%s)\n", k);
+		R_LOG_WARN ("Skipping signature with invalid value (%s)", k);
 		success = false;
 		goto out;
 	}
@@ -251,7 +251,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			continue;
 		}
 		if (strlen (word) < 3 || word[1] != ':') {
-			eprintf ("Warning: Skipping signature with corrupted serialization (%s:%s)\n", k, word);
+			R_LOG_WARN ("Skipping signature with corrupted serialization (%s:%s)", k, word);
 			success = false;
 			goto out;
 		}
@@ -272,7 +272,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 		case R_SIGN_TYPES:
 			DBL_VAL_FAIL (it->types, R_SIGN_TYPES);
 			if (!types_sig_valid (token)) {
-				eprintf ("Invalid types: ```%s``` in signatuer for %s\n", token, k);
+				R_LOG_ERROR ("Invalid types: ```%s``` in signatuer for %s", token, k);
 				success = false;
 				goto out;
 			}
@@ -336,7 +336,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			}
 			break;
 		default:
-			eprintf ("Unsupported (%c)\n", st);
+			R_LOG_ERROR ("Unsupported (%c)", st);
 			break;
 		}
 	}
@@ -607,23 +607,23 @@ static bool validate_item(RSignItem *it) {
 	r_return_val_if_fail (it, false);
 	// TODO: validate more
 	if (!r_name_check (it->name)) {
-		eprintf ("Bad name in signature: %s\n", it->name);
+		R_LOG_ERROR ("Bad name in signature: %s", it->name);
 		return false;
 	}
 
 	if (it->space && it->space->name && !r_name_check (it->space->name)) {
-		eprintf ("Bad space name in signature: %s\n", it->space->name);
+		R_LOG_ERROR ("Bad space name in signature: %s", it->space->name);
 		return false;
 	}
 
 	if (it->bytes) {
 		RSignBytes *b = it->bytes;
 		if (!b->mask || !b->bytes || b->size <= 0) {
-			eprintf ("Signature '%s' has empty byte field\n", it->name);
+			R_LOG_ERROR ("Signature '%s' has empty byte field", it->name);
 			return false;
 		}
 		if (b->mask[0] == '\0') {
-			eprintf ("Signature '%s' mask starts empty\n", it->name);
+			R_LOG_ERROR ("Signature '%s' mask starts empty", it->name);
 			return false;
 		}
 	}
@@ -699,12 +699,12 @@ static bool addBBHash(RAnal *a, RAnalFunction *fcn, const char *name) {
 R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val, int len) {
 	r_return_val_if_fail (a && name && type && val && len > 0, false);
 	if (type != R_SIGN_BBHASH) {
-		eprintf ("error: hash type unknown\n");
+		R_LOG_ERROR ("hash type unknown");
 		return false;
 	}
 	int digestsize = r_hash_size (R_ZIGN_HASH) * 2;
 	if (len != digestsize) {
-		eprintf ("error: invalid hash size: %d (%s digest size is %d)\n", len, ZIGN_HASH, digestsize);
+		R_LOG_ERROR ("invalid hash size: %d (%s digest size is %d)", len, ZIGN_HASH, digestsize);
 		return false;
 	}
 	return addHash (a, name, type, val);
@@ -982,7 +982,7 @@ R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignT
 		}
 		break;
 	default:
-		eprintf ("Error: %s Can not handle type %c\n", __FUNCTION__, type);
+		R_LOG_ERROR ("%s Can not handle type %c", __FUNCTION__, type);
 	}
 
 	return false;
@@ -1016,7 +1016,7 @@ R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname) {
 	r_return_val_if_fail (a && name && realname, false);
 
 	if (strchr (realname, ' ')) {
-		eprintf ("Realname sig can't contain spaces\n");
+		R_LOG_ERROR ("Realname sig can't contain spaces");
 		return false;
 	}
 
@@ -1032,7 +1032,7 @@ R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname) {
 R_API bool r_sign_add_types(RAnal *a, const char *name, const char *types) {
 	r_return_val_if_fail (a && name && types, false);
 	if (!types_sig_valid (types)) {
-		eprintf ("Invalid types signature: %s\n", types);
+		R_LOG_ERROR ("Invalid types signature: %s", types);
 		return false;
 	}
 
@@ -1405,7 +1405,7 @@ R_API bool r_sign_diff(RAnal *a, RSignOptions *options, const char *other_space_
 		return false;
 	}
 
-	eprintf ("Diff %d %d\n", (int)ls_length (la), (int)ls_length (lb));
+	R_LOG_INFO ("Diff %d %d", (int)ls_length (la), (int)ls_length (lb));
 
 	RListIter *itr;
 	RListIter *itr2;
@@ -1462,7 +1462,7 @@ R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions *options, const char *othe
 		return false;
 	}
 
-	eprintf ("Diff by name %d %d (%s)\n", (int)ls_length (la), (int)ls_length (lb), not_matching? "not matching" : "matching");
+	R_LOG_INFO ("Diff by name %d %d (%s)", (int)ls_length (la), (int)ls_length (lb), not_matching? "not matching" : "matching");
 
 	RListIter *itr;
 	RListIter *itr2;
@@ -1528,7 +1528,7 @@ static void list_sanitise_warn(char *s, const char *name, const char *field) {
 			}
 		}
 		if (sanitized) {
-			eprintf ("%s->%s needed sanitized\n", name, field);
+			R_LOG_INFO ("%s->%s needs to be sanitized", name, field);
 			r_warn_if_reached ();
 		}
 	}
@@ -2031,7 +2031,7 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 			keep_going = ctx->cb (it, ctx->user);
 		}
 	} else {
-		eprintf ("error: cannot deserialize zign\n");
+		R_LOG_ERROR ("cannot deserialize zign");
 	}
 	if (ctx->freeit) {
 		r_sign_item_free (it);
@@ -2138,7 +2138,7 @@ static bool addSearchKwCB(RSignItem *it, void *user) {
 	RSignBytes *bytes = it->bytes;
 
 	if (!bytes) {
-		eprintf ("Cannot find bytes for this signature: %s\n", it->name);
+		R_LOG_ERROR ("Cannot find bytes for this signature: %s", it->name);
 		r_sign_item_free (it);
 		return true;
 	}
@@ -2873,7 +2873,7 @@ static bool loadCB(void *user, const char *k, const char *v) {
 			}
 		}
 	} else {
-		eprintf ("error: cannot deserialize zign\n");
+		R_LOG_ERROR ("cannot deserialize zign");
 	}
 	r_sign_item_free (it);
 	return true;
@@ -2921,7 +2921,7 @@ R_API bool r_sign_load(RAnal *a, const char *file, bool merge) {
 	}
 	char *path = r_sign_path (a, file);
 	if (!r_file_exists (path)) {
-		eprintf ("error: file %s does not exist\n", file);
+		R_LOG_ERROR ("file %s does not exist", file);
 		free (path);
 		return false;
 	}
@@ -2943,44 +2943,37 @@ R_API bool r_sign_load_gz(RAnal *a, const char *filename, bool merge) {
 	int size = 0;
 	char *tmpfile = NULL;
 	bool retval = true;
-
 	char *path = r_sign_path (a, filename);
 	if (!r_file_exists (path)) {
-		eprintf ("error: file %s does not exist\n", filename);
+		R_LOG_ERROR ("file %s does not exist", filename);
 		retval = false;
 		goto out;
 	}
-
 	if (!(buf = r_file_gzslurp (path, &size, 0))) {
-		eprintf ("error: cannot decompress file\n");
+		R_LOG_ERROR ("cannot decompress file");
 		retval = false;
 		goto out;
 	}
-
 	if (!(tmpfile = r_file_temp ("r2zign"))) {
-		eprintf ("error: cannot create temp file\n");
+		R_LOG_ERROR ("cannot create temp file");
 		retval = false;
 		goto out;
 	}
-
 	if (!r_file_dump (tmpfile, buf, size, 0)) {
-		eprintf ("error: cannot dump file\n");
+		R_LOG_ERROR ("cannot dump file");
 		retval = false;
 		goto out;
 	}
-
 	if (!r_sign_load (a, tmpfile, merge)) {
-		eprintf ("error: cannot load file\n");
+		R_LOG_ERROR ("cannot load file");
 		retval = false;
 		goto out;
 	}
-
 	if (!r_file_rm (tmpfile)) {
-		eprintf ("error: cannot delete temp file\n");
+		R_LOG_ERROR ("cannot delete temp file");
 		retval = false;
 		goto out;
 	}
-
 out:
 	free (buf);
 	free (tmpfile);
@@ -2993,7 +2986,7 @@ R_API bool r_sign_save(RAnal *a, const char *file) {
 	r_return_val_if_fail (a && file, false);
 
 	if (sdb_isempty (a->sdb_zigns)) {
-		eprintf ("Warning: no zignatures to save\n");
+		R_LOG_WARN ("no zignatures to save");
 		return false;
 	}
 

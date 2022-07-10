@@ -5,7 +5,7 @@ TARGET_GB=anal_gb.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_GB}
 
-CFLAGS += -Iarch/gb/
+CFLAGS += -Iarch
 
 ${TARGET_GB}: ${OBJ_GB}
 	${CC} $(call libname,anal_gb) ${LDFLAGS} ${CFLAGS} \

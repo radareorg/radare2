@@ -1,4 +1,5 @@
 OBJ_MIPS_CS=anal_mips_cs.o
+OBJ_MIPS_CS+=../../asm/arch/mips/mipsasm.o
 
 include $(CURDIR)capstone.mk
 

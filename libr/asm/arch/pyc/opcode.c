@@ -245,7 +245,7 @@ void (store_opN)(struct op_parameter par) {
 		def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 		break;
 	default:
-		eprintf ("Error in store_op in opcode.c, call function %u.\n", par.func);
+		R_LOG_ERROR ("in store_op in opcode.c, call function %u", par.func);
 		return;
 	}
 	par.op_obj[par.op_code].type |= HASSTORE;
@@ -294,6 +294,6 @@ void (rm_op)(struct op_parameter par) {
 		op_obj->op_name = r_str_newf ("<%u>", par.op_code);
 		op_obj->type = op_obj->op_pop = op_obj->op_push = 0;
 	} else {
-		eprintf ("Error in rm_op() while constructing opcodes for .pyc file: \n .op_code = %u, .op_name = %s", par.op_code, par.op_name);
+		R_LOG_ERROR (".op_code = %u, .op_name = %s", par.op_code, par.op_name);
 	}
 }

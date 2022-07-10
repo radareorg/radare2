@@ -2,9 +2,7 @@
 
 #define R_LOG_ORIGIN "filter"
 
-#include "r_types.h"
-#include "r_util.h"
-#include <stdio.h>
+#include <r_util.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,7 +40,7 @@ static int file_stat(const char *file, struct stat* const pStat) {
 	if (!wfile) {
 		return -1;
 	}
-	int ret = _wstat (wfile, pStat);
+	int ret = _wstat (wfile, (struct _stat64i32 *)pStat);
 	free (wfile);
 	return ret;
 #else
@@ -254,8 +252,7 @@ R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
 				PTCHAR f = r_sys_conv_utf8_to_win (file);
 				int s = GetFullPathName (f, MAX_PATH, abspath, NULL);
 				if (s > MAX_PATH) {
-					// R_LOG_ERROR ("r_file_abspath/GetFullPathName: Path to file too long.\n");
-					eprintf ("r_file_abspath/GetFullPathName: Path to file too long.\n");
+					eprintf ("r_file_abspath/GetFullPathName: Path to file too long\n");
 				} else if (!s) {
 					r_sys_perror ("r_file_abspath/GetFullPathName");
 				} else {
@@ -461,7 +458,7 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 	}
 	size_t rsz = fread (ret, 1, sz, fd);
 	if (rsz != sz) {
-		eprintf ("Warning: r_file_slurp: fread: truncated read (%d / %d)\n", (int)rsz, (int)sz);
+		R_LOG_WARN ("r_file_slurp: fread: truncated read (%d / %d)", (int)rsz, (int)sz);
 		sz = rsz;
 	}
 	fclose (fd);

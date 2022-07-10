@@ -646,6 +646,7 @@ case "$1" in
 -r|run)
 	shift
 	PATH="${R2PM_BINDIR}:${PATH}" "$@"
+	exit $?
 	;;
 -v|version)
 	echo "r2pm ${R2_VERSION}"

@@ -443,8 +443,8 @@ static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_s
 }
 
 R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
-	static char section[128] = "";
-	static ut64 oaddr = UT64_MAX;
+	static R_TH_LOCAL char section[128] = "";
+	static R_TH_LOCAL ut64 oaddr = UT64_MAX;
 	if (oaddr == addr) {
 		return section;
 	}
@@ -1209,7 +1209,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 }
 
 R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
-	static char *hint_syntax = NULL;
+	static R_TH_LOCAL char *hint_syntax = NULL;
 	r_anal_hint_free (hint);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint_syntax) {
@@ -1361,7 +1361,7 @@ static void ds_show_refs(RDisasmState *ds) {
 				if (fcn) {
 					ds_comment (ds, true, "; %s", fcn->name);
 				} else {
-					ds_comment (ds, true, "; 0x%" PFMT64x"", ref->addr);
+					ds_comment (ds, true, "; 0x%" PFMT64x, ref->addr);
 				}
 			}
 		}
@@ -2877,7 +2877,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 		free (sect);
 	}
 	if (ds->show_symbols) {
-		static RFlagItem sfi = {0};
+		static R_TH_LOCAL RFlagItem sfi = {0};
 		const char *name = "";
 		int delta = 0;
 		if (ds->fcn) {
@@ -2956,7 +2956,7 @@ static void ds_print_offset(RDisasmState *ds) {
 	}
 	r_print_set_screenbounds (core->print, at);
 	if (ds->show_offset) {
-		static RFlagItem sfi = {0};
+		static R_TH_LOCAL RFlagItem sfi = {0};
 		const char *label = NULL;
 		int delta = -1;
 		bool show_trace = false;
@@ -5533,7 +5533,8 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 		if (p) {
 			core->asmqjmps_size = R_CORE_ASMQJMPS_NUM;
 			core->asmqjmps = p;
-			for (int i = 0; i < R_CORE_ASMQJMPS_NUM; i++) {
+			int i;
+			for (i = 0; i < R_CORE_ASMQJMPS_NUM; i++) {
 				core->asmqjmps[i] = UT64_MAX;
 			}
 		}
@@ -5684,7 +5685,7 @@ toro:
 			char *fmt = r_type_format (core->anal->sdb_types, link_type);
 			if (fmt) {
 				r_cons_printf ("(%s)\n", link_type);
-				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, ds->addr + ds->index);
+				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, ds->addr + ds->index);
 				const ut32 type_bitsize = r_type_get_bitsize (core->anal->sdb_types, link_type);
 				// always round up when calculating byte_size from bit_size of types
 				// could be struct with a bitfield entry
@@ -5756,7 +5757,7 @@ toro:
 			ds->at -= skip_bytes_flag;
 		}
 		if (ds->pdf) {
-			static bool sparse = false;
+			static R_TH_LOCAL bool sparse = false;
 			RAnalBlock *bb = r_anal_function_bbget_in (core->anal, ds->pdf, ds->at);
 			if (!bb) {
 				for (inc = 1; inc < ds->oplen; inc++) {
@@ -6101,6 +6102,7 @@ toro:
 		r_asm_set_pc (core->rasm, ds->at);
 		// XXX copypasta from main disassembler function
 		// r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+		// 580 - remove this call, because ranalop give us the disasssembly now! this is doing work twice
 		ret = r_asm_disassemble (core->rasm, &ds->asmop,
 			buf + addrbytes * i, nb_bytes - addrbytes * i);
 		ds->oplen = ret;
@@ -6186,9 +6188,11 @@ toro:
 				free (ds->opstr);
 				ds->opstr = strdup (ds->str);
 				asm_str = colorize_asm_string (core, ds, true);
-				core->parser->flagspace = ofs;
-				free (ds->opstr);
-				ds->opstr = asm_str;
+				if (asm_str) {
+					core->parser->flagspace = ofs;
+					free (ds->opstr);
+					ds->opstr = asm_str;
+				}
 			} else {
 				ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
 			}
@@ -6342,7 +6346,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			count = R_MIN (nb_bytes, nbytes);
 			if (count > 0) {
 				r_io_read_at (core->io, addr, buf, count);
-				r_io_read_at (core->io, addr+count, buf+count, nb_bytes-count);
+				r_io_read_at (core->io, addr + count, buf + count, nb_bytes - count);
 			} else {
 				if (nb_bytes > 0) {
 					memset (buf, 0xff, nb_bytes);

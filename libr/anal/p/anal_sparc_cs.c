@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2017 - pancake */
+/* radare2 - LGPL - Copyright 2014-2022 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -97,8 +97,14 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
-static int get_capstone_mode (RAnal *a) {
+static int get_capstone_mode(RAnal *a) {
 	int mode = CS_MODE_LITTLE_ENDIAN;
+#if 0
+	// XXX capstone doesnt support big endian sparc, this code does nothing, so we need to swap around
+	if (a->config->big_endian) {
+		mode = CS_MODE_BIG_ENDIAN;
+	}
+#endif
 	const char *cpu = a->config->cpu;
 	if (cpu && !strcmp (cpu, "v9")) {
 		mode |= CS_MODE_V9;
@@ -115,16 +121,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (handle == 0) {
 		return -1;
 	}
-
-	cs_insn *insn;
-	int n;
-
-	if (!a->config->big_endian) {
-		return -1;
-	}
+	cs_insn *insn = NULL;
+#if 0
+SPARC-V9 supports both little- and big-endian byte orders for data accesses only; instruction accesses
+are always performed using big-endian byte order. In SPARC-V8, all data and instruction accesses are
+performed in big-endian byte order.
+#endif
 
 	// capstone-next
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
@@ -135,6 +140,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->mnemonic = r_str_newf ("%s%s%s",
 					insn->mnemonic, insn->op_str[0]? " ": "",
 					insn->op_str);
+			r_str_replace_char (op->mnemonic, '%', 0);
 		}
 		op->size = insn->size;
 		op->id = insn->id;
@@ -395,6 +401,7 @@ RAnalPlugin r_anal_plugin_sparc_cs = {
 	.license = "BSD",
 	.arch = "sparc",
 	.bits = 32|64,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.archinfo = archinfo,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,

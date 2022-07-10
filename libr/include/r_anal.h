@@ -1224,6 +1224,9 @@ typedef struct r_anal_esil_t {
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd;	// ahem, let's not do this
+#if R2_580
+	bool in_cmd_step;
+#endif
 } RAnalEsil;
 
 #undef ESIL
@@ -2222,6 +2225,7 @@ extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_6502;
 extern RAnalPlugin r_anal_plugin_6502_cs;
 extern RAnalPlugin r_anal_plugin_8051;
+extern RAnalPlugin r_anal_plugin_alpha;
 extern RAnalPlugin r_anal_plugin_amd29k;
 extern RAnalPlugin r_anal_plugin_arc;
 extern RAnalPlugin r_anal_plugin_arm_cs;
@@ -2270,7 +2274,6 @@ extern RAnalPlugin r_anal_plugin_tms320;
 extern RAnalPlugin r_anal_plugin_tricore;
 extern RAnalPlugin r_anal_plugin_v810;
 extern RAnalPlugin r_anal_plugin_v850;
-extern RAnalPlugin r_anal_plugin_v850_np;
 extern RAnalPlugin r_anal_plugin_vax;
 extern RAnalPlugin r_anal_plugin_wasm;
 extern RAnalPlugin r_anal_plugin_ws;
@@ -2284,9 +2287,11 @@ extern RAnalPlugin r_anal_plugin_xcore_cs;
 extern RAnalPlugin r_anal_plugin_xtensa;
 extern RAnalPlugin r_anal_plugin_arm_v35;
 extern RAnalPlugin r_anal_plugin_z80;
+extern RAnalPlugin r_anal_plugin_mcs96;
 extern RAnalPlugin r_anal_plugin_pyc;
 extern RAnalPlugin r_anal_plugin_evm_cs;
 extern RAnalPlugin r_anal_plugin_bpf;
+extern RAnalPlugin r_anal_plugin_lm32;
 extern RAnalEsilPlugin r_esil_plugin_dummy;
 
 #ifdef __cplusplus

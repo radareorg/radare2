@@ -1,31 +1,24 @@
-/* radare - LGPL - Copyright 2010-2021 - pancake */
-
-/* covardly copied from r_cmd */
+/* radare - LGPL - Copyright 2010-2022 - pancake */
 
 #include <config.h>
 #include <r_core.h>
-#include <r_cmd.h>
-#include <r_list.h>
-#include <stdio.h>
 
 static RCorePlugin *cmd_static_plugins[] = {
 	R_CORE_STATIC_PLUGINS
 };
 
 R_API void r_core_plugin_fini(RCmd *cmd) {
-	RListIter *iter;
-	RCorePlugin *plugin;
-	if (!cmd->plist) {
-		return;
-	}
-	r_list_foreach (cmd->plist, iter, plugin) {
-		if (plugin && plugin->fini) {
-			plugin->fini (cmd, NULL);
+	if (cmd->plist) {
+		RListIter *iter;
+		RCorePlugin *plugin;
+		r_list_foreach (cmd->plist, iter, plugin) {
+			if (plugin && plugin->fini) {
+				plugin->fini (cmd, NULL);
+			}
 		}
+		r_list_free (cmd->plist);
+		cmd->plist = NULL;
 	}
-	/* empty the list */
-	r_list_free (cmd->plist);
-	cmd->plist = NULL;
 }
 
 R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
@@ -42,7 +35,7 @@ R_API bool r_core_plugin_init(RCmd *cmd) {
 	cmd->plist = r_list_newf (NULL); // memleak or dblfree
 	for (i = 0; cmd_static_plugins[i]; i++) {
 		if (!r_core_plugin_add (cmd, cmd_static_plugins[i])) {
-			eprintf ("Error loading cmd plugin\n");
+			R_LOG_ERROR ("loading cmd plugin");
 			return false;
 		}
 	}

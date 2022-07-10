@@ -38,7 +38,11 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 	}
 	while (anal->iob.read_at (anal->iob.io, address, buffer, sizeof (buffer))) {
 		size = wasm_dis (&wop, ptr, end - ptr);
-		if (!wop.txt || (wop.type == WASM_TYPE_OP_CORE && wop.op.core == WASM_OP_TRAP)) {
+		if (!wop.txt) {
+			break;
+		}
+		free (wop.txt);
+		if (wop.type == WASM_TYPE_OP_CORE && wop.op.core == WASM_OP_TRAP) {
 			// if invalid stop here.
 			break;
 		}

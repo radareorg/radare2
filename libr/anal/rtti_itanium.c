@@ -196,7 +196,7 @@ static bool rtti_itanium_vmi_class_type_info_init(RVTableContext *context, ut64 
 	}
 	at = at & 0xffffffff;
 	if (at < 1 || at > 0xfffff) {
-		eprintf ("Error reading vmi_base_count\n");
+		R_LOG_ERROR ("reading vmi_base_count");
 		return false;
 	}
 	vmi_cti->vmi_base_count = at;

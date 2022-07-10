@@ -421,10 +421,10 @@ extern bfd_boolean generic_symbol_is_valid
 
 /* Method to initialize a disassemble_info struct.  This should be
    called by all applications creating such a struct.  */
-extern void init_disassemble_info (struct disassemble_info *dinfo, void *stream,
+extern void init_disassemble_info(struct disassemble_info *dinfo, void *stream,
 				   fprintf_ftype fprintf_func);
 
-extern int print_insn_tricore (bfd_vma memaddr, struct disassemble_info *info);
+extern int print_insn_tricore(bfd_vma memaddr, struct disassemble_info *info);
 
 /* For compatibility with existing code.  */
 #define INIT_DISASSEMBLE_INFO(INFO, STREAM, FPRINTF_FUNC) \
@@ -433,7 +433,7 @@ extern int print_insn_tricore (bfd_vma memaddr, struct disassemble_info *info);
   init_disassemble_info (&(INFO), (STREAM), (fprintf_ftype) (FPRINTF_FUNC))
 
 #define DECLARE_GENERIC_FPRINTF_FUNC() \
-static int generic_fprintf_func(void *stream, const char *format, ...) { \
+static inline int generic_fprintf_func(void *stream, const char *format, ...) { \
 	int ret; \
 	va_list ap; \
 	if (!buf_global || !format) { \
@@ -446,7 +446,7 @@ static int generic_fprintf_func(void *stream, const char *format, ...) { \
 }
 
 #define DECLARE_GENERIC_PRINT_ADDRESS_FUNC() \
-static void generic_print_address_func(bfd_vma address, struct disassemble_info *info) { \
+static inline void generic_print_address_func(bfd_vma address, struct disassemble_info *info) { \
 	if (!buf_global) { \
 		return; \
 	} \

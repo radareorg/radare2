@@ -245,7 +245,7 @@ size: 12
 | 0x004017c1      89e1           mov ecx, esp
 | 0x004017c3      83c108         add ecx, 8
 | 0x004017c6      3d00100000     cmp eax, 0x1000
-| 0x004017cb      72             invalid
+\ 0x004017cb      72             invalid
 | // true: 0x004017dd  false: 0x004017cd
 EOF
 RUN
@@ -372,8 +372,8 @@ EXPECT=<<EOF
 0x00001337    0 0            func
 EOF
 EXPECT_ERR=<<EOF
-Cannot add function 'func' (duplicated) at 0x00001337
-Cannot add function 'func' (duplicated) at 0x00001337
+ERROR: Cannot add function 'func' (duplicated) at 0x00001337
+ERROR: Cannot add function 'func' (duplicated) at 0x00001337
 EOF
 RUN
 

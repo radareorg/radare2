@@ -1,0 +1,3 @@
+d "ldub [l7], l3" e60dc000
+d "sethi 0x21d950, g2" 0521d950
+d "sub l0, i2, i3" b624001a

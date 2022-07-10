@@ -12,7 +12,7 @@
 #define DB core->sdb
 
 extern void r_core_echo(RCore *core, const char *input);
-extern bool r_core_is_project (RCore *core, const char *name);
+extern bool r_core_is_project(RCore *core, const char *name);
 
 R_LIB_VERSION (r_core);
 
@@ -1219,19 +1219,15 @@ typedef struct {
 	const char *needle;
 	int needle_len;
 	bool must_be_data;
-
 	const char **valid_completions;
 	const RCmdAliasVal **valid_completion_vals;
 	int num_completions;
 } AliasAutocompletions;
 
 static bool check_alias_completion(void *in, const void *k, const void *v) {
-	// This repetition kind of sucks but we need
-	// to carry state somehow
 	AliasAutocompletions *c = in;
 	const char *needle = c->needle;
 	const int needle_len = c->needle_len;
-
 	const RCmdAliasVal *val = v;
 
 	/* Skip command aliases if we're filtering them out */
@@ -1295,8 +1291,8 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 		}
 	}
 	/* If 0 possible completions, do nothing */
-	free (c.valid_completions);
-	free (c.valid_completion_vals);
+	free ((void*)c.valid_completions);
+	free ((void*)c.valid_completion_vals);
 }
 
 static void autocomplete_process_path(RLineCompletion *completion, const char *str, const char *path) {
@@ -1536,7 +1532,7 @@ static void autocomplete_minus(RCore *core, RLineCompletion *completion, const c
 	int length = strlen (str);
 	int i;
 
-	const char **keys = r_cmd_alias_keys (core->rcmd);
+	char **keys = (char **)r_cmd_alias_keys (core->rcmd);
 	for (i = 0; i < core->rcmd->aliases->count; i++) {
 		if (!strncmp (keys[i], str, length)) {
 			r_line_completion_push (completion, keys[i]);
@@ -1553,7 +1549,7 @@ static void autocomplete_breakpoints(RCore *core, RLineCompletion *completion, c
 	RBreakpointItem *b;
 	int n = strlen (str);
 	r_list_foreach (bp->bps, iter, b) {
-		char *addr = r_str_newf ("0x%"PFMT64x"", b->addr);
+		char *addr = r_str_newf ("0x%"PFMT64x, b->addr);
 		if (!strncmp (addr, str, n)) {
 			r_line_completion_push (completion, addr);
 		}
@@ -1985,7 +1981,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			}
 			autocomplete_flags (core, completion, ptr+2);
 		}
-	} else if (!strncmp (buf->data, "#!pipe ", 7)) {
+	} else if (r_str_startswith (buf->data, "#!pipe ")) {
 		if (strchr (buf->data + 7, ' ')) {
 			autocomplete_filename (completion, buf, core->rcmd, NULL, 2);
 		} else {
@@ -1997,7 +1993,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			ADDARG ("perl");
 			ADDARG ("python");
 		}
-	} else if (!strncmp (buf->data, "ec ", 3)) {
+	} else if (r_str_startswith (buf->data, "ec ")) {
 		if (strchr (buf->data + 3, ' ')) {
 			autocomplete_filename (completion, buf, core->rcmd, NULL, 2);
 		} else {
@@ -2148,8 +2144,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			}
 		}
 		ls_free (l);
-	} else if (!strncmp (buf->data, "zo ", 3)
-			|| !strncmp (buf->data, "zoz ", 4)) {
+	} else if (r_str_startswith (buf->data, "zo ") || r_str_startswith (buf->data, "zoz ")) {
 		if (core->anal->zign_path && core->anal->zign_path[0]) {
 			char *zignpath = r_file_abspath (core->anal->zign_path);
 			char *paths[2] = { zignpath, NULL };
@@ -3080,7 +3075,11 @@ R_API bool r_core_init(RCore *core) {
 		core->cons->user_fgets = (void *)r_core_fgets;
 #endif
 		//r_line_singleton ()->user = (void *)core;
-		r_line_hist_load (R2_HOME_HISTORY);
+		char *histpath = r_str_home (".cache/radare2/history");
+		if (histpath) {
+			r_line_hist_load (histpath);
+			free (histpath);
+		}
 	}
 	core->print->cons = core->cons;
 	r_cons_bind (&core->print->consbind);
@@ -3330,7 +3329,7 @@ R_API bool r_core_prompt_loop(RCore *r) {
 			return false;
 		}
 		/* -1 means invalid command, -2 means quit prompt loop */
-		if ((ret = r_core_prompt_exec (r)) == -2) {
+		if ((ret = r_core_prompt_exec (r)) == R_CMD_RC_QUIT) {
 			break;
 		}
 	} while (ret != R_CORE_CMD_EXIT);
@@ -3791,7 +3790,7 @@ reaccept:
 					cmd_len = 0;
 				}
 #if DEMO_SERVER_SENDS_CMD_TO_CLIENT
-				static bool once = true;
+				static R_TH_LOCAL bool once = true;
 				/* TODO: server can reply a command request to the client only here */
 				if (once) {
 					const char *cmd = "pd 4";

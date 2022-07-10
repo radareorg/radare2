@@ -1098,7 +1098,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 }
 
 static bool set_reg_profile(RAnal *anal) {
-	const char *p =
+	const char * const p =
 	"=PC	ip\n"
 	"=SP	sp\n"
 	"=BP	bp\n"

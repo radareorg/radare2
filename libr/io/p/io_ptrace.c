@@ -178,10 +178,10 @@ static void close_pidmem(RIOPtrace *iop) {
 }
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	if (!strncmp (file, "ptrace://", 9)) {
+	if (r_str_startswith (file, "ptrace://")) {
 		return true;
 	}
-	if (!strncmp (file, "attach://", 9)) {
+	if (r_str_startswith (file, "attach://")) {
 		return true;
 	}
 	return false;
@@ -220,16 +220,16 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 		if (ret == -1) {
 #ifdef __ANDROID__
-			eprintf ("ptrace_attach: Operation not permitted\n");
+			R_LOG_ERROR ("ptrace_attach: Operation not permitted");
 #else
 			switch (errno) {
 			case EPERM:
 				ret = pid;
-				eprintf ("ptrace_attach: Operation not permitted\n");
+				R_LOG_ERROR ("ptrace_attach: Operation not permitted");
 				break;
 			case EINVAL:
 				r_sys_perror ("ptrace: Cannot attach");
-				eprintf ("ERRNO: %d (EINVAL)\n", errno);
+				R_LOG_ERROR ("errno: %d (EINVAL)", errno);
 				break;
 			default:
 				break;
@@ -239,7 +239,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		} else if (__waitpid (pid)) {
 			ret = pid;
 		} else {
-			eprintf ("Error in waitpid\n");
+			R_LOG_ERROR ("waitpid");
 			return NULL;
 		}
 	}
@@ -312,7 +312,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "mem")) {
 		open_pidmem (iop);
 	} else
-	if (!strncmp (cmd, "pid", 3)) {
+	if (r_str_startswith (cmd, "pid")) {
 		if (iop) {
 			if (cmd[3] == ' ') {
 				int pid = atoi (cmd + 4);

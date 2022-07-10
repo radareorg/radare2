@@ -34,6 +34,7 @@ R_API void r_sys_info_free(RSysInfo *si);
 
 R_API int r_sys_sigaction(int *sig, void(*handler)(int));
 R_API int r_sys_signal(int sig, void(*handler)(int));
+R_API void r_sys_signable(bool v);
 R_API void r_sys_env_init(void);
 R_API char **r_sys_get_environ(void);
 R_API void r_sys_set_environ(char **e);

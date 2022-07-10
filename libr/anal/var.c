@@ -12,7 +12,7 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	char *fmt = r_type_format (anal->sdb_types, var->type);
 	RRegItem *i;
 	if (!fmt) {
-		eprintf ("type:%s doesn't exist\n", var->type);
+		R_LOG_ERROR ("type:%s doesn't exist", var->type);
 		return false;
 	}
 	bool usePxr = !strcmp (var->type, "int"); // hacky but useful
@@ -26,7 +26,7 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 				anal->cb_printf ("pf r (%s)\n", i->name);
 			}
 		} else {
-			eprintf ("register not found\n");
+			R_LOG_ERROR ("register not found");
 		}
 		break;
 	case R_ANAL_VAR_KIND_BPV: {
@@ -54,7 +54,7 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	return true;
 }
 
-static const char *__int_type_from_size(int size) {
+static const char * __int_type_from_size(int size) {
 	switch (size) {
 	case 1: return "int8_t";
 	case 2: return "int16_t";
@@ -149,14 +149,14 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 		}
 	}
 	if (!valid_var_kind (kind)) {
-		eprintf ("Invalid var kind '%c'\n", kind);
+		R_LOG_ERROR ("Invalid var kind '%c'", kind);
 		return NULL;
 	}
 	if (kind == R_ANAL_VAR_KIND_REG) {
 		reg = r_reg_index_get (fcn->anal->reg, R_ABS (delta));
 		if (!reg) {
 			if (fcn->anal->verbose) {
-				eprintf ("No register at index %d\n", delta);
+				R_LOG_ERROR ("No register at index %d", delta);
 			}
 			return NULL;
 		}
@@ -199,7 +199,7 @@ R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList *l) {
 	return true;
 }
 
-R_API void r_anal_var_set_type(RAnalVar *var, const char *type) {
+R_API void r_anal_var_set_type(RAnalVar *var, const char * const type) {
 	char *nt = strdup (type);
 	if (nt) {
 		free (var->type);
@@ -409,7 +409,7 @@ R_API char *r_anal_var_prot_serialize(RList *l, bool spaces) {
 	}
 	r_strbuf_reserve (sb, r_list_length (l) * 0x10);
 
-	char *sep = spaces? ", ": ",";
+	const char * const sep = spaces? ", ": ",";
 	size_t len = strlen (sep);
 	RAnalVarProt *v;
 	RAnalVarProt *top = (RAnalVarProt *)r_list_get_top (l);
@@ -554,7 +554,7 @@ R_API bool r_anal_var_rename(RAnalVar *var, const char *new_name, bool verbose) 
 	RAnalVar *v1 = r_anal_function_get_var_byname (var->fcn, new_name);
 	if (v1) {
 		if (verbose) {
-			eprintf ("variable or arg with name `%s` already exist\n", new_name);
+			R_LOG_ERROR ("variable or arg with name `%s` already exist", new_name);
 		}
 		return false;
 	}
@@ -744,22 +744,22 @@ R_API char *r_anal_var_get_constraints_readable(RAnalVar *var) {
 			if (high) {
 				r_strbuf_append (&sb, " && ");
 			}
-			r_strbuf_appendf (&sb, "<= 0x%"PFMT64x "", constr->val);
+			r_strbuf_appendf (&sb, "<= 0x%"PFMT64x, constr->val);
 			low = true;
 			break;
 		case R_ANAL_COND_LT:
 			if (high) {
 				r_strbuf_append (&sb, " && ");
 			}
-			r_strbuf_appendf (&sb, "< 0x%"PFMT64x "", constr->val);
+			r_strbuf_appendf (&sb, "< 0x%"PFMT64x, constr->val);
 			low = true;
 			break;
 		case R_ANAL_COND_GE:
-			r_strbuf_appendf (&sb, ">= 0x%"PFMT64x "", constr->val);
+			r_strbuf_appendf (&sb, ">= 0x%"PFMT64x, constr->val);
 			high = true;
 			break;
 		case R_ANAL_COND_GT:
-			r_strbuf_appendf (&sb, "> 0x%"PFMT64x "", constr->val);
+			r_strbuf_appendf (&sb, "> 0x%"PFMT64x, constr->val);
 			high = true;
 			break;
 		default:
@@ -941,7 +941,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 				const char *rn = op->dst->reg ? op->dst->reg->name : NULL;
 				if (rn && ((bp && !strcmp (bp, rn)) || (sp && !strcmp (sp, rn)))) {
 					if (anal->verbose) {
-						eprintf ("Warning: Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x ".\n", op->addr);
+						R_LOG_WARN ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
 					}
 					goto beach;
 				}
@@ -969,7 +969,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	}
 
 	if (anal->verbose && (!op->src[0] || !op->dst)) {
-		eprintf ("Warning: Analysis didn't fill op->src/dst at 0x%" PFMT64x ".\n", op->addr);
+		R_LOG_WARN ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
 	}
 
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_ANAL_VAR_ACCESS_TYPE_WRITE : R_ANAL_VAR_ACCESS_TYPE_READ;
@@ -1158,7 +1158,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	const char *opdreg = op->dst ? get_regname (anal, op->dst) : NULL;
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
 	if (!fcn->cc) {
-		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments\n", fcn->name);
+		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
 		return;
 	}
 	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
@@ -1542,7 +1542,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			if (kind == R_ANAL_VAR_KIND_REG) { // registers
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf ("Register not found\n");
+					R_LOG_ERROR ("Register not found");
 					break;
 				}
 				anal->cb_printf ("\"afv%c %s %s %s\"\n",
@@ -1578,7 +1578,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			case R_ANAL_VAR_KIND_REG: {
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf ("Register not found\n");
+					R_LOG_ERROR ("Register not found");
 					break;
 				}
 				pj_o (pj);
@@ -1631,7 +1631,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			case R_ANAL_VAR_KIND_REG: {
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf ("Register not found\n");
+					R_LOG_ERROR ("Register not found");
 					break;
 				}
 				anal->cb_printf ("arg %s %s @ %s\n",
@@ -1741,7 +1741,7 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			const char *name = r_type_func_args_name (TDB, type_fcn_name, i);
 			if (!type || !*type || !name) {
 				// USE RLOG API
-				R_LOG_WARN ("Missing type for '%s'.", type_fcn_name);
+				R_LOG_WARN ("Missing type for '%s'", type_fcn_name);
 				goto beach;
 			}
 			size_t len = strlen (type);

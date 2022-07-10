@@ -266,9 +266,7 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 
 static ut64 try_get_cmpval_from_parents(RAnal *anal, RAnalFunction *fcn, RAnalBlock *my_bb, const char *cmp_reg) {
 	if (!cmp_reg) {
-		if (anal->verbose) {
-			eprintf ("try_get_cmpval_from_parents: cmp_reg not defined.\n");
-		}
+		R_LOG_DEBUG ("try_get_cmpval_from_parents: cmp_reg not defined");
 		return UT64_MAX;
 	}
 	r_return_val_if_fail (fcn && fcn->bbs, UT64_MAX);
@@ -541,9 +539,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	char *op_dst = NULL;
 	char *op_src = NULL;
 	if (depth < 1) {
-		if (anal->verbose) {
-			eprintf ("Too deep fcn_recurse at 0x%"PFMT64x "\n", addr);
-		}
+		R_LOG_DEBUG ("Too deep fcn_recurse at 0x%"PFMT64x, addr);
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 	// TODO Store all this stuff in the heap so we save memory in the stack
@@ -591,9 +587,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	// check if address is readable //:
 	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
 		if (addr != UT64_MAX && !anal->iob.io->va) {
-			if (anal->verbose) {
-				eprintf ("Invalid address 0x%"PFMT64x ". Try with io.va=true\n", addr);
-			}
+			R_LOG_DEBUG ("Invalid address 0x%"PFMT64x ". Try with io.va=true", addr);
 		}
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
@@ -633,7 +627,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	if (!anal->leaddrs) {
 		anal->leaddrs = r_list_newf (free_leaddr_pair);
 		if (!anal->leaddrs) {
-			eprintf ("Cannot create leaddr list\n");
+			R_LOG_ERROR ("Cannot create leaddr list");
 			gotoBeach (R_ANAL_RET_ERROR);
 		}
 	}
@@ -667,7 +661,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	}
 	if ((maxlen - (addrbytes * idx)) > MAX_SCAN_SIZE) {
 		if (anal->verbose) {
-			eprintf ("Warning: Skipping large memory region.\n");
+			R_LOG_WARN ("Skipping large memory region");
 		}
 		maxlen = 0;
 	}
@@ -699,19 +693,19 @@ repeat:
 		ret = read_ahead (anal, at, buf, bytes_read);
 
 		if (ret < 0) {
-			eprintf ("Failed to read\n");
+			R_LOG_ERROR ("Failed to read");
 			break;
 		}
 		if (is_invalid_memory (anal, buf, bytes_read)) {
 			if (anal->verbose) {
-				eprintf ("Warning: FFFF opcode at 0x%08"PFMT64x "\n", at);
+				R_LOG_WARN ("FFFF opcode at 0x%08"PFMT64x, at);
 			}
 			gotoBeach (R_ANAL_RET_ERROR)
 		}
 		r_anal_op_fini (op);
 		if ((oplen = r_anal_op (anal, op, at, buf, bytes_read, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) < 1) {
 			if (anal->verbose) {
-				eprintf ("Invalid instruction at 0x%"PFMT64x" with %d bits\n", at, anal->config->bits);
+				R_LOG_WARN ("Invalid instruction at 0x%"PFMT64x" with %d bits", at, anal->config->bits);
 			}
 			// gotoBeach (R_ANAL_RET_ERROR);
 			// RET_END causes infinite loops somehow
@@ -763,9 +757,7 @@ repeat:
 					r_anal_block_unref (split);
 				}
 				overlapped = true;
-				if (anal->verbose) {
-					eprintf ("Overlapped at 0x%08"PFMT64x "\n", at);
-				}
+				R_LOG_DEBUG ("Overlapped at 0x%08"PFMT64x, at);
 			}
 		}
 		if (!overlapped) {
@@ -1112,7 +1104,6 @@ repeat:
 			ret = r_anal_function_bb (anal, fcn, op->jump, depth);
 			int tc = anal->opt.tailcall;
 			if (tc) {
-				// eprintf ("TAIL CALL AT 0x%llx\n", op->addr);
 				int diff = op->jump - op->addr;
 				if (tc < 0) {
 					ut8 buf[32];
@@ -1574,7 +1565,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 			anal->visited = set_u_new ();
 		}
 		if (set_u_contains (anal->visited, addr)) {
-			eprintf ("r_anal_function: anal.norevisit at 0x%08"PFMT64x" %c\n", addr, reftype);
+			R_LOG_ERROR ("visit at 0x%08"PFMT64x" %c", addr, reftype);
 			return R_ANAL_RET_END;
 		}
 		set_u_add (anal->visited, addr);
@@ -1598,9 +1589,7 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 	// XXX -1 here results in lots of errors
 	int ret = r_anal_function_bb (anal, fcn, addr, anal->opt.depth);
 	if (ret < 0) {
-		if (anal->verbose) {
-			eprintf ("Failed to analyze basic block at 0x%"PFMT64x"\n", addr);
-		}
+		R_LOG_DEBUG ("Failed to analyze basic block at 0x%"PFMT64x, addr);
 	}
 	return ret;
 }
@@ -1688,14 +1677,13 @@ R_API RAnalFunction *r_anal_get_function_byname(RAnal *a, const char *name) {
 
 /* rename RAnalFunctionBB.add() */
 R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff) {
-	D eprintf ("Add bb\n");
 	if (size == 0) { // empty basic blocks allowed?
-		eprintf ("Warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
+		R_LOG_WARN ("empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion", addr);
 		r_warn_if_reached ();
 		return false;
 	}
 	if (size > a->opt.bb_max_size) {
-		eprintf ("Warning: can't allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x"\n", (st64)size, addr);
+		R_LOG_WARN ("can't allocate such big bb of %"PFMT64d" bytes at 0x%08"PFMT64x, (st64)size, addr);
 		r_warn_if_reached ();
 		return false;
 	}
@@ -1720,7 +1708,7 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 	}
 
 	if (!block) {
-		D eprintf ("Warning: r_anal_function_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x"\n", fcn->addr, addr);
+		D R_LOG_WARN ("r_anal_function_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x, fcn->addr, addr);
 		return false;
 	}
 
@@ -1775,7 +1763,7 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		N++; // nodes
 		if ((!anal || anal->verbose) && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
-			eprintf ("Warning: invalid bb jump/fail pair at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x"\n", bb->addr, fcn->addr);
+			R_LOG_WARN ("invalid bb jump/fail pair at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x, bb->addr, fcn->addr);
 		}
 		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
 			P++; // exit nodes
@@ -1792,7 +1780,7 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 
 	int result = E - N + (2 * P);
 	if (result < 1 && (!anal || anal->verbose)) {
-		eprintf ("Warning: CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08"PFMT64x"\n", E, N, P, fcn->addr);
+		R_LOG_WARN ("CC = E(%d) - N(%d) + (2 * P(%d)) < 1 at 0x%08"PFMT64x, E, N, P, fcn->addr);
 	}
 	// r_return_val_if_fail (result > 0, 0);
 	return result;
@@ -1944,7 +1932,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 		r_anal_save_parsed_type (a, out);
 	}
 	if (error_msg) {
-		eprintf ("%s", error_msg);
+		R_LOG_ERROR ("%s", error_msg);
 		free (error_msg);
 	}
 

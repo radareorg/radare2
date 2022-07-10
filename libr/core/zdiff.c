@@ -1,7 +1,5 @@
-/* radare - LGPL - Copyright 2019 - nibble, pancake */
+/* radare - LGPL - Copyright 2019-2022 - nibble, pancake */
 
-#include <stdio.h>
-#include <string.h>
 #include <r_core.h>
 
 static bool matchBytes(RSignItem *a, RSignItem *b) {

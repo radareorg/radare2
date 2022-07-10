@@ -1046,6 +1046,16 @@ static void optimize(void) {
 	free (oldstr);
 }
 
+#if R2_580
+R_API char *r_cons_drain(void) {
+	const char *buf = r_cons_get_buffer();
+	size_t buf_size = r_cons_get_buffer_size();
+	char *s = r_str_ndup (buf, buf_size);
+	r_cons_reset ();
+	return s;
+}
+#endif
+
 R_API void r_cons_flush(void) {
 	if (!r_cons_instance) {
 		r_cons_instance = &g_cons_instance;
@@ -1731,6 +1741,12 @@ R_API int r_cons_is_vtcompat(void) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
+	char *cmd_session = r_sys_getenv ("SESSIONNAME");
+	if (cmd_session) {
+		free (cmd_session);
+		return 2;
+	}
+	// Windows Terminal
 	char *wt_session = r_sys_getenv ("WT_SESSION");
 	if (wt_session) {
 		free (wt_session);
@@ -1870,7 +1886,7 @@ R_API void r_cons_set_utf8(bool b) {
 				r_sys_perror ("r_cons_set_utf8");
 			}
 		} else {
-			R_LOG_WARN ("UTF-8 Codepage not installed.");
+			R_LOG_WARN ("UTF-8 Codepage not installed");
 		}
 	} else {
 		UINT acp = GetACP ();
@@ -2176,5 +2192,6 @@ R_API void r_cons_thready(void) {
 		r_cons_new ();
 	}
 	C->unbreakable = true;
+	r_sys_signable (false); // disable signal handling
 	r_th_lock_leave (&r_cons_lock);
 }
