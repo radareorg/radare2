@@ -28,6 +28,7 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 
 
 static R_TH_LOCAL void *origread = NULL;
 static R_TH_LOCAL RIOPlugin *origplugin = NULL;
+static R_TH_LOCAL RIOPlugin *heapplugin = NULL;
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
@@ -72,6 +73,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 static void destroy(RBinFile *bf) {
 	if (origplugin) {
 		origplugin->read = origread;
+		R_FREE (heapplugin);
 	}
 	MACH0_(mach0_free) (bf->o->bin_obj);
 }
@@ -713,7 +715,13 @@ beach:
 
 static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io) {
 	r_return_if_fail (io && io->desc && io->desc->plugin);
-	RIOPlugin *plugin = io->desc->plugin;
+	RIOPlugin *plugin = R_NEW0 (RIOPlugin);
+	if (heapplugin) {
+		R_LOG_WARN ("Here be dragons");
+	}
+	heapplugin = plugin;
+	memcpy (plugin, io->desc->plugin, sizeof (RIOPlugin));
+	io->desc->plugin = plugin;
 	obj->original_io_read = plugin->read;
 	origread = plugin->read;
 	plugin->read = &rebasing_and_stripping_io_read;
