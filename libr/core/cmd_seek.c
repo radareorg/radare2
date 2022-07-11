@@ -427,9 +427,19 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_sC);
 		}
 		break;
+	case '0': // "s0"
+	case '1': // "s1"
+	case '2': // "s2"
+	case '3': // "s3"
+	case '4': // "s4"
+	case '5': // "s5"
+	case '6': // "s6"
+	case '7': // "s7"
+	case '8': // "s8"
+	case '9': // "s9"
 	case ' ': // "s "
 	{
-		ut64 addr = r_num_math (core->num, input + 1);
+		ut64 addr = r_num_math (core->num, input);
 		if (core->num->nc.errors) {
 			if (r_cons_singleton ()->context->is_interactive) {
 				eprintf ("Cannot seek to unknown address '%s'\n", core->num->nc.calc_buf);
