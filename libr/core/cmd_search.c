@@ -1967,7 +1967,16 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	ut64 oldoff = core->offset;
 	int syscallNumber = 0;
 	r_cons_break_push (NULL, NULL);
+	// XXX: the syscall register depends on arcm
 	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	if (!strcmp (core->anal->config->arch, "arm") && core->anal->config->bits == 64) {
+		const char *os = core->anal->config->os;
+		if (!strcmp (os, "linux")) {
+			a0 = "x8";
+		} else if (!strcmp (os, "macos")) {
+			a0 = "x16";
+		}
+	}
 	char *esp = r_str_newf ("%s,=", a0);
 	char *esp32 = NULL;
 	if (core->anal->config->bits == 64) {
@@ -2225,13 +2234,6 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 	}
 	if (type == 's') {
 		eprintf ("Shouldn't reach\n");
-// ??
-#if 0
-	case 's': // "/s"
-		do_syscall_search (core, &param);
-		dosearch = false;
-		break;
-#endif
 		return true;
 	}
 	if (mode == 'j') {
