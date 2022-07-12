@@ -439,7 +439,7 @@ static int cmd_seek(void *data, const char *input) {
 	case '9': // "s9"
 	case ' ': // "s "
 	{
-		ut64 addr = r_num_math (core->num, input);
+		ut64 addr = r_num_math (core->num, r_str_trim_head_ro (input));
 		if (core->num->nc.errors) {
 			if (r_cons_singleton ()->context->is_interactive) {
 				eprintf ("Cannot seek to unknown address '%s'\n", core->num->nc.calc_buf);
