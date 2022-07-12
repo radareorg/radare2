@@ -43,7 +43,15 @@ NAME=/m lzma
 FILE=bins/other/hello-world.lzma
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 LZMA BE compressed data dictionary size: 32768 bytes,
+0x00000000 1 LZMA BE compressed data dictionary size: 32768 bytes
+EOF
+RUN
+
+NAME=/m lzma
+FILE=bins/other/smol.lzma
+CMDS=pm
+EXPECT=<<EOF
+0x00000000 1 LZMA LE compressed data dictionary size: 2162620 bytes
 EOF
 RUN
 
