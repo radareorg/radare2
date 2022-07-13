@@ -48,32 +48,34 @@ R_API const char *r_anal_functiontype_tostring(int type) {
 }
 
 #if READ_AHEAD
+#if !R2_580
 static R_TH_LOCAL ut64 cache_addr = UT64_MAX;
+#endif
 
 // TODO: move into io :?
 static int read_ahead(RAnal *anal, ut64 addr, ut8 *buf, int len) {
-	static R_TH_LOCAL ut8 cache[1024];
-	const int cache_len = sizeof (cache);
+	anal->cache_addr = UT64_MAX;
+	const int cache_len = sizeof (anal->cache);
 
 	if (len < 1) {
 		return 0;
 	}
 	if (len > cache_len) {
 		int a = anal->iob.read_at (anal->iob.io, addr, buf, len); // double read
-		memcpy (cache, buf, cache_len);
-		cache_addr = addr;
+		memcpy (anal->cache, buf, cache_len);
+		anal->cache_addr = addr;
 		return a;
 	}
 
 	ut64 addr_end = UT64_ADD_OVFCHK (addr, len)? UT64_MAX: addr + len;
-	ut64 cache_addr_end = UT64_ADD_OVFCHK (cache_addr, cache_len)? UT64_MAX: cache_addr + cache_len;
-	bool isCached = ((addr != UT64_MAX) && (addr >= cache_addr) && (addr_end < cache_addr_end));
+	ut64 cache_addr_end = UT64_ADD_OVFCHK (anal->cache_addr, cache_len)? UT64_MAX: anal->cache_addr + cache_len;
+	bool isCached = ((addr != UT64_MAX) && (addr >= anal->cache_addr) && (addr_end < cache_addr_end));
 	if (isCached) {
-		memcpy (buf, cache + (addr - cache_addr), len);
+		memcpy (buf, anal->cache + (addr - anal->cache_addr), len);
 	} else {
-		anal->iob.read_at (anal->iob.io, addr, cache, sizeof (cache));
-		memcpy (buf, cache, len);
-		cache_addr = addr;
+		anal->iob.read_at (anal->iob.io, addr, anal->cache, sizeof (anal->cache));
+		memcpy (buf, anal->cache, len);
+		anal->cache_addr = addr;
 	}
 	return len;
 }
@@ -555,7 +557,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	int oplen, idx = 0;
 	size_t lea_cnt = 0;
 	size_t nop_prefix_cnt = 0;
-	static R_TH_LOCAL ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
+	anal->cmpval = UT64_MAX;
 	struct {
 		int cnt;
 		int idx;
@@ -632,7 +634,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			gotoBeach (R_ANAL_RET_ERROR);
 		}
 	}
-	static R_TH_LOCAL ut64 lea_jmptbl_ip = UT64_MAX;
+	anal->lea_jmptbl_ip = UT64_MAX;
 	ut64 last_reg_mov_lea_val = UT64_MAX;
 	bool last_is_reg_mov_lea = false;
 	bool last_is_push = false;
@@ -1027,7 +1029,7 @@ repeat:
 							? try_walkthrough_jmptbl (anal, fcn, bb, depth, addr, case_shift, jmptbl_addr, op->ptr, 4, table_size, default_case, 4)
 							: try_walkthrough_casetbl (anal, fcn, bb, depth, addr, case_shift, jmptbl_addr, casetbl_addr, op->ptr, 4, table_size, default_case, 4);
 						if (ret) {
-							lea_jmptbl_ip = addr;
+							anal->lea_jmptbl_ip = addr;
 						}
 					}
 				}
@@ -1124,14 +1126,14 @@ repeat:
 		case R_ANAL_OP_TYPE_SUB:
 			if (op->val != UT64_MAX && op->val > 0) {
 				// if register is not stack
-				cmpval = op->val;
+				anal->cmpval = op->val;
 			}
 			break;
 		case R_ANAL_OP_TYPE_CMP: {
 			ut64 val = (is_x86 || is_v850)? op->val : op->ptr;
 			if (val) {
-				cmpval = val;
-				bb->cmpval = cmpval;
+				anal->cmpval = val;
+				bb->cmpval = anal->cmpval;
 				bb->cmpreg = op->reg;
 				r_anal_cond_free (bb->cond);
 				bb->cond = r_anal_cond_new_from_op (op);
@@ -1155,9 +1157,9 @@ repeat:
 			if (anal->opt.jmptbl) {
 				if (op->ptr != UT64_MAX) {
 					ut64 table_size, default_case;
-					table_size = cmpval + 1;
+					table_size = anal->cmpval + 1;
 					default_case = op->fail; // is this really default case?
-					if (cmpval != UT64_MAX && default_case != UT64_MAX && (op->reg || op->ireg)) {
+					if (anal->cmpval != UT64_MAX && default_case != UT64_MAX && (op->reg || op->ireg)) {
 						// TODO -1
 						if (op->ireg) {
 							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, 0, op->ptr, op->ptr, anal->config->bits >> 3, table_size, default_case, ret);
@@ -1171,7 +1173,7 @@ repeat:
 						} else if (op->fail == op->ptr) {
 							op->fail = UT64_MAX;
 						}
-						cmpval = UT64_MAX;
+						anal->cmpval = UT64_MAX;
 					}
 				}
 			}
@@ -1224,8 +1226,8 @@ repeat:
 			if (is_arm && last_is_mov_lr_pc) {
 				break;
 			} else if (is_v850 && anal->opt.jmptbl) {
-				int ptsz = cmpval? cmpval + 1: 4;
-				if ((int)cmpval > 0) {
+				int ptsz = anal->cmpval? anal->cmpval + 1: 4;
+				if ((int)anal->cmpval > 0) {
 					ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr,
 						0, op->addr + 2, op->addr + 2, 2, ptsz, 0, ret);
 				}
@@ -1241,7 +1243,7 @@ repeat:
 				gotoBeach (R_ANAL_RET_END);
 			}
 			// switch statement
-			if (anal->opt.jmptbl && lea_jmptbl_ip != op->addr) {
+			if (anal->opt.jmptbl && anal->lea_jmptbl_ip != op->addr) {
 				ut8 buf[32]; // 32 bytes is enough to hold any instruction.
 				// op->ireg since rip relative addressing produces way too many false positives otherwise
 				// op->ireg is 0 for rip relative, "rax", etc otherwise
@@ -1296,11 +1298,11 @@ repeat:
 						}
 					}
 					if (!try_get_jmptbl_info (anal, fcn, op->addr, bb, &table_size, &default_case, &case_shift)) {
-						table_size = cmpval + 1;
+						table_size = anal->cmpval + 1;
 						default_case = -1;
 					}
 					ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, case_shift, jmptbl_base + movdisp, jmptbl_base, movscale, table_size, default_case, ret);
-					cmpval = UT64_MAX;
+					anal->cmpval = UT64_MAX;
 #if 0
 				} else if (movdisp != UT64_MAX) {
 					ut64 table_size, default_case;
@@ -1318,7 +1320,7 @@ repeat:
 						if (pred_cmpval != UT64_MAX) {
 							table_size += pred_cmpval;
 						} else {
-							table_size += cmpval;
+							table_size += anal->cmpval;
 						}
 						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, 0, op->addr + op->size,
 							op->addr + 4, 1, table_size, UT64_MAX, ret);
@@ -1331,7 +1333,7 @@ repeat:
 						if (pred_cmpval != UT64_MAX) {
 							tablesize += pred_cmpval;
 						} else {
-							tablesize += cmpval;
+							tablesize += anal->cmpval;
 						}
 						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, 0, op->addr + op->size,
 							op->addr + 4, 2, tablesize, UT64_MAX, ret);
@@ -1340,8 +1342,8 @@ repeat:
 					}
 				}
 			}
-			if (lea_jmptbl_ip == op->addr) {
-				lea_jmptbl_ip = UT64_MAX;
+			if (anal->lea_jmptbl_ip == op->addr) {
+				anal->lea_jmptbl_ip = UT64_MAX;
 			}
 			if (anal->opt.ijmp) {
 				r_anal_function_bb (anal, fcn, op->jump, depth - 1);

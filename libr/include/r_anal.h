@@ -667,6 +667,10 @@ typedef struct r_anal_t {
 	RList *leaddrs;
 	char *pincmd;
 	R_DIRTY_VAR;
+	ut64 cache_addr;
+	ut8 cache[1024];
+	ut64 cmpval;
+	ut64 lea_jmptbl_ip;
 } RAnal;
 
 typedef enum r_anal_addr_hint_type_t {
