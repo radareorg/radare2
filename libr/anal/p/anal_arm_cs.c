@@ -4441,8 +4441,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	int mode = (a->config->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
 	int n, ret;
 	mode |= (a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
-	if (a->config->cpu && strstr (a->config->cpu, "cortex")) {
-		mode |= CS_MODE_MCLASS;
+	if (R_STR_ISNOTEMPTY (a->config->cpu)) {
+		if (strstr (a->config->cpu, "cortex")) {
+			mode |= CS_MODE_MCLASS;
+		}
+		if (a->config->bits != 64 && strstr (a->config->cpu, "v8")) {
+			mode |= CS_MODE_V8;
+		}
+	}
+	if (a->config->bits != 64 && R_STR_ISNOTEMPTY (a->config->features) &&
+		strstr (a->config->features, "v8")) {
+		mode |= CS_MODE_V8;
 	}
 	if (!memcmp (buf, "\xff\xff\xff\xff", R_MIN (len, 4))) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -4473,10 +4482,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			return -1;
 		}
 	}
-	int haa = hackyArmAnal (a, op, buf, len);
+#if 0
+	int haa = hackyArmAnal (a, op, buf, len, mask);
 	if (haa > 0) {
 		return haa;
 	}
+#endif
 
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {

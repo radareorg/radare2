@@ -529,6 +529,9 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		ret = a->analb.decode (a->analb.anal, &aop, a->pc, buf, len, R_ANAL_OP_MASK_DISASM);
 		op->size = aop.size;
 		if (aop.mnemonic) {
+			if (a->immdisp && !strcmp(a->config->arch, "arm")) {
+				aop.mnemonic = r_str_replace (aop.mnemonic, "#", "", true);
+			}
 			r_strbuf_set (&op->buf_asm, aop.mnemonic);
 		} else {
 			r_strbuf_set (&op->buf_asm, "");

@@ -994,17 +994,21 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 		goto err_op;
 	}
 	// TODO This code block must be deleted when all the anal plugs support disasm
-	if (!op->mnemonic && mask & R_ANAL_OP_MASK_DISASM) {
-		RAsmOp asmop;
-		if (core->anal->verbose) {
-			R_LOG_WARN ("Implement RAnalOp.MASK_DISASM for current anal.arch. Using the sluggish RAsmOp fallback for now");
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (!op->mnemonic && mask & R_ANAL_OP_MASK_DISASM) {
+			RAsmOp asmop;
+			if (core->anal->verbose) {
+				R_LOG_WARN ("Implement RAnalOp.MASK_DISASM for current anal.arch. Using the sluggish RAsmOp fallback for now");
+			}
+			r_asm_set_pc (core->rasm, addr);
+			r_asm_op_init (&asmop);
+			if (r_asm_disassemble (core->rasm, &asmop, ptr, len) > 0) {
+				op->mnemonic = strdup (r_strbuf_get (&asmop.buf_asm));
+			}
+			r_asm_op_fini (&asmop);
+		} else if (core->rasm->immdisp && !strcmp(core->anal->config->arch, "arm")) {
+			op->mnemonic = r_str_replace (op->mnemonic, "#", "", true);
 		}
-		r_asm_set_pc (core->rasm, addr);
-		r_asm_op_init (&asmop);
-		if (r_asm_disassemble (core->rasm, &asmop, ptr, len) > 0) {
-			op->mnemonic = strdup (r_strbuf_get (&asmop.buf_asm));
-		}
-		r_asm_op_fini (&asmop);
 	}
 	return op;
 err_op:
