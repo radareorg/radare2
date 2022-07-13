@@ -213,7 +213,6 @@ static RList *symbols(RBinFile *bf) {
 #if 0
 	const char *lang = "c"; // XXX deprecate this
 #endif
-	int wordsize = 0;
 	if (!ret) {
 		return NULL;
 	}
@@ -222,7 +221,22 @@ static RList *symbols(RBinFile *bf) {
 		return NULL;
 	}
 	bool isStripped = false;
-	wordsize = MACH0_(get_bits) (obj->bin_obj);
+	bool isDwarfed = false;
+
+	if (!bf->o->sections) {
+		bf->o->sections = sections (bf);
+	}
+	if (bf->o->sections) {
+		RListIter *iter;
+		RBinSection *section;
+		r_list_foreach (bf->o->sections, iter, section) {
+			if (strstr (section->name, "DWARF.__debug_line")) {
+				isDwarfed = true;
+				break;
+			}
+		}
+	}
+	int wordsize = MACH0_(get_bits) (obj->bin_obj);
 
 	// OLD CODE
 	if (!(syms = MACH0_(get_symbols) (obj->bin_obj))) {
@@ -328,6 +342,9 @@ static RList *symbols(RBinFile *bf) {
 #endif
 	if (isStripped) {
 		bin->dbg_info |= R_BIN_DBG_STRIPPED;
+	}
+	if (isDwarfed) {
+		bin->dbg_info |= R_BIN_DBG_LINENUMS;
 	}
 	sdb_free (symcache);
 	return ret;
