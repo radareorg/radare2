@@ -5,15 +5,20 @@
    */
 /* #undef HAVE_DECL_TZNAME */
 
+#if 0
 #ifndef ftello
 #define ftello ftell
 #endif
 #ifndef fseeko
 #define fseeko fseek
 #endif
-
+#endif
+// #define Z_NULL NULL
+#undef HAVE_EXPLICIT_MEMSET
+#undef HAVE_EXPLICIT_BZERO
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
+#define HAVE_STDBOOL_H 1
 
 /* Define to 1 if you have the `fseeko' function. */
 #define HAVE_FSEEKO 1

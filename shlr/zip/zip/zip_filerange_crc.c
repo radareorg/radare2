@@ -48,6 +48,7 @@ _zip_filerange_crc(FILE *fp, off_t start, off_t len, uLong *crcp,
     Bytef buf[BUFSIZE];
     size_t n;
 
+#if 0
     *crcp = crc32(0L, Z_NULL, 0);
 
     if (fseeko(fp, start, SEEK_SET) != 0) {
@@ -66,6 +67,7 @@ _zip_filerange_crc(FILE *fp, off_t start, off_t len, uLong *crcp,
 
 	len-= n;
     }
+#endif
 
     return 0;
 }

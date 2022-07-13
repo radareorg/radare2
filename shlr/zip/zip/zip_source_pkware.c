@@ -1,3 +1,4 @@
+#if 0
 /*
   zip_source_pkware.c -- Traditional PKWARE de/encryption routines
   Copyright (C) 2009 Dieter Baron and Thomas Klausner
@@ -232,3 +233,4 @@ pkware_free(struct trad_pkware *ctx)
 {
     free(ctx);
 }
+#endif

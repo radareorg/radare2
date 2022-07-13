@@ -1,9 +1,9 @@
 /*
   zip_stat_index.c -- get information about file by index
-  Copyright (C) 1999-2009 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2020 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -31,58 +31,50 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 
 #include "zipint.h"
 
-
 
 ZIP_EXTERN int
-zip_stat_index(struct zip *za, zip_uint64_t index, zip_flags_t flags,
-	       struct zip_stat *st)
-{
+zip_stat_index(zip_t *za, zip_uint64_t index, zip_flags_t flags, zip_stat_t *st) {
     const char *name;
-    struct zip_dirent *de;
+    zip_dirent_t *de;
 
-    if ((de=_zip_get_dirent(za, index, flags, NULL)) == NULL)
-	return -1;
+    if ((de = _zip_get_dirent(za, index, flags, NULL)) == NULL)
+        return -1;
 
-    if ((name=zip_get_name(za, index, flags)) == NULL)
-	return -1;
+    if ((name = zip_get_name(za, index, flags)) == NULL)
+        return -1;
 
 
-    if ((flags & ZIP_FL_UNCHANGED) == 0
-	&& ZIP_ENTRY_DATA_CHANGED(za->entry+index)) {
-	if (zip_source_stat(za->entry[index].source, st) < 0) {
-	    _zip_error_set(&za->error, ZIP_ER_CHANGED, 0);
-	    return -1;
-	}
+    if ((flags & ZIP_FL_UNCHANGED) == 0 && ZIP_ENTRY_DATA_CHANGED(za->entry + index)) {
+        zip_entry_t *entry = za->entry + index;
+
+        if (zip_source_stat(entry->source, st) < 0) {
+            zip_error_set(&za->error, ZIP_ER_CHANGED, 0);
+            return -1;
+        }
+
+        if (entry->changes != NULL && entry->changes->changed & ZIP_DIRENT_LAST_MOD) {
+            st->mtime = de->last_mod;
+            st->valid |= ZIP_STAT_MTIME;
+        }
     }
     else {
-	zip_stat_init(st);
+        zip_stat_init(st);
 
-	st->crc = de->crc;
-	st->size = de->uncomp_size;
-	st->mtime = de->last_mod;
-	st->comp_size = de->comp_size;
-	st->comp_method = (zip_uint16_t)de->comp_method;
-	if (de->bitflags & ZIP_GPBF_ENCRYPTED) {
-	    if (de->bitflags & ZIP_GPBF_STRONG_ENCRYPTION) {
-		/* XXX */
-		st->encryption_method = ZIP_EM_UNKNOWN;
-	    }
-	    else
-		st->encryption_method = ZIP_EM_TRAD_PKWARE;
-	}
-	else
-	    st->encryption_method = ZIP_EM_NONE;
-	st->valid = ZIP_STAT_CRC|ZIP_STAT_SIZE|ZIP_STAT_MTIME
-	    |ZIP_STAT_COMP_SIZE|ZIP_STAT_COMP_METHOD|ZIP_STAT_ENCRYPTION_METHOD;
+        st->crc = de->crc;
+        st->size = de->uncomp_size;
+        st->mtime = de->last_mod;
+        st->comp_size = de->comp_size;
+        st->comp_method = (zip_uint16_t)de->comp_method;
+        st->encryption_method = de->encryption_method;
+        st->valid = (de->crc_valid ? ZIP_STAT_CRC : 0) | ZIP_STAT_SIZE | ZIP_STAT_MTIME | ZIP_STAT_COMP_SIZE | ZIP_STAT_COMP_METHOD | ZIP_STAT_ENCRYPTION_METHOD;
     }
 
     st->index = index;
     st->name = name;
-    st->valid |= ZIP_STAT_INDEX|ZIP_STAT_NAME;
+    st->valid |= ZIP_STAT_INDEX | ZIP_STAT_NAME;
 
     return 0;
 }

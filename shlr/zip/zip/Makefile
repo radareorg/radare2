@@ -45,6 +45,7 @@ LDFLAGS_SHARED+=-Wl,-soname,libr_z.${EXT_SO}
 endif
 endif
 
+	#zip_source_file.o zip_source_filep.o zip_source_free.o 
 OBJS=	zip_add.o zip_add_dir.o zip_add_entry.o \
 	zip_close.o zip_delete.o zip_dir_add.o zip_dirent.o \
 	zip_discard.o zip_entry.o zip_err_str.o zip_error.o \
@@ -58,7 +59,6 @@ OBJS=	zip_add.o zip_add_dir.o zip_add_entry.o \
 	zip_fopen_encrypted.o zip_fopen_index.o \
 	zip_fopen_index_encrypted.o zip_fread.o \
 	zip_get_archive_comment.o zip_get_archive_flag.o \
-	zip_get_compression_implementation.o \
 	zip_get_encryption_implementation.o zip_get_file_comment.o \
 	zip_get_num_entries.o zip_get_num_files.o zip_get_name.o \
 	zip_name_locate.o zip_new.o zip_open.o \
@@ -67,7 +67,7 @@ OBJS=	zip_add.o zip_add_dir.o zip_add_entry.o \
 	zip_set_file_comment.o zip_set_file_compression.o \
 	zip_set_name.o zip_source_buffer.o zip_source_close.o \
 	zip_source_crc.o zip_source_deflate.o zip_source_error.o \
-	zip_source_file.o zip_source_filep.o zip_source_free.o \
+	zip_source_file.o zip_source_free.o \
 	zip_source_function.o zip_source_layered.o \
 	zip_source_open.o zip_source_pkware.o zip_source_pop.o \
 	zip_source_read.o zip_source_stat.o zip_source_window.o \

@@ -1,5 +1,5 @@
 /* zutil.h -- internal interface and configuration of the compression library
- * Copyright (C) 1995-2013 Jean-loup Gailly.
+ * Copyright (C) 1995-2022 Jean-loup Gailly, Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -29,20 +29,29 @@
 #  include <stdlib.h>
 #endif
 
-#ifdef Z_SOLO
-   typedef long ptrdiff_t;  /* guess -- will be caught if guess is wrong */
-#endif
-
 #ifndef local
 #  define local static
 #endif
-/* compile with -Dlocal if your debugger can't find static symbols */
+/* since "static" is used to mean two completely different things in C, we
+   define "local" for the non-static meaning of "static", for readability
+   (compile with -Dlocal if your debugger can't find static symbols) */
 
 typedef unsigned char  uch;
 typedef uch FAR uchf;
 typedef unsigned short ush;
 typedef ush FAR ushf;
 typedef unsigned long  ulg;
+
+#if !defined(Z_U8) && !defined(Z_SOLO) && defined(STDC)
+#  include <limits.h>
+#  if (ULONG_MAX == 0xffffffffffffffff)
+#    define Z_U8 unsigned long
+#  elif (ULLONG_MAX == 0xffffffffffffffff)
+#    define Z_U8 unsigned long long
+#  elif (UINT_MAX == 0xffffffffffffffff)
+#    define Z_U8 unsigned
+#  endif
+#endif
 
 extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 /* (size given to avoid silly warnings with Visual C++) */
@@ -80,7 +89,6 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 
         /* target dependencies */
 
-#if 0
 #if defined(MSDOS) || (defined(WINDOWS) && !defined(WIN32))
 #  define OS_CODE  0x00
 #  ifndef Z_SOLO
@@ -97,31 +105,40 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #    endif
 #  endif
 #endif
-#endif
 
 #ifdef AMIGA
-#  define OS_CODE  0x01
+#  define OS_CODE  1
 #endif
 
 #if defined(VAXC) || defined(VMS)
-#  define OS_CODE  0x02
+#  define OS_CODE  2
 #  define F_OPEN(name, mode) \
      fopen((name), (mode), "mbc=60", "ctx=stm", "rfm=fix", "mrs=512")
 #endif
 
+#ifdef __370__
+#  if __TARGET_LIB__ < 0x20000000
+#    define OS_CODE 4
+#  elif __TARGET_LIB__ < 0x40000000
+#    define OS_CODE 11
+#  else
+#    define OS_CODE 8
+#  endif
+#endif
+
 #if defined(ATARI) || defined(atarist)
-#  define OS_CODE  0x05
+#  define OS_CODE  5
 #endif
 
 #ifdef OS2
-#  define OS_CODE  0x06
+#  define OS_CODE  6
 #  if defined(M_I86) && !defined(Z_SOLO)
 #    include <malloc.h>
 #  endif
 #endif
 
 #if defined(MACOS) || defined(TARGET_OS_MAC)
-#  define OS_CODE  0x07
+#  define OS_CODE  7
 #  ifndef Z_SOLO
 #    if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
 #      include <unix.h> /* for fdopen */
@@ -133,18 +150,24 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #  endif
 #endif
 
-#ifdef TOPS20
-#  define OS_CODE  0x0a
+#ifdef __acorn
+#  define OS_CODE 13
 #endif
 
-#ifdef WIN32
-#  ifndef __CYGWIN__  /* Cygwin is Unix, not Win32 */
-#    define OS_CODE  0x0b
-#  endif
+#if defined(WIN32) && !defined(__CYGWIN__)
+#  define OS_CODE  10
 #endif
 
-#ifdef __50SERIES /* Prime/PRIMOS */
-#  define OS_CODE  0x0f
+#ifdef _BEOS_
+#  define OS_CODE  16
+#endif
+
+#ifdef __TOS_OS400__
+#  define OS_CODE 18
+#endif
+
+#ifdef __APPLE__
+#  define OS_CODE 19
 #endif
 
 #if defined(_BEOS_) || defined(RISCOS)
@@ -154,10 +177,6 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #if (defined(_MSC_VER) && (_MSC_VER > 600)) && !defined __INTERIX
 #  if defined(_WIN32_WCE)
 #    define fdopen(fd,mode) NULL /* No fdopen() */
-#    ifndef _PTRDIFF_T_DEFINED
-       typedef int ptrdiff_t;
-#      define _PTRDIFF_T_DEFINED
-#    endif
 #  else
 #    define fdopen(fd,type)  _fdopen(fd,type)
 #  endif
@@ -170,7 +189,7 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #endif
 
 /* provide prototypes for these when building zlib without LFS */
-#if !defined(__WINDOWS__) && \
+#if !defined(_WIN32) && \
     (!defined(_LARGEFILE64_SOURCE) || _LFS64_LARGEFILE-0 == 0)
     ZEXTERN uLong ZEXPORT adler32_combine64 OF((uLong, uLong, z_off_t));
     ZEXTERN uLong ZEXPORT crc32_combine64 OF((uLong, uLong, z_off_t));
@@ -179,7 +198,7 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
         /* common defaults */
 
 #ifndef OS_CODE
-#  define OS_CODE  0x03  /* assume Unix */
+#  define OS_CODE  3     /* assume Unix */
 #endif
 
 #ifndef F_OPEN
@@ -218,7 +237,7 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #endif
 
 /* Diagnostic functions */
-#ifdef DEBUG
+#ifdef ZLIB_DEBUG
 #  include <stdio.h>
    extern int ZLIB_INTERNAL z_verbose;
    extern void ZLIB_INTERNAL z_error OF((char *m));
