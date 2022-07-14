@@ -113,11 +113,13 @@ _zip_stdio_op_read(zip_source_file_context_t *ctx, void *buf, zip_uint64_t len) 
 
 bool
 _zip_stdio_op_seek(zip_source_file_context_t *ctx, void *f, zip_int64_t offset, int whence) {
+#if 0
 #if ZIP_FSEEK_MAX > ZIP_INT64_MAX
     if (offset > ZIP_FSEEK_MAX || offset < ZIP_FSEEK_MIN) {
         zip_error_set(&ctx->error, ZIP_ER_SEEK, EOVERFLOW);
         return false;
     }
+#endif
 #endif
 
     if (fseeko((FILE *)f, (off_t)offset, whence) < 0) {
