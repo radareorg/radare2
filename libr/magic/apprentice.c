@@ -169,8 +169,12 @@ static int get_type(const char *l, const char **t) {
 	return p->type;
 }
 
-static void init_file_tables(void) {
-	static bool done = false;
+static void init_file_tables(bool *done) {
+	// Initialize
+	if (done == NULL) {
+		done = false;
+	}
+
 	const struct type_tbl_s *p;
 	if (done) {
 		return;
@@ -276,8 +280,9 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int a
 	char *p, *mfn;
 	int file_err, errs = -1;
 	struct mlist *mlist;
+	R_TH_LOCAL bool *done = NULL;
 
-	init_file_tables ();
+	init_file_tables (done);
 	if (!fn) {
 		return NULL;
 	}
