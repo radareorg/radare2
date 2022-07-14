@@ -176,7 +176,7 @@ static void init_file_tables(bool *done) {
 	}
 
 	const struct type_tbl_s *p;
-	if (done) {
+	if (&done) {
 		return;
 	}
 	done = true;
