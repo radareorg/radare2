@@ -170,7 +170,7 @@ static int get_type(const char *l, const char **t) {
 }
 
 static void init_file_tables(void) {
-	static R_TH_LOCAL bool done = false;
+	static bool done = false;
 	const struct type_tbl_s *p;
 	if (done) {
 		return;
@@ -958,7 +958,7 @@ static int check_cond(RMagic *ms, int cond, ut32 cont_level) {
  * parse one line from magic file, put into magic[index++] if valid
  */
 static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, const char *line, size_t lineno, int action) {
-	static R_TH_LOCAL ut32 last_cont_level = 0;
+	static ut32 last_cont_level = 0;
 	size_t i;
 	struct r_magic_entry *me;
 	struct r_magic *m;
