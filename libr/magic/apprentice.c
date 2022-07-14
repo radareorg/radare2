@@ -963,7 +963,7 @@ static int check_cond(RMagic *ms, int cond, ut32 cont_level) {
  * parse one line from magic file, put into magic[index++] if valid
  */
 static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, const char *line, size_t lineno, int action) {
-	static ut32 last_cont_level = 0;
+	static R_TH_LOCAL ut32 last_cont_level = 0;
 	size_t i;
 	struct r_magic_entry *me;
 	struct r_magic *m;
