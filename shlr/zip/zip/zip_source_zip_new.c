@@ -135,6 +135,8 @@ zip_source_t *_zip_source_zip_new(zip_t *srcza, zip_uint64_t srcidx, zip_flags_t
     /* creating a layered source calls zip_keep() on the lower layer, so we free it */
 
     if (needs_decrypt) {
+printf ("Cant decrypt\n");
+#if 0
         zip_encryption_implementation enc_impl;
 
         if ((enc_impl = _zip_get_encryption_implementation(st.encryption_method, ZIP_CODEC_DECODE)) == NULL) {
@@ -148,6 +150,7 @@ zip_source_t *_zip_source_zip_new(zip_t *srcza, zip_uint64_t srcidx, zip_flags_t
             return NULL;
         }
         src = s2;
+#endif
     }
     if (needs_decompress) {
         s2 = zip_source_decompress(srcza, src, st.comp_method);

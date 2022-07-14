@@ -384,6 +384,7 @@ add_data(zip_t *za, zip_source_t *src, zip_dirent_t *de, zip_uint32_t changed) {
     zip_source_keep(src_final);
 
     if (needs_decrypt) {
+#if 0
         zip_encryption_implementation impl;
 
         if ((impl = _zip_get_encryption_implementation(st.encryption_method, ZIP_CODEC_DECODE)) == NULL) {
@@ -399,6 +400,7 @@ add_data(zip_t *za, zip_source_t *src, zip_dirent_t *de, zip_uint32_t changed) {
 
         zip_source_free(src_final);
         src_final = src_tmp;
+#endif
     }
 
     if (needs_decompress) {
@@ -443,11 +445,13 @@ add_data(zip_t *za, zip_source_t *src, zip_dirent_t *de, zip_uint32_t changed) {
             password = za->default_password;
         }
 
+#if 0
         if ((impl = _zip_get_encryption_implementation(de->encryption_method, ZIP_CODEC_ENCODE)) == NULL) {
             zip_error_set(&za->error, ZIP_ER_ENCRNOTSUPP, 0);
             zip_source_free(src_final);
             return -1;
         }
+#endif
 
         if (de->encryption_method == ZIP_EM_TRAD_PKWARE) {
             de->bitflags |= ZIP_GPBF_DATA_DESCRIPTOR;
