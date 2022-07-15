@@ -43,6 +43,7 @@ extern "C" {
 
 #include <zipconf.h>
 
+#if 0
 #ifndef ZIP_EXTERN
 #ifndef ZIP_STATIC
 #ifdef _WIN32
@@ -56,6 +57,9 @@ extern "C" {
 #define ZIP_EXTERN
 #endif
 #endif
+#endif
+
+#define ZIP_EXTERN
 
 #include <stdio.h>
 #include <sys/types.h>
