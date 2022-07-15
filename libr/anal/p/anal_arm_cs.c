@@ -3004,7 +3004,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		addr &= ~3LL;
 		if (MEMDISP(1) < 0) {
 			const char *pc = "$$";
-			if (REGBASE(1) == ARM_REG_PC && !HASMEMINDEX(1)) {
+			if (REGBASE(1) == ARM_REG_PC) {
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,%s,%d,+,>>,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
@@ -3021,7 +3021,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				}
 			}
 		} else {
-			if (REGBASE(1) == ARM_REG_PC && !HASMEMINDEX(1)) {
+			if (REGBASE(1) == ARM_REG_PC) {
 				const char *pc = "$$";
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
@@ -4089,7 +4089,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = -MEMDISP (1);
-		} else if (REGBASE (1) == ARM_REG_PC && !HASMEMINDEX (1)) {
+		} else if (REGBASE(1) == ARM_REG_PC) {
 			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP (1);
 			op->refptr = 4;
 			if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {

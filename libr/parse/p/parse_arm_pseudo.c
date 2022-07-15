@@ -360,19 +360,16 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			if (!ripend) {
 				ripend = "]";
 			}
-			char * maybe_num = neg? neg+1 : rip;
-			if (r_is_valid_input_num_value (NULL, maybe_num)) {
-				if (neg) {
-					repl_num -= r_num_get (NULL, maybe_num);
-				} else {
-					repl_num += r_num_get (NULL, maybe_num);
-				}
-				rip -= 3;
-				*rip = 0;
-				tstr_new = r_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
-				free (tstr);
-				tstr = tstr_new;
+			if (neg) {
+				repl_num -= r_num_get (NULL, neg + 1);
+			} else {
+				repl_num += r_num_get (NULL, rip);
 			}
+			rip -= 3;
+			*rip = 0;
+			tstr_new = r_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
+			free (tstr);
+			tstr = tstr_new;
 		}
 	}
 
