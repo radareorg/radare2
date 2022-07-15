@@ -33,7 +33,7 @@
 
 
 #include "zipint.h"
-#ifdef HAVE_UNISTD_H
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 

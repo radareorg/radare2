@@ -59,8 +59,10 @@ zip_random_uint32(void) {
 #else /* HAVE_ARC4RANDOM */
 
 #ifndef HAVE_SECURE_RANDOM
+#ifndef _WIN32
 #include <fcntl.h>
 #include <unistd.h>
+#endif
 
 ZIP_EXTERN bool
 zip_secure_random(zip_uint8_t *buffer, zip_uint16_t length) {
