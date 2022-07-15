@@ -126,7 +126,6 @@ OBJS+=zip_source_compress.o
 OBJS+=zip_source_crc.o
 OBJS+=zip_source_deflate.o
 OBJS+=zip_source_error.o
-OBJS+=zip_source_file.o
 OBJS+=zip_source_file_common.o
 OBJS+=zip_source_file_stdio.o
 OBJS+=zip_source_file_stdio_named.o

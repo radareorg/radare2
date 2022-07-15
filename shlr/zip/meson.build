@@ -117,7 +117,6 @@ if not zip_dep.found() or not get_option('use_sys_zip')
     'zip/zip_source_crc.c',
     'zip/zip_source_deflate.c',
     'zip/zip_source_error.c',
-    'zip/zip_source_file.c',
     'zip/zip_source_file_common.c',
     'zip/zip_source_file_stdio.c',
     'zip/zip_source_file_stdio_named.c',
