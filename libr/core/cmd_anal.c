@@ -60,7 +60,7 @@ static const char *help_msg_afna[] = {
 
 static const char *help_msg_afu[] = {
 	"Usage:", "afu", "[addr]   # resize and analyze function from current address until addr.",
-	"afu", " 0x100004093", "Resize and analyze function from current address until 0x100004093",
+	"afu", " 0x100004093", "resize and analyze function from current address until 0x100004093",
 	NULL
 };
 
@@ -175,7 +175,7 @@ static const char *help_msg_aa[] = {
 	"aar", "[?] [len]", "analyze len bytes of instructions for references",
 	"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
 	"aaS", "", "analyze all flags starting with sym. (af @@ sym.*)",
-	"aat", " [fcn]", "Analyze all/given function to convert immediate to linked structure offsets (see tl?)",
+	"aat", " [fcn]", "analyze all/given function to convert immediate to linked structure offsets (see tl?)",
 	"aaT", " [len]", "analyze code after trap-sleds",
 	"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
 	"aav", "[?] [sat]", "find values referencing a specific section or map",
@@ -756,12 +756,12 @@ static const char *help_msg_ag[] = {
 static const char *help_msg_age[] = {
 	"Usage:", "age [title1] [title2]", "",
 	"Examples:", "", "",
-	"age", " title1 title2", "Add an edge from the node with \"title1\" as title to the one with title \"title2\"",
-	"age", " \"title1 with spaces\" title2", "Add an edge from node \"title1 with spaces\" to node \"title2\"",
-	"age-", " title1 title2", "Remove an edge from the node with \"title1\" as title to the one with title \"title2\"",
-	"ageh", "", "List all the highlighted edges",
-	"ageh", " nodeA nodeB", "Highlight edge between nodeA and nodeB",
-	"ageh-", " nodeA nodeB", "Highlight edge between nodeA and nodeB",
+	"age", " title1 title2", "add an edge from the node with \"title1\" as title to the one with title \"title2\"",
+	"age", " \"title1 with spaces\" title2", "add an edge from node \"title1 with spaces\" to node \"title2\"",
+	"age-", " title1 title2", "remove an edge from the node with \"title1\" as title to the one with title \"title2\"",
+	"ageh", "", "list all the highlighted edges",
+	"ageh", " nodeA nodeB", "highlight edge between nodeA and nodeB",
+	"ageh-", " nodeA nodeB", "highlight edge between nodeA and nodeB",
 	"age?", "", "show this help",
 	NULL
 };
@@ -778,7 +778,7 @@ static const char *help_msg_agn[] = {
 };
 
 static const char *help_msg_ah[] = {
-	"Usage:", "ah[lba-]", "Analysis Hints",
+	"Usage:", "ah[lba-]", "analysis Hints",
 	"ah?", "", "show this help",
 	"ah?", " offset", "show hint of given offset",
 	"ah", "", "list hints in human-readable format",
@@ -802,7 +802,7 @@ static const char *help_msg_ah[] = {
 	"ahr", " val", "set hint for return value of a function",
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
-	"aht", "[s][?] <type>", "Mark immediate as a type offset (deprecated, moved to \"aho\")",
+	"aht", "[s][?] <type>", "mark immediate as a type offset (deprecated, moved to \"aho\")",
 	"ahv", " val", "change opcode's val field (useful to set jmptbl sizes in jmp rax)",
 	NULL
 };
@@ -848,7 +848,7 @@ static const char *help_msg_ahi[] = {
 };
 
 static const char *help_msg_aht[] = {
-	"Usage:", "aht[s] [addr|type]", "Mark immediate as type offset (moved to aho)",
+	"Usage:", "aht[s] [addr|type]", "mark immediate as type offset (moved to aho)",
 	"ahts", " <offset>", "list all matching structure offsets",
 	"aht", " <struct.member>", "change immediate to structure offset",
 	"aht?", "", "show this help",
@@ -863,7 +863,7 @@ static const char *help_msg_aot[] = {
 };
 
 static const char *help_msg_aom[] = {
-	"Usage:", "aom[ljd] [arg]", "List opcode mnemonics",
+	"Usage:", "aom[ljd] [arg]", "list opcode mnemonics",
 	"aom", "", "show instruction mnemonic",
 	"aom.", "", "show instruction mnemonic in current address",
 	"aoml", "", "list all mnemonics",
@@ -873,7 +873,7 @@ static const char *help_msg_aom[] = {
 };
 
 static const char *help_msg_ao[] = {
-	"Usage:", "ao[e?] [len]", "Analyze Opcodes",
+	"Usage:", "ao[e?] [len]", "analyze Opcodes",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
 	"aoc", " [cycles]", "analyze which op could be executed in [cycles]",
@@ -925,7 +925,7 @@ static const char *help_msg_ar[] = {
 };
 
 static const char *help_msg_ara[] = {
-	"Usage:", "ara[+-s]", "Register Arena Push/Pop/Swap",
+	"Usage:", "ara[+-s]", "register Arena Push/Pop/Swap",
 	"ara", "", "show all register arenas allocated",
 	"ara", "+", "push a new register arena for each type",
 	"ara", "-", "pop last register arena",
@@ -935,7 +935,7 @@ static const char *help_msg_ara[] = {
 
 static const char *help_msg_arw[] = {
 	"Usage:", "arw ", "# Set contents of the register arena",
-	"arw", " <hexnum>", "Set contents of the register arena",
+	"arw", " <hexnum>", "set contents of the register arena",
 	NULL
 };
 
@@ -5360,9 +5360,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			// TODO #7967 help refactor: dup from drp
 			const char *help_msg[] = {
 				"Usage:", "drs", " # Register states commands",
-				"drs", "", "List register stack",
-				"drs+", "", "Push register state",
-				"drs-", "", "Pop register state",
+				"drs", "", "list register stack",
+				"drs+", "", "push register state",
+				"drs-", "", "pop register state",
 				NULL };
 			r_core_cmd_help (core, help_msg);
 		} break;
