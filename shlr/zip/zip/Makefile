@@ -44,6 +44,7 @@ LDFLAGS_SHARED?=-fPIC -shared
 LDFLAGS_SHARED+=-Wl,-soname,libr_z.${EXT_SO}
 endif
 endif
+EXT_SO?=dylib
 
 OBJS=
 OBJS+=zip_add.o
@@ -189,7 +190,6 @@ CFLAGS+=-I../../../libr/include -I../include/
 LDFLAGS+=-L../../../libr/util
 LINKFLAGS=../zlib/libr_z.$(EXT_AR)
 #LDFLAGS=-shared
-EXT_SO?=dylib
 LIBNAME=libr_zip.${SOVER}
 
 LIBAR=libr_zip.$(EXT_AR)
