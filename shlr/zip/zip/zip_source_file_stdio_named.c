@@ -325,7 +325,7 @@ static int create_temp_file(zip_source_file_context_t *ctx, bool create_file) {
         
         if (create_file) {
 #if _WIN32
-            if ((fd = open(temp, O_CREAT | O_BINARYA | O_RDWR, mode == -1 ? 0666 : mode)) >= 0) {
+            if ((fd = open(temp, O_CREAT | O_BINARY | O_RDWR, mode == -1 ? 0666 : mode)) >= 0) {
                 if (mode != -1) {
                     /* open() honors umask(), which we don't want in this case */
 #ifdef HAVE_FCHMOD
