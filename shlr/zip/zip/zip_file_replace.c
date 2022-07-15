@@ -85,7 +85,7 @@ _zip_file_replace(zip_t *za, zip_uint64_t idx, const char *name, zip_source_t *s
 
     /* does not change any name related data, so we can do it here;
      * needed for a double add of the same file name */
-    _zip_unchange_data(za->entry + idx);
+    //_zip_unchange_data(za->entry + idx);
 
     if (za->entry[idx].orig != NULL && (za->entry[idx].changes == NULL || (za->entry[idx].changes->changed & ZIP_DIRENT_COMP_METHOD) == 0)) {
         if (za->entry[idx].changes == NULL) {

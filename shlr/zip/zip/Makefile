@@ -158,10 +158,6 @@ OBJS+=zip_stat_index.o
 OBJS+=zip_stat_init.o
 OBJS+=zip_strerror.o
 OBJS+=zip_string.o
-OBJS+=zip_unchange.o
-OBJS+=zip_unchange_all.o
-OBJS+=zip_unchange_archive.o
-OBJS+=zip_unchange_data.o
 OBJS+=zip_utf-8.o
 
 #OFILES=libr_zip.$(EXT_AR) $(OBJS)

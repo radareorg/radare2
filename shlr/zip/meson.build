@@ -149,10 +149,6 @@ if not zip_dep.found() or not get_option('use_sys_zip')
     'zip/zip_stat_init.c',
     'zip/zip_strerror.c',
     'zip/zip_string.c',
-    'zip/zip_unchange.c',
-    'zip/zip_unchange_all.c',
-    'zip/zip_unchange_archive.c',
-    'zip/zip_unchange_data.c',
     'zip/zip_utf-8.c',
   ]
 
