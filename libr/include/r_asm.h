@@ -99,7 +99,7 @@ typedef struct r_asm_t {
 	RSyscall *syscall;
 	RNum *num;
 	int dataalign;
-	bool immdisp; // Display immediates with # symbol (for arm stuff).
+	bool immdisp; //TODO: Remove this for 5.8.
 	HtPP *flags;
 	bool pseudo;
 } RAsm;

@@ -113,7 +113,6 @@ static void check_itblock(RAsm *a, cs_insn *insn) {
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static R_TH_LOCAL int omode = -1;
 	static R_TH_LOCAL int obits = 32;
-	bool disp_hash = a->immdisp;
 	cs_insn* insn = NULL;
 	int ret, n = 0;
 	bool found = false;
@@ -214,9 +213,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			insn->mnemonic,
 			insn->op_str[0]? " ": "",
 			insn->op_str);
-		if (!disp_hash) {
-			r_str_replace_char (opstr, '#', 0);
-		}
+		r_str_replace_char (opstr, '#', '\x00');
 		r_strbuf_set (&op->buf_asm, opstr);
 	}
 	cs_free (insn, n);
