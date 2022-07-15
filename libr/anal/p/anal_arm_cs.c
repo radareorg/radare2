@@ -4083,7 +4083,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = -MEMDISP (1);
-		} else if (REGBASE(1) == ARM_REG_PC && !HASMEMINDEX(1)) {
+		} else if (REGBASE (1) == ARM_REG_PC && !HASMEMINDEX (1)) {
 			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP (1);
 			op->refptr = 4;
 			if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {

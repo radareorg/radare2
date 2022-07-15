@@ -361,11 +361,11 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 				ripend = "]";
 			}
 			char * maybe_num = neg? neg+1 : rip;
-			if( r_is_valid_input_num_value(NULL, maybe_num)){
+			if (r_is_valid_input_num_value (NULL, maybe_num)) {
 				if (neg) {
-					repl_num -= r_num_get(NULL, maybe_num);
+					repl_num -= r_num_get (NULL, maybe_num);
 				} else {
-					repl_num += r_num_get(NULL, maybe_num);
+					repl_num += r_num_get (NULL, maybe_num);
 				}
 				rip -= 3;
 				*rip = 0;
