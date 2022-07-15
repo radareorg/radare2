@@ -27,7 +27,7 @@ af
 pdsf
 EOF
 EXPECT=<<EOF
-0x00002900&nbsp;argc<br />0x00002904&nbsp;argv<br />0x00002918&nbsp;"alloc"<br />0x00002920&nbsp;str.alloc<br />0x00002928&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002934&nbsp;"init"<br />0x0000293c&nbsp;str.init<br />0x00002940&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x0000294c&nbsp;"X\x10\x9d\xe5"<br />0x0000295c&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002970&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002998&nbsp;"Usage:&nbsp;FileDP&nbsp;[-f/-d]&nbsp;[Full&nbsp;path&nbsp;to&nbsp;file/directory]&nbsp;"<br />0x0000299c&nbsp;bl&nbsp;sym.imp.puts<br />0x000029c8&nbsp;bl&nbsp;sym.imp.strcmp<br />0x00002a1c&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002a38&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002a64&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002a90&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002aa4&nbsp;bl&nbsp;sym.imp.NSLog<br />0x00002ab0&nbsp;str.File_Not_Found_<br />0x00002ab4&nbsp;bl&nbsp;sym.imp.puts<br />0x00002b00&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002b1c&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002b48&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002b64&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002ba4&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002c00&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002c54&nbsp;bl&nbsp;sym.imp.objc_enumerationMutation<br />0x00002ca0&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002cc0&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002cec&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002cfc&nbsp;str.cstr.file_name_is:_____protection_class:__<br />0x00002d04&nbsp;bl&nbsp;sym.imp.NSLog<br />0x00002d50&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002d84&nbsp;str.Directory_Not_found_<br />0x00002d88&nbsp;bl&nbsp;sym.imp.puts<br />0x00002dac&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002dcc&nbsp;bx&nbsp;lr
+0x00002900&nbsp;argc<br />0x00002904&nbsp;argv<br />0x0000290c&nbsp;str.autorelease<br />0x00002918&nbsp;"alloc"<br />0x00002920&nbsp;str.alloc<br />0x00002928&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x6f747561&nbsp;"alloc"<br />0x00002934&nbsp;"init"<br />0x0000293c&nbsp;str.init<br />0x00002940&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x6f747561&nbsp;"init"<br />0x0000295c&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002970&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002998&nbsp;"Usage:&nbsp;FileDP&nbsp;[-f/-d]&nbsp;[Full&nbsp;path&nbsp;to&nbsp;file/directory]&nbsp;"<br />0x0000299c&nbsp;bl&nbsp;sym.imp.puts<br />0x000029c8&nbsp;bl&nbsp;sym.imp.strcmp<br />0x000029ec&nbsp;str.init<br />0x00002a1c&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002a30&nbsp;str.stringWithCString:encoding:<br />0x00002a38&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002a58&nbsp;str.fileExistsAtPath:<br />0x00002a64&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002a74&nbsp;str.attributesOfItemAtPath:error:<br />0x00002a90&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002aa4&nbsp;bl&nbsp;sym.imp.NSLog<br />0x00002ab0&nbsp;str.File_Not_Found_<br />0x00002ab4&nbsp;bl&nbsp;sym.imp.puts<br />0x00002ad0&nbsp;str.init<br />0x00002b00&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002b10&nbsp;str.objectForKey:<br />0x00002b1c&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002b38&nbsp;str.hasSuffix:<br />0x00002b48&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002b5c&nbsp;str.stringWithCString:encoding:<br />0x00002b64&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002b90&nbsp;str.stringByAppendingFormat:<br />0x00002ba4&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002bdc&nbsp;str.enumeratorAtPath:<br />0x00002c00&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002c54&nbsp;bl&nbsp;sym.imp.objc_enumerationMutation<br />0x00002c98&nbsp;str.hasSuffix:<br />0x00002ca0&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002cb4&nbsp;str.fileExistsAtPath:<br />0x00002cc0&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002cd0&nbsp;str.attributesOfItemAtPath:error:<br />0x00002cec&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002cfc&nbsp;str.cstr.file_name_is:_____protection_class:__<br />0x00002d04&nbsp;bl&nbsp;sym.imp.NSLog<br />0x00002d28&nbsp;str.enumeratorAtPath:<br />0x00002d50&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002d84&nbsp;str.Directory_Not_found_<br />0x00002d88&nbsp;bl&nbsp;sym.imp.puts<br />0x00002da0&nbsp;str.countByEnumeratingWithState:objects:count:<br />0x00002dac&nbsp;bl&nbsp;sym.imp.objc_msgSend<br />0x00002dcc&nbsp;bx&nbsp;lr
 EOF
 RUN
 
@@ -43,40 +43,57 @@ EOF
 EXPECT=<<EOF
 0x00002900 argc
 0x00002904 argv
+0x0000290c str.autorelease
 0x00002918 "alloc"
 0x00002920 str.alloc
 0x00002928 bl sym.imp.objc_msgSend
+0x6f747561 "alloc"
 0x00002934 "init"
 0x0000293c str.init
 0x00002940 bl sym.imp.objc_msgSend
-0x0000294c "X\x10\x9d\xe5"
+0x6f747561 "init"
 0x0000295c bl sym.imp.objc_msgSend
 0x00002970 bl sym.imp.objc_msgSend
 0x00002998 "Usage: FileDP [-f/-d] [Full path to file/directory] "
 0x0000299c bl sym.imp.puts
 0x000029c8 bl sym.imp.strcmp
+0x000029ec str.init
 0x00002a1c bl sym.imp.objc_msgSend
+0x00002a30 str.stringWithCString:encoding:
 0x00002a38 bl sym.imp.objc_msgSend
+0x00002a58 str.fileExistsAtPath:
 0x00002a64 bl sym.imp.objc_msgSend
+0x00002a74 str.attributesOfItemAtPath:error:
 0x00002a90 bl sym.imp.objc_msgSend
 0x00002aa4 bl sym.imp.NSLog
 0x00002ab0 str.File_Not_Found_
 0x00002ab4 bl sym.imp.puts
+0x00002ad0 str.init
 0x00002b00 bl sym.imp.objc_msgSend
+0x00002b10 str.objectForKey:
 0x00002b1c bl sym.imp.objc_msgSend
+0x00002b38 str.hasSuffix:
 0x00002b48 bl sym.imp.objc_msgSend
+0x00002b5c str.stringWithCString:encoding:
 0x00002b64 bl sym.imp.objc_msgSend
+0x00002b90 str.stringByAppendingFormat:
 0x00002ba4 bl sym.imp.objc_msgSend
+0x00002bdc str.enumeratorAtPath:
 0x00002c00 bl sym.imp.objc_msgSend
 0x00002c54 bl sym.imp.objc_enumerationMutation
+0x00002c98 str.hasSuffix:
 0x00002ca0 bl sym.imp.objc_msgSend
+0x00002cb4 str.fileExistsAtPath:
 0x00002cc0 bl sym.imp.objc_msgSend
+0x00002cd0 str.attributesOfItemAtPath:error:
 0x00002cec bl sym.imp.objc_msgSend
 0x00002cfc str.cstr.file_name_is:_____protection_class:__
 0x00002d04 bl sym.imp.NSLog
+0x00002d28 str.enumeratorAtPath:
 0x00002d50 bl sym.imp.objc_msgSend
 0x00002d84 str.Directory_Not_found_
 0x00002d88 bl sym.imp.puts
+0x00002da0 str.countByEnumeratingWithState:objects:count:
 0x00002dac bl sym.imp.objc_msgSend
 0x00002dcc bx lr
 EOF
