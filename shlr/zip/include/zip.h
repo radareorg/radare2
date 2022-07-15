@@ -416,7 +416,7 @@ ZIP_EXTERN zip_file_t *_Nullable zip_fopen_index(zip_t *_Nonnull, zip_uint64_t, 
 ZIP_EXTERN zip_file_t *_Nullable zip_fopen_index_encrypted(zip_t *_Nonnull, zip_uint64_t, zip_flags_t, const char *_Nullable);
 ZIP_EXTERN zip_int64_t zip_fread(zip_file_t *_Nonnull, void *_Nonnull, zip_uint64_t);
 ZIP_EXTERN zip_int8_t zip_fseek(zip_file_t *_Nonnull, zip_int64_t, int);
-ZIP_EXTERN struct zip_source * zip_source_deflate(struct zip *za, struct zip_source *src, zip_int32_t cm, int flags);
+ZIP_EXTERN struct zip_source * _Nullable zip_source_deflate(struct zip *_Nonnull, struct zip_source *_Nullable, zip_int32_t cm, int flags);
 ZIP_EXTERN zip_int64_t zip_ftell(zip_file_t *_Nonnull);
 ZIP_EXTERN const char *_Nullable zip_get_archive_comment(zip_t *_Nonnull, int *_Nullable, zip_flags_t);
 ZIP_EXTERN int zip_get_archive_flag(zip_t *_Nonnull, zip_flags_t, zip_flags_t);

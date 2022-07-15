@@ -435,7 +435,7 @@ add_data(zip_t *za, zip_source_t *src, zip_dirent_t *de, zip_uint32_t changed) {
 
 
     if (needs_encrypt) {
-        zip_encryption_implementation impl;
+        zip_encryption_implementation impl = NULL;
         const char *password = NULL;
 
         if (de->password) {
