@@ -3426,6 +3426,11 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_CINC:
 		op->type = R_ANAL_OP_TYPE_CMOV;
 		break;
+	case ARM64_INS_BFI:
+	// case ARM64_INS_BTI:
+		op->type = R_ANAL_OP_TYPE_NOP;
+		op->family = R_ANAL_OP_FAMILY_SECURITY;
+		break;
 	case ARM64_INS_MOV:
 		if (REGID64(0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_RESET;
@@ -3445,7 +3450,6 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_SBFIZ:
 	case ARM64_INS_UBFIZ:
 	case ARM64_INS_BIC:
-	case ARM64_INS_BFI:
 	case ARM64_INS_BFXIL:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		if (ISIMM64 (1)) {
