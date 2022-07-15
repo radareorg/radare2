@@ -112,11 +112,11 @@ typedef char bool;
 #endif
 #endif
 
-#ifndef HAVE_FSEEKO
+#if !HAVE_FSEEKO
 #define fseeko(s, o, w) (fseek((s), (long int)(o), (w)))
 #endif
 
-#ifndef HAVE_FTELLO
+#if !HAVE_FTELLO
 #define ftello(s) ((long)ftell((s)))
 #endif
 
