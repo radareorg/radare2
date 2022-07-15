@@ -261,7 +261,7 @@ static bool init_hdr(struct MACH0_(obj_t) *bin) {
 	}
 	len = r_buf_read_at (bin->b, 0 + bin->header_at, machohdrbytes, sizeof (machohdrbytes));
 	if (len != sizeof (machohdrbytes)) {
-		bprintf ("Error: read (hdr)\n");
+		bprintf ("read (hdr)\n");
 		return false;
 	}
 	bin->hdr.magic = r_read_ble (&machohdrbytes[0], bin->big_endian, 32);
@@ -1148,7 +1148,7 @@ static int parse_thread(struct MACH0_(obj_t) *bin, struct load_command *lc, ut64
 
 	return true;
 wrong_read:
-	R_LOG_ERROR ("Error: read (thread)");
+	R_LOG_ERROR ("read (thread)");
 	return false;
 }
 

@@ -48,9 +48,9 @@ zip_source_file(struct zip *za, const char *fname, zip_uint64_t start,
 	return NULL;
 
     if (fname == NULL || len < -1) {
-	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
+	// _zip_error_set(&za->error, ZIP_ER_INVAL, 0);
 	return NULL;
     }
 
-    return _zip_source_file_or_p(za, fname, NULL, start, len, 1, NULL);
+    return NULL; // _zip_source_file_or_p(za, fname, NULL, start, len, 1, NULL);
 }
