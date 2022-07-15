@@ -39,9 +39,11 @@
 
 #ifdef __cplusplus
 extern "C" {
-#if 0
-} /* fix autoindent */
 #endif
+
+#if __MINGW32__ || _MSC_VER
+#define _Nullable
+#define _Nonnull
 #endif
 
 #include <zipconf.h>
