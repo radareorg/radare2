@@ -36,10 +36,10 @@
 #ifdef HAVE_CRYPTO
 #include "zip_crypto.h"
 #endif
+#include <stdlib.h>
 
 #ifdef HAVE_ARC4RANDOM
 
-#include <stdlib.h>
 
 #ifndef HAVE_SECURE_RANDOM
 ZIP_EXTERN bool
@@ -95,11 +95,17 @@ zip_random_uint32(void) {
         return value;
     }
 
+#if _WIN32
+    if (!seeded) {
+        srand((unsigned int)time(NULL));
+    }
+    return (zip_uint32_t)rand();
+#else
     if (!seeded) {
         srandom((unsigned int)time(NULL));
     }
-
     return (zip_uint32_t)random();
+#endif
 }
 #endif
 
