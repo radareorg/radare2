@@ -59,6 +59,7 @@ extern "C" {
 #endif
 #endif
 
+#undef ZIP_EXTERN
 #define ZIP_EXTERN
 
 #include <stdio.h>

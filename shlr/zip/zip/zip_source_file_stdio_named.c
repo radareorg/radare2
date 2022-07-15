@@ -324,6 +324,24 @@ static int create_temp_file(zip_source_file_context_t *ctx, bool create_file) {
         }
         
         if (create_file) {
+#if _WIN32
+            if ((fd = open(temp, O_CREAT | O_BINARYA | O_RDWR, mode == -1 ? 0666 : mode)) >= 0) {
+                if (mode != -1) {
+                    /* open() honors umask(), which we don't want in this case */
+#ifdef HAVE_FCHMOD
+                    (void)fchmod(fd, (mode_t)mode);
+#else
+                    (void)chmod(temp, (mode_t)mode);
+#endif
+                }
+                break;
+            }
+            if (errno != EEXIST) {
+                zip_error_set(&ctx->error, ZIP_ER_TMPOPEN, errno);
+                free(temp);
+                return -1;
+            }
+#else
             if ((fd = open(temp, O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, mode == -1 ? 0666 : (mode_t)mode)) >= 0) {
                 if (mode != -1) {
                     /* open() honors umask(), which we don't want in this case */
@@ -340,6 +358,7 @@ static int create_temp_file(zip_source_file_context_t *ctx, bool create_file) {
                 free(temp);
                 return -1;
             }
+#endif
         }
         else {
             if (stat(temp, &st) < 0) {
