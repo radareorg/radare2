@@ -57,10 +57,12 @@ zip_delete(zip_t *za, zip_uint64_t idx) {
         return -1;
     }
 
+#if 0
     /* allow duplicate file names, because the file will
      * be removed directly afterwards */
     if (_zip_unchange(za, idx, 1) != 0)
         return -1;
+#endif
 
     za->entry[idx].deleted = 1;
 
