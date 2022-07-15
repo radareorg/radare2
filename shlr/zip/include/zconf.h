@@ -470,6 +470,7 @@ typedef uLong FAR uLongf;
 #if defined(__WATCOMC__) && !defined(Z_HAVE_UNISTD_H)
 #  define Z_HAVE_UNISTD_H
 #endif
+#ifndef _WIN32
 #ifndef Z_SOLO
 #  if defined(Z_HAVE_UNISTD_H) || defined(_LARGEFILE64_SOURCE)
 #    include <unistd.h>         /* for SEEK_*, off_t, and _LFS64_LARGEFILE */
@@ -480,6 +481,7 @@ typedef uLong FAR uLongf;
 #      define z_off_t off_t
 #    endif
 #  endif
+#endif
 #endif
 
 #if defined(_LFS64_LARGEFILE) && _LFS64_LARGEFILE-0
