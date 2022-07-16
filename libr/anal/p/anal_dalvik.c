@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 
-#include <asm/arch/dalvik/opcode.h>
+#include <dalvik/opcode.h>
 #include <bin/format/dex/dex.h>
 
 #define GETWIDE "32,v%u,<<,v%u,|"
