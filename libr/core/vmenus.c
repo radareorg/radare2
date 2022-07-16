@@ -3745,6 +3745,7 @@ struct seek_flag_offset_t {
 	ut64 offset;
 	ut64 *next;
 	bool is_next;
+	bool found;
 };
 
 static bool seek_flag_offset(RFlagItem *fi, void *user) {
@@ -3752,10 +3753,12 @@ static bool seek_flag_offset(RFlagItem *fi, void *user) {
 	if (u->is_next) {
 		if (fi->offset < *u->next && fi->offset > u->offset) {
 			*u->next = fi->offset;
+			u->found = true;
 		}
 	} else {
-		if (fi->offset > *u->next && fi->offset < u->offset) {
+		if (fi->offset >= *u->next && fi->offset <  u->offset) {
 			*u->next = fi->offset;
+			u->found = true;
 		}
 	}
 	return true;
@@ -3764,10 +3767,12 @@ static bool seek_flag_offset(RFlagItem *fi, void *user) {
 R_API void r_core_seek_next(RCore *core, const char *type) {
 	RListIter *iter;
 	ut64 next = UT64_MAX;
+	bool found = false;
 	if (strstr (type, "opc")) {
 		RAnalOp aop;
 		if (r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
 			next = core->offset + aop.size;
+			found = true;
 		} else {
 			eprintf ("Invalid opcode\n");
 		}
@@ -3776,17 +3781,20 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (fcni->addr < next && fcni->addr > core->offset) {
 				next = fcni->addr;
+				found = true;
 			}
 		}
 	} else if (strstr (type, "hit")) {
 		const char *pfx = r_config_get (core->config, "search.prefix");
-		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = true };
+		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = true, .found = false };
 		r_flag_foreach_prefix (core->flags, pfx, -1, seek_flag_offset, &u);
+		found = u.found;
 	} else { // flags
-		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = true };
+		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = true, .found = false };
 		r_flag_foreach (core->flags, seek_flag_offset, &u);
+		found = u.found;
 	}
-	if (next != UT64_MAX) {
+	if (found == true) {
 		r_core_seek (core, next, true);
 	}
 }
@@ -3794,6 +3802,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 R_API void r_core_seek_previous(RCore *core, const char *type) {
 	RListIter *iter;
 	ut64 next = 0;
+	bool found = false;
 	if (strstr (type, "opc")) {
 		eprintf ("TODO: r_core_seek_previous (opc)\n");
 	} else
@@ -3802,18 +3811,21 @@ R_API void r_core_seek_previous(RCore *core, const char *type) {
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (fcni->addr > next && fcni->addr < core->offset) {
 				next = fcni->addr;
+				found = true;
 			}
 		}
 	} else
 	if (strstr (type, "hit")) {
 		const char *pfx = r_config_get (core->config, "search.prefix");
-		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false };
+		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false, .found = false };
 		r_flag_foreach_prefix (core->flags, pfx, -1, seek_flag_offset, &u);
+		found = u.found;
 	} else { // flags
-		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false };
+		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false, .found = false };
 		r_flag_foreach (core->flags, seek_flag_offset, &u);
+		found = u.found;
 	}
-	if (next != 0) {
+	if (found == true) {
 		r_core_seek (core, next, true);
 	}
 }
