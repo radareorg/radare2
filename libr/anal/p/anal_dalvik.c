@@ -21,8 +21,7 @@ static inline int _anal_get_offset(RAnal *a, int type, int idx) {
 
 static inline const char *_anal_get_name(RAnal *a, int type, int idx) {
 	if (a && a->binb.bin && a->binb.get_name) {
-		// TODO Find RAsm->pseudo equivalent
-		return a->binb.get_name (a->binb.bin, type, idx, true);
+		return a->binb.get_name (a->binb.bin, type, idx, a->pseudo);
 	}
 
 	return NULL;
