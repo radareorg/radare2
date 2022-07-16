@@ -284,7 +284,6 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 	ut64 offset;
 	a->config->dataalign = 2;
 
-	const char *buf_asm = NULL;
 	if (buf[0] == 0x00) { /* nop */
 		if (len < 2) {
 			return -1;
@@ -297,7 +296,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 			{
 				ut16 array_size = buf[2] | (buf[3] << 8);
 				int first_key = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
-				buf_asm = r_strf ("packed-switch-payload %d, %d", array_size, first_key);
+				op->mnemonic = r_strf ("packed-switch-payload %d, %d", array_size, first_key);
 				size = 8;
 				payload = 2 * (array_size * 2);
 				len = 0;
@@ -309,7 +308,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 			// int[size] relative offsets
 			{
 				ut16 array_size = buf[2] | (buf[3] << 8);
-				buf_asm = r_strf ("sparse-switch-payload %d", array_size);
+				op->mnemonic = r_strf ("sparse-switch-payload %d", array_size);
 				size = 4;
 				payload = 2 * (array_size * 4);
 				len = 0;
@@ -322,7 +321,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 			if (len > 7) {
 				ut16 elem_width = buf[2] | (buf[3] << 8);
 				ut32 array_size = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
-				buf_asm = r_strf ("fill-array-data-payload %d, %d", elem_width, array_size);
+				op->mnemonic = r_strf ("fill-array-data-payload %d, %d", elem_width, array_size);
 				payload = array_size * elem_width;
 			}
 			size = 8;
@@ -333,14 +332,12 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 			break;
 		}
 	}
-	if (buf_asm) {
-		r_strbuf_set (&op->buf_asm, buf_asm);
-	}
+
 	strasm = NULL;
 	if (size <= len) {
-		strasm = strdup (dalvik_opcodes[i].name);
-		size = dalvik_opcodes[i].len;
-		switch (dalvik_opcodes[i].fmt) {
+		strasm = strdup (dalvik_opcodes[opcode].name);
+		size = dalvik_opcodes[opcode].len;
+		switch (dalvik_opcodes[opcode].fmt) {
 		case fmtop: break;
 		case fmtopvAvB:
 			vA = buf[1] & 0x0f;
@@ -762,17 +759,16 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 		case fmtoptinvokeIR:
 		case fmt00:
 		default:
-			free (strasm);
-			strasm = NULL;
+			R_FREE (strasm);
 			size = 2;
 		}
-		r_strbuf_set (&op->buf_asm, r_str_get_fail (strasm, "invalid"));
+		op->mnemonic = r_str_new (r_str_get_fail (strasm, "invalid"));
 	} else if (len > 0) {
-		r_strbuf_set (&op->buf_asm, "invalid");
-		op->size = len;
+		op->mnemonic = r_str_new ("invalid");
 		size = len;
 	}
 
+	// TODO
 	if (payload < 0) {
 		op->payload = 0;
 	} else if (len > 0 && payload >= len) {
