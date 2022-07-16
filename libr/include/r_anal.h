@@ -65,9 +65,6 @@ typedef struct r_anal_range_t {
 
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 
-#define R_ANAL_GET_OFFSET(x,y,z) \
-	(x && x->binb.bin && x->binb.get_offset)? \
-		x->binb.get_offset (x->binb.bin, y, z): -1
 enum {
 	R_ANAL_DATA_TYPE_NULL = 0,
 	R_ANAL_DATA_TYPE_UNKNOWN = 1,
@@ -611,6 +608,7 @@ typedef struct r_anal_hint_cb_t {
 typedef struct r_anal_t {
 	RArchConfig *config;
 	int lineswidth; // asm.lines.width
+	bool pseudo;    // asm.pseudo
 	int sleep;      // anal.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
 	RAnalCPPABI cxxabi; // anal.cpp.abi
 	void *user;

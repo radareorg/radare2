@@ -585,6 +585,7 @@ static bool cb_asmpseudo(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->rasm->pseudo = node->i_value;
+	core->ranal->pseudo = node->i_value;
 	return true;
 }
 
