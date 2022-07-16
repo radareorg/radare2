@@ -988,7 +988,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->datatype = R_ANAL_DATATYPE_STRING;
 		if (len > 2) {
 			format21c(len, data, &vA, &vB);
-			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
+			ut64 offset = _anal_get_offset (anal, 's', vB);
 			op->ptr = offset;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
 				esilprintf (op, "0x%"PFMT64x",v%u,=", offset, vA);
@@ -1000,7 +1000,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->type = R_ANAL_OP_TYPE_MOV;
 			op->datatype = R_ANAL_DATATYPE_STRING;
 			format31c(len, data, &vA, &vB);
-			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
+			ut64 offset = _anal_get_offset (anal, 's', vB);
 			op->ptr = offset;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
 				esilprintf (op, "0x%"PFMT64x",v%u,=", offset, vA);
@@ -1012,7 +1012,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->type = R_ANAL_OP_TYPE_MOV;
 			op->datatype = R_ANAL_DATATYPE_CLASS;
 			format21c(len, data, &vA, &vB);
-			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
+			ut64 offset = _anal_get_offset (anal, 's', vB);
 			op->ptr = offset;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
 				esilprintf (op, "0x%"PFMT64x",v%u,=", offset, vA);
@@ -1061,7 +1061,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 
 		// resolve class name for vB
 		format21c(len, data, &vA, &vB);
-		ut64 off = R_ANAL_GET_OFFSET (anal, 't', vB);
+		ut64 off = _anal_get_offset (anal, 't', vB);
 		op->ptr = off;
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			esilprintf (op, "%" PFMT64u ",new,v%d,=", off, vA);
