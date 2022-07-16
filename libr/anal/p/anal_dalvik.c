@@ -416,25 +416,25 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 		case fmtoppAA:
 			vA = (signed char) buf[1];
 			//snprintf (str, sizeof (str), " %i", vA*2); // vA : word -> byte
-			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->offset + (vA * 2)); // vA : word -> byte
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAAAA:
 			vA = (short) (buf[3] << 8 | buf[2]);
-			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->offset + (vA * 2)); // vA : word -> byte
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAApBBBB: // if-*z
 			vA = (int) buf[1];
 			vB = (int) (buf[3] << 8 | buf[2]);
 			//snprintf (str, sizeof (str), " v%i, %i", vA, vB);
-			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->pc + (vB * 2));
+			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->offset + (vB * 2));
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAAAAAAAA:
 			vA = (int) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
 			//snprintf (str, sizeof (str), " %#08x", vA*2); // vA: word -> byte
-			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA*2)); // vA : word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->offset + (vA*2)); // vA : word -> byte
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAvBpCCCC: // if-*
@@ -442,13 +442,13 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (int) (buf[3] << 8 | buf[2]);
 			//snprintf (str, sizeof (str), " v%i, v%i, %i", vA, vB, vC);
-			snprintf (str, sizeof (str)," v%i, v%i, 0x%08"PFMT64x, vA, vB, a->pc + (vC * 2));
+			snprintf (str, sizeof (str)," v%i, v%i, 0x%08"PFMT64x, vA, vB, a->offset + (vC * 2));
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAApBBBBBBBB:
 			vA = (int) buf[1];
 			vB = (short) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
-			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->pc + (vB * 2) + 8);
+			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->offset + (vB * 2) + 8);
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptinlineI:
