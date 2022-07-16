@@ -274,7 +274,7 @@ static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len,
 	}
 }
 
-static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int size) {
+static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, int size) {
 	r_return_val_if_fail  (a && op && buf && len > 0, -1);
 
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, opcode = (int) buf[0];
