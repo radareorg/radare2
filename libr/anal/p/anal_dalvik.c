@@ -257,16 +257,15 @@ static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len,
 	}
 }
 
-static int dalvik_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int size) {
 	r_return_val_if_fail  (a && op && buf && len > 0, -1);
 
-	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, i = (int) buf[0];
-	int size = dalvik_opcodes[i].len;
+	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, opcode = (int) buf[0];
 	char str[1024], *strasm = NULL;
 	const char *flag_str = NULL;
 	r_strf_buffer (256);
 	ut64 offset;
-	a->dataalign = 2;
+	a->config->dataalign = 2;
 
 	const char *buf_asm = NULL;
 	if (buf[0] == 0x00) { /* nop */
@@ -781,7 +780,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	int sz = dalvik_opcodes[data[0]].len;
 	if (!op || sz >= len) {
 		if (op && (mask & R_ANAL_OP_MASK_DISASM)) {
-			op->mnemonic = strdup ("invalid");
+			dalvik_disassemble (anal, op, data, len, sz);
 		}
 		return -1;
 	}
