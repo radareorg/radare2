@@ -273,16 +273,15 @@ static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len,
 	}
 }
 
-static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, int size) {
+static int dalvik_disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int size) {
 	r_return_val_if_fail  (a && op && buf && len > 0, -1);
 
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, opcode = (int) buf[0];
 	char str[1024], *strasm = NULL;
 	const char *flag_str = NULL;
-	r_strf_buffer (256);
 	ut64 offset;
+
 	a->config->dataalign = 2;
-	op->nopcode = 1;
 
 	if (buf[0] == 0x00) { /* nop */
 		if (len < 2) {
@@ -297,7 +296,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 			{
 				ut16 array_size = buf[2] | (buf[3] << 8);
 				int first_key = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
-				op->mnemonic = r_strf ("packed-switch-payload %d, %d", array_size, first_key);
+				op->mnemonic = r_str_newf ("packed-switch-payload %d, %d", array_size, first_key);
 				size = 8;
 				payload = 2 * (array_size * 2);
 				len = 0;
@@ -309,7 +308,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 			// int[size] relative offsets
 			{
 				ut16 array_size = buf[2] | (buf[3] << 8);
-				op->mnemonic = r_strf ("sparse-switch-payload %d", array_size);
+				op->mnemonic = r_str_newf ("sparse-switch-payload %d", array_size);
 				size = 4;
 				payload = 2 * (array_size * 4);
 				len = 0;
@@ -322,7 +321,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 			if (len > 7) {
 				ut16 elem_width = buf[2] | (buf[3] << 8);
 				ut32 array_size = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
-				op->mnemonic = r_strf ("fill-array-data-payload %d, %d", elem_width, array_size);
+				op->mnemonic = r_str_newf ("fill-array-data-payload %d, %d", elem_width, array_size);
 				payload = array_size * elem_width;
 			}
 			size = 8;
@@ -431,25 +430,25 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 		case fmtoppAA:
 			vA = (signed char) buf[1];
 			//snprintf (str, sizeof (str), " %i", vA*2); // vA : word -> byte
-			snprintf (str, sizeof (str), " 0x%08"PFMT64x, op->addr + (vA * 2)); // vA : word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, addr + (vA * 2)); // vA : word -> byte
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAAAA:
 			vA = (short) (buf[3] << 8 | buf[2]);
-			snprintf (str, sizeof (str), " 0x%08"PFMT64x, op->addr + (vA * 2)); // vA : word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, addr + (vA * 2)); // vA : word -> byte
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAApBBBB: // if-*z
 			vA = (int) buf[1];
 			vB = (int) (buf[3] << 8 | buf[2]);
 			//snprintf (str, sizeof (str), " v%i, %i", vA, vB);
-			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, op->addr + (vB * 2));
+			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, addr + (vB * 2));
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAAAAAAAA:
 			vA = (int) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
 			//snprintf (str, sizeof (str), " %#08x", vA*2); // vA: word -> byte
-			snprintf (str, sizeof (str), " 0x%08"PFMT64x, op->addr + (vA*2)); // vA : word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, addr + (vA*2)); // vA : word -> byte
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAvBpCCCC: // if-*
@@ -457,13 +456,13 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (int) (buf[3] << 8 | buf[2]);
 			//snprintf (str, sizeof (str), " v%i, v%i, %i", vA, vB, vC);
-			snprintf (str, sizeof (str)," v%i, v%i, 0x%08"PFMT64x, vA, vB, op->addr + (vC * 2));
+			snprintf (str, sizeof (str)," v%i, v%i, 0x%08"PFMT64x, vA, vB, addr + (vC * 2));
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAApBBBBBBBB:
-			vA = (int) buf[1];
-			vB = (short) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
-			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, op->addr + (vB * 2) + 8);
+			vA = buf[1];
+			vB = buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24);
+			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, addr + (vB * 2) + 8);
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptinlineI:
@@ -769,12 +768,7 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 		size = len;
 	}
 
-	// is this needed?
-	if (payload < 0) {
-		payload = 0;
-	}
-
-	if (len > 0 && payload >= len) {
+	if (len > 0 && payload > len) {
 		payload = len;
 	}
 
@@ -788,17 +782,22 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 
 	free (strasm);
 	free ((char *)flag_str);
+
 	return size;
 }
 
 static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+	r_return_val_if_fail  (anal && op && data && len > 0, -1);
+
 	int sz = dalvik_opcodes[data[0]].len;
-	if (!op || sz >= len) {
-		if (op && (mask & R_ANAL_OP_MASK_DISASM)) {
-			dalvik_disassemble (anal, op, data, len, sz);
+	if (!op || sz > len) {
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = r_str_new ("invalid");
 		}
 		return -1;
 	}
+
+	op->addr = addr;
 	op->size = sz;
 	op->nopcode = 1; // Necessary??
 	op->id = data[0];
@@ -813,6 +812,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	}
 	switch (data[0]) {
 	case 0x00:
+		// TODO handle 2-byte instructions like in dalvik_disassemble()
 		op->type = R_ANAL_OP_TYPE_NOP;
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			esilprintf (op, ",");
@@ -1250,7 +1250,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->datatype = R_ANAL_DATATYPE_OBJECT;
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			ut32 vC = len > 3?(data[3] << 8) | data[2] : 0;
-			op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
+			op->ptr = _anal_get_offset (anal, 'f', vC);
 			if (mask & R_ANAL_OP_MASK_ESIL) {
 				ut32 vA = (data[1] & 0x0f);
 				esilprintf (op, "%" PFMT64d ",v%d,=", op->ptr, vA);
@@ -1297,7 +1297,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xfe:
 		op->type = R_ANAL_OP_TYPE_STORE;
 		vC = len > 3?(data[3] << 8) | data[2] : 0;
-		op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
+		op->ptr = _anal_get_offset (anal, 'f', vC);
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			ut32 vA = (data[1] & 0x0f);
 			esilprintf (op, "%" PFMT64d ",v%u,=", op->ptr, vA);
@@ -1582,7 +1582,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			//XXX fix this better since the check avoid an oob
 			//but the jump will be incorrect
 			ut32 vB = len > 3?(data[3] << 8) | data[2] : 0;
-			ut64 dst = anal->binb.get_offset (anal->binb.bin, 'm', vB);
+			ut64 dst = _anal_get_offset (anal, 'm', vB);
 			if (dst == 0) {
 				op->type = R_ANAL_OP_TYPE_UCALL;
 			} else {
@@ -1608,7 +1608,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			//XXX fix this better since the check avoid an oob
 			//but the jump will be incorrect
 			// ut32 vB = len > 3?(data[3] << 8) | data[2] : 3;
-			//op->jump = anal->binb.get_offset (anal->binb.bin, 'm', vB);
+			//op->jump = _anal_get_offset (anal, 'm', vB);
 			op->fail = addr + sz;
 			// op->type = R_ANAL_OP_TYPE_CALL;
 			op->type = R_ANAL_OP_TYPE_UCALL;
@@ -1628,6 +1628,11 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		break;
 	}
+
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		dalvik_disassemble (anal, op, addr, data, len, sz);
+	}
+
 	return sz;
 }
 
