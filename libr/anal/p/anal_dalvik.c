@@ -11,6 +11,23 @@
 #define GETWIDE "32,v%u,<<,v%u,|"
 #define SETWIDE "DUP,v%u,=,32,SWAP,>>,v%u,="
 
+static inline int _anal_get_offset(RAnal *a, int type, int idx) {
+	if (a && a->binb.bin && a->binb.get_offset) {
+		return a->binb.get_offset (a->binb.bin, type, idx);
+	}
+
+	return -1;
+}
+
+static inline const char *_anal_get_name(RAnal *a, int type, int idx) {
+	if (a && a->binb.bin && a->binb.get_name) {
+		// TODO Find RAsm->pseudo equivalent
+		return a->binb.get_name (a->binb.bin, type, idx, true);
+	}
+
+	return NULL;
+}
+
 static const char *getCond(ut8 cond) {
 	switch (cond) {
 	case 0x32: // if-eq
@@ -514,21 +531,21 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 			vA = (int) buf[1];
 			vB = (buf[3] << 8) | buf[2];
 			if (buf[0] == 0x1a) {
-				offset = R_ASM_GET_OFFSET (a, 's', vB);
+				offset = _anal_get_offset (a, 's', vB);
 				if (offset == -1) {
 					snprintf (str, sizeof (str), " v%i, string+%i", vA, vB);
 				} else {
 					snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
 				}
 			} else if (buf[0] == 0x1c || buf[0] == 0x1f || buf[0] == 0x22) {
-				flag_str = R_ASM_GET_NAME (a, 'c', vB);
+				flag_str = _anal_get_name (a, 'c', vB);
 				if (!flag_str) {
 					snprintf (str, sizeof (str), " v%i, class+%i", vA, vB);
 				} else {
 					snprintf (str, sizeof (str), " v%i, %s", vA, flag_str);
 				}
 			} else {
-				flag_str = R_ASM_GET_NAME (a, 'f', vB);
+				flag_str = _anal_get_name (a, 'f', vB);
 				if (!flag_str) {
 					snprintf (str, sizeof (str), " v%i, field+%i", vA, vB);
 				} else {
@@ -541,7 +558,7 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 			vA = (buf[1] & 0x0f);
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (buf[3]<<8) | buf[2];
-			offset = R_ASM_GET_OFFSET (a, 'o', vC);
+			offset = _anal_get_offset (a, 'o', vC);
 			if (offset == -1) {
 				snprintf (str, sizeof (str), " v%i, v%i, [obj+%04x]", vA, vB, vC);
 			} else {
@@ -552,7 +569,7 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 		case fmtopAAtBBBB:
 			vA = (int) buf[1];
 			vB = (buf[3] << 8) | buf[2];
-			offset = R_ASM_GET_OFFSET (a, 't', vB);
+			offset = _anal_get_offset (a, 't', vB);
 			if (offset == -1) {
 				snprintf (str, sizeof (str), " v%i, thing+%i", vA, vB);
 			} else {
@@ -565,14 +582,14 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (buf[3] << 8) | buf[2];
 			if (buf[0] == 0x20 || buf[0] == 0x23) { //instance-of & new-array
-				flag_str = R_ASM_GET_NAME (a, 'c', vC);
+				flag_str = _anal_get_name (a, 'c', vC);
 				if (flag_str) {
 					snprintf (str, sizeof (str), " v%i, v%i, %s", vA, vB, flag_str);
 				} else {
 					snprintf (str, sizeof (str), " v%i, v%i, class+%i", vA, vB, vC);
 				}
 			} else {
-				flag_str = R_ASM_GET_NAME (a, 'f', vC);
+				flag_str = _anal_get_name (a, 'f', vC);
 				if (flag_str) {
 					snprintf (str, sizeof (str), " v%i, v%i, %s", vA, vB, flag_str);
 				} else {
@@ -584,7 +601,7 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 		case fmtopvAAtBBBBBBBB:
 			vA = (int) buf[1];
 			vB = (int) (buf[5] | (buf[4] << 8) | (buf[3] << 16) | (buf[2] << 24));
-			offset = R_ASM_GET_OFFSET (a, 's', vB);
+			offset = _anal_get_offset (a, 's', vB);
 			if (offset == -1) {
 				snprintf (str, sizeof (str), " v%i, string+%i", vA, vB);
 			} else {
@@ -597,7 +614,7 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 			vB = (buf[3] << 8) | buf[2];
 			vC = (buf[5] << 8) | buf[4];
 			if (buf[0] == 0x25) { // filled-new-array/range
-				flag_str = R_ASM_GET_NAME (a, 'c', vB);
+				flag_str = _anal_get_name (a, 'c', vB);
 				if (flag_str) {
 					snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
 				}
@@ -605,7 +622,7 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 					snprintf (str, sizeof (str), " {v%i..v%i}, class+%i", vC, vC + vA - 1, vB);
 				}
 			} else if (buf[0] == 0xfd) { // invoke-custom/range
-				flag_str = R_ASM_GET_NAME (a, 's', vB);
+				flag_str = _anal_get_name (a, 's', vB);
 				if (flag_str) {
 					snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
 				}
@@ -613,7 +630,7 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 					snprintf (str, sizeof (str), " {v%i..v%i}, call_site+%i", vC, vC + vA - 1, vB);
 				}
 			} else {
-				flag_str = R_ASM_GET_NAME (a, 'm', vB);
+				flag_str = _anal_get_name (a, 'm', vB);
 				if (flag_str) {
 					snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
 				}
@@ -650,21 +667,21 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 			}
 			strasm = r_str_append (strasm, str);
 			if (buf[0] == 0x24) { // filled-new-array
-				flag_str = R_ASM_GET_NAME (a, 'c', vB);
+				flag_str = _anal_get_name (a, 'c', vB);
 				if (flag_str) {
 					snprintf (str, sizeof (str), ", %s ; 0x%x", flag_str, vB);
 				} else {
 					snprintf (str, sizeof (str), ", class+%i", vB);
 				}
 			} else if (buf[0] == 0xfc) { // invoke-custom
-				flag_str = R_ASM_GET_NAME (a, 's', vB);
+				flag_str = _anal_get_name (a, 's', vB);
 				if (flag_str) {
 					snprintf (str, sizeof (str), ", %s ; 0x%x", flag_str, vB);
 				} else {
 					snprintf (str, sizeof (str), ", call_site+%i", vB);
 				}
 			} else { // invoke-kind
-				flag_str = R_ASM_GET_NAME (a, 'm', vB);
+				flag_str = _anal_get_name (a, 'm', vB);
 				if (flag_str) {
 					snprintf (str, sizeof (str), ", %s ; 0x%x", flag_str, vB);
 				} else {
@@ -706,14 +723,14 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 			}
 			strasm = r_str_append (strasm, str);
 
-			flag_str = R_ASM_GET_NAME (a, 'm', vB);
+			flag_str = _anal_get_name (a, 'm', vB);
 			if (flag_str) {
 				strasm = r_str_appendf (strasm, ", %s", flag_str);
 			} else {
 				strasm = r_str_appendf (strasm, ", method+%i", vB);
 			}
 
-			flag_str = R_ASM_GET_NAME (a, 'p', vH);
+			flag_str = _anal_get_name (a, 'p', vH);
 			if (flag_str) {
 				strasm = r_str_appendf (strasm, ", %s", flag_str);
 			} else {
@@ -725,7 +742,7 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 			vB = (buf[3] << 8) | buf[2];
 			vC = (buf[5] << 8) | buf[4];
 			vH = (buf[7] << 8) | buf[6];
-			flag_str = R_ASM_GET_NAME (a, 'm', vB);
+			flag_str = _anal_get_name (a, 'm', vB);
 			if (flag_str) {
 				snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
 			} else {
@@ -733,7 +750,7 @@ static int dalvik_disassemble(RAnal *a, RAsmOp *op, const ut8 *buf, int len, int
 			}
 			strasm = r_str_append (strasm, str);
 
-			flag_str = R_ASM_GET_NAME (a, 'p', vH);
+			flag_str = _anal_get_name (a, 'p', vH);
 			if (flag_str) {
 				snprintf (str, sizeof (str), ", %s", flag_str);
 			} else {
