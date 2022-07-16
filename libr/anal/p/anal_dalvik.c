@@ -282,11 +282,13 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 	r_strf_buffer (256);
 	ut64 offset;
 	a->config->dataalign = 2;
+	op->nopcode = 1;
 
 	if (buf[0] == 0x00) { /* nop */
 		if (len < 2) {
 			return -1;
 		}
+		op->nopcode = 2;
 		switch (buf[1]) {
 		case 0x01: /* packed-switch-payload */
 			// ushort size
@@ -429,25 +431,25 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 		case fmtoppAA:
 			vA = (signed char) buf[1];
 			//snprintf (str, sizeof (str), " %i", vA*2); // vA : word -> byte
-			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->offset + (vA * 2)); // vA : word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, op->addr + (vA * 2)); // vA : word -> byte
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAAAA:
 			vA = (short) (buf[3] << 8 | buf[2]);
-			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->offset + (vA * 2)); // vA : word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, op->addr + (vA * 2)); // vA : word -> byte
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAApBBBB: // if-*z
 			vA = (int) buf[1];
 			vB = (int) (buf[3] << 8 | buf[2]);
 			//snprintf (str, sizeof (str), " v%i, %i", vA, vB);
-			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->offset + (vB * 2));
+			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, op->addr + (vB * 2));
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoppAAAAAAAA:
 			vA = (int) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
 			//snprintf (str, sizeof (str), " %#08x", vA*2); // vA: word -> byte
-			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->offset + (vA*2)); // vA : word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, op->addr + (vA*2)); // vA : word -> byte
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAvBpCCCC: // if-*
@@ -455,13 +457,13 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 			vB = (buf[1] & 0xf0) >> 4;
 			vC = (int) (buf[3] << 8 | buf[2]);
 			//snprintf (str, sizeof (str), " v%i, v%i, %i", vA, vB, vC);
-			snprintf (str, sizeof (str)," v%i, v%i, 0x%08"PFMT64x, vA, vB, a->offset + (vC * 2));
+			snprintf (str, sizeof (str)," v%i, v%i, 0x%08"PFMT64x, vA, vB, op->addr + (vC * 2));
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtopvAApBBBBBBBB:
 			vA = (int) buf[1];
 			vB = (short) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
-			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, a->offset + (vB * 2) + 8);
+			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, op->addr + (vB * 2) + 8);
 			strasm = r_str_append (strasm, str);
 			break;
 		case fmtoptinlineI:
@@ -767,22 +769,23 @@ static int dalvik_disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len, in
 		size = len;
 	}
 
-	// TODO
+	// is this needed?
 	if (payload < 0) {
-		op->payload = 0;
-	} else if (len > 0 && payload >= len) {
-		op->payload = len;
-	} else {
-		op->payload = payload;
+		payload = 0;
 	}
 
-	if (size + op->payload < 0) {
+	if (len > 0 && payload >= len) {
+		payload = len;
+	}
+
+	if (size + payload < 0) {
 		op->size = 0;
-	} else if (size + op->payload >= len) {
+	} else if (size + payload >= len) {
 		op->size = len;
 	} else {
-		op->size = size + op->payload;
+		op->size = size + payload;
 	}
+
 	free (strasm);
 	free ((char *)flag_str);
 	return size;
