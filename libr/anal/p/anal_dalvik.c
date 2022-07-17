@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2010-2019 - pancake */
 
 #include <r_anal.h>
-#include <opcode/dalvik.h>
+#include <dalvik/opcode.h>
 
 #define GETWIDE "32,v%u,<<,v%u,|"
 #define SETWIDE "DUP,v%u,=,32,SWAP,>>,v%u,="
