@@ -2857,7 +2857,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	}
 	ht_pp_free (hash);
 	// bin->symbols = symbols;
-    free (symbols);
+	free (symbols);
 	return list;
 }
 
@@ -2899,11 +2899,15 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 
 	int bits = MACH0_(get_bits_from_hdr) (&bin->hdr);
 	if (bin->symtab && bin->symstr) {
+		int n0 = bin->dysymtab.nextdefsym;
+		int n1 = bin->dysymtab.nlocalsym;
+		int n2 = bin->dysymtab.nundefsym;
+		int n3 = bin->nsymtab;
+		symbols_count = R_MAX (n0, 0);
+		symbols_count += R_MAX (n1, 0);
+		symbols_count += R_MAX (n2, 0);
+		symbols_count += R_MAX (n3, 0);
 		/* parse dynamic symbol table */
-		symbols_count = (bin->dysymtab.nextdefsym + \
-				bin->dysymtab.nlocalsym + \
-				bin->dysymtab.nundefsym );
-		symbols_count += bin->nsymtab;
 		if (symbols_count < 0 || ((st64)symbols_count * 2) > ST32_MAX) {
 			eprintf ("Symbols count overflow\n");
 			ht_pp_free (hash);
