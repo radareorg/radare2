@@ -1632,6 +1632,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 }
 
 // TODO
+#if 0
 static int dalvik_opasm(RAnal *anal, ut64 addr, const char *str, ut8 *outbuf, int outlen) {
 	char **argv;
 	int argc;
@@ -1657,6 +1658,7 @@ static int dalvik_opasm(RAnal *anal, ut64 addr, const char *str, ut8 *outbuf, in
 
 	return outlen;
 }
+#endif
 
 static bool set_reg_profile(RAnal *anal) {
 	const char * const p =
@@ -1718,7 +1720,7 @@ RAnalPlugin r_anal_plugin_dalvik = {
 	.bits = 32,
 	.desc = "Dalvik (Android VM) bytecode analysis plugin",
 	.op = &dalvik_op,
-	.opasm = &dalvik_opasm,
+	//.opasm = &dalvik_opasm,
 	.esil = true
 };
 
