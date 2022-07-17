@@ -598,7 +598,6 @@ typedef struct r_anal_hint_cb_t {
 typedef struct r_anal_t {
 	RArchConfig *config;
 	int lineswidth; // asm.lines.width
-	bool pseudo;    // asm.pseudo
 	int sleep;      // anal.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
 	RAnalCPPABI cxxabi; // anal.cpp.abi
 	void *user;
