@@ -24,9 +24,6 @@ R_API RLine *r_line_new(void) {
 #else
 	I.vtmode = 2;
 #endif
-	if (!r_line_dietline_init ()) {
-		R_LOG_ERROR ("r_line_dietline_init has failed");
-	}
 	r_line_completion_init (&I.completion, 4096);
 	return &I;
 }
