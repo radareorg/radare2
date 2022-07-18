@@ -2602,6 +2602,12 @@ static bool cb_scr_histblock(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scr_histsize(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_line_hist_set_size(node->i_value);
+	return true;
+}
+
 static bool cb_scrprompt(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -4136,6 +4142,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.hist.block", "true", &cb_scr_histblock, "use blocks for histogram");
 	SETCB ("scr.hist.filter", "true", &cb_scr_histfilter, "filter history for matching lines when using up/down keys");
 	SETBPREF ("scr.hist.save", "true", "always save history on exit");
+	SETICB("scr.hist.size", R_LINE_HISTSIZE, &cb_scr_histsize, "set input lines history size");
 	n = NODECB ("scr.strconv", "asciiesc", &cb_scrstrconv);
 	SETDESC (n, "convert string before display");
 	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
