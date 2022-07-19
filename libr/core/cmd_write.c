@@ -1564,6 +1564,7 @@ static int cmd_wt(void *data, const char *input) {
 		if (!filename || !*filename) {
 			const char* prefix = r_config_get (core->config, "cfg.prefixdump");
 			snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
+			free ((char *)filename);
 			filename = _fn;
 		}
 
