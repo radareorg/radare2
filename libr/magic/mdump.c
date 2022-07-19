@@ -198,7 +198,7 @@ const char *file_fmttime(ut32 v, int local, char *pp) {
 #ifndef HAVE_DAYLIGHT
 		static R_TH_LOCAL int daylight = 0;
 #ifdef HAVE_TM_ISDST
-		static time_t now = (time_t)0;
+		static R_TH_LOCAL time_t now = (time_t)0;
 
 		if (now == (time_t)0) {
 			struct tm *tm1;
