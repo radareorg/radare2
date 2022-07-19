@@ -14,12 +14,14 @@ static int r_main_r2pm_sh(int argc, const char **argv) {
 	return 1;
 #else
 	int i;
-	RStrBuf *sb = r_strbuf_new ("r2pm.sh");
+	char *r2pm_sh = r_file_path ("r2pm.sh");
+	RStrBuf *sb = r_strbuf_new (r2pm_sh);
+	free (r2pm_sh);
 	for (i = 1; i < argc; i++) {
 		r_strbuf_appendf (sb, " %s", argv[i]);
 	}
 	char *cmd = r_strbuf_drain (sb);
-	int res = r_sandbox_system (cmd, 0);
+	int res = cmd? r_sandbox_system (cmd, 0): -1;
 	free (cmd);
 	return res;
 #endif
