@@ -280,7 +280,7 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int a
 	char *p, *mfn;
 	int file_err, errs = -1;
 	struct mlist *mlist;
-	R_TH_LOCAL bool *done = NULL;
+	bool done = false;
 
 	init_file_tables (done);
 	if (!fn) {
