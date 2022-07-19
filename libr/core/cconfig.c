@@ -1035,10 +1035,7 @@ static bool cb_jsonencoding_numbers(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asm_armimm(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->rasm->immdisp = node->i_value ? true : false;
+static bool cb_asm_armimm(void *user, void *data) {	//TODO: Remove this for 5.8.
 	return true;
 }
 
@@ -3490,7 +3487,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("asm.hint.pos", 1, "shortcut hint position (-1, 0, 1)");
 	SETBPREF ("asm.slow", "true", "perform slow analysis operations in disasm");
 	SETBPREF ("asm.decode", "false", "use code analysis as a disassembler");
-	SETICB ("asm.imm.arm", false,  &cb_asm_armimm, "display # for immediates in ARM");
+	SETICB ("asm.imm.arm", false,  &cb_asm_armimm, "DEPRECATED, has no effect");	//TODO: Remove this for 5.8.
 	SETBPREF ("asm.imm.str", "true", "show immediates values as strings");
 	SETBPREF ("asm.imm.trim", "false", "remove all offsets and constants from disassembly");
 	SETBPREF ("asm.indent", "false", "indent disassembly based on reflines depth");

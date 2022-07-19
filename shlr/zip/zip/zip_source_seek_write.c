@@ -1,9 +1,9 @@
 /*
-  zip_get_encryption_implementation.c -- get encryption implementation
-  Copyright (C) 2009 Dieter Baron and Thomas Klausner
+  zip_source_seek_write.c -- seek to offset for writing
+  Copyright (C) 2014-2021 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -31,16 +31,21 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 
 #include "zipint.h"
 
-
 
-zip_encryption_implementation
-_zip_get_encryption_implementation(zip_uint16_t em)
-{
-    if (em == ZIP_EM_TRAD_PKWARE)
-	return zip_source_pkware;
-    return NULL;
+ZIP_EXTERN int
+zip_source_seek_write(zip_source_t *src, zip_int64_t offset, int whence) {
+    zip_source_args_seek_t args;
+
+    if (!ZIP_SOURCE_IS_OPEN_WRITING(src) || (whence != SEEK_SET && whence != SEEK_CUR && whence != SEEK_END)) {
+        zip_error_set(&src->error, ZIP_ER_INVAL, 0);
+        return -1;
+    }
+
+    args.offset = offset;
+    args.whence = whence;
+
+    return (_zip_source_call(src, &args, sizeof(args), ZIP_SOURCE_SEEK_WRITE) < 0 ? -1 : 0);
 }

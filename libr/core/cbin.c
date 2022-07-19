@@ -4382,6 +4382,9 @@ R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char *_arc
 			RAnalPlugin *anal_plugin;
 			RListIter *iter;
 			r_list_foreach (r->anal->plugins, iter, anal_plugin) {	//XXX: fix this properly after 5.8
+				if (!anal_plugin->arch) {
+					continue;
+				}
 				if (!strcmp (anal_plugin->arch, arch)) {
 					found_anal_plugin = true;
 					break;

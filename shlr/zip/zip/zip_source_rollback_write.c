@@ -1,9 +1,9 @@
 /*
-  zip_source_file.c -- create data source from file
-  Copyright (C) 1999-2009 Dieter Baron and Thomas Klausner
+  zip_source_rollback_write.c -- discard changes
+  Copyright (C) 2014-2021 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -31,26 +31,16 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-
-#include <errno.h>
-#include <stdio.h>
 
 #include "zipint.h"
 
-
 
-ZIP_EXTERN struct zip_source *
-zip_source_file(struct zip *za, const char *fname, zip_uint64_t start,
-		zip_int64_t len)
-{
-    if (za == NULL)
-	return NULL;
-
-    if (fname == NULL || len < -1) {
-	_zip_error_set(&za->error, ZIP_ER_INVAL, 0);
-	return NULL;
+ZIP_EXTERN void
+zip_source_rollback_write(zip_source_t *src) {
+    if (src->write_state != ZIP_SOURCE_WRITE_OPEN && src->write_state != ZIP_SOURCE_WRITE_FAILED) {
+        return;
     }
 
-    return _zip_source_file_or_p(za, fname, NULL, start, len, 1, NULL);
+    _zip_source_call(src, NULL, 0, ZIP_SOURCE_ROLLBACK_WRITE);
+    src->write_state = ZIP_SOURCE_WRITE_CLOSED;
 }

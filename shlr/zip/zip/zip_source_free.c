@@ -1,9 +1,9 @@
 /*
   zip_source_free.c -- free zip data source
-  Copyright (C) 1999-2009 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2021 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -31,28 +31,40 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 
 #include <stdlib.h>
 
 #include "zipint.h"
 
-
 
 ZIP_EXTERN void
-zip_source_free(struct zip_source *src)
-{
+zip_source_free(zip_source_t *src) {
     if (src == NULL)
-	return;
+        return;
 
-    if (src->is_open)
-	zip_source_close(src);
+    if (src->refcount > 0) {
+        src->refcount--;
+    }
+    if (src->refcount > 0) {
+        return;
+    }
 
-    if (src->src == NULL)
-	(void)src->cb.f(src->ud, NULL, 0, ZIP_SOURCE_FREE);
-    else {
-	(void)src->cb.l(src->src, src->ud, NULL, 0, ZIP_SOURCE_FREE);
-	zip_source_free(src->src);
+    if (ZIP_SOURCE_IS_OPEN_READING(src)) {
+        src->open_count = 1; /* force close */
+        zip_source_close(src);
+    }
+    if (ZIP_SOURCE_IS_OPEN_WRITING(src)) {
+        zip_source_rollback_write(src);
+    }
+
+    if (src->source_archive && !src->source_closed) {
+        _zip_deregister_source(src->source_archive, src);
+    }
+
+    (void)_zip_source_call(src, NULL, 0, ZIP_SOURCE_FREE);
+
+    if (src->src) {
+        zip_source_free(src->src);
     }
 
     free(src);
