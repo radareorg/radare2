@@ -45,7 +45,7 @@
 
 #ifndef COMPILE_ONLY
 void file_mdump(struct r_magic *m) {
-	static const char optyp[] = { FILE_OPS };
+	static R_TH_LOCAL const char optyp[] = { FILE_OPS };
 	char pp[ASCTIME_BUF_MAXLEN];
 
 	(void) eprintf ("[%u", m->lineno);
