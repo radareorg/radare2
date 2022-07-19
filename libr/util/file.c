@@ -293,7 +293,7 @@ R_API char *r_file_binsh(void) {
 	if (R_STR_ISEMPTY (bin_sh)) {
 		free (bin_sh);
 		bin_sh = r_file_path ("sh");
-		if (R_STR_ISEMPTY (bin_sh)) {
+		if (!bin_sh || *bin_sh != '/') {
 			free (bin_sh);
 			bin_sh = strdup (SHELL_PATH);
 		}

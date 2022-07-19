@@ -1,9 +1,9 @@
 /*
   zip_get_archive_flag.c -- set archive global flag
-  Copyright (C) 2008-2009 Dieter Baron and Thomas Klausner
+  Copyright (C) 2008-2021 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -31,36 +31,32 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 
 #include "zipint.h"
 
-
 
 ZIP_EXTERN int
-zip_set_archive_flag(struct zip *za, unsigned int flag, int value)
-{
+zip_set_archive_flag(zip_t *za, zip_flags_t flag, int value) {
     unsigned int new_flags;
 
     if (value)
-	new_flags = za->ch_flags | flag;
+        new_flags = za->ch_flags | flag;
     else
-	new_flags = za->ch_flags & ~flag;
+        new_flags = za->ch_flags & ~flag;
 
     if (new_flags == za->ch_flags)
-	return 0;
+        return 0;
 
     if (ZIP_IS_RDONLY(za)) {
-	_zip_error_set(&za->error, ZIP_ER_RDONLY, 0);
-	return -1;
+        zip_error_set(&za->error, ZIP_ER_RDONLY, 0);
+        return -1;
     }
 
-    if ((flag & ZIP_AFL_RDONLY) && value
-	&& (za->ch_flags & ZIP_AFL_RDONLY) == 0) {
-	if (_zip_changed(za, NULL)) {
-	    _zip_error_set(&za->error, ZIP_ER_CHANGED, 0);
-	    return -1;
-	}
+    if ((flag & ZIP_AFL_RDONLY) && value && (za->ch_flags & ZIP_AFL_RDONLY) == 0) {
+        if (_zip_changed(za, NULL)) {
+            zip_error_set(&za->error, ZIP_ER_CHANGED, 0);
+            return -1;
+        }
     }
 
     za->ch_flags = new_flags;

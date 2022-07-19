@@ -1,9 +1,9 @@
 /*
-  zip_get_compression_implementation.c -- get compression implementation
-  Copyright (C) 2009 Dieter Baron and Thomas Klausner
+  zip_source_write.c -- start a new file for writing
+  Copyright (C) 2014-2021 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -31,16 +31,16 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 
 #include "zipint.h"
 
-
 
-zip_compression_implementation
-_zip_get_compression_implementation(zip_int32_t cm)
-{
-    if (cm == ZIP_CM_DEFLATE || ZIP_CM_IS_DEFAULT(cm))
-	return zip_source_deflate;
-    return NULL;
+ZIP_EXTERN zip_int64_t
+zip_source_write(zip_source_t *src, const void *data, zip_uint64_t length) {
+    if (!ZIP_SOURCE_IS_OPEN_WRITING(src) || length > ZIP_INT64_MAX) {
+        zip_error_set(&src->error, ZIP_ER_INVAL, 0);
+        return -1;
+    }
+
+    return _zip_source_call(src, (void *)data, length, ZIP_SOURCE_WRITE);
 }

@@ -2,7 +2,7 @@
 
 #include <fcntl.h>
 #include "sdb.h"
-#if __wasi__ || EMSCRIPTEN
+#if __wasi__ || EMSCRIPTEN || __MINGW32__
 static int getpid(void) { return 0; }
 #endif
 
@@ -22,7 +22,7 @@ SDB_API bool sdb_lock_file(const char *f, char *buf, size_t buf_size) {
 
 SDB_API bool sdb_lock(const char *s) {
 	int fd;
-	char *pid, pidstr[64];
+	char pidstr[64];
 	if (!s) {
 		return false;
 	}
@@ -30,7 +30,7 @@ SDB_API bool sdb_lock(const char *s) {
 	if (fd == -1) {
 		return false;
 	}
-	pid = sdb_itoa (getpid (), pidstr, 10);
+	char *pid = sdb_itoa (getpid (), pidstr, 10);
 	if (pid) {
 		if ((write (fd, pid, strlen (pid)) < 0)
 			|| (write (fd, "\n", 1) < 0)) {
