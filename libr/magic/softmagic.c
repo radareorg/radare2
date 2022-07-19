@@ -899,7 +899,7 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 
 	if ((ms->flags & R_MAGIC_DEBUG) != 0) {
 		mdebug(offset, (char *)(void *)p, sizeof(union VALUETYPE));
-		const char *optyp[] = NULL;
+		const char optyp[] = { NULL };
 		file_mdump(m, &optyp);
 	}
 
@@ -1174,7 +1174,7 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 		if ((ms->flags & R_MAGIC_DEBUG) != 0) {
 			mdebug (offset, (char *)(void *)p,
 			    sizeof (union VALUETYPE));
-			const char *optyp[] = NULL;
+			const char optyp[] = { NULL };
 			file_mdump(m, &optyp);
 		}
 	}
