@@ -3825,7 +3825,7 @@ R_API void r_core_seek_previous(RCore *core, const char *type) {
 		r_flag_foreach (core->flags, seek_flag_offset, &u);
 		found = u.found;
 	}
-	if (found == true) {
+	if (found) {
 		r_core_seek (core, next, true);
 	}
 }
