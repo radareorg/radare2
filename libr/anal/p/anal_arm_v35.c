@@ -935,6 +935,10 @@ static void anop64(RAnal *a, RAnalOp *op, Instruction *insn) {
 	case ARM64_CINC:
 		op->type = R_ANAL_OP_TYPE_CMOV;
 		break;
+	case ARM64_BTI:
+		op->type = R_ANAL_OP_TYPE_NOP;
+		op->family = R_ANAL_OP_FAMILY_SECURITY;
+		break;
 	case ARM64_MOV:
 		if (REGID64(0) == REG_SP) {
 			op->stackop = R_ANAL_STACK_RESET;
@@ -1238,7 +1242,6 @@ static void anop64(RAnal *a, RAnalOp *op, Instruction *insn) {
 }
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, Instruction *insn) {
-
 	const char *postfix = "";
 
 	r_strbuf_init (&op->esil);
@@ -1304,6 +1307,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			"8,0xff00ff00ff00ff00,%s,&,>>,tmp,=,"
 			"8,0x00ff00ff00ff00ff,%s,&,<<,tmp,|=,tmp,%s,=",
 			REG64 (1), REG64 (1), REG64 (0));
+		break;
+	case ARM64_BTI:
 		break;
 	case ARM64_ADR:
 		// TODO: must be 21bit signed

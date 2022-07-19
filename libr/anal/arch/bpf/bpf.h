@@ -73,8 +73,8 @@ static const char * const r_bpf_op_table[] = {
 
 typedef struct r_bpf_sock_filter {	/* Filter block */
 	ut16 code; /* Actual filter code */
-	st8 jt;	/* Jump true */
-	st8 jf;	/* Jump false */
+	ut8 jt;	/* Jump true */
+	ut8 jf;	/* Jump false */
 	ut32 k; /* Generic multiuse field */
 } RBpfSockFilter;
 
