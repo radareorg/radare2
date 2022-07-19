@@ -8,7 +8,7 @@ asl~?
 EOF
 
 EXPECT=<<EOF
-335
+362
 365
 EOF
 RUN
@@ -560,6 +560,8 @@ RUN
 NAME=pop mem rsp
 FILE=-
 CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
 aei; aeim
 "wa push 0x41414141; push 0x42424242; pop [rsp]"
 3.aes

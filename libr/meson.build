@@ -94,7 +94,6 @@ if not no_user_plugins
   endif
   if user_plugins.contains('dalvik')
     bin_plugins += [ 'dex' ]
-    asm_plugins += [ 'dalvik' ]
     anal_plugins += [ 'dalvik' ]
     parse_plugins += [ 'dalvik_pseudo' ]
   endif
@@ -127,7 +126,6 @@ asm_plugins += [
   'arm_as',
   'arm_cs',
   'arm_winedbg',
-  'dalvik',
   'or1k',
   'ppc_as',
   'ppc_cs',

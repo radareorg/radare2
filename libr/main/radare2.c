@@ -1113,7 +1113,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 									}
 									r_core_bin_load (r, NULL, addr);
 								}
-							} else if (fh->name && r_str_startswith (fh->name, "gdb://")) {
+							} else if (fh && fh->name && r_str_startswith (fh->name, "gdb://")) {
 								filepath = iod->name;
 								if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
 									if (addr == UT64_MAX) {
