@@ -55,74 +55,74 @@ typedef enum {
 	OP_DOUBLE
 } OperandType;
 
-/*static void format10t(int len, const unsigned char* data, ut32* dst) {
+/*static void format10t(int len, const ut8* data, ut32* dst) {
 	if (len > 1) {
 		*dst = data[1];
 	}
 }*/
 
-static void format11x(int len, const unsigned char* data, ut32* dst) {
+static void format11x(int len, const ut8* data, ut32* dst) {
 	if (len > 1) {
 		*dst = data[1] & 0x0F;
 	}
 }
 
-static void format11n(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format11n(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 1) {
 		*dst = data[1] & 0x0F;
 		*src = (st32)((st8)((data[1] & 0xF0) >> 4)); // uhhh
 	}
 }
 
-static void format12x(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format12x(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 1) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
 	}
 }
 
-/*static void format20t(int len, const unsigned char* data, ut32* dst) {
+/*static void format20t(int len, const ut8* data, ut32* dst) {
 	if (len > 3) {
 		*dst = r_read_le16 (data + 2);
 	}
 }*/
 
-static void format21t(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format21t(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = 2*r_read_le16 (data + 2);
 	}
 }
 
-static void format21s(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format21s(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = (st32)(st16)r_read_le16 (data + 2);
 	}
 }
 
-static void format21hw(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format21hw(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = (ut32)((st16)r_read_le16 (data + 2)) << 16;
 	}
 }
 
-static void format21hd(int len, const unsigned char* data, ut32* dst, st64* src) {
+static void format21hd(int len, const ut8* data, ut32* dst, st64* src) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = (ut64)((st64)(st16)r_read_le16 (data + 2)) << 48;
 	}
 }
 
-static void format21c(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format21c(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = r_read_le16 (data + 2);
 	}
 }
 
-static void format22c(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+static void format22c(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 3) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
@@ -131,14 +131,14 @@ static void format22c(int len, const unsigned char* data, ut32* dst, ut32* src, 
 }
 
 // same as 21c but not for literals
-static void format22x(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format22x(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = r_read_le16 (data + 2);
 	}
 }
 
-static void format22t(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+static void format22t(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 3) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
@@ -146,7 +146,7 @@ static void format22t(int len, const unsigned char* data, ut32* dst, ut32* src, 
 	}
 }
 
-static void format22s(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+static void format22s(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 3) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
@@ -154,7 +154,7 @@ static void format22s(int len, const unsigned char* data, ut32* dst, ut32* src, 
 	}
 }
 
-static void format22b(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+static void format22b(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = data[2];
@@ -162,7 +162,7 @@ static void format22b(int len, const unsigned char* data, ut32* dst, ut32* src, 
 	}
 }
 
-static void format23x(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+static void format23x(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 1) {
 		*dst = data[1];
 		*src = data[2];
@@ -170,34 +170,34 @@ static void format23x(int len, const unsigned char* data, ut32* dst, ut32* src, 
 	}
 }
 
-/*static void format30t(int len, const unsigned char* data, ut32* dst) {
+/*static void format30t(int len, const ut8* data, ut32* dst) {
 	if (len > 5) {
 		*dst = r_read_le32(data+2);
 	}
 }*/
 
-static void format31i(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format31i(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 5) {
 		*dst = data[1];
 		*src = r_read_le32(data+2);
 	}
 }
 
-static void format31c(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format31c(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 5) {
 		*dst = data[1];
 		*src = r_read_le32(data+2);
 	}
 }
 
-static void format32x(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format32x(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 5) {
 		*dst = r_read_le16 (data + 2);
 		*src = r_read_le16 (data + 4);
 	}
 }
 
-/*static void format3rc(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+/*static void format3rc(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 5) {
 		*src = data[1] - 1;
 		*dst = r_read_le16 (data + 2);
@@ -205,7 +205,7 @@ static void format32x(int len, const unsigned char* data, ut32* dst, ut32* src) 
 	}
 }
 
-static void format4rcc(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref1, ut32* ref2) {
+static void format4rcc(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref1, ut32* ref2) {
 	if (len > 7) {
 		*src  = data[1] - 1;
 		*dst  = r_read_le16 (data + 2);
@@ -214,18 +214,15 @@ static void format4rcc(int len, const unsigned char* data, ut32* dst, ut32* src,
 	}
 }*/
 
-static void format51l(int len, const unsigned char* data, ut32* dst, st64* src) {
+static void format51l(int len, const ut8* data, ut32* dst, st64* src) {
 	if (len > 9) {
 		*dst = data[1];
 		*src = (st64)r_read_le64 (data + 2);
 	}
 }
 
-
 #define OPCALL(x, y, z) dalvik_math_op(op, data, len, mask, x, y, z)
-static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len,
-	RAnalOpMask mask, char* operation, unsigned int optype, OperandType ot) {
-
+static void dalvik_math_op(RAnalOp* op, const ut8* data, int len, RAnalOpMask mask, char* operation, unsigned int optype, OperandType ot) {
 	ut32 vA = 0, vB = 0, vC = 0;
 	op->type = optype;
 	if (ot == OP_FLOAT || ot == OP_DOUBLE) {
@@ -272,10 +269,11 @@ static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len,
 static int dalvik_disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int size) {
 	r_return_val_if_fail  (a && op && buf && len > 0, -1);
 
-	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, opcode = (int) buf[0];
+	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0;
 	char str[1024], *strasm = NULL;
 	const char *flag_str = NULL;
 	ut64 offset;
+	ut8 opcode = buf[0];
 
 	a->config->dataalign = 2;
 
