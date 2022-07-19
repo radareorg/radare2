@@ -10,7 +10,7 @@
 
 static int cmd_search(void *data, const char *input);
 
-#define USE_EMULATION 0
+#define USE_EMULATION 1
 
 #define AES_SEARCH_LENGTH 40
 #define PRIVATE_KEY_SEARCH_LENGTH 11
@@ -1891,22 +1891,31 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 #define SUMARRAY(arr, size, res) do (res) += (arr)[--(size)]; while ((size))
 
 #if USE_EMULATION
+static const char *get_syscall_register(RCore *core) {
+	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	if (!strcmp (core->anal->config->arch, "arm") && core->anal->config->bits == 64) {
+		const char *os = core->anal->config->os;
+		if (!strcmp (os, "linux")) {
+			a0 = "x8";
+		} else if (!strcmp (os, "macos")) {
+			a0 = "x16";
+		}
+	}
+	return a0;
+}
 // IMHO This code must be deleted
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int i, inslen, bsize = R_MIN (64, core->blocksize);
-	ut8 *arr;
 	RAnalOp aop;
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	const char *a0 = get_syscall_register (core);
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
 	RRegItem *reg_a0 = r_reg_get (core->dbg->reg, a0, -1);
 
-	arr = malloc (bsize);
+	ut8 *arr = malloc (bsize);
 	if (!arr) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
-		free (arr);
 		return -1;
 	}
 	r_reg_set_value (core->dbg->reg, r, curpc);
@@ -1925,10 +1934,10 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 			}
 			i += incr;
 			curpc += incr;
-			if (r_anal_op_nonlinear (aop.type)) {	// skip the instr
+			if (r_anal_op_nonlinear (aop.type)) {
 				r_reg_set_value (core->dbg->reg, r, curpc + 1);
-			} else {	// step instr
-				r_core_esil_step (core, UT64_MAX, NULL, NULL);
+			} else {
+				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			}
 		}
 	}
@@ -1945,7 +1954,6 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 #if USE_EMULATION
 	ut64 curpc;
 #endif
-	ut8 *buf;
 	int curpos, idx = 0, count = 0;
 	RAnalOp aop = {0};
 	int i, ret, bsize = R_MAX (64, core->blocksize);
@@ -1968,7 +1976,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		r_anal_esil_free (esil);
 		return;
 	}
-	buf = malloc (bsize);
+	ut8 *buf = malloc (bsize);
 	if (!buf) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		r_anal_esil_free (esil);
@@ -1976,18 +1984,12 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		return;
 	}
 	ut64 oldoff = core->offset;
+#if !USE_EMULATION
 	int syscallNumber = 0;
+#endif
 	r_cons_break_push (NULL, NULL);
 	// XXX: the syscall register depends on arcm
-	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
-	if (!strcmp (core->anal->config->arch, "arm") && core->anal->config->bits == 64) {
-		const char *os = core->anal->config->os;
-		if (!strcmp (os, "linux")) {
-			a0 = "x8";
-		} else if (!strcmp (os, "macos")) {
-			a0 = "x16";
-		}
-	}
+	const char *a0 = get_syscall_register (core);
 	char *esp = r_str_newf ("%s,=", a0);
 	char *esp32 = NULL;
 	if (core->anal->config->bits == 64) {
@@ -2023,6 +2025,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_ESIL);
 			curpos = idx++ % (MAXINSTR + 1);
 			previnstr[curpos] = ret; // This array holds prev n instr size + cur instr size
+#if !USE_EMULATION
 			if (aop.type == R_ANAL_OP_TYPE_MOV) {
 				const char *es = R_STRBUF_SAFEGET (&aop.esil);
 				if (strstr (es, esp)) {
@@ -2035,6 +2038,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 					}
 				}
 			}
+#endif
 			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
 				int scVector = -1; // int 0x80, svc 0x70, ...
 				int scNumber = 0; // r0/eax/...
@@ -2071,7 +2075,9 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 					r_anal_op_fini (&aop);
 					break;
 				}
+#if !USE_EMULATION
 				syscallNumber = 0;
+#endif
 			}
 			int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
 			if (inc < 0) {
@@ -2247,7 +2253,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		input++;
 	}
 	if (type == 's') {
-		eprintf ("Shouldn't reach\n");
+		R_LOG_ERROR ("Shouldn't be reached");
 		return true;
 	}
 	if (mode == 'j') {
