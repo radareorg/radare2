@@ -171,7 +171,7 @@ static int get_type(const char *l, const char **t) {
 
 static void init_file_tables(bool *done) {
 	// Initialize
-	if (done == NULL) {
+	if (!done) {
 		done = false;
 	}
 
