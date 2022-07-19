@@ -45,7 +45,6 @@
 
 #ifndef COMPILE_ONLY
 void file_mdump(struct r_magic *m) {
-	static R_TH_LOCAL const char optyp[] = { FILE_OPS };
 	char pp[ASCTIME_BUF_MAXLEN];
 
 	(void) eprintf ("[%u", m->lineno);
@@ -59,8 +58,8 @@ void file_mdump(struct r_magic *m) {
 		if (m->in_op & FILE_OPINVERSE)
 			(void) fputc('~', stderr);
 		(void) eprintf ("%c%u),",
-			       ((m->in_op & FILE_OPS_MASK) < SZOF(optyp)) ?
-					optyp[m->in_op & FILE_OPS_MASK] : '?',
+			       ((m->in_op & FILE_OPS_MASK) < SZOF(FILE_OPS)) ?
+					FILE_OPS[m->in_op & FILE_OPS_MASK] : '?',
 				m->in_offset);
 	}
 	(void) eprintf (" %s%s", (m->flag & UNSIGNED) ? "u" : "",
@@ -88,8 +87,8 @@ void file_mdump(struct r_magic *m) {
 			(void) eprintf ("/%u", m->str_range);
 		}
 	} else {
-		if ((m->mask_op & FILE_OPS_MASK) < SZOF(optyp)) {
-			(void) fputc (optyp[m->mask_op & FILE_OPS_MASK], stderr);
+		if ((m->mask_op & FILE_OPS_MASK) < SZOF(FILE_OPS)) {
+			(void) fputc (FILE_OPS[m->mask_op & FILE_OPS_MASK], stderr);
 		} else {
 			(void) fputc ('?', stderr);
 		}
