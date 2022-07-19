@@ -1,3 +1,4 @@
+#include <r_th.h>
 #include <r_skiplist.h>
 #include "minunit.h"
 
@@ -136,6 +137,33 @@ bool test_delete(void) {
 	mu_end;
 }
 
+// #define MY_NINS 0xfffff
+#define MY_NINS 123
+static RThreadFunctionRet bench_skiplist(struct r_th_t *user) {
+	RSkipList *list = r_skiplist_new (NULL, (RListComparator)cmp_int);
+	int i;
+	for (i = 0; i< MY_NINS; i++) {
+		r_skiplist_insert (list, (void *)(intptr_t)(i * (i + 3)));
+	}
+	r_skiplist_free (list);
+	return R_TH_STOP;
+}
+
+bool test_bench(void) {
+#define R2R_NTH 32
+	RThread *th[R2R_NTH];
+	int i;
+	for (i = 0; i < R2R_NTH; i++) {
+		th[i] = r_th_new (bench_skiplist, NULL, 0);
+		r_th_start (th[i], false);
+	}
+	for (i = 0; i < R2R_NTH; i++) {
+		r_th_wait (th[i]);
+		r_th_free (th[i]);
+	}
+	mu_end;
+}
+
 bool test_join(void) {
 	RSkipList *l1 = r_skiplist_new (NULL, (RListComparator)cmp_int);
 	r_skiplist_insert (l1, (void *)(intptr_t)3);
@@ -168,6 +196,7 @@ int all_tests() {
 	mu_run_test(test_purge);
 	mu_run_test(test_delete);
 	mu_run_test(test_join);
+	mu_run_test(test_bench);
 	return tests_passed != tests_run;
 }
 
