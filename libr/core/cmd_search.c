@@ -10,7 +10,7 @@
 
 static int cmd_search(void *data, const char *input);
 
-#define USE_EMULATION 0
+#define USE_EMULATION 1
 
 #define AES_SEARCH_LENGTH 40
 #define PRIVATE_KEY_SEARCH_LENGTH 11
@@ -1928,7 +1928,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 			if (r_anal_op_nonlinear (aop.type)) {	// skip the instr
 				r_reg_set_value (core->dbg->reg, r, curpc + 1);
 			} else {	// step instr
-				r_core_esil_step (core, UT64_MAX, NULL, NULL);
+				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			}
 		}
 	}
@@ -1976,7 +1976,9 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		return;
 	}
 	ut64 oldoff = core->offset;
+#if !USE_EMULATION
 	int syscallNumber = 0;
+#endif
 	r_cons_break_push (NULL, NULL);
 	// XXX: the syscall register depends on arcm
 	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
@@ -2023,6 +2025,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_ESIL);
 			curpos = idx++ % (MAXINSTR + 1);
 			previnstr[curpos] = ret; // This array holds prev n instr size + cur instr size
+#if !USE_EMULATION
 			if (aop.type == R_ANAL_OP_TYPE_MOV) {
 				const char *es = R_STRBUF_SAFEGET (&aop.esil);
 				if (strstr (es, esp)) {
@@ -2035,6 +2038,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 					}
 				}
 			}
+#endif
 			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
 				int scVector = -1; // int 0x80, svc 0x70, ...
 				int scNumber = 0; // r0/eax/...
@@ -2071,7 +2075,9 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 					r_anal_op_fini (&aop);
 					break;
 				}
+#if !USE_EMULATION
 				syscallNumber = 0;
+#endif
 			}
 			int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
 			if (inc < 0) {
