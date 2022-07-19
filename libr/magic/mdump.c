@@ -47,7 +47,6 @@
 void file_mdump(struct r_magic *m) {
 	static R_TH_LOCAL const char optyp[] = { FILE_OPS };
 	char pp[ASCTIME_BUF_MAXLEN];
-	int daylight = 0;
 
 	(void) eprintf ("[%u", m->lineno);
 	(void) eprintf ("%.*s %u", m->cont_level & 7, ">>>>>>>>", m->offset);
@@ -130,26 +129,26 @@ void file_mdump(struct r_magic *m) {
 		case FILE_BEDATE:
 		case FILE_MEDATE:
 			(void)eprintf ("%s,",
-			    file_fmttime (m->value.l, 1, pp, &daylight));
+			    file_fmttime (m->value.l, 1, pp));
 			break;
 		case FILE_LDATE:
 		case FILE_LELDATE:
 		case FILE_BELDATE:
 		case FILE_MELDATE:
 			(void)eprintf ("%s,",
-			    file_fmttime (m->value.l, 0, pp, &daylight));
+			    file_fmttime (m->value.l, 0, pp));
 			break;
 		case FILE_QDATE:
 		case FILE_LEQDATE:
 		case FILE_BEQDATE:
 			(void)eprintf ("%s,",
-			    file_fmttime ((ut32)m->value.q, 1, pp, &daylight));
+			    file_fmttime ((ut32)m->value.q, 1, pp));
 			break;
 		case FILE_QLDATE:
 		case FILE_LEQLDATE:
 		case FILE_BEQLDATE:
 			(void)eprintf ("%s,",
-			    file_fmttime ((ut32)m->value.q, 0, pp, &daylight));
+			    file_fmttime ((ut32)m->value.q, 0, pp));
 			break;
 		case FILE_FLOAT:
 		case FILE_BEFLOAT:
