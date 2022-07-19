@@ -44,8 +44,8 @@
 #define SZOF(a)	(sizeof(a) / sizeof(a[0]))
 
 #ifndef COMPILE_ONLY
-void file_mdump(struct r_magic *m) {
-	static R_TH_LOCAL const char optyp[] = { FILE_OPS };
+void file_mdump(struct r_magic *m, const char *optyp) {
+	optyp = { FILE_OPS };
 	char pp[ASCTIME_BUF_MAXLEN];
 
 	(void) eprintf ("[%u", m->lineno);
