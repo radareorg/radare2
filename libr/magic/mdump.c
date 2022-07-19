@@ -211,7 +211,7 @@ const char *file_fmttime(ut32 v, int local, char *pp, int *daylight) {
 		}
 #endif /* HAVE_TM_ISDST */
 #endif /* HAVE_DAYLIGHT */
-		if (&daylight) {
+		if (*daylight) {
 			t += 3600;
 		}
 #if __MINGW32__
