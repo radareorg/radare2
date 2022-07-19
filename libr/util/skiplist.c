@@ -1,4 +1,4 @@
-// (c) 2016 Jeffrey Crowell, Riccardo Schirone(ret2libc)
+// (c) 2016 Jeffrey Crowell, Riccardo Schirone(ret2libc), pancake
 // BSD 3 Clause License
 // radare2
 
@@ -152,8 +152,7 @@ R_API void r_skiplist_free(RSkipList *list) {
 	free (list);
 }
 
-// Inserts an element to the skiplist, and returns a pointer to the element's
-// node.
+// Inserts an element to the skiplist, and returns a pointer to the element's node.
 R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 	RSkipListNode *update[SKIPLIST_MAX_DEPTH + 1];
 	RSkipListNode *x;
@@ -167,8 +166,10 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 	}
 
 	// randomly choose the number of levels the new node will be put in
-	for (x_level = 0; rand () < RAND_MAX / 2 && x_level < SKIPLIST_MAX_DEPTH; x_level++) {
-		;
+	ut32 ptr = (ut32)((size_t)data);
+	ut32 rand_res = (ptr % 251) ^ (ptr % 65521) ^ (ptr % 4294967291) ^ ptr;
+	for (x_level = 0; (rand_res & 1) && (x_level < SKIPLIST_MAX_DEPTH); x_level++) {
+		rand_res >>= 1;
 	}
 
 	// update the `update` array with default values when the current node
