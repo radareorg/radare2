@@ -195,7 +195,6 @@ const char *file_fmttime(ut32 v, int local, char *pp) {
 	if (local) {
 		r_ctime_r (&t, pp);
 	} else {
-
 #if __MINGW32__
 		// nothing
 #else
