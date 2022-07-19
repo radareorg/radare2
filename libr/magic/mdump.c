@@ -190,30 +190,13 @@ void file_magwarn(struct r_magic_set *ms, const char *f, ...) {
 	(void) fputc('\n', stderr);
 }
 
-const char *file_fmttime(ut32 v, int local, char *pp, int *daylight) {
+const char *file_fmttime(ut32 v, int local, char *pp) {
 	time_t t = (time_t)v;
 
 	if (local) {
 		r_ctime_r (&t, pp);
 	} else {
-#ifndef HAVE_DAYLIGHT
-		daylight = 0;
-#ifdef HAVE_TM_ISDST
-		static R_TH_LOCAL time_t now = (time_t)0;
 
-		if (now == (time_t)0) {
-			struct tm *tm1;
-			(void)time (&now);
-			tm1 = localtime (&now);
-			if (!tm1)
-				return "*Invalid time*";
-			daylight = tm1->tm_isdst;
-		}
-#endif /* HAVE_TM_ISDST */
-#endif /* HAVE_DAYLIGHT */
-		if (*daylight) {
-			t += 3600;
-		}
 #if __MINGW32__
 		// nothing
 #else
