@@ -3596,7 +3596,7 @@ static bool __stepOut(RAnalEsil *esil, const char *cmd, bool *inCmdStep) {
 		esil->in_cmd_step = false;
 	}
 #else
-	if (cmd && esil && esil->cmd && !inCmdStep) {
+	if (cmd && esil && esil->cmd && !*inCmdStep) {
 		*inCmdStep = true;
 		if (esil->cmd (esil, cmd, esil->address, 0)) {
 			*inCmdStep = false;
