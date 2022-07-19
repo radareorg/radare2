@@ -1,3 +1,4 @@
+#if 0
 /*
   zip_source_deflate.c -- deflate (de)compressoin routines
   Copyright (C) 2009 Dieter Baron and Thomas Klausner
@@ -390,3 +391,4 @@ deflate_free(struct deflate *ctx)
     /* XXX: deflateEnd if close was not called */
     free(ctx);
 }
+#endif
