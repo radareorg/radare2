@@ -47,7 +47,6 @@
 void file_mdump(struct r_magic *m) {
 	static R_TH_LOCAL const char optyp[] = { FILE_OPS };
 	char pp[ASCTIME_BUF_MAXLEN];
-	time_t now = (time_t)0;
 
 	(void) eprintf ("[%u", m->lineno);
 	(void) eprintf ("%.*s %u", m->cont_level & 7, ">>>>>>>>", m->offset);
@@ -130,26 +129,26 @@ void file_mdump(struct r_magic *m) {
 		case FILE_BEDATE:
 		case FILE_MEDATE:
 			(void)eprintf ("%s,",
-			    file_fmttime (m->value.l, 1, pp, &now));
+			    file_fmttime (m->value.l, 1, pp));
 			break;
 		case FILE_LDATE:
 		case FILE_LELDATE:
 		case FILE_BELDATE:
 		case FILE_MELDATE:
 			(void)eprintf ("%s,",
-			    file_fmttime (m->value.l, 0, pp, &now));
+			    file_fmttime (m->value.l, 0, pp));
 			break;
 		case FILE_QDATE:
 		case FILE_LEQDATE:
 		case FILE_BEQDATE:
 			(void)eprintf ("%s,",
-			    file_fmttime ((ut32)m->value.q, 1, pp, &now));
+			    file_fmttime ((ut32)m->value.q, 1, pp));
 			break;
 		case FILE_QLDATE:
 		case FILE_LEQLDATE:
 		case FILE_BEQLDATE:
 			(void)eprintf ("%s,",
-			    file_fmttime ((ut32)m->value.q, 0, pp, &now));
+			    file_fmttime ((ut32)m->value.q, 0, pp));
 			break;
 		case FILE_FLOAT:
 		case FILE_BEFLOAT:
@@ -190,7 +189,7 @@ void file_magwarn(struct r_magic_set *ms, const char *f, ...) {
 	(void) fputc('\n', stderr);
 }
 
-const char *file_fmttime(ut32 v, int local, char *pp, time_t *now) {
+const char *file_fmttime(ut32 v, int local, char *pp) {
 	time_t t = (time_t)v;
 
 	if (local) {
@@ -198,18 +197,6 @@ const char *file_fmttime(ut32 v, int local, char *pp, time_t *now) {
 	} else {
 #ifndef HAVE_DAYLIGHT
 		static R_TH_LOCAL int daylight = 0;
-#ifdef HAVE_TM_ISDST
-		now = (time_t)0;
-
-		if (now == (time_t)0) {
-			struct tm *tm1;
-			(void)time (&now);
-			tm1 = localtime (&now);
-			if (!tm1)
-				return "*Invalid time*";
-			daylight = tm1->tm_isdst;
-		}
-#endif /* HAVE_TM_ISDST */
 #endif /* HAVE_DAYLIGHT */
 		if (daylight) {
 			t += 3600;
