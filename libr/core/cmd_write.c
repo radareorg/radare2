@@ -1564,6 +1564,7 @@ static int cmd_wt(void *data, const char *input) {
 		if (!filename || !*filename) {
 			const char* prefix = r_config_get (core->config, "cfg.prefixdump");
 			snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
+			free ((char *)filename);
 			filename = _fn;
 		}
 
@@ -1783,6 +1784,8 @@ static int cmd_wa(void *data, const char *input) {
 repeat:
 				if (!r_anal_op (core->anal, &analop, at, core->block + delta, core->blocksize - delta, R_ANAL_OP_MASK_BASIC)) {
 					R_LOG_DEBUG ("Invalid instruction?");
+					r_anal_op_fini (&analop);
+					r_asm_code_free (acode);
 					break;
 				}
 				if (delta < acode->len) {

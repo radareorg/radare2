@@ -107,10 +107,13 @@ static RList *entries(RBinFile *bf) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (!ptr || !ret || !r_list_append (ret, ptr)) {
 		r_list_free (ret);
+		ret = NULL;
 		R_FREE (ptr);
 	}
-	ptr->paddr = addr;
-	ptr->vaddr = addr;
+	if (ptr) {
+		ptr->paddr = addr;
+		ptr->vaddr = addr;
+	}
 	return ret;
 }
 

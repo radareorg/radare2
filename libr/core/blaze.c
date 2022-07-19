@@ -201,7 +201,7 @@ static void printFunctionCommands(RCore *core, fcn_t* fcn, const char *name) {
 }
 
 static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
-	r_return_if_fail (core && fcn && name);
+	r_return_if_fail (core && fcn);
 
 	RListIter *fcn_iter;
 	bb_t *cur = NULL;
