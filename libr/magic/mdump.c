@@ -194,12 +194,6 @@ const char *file_fmttime(ut32 v, int local, char *pp) {
 	if (local) {
 		r_ctime_r (&t, pp);
 	} else {
-#ifndef HAVE_DAYLIGHT
-		static R_TH_LOCAL int daylight = 0;
-#endif /* HAVE_DAYLIGHT */
-		if (daylight) {
-			t += 3600;
-		}
 #if __MINGW32__
 		// nothing
 #else
