@@ -15,6 +15,7 @@ static char *getFortuneFile(RCore *core, const char *type) {
 	if (path && r_file_exists (path)) {
 		return path;
 	}
+	free (path);
 	return NULL;
 }
 

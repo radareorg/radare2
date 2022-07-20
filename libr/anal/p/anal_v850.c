@@ -558,7 +558,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	case R_ANAL_OP_TYPE_POP:
 		// if (inst.op->memop == 3) { 
-		if (strstr (inst.op->esil, "#2")) {
+		if (inst.op && strstr (inst.op->esil, "#2")) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		}
 		break;

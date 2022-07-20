@@ -55,7 +55,6 @@ Bindiff two files with '$ radiff2 /bin/true /bin/false'
 Execute commands on a temporary offset by appending '@ offset' to your command.
 Temporally drop the verbosity prefixing the commands with ':'
 Change the graph block definition with graph.callblocks, graph.jmpblocks, graph.flagblocks
-Use scr.accel to browse the file faster!
 Use the 'id' command to see the source line related to the current seek
 Analyze socket connections with the socket plugin: 'radare2 socket://www.foo.com:80'. Use 'w' to send data
 Setup dbg.fpregs to true to visualize the fpu registers in the debugger view.

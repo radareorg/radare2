@@ -732,7 +732,8 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 	(op)->dst = r_anal_value_new (); \
 	(op)->dst->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
 
-#define INSIDE_M(k) ((k) >= 0 && (k) <= 16)
+// (k) >= 0 must also be true, but the value is already unsigned
+#define INSIDE_M(k) ((k) < 16)
 
 /*
 static bool bpf_int_exit(RAnalEsil *esil, ut32 interrupt, void *user);
