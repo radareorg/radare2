@@ -225,20 +225,21 @@ static RList *sections(RBinFile *bf) {
 			// process each symbols with their datas
 			sym = 0;
 			for (ut16 y = 0 ; y < lon / sizeof (S390_Header_CESD_DATA) ; y++) {
+				ut8 cad[9];
+				ut32 a, b;
+
 				left = r_buf_read_at (bf->buf, x, (ut8*)&hdr20d, sizeof (S390_Header_CESD_DATA));
 				if (left < sizeof (S390_Header_CESD_DATA)) {
 					return NULL;
 				}
-				ut8 cad[8];
 				r_magic_from_ebcdic (hdr20d.Symbol, sizeof (hdr20d.Symbol), cad);
-				ut32 a;
-				ut32 b;
+				cad[8] = '\0';
 				a = (hdr20d.Address[0] * 65536) + (hdr20d.Address[1] * 256) + (hdr20d.Address[2]);
 				b = (hdr20d.ID_or_Length[0] * 65536) + (hdr20d.ID_or_Length[1] * 256) + (hdr20d.ID_or_Length[2]);
 				sym++;
 				r_strbuf_appendf (su->sb, "       %02d   %s   0x%02x   0x%04x   (%5u) 0x%04x\n",
-						sym, r_str_ndup ((char *) cad, 8), hdr20d.Type, a, b, b);
-				add_symbol (su->symbols, r_str_ndup ((char *)cad, 8), a);
+						sym, (char *)cad, hdr20d.Type, a, b, b);
+				add_symbol (su->symbols, (char *)cad, a);
 				x += sizeof (S390_Header_CESD_DATA);
 			}
 			left = r_buf_read_at (bf->buf, x, gbuf, sizeof (gbuf));
