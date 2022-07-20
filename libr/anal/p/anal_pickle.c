@@ -380,11 +380,11 @@ static int archinfo(RAnal *anal, int q) {
 }
 
 RAnalPlugin r_anal_plugin_pickle = {
-	.name = "pypm",
+	.name = "pickle",
 	.desc = "Python Pickle Machine Disassembler",
 	.esil = false,
 	.license = "BSD",
-	.arch = "pypm",
+	.arch = "pickle",
 	.bits = 8, // not real sure
 	.op = &analop,
 	// .preludes = anal_preludes,

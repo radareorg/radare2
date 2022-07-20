@@ -1,7 +1,7 @@
 NAME=Basic op types working, even at EOF
 FILE=malloc://73
 CMDS=<<EOF
-e asm.arch=pypm
+e asm.arch=pickle
 wx+284b424d42414a44434241954746454443424100550055044142434442040000
 wx+00414243448d04000000000000004142434446332e344c0a63414243440a4546
 wx+47480a550441424344
@@ -27,7 +27,7 @@ RUN
 NAME=Invalid/filtered string ops
 FILE=malloc://16
 CMDS=<<EOF
-e asm.arch=pypm
+e asm.arch=pickle
 wx+585804000000414200436341000a4344
 s 0
 pid 8
