@@ -111,7 +111,10 @@ static inline int handle_float(RAnalOp *op, const char *name, int sz, const ut8 
 
 static inline char *get_line(const ut8 *buf, int len) {
 	// TODO: find end of large strings through RAnal->iob
-	char *str = strndup ((char *)buf, len);
+	char *str = (char *)malloc (len + 1);
+	strncpy (str, (char *)buf, len);
+	str[len + 1] = '\0';
+
 	if (str) {
 		char *n = strchr (str, '\n');
 		if (n) {
