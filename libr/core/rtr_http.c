@@ -546,7 +546,9 @@ the_end:
 	return ret;
 }
 
-#if 0
+#define USE_HTTP_THREADS 1
+
+#if USE_HTTP_THREADS
 static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 	if (!th) {
 		return false;
@@ -590,12 +592,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 		return 1;
 	}
 	if (launch == '&') {
-		while (*path == '&') {
-			path++;
-		}
-		return r_core_cmdf (core, "& =h%s", path);
-	}
-#if 0
+#if USE_HTTP_THREADS
 		if (httpthread) {
 			eprintf ("HTTP Thread is already running\n");
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
@@ -613,12 +610,17 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 			if (httpthread) {
 				r_th_setname (httpthread, "httpthread");
 			}
-			r_th_start (httpthread, true);
+			r_th_start (httpthread, false);
 			eprintf ("Background http server started.\n");
 		}
 		return 0;
-	}
+#else
+		while (*path == '&') {
+			path++;
+		}
+		return r_core_cmdf (core, "& =h%s", path);
 #endif
+	}
 	do {
 		ret = r_core_rtr_http_run (core, launch, browse, path);
 	} while (ret == -2);
