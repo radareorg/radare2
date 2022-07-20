@@ -142,7 +142,7 @@ bool test_delete(void) {
 static RThreadFunctionRet bench_skiplist(struct r_th_t *user) {
 	RSkipList *list = r_skiplist_new (NULL, (RListComparator)cmp_int);
 	int i;
-	for (i = 0; i< MY_NINS; i++) {
+	for (i = 0; i < MY_NINS; i++) {
 		r_skiplist_insert (list, (void *)(intptr_t)(i * (i + 3)));
 	}
 	r_skiplist_free (list);
@@ -156,6 +156,7 @@ bool test_bench(void) {
 	for (i = 0; i < R2R_NTH; i++) {
 		th[i] = r_th_new (bench_skiplist, NULL, 0);
 		r_th_start (th[i], false);
+		// r_th_start (th[i], true);
 	}
 	for (i = 0; i < R2R_NTH; i++) {
 		r_th_wait (th[i]);

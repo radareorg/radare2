@@ -35,12 +35,13 @@ static void *_r_th_launcher(void *_th) {
 		r_th_set_running (th, true);
 		ret = th->fun (th);
 		if (ret < 0) {
-			// th has been freed
+			th->ready = false;
 			r_th_lock_leave (th->lock);
 			return 0;
 		}
 		r_th_set_running (th, false);
 	} while (ret);
+	th->ready = false;
 	r_th_lock_leave (th->lock);
 #if HAVE_PTHREAD
 	pthread_exit (&ret);
@@ -246,9 +247,12 @@ R_API bool r_th_kill(RThread *th, bool force) {
 	return 0;
 }
 
+// enable should be bool and th->ready must be protected with locks
 R_API bool r_th_start(RThread *th, int enable) {
 	bool ret = true;
+	enable = false; /// R2_580. remove the enable bit imho
 	if (enable) {
+		R_LOG_WARN ("r_th_start.enable should be removed");
 		if (!r_th_is_running (th)) {
 			// start thread
 			while (!th->ready) {
