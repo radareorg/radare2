@@ -3281,16 +3281,13 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 						int remaining = size - delta;
 						remaining = R_MAX (remaining, 0);
 						if (remaining > (len - delta)) {
-							if (size > delta) {
-								size_t calloc_size = size - delta;
-								if (idx < calloc_size) {
-									ut8 *b = calloc (1, size - delta);
-									if (b) {
-										memcpy (b, buf, len);
-										r_print_hexdump (core->print, ds->at,
-												b + idx, calloc_size - idx, 16, 1, 1);
-										free (b);
-									}
+							size_t calloc_size = R_MIN (len, size - delta);
+							if (idx < calloc_size) {
+								ut8 *b = r_mem_dup (buf, calloc_size);
+								if (b) {
+									r_print_hexdump (core->print, ds->at,
+											b + idx, calloc_size - idx, 16, 1, 1);
+									free (b);
 								}
 							}
 						} else {
