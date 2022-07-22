@@ -1441,8 +1441,8 @@ static int cmd_wt(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *str = strdup (input);
 	char *ostr = str;
-	char *hfilename = NULL;
-	const char *filename = "";
+	char *filename = NULL;
+	bool free_filename = false;
 	char _fn[32];
 	_fn[0] = 0;
 	char *size_sep;
@@ -1524,19 +1524,20 @@ static int cmd_wt(void *data, const char *input) {
 				}
 				str++;
 				filename = r_str_newf ("%s-0x%08"PFMT64x, prefix, core->offset);
+				free_filename = true;
 			} else {
 				if (*str) {
 					if (str[1] == '?') {
 						r_core_cmd_help (core, help_msg_wt);
 						goto ret;
 					}
-					filename = r_str_trim_head_ro (str);
+					filename = (char *)r_str_trim_head_ro (str);
 					if (r_str_startswith (filename, "base64:")) {
 						const char *encoded = filename + 7;
 						char *decoded = (char *)sdb_decode (encoded, NULL);
 						if (decoded) {
-							hfilename = decoded;
 							filename = decoded;
+							free_filename = true;
 						}
 					}
 				} else {
@@ -1564,7 +1565,6 @@ static int cmd_wt(void *data, const char *input) {
 		if (!filename || !*filename) {
 			const char* prefix = r_config_get (core->config, "cfg.prefixdump");
 			snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
-			free ((char *)filename);
 			filename = _fn;
 		}
 
@@ -1635,13 +1635,15 @@ static int cmd_wt(void *data, const char *input) {
 			}
 		}
 		if (sz >= 0) {
-			eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
+			eprintf ("Dumped %" PFMT64d " bytes from 0x%08" PFMT64x" into %s\n",
 					sz, poff, filename);
 		}
 	}
 ret:
 	free (ostr);
-	free (hfilename);
+	if (free_filename) {
+		free (filename);
+	}
 	return 0;
 }
 
