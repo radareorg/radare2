@@ -599,7 +599,7 @@ dotherax:
 		r_strbuf_appendf (sb, "unsigned int buf_len = %d;\n", len);
 		char *s = r_strbuf_drain (sb);
 		if (s) {
-			printf ("%s\n", s);
+			printf ("%s", s);
 			free (s);
 			return true;
 		}
