@@ -1437,7 +1437,7 @@ static int cmd_wt(RCore *core, const char *input) {
 	R_BORROW const char *prefix = r_config_get (core->config, "cfg.prefixdump");
 	R_BORROW char *filename = NULL;
 	char default_filename_sep = '.';
-	char fn_local[32]; // for using sprintf instead of str_newf; doesnt need free()
+	char fn_local[32]; // for using snprintf instead of str_newf; doesnt need free()
 	int ret = 0;
 
 	bool append = false;
@@ -1574,17 +1574,24 @@ static int cmd_wt(RCore *core, const char *input) {
 
 				if (r_str_startswith (filename, "base64:")) {
 					const char *encoded = filename + 7;
-					int len = r_base64_decode ((ut8 *)fn_local, encoded, sizeof (fn_local));
-					// prevent string overrun
+					ut8 *decoded = r_base64_decode_dyn (encoded, -1);
+
+					if (!decoded) {
+						R_LOG_WARN ("Couldn't decode b64 filename");
+						ret = 1;
+						goto leave;
+					}
+
+					strncpy (fn_local, decoded, 32);
 					fn_local[31] = 0;
 
-					if (len < 32) {
-						filename = fn_local;
-					} else {
-						R_LOG_WARN ("Couldn't decode b64 filename");
-						R_LOG_WARN ("Ensure it correctly decodes to less than 32 characters");
-						filename = "";
+					filename = fn_local;
+
+					if (strlen (decoded) > 31) {
+						R_LOG_WARN ("Decoded filename was truncated to 31 characters");
 					}
+
+					free (decoded);
 				}
 				break;
 			}
@@ -1648,6 +1655,11 @@ static int cmd_wt(RCore *core, const char *input) {
 		if (free_buf) {
 			free (buf);
 		}
+
+		if (!ret) {
+			R_LOG_INFO ("Dumped %" PFMT64d " bytes from 0x%08" PFMT64x" into $%s",
+					sz, poff, filename);
+		}
 		goto leave;
 	}
 
@@ -1660,7 +1672,8 @@ static int cmd_wt(RCore *core, const char *input) {
 
 	// dump functions return bool; true on success
 	if (ret) {
-		R_LOG_INFO ("Dumped %" PFMT64d " bytes from 0x%08" PFMT64x" into %s", sz, poff, filename);
+		R_LOG_INFO ("Dumped %" PFMT64d " bytes from 0x%08" PFMT64x" into %s",
+				sz, poff, filename);
 		ret = 0;
 	}
 
