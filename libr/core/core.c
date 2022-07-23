@@ -3283,6 +3283,9 @@ R_API void r_core_fini(RCore *c) {
 	r_core_task_scheduler_fini (&c->tasks);
 	c->rcmd = r_cmd_free (c->rcmd);
 	r_list_free (c->cmd_descriptors);
+	r_unref (c->print->config);
+	r_unref (c->anal->reg->config);
+	r_unref (c->anal->config);
 	r_anal_free (c->anal);
 	r_asm_free (c->rasm);
 	c->rasm = NULL;
