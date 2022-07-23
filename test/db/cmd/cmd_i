@@ -4348,6 +4348,8 @@ EOF
 EXPECT_ERR=<<EOF
 DEBUG: Dynamic tag 16 not handled
 Cannot determine entrypoint, using 0x00000d28.
+DEBUG: (cannot find opening [) in (48])
+DEBUG: (cannot find opening [) in (56])
 EOF
 RUN
 
