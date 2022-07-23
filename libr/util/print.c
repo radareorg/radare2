@@ -666,6 +666,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
+	bool color = (p->flags & R_PRINT_FLAGS_COLOR);
 	int col = 0;
 	i = 0;
 	for (; !r_print_is_interrupted () && i < len; i++) {
@@ -691,7 +692,11 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 		} else {
 			if (b == '\\') {
 				p->cb_printf ("\\\\");
-			} else if ((b == '\n' && !esc_nl) || IS_PRINTABLE (b)) {
+			} else if ((b == '\n' && !esc_nl)) {
+				p->cb_printf ("\n");
+				if (color)
+					p->cb_printf (R_CONS_CLEAR_FROM_CURSOR_TO_EOL);
+			} else if (IS_PRINTABLE (b)) {
 				p->cb_printf ("%c", b);
 			} else {
 				p->cb_printf ("\\x%02x", b);
