@@ -160,19 +160,22 @@ static void error(RNum *num, const char *err_str) {
 static ut64 r_num_from_binary(RNum *num, const char *str) {
 	int i, j;
 	ut64 ret = 0;
-	for (j = 0, i = strlen (str) - 1; i > 0; i--, j++) {
-		if (str[i] == '_') {
+	for (j = 0, i = strlen (str) - 1; i >= 0; i--, j++) {
+		switch (str[i]) {
+		case '_':
 			j--;
-		} else if (str[i] == '1') {
+			break;
+		case '1':
 			ret |= (ut64) (1ULL << j);
-		} else if (str[i] == '0') {
-			// do nothing
-		} else {
+			break;
+		case '0':
+			break;
+		default:
 			error (num, "binary numbers must contain only 0 and 1");
 			return 0;
 		}
 	}
-	sscanf (str, "0x%"PFMT64x, &ret);
+//	sscanf (str, "0x%"PFMT64x, &ret);
 	return ret;
 }
 
@@ -254,6 +257,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		}
 	}
 	if (str[0] == '0' && str[1] == 'b') { // XXX this is wrong and causes bugs
+eprintf ("J (%s)\n", str + 2);
 		ret = r_num_from_binary (num, str + 2);
 	} else if (str[0] == '\'') {
 		ret = str[1] & 0xff;
@@ -420,7 +424,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			if (errno == ERANGE) {
 				error (num, "number won't fit into 64 bits");
 			}
-			if (!IS_DIGIT (*str) || (*endptr && *endptr != lch)) {
+			if (!IS_DIGIT (*str) && (*endptr && *endptr != lch)) {
 				error (num, "unknown symbol");
 			}
 			break;

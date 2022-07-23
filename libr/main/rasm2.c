@@ -471,9 +471,9 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 	}
 	ut8 bbuf[8] = {0};
 	int blen = is_binary (buf);
-	if (blen) {
-		char *nstr = r_str_newf ("0b%s", buf);
-		if (nstr[strlen (nstr)-1] == 'b') {
+	if (blen > 0) {
+		char *nstr = r_str_newf ("%s%s", r_str_startswith (buf, "0b")? "": "0b", buf);
+		if (nstr[strlen (nstr) - 1] == 'b') {
 			nstr[strlen (nstr)-1] = 0;
 		}
 		ut64 n = r_num_get (NULL, nstr);
