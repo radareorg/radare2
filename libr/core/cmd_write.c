@@ -1437,21 +1437,21 @@ static int cmd_wz(RCore *core, const char *input) {
 	return 0;
 }
 
-static int cmd_wt(void *data, const char *input) {
+static int cmd_wt(void *data, const char *input_) {
 	RCore *core = (RCore *)data;
-	char *str = strdup (input);
-	char *ostr = str;
+	char *input = strdup (input_);
+	char *original_input = input; // to be freed later
 	char *filename = NULL;
 	bool free_filename = false;
 	char _fn[32];
 	_fn[0] = 0;
 	char *size_sep;
-	if (*str == 's') { // "wts"
-		if (str[1] == ' ') {
+	if (*input == 's') { // "wts"
+		if (input[1] == ' ') {
 			st64 sz = r_io_size (core->io);
 			if (sz > 0) {
 				ut64 addr = 0;
-				char *host = str + 2;
+				char *host = input + 2;
 				char *port = strchr (host, ':');
 				if (port) {
 					*port ++= 0;
@@ -1489,21 +1489,21 @@ static int cmd_wt(void *data, const char *input) {
 		} else {
 			r_core_cmd_help (core, help_msg_wts);
 		}
-	} else if (*str == '?' || *str == '\0') {
+	} else if (*input == '?' || *input == '\0') {
 		r_core_cmd_help (core, help_msg_wt);
 	} else {
 		bool append = false;
 		bool toend = false;
 		st64 sz = core->blocksize;
 		ut64 poff = core->offset;
-		if (*str == 'f') { // "wtf"
-			str++;
-			if (*str == '?') {
+		if (*input == 'f') { // "wtf"
+			input++;
+			if (*input == '?') {
 				r_core_cmd_help (core, help_msg_wt);
 				goto ret;
 			}
-			if (*str == '!') {
-				if (str[1] == '?') {
+			if (*input == '!') {
+				if (input[1] == '?') {
 					r_core_cmd_help (core, help_msg_wt);
 					goto ret;
 				}
@@ -1511,27 +1511,27 @@ static int cmd_wt(void *data, const char *input) {
 				toend = true;
 				//use physical address
 				poff = map ? poff - r_io_map_begin (map) + map->delta : poff;
-				str++;
+				input++;
 			}
-			if (*str == 'f') { // "wtff"
-				if (str[1] == '?') {
+			if (*input == 'f') { // "wtff"
+				if (input[1] == '?') {
 					r_core_cmd_help (core, help_msg_wt);
 					goto ret;
 				}
-				const char *prefix = r_str_trim_head_ro (str + 2);
+				const char *prefix = r_str_trim_head_ro (input + 2);
 				if (!*prefix) {
 					prefix = "dump";
 				}
-				str++;
+				input++;
 				filename = r_str_newf ("%s-0x%08"PFMT64x, prefix, core->offset);
 				free_filename = true;
 			} else {
-				if (*str) {
-					if (str[1] == '?') {
+				if (*input) {
+					if (input[1] == '?') {
 						r_core_cmd_help (core, help_msg_wt);
 						goto ret;
 					}
-					filename = (char *)r_str_trim_head_ro (str);
+					filename = (char *)r_str_trim_head_ro (input);
 					if (r_str_startswith (filename, "base64:")) {
 						const char *encoded = filename + 7;
 						char *decoded = (char *)sdb_decode (encoded, NULL);
@@ -1544,24 +1544,25 @@ static int cmd_wt(void *data, const char *input) {
 					filename = "";
 				}
 			}
-		} else if (*str == 'a') { // "wta"
+		} else if (*input == 'a') { // "wta"
 			append = 1;
-			str++;
-			if (str[0] == ' ') {
-				filename = str + 1;
+			input++;
+			if (input[0] == ' ') {
+				filename = input + 1;
 			} else {
 				const char* prefix = r_config_get (core->config, "cfg.prefixdump");
 				snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
 				filename = _fn;
 			}
-		} else if (*str != ' ') {
+		} else if (*input != ' ') {
 			const char* prefix = r_config_get (core->config, "cfg.prefixdump");
 			snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
 			filename = _fn;
 		} else {
-			filename = str + 1;
+			filename = input + 1;
 		}
-		size_sep = *str? strchr (str + 1, ' ') : NULL;
+
+		size_sep = *input? strchr (input + 1, ' '): NULL;
 		if (!filename || !*filename) {
 			const char* prefix = r_config_get (core->config, "cfg.prefixdump");
 			snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
@@ -1640,7 +1641,7 @@ static int cmd_wt(void *data, const char *input) {
 		}
 	}
 ret:
-	free (ostr);
+	free (original_input);
 	if (free_filename) {
 		free (filename);
 	}
