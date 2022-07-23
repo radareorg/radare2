@@ -257,7 +257,6 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		}
 	}
 	if (str[0] == '0' && str[1] == 'b') { // XXX this is wrong and causes bugs
-eprintf ("J (%s)\n", str + 2);
 		ret = r_num_from_binary (num, str + 2);
 	} else if (str[0] == '\'') {
 		ret = str[1] & 0xff;
@@ -715,7 +714,7 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 		if (isxdigit ((ut8)hex[0])) {
 			n = r_num_math (num, p);
 		} else {
-			eprintf ("Invalid argument\n");
+			R_LOG_ERROR ("Invalid argument");
 			free (p);
 			return addr;
 		}
@@ -739,7 +738,7 @@ static ut64 r_num_tailff(RNum *num, const char *hex) {
 		if (isxdigit ((ut8)hex[0])) {
 			n = r_num_get (num, p);
 		} else {
-			eprintf ("Invalid argument\n");
+			R_LOG_ERROR ("Invalid argument");
 			free (p);
 			return UT64_MAX;
 		}
