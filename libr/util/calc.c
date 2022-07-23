@@ -346,14 +346,21 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 }
 			stringValueAppend(ch);
 			if (ch == '[') {
-				while (cin_get (num, nc, &ch) && ch!=']') {
+				while (cin_get (num, nc, &ch) && ch != ']') {
 					if (i > R_NUMCALC_STRSZ - 1) {
 						error (num, nc, "string too long");
 						return 0;
 					}
 					stringValueAppend(ch);
 				}
+				if (ch != ']') {
+					error (num, nc, "cannot find closing ]");
+					return 0;
+				}
 				stringValueAppend(ch);
+			} else if (ch == ']') {
+				error (num, nc, "cannot find opening [");
+				return 0;
 			} else {
 				while (cin_get (num, nc, &ch) && isvalidchar ((unsigned char)ch)) {
 					if (i >= R_NUMCALC_STRSZ) {
