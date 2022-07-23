@@ -205,7 +205,7 @@ s 0x100
 w6d ANqmyJXUINu0P3rTV/v+0dffk9F3VNMfk7DuNot7wItWZlTrOnTG7rRAwQs7v90SnnDjFsW3NVhnI47yn09+9bXS4PBGpt765qAGIV/jM/5TFxQYzklwNWz/KAtOpgADeODzvobSuWxyv43RosHP9djjDqYsftuZfQOky6mlzyGFwuAMlJl4BlgG2PrHp++fi/1Ft3wgUPkk9cXNmpTvH1bPK+topPHAqsm6cXGpEPynVbMjdQQcmfnhZ5N1VrLMJd63jYKoTSxyB53jsK3fVwKSeneWlxGPeHgi7s7VuvOzcYA1Gc1hi9T+boSrTdyt4FYkdu01BmatKFR7/Q5usA==
 wtff $d
 w0 256
-wff $d-0x00000100
+wff $d
 p8 256
 EOF
 EXPECT=<<EOF
