@@ -1513,19 +1513,14 @@ static int cmd_wt(void *data, const char *input_) {
 			r_socket_free (sock);
 			break;
 		}
-#if 0
 		case '?': // "wt?"
 		case '\0': // "wt"
 			  r_core_cmd_help (core, help_msg_wt);
 			  break;
-#endif
 	}
 
 	r_str_argv_free (argv);
 
-	if (*input == '?' || *input == '\0') {
-		r_core_cmd_help (core, help_msg_wt);
-	} else {
 		bool append = false;
 		bool toend = false;
 		st64 sz = core->blocksize;
