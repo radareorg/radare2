@@ -1446,50 +1446,84 @@ static int cmd_wt(void *data, const char *input_) {
 	char _fn[32];
 	_fn[0] = 0;
 	char *size_sep;
-	if (*input == 's') { // "wts"
-		if (input[1] == ' ') {
+
+	int argc;
+	char **argv = r_str_argv (input, &argc);
+
+	switch (*input) {
+		case 's': { // "wts"
+			ut64 addr = 0;
 			st64 sz = r_io_size (core->io);
-			if (sz > 0) {
-				ut64 addr = 0;
-				char *host = input + 2;
-				char *port = strchr (host, ':');
-				if (port) {
-					*port ++= 0;
-					char *space = strchr (port, ' ');
-					if (space) {
-						*space++ = 0;
-						sz = r_num_math (core->num, space);
-						addr = core->offset;
+			char *host_port;
+			R_BORROW char *host;
+			R_BORROW char *port;
+			ut8 *buf;
+			RSocket *sock;
+
+			if (argc < 2) {
+				// TODO wt? message needs updating
+				// TODO: need wts[?] in wt help? for recur. help
+				r_core_cmd_help (core, help_msg_wts);
+				break;
+			}
+
+			st64 sz = r_io_size (core->io);
+			if (sz <= 0) {
+				R_LOG_ERROR ("Unknown file size");
+				break;
+			}
+
+			host_port = strdup (argv[1]);
+
+			host = host_port;
+			port = strchr (host_port, ':');
+			if (!port) {
+				r_core_cmd_help (core, help_msg_wts);
+				free (host_port);
+				break;
+			}
+
+			*port++ = 0;
+
+			if (argc > 2) {
+				sz = r_num_math (core->num, argv[2]);
+				addr = core->offset;
+			}
+
+			buf = malloc (sz);
+			r_io_read_at (core->io, addr, buf, sz);
+
+			sock = r_socket_new (false);
+			if (r_socket_connect (sock, host, port, R_SOCKET_PROTO_TCP, 0)) {
+				ut64 sent = 0;
+				R_LOG_INFO ("Connection created. Sending data to TCP socket");
+				while (sent < sz) {
+					bool sockret = r_socket_write (sock, buf + sent, sz - sent);
+					if (!sockret) {
+						R_LOG_ERROR ("Socket write error");
+						break;
 					}
-					ut8 *buf = calloc (1, sz);
-					r_io_read_at (core->io, addr, buf, sz);
-					RSocket *s = r_socket_new (false);
-					if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 0)) {
-						int done = 0;
-						eprintf ("Transfering file to the end-point...\n");
-						while (done < sz) {
-							int rc = r_socket_write (s, buf + done, sz - done);
-							if (rc < 1) {
-								eprintf ("oops\n");
-								break;
-							}
-							done += rc;
-						}
-					} else {
-						eprintf ("Cannot connect\n");
-					}
-					r_socket_free (s);
-					free (buf);
-				} else {
-					r_core_cmd_help (core, help_msg_wts);
 				}
 			} else {
-				eprintf ("Unknown file size\n");
+				R_LOG_ERROR ("Connection to %s failed", host_port);
 			}
-		} else {
-			r_core_cmd_help (core, help_msg_wts);
+
+			free (host_port);
+			free (buf);
+			r_socket_free (sock);
+			break;
 		}
-	} else if (*input == '?' || *input == '\0') {
+#if 0
+		case '?': // "wt?"
+		case '\0': // "wt"
+			  r_core_cmd_help (core, help_msg_wt);
+			  break;
+#endif
+	}
+
+	r_str_argv_free (argv);
+
+	if (*input == '?' || *input == '\0') {
 		r_core_cmd_help (core, help_msg_wt);
 	} else {
 		bool append = false;
@@ -1562,12 +1596,13 @@ static int cmd_wt(void *data, const char *input_) {
 			filename = input + 1;
 		}
 
-		size_sep = *input? strchr (input + 1, ' '): NULL;
-		if (!filename || !*filename) {
+		if (R_STR_ISEMPTY (filename)) {
 			const char* prefix = r_config_get (core->config, "cfg.prefixdump");
 			snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
 			filename = _fn;
 		}
+
+		size_sep = *input? strchr (input + 1, ' '): NULL;
 
 		/* TODO: I think this logic can be cleaned up, size_sep looks tacked-on */
 		if (size_sep) {
