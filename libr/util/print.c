@@ -1849,8 +1849,6 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	}
 	cols /= 5;
 	for (i = 0; i < size; i++) {
-		ut8 next = (i + 1 < size)? arr[i + 1]: 0;
-		int base = 0, k = 0;
 		if (addr != UT64_MAX && step > 0) {
 			ut64 at = addr + (i * step);
 			if (show_offset) {
@@ -1871,34 +1869,8 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		} else {
 			p->cb_printf ("%s", v_line);
 		}
-		if (next < INC) {
-			base = 1;
-		}
-		if (next < arr[i]) {
-			if (arr[i] > INC) {
-				for (j = 0; j < next + base; j += INC) {
-					printHistBlock (p, k, cols);
-					k++;
-				}
-			}
-			for (j = next + INC; j + base < arr[i]; j += INC) {
-				printHistBlock (p, k, cols);
-				k++;
-			}
-		} else {
-			printHistBlock (p, k, cols);
-			k++;
-		}
-		if (i + 1 == size) {
-			for (j = arr[i] + INC + base; j + base < next; j += INC) {
-				printHistBlock (p, k, cols);
-				k++;
-			}
-		} else if (arr[i + 1] > arr[i]) {
-			for (j = arr[i] + INC + base; j + base < next; j += INC) {
-				printHistBlock (p, k, cols);
-				k++;
-			}
+		for (j = 0; j < arr[i] / 5; j++) {
+			printHistBlock (p, j, cols);
 		}
 		if (show_colors) {
 			p->cb_printf ("%s", Color_RESET);
