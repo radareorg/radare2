@@ -1852,7 +1852,8 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	for (i = 0; i < size; i++) {
 		cols = arr[i] > cols ? arr[i] : cols;
 	}
-	cols /= 5;
+	int div = R_MAX(255 / (p->cols * 3), 1);
+	cols /= div;
 	for (i = 0; i < size; i++) {
 		if (addr != UT64_MAX && step > 0) {
 			ut64 at = addr + (i * step);
@@ -1874,7 +1875,7 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		} else {
 			p->cb_printf ("%s", v_line);
 		}
-		for (j = 0; j < arr[i] / 5; j++) {
+		for (j = 0; j < arr[i] / div; j++) {
 			printHistBlock (p, j, cols);
 		}
 		if (show_colors) {
