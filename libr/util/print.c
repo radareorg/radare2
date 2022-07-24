@@ -1928,6 +1928,9 @@ static void r_print_2bpp_newline(RPrint *p, bool useColor) {
 }
 
 R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, size_t buflen, ut32 tiles, const char **colors) {
+	if (!tiles) {
+		return;
+	}
 	if (!colors) {
 		colors = (const char *[]){
 			Color_BGWHITE,
