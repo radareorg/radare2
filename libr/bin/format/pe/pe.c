@@ -3456,6 +3456,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(RBinPEObj* pe) {
 		if (exports_sz < 0 || pe->export_directory->NumberOfFunctions + 1 > 0xffff) {
 			return NULL;
 		}
+		if (pe->export_directory->NumberOfNames > pe->export_directory->NumberOfFunctions) {
+			return NULL;
+		}
 		if (!(exports = malloc (exports_sz))) {
 			return NULL;
 		}
