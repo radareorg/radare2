@@ -1586,7 +1586,7 @@ static int cmd_wt(RCore *core, const char *input) {
 					filename = fn_local;
 
 					if (len < 0) {
-						R_LOG_WARN ("Couldn't decode b64 filename");
+						R_LOG_ERROR ("Couldn't decode b64 filename");
 						ret = 1;
 						goto leave;
 					}
