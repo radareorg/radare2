@@ -275,7 +275,7 @@ RUN
 NAME=wtf base64
 CMDS=<<EOF
 wx 01020304
-wtf base64:dGVzdGZpbGU= 4
+wtf base64:dGVzdGZpbGU== 4
 wx 00000000
 wff testfile
 p8 4

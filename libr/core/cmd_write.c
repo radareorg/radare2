@@ -1437,7 +1437,7 @@ static int cmd_wt(RCore *core, const char *input) {
 	R_BORROW const char *prefix = r_config_get (core->config, "cfg.prefixdump");
 	R_BORROW char *filename = NULL;
 	char default_filename_sep = '.';
-	char fn_local[32]; // for using snprintf instead of str_newf; doesnt need free()
+	char fn_local[32] = {0}; // for using snprintf instead of str_newf; doesnt need free()
 	int ret = 0;
 
 	bool append = false;
@@ -1574,24 +1574,22 @@ static int cmd_wt(RCore *core, const char *input) {
 
 				if (r_str_startswith (filename, "base64:")) {
 					const char *encoded = filename + 7;
-					ut8 *decoded = r_base64_decode_dyn (encoded, -1);
-
-					if (!decoded) {
-						R_LOG_WARN ("Couldn't decode b64 filename");
+					int len;
+					if (strlen (encoded) > 31) {
+						R_LOG_ERROR ("Base64 blob must be fewer than 32 characters");
 						ret = 1;
 						goto leave;
 					}
 
-					strncpy (fn_local, decoded, 32);
-					fn_local[31] = 0;
+					len = r_base64_decode ((ut8 *)fn_local, encoded, -1);
 
 					filename = fn_local;
 
-					if (strlen (decoded) > 31) {
-						R_LOG_WARN ("Decoded filename was truncated to 31 characters");
+					if (len < 0) {
+						R_LOG_WARN ("Couldn't decode b64 filename");
+						ret = 1;
+						goto leave;
 					}
-
-					free (decoded);
 				}
 				break;
 			}
