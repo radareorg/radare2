@@ -364,6 +364,288 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	return op->size;
 }
 
+static inline bool write_num_sz(ut64 n, int byte_sz, ut8 *outbuf, int outsz) {
+	int bits = r_num_to_bits (NULL, n);
+	// TODO: signedness prbly wrong...
+	if (bits > byte_sz * 8) {
+		R_LOG_ERROR ("Arg 0x" PFMT64x " more then %d bits\n", n, bits);
+		false;
+	}
+	switch (byte_sz) {
+	case 1:
+		r_write_ble8 (outbuf, (ut8)(n & UT8_MAX));
+		break;
+	case 2:
+		r_write_ble16 (outbuf, (ut16)(n & UT16_MAX), false);
+		break;
+	case 4:
+		r_write_ble32 (outbuf, (ut32)(n & UT32_MAX), false);
+		break;
+	case 8:
+		r_write_ble64 (outbuf, n, false);
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+
+static inline int assemble_int(const char *str, int byte_sz, ut8 *outbuf, int outsz) {
+	if (outsz < byte_sz) {
+		return -2;
+	}
+	RNum *num = r_num_new (NULL, NULL, NULL);
+	if (num) {
+		ut64 n = r_num_math (num, str);
+		r_num_free (num);
+		if (write_num_sz (n, byte_sz, outbuf, outsz)) {
+			return byte_sz;
+		}
+	}
+	return 0;
+}
+
+static inline int assemble_float(const char *str, ut8 *outbuf, int outsz) {
+	if (outsz < sizeof (double)) {
+		return -2;
+	}
+	RNum *num = r_num_new (NULL, NULL, NULL);
+	if (num) {
+		*((double *)outbuf) = r_num_get_float (num, str);
+		r_mem_swap (outbuf, sizeof (double));
+		r_num_free (num);
+		return sizeof (double);
+	}
+	return 0;
+}
+
+static inline int assemble_cnt_str(const char *str, int byte_sz, ut8 *outbuf, int outsz) {
+	int wlen = -2;
+	char *write_str = strdup (str);
+	if (write_str) {
+		int len = r_str_unescape (write_str);
+		if (len > 0 && len + byte_sz <= outsz && write_num_sz (len, byte_sz, outbuf, outsz)) {
+			wlen = len + byte_sz;
+			memcpy (outbuf + byte_sz, write_str, len);
+		}
+		free (write_str);
+	}
+	return wlen;
+}
+
+static inline int write_op(char *opstr, ut8 *outbuf) {
+	struct opmap {const char *name; char op;};
+	struct opmap map[] = {
+		{ "MARK", '(' },
+		{ "STOP", '.' },
+		{ "POP", '0' },
+		{ "POP_MARK", '1' },
+		{ "DUP", '2' },
+		{ "FLOAT", 'F' },
+		{ "INT", 'I' },
+		{ "BININT", 'J' },
+		{ "BININT1", 'K' },
+		{ "LONG", 'L' },
+		{ "BININT2", 'M' },
+		{ "NONE", 'N' },
+		{ "PERSID", 'P' },
+		{ "BINPERSID", 'Q' },
+		{ "REDUCE", 'R' },
+		{ "STRING", 'S' },
+		{ "BINSTRING", 'T' },
+		{ "SHORT_BINSTRING", 'U' },
+		{ "UNICODE", 'V' },
+		{ "BINUNICODE", 'X' },
+		{ "APPEND", 'a' },
+		{ "BUILD", 'b' },
+		{ "GLOBAL", 'c' },
+		{ "DICT", 'd' },
+		{ "EMPTY_DICT", '}' },
+		{ "APPENDS", 'e' },
+		{ "GET", 'g' },
+		{ "BINGET", 'h' },
+		{ "INST", 'i' },
+		{ "LONG_BINGET", 'j' },
+		{ "LIST", 'l' },
+		{ "EMPTY_LIST", ']' },
+		{ "OBJ", 'o' },
+		{ "PUT", 'p' },
+		{ "BINPUT", 'q' },
+		{ "LONG_BINPUT", 'r' },
+		{ "SETITEM", 's' },
+		{ "TUPLE", 't' },
+		{ "EMPTY_TUPLE", ')' },
+		{ "SETITEMS", 'u' },
+		{ "BINFLOAT", 'G' },
+		{ "PROTO", '\x80' },
+		{ "NEWOBJ", '\x81' },
+		{ "EXT1", '\x82' },
+		{ "EXT2", '\x83' },
+		{ "EXT4", '\x84' },
+		{ "TUPLE1", '\x85' },
+		{ "TUPLE2", '\x86' },
+		{ "TUPLE3", '\x87' },
+		{ "NEWTRUE", '\x88' },
+		{ "NEWFALSE", '\x89' },
+		{ "LONG1", '\x8a' },
+		{ "LONG4", '\x8b' },
+		{ "BINBYTES", 'B' },
+		{ "SHORT_BINBYTES", 'C' },
+		{ "SHORT_BINUNICODE", '\x8c' },
+		{ "BINUNICODE8", '\x8d' },
+		{ "BINBYTES8", '\x8e' },
+		{ "EMPTY_SET", '\x8f' },
+		{ "ADDITEMS", '\x90' },
+		{ "FROZENSET", '\x91' },
+		{ "NEWOBJ_EX", '\x92' },
+		{ "STACK_GLOBAL", '\x93' },
+		{ "MEMOIZE", '\x94' },
+		{ "FRAME", '\x95' },
+		{ "BYTEARRAY8", '\x96' },
+		{ "NEXT_BUFFER", '\x97' },
+		{ "READONLY_BUFFER", '\x98' }
+	};
+
+	bool ret = false;
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (map); i++) {
+		if (!r_str_casecmp (opstr, map[i].name)) {
+			*outbuf = (ut8)map[i].op;
+			ret = true;
+			break;
+		}
+	}
+	return ret;
+}
+
+static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsz) {
+	r_return_val_if_fail (str && *str && outsz > 0 && outbuf, -1);
+	int wlen = 0;
+	char *opstr = strdup (str); // get a non-const str to manipulate
+	if (!opstr) {
+		return -1;
+	}
+
+	// get arg w/o whitespace
+	char *arg = strchr (opstr, ' ');
+	if (arg && *arg == ' ') {
+		*arg = '\0';
+		arg++;
+		arg = r_str_ichr (arg, ' ');
+	}
+
+	if (write_op (opstr, outbuf)) {
+		char op = (char)*outbuf;
+		wlen++;
+		outbuf++;
+		outsz--;
+		switch (op) {
+		// single byte
+		case OP_MARK:
+		case OP_STOP:
+		case OP_POP:
+		case OP_POP_MARK:
+		case OP_DUP:
+		case OP_NONE:
+		case OP_BINPERSID:
+		case OP_REDUCE:
+		case OP_APPEND:
+		case OP_BUILD:
+		case OP_DICT:
+		case OP_EMPTY_DICT:
+		case OP_APPENDS:
+		case OP_LIST:
+		case OP_EMPTY_LIST:
+		case OP_OBJ:
+		case OP_SETITEM:
+		case OP_TUPLE:
+		case OP_EMPTY_TUPLE:
+		case OP_SETITEMS:
+		case OP_NEWOBJ:
+		case OP_TUPLE1:
+		case OP_TUPLE2:
+		case OP_TUPLE3:
+		case OP_NEWTRUE:
+		case OP_NEWFALSE:
+		case OP_EMPTY_SET:
+		case OP_ADDITEMS:
+		case OP_FROZENSET:
+		case OP_NEWOBJ_EX:
+		case OP_STACK_GLOBAL:
+		case OP_MEMOIZE:
+		case OP_NEXT_BUFFER:
+		case OP_READONLY_BUFFER:
+			if (arg && *arg) {
+				wlen = -1;
+			}
+			break;
+		// ints
+		case OP_FRAME:
+			wlen += assemble_int (arg, 8, outbuf, outsz);
+			break;
+		case OP_BININT:
+		case OP_LONG_BINPUT:
+		case OP_LONG_BINGET:
+		case OP_EXT4:
+		case OP_LONG4:
+			wlen += assemble_int (arg, 4, outbuf, outsz);
+			break;
+		case OP_BININT2:
+		case OP_EXT2:
+			wlen += assemble_int (arg, 2, outbuf, outsz);
+			break;
+		case OP_BININT1:
+		case OP_BINGET:
+		case OP_BINPUT:
+		case OP_PROTO:
+		case OP_EXT1:
+		case OP_LONG1:
+			wlen += assemble_int (arg, 1, outbuf, outsz);
+			break;
+		// float
+		case OP_BINFLOAT:
+			wlen += assemble_float (arg, outbuf, outsz);
+			break;
+		// counted strings
+		case OP_BINUNICODE8:
+		case OP_BINBYTES8:
+		case OP_BYTEARRAY8:
+			wlen += assemble_cnt_str (arg, 8, outbuf, outsz);
+			break;
+		case OP_BINSTRING:
+		case OP_BINUNICODE:
+		case OP_BINBYTES:
+			wlen += assemble_cnt_str (arg, 4, outbuf, outsz);
+			break;
+		case OP_SHORT_BINBYTES:
+		case OP_SHORT_BINSTRING:
+		case OP_SHORT_BINUNICODE:
+			wlen += assemble_cnt_str (arg, 1, outbuf, outsz);
+			break;
+		// two lines
+		case OP_INST:
+		case OP_GLOBAL:
+		// one line
+		case OP_FLOAT:
+		case OP_INT:
+		case OP_LONG:
+		case OP_PERSID:
+		case OP_STRING:
+		case OP_UNICODE:
+		case OP_GET:
+		case OP_PUT:
+			R_LOG_ERROR ("This assembler can't handle %s (op: 0x%02x) yet\n", opstr, op);
+			wlen = -1;
+			break;
+		default:
+			r_warn_if_reached ();
+			wlen = -1;
+		}
+	}
+	free (opstr);
+	return wlen;
+}
+
 static int archinfo(RAnal *anal, int q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_ALIGN:
@@ -387,9 +669,9 @@ RAnalPlugin r_anal_plugin_pickle = {
 	.arch = "pickle",
 	.bits = 8, // not real sure
 	.op = &analop,
+	.opasm = &pickle_opasm,
 	// .preludes = anal_preludes,
 	.archinfo = archinfo,
-	// .get_reg_profile = &get_reg_profile,
 	// .mnemonics = cs_mnemonics,
 };
 
