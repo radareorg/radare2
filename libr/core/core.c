@@ -3301,6 +3301,7 @@ R_API void r_core_fini(RCore *c) {
 	r_cons_free ();
 	r_cons_singleton ()->teefile = NULL; // HACK
 	free (c->theme);
+	free (c->themepath);
 	r_search_free (c->search);
 	r_flag_free (c->flags);
 	r_fs_free (c->fs);

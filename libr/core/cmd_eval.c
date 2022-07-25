@@ -140,16 +140,19 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 
 	if (load_theme (core, home)) {
 		core->theme = r_str_dup (core->theme, arg);
+		free (core->themepath);
 		core->themepath = home;
 		home = NULL;
 	} else {
 		if (load_theme (core, path)) {
 			core->theme = r_str_dup (core->theme, arg);
+			free (core->themepath);
 			core->themepath = path;
 			path = NULL;
 		} else {
 			if (load_theme (core, arg)) {
 				core->theme = r_str_dup (core->theme, arg);
+				free (core->themepath);
 				core->themepath = arg;
 				arg = NULL;
 			} else {
