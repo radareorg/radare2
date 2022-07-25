@@ -1593,6 +1593,7 @@ static int cmd_wt(RCore *core, const char *input) {
 				}
 				break;
 			}
+			break;
 		case 'a':
 			append = true;
 			break;
