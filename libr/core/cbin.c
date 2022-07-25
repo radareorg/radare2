@@ -827,10 +827,10 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	if (anal_arch && sdb_isempty (core->anal->sdb_cc)) {
 		R_LOG_WARN ("Missing calling conventions for '%s' %d. Deriving it from the regprofile", anal_arch, bits);
 	}
-	free (anal_arch);
 	free (dbpath);
 	free (dbhomepath);
 #endif
+	free (anal_arch);
 }
 
 static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
