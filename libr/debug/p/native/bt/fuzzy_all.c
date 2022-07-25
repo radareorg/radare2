@@ -85,6 +85,7 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 		default:
 			eprintf ("Invalid word size with asm.bits\n");
 			r_list_free (list);
+			free (stack);
 			return NULL;
 		}
 		if (iscallret (dbg, addr)) {
@@ -100,5 +101,6 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 		ptr += wordsize;
 		cursp += wordsize;
 	}
+	free (stack);
 	return list;
 }
