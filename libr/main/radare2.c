@@ -757,6 +757,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 	}
 	if (show_versions) {
+		LISTS_FREE();
+		free (debugbackend);
 		return r_main_version_verify (1, json);
 	}
 	if (show_version) {
