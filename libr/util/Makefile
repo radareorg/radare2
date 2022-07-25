@@ -32,15 +32,9 @@ else
 OBJS+=$(SHLR)/lz4/lz4.o
 endif
 
-ifeq (${HAVE_LIB_GMP},1)
-  OBJS+=big_gmp.o
-else
-  ifeq (${HAVE_LIB_SSL},1)
-    OBJS+=big_ssl.o
-  else
-    OBJS+=big.o
-  endif
-endif
+OBJS+=big_gmp.o
+OBJS+=big_ssl.o
+OBJS+=big.o
 
 CWD=$(shell pwd)
 
@@ -59,6 +53,11 @@ include ../rules.mk
 include deps.mk
 include sdb.mk
 include spp.mk
+
+f fast:
+	rm -f sasa.c ; cat $(shell ls *.c| grep -v buf_| grep -v sasa) > sasa.c
+	$(CC_LIB) $(LIBNAME) $(CFLAGS) sasa.c $(SHARED_OBJ) $(LINK) $(LDFLAGS)
+	rm -f sasa.c
 
 charsets:
 	$(MAKE) -C d
