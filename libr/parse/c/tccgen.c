@@ -188,12 +188,10 @@ int tcc_sym_push(TCCState *s1, char *typename, int typesize, int meta) {
 	new_type->ref = sym_malloc (s1);
 	new_type->t = meta;
 
-	if (!sym_push (s1, 0, new_type, 0, 0)) {
-		return 0;
-	}
+	Sym *sym = sym_push (s1, 0, new_type, 0, 0);
 
 	free (new_type);
-	return 1;
+	return sym != NULL;
 }
 
 void dump_type(TCCState *s1, CType *type, int depth) {
