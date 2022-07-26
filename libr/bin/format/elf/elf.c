@@ -2573,6 +2573,9 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 			bool regs_found = false;
 			ut64 offset = 0;
 
+			if (!elf_nhdr) {
+				return NULL;
+			}
 			while (!regs_found) {
 				ut32 n_descsz, n_namesz, n_type;
 				int ret;
@@ -2620,6 +2623,9 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 					break;
 			}
 			ut8 *buf = malloc (regsize);
+			if (!buf) {
+				return NULL;
+			}
 			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset + offset + regdelta, buf, regsize) != regsize) {
 				free (buf);
 				R_LOG_DEBUG ("Cannot read register state from CORE file");
@@ -3553,6 +3559,9 @@ static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 					return false;
 				}
 				ut8 *data = malloc (size + 1);
+				if (!data) {
+					return NULL;
+				}
 				if (r_buf_read_at (bin->b, addr, data, size) == -1) {
 					eprintf ("Cannot read%c\n", 10);
 				}
@@ -4073,6 +4082,9 @@ static bool get_nt_file_maps(ELFOBJ *bin, RList *core_maps) {
 			ut64 offset = 0;
 			bool found = false;
 
+			if (!elf_nhdr) {
+				goto fail;
+			}
 			while (!found) {
 				int ret;
 				ut32 n_descsz, n_namesz, n_type;
