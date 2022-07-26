@@ -825,6 +825,10 @@ static struct r_bin_pe_export_t* parse_symbol_table(RBinPEObj* pe, struct r_bin_
 		sz = exports_sz;
 		exports = malloc (sz + export_t_sz);
 		exp = exports;
+		if (!exports) {
+			free (buf);
+			return NULL;
+		}
 	}
 
 	sections = pe->sections;
