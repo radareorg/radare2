@@ -634,7 +634,7 @@ static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int o
 		case OP_UNICODE:
 		case OP_GET:
 		case OP_PUT:
-			R_LOG_ERROR ("This assembler can't handle %s (op: 0x%02x) yet\n", opstr, op);
+			R_LOG_ERROR ("This assembler can't handle %s (op: 0x%02x) yet", opstr, op);
 			wlen = -1;
 			break;
 		default:
