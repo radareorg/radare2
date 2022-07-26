@@ -49,6 +49,9 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 
 	stacksize = 1024*512; // 512KB .. should get the size from the regions if possible
 	stack = malloc (stacksize);
+	if (!stack) {
+		return NULL;
+	}
 	if (at == UT64_MAX) {
 		RRegItem *ri;
 		RReg *reg = dbg->reg;
