@@ -26,7 +26,7 @@ static const char *help_msg_w[] = {
 	"wp","[?] -|file","apply radare patch file. See wp? fmi",
 	"wr"," 10","write 10 random bytes",
 	"ws","[?] pstring","write pascal string: 1 byte for length + N for the string",
-	"wt","[?] file [sz]","write to file (from current seek, blocksize or sz bytes)",
+	"wt","[afs][?] [filename] [size]","write to file (from current seek, blocksize or sz bytes)",
 	"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
 	"wx","[?][fs] 9090","write two intel nops (from wxfile or wxseek)",
 	"wX"," 1b2c3d","fill current block with cyclic hexpairs",
@@ -144,17 +144,13 @@ static const char *help_msg_wp[] = {
 };
 
 static const char *help_msg_wt[] = {
-	"Usage:", "wt[a] file [size]", " Write 'size' bytes in current block to 'file'",
+	"Usage:", "wt[afs] [filename] [size]", " Write current block or [size] bytes from offset to file",
 	"wta", " [filename]", "append to 'filename'",
 	"wtf", " [filename] [size]", "write to file (see also 'wxf' and 'wf?')",
-	"wtf!", " [filename]", "write to file from current address to eof",
-	"wtff", " [prefix]", "write block from current seek to [prefix]-[offset]",
-	"wts"," host:port [sz]", "send data to remote host:port via tcp://",
-	NULL
-};
-static const char *help_msg_wts[] = {
-	"Usage:", "wts host:port [sz]", " Write 'size' bytes to tcp connection at host:port",
-	"wts", " localhost:9999 1M", "Copy 1MB over tcp/ip",
+	"wtf!", " [filename]", "write to file from current address to eof (ignores given size)",
+	"wtff", " [prefix] [size]", "write block from current seek to \"<prefix>-<offset>\"",
+	"wts", " host:port [size]", "send data to remote socket at tcp://host:port",
+	"NOTE:", "", "filename defaults to \"<cfg.prefixdump>.<offset>\"",
 	NULL
 };
 
@@ -1437,211 +1433,252 @@ static int cmd_wz(RCore *core, const char *input) {
 	return 0;
 }
 
-static int cmd_wt(void *data, const char *input) {
-	RCore *core = (RCore *)data;
-	char *str = strdup (input);
-	char *ostr = str;
-	char *hfilename = NULL;
-	const char *filename = "";
-	char _fn[32];
-	_fn[0] = 0;
-	char *size_sep;
-	if (*str == 's') { // "wts"
-		if (str[1] == ' ') {
-			st64 sz = r_io_size (core->io);
-			if (sz > 0) {
-				ut64 addr = 0;
-				char *host = str + 2;
-				char *port = strchr (host, ':');
-				if (port) {
-					*port ++= 0;
-					char *space = strchr (port, ' ');
-					if (space) {
-						*space++ = 0;
-						sz = r_num_math (core->num, space);
-						addr = core->offset;
-					}
-					ut8 *buf = calloc (1, sz);
-					r_io_read_at (core->io, addr, buf, sz);
-					RSocket *s = r_socket_new (false);
-					if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 0)) {
-						int done = 0;
-						eprintf ("Transfering file to the end-point...\n");
-						while (done < sz) {
-							int rc = r_socket_write (s, buf + done, sz - done);
-							if (rc < 1) {
-								eprintf ("oops\n");
-								break;
-							}
-							done += rc;
-						}
-					} else {
-						eprintf ("Cannot connect\n");
-					}
-					r_socket_free (s);
-					free (buf);
-				} else {
-					r_core_cmd_help (core, help_msg_wts);
-				}
-			} else {
-				eprintf ("Unknown file size\n");
-			}
-		} else {
-			r_core_cmd_help (core, help_msg_wts);
-		}
-	} else if (*str == '?' || *str == '\0') {
-		r_core_cmd_help (core, help_msg_wt);
-	} else {
-		bool append = false;
-		bool toend = false;
-		st64 sz = core->blocksize;
-		ut64 poff = core->offset;
-		if (*str == 'f') { // "wtf"
-			str++;
-			if (*str == '?') {
-				r_core_cmd_help (core, help_msg_wt);
-				goto ret;
-			}
-			if (*str == '!') {
-				if (str[1] == '?') {
-					r_core_cmd_help (core, help_msg_wt);
-					goto ret;
-				}
-				RIOMap *map = r_io_map_get_at (core->io, poff);
-				toend = true;
-				//use physical address
-				poff = map ? poff - r_io_map_begin (map) + map->delta : poff;
-				str++;
-			}
-			if (*str == 'f') { // "wtff"
-				if (str[1] == '?') {
-					r_core_cmd_help (core, help_msg_wt);
-					goto ret;
-				}
-				const char *prefix = r_str_trim_head_ro (str + 2);
-				if (!*prefix) {
-					prefix = "dump";
-				}
-				str++;
-				filename = r_str_newf ("%s-0x%08"PFMT64x, prefix, core->offset);
-			} else {
-				if (*str) {
-					if (str[1] == '?') {
-						r_core_cmd_help (core, help_msg_wt);
-						goto ret;
-					}
-					filename = r_str_trim_head_ro (str);
-					if (r_str_startswith (filename, "base64:")) {
-						const char *encoded = filename + 7;
-						char *decoded = (char *)sdb_decode (encoded, NULL);
-						if (decoded) {
-							hfilename = decoded;
-							filename = decoded;
-						}
-					}
-				} else {
-					filename = "";
-				}
-			}
-		} else if (*str == 'a') { // "wta"
-			append = 1;
-			str++;
-			if (str[0] == ' ') {
-				filename = str + 1;
-			} else {
-				const char* prefix = r_config_get (core->config, "cfg.prefixdump");
-				snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
-				filename = _fn;
-			}
-		} else if (*str != ' ') {
-			const char* prefix = r_config_get (core->config, "cfg.prefixdump");
-			snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
-			filename = _fn;
-		} else {
-			filename = str + 1;
-		}
-		size_sep = *str? strchr (str + 1, ' ') : NULL;
-		if (!filename || !*filename) {
-			const char* prefix = r_config_get (core->config, "cfg.prefixdump");
-			snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
-			filename = _fn;
-		}
+static int cmd_wt(RCore *core, const char *input) {
+	R_BORROW const char *prefix = r_config_get (core->config, "cfg.prefixdump");
+	R_BORROW char *filename = NULL;
+	char default_filename_sep = '.';
+	char fn_local[32] = {0}; // for using snprintf instead of str_newf; doesnt need free()
+	int ret = 0;
 
-		/* TODO: I think this logic can be cleaned up, size_sep looks tacked-on */
-		if (size_sep) {
-			if (toend) {
+	bool append = false;
+	st64 sz = core->blocksize;
+	ut64 poff = core->offset; // physical address; for writing arbitrary sizes
+
+	int argc;
+	char **argv;
+
+	argv = r_str_argv (input, &argc);
+
+	fn_local[0] = 0;
+	filename = argv[1]; // NULL if argc < 2
+
+	input++;
+	switch (*input) {
+		case 's': { // "wts"
+			ut64 addr = 0;
+			char *host_port;
+			R_BORROW char *host;
+			R_BORROW char *port;
+			ut8 *buf;
+			RSocket *sock;
+
+			if (argc < 2) {
+				r_core_cmd_help_match (core, help_msg_wt, "wts", true);
+				ret = 1;
+				goto leave;
+			}
+
+			sz = r_io_size (core->io);
+			if (sz < 0) {
+				R_LOG_ERROR ("Unknown file size");
+				ret = 1;
+				goto leave;
+			}
+
+			host_port = strdup (argv[1]);
+
+			host = host_port;
+			port = strchr (host_port, ':');
+			if (!port) {
+				r_core_cmd_help_match (core, help_msg_wt, "wts", true);
+				free (host_port);
+				ret = 1;
+				goto leave;
+			}
+
+			*port++ = 0;
+
+			if (argc > 2) {
+				sz = r_num_math (core->num, argv[2]);
+				if (sz < 0) {
+					R_LOG_ERROR ("%s is not a valid size", argv[2]);
+					free (host_port);
+					ret = 1;
+					goto leave;
+				}
+				addr = core->offset;
+			}
+
+			buf = malloc (sz);
+			r_io_read_at (core->io, addr, buf, sz);
+
+			sock = r_socket_new (false);
+			if (r_socket_connect (sock, host, port, R_SOCKET_PROTO_TCP, 0)) {
+				ut64 sent = 0;
+				R_LOG_INFO ("Connection created. Sending data to TCP socket");
+				while (sent < sz) {
+					bool sockret = r_socket_write (sock, buf + sent, sz - sent);
+					if (!sockret) {
+						R_LOG_ERROR ("Socket write error");
+						ret = 1;
+						break;
+					}
+				}
+			} else {
+				R_LOG_ERROR ("Connection to %s failed", host_port);
+				ret = 1;
+			}
+
+			free (host_port);
+			free (buf);
+			r_socket_free (sock);
+			goto leave;
+		}
+		case 'f': // "wtf"
+			switch (input[1]) {
+			case '?': // "wtf?"
+				r_core_cmd_help_match (core, help_msg_wt, "wtf", true);
+				ret = 1;
+				goto leave;
+			case '!': { // "wtf!"
+				RIOMap *map;
+				if (input[2] == '?') {
+					r_core_cmd_help_match (core, help_msg_wt, "wtf!", true);
+					ret = 1;
+					goto leave;
+				}
+
+				map = r_io_map_get_at (core->io, poff);
+				if (map) {
+					// convert vaddr to paddr
+					poff = poff - r_io_map_begin (map) + map->delta;
+				}
+
 				sz = r_io_fd_size (core->io, core->io->desc->fd) - core->offset;
-				if (sz < 0) {
-					eprintf ("Warning: File size is unknown.\n");
-				}
-			} else {
-				sz = (st64) r_num_math (core->num, size_sep + 1);
-				/* Don't attempt to write if we can't parse size */
-				if (sz < 1) {
-					eprintf ("%s is not a valid size.\n", size_sep + 1);
-					sz = -1;
-				}
-				*size_sep = '\0';
-			}
 
-			// XXX: this branch didn't handle aliases at all before
-			// but im not fixing the duplication rn
-			if (*filename == '$') {
-				if (append) {
-					if (sz > 0 && r_cmd_alias_append_raw (core->rcmd, filename+1, core->block, sz)) {
-						const char *fn = r_str_trim_head_ro (filename + 1);
-						eprintf ("Alias \"$%s\" is a command - will not attempt to append.\n", fn);
+				// ignore given size
+				if (argc > 2) {
+					argc = 2;
+				}
+				break;
+			}
+			case 'f': // "wtff"
+				if (input[2] == '?') {
+					r_core_cmd_help_match (core, help_msg_wt, "wtff", true);
+					ret = 1;
+					goto leave;
+				}
+
+				if (argc > 1) {
+					prefix = argv[1];
+				}
+
+				default_filename_sep = '-';
+				break;
+			default: // "wtf"
+				if (input[2] == '?') {
+					r_core_cmd_help_match (core, help_msg_wt, "wtf", true);
+					ret = 1;
+					goto leave;
+				}
+
+				if (r_str_startswith (filename, "base64:")) {
+					const char *encoded = filename + 7;
+					int len;
+					if (strlen (encoded) > 31) {
+						R_LOG_ERROR ("Base64 blob must be fewer than 32 characters");
+						ret = 1;
+						goto leave;
 					}
-				} else {
-					if (sz > 0) {
-						r_cmd_alias_set_raw (core->rcmd, filename+1, core->block, sz);
+
+					len = r_base64_decode ((ut8 *)fn_local, encoded, -1);
+
+					filename = fn_local;
+
+					if (len < 0) {
+						R_LOG_ERROR ("Couldn't decode b64 filename");
+						ret = 1;
+						goto leave;
 					}
 				}
-			} else {
-				/* XXX: r_core_dump vs r_file_dump below? */
-				if (sz > 0 && !r_core_dump (core, filename, poff, (ut64)sz, append)) {
-					sz = -1;
-				}
+				break;
+			}
+			break;
+		case 'a':
+			append = true;
+			break;
+		case '\0': // "wt"
+		case ' ': // "wt "
+			break;
+		case '?': // "wt?"
+		default:
+			r_core_cmd_help (core, help_msg_wt);
+			goto leave;
+	}
+
+	// default filename is prefix.addr
+	if (R_STR_ISEMPTY (filename)) {
+		snprintf (fn_local, sizeof (fn_local), "%s%c0x%08" PFMT64x,
+				prefix, default_filename_sep, poff);
+		filename = fn_local;
+	}
+
+	// don't overwrite forced size
+	if (sz == core->blocksize && argc > 2) {
+		sz = (st64)r_num_math (core->num, argv[2]);
+	}
+
+	// Don't attempt to write 0 bytes
+	if (sz < 1) {
+		R_LOG_ERROR ("%s is not a valid size", argv[2]);
+		goto leave;
+	}
+
+	if (*filename == '$') {
+		ut8 *buf = core->block;
+		bool free_buf = false;
+
+		filename++;
+
+		// manual buffer if given arbitrary size
+		if (sz > core->blocksize) {
+			buf = malloc (sz);
+			if (!buf) {
+				R_LOG_ERROR ("malloc() failure");
+				ret = 1;
+				goto leave;
+			}
+			r_io_read_at (core->io, poff, buf, sz);
+			free_buf = true;
+		}
+
+		if (append) {
+			if (r_cmd_alias_append_raw (core->rcmd, filename, buf, sz)) {
+				R_LOG_ERROR ("Will not append to command alias \"$%s\"", filename);
+				ret = 1;
 			}
 		} else {
-			if (toend) {
-				sz = r_io_fd_size (core->io, core->io->desc->fd);
-				if (sz < 0) {
-					eprintf ("Warning: File size is unknown.\n");
-				}
-				if (sz != -1 && core->offset <= sz) {
-					sz -= core->offset;
-					if (!r_core_dump (core, filename, core->offset, (ut64)sz, append)) {
-						sz = -1;
-					}
-				} else {
-					sz = -1;
-				}
-			} else {
-				if (*filename == '$') {
-					if (append) {
-						if (r_cmd_alias_append_raw (core->rcmd, filename+1, core->block, sz)) {
-							eprintf ("Alias \"$%s\" is a command - will not attempt to append.\n", filename+1);
-						}
-					} else {
-						r_cmd_alias_set_raw (core->rcmd, filename+1, core->block, sz);
-					}
-				} else {
-					if (sz > 0 && !r_file_dump (filename, core->block, sz, append)) {
-						sz = -1;
-					}
-				}
-			}
+			r_cmd_alias_set_raw (core->rcmd, filename, buf, sz);
 		}
-		if (sz >= 0) {
-			eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
+
+		if (free_buf) {
+			free (buf);
+		}
+
+		if (!ret) {
+			R_LOG_INFO ("Dumped %" PFMT64d " bytes from 0x%08" PFMT64x" into $%s",
 					sz, poff, filename);
 		}
+		goto leave;
 	}
-ret:
-	free (ostr);
-	free (hfilename);
-	return 0;
+
+	// use core if reading past end of block
+	if (sz <= core->blocksize) {
+		ret = r_file_dump (filename, core->block, sz, append);
+	} else {
+		ret = r_core_dump (core, filename, poff, (ut64)sz, append);
+	}
+
+	// dump functions return bool; true on success
+	if (ret) {
+		R_LOG_INFO ("Dumped %" PFMT64d " bytes from 0x%08" PFMT64x" into %s",
+				sz, poff, filename);
+		ret = 0;
+	}
+
+leave:
+	r_str_argv_free (argv);
+	return ret;
 }
 
 static int cmd_ww(void *data, const char *input) {
@@ -1783,6 +1820,8 @@ static int cmd_wa(void *data, const char *input) {
 repeat:
 				if (!r_anal_op (core->anal, &analop, at, core->block + delta, core->blocksize - delta, R_ANAL_OP_MASK_BASIC)) {
 					R_LOG_DEBUG ("Invalid instruction?");
+					r_anal_op_fini (&analop);
+					r_asm_code_free (acode);
 					break;
 				}
 				if (delta < acode->len) {
@@ -2190,7 +2229,7 @@ static int cmd_write(void *data, const char *input) {
 		cmd_wz (core, input + 1);
 		break;
 	case 't': // "wt"
-		cmd_wt (core, input + 1);
+		cmd_wt (core, input);
 		break;
 	case 'f': // "wf"
 		cmd_wf (core, input + 1);

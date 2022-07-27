@@ -55,7 +55,7 @@
 
 # updated by Joerg Jenderek at Sep 2007
 # only for sector sizes with 512 or more Bytes
-0x1FE	leshort	0xAA55			x86 boot sector
+# 0x1FE	leshort	0xAA55			x86 boot sector
 # to do also for sectors < than 512 Bytes and some other files, GRR
 #30	search/481	\x55\xAA	x86 boot sector
 # not for BeOS floppy 1440k, MBRs

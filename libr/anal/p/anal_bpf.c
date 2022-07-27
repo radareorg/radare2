@@ -375,12 +375,12 @@ static bool parse_jump_targets(RBpfSockFilter *f, int opc, const bpf_token *op, 
 	ut64 label;
 	if (opc >= 2) {
 		parse_label_value (&label, op[1]);
-		f->jt = (st64)(label - pc - 8) / 8;
+		f->jt = (label - pc - 8) / 8;
 		f->jf = (pc >> 3) + 1;
 	}
 	if (opc == 3) {
 		parse_label_value (&label, op[2]);
-		f->jf = (st64)(label - pc - 8) / 8;
+		f->jf = (label - pc - 8) / 8;
 	}
 	return true;
 }
@@ -702,8 +702,8 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 
 #define EMIT_CJMP(op, addr, f) \
 	(op)->type = R_ANAL_OP_TYPE_CJMP; \
-	(op)->jump = (addr) + 8 + (st8)(f)->jt * 8; \
-	(op)->fail = (addr) + 8 + (st8)(f)->jf * 8;
+	(op)->jump = (addr) + 8 + (f)->jt * 8; \
+	(op)->fail = (addr) + 8 + (f)->jf * 8;
 
 #define EMIT_LOAD(op, addr, size) \
 	(op)->type = R_ANAL_OP_TYPE_LOAD; \
@@ -732,7 +732,8 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 	(op)->dst = r_anal_value_new (); \
 	(op)->dst->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
 
-#define INSIDE_M(k) ((k) >= 0 && (k) <= 16)
+// (k) >= 0 must also be true, but the value is already unsigned
+#define INSIDE_M(k) ((k) < 16)
 
 /*
 static bool bpf_int_exit(RAnalEsil *esil, ut32 interrupt, void *user);

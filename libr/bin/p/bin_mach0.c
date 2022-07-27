@@ -28,6 +28,7 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 
 
 static R_TH_LOCAL void *origread = NULL;
 static R_TH_LOCAL RIOPlugin *origplugin = NULL;
+static R_TH_LOCAL RIOPlugin *heapplugin = NULL;
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
@@ -72,6 +73,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 static void destroy(RBinFile *bf) {
 	if (origplugin) {
 		origplugin->read = origread;
+		R_FREE (heapplugin);
 	}
 	MACH0_(mach0_free) (bf->o->bin_obj);
 }
@@ -211,7 +213,6 @@ static RList *symbols(RBinFile *bf) {
 #if 0
 	const char *lang = "c"; // XXX deprecate this
 #endif
-	int wordsize = 0;
 	if (!ret) {
 		return NULL;
 	}
@@ -220,7 +221,22 @@ static RList *symbols(RBinFile *bf) {
 		return NULL;
 	}
 	bool isStripped = false;
-	wordsize = MACH0_(get_bits) (obj->bin_obj);
+	bool isDwarfed = false;
+
+	if (!bf->o->sections) {
+		bf->o->sections = sections (bf);
+	}
+	if (bf->o->sections) {
+		RListIter *iter;
+		RBinSection *section;
+		r_list_foreach (bf->o->sections, iter, section) {
+			if (strstr (section->name, "DWARF.__debug_line")) {
+				isDwarfed = true;
+				break;
+			}
+		}
+	}
+	int wordsize = MACH0_(get_bits) (obj->bin_obj);
 
 	// OLD CODE
 	if (!(syms = MACH0_(get_symbols) (obj->bin_obj))) {
@@ -326,6 +342,9 @@ static RList *symbols(RBinFile *bf) {
 #endif
 	if (isStripped) {
 		bin->dbg_info |= R_BIN_DBG_STRIPPED;
+	}
+	if (isDwarfed) {
+		bin->dbg_info |= R_BIN_DBG_LINENUMS;
 	}
 	sdb_free (symcache);
 	return ret;
@@ -713,7 +732,13 @@ beach:
 
 static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io) {
 	r_return_if_fail (io && io->desc && io->desc->plugin);
-	RIOPlugin *plugin = io->desc->plugin;
+	RIOPlugin *plugin = R_NEW0 (RIOPlugin);
+	if (heapplugin) {
+		R_LOG_WARN ("Here be dragons");
+	}
+	heapplugin = plugin;
+	memcpy (plugin, io->desc->plugin, sizeof (RIOPlugin));
+	io->desc->plugin = plugin;
 	obj->original_io_read = plugin->read;
 	origread = plugin->read;
 	plugin->read = &rebasing_and_stripping_io_read;

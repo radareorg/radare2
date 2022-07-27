@@ -1,9 +1,9 @@
 /*
-  zip_fopen_encrypted.c -- open file for reading with password
-  Copyright (C) 1999-2009 Dieter Baron and Thomas Klausner
+  zip_random_unix.c -- fill the user's buffer with random stuff (Unix version)
+  Copyright (C) 2016-2021 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -31,19 +31,82 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-
 #include "zipint.h"
 
-
+#ifdef HAVE_CRYPTO
+#include "zip_crypto.h"
+#endif
+#include <stdlib.h>
 
-ZIP_EXTERN struct zip_file *
-zip_fopen_encrypted(struct zip *za, const char *fname, zip_flags_t flags, const char *password)
-{
-    zip_int64_t idx;
+#ifdef HAVE_ARC4RANDOM
 
-    if ((idx=zip_name_locate(za, fname, flags)) < 0)
-	return NULL;
 
-    return zip_fopen_index_encrypted(za, (zip_uint64_t)idx, flags, password);
+#ifndef HAVE_SECURE_RANDOM
+ZIP_EXTERN bool
+zip_secure_random(zip_uint8_t *buffer, zip_uint16_t length) {
+    arc4random_buf(buffer, length);
+    return true;
 }
+#endif
+
+#ifndef HAVE_RANDOM_UINT32
+zip_uint32_t
+zip_random_uint32(void) {
+    return arc4random();
+}
+#endif
+
+#else /* HAVE_ARC4RANDOM */
+
+#ifndef HAVE_SECURE_RANDOM
+#ifndef _WIN32
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
+ZIP_EXTERN bool
+zip_secure_random(zip_uint8_t *buffer, zip_uint16_t length) {
+    int fd;
+
+    if ((fd = open("/dev/urandom", O_RDONLY)) < 0) {
+        return false;
+    }
+
+    if (read(fd, buffer, length) != length) {
+        close(fd);
+        return false;
+    }
+
+    close(fd);
+    return true;
+}
+#endif
+
+#ifndef HAVE_RANDOM_UINT32
+#include <stdlib.h>
+
+zip_uint32_t
+zip_random_uint32(void) {
+    static bool seeded = false;
+
+    zip_uint32_t value;
+
+    if (zip_secure_random((zip_uint8_t *)&value, sizeof(value))) {
+        return value;
+    }
+
+#if _WIN32
+    if (!seeded) {
+        srand((unsigned int)time(NULL));
+    }
+    return (zip_uint32_t)rand();
+#else
+    if (!seeded) {
+        srandom((unsigned int)time(NULL));
+    }
+    return (zip_uint32_t)random();
+#endif
+}
+#endif
+
+#endif /* HAVE_ARC4RANDOM */

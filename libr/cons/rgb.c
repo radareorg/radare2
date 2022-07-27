@@ -46,7 +46,7 @@ static void init_color_table(void) {
 static int __lookup_rgb(int r, int g, int b) {
 	int i, color = (r << 16) + (g << 8) + b;
 	// lookup extended colors only, coz non-extended can be changed by users.
-	for (i = 16; i < 256; i++) {
+	for (i = 16; i < 232; i++) {
 		if (color_table[i] == color) {
 			return i;
 		}
@@ -75,10 +75,10 @@ static ut32 __approximate_rgb(int r, int g, int b) {
 	b &= 0xff;
 	return (ut32)((G * M * M)  + (g * M) + b) + 16;
 #else
-	const int k = (int)(256.0 / 6);
-	r = R_DIM ((int)(r / k), 0, 6);
-	g = R_DIM ((int)(g / k), 0, 6);
-	b = R_DIM ((b / k), 0, 6);
+	const int k = 256 / 6;
+	r = R_DIM (r / k, 0, 5);
+	g = R_DIM (g / k, 0, 5);
+	b = R_DIM (b / k, 0, 5);
 	return 16 + (r * 36) + (g * 6) + b;
 #endif
 }

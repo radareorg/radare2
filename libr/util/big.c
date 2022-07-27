@@ -1,9 +1,9 @@
-/* Based on https://github.com/kokke/tiny-bignum-c.
- * Enjoy it --FXTi
- */
+/* radare2 - LGPL - Copyright 2010 - FXTi */
+/* Based on https://github.com/kokke/tiny-bignum-c */
 
 #include <r_util.h>
 
+#if !HAVE_LIB_GMP && !HAVE_LIB_SSL
 /* Functions for shifting number in-place. */
 static void _lshift_one_bit(RNumBig *a);
 static void _rshift_one_bit(RNumBig *a);
@@ -686,3 +686,5 @@ static void _r_big_zero_out(RNumBig *a) {
 	}
 	a->sign = 1; /* hack to avoid -0 */
 }
+
+#endif

@@ -329,10 +329,16 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 }
 
 static void load_asm_descriptions(RAsm *a, RAsmPlugin *p) {
-	const char *arch = ((!p || !strcmp (p->name, "null")) && a->config->arch)
-		? a->config->arch: (p? p->arch: NULL);
-	if (!arch || (p && !strcmp (p->name, "r2ghidra"))) {
-		arch = (a->config->cpu)? a->config->cpu: p->name;
+	const char *arch;
+
+	if (a->config->arch && (!p || !strcmp (p->name, "null"))) {
+		arch = a->config->arch;
+	} else if (p && !strcmp (p->name, "r2ghidra")) {
+		arch = p->name;
+	} else if (p) {
+		arch = p->arch;
+	} else {
+		arch = a->config->cpu;
 	}
 #if HAVE_GPERF
 	SdbGperf *gp = r_asm_get_gperf (arch); // p->name);

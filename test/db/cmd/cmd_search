@@ -43,7 +43,15 @@ NAME=/m lzma
 FILE=bins/other/hello-world.lzma
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 LZMA BE compressed data dictionary size: 32768 bytes,
+0x00000000 1 LZMA BE compressed data dictionary size: 32768 bytes
+EOF
+RUN
+
+NAME=/m lzma
+FILE=bins/other/smol.lzma
+CMDS=pm
+EXPECT=<<EOF
+0x00000000 1 LZMA LE compressed data dictionary size: 2162620 bytes
 EOF
 RUN
 
@@ -112,6 +120,21 @@ EXPECT=<<EOF
 0x00000000 hit0_0 .MZ.
 EOF
 RUN
+
+NAME=/as in arm64
+FILE=bins/elf/libarm64.so
+CMDS=/as
+EXPECT=<<EOF
+0x0000dfdc mmap
+0x0000dff4 openat
+0x0000e00c close
+0x0000e024 read
+0x0000e03c lseek
+0x0000e054 munmap
+0x0000e06c clock_gettime
+EOF
+RUN
+
 
 NAME=/as in arm32
 FILE=bins/elf/libexploit.so

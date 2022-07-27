@@ -358,7 +358,7 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const c
 	ps->rc_path = strdup (rc_path);
 	RThread *th = r_th_new (project_load_background, ps, false);
 	if (th) {
-		r_th_start (th, true);
+		r_th_start (th, false);
 		char thname[32] = {0};
 		size_t thlen = R_MIN (strlen (prj_name), sizeof (thname) - 1);
 		r_str_ncpy (thname, prj_name, thlen);

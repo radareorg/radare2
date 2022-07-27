@@ -65,9 +65,6 @@ typedef struct r_anal_range_t {
 
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 
-#define R_ANAL_GET_OFFSET(x,y,z) \
-	(x && x->binb.bin && x->binb.get_offset)? \
-		x->binb.get_offset (x->binb.bin, y, z): -1
 enum {
 	R_ANAL_DATA_TYPE_NULL = 0,
 	R_ANAL_DATA_TYPE_UNKNOWN = 1,
@@ -100,16 +97,6 @@ enum {
 #define R_ANAL_ARCHINFO_INV_OP_SIZE 2
 #define R_ANAL_ARCHINFO_ALIGN 4
 #define R_ANAL_ARCHINFO_DATA_ALIGN 8
-
-/* copypaste from r_asm.h */
-
-#define R_ANAL_GET_OFFSET(x,y,z) \
-        (x && x->binb.bin && x->binb.get_offset)? \
-                x->binb.get_offset (x->binb.bin, y, z): -1
-
-#define R_ANAL_GET_NAME(x,y,z) \
-        (x && x->binb.bin && x->binb.get_name)? \
-                x->binb.get_name (x->binb.bin, y, z): NULL
 
 /* type = (R_ANAL_VAR_TYPE_BYTE & R_ANAL_VAR_TYPE_SIZE_MASK) |
  *			( RANAL_VAR_TYPE_SIGNED & RANAL_VAR_TYPE_SIGN_MASK) |
@@ -2289,6 +2276,7 @@ extern RAnalPlugin r_anal_plugin_arm_v35;
 extern RAnalPlugin r_anal_plugin_z80;
 extern RAnalPlugin r_anal_plugin_mcs96;
 extern RAnalPlugin r_anal_plugin_pyc;
+extern RAnalPlugin r_anal_plugin_pickle;
 extern RAnalPlugin r_anal_plugin_evm_cs;
 extern RAnalPlugin r_anal_plugin_bpf;
 extern RAnalPlugin r_anal_plugin_lm32;

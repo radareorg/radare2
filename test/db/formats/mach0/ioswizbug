@@ -1,0 +1,27 @@
+NAME=fatmach0 string location dylib
+FILE=bins/mach0/ls-m1
+ARGS=-b32
+CMDS=<<EOF
+e hex.header=false
+b 32
+s 0
+x 32
+o bins/other/hello.txt
+x 32
+o-3
+x 32
+psz
+EOF
+EXPECT=<<EOF
+0x00000000  cafe babe 0000 0002 0100 0007 0000 0003  ................
+0x00000010  0000 4000 0001 1c60 0000 000e 0100 000c  ..@....`........
+0x00000000  6865 6c6c 6f20 776f 726c 640a 5365 636f  hello world.Seco
+0x00000010  6e64 204c 696e 650a 0000 000e 0100 000c  nd Line.........
+0x00000000  6865 6c6c 6f20 776f 726c 640a 5365 636f  hello world.Seco
+0x00000010  6e64 204c 696e 650a ffff ffff ffff ffff  nd Line.........
+hello world
+Second Line
+\xff\xff\xff\xff\xff\xff\xff\xff
+EOF
+RUN
+

@@ -1,9 +1,9 @@
 /*
   zip_unchange_data.c -- undo helper function
-  Copyright (C) 1999-2012 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2021 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -31,26 +31,23 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 
 #include "zipint.h"
 
 void
-_zip_unchange_data(struct zip_entry *ze)
-{
+_zip_unchange_data(zip_entry_t *ze) {
     if (ze->source) {
-	zip_source_free(ze->source);
-	ze->source = NULL;
+        zip_source_free(ze->source);
+        ze->source = NULL;
     }
 
     if (ze->changes != NULL && (ze->changes->changed & ZIP_DIRENT_COMP_METHOD) && ze->changes->comp_method == ZIP_CM_REPLACED_DEFAULT) {
-	ze->changes->changed &= ~ZIP_DIRENT_COMP_METHOD;
-	if (ze->changes->changed == 0) {
-	    _zip_dirent_free(ze->changes);
-	    ze->changes = NULL;
-	}
+        ze->changes->changed &= ~ZIP_DIRENT_COMP_METHOD;
+        if (ze->changes->changed == 0) {
+            _zip_dirent_free(ze->changes);
+            ze->changes = NULL;
+        }
     }
 
     ze->deleted = 0;
 }
-

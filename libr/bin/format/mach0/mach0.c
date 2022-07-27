@@ -1,10 +1,8 @@
 /* radare - LGPL - Copyright 2010-2022 - nibble, mrmacete, pancake */
 
-#include <stdio.h>
-#include <r_types.h>
-#include <r_util.h>
-#include "mach0.h"
+#define R_LOG_ORIGIN "bin.macho"
 #include <r_hash.h>
+#include "mach0.h"
 
 // TODO: deprecate bprintf and use Eprintf (bin->self)
 #define bprintf if (bin->verbose) eprintf
@@ -263,7 +261,7 @@ static bool init_hdr(struct MACH0_(obj_t) *bin) {
 	}
 	len = r_buf_read_at (bin->b, 0 + bin->header_at, machohdrbytes, sizeof (machohdrbytes));
 	if (len != sizeof (machohdrbytes)) {
-		bprintf ("Error: read (hdr)\n");
+		bprintf ("read (hdr)\n");
 		return false;
 	}
 	bin->hdr.magic = r_read_ble (&machohdrbytes[0], bin->big_endian, 32);
@@ -865,12 +863,8 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	super.blob.magic = r_buf_read_ble32_at (bin->b, data, mach0_endian);
 	super.blob.length = r_buf_read_ble32_at (bin->b, data + 4, mach0_endian);
 	super.count = r_buf_read_ble32_at (bin->b, data + 8, mach0_endian);
-	char *verbose = r_sys_getenv ("RABIN2_CODESIGN_VERBOSE");
-	bool isVerbose = false;
-	if (verbose) {
-		isVerbose = *verbose;
-		free (verbose);
-	}
+	// XXX deprecate
+	bool isVerbose = r_sys_getenv_asbool ("RABIN2_CODESIGN_VERBOSE");
 	// to dump all certificates
 	// [0x00053f75]> b 5K;/x 30800609;wtf @@ hit*
 	// then do this:
@@ -1154,7 +1148,7 @@ static int parse_thread(struct MACH0_(obj_t) *bin, struct load_command *lc, ut64
 
 	return true;
 wrong_read:
-	bprintf ("Error: read (thread)\n");
+	R_LOG_ERROR ("read (thread)");
 	return false;
 }
 
@@ -1164,14 +1158,12 @@ static int parse_function_starts(struct MACH0_(obj_t) *bin, ut64 off) {
 	int len;
 
 	if (off > bin->size || off + sizeof (struct linkedit_data_command) > bin->size) {
-		bprintf ("Likely overflow while parsing"
-			" LC_FUNCTION_STARTS command\n");
+		bprintf ("Likely overflow while parsing LC_FUNCTION_STARTS command");
 	}
 	bin->func_start = NULL;
 	len = r_buf_read_at (bin->b, off, sfc, sizeof (struct linkedit_data_command));
 	if (len < 1) {
-		bprintf ("Failed to get data while parsing"
-			" LC_FUNCTION_STARTS command\n");
+		R_LOG_WARN ("Failed to get data while parsing LC_FUNCTION_STARTS command");
 	}
 	fc.cmd = r_read_ble32 (&sfc[0], bin->big_endian);
 	fc.cmdsize = r_read_ble32 (&sfc[4], bin->big_endian);
@@ -1181,21 +1173,18 @@ static int parse_function_starts(struct MACH0_(obj_t) *bin, ut64 off) {
 	if ((int)fc.datasize > 0) {
 		ut8 *buf = calloc (1, fc.datasize + 1);
 		if (!buf) {
-			bprintf ("Failed to allocate buffer\n");
 			return false;
 		}
 		bin->func_size = fc.datasize;
 		if (fc.dataoff > bin->size || fc.dataoff + fc.datasize > bin->size) {
 			free (buf);
-			bprintf ("Likely overflow while parsing "
-				"LC_FUNCTION_STARTS command\n");
+			R_LOG_WARN ("Likely overflow while parsing LC_FUNCTION_STARTS command");
 			return false;
 		}
 		len = r_buf_read_at (bin->b, fc.dataoff, buf, fc.datasize);
 		if (len != fc.datasize) {
 			free (buf);
-			bprintf ("Failed to get data while parsing"
-				" LC_FUNCTION_STARTS\n");
+			R_LOG_WARN ("Failed to get data while parsing LC_FUNCTION_STARTS");
 			return false;
 		}
 		buf[fc.datasize] = 0; // null-terminated buffer
@@ -1726,6 +1715,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 		bin->hdr.sizeofcmds = bin->size - 128;
 		//return false;
 	}
+	bool noFuncStarts = r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
 	//bprintf ("Commands: %d\n", bin->hdr.ncmds);
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + bin->header_at; \
 			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
@@ -1990,9 +1980,13 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			/* TODO */
 			break;
 		case LC_FUNCTION_STARTS:
-			sdb_set (bin->kv, cmd_flagname, "function_starts", 0);
-			if (!parse_function_starts (bin, off)) {
-				bprintf ("Cannot parse LC_FUNCTION_STARTS\n");
+			if (noFuncStarts) {
+				// do nothing here
+			} else {
+				sdb_set (bin->kv, cmd_flagname, "function_starts", 0);
+				if (!parse_function_starts (bin, off)) {
+					R_LOG_WARN ("Cannot parse LC_FUNCTION_STARTS");
+				}
 			}
 			break;
 		case LC_REEXPORT_DYLIB:
@@ -2863,7 +2857,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	}
 	ht_pp_free (hash);
 	// bin->symbols = symbols;
-    free (symbols);
+	free (symbols);
 	return list;
 }
 
@@ -2905,11 +2899,15 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 
 	int bits = MACH0_(get_bits_from_hdr) (&bin->hdr);
 	if (bin->symtab && bin->symstr) {
+		int n0 = bin->dysymtab.nextdefsym;
+		int n1 = bin->dysymtab.nlocalsym;
+		int n2 = bin->dysymtab.nundefsym;
+		int n3 = bin->nsymtab;
+		symbols_count = R_MAX (n0, 0);
+		symbols_count += R_MAX (n1, 0);
+		symbols_count += R_MAX (n2, 0);
+		symbols_count += R_MAX (n3, 0);
 		/* parse dynamic symbol table */
-		symbols_count = (bin->dysymtab.nextdefsym + \
-				bin->dysymtab.nlocalsym + \
-				bin->dysymtab.nundefsym );
-		symbols_count += bin->nsymtab;
 		if (symbols_count < 0 || ((st64)symbols_count * 2) > ST32_MAX) {
 			eprintf ("Symbols count overflow\n");
 			ht_pp_free (hash);

@@ -825,6 +825,10 @@ static struct r_bin_pe_export_t* parse_symbol_table(RBinPEObj* pe, struct r_bin_
 		sz = exports_sz;
 		exports = malloc (sz + export_t_sz);
 		exp = exports;
+		if (!exports) {
+			free (buf);
+			return NULL;
+		}
 	}
 
 	sections = pe->sections;
@@ -3454,6 +3458,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(RBinPEObj* pe) {
 		// we cant exit with export_sz > pe->size, us r_bin_pe_export_t is 256+256+8+8+8+4 bytes is easy get over file size
 		// to avoid fuzzing we can abort on export_directory->NumberOfFunctions>0xffff
 		if (exports_sz < 0 || pe->export_directory->NumberOfFunctions + 1 > 0xffff) {
+			return NULL;
+		}
+		if (pe->export_directory->NumberOfNames > pe->export_directory->NumberOfFunctions) {
 			return NULL;
 		}
 		if (!(exports = malloc (exports_sz))) {

@@ -2,6 +2,10 @@
 0	string	BEGIN\ PGP\ PUBLIC\ KEY\ BLOCK	PGP Public key
 0	string	BEGIN\ PRIVATE\ KEY	PGP Private key
 0	string	BEGIN\ PUBLIC\ KEY	Public key
+0	string	BEGIN\ RSA\ PRIVATE\ KEY	RSA Private key
+0	string	BEGIN\ RSA\ PUBLIC\ KEY	RSA Public key
+0	string	BEGIN\ DSA\ PRIVATE\ KEY	DSA Private key
+0	string	BEGIN\ DSA\ PUBLIC\ KEY	DSA Public key
 0	string  \x8c\x0d\x04\x01\x03\x02	GPG-IDEA
 0	string  \x8c\x0d\x04\x02\x03\x02	GPG-3DES
 0	string  \x8c\x0d\x04\x03\x03\x02	GPG-CAST5
