@@ -3510,16 +3510,6 @@ reread:
 				dosearch = false;
 			}
 			break;
-		case 'r': // "/rr" - read refs
-			{
-				RListIter *iter;
-				RIOMap *map;
-				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
-					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 'r');
-				}
-			}
-			break;
 		case 'u': // "/ru"
 			{
 				bool v = r_config_get_i (core->config, "search.verbose");
@@ -3531,13 +3521,15 @@ reread:
 				dosearch = false;
 				break;
 			}
+		case 'r': // "/rr" - read refs
 		case 'w': // "/rw" - write refs
+		case 'x': // "/rx" - exec refs
 			{
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
 					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
-					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 'w');
+					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, input[1]);
 				}
 			}
 			break;
