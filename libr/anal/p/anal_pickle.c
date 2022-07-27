@@ -5,6 +5,11 @@
 
 #define MAXSTRLEN 128
 
+struct opmap {
+	const char *name;
+	char op;
+};
+
 enum opcode {
 	OP_MARK = '(',
 	OP_STOP = '.',
@@ -82,6 +87,77 @@ enum opcode {
 	OP_BYTEARRAY8 = '\x96',
 	OP_NEXT_BUFFER = '\x97',
 	OP_READONLY_BUFFER = '\x98'
+};
+
+static const struct opmap op_name_map[] = {
+	{ "MARK", '(' },
+	{ "STOP", '.' },
+	{ "POP", '0' },
+	{ "POP_MARK", '1' },
+	{ "DUP", '2' },
+	{ "FLOAT", 'F' },
+	{ "INT", 'I' },
+	{ "BININT", 'J' },
+	{ "BININT1", 'K' },
+	{ "LONG", 'L' },
+	{ "BININT2", 'M' },
+	{ "NONE", 'N' },
+	{ "PERSID", 'P' },
+	{ "BINPERSID", 'Q' },
+	{ "REDUCE", 'R' },
+	{ "STRING", 'S' },
+	{ "BINSTRING", 'T' },
+	{ "SHORT_BINSTRING", 'U' },
+	{ "UNICODE", 'V' },
+	{ "BINUNICODE", 'X' },
+	{ "APPEND", 'a' },
+	{ "BUILD", 'b' },
+	{ "GLOBAL", 'c' },
+	{ "DICT", 'd' },
+	{ "EMPTY_DICT", '}' },
+	{ "APPENDS", 'e' },
+	{ "GET", 'g' },
+	{ "BINGET", 'h' },
+	{ "INST", 'i' },
+	{ "LONG_BINGET", 'j' },
+	{ "LIST", 'l' },
+	{ "EMPTY_LIST", ']' },
+	{ "OBJ", 'o' },
+	{ "PUT", 'p' },
+	{ "BINPUT", 'q' },
+	{ "LONG_BINPUT", 'r' },
+	{ "SETITEM", 's' },
+	{ "TUPLE", 't' },
+	{ "EMPTY_TUPLE", ')' },
+	{ "SETITEMS", 'u' },
+	{ "BINFLOAT", 'G' },
+	{ "PROTO", '\x80' },
+	{ "NEWOBJ", '\x81' },
+	{ "EXT1", '\x82' },
+	{ "EXT2", '\x83' },
+	{ "EXT4", '\x84' },
+	{ "TUPLE1", '\x85' },
+	{ "TUPLE2", '\x86' },
+	{ "TUPLE3", '\x87' },
+	{ "NEWTRUE", '\x88' },
+	{ "NEWFALSE", '\x89' },
+	{ "LONG1", '\x8a' },
+	{ "LONG4", '\x8b' },
+	{ "BINBYTES", 'B' },
+	{ "SHORT_BINBYTES", 'C' },
+	{ "SHORT_BINUNICODE", '\x8c' },
+	{ "BINUNICODE8", '\x8d' },
+	{ "BINBYTES8", '\x8e' },
+	{ "EMPTY_SET", '\x8f' },
+	{ "ADDITEMS", '\x90' },
+	{ "FROZENSET", '\x91' },
+	{ "NEWOBJ_EX", '\x92' },
+	{ "STACK_GLOBAL", '\x93' },
+	{ "MEMOIZE", '\x94' },
+	{ "FRAME", '\x95' },
+	{ "BYTEARRAY8", '\x96' },
+	{ "NEXT_BUFFER", '\x97' },
+	{ "READONLY_BUFFER", '\x98' }
 };
 
 static inline int handle_int(RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
@@ -434,83 +510,11 @@ static inline int assemble_cnt_str(const char *str, int byte_sz, ut8 *outbuf, in
 }
 
 static inline int write_op(char *opstr, ut8 *outbuf) {
-	struct opmap {const char *name; char op;};
-	struct opmap map[] = {
-		{ "MARK", '(' },
-		{ "STOP", '.' },
-		{ "POP", '0' },
-		{ "POP_MARK", '1' },
-		{ "DUP", '2' },
-		{ "FLOAT", 'F' },
-		{ "INT", 'I' },
-		{ "BININT", 'J' },
-		{ "BININT1", 'K' },
-		{ "LONG", 'L' },
-		{ "BININT2", 'M' },
-		{ "NONE", 'N' },
-		{ "PERSID", 'P' },
-		{ "BINPERSID", 'Q' },
-		{ "REDUCE", 'R' },
-		{ "STRING", 'S' },
-		{ "BINSTRING", 'T' },
-		{ "SHORT_BINSTRING", 'U' },
-		{ "UNICODE", 'V' },
-		{ "BINUNICODE", 'X' },
-		{ "APPEND", 'a' },
-		{ "BUILD", 'b' },
-		{ "GLOBAL", 'c' },
-		{ "DICT", 'd' },
-		{ "EMPTY_DICT", '}' },
-		{ "APPENDS", 'e' },
-		{ "GET", 'g' },
-		{ "BINGET", 'h' },
-		{ "INST", 'i' },
-		{ "LONG_BINGET", 'j' },
-		{ "LIST", 'l' },
-		{ "EMPTY_LIST", ']' },
-		{ "OBJ", 'o' },
-		{ "PUT", 'p' },
-		{ "BINPUT", 'q' },
-		{ "LONG_BINPUT", 'r' },
-		{ "SETITEM", 's' },
-		{ "TUPLE", 't' },
-		{ "EMPTY_TUPLE", ')' },
-		{ "SETITEMS", 'u' },
-		{ "BINFLOAT", 'G' },
-		{ "PROTO", '\x80' },
-		{ "NEWOBJ", '\x81' },
-		{ "EXT1", '\x82' },
-		{ "EXT2", '\x83' },
-		{ "EXT4", '\x84' },
-		{ "TUPLE1", '\x85' },
-		{ "TUPLE2", '\x86' },
-		{ "TUPLE3", '\x87' },
-		{ "NEWTRUE", '\x88' },
-		{ "NEWFALSE", '\x89' },
-		{ "LONG1", '\x8a' },
-		{ "LONG4", '\x8b' },
-		{ "BINBYTES", 'B' },
-		{ "SHORT_BINBYTES", 'C' },
-		{ "SHORT_BINUNICODE", '\x8c' },
-		{ "BINUNICODE8", '\x8d' },
-		{ "BINBYTES8", '\x8e' },
-		{ "EMPTY_SET", '\x8f' },
-		{ "ADDITEMS", '\x90' },
-		{ "FROZENSET", '\x91' },
-		{ "NEWOBJ_EX", '\x92' },
-		{ "STACK_GLOBAL", '\x93' },
-		{ "MEMOIZE", '\x94' },
-		{ "FRAME", '\x95' },
-		{ "BYTEARRAY8", '\x96' },
-		{ "NEXT_BUFFER", '\x97' },
-		{ "READONLY_BUFFER", '\x98' }
-	};
-
 	bool ret = false;
 	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (map); i++) {
-		if (!r_str_casecmp (opstr, map[i].name)) {
-			*outbuf = (ut8)map[i].op;
+	for (i = 0; i < R_ARRAY_SIZE (op_name_map); i++) {
+		if (!r_str_casecmp (opstr, op_name_map[i].name)) {
+			*outbuf = (ut8)op_name_map[i].op;
 			ret = true;
 			break;
 		}
