@@ -72,8 +72,10 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 
 static void destroy(RBinFile *bf) {
 	if (origplugin) {
-		origplugin->read = origread;
 		R_FREE (heapplugin);
+		RIO *io = bf->rbin->iob.io;
+		io->desc->plugin = origplugin;
+		origplugin = NULL;
 	}
 	MACH0_(mach0_free) (bf->o->bin_obj);
 }
@@ -736,13 +738,13 @@ static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io) {
 	if (heapplugin) {
 		R_LOG_WARN ("Here be dragons");
 	}
-	heapplugin = plugin;
-	memcpy (plugin, io->desc->plugin, sizeof (RIOPlugin));
+	origplugin = io->desc->plugin;
+	memcpy (plugin, origplugin, sizeof (RIOPlugin));
 	io->desc->plugin = plugin;
 	obj->original_io_read = plugin->read;
 	origread = plugin->read;
 	plugin->read = &rebasing_and_stripping_io_read;
-	origplugin = plugin;
+	heapplugin = plugin;
 }
 
 static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
