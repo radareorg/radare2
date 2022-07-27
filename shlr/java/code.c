@@ -254,7 +254,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	return update_bytes_consumed (JAVA_OPS[idx].size);
 }
 
-R_API void r_java_new_method (void) {
+R_API void r_java_new_method(void) {
 	IFDBG eprintf ("Reseting the bytes consumed, they were: 0x%04"PFMT64x".\n", BYTES_CONSUMED);
 	init_switch_op ();
 	IN_SWITCH_OP = 0;
