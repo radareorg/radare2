@@ -4324,7 +4324,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 						k++;
 					}
 					break;
-				case 'f':
+				case 'F':
 					if (p[j] == 0xff) {
 						k++;
 					}
