@@ -1258,3 +1258,16 @@ offset table offset points outside of valid range
 ERROR: bplist parse error
 EOF
 RUN
+
+NAME=p=F hello-linux-x86_64
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=p=F
+EXPECT=<<EOF
+0x00400000 000 0000 |
+0x00400100 001 0000 |
+0x00400200 002 0000 |
+0x00400300 003 000a |##
+0x00400400 004 0013 |###
+0x00400500 005 0014 |####
+EOF
+RUN
