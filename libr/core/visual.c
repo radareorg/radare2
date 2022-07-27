@@ -4519,8 +4519,11 @@ dodo:
 					if (chrs[0] == '[') {
 						chrs[1] = r_cons_readchar ();
 						chrs_read++;
-						if (chrs[1] >= 'A' && chrs[1] <= 'D') { // arrow keys
-							flush_stdin ();
+						int ch56 = chrs[1] == '5' || chrs[1] == '6';
+						if ((chrs[1] >= 'A' && chrs[1] <= 'D') || ch56) { // arrow keys
+							if (!ch56 || r_cons_readchar () == '~') {
+								chrs_read += ch56;
+								flush_stdin ();
 #ifndef __WINDOWS__
 							// Following seems to fix an issue where scrolling slows
 							// down to a crawl for some terminals after some time
@@ -4528,6 +4531,7 @@ dodo:
 							r_cons_set_raw (false);
 							r_cons_set_raw (true);
 #endif
+							}
 						}
 					}
 					(void)r_cons_readpush (chrs, chrs_read);
