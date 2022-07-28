@@ -2110,7 +2110,7 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 	struct MACH0_(obj_t) *obj = kobj->mach0;
 	ut64 eob = off + count;
 	size_t i = 0;
-	for (; i < obj->nsegs; i++) {
+	for (; i < obj->segs_count; i++) {
 		if (!obj->chained_starts[i]) {
 			continue;
 		}
