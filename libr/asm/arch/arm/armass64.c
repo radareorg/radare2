@@ -212,7 +212,7 @@ static ut32 encodeBitMasksWithSize(ut64 imm, ut32 reg_size) {
 
 static inline ut32 encode1reg(ArmOp *op) {
 	int r = op->operands[0].reg;
-	if (r < 1 || r > 128) {
+	if (r < 0 || r > 128) {
 		R_LOG_ERROR ("Invalid register to encode");
 		return 0;
 	}
@@ -1362,10 +1362,10 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 
 	op = 0 (adr) || 1 (adrp) 
 #endif
-	ut32 immlo = at & 3;
-	ut32 immhi = at >> 2;
-	data += (immlo << 5);
-	data += (immhi << 29);
+	ut32 immlo = (at & 3) << 29;
+	ut32 immhi = (at >> 2) << 5;
+	data |= (immlo >> 24) & 0xff;
+	data |= ((immhi >> 8) & 0xff00) | ((immhi << 8) & 0xff0000) | ((immhi << 24) & 0xe0000000);
 	return data;
 }
 
@@ -1376,16 +1376,13 @@ static ut32 adr(ArmOp *op, int addr) {
 	if (op->operands[1].type & ARM_CONSTANT) {
 		// XXX what about negative values?
 		at = op->operands[1].immediate - addr;
-		at /= 4;
 	}
-	data = 0x00000030;
+	data = 0x00000010;
 	data |= encode1reg (op);
-	ut8 b0 = at;
-	ut8 b1 = (at >> 3) & 0xff;
-	ut8 b2 = (at >> (8 + 7)) & 0xff;
-	data += b0 << 29;
-	data += b1 << 16;
-	data += b2 << 24;
+	ut32 immlo = (at & 3) << 29;
+	ut32 immhi = (at >> 2) << 5;
+	data |= (immlo >> 24) & 0xff;
+	data |= ((immhi >> 8) & 0xff00) | ((immhi << 8) & 0xff0000) | ((immhi << 24) & 0xe0000000);
 	return data;
 }
 
