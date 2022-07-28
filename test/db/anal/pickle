@@ -43,3 +43,215 @@ EXPECT=<<EOF
 0x0000000f                   44  
 EOF
 RUN
+
+NAME=Assemble and dissassemble single byte funcs
+FILE=malloc://8
+CMDS=<<EOF
+e asm.arch=pickle
+wa MARK
+pid 1
+wa STOP
+pid 1
+wa POP
+pid 1
+wa POP_MARK
+pid 1
+wa DUP
+pid 1
+wa NONE
+pid 1
+wa BINPERSID
+pid 1
+wa REDUCE
+pid 1
+wa APPEND
+pid 1
+wa BUILD
+pid 1
+wa DICT
+pid 1
+wa EMPTY_DICT
+pid 1
+wa APPENDS
+pid 1
+wa LIST
+pid 1
+wa EMPTY_LIST
+pid 1
+wa OBJ
+pid 1
+wa SETITEM
+pid 1
+wa TUPLE
+pid 1
+wa EMPTY_TUPLE
+pid 1
+wa SETITEMS
+pid 1
+wa NEWOBJ
+pid 1
+wa TUPLE1
+pid 1
+wa TUPLE2
+pid 1
+wa TUPLE3
+pid 1
+wa NEWTRUE
+pid 1
+wa NEWFALSE
+pid 1
+wa EMPTY_SET
+pid 1
+wa ADDITEMS
+pid 1
+wa FROZENSET
+pid 1
+wa NEWOBJ_EX
+pid 1
+wa STACK_GLOBAL
+pid 1
+wa MEMOIZE
+pid 1
+wa NEXT_BUFFER
+pid 1
+wa READONLY_BUFFER
+pid 1
+EOF
+EXPECT=<<EOF
+0x00000000                   28  MARK
+0x00000000                   2e  STOP
+0x00000000                   30  POP
+0x00000000                   31  POP_MARK
+0x00000000                   32  DUP
+0x00000000                   4e  NONE
+0x00000000                   51  BINPERSID
+0x00000000                   52  REDUCE
+0x00000000                   61  APPEND
+0x00000000                   62  BUILD
+0x00000000                   64  DICT
+0x00000000                   7d  EMPTY_DICT
+0x00000000                   65  APPENDS
+0x00000000                   6c  LIST
+0x00000000                   5d  EMPTY_LIST
+0x00000000                   6f  OBJ
+0x00000000                   73  SETITEM
+0x00000000                   74  TUPLE
+0x00000000                   29  EMPTY_TUPLE
+0x00000000                   75  SETITEMS
+0x00000000                   81  NEWOBJ
+0x00000000                   85  TUPLE1
+0x00000000                   86  TUPLE2
+0x00000000                   87  TUPLE3
+0x00000000                   88  NEWTRUE
+0x00000000                   89  NEWFALSE
+0x00000000                   8f  EMPTY_SET
+0x00000000                   90  ADDITEMS
+0x00000000                   91  FROZENSET
+0x00000000                   92  NEWOBJ_EX
+0x00000000                   93  STACK_GLOBAL
+0x00000000                   94  MEMOIZE
+0x00000000                   97  NEXT_BUFFER
+0x00000000                   98  READONLY_BUFFER
+EOF
+RUN
+
+NAME=Assemble and dissassemble all ints
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=pickle
+wa FRAME 0x1122334455887788
+pid 1
+wa BININT 0x11223344
+pid 1
+wa LONG_BINPUT 0x11223344
+pid 1
+wa LONG_BINGET 0x11223344
+pid 1
+wa EXT4 0x11223344
+pid 1
+wa LONG4 0x11223344
+pid 1
+wa BININT2 0x1122
+pid 1
+wa EXT2 0x1122
+pid 1
+wa BININT1 0x11
+pid 1
+wa BINGET 0x11
+pid 1
+wa BINPUT 0x11
+pid 1
+wa PROTO 0x11
+pid 1
+wa EXT1 0x11
+pid 1
+wa LONG1 0x11
+pid 1
+EOF
+EXPECT=<<EOF
+0x00000000   958877885544332211  FRAME 0x1122334455887788
+0x00000000           4a44332211  BININT 0x11223344
+0x00000000           7244332211  LONG_BINPUT 0x11223344
+0x00000000           6a44332211  LONG_BINGET 0x11223344
+0x00000000           8444332211  EXT4 0x11223344
+0x00000000           8b44332211  LONG4 0x11223344
+0x00000000               4d2211  BININT2 0x1122
+0x00000000               832211  EXT2 0x1122
+0x00000000                 4b11  BININT1 0x11
+0x00000000                 6811  BINGET 0x11
+0x00000000                 7111  BINPUT 0x11
+0x00000000                 8011  PROTO 0x11
+0x00000000                 8211  EXT1 0x11
+0x00000000                 8a11  LONG1 0x11
+EOF
+RUN
+
+NAME=Assemble and dissassemble counted strings
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=pickle
+wa BINUNICODE8 AABBCCDD
+pid 1
+wa BINBYTES8 AABBCCDD
+pid 1
+wa BYTEARRAY8 AABBCCDD
+pid 1
+wa BINSTRING AABBCCDD
+pid 1
+wa BINUNICODE AABBCCDD
+pid 1
+wa BINBYTES AABBCCDD
+pid 1
+wa SHORT_BINBYTES AABBCCDD
+pid 1
+wa SHORT_BINSTRING AABBCCDD
+pid 1
+wa SHORT_BINUNICODE AABBCCDD
+pid 1
+EOF
+EXPECT=<<EOF
+0x00000000 8d08000000000000006161626263636464  BINUNICODE8 "aabbccdd"
+0x00000000 8e08000000000000006161626263636464  BINBYTES8 "aabbccdd"
+0x00000000 9608000000000000006161626263636464  BYTEARRAY8 "aabbccdd"
+0x00000000 54080000006161626263636464  BINSTRING "aabbccdd"
+0x00000000 58080000006161626263636464  BINUNICODE "aabbccdd"
+0x00000000 42080000006161626263636464  BINBYTES "aabbccdd"
+0x00000000 43086161626263636464  SHORT_BINBYTES "aabbccdd"
+0x00000000 55086161626263636464  SHORT_BINSTRING "aabbccdd"
+0x00000000 8c086161626263636464  SHORT_BINUNICODE "aabbccdd"
+EOF
+RUN
+
+
+NAME=Assemble and dissassemble float
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=pickle
+wa BINFLOAT 4.328
+pid 1
+e asm.arch=pickle
+EOF
+EXPECT=<<EOF
+0x00000000   4740114fdf3b645a1d  BINFLOAT 4.328000
+EOF
+RUN

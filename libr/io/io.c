@@ -638,11 +638,8 @@ R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user) {
 }
 #endif
 
-//remove all banks, maps and descs
 R_API void r_io_fini(RIO* io) {
-	if (!io) {
-		return;
-	}
+	r_return_if_fail (io);
 	r_io_bank_fini (io);
 	r_io_map_fini (io);
 	r_io_desc_cache_fini_all (io);

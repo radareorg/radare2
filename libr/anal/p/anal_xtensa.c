@@ -1457,8 +1457,11 @@ static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xten
 
 	bit_clear = opcode == 56;
 	cmp_op = bit_clear ? "==,$z" : "==,$z,!";
-	mask = 1 << imm_bit;
-
+	if (imm_bit > 24) {
+		mask = 0;
+	} else {
+		mask = 1 << imm_bit;
+	}
 	sign_extend (&imm_offset, 7);
 	imm_offset += 4 - 3;
 
@@ -1643,7 +1646,9 @@ static void esil_call(xtensa_isa isa, xtensa_opcode opcode,
 	sign_extend (&imm_offset, 17);
 
 	if (call) {
-		imm_offset <<= 2;
+		ut32 uimm_offset = imm_offset;
+		uimm_offset <<= 2;
+		imm_offset = uimm_offset;
 	}
 
 	imm_offset += 4 - 3;

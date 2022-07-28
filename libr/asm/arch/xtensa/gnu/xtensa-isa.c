@@ -223,12 +223,12 @@ xtensa_insnbuf_from_chars (xtensa_isa isa,
   fence_post = start + (num_chars * increment);
   memset (insn, 0, xtensa_insnbuf_size (isa) * sizeof (xtensa_insnbuf_word));
 
-  for (i = start; i != fence_post; i += increment, ++cp)
-    {
+  for (i = start; i != fence_post; i += increment, ++cp) {
       int word_inx = byte_to_word_index (i);
       int bit_inx = byte_to_bit_index (i);
-
-      insn[word_inx] |= (*cp & 0xff) << bit_inx;
+      if (bit_inx < 24) {
+	      insn[word_inx] |= (*cp & 0xff) << bit_inx;
+      }
     }
 }
 

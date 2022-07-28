@@ -768,6 +768,10 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 		from = core->offset;
 		to = from + core->blocksize;
 	}
+	if (list) {
+		r_list_free (list);
+		list = NULL;
+	}
 
 	core->print->zoom->mode = (input && *input)? input[1]: 'e';
 	r_print_zoom_buf (core->print, core, printzoomcallback, from, to, len, len);
@@ -4320,7 +4324,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 						k++;
 					}
 					break;
-				case 'f':
+				case 'F':
 					if (p[j] == 0xff) {
 						k++;
 					}
