@@ -4513,7 +4513,7 @@ dodo:
 				if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {
 					flush_stdin ();
 				} else if (ch == 0x1b) {
-					char chrs[2];
+					char chrs[3];
 					int chrs_read = 1;
 					chrs[0] = r_cons_readchar ();
 					if (chrs[0] == '[') {
@@ -4521,7 +4521,7 @@ dodo:
 						chrs_read++;
 						int ch56 = chrs[1] == '5' || chrs[1] == '6';
 						if ((chrs[1] >= 'A' && chrs[1] <= 'D') || ch56) { // arrow keys
-							if (!ch56 || r_cons_readchar () == '~') {
+							if (!ch56 || (chrs[2] = r_cons_readchar ()) == '~') {
 								chrs_read += ch56;
 								flush_stdin ();
 #ifndef __WINDOWS__
