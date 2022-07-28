@@ -259,7 +259,7 @@ static bool init_hdr(struct MACH0_(obj_t) *bin) {
 	} else {
 		return false; // object files are magic == 0, but body is different :?
 	}
-	len = r_buf_read_at (bin->b, 0 + bin->header_at, machohdrbytes, sizeof (machohdrbytes));
+	len = r_buf_read_at (bin->b, bin->header_at, machohdrbytes, sizeof (machohdrbytes));
 	if (len != sizeof (machohdrbytes)) {
 		bprintf ("read (hdr)\n");
 		return false;
@@ -1509,11 +1509,11 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) *bin, ut32 offset, ut32 si
 	if (segs_count == UT32_MAX || segs_count == 0) {
 		return false;
 	}
-	bin->segs_count = segs_count;
 	bin->chained_starts = R_NEWS0 (struct r_dyld_chained_starts_in_segment *, segs_count);
 	if (!bin->chained_starts) {
 		return false;
 	}
+	bin->segs_count = segs_count;
 	bin->fixups_header = header;
 	bin->fixups_offset = offset;
 	bin->fixups_size = size;
