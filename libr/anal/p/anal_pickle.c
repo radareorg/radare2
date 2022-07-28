@@ -536,6 +536,8 @@ static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int o
 		*arg = '\0';
 		arg++;
 		arg = r_str_ichr (arg, ' ');
+	} else {
+		arg = "";
 	}
 
 	if (write_op (opstr, outbuf)) {
