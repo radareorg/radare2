@@ -2387,9 +2387,10 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 
 		if (core->print->use_comments) {
 			for (j = 0; j < nb_cols; j++) {
-				const char *comment = core->print->get_comments (core->print->user, addr + j);
+				char *comment = core->print->get_comments (core->print->user, addr + j);
 				if (comment) {
 					r_cons_printf (" ; %s", comment);
+					free (comment);
 				}
 			}
 		}
