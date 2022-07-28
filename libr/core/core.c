@@ -2494,6 +2494,7 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 				r_asm_set_pc (core->rasm, value);
 				r_asm_disassemble (core->rasm, &op, buf, sizeof (buf));
 				r_strbuf_appendf (s, "'%s' ", r_asm_op_get_asm (&op));
+				r_asm_op_fini (&op);
 				/* get library name */
 				{ // NOTE: dup for mapname?
 					RDebugMap *map;

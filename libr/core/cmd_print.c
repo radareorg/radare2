@@ -6916,6 +6916,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 					r_cons_printf ("  // %s\n", r_strbuf_get (&asmop.buf_asm));
 					i--;
+					r_asm_op_fini (&asmop);
 				}
 				r_cons_printf (".equ shellcode_len, %d\n", len);
 			} else {

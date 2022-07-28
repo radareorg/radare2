@@ -798,7 +798,6 @@ static bool is_repeatable_inst(RCore *core, ut64 addr) {
 }
 
 static int step_until_inst(RCore *core, const char *instr, bool regex) {
-	RAsmOp asmop;
 	ut8 buf[32];
 	ut64 pc;
 	int ret;
@@ -811,6 +810,7 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	}
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
+		RAsmOp asmop;
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -836,15 +836,18 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 			if (regex) {
 				if (r_regex_match (instr, "e", buf_asm)) {
 					eprintf ("Stop.\n");
+					r_asm_op_fini (&asmop);
 					break;
 				}
 			} else {
 				if (strstr (buf_asm, instr)) {
 					eprintf ("Stop.\n");
+					r_asm_op_fini (&asmop);
 					break;
 				}
 			}
 		}
+		r_asm_op_fini (&asmop);
 	}
 	r_cons_break_pop ();
 	return true;

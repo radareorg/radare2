@@ -528,9 +528,9 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 			r_anal_op_fini (&aop);
 		}
 	} else if (hex) {
-		RAsmOp op;
 		r_asm_set_pc (as->a, addr);
 		while ((len - ret) > 0) {
+			RAsmOp op;
 			int dr = r_asm_disassemble (as->a, &op, data + ret, len - ret);
 			if (dr == -1 || op.size < 1) {
 				op.size = 1;
@@ -543,6 +543,7 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 			free (op_hex);
 			ret += op.size;
 			r_asm_set_pc (as->a, addr+ ret);
+			r_asm_op_fini (&op);
 		}
 	} else {
 		r_asm_set_pc (as->a, addr);

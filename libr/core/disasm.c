@@ -2207,9 +2207,11 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	const char *vartype = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, ds->at);
 	if (!comment) {
 		if (vartype) {
+			R_FREE (ds->comment);
 			ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_func_var_type), vartype);
 		} else if (item && R_STR_ISNOTEMPTY (item->comment)) {
 			ds->ocomment = item->comment;
+			R_FREE (ds->comment);
 			ds->comment = strdup (item->comment);
 		}
 	} else if (vartype) {
@@ -2218,6 +2220,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_usrcmt), comment);
 	}
 	if (!ds->comment || !*ds->comment) {
+		R_FREE (ds->comment);
 		return;
 	}
 	linelen = strlen (ds->comment) + 5;
@@ -5868,6 +5871,7 @@ toro:
 				r_asm_set_syntax (core->rasm, R_ASM_SYNTAX_INTEL);
 				r_asm_disassemble (core->rasm, &ao, ds_bufat (ds), ds_left (ds) + 5);
 				r_asm_set_syntax (core->rasm, os);
+				r_asm_op_fini (&ao);
 			}
 			if (mi_type == R_META_TYPE_FORMAT) {
 				if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
@@ -5907,6 +5911,7 @@ toro:
 				r_asm_set_syntax (core->rasm, R_ASM_SYNTAX_INTEL);
 				r_asm_disassemble (core->rasm, &ao, ds_bufat (ds), ds_left (ds) + 5);
 				r_asm_set_syntax (core->rasm, os);
+				r_asm_op_fini (&ao);
 			}
 			if (ds->show_bytes_right && ds->show_bytes) {
 				ds_comment (ds, true, "");
@@ -6315,7 +6320,6 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 }
 
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj) {
-	RAsmOp asmop;
 	RDisasmState *ds;
 	RAnalFunction *f;
 	int i, j, k, ret, line;
@@ -6399,6 +6403,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	const bool be = core->rasm->config->big_endian;
 
 	for (;;) {
+		RAsmOp asmop;
 		bool end_nbopcodes, end_nbbytes;
 		int skip_bytes_flag = 0, skip_bytes_bb = 0;
 
@@ -6420,7 +6425,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		} else if (i >= nb_bytes) {
 			break;
 		}
-		memset (&asmop, 0, sizeof (RAsmOp));
 		ret = r_asm_disassemble (core->rasm, &asmop, buf + i, nb_bytes - i);
 		if (ret < 1) {
 			char *hex = r_asm_op_get_hex (&asmop);
@@ -6635,6 +6639,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		end_nbopcodes = dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes;
 		end_nbbytes = dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes;
 		result = true;
+		r_asm_op_fini (&asmop);
 		if (end_nbopcodes || end_nbbytes) {
 			break;
 		}
@@ -6655,7 +6660,6 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	int i, ret, count = 0;
 	ut8 *buf = core->block;
 	char str[128];
-	RAsmOp asmop;
 	if (l < 1) {
 		l = len;
 	}
@@ -6682,6 +6686,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < l; i += minopsz) {
+		RAsmOp asmop;
 		ds->at = addr + i;
 		if (opalign > 1) {
 			// skip unaligned addresses
@@ -6769,6 +6774,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			}
 			}
 		}
+		r_asm_op_fini (&asmop);
 	}
 	r_cons_break_pop ();
 	if (buf != core->block) {
@@ -6796,7 +6802,6 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	bool asm_immtrim = r_config_get_i (core->config, "asm.imm.trim");
 	int i = 0, j, ret, err = 0;
 	ut64 old_offset = core->offset;
-	RAsmOp asmop;
 	const char *color_reg = R_CONS_COLOR_DEF (reg, Color_YELLOW);
 	const char *color_num = R_CONS_COLOR_DEF (num, Color_CYAN);
 	const size_t addrbytes = buf ? 1 : core->io->addrbytes;
@@ -6832,6 +6837,7 @@ toro:
 		// fix infinite loop
 		j += opinc;
 	} else for (; check_end (nb_opcodes, nb_bytes, addrbytes * i, j); j++) {
+		RAsmOp asmop;
 		if (r_cons_is_breaked ()) {
 			err = 1;
 			break;
@@ -7015,6 +7021,7 @@ toro:
 			}
 		}
 		i += ret;
+		r_asm_op_fini (&asmop);
 	}
 	if (buf == core->block && nb_opcodes > 0 && j < nb_opcodes) {
 		r_core_seek (core, core->offset + i, true);
