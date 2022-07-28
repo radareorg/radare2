@@ -776,14 +776,6 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 	core->print->zoom->mode = (input && *input)? input[1]: 'e';
 	r_print_zoom_buf (core->print, core, printzoomcallback, from, to, len, len);
 	block = core->print->zoom->buf;
-	switch (core->print->zoom->mode) {
-	case 'f':
-		// scale buffer for proper visualization of small numbers as colors
-		for (i = 0; i < core->print->zoom->size; i++) {
-			block[i] *= 8;
-		}
-		break;
-	}
 
 	for (i = 0; i < len; i += cols) {
 		ut64 ea = core->offset + i;
