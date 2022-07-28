@@ -605,7 +605,7 @@ static RList *r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len, 
 		r_asm_op_fini (&op);
 	} while ( ((int) current_buf_pos  >= 0) && (int)(len - current_buf_pos) >= 0 && hit_count <= max_hit_count);
 
-	free(buf);
+	free (buf);
 	return hits;
 }
 
