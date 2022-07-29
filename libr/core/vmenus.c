@@ -133,7 +133,6 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	char *word = NULL;
 	int x = 0;
 	char *ginput = NULL;
-	RAsmOp asmop;
 	RAnalOp analop;
 	ut8 buf[sizeof (ut64)];
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
@@ -168,6 +167,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		if (input) {
 			expr = strdup (input);
 		} else {
+			RAsmOp asmop;
 			memcpy (buf, core->block, sizeof (ut64));
 			// bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 			(void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
@@ -192,6 +192,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
 			free (op);
 			expr = strdup (r_strbuf_get (&analop.esil));
+			r_asm_op_fini (&asmop);
 		}
 		{
 			r_cons_printf (Color_RESET"esil: %s\n"Color_RESET, expr);
@@ -362,7 +363,6 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 	bool colorBits = false;
 	int analopType;
 	int i, j, x = 0;
-	RAsmOp asmop;
 	RAnalOp analop;
 	ut8 buf[sizeof (ut64)];
 	bool bitsInLine = false;
@@ -376,6 +376,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 	}
 	memcpy (buf, core->block + cur, sizeof (ut64));
 	for (;;) {
+		RAsmOp asmop;
 		r_cons_clear00 ();
 		bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 		(void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
@@ -642,6 +643,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			}
 			break;
 		}
+		r_asm_op_fini (&asmop);
 	}
 	return true;
 }
