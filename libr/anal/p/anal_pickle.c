@@ -509,6 +509,31 @@ static inline int assemble_cnt_str(const char *str, int byte_sz, ut8 *outbuf, in
 	return wlen;
 }
 
+static inline int assemble_n_str(char *str, ut32 cnt, ut8 *outbuf, int outsz) {
+	r_return_val_if_fail (cnt <= 2, -2);
+	size_t len = strlen (str);
+	if (len + 1 > outsz) { // str must be be \n terminated in outbuf
+		R_LOG_ERROR ("String to large for assembler to handle");
+		return -1;
+	}
+	if (strchr (str, '\n')) {
+		R_LOG_ERROR ("Shouldn't be newlines in argument");
+		return -1;
+	}
+
+	if (cnt == 2) {
+		char *space = strchr (str, ' ');
+		if (!space) {
+			R_LOG_ERROR ("Need space between args");
+			return -1;
+		}
+		*space = '\n';
+	}
+	memcpy (outbuf, str, len);
+	outbuf[len] = '\n';
+	return len + 1;
+}
+
 static inline int write_op(char *opstr, ut8 *outbuf) {
 	bool ret = false;
 	size_t i;
@@ -631,6 +656,8 @@ static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int o
 		// two lines
 		case OP_INST:
 		case OP_GLOBAL:
+			wlen += assemble_n_str (arg, 2, outbuf, outsz);
+			break;
 		// one line
 		case OP_FLOAT:
 		case OP_INT:
@@ -640,8 +667,7 @@ static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int o
 		case OP_UNICODE:
 		case OP_GET:
 		case OP_PUT:
-			R_LOG_ERROR ("This assembler can't handle %s (op: 0x%02x) yet", opstr, op);
-			wlen = -1;
+			wlen += assemble_n_str (arg, 1, outbuf, outsz);
 			break;
 		default:
 			r_warn_if_reached ();
