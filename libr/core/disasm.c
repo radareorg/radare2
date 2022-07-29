@@ -5185,7 +5185,17 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	bool is_code = (!ds->hint) || (ds->hint && ds->hint->type != 'd');
 	RAnalMetaItem *mi = r_meta_get_at (ds->core->anal, ds->at, R_META_TYPE_ANY, NULL);
 	if (mi) {
-		is_code = mi->type != 'd';
+		switch (mi->type) {
+		case 'd':
+		case 'h':
+		case 'm':
+		case 's':
+		case 'f':
+			is_code = false;
+			break;
+		default:
+			break;
+		}
 		mi = NULL;
 	}
 	if (is_code && ds->asm_describe && !ds->has_description) {
