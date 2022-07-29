@@ -3462,6 +3462,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		}
 	}
 	if (skip_bb) {
+		free (buf);
 		return false;
 	}
 	int *parent_reg_set = r_pvector_at (&ctx->reg_set, r_pvector_len (&ctx->reg_set) - 1);
