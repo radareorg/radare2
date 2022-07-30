@@ -450,12 +450,19 @@ e asm.lines.fcn=false
 s 0x8060b4f8
 wx 0000000000000000002e0500032e05000f00801021100000492d1808000082900800e003211080000000829007004010000000000016020003160200f8ff451000000000482d180801008424211000000800e003000000000000a290050040100100a524000082a00000a290552d1808010084240800e003000080a000000000e0ffbd27542d180c000000000800e0032000bd270000000000000000
 aa 2> /dev/null
+aaa
 pd 38
 EOF
 EXPECT=<<EOF
+;-- pc:
 0x8060b4f8      00000000   nop
+(fcn) fcn.8060b4fc 4
+// void fcn.8060b4fc (int32_t arg1, int32_t arg2);
+; arg int32_t arg1 @ a0
+; arg int32_t arg2 @ a1
 0x8060b4fc      00000000   nop
 (fcn) fcn.8060b500 80
+// void fcn.8060b500 (int32_t arg1, int32_t arg2);
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
 0x8060b500      002e0500   sll a1, a1, 0x18
@@ -479,6 +486,7 @@ EXPECT=<<EOF
 0x8060b548      0800e003   jr ra
 0x8060b54c      00000000   nop
 (fcn) fcn.8060b550 36
+// void fcn.8060b550 (int32_t arg1, int32_t arg2);
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
 0x8060b550      0000a290   lbu v0, (a1)
@@ -492,6 +500,7 @@ EXPECT=<<EOF
 0x8060b570      000080a0   sb zero, (a0)
 0x8060b574      00000000   nop
 (fcn) fcn.8060b578 20
+// void fcn.8060b578 (int32_t arg1, int32_t arg2);
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20

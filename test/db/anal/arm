@@ -405,7 +405,7 @@ af
 afl~[2]
 EOF
 EXPECT=<<EOF
-8
+12
 EOF
 RUN
 

@@ -101,9 +101,8 @@ EXPECT=<<EOF
 0x00107416    1     24 sym._wcrtomb
 0x0010742e    1     22 sym.__wctomb_r
 0x00107468    1     22 sym.__write
-0x001052d0    3     14 fcn.001052d0
-0x00107490    1     18 fcn.00107490
 0x001052cc    1      4 loc.___trap0
+0x00107490    1     18 fcn.00107490
 0x001074a4    1     20 fcn.001074a4
 0x001074bc    1     24 sym.__lseek
 0x001074d4    1     22 sym.__read
@@ -286,7 +285,7 @@ EXPECT=<<EOF
 0x0010d91c   17    342 fcn.0010d91c
 0x0010e2a2    7     60 sym._fileno
 0x0010e372    1     20 fcn.0010e372
-0x001138ec    3     14 fcn.001138ec
+0x001138e8    1      4 loc.___trap0
 0x0010e78e   15    160 sym.__findenv_r
 0x0010e82e    1     18 sym.__getenv_r
 0x0010e86e    1     14 sym._iswspace
@@ -318,7 +317,6 @@ EXPECT=<<EOF
 0x0010f3b2   12    272 sym.___d2b
 0x0010f4c2    4    148 sym.___ratio
 0x0010f66a    1     18 fcn.0010f66a
-0x001138e8    1      4 loc.___trap0
 0x0010f6e8    1     22 sym._putc
 0x0010f732   14    494 sym.__realloc_r
 0x0010fc5c    5     82 sym.__sbrk

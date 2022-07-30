@@ -517,7 +517,7 @@ static inline bool op_is_set_bp(const char *op_dst, const char *op_src, const ch
 }
 
 static inline bool does_arch_destroys_dst(const char *arch) {
-	return arch && (!strncmp (arch, "arm", 3) || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
+	return arch && (r_str_startswith (arch, "arm") || r_str_startswith (arch, "riscv") || r_str_startswith (arch, "ppc"));
 }
 
 static inline bool has_vars(RAnal *anal, ut64 addr) {
@@ -563,9 +563,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		0
 	};
 	bool arch_destroys_dst = does_arch_destroys_dst (anal->cur->arch);
-	const bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
-	const bool is_v850 = is_arm ? false: (anal->cur->arch && (!strncmp (anal->cur->arch, "v850", 4) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4)));
-	const bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
+	const bool is_arm = anal->cur->arch && r_str_startswith (anal->cur->arch, "arm");
+	const bool is_v850 = is_arm ? false: (anal->cur->arch && (r_str_startswith (anal->cur->arch, "v850") || r_str_startswith (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850")));
+	const bool is_x86 = is_arm ? false: anal->cur->arch && r_str_startswith (anal->cur->arch, "x86");
 	const bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
 	const bool is_dalvik = is_x86 ? false : anal->cur->arch && !strncmp (anal->cur->arch, "dalvik", 6);
 	RRegItem *variadic_reg = NULL;
@@ -717,8 +717,26 @@ repeat:
 		src1 = r_vector_index_ptr (op->srcs, 1);
 
 		if (anal->opt.nopskip && fcn->addr == at) {
+			if (at == 0) {
+				goto noskip;
+			}
+			if (anal->config->bits == 64) {
+				if (at % 8) {
+					goto noskip;
+				}
+			} else {
+				if (r_anal_archinfo (anal, R_ANAL_ARCHINFO_ALIGN) == 4) {
+					/// TODO 5.8.0 use anal->codealign vs dataalign
+					if (at % 4) {
+						goto noskip;
+					}
+				}
+			}
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
-			if (!fi || strncmp (fi->name, "sym.", 4)) {
+			if (fi) {
+				goto noskip;
+			}
+#if 1
 				if ((addr + delay.un_idx - oplen) == fcn->addr) {
 					if (r_anal_block_relocate (bb, bb->addr + oplen, bb->size - oplen)) {
 						fcn->addr += oplen;
@@ -726,7 +744,7 @@ repeat:
 						goto repeat;
 					}
 				}
-			}
+#endif
 			switch (op->type & R_ANAL_OP_TYPE_MASK) {
 			case R_ANAL_OP_TYPE_TRAP:
 			case R_ANAL_OP_TYPE_ILL:
@@ -742,6 +760,18 @@ repeat:
 				}
 			}
 		}
+goto complete;
+noskip:
+#if 0
+				if ((addr + delay.un_idx - oplen) == fcn->addr) {
+					if (r_anal_block_relocate (bb, bb->addr + oplen, bb->size - oplen)) {
+						fcn->addr += oplen;
+						idx = delay.un_idx;
+						goto repeat;
+					}
+				}
+#endif
+complete:
 		if (op->hint.new_bits) {
 			r_anal_hint_set_bits (anal, op->jump, op->hint.new_bits);
 		}
