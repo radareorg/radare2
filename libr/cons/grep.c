@@ -793,7 +793,6 @@ R_API void r_cons_grepbuf(void) {
 			r_list_sort (ctx->sorted_lines, cmp);
 		}
 		if (grep->sort_invert) {
-eprintf ("revers\n");
 			r_list_reverse (ctx->sorted_lines);
 		}
 		INSERT_LINES (ctx->unsorted_lines);
