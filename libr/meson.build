@@ -258,6 +258,7 @@ bin_plugins += [
   'pebble',
   'prg',
   'psxexe',
+  'rel',
   'sfc',
   'smd',
   'sms',
