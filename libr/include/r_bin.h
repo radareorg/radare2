@@ -858,6 +858,7 @@ extern RBinPlugin r_bin_plugin_omf;
 extern RBinPlugin r_bin_plugin_art;
 extern RBinPlugin r_bin_plugin_bootimg;
 extern RBinPlugin r_bin_plugin_dol;
+extern RBinPlugin r_bin_plugin_rel;
 extern RBinPlugin r_bin_plugin_nes;
 extern RBinPlugin r_bin_plugin_qnx;
 extern RBinPlugin r_bin_plugin_mbn;
