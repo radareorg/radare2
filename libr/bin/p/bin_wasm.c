@@ -302,7 +302,7 @@ static RList *get_imports(RBinFile *bf) {
 			r_list_append (ret, ptr);
 		}
 	}
-
+	return ret;
 bad_alloc:
 	r_list_free (ret);
 	return NULL;
