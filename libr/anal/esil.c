@@ -1168,7 +1168,7 @@ static bool esil_lsl(RAnalEsil *esil) {
 			if (num2 > sizeof (ut64) * 8) {
 				ERR ("esil_lsl: shift is too big");
 			} else {
-				const int shift = (num2 > 63)? 0: num << num2;
+				const ut64 shift = (num2 > 63)? 0: num << num2;
 				r_anal_esil_pushnum (esil, shift);
 				ret = true;
 			}
