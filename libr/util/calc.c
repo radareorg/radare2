@@ -341,23 +341,23 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 			int i = 0;
 #define stringValueAppend(x) { \
 	const size_t max = sizeof (nc->string_value) - 1; \
-	if (i < max) nc->string_value[i++] = x; \
-	else nc->string_value[max] = 0; \
+	if (i < max) { nc->string_value[i++] = x; } \
+	else { nc->string_value[max] = 0; } \
 }
-			stringValueAppend(ch);
+			stringValueAppend (ch);
 			if (ch == '[') {
 				while (cin_get (num, nc, &ch) && ch != ']') {
 					if (i > R_NUMCALC_STRSZ - 1) {
 						error (num, nc, "string too long");
 						return 0;
 					}
-					stringValueAppend(ch);
+					stringValueAppend (ch);
 				}
 				if (ch != ']') {
 					error (num, nc, "cannot find closing ]");
 					return 0;
 				}
-				stringValueAppend(ch);
+				stringValueAppend (ch);
 			} else if (ch == ']') {
 				error (num, nc, "cannot find opening [");
 				return 0;
@@ -367,7 +367,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 						error (num, nc, "string too long");
 						return 0;
 					}
-					stringValueAppend(ch);
+					stringValueAppend (ch);
 				}
 			}
 			stringValueAppend (0);
