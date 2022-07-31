@@ -8,6 +8,7 @@
     ISBN: 0201700735
  */
 
+#define R_LOG_ORIGIN "util.calc"
 #include <r_util.h>
 
 /* accessors */
