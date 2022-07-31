@@ -356,7 +356,6 @@ R_API char *r_stdin_slurp(int *sz) {
 	for (i = ret = 0; i >= 0; i += ret) {
 		char *new = realloc (buf, i + BS);
 		if (!new) {
-			eprintf ("Cannot realloc to %d\n", i+BS);
 			free (buf);
 			return NULL;
 		}

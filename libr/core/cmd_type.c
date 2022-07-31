@@ -1,10 +1,6 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 
-#include <string.h>
-#include "r_anal.h"
-#include "r_cons.h"
-#include "r_core.h"
-#include <sdb.h>
+#include <r_core.h>
 
 static const char *help_msg_t[] = {
 	"Usage: t", "", "# cparse types commands",
@@ -15,6 +11,7 @@ static const char *help_msg_t[] = {
 	"t-", " <name>", "delete types by its name",
 	"t-*", "", "remove all types",
 	"tail", " [filename]", "output the last part of files",
+	"tac", " [filename]", "the infamous reverse cat command",
 	"tc", " [type.name]", "list all/given types in C output format",
 	"te", "[?]", "list all loaded enums",
 	"td", "[?] <string>", "load types from string",
@@ -34,6 +31,18 @@ static const char *help_msg_t[] = {
 	"tu", "[?]", "print loaded union types",
 	"tx", "[f?]", "type xrefs",
 	"tt", "[?]", "list all loaded typedefs",
+	NULL
+};
+
+static const char *help_msg_tx[] = {
+	"Usage: tx", "[flg] [...]", "",
+	"tx.", "", "same as txf",
+	"txf", " ([addr])", "list all types used in the current or given function (same as tx.)",
+	"txl","","list all types used by any function",
+	"txg", "", "render the type xrefs graph (usage .txg;aggv)",
+	"tx", " int32_t", "list functions names using this type",
+	"txt", " int32_t", "same as 'tx type'",
+	"tx", "", "list functions and the types they use",
 	NULL
 };
 
@@ -314,6 +323,36 @@ static void showFormat(RCore *core, const char *name, int mode) {
 			R_LOG_ERROR ("Cannot find '%s' type", name);
 		}
 	}
+}
+
+static int cmd_tac(void *data, const char *_input) { // "tac"
+	char *input = strdup (_input);
+	char *arg = strchr (input, ' ');
+	if (arg) {
+		arg = (char *)r_str_trim_head_ro (arg + 1);
+	}
+	switch (*input) {
+	case '?': // "tac?"
+		eprintf ("Usage: tac [file]\n");
+		break;
+	default: // "tac"
+		if (R_STR_ISNOTEMPTY (arg)) {
+			char *data = r_file_slurp (arg, NULL);
+			RList *lines = r_str_split_list (data, "\n", 0);
+			RListIter *iter;
+			char *line;
+			r_list_foreach_prev (lines, iter, line) {
+				r_cons_printf ("%s\n", line);
+			}
+			r_list_free (lines);
+			free (data);
+		} else {
+			eprintf ("Usage: tac [file]\n");
+		}
+		break;
+	}
+	free (input);
+	return 0;
 }
 
 static int cmd_tail(void *data, const char *_input) { // "tail"
@@ -1509,14 +1548,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		default:
-			eprintf ("Usage: tx[flg] [...]\n");
-			eprintf (" txf | tx.      list all types used in this function\n");
-			eprintf (" txf 0xaddr     list all types used in function at 0xaddr\n");
-			eprintf (" txl            list all types used by any function\n");
-			eprintf (" txg            render the type xrefs graph (usage .txg;aggv)\n");
-			eprintf (" tx int32_t     list functions names using this type\n");
-			eprintf (" txt int32_t    same as 'tx type'\n");
-			eprintf (" tx             list functions and the types they use\n");
+			r_core_cmd_help (core, help_msg_tx);
 			break;
 		}
 		break;
@@ -1524,16 +1556,19 @@ static int cmd_type(void *data, const char *input) {
 	// ta: moved to anal hints (aht)- just for tail, at the moment
 	case 'a': // "ta"
 		switch (input[1]) {
-		case 'i': { // "tai"
+		case 'c': // "tac"
+			cmd_tac (core, input);
+			break;
+		case 'i': // "tai"
 			if (input[2] == 'l') {
 				cmd_tail (core, input);
 			} else {
 				eprintf ("Usage: tail [number] [file]\n");
 			}
 			break;
-		}
 		default:
-			eprintf ("[WARNING] \"ta\" is deprecated. Use \"aht\" instead.\n");
+			R_LOG_WARN ("`ta` command is deprecated. Use \"aht\" instead");
+			break;
 		}
 		break;
 	// tl - link a type to an address
