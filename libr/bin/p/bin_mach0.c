@@ -646,7 +646,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 
 	if (!io->cached) {
-		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
+		eprintf ("Warning: run r2 with -e bin.cache=true to fix relocations in disassembly\n");
 		goto beach;
 	}
 
