@@ -34,7 +34,7 @@ static char* r_egg_cfile_getCompiler(void) {
 		free (output);
 	}
 
-	eprintf ("Couldn't find a compiler ! Please, set CC.\n");
+	R_LOG_ERROR ("Couldn't find a compiler! Please set CC");
 	return NULL;
 }
 
@@ -217,7 +217,7 @@ static bool r_egg_cfile_parseCompiled(const char *file) {
 	char *fileExt = r_str_newf ("%s.tmp", file);
 	char *buffer = r_file_slurp (fileExt, NULL);
 	if (!buffer) {
-		eprintf ("Could not open '%s'.\n", fileExt);
+		R_LOG_ERROR ("Could not open '%s'", fileExt);
 		goto fail;
 	}
 

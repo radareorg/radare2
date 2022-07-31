@@ -786,7 +786,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			/* get the program coounter */
 			pc_ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
 			if (!pc_ri) { /* couldn't find PC?! */
-				eprintf ("Couldn't find the program counter!\n");
+				R_LOG_ERROR ("Couldn't find the program counter!");
 				return R_DEBUG_REASON_ERROR;
 			}
 
@@ -1109,7 +1109,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		}
 		// Analyze the opcode
 		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_BASIC)) {
-			eprintf ("debug-step-over: Decode error at %"PFMT64x"\n", pc);
+			R_LOG_ERROR ("debug-step-over: Decode error at %"PFMT64x, pc);
 			return steps_taken;
 		}
 		if (op.fail == -1) {
@@ -1121,13 +1121,13 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		// Skip over all the subroutine calls
 		if (isStepOverable (op.type)) {
 			if (!r_debug_continue_until (dbg, ins_size)) {
-				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
+				R_LOG_ERROR ("Could not step over call @ 0x%"PFMT64x, pc);
 				return steps_taken;
 			}
 		} else if ((op.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK))) {
 			//eprintf ("REP: skip to next instruction...\n");
 			if (!r_debug_continue_until (dbg, ins_size)) {
-				eprintf ("step over failed over rep\n");
+				R_LOG_ERROR ("step over failed over rep");
 				return steps_taken;
 			}
 		} else {
@@ -1191,7 +1191,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 			}
 			has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC);
 			if (has_bp) {
-				eprintf ("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
+				R_LOG_INFO ("hit breakpoint at: 0x%" PFMT64x " cnum: %d", reg->data, reg->cnum);
 				r_debug_goto_cnum (dbg, reg->cnum);
 				return dbg->tid;
 			}
@@ -1415,7 +1415,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 		}
 		// Analyze the opcode
 		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_BASIC)) {
-			eprintf ("Decode error at %"PFMT64x"\n", pc);
+			R_LOG_ERROR ("Decode error at %"PFMT64x, pc);
 			return false;
 		}
 		if (op.type == type) {
@@ -1427,7 +1427,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			: r_debug_step (dbg, 1);
 
 		if (!ret) {
-			eprintf ("r_debug_step: failed\n");
+			R_LOG_ERROR ("r_debug_step: failed");
 			break;
 		}
 		n++;
@@ -1553,12 +1553,12 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	}
 
 	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
-		eprintf ("--> cannot read registers\n");
+		R_LOG_ERROR ("--> cannot read registers");
 		return -1;
 	}
 	reg = (int)r_debug_reg_get_err (dbg, "SN", &err, NULL);
 	if (err) {
-		eprintf ("Cannot find 'sn' register for current arch-os.\n");
+		R_LOG_ERROR ("Cannot find 'sn' register for current arch-os");
 		return -1;
 	}
 	for (;;) {

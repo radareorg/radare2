@@ -419,7 +419,7 @@ static bool session_sdb_save(Sdb *db, const char *path) {
 	filename = r_str_newf ("%s%ssession.sdb", path, R_SYS_DIR);
 	sdb_file (db, filename);
 	if (!sdb_sync (db)) {
-		eprintf ("Failed to sync session to %s\n", filename);
+		R_LOG_ERROR ("Failed to sync session to %s", filename);
 		free (filename);
 		sdb_close (db);
 		return false;
@@ -433,7 +433,7 @@ static bool session_sdb_save(Sdb *db, const char *path) {
 		char *filename = r_str_newf ("%s%s%s.sdb", path, R_SYS_DIR, ns->name);
 		sdb_file (ns->sdb, filename);
 		if (!sdb_sync (ns->sdb)) {
-			eprintf ("Failed to sync %s to %s\n", ns->name, filename);
+			R_LOG_ERROR ("Failed to sync %s to %s", ns->name, filename);
 			free (filename);
 			sdb_close (ns->sdb);
 			return false;

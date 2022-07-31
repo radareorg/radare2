@@ -464,14 +464,14 @@ static void linux_dbg_wait_break_main(RDebug *dbg) {
 	// in another process group.
 	if (dpgid != tpgid) {
 		if (!linux_kill_thread (dbg->pid, SIGINT)) {
-			eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
+			R_LOG_ERROR ("Could not interrupt pid (%d)", dbg->pid);
 		}
 	}
 }
 
 static void linux_dbg_wait_break(RDebug *dbg) {
 	if (!linux_kill_thread (dbg->pid, SIGINT)) {
-		eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
+		R_LOG_ERROR ("Could not interrupt pid (%d)", dbg->pid);
 	}
 }
 
@@ -670,13 +670,13 @@ static bool linux_attach_single_pid(RDebug *dbg, int pid) {
 		// Make sure SIGSTOP is delivered and wait for it since we can't affect the pid
 		// until it hits SIGSTOP.
 		if (!linux_stop_thread (dbg, pid)) {
-			eprintf ("Could not stop pid (%d)\n", pid);
+			R_LOG_ERROR ("Could not stop pid (%d)", pid);
 			return false;
 		}
 	}
 
 	if (!linux_set_options (dbg, pid)) {
-		eprintf("failed set_options on %d\n", pid);
+		R_LOG_ERROR("failed set_options on %d", pid);
 		return false;
 	}
 	dbg->pid = pid;

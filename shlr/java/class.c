@@ -1616,11 +1616,11 @@ R_API RBinJavaCPTypeObj *r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 			java_obj->file_offset = offset;
 			// IFDBG eprintf ("java_obj->file_offset = 0x%08"PFMT64x".\n",java_obj->file_offset);
 		} else if (!java_obj) {
-			eprintf ("Unable to parse the tag '%d' and create valid object.\n", tag);
+			R_LOG_ERROR ("Unable to parse the tag '%d' and create valid object", tag);
 		} else if (!java_obj->metas) {
-			eprintf ("Unable to parse the tag '%d' and create valid object.\n", tag);
+			R_LOG_ERROR ("Unable to parse the tag '%d' and create valid object", tag);
 		} else {
-			eprintf ("Failed to set the java_obj->metas-file_offset for '%d' offset is(0x%08"PFMT64x ").\n", tag, offset);
+			R_LOG_ERROR ("Failed to set the java_obj->metas-file_offset for '%d' offset is(0x%08"PFMT64x ")", tag, offset);
 		}
 	}
 	free (cp_buf);
@@ -2138,11 +2138,11 @@ R_API ut64 r_bin_java_parse_cp_pool(RBinJavaObj *bin, const ut64 offset, const u
 			IFDBG ((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->print_summary (obj);
 			adv += ((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->calc_size (obj);
 			if (offset + adv > len) {
-				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Constant Pool Object: %d.\n", ord);
+				R_LOG_ERROR ("r_bin_java: Error unable to parse remainder of classfile after Constant Pool Object: %d", ord);
 				break;
 			}
 		} else {
-			IFDBG eprintf ("Failed to read ConstantPoolItem %d\n", bin->cp_idx);
+			IFDBG R_LOG_ERROR ("Failed to read ConstantPoolItem %d", bin->cp_idx);
 			break;
 		}
 	}
@@ -2213,7 +2213,7 @@ R_API ut64 r_bin_java_parse_fields(RBinJavaObj *bin, const ut64 offset, const ut
 					break;
 				}
 			} else {
-				IFDBG eprintf ("Failed to read Field %d\n", i);
+				IFDBG R_LOG_ERROR ("Failed to read Field %d", i);
 				break;
 			}
 		}
@@ -7647,7 +7647,7 @@ R_API RList *r_bin_java_find_cp_const_by_val(RBinJavaObj *bin_obj, const ut8 *by
 	case R_BIN_JAVA_CP_DOUBLE: return r_bin_java_find_cp_const_by_val_double (bin_obj, bytes, len);
 	case R_BIN_JAVA_CP_UNKNOWN:
 	default:
-		eprintf ("Failed to perform the search for: %s\n", bytes);
+		R_LOG_ERROR ("Failed to perform the search for: %s", bytes);
 		return r_list_new ();
 	}
 }

@@ -4347,7 +4347,7 @@ bintype  elf
 EOF
 EXPECT_ERR=<<EOF
 DEBUG: Dynamic tag 16 not handled
-Cannot determine entrypoint, using 0x00000d28.
+ERROR: Cannot determine entrypoint, using 0x00000d28
 DEBUG: (cannot find opening [) in (48])
 DEBUG: (cannot find opening [) in (56])
 EOF
@@ -4366,7 +4366,7 @@ vaddr=0x00000d28 paddr=0x00000d28 haddr=0x00000018 hvaddr=0x00000018 type=progra
 1 entrypoints
 EOF
 EXPECT_ERR=<<EOF
-Cannot determine entrypoint, using 0x00000d28.
+ERROR: Cannot determine entrypoint, using 0x00000d28
 EOF
 RUN
 

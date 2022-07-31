@@ -10,7 +10,7 @@ static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	mcore_t* instr = NULL;
 
 	if (mcore_init (&handle, buf, len)) {
-		eprintf ("[!] mcore: bad or invalid data.\n");
+		R_LOG_ERROR ("mcore: bad or invalid data");
 		return -1;
 	}
 

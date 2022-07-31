@@ -303,7 +303,7 @@ static bool setup_debug_privilege_noarg(void) {
 		//	eprintf ("Successfully changed token privileges.\n");
 		// XXX if we cant get the token nobody tells?? wtf
 	} else {
-		eprintf ("Failed to change token privileges 0x%x\n", (int)GetLastError());
+		R_LOG_ERROR ("Failed to change token privileges 0x%x", (int)GetLastError());
 		ret = false;
 	}
 	CloseHandle (hToken);

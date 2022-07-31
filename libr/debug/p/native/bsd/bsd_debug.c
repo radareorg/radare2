@@ -385,7 +385,7 @@ RList *bsd_native_sysctl_map(RDebug *dbg) {
 	entry.kve_start = 0;
 
 	if (sysctl (mib, 3, &entry, &len, NULL, 0) == -1) {
-		eprintf ("Could not get memory map: %s\n", strerror(errno));
+		R_LOG_ERROR ("Could not get memory map: %s", strerror(errno));
 		return NULL;
 	}
 
