@@ -450,7 +450,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		} else if (input[2] == ' ') {
 			const char *fn = input + 2;
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-			while (*fn== ' ')fn++;
+			fn = r_str_trim_head_ro (fn);
 			if (comment && *comment) {
 				// append filename in current comment
 				char *nc = r_str_newf ("%s ,(%s)", comment, fn);
@@ -561,6 +561,14 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			}
 		} else {
 			r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, nc);
+			if (r_config_get_b (core->config, "cmd.undo")) {
+				char *a = r_str_newf ("CC-0x%08"PFMT64x, addr);
+				char *b = r_str_newf ("CC %s@0x%08"PFMT64x, nc, addr);
+				RCoreUndo *uc = r_core_undo_new (core->offset, b, a);
+				r_core_undo_push (core, uc);
+				free (a);
+				free (b);
+			}
 		}
 		free (nc);
 		}

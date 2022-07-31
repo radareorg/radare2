@@ -3874,6 +3874,11 @@ R_API int r_core_config_init(RCore *core) {
 	/* cmd */
 	SETCB ("cmd.demangle", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "maximum command depth");
+#if R2_580
+	SETPREF ("cmd.undo", "true", "stack `uc` undo commands when running some commands like w, af, CC, ..");
+#else
+	SETPREF ("cmd.undo", "false", "stack `uc` undo commands when running some commands like w, af, CC, ..");
+#endif
 	SETPREF ("cmd.bp", "", "run when a breakpoint is hit");
 	SETPREF ("cmd.onsyscall", "", "run when a syscall is hit");
 	SETICB ("cmd.hitinfo", 1, &cb_debug_hitinfo, "show info when a tracepoint/breakpoint is hit");
