@@ -837,14 +837,15 @@ R_API void r_cons_clear(void) {
 }
 
 R_API void r_cons_reset(void) {
-	if (C->buffer) {
-		C->buffer[0] = '\0';
+	RConsContext *c = C;
+	if (c->buffer) {
+		c->buffer[0] = '\0';
 	}
-	C->buffer_len = 0;
+	c->buffer_len = 0;
 	I->lines = 0;
-	I->lastline = C->buffer;
-	cons_grep_reset (&C->grep);
-	C->pageable = true;
+	I->lastline = c->buffer;
+	cons_grep_reset (&c->grep);
+	c->pageable = true;
 }
 
 R_API const char *r_cons_get_buffer(void) {
@@ -1110,9 +1111,10 @@ R_API void r_cons_flush(void) {
 			}
 		} else if (I->maxpage > 0 && C->buffer_len > I->maxpage) {
 #if COUNT_LINES
+			char *buffer = C->buffer;
 			int i, lines = 0;
-			for (i = 0; C->buffer[i]; i++) {
-				if (C->buffer[i] == '\n') {
+			for (i = 0; buffer[i]; i++) {
+				if (buffer[i] == '\n') {
 					lines ++;
 				}
 			}
@@ -1499,14 +1501,15 @@ now the console color is reset with each \n (same stuff do it here but in correc
 /* return the aproximated x,y of cursor before flushing */
 // XXX this function is a huge bottleneck
 R_API int r_cons_get_cursor(int *rows) {
+	RConsContext *c = C;
 	int i, col = 0;
 	int row = 0;
 	// TODO: we need to handle GOTOXY and CLRSCR ansi escape code too
-	for (i = 0; i < C->buffer_len; i++) {
+	for (i = 0; i < c->buffer_len; i++) {
 		// ignore ansi chars, copypasta from r_str_ansi_len
-		if (C->buffer[i] == 0x1b) {
-			char ch2 = C->buffer[i + 1];
-			char *str = C->buffer;
+		if (c->buffer[i] == 0x1b) {
+			char ch2 = c->buffer[i + 1];
+			char *str = c->buffer;
 			if (ch2 == '\\') {
 				i++;
 			} else if (ch2 == ']') {
@@ -1518,7 +1521,7 @@ R_API int r_cons_get_cursor(int *rows) {
 					;
 				}
 			}
-		} else if (C->buffer[i] == '\n') {
+		} else if (c->buffer[i] == '\n') {
 			row++;
 			col = 0;
 		} else {
@@ -2042,8 +2045,10 @@ R_API void r_cons_highlight(const char *word) {
 }
 
 R_API char *r_cons_lastline(int *len) {
-	char *b = C->buffer + C->buffer_len;
-	while (b > C->buffer) {
+	RConsContext *c = C;
+	char *start = c->buffer;
+	char *b = start + c->buffer_len;
+	while (b > start) {
 		b--;
 		if (*b == '\n') {
 			b++;
@@ -2051,8 +2056,8 @@ R_API char *r_cons_lastline(int *len) {
 		}
 	}
 	if (len) {
-		int delta = b - C->buffer;
-		*len = C->buffer_len - delta;
+		int delta = b - start;
+		*len = c->buffer_len - delta;
 	}
 	return b;
 }
@@ -2060,16 +2065,18 @@ R_API char *r_cons_lastline(int *len) {
 // same as r_cons_lastline(), but len will be the number of
 // utf-8 characters excluding ansi escape sequences as opposed to just bytes
 R_API char *r_cons_lastline_utf8_ansi_len(int *len) {
+	RConsContext *c = C;
 	if (!len) {
 		return r_cons_lastline (0);
 	}
 
-	char *b = C->buffer + C->buffer_len;
+	char *start = c->buffer;
+	char *b = start + c->buffer_len;
 	int l = 0;
 	int last_possible_ansi_end = 0;
 	char ch = '\0';
 	char ch2;
-	while (b > C->buffer) {
+	while (b > start) {
 		ch2 = ch;
 		ch = *b;
 
@@ -2120,21 +2127,23 @@ R_API char *r_cons_swap_ground(const char *col) {
 }
 
 R_API bool r_cons_drop(int n) {
-	if (n > C->buffer_len) {
-		C->buffer_len = 0;
+	RConsContext *c = C;
+	if (n > c->buffer_len) {
+		c->buffer_len = 0;
 		return false;
 	}
-	C->buffer_len -= n;
+	c->buffer_len -= n;
 	return true;
 }
 
 R_API void r_cons_chop(void) {
-	while (C->buffer_len > 0) {
-		char ch = C->buffer[C->buffer_len - 1];
+	RConsContext *c = C;
+	while (c->buffer_len > 0) {
+		char ch = c->buffer[c->buffer_len - 1];
 		if (ch != '\n' && !IS_WHITESPACE (ch)) {
 			break;
 		}
-		C->buffer_len--;
+		c->buffer_len--;
 	}
 }
 
