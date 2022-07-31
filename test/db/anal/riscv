@@ -39,7 +39,7 @@ EXPECT=<<EOF
        .--> 0x00000002      8280           ret
        :`-> 0x00000004      9d06           addi a3, a3, 7
        `==< 0x00000006      f5fe           bnez a3, 0x2
-            0x00000008      0000           illegal
+            0x00000008      00000000       illegal
 EOF
 RUN
 
