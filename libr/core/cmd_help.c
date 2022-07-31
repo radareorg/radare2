@@ -743,8 +743,6 @@ static int cmd_help(void *data, const char *input) {
 					R_LOG_ERROR (err);
 					continue;
 				}
-				// XXX for some reason numcalc doesnt update numvalue :? need proper fix in 5.8 when api changes
-				n = r_num_math (core->num, str);
 				char *asnum  = r_num_as_string (NULL, n, false);
 
 				ut32 s = 0, a = 0;
