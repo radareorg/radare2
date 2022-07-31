@@ -411,19 +411,12 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			}
 			break;
 		default:
-#if 0
-			// sscanf (str, "%"PFMT64d"%n", &ret, &chars_read);
-// 32bit chop
-#if __WINDOWS__
-			ret = _strtoui64 (str, &endptr, 10);
-#endif
-#endif
 			errno = 0;
 			ret = strtoull (str, &endptr, 10);
 			if (errno == ERANGE) {
 				error (num, "number won't fit into 64 bits");
 			}
-			if (!IS_DIGIT (*str) && (*endptr && *endptr != lch)) {
+			if (!IS_DIGIT (*str)) {
 				error (num, "unknown symbol");
 			}
 			break;
