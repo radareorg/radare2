@@ -3844,7 +3844,7 @@ RUN
 NAME=./noncode
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
-e anal.noncode=false
+e anal.in=io.maps.x
 afr
 afl~?str.
 EOF
@@ -3856,7 +3856,7 @@ RUN
 NAME=./noncode
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
-e anal.noncode=false
+e anal.in=io.maps
 e anal.calls=true
 af
 afl~?str.
