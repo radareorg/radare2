@@ -21,6 +21,9 @@ static void __panels_refresh(RCore *core);
 #define PANEL_TITLE_XREFS_HERE       "Xrefs Here"
 #define PANEL_TITLE_XREFS            "Xrefs"
 #define PANEL_TITLE_REGISTERS        "Registers"
+#define PANEL_TITLE_FPU_REGISTERS    "FPU Registers"
+#define PANEL_TITLE_XMM_REGISTERS    "XMM Registers"
+#define PANEL_TITLE_YMM_REGISTERS    "YMM Registers"
 #define PANEL_TITLE_DISASSEMBLY      "Disassembly"
 #define PANEL_TITLE_DISASMSUMMARY    "Disassemble Summary"
 #define PANEL_TITLE_ALL_DECOMPILER   "Show All Decompiler Output"
@@ -42,6 +45,9 @@ static void __panels_refresh(RCore *core);
 #define PANEL_CMD_XREFS              "ax"
 #define PANEL_CMD_STACK              "px"
 #define PANEL_CMD_REGISTERS          "dr"
+#define PANEL_CMD_FPU_REGISTERS      "drf"
+#define PANEL_CMD_XMM_REGISTERS      "drm"
+#define PANEL_CMD_YMM_REGISTERS      "drmy"
 #define PANEL_CMD_DISASSEMBLY        "pd"
 #define PANEL_CMD_DISASMSUMMARY      "pdsf"
 #define PANEL_CMD_DECOMPILER         "pdc"
@@ -141,7 +147,7 @@ static const char *menus_Emulate[] = {
 };
 
 static const char *menus_Debug[] = {
-	"Registers", "RegisterRefs", "DRX", "Breakpoints", "Watchpoints",
+	"Registers", "FPU Registers", "XMM Registers", "YMM Registers", "RegisterRefs", "DRX", "Breakpoints", "Watchpoints",
 	"Maps", "Modules", "Backtrace", "Locals", "Continue",
 	"Step", "Step Over", "Reload",
 	NULL
@@ -1888,6 +1894,9 @@ static void __init_sdb(RCore *core) {
 	sdb_set (db, "Stack"  , "px 256@r:SP", 0);
 	sdb_set (db, "Locals", "afvd", 0);
 	sdb_set (db, "Registers", "dr", 0);
+	sdb_set (db, "FPU Registers", "drf", 0);
+	sdb_set (db, "XMM Registers", "drm", 0);
+	sdb_set (db, "YMM Registers", "drmy", 0);
 	sdb_set (db, "RegisterRefs", "drr", 0);
 	sdb_set (db, "Disassembly", "pd", 0);
 	sdb_set (db, "Disassemble Summary", "pdsf", 0);
@@ -4390,6 +4399,8 @@ static void __set_dcb(RCore *core, RPanel *p) {
 	} else if (__check_panel_type (p, PANEL_CMD_DISASSEMBLY)) {
 		p->model->directionCb = __direction_disassembly_cb;
 	} else if (__check_panel_type (p, PANEL_CMD_REGISTERS)) {
+		p->model->directionCb = __direction_register_cb;
+	} else if (__check_panel_type (p, PANEL_CMD_FPU_REGISTERS)) {
 		p->model->directionCb = __direction_register_cb;
 	} else if (__check_panel_type (p, PANEL_CMD_HEXDUMP)) {
 		p->model->directionCb = __direction_hexdump_cb;
