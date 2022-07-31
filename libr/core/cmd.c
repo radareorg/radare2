@@ -277,7 +277,7 @@ static const char *help_msg_u[] = {
 	"u", "", "show system uname",
 	"uw", "", "alias for wc (requires: e io.cache=true)",
 	"us", "", "alias for s- (seek history)",
-	"uc", "[?]", "undo core commands (uc?, ucl, uc*, ..)",
+	"uc", "[?]", "undo core commands (uc?, ucl, uc*, ..) (see `e cmd.undo`)",
 	"uid", "", "display numeric user id",
 	"uniq", "", "filter rows to avoid duplicates",
 	"uname", "", "uname - show system information",
@@ -285,9 +285,14 @@ static const char *help_msg_u[] = {
 };
 
 static const char *help_msg_uc[] = {
-	"Usage:", "uc [cmd] [revert-cmd]", "undo core commands",
-	"uc", "", "list all core undos",
+	"Usage:", "uc [cmd],[revert-cmd]", "undo core commands (see `e cmd.undo`)",
+	"uc", " w hello,w world", "add a new undo command manually",
+	"uc", "", "list all core undos commands",
 	"uc*", "", "list all core undos as r2 commands",
+#if R2_580
+	"ucu", "", "up : undo previous action",
+	"ucd", "", "down : redo action",
+#endif
 	"uc-", "", "undo last action",
 	"uc.", "", "list all reverts in current",
 	NULL
@@ -617,7 +622,7 @@ static int cmd_undo(void *data, const char *input) {
 				RCoreUndo *undo = r_core_undo_new (core->offset, cmd, rcmd);
 				r_core_undo_push (core, undo);
 			} else {
-				eprintf ("Usage: uc [cmd] [revert-cmd]\n");
+				eprintf ("Usage: uc [cmd],[revert-cmd]\n");
 			}
 			free (cmd);
 			}
@@ -640,6 +645,16 @@ static int cmd_undo(void *data, const char *input) {
 		case '-': // "uc-"
 			r_core_undo_pop (core);
 			break;
+#if R2_580
+		case 'u': // "ucu"
+			r_core_undo_up (core);
+			break;
+		case 'd': // "ucd"
+			r_config_set_b (core->config, "cmd.undo", false);
+			r_core_undo_down (core);
+			r_config_set_b (core->config, "cmd.undo", true);
+			break;
+#endif
 		default:
 			r_core_undo_print (core, 0, NULL);
 			break;
