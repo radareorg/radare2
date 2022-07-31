@@ -8,6 +8,7 @@
     ISBN: 0201700735
  */
 
+#define R_LOG_ORIGIN "util.calc"
 #include <r_util.h>
 
 /* accessors */
@@ -389,7 +390,7 @@ static void load_token(RNum *num, RNumCalc *nc, const char *s) {
 R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	RNumCalcValue n;
 	RNumCalc *nc, nc_local;
-	if (!str || !*str) {
+	if (R_STR_ISEMPTY (str)) {
 		return 0LL;
 	}
 	if (num) {
@@ -418,6 +419,7 @@ R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	}
 	if (num) {
 		num->fvalue = n.d;
+		num->value = n.n;
 	}
 	nc->under_calc = false;
 	return n.n;

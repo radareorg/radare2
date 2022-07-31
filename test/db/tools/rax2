@@ -1,3 +1,21 @@
+NAME=rax2 zz
+FILE=-
+CMDS=!rax2 zz
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: unknown symbol
+EOF
+RUN
+
+NAME=? zz
+FILE=-
+CMDS=? zz
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: unknown symbol
+EOF
+RUN
+
 NAME=rax2 -I 3530468537
 FILE=-
 CMDS=!rax2 -I 3530468537
