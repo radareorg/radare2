@@ -104,10 +104,10 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 		if (!strcmp (arch, "x86")) {
 			if (bits == 32) {
 				cEnv->CFLAGS = strdup ("-arch i386 -fPIC -fPIE");
-				cEnv->LDFLAGS = strdup ("-arch i386 -shared -c -fPIC -fPIE -pie");
+				cEnv->LDFLAGS = strdup ("-arch i386 -fPIC -fPIE -pie");
 			} else {
 				cEnv->CFLAGS = strdup ("-arch x86_64 -fPIC -fPIE");
-				cEnv->LDFLAGS = strdup ("-arch x86_64 -shared -c -fPIC -fPIE -pie");
+				cEnv->LDFLAGS = strdup ("-arch x86_64 -fPIC -fPIE -pie");
 			}
 		} else {
 			cEnv->CFLAGS = strdup ("-shared -c -fPIC -pie -fPIE");
@@ -139,8 +139,8 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 		cEnv->TEXT = ".text";
 		cEnv->FMT = "pe";
 	} else if (isXNU(os)) {
-		//cEnv->TEXT = "0.__TEXT.__text";
-		cEnv->TEXT = "0..__text";
+		cEnv->TEXT = "0.__TEXT.__text";
+		// cEnv->TEXT = "__text";
 	} else {
 		cEnv->TEXT = ".text";
 	}
@@ -185,15 +185,19 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 		free (cEnv->CFLAGS);
 		cEnv->CFLAGS = strdup (buffer);
 	}
-	free (buffer);
-	buffer = r_str_newf ("%s -nostdlib", cEnv->LDFLAGS);
-	if (!buffer) {
-		goto fail;
-	}
-	free (cEnv->LDFLAGS);
-	cEnv->LDFLAGS = strdup (buffer);
-
-	if (r_egg_cfile_check_cEnv (cEnv)) {
+    if (!isXNU (os)) {
+        /* Every executable must link with libSystem.dylib,
+         * so '-nostdlib' is not needed for XNU/MAC */
+	    free (buffer);
+        buffer = r_str_newf ("%s -nostdlib", cEnv->LDFLAGS);
+	    if (!buffer) {
+		    goto fail;
+	    }
+	    free (cEnv->LDFLAGS);
+	    cEnv->LDFLAGS = strdup (buffer);
+    }
+    
+    if (r_egg_cfile_check_cEnv (cEnv)) {
 		R_LOG_ERROR ("invalid cEnv allocation");
 		goto fail;
 	}
@@ -307,10 +311,15 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 		goto fail;
 	}
 	if (r_file_size (fileExt) == 0) {
-		eprintf ("FALLBACK: Using objcopy instead of rabin2");
+		eprintf ("FALLBACK: Using objcopy instead of rabin2\n");
 		free (output);
-		output = r_sys_cmd_strf ("'%s' -j .text -O binary '%s.o' '%s.text'",
-		  		cEnv->OBJCOPY, file, file);
+        if (isXNU(os)) {
+            output = r_sys_cmd_strf ("'%s' -j 0.__TEXT.__text -O binary '%s.o' '%s.text'",
+		  	    	cEnv->OBJCOPY, file, file);
+        } else {
+		    output = r_sys_cmd_strf ("'%s' -j .text -O binary '%s.o' '%s.text'",
+		  	    	cEnv->OBJCOPY, file, file);
+        }
 		if (!output) {
 			eprintf ("objcopy failed!\n");
 			goto fail;
