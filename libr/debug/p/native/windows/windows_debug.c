@@ -576,12 +576,12 @@ int w32_attach_new_process(RDebug* dbg, int pid) {
 	int tid = -1;
 
 	if (!w32_detach (dbg, dbg->pid)) {
-		eprintf ("Failed to detach from (%d)\n", dbg->pid);
+		R_LOG_ERROR ("Failed to detach from (%d)", dbg->pid);
 		return -1;
 	}
 
 	if ((tid = w32_attach (dbg, pid)) < 0) {
-		eprintf ("Failed to attach to (%d)\n", pid);
+		R_LOG_ERROR ("Failed to attach to (%d)", pid);
 		return -1;
 	}
 

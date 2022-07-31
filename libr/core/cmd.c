@@ -1428,7 +1428,7 @@ static int cmd_lr(RCore *core, const char *input) { // "lr"
 	const char *arg = R_STR_ISEMPTY (input)? ".": input;
 	RList *files = r_file_lsrf (arg);
 	if (!files) {
-		eprintf ("Failed to read directories\n");
+		R_LOG_ERROR ("Failed to read directories");
 		return 0;
 	}
 	r_list_sort (files, (RListComparator)strcmp);
@@ -5627,7 +5627,7 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 		return false;
 	}
 	if (!r_core_cmd_lines (core, odata)) {
-		eprintf ("Failed to run script '%s'\n", file);
+		R_LOG_ERROR ("Failed to run script '%s'", file);
 		free (odata);
 		return false;
 	}

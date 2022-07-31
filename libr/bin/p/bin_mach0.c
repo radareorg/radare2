@@ -126,7 +126,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 			}
 			int read = r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
 			if (read < sec->size) {
-				eprintf ("process_constructors: cannot process section %s\n", sec->name);
+				R_LOG_ERROR ("process_constructors: cannot process section %s", sec->name);
 				continue;
 			}
 			if (bits == 32) {

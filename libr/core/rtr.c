@@ -1187,7 +1187,7 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 
 	if (nread < 0) {
 		if (nread != UV_EOF) {
-			eprintf ("Failed to read: %s\n", uv_err_name ((int) nread));
+			R_LOG_ERROR ("Failed to read: %s", uv_err_name ((int) nread));
 		}
 		rtr_cmds_client_close ((uv_tcp_t *) client, true);
 		return;
@@ -1308,7 +1308,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	uv_tcp_bind (&context.server, (const struct sockaddr *) &addr, 0);
 	int r = uv_listen ((uv_stream_t *)&context.server, 32, rtr_cmds_new_connection);
 	if (r) {
-		eprintf ("Failed to listen: %s\n", uv_strerror (r));
+		R_LOG_ERROR ("Failed to listen: %s", uv_strerror (r));
 		goto beach;
 	}
 

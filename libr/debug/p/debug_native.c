@@ -836,7 +836,7 @@ static bool linux_map_thp(RDebug *dbg, ut64 addr, int size) {
 		r_reg_arena_push (dbg->reg);
 		const ut8 *tmp = r_buf_data (buf, &tmpsz);
 		if (!r_debug_execute (dbg, tmp, tmpsz, &retval, true, false)) {
-			eprintf ("Failed to execute code.\n");
+			R_LOG_ERROR ("Failed to execute code");
 		}
 		ret = (retval == 0);
 		r_reg_arena_pop (dbg->reg);
@@ -895,7 +895,7 @@ static RDebugMap* linux_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 		ut64 tmpsz;
 		const ut8 *tmp = r_buf_data (buf, &tmpsz);
 		if (!r_debug_execute (dbg, tmp, tmpsz, &map_addr, true, false)) {
-			eprintf ("Failed to execute code.\n");
+			R_LOG_ERROR ("Failed to execute code");
 			goto err_linux_map_alloc;
 		}
 		r_reg_arena_pop (dbg->reg);
@@ -947,7 +947,7 @@ static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 		ut64 tmpsz;
 		const ut8 *tmp = r_buf_data (buf, &tmpsz);
 		if (!r_debug_execute (dbg, tmp, tmpsz, &ret, true, false)) {
-			eprintf ("Failed to execute code.\n");
+			R_LOG_ERROR ("Failed to execute code");
 		}
 		r_reg_arena_pop (dbg->reg);
 	}
@@ -1565,7 +1565,7 @@ static int r_debug_native_map_protect(RDebug *dbg, ut64 addr, int size, int perm
 		ut64 tmpsz;
 		const ut8 *tmp = r_buf_data (buf, &tmpsz);
 		if (!r_debug_execute (dbg, tmp, tmpsz, NULL, true, false)) {
-			eprintf ("Failed to execute code.\n");
+			R_LOG_ERROR ("Failed to execute code");
 		}
 		r_reg_arena_pop (dbg->reg);
 		return true;

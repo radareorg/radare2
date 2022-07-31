@@ -4187,7 +4187,7 @@ RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin) {
 
 	if (!r_list_empty (maps)) {
 		if (!get_nt_file_maps (bin, maps)) {
-			eprintf ("Could not retrieve the names of all maps from NT_FILE\n");
+			R_LOG_ERROR ("Could not retrieve the names of all maps from NT_FILE");
 		}
 	}
 

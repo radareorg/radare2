@@ -100,7 +100,7 @@ R_API bool r_file_truncate(const char *filename, ut64 newsize) {
 	int r = ftruncate (fd, newsize);
 #endif
 	if (r != 0) {
-		eprintf ("Could not resize %s file\n", filename);
+		R_LOG_ERROR ("Could not resize %s file", filename);
 		close (fd);
 		return false;
 	}

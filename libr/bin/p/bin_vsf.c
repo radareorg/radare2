@@ -80,7 +80,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 			struct vsf_module module;
 			int read = r_buf_fread_at (bf->buf, offset, (ut8*)&module, "16ccci", 1);
 			if (read != sizeof(module)) {
-				eprintf ("Truncated Header\n");
+				R_LOG_ERROR ("Truncated Header");
 				free (res);
 				return false;
 			}
@@ -307,7 +307,7 @@ static RBinInfo* info(RBinFile *bf) {
 	memset (&hdr, 0, sizeof(hdr));
 	int read = r_buf_read_at (bf->buf, 0, (ut8*)&hdr, sizeof(hdr));
 	if (read != sizeof(hdr)) {
-		eprintf ("Truncated Header\n");
+		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
 	if (!(ret = R_NEW0 (RBinInfo))) {

@@ -229,7 +229,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 		r_anal_function_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, NULL);
 	}
 	if (!r_anal_add_function (core->anal, f)) {
-		// eprintf ("Failed to insert function\n");
+		// R_LOG_ERROR ("Failed to insert function");
 		r_anal_function_free (f);
 		return;
 	}
@@ -473,7 +473,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 				if (cur->jump < UT64_MAX && !sdb_num_get (sdb, Fhandled (cur->jump), NULL)) {
 					jump = sdb_ptr_get (sdb, r_strf ("bb.0x%08"PFMT64x, cur->jump), NULL);
 					if (!jump) {
-						eprintf ("Failed to get jump block at 0x%"PFMT64x"\n", cur->jump);
+						R_LOG_ERROR ("Failed to get jump block at 0x%"PFMT64x, cur->jump);
 						continue;
 					}
 					if (!r_stack_push (stack, (void*)jump)) {
@@ -484,7 +484,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 				if (cur->fail < UT64_MAX && !sdb_num_get (sdb, Fhandled (cur->fail), NULL)) {
 					fail = sdb_ptr_get (sdb, r_strf ("bb.0x%08" PFMT64x, cur->fail), NULL);
 					if (!fail) {
-						eprintf ("Failed to get fail block at 0x%"PFMT64x"\n", cur->fail);
+						R_LOG_ERROR ("Failed to get fail block at 0x%"PFMT64x, cur->fail);
 						continue;
 					}
 					if (!r_stack_push (stack, (void*)fail)) {

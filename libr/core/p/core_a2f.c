@@ -107,12 +107,12 @@ void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
 	}
 	ut64* value = (ut64*) calloc (1, sizeof (ut64));
 	if (!value) {
-		eprintf ("Failed to allocate memory for address stack\n");
+		R_LOG_ERROR ("Failed to allocate memory for address stack");
 		return;
 	}
 	*value = addr;
 	if (!r_stack_push (stack, (void*)value)) {
-		eprintf ("Failed to push address on stack\n");
+		R_LOG_ERROR ("Failed to push address on stack");
 		free (value);
 		return;
 	}
@@ -140,7 +140,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 		block_end = false;
 		value = (ut64*) r_stack_pop (stack);
 		if (!value) {
-			eprintf ("Failed to pop next address from stack\n");
+			R_LOG_ERROR ("Failed to pop next address from stack");
 			break;
 		}
 
@@ -150,12 +150,12 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 		while (!block_end && cur < maxfcnsize) {
 			op = r_core_anal_op (core, addr + cur, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 			if (!op || !op->mnemonic) {
-				eprintf ("a2f: Cannot analyze opcode at 0x%"PFMT64x"\n", addr+cur);
+				R_LOG_ERROR ("a2f: Cannot analyze opcode at 0x%"PFMT64x, addr+cur);
 				oaddr = UT64_MAX;
 				break;
 			}
 			if (op->mnemonic[0] == '?') {
-				eprintf ("a2f: Cannot analyze opcode at 0x%"PFMT64x"\n", addr+cur);
+				R_LOG_ERROR ("a2f: Cannot analyze opcode at 0x%"PFMT64x, addr+cur);
 				oaddr = UT64_MAX;
 				break;
 			}
@@ -296,20 +296,20 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 	char *function_label;
 	bool vars = r_config_get_b (core->config, "anal.vars");
 	if (!db) {
-		eprintf ("Cannot create db\n");
+		R_LOG_ERROR ("Cannot create db");
 		return false;
 	}
 
 	RList *delayed_commands = r_list_newf (free);
 	if (!delayed_commands) {
-		eprintf ("Failed to initialize the delayed command list\n");
+		R_LOG_ERROR ("Failed to initialize the delayed command list");
 		sdb_free (db);
 		return false;
 	}
 
 	ut64 a = analyzeStackBased (core, db, addr, delayed_commands);
 	if (addr == UT64_MAX) {
-		eprintf ("Initial analysis failed\n");
+		R_LOG_ERROR ("Initial analysis failed");
 		return false;
 	}
 	if (a != UT64_MAX) {

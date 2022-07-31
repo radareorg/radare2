@@ -53,7 +53,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		R_LOG_ERROR ("Could not open the %s", iob->name);
 		return NULL;
 	}
-	eprintf ("Opened %s %s with fd %p\n", iob->name, file + 8, io_ctx);
+	R_LOG_INFO ("Opened %s %s with fd %p", iob->name, file + 8, io_ctx);
 
 	io_desc_t *desc = io_desc_new (iob, io_ctx);
 	if (!desc) {
@@ -63,7 +63,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 	WindCtx *ctx = winkd_ctx_new (desc);
 	if (!ctx) {
-		eprintf ("Failed to initialize winkd context\n");
+		R_LOG_ERROR ("Failed to initialize winkd context");
 		return NULL;
 	}
 	return r_io_desc_new (io, &r_io_plugin_winkd, file, rw, mode, ctx);

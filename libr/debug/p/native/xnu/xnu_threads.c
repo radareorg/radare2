@@ -313,7 +313,7 @@ static int xnu_update_thread_list(RDebug *dbg) {
 	if (kr != KERN_SUCCESS) {
 		// we can get into this when the process has terminated but we
 		// still hold the old task because we are caching it
-		eprintf ("Failed to get list of task's threads\n");
+		R_LOG_ERROR ("Failed to get list of task's threads");
 		return false;
 	}
 	if (r_list_empty (dbg->threads)) {
@@ -321,11 +321,11 @@ static int xnu_update_thread_list(RDebug *dbg) {
 		for (i = 0; i < thread_count; i++) {
 			thread = xnu_get_thread_with_info (dbg, thread_list[i]);
 			if (!thread) {
-				eprintf ("Failed to fill_thread\n");
+				R_LOG_ERROR ("Failed to fill_thread");
 				continue;
 			}
 			if (!r_list_append (dbg->threads, thread)) {
-				eprintf ("Failed to add thread to list\n");
+				R_LOG_ERROR ("Failed to add thread to list");
 				xnu_thread_free (thread);
 			}
 		}
@@ -362,7 +362,7 @@ static int xnu_update_thread_list(RDebug *dbg) {
 				kr = mach_port_deallocate (mach_task_self (),
 							   thread_list[i]);
 				if (kr != KERN_SUCCESS) {
-					eprintf ("Failed to deallocate port\n");
+					R_LOG_ERROR ("Failed to deallocate port");
 				}
 				continue;
 			}

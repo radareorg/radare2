@@ -3884,7 +3884,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 			}
 			// TODO: this can be probably enhanced
 			if (!r_io_read_at (core->io, at, buf, core->blocksize)) {
-				eprintf ("Failed to read at 0x%08" PFMT64x "\n", at);
+				R_LOG_ERROR ("Failed to read at 0x%08" PFMT64x, at);
 				break;
 			}
 			for (i = bckwrds ? (core->blocksize - OPSZ - 1) : 0;

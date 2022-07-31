@@ -632,7 +632,7 @@ static bool noreturn_recurse(RAnal *anal, ut64 addr) {
 	ut8 bbuf[0x10] = {0};
 	ut64 recurse_addr = UT64_MAX;
 	if (!anal->iob.read_at (anal->iob.io, addr, bbuf, sizeof (bbuf))) {
-		eprintf ("Couldn't read buffer\n");
+		R_LOG_ERROR ("Couldn't read buffer");
 		return false;
 	}
 	if (r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL) < 1) {

@@ -578,13 +578,11 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *
 	}
 	RAnalEsilBB *glue_bb = R_NEW0 (RAnalEsilBB);
 	if (!glue_bb) {
-		eprintf ("Couldn't allocate glue_bb\n");
 		return NULL;
 	}
 	RStrBuf *glue = r_strbuf_new ("");
 	if (!glue) {
 		free (glue_bb);
-		eprintf ("Couldn't allocate glue\n");
 		return NULL;
 	}
 	const char *pc = r_reg_get_name (anal->reg, R_REG_NAME_PC);
@@ -593,7 +591,6 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *
 	r_strbuf_free (glue);
 	if (!glue_bb->expr) {
 		free (glue_bb);
-		eprintf ("Couldn't strdup\n");
 		return NULL;
 	}
 	glue_bb->enter = R_ANAL_ESIL_BLOCK_ENTER_GLUE;

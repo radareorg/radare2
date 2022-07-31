@@ -1753,7 +1753,7 @@ static void visual_comma(RCore *core) {
 		char *cwf = r_str_newf ("%s"R_SYS_DIR "%s", cwd, cmtfile);
 		char *odata = r_file_slurp (cwf, NULL);
 		if (!odata) {
-			eprintf ("Could not open '%s'.\n", cwf);
+			R_LOG_ERROR ("Could not open '%s'", cwf);
 			free (cwf);
 			goto beach;
 		}
@@ -1763,7 +1763,7 @@ static void visual_comma(RCore *core) {
 		free (odata);
 		free (cwf);
 	} else {
-		eprintf ("No commafile found.\n");
+		R_LOG_ERROR ("No commafile found");
 	}
 beach:
 	free (comment);

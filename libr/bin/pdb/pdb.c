@@ -509,11 +509,11 @@ static bool pdb7_parse(RPdb *pdb) {
 	pdb->pdb_streams2 = NULL;
 	if (!init_pdb7_root_stream (pdb, root_page_list, num_root_pages,
 		    ePDB_STREAM_ROOT, root_size, page_size)) {
-		eprintf ("Could not initialize root stream.\n");
+		R_LOG_ERROR ("Could not initialize root stream");
 		goto error;
 	}
 	if (!pdb_read_root (pdb)) {
-		eprintf ("PDB root was not initialized.\n");
+		R_LOG_ERROR ("PDB root was not initialized");
 		goto error;
 	}
 
