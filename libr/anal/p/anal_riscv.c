@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2021 - qnix */
+/* radare - LGPL - Copyright 2015-2022 - pancake, qnix */
 
 #include <string.h>
 #include <r_types.h>
@@ -6,20 +6,34 @@
 #include <r_asm.h>
 #include <r_anal.h>
 #include "../../asm/arch/riscv/riscv-opc.c"
-#include "../../asm/arch/riscv/riscv.h"
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(*a))
+#include "../../asm/arch/riscv/riscv.c"
+#include "../../asm/arch/riscv/riscvasm.c"
 #define RISCVARGSMAX (8)
 #define RISCVARGSIZE (64)
 #define RISCVARGN(x) ((x)->arg[(x)->num++])
-
-static R_TH_LOCAL bool init = false;
-static R_TH_LOCAL const char *const *riscv_gpr_names = riscv_gpr_names_abi;
-static R_TH_LOCAL const char *const *riscv_fpr_names = riscv_fpr_names_abi;
 
 typedef struct riscv_args {
 	int num;
 	char arg[RISCVARGSMAX][RISCVARGSIZE];
 } riscv_args_t;
+
+static int riscv_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
+	if (outsize < 4) {
+		return -1;
+	}
+	ut8 *opbuf = outbuf;
+	int ret = riscv_assemble (str, addr, opbuf);
+	if (a->config->big_endian) {
+		ut8 *buf = opbuf;
+		ut8 tmp = buf[0];
+		buf[0] = buf[3];
+		buf[3] = tmp;
+		tmp = buf[1];
+		buf[1] = buf[2];
+		buf[2] = tmp;
+	}
+	return ret;
+}
 
 #define is_any(...) _is_any(o->name, __VA_ARGS__, NULL)
 static bool _is_any(const char *str, ...) {
@@ -42,32 +56,11 @@ static bool _is_any(const char *str, ...) {
 
 static void arg_p2(char *buf, unsigned long val, const char* const* array, size_t size) {
 	const char *s = (val >= size || array[val]) ? array[val] : "unknown";
-	snprintf (buf, RISCVARGSIZE, "%s", s);
-}
-
-static struct riscv_opcode *get_opcode(insn_t word) {
-	struct riscv_opcode *op = NULL;
-	static R_TH_LOCAL const struct riscv_opcode *riscv_hash[OP_MASK_OP + 1] = {0};
-
-#define OP_HASH_IDX(i) ((i) & (riscv_insn_length (i) == 2 ? 3 : OP_MASK_OP))
-
-	if (!init) {
-		size_t i;
-		for (i = 0; i < OP_MASK_OP + 1; i++) {
-			riscv_hash[i] = 0;
-		}
-		for (op = riscv_opcodes; op <= &riscv_opcodes[NUMOPCODES - 1]; op++) {
-			if (!riscv_hash[OP_HASH_IDX (op->match)]) {
-				riscv_hash[OP_HASH_IDX (op->match)] = op;
-			}
-		}
-		init = true;
-	}
-	return (struct riscv_opcode *)riscv_hash[OP_HASH_IDX (word)];
+	r_str_ncpy (buf, s, RISCVARGSIZE);
 }
 
 /* Print insn arguments for 32/64-bit code.  */
-static void get_insn_args(riscv_args_t *args, const char *d, insn_t _l, ut64 pc) {
+static void get_riscv_args(riscv_args_t *args, const char *d, insn_t _l, ut64 pc) {
 	int l = _l;
 	int rs1 = (l >> OP_SH_RS1) & OP_MASK_RS1;
 	int rd = (l >> OP_SH_RD) & OP_MASK_RD;
@@ -276,8 +269,7 @@ static void get_insn_args(riscv_args_t *args, const char *d, insn_t _l, ut64 pc)
 			break;
 		default:
 			/* xgettext:c-format */
-			snprintf (RISCVARGN (args), RISCVARGSIZE , "# internal error, undefined modifier (%c)",
-					*d);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "# internal error, undefined modifier (%c)", *d);
 			return;
 		}
 	}
@@ -288,6 +280,37 @@ static const char* arg_n(riscv_args_t* args, int n) {
 		return "0";
 	}
 	return args->arg[n];
+}
+
+static char *riscv_disassemble(RAnal *a, ut64 addr, const ut8 *buf, int len) {//insn_t word, int xlen, int len) {
+	insn_t word = {0};
+	memcpy (&word, buf, R_MIN (sizeof (word), len));
+	int xlen = a->config->bits;
+	// int len = riscv_insn_length (insn);
+	const bool no_alias = false;
+	const struct riscv_opcode *op = get_opcode (word);
+	if (!op) {
+		return NULL;
+	}
+	for (; op < &riscv_opcodes[NUMOPCODES]; op++) {
+		if ( !(op->match_func)(op, word) ) {
+			continue;
+		}
+		if (no_alias && (op->pinfo & INSN_ALIAS)) {
+			continue;
+		}
+		if (isdigit ((ut8)op->subset[0]) && atoi (op->subset) != xlen ) {
+			continue;
+		}
+		if (op->name && op->args) {
+			char opasm [64];
+			r_str_ncpy (opasm, op->name, sizeof (opasm));
+			get_insn_args (opasm, op->args, word, addr);
+			return strdup (opasm);
+		}
+		return NULL;
+	}
+	return NULL;
 }
 
 static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
@@ -318,7 +341,10 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return op->size;
 	}
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		op->mnemonic = strdup (o->name);
+		op->mnemonic = riscv_disassemble (anal, addr, data, len);
+		if (!op->mnemonic) {
+			op->mnemonic = strdup ("invalid");
+		}
 	}
 
 	for (; o <= &riscv_opcodes[NUMOPCODES - 1]; o++) {
@@ -346,7 +372,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->size = 2;
 		}
 #define ARG(x) (arg_n (&args, (x)))
-		get_insn_args (&args, o->args, word, addr);
+		get_riscv_args (&args, o->args, word, addr);
 		if (!strcmp (name, "nop")) {
 			esilprintf (op, ",");
 		}
@@ -866,7 +892,7 @@ static char *get_reg_profile(RAnal *anal) {
 
 			 break;
 	}
-	return (p && *p)? strdup (p): NULL;
+	return R_STR_ISNOTEMPTY (p)? strdup (p): NULL;
 }
 
 RAnalPlugin r_anal_plugin_riscv = {
@@ -874,8 +900,10 @@ RAnalPlugin r_anal_plugin_riscv = {
 	.desc = "RISC-V analysis plugin",
 	.license = "GPL",
 	.arch = "riscv",
-	.bits = 32|64,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.bits = 32 | 64,
 	.op = &riscv_op,
+	.opasm = &riscv_opasm,
 	.get_reg_profile = &get_reg_profile,
 };
 
