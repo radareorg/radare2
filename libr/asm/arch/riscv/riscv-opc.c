@@ -671,5 +671,5 @@ static const struct riscv_opcode riscv_builtin_opcodes[] = {
 /* Removed const from the following to allow for dynamic extensions to the
    built-in instruction set.  */
 static struct riscv_opcode *riscv_opcodes = (struct riscv_opcode *) riscv_builtin_opcodes;
-static const int bfd_riscv_num_opcodes = RISCV_NUM_OPCODES;
+const int bfd_riscv_num_opcodes = RISCV_NUM_OPCODES;
 #undef RISCV_NUM_OPCODES
