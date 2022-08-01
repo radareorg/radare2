@@ -132,7 +132,7 @@ static const char *menus_View[] = {
 };
 
 static const char *menus_Tools[] = {
-	"Calculator", "R2 Shell", "System Shell",
+	"Calculator", "Assembler", "R2 Shell", "System Shell",
 	NULL
 };
 
@@ -5146,7 +5146,7 @@ static int __settings_colors_cb(void *user) {
 		p->view->refresh = true;
 		menu->refreshPanels[i - 1] = p;
 	}
-	__update_menu(core, "Settings.Colors", __init_menu_color_settings_layout);
+	__update_menu (core, "Settings.Colors", __init_menu_color_settings_layout);
 	return 0;
 }
 
@@ -5236,6 +5236,15 @@ static int __calculator_cb(void *user) {
 	}
 	return 0;
 }
+
+static int __r2_assembler_cb(void *user) {
+	RCore *core = (RCore *)user;
+	const int ocur = core->print->cur_enabled;
+	r_core_visual_asm (core, core->offset);
+	core->print->cur_enabled = ocur;
+	return 0;
+}
+
 
 static int __r2_shell_cb(void *user) {
 	RCore *core = (RCore *)user;
@@ -5663,6 +5672,8 @@ static bool __init_panels_menu(RCore *core) {
 	for (i = 0; menus_Tools[i]; i++) {
 		if (!strcmp (menus_Tools[i], "Calculator")) {
 			__add_menu (core, parent, menus_Tools[i], __calculator_cb);
+		} else if (!strcmp (menus_Tools[i], "Assembler")) {
+			__add_menu (core, parent, menus_Tools[i], __r2_assembler_cb);
 		} else if (!strcmp (menus_Tools[i], "R2 Shell")) {
 			__add_menu (core, parent, menus_Tools[i], __r2_shell_cb);
 		} else if (!strcmp (menus_Tools[i], "System Shell")) {
