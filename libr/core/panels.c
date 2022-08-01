@@ -5224,13 +5224,14 @@ static void __init_menu_screen_settings_layout(void *_core, const char *parent) 
 
 static int __calculator_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_cons_clear ();
 	for (;;) {
 		char *s = __show_status_input (core, "> ");
 		if (!s || !*s) {
 			free (s);
 			break;
 		}
+		r_cons_clear00 ();
+		r_cons_printf (core, "> %s", s);
 		r_core_cmdf (core, "? %s", s);
 		r_cons_flush ();
 		free (s);
