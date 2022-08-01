@@ -11,6 +11,7 @@
 .Op Fl F Ar file
 .Op Fl t Ar to
 .Op Fl [m|s|e] Ar str
+.Op Fl V Ar s:val
 .Op Fl x Ar hex
 .Ar file|dir
 .Sh DESCRIPTION
@@ -30,6 +31,8 @@ Only accept aligned hits
 Search for a specific string
 .It Fl S Ar str
 Search for a specific wide string
+.It Fl V Ar size:value
+Search for a little-endian value of given size. For example -V 4:123
 .It Fl e Ar regex
 Search for a regular expression string matches
 .It Fl x Ar hex

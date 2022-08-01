@@ -2132,7 +2132,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	const char *esilstr;
 	const char *opexstr;
 	RAnalHint *hint;
-	RAsmOp asmop = {0};
 	RAnalOp op = {0};
 	ut64 addr;
 	PJ *pj = NULL;
@@ -2162,6 +2161,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
+		RAsmOp asmop = {0};
 		addr = core->offset + idx;
 		r_asm_set_pc (core->rasm, addr);
 		hint = r_anal_hint_get (core->anal, addr);
@@ -2558,8 +2558,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		free (mnem);
 		r_anal_hint_free (hint);
 		r_anal_op_fini (&op);
+		r_asm_op_fini (&asmop);
 	}
-	r_asm_op_fini (&asmop);
 	r_anal_op_fini (&op);
 	if (fmt == 's') {
 		r_cons_printf ("%d\n", totalsize);

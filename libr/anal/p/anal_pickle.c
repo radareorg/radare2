@@ -509,6 +509,31 @@ static inline int assemble_cnt_str(const char *str, int byte_sz, ut8 *outbuf, in
 	return wlen;
 }
 
+static inline int assemble_n_str(char *str, ut32 cnt, ut8 *outbuf, int outsz) {
+	r_return_val_if_fail (cnt <= 2, -2);
+	size_t len = strlen (str);
+	if (len + 1 > outsz) { // str must be be \n terminated in outbuf
+		R_LOG_ERROR ("String to large for assembler to handle");
+		return -1;
+	}
+	if (strchr (str, '\n')) {
+		R_LOG_ERROR ("Shouldn't be newlines in argument");
+		return -1;
+	}
+
+	if (cnt == 2) {
+		char *space = strchr (str, ' ');
+		if (!space) {
+			R_LOG_ERROR ("Need space between args");
+			return -1;
+		}
+		*space = '\n';
+	}
+	memcpy (outbuf, str, len);
+	outbuf[len] = '\n';
+	return len + 1;
+}
+
 static inline int write_op(char *opstr, ut8 *outbuf) {
 	bool ret = false;
 	size_t i;
@@ -631,6 +656,8 @@ static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int o
 		// two lines
 		case OP_INST:
 		case OP_GLOBAL:
+			wlen += assemble_n_str (arg, 2, outbuf, outsz);
+			break;
 		// one line
 		case OP_FLOAT:
 		case OP_INT:
@@ -640,8 +667,7 @@ static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int o
 		case OP_UNICODE:
 		case OP_GET:
 		case OP_PUT:
-			R_LOG_ERROR ("This assembler can't handle %s (op: 0x%02x) yet", opstr, op);
-			wlen = -1;
+			wlen += assemble_n_str (arg, 1, outbuf, outsz);
 			break;
 		default:
 			r_warn_if_reached ();
@@ -667,6 +693,45 @@ static int archinfo(RAnal *anal, int q) {
 	return 0;
 }
 
+static inline char *pickle_json_mnemonic(int id) {
+	PJ *pj = pj_new ();
+	if (pj) {
+		pj_a (pj);
+		if (id >= 0 && id < R_ARRAY_SIZE (op_name_map)) {
+			pj_s (pj, op_name_map[id].name);
+		} else if (id == -1) {
+			size_t i;
+			RStrBuf *buf = buf = r_strbuf_new ("");
+			for (i = 0; i < R_ARRAY_SIZE (op_name_map); i++) {
+				pj_s (pj, op_name_map[i].name);
+			}
+		}
+		pj_end (pj);
+		return pj_drain (pj);
+	}
+	return NULL;
+}
+
+static char *pickle_mnemonics(RAnal *a, int id, bool json) {
+	if (json) {
+		return pickle_json_mnemonic (id);
+	}
+	if (id >= 0 && id < R_ARRAY_SIZE (op_name_map)) {
+		return strdup (op_name_map[id].name);
+	}
+	if (id == -1) {
+		size_t i;
+		RStrBuf *buf = buf = r_strbuf_new ("");
+		for (i = 0; i < R_ARRAY_SIZE (op_name_map); i++) {
+			r_strbuf_append (buf, op_name_map[i].name);
+			r_strbuf_append (buf, "\n");
+		}
+		return r_strbuf_drain (buf);
+	}
+
+	return NULL;
+}
+
 RAnalPlugin r_anal_plugin_pickle = {
 	.name = "pickle",
 	.desc = "Python Pickle Machine Disassembler",
@@ -678,7 +743,7 @@ RAnalPlugin r_anal_plugin_pickle = {
 	.opasm = &pickle_opasm,
 	// .preludes = anal_preludes,
 	.archinfo = archinfo,
-	// .mnemonics = cs_mnemonics,
+	.mnemonics = pickle_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE

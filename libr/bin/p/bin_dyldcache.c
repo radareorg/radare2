@@ -1538,7 +1538,7 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		if (rounded_count > rebase_info->page_size) {
 			internal_buf = malloc (rounded_count);
 			if (!internal_buf) {
-				eprintf ("Cannot allocate memory for 'internal_buf'\n");
+				R_LOG_ERROR ("Cannot allocate memory for 'internal_buf'");
 				return -1;
 			}
 		}

@@ -18,24 +18,17 @@
    - Code changes to make r2 friendly (qnix@0x80.org)
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <ctype.h>
-#include <stdarg.h>
 #include <r_asm.h>
-#include <r_lib.h>
-#include <string.h>
 
 #include "riscv-opc.h"
 #include "riscv.h"
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(*a))
 
-// TODO : an conf to chose between abi or numeric
-static const char *const *riscv_gpr_names = riscv_gpr_names_abi;
-static const char *const *riscv_fpr_names = riscv_fpr_names_abi;
-static int init = 0;
+// TODO : an conf to choose between abi or numeric
+static R_TH_LOCAL const char * const * riscv_gpr_names = riscv_gpr_names_abi;
+static R_TH_LOCAL const char * const * riscv_fpr_names = riscv_fpr_names_abi;
+static R_TH_LOCAL bool init = false;
 
 static void arg_p(char *buf, unsigned long val, const char* const* array, size_t size) {
 	const char *s = (val >= size || array[val]) ? array[val] : "unknown";
@@ -279,50 +272,7 @@ static struct riscv_opcode *get_opcode(insn_t word) {
 				riscv_hash[OP_HASH_IDX (op->match)] = op;
 			}
 		}
-		init = 1;
+		init = true;
 	}
-
 	return (struct riscv_opcode *)riscv_hash[OP_HASH_IDX (word)];
-}
-
-static int riscv_disassemble(RAsm *a, RAsmOp *rop, insn_t word, int xlen, int len) {
-	const bool no_alias = false;
-	const struct riscv_opcode *op = get_opcode (word);
-	if (!op) {
-		return -1;
-	}
-	for (; op < &riscv_opcodes[NUMOPCODES]; op++) {
-		if ( !(op->match_func)(op, word) ) {
-			continue;
-		}
-		if (no_alias && (op->pinfo & INSN_ALIAS)) {
-			continue;
-		}
-		if (isdigit ((ut8)op->subset[0]) && atoi (op->subset) != xlen ) {
-			continue;
-		}
-		if (op->name && op->args) {
-			r_asm_op_set_asm (rop, op->name);
-			get_insn_args (r_asm_op_get_asm (rop), op->args, word, a->pc);
-			return 0;
-		}
-		r_strf_buffer (32);
-		r_asm_op_set_asm (rop, r_strf ("invalid word(%"PFMT64x")", (ut64)word));
-		return -1;
-	}
-	return 0;
-}
-
-static int riscv_dis(RAsm *a, RAsmOp *rop, const ut8 *buf, ut64 len) {
-	insn_t insn = {0};
-	if (len < 2) {
-		return -1;
-	}
-	memcpy (&insn, buf, R_MIN (sizeof (insn), len));
-	int insn_len = riscv_insn_length(insn);
-	if (len < insn_len) {
-		return -1;
-	}
-	riscv_disassemble (a, rop, insn, a->config->bits, len);
-	return insn_len;
 }

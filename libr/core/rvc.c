@@ -60,7 +60,7 @@ bool file_copyrf(const char *src, const char *dst) {
 				r_sys_mkdirp (dstp);
 			} else {
 				if (!file_copyp (path, dstp)) {
-				eprintf ("Failed to copy the file: %s to %s\n",
+				R_LOG_ERROR ("Failed to copy the file: %s to %s",
 						path, dstp);
 				ret = false;
 				//continue copying files don't break
@@ -69,7 +69,7 @@ bool file_copyrf(const char *src, const char *dst) {
 			free (dstp);
 		} else {
 			ret = false;
-			eprintf ("Failed to copy the file: %s\n", path);
+			R_LOG_ERROR ("Failed to copy the file: %s", path);
 		}
 	}
 	return ret;
@@ -1058,11 +1058,11 @@ R_API bool r_vc_clone(const char *src, const char *dst) {
 					if (r_vc_reset (dst_repo)) {
 						ret = true;
 					} else {
-						eprintf("Failed to reset\n");
+						R_LOG_ERROR("Failed to reset");
 					}
 				}
 			} else {
-				eprintf ("Failed to copy files\n");
+				R_LOG_ERROR ("Failed to copy files");
 			}
 			free (srp);
 		}

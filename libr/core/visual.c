@@ -1753,7 +1753,7 @@ static void visual_comma(RCore *core) {
 		char *cwf = r_str_newf ("%s"R_SYS_DIR "%s", cwd, cmtfile);
 		char *odata = r_file_slurp (cwf, NULL);
 		if (!odata) {
-			eprintf ("Could not open '%s'.\n", cwf);
+			R_LOG_ERROR ("Could not open '%s'", cwf);
 			free (cwf);
 			goto beach;
 		}
@@ -1763,7 +1763,7 @@ static void visual_comma(RCore *core) {
 		free (odata);
 		free (cwf);
 	} else {
-		eprintf ("No commafile found.\n");
+		R_LOG_ERROR ("No commafile found");
 	}
 beach:
 	free (comment);
@@ -1979,6 +1979,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 				r_core_seek (core, prev_addr, true);
 				prev_sz = r_asm_disassemble (core->rasm, &op,
 					core->block, 32);
+				r_asm_op_fini (&op);
 			}
 		} else {
 			prev_sz = roff - prev_roff;
@@ -2050,6 +2051,7 @@ static bool fix_cursor(RCore *core) {
 				p->ocur = R_MAX (p->ocur - sz, 0);
 			}
 			res |= off_is_visible;
+			r_asm_op_fini (&op);
 		}
 	} else if (core->print->cur >= offscreen) {
 		r_core_seek (core, core->offset + p->cols, true);
@@ -2446,7 +2448,6 @@ static int process_get_click(RCore *core, int ch) {
 
 R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	ut8 och = arg[0];
-	RAsmOp op;
 	ut64 offset = core->offset;
 	char buf[4096];
 	const char *key_s;
@@ -3102,8 +3103,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							times = distance;
 						}
 						while (times--) {
+							RAsmOp op;
 							if (isDisasmPrint (core->printidx)) {
 								r_core_visual_disasm_down (core, &op, &cols);
+								r_asm_op_fini (&op);
 							} else if (!strcmp (__core_visual_print_command (core),
 									"prc")) {
 								cols = r_config_get_i (core->config, "hex.cols");
@@ -3130,10 +3133,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			} else {
 				if (core->print->screen_bounds > 1 && core->print->screen_bounds >= core->offset) {
+					RAsmOp op;
 					ut64 addr = UT64_MAX;
 					if (isDisasmPrint (core->printidx)) {
 						if (core->print->screen_bounds == core->offset) {
 							r_asm_disassemble (core->rasm, &op, core->block, 32);
+							r_asm_op_fini (&op);
 						}
 						if (addr == core->offset || addr == UT64_MAX) {
 							addr = core->offset + 48;

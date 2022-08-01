@@ -41,7 +41,7 @@ static int r_debug_winkd_reg_write(RDebug *dbg, int type, const ut8 *buf, int si
 	int arena_size;
 	ut8 *arena = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &arena_size);
 	if (!arena) {
-		eprintf ("Could not retrieve the register arena!\n");
+		R_LOG_ERROR ("Could not retrieve the register arena!");
 		return false;
 	}
 	int ret = winkd_write_reg (wctx, arena, arena_size);
@@ -103,7 +103,7 @@ static bool r_debug_winkd_attach(RDebug *dbg, int pid) {
 
 	// Handshake
 	if (!winkd_sync (wctx)) {
-		eprintf ("Could not connect to winkd\n");
+		R_LOG_ERROR ("Could not connect to winkd");
 		winkd_ctx_free ((WindCtx **)&desc->data);
 		return false;
 	}

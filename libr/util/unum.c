@@ -4,9 +4,7 @@
 
 #include <errno.h>
 #include <math.h>  /* for ceill */
-#include <stdlib.h>
 #include <r_util.h>
-
 
 static ut64 r_num_tailff(RNum *num, const char *hex);
 
@@ -411,19 +409,12 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			}
 			break;
 		default:
-#if 0
-			// sscanf (str, "%"PFMT64d"%n", &ret, &chars_read);
-// 32bit chop
-#if __WINDOWS__
-			ret = _strtoui64 (str, &endptr, 10);
-#endif
-#endif
 			errno = 0;
 			ret = strtoull (str, &endptr, 10);
 			if (errno == ERANGE) {
 				error (num, "number won't fit into 64 bits");
 			}
-			if (!IS_DIGIT (*str) && (*endptr && *endptr != lch)) {
+			if (!IS_DIGIT (*str)) {
 				error (num, "unknown symbol");
 			}
 			break;
@@ -436,20 +427,13 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 }
 
 R_API ut64 r_num_math(RNum *num, const char *str) {
-	ut64 ret;
 	const char *err = NULL;
 	if (R_STR_ISEMPTY (str)) {
 		return 0LL;
 	}
-	if (num) {
-		num->dbz = 0;
-	}
-	ret = r_num_calc (num, str, &err); // TODO: rename r_num_calc to r_num_math_err()
+	ut64 ret = r_num_calc (num, str, &err); // TODO: rename r_num_calc to r_num_math_err()
 	if (err) {
 		R_LOG_DEBUG ("(%s) in (%s)", err, str);
-	}
-	if (num) {
-		num->value = ret;
 	}
 	return ret;
 }
@@ -632,7 +616,7 @@ R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only) {
 	int stri, ret = 0, off = 0;
 	int len = sizeof (ut64);
 	ut64 num = n;
-	str[stri=0] = 0;
+	str[stri = 0] = 0;
 	while (len--) {
 		char ch = (num & 0xff);
 		if (ch >= 32 && ch < 127) {
@@ -744,7 +728,7 @@ static ut64 r_num_tailff(RNum *num, const char *hex) {
 		}
 		free (p);
 	}
-	ut64 left = ((UT64_MAX >>i) << i);
+	ut64 left = ((UT64_MAX >> i) << i);
 	return left | n;
 }
 

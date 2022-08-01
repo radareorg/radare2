@@ -1486,7 +1486,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			{
 			src = getarg (&gop, 0, 0, NULL, SRC_AR, NULL);
 			op->src[0] = r_anal_value_new ();
-			op->src[0]->reg = r_reg_get (a->reg, src, R_REG_TYPE_GPR);
+			if (op->src[0]) {
+				op->src[0]->reg = r_reg_get (a->reg, src, R_REG_TYPE_GPR);
+			}
 			//XXX fallthrough
 			}
 		//case X86_OP_FP:
@@ -2288,10 +2290,12 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 
 	// PC register
 	val = r_anal_value_new ();
-	val->type = R_ANAL_VAL_REG;
-	val->access = R_ANAL_ACC_W;
-	val->reg = cs_reg2reg (reg, handle, X86_REG_RIP);
-	r_list_append (ret, val);
+	if (val) {
+		val->type = R_ANAL_VAL_REG;
+		val->access = R_ANAL_ACC_W;
+		val->reg = cs_reg2reg (reg, handle, X86_REG_RIP);
+		r_list_append (ret, val);
+	}
 
 #if CS_API_MAJOR >= 4
 	// Register access info
@@ -2301,19 +2305,23 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 		if (read_count > 0) {
 			for (i = 0; i < read_count; i++) {
 				val = r_anal_value_new ();
-				val->type = R_ANAL_VAL_REG;
-				val->access = R_ANAL_ACC_R;
-				val->reg = cs_reg2reg (reg, handle, regs_read[i]);
-				r_list_append (ret, val);
+				if (val) {
+					val->type = R_ANAL_VAL_REG;
+					val->access = R_ANAL_ACC_R;
+					val->reg = cs_reg2reg (reg, handle, regs_read[i]);
+					r_list_append (ret, val);
+				}
 			}
 		}
 		if (write_count > 0) {
 			for (i = 0; i < write_count; i++) {
 				val = r_anal_value_new ();
-				val->type = R_ANAL_VAL_REG;
-				val->access = R_ANAL_ACC_W;
-				val->reg = cs_reg2reg (reg, handle, regs_write[i]);
-				r_list_append (ret, val);
+				if (val) {
+					val->type = R_ANAL_VAL_REG;
+					val->access = R_ANAL_ACC_W;
+					val->reg = cs_reg2reg (reg, handle, regs_write[i]);
+					r_list_append (ret, val);
+				}
 			}
 		}
 	}
@@ -2322,69 +2330,83 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 	switch (insn->id) {
 	case X86_INS_PUSH:
 		val = r_anal_value_new ();
-		val->type = R_ANAL_VAL_MEM;
-		val->access = R_ANAL_ACC_W;
-		val->reg = cs_reg2reg (reg, handle, sp);
-		val->delta = -INSOP(0).size;
-		val->memref = INSOP(0).size;
-		r_list_append (ret, val);
+		if (val) {
+			val->type = R_ANAL_VAL_MEM;
+			val->access = R_ANAL_ACC_W;
+			val->reg = cs_reg2reg (reg, handle, sp);
+			val->delta = -INSOP(0).size;
+			val->memref = INSOP(0).size;
+			r_list_append (ret, val);
+		}
 		break;
 	case X86_INS_PUSHAW:
 		// AX, CX, DX, BX, SP, BP, SI, DI
 		val = r_anal_value_new ();
-		val->type = R_ANAL_VAL_MEM;
-		val->access = R_ANAL_ACC_W;
-		val->reg = cs_reg2reg (reg, handle, sp);
-		val->delta = -16;
-		val->memref = 16;
-		r_list_append (ret, val);
+		if (val) {
+			val->type = R_ANAL_VAL_MEM;
+			val->access = R_ANAL_ACC_W;
+			val->reg = cs_reg2reg (reg, handle, sp);
+			val->delta = -16;
+			val->memref = 16;
+			r_list_append (ret, val);
+		}
 		break;
 	case X86_INS_PUSHAL:
 		// EAX, ECX, EDX, EBX, EBP, ESP, EBP, ESI, EDI
 		val = r_anal_value_new ();
-		val->type = R_ANAL_VAL_MEM;
-		val->access = R_ANAL_ACC_W;
-		val->reg = cs_reg2reg (reg, handle, sp);
-		val->delta = -32;
-		val->memref = 32;
-		r_list_append (ret, val);
+		if (val) {
+			val->type = R_ANAL_VAL_MEM;
+			val->access = R_ANAL_ACC_W;
+			val->reg = cs_reg2reg (reg, handle, sp);
+			val->delta = -32;
+			val->memref = 32;
+			r_list_append (ret, val);
+		}
 		break;
 	case X86_INS_PUSHF:
 		val = r_anal_value_new ();
-		val->type = R_ANAL_VAL_MEM;
-		val->access = R_ANAL_ACC_W;
-		val->reg = cs_reg2reg (reg, handle, sp);
-		val->delta = -2;
-		val->memref = 2;
-		r_list_append (ret, val);
+		if (val) {
+			val->type = R_ANAL_VAL_MEM;
+			val->access = R_ANAL_ACC_W;
+			val->reg = cs_reg2reg (reg, handle, sp);
+			val->delta = -2;
+			val->memref = 2;
+			r_list_append (ret, val);
+		}
 		break;
 	case X86_INS_PUSHFD:
 		val = r_anal_value_new ();
-		val->type = R_ANAL_VAL_MEM;
-		val->access = R_ANAL_ACC_W;
-		val->reg = cs_reg2reg (reg, handle, sp);
-		val->delta = -4;
-		val->memref = 4;
-		r_list_append (ret, val);
+		if (val) {
+			val->type = R_ANAL_VAL_MEM;
+			val->access = R_ANAL_ACC_W;
+			val->reg = cs_reg2reg (reg, handle, sp);
+			val->delta = -4;
+			val->memref = 4;
+			r_list_append (ret, val);
+		}
 		break;
 	case X86_INS_PUSHFQ:
 		val = r_anal_value_new ();
-		val->type = R_ANAL_VAL_MEM;
-		val->access = R_ANAL_ACC_W;
-		val->reg = cs_reg2reg (reg, handle, sp);
-		val->delta = -8;
-		val->memref = 8;
-		r_list_append (ret, val);
+		if (val) {
+			val->type = R_ANAL_VAL_MEM;
+			val->access = R_ANAL_ACC_W;
+			val->reg = cs_reg2reg (reg, handle, sp);
+			val->delta = -8;
+			val->memref = 8;
+			r_list_append (ret, val);
+		}
 		break;
 	case X86_INS_CALL:
 	case X86_INS_LCALL:
 		val = r_anal_value_new ();
-		val->type = R_ANAL_VAL_MEM;
-		val->access = R_ANAL_ACC_W;
-		val->reg = cs_reg2reg (reg, handle, sp);
-		val->delta = -regsz;
-		val->memref = regsz;
-		r_list_append (ret, val);
+		if (val) {
+			val->type = R_ANAL_VAL_MEM;
+			val->access = R_ANAL_ACC_W;
+			val->reg = cs_reg2reg (reg, handle, sp);
+			val->delta = -regsz;
+			val->memref = regsz;
+			r_list_append (ret, val);
+		}
 		break;
 	default:
 		break;
@@ -2394,33 +2416,35 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 	for (i = 0; i < INSOPS; i++) {
 		if (INSOP (i).type == X86_OP_MEM) {
 			val = r_anal_value_new ();
-			val->type = R_ANAL_VAL_MEM;
+			if (val) {
+				val->type = R_ANAL_VAL_MEM;
 #if CS_API_MAJOR >= 4
-			switch (INSOP (i).access) {
-			case CS_AC_READ:
-				val->access = R_ANAL_ACC_R;
-				break;
-			case CS_AC_WRITE:
-				val->access = R_ANAL_ACC_W;
-				break;
-			case CS_AC_INVALID:
-				val->access = R_ANAL_ACC_UNKNOWN;
-				break;
-			}
+				switch (INSOP (i).access) {
+				case CS_AC_READ:
+				    val->access = R_ANAL_ACC_R;
+				    break;
+				case CS_AC_WRITE:
+				    val->access = R_ANAL_ACC_W;
+				    break;
+				case CS_AC_INVALID:
+				    val->access = R_ANAL_ACC_UNKNOWN;
+				    break;
+				}
 #else
-			val->access = R_ANAL_ACC_UNKNOWN;
+				val->access = R_ANAL_ACC_UNKNOWN;
 #endif
-			val->mul = INSOP (i).mem.scale;
-			val->delta = INSOP (i).mem.disp;
-			if (INSOP(0).mem.base == X86_REG_RIP ||
-				INSOP(0).mem.base == X86_REG_EIP) {
-				val->delta += insn->size;
+				val->mul = INSOP (i).mem.scale;
+				val->delta = INSOP (i).mem.disp;
+				if (INSOP(0).mem.base == X86_REG_RIP ||
+				  INSOP(0).mem.base == X86_REG_EIP) {
+					val->delta += insn->size;
+				}
+				val->memref = INSOP (i).size;
+				val->seg = cs_reg2reg (reg, handle, INSOP (i).mem.segment);
+				val->reg = cs_reg2reg (reg, handle, INSOP (i).mem.base);
+				val->regdelta = cs_reg2reg (reg, handle, INSOP (i).mem.index);
+				r_list_append (ret, val);
 			}
-			val->memref = INSOP (i).size;
-			val->seg = cs_reg2reg (reg, handle, INSOP (i).mem.segment);
-			val->reg = cs_reg2reg (reg, handle, INSOP (i).mem.base);
-			val->regdelta = cs_reg2reg (reg, handle, INSOP (i).mem.index);
-			r_list_append (ret, val);
 		}
 	}
 
@@ -2434,6 +2458,9 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 	(op)->dst = r_anal_value_new ();
 
 static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, int x) {
+	if (!val) {
+		return;
+	}
 	switch (INSOP (x).type) {
 	case X86_OP_MEM:
 		val->mul = INSOP (x).mem.scale;

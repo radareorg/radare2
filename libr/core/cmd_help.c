@@ -734,9 +734,14 @@ static int cmd_help(void *data, const char *input) {
 				if (!*str) {
 					continue;
 				}
-				n = r_num_math (core->num, str);
+				const char *err = NULL;
+				n = r_num_calc (core->num, str, &err);
 				if (core->num->dbz) {
 					eprintf ("RNum ERROR: Division by Zero\n");
+				}
+				if (err) {
+					R_LOG_ERROR (err);
+					continue;
 				}
 				char *asnum  = r_num_as_string (NULL, n, false);
 

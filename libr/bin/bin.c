@@ -219,7 +219,7 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinFileOptions *opt) {
 		opt->fd = iob->fd_open (iob->io, file, R_PERM_R, 0644);
 	}
 	if (opt->fd < 0) {
-		eprintf ("Couldn't open bin for file '%s'\n", file);
+		R_LOG_ERROR ("Couldn't open bin for file '%s'", file);
 		return false;
 	}
 	opt->sz = 0;
@@ -232,7 +232,7 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 
 	RBinFile *bf = r_bin_file_find_by_id (bin, bf_id);
 	if (!bf) {
-		eprintf ("r_bin_reload: No file to reopen\n");
+		R_LOG_ERROR ("r_bin_reload: No file to reopen");
 		return false;
 	}
 	RBinFileOptions opt;

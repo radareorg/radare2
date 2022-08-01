@@ -191,7 +191,7 @@ R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 	for (i = 0; sig[i] != 0; i++) {
 		ret = sigaction (sig[i], &sigact, NULL);
 		if (ret) {
-			eprintf ("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
+			R_LOG_ERROR ("Failed to set signal handler for signal '%d': %s", sig[i], strerror(errno));
 			return ret;
 		}
 	}
@@ -209,7 +209,7 @@ R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 	for (i = 0; sig[i] != 0; i++) {
 		void (*ret)(int) = signal (sig[i], handler);
 		if (ret == SIG_ERR) {
-			eprintf ("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
+			R_LOG_ERROR ("Failed to set signal handler for signal '%d': %s", sig[i], strerror(errno));
 			return -1;
 		}
 	}
@@ -238,7 +238,7 @@ R_API int r_sys_truncate(const char *file, int sz) {
 	}
 	int r = _chsize (fd, sz);
 	if (r != 0) {
-		eprintf ("Could not resize '%s' file\n", file);
+		R_LOG_ERROR ("Could not resize '%s' file", file);
 		close (fd);
 		return false;
 	}
@@ -333,7 +333,7 @@ R_API void r_sys_backtrace(void) {
 #ifdef HAVE_BACKTRACE
 	void *array[10];
 	size_t size = backtrace (array, 10);
-	eprintf ("Backtrace %d stack frames.\n", (int)size);
+	R_LOG_ERROR ("Backtrace %d stack frames", (int)size);
 	backtrace_symbols_fd (array, size, 2);
 #elif __APPLE__
 	void **fp = (void **) __builtin_frame_address (0);

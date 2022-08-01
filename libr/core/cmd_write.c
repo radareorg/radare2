@@ -1401,6 +1401,19 @@ static int cmd_w(RCore *core, const char *input) {
 	char *str = strdup (input);
 	/* write string */
 	int len = r_str_unescape (str);
+	if (r_config_get_b (core->config, "cmd.undo")) {
+		ut8 *buf = malloc (len);
+		r_io_read_at (core->io, core->offset, buf, len);
+		char *bufstr = r_hex_bin2strdup (buf, len);
+		char *a = r_str_newf ("wx %s", bufstr);
+		char *b = r_str_newf ("w %s", str);
+		RCoreUndo *uc = r_core_undo_new (core->offset, b, a);
+		r_core_undo_push (core, uc);
+		free (a);
+		free (b);
+		free (bufstr);
+		free (buf);
+	}
 	// handle charset logic here
 	if (!r_core_write_at (core, core->offset, (const ut8 *)str, len)) {
 		cmd_write_fail (core);

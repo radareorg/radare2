@@ -255,3 +255,135 @@ EXPECT=<<EOF
 0x00000000   4740114fdf3b645a1d  BINFLOAT 4.328000
 EOF
 RUN
+
+NAME=Assemble and dissassemble newline strs
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=pickle
+wa INST string1 string2
+pid 1
+wa GLOBAL string1 string2
+pid 1
+wa FLOAT string_arg
+pid 1
+wa INT string_arg
+pid 1
+wa LONG string_arg
+pid 1
+wa PERSID string_arg
+pid 1
+wa STRING string_arg
+pid 1
+wa UNICODE string_arg
+pid 1
+wa GET string_arg
+pid 1
+wa PUT string_arg
+pid 1
+EOF
+EXPECT=<<EOF
+0x00000000 69737472696e67310a737472696e67320a  INST "string1 string2"
+0x00000000 63737472696e67310a737472696e67320a  GLOBAL "string1 string2"
+0x00000000 46737472696e675f6172670a  FLOAT "string_arg"
+0x00000000 49737472696e675f6172670a  INT "string_arg"
+0x00000000 4c737472696e675f6172670a  LONG "string_arg"
+0x00000000 50737472696e675f6172670a  PERSID "string_arg"
+0x00000000 53737472696e675f6172670a  STRING "string_arg"
+0x00000000 56737472696e675f6172670a  UNICODE "string_arg"
+0x00000000 67737472696e675f6172670a  GET "string_arg"
+0x00000000 70737472696e675f6172670a  PUT "string_arg"
+EOF
+RUN
+
+NAME=Fail to Assemble bad newline strs
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=pickle
+wa INST no_space_when_needed
+pxw 1
+wa PUT too_longggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
+pxw 1
+EOF
+EXPECT=<<EOF
+0x00000000  0x00000000                                   .
+0x00000000  0x00000000                                   .
+EOF
+RUN
+
+NAME=mnemonics
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=pickle
+aoml
+EOF
+EXPECT=<<EOF
+MARK
+STOP
+POP
+POP_MARK
+DUP
+FLOAT
+INT
+BININT
+BININT1
+LONG
+BININT2
+NONE
+PERSID
+BINPERSID
+REDUCE
+STRING
+BINSTRING
+SHORT_BINSTRING
+UNICODE
+BINUNICODE
+APPEND
+BUILD
+GLOBAL
+DICT
+EMPTY_DICT
+APPENDS
+GET
+BINGET
+INST
+LONG_BINGET
+LIST
+EMPTY_LIST
+OBJ
+PUT
+BINPUT
+LONG_BINPUT
+SETITEM
+TUPLE
+EMPTY_TUPLE
+SETITEMS
+BINFLOAT
+PROTO
+NEWOBJ
+EXT1
+EXT2
+EXT4
+TUPLE1
+TUPLE2
+TUPLE3
+NEWTRUE
+NEWFALSE
+LONG1
+LONG4
+BINBYTES
+SHORT_BINBYTES
+SHORT_BINUNICODE
+BINUNICODE8
+BINBYTES8
+EMPTY_SET
+ADDITEMS
+FROZENSET
+NEWOBJ_EX
+STACK_GLOBAL
+MEMOIZE
+FRAME
+BYTEARRAY8
+NEXT_BUFFER
+READONLY_BUFFER
+EOF
+RUN

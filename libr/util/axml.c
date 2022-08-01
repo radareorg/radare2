@@ -183,7 +183,7 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 		// If UTF-16LE, decode to UTF-8 so we can print it to the screen
 		if (r_str_utf16_to_utf8 ((ut8 *)name, n * 2, (const ut8 *)start16, n, true) < 0) {
 			free (name);
-			eprintf ("Failed to decode UTF16-LE\n");
+			R_LOG_ERROR ("Failed to decode UTF16-LE");
 			return NULL;
 		}
 

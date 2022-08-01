@@ -50,7 +50,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->has_va = 1;
 	ret->bits = 8;
 	if (!check_buffer (bf, bf->buf)) {
-		eprintf ("Cannot find magic SEGA copyright\n");
+		R_LOG_ERROR ("Cannot find magic SEGA copyright");
 		free (ret);
 		return NULL;
 	}
@@ -58,29 +58,29 @@ static RBinInfo *info(RBinFile *bf) {
 	r_buf_read_at (bf->buf, cb, (ut8*)&hdr, sizeof (hdr));
 	hdr.CheckSum = r_read_le16 (&hdr.CheckSum);
 
-	eprintf ("Checksum: 0x%04x\n", (ut32)hdr.CheckSum); // use endian safe apis here
-	eprintf ("ProductCode: %02d%02X%02X\n", (hdr.Version >> 4), hdr.ProductCode[1],
+	R_LOG_INFO ("Checksum: 0x%04x", (ut32)hdr.CheckSum); // use endian safe apis here
+	R_LOG_INFO ("ProductCode: %02d%02X%02X", (hdr.Version >> 4), hdr.ProductCode[1],
 		hdr.ProductCode[0]);
 	switch (hdr.RegionRomSize >> 4) {
 	case 3:
-		eprintf ("Console: Sega Master System\n");
-		eprintf ("Region: Japan\n");
+		R_LOG_INFO ("Console: Sega Master System");
+		R_LOG_INFO ("Region: Japan");
 		break;
 	case 4:
-		eprintf ("Console: Sega Master System\n");
-		eprintf ("Region: Export\n");
+		R_LOG_INFO ("Console: Sega Master System");
+		R_LOG_INFO ("Region: Export");
 		break;
 	case 5:
-		eprintf ("Console: Game Gear\n");
-		eprintf ("Region: Japan\n");
+		R_LOG_INFO ("Console: Game Gear");
+		R_LOG_INFO ("Region: Japan");
 		break;
 	case 6:
-		eprintf ("Console: Game Gear\n");
-		eprintf ("Region: Export\n");
+		R_LOG_INFO ("Console: Game Gear");
+		R_LOG_INFO ("Region: Export");
 		break;
 	case 7:
-		eprintf ("Console: Game Gear\n");
-		eprintf ("Region: International\n");
+		R_LOG_INFO ("Console: Game Gear");
+		R_LOG_INFO ("Region: International");
 		break;
 	}
 	int romsize = 0;
@@ -95,7 +95,7 @@ static RBinInfo *info(RBinFile *bf) {
 	case 0x1: romsize = 512; break;
 	case 0x2: romsize = 1024; break;
 	}
-	eprintf ("RomSize: %dKB\n", romsize);
+	R_LOG_INFO ("RomSize: %dKB", romsize);
 	return ret;
 }
 

@@ -21,6 +21,9 @@ static void __panels_refresh(RCore *core);
 #define PANEL_TITLE_XREFS_HERE       "Xrefs Here"
 #define PANEL_TITLE_XREFS            "Xrefs"
 #define PANEL_TITLE_REGISTERS        "Registers"
+#define PANEL_TITLE_FPU_REGISTERS    "FPU Registers"
+#define PANEL_TITLE_XMM_REGISTERS    "XMM Registers"
+#define PANEL_TITLE_YMM_REGISTERS    "YMM Registers"
 #define PANEL_TITLE_DISASSEMBLY      "Disassembly"
 #define PANEL_TITLE_DISASMSUMMARY    "Disassemble Summary"
 #define PANEL_TITLE_ALL_DECOMPILER   "Show All Decompiler Output"
@@ -42,6 +45,9 @@ static void __panels_refresh(RCore *core);
 #define PANEL_CMD_XREFS              "ax"
 #define PANEL_CMD_STACK              "px"
 #define PANEL_CMD_REGISTERS          "dr"
+#define PANEL_CMD_FPU_REGISTERS      "dr fpu;drf"
+#define PANEL_CMD_XMM_REGISTERS      "drm"
+#define PANEL_CMD_YMM_REGISTERS      "drmy"
 #define PANEL_CMD_DISASSEMBLY        "pd"
 #define PANEL_CMD_DISASMSUMMARY      "pdsf"
 #define PANEL_CMD_DECOMPILER         "pdc"
@@ -126,7 +132,7 @@ static const char *menus_View[] = {
 };
 
 static const char *menus_Tools[] = {
-	"Calculator", "R2 Shell", "System Shell",
+	"Calculator", "Assembler", "R2 Shell", "System Shell",
 	NULL
 };
 
@@ -141,7 +147,7 @@ static const char *menus_Emulate[] = {
 };
 
 static const char *menus_Debug[] = {
-	"Registers", "RegisterRefs", "DRX", "Breakpoints", "Watchpoints",
+	"Registers", "FPU Registers", "XMM Registers", "YMM Registers", "RegisterRefs", "DRX", "Breakpoints", "Watchpoints",
 	"Maps", "Modules", "Backtrace", "Locals", "Continue",
 	"Step", "Step Over", "Reload",
 	NULL
@@ -602,6 +608,7 @@ static bool __is_abnormal_cursor_type(RCore *core, RPanel *panel) {
 
 static bool __is_normal_cursor_type(RPanel *panel) {
 	return (__check_panel_type (panel, PANEL_CMD_STACK) ||
+			__check_panel_type (panel, PANEL_CMD_FPU_REGISTERS) ||
 			__check_panel_type (panel, PANEL_CMD_REGISTERS) ||
 			__check_panel_type (panel, PANEL_CMD_DISASSEMBLY) ||
 			__check_panel_type (panel, PANEL_CMD_HEXDUMP));
@@ -1591,6 +1598,7 @@ static void __fix_cursor_down(RCore *core) {
 			if (sz < 1) {
 				sz = 1;
 			}
+			r_asm_op_fini (&op);
 			r_core_seek_delta (core, sz);
 			print->cur = R_MAX (print->cur - sz, 0);
 			if (print->ocur != -1) {
@@ -1887,6 +1895,9 @@ static void __init_sdb(RCore *core) {
 	sdb_set (db, "Stack"  , "px 256@r:SP", 0);
 	sdb_set (db, "Locals", "afvd", 0);
 	sdb_set (db, "Registers", "dr", 0);
+	sdb_set (db, "FPU Registers", PANEL_CMD_FPU_REGISTERS, 0);
+	sdb_set (db, "XMM Registers", PANEL_CMD_XMM_REGISTERS, 0);
+	sdb_set (db, "YMM Registers", PANEL_CMD_YMM_REGISTERS, 0);
 	sdb_set (db, "RegisterRefs", "drr", 0);
 	sdb_set (db, "Disassembly", "pd", 0);
 	sdb_set (db, "Disassemble Summary", "pdsf", 0);
@@ -2778,6 +2789,7 @@ static void __direction_disassembly_cb(void *user, int direction) {
 			r_core_visual_disasm_down (core, &op, &cols);
 			r_core_seek (core, core->offset + cols, true);
 			__set_panel_addr (core, cur, core->offset);
+			r_asm_op_fini (&op);
 		}
 		break;
 	}
@@ -4389,6 +4401,12 @@ static void __set_dcb(RCore *core, RPanel *p) {
 		p->model->directionCb = __direction_disassembly_cb;
 	} else if (__check_panel_type (p, PANEL_CMD_REGISTERS)) {
 		p->model->directionCb = __direction_register_cb;
+	} else if (__check_panel_type (p, PANEL_CMD_FPU_REGISTERS)) {
+		p->model->directionCb = __direction_register_cb;
+	} else if (__check_panel_type (p, PANEL_CMD_XMM_REGISTERS)) {
+		p->model->directionCb = __direction_register_cb;
+	} else if (__check_panel_type (p, PANEL_CMD_YMM_REGISTERS)) {
+		p->model->directionCb = __direction_register_cb;
 	} else if (__check_panel_type (p, PANEL_CMD_HEXDUMP)) {
 		p->model->directionCb = __direction_hexdump_cb;
 	} else {
@@ -5128,7 +5146,7 @@ static int __settings_colors_cb(void *user) {
 		p->view->refresh = true;
 		menu->refreshPanels[i - 1] = p;
 	}
-	__update_menu(core, "Settings.Colors", __init_menu_color_settings_layout);
+	__update_menu (core, "Settings.Colors", __init_menu_color_settings_layout);
 	return 0;
 }
 
@@ -5212,12 +5230,23 @@ static int __calculator_cb(void *user) {
 			free (s);
 			break;
 		}
+		r_cons_clear00 ();
+		r_cons_printf ("\n> %s\n", s);
 		r_core_cmdf (core, "? %s", s);
 		r_cons_flush ();
 		free (s);
 	}
 	return 0;
 }
+
+static int __r2_assembler_cb(void *user) {
+	RCore *core = (RCore *)user;
+	const int ocur = core->print->cur_enabled;
+	r_core_visual_asm (core, core->offset);
+	core->print->cur_enabled = ocur;
+	return 0;
+}
+
 
 static int __r2_shell_cb(void *user) {
 	RCore *core = (RCore *)user;
@@ -5645,6 +5674,8 @@ static bool __init_panels_menu(RCore *core) {
 	for (i = 0; menus_Tools[i]; i++) {
 		if (!strcmp (menus_Tools[i], "Calculator")) {
 			__add_menu (core, parent, menus_Tools[i], __calculator_cb);
+		} else if (!strcmp (menus_Tools[i], "Assembler")) {
+			__add_menu (core, parent, menus_Tools[i], __r2_assembler_cb);
 		} else if (!strcmp (menus_Tools[i], "R2 Shell")) {
 			__add_menu (core, parent, menus_Tools[i], __r2_shell_cb);
 		} else if (!strcmp (menus_Tools[i], "System Shell")) {

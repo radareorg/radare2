@@ -51,7 +51,7 @@ R_API ut64 r_time_now_mono(void) {
 }
 
 // R_API char *r_time_stamp_to_str(ut32 timeStamp) {
-R_API char *r_time_stamp_to_str(time_t timeStamp) {
+R_API R_MUSTUSE char *r_time_stamp_to_str(time_t timeStamp) {
 #if __WINDOWS__
 	time_t rawtime;
 	struct tm *tminfo;
