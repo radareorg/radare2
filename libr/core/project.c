@@ -112,7 +112,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 		pj = pj_new ();
 		if (!pj) {
 			break;
-	}
+		}
 		pj_a (pj);
 		r_list_foreach (list, iter, foo) {
 			// todo. escape string
@@ -388,7 +388,9 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	}
 	if (ask_for_closing && r_project_is_loaded (core->prj)) {
 		if (r_cons_is_interactive ()) {
-			close_current_session = interactive? r_cons_yesno ('y', "Close current session? (Y/n)"): true;
+			close_current_session = interactive
+				? r_cons_yesno ('y', "Close current session? (Y/n)")
+				: true;
 		}
 	}
 	if (close_current_session) {
@@ -475,9 +477,9 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 		r_cons_printf ("\"of \\\"%s\\\" %s\"\n", desc->uri, r_str_rwx_i (desc->perm));
 		if ((maps = r_io_map_get_by_fd (core->io, id))) { //wtf
 			r_list_foreach (maps, iter, map) {
-				r_cons_printf ("om %d 0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x " %s%s%s\n", fdc, r_io_map_begin (map),
-						r_io_map_size (map), map->delta, r_str_rwx_i (map->perm), map->name ? " " : "",
-						r_str_get (map->name));
+				r_cons_printf ("om %d 0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x " %s%s%s\n", fdc,
+						r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
+						map->name? " " : "", r_str_get (map->name));
 			}
 			r_list_free (maps);
 		}
@@ -596,8 +598,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	}
 	r_core_cmd (core, "wc*", 0);
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
-		r_cons_printf ("# seek\n" "s 0x%08" PFMT64x "\n",
-			core->offset);
+		r_cons_printf ("# seek\n" "s 0x%08" PFMT64x "\n", core->offset);
 		flush (sb);
 	}
 	r_cons_singleton ()->context->is_interactive = true;
@@ -649,8 +650,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		prj_dir = strdup (prj_name);
 	}
 	if (r_core_is_project (core, prj_name) && strcmp (prj_name, r_config_get (core->config, "prj.name"))) {
-		R_LOG_ERROR ("A project with this name already exists. Use P-%s to delete it",
-				prj_name);
+		R_LOG_ERROR ("A project with this name already exists. Use P-%s to delete it", prj_name);
 		free (script_path);
 		free (prj_dir);
 		return false;
