@@ -3693,8 +3693,10 @@ R_API int r_core_config_init(RCore *core) {
 	RList *fortune_types = r_core_fortune_types ();
 	if (!fortune_types) {
 		fortune_types = r_list_newf (free);
-		r_list_append (fortune_types, "tips");
-		r_list_append (fortune_types, "fun");
+		if (fortune_types) {
+			r_list_append (fortune_types, strdup ("tips"));
+			r_list_append (fortune_types, strdup ("fun"));
+		}
 	}
 	char *fts = r_str_list_join (fortune_types, ",");
 	r_list_free (fortune_types);
