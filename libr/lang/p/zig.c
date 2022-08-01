@@ -52,11 +52,11 @@ static bool lang_zig_file(RLang *lang, const char *file) {
 		if (fcn) {
 			fcn (lang->user);
 		} else {
-			eprintf ("Cannot find 'entry' symbol in library\n");
+			R_LOG_ERROR ("Cannot find 'entry' symbol in library");
 		}
 		r_lib_dl_close (lib);
 	} else {
-		eprintf ("Cannot open library\n");
+		R_LOG_ERROR ("Cannot open library");
 		free (name);
 		free (path);
 		free (cc);
@@ -97,7 +97,7 @@ static bool lang_zig_run(RLang *lang, const char *code, int len) {
 		lang_zig_file (lang, file);
 		r_file_rm (file);
 	} else {
-		eprintf ("Cannot open %s\n", file);
+		R_LOG_ERROR ("Cannot open %s", file);
 	}
 	return true;
 }

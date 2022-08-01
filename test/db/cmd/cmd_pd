@@ -1062,8 +1062,8 @@ utf32le
 utf32le
 EOF
 EXPECT_ERR=<<EOF
-Unknown encoding: cat_sat_on_keyboard
-Unknown encoding: CAT_SAT_ON_KEYBOARD
+ERROR: Unknown encoding: cat_sat_on_keyboard
+ERROR: Unknown encoding: CAT_SAT_ON_KEYBOARD
 EOF
 RUN
 

@@ -27,7 +27,7 @@ R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
 		}
 
 		if (r_regex_init (&rx, (char *)kw->bin_keyword, reflags)) {
-			eprintf ("Cannot compile '%s' regexp\n", kw->bin_keyword);
+			R_LOG_ERROR ("Cannot compile '%s' regexp", kw->bin_keyword);
 			ret = -1;
 			goto beach;
 		}
@@ -111,7 +111,7 @@ R_IPI int search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 		}
 
 		if (r_regex_init (&rx, (char *)kw->bin_keyword, reflags)) {
-			eprintf ("Cannot compile '%s' regexp\n", kw->bin_keyword);
+			R_LOG_ERROR ("Cannot compile '%s' regexp", kw->bin_keyword);
 			return -1;
 		}
 

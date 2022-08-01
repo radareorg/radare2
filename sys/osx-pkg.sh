@@ -26,7 +26,7 @@ export CFLAGS="-O2 $CFLAGS"
 ${MAKE} -j4 || exit 1
 # TODO: run sys/install.sh
 ${MAKE} install PREFIX="${PREFIX}" DESTDIR=${SRC} || exit 1
-ARM64CHK=`echo "$CFLAGS $ARCHFLAGS | grep arm64`
+ARM64CHK=`echo "$CFLAGS $ARCHFLAGS" | grep arm64`
 if [ -n "$ARM64CHK" ]; then
 	# crossbuild arm64 build
 	ARCH=m1

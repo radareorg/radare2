@@ -4378,7 +4378,7 @@ onemoretime:
 				free (newname);
 			}
 		} else {
-			eprintf ("Cannot find instruction with a variable\n");
+			R_LOG_ERROR ("Cannot find instruction with a variable");
 			r_cons_any_key (NULL);
 		}
 

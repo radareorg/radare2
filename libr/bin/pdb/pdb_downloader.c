@@ -73,7 +73,7 @@ static int download(struct SPDBDownloader *pd) {
 		opt->dbg_file);
 
 	if (r_file_exists (abspath_to_file)) {
-		eprintf ("File already downloaded.\n");
+		R_LOG_ERROR ("File already downloaded");
 		free (abspath_to_file);
 		return 1;
 	}
@@ -88,7 +88,7 @@ static int download(struct SPDBDownloader *pd) {
 			opt->guid, R_SYS_DIR,
 			archive_name);
 
-		eprintf ("Attempting to download compressed pdb in %s\n", abspath_to_archive);
+		R_LOG_INFO ("Attempting to download compressed pdb in %s", abspath_to_archive);
 		char *abs_arch_esc = r_str_escape_sh (abspath_to_archive);
 #if __WINDOWS__
 		char *abs_file_esc = r_str_escape_sh (abspath_to_file);
@@ -113,7 +113,7 @@ static int download(struct SPDBDownloader *pd) {
 		if (opt->extract > 0 && res) {
 			eprintf ("Attempting to decompress pdb\n");
 			if (res && ((cmd_ret = r_sys_cmd (extractor_cmd)) != 0)) {
-				eprintf ("cab extractor exited with error %d\n", cmd_ret);
+				R_LOG_ERROR ("cab extractor exited with error %d", cmd_ret);
 				res = 0;
 			}
 			r_file_rm (abspath_to_archive);
@@ -135,7 +135,7 @@ void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->opt = R_NEW0 (SPDBDownloaderOpt);
 	if (!pd->opt) {
 		pd->download = 0;
-		eprintf ("Cannot allocate memory for SPDBDownloaderOpt.\n");
+		R_LOG_ERROR ("Cannot allocate memory for SPDBDownloaderOpt");
 		return;
 	}
 	pd->opt->dbg_file = strdup (opt->dbg_file);
@@ -177,17 +177,17 @@ int r_bin_pdb_download(RCore *core, PJ *pj, int isradjson, SPDBOptions *options)
 	RBinInfo *info = r_bin_get_info (core->bin);
 
 	if (!info || !info->debug_file_name) {
-		eprintf ("Can't find debug filename\n");
+		R_LOG_ERROR ("Can't find debug filename");
 		return 1;
 	}
 
 	if (!is_valid_guid (info->guid)) {
-		eprintf ("Invalid GUID for file\n");
+		R_LOG_ERROR ("Invalid GUID for file");
 		return 1;
 	}
 
 	if (!options || !options->symbol_server || !options->user_agent) {
-		eprintf ("Can't retrieve pdb configurations\n");
+		R_LOG_ERROR ("Can't retrieve pdb configurations");
 		return 1;
 	}
 

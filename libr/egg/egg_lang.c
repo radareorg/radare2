@@ -961,7 +961,7 @@ static void rcc_next(REgg *egg) {
 		egg->lang.elem[egg->lang.elem_n - 1] = 0;
 		path = find_include (egg->lang.includedir, egg->lang.includefile);
 		if (!path) {
-			eprintf ("Cannot find include file '%s'\n", egg->lang.elem);
+			R_LOG_ERROR ("Cannot find include file '%s'", egg->lang.elem);
 			return;
 		}
 		R_FREE (egg->lang.includefile);
@@ -979,7 +979,7 @@ static void rcc_next(REgg *egg) {
 			free (q);
 			egg->lang.line = oline;
 		} else {
-			eprintf ("Cannot find '%s'\n", path);
+			R_LOG_ERROR ("Cannot find '%s'", path);
 		}
 		free (path);
 		return;
@@ -988,7 +988,7 @@ static void rcc_next(REgg *egg) {
 	if (egg->lang.callname) {
 		if (!strcmp (egg->lang.callname, "goto")) {
 			if (egg->lang.nargs != 1) {
-				eprintf ("Invalid number of arguments for goto()\n");
+				R_LOG_ERROR ("Invalid number of arguments for goto()");
 				return;
 			}
 			e->jmp (egg, egg->lang.ctxpush[CTX], 0);
@@ -1011,7 +1011,7 @@ static void rcc_next(REgg *egg) {
 		}
 		str = r_egg_mkvar (egg, buf, ocn, 0);
 		if (!str) {
-			eprintf ("Cannot mkvar\n");
+			R_LOG_ERROR ("Cannot mkvar");
 			return;
 		}
 		if (*ocn == '.') {
@@ -1065,7 +1065,7 @@ static void rcc_next(REgg *egg) {
 							}
 							free (s);
 						} else {
-							eprintf ("Cannot get @syscall payload\n");
+							R_LOG_ERROR ("Cannot get @syscall payload");
 						}
 					}
 					egg->lang.docall = 0;
@@ -1119,7 +1119,7 @@ static void rcc_next(REgg *egg) {
 			free (str);
 			str = r_egg_mkvar (egg, buf, egg->lang.dstvar, 0);
 			if (*buf == 0) {
-				eprintf ("Cannot resolve variable '%s'\n", egg->lang.dstvar);
+				R_LOG_ERROR ("Cannot resolve variable '%s'", egg->lang.dstvar);
 			} else {
 				e->get_result (egg, buf);
 			}

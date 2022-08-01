@@ -23,7 +23,7 @@ R_API RSearch *r_search_new(int mode) {
 	}
 	if (!r_search_set_mode (s, mode)) {
 		free (s);
-		eprintf ("Cannot init search for mode %d\n", mode);
+		R_LOG_ERROR ("Cannot init search for mode %d", mode);
 		return false;
 	}
 	s->inverse = false;
@@ -633,7 +633,7 @@ R_API void r_search_string_prepare_backward(RSearch *s) {
 R_API void r_search_reset(RSearch *s, int mode) {
 	s->nhits = 0;
 	if (!r_search_set_mode (s, mode)) {
-		eprintf ("Cannot init search for mode %d\n", mode);
+		R_LOG_ERROR ("Cannot init search for mode %d", mode);
 	}
 }
 

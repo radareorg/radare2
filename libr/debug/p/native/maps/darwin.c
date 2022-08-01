@@ -90,7 +90,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 #if 0
 	if (dbg->pid == 0) {
 		vm_address_t base = get_kernel_base (task);
-		eprintf ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
+		R_LOG_INFO ("Kernel Base Address: 0x%"PFMT64x, (ut64)base);
 		return NULL;
 	}
 #endif
@@ -106,7 +106,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 		kr = mach_vm_region_recurse (task, &address, &size, &depth,
 			(vm_region_recurse_info_t) &info, &info_count);
 		if (kr != KERN_SUCCESS) {
-			//eprintf ("Cannot kern succ recurse\n");
+			//R_LOG_ERROR ("Cannot kern succ recurse");
 			break;
 		}
 		if (!list) {
@@ -154,7 +154,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 			mr = r_debug_map_new (buf, address, address+size,
 					xwr2rwx (info.protection), 0);
 			if (!mr) {
-				eprintf ("Cannot create r_debug_map_new\n");
+				R_LOG_ERROR ("Cannot create r_debug_map_new");
 				break;
 			}
 			mr->file = strdup (module_name);
@@ -259,7 +259,7 @@ static RList *osx_dbg_maps(RDebug *dbg) {
 			mr = r_debug_map_new (buf, prev_address, prev_address+prev_size,
 				xwr2rwx (prev_info.protection), 0);
 			if (!mr) {
-				eprintf ("Cannot create r_debug_map_new\n");
+				R_LOG_ERROR ("Cannot create r_debug_map_new");
 				break;
 			}
 			mr->file = strdup (module_name);

@@ -57,13 +57,13 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 		RReg *reg = dbg->reg;
 		const char *spname = r_reg_get_name (reg, R_REG_NAME_SP);
 		if (!spname) {
-			eprintf ("Cannot find stack pointer register\n");
+			R_LOG_ERROR ("Cannot find stack pointer register");
 			free (stack);
 			return NULL;
 		}
 		ri = r_reg_get (reg, spname, R_REG_TYPE_GPR);
 		if (!ri) {
-			eprintf ("Cannot find stack pointer register\n");
+			R_LOG_ERROR ("Cannot find stack pointer register");
 			free (stack);
 			return NULL;
 		}
@@ -86,7 +86,7 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 		case 4: addr = *p32; break;
 		case 2: addr = *p16; break;
 		default:
-			eprintf ("Invalid word size with asm.bits\n");
+			R_LOG_ERROR ("Invalid word size with asm.bits");
 			r_list_free (list);
 			free (stack);
 			return NULL;
@@ -97,7 +97,7 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 			frame->size = cursp - oldsp;
 			frame->sp = cursp;
 			frame->bp = oldsp; //addr + (i * wordsize); // -4 || -8
-			// eprintf ("--------------> 0x%llx (%d)\n", addr, frame->size);
+			// R_LOG_DEBUG ("--------------> 0x%llx (%d)", addr, frame->size);
 			r_list_append (list, frame);
 			oldsp = cursp;
 		}

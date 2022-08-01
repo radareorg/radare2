@@ -4405,7 +4405,6 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	ut64 at;
 
 	if (from == to || from == UT64_MAX || to == UT64_MAX) {
-		eprintf ("Cannot alloc for this range\n");
 		return NULL;
 	}
 	as = R_NEW0 (RCoreAnalStats);
@@ -4683,11 +4682,11 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2) {
 	RAnalFunction *f1 = r_anal_get_function_at (core->anal, addr);
 	RAnalFunction *f2 = r_anal_get_function_at (core->anal, addr2);
 	if (!f1 || !f2) {
-		eprintf ("Cannot find function\n");
+		R_LOG_ERROR ("Cannot find function");
 		return;
 	}
 	if (f1 == f2) {
-		eprintf ("Cannot merge the same function\n");
+		R_LOG_ERROR ("Cannot merge the same function");
 		return;
 	}
 	// join all basic blocks from f1 into f2 if they are not
@@ -5280,7 +5279,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	// TODO: backup/restore register state before/after analysis
 	const char *kpcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	if (!kpcname || !*kpcname) {
-		eprintf ("Cannot find program counter register in the current profile.\n");
+		R_LOG_ERROR ("Cannot find program counter register in the current profile");
 		return;
 	}
 	pcname = strdup (kpcname);
@@ -5904,11 +5903,11 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 	RAnalBlock *b1 = r_anal_bb_from_offset (core->anal, to);
 	PJ *pj = NULL;
 	if (!b0) {
-		eprintf ("Cannot find basic block for 0x%08"PFMT64x"\n", from);
+		R_LOG_ERROR ("Cannot find basic block for 0x%08"PFMT64x, from);
 		return;
 	}
 	if (!b1) {
-		eprintf ("Cannot find basic block for 0x%08"PFMT64x"\n", to);
+		R_LOG_ERROR ("Cannot find basic block for 0x%08"PFMT64x, to);
 		return;
 	}
 	RCoreAnalPaths rcap = {{0}};
@@ -6035,7 +6034,7 @@ static bool analyze_noreturn_function(RCore *core, RAnalFunction *f) {
 		// get last opcode
 		RAnalOp *op = r_core_op_anal (core, opaddr, R_ANAL_OP_MASK_HINT);
 		if (!op) {
-			eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", opaddr);
+			R_LOG_ERROR ("Cannot analyze opcode at 0x%08" PFMT64x, opaddr);
 			return false;
 		}
 
@@ -6100,7 +6099,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 		r_list_foreach (xrefs, iter, xref) {
 			RAnalOp *xrefop = r_core_op_anal (core, xref->addr, R_ANAL_OP_MASK_ALL);
 			if (!xrefop) {
-				eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", xref->addr);
+				R_LOG_ERROR ("Cannot analyze opcode at 0x%08" PFMT64x, xref->addr);
 				continue;
 			}
 			ut64 call_addr = xref->addr;

@@ -1138,7 +1138,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	top_title = r_str_new ("");
 
 	if (!r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)))) {
-		eprintf ("Cannot read\n");
+		R_LOG_ERROR ("Cannot read");
 		free (cnk);
 		free (cnk_next);
 		r_cons_canvas_free (can);

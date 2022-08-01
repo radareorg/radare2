@@ -272,13 +272,13 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 			PRINTF_GA ("narenas : %"PFMT64d"\n", (ut64)narenas);
 		}
 		if (narenas == 0) {
-			eprintf ("No arenas allocated.\n");
+			R_LOG_ERROR ("No arenas allocated");
 			free (stats);
 			free (ar);
 			return;
 		}
 		if (narenas == GHT_MAX) {
-			eprintf ("Cannot find narenas_total\n");
+			R_LOG_ERROR ("Cannot find narenas_total");
 			free (stats);
 			free (ar);
 			return;
