@@ -718,7 +718,8 @@ static char *pickle_mnemonics(RAnal *a, int id, bool json) {
 	}
 	if (id >= 0 && id < R_ARRAY_SIZE (op_name_map)) {
 		return strdup (op_name_map[id].name);
-	} else if (id == -1) {
+	}
+	if (id == -1) {
 		size_t i;
 		RStrBuf *buf = buf = r_strbuf_new ("");
 		for (i = 0; i < R_ARRAY_SIZE (op_name_map); i++) {
