@@ -264,6 +264,8 @@ struct r_magic_set {
 	/* FIXME: Make the string dynamically allocated so that e.g.
 	   strings matched in files can be longer than MAXstring */
 	union VALUETYPE ms_value;	/* either number or string */
+
+	ut32 last_cont_level;
 };
 
 #if USE_LIB_MAGIC
