@@ -233,7 +233,7 @@ static bool objc_find_refs(RCore *core) {
 	RCoreObjc *objc = core_objc_new (core);
 	if (!objc) {
 		if (core->anal->verbose) {
-			eprintf ("Could not find necessary Objective-C sections...\n");
+			R_LOG_ERROR ("Could not find necessary Objective-C sections");
 		}
 		return false;
 	}

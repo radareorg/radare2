@@ -24,35 +24,32 @@
 #include <stdio.h>
 
 /* Register names used by gas and objdump.  */
-
-static const char *const riscv_gpr_names_numeric[NGPR] =
-{
-  "x0",   "x1",   "x2",   "x3",   "x4",   "x5",   "x6",   "x7",
-  "x8",   "x9",   "x10",  "x11",  "x12",  "x13",  "x14",  "x15",
-  "x16",  "x17",  "x18",  "x19",  "x20",  "x21",  "x22",  "x23",
-  "x24",  "x25",  "x26",  "x27",  "x28",  "x29",  "x30",  "x31"
+static const char *const riscv_gpr_names_numeric[NGPR] = {
+	"x0",   "x1",   "x2",   "x3",   "x4",   "x5",   "x6",   "x7",
+	"x8",   "x9",   "x10",  "x11",  "x12",  "x13",  "x14",  "x15",
+	"x16",  "x17",  "x18",  "x19",  "x20",  "x21",  "x22",  "x23",
+	"x24",  "x25",  "x26",  "x27",  "x28",  "x29",  "x30",  "x31"
 };
 
 static const char *const riscv_gpr_names_abi[NGPR] = {
-  "zero", "ra", "sp",  "gp",  "tp", "t0",  "t1",  "t2",
-  "s0",   "s1", "a0",  "a1",  "a2", "a3",  "a4",  "a5",
-  "a6",   "a7", "s2",  "s3",  "s4", "s5",  "s6",  "s7",
-  "s8",   "s9", "s10", "s11", "t3", "t4",  "t5",  "t6"
+	"zero", "ra", "sp",  "gp",  "tp", "t0",  "t1",  "t2",
+	"s0",   "s1", "a0",  "a1",  "a2", "a3",  "a4",  "a5",
+	"a6",   "a7", "s2",  "s3",  "s4", "s5",  "s6",  "s7",
+	"s8",   "s9", "s10", "s11", "t3", "t4",  "t5",  "t6"
 };
 
-static const char *const riscv_fpr_names_numeric[NFPR] =
-{
-  "f0",   "f1",   "f2",   "f3",   "f4",   "f5",   "f6",   "f7",
-  "f8",   "f9",   "f10",  "f11",  "f12",  "f13",  "f14",  "f15",
-  "f16",  "f17",  "f18",  "f19",  "f20",  "f21",  "f22",  "f23",
-  "f24",  "f25",  "f26",  "f27",  "f28",  "f29",  "f30",  "f31"
+static const char *const riscv_fpr_names_numeric[NFPR] = {
+	"f0",   "f1",   "f2",   "f3",   "f4",   "f5",   "f6",   "f7",
+	"f8",   "f9",   "f10",  "f11",  "f12",  "f13",  "f14",  "f15",
+	"f16",  "f17",  "f18",  "f19",  "f20",  "f21",  "f22",  "f23",
+	"f24",  "f25",  "f26",  "f27",  "f28",  "f29",  "f30",  "f31"
 };
 
 static const char *const riscv_fpr_names_abi[NFPR] = {
-  "ft0", "ft1", "ft2",  "ft3",  "ft4", "ft5", "ft6",  "ft7",
-  "fs0", "fs1", "fa0",  "fa1",  "fa2", "fa3", "fa4",  "fa5",
-  "fa6", "fa7", "fs2",  "fs3",  "fs4", "fs5", "fs6",  "fs7",
-  "fs8", "fs9", "fs10", "fs11", "ft8", "ft9", "ft10", "ft11"
+	"ft0", "ft1", "ft2",  "ft3",  "ft4", "ft5", "ft6",  "ft7",
+	"fs0", "fs1", "fa0",  "fa1",  "fa2", "fa3", "fa4",  "fa5",
+	"fa6", "fa7", "fs2",  "fs3",  "fs4", "fs5", "fs6",  "fs7",
+	"fs8", "fs9", "fs10", "fs11", "ft8", "ft9", "ft10", "ft11"
 };
 
 /* The order of overloaded instructions matters.  Label arguments and
@@ -89,30 +86,25 @@ static int match_never(const struct riscv_opcode *op, insn_t insn)
   return 0;
 }
 
-static int match_rs1_eq_rs2(const struct riscv_opcode *op, insn_t insn)
-{
-  int rs1 = (insn & MASK_RS1) >> OP_SH_RS1;
-  int rs2 = (insn & MASK_RS2) >> OP_SH_RS2;
-  return match_opcode (op, insn) && rs1 == rs2;
+static int match_rs1_eq_rs2(const struct riscv_opcode *op, insn_t insn) {
+	int rs1 = (insn & MASK_RS1) >> OP_SH_RS1;
+	int rs2 = (insn & MASK_RS2) >> OP_SH_RS2;
+	return match_opcode (op, insn) && rs1 == rs2;
 }
 
-static int match_rd_nonzero(const struct riscv_opcode *op, insn_t insn)
-{
-  return match_opcode (op, insn) && ((insn & MASK_RD) != 0);
+static int match_rd_nonzero(const struct riscv_opcode *op, insn_t insn) {
+	return match_opcode (op, insn) && ((insn & MASK_RD) != 0);
 }
 
-static int match_c_add(const struct riscv_opcode *op, insn_t insn)
-{
-  return match_rd_nonzero (op, insn) && ((insn & MASK_CRS2) != 0);
+static int match_c_add(const struct riscv_opcode *op, insn_t insn) {
+	return match_rd_nonzero (op, insn) && ((insn & MASK_CRS2) != 0);
 }
 
-static int match_c_lui(const struct riscv_opcode *op, insn_t insn)
-{
-  return match_rd_nonzero (op, insn) && (((insn & MASK_RD) >> OP_SH_RD) != 2);
+static int match_c_lui(const struct riscv_opcode *op, insn_t insn) {
+	return match_rd_nonzero (op, insn) && (((insn & MASK_RD) >> OP_SH_RD) != 2);
 }
 
-static const struct riscv_opcode riscv_builtin_opcodes[] =
-{
+static const struct riscv_opcode riscv_builtin_opcodes[] = {
 /* name,      isa,   operands, match, mask, match_func, pinfo.  */
 {"illegal",   "C",   "",  0, 0xffffU,  match_opcode, 0 },
 {"unimp",     "I",   "",  MATCH_CSRRW | (CSR_CYCLE << OP_SH_CSR), 0xffffffffU,  match_opcode, 0 }, /* csrw cycle, x0 */
@@ -673,13 +665,11 @@ static const struct riscv_opcode riscv_builtin_opcodes[] =
 {"wfi",       "I",   "",     MATCH_WFI, MASK_WFI, match_opcode, 0 },
 };
 
-#define RISCV_NUM_OPCODES \
-  ((sizeof riscv_builtin_opcodes) / (sizeof (riscv_builtin_opcodes[0])))
+#define RISCV_NUM_OPCODES ((sizeof riscv_builtin_opcodes) / (sizeof (riscv_builtin_opcodes[0])))
 //const int bfd_riscv_num_builtin_opcodes = RISCV_NUM_OPCODES;
 
 /* Removed const from the following to allow for dynamic extensions to the
    built-in instruction set.  */
-static struct riscv_opcode *riscv_opcodes =
-  (struct riscv_opcode *) riscv_builtin_opcodes;
-static int bfd_riscv_num_opcodes = RISCV_NUM_OPCODES;
+static struct riscv_opcode *riscv_opcodes = (struct riscv_opcode *) riscv_builtin_opcodes;
+const int bfd_riscv_num_opcodes = RISCV_NUM_OPCODES;
 #undef RISCV_NUM_OPCODES

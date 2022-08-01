@@ -374,7 +374,7 @@ R_IPI bool r_io_desc_init(RIO* io) {
 
 static bool desc_fini_cb(void* user, void* data, ut32 id) {
 	RIODesc* desc = (RIODesc*) data;
-	if (desc->plugin && desc->plugin->close) {
+	if (desc && desc->plugin && desc->plugin->close) {
 		desc->plugin->close (desc);
 	}
 	r_io_desc_free (desc);

@@ -438,6 +438,9 @@ fd       3
 file     bins/elf/analysis/guess-number-riscv64
 size     0x9d5a8
 humansz  629.4K
+minopsz  2
+maxopsz  4
+invopsz  2
 mode     r-x
 format   elf64
 iorw     false

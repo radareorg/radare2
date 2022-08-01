@@ -98,7 +98,6 @@ if not no_user_plugins
     parse_plugins += [ 'dalvik_pseudo' ]
   endif
   if user_plugins.contains('riscv')
-    asm_plugins += [ 'riscv' ]
     anal_plugins += [ 'riscv' ]
     parse_plugins += [ 'riscv_pseudo' ]
   endif
@@ -129,7 +128,6 @@ asm_plugins += [
   'or1k',
   'ppc_as',
   'ppc_cs',
-  'riscv',
   'x86_as',
   'x86_nasm',
   'x86_nz',

@@ -64,7 +64,7 @@ int w32_first_thread(int pid) {
 		}
 	} while (Thread32Next (th, &te32));
 err_load_th:
-	eprintf ("Could not find an active thread for pid %d\n", pid);
+	R_LOG_ERROR ("Could not find an active thread for pid %d", pid);
 	CloseHandle (th);
 	return pid;
 }

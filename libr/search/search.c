@@ -1,9 +1,8 @@
-/* radare - LGPL - Copyright 2008-2016 pancake */
+/* radare - LGPL - Copyright 2008-2022 pancake */
+
+#define R_LOG_ORIGIN "search"
 
 #include <r_search.h>
-#include <r_list.h>
-#include <ctype.h>
-#include <r_util/r_assert.h>
 #include "search.h"
 
 // Experimental search engine (fails, because stops at first hit of every block read
@@ -119,14 +118,14 @@ R_API int r_search_begin(RSearch *s) {
 // use when the size of the hit does not match the size of the keyword (ie: /a{30}/)
 R_IPI int r_search_hit_sz(RSearch *s, RSearchKeyword *kw, ut64 addr, ut32 sz) {
 	if (s->align && (addr%s->align)) {
-		eprintf ("0x%08"PFMT64x" unaligned\n", addr);
+		// eprintf ("0x%08"PFMT64x" unaligned\n", addr);
 		return 1;
 	}
 	if (!s->contiguous) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
 			kw->last = s->bckwrds? addr: addr + sz;
-			eprintf ("0x%08"PFMT64x" Sequential hit ignored.\n", addr);
+			R_LOG_WARN ("0x%08"PFMT64x" Sequential hit ignored", addr);
 			return 1;
 		}
 	}
@@ -409,7 +408,7 @@ R_IPI int search_kw_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 			left->len = 0;
 		}
 	} else {
-		left = malloc (sizeof(RSearchLeftover) + (size_t)2 * (longest - 1));
+		left = malloc (sizeof (RSearchLeftover) + (size_t)2 * (longest - 1));
 		if (!left) {
 			return -1;
 		}
@@ -483,8 +482,8 @@ R_IPI int search_kw_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 }
 
 R_API void r_search_set_distance(RSearch *s, int dist) {
-	if (dist>=R_SEARCH_DISTANCE_MAX) {
-		eprintf ("Invalid distance\n");
+	if (dist >= R_SEARCH_DISTANCE_MAX) {
+		R_LOG_ERROR ("Invalid distance");
 		s->distance = 0;
 	} else {
 		s->distance = (dist>0)?dist:0;
@@ -518,7 +517,7 @@ R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len) {
 		}
 		ret = s->update (s, from, buf, len);
 	} else {
-		eprintf ("r_search_update: No search method defined\n");
+		R_LOG_ERROR ("Missing r_search_update callback");
 	}
 	return ret;
 }
@@ -534,7 +533,7 @@ R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to) {
 	case R_SEARCH_RABIN_KARP:
 		return search_rk (s, from, to);
 	default:
-		eprintf ("Unsupported mode\n");
+		R_LOG_WARN ("Unsupported search mode");
 		return -1;
 	}
 }

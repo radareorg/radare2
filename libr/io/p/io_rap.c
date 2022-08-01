@@ -257,7 +257,7 @@ static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
 			io->cb_printf ("%s", ptr);
 		} else {
 			if (write (1, ptr, i) != i) {
-				eprintf ("Failed to write\n");
+				R_LOG_ERROR ("Failed to write");
 			}
 		}
 		free (ptr);

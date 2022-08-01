@@ -84,24 +84,24 @@ R_API bool r_th_setname(RThread *th, const char *name) {
 #if defined(HAVE_PTHREAD_NP) && HAVE_PTHREAD_NP
 #if __linux__ || __sun
 	if (pthread_setname_np (th->tid, name) != 0) {
-		eprintf ("Failed to set thread name\n");
+		R_LOG_ERROR ("Failed to set thread name");
 		return false;
 	}
 #elif __APPLE__
 	if (pthread_setname_np (name) != 0) {
-		eprintf ("Failed to set thread name\n");
+		R_LOG_ERROR ("Failed to set thread name");
 		return false;
 	}
 #elif __FreeBSD__ || __OpenBSD__ || __DragonFly__ || __sun
 	pthread_set_name_np (th->tid, name);
 #elif __NetBSD__
 	if (pthread_setname_np (th->tid, "%s", (void *)name) != 0) {
-		eprintf ("Failed to set thread name\n");
+		R_LOG_ERROR ("Failed to set thread name");
 		return false;
 	}
 #elif __HAIKU__
 	if (rename_thread ((thread_id)th->tid, name) != B_OK) {
-		eprintf ("Failed to set thread name\n");
+		R_LOG_ERROR ("Failed to set thread name");
 		return false;
 	}
 #else
@@ -115,7 +115,7 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 #if defined(HAVE_PTHREAD_NP) && HAVE_PTHREAD_NP
 #if __linux__ || __NetBSD__ || __APPLE__ || __sun
 	if (pthread_getname_np (th->tid, name, len) != 0) {
-		eprintf ("Failed to get thread name\n");
+		R_LOG_ERROR ("Failed to get thread name");
 		return false;
 	}
 #elif (__FreeBSD__ &&  __FreeBSD_version >= 1200000) || __DragonFly__  || (__OpenBSD__ && OpenBSD >= 201905)
@@ -125,7 +125,7 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 	size_t flen = len < B_OS_NAME_LENGTH ? len : B_OS_NAME_LENGTH;
 
 	if (get_thread_info ((thread_id)th->tid, &ti) != B_OK) {
-		eprintf ("Failed to get thread name\n");
+		R_LOG_ERROR ("Failed to get thread name");
 		return false;
 	}
 
@@ -150,7 +150,7 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 	CPU_SET(cpuid, &c);
 
 	if (sched_setaffinity (th->tid, sizeof (c), &c) != 0) {
-		eprintf ("Failed to set cpu affinity\n");
+		R_LOG_ERROR ("Failed to set cpu affinity");
 		return false;
 	}
 #endif
@@ -160,7 +160,7 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 	CPU_SET(cpuid, &c);
 
 	if (pthread_setaffinity_np (th->tid, sizeof (c), &c) != 0) {
-		eprintf ("Failed to set cpu affinity\n");
+		R_LOG_ERROR ("Failed to set cpu affinity");
 		return false;
 	}
 #elif __NetBSD__
@@ -169,7 +169,7 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 
 	if (pthread_setaffinity_np (th->tid, cpuset_size(c), c) != 0) {
 		cpuset_destroy (c);
-		eprintf ("Failed to set cpu affinity\n");
+		R_LOG_ERROR ("Failed to set cpu affinity");
 		return false;
 	}
 
@@ -178,12 +178,12 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 	thread_affinity_policy_data_t c = {cpuid};
 	if (thread_policy_set (pthread_mach_thread_np (th->tid),
 		THREAD_AFFINITY_POLICY, (thread_policy_t)&c, 1) != KERN_SUCCESS) {
-		eprintf ("Failed to set cpu affinity\n");
+		R_LOG_ERROR ("Failed to set cpu affinity");
 		return false;
 	}
 #elif __WINDOWS__
 	if (SetThreadAffinityMask (th->tid, (DWORD_PTR)1 << cpuid) == 0) {
-		eprintf ("Failed to set cpu affinity\n");
+		R_LOG_ERROR ("Failed to set cpu affinity");
 		return false;
 	}
 #elif __sun
@@ -194,7 +194,7 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 
 	if (pset_bind (c, P_PID, r_sys_getpid (), NULL)) {
 		pset_destroy (c);
-		eprintf ("Failed to set cpu affinity\n");
+		R_LOG_ERROR ("Failed to set cpu affinity");
 		return false;
 	}
 

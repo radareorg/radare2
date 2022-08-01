@@ -3026,7 +3026,7 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 					// in reverse order
 					struct io_bin_section_info_t *ibs = R_NEW (struct io_bin_section_info_t);
 					if (!ibs) {
-						eprintf ("Could not allocate memory\n");
+						R_LOG_ERROR ("Could not allocate memory");
 						goto out;
 					}
 					ibs->sec = section;

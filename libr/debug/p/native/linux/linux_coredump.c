@@ -88,7 +88,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 
 	p = R_NEW0 (prpsinfo_t);
 	if (!p) {
-		eprintf ("Couldn't allocate memory for prpsinfo_t\n");
+		R_LOG_ERROR ("Couldn't allocate memory for prpsinfo_t");
 		return NULL;
 	}
 
@@ -97,7 +97,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 	file = r_strf ("/proc/%d/cmdline", mypid);
 	buffer = r_file_slurp (file, &len);
 	if (!buffer) {
-		eprintf ("buffer NULL\n");
+		R_LOG_ERROR ("buffer NULL");
 		goto error;
 	}
 	buffer[len] = 0;

@@ -27,6 +27,7 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 
 
 
 static R_TH_LOCAL void *origread = NULL;
+static R_TH_LOCAL int origdesc = 0;
 static R_TH_LOCAL RIOPlugin *origplugin = NULL;
 static R_TH_LOCAL RIOPlugin *heapplugin = NULL;
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
@@ -72,10 +73,14 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 
 static void destroy(RBinFile *bf) {
 	if (origplugin) {
-		R_FREE (heapplugin);
-		RIO *io = bf->rbin->iob.io;
-		io->desc->plugin = origplugin;
+		RIOBind *iob = &bf->rbin->iob;
+		RIO *io = iob->io;
+		RIODesc *desc = iob->desc_get (io, origdesc);
+		if (desc) {
+			desc->plugin = origplugin;
+		}
 		origplugin = NULL;
+		R_FREE (heapplugin);
 	}
 	MACH0_(mach0_free) (bf->o->bin_obj);
 }
@@ -126,7 +131,7 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 			}
 			int read = r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
 			if (read < sec->size) {
-				eprintf ("process_constructors: cannot process section %s\n", sec->name);
+				R_LOG_ERROR ("process_constructors: cannot process section %s", sec->name);
 				continue;
 			}
 			if (bits == 32) {
@@ -646,7 +651,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 
 	if (!io->cached) {
-		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
+		eprintf ("Warning: run r2 with -e bin.cache=true to fix relocations in disassembly\n");
 		goto beach;
 	}
 
@@ -739,6 +744,7 @@ static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io) {
 		R_LOG_WARN ("Here be dragons");
 	}
 	origplugin = io->desc->plugin;
+	origdesc = io->desc->fd;
 	memcpy (plugin, origplugin, sizeof (RIOPlugin));
 	io->desc->plugin = plugin;
 	obj->original_io_read = plugin->read;

@@ -90,7 +90,7 @@ static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 		return NULL;
 	}
 	if (!xnu_update_thread_list (dbg)) {
-		eprintf ("Failed to update thread_list xnu_udpate_thread_list\n");
+		R_LOG_ERROR ("Failed to update thread_list xnu_udpate_thread_list");
 		return NULL;
 	}
 	//TODO get the current thread
@@ -101,7 +101,7 @@ static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 		it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
 			  (RListComparator)&thread_find);
 		if (!it) {
-			eprintf ("Thread not found get_xnu_thread\n");
+			R_LOG_ERROR ("Thread not found get_xnu_thread");
 			return NULL;
 		}
 	}
@@ -536,7 +536,7 @@ RList *xnu_thread_list(RDebug *dbg, int pid, RList *list) {
 	list->free = (RListFree)&r_debug_pid_free;
 	r_list_foreach (dbg->threads, iter, thread) {
 		if (!xnu_thread_get_gpr (dbg, thread)) {
-			eprintf ("Failed to get gpr registers xnu_thread_list\n");
+			R_LOG_ERROR ("Failed to get gpr registers xnu_thread_list");
 			continue;
 		}
 		thread->state_size = sizeof (thread->gpr);
@@ -598,14 +598,14 @@ task_t pid_to_task(int pid) {
 			task = task_for_pid_ios9pangu (pid);
 			if (task != MACH_PORT_NULL) {
 				if (pid != -1) {
-					eprintf ("Failed to get task %d for pid %d.\n",
+					R_LOG_ERROR ("Failed to get task %d for pid %d",
 							(int)task, (int)pid);
-					eprintf ("Reason: 0x%x: %s\n", err,
+					R_LOG_ERROR ("Reason: 0x%x: %s", err,
 							(char *)MACH_ERROR_STRING (err));
 				}
-				eprintf ("You probably need to run as root or sign "
+				R_LOG_WARN ("You probably need to run as root or sign "
 					"the binary.\n Read doc/ios.md || doc/macos.md\n"
-					" make -C binr/radare2 ios-sign || macos-sign\n");
+					" make -C binr/radare2 ios-sign || macos-sign");
 				return 0;
 			}
 		}
@@ -816,11 +816,11 @@ static int xnu_write_mem_maps_to_buffer(RBuffer *buffer, RList *mem_maps, int st
 					&local_address, &local_size);
 
 				if ((kr != KERN_SUCCESS) || (xfer_size != local_size)) {
-					eprintf ("Failed to read target memory\n"); // XXX: Improve this message?
-					eprintf ("[DEBUG] kr = %d\n", kr);
-					eprintf ("[DEBUG] KERN_SUCCESS = %d\n", KERN_SUCCESS);
-					eprintf ("[DEBUG] xfer_size = %"PFMT64d"\n", (ut64)xfer_size);
-					eprintf ("[DEBUG] local_size = %d\n", local_size);
+					R_LOG_ERROR ("Failed to read target memory"); // XXX: Improve this message?
+					R_LOG_DEBUG ("kr = %d", kr);
+					R_LOG_DEBUG ("KERN_SUCCESS = %d", KERN_SUCCESS);
+					R_LOG_DEBUG ("xfer_size = %"PFMT64d, (ut64)xfer_size);
+					R_LOG_DEBUG ("local_size = %d", local_size);
 					if (kr > 1) error = -1; // XXX: INVALID_ADDRESS is not a bug right know
 					goto cleanup;
 				}
@@ -833,7 +833,7 @@ static int xnu_write_mem_maps_to_buffer(RBuffer *buffer, RList *mem_maps, int st
 #endif
 				if (!rc) {
 					error = errno;
-					eprintf ("Failed to write in the destination\n");
+					R_LOG_ERROR ("Failed to write in the destination");
 					goto cleanup;
 				}
 
