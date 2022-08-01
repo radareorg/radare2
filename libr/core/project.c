@@ -65,7 +65,7 @@ static int make_projects_directory(RCore *core) {
 
 R_API bool r_core_is_project(RCore *core, const char *name) {
 	bool ret = false;
-	if (!R_STR_ISEMPTY (name) && *name != '.') {
+	if (R_STR_ISNOTEMPTY (name) && *name != '.') {
 		char *path = get_project_script_path (core, name);
 		if (!path) {
 			return false;
