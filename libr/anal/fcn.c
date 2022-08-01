@@ -944,7 +944,7 @@ repeat:
 				if ((buf[2] == 0xff || buf[2] == 0xfe) && buf[3] == 0xff) {
 					leaddr_pair *pair = R_NEW (leaddr_pair);
 					if (!pair) {
-						eprintf ("Cannot create leaddr_pair\n");
+						R_LOG_ERROR ("Cannot create leaddr_pair");
 						gotoBeach (R_ANAL_RET_ERROR);
 					}
 					pair->op_addr = op->addr;
@@ -965,7 +965,7 @@ repeat:
 			if (op->ptr != UT64_MAX) {
 				leaddr_pair *pair = R_NEW (leaddr_pair);
 				if (!pair) {
-					eprintf ("Cannot create leaddr_pair\n");
+					R_LOG_ERROR ("Cannot create leaddr_pair");
 					gotoBeach (R_ANAL_RET_ERROR);
 				}
 				pair->op_addr = op->addr;

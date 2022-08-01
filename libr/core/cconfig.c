@@ -797,7 +797,7 @@ static bool cb_asmarch(void *user, void *data) {
 		const char *asmcpu = r_config_get (core->config, "asm.cpu");
 		const char *asmos = r_config_get (core->config, "asm.os");
 		if (!r_syscall_setup (core->anal->syscall, node->value, core->anal->config->bits, asmcpu, asmos)) {
-			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+			//R_LOG_ERROR ("asm.arch: Cannot setup syscall '%s/%s' from '%s'",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
 	}
@@ -876,13 +876,13 @@ static bool cb_asmbits(void *user, void *data) {
 		if (!ret) {
 			RAsmPlugin *h = core->rasm->cur;
 			if (!h) {
-				eprintf ("e asm.bits: Cannot set value, no plugins defined yet\n");
+				R_LOG_ERROR ("e asm.bits: Cannot set value, no plugins defined yet");
 				ret = true;
 			}
-			// else { eprintf ("Cannot set bits %d to '%s'\n", bits, h->name); }
+			// else { R_LOG_ERROR ("Cannot set bits %d to '%s'", bits, h->name); }
 		}
 		if (!r_anal_set_bits (core->anal, bits)) {
-			eprintf ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
+			R_LOG_ERROR ("asm.arch: Cannot setup '%d' bits analysis engine", bits);
 			ret = false;
 		}
 	}
@@ -916,7 +916,7 @@ static bool cb_asmbits(void *user, void *data) {
 	const char *asmcpu = r_config_get (core->config, "asm.cpu");
 	if (core->anal) {
 		if (!r_syscall_setup (core->anal->syscall, asmarch, bits, asmcpu, asmos)) {
-			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+			//R_LOG_ERROR ("asm.arch: Cannot setup syscall '%s/%s' from '%s'",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
 		__setsegoff (core->config, asmarch, core->anal->config->bits);
@@ -1158,7 +1158,7 @@ static bool cb_binstrenc(void *user, void *data) {
 			return true;
 		}
 	}
-	eprintf ("Unknown encoding: %s\n", node->value);
+	R_LOG_ERROR ("Unknown encoding: %s", node->value);
 	free (enc);
 	return false;
 }
@@ -1475,7 +1475,7 @@ static bool cb_cfgsanbox(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	int ret = r_sandbox_enable (node->i_value);
 	if (node->i_value != ret) {
-		eprintf ("Cannot disable sandbox\n");
+		R_LOG_ERROR ("Cannot disable sandbox");
 	}
 	return (!node->i_value && ret)? 0: 1;
 }
@@ -1834,7 +1834,7 @@ static bool cb_gotolimit(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (r_sandbox_enable (0)) {
-		eprintf ("Cannot change gotolimit\n");
+		R_LOG_ERROR ("Cannot change gotolimit");
 		return false;
 	}
 	if (core->anal->esil) {
@@ -1855,7 +1855,7 @@ static bool cb_esilverbose(void *user, void *data) {
 static bool cb_esilstackdepth(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->i_value < 3) {
-		eprintf ("esil.stack.depth must be greater than 2\n");
+		R_LOG_ERROR ("esil.stack.depth must be greater than 2");
 		node->i_value = 32;
 	}
 	return true;
@@ -2764,7 +2764,7 @@ static bool cb_prjname(void *user, void *data) {
 			if (r_project_rename (core->prj, prjname)) {
 				return true;
 			}
-			eprintf ("Cannot rename project.\n");
+			R_LOG_ERROR ("Cannot rename project");
 		} else {
 			r_project_close (core->prj);
 		}
@@ -2773,7 +2773,7 @@ static bool cb_prjname(void *user, void *data) {
 			if (r_project_open (core->prj, prjname, NULL)) {
 				return true;
 			}
-			eprintf ("Cannot open project.\n");
+			R_LOG_ERROR ("Cannot open project");
 		} else {
 			return true;
 		}

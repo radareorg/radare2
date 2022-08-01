@@ -135,7 +135,7 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 		k = j * R_SZ;
 		const char *reg = getreg (j + 1);
 		if (!reg) {
-			eprintf ("Cannot find gpr %d\n", j + 1);
+			R_LOG_ERROR ("Cannot find gpr %d", j + 1);
 			break;
 		}
 		if (attsyntax) {

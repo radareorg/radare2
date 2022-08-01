@@ -1792,14 +1792,14 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 				format_owned = true;
 			}
 			if (!format) {
-				eprintf ("Cannot find format for struct `%s'\n", structname + 1);
+				R_LOG_ERROR ("Cannot find format for struct `%s'", structname + 1);
 				free (structname);
 				free (o);
 				return 0;
 			}
 			int newsize = r_print_format_struct_size (p, format, mode, n + 1);
 			if (newsize < 1) {
-				eprintf ("Cannot find size for `%s'\n", format);
+				R_LOG_ERROR ("Cannot find size for `%s'", format);
 				free (structname);
 				free (o);
 				return 0;

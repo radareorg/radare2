@@ -45,10 +45,10 @@ R_API int r_socket_rap_client_open(RSocket *s, const char *file, int rw) {
 		if (buf[0] == (char)(RAP_PACKET_OPEN | RAP_PACKET_REPLY)) {
 			fd = r_read_at_be32 (buf + 1, 1);
 		} else {
-			eprintf ("RapClientOpen: Bad packet 0x%02x\n", buf[0]);
+			R_LOG_ERROR ("RapClientOpen: Bad packet 0x%02x", buf[0]);
 		}
 	} else {
-		eprintf ("Cannot read 5 bytes from server\n");
+		R_LOG_ERROR ("Cannot read 5 bytes from server");
 	}
 	free (buf);
 	return fd;

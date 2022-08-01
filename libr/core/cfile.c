@@ -338,7 +338,7 @@ static bool setbpint(RCore *r, const char *mode, const char *sym) {
 #endif
 		return true;
 	}
-	eprintf ("Cannot set breakpoint at %s\n", sym);
+	R_LOG_ERROR ("Cannot set breakpoint at %s", sym);
 	return false;
 }
 #endif
@@ -735,7 +735,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			RFlagItem *impsym = r_flag_get (r->flags, flagname);
 			free (flagname);
 			if (!impsym) {
-				//eprintf ("Cannot find '%s' import in the PLT\n", imp->name);
+				//R_LOG_ERROR ("Cannot find '%s' import in the PLT", imp->name);
 				continue;
 			}
 			ut64 imp_addr = impsym->offset;

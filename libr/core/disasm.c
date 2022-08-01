@@ -738,7 +738,7 @@ static RDisasmState *ds_init(RCore *core) {
 		RIOMap *map = r_io_map_add (core->io, ds->stackFd, R_PERM_RW, 0LL, addr, size);
 		if (!map) {
 			r_io_fd_close (core->io, ds->stackFd);
-			eprintf ("Cannot create map for tha stack, fd %d got closed again\n", ds->stackFd);
+			R_LOG_ERROR ("Cannot create map for tha stack, fd %d got closed again", ds->stackFd);
 			ds->stackFd = -1;
 		} else {
 			r_io_map_set_name (map, "fake.stack");
@@ -6288,7 +6288,7 @@ static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes)
 				if (core->blocksize == *nb_bytes) {
 					r_io_read_at (core->io, core->offset, core->block, *nb_bytes);
 				} else {
-					eprintf ("Cannot read that much!\n");
+					R_LOG_ERROR ("Cannot read that much!");
 					r_core_block_size (core, obsz);
 					return false;
 				}

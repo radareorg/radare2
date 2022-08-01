@@ -36,7 +36,7 @@ static inline ut64 genmask(int bits) {
 	return m;
 }
 
-#define ERR(x) if (esil->verbose) { eprintf ("%s\n", x); }
+#define ERR(...) if (esil->verbose) { R_LOG_ERROR (__VA_ARGS__); }
 
 static bool isnum(RAnalEsil *esil, const char *str, ut64 *num) {
 	if (!esil || !str) {
@@ -130,11 +130,10 @@ R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb cod
 	if (!eop) {
 		eop = R_NEW (RAnalEsilOp);
 		if (!eop) {
-			eprintf ("Cannot allocate esil-operation %s\n", op);
 			return false;
 		}
 		if (!ht_pp_insert (esil->ops, op, eop)) {
-			eprintf ("Cannot set esil-operation %s\n", op);
+			R_LOG_ERROR ("Cannot set esil-operation %s", op);
 			free (eop);
 			return false;
 		}
@@ -819,9 +818,7 @@ static bool esil_eq(RAnalEsil *esil) {
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 	if (!src || !dst) {
-		if (esil->verbose) {
-			eprintf ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x"\n", esil->address);
-		}
+		ERR ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x, esil->address);
 		free (src);
 		free (dst);
 		return false;
@@ -2105,7 +2102,7 @@ static bool esil_poke_some(RAnalEsil *esil) {
 					const int size_bytes = regsize / 8;
 					const ut32 written = r_anal_esil_mem_write (esil, ptr, b, size_bytes);
 					if (written != size_bytes) {
-						//eprintf ("Cannot write at 0x%08" PFMT64x "\n", ptr);
+						//R_LOG_ERROR ("Cannot write at 0x%08" PFMT64x, ptr);
 						esil->trap = 1;
 					}
 					ptr += size_bytes;
@@ -2218,7 +2215,7 @@ static bool esil_peek_some(RAnalEsil *esil) {
 					bool oks = r_anal_esil_mem_read (esil, ptr, a, 4);
 					if (!oks) {
 						if (esil->verbose) {
-							eprintf ("Cannot peek from 0x%08" PFMT64x "\n", ptr);
+							R_LOG_ERROR ("Cannot peek from 0x%08" PFMT64x, ptr);
 						}
 						free (dst);
 						free (count);
@@ -3568,7 +3565,7 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 			return 2;
 		}
 		if (esil->verbose) {
-			eprintf ("Cannot find word %d\n", esil->parse_goto);
+			R_LOG_ERROR ("Cannot find word %d", esil->parse_goto);
 		}
 		return 1;
 	}

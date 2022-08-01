@@ -546,7 +546,7 @@ R_API bool r_bin_list_plugin(RBin *bin, const char* name, PJ *pj, int json) {
 		return true;
 	}
 
-	eprintf ("Cannot find plugin %s\n", name);
+	R_LOG_ERROR ("Cannot find plugin %s", name);
 	return false;
 }
 
@@ -987,11 +987,11 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 	}
 	Sdb *binfile_sdb = binfile? binfile->sdb: NULL;
 	if (!binfile_sdb) {
-	//	eprintf ("Cannot find SDB!\n");
+	//	R_LOG_ERROR ("Cannot find SDB!");
 		return;
 	}
 	if (!binfile) {
-	//	eprintf ("Binary format not currently loaded!\n");
+	//	R_LOG_ERROR ("Binary format not currently loaded!");
 		return;
 	}
 	sdb_unset (binfile_sdb, ARCHS_KEY, 0);
@@ -1176,7 +1176,7 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		ut8 *num8 = (ut8*)&num;
 		RBuffer *buf = r_buf_new_file (file, O_RDWR | O_CREAT, 0644);
 		if (!buf) {
-			eprintf ("Cannot open file %s - Permission Denied.\n", file);
+			R_LOG_ERROR ("Cannot open file %s - Permission Denied", file);
 			return NULL;
 		}
 		r_buf_write_at (buf, 0, (const ut8*)"\xca\xfe\xba\xbe", 4);
@@ -1193,7 +1193,7 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 			if (f_buf) {
 				eprintf ("ADD %s %"PFMT64u"\n", f, (ut64)f_len);
 			} else {
-				eprintf ("Cannot open %s\n", f);
+				R_LOG_ERROR ("Cannot open %s", f);
 				free (f_buf);
 				continue;
 			}

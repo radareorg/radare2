@@ -292,8 +292,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		}
 
 		if (op->mnemonic[0] == '?') {
-			eprintf ("? Bad op at: 0x%08"PFMT64x"\n", dst);
-			eprintf ("Cannot analyze opcode at 0x%"PFMT64x"\n", dst);
+			R_LOG_ERROR ("? Bad op at: 0x%08"PFMT64x, dst);
+			R_LOG_ERROR ("Cannot analyze opcode at 0x%"PFMT64x, dst);
 			block_score -= 10;
 			cur++;
 			continue;
@@ -579,8 +579,8 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 					}
 
 					if (op->mnemonic[0] == '?') {
-						eprintf ("? Bad op at: 0x%08"PFMT64x"\n", cur + b_start);
-						eprintf ("Cannot analyze opcode at %"PFMT64x"\n", b_start + cur);
+						R_LOG_ERROR ("? Bad op at: 0x%08"PFMT64x, cur + b_start);
+						R_LOG_ERROR ("Cannot analyze opcode at %"PFMT64x, b_start + cur);
 						block_score -= 10;
 						cur++;
 						continue;

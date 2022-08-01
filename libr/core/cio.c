@@ -25,7 +25,7 @@ R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach)
 				r_core_cmdf (r, "dpa %d", pid);
 			}
 		} else {
-			eprintf ("Cannot retrieve pid from io.\n");
+			R_LOG_ERROR ("Cannot retrieve pid from io");
 		}
 	}
 	//this makes to attach twice showing warnings in the output
@@ -77,7 +77,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 		fd = r_sandbox_fopen (file, "wb");
 	}
 	if (!fd) {
-		eprintf ("Cannot open '%s' for writing\n", file);
+		R_LOG_ERROR ("Cannot open '%s' for writing", file);
 		return false;
 	}
 	/* some io backends seems to be buggy in those cases */

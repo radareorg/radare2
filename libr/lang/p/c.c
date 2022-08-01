@@ -30,7 +30,7 @@ static int lang_c_file(RLang *lang, const char *file) {
 		strcpy (name, file);
 	}
 	if (!r_file_exists (name)) {
-		eprintf ("file not found (%s)\n", name);
+		R_LOG_ERROR ("file not found (%s)", name);
 		return false;
 	}
 
@@ -76,11 +76,11 @@ static int lang_c_file(RLang *lang, const char *file) {
 			ac = 0;
 			av = NULL;
 		} else {
-			eprintf ("Cannot find 'entry' symbol in library\n");
+			R_LOG_ERROR ("Cannot find 'entry' symbol in library");
 		}
 		r_lib_dl_close (lib);
 	} else {
-		eprintf ("Cannot open library\n");
+		R_LOG_ERROR ("Cannot open library");
 	}
 	r_file_rm (buf); // remove lib
 	free (buf);
@@ -95,7 +95,7 @@ static int lang_c_init(void *user) {
 static bool lang_c_run(RLang *lang, const char *code, int len) {
 	FILE *fd = r_sandbox_fopen (".tmp.c", "w");
 	if (!fd) {
-		eprintf ("Cannot open .tmp.c\n");
+		R_LOG_ERROR ("Cannot open .tmp.c");
 		return false;
 	}
 	fputs ("#include <r_core.h>\n\nvoid entry(RCore *core, int argc, const char **argv) {\n", fd);

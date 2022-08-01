@@ -19,7 +19,7 @@ static inline HANDLE w32_loadlib(const char *name, const char *libname) {
 	if (!lib) {
 		lib = LoadLibrary (TEXT (libname));
 		if (!lib) {
-			eprintf ("Cannot load %s to resolve %s. Aborting\n", libname, name);
+			R_LOG_ERROR ("Cannot load %s to resolve %s. Aborting", libname, name);
 			return (HANDLE)(size_t)0;
 		}
 	}

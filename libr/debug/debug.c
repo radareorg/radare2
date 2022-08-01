@@ -124,7 +124,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	}
 
 	if (!dbg->pc_at_bp_set) {
-		eprintf ("failed to determine position of pc after breakpoint\n");
+		R_LOG_ERROR ("failed to determine position of pc after breakpoint");
 	}
 
 	if (dbg->pc_at_bp) {
@@ -535,12 +535,12 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	ri_sp = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_SP], R_REG_TYPE_GPR);
 
 	if (!ri_pc) {
-		eprintf ("r_debug_execute: Cannot get program counter\n");
+		R_LOG_ERROR ("r_debug_execute: Cannot get program counter");
 		return false;
 	}
 
 	if (restore && !ignore_stack && !ri_sp) {
-		eprintf ("r_debug_execute: Cannot get stack pointer\n");
+		R_LOG_ERROR ("r_debug_execute: Cannot get stack pointer");
 		return false;
 	}
 
@@ -548,7 +548,7 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	reg_backup = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &reg_backup_sz);
 
 	if (!reg_backup) {
-		eprintf ("Cannot get register arena bytes\n");
+		R_LOG_ERROR ("Cannot get register arena bytes");
 		return false;
 	}
 
@@ -643,7 +643,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 #endif
 	if (pid == -1 && tid == -1) {
 		if (dbg->pid != -1) {
-			eprintf ("Child %d is dead\n", dbg->pid);
+			R_LOG_ERROR ("Child %d is dead", dbg->pid);
 		}
 	}
 	if (pid < 0 || tid < 0) {
@@ -663,7 +663,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 			free (pidcmd);
 		}
 	} else {
-		eprintf ("Cannot find pid for child %d\n", dbg->pid);
+		R_LOG_ERROR ("Cannot find pid for child %d", dbg->pid);
 	}
 
 	// Synchronize with the current thread's data
@@ -1021,7 +1021,7 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 			dbg->session->maxcnum++;
 			dbg->session->bp = 0;
 			if (!r_debug_trace_ins_before (dbg)) {
-				eprintf ("trace_ins_before: failed\n");
+				R_LOG_ERROR ("trace_ins_before: failed");
 			}
 		}
 
@@ -1031,13 +1031,13 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 			ret = r_debug_step_hard (dbg, &bp);
 		}
 		if (!ret) {
-			eprintf ("Stepping failed!\n");
+			R_LOG_ERROR ("Stepping failed!");
 			return steps_taken;
 		}
 
 		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 			if (!r_debug_trace_ins_after (dbg)) {
-				eprintf ("trace_ins_after: failed\n");
+				R_LOG_ERROR ("trace_ins_after: failed");
 			}
 			dbg->session->reasontype = dbg->reason.type;
 			dbg->session->bp = bp;
@@ -1125,7 +1125,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 				return steps_taken;
 			}
 		} else if ((op.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK))) {
-			//eprintf ("REP: skip to next instruction...\n");
+			//R_LOG_ERROR ("REP: skip to next instruction");
 			if (!r_debug_continue_until (dbg, ins_size)) {
 				R_LOG_ERROR ("step over failed over rep");
 				return steps_taken;

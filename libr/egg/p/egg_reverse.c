@@ -48,20 +48,23 @@ static RBuffer *build(REgg *egg) {
 		case R_SYS_ARCH_X86:
 			switch (egg->bits) {
 			case 32: sc = x86_freebsd_reverse; break;
-			default: eprintf ("Unsupportted\n");
+			default: R_LOG_ERROR ("Unsupported");
 			}
 			break;
 		}
 		break;
 	default:
-		eprintf ("unsupported os %x\n", egg->os);
+		R_LOG_ERROR ("unsupported os %x", egg->os);
 		break;
 	}
 	if (sc) {
 		r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
 		if (shell && *shell) {
-			if (cd) r_buf_write_at (buf, cd, (const ut8*)shell, strlen (shell)+1);
-			else eprintf ("Cannot set shell\n");
+			if (cd) {
+				r_buf_write_at (buf, cd, (const ut8*)shell, strlen (shell)+1);
+			} else {
+				R_LOG_ERROR ("Cannot set shell");
+			}
 		}
 	}
 	free (suid);
