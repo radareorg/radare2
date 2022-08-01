@@ -13,7 +13,7 @@ static bool is_valid_project_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 64) {
 		return false;
 	}
-	const char *extention = r_str_endswith (name, ".zip") ? r_str_last (name, ".zip") : NULL;
+	const char *extention = r_str_endswith (name, ".zip")? r_str_last (name, ".zip"): NULL;
 	for (; *name && name != extention; name++) {
 		if (IS_DIGIT (*name) || IS_LOWER (*name) || *name == '_') {
 			continue;
@@ -65,7 +65,7 @@ static int make_projects_directory(RCore *core) {
 
 R_API bool r_core_is_project(RCore *core, const char *name) {
 	bool ret = false;
-	if (name && *name && *name != '.') {
+	if (R_STR_ISNOTEMPTY (name) && *name != '.') {
 		char *path = get_project_script_path (core, name);
 		if (!path) {
 			return false;
@@ -388,7 +388,9 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	}
 	if (ask_for_closing && r_project_is_loaded (core->prj)) {
 		if (r_cons_is_interactive ()) {
-			close_current_session = interactive? r_cons_yesno ('y', "Close current session? (Y/n)"): true;
+			close_current_session = interactive
+				? r_cons_yesno ('y', "Close current session? (Y/n)")
+				: true;
 		}
 	}
 	if (close_current_session) {
@@ -476,8 +478,8 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 		if ((maps = r_io_map_get_by_fd (core->io, id))) { //wtf
 			r_list_foreach (maps, iter, map) {
 				r_cons_printf ("om %d 0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x " %s%s%s\n", fdc,
-					r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
-					map->name ? " " : "", r_str_get (map->name));
+						r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
+						map->name? " " : "", r_str_get (map->name));
 			}
 			r_list_free (maps);
 		}
@@ -488,8 +490,8 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 #endif
 
 static char *r_cons_drain(void) {
-	const char *buf = r_cons_get_buffer();
-	size_t buf_size = r_cons_get_buffer_len();
+	const char *buf = r_cons_get_buffer ();
+	size_t buf_size = r_cons_get_buffer_len ();
 	char *s = r_str_ndup (buf, buf_size);
 	r_cons_reset ();
 	return s;
@@ -596,9 +598,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	}
 	r_core_cmd (core, "wc*", 0);
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
-		r_cons_printf ("# seek\n"
-			       "s 0x%08" PFMT64x "\n",
-			core->offset);
+		r_cons_printf ("# seek\n" "s 0x%08" PFMT64x "\n", core->offset);
 		flush (sb);
 	}
 	r_cons_singleton ()->context->is_interactive = true;
