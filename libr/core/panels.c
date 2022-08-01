@@ -5224,6 +5224,7 @@ static void __init_menu_screen_settings_layout(void *_core, const char *parent) 
 
 static int __calculator_cb(void *user) {
 	RCore *core = (RCore *)user;
+	r_cons_clear ();
 	for (;;) {
 		char *s = __show_status_input (core, "> ");
 		if (!s || !*s) {

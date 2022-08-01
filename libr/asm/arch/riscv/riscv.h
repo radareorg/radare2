@@ -342,7 +342,7 @@ extern const char * const riscv_fpr_names_abi[NFPR];
 extern struct riscv_opcode *riscv_opcodes;
 //extern const struct riscv_opcode riscv_opcodes[];
 #ifdef _MSC_VER
-extern int bfd_riscv_num_opcodes;
+extern const int bfd_riscv_num_opcodes;
 #endif
 #endif
 #define NUMOPCODES bfd_riscv_num_opcodes
