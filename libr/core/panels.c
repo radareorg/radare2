@@ -45,7 +45,7 @@ static void __panels_refresh(RCore *core);
 #define PANEL_CMD_XREFS              "ax"
 #define PANEL_CMD_STACK              "px"
 #define PANEL_CMD_REGISTERS          "dr"
-#define PANEL_CMD_FPU_REGISTERS      "drf"
+#define PANEL_CMD_FPU_REGISTERS      "dr fpu;drf"
 #define PANEL_CMD_XMM_REGISTERS      "drm"
 #define PANEL_CMD_YMM_REGISTERS      "drmy"
 #define PANEL_CMD_DISASSEMBLY        "pd"
@@ -608,6 +608,7 @@ static bool __is_abnormal_cursor_type(RCore *core, RPanel *panel) {
 
 static bool __is_normal_cursor_type(RPanel *panel) {
 	return (__check_panel_type (panel, PANEL_CMD_STACK) ||
+			__check_panel_type (panel, PANEL_CMD_FPU_REGISTERS) ||
 			__check_panel_type (panel, PANEL_CMD_REGISTERS) ||
 			__check_panel_type (panel, PANEL_CMD_DISASSEMBLY) ||
 			__check_panel_type (panel, PANEL_CMD_HEXDUMP));
@@ -1894,9 +1895,9 @@ static void __init_sdb(RCore *core) {
 	sdb_set (db, "Stack"  , "px 256@r:SP", 0);
 	sdb_set (db, "Locals", "afvd", 0);
 	sdb_set (db, "Registers", "dr", 0);
-	sdb_set (db, "FPU Registers", "drf", 0);
-	sdb_set (db, "XMM Registers", "drm", 0);
-	sdb_set (db, "YMM Registers", "drmy", 0);
+	sdb_set (db, "FPU Registers", PANEL_CMD_FPU_REGISTERS, 0);
+	sdb_set (db, "XMM Registers", PANEL_CMD_XMM_REGISTERS, 0);
+	sdb_set (db, "YMM Registers", PANEL_CMD_YMM_REGISTERS, 0);
 	sdb_set (db, "RegisterRefs", "drr", 0);
 	sdb_set (db, "Disassembly", "pd", 0);
 	sdb_set (db, "Disassemble Summary", "pdsf", 0);
@@ -4401,6 +4402,10 @@ static void __set_dcb(RCore *core, RPanel *p) {
 	} else if (__check_panel_type (p, PANEL_CMD_REGISTERS)) {
 		p->model->directionCb = __direction_register_cb;
 	} else if (__check_panel_type (p, PANEL_CMD_FPU_REGISTERS)) {
+		p->model->directionCb = __direction_register_cb;
+	} else if (__check_panel_type (p, PANEL_CMD_XMM_REGISTERS)) {
+		p->model->directionCb = __direction_register_cb;
+	} else if (__check_panel_type (p, PANEL_CMD_YMM_REGISTERS)) {
 		p->model->directionCb = __direction_register_cb;
 	} else if (__check_panel_type (p, PANEL_CMD_HEXDUMP)) {
 		p->model->directionCb = __direction_hexdump_cb;
