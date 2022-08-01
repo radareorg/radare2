@@ -5,6 +5,10 @@
 #include <r_anal.h>
 #define DB anal->sdb_cc
 
+static bool max_cc_cached(RAnal *anal, const char *cc, void *db) {
+  return (anal->r_anal_cache->ccmax_cache.old_db == db && anal->r_anal_cache->ccmax_cache.old_cc && anal->r_anal_cache->ccmax_cache.old_cc == cc);
+}
+
 R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	r_return_if_fail (anal && name);
 	size_t i;
@@ -213,16 +217,13 @@ R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	int i = 0;
-	r_return_val_if_fail (anal && DB && cc, 0);
-	static R_TH_LOCAL void *oldDB = NULL;
-	static R_TH_LOCAL char *oldCC = NULL;
-	static R_TH_LOCAL int oldArg = 0;
-	if (oldDB == DB && !strcmp (cc, oldCC)) {
-		return oldArg;
+	r_return_val_if_fail (anal && cc, 0);
+	if (max_cc_cached (anal, cc, DB)) {
+		return anal->r_anal_cache->ccmax_cache.old_arg;
 	}
-	oldDB = DB;
-	free (oldCC);
-	oldCC = strdup (cc);
+	anal->r_anal_cache->ccmax_cache.old_db = DB;
+	free (anal->r_anal_cache->ccmax_cache.old_cc);
+	anal->r_anal_cache->ccmax_cache.old_cc = strdup (cc);
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		r_strf_var (query, 64, "cc.%s.arg%d", cc, i);
 		const char *res = sdb_const_get (DB, query, 0);
@@ -230,7 +231,7 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 			break;
 		}
 	}
-	oldArg = i;
+	anal->r_anal_cache->ccmax_cache.old_arg = i;
 	return i;
 }
 

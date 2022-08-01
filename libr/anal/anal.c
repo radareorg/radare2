@@ -157,6 +157,7 @@ R_API void r_anal_free(RAnal *a) {
 		return;
 	}
 	/* TODO: Free anals here */
+	free (a->r_anal_cache->ccmax_cache.old_cc);
 	free (a->pincmd);
 	r_list_free (a->fcns);
 	ht_up_free (a->ht_addr_fun);
