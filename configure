@@ -134,12 +134,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='radare2' ; VERSION='5.7.5' ; VERSION_MAJOR=5; VERSION_MINOR=7; VERSION_PATCH=5; VERSION_NUMBER=50705; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2' ; VERSION='5.7.6' ; VERSION_MAJOR=5; VERSION_MINOR=7; VERSION_PATCH=6; VERSION_NUMBER=50706; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-5.7.5 to adapt to many kinds of systems.
+'configure' configures radare2-5.7.6 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -244,10 +244,10 @@ ocho() {
 
 show_version() {
 if [ "$QUIET" = 1 ]; then
-	echo "5.7.5"
+	echo "5.7.6"
 	exit 0
 fi
-echo "radare2-5.7.5 configuration script done with acr v2.0.0.
+echo "radare2-5.7.6 configuration script done with acr v2.0.0.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -276,7 +276,7 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:   radare2"
-echo "VERSION:   5.7.5"
+echo "VERSION:   5.7.6"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
