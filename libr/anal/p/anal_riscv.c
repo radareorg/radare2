@@ -1,7 +1,5 @@
 /* radare - LGPL - Copyright 2015-2022 - pancake, qnix */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
@@ -12,12 +10,15 @@
 #define RISCVARGSIZE (64)
 #define RISCVARGN(x) ((x)->arg[(x)->num++])
 
+static R_TH_LOCAL bool init0 = false;
+
 typedef struct riscv_args {
 	int num;
 	char arg[RISCVARGSMAX][RISCVARGSIZE];
 } riscv_args_t;
 
 static int riscv_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
+	// assume is at least outsize
 	if (outsize < 4) {
 		return -1;
 	}
@@ -56,12 +57,12 @@ static bool _is_any(const char *str, ...) {
 
 static void arg_p2(char *buf, unsigned long val, const char* const* array, size_t size) {
 	const char *s = (val >= size || array[val]) ? array[val] : "unknown";
-	r_str_ncpy (buf, s, RISCVARGSIZE);
+	snprintf (buf, RISCVARGSIZE, "%s", s);
+//	r_str_ncpy (buf, s, RISCVARGSIZE);
 }
 
 /* Print insn arguments for 32/64-bit code.  */
-static void get_riscv_args(riscv_args_t *args, const char *d, insn_t _l, ut64 pc) {
-	int l = _l;
+static void get_riscv_args(riscv_args_t *args, const char *d, insn_t l, ut64 pc) {
 	int rs1 = (l >> OP_SH_RS1) & OP_MASK_RS1;
 	int rd = (l >> OP_SH_RD) & OP_MASK_RD;
 	ut64 target;
@@ -87,7 +88,6 @@ static void get_riscv_args(riscv_args_t *args, const char *d, insn_t _l, ut64 pc
 				break;
 			}
 			break;
-
 		case 'C': /* RVC */
 			d++;
 			switch (*d) {
@@ -254,6 +254,7 @@ static void get_riscv_args(riscv_args_t *args, const char *d, insn_t _l, ut64 pc
 				unsigned int csr = EXTRACT_OPERAND (CSR, l);
 				switch (csr) {
 #define DECLARE_CSR(name, num) case num: csr_name = #name; break;
+#undef RISCV_ENCODING_H
 #include "../../asm/arch/riscv/riscv-opc.h"
 #undef DECLARE_CSR
 				}
@@ -282,13 +283,40 @@ static const char* arg_n(riscv_args_t* args, int n) {
 	return args->arg[n];
 }
 
+static struct riscv_opcode *riscv_get_opcode(insn_t word) {
+	struct riscv_opcode *op = NULL;
+	static R_TH_LOCAL const struct riscv_opcode *riscv_hash[OP_MASK_OP + 1] = {0};
+
+#define OP_HASH_IDX(i) ((i) & (riscv_insn_length (i) == 2 ? 3 : OP_MASK_OP))
+
+	if (!init0) {
+		size_t i;
+		for (i = 0; i < OP_MASK_OP + 1; i++) {
+			riscv_hash[i] = 0;
+		}
+		for (op = riscv_opcodes; op <= &riscv_opcodes[NUMOPCODES - 1]; op++) {
+			if (!riscv_hash[OP_HASH_IDX (op->match)]) {
+				riscv_hash[OP_HASH_IDX (op->match)] = op;
+			}
+		}
+		init0 = true;
+	}
+	return (struct riscv_opcode *)riscv_hash[OP_HASH_IDX (word)];
+}
+
 static char *riscv_disassemble(RAnal *a, ut64 addr, const ut8 *buf, int len) {//insn_t word, int xlen, int len) {
+	if (len < 2) {
+		return NULL;
+	}
 	insn_t word = {0};
 	memcpy (&word, buf, R_MIN (sizeof (word), len));
 	int xlen = a->config->bits;
-	// int len = riscv_insn_length (insn);
+	int ilen = riscv_insn_length (word);
+	if (len < ilen) {
+		return NULL;
+	}
 	const bool no_alias = false;
-	const struct riscv_opcode *op = get_opcode (word);
+	const struct riscv_opcode *op = riscv_get_opcode (word);
 	if (!op) {
 		return NULL;
 	}
@@ -299,11 +327,11 @@ static char *riscv_disassemble(RAnal *a, ut64 addr, const ut8 *buf, int len) {//
 		if (no_alias && (op->pinfo & INSN_ALIAS)) {
 			continue;
 		}
-		if (isdigit ((ut8)op->subset[0]) && atoi (op->subset) != xlen ) {
+		if (isdigit ((ut8)op->subset[0]) && atoi (op->subset) != xlen) {
 			continue;
 		}
 		if (op->name && op->args) {
-			char opasm [64];
+			char opasm [128];
 			r_str_ncpy (opasm, op->name, sizeof (opasm));
 			get_insn_args (opasm, op->args, word, addr);
 			return strdup (opasm);
@@ -318,18 +346,24 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	riscv_args_t args = {0};
 	ut64 word = 0;
 	int xlen = anal->config->bits;
-	op->size = 4;
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
+	op->size = 4;
 	bool be = anal->config->big_endian;
+	if (len < 2) {
+		op->size = 2;
+		return -1;
+	}
 
 	if (len >= sizeof (ut64)) {
 		word = r_read_ble64 (data, be);
 	} else if (len >= sizeof (ut32)) {
 		word = r_read_ble16 (data, be);
 	} else {
-		op->type = R_ANAL_OP_TYPE_ILL;
-		return -1;
+		word = r_read_ble16 (data, be);
+		//word = r_read_ble32 (data, be);
+		//op->type = R_ANAL_OP_TYPE_ILL;
+		//return -1;
 	}
 
 	struct riscv_opcode *o = get_opcode (word);
@@ -373,6 +407,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 #define ARG(x) (arg_n (&args, (x)))
 		get_riscv_args (&args, o->args, word, addr);
+		//get_insn_args (&args, o->args, word, addr);
 		if (!strcmp (name, "nop")) {
 			esilprintf (op, ",");
 		}
@@ -895,6 +930,19 @@ static char *get_reg_profile(RAnal *anal) {
 	return R_STR_ISNOTEMPTY (p)? strdup (p): NULL;
 }
 
+static int archinfo(RAnal *anal, int q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 0;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 4;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 2;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	}
+	return 0;
+}
 RAnalPlugin r_anal_plugin_riscv = {
 	.name = "riscv",
 	.desc = "RISC-V analysis plugin",
@@ -903,6 +951,7 @@ RAnalPlugin r_anal_plugin_riscv = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.bits = 32 | 64,
 	.op = &riscv_op,
+	.archinfo = archinfo,
 	.opasm = &riscv_opasm,
 	.get_reg_profile = &get_reg_profile,
 };
