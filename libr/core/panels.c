@@ -5231,7 +5231,7 @@ static int __calculator_cb(void *user) {
 			break;
 		}
 		r_cons_clear00 ();
-		r_cons_printf (core, "> %s", s);
+		r_cons_printf ("\n> %s\n", s);
 		r_core_cmdf (core, "? %s", s);
 		r_cons_flush ();
 		free (s);
