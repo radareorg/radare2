@@ -276,7 +276,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 				if (fi) {
 					fi->size = r_num_math (core->num, v);
 				} else {
-					eprintf ("Cannot find flag named '%s'\n", flagname);
+					R_LOG_ERROR ("Cannot find flag named '%s'", flagname);
 				}
 			}
 		}
@@ -302,7 +302,7 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 		}
 	}
 	if (strchr (file, '\"')) {  // TODO: escape "?
-		eprintf ("Invalid char found in filename\n");
+		R_LOG_ERROR ("Invalid char found in filename");
 		return false;
 	}
 	RBinFileOptions opt = {0};
@@ -313,7 +313,7 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 		r_bin_file_delete (core->bin, bf->id);
 		return true;
 	}
-	eprintf ("Cannot open bin '%s'\n", file);
+	R_LOG_ERROR ("Cannot open bin '%s'", file);
 	return false;
 }
 
@@ -3051,11 +3051,11 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 					if (dl == datalen) {
 						hashstr = build_hash_string (pj, mode, hashtypes, data, datalen);
 					} else if (r->bin->verbose) {
-						eprintf ("Cannot read section at 0x%08"PFMT64x"\n", section->paddr);
+						R_LOG_ERROR ("Cannot read section at 0x%08"PFMT64x, section->paddr);
 					}
 					free (data);
 				} else if (r->bin->verbose) {
-					eprintf ("Section at 0x%08"PFMT64x" larger than bin.hashlimit\n", section->paddr);
+					R_LOG_ERROR ("Section at 0x%08"PFMT64x" larger than bin.hashlimit", section->paddr);
 				}
 			}
 			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x" %s %s%s%s\n",
@@ -3083,11 +3083,11 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 					if (dl == datalen) {
 						free (build_hash_string (pj, mode, hashtypes, data, datalen));
 					} else if (r->bin->verbose) {
-						eprintf ("Cannot read section at 0x%08"PFMT64x"\n", section->paddr);
+						R_LOG_ERROR ("Cannot read section at 0x%08"PFMT64x, section->paddr);
 					}
 					free (data);
 				} else if (r->bin->verbose) {
-					eprintf ("Section at 0x%08"PFMT64x" larger than bin.hashlimit\n", section->paddr);
+					R_LOG_ERROR ("Section at 0x%08"PFMT64x" larger than bin.hashlimit", section->paddr);
 				}
 			}
 			pj_kN (pj, "paddr", section->paddr);
@@ -3107,11 +3107,11 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 					if (dl == datalen) {
 						hashstr = build_hash_string (pj, mode, hashtypes, data, datalen);
 					} else if (r->bin->verbose) {
-						eprintf ("Cannot read section at 0x%08"PFMT64x"\n", section->paddr);
+						R_LOG_ERROR ("Cannot read section at 0x%08"PFMT64x, section->paddr);
 					}
 					free (data);
 				} else if (r->bin->verbose) {
-					eprintf ("Section at 0x%08"PFMT64x" larger than bin.hashlimit\n", section->paddr);
+					R_LOG_WARN ("Section at 0x%08"PFMT64x" larger than bin.hashlimit", section->paddr);
 				}
 			}
 			if (section->arch || section->bits) {

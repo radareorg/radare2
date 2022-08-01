@@ -274,7 +274,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 		if (argv) {
 			char *argv0 = r_file_path (argv[0]);
 			if (!argv0) {
-				eprintf ("Cannot find '%s'\n", argv[0]);
+				R_LOG_ERROR ("Cannot find '%s'", argv[0]);
 				return -1;
 			}
 			pid = 0;

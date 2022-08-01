@@ -747,7 +747,7 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 		fd = r_sandbox_fopen (file, "wb");
 	}
 	if (!fd) {
-		eprintf ("Cannot open '%s' for writing\n", file);
+		R_LOG_ERROR ("Cannot open '%s' for writing", file);
 		return false;
 	}
 	for (i = 0; i < len; i += 16) {
@@ -787,7 +787,7 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
 		fd = r_sandbox_fopen (file, "wb");
 	}
 	if (!fd) {
-		eprintf ("Cannot open '%s' for writing\n", file);
+		R_LOG_ERROR ("Cannot open '%s' for writing", file);
 		return false;
 	}
 	if (buf) {
@@ -1292,7 +1292,7 @@ R_API char *r_file_tmpdir(void) {
 	if (!r_file_is_directory (path)) {
 		free (path);
 		return NULL;
-		//eprintf ("Cannot find dir.tmp '%s'\n", path);
+		//R_LOG_ERROR ("Cannot find dir.tmp '%s'", path);
 	}
 	return path;
 }
@@ -1300,7 +1300,7 @@ R_API char *r_file_tmpdir(void) {
 R_API bool r_file_copy(const char *src, const char *dst) {
 	r_return_val_if_fail (R_STR_ISNOTEMPTY (src) && R_STR_ISNOTEMPTY (dst), false);
 	if (!strcmp (src, dst)) {
-		eprintf ("Cannot copy file '%s' to itself.\n", src);
+		R_LOG_ERROR ("Cannot copy file '%s' to itself", src);
 		return false;
 	}
 	/* TODO: implement in C */

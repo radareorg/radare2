@@ -454,7 +454,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 					vars = r_str_append (vars, " ");
 				}
 			} else {
-				eprintf ("Cannot resolve type '%s'\n", var3);
+				R_LOG_ERROR ("Cannot resolve type '%s'", var3);
 			}
 			free (type);
 		}

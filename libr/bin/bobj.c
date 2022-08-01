@@ -221,8 +221,6 @@ static void filter_classes(RBinFile *bf, RList *list) {
 					r_bin_filter_sym (bf, ht, sym->vaddr, sym);
 				}
 			}
-		} else {
-			eprintf ("Cannot alloc %d byte(s)\n", namepad_len);
 		}
 	}
 	ht_pu_free (db);

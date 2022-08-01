@@ -59,14 +59,14 @@ static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock 
 			if (block) {
 				if (block->addr != ip) {
 					st64 d = block->addr - ip;
-					eprintf ("Cannot find basic block for switch case at 0x%08"PFMT64x" bbdelta = %d\n", ip, (int)R_ABS (d));
+					R_LOG_ERROR ("Cannot find basic block for switch case at 0x%08"PFMT64x" bbdelta = %d", ip, (int)R_ABS (d));
 					block = NULL;
 					return;
 				} else {
-					eprintf ("Inconsistent basicblock storage issue at 0x%08"PFMT64x"\n", ip);
+					R_LOG_ERROR ("Inconsistent basicblock storage issue at 0x%08"PFMT64x, ip);
 				}
 			} else {
-				eprintf ("Major disaster at 0x%08"PFMT64x"\n", ip);
+				R_LOG_ERROR ("Major disaster at 0x%08"PFMT64x, ip);
 				return;
 			}
 			// analyze at given address

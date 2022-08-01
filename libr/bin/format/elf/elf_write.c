@@ -43,7 +43,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 	}
 
 	if (delta == 0) {
-		eprintf ("Cannot find section\n");
+		R_LOG_ERROR ("Cannot find section");
 		return 0;
 	}
 

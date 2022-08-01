@@ -4255,8 +4255,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		h = 25;
 		can = r_cons_canvas_new (w, h);
 		if (!can) {
-			eprintf ("Cannot create RCons.canvas context. Invalid screen "
-					"size? See scr.columns + scr.rows\n");
+			R_LOG_ERROR ("Cannot create RCons.canvas context. Invalid screen "
+					"size? See scr.columns + scr.rows");
 			r_config_hold_free (hc);
 			return false;
 		}
@@ -4598,7 +4598,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			if (undo) {
 				r_core_seek (core, undo->off, false);
 			} else {
-				eprintf ("Cannot undo\n");
+				R_LOG_ERROR ("Cannot undo");
 			}
 			if (r_config_get_i (core->config, "graph.few")) {
 				g->need_reload_nodes = true;
@@ -4611,7 +4611,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			if (undo) {
 				r_core_seek (core, undo->off, false);
 			} else {
-				eprintf ("Cannot redo\n");
+				R_LOG_ERROR ("Cannot redo");
 			}
 			if (r_config_get_i (core->config, "graph.few")) {
 				g->need_reload_nodes = true;

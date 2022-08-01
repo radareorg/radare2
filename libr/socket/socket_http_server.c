@@ -211,7 +211,7 @@ R_API void r_socket_http_free(RSocketHTTPRequest *rs) {
 int main() {
 	RSocket *s = r_socket_new (false);
 	if (!r_socket_listen (s, "8080", NULL)) {
-		eprintf ("Cannot listen here\n");
+		R_LOG_ERROR ("Cannot listen here");
 		return 1;
 	}
 	for (;;) {

@@ -587,23 +587,23 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	}
 
 	if (!r_core_file_open (core, file, R_PERM_RX, 0)) {
-		eprintf ("Cannot open file (%s)\n", file);
+		R_LOG_ERROR ("Cannot open file (%s)", file);
 		return -1;
 	}
 	r_core_file_reopen_debug (core, args);
 
 	if (!(sock = r_socket_new (false))) {
-		eprintf ("gdbserver: Could not open socket for listening\n");
+		R_LOG_ERROR ("gdbserver: Could not open socket for listening");
 		return -1;
 	}
 	if (!r_socket_listen (sock, port, NULL)) {
 		r_socket_free (sock);
-		eprintf ("gdbserver: Cannot listen on port: %s\n", port);
+		R_LOG_ERROR ("gdbserver: Cannot listen on port: %s", port);
 		return -1;
 	}
 	if (!(g = R_NEW0 (libgdbr_t))) {
 		r_socket_free (sock);
-		eprintf ("gdbserver: Cannot alloc libgdbr instance\n");
+		R_LOG_ERROR ("gdbserver: Cannot alloc libgdbr instance");
 		return -1;
 	}
 	gdbr_init (g, true);
@@ -612,7 +612,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	int bits = r_config_get_i (core->config, "asm.bits");
 	gdbr_set_architecture (g, arch, bits);
 	core->gdbserver_up = 1;
-	eprintf ("gdbserver started on port: %s, file: %s\n", port, file);
+	R_LOG_INFO ("gdbserver started on port: %s, file: %s", port, file);
 
 	for (;;) {
 		if (!(g->sock = r_socket_accept (sock))) {
@@ -796,7 +796,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			char *uri = r_str_newf ("http://%s:%s/%s", host, port, file);
 			char *str = r_socket_http_get (uri, NULL, &len);
 			if (!str) {
-				eprintf ("Cannot find peer\n");
+				R_LOG_ERROR ("Cannot find peer");
 				r_socket_free (fd);
 				return;
 			}
@@ -921,7 +921,7 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 				dup2 (ff, 2);
 				errmsg_fd = ff;
 			} else {
-				eprintf ("Cannot open fifo: %s\n", f);
+				R_LOG_ERROR ("Cannot open fifo: %s", f);
 			}
 		}
 		// r_core_event (core, );
@@ -929,7 +929,7 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 		free (f);
 		// TODO: those files are leaked when closing r_core_free() should be deleted
 #else
-		eprintf ("Not supported for your platform.\n");
+		R_LOG_ERROR ("Not supported for your platform");
 #endif
 	} else {
 		eprintf ("(%s)\n", input);
@@ -1069,7 +1069,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		char *uri = r_str_newf ("http://%s:%d/cmd/%s", rh->host, rh->port, cmd);
 		char *str = r_socket_http_get (uri, NULL, &len);
 		if (!str) {
-			eprintf ("Cannot find '%s'\n", uri);
+			R_LOG_ERROR ("Cannot find '%s'", uri);
 			return;
 		}
 		r_core_return_value (core, R_CMD_RC_SUCCESS);
@@ -1124,7 +1124,7 @@ R_API char *r_core_rtr_cmds_query(RCore *core, const char *host, const char *por
 			rbuf = r_str_append (rbuf, (const char *)buf);
 		}
 	} else {
-		eprintf ("Cannot connect\n");
+		R_LOG_ERROR ("Cannot connect");
 	}
 	r_socket_free (s);
 	return rbuf;

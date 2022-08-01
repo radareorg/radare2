@@ -74,7 +74,7 @@ static int lang_cpipe_init(void *user) {
 static bool lang_cpipe_run(RLang *lang, const char *code, int len) {
 	FILE *fd = r_sandbox_fopen (".tmp.c", "w");
 	if (!fd) {
-		eprintf ("Cannot open .tmp.c\n");
+		R_LOG_ERROR ("Cannot open .tmp.c");
 		return false;
 	}
 	fputs ("#include <r_socket.h>\n\n"

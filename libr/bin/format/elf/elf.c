@@ -3563,7 +3563,7 @@ static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 					return NULL;
 				}
 				if (r_buf_read_at (bin->b, addr, data, size) == -1) {
-					eprintf ("Cannot read%c\n", 10);
+					R_LOG_ERROR ("Cannot read");
 				}
 				size_t osize;
 				ut8 *odata = r_sys_unxz (data, size, &osize);
@@ -4092,7 +4092,7 @@ static bool get_nt_file_maps(ELFOBJ *bin, RList *core_maps) {
 						bin->phdr[ph].p_offset + offset,
 						elf_nhdr, elf_nhdr_size);
 				if (ret != elf_nhdr_size) {
-					eprintf ("Cannot read more NOTES header from CORE\n");
+					R_LOG_ERROR ("Cannot read more NOTES header from CORE");
 					free (elf_nhdr);
 					goto fail;
 				}

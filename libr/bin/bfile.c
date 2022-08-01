@@ -167,8 +167,6 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				len = res;
 				free (buf);
 				buf = out;
-			} else {
-				eprintf ("Cannot allocate\n");
 			}
 		} else {
 			eprintf ("Invalid value for RABIN2_CHARSET.\n");
@@ -945,7 +943,6 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	const size_t blocksize = 64000;
 	ut8 *buf = malloc (blocksize);
 	if (!buf) {
-		eprintf ("Cannot allocate computation buffer\n");
 		return NULL;
 	}
 
@@ -1073,7 +1070,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 
 	RBinClass *c = r_bin_file_add_class (bf, klass, NULL, 0);
 	if (!c) {
-		eprintf ("Cannot allocate class %s\n", klass);
+		R_LOG_ERROR ("Cannot allocate class %s", klass);
 		return NULL;
 	}
 	RBinSymbol *sym = __getMethod (bf, klass, method);

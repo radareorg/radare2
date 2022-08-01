@@ -90,7 +90,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 	}
 	char *data = r_file_slurp (file, NULL);
 	if (!data) {
-		eprintf ("Cannot open file.\n");
+		R_LOG_ERROR ("Cannot open file");
 		return;
 	}
 	RList *list = r_str_split_list (data, "\n", 0);

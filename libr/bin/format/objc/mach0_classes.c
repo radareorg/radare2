@@ -1172,7 +1172,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 		return;
 	}
 	if (left < size) {
-		eprintf ("Cannot parse obj class info out of bounds\n");
+		R_LOG_ERROR ("Cannot parse obj class info out of bounds");
 		return;
 	}
 	len = r_buf_read_at (bf->buf, r, sc, size);
@@ -1253,7 +1253,7 @@ static SwiftType parse_type_entry(RBinFile *bf, ut64 typeaddr) {
 	ut32 words[16] = {0};
 	st32 *swords = (st32*)&words;
 	if (r_buf_read_at (bf->buf, typeaddr, (ut8*)&words, sizeof (words)) < 1) {
-		eprintf ("Invalid pointers.\n");
+		R_LOG_ERROR ("Invalid pointers");
 		return st;
 	}
 #if 0
@@ -1461,7 +1461,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	for (i = 0; i < s_size; i += sizeof (mach0_ut)) {
 		left = s_size - i;
 		if (left < sizeof (mach0_ut)) {
-			eprintf ("Chopped classlist data\n");
+			R_LOG_ERROR ("Chopped classlist data");
 			break;
 		}
 		if (!(klass = R_NEW0 (RBinClass))) {
@@ -1613,7 +1613,7 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipLis
 		return;
 	}
 	if (left < size) {
-		eprintf ("Cannot parse obj category info out of bounds\n");
+		R_LOG_ERROR ("Cannot parse obj category info out of bounds");
 		return;
 	}
 	len = r_buf_read_at (bf->buf, r, sc, size);

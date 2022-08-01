@@ -1116,7 +1116,7 @@ static void visual_search(RCore *core) {
 		eprintf ("Found in offset 0x%08"PFMT64x" + %d\n", core->offset, core->print->cur);
 		r_cons_any_key (NULL);
 	} else {
-		eprintf ("Cannot find bytes.\n");
+		R_LOG_ERROR ("Cannot find bytes");
 		r_cons_any_key (NULL);
 		r_cons_clear00 ();
 	}
@@ -3666,7 +3666,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_core_visual_seek_animation (core, undo->off);
 				core->print->cur = undo->cursor;
 			} else {
-				eprintf ("Cannot undo\n");
+				R_LOG_ERROR ("Cannot undo");
 			}
 		}
 		break;
@@ -4396,7 +4396,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	splitPtr = UT64_MAX;
 
 	if (r_cons_get_size (&ch) < 1 || ch < 1) {
-		eprintf ("Cannot create Visual context. Use scr.fix_{columns|rows}\n");
+		R_LOG_ERROR ("Cannot create Visual context. Use scr.fix_{columns|rows}");
 		return 0;
 	}
 

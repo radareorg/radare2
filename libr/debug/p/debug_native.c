@@ -537,18 +537,18 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 #endif
 		} else if (status == 1) {
 			/* XXX(jjd): does this actually happen? */
-			eprintf ("EEK DEAD DEBUGEE!\n");
+			R_LOG_ERROR ("EEK DEAD DEBUGEE!");
 			reason = R_DEBUG_REASON_DEAD;
 		} else if (status == 0) {
 			/* XXX(jjd): does this actually happen? */
-			eprintf ("STATUS=0?!?!?!?\n");
+			R_LOG_ERROR ("STATUS=0?!?!?!?");
 			reason = R_DEBUG_REASON_DEAD;
 		} else {
 			if (ret != pid) {
 				reason = R_DEBUG_REASON_NEW_PID;
 			} else {
 				/* ugh. still don't know :-/ */
-				eprintf ("CRAP. returning from wait without knowing why...\n");
+				R_LOG_ERROR ("CRAP. returning from wait without knowing why");
 			}
 		}
 	}
@@ -800,7 +800,7 @@ static bool linux_map_thp(RDebug *dbg, ut64 addr, int size) {
 	const size_t thpsize = 1<<21;
 
 	if (size % thpsize) {
-		eprintf ("size not a power of huge pages size\n");
+		R_LOG_ERROR ("size not a power of huge pages size");
 		return false;
 	}
 #if __linux__
@@ -808,7 +808,7 @@ static bool linux_map_thp(RDebug *dbg, ut64 addr, int size) {
 	// even though the address might not have the 'hg'
 	// vmflags
 	if (thp_mode () != 1) {
-		eprintf ("transparent huge page mode is not in madvise mode\n");
+		R_LOG_ERROR ("transparent huge page mode is not in madvise mode");
 		return false;
 	}
 #endif
@@ -823,11 +823,11 @@ static bool linux_map_thp(RDebug *dbg, ut64 addr, int size) {
 	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
 	r_egg_load (dbg->egg, code, 0);
 	if (!r_egg_compile (dbg->egg)) {
-		eprintf ("Cannot compile.\n");
+		R_LOG_ERROR ("Cannot compile");
 		goto err_linux_map_thp;
 	}
 	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOG_ERROR ("r_egg_assemble: invalid assembly");
 		goto err_linux_map_thp;
 	}
 	buf = r_egg_get_bin (dbg->egg);
@@ -880,11 +880,11 @@ static RDebugMap* linux_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
 	r_egg_load (dbg->egg, code, 0);
 	if (!r_egg_compile (dbg->egg)) {
-		eprintf ("Cannot compile.\n");
+		R_LOG_ERROR ("Cannot compile");
 		goto err_linux_map_alloc;
 	}
 	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOG_ERROR ("r_egg_assemble: invalid assembly");
 		goto err_linux_map_alloc;
 	}
 	buf = r_egg_get_bin (dbg->egg);
@@ -902,8 +902,7 @@ static RDebugMap* linux_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 		if (map_addr < UT64_MAX) {
 			if (thp) {
 				if (!linux_map_thp (dbg, map_addr, size)) {
-					// Not overly dramatic
-					eprintf ("map promotion to huge page failed\n");
+					R_LOG_WARN ("map promotion to huge page failed");
 				}
 			}
 			r_debug_map_sync (dbg);
@@ -934,11 +933,11 @@ static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
 	r_egg_load (dbg->egg, code, 0);
 	if (!r_egg_compile (dbg->egg)) {
-		eprintf ("Cannot compile.\n");
+		R_LOG_ERROR ("Cannot compile");
 		goto err_linux_map_dealloc;
 	}
 	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOG_ERROR ("r_egg_assemble: invalid assembly");
 		goto err_linux_map_dealloc;
 	}
 	buf = r_egg_get_bin (dbg->egg);
@@ -1552,11 +1551,11 @@ static int r_debug_native_map_protect(RDebug *dbg, ut64 addr, int size, int perm
 	r_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
 	r_egg_load (dbg->egg, code, 0);
 	if (!r_egg_compile (dbg->egg)) {
-		eprintf ("Cannot compile.\n");
+		R_LOG_ERROR ("Cannot compile");
 		return false;
 	}
 	if (!r_egg_assemble (dbg->egg)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOG_ERROR ("r_egg_assemble: invalid assembly");
 		return false;
 	}
 	buf = r_egg_get_bin (dbg->egg);

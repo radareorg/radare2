@@ -240,7 +240,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				if (ht) {
 					wrap->pi.hThread = ht;
 				} else {
-					eprintf ("Cannot attach to %d (%s)\n", pid, cmd);
+					R_LOG_ERROR ("Cannot attach to %d (%s)", pid, cmd);
 				}
 			}
 		}

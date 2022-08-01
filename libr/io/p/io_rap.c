@@ -123,16 +123,16 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 	}
 	RSocket *s = r_socket_new (is_ssl);
 	if (!s) {
-		eprintf ("Cannot create new socket\n");
+		R_LOG_ERROR ("Cannot create new socket");
 		return NULL;
 	}
-	eprintf ("Connecting to %s, port %s\n", host, port);
+	R_LOG_INFO ("Connecting to %s, port %s", host, port);
 	if (!r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 0)) {
-		eprintf ("Cannot connect to '%s' (%d)\n", host, p);
+		R_LOG_ERROR ("Cannot connect to '%s' (%d)", host, p);
 		r_socket_free (s);
 		return NULL;
 	}
-	eprintf ("Connected to: %s at port %s\n", host, port);
+	R_LOG_INFO ("Connected to: %s at port %s", host, port);
 	RIORap *rior = R_NEW0 (RIORap);
 	if (!rior) {
 		r_socket_free (s);

@@ -345,7 +345,7 @@ void _handle_goto (EsilCfgGen *gen, ut32 idx) {
 	EsilVal *v = r_stack_pop (gen->vals);
 	if (!v || v->type != ESIL_VAL_CONST) {
 		free (v);
-		eprintf ("Cannot resolve GOTO dst :(\n");
+		R_LOG_ERROR ("Cannot resolve GOTO dst :(");
 		goto beach;
 	}
 

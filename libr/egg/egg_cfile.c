@@ -84,8 +84,8 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 	if (!cEnv->SFLIBPATH) {
 		output = r_sys_cmd_strf ("r2 -hh | grep INCDIR | awk '{print $2}'");
 		if (!output || (output[0] == '\0')) {
-			eprintf ("Cannot find SFLIBPATH env var.\n"
-		  		 "Please define it, or fix r2 installation.\n");
+			R_LOG_ERROR ("Cannot find SFLIBPATH env var");
+			eprintf ("Please define $SFLIBPATH, or fix r2 installation\n");
 			goto fail;
 		}
 
@@ -292,7 +292,7 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 	printf ("rabin2 -o '%s.text' -O d/S/'%s' '%s.o'\n", file, cEnv->TEXT, file);
 	output = r_sys_cmd_strf ("rabin2 -o '%s.text' -O d/S/'%s' '%s'.o", file, cEnv->TEXT, file);
 	if (!output) {
-		eprintf ("Linkage failed!\n");
+		R_LOG_ERROR ("Linkage failed!");
 		goto fail;
 	}
 
@@ -302,7 +302,7 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 	}
 
 	if (!r_file_exists (fileExt)) {
-		eprintf ("Cannot find %s.o\n", file);
+		R_LOG_ERROR ("Cannot find %s.o", file);
 		goto fail;
 	}
 

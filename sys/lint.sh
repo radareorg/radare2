@@ -17,7 +17,9 @@
 (git grep -n -i 'R_LOG_ERROR ("ERROR' | grep -v sys) && exit 1
 (git grep -n ^R_API libr shlr | grep ' (') && exit 1
 (git grep -n ^R_API libr shlr | grep '( ') && exit 1
-(git grep -n -e 'eprintf ("Could' -e 'eprintf ("Failed' libr | grep -v -e ^libr/core/cmd_ -e ^libr/main/) && exit 1
+(git grep -n -e 'eprintf ("Could' -e 'eprintf ("Failed' -e 'eprintf ("Cannot' libr \
+    | grep -v -e ^libr/core/cmd -e ^libr/main/ -e ^libr/util/syscmd \
+    | grep -v -e r_cons_eprintf -e alloc) && exit 1
 
 # pending cleanups
 # ( git grep 'desc = "[A-Z]' ) && exit 1
@@ -27,6 +29,5 @@
 # (git grep 'strncmp' libr) # && exit 1 # use r_str_startswith()
 # (git grep 'eprintf' libr | grep 'Warning:') # && exit 1
 # (git grep 'eprintf' | grep 'Usage:' | grep -v sys/) # && exit 1
-# (git grep -n 'eprintf ("Cannot' libr | grep -v -e ^libr/core/cmd_ -e ^libr/main/) && exit 1
 
 exit 0

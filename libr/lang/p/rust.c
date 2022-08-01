@@ -54,11 +54,14 @@ static int lang_rust_file(RLang *lang, const char *file) {
 	if (lib!= NULL) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");
-		if (fcn) fcn (lang->user);
-		else eprintf ("Cannot find 'entry' symbol in library\n");
+		if (fcn) {
+			fcn (lang->user);
+		} else {
+			R_LOG_ERROR ("Cannot find 'entry' symbol in library");
+		}
 		r_lib_dl_close (lib);
 	} else {
-		eprintf ("Cannot open library\n");
+		R_LOG_ERROR ("Cannot open library");
 	}
 	r_file_rm (path); // remove lib
 	free (path);
@@ -73,7 +76,7 @@ static int lang_rust_init(void *user) {
 static bool lang_rust_run(RLang *lang, const char *code, int len) {
 	FILE *fd = r_sandbox_fopen ("_tmp.rs", "w");
 	if (!fd) {
-		eprintf ("Cannot open _tmp.rs\n");
+		R_LOG_ERROR ("Cannot open _tmp.rs");
 		return false;
 	}
 	const char *rust_header = \

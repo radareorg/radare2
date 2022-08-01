@@ -1277,7 +1277,7 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 		size = mach0_size (dbg, addr);
 		mr = r_debug_map_new (file_path, addr, addr + size, 7, 7);
 		if (!mr) {
-			eprintf ("Cannot create r_debug_map_new\n");
+			R_LOG_ERROR ("Cannot create r_debug_map_new");
 			break;
 		}
 		mr->file = strdup (file_path);
@@ -1406,7 +1406,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 				"", info.is_submap ? "_submap": "",
 				module_name, maxperm, depthstr);
 			if (!(mr = r_debug_map_new (buf, address, address + size, xwr2rwx (info.protection), xwr2rwx (info.max_protection)))) {
-				eprintf ("Cannot create r_debug_map_new\n");
+				R_LOG_ERROR ("Cannot create r_debug_map_new");
 				break;
 			}
 			RDebugMap *rdm = moduleAt (modules, address);
