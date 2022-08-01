@@ -693,6 +693,45 @@ static int archinfo(RAnal *anal, int q) {
 	return 0;
 }
 
+static inline char *pickle_json_mnemonic(int id) {
+	PJ *pj = pj_new ();
+	if (pj) {
+		pj_a (pj);
+		if (id >= 0 && id < R_ARRAY_SIZE (op_name_map)) {
+			pj_s (pj, op_name_map[id].name);
+		} else if (id == -1) {
+			size_t i;
+			RStrBuf *buf = buf = r_strbuf_new ("");
+			for (i = 0; i < R_ARRAY_SIZE (op_name_map); i++) {
+				pj_s (pj, op_name_map[i].name);
+			}
+		}
+		pj_end (pj);
+		return pj_drain (pj);
+	}
+	return NULL;
+}
+
+static char *pickle_mnemonics(RAnal *a, int id, bool json) {
+	if (json) {
+		return pickle_json_mnemonic (id);
+	}
+	if (id >= 0 && id < R_ARRAY_SIZE (op_name_map)) {
+		return strdup (op_name_map[id].name);
+	}
+	if (id == -1) {
+		size_t i;
+		RStrBuf *buf = buf = r_strbuf_new ("");
+		for (i = 0; i < R_ARRAY_SIZE (op_name_map); i++) {
+			r_strbuf_append (buf, op_name_map[i].name);
+			r_strbuf_append (buf, "\n");
+		}
+		return r_strbuf_drain (buf);
+	}
+
+	return NULL;
+}
+
 RAnalPlugin r_anal_plugin_pickle = {
 	.name = "pickle",
 	.desc = "Python Pickle Machine Disassembler",
@@ -704,7 +743,7 @@ RAnalPlugin r_anal_plugin_pickle = {
 	.opasm = &pickle_opasm,
 	// .preludes = anal_preludes,
 	.archinfo = archinfo,
-	// .mnemonics = cs_mnemonics,
+	.mnemonics = pickle_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE
