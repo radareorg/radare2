@@ -1452,7 +1452,7 @@ za fcn.10002d70 b 38a0000038c000004bfffed4:ffffffffffffffffff000000
 za fcn.10002d70 g cc=3 nbbs=8 edges=9 ebbs=1 bbsum=232
 za fcn.10002d70 o 0x10002d70
 za fcn.10002d70 t void fcn.10002d70 (int32_t arg1, int32_t arg2, int32_t arg_1030h, int32_t arg_1034h)
-za fcn.10002d70 v fs-4136:var_8h:int32_t, ts4:arg_1034h:int32_t, fs-36:var_100ch:int32_t, ts0:arg_1030h:int32_t, fb-4096:var_1000h:int32_t, tr5:arg1:int32_t, tr6:arg2:int32_t
+za fcn.10002d70 v fs-4136:var_8h:int32_t, ts4:arg_1034h:int32_t, fs-36:var_100ch:int32_t, ts0:arg_1030h:int32_t, tr5:arg1:int32_t, tr6:arg2:int32_t
 za fcn.10002d70 h 5f59f157d9e3548e81fed794bff828e7fc6ab90932a879b643d6d2a30c20c3b0
 EOF
 RUN
