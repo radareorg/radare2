@@ -352,7 +352,7 @@ static int rabin_do_operation(RBin *bin, const char *op, int rad, const char *ou
 	if (bf) {
 		if (!bf->buf) {
 			R_LOG_ERROR ("Missing data buffer");
-			return false;
+			goto error;
 		}
 		RBuffer *nb = r_buf_new_with_buf (bf->buf);
 		r_buf_free (bf->buf);
