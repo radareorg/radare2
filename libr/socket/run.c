@@ -2,9 +2,6 @@
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <fcntl.h>
 #include <r_socket.h>
 #include <r_util.h>
@@ -58,7 +55,6 @@
 #include <process.h>  // to compile execv in msvc windows
 #define pid_t int
 #endif
-
 
 #if HAVE_PTY
 static int(*dyn_openpty)(int *amaster, int *aslave, char *name, struct termios *termp, struct winsize *winp) = NULL;
@@ -290,8 +286,7 @@ static void setASLR(RRunProfile *r, int enabled) {
 		: r->_program ? r->_program
 		: r->_args[0] ? r->_args[0]
 		: "/path/to/exec";
-	eprintf ("To disable aslr patch mach0.hdr.flags with:\n"
-		"r2 -qwnc 'wx 000000 @ 0x18' %s\n", argv0);
+	R_LOG_INFO ("To disable aslr patch mach0.hdr.flags with: r2 -qwnc 'wx 000000 @ 0x18' %s", argv0);
 	// f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
 	// for osxver>=10.7
 	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
@@ -519,6 +514,9 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		p->_aslr = parseBool (e);
 	} else if (!strcmp (b, "pid")) {
 		p->_pid = atoi (e);
+		if (!p->_pid) {
+			p->_pid = parseBool (e);
+		}
 	} else if (!strcmp (b, "pidfile")) {
 		p->_pidfile = strdup (e);
 	} else if (!strcmp (b, "connect")) {
@@ -910,7 +908,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 			if (child) {
 				is_child = true;
 
-				if (p->_dofork && !p->_dodebug) {
+				if (p->_dofork) {
 					pid_t child_pid = r_sys_fork ();
 					if (child_pid == -1) {
 						R_LOG_ERROR ("cannot fork");
@@ -920,6 +918,9 @@ R_API int r_run_config_env(RRunProfile *p) {
 					} else if (child_pid != 0){
 						// parent code
 						is_child = false;
+						if (p->_pid) {
+							R_LOG_INFO ("pid = %d", child_pid);
+						}
 					}
 				}
 
@@ -1157,8 +1158,13 @@ R_API int r_run_start(RRunProfile *p) {
 			posix_spawnattr_setbinpref_np (
 					&attr, 1, &cpu, &copied);
 		}
-		ret = posix_spawnp (&pid, p->_args[0],
-			NULL, &attr, p->_args, envp);
+		if (p->_pid) {
+			R_LOG_INFO ("pid = %d", r_sys_getpid ());
+		}
+		ret = posix_spawnp (&pid, p->_args[0], NULL, &attr, p->_args, envp);
+		if (p->_pid) {
+			R_LOG_INFO ("pid = %d", pid);
+		}
 		switch (ret) {
 		case 0:
 			break;
@@ -1191,6 +1197,9 @@ R_API int r_run_start(RRunProfile *p) {
 				exit (1);
 			}
 			if (child) {
+				if (p->_pid) {
+					R_LOG_INFO ("pid = %d", child);
+				}
 				if (p->_pidfile) {
 					char pidstr[32];
 					snprintf (pidstr, sizeof (pidstr), "%d\n", child);
@@ -1243,10 +1252,13 @@ R_API int r_run_start(RRunProfile *p) {
 			if (p->_pidfile) {
 				R_LOG_WARN ("pidfile doesnt work with 'system'");
 			}
+			if (p->_pid) {
+				R_LOG_WARN ("Use 'program' instead of 'system' to show the pid");
+			}
 			rc = r_sys_cmd (p->_system);
 		}
 		time_end (p->_time, time_begin);
-		exit(rc);
+		exit (rc);
 	}
 	if (p->_program) {
 		if (!r_file_exists (p->_program)) {
@@ -1279,7 +1291,7 @@ R_API int r_run_start(RRunProfile *p) {
 			}
 		}
 		if (p->_pid) {
-			R_LOG_INFO ("PID: %d", r_sys_getpid ());
+			R_LOG_INFO ("pid = %d", r_sys_getpid ());
 		}
 		if (p->_pidfile) {
 			char pidstr[32];

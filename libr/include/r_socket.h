@@ -232,10 +232,18 @@ typedef struct r_run_profile_t {
 	bool _time;
 	int _pid;
 	char *_pidfile;
+#if R2_580
+	// TODO more bools
+	bool _r2preload;
+	bool _docore;
+	bool _dofork;
+	/// OKK dodebug is no longer used
+#else
 	int _r2preload;
 	int _docore;
 	int _dofork;
 	int _dodebug;
+#endif
 	int _aslr;
 	int _maxstack;
 	int _maxproc;
