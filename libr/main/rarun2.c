@@ -1,6 +1,5 @@
-/* radare2 - Copyleft 2011-2021 - pancake */
+/* radare2 - Copyleft 2011-2022 - pancake */
 
-#include <r_util.h>
 #include <r_main.h>
 #include <r_socket.h>
 
