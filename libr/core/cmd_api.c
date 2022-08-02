@@ -370,6 +370,7 @@ R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 		val.sz++;
 		ut8 *data = realloc (val.data, val.sz);
 		if (!data) {
+			free (val.data);
 			return 1;
 		}
 		val.data = data;
