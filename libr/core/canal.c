@@ -4110,6 +4110,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		// wtf
 		R_LOG_ERROR ("Something is really wrong deep inside");
 		free (block);
+		free (buf);
 		return -1;
 	}
 	while (at < to && !r_cons_is_breaked ()) {
