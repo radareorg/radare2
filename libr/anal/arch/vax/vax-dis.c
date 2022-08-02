@@ -144,8 +144,15 @@ parse_disassembler_options (const char *options)
 	  entry_addr_total_slots
 	    += 1 + strlen (options) / (strlen (entry_switch) + 5);
 
-	  entry_addr = realloc (entry_addr, sizeof (bfd_vma)
+	  bfd_vma *new_entry_addr;
+	  new_entry_addr = realloc (entry_addr, sizeof (bfd_vma)
 				* entry_addr_total_slots);
+	  if (!new_entry_addr) {
+	    free (entry_addr);
+	    entry_addr = NULL;
+	  } else {
+	    entry_addr = new_entry_addr;
+	  }
 	}
 
       if (entry_addr == NULL)
