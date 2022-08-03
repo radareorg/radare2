@@ -998,7 +998,7 @@ R_API bool r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (m->name, name)) {
 			r_list_delete (mac->macros, iter);
-			eprintf ("Macro '%s' removed.\n", name);
+			R_LOG_DEBUG ("Macro '%s' removed", name);
 			ret = true;
 			break;
 		}
