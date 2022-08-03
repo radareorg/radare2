@@ -423,23 +423,22 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	return true;
 }
 
-R_IPI RRBTree *r_bin_object_patch_relocs(RBin *bin, RBinObject *bo) {
+R_IPI RRBTree *r_bin_object_patch_relocs(RBin *bin, RBinObject *bo, bool *first) {
 	r_return_val_if_fail (bin && bo, NULL);
-
-	static R_TH_LOCAL bool first = true;
+	bin->first = first;
 	// r_bin_object_set_items set o->relocs but there we don't have access
 	// to io so we need to be run from bin_relocs, free the previous reloc and get
 	// the patched ones
-	if (first && bo->plugin && bo->plugin->patch_relocs) {
+	if (bin->first && bo->plugin && bo->plugin->patch_relocs) {
 		RList *tmp = bo->plugin->patch_relocs (bin);
-		first = false;
+		bin->first = false;
 		if (!tmp) {
 			return bo->relocs;
 		}
 		r_crbtree_free (bo->relocs);
 		REBASE_PADDR (bo, tmp, RBinReloc);
 		bo->relocs = list2rbtree (tmp);
-		first = false;
+		bin->first = false;
 		bin->is_reloc_patched = true;
 		tmp->free = NULL;
 		r_list_free (tmp);

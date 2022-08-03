@@ -3349,7 +3349,6 @@ char* PE_(r_bin_pe_get_arch)(RBinPEObj* pe) {
 
 struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* pe) {
 	struct r_bin_pe_addr_t* entry = NULL;
-	static R_TH_LOCAL bool debug = false;
 	int i;
 	ut64 base_addr = PE_(r_bin_pe_get_image_base) (pe);
 	if (!pe || !pe->optional_header) {
@@ -3368,7 +3367,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* pe) {
 	if (entry->paddr >= pe->size) {
 		struct r_bin_pe_section_t* sections = pe->sections;
 		ut64 paddr = 0;
-		if (!debug) {
+		if (!pe->debug) {
 			pe_printf ("Warning: Invalid entrypoint ... "
 				"trying to fix it but i do not promise nothing\n");
 		}
@@ -3401,7 +3400,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* pe) {
 		}
 	}
 	if (!entry->paddr) {
-		if (!debug) {
+		if (!pe->debug) {
 			pe_printf ("Warning: NULL entrypoint\n");
 		}
 		struct r_bin_pe_section_t* sections = pe->sections;
@@ -3422,8 +3421,8 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* pe) {
 			entry->paddr--;
 		}
 	}
-	if (!debug) {
-		debug = true;
+	if (!pe->debug) {
+		pe->debug = true;
 	}
 	return entry;
 }

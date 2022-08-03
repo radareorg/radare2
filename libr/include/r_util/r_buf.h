@@ -46,6 +46,9 @@ struct r_buf_t {
 	ut8 Oxff_priv;
 	int refctr;
 	// 580 R_REF_TYPE instead of refcnt;
+	RList *refs;
+	// interned_table is used to handle TYPE_INTERNED object
+	RList *interned_table;
 };
 
 // XXX: this should not be public

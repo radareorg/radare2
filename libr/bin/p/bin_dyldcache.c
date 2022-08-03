@@ -101,6 +101,7 @@ typedef struct _r_dyldcache {
 	RDyldLocSym *locsym;
 	objc_cache_opt_info *oi;
 	bool objc_opt_info_loaded;
+	ut32 k;
 } RDyldCache;
 
 typedef struct _r_bin_image {
@@ -112,8 +113,6 @@ typedef struct _r_bin_image {
 	ut32 nlist_start_index;
 	ut32 nlist_count;
 } RDyldBinImage;
-
-static R_TH_LOCAL RList *pending_bin_files = NULL;
 
 static ut64 va2pa(uint64_t addr, ut32 n_maps, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left) {
 	ut64 res = UT64_MAX;
@@ -399,8 +398,7 @@ static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RList *sy
 		if (symstr) {
 			sym->name = symstr;
 		} else {
-			static R_TH_LOCAL ut32 k = 0;
-			sym->name = r_str_newf ("unk_local%d", k++);
+			sym->name = r_str_newf ("unk_local%d", cache->k++);
 		}
 
 		r_list_append (symbols, sym);
@@ -1493,13 +1491,13 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			} else {
 				cache = ((struct MACH0_(obj_t)*) bf->o->bin_obj)->user;
 			}
-			if (pending_bin_files) {
-				RListIter *to_remove = r_list_contains (pending_bin_files, bf);
+			if (bf->pending_bin_files) {
+				RListIter *to_remove = r_list_contains (bf->pending_bin_files, bf);
 				if (to_remove) {
-					r_list_delete (pending_bin_files, to_remove);
-					if (r_list_empty (pending_bin_files)) {
-						r_list_free (pending_bin_files);
-						pending_bin_files = NULL;
+					r_list_delete (bf->pending_bin_files, to_remove);
+					if (r_list_empty (bf->pending_bin_files)) {
+						r_list_free (bf->pending_bin_files);
+						bf->pending_bin_files = NULL;
 					}
 				}
 			}
@@ -1507,7 +1505,7 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		}
 	}
 	if (!cache) {
-		r_list_foreach (pending_bin_files, iter, bf) {
+		r_list_foreach (bf->pending_bin_files, iter, bf) {
 			if (bf->fd == fd->fd && bf->o) {
 				if (!strncmp ((char*) bf->o->bin_obj, "dyldcac", 7)) {
 					cache = bf->o->bin_obj;
@@ -1903,14 +1901,14 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	cache->rebase_infos = get_rebase_infos (bf, cache);
 	if (cache->rebase_infos) {
 		if (!rebase_infos_get_slide (cache)) {
-			if (!pending_bin_files) {
-				pending_bin_files = r_list_new ();
-				if (!pending_bin_files) {
+			if (!bf->pending_bin_files) {
+				bf->pending_bin_files = r_list_new ();
+				if (!bf->pending_bin_files) {
 					r_dyldcache_free (cache);
 					return false;
 				}
 			}
-			r_list_push (pending_bin_files, bf);
+			r_list_push (bf->pending_bin_files, bf);
 			swizzle_io_read (cache, bf->rbin->iob.io);
 		}
 	}

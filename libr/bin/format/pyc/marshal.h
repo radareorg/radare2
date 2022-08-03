@@ -47,6 +47,7 @@ typedef enum {
 typedef struct {
 	pyc_marshal_type type;
 	void *data;
+	ut32 magic_int;
 } pyc_object;
 
 typedef struct {

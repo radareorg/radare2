@@ -10,9 +10,6 @@
 #define STANDARD_OPERAND_COUNT_DWARF3 12
 #define R_BIN_DWARF_INFO 1
 
-// TODO: kill this global
-static R_TH_LOCAL bool big_end = false;
-
 /* This macro seems bad regarding to endianess XXX, use only for single byte */
 #define READ(buf, type)                                             \
 	(((buf) + sizeof (type) < buf_end) ? *((type *)(buf)) : 0); \
@@ -21,13 +18,13 @@ static R_TH_LOCAL bool big_end = false;
 	(((buf) + sizeof (ut8) < buf_end) ? ((ut8 *)buf)[0] : 0); \
 	(buf) += sizeof (ut8)
 #define READ16(buf)                                                            \
-	(((buf) + sizeof (ut16) < buf_end) ? r_read_ble16 (buf, big_end) : 0); \
+	(((buf) + sizeof (ut16) < buf_end) ? r_read_ble16 (buf, bin->big_end) : 0); \
 	(buf) += sizeof (ut16)
 #define READ32(buf)                                                            \
-	(((buf) + sizeof (ut32) < buf_end) ? r_read_ble32 (buf, big_end) : 0); \
+	(((buf) + sizeof (ut32) < buf_end) ? r_read_ble32 (buf, bin->big_end) : 0); \
 	(buf) += sizeof (ut32)
 #define READ64(buf)                                                            \
-	(((buf) + sizeof (ut64) < buf_end) ? r_read_ble64 (buf, big_end) : 0); \
+	(((buf) + sizeof (ut64) < buf_end) ? r_read_ble64 (buf, bin->big_end) : 0); \
 	(buf) += sizeof (ut64)
 
 static const char *dwarf_tag_name_encodings[] = {
@@ -1101,11 +1098,11 @@ static bool parse_line_raw(const RBin *a, const ut8 *obuf, ut64 len, int mode) {
 	(x)=*(y*)buf; idx+=sizeof(y);buf+=sizeof(y)
 
 #define READ_BUF64(x) if (idx+sizeof(ut64)>=len) { return false;} \
-	(x)=r_read_ble64(buf, big_end); idx+=sizeof(ut64);buf+=sizeof(ut64)
+	(x)=r_read_ble64(buf, bin->big_end); idx+=sizeof(ut64);buf+=sizeof(ut64)
 #define READ_BUF32(x) if (idx+sizeof(ut32)>=len) { return false;} \
-	(x)=r_read_ble32(buf, big_end); idx+=sizeof(ut32);buf+=sizeof(ut32)
+	(x)=r_read_ble32(buf, bin->big_end); idx+=sizeof(ut32);buf+=sizeof(ut32)
 #define READ_BUF16(x) if (idx+sizeof(ut16)>=len) { return false;} \
-	(x)=r_read_ble16(buf, big_end); idx+=sizeof(ut16);buf+=sizeof(ut16)
+	(x)=r_read_ble16(buf, bin->big_end); idx+=sizeof(ut16);buf+=sizeof(ut16)
 
 static int parse_aranges_raw(const ut8 *obuf, int len, int mode, PrintfCallback print) {
 	ut32 length, offset;
@@ -2255,8 +2252,10 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin 
 			free (buf);
 			goto cleanup;
 		}
+
 		/* set the endianity global [HOTFIX] */
-		big_end = r_bin_is_big_endian (bin);
+		bin->big_end = r_bin_is_big_endian (bin);
+
 		info = parse_info_raw (binfile->sdb_addrinfo, da, buf, len,
 			debug_str_buf, debug_str_len);
 
@@ -2326,8 +2325,10 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 			free (buf);
 			return NULL;
 		}
+
 		/* set the endianity global [HOTFIX] */
-		big_end = r_bin_is_big_endian (bin);
+		bin->big_end = r_bin_is_big_endian (bin);
+
 		// Actually parse the section
 		parse_line_raw (bin, buf, len, mode);
 		// k bin/cur/addrinfo/*
@@ -2382,8 +2383,9 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 			free (buf);
 			return NULL;
 		}
+
 		/* set the endianity global [HOTFIX] */
-		big_end = r_bin_is_big_endian (bin);
+		bin->big_end = r_bin_is_big_endian (bin);
 		parse_aranges_raw (buf, len, mode, bin->cb_printf);
 
 		free (buf);
@@ -2510,8 +2512,10 @@ R_API HtUP/*<offset, RBinDwarfLocList*/ *r_bin_dwarf_parse_loc(RBin *bin, int ad
 	if (!buf) {
 		return NULL;
 	}
+
 	/* set the endianity global [HOTFIX] */
-	big_end = r_bin_is_big_endian (bin);
+	bin->big_end = r_bin_is_big_endian (bin);
+
 	HtUP /*<offset, RBinDwarfLocList*/ *loc_table = ht_up_new0 ();
 	if (!loc_table) {
 		free (buf);

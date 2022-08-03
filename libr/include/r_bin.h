@@ -304,6 +304,9 @@ typedef struct r_bin_file_t {
 	Sdb *sdb_info;
 	Sdb *sdb_addrinfo;
 	struct r_bin_t *rbin;
+	RList *pending_bin_files;
+	Sdb *mdb;
+	const char *dexSubsystem;
 } RBinFile;
 
 typedef struct r_bin_file_options_t {
@@ -356,6 +359,8 @@ struct r_bin_t {
 	bool use_ldr; // use loader plugins when loading a file?
 	RStrConstPool constpool;
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
+	bool first;
+	bool big_end;
 };
 
 typedef struct r_bin_xtr_metadata_t {
@@ -551,6 +556,7 @@ typedef struct r_bin_symbol_t {
 	/* see R_BIN_METH_* constants */
 	ut64 method_flags;
 	int dup_count;
+	ut32 symbols_ordinal;
 } RBinSymbol;
 
 typedef struct r_bin_import_t {

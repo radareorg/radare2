@@ -8,14 +8,6 @@
 // avoiding using r2 internals asserts
 #define if_true_return(cond,ret) if(cond){return(ret);}
 
-// TODO: kill globals
-static R_TH_LOCAL ut32 magic_int;
-static R_TH_LOCAL ut32 symbols_ordinal = 0;
-static R_TH_LOCAL RList *refs = NULL; // If you don't have a good reason, do not change this. And also checkout !refs in get_code_object()
-
-/* interned_table is used to handle TYPE_INTERNED object */
-extern R_TH_LOCAL RList *interned_table;
-
 static pyc_object *get_object(RBuffer *buffer);
 static pyc_object *copy_object(pyc_object *object);
 static void free_object(pyc_object *object);
@@ -248,7 +240,7 @@ static pyc_object *get_stringref_object(RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
 	ut32 n = get_st32 (buffer, &error);
-	if (n >= r_list_length (interned_table)) {
+	if (n >= r_list_length (buffer->interned_table)) {
 		R_LOG_DEBUG ("bad marshal data (string ref out of range)");
 		return NULL;
 	}
@@ -260,7 +252,7 @@ static pyc_object *get_stringref_object(RBuffer *buffer) {
 		return NULL;
 	}
 	ret->type = TYPE_STRINGREF;
-	ret->data = r_list_get_n (interned_table, n);
+	ret->data = r_list_get_n (buffer->interned_table, n);
 	if (!ret->data) {
 		R_FREE (ret);
 	}
@@ -331,7 +323,7 @@ static pyc_object *get_complex_object(RBuffer *buffer) {
 		return NULL;
 	}
 
-	if ((magic_int & 0xffff) <= 62061) {
+	if ((ret->magic_int & 0xffff) <= 62061) {
 		n1 = get_ut8 (buffer, &error);
 	} else {
 		n1 = get_st32 (buffer, &error);
@@ -354,7 +346,7 @@ static pyc_object *get_complex_object(RBuffer *buffer) {
 	}
 	s1[n1] = '\0';
 
-	if ((magic_int & 0xffff) <= 62061) {
+	if ((ret->magic_int & 0xffff) <= 62061) {
 		n2 = get_ut8 (buffer, &error);
 	} else
 		n2 = get_st32 (buffer, &error);
@@ -477,7 +469,7 @@ static pyc_object *get_interned_object(RBuffer *buffer) {
 	ret->type = TYPE_INTERNED;
 	ret->data = get_bytes (buffer, n);
 	/* add data pointer to interned table */
-	r_list_append (interned_table, ret->data);
+	r_list_append (buffer->interned_table, ret->data);
 	if (!ret->data) {
 		R_FREE (ret);
 	}
@@ -673,10 +665,10 @@ static pyc_object *get_ref_object(RBuffer *buffer) {
 	if (error) {
 		return NULL;
 	}
-	if (index >= r_list_length (refs)) {
+	if (index >= r_list_length (buffer->refs)) {
 		return NULL;
 	}
-	pyc_object *obj = r_list_get_n (refs, index);
+	pyc_object *obj = r_list_get_n (buffer->refs, index);
 	return obj? copy_object (obj): NULL;
 }
 
@@ -841,13 +833,13 @@ static pyc_object *get_code_object(RBuffer *buffer) {
 	// support start from v1.0
 	ret->data = cobj;
 
-	bool v10_to_12 = magic_int_within (magic_int, 39170, 16679, &error); // 1.0.1 - 1.2
-	bool v13_to_22 = magic_int_within (magic_int, 11913, 60718, &error); // 1.3b1 - 2.2a1
-	bool v11_to_14 = magic_int_within (magic_int, 39170, 20117, &error); // 1.0.1 - 1.4
-	bool v15_to_22 = magic_int_within (magic_int, 20121, 60718, &error); // 1.5a1 - 2.2a1
-	bool v13_to_20 = magic_int_within (magic_int, 11913, 50824, &error); // 1.3b1 - 2.0b1
-	//bool v21_to_27 = (!v13_to_20) && magic_int_within (magic_int, 60124, 62212, &error);
-	bool has_posonlyargcount = magic_int_within (magic_int, 3410, 3424, &error); // v3.8.0a4 - latest
+	bool v10_to_12 = magic_int_within (ret->magic_int, 39170, 16679, &error); // 1.0.1 - 1.2
+	bool v13_to_22 = magic_int_within (ret->magic_int, 11913, 60718, &error); // 1.3b1 - 2.2a1
+	bool v11_to_14 = magic_int_within (ret->magic_int, 39170, 20117, &error); // 1.0.1 - 1.4
+	bool v15_to_22 = magic_int_within (ret->magic_int, 20121, 60718, &error); // 1.5a1 - 2.2a1
+	bool v13_to_20 = magic_int_within (ret->magic_int, 11913, 50824, &error); // 1.3b1 - 2.0b1
+	//bool v21_to_27 = (!v13_to_20) && magic_int_within (ret->magic_int, 60124, 62212, &error);
+	bool has_posonlyargcount = magic_int_within (ret->magic_int, 3410, 3424, &error); // v3.8.0a4 - latest
 	if (error) {
 		free (ret);
 		free (cobj);
@@ -868,7 +860,7 @@ static pyc_object *get_code_object(RBuffer *buffer) {
 		cobj->posonlyargcount = 0; // None
 	}
 
-	if (((3020 < (magic_int & 0xffff)) && ((magic_int & 0xffff) < 20121)) && (!v11_to_14)) {
+	if (((3020 < (ret->magic_int & 0xffff)) && ((ret->magic_int & 0xffff) < 20121)) && (!v11_to_14)) {
 		cobj->kwonlyargcount = get_ut32 (buffer, &error); // Not included in argcount
 	} else {
 		cobj->kwonlyargcount = 0;
@@ -900,7 +892,7 @@ static pyc_object *get_code_object(RBuffer *buffer) {
 
 	//to help disassemble the code
 	cobj->start_offset = r_buf_tell (buffer) + 5; // 1 from get_object() and 4 from get_string_object()
-	if (!refs) {
+	if (!buffer->refs) {
 		return ret; //return for entried part to get the root object of this file
 	}
 	cobj->code = get_object (buffer);
@@ -958,8 +950,8 @@ static pyc_object *get_code_object(RBuffer *buffer) {
 }
 
 ut64 get_code_object_addr(RBuffer *buffer, ut32 magic) {
-	magic_int = magic;
 	pyc_object *co = get_code_object (buffer);
+	co->magic_int = magic;
 	ut64 result = 0;
 	if (!co) {
 		return 0;
@@ -987,7 +979,7 @@ static pyc_object *get_object(RBuffer *buffer) {
 	if (flag) {
 		pyc_object *noneret = get_none_object ();
 		if (noneret) {
-			ref_idx = r_list_append (refs, noneret);
+			ref_idx = r_list_append (buffer->refs, noneret);
 		}
 	}
 
@@ -1085,7 +1077,7 @@ static pyc_object *get_object(RBuffer *buffer) {
 		break;
 	case TYPE_UNKNOWN:
 		R_LOG_DEBUG ("Get not implemented for type 0x%x", type);
-		// r_list_pop (refs);
+		// r_list_pop (buffer->refs);
 		free_object (ret);
 		return NULL;
 	case 0:
@@ -1093,7 +1085,7 @@ static pyc_object *get_object(RBuffer *buffer) {
 		break;
 	default:
 		R_LOG_DEBUG ("Undefined type in get_object (0x%x)", type);
-		// r_list_pop (refs);
+		// r_list_pop (buffer->refs);
 		return NULL;
 	}
 
@@ -1110,7 +1102,7 @@ static pyc_object *get_object(RBuffer *buffer) {
 	if (!ret) {
 		return NULL;
 	}
-	r_list_append (refs, ret);
+	r_list_append (buffer->refs, ret);
 	return ret;
 }
 
@@ -1159,7 +1151,7 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	symbol->size = cobj->end_offset - cobj->start_offset;
 	symbol->vaddr = cobj->start_offset;
 	symbol->paddr = cobj->start_offset;
-	symbol->ordinal = symbols_ordinal++;
+	symbol->ordinal = symbol->symbols_ordinal++;
 	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
 		goto fail2;
 	}
@@ -1184,13 +1176,14 @@ fail2:
 
 bool get_sections_symbols_from_code_objects(RBuffer *buffer, RList *sections, RList *symbols, RList *cobjs, ut32 magic) {
 	bool ret;
-	magic_int = magic;
-	refs = r_list_newf (NULL); // (RListFree)free_object);
-	if (!refs) {
+	pyc_object *obj = get_object (buffer);
+	obj->magic_int = magic;
+	buffer->refs = r_list_newf (NULL); // (RListFree)free_object);
+	if (!buffer->refs) {
 		return false;
 	}
-	ret = extract_sections_symbols (get_object (buffer), sections, symbols, cobjs, NULL);
-	r_list_free (refs);
-	refs = NULL;
+	ret = extract_sections_symbols (obj, sections, symbols, cobjs, NULL);
+	r_list_free (buffer->refs);
+	buffer->refs = NULL;
 	return ret;
 }

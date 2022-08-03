@@ -124,6 +124,10 @@ struct MACH0_(opts_t) {
 	ut64 symbols_off;
 	int maxsymlen;
 	RBinFile *bf;
+	void *origread;
+	int origdesc;
+	RIOPlugin *origplugin;
+	RIOPlugin *heapplugin;
 };
 
 struct MACH0_(obj_t) {

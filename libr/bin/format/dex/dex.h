@@ -150,6 +150,8 @@ typedef struct r_bin_dex_obj_t {
 	Sdb *kv;
 	char **cal_strings;
 	bool verbose;
+	bool dexdump;
+	bool simplifiedDemangling; // depends on asm.pseudo
 } RBinDexObj;
 
 struct r_bin_dex_str_t {

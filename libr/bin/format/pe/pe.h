@@ -128,6 +128,7 @@ struct PE_(r_bin_pe_obj_t) {
 	char *authentihash;
 	bool is_authhash_valid;
 	bool is_signed;
+	bool debug;
 };
 
 #undef RBinPEObj

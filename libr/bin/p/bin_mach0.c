@@ -22,11 +22,6 @@ static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io);
 static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 
-
-static R_TH_LOCAL void *origread = NULL;
-static R_TH_LOCAL int origdesc = 0;
-static R_TH_LOCAL RIOPlugin *origplugin = NULL;
-static R_TH_LOCAL RIOPlugin *heapplugin = NULL;
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
@@ -69,15 +64,16 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	if (origplugin) {
+	struct MACH0_(obj_t) *obj = bf->o->bin_obj;
+	if (obj->origplugin) {
 		RIOBind *iob = &bf->rbin->iob;
 		RIO *io = iob->io;
-		RIODesc *desc = iob->desc_get (io, origdesc);
+		RIODesc *desc = iob->desc_get (io, obj->origdesc);
 		if (desc) {
-			desc->plugin = origplugin;
+			desc->plugin = obj->origplugin;
 		}
-		origplugin = NULL;
-		R_FREE (heapplugin);
+		obj->origplugin = NULL;
+		R_FREE (obj->heapplugin);
 	}
 	MACH0_(mach0_free) (bf->o->bin_obj);
 }
@@ -737,17 +733,17 @@ beach:
 static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io) {
 	r_return_if_fail (io && io->desc && io->desc->plugin);
 	RIOPlugin *plugin = R_NEW0 (RIOPlugin);
-	if (heapplugin) {
+	if (obj->heapplugin) {
 		R_LOG_WARN ("Here be dragons");
 	}
-	origplugin = io->desc->plugin;
-	origdesc = io->desc->fd;
-	memcpy (plugin, origplugin, sizeof (RIOPlugin));
+	obj->origplugin = io->desc->plugin;
+	obj->origdesc = io->desc->fd;
+	memcpy (plugin, obj->origplugin, sizeof (RIOPlugin));
 	io->desc->plugin = plugin;
 	obj->original_io_read = plugin->read;
-	origread = plugin->read;
+	obj->origread = plugin->read;
 	plugin->read = &rebasing_and_stripping_io_read;
-	heapplugin = plugin;
+	obj->heapplugin = plugin;
 }
 
 static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {

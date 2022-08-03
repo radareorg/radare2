@@ -695,7 +695,8 @@ R_API RList *r_bin_get_libs(RBin *bin) {
 R_API RRBTree *r_bin_patch_relocs(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
-	return o? r_bin_object_patch_relocs (bin, o): NULL;
+	bool first = true;
+	return o? r_bin_object_patch_relocs (bin, o, &first): NULL;
 }
 
 R_API RRBTree *r_bin_get_relocs(RBin *bin) {
