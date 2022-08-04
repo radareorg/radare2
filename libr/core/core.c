@@ -3296,6 +3296,7 @@ R_API void r_core_fini(RCore *c) {
 	c->io = (r_io_free (c->io), NULL);
 	c->lang = (r_lang_free (c->lang), NULL);
 	r_config_free (c->config);
+	c->config = NULL;
 	/* after r_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we
 	should probably need to add a r_config_free_payload callback */

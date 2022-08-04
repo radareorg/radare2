@@ -626,6 +626,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			main_print_var (opt.arg);
 			LISTS_FREE ();
 			free (debugbackend);
+			free (envprofile);
+			r_core_free (r);
 			return 0;
 		case 'i':
 			if (R_STR_ISEMPTY (opt.arg)) {
@@ -759,6 +761,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (show_versions) {
 		LISTS_FREE();
 		free (debugbackend);
+		free (envprofile);
+		r_core_free (r);
 		return r_main_version_verify (1, json);
 	}
 	if (show_version) {
@@ -791,8 +795,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			LISTS_FREE ();
 			free (customRarunProfile);
 			free (debugbackend);
+			free (envprofile);
+			r_core_free (r);
 			return r_main_version_print ("radare2");
 		}
+		free (envprofile);
+		r_core_free (r);
 		return 0;
 	}
 	if (noStderr) {
