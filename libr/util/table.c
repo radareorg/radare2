@@ -1092,6 +1092,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		const char *operation = r_list_get_n (q, 1);
 		const char *operand = r_list_get_n (q, 2);
 		if (__table_special (t, columnName)) {
+			r_list_free (q);
 			continue;
 		}
 		int col = r_table_column_nth (t, columnName);
@@ -1105,6 +1106,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 			}
 		}
 		if (!operation) {
+			r_list_free (q);
 			break;
 		}
 		if (!strcmp (operation, "sort")) {
