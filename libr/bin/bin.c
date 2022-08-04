@@ -847,7 +847,9 @@ R_API RBin *r_bin_new(void) {
 				goto trashbin_binxtrs;
 			}
 			*static_xtr_plugin = *bin_xtr_static_plugins[i];
-			r_bin_xtr_add (bin, static_xtr_plugin);
+			if (r_bin_xtr_add (bin, static_xtr_plugin) == false) {
+				free (static_xtr_plugin);
+			}
 		}
 	}
 	/* loaders */
@@ -860,7 +862,9 @@ R_API RBin *r_bin_new(void) {
 				goto trashbin_binldrs;
 			}
 			*static_ldr_plugin = *bin_ldr_static_plugins[i];
-			r_bin_ldr_add (bin, static_ldr_plugin);
+			if (r_bin_ldr_add (bin, static_ldr_plugin) == false) {
+				free (static_ldr_plugin);
+			}
 		}
 	}
 	return bin;
