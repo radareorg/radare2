@@ -174,7 +174,7 @@ R_API void r_core_diff_show_json(RCore *c, RCore *c2) {
 
 	fcns = r_anal_get_fcns (c->anal);
 	if (r_list_empty (fcns)) {
-		eprintf ("No functions found, try running with -A or load a project\n");
+		R_LOG_INFO ("No functions found, try running with -A or load a project\n");
 		return;
 	}
 
