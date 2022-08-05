@@ -166,7 +166,7 @@ R_API void r_core_diff_show_json(RCore *c, RCore *c2) {
 	const char *match;
 	RListIter *iter;
 	RAnalFunction *f;
-	PJ *pj = core_pj_new ();
+	PJ *pj = r_core_pj_new (c);
 
 	if (!pj) {
 		return;
