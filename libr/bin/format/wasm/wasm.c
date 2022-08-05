@@ -1117,7 +1117,21 @@ ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin) {
 	return 0;
 }
 
+static int _export_sorter(const void *_a, const void *_b) {
+	const RBinWasmExportEntry *a = _a;
+	const RBinWasmExportEntry *b = _b;
+	st64 diff = (st64)a->kind - b->kind;
+	if (!diff) {
+		diff = (st64)a->index - b->index;
+		if (!diff) { // index collision shouldn't happen
+			diff = (st64)a->sec_i - b->sec_i;
+		}
+	}
+	return diff > 0? 1: -1;
+}
+
 static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
+	RPVectorComparator *sorter = NULL;
 	RPVector **cache = NULL;
 	RPVectorFree pfree = (RPVectorFree)free;
 	ParseEntryFcn parser;
@@ -1147,6 +1161,7 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 		parser = (ParseEntryFcn)parse_export_entry;
 		pfree = (RPVectorFree)free_export_entry;
 		cache = &bin->g_exports;
+		sorter = _export_sorter;
 		break;
 	case R_BIN_WASM_SECTION_ELEMENT:
 		parser = (ParseEntryFcn)parse_element_entry;
@@ -1180,6 +1195,9 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 	}
 
 	*cache = parse_vec (bin, bound, parser, pfree);
+	if (sorter) {
+		r_pvector_sort (*cache, sorter);
+	}
 	return *cache;
 }
 
