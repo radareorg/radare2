@@ -162,7 +162,7 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
 
 /* Iterate available diffs and print json output */
 R_API void r_core_diff_show_json(RCore *c, RCore *c2) {
-	RList *fcns = r_anal_get_fcns (c->anal);
+	RList *fcns;
 	const char *match;
 	RListIter *iter;
 	RAnalFunction *f;
