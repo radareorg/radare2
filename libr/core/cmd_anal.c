@@ -8328,6 +8328,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			r_cons_println (pj_string (pj));
 			pj_free (pj);
 		}
+		r_list_free (list);
 		break;
 	case '\0':
 		cmd_syscall_do (core, -1, core->offset);
