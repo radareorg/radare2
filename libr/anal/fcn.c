@@ -426,6 +426,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 	while (!r_list_empty (block->fcns)) {
 		RAnalFunction *other_fcn = r_list_first (block->fcns);
 		if (other_fcn->addr == block->addr) {
+			r_anal_block_unref (block);
 			return false;
 		}
 		// Steal vars from this block
