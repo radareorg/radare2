@@ -2344,6 +2344,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 					}
 					count++;
 					if (search->maxhits && count >= search->maxhits) {
+						r_anal_op_fini (&aop);
 						goto done;
 					}
 				}
@@ -2351,9 +2352,10 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 				if (inc < 0) {
 					inc = 0;
 				}
-	 			i += inc;
-	 			at += inc;
+				i += inc;
+				at += inc;
 			}
+			r_anal_op_fini (&aop);
 		}
 	}
 done:
