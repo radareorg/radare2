@@ -53,7 +53,10 @@ jobs:
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
         ./configure --without-capstone --with-rpath && make -j
         sudo make install
-        time r2 -qc/m /bin/ls > /tmp/m.1 2>&1
+    - name: Running c/m with self-hosted libmagic
+      run:
+        time r2 -qc/m /bin/ls > /tmp/m.1 2>&1 || true
+        cat /tmp/m.1
     - name: Uninstall test
       run: |
         sudo make uninstall
@@ -65,8 +68,11 @@ jobs:
         rm -f plugins.cfg
         ./configure --with-sysmagic --without-capstone --with-rpath && make -j
         sudo make install
-        time r2 -qc/m /bin/ls > /tmp/m.2 2>&1
-    - name: Magic times
+    - name: Running c/m with system libmagic
+      run:
+        time r2 -qc/m /bin/ls > /tmp/m.2 2>&1 || true
+        cat /tmp/m.2
+    - name: Compare magic times and results
       run: |
         echo ===== m.1
         cat /tmp/m.1
