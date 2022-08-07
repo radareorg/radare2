@@ -296,7 +296,7 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int a
 	mlist->next = mlist->prev = mlist;
 
 	while (fn) {
-		p = strchr (fn, PATHSEP);
+		p = strstr (fn, R_SYS_ENVSEP);
 		if (p) {
 			*p++ = '\0';
 		}
@@ -2045,6 +2045,7 @@ static ut32 swap4(ut32 sv) {
  * swap a quad
  */
 static ut64 swap8(ut64 sv) {
+	// we have r_read apis for that, dont dupe!
 	ut64 rv;
 	ut8 *s = (ut8 *)(void *)&sv;
 	ut8 *d = (ut8 *)(void *)&rv;
