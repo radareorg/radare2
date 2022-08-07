@@ -65,7 +65,8 @@ jobs:
         CFLAGS: -O0
       run: |
         sudo apt install -y libmagic-dev
-        rm -f plugins.cfg
+        git clean -xdf ; rm -rf shlr/capstone
+        cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
         ./configure --with-sysmagic --without-capstone --with-rpath && make -j
         sudo make install
     - name: Running c/m with system libmagic
