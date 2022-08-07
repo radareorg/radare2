@@ -53,6 +53,7 @@ jobs:
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
         ./configure --without-capstone --with-rpath && make -j
         sudo make install
+        time r2 -qc/m /bin/ls > /tmp/m.1 2>&1
     - name: Uninstall test
       run: |
         sudo make uninstall
@@ -60,10 +61,17 @@ jobs:
       env:
         CFLAGS: -O0
       run: |
+        sudo apt install -y libmagic-dev
         rm -f plugins.cfg
         ./configure --with-sysmagic --without-capstone --with-rpath && make -j
         sudo make install
-        r2 -v
+        time r2 -qc/m /bin/ls > /tmp/m.2 2>&1
+    - name: Magic times
+      run: |
+        echo ===== m.1
+        cat /tmp/m.1
+        echo ===== m.2
+        cat /tmp/m.2
     #- name: Building muon/samu
     #  run: |
     #    r2pm -gci muon # installs samurai as dependency
