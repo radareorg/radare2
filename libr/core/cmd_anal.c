@@ -7245,11 +7245,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			break;
 		case ' ':
 			n = strchr (input, ' ');
-			if (!(n + 1)) {
+			n1 = n ? n + 1: NULL;
+			if (!n1 || !*n1) {
 				r_core_esil_step (core, until_addr, until_expr, NULL, false);
 				break;
 			}
-			off = r_num_math (core->num, n + 1);
+			off = r_num_math (core->num, n1);
 			cmd_aespc (core, -1, -1, off);
 			break;
 		default:
