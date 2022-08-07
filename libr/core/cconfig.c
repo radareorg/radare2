@@ -770,9 +770,9 @@ static bool cb_asmarch(void *user, void *data) {
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	r_config_set (core->config, "asm.parser", asmparser);
 
-	if (core->rasm->cur && core->anal && !(core->anal->cur->bits & core->anal->config->bits)) {
+	if (core->rasm->cur && core->anal && core->anal->cur && !(core->anal->cur->bits & core->anal->config->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
-	} else if (core->rasm->cur && core->anal && !(core->rasm->cur->bits & core->anal->config->bits)) {
+	} else if (core->rasm->cur && core->anal && core->anal->cur && !(core->rasm->cur->bits & core->anal->config->bits)) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
 
