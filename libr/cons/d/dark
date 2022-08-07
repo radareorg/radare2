@@ -30,7 +30,7 @@ ec push rgb:99a
 ec pop rgb:99a
 ec reg rgb:368
 ec creg rgb:368
-ec trap rgb:000 rgb:
+ec trap rgb:000 rgb:123
 ec swi rgb:99a
 ec ucall rgb:44f rgb:123
 ec ujmp rgb:368
