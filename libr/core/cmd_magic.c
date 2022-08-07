@@ -37,18 +37,28 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	if (core->search->align) {
 		int mod = addr % core->search->align;
 		if (mod) {
-			eprintf ("Unaligned search at %d\n", mod);
+			R_LOG_WARN ("Unaligned search result at %d", mod);
 			ret = mod;
 			goto seek_exit;
 		}
 	}
-	if (((addr&7)==0) && ((addr&(7<<8))==0))
-		if (!pj) { // update search display
+	if (((addr & 7) == 0) && ((addr & (7 << 8)) == 0)) {
+		bool must_report_progress = !pj;
+		if (must_report_progress) {
+			must_report_progress = r_config_get_b (core->config, "search.verbose");
+			if (must_report_progress) {
+				must_report_progress = r_config_get_b (core->config, "scr.interactive");
+			}
+		}
+		if (must_report_progress) {
 			eprintf ("0x%08" PFMT64x " [%d matches found]\r", addr, *hits);
 		}
+	}
 	if (file) {
-		if (*file == ' ') file++;
-		if (!*file) file = NULL;
+		file = r_str_trim_head_ro (file);
+		if (R_STR_ISEMPTY (file)) {
+			file = NULL;
+		}
 	}
 	if (file && ofile && file != ofile) {
 		if (strcmp (file, ofile)) {
@@ -65,7 +75,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			free (ofile);
 			ofile = strdup (file);
 			if (!r_magic_load (ck, file)) {
-				eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
+				R_LOG_ERROR ("failed r_magic_load (\"%s\") %s", file, r_magic_error (ck));
 				ck = NULL;
 				ret = -1;
 				goto seek_exit;
@@ -74,7 +84,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			const char *magicpath = r_config_get (core->config, "dir.magic");
 			if (!r_magic_load (ck, magicpath)) {
 				ck = NULL;
-				eprintf ("failed r_magic_load (dir.magic) %s\n", r_magic_error (ck));
+				R_LOG_ERROR ("failed r_magic_load (dir.magic) %s", r_magic_error (ck));
 				ret = -1;
 				goto seek_exit;
 			}
@@ -82,7 +92,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	}
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, r_str_get (file), addr);
 	if (delta + 2 > core->blocksize) {
-		eprintf ("EOB\n");
+		R_LOG_WARN ("magic result happens between block reads");
 		ret = -1;
 		goto seek_exit;
 	}
@@ -90,7 +100,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	if (str) {
 		const char *cmdhit;
 #if USE_LIB_MAGIC
-		if (!v && (!strcmp (str, "data") || strstr(str, "ASCII") || strstr(str, "ISO") || strstr(str, "no line terminator"))) {
+		if (!v && (!strcmp (str, "data") || strstr(str, "ASCII") || strstr (str, "ISO") || strstr (str, "no line terminator"))) {
 #else
 		if (!v && (!strcmp (str, "data"))) {
 #endif
@@ -126,7 +136,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		}
 		// TODO: This must be a callback .. move this into RSearch?
 		if (!pj) {
-			r_cons_printf ("0x%08"PFMT64x" %d %s\n", addr + adelta, magicdepth-depth, p);
+			r_cons_printf ("0x%08"PFMT64x" %d %s\n", addr + adelta, magicdepth - depth, p);
 		} else {
 			pj_o (pj);
 			pj_kN (pj, "offset", addr + adelta);
@@ -171,13 +181,11 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	r_magic_free (ck);
 	ck = NULL;
 #endif
-{
 	int mod = core->search->align;
 	if (mod) {
 		ret = mod; //adelta%addr + deR_ABS(mod-adelta)+1;
 		goto seek_exit;
 	}
-}
 	ret = adelta; //found;
 
 seek_exit:
