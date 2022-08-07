@@ -263,13 +263,13 @@ typedef struct r_run_profile_t {
 	int _nice;
 } RRunProfile;
 
-R_API RRunProfile *r_run_new(const char *str);
+R_API RRunProfile *r_run_new(R_NULLABLE const char *str);
 R_API bool r_run_parse(RRunProfile *pf, const char *profile);
 R_API void r_run_free(RRunProfile *r);
 R_API bool r_run_parseline(RRunProfile *p, const char *b);
 R_API const char *r_run_help(void);
-R_API int r_run_config_env(RRunProfile *p);
-R_API int r_run_start(RRunProfile *p);
+R_API bool r_run_config_env(RRunProfile *p);
+R_API bool r_run_start(RRunProfile *p);
 R_API void r_run_reset(RRunProfile *p);
 R_API bool r_run_parsefile(RRunProfile *p, const char *b);
 R_API char *r_run_get_environ_profile(char **env);
