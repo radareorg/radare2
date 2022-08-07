@@ -4408,10 +4408,9 @@ R_API void r_core_visual_colors(RCore *core) {
 	char *color = calloc (1, 64), cstr[32];
 	char preview_cmd[128] = "pd $r";
 	int ch, opt = 0, oopt = -1;
-	bool truecolor = r_cons_singleton ()->context->color_mode == COLOR_MODE_16M;
-	char *rgb_xxx_fmt = truecolor ? "rgb:%2.2x%2.2x%2.2x ":"rgb:%x%x%x ";
+	char *rgb_xxx_fmt = "rgb:%02x%02x%02x";
 	const char *k;
-	RColor rcolor;
+	RColor rcolor, zcolor = { 0 };
 
 	r_cons_show_cursor (false);
 	rcolor = r_cons_pal_get_i (opt);
@@ -4423,23 +4422,9 @@ R_API void r_core_visual_colors(RCore *core) {
 			opt = 0;
 			k = r_cons_pal_get_name (opt);
 		}
-		if (!truecolor) {
-			rcolor.r &= 0xf;
-			rcolor.g &= 0xf;
-			rcolor.b &= 0xf;
-			rcolor.r2 &= 0xf;
-			rcolor.g2 &= 0xf;
-			rcolor.b2 &= 0xf;
-		} else {
-			rcolor.r &= 0xff;
-			rcolor.g &= 0xff;
-			rcolor.b &= 0xff;
-			rcolor.r2 &= 0xff;
-			rcolor.g2 &= 0xff;
-			rcolor.b2 &= 0xff;
-		}
 		sprintf (color, rgb_xxx_fmt, rcolor.r, rcolor.g, rcolor.b);
 		if (rcolor.r2 || rcolor.g2 || rcolor.b2) {
+			color = r_str_appendf (color, " ");
 			color = r_str_appendf (color, rgb_xxx_fmt, rcolor.r2, rcolor.g2, rcolor.b2);
 			rcolor.a = ALPHA_FGBG;
 		} else {
@@ -4464,7 +4449,9 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		r_cons_newline ();
 
-		r_core_cmdf (core, "ec %s %s", k, color);
+		if (memcmp (&rcolor, &zcolor, sizeof (rcolor))) {
+			r_core_cmdf (core, "ec %s %s", k, color);
+		}
 		char * res = r_core_cmd_str (core, preview_cmd);
 		int h, w = r_cons_get_size (&h);
 		char *body = r_str_ansi_crop (res, 0, 0, w, h - 8);
@@ -4533,6 +4520,7 @@ R_API void r_core_visual_colors(RCore *core) {
 			}
 			r_cons_show_cursor (false);
 		}
+		opt = R_DIM (opt, 0, r_cons_pal_len () - 1);
 		if (opt != oopt) {
 			rcolor = r_cons_pal_get_i (opt);
 			oopt = opt;
