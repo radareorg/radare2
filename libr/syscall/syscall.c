@@ -270,6 +270,9 @@ static bool callback_list(void *u, const char *k, const char *v) {
 R_API RList *r_syscall_list(RSyscall *s) {
 	r_return_val_if_fail (s && s->db, NULL);
 	RList *list = r_list_newf ((RListFree)r_syscall_item_free);
+	if (!list) {
+		return NULL;
+	}
 	sdb_foreach (s->db, callback_list, list);
 	return list;
 }
