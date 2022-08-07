@@ -12043,7 +12043,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 
 static void show_reg_args(RCore *core, int nargs, RStrBuf *sb) {
 	int i;
-	char regname[8];
+	char regname[12];
 	if (nargs < 0) {
 		nargs = 4; // default args if not defined
 	}
