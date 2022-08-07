@@ -1894,19 +1894,24 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 // IMHO This code must be deleted
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int i, inslen, bsize = R_MIN (64, core->blocksize);
-	ut8 *arr;
 	RAnalOp aop;
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	if (!strcmp (core->anal->config->arch, "arm") && core->anal->config->bits == 64) {
+		const char *os = core->anal->config->os;
+		if (!strcmp (os, "linux")) {
+			a0 = "x8";
+		} else if (!strcmp (os, "macos")) {
+			a0 = "x16";
+		}
+	}
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
 	RRegItem *reg_a0 = r_reg_get (core->dbg->reg, a0, -1);
 
-	arr = malloc (bsize);
+	ut8 *arr = malloc (bsize);
 	if (!arr) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
-		free (arr);
 		return -1;
 	}
 	r_reg_set_value (core->dbg->reg, r, curpc);
@@ -1925,9 +1930,9 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 			}
 			i += incr;
 			curpc += incr;
-			if (r_anal_op_nonlinear (aop.type)) {	// skip the instr
+			if (r_anal_op_nonlinear (aop.type)) {
 				r_reg_set_value (core->dbg->reg, r, curpc + 1);
-			} else {	// step instr
+			} else {
 				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			}
 		}
