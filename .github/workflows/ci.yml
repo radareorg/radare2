@@ -47,10 +47,23 @@ jobs:
     - name: Linting
       run: sys/lint.sh
     - name: Building without capstone
+      env:
+        CFLAGS: -O0
       run: |
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
         ./configure --without-capstone --with-rpath && make -j
         sudo make install
+    - name: Uninstall test
+      run: |
+        sudo make uninstall
+    - name: Building with libmagic
+      env:
+        CFLAGS: -O0
+      run: |
+        rm -f plugins.cfg
+        ./configure --with-sysmagic --without-capstone --with-rpath && make -j
+        sudo make install
+        r2 -v
     #- name: Building muon/samu
     #  run: |
     #    r2pm -gci muon # installs samurai as dependency
