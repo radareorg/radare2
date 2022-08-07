@@ -4486,6 +4486,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		CASE_RGB ('V','v',rcolor.b2);
 		case 'Q':
 		case 'q':
+			free (res);
 			free (body);
 			free (color);
 			return;
@@ -4537,5 +4538,6 @@ R_API void r_core_visual_colors(RCore *core) {
 			oopt = opt;
 		}
 		free (body);
+		free (res);
 	}
 }
