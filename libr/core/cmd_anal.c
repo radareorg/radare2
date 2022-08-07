@@ -7690,6 +7690,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				r_core_return_value (core, 0);
 			}
 			r_anal_op_fini (&aop);
+			free (hex);
 		} else if (input[1] == 'a') { // "aexa"
 			char *bytes = r_core_cmd_strf (core, "\"pa %s\"", r_str_trim_head_ro (input + 2));
 			if (R_STR_ISNOTEMPTY (bytes)) {
