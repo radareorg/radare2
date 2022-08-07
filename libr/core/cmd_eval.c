@@ -307,6 +307,7 @@ done:
 	if (getNext) {
 		R_FREE (core->theme);
 		nextpal (core, mode);
+		r_list_free (files);
 		return;
 	}
 	if (mode == 'l' && !core->theme && !r_list_empty (files)) {
