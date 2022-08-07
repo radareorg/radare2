@@ -296,7 +296,7 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int a
 	mlist->next = mlist->prev = mlist;
 
 	while (fn) {
-		p = strchr (fn, PATHSEP);
+		p = strchr (fn, R_SYS_ENVSEP);
 		if (p) {
 			*p++ = '\0';
 		}

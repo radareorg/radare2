@@ -39,6 +39,16 @@
 #include <r_userconf.h>
 #include <r_types.h>
 
+/*
+ * Copy buf[0 ... nbytes-1] into out[], translating EBCDIC to ASCII.
+ */
+R_API void r_magic_from_ebcdic(const ut8 *buf, size_t nbytes, ut8 *out) {
+	size_t i;
+	for (i = 0; i < nbytes; i++) {
+		out[i] = ebcdic_to_ascii[buf[i]];
+	}
+}
+
 #if !USE_LIB_MAGIC
 
 #include "file.h"
@@ -147,9 +157,9 @@ return 0;
 		type = "text";
 		code_mime = "unknown";
 	} else {
-		r_magic_from_ebcdic(buf, nbytes, nbuf);
+		r_magic_from_ebcdic (buf, nbytes, nbuf);
 
-		if (looks_ascii(nbuf, nbytes, ubuf, &ulen)) {
+		if (looks_ascii (nbuf, nbytes, ubuf, &ulen)) {
 			code = "EBCDIC";
 			type = "character data";
 			code_mime = "ebcdic";
@@ -534,9 +544,7 @@ static int looks_extended(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *
  * Encode Unicode string as UTF-8, returning pointer to character
  * after end of string, or NULL if an invalid character is found.
  */
-static ut8 *
-encode_utf8(ut8 *buf, size_t len, unichar *ubuf, size_t ulen)
-{
+static ut8 * encode_utf8(ut8 *buf, size_t len, unichar *ubuf, size_t ulen) {
 	size_t i;
 	ut8 *end = buf + len;
 
@@ -773,7 +781,7 @@ static ut8 ebcdic_to_ascii[] = {
 '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 250, 251, 252, 253, 254, 255
 };
 
-#ifdef notdef
+#if 0
 /*
  * The following EBCDIC-to-ASCII table may relate more closely to reality,
  * or at least to modern reality.  It comes from
@@ -807,13 +815,3 @@ static ut8 ebcdic_1047_to_8859[] = {
 0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0xB3,0xDB,0xDC,0xD9,0xDA,0x9F
 };
 #endif
-
-/*
- * Copy buf[0 ... nbytes-1] into out[], translating EBCDIC to ASCII.
- */
-R_API void r_magic_from_ebcdic(const ut8 *buf, size_t nbytes, ut8 *out) {
-	size_t i;
-	for (i = 0; i < nbytes; i++) {
-		out[i] = ebcdic_to_ascii[buf[i]];
-	}
-}
