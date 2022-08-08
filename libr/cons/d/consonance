@@ -1,7 +1,7 @@
 # background of the terminal must be 134 o 033
 # xterm -fn 10x20 -bg rgb:20/20/20 -fg rgb:d0/d0/d0
 # ref: https://github.com/eugeneching/ida-consonance/blob/master/ida-consonance.clr
-
+ecd
 ec b0x00 rgb:9aa
 ec b0x7f rgb:577
 ec b0xff rgb:8cf
