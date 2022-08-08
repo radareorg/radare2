@@ -318,7 +318,9 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 				snprintf (title, sizeof (title) - 1, "__%s__", str);
 			}
 			append_shortcut (g, title, n->title, sizeof (title) - strlen (title));
-			W (r_str_ansi_crop (title, delta_x, 0, 20, 1));
+			char *res = r_str_ansi_crop (title, delta_x, 0, 20, 1);
+			W (res);
+			free (res);
 		}
 	} else {
 		snprintf (title, sizeof (title) - 1,
