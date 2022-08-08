@@ -120,6 +120,9 @@ R_API RGraph *r_graph_new(void) {
 }
 
 R_API void r_graph_free(RGraph* t) {
+	if (!t) {
+		return;
+	}
 	r_list_free (t->nodes);
 	free (t);
 }
