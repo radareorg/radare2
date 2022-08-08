@@ -15,7 +15,6 @@ ec bin gray
 ec b0x7f white
 ec other gray
 ec btext cyan
-ec invalid red
 ec trap red
 ec ucall green
 ec ujmp green
