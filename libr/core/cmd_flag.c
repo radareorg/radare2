@@ -1292,7 +1292,8 @@ rep:
 		break;
 	case 'c': // "fc"
 		if (input[1] == 0 || input[1] == '.') {
-			const RList *list = input[1]? r_flag_get_list (core->flags, core->offset): r_flag_all_list (core->flags, false);
+			RList *list_to_free = input[1]? NULL: r_flag_all_list (core->flags, false);
+			const RList *list = input[1]? r_flag_get_list (core->flags, core->offset): list_to_free;
 			RListIter *iter;
 			RFlagItem *fi;
 			r_list_foreach (list, iter, fi) {
@@ -1305,27 +1306,31 @@ rep:
 					}
 				}
 			}
+			r_list_free (list_to_free);
 		} else if (input[1] == '-') {
 			RListIter *iter;
 			RFlagItem *fi;
 			ut64 addr = (input[1] && input[2] != '*' && input[2]) ? r_num_math (core->num, input + 2): core->offset;
+			RList *list_to_free = (input[1] && input[2]=='*')? r_flag_all_list (core->flags, false): NULL;
 			const RList *list = (input[1] && input[2]=='*')?
-				r_flag_all_list (core->flags, false)
+				list_to_free
 				: r_flag_get_list (core->flags, addr);
 			r_list_foreach (list, iter, fi) {
 				if (fi->color) {
 					R_FREE (fi->color);
 				}
 			}
+			r_list_free (list_to_free);
 		} else if (input[1] == '*') {
 			RListIter *iter;
 			RFlagItem *fi;
-			const RList *list = r_flag_all_list (core->flags, false);
+			RList *list = r_flag_all_list (core->flags, false);
 			r_list_foreach (list, iter, fi) {
 				if (fi->color) {
 					r_cons_printf ("fc %s=%s\n", fi->name, fi->color);
 				}
 			}
+			r_list_free (list);
 		} else if (input[1] == ' ') {
 			const char *ret;
 			char *arg = r_str_trim_dup (input + 2);
