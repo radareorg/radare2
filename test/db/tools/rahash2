@@ -223,6 +223,7 @@ c  cps2
 c  des-ecb
 c  xor
 c  serpent-ecb
+c  sm4-ecb
 EOF
 RUN
 
@@ -1010,6 +1011,14 @@ FILE=-
 CMDS=!rahash2 -E serpent-ecb -S "1032547698badcfe1032547698badcfe1032547698badcfe1032547698badcfe" -x "101231" | rax2 -S
 EXPECT=<<EOF
 417dfc518e8146ea81b089731b56fefa
+EOF
+RUN
+
+NAME=rahash2 -E sm4-ecb
+FILE=-
+CMDS=!rahash2 -E sm4-ecb -S "0123456789abcdeffedcba9876543210" -x "aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffffaaaaaaaabbbbbbbb" | rax2 -S
+EXPECT=<<EOF
+5ec8143de509cff7b5179f8f474b86192f1d305a7fb17df985f81c8482192304
 EOF
 RUN
 
