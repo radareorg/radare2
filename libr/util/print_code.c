@@ -122,7 +122,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 			int col = 0;
 			const int max_cols = 60;
 
-			p->cb_printf ("const char cstr[%d] = \"", len);
+			p->cb_printf ("const unsigned char cstr[%d] = \"", len);
 			for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 				if (col == 0 || col > max_cols) {
 					p->cb_printf ("\"\\\n  \"");
@@ -147,7 +147,8 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 						if (buf[i] == '"') {
 							p->cb_printf ("\\\"");
 						} else {
-							p->cb_printf ("%c", buf[i]);
+							p->cb_printf("\\x%02x", buf[i]);
+							// p->cb_printf ("%c", buf[i]);
 						}
 					} else {
 						p->cb_printf ("\\x%02x", buf[i]);
