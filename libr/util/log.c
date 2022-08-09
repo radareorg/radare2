@@ -168,6 +168,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *fmt, 
 		r_sys_backtrace ();
 		r_sys_breakpoint ();
 	}
+	free (s);
 }
 
 R_API void r_log_message(RLogLevel level, const char *origin, const char *fmt, ...) {

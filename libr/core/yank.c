@@ -300,6 +300,7 @@ R_API int r_core_yank_hexdump(RCore *core, ut64 pos) {
 			r_print_hexdump (core->print, pos,
 				buf, ybl - pos, 16, 1, 1);
 			res = true;
+			free (buf);
 		} else {
 			R_LOG_ERROR ("Position exceeds buffer length");
 		}
@@ -321,6 +322,7 @@ R_API int r_core_yank_cat(RCore *core, ut64 pos) {
 			r_buf_read_at (core->yank_buf, pos, (ut8 *)buf, sz);
 			r_cons_write (buf, sz);
 			r_cons_newline ();
+			free (buf);
 			return true;
 		}
 		R_LOG_ERROR ("Position exceeds buffer length");
@@ -343,6 +345,7 @@ R_API int r_core_yank_cat_string(RCore *core, ut64 pos) {
 			int len = r_str_nlen (buf, sz);
 			r_cons_write (buf, len);
 			r_cons_newline ();
+			free (buf);
 			return true;
 		}
 		R_LOG_ERROR ("Position exceeds buffer length");

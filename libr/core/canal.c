@@ -3424,6 +3424,10 @@ typedef struct {
 
 static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	int *cur_regset = r_pvector_pop (&ctx->reg_set);
+	if (r_pvector_len (&ctx->reg_set) == 0) {
+		free (cur_regset);
+		return false;
+	}
 	int *prev_regset = r_pvector_at (&ctx->reg_set, r_pvector_len (&ctx->reg_set) - 1);
 	size_t i;
 	for (i = 0; i < REG_SET_SIZE; i++) {
@@ -3462,6 +3466,10 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		}
 	}
 	if (skip_bb) {
+		free (buf);
+		return false;
+	}
+	if (r_pvector_len (&ctx->reg_set) == 0) {
 		free (buf);
 		return false;
 	}
@@ -4110,6 +4118,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		// wtf
 		R_LOG_ERROR ("Something is really wrong deep inside");
 		free (block);
+		free (buf);
 		return -1;
 	}
 	while (at < to && !r_cons_is_breaked ()) {

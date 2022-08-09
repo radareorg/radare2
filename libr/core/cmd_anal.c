@@ -5690,8 +5690,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					r_reg_setv (core->anal->reg, pcname, op.addr + op.size);
 					r_reg_setv (core->dbg->reg, pcname, op.addr + op.size);
 				}
-				r_anal_op_fini(&op);
-				return 1;
+				return_tail (1);
 			}
 		}
 		if (r2wars) {
@@ -7246,11 +7245,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			break;
 		case ' ':
 			n = strchr (input, ' ');
-			if (!(n + 1)) {
+			n1 = n ? n + 1: NULL;
+			if (!n1 || !*n1) {
 				r_core_esil_step (core, until_addr, until_expr, NULL, false);
 				break;
 			}
-			off = r_num_math (core->num, n + 1);
+			off = r_num_math (core->num, n1);
 			cmd_aespc (core, -1, -1, off);
 			break;
 		default:
@@ -7690,6 +7690,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				r_core_return_value (core, 0);
 			}
 			r_anal_op_fini (&aop);
+			free (hex);
 		} else if (input[1] == 'a') { // "aexa"
 			char *bytes = r_core_cmd_strf (core, "\"pa %s\"", r_str_trim_head_ro (input + 2));
 			if (R_STR_ISNOTEMPTY (bytes)) {
@@ -8328,6 +8329,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			r_cons_println (pj_string (pj));
 			pj_free (pj);
 		}
+		r_list_free (list);
 		break;
 	case '\0':
 		cmd_syscall_do (core, -1, core->offset);
@@ -12043,7 +12045,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 
 static void show_reg_args(RCore *core, int nargs, RStrBuf *sb) {
 	int i;
-	char regname[8];
+	char regname[12];
 	if (nargs < 0) {
 		nargs = 4; // default args if not defined
 	}

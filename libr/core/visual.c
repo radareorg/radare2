@@ -1377,6 +1377,9 @@ static void add_ref(RCore *core) {
 }
 
 static bool delete_ref(RCore *core, RList *xrefs, int choice, int xref) {
+	if (!xrefs) {
+		return 0;
+	}
 	RAnalRef *refi = r_list_get_n (xrefs, choice);
 	if (refi) {
 		if (core->print->cur_enabled) {
@@ -1386,7 +1389,11 @@ static bool delete_ref(RCore *core, RList *xrefs, int choice, int xref) {
 	}
 	return false;
 }
+
 static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
+	if (!xrefs) {
+		return 0;
+	}
 	RAnalRef *refi = r_list_get_n (xrefs, choice);
 	if (refi) {
 		if (core->print->cur_enabled) {

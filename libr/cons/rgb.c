@@ -258,17 +258,11 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 				: (r == 0xff || g == 0xff || b == 0xff)
 					? 60
 					: 0;  // eco bright-specific
-			if (r == g && g == b) {
-				r = (r > 0x7f) ? 1 : 0;
-				g = (g > 0x7f) ? 1 : 0;
-				b = (b > 0x7f) ? 1 : 0;
-			} else {
-				ut8 k = (r + g + b) / 3;
-				r = (r >= k) ? 1 : 0;
-				g = (g >= k) ? 1 : 0;
-				b = (b >= k) ? 1 : 0;
-			}
-			c = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
+			ut8 k = (r + g + b) / 3;
+			r = (r >= k) ? 1 : 0;
+			g = (g >= k) ? 1 : 0;
+			b = (b >= k) ? 1 : 0;
+			c = r + (g << 1) + (b << 2);
 		}
 		written = snprintf (outstr + i, sz - i, "%dm", fgbg + bright + c);
 		break;

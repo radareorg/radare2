@@ -839,25 +839,33 @@ R_API RBin *r_bin_new(void) {
 	}
 	/* extractors */
 	bin->binxtrs = r_list_new ();
-	bin->binxtrs->free = free;
-	for (i = 0; bin_xtr_static_plugins[i]; i++) {
-		static_xtr_plugin = R_NEW0 (RBinXtrPlugin);
-		if (!static_xtr_plugin) {
-			goto trashbin_binxtrs;
+	if (bin->binxtrs) {
+		bin->binxtrs->free = free;
+		for (i = 0; bin_xtr_static_plugins[i]; i++) {
+			static_xtr_plugin = R_NEW0 (RBinXtrPlugin);
+			if (!static_xtr_plugin) {
+				goto trashbin_binxtrs;
+			}
+			*static_xtr_plugin = *bin_xtr_static_plugins[i];
+			if (r_bin_xtr_add (bin, static_xtr_plugin) == false) {
+				free (static_xtr_plugin);
+			}
 		}
-		*static_xtr_plugin = *bin_xtr_static_plugins[i];
-		r_bin_xtr_add (bin, static_xtr_plugin);
 	}
 	/* loaders */
 	bin->binldrs = r_list_new ();
-	bin->binldrs->free = free;
-	for (i = 0; bin_ldr_static_plugins[i]; i++) {
-		static_ldr_plugin = R_NEW0 (RBinLdrPlugin);
-		if (!static_ldr_plugin) {
-			goto trashbin_binldrs;
+	if (bin->binldrs) {
+		bin->binldrs->free = free;
+		for (i = 0; bin_ldr_static_plugins[i]; i++) {
+			static_ldr_plugin = R_NEW0 (RBinLdrPlugin);
+			if (!static_ldr_plugin) {
+				goto trashbin_binldrs;
+			}
+			*static_ldr_plugin = *bin_ldr_static_plugins[i];
+			if (r_bin_ldr_add (bin, static_ldr_plugin) == false) {
+				free (static_ldr_plugin);
+			}
 		}
-		*static_ldr_plugin = *bin_ldr_static_plugins[i];
-		r_bin_ldr_add (bin, static_ldr_plugin);
 	}
 	return bin;
 trashbin_binldrs:

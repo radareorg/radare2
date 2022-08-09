@@ -370,6 +370,7 @@ R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 		val.sz++;
 		ut8 *data = realloc (val.data, val.sz);
 		if (!data) {
+			free (val.data);
 			return 1;
 		}
 		val.data = data;
@@ -998,7 +999,7 @@ R_API bool r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (m->name, name)) {
 			r_list_delete (mac->macros, iter);
-			eprintf ("Macro '%s' removed.\n", name);
+			R_LOG_DEBUG ("Macro '%s' removed", name);
 			ret = true;
 			break;
 		}

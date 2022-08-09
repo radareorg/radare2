@@ -1,3 +1,4 @@
+ecd
 ec b0x00 rgb:444
 ec help rgb:366
 ec comment rgb:99a
@@ -30,7 +31,7 @@ ec push rgb:99a
 ec pop rgb:99a
 ec reg rgb:368
 ec creg rgb:368
-ec trap rgb:000 rgb:
+ec trap rgb:000 rgb:123
 ec swi rgb:99a
 ec ucall rgb:44f rgb:123
 ec ujmp rgb:368

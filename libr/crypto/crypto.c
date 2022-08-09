@@ -24,6 +24,7 @@ static const struct {
 	{ "des-ecb", R_CRYPTO_DES_ECB },
 	{ "xor", R_CRYPTO_XOR },
 	{ "serpent-ecb", R_CRYPTO_SERPENT },
+	{ "sm4-ecb", R_CRYPTO_SM4_ECB },
 	{ NULL, 0 }
 };
 

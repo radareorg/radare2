@@ -18,7 +18,7 @@ enum {
 	R_ANAL_JAVA_DATA_OP = 1 << 28,  // operates on data
 	R_ANAL_JAVA_UNK_OP = 1 << 29,  /* unknown opcode type */
 	R_ANAL_JAVA_REP_OP = 1 << 30,  /* repeats next instruction N times */
-	R_ANAL_JAVA_COND_OP = 1 << 31,
+	R_ANAL_JAVA_COND_OP = 1U << 31,
 };
 
 enum {

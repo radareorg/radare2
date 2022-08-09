@@ -1092,6 +1092,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		const char *operation = r_list_get_n (q, 1);
 		const char *operand = r_list_get_n (q, 2);
 		if (__table_special (t, columnName)) {
+			r_list_free (q);
 			continue;
 		}
 		int col = r_table_column_nth (t, columnName);
@@ -1105,6 +1106,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 			}
 		}
 		if (!operation) {
+			r_list_free (q);
 			break;
 		}
 		if (!strcmp (operation, "sort")) {
@@ -1247,9 +1249,9 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 			free (b);
 			i++;
 		}
-		RStrBuf *buf = r_strbuf_new ("");
 		/* current seek */
 		if (i > 0 && len != 0) {
+			RStrBuf *buf = r_strbuf_new ("");
 			if (seek == UT64_MAX) {
 				seek = 0;
 			}
@@ -1259,9 +1261,9 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 			}
 			r_strf_var (a0, 64, "0x%08"PFMT64x, seek);
 			r_strf_var (a1, 64, "0x%08"PFMT64x, seek + len);
-			r_table_add_rowf (table, "sssssss", "=>", a0, r_strbuf_drain (buf), a1, "", "", "");
-		} else {
-			r_strbuf_free (buf);
+			char *b = r_strbuf_drain (buf);
+			r_table_add_rowf (table, "sssssss", "=>", a0, b, a1, "", "", "");
+			free (b);
 		}
 	}
 }

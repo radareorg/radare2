@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2014 - pancake */
+/* radare - LGPL - Copyright 2011-2022 - pancake */
 
 #ifndef R2_MAGIC_H
 #define R2_MAGIC_H
@@ -12,12 +12,6 @@ extern "C" {
 R_LIB_VERSION_HEADER (r_magic);
 
 #ifdef R_API
-
-#ifdef __EMX__
-#define PATHSEP	';'
-#else
-#define PATHSEP	':'
-#endif
 
 /* limits */
 #ifndef HOWMANY

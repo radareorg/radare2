@@ -159,3 +159,79 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
 		}
 	}
 }
+
+/* Iterate available diffs and print json output */
+R_API void r_core_diff_show_json(RCore *c, RCore *c2) {
+	RList *fcns;
+	const char *match;
+	RListIter *iter;
+	RAnalFunction *f;
+	PJ *pj = r_core_pj_new (c);
+
+	if (!pj) {
+		return;
+	}
+
+	fcns = r_anal_get_fcns (c->anal);
+	if (r_list_empty (fcns)) {
+		R_LOG_ERROR ("No functions found, try running with -A or load a project");
+		return;
+	}
+
+	pj_a (pj);
+
+	r_list_foreach (fcns, iter, f) {
+		switch (f->type) {
+		case R_ANAL_FCN_TYPE_FCN:
+		case R_ANAL_FCN_TYPE_SYM:
+			switch (f->diff->type) {
+			case R_ANAL_DIFF_TYPE_MATCH:
+				match = "MATCH";
+				break;
+			case R_ANAL_DIFF_TYPE_UNMATCH:
+				match = "UNMATCH";
+				break;
+			default:
+				match = "NEW";
+				f->diff->dist = 0;
+			}
+
+			pj_o (pj);
+			pj_kn (pj, "addr", f->addr);
+			pj_ks (pj, "name", f->name? f->name: "");
+			pj_kn (pj, "size", r_anal_function_linear_size (f));
+			pj_kn (pj, "diff_addr", f->diff->addr);
+			pj_ks (pj, "diff_name", f->diff->name? f->diff->name: "");
+			pj_kn (pj, "diff_size", f->diff->size);
+			pj_ks (pj, "match", match);
+			pj_kd (pj, "dist", f->diff->dist);
+			pj_end (pj);
+
+			break;
+		}
+	}
+
+	fcns = r_anal_get_fcns (c2->anal);
+	r_list_foreach (fcns, iter, f) {
+		switch (f->type) {
+		case R_ANAL_FCN_TYPE_FCN:
+		case R_ANAL_FCN_TYPE_SYM:
+			if (f->diff->type == R_ANAL_DIFF_TYPE_NULL) {
+				pj_o (pj);
+				pj_kn (pj, "addr", f->addr);
+				pj_ks (pj, "name", f->name? f->name: "");
+				pj_kn (pj, "size", r_anal_function_linear_size (f));
+				pj_ks (pj, "match", "NEW");
+				pj_kd (pj, "dist", 0);
+				pj_end (pj);
+			}
+			break;
+		}
+	}
+
+	pj_end (pj);
+
+	char *s = pj_drain (pj);
+	printf ("%s\n", s);
+	free (s);
+}

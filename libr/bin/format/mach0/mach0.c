@@ -1,13 +1,13 @@
 /* radare - LGPL - Copyright 2010-2022 - nibble, mrmacete, pancake */
 
 #define R_LOG_ORIGIN "bin.macho"
+
 #include <r_hash.h>
 #include "mach0.h"
 
-// TODO: deprecate bprintf and use Eprintf (bin->self)
 #define bprintf if (bin->verbose) eprintf
-#define Eprintf if (mo->verbose) eprintf
 
+#define MACHO_MAX_SECTIONS 4096
 // Microsoft C++: 2048 characters; Intel C++: 2048 characters; g++: No limit
 // see -e bin.maxsymlen
 
@@ -44,7 +44,7 @@ static ut64 read_uleb128(ut8 **p, ut8 *end) {
 	ut64 v;
 	*p = (ut8 *)r_uleb128 (*p, end - *p, &v, &error);
 	if (error) {
-		eprintf ("%s\n", error);
+		R_LOG_ERROR ("%s", error);
 		R_FREE (error);
 		return UT64_MAX;
 	}
@@ -352,7 +352,7 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 	if (bin->segs[j].nsects > 0) {
 		sect = bin->nsects;
 		bin->nsects += bin->segs[j].nsects;
-		if (bin->nsects > 128) {
+		if (bin->nsects > MACHO_MAX_SECTIONS) {
 			int new_nsects = bin->nsects & 0xf;
 			bprintf ("WARNING: mach0 header contains too many sections (%d). Wrapping to %d\n",
 				 bin->nsects, new_nsects);
@@ -525,7 +525,7 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 error:
 	R_FREE (mo->symstr);
 	R_FREE (mo->symtab);
-	Eprintf ("%s\n", error_message);
+	R_LOG_DEBUG ("%s", error_message);
 	return false;
 }
 
@@ -1711,7 +1711,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 	bin->os = 0;
 	bin->has_crypto = 0;
 	if (bin->hdr.sizeofcmds > bin->size) {
-		bprintf ("Warning: chopping hdr.sizeofcmds\n");
+		R_LOG_WARN ("chopping hdr.sizeofcmds because it's larger than the file size");
 		bin->hdr.sizeofcmds = bin->size - 128;
 		//return false;
 	}
@@ -1720,12 +1720,12 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + bin->header_at; \
 			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		if (off > bin->size || off + sizeof (struct load_command) > bin->size) {
-			bprintf ("mach0: out of bounds command\n");
+			R_LOG_WARN ("out of bounds macho command");
 			return false;
 		}
 		len = r_buf_read_at (bin->b, off, loadc, sizeof (struct load_command));
 		if (len < 1) {
-			bprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
+			R_LOG_ERROR ("read (lc) at 0x%08"PFMT64x, off);
 			return false;
 		}
 		lc.cmd = r_read_ble32 (&loadc[0], bin->big_endian);
@@ -2289,7 +2289,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 		}
 	}
 	if (bin->nsects > 0) {
-		int last_section = R_MIN (bin->nsects, 128); // maybe drop this limit?
+		int last_section = R_MIN (bin->nsects, MACHO_MAX_SECTIONS);
 		for (i = 0; i < last_section; i++) {
 			RBinSection *s = R_NEW0 (RBinSection);
 			if (!s) {
@@ -2334,7 +2334,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 	return list;
 }
 
-// XXX this function is called so many times
+// XXX this function is called so many times, should return cached RList instead
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
 	struct section_t *sections;
@@ -2369,11 +2369,11 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 	if (!bin->sects) {
 		return NULL;
 	}
-	to = R_MIN (bin->nsects, 128); // limit number of sections here to avoid fuzzed bins
+	to = R_MIN (bin->nsects, MACHO_MAX_SECTIONS);
 	if (to < 1) {
 		return NULL;
 	}
-	if (!(sections = calloc (bin->nsects + 1, sizeof (struct section_t)))) {
+	if (!(sections = calloc (to + 1, sizeof (struct section_t)))) {
 		return NULL;
 	}
 	for (i = 0; i < to; i++) {
@@ -2395,9 +2395,9 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 		}
 		snprintf (sections[i].name, sizeof (sections[i].name),
 			"%d.%s.%s", (int)i, raw_segname, sectname);
-		sections[i].last = 0;
+		sections[i].last = false;
 	}
-	sections[i].last = 1;
+	sections[i].last = true;
 	return sections;
 }
 

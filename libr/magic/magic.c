@@ -106,7 +106,7 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 	 * one extra for terminating '\0', and
 	 * some overlapping space for matches near EOF
 	 */
-#define SLOP (1 + sizeof(union VALUETYPE))
+#define SLOP (1 + sizeof (union VALUETYPE))
 	if (!(buf = malloc (HOWMANY + SLOP))) {
 		return NULL;
 	}
@@ -126,7 +126,7 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 			ispipe = true;
 		}
 	} else {
-		int flags = O_RDONLY|O_BINARY;
+		int flags = O_RDONLY | O_BINARY;
 
 		if (stat (inname, &sb) == 0 && S_ISFIFO (sb.st_mode)) {
 #if O_NONBLOCK
