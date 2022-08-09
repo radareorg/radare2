@@ -5831,14 +5831,14 @@ static bool printAnalPaths(RCoreAnalPaths *p, PJ *pj) {
 	if (pj) {
 		pj_a (pj);
 	} else {
-		r_cons_printf ("pdb @@= ");
+		r_cons_printf ("pdb @@=");
 	}
 
 	r_list_foreach (p->path, iter, path) {
 		if (pj) {
 			pj_n (pj, path->addr);
 		} else {
-			r_cons_printf ("0x%08"PFMT64x" ", path->addr);
+			r_cons_printf (" 0x%08"PFMT64x, path->addr);
 		}
 	}
 
@@ -5881,13 +5881,11 @@ static void analPaths(RCoreAnalPaths *p, PJ *pj) {
 			return;
 		}
 	} else {
-		RAnalBlock *c = cur;
 		ut64 j = cur->jump;
 		ut64 f = cur->fail;
 		analPathFollow (p, j, pj);
-		cur = c;
 		analPathFollow (p, f, pj);
-		if (p->followCalls) {
+		if (p->cur == cur && p->followCalls) {
 			int i;
 			for (i = 0; i < cur->op_pos_size; i++) {
 				ut64 addr = cur->addr + cur->op_pos[i];
@@ -5895,7 +5893,6 @@ static void analPaths(RCoreAnalPaths *p, PJ *pj) {
 				if (op && op->type == R_ANAL_OP_TYPE_CALL) {
 					analPathFollow (p, op->jump, pj);
 				}
-				cur = c;
 				r_anal_op_free (op);
 			}
 		}
