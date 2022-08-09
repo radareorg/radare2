@@ -688,7 +688,6 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				} // else show_raw is_above()
 				break;
 			case 'p': // PE/python
-				create (format, arch, bits, tmp, tmpsz);
 				if (strlen (format) > 2 && format[1] == 'y') { // Python
 					r_print_code (p, 0, tmp, tmpsz, 'p');
 				} else { // PE
