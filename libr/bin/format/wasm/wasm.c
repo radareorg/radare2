@@ -1131,7 +1131,7 @@ static int _export_sorter(const void *_a, const void *_b) {
 }
 
 static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
-	RPVectorComparator *sorter = NULL;
+	RPVectorComparator sorter = NULL;
 	RPVector **cache = NULL;
 	RPVectorFree pfree = (RPVectorFree)free;
 	ParseEntryFcn parser;
@@ -1161,7 +1161,7 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 		parser = (ParseEntryFcn)parse_export_entry;
 		pfree = (RPVectorFree)free_export_entry;
 		cache = &bin->g_exports;
-		sorter = _export_sorter;
+		sorter = (RPVectorComparator)_export_sorter;
 		break;
 	case R_BIN_WASM_SECTION_ELEMENT:
 		parser = (ParseEntryFcn)parse_element_entry;
