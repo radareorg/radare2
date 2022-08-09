@@ -2880,7 +2880,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		arg[end - input] = 0;
 		RCoreAutocomplete* a = r_core_autocomplete_find (b, arg, true);
 		input = r_str_trim_head_ro (end);
-		if (input && *input && !a) {
+		if (R_STR_ISNOTEMPTY (input) && !a) {
 			if (b->type == R_CORE_AUTOCMPLT_DFLT && !(b = r_core_autocomplete_add (b, arg, R_CORE_AUTOCMPLT_DFLT, false))) {
 				eprintf ("ENOMEM\n");
 				return;
@@ -2888,7 +2888,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 				eprintf ("Cannot add autocomplete to '%s'. type not $dflt\n", b->cmd);
 				return;
 			}
-		} else if ((!input || !*input) && !a) {
+		} else if (R_STR_ISEMPTY (input) && !a) {
 			if (arg[0] == '$') {
 				int type = autocomplete_type (arg);
 				if (type != R_CORE_AUTOCMPLT_END && !b->locked && !b->n_subcmds) {
@@ -2906,7 +2906,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 				}
 			}
 			return;
-		} else if ((!input || !*input) && a) {
+		} else if (R_STR_ISEMPTY (input) && a) {
 			// eprintf ("Cannot add '%s'. Already exists.\n", arg);
 			return;
 		} else {
