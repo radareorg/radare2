@@ -428,6 +428,8 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			format = "mach064";
 		} else if (!strcmp (format, "elf")) {
 			format = "elf64";
+		} else if (!strcmp (format, "pe")) {
+			format = "pe64";
 		}
 	}
 
