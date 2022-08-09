@@ -130,26 +130,6 @@ nth paddr      vaddr      bind   type size lib name
 EOF
 RUN
 
-NAME=WASM Export functions with custom section
-FILE=bins/wasm/sections.wasm
-CMDS=iE
-EXPECT=<<EOF
-[Exports]
-
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
-8   0x000003f1 0x000003f1 GLOBAL FUNC 16       _start
-16  0x000004f5 0x000004f5 GLOBAL FUNC 3        stackSave
-17  0x000004fa 0x000004fa GLOBAL FUNC 5        stackRestore
-18  0x00000505 0x00000505 GLOBAL FUNC 15       stackAlloc
-19  0x00000516 0x00000516 GLOBAL FUNC 19       emscripten_stack_init
-20  0x0000052b 0x0000052b GLOBAL FUNC 6        emscripten_stack_get_free
-21  0x00000533 0x00000533 GLOBAL FUNC 3        emscripten_stack_get_base
-22  0x00000538 0x00000538 GLOBAL FUNC 3        emscripten_stack_get_end
-23  0x0000053d 0x0000053d GLOBAL FUNC 4        __errno_location
-EOF
-RUN
-
 NAME=WASM Export functions w/o custom section
 FILE=bins/wasm/unary.wasm
 CMDS=iE
