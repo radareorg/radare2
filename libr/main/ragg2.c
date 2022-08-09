@@ -259,7 +259,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				ut8 *b;
 				*p++ = 0;
 				off = r_num_math (NULL, arg);
-				b = malloc (strlen (opt.arg) + 1);
+				b = calloc (1, strlen (opt.arg) + 1);
 				len = r_hex_str2bin (p, b);
 				if (len > 0) {
 					r_egg_patch (es->e, off, (const ut8 *)b, len);
@@ -550,7 +550,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	
 	// add raw bytes
 	if (bytes) {
-		ut8 *b = malloc (strlen (bytes) + 1);
+		ut8 *b = calloc (1, strlen (bytes) + 1);
 		int len = r_hex_str2bin (bytes, b);
 		if (len > 0) {
 			if (!r_egg_raw (es->e, b, len)) {
