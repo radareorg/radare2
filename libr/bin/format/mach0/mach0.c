@@ -1490,8 +1490,6 @@ static size_t get_word_size(struct MACH0_(obj_t) *bin) {
 }
 
 static bool parse_chained_fixups(struct MACH0_(obj_t) *bin, ut32 offset, ut32 size) {
-eprintf ("SKIP\n");
-return false;
 	struct dyld_chained_fixups_header header;
 	if (size < sizeof (header)) {
 		return false;
