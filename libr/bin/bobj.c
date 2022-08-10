@@ -242,8 +242,9 @@ static RRBTree *list2rbtree(RList *relocs) {
 
 static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 	ht_pp_free (bo->classes_ht);
-	ht_pp_free (bo->methods_ht);
 	bo->classes_ht = ht_pp_new0 ();
+
+	ht_pp_free (bo->methods_ht);
 	bo->methods_ht = ht_pp_new0 ();
 
 	RListIter *it, *it2;

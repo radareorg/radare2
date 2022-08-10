@@ -1490,6 +1490,8 @@ static size_t get_word_size(struct MACH0_(obj_t) *bin) {
 }
 
 static bool parse_chained_fixups(struct MACH0_(obj_t) *bin, ut32 offset, ut32 size) {
+eprintf ("SKIP\n");
+return false;
 	struct dyld_chained_fixups_header header;
 	if (size < sizeof (header)) {
 		return false;
@@ -1700,6 +1702,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 }
 
 static int init_items(struct MACH0_(obj_t) *bin) {
+	bool skip_chained_fixups = r_sys_getenv_asbool ("RABIN2_MACHO_SKIPFIXUPS");
 	struct load_command lc = {0, 0};
 	ut8 loadc[sizeof (struct load_command)] = {0};
 	bool is_first_thread = true;
@@ -2056,15 +2059,16 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				ut8 buf[8];
 				r_buf_read_at (bin->b, off + 8, buf, sizeof (buf));
 				ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
-				ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
+				ut32 datasize = r_read_ble32 (buf + 4, bin->big_endian);
 				eprintf ("exports trie at 0x%x size %d\n", dataoff, datasize);
 			}
 			break;
-		case LC_DYLD_CHAINED_FIXUPS: {
+		case LC_DYLD_CHAINED_FIXUPS:
+			if (!skip_chained_fixups) {
 				ut8 buf[8];
 				if (r_buf_read_at (bin->b, off + 8, buf, sizeof (buf)) == sizeof (buf)) {
 					ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
-					ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
+					ut32 datasize = r_read_ble32 (buf + 4, bin->big_endian);
 					if (bin->verbose) {
 						eprintf ("chained fixups at 0x%x size %d\n", dataoff, datasize);
 					}
