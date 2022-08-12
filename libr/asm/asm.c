@@ -262,7 +262,7 @@ R_API void r_asm_free(RAsm *a) {
 	if (a->cur && a->cur->fini) {
 		a->cur->fini (a->cur->user);
 	}
-	r_unref (a->config);
+	// r_unref (a->config);
 	if (a->plugins) {
 		r_list_free (a->plugins);
 		a->plugins = NULL;
