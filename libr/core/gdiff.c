@@ -162,22 +162,19 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
 
 /* Iterate available diffs and print json output */
 R_API void r_core_diff_show_json(RCore *c, RCore *c2) {
-	RList *fcns;
 	const char *match;
 	RListIter *iter;
 	RAnalFunction *f;
-	PJ *pj = r_core_pj_new (c);
 
-	if (!pj) {
-		return;
-	}
-
-	fcns = r_anal_get_fcns (c->anal);
+	RList *fcns = r_anal_get_fcns (c->anal);
 	if (r_list_empty (fcns)) {
 		R_LOG_ERROR ("No functions found, try running with -A or load a project");
 		return;
 	}
-
+	PJ *pj = r_core_pj_new (c);
+	if (!pj) {
+		return;
+	}
 	pj_a (pj);
 
 	r_list_foreach (fcns, iter, f) {
