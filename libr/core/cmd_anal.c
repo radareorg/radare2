@@ -7240,13 +7240,13 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			break;
 		case 'p': //"aesp"
 			n = strchr (input, ' ');
-			n1 = n ? strchr (n + 1, ' ') : NULL;
+			n1 = (n && *n) ? strchr (n + 1, ' ') : NULL;
 			if ((!n || !n1) || (!*n || !*n1)) {
 				eprintf ("aesp [offset] [num]\n");
 				break;
 			}
-			adr = r_num_math (core->num, n + 1);
-			off = r_num_math (core->num, n1 + 1);
+			adr = n? r_num_math (core->num, n + 1): 0;
+			off = n1? r_num_math (core->num, n1 + 1): 0;
 			cmd_aespc (core, adr, -1, off);
 			break;
 		case ' ':
@@ -12051,7 +12051,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 
 static void show_reg_args(RCore *core, int nargs, RStrBuf *sb) {
 	int i;
-	char regname[12];
+	char regname[16];
 	if (nargs < 0) {
 		nargs = 4; // default args if not defined
 	}
@@ -12059,7 +12059,7 @@ static void show_reg_args(RCore *core, int nargs, RStrBuf *sb) {
 		snprintf (regname, sizeof (regname), "A%d", i);
 		ut64 v = r_reg_getv (core->anal->reg, regname);
 		if (sb) {
-			r_strbuf_appendf (sb, "%s0x%08"PFMT64x, i?", ":"", v);
+			r_strbuf_appendf (sb, "%s0x%08"PFMT64x, i? ", ": "", v);
 		} else {
 			r_cons_printf ("A%d 0x%08"PFMT64x"\n", i, v);
 		}
