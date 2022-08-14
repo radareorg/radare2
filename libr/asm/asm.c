@@ -450,24 +450,27 @@ R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 }
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
-	r_return_val_if_fail (a && a->cur, false);
-	a->config->big_endian = false; // little endian by default
-	// TODO: Use a->config->endian the same as a->cur->endian, and save this switch
-	switch (a->cur->endian) {
-	case R_SYS_ENDIAN_NONE:
-	case R_SYS_ENDIAN_BI:
-		// TODO: not yet implemented
+	r_return_val_if_fail (a, false);
+	a->config->big_endian = (bool)R_SYS_ENDIAN; // default is host endian
+	if (a->cur) {
+		switch (a->cur->endian) {
+		case R_SYS_ENDIAN_NONE:
+		case R_SYS_ENDIAN_BI:
+			// TODO: not yet implemented
+			a->config->big_endian = b;
+			break;
+		case R_SYS_ENDIAN_LITTLE:
+			a->config->big_endian = false;
+			break;
+		case R_SYS_ENDIAN_BIG:
+			a->config->big_endian = true;
+			break;
+		default:
+			R_LOG_WARN ("RAsmPlugin doesn't specify endianness");
+			break;
+		}
+	} else {
 		a->config->big_endian = b;
-		break;
-	case R_SYS_ENDIAN_LITTLE:
-		a->config->big_endian = false;
-		break;
-	case R_SYS_ENDIAN_BIG:
-		a->config->big_endian = true;
-		break;
-	default:
-		R_LOG_WARN ("RAsmPlugin doesn't specify endianness");
-		break;
 	}
 	return a->config->big_endian;
 }
