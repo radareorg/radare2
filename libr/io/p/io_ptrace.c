@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2021 - pancake */
+/* radare - LGPL - Copyright 2008-2022 - pancake */
 
 #include <r_userconf.h>
 #include <r_util.h>
@@ -7,7 +7,7 @@
 #include <r_cons.h>
 #include <r_debug.h>
 
-#if DEBUGGER && (__linux__ || __BSD__)
+#if DEBUGGER && (__linux__ || __BSD__ || defined(__serenity__))
 
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -54,7 +54,7 @@ static int __waitpid(int pid) {
 
 #define debug_read_raw(io,x,y) r_io_ptrace((io), PTRACE_PEEKTEXT, (x), (void *)(y), R_PTRACE_NODATA)
 #define debug_write_raw(io,x,y,z) r_io_ptrace((io), PTRACE_POKEDATA, (x), (void *)(y), (r_ptrace_data_t)(z))
-#if __OpenBSD__ || __NetBSD__ || __KFBSD__
+#if __OpenBSD__ || __NetBSD__ || __KFBSD__ || defined(__serenity__)
 typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, int data);
 #else
 typedef size_t ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);

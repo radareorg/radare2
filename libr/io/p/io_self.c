@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2021 - pancake */
+/* radare - LGPL - Copyright 2014-2022 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -264,13 +264,11 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
-	int ret, pid = r_sys_getpid ();
 	if (r_sandbox_enable (0)) {
 		return NULL;
 	}
-	io->va = true; // nop
-	ret = update_self_regions (io, pid);
-	if (ret) {
+	int pid = r_sys_getpid ();
+	if (update_self_regions (io, pid)) {
 		return r_io_desc_new (io, &r_io_plugin_self,
 			file, rw, mode, NULL);
 	}
