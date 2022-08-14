@@ -854,7 +854,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 	if (p->_aslr != -1) {
 		setASLR (p, p->_aslr);
 	}
-#if __UNIX__ && !__wasi__ && !defined(serenity)
+#if __UNIX__ && !__wasi__ && !defined(__serenity__)
 	set_limit (p->_docore, RLIMIT_CORE, RLIM_INFINITY);
 	if (p->_maxfd) {
 		set_limit (p->_maxfd, RLIMIT_NOFILE, p->_maxfd);

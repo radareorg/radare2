@@ -426,7 +426,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		eprintf ("RES %"PFMT64d"\n", result);
 		free (argv);
-#if !defined(__WINDOWS__)
+#if !defined(__WINDOWS__) && !defined (__serenity__)
 	} else if (r_str_startswith (cmd, "alarm ")) {
 		struct itimerval tmout;
 		int secs = atoi (cmd + 6);
@@ -440,7 +440,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 #ifdef _MSC_VER
 #pragma message ("self:// alarm is not implemented for this platform yet")
 #else
-	#warning "self:// alarm is not implemented for this platform yet"
+#warning "self:// alarm is not implemented for this platform yet"
 #endif
 #endif
 	} else if (r_str_startswith (cmd, "dlsym ")) {
