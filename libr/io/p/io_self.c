@@ -54,9 +54,9 @@ typedef struct {
 	int perm;
 } RIOSelfSection;
 
-static RIOSelfSection self_sections[1024];
-static int self_sections_count = 0;
-static bool mameio = false;
+static R_TH_LOCAL RIOSelfSection self_sections[1024];
+static R_TH_LOCAL int self_sections_count = 0;
+static R_TH_LOCAL bool mameio = false;
 
 static int self_in_section(RIO *io, ut64 addr, int *left, int *perm) {
 	int i;
@@ -74,6 +74,109 @@ static int self_in_section(RIO *io, ut64 addr, int *left, int *perm) {
 	return false;
 }
 
+#if __serenity__
+static ut64 getnum(char *s) {
+	if (s && *s == '"') {
+		char *colon = strchr (s, ':');
+		if (colon) {
+			char *comma = strchr (s, ',');
+			if (comma) {
+				*comma = 0;
+				return r_num_get (NULL, colon + 1);
+			}
+		}
+	}
+	return 0;
+}
+
+static char *getstr(char *s) {
+	if (s && *s == '"') {
+		char *colon = strchr (s, ':');
+		if (colon) {
+			char *comma = strchr (s, ',');
+			if (comma) {
+				*comma = 0;
+				char *q = strchr (colon, '"');
+				if (q) {
+					char *q2 = strchr (q + 1, '"');
+					if (q2) {
+						return r_str_ndup (q + 1, q2 - q);
+					}
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
+static int serenity_debug_regions(RIO *io, int pid) {
+	// pid is ignored
+	const char *path = "/proc/self/vm";
+#if 0
+[
+  {
+    "readable": true,
+    "writable": true,
+    "executable": true,
+    "stack": true,
+    "shared": true,
+    "syscall": true,
+    "purgeable": true,
+    "cacheable": true,
+    "address": 1234,
+    "size": 4096,
+    "amount_resident": 4096,
+    "amount_dirty": 4096,
+    "cow_pages": 0,
+    "name": "/bin/cat",
+    "vmobject": "/bin/cat",
+    "pagemap": "P",
+  },
+  {
+  ...
+  }
+]
+#endif
+	char *pos_c;
+	int i, l, perm;
+	char line[1024];
+	char region[100], region2[100], perms[5];
+
+	int sz;
+	self_sections_count = 0;
+	char *vmdata = r_file_slurp (path, &sz);
+	char *s = r_str_ndup (vmdata, sz);
+	char *p = s;
+	while (true) {
+		char *next = strchr (p, '}');
+		if (!next) {
+			break;
+		}
+		char *addr = strstr (p, "\"address\":");
+		char *size = strstr (p, "\"size\":");
+		char *name = strstr (p, "\"name\":");
+		if (addr && size && name) {
+			int r = strstr ("\"readable\": true,")? R_PERM_R: 0;
+			int w = strstr ("\"writable\": true,")? R_PERM_W: 0;
+			int x = strstr ("\"executable\": true,")? R_PERM_X: 0;
+			ut64 a = getnum (addr);
+			ut64 s = getnum (size);
+			char *n = getstr (name);
+			self_sections[self_sections_count].from = a;
+			self_sections[self_sections_count].to = a + s;
+			self_sections[self_sections_count].name = n;
+			self_sections[self_sections_count].perm = r|w|x;
+			self_sections_count++;
+		}
+		p = next + 1;
+	}
+	free (vmdata);
+	free (s);
+
+	return true;
+}
+#endif
+
 static int update_self_regions(RIO *io, int pid) {
 	self_sections_count = 0;
 #if __APPLE__
@@ -86,6 +189,8 @@ static int update_self_regions(RIO *io, int pid) {
 	}
 	macosx_debug_regions (io, task, (size_t)1, 1000);
 	return true;
+#elif __serenity__
+	return serenity_debug_regions (io, pid);
 #elif __linux__
 	char *pos_c;
 	int i, l, perm;
@@ -815,11 +920,9 @@ exit:
 		if (entry.protection & VM_PROT_WRITE) {
 			perm |= R_PERM_W;
 		}
-
 		if (entry.protection & VM_PROT_EXECUTE) {
 			perm |= R_PERM_X;
 		}
-
 		io->cb_printf (" %p - %p %s [off. %" PFMT64u "]\n",
 				(void *)entry.ba.start,
 				(void *)entry.ba.end,
