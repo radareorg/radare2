@@ -84,9 +84,9 @@ static bool __close(RIODesc *fd) {
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (*cmd == '?' || !strcmp (cmd, "help")) {
-		eprintf ("Usage: =!cmd args\n"
-			" =!:<bochscmd>      - Send a bochs command.\n"
-			" =!dobreak	  - pause bochs.\n");
+		eprintf ("Usage: :cmd args\n"
+			" ::<bochscmd>      - Send a bochs command.\n"
+			" :dobreak	  - pause bochs.\n");
 		bochs_send_cmd (desc, &cmd[1], true);
 		io->cb_printf ("%s\n", desc->data);
 	} else if (r_str_startswith (cmd, "dobreak")) {

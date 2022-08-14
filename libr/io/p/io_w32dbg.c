@@ -246,7 +246,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		return r_str_newf ("%lu", wrap->pi.dwProcessId);
 	} else {
-		eprintf ("Try: '=!pid'\n");
+		eprintf ("Try: ':pid'\n");
 	}
 	return NULL;
 }

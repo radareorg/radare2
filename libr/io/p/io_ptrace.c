@@ -289,11 +289,11 @@ static bool __close(RIODesc *desc) {
 }
 
 static void show_help(void) {
-	eprintf ("Usage: =!cmd args\n"
-		" =!ptrace   - use ptrace io\n"
-		" =!mem      - use /proc/pid/mem io if possible\n"
-		" =!pid      - show targeted pid\n"
-		" =!pid <#>  - select new pid\n");
+	eprintf ("Usage: :cmd args\n"
+		" :ptrace   - use ptrace io\n"
+		" :mem      - use /proc/pid/mem io if possible\n"
+		" :pid      - show targeted pid\n"
+		" :pid <#>  - select new pid\n");
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {

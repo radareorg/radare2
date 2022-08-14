@@ -150,9 +150,9 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 		if (i > 0) {
 			eprintf ("rap connection was successful. open %d\n", i);
 			// io->coreb.cmd (io->coreb.core, "e io.va=0");
-			io->coreb.cmd (io->coreb.core, ".=!i*");
-			io->coreb.cmd (io->coreb.core, ".=!f*");
-			io->coreb.cmd (io->coreb.core, ".=!om*");
+			io->coreb.cmd (io->coreb.core, ".:i*");
+			io->coreb.cmd (io->coreb.core, ".:f*");
+			io->coreb.cmd (io->coreb.core, ".:om*");
 		}
 	}
 	return r_io_desc_new (io, &r_io_plugin_rap,

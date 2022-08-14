@@ -343,7 +343,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		char *argv = strdup (cmd + 5);
 		int argc = r_str_word_set0 (argv);
 		if (argc == 0) {
-			eprintf ("Usage: =!call [fcnptr] [a0] [a1] ...\n");
+			eprintf ("Usage: :call [fcnptr] [a0] [a1] ...\n");
 			free (argv);
 			return NULL;
 		}
@@ -460,7 +460,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			eprintf ("This process is not a MAME!");
 		}
 		r_lib_dl_close (lib);
-	} else if (!strcmp (cmd, "maps")) {
+	} else if (!strcmp (cmd, "maps") || r_str_startswith (cmd, "dm")) {
 		int i;
 		for (i = 0; i < self_sections_count; i++) {
 			eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %s %s\n",
@@ -468,17 +468,17 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				r_str_rwx_i (self_sections[i].perm),
 				self_sections[i].name);
 		}
-	} else {
-		eprintf ("|Usage: =![cmd] [args]\n");
-		eprintf ("| =!pid               show getpid()\n");
-		eprintf ("| =!maps              show map regions\n");
-		eprintf ("| =!kill              commit suicide\n");
+	} else if (*cmd == '?') {
+		eprintf ("|Usage: :[cmd] [args]\n");
+		eprintf ("| :pid               show getpid()\n");
+		eprintf ("| :maps              show map regions (same as :dm)\n");
+		eprintf ("| :kill              commit suicide\n");
 #if !defined(__WINDOWS__)
-		eprintf ("| =!alarm [secs]      setup alarm signal to raise r2 prompt\n");
+		eprintf ("| :alarm [secs]      setup alarm signal to raise r2 prompt\n");
 #endif
-		eprintf ("| =!dlsym [sym]       dlopen\n");
-		eprintf ("| =!call [sym] [...]  nativelly call a function\n");
-		eprintf ("| =!mameio            enter mame IO mode\n");
+		eprintf ("| :dlsym [sym]       dlopen\n");
+		eprintf ("| :call [sym] [...]  nativelly call a function\n");
+		eprintf ("| :mameio            enter mame IO mode\n");
 	}
 	return NULL;
 }

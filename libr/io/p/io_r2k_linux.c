@@ -242,10 +242,10 @@ static void print_help(RIO *io, char *cmd, int p_usage) {
 		":rl     addr len        Read from linear address",
 		":rp     pid addr len    Read from process address",
 		":rP     addr len        Read physical address",
-		":R[p]                   Print control registers. Use =!Rp for detailed description",
-		":wl[x]  addr input      Write at linear address. Use =!wlx for input in hex",
-		":wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex",
-		":wP[x]  addr input      Write at physical address. Use =!wPx for input in hex",
+		":R[p]                   Print control registers. Use :Rp for detailed description",
+		":wl[x]  addr input      Write at linear address. Use :wlx for input in hex",
+		":wp[x]  pid addr input  Write at process address. Use :wpx for input in hex",
+		":wP[x]  addr input      Write at physical address. Use :wPx for input in hex",
 		":W      1|0             Honor arch write protect (1 enable WP, 0 disable WP)"
 	};
 	if (p_usage) {
@@ -442,7 +442,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			switch (buf[1]) {
 			case 'l':
 				//read linear address
-				//=! rl addr len
+				//: rl addr len
 				if (buf[2] != ' ') {
 					print_help (io, "rl", 0);
 					goto end;
@@ -459,7 +459,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				break;
 			case 'p':
 				//read process address
-				//=! rp pid address len
+				//: rp pid address len
 				if (buf[2] != ' ') {
 					print_help (io, "rp", 0);
 					goto end;
@@ -476,7 +476,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				break;
 			case 'P':
 				//read physical address
-				//=! rP address len
+				//: rP address len
 				if (buf[2] != ' ') {
 					print_help (io, "rP", 0);
 					goto end;
@@ -513,7 +513,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		switch (buf[1]) {
 		case 'l':
 			//write linear address
-			//=! wl addr str
+			//: wl addr str
 			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
 				print_help (io, "wl", 0);
 				goto end;
@@ -530,7 +530,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			break;
 		case 'p':
 			//write process address
-			//=! wp pid address str
+			//: wp pid address str
 			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
 				print_help (io, "wp", 0);
 				goto end;
@@ -547,7 +547,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			break;
 		case 'P':
 			//write physical address
-			//=! wP address str
+			//: wP address str
 			if ((inphex && buf[3] != ' ') || (!inphex && buf[2] != ' ')) {
 				print_help (io, "wP", 0);
 				goto end;
@@ -585,7 +585,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	case 'M':
 		{
 			//Print kernel memory map.
-			//=! M
+			//: M
 			int i, j;
 			struct r2k_kernel_maps map_data;
 			struct r2k_kernel_map_info *info;
@@ -624,7 +624,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	case 'R':
 		{
 			//Read control registers
-			//=! R[p]
+			//: R[p]
 			struct r2k_control_reg reg_data;
 			ioctl_n = IOCTL_READ_CONTROL_REG;
 			ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &reg_data);
@@ -674,7 +674,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	case 'p':
 		{
 			//Print process info
-			//=! p pid
+			//: p pid
 			ut64 i;
 			ut64 nextstart;
 			ut64 buffsize;
