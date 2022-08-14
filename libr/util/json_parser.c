@@ -1,24 +1,16 @@
-/* radare - LGPL - Copyright 2020 - thestr4ng3r, Yaroslav Stavnichiy */
+/* radare - LGPL - Copyright 2020-2022 - thestr4ng3r, Yaroslav Stavnichiy, pancake */
+
+#define R_LOG_ORIGIN "json.parse"
 
 #include <errno.h>
 
+#include <r_util.h>
 #include <r_util/r_utf8.h>
 #include <r_util/r_hex.h>
 #include <r_util/r_json.h>
 
-#if 0
-// optional error printing
-#define R_JSON_REPORT_ERROR(msg, p) fprintf(stderr, "R_JSON PARSE ERROR (%d): " msg " at %s\n", __LINE__, p)
-#else
-#define R_JSON_REPORT_ERROR(msg, p) do { (void)(msg); (void)(p); } while (0)
-#endif
-
-static RJson *json_new(void) {
-	return R_NEW0 (RJson);
-}
-
 static RJson *create_json(RJsonType type, const char *key, RJson *parent) {
-	RJson *js = json_new ();
+	RJson *js = R_NEW0 (RJson);
 	if (!js) {
 		return NULL;
 	}
@@ -92,7 +84,7 @@ static char *unescape_string(char *s, char **end) {
 				ut8 high = 0, low = 0;
 				if (r_hex_to_byte (&high, p[1]) || r_hex_to_byte (&high, p[2])
 						|| r_hex_to_byte (&low, p[3]) || r_hex_to_byte (&low, p[4])) {
-					R_JSON_REPORT_ERROR ("invalid unicode escape", p - 1);
+					R_LOG_ERROR ("invalid unicode escape (%s)", p - 1);
 					return NULL;
 				}
 				RRune codepoint = (RRune)high << 8 | (RRune)low;
@@ -102,19 +94,19 @@ static char *unescape_string(char *s, char **end) {
 					if (p[-1] != '\\' || *p != 'u'
 							|| r_hex_to_byte (&high, p[1]) || r_hex_to_byte (&high, p[2])
 							|| r_hex_to_byte (&low, p[3]) || r_hex_to_byte (&low, p[4])) {
-						R_JSON_REPORT_ERROR ("invalid unicode surrogate", ps);
+						R_LOG_ERROR ("invalid unicode surrogate (%s)", ps);
 						return NULL;
 					}
 					RRune codepoint2 = (RRune)high << 8 | (RRune)low;
 					if ((codepoint2 & 0xfc00) != 0xdc00) {
-						R_JSON_REPORT_ERROR ("invalid unicode surrogate", ps);
+						R_LOG_ERROR ("invalid unicode surrogate (%s)", ps);
 						return NULL;
 					}
 					codepoint = 0x10000 + ((codepoint - 0xd800) << 10) + (codepoint2 - 0xdc00);
 				}
 				int sz = r_utf8_encode ((ut8 *)d, codepoint);
 				if (!s) {
-					R_JSON_REPORT_ERROR ("invalid codepoint", ps);
+					R_LOG_ERROR ("invalid codepoint (%s)", ps);
 					return NULL;
 				}
 				d += sz;
@@ -130,7 +122,7 @@ static char *unescape_string(char *s, char **end) {
 			*d++ = c;
 		}
 	}
-	R_JSON_REPORT_ERROR ("no closing quote for string", s);
+	R_LOG_ERROR ("no closing quote for string (%s)", s);
 	return NULL;
 }
 
@@ -139,13 +131,13 @@ static char *skip_block_comment(char *ps) {
 	// caller must ensure that ps[0], ps[1] and ps[2] are valid.
 	char *p = ps + 2;
 	if (!*p) {
-		R_JSON_REPORT_ERROR ("endless comment", ps);
+		R_LOG_ERROR ("endless comment (%s)", ps);
 		return NULL;
 	}
 	REPEAT:
 	p = strchr (p + 1, '/');
 	if (!p) {
-		R_JSON_REPORT_ERROR ("endless comment", ps);
+		R_LOG_ERROR ("endless comment (%s)", ps);
 		return NULL;
 	}
 	if (p[-1] != '*') {
@@ -161,7 +153,7 @@ static char *skip_whitespace(char *p) {
 				char *ps = p;
 				p = strchr (p + 2, '\n');
 				if (!p) {
-					R_JSON_REPORT_ERROR ("endless comment", ps);
+					R_LOG_ERROR ("endless comment (%s)", ps);
 					return NULL; // error
 				}
 				p++;
@@ -172,7 +164,7 @@ static char *skip_whitespace(char *p) {
 				}
 				continue;
 			} else {
-				R_JSON_REPORT_ERROR ("unexpected chars", p);
+				R_LOG_ERROR ("unexpected chars (%s)", p);
 				return NULL; // error
 			}
 			continue;
@@ -204,28 +196,28 @@ static char *parse_key(const char **key, char *p) {
 			if (*p == ':') {
 				return p + 1;
 			}
-			R_JSON_REPORT_ERROR ("unexpected chars", p);
+			R_LOG_ERROR ("unexpected chars (%s)", p);
 			return NULL;
 		}
 		if (c == '}') {
 			return p - 1;
 		}
-		R_JSON_REPORT_ERROR ("unexpected chars", p - 1);
+		R_LOG_ERROR ("unexpected chars (%s)", p - 1);
 		return NULL; // error
 	}
-	R_JSON_REPORT_ERROR ("unexpected chars", p - 1);
+	R_LOG_ERROR ("unexpected chars (%s)", p - 1);
 	return NULL; // error
 }
 
 static char *parse_value(RJson *parent, const char *key, char *p) {
 	RJson *js;
-	p = skip_whitespace (p);
+	p = skip_whitespace (p); // TODO: use r_str_trim_head_ro()
 	if (!p) {
 		return NULL;
 	}
 	switch (*p) {
 	case '\0':
-		R_JSON_REPORT_ERROR ("unexpected end of text", p);
+		R_LOG_ERROR ("unexpected end of text (%s)", p);
 		return NULL; // error
 	case '{':
 		js = create_json (R_JSON_OBJECT, key, parent);
@@ -254,13 +246,13 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 					return NULL;
 				}
 				if (*p == '}') {
-					R_JSON_REPORT_ERROR ("trailing comma", commapos);
+					R_LOG_ERROR ("trailing comma (%s)", commapos);
 					return NULL;
 				}
 			} else if (*p == '}') {
 				return p + 1; // end of object
 			} else {
-				R_JSON_REPORT_ERROR ("unexpected chars", p);
+				R_LOG_ERROR ("unexpected chars (%s)", p);
 				return NULL;
 			}
 		}
@@ -284,13 +276,13 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 					return NULL;
 				}
 				if (*p == ']') {
-					R_JSON_REPORT_ERROR ("trailing comma", commapos);
+					R_LOG_ERROR ("trailing comma (%s)", commapos);
 					return NULL;
 				}
 			} else if (*p == ']') {
 				return p + 1; // end of array
 			} else {
-				R_JSON_REPORT_ERROR ("unexpected chars", p);
+				R_LOG_ERROR ("unexpected chars (%s)", p);
 				return NULL;
 			}
 		}
@@ -324,7 +316,7 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 			js->num.u_value = (ut64)strtoull (p, &pe, 10);
 		}
 		if (pe == p || errno == ERANGE) {
-			R_JSON_REPORT_ERROR ("invalid number", p);
+			R_LOG_ERROR ("invalid number (%s)", p);
 			return NULL; // error
 		}
 		if (*pe == '.' || *pe == 'e' || *pe == 'E') { // double value
@@ -332,7 +324,7 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 			errno = 0;
 			js->num.dbl_value = strtod (p, &pe);
 			if (pe == p || errno == ERANGE) {
-				R_JSON_REPORT_ERROR ("invalid fractional number", p);
+				R_LOG_ERROR ("invalid fractional number (%s)", p);
 				return NULL; // error
 			}
 		} else {
@@ -345,12 +337,12 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 		return pe;
 	}
 	case 't':
-		if (!strncmp (p, "true", 4)) {
+		if (r_str_startswith (p, "true")) {
 			js = create_json (R_JSON_BOOLEAN, key, parent);
 			js->num.u_value = 1;
 			return p + 4;
 		}
-		R_JSON_REPORT_ERROR ("unexpected chars", p);
+		R_LOG_ERROR ("unexpected chars (%s)", p);
 		return NULL; // error
 	case 'f':
 		if (!strncmp (p, "false", 5)) {
@@ -358,22 +350,23 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 			js->num.u_value = 0;
 			return p + 5;
 		}
-		R_JSON_REPORT_ERROR ("unexpected chars", p);
+		R_LOG_ERROR ("unexpected chars (%s)", p);
 		return NULL; // error
 	case 'n':
-		if (!strncmp (p, "null", 4)) {
+		if (r_str_startswith (p, "null")) {
 			create_json (R_JSON_NULL, key, parent);
 			return p + 4;
 		}
-		R_JSON_REPORT_ERROR ("unexpected chars", p);
+		R_LOG_ERROR ("unexpected chars (%s)", p);
 		return NULL; // error
 	default:
-		R_JSON_REPORT_ERROR ("unexpected chars", p);
+		R_LOG_ERROR ("unexpected chars (%s)", p);
 		return NULL; // error
 	}
 	return NULL;
 }
 
+// XXX make this api const char *text instead of char *text
 R_API RJson *r_json_parse(char *text) {
 	RJson js = {0};
 	if (!parse_value (&js, 0, text)) {
