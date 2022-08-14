@@ -5489,7 +5489,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			char *ostr = r_str_trim_dup (str + 1);
 			char *regname = r_str_trim_nc (ostr);
 			if (!reg_name_roll_set (core, regname, n)) {
-				R_LOG_ERROR ("ar: Unknown register '%s'\n", regname);
+				R_LOG_ERROR ("ar: Unknown register '%s'", regname);
 			}
 			free (ostr);
 			return;
