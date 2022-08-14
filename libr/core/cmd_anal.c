@@ -5110,6 +5110,31 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	core->dbg->reg = hack;
 }
 
+static RRegItem *reg_by_name_role(RCore *core, const char *n) {
+	RRegItem *r = r_reg_get (core->anal->reg, n, -1);
+	if (!r) {
+		int role = r_reg_get_name_idx (n);
+		if (role != -1) {
+			const char *alias = r_reg_get_name (core->anal->reg, role);
+			if (alias) {
+				r = r_reg_get (core->anal->reg, alias, -1);
+			}
+		}
+	}
+	return r;
+}
+
+static bool reg_name_roll_set(RCore *core, const char *name, ut64 n) {
+	RRegItem *r = reg_by_name_role (core, name);
+	if (r) {
+		r_reg_set_value (core->anal->reg, r, n);
+		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
+		r_core_cmdf (core, ".dr*%d", core->anal->config->bits); // XXX: replace in future
+		return true;
+	}
+	return false;
+}
+
 // XXX dup from drp :OOO
 void cmd_anal_reg(RCore *core, const char *str) {
 #if 0
@@ -5126,7 +5151,6 @@ void cmd_anal_reg(RCore *core, const char *str) {
 #endif
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int use_colors = r_config_get_i (core->config, "scr.color");
-	RRegItem *r = NULL;
 	const char *use_color;
 	const char *name;
 	char *arg;
@@ -5464,26 +5488,8 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			ut64 n = r_num_math (core->num, arg + 1);
 			char *ostr = r_str_trim_dup (str + 1);
 			char *regname = r_str_trim_nc (ostr);
-			r = r_reg_get (core->anal->reg, regname, -1);
-			if (!r) {
-				int role = r_reg_get_name_idx (regname);
-				if (role != -1) {
-					const char *alias = r_reg_get_name (core->anal->reg, role);
-					if (alias) {
-						r = r_reg_get (core->anal->reg, alias, -1);
-					}
-				}
-			}
-			if (r) {
-				//eprintf ("%s 0x%08"PFMT64x" -> ", str,
-				//	r_reg_get_value (core->dbg->reg, r));
-				r_reg_set_value (core->anal->reg, r, n);
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
-				//eprintf ("0x%08"PFMT64x"\n",
-				//	r_reg_get_value (core->dbg->reg, r));
-				r_core_cmdf (core, ".dr*%d", core->anal->config->bits);
-			} else {
-				eprintf ("ar: Unknown register '%s'\n", regname);
+			if (!reg_name_roll_set (core, regname, n)) {
+				R_LOG_ERROR ("ar: Unknown register '%s'\n", regname);
 			}
 			free (ostr);
 			return;
@@ -7057,7 +7063,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		case 'c': // "aepc"
 			if (input[2] == ' ' || input[2] == '=') {
 				// seek to this address
-				r_core_cmdf (core, "ar PC=%s", r_str_trim_head_ro (input + 3));
+				reg_name_roll_set (core, "PC", r_num_math (core->num, input + 3));
 				r_core_cmd0 (core, ".ar*");
 			} else {
 				eprintf ("Usage: aepc [address]  # same as 'ar PC=..'\n");
@@ -7389,7 +7395,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			cmd_esil_mem (core, input + 2);
 			break;
 		case 'p': // "aeip" // initialize pc = $$
-			r_core_cmd0 (core, "ar PC=$$");
+			reg_name_roll_set (core, "PC", core->offset);
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_aei);
@@ -7408,7 +7414,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			{
 				const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 				if (pc && r_reg_getv (core->anal->reg, pc) == 0LL) {
-					r_core_cmd0 (core, "ar PC=$$");
+					reg_name_roll_set (core, "PC", core->offset);
 				}
 			}
 			if (!(esil = core->anal->esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
