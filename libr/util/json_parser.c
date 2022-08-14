@@ -209,9 +209,9 @@ static char *parse_key(const char **key, char *p) {
 	return NULL; // error
 }
 
-static char *parse_value(RJson *parent, const char *key, const char *p) {
+static char *parse_value(RJson *parent, const char *key, char *p) {
 	RJson *js;
-	p = skip_whitespace (p);
+	p = skip_whitespace (p); // TODO: use r_str_trim_head_ro()
 	if (!p) {
 		return NULL;
 	}
@@ -366,7 +366,8 @@ static char *parse_value(RJson *parent, const char *key, const char *p) {
 	return NULL;
 }
 
-R_API RJson *r_json_parse(const char *text) {
+// XXX make this api const char *text instead of char *text
+R_API RJson *r_json_parse(char *text) {
 	RJson js = {0};
 	if (!parse_value (&js, 0, text)) {
 		if (js.children.first) {
