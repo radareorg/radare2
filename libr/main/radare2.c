@@ -872,7 +872,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 
 	if (do_list_io_plugins) {
-		if (r_config_get_i (r->config, "cfg.plugins")) {
+		if (r_config_get_b (r->config, "cfg.plugins")) {
 			r_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
 		}
 		run_commands (r, NULL, prefiles, false, do_analysis);
@@ -945,10 +945,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	tmp = NULL;
 	if (!load_l || (tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
-		r_config_set_i (r->config, "cfg.plugins", 0);
+		r_config_set_b (r->config, "cfg.plugins", false);
 		free (tmp);
 	}
-	if (r_config_get_i (r->config, "cfg.plugins")) {
+	if (r_config_get_b (r->config, "cfg.plugins")) {
 		r_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
 	}
 	ret = run_commands (r, NULL, prefiles, false, do_analysis);
