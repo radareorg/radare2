@@ -277,6 +277,7 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int a
 	int file_err, errs = -1;
 	struct mlist *mlist;
 
+	ms->last_cont_level = 0;
 	init_file_tables ();
 	if (!fn) {
 		return NULL;
