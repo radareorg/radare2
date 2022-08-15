@@ -77,9 +77,9 @@ static bool __esil_attach(RDebug *dbg, int pid) {
 #if 0
 	RIOBdescbg *o;
 	o = dbg->iob.io->desc->data;
-eprintf ("base = %llx\n", o->bfvm->base);
-eprintf ("screen = %llx\n", o->bfvm->screen);
-eprintf ("input = %llx\n", o->bfvm->input);
+	eprintf ("base = %llx\n", o->bfvm->base);
+	eprintf ("screen = %llx\n", o->bfvm->screen);
+	eprintf ("input = %llx\n", o->bfvm->input);
 #endif
 	return true;
 }

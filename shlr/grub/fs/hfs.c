@@ -674,10 +674,10 @@ grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx, int thi
     grub_uint16_t offsets[nodesize / 2];
   } node;
 #else
-if (nodesize != 512) {
-eprintf ("Unhandled nodesize %d != 512\n", nodesize);
+  if (nodesize != 512) {
+	eprintf ("Unhandled nodesize %d != 512\n", nodesize);
 	return grub_errno;
-}
+  }
   union
   {
     struct grub_hfs_node node;
@@ -691,7 +691,7 @@ if (!node.rawnode) {
   return grub_errno;
 }
 node.offsets = malloc ((nodesize*sizeof(grub_uint16_t))/2);
-eprintf ("SET FOFS %p\n", node.offsets);
+ eprintf ("SET FOFS %p\n", node.offsets);
 if (!node.offsets) {
   return grub_errno;
 }
