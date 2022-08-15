@@ -54,7 +54,6 @@ static R_TH_LOCAL ut64 cache_addr = UT64_MAX;
 
 // TODO: move into io :?
 static int read_ahead(RAnal *anal, ut64 addr, ut8 *buf, int len) {
-	anal->cache_addr = UT64_MAX;
 	const int cache_len = sizeof (anal->cache);
 
 	if (len < 1) {
