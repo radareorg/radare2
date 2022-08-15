@@ -406,13 +406,12 @@ static inline bool is_true_or_false(const char *s) {
 
 /* TODO: reduce number of strdups here */
 R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *value) {
-	RConfigNode *node = NULL;
 	char *ov = NULL;
 	ut64 oi;
 	r_return_val_if_fail (cfg && cfg->ht, NULL);
 	r_return_val_if_fail (!IS_NULLSTR (name), NULL);
 
-	node = r_config_node_get (cfg, name);
+	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		if (r_config_node_is_ro (node)) {
 			R_LOG_ERROR ("Key '%s' is readonly", name);
