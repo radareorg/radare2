@@ -1887,7 +1887,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				xor = 0xffffffffffffffff;
 				break;
 			default:
-				eprintf ("Neg: Unhandled bitsize %d\n", bitsize);
+				R_LOG_ERROR ("Neg: Unhandled bitsize %d", bitsize);
 			}
 			esilprintf (op, "%s,!,!,cf,:=,%s,0x%"PFMT64x",^,1,+,%s,$z,zf,:=,0,of,:=,%d,$s,sf,:=,%d,$o,pf,:=",
 				src, src, xor, dst, bitsize - 1, bitsize - 1);

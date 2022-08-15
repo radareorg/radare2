@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2014-2022 - pancake, condret */
 
+#define R_LOG_ORIGIN "anal.esil"
+
 #include <r_anal.h>
 
 #if __wasi__ || EMSCRIPTEN
@@ -14,6 +16,7 @@
 #define ESIL_MACRO 0
 #define IFDBG if (esil && esil->verbose > 1)
 #define IFVBS if (esil && esil->verbose > 0)
+#define ERR(...) if (esil->verbose) { R_LOG_ERROR (__VA_ARGS__); }
 #define FLG(x) R_ANAL_ESIL_FLAG_##x
 #define cpuflag(x, y)\
 if (esil) {\
@@ -35,8 +38,6 @@ static inline ut64 genmask(int bits) {
 	}
 	return m;
 }
-
-#define ERR(...) if (esil->verbose) { R_LOG_ERROR (__VA_ARGS__); }
 
 static bool isnum(RAnalEsil *esil, const char *str, ut64 *num) {
 	if (!esil || !str) {

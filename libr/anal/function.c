@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2019-2022 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
 
@@ -18,6 +18,7 @@ static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 }
 
 R_API RList *r_anal_get_functions_in(RAnal *anal, ut64 addr) {
+	r_return_val_if_fail (anal, NULL);
 	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
@@ -30,17 +31,17 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 	// check if name is already registered
 	bool found = false;
 	if (addr == UT64_MAX) {
-		eprintf ("Invalid function address (-1) '%s'\n", name);
+		R_LOG_ERROR ("Invalid function address (-1) '%s'", name);
 		return true;
 	}
 	if (!name) {
-		eprintf ("TODO: Empty function name, we must auto generate one\n");
+		R_LOG_ERROR ("TODO: Empty function name, we must auto generate one");
 		return true;
 	}
 	RAnalFunction *f = ht_pp_find (anal->ht_name_fun, name, &found);
 	if (f && found) {
 		if (f->addr != addr) {
-			eprintf ("Invalid function name '%s' at 0x%08"PFMT64x" (function at 0x%08"PFMT64x")\n", name, addr, f->addr);
+			R_LOG_ERROR ("Invalid function name '%s' at 0x%08"PFMT64x" (function at 0x%08"PFMT64x")", name, addr, f->addr);
 		}
 		return true;
 	}
@@ -48,7 +49,7 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 	found = false;
 	f = ht_up_find (anal->ht_addr_fun, addr, &found);
 	if (f && found) {
-		eprintf ("Function already defined in 0x%08"PFMT64x"\n", addr);
+		R_LOG_WARN ("Function already defined in 0x%08"PFMT64x, addr);
 		return true;
 	}
 	return false;
@@ -130,6 +131,7 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 }
 
 R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
+	r_return_val_if_fail (anal && fcn, false);
 	if (__fcn_exists (anal, fcn->name, fcn->addr)) {
 		return false;
 	}
@@ -147,6 +149,7 @@ R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn) {
 }
 
 R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 addr, int type, RAnalDiff *diff) {
+	r_return_val_if_fail (anal && addr != UT64_MAX, NULL);
 	RAnalFunction *fcn = r_anal_function_new (anal);
 	if (!fcn) {
 		return NULL;
@@ -181,10 +184,12 @@ R_API RAnalFunction *r_anal_create_function(RAnal *anal, const char *name, ut64 
 }
 
 R_API bool r_anal_function_delete(RAnalFunction *fcn) {
+	r_return_val_if_fail (fcn, false);
 	return r_list_delete_data (fcn->anal->fcns, fcn);
 }
 
 R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
+	r_return_val_if_fail (anal, NULL);
 	bool found = false;
 	RAnalFunction *f = ht_up_find (anal->ht_addr_fun, addr, &found);
 	if (f && found) {
@@ -194,6 +199,7 @@ R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
 }
 
 R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
+	r_return_val_if_fail (fcn, false);
 	if (fcn->addr == addr) {
 		return true;
 	}
@@ -207,6 +213,7 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 }
 
 R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
+	r_return_val_if_fail (fcn && name, false);
 	RAnal *anal = fcn->anal;
 	RAnalFunction *existing = ht_pp_find (anal->ht_name_fun, name, NULL);
 	if (existing) {
@@ -231,6 +238,7 @@ R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
 }
 
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
+	r_return_if_fail (fcn && bb);
 	if (r_list_contains (bb->fcns, fcn)) {
 		return;
 	}
@@ -253,6 +261,7 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 }
 
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
+	r_return_if_fail (fcn && bb);
 	r_list_delete_data (bb->fcns, fcn);
 
 	if (fcn->meta._min != UT64_MAX
@@ -274,13 +283,13 @@ static void ensure_fcn_range(RAnalFunction *fcn) {
 	RAnalBlock *block;
 	RListIter *iter;
 	r_list_foreach (fcn->bbs, iter, block) {
-			if (block->addr < minval) {
-				minval = block->addr;
-			}
-			if (block->addr + block->size > maxval) {
-				maxval = block->addr + block->size;
-			}
+		if (block->addr < minval) {
+			minval = block->addr;
 		}
+		if (block->addr + block->size > maxval) {
+			maxval = block->addr + block->size;
+		}
+	}
 	fcn->meta._min = minval;
 	fcn->meta._max = minval == UT64_MAX ? UT64_MAX : maxval;
 }
@@ -306,13 +315,12 @@ R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn) {
 }
 
 R_API ut64 r_anal_function_realsize(const RAnalFunction *fcn) {
+	r_return_val_if_fail (fcn, UT64_MAX);
 	RListIter *iter;
 	RAnalBlock *bb;
 	ut64 sz = 0;
-	if (!sz) {
-		r_list_foreach (fcn->bbs, iter, bb) {
-			sz += bb->size;
-		}
+	r_list_foreach (fcn->bbs, iter, bb) {
+		sz += bb->size;
 	}
 	return sz;
 }
@@ -329,6 +337,10 @@ static bool fcn_in_cb(RAnalBlock *block, void *user) {
 }
 
 R_API bool r_anal_function_contains(RAnalFunction *fcn, ut64 addr) {
+	r_return_val_if_fail (fcn, false);
+	if (addr == UT64_MAX) {
+		return false;
+	}
 	// fcn_in_cb breaks with false if it finds the fcn
 	return !r_anal_blocks_foreach_in (fcn->anal, addr, fcn_in_cb, fcn);
 }
