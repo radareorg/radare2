@@ -2130,6 +2130,13 @@ static inline RAnalEsil *esil_new_from_core(RCore *core) {
 	return r_anal_esil_new (stacksize, iotrap, addrsize);
 }
 
+static inline void esil_setup_from_core(RCore *core, RAnalEsil *esil) {
+	int romem = r_config_get_i (core->config, "esil.romem");
+	int stats = r_config_get_i (core->config, "esil.stats");
+	bool nonull = r_config_get_b (core->config, "esil.nonull");
+	r_anal_esil_setup (esil, core->anal, romem, stats, nonull);
+}
+
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
 	bool be = core->rasm->config->big_endian;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -5528,10 +5535,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 }
 
 static ut64 initializeEsil(RCore *core) {
-	int romem = r_config_get_i (core->config, "esil.romem");
-	int stats = r_config_get_i (core->config, "esil.stats");
 	int exectrap = r_config_get_i (core->config, "esil.exectrap");
-	bool nonull = r_config_get_b (core->config, "esil.nonull");
 	RAnalEsil *esil = esil_new_from_core (core);
 	if (esil) {
 		r_anal_esil_free (core->anal->esil);
@@ -5542,7 +5546,7 @@ static ut64 initializeEsil(RCore *core) {
 	ut64 addr;
 	esil->verbose = r_config_get_i (core->config, "esil.verbose");
 	esil->cmd = r_core_esil_cmd;
-	r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
+	esil_setup_from_core (core, esil); // setup io
 	{
 		const char *cmd_esil_step = r_config_get (core->config, "cmd.esil.step");
 		if (cmd_esil_step && *cmd_esil_step) {
@@ -6003,15 +6007,12 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	char nomalloc[256];
 	char *p;
 	if (!esil) {
-		int romem = r_config_get_i (core->config, "esil.romem");
-		int stats = r_config_get_i (core->config, "esil.stats");
-		bool nonull = r_config_get_b (core->config, "esil.nonull");
 		int verbose = r_config_get_i (core->config, "esil.verbose");
 		esil = esil_new_from_core (core);
 		if (!esil) {
 			return;
 		}
-		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
+		esil_setup_from_core (core, esil); // setup io
 		r_anal_esil_free (core->anal->esil);
 		core->anal->esil = esil;
 		esil->verbose = verbose;
@@ -6361,7 +6362,6 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	AeaStats stats;
 	const char *esilstr;
 	RAnalOp aop = {0};
-	ut8 *buf;
 	RList* regnow;
 	PJ *pj = NULL;
 	if (!core) {
@@ -6386,7 +6386,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		buf_sz = maxopsize;
 	}
 	addr_end = addr + buf_sz;
-	buf = malloc (buf_sz);
+	ut8 *buf = malloc (buf_sz);
 	if (!buf) {
 		return false;
 	}
@@ -6396,12 +6396,13 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	//esil_init (core);
 	//esil = core->anal->esil;
 	r_reg_arena_push (core->anal->reg);
-	int romem = r_config_get_i (core->config, "esil.romem");
-	int stats1 = r_config_get_i (core->config, "esil.stats");
-	bool nonull = r_config_get_b (core->config, "esil.nonull");
 	const bool cfg_r2wars = r_config_get_i (core->config, "cfg.r2wars");
 	esil = esil_new_from_core (core);
-	r_anal_esil_setup (esil, core->anal, romem, stats1, nonull); // setup io
+	if (!esil) {
+		free (buf);
+		return false;
+	}
+	esil_setup_from_core (core, esil);
 #	define hasNext(x) (x&1) ? (addr<addr_end) : (ops<ops_end)
 
 	mymemxsr = r_list_new ();
@@ -6587,7 +6588,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	if (addr == -1) {
 		addr = r_reg_getv (core->dbg->reg, pc);
 	}
-	(void)r_anal_esil_setup (core->anal->esil, core->anal, 0, 0, 0); // int romem, int stats, int nonull) {
+	esil_setup_from_core (core, esil);
 	ut64 cursp = r_reg_getv (core->dbg->reg, "SP");
 	ut64 oldoff = core->offset;
 	const ut64 flags = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_DISASM;
@@ -7007,9 +7008,6 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 	ut64 adr ;
 	char *n, *n1;
 	int off;
-	bool romem = r_config_get_b (core->config, "esil.romem");
-	bool stats = r_config_get_b (core->config, "esil.stats");
-	bool nonull = r_config_get_b (core->config, "esil.nonull");
 	ut64 until_addr = UT64_MAX;
 
 	const char *until_expr = NULL;
@@ -7112,8 +7110,8 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			if (!esil) {
 				return;
 			}
+			esil_setup_from_core (core, esil);
 		}
-		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
 		r_anal_esil_set_pc (esil, core->offset);
 		r_anal_esil_parse (esil, input + 1);
 		if (verbose && *input != 'q') {
@@ -7415,7 +7413,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 					reg_name_roll_set (core, "PC", core->offset);
 				}
 			}
-			r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
+			esil_setup_from_core (core, esil); // setup io
 			esil->verbose = (int)r_config_get_i (core->config, "esil.verbose");
 			/* restore user settings for interrupt handling */
 			{
