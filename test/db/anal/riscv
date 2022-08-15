@@ -5,7 +5,7 @@ af @ sym._printf_r
 afl~_printf_r
 EOF
 EXPECT=<<EOF
-0x00010330    1 68           sym._printf_r
+0x00010330    1     68 sym._printf_r
 EOF
 RUN
 
