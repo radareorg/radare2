@@ -389,8 +389,8 @@ static ut32 r_n_math(ArmOp *op, ut32 data_64, ut32 data_32 , bool is64) {
 	int k = 0;
 	if (is64) {
 	        k = data_64;
-	} else { 
-	        k = data_32;	        
+	} else {
+	        k = data_32;
 	}
 	check_cond (op->operands[0].type == ARM_GPR);
 	check_cond (op->operands[1].type == ARM_GPR);
@@ -643,7 +643,7 @@ static ut32 tst(ArmOp *op) {
              } else if (check4){
                     k = 0x1f000072;
              }
-             data = k | (op->operands[0].reg & 0x7) << 29; 
+             data = k | (op->operands[0].reg & 0x7) << 29;
              data |= (op->operands[0].reg & 0x18) << 13;
 
             	// encode immediate for tst
@@ -1360,7 +1360,7 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
         ---+-------+-----------+-------+----
 	op | immlo | 1 0 0 0 0 | immhi | Rd
 
-	op = 0 (adr) || 1 (adrp) 
+	op = 0 (adr) || 1 (adrp)
 #endif
 	ut32 immlo = (at & 3) << 29;
 	ut32 immhi = (at >> 2) << 5;

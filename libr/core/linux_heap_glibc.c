@@ -1195,7 +1195,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			case '*':
 				r_cons_printf ("fs heap.corrupted\n");
 				ut64 chunkflag = (ut64)((prev_chunk >> 4) & 0xffffULL);
-				r_cons_printf ("f chunk.corrupted.%06"PFMT64x" %d 0x%"PFMT64x"\n", 
+				r_cons_printf ("f chunk.corrupted.%06"PFMT64x" %d 0x%"PFMT64x"\n",
 					chunkflag, (int)cnk->size, (ut64)prev_chunk);
 				break;
 			case 'g':

@@ -38,7 +38,7 @@ R_API bool r_io_plugin_init(RIO *io) {
 }
 
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
-	// TODO: optimization 
+	// TODO: optimization
 	if (strstr (filename, "://")) {
 		RIOPlugin *ret;
 		SdbListIter *iter;

@@ -987,16 +987,16 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			char shft[32];
 			cs_x86_op operand = insn->detail->x86.operands[2];
 			if (operand.type == X86_OP_IMM) {
-				sprintf(shft, "%" PFMT64d, operand.imm);
+				sprintf (shft, "%" PFMT64d, operand.imm);
 			} else {
-				strcpy(shft, "cl"); 
+				strcpy (shft, "cl");
 			}
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst_r = getarg (&gop, 0, 0, NULL, DST_R_AR, NULL);
 			dst_w = getarg (&gop, 0, 1, NULL, DST_W_AR, &bitsize);
 			esilprintf (op,  // set CF to last bit shifted out, OF if sign changes
 				"%s,?{,1,1,%s,-,%s,>>,&,cf,:=,1,%s,-,!,%s,%d,%s,>>,^,!,&,of,:=,"
-				"%s,%d,-,%s,<<,%s,%s,>>,|,1,%d,1,<<,-,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}", 
+				"%s,%d,-,%s,<<,%s,%s,>>,|,1,%d,1,<<,-,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}",
 				shft, shft, dst_r, shft, src, bitsize-1, dst_r,
 				shft, bitsize, src, shft, dst_r, bitsize, dst_w, bitsize-1);
 			
@@ -1978,7 +1978,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			ut32 bitsize;
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, &bitsize);
-			esilprintf (op, "%u,%u,%s,F2D,%u,%s,F2D,F+,D2F,%s,=", 
+			esilprintf (op, "%u,%u,%s,F2D,%u,%s,F2D,F+,D2F,%s,=",
 				bitsize, bitsize, src, bitsize, dst, dst);
 
 			break;
@@ -2017,7 +2017,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			}
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
-			esilprintf (op, "32,32,%s,F2D,32,%s,F2D,F%c,D2F,%s,=", 
+			esilprintf (op, "32,32,%s,F2D,32,%s,F2D,F%c,D2F,%s,=",
 				src, dst, operator, dst);
 		}
 		break;
@@ -2127,13 +2127,13 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_CVTSD2SS:
 	case X86_INS_CVTSS2SD:
 	case X86_INS_CVTSI2SS:
-	case X86_INS_CVTSI2SD: 
+	case X86_INS_CVTSI2SD:
 	case X86_INS_CVTPS2PI:
 	case X86_INS_CVTPD2PI:
 	case X86_INS_CVTPD2PS:
 	case X86_INS_CVTPS2PD:
 	case X86_INS_CVTPI2PS:
-	case X86_INS_CVTPI2PD: 
+	case X86_INS_CVTPI2PD:
 	{
 		src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 		dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
@@ -2151,16 +2151,16 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		case X86_INS_CVTPD2PS:
 			esilprintf (op, "32,%s,D2F,%s", src, dst);
 			break;
-		case X86_INS_CVTSS2SD: 
-		case X86_INS_CVTPS2PD: 
+		case X86_INS_CVTSS2SD:
+		case X86_INS_CVTPS2PD:
 			esilprintf (op, "32,%s,F2D,%s", src, dst);
 			break;
-		case X86_INS_CVTSI2SS: 
-		case X86_INS_CVTPI2PS: 
+		case X86_INS_CVTSI2SS:
+		case X86_INS_CVTPI2PS:
 			esilprintf (op, "32,%s,I2D,D2F,%s", src, dst);
 			break;
 		case X86_INS_CVTPI2PD:
-		case X86_INS_CVTSI2SD: 
+		case X86_INS_CVTSI2SD:
 		default:
 			esilprintf (op, "%s,I2D,%s", src, dst);
 			break;

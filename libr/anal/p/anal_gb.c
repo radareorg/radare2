@@ -622,9 +622,9 @@ static inline void gb_anal_cb_rr(RReg *reg, RAnalOp *op, const ut8 data) {
 		r_strbuf_setf (&op->esil, "1,%s,&,H,:=,1,%s,>>,7,C,<<,|,%s,=,H,C,:=,0,H,:=,0,N,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]); //HACK
 	}
 }
- 
+
 static inline void gb_anal_cb_sla(RReg *reg, RAnalOp *op, const ut8 data) {
-	//sra+sla+srl in one function, like xoaasc 
+	//sra+sla+srl in one function, like xoaasc
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->src[0]->imm = 1;

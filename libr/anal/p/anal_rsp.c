@@ -64,7 +64,7 @@ static RStrBuf *disassemble(RStrBuf *buf_asm, rsp_instruction *r_instr) {
 				(ut32)r_instr->operands[i].s);
 			break;
 		case RSP_OPND_C2_VREG_ELEMENT:
-			r_strbuf_appendf (buf_asm, "%s%s", rsp_c2_vreg_names[r_instr->operands[i].u], 
+			r_strbuf_appendf (buf_asm, "%s%s", rsp_c2_vreg_names[r_instr->operands[i].u],
 				rsp_c2_vreg_element_names[r_instr->operands[i].s]);
 			break;
 		default: /* should not happend */

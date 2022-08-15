@@ -227,7 +227,6 @@ static char* regname(uint8_t reg) {
 }
 
 #define REG(n) (regname(OP(n).reg))
- 
 void bpf_alu(RAnal *a, RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
 	if (OPCOUNT == 2 && a->config->bits == 64) { // eBPF
 		if (bits == 64) {
@@ -240,10 +239,10 @@ void bpf_alu(RAnal *a, RAnalOp *op, cs_insn *insn, const char* operation, int bi
 		} else {
 			if (OP (1).type == BPF_OP_IMM) {
 				op->val = IMM (1);
-				esilprintf (op, "%" PFMT64d ",%s,0xffffffff,&,%s,0xffffffff,&,%s,=", 
+				esilprintf (op, "%" PFMT64d ",%s,0xffffffff,&,%s,0xffffffff,&,%s,=",
 					IMM (1), REG (0), operation, REG (0));
 			} else {
-				esilprintf (op, "%s,%s,0xffffffff,&,%s,0xffffffff,&,%s,=", 
+				esilprintf (op, "%s,%s,0xffffffff,&,%s,0xffffffff,&,%s,=",
 					REG (1), REG (0), operation, REG (0));
 			}
 		}
@@ -251,7 +250,7 @@ void bpf_alu(RAnal *a, RAnalOp *op, cs_insn *insn, const char* operation, int bi
 		if (OPCOUNT > 0 && OP (0).type == BPF_OP_IMM) {
 			op->val = IMM (0);
 			esilprintf (op, "%" PFMT64d ",a,%s=", IMM (0), operation);
-		} else { 
+		} else {
 			esilprintf (op, "x,a,%s=", operation);
 		}
 	}
@@ -259,12 +258,12 @@ void bpf_alu(RAnal *a, RAnalOp *op, cs_insn *insn, const char* operation, int bi
 
 void bpf_load(RAnal *a, RAnalOp *op, cs_insn *insn, char* reg, int size) {
 	if (OPCOUNT > 1 && OP (0).type == BPF_OP_REG) {
-		esilprintf (op, "%d,%s,+,[%d],%s,=", 
+		esilprintf (op, "%d,%s,+,[%d],%s,=",
 			OP (1).mem.disp, regname(OP (1).mem.base), size, REG (0));
 	} else if (OPCOUNT > 0 && OP (0).type == BPF_OP_MMEM) { // cBPF
 		esilprintf (op, "m[%d],%s,=", OP (0).mmem, reg);
 	} else if (OPCOUNT > 0) {
-		esilprintf (op, "%d,%s,+,[%d],%s,=", 
+		esilprintf (op, "%d,%s,+,[%d],%s,=",
 			OP (0).mem.disp, regname(OP (0).mem.base), size, reg);
 	}
 }
@@ -274,10 +273,10 @@ void bpf_store(RAnal *a, RAnalOp *op, cs_insn *insn, char *reg, int size) {
 		esilprintf (op, "%s,m[%d],=", reg, OP (0).mmem);
 	} else if (OPCOUNT > 1) { // eBPF
 		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%d,%s,+,=[%d]", 
+			esilprintf (op, "%" PFMT64d ",%d,%s,+,=[%d]",
 				IMM (1), OP (0).mem.disp, regname(OP (0).mem.base), size);
 		} else {
-			esilprintf (op, "%s,%d,%s,+,=[%d]", 
+			esilprintf (op, "%s,%d,%s,+,=[%d]",
 				REG (1), OP (0).mem.disp, regname(OP (0).mem.base), size);
 		}
 	}
@@ -286,18 +285,18 @@ void bpf_store(RAnal *a, RAnalOp *op, cs_insn *insn, char *reg, int size) {
 void bpf_jump(RAnal *a, RAnalOp *op, cs_insn *insn, char *condition) {
 	if (OPCOUNT > 0 && a->config->bits == 32) { // cBPF
 		if (OP (0).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",a,NUM,%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=", 
+			esilprintf (op, "%" PFMT64d ",a,NUM,%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=",
 				IMM (0), condition, op->jump, op->fail);
 		} else {
-			esilprintf (op, "x,NUM,a,NUM,%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=", 
+			esilprintf (op, "x,NUM,a,NUM,%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=",
 				condition, op->jump, op->fail);
 		}
 	} else if (OPCOUNT > 1) { // eBPF
 		if (OP (1).type == BPF_OP_IMM) {
-			esilprintf (op, "%" PFMT64d ",%s,%s,?{,0x%" PFMT64x ",pc,=,}", 
+			esilprintf (op, "%" PFMT64d ",%s,%s,?{,0x%" PFMT64x ",pc,=,}",
 				IMM (1), REG (0), condition, op->jump);
 		} else {
-			esilprintf (op, "%s,%s,%s,?{,0x%" PFMT64x ",pc,=,}", 
+			esilprintf (op, "%s,%s,%s,?{,0x%" PFMT64x ",pc,=,}",
 				REG (1), REG (0), condition, op->jump);
 		}
 	}
@@ -349,20 +348,20 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 	case BPF_INS_CALL:	///< eBPF only
 		// the call immediate is almost never used as an addr so its an INT
 		// maybe this will change in the future once the relocs are added?
-		esilprintf (op, "pc,sp,=[8],8,sp,-=,0x%" PFMT64x ",$", IMM (0)); 
+		esilprintf (op, "pc,sp,=[8],8,sp,-=,0x%" PFMT64x ",$", IMM (0));
 		break;
 	case BPF_INS_EXIT:	///< eBPF only
-		esilprintf (op, "8,sp,+=,sp,[8],pc,="); 
+		esilprintf (op, "8,sp,+=,sp,[8],pc,=");
 		break;
 	case BPF_INS_RET:
 		// cBPF shouldnt really need the stack, but gonna leave it
-		esilprintf (op, "%" PFMT64d ",r0,=,8,sp,+=,sp,[8],pc,=", IMM (0)); 
+		esilprintf (op, "%" PFMT64d ",r0,=,8,sp,+=,sp,[8],pc,=", IMM (0));
 		break;
 	case BPF_INS_TAX:
-		esilprintf (op, "a,x,="); 
+		esilprintf (op, "a,x,=");
 		break;
 	case BPF_INS_TXA:
-		esilprintf (op, "x,a,="); 
+		esilprintf (op, "x,a,=");
 		break;
 	case BPF_INS_ADD:
 		ALU ("+", 32);
@@ -523,9 +522,8 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 		LOAD ("x", 1);
 		break;
 	case BPF_INS_LDXDW:	///< eBPF only
-		LOAD ("a", 8); // reg never used here 
+		LOAD ("a", 8); // reg never used here
 		break;
-
 		///< Store
 	case BPF_INS_STW:	///< eBPF only
 		STORE ("a", 4);
@@ -547,14 +545,14 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 		break;
 
 	case BPF_INS_XADDW:	///< eBPF only
-		esilprintf (op, "%s,0xffffffff,&,%d,%s,+,[4],DUP,%s,=,+,%d,%s,+,=[4]", 
-			REG (1), OP (0).mem.disp, regname(OP (0).mem.base), 
+		esilprintf (op, "%s,0xffffffff,&,%d,%s,+,[4],DUP,%s,=,+,%d,%s,+,=[4]",
+			REG (1), OP (0).mem.disp, regname(OP (0).mem.base),
 			REG (1), OP (0).mem.disp, regname(OP (0).mem.base));
 
 		break;
 	case BPF_INS_XADDDW: ///< eBPF only
-		esilprintf (op, "%s,NUM,%d,%s,+,[8],DUP,%s,=,+,%d,%s,+,=[8]", 
-			REG (1), OP (0).mem.disp, regname(OP (0).mem.base), 
+		esilprintf (op, "%s,NUM,%d,%s,+,[8],DUP,%s,=,+,%d,%s,+,=[8]",
+			REG (1), OP (0).mem.disp, regname(OP (0).mem.base),
 			REG (1), OP (0).mem.disp, regname(OP (0).mem.base));
 
 		break;

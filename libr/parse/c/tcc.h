@@ -389,7 +389,7 @@ anon_sym: anonymous symbol index
 	int total_bytes;
 	int tok_ident;
 	TokenSym **table_ident;
-	// 
+	//
 	const char *global_type;
 	const char *global_symname;
 

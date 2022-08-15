@@ -139,7 +139,7 @@
 # # From: Abel Cheung <abel@oaka.org>
 # # Listed here because they are basically zip files
 # >>30	string		mimetype
-# 
+#
 # # KOffice (1.2 or above) formats
 # >>>50	string	vnd.kde.		KOffice (>=1.2)
 # >>>>58	string	karbon			Karbon document
@@ -150,7 +150,7 @@
 # >>>>58	string	kpresenter		KPresenter document
 # >>>>58	string	kspread			KSpread document
 # >>>>58	string	kword			KWord document
-# 
+#
 # # OpenOffice formats (for OpenOffice 1.x / StarOffice 6/7)
 # >>>50	string	vnd.sun.xml.		OpenOffice.org 1.x
 # >>>>62	string	writer			Writer
@@ -167,7 +167,7 @@
 # >>>>>69	byte	!0x2e			presentation
 # >>>>>69	string	.template		template
 # >>>>62	string	math			Math document
-# 
+#
 # # OpenDocument formats (for OpenOffice 2.x / StarOffice >= 8)
 # # http://lists.oasis-open.org/archives/office/200505/msg00006.html
 # >>>50	string	vnd.oasis.opendocument.	OpenDocument

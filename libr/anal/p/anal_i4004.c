@@ -132,7 +132,7 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			}
 		}
 		break;
-	case 1: 
+	case 1:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		if (mask & R_ANAL_OP_MASK_DISASM) {
 			snprintf (basm, basz, "jcn 0x%x 0x%x", low, buf[1]);

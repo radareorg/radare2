@@ -7670,7 +7670,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		r_reg_setv (reg, "PC", pc);
 		break;
 		  }
-	case 'x': 
+	case 'x':
 		if (input[1] == ' ') { // "aex"
 			char *hex;
 			int ret, bufsz;
@@ -8717,7 +8717,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		//get all xrefs pointing to addr
 		list = r_anal_xrefs_get (core->anal, addr);
 		r_list_foreach (list, iter, ref) {
-			r_cons_printf ("0x%"PFMT64x" %s %s\n", ref->addr, 
+			r_cons_printf ("0x%"PFMT64x" %s %s\n", ref->addr,
 				r_anal_ref_perm_tostring (ref),
 				r_anal_ref_type_tostring (ref->type));
 			r_anal_xrefs_set (core->anal, ref->addr, at, ref->type);
@@ -8883,7 +8883,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
 					free (print_comment);
 					r_cons_printf ("%s 0x%" PFMT64x " [%s:%s] %s\n",
-						buf_fcn, ref->addr, r_anal_ref_type_tostring (ref->type), 
+						buf_fcn, ref->addr, r_anal_ref_type_tostring (ref->type),
 						r_anal_ref_perm_tostring (ref), buf_asm);
 					free (buf_asm);
 					free (buf_fcn);

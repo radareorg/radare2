@@ -58,7 +58,7 @@ R_API int r_sys_tem_statement(const char *l) {
 			progname = s;
 		} else {
 			r_strbuf_append (sb, " ");
-			// TODO: replace env vars 
+			// TODO: replace env vars
 			// s = r_str_replace (s, "$FOO", "TMP", 1);
 			r_strbuf_append (sb, s);
 			free (s);
