@@ -48,9 +48,7 @@ R_API const char *r_anal_functiontype_tostring(int type) {
 }
 
 #if READ_AHEAD
-#if !R2_580
 static R_TH_LOCAL ut64 cache_addr = UT64_MAX;
-#endif
 
 // TODO: move into io :?
 static int read_ahead(RAnal *anal, ut64 addr, ut8 *buf, int len) {
