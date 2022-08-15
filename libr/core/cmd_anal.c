@@ -6139,10 +6139,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	r_reg_setv (core->anal->reg, "BP", sp);
 	r_reg_setv (core->anal->reg, "PC", curoff);
 	r_core_cmd0 (core, ".ar*");
-	if (esil) {
-		esil->stack_addr = addr;
-		esil->stack_size = size;
-	}
+	esil->stack_addr = addr;
+	esil->stack_size = size;
 	initialize_stack (core, addr, size);
 	r_core_seek (core, curoff, false);
 }
