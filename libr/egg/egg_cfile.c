@@ -196,7 +196,6 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 		free (cEnv->LDFLAGS);
 		cEnv->LDFLAGS = strdup (buffer);
 	}
-    
 	if (r_egg_cfile_check_cEnv (cEnv)) {
 		R_LOG_ERROR ("invalid cEnv allocation");
 		goto fail;

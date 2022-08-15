@@ -1654,14 +1654,14 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 				r_cons_printf ("%s`-%s %8s = 0x%016"PFMT64x" @ %d + %d\n",
 						pad?pad:"", pad2,
 						la->name?la->name: "",
-						la->value, 
+						la->value,
 						la->pos, la->sz
 					      );
 			} else {
 				r_cons_printf ("%s`-%s %8s = %4"PFMT64o"o %5"PFMT64d"   0x%02"PFMT64x" @ %d + %d\n",
 						pad?pad:"", pad2,
 						la->name?la->name: "",
-						la->value, la->value, la->value, 
+						la->value, la->value, la->value,
 						la->pos, la->sz
 					      );
 			}

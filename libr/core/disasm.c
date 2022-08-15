@@ -1512,7 +1512,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			r_list_foreach (addrs, it, addrptr) {
 				if (R_STR_ISNOTEMPTY (addrptr)) {
 					char ch = xrefs_char [i++];
-					ds_comment (ds, false, "%s%s0x%"PFMT64x"(%c)", 
+					ds_comment (ds, false, "%s%s0x%"PFMT64x"(%c)",
 						it == addrs->head ? "" : ", ", plus, *addrptr, ch);
 				}
 			}

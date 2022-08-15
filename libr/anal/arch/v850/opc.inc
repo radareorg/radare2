@@ -921,7 +921,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "ld.w", two (0x0780, 0x0009), two (0xffe0, 0x001f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP, R_ANAL_OP_TYPE_LOAD, "#0,[4],#1,=" },
 	{ "ld.w23", two (0x0780, 0x0009), two (0x07e0, 0x001f), {D23_ALIGN1, R1, R3}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_LOAD },
 	{ "ldl.w", two (0x07e0, 0x0378), two (0xffe0, 0x07ff), {R1, R3}, 1, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_LOAD },
-	/// XXX load status word is always zero 
+	/// XXX load status word is always zero
 	{ "ldsr", two (0x07e0, 0x0020), two (0x07e0, 0x07ff), {R1, SR2, SELID}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_LOAD, "#1,#0,:=" },
 	{ "ldsr", two (0x07e0, 0x0020), two (0x07e0, 0x07ff), {R1, SR2}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_LOAD, "#1,#0,:=" },
 	{ "ldsr", two (0x07e0, 0x0020), two (0x07e0, 0x07ff), {R1, OLDSR2}, 0, (V850_CPU_ALL & (~ V850_CPU_E3V5_UP)), R_ANAL_OP_TYPE_LOAD, "#1,#0,:=" },

@@ -196,7 +196,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		}
 
 		if (r_config_get_b (core->config, "http.channel")) {
-			// start a new thread with 
+			// start a new thread with
 			// char *res = r_core_cmd_str_r (core, cmd);
 			if (rs) {
 				r_socket_http_response (rs, 200, "TODO", 0, headers);

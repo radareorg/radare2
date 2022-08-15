@@ -1246,7 +1246,7 @@ typedef struct {
 	st32 *fieldmd;
 	ut64 fieldmd_addr;
 	size_t fieldmd_size;
-} SwiftType; 
+} SwiftType;
 
 static SwiftType parse_type_entry(RBinFile *bf, ut64 typeaddr) {
 	SwiftType st = {0};

@@ -268,7 +268,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 				}
 				cksum += byte;
 			}
-			if (1) { //  || 
+			if (1) {
 				//bool is_seq = (next_addr != addr_tmp) || ((sec_size + bc) > SEC_MAX);
 				//previous block is not contiguous, or
 				//section buffer is full => write a sparse chunk

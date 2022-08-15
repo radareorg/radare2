@@ -978,10 +978,10 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
 		r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[1]", LA_RD(), LA_RJ(), I12_SX(opcode));
 		break;
 	case LA_INS_ST_H:
-		r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[2]", LA_RD(), LA_RJ(), I12_SX(opcode)); 
+		r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[2]", LA_RD(), LA_RJ(), I12_SX(opcode));
 		break;
 	case LA_INS_ST_W:
-		r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[4]", LA_RD(), LA_RJ(), I12_SX(opcode)); 
+		r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[4]", LA_RD(), LA_RJ(), I12_SX(opcode));
 		break;
 	case LA_INS_ST_D:
 		r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[8]", LA_RD(), LA_RJ(), I12_SX(opcode));

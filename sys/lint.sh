@@ -10,6 +10,7 @@
 (git grep -n 'eprintf' libr | grep 'Error:') && exit 1
 (git grep -n 'x ""' libr) && exit 1
 (git grep -n 'x""' libr) && exit 1
+(git grep -n '\ $' libr) && exit 1 # trailing space
 (git grep -n '4d""' libr) && exit 1
 (git grep -n 'r_core_cmd' libr | grep -v /lang/ | grep '\\n') && exit 1
 (git grep -n 'r_str_startswith ("' libr ) && exit 1

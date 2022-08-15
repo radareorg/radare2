@@ -657,7 +657,7 @@ static void arg64_append(RStrBuf *sb, Instruction *insn, int n, int i, int sign)
 	if (!signext) {
 		// this is weird but signext+shift is all in shiftType?
 		// not extend. why even have an extend field?
-		// why not just shiftType = sx* with a shiftValue of 0? 
+		// why not just shiftType = sx* with a shiftValue of 0?
 		signext = decode_sign_ext64 (op.shiftType);
 	}
 	if (sign && !signext) {

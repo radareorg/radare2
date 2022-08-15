@@ -1900,7 +1900,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64 (2));
 		}
 		break;
-	case ARM64_INS_CMN: 
+	case ARM64_INS_CMN:
 	case ARM64_INS_CCMN:
 		ARG64_APPEND (&op->esil, 1);
 		COMMA (&op->esil);
