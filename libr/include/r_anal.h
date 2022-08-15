@@ -595,6 +595,24 @@ typedef struct r_anal_hint_cb_t {
 	void (*on_bits) (struct r_anal_t *a, ut64 addr, int bits, bool set);
 } RHintCb;
 
+typedef struct {
+  void *db;
+  char *cc;
+  int oldArg;
+} RAnalCCMaxCache;
+
+typedef struct {
+	ut64 cache_addr;
+	ut8 cache[1024];
+ 	ut64 cmpval;
+ 	ut64 lea_jmptbl_ip;
+} RAnalLinearCache;
+
+typedef struct {
+  RAnalCCMaxCache ccmax;
+  RAnalLinearCache linear;
+} RAnalCache;
+
 typedef struct r_anal_t {
 	RArchConfig *config;
 	int lineswidth; // asm.lines.width
@@ -667,10 +685,7 @@ typedef struct r_anal_t {
 	RList *leaddrs;
 	char *pincmd;
 	R_DIRTY_VAR;
-	ut64 cache_addr;
-	ut8 cache[1024];
-	ut64 cmpval;
-	ut64 lea_jmptbl_ip;
+	RAnalCache *r_anal_cache;
 } RAnal;
 
 typedef enum r_anal_addr_hint_type_t {
