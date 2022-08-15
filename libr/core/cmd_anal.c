@@ -6040,10 +6040,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		} else {
 			cmd_esil_mem (core, "");
 		}
-		if (esil) {
-			esil->stack_addr = addr;
-			esil->stack_size = size;
-		}
+		esil->stack_addr = addr;
+		esil->stack_size = size;
 		initialize_stack (core, addr, size);
 		return;
 	}
