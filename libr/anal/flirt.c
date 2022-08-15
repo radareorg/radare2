@@ -97,7 +97,8 @@
    They appear as "(REF XXXX: NAME)" in dumpsig output
  */
 
-#include <r_types.h>
+#define R_LOG_ORIGIN "anal.flirt"
+
 #include <r_lib.h>
 #include <r_sign.h>
 #include <signal.h>
@@ -805,9 +806,7 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b) {
 			ref_function->name[ref_function_name_length] = '\0';
 		}
 		r_list_append (module->referenced_functions, ref_function);
-#if DEBUG
-		eprintf ("(REF: %04X: %s)\n", ref_function->offset, ref_function->name);
-#endif
+		R_LOG_DEBUG ("(REF: %04X: %s)", ref_function->offset, ref_function->name);
 	}
 
 	return true;
@@ -854,13 +853,11 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 				// unresolved collision (happens in *.exc while creating .sig from .pat)
 				function->is_collision = true;
 			}
-			if (current_byte & 0x01 || current_byte & 0x04) { // appears as 'd' or '?' in dumpsig
 #if DEBUG
-				// XXX investigate
-				eprintf ("INVESTIGATE PUBLIC NAME FLAG: %02X @ %04X\n", current_byte,
-					r_buf_tell (b) + header_size);
-#endif
+			if (current_byte & 0x01 || current_byte & 0x04) { // appears as 'd' or '?' in dumpsig
+				R_LOG_DEBUG ("Investigate public name: %02X @ %04Xn", current_byte, r_buf_tell (b) + header_size);
 			}
+#endif
 			current_byte = read_byte (b);
 			if (buf_eof || buf_err) {
 				goto err_exit;
@@ -891,7 +888,6 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 #if DEBUG
 	eprintf ("\n");
 #endif
-
 	return true;
 
 err_exit:
@@ -920,7 +916,7 @@ static ut8 parse_leaf(const RAnal *anal, RBuffer *b, RFlirtNode *node) {
 			R_LOG_WARN ("non zero crc of zero length @ %04X",
 				r_buf_tell (b) + header_size);
 		}
-		eprintf ("crc_len: %02X crc16: %04X\n", crc_length, crc16);
+		R_LOG_INFO ("crc_len: %02X crc16: %04X", crc_length, crc16);
 #endif
 
 		do { // loop for all modules having the same crc
@@ -945,7 +941,7 @@ static ut8 parse_leaf(const RAnal *anal, RBuffer *b, RFlirtNode *node) {
 				}
 			}
 #if DEBUG
-			eprintf ("module_length: %04X\n", module->length);
+			R_LOG_DEBUG ("module_length: %04X", module->length);
 #endif
 
 			if (!read_module_public_functions (module, b, &flags)) {
