@@ -667,6 +667,8 @@ typedef struct r_anal_t {
 	RList *leaddrs;
 	char *pincmd;
 	R_DIRTY_VAR;
+	int omode;
+	int obits;
 } RAnal;
 
 typedef enum r_anal_addr_hint_type_t {
@@ -889,8 +891,6 @@ typedef struct r_anal_op_t {
 	RAnalHint hint;
 	RAnalDataType datatype;
 	int vliw; // begin of opcode block.
-	int omode;
-	int obits;
 } RAnalOp;
 
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);

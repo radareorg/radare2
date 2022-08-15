@@ -4441,9 +4441,9 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static R_TH_LOCAL csh handle = 0;
-	if (op->omode == 0 && op->obits == 0) {
-		op->omode = -1;
-		op->obits = 32;
+	if (a->omode == 0 && a->obits == 0) {
+		a->omode = -1;
+		a->obits = 32;
 	}
 	cs_insn *insn = NULL;
 	int mode = (a->config->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
@@ -4457,13 +4457,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->size = 4;
 		return -1;
 	}
-	if (mode != op->omode || a->config->bits != op->obits) {
+	if (mode != a->omode || a->config->bits != a->obits) {
 		if (handle != 0) {
 			cs_close (&handle);
 			handle = 0; // unnecessary
 		}
-		op->omode = mode;
-		op->obits = a->config->bits;
+		a->omode = mode;
+		a->obits = a->config->bits;
 	}
 	op->size = (a->config->bits == 16)? 2: 4;
 	op->addr = addr;
