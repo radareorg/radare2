@@ -19,7 +19,6 @@
 #endif
 
 #include <stdio.h>
-#include <unistd.h>
 #include "zlib.h"
 #ifdef STDC
 #  include <string.h>
@@ -34,6 +33,8 @@
 
 #ifdef _WIN32
 #  include <stddef.h>
+#else
+#  include <unistd.h>
 #endif
 
 #if defined(__TURBOC__) || defined(_MSC_VER) || defined(_WIN32)
