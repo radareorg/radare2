@@ -104,7 +104,7 @@ R_API ut32 r_time_dos_time_stamp_to_posix(ut32 timeStamp) {
 	t.tm_isdst = -1;
 	time_t epochTime = mktime (&t);
 
-	return (ut32) epochTime;
+	return (ut32) (epochTime & UT32_MAX);
 }
 
 R_API bool r_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const ut32 possiblePosixOrDosTimeStamp) {

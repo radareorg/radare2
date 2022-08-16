@@ -92,7 +92,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (op->size == -1) {
 		r_strbuf_set (&op->buf_asm, "(data)");
 	}
-	if (!memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", op->size)) {
+	if (!memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", R_MIN (len, op->size))) {
 		r_strbuf_set (&op->buf_asm, "breakpoint");
 		return 4;
 	}
