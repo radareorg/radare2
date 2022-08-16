@@ -92,10 +92,10 @@ static V850NP_INSERT(i5div3) {
 }
 
 static V850NP_EXTRACT(i5div3) {
-	unsigned long ret = (insn & 0x003c0000) >> (16+2);
+	st64 ret = (insn & 0x003c0000) >> 18;
 	ret = 32 - (ret * 2);
-	*invalid = (ret > 32 || ret < 2) ? 1 : 0;
-	return ret;
+	*invalid = (ret < 2 || ret > 32);
+	return (ut32)(ret & UT32_MAX);
 }
 
 static V850NP_INSERT(d5_4) {

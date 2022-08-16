@@ -374,7 +374,7 @@ print_insn_lanai (memaddr, info)
 
 	  info->data_size = F_DATA_SIZE(opcode->flags);
 
-	  if (opcode->flags & (F_UNBR|F_CONDBR|F_JSR))
+	  if (opcode->flags & (F_UNBR|F_BR|F_CONDBR|F_JSR))
 	    {
 		/* FIXME -- check is_annulled flag */
 		if (opcode->flags & F_UNBR) {

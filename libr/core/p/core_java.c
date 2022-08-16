@@ -1257,7 +1257,7 @@ static int r_cmd_java_handle_calc_flags(RCore *core, const char *cmd) {
 	}
 
 	if (*(cmd) == 'l') {
-		const char *lcmd = *cmd + 1 == ' '? cmd + 2: cmd + 1;
+		const char *lcmd = cmd[1] == ' '? cmd + 2: cmd + 1;
 		IFDBG eprintf ("Seeing %s and accepting %s\n", cmd, lcmd);
 		switch (*(lcmd)) {
 		case 'f':

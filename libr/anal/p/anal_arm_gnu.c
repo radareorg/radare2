@@ -309,13 +309,9 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		    ((code[i] & 0xffffff00) == 0xe12fff00)) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		} else if (IS_BRANCHL (code[i])) {
-			if (IS_BRANCH (code[i])) {
-				op->type = R_ANAL_OP_TYPE_CALL;
-				op->jump = branch_dst_addr;
-				op->fail = addr + 4;
-			} else {
-				op->type = R_ANAL_OP_TYPE_RET;
-			}
+			op->type = R_ANAL_OP_TYPE_CALL;
+			op->jump = branch_dst_addr;
+			op->fail = addr + 4;
 		} else if (IS_BRANCH (code[i])) {
 			if (IS_CONDAL (code[i])) {
 				op->type = R_ANAL_OP_TYPE_JMP;
