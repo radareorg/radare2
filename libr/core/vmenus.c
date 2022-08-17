@@ -453,7 +453,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		} else {
 			int set;
 			const char *ws = r_config_get_i (core->config, "scr.utf8")? "·": " ";
-			for (set = 1; set >= 0 ; set--) {
+			for (set = 1; set >= 0; set--) {
 				r_cons_printf ("\nbit: ");
 				for (i = 0; i < 8; i++) {
 					ut8 *byte = buf + i;

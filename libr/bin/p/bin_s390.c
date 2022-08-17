@@ -224,7 +224,8 @@ static RList *sections(RBinFile *bf) {
 			x += sizeof (S390_Header_CESD);
 			// process each symbols with their datas
 			sym = 0;
-			for (ut16 y = 0 ; y < lon / sizeof (S390_Header_CESD_DATA) ; y++) {
+			ut16 y;
+			for (y = 0; y < lon / sizeof (S390_Header_CESD_DATA) ; y++) {
 				ut8 cad[9];
 				ut32 a, b;
 
@@ -304,7 +305,8 @@ static RList *sections(RBinFile *bf) {
 			x += sizeof (S390_Header_ControlRecord);
 
 			lonCR = 0;
-			for (ut16 y = 0 ; y < lon / sizeof(S390_Header_ControlRecord_Data) ; y++) {
+			ut16 y;
+			for (y = 0; y < lon / sizeof(S390_Header_ControlRecord_Data) ; y++) {
 				left = r_buf_read_at (bf->buf, x, (ut8*)&hdrCRd, sizeof (S390_Header_ControlRecord_Data));
 				if (left < sizeof (S390_Header_ControlRecord_Data)) {
 					return NULL;

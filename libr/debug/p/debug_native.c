@@ -1493,7 +1493,7 @@ static RList *xnu_desc_list(int pid) {
 	int i, nb, type = 0;
 	int maxfd = getMaxFiles();
 
-	for (i = 0 ; i < maxfd; i++) {
+	for (i = 0; i < maxfd; i++) {
 		nb = proc_pidfdinfo (pid, i, PROC_PIDFDVNODEPATHINFO, &vi, sizeof (vi));
 		if (nb < 1) {
 			continue;

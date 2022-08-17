@@ -58,10 +58,10 @@ static void processNode(mpc_ast_t *node) {
 		int i, j;
 		const char *name = node->children[0]->contents;
 		printf ("%s:\n", name);
-		for (i=0 ; i<node->children_num; i++) {
+		for (i = 0; i < node->children_num; i++) {
 			if (!strcmp (node->children[i]->tag, "body|>")) {
 				node = node->children[i];
-				for (i=0 ; i<node->children_num; i++) {
+				for (i = 0; i < node->children_num; i++) {
 					if (!strcmp (node->children[i]->tag, "stmt|>")) {
 						processNode (node->children[i]);
 					} else {
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
 			{
 				int i;
 				mpc_ast_t *root = r.output;
-				for (i=0; i< root->children_num; i++) {
+				for (i=0; i < root->children_num; i++) {
 					mpc_ast_t *node = root->children[i];
 					eprintf ("; TAG = %s    (%s)\n", node->tag, node->contents);
 					processNode (node);

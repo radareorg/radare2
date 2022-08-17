@@ -405,7 +405,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 				case 'u':
 					if (!strncmp (q, "uRxs", 4)) {
 						strcat (out, "..");
-						int n = 0 ;
+						int n = 0;
 						const char *Q = getnum (q + 4, &n);
 						strcat (out, getstring (Q, n));
 						q = Q + n + 1;

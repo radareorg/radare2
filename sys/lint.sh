@@ -5,12 +5,14 @@
 (git grep -n 'for (' libr | grep "; ++" | grep -v arch ) && exit 1
 (git grep -n 'for (int' | grep -v sys/) && exit 1
 (git grep -n 'for (long' | grep -v sys/) && exit 1
+(git grep -n 'for (ut' | grep -v sys/) && exit 1
 (git grep -n 'for (size_t' | grep -v sys/) && exit 1
 (git grep -n 'R_LOG_' | grep '\\n' | grep -v sys/) && exit 1
 (git grep -n 'eprintf' libr | grep 'Error:') && exit 1
 (git grep -n 'x ""' libr) && exit 1
 (git grep -n 'x""' libr) && exit 1
 (git grep -n ';;$' libr) && exit 1
+(git grep -n '0 ;' libr) && exit 1
 (git grep -n '\ $' libr) && exit 1 # trailing space
 (git grep -n '^eprintf' libr) && exit 1
 (git grep -n '4d""' libr) && exit 1
