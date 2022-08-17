@@ -2730,7 +2730,7 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 	r_name_filter (map_name, R_FLAG_NAME_SIZE);
 	int perm = sec->perm;
 	// workaround to force exec bit in text section
-	if (sec->name &&  strstr (sec->name, "text")) {
+	if (sec->name && strstr (sec->name, "text")) {
 		perm |= R_PERM_X;
 	}
 

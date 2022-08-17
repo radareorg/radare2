@@ -692,7 +692,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			}
 		}
 	} else {
-		if (desc) {
+		ut64 bin_baddr = r_config_get_i (r->config, "bin.baddr");
+		if (desc && bin_baddr) {
 			r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
 		}
 		if (binfile) {
