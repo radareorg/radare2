@@ -27,6 +27,7 @@ bool r_coff_supported_arch(const ut8 *buf) {
  	case COFF_FILE_MACHINE_ARM:
 	case COFF_FILE_MACHINE_ARM64:
 	case COFF_FILE_MACHINE_ARMNT:
+	case COFF_FILE_MACHINE_POWERPC:
 		return true;
 	default:
 		return false;
