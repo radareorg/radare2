@@ -17,7 +17,7 @@ static const char *help_msg_w[] = {
 	"wb"," 011001","write bits in bit big endian",
 	"wB","[-]0xVALUE","set or unset bits with given value",
 	"wc","[?][jir+-*?]","write cache list/undo/commit/reset (io.cache)",
-	"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
+	"wd"," [off] [n]","copy N bytes from OFF to $$ (memcpy) (see y?)",
 	"we","[?] [nNsxX] [arg]","extend write operations (insert instead of replace)",
 	"wf","[fs] -|file","write contents of file at current offset",
 	"wh"," r2","whereis/which shell command",

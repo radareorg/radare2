@@ -43,6 +43,16 @@ static const char *help_msg_pdo[] = {
 	NULL
 };
 
+static const char *help_msg_p8[] = {
+	"Usage: p8[*fjx]", " [len]", "8bit hexpair list of bytes (see pcj)",
+	"p8", " ([len])", "print hexpairs string",
+	"p8*", "","display r2 commands to write this block",
+	"p8f", "", "print hexpairs of function (linear)",
+	"p8j", "", "print hexpairs in JSON array",
+	"p8x", "","print hexpairs honoring hex.cols",
+	NULL
+};
+
 static const char *help_msg_pp[] = {
 	"Usage: pp[d]", "", "print patterns",
 	"pp0", "", "print buffer filled with zeros",
@@ -7702,21 +7712,36 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '8': // "p8"
 		if (input[1] == '?') {
-			r_cons_printf ("|Usage: p8[fj] [len]     8bit hexpair list of bytes (see pcj)\n");
-			r_cons_printf (" p8  : print hexpairs string\n");
-			r_cons_printf (" p8f : print hexpairs of function (linear)\n");
-			r_cons_printf (" p8j : print hexpairs in JSON array\n");
+			r_core_cmd_help (core, help_msg_p8);
 		} else if (l) {
+			bool rad = strchr (input, '*');
 			if (!r_core_block_size (core, len)) {
 				len = core->blocksize;
 			}
 			if (input[1] == 'j') { // "p8j"
 				r_core_cmdf (core, "pcj %s", input + 2);
+			} else if (input[1] == 'x') { // "p8x"
+				r_core_block_read (core);
+				block = core->block;
+				int cols = r_config_get_i (core->config, "hex.cols");
+				if (cols < 1) {
+					cols = 1;
+				}
+				int i;
+				for (i = 0; i < len; i += cols) {
+					if (rad) {
+						r_cons_printf ("wx+ ");
+					}
+					r_print_bytes (core->print, block + i, R_MIN (cols, len - cols), "%02x");
+				}
 			} else if (input[1] == 'f') { // "p8f"
 				r_core_cmdf (core, "p8 $FS @ $FB");
 			} else {
 				r_core_block_read (core);
 				block = core->block;
+				if (rad) {
+					r_cons_printf ("wx+ ");
+				}
 				r_print_bytes (core->print, block, len, "%02x");
 			}
 		}

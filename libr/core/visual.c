@@ -49,7 +49,7 @@ static const char *printfmtColumns[NPF] = {
 #define PRINT_HEX_FORMATS 10
 #define PRINT_3_FORMATS 2
 #define PRINT_4_FORMATS 9
-#define PRINT_5_FORMATS 8
+#define PRINT_5_FORMATS 7
 
 static const char *printHexFormats[PRINT_HEX_FORMATS] = {
 	"px", "pxa", "pxr", "prx", "pxb", "pxh", "pxw", "pxq", "pxd", "pxr",
