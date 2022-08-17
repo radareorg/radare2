@@ -420,7 +420,7 @@ R_API char *r_table_tostring(RTable *t) {
 	}
 	if (t->showJSON) {
 		char *s = r_table_tojson (t);
-		char *q = r_str_newf ("%s\n", s);;
+		char *q = r_str_newf ("%s\n", s);
 		free (s);
 		return q;
 	}

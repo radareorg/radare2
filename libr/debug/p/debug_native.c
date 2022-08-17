@@ -1,13 +1,9 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_userconf.h>
-#include <r_debug.h>
 #include <r_drx.h>
-#include <r_asm.h>
 #include <r_core.h>
-#include <r_reg.h>
 #include <r_lib.h>
-#include <r_anal.h>
 #include <signal.h>
 #include <sys/types.h>
 
@@ -1089,7 +1085,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 			name[0] = '\0';
 		}
 #else
-		ut64 offset = 0;;
+		ut64 offset = 0;
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
 		i = sscanf (line, "%s %s %08"PFMT64x" %*s %*s %[^\n]", &region[2], perms, &offset, name);
 		if (i == 3) {

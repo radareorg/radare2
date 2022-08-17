@@ -162,7 +162,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 	if (!bf) {
 		return;
 	}
-	Sdb *db = sdb_ns (bf->sdb, "info", 0);;
+	Sdb *db = sdb_ns (bf->sdb, "info", 0);
 	if (!db) {
 		return;
 	}

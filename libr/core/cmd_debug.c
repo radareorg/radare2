@@ -4605,7 +4605,7 @@ static char *get_corefile_name(const char *raw_name, int pid) {
 }
 
 static int cmd_debug_step(RCore *core, const char *input) {
-	ut64 addr = core->offset;;
+	ut64 addr = core->offset;
 	ut8 buf[64];
 	RAnalOp aop;
 	int i, times = 1;

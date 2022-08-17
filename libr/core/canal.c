@@ -2358,7 +2358,7 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	int is_html = r_cons_context ()->is_html;
 	bool refgraph = r_config_get_i (core->config, "graph.refs");
 	RListIter *iter, *iter2;
-	int usenames = r_config_get_i (core->config, "graph.json.usenames");;
+	int usenames = r_config_get_i (core->config, "graph.json.usenames");
 	RAnalFunction *fcni;
 	RAnalRef *fcnr;
 	PJ *pj = NULL;
@@ -5925,7 +5925,7 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 	rcap.to = to;
 	rcap.toBB = b1;
 	rcap.cur = b0;
-	rcap.count = r_config_get_i (core->config, "search.maxhits");;
+	rcap.count = r_config_get_i (core->config, "search.maxhits");
 	rcap.followCalls = followCalls;
 	rcap.followDepth = followDepth;
 

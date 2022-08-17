@@ -83,7 +83,7 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RList* entries(RBinFile *bf) {
-	RList* ret = r_list_newf (free);;
+	RList* ret = r_list_newf (free);
 	if (ret) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
 		if (ptr) {

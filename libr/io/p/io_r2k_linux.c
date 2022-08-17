@@ -470,7 +470,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				if (pid == -1 || addr == -1 || len == -1) {
 					io->cb_printf ("Invalid number of arguments.\n");
 					print_help (io, "rp", 0);
-					goto end;;
+					goto end;
 				}
 				ioctl_n = IOCTL_READ_PROCESS_ADDR;
 				break;

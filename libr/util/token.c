@@ -523,7 +523,7 @@ int main() {
 		);
 	Data data = {0};
 	char *s = r_file_slurp ("a.c", NULL);
-	data.pj = pj_new ();;
+	data.pj = pj_new ();
 	pj_o (data.pj);
 	tokenize (s, callback, &data);
 	pj_end (data.pj);

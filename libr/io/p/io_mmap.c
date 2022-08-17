@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake */
+/* radare - LGPL - Copyright 2013-2022 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -56,11 +56,8 @@ static void r_io_mmap_free(RIOMMapFileObj *mmo) {
 }
 
 RIOMMapFileObj *r_io_mmap_create_new_file(RIO  *io, const char *filename, int mode, int flags) {
-	RIOMMapFileObj *mmo;
-	if (!io) {
-		return NULL;
-	}
-	mmo = R_NEW0 (RIOMMapFileObj);
+	r_return_val_if_fail (io && filename, NULL);
+	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
 	if (!mmo) {
 		return NULL;
 	}
@@ -76,7 +73,7 @@ RIOMMapFileObj *r_io_mmap_create_new_file(RIO  *io, const char *filename, int mo
 	return mmo;
 }
 
-static int r_io_mmap_check(const char *filename) {
+static bool r_io_mmap_check(const char *filename) {
 	return (filename && r_str_startswith (filename, "mmap://") && filename[7]);
 }
 
@@ -122,19 +119,18 @@ static int r_io_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 }
 
 static RIODesc *r_io_mmap_open(RIO *io, const char *file, int flags, int mode) {
-	if (!strncmp (file, "mmap://", 7)) {
-		file += 7;
+	if (r_str_startswith (file, "mmap://")) {
+		file += strlen ("mmap://");
 	}
 	RIOMMapFileObj *mmo = r_io_mmap_create_new_file (io, file, mode, flags);
 	return mmo? r_io_desc_new (io, &r_io_plugin_mmap, mmo->filename, flags, mode, mmo): NULL;
 }
 
 static ut64 r_io_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	RIOMMapFileObj *mmo;
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	mmo = fd->data;
+	RIOMMapFileObj *mmo = fd->data;
 	return r_io_mmap_seek (io, mmo, offset, whence);
 }
 
@@ -148,7 +144,6 @@ static bool r_io_mmap_truncate(RIOMMapFileObj *mmo, ut64 size) {
 	}
 	return res;
 }
-
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return r_io_mmap_check (file);

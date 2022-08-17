@@ -3882,7 +3882,7 @@ R_API int r_str_distance(const char *a, const char *b) {
 	ut32 distance = 0;
 	double similarity = 0;
 	r_diff_buffers_distance_levenshtein (NULL, (const ut8*)a, strlen (a), (const ut8*)b, strlen (b), &distance, &similarity);
-	return (int)(similarity * 100);;
+	return (int)(similarity * 100);
 }
 
 R_API const char *r_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y) {

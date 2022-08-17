@@ -432,7 +432,7 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 	case ' ':
 		{
 			int pageind;
-			ut64 npages, chunksize_mask, map_bias, map_misc_offset, chunk, mapbits;;
+			ut64 npages, chunksize_mask, map_bias, map_misc_offset, chunk, mapbits;
 			arena_chunk_t *c = R_NEW0 (arena_chunk_t);
 
 			if (!c) {

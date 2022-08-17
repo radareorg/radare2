@@ -11,7 +11,7 @@ typedef struct r_io_mmo_t {
 	bool rawio;
 	bool nocache;
 	RBuffer *buf;
-	RIO * io_backref;
+	RIO *io_backref;
 } RIOMMapFileObj;
 
 static int __io_posix_open(const char *file, int perm, int mode) {

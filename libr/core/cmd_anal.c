@@ -4180,7 +4180,7 @@ static int cmd_af(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_af_plus);
 			break;
 		}
-		char *ptr = input[2]? r_str_trim_dup (input + 2): r_str_newf ("0x%"PFMT64x, core->offset);;
+		char *ptr = input[2]? r_str_trim_dup (input + 2): r_str_newf ("0x%"PFMT64x, core->offset);
 		const char *ptr2;
 		int n = r_str_word_set0 (ptr);
 		const char *name = NULL;

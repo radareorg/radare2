@@ -44,7 +44,7 @@ static RList* entries(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0 (RBinInfo);;
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -374,7 +374,7 @@ static RList* relocs(RBinFile *bf) {
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
 	RListIter *it;
-	RList* ret = r_list_newf (free);;
+	RList* ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}

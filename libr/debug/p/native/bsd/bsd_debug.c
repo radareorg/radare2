@@ -474,7 +474,7 @@ RList *bsd_desc_list(int pid) {
 #else
 			if (kve->kf_sock_domain == AF_LOCAL) {
 				struct sockaddr_un *sun =
-					(struct sockaddr_un *)&kve->kf_un.kf_sock.kf_sa_local;;
+					(struct sockaddr_un *)&kve->kf_un.kf_sock.kf_sa_local;
 				if (sun->sun_path[0] != 0)
 					addr_to_string (&kve->kf_un.kf_sock.kf_sa_local, path, sizeof(path));
 				else

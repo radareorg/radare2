@@ -610,7 +610,7 @@ static RList *r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len, 
 }
 
 static RList *r_core_asm_back_disassemble(RCore *core, ut64 addr, int len, ut64 max_hit_count, ut8 disassmble_each_addr, ut32 extra_padding) {
-	RList *hits;;
+	RList *hits;
 	ut8 *buf = NULL;
 	ut8 max_invalid_b4_exit = 4,
 		last_num_invalid = 0;

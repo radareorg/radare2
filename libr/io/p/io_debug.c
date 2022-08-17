@@ -470,8 +470,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 		return NULL;
 	}
-	if (!strncmp (file, "waitfor://", 10)) {
-		const char *procname = file + 10;
+	if (r_str_startswith (file, "waitfor://")) {
+		const char *procname = file + strlen ("waitfor://");
 		R_LOG_INFO ("Waiting for %s", procname);
 		while (true) {
 			int target_pid = get_pid_of (io, procname);
@@ -482,7 +482,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 			r_sys_usleep (100);
 		}
-	} else if (!strncmp (file, "pidof://", 8)) {
+	} else if (r_str_startswith (file, "pidof://")) {
 		const char *procname = file + 8;
 		int target_pid = get_pid_of (io, procname);
 		if (target_pid == -1) {

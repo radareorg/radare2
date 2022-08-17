@@ -1552,7 +1552,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 	if (size < 1 || size < bufasm_len) {
 		return;
 	}
-	RStrBuf *sb = r_strbuf_new ("");;
+	RStrBuf *sb = r_strbuf_new ("");
 	char *b, *ob = (ds->opstr)? strdup (ds->opstr): strdup (r_asm_op_get_asm (&ds->asmop));
 	for (b = ob; b && *b; b++, i++) {
 		r_strbuf_append_n (sb, b, 1);
