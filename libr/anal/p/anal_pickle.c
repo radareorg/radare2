@@ -234,7 +234,7 @@ static inline int handle_n_lines(RAnalOp *op, const char *name, int n, const ut8
 		op->ptr = op->addr + op->nopcode;
 		op->ptrsize = strlen (str) + 1;
 		op->size += op->ptrsize;
-		op->mnemonic = r_str_newf ("%s \"%s\"", name, str);
+		op->mnemonic = r_str_newf ("%s %s", name, str);
 		free (str);
 	} else {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -251,7 +251,7 @@ static inline void set_mnemonic_str(RAnalOp *op, const char *n, const ut8 *buf, 
 	}
 	char *str = r_str_escape_raw ((ut8 *)buf, readlen);
 	if (str) {
-		op->mnemonic = r_str_newf ("%s \"%s%s\"", n, str, dots);
+		op->mnemonic = r_str_newf ("%s %s%s", n, str, dots);
 		free (str);
 	} else {
 		op->mnemonic = r_str_newf ("%s <failed to decode str>", n);
