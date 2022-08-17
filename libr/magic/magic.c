@@ -198,12 +198,15 @@ done:
 
 /* API */
 
+extern void init_file_tables(RMagic *m);
+
 // TODO: reinitialize all the time
 R_API RMagic* r_magic_new(int flags) {
 	RMagic *ms = R_NEW0 (RMagic);
 	if (!ms) {
 		return NULL;
 	}
+	init_file_tables (ms);
 	r_magic_setflags (ms, flags);
 	ms->o.buf = ms->o.pbuf = NULL;
 	ms->c.li = malloc ((ms->c.len = 10) * sizeof (*ms->c.li));
