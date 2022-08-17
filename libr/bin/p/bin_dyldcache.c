@@ -844,13 +844,16 @@ static RDyldRebaseInfos *get_rebase_infos(RBinFile *bf, RDyldCache *cache) {
 	}
 
 	if (!cache->hdr->slideInfoOffset || !cache->hdr->slideInfoSize) {
-		ut32 total_slide_infos = 0;
+		size_t total_slide_infos = 0;
 		ut32 n_slide_infos[MAX_N_HDR];
 
-		ut32 i;
+		size_t i;
 		for (i = 0; i < cache->n_hdr && i < MAX_N_HDR; i++) {
 			ut64 hdr_offset = cache->hdr_offset[i];
 			if ((n_slide_infos[i] = r_buf_read_le32_at (cache->buf, 0x13c + hdr_offset)) == UT32_MAX) {
+				goto beach;
+			}
+			if (!SZT_ADD_OVFCHK (total_slide_infos, n_slide_infos[i])) {
 				goto beach;
 			}
 			total_slide_infos += n_slide_infos[i];
@@ -865,7 +868,7 @@ static RDyldRebaseInfos *get_rebase_infos(RBinFile *bf, RDyldCache *cache) {
 			goto beach;
 		}
 
-		ut32 k = 0;
+		size_t k = 0;
 		for (i = 0; i < cache->n_hdr && i < MAX_N_HDR; i++) {
 			ut64 hdr_offset = cache->hdr_offset[i];
 			ut64 slide_infos_offset;
