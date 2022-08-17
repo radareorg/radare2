@@ -585,6 +585,7 @@ extern RIOPlugin r_io_plugin_winedbg;
 extern RIOPlugin r_io_plugin_gprobe;
 extern RIOPlugin r_io_plugin_fd;
 extern RIOPlugin r_io_plugin_socket;
+extern RIOPlugin r_io_plugin_xattr;
 extern RIOPlugin r_io_plugin_isotp;
 extern RIOPlugin r_io_plugin_xalz;
 
