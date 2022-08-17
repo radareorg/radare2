@@ -4335,7 +4335,7 @@ EXPECT_ERR=
 RUN
 
 NAME=auto entry (log.level test)
-ARGS=-e io.cache=true -e log.level=5
+ARGS=-e io.cache=true -e log.level=6
 FILE=bins/elf/libexploit.so
 CMDS=<<EOF
 i~elf
