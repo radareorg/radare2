@@ -263,7 +263,8 @@ static inline int cnt_str(RAnal *a, RAnalOp *op, const char *name, int sz, const
 		op->ptrsize = r_mem_get_num (buf, sz);
 		op->size = op->nopcode + sz + op->ptrsize;
 		op->ptr = op->addr + sz + op->nopcode;
-		if (!a->iob.is_valid_offset (a->iob.io, op->addr + op->size - 1, 0)) {
+		RIOIsValidOff validoff = a->iob.io? a->iob.is_valid_offset: NULL;
+		if (validoff && !validoff (a->iob.io, op->addr + op->size - 1, 0)) {
 			// end of string is in bad area, probably this is invalid offset for op
 			op->size = 1;
 			op->type = R_ANAL_OP_TYPE_ILL;
