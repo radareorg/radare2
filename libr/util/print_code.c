@@ -147,7 +147,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 						if (buf[i] == '"') {
 							p->cb_printf ("\\\"");
 						} else {
-							p->cb_printf("\\x%02x", buf[i]);
+							p->cb_printf ("%c", buf[i]);
 							// p->cb_printf ("%c", buf[i]);
 						}
 					} else {
