@@ -9,18 +9,18 @@ s-73
 pid 12
 EOF
 EXPECT=<<EOF
-0x00000000                   28  MARK
-0x00000001                 4b42  BININT1 0x42
-0x00000003               4d4241  BININT2 0x4142
-0x00000006           4a44434241  BININT 0x41424344
-0x0000000b   954746454443424100  FRAME 0x41424344454647
-0x00000014                 5500  SHORT_BINSTRING ""
-0x00000016         550441424344  SHORT_BINSTRING "ABCD"
-0x0000001c   420400000041424344  BINBYTES "ABCD"
-0x00000025 8d040000000000000041424344  BINUNICODE8 "ABCD"
-0x00000032         4c3334354c0a  LONG "345L"
-0x00000038 63414243440a454647480a  GLOBAL "ABCD EFGH"
-0x00000043         550441424344  SHORT_BINSTRING "ABCD"
+0x00000000                   28  mark
+0x00000001                 4b42  binint1 0x42
+0x00000003               4d4241  binint2 0x4142
+0x00000006           4a44434241  binint 0x41424344
+0x0000000b   954746454443424100  frame 0x41424344454647
+0x00000014                 5500  short_binstring ""
+0x00000016         550441424344  short_binstring "ABCD"
+0x0000001c   420400000041424344  binbytes "ABCD"
+0x00000025 8d040000000000000041424344  binunicode8 "ABCD"
+0x00000032         4c3334354c0a  long "345L"
+0x00000038 63414243440a454647480a  global "ABCD EFGH"
+0x00000043         550441424344  short_binstring "ABCD"
 EOF
 RUN
 
@@ -34,7 +34,7 @@ pid 8
 EOF
 EXPECT=<<EOF
 0x00000000                   58  
-0x00000001   580400000041420043  BINUNICODE "AB\x00C"
+0x00000001   580400000041420043  binunicode "AB\x00C"
 0x0000000a                   63  
 0x0000000b                   41  
 0x0000000c                   00  
@@ -118,40 +118,40 @@ wa READONLY_BUFFER
 pid 1
 EOF
 EXPECT=<<EOF
-0x00000000                   28  MARK
-0x00000000                   2e  STOP
-0x00000000                   30  POP
-0x00000000                   31  POP_MARK
-0x00000000                   32  DUP
-0x00000000                   4e  NONE
-0x00000000                   51  BINPERSID
-0x00000000                   52  REDUCE
-0x00000000                   61  APPEND
-0x00000000                   62  BUILD
-0x00000000                   64  DICT
-0x00000000                   7d  EMPTY_DICT
-0x00000000                   65  APPENDS
-0x00000000                   6c  LIST
-0x00000000                   5d  EMPTY_LIST
-0x00000000                   6f  OBJ
-0x00000000                   73  SETITEM
-0x00000000                   74  TUPLE
-0x00000000                   29  EMPTY_TUPLE
-0x00000000                   75  SETITEMS
-0x00000000                   81  NEWOBJ
-0x00000000                   85  TUPLE1
-0x00000000                   86  TUPLE2
-0x00000000                   87  TUPLE3
-0x00000000                   88  NEWTRUE
-0x00000000                   89  NEWFALSE
-0x00000000                   8f  EMPTY_SET
-0x00000000                   90  ADDITEMS
-0x00000000                   91  FROZENSET
-0x00000000                   92  NEWOBJ_EX
-0x00000000                   93  STACK_GLOBAL
-0x00000000                   94  MEMOIZE
-0x00000000                   97  NEXT_BUFFER
-0x00000000                   98  READONLY_BUFFER
+0x00000000                   28  mark
+0x00000000                   2e  stop
+0x00000000                   30  pop
+0x00000000                   31  pop_mark
+0x00000000                   32  dup
+0x00000000                   4e  none
+0x00000000                   51  binpersid
+0x00000000                   52  reduce
+0x00000000                   61  append
+0x00000000                   62  build
+0x00000000                   64  dict
+0x00000000                   7d  empty_dict
+0x00000000                   65  appends
+0x00000000                   6c  list
+0x00000000                   5d  empty_list
+0x00000000                   6f  obj
+0x00000000                   73  setitem
+0x00000000                   74  tuple
+0x00000000                   29  empty_tuple
+0x00000000                   75  setitems
+0x00000000                   81  newobj
+0x00000000                   85  tuple1
+0x00000000                   86  tuple2
+0x00000000                   87  tuple3
+0x00000000                   88  newtrue
+0x00000000                   89  newfalse
+0x00000000                   8f  empty_set
+0x00000000                   90  additems
+0x00000000                   91  frozenset
+0x00000000                   92  newobj_ex
+0x00000000                   93  stack_global
+0x00000000                   94  memoize
+0x00000000                   97  next_buffer
+0x00000000                   98  readonly_buffer
 EOF
 RUN
 
@@ -189,20 +189,20 @@ wa LONG1 0x11
 pid 1
 EOF
 EXPECT=<<EOF
-0x00000000   958877885544332211  FRAME 0x1122334455887788
-0x00000000           4a44332211  BININT 0x11223344
-0x00000000           7244332211  LONG_BINPUT 0x11223344
-0x00000000           6a44332211  LONG_BINGET 0x11223344
-0x00000000           8444332211  EXT4 0x11223344
-0x00000000           8b44332211  LONG4 0x11223344
-0x00000000               4d2211  BININT2 0x1122
-0x00000000               832211  EXT2 0x1122
-0x00000000                 4b11  BININT1 0x11
-0x00000000                 6811  BINGET 0x11
-0x00000000                 7111  BINPUT 0x11
-0x00000000                 8011  PROTO 0x11
-0x00000000                 8211  EXT1 0x11
-0x00000000                 8a11  LONG1 0x11
+0x00000000   958877885544332211  frame 0x1122334455887788
+0x00000000           4a44332211  binint 0x11223344
+0x00000000           7244332211  long_binput 0x11223344
+0x00000000           6a44332211  long_binget 0x11223344
+0x00000000           8444332211  ext4 0x11223344
+0x00000000           8b44332211  long4 0x11223344
+0x00000000               4d2211  binint2 0x1122
+0x00000000               832211  ext2 0x1122
+0x00000000                 4b11  binint1 0x11
+0x00000000                 6811  binget 0x11
+0x00000000                 7111  binput 0x11
+0x00000000                 8011  proto 0x11
+0x00000000                 8211  ext1 0x11
+0x00000000                 8a11  long1 0x11
 EOF
 RUN
 
@@ -230,15 +230,15 @@ wa SHORT_BINUNICODE AABBCCDD
 pid 1
 EOF
 EXPECT=<<EOF
-0x00000000 8d08000000000000006161626263636464  BINUNICODE8 "aabbccdd"
-0x00000000 8e08000000000000006161626263636464  BINBYTES8 "aabbccdd"
-0x00000000 9608000000000000006161626263636464  BYTEARRAY8 "aabbccdd"
-0x00000000 54080000006161626263636464  BINSTRING "aabbccdd"
-0x00000000 58080000006161626263636464  BINUNICODE "aabbccdd"
-0x00000000 42080000006161626263636464  BINBYTES "aabbccdd"
-0x00000000 43086161626263636464  SHORT_BINBYTES "aabbccdd"
-0x00000000 55086161626263636464  SHORT_BINSTRING "aabbccdd"
-0x00000000 8c086161626263636464  SHORT_BINUNICODE "aabbccdd"
+0x00000000 8d08000000000000006161626263636464  binunicode8 "aabbccdd"
+0x00000000 8e08000000000000006161626263636464  binbytes8 "aabbccdd"
+0x00000000 9608000000000000006161626263636464  bytearray8 "aabbccdd"
+0x00000000 54080000006161626263636464  binstring "aabbccdd"
+0x00000000 58080000006161626263636464  binunicode "aabbccdd"
+0x00000000 42080000006161626263636464  binbytes "aabbccdd"
+0x00000000 43086161626263636464  short_binbytes "aabbccdd"
+0x00000000 55086161626263636464  short_binstring "aabbccdd"
+0x00000000 8c086161626263636464  short_binunicode "aabbccdd"
 EOF
 RUN
 
@@ -252,7 +252,7 @@ pid 1
 e asm.arch=pickle
 EOF
 EXPECT=<<EOF
-0x00000000   4740114fdf3b645a1d  BINFLOAT 4.328000
+0x00000000   4740114fdf3b645a1d  binfloat 4.328000
 EOF
 RUN
 
@@ -282,16 +282,16 @@ wa PUT string_arg
 pid 1
 EOF
 EXPECT=<<EOF
-0x00000000 69737472696e67310a737472696e67320a  INST "string1 string2"
-0x00000000 63737472696e67310a737472696e67320a  GLOBAL "string1 string2"
-0x00000000 46737472696e675f6172670a  FLOAT "string_arg"
-0x00000000 49737472696e675f6172670a  INT "string_arg"
-0x00000000 4c737472696e675f6172670a  LONG "string_arg"
-0x00000000 50737472696e675f6172670a  PERSID "string_arg"
-0x00000000 53737472696e675f6172670a  STRING "string_arg"
-0x00000000 56737472696e675f6172670a  UNICODE "string_arg"
-0x00000000 67737472696e675f6172670a  GET "string_arg"
-0x00000000 70737472696e675f6172670a  PUT "string_arg"
+0x00000000 69737472696e67310a737472696e67320a  inst "string1 string2"
+0x00000000 63737472696e67310a737472696e67320a  global "string1 string2"
+0x00000000 46737472696e675f6172670a  float "string_arg"
+0x00000000 49737472696e675f6172670a  int "string_arg"
+0x00000000 4c737472696e675f6172670a  long "string_arg"
+0x00000000 50737472696e675f6172670a  persid "string_arg"
+0x00000000 53737472696e675f6172670a  string "string_arg"
+0x00000000 56737472696e675f6172670a  unicode "string_arg"
+0x00000000 67737472696e675f6172670a  get "string_arg"
+0x00000000 70737472696e675f6172670a  put "string_arg"
 EOF
 RUN
 
@@ -317,73 +317,73 @@ e asm.arch=pickle
 aoml
 EOF
 EXPECT=<<EOF
-MARK
-STOP
-POP
-POP_MARK
-DUP
-FLOAT
-INT
-BININT
-BININT1
-LONG
-BININT2
-NONE
-PERSID
-BINPERSID
-REDUCE
-STRING
-BINSTRING
-SHORT_BINSTRING
-UNICODE
-BINUNICODE
-APPEND
-BUILD
-GLOBAL
-DICT
-EMPTY_DICT
-APPENDS
-GET
-BINGET
-INST
-LONG_BINGET
-LIST
-EMPTY_LIST
-OBJ
-PUT
-BINPUT
-LONG_BINPUT
-SETITEM
-TUPLE
-EMPTY_TUPLE
-SETITEMS
-BINFLOAT
-PROTO
-NEWOBJ
-EXT1
-EXT2
-EXT4
-TUPLE1
-TUPLE2
-TUPLE3
-NEWTRUE
-NEWFALSE
-LONG1
-LONG4
-BINBYTES
-SHORT_BINBYTES
-SHORT_BINUNICODE
-BINUNICODE8
-BINBYTES8
-EMPTY_SET
-ADDITEMS
-FROZENSET
-NEWOBJ_EX
-STACK_GLOBAL
-MEMOIZE
-FRAME
-BYTEARRAY8
-NEXT_BUFFER
-READONLY_BUFFER
+mark
+stop
+pop
+pop_mark
+dup
+float
+int
+binint
+binint1
+long
+binint2
+none
+persid
+binpersid
+reduce
+string
+binstring
+short_binstring
+unicode
+binunicode
+append
+build
+global
+dict
+empty_dict
+appends
+get
+binget
+inst
+long_binget
+list
+empty_list
+obj
+put
+binput
+long_binput
+setitem
+tuple
+empty_tuple
+setitems
+binfloat
+proto
+newobj
+ext1
+ext2
+ext4
+tuple1
+tuple2
+tuple3
+newtrue
+newfalse
+long1
+long4
+binbytes
+short_binbytes
+short_binunicode
+binunicode8
+binbytes8
+empty_set
+additems
+frozenset
+newobj_ex
+stack_global
+memoize
+frame
+bytearray8
+next_buffer
+readonly_buffer
 EOF
 RUN
