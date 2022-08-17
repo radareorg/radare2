@@ -90,74 +90,74 @@ enum opcode {
 };
 
 static const struct opmap op_name_map[] = {
-	{ "MARK", '(' },
-	{ "STOP", '.' },
-	{ "POP", '0' },
-	{ "POP_MARK", '1' },
-	{ "DUP", '2' },
-	{ "FLOAT", 'F' },
-	{ "INT", 'I' },
-	{ "BININT", 'J' },
-	{ "BININT1", 'K' },
-	{ "LONG", 'L' },
-	{ "BININT2", 'M' },
-	{ "NONE", 'N' },
-	{ "PERSID", 'P' },
-	{ "BINPERSID", 'Q' },
-	{ "REDUCE", 'R' },
-	{ "STRING", 'S' },
-	{ "BINSTRING", 'T' },
-	{ "SHORT_BINSTRING", 'U' },
-	{ "UNICODE", 'V' },
-	{ "BINUNICODE", 'X' },
-	{ "APPEND", 'a' },
-	{ "BUILD", 'b' },
-	{ "GLOBAL", 'c' },
-	{ "DICT", 'd' },
-	{ "EMPTY_DICT", '}' },
-	{ "APPENDS", 'e' },
-	{ "GET", 'g' },
-	{ "BINGET", 'h' },
-	{ "INST", 'i' },
-	{ "LONG_BINGET", 'j' },
-	{ "LIST", 'l' },
-	{ "EMPTY_LIST", ']' },
-	{ "OBJ", 'o' },
-	{ "PUT", 'p' },
-	{ "BINPUT", 'q' },
-	{ "LONG_BINPUT", 'r' },
-	{ "SETITEM", 's' },
-	{ "TUPLE", 't' },
-	{ "EMPTY_TUPLE", ')' },
-	{ "SETITEMS", 'u' },
-	{ "BINFLOAT", 'G' },
-	{ "PROTO", '\x80' },
-	{ "NEWOBJ", '\x81' },
-	{ "EXT1", '\x82' },
-	{ "EXT2", '\x83' },
-	{ "EXT4", '\x84' },
-	{ "TUPLE1", '\x85' },
-	{ "TUPLE2", '\x86' },
-	{ "TUPLE3", '\x87' },
-	{ "NEWTRUE", '\x88' },
-	{ "NEWFALSE", '\x89' },
-	{ "LONG1", '\x8a' },
-	{ "LONG4", '\x8b' },
-	{ "BINBYTES", 'B' },
-	{ "SHORT_BINBYTES", 'C' },
-	{ "SHORT_BINUNICODE", '\x8c' },
-	{ "BINUNICODE8", '\x8d' },
-	{ "BINBYTES8", '\x8e' },
-	{ "EMPTY_SET", '\x8f' },
-	{ "ADDITEMS", '\x90' },
-	{ "FROZENSET", '\x91' },
-	{ "NEWOBJ_EX", '\x92' },
-	{ "STACK_GLOBAL", '\x93' },
-	{ "MEMOIZE", '\x94' },
-	{ "FRAME", '\x95' },
-	{ "BYTEARRAY8", '\x96' },
-	{ "NEXT_BUFFER", '\x97' },
-	{ "READONLY_BUFFER", '\x98' }
+	{ "mark", '(' },
+	{ "stop", '.' },
+	{ "pop", '0' },
+	{ "pop_mark", '1' },
+	{ "dup", '2' },
+	{ "float", 'F' },
+	{ "int", 'I' },
+	{ "binint", 'J' },
+	{ "binint1", 'K' },
+	{ "long", 'L' },
+	{ "binint2", 'M' },
+	{ "none", 'N' },
+	{ "persid", 'P' },
+	{ "binpersid", 'Q' },
+	{ "reduce", 'R' },
+	{ "string", 'S' },
+	{ "binstring", 'T' },
+	{ "short_binstring", 'U' },
+	{ "unicode", 'V' },
+	{ "binunicode", 'X' },
+	{ "append", 'a' },
+	{ "build", 'b' },
+	{ "global", 'c' },
+	{ "dict", 'd' },
+	{ "empty_dict", '}' },
+	{ "appends", 'e' },
+	{ "get", 'g' },
+	{ "binget", 'h' },
+	{ "inst", 'i' },
+	{ "long_binget", 'j' },
+	{ "list", 'l' },
+	{ "empty_list", ']' },
+	{ "obj", 'o' },
+	{ "put", 'p' },
+	{ "binput", 'q' },
+	{ "long_binput", 'r' },
+	{ "setitem", 's' },
+	{ "tuple", 't' },
+	{ "empty_tuple", ')' },
+	{ "setitems", 'u' },
+	{ "binfloat", 'G' },
+	{ "proto", '\x80' },
+	{ "newobj", '\x81' },
+	{ "ext1", '\x82' },
+	{ "ext2", '\x83' },
+	{ "ext4", '\x84' },
+	{ "tuple1", '\x85' },
+	{ "tuple2", '\x86' },
+	{ "tuple3", '\x87' },
+	{ "newtrue", '\x88' },
+	{ "newfalse", '\x89' },
+	{ "long1", '\x8a' },
+	{ "long4", '\x8b' },
+	{ "binbytes", 'B' },
+	{ "short_binbytes", 'C' },
+	{ "short_binunicode", '\x8c' },
+	{ "binunicode8", '\x8d' },
+	{ "binbytes8", '\x8e' },
+	{ "empty_set", '\x8f' },
+	{ "additems", '\x90' },
+	{ "frozenset", '\x91' },
+	{ "newobj_ex", '\x92' },
+	{ "stack_global", '\x93' },
+	{ "memoize", '\x94' },
+	{ "frame", '\x95' },
+	{ "bytearray8", '\x96' },
+	{ "next_buffer", '\x97' },
+	{ "readonly_buffer", '\x98' }
 };
 
 static inline int handle_int(RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
@@ -203,7 +203,7 @@ static inline char *get_line(const ut8 *buf, int len) {
 
 static inline char *get_two_lines(const ut8 *buf, int len) {
 	char *out = malloc (len);
-	char *rep = " \x00";
+	const char * const rep = " \x00";
 	int i, cnt = 0;
 	if (out) {
 		for (i = 0; i < len; i++) {
@@ -295,145 +295,145 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	len--;
 	switch (opcode) {
 	case OP_MARK:
-		trivial_op ("MARK");
+		trivial_op ("mark");
 	case OP_STOP:
-		trivial_op ("STOP");
+		trivial_op ("stop");
 	case OP_POP:
-		trivial_op ("POP");
+		trivial_op ("pop");
 	case OP_POP_MARK:
-		trivial_op ("POP_MARK");
+		trivial_op ("pop_mark");
 	case OP_DUP:
-		trivial_op ("DUP");
+		trivial_op ("dup");
 	case OP_FLOAT:
-		return handle_n_lines (op, "FLOAT", 1, buf, len);
+		return handle_n_lines (op, "float", 1, buf, len);
 	case OP_INT:
-		return handle_n_lines (op, "INT", 1, buf, len);
+		return handle_n_lines (op, "int", 1, buf, len);
 	case OP_BININT:
 		op->sign = true;
-		return handle_int (op, "BININT", 4, buf, len);
+		return handle_int (op, "binint", 4, buf, len);
 	case OP_BININT1:
-		return handle_int (op, "BININT1", 1, buf, len);
+		return handle_int (op, "binint1", 1, buf, len);
 	case OP_LONG:
-		return handle_n_lines (op, "LONG", 1, buf, len);
+		return handle_n_lines (op, "long", 1, buf, len);
 	case OP_BININT2:
-		return handle_int (op, "BININT2", 2, buf, len);
+		return handle_int (op, "binint2", 2, buf, len);
 	case OP_NONE:
-		trivial_op ("NONE");
+		trivial_op ("none");
 	case OP_PERSID:
 		// TODO: validate
-		return handle_n_lines (op, "PERSID", 1, buf, len);
+		return handle_n_lines (op, "persid", 1, buf, len);
 	case OP_BINPERSID:
-		trivial_op ("BINPERSID");
+		trivial_op ("binpersid");
 	case OP_REDUCE:
-		trivial_op ("REDUCE");
+		trivial_op ("reduce");
 	case OP_STRING:
-		return handle_n_lines (op, "STRING", 1, buf, len);
+		return handle_n_lines (op, "string", 1, buf, len);
 	case OP_BINSTRING:
-		return cnt_str (a, op, "BINSTRING", 4, buf, len);
+		return cnt_str (a, op, "binstring", 4, buf, len);
 	case OP_SHORT_BINSTRING:
-		return cnt_str (a, op, "SHORT_BINSTRING", 1, buf, len);
+		return cnt_str (a, op, "short_binstring", 1, buf, len);
 	case OP_UNICODE:
-		return handle_n_lines (op, "UNICODE", 1, buf, len);
+		return handle_n_lines (op, "unicode", 1, buf, len);
 	case OP_BINUNICODE:
-		return cnt_str (a, op, "BINUNICODE", 4, buf, len);
+		return cnt_str (a, op, "binunicode", 4, buf, len);
 	case OP_APPEND:
-		trivial_op ("APPEND");
+		trivial_op ("append");
 	case OP_BUILD:
-		trivial_op ("BUILD");
+		trivial_op ("build");
 	case OP_GLOBAL:
-		return handle_n_lines (op, "GLOBAL", 2, buf, len);
+		return handle_n_lines (op, "global", 2, buf, len);
 	case OP_DICT:
-		trivial_op ("DICT");
+		trivial_op ("dict");
 	case OP_EMPTY_DICT:
-		trivial_op ("EMPTY_DICT");
+		trivial_op ("empty_dict");
 	case OP_APPENDS:
-		trivial_op ("APPENDS");
+		trivial_op ("appends");
 	case OP_GET:
-		return handle_n_lines (op, "GET", 1, buf, len);
+		return handle_n_lines (op, "get", 1, buf, len);
 	case OP_BINGET:
 		op->sign = true; // I think
-		return handle_int (op, "BINGET", 1, buf, len);
+		return handle_int (op, "binget", 1, buf, len);
 	case OP_INST:
-		return handle_n_lines (op, "INST", 2, buf, len);
+		return handle_n_lines (op, "inst", 2, buf, len);
 	case OP_LONG_BINGET:
-		return handle_int (op, "LONG_BINGET", 4, buf, len);
+		return handle_int (op, "long_binget", 4, buf, len);
 	case OP_LIST:
-		trivial_op ("LIST");
+		trivial_op ("list");
 	case OP_EMPTY_LIST:
-		trivial_op ("EMPTY_LIST");
+		trivial_op ("empty_list");
 	case OP_OBJ:
-		trivial_op ("OBJ");
+		trivial_op ("obj");
 	case OP_PUT:
-		return handle_n_lines (op, "PUT", 1, buf, len);
+		return handle_n_lines (op, "put", 1, buf, len);
 	case OP_BINPUT:
-		return handle_int (op, "BINPUT", 1, buf, len);
+		return handle_int (op, "binput", 1, buf, len);
 	case OP_LONG_BINPUT:
-		return handle_int (op, "LONG_BINPUT", 4, buf, len);
+		return handle_int (op, "long_binput", 4, buf, len);
 	case OP_SETITEM:
-		trivial_op ("SETITEM");
+		trivial_op ("setitem");
 	case OP_TUPLE:
-		trivial_op ("TUPLE");
+		trivial_op ("tuple");
 	case OP_EMPTY_TUPLE:
-		trivial_op ("EMPTY_TUPLE");
+		trivial_op ("empty_tuple");
 	case OP_SETITEMS:
-		trivial_op ("SETITEMS");
+		trivial_op ("setitems");
 	case OP_BINFLOAT:
-		return handle_float (op, "BINFLOAT", 8, buf, len);
+		return handle_float (op, "binfloat", 8, buf, len);
 	case OP_PROTO:
-		return handle_int (op, "PROTO", 1, buf, len);
+		return handle_int (op, "proto", 1, buf, len);
 	case OP_NEWOBJ:
-		trivial_op ("NEWOBJ");
+		trivial_op ("newobj");
 	case OP_EXT1:
 		// I don't *think* it's signed
-		return handle_int (op, "EXT1", 1, buf, len);
+		return handle_int (op, "ext1", 1, buf, len);
 	case OP_EXT2:
-		return handle_int (op, "EXT2", 2, buf, len);
+		return handle_int (op, "ext2", 2, buf, len);
 	case OP_EXT4:
-		return handle_int (op, "EXT4", 4, buf, len);
+		return handle_int (op, "ext4", 4, buf, len);
 	case OP_TUPLE1:
-		trivial_op ("TUPLE1");
+		trivial_op ("tuple1");
 	case OP_TUPLE2:
-		trivial_op ("TUPLE2");
+		trivial_op ("tuple2");
 	case OP_TUPLE3:
-		trivial_op ("TUPLE3");
+		trivial_op ("tuple3");
 	case OP_NEWTRUE:
-		trivial_op ("NEWTRUE");
+		trivial_op ("newtrue");
 	case OP_NEWFALSE:
-		trivial_op ("NEWFALSE");
+		trivial_op ("newfalse");
 	case OP_LONG1:
-		return handle_int (op, "LONG1", 1, buf, len);
+		return handle_int (op, "long1", 1, buf, len);
 	case OP_LONG4:
-		return handle_int (op, "LONG4", 4, buf, len);
+		return handle_int (op, "long4", 4, buf, len);
 	case OP_BINBYTES:
-		return cnt_str (a, op, "BINBYTES", 4, buf, len);
+		return cnt_str (a, op, "binbytes", 4, buf, len);
 	case OP_SHORT_BINBYTES:
-		return cnt_str (a, op, "SHORT_BINBYTES", 1, buf, len);
+		return cnt_str (a, op, "short_binbytes", 1, buf, len);
 	case OP_SHORT_BINUNICODE:
-		return cnt_str (a, op, "SHORT_BINUNICODE", 1, buf, len);
+		return cnt_str (a, op, "short_binunicode", 1, buf, len);
 	case OP_BINUNICODE8:
-		return cnt_str (a, op, "BINUNICODE8", 8, buf, len);
+		return cnt_str (a, op, "binunicode8", 8, buf, len);
 	case OP_BINBYTES8:
-		return cnt_str (a, op, "BINBYTES8", 8, buf, len);
+		return cnt_str (a, op, "binbytes8", 8, buf, len);
 	case OP_EMPTY_SET:
-		trivial_op ("EMPTY_SET");
+		trivial_op ("empty_set");
 	case OP_ADDITEMS:
-		trivial_op ("ADDITEMS");
+		trivial_op ("additems");
 	case OP_FROZENSET:
-		trivial_op ("FROZENSET");
+		trivial_op ("frozenset");
 	case OP_NEWOBJ_EX:
-		trivial_op ("NEWOBJ_EX");
+		trivial_op ("newobj_ex");
 	case OP_STACK_GLOBAL:
-		trivial_op ("STACK_GLOBAL");
+		trivial_op ("stack_global");
 	case OP_MEMOIZE:
-		trivial_op ("MEMOIZE");
+		trivial_op ("memoize");
 	case OP_FRAME:
-		return handle_int (op, "FRAME", 8, buf, len);
+		return handle_int (op, "frame", 8, buf, len);
 	case OP_BYTEARRAY8:
-		return cnt_str (a, op, "BYTEARRAY8", 8, buf, len);
+		return cnt_str (a, op, "bytearray8", 8, buf, len);
 	case OP_NEXT_BUFFER:
-		trivial_op ("NEXT_BUFFER");
+		trivial_op ("next_buffer");
 	case OP_READONLY_BUFFER:
-		trivial_op ("READONLY_BUFFER");
+		trivial_op ("readonly_buffer");
 	}
 
 	// bad opcode, must be at bad addr
