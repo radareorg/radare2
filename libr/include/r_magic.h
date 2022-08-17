@@ -258,6 +258,8 @@ struct r_magic_set {
 	/* FIXME: Make the string dynamically allocated so that e.g.
 	   strings matched in files can be longer than MAXstring */
 	union VALUETYPE ms_value;	/* either number or string */
+	int magic_file_formats[FILE_NAMES_SIZE];
+	const char *magic_file_names[FILE_NAMES_SIZE];
 };
 
 #if USE_LIB_MAGIC

@@ -70,11 +70,6 @@ struct r_magic_entry {
 	ut32 max_count;
 };
 
-static int magic_file_formats[FILE_NAMES_SIZE];
-static const size_t file_nformats = FILE_NAMES_SIZE;
-static const char *magic_file_names[FILE_NAMES_SIZE];
-static const size_t file_nnames = FILE_NAMES_SIZE;
-
 static int getvalue(RMagic *ms, struct r_magic *, const char **, int);
 static int hextoint(int);
 static const char *getstr(RMagic *, const char *, char *, int, int *, int);
@@ -169,19 +164,14 @@ static int get_type(const char *l, const char **t) {
 	return p->type;
 }
 
-static void init_file_tables(void) {
-	static R_TH_LOCAL bool done = false;
+void init_file_tables(RMagic *m) {
 	const struct type_tbl_s *p;
-	if (done) {
-		return;
-	}
-	done = true;
 	for (p = type_tbl; p->len; p++) {
 		if (p->type >= FILE_NAMES_SIZE) {
 			continue;
 		}
-		magic_file_names[p->type] = p->name;
-		magic_file_formats[p->type] = p->format;
+		m->magic_file_names[p->type] = p->name;
+		m->magic_file_formats[p->type] = p->format;
 	}
 }
 
@@ -272,12 +262,11 @@ void file_delmagic(struct r_magic *p, int type, size_t entries) {
 }
 
 /* const char *fn: list of magic files and directories */
-struct mlist * file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int action) {
+struct mlist *file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int action) {
 	char *p, *mfn;
 	int file_err, errs = -1;
 	struct mlist *mlist;
 
-	init_file_tables ();
 	if (!fn) {
 		return NULL;
 	}
@@ -1324,7 +1313,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 		}
 	}
 	if (action == FILE_CHECK) {
-		file_mdump (m);
+		file_mdump (ms, m);
 	}
 	m->mimetype[0] = '\0';		/* initialise MIME type to none */
 	if (m->cont_level == 0) {
@@ -1522,23 +1511,19 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 		return 1;
 	}
 
-	if (file_nformats != file_nnames) {
-		return -1;
-	}
-
-	if (m->type >= file_nformats) {
+	if (m->type >= FILE_NAMES_SIZE) {
 		file_magwarn(ms, "Internal error inconsistency between "
 		    "m->type and format strings");
 		return -1;
 	}
-	if (magic_file_formats[m->type] == FILE_FMT_NONE) {
+	if (ms->magic_file_formats[m->type] == FILE_FMT_NONE) {
 		file_magwarn(ms, "No format string for `%s' with description "
-		    "`%s'", m->desc, magic_file_names[m->type]);
+		    "`%s'", m->desc, ms->magic_file_names[m->type]);
 		return -1;
 	}
 
 	ptr++;
-	if (ptr && check_format_type(ptr, magic_file_formats[m->type]) == -1) {
+	if (ptr && check_format_type (ptr, ms->magic_file_formats[m->type]) == -1) {
 		/*
 		 * TODO: this error message is unhelpful if the format
 		 * string is not one character long
@@ -1546,7 +1531,7 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 		file_magwarn(ms, "Printf format `%c' is not valid for type "
 		    "`%s' in description `%s'",
 		    ptr && *ptr ? *ptr : '?',
-		    magic_file_names[m->type], m->desc);
+		    ms->magic_file_names[m->type], m->desc);
 		return -1;
 	}
 
@@ -1555,7 +1540,7 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 			file_magwarn (ms,
 			    "Too many format strings (should have at most one) "
 			    "for `%s' with description `%s'",
-			    magic_file_names[m->type], m->desc);
+			    ms->magic_file_names[m->type], m->desc);
 			return -1;
 		}
 	}
