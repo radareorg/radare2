@@ -83,7 +83,7 @@ typedef struct {
 	bool show_color;
 	bool show_color_bytes;
 	bool show_color_args;
-	int colorop;
+	bool colorop;
 	int acase;
 	bool capitalize;
 	bool show_flgoff;
@@ -649,15 +649,14 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->pre_emu = r_config_get_i (core->config, "emu.pre");
 	ds->show_flgoff = r_config_get_i (core->config, "asm.flags.offset");
 	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
-	{
-		const char *ah = r_config_get (core->config, "asm.highlight");
-		ds->asm_highlight = (ah && *ah)? r_num_math (core->num, ah): UT64_MAX;
-	}
+	const char *ah = r_config_get (core->config, "asm.highlight");
+	ds->asm_highlight = R_STR_ISNOTEMPTY (ah)? r_num_math (core->num, ah): UT64_MAX;
 	ds->asm_anal = r_config_get_i (core->config, "asm.anal");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
-	ds->show_color_bytes = r_config_get_i (core->config, "scr.color.bytes"); // maybe rename to asm.color.bytes
+	ds->show_color_bytes = r_config_get_i (core->config, "scr.color.bytes");
 	ds->show_color_args = r_config_get_i (core->config, "scr.color.args");
-	ds->colorop = r_config_get_i (core->config, "scr.color.ops"); // XXX confusing name // asm.color.inst (mnemonic + operands) ?
+	ds->colorop = r_config_get_b (core->config, "scr.color.ops");
+	R_LOG_TODO ("find a better name for 'scr.color.ops'");
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
 	ds->acase = r_config_get_i (core->config, "asm.ucase");
 	ds->capitalize = r_config_get_i (core->config, "asm.capitalize");
@@ -912,7 +911,7 @@ static void ds_free(RDisasmState *ds) {
 		return;
 	}
 	if (ds->show_emu_stack) {
-		// TODO: destroy fake stack in here
+		R_LOG_TODO ("destroy fake stack");
 		if (ds->stackFd != -1) {
 			r_io_fd_close (ds->core->io, ds->stackFd);
 		}
