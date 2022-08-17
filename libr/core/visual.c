@@ -65,7 +65,7 @@ static const char *print4Formats[PRINT_4_FORMATS] = {
 };
 static R_TH_LOCAL int current5format = 0;
 static const char *print5Formats[PRINT_5_FORMATS] = {
-	"pca", "pcA", "p8", "pcc", "pss", "pcp", "pcd", "pcj"
+	"pca", "pcA", "p8x", "pcc", "pss", "pcp", "pcd",
 };
 
 R_API void r_core_visual_applyHexMode(RCore *core, int hexMode) {
@@ -2854,7 +2854,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			int delta = (core->print->ocur != -1)? R_MIN (core->print->cur, core->print->ocur): core->print->cur;
 			ut64 addr = core->offset + delta;
 			if (!canWrite (core, addr)) {
-				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
+				R_LOG_ERROR ("File is read-only. Use `r2 -w` or run `oo+` or `e io.cache=true`");
 				r_cons_any_key (NULL);
 				return true;
 			}
