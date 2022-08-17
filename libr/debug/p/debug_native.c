@@ -1,9 +1,13 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_userconf.h>
+#include <r_debug.h>
 #include <r_drx.h>
+#include <r_asm.h>
 #include <r_core.h>
+#include <r_reg.h>
 #include <r_lib.h>
+#include <r_anal.h>
 #include <signal.h>
 #include <sys/types.h>
 

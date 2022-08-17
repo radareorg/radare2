@@ -14,6 +14,8 @@ enum {
 
 #if __i386__ || __x86_64__
 #define NUM_DRX_REGISTERS 8
+#else
+#define NUM_DRX_REGISTERS 0
 #endif
 
 #ifdef __cplusplus
