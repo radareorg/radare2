@@ -1,9 +1,8 @@
-/* radare - LGPL - Copyright 2016 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2022 - Oscar Salvador */
 
 #ifndef BFLT_H
 #define BFLT_H
 
-#include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
@@ -17,7 +16,7 @@
 #define FLAT_FLAG_KTRACE	0x10	/* output useful kernel trace for debugging */
 
 struct bflt_hdr {
-	char magic[4];
+	ut8 magic[4];
 	ut32 rev;
 	ut32 entry;
 	ut32 data_start;
@@ -31,8 +30,6 @@ struct bflt_hdr {
 	ut32 filler[5];
 };
 
-//typedef reloc_struct_t
-
 struct reloc_struct_t {
 	ut32 addr_to_patch;
 	ut32 data_offset;
@@ -45,14 +42,14 @@ struct r_bin_bflt_obj {
 	RBuffer *b;
 	ut8 endian;
 	size_t size;
-	uint32_t n_got;
+	ut32 n_got;
 };
 
-#define BFLT_HDR_SIZE		sizeof (struct bflt_hdr)
-#define VALID_GOT_ENTRY(x)	(x != 0xFFFFFFFF)
+#define BFLT_HDR_SIZE sizeof (struct bflt_hdr)
+#define VALID_GOT_ENTRY(x) (x != UT32_MAX)
 
-RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin);
-struct r_bin_bflt_obj *r_bin_bflt_new_buf(RBuffer *buf);
-void r_bin_bflt_free (struct r_bin_bflt_obj *obj);
+R_API RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin);
+R_API struct r_bin_bflt_obj *r_bin_bflt_new_buf(RBuffer *buf);
+R_API void r_bin_bflt_free(struct r_bin_bflt_obj *obj);
 
 #endif
