@@ -6668,36 +6668,57 @@ static int cmd_print(void *data, const char *input) {
 		case 'b': // "psb"
 			if (l > 0) {
 				int quiet = input[2] == 'q'; // "psbq"
-				char *s = malloc (core->blocksize + 1);
-				int i, j, hasnl = 0;
-				if (s) {
+				RStrBuf *sb = r_strbuf_new ("");
+				int i, hasnl = 0;
+				if (sb) {
 					if (!quiet) {
 						r_print_offset (core->print, core->offset, 0, 0, NULL);
 					}
 					// TODO: filter more chars?
-					for (i = j = 0; i < core->blocksize; i++) {
+					for (i = 0; i < core->blocksize; i++) {
 						char ch = (char) block[i];
-						if (!ch) {
-							if (!hasnl) {
-								s[j] = 0;
-								if (*s) {
-									r_cons_println (s);
-									if (!quiet) {
-										r_print_offset (core->print, core->offset + i, 0, 0, NULL);
-									}
-								}
-								j = 0;
-								s[0] = 0;
+						if (ch == 0xa) {
+							char *s = r_strbuf_drain (sb);
+							r_cons_print (s); // TODO: missing newline?
+							free (s);
+							sb = r_strbuf_new ("");
+							r_cons_newline ();
+							if (!quiet) {
+								r_print_offset (core->print, core->offset + i, 0, 0, NULL);
 							}
 							hasnl = 1;
 							continue;
 						}
+						if (!ch) {
+							if (core->print->cur_enabled && core->print->cur == i) {
+								r_strbuf_appendf (sb, Color_INVERT"."Color_RESET);
+							}
+							if (!hasnl) {
+								char *s = r_strbuf_drain (sb);
+								r_cons_println (s); // TODO: missing newline?
+								free (s);
+								sb = r_strbuf_new ("");
+								if (!quiet) {
+									r_print_offset (core->print, core->offset + i, 0, 0, NULL);
+								}
+							}
+							hasnl = true;
+							continue;
+						}
 						hasnl = 0;
 						if (IS_PRINTABLE (ch)) {
-							s[j++] = ch;
+							if (core->print->cur_enabled && core->print->cur == i) {
+								r_strbuf_appendf (sb, Color_INVERT"%c"Color_RESET, ch);
+							} else {
+								r_strbuf_appendf (sb, "%c", ch);
+							}
+						} else {
+							if (core->print->cur_enabled && core->print->cur == i) {
+								r_strbuf_appendf (sb, Color_INVERT"."Color_RESET);
+							}
 						}
 					}
-					s[j] = 0;
+					char *s = r_strbuf_drain (sb);
 					r_cons_print (s); // TODO: missing newline?
 					free (s);
 				}
@@ -7225,7 +7246,7 @@ static int cmd_print(void *data, const char *input) {
 					buf[4] = 0;
 
 					r_print_cursor (core->print, i, 1, 1);
-					r_cons_printf ("%s.%s  ", buf, buf + 5);
+					r_cons_printf ("%s_%s  ", buf, buf + 5);
 					r_print_cursor (core->print, i, 1, 0);
 					if (c == 3) {
 						const ut8 *b = core->block + i - 3;
