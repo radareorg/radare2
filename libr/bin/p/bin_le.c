@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - GustavoLCR */
+/* radare - LGPL - Copyright 2019-2022 - GustavoLCR */
 
 #include <r_bin.h>
 #include "../format/le/le.h"
@@ -27,7 +27,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && bin_obj && buf, false);
-	r_bin_le_obj_t *res = r_bin_le_new_buf (buf);
+	RBinLEObj *res = r_bin_le_new_buf (buf);
 	if (res) {
 		*bin_obj = res;
 		return true;
@@ -42,7 +42,7 @@ static void destroy(RBinFile *bf) {
 static void header(RBinFile *bf) {
 	r_return_if_fail (bf && bf->rbin && bf->o && bf->o->bin_obj);
 	RBin *rbin = bf->rbin;
-	r_bin_le_obj_t *bin = bf->o->bin_obj;
+	RBinLEObj *bin = bf->o->bin_obj;
 	LE_image_header *h = bin->header;
 	PrintfCallback p = rbin->cb_printf;
 	if (!h || !p) {
@@ -128,7 +128,7 @@ static RList *relocs(RBinFile *bf) {
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *info = R_NEW0 (RBinInfo);
 	if (info) {
-		r_bin_le_obj_t *bin = bf->o->bin_obj;
+		RBinLEObj *bin = bf->o->bin_obj;
 		LE_image_header *h = bin->header;
 		info->bits = 32;
 		info->type = strdup (bin->type);
