@@ -50,17 +50,17 @@ static int decode_fixed(struct state *s, struct directive *d) {
 			return 0;
 		}
 		s->s_nop++;
-		strcpy(d->d_asm, "nop");
+		strcpy (d->d_asm, "nop");
 		break;
-	case INST_BRK: strcpy(d->d_asm, "brk"); break;
-	case INST_SLEEP: strcpy(d->d_asm, "sleep"); break;
-	case INST_SIF: strcpy(d->d_asm, "sif"); break;
-	case INST_BC: strcpy(d->d_asm, "bc"); break;
-	case INST_BRXL: strcpy(d->d_asm, "brxl"); break;
-	case INST_U: strcpy(d->d_asm, ""); s->s_u = 1; break;
-	case INST_RTS: strcpy(d->d_asm, "rts"); break;
+	case INST_BRK: strcpy (d->d_asm, "brk"); break;
+	case INST_SLEEP: strcpy (d->d_asm, "sleep"); break;
+	case INST_SIF: strcpy (d->d_asm, "sif"); break;
+	case INST_BC: strcpy (d->d_asm, "bc"); break;
+	case INST_BRXL: strcpy (d->d_asm, "brxl"); break;
+	case INST_U: strcpy (d->d_asm, ""); s->s_u = 1; break;
+	case INST_RTS: strcpy (d->d_asm, "rts"); break;
 	}
-	return d->d_asm[0]!=0;
+	return d->d_asm[0] != 0;
 }
 
 static char *regname(int reg) {

@@ -55,7 +55,7 @@ fail:
 	return false;
 }
 
-static int r_bin_bflt_init(struct r_bin_bflt_obj *obj, RBuffer *buf) {
+static bool r_bin_bflt_init(RBinBfltObj *obj, RBuffer *buf) {
 	obj->b = r_buf_ref (buf);
 	obj->size = r_buf_size (buf);
 	obj->endian = false;
@@ -69,19 +69,20 @@ static int r_bin_bflt_init(struct r_bin_bflt_obj *obj, RBuffer *buf) {
 	return true;
 }
 
-R_API void r_bin_bflt_free(struct r_bin_bflt_obj *obj) {
-	if (obj) {
-		R_FREE (obj->hdr);
-		r_buf_free (obj->b);
-		R_FREE (obj);
+R_IPI void r_bin_bflt_free(RBinBfltObj *o) {
+	if (o) {
+		R_FREE (o->hdr);
+		r_buf_free (o->b);
+		free (o);
 	}
 }
 
-R_API struct r_bin_bflt_obj *r_bin_bflt_new_buf(RBuffer *buf) {
-	struct r_bin_bflt_obj *bin = R_NEW0 (struct r_bin_bflt_obj);
-	if (bin && r_bin_bflt_init (bin, buf)) {
-		return bin;
+R_IPI RBinBfltObj *r_bin_bflt_new_buf(RBuffer *buf) {
+	r_return_val_if_fail (buf, NULL);
+	RBinBfltObj *o = R_NEW0 (RBinBfltObj);
+	if (o && r_bin_bflt_init (o, buf)) {
+		return o;
 	}
-	r_bin_bflt_free (bin);
+	r_bin_bflt_free (o);
 	return NULL;
 }

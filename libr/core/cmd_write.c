@@ -1154,7 +1154,7 @@ static int cmd_wu(void *data, const char *input) {
 			char sign = ' ';
 			int line = 0, offs = 0, hexa = 0;
 			int newline = 1;
-			for (i=0; data[i]; i++) {
+			for (i = 0; data[i]; i++) {
 				switch (data[i]) {
 				case '+':
 					if (newline)

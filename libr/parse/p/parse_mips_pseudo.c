@@ -94,21 +94,21 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ NULL }
 	};
 
-	for (i=0; ops[i].op; i++) {
+	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr) {
-				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
+				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
 					if (can_replace (ops[i].str, j, ops[i].max_operands)) {
 						const char *w = argv[ ops[i].str[j]-'0' ];
 						if (w) {
-							strcpy (newstr+k, w);
+							strcpy (newstr + k, w);
 							k += strlen (w) - 1;
 						}
 					} else {
 						newstr[k] = ops[i].str[j];
 					}
 				}
-				newstr[k]='\0';
+				newstr[k] = '\0';
 			}
 			return true;
 		}

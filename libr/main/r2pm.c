@@ -277,7 +277,7 @@ static void r2pm_setenv(void) {
 	free (oldpath);
 	free (r2_prefix);
 
-	// GLOBAL=0 # depends on r2pm.global, which is set on r2pm_install
+	// GLOBAL = 0 # depends on r2pm.global, which is set on r2pm_install
 	char *python = r_sys_getenv ("PYTHON");
 	if (!python) {
 		python = r_file_path ("python3");

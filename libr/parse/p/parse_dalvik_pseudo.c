@@ -193,21 +193,21 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ NULL }
 	};
 
-	for (i=0; ops[i].op; i++) {
+	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr) {
-				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
-					if (ops[i].str[j]>='1' && ops[i].str[j]<='9') {
-						const char *w = argv[ ops[i].str[j]-'0' ];
+				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
+					if (ops[i].str[j] >= '1' && ops[i].str[j] <= '9') {
+						const char *w = argv[ops[i].str[j] - '0'];
 						if (w) {
-							strcpy (newstr+k, w);
-							k += strlen(w)-1;
+							strcpy (newstr + k, w);
+							k += strlen (w) - 1;
 						}
 					} else {
 						newstr[k] = ops[i].str[j];
 					}
 				}
-				newstr[k]='\0';
+				newstr[k] = '\0';
 			}
 			return true;
 		}
@@ -235,6 +235,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	char w4[64];
 
 	if (!strcmp (data, "invalid")
+	||  !strcmp (data, "???")
 	||  !strcmp (data, "nop")
 	||  !strcmp (data, "DEPRECATED")) {
 		str[0] = 0;
@@ -265,9 +266,9 @@ static int parse(RParse *p, const char *data, char *str) {
 				;
 			}
 			strncpy (w0, buf, sizeof (w0) - 1);
-			w0[sizeof(w0)-1] = '\0';
+			w0[sizeof (w0)-1] = '\0';
 			strncpy (w1, ptr, sizeof (w1) - 1);
-			w1[sizeof(w1)-1] = '\0';
+			w1[sizeof (w1)-1] = '\0';
 
 			optr=ptr;
 			ptr2 = strchr (ptr, '}');

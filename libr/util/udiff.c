@@ -1,10 +1,9 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nikolai */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nikolai */
 
 #include <r_util/r_diff.h>
 
 // the non-system-diff doesnt work well
 #define USE_SYSTEM_DIFF 1
-
 
 R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b) {
 	RDiff *d = R_NEW0 (RDiff);
@@ -842,7 +841,8 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 	size_t skip;
 	ut32 alen = bufa->len;
 	ut32 blen = bufb->len;
-	for (skip=0; skip < alen && !levdiff (bufa, bufb, skip, skip); skip++) {}
+	for (skip = 0; skip < alen && !levdiff (bufa, bufb, skip, skip); skip++) {
+	}
 
 	// strip suffix as long as bytes don't diff
 	size_t i;
@@ -951,11 +951,11 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 	{
 		// for debugging matrix
 		size_t total = 0;
-		for (i=0; i <= alen; i++) {
+		for (i = 0; i <= alen; i++) {
 			Levrow *bow = matrix + i;
 			ut32 j;
 			printf ("   ");
-			for (j=0; j <= blen; j++) {
+			for (j = 0; j <= blen; j++) {
 				ut32 val = lev_get_val (bow, j);
 				if (val >= UT32_MAX - 1) {
 					printf (" ..");

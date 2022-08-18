@@ -4,12 +4,12 @@
 *** .hex format description : every line follows this pattern
 :SSAAAARR<xx*SS>KK
 SS: num of "xx" bytes
-AAAA lower 16bits of address for resulting data (==0 for 01, 02, 04 and 05 records)
+AAAA lower 16bits of address for resulting data (== 0 for 01, 02, 04 and 05 records)
 RR: rec type:
 	00 data
-	01 EOF (always SS=0, AAAA=0)
-	02 extended segment addr reg: (always SS=02, AAAA=0); data = 0x<xxyy> => bits 4..19 of following addresses
-	04 extended linear addr reg: (always SS=02, AAAA=0); data = 0x<xxyy> => bits 16..31 of following addresses
+	01 EOF (always SS= 0, AAAA = 0)
+	02 extended segment addr reg: (always SS = 02, AAAA = 0); data = 0x<xxyy> => bits 4..19 of following addresses
+	04 extended linear addr reg: (always SS = 02, AAAA = 0); data = 0x<xxyy> => bits 16..31 of following addresses
 	05 non-standard; could be "start linear address" AKA "entry point".
 KK = 0 - (sum of all bytes)
 
@@ -17,7 +17,7 @@ KK = 0 - (sum of all bytes)
 
 **** example records
 :02000002fffffe		#rec 02 : new seg = 0xffff, so next addresses will be (seg<<4)+AAAA
-:02000000556643		#rec 00 : load 2 bytes [0x000f fff0]=0x55; [0x000f fff1]=0x66
+:02000000556643		#rec 00 : load 2 bytes [0x000f fff0] = 0x55; [0x000f fff1] = 0x66
 :020000040800f2		#rec 04 : new linear addr = 0x0800, so next addresses will be (0x0800 <<16) + AAAA
 :10000000480F0020F948000811480008134800086C	#rec 00 : load 16 bytes @ 0x0800 0000
 :04000005080049099D	#rec 05 : entry point = 0x0800 4909 (ignored)
@@ -68,7 +68,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		ut16 addl0 = rbs->from & 0xffff;
 		ut16 addh0 = rbs->from >> 16;
 		ut16 addh1 = rbs->to >> 16;
-		ut16 tsiz =0;
+		ut16 tsiz = 0;
 		if (rbs->size == 0) {
 			continue;
 		}
@@ -354,8 +354,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			sec_start = segreg;
 
 			if (eol) {
-				// checksum
-				byte=0;	//break checksum if sscanf failed
+				byte = 0; //break checksum if sscanf failed
 				if (sscanf (str + 9 + 4, "%02x", &byte) != 1) {
 					cksum = 1;
 				}

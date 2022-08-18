@@ -239,7 +239,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	// the easy parts though
 	if (IN_SWITCH_OP) {
 		NUM_CASES_SEEN++;
-		if (NUM_CASES_SEEN == SWITCH_OP_CASES) IN_SWITCH_OP=0;
+		if (NUM_CASES_SEEN == SWITCH_OP_CASES) { IN_SWITCH_OP = 0; }
 		op->addr = addr;
 		op->size = 4;
 		op->type2 = 0;

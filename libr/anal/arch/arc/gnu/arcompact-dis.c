@@ -664,19 +664,18 @@ sign_extend (int value, int bits)
 static int
 dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 {
-
   int subopcode, mul;
-  int condCodeIsPartOfName=0;
+  int condCodeIsPartOfName = 0;
   int decodingClass;
   const char *instrName;
-  int fieldAisReg=1, fieldBisReg=1, fieldCisReg=1;
-  int fieldA=0, fieldB=0, fieldC=0;
-  int flag=0, cond=0, is_shimm=0, is_limm=0;
-  int signExtend=0, addrWriteBack=0, directMem=0;
-  int is_linked=0;
-  int offset=0;
+  int fieldAisReg = 1, fieldBisReg = 1, fieldCisReg = 1;
+  int fieldA = 0, fieldB = 0, fieldC = 0;
+  int flag = 0, cond = 0, is_shimm = 0, is_limm = 0;
+  int signExtend = 0, addrWriteBack = 0, directMem = 0;
+  int is_linked = 0;
+  int offset = 0;
   int usesAuxReg = 0;
-  int usesSimdRegA= 0, usesSimdRegB=0, usesSimdRegC=0,simd_scale_u8=-1;
+  int usesSimdRegA= 0, usesSimdRegB = 0, usesSimdRegC = 0,simd_scale_u8=-1;
   int flags = !E_ARC_MACH_A4;
   char formatString[60];
 
@@ -718,7 +717,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
   instrName = 0;
   decodingClass = 0; /* default! */
   mul = 0;
-  condCodeIsPartOfName=0;
+  condCodeIsPartOfName = 0;
   state->commNum = 0;
   state->tcnt = 0;
   state->acnt = 0;
@@ -963,8 +962,8 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	case 1: instrName = "lsr"; break;
 	case 2: instrName = "asr"; break;
 	case 3: instrName = "ror"; break;
-	case 4: instrName = "mul64"; mul =1; decodingClass = 2; break;
-	case 5: instrName = "mulu64"; mul =1; decodingClass = 2; break;
+	case 4: instrName = "mul64"; mul = 1; decodingClass = 2; break;
+	case 5: instrName = "mulu64"; mul = 1; decodingClass = 2; break;
 
 	  /* ARC A700 */
       case 6: instrName = "adds" ;break;
@@ -1038,9 +1037,9 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  case 68:
 	    instrName = "vld32";
 	    decodingClass = 37;
-	    usesSimdRegA=1;
-	    usesSimdRegB=2;
-	    usesSimdRegC=0;
+	    usesSimdRegA = 1;
+	    usesSimdRegB = 2;
+	    usesSimdRegC = 0;
 	    simd_scale_u8 = 2;
 	    break;
 
@@ -1300,12 +1299,12 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 		{
 		case 0:
 		  instrName = "vaddw"; decodingClass = 42;
-		  usesSimdRegA = usesSimdRegB = usesSimdRegC =1;
+		  usesSimdRegA = usesSimdRegB = usesSimdRegC = 1;
 		  break;
 
 		case 1:
 		  instrName = "vaddaw"; decodingClass = 42;
-		  usesSimdRegA = usesSimdRegB = usesSimdRegC =1;
+		  usesSimdRegA = usesSimdRegB = usesSimdRegC = 1;
 		  break;
 
 		case 2:
@@ -2122,7 +2121,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
         case 6 : instrName = "bic_s"; break;
         case 7 : instrName = "xor_s"; break;
 	case 11: instrName = "tst_s"; decodingClass = 14; break;
-	case 12: instrName = "mul64_s"; mul =1; decodingClass = 14; break;
+	case 12: instrName = "mul64_s"; mul = 1; decodingClass = 14; break;
 	case 13: instrName = "sexb_s"; decodingClass = 14; break;
 	case 14: instrName = "sexw_s"; decodingClass = 14; break;
 	case 15: instrName = "extb_s"; decodingClass = 14; break;
@@ -2818,7 +2817,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       state->source_operand.registerNum = fieldC;
       state->sourceType = fieldCisReg ? ARC_REGISTER : ARC_LIMM ;
       fieldA  = FIELDD9(state->words[0]); /* shimm */
-      fieldAisReg=0;
+      fieldAisReg = 0;
 
       /* [B,A offset] */
 #if 0

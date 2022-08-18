@@ -193,9 +193,9 @@ R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char
 
 /* Validate a regexp in the canonical format /<regexp>/<options> */
 R_API RSearchKeyword *r_search_keyword_new_regexp(const char *str, const char *data) {
-	RSearchKeyword *kw;
 	int i = 0, start, length;
 
+	// TODO: use r_str_trim_head_ro (str);
 	while (isspace ((const unsigned char)str[i])) {
 		i++;
 	}
@@ -223,19 +223,17 @@ R_API RSearchKeyword *r_search_keyword_new_regexp(const char *str, const char *d
 		return NULL;
 	}
 
-	kw = R_NEW0(RSearchKeyword);
+	RSearchKeyword *kw = R_NEW0 (RSearchKeyword);
 	if (!kw) {
 		return NULL;
 	}
-
 	kw->bin_keyword = malloc (length+1);
 	if (!kw->bin_keyword) {
 		r_search_keyword_free (kw);
 		return NULL;
 	}
-
-	kw->bin_keyword[length]=0;
-	memcpy(kw->bin_keyword, str + start, length);
+	kw->bin_keyword[length] = 0;
+	memcpy (kw->bin_keyword, str + start, length);
 	kw->keyword_length = length - specials;
 	kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
 	kw->data = (void *) data;

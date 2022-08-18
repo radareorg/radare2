@@ -200,7 +200,7 @@ R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
 					continue;
 				}
 				if (str[j] == '1') {
-					ret|=1 << k;
+					ret |= (1 << k);
 				} else if (str[j] != '0') {
 					return n;
 				}

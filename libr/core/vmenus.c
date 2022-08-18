@@ -860,7 +860,7 @@ R_API int r_core_visual_types(RCore *core) {
 			}
 			menu--;
 			option = _option;
-			if (menu==0) {
+			if (menu == 0) {
 				// if no flagspaces, just quit
 				if (r_flag_space_is_empty (core->flags)) {
 					return true;
@@ -1914,7 +1914,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			delta++;
 			break;
 		case 'J':
-			cur+=10;
+			cur += 10;
 			forceaddr = false;
 			delta = 0;
 			break;
@@ -1922,7 +1922,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			delta = 0;
 			forceaddr = false;
 			if (cur > 10) {
-				cur-=10;
+				cur -= 10;
 			} else {
 				cur = 0;
 			}
@@ -2085,7 +2085,8 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				option = 0;
 			}
 			break;
-		case 'K': option-=10;
+		case 'K':
+			option -= 10;
 			if (option < 0) {
 				option = 0;
 			}
@@ -2200,7 +2201,6 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				format = MAX_FORMAT;
 			}
 			break;
-			// = (format<=0)? MAX_FORMAT: format-1; break;
 		case 'p': format++; break;
 		case 'l':
 		case ' ':
@@ -2659,7 +2659,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 			}
 		} else if (mode == 1) {
 			r_cons_printf ("Types:\n\n");
-			for (i=0;;i++) {
+			for (i = 0; ; i++) {
 				n = r_fs_partition_type_get (i);
 				if (!n) {
 					break;
@@ -3409,7 +3409,7 @@ static char *__prompt(const char *msg, void *p) {
 	r_cons_show_cursor (true);
 	r_cons_set_raw (false);
 	r_line_set_prompt (msg);
-	res[0] =0;
+	res[0] = 0;
 	if (!r_cons_fgets (res, sizeof (res), 0, NULL)) {
 		res[0] = 0;
 	}
@@ -3657,10 +3657,10 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				delta = 0;
 				switch (level) {
 				case 1:
-					variable_option = (variable_option<=0)? 0: variable_option-1;
+					variable_option = (variable_option <= 0)? 0: variable_option-1;
 					break;
 				default:
-					option = (option<=0)? 0: option-1;
+					option = (option <= 0)? 0: option-1;
 					break;
 				}
 			}

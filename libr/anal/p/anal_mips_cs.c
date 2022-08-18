@@ -199,7 +199,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 	return buf;
 }
 
-#define ARG(x) (*str[x]!=0)?str[x]:arg(handle, insn, str[x], x)
+#define ARG(x) (*str[x] != 0)?str[x]:arg(handle, insn, str[x], x)
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	char str[8][32] = {{0}};
@@ -876,8 +876,8 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_JRADDIUSP:
 	case MIPS_INS_BAL:
 	// (no blezal/bgtzal or blezall/bgtzall, only blezalc/bgtzalc)
-	case MIPS_INS_BLTZAL: // Branch on <0 and link
-	case MIPS_INS_BGEZAL: // Branch on >=0 and link
+	case MIPS_INS_BLTZAL: // Branch on < 0 and link
+	case MIPS_INS_BGEZAL: // Branch on >= 0 and link
 	case MIPS_INS_BLTZALL: // "likely" versions
 	case MIPS_INS_BGEZALL:
 	case MIPS_INS_BLTZALC: // compact versions

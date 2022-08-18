@@ -2748,9 +2748,9 @@ aarch64_operand_index (const enum aarch64_opnd *operands, enum aarch64_opnd oper
     R (16), R (17), R (18), R (19), R (20), R (21), R (22), R (23), \
     R (24), R (25), R (26), R (27), R (28), R (29), R (30),  FOR31 }
 /* [0][0]  32-bit integer regs with sp   Wn
-   [0][1]  64-bit integer regs with sp   Xn  sf=1
+   [0][1]  64-bit integer regs with sp   Xn  sf = 1
    [1][0]  32-bit integer regs with #0   Wn
-   [1][1]  64-bit integer regs with #0   Xn  sf=1 */
+   [1][1]  64-bit integer regs with #0   Xn  sf = 1 */
 static const char *int_reg[2][2][32] = {
 #define R32(X) "w" #X
 #define R64(X) "x" #X

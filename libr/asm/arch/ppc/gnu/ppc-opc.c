@@ -5150,7 +5150,7 @@ const int powerpc_num_opcodes =
 /* The macro table.  This is only used by the assembler.  */
 
 /* The expressions of the form (-x ! 31) & (x | 31) have the value 0
-   when x=0; 32-x when x is between 1 and 31; are negative if x is
+   when x = 0; 32-x when x is between 1 and 31; are negative if x is
    negative; and are 32 or more otherwise.  This is what you want
    when, for instance, you are emulating a right shift by a
    rotate-left-and-mask, because the underlying instructions support

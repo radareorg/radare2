@@ -15,7 +15,7 @@
 #define FLAT_FLAG_GZDATA	0x8	/* only data/relocs are compressed (for XIP) */
 #define FLAT_FLAG_KTRACE	0x10	/* output useful kernel trace for debugging */
 
-struct bflt_hdr {
+typedef struct bflt_hdr {
 	ut8 magic[4];
 	ut32 rev;
 	ut32 entry;
@@ -28,28 +28,28 @@ struct bflt_hdr {
 	ut32 flags;
 	ut32 build_date;
 	ut32 filler[5];
-};
+} RBinBfltHeader;
 
-struct reloc_struct_t {
+typedef struct reloc_struct_t {
 	ut32 addr_to_patch;
 	ut32 data_offset;
-};
+} RBinBfltReloc;
 
-struct r_bin_bflt_obj {
-	struct bflt_hdr *hdr;
-	struct reloc_struct_t *reloc_table;
-	struct reloc_struct_t *got_table;
+typedef struct r_bin_bflt_obj {
+	RBinBfltHeader *hdr;
+	RBinBfltReloc *reloc_table;
+	RBinBfltReloc *got_table;
 	RBuffer *b;
 	ut8 endian;
 	size_t size;
 	ut32 n_got;
-};
+} RBinBfltObj;
 
-#define BFLT_HDR_SIZE sizeof (struct bflt_hdr)
+#define BFLT_HDR_SIZE sizeof (RBinBfltHeader)
 #define VALID_GOT_ENTRY(x) (x != UT32_MAX)
 
-R_API RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin);
-R_API struct r_bin_bflt_obj *r_bin_bflt_new_buf(RBuffer *buf);
-R_API void r_bin_bflt_free(struct r_bin_bflt_obj *obj);
+R_IPI RBinAddr *r_bflt_get_entry(RBinBfltObj *bin);
+R_IPI RBinBfltObj *r_bin_bflt_new_buf(RBuffer *buf);
+R_IPI void r_bin_bflt_free(RBinBfltObj *obj);
 
 #endif

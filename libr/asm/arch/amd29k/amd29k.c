@@ -14,11 +14,11 @@
 #define AMD29K_SET_INVALID(x,i) ((x)->type[(i)]=AMD29K_TYPE_UNK)
 #define AMD29K_HAS_BIT(x) (((x)[0] & 1))
 // Global registers
-#define AMD29K_IS_REG_GR(x) ((x)>=0&&(x)<128)
+#define AMD29K_IS_REG_GR(x) ((x) >= 0 && (x) < 128)
 // Local registers
-#define AMD29K_IS_REG_LR(x) ((x)>=128&&(x)<256)
+#define AMD29K_IS_REG_LR(x) ((x) >= 128 && (x) < 256)
 #define AMD29K_REGNAME(x) (AMD29K_IS_REG_GR(x)?"gr":"lr")
-#define AMD29K_LR(x) (AMD29K_IS_REG_GR(x)?(x):(x)-127)
+#define AMD29K_LR(x) (AMD29K_IS_REG_GR(x)? (x): (x)-127)
 
 static void decode_ra_rb_rci(amd29k_instr_t* instruction, const ut8* buffer) {
 	AMD29K_SET_VALUE (instruction, 0, buffer[1], AMD29K_TYPE_REG);

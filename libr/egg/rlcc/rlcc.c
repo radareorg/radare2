@@ -193,39 +193,37 @@ int main(int argc, char **argv) {
 
 #if 1
 	if (argc > 1) {
-
 		mpc_result_t r;
-		if (mpc_parse_contents(argv[1], Smallc, &r)) {
-			mpc_ast_print_to(r.output, stderr);
+		if (mpc_parse_contents (argv[1], Smallc, &r)) {
+			mpc_ast_print_to (r.output, stderr);
 			{
 				int i;
 				mpc_ast_t *root = r.output;
-				for (i=0; i < root->children_num; i++) {
+				for (i = 0; i < root->children_num; i++) {
 					mpc_ast_t *node = root->children[i];
 					eprintf ("; TAG = %s    (%s)\n", node->tag, node->contents);
 					processNode (node);
 				}
 			}
-			mpc_ast_delete(r.output);
+			mpc_ast_delete (r.output);
 		} else {
-			mpc_err_print(r.error);
-			mpc_err_delete(r.error);
+			mpc_err_print (r.error);
+			mpc_err_delete (r.error);
 		}
 
 	} else {
 
 		mpc_result_t r;
-		if (mpc_parse_pipe("<stdin>", stdin, Smallc, &r)) {
-			mpc_ast_print(r.output);
-			mpc_ast_delete(r.output);
+		if (mpc_parse_pipe ("<stdin>", stdin, Smallc, &r)) {
+			mpc_ast_print (r.output);
+			mpc_ast_delete (r.output);
 		} else {
-			mpc_err_print(r.error);
-			mpc_err_delete(r.error);
+			mpc_err_print (r.error);
+			mpc_err_delete (r.error);
 		}
 	}
 #endif
-
-	mpc_cleanup(17, Ident, Number, Character, String, Factor, Term, Lexp, Stmt, Exp,
+	mpc_cleanup (17, Ident, Number, Character, String, Factor, Term, Lexp, Stmt, Exp,
 			Vartype, Typeident, Decls, Args, Body, Comment, Procedure, CProcedure,
 			Sigdef, Includes, Smallc);
 

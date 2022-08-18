@@ -1428,7 +1428,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 		r_cons_printf ("f-fcnvar*\n");
 		r_list_foreach (list, iter, var) {
 			r_cons_printf ("f fcnvar.%s @ %s%s%d\n", var->name, bp,
-				var->delta>=0? "+":"", var->delta);
+				var->delta >= 0? "+":"", var->delta);
 		}
 		r_list_free (list);
 		return;
@@ -3236,10 +3236,10 @@ static void r_core_anal_nofunclist(RCore *core, const char *input) {
 				}
 			}
 			chunk_size = 0;
-			chunk_offset = i+1;
+			chunk_offset = i + 1;
 			continue;
 		}
-		chunk_size+=1;
+		chunk_size += 1;
 	}
 	if (chunk_size >= 16) {
 		fcn = r_anal_get_fcn_in (core->anal, base_addr+chunk_offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
@@ -4732,7 +4732,7 @@ static int cmd_af(RCore *core, const char *input) {
 	case 'B': // "afB" // set function bits
 		if (input[2] == ' ') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			if (fcn) { // bits=0 means unset
+			if (fcn) { // bits = 0 means unset
 				int nbits = atoi (input + 3);
 				int obits = core->anal->config->bits;
 				if (nbits > 0) {
@@ -7094,7 +7094,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		break;
 	case ' ':
 	case 'q':
-		//r_anal_esil_eval (core->anal, input+1);
+		//r_anal_esil_eval (core->anal, input + 1);
 		if (!esil) {
 			core->anal->esil = esil = esil_new_setup (core);
 			if (!esil) {
@@ -7566,7 +7566,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			break;
 			}
 		default:
-			cmd_aea (core, 1, core->offset, (int)r_num_math (core->num, input[1]?input+2:input+1));
+			cmd_aea (core, 1, core->offset, (int)r_num_math (core->num, input[1]? input + 2:input + 1));
 		}
 		break;
 	case 'a': { // "aea"
@@ -11913,7 +11913,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		if (end) {
 			vtable.offset = r_num_get (core->num, end + 1);
 			// end + 1 won't work on extra whitespace between arguments, TODO
-			arg3_str = strchr (end+1, ' ');
+			arg3_str = strchr (end + 1, ' ');
 		}
 
 		if (arg3_str) {

@@ -41,7 +41,7 @@ static RBuffer *build(REgg *egg) {
 
 	for (i = 0; i < r_buf_size (sc); i++) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
-		if ((r_buf_read8_at (sc, i) ^ nkey)==0) {
+		if ((r_buf_read8_at (sc, i) ^ nkey) == 0) {
 			eprintf ("This xor key generates null bytes. Try again.\n");
 			free (key);
 			return NULL;

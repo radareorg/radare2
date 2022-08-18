@@ -3023,7 +3023,7 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 	RBinElfSection *ret = NULL;
 	char unknown_s[32], invalid_s[32];
-	int i, nidx, unknown_c=0, invalid_c=0;
+	int i, nidx, unknown_c = 0, invalid_c = 0;
 
 	r_return_val_if_fail (bin, NULL);
 	if (bin->g_sections) {

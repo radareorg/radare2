@@ -523,7 +523,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
   instrName = 0;
   decodingClass = CLASS_A4_ARITH; /* default!  */
   repeatsOp = 0;
-  condCodeIsPartOfName=0;
+  condCodeIsPartOfName = 0;
   state->commNum = 0;
   state->tcnt = 0;
   state->acnt = 0;
@@ -724,22 +724,20 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	  instrName = "nop";
 	  decodingClass = CLASS_A4_OP3_SUBOPC3F;
       } else {
-	      instrName = "xor";
+          instrName = "xor";
       }
       break;
 
     default:
       instrName = instruction_name (state,state->_opcode,0,&flags);
-      /* if (instrName) printf ("FLAGS=0x%x\n", flags); */
-      if (!instrName)
-	{
-	  instrName = "???";
-	  state->flow=invalid_instr;
-	}
-	if (flags & IGNORE_FIRST_OPD) {
-		ignoreFirstOpd = 1;
-	}
-	break;
+      if (!instrName) {
+        instrName = "???";
+        state->flow=invalid_instr;
+      }
+      if (flags & IGNORE_FIRST_OPD) {
+        ignoreFirstOpd = 1;
+      }
+      break;
     }
 
   fieldAisReg = fieldBisReg = fieldCisReg = 1; /* Assume regs for now.  */

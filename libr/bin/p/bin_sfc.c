@@ -161,8 +161,7 @@ static RList* sections(RBinFile *bf) {
 		}
 
 	} else {
-		for (i=0; i < ((bf->size - hdroffset)/ 0x8000) ; i++) {
-
+		for (i = 0; i < ((bf->size - hdroffset)/ 0x8000) ; i++) {
 			addrom(ret,"ROM",i,hdroffset + i*0x8000,0x8000 + (i*0x10000), 0x8000);
 		}
 	}

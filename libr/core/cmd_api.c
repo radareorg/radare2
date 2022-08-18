@@ -1014,7 +1014,7 @@ static void macro_meta(RCmdMacro *mac) {
 	RListIter *iter;
 	r_list_foreach (mac->macros, iter, m) {
 		mac->cb_printf ("\"(%s %s; ", m->name, m->args);
-		for (j=0; m->code[j]; j++) {
+		for (j = 0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
 				mac->cb_printf (";");
 			} else {
@@ -1039,7 +1039,7 @@ R_API void r_cmd_macro_list(RCmdMacro *mac, int mode) {
 	RListIter *iter;
 	r_list_foreach (mac->macros, iter, m) {
 		mac->cb_printf ("%d (%s %s; ", idx, m->name, m->args);
-		for (j=0; m->code[j]; j++) {
+		for (j = 0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
 				mac->cb_printf ("; ");
 			} else {

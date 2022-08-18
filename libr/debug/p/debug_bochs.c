@@ -100,7 +100,7 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		bochs_send_cmd (desc, "regs", true);
 		//r14: 00000000_00000000 r15: 00000000_00000000
 		//rip: 00000000_0000e07b
-		//eflags 0x00000046: id vip vif ac vm rf nt IOPL=0 of df if tf sf ZF af PF cf
+		//"eflags 0x00000046: id vip vif ac vm rf nt IOPL=0 of df if tf sf ZF af PF cf"
 		//<bochs:109>return -1;
 		pos = 0x78;
 		lenRec = strlen (desc->data);
@@ -155,8 +155,8 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		   Data segment, base=0x00000000, limit=0x0000ffff, Read/Write, Accessed
 		   gs:0x0000, dh=0x00009300, dl=0x0000ffff, valid=7
 		   Data segment, base=0x00000000, limit=0x0000ffff, Read/Write, Accessed
-		   ldtr:0x0000, dh=0x00008200, dl=0x0000ffff, valid=1
-		   tr:0x0000, dh=0x00008b00, dl=0x0000ffff, valid=1
+		   ldtr:0x0000, dh=0x00008200, dl=0x0000ffff, valid = 1
+		   tr:0x0000, dh=0x00008b00, dl=0x0000ffff, valid = 1
 		   gdtr:base=0x0000000000000000, limit=0xffff
 		   idtr:base=0x0000000000000000, limit=0xffff
 		*/

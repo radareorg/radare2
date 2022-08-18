@@ -598,8 +598,8 @@ static char *getrange(char *s) {
 	char *p = NULL;
 	while (s && *s) {
 		if (*s == ',') {
-			p = s+1;
-			*p=0;
+			p = s + 1;
+			*p = 0;
 		}
 		if (*s == '[' || *s == ']') {
 			memmove (s, s + 1, strlen (s + 1) + 1);
@@ -632,7 +632,7 @@ static int getreg(const char *str) {
 			return reg;
 		}
 	}
-	for (i=0; aliases[i]; i++) {
+	for (i = 0; aliases[i]; i++) {
 		if (!strcmpnull (str, aliases[i])) {
 			return 10 + i;
 		}
@@ -1189,7 +1189,7 @@ static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
 	};
 	int i, cond = 14; // 'always' is default
 	char *c = ao->op+delta;
-	for (i=0; conds[i]; i++) {
+	for (i = 0; conds[i]; i++) {
 		if (!strcmpnull (c, conds[i])) {
 			cond = i;
 			break;
@@ -5078,7 +5078,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ut8 reg3 = getregmemstart (ao->a[2]);
 			st32 num = getnummemend (ao->a[3]);
 
-			if ((strsel != 0) || (reg1 > 15) || (reg2 > 15) || (reg3 > 15) || (num < 0) || (num > 1023) || ((num % 4) !=0)) {
+			if ((strsel != 0) || (reg1 > 15) || (reg2 > 15) || (reg3 > 15) || (num < 0) || (num > 1023) || ((num % 4) != 0)) {
 				return -1;
 			}
 

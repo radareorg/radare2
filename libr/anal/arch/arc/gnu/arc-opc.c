@@ -1151,7 +1151,7 @@ insert_reg (arc_insn insn,long *ex ATTRIBUTE_UNUSED,
 	     make it a scaled instruction, i.e. set .aa field to 3 */
 	  if (addrwb_p == 0)
 	    {
-	      /* Check for ld with .aa=0 */
+	      /* Check for ld with .aa = 0 */
 	      if ((insn & 0xf8000000) == 0x10000000)
 		{
 		  /* if an ld/ldw insn */
@@ -1161,7 +1161,7 @@ insert_reg (arc_insn insn,long *ex ATTRIBUTE_UNUSED,
 			  addrwb_p = 0x600;
 		  }
 		}
-	      /* Check for st with .aa=0 */
+	      /* Check for st with .aa = 0 */
 	      else if ((insn & 0xf8000001) == 0x18000000)
 		{
 		  /* if an st/stw insn */
@@ -2513,7 +2513,7 @@ static struct arc_opcode arc_opcodes[] = {
   { "extw%.q%.f %a,%b%F%S%L", I(-1)|C(-1), I(3)|C(8), ARC_MACH_ARC4, 0, 0 ,0,0},
   { "flag%.q %b%G%S%L",	I(-1)|A(-1)|C(-1), I(3)|A(ARC_REG_SHIMM_UPDATE)|C(0), ARC_MACH_ARC4, 0, 0 ,0,0},
 
-  /* %Q: force arc_cond_p=1 --> no shimm values */
+  /* %Q: force arc_cond_p = 1 --> no shimm values */
   /* This insn allows an optional flags spec.  */
   { "j%q%Q%.n%.f %b%F%J,%j", I(-1)|A(-1)|C(-1)|R(-1,7,1), I(7)|A(0)|C(0)|R(0,7,1), ARC_MACH_ARC4 | ARC_OPCODE_COND_BRANCH, 0, 0 ,0,0},
   { "j%q%Q%.n%.f %b%F%J,%j", I(-1)|A(-1)|C(-1)|R(-1,7,1), I(7)|A(0)|C(0)|R(0,7,1), ARC_MACH_ARC4 | ARC_OPCODE_COND_BRANCH, 0, 0 ,0,0},

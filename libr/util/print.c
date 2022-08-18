@@ -1452,7 +1452,6 @@ static const char* getchardiff(RPrint *p, char *fmt, ut8 a, ut8 b) {
 	} else {
 		sprintf (fmt, "%c", ch);
 	}
-	//else { fmt[0] = ch; fmt[1]=0; }
 	return fmt;
 }
 

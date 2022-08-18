@@ -102,7 +102,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	// /proc/pid/mem fails on latest linux
 	if (fd != -1) {
 		ret = lseek (fd, addr, SEEK_SET);
-		if (ret >=0) {
+		if (ret >= 0) {
 			// Workaround for the buggy Debian Wheeze's /proc/pid/mem
 			if (read (fd, buf, len) != -1) {
 				return ret;

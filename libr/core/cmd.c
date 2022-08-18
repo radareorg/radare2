@@ -971,7 +971,7 @@ static int cmd_rap(void *data, const char *input) {
 	case '!': // "=!"
 		if (input[1] == 'q') {
 			R_FREE (core->cmdremote);
-		} else if (input[1] == '=') { // =!=0 or =!= for iosystem
+		} else if (input[1] == '=') { // =!= or =!= for iosystem
 			R_FREE (core->cmdremote);
 			core->cmdremote = r_str_trim_dup (input + 2);
 		} else {

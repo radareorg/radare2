@@ -111,7 +111,7 @@ static void dorender(PrintfCallback cb_printf, const ut8 *buf, int len, int w, i
 	const ut8 *c, *d;
 	int x, y;
 	for (y = 0; y < h; y += 2) {
-		for (x=0; x < w; x++) {
+		for (x = 0; x < w; x++) {
 			c = XY (buf, x, y);
 			d = XY (buf, x, y + 1);
 			if (d + 3 > (buf + len)) {

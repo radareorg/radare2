@@ -2080,8 +2080,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_STP: // stp x6, x7, [x6,0xf90]
 	{
 		int disp = (int)MEMDISP64 (2);
-		char sign = disp>=0?'+':'-';
-		st64 abs = disp>=0? MEMDISP64 (2): -(st64)MEMDISP64 (2);
+		char sign = (disp >= 0)?'+':'-';
+		st64 abs = (disp >= 0)? MEMDISP64 (2): -(st64)MEMDISP64 (2);
 		int size = REGSIZE64 (0);
 		// Pre-index case
 		if (ISPREINDEX64 ()) {
@@ -2095,8 +2095,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		// Post-index case
 		} else if (ISPOSTINDEX64 ()) {
 			int val = IMM64 (3);
-			sign = val>=0?'+':'-';
-			abs = val>=0? val: -val;
+			sign = (val >= 0)?'+':'-';
+			abs = (val >= 0)? val: -val;
 			// "stp x4, x5, [x8], 0x10"
 			// "x4,x8,=[],x5,x8,8,+,=[],16,x8,+="
 			r_strbuf_setf(&op->esil,
@@ -2117,8 +2117,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_LDP: // ldp x29, x30, [sp], 0x10
 	{
 		int disp = (int)MEMDISP64 (2);
-		char sign = disp>=0?'+':'-';
-		ut64 abs = disp>=0? MEMDISP64 (2): (ut64)(-MEMDISP64 (2));
+		char sign = (disp >= 0)? '+': '-';
+		ut64 abs = (disp >= 0)? MEMDISP64 (2): (ut64)(-MEMDISP64 (2));
 		int size = REGSIZE64 (0);
 		// Pre-index case
 		// x2,x8,32,+,=[8],x3,x8,32,+,8,+,=[8]
@@ -2135,8 +2135,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		// Post-index case
 		} else if (ISPOSTINDEX64 ()) {
 			int val = IMM64 (3);
-			sign = val>=0?'+':'-';
-			abs = val>=0? val: -val;
+			sign = (val >= 0)?'+':'-';
+			abs = (val >= 0)? val: -val;
 			// ldp x4, x5, [x8], -0x10
 			// x8,[8],x4,=,x8,8,+,[8],x5,=,16,x8,+=
 			r_strbuf_setf (&op->esil,
@@ -2739,8 +2739,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		if (OPCOUNT() == 2) {
 			if (ISMEM(1) && !HASMEMINDEX(1)) {
 				int disp = MEMDISP (1);
-				char sign = disp>=0?'+':'-';
-				disp = disp>=0?disp:-disp;
+				char sign = (disp >= 0)?'+':'-';
+				disp = (disp >= 0)? disp: -disp;
 				r_strbuf_appendf (&op->esil, "%s,0x%x,%s,%c,0xffffffff,&,=[%d]",
 						  REG(0), disp, MEMBASE(1), sign, str_ldr_bytes);
 				if (insn->detail->arm.writeback) {
@@ -2836,11 +2836,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 						       REG(0), MEMBASE(1), str_ldr_bytes, REG(2), MEMBASE(1));
 				}
 			}
-			if (ISREG(1) && str_ldr_bytes==8) { // e.g. 'strd r2, r3, [r4]', normally should be the only case for ISREG(1).
+			if (ISREG (1) && str_ldr_bytes == 8) { // e.g. 'strd r2, r3, [r4]', normally should be the only case for ISREG(1).
 				if (!HASMEMINDEX(2)) {
-					int disp = MEMDISP(2);
-					char sign = disp>=0?'+':'-';
-					disp = disp>=0?disp:-disp;
+					int disp = MEMDISP (2);
+					char sign = (disp >= 0)?'+':'-';
+					disp = (disp >= 0)? disp: -disp;
 					r_strbuf_appendf (&op->esil, "%s,%d,%s,%c,0xffffffff,&,=[4],%s,4,%d,+,%s,%c,0xffffffff,&,=[4]",
 							  REG(0), disp, MEMBASE(2), sign, REG(1), disp, MEMBASE(2), sign);
 					if (insn->detail->arm.writeback) {
@@ -2848,7 +2848,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 								  disp, MEMBASE(2), sign, MEMBASE(2));
 					}
 				} else {
-					if (ISSHIFTED(2)) {
+					if (ISSHIFTED (2)) {
 						// it seems strd does not support SHIFT which is good, but have a check nonetheless
 					} else {
 						r_strbuf_appendf (&op->esil, "%s,%s,%s,+,0xffffffff,&,=[4],%s,4,%s,+,%s,+,0xffffffff,&,=[4]",
@@ -4446,7 +4446,7 @@ static R_TH_LOCAL int obits = 32;
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	cs_insn *insn = NULL;
-	int mode = (a->config->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
+	int mode = (a->config->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	int n, ret;
 	mode |= (a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (R_STR_ISNOTEMPTY (a->config->cpu)) {
@@ -4546,7 +4546,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 }
 
 static char *arm_mnemonics(RAnal *a, int id, bool json) {
-	int mode = (a->config->bits==16)? CS_MODE_THUMB: CS_MODE_ARM;
+	int mode = (a->config->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	mode |= (a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (R_STR_ISNOTEMPTY (a->config->cpu)) {
 		if (strstr (a->config->cpu, "cortex")) {

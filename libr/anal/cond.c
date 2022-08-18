@@ -85,10 +85,10 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 		switch (cond->type) {
 		case R_ANAL_COND_EQ: return !arg0;
 		case R_ANAL_COND_NE: return arg0;
-		case R_ANAL_COND_GT: return arg0>0;
-		case R_ANAL_COND_GE: return arg0>=0;
-		case R_ANAL_COND_LT: return arg0<0;
-		case R_ANAL_COND_LE: return arg0<=0;
+		case R_ANAL_COND_GT: return arg0 > 0;
+		case R_ANAL_COND_GE: return arg0 >= 0;
+		case R_ANAL_COND_LT: return arg0 < 0;
+		case R_ANAL_COND_LE: return arg0 <= 0;
 		}
 	}
 	return false;
@@ -96,14 +96,13 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 
 // XXX conflict naming with tostring()
 R_API char *r_anal_cond_to_string(RAnalCond *cond) {
-	char *val0, *val1, *out = NULL;
-	const char *cnd;
+	char *out = NULL;
 	if (!cond) {
 		return NULL;
 	}
-	cnd = condstring (cond);
-	val0 = r_anal_value_to_string (cond->arg[0]);
-	val1 = r_anal_value_to_string (cond->arg[1]);
+	const char *cnd = condstring (cond);
+	char *val0 = r_anal_value_to_string (cond->arg[0]);
+	char *val1 = r_anal_value_to_string (cond->arg[1]);
 	if (val0) {
 		if (R_ANAL_COND_SINGLE (cond)) {
 			int val0len = strlen (val0) + 10;
