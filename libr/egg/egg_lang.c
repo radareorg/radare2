@@ -198,7 +198,7 @@ static void rcc_internal_mathop(REgg *egg, const char *ptr, char *ep, char op) {
 		*q = '\x00';
 	}
 	REggEmit *e = egg->remit;
-	p = r_str_trim_head_ro (p);
+	p = (char *)r_str_trim_head_ro (p);
 	if (is_var (p)) {
 		p = r_egg_mkvar (egg, buf, p, 0);
 		if (egg->lang.varxs == '*') {
@@ -236,7 +236,7 @@ static void rcc_mathop(REgg *egg, char **pos, int level) {
 	int op_ret = level;
 	char op, *next_pos;
 
-	*pos = r_str_trim_head_ro (*pos);
+	*pos = (char *)r_str_trim_head_ro (*pos);
 	next_pos = *pos + 1;
 
 	do {
@@ -591,7 +591,7 @@ static void rcc_fun(REgg *egg, const char *str) {
 				rcc_set_callname (egg, ptr2);
 			}
 		} else {
-			str = skipspaces (str);
+			str = r_str_trim_head_ro (str);
 			rcc_set_callname (egg, str);
 			egg->remit->comment (egg, "rcc_fun %d (%s)", CTX, egg->lang.callname);
 		}
@@ -603,14 +603,14 @@ static void rcc_fun(REgg *egg, const char *str) {
 			if (strstr (ptr, "env")) {
 				// eprintf ("SETENV (%s)\n", str);
 				free (egg->lang.setenviron);
-				egg->lang.setenviron = strdup (skipspaces (str));
+				egg->lang.setenviron = r_str_trim_dup (str);
 				egg->lang.slurp = 0;
 			} else if (strstr (ptr, "fastcall")) {
 				/* TODO : not yet implemented */
 			} else if (strstr (ptr, "syscall")) {
 				if (*str) {
 					egg->lang.mode = LANG_MODE_SYSCALL;
-					egg->lang.dstvar = strdup (skipspaces (str));
+					egg->lang.dstvar = r_str_trim_dup (str);
 				} else {
 					egg->lang.mode = LANG_MODE_INLINE;
 					free (egg->lang.syscallbody);
@@ -623,12 +623,12 @@ static void rcc_fun(REgg *egg, const char *str) {
 			} else if (strstr (ptr, "include")) {
 				egg->lang.mode = LANG_MODE_INCLUDE;
 				free (egg->lang.includefile);
-				egg->lang.includefile = strdup (skipspaces (str));
+				egg->lang.includefile = r_str_trim_dup (str);
 				// egg->lang.slurp = 0;
 				// try to deal with alias
 			} else if (strstr (ptr, "alias")) {
 				egg->lang.mode = LANG_MODE_ALIAS;
-				ptr2 = egg->lang.dstvar = strdup (skipspaces (str));
+				ptr2 = egg->lang.dstvar = r_str_trim_dup (str);
 				while (*ptr2 && !is_space (*ptr2)) {
 					ptr2++;
 				}
@@ -637,13 +637,13 @@ static void rcc_fun(REgg *egg, const char *str) {
 			} else if (strstr (ptr, "data")) {
 				egg->lang.mode = LANG_MODE_DATA;
 				egg->lang.ndstval = 0;
-				egg->lang.dstvar = strdup (skipspaces (str));
+				egg->lang.dstvar = r_str_trim_dup (str);
 				egg->lang.dstval = malloc (4096);
 			} else if (strstr (ptr, "naked")) {
 				egg->lang.mode = LANG_MODE_NAKED;
 				/*
 				free (egg->lang.dstvar);
-				egg->lang.dstvar = strdup (skipspaces (str));
+				egg->lang.dstvar = r_str_trim_dup (str);
 				egg->lang.dstval = malloc (4096);
 				egg->lang.ndstval = 0;
 				*/
