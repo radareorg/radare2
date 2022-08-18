@@ -2263,7 +2263,7 @@ static void cmd_debug_reg_print_packed_reg(RCore *core, RRegItem *item, char exp
 		if (!explicit_size || pack_show[pi]) {
 			for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
 				ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
-				if( pi > NUM_INT_PACK_TYPES-1)	{ // are we printing int or double?
+				if (pi > NUM_INT_PACK_TYPES-1)	{ // are we printing int or double?
 					if (pack_sizes[pi] == 64)	{
 						double dres;
 						memcpy ((void*)&dres, (void*)&res, 8);

@@ -933,7 +933,7 @@ R_API RCore *r_core_new(void) {
 }
 
 /*-----------------------------------*/
-#define radare_argc (sizeof (radare_argv) / sizeof(const char*) - 1)
+#define radare_argc (sizeof (radare_argv) / sizeof (const char*) - 1)
 #define ms_argc (sizeof (ms_argv) / sizeof (const char*) - 1)
 static const char *ms_argv[] = {
 	"?", "!", "ls", "cd", "cat", "get", "mount", "help", "q", "exit", NULL
@@ -1959,7 +1959,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			should_complete &= buf->data + buf->index < pipe_space;
 		}
 		if (should_complete) {
-			if (pipe[1] != ' '){
+			if (pipe[1] != ' ') {
 				r_line_completion_push (completion, ">");
 				return;
 			}

@@ -1,18 +1,13 @@
 /* radare - LGPL - Copyright 2007-2022 - pancake */
 
-#include <r_bin.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
+#include <r_util.h>
 
 // TODO: simplify this horrible loop
 R_API void r_str_trim_path(char *s) {
 	r_return_if_fail (s);
 	char *src, *dst, *p;
 	int i = 0;
-	if (!s || !*s) {
+	if (R_STR_ISEMPTY (s)) {
 		return;
 	}
 	dst = src = s + 1;

@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <r_cons.h>
 
-#define IFDBG if(0)
+#define IFDBG if (0)
 
 // $ echo "..." | xcrun swift-demangle
 

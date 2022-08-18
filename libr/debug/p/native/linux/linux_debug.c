@@ -922,7 +922,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 #define MAXPID 99999
 		/* otherwise, brute force the pids */
 		for (i = pid; i < MAXPID; i++) { // XXX
-			if (procfs_pid_slurp (i, "status", buf, sizeof(buf)) == -1) {
+			if (procfs_pid_slurp (i, "status", buf, sizeof (buf)) == -1) {
 				continue;
 			}
 			int uid = 0;
@@ -940,9 +940,9 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 					continue;
 				}
 
-				if (procfs_pid_slurp (i, "comm", buf, sizeof(buf)) == -1) {
+				if (procfs_pid_slurp (i, "comm", buf, sizeof (buf)) == -1) {
 					/* fall back to auto-id */
-					snprintf (buf, sizeof(buf), "thread_%d", thid++);
+					snprintf (buf, sizeof (buf), "thread_%d", thid++);
 				}
 				r_list_append (list, r_debug_pid_new (buf, i, uid, 's', 0));
 			}
@@ -970,7 +970,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 	r_cons_printf ("foo = 0x%04lx          \n", (fpregs).foo);\
 	r_cons_printf ("fos = 0x%04lx              ", (fpregs).fos)
 
-static void print_fpu(void *f){
+static void print_fpu(void *f) {
 #if __x86_64__
 	int i,j;
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
@@ -1214,7 +1214,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		struct _xstate xstate;
 		struct iovec iov = {};
 		iov.iov_base = &xstate;
-		iov.iov_len = sizeof(struct _xstate);
+		iov.iov_len = sizeof (struct _xstate);
 		ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)NT_X86_XSTATE, &iov);
 		if (errno == ENODEV) {
 			// ignore ENODEV, it just means this CPU or kernel doesn't support XSTATE

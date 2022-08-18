@@ -593,7 +593,7 @@ int v850np_disasm(v850np_inst *inst, int cpumodel, ut64 addr, const ut8* buffer,
 	}
 
 	if (length == 0 && (cpumodel & V850_CPU_E3V5_UP)) {
-		if ( /* ld.dw 23bit (v850e3v5) */
+		if (/* ld.dw 23bit (v850e3v5) */
 				((insn & 0xffe0) == 0x07a0 && (insn2 & 0x000f) == 0x0009)
 				|| /* st.dw 23bit (v850e3v5) */
 				((insn & 0xffe0) == 0x07a0 && (insn2 & 0x000f) == 0x000f)) {

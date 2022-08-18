@@ -117,7 +117,7 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	trace->traps = trap;
 	trace->buffer = buf;
 	trace->length = len;
-	if (!r_list_append (bp->traces, trace)){
+	if (!r_list_append (bp->traces, trace)) {
 		free (buf);
 		free (trap);
 		free (trace);

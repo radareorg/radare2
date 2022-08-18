@@ -24,8 +24,14 @@ R_LIB_VERSION (r_magic);
 #undef R_API
 #define R_API
 
-R_API RMagic* r_magic_new(int flags) { return magic_open(flags); }
-R_API void r_magic_free(RMagic* m) { if(m) { magic_close(m); } }
+R_API RMagic* r_magic_new(int flags) {
+	return magic_open (flags);
+}
+R_API void r_magic_free(RMagic* m) {
+	if (m) {
+		magic_close (m);
+	}
+}
 R_API const char *r_magic_file(RMagic* m, const char *f) { return magic_file(m, f); }
 R_API const char *r_magic_descriptor(RMagic* m, int fd) { return magic_descriptor(m, fd); }
 R_API const char *r_magic_buffer(RMagic* m, const void *b, size_t s) { return magic_buffer(m, b, s); }

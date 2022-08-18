@@ -1836,7 +1836,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				const char *r_rema = (width == 1)?"ah": (width == 2)?"dx": (width == 4)?"edx":"rdx";
 				const char *r_nume = (width == 1)?"ax": r_quot;
 
-				if ( width == 8 ) {
+				if (width == 8 ) {
 					esilprintf (op, "%s,%s,L*,%s,=,DUP,%s,=,!,!,DUP,cf,:=,of,:=",
 							src, r_nume, r_nume, r_rema);
 				} else {

@@ -89,8 +89,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		// FIX: Don't allocate more than one RIODesc
 		return rioqnx;
 	}
-	strncpy (host, file + 6, sizeof(host) - 1);
-	host[sizeof(host) - 1] = '\0';
+	strncpy (host, file + 6, sizeof (host) - 1);
+	host[sizeof (host) - 1] = '\0';
 	port = strchr (host, ':');
 	if (!port) {
 		eprintf ("Port not specified. Please use qnx://[host]:[port]\n");

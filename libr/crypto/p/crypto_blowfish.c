@@ -350,11 +350,11 @@ int main() {
 
 	/* encrypt */
 	blowfish_init (&st, (const ut8*)"key", 3);
-	blowfish_crypt (&st, (const ut8*)"helloworld123456", out, sizeof(out));
+	blowfish_crypt (&st, (const ut8*)"helloworld123456", out, sizeof (out));
 
 	/* decrypt */
 	blowfish_init (&st, (const ut8*)"key", 3);
-	blowfish_decrypt (&st, out, out, sizeof(out));
+	blowfish_decrypt (&st, out, out, sizeof (out));
 
 	eprintf ("%s\n", (const char *)out); // must print "helloworld123456"
 }

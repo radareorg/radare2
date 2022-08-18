@@ -190,7 +190,7 @@ static int inithist(void) {
 	if ((I.history.size + 1024) * sizeof (char *) < I.history.size) {
 		return false;
 	}
-	I.history.data = (char **) calloc ((I.history.size + 1024), sizeof(char *));
+	I.history.data = (char **) calloc ((I.history.size + 1024), sizeof (char *));
 	if (!I.history.data) {
 		return false;
 	}

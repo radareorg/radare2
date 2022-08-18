@@ -699,7 +699,7 @@ R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 	struct timeval t = {timeout, 0};
 
 	int r = select (s->fd + 1, &read_fds, NULL, &except_fds, &t);
-	if(r < 0) {
+	if (r < 0) {
 		r_sys_perror ("select");
 	} else if (r > 0 && FD_ISSET (s->fd, &read_fds)) {
 		return r_socket_accept (s);

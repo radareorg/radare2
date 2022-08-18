@@ -52,7 +52,7 @@ static int splitlines(const char *a, int len, struct line **lr) {
 		}
 	}
 
-	*lr = l = (struct line *)malloc(sizeof(struct line) * i);
+	*lr = l = (struct line *)malloc(sizeof (struct line) * i);
 	if (!l) {
 		return -1;
 	}
@@ -96,7 +96,7 @@ static int equatelines(struct line *a, int an, struct line *b, int bn) {
 
 	/* try to allocate a large hash table to avoid collisions */
 	for (scale = 4; scale; scale /= 2) {
-		h = (struct pos *)malloc(scale * buckets * sizeof(struct pos));
+		h = (struct pos *)malloc(scale * buckets * sizeof (struct pos));
 		if (h) {
 			break;
 		}
@@ -230,18 +230,17 @@ static void recurse(struct line *a, struct line *b, struct pos *pos,
 	recurse(a, b, pos, i + k, a2, j + k, b2, l);
 }
 
-static struct hunklist diff(struct line *a, int an, struct line *b, int bn)
-{
+static struct hunklist diff(struct line *a, int an, struct line *b, int bn) {
 	struct hunklist l;
 	struct hunk *curr;
 	struct pos *pos;
 	int t;
 
 	/* allocate and fill arrays */
-	t = equatelines(a, an, b, bn);
-	pos = (struct pos *)calloc(bn ? bn : 1, sizeof(struct pos));
+	t = equatelines (a, an, b, bn);
+	pos = (struct pos *)calloc (bn ? bn : 1, sizeof (struct pos));
 	/* we can't have more matches than lines in the shorter file */
-	l.head = l.base = (struct hunk *)malloc (sizeof(struct hunk)
+	l.head = l.base = (struct hunk *)malloc (sizeof (struct hunk)
 		* ((an<bn ? an:bn) + 1));
 
 	if (pos && l.base && t) {

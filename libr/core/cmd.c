@@ -512,7 +512,7 @@ static int r_core_cmd_nullcallback(void *data) {
 }
 
 /* Escape raw bytes if not using b64 */
-static bool print_aliases(void *use_b64, const void *key, const void *val){
+static bool print_aliases(void *use_b64, const void *key, const void *val) {
 	const char *k = (char *) key;
 	RCmdAliasVal *v = (RCmdAliasVal *) val;
 	bool base64 = *(bool *)use_b64;

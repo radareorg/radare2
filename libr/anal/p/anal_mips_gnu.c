@@ -1277,7 +1277,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			//eprintf ("%llx jalr\n", addr);
 			op->delay = 1;
 			insn.id = MIPS_INS_JALR;
-			if (rs  == 25){
+			if (rs == 25) {
 				op->type = R_ANAL_OP_TYPE_RCALL;
 				op->jump = t9_pre;
 				break;
@@ -1328,7 +1328,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->type = R_ANAL_OP_TYPE_ADD;
 			break;
 		case 45: //daddu move
-			if(rt == 0) {
+			if (rt == 0) {
 				op->type = R_ANAL_OP_TYPE_MOV;
 				insn.id = MIPS_INS_MOV;
 				break;
@@ -1515,14 +1515,14 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		case 4: // beq
 			if (!insn.id) {
 				insn.id = MIPS_INS_BEQ;
-				if(rt == 0) {
+				if (rt == 0) {
 					insn.id = MIPS_INS_BEQZ ;
 				}
 			}
 		case 5: // bne // also bnez
 			if (!insn.id) {
 				insn.id = MIPS_INS_BNE;
-				if(rt == 0) {
+				if (rt == 0) {
 					insn.id = MIPS_INS_BNEZ;
 				}
 			}
@@ -1788,7 +1788,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	return op->size;
 }
 /* Set the profile register */
-static bool mips_set_reg_profile(RAnal* anal){
+static bool mips_set_reg_profile(RAnal* anal) {
      const char *p =
 #if 0
 	  "=PC    pc\n"

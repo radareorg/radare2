@@ -9,7 +9,7 @@
 			r_write_be##rbits (ctx->digest, res); \
 			return R_HASH_SIZE_##aname; \
 		} \
-	} while(0)
+	} while (0)
 
 /* TODO: do it more beautiful with structs and not spaguetis */
 R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {

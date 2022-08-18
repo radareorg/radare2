@@ -38,11 +38,11 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 #endif
 
 #undef _NELEM
-#define _NELEM(ary)	(sizeof(ary) / sizeof((ary)[0]))
+#define _NELEM(ary)	(sizeof (ary) / sizeof ((ary)[0]))
 
 #define BIT(word,n)       ((word) & (1 << (n)))
 /* START ARC LOCAL */
-#define BITS(word,s,e)    (((word) << (sizeof(word)*8-1 - (e))) >> ((s)+(sizeof(word)*8-1 - (e))))
+#define BITS(word,s,e)    (((word) << (sizeof (word)*8-1 - (e))) >> ((s)+(sizeof (word)*8-1 - (e))))
 /* END ARC LOCAL */
 #define OPCODE(word)      (BITS ((word), 27, 31))
 #define FIELDA(word)      (BITS ((word), 0, 5))
@@ -97,14 +97,14 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 	} \
 	}
 
-#define CHECK_NULLIFY() do{		\
-	state->nullifyMode = BITS(state->words[0],5,5);	\
-	}while(0)
+#define CHECK_NULLIFY() do { \
+	state->nullifyMode = BITS (state->words[0],5,5);	\
+	} while (0)
 
 #define CHECK_COND_NULLIFY() do {		\
-	state->nullifyMode = BITS(state->words[0],5,5);	\
+	state->nullifyMode = BITS (state->words[0],5,5);	\
 	cond = BITS(state->words[0],0,4);	\
-	}while(0)
+	} while (0)
 
 #define CHECK_FLAG_COND_NULLIFY() do{	\
 	if (is_shimm == 0) {			\
@@ -112,7 +112,7 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 	  state->nullifyMode = BITS(state->words[0],5,5); \
 	  cond = BITS(state->words[0],0,4);	\
 	}					\
-	}while(0)
+	} while (0)
 
 #define CHECK_FLAG_COND() {		\
 	if (is_shimm == 0) {			\
@@ -826,7 +826,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       case 9: instrName = "min";  break;
       case 10:
 	{
-	  if(state->words[0] == 0x264a7000)
+	  if (state->words[0] == 0x264a7000)
 	    {
 	      instrName = "nop";
 	      decodingClass = 26;
@@ -2681,7 +2681,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       CHECK_FIELD_A();
       CHECK_FIELD_B();
 
-      if(FIELDA(state->words[0]) == 62)
+      if (FIELDA(state->words[0]) == 62)
 	{
 	  instrName = "prefetch";
 	}
@@ -2757,10 +2757,9 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       /* Support for Prefetch */
       /* Fixme :: Check for A700 within this function */
 
-      if(FIELDA(state->words[0]) == 62)
-	{
+      if (FIELDA(state->words[0]) == 62) {
 	  instrName = "prefetch";
-	}
+      }
 
       fieldC = FIELDD9(state->words[0]);
       fieldCisReg = 0;
@@ -3808,7 +3807,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
   lowbyte = ((info->endian == BFD_ENDIAN_LITTLE) ? 1 : 0);
   highbyte = ((info->endian == BFD_ENDIAN_LITTLE) ? 0 : 1);
 
-  memset(&s, 0, sizeof(struct arcDisState));
+  memset(&s, 0, sizeof (struct arcDisState));
 
   /* read first instruction */
   status = (*info->read_memory_func) (address, buffer, 2, info);
@@ -3945,7 +3944,7 @@ arcAnalyzeInstr
   lowbyte = ((info->endian == BFD_ENDIAN_LITTLE) ? 1 : 0);
   highbyte = ((info->endian == BFD_ENDIAN_LITTLE) ? 0 : 1);
 
-  memset(&s, 0, sizeof(struct arcDisState));
+  memset(&s, 0, sizeof (struct arcDisState));
 
   /* read first instruction */
   status = (*info->read_memory_func) (address, buffer, 2, info);

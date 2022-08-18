@@ -475,7 +475,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	}
 	while (addr_srch < libc_addr_end) {
 		GH (update_main_arena) (core, addr_srch, ta);
-		if ( ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
+		if (ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
 			ta->GH(system_mem) == heap_sz) {
 
 			*m_arena = addr_srch;

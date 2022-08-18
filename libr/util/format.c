@@ -1377,7 +1377,7 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 		p->cb_printf ("\"");
 		utf_encoded_buf = r_str_escape_utf8_for_json (
 		    (char *)buf + i, size == -1 ? str_len : R_MIN (size, str_len));
-		if (utf_encoded_buf){
+		if (utf_encoded_buf) {
 			p->cb_printf ("%s", utf_encoded_buf);
 			free (utf_encoded_buf);
 		}

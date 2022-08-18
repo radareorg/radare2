@@ -52,7 +52,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	st32 jumpdisp;
 	struct v810_cmd cmd;
 
-	memset (&cmd, 0, sizeof(cmd));
+	memset (&cmd, 0, sizeof (cmd));
 
 	int ret = op->size = v810_decode_command (buf, len, &cmd);
 	if (ret <= 0) {

@@ -105,7 +105,7 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		pos = 0x78;
 		lenRec = strlen (desc->data);
 		while (desc->data[i] != 0 && i < lenRec -4 ) {
-			if ( (desc->data[i] == (ut8)'r' && desc->data[i + 3] == (ut8)':')) {
+			if ((desc->data[i] == (ut8)'r' && desc->data[i + 3] == (ut8)':')) {
 				strncpy (regname, &desc->data[i], 3);
 				regname[3] = 0;
 				strncpy (&strReg[2], &desc->data[i + 5], 8);
@@ -302,7 +302,7 @@ static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 				//eprintf("stop on breakpoint%s\n",desc->data);
 				break;
 			}
-		} while(1);
+		} while (1);
 		r_cons_break_pop ();
 	}
 	//eprintf ("bochs_wait: loop done\n");

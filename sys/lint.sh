@@ -14,8 +14,11 @@
 (git grep -n 'eprintf' libr | grep 'Error:') && exit 1
 (git grep -n 'x ""' libr) && exit 1
 (git grep -n 'x""' libr) && exit 1
-# (git grep -e 'sizeof(' -e 'for(' -e 'while(' -e 'if(' libr) && exit 1
+( git grep '){$' libr| grep if) && exit 1
+(git grep -e 'sizeof(' -e 'for(' -e 'while(' -e 'if(' libr | grep -v :static | grep -v :R_API | grep c:) && exit 1
+# ( git grep if' (' libr| grep ')$'| grep -v '//'|grep -v '#') && exit 1
 # ( git grep strcmp | grep '== 0') && exit 1
+# ( git grep strncmp | grep '== 0') && exit 1
 (git grep -n ';;$' libr) && exit 1
 (git grep -n '0 ;' libr) && exit 1
 (git grep -n -e 'i<' -e 'j<' -e 'k<' libr | grep -v '"') && exit 1

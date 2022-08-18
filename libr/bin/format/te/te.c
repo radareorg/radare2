@@ -105,7 +105,7 @@ static bool r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
 	if (!(bin->section_header = malloc (sections_size))) {
 		return false;
 	}
-	if (r_buf_read_at (bin->b, sizeof(TE_image_file_header),
+	if (r_buf_read_at (bin->b, sizeof (TE_image_file_header),
 				(ut8*)bin->section_header, sections_size) == -1) {
 		R_LOG_ERROR ("read (sections headers)");
 		return false;

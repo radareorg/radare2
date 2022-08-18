@@ -116,11 +116,11 @@ static bool parse_uint_node(RBPlist *bplist, const char **bnode, ut8 size) {
 	size = 1 << size; // make length less misleading
 #if 1
 	switch (size) {
-	case sizeof(ut8):
-	case sizeof(ut16):
-	case sizeof(ut32):
-	case sizeof(ut64):
-		// data.length = sizeof(ut64);
+	case sizeof (ut8):
+	case sizeof (ut16):
+	case sizeof (ut32):
+	case sizeof (ut64):
+		// data.length = sizeof (ut64);
 		break;
 	case 16:
 		// data.length = size;
@@ -144,11 +144,11 @@ static double parse_real(const char **bnode, ut8 size) {
 	ut8 buf[8] = {0};
 	memcpy (&data, *bnode, sizeof (buf));
 	switch (1 << size) {
-	case sizeof(ut32):
+	case sizeof (ut32):
 		*(ut32*)buf = float_bswap32 (data);
 		realval = *(float *) buf;
 		break;
-	case sizeof(ut64):
+	case sizeof (ut64):
 		*(ut64*)buf = float_bswap64 (data);
 		realval = *(double *) buf;
 		break;

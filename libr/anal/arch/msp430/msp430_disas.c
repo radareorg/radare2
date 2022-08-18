@@ -117,79 +117,79 @@ static int decode_emulation(ut16 instr, struct msp430_cmd *cmd)
 	opcode = get_twoop_opcode(instr);
 
 	if (opcode == MSP430_ADDC && as == 0 && src == MSP430_R3) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "adc.b" : "adc");
-		snprintf(cmd->operands, sizeof (cmd->operands), "%s", msp430_register_names[dst]);
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "adc.b" : "adc");
+		snprintf (cmd->operands, sizeof (cmd->operands), "%s", msp430_register_names[dst]);
 	} else if (opcode == MSP430_MOV && as == 0 && src == MSP430_R3) {
 		if (ad == 0 && dst == MSP430_R3) {
-			snprintf(cmd->instr, sizeof (cmd->instr), "nop");
+			snprintf (cmd->instr, sizeof (cmd->instr), "nop");
 			cmd->operands[0] = '\0';
 		} else {
-			snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "clr.b" : "clr");
+			snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "clr.b" : "clr");
 			remove_first_operand(cmd);
 		}
 	} else if (opcode == MSP430_MOV && as == 3 && src == MSP430_SP) {
 		if (dst == MSP430_PC) {
-			snprintf(cmd->instr, sizeof (cmd->instr), "ret");
+			snprintf (cmd->instr, sizeof (cmd->instr), "ret");
        			cmd->type = MSP430_ONEOP;
 			cmd->opcode = MSP430_RETI;
 			cmd->operands[0] = '\0';
 		} else {
-			snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "pop.b" : "pop");
+			snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "pop.b" : "pop");
 			remove_first_operand(cmd);
 		}
 	} else if (opcode == MSP430_MOV && ad == 0 && dst == MSP430_PC) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", "br");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", "br");
 		remove_second_operand(cmd);
 	} else if (opcode == MSP430_BIC && as == 2 && src == MSP430_SR && dst == MSP430_SR && ad == 0) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", "clrn");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", "clrn");
 		cmd->operands[0] = '\0';
 	} else if (opcode == MSP430_BIC && as == 2 && src == MSP430_R3 && dst == MSP430_SR && ad == 0) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", "clrz");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", "clrz");
 		cmd->operands[0] = '\0';
 	} else if (opcode == MSP430_BIC && as == 3 && src == MSP430_SR && dst == MSP430_SR && ad == 0) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", "dint");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", "dint");
 		cmd->operands[0] = '\0';
 	} else if (opcode == MSP430_BIS && as == 3 && src == MSP430_SR && dst == MSP430_SR && ad == 0) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", "eint");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", "eint");
 		cmd->operands[0] = '\0';
 	} else if (opcode == MSP430_DADD && as == 0 && src == MSP430_R3) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "dadc.b" : "dadc");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "dadc.b" : "dadc");
 		remove_first_operand(cmd);
 	} else if (opcode == MSP430_SUB && as == 1 && src == MSP430_R3) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "dec.b" : "dec");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "dec.b" : "dec");
 		remove_first_operand(cmd);
 	} else if (opcode == MSP430_SUB && as == 2 && src == MSP430_R3) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "decd.b" : "decd");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "decd.b" : "decd");
 		remove_first_operand(cmd);
 	} else if (opcode == MSP430_ADD && as == 1 && src == MSP430_R3) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "inc.b" : "inc");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "inc.b" : "inc");
 		remove_first_operand(cmd);
 	} else if (opcode == MSP430_ADD && as == 2 && src == MSP430_R3) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "incd.b" : "incd");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "incd.b" : "incd");
 		remove_first_operand(cmd);
 	} else if (opcode == MSP430_XOR && as == 3 && src == MSP430_R3) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "inv.b" : "inv");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "inv.b" : "inv");
 		remove_first_operand(cmd);
 	} else if (opcode == MSP430_ADD && src == dst) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "rla.b" : "rla");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "rla.b" : "rla");
 		remove_second_operand(cmd);
 	} else if (opcode == MSP430_ADDC && src == dst) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "rlc.b" : "rlc");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "rlc.b" : "rlc");
 		remove_second_operand(cmd);
 	} else if (opcode == MSP430_SUBC && as == 0 && src == MSP430_R3) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "sbc.b" : "sbc");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "sbc.b" : "sbc");
 		remove_first_operand(cmd);
 	} else if (opcode == MSP430_BIS && as == 1 && src == MSP430_R3 && dst == MSP430_SR && ad == 0) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "setc");
+		snprintf (cmd->instr, sizeof (cmd->instr), "setc");
 		cmd->operands[0] = '\0';
 	} else if (opcode == MSP430_BIS && as == 2 && src == MSP430_SR && dst == MSP430_SR && ad == 0) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "setn");
+		snprintf (cmd->instr, sizeof (cmd->instr), "setn");
 		cmd->operands[0] = '\0';
 	} else if (opcode == MSP430_BIS && as == 2 && src == MSP430_R3 && dst == MSP430_SR && ad == 0) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "setz");
+		snprintf (cmd->instr, sizeof (cmd->instr), "setz");
 		cmd->operands[0] = '\0';
 	} else if (opcode == MSP430_CMP && as == 0 && src == MSP430_R3) {
-		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "tst.b" : "tst");
+		snprintf (cmd->instr, sizeof (cmd->instr), "%s", bw ? "tst.b" : "tst");
 		remove_first_operand(cmd);
 	}
 
@@ -204,7 +204,7 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 	ut16 op;
 	char dstbuf[16];
 
-	memset(dstbuf, 0, sizeof(dstbuf));
+	memset (dstbuf, 0, sizeof (dstbuf));
 
 	as = get_as(instr);
 	ad = get_ad(instr);
@@ -216,10 +216,10 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 	case 0:
 		switch (src) {
 		case MSP430_R3: /* CG2 */
-			snprintf(cmd->operands, sizeof (cmd->operands), "#0");
+			snprintf (cmd->operands, sizeof (cmd->operands), "#0");
 			break;
 		default: /* register mode */
-			snprintf(cmd->operands, sizeof (cmd->operands), "%s", msp430_register_names[src]);
+			snprintf (cmd->operands, sizeof (cmd->operands), "%s", msp430_register_names[src]);
 		}
 		ret = 2;
 		break;
@@ -227,32 +227,32 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 		ret = 4;
 		switch (src) {
 		case MSP430_PC: /* symbolic mode */
-			snprintf(cmd->operands, sizeof (cmd->operands), "0x%04x", op1);
+			snprintf (cmd->operands, sizeof (cmd->operands), "0x%04x", op1);
 			srcOperInCodeWord = 1;
 			break;
 		case MSP430_R3: /* CG2 */
-			snprintf(cmd->operands, sizeof (cmd->operands), "%s", "#1");
+			snprintf (cmd->operands, sizeof (cmd->operands), "%s", "#1");
 			ret = 2;
 			break;
 		case MSP430_SR: /* absolute mode */
-			snprintf(cmd->operands, sizeof (cmd->operands), "&0x%04x", op1);
+			snprintf (cmd->operands, sizeof (cmd->operands), "&0x%04x", op1);
 			srcOperInCodeWord = 1;
 			break;
 		default: /* indexed mode */
-			snprintf(cmd->operands, sizeof (cmd->operands), "0x%x(%s)", op1, msp430_register_names[src]);
+			snprintf (cmd->operands, sizeof (cmd->operands), "0x%x(%s)", op1, msp430_register_names[src]);
 			srcOperInCodeWord = 1;
 		}
 		break;
 	case 2:
 		switch (src) {
 		case MSP430_SR: /* CG1 */
-			snprintf(cmd->operands, sizeof (cmd->operands), "#4");
+			snprintf (cmd->operands, sizeof (cmd->operands), "#4");
 			break;
 		case MSP430_R3: /* CG2 */
-			snprintf(cmd->operands, sizeof (cmd->operands), "#2");
+			snprintf (cmd->operands, sizeof (cmd->operands), "#2");
 			break;
 		default: /* indirect register mode */
-			snprintf(cmd->operands, sizeof (cmd->operands), "@%s", msp430_register_names[src]);
+			snprintf (cmd->operands, sizeof (cmd->operands), "@%s", msp430_register_names[src]);
 		}
 		ret = 2;
 		break;
@@ -260,18 +260,18 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 		ret = 2;
 		switch (src) {
 		case MSP430_SR: /* CG1 */
-			snprintf(cmd->operands, sizeof (cmd->operands), "#8");
+			snprintf (cmd->operands, sizeof (cmd->operands), "#8");
 			break;
 		case MSP430_R3: /* CG2 */
-			snprintf(cmd->operands, sizeof (cmd->operands), "#-1");
+			snprintf (cmd->operands, sizeof (cmd->operands), "#-1");
 			break;
 		case MSP430_PC: /* immediate mode */
-			snprintf(cmd->operands, sizeof (cmd->operands), "#0x%04x", op1);
+			snprintf (cmd->operands, sizeof (cmd->operands), "#0x%04x", op1);
 			srcOperInCodeWord = 1;
 			ret = 4;
 			break;
 		default: /* indirect autoincrement mode */
-			snprintf(cmd->operands, sizeof (cmd->operands), "@%s+", msp430_register_names[src]);
+			snprintf (cmd->operands, sizeof (cmd->operands), "@%s+", msp430_register_names[src]);
 		}
 		break;
 	}
@@ -279,7 +279,7 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 	/* addressing mode of destination operand */
 	switch (ad) {
 	case 0: /* register mode */
-		snprintf(dstbuf, sizeof (dstbuf), ", %s", msp430_register_names[dst]);
+		snprintf (dstbuf, sizeof (dstbuf), ", %s", msp430_register_names[dst]);
 		break;
 	case 1:
 		/* check addr. mode of source operand */
@@ -292,13 +292,13 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 		}
 		switch (get_dst(instr)) {
 		case MSP430_PC: /* symbolic mode */
-			snprintf(dstbuf, sizeof (dstbuf), ", 0x%04x", op);
+			snprintf (dstbuf, sizeof (dstbuf), ", 0x%04x", op);
 			break;
 		case MSP430_SR: /* absolute mode */
-		    	snprintf(dstbuf, sizeof (dstbuf), ", &0x%04x", op);
+		    	snprintf (dstbuf, sizeof (dstbuf), ", &0x%04x", op);
 			break;
 		default: /* indexed mode */
-			snprintf(dstbuf, sizeof (dstbuf), ", 0x%x(%s)", op, msp430_register_names[dst]);
+			snprintf (dstbuf, sizeof (dstbuf), ", 0x%x(%s)", op, msp430_register_names[dst]);
 		}
 		break;
 	}
@@ -333,12 +333,12 @@ static void decode_jmp(ut16 instr, struct msp430_cmd *cmd)
 {
 	ut16 addr;
 
-	snprintf(cmd->instr, sizeof (cmd->instr), "%s", jmp_instrs[get_jmp_cond(instr)]);
+	snprintf (cmd->instr, sizeof (cmd->instr), "%s", jmp_instrs[get_jmp_cond(instr)]);
 
 	addr = instr & 0x3FF;
 
 	cmd->jmp_addr = addr >= 0x300 ? (st16)((0xFE00 | addr) * 2 + 2) : (addr & 0x1FF) * 2 + 2;
-	snprintf(cmd->operands, sizeof (cmd->operands), "$%c0x%04x", addr >= 0x300 ? '-' : '+',
+	snprintf (cmd->operands, sizeof (cmd->operands), "$%c0x%04x", addr >= 0x300 ? '-' : '+',
 			addr >= 0x300 ? 0x400 - ((addr & 0x1FF) * 2 + 2) : (addr & 0x1FF) * 2 + 2);
 
 	cmd->jmp_cond = get_jmp_cond(instr);
@@ -361,7 +361,7 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 
 	as = get_as(instr);
 
-	snprintf(cmd->instr, sizeof (cmd->instr), "%s", one_op_instrs[opcode]);
+	snprintf (cmd->instr, sizeof (cmd->instr), "%s", one_op_instrs[opcode]);
 
 	cmd->opcode = get_oneop_opcode(instr);
 
@@ -376,10 +376,10 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 		case 0:
 			switch (get_dst(instr)) {
 			case MSP430_R3:
-				snprintf(cmd->operands, sizeof (cmd->operands), "#0");
+				snprintf (cmd->operands, sizeof (cmd->operands), "#0");
 				break;
 			default:
-				snprintf(cmd->operands, sizeof (cmd->operands),
+				snprintf (cmd->operands, sizeof (cmd->operands),
 						"%s", msp430_register_names[get_dst(instr)]);
 			}
 			ret = 2;
@@ -389,18 +389,18 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 			ret = 4;
 			switch (get_dst(instr)) {
 			case MSP430_R3:
-				snprintf(cmd->operands, sizeof (cmd->operands), "#1");
+				snprintf (cmd->operands, sizeof (cmd->operands), "#1");
 				/* this is an unusual encoding in that there's no index word */
 				ret = 2;
 				break;
 			case MSP430_PC:
-				snprintf(cmd->operands, sizeof (cmd->operands), "0x%04x", op);
+				snprintf (cmd->operands, sizeof (cmd->operands), "0x%04x", op);
 				break;
 			case MSP430_SR:
-				snprintf(cmd->operands, sizeof (cmd->operands), "&0x%04x", op);
+				snprintf (cmd->operands, sizeof (cmd->operands), "&0x%04x", op);
 				break;
 			default:
-				snprintf(cmd->operands, sizeof (cmd->operands),
+				snprintf (cmd->operands, sizeof (cmd->operands),
 						"0x%x(%s)", op, msp430_register_names[get_dst(instr)]);
 			}
 
@@ -408,20 +408,20 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 		case 2:
 			switch (get_dst(instr)) {
 			case MSP430_SR:
-				snprintf(cmd->operands, sizeof (cmd->operands), "#4");
+				snprintf (cmd->operands, sizeof (cmd->operands), "#4");
 				break;
 			case MSP430_R3:
-				snprintf(cmd->operands, sizeof (cmd->operands), "#2");
+				snprintf (cmd->operands, sizeof (cmd->operands), "#2");
 				break;
 			default:
-				snprintf(cmd->operands, sizeof (cmd->operands),
+				snprintf (cmd->operands, sizeof (cmd->operands),
 						"@%s", msp430_register_names[get_dst(instr)]);
 			}
 
 			ret = 2;
 			break;
 		case 3:
-			snprintf(cmd->operands, sizeof (cmd->operands), "#0x%04x", op);
+			snprintf (cmd->operands, sizeof (cmd->operands), "#0x%04x", op);
 			ret = 4;
 			break;
 		default:
@@ -491,7 +491,7 @@ int msp430_decode_command(const ut8 *in, int len, struct msp430_cmd *cmd) {
 	 * all MSP430 opcodes are of 16 bits,valid or invalid */
 	if (ret < 0) {
 		cmd->type = MSP430_INV;
-		snprintf(cmd->instr, sizeof (cmd->instr), "invalid");
+		snprintf (cmd->instr, sizeof (cmd->instr), "invalid");
 		cmd->operands[0] = '\0';
 		ret = 2;
 	}

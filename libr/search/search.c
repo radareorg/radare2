@@ -192,7 +192,7 @@ R_IPI int search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len)
 			left->len = 0;
 		}
 	} else {
-		left = malloc (sizeof(RSearchLeftover) + (size_t)2 * (longest - 1));
+		left = calloc (sizeof (RSearchLeftover) + (size_t)2, (longest - 1));
 		if (!left) {
 			return -1;
 		}

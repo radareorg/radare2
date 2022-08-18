@@ -230,7 +230,7 @@ static int load_omf_symb(OMF_record *record, ut32 ct, const ut8 *buf, int buf_si
 			return false;
 		}
 		symbol->name[str_size] = 0;
-		memcpy (symbol->name, buf + ct + 1, sizeof(char) * str_size);
+		memcpy (symbol->name, buf + ct + 1, sizeof (char) * str_size);
 
 		ct += 1 + str_size + (bits == 32 ? 4 : 2);
 		if (ct >= buf_size) {
@@ -286,7 +286,7 @@ static int load_omf_pubdef(OMF_record *record, const ut8 *buf, int buf_size) {
 		return false;
 	}
 
-	if(!(ret = R_NEW0 (OMF_multi_datas))) {
+	if (!(ret = R_NEW0 (OMF_multi_datas))) {
 		return false;
 	}
 	record->content = ret;
@@ -384,7 +384,7 @@ static int load_omf_content(OMF_record *record, const ut8 *buf, ut64 global_ct, 
 	return true;
 }
 
-static OMF_record_handler *load_record_omf(const ut8 *buf, ut64 global_ct, ut64 buf_size){
+static OMF_record_handler *load_record_omf(const ut8 *buf, ut64 global_ct, ut64 buf_size) {
 	OMF_record_handler *new = NULL;
 
 	if (is_valid_omf_type (*buf) && r_bin_checksum_omf_ok (buf, buf_size)) {
@@ -525,7 +525,7 @@ static int get_omf_symbol_info(r_bin_omf_obj *obj) {
 			if (!(obj->symbols[ct_obj] = R_NEW0 (OMF_symbol))) {
 				return false;
 			}
-			memcpy(obj->symbols[ct_obj], ((OMF_symbol *)symbols->elems) + ct_rec, sizeof(*(obj->symbols[ct_obj])));
+			memcpy(obj->symbols[ct_obj], ((OMF_symbol *)symbols->elems) + ct_rec, sizeof (*(obj->symbols[ct_obj])));
 			obj->symbols[ct_obj]->name = strdup(((OMF_symbol *)symbols->elems)[ct_rec].name);
 			ct_obj++;
 		 }
@@ -686,7 +686,7 @@ r_bin_omf_obj *r_bin_internal_omf_load(const ut8 *buf, ut64 size) {
 		r_bin_free_all_omf_obj(ret);
 		return NULL;
 	}
-	if(!(get_omf_infos(ret))) {
+	if (!(get_omf_infos(ret))) {
 		r_bin_free_all_omf_obj(ret);
 		return NULL;
 	}

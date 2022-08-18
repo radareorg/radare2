@@ -327,11 +327,11 @@ R_API const char *x##_version(void) { return "" R2_GITTAP; }
 
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
-#define R_NEWS0(x,y) (x*)calloc(y,sizeof(x))
-#define R_NEWS(x,y) (x*)malloc(sizeof(x)*(y))
-#define R_NEW0(x) (x*)calloc(1,sizeof(x))
-#define R_NEW(x) (x*)malloc(sizeof(x))
-#define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof(x), y)
+#define R_NEWS0(x,y) (x*)calloc(y,sizeof (x))
+#define R_NEWS(x,y) (x*)malloc(sizeof (x)*(y))
+#define R_NEW0(x) (x*)calloc(1,sizeof (x))
+#define R_NEW(x) (x*)malloc(sizeof (x))
+#define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof (x), y)
 
 static inline void *r_new_copy(int size, void *data) {
 	void *a = malloc(size);
@@ -341,7 +341,7 @@ static inline void *r_new_copy(int size, void *data) {
 	return a;
 }
 // TODO: Make R_NEW_COPY be 1 arg, not two
-#define R_NEW_COPY(x,y) x=(void*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
+#define R_NEW_COPY(x,y) x=(void*)malloc(sizeof (y));memcpy(x,y,sizeof (y))
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
 #define R_ARRAY_SIZE(x) (sizeof (x) / sizeof ((x)[0]))
 #define R_PTR_MOVE(d,s) d=s;s=NULL;
@@ -373,7 +373,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define _perror(str,file,line,func) \
   { \
 	  char buf[256]; \
-	  snprintf(buf,sizeof(buf),"[%s:%d %s] %s",file,line,func,str); \
+	  snprintf(buf,sizeof (buf),"[%s:%d %s] %s",file,line,func,str); \
 	  r_sys_perror_str(buf); \
   }
 #define perror(x) _perror(x,__FILE__,__LINE__,__func__)

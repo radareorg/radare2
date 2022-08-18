@@ -852,7 +852,7 @@ exit:
 
 		while (p_start < p_end) {
 			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
-			size_t sz = sizeof(*entry);
+			size_t sz = sizeof (*entry);
 			int perm = 0;
 			if (sz == 0) {
 				break;

@@ -283,7 +283,7 @@ R_API void r_io_wundo_apply_all(RIO *io, int set) {
 }
 
 /* sets or unsets the writes done */
-/* if ( set == 0 ) unset(n) */
+/* if (set == 0 ) unset(n) */
 R_API int r_io_wundo_set(RIO *io, int n, int set) {
 	RListIter *iter;
 	RIOUndoWrite *u = NULL;

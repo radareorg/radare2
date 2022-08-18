@@ -60,7 +60,7 @@ static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64
 	ut8 buf[6 * sizeof (ut32)];
 	int colSize = 5 * sizeof (ut32);
 	if (context->word_size == 8) {
-		colSize += sizeof(ut32);
+		colSize += sizeof (ut32);
 	}
 	if (colSize > sizeof (buf)) {
 		return false;
@@ -651,7 +651,7 @@ RecoveryCompleteObjectLocator *recovery_complete_object_locator_new() {
 	if (!col) {
 		return NULL;
 	}
-	r_vector_init (&col->base_td, sizeof(RecoveryBaseDescriptor), NULL, NULL);
+	r_vector_init (&col->base_td, sizeof (RecoveryBaseDescriptor), NULL, NULL);
 	return col;
 }
 

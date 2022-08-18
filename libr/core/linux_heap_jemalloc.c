@@ -97,7 +97,7 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 	const char *path = NULL;
 	ut64 jemalloc_addr = UT64_MAX;
 
-	if (!core || !core->dbg || !core->dbg->maps){
+	if (!core || !core->dbg || !core->dbg->maps) {
 		return false;
 	}
 	r_debug_map_sync (core->dbg);

@@ -563,7 +563,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 				bool bFound = false;
 				// check if offset don't have into block_list, to end branch analisys
 				r_list_foreach (block_list, iter, block) {
-					if ( (block->type == END || block->type == NORMAL) && b_start + cur == block->start ) {
+					if ((block->type == END || block->type == NORMAL) && b_start + cur == block->start ) {
 						bFound = true;
 						break;
 					}

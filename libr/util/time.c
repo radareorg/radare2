@@ -117,10 +117,9 @@ R_API bool r_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const ut
 
 
 R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len) {
-	if(len < 4) {
+	if (len < 4) {
 		return 0;
 	}
-
 	ut32 dt = buf[3] << 24 | buf[2] << 16 | buf[1] << 8 | buf[0];
 	char *s = r_time_stamp_to_str (r_time_dos_time_stamp_to_posix (dt));
 	if (!s) {

@@ -683,6 +683,6 @@ static int gbAsm(const char *buf, ut8 *outbuf) {
 		break;
 	}
 	free (buf_asm);
-	memcpy(outbuf, opbuf, sizeof(ut8) * len);
+	memcpy (outbuf, opbuf, sizeof (ut8) * len);
 	return len;
 }

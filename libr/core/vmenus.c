@@ -2480,7 +2480,7 @@ R_API void r_core_visual_config(RCore *core) {
 					if (option == i) {
 						hit = 1;
 					}
-					if ( (i >=option-delta) && ((i < option+delta)||((option<delta)&&(i < (delta<<1))))) {
+					if ((i >=option-delta) && ((i < option+delta)||((option<delta)&&(i < (delta<<1))))) {
 						r_cons_printf (" %c  %s\n", (option == i)?'>':' ', old);
 						j++;
 					}
@@ -2505,7 +2505,7 @@ R_API void r_core_visual_config(RCore *core) {
 						desc = bt->desc;
 						hit = 1;
 					}
-					if ( (i>=option-delta) && ((i < option+delta)||((option<delta)&&(i < (delta<<1))))) {
+					if ((i>=option-delta) && ((i < option+delta)||((option<delta)&&(i < (delta<<1))))) {
 						// TODO: Better align
 						r_cons_printf (" %c  %s = %s\n", (option==i)?'>':' ', bt->name, bt->value);
 						j++;
@@ -2717,7 +2717,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 
 		/* Ask for option */
 		ch = r_cons_readchar ();
-		if (ch==-1||ch==4){
+		if (ch==-1||ch==4) {
 			free (root);
 			return;
 		}
@@ -2767,7 +2767,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 					}
 					r_list_free (list);
 					list = NULL;
-				} else if (mode == 2){
+				} else if (mode == 2) {
 					r_str_trim_path (path);
 					size_t n = strlen (path);
 					snprintf (path + n, sizeof (path) - n, "/");
@@ -3700,7 +3700,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			RAnalFunction *fcn;
 			int i = 0;
 			r_list_foreach (core->anal->fcns, iter, fcn) {
-				if (core->offset == fcn->addr){
+				if (core->offset == fcn->addr) {
 					option = i;
 				}
 				i++;

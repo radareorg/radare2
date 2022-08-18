@@ -677,18 +677,18 @@ enum __ptrace_request
 /* provoke compile error for invalid uses of size argument */
 extern unsigned int __invalid_size_argument_for_IOC;
 #define _IOC_TYPECHECK(t) \
-	        ((sizeof(t) == sizeof(t[1]) && \
-		            sizeof(t) < (1 << _IOC_SIZEBITS)) ? \
-		           sizeof(t) : __invalid_size_argument_for_IOC)
+	        ((sizeof (t) == sizeof (t[1]) && \
+		            sizeof (t) < (1 << _IOC_SIZEBITS)) ? \
+		           sizeof (t) : __invalid_size_argument_for_IOC)
 
 				       /* used to create numbers */
 #define _IO(type,nr)            _IOC(_IOC_NONE,(type),(nr),0)
 #define _IOR(type,nr,size)      _IOC(_IOC_READ,(type),(nr),(_IOC_TYPECHECK(size)))
 #define _IOW(type,nr,size)      _IOC(_IOC_WRITE,(type),(nr),(_IOC_TYPECHECK(size)))
 #define _IOWR(type,nr,size)     _IOC(_IOC_READ|_IOC_WRITE,(type),(nr),(_IOC_TYPECHECK(size)))
-#define _IOR_BAD(type,nr,size)  _IOC(_IOC_READ,(type),(nr),sizeof(size))
-#define _IOW_BAD(type,nr,size)  _IOC(_IOC_WRITE,(type),(nr),sizeof(size))
-#define _IOWR_BAD(type,nr,size) _IOC(_IOC_READ|_IOC_WRITE,(type),(nr),sizeof(size))
+#define _IOR_BAD(type,nr,size)  _IOC(_IOC_READ,(type),(nr),sizeof (size))
+#define _IOW_BAD(type,nr,size)  _IOC(_IOC_WRITE,(type),(nr),sizeof (size))
+#define _IOWR_BAD(type,nr,size) _IOC(_IOC_READ|_IOC_WRITE,(type),(nr),sizeof (size))
 
 				       /* used to decode ioctl numbers.. */
 #define _IOC_DIR(nr)            (((nr) >> _IOC_DIRSHIFT) & _IOC_DIRMASK)

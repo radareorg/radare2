@@ -274,7 +274,7 @@ const char *file_getbuffer(RMagic *ms) {
 		int mb_conv = 1;
 		size_t bytesconsumed;
 		char *eop;
-		(void)memset(&state, 0, sizeof(mbstate_t));
+		(void)memset(&state, 0, sizeof (mbstate_t));
 
 		np = ms->o.pbuf;
 		op = ms->o.buf;

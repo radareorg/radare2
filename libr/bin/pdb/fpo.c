@@ -21,7 +21,7 @@ static int parse_fpo_data(char *data, int data_size, int *read_bytes, SFPO_DATA 
 ///////////////////////////////////////////////////////////////////////////////
 static int parse_fpo_data_v2(char *data, int data_size, int *read_bytes, SFPO_DATA_V2 *fpo_data) {
 	int curr_read_bytes = *read_bytes;
-	memcpy (fpo_data, data, sizeof(SFPO_DATA_V2));
+	memcpy (fpo_data, data, sizeof (SFPO_DATA_V2));
 	*read_bytes += sizeof (SFPO_DATA_V2);
 	return (*read_bytes - curr_read_bytes);
 }
@@ -42,7 +42,7 @@ void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file) {
 	fpo_stream->fpo_data_list = r_list_new ();
 	ptmp = data;
 	while (read_bytes < data_size) {
-		fpo_data = (SFPO_DATA *) malloc(sizeof(SFPO_DATA));
+		fpo_data = (SFPO_DATA *) malloc(sizeof (SFPO_DATA));
 		curr_read_bytes = parse_fpo_data(ptmp, data_size, &read_bytes, fpo_data);
 		ptmp += curr_read_bytes;
 
@@ -105,7 +105,7 @@ void parse_fpo_new_stream(void *stream, R_STREAM_FILE *stream_file)
 	fpo_stream->fpo_data_list = r_list_new ();
 	ptmp = data;
 	while (read_bytes < data_size) {
-		fpo_data = (SFPO_DATA_V2 *) malloc (sizeof(SFPO_DATA_V2));
+		fpo_data = (SFPO_DATA_V2 *) malloc (sizeof (SFPO_DATA_V2));
 		if (!fpo_data) {
 			free (data);
 			return;

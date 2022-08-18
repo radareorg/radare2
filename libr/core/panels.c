@@ -64,7 +64,7 @@ static void __panels_refresh(RCore *core);
 #define PANEL_CONFIG_RESIZE_W    4
 #define PANEL_CONFIG_RESIZE_H    4
 
-#define COUNT(x) (sizeof((x)) / sizeof((*x)) - 1)
+#define COUNT(x) (sizeof ((x)) / sizeof ((*x)) - 1)
 
 // TODO: kill mutable globals
 static R_TH_LOCAL bool firstRun = true;
@@ -982,7 +982,7 @@ static void __panel_all_clear(RPanels *panels) {
 
 static void __layout_default(RPanels *panels) {
 	RPanel *p0 = __get_panel (panels, 0);
-	if (!p0){
+	if (!p0) {
 		eprintf("_get_panel (...,0) return null\n");
 		return;
 	}
@@ -1659,7 +1659,7 @@ static void __save_panel_pos(RPanel* panel) {
 }
 
 static void __restore_panel_pos(RPanel* panel) {
-	if(!panel){
+	if (!panel) {
 		return;
 	}
 	__set_geometry (&panel->view->pos, panel->view->prevPos.x, panel->view->prevPos.y,
@@ -1668,7 +1668,7 @@ static void __restore_panel_pos(RPanel* panel) {
 
 static void __maximize_panel_size(RPanels *panels) {
 	RPanel *cur = __get_cur_panel (panels);
-	if(!cur){
+	if (!cur) {
 		return;
 	}
 	__set_geometry (&cur->view->pos, 0, 1, panels->can->w, panels->can->h - 1);

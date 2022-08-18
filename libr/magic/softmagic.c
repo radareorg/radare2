@@ -339,7 +339,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 			}
 			break;
 		}
-		t = ms->offset + sizeof(char);
+		t = ms->offset + sizeof (char);
 		break;
   	case FILE_SHORT:
   	case FILE_BESHORT:
@@ -365,7 +365,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 			}
 			break;
 		}
-		t = ms->offset + sizeof(short);
+		t = ms->offset + sizeof (short);
 		break;
   	case FILE_LONG:
   	case FILE_BELONG:
@@ -392,7 +392,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 			}
 			break;
 		}
-		t = ms->offset + sizeof(st32);
+		t = ms->offset + sizeof (st32);
   		break;
   	case FILE_QUAD:
   	case FILE_BEQUAD:
@@ -401,7 +401,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		if (file_printf (ms, R_MAGIC_DESC, (ut64)v) == -1) {
 			return -1;
 		}
-		t = ms->offset + sizeof(ut64);
+		t = ms->offset + sizeof (ut64);
   		break;
 
   	case FILE_STRING:
@@ -434,7 +434,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		if (file_printf (ms, R_MAGIC_DESC, file_fmttime (p->l, 1, pp)) == -1) {
 			return -1;
 		}
-		t = ms->offset + sizeof(time_t);
+		t = ms->offset + sizeof (time_t);
 		break;
 	case FILE_LDATE:
 	case FILE_BELDATE:
@@ -443,7 +443,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		if (file_printf (ms, R_MAGIC_DESC, file_fmttime (p->l, 0, pp)) == -1) {
 			return -1;
 		}
-		t = ms->offset + sizeof(time_t);
+		t = ms->offset + sizeof (time_t);
 		break;
 	case FILE_QDATE:
 	case FILE_BEQDATE:
@@ -451,7 +451,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		if (file_printf (ms, R_MAGIC_DESC, file_fmttime ((ut32)p->q, 1, pp)) == -1) {
 			return -1;
 		}
-		t = ms->offset + sizeof(ut64);
+		t = ms->offset + sizeof (ut64);
 		break;
 	case FILE_QLDATE:
 	case FILE_BEQLDATE:
@@ -459,7 +459,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		if (file_printf (ms, R_MAGIC_DESC, file_fmttime ((ut32)p->q, 0, pp)) == -1) {
 			return -1;
 		}
-		t = ms->offset + sizeof(ut64);
+		t = ms->offset + sizeof (ut64);
 		break;
   	case FILE_FLOAT:
   	case FILE_BEFLOAT:
@@ -485,7 +485,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 			}
 			break;
 		}
-		t = ms->offset + sizeof(float);
+		t = ms->offset + sizeof (float);
   		break;
   	case FILE_DOUBLE:
   	case FILE_BEDOUBLE:
@@ -511,7 +511,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 			}
 			break;
 		}
-		t = ms->offset + sizeof(double);
+		t = ms->offset + sizeof (double);
   		break;
 	case FILE_REGEX: {
 		char *cp = r_str_ndup ((const char *)ms->search.s, ms->search.rm_len);
@@ -659,7 +659,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 		size_t len;
 
 		/* Null terminate and eat *trailing* return */
-		p->s[sizeof(p->s) - 1] = '\0';
+		p->s[sizeof (p->s) - 1] = '\0';
 		len = strlen(p->s);
 		if (len-- && p->s[len] == '\n') {
 			p->s[len] = '\0';
@@ -827,7 +827,7 @@ static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 
 			const ut8 *src = s + offset;
 			const ut8 *esrc = s + nbytes;
 			char *dst = p->s;
-			char *edst = &p->s[sizeof(p->s) - 1];
+			char *edst = &p->s[sizeof (p->s) - 1];
 
 			if (type == FILE_BESTRING16) {
 				src++;
@@ -891,7 +891,7 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 	}
 
 	if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-		mdebug(offset, (char *)(void *)p, sizeof(union VALUETYPE));
+		mdebug(offset, (char *)(void *)p, sizeof (union VALUETYPE));
 		file_mdump(m);
 	}
 

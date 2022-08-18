@@ -1698,7 +1698,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplea(RAsm *a, ut8 *data, const Opcode *op){
+static int oplea(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int mod = 0;
 	st32 offset = 0;

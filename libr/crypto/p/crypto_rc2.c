@@ -258,7 +258,7 @@ int main() {
 	rc2_expandKey ((const ut8*)"key", 3, BITS, &st);
 	rc2_crypt(&st, (const ut8 *)"12345678abc", out, 11);
 	eprintf ("%s\n", (const char *)out);
-	rc2_dcrypt(&st, (const ut8 *)out, out, sizeof(out));
+	rc2_dcrypt(&st, (const ut8 *)out, out, sizeof (out));
 	eprintf ("%s\n", (const char *)out);
 	return 0;
 }

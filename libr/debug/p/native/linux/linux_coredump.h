@@ -57,7 +57,7 @@
 
 #define SIZE_PR_FNAME	16
 
-#define SIZE_NT_FILE_DESCSZ	sizeof(unsigned long) * 3   /* start_address * end_address * offset_address */
+#define SIZE_NT_FILE_DESCSZ	sizeof (unsigned long) * 3   /* start_address * end_address * offset_address */
 /*
 NT_FILE layout:
 	[number of mappings]

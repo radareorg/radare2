@@ -86,18 +86,22 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 	int nch;
 	struct stat tstatbuf;
 #endif
-	if (!fn)
+	if (!fn) {
 		return 0;
+	}
 	/*
 	 * Fstat is cheaper but fails for files you don't have read perms on.
 	 * On 4.2BSD and similar systems, use lstat() to identify symlinks.
 	 */
 #ifdef	S_IFLNK
-	if ((ms->flags & R_MAGIC_SYMLINK) == 0)
+	if ((ms->flags & R_MAGIC_SYMLINK) == 0) {
 		ret = lstat (fn, sb);
-	else
-#endif
+	} else {
+		ret = stat (fn, sb);	/* don't merge into if; see "ret =" above */
+	}
+#else
 	ret = stat (fn, sb);	/* don't merge into if; see "ret =" above */
+#endif
 
 	if (ret) {
 		if (ms->flags & R_MAGIC_ERROR) {
@@ -148,22 +152,26 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 		 * like ordinary files.  Otherwise, just report that they
 		 * are block special files and go on to the next file.
 		 */
-		if ((ms->flags & R_MAGIC_DEVICES) != 0)
+		if ((ms->flags & R_MAGIC_DEVICES) != 0) {
 			break;
+		}
 #ifdef HAVE_STAT_ST_RDEV
 # ifdef dv_unit
 		if (file_printf (ms, "character special (%d/%d/%d)",
 		    major (sb->st_rdev), dv_unit(sb->st_rdev),
-		    dv_subunit (sb->st_rdev)) == -1)
+		    dv_subunit (sb->st_rdev)) == -1) {
 			return -1;
+		}
 # else
 		if (file_printf (ms, "character special (%ld/%ld)",
-		    (long) major (sb->st_rdev), (long) minor(sb->st_rdev)) == -1)
+		    (long) major (sb->st_rdev), (long) minor(sb->st_rdev)) == -1) {
 			return -1;
+		}
 # endif
 #else
-		if (file_printf (ms, "character special") == -1)
+		if (file_printf (ms, "character special") == -1) {
 			return -1;
+		}
 #endif
 		return 1;
 #endif
@@ -174,37 +182,42 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 		 * like ordinary files.  Otherwise, just report that they
 		 * are block special files and go on to the next file.
 		 */
-		if ((ms->flags & R_MAGIC_DEVICES) != 0)
+		if ((ms->flags & R_MAGIC_DEVICES) != 0) {
 			break;
+		}
 #ifdef HAVE_STAT_ST_RDEV
 # ifdef dv_unit
-		if (file_printf(ms, "block special (%d/%d/%d)",
-		    major(sb->st_rdev), dv_unit(sb->st_rdev),
-		    dv_subunit(sb->st_rdev)) == -1)
+		if (file_printf (ms, "block special (%d/%d/%d)",
+		    major(sb->st_rdev), dv_unit (sb->st_rdev),
+		    dv_subunit (sb->st_rdev)) == -1) {
 			return -1;
+		}
 # else
-		if (file_printf(ms, "block special (%ld/%ld)",
-		    (long)major(sb->st_rdev), (long)minor(sb->st_rdev)) == -1)
+		if (file_printf (ms, "block special (%ld/%ld)",
+		    (long)major (sb->st_rdev), (long)minor (sb->st_rdev)) == -1)
 			return -1;
 # endif
 #else
-		if (file_printf(ms, "block special") == -1)
+		if (file_printf (ms, "block special") == -1) {
 			return -1;
+		}
 #endif
 		return 1;
 #endif
 	/* TODO add code to handle V7 MUX and Blit MUX files */
 #ifdef	S_IFIFO
 	case S_IFIFO:
-		if((ms->flags & R_MAGIC_DEVICES) != 0)
+		if ((ms->flags & R_MAGIC_DEVICES) != 0) {
 			break;
-		if (file_printf(ms, "fifo (named pipe)") == -1)
+		}
+		if (file_printf (ms, "fifo (named pipe)") == -1) {
 			return -1;
+		}
 		return 1;
 #endif
 #ifdef	S_IFDOOR
 	case S_IFDOOR:
-		return (file_printf (ms, "door") == -1)? -1:1;
+		return (file_printf (ms, "door") == -1)? -1: 1;
 #endif
 #ifdef	S_IFLNK
 	case S_IFLNK:

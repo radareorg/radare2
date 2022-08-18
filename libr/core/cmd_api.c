@@ -37,7 +37,7 @@ static const RCmdDescHelp root_help = {
 
 static R_TH_LOCAL int value = 0;
 
-#define NCMDS (sizeof (cmd->cmds)/sizeof(*cmd->cmds))
+#define NCMDS (sizeof (cmd->cmds)/sizeof (*cmd->cmds))
 R_LIB_VERSION (r_cmd);
 
 static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {

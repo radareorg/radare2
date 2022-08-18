@@ -639,7 +639,7 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 	{
 		// TODO
 		struct dbreg dbr;
-		ret = ptrace (PT_GETDBREGS, pid, (caddr_t)&dbr, sizeof(dbr));
+		ret = ptrace (PT_GETDBREGS, pid, (caddr_t)&dbr, sizeof (dbr));
 		if (ret != 0) return false;
 		// XXX: maybe the register map is not correct, must review
 	}
@@ -677,7 +677,7 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 			size = sizeof (regs);
 		}
 		memcpy (buf, &regs, size);
-		return sizeof(regs);
+		return sizeof (regs);
 		}
 		break;
 	}
@@ -1008,7 +1008,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #if __sun
 	char path[1024];
 	/* TODO: On solaris parse /proc/%d/map */
-	snprintf (path, sizeof(path) - 1, "pmap %d >&2", ps.tid);
+	snprintf (path, sizeof (path) - 1, "pmap %d >&2", ps.tid);
 	system (path);
 #else
 	RDebugMap *map;
@@ -1269,7 +1269,7 @@ static void sync_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 #if __i386__ || __x86_64__
 static void set_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
-	if (num_regs != NUM_DRX_REGISTERS){
+	if (num_regs != NUM_DRX_REGISTERS) {
 		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
 		return;
 	}

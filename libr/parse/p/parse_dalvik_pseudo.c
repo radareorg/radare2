@@ -282,9 +282,9 @@ static int parse(RParse *p, const char *data, char *str) {
 					;
 				}
 				strncpy (w1, optr, sizeof (w1) - 1);
-				w1[sizeof(w1)-1] = '\0';
+				w1[sizeof (w1)-1] = '\0';
 				strncpy (w2, ptr, sizeof (w2) - 1);
-				w2[sizeof(w2)-1] = '\0';
+				w2[sizeof (w2)-1] = '\0';
 				optr=ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
@@ -293,9 +293,9 @@ static int parse(RParse *p, const char *data, char *str) {
 						;
 					}
 					strncpy (w2, optr, sizeof (w2) - 1);
-					w2[sizeof(w2)-1] = '\0';
+					w2[sizeof (w2)-1] = '\0';
 					strncpy (w3, ptr, sizeof (w3) - 1);
-					w3[sizeof(w3)-1] = '\0';
+					w3[sizeof (w3)-1] = '\0';
 					optr=ptr;
 // bonus
 					ptr = strchr (ptr, ',');
@@ -305,9 +305,9 @@ static int parse(RParse *p, const char *data, char *str) {
 							;
 						}
 						strncpy (w3, optr, sizeof (w3) - 1);
-						w3[sizeof(w3)-1] = '\0';
+						w3[sizeof (w3) - 1] = '\0';
 						strncpy (w4, ptr, sizeof (w4) - 1);
-						w4[sizeof(w4)-1] = '\0';
+						w4[sizeof (w4) - 1] = '\0';
 					}
 				}
 			}

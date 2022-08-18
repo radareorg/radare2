@@ -630,7 +630,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == '6' && input[2] == '4') {
 			//b64 decoding takes at most strlen(str) * 4
 			const int buflen = (strlen (input+3) * 4) + 1;
-			char* buf = calloc (buflen, sizeof(char));
+			char* buf = calloc (buflen, sizeof (char));
 			if (!buf) {
 				return false;
 			}

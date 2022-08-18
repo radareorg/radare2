@@ -1189,7 +1189,7 @@ build_immediate_table (void)
     }
   assert (nb_imms == TOTAL_IMM_NB);
   qsort(simd_immediates, nb_imms,
-	sizeof(simd_immediates[0]), simd_imm_encoding_cmp);
+	sizeof (simd_immediates[0]), simd_imm_encoding_cmp);
 }
 
 /* Return TRUE if VALUE is a valid logical immediate, i.e. bitmask, that can
@@ -1232,7 +1232,7 @@ aarch64_logical_immediate_p (uint64_t value, int esize, aarch64_insn *encoding)
   imm_enc.imm = value;
   imm_encoding = (const simd_imm_encoding *)
     bsearch(&imm_enc, simd_immediates, TOTAL_IMM_NB,
-            sizeof(simd_immediates[0]), simd_imm_encoding_cmp);
+            sizeof (simd_immediates[0]), simd_imm_encoding_cmp);
   if (imm_encoding == NULL)
     {
       DEBUG_TRACE ("exit with FALSE");

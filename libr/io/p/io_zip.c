@@ -424,7 +424,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		*zip_filename++ = 0;
 
 		// check for // for file in the archive
-		if ( (filename_in_zipfile = strstr (zip_filename, "//")) && filename_in_zipfile[2]) {
+		if ((filename_in_zipfile = strstr (zip_filename, "//")) && filename_in_zipfile[2]) {
 			// null terminating uri to filename here.
 			*filename_in_zipfile++ = 0;
 			*filename_in_zipfile++ = 0;

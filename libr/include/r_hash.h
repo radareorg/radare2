@@ -283,7 +283,7 @@ typedef struct r_hash_seed_t {
 #define R_HASH_SIZE_FLETCHER32 4
 #define R_HASH_SIZE_FLETCHER64 8
 
-#define R_HASH_NBITS (8*sizeof(ut64))
+#define R_HASH_NBITS (8*sizeof (ut64))
 
 enum HASH_INDICES {
 	R_HASH_IDX_MD5 = 0,

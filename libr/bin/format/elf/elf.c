@@ -3237,7 +3237,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS && sym[i].st_shndx == SHT_NULL) {
 			if (sym[i].st_value) {
 				toffset = sym[i].st_value;
-			} else if ((toffset = get_import_addr (bin, i)) == -1){
+			} else if ((toffset = get_import_addr (bin, i)) == -1) {
 				toffset = 0;
 			}
 			tsize = 16;

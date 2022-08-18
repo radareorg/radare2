@@ -99,9 +99,9 @@ const char *gb_card_type_str[]={
 	"CAM"
 };
 
-void gb_add_cardtype(char *type, ut8 cardcode){
+void gb_add_cardtype(char *type, ut8 cardcode) {
 	strcat (type,"\ncard\t");
-	switch (cardcode){
+	switch (cardcode) {
 		case GB_TAMA5:
 		case GB_HUC3:
 		case GB_HUC1:
@@ -122,8 +122,8 @@ void gb_add_cardtype(char *type, ut8 cardcode){
 	}
 }
 
-int gb_get_rombanks(ut8 id){
-	switch (id){
+int gb_get_rombanks(ut8 id) {
+	switch (id) {
 		case GB_ROM_BANKS_2:
 			return 2;
 		case GB_ROM_BANKS_4:
@@ -149,7 +149,7 @@ int gb_get_rombanks(ut8 id){
 }
 
 
-void gb_get_gbtype(char *type, ut8 foo, ut8 bar){
+void gb_get_gbtype(char *type, ut8 foo, ut8 bar) {
 	if (foo==GB_SGB) {
 		strcpy (type, "SuperGameboy-Rom");
 	} else {

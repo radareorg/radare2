@@ -812,7 +812,7 @@ void* arm_free(struct winedbg_arm_insn *arminsn) {
 
 struct winedbg_arm_insn* arm_new() {
 	struct winedbg_arm_insn *ret;
-	ret = malloc(sizeof(struct winedbg_arm_insn));
+	ret = malloc(sizeof (struct winedbg_arm_insn));
 	ret->pc = 0;
 	ret->thumb = false;
 	ret->str_hex = NULL;

@@ -413,7 +413,7 @@ R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb c
 		if (!cb (addr, user)) { \
 			return false; \
 		} \
-	} while(0);
+	} while (0);
 
 	CB_ADDR (block->jump);
 	CB_ADDR (block->fail);

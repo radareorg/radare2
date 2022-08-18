@@ -105,7 +105,7 @@ R_IPI int search_pattern(RSearch *s, ut64 from, ut64 to) {
 			addr += nr;
 			moar = 0;
 			for (i = 0; i < nr; i++) {
-				if (!memcmp (&block[i], sblk, patlen) && !is_fi_present (root, sblk, patlen)){
+				if (!memcmp (&block[i], sblk, patlen) && !is_fi_present (root, sblk, patlen)) {
 					if (cnt == 0) {
 						add_fi (root, sblk, patlen);
 						pcnt++;

@@ -1139,7 +1139,7 @@ static int esil_ifset(RAnalEsil *esil) {
 }
 #endif
 
-static bool esil_if(RAnalEsil *esil) {
+static bool esil_if (RAnalEsil *esil) {
 	ut64 num = 0LL;
 	if (esil->skip) {
 		esil->skip++;
@@ -2151,7 +2151,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 			return ret;
 		}
 		ut64 bitmask = genmask (bits - 1);
-		ut8 a[sizeof(ut64)] = {0};
+		ut8 a[sizeof (ut64)] = {0};
 		ret = !!r_anal_esil_mem_read (esil, addr, a, bytes);
 #if 0
 		ut64 b = r_read_ble64 (a, esil->anal->config->big_endian);

@@ -1985,7 +1985,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
 		const char *arg1 = strtok (args, " ");
 		if (arg1 && r_str_isnumber (arg1)) {
-			r_core_cmd_help (core, (const char *[]){
+			r_core_cmd_help (core, (const char *[]) {
 				"Usage:", "pf [0|cnt][format-string]", "",
 				NULL
 			});
@@ -7829,7 +7829,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case ' ':
 		case '\0':
-			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof(ut32)
+			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof (ut32)
 			if (len < sizeof (ut32)) {
 				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut32));
 			}
@@ -7841,7 +7841,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'h': // "pth"
-			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof(ut32)
+			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof (ut32)
 			if (len < sizeof (ut32)) {
 				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut32));
 			}

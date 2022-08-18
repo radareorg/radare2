@@ -121,7 +121,7 @@ static int __set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
 	CONTEXT ctx = {0};
 	size = R_MIN (size, sizeof (ctx));
 	memcpy (&ctx, buf, size);
-	if(!(ret = SetThreadContext (th, &ctx))) {
+	if (!(ret = SetThreadContext (th, &ctx))) {
 		r_sys_perror ("__set_thread_context/SetThreadContext");
 	}
 	return ret;
@@ -180,7 +180,7 @@ static int __get_avx(HANDLE th, ut128 xmm[16], ut128 ymm[16]) {
 		goto err_get_avx;
 	}
 	newxmm = (ut128 *)r_w32_LocateXStateFeature (ctx, XSTATE_LEGACY_SSE, &featurelen);
-		nregs = featurelen / sizeof(*newxmm);
+		nregs = featurelen / sizeof (*newxmm);
 	for (index = 0; index < nregs; index++) {
 		ymm[index].High = 0;
 		xmm[index].High = 0;

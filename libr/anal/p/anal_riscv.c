@@ -321,7 +321,7 @@ static char *riscv_disassemble(RAnal *a, ut64 addr, const ut8 *buf, int len) {//
 		return NULL;
 	}
 	for (; op < &riscv_opcodes[NUMOPCODES]; op++) {
-		if ( !(op->match_func)(op, word) ) {
+		if (!(op->match_func)(op, word) ) {
 			continue;
 		}
 		if (no_alias && (op->pinfo & INSN_ALIAS)) {

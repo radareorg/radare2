@@ -295,7 +295,7 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 	if (off > bin->size || off + sizeof (struct MACH0_(segment_command)) > bin->size) {
 		return false;
 	}
-	if (!(bin->segs = realloc (bin->segs, bin->nsegs * sizeof(struct MACH0_(segment_command))))) {
+	if (!(bin->segs = realloc (bin->segs, bin->nsegs * sizeof (struct MACH0_(segment_command))))) {
 		r_sys_perror ("realloc (seg)");
 		return false;
 	}
@@ -363,23 +363,23 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 			bin->nsects = sect;
 			return false;
 		}
-		if (!UT32_MUL (&size_sects, bin->nsects-sect, sizeof (struct MACH0_(section)))){
+		if (!UT32_MUL (&size_sects, bin->nsects-sect, sizeof (struct MACH0_(section)))) {
 			bin->nsects = sect;
 			return false;
 		}
-		if (!size_sects || size_sects > bin->size){
+		if (!size_sects || size_sects > bin->size) {
 			bin->nsects = sect;
 			return false;
 		}
 
 		if (bin->segs[j].cmdsize != sizeof (struct MACH0_(segment_command)) \
-				  + (sizeof (struct MACH0_(section))*bin->segs[j].nsects)){
+				  + (sizeof (struct MACH0_(section))*bin->segs[j].nsects)) {
 			bin->nsects = sect;
 			return false;
 		}
 
 		if (off + sizeof (struct MACH0_(segment_command)) > bin->size ||\
-				off + sizeof (struct MACH0_(segment_command)) + size_sects > bin->size){
+				off + sizeof (struct MACH0_(segment_command)) + size_sects > bin->size) {
 			bin->nsects = sect;
 			return false;
 		}
@@ -574,15 +574,15 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 			r_sys_perror ("calloc (toc)");
 			return false;
 		}
-		if (!UT32_MUL (&size_tab, bin->ntoc, sizeof (struct dylib_table_of_contents))){
+		if (!UT32_MUL (&size_tab, bin->ntoc, sizeof (struct dylib_table_of_contents))) {
 			R_FREE (bin->toc);
 			return false;
 		}
-		if (!size_tab){
+		if (!size_tab) {
 			R_FREE (bin->toc);
 			return false;
 		}
-		if (bin->dysymtab.tocoff > bin->size || bin->dysymtab.tocoff + size_tab > bin->size){
+		if (bin->dysymtab.tocoff > bin->size || bin->dysymtab.tocoff + size_tab > bin->size) {
 			R_FREE (bin->toc);
 			return false;
 		}
@@ -606,16 +606,16 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 			r_sys_perror ("calloc (modtab)");
 			return false;
 		}
-		if (!UT32_MUL (&size_tab, bin->nmodtab, sizeof (struct MACH0_(dylib_module)))){
+		if (!UT32_MUL (&size_tab, bin->nmodtab, sizeof (struct MACH0_(dylib_module)))) {
 			R_FREE (bin->modtab);
 			return false;
 		}
-		if (!size_tab){
+		if (!size_tab) {
 			R_FREE (bin->modtab);
 			return false;
 		}
 		if (bin->dysymtab.modtaboff > bin->size || \
-		  bin->dysymtab.modtaboff + size_tab > bin->size){
+		  bin->dysymtab.modtaboff + size_tab > bin->size) {
 			R_FREE (bin->modtab);
 			return false;
 		}
@@ -655,16 +655,16 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 			r_sys_perror ("calloc (indirectsyms)");
 			return false;
 		}
-		if (!UT32_MUL (&size_tab, bin->nindirectsyms, sizeof (ut32))){
+		if (!UT32_MUL (&size_tab, bin->nindirectsyms, sizeof (ut32))) {
 			R_FREE (bin->indirectsyms);
 			return false;
 		}
-		if (!size_tab){
+		if (!size_tab) {
 			R_FREE (bin->indirectsyms);
 			return false;
 		}
 		if (bin->dysymtab.indirectsymoff > bin->size || \
-				bin->dysymtab.indirectsymoff + size_tab > bin->size){
+				bin->dysymtab.indirectsymoff + size_tab > bin->size) {
 			R_FREE (bin->indirectsyms);
 			return false;
 		}
@@ -1855,7 +1855,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				//bprintf ("[mach0] load dynamic linker\n");
 				struct dylinker_command dy = {0};
 				ut8 sdy[sizeof (struct dylinker_command)] = {0};
-				if (off + sizeof (struct dylinker_command) > bin->size){
+				if (off + sizeof (struct dylinker_command) > bin->size) {
 					bprintf ("Warning: Cannot parse dylinker command\n");
 					return false;
 				}
@@ -1939,7 +1939,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			sdb_set (bin->kv, cmd_flagname, "dyld_info", 0);
 			bin->dyld_info = calloc (1, sizeof (struct dyld_info_command));
 			if (bin->dyld_info) {
-				if (off + sizeof (struct dyld_info_command) > bin->size){
+				if (off + sizeof (struct dyld_info_command) > bin->size) {
 					bprintf ("Cannot parse dyldinfo\n");
 					R_FREE (bin->dyld_info);
 					return false;

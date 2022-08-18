@@ -1031,7 +1031,7 @@ static void optimize(void) {
 			//	eprintf ("ERN (%d) %s%c", pos, escape, 10);
 				onescape = false;
 			} else {
-				if (escape_n + 1 >= sizeof(escape)) {
+				if (escape_n + 1 >= sizeof (escape)) {
 					escape_n = 0;
 					onescape = false;
 				}

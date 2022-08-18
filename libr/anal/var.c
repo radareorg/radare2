@@ -1465,7 +1465,7 @@ static int regvar_comparator(const RAnalVar *a, const RAnalVar *b) {
 	// return (a && b)? (a->argnum > b->argnum) - (a->argnum < b->argnum): 0;
 }
 
-static int var_comparator(const RAnalVar *a, const RAnalVar *b){
+static int var_comparator(const RAnalVar *a, const RAnalVar *b) {
 	if (a && b) {
 		if (a->isarg && !b->isarg) {
 			return -1;

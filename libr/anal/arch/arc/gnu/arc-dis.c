@@ -67,7 +67,7 @@ typedef enum
 
 #define BIT(word,n)	((word) & (1 << (n)))
 /* START ARC LOCAL */
-#define BITS(word,s,e)  (((word) << (sizeof(word)*8-1 - (e))) >> ((s) + (sizeof(word)*8-1 - (e))))
+#define BITS(word,s,e)  (((word) << (sizeof (word)*8-1 - (e))) >> ((s) + (sizeof (word)*8-1 - (e))))
 /* END ARC LOCAL */
 #define OPCODE(word)	(BITS ((word), 27, 31))
 #define FIELDA(word)	(BITS ((word), 21, 26))
@@ -1113,7 +1113,7 @@ ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info)
   void *stream = info->stream; 	/* Output stream.  */
   fprintf_ftype func = info->fprintf_func;
 
-  memset (&s, 0, sizeof(struct arcDisState));
+  memset (&s, 0, sizeof (struct arcDisState));
 
   /* Read first instruction.  */
   status = (*info->read_memory_func) (address, buffer, 4, info);

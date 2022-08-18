@@ -349,10 +349,10 @@ bool callback(RTokenizer *tok) {
 		} else if (tok->ch == '(') {
 			data->parlevel++;
 			if (data->word) {
-				if ( !strcmp (data->word, "if")) {
+				if (!strcmp (data->word, "if")) {
 					indent (tok);
 					eprintf ("IF %d%c", tok->indent, 10);
-				} else if ( !strcmp (data->word, "switch")) {
+				} else if (!strcmp (data->word, "switch")) {
 					data->inswitch = true;
 					indent (tok);
 					eprintf ("SWITCH%c", 10);

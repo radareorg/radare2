@@ -42,7 +42,7 @@ void parse_gdata_stream(void *stream, R_STREAM_FILE *stream_file) {
 
 		leaf_type = *(unsigned short *) (data);
 		if ((leaf_type == 0x110E) || (leaf_type == 0x1009)) {
-			global = (SGlobal *) malloc(sizeof(SGlobal));
+			global = (SGlobal *) malloc(sizeof (SGlobal));
 			if (!global) {
 				free (data);
 				return;

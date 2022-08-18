@@ -96,7 +96,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	bool res = check_buffer (bf, b);
 	if (res) {
 		s390user *su = R_NEW0 (s390user);
@@ -250,7 +250,7 @@ static RList *sections(RBinFile *bf) {
 			break;
 		// CSECT IDR
 		case 0x80:
-			left = r_buf_read_at (bf->buf, x, (ut8*)&hdr80, sizeof(S390_Header_CSECT_IDR));
+			left = r_buf_read_at (bf->buf, x, (ut8*)&hdr80, sizeof (S390_Header_CSECT_IDR));
 			if (left < sizeof (S390_Header_CSECT_IDR)) {
 				return NULL;
 			}
@@ -294,7 +294,7 @@ static RList *sections(RBinFile *bf) {
 		case 0x0e:
 		// Control Record & RLD (EOS) 0x1111
 		case 0x0f:
-			left = r_buf_read_at (bf->buf, x, (ut8*)&hdrCR, sizeof(S390_Header_ControlRecord));
+			left = r_buf_read_at (bf->buf, x, (ut8*)&hdrCR, sizeof (S390_Header_ControlRecord));
 			if (left < sizeof (S390_Header_ControlRecord)) {
 				return NULL;
 			}
@@ -307,7 +307,7 @@ static RList *sections(RBinFile *bf) {
 			lonCR = 0;
 			{
 			ut16 y;
-			for (y = 0; y < lon / sizeof(S390_Header_ControlRecord_Data) ; y++) {
+			for (y = 0; y < lon / sizeof (S390_Header_ControlRecord_Data) ; y++) {
 				left = r_buf_read_at (bf->buf, x, (ut8*)&hdrCRd, sizeof (S390_Header_ControlRecord_Data));
 				if (left < sizeof (S390_Header_ControlRecord_Data)) {
 					return NULL;

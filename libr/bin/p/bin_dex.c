@@ -1664,7 +1664,7 @@ static bool dex_loadcode(RBinFile *bf) {
 	if (methods) {
 		int import_count = 0;
 		int sym_count = dex->methods_list->length;
-		int last = (methods_size / sizeof(int)); // sym_count
+		int last = (methods_size / sizeof (int)); // sym_count
 		for (i = 0; i < last; i++) {
 			int len = 0;
 			if (methods[i]) {

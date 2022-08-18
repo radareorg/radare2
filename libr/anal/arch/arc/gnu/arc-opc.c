@@ -4873,7 +4873,7 @@ get_ext_suffix (char *s, char field)
   struct arc_ext_operand_value *suffix = arc_ext_operands;
   char ctype = 0;
 
-  switch(field){
+  switch(field) {
   case 'e' :
       ctype = arc_mach_a4 ? CACHEBYPASS5 : 0;
       break;
@@ -4937,7 +4937,7 @@ get_ext_suffix (char *s, char field)
   default :
       ctype = arc_mach_a4 ? COND : COND_AC;
       break;
-      } /* end switch(field) */
+      } /* end switch (field) */
       if (ctype == 0) {
 	      ctype = arc_mach_a4 ? COND : COND_AC;
       }
@@ -4946,7 +4946,7 @@ get_ext_suffix (char *s, char field)
 		      return (&suffix->operand);
 	      }
 	      suffix = suffix->next;
-  } /* end while(suffix) */
+  } /* end while (suffix) */
 
   return NULL;
 }

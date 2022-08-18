@@ -2822,7 +2822,7 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 	}
 }
 
-static void ds_print_lines_right(RDisasmState *ds){
+static void ds_print_lines_right(RDisasmState *ds) {
 	if (ds->linesright && ds->show_lines_bb && ds->line) {
 		ds_print_ref_lines (ds->line, ds->line_col, ds);
 	}
@@ -3082,7 +3082,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 	case 8: type = isSigned? ".int64": ".qword"; break;
 	default: return false;
 	}
-	ut8 buf[sizeof(ut64)] = {0};
+	ut8 buf[sizeof (ut64)] = {0};
 	memcpy (buf, obuf, R_MIN (sizeof (ut64), size));
 	// adjust alignment
 	const bool be = core->rasm->config->big_endian;
@@ -3357,7 +3357,7 @@ static st64 revert_cdiv_magic(st64 magic) {
 		E = 1LL << (32 + s);
 		candidate = (E + magic - 1) / magic;
 		if (candidate > 0) {
-			if ( ((N * magic) >> (32 + s)) == (N / candidate) ) {
+			if (((N * magic) >> (32 + s)) == (N / candidate) ) {
 				return candidate;
 			}
 		}

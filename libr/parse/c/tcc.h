@@ -420,7 +420,7 @@ anon_sym: anonymous symbol index
 	Sym *sym_free_first;
 	char *dir_name;
 
-#define SYM_POOL_NB (8192 / sizeof(Sym))
+#define SYM_POOL_NB (8192 / sizeof (Sym))
 	CType char_pointer_type, func_old_type;
 	CType int8_type, int16_type, int32_type, int64_type, size_type;
 	SValue vstack[1+/*to make bcheck happy*/ VSTACK_SIZE];
@@ -576,7 +576,7 @@ static const bool tcc_ext = true;
 #endif
 
 #ifndef countof
-#define countof(tab) (sizeof(tab) / sizeof((tab)[0]))
+#define countof(tab) (sizeof (tab) / sizeof ((tab)[0]))
 #endif
 
 #define TOK_EOF       (-1)  /* end of file */

@@ -849,7 +849,7 @@ static unsigned int regsize32(cs_insn *insn, int n) {
 
 static int regsize64(cs_insn *insn, int n) {
 	unsigned int reg = insn->detail->arm64.operands[n].reg;
-	if ( (reg >= ARM64_REG_S0 && reg <= ARM64_REG_S31) ||
+	if ((reg >= ARM64_REG_S0 && reg <= ARM64_REG_S31) ||
 		(reg >= ARM64_REG_W0 && reg <= ARM64_REG_W30) ||
 		reg == ARM64_REG_WZR) {
 		return 4;
@@ -860,7 +860,7 @@ static int regsize64(cs_insn *insn, int n) {
 	if (reg >= ARM64_REG_H0 && reg <= ARM64_REG_H31) {
 		return 2;
 	}
-	if ( (reg >= ARM64_REG_Q0 && reg <= ARM64_REG_Q31) ||
+	if ((reg >= ARM64_REG_Q0 && reg <= ARM64_REG_Q31) ||
 		(reg >= ARM64_REG_V0 && reg <= ARM64_REG_V31) ) {
 		return 16;
 	}
@@ -3862,7 +3862,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 				if (ISIMM(1)) {
 					//0x0000bf4e      95b0           sub sp, 0x54
 					op->stackptr = IMM(1);
-				} else if ( ISIMM(2) && ISREG(1) && REGID(1) == ARM_REG_SP) {
+				} else if (ISIMM(2) && ISREG(1) && REGID(1) == ARM_REG_SP) {
 					// 0x00008254    10d04de2     sub sp, sp, 0x10
 					op->stackptr = IMM(2);
 				}

@@ -8,7 +8,7 @@
 #include <string.h>
 #include "gb_op_table.h"
 
-static int gbOpLength(int gboptype){
+static int gbOpLength(int gboptype) {
 	switch (gboptype) {
 	case GB_8BIT:
 		return 1;
@@ -200,7 +200,7 @@ static void gb_hardware_register_name(char *reg, ut8 offset) {
 	}
 }
 
-static void gbDisass(RAnalOp *op, const ut8 *buf){
+static void gbDisass(RAnalOp *op, const ut8 *buf) {
 	char reg[32];
 	memset (reg, '\0', sizeof (reg));
 	switch (gb_op[buf[0]].type) {

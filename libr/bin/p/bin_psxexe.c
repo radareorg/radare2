@@ -23,7 +23,7 @@ static RBinInfo* info(RBinFile* bf) {
 	RBinInfo* ret = NULL;
 	psxexe_header psxheader = {{0}};
 
-	if (r_buf_read_at (bf->buf, 0, (ut8*)&psxheader, sizeof(psxexe_header)) < sizeof(psxexe_header)) {
+	if (r_buf_read_at (bf->buf, 0, (ut8*)&psxheader, sizeof (psxexe_header)) < sizeof (psxexe_header)) {
 		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}

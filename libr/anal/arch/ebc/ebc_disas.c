@@ -142,7 +142,7 @@ static int decode_jmp(const ut8 *bytes, ebc_command_t *cmd) {
 	snprintf(cmd->instr, EBC_INSTR_MAXLEN, "%s%d%s", instr_names[EBC_JMP], bits,
 			TEST_BIT(bytes[1], 7) ? TEST_BIT(bytes[1], 6) ? "cs" : "cc" : "");
 
-	if (TEST_BIT(bytes[0], 6)){
+	if (TEST_BIT(bytes[0], 6)) {
 		immed = *(ut64*)(bytes + 2);
 		bits = 64;
 		ret = 10;

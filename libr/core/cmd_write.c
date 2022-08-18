@@ -489,8 +489,8 @@ static void cmd_write_value_double(RCore *core, const char *input) {
 static void cmd_write_value(RCore *core, const char *input) {
 	int type = 0;
 	ut64 off = 0LL;
-	ut8 buf[sizeof(ut64)];
-	bool be = r_config_get_i (core->config, "cfg.bigendian");
+	ut8 buf[sizeof (ut64)];
+	bool be = r_config_get_b (core->config, "cfg.bigendian");
 
 	r_core_return_value (core, R_CMD_RC_SUCCESS);
 
@@ -949,7 +949,7 @@ static int cmd_w6(void *data, const char *input) {
 			} else {
 				buf = calloc (str_len + 1, 4);
 				len = r_base64_encode ((char *)buf, bin_buf, bin_len);
-				if(len == 0) {
+				if (len == 0) {
 					free (buf);
 					fail = 1;
 				}
@@ -1025,7 +1025,7 @@ static int cmd_we(void *data, const char *input) {
 			while (*input && *input != ' ') input++;
 			input++;
 			len = *input ? r_num_math (core->num, input) : 0;
-			if (len > 0){
+			if (len > 0) {
 				ut64 cur_off = core->offset;
 				cmd_suc = r_core_extend_at (core, addr, len);
 				if (cmd_suc) {
@@ -1079,7 +1079,7 @@ static int cmd_we(void *data, const char *input) {
 
 			p = strtok (NULL, " ");
 			b_size = p && *p ? r_num_math (core->num, p) : 0;
-			if (dist != 0){
+			if (dist != 0) {
 				r_core_shift_block (core, addr, b_size, dist);
 				r_core_seek (core, addr, true);
 				cmd_suc = true;

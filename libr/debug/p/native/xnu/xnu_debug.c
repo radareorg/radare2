@@ -958,7 +958,7 @@ bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 
 	for (i = 0; i < coredump_nflavors; i++) {
 		tstate_size += sizeof (coredump_thread_state_flavor_t) +
-			(flavors[i].count * sizeof(int));
+			(flavors[i].count * sizeof (int));
 	}
 
 	command_size = COMMAND_SIZE (segment_count,segment_command_sz,
@@ -1013,7 +1013,7 @@ RDebugPid *xnu_get_pid (int pid) {
 	/* Get the maximum process arguments size. */
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_ARGMAX;
-	size = sizeof(argmax);
+	size = sizeof (argmax);
 	if (sysctl (mib, 2, &argmax, &size, NULL, 0) == -1) {
 		eprintf ("sysctl() error on getting argmax\n");
 		return NULL;

@@ -238,7 +238,7 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 // int pages_amount, int index, int size,
 // int page_size, f_load pLoad)
 // {
-// pdb_stream->pdb_stream = (R_PDB_STREAM *) malloc(sizeof(R_PDB_STREAM));
+// pdb_stream->pdb_stream = (R_PDB_STREAM *) malloc(sizeof (R_PDB_STREAM));
 // init_r_pdb_stream(pdb_stream->pdb_stream, fp, pages, pages_amount, index, size, page_size);
 // pdb_stream->load = pLoad;
 // if (pLoad) {
@@ -299,15 +299,15 @@ static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream) {
 		ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
 	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_section_hdr, sizeof (SPEStream),
 		ePDB_STREAM_SECT_HDR, free_pe_stream, parse_pe_stream);
-	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_section_hdr_orig, sizeof(SPEStream),
+	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_section_hdr_orig, sizeof (SPEStream),
 		ePDB_STREAM_SECT__HDR_ORIG, free_pe_stream, parse_pe_stream);
-	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_omap_to_src, sizeof(SOmapStream),
+	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_omap_to_src, sizeof (SOmapStream),
 		ePDB_STREAM_OMAP_TO_SRC, free_omap_stream, parse_omap_stream);
-	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_omap_from_src, sizeof(SOmapStream),
+	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_omap_from_src, sizeof (SOmapStream),
 		ePDB_STREAM_OMAP_FROM_SRC, free_omap_stream, parse_omap_stream);
-	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_fpo, sizeof(SFPOStream),
+	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_fpo, sizeof (SFPOStream),
 		ePDB_STREAM_FPO, free_fpo_stream, parse_fpo_stream);
-	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_new_fpo, sizeof(SFPONewStream),
+	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_new_fpo, sizeof (SFPONewStream),
 		ePDB_STREAM_FPO_NEW, free_fpo_stream, parse_fpo_new_stream);
 
 	// unparsed, but know their names
@@ -494,7 +494,7 @@ static bool pdb7_parse(RPdb *pdb) {
 		r_buf_read (pdb->buf, p_tmp, page_size);
 		p_tmp = (char *) p_tmp + page_size;
 	}
-	root_page_list = (int *) calloc (sizeof(int), num_root_pages);
+	root_page_list = (int *) calloc (sizeof (int), num_root_pages);
 	if (!root_page_list) {
 		R_LOG_ERROR ("memory allocation of root page");
 		goto error;

@@ -732,7 +732,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 	} else if (IS_DT (code)) {
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,1,r%d,-=,$z,sr,|,sr,:=", GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_UNK;
-	} else if (IS_MACW(code)){
+	} else if (IS_MACW(code)) {
 		r_strbuf_setf (&op->esil,
 			"0x2,sr,&,!,?{," //if S==0
 				S16_EXT("r%d,[2]")"," //@Rn sign extended

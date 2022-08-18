@@ -189,7 +189,7 @@ static int i2c_open(struct gport *port) {
 static int sp_close(struct gport *port) {
 #if __WINDOWS__
 	/* Returns non-zero upon success, 0 upon failure. */
-	if (CloseHandle (port->hdl) == 0){
+	if (CloseHandle (port->hdl) == 0) {
 		return -1;
 	}
 	port->hdl = INVALID_HANDLE_VALUE;

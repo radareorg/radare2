@@ -146,7 +146,7 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 		}
 		return 0;
 	}
-	if (!strcmp (t, "type")){
+	if (!strcmp (t, "type")) {
 		char *query = r_str_newf ("type.%s.size", tmptype);
 		ut64 r = sdb_num_get (TDB, query, 0); // returns size in bits
 		free (query);
@@ -558,7 +558,7 @@ R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
 	return fcn && !strcmp (fcn, "func");
 }
 
-R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name){
+R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
 	r_strf_var (query, 64, "func.%s.ret", func_name);
 	return sdb_const_get (TDB, query, 0);
 }

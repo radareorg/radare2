@@ -640,7 +640,7 @@ static ut32 tst(ArmOp *op) {
              check_cond (op->operands[1].immediate <= 0xfffffffffffffff);
              if (check3) {
                     k = 0x1f0040f2;
-             } else if (check4){
+             } else if (check4) {
                     k = 0x1f000072;
              }
              data = k | (op->operands[0].reg & 0x7) << 29;
@@ -1226,7 +1226,7 @@ static ut32 msr(ArmOp *op, int w) {
 			}
 		}
 		r = op->operands[1].reg;
-		if ( op->operands[1].sp_val == 0xfffe ) {
+		if (op->operands[1].sp_val == 0xfffe ) {
 			is_immediate = 1;
 			r = op->operands[1].immediate;
 		}
@@ -1536,7 +1536,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 		if (strcmp (op->mnemonic, "msr") == 0 && operand == 1) {
 
 			//operand 1 must be a immediate
-			if ( token[0] == '#' || (token[0] >= '0' && token[0] <= '9')) {
+			if (token[0] == '#' || (token[0] >= '0' && token[0] <= '9')) {
 				//immediate operand found.
 				op->operands[operand].sp_val = 0xfffe; //not regiter, but a immediate
 				op->operands[operand].immediate = r_num_math (NULL, token[0]=='#'?token+1:token);

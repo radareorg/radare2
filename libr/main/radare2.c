@@ -1577,7 +1577,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 				if (debug) {
 					if (no_question_debug) {
-						if (r_config_get_i (r->config, "dbg.exitkills") && y_kill_debug){
+						if (r_config_get_i (r->config, "dbg.exitkills") && y_kill_debug) {
 							r_debug_kill (r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 						}
 					} else {

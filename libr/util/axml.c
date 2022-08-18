@@ -1,9 +1,6 @@
-/* radare2 - LGPL - Copyright 2021 - keegan */
+/* radare2 - LGPL - Copyright 2021-2022 - keegan */
 
-#include <string.h>
-#include <r_types.h>
-#include <r_core.h>
-
+#include <r_util.h>
 #include "axml_resources.h"
 
 enum {
@@ -119,7 +116,7 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 		}
 		(void)n;
 
-		if (start > data + data_size - sizeof(ut16)) {
+		if (start > data + data_size - sizeof (ut16)) {
 			return NULL;
 		}
 
@@ -213,7 +210,7 @@ static char *resource_value(string_pool_t *pool, const ut8 *data, ut64 data_size
 	case RESOURCE_BOOL:
 		return r_str_newf (value->data.d ? "true" : "false");
 	default:
-		eprintf ("Resource type is not recognized: %#x\n", value->type);
+		R_LOG_WARN ("Resource type is not recognized: %#x", value->type);
 		break;
 	}
 	return r_str_new ("null");
@@ -240,9 +237,9 @@ static bool dump_element(RStrBuf *sb, string_pool_t *pool, namespace_t *namespac
 			free (value);
 		}
 
-		if (count * sizeof(attribute_t) > element_size) {
+		if (count * sizeof (attribute_t) > element_size) {
 			r_strbuf_appendf (sb, " />");
-			eprintf ("Invalid element count\n");
+			R_LOG_ERROR ("Invalid element count");
 			free (name);
 			return false;
 		}
@@ -321,7 +318,7 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 	ut64 offset = 0;
 
 	chunk_header_t header = {0};
-	if (r_buf_fread_at (buffer, offset, (ut8 *)&header, "ssi", 1) != sizeof(header)) {
+	if (r_buf_fread_at (buffer, offset, (ut8 *)&header, "ssi", 1) != sizeof (header)) {
 		goto bad;
 	}
 
@@ -334,12 +331,12 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 		goto bad;
 	}
 
-	offset += sizeof(header);
+	offset += sizeof (header);
 
 	sb = r_strbuf_new ("");
 
 	while (offset < binary_size) {
-		if (r_buf_fread_at (buffer, offset, (ut8 *)&header, "ssi", 1) != sizeof(header)) {
+		if (r_buf_fread_at (buffer, offset, (ut8 *)&header, "ssi", 1) != sizeof (header)) {
 			goto bad;
 		}
 
@@ -347,7 +344,7 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 
 		// After reading the original chunk header, read the type-specific
 		// header
-		offset += sizeof(header);
+		offset += sizeof (header);
 
 		switch (type) {
 		case TYPE_STRING_POOL: {
@@ -403,7 +400,7 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 			}
 
 			end_element_t end;
-			if (r_buf_read_at (buffer, offset, (void *)&end, sizeof(end)) != sizeof(end)) {
+			if (r_buf_read_at (buffer, offset, (void *)&end, sizeof (end)) != sizeof (end)) {
 				goto bad;
 			}
 
@@ -417,8 +414,8 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 		case TYPE_START_NAMESPACE: {
 			// If there is already a start namespace, override it
 			free (namespace);
-			namespace = malloc (sizeof(*namespace));
-			if (r_buf_fread_at (buffer, offset, (ut8 *)namespace, "iiii", 1) != sizeof(*namespace)) {
+			namespace = malloc (sizeof (*namespace));
+			if (r_buf_fread_at (buffer, offset, (ut8 *)namespace, "iiii", 1) != sizeof (*namespace)) {
 				goto bad;
 			}
 		} break;
@@ -430,13 +427,12 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 			if (resource_map_length > data_size - offset) {
 				goto bad;
 			}
-			resource_map_length /= sizeof(ut32);
+			resource_map_length /= sizeof (ut32);
 			break;
 		default:
-			eprintf ("Type is not recognized: %#x\n", type);
+			R_LOG_WARN ("Type is not recognized: %#x", type);
 		}
-
-		offset += header.size - sizeof(header);
+		offset += header.size - sizeof (header);
 	}
 
 	r_buf_free (buffer);
@@ -444,10 +440,9 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 	free (namespace);
 	return r_strbuf_drain (sb);
 bad:
-	eprintf ("Invalid Android Binary XML\n");
+	R_LOG_ERROR ("Invalid Android Binary XML");
 error:
-	if (buffer)
-		r_buf_free (buffer);
+	r_buf_free (buffer);
 	free (pool);
 	r_strbuf_free (sb);
 	return NULL;

@@ -2042,7 +2042,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 		int regidx = i;
 		if (core->rasm->config->bits == 32 &&
 			((core->rasm->cur && !strcmp (core->rasm->cur->arch, "x86")) ||
-			(core->anal->cur && !strcmp (core->anal->cur->arch , "x86")))){
+			(core->anal->cur && !strcmp (core->anal->cur->arch , "x86")))) {
 			regidx++;
 		}
 		ut64 arg = r_debug_arg_get (core->dbg, cc, regidx);
@@ -3223,9 +3223,9 @@ static void r_core_anal_nofunclist(RCore *core, const char *input) {
 	chunk_size = 0;
 	chunk_offset = 0;
 	for (i = 0; i < code_size; i++) {
-		if (bitmap[i]){
+		if (bitmap[i]) {
 			// We only print a region is its size is bigger than 15 bytes
-			if (chunk_size >= minlen){
+			if (chunk_size >= minlen) {
 				fcn = r_anal_get_fcn_in (core->anal, base_addr+chunk_offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 				if (fcn) {
 					r_cons_printf ("0x%08" PFMT64x "  %6" PFMT64u "   %s\n",
@@ -6209,7 +6209,7 @@ static char *oldregread = NULL;
 static RList *mymemxsr = NULL;
 static RList *mymemxsw = NULL;
 
-#define R_NEW_DUP(x) memcpy((void*)malloc(sizeof(x)), &(x), sizeof(x))
+#define R_NEW_DUP(x) memcpy((void*)malloc(sizeof (x)), &(x), sizeof (x))
 typedef struct {
 	ut64 addr;
 	int size;
@@ -6490,15 +6490,15 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			pj_k (pj, "V");
 			showregs_json (stats.regvalues, pj);
 		}
-		if (!r_list_empty (regnow)){
+		if (!r_list_empty (regnow)) {
 			pj_k (pj, "N");
 			showregs_json (regnow, pj);
 		}
-		if (!r_list_empty (mymemxsr)){
+		if (!r_list_empty (mymemxsr)) {
 			pj_k (pj, "@R");
 			showmem_json (mymemxsr, pj);
 		}
-		if (!r_list_empty (mymemxsw)){
+		if (!r_list_empty (mymemxsw)) {
 			pj_k (pj, "@W");
 			showmem_json (mymemxsw, pj);
 		}
@@ -6529,15 +6529,15 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			r_cons_printf (" V: ");
 			showregs (stats.regvalues);
 		}
-		if (!r_list_empty (regnow)){
+		if (!r_list_empty (regnow)) {
 			r_cons_printf (" N: ");
 			showregs (regnow);
 		}
-		if (!r_list_empty (mymemxsr)){
+		if (!r_list_empty (mymemxsr)) {
 			r_cons_printf ("@R:");
 			showmem (mymemxsr);
 		}
-		if (!r_list_empty (mymemxsw)){
+		if (!r_list_empty (mymemxsw)) {
 			r_cons_printf ("@W:");
 			showmem (mymemxsw);
 		}
@@ -7539,7 +7539,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		}
 		break;
 	case 'A': // "aeA"
-		switch (input[1]){
+		switch (input[1]) {
 		case '?':
 			r_core_cmd_help (core, help_msg_aea);
 			break;
@@ -9003,7 +9003,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						} else {
 							r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
 							r_asm_set_pc (core->rasm, ref->addr);
-							r_asm_disassemble (core->rasm, &asmop, buf, sizeof(buf));
+							r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
 							RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
 							r_parse_filter (core->parser, ref->addr, core->flags, hint, r_asm_op_get_asm (&asmop),
 									str, sizeof (str), be);

@@ -1341,7 +1341,7 @@ static int bin_source(RCore *r, PJ *pj, int mode) {
 		RList *list = r_str_split_list (v, "|", 0);
 		srcline = r_list_get_bottom (list);
 		if (srcline) {
-			if (!strstr (srcline, "0x")){
+			if (!strstr (srcline, "0x")) {
 				r_list_append (final_list, srcline);
 			}
 		}
@@ -2561,7 +2561,7 @@ next:
 			break;
 		}
 	}
-	if (IS_MODE_NORMAL (mode)){
+	if (IS_MODE_NORMAL (mode)) {
 		if (r->table_query) {
 			r_table_query (table, r->table_query);
 		}

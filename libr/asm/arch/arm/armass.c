@@ -498,10 +498,10 @@ static st32 firstsigdigit(ut32 num) {
 	ut32 backwardmask = 0x1;
 	ut32 i;
 	for (i = 0; i < 32; i++ ) {
-		if ( (forwardmask & num) && (f == -1)) {
+		if ((forwardmask & num) && (f == -1)) {
 			f = i;
 		}
-		if ( (backwardmask & num) && (b == -1)) {
+		if ((backwardmask & num) && (b == -1)) {
 			b = 32-i;
 		}
 		forwardmask >>= 1;
@@ -567,15 +567,15 @@ static ut32 getthimmed12(const char *str) {
 	ut64 result = 0;
 	if (num <= 0xff) {
 		return num << 8;
-	} else if ( ((num & 0xff00ff00) == 0) && ((num & 0x00ff0000) == ((num & 0x000000ff) << 16)) ) {
+	} else if (((num & 0xff00ff00) == 0) && ((num & 0x00ff0000) == ((num & 0x000000ff) << 16)) ) {
 		result |= (num & 0x000000ff) << 8;
 		result |= 0x00000010;
 		return result;
-	} else if ( ((num & 0x00ff00ff) == 0) && ((num & 0xff000000) == ((num & 0x0000ff00) << 16)) ) {
+	} else if (((num & 0x00ff00ff) == 0) && ((num & 0xff000000) == ((num & 0x0000ff00) << 16)) ) {
 		result |= num & 0x0000ff00;
 		result |= 0x00000020;
 		return result;
-	} else if ( ((num & 0xff000000) == ((num & 0x00ff0000) << 8)) && ((num & 0xff000000) == ((num & 0x0000ff00) << 16)) && ((num &0xff000000) == ((num & 0x000000ff) << 24)) ) {
+	} else if (((num & 0xff000000) == ((num & 0x00ff0000) << 8)) && ((num & 0xff000000) == ((num & 0x0000ff00) << 16)) && ((num &0xff000000) == ((num & 0x000000ff) << 24)) ) {
 		result |= num & 0x0000ff00;
 		result |= 0x00000030;
 		return result;
@@ -1116,7 +1116,7 @@ static ut32 getshift(const char *str) {
 			return 0;
 		}
 		*space = 0;
-		strncpy (arg, ++space, sizeof(arg) - 1);
+		strncpy (arg, ++space, sizeof (arg) - 1);
 
 		for (i = 0; shifts[i]; i++) {
 			if (!r_str_casecmp (type, shifts[i])) {
@@ -1210,7 +1210,7 @@ static st32 thumb_getoffset(char *label, ut64 cur) {
 static st8 std_16bit_2reg(ArmOpcode *ao, ut64 m) {
 	ut8 rd = getreg (ao->a[0]);
 	ut8 rn = getreg (ao->a[1]);
-	if ( (rd < 8) && (rn < 8) && !(m & DOTW_BIT)) {
+	if ((rd < 8) && (rn < 8) && !(m & DOTW_BIT)) {
 		ao->o |= rd << 8;
 		ao->o |= rn << 11;
 		return 2;
@@ -1221,7 +1221,7 @@ static st8 std_16bit_2reg(ArmOpcode *ao, ut64 m) {
 static st8 mem_16bit_2reg(ArmOpcode *ao, ut64 m) {
 	ut8 rd = getreg (ao->a[0]);
 	ut8 rn = getregmemstart (ao->a[1]);
-	if ( (rd < 8) && (rn < 8) && !(m & DOTW_BIT)) {
+	if ((rd < 8) && (rn < 8) && !(m & DOTW_BIT)) {
 		ao->o |= rd << 8;
 		ao->o |= rn << 11;
 		return 2;
@@ -1513,7 +1513,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_CONST: {
 			ut8 reg = getreg (ao->a[0]);
 			st32 label = getnum (ao->a[1]);
-			if ( !(m & DOTW_BIT) && (reg < 8) && (label < 1024) && (label >= 0) && (label % 4 == 0)) {
+			if (!(m & DOTW_BIT) && (reg < 8) && (label < 1024) && (label >= 0) && (label % 4 == 0)) {
 				ao->o = 0x00a0;
 				ao->o |= reg;
 				ao->o |= (label / 4) << 8;

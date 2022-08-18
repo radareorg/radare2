@@ -11,7 +11,7 @@ static const char * const types[R_REG_TYPE_LAST + 1] = {
 
 R_API bool r_reg_hasbits_check(RReg *reg, int size) {
 	return reg->hasbits & size;
-#define HB(x) if(size&x && reg->hasbits &x) return true
+#define HB(x) if (size&x && reg->hasbits &x) return true
 	HB(1);
 	HB(2);
 	HB(4);
@@ -31,7 +31,7 @@ R_API void r_reg_hasbits_clear(RReg *reg) {
 
 R_API bool r_reg_hasbits_use(RReg *reg, int size) {
 	bool done = false;
-#define HB(x) if(size&x) { reg->hasbits |=x; done = true; }
+#define HB(x) if (size&(x)) { reg->hasbits |= (x); done = true; }
 	HB(1);
 	HB(2);
 	HB(4);

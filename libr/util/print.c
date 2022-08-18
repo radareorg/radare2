@@ -1932,7 +1932,7 @@ R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, size_t buflen, ut32 tiles, co
 		return;
 	}
 	if (!colors) {
-		colors = (const char *[]){
+		colors = (const char *[]) {
 			Color_BGWHITE,
 			Color_BGRED,
 			Color_BGBLUE,

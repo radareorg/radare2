@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 	int option_index = 0;
 	char *pdb_file = 0;
 
-	while(1) {
+	while (1) {
 		int c = getopt_long (argc, argv, ":f:tg:h", long_options, &option_index);
 		if (c == -1)
 			break;

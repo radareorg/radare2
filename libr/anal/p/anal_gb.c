@@ -1146,7 +1146,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_POP;
 			break;
 		case 0xc3:
-			if( gb_op_calljump (anal, op, data, addr)) {
+			if (gb_op_calljump (anal, op, data, addr)) {
 				op->type = R_ANAL_OP_TYPE_JMP;
 				gb_anal_esil_jmp (op);
 			} else {
@@ -1181,7 +1181,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xca:
 		case 0xd2:
 		case 0xda:
-			if( gb_op_calljump (anal, op, data, addr)) {
+			if (gb_op_calljump (anal, op, data, addr)) {
 				op->type = R_ANAL_OP_TYPE_CJMP;
 			} else {
 				op->type = R_ANAL_OP_TYPE_UCJMP;

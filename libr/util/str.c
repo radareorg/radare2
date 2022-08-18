@@ -2901,7 +2901,7 @@ R_API char *r_str_uri_encode(const char *s) {
 		return NULL;
 	}
 	for (; *s; s++) {
-		if((*s>='0' && *s<='9')
+		if ((*s>='0' && *s<='9')
 		|| (*s>='a' && *s<='z')
 		|| (*s>='A' && *s<='Z')) {
 			*d++ = *s;

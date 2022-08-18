@@ -347,7 +347,7 @@ loop_end:
 					}
 					prevd = true;
 				} else if (ch == '.') {
-					if (prevd == true && segmentsum < 256){
+					if (prevd == true && segmentsum < 256) {
 						segment++;
 						segmentsum = 0;
 					} else {

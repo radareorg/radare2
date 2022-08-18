@@ -936,7 +936,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				if (cptr && ptr && cptr < ptr) {
 					likely_comment = false;
 					for (cptr += 1; cptr < ptr ; cptr += 1) {
-						if ( ! isspace ((unsigned char) *cptr)) {
+						if (! isspace ((unsigned char) *cptr)) {
 							likely_comment = true;
 							break;
 						}
