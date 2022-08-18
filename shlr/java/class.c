@@ -8460,9 +8460,9 @@ R_API ConstJavaValue *U(r_bin_java_resolve_to_const_value)(RBinJavaObj * BIN_OBJ
 		if (desc_str != empty) {
 			free (desc_str);
 		}
-	} else if (!strcmp (cp_name, "MethodRef") ||
-	!strcmp (cp_name, "FieldRef") ||
-	!strcmp (cp_name, "InterfaceMethodRef") == 0) {
+	} else if (!strcmp (cp_name, "MethodRef")
+	|| !strcmp (cp_name, "FieldRef")
+	|| !strcmp (cp_name, "InterfaceMethodRef")) {
 		/*
 		*  The MethodRef, FieldRef, and InterfaceMethodRef structures
 		*/
