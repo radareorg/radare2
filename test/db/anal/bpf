@@ -3,6 +3,7 @@ FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=bpf
 e asm.bits=32
+e asm.parser=x86.pseudo
 wx 0400000001000000
 ao@0
 EOF
