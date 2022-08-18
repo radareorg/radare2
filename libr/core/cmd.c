@@ -300,11 +300,12 @@ static const char *help_msg_uc[] = {
 
 static const char *help_msg_y[] = {
 	"Usage:", "y[ptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
-	"y!", "", "open cfg.editor to edit the clipboard",
 	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16", "copy 16 bytes into clipboard",
 	"y", "", "show yank buffer information (origin len bytes)",
+	"y-", "", "empty / reset clipboard",
+	"y!", "", "open cfg.editor to edit the clipboard",
 	"y*", "", "print in r2 commands what's been yanked",
 	"yf", " 64 0x200", "copy file 64 bytes from 0x200 from file",
 	"yfa", " file copy", "copy all bytes from file (opens w/ io)",
