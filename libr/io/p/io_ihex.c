@@ -159,7 +159,7 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 	last_addr = i+start_addr;
 	cks = -last_addr;
 	cks -= last_addr>>8;
-	for (j=0;i<size; i++, j++) {
+	for (j = 0; i < size; i++, j++) {
 		cks -= b[j];
 		sprintf(linebuf+(2*j), "%02X", b[j]);
 	}

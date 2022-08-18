@@ -248,7 +248,7 @@ static bool rtti_msvc_read_type_descriptor(RVTableContext *context, ut64 addr, r
 	while (1) {
 		context->anal->iob.read_at (context->anal->iob.io, nameAddr + bufOffset, buf, sizeof (buf));
 		int i;
-		for (i=0; i<sizeof (buf); i++) {
+		for (i = 0; i < sizeof (buf); i++) {
 			if (buf[i] == '\0') {
 				endFound = true;
 				break;

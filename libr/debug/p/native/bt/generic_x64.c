@@ -36,12 +36,13 @@ static RList *backtrace_x86_64(RDebug *dbg, ut64 at) {
 		_rbp = ptr;
 	}
 
-	for (i=1; i<dbg->btdepth; i++) {
+	for (i = 1; i < dbg->btdepth; i++) {
 		// TODO: make those two reads in a shot
 		bio->read_at (bio->io, _rbp, (ut8*)&ebp2, 8);
-		if (ebp2 == UT64_MAX)
+		if (ebp2 == UT64_MAX) {
 			break;
-		bio->read_at (bio->io, _rbp+8, (ut8*)&ptr, 8);
+		}
+		bio->read_at (bio->io, _rbp + 8, (ut8*)&ptr, 8);
 		if (!ptr || !_rbp)
 			break;
 		frame = R_NEW0 (RDebugFrame);
@@ -87,12 +88,12 @@ static RList *backtrace_x86_64_anal(RDebug *dbg, ut64 at) {
 		r_list_append (list, frame);
 	}
 
-	for (i=1; i<dbg->btdepth; i++) {
+	for (i = 1; i < dbg->btdepth; i++) {
 		// TODO: make those two reads in a shot
 		bio->read_at (bio->io, _rbp, (ut8*)&ebp2, 8);
 		if (ebp2 == UT64_MAX)
 			break;
-		bio->read_at (bio->io, _rbp+8, (ut8*)&ptr, 8);
+		bio->read_at (bio->io, _rbp + 8, (ut8*)&ptr, 8);
 		if (!ptr || !_rbp)
 			break;
 		//fcn = r_anal_get_fcn_in (dbg->anal, ptr, R_ANAL_FCN_TYPE_NULL);

@@ -2574,15 +2574,15 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			} else {
 				RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
 				if (rf) {
-					if (*name=='=') {
-						for (i=0; i<R_REG_COND_LAST; i++) {
+					if (*name == '=') {
+						for (i = 0; i < R_REG_COND_LAST; i++) {
 							r_cons_printf ("%s:%d ",
 									r_reg_cond_to_string (i),
 									r_reg_cond_bits (core->dbg->reg, i, rf));
 						}
 						r_cons_newline ();
 					} else {
-						for (i=0; i<R_REG_COND_LAST; i++) {
+						for (i = 0; i < R_REG_COND_LAST; i++) {
 							r_cons_printf ("%d %s\n",
 									r_reg_cond_bits (core->dbg->reg, i, rf),
 									r_reg_cond_to_string (i));
@@ -2605,7 +2605,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 			break;
 		case ' ': {
-				  char *s = strdup (str+2);
+				  char *s = strdup (str + 2);
 				  char sl, n, perm;
 				  int len;
 				  ut64 off;

@@ -188,7 +188,7 @@ static bool false_positive(const char *str) {
 		bo[(ut8)str[i]] = 1;
 		ln++;
 	}
-	for (i = 0; i<0x100; i++) {
+	for (i = 0; i < 0x100; i++) {
 		if (bo[i]) {
 			di++;
 		}

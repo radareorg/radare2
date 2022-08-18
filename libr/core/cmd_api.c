@@ -1070,7 +1070,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 	char *pcmd, cmd[R_CMD_MAXLEN];
 	const char *arg = args;
 
-	for (*cmd=i=j=0; j<R_CMD_MAXLEN && ptr[j]; i++,j++) {
+	for (*cmd = i = j = 0; j < R_CMD_MAXLEN && ptr[j]; i++,j++) {
 		if (ptr[j]=='$') {
 			if (ptr[j+1]>='0' && ptr[j+1]<='9') {
 				int wordlen;
@@ -1160,7 +1160,7 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 				}
 				//		eprintf("===> GOTO %s\n", label);
 				/* goto label ptr+3 */
-				for (i=0; i<*labels_n; i++) {
+				for (i = 0; i < *labels_n; i++) {
 					if (!strcmp (label, labels[i].name)) {
 						return labels[i].ptr;
 					}

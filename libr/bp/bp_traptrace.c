@@ -57,7 +57,7 @@ R_API ut64 r_bp_traptrace_next(RBreakpoint *bp, ut64 addr) {
 	r_list_foreach (bp->traces, iter, trace) {
 		if (addr>=trace->addr && addr<=trace->addr_end) {
 			delta = (int)(addr-trace->addr);
-			for (i=delta; i<trace->length; i++) {
+			for (i = delta; i < trace->length; i++) {
 				if (R_BIT_CHK (trace->bits, i)) {
 					return addr + i;
 				}

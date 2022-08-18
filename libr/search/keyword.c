@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake */
+/* radare - LGPL - Copyright 2010-2022 - pancake */
 
 #include <r_search.h>
 
 static int ignoreMask(const ut8 *bm, int len) {
 	int i;
-	for (i=0; i<len; i++) {
+	for (i = 0; i < len; i++) {
 		if (bm[i] != 0xff) {
 			return 0;
 		}
@@ -55,7 +55,7 @@ R_API void r_search_keyword_free(RSearchKeyword *kw) {
 }
 
 R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bmstr, const char *data, int ignore_case) {
-	RSearchKeyword *kw;
+	r_return_val_if_fail (kwbuf, NULL);
 	ut8 *bmbuf = NULL;
 	int bmlen = 0;
 
@@ -64,12 +64,12 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bm
 		if (!bmbuf) {
 			return NULL;
 		}
-		bmlen = r_hex_str2bin (bmstr, bmbuf);
+		int bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
 			R_FREE (bmbuf);
 		}
 	}
-	kw = r_search_keyword_new ((ut8 *)kwbuf, strlen (kwbuf), bmbuf, bmlen, data);
+	RSearchKeyword *kw = r_search_keyword_new ((ut8 *)kwbuf, strlen (kwbuf), bmbuf, bmlen, data);
 	if (kw) {
 		kw->icase = ignore_case;
 		kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
@@ -97,9 +97,9 @@ R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *b
 		}
 	}
 
-	len = strlen(kwbuf);
-	str = malloc((len+1)*2);
-	for (p2=kwbuf, p=str; *p2; ) {
+	len = strlen (kwbuf);
+	str = malloc ((len + 1) * 2);
+	for (p2 = kwbuf, p = str; *p2; ) {
 		RRune ch;
 		int num_utf8_bytes = r_utf8_decode ((const ut8 *)p2, kwbuf + len - p2, &ch);
 		if (num_utf8_bytes < 1) {
@@ -120,7 +120,7 @@ R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *b
 	}
 
 	kw = r_search_keyword_new ((ut8 *)str, p - str, bmbuf, bmlen, data);
-	free(str);
+	free (str);
 	if (kw) {
 		kw->icase = ignore_case;
 	}
@@ -137,7 +137,7 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 		return NULL;
 	}
 
-	kwbuf = malloc (strlen (kwstr)+1);
+	kwbuf = malloc (strlen (kwstr) + 1);
 	if (!kwbuf) {
 		return NULL;
 	}

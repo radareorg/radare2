@@ -508,7 +508,7 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
 		int i, n = sdb_array_length (TDB, r_strf ("%s.%s", kind, name));
 		char *elements_key = r_str_newf ("%s.%s", kind, name);
-		for (i = 0; i< n; i++) {
+		for (i = 0; i < n; i++) {
 			char *p = sdb_array_get (TDB, elements_key, i, NULL);
 			sdb_unset (TDB, r_strf ("%s.%s", elements_key, p), 0);
 			free (p);

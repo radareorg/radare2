@@ -3620,7 +3620,7 @@ static Sdb *__core_cmd_anal_fcn_stats(RCore *core, const char *input) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		int i;
 		__updateStats (core, db, bb->addr, statsMode);
-		for (i = 0; i< bb->op_pos_size; i++) {
+		for (i = 0; i < bb->op_pos_size; i++) {
 			ut16 op_pos = bb->op_pos[i];
 			__updateStats (core, db, bb->addr + op_pos, statsMode);
 		}

@@ -100,7 +100,7 @@ R_API void r_str_reverse(char *str) {
 R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 	int i, j, idx;
 	if (bitz) {
-		for (i = j = 0; i<len && (!bitz||bitz[i]); i++) {
+		for (i = j = 0; i < len && (!bitz||bitz[i]); i++) {
 			if (i > 0 && (i % 8) == 0) {
 				buf++;
 			}
@@ -196,12 +196,9 @@ R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
 		}
 		if (i + 7 < len) {
 			for (k = 0, j = i + 7; j >= i; j--, k++) {
-				// INVERSE for (k=0,j=i; j<i+8; j++,k++) {
 				if (str[j] == ' ') {
-					//k--;
 					continue;
 				}
-				//		printf ("---> j=%d (%c) (%02x)\n", j, str[j], str[j]);
 				if (str[j] == '1') {
 					ret|=1 << k;
 				} else if (str[j] != '0') {
@@ -209,7 +206,6 @@ R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
 				}
 			}
 		}
-	//	printf ("-======> %02x\n", ret);
 		out[n++] = ret;
 		if (n == outlen) {
 			return n;
@@ -2723,7 +2719,7 @@ R_API const char *r_str_lastbut(const char *s, char ch, const char *but) {
 // Must be merged inside strlen
 R_API size_t r_str_len_utf8char(const char *s, int left) {
 	size_t i = 1;
-	while (s[i] && (!left || i<left)) {
+	while (s[i] && (!left || i < left)) {
 		if ((s[i] & 0xc0) != 0x80) {
 			i++;
 		} else {

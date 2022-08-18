@@ -173,7 +173,7 @@ static R_BORROW RList *lines(RBinFile *bf) {
 	/*
 	   int i;
 	   RBinJavaObj *b = bf->o->bin_obj;
-	   for (i=0; i<b->lines.count; i++) {
+	   for (i = 0; i < b->lines.count; i++) {
 	        RBinDwarfRow *row = R_NEW0(RBinDwarfRow);
 	        r_bin_dwarf_line_new (row, b->lines.addr[i], file, b->lines.line[i]);
 	        r_list_append (list, row);

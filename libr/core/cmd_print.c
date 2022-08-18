@@ -4212,7 +4212,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			int i, words = core->blocksize / 2;
 			int step = r_num_math (core->num, input + 2);
 			ut64 oldword = 0;
-			for (i = 0; i<words; i++) {
+			for (i = 0; i < words; i++) {
 				ut64 word64 = word[i] + ST16_MAX;
 				r_cons_printf ("0x%08"PFMT64x" %8d  ", core->offset + (i *2), word[i]);
 				r_print_progressbar (core->print, word64 * 100 / UT16_MAX, 60);

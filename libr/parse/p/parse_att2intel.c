@@ -1,18 +1,13 @@
-/* radare - LGPL - Copyright 2011 pancake<@nopcode.org> */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+/* radare - LGPL - Copyright 2011-2022 - pancake */
 
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_flag.h>
 #include <r_anal.h>
 #include <r_parse.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
 	int i,j,k;
-	struct {
+	const struct {
 		const char *op;
 		const char *str;
 	} ops[] = {
@@ -58,7 +53,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	/* TODO: this is slow */
 	if (newstr) {
 		newstr[0] = '\0';
-		for (i=0; i<argc; i++) {
+		for (i = 0; i < argc; i++) {
 			strcat (newstr, argv[i]);
 			strcat (newstr, (i == 0 || i== argc - 1)?" ":",");
 		}
@@ -157,7 +152,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		{
 			const char *wa[] = { w0, w1, w2, w3 };
 			int nw = 0;
-			for (i=0; i<4; i++) {
+			for (i = 0; i < 4; i++) {
 				if (wa[i][0] != '\0') {
 					nw++;
 				}
@@ -172,8 +167,6 @@ static int parse(RParse *p, const char *data, char *str) {
 RParsePlugin r_parse_plugin_att2intel = {
 	.name = "att2intel",
 	.desc = "X86 att 2 intel plugin",
-	.init = NULL,
-	.fini = NULL,
 	.parse = &parse,
 };
 

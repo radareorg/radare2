@@ -89,7 +89,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	/* TODO: this is slow */
 	if (newstr) {
 		newstr[0] = '\0';
-		for (i=0; i<argc; i++) {
+		for (i = 0; i < argc; i++) {
 			strcat (newstr, argv[i]);
 			strcat (newstr, (i == 0 || i== argc - 1)?" ":", ");
 		}

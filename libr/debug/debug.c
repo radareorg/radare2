@@ -1526,10 +1526,9 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 	}
 	eprintf ("--> %s 0x%08"PFMT64x" syscall %d %s (", sysreg,
 			r_debug_reg_get (dbg, "PC"), reg, sysname);
-	for (i=0; i<args; i++) {
-		ut64 val;
-		snprintf (regname, sizeof (regname)-1, "A%d", i);
-		val = r_debug_reg_get (dbg, regname);
+	for (i = 0; i < args; i++) {
+		snprintf (regname, sizeof (regname) - 1, "A%d", i);
+		ut64 val = r_debug_reg_get (dbg, regname);
 		if (((st64)val<0) && ((st64)val>-0xffff)) {
 			eprintf ("%"PFMT64d"%s", val, (i+1==args)?"":" ");
 		} else {
@@ -1541,9 +1540,11 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 	return reg;
 }
 
+// R2_580 R_API bool r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
+	r_return_val_if_fail (dbg, false);
 	int i, err, reg, ret = false;
-	if (!dbg || !dbg->h || r_debug_is_dead (dbg)) {
+	if (!dbg->h || r_debug_is_dead (dbg)) {
 		return false;
 	}
 	if (!dbg->h->contsc) {

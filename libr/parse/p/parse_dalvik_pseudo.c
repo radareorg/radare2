@@ -216,7 +216,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	/* TODO: this is slow */
 	if (newstr) {
 		newstr[0] = '\0';
-		for (i=0; i<argc; i++) {
+		for (i = 0; i < argc; i++) {
 			strcat (newstr, argv[i]);
 			strcat (newstr, (i == 0 || i== argc - 1)?" ":", ");
 		}
@@ -314,7 +314,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		{
 			const char *wa[] = { w0, w1, w2, w3, w4 };
 			int nw = 0;
-			for (i=0; i<4; i++) {
+			for (i = 0; i < 4; i++) {
 				if (wa[i][0] != '\0') {
 					nw++;
 				}

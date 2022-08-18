@@ -168,9 +168,9 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 #define BPOFF (R_SZ-4)
 #define M32(x) (unsigned int)((x) & 0xffffffff)
 	/* XXX: Assumes sizeof(ut32) == 4 */
-	for (i=4; i<=oj; i+=4) {
+	for (i = 4; i <= oj; i += 4) {
 		/* XXX endian issues (non-portable asm) */
-		ut32 *n = (ut32 *)(s+i-4);
+		ut32 *n = (ut32 *)(s + i - 4);
 		p = r_egg_mkvar (egg, str2, dstvar, i+BPOFF);
 		if (attsyntax) {
 			r_egg_printf (egg, "  movl $0x%x, %s\n", M32 (*n), p);
@@ -212,7 +212,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 #if 0
 	char *p, str2[64];
 	int i, oj = j;
-	for (i=0; i<oj; i+=4) {
+	for (i = 0; i < oj; i += 4) {
 		/* XXX endian and 32/64bit issues */
 		int *n = (int *)(str+i);
 		p = r_egg_mkvar (egg, str2, dstvar, j);

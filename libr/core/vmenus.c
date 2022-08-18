@@ -1990,7 +1990,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 					fs2 = fi->name;
 					hit = 1;
 				}
-				if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+				if ((i >= option-delta) && ((i < option + delta)||((option<delta)&&(i < (delta << 1))))) {
 					bool cur = option == i;
 					if (cur && hasColor) {
 						r_cons_printf (Color_INVERT);
@@ -2480,7 +2480,7 @@ R_API void r_core_visual_config(RCore *core) {
 					if (option == i) {
 						hit = 1;
 					}
-					if ( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+					if ( (i >=option-delta) && ((i < option+delta)||((option<delta)&&(i < (delta<<1))))) {
 						r_cons_printf (" %c  %s\n", (option == i)?'>':' ', old);
 						j++;
 					}
@@ -2505,7 +2505,7 @@ R_API void r_core_visual_config(RCore *core) {
 						desc = bt->desc;
 						hit = 1;
 					}
-					if ( (i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+					if ( (i>=option-delta) && ((i < option+delta)||((option<delta)&&(i < (delta<<1))))) {
 						// TODO: Better align
 						r_cons_printf (" %c  %s = %s\n", (option==i)?'>':' ', bt->name, bt->value);
 						j++;

@@ -1100,10 +1100,9 @@ static ut32 getshift(const char *str) {
 	char type[128];
 	char arg[128];
 	char *space;
-	ut32 i=0, shift=0;
+	ut32 i = 0, shift = 0;
 	const char *shifts[] = {
-		"LSL", "LSR", "ASR", "ROR",
-		0, "RRX" // alias for ROR #0
+		"LSL", "LSR", "ASR", "ROR", 0, "RRX" // alias for ROR #0
 	};
 
 	strncpy (type, str, sizeof (type) - 1);
@@ -1152,7 +1151,6 @@ static ut32 getshift(const char *str) {
 			i = i << 4;
 		}
 	}
-
 	return i;
 }
 
@@ -1162,10 +1160,10 @@ static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 	if (strlen (str) + 1 >= sizeof (ao->op)) {
 		return;
 	}
-	strncpy (ao->op, str, sizeof (ao->op)-1);
+	strncpy (ao->op, str, sizeof (ao->op) - 1);
 	strcpy (ao->opstr, ao->op);
 	ao->a[0] = strchr (ao->op, ' ');
-	for (i=0; i<15; i++) {
+	for (i = 0; i < 15; i++) {
 		if (ao->a[i]) {
 			*ao->a[i] = 0;
 			ao->a[i+1] = strchr (++ao->a[i], ',');
@@ -1177,7 +1175,7 @@ static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 		*ao->a[i] = 0;
 		ao->a[i]++;
 	}
-	for (i=0; i<16; i++) {
+	for (i = 0; i < 16; i++) {
 		while (ao->a[i] && *ao->a[i] == ' ') {
 			ao->a[i]++;
 		}

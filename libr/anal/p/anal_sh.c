@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 eloi<limited-entropy.com> */
+/* radare - LGPL - Copyright 2010-2022 eloi <limited-entropy.com> */
 
 #include <r_lib.h>
 #include <r_asm.h>

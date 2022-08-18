@@ -3816,7 +3816,7 @@ static struct arc_opcode arc_opcodes[] = {
 static const struct arc_operand_value arc_reg_names_a4[] =
 {
   /* Sort this so that the first 61 entries are sequential.
-     IE: For each i (i<61), arc_reg_names[i].value == i.  */
+     IE: For each i (i < 61), arc_reg_names[i].value == i.  */
 
   { "r0", 0, REG, 0 }, { "r1", 1, REG, 0 }, { "r2", 2, REG, 0 },
   { "r3", 3, REG, 0 }, { "r4", 4, REG, 0 }, { "r5", 5, REG, 0 },
@@ -3882,7 +3882,7 @@ static const struct arc_operand_value arc_reg_names_a4[] =
 static const struct arc_operand_value arc_reg_names_a500600[] =
 {
   /* Sort this so that the first 61 entries are sequential.
-     IE: For each i (i<61), arc_reg_names[i].value == i.  */
+     IE: For each i (i < 61), arc_reg_names[i].value == i.  */
 
   { "r0", 0, REG_AC, 0 }, { "r1", 1, REG_AC, 0 }, { "r2", 2, REG_AC, 0 },
   { "r3", 3, REG_AC, 0 }, { "r4", 4, REG_AC, 0 }, { "r5", 5, REG_AC, 0 },
@@ -3935,7 +3935,7 @@ static const struct arc_operand_value arc_reg_names_a500600[] =
 static const struct arc_operand_value arc_reg_names_a700[] =
 {
   /* Sort this so that the first 61 entries are sequential.
-     IE: For each i (i<61), arc_reg_names[i].value == i.  */
+     IE: For each i (i < 61), arc_reg_names[i].value == i.  */
 
   { "r0", 0, REG_AC, 0 }, { "r1", 1, REG_AC, 0 }, { "r2", 2, REG_AC, 0 },
   { "r3", 3, REG_AC, 0 }, { "r4", 4, REG_AC, 0 }, { "r5", 5, REG_AC, 0 },

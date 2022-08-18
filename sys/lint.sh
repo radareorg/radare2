@@ -8,11 +8,14 @@
 (git grep -n 'for (ut' | grep -v sys/) && exit 1
 (git grep -n 'for (size_t' | grep -v sys/) && exit 1
 (git grep -n 'R_LOG_' | grep '\\n' | grep -v sys/) && exit 1
+# (git grep 'free(' libr| grep -v R_API| grep -v static| grep c:) && exit 1
+# (git grep '=0' libr| grep c:|grep -v '"' |grep -v '=0x' | less) && exit 1
 (git grep -n 'eprintf' libr | grep 'Error:') && exit 1
 (git grep -n 'x ""' libr) && exit 1
 (git grep -n 'x""' libr) && exit 1
 (git grep -n ';;$' libr) && exit 1
 (git grep -n '0 ;' libr) && exit 1
+(git grep -n -e 'i<' -e 'j<' -e 'k<' libr | grep -v '"') && exit 1
 (git grep -n '\ $' libr) && exit 1 # trailing space
 (git grep -n '^eprintf' libr) && exit 1
 (git grep -n '4d""' libr) && exit 1

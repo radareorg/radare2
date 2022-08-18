@@ -308,10 +308,15 @@ R_API bool r_sandbox_creat(const char *path, int mode) {
 	if (G_enabled) {
 		return false;
 #if 0
-		if (mode & O_CREAT) return -1;
-		if (mode & O_RDWR) return -1;
-		if (!r_sandbox_check_path (path))
+		if (mode & O_CREAT) {
 			return -1;
+		}
+		if (mode & O_RDWR) {
+			return -1;
+		}
+		if (!r_sandbox_check_path (path)) {
+			return -1;
+		}
 #endif
 	}
 	int fd = open (path, O_CREAT | O_TRUNC | O_WRONLY, mode);

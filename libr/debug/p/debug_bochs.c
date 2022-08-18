@@ -72,7 +72,7 @@ static int r_debug_bochs_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool se
 					}
 				}
 				i += 48;
-			} while (desc->data[i] != '<' && i<lenRec-4);
+			} while (desc->data[i] != '<' && i < lenRec - 4);
 		}
 		if (a == b->addr) {
 			snprintf (bufcmd, sizeof (bufcmd), "d %i", n);
