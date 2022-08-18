@@ -71,13 +71,15 @@ static const char *help_msg_wA[] = {
 };
 
 static const char *help_msg_wc[] = {
-	"Usage:", "wc[jir+-*?]","  # NOTE: Uses io.cache=true",
+	"Usage:", "wc[jir+-*?]","  # See `e io.cache = true`",
 	"wc","","list all write changes",
 	"wcj","","list all write changes in JSON",
 	"wc-"," [from] [to]","remove write op at curseek or given addr",
 	"wc+"," [from] [to]","commit change from cache to io",
-	"wc*","","\"\" in radare commands",
-	"wcr","","reset all write changes in cache",
+	"wc*","","write commands",
+	"wcr","","revert all writes in the cache",
+	"wcu","","undo last change",
+	"wcU","","redo undone change (TODO)",
 	"wci","","commit write cache",
 	"wcf"," [file]","commit write cache into given file",
 	"wcp"," [fd]", "list all cached write-operations on p-layer for specified fd or current fd",
@@ -1304,6 +1306,30 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 	free (sfn);
 }
 
+static void wcu(RCore *core) {
+	void **iter;
+	RIO *io = core->io;
+	r_pvector_foreach_prev (&io->cache, iter) {
+		RIOCache *c = *iter;
+		int cached = io->cached;
+		io->cached = 0;
+		r_io_write_at (io, r_itv_begin (c->itv), c->odata, r_itv_size (c->itv));
+		c->written = false;
+		io->cached = cached;
+		r_pvector_remove_data (&io->cache, c);
+		free (c->data);
+		free (c->odata);
+		free (c);
+		break;
+	}
+	r_skyline_clear (&io->cache_skyline);
+	r_pvector_foreach (&io->cache, iter) {
+		RIOCache *c = *iter;
+		c = *iter;
+		r_skyline_add (&io->cache_skyline, c->itv, c);
+	}
+}
+
 static int cmd_wc(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -1314,6 +1340,12 @@ static int cmd_wc(void *data, const char *input) {
 		break;
 	case '?': // "wc?"
 		r_core_cmd_help (core, help_msg_wc);
+		break;
+	case 'u': // "wcu"
+		wcu (core);
+		break;
+	case 'U': // "wcU"
+		R_LOG_ERROR ("TODO: Not implemented");
 		break;
 	case 'f': // "wcf"
 		if (input[1] == ' ') {
@@ -1355,7 +1387,7 @@ static int cmd_wc(void *data, const char *input) {
 			break;
 		}
 		ut64 from, to;
-		if (input[1]==' ') { // "wc- "
+		if (input[1] == ' ') { // "wc- "
 			char *p = strchr (input+2, ' ');
 			if (p) {
 				*p = 0;
@@ -1370,11 +1402,11 @@ static int cmd_wc(void *data, const char *input) {
 				to = from + core->blocksize;
 			}
 		} else {
-			R_LOG_ERROR ("Invalidate write cache at 0x%08"PFMT64x, core->offset);
+			R_LOG_INFO ("Invalidate write cache at 0x%08"PFMT64x, core->offset);
 			from = core->offset;
 			to = core->offset + core->blocksize;
 		}
-		R_LOG_ERROR ("invalidated %d cache(s)", r_io_cache_invalidate (core->io, from, to));
+		R_LOG_INFO ("Invalidated %d cache(s)", r_io_cache_invalidate (core->io, from, to));
 		r_core_block_read (core);
 		break;
 	}
@@ -1391,8 +1423,8 @@ static int cmd_wc(void *data, const char *input) {
 	case 'r': // "wcr"
 		r_io_cache_reset (core->io, core->io->cached);
 		/* Before loading the core block we have to make sure that if
-			* the cache wrote past the original EOF these changes are no
-			* longer displayed. */
+		 * the cache wrote past the original EOF these changes are no
+		 * longer displayed. */
 		memset (core->block, 0xff, core->blocksize);
 		r_core_block_read (core);
 		break;
@@ -1743,7 +1775,7 @@ static int cmd_wx(void *data, const char *input) {
 	int size;
 	switch (input[0]) {
 	case ' ': // "wx "
-		cmd_write_hexpair (core, input + 0);
+		cmd_write_hexpair (core, r_str_trim_head_ro (input));
 		break;
 	case 'f': // "wxf"
 		arg = (const char *)(input + ((input[1]==' ')? 2: 1));

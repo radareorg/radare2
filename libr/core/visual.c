@@ -2175,9 +2175,15 @@ static bool insert_mode_enabled(RCore *core) {
 			core->print->cur++;
 			__nib = -1;
 		} else {
-			r_core_cmdf (core, "wx %c. @ $$+%d", ch, core->print->cur);
+			r_core_cmdf (core, "wx %c @ $$+%d", ch, core->print->cur);
 			__nib = ch;
 		}
+		break;
+	case 'u':
+		r_core_cmd0 (core, "wcu");
+		break;
+	case 'U':
+		r_core_cmd0 (core, "wcU");
 		break;
 	case 'r':
 		r_core_cmdf (core, "r-1 @ 0x%08"PFMT64x, core->offset + core->print->cur);
