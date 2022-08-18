@@ -803,7 +803,7 @@ R_API int r_socket_write(RSocket *s, const void *buf, int len) {
 			} else {
 				ret = SSL_write (s->sfd, buf + delta, b);
 			}
-		} else
+		} else /* block */
 #endif
 		{
 			ret = send (s->fd, (char *)buf+delta, b, 0);

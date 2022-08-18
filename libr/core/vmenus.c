@@ -2847,8 +2847,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 				if (mode == 2) {
 					if (!root) {
 						mode = 0;
-					} else
-					if (strcmp (path, root)) {
+					} else if (strcmp (path, root)) {
 						strcat (path, "/..");
 						r_str_trim_path (path);
 					} else {
@@ -3807,8 +3806,7 @@ R_API void r_core_seek_previous(RCore *core, const char *type) {
 	bool found = false;
 	if (strstr (type, "opc")) {
 		eprintf ("TODO: r_core_seek_previous (opc)\n");
-	} else
-	if (strstr (type, "fun")) {
+	} else if (strstr (type, "fun")) {
 		RAnalFunction *fcni;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (fcni->addr > next && fcni->addr < core->offset) {
@@ -3816,8 +3814,7 @@ R_API void r_core_seek_previous(RCore *core, const char *type) {
 				found = true;
 			}
 		}
-	} else
-	if (strstr (type, "hit")) {
+	} else if (strstr (type, "hit")) {
 		const char *pfx = r_config_get (core->config, "search.prefix");
 		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false, .found = false };
 		r_flag_foreach_prefix (core->flags, pfx, -1, seek_flag_offset, &u);

@@ -418,8 +418,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 			op = e? "jae": "ja";
 		}
 		arg = b+1;
-	} else
-	if (g) {
+	} else if (g) {
 		*g = '\0';
 		if (signed_value) {
 			op = e? "jle": "jl";

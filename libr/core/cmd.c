@@ -1068,7 +1068,7 @@ static int cmd_yank(void *data, const char *input) {
 #if R2_580
 		r_core_yank_unset (core);
 #else
-		r_buf_set_bytes (core->yank_buf, "", 0);
+		r_buf_set_bytes (core->yank_buf, (const ut8*)"", 0);
 		core->yank_addr = UT64_MAX;
 #endif
 		break;

@@ -1133,9 +1133,8 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 				}
 			}
 			return NULL;
-		} else
-		/* conditional goto */
-		if (ptr[0]=='?' && ptr[1]=='!' && ptr[2] != '?') {
+			/* conditional goto */
+		} else if (ptr[0]=='?' && ptr[1]=='!' && ptr[2] != '?') {
 			if (mac->num && mac->num->value != 0) {
 				char *label = ptr + 3;
 				for (; *label == ' ' || *label == '.'; label++) {
@@ -1150,9 +1149,8 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 				}
 				return NULL;
 			}
-		} else
-		/* conditional goto */
-		if (ptr[0] == '?' && ptr[1] == '?' && ptr[2] != '?') {
+			/* conditional goto */
+		} else if (ptr[0] == '?' && ptr[1] == '?' && ptr[2] != '?') {
 			if (mac->num->value == 0) {
 				char *label = ptr + 3;
 				for (; label[0] == ' ' || label[0] == '.'; label++) {

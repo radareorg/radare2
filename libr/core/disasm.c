@@ -3838,8 +3838,7 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 				slen = ds_print_shortcut (ds, ds->analop.val, pos);
 				gotShortcut = true;
 			}
-		} else
-		if (ds->asm_hint_lea) {
+		} else if (ds->asm_hint_lea) {
 			if (ds->analop.ptr != UT64_MAX && ds->analop.ptr != UT32_MAX && ds->analop.ptr > 256) {
 				slen = ds_print_shortcut (ds, ds->analop.ptr, pos);
 				gotShortcut = true;

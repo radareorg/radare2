@@ -305,14 +305,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (!strcmp (cmd, "help")) {
 		show_help ();
-	} else
-	if (!strcmp (cmd, "ptrace")) {
+	} else if (!strcmp (cmd, "ptrace")) {
 		close_pidmem (iop);
-	} else
-	if (!strcmp (cmd, "mem")) {
+	} else if (!strcmp (cmd, "mem")) {
 		open_pidmem (iop);
-	} else
-	if (r_str_startswith (cmd, "pid")) {
+	} else if (r_str_startswith (cmd, "pid")) {
 		if (iop) {
 			if (cmd[3] == ' ') {
 				int pid = atoi (cmd + 4);

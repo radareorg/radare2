@@ -703,9 +703,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  }
 	  /* Get the major opcode of the ARCtangent-A5 32-bit instruction. */
 	  state->_opcode = OPCODE (state->words[0]);
-  }
-  else
-  {
+  } else {
     /* ARCompact 16-bit instruction */
     if (!NEXT_WORD_AC (0)) {
 	    return 0;
@@ -830,9 +828,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	    {
 	      instrName = "nop";
 	      decodingClass = 26;
-	    }
-	  else
-	    {
+	    } else {
 	      instrName = "mov";
 	      decodingClass = 12;
 	    }
@@ -1986,9 +1982,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	    state->flow = invalid_instr;
 	    break;
 	  }
-      }
-    else
-      {
+      } else {
 	instrName = "???_SIMD";
 	state->flow = invalid_instr;
       }
@@ -2343,9 +2337,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 		  default:
 			  mwerror (state, "Invalid syntax class\n");
 		  }
-	}
-      else
-	{
+	} else {
 /* Must do the above for this one too */
 	  switch (flags)
 	    {
@@ -2401,9 +2393,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  {
 	    /* If fieldC is not a limm, then fieldB may be a limm value */
             CHECK_FIELD_B();
-	  }
-      	  else
-	  {
+	  } else {
             FIELD_B();
 	    if (!fieldBisReg) {
 		    fieldB = fieldC;
@@ -2471,17 +2461,13 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 		    fieldCisReg = 0;
 		    fieldC = fieldB;
 	    }
-	  }
-	  else
-	  {
+	  } else {
 	    fieldA = fieldB;
             if (BIT(state->words[0],5))
 	    {
               FIELD_C();
               fieldCisReg = 0;
-	    }
-	    else
-	    {
+	    } else {
               CHECK_FIELD_C();
 	    }
 	  }
@@ -2539,9 +2525,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  if (!fieldBisReg) {
 		  fieldB = fieldC;
 	  }
-	}
-	else
-	{
+	} else {
       	  CHECK_FIELD_B();
 	}
       }
@@ -2577,9 +2561,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
         WRITE_FORMAT_COMMA_x(C);
         WRITE_NOP_COMMENT();
         my_sprintf(state, state->operandBuffer, formatString, 0, fieldB, fieldC);
-      }
-      else
-      {
+      } else {
 	WRITE_FORMAT_x(B);
         WRITE_FORMAT_COMMA_x(C);
         WRITE_NOP_COMMENT();
@@ -2650,9 +2632,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	{
 	  state->flow = is_linked ? direct_call : direct_jump;
 	  add_target(fieldC);
-	}
-      else
-	{
+	} else {
 	  state->flow = is_linked ? indirect_call : indirect_jump;
 	  /*
 	   * We should also treat this as indirect call if NOT linked
@@ -2694,9 +2674,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	if (!fieldCisReg) {
 		fieldC = fieldB;
 	}
-      }
-      else
-      {
+      } else {
         CHECK_FIELD_C();
       }
       if (dbg) {
@@ -2800,9 +2778,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	{
 	  fieldB = state->_offset;
 	  WRITE_FORMAT_x_RB(B);
-	}
-      else
-	{
+	} else {
 	  WRITE_FORMAT_x(B);
 	  WRITE_FORMAT_COMMA_x_RB(C);
 	}
@@ -2846,9 +2822,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       if (fieldA == 0)
       {
         WRITE_FORMAT_x_RB(B);
-      }
-      else
-      {
+      } else {
 	WRITE_FORMAT_x(B);
         fieldAisReg = 0;
         WRITE_FORMAT_COMMA_x_RB(A);
@@ -3049,9 +3023,8 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 
       if (BIT (state->words[0], 16) && state->_opcode == op_BC) {
 	      CHECK_NULLIFY ();
-      } else
+      } else if ((state->_opcode == op_BLC && BITS (state->words[0], 16, 17) == 2) || (state->_opcode == op_BC && (BIT (state->words[0], 16)))) {
 	      /* Checking for bl unconditionally FIX For Bug #553 */
-	      if ((state->_opcode == op_BLC && BITS (state->words[0], 16, 17) == 2) || (state->_opcode == op_BC && (BIT (state->words[0], 16)))) {
 	      CHECK_NULLIFY ();
       } else {
 	      CHECK_COND_NULLIFY ();

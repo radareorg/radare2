@@ -148,14 +148,9 @@ static void trimbits(char *b) {
 // The string is then trimmed using the "trimbits" function above.
 R_API int r_str_bits64(char* strout, ut64 in) {
 	int i, bit, count = 0;
-	count = 0;
 	for (i = (sizeof (in) * 8) - 1; i >= 0; i--) {
 		bit = in >> i;
-		if (bit & 1) {
-			strout[count] = '1';
-		} else {
-			strout[count] = '0';
-		}
+		strout[count] = (bit & 1)? '1': '0';
 		count++;
 	}
 	strout[count] = '\0';
@@ -243,7 +238,7 @@ R_API void r_str_case(char *str, bool up) {
 	if (up) {
 		char oc = 0;
 		for (; *str; oc = *str++) {
-			*str = (*str=='x' && oc=='0') ? 'x': toupper ((int)(ut8)*str);
+			*str = (*str == 'x' && oc == '0') ? 'x': toupper ((int)(ut8)*str);
 		}
 	} else {
 		for (; *str; str++) {
@@ -1246,8 +1241,7 @@ R_API char *r_str_sanitize_sdb_key(const char *s) {
 	char *cur = ret;
 	while (len > 0) {
 		char c = *s;
-		if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9')
-			&& c != '_' && c != ':') {
+		if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9') && c != '_' && c != ':') {
 			c = '_';
 		}
 		*cur = c;
@@ -2036,7 +2030,7 @@ R_API bool r_str_is_printable_incl_newlines(const char *str) {
 	return true;
 }
 
-// Length in chars of a wide string (find better name?)
+// Length in chars of a wide string and find a better name
 R_API size_t r_wstr_clen(const char *s) {
 	size_t len = 0;
 	if (!*s++) {
@@ -2220,7 +2214,7 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 }
 
 R_API size_t r_str_utf8_codepoint(const char* s, size_t left) {
-	if (!s || left <= 0) {
+	if (!s || !*s || left <= 0) {
 		return 0;
 	}
 	if ((*s & 0x80) != 0x80) {
@@ -2236,15 +2230,13 @@ R_API size_t r_str_utf8_codepoint(const char* s, size_t left) {
 }
 
 R_API bool r_str_char_fullwidth(const char* s, size_t left) {
-	if (!s || left <= 0) {
+	if (!s || !*s || left <= 0) {
 		return false;
 	}
 	size_t codepoint = r_str_utf8_codepoint (s, left);
-	return (codepoint >= 0x1100 &&
-		 (codepoint <= 0x115f ||                  /* Hangul Jamo init. consonants */
-			  codepoint == 0x2329 || codepoint == 0x232a ||
-		 (R_BETWEEN (0x2e80, codepoint, 0xa4cf)
-			&& codepoint != 0x303f) ||        /* CJK ... Yi */
+	if (codepoint >= 0x1100) {
+		 return codepoint <= 0x115f || codepoint == 0x2329 || codepoint == 0x232a || /* Hangul Jamo init. consonants */
+		 (R_BETWEEN (0x2e80, codepoint, 0xa4cf) && codepoint != 0x303f) || /* CJK ... Yi */
 		 R_BETWEEN (0xac00, codepoint, 0xd7a3) || /* Hangul Syllables */
 		 R_BETWEEN (0xf900, codepoint, 0xfaff) || /* CJK Compatibility Ideographs */
 		 R_BETWEEN (0xfe10, codepoint, 0xfe19) || /* Vertical forms */
@@ -2252,7 +2244,9 @@ R_API bool r_str_char_fullwidth(const char* s, size_t left) {
 		 R_BETWEEN (0xff00, codepoint, 0xff60) || /* Fullwidth Forms */
 		 R_BETWEEN (0xffe0, codepoint, 0xffe6) ||
 		 R_BETWEEN (0x20000, codepoint, 0x2fffd) ||
-		 R_BETWEEN (0x30000, codepoint, 0x3fffd)));
+		 R_BETWEEN (0x30000, codepoint, 0x3fffd);
+	}
+	return false;
 }
 
 /**
@@ -2901,9 +2895,7 @@ R_API char *r_str_uri_encode(const char *s) {
 		return NULL;
 	}
 	for (; *s; s++) {
-		if ((*s>='0' && *s<='9')
-		|| (*s>='a' && *s<='z')
-		|| (*s>='A' && *s<='Z')) {
+		if ((*s >= '0' && *s <= '9') || (*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z')) {
 			*d++ = *s;
 		} else {
 			*d++ = '%';

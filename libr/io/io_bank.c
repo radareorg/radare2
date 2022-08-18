@@ -625,7 +625,7 @@ found:
 				// bd completly overlaps sm => nothing to do
 				free (sm);
 				return true;
-			} // else
+			}
 			// adjust sm
 			// r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
 		} else {

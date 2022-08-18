@@ -245,8 +245,7 @@ static ut64 cqcheck(char **input) {
 		res |= DOTN_BIT;
 		*input += 2;
 		offset += 2;
-	} else
-	if (r_str_startswith (*input, ".w")) {
+	} else if (r_str_startswith (*input, ".w")) {
 		res |= DOTW_BIT;
 		*input += 2;
 		offset += 2;
@@ -332,12 +331,10 @@ static ut64 opmask(char *input, const char *opcode, ut64 allowed_mask) {
 		if ((*input == 'b') && (B_BIT & allowed_mask)) {
 			res |= B_BIT;
 			input++;
-		} else
-		if ((*input == 'h') && (H_BIT & allowed_mask)) {
+		} else if ((*input == 'h') && (H_BIT & allowed_mask)) {
 			res |= H_BIT;
 			input++;
-		} else
-		if ((*input == 'd') && (D_BIT & allowed_mask)) {
+		} else if ((*input == 'd') && (D_BIT & allowed_mask)) {
 			res |= D_BIT;
 			input++;
 		}
@@ -1308,7 +1305,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		ao->o = 0xde;
 		ao->o |= getnum (ao->a[0]) << 8;
 		return 2;
-	} else
+	}
 	if ((m = opmask (ao->op, "add", S_BIT | W_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
@@ -1466,8 +1463,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "adc", S_BIT))) {
+	} else if ((m = opmask (ao->op, "adc", S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -1506,8 +1502,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "adr", 0))) {
+	} else if ((m = opmask (ao->op, "adr", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -1543,8 +1538,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "and", S_BIT))) {
+	} else if ((m = opmask (ao->op, "and", S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -1583,8 +1577,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "asr", S_BIT))) {
+	} else if ((m = opmask (ao->op, "asr", S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_CONST: {
@@ -1627,8 +1620,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "b", 0) )) {
+	} else if (( m = opmask (ao->op, "b", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_CONST: {
@@ -1679,8 +1671,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "bl", 0) )) {
+	} else if ((m = opmask (ao->op, "bl", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_CONST: {
@@ -1696,8 +1687,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "bx", 0) )) {
+	} else if (( m = opmask (ao->op, "bx", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG: {
@@ -1710,8 +1700,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "blx", 0) )) {
+	} else if (( m = opmask (ao->op, "blx", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG: {
@@ -1735,8 +1724,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "bfc", 0) )) {
+	} else if (( m = opmask (ao->op, "bfc", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST_CONST: {
@@ -1762,8 +1750,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "bfi", 0) )) {
+	} else if (( m = opmask (ao->op, "bfi", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_CONST_CONST: {
@@ -1783,8 +1770,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "bic", S_BIT) )) {
+	} else if (( m = opmask (ao->op, "bic", S_BIT) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -1822,8 +1808,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "bkpt", 0) )) {
+	} else if (( m = opmask (ao->op, "bkpt", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_CONST: {
@@ -1839,8 +1824,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "cbnz", 0) )) {
+	} else if (( m = opmask (ao->op, "cbnz", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -1859,8 +1843,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "cbz", 0) )) {
+	} else if (( m = opmask (ao->op, "cbz", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -1879,8 +1862,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "cdp", TWO_BIT) )) {
+	} else if (( m = opmask (ao->op, "cdp", TWO_BIT) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_COPROC_CONST_COREG_COREG_COREG: {
@@ -1925,8 +1907,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "clz", 0) )) {
+	} else if (( m = opmask (ao->op, "clz", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -1938,8 +1919,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "cmn", 0) )) {
+	} else if (( m = opmask (ao->op, "cmn", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -1967,8 +1947,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "cmp", 0) )) {
+	} else if (( m = opmask (ao->op, "cmp", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -2018,8 +1997,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "cps", ID_BIT | IE_BIT) )) {
+	} else if (( m = opmask (ao->op, "cps", ID_BIT | IE_BIT) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_OTHER: {
@@ -2066,8 +2044,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "dbg", 0))) {
+	} else if ((m = opmask (ao->op, "dbg", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_CONST: {
@@ -2082,8 +2059,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "dmb", 0))) {
+	} else if ((m = opmask (ao->op, "dmb", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_NONE: {
@@ -2112,8 +2088,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "dsb", 0))) {
+	} else if ((m = opmask (ao->op, "dsb", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_NONE: {
@@ -2141,8 +2116,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "eor", S_BIT))) {
+	} else if ((m = opmask (ao->op, "eor", S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST:
@@ -2178,8 +2152,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "isb", 0))) {
+	} else if ((m = opmask (ao->op, "isb", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_NONE: {
@@ -2208,8 +2181,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = itmask (ao->op))) {
+	} else if ((m = itmask (ao->op))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_OTHER: {
@@ -2248,8 +2220,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "ldc", TWO_BIT | L_BIT))) {
+	} else if ((m = opmask (ao->op, "ldc", TWO_BIT | L_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_COPROC_COREG_BRACKREG_CONSTBRACK: {
@@ -2339,8 +2310,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "ldm", DB_BIT | EA_BIT | IA_BIT | FD_BIT))) {
+	} else if ((m = opmask (ao->op, "ldm", DB_BIT | EA_BIT | IA_BIT | FD_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REGBANG_LIST: {
@@ -2401,8 +2371,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "ldr", B_BIT | H_BIT | D_BIT | T_BIT | S_BIT))) {
+	} else if ((m = opmask (ao->op, "ldr", B_BIT | H_BIT | D_BIT | T_BIT | S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		ut32 ldrsel = m & (B_BIT | H_BIT | D_BIT);
 		if ((m & S_BIT) && !(m & (B_BIT | H_BIT))) {
@@ -2480,8 +2449,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o = 0x50f8000c;
 				ao->o |= (-num & 0xff) << 8;
 				return mem_32bit_2reg (ao, m);
-			} else
-			if (ldrsel == B_BIT) {
+			} else if (ldrsel == B_BIT) {
 				if (m & T_BIT) {
 					if ((num < 0) || (num > 255)) {
 						return -1;
@@ -2537,8 +2505,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				}
 				ao->o |= -num << 8;
 				return mem_32bit_2reg (ao, m);
-			} else
-			if (ldrsel == H_BIT) {
+			} else if (ldrsel == H_BIT) {
 				if (m & T_BIT) {
 					if ((num < 0) || (num > 255)) {
 						return -1;
@@ -2608,11 +2575,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			}
 			if (ldrsel == 0) {
 				ao->o = 0x50f80009;
-			} else
-			if (ldrsel == B_BIT) {
+			} else if (ldrsel == B_BIT) {
 				ao->o = 0x10f80009;
-			} else
-			if (ldrsel == H_BIT) {
+			} else if (ldrsel == H_BIT) {
 				ao->o = 0x30f80009;
 			} else {
 				return -1;
@@ -2638,11 +2603,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			}
 			if (ldrsel == 0) {
 				ao->o = 0x50f8000d;
-			} else
-			if (ldrsel == B_BIT) {
+			} else if (ldrsel == B_BIT) {
 				ao->o = 0x10f8000d;
-			} else
-			if (ldrsel == H_BIT) {
+			} else if (ldrsel == H_BIT) {
 				ao->o = 0x30f8000d;
 			} else {
 				return -1;
@@ -2664,22 +2627,19 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			if (reg3 < 8) {
 				if (ldrsel == 0) {
 					ao->o = 0x0058;
-				} else
-				if (ldrsel == B_BIT) {
+				} else if (ldrsel == B_BIT) {
 					if (m & S_BIT) {
 						ao->o = 0x0056;
 					} else {
 						ao->o = 0x005c;
 					}
-				} else
-				if (ldrsel == H_BIT) {
+				} else if (ldrsel == H_BIT) {
 					if (m & S_BIT) {
 						ao->o = 0x005e;
 					} else {
 						ao->o = 0x005a;
 					}
-				} else
-				{
+				} else {
 					return -1;
 				}
 				ao->o |= (reg3 & 0x3) << 14;
@@ -2703,14 +2663,11 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 
 			if (ldrsel == 0) {
 				ao->o = 0x50f80000;
-			} else
-			if (ldrsel == B_BIT) {
+			} else if (ldrsel == B_BIT) {
 				ao->o = 0x10f80000;
-			} else
-			if (ldrsel == H_BIT) {
+			} else if (ldrsel == H_BIT) {
 				ao->o = 0x30f80000;
-			} else
-			{
+			} else {
 				return -1;
 			}
 			if (m & S_BIT) {
@@ -2793,8 +2750,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "ldrex", B_BIT | H_BIT | D_BIT))) {
+	} else if ((m = opmask (ao->op, "ldrex", B_BIT | H_BIT | D_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		ut32 ldrsel = m & (B_BIT | H_BIT | D_BIT);
 		switch (argt) {
@@ -2807,14 +2763,12 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= reg1 << 4;
 				ao->o |= reg2 << 24;
 				return 4;
-			} else
-			if (ldrsel == H_BIT) {
+			} else if (ldrsel == H_BIT) {
 				ao->o = 0xd0e85f0f;
 				ao->o |= reg1 << 4;
 				ao->o |= reg2 << 24;
 				return 4;
-			} else
-			if (ldrsel == 0) {
+			} else if (ldrsel == 0) {
 				ao->a[1][strlen (ao->a[1]) - 1] = '\0';
 				ao->a[2] = "0]";
 			} else {
@@ -2849,8 +2803,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "lsl", S_BIT))) {
+	} else if ((m = opmask (ao->op, "lsl", S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_CONST: {
@@ -2937,8 +2890,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "mcr", R_BIT | TWO_BIT))) {
+	} else if ((m = opmask (ao->op, "mcr", R_BIT | TWO_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_COPROC_CONST_REG_COREG_COREG: {
@@ -2996,8 +2948,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "mla", 0))) {
+	} else if ((m = opmask (ao->op, "mla", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_REG_REG: {
@@ -3014,8 +2965,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "mls", 0))) {
+	} else if ((m = opmask (ao->op, "mls", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_REG_REG: {
@@ -3032,8 +2982,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "mov", S_BIT | W_BIT | T_BIT))) {
+	} else if ((m = opmask (ao->op, "mov", S_BIT | W_BIT | T_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -3114,8 +3063,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "mrc", TWO_BIT))) {
+	} else if ((m = opmask (ao->op, "mrc", TWO_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_COPROC_CONST_REG_COREG_COREG: {
@@ -3150,8 +3098,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "mrrc", TWO_BIT))) {
+	} else if ((m = opmask (ao->op, "mrrc", TWO_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_COPROC_CONST_REG_REG_COREG: {
@@ -3180,8 +3127,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "mrs", 0))) {
+	} else if ((m = opmask (ao->op, "mrs", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_OTHER: {
@@ -3210,8 +3156,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "msr", 0))) {
+	} else if ((m = opmask (ao->op, "msr", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_OTHER_REG: {
@@ -3236,8 +3181,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "mul", 0))) {
+	} else if ((m = opmask (ao->op, "mul", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -3260,8 +3204,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "mvn", S_BIT))) {
+	} else if ((m = opmask (ao->op, "mvn", S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -3313,8 +3256,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "nop", 0))) {
+	} else if ((m = opmask (ao->op, "nop", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_NONE: {
@@ -3329,8 +3271,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "orn", S_BIT))) {
+	} else if ((m = opmask (ao->op, "orn", S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -3372,8 +3313,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "orr", S_BIT))) {
+	} else if ((m = opmask (ao->op, "orr", S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -3419,8 +3359,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "pkh", BT_BIT | TB_BIT))) {
+	} else if ((m = opmask (ao->op, "pkh", BT_BIT | TB_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -3430,8 +3369,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (m & TB_BIT) {
 				ao->a[3] = "asr 0";
-			} else
-			if (m & BT_BIT) {
+			} else if (m & BT_BIT) {
 				ao->a[3] = "lsl 0";
 			} else {
 				return -1;
@@ -3458,8 +3396,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "pld", 0))) {
+	} else if ((m = opmask (ao->op, "pld", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_BRACKREG_CONSTBRACK: {
@@ -3523,8 +3460,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "pli", 0))) {
+	} else if ((m = opmask (ao->op, "pli", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_BRACKREG_CONSTBRACK: {
@@ -3588,8 +3524,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "pop", 0))) {
+	} else if ((m = opmask (ao->op, "pop", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_LIST: {
@@ -3612,8 +3547,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "push", 0))) {
+	} else if ((m = opmask (ao->op, "push", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_LIST: {
@@ -3636,8 +3570,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "qadd", EIGHT_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "qadd", EIGHT_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -3647,8 +3580,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (m & SIXTEEN_BIT) {
 				ao->o = 0x90fa10f0;
-			} else
-			if (m & EIGHT_BIT) {
+			} else if (m & EIGHT_BIT) {
 				ao->o = 0x80fa10f0;
 			} else {
 				ao->o = 0x80fa80f0;
@@ -3660,8 +3592,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "qasx", 0))) {
+	} else if ((m = opmask (ao->op, "qasx", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -3676,8 +3607,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "qdadd", 0))) {
+	} else if ((m = opmask (ao->op, "qdadd", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -3692,8 +3622,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "qdsub", 0))) {
+	} else if ((m = opmask (ao->op, "qdsub", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -3708,8 +3637,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "qsax", 0))) {
+	} else if ((m = opmask (ao->op, "qsax", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -3724,8 +3652,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "qsub", EIGHT_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "qsub", EIGHT_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -3735,8 +3662,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (m & SIXTEEN_BIT) {
 				ao->o = 0xd0fa10f0;
-			} else
-			if (m & EIGHT_BIT) {
+			} else if (m & EIGHT_BIT) {
 				ao->o = 0xc0fa10f0;
 			} else {
 				ao->o = 0x80faa0f0;
@@ -3747,8 +3673,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "rbit", 0))) {
+	} else if ((m = opmask (ao->op, "rbit", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -3760,15 +3685,13 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "rev", SIXTEEN_BIT | SH_BIT))) {
+	} else if ((m = opmask (ao->op, "rev", SIXTEEN_BIT | SH_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
 			if (m & SIXTEEN_BIT) {
 				ao->o = 0x40ba;
-			} else
-			if (m & SH_BIT) {
+			} else if (m & SH_BIT) {
 				ao->o = 0xc0ba;
 			} else {
 				ao->o = 0x00ba;
@@ -3777,11 +3700,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			if (std_16bit_2reg (ao, m)) {
 				return 2;
 			}
-			
 			if (m & SIXTEEN_BIT) {
 				ao->o = 0x90fa90f0;
-			} else
-			if (m & SH_BIT) {
+			} else if (m & SH_BIT) {
 				ao->o = 0x90fab0f0;
 			} else {
 				ao->o = 0x90fa80f0;
@@ -3793,8 +3714,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "rfe", IA_BIT | FD_BIT | DB_BIT | EA_BIT))) {
+	} else if ((m = opmask (ao->op, "rfe", IA_BIT | FD_BIT | DB_BIT | EA_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		ut32 wb = 0;
 		switch (argt) {
@@ -3824,8 +3744,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "ror", S_BIT))) {
+	} else if ((m = opmask (ao->op, "ror", S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_CONST: {
@@ -3864,8 +3783,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "rrx", S_BIT))) {
+	} else if ((m = opmask (ao->op, "rrx", S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -3888,8 +3806,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "rsb", S_BIT))) {
+	} else if ((m = opmask (ao->op, "rsb", S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -3936,8 +3853,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "sadd", EIGHT_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "sadd", EIGHT_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -3947,8 +3863,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (m & SIXTEEN_BIT) {
 				ao->o = 0x90fa00f0;
-			} else
-			if (m & EIGHT_BIT) {
+			} else if (m & EIGHT_BIT) {
 				ao->o = 0x80fa00f0;
 			} else {
 				return -1;
@@ -3959,8 +3874,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "sasx", 0))) {
+	} else if ((m = opmask (ao->op, "sasx", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -3975,8 +3889,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "sbc", S_BIT))) {
+	} else if ((m = opmask (ao->op, "sbc", S_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4022,8 +3935,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if (( m = opmask (ao->op, "sbfx", 0) )) {
+	} else if (( m = opmask (ao->op, "sbfx", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_CONST_CONST: {
@@ -4043,8 +3955,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "sdiv", 0))) {
+	} else if ((m = opmask (ao->op, "sdiv", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4059,8 +3970,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "sel", 0))) {
+	} else if ((m = opmask (ao->op, "sel", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4075,8 +3985,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "setend", 0))) {
+	} else if ((m = opmask (ao->op, "setend", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_OTHER: {
@@ -4085,8 +3994,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			if (!(strcmpnull (ao->a[0], "be"))) {
 				ao->o |= 1 << 11;
 				return 2;
-			} else
-			if (!(strcmpnull (ao->a[0], "le"))) {
+			} else if (!(strcmpnull (ao->a[0], "le"))) {
 				return 2;
 			} else {
 				return -1;
@@ -4096,8 +4004,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "sev", 0))) {
+	} else if ((m = opmask (ao->op, "sev", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_NONE:
@@ -4112,8 +4019,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "shadd", EIGHT_BIT | SIXTEEN_BIT ))) {
+	} else if ((m = opmask (ao->op, "shadd", EIGHT_BIT | SIXTEEN_BIT ))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4123,8 +4029,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (m & SIXTEEN_BIT) {
 				ao->o = 0x90fa20f0;
-			} else
-			if (m & EIGHT_BIT) {
+			} else if (m & EIGHT_BIT) {
 				ao->o = 0x80fa20f0;
 			} else {
 				return -1;
@@ -4135,8 +4040,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "shasx", 0))) {
+	} else if ((m = opmask (ao->op, "shasx", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4151,8 +4055,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "shsax", 0))) {
+	} else if ((m = opmask (ao->op, "shsax", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4167,8 +4070,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "shsub", EIGHT_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "shsub", EIGHT_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4178,8 +4080,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (m & SIXTEEN_BIT) {
 				ao->o = 0xd0fa20f0;
-			} else
-			if (m & EIGHT_BIT) {
+			} else if (m & EIGHT_BIT) {
 				ao->o = 0xc0fa20f0;
 			} else {
 				return -1;
@@ -4190,8 +4091,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "smc", 0))) {
+	} else if ((m = opmask (ao->op, "smc", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_CONST: {
@@ -4210,8 +4110,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "smla", BB_BIT | BT_BIT | TB_BIT | TT_BIT | WB_BIT | WT_BIT | L_BIT | D_BIT | X_BIT))) {
+	} else if ((m = opmask (ao->op, "smla", BB_BIT | BT_BIT | TB_BIT | TT_BIT | WB_BIT | WT_BIT | L_BIT | D_BIT | X_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_REG_REG: {
@@ -4226,17 +4125,13 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			if (m & L_BIT) {
 				if (m & BB_BIT) {
 					ao->o = 0xc0fb8000;
-				} else
-				if (m & BT_BIT) {
+				} else if (m & BT_BIT) {
 					ao->o = 0xc0fb9000;
-				} else
-				if (m & TB_BIT) {
+				} else if (m & TB_BIT) {
 					ao->o = 0xc0fba000;
-				} else
-				if (m & TT_BIT) {
+				} else if (m & TT_BIT) {
 					ao->o = 0xc0fbb000;
-				} else
-				if (m & D_BIT) {
+				} else if (m & D_BIT) {
 					ao->o = 0xc0fbc000;
 					if (m & X_BIT) {
 						ao->o |= 1 << 12;
@@ -4294,8 +4189,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "smlsd", X_BIT))) {
+	} else if ((m = opmask (ao->op, "smlsd", X_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_REG_REG: {
@@ -4315,8 +4209,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "smlsld", X_BIT))) {
+	} else if ((m = opmask (ao->op, "smlsld", X_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_REG_REG: {
@@ -4344,8 +4237,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "smmla", R_BIT))) {
+	} else if ((m = opmask (ao->op, "smmla", R_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_REG_REG: {
@@ -4365,8 +4257,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "smmls", R_BIT))) {
+	} else if ((m = opmask (ao->op, "smmls", R_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_REG_REG: {
@@ -4386,8 +4277,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "smmul", R_BIT))) {
+	} else if ((m = opmask (ao->op, "smmul", R_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4405,8 +4295,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "smuad", X_BIT))) {
+	} else if ((m = opmask (ao->op, "smuad", X_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4424,8 +4313,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "smul", BB_BIT | BT_BIT | TB_BIT | TT_BIT | WB_BIT | WT_BIT | L_BIT))) {
+	} else if ((m = opmask (ao->op, "smul", BB_BIT | BT_BIT | TB_BIT | TT_BIT | WB_BIT | WT_BIT | L_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4435,20 +4323,15 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (m & BB_BIT) {
 				ao->o = 0x10fb00f0;
-			} else
-			if (m & BT_BIT) {
+			} else if (m & BT_BIT) {
 				ao->o = 0x10fb10f0;
-			} else
-			if (m & TB_BIT) {
+			} else if (m & TB_BIT) {
 				ao->o = 0x10fb20f0;
-			} else
-			if (m & TT_BIT) {
+			} else if (m & TT_BIT) {
 				ao->o = 0x10fb30f0;
-			} else
-			if (m & WB_BIT) {
+			} else if (m & WB_BIT) {
 				ao->o = 0x30fb00f0;
-			} else
-			if (m & WT_BIT) {
+			} else if (m & WT_BIT) {
 				ao->o = 0x30fb10f0;
 			} else {
 				return -1;
@@ -4477,8 +4360,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "smusd", X_BIT))) {
+	} else if ((m = opmask (ao->op, "smusd", X_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4496,8 +4378,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "srs", DB_BIT | FD_BIT | IA_BIT | EA_BIT))) {
+	} else if ((m = opmask (ao->op, "srs", DB_BIT | FD_BIT | IA_BIT | EA_BIT))) {
 		ut32 w = 0;
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
@@ -4524,8 +4405,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "ssat", SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "ssat", SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST_REG: {
@@ -4563,8 +4443,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "ssax", 0))) {
+	} else if ((m = opmask (ao->op, "ssax", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4579,8 +4458,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "ssub", EIGHT_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "ssub", EIGHT_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -4590,8 +4468,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (m & EIGHT_BIT) {
 				ao->o = 0xc0fa00f0;
-			} else
-			if (m & SIXTEEN_BIT) {
+			} else if (m & SIXTEEN_BIT) {
 				ao->o = 0xd0fa00f0;
 			} else {
 				return -1;
@@ -4766,11 +4643,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				}
 				if (strsel == 0) {
 					ao->o = 0x40f8000e;
-				} else
-				if (strsel == H_BIT) {
+				} else if (strsel == H_BIT) {
 					ao->o = 0x20f8000e;
-				} else
-				if (strsel == B_BIT) {
+				} else if (strsel == B_BIT) {
 					ao->o = 0x00f8000e;
 				} else {
 					return -1;
@@ -4817,11 +4692,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			if (num >= 0) {
 				if (strsel == 0) {
 					ao->o = 0xc0f80000;
-				} else
-				if (strsel == B_BIT) {
+				} else if (strsel == B_BIT) {
 					ao->o = 0x80f80000;
-				} else
-				if (strsel == H_BIT) {
+				} else if (strsel == H_BIT) {
 					ao->o = 0xa0f80000;
 				} else {
 					return -1;
@@ -4832,11 +4705,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			}
 			if (strsel == 0) {
 				ao->o = 0x40f8000c;
-			} else
-			if (strsel == B_BIT) {
+			} else if (strsel == B_BIT) {
 				ao->o = 0x00f8000c;
-			} else
-			if (strsel == H_BIT) {
+			} else if (strsel == H_BIT) {
 				ao->o = 0x20f8000c;
 			} else {
 				return -1;
@@ -4856,11 +4727,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 
 			if (strsel == 0) {
 				ao->o = 0x40f80009;
-			} else
-			if (strsel == B_BIT) {
+			} else if (strsel == B_BIT) {
 				ao->o = 0x00f80009;
-			} else
-			if (strsel == H_BIT) {
+			} else if (strsel == H_BIT) {
 				ao->o = 0x20f80009;
 			} else {
 				return -1;
@@ -4886,11 +4755,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 
 			if (strsel == 0) {
 				ao->o = 0x40f8000d;
-			} else
-			if (strsel == B_BIT) {
+			} else if (strsel == B_BIT) {
 				ao->o = 0x00f8000d;
-			} else
-			if (strsel == H_BIT) {
+			} else if (strsel == H_BIT) {
 				ao->o = 0x20f8000d;
 			} else {
 				return -1;
@@ -4912,11 +4779,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			if ((reg1 < 8) && (reg2 < 8) && (reg3 < 8) && (!(m & DOTW_BIT))) {
 				if (strsel == 0) {
 					ao->o = 0x0050;
-				} else
-				if (strsel == B_BIT) {
+				} else if (strsel == B_BIT) {
 					ao->o = 0x0054;
-				} else
-				if (strsel == H_BIT) {
+				} else if (strsel == H_BIT) {
 					ao->o = 0x0052;
 				} else {
 					return -1;
@@ -4943,11 +4808,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 
 			if (strsel == 0) {
 				ao->o = 0x40f80000;
-			} else
-			if (strsel == B_BIT) {
+			} else if (strsel == B_BIT) {
 				ao->o = 0x00f80000;
-			} else
-			if (strsel == H_BIT) {
+			} else if (strsel == H_BIT) {
 				ao->o = 0x20f80000;
 			} else {
 				return -1;
@@ -5040,8 +4903,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "strex", B_BIT | D_BIT | H_BIT))) {
+	} else if ((m = opmask (ao->op, "strex", B_BIT | D_BIT | H_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		ut32 strsel = m & (B_BIT | H_BIT | D_BIT);
 		switch (argt) {
@@ -5059,8 +4921,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				ao->o |= reg2 << 4;
 				ao->o |= reg3 << 24;
 				return 4;
-			} else
-			if (strsel == H_BIT) {
+			} else if (strsel == H_BIT) {
 				ao->o = 0xc0e8500f;
 				ao->o |= reg1 << 8;
 				ao->o |= reg2 << 4;
@@ -5109,8 +4970,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			}
 			break;
 		}
-	} else
-	if ((m = opmask (ao->op, "sub", S_BIT | W_BIT))) {
+	} else if ((m = opmask (ao->op, "sub", S_BIT | W_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -5242,8 +5102,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "svc", 0))) {
+	} else if ((m = opmask (ao->op, "svc", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_CONST: {
@@ -5259,8 +5118,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "sxta", B_BIT | H_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "sxta", B_BIT | H_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -5288,11 +5146,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			
 			if (sufsel == B_BIT) {
 				ao->o = 0x40fa80f0;
-			} else
-			if (sufsel == (B_BIT | SIXTEEN_BIT)) {
+			} else if (sufsel == (B_BIT | SIXTEEN_BIT)) {
 				ao->o = 0x20fa80f0;
-			} else
-			if (sufsel == H_BIT) {
+			} else if (sufsel == H_BIT) {
 				ao->o = 0x00fa80f0;
 			} else {
 				return -1;
@@ -5303,8 +5159,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			}
 			break;
 		}
-	} else
-	if ((m = opmask (ao->op, "sxt", B_BIT | H_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "sxt", B_BIT | H_BIT | SIXTEEN_BIT))) {
 		ut64 sufsel = m & (B_BIT | H_BIT | SIXTEEN_BIT);
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
@@ -5327,11 +5182,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					return 2;
 				}
 				ao->o = 0x4ffa80f0;
-			} else
-			if (sufsel == (B_BIT | SIXTEEN_BIT)) {
+			} else if (sufsel == (B_BIT | SIXTEEN_BIT)) {
 				ao->o = 0x2ffa80f0;
-			} else
-			if (sufsel == H_BIT) {
+			} else if (sufsel == H_BIT) {
 				ao->o = 0x00b2;
 				if ((shift == 0) && std_16bit_2reg (ao, m)) {
 					return 2;
@@ -5348,8 +5201,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			}
 			break;
 		}
-	} else
-	if ((m = opmask (ao->op, "tb", B_BIT | H_BIT))) {
+	} else if ((m = opmask (ao->op, "tb", B_BIT | H_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		ut64 sufsel = m & (B_BIT | H_BIT);
 		switch (argt) {
@@ -5389,8 +5241,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "teq", 0))) {
+	} else if ((m = opmask (ao->op, "teq", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -5420,8 +5271,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "tst", 0))) {
+	} else if ((m = opmask (ao->op, "tst", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST: {
@@ -5457,8 +5307,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "uadd", EIGHT_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "uadd", EIGHT_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -5468,8 +5317,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (m & EIGHT_BIT) {
 				ao->o = 0x80fa40f0;
-			} else
-			if (m & SIXTEEN_BIT) {
+			} else if (m & SIXTEEN_BIT) {
 				ao->o = 0x90fa40f0;
 			} else {
 				return -1;
@@ -5481,8 +5329,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "uasx", 0))) {
+	} else if ((m = opmask (ao->op, "uasx", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -5497,8 +5344,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "ubfx", 0))) {
+	} else if ((m = opmask (ao->op, "ubfx", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_CONST_CONST: {
@@ -5523,8 +5369,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "udiv", 0))) {
+	} else if ((m = opmask (ao->op, "udiv", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -5539,8 +5384,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "uhadd", EIGHT_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "uhadd", EIGHT_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		ut64 sufsel = m & (EIGHT_BIT | SIXTEEN_BIT);
 		switch (argt) {
@@ -5551,8 +5395,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (sufsel == EIGHT_BIT) {
 				ao->o = 0x80fa60f0;
-			} else
-			if (sufsel == SIXTEEN_BIT) {
+			} else if (sufsel == SIXTEEN_BIT) {
 				ao->o = 0x90fa60f0;
 			} else {
 				return -1;
@@ -5564,8 +5407,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "uhasx", 0))) {
+	} else if ((m = opmask (ao->op, "uhasx", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -5582,8 +5424,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "uhsax", 0))) {
+	} else if ((m = opmask (ao->op, "uhsax", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -5599,8 +5440,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "uhsub", EIGHT_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "uhsub", EIGHT_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		ut64 sufsel = m & (EIGHT_BIT | SIXTEEN_BIT);
 		switch (argt) {
@@ -5611,8 +5451,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (sufsel == EIGHT_BIT) {
 				ao->o = 0xc0fa60f0;
-			} else
-			if (sufsel == SIXTEEN_BIT) {
+			} else if (sufsel == SIXTEEN_BIT) {
 				ao->o = 0xd0fa60f0;
 			} else {
 				return -1;
@@ -5624,8 +5463,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "umaal", 0))) {
+	} else if ((m = opmask (ao->op, "umaal", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_REG_REG: {
@@ -5649,8 +5487,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "umlal", 0))) {
+	} else if ((m = opmask (ao->op, "umlal", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_REG_REG: {
@@ -5674,8 +5511,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "umull", 0))) {
+	} else if ((m = opmask (ao->op, "umull", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_REG_REG: {
@@ -5699,8 +5535,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "uqadd", EIGHT_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "uqadd", EIGHT_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		ut64 sufsel = m & (EIGHT_BIT | SIXTEEN_BIT);
 		switch (argt) {
@@ -5711,8 +5546,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (sufsel == EIGHT_BIT) {
 				ao->o = 0x80fa50f0;
-			} else
-			if (sufsel == SIXTEEN_BIT) {
+			} else if (sufsel == SIXTEEN_BIT) {
 				ao->o = 0x90fa50f0;
 			} else {
 				return -1;
@@ -5724,8 +5558,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "uqasx", 0))) {
+	} else if ((m = opmask (ao->op, "uqasx", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -5741,8 +5574,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "uqsax", 0))) {
+	} else if ((m = opmask (ao->op, "uqsax", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -5758,8 +5590,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "uqsub", EIGHT_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "uqsub", EIGHT_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		ut64 sufsel = m & (EIGHT_BIT | SIXTEEN_BIT);
 		switch (argt) {
@@ -5770,8 +5601,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (sufsel == EIGHT_BIT) {
 				ao->o = 0xc0fa50f0;
-			} else
-			if (sufsel == SIXTEEN_BIT) {
+			} else if (sufsel == SIXTEEN_BIT) {
 				ao->o = 0xd0fa50f0;
 			} else {
 				return -1;
@@ -5783,8 +5613,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "usad8", 0))) {
+	} else if ((m = opmask (ao->op, "usad8", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -5800,8 +5629,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "usada8", 0))) {
+	} else if ((m = opmask (ao->op, "usada8", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG_REG_REG: {
@@ -5825,8 +5653,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "usat", SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "usat", SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_CONST_REG: {
@@ -5872,8 +5699,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "usax", 0))) {
+	} else if ((m = opmask (ao->op, "usax", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_REG_REG: {
@@ -5889,8 +5715,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "usub", EIGHT_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "usub", EIGHT_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		ut64 sufsel = m & (EIGHT_BIT | SIXTEEN_BIT);
 		switch (argt) {
@@ -5901,8 +5726,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		case THUMB_REG_REG_REG: {
 			if (sufsel == EIGHT_BIT) {
 				ao->o = 0xc0fa40f0;
-			} else
-			if (sufsel == SIXTEEN_BIT) {
+			} else if (sufsel == SIXTEEN_BIT) {
 				ao->o = 0xd0fa40f0;
 			} else {
 				return -1;
@@ -5914,8 +5738,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "uxta", B_BIT | H_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "uxta", B_BIT | H_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		ut64 sufsel = m & (B_BIT | H_BIT | SIXTEEN_BIT);
 		switch (argt) {
@@ -5942,11 +5765,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 
 			if (sufsel == B_BIT) {
 				ao->o = 0x50fa80f0;
-			} else
-			if (sufsel == (B_BIT | SIXTEEN_BIT)) {
+			} else if (sufsel == (B_BIT | SIXTEEN_BIT)) {
 				ao->o = 0x30fa80f0;
-			} else
-			if (sufsel == H_BIT) {
+			} else if (sufsel == H_BIT) {
 				ao->o = 0x10fa80f0;
 			} else {
 				return -1;
@@ -5959,8 +5780,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "uxt", B_BIT | H_BIT | SIXTEEN_BIT))) {
+	} else if ((m = opmask (ao->op, "uxt", B_BIT | H_BIT | SIXTEEN_BIT))) {
 		ut64 argt = thumb_selector (ao);
 		ut64 sufsel = m & (B_BIT | H_BIT | SIXTEEN_BIT);
 		switch (argt) {
@@ -5989,11 +5809,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 
 			if (sufsel == B_BIT) {
 				ao->o = 0x5ffa80f0;
-			} else
-			if (sufsel == (B_BIT | SIXTEEN_BIT)) {
+			} else if (sufsel == (B_BIT | SIXTEEN_BIT)) {
 				ao->o = 0x3ffa80f0;
-			} else
-			if (sufsel == H_BIT) {
+			} else if (sufsel == H_BIT) {
 				ao->o = 0x1ffa80f0;
 			} else {
 				return -1;
@@ -6009,8 +5827,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return -1;
 
 		}
-	} else
-	if ((m = opmask (ao->op, "wfe", 0))) {
+	} else if ((m = opmask (ao->op, "wfe", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_NONE: {
@@ -6026,8 +5843,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "wfi", 0))) {
+	} else if ((m = opmask (ao->op, "wfi", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_NONE: {
@@ -6043,8 +5859,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "yield", 0))) {
+	} else if ((m = opmask (ao->op, "yield", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
 		case THUMB_NONE: {
@@ -6421,8 +6236,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						// TODO: if (b>255) -> automatic multiplier
 						ao->o |= (a << 8);
 						ao->o |= ((b & 0xff) << 24);
-					} else
-					if (findyz (b, &y, &z)) {
+					} else if (findyz (b, &y, &z)) {
 						ao->o = 0x50e3;
 						ao->o |= (y << 24);
 						ao->o |= (z << 16);

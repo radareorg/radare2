@@ -92,7 +92,7 @@
 #define PROTECT_ZERO() \
 	if (REG(0)[0]=='z'){\
 		r_strbuf_appendf (&op->esil, ",");\
-	} else
+	} else /**/
 
 #define ESIL_LOAD(size) \
 	PROTECT_ZERO () {\

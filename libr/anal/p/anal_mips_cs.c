@@ -111,9 +111,9 @@ static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const 
 }
 
 #define PROTECT_ZERO() \
-	if (REG(0)[0]=='z'){\
+	if (REG(0)[0] == 'z') {\
 		r_strbuf_appendf (&op->esil, ",");\
-	} else
+	} else /**/
 
 #define ESIL_LOAD(size) \
 	PROTECT_ZERO () {\
