@@ -137,7 +137,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		}
 		if (ptr) {
 			*ptr = '\0';
-			ptr = r_str_trim_head_ro (ptr + 1);
+			ptr = (char *)r_str_trim_head_ro (ptr + 1);
 			strncpy (w0, buf, WSZ - 1);
 			strncpy (w1, ptr, WSZ - 1);
 
@@ -145,7 +145,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				ptr = r_str_trim_head_ro (ptr + 1);
+				ptr = (char *)r_str_trim_head_ro (ptr + 1);
 				strncpy (w1, optr, WSZ - 1);
 				strncpy (w2, ptr, WSZ - 1);
 				optr=ptr;
