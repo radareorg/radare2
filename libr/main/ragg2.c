@@ -259,7 +259,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				ut8 *b;
 				*p++ = 0;
 				off = r_num_math (NULL, arg);
-				b = malloc (strlen (opt.arg) + 1);
+				b = calloc (1, strlen (opt.arg) + 1);
 				len = r_hex_str2bin (p, b);
 				if (len > 0) {
 					r_egg_patch (es->e, off, (const ut8 *)b, len);
@@ -428,6 +428,8 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			format = "mach064";
 		} else if (!strcmp (format, "elf")) {
 			format = "elf64";
+		} else if (!strcmp (format, "pe")) {
+			format = "pe64";
 		}
 	}
 
@@ -507,7 +509,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			goto fail;
 		}
 	}
-
+	
 	// compile source code to assembly
 	if (!r_egg_compile (es->e)) {
 		if (!fmt) {
@@ -525,7 +527,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			r_egg_raw (es->e, (const ut8 *)str, l);
 		}
 	}
-
+	
 	// add raw file
 	if (contents) {
 		size_t l;
@@ -545,10 +547,10 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			goto fail;
 		}
 	}
-
+	
 	// add raw bytes
 	if (bytes) {
-		ut8 *b = malloc (strlen (bytes) + 1);
+		ut8 *b = calloc (1, strlen (bytes) + 1);
 		int len = r_hex_str2bin (bytes, b);
 		if (len > 0) {
 			if (!r_egg_raw (es->e, b, len)) {
@@ -563,6 +565,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		free (bytes);
 		bytes = NULL;
 	}
+	
 
 	/* set output (create output file if needed) */
 	if (ofileauto) {
@@ -594,7 +597,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			goto fail;
 		}
 	}
-
+	
 	// assemble to binary
 	if (!show_asm) {
 		if (!r_egg_assemble (es->e)) {
@@ -686,9 +689,11 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 					printf ("\n");
 				} // else show_raw is_above()
 				break;
-			case 'p': // PE
-				if (strlen (format) >= 2 && format[1] == 'y') { // Python
+			case 'p': // PE/python
+				if (strlen (format) > 2 && format[1] == 'y') { // Python
 					r_print_code (p, 0, tmp, tmpsz, 'p');
+				} else { // PE
+					create (format, arch, bits, tmp, tmpsz);
 				}
 				break;
 			case 'e': // ELF

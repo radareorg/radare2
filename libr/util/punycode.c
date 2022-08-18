@@ -342,7 +342,7 @@ R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen) {
 		n += i / (di + 1);
 		i %= (di + 1);
 
-		memmove (dst + i + 1, dst + i, (di - i) * sizeof(ut32));
+		memmove (dst + i + 1, dst + i, (di - i) * sizeof (ut32));
 		dst[i++] = n;
 	}
 

@@ -1,12 +1,6 @@
-/* Copyright (C) 2008-2021 - pancake, unlogic, emvivre */
+/* Copyright (C) 2008-2022 - pancake, unlogic, emvivre */
 
-#include <r_flag.h>
 #include <r_core.h>
-#include <r_asm.h>
-#include <r_lib.h>
-#include <r_types.h>
-#include <stdio.h>
-#include <string.h>
 
 static ut64 getnum(RAsm *a, const char *s);
 
@@ -1704,7 +1698,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplea(RAsm *a, ut8 *data, const Opcode *op){
+static int oplea(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int mod = 0;
 	st32 offset = 0;
@@ -2375,9 +2369,6 @@ static int oppop(RAsm *a, ut8 *data, const Opcode *op) {
 	int offset = 0;
 	int mod = 0;
 	if ((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) {
-		if (op->operands[0].type & OT_MEMORY) {
-			return -1;
-		}
 		if (op->operands[0].type & OT_REGTYPE & OT_SEGMENTREG) {
 			ut8 base;
 			if (op->operands[0].reg & X86R_FS) {
@@ -2427,7 +2418,7 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int mod = 0;
-	st32 immediate = 0;;
+	st32 immediate = 0;
 	st32 offset = 0;
 	if (op->operands[0].type & OT_GPREG
 			&& !(op->operands[0].type & OT_MEMORY)) {

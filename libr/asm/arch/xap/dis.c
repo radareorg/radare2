@@ -50,17 +50,17 @@ static int decode_fixed(struct state *s, struct directive *d) {
 			return 0;
 		}
 		s->s_nop++;
-		strcpy(d->d_asm, "nop");
+		strcpy (d->d_asm, "nop");
 		break;
-	case INST_BRK: strcpy(d->d_asm, "brk"); break;
-	case INST_SLEEP: strcpy(d->d_asm, "sleep"); break;
-	case INST_SIF: strcpy(d->d_asm, "sif"); break;
-	case INST_BC: strcpy(d->d_asm, "bc"); break;
-	case INST_BRXL: strcpy(d->d_asm, "brxl"); break;
-	case INST_U: strcpy(d->d_asm, ""); s->s_u = 1; break;
-	case INST_RTS: strcpy(d->d_asm, "rts"); break;
+	case INST_BRK: strcpy (d->d_asm, "brk"); break;
+	case INST_SLEEP: strcpy (d->d_asm, "sleep"); break;
+	case INST_SIF: strcpy (d->d_asm, "sif"); break;
+	case INST_BC: strcpy (d->d_asm, "bc"); break;
+	case INST_BRXL: strcpy (d->d_asm, "brxl"); break;
+	case INST_U: strcpy (d->d_asm, ""); s->s_u = 1; break;
+	case INST_RTS: strcpy (d->d_asm, "rts"); break;
 	}
-	return d->d_asm[0]!=0;
+	return d->d_asm[0] != 0;
 }
 
 static char *regname(int reg) {
@@ -421,7 +421,7 @@ static int decode_known(struct state *s, struct directive *d) {
 	if (idx) {
 		char *r = in->in_mode == DATA_MODE_INDEXED_X ? "X" : "Y";
 		if (regn) r = "Y";
-		snprintf(tmp, sizeof(tmp), ", %s", r);
+		snprintf(tmp, sizeof (tmp), ", %s", r);
 		strcat(d->d_asm, tmp);
 		if (ptr)
 			strcat(d->d_asm, ")");
@@ -455,7 +455,7 @@ static void xap_decode(struct state *s, struct directive *d) {
 }
 
 static int read_bin(struct state *s, struct directive *d) {
-	memcpy(&d->d_inst, s->s_buf, sizeof(d->d_inst));
+	memcpy(&d->d_inst, s->s_buf, sizeof (d->d_inst));
 	d->d_off = s->s_off++;
 	return 1;
 }
@@ -492,7 +492,7 @@ static void own(struct state *s)
 	char fname[128];
 	char *fnamep;
 
-	snprintf(fname, sizeof(fname), "%s", s->s_fname);
+	snprintf(fname, sizeof (fname), "%s", s->s_fname);
 	fnamep = strchr(fname, '.');
 	if (fnamep)
 		*fnamep = 0;

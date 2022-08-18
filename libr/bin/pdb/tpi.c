@@ -1588,9 +1588,9 @@ static void free_lf_fieldlist(void *type) {
 			type_info->free_ (type_info);
 		}
 		if (type_info->type_info) {
-			free(type_info->type_info);
+			free (type_info->type_info);
 		}
-		free(type_info);
+		free (type_info);
 	}
 	r_list_free (lf_fieldlist->substructs);
 }
@@ -1617,7 +1617,7 @@ static void free_lf_onemethod(void *type) {
 static void free_lf_enum(void *type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_ENUM *lf_enum = (SLF_ENUM *) t->type_info;
-	free(lf_enum->name.name);
+	free (lf_enum->name.name);
 }
 
 static void free_lf_array(void *type) {
@@ -1895,7 +1895,7 @@ static void get_class_struct_print_type(void *type, char **name) {
 	}
 
 	//	if (need_to_free) {
-	//		free(tmp_name);
+	//		free (tmp_name);
 	//		tmp_name = 0;
 	//	}
 }
@@ -1935,7 +1935,7 @@ static void get_arglist_print_type(void *type, char **name) {
 //	strcat(*name, tmp_name);
 
 //	if (need_to_free)
-//		free(tmp_name);
+//		free (tmp_name);
 }
 
 // TODO, nothing is really being parsed here
@@ -1977,7 +1977,7 @@ static void get_union_print_type(void *type, char **name) {
 	}
 
 	//	if (need_to_free) {
-	//		free(tmp_name);
+	//		free (tmp_name);
 	//		tmp_name = 0;
 	//	}
 }
@@ -2017,7 +2017,7 @@ static void get_enumerate_print_type(void *type, char **name) {
 	}
 
 	//	if (need_to_free)
-	//		free(tmp_name);
+	//		free (tmp_name);
 }
 
 static void get_nesttype_print_type(void *type, char **name) {
@@ -2090,7 +2090,7 @@ static void get_method_print_type(void *type, char **name) {
 	}
 
 	//	if (need_to_free)
-	//		free(tmp_name);
+	//		free (tmp_name);
 }
 
 static void get_member_print_type(void *type, char **name) {
@@ -2200,11 +2200,11 @@ static int parse_sval(SVal *val, uint8_t *leaf_data, unsigned int *read_bytes, u
 		    SVal_LF_UQUADWORD lf_uqword;
 		    READ8(*read_bytes, len, lf_uqword.value, leaf_data, st64);
 		    parse_sctring(&lf_uqword.name, leaf_data, read_bytes, len);
-		    val->name_or_val = malloc(sizeof(SVal_LF_UQUADWORD));
+		    val->name_or_val = malloc(sizeof (SVal_LF_UQUADWORD));
 		    if (!val->name_or_val) {
 			    break;
 		    }
-		    memcpy(val->name_or_val, &lf_uqword, sizeof(SVal_LF_UQUADWORD));
+		    memcpy(val->name_or_val, &lf_uqword, sizeof (SVal_LF_UQUADWORD));
 		    break;
 		}
 		case eLF_QUADWORD:
@@ -2280,7 +2280,7 @@ static int parse_sval(SVal *val, uint8_t *leaf_data, unsigned int *read_bytes, u
 			SVal_LF_USHORT lf_ushort;
 			READ2(*read_bytes, len, lf_ushort.value, leaf_data, ut16);
 			parse_sctring (&lf_ushort.name, leaf_data, read_bytes, len);
-			val->name_or_val = malloc (sizeof(SVal_LF_USHORT));
+			val->name_or_val = malloc (sizeof (SVal_LF_USHORT));
 			if (!val->name_or_val) {
 				break;
 			}
@@ -2384,7 +2384,7 @@ static int parse_lf_onemethod(SLF_ONEMETHOD *lf_onemethod, uint8_t *leaf_data, u
 
 	// lf_onemethod->fldattr.fldattr = SWAP_UINT16(lf_onemethod->fldattr.fldattr);
 
-	if((lf_onemethod->fldattr.bits.mprop == eMTintro) ||
+	if ((lf_onemethod->fldattr.bits.mprop == eMTintro) ||
 		(lf_onemethod->fldattr.bits.mprop == eMTpureintro)) {
 		READ4(*read_bytes, len, lf_onemethod->val.val, leaf_data, ut32);
 	}
@@ -2863,7 +2863,7 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, uint8_t *leaf_data, unsigne
 }
 
 #define PARSE_LF(lf_type, lf_func) { \
-	lf_type *lf = (lf_type *) malloc(sizeof(lf_type)); \
+	lf_type *lf = (lf_type *) malloc(sizeof (lf_type)); \
 	if (!lf) { free (leaf_data); return 0; }\
 	parse_##lf_func(lf, leaf_data + 2, &read_bytes, type->length); \
 	type->type_data.type_info = (void *) lf; \
@@ -2902,7 +2902,7 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 		break;
 	case eLF_POINTER:
 	{
-		SLF_POINTER *lf = (SLF_POINTER *) malloc(sizeof(SLF_POINTER)); \
+		SLF_POINTER *lf = (SLF_POINTER *) malloc(sizeof (SLF_POINTER)); \
 		if (!lf) { \
 			free (leaf_data); \
 			return 0; \
@@ -2956,7 +2956,7 @@ int parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
 	tpi_stream->types = r_list_new ();
 	p_types_list = tpi_stream->types;
 
-	stream_file_read(stream, sizeof(STPIHeader), (char *)&tpi_stream->header);
+	stream_file_read(stream, sizeof (STPIHeader), (char *)&tpi_stream->header);
 
 	base_idx = tpi_stream->header.idx_begin;
 

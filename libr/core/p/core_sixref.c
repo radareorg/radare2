@@ -17,7 +17,7 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 
 	for (; p < e; p++, addr += 4) {
 		ut32 v = *p;
-		if((v & 0x1f000000) == 0x10000000) // adr and adrp
+		if ((v & 0x1f000000) == 0x10000000) // adr and adrp
 		{
 			ut32 reg = v & 0x1f;
 			bool is_adrp = (v & 0x80000000) != 0;
@@ -34,23 +34,23 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 			else
 			{
 				ut32 *q = p + 1;
-				while(q < e && *q == 0xd503201f) // nop
+				while (q < e && *q == 0xd503201f) // nop
 				{
 					q++;
 				}
-				if(q < e) {
+				if (q < e) {
 					v = *q;
 					ut32 reg2 = reg;
 					ut32 aoff = 0;
 					bool found = false;
-					if((v & 0xff8003e0) == (0x91000000 | (reg << 5))) // 64bit add, match reg
+					if ((v & 0xff8003e0) == (0x91000000 | (reg << 5))) // 64bit add, match reg
 					{
 						reg2 = v & 0x1f;
 						aoff = (v >> 10) & 0xfff;
 						if (v & 0x400000) {
 							aoff <<= 12;
 						}
-						if(target + aoff == search) {
+						if (target + aoff == search) {
 							r_cons_printf ("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff);
 							found = true;
 						} else {
@@ -59,9 +59,9 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 							} while (q < e && *q == 0xd503201f); // nop
 						}
 					}
-					if(!found && q < e) {
+					if (!found && q < e) {
 						v = *q;
-						if((v & 0xff8003e0) == (0x91000000 | (reg2 << 5))) // 64bit add, match reg
+						if ((v & 0xff8003e0) == (0x91000000 | (reg2 << 5))) // 64bit add, match reg
 						{
 							ut32 xoff = (v >> 10) & 0xfff;
 							if (v & 0x400000) {
@@ -71,7 +71,7 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 								// If we get here, we know the previous add matched
 								r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; add x%u, x%u, %#x\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, v & 0x1f, reg2, xoff);
 							}
-						} else if((v & 0x3e0003e0) == (0x38000000 | (reg2 << 5))) // all of str[hb]/ldr[hb], match reg
+						} else if ((v & 0x3e0003e0) == (0x38000000 | (reg2 << 5))) // all of str[hb]/ldr[hb], match reg
 						{
 							const char *inst = NULL;
 							uint8_t size;
@@ -89,11 +89,11 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 								case 0x21: case 0x31: inst = "ldrsh"; break;
 								case 0x22:            inst = "ldrsw"; break;
 							}
-							if(inst)
+							if (inst)
 							{
 								uint8_t regsize = opc == 2 && size < 2 ? 3 : size;
 								const char *rs = regsize == 3 ? "x" : "w";
-								if((v & 0x1000000) != 0) // unsigned offset
+								if ((v & 0x1000000) != 0) // unsigned offset
 								{
 									ut64 uoff = ((v >> 10) & 0xfff) << size;
 									if (target + aoff + uoff == search) {
@@ -106,12 +106,12 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 											r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; %s %s%u, [x%u, %#"PFMT64x"]\n", addr, is_adrp ? "adrp" : "adr", reg, target, inst, rs, v & 0x1f, reg2, uoff);
 										}
 									}
-								} else if((v & 0x00200000) == 0) {
+								} else if ((v & 0x00200000) == 0) {
 									int64_t soff = ((int64_t)((v >> 12) & 0x1ff) << 55) >> 55;
 									const char *sign = soff < 0 ? "-" : "";
-									if(target + aoff + soff == search) {
-										if((v & 0x400) == 0) {
-											if((v & 0x800) == 0) // unscaled
+									if (target + aoff + soff == search) {
+										if ((v & 0x400) == 0) {
+											if ((v & 0x800) == 0) // unscaled
 											{
 												switch((opc << 4) | size)
 												{
@@ -141,7 +141,7 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 													case 0x22:            inst = "ldtrsw"; break;
 												}
 											}
-											if(aoff) // Have add
+											if (aoff) // Have add
 											{
 												r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u, %s%"PFMT64d"]\n",
 													addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
@@ -153,9 +153,9 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 										}
 										else // pre/post-index
 										{
-											if((v & 0x800) != 0) // pre
+											if ((v & 0x800) != 0) // pre
 											{
-												if(aoff) // Have add
+												if (aoff) // Have add
 												{
 													r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u, %s%"PFMT64d"]!\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
 												}
@@ -166,7 +166,7 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 											}
 											else // post
 											{
-												if(aoff) // Have add
+												if (aoff) // Have add
 												{
 													r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u], %s%"PFMT64d"\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
 												}
@@ -185,20 +185,20 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 				}
 			}
 		}
-		else if((v & 0xbf000000) == 0x18000000 || (v & 0xff000000) == 0x98000000) // ldr and ldrsw literal
+		else if ((v & 0xbf000000) == 0x18000000 || (v & 0xff000000) == 0x98000000) // ldr and ldrsw literal
 		{
 			int64_t off = ((int64_t)((v >> 5) & 0x7ffff) << 45) >> 43;
 			if (!search) {
 				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr + off, addr);
 				addref (core, addr, addr + off, R_ANAL_REF_TYPE_DATA); // is_adrp matters?
-			} else if(addr + off == search) {
+			} else if (addr + off == search) {
 				ut32 reg  = v & 0x1f;
 				bool is_ldrsw = (v & 0xff000000) == 0x98000000;
 				bool is_64bit = (v & 0x40000000) != 0 && !is_ldrsw;
 				r_cons_printf("%#"PFMT64x": %s %s%u, %#"PFMT64x"\n", addr, is_ldrsw ? "ldrsw" : "ldr", is_64bit ? "x" : "w", reg, search);
 			}
 		}
-		else if((v & 0x7c000000) == 0x14000000) // b and bl
+		else if ((v & 0x7c000000) == 0x14000000) // b and bl
 		{
 			int64_t off = ((int64_t)(v & 0x3ffffff) << 38) >> 36;
 			bool is_bl = (v & 0x80000000) != 0;
@@ -209,13 +209,13 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 				r_cons_printf("%#"PFMT64x": %s %#"PFMT64x"\n", addr, is_bl ? "bl" : "b", search);
 			}
 		}
-		else if((v & 0xff000010) == 0x54000000) // b.cond
+		else if ((v & 0xff000010) == 0x54000000) // b.cond
 		{
 			int64_t off = ((int64_t)((v >> 5) & 0x7ffff) << 45) >> 43;
 			if (!search) {
 				addref (core, addr, addr + off, R_ANAL_REF_TYPE_CODE);
 				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr + off, addr);
-			} else if(addr + off == search) {
+			} else if (addr + off == search) {
 				const char *cond;
 				switch(v & 0xf)
 				{
@@ -239,20 +239,20 @@ static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 				r_cons_printf("%#"PFMT64x": b.%s %#"PFMT64x"\n", addr, cond, search);
 			}
 		}
-		else if((v & 0x7e000000) == 0x34000000) // cbz and cbnz
+		else if ((v & 0x7e000000) == 0x34000000) // cbz and cbnz
 		{
 			int64_t off = ((int64_t)((v >> 5) & 0x7ffff) << 45) >> 43;
 			if (!search) {
 				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr + off, addr);
 				addref (core, addr, addr + off, R_ANAL_REF_TYPE_CODE);
-			} else if(addr + off == search) {
+			} else if (addr + off == search) {
 				ut32 reg  = v & 0x1f;
 				bool is_64bit = (v & 0x80000000) != 0;
 				bool is_nz    = (v & 0x01000000) != 0;
 				r_cons_printf ("%#"PFMT64x": %s %s%u, %#"PFMT64x"\n", addr, is_nz ? "cbnz" : "cbz", is_64bit ? "x" : "w", reg, search);
 			}
 		}
-		else if((v & 0x7e000000) == 0x36000000) // tbz and tbnz
+		else if ((v & 0x7e000000) == 0x36000000) // tbz and tbnz
 		{
 			int64_t off = ((int64_t)((v >> 5) & 0x3fff) << 50) >> 48;
 			if (!search) {

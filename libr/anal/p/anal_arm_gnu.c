@@ -24,7 +24,7 @@ static unsigned int disarm_branch_offset(unsigned int pc, unsigned int insoff) {
 #define IS_BRANCH(x)  (((x) & ARM_BRANCH_I_MASK) == ARM_BRANCH_I)
 #define IS_BRANCHL(x) (IS_BRANCH (x) && ((x) & ARM_BRANCH_LINK) == ARM_BRANCH_LINK)
 #define IS_RETURN(x)  (((x) & (ARM_DTM_I_MASK | ARM_DTM_LOAD | (1 << 15))) == (ARM_DTM_I | ARM_DTM_LOAD | (1 << 15)))
-// if ( (inst & ( ARM_DTX_I_MASK | ARM_DTX_LOAD  | ( ARM_DTX_RD_MASK ) ) ) == ( ARM_DTX_LOAD | ARM_DTX_I | ( ARM_PC << 12 ) ) )
+// if ((inst & ( ARM_DTX_I_MASK | ARM_DTX_LOAD  | ( ARM_DTX_RD_MASK ) ) ) == ( ARM_DTX_LOAD | ARM_DTX_I | ( ARM_PC << 12 ) ) )
 #define IS_UNKJMP(x)  ((((ARM_DTX_RD_MASK))) == (ARM_DTX_LOAD | ARM_DTX_I | (ARM_PC << 12)))
 #define IS_LOAD(x)    (((x) & ARM_DTX_LOAD) == (ARM_DTX_LOAD))
 #define IS_CONDAL(x)  (((x) & ARM_COND_MASK) == ARM_COND_AL)
@@ -309,13 +309,9 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		    ((code[i] & 0xffffff00) == 0xe12fff00)) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		} else if (IS_BRANCHL (code[i])) {
-			if (IS_BRANCH (code[i])) {
-				op->type = R_ANAL_OP_TYPE_CALL;
-				op->jump = branch_dst_addr;
-				op->fail = addr + 4;
-			} else {
-				op->type = R_ANAL_OP_TYPE_RET;
-			}
+			op->type = R_ANAL_OP_TYPE_CALL;
+			op->jump = branch_dst_addr;
+			op->fail = addr + 4;
 		} else if (IS_BRANCH (code[i])) {
 			if (IS_CONDAL (code[i])) {
 				op->type = R_ANAL_OP_TYPE_JMP;

@@ -77,7 +77,7 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 	cursp = oldsp = sp;
 	(void)bio->read_at (bio->io, sp, stack, stacksize);
 	ptr = stack;
-	for (i=0; i<dbg->btdepth; i++) {
+	for (i = 0; i < dbg->btdepth; i++) {
 		p64 = (ut64*)ptr;
 		p32 = (ut32*)ptr;
 		p16 = (ut16*)ptr;

@@ -157,7 +157,7 @@ cpucode = 66471;
 		if (cpu) {
  			int i;
 			cpucode = atoi (cpu);
-			for (i = 0; i < (sizeof(arm_cpucodes) / sizeof(arm_cpucodes[0])); i++) {
+			for (i = 0; i < (sizeof (arm_cpucodes) / sizeof (arm_cpucodes[0])); i++) {
 				if (!strcmp (arm_cpucodes[i].name, cpu)) {
 					cpucode = arm_cpucodes[i].cpucode;
 					break;

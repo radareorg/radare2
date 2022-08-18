@@ -3023,7 +3023,7 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 	RBinElfSection *ret = NULL;
 	char unknown_s[32], invalid_s[32];
-	int i, nidx, unknown_c=0, invalid_c=0;
+	int i, nidx, unknown_c = 0, invalid_c = 0;
 
 	r_return_val_if_fail (bin, NULL);
 	if (bin->g_sections) {
@@ -3237,7 +3237,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS && sym[i].st_shndx == SHT_NULL) {
 			if (sym[i].st_value) {
 				toffset = sym[i].st_value;
-			} else if ((toffset = get_import_addr (bin, i)) == -1){
+			} else if ((toffset = get_import_addr (bin, i)) == -1) {
 				toffset = 0;
 			}
 			tsize = 16;
@@ -3927,13 +3927,13 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	//free (bin->strtab_section);
 	size_t i;
 	if (bin->imports_by_ord) {
-		for (i = 0; i<bin->imports_by_ord_size; i++) {
+		for (i = 0; i < bin->imports_by_ord_size; i++) {
 			free (bin->imports_by_ord[i]);
 		}
 		free (bin->imports_by_ord);
 	}
 	if (bin->symbols_by_ord) {
-		for (i = 0; i<bin->symbols_by_ord_size; i++) {
+		for (i = 0; i < bin->symbols_by_ord_size; i++) {
 			r_bin_symbol_free (bin->symbols_by_ord[i]);
 		}
 		free (bin->symbols_by_ord);

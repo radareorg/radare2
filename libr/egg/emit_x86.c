@@ -167,10 +167,10 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	/* XXX: Hack: Adjust offset in R_BP correctly for 64b addresses */
 #define BPOFF (R_SZ-4)
 #define M32(x) (unsigned int)((x) & 0xffffffff)
-	/* XXX: Assumes sizeof(ut32) == 4 */
-	for (i=4; i<=oj; i+=4) {
+	/* XXX: Assumes sizeof (ut32) == 4 */
+	for (i = 4; i <= oj; i += 4) {
 		/* XXX endian issues (non-portable asm) */
-		ut32 *n = (ut32 *)(s+i-4);
+		ut32 *n = (ut32 *)(s + i - 4);
 		p = r_egg_mkvar (egg, str2, dstvar, i+BPOFF);
 		if (attsyntax) {
 			r_egg_printf (egg, "  movl $0x%x, %s\n", M32 (*n), p);
@@ -212,7 +212,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 #if 0
 	char *p, str2[64];
 	int i, oj = j;
-	for (i=0; i<oj; i+=4) {
+	for (i = 0; i < oj; i += 4) {
 		/* XXX endian and 32/64bit issues */
 		int *n = (int *)(str+i);
 		p = r_egg_mkvar (egg, str2, dstvar, j);
@@ -418,8 +418,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 			op = e? "jae": "ja";
 		}
 		arg = b+1;
-	} else
-	if (g) {
+	} else if (g) {
 		*g = '\0';
 		if (signed_value) {
 			op = e? "jle": "jl";

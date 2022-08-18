@@ -1,3 +1,5 @@
+#define R_LOG_ORIGIN "r2k"
+
 #include "io_r2k_windows.h"
 
 HANDLE gHandleDriver = NULL;
@@ -91,7 +93,7 @@ int GetSystemModules(RIO *io) {
 	int i;
 	LPVOID lpBufMods = NULL;
 	int bufmodsize = 1024 * 1024;
-	if(gHandleDriver) {
+	if (gHandleDriver) {
 		if (!(lpBufMods = malloc (bufmodsize))) {
 			eprintf ("[r2k] GetSystemModules: Error can't allocate %i bytes of memory.\n", bufmodsize);
 			return -1;
@@ -116,7 +118,7 @@ int ReadKernelMemory (ut64 address, ut8 *buf, int len) {
 	int bufsize;
 	PPA p;
 	memset (buf, '\xff', len);
-	if(gHandleDriver) {
+	if (gHandleDriver) {
 		bufsize = sizeof (PA) + len;
 		if (!(lpBuffer = malloc (bufsize))) {
 			eprintf ("[r2k] ReadKernelMemory: Error can't allocate %i bytes of memory.\n", bufsize);
@@ -139,15 +141,14 @@ int ReadKernelMemory (ut64 address, ut8 *buf, int len) {
 	return ret;
 }
 
-int WriteKernelMemory (ut64 address, const ut8 *buf, int len) {
+int WriteKernelMemory(ut64 address, const ut8 *buf, int len) {
 	DWORD ret = -1, bRead = 0;
 	LPVOID lpBuffer = NULL;
 	int bufsize;
 	PPA p;
-	if(gHandleDriver) {
+	if (gHandleDriver) {
 		bufsize = sizeof (PA) + len;
 		if (!(lpBuffer = malloc (bufsize))) {
-			eprintf ("[r2k] WriteKernelMemory: Error can't allocate %i bytes of memory.\n", bufsize);
 			return -1;
 		}
 		p = (PPA)lpBuffer;
@@ -157,7 +158,7 @@ int WriteKernelMemory (ut64 address, const ut8 *buf, int len) {
 		if (DeviceIoControl (gHandleDriver, IOCTL_WRITE_KERNEL_MEM, lpBuffer, bufsize, lpBuffer, bufsize, &bRead, NULL)) {
 			ret = len;
 		} else {
-			eprintf ("[r2k] WriteKernelMemory: Error IOCTL_WRITE_KERNEL_MEM.\n");
+			R_LOG_ERROR ("WriteKernelMemory: IOCTL_WRITE_KERNEL_MEM");
 			ret = -1;
 		}
 		free (lpBuffer);

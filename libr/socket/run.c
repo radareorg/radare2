@@ -854,7 +854,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 	if (p->_aslr != -1) {
 		setASLR (p, p->_aslr);
 	}
-#if __UNIX__ && !__wasi__ && !defined(serenity)
+#if __UNIX__ && !__wasi__ && !defined(__serenity__)
 	set_limit (p->_docore, RLIMIT_CORE, RLIM_INFINITY);
 	if (p->_maxfd) {
 		set_limit (p->_maxfd, RLIMIT_NOFILE, p->_maxfd);
@@ -915,7 +915,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 						r_socket_free (child);
 						r_socket_free (fd);
 						return 1;
-					} else if (child_pid != 0){
+					} else if (child_pid != 0) {
 						// parent code
 						is_child = false;
 						if (p->_pid) {

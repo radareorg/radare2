@@ -72,7 +72,7 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtPU *db, ut64 vaddr, char *name) {
 			resname = p;
 		}
 		// two symbols at different addresses and same name wtf
-		// eprintf ("Symbol '%s' dupped!\n", sym->name);
+		R_LOG_DEBUG ("Found duplicated symbol '%s'", name);
 	}
 	return resname;
 }
@@ -188,7 +188,7 @@ static bool false_positive(const char *str) {
 		bo[(ut8)str[i]] = 1;
 		ln++;
 	}
-	for (i = 0; i<0x100; i++) {
+	for (i = 0; i < 0x100; i++) {
 		if (bo[i]) {
 			di++;
 		}
@@ -347,7 +347,7 @@ loop_end:
 					}
 					prevd = true;
 				} else if (ch == '.') {
-					if (prevd == true && segmentsum < 256){
+					if (prevd == true && segmentsum < 256) {
 						segment++;
 						segmentsum = 0;
 					} else {

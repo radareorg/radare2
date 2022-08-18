@@ -8,7 +8,7 @@ extern "C" {
 typedef struct {
 	char buf[32];
 	size_t len; // string length in chars or binary buffer size
-	char *ptr; // ptr replacing buf in case strlen > sizeof(buf)
+	char *ptr; // ptr replacing buf in case strlen > sizeof (buf)
 	size_t ptrlen; // string length + 1 or binary buffer size
 	bool weakref; // ptr is not owned
 } RStrBuf;

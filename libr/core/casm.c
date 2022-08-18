@@ -13,7 +13,7 @@ static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_ran
 static void add_hit_to_sorted_hits(RList* hits, ut64 addr, int len, ut8 is_valid);
 static int prune_hits_in_addr_range(RList *hits, ut64 addr, ut64 len, ut8 is_valid);
 
-static int rcoreasm_address_comparator(RCoreAsmHit *a, RCoreAsmHit *b){
+static int rcoreasm_address_comparator(RCoreAsmHit *a, RCoreAsmHit *b) {
 	if (a->addr == b->addr) {
 		return 0;
 	}
@@ -305,7 +305,7 @@ static void add_hit_to_hits(RList* hits, ut64 addr, int len, ut8 is_valid) {
 		hit->len = len;
 		hit->valid = is_valid;
 		hit->code = NULL;
-		if (!r_list_append (hits, hit)){
+		if (!r_list_append (hits, hit)) {
 			free (hit);
 		}
 	}
@@ -319,7 +319,7 @@ static int prune_hits_in_addr_range(RList *hits, ut64 addr, ut64 len, ut8 is_val
 	return prune_hits_in_hit_range(hits, &hit);
 }
 
-static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit){
+static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit) {
 	RListIter *iter, *iter_tmp;
 	RCoreAsmHit *to_check_hit;
 	int result = 0;
@@ -329,7 +329,7 @@ static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit){
 	}
 	start_range = hit->addr;
 	end_range =  hit->addr +  hit->len;
-	r_list_foreach_safe (hits, iter, iter_tmp, to_check_hit){
+	r_list_foreach_safe (hits, iter, iter_tmp, to_check_hit) {
 		if (to_check_hit && is_hit_inrange(to_check_hit, start_range, end_range)) {
 			IFDBG eprintf ("Found hit that clashed (start: 0x%"PFMT64x
 				" - end: 0x%"PFMT64x" ), 0x%"PFMT64x" len: %d (valid: %d 0x%"PFMT64x
@@ -355,7 +355,7 @@ static RCoreAsmHit *find_addr(RList *hits, ut64 addr) {
 	return r_list_iter_get_data(addr_iter);
 }
 
-static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 len, ut64 current_buf_pos, ut64 current_instr_addr, ut64 end_addr){
+static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 len, ut64 current_buf_pos, ut64 current_instr_addr, ut64 end_addr) {
 	RCoreAsmHit *hit = NULL, *found_addr = NULL;
 	// forward disassemble from the current instruction up to the end address
 	ut64 temp_instr_addr = current_instr_addr;
@@ -377,7 +377,7 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 		IFDBG eprintf("Current position: %"PFMT64d" instr_addr: 0x%"PFMT64x"\n", tmp_current_buf_pos, temp_instr_addr);
 		temp_instr_len = r_asm_disassemble (core->rasm, &op, buf+tmp_current_buf_pos, temp_instr_len);
 
-		if (temp_instr_len == 0){
+		if (temp_instr_len == 0) {
 			is_valid = false;
 			temp_instr_len = 1;
 		} else {
@@ -423,7 +423,7 @@ static int handle_disassembly_overlap(RCore* core, RList *hits, ut8* buf, int le
 }
 #endif
 
-static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_range){
+static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_range) {
 	int result = false;
 	if (start == start_range) {
 		return true;
@@ -434,7 +434,7 @@ static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_ran
 			result = true;
 		} else if (start_range < end && end < end_range) {
 			result = true;
-		} else if ( start <= start_range && end_range < end) {
+		} else if (start <= start_range && end_range < end) {
 			result = true;
 		}
 	// XXX - these cases need to be tested
@@ -474,7 +474,7 @@ static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_ran
 	return result;
 }
 
-static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
+static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range) {
 	int result = false;
 	if (hit) {
 		result = is_addr_in_range (hit->addr,
@@ -522,7 +522,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		}
 		c = r_asm_mdisassemble (core->rasm, buf + len - idx, idx);
 		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte")) {
-			r_asm_code_free(c);
+			r_asm_code_free (c);
 			continue;
 		}
 		numinstr = 0;
@@ -532,7 +532,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 				++numinstr;
 			}
 		}
-		r_asm_code_free(c);
+		r_asm_code_free (c);
 		if (numinstr >= n || idx > 16 * n) { // assume average instruction length <= 16
 			break;
 		}
@@ -551,7 +551,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	return hits;
 }
 
-static RList *r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len, ut64 max_hit_count, ut32 extra_padding){
+static RList *r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len, ut64 max_hit_count, ut32 extra_padding) {
 	RList *hits = r_core_asm_hit_list_new ();
 	RCoreAsmHit dummy_value;
 	RCoreAsmHit *hit = NULL;
@@ -563,7 +563,7 @@ static RList *r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len, 
 
 	memset (&dummy_value, 0, sizeof (RCoreAsmHit));
 
-	if (!hits || !buf ){
+	if (!hits || !buf ) {
 		if (hits) {
 			r_list_purge (hits);
 			free (hits);
@@ -610,7 +610,7 @@ static RList *r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len, 
 }
 
 static RList *r_core_asm_back_disassemble(RCore *core, ut64 addr, int len, ut64 max_hit_count, ut8 disassmble_each_addr, ut32 extra_padding) {
-	RList *hits;;
+	RList *hits;
 	ut8 *buf = NULL;
 	ut8 max_invalid_b4_exit = 4,
 		last_num_invalid = 0;
@@ -758,13 +758,13 @@ static RList *r_core_asm_back_disassemble(RCore *core, ut64 addr, int len, ut64 
 	return hits;
 }
 
-R_API RList *r_core_asm_back_disassemble_instr(RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding){
+R_API RList *r_core_asm_back_disassemble_instr(RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding) {
 	// extra padding to allow for additional disassembly on border buffer cases
 	ut8 disassmble_each_addr  = false;
 	return r_core_asm_back_disassemble (core, addr, len, hit_count, disassmble_each_addr, extra_padding);
 }
 
-R_API RList *r_core_asm_back_disassemble_byte(RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding){
+R_API RList *r_core_asm_back_disassemble_byte(RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding) {
 	// extra padding to allow for additional disassembly on border buffer cases
 	ut8 disassmble_each_addr  = true;
 	return r_core_asm_back_disassemble (core, addr, len, hit_count, disassmble_each_addr, extra_padding);

@@ -43,7 +43,7 @@ int binutils_assemble(RAsm *a, RAsmOp *op, const char *buf, const char *as, cons
 	}
 
 	char cmd[4096];
-	snprintf (cmd, sizeof(cmd), "%s %s %s -o %s", as, cmd_opt, ipath, opath);
+	snprintf (cmd, sizeof (cmd), "%s %s %s -o %s", as, cmd_opt, ipath, opath);
 	if (!r_sys_cmd (cmd)) {
 		int len = 0;
 		const ut8 *begin, *end;

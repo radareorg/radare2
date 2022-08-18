@@ -1,13 +1,11 @@
-/* radare - LGPL - Copyright 2016 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2022 - Oscar Salvador */
 
 #include <r_util.h>
-#include <r_types.h>
-
 #include "bflt.h"
 
 #define READ(x, i) r_read_be32 ((x) + (i)); (i) += 4;
 
-RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
+R_IPI RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	if (addr && bin && bin->hdr) {
 		addr->paddr = bin->hdr->entry;
@@ -16,11 +14,9 @@ RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
 }
 
 static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
-	struct bflt_hdr *p_hdr;
 	ut8 bhdr[BFLT_HDR_SIZE] = {0};
-	int len, i = 0;
 	
-	len = r_buf_read_at (bin->b, 0, bhdr, BFLT_HDR_SIZE);
+	int len = r_buf_read_at (bin->b, 0, bhdr, BFLT_HDR_SIZE);
 	if (len < 1) {
 		R_LOG_WARN ("read bFLT hdr failed");
 		goto fail;
@@ -30,13 +26,13 @@ static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
 		R_LOG_WARN ("wrong magic number in bFLT file");
 		goto fail;
 	}
-	p_hdr = R_NEW0 (struct bflt_hdr);
+	struct bflt_hdr *p_hdr = R_NEW0 (struct bflt_hdr);
 	if (!p_hdr) {
 		R_LOG_WARN ("couldn't allocate memory");
 		goto fail;
 	}
 	
-	i += 4;
+	int i = 4;
 	p_hdr->rev = READ (bhdr, i);
 	p_hdr->entry = READ (bhdr, i);
 	p_hdr->data_start = READ (bhdr, i);
@@ -59,7 +55,7 @@ fail:
 	return false;
 }
 
-static int r_bin_bflt_init(struct r_bin_bflt_obj *obj, RBuffer *buf) {
+static bool r_bin_bflt_init(RBinBfltObj *obj, RBuffer *buf) {
 	obj->b = r_buf_ref (buf);
 	obj->size = r_buf_size (buf);
 	obj->endian = false;
@@ -73,19 +69,20 @@ static int r_bin_bflt_init(struct r_bin_bflt_obj *obj, RBuffer *buf) {
 	return true;
 }
 
-struct r_bin_bflt_obj *r_bin_bflt_new_buf(RBuffer *buf) {
-	struct r_bin_bflt_obj *bin = R_NEW0 (struct r_bin_bflt_obj);
-	if (bin && r_bin_bflt_init (bin, buf)) {
-		return bin;
+R_IPI void r_bin_bflt_free(RBinBfltObj *o) {
+	if (o) {
+		R_FREE (o->hdr);
+		r_buf_free (o->b);
+		free (o);
 	}
-	r_bin_bflt_free (bin);
-	return NULL;
 }
 
-void r_bin_bflt_free(struct r_bin_bflt_obj *obj) {
-	if (obj) {
-		R_FREE (obj->hdr);
-		r_buf_free (obj->b);
-		R_FREE (obj);
+R_IPI RBinBfltObj *r_bin_bflt_new_buf(RBuffer *buf) {
+	r_return_val_if_fail (buf, NULL);
+	RBinBfltObj *o = R_NEW0 (RBinBfltObj);
+	if (o && r_bin_bflt_init (o, buf)) {
+		return o;
 	}
+	r_bin_bflt_free (o);
+	return NULL;
 }

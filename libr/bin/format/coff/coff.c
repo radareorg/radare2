@@ -1,12 +1,9 @@
-/* radare - LGPL - Copyright 2008-2019 pancake, inisider */
+/* radare - LGPL - Copyright 2008-2022 pancake, inisider */
 
 #include <r_util.h>
-
 #include "coff.h"
 
-#define bprintf if(obj->verbose)eprintf
-
-bool r_coff_supported_arch(const ut8 *buf) {
+R_IPI bool r_coff_supported_arch(const ut8 *buf) {
 	ut16 arch = r_read_le16 (buf);
 	switch (arch) {
 	case COFF_FILE_MACHINE_MIPS16:
@@ -27,13 +24,14 @@ bool r_coff_supported_arch(const ut8 *buf) {
  	case COFF_FILE_MACHINE_ARM:
 	case COFF_FILE_MACHINE_ARM64:
 	case COFF_FILE_MACHINE_ARMNT:
+	case COFF_FILE_MACHINE_POWERPC:
 		return true;
 	default:
 		return false;
 	}
 }
 
-char *r_coff_symbol_name(struct r_bin_coff_obj *obj, void *ptr) {
+R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
 	char n[256] = {0};
 	int len = 0, offset = 0;
 	union {
@@ -62,7 +60,7 @@ char *r_coff_symbol_name(struct r_bin_coff_obj *obj, void *ptr) {
 	return strdup (n);
 }
 
-static int r_coff_rebase_sym(struct r_bin_coff_obj *obj, RBinAddr *addr, struct coff_symbol *sym) {
+static int r_coff_rebase_sym(RBinCoffObj *obj, RBinAddr *addr, struct coff_symbol *sym) {
 	if (sym->n_scnum < 1 || sym->n_scnum > obj->hdr.f_nscns) {
 		return 0;
 	}
@@ -72,9 +70,8 @@ static int r_coff_rebase_sym(struct r_bin_coff_obj *obj, RBinAddr *addr, struct 
 
 /* Try to get a valid entrypoint using the methods outlined in
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
-RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
+R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
 	RBinAddr *addr = R_NEW0 (RBinAddr);
-	int i;
 	if (!addr) {
 		return NULL;
 	}
@@ -86,6 +83,7 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 	/* No help from the header eh? Use the address of the symbols '_start'
 	 * or 'main' if present */
 	if (obj->symbols) {
+		int i;
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
 			if ((!strcmp (obj->symbols[i].n_name, "_start") ||
 				    !strcmp (obj->symbols[i].n_name, "start")) &&
@@ -119,7 +117,7 @@ RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 	return addr;
 }
 
-static bool r_bin_coff_init_hdr(struct r_bin_coff_obj *obj) {
+static bool r_bin_coff_init_hdr(RBinCoffObj *obj) {
 	ut16 magic = r_buf_read_le16_at (obj->b, 0);
 	switch (magic) {
 	case COFF_FILE_MACHINE_H8300:
@@ -143,7 +141,7 @@ static bool r_bin_coff_init_hdr(struct r_bin_coff_obj *obj) {
 	return true;
 }
 
-static bool r_bin_coff_init_opt_hdr(struct r_bin_coff_obj *obj) {
+static bool r_bin_coff_init_opt_hdr(RBinCoffObj *obj) {
 	int ret;
 	if (!obj->hdr.f_opthdr) {
 		return false;
@@ -156,7 +154,7 @@ static bool r_bin_coff_init_opt_hdr(struct r_bin_coff_obj *obj) {
 	return true;
 }
 
-static bool r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj) {
+static bool r_bin_coff_init_scn_hdr(RBinCoffObj *obj) {
 	int ret, size;
 	ut64 offset = sizeof (struct coff_hdr) + (obj->hdr.f_opthdr ? sizeof (struct coff_opt_hdr) : 0);
 	if (obj->hdr.f_magic == COFF_FILE_TI_COFF) {
@@ -178,7 +176,7 @@ static bool r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj) {
 	return true;
 }
 
-static bool r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
+static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 	int ret, size;
 	ut64 offset = obj->hdr.f_symptr;
 	if (obj->hdr.f_nsyms >= 0xffff || !obj->hdr.f_nsyms) { // too much symbols, probably not allocatable
@@ -203,7 +201,7 @@ static bool r_bin_coff_init_symtable(struct r_bin_coff_obj *obj) {
 	return true;
 }
 
-static bool r_bin_coff_init_scn_va(struct r_bin_coff_obj *obj) {
+static bool r_bin_coff_init_scn_va(RBinCoffObj *obj) {
 	obj->scn_va = R_NEWS (ut64, obj->hdr.f_nscns);
 	if (!obj->scn_va) {
 		return false;
@@ -222,44 +220,49 @@ static bool r_bin_coff_init_scn_va(struct r_bin_coff_obj *obj) {
 	return true;
 }
 
-static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf, bool verbose) {
+static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
+	if (!obj || !buf) {
+		return false;
+	}
 	obj->b = r_buf_ref (buf);
 	obj->size = r_buf_size (buf);
 	obj->verbose = verbose;
 	obj->sym_ht = ht_up_new0 ();
 	obj->imp_ht = ht_up_new0 ();
 	if (!r_bin_coff_init_hdr (obj)) {
-		bprintf ("Warning: failed to init hdr\n");
+		R_LOG_ERROR ("failed to init coff header");
 		return false;
 	}
 	r_bin_coff_init_opt_hdr (obj);
 	if (!r_bin_coff_init_scn_hdr (obj)) {
-		bprintf ("Warning: failed to init section header\n");
+		R_LOG_WARN ("failed to init section header");
 		return false;
 	}
 	if (!r_bin_coff_init_scn_va (obj)) {
-		bprintf ("Warning: failed to init section VA table\n");
+		R_LOG_WARN ("failed to init section VA table");
 		return false;
 	}
 	if (!r_bin_coff_init_symtable (obj)) {
-		bprintf ("Warning: failed to init symtable\n");
+		R_LOG_WARN ("failed to init symtable");
 		return false;
 	}
 	return true;
 }
 
-void r_bin_coff_free(struct r_bin_coff_obj *obj) {
-	ht_up_free (obj->sym_ht);
-	ht_up_free (obj->imp_ht);
-	free (obj->scn_va);
-	free (obj->scn_hdrs);
-	free (obj->symbols);
-	r_buf_free (obj->b);
-	free (obj);
+R_IPI void r_bin_coff_free(RBinCoffObj *obj) {
+	if (obj) {
+		ht_up_free (obj->sym_ht);
+		ht_up_free (obj->imp_ht);
+		free (obj->scn_va);
+		free (obj->scn_hdrs);
+		free (obj->symbols);
+		r_buf_free (obj->b);
+		free (obj);
+	}
 }
 
-struct r_bin_coff_obj* r_bin_coff_new_buf(RBuffer *buf, bool verbose) {
-	struct r_bin_coff_obj* bin = R_NEW0 (struct r_bin_coff_obj);
+R_IPI RBinCoffObj *r_bin_coff_new_buf(RBuffer *buf, bool verbose) {
+	RBinCoffObj* bin = R_NEW0 (RBinCoffObj);
 	r_bin_coff_init (bin, buf, verbose);
 	return bin;
 }

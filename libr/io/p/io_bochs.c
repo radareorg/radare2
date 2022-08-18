@@ -49,8 +49,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		desc = &riob->desc;
 		riobochs = r_io_desc_new (io, &r_io_plugin_bochs, file, rw, mode, riob);
 		//riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
-		free(fileBochs);
-		free(fileCfg);
+		free (fileBochs);
+		free (fileCfg);
 		return riobochs;
 	}
 	free (riob);
@@ -84,9 +84,9 @@ static bool __close(RIODesc *fd) {
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (*cmd == '?' || !strcmp (cmd, "help")) {
-		eprintf ("Usage: =!cmd args\n"
-			" =!:<bochscmd>      - Send a bochs command.\n"
-			" =!dobreak	  - pause bochs.\n");
+		eprintf ("Usage: :cmd args\n"
+			" ::<bochscmd>      - Send a bochs command.\n"
+			" :dobreak	  - pause bochs.\n");
 		bochs_send_cmd (desc, &cmd[1], true);
 		io->cb_printf ("%s\n", desc->data);
 	} else if (r_str_startswith (cmd, "dobreak")) {

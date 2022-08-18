@@ -711,7 +711,7 @@ static int cmd_seek(void *data, const char *input) {
 			cmd = strdup (input);
 			p = strchr (cmd + 2, ' ');
 			if (p) {
-				off = r_num_math (core->num, p + 1);;
+				off = r_num_math (core->num, p + 1);
 				*p = '\0';
 			}
 			cmd[0] = 's';

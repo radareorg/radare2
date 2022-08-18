@@ -1,13 +1,13 @@
 /* radare - LGPL - Copyright 2010-2022 - nibble, mrmacete, pancake */
 
 #define R_LOG_ORIGIN "bin.macho"
+
 #include <r_hash.h>
 #include "mach0.h"
 
-// TODO: deprecate bprintf and use Eprintf (bin->self)
 #define bprintf if (bin->verbose) eprintf
-#define Eprintf if (mo->verbose) eprintf
 
+#define MACHO_MAX_SECTIONS 4096
 // Microsoft C++: 2048 characters; Intel C++: 2048 characters; g++: No limit
 // see -e bin.maxsymlen
 
@@ -44,7 +44,7 @@ static ut64 read_uleb128(ut8 **p, ut8 *end) {
 	ut64 v;
 	*p = (ut8 *)r_uleb128 (*p, end - *p, &v, &error);
 	if (error) {
-		eprintf ("%s\n", error);
+		R_LOG_ERROR ("%s", error);
 		R_FREE (error);
 		return UT64_MAX;
 	}
@@ -295,7 +295,7 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 	if (off > bin->size || off + sizeof (struct MACH0_(segment_command)) > bin->size) {
 		return false;
 	}
-	if (!(bin->segs = realloc (bin->segs, bin->nsegs * sizeof(struct MACH0_(segment_command))))) {
+	if (!(bin->segs = realloc (bin->segs, bin->nsegs * sizeof (struct MACH0_(segment_command))))) {
 		r_sys_perror ("realloc (seg)");
 		return false;
 	}
@@ -352,7 +352,7 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 	if (bin->segs[j].nsects > 0) {
 		sect = bin->nsects;
 		bin->nsects += bin->segs[j].nsects;
-		if (bin->nsects > 128) {
+		if (bin->nsects > MACHO_MAX_SECTIONS) {
 			int new_nsects = bin->nsects & 0xf;
 			bprintf ("WARNING: mach0 header contains too many sections (%d). Wrapping to %d\n",
 				 bin->nsects, new_nsects);
@@ -363,23 +363,23 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 			bin->nsects = sect;
 			return false;
 		}
-		if (!UT32_MUL (&size_sects, bin->nsects-sect, sizeof (struct MACH0_(section)))){
+		if (!UT32_MUL (&size_sects, bin->nsects-sect, sizeof (struct MACH0_(section)))) {
 			bin->nsects = sect;
 			return false;
 		}
-		if (!size_sects || size_sects > bin->size){
+		if (!size_sects || size_sects > bin->size) {
 			bin->nsects = sect;
 			return false;
 		}
 
 		if (bin->segs[j].cmdsize != sizeof (struct MACH0_(segment_command)) \
-				  + (sizeof (struct MACH0_(section))*bin->segs[j].nsects)){
+				  + (sizeof (struct MACH0_(section))*bin->segs[j].nsects)) {
 			bin->nsects = sect;
 			return false;
 		}
 
 		if (off + sizeof (struct MACH0_(segment_command)) > bin->size ||\
-				off + sizeof (struct MACH0_(segment_command)) + size_sects > bin->size){
+				off + sizeof (struct MACH0_(segment_command)) + size_sects > bin->size) {
 			bin->nsects = sect;
 			return false;
 		}
@@ -525,7 +525,7 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 error:
 	R_FREE (mo->symstr);
 	R_FREE (mo->symtab);
-	Eprintf ("%s\n", error_message);
+	R_LOG_DEBUG ("%s", error_message);
 	return false;
 }
 
@@ -574,15 +574,15 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 			r_sys_perror ("calloc (toc)");
 			return false;
 		}
-		if (!UT32_MUL (&size_tab, bin->ntoc, sizeof (struct dylib_table_of_contents))){
+		if (!UT32_MUL (&size_tab, bin->ntoc, sizeof (struct dylib_table_of_contents))) {
 			R_FREE (bin->toc);
 			return false;
 		}
-		if (!size_tab){
+		if (!size_tab) {
 			R_FREE (bin->toc);
 			return false;
 		}
-		if (bin->dysymtab.tocoff > bin->size || bin->dysymtab.tocoff + size_tab > bin->size){
+		if (bin->dysymtab.tocoff > bin->size || bin->dysymtab.tocoff + size_tab > bin->size) {
 			R_FREE (bin->toc);
 			return false;
 		}
@@ -606,16 +606,16 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 			r_sys_perror ("calloc (modtab)");
 			return false;
 		}
-		if (!UT32_MUL (&size_tab, bin->nmodtab, sizeof (struct MACH0_(dylib_module)))){
+		if (!UT32_MUL (&size_tab, bin->nmodtab, sizeof (struct MACH0_(dylib_module)))) {
 			R_FREE (bin->modtab);
 			return false;
 		}
-		if (!size_tab){
+		if (!size_tab) {
 			R_FREE (bin->modtab);
 			return false;
 		}
 		if (bin->dysymtab.modtaboff > bin->size || \
-		  bin->dysymtab.modtaboff + size_tab > bin->size){
+		  bin->dysymtab.modtaboff + size_tab > bin->size) {
 			R_FREE (bin->modtab);
 			return false;
 		}
@@ -655,16 +655,16 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 			r_sys_perror ("calloc (indirectsyms)");
 			return false;
 		}
-		if (!UT32_MUL (&size_tab, bin->nindirectsyms, sizeof (ut32))){
+		if (!UT32_MUL (&size_tab, bin->nindirectsyms, sizeof (ut32))) {
 			R_FREE (bin->indirectsyms);
 			return false;
 		}
-		if (!size_tab){
+		if (!size_tab) {
 			R_FREE (bin->indirectsyms);
 			return false;
 		}
 		if (bin->dysymtab.indirectsymoff > bin->size || \
-				bin->dysymtab.indirectsymoff + size_tab > bin->size){
+				bin->dysymtab.indirectsymoff + size_tab > bin->size) {
 			R_FREE (bin->indirectsyms);
 			return false;
 		}
@@ -1700,6 +1700,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 }
 
 static int init_items(struct MACH0_(obj_t) *bin) {
+	bool skip_chained_fixups = r_sys_getenv_asbool ("RABIN2_MACHO_SKIPFIXUPS");
 	struct load_command lc = {0, 0};
 	ut8 loadc[sizeof (struct load_command)] = {0};
 	bool is_first_thread = true;
@@ -1711,7 +1712,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 	bin->os = 0;
 	bin->has_crypto = 0;
 	if (bin->hdr.sizeofcmds > bin->size) {
-		bprintf ("Warning: chopping hdr.sizeofcmds\n");
+		R_LOG_WARN ("chopping hdr.sizeofcmds because it's larger than the file size");
 		bin->hdr.sizeofcmds = bin->size - 128;
 		//return false;
 	}
@@ -1720,12 +1721,12 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + bin->header_at; \
 			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		if (off > bin->size || off + sizeof (struct load_command) > bin->size) {
-			bprintf ("mach0: out of bounds command\n");
+			R_LOG_WARN ("out of bounds macho command");
 			return false;
 		}
 		len = r_buf_read_at (bin->b, off, loadc, sizeof (struct load_command));
 		if (len < 1) {
-			bprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
+			R_LOG_ERROR ("read (lc) at 0x%08"PFMT64x, off);
 			return false;
 		}
 		lc.cmd = r_read_ble32 (&loadc[0], bin->big_endian);
@@ -1854,7 +1855,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				//bprintf ("[mach0] load dynamic linker\n");
 				struct dylinker_command dy = {0};
 				ut8 sdy[sizeof (struct dylinker_command)] = {0};
-				if (off + sizeof (struct dylinker_command) > bin->size){
+				if (off + sizeof (struct dylinker_command) > bin->size) {
 					bprintf ("Warning: Cannot parse dylinker command\n");
 					return false;
 				}
@@ -1938,7 +1939,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			sdb_set (bin->kv, cmd_flagname, "dyld_info", 0);
 			bin->dyld_info = calloc (1, sizeof (struct dyld_info_command));
 			if (bin->dyld_info) {
-				if (off + sizeof (struct dyld_info_command) > bin->size){
+				if (off + sizeof (struct dyld_info_command) > bin->size) {
 					bprintf ("Cannot parse dyldinfo\n");
 					R_FREE (bin->dyld_info);
 					return false;
@@ -2056,15 +2057,16 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				ut8 buf[8];
 				r_buf_read_at (bin->b, off + 8, buf, sizeof (buf));
 				ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
-				ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
+				ut32 datasize = r_read_ble32 (buf + 4, bin->big_endian);
 				eprintf ("exports trie at 0x%x size %d\n", dataoff, datasize);
 			}
 			break;
-		case LC_DYLD_CHAINED_FIXUPS: {
+		case LC_DYLD_CHAINED_FIXUPS:
+			if (!skip_chained_fixups) {
 				ut8 buf[8];
 				if (r_buf_read_at (bin->b, off + 8, buf, sizeof (buf)) == sizeof (buf)) {
 					ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
-					ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
+					ut32 datasize = r_read_ble32 (buf + 4, bin->big_endian);
 					if (bin->verbose) {
 						eprintf ("chained fixups at 0x%x size %d\n", dataoff, datasize);
 					}
@@ -2289,7 +2291,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 		}
 	}
 	if (bin->nsects > 0) {
-		int last_section = R_MIN (bin->nsects, 128); // maybe drop this limit?
+		int last_section = R_MIN (bin->nsects, MACHO_MAX_SECTIONS);
 		for (i = 0; i < last_section; i++) {
 			RBinSection *s = R_NEW0 (RBinSection);
 			if (!s) {
@@ -2334,7 +2336,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 	return list;
 }
 
-// XXX this function is called so many times
+// XXX this function is called so many times, should return cached RList instead
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
 	struct section_t *sections;
@@ -2369,11 +2371,11 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 	if (!bin->sects) {
 		return NULL;
 	}
-	to = R_MIN (bin->nsects, 128); // limit number of sections here to avoid fuzzed bins
+	to = R_MIN (bin->nsects, MACHO_MAX_SECTIONS);
 	if (to < 1) {
 		return NULL;
 	}
-	if (!(sections = calloc (bin->nsects + 1, sizeof (struct section_t)))) {
+	if (!(sections = calloc (to + 1, sizeof (struct section_t)))) {
 		return NULL;
 	}
 	for (i = 0; i < to; i++) {
@@ -2395,9 +2397,9 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 		}
 		snprintf (sections[i].name, sizeof (sections[i].name),
 			"%d.%s.%s", (int)i, raw_segname, sectname);
-		sections[i].last = 0;
+		sections[i].last = false;
 	}
-	sections[i].last = 1;
+	sections[i].last = true;
 	return sections;
 }
 

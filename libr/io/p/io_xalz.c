@@ -22,7 +22,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		int consumed;
 		if (data) {
 			ut32 osz = r_read_le32 (data + 8);
-			// create buffer 
+			// create buffer
 			ut8 *obuf = r_inflate_lz4 ((const ut8*)data + 0xc, (uint32_t) sz - 0xc, &consumed, &outsize);
 			if (obuf) {
 				if (osz != outsize) {

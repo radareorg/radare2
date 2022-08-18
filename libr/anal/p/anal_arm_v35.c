@@ -657,7 +657,7 @@ static void arg64_append(RStrBuf *sb, Instruction *insn, int n, int i, int sign)
 	if (!signext) {
 		// this is weird but signext+shift is all in shiftType?
 		// not extend. why even have an extend field?
-		// why not just shiftType = sx* with a shiftValue of 0? 
+		// why not just shiftType = sx* with a shiftValue of 0?
 		signext = decode_sign_ext64 (op.shiftType);
 	}
 	if (sign && !signext) {
@@ -2224,8 +2224,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM64_STP: // stp x6, x7, [x6,0xf90]
 	{
 		int disp = (int)MEMDISP64 (2);
-		char sign = disp>=0?'+':'-';
-		ut64 abs = disp>=0? MEMDISP64 (2): -MEMDISP64 (2);
+		char sign = (disp >= 0)?'+':'-';
+		ut64 abs = (disp >= 0)? MEMDISP64 (2): -MEMDISP64 (2);
 		int size = REGSIZE64 (0);
 		// Pre-index case
 		if (ISPREINDEX64 ()) {
@@ -2239,8 +2239,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// Post-index case
 		} else if (ISPOSTINDEX64 ()) {
 			int val = GETIMM64 (3);
-			sign = val>=0?'+':'-';
-			abs = val>=0? val: -val;
+			sign = (val >= 0)?'+':'-';
+			abs = (val >= 0)? val: -val;
 			// "stp x4, x5, [x8], 0x10"
 			// "x4,x8,=[],x5,x8,8,+,=[],16,x8,+="
 			r_strbuf_setf(&op->esil,
@@ -2262,8 +2262,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM64_LDP: // ldp x29, x30, [sp], 0x10
 	{
 		int disp = (int)MEMDISP64 (2);
-		char sign = disp>=0?'+':'-';
-		ut64 abs = disp>=0? MEMDISP64 (2): -MEMDISP64 (2);
+		char sign = (disp >= 0)?'+':'-';
+		ut64 abs = (disp >= 0)? MEMDISP64 (2): -MEMDISP64 (2);
 		int size = REGSIZE64 (0);
 		// Pre-index case
 		// x2,x8,32,+,=[8],x3,x8,32,+,8,+,=[8]
@@ -2280,8 +2280,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		// Post-index case
 		} else if (ISPOSTINDEX64 ()) {
 			int val = GETIMM64 (3);
-			sign = val>=0?'+':'-';
-			abs = val>=0? val: -val;
+			sign = (val >= 0)? '+': '-';
+			abs = (val >= 0)? val: -val;
 			// ldp x4, x5, [x8], -0x10
 			// x8,[8],x4,=,x8,8,+,[8],x5,=,16,x8,+=
 			r_strbuf_setf (&op->esil,

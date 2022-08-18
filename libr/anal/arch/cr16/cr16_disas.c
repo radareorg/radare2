@@ -122,7 +122,7 @@ static inline ut8 cr16_get_srcreg(const ut16 instr)
 
 static inline int cr16_check_instrs_4bit_bndrs(const ut8 opcode)
 {
-	if (opcode >=sizeof(instrs_4bit)/sizeof(void*)
+	if (opcode >=sizeof (instrs_4bit)/sizeof (void*)
 			|| !instrs_4bit[opcode]) {
 				return -1;
 	}
@@ -136,7 +136,7 @@ static inline ut16 cr16_get_opcode_159_0(const ut16 opc)
 
 static inline int cr16_check_reg_boundaries(const ut8 reg)
 {
-	if (reg >= sizeof(cr16_regs_names)/sizeof(void*)
+	if (reg >= sizeof (cr16_regs_names)/sizeof (void*)
 			|| !cr16_regs_names[reg]) {
 		return -1;
 	}
@@ -147,7 +147,7 @@ static inline int cr16_print_ld_sw_opcode(struct cr16_cmd *cmd, ut16 instr)
 {
 	ut8 opcode = instr >> 14;
 
-	if (opcode >= sizeof(ld_sw)/sizeof(void*) || !ld_sw[opcode]) {
+	if (opcode >= sizeof (ld_sw)/sizeof (void*) || !ld_sw[opcode]) {
 		return -1;
 	}
 

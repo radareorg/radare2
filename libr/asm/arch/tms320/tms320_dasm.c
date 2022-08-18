@@ -301,7 +301,7 @@ int vreplace(char * string, const char * token, const char * fmt, va_list args)
 		return 0;
 	}
 
-	vsnprintf(data, sizeof(data), fmt, args);
+	vsnprintf(data, sizeof (data), fmt, args);
 
 	memmove(pos + strlen(data), pos + strlen(token), strlen(pos + strlen(token)) + 1);
 	memmove(pos, data, strlen(data));
@@ -936,7 +936,7 @@ void decode_addressing_modes(tms320_dasm_t * dasm)
 	if (field_valid(dasm, AAAAAAAI)) {
 		char str[64], tmp[64];
 
-		snprintf(tmp, sizeof(tmp), "%s", get_smem_str(field_value(dasm, AAAAAAAI), str));
+		snprintf(tmp, sizeof (tmp), "%s", get_smem_str(field_value(dasm, AAAAAAAI), str));
 
 		if (field_value(dasm, AAAAAAAI) & 1) {
 			if (strstr(tmp, "k16")) {
@@ -1005,7 +1005,7 @@ insn_item_t * decode_insn(tms320_dasm_t * dasm)
 {
 	dasm->length = dasm->head->size;
 
-	snprintf(dasm->syntax, sizeof(dasm->syntax), \
+	snprintf(dasm->syntax, sizeof (dasm->syntax), \
 		 field_valid(dasm, E) && field_value(dasm, E) ? "|| %s" : "%s", dasm->insn->syntax);
 
 	decode_bits(dasm);
@@ -1082,12 +1082,12 @@ insn_head_t * lookup_insn_head(tms320_dasm_t * dasm) {
 static void init_dasm(tms320_dasm_t * dasm, const ut8 *stream, int len)
 {
 	strcpy(dasm->syntax, "invalid");
-	memcpy(dasm->stream, stream, min(sizeof(dasm->stream), len));
+	memcpy(dasm->stream, stream, min(sizeof (dasm->stream), len));
 
 	dasm->status = 0;
 	dasm->length = 0;
 
-	memset(&dasm->f, 0, sizeof(dasm->f));
+	memset(&dasm->f, 0, sizeof (dasm->f));
 
 	dasm->head = NULL;
 	dasm->insn = NULL;

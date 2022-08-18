@@ -102,7 +102,7 @@ typedef struct r_fs_partition_type_t {
 	RFSPartitionIterator iterate;
 	//RFSPartitionIterator parhook;
 } RFSPartitionType;
-#define R_FS_PARTITIONS_LENGTH (int)(sizeof (partitions)/sizeof(RFSPartitionType)-1)
+#define R_FS_PARTITIONS_LENGTH (int)(sizeof (partitions)/sizeof (RFSPartitionType)-1)
 
 enum {
 	R_FS_VIEW_NORMAL = 0,

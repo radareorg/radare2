@@ -43,6 +43,16 @@ static const char *help_msg_pdo[] = {
 	NULL
 };
 
+static const char *help_msg_p8[] = {
+	"Usage: p8[*fjx]", " [len]", "8bit hexpair list of bytes (see pcj)",
+	"p8", " ([len])", "print hexpairs string",
+	"p8*", "","display r2 commands to write this block",
+	"p8f", "", "print hexpairs of function (linear)",
+	"p8j", "", "print hexpairs in JSON array",
+	"p8x", "","print hexpairs honoring hex.cols",
+	NULL
+};
+
 static const char *help_msg_pp[] = {
 	"Usage: pp[d]", "", "print patterns",
 	"pp0", "", "print buffer filled with zeros",
@@ -1654,14 +1664,14 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 				r_cons_printf ("%s`-%s %8s = 0x%016"PFMT64x" @ %d + %d\n",
 						pad?pad:"", pad2,
 						la->name?la->name: "",
-						la->value, 
+						la->value,
 						la->pos, la->sz
 					      );
 			} else {
 				r_cons_printf ("%s`-%s %8s = %4"PFMT64o"o %5"PFMT64d"   0x%02"PFMT64x" @ %d + %d\n",
 						pad?pad:"", pad2,
 						la->name?la->name: "",
-						la->value, la->value, la->value, 
+						la->value, la->value, la->value,
 						la->pos, la->sz
 					      );
 			}
@@ -1975,7 +1985,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
 		const char *arg1 = strtok (args, " ");
 		if (arg1 && r_str_isnumber (arg1)) {
-			r_core_cmd_help (core, (const char *[]){
+			r_core_cmd_help (core, (const char *[]) {
 				"Usage:", "pf [0|cnt][format-string]", "",
 				NULL
 			});
@@ -4202,7 +4212,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			int i, words = core->blocksize / 2;
 			int step = r_num_math (core->num, input + 2);
 			ut64 oldword = 0;
-			for (i = 0; i<words; i++) {
+			for (i = 0; i < words; i++) {
 				ut64 word64 = word[i] + ST16_MAX;
 				r_cons_printf ("0x%08"PFMT64x" %8d  ", core->offset + (i *2), word[i]);
 				r_print_progressbar (core->print, word64 * 100 / UT16_MAX, 60);
@@ -6658,36 +6668,57 @@ static int cmd_print(void *data, const char *input) {
 		case 'b': // "psb"
 			if (l > 0) {
 				int quiet = input[2] == 'q'; // "psbq"
-				char *s = malloc (core->blocksize + 1);
-				int i, j, hasnl = 0;
-				if (s) {
+				RStrBuf *sb = r_strbuf_new ("");
+				int i, hasnl = 0;
+				if (sb) {
 					if (!quiet) {
 						r_print_offset (core->print, core->offset, 0, 0, NULL);
 					}
 					// TODO: filter more chars?
-					for (i = j = 0; i < core->blocksize; i++) {
+					for (i = 0; i < core->blocksize; i++) {
 						char ch = (char) block[i];
-						if (!ch) {
-							if (!hasnl) {
-								s[j] = 0;
-								if (*s) {
-									r_cons_println (s);
-									if (!quiet) {
-										r_print_offset (core->print, core->offset + i, 0, 0, NULL);
-									}
-								}
-								j = 0;
-								s[0] = 0;
+						if (ch == 0xa) {
+							char *s = r_strbuf_drain (sb);
+							r_cons_print (s); // TODO: missing newline?
+							free (s);
+							sb = r_strbuf_new ("");
+							r_cons_newline ();
+							if (!quiet) {
+								r_print_offset (core->print, core->offset + i, 0, 0, NULL);
 							}
 							hasnl = 1;
 							continue;
 						}
+						if (!ch) {
+							if (core->print->cur_enabled && core->print->cur == i) {
+								r_strbuf_appendf (sb, Color_INVERT"."Color_RESET);
+							}
+							if (!hasnl) {
+								char *s = r_strbuf_drain (sb);
+								r_cons_println (s); // TODO: missing newline?
+								free (s);
+								sb = r_strbuf_new ("");
+								if (!quiet) {
+									r_print_offset (core->print, core->offset + i, 0, 0, NULL);
+								}
+							}
+							hasnl = true;
+							continue;
+						}
 						hasnl = 0;
 						if (IS_PRINTABLE (ch)) {
-							s[j++] = ch;
+							if (core->print->cur_enabled && core->print->cur == i) {
+								r_strbuf_appendf (sb, Color_INVERT"%c"Color_RESET, ch);
+							} else {
+								r_strbuf_appendf (sb, "%c", ch);
+							}
+						} else {
+							if (core->print->cur_enabled && core->print->cur == i) {
+								r_strbuf_appendf (sb, Color_INVERT"."Color_RESET);
+							}
 						}
 					}
-					s[j] = 0;
+					char *s = r_strbuf_drain (sb);
 					r_cons_print (s); // TODO: missing newline?
 					free (s);
 				}
@@ -7215,7 +7246,7 @@ static int cmd_print(void *data, const char *input) {
 					buf[4] = 0;
 
 					r_print_cursor (core->print, i, 1, 1);
-					r_cons_printf ("%s.%s  ", buf, buf + 5);
+					r_cons_printf ("%s_%s  ", buf, buf + 5);
 					r_print_cursor (core->print, i, 1, 0);
 					if (c == 3) {
 						const ut8 *b = core->block + i - 3;
@@ -7702,21 +7733,36 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '8': // "p8"
 		if (input[1] == '?') {
-			r_cons_printf ("|Usage: p8[fj] [len]     8bit hexpair list of bytes (see pcj)\n");
-			r_cons_printf (" p8  : print hexpairs string\n");
-			r_cons_printf (" p8f : print hexpairs of function (linear)\n");
-			r_cons_printf (" p8j : print hexpairs in JSON array\n");
+			r_core_cmd_help (core, help_msg_p8);
 		} else if (l) {
+			bool rad = strchr (input, '*');
 			if (!r_core_block_size (core, len)) {
 				len = core->blocksize;
 			}
 			if (input[1] == 'j') { // "p8j"
 				r_core_cmdf (core, "pcj %s", input + 2);
+			} else if (input[1] == 'x') { // "p8x"
+				r_core_block_read (core);
+				block = core->block;
+				int cols = r_config_get_i (core->config, "hex.cols");
+				if (cols < 1) {
+					cols = 1;
+				}
+				int i;
+				for (i = 0; i < len; i += cols) {
+					if (rad) {
+						r_cons_printf ("wx+ ");
+					}
+					r_print_bytes (core->print, block + i, R_MIN (cols, len - cols), "%02x");
+				}
 			} else if (input[1] == 'f') { // "p8f"
 				r_core_cmdf (core, "p8 $FS @ $FB");
 			} else {
 				r_core_block_read (core);
 				block = core->block;
+				if (rad) {
+					r_cons_printf ("wx+ ");
+				}
 				r_print_bytes (core->print, block, len, "%02x");
 			}
 		}
@@ -7804,7 +7850,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case ' ':
 		case '\0':
-			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof(ut32)
+			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof (ut32)
 			if (len < sizeof (ut32)) {
 				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut32));
 			}
@@ -7816,7 +7862,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'h': // "pth"
-			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof(ut32)
+			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof (ut32)
 			if (len < sizeof (ut32)) {
 				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut32));
 			}

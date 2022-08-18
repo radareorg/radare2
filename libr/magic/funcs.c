@@ -119,7 +119,7 @@ static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut
 		return;
 	}
 	if (lineno != 0) {
-		free(ms->o.buf);
+		free (ms->o.buf);
 		ms->o.buf = NULL;
 		(void)file_printf (ms, "line %u: ", lineno);
 	}
@@ -274,7 +274,7 @@ const char *file_getbuffer(RMagic *ms) {
 		int mb_conv = 1;
 		size_t bytesconsumed;
 		char *eop;
-		(void)memset(&state, 0, sizeof(mbstate_t));
+		(void)memset(&state, 0, sizeof (mbstate_t));
 
 		np = ms->o.pbuf;
 		op = ms->o.buf;

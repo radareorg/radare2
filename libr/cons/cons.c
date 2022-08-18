@@ -10,11 +10,14 @@ R_LIB_VERSION (r_cons);
 
 // Stub function that cb_main_output gets pointed to in util/log.c by r_cons_new
 // This allows Iaito to set per-task logging redirection
+static R_TH_LOCAL int oldraw = -1;
 static R_TH_LOCAL RThreadLock *lock = NULL;
 static R_TH_LOCAL RConsContext r_cons_context_default = {{{{0}}}};
 static R_TH_LOCAL RCons g_cons_instance = {0};
 static R_TH_LOCAL RCons *r_cons_instance = NULL;
 static R_TH_LOCAL RThreadLock r_cons_lock = R_THREAD_LOCK_INIT;
+static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
+static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
 #define I (r_cons_instance)
 #define C (getctx())
 
@@ -973,7 +976,6 @@ static bool lastMatters(void) {
 }
 
 R_API void r_cons_echo(const char *msg) {
-	static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
 	if (msg) {
 		if (echodata) {
 			r_strbuf_append (echodata, msg);
@@ -1029,7 +1031,7 @@ static void optimize(void) {
 			//	eprintf ("ERN (%d) %s%c", pos, escape, 10);
 				onescape = false;
 			} else {
-				if (escape_n + 1 >= sizeof(escape)) {
+				if (escape_n + 1 >= sizeof (escape)) {
 					escape_n = 0;
 					onescape = false;
 				}
@@ -1207,7 +1209,6 @@ R_API void r_cons_visual_flush(void) {
 
 R_API void r_cons_print_fps(int col) {
 	int fps = 0, w = r_cons_get_size (NULL);
-	static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
 	fps = 0;
 	if (prev) {
 		ut64 now = r_time_now_mono ();
@@ -1829,13 +1830,12 @@ R_API void r_cons_show_cursor(int cursor) {
  *
  * For optimization reasons, there's no initialization flag, so you need to
  * ensure that the make the first call to r_cons_set_raw() with '1' and
- * the next calls ^=1, so: 1, 0, 1, 0, 1, ...
+ * the next calls ^= 1, so: 1, 0, 1, 0, 1, ...
  *
  * If you doesn't use this order you'll probably loss your terminal properties.
  *
  */
 R_API void r_cons_set_raw(bool is_raw) {
-	static R_TH_LOCAL int oldraw = -1;
 	if (oldraw != -1) {
 		if (is_raw == oldraw) {
 			return;

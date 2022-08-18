@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 eloi<limited-entropy.com> */
+/* radare - LGPL - Copyright 2010-2022 eloi <limited-entropy.com> */
 
 #include <r_lib.h>
 #include <r_asm.h>
@@ -218,7 +218,7 @@ static RAnalValue *anal_fill_im(RAnal *anal, st32 v) {
 	return ret;
 }
 
-/* Implements @(disp,Rn) , size=1 for .b, 2 for .w, 4 for .l */
+/* Implements @(disp,Rn), size = 1 for .b, 2 for .w, 4 for .l */
 static RAnalValue *anal_fill_reg_disp_mem(RAnal *anal, int reg, st64 delta, st64 size) {
 	RAnalValue *ret = anal_fill_ai_rg (anal, reg);
 	ret->memref = size;
@@ -412,7 +412,7 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 	return op->size;
 }
 
-//nibble=1; 0001nnnnmmmmi4*4 mov.l <REG_M>,@(<disp>,<REG_N>)
+//nibble = 1; 0001nnnnmmmmi4*4 mov.l <REG_M>,@(<disp>,<REG_N>)
 static int movl_reg_rdisp(RAnal* anal, RAnalOp* op, ut16 code) {
 	op->type = R_ANAL_OP_TYPE_STORE;
 	op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -732,7 +732,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 	} else if (IS_DT (code)) {
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,1,r%d,-=,$z,sr,|,sr,:=", GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_UNK;
-	} else if (IS_MACW(code)){
+	} else if (IS_MACW(code)) {
 		r_strbuf_setf (&op->esil,
 			"0x2,sr,&,!,?{," //if S==0
 				S16_EXT("r%d,[2]")"," //@Rn sign extended
@@ -746,7 +746,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 				"*,"
 				"0xffffffff00000000,&,>>,mach,=," //MACH > mach
 				"0xffffffff,&,macl,=,"
-			"}{," //if S==1
+			"}{," //if S == 1
 				S16_EXT("r%d,[2]")"," //@Rn sign extended
 				S16_EXT("r%d,[2]")"," //@Rm sign extended
 				"*"
@@ -927,7 +927,7 @@ static int movw_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	op->src[0] = r_anal_value_new ();
 	op->src[0]->base = (code & 0xFF) * 2+op->addr + 4;
-	op->src[0]->memref=1;
+	op->src[0]->memref = 1;
 	r_strbuf_setf (&op->esil, "0x%" PFMT64x ",[2],r%d,=,r%d,0x8000,&,?{,0xFFFF0000,r%d,|=,}", op->src[0]->base, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 	return op->size;
 }

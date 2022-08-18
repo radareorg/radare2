@@ -330,14 +330,14 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 	}
 }
 
-static int bin_is_executable(RBinObject *obj){
+static int bin_is_executable(RBinObject *obj) {
 	RListIter *it;
 	RBinSection *sec;
 	if (obj) {
 		if (obj->info && obj->info->arch) {
 			return true;
 		}
-		r_list_foreach (obj->sections, it, sec){
+		r_list_foreach (obj->sections, it, sec) {
 			if (sec->perm & R_PERM_X) {
 				return true;
 			}

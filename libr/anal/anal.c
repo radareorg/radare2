@@ -537,7 +537,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, -1);
 		RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 		if (!fcn && !fi) {
-			eprintf ("Can't find Function at given address\n");
+			R_LOG_ERROR ("Can't find Function at given address");
 			return false;
 		}
 		tmp_name = fcn ? fcn->name: fi->name;
@@ -555,10 +555,10 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 			if (name) {
 				sdb_bool_set (TDB, K_NORET_FUNC (name), true, 0);
 			} else {
-				eprintf ("Can't find prototype for: %s\n", tmp_name);
+				R_LOG_WARN ("Can't find prototype for: %s", tmp_name);
 			}
 		} else {
-			eprintf ("Can't find prototype for: %s\n", tmp_name);
+			R_LOG_WARN ("Can't find prototype for: %s", tmp_name);
 		}
 		//return false;
 	}

@@ -257,7 +257,7 @@ EXPECT=<<EOF
  [97m##[0m  func_var
  [93m##[0m  func_var_type
  [96m##[0m  func_var_addr
- [40m##[0m  widget_bg
+ [47m##[0m  widget_bg
  [101m##[0m  widget_sel
  [92m##[0m  ai.read
  [94m##[0m  ai.write
@@ -279,9 +279,9 @@ EXPECT=<<EOF
  [33m##[0m  graph.diff.unmatch
  [93m##[0m  gui.cflow
  [93m##[0m  gui.dataoffset
- [30m##[0m  gui.background
+ [37m##[0m  gui.background
  [97m##[0m  gui.alt_background
- [30m##[0m  gui.border
+ [37m##[0m  gui.border
  [101m##[0m  wordhl
  [44m##[0m  linehl
 EOF

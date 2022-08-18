@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define SZOF(a)	(sizeof(a) / sizeof(a[0]))
+#define SZOF(a)	(sizeof (a) / sizeof (a[0]))
 
 #ifndef COMPILE_ONLY
 void file_mdump(struct r_magic *m) {

@@ -375,7 +375,7 @@ typedef unsigned szind_t;
 #    include <stdlib.h>
 #  endif
 #  define VARIABLE_ARRAY(type, name, count) \
-	type *name = alloca(sizeof(type) * (count))
+	type *name = alloca(sizeof (type) * (count))
 #else
 #  define VARIABLE_ARRAY(type, name, count) type name[(count)]
 #endif

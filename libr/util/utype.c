@@ -146,7 +146,7 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 		}
 		return 0;
 	}
-	if (!strcmp (t, "type")){
+	if (!strcmp (t, "type")) {
 		char *query = r_str_newf ("type.%s.size", tmptype);
 		ut64 r = sdb_num_get (TDB, query, 0); // returns size in bits
 		free (query);
@@ -508,7 +508,7 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
 		int i, n = sdb_array_length (TDB, r_strf ("%s.%s", kind, name));
 		char *elements_key = r_str_newf ("%s.%s", kind, name);
-		for (i = 0; i< n; i++) {
+		for (i = 0; i < n; i++) {
 			char *p = sdb_array_get (TDB, elements_key, i, NULL);
 			sdb_unset (TDB, r_strf ("%s.%s", elements_key, p), 0);
 			free (p);
@@ -558,7 +558,7 @@ R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
 	return fcn && !strcmp (fcn, "func");
 }
 
-R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name){
+R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
 	r_strf_var (query, 64, "func.%s.ret", func_name);
 	return sdb_const_get (TDB, query, 0);
 }

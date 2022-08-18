@@ -1,9 +1,6 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
-#include <r_bin.h>
 #include <r_core.h>
 #include "../i/private.h"
 #include "mach0/mach0.h"
@@ -54,7 +51,7 @@ static char *entitlements(RBinFile *bf, bool json) {
 	return r_str_dup (NULL, (const char*)bin->signature);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && bin_obj && buf, false);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);

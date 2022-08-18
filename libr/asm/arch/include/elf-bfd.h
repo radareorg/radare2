@@ -205,9 +205,9 @@ struct elf_link_hash_entry
   struct
   {
     /* Virtual table entry use information.  This array is nominally of size
-       size/sizeof(target_void_pointer), though we have to be able to assume
+       size/sizeof (target_void_pointer), though we have to be able to assume
        and track a size while the symbol is still undefined.  It is indexed
-       via offset/sizeof(target_void_pointer).  */
+       via offset/sizeof (target_void_pointer).  */
     size_t size;
     bfd_boolean *used;
 

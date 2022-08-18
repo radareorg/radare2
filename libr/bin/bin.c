@@ -3,10 +3,8 @@
 #define R_LOG_ORIGIN "bin"
 
 #include <r_bin.h>
-#include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
-#include <r_io.h>
 #include <config.h>
 #include "i/private.h"
 
@@ -266,7 +264,7 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
 			if (!xtr->check_buffer) {
-				eprintf ("Missing check_buffer callback for '%s'\n", xtr->name);
+				R_LOG_ERROR ("Missing check_buffer callback for '%s'", xtr->name);
 				continue;
 			}
 			if (xtr->check_buffer (bf, buf)) {
@@ -1198,9 +1196,7 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		r_list_foreach (files, iter, f) {
 			size_t f_len = 0;
 			ut8 *f_buf = (ut8 *)r_file_slurp (f, &f_len);
-			if (f_buf) {
-				eprintf ("ADD %s %"PFMT64u"\n", f, (ut64)f_len);
-			} else {
+			if (!f_buf) {
 				R_LOG_ERROR ("Cannot open %s", f);
 				free (f_buf);
 				continue;
@@ -1233,7 +1229,7 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		r_buf_free (buf);
 		return NULL;
 	} else {
-		eprintf ("Usage: rabin2 -X [fat|zip] [filename] [files ...]\n");
+		R_LOG_ERROR ("Use `rabin2 -X [fat|zip] [filename] [files ...]`");
 	}
 	return NULL;
 }

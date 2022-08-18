@@ -672,7 +672,7 @@ static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 			r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth - 1);
 		}
 		// TODO: fix memleak here, fcn not freed even though it is
-		// added in core->anal->fcns which is freed in r_anal_free()
+		// added in core->anal->fcns which is freed in r_anal_free ()
 	}
 	r_list_free (refs);
 	return 1;
@@ -1512,8 +1512,8 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 					char *from = get_title (bbi->addr);
 					char *to = get_title (bbi->fail);
 					r_cons_printf ("age %s %s\n", from, to);
-					free(from);
-					free(to);
+					free (from);
+					free (to);
 				} else {
 					r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 									"[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
@@ -1535,8 +1535,8 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 						char *from = get_title (bbi->addr);
 						char *to = get_title (bbi->fail);
 						r_cons_printf ("age %s %s\n", from, to);
-						free(from);
-						free(to);
+						free (from);
+						free (to);
 					} else {
 						r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 								"[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
@@ -1576,9 +1576,9 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 			}
 		}
 	}
-	free(pal_jump);
-	free(pal_fail);
-	free(pal_trfa);
+	free (pal_jump);
+	free (pal_fail);
+	free (pal_trfa);
 	return nodes;
 }
 
@@ -2358,7 +2358,7 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	int is_html = r_cons_context ()->is_html;
 	bool refgraph = r_config_get_i (core->config, "graph.refs");
 	RListIter *iter, *iter2;
-	int usenames = r_config_get_i (core->config, "graph.json.usenames");;
+	int usenames = r_config_get_i (core->config, "graph.json.usenames");
 	RAnalFunction *fcni;
 	RAnalRef *fcnr;
 	PJ *pj = NULL;
@@ -3424,6 +3424,10 @@ typedef struct {
 
 static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	int *cur_regset = r_pvector_pop (&ctx->reg_set);
+	if (r_pvector_len (&ctx->reg_set) == 0) {
+		free (cur_regset);
+		return false;
+	}
 	int *prev_regset = r_pvector_at (&ctx->reg_set, r_pvector_len (&ctx->reg_set) - 1);
 	size_t i;
 	for (i = 0; i < REG_SET_SIZE; i++) {
@@ -3462,6 +3466,10 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		}
 	}
 	if (skip_bb) {
+		free (buf);
+		return false;
+	}
+	if (r_pvector_len (&ctx->reg_set) == 0) {
 		free (buf);
 		return false;
 	}
@@ -4110,6 +4118,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		// wtf
 		R_LOG_ERROR ("Something is really wrong deep inside");
 		free (block);
+		free (buf);
 		return -1;
 	}
 	while (at < to && !r_cons_is_breaked ()) {
@@ -5822,14 +5831,14 @@ static bool printAnalPaths(RCoreAnalPaths *p, PJ *pj) {
 	if (pj) {
 		pj_a (pj);
 	} else {
-		r_cons_printf ("pdb @@= ");
+		r_cons_printf ("pdb @@=");
 	}
 
 	r_list_foreach (p->path, iter, path) {
 		if (pj) {
 			pj_n (pj, path->addr);
 		} else {
-			r_cons_printf ("0x%08"PFMT64x" ", path->addr);
+			r_cons_printf (" 0x%08"PFMT64x, path->addr);
 		}
 	}
 
@@ -5872,13 +5881,11 @@ static void analPaths(RCoreAnalPaths *p, PJ *pj) {
 			return;
 		}
 	} else {
-		RAnalBlock *c = cur;
 		ut64 j = cur->jump;
 		ut64 f = cur->fail;
 		analPathFollow (p, j, pj);
-		cur = c;
 		analPathFollow (p, f, pj);
-		if (p->followCalls) {
+		if (p->cur == cur && p->followCalls) {
 			int i;
 			for (i = 0; i < cur->op_pos_size; i++) {
 				ut64 addr = cur->addr + cur->op_pos[i];
@@ -5886,7 +5893,6 @@ static void analPaths(RCoreAnalPaths *p, PJ *pj) {
 				if (op && op->type == R_ANAL_OP_TYPE_CALL) {
 					analPathFollow (p, op->jump, pj);
 				}
-				cur = c;
 				r_anal_op_free (op);
 			}
 		}
@@ -5919,7 +5925,7 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 	rcap.to = to;
 	rcap.toBB = b1;
 	rcap.cur = b0;
-	rcap.count = r_config_get_i (core->config, "search.maxhits");;
+	rcap.count = r_config_get_i (core->config, "search.maxhits");
 	rcap.followCalls = followCalls;
 	rcap.followDepth = followDepth;
 

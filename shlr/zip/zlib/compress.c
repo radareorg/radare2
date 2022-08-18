@@ -26,7 +26,7 @@ int ZEXPORT compress2 (dest, destLen, source, sourceLen, level)
     uLong sourceLen;
     int level;
 {
-    z_stream stream = {0};
+    z_stream stream;
     int err;
     const uInt max = (uInt)-1;
     uLong left;
@@ -45,7 +45,6 @@ int ZEXPORT compress2 (dest, destLen, source, sourceLen, level)
     stream.avail_out = 0;
     stream.next_in = (z_const Bytef *)source;
     stream.avail_in = 0;
-    stream.total_out = 0;
 
     do {
         if (stream.avail_out == 0) {

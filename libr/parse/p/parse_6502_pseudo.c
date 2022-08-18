@@ -151,8 +151,8 @@ static int parse(RParse *p, const char *data, char *str) {
 			for (++ptr; *ptr == ' '; ptr++) {
 				;
 			}
-			strncpy (w0, buf, sizeof(w0) - 1);
-			strncpy (w1, ptr, sizeof(w1) - 1);
+			strncpy (w0, buf, sizeof (w0) - 1);
+			strncpy (w1, ptr, sizeof (w1) - 1);
 			optr = ptr;
 			ptr = strchr (ptr, ',');
 			if (ptr) {
@@ -160,11 +160,11 @@ static int parse(RParse *p, const char *data, char *str) {
 				for (++ptr; *ptr == ' '; ptr++) {
 					;
 				}
-				strncpy (w1, optr, sizeof(w1) - 1);
-				strncpy (w2, ptr, sizeof(w2) - 1);
+				strncpy (w1, optr, sizeof (w1) - 1);
+				strncpy (w2, ptr, sizeof (w2) - 1);
 			}
 		} else {
-			strncpy (w0, buf, sizeof(w0) - 1);
+			strncpy (w0, buf, sizeof (w0) - 1);
 		}
 
 		const char *wa[] = {w0, w1, w2};

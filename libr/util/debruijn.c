@@ -67,7 +67,6 @@ static char* de_bruijn(const char* charset, int order, int maxlen) {
 // The returned string is malloced, and it is the responsibility of the caller
 // to free the memory.
 R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
-	char *pat, *pat2;
 	ut64 len;
 	if (!charset) {
 		charset = debruijn_charset;
@@ -75,31 +74,28 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 	if (start >= size) {
 		return (char*)NULL;
 	}
-	pat = de_bruijn (charset, 3 /*subsequence length*/, size);
+	char *pat = de_bruijn (charset, 3 /*subsequence length*/, size);
 	if (!pat) {
 		return NULL;
 	}
 	if (start == 0) {
 		len = strlen (pat);
 		if (size != len) {
-			eprintf ("warning: requested pattern of length %d, "
-				 "generated length %"PFMT64d"\n", size, len);
+			R_LOG_WARN ("requested pattern of length %d, generated length %"PFMT64d, size, len);
 		}
 		return pat;
 	}
-	pat2 = calloc ((size - start) + 1, sizeof(char));
+	char *pat2 = calloc ((size - start) + 1, sizeof (char));
 	if (!pat2) {
 		free (pat);
 		return NULL;
 	}
 	strncpy (pat2, pat + start, size - start);
-	pat2[size-start] = 0;
+	pat2[size - start] = 0;
 	free (pat);
 	len = strlen (pat2);
 	if (size != len) {
-		eprintf ("warning: requested pattern of length %d, "
-				 "generated length %"PFMT64d"\n",
-				 size, len);
+		R_LOG_WARN ("requested pattern of length %d, generated length %"PFMT64d, size, len);
 	}
 	return pat2;
 }

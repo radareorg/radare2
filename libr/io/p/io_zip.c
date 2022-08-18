@@ -292,11 +292,16 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 
-	RList *list_fds = r_list_new ();
 	int perm = 0;
 	struct zip_stat sb;
 	struct zip *zipArch = r_io_zip_open_archive (zip_filename, perm, mode, rw);
 	if (!zipArch) {
+		free (zip_uri);
+		return NULL;
+	}
+	RList *list_fds = r_list_new ();
+	if (!list_fds) {
+		free (zip_uri);
 		return NULL;
 	}
 	ut64 i, num_entries = zip_get_num_files (zipArch);
@@ -419,7 +424,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		*zip_filename++ = 0;
 
 		// check for // for file in the archive
-		if ( (filename_in_zipfile = strstr (zip_filename, "//")) && filename_in_zipfile[2]) {
+		if ((filename_in_zipfile = strstr (zip_filename, "//")) && filename_in_zipfile[2]) {
 			// null terminating uri to filename here.
 			*filename_in_zipfile++ = 0;
 			*filename_in_zipfile++ = 0;

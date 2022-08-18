@@ -3,7 +3,7 @@
 #include <r_util.h>
 #include "v850e0.h"
 
-static const char *instrs[] = {
+static const char * const instrs[] = {
 	[V850_MOV]	= "mov",
 	[V850_NOT]	= "not",
 	[V850_DIVH]	= "divh",
@@ -53,14 +53,14 @@ static const char *instrs[] = {
 	[V850_EXT1]	= "",
 };
 
-static const char *bit_instrs[] = {
+static const char * const bit_instrs[] = {
 	[V850_BIT_SET1]	= "set1",
 	[V850_BIT_NOT1]	= "not1",
 	[V850_BIT_CLR1]	= "clr1",
 	[V850_BIT_TST1]	= "tst1",
 };
 
-static const char *ext_instrs1[] = {
+static const char * const ext_instrs1[] = {
 	[V850_EXT_SETF]	= "setf",
 	[V850_EXT_LDSR]	= "ldsr",
 	[V850_EXT_STSR]	= "stsr",
@@ -73,12 +73,12 @@ static const char *ext_instrs1[] = {
 	[V850_EXT_EXT2]	= "ext2",
 };
 
-static const char *ext_instrs2[] = {
+static const char * const ext_instrs2[] = {
 	[V850_EXT_DI]	= "di",
 	[V850_EXT_EI]	= "ei",
 };
 
-static const char *conds[] = {
+static const char * const conds[] = {
 	[V850_COND_V]	= "v",
 	[V850_COND_CL]	= "cl",
 	[V850_COND_ZE]	= "z",
@@ -237,9 +237,9 @@ static int decode_bit_op(const ut8 *instr, int len, struct v850_cmd *cmd) {
 
 	ut16 word1 = r_read_le16 (instr);
 	ut16 word2 = r_read_at_le16 (instr, 2);
-	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", bit_instrs[word1 >> 14]);
+	snprintf (cmd->instr, sizeof (cmd->instr) - 1, "%s", bit_instrs[word1 >> 14]);
 	ut8 reg1 = get_reg1 (word1);
-	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "%u, 0x%x[r%d]",
+	snprintf (cmd->operands, sizeof (cmd->instr) - 1, "%u, 0x%x[r%d]",
 			(word1 >> 11) & 0x7, word2, reg1);
 	return 4;
 }
@@ -252,8 +252,11 @@ static int decode_extended(const ut8 *instr, int len, struct v850_cmd *cmd) {
 	ut16 word1 = r_read_le16 (instr);
 	ut16 word2 = r_read_at_le16 (instr, 2);
 
-	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s",
-			ext_instrs1[get_subopcode (word1)]);
+	int index = get_subopcode (word1);
+	if (index < 0 || index >= R_ARRAY_SIZE (ext_instrs1)) {
+		return -1;
+	}
+	snprintf (cmd->instr, sizeof (cmd->instr) - 1, "%s", ext_instrs1[index]);
 
 	switch (get_subopcode (word1)) {
 	case V850_EXT_SETF:
@@ -275,8 +278,7 @@ static int decode_extended(const ut8 *instr, int len, struct v850_cmd *cmd) {
 				get_reg1 (word1), get_reg2 (word2));
 		break;
 	case V850_EXT_TRAP:
-		snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%x",
-				get_reg1 (word1));
+		snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%x", get_reg1 (word1));
 		break;
 	case V850_EXT_HALT:
 	case V850_EXT_RETI:
@@ -284,8 +286,7 @@ static int decode_extended(const ut8 *instr, int len, struct v850_cmd *cmd) {
 		break;
 	case V850_EXT_EXT2:
 		// can be only 0 or 1
-		snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s",
-				ext_instrs2[(word2 >> 13) & 1]);
+		snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", ext_instrs2[(word2 >> 13) & 1]);
 		break;
 	default:
 		return -1;

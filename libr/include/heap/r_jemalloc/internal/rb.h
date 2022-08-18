@@ -464,7 +464,7 @@ a_prefix##insert(a_rbt_type *rbtree, a_type *node) {			\
     struct {								\
 	a_type *node;							\
 	int cmp;							\
-    } path[sizeof(void *) << 4], *pathp;				\
+    } path[sizeof (void *) << 4], *pathp;				\
     rbt_node_new(a_type, a_field, rbtree, node);			\
     /* Wind. */								\
     path->node = rbtree->rbt_root;					\
@@ -534,7 +534,7 @@ a_prefix##remove(a_rbt_type *rbtree, a_type *node) {			\
     struct {								\
 	a_type *node;							\
 	int cmp;							\
-    } *pathp, *nodep, path[sizeof(void *) << 4];			\
+    } *pathp, *nodep, path[sizeof (void *) << 4];			\
     /* Wind. */								\
     nodep = NULL; /* Silence compiler warning. */			\
     path->node = rbtree->rbt_root;					\

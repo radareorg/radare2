@@ -276,7 +276,7 @@ R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len
 	if (fs && file) {
 		// TODO: fill file->data ? looks like dupe of rbuffer
 		if (file->p && file->p->write) {
-			return file->p->write (file, addr, data, len);;
+			return file->p->write (file, addr, data, len);
 		}
 		R_LOG_ERROR ("null file->p->write");
 	}

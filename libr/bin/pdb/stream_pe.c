@@ -3,14 +3,13 @@
 #include "stream_file.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-void parse_pe_stream(void *stream, R_STREAM_FILE *stream_file)
-{
+void parse_pe_stream(void *stream, R_STREAM_FILE *stream_file) {
 	int data_size = 0;
 	char *data = 0, *ptmp = 0;
 	int read_bytes = 0;
 	SIMAGE_SECTION_HEADER *sctn_header = 0;
 	SPEStream *pe_stream = (SPEStream *) stream;
-	int sctn_header_size =0;
+	int sctn_header_size = 0;
 
 	stream_file_get_size (stream_file, &data_size);
 	data = (char *) malloc (data_size);

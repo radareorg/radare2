@@ -896,7 +896,7 @@ static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta) {
 static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	st64 ptr = 0;
 	char *addr, *esil_buf = NULL;
-	const st64 maxstackframe = 1024 * 8; 
+	const st64 maxstackframe = 1024 * 8;
 
 	r_return_if_fail (anal && fcn && op && reg);
 
@@ -1465,7 +1465,7 @@ static int regvar_comparator(const RAnalVar *a, const RAnalVar *b) {
 	// return (a && b)? (a->argnum > b->argnum) - (a->argnum < b->argnum): 0;
 }
 
-static int var_comparator(const RAnalVar *a, const RAnalVar *b){
+static int var_comparator(const RAnalVar *a, const RAnalVar *b) {
 	if (a && b) {
 		if (a->isarg && !b->isarg) {
 			return -1;

@@ -155,8 +155,8 @@ struct canfd_frame {
 	__u8    data[CANFD_MAX_DLEN] __attribute__((aligned(8)));
 };
 
-#define CAN_MTU		(sizeof(struct can_frame))
-#define CANFD_MTU	(sizeof(struct canfd_frame))
+#define CAN_MTU		(sizeof (struct can_frame))
+#define CANFD_MTU	(sizeof (struct canfd_frame))
 
 /* particular protocols of the protocol family PF_CAN */
 #define CAN_RAW		1 /* RAW sockets */

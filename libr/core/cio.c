@@ -493,18 +493,18 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 
 	// cases
 	// addr + b_size + dist > file_end
-	//if ( (addr+b_size) + dist > file_end ) {
+	//if ((addr+b_size) + dist > file_end ) {
 	//	res = false;
 	//}
 	// addr + b_size + dist < file_start (should work since dist is signed)
-	//else if ( (addr+b_size) + dist < 0 ) {
+	//else if ((addr+b_size) + dist < 0 ) {
 	//	res = false;
 	//}
 	// addr + dist < file_start
 	if (addr + dist < fstart) {
 		res = false;
 	// addr + dist > file_end
-	} else if ( (addr) + dist > fend) {
+	} else if ((addr) + dist > fend) {
 		res = false;
 	} else {
 		r_io_read_at (core->io, addr, shift_buf, b_size);

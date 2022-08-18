@@ -58,7 +58,7 @@ RBinPEObj *r_bin_pemixed_init_native(RBinPEObj *pe) {
 	ut8* zero_out;
 
 	struct PE_(r_bin_pe_obj_t)* sub_bin_native = R_NEW0 (struct PE_(r_bin_pe_obj_t));
-	memcpy (sub_bin_native, pe, sizeof(struct PE_(r_bin_pe_obj_t)));
+	memcpy (sub_bin_native, pe, sizeof (struct PE_(r_bin_pe_obj_t)));
 
 	//copy pe->b and assign to sub_bin_native
 

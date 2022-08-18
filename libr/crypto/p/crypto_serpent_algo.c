@@ -142,7 +142,7 @@ static bool serpent_keyschedule(struct serpent_state st, ut32 subkeys[NB_SUBKEYS
 				&tmpkeys[DW_BY_USERKEY + i * DW_BY_BLOCK]);
 	}
 
-	memcpy (subkeys, tmpkeys + DW_BY_USERKEY, 132 * sizeof(ut32));
+	memcpy (subkeys, tmpkeys + DW_BY_USERKEY, 132 * sizeof (ut32));
 	return true;
 }
 

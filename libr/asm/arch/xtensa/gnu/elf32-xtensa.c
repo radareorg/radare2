@@ -11149,7 +11149,7 @@ match_section_group (bfd *abfd ATTRIBUTE_UNUSED, asection *sec, void *inf)
 }
 
 
-static int linkonce_len = sizeof(".gnu.linkonce.") - 1;
+static int linkonce_len = sizeof (".gnu.linkonce.") - 1;
 
 static char *
 xtensa_property_section_name (asection *sec, const char *base_name)

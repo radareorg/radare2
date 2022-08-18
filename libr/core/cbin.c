@@ -162,7 +162,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 	if (!bf) {
 		return;
 	}
-	Sdb *db = sdb_ns (bf->sdb, "info", 0);;
+	Sdb *db = sdb_ns (bf->sdb, "info", 0);
 	if (!db) {
 		return;
 	}
@@ -1341,7 +1341,7 @@ static int bin_source(RCore *r, PJ *pj, int mode) {
 		RList *list = r_str_split_list (v, "|", 0);
 		srcline = r_list_get_bottom (list);
 		if (srcline) {
-			if (!strstr (srcline, "0x")){
+			if (!strstr (srcline, "0x")) {
 				r_list_append (final_list, srcline);
 			}
 		}
@@ -2561,7 +2561,7 @@ next:
 			break;
 		}
 	}
-	if (IS_MODE_NORMAL (mode)){
+	if (IS_MODE_NORMAL (mode)) {
 		if (r->table_query) {
 			r_table_query (table, r->table_query);
 		}
@@ -2852,7 +2852,7 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			RInterval pitv = (RInterval){s->paddr, s->size};
 			RInterval vitv = (RInterval){s->vaddr, s->vsize};
 			r_num_units (humansz, sizeof (humansz), s->size);
-			RListInfo *info = r_listinfo_new (s->name, pitv, vitv, s->perm, strdup (humansz));
+			RListInfo *info = r_listinfo_new (s->name, pitv, vitv, s->perm, humansz);
 			r_list_append (list, info);
 		}
 		RTable *table = r_core_table (r, "sections");

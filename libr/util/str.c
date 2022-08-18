@@ -100,7 +100,7 @@ R_API void r_str_reverse(char *str) {
 R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 	int i, j, idx;
 	if (bitz) {
-		for (i = j = 0; i<len && (!bitz||bitz[i]); i++) {
+		for (i = j = 0; i < len && (!bitz||bitz[i]); i++) {
 			if (i > 0 && (i % 8) == 0) {
 				buf++;
 			}
@@ -148,14 +148,9 @@ static void trimbits(char *b) {
 // The string is then trimmed using the "trimbits" function above.
 R_API int r_str_bits64(char* strout, ut64 in) {
 	int i, bit, count = 0;
-	count = 0;
 	for (i = (sizeof (in) * 8) - 1; i >= 0; i--) {
 		bit = in >> i;
-		if (bit & 1) {
-			strout[count] = '1';
-		} else {
-			strout[count] = '0';
-		}
+		strout[count] = (bit & 1)? '1': '0';
 		count++;
 	}
 	strout[count] = '\0';
@@ -196,20 +191,16 @@ R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen) {
 		}
 		if (i + 7 < len) {
 			for (k = 0, j = i + 7; j >= i; j--, k++) {
-				// INVERSE for (k=0,j=i; j<i+8; j++,k++) {
 				if (str[j] == ' ') {
-					//k--;
 					continue;
 				}
-				//		printf ("---> j=%d (%c) (%02x)\n", j, str[j], str[j]);
 				if (str[j] == '1') {
-					ret|=1 << k;
+					ret |= (1 << k);
 				} else if (str[j] != '0') {
 					return n;
 				}
 			}
 		}
-	//	printf ("-======> %02x\n", ret);
 		out[n++] = ret;
 		if (n == outlen) {
 			return n;
@@ -247,7 +238,7 @@ R_API void r_str_case(char *str, bool up) {
 	if (up) {
 		char oc = 0;
 		for (; *str; oc = *str++) {
-			*str = (*str=='x' && oc=='0') ? 'x': toupper ((int)(ut8)*str);
+			*str = (*str == 'x' && oc == '0') ? 'x': toupper ((int)(ut8)*str);
 		}
 	} else {
 		for (; *str; str++) {
@@ -1250,8 +1241,7 @@ R_API char *r_str_sanitize_sdb_key(const char *s) {
 	char *cur = ret;
 	while (len > 0) {
 		char c = *s;
-		if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9')
-			&& c != '_' && c != ':') {
+		if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9') && c != '_' && c != ':') {
 			c = '_';
 		}
 		*cur = c;
@@ -2040,7 +2030,7 @@ R_API bool r_str_is_printable_incl_newlines(const char *str) {
 	return true;
 }
 
-// Length in chars of a wide string (find better name?)
+// Length in chars of a wide string and find a better name
 R_API size_t r_wstr_clen(const char *s) {
 	size_t len = 0;
 	if (!*s++) {
@@ -2224,7 +2214,7 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 }
 
 R_API size_t r_str_utf8_codepoint(const char* s, size_t left) {
-	if (!s || left <= 0) {
+	if (!s || !*s || left <= 0) {
 		return 0;
 	}
 	if ((*s & 0x80) != 0x80) {
@@ -2240,15 +2230,13 @@ R_API size_t r_str_utf8_codepoint(const char* s, size_t left) {
 }
 
 R_API bool r_str_char_fullwidth(const char* s, size_t left) {
-	if (!s || left <= 0) {
+	if (!s || !*s || left <= 0) {
 		return false;
 	}
 	size_t codepoint = r_str_utf8_codepoint (s, left);
-	return (codepoint >= 0x1100 &&
-		 (codepoint <= 0x115f ||                  /* Hangul Jamo init. consonants */
-			  codepoint == 0x2329 || codepoint == 0x232a ||
-		 (R_BETWEEN (0x2e80, codepoint, 0xa4cf)
-			&& codepoint != 0x303f) ||        /* CJK ... Yi */
+	if (codepoint >= 0x1100) {
+		 return codepoint <= 0x115f || codepoint == 0x2329 || codepoint == 0x232a || /* Hangul Jamo init. consonants */
+		 (R_BETWEEN (0x2e80, codepoint, 0xa4cf) && codepoint != 0x303f) || /* CJK ... Yi */
 		 R_BETWEEN (0xac00, codepoint, 0xd7a3) || /* Hangul Syllables */
 		 R_BETWEEN (0xf900, codepoint, 0xfaff) || /* CJK Compatibility Ideographs */
 		 R_BETWEEN (0xfe10, codepoint, 0xfe19) || /* Vertical forms */
@@ -2256,7 +2244,9 @@ R_API bool r_str_char_fullwidth(const char* s, size_t left) {
 		 R_BETWEEN (0xff00, codepoint, 0xff60) || /* Fullwidth Forms */
 		 R_BETWEEN (0xffe0, codepoint, 0xffe6) ||
 		 R_BETWEEN (0x20000, codepoint, 0x2fffd) ||
-		 R_BETWEEN (0x30000, codepoint, 0x3fffd)));
+		 R_BETWEEN (0x30000, codepoint, 0x3fffd);
+	}
+	return false;
 }
 
 /**
@@ -2723,7 +2713,7 @@ R_API const char *r_str_lastbut(const char *s, char ch, const char *but) {
 // Must be merged inside strlen
 R_API size_t r_str_len_utf8char(const char *s, int left) {
 	size_t i = 1;
-	while (s[i] && (!left || i<left)) {
+	while (s[i] && (!left || i < left)) {
 		if ((s[i] & 0xc0) != 0x80) {
 			i++;
 		} else {
@@ -2905,9 +2895,7 @@ R_API char *r_str_uri_encode(const char *s) {
 		return NULL;
 	}
 	for (; *s; s++) {
-		if((*s>='0' && *s<='9')
-		|| (*s>='a' && *s<='z')
-		|| (*s>='A' && *s<='Z')) {
+		if ((*s >= '0' && *s <= '9') || (*s >= 'a' && *s <= 'z') || (*s >= 'A' && *s <= 'Z')) {
 			*d++ = *s;
 		} else {
 			*d++ = '%';
@@ -3882,7 +3870,7 @@ R_API int r_str_distance(const char *a, const char *b) {
 	ut32 distance = 0;
 	double similarity = 0;
 	r_diff_buffers_distance_levenshtein (NULL, (const ut8*)a, strlen (a), (const ut8*)b, strlen (b), &distance, &similarity);
-	return (int)(similarity * 100);;
+	return (int)(similarity * 100);
 }
 
 R_API const char *r_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y) {

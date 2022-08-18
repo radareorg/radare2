@@ -175,7 +175,7 @@ static const char *help_msg_pdc[] = {
 #define K_MARK(x) r_strf ("mark.%"PFMT64x,x)
 #define K_ELSE(x) r_strf ("else.%"PFMT64x,x)
 #define K_INDENT(x) r_strf ("loc.%"PFMT64x,x)
-#define SET_INDENT(x) { (x) = (x)>0?(x):0; memset (indentstr, ' ', sizeof(indentstr)); indentstr [((x) * I_TAB)] = 0; }
+#define SET_INDENT(x) { (x) = (x)>0?(x):0; memset (indentstr, ' ', sizeof (indentstr)); indentstr [((x) * I_TAB)] = 0; }
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	bool show_c_headers = *input == 'c';
 	if (*input == '?') {

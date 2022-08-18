@@ -863,7 +863,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		break;
 	}
 	r_core_return_value (core, ret);
-	// double free wtf is freed this here? r_socket_free(fd);
+	// double free wtf is freed this here? r_socket_free (fd);
 	//r_core_rtr_list (core);
 }
 
@@ -927,7 +927,7 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 		// r_core_event (core, );
 		free (s);
 		free (f);
-		// TODO: those files are leaked when closing r_core_free() should be deleted
+		// TODO: those files are leaked when closing r_core_free () should be deleted
 #else
 		R_LOG_ERROR ("Not supported for your platform");
 #endif

@@ -213,19 +213,19 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (cmd[0] == '?' || !strcmp (cmd, "help")) {
-		eprintf ("Usage: =!cmd args\n"
-			 " =!pid             - show targeted pid\n"
-			 " =!pkt s           - send packet 's'\n"
-			 " =!rd              - show reverse debugging availability\n"
-			 " =!dsb             - step backwards\n"
-			 " =!dcb             - continue backwards\n"
-			 " =!monitor cmd     - hex-encode monitor command and pass"
+		eprintf ("Usage: :cmd args\n"
+			 " :pid             - show targeted pid\n"
+			 " :pkt s           - send packet 's'\n"
+			 " :rd              - show reverse debugging availability\n"
+			 " :dsb             - step backwards\n"
+			 " :dcb             - continue backwards\n"
+			 " :monitor cmd     - hex-encode monitor command and pass"
 			                     " to target interpreter\n"
-			 " =!detach [pid]    - detach from remote/detach specific pid\n"
-			 " =!inv.reg         - invalidate reg cache\n"
-			 " =!pktsz           - get max packet size used\n"
-			 " =!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
-			 " =!exec_file [pid] - get file which was executed for"
+			 " :detach [pid]    - detach from remote/detach specific pid\n"
+			 " :inv.reg         - invalidate reg cache\n"
+			 " :pktsz           - get max packet size used\n"
+			 " :pktsz bytes     - set max. packet size as 'bytes' bytes\n"
+			 " :exec_file [pid] - get file which was executed for"
 			                     " current/specified pid\n");
 		return NULL;
 	}
@@ -401,7 +401,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		desc->get_baddr = true;
 		return NULL;
 	}
-	eprintf ("Try: '=!?'\n");
+	eprintf ("Try: ':?'\n");
 	return NULL;
 }
 

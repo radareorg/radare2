@@ -74,7 +74,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (bf, b);
 }
 
@@ -83,7 +83,7 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RList* entries(RBinFile *bf) {
-	RList* ret = r_list_newf (free);;
+	RList* ret = r_list_newf (free);
 	if (ret) {
 		RBinAddr *ptr = R_NEW0 (RBinAddr);
 		if (ptr) {

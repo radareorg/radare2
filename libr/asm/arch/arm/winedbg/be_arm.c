@@ -802,15 +802,17 @@ char* winedbg_arm_insn_hex(struct winedbg_arm_insn *arminsn) {
 }
 
 void* arm_free(struct winedbg_arm_insn *arminsn) {
-	free(arminsn->str_hex);
-	free(arminsn->str_asm);
-	free(arminsn);
+	if (arminsn) {
+		free (arminsn->str_hex);
+		free (arminsn->str_asm);
+		free (arminsn);
+	}
 	return NULL;
 }
 
 struct winedbg_arm_insn* arm_new() {
 	struct winedbg_arm_insn *ret;
-	ret = malloc(sizeof(struct winedbg_arm_insn));
+	ret = malloc(sizeof (struct winedbg_arm_insn));
 	ret->pc = 0;
 	ret->thumb = false;
 	ret->str_hex = NULL;

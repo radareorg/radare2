@@ -277,7 +277,7 @@ static void r2pm_setenv(void) {
 	free (oldpath);
 	free (r2_prefix);
 
-	// GLOBAL=0 # depends on r2pm.global, which is set on r2pm_install
+	// GLOBAL = 0 # depends on r2pm.global, which is set on r2pm_install
 	char *python = r_sys_getenv ("PYTHON");
 	if (!python) {
 		python = r_file_path ("python3");
@@ -403,7 +403,7 @@ static int r2pm_clone(const char *pkg) {
 			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_TEXTLINE);
 			bool use_c_impl = false;
 			if (use_c_impl) {
-				R_LOG_INFO ("TODO: wget tarball from '%s'", url); 
+				R_LOG_INFO ("TODO: wget tarball from '%s'", url);
 			} else {
 				// TODO. run wget
 			}

@@ -189,7 +189,7 @@ static int i2c_open(struct gport *port) {
 static int sp_close(struct gport *port) {
 #if __WINDOWS__
 	/* Returns non-zero upon success, 0 upon failure. */
-	if (CloseHandle (port->hdl) == 0){
+	if (CloseHandle (port->hdl) == 0) {
 		return -1;
 	}
 	port->hdl = INVALID_HANDLE_VALUE;
@@ -1165,13 +1165,13 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOGprobe *gprobe = (RIOGprobe *)fd->data;
 
 	if (!cmd[0] || cmd[0] == '?' || !strcmp (cmd, "help")) {
-		printf ("Usage: =!cmd args\n"
-			" =!reset code\n"
-			" =!debugon\n"
-			" =!debugoff\n"
-			" =!runcode address\n"
-			" =!getdeviceid\n"
-			" =!getinformation\n");
+		printf ("Usage: :cmd args\n"
+			" :reset code\n"
+			" :debugon\n"
+			" :debugoff\n"
+			" :runcode address\n"
+			" :getdeviceid\n"
+			" :getinformation\n");
 		return NULL;
 	}
 
@@ -1205,10 +1205,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 
 	if (r_str_startswith (cmd, "getdeviceid")) {
 		ut8 index = 0;
-
 		while (!gprobe_getdeviceid (&gprobe->gport, index++)) {
+			// do nothing
 		};
-
 		return NULL;
 	}
 
@@ -1218,7 +1217,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 
-	printf ("Try: '=!?'\n");
+	printf ("Try: ':?'\n");
 
 	return NULL;
 }

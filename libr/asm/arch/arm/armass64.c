@@ -389,8 +389,8 @@ static ut32 r_n_math(ArmOp *op, ut32 data_64, ut32 data_32 , bool is64) {
 	int k = 0;
 	if (is64) {
 	        k = data_64;
-	} else { 
-	        k = data_32;	        
+	} else {
+	        k = data_32;
 	}
 	check_cond (op->operands[0].type == ARM_GPR);
 	check_cond (op->operands[1].type == ARM_GPR);
@@ -640,10 +640,10 @@ static ut32 tst(ArmOp *op) {
              check_cond (op->operands[1].immediate <= 0xfffffffffffffff);
              if (check3) {
                     k = 0x1f0040f2;
-             } else if (check4){
+             } else if (check4) {
                     k = 0x1f000072;
              }
-             data = k | (op->operands[0].reg & 0x7) << 29; 
+             data = k | (op->operands[0].reg & 0x7) << 29;
              data |= (op->operands[0].reg & 0x18) << 13;
 
             	// encode immediate for tst
@@ -1226,7 +1226,7 @@ static ut32 msr(ArmOp *op, int w) {
 			}
 		}
 		r = op->operands[1].reg;
-		if ( op->operands[1].sp_val == 0xfffe ) {
+		if (op->operands[1].sp_val == 0xfffe ) {
 			is_immediate = 1;
 			r = op->operands[1].immediate;
 		}
@@ -1360,7 +1360,7 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
         ---+-------+-----------+-------+----
 	op | immlo | 1 0 0 0 0 | immhi | Rd
 
-	op = 0 (adr) || 1 (adrp) 
+	op = 0 (adr) || 1 (adrp)
 #endif
 	ut32 immlo = (at & 3) << 29;
 	ut32 immhi = (at >> 2) << 5;
@@ -1536,7 +1536,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 		if (strcmp (op->mnemonic, "msr") == 0 && operand == 1) {
 
 			//operand 1 must be a immediate
-			if ( token[0] == '#' || (token[0] >= '0' && token[0] <= '9')) {
+			if (token[0] == '#' || (token[0] >= '0' && token[0] <= '9')) {
 				//immediate operand found.
 				op->operands[operand].sp_val = 0xfffe; //not regiter, but a immediate
 				op->operands[operand].immediate = r_num_math (NULL, token[0]=='#'?token+1:token);

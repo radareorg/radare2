@@ -127,7 +127,7 @@ static bool __close(RIODesc *fd) {
 	}
 	RIOGzip *riom = fd->data;
 	if (riom->has_changed) {
-		eprintf ("TODO: Writing changes into gzipped files is not yet supported\n");
+		R_LOG_ERROR ("TODO: Writing changes into gzipped files is not yet supported");
 	}
 	R_FREE (riom->buf);
 	R_FREE (fd->data);

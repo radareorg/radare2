@@ -1347,7 +1347,7 @@ static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
 	case 68:	/* ball */
 		snprintf(
 			compare_val,
-			sizeof(compare_val),
+			sizeof (compare_val),
 			"%s%d",
 			xtensa_regfile_shortname (isa, op2_rf),
 			op2_reg
@@ -2010,7 +2010,7 @@ static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origina
 		slot_buffer = xtensa_insnbuf_alloc (isa);
 	}
 
-	memset (insn_buffer, 0,	xtensa_insnbuf_size (isa) * sizeof(xtensa_insnbuf_word));
+	memset (insn_buffer, 0,	xtensa_insnbuf_size (isa) * sizeof (xtensa_insnbuf_word));
 
 	xtensa_insnbuf_from_chars (isa, insn_buffer, buffer, len);
 	format = xtensa_format_decode (isa, insn_buffer);

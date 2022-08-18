@@ -846,7 +846,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn*insn) {
 			break;
 		case MIPS_INS_JALR:
 		case MIPS_INS_JALRS:
-			if (strcmp(R_REG(rd), "rd")==0) {
+			if (!strcmp (R_REG (rd), "rd")) {
 				r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_D ("%s"), R_REG (rs));
 			} else {
 				r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_DR ("%s", "%s"), R_REG (rd), R_REG (rs));
@@ -1277,7 +1277,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			//eprintf ("%llx jalr\n", addr);
 			op->delay = 1;
 			insn.id = MIPS_INS_JALR;
-			if (rs  == 25){
+			if (rs == 25) {
 				op->type = R_ANAL_OP_TYPE_RCALL;
 				op->jump = t9_pre;
 				break;
@@ -1328,7 +1328,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->type = R_ANAL_OP_TYPE_ADD;
 			break;
 		case 45: //daddu move
-			if(rt == 0) {
+			if (rt == 0) {
 				op->type = R_ANAL_OP_TYPE_MOV;
 				insn.id = MIPS_INS_MOV;
 				break;
@@ -1376,8 +1376,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			break;
 		}
 		//family = 'R';
-	} else
-	if ((optype & 0x3e) == 2) {
+	} else if ((optype & 0x3e) == 2) {
 /*
 		// J-TYPE
 		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
@@ -1495,8 +1494,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 					insn.id = MIPS_INS_BGEZ;
 					break;
 				case 17: //bal  bgezal
-					if (rs==0) {
-						op->jump = addr+(imm<<2)+4;
+					if (rs == 0) {
+						op->jump = addr + (imm << 2) + 4;
 						snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump) ;
 						insn.id = MIPS_INS_BAL;
 					} else {
@@ -1515,14 +1514,14 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		case 4: // beq
 			if (!insn.id) {
 				insn.id = MIPS_INS_BEQ;
-				if(rt == 0) {
+				if (rt == 0) {
 					insn.id = MIPS_INS_BEQZ ;
 				}
 			}
 		case 5: // bne // also bnez
 			if (!insn.id) {
 				insn.id = MIPS_INS_BNE;
-				if(rt == 0) {
+				if (rt == 0) {
 					insn.id = MIPS_INS_BNEZ;
 				}
 			}
@@ -1788,7 +1787,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	return op->size;
 }
 /* Set the profile register */
-static bool mips_set_reg_profile(RAnal* anal){
+static bool mips_set_reg_profile(RAnal* anal) {
      const char *p =
 #if 0
 	  "=PC    pc\n"

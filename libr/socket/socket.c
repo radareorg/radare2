@@ -699,7 +699,7 @@ R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 	struct timeval t = {timeout, 0};
 
 	int r = select (s->fd + 1, &read_fds, NULL, &except_fds, &t);
-	if(r < 0) {
+	if (r < 0) {
 		r_sys_perror ("select");
 	} else if (r > 0 && FD_ISSET (s->fd, &read_fds)) {
 		return r_socket_accept (s);
@@ -803,7 +803,7 @@ R_API int r_socket_write(RSocket *s, const void *buf, int len) {
 			} else {
 				ret = SSL_write (s->sfd, buf + delta, b);
 			}
-		} else
+		} else /* block */
 #endif
 		{
 			ret = send (s->fd, (char *)buf+delta, b, 0);

@@ -6,7 +6,7 @@
 R_LIB_VERSION(r_lib);
 
 /* TODO: avoid globals */
-#define IFDBG if(__has_debug)
+#define IFDBG if (__has_debug)
 static R_TH_LOCAL bool __has_debug = false;
 
 /* XXX : this must be registered in runtime */

@@ -402,7 +402,7 @@ static inline ut64 dwarf_read_address(size_t size, const ut8 **buf, const ut8 *b
 	default:
 		result = 0;
 		*buf += size;
-		eprintf ("Weird dwarf address size: %u.\n", (int)size);
+		R_LOG_WARN ("Unsupported dwarf address size: %u", (int)size);
 	}
 	return result;
 }
@@ -1097,15 +1097,15 @@ static bool parse_line_raw(const RBin *a, const ut8 *obuf, ut64 len, int mode) {
 	return true;
 }
 
-#define READ_BUF(x,y) if (idx+sizeof(y)>=len) { return false;} \
-	(x)=*(y*)buf; idx+=sizeof(y);buf+=sizeof(y)
+#define READ_BUF(x,y) if (idx+sizeof (y)>=len) { return false;} \
+	(x)=*(y*)buf; idx+=sizeof (y);buf+=sizeof (y)
 
-#define READ_BUF64(x) if (idx+sizeof(ut64)>=len) { return false;} \
-	(x)=r_read_ble64(buf, big_end); idx+=sizeof(ut64);buf+=sizeof(ut64)
-#define READ_BUF32(x) if (idx+sizeof(ut32)>=len) { return false;} \
-	(x)=r_read_ble32(buf, big_end); idx+=sizeof(ut32);buf+=sizeof(ut32)
-#define READ_BUF16(x) if (idx+sizeof(ut16)>=len) { return false;} \
-	(x)=r_read_ble16(buf, big_end); idx+=sizeof(ut16);buf+=sizeof(ut16)
+#define READ_BUF64(x) if (idx+sizeof (ut64)>=len) { return false;} \
+	(x)=r_read_ble64(buf, big_end); idx+=sizeof (ut64);buf+=sizeof (ut64)
+#define READ_BUF32(x) if (idx+sizeof (ut32)>=len) { return false;} \
+	(x)=r_read_ble32(buf, big_end); idx+=sizeof (ut32);buf+=sizeof (ut32)
+#define READ_BUF16(x) if (idx+sizeof (ut16)>=len) { return false;} \
+	(x)=r_read_ble16(buf, big_end); idx+=sizeof (ut16);buf+=sizeof (ut16)
 
 static int parse_aranges_raw(const ut8 *obuf, int len, int mode, PrintfCallback print) {
 	ut32 length, offset;
@@ -1627,7 +1627,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->address = READ64 (buf);
 			break;
 		default:
-			eprintf ("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->address_size);
+			R_LOG_WARN ("DWARF: Unexpected pointer size: %u", (unsigned)hdr->address_size);
 			return NULL;
 		}
 		break;
@@ -1850,7 +1850,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->uconstant = 0;
 		return NULL;
 	default:
-		eprintf ("Unknown DW_FORM 0x%02" PFMT64x "\n", def->attr_form);
+		R_LOG_WARN ("Unknown DW_FORM 0x%02" PFMT64x, def->attr_form);
 		value->uconstant = 0;
 		return NULL;
 	}
@@ -2185,7 +2185,7 @@ RBinSection *getsection(RBin *a, const char *sn) {
 	RBinFile *binfile = a ? a->cur: NULL;
 	RBinObject *o = binfile ? binfile->o : NULL;
 
-	if ( o && o->sections) {
+	if (o && o->sections) {
 		r_list_foreach (o->sections, iter, section) {
 			if (strstr (section->name, sn)) {
 				return section;

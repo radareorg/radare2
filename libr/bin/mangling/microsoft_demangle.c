@@ -1450,7 +1450,7 @@ static bool init_type_code_str_struct(STypeCodeStr *type_coder_str) {
 	if (!type_coder_str->type_str) {
 		return false;
 	}
-	memset (type_coder_str->type_str, 0, TYPE_STR_LEN * sizeof(char));
+	memset (type_coder_str->type_str, 0, TYPE_STR_LEN * sizeof (char));
 
 	type_coder_str->curr_pos = 0; // strlen ("unknown type");
 //	strncpy(type_coder_str->type_str, "unknown_type", type_coder_str->curr_pos);

@@ -98,7 +98,7 @@ static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 		(void)run_ioctl_command (io, fd, cmd);
 		return NULL;
 #else
-		eprintf ("Try: '=!mod'\n    '.=!mod'\n");
+		eprintf ("Try: ':mod'\n    '.:mod'\n");
 #endif
 	}
 	return NULL;

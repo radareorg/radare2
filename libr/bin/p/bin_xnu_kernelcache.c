@@ -2048,7 +2048,7 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 
-	// move into 
+	// move into
 	if (count > cache->internal_buffer_size) {
 		if (cache->internal_buffer) {
 			R_FREE (cache->internal_buffer);

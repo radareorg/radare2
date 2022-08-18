@@ -169,8 +169,8 @@ enum v850_flags {
 struct v850_cmd {
 	ut64 addr;
 	unsigned type;
-	char	instr[V850_INSTR_MAXLEN];
-	char	operands[V850_INSTR_MAXLEN];
+	char instr[V850_INSTR_MAXLEN];
+	char operands[V850_INSTR_MAXLEN];
 };
 
 static inline ut8 get_opcode(const ut16 instr) {

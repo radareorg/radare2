@@ -114,12 +114,19 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 		}
 	}
 	fnum = (long double)num;
-	if (num >= EB) { unit = 'E'; fnum /= EB; } else
-	if (num >= PB) { unit = 'P'; fnum /= PB; } else
-	if (num >= TB) { unit = 'T'; fnum /= TB; } else
-	if (num >= GB) { unit = 'G'; fnum /= GB; } else
-	if (num >= MB) { unit = 'M'; fnum /= MB; } else
-	if (num >= KB) { unit = 'K'; fnum /= KB; } else {
+	if (num >= EB) {
+		unit = 'E'; fnum /= EB;
+	} else if (num >= PB) {
+		unit = 'P'; fnum /= PB;
+	} else if (num >= TB) {
+		unit = 'T'; fnum /= TB;
+	} else if (num >= GB) {
+		unit = 'G'; fnum /= GB;
+	} else if (num >= MB) {
+		unit = 'M'; fnum /= MB;
+	} else if (num >= KB) {
+		unit = 'K'; fnum /= KB;
+	} else {
 		unit = '\0';
 	}
 	fmt_str = ((double)ceill (fnum) == (double)fnum)

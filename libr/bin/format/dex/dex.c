@@ -232,6 +232,9 @@ static void r_bin_dex_obj_free(RBinDexObj *dex) {
 }
 
 void r_bin_dex_free(RBinDexObj *dex) {
+	if (!dex) {
+		return;
+	}
 	struct dex_header_t *dexhdr = &dex->header;
 	if (dex->cal_strings) {
 		size_t i;

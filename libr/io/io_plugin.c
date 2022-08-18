@@ -38,7 +38,7 @@ R_API bool r_io_plugin_init(RIO *io) {
 }
 
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
-	// TODO: optimization 
+	// TODO: optimization
 	if (strstr (filename, "://")) {
 		RIOPlugin *ret;
 		SdbListIter *iter;
@@ -77,7 +77,7 @@ R_API int r_io_plugin_list(RIO *io) {
 		str[2] = plugin->isdbg ? 'd' : '_';
 		str[3] = 0;
 		io->cb_printf ("%s  %-8s %-6s %s.", str,
-			plugin->name, plugin->license, plugin->desc);
+			r_str_get (plugin->name), r_str_get (plugin->license), r_str_get (plugin->desc));
 		if (plugin->uris) {
 			io->cb_printf (" %s", plugin->uris);
 		}
@@ -115,7 +115,6 @@ R_API int r_io_plugin_list_json(RIO *io) {
 		if (plugin->license) {
 			pj_ks (pj, "license", plugin->license);
 		}
-
 		if (plugin->uris) {
 			char *uri;
 			char *uris = strdup (plugin->uris);

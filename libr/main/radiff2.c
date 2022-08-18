@@ -1054,7 +1054,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			break;
 		case 't':
 			ro.threshold = atoi (opt.arg);
-			printf ("%s\n", opt.arg);
+			// printf ("%s\n", opt.arg);
 			break;
 		case 'd':
 			delta = 1;
@@ -1211,7 +1211,11 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				r_core_zdiff (c, c2);
 			} else {
 				r_core_gdiff (c, c2);
-				r_core_diff_show (c, c2);
+				if (ro.diffmode == 'j') {
+					r_core_diff_show_json (c, c2);
+				} else {
+					r_core_diff_show (c, c2);
+				}
 			}
 		} else if (ro.mode == MODE_DIFF_SYMBOLS) {
 			int sz;

@@ -66,7 +66,7 @@ R_API REgg *r_egg_new(void) {
 		goto beach;
 	}
 	egg->plugins = r_list_new ();
-	for (i=0; egg_static_plugins[i]; i++) {
+	for (i = 0; egg_static_plugins[i]; i++) {
 		r_egg_add (egg, egg_static_plugins[i]);
 	}
 	return egg;

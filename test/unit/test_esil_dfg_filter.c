@@ -3,9 +3,6 @@
 #include <r_util.h>
 #include "minunit.h"
 
-#if 0
-// XXX disabled tests as they are broken and dfg code is not used
-
 bool test_filter_regs(void) {
 	RAnal *anal = r_anal_new ();
 	r_anal_use (anal, "x86");
@@ -70,12 +67,9 @@ bool test_lemon_const_folder(void) {
 	mu_assert_true (cmp_result, "esil dfg const folding is broken");
 	mu_end;
 }
-#endif
 
 int main(int argc, char **argv) {
-#if 0
 	mu_run_test (test_filter_regs);
 	mu_run_test (test_lemon_const_folder);
-#endif
 	return tests_passed != tests_run;
 }

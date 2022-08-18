@@ -668,7 +668,7 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode, const char
 				if (elem > -1) {
 					elem--;
 				}
-				i+=4;
+				i +=4;
 			}
 			p->cb_printf (" ]");
 		}
@@ -737,7 +737,7 @@ static void r_print_format_int(const RPrint* p, int endian, int mode, const char
 				if (elem > -1) {
 					elem--;
 				}
-				i+=4;
+				i += 4;
 			}
 			p->cb_printf (" ]");
 		}
@@ -800,7 +800,7 @@ static void r_print_format_octal(const RPrint* p, int endian, int mode, const ch
 				if (elem > -1) {
 					elem--;
 				}
-				i+=4;
+				i += 4;
 			}
 			if (!SEEVALUE) {
 				p->cb_printf (" ]");
@@ -825,7 +825,7 @@ static void r_print_format_octal(const RPrint* p, int endian, int mode, const ch
 				if (elem > -1) {
 					elem--;
 				}
-				i+=4;
+				i += 4;
 			}
 			p->cb_printf (" ]");
 		}
@@ -874,7 +874,7 @@ static void r_print_format_hexflag(const RPrint* p, int endian, int mode, const 
 				if (elem > -1) {
 					elem--;
 				}
-				i+=4;
+				i += 4;
 			}
 			if (!SEEVALUE) {
 				p->cb_printf (" ]");
@@ -913,7 +913,7 @@ static int r_print_format_10bytes(const RPrint* p, int mode, const char *setval,
 	if (MUSTSET) {
 		p->cb_printf ("?e pf B not yet implemented\n");
 	} else if (mode & R_PRINT_DOT) {
-		for (j = 0; j<10; j++) {
+		for (j = 0; j < 10; j++) {
 			p->cb_printf ("%02x ", buf[j]);
 		}
 	} else if (MUSTSEE) {
@@ -925,7 +925,7 @@ static int r_print_format_10bytes(const RPrint* p, int mode, const char *setval,
 		if (!SEEVALUE && !ISQUIET) {
 			p->cb_printf ("0x%08" PFMT64x " = ", seeki);
 		}
-		for (j=0; j<10; j++) {
+		for (j = 0; j < 10; j++) {
 			p->cb_printf ("%02x ", buf[j]);
 		}
 		if (!SEEVALUE) {
@@ -981,7 +981,7 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode, const 
 		if (!SEEVALUE) {
 			p->cb_printf (" ... (");
 		}
-		for (j=0; j<size; j++) {
+		for (j = 0; j < size; j++) {
 			if (!SEEVALUE) {
 				if (IS_PRINTABLE (buf[j])) {
 					p->cb_printf ("%c", buf[i+j]);
@@ -1346,7 +1346,7 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 		(MUSTSEESTRUCT) ?
 			p->cb_printf ("\"") :
 			p->cb_printf ("\\\"");
-		for (; j<len && ((size==-1 || size-- >0) && buf[j]) ; j++) {
+		for (; j < len && ((size==-1 || size-- >0) && buf[j]) ; j++) {
 			char ch = buf[j];
 			if (ch == '"') {
 				p->cb_printf ("\\\"");
@@ -1377,7 +1377,7 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 		p->cb_printf ("\"");
 		utf_encoded_buf = r_str_escape_utf8_for_json (
 		    (char *)buf + i, size == -1 ? str_len : R_MIN (size, str_len));
-		if (utf_encoded_buf){
+		if (utf_encoded_buf) {
 			p->cb_printf ("%s", utf_encoded_buf);
 			free (utf_encoded_buf);
 		}
@@ -1405,13 +1405,13 @@ static void r_print_format_nulltermwidestring(const RPrint* p, const int len, in
 			R_LOG_WARN ("new string is longer than previous one");
 		}
 		p->cb_printf ("ww %s @ 0x%08"PFMT64x"\n", newstring, seeki);
-		free(ons);
+		free (ons);
 	} else if (MUSTSEE) {
 		int j = i;
 		if (!SEEVALUE && !ISQUIET) {
 			p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 		}
-		for (; j<len && ((size==-1 || size-->0) && buf[j]) ; j+=2) {
+		for (; j < len && ((size == -1 || size-- > 0) && buf[j]) ; j += 2) {
 			if (IS_PRINTABLE (buf[j])) {
 				p->cb_printf ("%c", buf[j]);
 			} else {
@@ -2413,7 +2413,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					p->cb_printf ("f %s.%s_", fmtname, fieldname);
 				} else if (tmp == 'E') {
 					p->cb_printf ("f %s=0x%08"PFMT64x"\n", fieldname, seeki);
-				} else if (slide/STRUCTFLAG>0 && idx==1) {
+				} else if (slide/STRUCTFLAG>0 && idx == 1) {
 					p->cb_printf ("%s=0x%08"PFMT64x"\n", fieldname, seeki);
 				} else {
 					p->cb_printf ("f %s=0x%08" PFMT64x "\n", fieldname, seeki);
@@ -2557,11 +2557,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					break;
 				case 'i':
 					r_print_format_int (p, endian, mode, setval, seeki, buf, i, size);
-					i+= (size == -1)? 4: 4 * size;
+					i += (size == -1)? 4: 4 * size;
 					break;
 				case 'd':
 					r_print_format_hex (p, endian, mode, setval, seeki, buf, i, size);
-					i+= (size == -1)? 4: 4 * size;
+					i += (size == -1)? 4: 4 * size;
 					break;
 				case 'D':
 					if (MUSTSET) {
@@ -2647,7 +2647,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						// eprintf ("Set val not implemented yet for bitfields!\n");
 					}
 					r_print_format_bitfield (p, seeki, fmtname, fieldname, addr, mode, size);
-					i+=(size == -1)? 1: size;
+					i += (size == -1)? 1: size;
 					break;
 				case 'E': // resolve enum
 					if (MUSTSET) {

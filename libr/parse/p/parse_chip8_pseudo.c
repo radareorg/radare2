@@ -73,7 +73,7 @@ static int tokenize(const char* in, char* out[]) {
 
 	while (i < len) {
 		tokenlen = strcspn (buf, tokcharset);
-		token = calloc (tokenlen + 1, sizeof(char));
+		token = calloc (tokenlen + 1, sizeof (char));
 		memcpy (token, buf, tokenlen);
 		out[count] = token;
 		i += tokenlen;

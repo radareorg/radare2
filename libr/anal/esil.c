@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2014-2022 - pancake, condret */
 
+#define R_LOG_ORIGIN "anal.esil"
+
 #include <r_anal.h>
 
 #if __wasi__ || EMSCRIPTEN
@@ -14,6 +16,7 @@
 #define ESIL_MACRO 0
 #define IFDBG if (esil && esil->verbose > 1)
 #define IFVBS if (esil && esil->verbose > 0)
+#define ERR(...) if (esil->verbose) { R_LOG_ERROR (__VA_ARGS__); }
 #define FLG(x) R_ANAL_ESIL_FLAG_##x
 #define cpuflag(x, y)\
 if (esil) {\
@@ -35,8 +38,6 @@ static inline ut64 genmask(int bits) {
 	}
 	return m;
 }
-
-#define ERR(...) if (esil->verbose) { R_LOG_ERROR (__VA_ARGS__); }
 
 static bool isnum(RAnalEsil *esil, const char *str, ut64 *num) {
 	if (!esil || !str) {
@@ -96,8 +97,10 @@ static bool popRN(RAnalEsil *esil, ut64 *n) {
 /* R_ANAL_ESIL API */
 
 static void esil_ops_free(HtPPKv *kv) {
-	free (kv->key);
-	free (kv->value);
+	if (kv) {
+		free (kv->key);
+		free (kv->value);
+	}
 }
 
 R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
@@ -1136,7 +1139,7 @@ static int esil_ifset(RAnalEsil *esil) {
 }
 #endif
 
-static bool esil_if(RAnalEsil *esil) {
+static bool esil_if (RAnalEsil *esil) {
 	ut64 num = 0LL;
 	if (esil->skip) {
 		esil->skip++;
@@ -2148,7 +2151,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 			return ret;
 		}
 		ut64 bitmask = genmask (bits - 1);
-		ut8 a[sizeof(ut64)] = {0};
+		ut8 a[sizeof (ut64)] = {0};
 		ret = !!r_anal_esil_mem_read (esil, addr, a, bytes);
 #if 0
 		ut64 b = r_read_ble64 (a, esil->anal->config->big_endian);
@@ -3009,7 +3012,7 @@ static bool esil_is_nan(RAnalEsil *esil) {
 		} else {
 			ERR("esil_is_nan: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_is_nan: fail to get argument from stack.");
 	}
@@ -3030,7 +3033,7 @@ static bool esil_int_to_double(RAnalEsil *esil, int sign) {
 		} else {
 			ERR("esil_int_to_float: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_int_to_float: fail to get argument from stack.");
 	}
@@ -3058,7 +3061,7 @@ static bool esil_double_to_int(RAnalEsil *esil) {
 		} else {
 			ERR("esil_float_to_int: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_float_to_int: fail to get argument from stack.");
 	}
@@ -3089,8 +3092,8 @@ static bool esil_double_to_float(RAnalEsil *esil) {
 		ERR("esil_float_to_float: invalid parameters.");
 	}
 
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3115,8 +3118,8 @@ static bool esil_float_to_double(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_to_float: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3135,8 +3138,8 @@ static bool esil_float_cmp(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_cmp: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3155,8 +3158,8 @@ static bool esil_float_negcmp(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_negcmp: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3225,8 +3228,8 @@ static bool esil_float_add(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_add: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3255,8 +3258,8 @@ static bool esil_float_sub(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_sub: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3285,8 +3288,8 @@ static bool esil_float_mul(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_mul: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3315,8 +3318,8 @@ static bool esil_float_div(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_div: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3331,7 +3334,7 @@ static bool esil_float_neg(RAnalEsil *esil) {
 		} else {
 			ERR("esil_float_neg: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_float_neg: fail to get element from stack.");
 	}
@@ -3353,7 +3356,7 @@ static bool esil_float_ceil(RAnalEsil *esil) {
 		} else {
 			ERR("esil_float_ceil: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_float_ceil: fail to get element from stack.");
 	}
@@ -3375,7 +3378,7 @@ static bool esil_float_floor(RAnalEsil *esil) {
 		} else {
 			ERR("esil_float_floor: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_float_floor: fail to get element from stack.");
 	}
@@ -3398,7 +3401,7 @@ static bool esil_float_round(RAnalEsil *esil) {
 		} else {
 			ERR("esil_float_round: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_float_round: fail to get element from stack.");
 	}
@@ -3420,7 +3423,7 @@ static bool esil_float_sqrt(RAnalEsil *esil) {
 		} else {
 			ERR("esil_float_sqrt: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_float_sqrt: fail to get element from stack.");
 	}

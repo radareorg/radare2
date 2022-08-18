@@ -37,7 +37,7 @@ static const RCmdDescHelp root_help = {
 
 static R_TH_LOCAL int value = 0;
 
-#define NCMDS (sizeof (cmd->cmds)/sizeof(*cmd->cmds))
+#define NCMDS (sizeof (cmd->cmds)/sizeof (*cmd->cmds))
 R_LIB_VERSION (r_cmd);
 
 static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
@@ -370,6 +370,7 @@ R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 		val.sz++;
 		ut8 *data = realloc (val.data, val.sz);
 		if (!data) {
+			free (val.data);
 			return 1;
 		}
 		val.data = data;
@@ -1013,7 +1014,7 @@ static void macro_meta(RCmdMacro *mac) {
 	RListIter *iter;
 	r_list_foreach (mac->macros, iter, m) {
 		mac->cb_printf ("\"(%s %s; ", m->name, m->args);
-		for (j=0; m->code[j]; j++) {
+		for (j = 0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
 				mac->cb_printf (";");
 			} else {
@@ -1038,7 +1039,7 @@ R_API void r_cmd_macro_list(RCmdMacro *mac, int mode) {
 	RListIter *iter;
 	r_list_foreach (mac->macros, iter, m) {
 		mac->cb_printf ("%d (%s %s; ", idx, m->name, m->args);
-		for (j=0; m->code[j]; j++) {
+		for (j = 0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
 				mac->cb_printf ("; ");
 			} else {
@@ -1069,7 +1070,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 	char *pcmd, cmd[R_CMD_MAXLEN];
 	const char *arg = args;
 
-	for (*cmd=i=j=0; j<R_CMD_MAXLEN && ptr[j]; i++,j++) {
+	for (*cmd = i = j = 0; j < R_CMD_MAXLEN && ptr[j]; i++,j++) {
 		if (ptr[j]=='$') {
 			if (ptr[j+1]>='0' && ptr[j+1]<='9') {
 				int wordlen;
@@ -1132,9 +1133,8 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 				}
 			}
 			return NULL;
-		} else
-		/* conditional goto */
-		if (ptr[0]=='?' && ptr[1]=='!' && ptr[2] != '?') {
+			/* conditional goto */
+		} else if (ptr[0]=='?' && ptr[1]=='!' && ptr[2] != '?') {
 			if (mac->num && mac->num->value != 0) {
 				char *label = ptr + 3;
 				for (; *label == ' ' || *label == '.'; label++) {
@@ -1149,9 +1149,8 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 				}
 				return NULL;
 			}
-		} else
-		/* conditional goto */
-		if (ptr[0] == '?' && ptr[1] == '?' && ptr[2] != '?') {
+			/* conditional goto */
+		} else if (ptr[0] == '?' && ptr[1] == '?' && ptr[2] != '?') {
 			if (mac->num->value == 0) {
 				char *label = ptr + 3;
 				for (; label[0] == ' ' || label[0] == '.'; label++) {
@@ -1159,7 +1158,7 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 				}
 				//		eprintf("===> GOTO %s\n", label);
 				/* goto label ptr+3 */
-				for (i=0; i<*labels_n; i++) {
+				for (i = 0; i < *labels_n; i++) {
 					if (!strcmp (label, labels[i].name)) {
 						return labels[i].ptr;
 					}

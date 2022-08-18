@@ -358,7 +358,7 @@ print_insn_lanai (memaddr, info)
 		      (*info->fprintf_func) (stream, "\t! ");
 		      info->target
 			 = X_C16(     insn) << (L3_RI_H&     insn ? 16 : 0);
-		      if((prev_insn & 0xf07c0000) == 0x50000000 ){
+		      if ((prev_insn & 0xf07c0000) == 0x50000000 ) {
 		        info->target
 			  |= X_C16(prev_insn) << (L3_RI_H&prev_insn ? 16 : 0);
 		      }else{
@@ -374,7 +374,7 @@ print_insn_lanai (memaddr, info)
 
 	  info->data_size = F_DATA_SIZE(opcode->flags);
 
-	  if (opcode->flags & (F_UNBR|F_CONDBR|F_JSR))
+	  if (opcode->flags & (F_UNBR|F_BR|F_CONDBR|F_JSR))
 	    {
 		/* FIXME -- check is_annulled flag */
 		if (opcode->flags & F_UNBR) {

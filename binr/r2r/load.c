@@ -137,16 +137,15 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 		}
 
 		// RUN is the only cmd without value
-		if (strcmp (line, "RUN") == 0) {
+		if (!strcmp (line, "RUN")) {
 			test->run_line = linenum;
 			if (!test->cmds.value) {
-				eprintf (LINEFMT "Error: Test without CMDS key\n", file, linenum);
+				R_LOG_ERROR (LINEFMT ": Test without CMDS key", file, linenum);
 				goto fail;
 			}
 			if (!(test->expect.value || test->expect_err.value)) {
 				if (!(test->regexp_out.value || test->regexp_err.value)) {
-					eprintf (LINEFMT "Error: Test without EXPECT or EXPECT_ERR key"
-						 " (did you forget an EOF?)\n", file, linenum);
+					R_LOG_ERROR (LINEFMT ": Test without EXPECT or EXPECT_ERR key, missing EOF?", file, linenum);
 					goto fail;
 				}
 			}
@@ -159,29 +158,29 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 		}
 
 #define DO_KEY_STR(key, field) \
-		if (strcmp (line, key) == 0) { \
+		if (!strcmp (line, key)) { \
 			if (test->field.value) { \
 				free (test->field.value); \
-				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
+				R_LOG_WARN (LINEFMT ": Duplicate key \"%s\"", file, linenum, key); \
 			} \
 			if (!val) { \
-				eprintf (LINEFMT "Error: No value for key \"%s\"\n", file, linenum, key); \
+				R_LOG_ERROR (LINEFMT ": No value for key \"%s\"", file, linenum, key); \
 				goto fail; \
 			} \
 			test->field.line_begin = linenum; \
 			test->field.value = read_string_val (&nextline, val, &linenum); \
 			test->field.line_end = linenum + 1; \
 			if (!test->field.value) { \
-				eprintf (LINEFMT "Error: Failed to read value for key \"%s\"\n", file, linenum, key); \
+				R_LOG_ERROR (LINEFMT ": Failed to read value for key \"%s\"", file, linenum, key); \
 				goto fail; \
 			} \
 			continue; \
 		}
 
 #define DO_KEY_BOOL(key, field) \
-		if (strcmp (line, key) == 0) { \
+		if (!strcmp (line, key)) { \
 			if (test->field.value) { \
-				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
+				R_LOG_WARN (LINEFMT ": Duplicate key \"%s\"", file, linenum, key); \
 			} \
 			test->field.set = true; \
 			/* Strip comment */ \
@@ -199,16 +198,16 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 			} else if (!strcmp (val, "0")) { \
 				test->field.value = false; \
 			} else { \
-				eprintf (LINEFMT "Error: Invalid value \"%s\" for boolean key \"%s\", only \"1\" or \"0\" allowed.\n", file, linenum, val, key); \
+				R_LOG_ERROR (LINEFMT ": Invalid value \"%s\" for boolean key \"%s\", only \"1\" or \"0\" allowed", file, linenum, val, key); \
 				goto fail; \
 			} \
 			continue; \
 		}
 
 #define DO_KEY_NUM(key, field) \
-		if (strcmp (line, key) == 0) { \
+		if (!strcmp (line, key)) { \
 			if (test->field.value) { \
-				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
+				R_LOG_WARN (LINEFMT ": Duplicate key \"%s\"", file, linenum, key); \
 			} \
 			test->field.set = true; \
 			/* Strip comment */ \
@@ -224,7 +223,7 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 			char *endval; \
 			test->field.value = strtol (val, &endval, 0); \
 			if (!endval || *endval) { \
-				eprintf (LINEFMT "Error: Invalid value \"%s\" for numeric key \"%s\", only numbers allowed.\n", file, linenum, val, key); \
+				R_LOG_ERROR (LINEFMT ": Invalid value \"%s\" for numeric key \"%s\", only numbers allowed", file, linenum, val, key); \
 				goto fail; \
 			} \
 			continue; \
@@ -235,7 +234,7 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 #undef DO_KEY_BOOL
 #undef DO_KEY_NUM
 
-		eprintf (LINEFMT "Unknown key \"%s\".\n", file, linenum, line);
+		R_LOG_ERROR (LINEFMT ": Unknown key \"%s\"", file, linenum, line);
 	} while ((line = nextline));
 beach:
 	free (contents);
@@ -356,25 +355,25 @@ R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file)
 				mode |= R2R_ASM_TEST_MODE_BROKEN;
 				break;
 			default:
-				eprintf (LINEFMT "Warning: Invalid mode char '%c'\n", file, linenum, *line);
+				R_LOG_WARN (LINEFMT ": Invalid mode char '%c'", file, linenum, *line);
 				goto fail;
 			}
 			line++;
 		}
 		if (!(mode & R2R_ASM_TEST_MODE_ASSEMBLE) && !(mode & R2R_ASM_TEST_MODE_DISASSEMBLE)) {
-			eprintf (LINEFMT "Warning: Mode specifies neither assemble nor disassemble.\n", file, linenum);
+			R_LOG_WARN (LINEFMT "Mode specifies neither assemble nor disassemble", file, linenum);
 			continue;
 		}
 
 		char *disasm = strchr (line, '"');
 		if (!disasm) {
-			eprintf (LINEFMT "Error: Expected \" to begin disassembly.\n", file, linenum);
+			R_LOG_ERROR (LINEFMT ": Expected \" to begin disassembly", file, linenum);
 			goto fail;
 		}
 		disasm++;
 		char *hex = strchr (disasm, '"');
 		if (!hex) {
-			eprintf (LINEFMT "Error: Expected \" to end disassembly.\n", file, linenum);
+			R_LOG_ERROR (LINEFMT ": Expected \" to end disassembly", file, linenum);
 			goto fail;
 		}
 		*hex = '\0';
@@ -393,7 +392,7 @@ R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file)
 
 		size_t hexlen = strlen (hex);
 		if (!hexlen) {
-			eprintf (LINEFMT "Error: Expected hex chars.\n", file, linenum);
+			R_LOG_ERROR (LINEFMT ": Expected hex chars", file, linenum);
 			goto fail;
 		}
 		ut8 *bytes = malloc (hexlen);
@@ -402,11 +401,11 @@ R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file)
 		}
 		int bytesz = r_hex_str2bin (hex, bytes);
 		if (bytesz == 0) {
-			eprintf (LINEFMT "Error: Expected hex chars.\n", file, linenum);
+			R_LOG_ERROR (LINEFMT "Expected hex chars", file, linenum);
 			goto fail;
 		}
 		if (bytesz < 0) {
-			eprintf (LINEFMT "Error: Odd number of hex chars: %s\n", file, linenum, hex);
+			R_LOG_ERROR (LINEFMT ": Odd number of hex chars: %s", file, linenum, hex);
 			goto fail;
 		}
 

@@ -416,7 +416,7 @@ R_API void r_oids_odelete(ROIDStorage *st, ut32 od) {
 	}
 	n = st->ptop - od - 1;
 	r_id_storage_delete (st->data, st->permutation[od]);
-	memmove (&st->permutation[od], &st->permutation[od + 1], n * sizeof(ut32));
+	memmove (&st->permutation[od], &st->permutation[od + 1], n * sizeof (ut32));
 	st->ptop--;
 	if (!st->ptop) {
 		R_FREE (st->permutation);
@@ -548,8 +548,8 @@ bool oids_od_binsert(ROIDStorage *storage, ut32 id, ut32 *od, void *incoming, vo
 	if (!oids_od_bfind (storage, od, incoming, user)) {
 		return false;
 	}
-	if(od[0] != storage->ptop) {
-		memmove (&storage->permutation[od[0] + 1], &storage->permutation[od[0]], (storage->ptop - od[0]) * sizeof(ut32));
+	if (od[0] != storage->ptop) {
+		memmove (&storage->permutation[od[0] + 1], &storage->permutation[od[0]], (storage->ptop - od[0]) * sizeof (ut32));
 	}
 	storage->ptop++;
 	storage->permutation[od[0]] = id;

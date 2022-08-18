@@ -288,7 +288,10 @@ static void _exchange_nodes(RRBNode *node_a, RRBNode *node_b) {
 
 // remove data from the tree, without freeing it
 R_API void *r_crbtree_take(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
-	r_return_val_if_fail (tree && data && tree->size && tree->root && cmp, NULL);
+	r_return_val_if_fail (tree && data && cmp, NULL);
+	if (!tree->root || !tree->size) {
+		return NULL;
+	}
 
 	RRBNode head; /* Fake tree root */
 	memset (&head, 0, sizeof (RRBNode));
@@ -372,7 +375,10 @@ R_API void *r_crbtree_take(RRBTree *tree, void *data, RRBComparator cmp, void *u
 }
 
 R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
-	r_return_val_if_fail (tree && data && tree->size && tree->root && cmp, false);
+	r_return_val_if_fail (tree && data && cmp, false);
+	if (!(tree->size && tree->root)) {
+		return false;
+	}
 	data = r_crbtree_take (tree, data, cmp, user);
 	if (tree->free) {
 		tree->free (data);

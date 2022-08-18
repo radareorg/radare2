@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2021 - pancake */
+/* radare - LGPL - Copyright 2014-2022 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -54,9 +54,9 @@ typedef struct {
 	int perm;
 } RIOSelfSection;
 
-static RIOSelfSection self_sections[1024];
-static int self_sections_count = 0;
-static bool mameio = false;
+static R_TH_LOCAL RIOSelfSection self_sections[1024];
+static R_TH_LOCAL int self_sections_count = 0;
+static R_TH_LOCAL bool mameio = false;
 
 static int self_in_section(RIO *io, ut64 addr, int *left, int *perm) {
 	int i;
@@ -74,6 +74,112 @@ static int self_in_section(RIO *io, ut64 addr, int *left, int *perm) {
 	return false;
 }
 
+#if __serenity__
+static ut64 getnum(char *s) {
+	if (s && *s == '"') {
+		char *colon = strchr (s, ':');
+		if (colon) {
+			char *comma = strchr (s, ',');
+			if (comma) {
+				*comma = 0;
+				return r_num_get (NULL, colon + 1);
+			}
+		}
+	}
+	return 0;
+}
+
+static char *getstr(char *s) {
+	if (s && *s == '"') {
+		char *colon = strchr (s, ':');
+		if (colon) {
+			char *comma = strchr (s, ',');
+			if (comma) {
+				*comma = 0;
+				char *q = strchr (colon, '"');
+				if (q) {
+					char *q2 = strchr (q + 1, '"');
+					if (q2) {
+						return r_str_ndup (q + 1, q2 - q);
+					}
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
+static int serenity_debug_regions(RIO *io, int pid) {
+	// pid is ignored
+	const char *path = "/proc/self/vm";
+#if 0
+[
+  {
+    "readable": true,
+    "writable": true,
+    "executable": true,
+    "stack": true,
+    "shared": true,
+    "syscall": true,
+    "purgeable": true,
+    "cacheable": true,
+    "address": 1234,
+    "size": 4096,
+    "amount_resident": 4096,
+    "amount_dirty": 4096,
+    "cow_pages": 0,
+    "name": "/bin/cat",
+    "vmobject": "/bin/cat",
+    "pagemap": "P",
+  },
+  {
+  ...
+  }
+]
+#endif
+	char *pos_c;
+	int i, l, perm;
+	char line[1024];
+	char region[100], region2[100], perms[5];
+
+	int sz;
+	self_sections_count = 0;
+	char *vmdata = r_file_slurp (path, &sz);
+	char *s = r_str_ndup (vmdata, sz);
+	char *p = s;
+	while (true) {
+		char *next = strstr (p, "},");
+		if (!next) {
+			next = strchr (p, '}');
+			if (!next) {
+				break;
+			}
+		}
+		char *addr = strstr (p, "\"address\":");
+		char *size = strstr (p, "\"size\":");
+		char *name = strstr (p, "\"name\":");
+		if (addr && size && name) {
+			int r = strstr ("\"readable\": true,")? R_PERM_R: 0;
+			int w = strstr ("\"writable\": true,")? R_PERM_W: 0;
+			int x = strstr ("\"executable\": true,")? R_PERM_X: 0;
+			ut64 a = getnum (addr);
+			ut64 s = getnum (size);
+			char *n = getstr (name);
+			self_sections[self_sections_count].from = a;
+			self_sections[self_sections_count].to = a + s;
+			self_sections[self_sections_count].name = n;
+			self_sections[self_sections_count].perm = r|w|x;
+			self_sections_count++;
+		}
+		p = next + 1;
+	}
+	free (vmdata);
+	free (s);
+
+	return true;
+}
+#endif
+
 static int update_self_regions(RIO *io, int pid) {
 	self_sections_count = 0;
 #if __APPLE__
@@ -86,6 +192,8 @@ static int update_self_regions(RIO *io, int pid) {
 	}
 	macosx_debug_regions (io, task, (size_t)1, 1000);
 	return true;
+#elif __serenity__
+	return serenity_debug_regions (io, pid);
 #elif __linux__
 	char *pos_c;
 	int i, l, perm;
@@ -264,13 +372,11 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
-	int ret, pid = r_sys_getpid ();
 	if (r_sandbox_enable (0)) {
 		return NULL;
 	}
-	io->va = true; // nop
-	ret = update_self_regions (io, pid);
-	if (ret) {
+	int pid = r_sys_getpid ();
+	if (update_self_regions (io, pid)) {
 		return r_io_desc_new (io, &r_io_plugin_self,
 			file, rw, mode, NULL);
 	}
@@ -345,7 +451,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		char *argv = strdup (cmd + 5);
 		int argc = r_str_word_set0 (argv);
 		if (argc == 0) {
-			eprintf ("Usage: =!call [fcnptr] [a0] [a1] ...\n");
+			eprintf ("Usage: :call [fcnptr] [a0] [a1] ...\n");
 			free (argv);
 			return NULL;
 		}
@@ -426,7 +532,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		eprintf ("RES %"PFMT64d"\n", result);
 		free (argv);
-#if !defined(__WINDOWS__)
+#if !defined(__WINDOWS__) && !defined (__serenity__)
 	} else if (r_str_startswith (cmd, "alarm ")) {
 		struct itimerval tmout;
 		int secs = atoi (cmd + 6);
@@ -440,7 +546,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 #ifdef _MSC_VER
 #pragma message ("self:// alarm is not implemented for this platform yet")
 #else
-	#warning "self:// alarm is not implemented for this platform yet"
+#warning "self:// alarm is not implemented for this platform yet"
 #endif
 #endif
 	} else if (r_str_startswith (cmd, "dlsym ")) {
@@ -462,7 +568,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			eprintf ("This process is not a MAME!");
 		}
 		r_lib_dl_close (lib);
-	} else if (!strcmp (cmd, "maps")) {
+	} else if (!strcmp (cmd, "maps") || r_str_startswith (cmd, "dm")) {
 		int i;
 		for (i = 0; i < self_sections_count; i++) {
 			eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %s %s\n",
@@ -470,17 +576,17 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				r_str_rwx_i (self_sections[i].perm),
 				self_sections[i].name);
 		}
-	} else {
-		eprintf ("|Usage: =![cmd] [args]\n");
-		eprintf ("| =!pid               show getpid()\n");
-		eprintf ("| =!maps              show map regions\n");
-		eprintf ("| =!kill              commit suicide\n");
+	} else if (*cmd == '?') {
+		eprintf ("|Usage: :[cmd] [args]\n");
+		eprintf ("| :pid               show getpid()\n");
+		eprintf ("| :maps              show map regions (same as :dm)\n");
+		eprintf ("| :kill              commit suicide\n");
 #if !defined(__WINDOWS__)
-		eprintf ("| =!alarm [secs]      setup alarm signal to raise r2 prompt\n");
+		eprintf ("| :alarm [secs]      setup alarm signal to raise r2 prompt\n");
 #endif
-		eprintf ("| =!dlsym [sym]       dlopen\n");
-		eprintf ("| =!call [sym] [...]  nativelly call a function\n");
-		eprintf ("| =!mameio            enter mame IO mode\n");
+		eprintf ("| :dlsym [sym]       dlopen\n");
+		eprintf ("| :call [sym] [...]  nativelly call a function\n");
+		eprintf ("| :mameio            enter mame IO mode\n");
 	}
 	return NULL;
 }
@@ -746,7 +852,7 @@ exit:
 
 		while (p_start < p_end) {
 			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
-			size_t sz = sizeof(*entry);
+			size_t sz = sizeof (*entry);
 			int perm = 0;
 			if (sz == 0) {
 				break;
@@ -817,11 +923,9 @@ exit:
 		if (entry.protection & VM_PROT_WRITE) {
 			perm |= R_PERM_W;
 		}
-
 		if (entry.protection & VM_PROT_EXECUTE) {
 			perm |= R_PERM_X;
 		}
-
 		io->cb_printf (" %p - %p %s [off. %" PFMT64u "]\n",
 				(void *)entry.ba.start,
 				(void *)entry.ba.end,

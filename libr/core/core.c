@@ -933,7 +933,7 @@ R_API RCore *r_core_new(void) {
 }
 
 /*-----------------------------------*/
-#define radare_argc (sizeof (radare_argv) / sizeof(const char*) - 1)
+#define radare_argc (sizeof (radare_argv) / sizeof (const char*) - 1)
 #define ms_argc (sizeof (ms_argv) / sizeof (const char*) - 1)
 static const char *ms_argv[] = {
 	"?", "!", "ls", "cd", "cat", "get", "mount", "help", "q", "exit", NULL
@@ -1727,7 +1727,7 @@ static void autocomplete_macro(RCore *core, RLineCompletion *completion, const c
 }
 
 static void autocomplete_file(RLineCompletion *completion, const char *str) {
-	r_return_if_fail (str);
+	r_return_if_fail (completion && str);
 	char *pipe = strchr (str, '>');
 
 	if (pipe) {
@@ -1738,7 +1738,6 @@ static void autocomplete_file(RLineCompletion *completion, const char *str) {
 	} else {
 		autocomplete_process_path (completion, str, str);
 	}
-
 }
 
 static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const char *str) {
@@ -1905,7 +1904,7 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 		// handled before
 		break;
 	default:
-		if (r_config_get_i (core->config, "cfg.newtab")) {
+		if (r_config_get_b (core->config, "cfg.newtab")) {
 			RCmdDescriptor *desc = &core->root_cmd_descriptor;
 			for (i = 0; arg[i] && desc; i++) {
 				ut8 c = arg[i];
@@ -1953,14 +1952,14 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		/* XXX this doesn't handle filenames with spaces */
 		// accept "> " and ">"
 		char *pipe_space = pipe[1] == ' '
-			? strchr (pipe+2, ' ')
+			? strchr (pipe + 2, ' ')
 			: strchr (pipe, ' ');
 		bool should_complete = buf->data + buf->index >= pipe;
 		if (pipe_space) {
 			should_complete &= buf->data + buf->index < pipe_space;
 		}
 		if (should_complete) {
-			if (pipe[1] != ' '){
+			if (pipe[1] != ' ') {
 				r_line_completion_push (completion, ">");
 				return;
 			}
@@ -1968,7 +1967,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		}
 	} else if (ptr) {
 		char *ptr_space = ptr[1] == ' '
-			? strchr (ptr+2, ' ')
+			? strchr (ptr + 2, ' ')
 			: strchr (ptr, ' ');
 		bool should_complete = buf->data + buf->index >= ptr;
 		if (ptr_space) {
@@ -2746,7 +2745,7 @@ static void __init_autocomplete_default(RCore* core) {
 		"db-", "dbc", "dbC", "dbd", "dbe", "dbs", "dbi", "dbte", "dbtd", "dbts", NULL
 	};
 	const char *files[] = {
-		".", "..", ".*", ":. ", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala", "v.",
+		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala", "v.",
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
 		"idp", "idpi", "L", "obf", "o+", "oc", "r2", "rabin2", "rasm2", "rahash2", "rax2",
 		"rafind2", "cd", "ls", "on", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",

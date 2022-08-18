@@ -737,7 +737,7 @@ arena_miscelm_to_pageind(const arena_chunk_map_misc_t *miscelm)
 {
 	arena_chunk_t *chunk = (arena_chunk_t *)CHUNK_ADDR2BASE(miscelm);
 	size_t pageind = ((uintptr_t)miscelm - ((uintptr_t)chunk +
-	    map_misc_offset)) / sizeof(arena_chunk_map_misc_t) + map_bias;
+	    map_misc_offset)) / sizeof (arena_chunk_map_misc_t) + map_bias;
 
 	assert(pageind >= map_bias);
 	assert(pageind < chunk_npages);
@@ -1185,7 +1185,7 @@ arena_run_regind(arena_run_t *run, arena_bin_info_t *bin_info, const void *ptr)
 		 * divide by 0, and 1 and 2 are both powers of two, which are
 		 * handled above.
 		 */
-#define	SIZE_INV_SHIFT	((sizeof(size_t) << 3) - LG_RUN_MAXREGS)
+#define	SIZE_INV_SHIFT	((sizeof (size_t) << 3) - LG_RUN_MAXREGS)
 #define	SIZE_INV(s)	(((ZU(1) << SIZE_INV_SHIFT) / (s)) + 1)
 		static const size_t interval_invs[] = {
 		    SIZE_INV(3),
@@ -1198,7 +1198,7 @@ arena_run_regind(arena_run_t *run, arena_bin_info_t *bin_info, const void *ptr)
 		    SIZE_INV(28), SIZE_INV(29), SIZE_INV(30), SIZE_INV(31)
 		};
 
-		if (likely(interval <= ((sizeof(interval_invs) / sizeof(size_t))
+		if (likely(interval <= ((sizeof (interval_invs) / sizeof (size_t))
 		    + 2))) {
 			regind = (diff * interval_invs[interval - 3]) >>
 			    SIZE_INV_SHIFT;

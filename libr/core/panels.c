@@ -64,7 +64,7 @@ static void __panels_refresh(RCore *core);
 #define PANEL_CONFIG_RESIZE_W    4
 #define PANEL_CONFIG_RESIZE_H    4
 
-#define COUNT(x) (sizeof((x)) / sizeof((*x)) - 1)
+#define COUNT(x) (sizeof ((x)) / sizeof ((*x)) - 1)
 
 // TODO: kill mutable globals
 static R_TH_LOCAL bool firstRun = true;
@@ -982,7 +982,7 @@ static void __panel_all_clear(RPanels *panels) {
 
 static void __layout_default(RPanels *panels) {
 	RPanel *p0 = __get_panel (panels, 0);
-	if (!p0){
+	if (!p0) {
 		eprintf("_get_panel (...,0) return null\n");
 		return;
 	}
@@ -1659,7 +1659,7 @@ static void __save_panel_pos(RPanel* panel) {
 }
 
 static void __restore_panel_pos(RPanel* panel) {
-	if(!panel){
+	if (!panel) {
 		return;
 	}
 	__set_geometry (&panel->view->pos, panel->view->prevPos.x, panel->view->prevPos.y,
@@ -1668,7 +1668,7 @@ static void __restore_panel_pos(RPanel* panel) {
 
 static void __maximize_panel_size(RPanels *panels) {
 	RPanel *cur = __get_cur_panel (panels);
-	if(!cur){
+	if (!cur) {
 		return;
 	}
 	__set_geometry (&cur->view->pos, 0, 1, panels->can->w, panels->can->h - 1);
@@ -3710,7 +3710,7 @@ static bool __drag_and_resize(RCore *core) {
 	if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
-			y -= r_config_get_i (core->config, "scr.notch");;
+			y -= r_config_get_i (core->config, "scr.notch");
 			if (panels->mouse_on_edge_x) {
 				__update_edge_x (core, x - panels->mouse_orig_x);
 			}
@@ -4049,7 +4049,7 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 		word = NULL;
 		if (key == INT8_MAX - 1) {
 			if (r_cons_get_click (&cx, &cy)) {
-				cy -= r_config_get_i (core->config, "scr.notch");;
+				cy -= r_config_get_i (core->config, "scr.notch");
 				if ((cx < x || x + w < cx) || ((cy < y || y + h < cy))) {
 					key = 'q';
 				} else {
@@ -4198,7 +4198,7 @@ static bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 		if (!r_cons_get_click (&x, &y)) {
 			return false;
 		}
-		y -= r_config_get_i (core->config, "scr.notch");;
+		y -= r_config_get_i (core->config, "scr.notch");
 		if (y == MENU_Y && __handle_mouse_on_top (core, x, y)) {
 			return true;
 		}
@@ -4449,7 +4449,7 @@ static void __call_visual_graph(RCore *core) {
 		r_config_set_i (core->config, "scr.color", ocolor);
 
 		int h, w = r_cons_get_size (&h);
-		h -= r_config_get_i (core->config, "scr.notch");;
+		h -= r_config_get_i (core->config, "scr.notch");
 		panels->can = __create_new_canvas (core, w, h);
 	}
 }
@@ -4576,7 +4576,7 @@ static void __do_panels_resize(RCore *core) {
 	RPanels *panels = core->panels;
 	int i;
 	int h, w = r_cons_get_size (&h);
-	h -= r_config_get_i (core->config, "scr.notch");;
+	h -= r_config_get_i (core->config, "scr.notch");
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
 		if ((panel->view->edge & (1 << PANEL_EDGE_BOTTOM))
@@ -5848,7 +5848,7 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 		// TODO drop utf8!!
 		r_str_ansi_filter (s, NULL, NULL, -1);
 		int i, h, w = r_cons_get_size (&h);
-		h -= r_config_get_i (core->config, "scr.notch");;
+		h -= r_config_get_i (core->config, "scr.notch");
 		for (i = 0; i < 40; i+= (1 + (i/30))) {
 			int H = (int)(i * ((double)h / 40));
 			char *r = r_str_scale (s, w, H);
@@ -5877,7 +5877,7 @@ static void demo_end(RCore *core, RConsCanvas *can) {
 		// TODO drop utf8!!
 		r_str_ansi_filter (s, NULL, NULL, -1);
 		int i, h, w = r_cons_get_size (&h);
-		h -= r_config_get_i (core->config, "scr.notch");;
+		h -= r_config_get_i (core->config, "scr.notch");
 		for (i = h; i > 0; i--) {
 			int H = i;
 			char *r = r_str_scale (s, w, H);
@@ -5942,7 +5942,7 @@ static void __panels_refresh(RCore *core) {
 	}
 	r_cons_gotoxy (0, 0);
 	int i, h, w = r_cons_get_size (&h);
-	h -= r_config_get_i (core->config, "scr.notch");;
+	h -= r_config_get_i (core->config, "scr.notch");
 	if (!r_cons_canvas_resize (can, w, h)) {
 		return;
 	}
@@ -6521,7 +6521,7 @@ static void __panels_process(RCore *core, RPanels *panels) {
 	core->panels = panels;
 	panels->autoUpdate = true;
 	int h, w = r_cons_get_size (&h);
-	h -= r_config_get_i (core->config, "scr.notch");;
+	h -= r_config_get_i (core->config, "scr.notch");
 	panels->can = __create_new_canvas (core, w, h);
 	__set_refresh_all (core, false, true);
 
@@ -7098,7 +7098,7 @@ virtualmouse:
 			__replace_cmd (core, PANEL_TITLE_DECOMPILER, PANEL_CMD_DECOMPILER);
 
 			int h, w = r_cons_get_size (&h);
-			h -= r_config_get_i (core->config, "scr.notch");;
+			h -= r_config_get_i (core->config, "scr.notch");
 			panels->can = __create_new_canvas (core, w, h);
 		}
 		break;

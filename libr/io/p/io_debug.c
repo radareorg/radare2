@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <r_core.h>
 
-#if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__
+#if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__ || __serenity__
 #define DEBUGGER_SUPPORTED 1
 #else
 #define DEBUGGER_SUPPORTED 0
@@ -192,7 +192,11 @@ static void trace_me(void) {
 #if __APPLE__
 	r_sys_signal (SIGTRAP, SIG_IGN); //NEED BY STEP
 #endif
-#if __APPLE__ || __BSD__
+#if __serenity__
+	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
+		r_sys_perror ("ptrace-traceme");
+	}
+#elif __APPLE__ || __BSD__
 	/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
 	r_sys_signal (SIGABRT, inferior_abort_handler);
 	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
@@ -466,8 +470,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 		return NULL;
 	}
-	if (!strncmp (file, "waitfor://", 10)) {
-		const char *procname = file + 10;
+	if (r_str_startswith (file, "waitfor://")) {
+		const char *procname = file + strlen ("waitfor://");
 		R_LOG_INFO ("Waiting for %s", procname);
 		while (true) {
 			int target_pid = get_pid_of (io, procname);
@@ -478,7 +482,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 			r_sys_usleep (100);
 		}
-	} else if (!strncmp (file, "pidof://", 8)) {
+	} else if (r_str_startswith (file, "pidof://")) {
 		const char *procname = file + 8;
 		int target_pid = get_pid_of (io, procname);
 		if (target_pid == -1) {

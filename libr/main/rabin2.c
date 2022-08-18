@@ -352,7 +352,7 @@ static int rabin_do_operation(RBin *bin, const char *op, int rad, const char *ou
 	if (bf) {
 		if (!bf->buf) {
 			R_LOG_ERROR ("Missing data buffer");
-			return false;
+			goto error;
 		}
 		RBuffer *nb = r_buf_new_with_buf (bf->buf);
 		r_buf_free (bf->buf);
@@ -922,7 +922,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			res = __demangleAs (bin, type, file);
 			if (res && *res) {
 				printf ("%s\n", res);
-				free(res);
+				free (res);
 				r_core_fini (&core);
 				return 0;
 			} else {

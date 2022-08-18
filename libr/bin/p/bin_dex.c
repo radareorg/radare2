@@ -253,7 +253,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 		return NULL;
 	}
 	if (!params_off) {
-		return r_str_newf ("()%s", return_type);;
+		return r_str_newf ("()%s", return_type);
 	}
 	ut8 params_buf[sizeof (ut32)];
 	if (!r_buf_read_at (bin->b, params_off, params_buf, sizeof (params_buf))) {
@@ -1664,7 +1664,7 @@ static bool dex_loadcode(RBinFile *bf) {
 	if (methods) {
 		int import_count = 0;
 		int sym_count = dex->methods_list->length;
-		int last = (methods_size / sizeof(int)); // sym_count
+		int last = (methods_size / sizeof (int)); // sym_count
 		for (i = 0; i < last; i++) {
 			int len = 0;
 			if (methods[i]) {

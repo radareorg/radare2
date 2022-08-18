@@ -630,7 +630,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == '6' && input[2] == '4') {
 			//b64 decoding takes at most strlen(str) * 4
 			const int buflen = (strlen (input+3) * 4) + 1;
-			char* buf = calloc (buflen, sizeof(char));
+			char* buf = calloc (buflen, sizeof (char));
 			if (!buf) {
 				return false;
 			}
@@ -1218,7 +1218,7 @@ static int cmd_help(void *data, const char *input) {
 				  ut64 *nums = calloc (sizeof (ut64), r_list_length (list));
 				  int i = 0;
 				  r_list_foreach (list, iter, word) {
-					nums[i] = r_num_math (core->num, word);;
+					nums[i] = r_num_math (core->num, word);
 					i++;
 				  }
 				  int size = r_config_get_i (core->config, "hex.cols");

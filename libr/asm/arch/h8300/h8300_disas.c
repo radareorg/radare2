@@ -128,7 +128,7 @@ static int decode_opcode_4bit(const ut8 *bytes, struct h8300_cmd *cmd)
 {
 	ut8 opcode = bytes[0] >> 4;
 
-	if (opcode >= sizeof(commands_4bit)/sizeof(void*)
+	if (opcode >= sizeof (commands_4bit)/sizeof (void*)
 			|| !commands_4bit[opcode]) {
 		return -1;
 	}
@@ -156,7 +156,7 @@ static int decode_opcode(const ut8 *bytes, struct h8300_cmd *cmd)
 	case H8300_BILD:
 	case H8300_BST:
 	case H8300_BIST:
-		if (ext_opcode >= sizeof(commands_9bit)/sizeof(void*) ||
+		if (ext_opcode >= sizeof (commands_9bit)/sizeof (void*) ||
 				!commands_9bit[ext_opcode]) {
 			break;
 		}
@@ -203,7 +203,7 @@ static int decode_opcode(const ut8 *bytes, struct h8300_cmd *cmd)
 		break;
 	}
 
-	if (bytes[0] >= sizeof(commands)/sizeof(void*) || !commands[bytes[0]]) {
+	if (bytes[0] >= sizeof (commands)/sizeof (void*) || !commands[bytes[0]]) {
 		return -1;
 	}
 

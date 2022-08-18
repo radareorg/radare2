@@ -284,7 +284,7 @@ static const char* getspr(const char *reg) {
 		case SPR_PIR:
 			return "pir";
 		default:
-			snprintf(cspr, sizeof(cspr), "spr_%u", spr);
+			snprintf (cspr, sizeof (cspr), "spr_%u", spr);
 			break;
 	}
 	return cspr;

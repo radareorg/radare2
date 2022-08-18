@@ -152,9 +152,7 @@ R_API bool r_file_is_c(const char *file) {
 	const char *ext = r_str_lchr (file, '.'); // TODO: add api in r_file_extension or r_str_ext for this
 	if (ext) {
 		ext++;
-		if (!strcmp (ext, "cparse")
-		||  !strcmp (ext, "c")
-		||  !strcmp (ext, "h")) {
+		if (!strcmp (ext, "cparse") || !strcmp (ext, "c") || !strcmp (ext, "h")) {
 			return true;
 		}
 	}

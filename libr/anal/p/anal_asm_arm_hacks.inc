@@ -1,4 +1,4 @@
-static char *hack_handle_dp_imm(ut32 insn) {
+static char *hack_asm_handle_dp_imm(ut32 insn) {
 	char *buf_asm = NULL;
 	char *mnemonic = NULL;
 	const ut8 op0 = (insn >> 23) & 0x7;
@@ -21,7 +21,7 @@ static char *hack_handle_dp_imm(ut32 insn) {
 			const ut8 uimm4 = (insn >> 10) & 0xf;
 			const ut8 Xn = (insn >> 5) & 0x1f;
 			const ut8 Xd = (insn >> 0) & 0x1f;
-			buf_asm = r_str_newf ("%s x%d, x%d, #0x%x, #0x%x",
+			buf_asm = r_str_newf ("%s x%d, x%d, 0x%x, 0x%x",
 				mnemonic, Xd, Xn, uimm6, uimm4);
 			buf_asm = r_str_replace (buf_asm, "x31", "sp", 1);
 			return buf_asm;
@@ -30,7 +30,7 @@ static char *hack_handle_dp_imm(ut32 insn) {
 	return NULL;
 }
 
-static char *hack_handle_br_exc_sys(ut32 insn) {
+static char *hack_asm_handle_br_exc_sys(ut32 insn) {
 	char *buf_asm = NULL;
 	const char *mnemonic = "bti";
 	const ut8 op0 = (insn >> 29) & 0x7;
@@ -61,7 +61,7 @@ static char *hack_handle_br_exc_sys(ut32 insn) {
 	return buf_asm;
 }
 
-static char *hack_handle_dp_reg(ut32 insn) {
+static char *hack_asm_handle_dp_reg(ut32 insn) {
 	char *buf_asm = NULL;
 	char *mnemonic = NULL;
 	const bool op0 = (insn >> 30) & 0x1;
@@ -106,7 +106,7 @@ static char *hack_handle_dp_reg(ut32 insn) {
 	return NULL;
 }
 
-static char *hack_handle_ldst(ut32 insn) {
+static char *hack_asm_handle_ldst(ut32 insn) {
 	char *buf_asm = NULL;
 	char *mnemonic = NULL;
 	bool ignore_imm9 = false;
@@ -141,15 +141,15 @@ static char *hack_handle_ldst(ut32 insn) {
 
 			switch (op2) {
 			case 1:
-				buf_asm = r_str_newf ("%s x%d, [x%d], #0x%x",
+				buf_asm = r_str_newf ("%s x%d, [x%d], 0x%x",
 					mnemonic, Xt, Xn, imm9);
 				break;
 			case 2:
-				buf_asm = r_str_newf ("%s x%d, [x%d, #0x%x]",
+				buf_asm = r_str_newf ("%s x%d, [x%d, 0x%x]",
 					mnemonic, Xt, Xn, imm9);
 				break;
 			case 3:
-				buf_asm = r_str_newf ("%s x%d, [x%d, #0x%x]!",
+				buf_asm = r_str_newf ("%s x%d, [x%d, 0x%x]!",
 					mnemonic, Xt, Xn, imm9);
 				break;
 			}
@@ -177,7 +177,7 @@ static char *hack_handle_ldst(ut32 insn) {
 				buf_asm = r_str_newf ("%s x%d, [x%d]",
 					mnemonic, Xt, Xn);
 			} else {
-				buf_asm = r_str_newf ("%s x%d, [x%d, #0x%x]",
+				buf_asm = r_str_newf ("%s x%d, [x%d, 0x%x]",
 					mnemonic, Xt, Xn, imm9);
 			}
 			buf_asm = r_str_replace (buf_asm, "x31", "sp", 1);
@@ -196,15 +196,15 @@ static char *hack_handle_ldst(ut32 insn) {
 			const ut8 Xt = (insn >> 0) & 0x1f;
 			switch (op2) {
 			case 1:
-				buf_asm = r_str_newf ("stgp x%d, x%d, [x%d], #0x%x",
+				buf_asm = r_str_newf ("stgp x%d, x%d, [x%d], 0x%x",
 					Xt, Xt2, Xn, imm7);
 				break;
 			case 2:
-				buf_asm = r_str_newf ("stgp x%d, x%d, [x%d, #0x%x]",
+				buf_asm = r_str_newf ("stgp x%d, x%d, [x%d, 0x%x]",
 					Xt, Xt2, Xn, imm7);
 				break;
 			case 3:
-				buf_asm = r_str_newf ("stgp x%d, x%d, [x%d, #0x%x]!",
+				buf_asm = r_str_newf ("stgp x%d, x%d, [x%d, 0x%x]!",
 					Xt, Xt2, Xn, imm7);
 				break;
 			default:
@@ -217,9 +217,9 @@ static char *hack_handle_ldst(ut32 insn) {
 	return NULL;
 }
 
-static int hackyArmAsm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int hackyArmAsm(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	char *buf_asm = NULL;
-    // Hacky support for ARMv8.5
+	// Hacky support for ARMv8.5
 	if (a->config->bits == 64 && len >= 4) {
 		ut32 insn = r_read_ble32 (buf, a->config->big_endian);
 		int insn_class = (insn >> 25) & 0xf;
@@ -228,19 +228,19 @@ static int hackyArmAsm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		case 5:
 		case 13:
 			// irg, subp, gmi, subps
-			buf_asm = hack_handle_dp_reg (insn);
+			buf_asm = hack_asm_handle_dp_reg (insn);
 			break;
 		// Data Processing -- Immediate
 		case 8:
 		case 9:
 			// addg, subg
-			buf_asm = hack_handle_dp_imm (insn);
+			buf_asm = hack_asm_handle_dp_imm (insn);
 			break;
 		// Branches, Exception generating, and System instructions
 		case 10:
 		case 11:
 			// bti
-			buf_asm = hack_handle_br_exc_sys (insn);
+			buf_asm = hack_asm_handle_br_exc_sys (insn);
 			break;
 		// Loads and Stores
 		case 4:
@@ -248,20 +248,17 @@ static int hackyArmAsm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		case 12:
 		case 14:
 			// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
-			buf_asm = hack_handle_ldst (insn);
+			buf_asm = hack_asm_handle_ldst (insn);
 			break;
 		default:
 			break;
 		}
 
 		if (buf_asm) {
-			if (!a->immdisp) {
-				r_str_replace_char (buf_asm, '#', 0);
-			}
-			r_strbuf_set (&op->buf_asm, buf_asm);
-			free (buf_asm);
-			return op->size = 4;
+			op->mnemonic = buf_asm;
+			return op->size;
 		}
+		return -1;
 	}
-	return -1;
+	return 0;
 }

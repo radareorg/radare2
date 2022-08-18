@@ -322,7 +322,7 @@ R_API int r_regex_init(RRegex *preg, const char *pattern, int cflags) {
 	g->nsub = 0;
 	g->ncategories = 1;	/* category 0 is "everything else" */
 	g->categories = &g->catspace[-(CHAR_MIN)]; // WTF
-	(void) memset ((char *)g->catspace, 0, NC*sizeof(cat_t));
+	(void) memset ((char *)g->catspace, 0, NC*sizeof (cat_t));
 	g->backrefs = 0;
 
 	/* do it */
@@ -1244,7 +1244,7 @@ static cset *allocset(struct parse *p) {
 		}
 		nbytes = nc / CHAR_BIT * css;
 
-		ptr = (cset *)realloc((char *)p->g->sets, nc * sizeof(cset));
+		ptr = (cset *)realloc((char *)p->g->sets, nc * sizeof (cset));
 		if (!ptr) {
 			goto nomem;
 		}
@@ -1476,7 +1476,7 @@ categorize(struct parse *p, struct re_guts *g)
 	}
 
 	for (c = CHAR_MIN; c <= CHAR_MAX; c++) {
-		if ( *(cats+c) && isinsets(g, c)) {
+		if (*(cats+c) && isinsets(g, c)) {
 			cat = g->ncategories++;
 			cats[c] = cat;
 			for (c2 = c + 1; c2 <= CHAR_MAX; c2++) {
@@ -1506,7 +1506,7 @@ dupl(struct parse *p,
 		enlarge(p, p->ssize + len);	/* this many unexpected additions */
 		if (p->ssize >= p->slen + len) {
 			(void) memcpy((char *)(p->strip + p->slen),
-			  (char *)(p->strip + start), (size_t)len*sizeof(sop));
+			  (char *)(p->strip + start), (size_t)len*sizeof (sop));
 			p->slen += len;
 			return(ret);
 		}
@@ -1578,7 +1578,7 @@ doinsert(struct parse *p, sop op, size_t opnd, sopno pos)
 	}	
 
 	memmove((char *)&p->strip[pos+1], (char *)&p->strip[pos],
-						(HERE()-pos-1)*sizeof(sop));
+						(HERE()-pos-1)*sizeof (sop));
 	p->strip[pos] = s;
 }
 
@@ -1610,7 +1610,7 @@ enlarge(struct parse *p, sopno size)
 		return;
 	}
 
-	sp = (sop *)realloc(p->strip, size*sizeof(sop));
+	sp = (sop *)realloc(p->strip, size*sizeof (sop));
 	if (!sp) {
 		SETERROR(R_REGEX_ESPACE);
 		return;
@@ -1622,13 +1622,11 @@ enlarge(struct parse *p, sopno size)
 /*
  - stripsnug - compact the strip
  */
-static void
-stripsnug(struct parse *p, struct re_guts *g)
-{
+static void stripsnug(struct parse *p, struct re_guts *g) {
 	g->nstates = p->slen;
-	g->strip = (sop *)realloc((char *)p->strip, p->slen * sizeof(sop));
+	g->strip = (sop *)realloc((char *)p->strip, p->slen * sizeof (sop));
 	if (!g->strip) {
-		SETERROR(R_REGEX_ESPACE);
+		SETERROR (R_REGEX_ESPACE);
 		g->strip = p->strip;
 	}
 }
@@ -1642,9 +1640,7 @@ stripsnug(struct parse *p, struct re_guts *g)
  *
  * Note that must and mlen got initialized during setup.
  */
-static void
-findmust(struct parse *p, struct re_guts *g)
-{
+static void findmust(struct parse *p, struct re_guts *g) {
 	sop *scan;
 	sop *start = NULL;    /* start initialized in the default case, after that */
 	sop *newstart = NULL; /* newstart was initialized in the OCHAR case */

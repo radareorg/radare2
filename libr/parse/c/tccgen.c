@@ -98,7 +98,7 @@ ST_FUNC void test_lvalue(TCCState *s1) {
 static Sym *__sym_malloc(TCCState *s1) {
 	Sym *sym_pool, *sym, *last_sym;
 	int i;
-	int sym_pool_size = SYM_POOL_NB * sizeof(Sym);
+	int sym_pool_size = SYM_POOL_NB * sizeof (Sym);
 	sym_pool = malloc (sym_pool_size);
 	memset (sym_pool, 0, sym_pool_size);
 	dynarray_add (&s1->sym_pools, &s1->nb_sym_pools, sym_pool);
@@ -181,7 +181,7 @@ ST_INLN Sym *sym_find(TCCState *s1, int v) {
 // TODO: Add better way to store the meta information
 // about the pushed type
 int tcc_sym_push(TCCState *s1, char *typename, int typesize, int meta) {
-	CType *new_type = (CType *) malloc (sizeof(CType));
+	CType *new_type = (CType *) malloc (sizeof (CType));
 	if (!new_type) {
 		return 0;
 	}
@@ -731,7 +731,7 @@ add_tstr:
 		} else {
 			r_str_ncpy (buf1, "*", sizeof (buf1));
 			if (varstr) {
-				pstrcat (buf1, sizeof(buf1), varstr);
+				pstrcat (buf1, sizeof (buf1), varstr);
 			}
 			type_to_str (s1, buf, buf_size, &s->type, buf1);
 		}
@@ -1018,7 +1018,7 @@ do_decl:
 				while (tcc_nerr (s1) == 0) {
 					bit_size = -1;
 					v = 0;
-					memcpy (&type1, &btype, sizeof(type1));
+					memcpy (&type1, &btype, sizeof (type1));
 					if (s1->tok != ':') {
 						type_decl (s1, &type1, &ad, &v, TYPE_DIRECT | TYPE_ABSTRACT);
 						if (v == 0 && not_structured(&type1)) {
@@ -1124,7 +1124,7 @@ do_decl:
 						// TODO: Don't use such a small limit?
 						char b[1024];
 						char *varstr = get_tok_str (s1, v, NULL);
-						type_to_str (s1, b, sizeof(b), &type1, NULL);
+						type_to_str (s1, b, sizeof (b), &type1, NULL);
 						{
 							int type_bt = type1.t & VT_BTYPE;
 							//eprintf("2: %s.%s = %s\n", ctype, name, varstr);
@@ -1214,7 +1214,7 @@ static int parse_btype(TCCState *s1, CType *type, AttributeDef *ad) {
 	Sym *s;
 	STACK_NEW0 (CType, type1);
 
-	memset (ad, 0, sizeof(AttributeDef));
+	memset (ad, 0, sizeof (AttributeDef));
 	type_found = 0;
 	typespec_found = 0;
 	typedef_found = 0;
@@ -1698,7 +1698,7 @@ redo:
 		s1->nocode_wanted = saved_nocode_wanted;
 	} else {
 		char *name = get_tok_str (s1, *v, NULL);
-		type_to_str (s1, s1->decl_kind, sizeof(s1->decl_kind), type, NULL);
+		type_to_str (s1, s1->decl_kind, sizeof (s1->decl_kind), type, NULL);
 		// eprintf ("---%d %s STATIC %s\n", td, kind, name);
 		s1->global_symname = name;
 		s1->global_type = s1->decl_kind;
@@ -1724,7 +1724,7 @@ redo:
 			break;
 		}
 	}
-	memcpy (type, type1, sizeof(*type));
+	memcpy (type, type1, sizeof (*type));
 }
 
 /* compute the lvalue VT_LVAL_xxx needed to match type t. */
@@ -1862,7 +1862,7 @@ str_init:
 		type.t = t;
 		mk_pointer (s1, &type);
 		type.t |= VT_ARRAY;
-		memset (&ad, 0, sizeof(AttributeDef));
+		memset (&ad, 0, sizeof (AttributeDef));
 		decl_initializer_alloc (s1, &type, &ad, VT_CONST, 2, 0, NULL, 0);
 		break;
 	case '(':
@@ -2520,7 +2520,7 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
 				if (s1->tok == TOK_STR) {
 					cstr_len = cstr->size;
 				} else {
-					cstr_len = cstr->size / sizeof(nwchar_t);
+					cstr_len = cstr->size / sizeof (nwchar_t);
 				}
 				cstr_len--;
 				nb = cstr_len;
@@ -2986,7 +2986,7 @@ static int decl0(TCCState *s1, int l, int is_for_loop_init) {
 #if 0
 			{
 				char buf[500];
-				type_to_str (buf, sizeof(buf), t, get_tok_str (s1, v, NULL));
+				type_to_str (buf, sizeof (buf), t, get_tok_str (s1, v, NULL));
 				printf ("type = '%s'\n", buf);
 			}
 #endif

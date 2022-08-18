@@ -97,7 +97,7 @@ static int is_tar(const ut8 *buf, size_t nbytes) {
 
 	sum = 0;
 	p = header->charptr;
-	for (i = sizeof(union record); --i >= 0;) {
+	for (i = sizeof (union record); --i >= 0;) {
 		/*
 		 * We cannot use ut8 here because of old compilers,
 		 * e.g. V7.

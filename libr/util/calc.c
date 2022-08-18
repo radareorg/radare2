@@ -35,12 +35,12 @@ static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) { n.d += v.d;
 static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n >>= v.n; return n; }
 static inline RNumCalcValue Nrol(RNumCalcValue n, RNumCalcValue v) {
 	n.d += v.d;
-	n.n = (n.n << v.n) | (n.n >> (sizeof(n.n) * 8 - v.n));
+	n.n = (n.n << v.n) | (n.n >> (sizeof (n.n) * 8 - v.n));
 	return n;
 }
 static inline RNumCalcValue Nror(RNumCalcValue n, RNumCalcValue v) {
 	n.d += v.d;
-	n.n = (n.n >> v.n) | (n.n << (sizeof(n.n) * 8 - v.n));
+	n.n = (n.n >> v.n) | (n.n << (sizeof (n.n) * 8 - v.n));
 	return n;
 }
 static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {

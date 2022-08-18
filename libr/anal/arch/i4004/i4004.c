@@ -529,11 +529,12 @@ sdb_get_c_i4004 (register const char *str, register size_t len)
 // 0x5646ad24c160
 typedef int (*GperfForeachCallback)(void *user, const char *k, const char *v);
 int gperf_i4004_foreach(GperfForeachCallback cb, void *user) {
-	int i;for (i=0;i<i4004_TOTAL_KEYWORDS;i++) {
-	const struct i4004_kv *w = &i4004_wordlist[i];
-	if (!cb (user, w->name, w->value)) return 0;
+	int i;for (i = 0; i < i4004_TOTAL_KEYWORDS; i++) {
+		const struct i4004_kv *w = &i4004_wordlist[i];
+		if (!cb (user, w->name, w->value)) return 0;
+	}
+	return 1;
 }
-return 1;}
 const char* gperf_i4004_get(const char *s) {
 	const struct i4004_kv *o = sdb_get_c_i4004 (s, strlen(s));
 	return o? o->value: NULL;

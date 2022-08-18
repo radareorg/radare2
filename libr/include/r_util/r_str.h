@@ -25,7 +25,7 @@ typedef int (*RStrRangeCallback) (void *, int);
 
 #define r_strf_buffer(s) char strbuf[s]
 #define r_strf_var(n,s, f, ...) char n[s]; snprintf (n, s, f, __VA_ARGS__);
-#define r_strf(s,...) (snprintf (strbuf, sizeof(strbuf), s, __VA_ARGS__)?strbuf: strbuf)
+#define r_strf(s,...) (snprintf (strbuf, sizeof (strbuf), s, __VA_ARGS__)?strbuf: strbuf)
 
 typedef struct r_charset_rune_t {
 	ut8 *ch;
@@ -46,7 +46,7 @@ typedef struct r_charset_t {
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
 #define R_STR_ISNOTEMPTY(x) ((x) && *(x))
 #define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
-#define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
+#define r_str_array(x,y) ((y>=0 && y<(sizeof (x)/sizeof (*x)))?x[y]:"")
 R_API RCharset *r_charset_new(void);
 R_API void r_charset_free(RCharset *charset);
 R_API RCharsetRune *r_charset_rune_new(const ut8 *ch, const ut8 *hx);

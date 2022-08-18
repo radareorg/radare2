@@ -978,10 +978,10 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
 		r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[1]", LA_RD(), LA_RJ(), I12_SX(opcode));
 		break;
 	case LA_INS_ST_H:
-		r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[2]", LA_RD(), LA_RJ(), I12_SX(opcode)); 
+		r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[2]", LA_RD(), LA_RJ(), I12_SX(opcode));
 		break;
 	case LA_INS_ST_W:
-		r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[4]", LA_RD(), LA_RJ(), I12_SX(opcode)); 
+		r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[4]", LA_RD(), LA_RJ(), I12_SX(opcode));
 		break;
 	case LA_INS_ST_D:
 		r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[8]", LA_RD(), LA_RJ(), I12_SX(opcode));
@@ -1213,13 +1213,13 @@ static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int l
 	for (ase=la_ases; ase->opcode; ase++) {
 		if (!ase->opc_htab_inited) {
 			for (it=ase->opcode; it->match; it++) {
-				if(!ase->la_opcode_ht[LA_INSN_HASH(it->match)]){
+				if (!ase->la_opcode_ht[LA_INSN_HASH(it->match)]) {
 					ase->la_opcode_ht[LA_INSN_HASH(it->match)] = it;
 				}
 			}
 			int i;
 			for (i = 0; i < HT_NUM; i++) {
-				if(!ase->la_opcode_ht[i]){
+				if (!ase->la_opcode_ht[i]) {
 					ase->la_opcode_ht[i]=it;
 				}
 			}
@@ -1310,7 +1310,7 @@ static int archinfo(RAnal *anal, int q) {
 }
 
 /* Set the profile register */
-static bool la_set_reg_profile(RAnal* anal){
+static bool la_set_reg_profile(RAnal* anal) {
 	const char *p =
 	"=PC	pc\n"
 	"=SP	sp\n"

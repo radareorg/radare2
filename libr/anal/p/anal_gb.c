@@ -622,9 +622,9 @@ static inline void gb_anal_cb_rr(RReg *reg, RAnalOp *op, const ut8 data) {
 		r_strbuf_setf (&op->esil, "1,%s,&,H,:=,1,%s,>>,7,C,<<,|,%s,=,H,C,:=,0,H,:=,0,N,:=", regs_x[data & 7], regs_x[data & 7], regs_x[data & 7]); //HACK
 	}
 }
- 
+
 static inline void gb_anal_cb_sla(RReg *reg, RAnalOp *op, const ut8 data) {
-	//sra+sla+srl in one function, like xoaasc 
+	//sra+sla+srl in one function, like xoaasc
 	op->dst = r_anal_value_new ();
 	op->src[0] = r_anal_value_new ();
 	op->src[0]->imm = 1;
@@ -1146,7 +1146,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_POP;
 			break;
 		case 0xc3:
-			if( gb_op_calljump (anal, op, data, addr)) {
+			if (gb_op_calljump (anal, op, data, addr)) {
 				op->type = R_ANAL_OP_TYPE_JMP;
 				gb_anal_esil_jmp (op);
 			} else {
@@ -1181,7 +1181,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xca:
 		case 0xd2:
 		case 0xda:
-			if( gb_op_calljump (anal, op, data, addr)) {
+			if (gb_op_calljump (anal, op, data, addr)) {
 				op->type = R_ANAL_OP_TYPE_CJMP;
 			} else {
 				op->type = R_ANAL_OP_TYPE_UCJMP;

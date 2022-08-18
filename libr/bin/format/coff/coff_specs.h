@@ -168,7 +168,7 @@ struct coff_hdr {
 	ut32 f_timdat;	/* Time & date stamp */
 	ut32 f_symptr;	/* File pointer to Symbol Table */
 	ut32 f_nsyms;	/* Number of Symbols */
-	ut16 f_opthdr;	/* sizeof(Optional Header) */
+	ut16 f_opthdr;	/* sizeof (Optional Header) */
 	ut16 f_flags;	/* Flags */
 });// __attribute__ ((packed));
 

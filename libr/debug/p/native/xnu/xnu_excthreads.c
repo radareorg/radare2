@@ -132,7 +132,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		} else {
 			state->__mdscr_el1 = state->__mdscr_el1 & ~SS_ENABLE;
 		}
-	} else
+	} else // {
 #elif __arm || __arm__ || __armv7 || __armv7__
 	int i = 0;
 	if (th->flavor == ARM_DEBUG_STATE) {
@@ -195,10 +195,10 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 				state->__bcr[i] = 0;
 			}
 		}
-	} else
+	} else // {
 #endif
 	{
-		eprintf ("Bad flavor modificy_trace_bit arm\n");
+		R_LOG_ERROR ("Bad flavor modificy_trace_bit arm");
 		return false;
 	}
 	//set state
@@ -232,13 +232,13 @@ static bool xnu_restore_exception_ports(int pid) {
 		kr = task_set_exception_ports (task, ex.masks[i], ex.ports[i],
 					       ex.behaviors[i], ex.flavors[i]);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("fail to restore exception ports\n");
+			R_LOG_ERROR ("fail to restore exception ports");
 			return false;
 		}
 	}
 	kr = mach_port_deallocate (mach_task_self (), ex.exception_port);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocate exception port\n");
+		R_LOG_ERROR ("failed to deallocate exception port");
 		return false;
 	}
 	return true;
@@ -299,11 +299,11 @@ static bool validate_mach_message(RDebug *dbg, exc_msg *msg) {
 		/*we got new rights to the task, get rid of it.*/
 		kr = mach_port_deallocate (mach_task_self (), msg->task.name);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("validate_mach_message: failed to deallocate task port\n");
+			R_LOG_ERROR ("validate_mach_message: failed to deallocate task port");
 		}
 		kr = mach_port_deallocate (mach_task_self (), msg->thread.name);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("validate_mach_message2: failed to deallocated task port\n");
+			R_LOG_ERROR ("validate_mach_message2: failed to deallocated task port");
 		}
 		return false;
 	}
@@ -329,32 +329,32 @@ static int handle_exception_message(RDebug *dbg, exc_msg *msg, int *ret_code) {
 		*ret_code = KERN_FAILURE;
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("failed to suspend task bad access\n");
+			R_LOG_ERROR ("failed to suspend task bad access");
 		}
-		eprintf ("EXC_BAD_ACCESS\n");
+		R_LOG_ERROR ("EXC_BAD_ACCESS");
 		break;
 	case EXC_BAD_INSTRUCTION:
 		ret = R_DEBUG_REASON_ILLEGAL;
 		*ret_code = KERN_FAILURE;
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("failed to suspend task bad instruction\n");
+			R_LOG_ERROR ("failed to suspend task bad instruction");
 		}
-		eprintf ("EXC_BAD_INSTRUCTION\n");
+		R_LOG_ERROR ("EXC_BAD_INSTRUCTION");
 		break;
 	case EXC_ARITHMETIC:
-		eprintf ("EXC_ARITHMETIC\n");
+		R_LOG_ERROR ("EXC_ARITHMETIC");
 		break;
 	case EXC_EMULATION:
-		eprintf ("EXC_EMULATION\n");
+		R_LOG_ERROR ("EXC_EMULATION");
 		break;
 	case EXC_SOFTWARE:
-		eprintf ("EXC_SOFTWARE\n");
+		R_LOG_ERROR ("EXC_SOFTWARE");
 		break;
 	case EXC_BREAKPOINT:
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("failed to suspend task breakpoint\n");
+			R_LOG_ERROR ("failed to suspend task breakpoint");
 		}
 		ret = R_DEBUG_REASON_BREAKPOINT;
 		break;
@@ -364,11 +364,11 @@ static int handle_exception_message(RDebug *dbg, exc_msg *msg, int *ret_code) {
 	}
 	kr = mach_port_deallocate (mach_task_self (), msg->task.name);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocate task port\n");
+		R_LOG_ERROR ("failed to deallocate task port");
 	}
 	kr = mach_port_deallocate (mach_task_self (), msg->thread.name);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocated task port\n");
+		R_LOG_ERROR ("failed to deallocated task port");
 	}
 	return ret;
 }
@@ -415,7 +415,7 @@ static int __xnu_wait(RDebug *dbg, int pid) {
 			if (reply.Head.msgh_remote_port != 0 && kr != MACH_MSG_SUCCESS) {
 				kr = mach_port_deallocate(mach_task_self (), reply.Head.msgh_remote_port);
 				if (kr != KERN_SUCCESS) {
-					eprintf ("failed to deallocate reply port\n");
+					R_LOG_ERROR ("failed to deallocate reply port");
 				}
 			}
 			continue;
@@ -429,8 +429,9 @@ static int __xnu_wait(RDebug *dbg, int pid) {
 				MACH_PORT_NULL);
 		if (reply.Head.msgh_remote_port != 0 && kr != MACH_MSG_SUCCESS) {
 			kr = mach_port_deallocate(mach_task_self (), reply.Head.msgh_remote_port);
-			if (kr != KERN_SUCCESS)
-				eprintf ("failed to deallocate reply port\n");
+			if (kr != KERN_SUCCESS) {
+				R_LOG_ERROR ("failed to deallocate reply port");
+			}
 		}
 		break; // to avoid infinite loops
 	}

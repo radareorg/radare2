@@ -1452,7 +1452,6 @@ static const char* getchardiff(RPrint *p, char *fmt, ut8 a, ut8 b) {
 	} else {
 		sprintf (fmt, "%c", ch);
 	}
-	//else { fmt[0] = ch; fmt[1]=0; }
 	return fmt;
 }
 
@@ -1933,7 +1932,7 @@ R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, size_t buflen, ut32 tiles, co
 		return;
 	}
 	if (!colors) {
-		colors = (const char *[]){
+		colors = (const char *[]) {
 			Color_BGWHITE,
 			Color_BGRED,
 			Color_BGBLUE,

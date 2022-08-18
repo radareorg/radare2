@@ -173,7 +173,7 @@ typedef struct {
 	const char *name;
 	ut8 offset; // offset into memory, where the value is held
 	ut8 resetvalue; // value the register takes in case of a reset
-	ut8 num_bytes; // no more than sizeof(ut64)
+	ut8 num_bytes; // no more than sizeof (ut64)
 	ut8 banked : 1;
 	ut8 isdptr : 1;
 } RI8051Reg;

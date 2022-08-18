@@ -475,7 +475,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	}
 	while (addr_srch < libc_addr_end) {
 		GH (update_main_arena) (core, addr_srch, ta);
-		if ( ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
+		if (ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
 			ta->GH(system_mem) == heap_sz) {
 
 			*m_arena = addr_srch;
@@ -916,9 +916,9 @@ static GH (RTcache)* GH (tcache_new) (RCore *core) {
 static void GH (tcache_free) (GH (RTcache)* tcache) {
 	r_return_if_fail (tcache);
 	tcache->type == NEW
-		? free(tcache->RHeapTcache.heap_tcache)
-		: free(tcache->RHeapTcache.heap_tcache_pre_230);
-	free(tcache);
+		? free (tcache->RHeapTcache.heap_tcache)
+		: free (tcache->RHeapTcache.heap_tcache_pre_230);
+	free (tcache);
 }
 
 static bool GH (tcache_read) (RCore *core, GHT tcache_start, GH (RTcache)* tcache) {
@@ -1018,7 +1018,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 		GHT mmap_start = GHT_MAX, tcache_start = GHT_MAX;
 		MallocState *ta = R_NEW0 (MallocState);
 		if (!ta) {
-			free(ta);
+			free (ta);
 			GH (tcache_free) (r_tcache);
 			return;
 		}
@@ -1195,7 +1195,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			case '*':
 				r_cons_printf ("fs heap.corrupted\n");
 				ut64 chunkflag = (ut64)((prev_chunk >> 4) & 0xffffULL);
-				r_cons_printf ("f chunk.corrupted.%06"PFMT64x" %d 0x%"PFMT64x"\n", 
+				r_cons_printf ("f chunk.corrupted.%06"PFMT64x" %d 0x%"PFMT64x"\n",
 					chunkflag, (int)cnk->size, (ut64)prev_chunk);
 				break;
 			case 'g':
@@ -1427,7 +1427,7 @@ void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena)
 			}
 		}
 	}
-	free(ta);
+	free (ta);
 }
 
 void GH(print_inst_minfo)(GH(RHeapInfo) *heap_info, GHT hinfo) {

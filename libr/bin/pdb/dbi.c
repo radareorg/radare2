@@ -13,9 +13,9 @@ static void free_dbi_stream(void *stream) {
 	RListIter *it = r_list_iterator(t->dbiexhdrs);
 	while (r_list_iter_next(it)) {
 		dbi_ex_header = (SDBIExHeader *) r_list_iter_get(it);
-		free(dbi_ex_header->modName.name);
-		free(dbi_ex_header->objName.name);
-		free(dbi_ex_header);
+		free (dbi_ex_header->modName.name);
+		free (dbi_ex_header->objName.name);
+		free (dbi_ex_header);
 	}
 	r_list_free (t->dbiexhdrs);
 }
@@ -137,7 +137,7 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 	dbi_stream->dbiexhdrs = r_list_new ();
 	p_tmp = dbiexhdr_data;
 	while (i < size) {
-		dbi_ex_header = (SDBIExHeader *) malloc (sizeof(SDBIExHeader));
+		dbi_ex_header = (SDBIExHeader *) malloc (sizeof (SDBIExHeader));
 		if (!dbi_ex_header) {
 			break;
 		}

@@ -1804,7 +1804,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					}
 					free (filesc);
 					r_cons_println (res);
-					free(name);
+					free (name);
 					free (res);
 					if (libname || addr != UT64_MAX) { //only single match requested
 						break;
@@ -2263,7 +2263,7 @@ static void cmd_debug_reg_print_packed_reg(RCore *core, RRegItem *item, char exp
 		if (!explicit_size || pack_show[pi]) {
 			for (i = 0; i < item->packed_size / pack_sizes[pi]; i++) {
 				ut64 res = r_reg_get_pack(core->dbg->reg, item, i, pack_sizes[pi]);
-				if( pi > NUM_INT_PACK_TYPES-1)	{ // are we printing int or double?
+				if (pi > NUM_INT_PACK_TYPES-1)	{ // are we printing int or double?
 					if (pack_sizes[pi] == 64)	{
 						double dres;
 						memcpy ((void*)&dres, (void*)&res, 8);
@@ -2574,15 +2574,15 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			} else {
 				RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
 				if (rf) {
-					if (*name=='=') {
-						for (i=0; i<R_REG_COND_LAST; i++) {
+					if (*name == '=') {
+						for (i = 0; i < R_REG_COND_LAST; i++) {
 							r_cons_printf ("%s:%d ",
 									r_reg_cond_to_string (i),
 									r_reg_cond_bits (core->dbg->reg, i, rf));
 						}
 						r_cons_newline ();
 					} else {
-						for (i=0; i<R_REG_COND_LAST; i++) {
+						for (i = 0; i < R_REG_COND_LAST; i++) {
 							r_cons_printf ("%d %s\n",
 									r_reg_cond_bits (core->dbg->reg, i, rf),
 									r_reg_cond_to_string (i));
@@ -2605,7 +2605,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 			break;
 		case ' ': {
-				  char *s = strdup (str+2);
+				  char *s = strdup (str + 2);
 				  char sl, n, perm;
 				  int len;
 				  ut64 off;
@@ -4605,7 +4605,7 @@ static char *get_corefile_name(const char *raw_name, int pid) {
 }
 
 static int cmd_debug_step(RCore *core, const char *input) {
-	ut64 addr = core->offset;;
+	ut64 addr = core->offset;
 	ut8 buf[64];
 	RAnalOp aop;
 	int i, times = 1;

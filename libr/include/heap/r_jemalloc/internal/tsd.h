@@ -286,7 +286,7 @@ a_name##tsd_wrapper_get(bool init)					\
 									\
 	if (init && unlikely(wrapper == NULL)) {			\
 		wrapper = (a_name##tsd_wrapper_t *)			\
-		    malloc_tsd_malloc(sizeof(a_name##tsd_wrapper_t));	\
+		    malloc_tsd_malloc(sizeof (a_name##tsd_wrapper_t));	\
 		if (wrapper == NULL) {					\
 			malloc_write("<jemalloc>: Error allocating"	\
 			    " TSD for "#a_name"\n");			\
@@ -319,14 +319,14 @@ a_name##tsd_boot1(void)							\
 {									\
 	a_name##tsd_wrapper_t *wrapper;					\
 	wrapper = (a_name##tsd_wrapper_t *)				\
-	    malloc_tsd_malloc(sizeof(a_name##tsd_wrapper_t));		\
+	    malloc_tsd_malloc(sizeof (a_name##tsd_wrapper_t));		\
 	if (wrapper == NULL) {						\
 		malloc_write("<jemalloc>: Error allocating"		\
 		    " TSD for "#a_name"\n");				\
 		abort();						\
 	}								\
 	memcpy(wrapper, &a_name##tsd_boot_wrapper,			\
-	    sizeof(a_name##tsd_wrapper_t));				\
+	    sizeof (a_name##tsd_wrapper_t));				\
 	a_name##tsd_wrapper_set(wrapper);				\
 }									\
 a_attr bool								\
@@ -425,7 +425,7 @@ a_name##tsd_wrapper_get(bool init)					\
 		if (wrapper)						\
 		    return (wrapper);					\
 		wrapper = (a_name##tsd_wrapper_t *)			\
-		    malloc_tsd_malloc(sizeof(a_name##tsd_wrapper_t));	\
+		    malloc_tsd_malloc(sizeof (a_name##tsd_wrapper_t));	\
 		block.data = (void *)wrapper;				\
 		if (wrapper == NULL) {					\
 			malloc_write("<jemalloc>: Error allocating"	\
@@ -456,14 +456,14 @@ a_name##tsd_boot1(void)							\
 {									\
 	a_name##tsd_wrapper_t *wrapper;					\
 	wrapper = (a_name##tsd_wrapper_t *)				\
-	    malloc_tsd_malloc(sizeof(a_name##tsd_wrapper_t));		\
+	    malloc_tsd_malloc(sizeof (a_name##tsd_wrapper_t));		\
 	if (wrapper == NULL) {						\
 		malloc_write("<jemalloc>: Error allocating"		\
 		    " TSD for "#a_name"\n");				\
 		abort();						\
 	}								\
 	memcpy(wrapper, &a_name##tsd_boot_wrapper,			\
-	    sizeof(a_name##tsd_wrapper_t));				\
+	    sizeof (a_name##tsd_wrapper_t));				\
 	a_name##tsd_wrapper_set(wrapper);				\
 }									\
 a_attr bool								\

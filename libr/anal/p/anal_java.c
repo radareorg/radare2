@@ -8,7 +8,7 @@
 #include "../../../shlr/java/class.h"
 
 #define DO_THE_DBG 0
-#define IFDBG  if(DO_THE_DBG)
+#define IFDBG  if (DO_THE_DBG)
 
 static R_TH_LOCAL ut64 METHOD_START = 0;
 
@@ -117,16 +117,16 @@ static ut64 extract_code_op(ut64 ranal2_op_type) {
 }
 
 static ut64 extract_load_store_op(ut64 ranal2_op_type) {
-	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_PUSH) == R_ANAL_JAVA_LDST_OP_PUSH) {
+	if ((ranal2_op_type & R_ANAL_JAVA_LDST_OP_PUSH) == R_ANAL_JAVA_LDST_OP_PUSH) {
 		return R_ANAL_OP_TYPE_PUSH;
 	}
-	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_POP) == R_ANAL_JAVA_LDST_OP_POP) {
+	if ((ranal2_op_type & R_ANAL_JAVA_LDST_OP_POP) == R_ANAL_JAVA_LDST_OP_POP) {
 		return R_ANAL_OP_TYPE_POP;
 	}
-	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_MOV) == R_ANAL_JAVA_LDST_OP_MOV) {
+	if ((ranal2_op_type & R_ANAL_JAVA_LDST_OP_MOV) == R_ANAL_JAVA_LDST_OP_MOV) {
 		return R_ANAL_OP_TYPE_MOV;
 	}
-	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_EFF_ADDR) == R_ANAL_JAVA_LDST_OP_EFF_ADDR) {
+	if ((ranal2_op_type & R_ANAL_JAVA_LDST_OP_EFF_ADDR) == R_ANAL_JAVA_LDST_OP_EFF_ADDR) {
 		return R_ANAL_OP_TYPE_LEA;
 	}
 	return R_ANAL_OP_TYPE_UNK;
@@ -239,7 +239,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	// the easy parts though
 	if (IN_SWITCH_OP) {
 		NUM_CASES_SEEN++;
-		if (NUM_CASES_SEEN == SWITCH_OP_CASES) IN_SWITCH_OP=0;
+		if (NUM_CASES_SEEN == SWITCH_OP_CASES) { IN_SWITCH_OP = 0; }
 		op->addr = addr;
 		op->size = 4;
 		op->type2 = 0;
@@ -279,7 +279,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	} else if (op->type  == R_ANAL_OP_TYPE_JMP) {
 		op->jump = addr + (short)(USHORT (data, 1));
 		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x".\n", JAVA_OPS[op_byte].name, op->jump);
-	} else if ( (op->type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL ) {
+	} else if ((op->type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL ) {
 		op->jump = (int)(short)(USHORT (data, 1));
 		op->fail = addr + sz;
 		//IFDBG eprintf ("%s callto 0x%04x  failto 0x%04x.\n", JAVA_OPS[op_byte].name, op->jump, op->fail);

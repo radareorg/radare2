@@ -897,7 +897,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xf1: // return-void-barrier
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->eob = true;
-		//TODO: handle return if(0x0e) {} else {}
+		//TODO: handle return if (0x0e) {} else {}
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			if (data[0] == 0x0e) {// return-void
 				esilprintf (op, "sp,[8],ip,=,8,sp,+=");

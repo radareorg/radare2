@@ -26,7 +26,7 @@ struct r_bin_dmp64_obj_t {
 	Sdb *kv;
 };
 
-void r_bin_dmp64_free(struct r_bin_dmp64_obj_t *obj);
-struct r_bin_dmp64_obj_t *r_bin_dmp64_new_buf(RBuffer* buf);
+R_IPI void r_bin_dmp64_free(struct r_bin_dmp64_obj_t *obj);
+R_IPI struct r_bin_dmp64_obj_t *r_bin_dmp64_new_buf(RBuffer* buf);
 
 #endif /* DMP64_H */

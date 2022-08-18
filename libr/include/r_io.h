@@ -235,7 +235,7 @@ typedef struct r_io_cache_t {
 	int written;
 } RIOCache;
 
-#define R_IO_DESC_CACHE_SIZE (sizeof(ut64) * 8)
+#define R_IO_DESC_CACHE_SIZE (sizeof (ut64) * 8)
 typedef struct r_io_desc_cache_t {
 	ut64 cached;
 	ut8 cdata[R_IO_DESC_CACHE_SIZE];
@@ -585,6 +585,7 @@ extern RIOPlugin r_io_plugin_winedbg;
 extern RIOPlugin r_io_plugin_gprobe;
 extern RIOPlugin r_io_plugin_fd;
 extern RIOPlugin r_io_plugin_socket;
+extern RIOPlugin r_io_plugin_xattr;
 extern RIOPlugin r_io_plugin_isotp;
 extern RIOPlugin r_io_plugin_xalz;
 

@@ -60,7 +60,7 @@ static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64
 	ut8 buf[6 * sizeof (ut32)];
 	int colSize = 5 * sizeof (ut32);
 	if (context->word_size == 8) {
-		colSize += sizeof(ut32);
+		colSize += sizeof (ut32);
 	}
 	if (colSize > sizeof (buf)) {
 		return false;
@@ -248,7 +248,7 @@ static bool rtti_msvc_read_type_descriptor(RVTableContext *context, ut64 addr, r
 	while (1) {
 		context->anal->iob.read_at (context->anal->iob.io, nameAddr + bufOffset, buf, sizeof (buf));
 		int i;
-		for (i=0; i<sizeof (buf); i++) {
+		for (i = 0; i < sizeof (buf); i++) {
 			if (buf[i] == '\0') {
 				endFound = true;
 				break;
@@ -651,11 +651,11 @@ RecoveryCompleteObjectLocator *recovery_complete_object_locator_new() {
 	if (!col) {
 		return NULL;
 	}
-	r_vector_init (&col->base_td, sizeof(RecoveryBaseDescriptor), NULL, NULL);
+	r_vector_init (&col->base_td, sizeof (RecoveryBaseDescriptor), NULL, NULL);
 	return col;
 }
 
-void recovery_complete_object_locator_free(RecoveryCompleteObjectLocator *col) {
+static void recovery_complete_object_locator_free(RecoveryCompleteObjectLocator *col) {
 	if (!col) {
 		return;
 	}
@@ -663,7 +663,6 @@ void recovery_complete_object_locator_free(RecoveryCompleteObjectLocator *col) {
 	r_vector_clear (&col->base_td);
 	free (col);
 }
-
 
 struct recovery_type_descriptor_t {
 	ut64 addr;
@@ -686,14 +685,13 @@ RecoveryTypeDescriptor *recovery_type_descriptor_new() {
 	return td;
 }
 
-void recovery_type_descriptor_free(RecoveryTypeDescriptor *td) {
+static void recovery_type_descriptor_free(RecoveryTypeDescriptor *td) {
 	if (!td) {
 		return;
 	}
 	rtti_type_descriptor_fini (&td->td);
 	free (td);
 }
-
 
 typedef struct rtti_msvc_anal_context_t {
 	RVTableContext *vt_context;
@@ -973,8 +971,10 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	return name;
 }
 
-void str_value_free(HtUPKv *kv) {
-	free (kv->value);
+static void str_value_free(HtUPKv *kv) {
+	if (kv) {
+		free (kv->value);
+	}
 }
 
 R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtables) {

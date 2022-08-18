@@ -300,11 +300,12 @@ static const char *help_msg_uc[] = {
 
 static const char *help_msg_y[] = {
 	"Usage:", "y[ptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
-	"y!", "", "open cfg.editor to edit the clipboard",
 	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16", "copy 16 bytes into clipboard",
 	"y", "", "show yank buffer information (origin len bytes)",
+	"y-", "", "empty / reset clipboard",
+	"y!", "", "open cfg.editor to edit the clipboard",
 	"y*", "", "print in r2 commands what's been yanked",
 	"yf", " 64 0x200", "copy file 64 bytes from 0x200 from file",
 	"yfa", " file copy", "copy all bytes from file (opens w/ io)",
@@ -512,7 +513,7 @@ static int r_core_cmd_nullcallback(void *data) {
 }
 
 /* Escape raw bytes if not using b64 */
-static bool print_aliases(void *use_b64, const void *key, const void *val){
+static bool print_aliases(void *use_b64, const void *key, const void *val) {
 	const char *k = (char *) key;
 	RCmdAliasVal *v = (RCmdAliasVal *) val;
 	bool base64 = *(bool *)use_b64;
@@ -971,7 +972,7 @@ static int cmd_rap(void *data, const char *input) {
 	case '!': // "=!"
 		if (input[1] == 'q') {
 			R_FREE (core->cmdremote);
-		} else if (input[1] == '=') { // =!=0 or =!= for iosystem
+		} else if (input[1] == '=') { // =!= or =!= for iosystem
 			R_FREE (core->cmdremote);
 			core->cmdremote = r_str_trim_dup (input + 2);
 		} else {
@@ -1063,6 +1064,14 @@ static int cmd_yank(void *data, const char *input) {
 	switch (input[0]) {
 	case ' ': // "y "
 		r_core_yank (core, core->offset, r_num_math (core->num, input + 1));
+		break;
+	case '-': // "y-"
+#if R2_580
+		r_core_yank_unset (core);
+#else
+		r_buf_set_bytes (core->yank_buf, (const ut8*)"", 0);
+		core->yank_addr = UT64_MAX;
+#endif
 		break;
 	case 'l': // "yl"
 		r_core_return_value (core, r_buf_size (core->yank_buf));
@@ -2880,7 +2889,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		arg[end - input] = 0;
 		RCoreAutocomplete* a = r_core_autocomplete_find (b, arg, true);
 		input = r_str_trim_head_ro (end);
-		if (input && *input && !a) {
+		if (R_STR_ISNOTEMPTY (input) && !a) {
 			if (b->type == R_CORE_AUTOCMPLT_DFLT && !(b = r_core_autocomplete_add (b, arg, R_CORE_AUTOCMPLT_DFLT, false))) {
 				eprintf ("ENOMEM\n");
 				return;
@@ -2888,7 +2897,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 				eprintf ("Cannot add autocomplete to '%s'. type not $dflt\n", b->cmd);
 				return;
 			}
-		} else if ((!input || !*input) && !a) {
+		} else if (R_STR_ISEMPTY (input) && !a) {
 			if (arg[0] == '$') {
 				int type = autocomplete_type (arg);
 				if (type != R_CORE_AUTOCMPLT_END && !b->locked && !b->n_subcmds) {
@@ -2906,7 +2915,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 				}
 			}
 			return;
-		} else if ((!input || !*input) && a) {
+		} else if (R_STR_ISEMPTY (input) && a) {
 			// eprintf ("Cannot add '%s'. Already exists.\n", arg);
 			return;
 		} else {
@@ -2934,10 +2943,10 @@ static int cmd_system(void *data, const char *input) {
 	switch (*input) {
 	case '-': //!-
 		if (input[1]) {
-			r_line_hist_free();
+			r_line_hist_free ();
 			r_line_hist_save (R2_HOME_HISTORY);
 		} else {
-			r_line_hist_free();
+			r_line_hist_free ();
 		}
 		break;
 	case '=': //!=

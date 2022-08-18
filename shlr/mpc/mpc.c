@@ -2779,7 +2779,7 @@ static void mpc_print_unretained(mpc_parser_t *p, int force) {
 
   if (p->type == MPC_TYPE_OR) {
     printf("(");
-    for(i = 0; i < p->data.or.n-1; i++) {
+    for (i = 0; i < p->data.or.n-1; i++) {
       mpc_print_unretained(p->data.or.xs[i], 0);
       printf(" | ");
     }
@@ -2789,7 +2789,7 @@ static void mpc_print_unretained(mpc_parser_t *p, int force) {
 
   if (p->type == MPC_TYPE_AND) {
     printf("(");
-    for(i = 0; i < p->data.and.n-1; i++) {
+    for (i = 0; i < p->data.and.n-1; i++) {
       mpc_print_unretained(p->data.and.xs[i], 0);
       printf(" ");
     }
@@ -3048,7 +3048,7 @@ int mpc_ast_get_index(mpc_ast_t *ast, const char *tag) {
 int mpc_ast_get_index_lb(mpc_ast_t *ast, const char *tag, int lb) {
   int i;
 
-  for(i=lb; i<ast->children_num; i++) {
+  for (i=lb; i<ast->children_num; i++) {
     if(strcmp(ast->children[i]->tag, tag) == 0) {
       return i;
     }
@@ -3064,7 +3064,7 @@ mpc_ast_t *mpc_ast_get_child(mpc_ast_t *ast, const char *tag) {
 mpc_ast_t *mpc_ast_get_child_lb(mpc_ast_t *ast, const char *tag, int lb) {
   int i;
 
-  for(i=lb; i<ast->children_num; i++) {
+  for (i=lb; i<ast->children_num; i++) {
     if(strcmp(ast->children[i]->tag, tag) == 0) {
       return ast->children[i];
     }
@@ -3868,7 +3868,7 @@ static int mpc_nodecount_unretained(mpc_parser_t* p, int force) {
 
   if (p->type == MPC_TYPE_OR) {
     total = 1;
-    for(i = 0; i < p->data.or.n; i++) {
+    for (i = 0; i < p->data.or.n; i++) {
       total += mpc_nodecount_unretained(p->data.or.xs[i], 0);
     }
     return total;
@@ -3876,7 +3876,7 @@ static int mpc_nodecount_unretained(mpc_parser_t* p, int force) {
 
   if (p->type == MPC_TYPE_AND) {
     total = 1;
-    for(i = 0; i < p->data.and.n; i++) {
+    for (i = 0; i < p->data.and.n; i++) {
       total += mpc_nodecount_unretained(p->data.and.xs[i], 0);
     }
     return total;
@@ -3914,13 +3914,13 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
   if (p->type == MPC_TYPE_COUNT)      { mpc_optimise_unretained(p->data.repeat.x, 0); }
 
   if (p->type == MPC_TYPE_OR) {
-    for(i = 0; i < p->data.or.n; i++) {
+    for (i = 0; i < p->data.or.n; i++) {
       mpc_optimise_unretained(p->data.or.xs[i], 0);
     }
   }
 
   if (p->type == MPC_TYPE_AND) {
-    for(i = 0; i < p->data.and.n; i++) {
+    for (i = 0; i < p->data.and.n; i++) {
       mpc_optimise_unretained(p->data.and.xs[i], 0);
     }
   }

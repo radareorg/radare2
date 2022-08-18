@@ -1428,7 +1428,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 		r_cons_printf ("f-fcnvar*\n");
 		r_list_foreach (list, iter, var) {
 			r_cons_printf ("f fcnvar.%s @ %s%s%d\n", var->name, bp,
-				var->delta>=0? "+":"", var->delta);
+				var->delta >= 0? "+":"", var->delta);
 		}
 		r_list_free (list);
 		return;
@@ -2042,7 +2042,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 		int regidx = i;
 		if (core->rasm->config->bits == 32 &&
 			((core->rasm->cur && !strcmp (core->rasm->cur->arch, "x86")) ||
-			(core->anal->cur && !strcmp (core->anal->cur->arch , "x86")))){
+			(core->anal->cur && !strcmp (core->anal->cur->arch , "x86")))) {
 			regidx++;
 		}
 		ut64 arg = r_debug_arg_get (core->dbg, cc, regidx);
@@ -2121,6 +2121,21 @@ static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 		r_cons_println (msg);
 		free (msg);
 	}
+}
+
+static inline RAnalEsil *esil_new_setup(RCore *core) {
+	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
+	int iotrap = r_config_get_i (core->config, "esil.iotrap");
+	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
+	RAnalEsil *esil = r_anal_esil_new (stacksize, iotrap, addrsize);
+	if (esil) {
+		int romem = r_config_get_i (core->config, "esil.romem");
+		int stats = r_config_get_i (core->config, "esil.stats");
+		bool nonull = r_config_get_b (core->config, "esil.nonull");
+		r_anal_esil_setup (esil, core->anal, romem, stats, nonull);
+		esil->verbose = r_config_get_i (core->config, "esil.verbose");
+	}
+	return esil;
 }
 
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
@@ -3208,9 +3223,9 @@ static void r_core_anal_nofunclist(RCore *core, const char *input) {
 	chunk_size = 0;
 	chunk_offset = 0;
 	for (i = 0; i < code_size; i++) {
-		if (bitmap[i]){
+		if (bitmap[i]) {
 			// We only print a region is its size is bigger than 15 bytes
-			if (chunk_size >= minlen){
+			if (chunk_size >= minlen) {
 				fcn = r_anal_get_fcn_in (core->anal, base_addr+chunk_offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 				if (fcn) {
 					r_cons_printf ("0x%08" PFMT64x "  %6" PFMT64u "   %s\n",
@@ -3221,10 +3236,10 @@ static void r_core_anal_nofunclist(RCore *core, const char *input) {
 				}
 			}
 			chunk_size = 0;
-			chunk_offset = i+1;
+			chunk_offset = i + 1;
 			continue;
 		}
-		chunk_size+=1;
+		chunk_size += 1;
 	}
 	if (chunk_size >= 16) {
 		fcn = r_anal_get_fcn_in (core->anal, base_addr+chunk_offset, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
@@ -3605,7 +3620,7 @@ static Sdb *__core_cmd_anal_fcn_stats(RCore *core, const char *input) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		int i;
 		__updateStats (core, db, bb->addr, statsMode);
-		for (i = 0; i< bb->op_pos_size; i++) {
+		for (i = 0; i < bb->op_pos_size; i++) {
 			ut16 op_pos = bb->op_pos[i];
 			__updateStats (core, db, bb->addr + op_pos, statsMode);
 		}
@@ -4165,7 +4180,7 @@ static int cmd_af(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_af_plus);
 			break;
 		}
-		char *ptr = input[2]? r_str_trim_dup (input + 2): r_str_newf ("0x%"PFMT64x, core->offset);;
+		char *ptr = input[2]? r_str_trim_dup (input + 2): r_str_newf ("0x%"PFMT64x, core->offset);
 		const char *ptr2;
 		int n = r_str_word_set0 (ptr);
 		const char *name = NULL;
@@ -4717,7 +4732,7 @@ static int cmd_af(RCore *core, const char *input) {
 	case 'B': // "afB" // set function bits
 		if (input[2] == ' ') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			if (fcn) { // bits=0 means unset
+			if (fcn) { // bits = 0 means unset
 				int nbits = atoi (input + 3);
 				int obits = core->anal->config->bits;
 				if (nbits > 0) {
@@ -5110,6 +5125,31 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	core->dbg->reg = hack;
 }
 
+static RRegItem *reg_by_name_role(RCore *core, const char *n) {
+	RRegItem *r = r_reg_get (core->anal->reg, n, -1);
+	if (!r) {
+		int role = r_reg_get_name_idx (n);
+		if (role != -1) {
+			const char *alias = r_reg_get_name (core->anal->reg, role);
+			if (alias) {
+				r = r_reg_get (core->anal->reg, alias, -1);
+			}
+		}
+	}
+	return r;
+}
+
+static bool reg_name_roll_set(RCore *core, const char *name, ut64 n) {
+	RRegItem *r = reg_by_name_role (core, name);
+	if (r) {
+		r_reg_set_value (core->anal->reg, r, n);
+		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
+		r_core_cmdf (core, ".dr*%d", core->anal->config->bits); // XXX: replace in future
+		return true;
+	}
+	return false;
+}
+
 // XXX dup from drp :OOO
 void cmd_anal_reg(RCore *core, const char *str) {
 #if 0
@@ -5126,7 +5166,6 @@ void cmd_anal_reg(RCore *core, const char *str) {
 #endif
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int use_colors = r_config_get_i (core->config, "scr.color");
-	RRegItem *r = NULL;
 	const char *use_color;
 	const char *name;
 	char *arg;
@@ -5464,26 +5503,8 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			ut64 n = r_num_math (core->num, arg + 1);
 			char *ostr = r_str_trim_dup (str + 1);
 			char *regname = r_str_trim_nc (ostr);
-			r = r_reg_get (core->anal->reg, regname, -1);
-			if (!r) {
-				int role = r_reg_get_name_idx (regname);
-				if (role != -1) {
-					const char *alias = r_reg_get_name (core->anal->reg, role);
-					if (alias) {
-						r = r_reg_get (core->anal->reg, alias, -1);
-					}
-				}
-			}
-			if (r) {
-				//eprintf ("%s 0x%08"PFMT64x" -> ", str,
-				//	r_reg_get_value (core->dbg->reg, r));
-				r_reg_set_value (core->anal->reg, r, n);
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
-				//eprintf ("0x%08"PFMT64x"\n",
-				//	r_reg_get_value (core->dbg->reg, r));
-				r_core_cmdf (core, ".dr*%d", core->anal->config->bits);
-			} else {
-				eprintf ("ar: Unknown register '%s'\n", regname);
+			if (!reg_name_roll_set (core, regname, n)) {
+				R_LOG_ERROR ("ar: Unknown register '%s'", regname);
 			}
 			free (ostr);
 			return;
@@ -5515,14 +5536,8 @@ void cmd_anal_reg(RCore *core, const char *str) {
 }
 
 static ut64 initializeEsil(RCore *core) {
-	int romem = r_config_get_i (core->config, "esil.romem");
-	int stats = r_config_get_i (core->config, "esil.stats");
-	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int exectrap = r_config_get_i (core->config, "esil.exectrap");
-	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	bool nonull = r_config_get_b (core->config, "esil.nonull");
-	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-	RAnalEsil *esil = r_anal_esil_new (stacksize, iotrap, addrsize);
+	RAnalEsil *esil = esil_new_setup (core);
 	if (esil) {
 		r_anal_esil_free (core->anal->esil);
 		core->anal->esil = esil;
@@ -5530,9 +5545,7 @@ static ut64 initializeEsil(RCore *core) {
 		return UT64_MAX;
 	}
 	ut64 addr;
-	esil->verbose = r_config_get_i (core->config, "esil.verbose");
 	esil->cmd = r_core_esil_cmd;
-	r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
 	{
 		const char *cmd_esil_step = r_config_get (core->config, "cmd.esil.step");
 		if (cmd_esil_step && *cmd_esil_step) {
@@ -5690,8 +5703,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					r_reg_setv (core->anal->reg, pcname, op.addr + op.size);
 					r_reg_setv (core->dbg->reg, pcname, op.addr + op.size);
 				}
-				r_anal_op_fini(&op);
-				return 1;
+				return_tail (1);
 			}
 		}
 		if (r2wars) {
@@ -5994,20 +6006,12 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	char nomalloc[256];
 	char *p;
 	if (!esil) {
-		int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-		int iotrap = r_config_get_i (core->config, "esil.iotrap");
-		int romem = r_config_get_i (core->config, "esil.romem");
-		int stats = r_config_get_i (core->config, "esil.stats");
-		bool nonull = r_config_get_b (core->config, "esil.nonull");
-		int verbose = r_config_get_i (core->config, "esil.verbose");
-		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-		if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
+		esil = esil_new_setup (core);
+		if (!esil) {
 			return;
 		}
-		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
 		r_anal_esil_free (core->anal->esil);
 		core->anal->esil = esil;
-		esil->verbose = verbose;
 		{
 			const char *s = r_config_get (core->config, "cmd.esil.intr");
 			if (s) {
@@ -6032,10 +6036,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		} else {
 			cmd_esil_mem (core, "");
 		}
-		if (esil) {
-			esil->stack_addr = addr;
-			esil->stack_size = size;
-		}
+		esil->stack_addr = addr;
+		esil->stack_size = size;
 		initialize_stack (core, addr, size);
 		return;
 	}
@@ -6133,10 +6135,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	r_reg_setv (core->anal->reg, "BP", sp);
 	r_reg_setv (core->anal->reg, "PC", curoff);
 	r_core_cmd0 (core, ".ar*");
-	if (esil) {
-		esil->stack_addr = addr;
-		esil->stack_size = size;
-	}
+	esil->stack_addr = addr;
+	esil->stack_size = size;
 	initialize_stack (core, addr, size);
 	r_core_seek (core, curoff, false);
 }
@@ -6153,10 +6153,8 @@ static void esil_init(RCore *core) {
 		opc = core->offset;
 	}
 	if (!core->anal->esil) {
-		int iotrap = r_config_get_i (core->config, "esil.iotrap");
-		ut64 stackSize = r_config_get_i (core->config, "esil.stack.size");
-		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-		if (!(core->anal->esil = r_anal_esil_new (stackSize, iotrap, addrsize))) {
+		core->anal->esil = esil_new_from_core (core);
+		if (!core->anal->esil) {
 			R_FREE (regstate);
 			return;
 		}
@@ -6211,7 +6209,7 @@ static char *oldregread = NULL;
 static RList *mymemxsr = NULL;
 static RList *mymemxsw = NULL;
 
-#define R_NEW_DUP(x) memcpy((void*)malloc(sizeof(x)), &(x), sizeof(x))
+#define R_NEW_DUP(x) memcpy((void*)malloc(sizeof (x)), &(x), sizeof (x))
 typedef struct {
 	ut64 addr;
 	int size;
@@ -6356,7 +6354,6 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	AeaStats stats;
 	const char *esilstr;
 	RAnalOp aop = {0};
-	ut8 *buf;
 	RList* regnow;
 	PJ *pj = NULL;
 	if (!core) {
@@ -6381,7 +6378,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		buf_sz = maxopsize;
 	}
 	addr_end = addr + buf_sz;
-	buf = malloc (buf_sz);
+	ut8 *buf = malloc (buf_sz);
 	if (!buf) {
 		return false;
 	}
@@ -6391,15 +6388,12 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	//esil_init (core);
 	//esil = core->anal->esil;
 	r_reg_arena_push (core->anal->reg);
-	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	bool iotrap = r_config_get_i (core->config, "esil.iotrap");
-	int romem = r_config_get_i (core->config, "esil.romem");
-	int stats1 = r_config_get_i (core->config, "esil.stats");
-	bool nonull = r_config_get_b (core->config, "esil.nonull");
-	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	const bool cfg_r2wars = r_config_get_i (core->config, "cfg.r2wars");
-	esil = r_anal_esil_new (stacksize, iotrap, addrsize);
-	r_anal_esil_setup (esil, core->anal, romem, stats1, nonull); // setup io
+	esil = esil_new_setup (core);
+	if (!esil) {
+		free (buf);
+		return false;
+	}
 #	define hasNext(x) (x&1) ? (addr<addr_end) : (ops<ops_end)
 
 	mymemxsr = r_list_new ();
@@ -6496,15 +6490,15 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			pj_k (pj, "V");
 			showregs_json (stats.regvalues, pj);
 		}
-		if (!r_list_empty (regnow)){
+		if (!r_list_empty (regnow)) {
 			pj_k (pj, "N");
 			showregs_json (regnow, pj);
 		}
-		if (!r_list_empty (mymemxsr)){
+		if (!r_list_empty (mymemxsr)) {
 			pj_k (pj, "@R");
 			showmem_json (mymemxsr, pj);
 		}
-		if (!r_list_empty (mymemxsw)){
+		if (!r_list_empty (mymemxsw)) {
 			pj_k (pj, "@W");
 			showmem_json (mymemxsw, pj);
 		}
@@ -6535,15 +6529,15 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			r_cons_printf (" V: ");
 			showregs (stats.regvalues);
 		}
-		if (!r_list_empty (regnow)){
+		if (!r_list_empty (regnow)) {
 			r_cons_printf (" N: ");
 			showregs (regnow);
 		}
-		if (!r_list_empty (mymemxsr)){
+		if (!r_list_empty (mymemxsr)) {
 			r_cons_printf ("@R:");
 			showmem (mymemxsr);
 		}
-		if (!r_list_empty (mymemxsw)){
+		if (!r_list_empty (mymemxsw)) {
 			r_cons_printf ("@W:");
 			showmem (mymemxsw);
 		}
@@ -6568,17 +6562,14 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
-	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	int iotrap = r_config_get_i (core->config, "esil.iotrap");
-	ut64 addrsize = r_config_get_i (core->config, "esil.addr.size");
 
 	// eprintf ("   aesB %llx %llx %d\n", addr, until_addr, off); // 0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
 	if (!esil) {
 		R_LOG_DEBUG ("cmd_espc: creating new esil instance");
-		if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
+		core->anal->esil = esil = esil_new_setup (core);
+		if (!esil) {
 			return;
 		}
-		core->anal->esil = esil;
 	}
 	buf = malloc (bsize);
 	if (!buf) {
@@ -6588,7 +6579,6 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	if (addr == -1) {
 		addr = r_reg_getv (core->dbg->reg, pc);
 	}
-	(void)r_anal_esil_setup (core->anal->esil, core->anal, 0, 0, 0); // int romem, int stats, int nonull) {
 	ut64 cursp = r_reg_getv (core->dbg->reg, "SP");
 	ut64 oldoff = core->offset;
 	const ut64 flags = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_DISASM;
@@ -7008,13 +6998,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 	ut64 adr ;
 	char *n, *n1;
 	int off;
-	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	bool iotrap = r_config_get_b (core->config, "esil.iotrap");
-	bool romem = r_config_get_b (core->config, "esil.romem");
-	bool stats = r_config_get_b (core->config, "esil.stats");
-	bool nonull = r_config_get_b (core->config, "esil.nonull");
 	ut64 until_addr = UT64_MAX;
-	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
 	const char *until_expr = NULL;
 	RAnalOp *op = NULL;
@@ -7058,7 +7042,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		case 'c': // "aepc"
 			if (input[2] == ' ' || input[2] == '=') {
 				// seek to this address
-				r_core_cmdf (core, "ar PC=%s", r_str_trim_head_ro (input + 3));
+				reg_name_roll_set (core, "PC", r_num_math (core->num, input + 3));
 				r_core_cmd0 (core, ".ar*");
 			} else {
 				eprintf ("Usage: aepc [address]  # same as 'ar PC=..'\n");
@@ -7110,11 +7094,13 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		break;
 	case ' ':
 	case 'q':
-		//r_anal_esil_eval (core->anal, input+1);
-		if (!esil && !(core->anal->esil = esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
-			return;
+		//r_anal_esil_eval (core->anal, input + 1);
+		if (!esil) {
+			core->anal->esil = esil = esil_new_setup (core);
+			if (!esil) {
+				return;
+			}
 		}
-		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
 		r_anal_esil_set_pc (esil, core->offset);
 		r_anal_esil_parse (esil, input + 1);
 		if (verbose && *input != 'q') {
@@ -7235,22 +7221,23 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			break;
 		case 'p': //"aesp"
 			n = strchr (input, ' ');
-			n1 = n ? strchr (n + 1, ' ') : NULL;
+			n1 = R_STR_ISNOTEMPTY (n) ? strchr (n + 1, ' ') : NULL;
 			if ((!n || !n1) || (!*n || !*n1)) {
 				eprintf ("aesp [offset] [num]\n");
 				break;
 			}
-			adr = r_num_math (core->num, n + 1);
-			off = r_num_math (core->num, n1 + 1);
+			adr = R_STR_ISNOTEMPTY (n)? r_num_math (core->num, n + 1): 0;
+			off = R_STR_ISNOTEMPTY (n1)? r_num_math (core->num, n1 + 1): 0;
 			cmd_aespc (core, adr, -1, off);
 			break;
 		case ' ':
 			n = strchr (input, ' ');
-			if (!(n + 1)) {
+			n1 = n ? n + 1: NULL;
+			if (!n1 || !*n1) {
 				r_core_esil_step (core, until_addr, until_expr, NULL, false);
 				break;
 			}
-			off = r_num_math (core->num, n + 1);
+			off = r_num_math (core->num, n1);
 			cmd_aespc (core, -1, -1, off);
 			break;
 		default:
@@ -7389,7 +7376,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			cmd_esil_mem (core, input + 2);
 			break;
 		case 'p': // "aeip" // initialize pc = $$
-			r_core_cmd0 (core, "ar PC=$$");
+			reg_name_roll_set (core, "PC", core->offset);
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_aei);
@@ -7404,18 +7391,17 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			break;
 		case 0: //lolololol
 			r_anal_esil_free (esil);
+			esil = core->anal->esil = esil_new_setup (core);
+			if (!esil) {
+				return;
+			}
 			// reinitialize
 			{
 				const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 				if (pc && r_reg_getv (core->anal->reg, pc) == 0LL) {
-					r_core_cmd0 (core, "ar PC=$$");
+					reg_name_roll_set (core, "PC", core->offset);
 				}
 			}
-			if (!(esil = core->anal->esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
-				return;
-			}
-			r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
-			esil->verbose = (int)r_config_get_i (core->config, "esil.verbose");
 			/* restore user settings for interrupt handling */
 			{
 				const char *s = r_config_get (core->config, "cmd.esil.intr");
@@ -7553,7 +7539,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		}
 		break;
 	case 'A': // "aeA"
-		switch (input[1]){
+		switch (input[1]) {
 		case '?':
 			r_core_cmd_help (core, help_msg_aea);
 			break;
@@ -7580,7 +7566,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			break;
 			}
 		default:
-			cmd_aea (core, 1, core->offset, (int)r_num_math (core->num, input[1]?input+2:input+1));
+			cmd_aea (core, 1, core->offset, (int)r_num_math (core->num, input[1]? input + 2:input + 1));
 		}
 		break;
 	case 'a': { // "aea"
@@ -7664,7 +7650,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		r_reg_setv (reg, "PC", pc);
 		break;
 		  }
-	case 'x': 
+	case 'x':
 		if (input[1] == ' ') { // "aex"
 			char *hex;
 			int ret, bufsz;
@@ -7690,6 +7676,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				r_core_return_value (core, 0);
 			}
 			r_anal_op_fini (&aop);
+			free (hex);
 		} else if (input[1] == 'a') { // "aexa"
 			char *bytes = r_core_cmd_strf (core, "\"pa %s\"", r_str_trim_head_ro (input + 2));
 			if (R_STR_ISNOTEMPTY (bytes)) {
@@ -8328,6 +8315,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			r_cons_println (pj_string (pj));
 			pj_free (pj);
 		}
+		r_list_free (list);
 		break;
 	case '\0':
 		cmd_syscall_do (core, -1, core->offset);
@@ -8709,7 +8697,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		//get all xrefs pointing to addr
 		list = r_anal_xrefs_get (core->anal, addr);
 		r_list_foreach (list, iter, ref) {
-			r_cons_printf ("0x%"PFMT64x" %s %s\n", ref->addr, 
+			r_cons_printf ("0x%"PFMT64x" %s %s\n", ref->addr,
 				r_anal_ref_perm_tostring (ref),
 				r_anal_ref_type_tostring (ref->type));
 			r_anal_xrefs_set (core->anal, ref->addr, at, ref->type);
@@ -8875,7 +8863,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						: r_str_newf ("%s", fcn ? fcn->name : "(nofunc)");
 					free (print_comment);
 					r_cons_printf ("%s 0x%" PFMT64x " [%s:%s] %s\n",
-						buf_fcn, ref->addr, r_anal_ref_type_tostring (ref->type), 
+						buf_fcn, ref->addr, r_anal_ref_type_tostring (ref->type),
 						r_anal_ref_perm_tostring (ref), buf_asm);
 					free (buf_asm);
 					free (buf_fcn);
@@ -9015,7 +9003,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						} else {
 							r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
 							r_asm_set_pc (core->rasm, ref->addr);
-							r_asm_disassemble (core->rasm, &asmop, buf, sizeof(buf));
+							r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
 							RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
 							r_parse_filter (core->parser, ref->addr, core->flags, hint, r_asm_op_get_asm (&asmop),
 									str, sizeof (str), be);
@@ -9697,7 +9685,7 @@ static bool cmd_ageh(RCore *core, const char *input) {
 
 	r_strf_var (k, 64, "agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
 	sdb_set (core->sdb, k, add? "true": "", 0);
-	free(arg);
+	free (arg);
 	return true;
 }
 
@@ -11925,7 +11913,7 @@ static void cmd_anal_class_vtable(RCore *core, const char *input) {
 		if (end) {
 			vtable.offset = r_num_get (core->num, end + 1);
 			// end + 1 won't work on extra whitespace between arguments, TODO
-			arg3_str = strchr (end+1, ' ');
+			arg3_str = strchr (end + 1, ' ');
 		}
 
 		if (arg3_str) {
@@ -12043,7 +12031,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 
 static void show_reg_args(RCore *core, int nargs, RStrBuf *sb) {
 	int i;
-	char regname[8];
+	char regname[16];
 	if (nargs < 0) {
 		nargs = 4; // default args if not defined
 	}
@@ -12051,7 +12039,7 @@ static void show_reg_args(RCore *core, int nargs, RStrBuf *sb) {
 		snprintf (regname, sizeof (regname), "A%d", i);
 		ut64 v = r_reg_getv (core->anal->reg, regname);
 		if (sb) {
-			r_strbuf_appendf (sb, "%s0x%08"PFMT64x, i?", ":"", v);
+			r_strbuf_appendf (sb, "%s0x%08"PFMT64x, i? ", ": "", v);
 		} else {
 			r_cons_printf ("A%d 0x%08"PFMT64x"\n", i, v);
 		}

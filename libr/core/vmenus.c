@@ -453,7 +453,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 		} else {
 			int set;
 			const char *ws = r_config_get_i (core->config, "scr.utf8")? "·": " ";
-			for (set = 1; set >= 0 ; set--) {
+			for (set = 1; set >= 0; set--) {
 				r_cons_printf ("\nbit: ");
 				for (i = 0; i < 8; i++) {
 					ut8 *byte = buf + i;
@@ -860,7 +860,7 @@ R_API int r_core_visual_types(RCore *core) {
 			}
 			menu--;
 			option = _option;
-			if (menu==0) {
+			if (menu == 0) {
 				// if no flagspaces, just quit
 				if (r_flag_space_is_empty (core->flags)) {
 					return true;
@@ -1651,7 +1651,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 		}
 	}
 cleanup:
-	ls_free(list);
+	ls_free (list);
 	return true;
 }
 
@@ -1914,7 +1914,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			delta++;
 			break;
 		case 'J':
-			cur+=10;
+			cur += 10;
 			forceaddr = false;
 			delta = 0;
 			break;
@@ -1922,7 +1922,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			delta = 0;
 			forceaddr = false;
 			if (cur > 10) {
-				cur-=10;
+				cur -= 10;
 			} else {
 				cur = 0;
 			}
@@ -1990,7 +1990,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 					fs2 = fi->name;
 					hit = 1;
 				}
-				if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+				if ((i >= option-delta) && ((i < option + delta)||((option<delta)&&(i < (delta << 1))))) {
 					bool cur = option == i;
 					if (cur && hasColor) {
 						r_cons_printf (Color_INVERT);
@@ -2085,7 +2085,8 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				option = 0;
 			}
 			break;
-		case 'K': option-=10;
+		case 'K':
+			option -= 10;
 			if (option < 0) {
 				option = 0;
 			}
@@ -2200,7 +2201,6 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				format = MAX_FORMAT;
 			}
 			break;
-			// = (format<=0)? MAX_FORMAT: format-1; break;
 		case 'p': format++; break;
 		case 'l':
 		case ' ':
@@ -2480,7 +2480,7 @@ R_API void r_core_visual_config(RCore *core) {
 					if (option == i) {
 						hit = 1;
 					}
-					if ( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+					if ((i >=option-delta) && ((i < option+delta)||((option<delta)&&(i < (delta<<1))))) {
 						r_cons_printf (" %c  %s\n", (option == i)?'>':' ', old);
 						j++;
 					}
@@ -2505,7 +2505,7 @@ R_API void r_core_visual_config(RCore *core) {
 						desc = bt->desc;
 						hit = 1;
 					}
-					if ( (i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+					if ((i>=option-delta) && ((i < option+delta)||((option<delta)&&(i < (delta<<1))))) {
 						// TODO: Better align
 						r_cons_printf (" %c  %s = %s\n", (option==i)?'>':' ', bt->name, bt->value);
 						j++;
@@ -2659,7 +2659,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 			}
 		} else if (mode == 1) {
 			r_cons_printf ("Types:\n\n");
-			for (i=0;;i++) {
+			for (i = 0; ; i++) {
 				n = r_fs_partition_type_get (i);
 				if (!n) {
 					break;
@@ -2717,7 +2717,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 
 		/* Ask for option */
 		ch = r_cons_readchar ();
-		if (ch==-1||ch==4){
+		if (ch==-1||ch==4) {
 			free (root);
 			return;
 		}
@@ -2767,7 +2767,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 					}
 					r_list_free (list);
 					list = NULL;
-				} else if (mode == 2){
+				} else if (mode == 2) {
 					r_str_trim_path (path);
 					size_t n = strlen (path);
 					snprintf (path + n, sizeof (path) - n, "/");
@@ -2847,8 +2847,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 				if (mode == 2) {
 					if (!root) {
 						mode = 0;
-					} else
-					if (strcmp (path, root)) {
+					} else if (strcmp (path, root)) {
 						strcat (path, "/..");
 						r_str_trim_path (path);
 					} else {
@@ -3409,7 +3408,7 @@ static char *__prompt(const char *msg, void *p) {
 	r_cons_show_cursor (true);
 	r_cons_set_raw (false);
 	r_line_set_prompt (msg);
-	res[0] =0;
+	res[0] = 0;
 	if (!r_cons_fgets (res, sizeof (res), 0, NULL)) {
 		res[0] = 0;
 	}
@@ -3423,7 +3422,7 @@ static void addVar(RCore *core, int ch, const char *msg) {
 	char *cmd = r_str_newf ("afv%c %s %s %s", ch, src, name, type);
 	r_str_trim (cmd);
 	r_core_cmd0 (core, cmd);
-	free(cmd);
+	free (cmd);
 	free (src);
 	free (name);
 	free (type);
@@ -3657,10 +3656,10 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				delta = 0;
 				switch (level) {
 				case 1:
-					variable_option = (variable_option<=0)? 0: variable_option-1;
+					variable_option = (variable_option <= 0)? 0: variable_option-1;
 					break;
 				default:
-					option = (option<=0)? 0: option-1;
+					option = (option <= 0)? 0: option-1;
 					break;
 				}
 			}
@@ -3700,7 +3699,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			RAnalFunction *fcn;
 			int i = 0;
 			r_list_foreach (core->anal->fcns, iter, fcn) {
-				if (core->offset == fcn->addr){
+				if (core->offset == fcn->addr) {
 					option = i;
 				}
 				i++;
@@ -3807,8 +3806,7 @@ R_API void r_core_seek_previous(RCore *core, const char *type) {
 	bool found = false;
 	if (strstr (type, "opc")) {
 		eprintf ("TODO: r_core_seek_previous (opc)\n");
-	} else
-	if (strstr (type, "fun")) {
+	} else if (strstr (type, "fun")) {
 		RAnalFunction *fcni;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (fcni->addr > next && fcni->addr < core->offset) {
@@ -3816,8 +3814,7 @@ R_API void r_core_seek_previous(RCore *core, const char *type) {
 				found = true;
 			}
 		}
-	} else
-	if (strstr (type, "hit")) {
+	} else if (strstr (type, "hit")) {
 		const char *pfx = r_config_get (core->config, "search.prefix");
 		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false, .found = false };
 		r_flag_foreach_prefix (core->flags, pfx, -1, seek_flag_offset, &u);
@@ -4408,10 +4405,9 @@ R_API void r_core_visual_colors(RCore *core) {
 	char *color = calloc (1, 64), cstr[32];
 	char preview_cmd[128] = "pd $r";
 	int ch, opt = 0, oopt = -1;
-	bool truecolor = r_cons_singleton ()->context->color_mode == COLOR_MODE_16M;
-	char *rgb_xxx_fmt = truecolor ? "rgb:%2.2x%2.2x%2.2x ":"rgb:%x%x%x ";
+	char *rgb_xxx_fmt = "rgb:%02x%02x%02x";
 	const char *k;
-	RColor rcolor;
+	RColor rcolor, zcolor = { 0 };
 
 	r_cons_show_cursor (false);
 	rcolor = r_cons_pal_get_i (opt);
@@ -4423,23 +4419,9 @@ R_API void r_core_visual_colors(RCore *core) {
 			opt = 0;
 			k = r_cons_pal_get_name (opt);
 		}
-		if (!truecolor) {
-			rcolor.r &= 0xf;
-			rcolor.g &= 0xf;
-			rcolor.b &= 0xf;
-			rcolor.r2 &= 0xf;
-			rcolor.g2 &= 0xf;
-			rcolor.b2 &= 0xf;
-		} else {
-			rcolor.r &= 0xff;
-			rcolor.g &= 0xff;
-			rcolor.b &= 0xff;
-			rcolor.r2 &= 0xff;
-			rcolor.g2 &= 0xff;
-			rcolor.b2 &= 0xff;
-		}
 		sprintf (color, rgb_xxx_fmt, rcolor.r, rcolor.g, rcolor.b);
 		if (rcolor.r2 || rcolor.g2 || rcolor.b2) {
+			color = r_str_appendf (color, " ");
 			color = r_str_appendf (color, rgb_xxx_fmt, rcolor.r2, rcolor.g2, rcolor.b2);
 			rcolor.a = ALPHA_FGBG;
 		} else {
@@ -4464,7 +4446,9 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		r_cons_newline ();
 
-		r_core_cmdf (core, "ec %s %s", k, color);
+		if (memcmp (&rcolor, &zcolor, sizeof (rcolor))) {
+			r_core_cmdf (core, "ec %s %s", k, color);
+		}
 		char * res = r_core_cmd_str (core, preview_cmd);
 		int h, w = r_cons_get_size (&h);
 		char *body = r_str_ansi_crop (res, 0, 0, w, h - 8);
@@ -4486,6 +4470,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		CASE_RGB ('V','v',rcolor.b2);
 		case 'Q':
 		case 'q':
+			free (res);
 			free (body);
 			free (color);
 			return;
@@ -4532,10 +4517,12 @@ R_API void r_core_visual_colors(RCore *core) {
 			}
 			r_cons_show_cursor (false);
 		}
+		opt = R_DIM (opt, 0, r_cons_pal_len () - 1);
 		if (opt != oopt) {
 			rcolor = r_cons_pal_get_i (opt);
 			oopt = opt;
 		}
 		free (body);
+		free (res);
 	}
 }

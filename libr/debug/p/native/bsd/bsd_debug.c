@@ -192,7 +192,7 @@ RDebugInfo *bsd_info(RDebug *dbg, const char *arg) {
 
 		if (kp->p_psflags & PS_ZOMBIE) {
 				rdi->status = R_DBG_PROC_ZOMBIE;
-		} else if (kp->p_psflags & PS_STOPPED){
+		} else if (kp->p_psflags & PS_STOPPED) {
 				rdi->status = R_DBG_PROC_STOP;
 		} else if (kp->p_psflags & PS_PPWAIT) {
 				rdi->status = R_DBG_PROC_SLEEP;
@@ -220,7 +220,7 @@ RDebugInfo *bsd_info(RDebug *dbg, const char *arg) {
 		return NULL;
 	}
 
-	kp = kvm_getproc2 (kd, KERN_PROC_PID, dbg->pid, sizeof(*kp), &np);
+	kp = kvm_getproc2 (kd, KERN_PROC_PID, dbg->pid, sizeof (*kp), &np);
 	if (kp) {
 		rdi->pid = dbg->pid;
 		rdi->tid = dbg->tid;
@@ -261,7 +261,7 @@ RList *bsd_pid_list(RDebug *dbg, int pid, RList *list) {
 #ifdef __NetBSD__
 # define KVM_OPEN_FLAG KVM_NO_FILES
 # define KVM_GETPROCS(kd, opt, arg, cntptr) \
-	kvm_getproc2 (kd, opt, arg, sizeof(struct kinfo_proc2), cntptr)
+	kvm_getproc2 (kd, opt, arg, sizeof (struct kinfo_proc2), cntptr)
 # define KP_COMM(x) (x)->p_comm
 # define KP_PID(x) (x)->p_pid
 # define KP_PPID(x) (x)->p_ppid
@@ -270,7 +270,7 @@ RList *bsd_pid_list(RDebug *dbg, int pid, RList *list) {
 #elif defined(__OpenBSD__)
 # define KVM_OPEN_FLAG KVM_NO_FILES
 # define KVM_GETPROCS(kd, opt, arg, cntptr) \
-	kvm_getprocs (kd, opt, arg, sizeof(struct kinfo_proc), cntptr)
+	kvm_getprocs (kd, opt, arg, sizeof (struct kinfo_proc), cntptr)
 # define KP_COMM(x) (x)->p_comm
 # define KP_PID(x) (x)->p_pid
 # define KP_PPID(x) (x)->p_ppid
@@ -378,7 +378,7 @@ RList *bsd_native_sysctl_map(RDebug *dbg) {
 	RList *list = NULL;
 	RDebugMap *map;
 
-	len = sizeof(entry);
+	len = sizeof (entry);
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_PROC_VMMAP;
 	mib[2] = dbg->pid;
@@ -462,11 +462,11 @@ RList *bsd_desc_list(int pid) {
 				struct sockaddr_un *sun =
 					(struct sockaddr_un *)&kve->kf_sa_local;
 				if (sun->sun_path[0] != 0)
-					addr_to_string (&kve->kf_sa_local, path, sizeof(path));
+					addr_to_string (&kve->kf_sa_local, path, sizeof (path));
 				else
-					addr_to_string (&kve->kf_sa_peer, path, sizeof(path));
+					addr_to_string (&kve->kf_sa_peer, path, sizeof (path));
 			} else {
-				addr_to_string (&kve->kf_sa_local, path, sizeof(path));
+				addr_to_string (&kve->kf_sa_local, path, sizeof (path));
 				strcat (path, " ");
 				addr_to_string (&kve->kf_sa_peer, path + strlen (path),
 						sizeof (path));
@@ -474,13 +474,13 @@ RList *bsd_desc_list(int pid) {
 #else
 			if (kve->kf_sock_domain == AF_LOCAL) {
 				struct sockaddr_un *sun =
-					(struct sockaddr_un *)&kve->kf_un.kf_sock.kf_sa_local;;
+					(struct sockaddr_un *)&kve->kf_un.kf_sock.kf_sa_local;
 				if (sun->sun_path[0] != 0)
-					addr_to_string (&kve->kf_un.kf_sock.kf_sa_local, path, sizeof(path));
+					addr_to_string (&kve->kf_un.kf_sock.kf_sa_local, path, sizeof (path));
 				else
-					addr_to_string (&kve->kf_un.kf_sock.kf_sa_peer, path, sizeof(path));
+					addr_to_string (&kve->kf_un.kf_sock.kf_sa_peer, path, sizeof (path));
 			} else {
-				addr_to_string (&kve->kf_un.kf_sock.kf_sa_local, path, sizeof(path));
+				addr_to_string (&kve->kf_un.kf_sock.kf_sa_local, path, sizeof (path));
 				strcat (path, " ");
 				addr_to_string (&kve->kf_un.kf_sock.kf_sa_peer, path + strlen (path),
 						sizeof (path));
@@ -551,7 +551,7 @@ RList *bsd_thread_list(RDebug *dbg, int pid, RList *list) {
 		return NULL;
 	}
 
-	len += sizeof(*kp) + len / 10;
+	len += sizeof (*kp) + len / 10;
 	kp = malloc(len);
 	if (sysctl (mib, 4, kp, &len, NULL, 0) == -1) {
 		free (kp);
@@ -559,7 +559,7 @@ RList *bsd_thread_list(RDebug *dbg, int pid, RList *list) {
 		return NULL;
 	}
 
-	max = len / sizeof(*kp);
+	max = len / sizeof (*kp);
 	for (i = 0; i < max; i ++) {
 		RDebugPid *pid_info;
 		int pid_stat;

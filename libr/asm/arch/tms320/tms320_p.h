@@ -6,7 +6,7 @@
 #endif
 
 #ifndef ARRAY_SIZE
-# define ARRAY_SIZE(x)		(sizeof(x) / sizeof((x)[0]))
+# define ARRAY_SIZE(x)		(sizeof (x) / sizeof ((x)[0]))
 #endif
 
 #ifndef get_bits

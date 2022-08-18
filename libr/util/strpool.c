@@ -68,7 +68,7 @@ R_API int r_strpool_append(RStrpool *p, const char *s) {
 	return r_strpool_memcat (p, s, l);
 }
 
-R_API int r_strpool_ansi_chop(RStrpool *p, int n){
+R_API int r_strpool_ansi_chop(RStrpool *p, int n) {
 	/* p->str need not be a c-string */
 	int i = r_str_ansi_trim (p->str, p->len, n);
 	p->len = i;

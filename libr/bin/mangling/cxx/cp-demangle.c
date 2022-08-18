@@ -3550,7 +3550,7 @@ d_expr_primary (struct d_info *di)
 	 floating point literal here.  The ABI specifies that the
 	 format of such literals is machine independent.  That's fine,
 	 but what's not fine is that versions of g++ up to 3.2 with
-	 -fabi-version=1 used upper case letters in the hex constant,
+	 -fabi-version = 1 used upper case letters in the hex constant,
 	 and dumped out gcc's internal representation.  That makes it
 	 hard to tell where the constant ends, and hard to dump the
 	 constant in any readable form anyhow.  We don't attempt to
@@ -3647,7 +3647,7 @@ d_local_name (struct d_info *di)
 /* <discriminator> ::= _ <number>    # when number < 10
                    ::= __ <number> _ # when number >= 10
 
-   <discriminator> ::= _ <number>    # when number >=10
+   <discriminator> ::= _ <number>    # when number >= 10
    is also accepted to support gcc versions that wrongly mangled that way.
 
    We demangle the discriminator, but we don't print it out.  FIXME:

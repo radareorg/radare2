@@ -22,7 +22,7 @@ static const struct {
 	{"C64", "Commodore 64", r_offsetof(struct vsf_c64mem, ram), 64 * 1024},
 	{"C128", "Commodore 128", r_offsetof(struct vsf_c128mem, ram), 128 * 1024},
 };
-static const int MACHINES_MAX = sizeof(_machines) / sizeof(_machines[0]);
+static const int MACHINES_MAX = sizeof (_machines) / sizeof (_machines[0]);
 
 static Sdb* get_sdb(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
@@ -79,7 +79,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 		while (offset < sz) {
 			struct vsf_module module;
 			int read = r_buf_fread_at (bf->buf, offset, (ut8*)&module, "16ccci", 1);
-			if (read != sizeof(module)) {
+			if (read != sizeof (module)) {
 				R_LOG_ERROR ("Truncated Header");
 				free (res);
 				return false;
@@ -304,9 +304,9 @@ static RBinInfo* info(RBinFile *bf) {
 
 	RBinInfo *ret = NULL;
 	struct vsf_hdr hdr;
-	memset (&hdr, 0, sizeof(hdr));
-	int read = r_buf_read_at (bf->buf, 0, (ut8*)&hdr, sizeof(hdr));
-	if (read != sizeof(hdr)) {
+	memset (&hdr, 0, sizeof (hdr));
+	int read = r_buf_read_at (bf->buf, 0, (ut8*)&hdr, sizeof (hdr));
+	if (read != sizeof (hdr)) {
 		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
@@ -471,7 +471,7 @@ static RList* symbols(RBinFile *bf) {
 		{0xDD0E, "CIA2_CRA"},
 		{0xDD0F, "CIA2_CRB"},
 	};
-	static const int SYMBOLS_MAX = sizeof(_symbols) / sizeof(_symbols[0]);
+	static const int SYMBOLS_MAX = sizeof (_symbols) / sizeof (_symbols[0]);
 	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->o->bin_obj;
 	if (!vsf_obj) {
 		return NULL;

@@ -323,7 +323,7 @@ static inline char *drain(RStrBuf *sb) {
 		? sb->weakref
 			? r_mem_dup (sb->ptr, sb->ptrlen)
 			: sb->ptr
-		: strdup (sb->buf);
+		: r_str_ndup (sb->buf, sb->len);
 }
 
 R_API char *r_strbuf_drain(RStrBuf *sb) {

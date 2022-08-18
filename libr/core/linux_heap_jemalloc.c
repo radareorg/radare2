@@ -97,7 +97,7 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 	const char *path = NULL;
 	ut64 jemalloc_addr = UT64_MAX;
 
-	if (!core || !core->dbg || !core->dbg->maps){
+	if (!core || !core->dbg || !core->dbg->maps) {
 		return false;
 	}
 	r_debug_map_sync (core->dbg);
@@ -432,7 +432,7 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 	case ' ':
 		{
 			int pageind;
-			ut64 npages, chunksize_mask, map_bias, map_misc_offset, chunk, mapbits;;
+			ut64 npages, chunksize_mask, map_bias, map_misc_offset, chunk, mapbits;
 			arena_chunk_t *c = R_NEW0 (arena_chunk_t);
 
 			if (!c) {
