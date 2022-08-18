@@ -113,7 +113,7 @@ R_API int r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
 R_API int r_core_yank_set_str(RCore *core, ut64 addr, const char *str, ut32 len) {
 	// free (core->yank_buf);
 	int res = r_core_yank_set (core, addr, (ut8 *)str, len);
-	if (res == true) {
+	if (res) {
 		ut8 zero = 0;
 		r_buf_write_at (core->yank_buf, len - 1, &zero, sizeof (zero));
 	}
@@ -356,18 +356,13 @@ R_API int r_core_yank_cat_string(RCore *core, ut64 pos) {
 }
 
 R_API int r_core_yank_hud_file(RCore *core, const char *input) {
-	char *buf = NULL;
-	bool res = false;
-	ut32 len = 0;
-	if (!input || !*input) {
+	if (R_STR_ISEMPTY (input)) {
 		return false;
 	}
-	for (input++; *input == ' '; input++) {
-		/* nothing */
-	}
-	buf = r_cons_hud_file (input);
-	len = buf? strlen ((const char *) buf) + 1: 0;
-	res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
+	input = r_str_trim_head_ro (input + 1);
+	char *buf = r_cons_hud_file (input);
+	ut32 len = buf? strlen ((const char *) buf) + 1: 0;
+	bool res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
 	free (buf);
 	return res;
 }
@@ -386,8 +381,16 @@ R_API int r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 	return res;
 }
 
+#if R2_580
+R_API void r_core_yank_unset(RCore *core) {
+	r_buf_free (core->yank_buf);
+	core->yank_addr = UT64_MAX;
+}
+
+#endif
+
 R_API bool r_core_yank_hexpair(RCore *core, const char *input) {
-	if (!input || !*input) {
+	if (R_STR_ISEMPTY (input)) {
 		return false;
 	}
 	char *out = strdup (input);
@@ -400,15 +403,15 @@ R_API bool r_core_yank_hexpair(RCore *core, const char *input) {
 }
 
 R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
-	ut64 len = 0, adv = 0, addr = 0;
+	r_return_val_if_fail (core, false);
 	bool res = false;
 
 	if (!input) {
 		return res;
 	}
 	// get the number of bytes to yank
-	adv = consume_chars (input, ' ');
-	len = r_num_math (core->num, input + adv);
+	ut64 adv = consume_chars (input, ' ');
+	ut64 len = r_num_math (core->num, input + adv);
 	if (len == 0) {
 		R_LOG_ERROR ("Number of bytes read must be > 0");
 		return res;
@@ -422,7 +425,7 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 	adv++;
 
 	// XXX - bug, will fail if address needs to be computed and has spaces
-	addr = r_num_math (core->num, input + adv);
+	ut64 addr = r_num_math (core->num, input + adv);
 
 	adv += find_next_char (input + adv, ' ');
 	if (adv == 0) {
@@ -435,10 +438,9 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 	return perform_mapped_file_yank (core, addr, len, input + adv);
 }
 
+// R2_580 R_API bool r_core_yank_file_all(RCore *core, const char *input) {
 R_API int r_core_yank_file_all(RCore *core, const char *input) {
-	if (!input) {
-		return false;
-	}
+	r_return_val_if_fail (core && input, false);
 	ut64 adv = consume_chars (input, ' ');
 	return perform_mapped_file_yank (core, 0, -1, input + adv);
 }
