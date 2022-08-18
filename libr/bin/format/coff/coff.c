@@ -249,7 +249,7 @@ static int r_bin_coff_init(struct r_bin_coff_obj *obj, RBuffer *buf, bool verbos
 	return true;
 }
 
-void r_bin_coff_free(struct r_bin_coff_obj *obj) {
+R_API void r_bin_coff_free(struct r_bin_coff_obj *obj) {
 	ht_up_free (obj->sym_ht);
 	ht_up_free (obj->imp_ht);
 	free (obj->scn_va);

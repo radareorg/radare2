@@ -33,6 +33,7 @@
 
 #if !USE_LIB_MAGIC
 
+#include <r_util.h>
 #include "file.h"
 #include "r_regex.h"
 #include <string.h>
@@ -40,15 +41,12 @@
 #include <stdlib.h>
 #include "r_util/r_time.h"
 
-static int match(RMagic *, struct r_magic *, ut32,
-    const ut8 *, size_t, int);
-static int mget(RMagic *, const ut8 *,
-    struct r_magic *, size_t, unsigned int);
+static int match(RMagic *, struct r_magic *, ut32, const ut8 *, size_t, int);
+static int mget(RMagic *, const ut8 *, struct r_magic *, size_t, unsigned int);
 static int magiccheck(RMagic *, struct r_magic *);
 static st32 mprint(RMagic *, struct r_magic *);
 static void mdebug(ut32, const char *, size_t);
-static int mcopy(RMagic *, union VALUETYPE *, int, int,
-    const ut8 *, ut32, size_t, size_t);
+static int mcopy(RMagic *, union VALUETYPE *, int, int, const ut8 *, ut32, size_t, size_t);
 static int mconvert(RMagic *, struct r_magic *);
 static int print_sep(RMagic *, int);
 static void cvt_8(union VALUETYPE *, const struct r_magic *);
@@ -516,21 +514,16 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		t = ms->offset + sizeof(double);
   		break;
 	case FILE_REGEX: {
-		char *cp;
-		int rval;
-
-		cp = strdupn((const char *)ms->search.s, ms->search.rm_len);
+		char *cp = r_str_ndup ((const char *)ms->search.s, ms->search.rm_len);
 		if (!cp) {
 			file_oomem(ms, ms->search.rm_len);
 			return -1;
 		}
-		rval = file_printf(ms, R_MAGIC_DESC, cp);
-		free(cp);
-
+		int rval = file_printf(ms, R_MAGIC_DESC, cp);
+		free (cp);
 		if (rval == -1) {
 			return -1;
 		}
-
 		if ((m->str_flags & REGEX_OFFSET_START)) {
 			t = ms->search.offset;
 		} else {

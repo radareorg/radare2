@@ -650,7 +650,7 @@ static bool __init_header(r_bin_le_obj_t *bin, RBuffer *buf) {
 	return true;
 }
 
-void r_bin_le_free(r_bin_le_obj_t *bin) {
+R_API void r_bin_le_free(r_bin_le_obj_t *bin) {
 	if (bin) {
 		free (bin->header);
 		free (bin->objtbl);

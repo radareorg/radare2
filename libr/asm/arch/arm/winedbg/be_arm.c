@@ -802,9 +802,11 @@ char* winedbg_arm_insn_hex(struct winedbg_arm_insn *arminsn) {
 }
 
 void* arm_free(struct winedbg_arm_insn *arminsn) {
-	free(arminsn->str_hex);
-	free(arminsn->str_asm);
-	free(arminsn);
+	if (arminsn) {
+		free (arminsn->str_hex);
+		free (arminsn->str_asm);
+		free (arminsn);
+	}
 	return NULL;
 }
 

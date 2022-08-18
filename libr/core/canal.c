@@ -672,7 +672,7 @@ static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 			r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth - 1);
 		}
 		// TODO: fix memleak here, fcn not freed even though it is
-		// added in core->anal->fcns which is freed in r_anal_free()
+		// added in core->anal->fcns which is freed in r_anal_free ()
 	}
 	r_list_free (refs);
 	return 1;
@@ -1512,8 +1512,8 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 					char *from = get_title (bbi->addr);
 					char *to = get_title (bbi->fail);
 					r_cons_printf ("age %s %s\n", from, to);
-					free(from);
-					free(to);
+					free (from);
+					free (to);
 				} else {
 					r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 									"[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
@@ -1535,8 +1535,8 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 						char *from = get_title (bbi->addr);
 						char *to = get_title (bbi->fail);
 						r_cons_printf ("age %s %s\n", from, to);
-						free(from);
-						free(to);
+						free (from);
+						free (to);
 					} else {
 						r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 								"[color=\"%s\"];\n", bbi->addr, bbi->fail, pal_fail);
@@ -1576,9 +1576,9 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 			}
 		}
 	}
-	free(pal_jump);
-	free(pal_fail);
-	free(pal_trfa);
+	free (pal_jump);
+	free (pal_fail);
+	free (pal_trfa);
 	return nodes;
 }
 

@@ -126,7 +126,7 @@ static bool parse_uint_node(RBPlist *bplist, const char **bnode, ut8 size) {
 		// data.length = size;
 		break;
 	default:
-		//free(data);
+		// free (data);
 		R_LOG_ERROR ("Invalid byte size for integer node");
 		return false;
 	};

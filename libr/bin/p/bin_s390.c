@@ -298,13 +298,14 @@ static RList *sections(RBinFile *bf) {
 			if (left < sizeof (S390_Header_ControlRecord)) {
 				return NULL;
 			}
-			lon = r_read_be16(&hdrCR.Count);
+			lon = r_read_be16 (&hdrCR.Count);
 			rec++;
 			r_strbuf_appendf (su->sb, "Record %02d Type 0x%02x - Count: 0x%04x - 0x%04x - %04d\n",
 					rec, gbuf[0], x, lon, (int)(lon / sizeof (S390_Header_ControlRecord_Data)));
 			x += sizeof (S390_Header_ControlRecord);
 
 			lonCR = 0;
+			{
 			ut16 y;
 			for (y = 0; y < lon / sizeof(S390_Header_ControlRecord_Data) ; y++) {
 				left = r_buf_read_at (bf->buf, x, (ut8*)&hdrCRd, sizeof (S390_Header_ControlRecord_Data));
@@ -315,6 +316,7 @@ static RList *sections(RBinFile *bf) {
 						r_read_be16 (&hdrCRd.EntryNumber), r_read_be16 (&hdrCRd.Length));
 				lonCR += r_read_be16 (&hdrCRd.Length);
 				x += sizeof (S390_Header_ControlRecord_Data);
+			}
 			}
 			// To Do something with IDR data
 			r_strbuf_appendf (su->sb, "Long: 0x%04x\n", lonCR);

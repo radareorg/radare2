@@ -1804,7 +1804,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					}
 					free (filesc);
 					r_cons_println (res);
-					free(name);
+					free (name);
 					free (res);
 					if (libname || addr != UT64_MAX) { //only single match requested
 						break;

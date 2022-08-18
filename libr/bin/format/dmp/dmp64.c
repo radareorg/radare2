@@ -148,11 +148,10 @@ static int r_bin_dmp64_init(struct r_bin_dmp64_obj_t *obj) {
 	return true;
 }
 
-void r_bin_dmp64_free(struct r_bin_dmp64_obj_t *obj) {
+R_API void r_bin_dmp64_free(struct r_bin_dmp64_obj_t *obj) {
 	if (!obj) {
 		return;
 	}
-
 	r_buf_free (obj->b);
 	obj->b = NULL;
 	free (obj->header);

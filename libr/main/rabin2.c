@@ -922,7 +922,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			res = __demangleAs (bin, type, file);
 			if (res && *res) {
 				printf ("%s\n", res);
-				free(res);
+				free (res);
 				r_core_fini (&core);
 				return 0;
 			} else {

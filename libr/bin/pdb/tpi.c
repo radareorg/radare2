@@ -1588,9 +1588,9 @@ static void free_lf_fieldlist(void *type) {
 			type_info->free_ (type_info);
 		}
 		if (type_info->type_info) {
-			free(type_info->type_info);
+			free (type_info->type_info);
 		}
-		free(type_info);
+		free (type_info);
 	}
 	r_list_free (lf_fieldlist->substructs);
 }
@@ -1617,7 +1617,7 @@ static void free_lf_onemethod(void *type) {
 static void free_lf_enum(void *type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_ENUM *lf_enum = (SLF_ENUM *) t->type_info;
-	free(lf_enum->name.name);
+	free (lf_enum->name.name);
 }
 
 static void free_lf_array(void *type) {
@@ -1895,7 +1895,7 @@ static void get_class_struct_print_type(void *type, char **name) {
 	}
 
 	//	if (need_to_free) {
-	//		free(tmp_name);
+	//		free (tmp_name);
 	//		tmp_name = 0;
 	//	}
 }
@@ -1935,7 +1935,7 @@ static void get_arglist_print_type(void *type, char **name) {
 //	strcat(*name, tmp_name);
 
 //	if (need_to_free)
-//		free(tmp_name);
+//		free (tmp_name);
 }
 
 // TODO, nothing is really being parsed here
@@ -1977,7 +1977,7 @@ static void get_union_print_type(void *type, char **name) {
 	}
 
 	//	if (need_to_free) {
-	//		free(tmp_name);
+	//		free (tmp_name);
 	//		tmp_name = 0;
 	//	}
 }
@@ -2017,7 +2017,7 @@ static void get_enumerate_print_type(void *type, char **name) {
 	}
 
 	//	if (need_to_free)
-	//		free(tmp_name);
+	//		free (tmp_name);
 }
 
 static void get_nesttype_print_type(void *type, char **name) {
@@ -2090,7 +2090,7 @@ static void get_method_print_type(void *type, char **name) {
 	}
 
 	//	if (need_to_free)
-	//		free(tmp_name);
+	//		free (tmp_name);
 }
 
 static void get_member_print_type(void *type, char **name) {

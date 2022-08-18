@@ -1289,7 +1289,7 @@ R_API Rvc *r_vc_open(const char *rp) {
 			}
 			free (repo->path);
 		}
-		free(repo);
+		free (repo);
 	}
 	return NULL;
 

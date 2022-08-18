@@ -13,9 +13,9 @@ static void free_dbi_stream(void *stream) {
 	RListIter *it = r_list_iterator(t->dbiexhdrs);
 	while (r_list_iter_next(it)) {
 		dbi_ex_header = (SDBIExHeader *) r_list_iter_get(it);
-		free(dbi_ex_header->modName.name);
-		free(dbi_ex_header->objName.name);
-		free(dbi_ex_header);
+		free (dbi_ex_header->modName.name);
+		free (dbi_ex_header->objName.name);
+		free (dbi_ex_header);
 	}
 	r_list_free (t->dbiexhdrs);
 }

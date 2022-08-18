@@ -124,7 +124,7 @@ R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *b
 	if (kw) {
 		kw->icase = ignore_case;
 	}
-	free(bmbuf);
+	free (bmbuf);
 	return kw;
 }
 

@@ -1188,7 +1188,7 @@ static void rcc_next(REgg *egg) {
 				eprintf("Getting into e->mathop with eq: %s\n", eq);
 				eprintf("Getting into e->mathop with p: %s\n", p);
 				e->mathop (egg, ch, vs, type, eq, p);
-				free(p);
+				free (p);
 #endif
 			} else {
 				if (!strcmp (ptr, "break")) {	// handle 'break;'

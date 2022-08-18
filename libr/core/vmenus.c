@@ -1651,7 +1651,7 @@ R_API int r_core_visual_anal_classes(RCore *core) {
 		}
 	}
 cleanup:
-	ls_free(list);
+	ls_free (list);
 	return true;
 }
 
@@ -3423,7 +3423,7 @@ static void addVar(RCore *core, int ch, const char *msg) {
 	char *cmd = r_str_newf ("afv%c %s %s %s", ch, src, name, type);
 	r_str_trim (cmd);
 	r_core_cmd0 (core, cmd);
-	free(cmd);
+	free (cmd);
 	free (src);
 	free (name);
 	free (type);

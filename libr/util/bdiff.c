@@ -153,7 +153,7 @@ static int equatelines(struct line *a, int an, struct line *b, int bn) {
 	}
 
 	/* discard hash tables */
-	free(h);
+	free (h);
 	return 1;
 }
 
@@ -252,7 +252,7 @@ static struct hunklist diff(struct line *a, int an, struct line *b, int bn)
 		l.head++;
 	}
 
-	free(pos);
+	free (pos);
 
 	/* normalize the hunk list, try to push each hunk towards the end */
 	for (curr = l.base; curr != l.head; curr++) {

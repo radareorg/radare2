@@ -655,7 +655,7 @@ RecoveryCompleteObjectLocator *recovery_complete_object_locator_new() {
 	return col;
 }
 
-void recovery_complete_object_locator_free(RecoveryCompleteObjectLocator *col) {
+static void recovery_complete_object_locator_free(RecoveryCompleteObjectLocator *col) {
 	if (!col) {
 		return;
 	}
@@ -663,7 +663,6 @@ void recovery_complete_object_locator_free(RecoveryCompleteObjectLocator *col) {
 	r_vector_clear (&col->base_td);
 	free (col);
 }
-
 
 struct recovery_type_descriptor_t {
 	ut64 addr;
@@ -686,14 +685,13 @@ RecoveryTypeDescriptor *recovery_type_descriptor_new() {
 	return td;
 }
 
-void recovery_type_descriptor_free(RecoveryTypeDescriptor *td) {
+static void recovery_type_descriptor_free(RecoveryTypeDescriptor *td) {
 	if (!td) {
 		return;
 	}
 	rtti_type_descriptor_fini (&td->td);
 	free (td);
 }
-
 
 typedef struct rtti_msvc_anal_context_t {
 	RVTableContext *vt_context;
@@ -973,8 +971,10 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	return name;
 }
 
-void str_value_free(HtUPKv *kv) {
-	free (kv->value);
+static void str_value_free(HtUPKv *kv) {
+	if (kv) {
+		free (kv->value);
+	}
 }
 
 R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtables) {

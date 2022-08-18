@@ -1916,7 +1916,7 @@ error1:
 #if QUICK
 		(void)munmap((void *)mm, (size_t)st.st_size);
 #else
-		free(mm);
+		free (mm);
 #endif
 	} else {
 		*magicp = NULL;
@@ -1969,9 +1969,9 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 
 	rv = 0;
 beach:
-	(void)close(fd);
+	(void)close (fd);
 out:
-	free(dbname);
+	free (dbname);
 	return rv;
 }
 

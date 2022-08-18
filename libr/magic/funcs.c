@@ -119,7 +119,7 @@ static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut
 		return;
 	}
 	if (lineno != 0) {
-		free(ms->o.buf);
+		free (ms->o.buf);
 		ms->o.buf = NULL;
 		(void)file_printf (ms, "line %u: ", lineno);
 	}

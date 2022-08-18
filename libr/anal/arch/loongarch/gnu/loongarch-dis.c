@@ -153,7 +153,7 @@ static int do_print_insn_loongarch (int insn, struct disassemble_info *info) {
 		}
 		info->private_data = &insn;
 		loongarch_foreach_args (opc->format, fake_arg_strs, dis_one_arg, info);
-		free(fake_args);
+		free (fake_args);
 	}
 	infprintf (is, "%s", args_buf->buf);
 

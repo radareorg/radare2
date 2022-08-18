@@ -522,7 +522,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		}
 		c = r_asm_mdisassemble (core->rasm, buf + len - idx, idx);
 		if (strstr (c->assembly, "invalid") || strstr (c->assembly, ".byte")) {
-			r_asm_code_free(c);
+			r_asm_code_free (c);
 			continue;
 		}
 		numinstr = 0;
@@ -532,7 +532,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 				++numinstr;
 			}
 		}
-		r_asm_code_free(c);
+		r_asm_code_free (c);
 		if (numinstr >= n || idx > 16 * n) { // assume average instruction length <= 16
 			break;
 		}

@@ -1405,7 +1405,7 @@ static void r_print_format_nulltermwidestring(const RPrint* p, const int len, in
 			R_LOG_WARN ("new string is longer than previous one");
 		}
 		p->cb_printf ("ww %s @ 0x%08"PFMT64x"\n", newstring, seeki);
-		free(ons);
+		free (ons);
 	} else if (MUSTSEE) {
 		int j = i;
 		if (!SEEVALUE && !ISQUIET) {

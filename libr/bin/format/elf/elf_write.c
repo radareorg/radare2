@@ -81,7 +81,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 					}
 				}
 			}
-			free(rel);
+			free (rel);
 			break;
 		} else if (!strcmp (&strtab[shdrp->sh_name], ".rela.plt")) {
 			Elf_(Rela) *rel, *relp;
@@ -103,7 +103,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 					}
 				}
 			}
-			free(rel);
+			free (rel);
 			break;
 		}
 	}

@@ -62,12 +62,16 @@ static void inst_vars_kv_free(HtUPKv *kv) {
 }
 
 static void labels_kv_free(HtUPKv *kv) {
-	free (kv->value);
+	if (kv) {
+		free (kv->value);
+	}
 }
 
 static void label_addrs_kv_free(HtPPKv *kv) {
-	free (kv->key);
-	free (kv->value);
+	if (kv) {
+		free (kv->key);
+		free (kv->value);
+	}
 }
 
 R_API RAnalFunction *r_anal_function_new(RAnal *anal) {

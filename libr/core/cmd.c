@@ -2934,10 +2934,10 @@ static int cmd_system(void *data, const char *input) {
 	switch (*input) {
 	case '-': //!-
 		if (input[1]) {
-			r_line_hist_free();
+			r_line_hist_free ();
 			r_line_hist_save (R2_HOME_HISTORY);
 		} else {
-			r_line_hist_free();
+			r_line_hist_free ();
 		}
 		break;
 	case '=': //!=

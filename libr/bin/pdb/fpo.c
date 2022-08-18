@@ -19,19 +19,15 @@ static int parse_fpo_data(char *data, int data_size, int *read_bytes, SFPO_DATA 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int parse_fpo_data_v2(char *data, int data_size, int *read_bytes, SFPO_DATA_V2 *fpo_data)
-{
+static int parse_fpo_data_v2(char *data, int data_size, int *read_bytes, SFPO_DATA_V2 *fpo_data) {
 	int curr_read_bytes = *read_bytes;
-
 	memcpy (fpo_data, data, sizeof(SFPO_DATA_V2));
 	*read_bytes += sizeof (SFPO_DATA_V2);
-
 	return (*read_bytes - curr_read_bytes);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file)
-{
+void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file) {
 	int data_size;
 	char *data = 0, *ptmp = 0;
 	int curr_read_bytes = 0, read_bytes = 0;
@@ -51,19 +47,18 @@ void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file)
 		ptmp += curr_read_bytes;
 
 		if (!curr_read_bytes) {
-			free(fpo_data);
+			free (fpo_data);
 			break;
 		}
 
 		r_list_append (fpo_stream->fpo_data_list, fpo_data);
 	}
 
-	free(data);
+	free (data);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void free_fpo_stream(void *stream)
-{
+void free_fpo_stream(void *stream) {
 	SFPOStream *fpo_stream = (SFPOStream *) stream;
 	RListIter *it = 0;
 	SFPO_DATA *fpo_data = 0;
@@ -71,14 +66,13 @@ void free_fpo_stream(void *stream)
 	it = r_list_iterator(fpo_stream->fpo_data_list);
 	while (r_list_iter_next(it)) {
 		fpo_data = (SFPO_DATA *) r_list_iter_get(it);
-		free(fpo_data);
+		free (fpo_data);
 	}
 	r_list_free (fpo_stream->fpo_data_list);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void free_fpo_new_stream(void *stream)
-{
+void free_fpo_new_stream(void *stream) {
 	SFPONewStream *fpo_stream = (SFPONewStream *) stream;
 	RListIter *it = 0;
 	SFPO_DATA_V2 *fpo_data = 0;
@@ -86,7 +80,7 @@ void free_fpo_new_stream(void *stream)
 	it = r_list_iterator(fpo_stream->fpo_data_list);
 	while (r_list_iter_next(it)) {
 		fpo_data = (SFPO_DATA_V2 *) r_list_iter_get(it);
-		free(fpo_data);
+		free (fpo_data);
 	}
 	r_list_free (fpo_stream->fpo_data_list);
 }

@@ -9685,7 +9685,7 @@ static bool cmd_ageh(RCore *core, const char *input) {
 
 	r_strf_var (k, 64, "agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
 	sdb_set (core->sdb, k, add? "true": "", 0);
-	free(arg);
+	free (arg);
 	return true;
 }
 
