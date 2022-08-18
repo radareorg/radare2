@@ -3616,7 +3616,6 @@ static bool __handle_cursor_mode(RCore *core, const int key) {
 	RPanel *cur = __get_cur_panel (core->panels);
 	RPrint *print = core->print;
 	char *db_val;
-			core->print->cur++;
 	switch (key) {
 	case ':':
 	case ';':

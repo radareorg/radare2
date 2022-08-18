@@ -25,6 +25,8 @@ static R_TH_LOCAL int color = 1;
 static R_TH_LOCAL int zoom = 0;
 static R_TH_LOCAL int currentFormat = 0;
 static R_TH_LOCAL int current0format = 0;
+static R_TH_LOCAL char numbuf[32] = {0};
+static R_TH_LOCAL int numbuf_i = 0;
 
 typedef struct {
 	int x;
@@ -2152,7 +2154,7 @@ static bool insert_mode_enabled(RCore *core) {
 		core->print->cur = R_MAX (0, core->print->cur - 1);
 		return true;
 	} else if (ch != 'l' && arrows == 'l') {
-		core->print->cur = core->print->cur + 1;
+		core->print->cur++;
 		return true;
 	} else if (ch != 'j' && arrows == 'j') {
 		cursor_nextrow (core, false);
@@ -2231,7 +2233,7 @@ static bool insert_mode_enabled(RCore *core) {
 		core->print->cur = R_MAX (0, core->print->cur - 1);
 		break;
 	case 'l':
-		core->print->cur = core->print->cur + 1;
+		core->print->cur++;
 		break;
 	case 'j':
 		cursor_nextrow (core, false);
@@ -2421,9 +2423,6 @@ static bool isNumber(RCore *core, int ch) {
 	}
 	return false;
 }
-
-static char numbuf[32] = {0};
-static int numbuf_i = 0;
 
 static void numbuf_append(int ch) {
 	if (numbuf_i >= sizeof (numbuf) - 1) {
