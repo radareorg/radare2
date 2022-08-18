@@ -402,7 +402,7 @@ static inline ut64 dwarf_read_address(size_t size, const ut8 **buf, const ut8 *b
 	default:
 		result = 0;
 		*buf += size;
-		eprintf ("Weird dwarf address size: %u.\n", (int)size);
+		R_LOG_WARN ("Unsupported dwarf address size: %u", (int)size);
 	}
 	return result;
 }
@@ -1627,7 +1627,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->address = READ64 (buf);
 			break;
 		default:
-			eprintf ("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->address_size);
+			R_LOG_WARN ("DWARF: Unexpected pointer size: %u", (unsigned)hdr->address_size);
 			return NULL;
 		}
 		break;
@@ -1850,7 +1850,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->uconstant = 0;
 		return NULL;
 	default:
-		eprintf ("Unknown DW_FORM 0x%02" PFMT64x "\n", def->attr_form);
+		R_LOG_WARN ("Unknown DW_FORM 0x%02" PFMT64x, def->attr_form);
 		value->uconstant = 0;
 		return NULL;
 	}

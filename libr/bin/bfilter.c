@@ -72,7 +72,7 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtPU *db, ut64 vaddr, char *name) {
 			resname = p;
 		}
 		// two symbols at different addresses and same name wtf
-		// eprintf ("Symbol '%s' dupped!\n", sym->name);
+		R_LOG_DEBUG ("Found duplicated symbol '%s'", name);
 	}
 	return resname;
 }

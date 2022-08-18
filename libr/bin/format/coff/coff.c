@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2008-2019 pancake, inisider */
+/* radare - LGPL - Copyright 2008-2022 pancake, inisider */
 
 #include <r_util.h>
-
 #include "coff.h"
-
-#define bprintf if (obj->verbose)eprintf
 
 R_IPI bool r_coff_supported_arch(const ut8 *buf) {
 	ut16 arch = r_read_le16 (buf);
@@ -75,7 +72,6 @@ static int r_coff_rebase_sym(RBinCoffObj *obj, RBinAddr *addr, struct coff_symbo
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
 R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
 	RBinAddr *addr = R_NEW0 (RBinAddr);
-	int i;
 	if (!addr) {
 		return NULL;
 	}
@@ -87,6 +83,7 @@ R_IPI RBinAddr *r_coff_get_entry(RBinCoffObj *obj) {
 	/* No help from the header eh? Use the address of the symbols '_start'
 	 * or 'main' if present */
 	if (obj->symbols) {
+		int i;
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
 			if ((!strcmp (obj->symbols[i].n_name, "_start") ||
 				    !strcmp (obj->symbols[i].n_name, "start")) &&
@@ -224,7 +221,7 @@ static bool r_bin_coff_init_scn_va(RBinCoffObj *obj) {
 }
 
 static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
-	if (!obj || buf) {
+	if (!obj || !buf) {
 		return false;
 	}
 	obj->b = r_buf_ref (buf);
@@ -233,20 +230,20 @@ static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
 	obj->sym_ht = ht_up_new0 ();
 	obj->imp_ht = ht_up_new0 ();
 	if (!r_bin_coff_init_hdr (obj)) {
-		bprintf ("Warning: failed to init hdr\n");
+		R_LOG_ERROR ("failed to init coff header");
 		return false;
 	}
 	r_bin_coff_init_opt_hdr (obj);
 	if (!r_bin_coff_init_scn_hdr (obj)) {
-		bprintf ("Warning: failed to init section header\n");
+		R_LOG_WARN ("failed to init section header");
 		return false;
 	}
 	if (!r_bin_coff_init_scn_va (obj)) {
-		bprintf ("Warning: failed to init section VA table\n");
+		R_LOG_WARN ("failed to init section VA table");
 		return false;
 	}
 	if (!r_bin_coff_init_symtable (obj)) {
-		bprintf ("Warning: failed to init symtable\n");
+		R_LOG_WARN ("failed to init symtable");
 		return false;
 	}
 	return true;
