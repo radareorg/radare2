@@ -248,7 +248,7 @@ FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 64
 CMDS=om~?
 EXPECT=<<EOF
-4
+3
 EOF
 RUN
 

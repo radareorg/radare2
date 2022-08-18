@@ -49,7 +49,7 @@ RUN
 
 NAME=io.baddr -x86_32 entry0 data
 FILE=bins/mach0/fatmach0-3true
-ARGS=-a x86 -b 32
+ARGS=-a x86 -b 32 -e io.basemap=true
 CMDS=<<EOF
 ie~paddr[3]
 ie~vaddr[1]
@@ -61,6 +61,23 @@ EXPECT=<<EOF
 0x00001f44
 6a0089e583e4f083ec10
 6a0089e583e4f083ec10
+EOF
+RUN
+
+NAME=io.baddr -x86_32 entry0 data nobasemap
+FILE=bins/mach0/fatmach0-3true
+ARGS=-a x86 -b 32 -e io.basemap=false
+CMDS=<<EOF
+ie~paddr[3]
+ie~vaddr[1]
+p8 10 @ 0x00001f44
+p8 10 @ 0x00005f44
+EOF
+EXPECT=<<EOF
+0x00005f44
+0x00001f44
+6a0089e583e4f083ec10
+ffffffffffffffffffff
 EOF
 RUN
 
