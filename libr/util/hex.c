@@ -441,7 +441,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 		if (out) {
 			r_hex_to_byte (&out[nibbles / 2], '0');
 		}
-		return -(nibbles+1) / 2;
+		return -((nibbles + 1) / 2);
 	}
 
 	return nibbles / 2;
