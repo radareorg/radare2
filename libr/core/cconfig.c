@@ -4195,6 +4195,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("io.pcache.write", "false", &cb_iopcachewrite, "enable write-cache");
 	SETCB ("io.pcache.read", "false", &cb_iopcacheread, "enable read-cache");
 	SETCB ("io.ff", "true", &cb_ioff, "fill invalid buffers with 0xff instead of returning error");
+	SETBPREF ("io.basemap", "true", "create a map at base address 0 when opening a file");
 	SETICB ("io.mask", 0, &cb_iomask, "mask addresses before resolving as maps");
 	SETBPREF ("io.exec", "true", "see !!r2 -h~-x");
 	SETICB ("io.0xff", 0xff, &cb_io_oxff, "use this value instead of 0xff to fill unallocated areas");
