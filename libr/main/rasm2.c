@@ -708,6 +708,28 @@ static void __load_plugins(RAsmState *as) {
 	free (path);
 }
 
+static inline char *io_slurp(const char *file, size_t *len) {
+	RIODesc *des;
+	ut8 *ret = NULL;
+	RIO *io = r_io_new ();
+	if (io) {
+		des = r_io_open_nomap (io, file, R_PERM_R, 0);
+		if (des) {
+			ut64 size = r_io_desc_size (des);
+			ret = malloc (size);
+			if (!ret || !r_io_read (io, ret, size)) {
+				free (ret);
+				ret = NULL;
+			} else {
+				*len = size;
+			}
+		}
+	}
+	r_io_desc_free (des);
+	r_io_free (io);
+	return ret;
+}
+
 R_API int r_main_rasm2(int argc, const char *argv[]) {
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
@@ -968,6 +990,9 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			free (buf);
 		} else {
 			content = r_file_slurp (file, &length);
+			if (!content) {
+				content = io_slurp (file, &length);
+			}
 			if (content) {
 				if (length > ST32_MAX) {
 					eprintf ("rasm2: File %s is too big\n", file);
