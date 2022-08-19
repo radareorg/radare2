@@ -1425,7 +1425,6 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 	//bool contiguous = false;
 	//ut32 oldprot = UT32_MAX;
 	//ut32 oldmaxprot = UT32_MAX;
-	char buf[1024];
 	char module_name[MAXPATHLEN];
 	mach_vm_address_t address = MACH_VM_MIN_ADDRESS;
 	mach_vm_size_t size = (mach_vm_size_t) 0;
@@ -1496,7 +1495,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 				maxperm[0] = 0;
 			}
 			// XXX: if its shared, it cannot be read?
-			snprintf (buf, sizeof (buf), "%02x_%s%s%s%s%s%s%s%s",
+			char *buf = r_str_newf ("%02x_%s%s%s%s%s%s%s%s",
 				i, unparse_inheritance (info.inheritance),
 				info.user_tag? "_user": "",
 				info.is_submap? "_sub": "",

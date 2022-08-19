@@ -58,6 +58,14 @@ call = 4
 #define ARG1_AR      1
 #define ARG2_AR      2
 
+#define STRCPY_CHECK(dst, src, n) \
+	r_return_val_if_fail(R_UNLIKELY (r_str_ncpy(dst, src, n) < n-1), NULL)
+
+#define SNPRINTF_CHECK(str, n, format, ...) \
+	r_return_val_if_fail(R_UNLIKELY (snprintf (str, n, format, ## __VA_ARGS__) >= 0), NULL)
+
+#define SNPRINTF_BUF(str, format, ...) SNPRINTF_CHECK(str, sizeof (str), format, __VA_ARGS__)
+
 struct Getarg {
 	csh handle;
 	cs_insn *insn;
@@ -286,37 +294,37 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel, ut
 		st64 disp = op.mem.disp;
 
 		if (disp != 0) {
-			snprintf (out, BUF_SZ, "0x%"PFMT64x",", (disp < 0) ? -disp : disp);
+			SNPRINTF_CHECK (out, BUF_SZ, "0x%"PFMT64x",", (disp < 0) ? -disp : disp);
 			component_count++;
 		}
 
 		if (index) {
 			if (scale > 1) {
-				snprintf (buf_, BUF_SZ, "%s%s,%d,*,", out, index, scale);
+				SNPRINTF_BUF (buf_, "%s%s,%d,*,", out, index, scale);
 			} else {
-				snprintf (buf_, BUF_SZ, "%s%s,", out, index);
+				SNPRINTF_BUF (buf_, "%s%s,", out, index);
 			}
-			strncpy (out, buf_, BUF_SZ);
+			STRCPY_CHECK (out, buf_, BUF_SZ);
 			component_count++;
 		}
 
 		if (base) {
-			snprintf (buf_, BUF_SZ, "%s%s,", out, base);
-			strncpy (out, buf_, BUF_SZ);
+			SNPRINTF_BUF (buf_, "%s%s,", out, base);
+			STRCPY_CHECK (out, buf_, BUF_SZ);
 			component_count++;
 		}
 
 		if (component_count > 1) {
 			if (component_count > 2) {
-				snprintf (buf_, BUF_SZ, "%s+,", out);
-				strncpy (out, buf_, BUF_SZ);
+				SNPRINTF_BUF (buf_, "%s+,", out);
+				STRCPY_CHECK (out, buf_, BUF_SZ);
 			}
 			if (disp < 0) {
-				snprintf (buf_, BUF_SZ, "%s-", out);
+				SNPRINTF_BUF (buf_, "%s-", out);
 			} else {
-				snprintf (buf_, BUF_SZ, "%s+", out);
+				SNPRINTF_BUF (buf_, "%s+", out);
 			}
-			strncpy (out, buf_, BUF_SZ);
+			STRCPY_CHECK (out, buf_, BUF_SZ);
 		} else {
 			// Remove the trailing ',' from esil statement.
 			if (*out) {
@@ -330,18 +338,18 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel, ut
 		if (set == 1) {
 			size_t len = strlen (setarg);
 			if (len > 0 && setarg[len - 1] == ',') {
-				snprintf (buf_, BUF_SZ, "%s,%s%s=[%d]", out, setarg,
+				SNPRINTF_BUF (buf_, "%s,%s%s=[%d]", out, setarg,
 					gop->bits == 32 ? "0xffffffff,&," : "", op.size == 10? 8: op.size);
 			} else {
-				snprintf (buf_, BUF_SZ, "%s,%s=[%d]", out, setarg, op.size == 10? 8: op.size);
+				SNPRINTF_BUF (buf_, "%s,%s=[%d]", out, setarg, op.size == 10? 8: op.size);
 			}
-			strncpy (out, buf_, BUF_SZ);
+			STRCPY_CHECK (out, buf_, BUF_SZ);
 		} else if (set == 0) {
 			if (!*out) {
 				strcpy (out, "0");
 			}
-			snprintf (buf_, BUF_SZ, "%s,[%d]", out, op.size == 10? 8: op.size);
-			strncpy (out, buf_, BUF_SZ);
+			SNPRINTF_BUF (buf_, "%s,[%d]", out, op.size == 10? 8: op.size);
+			STRCPY_CHECK (out, buf_, BUF_SZ);
 		}
 		out[BUF_SZ - 1] = 0;
 		}
@@ -3722,7 +3730,7 @@ static int x86_int_0x80(RAnalEsil *esil, int interrupt) {
 			return true;
 		}
 	}
-	eprintf ("syscall %d not implemented yet\n", syscall);
+	R_LOG_ERROR ("syscall %d not implemented yet", syscall);
 	return false;
 }
 #endif
@@ -3730,7 +3738,7 @@ static int x86_int_0x80(RAnalEsil *esil, int interrupt) {
 #if 0
 static int esil_x86_cs_intr(RAnalEsil *esil, int intr) {
 	if (!esil) return false;
-	eprintf ("INTERRUPT 0x%02x HAPPENS\n", intr);
+	R_LOG_DEBUG ("INTERRUPT 0x%02x HAPPENS", intr);
 	return true;
 }
 #endif
