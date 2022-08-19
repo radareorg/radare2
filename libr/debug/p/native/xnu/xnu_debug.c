@@ -29,6 +29,76 @@ static task_t task_dbg = 0;
 #include "xnu_excthreads.c"
 #endif
 
+#if defined (__ppc__)
+
+static coredump_thread_state_flavor_t
+thread_flavor_array[] = {
+	{ PPC_THREAD_STATE,	PPC_THREAD_STATE_COUNT },
+	{ PPC_FLOAT_STATE, PPC_FLOAT_STATE_COUNT },
+	{ PPC_EXCEPTION_STATE, PPC_EXCEPTION_STATE_COUNT },
+	{ PPC_VECTOR_STATE,	PPC_VECTOR_STATE_COUNT },
+};
+
+static int coredump_nflavors = 4;
+
+#elif defined (__ppc64__)
+
+coredump_thread_state_flavor_t
+thread_flavor_array[] = {
+	{ PPC_THREAD_STATE64, PPC_THREAD_STATE64_COUNT },
+	{ PPC_FLOAT_STATE, PPC_FLOAT_STATE_COUNT },
+	{ PPC_EXCEPTION_STATE64, PPC_EXCEPTION_STATE64_COUNT },
+	{ PPC_VECTOR_STATE,	PPC_VECTOR_STATE_COUNT },
+};
+
+static int coredump_nflavors = 4;
+
+#elif defined (__i386__)
+
+static coredump_thread_state_flavor_t
+thread_flavor_array[] = {
+	{ x86_THREAD_STATE32, x86_THREAD_STATE32_COUNT },
+	{ x86_FLOAT_STATE32, x86_FLOAT_STATE32_COUNT },
+	{ x86_EXCEPTION_STATE32, x86_EXCEPTION_STATE32_COUNT },
+};
+
+static int coredump_nflavors = 3;
+
+#elif defined (__x86_64__)
+
+static coredump_thread_state_flavor_t
+thread_flavor_array[] = {
+	{ x86_THREAD_STATE64, x86_THREAD_STATE64_COUNT },
+	{ x86_FLOAT_STATE64, x86_FLOAT_STATE64_COUNT },
+	{ x86_EXCEPTION_STATE64, x86_EXCEPTION_STATE64_COUNT },
+};
+
+static int coredump_nflavors = 3;
+
+#elif defined (__aarch64__) || defined (__arm64__)
+
+static coredump_thread_state_flavor_t
+thread_flavor_array[] = {
+	{ ARM_UNIFIED_THREAD_STATE, ARM_UNIFIED_THREAD_STATE_COUNT}
+};
+
+static int coredump_nflavors = 1;
+
+#elif defined (__arm__)
+
+static coredump_thread_state_flavor_t
+thread_flavor_array[] = {
+	{ ARM_THREAD_STATE64, ARM_THREAD_STATE64_COUNT }
+};
+
+static int coredump_nflavors = 1;
+
+#else
+// XXX: Add __arm__ for iOS devices?
+#warning Unsupported architecture
+
+#endif
+
 extern int proc_regionfilename(int pid, uint64_t address, void * buffer, uint32_t buffersize);
 
 #define MAX_MACH_HEADER_SIZE (64 * 1024)
