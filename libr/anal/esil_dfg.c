@@ -1185,7 +1185,7 @@ R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg) {
 	RStrBuf *filtered = r_strbuf_new ("");
 	RGraphVisitor vi = { _dfg_filter_rev_dfs_cb, NULL, NULL, NULL, NULL, &filter };
 
-	// dfs the graph starting at node of esp-register
+	// dfs the graph starting at node of register
 	r_graph_dfs_node_reverse (dfg->flow, resolve_me, &vi);
 
 	if (filter.tree->root) {
@@ -1220,4 +1220,52 @@ R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const 
 	RStrBuf *filtered = r_anal_esil_dfg_filter (dfg, reg);
 	r_anal_esil_dfg_free (dfg);
 	return filtered;
+}
+
+R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg) {
+	r_return_val_if_fail (dfg && reg, false);
+	char *_reg = r_str_newf ("reg.%s", reg);
+	if (!sdb_num_exists (dfg->regs, _reg)) {
+		// reg is actually not part of the current reg-profile
+		free (_reg);
+		return false;
+	}
+	EsilDFGRegVar *rv = R_NEW0 (EsilDFGRegVar);
+	if (!rv) {
+		free (_reg);
+		eprintf ("Allocation failed\n");
+		return false;
+	}
+	const ut64 v = sdb_num_get (dfg->regs, _reg, NULL);
+	free (_reg);
+	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
+	rv->to = v & UT32_MAX;
+	r_queue_enqueue (dfg->todo, rv);
+
+	while (!r_queue_is_empty (dfg->todo)) {
+		rv = r_queue_dequeue (dfg->todo);
+		EsilDFGRegVar *part_rv = r_crbtree_find (dfg->reg_vars, rv, _rv_find_cmp, dfg);
+		R_FREE (rv);
+		if (part_rv) {
+			RAnalEsilDFGNode *edf_node = (RAnalEsilDFGNode *)part_rv->node->data;
+			if (!edf_node) {
+				eprintf ("edf_node is NULL\n");
+				goto beach;
+			}
+			if (!(edf_node->type & R_ANAL_ESIL_DFG_BLOCK_CONST)) {
+				goto beach;
+			}
+		} else {
+			if (dfg->malloc_failed) {
+				eprintf ("Allocation failed\n");
+			}
+			goto beach;
+		}
+	}
+	return true;
+beach:
+	while (!r_queue_is_empty (dfg->todo)) {
+		free (r_queue_dequeue (dfg->todo));
+	}
+	return false;
 }
