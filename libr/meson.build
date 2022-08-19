@@ -77,10 +77,6 @@ if not no_user_plugins
   endif
   if user_plugins.contains('sparc')
     anal_plugins += [ 'sparc_cs' ]
-    if use_gpl
-      asm_plugins += [ 'sparc_gnu' ]
-      anal_plugins += [ 'sparc_gnu' ]
-    endif
     bp_plugins += [ 'sparc' ]
     # missing parse_plugins += [ 'sparc_pseudo' ]
   endif
@@ -202,7 +198,6 @@ if no_user_plugins
   #    'hppa_gnu',
       'm68k_gnu',
       'lanai_gnu',
-      'sparc_gnu'
     ]
     anal_plugins += [
       'z80',

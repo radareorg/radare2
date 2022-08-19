@@ -1,11 +1,76 @@
-/* radare - LGPL - Copyright 2011-2015 -- pancake */
+/* radare - LGPL - Copyright 2011-2022 -- pancake */
 
-#include <string.h>
-
-#include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
+#include "disas-asm.h"
+
+static R_TH_LOCAL unsigned long Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL ut8 bytes[4] = {0};
+
+// XXX This can be a generic function defined in a macro
+static int sparc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 4) {
+		return -1;
+	}
+	memcpy (myaddr, bytes, length);
+	return 0;
+}
+
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+	return 0;
+}
+
+static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	//--
+}
+
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
+DECLARE_GENERIC_FPRINTF_FUNC()
+
+static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	struct disassemble_info disasm_obj;
+	if (len < 4) {
+		return -1;
+	}
+	buf_global = r_strbuf_new ("");
+	Offset = addr;
+	// disasm inverted
+	memcpy (bytes, buf, 4);
+
+	/* prepare disassembler */
+	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
+	disasm_obj.buffer = bytes;
+	disasm_obj.read_memory_func = &sparc_buffer_read_memory;
+	disasm_obj.symbol_at_address_func = &symbol_at_address;
+	disasm_obj.memory_error_func = &memory_error_func;
+	disasm_obj.print_address_func = &generic_print_address_func;
+	disasm_obj.endian = 0; // a->config->big_endian;
+	disasm_obj.fprintf_func = &generic_fprintf_func;
+	disasm_obj.stream = stdout;
+	disasm_obj.mach = ((a->config->bits == 64)
+			   ? bfd_mach_sparc_v9b
+			   : 0);
+
+	op->size = print_insn_sparc ((bfd_vma)Offset, &disasm_obj);
+
+	char *s = r_strbuf_drain (buf_global);
+	buf_global = NULL;
+	if (R_STR_ISEMPTY (s) || r_str_startswith (s, "unknown")) {
+		free (s);
+		op->mnemonic = strdup ("invalid");
+	} else if (op->size > 0) {
+		op->mnemonic = s;
+	} else {
+		free (s);
+	}
+	return op->size;
+}
 
 enum {
 	GPR_G0 = 0,
@@ -371,13 +436,9 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->addr = addr;
 	op->size = sz;
 
-	if (!anal->config->big_endian) {
-		((char*)&insn)[0] = data[3];
-		((char*)&insn)[1] = data[2];
-		((char*)&insn)[2] = data[1];
-		((char*)&insn)[3] = data[0];
-	} else {
-		memcpy (&insn, data, sz);
+	r_mem_swaporcopy ((ut8*)&insn, data, 4, !anal->config->big_endian);
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		disassemble (anal, op, addr, (ut8 *)&insn, len);
 	}
 
 	if (X_OP (insn) == OP_0) {
@@ -603,11 +664,12 @@ static int archinfo(RAnal *anal, int q) {
 
 RAnalPlugin r_anal_plugin_sparc_gnu = {
 	.name = "sparc.gnu",
-	.desc = "SPARC analysis plugin",
-	.license = "LGPL3",
+	.desc = "Scalable Processor Architecture",
+	.license = "GPL3",
 	.arch = "sparc",
 	.bits = 32 | 64,
 	.op = &sparc_op,
+	.endian = R_SYS_ENDIAN_BIG | R_SYS_ENDIAN_LITTLE,
 	.archinfo = archinfo,
 	.set_reg_profile = set_reg_profile,
 };
