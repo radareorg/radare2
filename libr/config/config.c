@@ -167,7 +167,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	if (!IS_NULLSTR (str)) {
 		str = r_str_trim_head_ro (str);
 		len = strlen (str);
-		if (len > 0 && str[0] == 'j') {
+		if (len > 0 && (str[0] == 'j' || str[0] == 'J')) {
 			str++;
 			len--;
 			json = true;
@@ -641,7 +641,8 @@ R_API bool r_config_eval(RConfig *cfg, const char *str, bool many) {
 	if (many) {
 		// space separated list of k=v k=v,..
 		// if you want to use spaces go for base64 or e.
-		RList *list = r_str_split_list (s, ",", 0);
+		const char *ch = strstr (s, ":")? ":": ","; // R2_580 change to only use ':' imho
+		RList *list = r_str_split_list (s, ch, 0);
 		RListIter *iter;
 		char *name;
 		r_list_foreach (list, iter, name) {
