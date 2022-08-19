@@ -38,7 +38,23 @@
 #define R_BORROW /* pointer ownership is not transferred, it must not be freed by the receiver */
 #define R_NONNULL /* pointer can not be null */
 #define R_NULLABLE /* pointer can be null */
-#define R_DEPRECATE /* should not be used in new code and should/will be removed in the future */
+
+/* should not be used in new code and should/will be removed in the future */
+#ifdef __GNUC__
+#  define R_DEPRECATE
+#  define R_DEPRECATED __attribute__((deprecated))
+#else
+#  define R_DEPRECATE
+#  define R_DEPRECATED
+#endif
+
+#ifdef __GNUC__
+#  define R_WIP __attribute__((deprecated("this function is considered as work-in-progress", "use it at your own risk")))
+// warning doesnt work on llvm/clang, its a gcc specific thing,
+// __attribute__((warning("Don't use this function yet. its too new")))
+#else
+#  define R_WIP /* should not be used in new code and should/will be removed in the future */
+#endif
 #define R_IFNULL(x) /* default value for the pointer when null */
 
 #ifdef R_NEW
