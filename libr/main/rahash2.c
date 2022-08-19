@@ -498,7 +498,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		case 'i':
 			iterations = atoi (opt.arg);
 			if (iterations < 0) {
-				R_LOG_ERROR ("-i argument must be positive\n");
+				R_LOG_ERROR ("-i argument must be positive");
 				ret(1);
 			}
 			break;

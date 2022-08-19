@@ -198,7 +198,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		: r_str_newf ("%s/%s.%s_%i.%d", outpath, ptr, arch, bits, idx);
 
 	if (!outfile || !r_file_dump (outfile, bytes, bin_size, 0)) {
-		R_LOG_ERROR ("extract failed %s\n", outfile);
+		R_LOG_ERROR ("extract failed %s", outfile);
 		res = false;
 	} else {
 		printf ("%s created (%"PFMT64d")\n", outfile, bin_size);

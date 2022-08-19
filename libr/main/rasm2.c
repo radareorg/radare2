@@ -921,7 +921,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			goto beach;
 		}
 	} else if (!r_asm_use (as->a, R_SYS_ARCH)) {
-		R_LOG_ERROR ("Cannot find asm." R_SYS_ARCH " plugin");
+		R_LOG_ERROR ("Cannot find " R_SYS_ARCH " plugin");
 		ret = 0;
 		goto beach;
 	}
