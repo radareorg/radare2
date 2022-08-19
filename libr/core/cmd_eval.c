@@ -88,9 +88,7 @@ static bool load_theme(RCore *core, const char *path) {
 static void cmd_eval_table(RCore *core, const char *input) {
 	const char fmt = *input++;
 	const char *q = input;
-	FlagTableData ftd = {0};
 	RTable *t = r_core_table (core, "eval");
-	ftd.t = t;
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeBoolean = r_table_type ("bool");
 	r_table_add_column (t, typeBoolean, "ro", 0);
@@ -190,7 +188,7 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 				arg = NULL;
 			} else {
 				char *absfile = r_file_abspath (arg);
-				eprintf ("eco: cannot open colorscheme profile (%s)\n", absfile);
+				R_LOG_ERROR ("eco: cannot open colorscheme profile (%s)", absfile);
 				free (absfile);
 				failed = true;
 			}
@@ -581,7 +579,7 @@ static int cmd_eval(void *data, const char *input) {
 					color_code = r_cons_pal_parse (dup, NULL);
 					R_FREE (dup);
 					if (!color_code) {
-						eprintf ("Unknown color %s\n", argv[0]);
+						R_LOG_ERROR ("Unknown color %s", argv[0]);
 						r_str_argv_free (argv);
 						return true;
 					}
@@ -599,7 +597,7 @@ static int cmd_eval(void *data, const char *input) {
 					color_code = r_cons_pal_parse (dup, NULL);
 					R_FREE (dup);
 					if (!color_code) {
-						eprintf ("Unknown color %s\n", argv[1]);
+						R_LOG_ERROR ("Unknown color %s", argv[1]);
 						r_str_argv_free (argv);
 						free (word);
 						return true;
@@ -607,7 +605,7 @@ static int cmd_eval(void *data, const char *input) {
 				}
 				break;
 			default:
-				eprintf ("See ecH?\n");
+				R_LOG_INFO ("See ecH?");
 				r_str_argv_free (argv);
 				return true;
 			}
@@ -687,8 +685,12 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case '!': // "e!"
 		input = r_str_trim_head_ro (input + 1);
-		if (!r_config_toggle (core->config, input)) {
-			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
+		if (R_STR_ISNOTEMPTY (input) && *input != '?') {
+			if (!r_config_toggle (core->config, input)) {
+				R_LOG_ERROR ("'%s' is not a boolean variable", input);
+			}
+		} else {
+			r_core_cmd_help_match (core, help_msg_e, "e!", true);
 		}
 		break;
 	case 's': // "es"
