@@ -187,33 +187,27 @@ RUN
 NAME=rasm2 #1900 (detect syntax error - case 1)
 FILE=-
 CMDS=!rasm2 -a x86 -b 32 "mov hello, eax"
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov hello, eax' at line 3
-invalid
 EOF
 RUN
 
 NAME=rasm2 #1900 (detect syntax error - case 2)
 FILE=-
 CMDS=!rasm2 -a x86 -b 32 "mov 33, eax"
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov 33, eax' at line 3
-invalid
 EOF
 RUN
 
 NAME=rasm2 #1900 (detect syntax error - case 3)
 FILE=-
 CMDS=!rasm2 -a x86 -b 32 "mov eax, hello"
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov eax, hello' at line 3
-invalid
 EOF
 RUN
 
@@ -223,7 +217,6 @@ CMDS=!rasm2 -a x86 -b 32 "mov eax, 0x1122334455"
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov eax, 0x1122334455' at line 3
-invalid
 EOF
 RUN
 
@@ -236,9 +229,7 @@ EOF
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov rax, 0x112233445566778899' at line 3
-invalid
 ERROR: Cannot assemble 'mov eax, 0x1122334455' at line 3
-invalid
 EOF
 RUN
 
