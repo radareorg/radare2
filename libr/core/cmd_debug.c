@@ -737,11 +737,11 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 static int step_until(RCore *core, ut64 addr) {
 	ut64 off = r_debug_reg_get (core->dbg, "PC");
 	if (!off) {
-		eprintf ("Cannot 'drn PC'\n");
+		R_LOG_ERROR ("Cannot 'drn PC'");
 		return false;
 	}
 	if (!addr) {
-		eprintf ("Cannot continue until address 0\n");
+		R_LOG_ERROR ("Cannot continue until address 0");
 		return false;
 	}
 	r_cons_break_push (NULL, NULL);
@@ -765,7 +765,7 @@ static int step_until(RCore *core, ut64 addr) {
 static int step_until_esil(RCore *core, const char *esilstr) {
 	r_return_val_if_fail (core && core->dbg && core->dbg->anal && esilstr, false);
 	if (!core->dbg->anal->esil) {
-		eprintf ("esil is not initialized. Run 'aei' first.\n");
+		R_LOG_INFO ("esil is not initialized. Run 'aei' first");
 		return false;
 	}
 	r_cons_break_push (NULL, NULL);
@@ -781,7 +781,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 		r_debug_step (core->dbg, 1);
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
 		if (r_anal_esil_condition (core->anal->esil, esilstr)) {
-			eprintf ("ESIL BREAK!\n");
+			R_LOG_INFO ("ESIL BREAK!");
 			break;
 		}
 	}
@@ -805,7 +805,7 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 
 	instr = r_str_trim_head_ro (instr);
 	if (!core || !instr|| !core->dbg) {
-		eprintf ("Wrong state\n");
+		R_LOG_WARN ("Wrong state");
 		return false;
 	}
 	r_cons_break_push (NULL, NULL);
@@ -865,14 +865,14 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 	bool res = true;
 
 	if (!core || !core->dbg) {
-		eprintf ("Wrong state\n");
+		R_LOG_ERROR ("Wrong state");
 		res = false;
 		goto end;
 	}
 	st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 	ut64 countsteps = 0;
-	if (!optypes || !*optypes) {
-		eprintf ("Missing optypes. Usage example: 'dsuo ucall ujmp'\n");
+	if (R_STR_ISEMPTY (optypes)) {
+		R_LOG_ERROR ("Missing optypes. Usage example: 'dsuo ucall ujmp'");
 		res = false;
 		goto end;
 	}
@@ -946,7 +946,7 @@ static int step_until_flag(RCore *core, const char *instr) {
 
 	instr = r_str_trim_head_ro (instr);
 	if (!core || !instr || !core->dbg) {
-		eprintf ("Wrong state\n");
+		R_LOG_ERROR ("Wrong state");
 		return false;
 	}
 	r_cons_break_push (NULL, NULL);
@@ -985,7 +985,7 @@ static int step_until_eof(RCore *core) {
 		off = r_debug_reg_get (core->dbg, "SP");
 		// check breakpoint here
 		if (--maxLoops < 0) {
-			eprintf ("Step loop limit exceeded\n");
+			R_LOG_ERROR ("Step loop limit exceeded");
 			break;
 		}
 	} while (off <= now);
@@ -999,7 +999,7 @@ static int step_line(RCore *core, int times) {
 	char *tmp_ptr = NULL;
 	ut64 off = r_debug_reg_get (core->dbg, "PC");
 	if (off == 0LL) {
-		eprintf ("Cannot 'drn PC'\n");
+		R_LOG_ERROR ("Cannot 'drn PC'");
 		return false;
 	}
 	file[0] = 0;
@@ -1059,7 +1059,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 				core->dbg->forked_pid = -1;
 			}
 		} else {
-			eprintf ("No recently forked children\n");
+			R_LOG_INFO ("No recently forked children");
 		}
 		break;
 	case 'k': // "dpk"
@@ -1071,12 +1071,14 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			ptr = r_str_trim_head_ro (input + 2);
 			ptr = strchr (ptr, ' ');
 			sig = ptr? atoi (ptr + 1): 0;
-			eprintf ("Sending signal '%d' to pid '%d'\n", sig, pid);
+			R_LOG_INFO ("Sending signal '%d' to pid '%d'", sig, pid);
 			r_debug_kill (core->dbg, pid, false, sig);
-		} else eprintf ("cmd_debug_pid: Invalid arguments (%s)\n", input);
+		} else {
+			R_LOG_INFO ("cmd_debug_pid: Invalid arguments (%s)", input);
+		}
 		break;
 	case 'n': // "dpn"
-		eprintf ("TODO: debug_fork: %d\n", r_debug_child_fork (core->dbg));
+		R_LOG_ERROR ("TODO: debug_fork is not implemented: %d", r_debug_child_fork (core->dbg));
 		break;
 	case 't': // "dpt"
 		switch (input[2]) {
@@ -1098,7 +1100,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 					(int) r_num_math (core->num, input + 3));
 			break;
 		case 'n': // "dptn"
-			eprintf ("TODO: debug_clone: %d\n", r_debug_child_clone (core->dbg));
+			R_LOG_INFO ("TODO: debug_clone: %d", r_debug_child_clone (core->dbg));
 			break;
 		case '?': // "dpt?"
 		default:
@@ -1261,13 +1263,13 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 			ut8 *buf = malloc (map->size);
 			//TODO: use mmap here. we need a portable implementation
 			if (!buf) {
-				eprintf ("Cannot allocate 0x%08"PFMT64x" bytes\n", map->size);
+				R_LOG_ERROR ("Cannot allocate 0x%08"PFMT64x" bytes", map->size);
 				free (buf);
 				/// XXX: TODO: read by blocks!!1
 				continue;
 			}
 			if (map->size > MAX_MAP_SIZE) {
-				eprintf ("Do not dumping 0x%08"PFMT64x" because it's too big\n", map->addr);
+				R_LOG_INFO ("Not dumping 0x%08"PFMT64x" because it's too large (%"PFMT64d")", map->addr, map->size);
 				free (buf);
 				continue;
 			}

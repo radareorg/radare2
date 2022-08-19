@@ -430,7 +430,11 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'L': // "LL"
-		screenlock (core);
+		if (r_config_get_b (core->config, "scr.interactive")) {
+			screenlock (core);
+		} else {
+			R_LOG_ERROR ("lock screen requires scr.interactive");
+		}
 		break;
 	case 'g': // "Lg"
 		if (input[1] == 'j') {
