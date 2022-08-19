@@ -446,7 +446,7 @@ static ut64 numvar_instruction_backward(RCore *core, const char *input) {
 		n = atoi (input + 1);
 	}
 	if (n < 1) {
-		eprintf ("Invalid negative value\n");
+		R_LOG_ERROR ("Invalid negative value");
 		n = 1;
 	}
 	int numinstr = n;
@@ -495,7 +495,7 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 		n = atoi (input + 1);
 	}
 	if (n < 1) {
-		eprintf ("Invalid negative value\n");
+		R_LOG_ERROR ("Invalid negative value");
 		n = 1;
 	}
 	for (i = 0; i < n; i++) {
@@ -606,7 +606,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 1:
 			return r_read_ble8 (buf);
 		default:
-			r_cons_eprintf ("Invalid reference size: %d (%s)\n", refsz, str);
+			R_LOG_ERROR ("Invalid reference size: %d (%s)", refsz, str);
 			return 0LL;
 		}
 }
@@ -644,7 +644,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return r_debug_reg_get (core->dbg, str + 2);
 		case 'k': // $k{kv}
 			if (str[2] != '{') {
-				r_cons_eprintf ("Expected '{' after 'k'.\n");
+				R_LOG_ERROR ("Expected '{' after 'k'");
 				break;
 			}
 			bptr = strdup (str + 3);
@@ -659,7 +659,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			out = sdb_querys (core->sdb, NULL, 0, bptr);
 			if (out && *out) {
 				if (strstr (out, "$k{")) {
-					r_cons_eprintf ("Recursivity is not permitted here\n");
+					R_LOG_ERROR ("Recursivity is not permitted here");
 				} else {
 					ret = r_num_math (core->num, out);
 				}
@@ -863,7 +863,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 			return 0;
 		default:
-			r_cons_eprintf ("Invalid variable '%s'\n", str);
+			R_LOG_ERROR ("Invalid variable '%s'", str);
 			return 0;
 		}
 		break;
@@ -2540,7 +2540,7 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 			case 2:
 				r = r_utf8_encode_str ((const RRune *)buf, widebuf, sizeof (widebuf) - 1);
 				if (r == -1) {
-					r_cons_eprintf ("Something was wrong with refs\n");
+					R_LOG_ERROR ("Something was wrong with refs");
 				} else {
 					if (pj) {
 						pj_ks (pj, "string", (const char *)widebuf);
@@ -3014,6 +3014,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->offsize = r_core_print_offsize;
 	core->print->cb_printf = r_cons_printf;
 #if __WINDOWS__
+	// XXX R2_580 deprecate this callback? we have the rlog apis
 	core->print->cb_eprintf = win_eprintf;
 #endif
 	core->print->cb_color = r_cons_rainbow_get;
