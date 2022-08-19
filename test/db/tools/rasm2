@@ -5,7 +5,7 @@ EXPECT=<<EOF
 Reassembling 8051... OK
 EOF
 EXPECT_ERR=<<EOF
-Warning: using oba to load the syminfo from different mapaddress.
+WARN: using oba to load the syminfo from different mapaddress
 EOF
 RUN
 
