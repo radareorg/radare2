@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include "r_core.h"
 
+static R_TH_LOCAL bool getNext = false;
+
 static const char *help_msg_e[] = {
 	"Usage:", "e [var[=value]]", "Evaluable vars",
 	"e","?asm.bytes", "show description",
@@ -70,8 +72,6 @@ static const char *help_msg_eco[] = {
 	NULL
 };
 
-static bool getNext = false;
-
 static bool load_theme(RCore *core, const char *path) {
 	if (!r_file_exists (path)) {
 		return false;
@@ -86,7 +86,7 @@ static bool load_theme(RCore *core, const char *path) {
 }
 
 static void cmd_eval_table(RCore *core, const char *input) {
-	const char fmt = *input++;
+	const char fmt = *input;
 	const char *q = input;
 	RTable *t = r_core_table (core, "eval");
 	RTableColumnType *typeString = r_table_type ("string");
@@ -498,8 +498,12 @@ static int cmd_eval(void *data, const char *input) {
 				r_list_free (themes_list);
 			}
 			break;
-		case 's': r_cons_pal_show (); break; // "ecs"
-		case '*': r_cons_pal_list (1, NULL); break; // "ec*"
+		case 's': // "ecs"
+			r_cons_pal_show ();
+			break;
+		case '*': // "ec*"
+			r_cons_pal_list (1, NULL);
+			break;
 		case 'h': // echo
 			if (input[2] == 'o') {
 				r_core_echo (core, input + 3);

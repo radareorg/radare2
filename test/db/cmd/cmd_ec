@@ -311,6 +311,6 @@ NAME=ecHi
 FILE=-
 CMDS=ecHi xxxx
 EXPECT_ERR=<<EOF
-Unknown color xxxx
+ERROR: Unknown color xxxx
 EOF
 RUN
