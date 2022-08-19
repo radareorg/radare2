@@ -716,12 +716,13 @@ static inline char *io_slurp(const char *file, size_t *len) {
 		des = r_io_open_nomap (io, file, R_PERM_R, 0);
 		if (des) {
 			ut64 size = r_io_desc_size (des);
-			ret = malloc (size);
-			if (!ret || !r_io_read (io, ret, size)) {
+			ret = malloc (size + 1);
+			if (size >= ST32_MAX || !ret || !r_io_read (io, ret, size)) {
 				free (ret);
 				ret = NULL;
 			} else {
 				*len = size;
+				ret[size] = '\0';
 			}
 		}
 	}
@@ -991,7 +992,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		} else {
 			content = r_file_slurp (file, &length);
 			if (!content) {
-				content = io_slurp (file, &length);
+				content = (char *)io_slurp (file, &length);
 			}
 			if (content) {
 				if (length > ST32_MAX) {
