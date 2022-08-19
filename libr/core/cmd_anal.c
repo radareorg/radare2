@@ -162,6 +162,7 @@ static const char *help_msg_aa[] = {
 	"aab", "", "abb across bin.sections.rx",
 	"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
 	"aac*", " [len]", "flag function calls without performing a complete analysis",
+	"aaci", "", "flag import xrefs only",
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaef", "", "analyze references with ESIL in all functions",
@@ -169,6 +170,7 @@ static const char *help_msg_aa[] = {
 	"aaF", " [sym*]", "set anal.in=block for all the spaces between flags matching glob",
 	"aaFa", " [sym*]", "same as aaF but uses af/a2f instead of af+/afb+ (slower but more accurate)",
 	"aai", "[j]", "show info of all analysis parameters",
+	"aaj", " ", "analyze all jumps",
 	"aan", "[?][gr]", "autoname functions (aang = golang, aanr = noreturn propagation)",
 	"aao", "", "analyze all objc references",
 	"aap", "", "find and analyze function preludes",
@@ -6643,12 +6645,12 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 		if (fcn) {
 			from = fcn->addr;
 		} else {
-			R_LOG_INFO ("Usage: aefa [from] # if no from address is given, uses fcn.addr\n");
+			R_LOG_INFO ("Usage: aefa [from] # if no from address is given, uses fcn.addr");
 			return;
 		}
 	}
-	R_LOG_INFO ("Emulate from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", from, to);
-	R_LOG_INFO ("Resolve call args for 0x%08"PFMT64x"\n", to);
+	R_LOG_INFO ("Emulate from 0x%08"PFMT64x" to 0x%08"PFMT64x, from, to);
+	R_LOG_INFO ("Resolve call args for 0x%08"PFMT64x, to);
 
 	// emulate
 	// XXX do not use commands, here, just use the api
@@ -7089,7 +7091,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			r_cons_printf ("trap: %d\n", core->anal->esil->trap);
 			r_cons_printf ("trap-code: %d\n", core->anal->esil->trap_code);
 		} else {
-			R_LOG_INFO ("esil vm not initialized. run `aei`\n");
+			R_LOG_WARN ("esil vm is not initialized. Please run `aei`");
 		}
 		break;
 	case ' ':
@@ -7280,7 +7282,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				r_anal_op_free (op);
 				op = NULL;
 				if (core->anal->esil->trap || core->anal->esil->trap_code) {
-					R_LOG_INFO ("esil trap '%s' (%d) at 0x%08" PFMT64x "\n",
+					R_LOG_INFO ("esil trap '%s' (%d) at 0x%08" PFMT64x,
 							r_anal_esil_trapstr (core->anal->esil->trap),
 							core->anal->esil->trap_code, addr);
 					break;
@@ -8024,7 +8026,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 			} else if (to - from > UT32_MAX) {
 				R_LOG_WARN ("Skipping huge range");
 			} else {
-				R_LOG_DEBUG ("abb 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", (to - from), from);
+				R_LOG_DEBUG ("abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (to - from), from);
 				r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (to - from), from);
 			}
 		}
@@ -11140,7 +11142,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			cmd_anal_calls (core, input + 1, input[2] == '*', true);
 			break;
 		case '?': // "aac?"
-			eprintf ("Usage: aac, aac* or aaci (imports xrefs only)\n");
+			r_core_cmd_help_match (core, help_msg_aa, "aac", false);
 			break;
 		default: // "aac"
 			cmd_anal_calls (core, input + 1, false, false);
@@ -11148,10 +11150,18 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "aaj"
-		cmd_anal_jumps (core, input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_aa, "aaj", true);
+		} else {
+			cmd_anal_jumps (core, input + 1);
+		}
 		break;
 	case 'd': // "aad"
-		cmd_anal_aad (core, input);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_aa, "aad", true);
+		} else {
+			cmd_anal_aad (core, input);
+		}
 		break;
 	case 'v': // "aav"
 		if (strchr (input + 1, '?')) {
@@ -11161,21 +11171,41 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		}
 		break;
 	case 'w': // "aaw"
-		cmd_anal_aaw (core, input);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_aa, "aaw", true);
+		} else {
+			cmd_anal_aaw (core, input);
+		}
 		break;
 	case 'u': // "aau" - print areas not covered by functions
-		r_core_anal_nofunclist (core, input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_aa, "aau", true);
+		} else {
+			r_core_anal_nofunclist (core, input + 1);
+		}
 		break;
 	case 'i': // "aai"
-		r_core_anal_info (core, input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_aa, "aai", true);
+		} else {
+			r_core_anal_info (core, input + 1);
+		}
 		break;
 	case 's': // "aas"
-		r_core_cmd0 (core, "af @@= `isq~[0]`");
-		r_core_cmd0 (core, "af @@f:entry*");
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_aa, "aas", true);
+		} else {
+			r_core_cmd0 (core, "af @@= `isq~[0]`");
+			r_core_cmd0 (core, "af @@f:entry*");
+		}
 		break;
 	case 'S': // "aaS"
-		r_core_cmd0 (core, "af @@f:sym.*");
-		r_core_cmd0 (core, "af @@f:entry*");
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_aa, "aaS", true);
+		} else {
+			r_core_cmd0 (core, "af @@f:sym.*");
+			r_core_cmd0 (core, "af @@f:entry*");
+		}
 		break;
 	case 'F': // "aaF" "aaFa"
 		if (!input[1] || input[1] == ' ' || input[1] == 'a') {
@@ -11201,8 +11231,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'p': // "aap"
 		if (input[1] == '?') {
-			// TODO: accept parameters for ranges
-			eprintf ("Usage: /aap   ; find in memory for function preludes");
+			r_core_cmd_help_match (core, help_msg_aa, "aap", true);
 		} else {
 			r_core_search_preludes (core, true);
 		}
@@ -11436,62 +11465,80 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			R_FREE (dh_orig);
 		}
 		break;
-	case 't': { // "aat"
-		char *off = input[1]? r_str_trim_dup (input + 2): NULL;
-		RAnalFunction *fcn;
-		RListIter *it;
-		if (off && *off) {
-			ut64 addr = r_num_math (NULL, off);
-			fcn = r_anal_get_function_at (core->anal, core->offset);
-			if (fcn) {
-				r_core_link_stroff (core, fcn);
-			} else {
-				R_LOG_ERROR ("Cannot find function at %08" PFMT64x, addr);
-			}
+	case 't': // "aat"
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_aa, "aat", true);
 		} else {
-			if (r_list_empty (core->anal->fcns)) {
-				R_LOG_ERROR ("Couldn't find any functions");
-				break;
-			}
-			r_list_foreach (core->anal->fcns, it, fcn) {
-				if (r_cons_is_breaked ()) {
+			char *off = input[1]? r_str_trim_dup (input + 2): NULL;
+			RAnalFunction *fcn;
+			RListIter *it;
+			if (off && *off) {
+				ut64 addr = r_num_math (NULL, off);
+				fcn = r_anal_get_function_at (core->anal, core->offset);
+				if (fcn) {
+					r_core_link_stroff (core, fcn);
+				} else {
+					R_LOG_ERROR ("Cannot find function at %08" PFMT64x, addr);
+				}
+			} else {
+				if (r_list_empty (core->anal->fcns)) {
+					R_LOG_ERROR ("Couldn't find any functions");
 					break;
 				}
-				r_core_link_stroff (core, fcn);
+				r_list_foreach (core->anal->fcns, it, fcn) {
+					if (r_cons_is_breaked ()) {
+						break;
+					}
+					r_core_link_stroff (core, fcn);
+				}
 			}
+			free (off);
 		}
-		free (off);
 		break;
-	}
 	case 'T': // "aaT"
 		cmd_anal_aftertraps (core, input + 1);
 		break;
 	case 'o': // "aao"
-		cmd_anal_objc (core, input + 1, false);
+		if (input[1] == '?') { // "aao?"
+			r_core_cmd_help_match (core, help_msg_aa, "aao", true);
+		} else {
+			cmd_anal_objc (core, input + 1, false);
+		}
 		break;
 	case 'e': // "aae"
 		if (input[1] == 'f') { // "aaef"
-			RListIter *it;
-			RAnalFunction *fcn;
-			ut64 cur_seek = core->offset;
-			r_list_foreach (core->anal->fcns, it, fcn) {
-				r_core_seek (core, fcn->addr, true);
-				r_core_anal_esil (core, "f", NULL);
-				// __anal_esil_function (core, fcn->addr);
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_aae, "aaef", true);
+			} else {
+				RListIter *it;
+				RAnalFunction *fcn;
+				ut64 cur_seek = core->offset;
+				r_list_foreach (core->anal->fcns, it, fcn) {
+					r_core_seek (core, fcn->addr, true);
+					r_core_anal_esil (core, "f", NULL);
+					// __anal_esil_function (core, fcn->addr);
+				}
+				r_core_seek (core, cur_seek, true);
 			}
-			r_core_seek (core, cur_seek, true);
 		} else if (input[1] == '?') { // "aae?"
 			r_core_cmd_help (core, help_msg_aae);
 		} else if (input[1] == 'p') { // "aaep" // auto define all esil pins
-			r_core_cmd0 (core, "aep ret0@@@i");
-			r_core_cmd0 (core, "aepa@@@i");
-		} else if (input[1] == ' ') {
-			const char *len = (char *)input + 1;
-			char *addr = strchr (input + 2, ' ');
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_aae, "aaef", true);
+			} else {
+				r_core_cmd0 (core, "aep ret0@@@i");
+				r_core_cmd0 (core, "aepa@@@i");
+			}
+		} else if (input[1] == ' ') { // "aae "
+			char *arg = r_str_trim_dup (input + 1);
+			const char *len = (char *)arg;
+			char *addr = strchr (arg, ' ');
 			if (addr) {
-				*addr++ = 0;
+				*addr = 0;
+				addr = (char *)r_str_trim_head_ro (addr + 1);
 			}
 			r_core_anal_esil (core, len, addr);
+			free (arg);
 		} else {
 			ut64 at = core->offset;
 			RIOMap *map;
@@ -11526,7 +11573,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		}
 		break;
 	case 'r':
-		(void)r_core_anal_refs (core, input + 1);
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_aar);
+		} else {
+			(void)r_core_anal_refs (core, input + 1);
+		}
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_aa);
@@ -12198,7 +12249,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 
 static bool core_anal_abf(RCore *core, const char* input) {
 	if (strchr (input, '?')) {
-		eprintf ("Usage: abf ([addr])  # list incoming/from basic blocks\n");
+		r_core_cmd_help_match (core, help_msg_ab, "abf", true);
 		return false;
 	}
 	ut64 addr = r_num_math (core->num, input);
