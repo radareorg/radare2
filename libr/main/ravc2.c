@@ -81,8 +81,8 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 
 	if (git) {
-		eprintf ("TODO: r_vc_git APIs should be called from r_vc\n");
-		eprintf ("TODO: r_vc_new should accept options argument\n");
+		R_LOG_WARN ("TODO: r_vc_git APIs should be called from r_vc");
+		R_LOG_WARN ("TODO: r_vc_new should accept options argument");
 	}
 	const char *action = opt.argv[opt.ind];
 	if (!action) {
@@ -185,7 +185,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		r_list_free (commits);
 		return 0;
 	}
-	eprintf ("Incorrect command\n");
+	R_LOG_ERROR ("Incorrect command");
 ret:
 	r_vc_close (rvc, save);
 	return !save;
