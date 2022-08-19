@@ -8006,6 +8006,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 	char *arg = strchr (input, ' ');
 	r_cons_break_push (NULL, NULL);
 	if (!arg) {
+		r_core_cmd0 (core, "abb $SS @ $S");
 		RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 		RListIter *iter;
 		RIOMap* map;
