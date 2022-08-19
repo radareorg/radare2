@@ -13,7 +13,9 @@ static const char *help_msg_e[] = {
 	"e var=?", "", "print all valid values of var",
 	"e var=??", "", "print all valid values of var with description",
 	"e.", "a=b", "same as 'e a=b' but without using a space",
-	"e,", "k=v,k=v,k=v", "comma separated k[=v]",
+	"e,", "[table-query]", "show the output in table format",
+	"e/", "asm", "filter configuration variables by name",
+	"e:", "k=v:k=v:k=v", "comma or colon separated k[=v]",
 	"e-", "", "reset config vars",
 	"e*", "", "dump config vars in r commands",
 	"e!", "a", "invert the boolean value of 'a' var",
@@ -21,6 +23,7 @@ static const char *help_msg_e[] = {
 	"ee", "var", "open editor to change the value of var",
 	"ed", "", "open editor to change the ~/.radare2rc",
 	"ej", "", "list config vars in JSON",
+	"eJ", "", "list config vars in verbose JSON",
 	"en", "", "list environment vars",
 	"env", " [k[=v]]", "get/set environment variable",
 	"er", " [key]", "set config key as readonly. no way back",
@@ -82,6 +85,36 @@ static bool load_theme(RCore *core, const char *path) {
 	return res;
 }
 
+static void cmd_eval_table(RCore *core, const char *input) {
+	const char fmt = *input++;
+	const char *q = input;
+	FlagTableData ftd = {0};
+	RTable *t = r_core_table (core, "eval");
+	ftd.t = t;
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeBoolean = r_table_type ("bool");
+	r_table_add_column (t, typeBoolean, "ro", 0);
+	r_table_add_column (t, typeString, "type", 0);
+	r_table_add_column (t, typeString, "key", 0);
+	r_table_add_column (t, typeString, "value", 0);
+	r_table_add_column (t, typeString, "desc", 0);
+
+	RListIter *iter;
+	RConfigNode *node;
+	r_list_foreach (core->config->nodes, iter, node) {
+		r_strf_var (type, 32, "%s", r_config_node_type (node));
+		r_strf_var (ro, 32, "%s", r_config_node_is_ro (node)? "ro": "");
+		r_table_add_row (t, ro, type, node->name, node->value, node->desc, NULL);
+	}
+	if (r_table_query (t, q)) {
+		char *s = (fmt == 'j')
+			? r_table_tojson (t)
+			: r_table_tostring (t);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
+	r_table_free (t);
+}
 static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 	const char *fn = r_str_lchr (file, '/');
 	if (!fn) fn = file;
@@ -414,6 +447,9 @@ static int cmd_eval(void *data, const char *input) {
 	case 'x': // "ex"
 		// XXX we need headers for the cmd_xxx files.
 		return cmd_quit (data, "");
+	case 'J': // "eJ"
+		r_config_list (core->config, NULL, 'J');
+		break;
 	case 'j': // "ej"
 		r_config_list (core->config, NULL, 'j');
 		break;
@@ -669,14 +705,17 @@ static int cmd_eval(void *data, const char *input) {
 		if (input[1]) {
 			const char *key = input + ((input[1] == ' ')? 2: 1);
 			if (!r_config_readonly (core->config, key)) {
-				eprintf ("cannot find key '%s'\n", key);
+				R_LOG_ERROR ("cannot find key '%s'", key);
 			}
 		} else {
 			eprintf ("Usage: er [key]  # make an eval key PERMANENTLY read only\n");
 		}
 		break;
-	case ',': // "e."
+	case ':': // "e:"
 		r_config_eval (core->config, input + 1, true);
+		break;
+	case ',': // "e,"
+		cmd_eval_table (core, input + 1);
 		break;
 	case '.': // "e "
 	case ' ': // "e "
