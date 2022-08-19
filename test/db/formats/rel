@@ -32,6 +32,7 @@ FILE=bins/rel/d_profileNP.rel
 ARGS=-e bin.cache=true -B 0x80500000 -e log.level=5
 CMDS=
 EXPECT_ERR=<<EOF
+DEBUG: RCore.cmd('=!')
 INFO: REL module ID 00000001
 INFO: REL version 3
 DEBUG: imp 0: 2 relocs
@@ -68,6 +69,8 @@ DEBUG: REL: Reloc R_PPC_ADDR32          @0x80500188: 00000000 => 8023a598
 DEBUG: REL: Reloc R_PPC_ADDR32          @0x8050018c: 00000000 => 8023a5b0
 DEBUG: REL: Reloc R_PPC_ADDR32          @0x80500190: 00000000 => 8023a5e0
 DEBUG: REL: Reloc R_PPC_ADDR32          @0x80500194: 00000000 => 8023a600
+DEBUG: RCore.cmd('=!')
+DEBUG: RCore.cmd('ieq')
 EOF
 RUN
 

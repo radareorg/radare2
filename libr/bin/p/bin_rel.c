@@ -53,7 +53,7 @@ R_PACKED (typedef struct {
 // This plugin behaves a bit differently depending on each lib:
 //
 //  - 0:      Relocs to main.dol
-//            main.dol is not relocatable, thus uses absolute addresses as addends (S=0).
+//            main.dol is not relocatable, thus uses absolute addresses as addends (S = 0)
 //            Used for fixing up relative references (e.g. branches).
 //            Patched on load without emitting a symbol/reloc.
 //

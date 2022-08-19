@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
+
+#define R_LOG_ORIGIN "radiff2"
 
 #include <r_core.h>
 #include <r_main.h>
@@ -179,7 +181,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		break;
 	case 'r':
 		if (ro->disasm) {
-			eprintf ("r2cmds (-r) + disasm (-D) not yet implemented\n");
+			R_LOG_WARN ("r2cmds (-r) + disasm (-D) is not yet implemented");
 		}
 		if (op->a_len == op->b_len) {
 			printf ("wx ");
@@ -207,7 +209,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	case 'j':
 		// TODO PJ
 		if (ro->disasm) {
-			eprintf ("JSON (-j) + disasm (-D) not yet implemented\n");
+			R_LOG_WARN ("JSON (-j) + disasm (-D) not yet implemented");
 		}
 		{
 			PJ *pj = ro->pj;
@@ -491,7 +493,7 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 			"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF\n");
 		break;
 	default:
-		eprintf ("Invalid column width\n");
+		R_LOG_ERROR ("Invalid column width");
 		return;
 	}
 	r_cons_break_push (NULL, NULL);
@@ -712,7 +714,7 @@ static ut8 *slurp(RadiffOptions *ro, RCore **c, const char *file, size_t *sz) {
 			*c = opencore (ro, NULL);
 		}
 		if (!*c) {
-			eprintf ("opencore failed\n");
+			R_LOG_ERROR ("opencore failed");
 			return NULL;
 		}
 		io = (*c)->io;
@@ -728,11 +730,11 @@ static ut8 *slurp(RadiffOptions *ro, RCore **c, const char *file, size_t *sz) {
 					*sz = size;
 				}
 			} else {
-				eprintf ("slurp: read error\n");
+				R_LOG_ERROR ("slurp: read error");
 				R_FREE (data);
 			}
 		} else {
-			eprintf ("slurp: Invalid file size\n");
+			R_LOG_ERROR ("slurp: Invalid file size");
 		}
 		r_io_fd_close (io, fd);
 		return data;
@@ -1042,7 +1044,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				ro.mode = MODE_DIFF_SYMBOLS;
 				break;
 			default:
-				eprintf ("-i expects [s,i] for symbols or imports diffing\n");
+				R_LOG_ERROR ("-i expects [s,i] for symbols or imports diffing");
 				return 1;
 			}
 			break;
@@ -1122,7 +1124,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	ro.file2 = (opt.ind + 1 < argc)? argv[opt.ind + 1]: NULL;
 
 	if (R_STR_ISEMPTY (ro.file) || R_STR_ISEMPTY (ro.file2)) {
-		eprintf ("Cannot open empty path\n");
+		R_LOG_ERROR ("Cannot open empty path");
 		return 1;
 	}
 
@@ -1134,11 +1136,11 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	case MODE_DIFF_IMPORTS:
 		c = opencore (&ro, ro.file);
 		if (!c) {
-			eprintf ("Cannot open '%s'\n", r_str_getf (ro.file));
+			R_LOG_ERROR ("Cannot open '%s'", r_str_getf (ro.file));
 		}
 		c2 = opencore (&ro, ro.file2);
 		if (!c2) {
-			eprintf ("Cannot open '%s'\n", r_str_getf (ro.file2));
+			R_LOG_ERROR ("Cannot open '%s'", r_str_getf (ro.file2));
 		}
 		if (!c || !c2) {
 			return 1;
@@ -1251,18 +1253,18 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		bufa = slurp (&ro, &c, ro.file, &fsz);
 		sza = fsz;
 		if (!bufa) {
-			eprintf ("radiff2: Cannot open %s\n", r_str_getf (ro.file));
+			R_LOG_ERROR ("Cannot open %s", r_str_getf (ro.file));
 			return 1;
 		}
 		bufb = slurp (&ro, &c, ro.file2, &fsz);
 		szb = fsz;
 		if (!bufb) {
-			eprintf ("radiff2: Cannot open: %s\n", r_str_getf (ro.file2));
+			R_LOG_ERROR ("Cannot open: %s", r_str_getf (ro.file2));
 			free (bufa);
 			return 1;
 		}
 		if (sza != szb) {
-			eprintf ("File size differs %"PFMT64u" vs %"PFMT64u"\n", (ut64)sza, (ut64)szb);
+			R_LOG_INFO ("File size differs %"PFMT64u" vs %"PFMT64u, (ut64)sza, (ut64)szb);
 		}
 		break;
 	}
