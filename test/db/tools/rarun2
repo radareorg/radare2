@@ -13,3 +13,19 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=rarun2 repeat
+FILE=-
+CMDS=!rarun2 arg1='@16@A' -- echo
+EXPECT=<<EOF
+AAAAAAAAAAAAAAAA
+EOF
+RUN
+
+NAME=rarun2 null input
+FILE=-
+CMDS=!rarun2 input='AAAA\x00\x00AAAA' -- rax2 -S
+EXPECT=<<EOF
+41414141000041414141
+EOF
+RUN
