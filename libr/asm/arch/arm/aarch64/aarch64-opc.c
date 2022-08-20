@@ -1099,8 +1099,7 @@ typedef struct
 
 static simd_imm_encoding simd_immediates[TOTAL_IMM_NB];
 
-static int
-simd_imm_encoding_cmp(const void *i1, const void *i2)
+static int simd_imm_encoding_cmp(const void *i1, const void *i2)
 {
   const simd_imm_encoding *imm1 = (const simd_imm_encoding *)i1;
   const simd_imm_encoding *imm2 = (const simd_imm_encoding *)i2;

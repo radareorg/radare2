@@ -260,7 +260,7 @@ static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	bool found = false;
 	const char ntdll[] = "ntdll.dll";
 	r_list_foreach (modules, it, map) {
-		if (!strncmp(map->name, ntdll, sizeof (ntdll))) {
+		if (!strncmp (map->name, ntdll, sizeof (ntdll))) {
 			found = true;
 			break;
 		}

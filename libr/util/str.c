@@ -23,6 +23,16 @@ static const char * const rwxstr[] = {
 	[15] = "rwx",
 };
 
+// equal string, same case
+R_API R_WIP bool r_str_eq(const char *s1, const char *s2) {
+	return s1 && s2 && !strcmp (s1, s2);
+}
+
+// equal string, ignoring case
+R_API R_WIP bool r_str_eqi(const char *s1, const char *s2) {
+	return s1 && s2 && !r_str_casecmp (s1, s2);
+}
+
 R_API int r_str_casecmp(const char *s1, const char *s2) {
 #ifdef _MSC_VER
 	return stricmp (s1, s2);
@@ -745,7 +755,7 @@ R_API size_t r_str_ncpy(char *dst, const char *src, size_t n) {
 	return i;
 }
 
-/* memccmp("foo.bar", "foo.cow, '.') == 0 */
+/* memccmp ("foo.bar", "foo.cow, '.') == 0 */
 // Returns 1 if src and dst are equal up until the first instance of ch in src.
 R_API bool r_str_ccmp(const char *dst, const char *src, int ch) {
 	int i;

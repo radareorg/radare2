@@ -640,7 +640,7 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 			r_sys_setenv (e, V);
 			free (V);
 		}
-	} else if (!strcmp(b, "clearenv")) {
+	} else if (!strcmp (b, "clearenv")) {
 		r_sys_clearenv ();
 	}
 	if (must_free == true) {
