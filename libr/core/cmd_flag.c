@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <stddef.h>
-#include "r_cons.h"
 #include "r_core.h"
 
 static const char *help_msg_fR[] = {
@@ -749,7 +748,6 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 	}
 	return true;
 }
-
 
 static void print_function_labels_for(RAnalFunction *fcn, int rad, PJ *pj) {
 	r_return_if_fail (fcn && (rad != 'j' || pj));

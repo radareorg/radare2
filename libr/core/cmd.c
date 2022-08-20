@@ -5486,6 +5486,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 	int ret = false;
 	size_t i;
+	R_LOG_DEBUG ("RCore.cmd('%s')", cstr);
 	if (core->cmdfilter) {
 		const char *invalid_chars = ";|>`@";
 		for (i = 0; invalid_chars[i]; i++) {

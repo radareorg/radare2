@@ -25,6 +25,8 @@ static R_TH_LOCAL int color = 1;
 static R_TH_LOCAL int zoom = 0;
 static R_TH_LOCAL int currentFormat = 0;
 static R_TH_LOCAL int current0format = 0;
+static R_TH_LOCAL char numbuf[32] = {0};
+static R_TH_LOCAL int numbuf_i = 0;
 
 typedef struct {
 	int x;
@@ -1846,6 +1848,17 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		nextOpcode (core);
 		return;
 	}
+	if (PIDX == 4) { // TEXT
+		int idx = p->cur_enabled? p->cur: 0;
+		const ut8 *buf = core->block;
+		if (idx < core->blocksize) {
+			const ut8* nl = r_mem_mem (core->block + idx, core->blocksize - idx, (const ut8*)"\n", 1);
+			if (nl) {
+				p->cur = (int)(size_t)(nl - buf + 1);
+			}
+		}
+		return;
+	}
 
 	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
 		p->cur += r_config_get_i (core->config, "hex.cols");
@@ -2111,7 +2124,7 @@ static bool insert_mode_enabled(RCore *core) {
 		}
 		if (ch == 0x7f) { // backspace
 			if (textedit_mode) {
-				if (core->print->cur > 0) {
+				if (core->print->cur_enabled && core->print->cur > 0) {
 					r_core_cmdf (core, "r-1@ 0x%08"PFMT64x" + %d", core->offset, core->print->cur - 1);
 					core->print->cur--;
 				}
@@ -2152,7 +2165,7 @@ static bool insert_mode_enabled(RCore *core) {
 		core->print->cur = R_MAX (0, core->print->cur - 1);
 		return true;
 	} else if (ch != 'l' && arrows == 'l') {
-		core->print->cur = core->print->cur + 1;
+		core->print->cur++;
 		return true;
 	} else if (ch != 'j' && arrows == 'j') {
 		cursor_nextrow (core, false);
@@ -2231,7 +2244,7 @@ static bool insert_mode_enabled(RCore *core) {
 		core->print->cur = R_MAX (0, core->print->cur - 1);
 		break;
 	case 'l':
-		core->print->cur = core->print->cur + 1;
+		core->print->cur++;
 		break;
 	case 'j':
 		cursor_nextrow (core, false);
@@ -2421,9 +2434,6 @@ static bool isNumber(RCore *core, int ch) {
 	}
 	return false;
 }
-
-static char numbuf[32] = {0};
-static int numbuf_i = 0;
 
 static void numbuf_append(int ch) {
 	if (numbuf_i >= sizeof (numbuf) - 1) {

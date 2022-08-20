@@ -112,6 +112,8 @@ r_anal_sources = [
   'p/anal_s390_gnu.c',
   '../asm/arch/s390/gnu/s390-dis.c',
   '../asm/arch/s390/gnu/s390-opc.c',
+  '../asm/arch/sparc/gnu/sparc-dis.c',
+  '../asm/arch/sparc/gnu/sparc-opc.c',
   'p/anal_sh.c',
   '../asm/arch/sh/gnu/sh-dis.c',
   'p/anal_snes.c',

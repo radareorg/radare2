@@ -1,6 +1,9 @@
 #!/bin/sh
 
 # validated and ready to go lintings
+(git grep -n 'cmp(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
+# (git grep -n 'len(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
+# (git grep -n ',"' libr | grep -v R_API | grep -v static | grep c:) && exit 1
 (git grep -n 'for(' libr | grep -v _for | grep -v colorfor) && exit 1
 (git grep -n 'for (' libr | grep "; ++" | grep -v arch ) && exit 1
 (git grep -n 'for (int' | grep -v sys/) && exit 1

@@ -162,8 +162,8 @@ static void set_limit(int n, int a, ut64 b) {
 }
 #endif
 
-static char *getstr(const char *src) {
-	int len;
+static char *getstr(const char *src, R_NULLABLE size_t *out_len) {
+	size_t len = 0;
 	char *ret = NULL;
 
 	switch (*src) {
@@ -175,7 +175,7 @@ static char *getstr(const char *src) {
 				len--;
 				if (ret[len] == '\'') {
 					ret[len] = 0;
-					return ret;
+					goto beach;
 				}
 				R_LOG_ERROR ("Missing \"");
 			}
@@ -191,7 +191,7 @@ static char *getstr(const char *src) {
 				if (ret[len] == '"') {
 					ret[len] = 0;
 					r_str_unescape (ret);
-					return ret;
+					goto beach;
 				}
 				R_LOG_ERROR ("Missing \"");
 			}
@@ -202,23 +202,23 @@ static char *getstr(const char *src) {
 		{
 			char *pat = strchr (src + 1, '@');
 			if (pat) {
-				size_t len;
-				long i, rep;
+				size_t i, pat_len;
 				*pat++ = 0;
-				rep = strtol (src + 1, NULL, 10);
-				len = strlen (pat);
-				if (rep > 0) {
-					char *buf = malloc (rep);
-					if (buf) {
-						for (i = 0; i < rep; i++) {
-							buf[i] = pat[i % len];
+				len = strtoul (src + 1, NULL, 10);
+				pat_len = strlen (pat);
+				if (len > 0) {
+					ret = malloc (len + 1);
+					if (ret) {
+						for (i = 0; i < len; i++) {
+							ret[i] = pat[i % pat_len];
 						}
+						ret[len] = 0;
 					}
-					return buf;
+					goto beach;
 				}
 			}
 			// slurp file
-			return r_file_slurp (src + 1, NULL);
+			ret = r_file_slurp (src + 1, &len);
 		}
 	case '`':
 		{
@@ -229,16 +229,17 @@ static char *getstr(const char *src) {
 			char *ret = r_sys_cmd_str (msg, NULL, NULL);
 			r_str_trim_tail (ret);
 			free (msg);
-			return ret;
+			len = strlen (ret);
+			goto beach;
 		}
 		free (msg);
-		return strdup ("");
+		ret = strdup ("");
 		}
 	case '!':
 		{
-		char *a = r_sys_cmd_str (src + 1, NULL, NULL);
-		r_str_trim_tail (a);
-		return a;
+		ret = r_sys_cmd_str (src + 1, NULL, NULL);
+		r_str_trim_tail (ret);
+		len = strlen (ret);
 		}
 	case ':':
 		if (src[1] == '!') {
@@ -250,13 +251,19 @@ static char *getstr(const char *src) {
 		len = r_hex_str2bin (src + 1, (ut8*)ret);
 		if (len > 0) {
 			ret[len] = 0;
-			return ret;
+			goto beach;
 		}
 		R_LOG_ERROR ("Invalid hexpair string");
 		free (ret);
 		return NULL;
+	default:
+		len = r_str_unescape ((ret = strdup (src)));
 	}
-	r_str_unescape ((ret = strdup (src)));
+
+beach:
+	if (out_len) {
+		*out_len = len;
+	}
 	return ret;
 }
 
@@ -583,10 +590,10 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		p->_timeout = atoi (e);
 	} else if (!strcmp (b, "timeoutsig")) {
 		p->_timeout_sig = r_signal_from_string (e);
-	} else if (!memcmp (b, "arg", 3)) {
+	} else if (r_str_startswith (b, "arg")) {
 		int n = atoi (b + 3);
 		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
-			p->_args[n] = getstr (e);
+			p->_args[n] = getstr (e, NULL);
 			p->_argc++;
 		} else {
 			R_LOG_ERROR ("Out of bounds args index: %d", n);
@@ -629,11 +636,11 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		char *V, *v = strchr (e, '=');
 		if (v) {
 			*v++ = 0;
-			V = getstr (v);
+			V = getstr (v, NULL);
 			r_sys_setenv (e, V);
 			free (V);
 		}
-	} else if (!strcmp(b, "clearenv")) {
+	} else if (!strcmp (b, "clearenv")) {
 		r_sys_clearenv ();
 	}
 	if (must_free == true) {
@@ -1033,9 +1040,9 @@ R_API int r_run_config_env(RRunProfile *p) {
 			R_LOG_ERROR ("Cannot create pipe");
 			return 1;
 		}
-		inp = getstr (p->_input);
+		size_t inpl;
+		inp = getstr (p->_input, &inpl);
 		if (inp) {
-			size_t inpl = strlen (inp);
 			if  (write (f2[1], inp, inpl) != inpl) {
 				R_LOG_ERROR ("Cannot write to the pipe");
 			}

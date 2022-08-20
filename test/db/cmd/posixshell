@@ -21,7 +21,7 @@ Cannot chdir
 /dev
 /dev
 /
-Cannot popd
+ERROR: Nothing was pushd. Cannot popd
 EOF
 RUN
 

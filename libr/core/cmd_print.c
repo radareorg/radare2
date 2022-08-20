@@ -1884,7 +1884,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				*dot = 0;
 			}
 			if (!space && !sdb_const_get (core->print->formats, name, NULL)) {
-				eprintf ("Unknown format name '%s'.\n", name);
+				R_LOG_ERROR ("Unknown format name '%s'", name);
 				goto err_name;
 			}
 			if (dot) {
@@ -1908,7 +1908,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (space && (!eq || space < eq)) {
 				*space++ = 0;
 				if (strchr (name, '.')) {
-					eprintf ("Struct or fields name can not contain a dot (%s)\n", name);
+					R_LOG_ERROR ("Struct or fields name can not contain a dot (%s)", name);
 				} else {
 					// pf.foo=xxx
 					sdb_set (core->print->formats, name, space, 0);
@@ -1917,7 +1917,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			}
 
 			if (!strchr (name, '.') && !sdb_const_get (core->print->formats, name, NULL)) {
-				eprintf ("Cannot find '%s' format.\n", name);
+				R_LOG_ERROR ("Cannot find '%s' format", name);
 				goto err_name;
 			}
 
@@ -1991,7 +1991,6 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			});
 			goto err_arg1;
 		}
-
 		r_print_format (core->print, core->offset,
 			buf, size, fmt, mode, NULL, NULL);
 	err_arg1:
@@ -2661,7 +2660,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 		len = datalen;
 	}
 	if (len < 0 || len > datalen) {
-		eprintf ("Invalid length\n");
+		R_LOG_ERROR ("Invalid length");
 		return 0;
 	}
 	if (onechar) {
@@ -3023,7 +3022,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		if (fcn) {
 			line = s = r_core_cmd_str (core, "pdr");
 		} else {
-			eprintf ("Cannot find function.\n");
+			R_LOG_ERROR ("Cannot find function");
 			r_config_set_i (core->config, "scr.color", use_color);
 			r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
 			goto restore_conf;
@@ -3133,7 +3132,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				if (o) {
 					str = (char*)o;
 				} else {
-					eprintf ("Warning: missing summary reference: %s\n", dot);
+					R_LOG_WARN ("missing summary reference: %s", dot);
 				}
 			}
 		}
@@ -3376,7 +3375,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 		if (nlen > core->blocksize) {
 			r_core_block_size (core, nlen);
 			if (nlen != core->blocksize) {
-				eprintf ("Invalid block size\n");
+				R_LOG_ERROR ("Invalid block size");
 				r_core_block_size (core, osize);
 				return false;
 			}
@@ -3580,7 +3579,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 			}
 			int i = 0;
 			if (length + size > 0xfffff) {
-				eprintf ("Too large\n");
+				R_LOG_ERROR ("Too large");
 				break;
 			}
 			ut8 * data = calloc (length + size, 1);
@@ -4053,14 +4052,14 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				}
 			}
 			if (totalsize == UT64_MAX) {
-				eprintf ("Cannot determine file size\n");
+				R_LOG_ERROR ("Cannot determine file size");
 				goto beach;
 			}
 		}
 	}
 	blocksize = (blocksize > 0)? (totalsize / blocksize): (core->blocksize);
 	if (blocksize < 1) {
-		eprintf ("Invalid block size: %d\n", (int)blocksize);
+		R_LOG_ERROR ("Invalid block size: %d", (int)blocksize);
 		goto beach;
 	}
 	if (!r_config_get_b (core->config, "cfg.debug")) {
@@ -4080,7 +4079,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	} else {
 		blocksize = totalsize / nblocks;
 		 if (blocksize < 1) {
-			eprintf ("Invalid block size: %d\n", (int)blocksize);
+			R_LOG_ERROR ("Invalid block size: %d", (int)blocksize);
 			goto beach;
 		}
 	}
@@ -4503,7 +4502,7 @@ static void __printPattern(RCore *core, const char *_input) {
 	size_t i, j;
 	st64 len = arg? r_num_math (core->num, arg): core->blocksize;
 	if (len < 1) {
-		eprintf ("Invalid length\n");
+		R_LOG_ERROR ("Invalid length");
 		return;
 	}
 	switch (input[0]) {
@@ -4871,7 +4870,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 				free (buf);
 			} else {
-				eprintf ("Cannot allocate %"PFMT64u" byte(s)\n", b->size);
+				R_LOG_ERROR ("Cannot allocate %"PFMT64u" byte(s)", b->size);
 			}
 			pj_end (pj);
 			pj_end (pj);
@@ -5391,7 +5390,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 			if (f) {
 				func_walk_blocks (core, f, input[2], 'I', input[2] == '.');
 			} else {
-				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+				R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, core->offset);
 				r_core_return_value (core, 0);
 			}
 		}
@@ -5402,7 +5401,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 			if (b) {
 				r_core_print_disasm_instructions (core, b->size - (core->offset - b->addr), 0);
 			} else {
-				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+				R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, core->offset);
 				r_core_return_value (core, 0);
 			}
 		}
@@ -5473,7 +5472,7 @@ static bool strnullpad_check(const ut8 *buf, int len, int clen, int inc, bool be
 			}
 		// utf32 } else if (inc == 4) {
 		} else {
-			eprintf ("Invalid inc\n");
+			R_LOG_ERROR ("Invalid inc");
 			return false;
 		}
 	}
@@ -5500,7 +5499,7 @@ static bool check_string_at(RCore *core, ut64 addr) {
 			return false;
 		}
 	} else {
-		eprintf ("Cannot allocate %d byte(s)\n", len);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", len);
 		return false;
 	}
 	int nullbyte = r_str_nlen ((const char *)buf, len);
@@ -5659,7 +5658,7 @@ static int cmd_print(void *data, const char *input) {
 		/* hijack here for now, idk how to more cleanly integrate it */
 		return cmd_pdu (core, input + 2);
 	}
-	if (!strncmp (input, "ushd", 4)) { // "pushd"
+	if (r_str_startswith (input, "ushd")) { // "pushd"
 		bool halp = true;
 		const char *arg = strchr (input, ' ');
 		if (arg) {
@@ -5679,7 +5678,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		return 0;
 	}
-	if (!strncmp (input, "opd", 3)) { // "popd"
+	if (r_str_startswith (input, "opd")) { // "popd"
 		bool all = strstr (input, "-a");
 		bool halp = strstr (input, "-h");
 		if (halp) {
@@ -5692,7 +5691,7 @@ static int cmd_print(void *data, const char *input) {
 			if (suc) {
 				r_core_return_value (core, 0);
 			} else {
-				eprintf ("Cannot popd\n");
+				R_LOG_ERROR ("Nothing was pushd. Cannot popd");
 				r_core_return_value (core, 1);
 			}
 		}
@@ -5757,8 +5756,7 @@ static int cmd_print(void *data, const char *input) {
 			i = 0;
 		}
 		if (i && l > i) {
-			eprintf ("This block size is too big (0x%"PFMT64x
-				" < 0x%" PFMT64x "). Did you mean 'p%c @ %s' instead?\n",
+			R_LOG_ERROR ("Block size is too large (0x%"PFMT64x " < 0x%" PFMT64x "). Did you mean 'p%c @ %s' instead?",
 				n, l, *input, *input? r_str_trim_head_ro (input + 1): "");
 			goto beach;
 		}
@@ -5766,8 +5764,7 @@ static int cmd_print(void *data, const char *input) {
 	if (input[0] == 'x' || input[0] == 'D') {
 		if (l > 0 && tmpseek == UT64_MAX) {
 			if (!r_core_block_size (core, l)) {
-				eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
-					*input, input + 2);
+				R_LOG_ERROR ("This block size is too big. Did you mean 'p%c @ %s' instead?", *input, input + 2);
 				goto beach;
 			}
 		}
@@ -5782,7 +5779,7 @@ static int cmd_print(void *data, const char *input) {
 				len = core->blocksize;
 			}
 		} else {
-			eprintf ("p: Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+			R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, core->offset);
 			r_core_return_value (core, 0);
 			goto beach;
 		}
@@ -5828,14 +5825,14 @@ static int cmd_print(void *data, const char *input) {
 					free (res);
 */
 				} else {
-					eprintf ("Cannot allocate %d\n", (int)(core->offset));
+					R_LOG_ERROR ("Cannot allocate %d", (int)(core->offset));
 				}
 			} else {
 				r_core_cmdf (core, "pj %"PFMT64u" @ 0", core->offset);
 			}
 		} else {
 			if (core->blocksize < 4 || !memcmp (core->block, "\xff\xff\xff\xff", 4)) {
-				eprintf ("Cannot read\n");
+				R_LOG_ERROR ("Cannot read");
 			} else {
 				char *res = r_print_json_indent ((const char *)core->block, true, "  ", NULL);
 				r_cons_printf ("%s\n", res);
@@ -5901,11 +5898,11 @@ static int cmd_print(void *data, const char *input) {
 							const char *str = R_STRBUF_SAFEGET (&aop.esil);
 							r_cons_println (str);
 						} else {
-							eprintf ("Cannot decode instruction\n");
+							R_LOG_ERROR ("Cannot decode instruction");
 							break;
 						}
 						if (aop.size < 1) {
-							eprintf ("Cannot decode instruction\n");
+							R_LOG_ERROR ("Cannot decode instruction");
 							break;
 						}
 						printed += aop.size;
@@ -5938,11 +5935,11 @@ static int cmd_print(void *data, const char *input) {
 								const char *str = R_STRBUF_SAFEGET (&aop.esil);
 								r_cons_println (str);
 							} else {
-								eprintf ("Cannot decode instruction\n");
+								R_LOG_ERROR ("Cannot decode instruction");
 								break;
 							}
 							if (aop.size < 1) {
-								eprintf ("Cannot decode instruction\n");
+								R_LOG_ERROR ("Cannot decode instruction");
 								break;
 							}
 							printed += aop.size;
@@ -6156,7 +6153,7 @@ static int cmd_print(void *data, const char *input) {
 
 		int mbs = core->blocksize_max;
 		if (core->blocksize_max < use_blocksize && (int) use_blocksize < -mbs) {
-			eprintf ("This block size is too big (%"PFMT64u "<%"PFMT64u "). Did you mean 'p%c @ 0x%08"PFMT64x "' instead?\n",
+			R_LOG_ERROR ("Block size is too large (%"PFMT64u "<%"PFMT64u "). Did you mean 'p%c @ 0x%08"PFMT64x "' instead?",
 				(ut64) core->blocksize_max, (ut64) use_blocksize, input[0], (ut64) use_blocksize);
 			goto beach;
 		} else if (core->blocksize_max < use_blocksize && (int) use_blocksize > -mbs) {
@@ -6293,7 +6290,7 @@ static int cmd_print(void *data, const char *input) {
 				if (f) {
 					func_walk_blocks (core, f, input[2], 'D', input[2] == '.');
 				} else {
-					eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+					R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, core->offset);
 				}
 				pd_result = true;
 			}
@@ -6330,7 +6327,7 @@ static int cmd_print(void *data, const char *input) {
 						pd_result = 0;
 					}
 				} else {
-					eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+					R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, core->offset);
 					r_core_return_value (core, 0);
 				}
 			}
@@ -6397,7 +6394,7 @@ static int cmd_print(void *data, const char *input) {
 							r_core_print_disasm_json (core, b->addr, buf, b->size, 0, pj);
 							free (buf);
 						} else {
-							eprintf ("Cannot allocate %"PFMT64u" byte(s)\n", b->size);
+							R_LOG_ERROR ("Cannot allocate %"PFMT64u" byte(s)", b->size);
 						}
 					}
 					pj_end (pj);
@@ -6410,7 +6407,7 @@ static int cmd_print(void *data, const char *input) {
 					ut64 linearsz = r_anal_function_linear_size (f);
 					ut64 realsz = r_anal_function_realsize (f);
 					if (realsz + 4096 < linearsz) {
-						eprintf ("Linear size differs too much from the bbsum, please use pdr instead.\n");
+						R_LOG_ERROR ("Linear size differs too much from the bbsum, please use pdr instead");
 					} else {
 						ut64 at = f->addr; // TODO: should be min from r_anal_function_get_range()?
 						ut64 sz = R_MAX (linearsz, realsz);
@@ -6425,7 +6422,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 					pd_result = 0;
 				} else {
-					eprintf ("pdf: Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+					R_LOG_ERROR ("pdf: Cannot find function at 0x%08"PFMT64x, core->offset);
 					processed_cmd = true;
 					r_core_return_value (core, 0);
 				}
@@ -6507,7 +6504,7 @@ static int cmd_print(void *data, const char *input) {
 		case ' ':
 			break;
 		default:
-			eprintf ("Invalid pd subcommand.\n");
+			R_LOG_ERROR ("Invalid pd subcommand");
 			return 0;
 		}
 		if (formatted_json) {
@@ -6547,7 +6544,7 @@ static int cmd_print(void *data, const char *input) {
 						if (bs1 > bs) {
 							ut8 *tmpblock = realloc (block1, bs1);
 							if (!tmpblock) {
-								eprintf ("Memory reallocation failed.\n");
+								R_LOG_ERROR ("Memory reallocation failed");
 								free (block1);
 								break;
 							}
@@ -6574,7 +6571,7 @@ static int cmd_print(void *data, const char *input) {
 				if (*input == 'D' && use_blocksize > 0) {
 					l = use_blocksize;
 					if (l > R_CORE_MAX_DISASM) { // pD
-						eprintf ("Block size too big\n");
+						R_LOG_ERROR ("Block size too big");
 						return 1;
 					}
 					block1 = malloc (addrbytes * l);
@@ -6586,7 +6583,7 @@ static int cmd_print(void *data, const char *input) {
 								NULL, NULL);
 						r_core_return_value (core, dislen);
 					} else {
-						eprintf ("Cannot allocate %" PFMT64d " byte(s)\n", addrbytes * l);
+						R_LOG_ERROR ("Cannot allocate %" PFMT64d " byte(s)", addrbytes * l);
 					}
 				} else {
 					ut8 *buf = core->block;
@@ -7040,7 +7037,7 @@ static int cmd_print(void *data, const char *input) {
 								r_print_bytes (core->print, obuf + i, left, "%02x");
 							}
 						} else {
-							eprintf ("Invalid input size %d\n", olen);
+							R_LOG_ERROR ("Invalid input size %d", olen);
 						}
 						free (dst);
 					}
@@ -7116,7 +7113,7 @@ static int cmd_print(void *data, const char *input) {
 		} else if (input[1] == ' ') {
 			char *data = r_file_slurp (input + 2, NULL);
 			if (!data) {
-				eprintf ("Could not open '%s'.\n", input + 2);
+				R_LOG_ERROR ("Could not open '%s'", input + 2);
 				break;
 			}
 			char *res = r_print_stereogram (data, 78, 20);
@@ -7441,7 +7438,7 @@ static int cmd_print(void *data, const char *input) {
 					cmd_pxr (core, len, mode, wordsize, mode? strchr (input, mode): NULL);
 					break;
 				default:
-					eprintf ("Invalid word size. Use 1, 2, 4 or 8.\n");
+					R_LOG_ERROR ("Invalid word size. Use 1, 2, 4 or 8");
 					break;
 				}
 			}
@@ -7715,7 +7712,7 @@ static int cmd_print(void *data, const char *input) {
 				if (r_base64_decode (buf, (const char *) block, len)) {
 					r_cons_println ((const char *) buf);
 				} else {
-					eprintf ("r_base64_decode: invalid stream\n");
+					R_LOG_ERROR ("r_base64_decode: invalid stream");
 				}
 				break;
 			case 'e': // "p6e"
@@ -7837,7 +7834,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'n': // easter
-		eprintf ("easter egg license has expired\n");
+		R_LOG_ERROR ("easter egg license has expired");
 		break;
 	case 't': // "pt"
 		switch (input[1]) {
@@ -7852,7 +7849,7 @@ static int cmd_print(void *data, const char *input) {
 		case '\0':
 			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof (ut32)
 			if (len < sizeof (ut32)) {
-				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut32));
+				R_LOG_WARN ("You should change the block size: b %d", (int) sizeof (ut32));
 			}
 			if (len % sizeof (ut32)) {
 				len = len - (len % sizeof (ut32));
@@ -7864,7 +7861,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'h': // "pth"
 			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof (ut32)
 			if (len < sizeof (ut32)) {
-				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut32));
+				R_LOG_WARN ("Change the block size: b %d", (int) sizeof (ut32));
 			}
 			if (len % sizeof (ut32)) {
 				len = len - (len % sizeof (ut32));
@@ -7877,7 +7874,7 @@ static int cmd_print(void *data, const char *input) {
 			// len must be multiple of 4 since r_print_date_dos read buf+3
 			// if block size is 1 or 5 for example it reads beyond the buffer
 			if (len < sizeof (ut32)) {
-				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut32));
+				R_LOG_WARN ("Change the block size: b %d", (int) sizeof (ut32));
 			}
 			if (len % sizeof (ut32)) {
 				len = len - (len % sizeof (ut32));
@@ -7888,7 +7885,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'n': // "ptn"
 			if (len < sizeof (ut64)) {
-				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut64));
+				R_LOG_WARN ("Change the block size: b %d", (int) sizeof (ut64));
 			}
 			if (len % sizeof (ut64)) {
 				len = len - (len % sizeof (ut64));

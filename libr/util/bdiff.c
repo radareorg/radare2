@@ -12,9 +12,6 @@
 */
 
 #include <r_util.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
 
 struct line {
 	int h, len, n, e;
@@ -81,7 +78,7 @@ static int splitlines(const char *a, int len, struct line **lr) {
 }
 
 inline static int cmp(struct line *a, struct line *b) {
-	return a->h != b->h || a->len != b->len || memcmp(a->l, b->l, a->len);
+	return a->h != b->h || a->len != b->len || memcmp (a->l, b->l, a->len);
 }
 
 static int equatelines(struct line *a, int an, struct line *b, int bn) {

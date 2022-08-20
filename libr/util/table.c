@@ -4,8 +4,8 @@
 #include "r_cons.h"
 
 // cant do that without globals because RList doesnt have void *user :(
-static int Gnth = 0;
-static RListComparator Gcmp = NULL;
+static R_TH_LOCAL int Gnth = 0;
+static R_TH_LOCAL RListComparator Gcmp = NULL;
 
 static int sortString(const void *a, const void *b) {
 	return strcmp (a, b);
@@ -706,23 +706,23 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 			break;
 		case '=':
 			if (nv == 0) {
-				match = !strcmp (nn, un);
+				match = (nn && un && !strcmp (nn, un));
 			} else {
 				match = (nv == uv);
 			}
 			break;
 		case '!':
 			if (nv == 0) {
-				match = strcmp (nn, un);
+				match = (!nn || !un || strcmp (nn, un));
 			} else {
 				match = (nv != uv);
 			}
 			break;
 		case '$':
-			match = strstr (nn, un) == NULL;
+			match = !nn || !un || strstr (nn, un) == NULL;
 			break;
 		case '~':
-			match = strstr (nn, un);
+			match = nn&&un&&strstr (nn, un);
 			break;
 		case 's':
 			match = strlen (nn) == atoi (un);
@@ -1172,7 +1172,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		} else {
 			int op = __resolveOperation (operation);
 			if (op == -1) {
-				eprintf ("Invalid operation (%s)\n", operation);
+				R_LOG_ERROR ("Invalid table operation (%s)", operation);
 			} else {
 				r_table_filter (t, col, op, operand);
 			}

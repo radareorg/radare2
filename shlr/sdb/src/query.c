@@ -174,7 +174,8 @@ SDB_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	StrBuf *out = strbuf_new ();
 	if ((int)len < 1 || !buf) {
 		bufset = true;
-		buf = (char *)malloc ((len = 64));
+		len = 64;
+		buf = (char *)calloc (1, len);
 		if (!buf) {
 			strbuf_free (out);
 			return NULL;

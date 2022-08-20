@@ -451,7 +451,7 @@ static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname
 		R_LOG_WARN ("RReg profile does not contain BP register");
 		return false;
 	}
-	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp(reg->name, bp)) || num)) { //I trust k-maps
+	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp (reg->name, bp)) || num)) { //I trust k-maps
 		r_reg_set_value (esil->anal->reg, reg, num);
 		return true;
 	}
@@ -3136,7 +3136,7 @@ static bool esil_float_cmp(RAnalEsil *esil) {
 			ret = r_anal_esil_pushnum (esil, fabs(s - d) <= DBL_EPSILON);
 		}
 	} else {
-		ERR("esil_float_cmp: invalid parameters.");
+		ERR ("esil_float_cmp: invalid parameters.");
 	}
 	free (dst);
 	free (src);
@@ -3489,7 +3489,7 @@ static bool runword(RAnalEsil *esil, const char *word) {
 		}
 		return true;
 	}
-	if (esil->skip && strcmp(word, "?{")) {
+	if (esil->skip && strcmp (word, "?{")) {
 		return true;
 	}
 
