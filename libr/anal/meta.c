@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2020 - nibble, pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2008-2022 - nibble, pancake, thestr4ng3r */
 
 #include <r_anal.h>
 #include <r_core.h>
@@ -538,7 +538,7 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, const char *
 	}
 
 beach:
-	if (tq) {
+	if (t && tq) {
 		r_table_query (t, tq);
 	}
 	if (!tq || !strstr (tq, "?")) {
