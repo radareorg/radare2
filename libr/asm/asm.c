@@ -17,7 +17,7 @@ static const char *directives[] = {
 	".else", ".set", ".get", NULL
 };
 
-static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
+static const RAsmPlugin * const asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
 static void parseHeap(RParse *p, RStrBuf *s) {
 	char *op_buf_asm = r_strbuf_get (s);
@@ -218,7 +218,7 @@ R_API RAsm *r_asm_new(void) {
 	}
 	a->config = r_arch_config_new ();
 	for (i = 0; asm_static_plugins[i]; i++) {
-		r_asm_add (a, asm_static_plugins[i]);
+		r_asm_add (a, (RAsmPlugin*)asm_static_plugins[i]);
 	}
 	return a;
 }
@@ -603,11 +603,11 @@ static Ase findAssembler(RAsm *a, const char *kw) {
 					return h->assemble;
 				}
 			} else {
-				ase = h->assemble;
+				return h->assemble;
 			}
 		}
 	}
-	return ase;
+	return NULL;
 }
 
 static char *replace_directives_for(char *str, const char *token) {
