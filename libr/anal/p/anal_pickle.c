@@ -248,7 +248,7 @@ static inline int handle_opstring(RAnalOp *op, const ut8 *buf, int buflen) {
 		return -1;
 	}
 	buf++;
-	buflen -= 1; // remove starting quote
+	buflen --; // remove starting quote
 	char *str = get_line (buf, buflen);
 	if (str) {
 		size_t len = strlen (str);
