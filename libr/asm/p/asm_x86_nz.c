@@ -1678,7 +1678,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	} else if (!strcmp (op->mnemonic, "jo")) {
 		data[l++] = 0x80;
 	} else if (!strcmp (op->mnemonic, "jp")
-			|| !strcmp(op->mnemonic, "jpe")) {
+			|| !strcmp (op->mnemonic, "jpe")) {
 		data[l++] = 0x8a;
 	} else if (!strcmp (op->mnemonic, "js")
 			|| !strcmp (op->mnemonic, "jz")) {
@@ -2573,14 +2573,14 @@ static int opretf(RAsm *a, ut8 *data, const Opcode *op) {
 static int opstos(RAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
-	if (!strcmp(op->mnemonic, "stosw")) {
+	if (!strcmp (op->mnemonic, "stosw")) {
 		data[l++] = 0x66;
 	}
-	if (!strcmp(op->mnemonic, "stosb")) {
+	if (!strcmp (op->mnemonic, "stosb")) {
 		data[l++] = 0xaa;
-	} else if (!strcmp(op->mnemonic, "stosw")) {
+	} else if (!strcmp (op->mnemonic, "stosw")) {
 		data[l++] = 0xab;
-	} else if (!strcmp(op->mnemonic, "stosd")) {
+	} else if (!strcmp (op->mnemonic, "stosd")) {
 		data[l++] = 0xab;
 	}
 	return l;

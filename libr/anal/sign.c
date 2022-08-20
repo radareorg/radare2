@@ -2645,7 +2645,7 @@ static bool item_has_type(RSignItem *it, RSignType t) {
 
 typedef int (*RSignSorter) (RSignItem *, RSignItem *);
 
-RSignSorter type_to_cmp(int type, bool exact) {
+static RSignSorter type_to_cmp(int type, bool exact) {
 	switch (type) {
 	case R_SIGN_GRAPH:
 		if (exact) {

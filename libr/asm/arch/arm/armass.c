@@ -3138,13 +3138,13 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				return -1;
 			}
 
-			if ((!strcmp(ao->a[1], "cpsr")) || (!strcmp(ao->a[1], "apsr"))) {
+			if ((!strcmp (ao->a[1], "cpsr")) || (!strcmp (ao->a[1], "apsr"))) {
 				ao->o = 0xeff30080;
 				ao->o |= reg1;
 				return 4;
 			}
 
-			if (!strcmp(ao->a[1], "spsr")) {
+			if (!strcmp (ao->a[1], "spsr")) {
 				ao->o = 0xfff30080;
 				ao->o |= reg1;
 				return 4;

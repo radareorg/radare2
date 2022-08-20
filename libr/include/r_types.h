@@ -49,7 +49,8 @@
 #endif
 
 #ifdef __GNUC__
-#  define R_WIP __attribute__((deprecated("this function is considered as work-in-progress", "use it at your own risk")))
+#  define R_WIP __attribute__((deprecated))
+// ("this function is considered as work-in-progress", "use it at your own risk")))
 // warning doesnt work on llvm/clang, its a gcc specific thing,
 // __attribute__((warning("Don't use this function yet. its too new")))
 #else

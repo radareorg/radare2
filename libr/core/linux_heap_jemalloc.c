@@ -48,7 +48,7 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 			return GHT_MAX;
 		}
 		r_list_foreach (syms, iter, s) {
-			if (!strcmp(s->name, symname)) {
+			if (!strcmp (s->name, symname)) {
 				vaddr = s->vaddr;
 				break;
 			}

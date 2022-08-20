@@ -1211,7 +1211,7 @@ print_decoded_insn (memaddr, info)
 	    }
   }
   else
-  if (!strncmp(insn->name,"ret",3)) {
+  if (!strncmp (insn->name, "ret", 3)) {
 	int i = 0;
 	for (i = 2; i < 8; i++) {
 		load_areg[i] = false;
