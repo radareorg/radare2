@@ -590,7 +590,6 @@ static bool assemblerMatches(RAsm *a, RAsmPlugin *h) {
 }
 
 static Ase findAssembler(RAsm *a, const char *kw) {
-	Ase ase = NULL;
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (a->acur && a->acur->assemble) {
