@@ -541,7 +541,7 @@ beach:
 	if (tq) {
 		r_table_query (t, tq);
 	}
-	if (!strstr (tq, "?")) {
+	if (!tq || !strstr (tq, "?")) {
 		if (t) {
 			char *s = r_table_tostring (t);
 			r_cons_printf ("%s\n", s);
