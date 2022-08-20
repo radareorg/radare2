@@ -242,16 +242,40 @@ static inline int handle_n_lines(RAnalOp *op, const char *name, int n, const ut8
 	return op->size;
 }
 
+static inline int handle_opstring(RAnalOp *op, const ut8 *buf, int buflen) {
+	if (buf[0] != '\'') {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return -1;
+	}
+	buf++;
+	buflen -= 1; // remove starting quote
+	char *str = get_line (buf, buflen);
+	if (str) {
+		size_t len = strlen (str);
+		if (len > 0 && str[len - 1] == '\'') {
+			str[len - 1] = '\0';
+			op->mnemonic = r_str_newf ("string \"%s\"", str);
+			op->ptr = op->addr + 2; // skip op and first '
+			op->ptrsize = len - 1; // remove last ' from len
+			op->size = 2 + op->ptrsize + 2; // (S') + str + ('\n)
+			free (str);
+			return op->size;
+		}
+		free (str);
+	}
+	return -1;
+}
+
 static inline void set_mnemonic_str(RAnalOp *op, const char *n, const ut8 *buf, size_t max) {
-	char *dots = "";
+	char *trunc = "";
 	size_t readlen = op->ptrsize;
 	if (op->ptrsize > max) {
-		dots = "...";
+		trunc = "<truncated>";
 		readlen = max;
 	}
 	char *str = r_str_escape_raw ((ut8 *)buf, readlen);
 	if (str) {
-		op->mnemonic = r_str_newf ("%s \"%s%s\"", n, str, dots);
+		op->mnemonic = r_str_newf ("%s \"%s\"%s", n, str, trunc);
 		free (str);
 	} else {
 		op->mnemonic = r_str_newf ("%s <failed to decode str>", n);
@@ -327,7 +351,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case OP_REDUCE:
 		trivial_op ("reduce");
 	case OP_STRING:
-		return handle_n_lines (op, "string", 1, buf, len);
+		return handle_opstring (op, buf, len);
 	case OP_BINSTRING:
 		return cnt_str (a, op, "binstring", 4, buf, len);
 	case OP_SHORT_BINSTRING:
@@ -496,37 +520,61 @@ static inline int assemble_float(const char *str, ut8 *outbuf, int outsz) {
 	return 0;
 }
 
-static inline int assemble_cnt_str(const char *str, int byte_sz, ut8 *outbuf, int outsz) {
+static inline st64 str_valid_arg(const char *str) {
+	size_t len = strlen (str);
+	if (len < 2 || str[0] != '\"' || str[len - 1] != '\"') {
+		R_LOG_ERROR ("String arg must be quoted");
+		return -2;
+	}
+	return len;
+}
+
+static inline int assemble_cnt_str(char *str, int byte_sz, ut8 *outbuf, int outsz) {
+	st64 len = str_valid_arg (str);
+	if (len < 0) {
+		return len;
+	}
+	// remove quotes from string
+	str[len - 1] = '\0';
+	str++;
 	int wlen = -2;
-	char *write_str = strdup (str);
-	if (write_str) {
-		int len = r_str_unescape (write_str);
-		if (len > 0 && len + byte_sz <= outsz && write_num_sz (len, byte_sz, outbuf, outsz)) {
-			wlen = len + byte_sz;
-			memcpy (outbuf + byte_sz, write_str, len);
-		}
-		free (write_str);
+	len = r_str_unescape (str);
+	if (len > 0 && len + byte_sz <= outsz && write_num_sz (len, byte_sz, outbuf, outsz)) {
+		wlen = len + byte_sz;
+		memcpy (outbuf + byte_sz, str, len);
 	}
 	return wlen;
 }
 
-static inline int assemble_n_str(char *str, ut32 cnt, ut8 *outbuf, int outsz) {
+static inline int assemble_n_str(char *str, ut32 cnt, ut8 *outbuf, int outsz, bool q) {
 	r_return_val_if_fail (cnt <= 2, -2);
-	size_t len = strlen (str);
-	if (len + 1 > outsz) { // str must be be \n terminated in outbuf
+	st64 len = str_valid_arg (str);
+	if (len < 0) {
+		return len;
+	}
+	if (outsz > 0 && len > outsz - 1) { // str must be be \n terminated in outbuf
 		R_LOG_ERROR ("String to large for assembler to handle");
-		return -1;
+		return -2;
 	}
 	if (strchr (str, '\n')) {
 		R_LOG_ERROR ("Shouldn't be newlines in argument");
-		return -1;
+		return -2;
+	}
+
+	if (q) { // string is rpr bracket quoted
+		str[0] = '\'';
+		str[len - 1] = '\'';
+	} else {
+		// don't include quotes in output
+		str = str + 1;
+		len -= 2;
 	}
 
 	if (cnt == 2) {
 		char *space = strchr (str, ' ');
 		if (!space) {
 			R_LOG_ERROR ("Need space between args");
-			return -1;
+			return -2;
 		}
 		*space = '\n';
 	}
@@ -657,18 +705,21 @@ static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int o
 		// two lines
 		case OP_INST:
 		case OP_GLOBAL:
-			wlen += assemble_n_str (arg, 2, outbuf, outsz);
+			wlen += assemble_n_str (arg, 2, outbuf, outsz, false);
 			break;
 		// one line
 		case OP_FLOAT:
 		case OP_INT:
 		case OP_LONG:
 		case OP_PERSID:
-		case OP_STRING:
 		case OP_UNICODE:
 		case OP_GET:
 		case OP_PUT:
-			wlen += assemble_n_str (arg, 1, outbuf, outsz);
+			wlen += assemble_n_str (arg, 1, outbuf, outsz, false);
+			break;
+		// one like rpr style
+		case OP_STRING:
+			wlen += assemble_n_str (arg, 1, outbuf, outsz, true);
 			break;
 		default:
 			r_warn_if_reached ();
