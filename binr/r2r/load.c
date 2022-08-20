@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2021 - thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2022 - pancake, thestr4ng3r */
 
 #include "r2r.h"
 
@@ -240,7 +240,7 @@ beach:
 	free (contents);
 
 	if (test && (test->name.value || test->cmds.value || test->expect.value)) {
-		eprintf ("Warning: found test tokens at the end of \"%s\" without RUN.\n", file);
+		R_LOG_WARN ("found test tokens at the end of \"%s\" without RUN", file);
 	}
 	r2r_cmd_test_free (test);
 	return ret;
@@ -310,13 +310,13 @@ R_API RPVector *r2r_load_asm_test_file(RStrConstPool *strpool, const char *file)
 	const char *cpu;
 	int bits;
 	if (!parse_asm_path (file, strpool, &arch, &cpu, &bits)) {
-		eprintf ("Failed to parse arch/cpu/bits from path %s\n", file);
+		R_LOG_ERROR ("Failed to parse arch/cpu/bits from path %s", file);
 		return NULL;
 	}
 
 	char *contents = r_file_slurp (file, NULL);
 	if (!contents) {
-		eprintf ("Failed to open file \"%s\"\n", file);
+		R_LOG_ERROR ("Failed to open file \"%s\"", file);
 		return NULL;
 	}
 
