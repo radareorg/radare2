@@ -581,6 +581,8 @@ static int cmd_seek(void *data, const char *input) {
 			char mode = input[0];
 			if (input[1] == '=') {
 				mode = 0;
+			} else if (input[1] == '*') {
+				mode = 'r';
 			}
 			RList *list = r_io_sundo_list (core->io, mode);
 			if (list) {
