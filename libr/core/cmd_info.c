@@ -15,10 +15,12 @@ static const char *help_msg_i[] = {
 	"ia", "", "show all info (imports, exports, sections..)",
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
 	"ic", "", "List classes, methods and fields",
-	"icc", "", "List classes, methods and fields in Header Format",
+	"icc", "", "List classes, methods and fields in Header Format (icj for json)",
 	"icg", " [str]", "List classes as agn/age commands to create class hirearchy graphs (matches str if provided)",
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
+	"icl", "", "Show addresses of class and it methods, without names",
+	"ics", "", "Show class symbols in an easy to parse format",
 	"iC", "[j]", "show signature info (entitlements, ...)",
 	"id", "[?]", "show DWARF source lines information",
 	"iD", " lang sym", "demangle symbolname for given language",
@@ -1246,7 +1248,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'c': // "ic"
 			// XXX this is dupe of cbin.c:bin_classes()
 			if (input[1] == '?') {
-				eprintf ("Usage: ic[gljqc**] [class-index or name]\n");
+				eprintf ("Usage: ic[glbjqc**] [class-index or name]\n");
 			} else if (input[1] == 'g') {
 				RBinClass *cls;
 				RListIter *iter;
@@ -1286,7 +1288,7 @@ static int cmd_info(void *data, const char *input) {
 					}
 				}
 				goto done;
-			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
+			} else if (input[1] == ' ' || input[1] == 's' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
 				RList *objs = r_core_bin_files (core);
 				RListIter *objs_iter;
 				RBinFile *bf;
@@ -1387,6 +1389,16 @@ static int cmd_info(void *data, const char *input) {
 							r_list_foreach (obj->classes, iter, cls) {
 								if (!isKnownPackage (cls->name)) {
 									r_cons_printf ("%s\n", cls->name);
+								}
+							}
+						} else if (input[1] == 's') { // "ics"
+							r_list_foreach (obj->classes, iter, cls) {
+								r_list_foreach (cls->methods, iter2, sym) {
+									if (sym->vaddr == 0 || sym->vaddr == UT64_MAX) {
+										continue;
+									}
+									r_cons_printf ("0x%"PFMT64d" [%s] %s\n",
+										sym->vaddr, cls->name, sym->name);
 								}
 							}
 						} else if (input[1] == 'l') { // "icl"
