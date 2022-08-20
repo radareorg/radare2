@@ -8,7 +8,7 @@ r_asm_sources = [
   'binutils_as.c',
   join_paths('p','asm_null.c'),
   join_paths('p','asm_arm_as.c'),
-  join_paths('p','asm_arm_cs.c'),
+  join_paths('p','asm_arm.c'),
   join_paths('p','asm_arm_gnu.c'),
   join_paths('p','asm_arm_winedbg.c'),
   #join_paths('p','asm_gas.c'),

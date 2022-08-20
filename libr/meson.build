@@ -62,7 +62,7 @@ if not no_user_plugins
     io_plugins += [ 'r2web' ]
   endif
   if user_plugins.contains('arm')
-    asm_plugins += [ 'arm_cs' ]
+    asm_plugins += [ 'arm' ]
     anal_plugins += [ 'arm_cs' ]
     bp_plugins += [ 'arm' ]
     parse_plugins += [ 'arm_pseudo' ]
@@ -119,7 +119,7 @@ if no_user_plugins
 
 asm_plugins += [
   'arm_as',
-  'arm_cs',
+  'arm',
   'arm_winedbg',
   'or1k',
   'ppc_as',
