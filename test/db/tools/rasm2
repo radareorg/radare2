@@ -140,6 +140,7 @@ RUN
 
 NAME=rasm2 #1167 3
 FILE=-
+REQUIRE=gas linux x86
 CMDS=!rasm2 -s att -a x86.as -b 64 "test %rbx, %rax" 
 EXPECT=<<EOF
 4885d8
@@ -148,6 +149,7 @@ RUN
 
 NAME=rasm2 #1167 4
 FILE=-
+REQUIRE=gas linux x86
 CMDS=!rasm2 -s intel -a x86.as -b 64 "test rax, rbx" 
 EXPECT=<<EOF
 4885d8
@@ -156,6 +158,7 @@ RUN
 
 NAME=rasm2 #1167 5
 FILE=-
+REQUIRE=gas linux x86
 CMDS=!rasm2 -s att -a x86.as -b 64 "add \$33, %rbx"
 EXPECT=<<EOF
 4883c321
@@ -164,6 +167,7 @@ RUN
 
 NAME=rasm2 #1167 6
 FILE=-
+REQUIRE=gas linux x86
 CMDS=!rasm2 -s intel -a x86.as -b 64 "add rbx, 33" 
 EXPECT=<<EOF
 4883c321
@@ -323,6 +327,7 @@ RUN
 
 NAME=rasm2 -s att -a x86.as -b 64 movq %rdx, %rax
 FILE=-
+REQUIRE=gas linux x86
 CMDS=!rasm2 -s att -a x86.as -b 64 "movq %rdx, %rax"
 EXPECT=<<EOF
 4889d0
