@@ -470,6 +470,10 @@ static int cmd_mount(void *data, const char *_input) {
 			r_core_cmd_help_match_spec (core, help_msg_m, "ms", 0, true);
 			break;
 		};
+		if (!r_config_get_b (core->config, "scr.interactive")) {
+			R_LOG_ERROR ("mount shell requires scr.interactive");
+			break;
+		}
 		if (core->http_up) {
 			free (oinput);
 			return false;
