@@ -538,17 +538,19 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, const char *
 	}
 
 beach:
-	if (t) {
-		if (tq) {
-			r_table_query (t, tq);
+	if (tq) {
+		r_table_query (t, tq);
+	}
+	if (!strstr (tq, "?")) {
+		if (t) {
+			char *s = r_table_tostring (t);
+			r_cons_printf ("%s\n", s);
+			free (s);
+		} else if (pj) {
+			pj_end (pj);
+			r_cons_printf ("%s\n", pj_string (pj));
+			pj_free (pj);
 		}
-		char *s = r_table_tostring (t);
-		r_cons_printf ("%s\n", s);
-		free (s);
-	} else if (pj) {
-		pj_end (pj);
-		r_cons_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
 	}
 }
 

@@ -1146,7 +1146,7 @@ static int cmd_meta(void *data, const char *input) {
 		if (!input[0] || input[1] == '.') {
 			r_meta_print_list_at (core->anal, core->offset, *input, input + 2);
 		} else {
-			r_meta_print_list_all (core->anal, R_META_TYPE_ANY, *input, input + 2);
+			r_meta_print_list_all (core->anal, R_META_TYPE_ANY, *input, input + 1);
 		}
 		break;
 	}
