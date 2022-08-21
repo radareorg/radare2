@@ -40,12 +40,14 @@ R_API void r_debug_bp_update(RDebug *dbg) {
 	}
 }
 
+#if __i386__ || __x86_64__
 static int r_debug_drx_at(RDebug *dbg, ut64 addr) {
 	if (dbg && dbg->h && dbg->h->drx) {
 		return dbg->h->drx (dbg, 0, addr, 0, 0, 0, DRX_API_GET_BP);
 	}
 	return -1;
 }
+#endif
 
 /*
  * Recoiling after a breakpoint has two stages:
