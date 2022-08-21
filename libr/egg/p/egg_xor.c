@@ -25,7 +25,7 @@ static RBuffer *build(REgg *egg) {
 	}
 	if (nkey != (nkey & 0xff)) {
 		nkey &= 0xff;
-		R_LOG_INFO ("xor key wrapped to (%d)\n", nkey);
+		R_LOG_INFO ("xor key wrapped to (%d)", nkey);
 	}
 	if (r_buf_size (egg->bin) > 240) { // XXX
 		R_LOG_ERROR ("shellcode is too long :(");
@@ -42,7 +42,7 @@ static RBuffer *build(REgg *egg) {
 	for (i = 0; i < r_buf_size (sc); i++) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
 		if ((r_buf_read8_at (sc, i) ^ nkey) == 0) {
-			R_LOG_INNFO ("This xor key generates null bytes. Try again");
+			R_LOG_INFO ("This xor key generates null bytes. Try again");
 			free (key);
 			return NULL;
 		}

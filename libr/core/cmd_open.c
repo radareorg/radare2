@@ -583,9 +583,10 @@ static void cmd_omf(RCore *core, int argc, char *argv[]) {
 
 static void r_core_cmd_omt(RCore *core, const char *arg) {
 	RTable *t = r_table_new ("iomaps");
-
+	if (!t) {
+		return;
+	}
 	r_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
-
 	ut32 mapid;
 	r_id_storage_get_lowest (core->io->maps, &mapid);
 	do {
@@ -601,7 +602,7 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 			va, va_end, r_str_rwx_i (m->perm), name);
 	} while (r_id_storage_get_next (core->io->maps, &mapid));
 	if (r_table_query (t, arg)) {
-		char *ts = r_table_tofancystring (t);
+		char *ts = strchr (arg, ':')? r_table_tostring (t) : r_table_tofancystring (t);
 		r_cons_printf ("%s", ts);
 		free (ts);
 	}
