@@ -3599,8 +3599,8 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e io.cache=true
-$orig_end=?e `omt va_end/cols~[0]:3`
-omr 1 `omt size/cols~[0]:3`+2
+$orig_end=?e `om,va_end/cols~[0]:3`
+omr 1 `om,size/cols~[0]:3`+2
 s `$orig_end`
 wa jmp entry0
 aF
