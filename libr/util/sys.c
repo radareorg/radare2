@@ -622,6 +622,10 @@ R_API bool r_sys_aslr(int val) {
 
 #if __UNIX__ && HAVE_SYSTEM
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return false;
+	}
+
 	char *mysterr = NULL;
 	if (!sterr) {
 		sterr = &mysterr;
