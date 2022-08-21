@@ -171,6 +171,7 @@ extern RFSPlugin r_fs_plugin_cpio;
 extern RFSPlugin r_fs_plugin_xfs;
 extern RFSPlugin r_fs_plugin_fb;
 extern RFSPlugin r_fs_plugin_minix;
+extern RFSPlugin r_fs_plugin_zip;
 extern RFSPlugin r_fs_plugin_posix;
 #endif
 
