@@ -1150,13 +1150,12 @@ static void autocomplete_mount_point(RLineCompletion *completion, RCore *core, c
 
 static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const char *str, const char *path) {
 	r_return_if_fail (completion && core && str && path);
-	char *lpath = NULL, *dirname = NULL , *basename = NULL;
-	char *p = NULL;
-	char *pwd = (core->rfs && core->rfs->cwd && *(core->rfs->cwd)) ? *(core->rfs->cwd): ".";
+	char *dirname = NULL , *basename = NULL;
+	char *pwd = strdup (core->rfs->cwd? (const char *)core->rfs->cwd: ".");
 	int n = 0;
 	RFSFile *file;
-	lpath = r_str_new (path);
-	p = (char *)r_str_last (lpath, R_SYS_DIR);
+	char *lpath = r_str_new (path);
+	char *p = (char *)r_str_last (lpath, R_SYS_DIR);
 	if (p) {
 		*p = 0;
 		if (p == lpath) { // /xxx
@@ -1181,13 +1180,14 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
     		}
 		basename = r_str_new (lpath);
 	}
+	R_FREE (pwd);
 
 	if (!dirname || !basename) {
 		goto out;
 	}
 	RList *list = r_fs_dir (core->fs, dirname);
 	n = strlen (basename);
-	bool chgdir = !strncmp (str, "cd ", 3);
+	bool chgdir = r_str_startswith (str, "cd ");
 	if (list) {
 		RListIter *iter;
 		r_list_foreach (list, iter, file) {
@@ -1729,29 +1729,23 @@ static void autocomplete_macro(RCore *core, RLineCompletion *completion, const c
 static void autocomplete_file(RLineCompletion *completion, const char *str) {
 	r_return_if_fail (completion && str);
 	char *pipe = strchr (str, '>');
-
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
 	}
-	if (str && !*str) {
-		autocomplete_process_path (completion, str, "./");
-	} else {
-		autocomplete_process_path (completion, str, str);
-	}
+	const char *arg = (str && !*str)? "./": str;
+	autocomplete_process_path (completion, str, arg);
 }
 
 static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const char *str) {
 	r_return_if_fail (str);
 	char *pipe = strchr (str, '>');
-	char *path = (core->rfs && core->rfs->cwd && *(core->rfs->cwd)) ? *(core->rfs->cwd): "/";
+	char *path = strdup ((core->rfs->cwd && *core->rfs->cwd) ? (const char *)core->rfs->cwd: "/");
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
 	}
-	if (str && !*str) {
-		autocomplete_ms_path (completion, core, str, path);
-	} else {
-		autocomplete_ms_path (completion, core, str, str);
-	}
+	const char *arg = (str && !*str)? path: str;
+	autocomplete_ms_path (completion, core, str, arg);
+	free (path);
 }
 
 static void autocomplete_charsets(RCore *core, RLineCompletion *completion, const char *str) {
@@ -2992,6 +2986,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	core->chan = NULL;
 	r_core_setenv (core);
+	core->rfs = r_fs_shell_new ();
 	core->ev = r_event_new (core);
 	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler, NULL);
 	core->max_cmd_depth = R_CONS_CMD_DEPTH + 1;
@@ -3315,6 +3310,7 @@ R_API void r_core_fini(RCore *c) {
 	sdb_free (c->sdb);
 	r_core_log_free (c->log);
 	r_parse_free (c->parser);
+	r_fs_shell_free (c->rfs);
 	free (c->times);
 }
 
