@@ -15,9 +15,6 @@ int LLVMFuzzerInitialize(int *argc, char ***argv) {
 }
 
 int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
-	r_sys_clearenv ();
-	r_sandbox_enable (true);
-
 	char *str = malloc (len + 1);
 	memcpy (str, data, len);
 	str[len] = 0;

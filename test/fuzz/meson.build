@@ -1,6 +1,7 @@
 if get_option('enable_libfuzzer')
   targets = [
     'bin',
+    'bin_demangle',
     'run_parseline',
   ]
 
