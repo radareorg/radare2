@@ -7,16 +7,16 @@
 #include <r_util/r_sys.h>
 #include <r_util/r_sandbox.h>
 
-const char *opt_forcebin = NULL;
+static int demangle_type = R_BIN_NM_CXX;
 
 static void usage() {
 	printf (
-	"Usage: fuzz_bin <libFuzzer flags> <corpora> -- <flags>\n"
+	"Usage: fuzz_bin_demangle <libFuzzer flags> <corpora> -- <flags>\n"
 	"\n"
 	"libFuzzer flags: show with -help=1\n"
 	"\n"
 	"Target Flags\n"
-	" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
+	" -l [lang]     set demangle lang\n"
 	);
 	exit (1);
 }
@@ -44,11 +44,11 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 		argc = argc - i;
 
 		RGetopt opt;
-		r_getopt_init (&opt, argc, argv, "F:");
+		r_getopt_init (&opt, argc, argv, "l:");
 		while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
-		case 'F':
-			opt_forcebin = opt.arg;
+		case 'l':
+			demangle_type = r_bin_demangle_type (opt.arg);
 			break;
 		default:
 			usage();
@@ -65,23 +65,25 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 }
 
 int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
-	RBuffer *buf = r_buf_new_with_bytes (data, len);
-	RBin *bin = r_bin_new ();
-	RIO *io = r_io_new ();
-	r_io_bind (io, &bin->iob);
+	char *str = malloc (len + 1);
+	memcpy (str, data, len);
+	str[len] = 0;
 
-	if (opt_forcebin) {
-		r_bin_force_plugin (bin, opt_forcebin);
+	ut64 vaddr = 0x10000000;
+	char *demangled = NULL;
+	// TODO: replace with r_bin_demangle
+	switch (demangle_type) {
+	case R_BIN_NM_JAVA: demangled = r_bin_demangle_java (str); break;
+	case R_BIN_NM_RUST: demangled = r_bin_demangle_rust (NULL, str, vaddr); break;
+	case R_BIN_NM_OBJC: demangled = r_bin_demangle_objc (NULL, str); break;
+	case R_BIN_NM_SWIFT: demangled = r_bin_demangle_swift (str, false, false); break;
+	case R_BIN_NM_CXX: demangled = r_bin_demangle_cxx (NULL, str, vaddr); break;
+	case R_BIN_NM_MSVC: demangled = r_bin_demangle_msvc (str); break;
+	default:
+		abort();
 	}
 
-	RBinFileOptions bo;
-	r_bin_file_options_init (&bo, /*fd*/ -1, /*baseaddr*/ 0x10000000, /*loadaddr*/ 0, /*rawstr*/ 0);
-	bo.filename = strdup ("test");
-	r_bin_open_buf (bin, buf, &bo);
-
-	r_bin_free (bin);
-	R_FREE (bo.filename);
-	r_io_free (io);
-	r_buf_free (buf);
+	free (str);
+	free (demangled);
 	return 0;
 }
