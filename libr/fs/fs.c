@@ -164,7 +164,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	root->p = p;
 	root->iob = fs->iob;
 	root->cob = fs->cob;
-	if (!p->mount (root)) {
+	if (p->mount && !p->mount (root)) {
 		free (str);
 		free (heapFsType);
 		r_fs_root_free (root);

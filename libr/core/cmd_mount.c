@@ -169,21 +169,21 @@ static int cmd_mount(void *data, const char *_input) {
 			const char *fstype = ptr;
 			if (*mountp != '/') {
 				if (*fstype != '/') {
-					eprintf ("Invalid mountpoint\n");
+					R_LOG_ERROR ("Invalid mountpoint");
 					return 0;
 				}
 				mountp = ptr;
 				fstype = input;
 			}
 			if (fstype && !r_fs_mount (core->fs, fstype, mountp, off)) {
-				eprintf ("Cannot mount %s\n", input);
+				R_LOG_ERROR ("Cannot mount %s", input);
 			}
 		} else {
 			if (!(ptr = r_fs_name (core->fs, core->offset))) {
-				eprintf ("Unknown filesystem type\n");
+				R_LOG_ERROR ("Unknown filesystem type");
 			}
 			if (ptr && !r_fs_mount (core->fs, ptr, input, core->offset)) {
-				eprintf ("Cannot mount %s\n", input);
+				R_LOG_ERROR ("Cannot mount %s", input);
 			}
 			free (ptr);
 		}
@@ -292,7 +292,7 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 			r_list_free (list);
 		} else {
-			eprintf ("Cannot read partition\n");
+			R_LOG_ERROR ("Cannot read partition");
 		}
 		break;
 	case 'o': // "mo"
@@ -309,7 +309,7 @@ static int cmd_mount(void *data, const char *_input) {
 					r_io_desc_write (fd, file->data, file->size);
 				}
 			} else {
-				eprintf ("Cannot open file\n");
+				R_LOG_ERROR ("Cannot open file");
 			}
 		}
 		break;
@@ -325,7 +325,7 @@ static int cmd_mount(void *data, const char *_input) {
 				r_cons_printf ("f file %d 0x%08"PFMT64x"\n", file->size, file->off);
 				r_fs_close (core->fs, file);
 			} else {
-				eprintf ("Cannot open file\n");
+				R_LOG_ERROR ("Cannot open file");
 			}
 		}
 		break;
@@ -378,7 +378,7 @@ static int cmd_mount(void *data, const char *_input) {
 		char *hfilename = NULL;
 		const char *filename = r_str_trim_head_ro (input);
 		if (R_STR_ISEMPTY (filename)) {
-			eprintf ("No filename given\n");
+			R_LOG_WARN ("No filename given");
 			break;
 		}
 		if (r_str_startswith (filename, "base64:")) {
@@ -401,7 +401,7 @@ static int cmd_mount(void *data, const char *_input) {
 			int blocksize = file->size < core->blocksize ? file->size : core->blocksize;
 			size = size > 0 ? size : file->size;
 			if (r_file_exists (localFile) && !r_sys_truncate (localFile, 0)) {
-				eprintf ("Cannot create file %s\n", localFile);
+				R_LOG_ERROR ("Cannot create file %s", localFile);
 				break;
 			}
 			while (total_bytes_read < size && ptr < file->size) {
@@ -422,7 +422,7 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 			free (localFile);
 		} else if (!r_fs_dir_dump (core->fs, filename, ptr)) {
-			eprintf ("Cannot open file (%s) (%s).\n", filename, ptr);
+			R_LOG_ERROR ("Cannot open file (%s) (%s)", filename, ptr);
 		}
 		free (hfilename);
 		break;
@@ -444,7 +444,7 @@ static int cmd_mount(void *data, const char *_input) {
 				}
 				//XXX: r_list_purge (list);
 			} else {
-				eprintf ("Unknown store path\n");
+				R_LOG_ERROR ("Unknown store path");
 			}
 			break;
 		case 'o':
@@ -460,7 +460,7 @@ static int cmd_mount(void *data, const char *_input) {
 				}
 				//XXX: r_list_purge (list);
 			} else {
-				eprintf ("Unknown store path\n");
+				R_LOG_ERROR ("Unknown store path");
 			}
 			break;
 		}
