@@ -22,10 +22,122 @@ AAAAAAAAAAAAAAAA
 EOF
 RUN
 
+NAME=rarun2 repeat invalid num
+FILE=-
+CMDS=!rarun2 arg1='@yeet@A' -- echo
+EXPECT_ERR=<<EOF
+ERROR: Invalid num in @<num>@<pattern> expr
+EOF
+RUN
+
+NAME=rarun2 repeat missing pattern
+FILE=-
+CMDS=!rarun2 arg1='@16@' -- echo
+EXPECT_ERR=<<EOF
+ERROR: Missing pattern in @<num>@<pattern> expr
+EOF
+RUN
+
 NAME=rarun2 null input
 FILE=-
 CMDS=!rarun2 input='AAAA\x00\x00AAAA' -- rax2 -S
 EXPECT=<<EOF
 41414141000041414141
+EOF
+RUN
+
+NAME=rarun2 bang expr input
+FILE=-
+CMDS=!rarun2 input='!printf ABCD' -- cat
+EXPECT=ABCD
+RUN
+
+NAME=rarun2 backtick expr input
+FILE=-
+CMDS=!rarun2 input='`printf ABCD`' -- cat
+EXPECT=ABCD
+RUN
+
+NAME=rarun2 backtick expr err
+FILE=-
+CMDS=!rarun2 input='`printf ABCD' -- cat
+EXPECT_ERR=<<EOF
+ERROR: Unterminated backtick expr in input
+ERROR: Invalid input
+EOF
+RUN
+
+NAME=rarun2 backtick expr empty
+FILE=-
+CMDS=!rarun2 input='``' -- cat
+EXPECT=
+RUN
+
+NAME=rarun2 single quotes input
+FILE=-
+CMDS=!rarun2 input="'ABCD'" -- cat
+EXPECT=ABCD
+RUN
+
+NAME=rarun2 single quotes err
+FILE=-
+CMDS=!rarun2 input="'AAAA" -- cat
+EXPECT_ERR=<<EOF
+ERROR: Unterminated string literal in input: ' expected
+ERROR: Invalid input
+EOF
+RUN
+
+NAME=rarun2 double quotes input
+FILE=-
+CMDS=!rarun2 input='"ABCD"' -- cat
+EXPECT=ABCD
+RUN
+
+NAME=rarun2 double quotes err
+FILE=-
+CMDS=!rarun2 input='"AAAA' -- cat
+EXPECT_ERR=<<EOF
+ERROR: Unterminated string literal in input: " expected
+ERROR: Invalid input
+EOF
+RUN
+
+NAME=rarun2 double quotes escape
+FILE=-
+CMDS=!rarun2 input='"\x41"' -- cat
+EXPECT=A
+RUN
+
+NAME=rarun2 colon expr
+FILE=-
+CMDS=!rarun2 input=':41424344' -- cat
+EXPECT=ABCD
+RUN
+
+NAME=rarun2 colon expr empty
+FILE=-
+CMDS=!rarun2 input=':' -- cat
+EXPECT=
+RUN
+
+NAME=rarun2 colon bang expr
+FILE=-
+CMDS=!rarun2 input=':!printf 41424344' -- cat
+EXPECT=ABCD
+RUN
+
+NAME=rarun2 colon bang expr padding
+FILE=-
+CMDS=!rarun2 input=':!printf "  4142 4344 "' -- cat
+EXPECT=ABCD
+RUN
+
+NAME=rarun2 colon bang invalid hex
+FILE=-
+CMDS=!rarun2 input=':!printf sogga' -- cat
+EXPECT_ERR=<<EOF
+ERROR: Invalid hexpair string
+ERROR: Invalid input
 EOF
 RUN

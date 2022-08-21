@@ -2,6 +2,7 @@
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
+#include <errno.h>
 #include <fcntl.h>
 #include <r_socket.h>
 #include <r_util.h>
@@ -131,6 +132,7 @@ R_API bool r_run_parse(RRunProfile *pf, const char *profile) {
 }
 
 R_API void r_run_free(RRunProfile *r) {
+	int i;
 	if (r) {
 		free (r->_system);
 		free (r->_program);
@@ -144,6 +146,20 @@ R_API void r_run_free(RRunProfile *r) {
 		free (r->_chroot);
 		free (r->_libpath);
 		free (r->_preload);
+		free (r->_pidfile);
+		free (r->_connect);
+		free (r->_listen);
+		free (r->_input);
+		free (r->_setuid);
+		free (r->_seteuid);
+		free (r->_setgid);
+		free (r->_setegid);
+		if (r->_args[0] != r->_program) {
+			free (r->_args[0]);
+		}
+		for (i = 1; i < R_RUN_PROFILE_NARGS; i++) {
+			free (r->_args[i]);
+		}
 		free (r);
 	}
 }
@@ -166,9 +182,9 @@ static char *getstr(const char *src, R_NULLABLE size_t *out_len) {
 	size_t len = 0;
 	char *ret = NULL;
 
-	switch (*src) {
+	switch (*(src++)) {
 	case '\'':
-		ret = strdup (src+1);
+		ret = strdup (src);
 		if (ret) {
 			len = strlen (ret);
 			if (len > 0) {
@@ -177,13 +193,13 @@ static char *getstr(const char *src, R_NULLABLE size_t *out_len) {
 					ret[len] = 0;
 					goto beach;
 				}
-				R_LOG_ERROR ("Missing \"");
+				R_LOG_ERROR ("Unterminated string literal in input: ' expected");
 			}
 			free (ret);
 		}
 		return NULL;
 	case '"':
-		ret = strdup (src + 1);
+		ret = strdup (src);
 		if (ret) {
 			len = strlen (ret);
 			if (len > 0) {
@@ -193,19 +209,31 @@ static char *getstr(const char *src, R_NULLABLE size_t *out_len) {
 					r_str_unescape (ret);
 					goto beach;
 				}
-				R_LOG_ERROR ("Missing \"");
+				R_LOG_ERROR ("Unterminated string literal in input: \" expected");
 			}
 			free (ret);
 		}
 		return NULL;
 	case '@':
 		{
-			char *pat = strchr (src + 1, '@');
-			if (pat) {
+			char *pat, *endptr;
+			if ((pat = strchr (src, '@'))) {
 				size_t i, pat_len;
 				*pat++ = 0;
-				len = strtoul (src + 1, NULL, 10);
+				len = strtoul (src, &endptr, 10);
+				if (*endptr != 0) {
+					R_LOG_ERROR ("Invalid num in @<num>@<pattern> expr");
+					return NULL;
+				}
+				if (errno == EINVAL || errno == ERANGE || len > 64000000) {
+					R_LOG_ERROR ("Out-of-bounds num in @<num>@<pattern> expr");
+					return NULL;
+				}
 				pat_len = strlen (pat);
+				if (pat_len == 0) {
+					R_LOG_ERROR ("Missing pattern in @<num>@<pattern> expr");
+					return NULL;
+				}
 				if (len > 0) {
 					ret = malloc (len + 1);
 					if (ret) {
@@ -218,46 +246,64 @@ static char *getstr(const char *src, R_NULLABLE size_t *out_len) {
 				}
 			}
 			// slurp file
-			ret = r_file_slurp (src + 1, &len);
+			ret = r_file_slurp (src, &len);
+			break;
 		}
 	case '`':
 		{
-		char *msg = strdup (src + 1);
-		int msg_len = strlen (msg);
-		if (msg_len > 0) {
-			msg [msg_len - 1] = 0;
-			char *ret = r_sys_cmd_str (msg, NULL, NULL);
-			r_str_trim_tail (ret);
-			free (msg);
-			len = strlen (ret);
-			goto beach;
+		size_t msg_len = strlen (src);
+		if (msg_len == 0) {
+			R_LOG_ERROR ("Invalid backtick expression in input");
+			return NULL;
 		}
+		if (src [msg_len - 1] != '`') {
+			R_LOG_ERROR ("Unterminated backtick expr in input");
+			return NULL;
+		}
+		char *msg = strdup (src);
+		if (!msg) {
+			return NULL;
+		}
+		msg [msg_len - 1] = 0;
+		int cmd_len = 0;
+		ret = r_sys_cmd_str (msg, NULL, &cmd_len);
+		len = (size_t)cmd_len;
+		r_str_trim_tail (ret);
 		free (msg);
-		ret = strdup ("");
+		break;
 		}
 	case '!':
 		{
-		ret = r_sys_cmd_str (src + 1, NULL, NULL);
+		ret = r_sys_cmd_str (src, NULL, NULL);
+		if (!ret) {
+			return NULL;
+		}
 		r_str_trim_tail (ret);
 		len = strlen (ret);
+		break;
 		}
 	case ':':
-		if (src[1] == '!') {
-			ret = r_sys_cmd_str (src + 1, NULL, NULL);
-			r_str_trim_tail (ret); // why no head :?
-		} else {
-			ret = strdup (src);
+		{
+		char *hex = getstr (src, NULL);
+		if (!hex) {
+			return NULL;
 		}
-		len = r_hex_str2bin (src + 1, (ut8*)ret);
-		if (len > 0) {
-			ret[len] = 0;
-			goto beach;
+		int hexlen = r_hex_str2bin (hex, NULL);
+		if (hexlen <= 0) {
+			R_LOG_ERROR ("Invalid hexpair string");
+			free (hex);
+			return NULL;
 		}
-		R_LOG_ERROR ("Invalid hexpair string");
-		free (ret);
-		return NULL;
+		len = (size_t)hexlen;
+		ret = malloc (len + 1);
+		ret[len] = 0;
+		r_hex_str2bin (hex, (ut8*)ret);
+		free (hex);
+		}
+		break;
 	default:
-		len = r_str_unescape ((ret = strdup (src)));
+		len = r_str_unescape ((ret = strdup (src - 1)));
+		break;
 	}
 
 beach:
@@ -1046,11 +1092,11 @@ R_API int r_run_config_env(RRunProfile *p) {
 			if  (write (f2[1], inp, inpl) != inpl) {
 				R_LOG_ERROR ("Cannot write to the pipe");
 			}
-			close (f2[1]);
 			free (inp);
 		} else {
 			R_LOG_ERROR ("Invalid input");
 		}
+		close (f2[1]);
 	}
 #endif
 	if (p->_r2preload) {
