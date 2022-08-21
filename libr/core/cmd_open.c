@@ -142,6 +142,7 @@ static const char *help_msg_om[] = {
 	"om-*", "", "remove all maps",
 	"om-..", "", "hud view of all the maps to select the one to remove",
 	"om.", "", "show map, that is mapped to current offset",
+	"om,", " [query]", "list maps using table api",
 	"om=", "", "list all maps in ascii art",
 	"oma"," [fd]", "create a map covering all VA for given fd",
 	"omb", " ", "list/select memory map banks",
@@ -160,8 +161,7 @@ static const char *help_msg_om[] = {
 	"ompf", " [fd]", "prioritize map by fd",
 	"omq", "", "list all maps and their fds",
 	"omqq", "", "list all maps addresses (See $MM to get the size)",
-	"omr", " mapid newsize", "resize map with corresponding id",
-	"omt", " [query]", "list maps using table api", // "om,"
+	"omr", " [mapid newsize]", "resize map with corresponding id",
 	NULL
 };
 
@@ -876,7 +876,15 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		break;
 	case 'r': // "omr"
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_om, "omr", true);
+			break;
+		}
 		if (input[2] != ' ') {
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			if (map) {
+				r_cons_printf ("%"PFMT64d"\n", r_itv_size (map->itv));
+			}
 			break;
 		}
 		P = strchr (input + 3, ' ');
@@ -955,6 +963,10 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		break;
 	case 't': // "omt"
+		R_LOG_WARN ("Deprecated. use 'om,' instead of 'omt'")
+		r_core_cmd_omt (core, input + 2);
+		break;
+	case ',': // "om,"
 		r_core_cmd_omt (core, input + 2);
 		break;
 	case ' ': // "om"

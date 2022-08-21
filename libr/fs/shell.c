@@ -127,7 +127,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		}
 		free (cwd);
 	} else if (r_str_startswith (buf, "pwd")) {
-		cb_printf ("%s\n", shell->cwd);
+		cb_printf ("%s\n", (const char *)shell->cwd);
 	} else if (r_str_startswith (buf, "cd ")) {
 		const char *input = r_str_trim_head_ro (buf + 3);
 		char *abspath = fs_abspath (shell, input);

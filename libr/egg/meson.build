@@ -11,7 +11,6 @@ r_egg_sources = [
   #'p/egg_cb.c',
   'p/egg_exec.c',
   #'p/egg_reverse.c',
-  #'p/egg_shya.c',
   'p/egg_xor.c'
 ]
 

@@ -346,7 +346,7 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 			}
 			// LEAK r_asm_code_free (asmcode);
 		} else {
-			eprintf ("fail assembling\n");
+			R_LOG_ERROR ("fail assembling");
 		}
 	}
 	free (code);
@@ -448,7 +448,7 @@ R_API bool r_egg_padding(REgg *egg, const char *pad) {
 		number = strtol (p, NULL, 10);
 
 		if (number < 1) {
-			eprintf ("Invalid padding length at %d\n", number);
+			R_LOG_ERROR ("Invalid padding length at %d", number);
 			free (o);
 			return false;
 		}
@@ -462,7 +462,7 @@ R_API bool r_egg_padding(REgg *egg, const char *pad) {
 		case 't':
 		case 'T': padding_byte = 0xcc; break;
 		default:
-			eprintf ("Invalid padding format (%c)\n", *p);
+			R_LOG_ERROR ("Invalid padding format (%c)", *p);
 			eprintf ("Valid ones are:\n");
 			eprintf ("	s S : NULL byte\n");
 			eprintf ("	n N : nop\n");
@@ -511,7 +511,7 @@ R_API bool r_egg_shellcode(REgg *egg, const char *name) {
 		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p->name)) {
 			b = p->build (egg);
 			if (!b) {
-				eprintf ("%s Shellcode has failed\n", p->name);
+				R_LOG_ERROR ("%s Shellcode has failed", p->name);
 				return false;
 			}
 			ut64 tmpsz;
