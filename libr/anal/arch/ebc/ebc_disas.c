@@ -286,35 +286,35 @@ static int decode_cmpeq(const ut8 *bytes, ebc_command_t *cmd) {
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%deq",
 			instr_names[EBC_CMPLTE], bits);
-	return decode_cmp(bytes, cmd);
+	return decode_cmp (bytes, cmd);
 }
 
 static int decode_cmplte(const ut8 *bytes, ebc_command_t *cmd) {
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%dlte",
 			instr_names[EBC_CMPLTE], bits);
-	return decode_cmp(bytes, cmd);
+	return decode_cmp (bytes, cmd);
 }
 
 static int decode_cmpgte(const ut8 *bytes, ebc_command_t *cmd) {
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%dgte",
 			instr_names[EBC_CMPGTE], bits);
-	return decode_cmp(bytes, cmd);
+	return decode_cmp (bytes, cmd);
 }
 
 static int decode_cmpulte(const ut8 *bytes, ebc_command_t *cmd) {
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%dulte",
 			instr_names[EBC_CMPULTE], bits);
-	return decode_cmp(bytes, cmd);
+	return decode_cmp (bytes, cmd);
 }
 
 static int decode_cmpugte(const ut8 *bytes, ebc_command_t *cmd) {
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%dugte",
 			instr_names[EBC_CMPUGTE], bits);
-	return decode_cmp(bytes, cmd);
+	return decode_cmp (bytes, cmd);
 }
 
 static int decode_not(const ut8 *bytes, ebc_command_t *cmd) {

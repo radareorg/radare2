@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
+#define R_LOG_ORIGIN "anal.ppc.gnu"
+
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
@@ -67,9 +69,14 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->size = print_insn_little_powerpc ((bfd_vma)Offset, &disasm_obj);
 	}
 	if (op->size == -1) {
-		op->mnemonic = strdup ("(data)");
+		op->mnemonic = strdup ("invalid");
 	} else {
 		op->mnemonic = r_strbuf_drain (buf_global);
+		if (R_STR_ISEMPTY (op->mnemonic)) {
+			free (op->mnemonic);
+			op->mnemonic = strdup ("invalid");
+			op->size = -1;
+		}
 		buf_global = NULL;
 	}
 	return op->size;
@@ -86,15 +93,17 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	int lk = bytes[3]&0x1;
 	//if (baddr>0x7fff)
 	//      baddr = -baddr;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
-		disassemble (anal, op, addr, bytes, len);
-	}
 
 	op->addr = addr;
 	op->type = 0;
 	op->size = 4;
-
-	//eprintf("OPCODE IS %08x : %02x (opcode=%d) baddr = %d\n", addr, bytes[0], opcode, baddr);
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		int res = disassemble (anal, op, addr, bytes, len);
+		if (res == -1) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+		}
+	}
+	R_LOG_DEBUG ("OPCODE IS %08x : %02x (opcode=%d) baddr = %d", addr, bytes[0], opcode, baddr);
 
 	switch (opcode) {
 //	case 0: // bl op->type = R_ANAL_OP_TYPE_NOP; break;

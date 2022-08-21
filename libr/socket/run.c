@@ -2,6 +2,7 @@
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
+#include <errno.h>
 #include <fcntl.h>
 #include <r_socket.h>
 #include <r_util.h>
@@ -131,6 +132,7 @@ R_API bool r_run_parse(RRunProfile *pf, const char *profile) {
 }
 
 R_API void r_run_free(RRunProfile *r) {
+	int i;
 	if (r) {
 		free (r->_system);
 		free (r->_program);
@@ -144,6 +146,20 @@ R_API void r_run_free(RRunProfile *r) {
 		free (r->_chroot);
 		free (r->_libpath);
 		free (r->_preload);
+		free (r->_pidfile);
+		free (r->_connect);
+		free (r->_listen);
+		free (r->_input);
+		free (r->_setuid);
+		free (r->_seteuid);
+		free (r->_setgid);
+		free (r->_setegid);
+		if (r->_args[0] != r->_program) {
+			free (r->_args[0]);
+		}
+		for (i = 1; i < R_RUN_PROFILE_NARGS; i++) {
+			free (r->_args[i]);
+		}
 		free (r);
 	}
 }
@@ -162,28 +178,28 @@ static void set_limit(int n, int a, ut64 b) {
 }
 #endif
 
-static char *getstr(const char *src) {
-	int len;
+static char *getstr(const char *src, R_NULLABLE size_t *out_len) {
+	size_t len = 0;
 	char *ret = NULL;
 
-	switch (*src) {
+	switch (*(src++)) {
 	case '\'':
-		ret = strdup (src+1);
+		ret = strdup (src);
 		if (ret) {
 			len = strlen (ret);
 			if (len > 0) {
 				len--;
 				if (ret[len] == '\'') {
 					ret[len] = 0;
-					return ret;
+					goto beach;
 				}
-				R_LOG_ERROR ("Missing \"");
+				R_LOG_ERROR ("Unterminated string literal in input: ' expected");
 			}
 			free (ret);
 		}
 		return NULL;
 	case '"':
-		ret = strdup (src + 1);
+		ret = strdup (src);
 		if (ret) {
 			len = strlen (ret);
 			if (len > 0) {
@@ -191,72 +207,109 @@ static char *getstr(const char *src) {
 				if (ret[len] == '"') {
 					ret[len] = 0;
 					r_str_unescape (ret);
-					return ret;
+					goto beach;
 				}
-				R_LOG_ERROR ("Missing \"");
+				R_LOG_ERROR ("Unterminated string literal in input: \" expected");
 			}
 			free (ret);
 		}
 		return NULL;
 	case '@':
 		{
-			char *pat = strchr (src + 1, '@');
-			if (pat) {
-				size_t len;
-				long i, rep;
+			char *pat, *endptr;
+			if ((pat = strchr (src, '@'))) {
+				size_t i, pat_len;
 				*pat++ = 0;
-				rep = strtol (src + 1, NULL, 10);
-				len = strlen (pat);
-				if (rep > 0) {
-					char *buf = malloc (rep);
-					if (buf) {
-						for (i = 0; i < rep; i++) {
-							buf[i] = pat[i % len];
+				len = strtoul (src, &endptr, 10);
+				if (*endptr != 0) {
+					R_LOG_ERROR ("Invalid num in @<num>@<pattern> expr");
+					return NULL;
+				}
+				if (errno == EINVAL || errno == ERANGE || len > 64000000) {
+					R_LOG_ERROR ("Out-of-bounds num in @<num>@<pattern> expr");
+					return NULL;
+				}
+				pat_len = strlen (pat);
+				if (pat_len == 0) {
+					R_LOG_ERROR ("Missing pattern in @<num>@<pattern> expr");
+					return NULL;
+				}
+				if (len > 0) {
+					ret = malloc (len + 1);
+					if (ret) {
+						for (i = 0; i < len; i++) {
+							ret[i] = pat[i % pat_len];
 						}
+						ret[len] = 0;
 					}
-					return buf;
+					goto beach;
 				}
 			}
 			// slurp file
-			return r_file_slurp (src + 1, NULL);
+			ret = r_file_slurp (src, &len);
+			break;
 		}
 	case '`':
 		{
-		char *msg = strdup (src + 1);
-		int msg_len = strlen (msg);
-		if (msg_len > 0) {
-			msg [msg_len - 1] = 0;
-			char *ret = r_sys_cmd_str (msg, NULL, NULL);
-			r_str_trim_tail (ret);
-			free (msg);
-			return ret;
+		size_t msg_len = strlen (src);
+		if (msg_len == 0) {
+			R_LOG_ERROR ("Invalid backtick expression in input");
+			return NULL;
 		}
+		if (src [msg_len - 1] != '`') {
+			R_LOG_ERROR ("Unterminated backtick expr in input");
+			return NULL;
+		}
+		char *msg = strdup (src);
+		if (!msg) {
+			return NULL;
+		}
+		msg [msg_len - 1] = 0;
+		int cmd_len = 0;
+		ret = r_sys_cmd_str (msg, NULL, &cmd_len);
+		len = (size_t)cmd_len;
+		r_str_trim_tail (ret);
 		free (msg);
-		return strdup ("");
+		break;
 		}
 	case '!':
 		{
-		char *a = r_sys_cmd_str (src + 1, NULL, NULL);
-		r_str_trim_tail (a);
-		return a;
+		ret = r_sys_cmd_str (src, NULL, NULL);
+		if (!ret) {
+			return NULL;
+		}
+		r_str_trim_tail (ret);
+		len = strlen (ret);
+		break;
 		}
 	case ':':
-		if (src[1] == '!') {
-			ret = r_sys_cmd_str (src + 1, NULL, NULL);
-			r_str_trim_tail (ret); // why no head :?
-		} else {
-			ret = strdup (src);
+		{
+		char *hex = getstr (src, NULL);
+		if (!hex) {
+			return NULL;
 		}
-		len = r_hex_str2bin (src + 1, (ut8*)ret);
-		if (len > 0) {
-			ret[len] = 0;
-			return ret;
+		int hexlen = r_hex_str2bin (hex, NULL);
+		if (hexlen <= 0) {
+			R_LOG_ERROR ("Invalid hexpair string");
+			free (hex);
+			return NULL;
 		}
-		R_LOG_ERROR ("Invalid hexpair string");
-		free (ret);
-		return NULL;
+		len = (size_t)hexlen;
+		ret = malloc (len + 1);
+		ret[len] = 0;
+		r_hex_str2bin (hex, (ut8*)ret);
+		free (hex);
+		}
+		break;
+	default:
+		len = r_str_unescape ((ret = strdup (src - 1)));
+		break;
 	}
-	r_str_unescape ((ret = strdup (src)));
+
+beach:
+	if (out_len) {
+		*out_len = len;
+	}
 	return ret;
 }
 
@@ -583,10 +636,10 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		p->_timeout = atoi (e);
 	} else if (!strcmp (b, "timeoutsig")) {
 		p->_timeout_sig = r_signal_from_string (e);
-	} else if (!memcmp (b, "arg", 3)) {
+	} else if (r_str_startswith (b, "arg")) {
 		int n = atoi (b + 3);
 		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
-			p->_args[n] = getstr (e);
+			p->_args[n] = getstr (e, NULL);
 			p->_argc++;
 		} else {
 			R_LOG_ERROR ("Out of bounds args index: %d", n);
@@ -629,11 +682,11 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		char *V, *v = strchr (e, '=');
 		if (v) {
 			*v++ = 0;
-			V = getstr (v);
+			V = getstr (v, NULL);
 			r_sys_setenv (e, V);
 			free (V);
 		}
-	} else if (!strcmp(b, "clearenv")) {
+	} else if (!strcmp (b, "clearenv")) {
 		r_sys_clearenv ();
 	}
 	if (must_free == true) {
@@ -1033,17 +1086,17 @@ R_API int r_run_config_env(RRunProfile *p) {
 			R_LOG_ERROR ("Cannot create pipe");
 			return 1;
 		}
-		inp = getstr (p->_input);
+		size_t inpl;
+		inp = getstr (p->_input, &inpl);
 		if (inp) {
-			size_t inpl = strlen (inp);
 			if  (write (f2[1], inp, inpl) != inpl) {
 				R_LOG_ERROR ("Cannot write to the pipe");
 			}
-			close (f2[1]);
 			free (inp);
 		} else {
 			R_LOG_ERROR ("Invalid input");
 		}
+		close (f2[1]);
 	}
 #endif
 	if (p->_r2preload) {

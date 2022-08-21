@@ -1,14 +1,13 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
 
-#include <r_types.h>
+#define R_LOG_ORIGIN "core.anal"
+
 #include <r_list.h>
 #include <r_flag.h>
 #include <r_core.h>
 #include <r_bin.h>
 #include <ht_uu.h>
 #include <r_util/r_graph_drawable.h>
-
-#include <string.h>
 
 HEAPTYPE (ut64);
 
@@ -759,7 +758,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	const char *cc = r_anal_cc_default (core->anal);
 	if (!cc) {
 		if (r_anal_cc_once (core->anal)) {
-			eprintf ("Warning: set your favourite calling convention in `e anal.cc=?`\n");
+			R_LOG_WARN ("set your favourite calling convention in `e anal.cc=?`");
 		}
 		cc = "reg";
 	}
@@ -1663,7 +1662,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 				}
 				free (buf);
 			} else {
-				eprintf ("cannot allocate %"PFMT64u" byte(s)\n", bbi->size);
+				R_LOG_ERROR ("cannot allocate %"PFMT64u" byte(s)", bbi->size);
 			}
 			pj_end (pj);
 			pj_end (pj);
@@ -1831,7 +1830,6 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 	char *pal_traced = palColorFor ("graph.traced");
 	char *pal_box4 = palColorFor ("graph.box4");
 	if (!fcn || !fcn->bbs) {
-		eprintf ("No fcn\n");
 		free (pal_jump);
 		free (pal_fail);
 		free (pal_trfa);
@@ -1903,7 +1901,6 @@ R_API bool r_core_anal_bb_seek(RCore *core, ut64 addr) {
 
 R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	const char *esil;
-	eprintf ("TODO\n");
 	while (1) {
 		// TODO: Implement the proper logic for doing esil analysis
 		RAnalOp *op = r_core_anal_op (core, at, R_ANAL_OP_MASK_ESIL);
@@ -1945,15 +1942,11 @@ static bool is_skippable_addr(RCore *core, ut64 addr) {
  * reference to that fcn */
 R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	if (depth < 0) {
-		if (core->anal->verbose) {
-			eprintf ("Message: Early deepness at 0x%08"PFMT64x"\n", at);
-		}
+		R_LOG_DEBUG ("Early deepness at 0x%08"PFMT64x, at);
 		return false;
 	}
 	if (from == UT64_MAX && is_skippable_addr (core, at)) {
-		if (core->anal->verbose) {
-			eprintf ("Message: Invalid address for function 0x%08"PFMT64x"\n", at);
-		}
+		R_LOG_DEBUG ("Message: Invalid address for function 0x%08"PFMT64x, at);
 		return false;
 	}
 
@@ -1966,9 +1959,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 
 	if (core->io->va) {
 		if (!r_io_is_valid_offset (core->io, at, !core->anal->opt.noncode)) {
-			if (core->anal->verbose) {
-				R_LOG_WARN ("Address not mapped or not executable at 0x%08"PFMT64x, at);
-			}
+			R_LOG_DEBUG ("Address not mapped or not executable at 0x%08"PFMT64x, at);
 			return false;
 		}
 	}
@@ -1981,7 +1972,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	}
 
 	if ((from != UT64_MAX && !at) || at == UT64_MAX) {
-		eprintf ("Invalid address from 0x%08"PFMT64x"\n", from);
+		R_LOG_WARN ("Invalid address from 0x%08"PFMT64x, from);
 		return false;
 	}
 	if (r_cons_is_breaked ()) {
@@ -2259,7 +2250,7 @@ R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
 		}
 		r_list_free (refs);
 	} else {
-		eprintf ("Not in a function. Use 'df' to define it.\n");
+		R_LOG_ERROR ("Not in a function. Use 'df' to define it");
 	}
 }
 
@@ -2280,7 +2271,7 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 		}
 		r_list_free (refs);
 	} else {
-		eprintf("Not in a function. Use 'df' to define it.\n");
+		R_LOG_ERROR ("Not in a function. Use 'df' to define it");
 	}
 }
 
@@ -3274,7 +3265,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	if (*rad == '.') {
 		RList *fcns = r_anal_get_functions_in (core->anal, core->offset);
 		if (!fcns || r_list_empty (fcns)) {
-			eprintf ("No functions at current address.\n");
+			R_LOG_ERROR ("No functions at current address");
 			r_list_free (fcns);
 			return -1;
 		}
@@ -3576,7 +3567,7 @@ static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int de
 	RAnalRef *refi;
 
 	if (depth < 0) {
-		eprintf ("going too deep\n");
+		R_LOG_ERROR ("going too deep");
 		return false;
 	}
 
@@ -3869,7 +3860,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
 	if (!ref) {
-		eprintf ("Null reference search is not supported\n");
+		R_LOG_ERROR ("Null reference search is not supported");
 		free (buf);
 		return -1;
 	}
@@ -5192,10 +5183,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 
 	mycore = core;
 	if (!strcmp (str, "?")) {
-		eprintf ("Usage: aae[f] [len] [addr] - analyze refs in function, section or len bytes with esil\n");
-		eprintf ("  aae $SS @ $S             - analyze the whole section\n");
-		eprintf ("  aae $SS str.Hello @ $S   - find references for str.Hellow\n");
-		eprintf ("  aaef                     - analyze functions discovered with esil\n");
+		R_LOG_INFO ("should never happen");
 		return;
 	}
 #define CHECKREF(x) ((refptr && (x) == refptr) || !refptr)

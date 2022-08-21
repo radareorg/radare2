@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include <stdio.h>
-#include <stdlib.h>
+#define R_LOG_ORIGIN "rafind2"
 
 #include <r_main.h>
 #include <r_types.h>
@@ -70,7 +69,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		delta = ro->cur - addr;
 	}
 	if (delta > 0 && delta >= ro->bsize) {
-		eprintf ("Invalid delta %d from 0x%08"PFMT64x"\n", delta, addr);
+		R_LOG_ERROR ("Invalid delta %d from 0x%08"PFMT64x, delta, addr);
 		return 0;
 	}
 	if (delta != 0) {
@@ -219,7 +218,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	RIO *io = r_io_new ();
 	ro->io = io;
 	if (!r_io_open_nomap (io, file, R_PERM_R, 0)) {
-		eprintf ("Cannot open file '%s'\n", file);
+		R_LOG_ERROR ("Cannot open file '%s'", file);
 		result = 1;
 		goto err;
 	}
@@ -236,7 +235,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 
 	ro->buf = calloc (1, ro->bsize);
 	if (!ro->buf) {
-		eprintf ("Cannot allocate %"PFMT64d" bytes\n", ro->bsize);
+		R_LOG_ERROR ("Cannot allocate %"PFMT64d" bytes", ro->bsize);
 		result = 1;
 		goto err;
 	}
@@ -295,7 +294,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 			if (k) {
 				r_search_kw_add (rs, k);
 			} else {
-				eprintf ("Invalid keyword\n");
+				R_LOG_ERROR ("Invalid keyword");
 			}
 		}
 	}
@@ -327,7 +326,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 			bsize = ret;
 		}
 		if (r_search_update (rs, ro->cur, ro->buf, ret) == -1) {
-			eprintf ("search: update read error at 0x%08"PFMT64x"\n", ro->cur);
+			R_LOG_ERROR ("search.update read error at 0x%08"PFMT64x, ro->cur);
 			break;
 		}
 	}
@@ -443,7 +442,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			{
 			int bs = (int)r_num_math (NULL, opt.arg);
 			if (bs < 2) {
-				eprintf ("Invalid blocksize <= 1\n");
+				R_LOG_ERROR ("Invalid blocksize <= 1");
 				return 1;
 			}
 			ro.bsize = bs;
@@ -461,7 +460,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 				size_t data_size;
 				char *data = r_file_slurp (opt.arg, &data_size);
 				if (!data) {
-					eprintf ("Cannot slurp '%s'\n", opt.arg);
+					R_LOG_ERROR ("Cannot slurp '%s'", opt.arg);
 					return 1;
 				}
 				char *hexdata = r_hex_bin2strdup ((ut8*)data, data_size);
@@ -578,7 +577,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	for (; opt.ind < argc; opt.ind++) {
 		file = argv[opt.ind];
 		if (file && !*file) {
-			eprintf ("Cannot open empty path\n");
+			R_LOG_ERROR ("Cannot open empty path");
 			return 1;
 		}
 		rafind_open (&ro, file);

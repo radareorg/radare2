@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2021 - RHL120, pancake */
+/* radare - LGPL - Copyright 2021-2022 - RHL120, pancake */
+
+#define R_LOG_ORIGIN "core.rvc"
 
 #include "r_config.h"
 #include "r_core.h"
-#include "types.h"
-#include <rvc.h>
-#include <r_util.h>
+#include "rvc.h"
 #include <sdb.h>
 #define FIRST_BRANCH "branches.master"
 #define NOT_SPECIAL(c) IS_DIGIT (c) || IS_LOWER (c) || c == '_'
@@ -499,7 +499,7 @@ static RList *load_rvc_ignore(Rvc *rvc) {
 R_API RList *r_vc_get_uncommitted(Rvc *rvc) {
 	RList *ignore = load_rvc_ignore (rvc);
 	if (!repo_exists (rvc->path)) {
-		eprintf ("No valid repo in %s\n", rvc->path);
+		R_LOG_ERROR ("No valid repo in %s", rvc->path);
 		return false;
 	}
 	RList *blobs = get_blobs(rvc, ignore);
@@ -734,7 +734,7 @@ static RList *blobs_add(Rvc *rvc, const RList *files) {
 			r_list_delete (uncommitted, j);
 		}
 		if (!found) {
-			eprintf ("File %s is already committed\n", path);
+			R_LOG_ERROR ("File %s is already committed", path);
 		}
 		free (absp);
 	}
@@ -748,7 +748,7 @@ fail_ret:
 R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const RList *files) {
 	char *commit_hash;
 	if (!repo_exists (rvc->path)) {
-		eprintf ("No valid repo in %s\n", rvc->path);
+		R_LOG_ERROR ("No valid repo in %s", rvc->path);
 		return false;
 	}
 	if (R_STR_ISEMPTY (message)) {
@@ -766,13 +766,13 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 		}
 	}
 	if (message && r_str_len_utf8 (message) > MAX_MESSAGE_LEN) {
-		eprintf ("Commit message is too long\n");
+		R_LOG_ERROR ("Commit message is too long");
 		return false;
 	}
 	const char *m;
 	for (m = message; *m; m++) {
 		if (*m < ' ' && *m != '\n') {
-			eprintf ("commit messages must not contain unprintable charecters %c\n",
+			R_LOG_ERROR ("commit messages must not contain unprintable charecters %c",
 					*m);
 			return false;
 		}
@@ -783,7 +783,7 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 	}
 	if (r_list_empty (blobs)) {
 		r_list_free (blobs);
-		eprintf ("Nothing to commit\n");
+		R_LOG_ERROR ("Nothing to commit");
 		return false;
 	}
 	commit_hash = write_commit (rvc, message, author, blobs);
@@ -812,7 +812,7 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 
 R_API RList *r_vc_get_branches(Rvc *rvc) {
 	if (!repo_exists (rvc->path)) {
-		eprintf ("No valid repo in %s\n", rvc->path);
+		R_LOG_ERROR ("No valid repo in %s", rvc->path);
 		return NULL;
 	}
 	RList *ret = r_list_new ();
@@ -846,11 +846,11 @@ R_API bool r_vc_branch(Rvc *rvc, const char *bname) {
 	const char *current_branch;
 	const char *commits;
 	if (!repo_exists (rvc->path)) {
-		eprintf ("No valid repo in %s\n", rvc->path);
+		R_LOG_ERROR ("No valid repo in %s", rvc->path);
 		return false;
 	}
 	if (!is_valid_branch_name (bname)) {
-		eprintf ("The branch name %s is invalid\n", bname);
+		R_LOG_ERROR ("Invalid branch name %s", bname);
 		return false;
 	}
 	{
@@ -858,7 +858,7 @@ R_API bool r_vc_branch(Rvc *rvc, const char *bname) {
 		if (ret < 0) {
 			return false;
 		} else if (ret) {
-			eprintf ("The branch %s already exists\n", bname);
+			R_LOG_ERROR ("The branch %s already exists", bname);
 			return false;
 		}
 	}
@@ -879,12 +879,12 @@ R_API bool r_vc_branch(Rvc *rvc, const char *bname) {
 R_API Rvc *r_vc_new(const char *path) {
 	char *commitp, *blobsp;
 	if (repo_exists (path)) {
-		eprintf("A repo already exists in %s", path);
+		R_LOG_ERROR ("A repo already exists in %s", path);
 		return NULL;
 	}
 	Rvc *rvc = R_NEW(Rvc);
 	if (!rvc) {
-		eprintf("Failed to create repo\n");
+		R_LOG_ERROR ("Failed to create repo");
 		return NULL;
 	}
 	rvc->path = r_str_new (path);
@@ -902,7 +902,7 @@ R_API Rvc *r_vc_new(const char *path) {
 		return false;
 	}
 	if (!r_sys_mkdirp (commitp) || !r_sys_mkdir (blobsp)) {
-		eprintf ("Can't create The RVC repo directory\n");
+		R_LOG_ERROR ("Can't create The RVC repo directory");
 		free (commitp);
 		free (rvc->path);
 		free (rvc);
@@ -913,7 +913,7 @@ R_API Rvc *r_vc_new(const char *path) {
 	free (blobsp);
 	rvc->db = sdb_new (rvc->path, "/.rvc/" DBNAME, 0);
 	if (!rvc->db) {
-		eprintf ("Can't create The RVC branches database");
+		R_LOG_ERROR ("Can't create The RVC branches database");
 		free (rvc->path);
 		free (rvc);
 		return false;
@@ -935,7 +935,7 @@ R_API Rvc *r_vc_new(const char *path) {
 
 R_API bool r_vc_checkout(Rvc *rvc, const char *bname) {
 	if (!repo_exists (rvc->path)) {
-		eprintf ("No valid repo in %s\n", rvc->path);
+		R_LOG_ERROR ("No valid repo in %s", rvc->path);
 		return false;
 	}
 	{
@@ -944,7 +944,7 @@ R_API bool r_vc_checkout(Rvc *rvc, const char *bname) {
 			return false;
 		}
 		if (ret == 0) {
-			eprintf ("The branch %s doesn't exist.\n", bname);
+			R_LOG_ERROR ("The branch %s doesn't exist", bname);
 			return false;
 		}
 	}
@@ -996,7 +996,7 @@ fail_ret:
 
 R_API RList *r_vc_log(Rvc *rvc) {
 	if (!repo_exists (rvc->path)) {
-		eprintf ("No valid repo in %s\n", rvc->path);
+		R_LOG_ERROR ("No valid repo in %s", rvc->path);
 		return false;
 	}
 	RList *commits = get_commits (rvc, 0);
@@ -1035,7 +1035,7 @@ fail_ret:
 
 R_API char *r_vc_current_branch(Rvc *rvc) {
 	if (!repo_exists (rvc->path)) {
-		eprintf ("No valid repo in %s\n", rvc->path);
+		R_LOG_ERROR ("No valid repo in %s", rvc->path);
 		return false;
 	}
 	if (!rvc->db) {
@@ -1210,12 +1210,15 @@ R_API bool r_vc_reset(Rvc *rvc) {
 }
 
 //Access both git and rvc functionality from one set of functions
+static void warn(void) {
+	R_LOG_WARN ("rvc is still under development and can be unstable, be careful");
+}
 
 R_API Rvc *rvc_git_init(const RCore *core, const char *path) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
 		return r_vc_git_init (path);
 	}
-	printf ("rvc is just for testing please don't use it\n");
+	warn ();
 	Rvc *rvc = r_vc_new (path);
 	if (!rvc || !r_vc_save (rvc)) {
 		return NULL;
@@ -1234,7 +1237,7 @@ R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char
 	message = R_STR_ISEMPTY (message)? m : message;
 	if (rvc->type == VC_RVC) {
 		author = author? author : r_config_get (core->config, "cfg.user");
-		eprintf ("rvc is just for testing please don't use it\n");
+		warn ();
 		r_vc_commit (rvc, message, author, files);
 		return r_vc_save (rvc);
 	}
@@ -1250,7 +1253,7 @@ R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char
 
 R_API bool rvc_git_branch(Rvc *rvc, const char *bname) {
 	if (rvc->type == VC_RVC) {
-		eprintf ("rvc is just for testing please don't use it\n");
+		warn ();
 		r_vc_branch (rvc, bname);
 		return r_vc_save(rvc);
 	}
@@ -1259,7 +1262,7 @@ R_API bool rvc_git_branch(Rvc *rvc, const char *bname) {
 
 R_API bool rvc_git_checkout(const RCore *core, Rvc *rvc, const char *bname) {
 	if (rvc->type == VC_GIT) {
-		eprintf ("rvc is just for testing please don't use it\n");
+		warn ();
 		r_vc_checkout (rvc, bname);
 		return r_vc_save(rvc);
 	}
@@ -1292,7 +1295,6 @@ R_API Rvc *r_vc_open(const char *rp) {
 		free (repo);
 	}
 	return NULL;
-
 }
 
 R_API bool r_vc_save(Rvc *vc) {

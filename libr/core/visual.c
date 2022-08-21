@@ -9,7 +9,11 @@ static void visual_refresh(RCore *core);
 
 #define PROMPTSTR "> "
 // remove globals pls
+static R_TH_LOCAL bool textedit_mode = true;
 static R_TH_LOCAL int obs = 0;
+static R_TH_LOCAL bool __ime = false;
+static R_TH_LOCAL int __nib = -1;
+static R_TH_LOCAL bool __imes = false;
 static R_TH_LOCAL int blocksize = 0;
 static R_TH_LOCAL bool autoblocksize = true;
 static R_TH_LOCAL int disMode = 0;
@@ -21,6 +25,8 @@ static R_TH_LOCAL int color = 1;
 static R_TH_LOCAL int zoom = 0;
 static R_TH_LOCAL int currentFormat = 0;
 static R_TH_LOCAL int current0format = 0;
+static R_TH_LOCAL char numbuf[32] = {0};
+static R_TH_LOCAL int numbuf_i = 0;
 
 typedef struct {
 	int x;
@@ -34,7 +40,7 @@ static const char *printfmtSingle[NPF] = {
 	"pd $r",  // ASSEMBLY
 	"pxw 64@r:SP;dr=;drcq;pd $r",  // DEBUGGER
 	"prc", // OVERVIEW
-	"pss", // PC//  copypasteable views
+	"psb", // PC//  copypasteable views
 };
 
 static const char *printfmtColumns[NPF] = {
@@ -65,7 +71,7 @@ static const char *print4Formats[PRINT_4_FORMATS] = {
 };
 static R_TH_LOCAL int current5format = 0;
 static const char *print5Formats[PRINT_5_FORMATS] = {
-	"pca", "pcA", "p8x", "pcc", "pss", "pcp", "pcd",
+	"pca", "pcA", "p8x", "pcc", "psb", "pcp", "pcd",
 };
 
 R_API void r_core_visual_applyHexMode(RCore *core, int hexMode) {
@@ -1842,6 +1848,17 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		nextOpcode (core);
 		return;
 	}
+	if (PIDX == 4) { // TEXT
+		int idx = p->cur_enabled? p->cur: 0;
+		const ut8 *buf = core->block;
+		if (idx < core->blocksize) {
+			const ut8* nl = r_mem_mem (core->block + idx, core->blocksize - idx, (const ut8*)"\n", 1);
+			if (nl) {
+				p->cur = (int)(size_t)(nl - buf + 1);
+			}
+		}
+		return;
+	}
 
 	if (PIDX == 7 || !strcmp ("prc", r_config_get (core->config, "cmd.visual"))) {
 		p->cur += r_config_get_i (core->config, "hex.cols");
@@ -2085,9 +2102,6 @@ static bool fix_cursor(RCore *core) {
 	return res;
 }
 
-static R_TH_LOCAL bool __ime = false;
-static R_TH_LOCAL int __nib = -1;
-
 static bool insert_mode_enabled(RCore *core) {
 	if (!__ime) {
 		return false;
@@ -2096,6 +2110,41 @@ static bool insert_mode_enabled(RCore *core) {
 	if ((ut8)ch == KEY_ALTQ) {
 		(void)r_cons_readchar ();
 		__ime = false;
+		return true;
+	}
+	if (__imes) {
+		if (ch == 0x1b) {
+			__ime = false;
+			__imes = false;
+			return true;
+		}
+		if (ch == 9) {
+			textedit_mode = !textedit_mode;
+			return true;
+		}
+		if (ch == 0x7f) { // backspace
+			if (textedit_mode) {
+				if (core->print->cur_enabled && core->print->cur > 0) {
+					r_core_cmdf (core, "r-1@ 0x%08"PFMT64x" + %d", core->offset, core->print->cur - 1);
+					core->print->cur--;
+				}
+				return true;
+			} else {
+				core->print->cur--;
+			}
+			ch = 0;
+		}
+		if (ch == 0xd) {
+			ch = '\n';
+		}
+		if (textedit_mode) {
+			r_core_cmdf (core, "r+1@ 0x%08"PFMT64x" + %d", core->offset, core->print->cur);
+		}
+		r_core_cmdf (core, "wx %02x @ 0x%08"PFMT64x" + %d", ch, core->offset, core->print->cur);
+		core->print->cur ++;
+		if (ch == 0) { // backspace
+			core->print->cur--;
+		}
 		return true;
 	}
 	char arrows = r_cons_arrow_to_hjkl (ch);
@@ -2116,7 +2165,7 @@ static bool insert_mode_enabled(RCore *core) {
 		core->print->cur = R_MAX (0, core->print->cur - 1);
 		return true;
 	} else if (ch != 'l' && arrows == 'l') {
-		core->print->cur = core->print->cur + 1;
+		core->print->cur++;
 		return true;
 	} else if (ch != 'j' && arrows == 'j') {
 		cursor_nextrow (core, false);
@@ -2195,7 +2244,7 @@ static bool insert_mode_enabled(RCore *core) {
 		core->print->cur = R_MAX (0, core->print->cur - 1);
 		break;
 	case 'l':
-		core->print->cur = core->print->cur + 1;
+		core->print->cur++;
 		break;
 	case 'j':
 		cursor_nextrow (core, false);
@@ -2386,9 +2435,6 @@ static bool isNumber(RCore *core, int ch) {
 	return false;
 }
 
-static char numbuf[32] = {0};
-static int numbuf_i = 0;
-
 static void numbuf_append(int ch) {
 	if (numbuf_i >= sizeof (numbuf) - 1) {
 		numbuf_i = 0;
@@ -2478,6 +2524,26 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		if (!ch) {
 			return 1;
 		}
+	}
+	if (__imes) {
+		// TODO: support arrow keys to move around without losing insert mode
+		// TODO: implement append mode
+		__ime = true;
+		setcursor (core, true);
+		if (ch == 9 || ch == 0x1b) {
+			__ime = false;
+			__imes = false;
+			return 1;
+		}
+		if (ch == 0x7f) { // backspace
+			core->print->cur--;
+			ch = 0;
+		}
+		r_core_cmdf (core, "wx %02x @ 0x%08"PFMT64x" + %d", ch, core->offset, core->print->cur);
+		core->print->cur ++;
+		och = 0;
+		ch = 0;
+		return 1;
 	}
 	if (r_cons_singleton ()->mouse_event) {
 		wheelspeed = r_config_get_i (core->config, "scr.wheel.speed");
@@ -2874,6 +2940,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					core->print->cur_enabled = true;
 					return true;
 				}
+			} else if (PIDX == 4) {
+				__ime = true;
+				__imes = true;
 			} else if (PIDX == 2) {
 				if (core->seltab == 0) {
 					addr = r_debug_reg_get (core->dbg, "SP") + delta;
@@ -2916,7 +2985,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					buf[0] = '\0';
 				}
 				strcat (buf, "\"");
-			} else {
+			} else if (PIDX != 4) {
 				r_line_set_prompt ("insert hex: ");
 				if (core->print->ocur != -1) {
 					int bs = R_ABS (core->print->cur - core->print->ocur) + 1;
@@ -3907,16 +3976,17 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			? r_str_newf ("0x%016"PFMT64x, core->offset)
 			: r_str_newf ("0x%08"PFMT64x, core->offset);
 		if (__ime) {
-			title = r_str_newf ("[%s + %d> * INSERT MODE *\n",
-				address, core->print->cur);
+			const char *text = textedit_mode? "EDITOR MODE": "INSERT MODE";
+			title = r_str_newf ("[%s + %d> * %s * (press ESC to leave, TAB to toggle mode)\n",
+				address, core->print->cur, text);
 		} else {
 			char pm[32] = "[XADVC]";
 			int i;
 			for (i = 0; i < 6; i++) {
 				if (core->printidx == i) {
-					pm[i + 1] = toupper((unsigned char)pm[i + 1]);
+					pm[i + 1] = toupper ((unsigned char)pm[i + 1]);
 				} else {
-					pm[i + 1] = tolower((unsigned char)pm[i + 1]);
+					pm[i + 1] = tolower ((unsigned char)pm[i + 1]);
 				}
 			}
 			if (core->print->cur_enabled) {

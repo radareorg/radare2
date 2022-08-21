@@ -3441,7 +3441,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		}
 		break;
 	case 'l':
-		if (r_config_get_b (core->config, "scr.cursor")) {
+		if (core->print->cur_enabled) {
 			core->cons->cpos.x++;
 		} else {
 			(void)__move_to_direction (core, RIGHT);
@@ -3616,7 +3616,6 @@ static bool __handle_cursor_mode(RCore *core, const int key) {
 	RPanel *cur = __get_cur_panel (core->panels);
 	RPrint *print = core->print;
 	char *db_val;
-			core->print->cur++;
 	switch (key) {
 	case ':':
 	case ';':

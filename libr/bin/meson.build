@@ -58,6 +58,7 @@ r_bin_sources = [
   join_paths('p','bin_psxexe.c'),
   join_paths('p','bin_pyc.c'),
   join_paths('p','bin_qnx.c'),
+  join_paths('p','bin_rel.c'),
   join_paths('p','bin_s390.c'),
   join_paths('p','bin_sfc.c'),
   join_paths('p','bin_smd.c'),

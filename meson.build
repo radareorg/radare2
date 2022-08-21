@@ -645,6 +645,7 @@ if get_option('use_webui')
 endif
 
 subdir('test/unit')
+subdir('test/fuzz')
 
 install_data(
   'doc/fortunes.fun',

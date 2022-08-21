@@ -518,7 +518,7 @@ static ut32 ngc(ArmOp *op) {
 	check_cond(op->operands[0].type == ARM_GPR);
 	check_cond(op->operands[1].type == ARM_GPR);
 
-	if (!strncmp(op->mnemonic, "ngc", 3)) {
+	if (!strncmp (op->mnemonic, "ngc", 3)) {
 		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0xe00300da;
 		} else if (op->operands[0].reg_type & ARM_REG32) {
@@ -579,7 +579,7 @@ static ut32 rbit(ArmOp *op) {
 	check_cond(op->operands[1].type == ARM_GPR);
 
 	int k = 0;
-	if (!strncmp(op->mnemonic, "rbit", 4)) {
+	if (!strncmp (op->mnemonic, "rbit", 4)) {
 		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0x0000c0da;
 		} else if (op->operands[0].reg_type & ARM_REG32) {
@@ -601,7 +601,7 @@ static ut32 mvn(ArmOp *op) {
 	check_cond(op->operands[1].type == ARM_GPR);
 
 	int k = 0;
-	if (!strncmp(op->mnemonic, "mvn", 3)) {
+	if (!strncmp (op->mnemonic, "mvn", 3)) {
 		if (op->operands[0].reg_type & ARM_REG64) {
 			k = 0xe00320aa;
 		} else if (op->operands[0].reg_type & ARM_REG32) {
@@ -776,7 +776,7 @@ static ut32 sxt(ArmOp *op) {
 	check_cond (op->operands[0].type == ARM_GPR);
 	check_cond (op->operands[1].type == ARM_GPR);
 
-	if (!strncmp(op->mnemonic, "sxtb", 4)) {
+	if (!strncmp (op->mnemonic, "sxtb", 4)) {
 		if (r64_32) {
 			k = 0x001c4093;
 		} else if (reg_32) {
@@ -784,7 +784,7 @@ static ut32 sxt(ArmOp *op) {
 		} else {
 			return UT32_MAX;
 		}
-	} else if (!strncmp(op->mnemonic, "sxth", 4)) {
+	} else if (!strncmp (op->mnemonic, "sxth", 4)) {
 	  	if (r64_32) {
 			k = 0x003c4093;
 		} else if (reg_32) {
@@ -792,7 +792,7 @@ static ut32 sxt(ArmOp *op) {
 		} else {
 			return UT32_MAX;
 		}
-	} else if (!strncmp(op->mnemonic, "sxtw", 4)) {
+	} else if (!strncmp (op->mnemonic, "sxtw", 4)) {
 	  	if (r64_32) {
 			k = 0x007c4093;
 		} else {
@@ -852,7 +852,7 @@ static ut32 math(ArmOp *op, ut32 data, bool is64) {
 	return data | encode3regs (op);
 }
 
-static ut32 cmp(ArmOp *op) {
+static ut32 cmp (ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
 	if (op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64) {
@@ -1663,7 +1663,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands[operand].type = ARM_GPR;
 			op->operands[operand].reg_type = ARM_REG64;
 
-			if (!strncmp(token + 1, "zr", 2)) {
+			if (!strncmp (token + 1, "zr", 2)) {
 				// XZR
 				op->operands[operand].reg = 31;
 			} else {
@@ -1680,10 +1680,10 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands[operand].type = ARM_GPR;
 			op->operands[operand].reg_type = ARM_REG32;
 
-			if (!strncmp(token + 1, "zr", 2)) {
+			if (!strncmp (token + 1, "zr", 2)) {
 				// WZR
 				op->operands[operand].reg = 31;
-			} else if (!strncmp(token + 1, "sp", 2)) {
+			} else if (!strncmp (token + 1, "sp", 2)) {
 				// WSP
 				op->operands[operand].reg = 31;
 				op->operands[operand].reg_type |= ARM_SP;

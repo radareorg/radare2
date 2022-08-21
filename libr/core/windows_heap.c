@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2019-2021 - GustavoLCR */
+/* radare - LGPL - Copyright 2019-2022 - GustavoLCR */
+
+#define R_LOG_ORIGIN "windows.heap"
 
 #include <r_core.h>
 #include <tlhelp32.h>
@@ -51,16 +53,16 @@
 #define PDI_HEAP_BLOCKS     0x10
 #define PDI_HEAP_ENTRIES_EX 0x200
 
-static size_t RtlpHpHeapGlobalsOffset = 0;
-static size_t RtlpLFHKeyOffset = 0;
+static R_TH_LOCAL size_t RtlpHpHeapGlobalsOffset = 0;
+static R_TH_LOCAL size_t RtlpLFHKeyOffset = 0;
 
 #define CHECK_INFO(heapInfo)\
 	if (!heapInfo) {\
-		eprintf ("It wasn't possible to get the heap information\n");\
+		R_LOG_ERROR ("It wasn't possible to get the heap information");\
 		return;\
 	}\
 	if (!heapInfo->count) {\
-		r_cons_print ("No heaps for this process\n");\
+		R_LOG_INFO ("No heaps for this process");\
 		return;\
 	}
 
@@ -250,15 +252,15 @@ static void free_extra_info(PDEBUG_HEAP_INFORMATION heap) {
 	}
 }
 
+static R_TH_LOCAL ut64 lastNdtllAddr = 0;
 static bool GetHeapGlobalsOffset(RDebug *dbg, HANDLE h_proc) {
 	RList *modules = r_w32_dbg_modules (dbg);
 	RListIter *it;
 	RDebugMap *map;
 	bool found = false;
 	const char ntdll[] = "ntdll.dll";
-	static R_TH_LOCAL ut64 lastNdtllAddr = 0;
 	r_list_foreach (modules, it, map) {
-		if (!strncmp(map->name, ntdll, sizeof (ntdll))) {
+		if (!strncmp (map->name, ntdll, sizeof (ntdll))) {
 			found = true;
 			break;
 		}

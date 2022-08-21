@@ -429,13 +429,13 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	if (!c || w < 0 || h <= 0) {
 		return false;
 	}
-	int *newblen = realloc (c->blen, sizeof (*c->blen) * h);
+	int *newblen = realloc (c->blen, sizeof (int) * h);
 	if (!newblen) {
 		r_cons_canvas_free (c);
 		return false;
 	}
 	c->blen = newblen;
-	int *newbsize = realloc (c->bsize, sizeof (*c->bsize) * h);
+	int *newbsize = realloc (c->bsize, sizeof (int) * h);
 	if (!newbsize) {
 		r_cons_canvas_free (c);
 		return false;

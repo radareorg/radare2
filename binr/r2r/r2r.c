@@ -743,6 +743,9 @@ static R2RProcessOutput *print_runner(const char *file, const char *args[], size
 	printf ("%s", file);
 	for (i = 0; i < args_size; i++) {
 		const char *str = args[i];
+		if (R_STR_ISEMPTY (str)) {
+			break;
+		}
 		if (strpbrk (str, "\n \'\"")) {
 			printf (" '%s'", str); // TODO: escape
 		} else {
@@ -772,14 +775,14 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	case R2R_TEST_TYPE_CMD: {
 		r2r_run_cmd_test (config, result->test->cmd_test, print_runner, NULL);
 		const char *expect = result->test->cmd_test->expect.value;
-		const char *out = result->proc_out->out;
+		const char *out = result->proc_out? result->proc_out->out: "";
 		const char *regexp_out = result->test->cmd_test->regexp_out.value;
 		if ((expect || regexp_out) && !r_test_cmp_cmd_output (out, expect, regexp_out)) {
 			printf ("-- stdout\n");
 			print_diff (out, expect, false, regexp_out);
 		}
 		expect = result->test->cmd_test->expect_err.value;
-		const char *err = result->proc_out->err;
+		const char *err = result->proc_out? result->proc_out->err: "";
 		const char *regexp_err = result->test->cmd_test->regexp_err.value;
 		if ((expect || regexp_err) && !r_test_cmp_cmd_output (err, expect, regexp_err)) {
 			printf ("-- stderr\n");
@@ -787,7 +790,7 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 		} else if (*err) {
 			printf ("-- stderr\n%s\n", err);
 		}
-		if (result->proc_out->ret != 0) {
+		if (result->proc_out && result->proc_out->ret != 0) {
 			printf ("-- exit status: "Color_RED"%d"Color_RESET"\n", result->proc_out->ret);
 		}
 		break;
@@ -1085,7 +1088,7 @@ static char *replace_cmd_kv(const char *path, const char *content, size_t line_b
 static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RPVector *fixup_results) {
 	char *content = r_file_slurp (path, NULL);
 	if (!content) {
-		eprintf ("Failed to read file \"%s\"\n", path);
+		R_LOG_ERROR ("Failed to read file \"%s\"", path);
 		return;
 	}
 	char *newc = replace_cmd_kv (path, content, line_begin, line_end, key, value, fixup_results);
@@ -1098,7 +1101,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 		sync ();
 #endif
 	} else {
-		eprintf ("Failed to write file \"%s\"\n", path);
+		R_LOG_ERROR ("Failed to write file \"%s\"", path);
 	}
 	free (newc);
 }
@@ -1138,12 +1141,12 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 	int fd = r_file_mkstemp ("r2r-cmds", &name);
 	if (fd == -1) {
 		free (name);
-		eprintf ("Failed to open tmp file\n");
+		R_LOG_ERROR ("Failed to open tmp file");
 		return;
 	}
 	size_t cmds_sz = strlen (test->cmds.value);
 	if (write (fd, test->cmds.value, cmds_sz) != cmds_sz) {
-		eprintf ("Failed to write to tmp file\n");
+		R_LOG_ERROR ("Failed to write to tmp file");
 		free (name);
 		close (fd);
 		return;
@@ -1164,7 +1167,7 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 
 	char *newcmds = r_file_slurp (name, NULL);
 	if (!newcmds) {
-		eprintf ("Failed to read edited command file\n");
+		R_LOG_ERROR ("Failed to read edited command file");
 		free (name);
 		return;
 	}
