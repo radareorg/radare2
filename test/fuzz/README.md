@@ -59,3 +59,5 @@ mkdir corpus_parseline
   - add fuzz target to `LLVMFuzzerTestOneInput`
   - make sure input is short (ideally no longer than 256 bytes)
   - make sure no memory leaks are present
+- `-close_fd_mask=2` (mute stderr) if your target is spammy
+- `-ignore_ooms` `-fork=16` if you're likely to OOM
