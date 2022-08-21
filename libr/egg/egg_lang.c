@@ -540,7 +540,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 					}
 					R_LOG_ERROR ("Unknown arg for syscall '%s'", r_str_get (egg->lang.callname));
 				} else {
-					R_LOG_WARN ("No CallName '%s'\n", r_str_get (egg->lang.callname));
+					R_LOG_WARN ("No CallName '%s'", r_str_get (egg->lang.callname));
 				}
 			}
 		} else if (!strncmp (str + 1, "reg", 3)) {
