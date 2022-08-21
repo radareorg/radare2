@@ -83,19 +83,31 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		r_list_free (list);
 	} else if (r_str_startswith (buf, "ls")) {
 		char *cwd = NULL;
+		bool minus_ele = r_str_startswith (buf, "ls -l");
+		if (minus_ele) {
+			buf += 3;
+		}
 		if (buf[2] == ' ') {
 			if (buf[3] == '/') {
 				cwd = strdup (buf + 3);
 			} else {
-				cwd = r_str_newf ("%s/%s", *shell->cwd, buf + 3);
+				cwd = r_str_newf ("%s/%s", (const char *)shell->cwd, buf + 3);
 			}
 		} else {
-			cwd = strdup (*(shell->cwd));
+			cwd = strdup ((const char *)shell->cwd);
 		}
 		RList *list = r_fs_dir (fs, cwd);
 		if (list) {
 			r_list_foreach (list, iter, file) {
-				cb_printf ("%c %s\n", file->type, file->name);
+				if (minus_ele) {
+					cb_printf ("%c %8d %s\n", file->type, file->size, file->name);
+				} else {
+					cb_printf ("%c %s\n", file->type, file->name);
+				}
+			}
+		} else {
+			if (strlen (cwd) > 1) {
+				R_LOG_ERROR ("Invalid path");
 			}
 		}
 		r_list_free (list);

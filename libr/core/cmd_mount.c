@@ -10,6 +10,8 @@ static const char *help_msg_m[] = {
 	"mL", "[Lj]", "list filesystem plugins (Same as Lm), mLL shows only fs plugin names",
 	"mc", " [file]", "cat: Show the contents of the given file",
 	"md", " /", "list files and directory on the virtual r2's fs",
+	"mdd", " /", "show file size like `ls -l` in ms",
+	"mdq", " /", "show just the file name (quiet)",
 	"mf", "[?] [o|n]", "search files for given filename or for offset",
 	"mg", " /foo [offset size]", "get fs file/dir and dump to disk (support base64:)",
 	"mi", " /foo/bar", "get offset and size of given file",
@@ -70,6 +72,14 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 	RListIter *iter;
 	RFSFile *file;
 	RFSRoot *root;
+	bool minus_ele = *input == 'd'; // "mdd"
+	if (minus_ele) {
+		input++;
+	}
+	bool minus_quiet = *input == 'q'; // "mdq"
+	if (minus_quiet) {
+		input++;
+	}
 	input = r_str_trim_head_ro (input + isJSON);
 	if (r_str_startswith (input, "base64:")) {
 		const char *encoded = input + 7;
@@ -88,14 +98,29 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 		r_list_foreach (list, iter, file) {
 			if (isJSON) {
 				pj_o (pj);
-				pj_ks (pj, "type", t2s(file->type));
+				pj_ks (pj, "type", t2s (file->type));
+				pj_kn (pj, "size", file->size);
 				pj_ks (pj, "name", file->name);
 				pj_end (pj);
 			} else {
-				r_cons_printf ("%c %s\n", file->type, file->name);
+				if (minus_quiet) {
+					if (file->type == 'd') {
+						r_cons_printf ("%s/\n", file->name);
+					} else {
+						r_cons_printf ("%s\n", file->name);
+					}
+				} else if (minus_ele) {
+					r_cons_printf ("%c %10d %s\n", file->type, file->size, file->name);
+				} else {
+					r_cons_printf ("%c %s\n", file->type, file->name);
+				}
 			}
 		}
 		r_list_free (list);
+	} else {
+		if (strlen (input) > 1) {
+			R_LOG_ERROR ("Invalid path");
+		}
 	}
 	const char *path = *input ? input : "/";
 	r_list_foreach (core->fs->roots, iter, root) {
