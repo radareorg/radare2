@@ -190,8 +190,15 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 			R_LOG_WARN ("looks like there is no correct values of stream size in PDB file");
 			return 0;
 		}
-
+		if (SZT_MUL_OVFCHK (num_pages, 4)) {
+			R_LOG_WARN ("num_pages overflow");
+			return 0;
+		}
 		ut32 size = num_pages * 4;
+		if (size > UT16_MAX) {
+			R_LOG_WARN ("too many pages");
+			return 0;
+		}
 		ut8 *tmp = (ut8 *) calloc (num_pages, 4);
 		page = R_NEW0 (SPage);
 		if (num_pages != 0) {
@@ -466,6 +473,10 @@ static bool pdb7_parse(RPdb *pdb) {
 		goto error;
 	}
 	num_root_index_pages = count_pages ((num_root_pages * 4), page_size);
+	if (num_root_pages > UT16_MAX) {
+		R_LOG_ERROR ("Invalid page count");
+		goto error;
+	}
 	root_index_pages = (int *) calloc (sizeof (int), R_MAX (num_root_index_pages, 1));
 	if (!root_index_pages) {
 		R_LOG_ERROR ("memory allocation");
