@@ -448,8 +448,16 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 #if __POWERPC__
 #warning TODO powerpc support here
 #else
-		memcpy (&th->gpr.uts, buf, R_MIN (size, sizeof (th->gpr.uts)));
+		// memcpy (&th->gpr.uts, buf, R_MIN (size, sizeof (th->gpr.uts)));
+		{
+		size_t buf_size = R_MIN (size, sizeof (th->gpr));
+#if __x86_64__ || __i386__
+		memcpy (&th->gpr.uts, buf, buf_size);
+#else
+		memcpy (&th->gpr, buf, buf_size);
 #endif
+#endif
+		}
 		ret = xnu_thread_set_gpr (dbg, th);
 		break;
 	}
@@ -594,7 +602,8 @@ static void xnu_free_threads_ports(RDebugPid *p) {
 RList *xnu_thread_list(RDebug *dbg, int pid, RList *list) {
 #if __arm__ || __arm64__ || __aarch_64__
 	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
-		state.ts_64.__pc : state.ts_32.__pc
+		state.arm64.__pc : state.arm32.__pc
+		/* state.ts_64.__pc : state.ts_32.__pc */
 #elif __POWERPC__
 	#define CPU_PC state.srr0
 #elif __x86_64__ || __i386__
