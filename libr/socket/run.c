@@ -98,7 +98,7 @@ static void dyn_init(void) {
 R_API RRunProfile *r_run_new(const char *str) {
 	RRunProfile *p = R_NEW0 (RRunProfile);
 	if (p) {
-		r_run_reset (p);
+		r_run_reset (p); // TODO: rename to r_run_init
 		if (str) {
 			r_run_parsefile (p, str);
 		}
@@ -108,6 +108,30 @@ R_API RRunProfile *r_run_new(const char *str) {
 
 R_API void r_run_reset(RRunProfile *p) {
 	r_return_if_fail (p);
+	int i;
+	for (i = 0; i < R_RUN_PROFILE_NARGS; i++) {
+		R_FREE (p->_args[i]);
+	}
+	R_FREE (p->_system);
+	R_FREE (p->_program);
+	R_FREE (p->_runlib);
+	R_FREE (p->_runlib_fcn);
+	R_FREE (p->_stdio);
+	R_FREE (p->_stdin);
+	R_FREE (p->_stdout);
+	R_FREE (p->_stderr);
+	R_FREE (p->_chgdir);
+	R_FREE (p->_chroot);
+	R_FREE (p->_libpath);
+	R_FREE (p->_preload);
+	R_FREE (p->_pidfile);
+	R_FREE (p->_connect);
+	R_FREE (p->_listen);
+	R_FREE (p->_input);
+	R_FREE (p->_setuid);
+	R_FREE (p->_seteuid);
+	R_FREE (p->_setgid);
+	R_FREE (p->_setegid);
 	memset (p, 0, sizeof (RRunProfile));
 	p->_aslr = -1;
 }
@@ -154,10 +178,7 @@ R_API void r_run_free(RRunProfile *r) {
 		free (r->_seteuid);
 		free (r->_setgid);
 		free (r->_setegid);
-		if (r->_args[0] != r->_program) {
-			free (r->_args[0]);
-		}
-		for (i = 1; i < R_RUN_PROFILE_NARGS; i++) {
+		for (i = 0; i < R_RUN_PROFILE_NARGS; i++) {
 			free (r->_args[i]);
 		}
 		free (r);
@@ -296,8 +317,10 @@ static char *getstr(const char *src, R_NULLABLE size_t *out_len) {
 		}
 		len = (size_t)hexlen;
 		ret = malloc (len + 1);
-		ret[len] = 0;
-		r_hex_str2bin (hex, (ut8*)ret);
+		if (ret) {
+			ret[len] = 0;
+			r_hex_str2bin (hex, (ut8*)ret);
+		}
 		free (hex);
 		}
 		break;
@@ -305,7 +328,6 @@ static char *getstr(const char *src, R_NULLABLE size_t *out_len) {
 		len = r_str_unescape ((ret = strdup (src - 1)));
 		break;
 	}
-
 beach:
 	if (out_len) {
 		*out_len = len;
@@ -554,7 +576,8 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		return 0;
 	}
 	if (!strcmp (b, "program")) {
-		p->_args[0] = p->_program = strdup (e);
+		p->_args[0] = strdup (e);
+		p->_program = strdup (e);
 	} else if (!strcmp (b, "daemon")) {
 		p->_daemon = true;
 	} else if (!strcmp (b, "system")) {
@@ -639,6 +662,7 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 	} else if (r_str_startswith (b, "arg")) {
 		int n = atoi (b + 3);
 		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
+			free (p->_args[n]);
 			p->_args[n] = getstr (e, NULL);
 			p->_argc++;
 		} else {
@@ -1189,7 +1213,7 @@ R_API int r_run_start(RRunProfile *p) {
 	int ret;
 	posix_spawnattr_init (&attr);
 	if (p->_args[0]) {
-		char **envp = r_sys_get_environ();
+		char **envp = r_sys_get_environ ();
 		ut32 spflags = 0; //POSIX_SPAWN_START_SUSPENDED;
 		spflags |= POSIX_SPAWN_SETEXEC;
 		if (p->_aslr == 0) {
