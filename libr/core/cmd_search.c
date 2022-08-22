@@ -2263,6 +2263,9 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 	r_cons_break_push (NULL, NULL);
 	RIOMap* map;
 	RListIter *iter;
+	char *word = strdup (input);
+	RList *words = r_str_split_list (word, ",", 0);
+
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
@@ -2295,8 +2298,14 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 								isCandidate = true;
 							}
 						} else {
-							if (!strcmp (input, type)) {
-								isCandidate = true;
+							RListIter *iter;
+							const char *w;
+							r_list_foreach (words, iter, w) {
+								if (!strcmp (type, w)) {
+									isCandidate = true;
+									match = true;
+									break;
+								}
 							}
 						}
 						if (isCandidate) {
@@ -2313,7 +2322,6 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 					}
 				}
 				if (match) {
-					// char *opstr = r_core_disassemble_instr (core, at, 1);
 					char *opstr = r_core_op_str (core, at);
 					switch (mode) {
 					case 'j':
@@ -2365,6 +2373,8 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		}
 	}
 done:
+	r_list_free (words);
+	free (word);
 	if (mode == 'j') {
 		pj_end (param->pj);
 	}
@@ -2375,7 +2385,7 @@ done:
 static void do_section_search(RCore *core, struct search_parameters *param, const char *input) {
 	double threshold = 1;
 	bool r2mode = false;
-	if (input && *input) {
+	if (R_STR_ISNOTEMPTY (input)) {
 		if (*input == '*') {
 			r2mode = true;
 		}
