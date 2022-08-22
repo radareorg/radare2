@@ -250,6 +250,12 @@ R_UNUSED static bool r_str_startswith_inline(const char *str, const char *needle
 	return !strncmp (str, needle, strlen (needle));
 }
 #define r_str_startswith r_str_startswith_inline
+R_UNUSED static const char *r_str_skip_prefix(const char *str, const char *prefix) {
+	if (r_str_startswith (str, prefix)) {
+		str += strlen (prefix);
+	}
+	return str;
+}
 R_API bool r_str_endswith(const char *str, const char *needle);
 R_API bool r_str_isnumber(const char *str);
 R_API const char *r_str_last(const char *in, const char *ch);

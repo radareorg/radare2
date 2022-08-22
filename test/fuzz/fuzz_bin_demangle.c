@@ -85,5 +85,11 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 
 	free (str);
 	free (demangled);
+
+	if (demangle_type == R_BIN_NM_MSVC) {
+		// Flush out globals
+		free (r_bin_demangle_msvc ("."));
+	}
+
 	return 0;
 }
