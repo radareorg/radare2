@@ -138,7 +138,7 @@ static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	// thread->flavor is used in a switch+case but in regs->tsh.flavor we
 	// specify
 	thread->state = &regs->uts;
-	//thread->state = regs;
+	thread->state = &regs;
 	thread->flavor = x86_THREAD_STATE;
 	thread->count = x86_THREAD_STATE_COUNT;
 	if (dbg->bits == R_SYS_BITS_64) {
@@ -154,8 +154,8 @@ static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	thread->flavor = ARM_UNIFIED_THREAD_STATE;
 	thread->count = ARM_UNIFIED_THREAD_STATE_COUNT;
 #endif
-	//thread->state = regs;
-	thread->state = &regs->uts;
+	//thread->state = &regs->uts;
+	thread->state = &regs;
 	if (dbg->bits == R_SYS_BITS_64) {
 		thread->flavor = ARM_THREAD_STATE64;
 		thread->count = ARM_THREAD_STATE64_COUNT;
@@ -191,8 +191,8 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 #if __POWERPC__
 	thread->state = regs;
 #elif  __arm64 || __aarch64 || __arch64__ || __arm64__
-	//thread->state = regs;
-	thread->state = &regs->uts;
+	thread->state = regs;
+	// thread->state = &regs->uts;
 	if (dbg->bits == R_SYS_BITS_64) {
 		thread->flavor = ARM_THREAD_STATE64;
 		thread->count = ARM_THREAD_STATE64_COUNT;
