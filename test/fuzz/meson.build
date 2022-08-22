@@ -3,6 +3,7 @@ if get_option('enable_libfuzzer')
     'bin',
     'bin_demangle',
     'pkcs7_parse',
+    'protobuf_decode',
     'punycode_decode',
     'run_parseline',
     'x509_parse',
