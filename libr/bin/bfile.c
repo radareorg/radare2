@@ -500,6 +500,9 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int ra
 		bf->fd = fd;
 		bf->curxtr = xtrname ? r_bin_get_xtrplugin_by_name (bin, xtrname) : NULL;
 		bf->sdb = sdb;
+		if ((int)file_sz < 0) {
+			file_sz = 1024 * 64;
+		}
 		bf->size = file_sz;
 		bf->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
 		bf->xtr_obj = NULL;

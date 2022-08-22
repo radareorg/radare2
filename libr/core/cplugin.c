@@ -8,6 +8,7 @@ static RCorePlugin *cmd_static_plugins[] = {
 };
 
 R_API void r_core_plugin_fini(RCmd *cmd) {
+	r_return_if_fail (cmd);
 	if (cmd->plist) {
 		RListIter *iter;
 		RCorePlugin *plugin;
@@ -31,6 +32,7 @@ R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 }
 
 R_API bool r_core_plugin_init(RCmd *cmd) {
+	r_return_val_if_fail (cmd, false);
 	size_t i;
 	cmd->plist = r_list_newf (NULL); // memleak or dblfree
 	for (i = 0; cmd_static_plugins[i]; i++) {
@@ -43,6 +45,7 @@ R_API bool r_core_plugin_init(RCmd *cmd) {
 }
 
 R_API bool r_core_plugin_check(RCmd *cmd, const char *a0) {
+	r_return_val_if_fail (cmd && a0, false);
 	RListIter *iter;
 	RCorePlugin *cp;
 	r_list_foreach (cmd->plist, iter, cp) {

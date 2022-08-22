@@ -371,7 +371,9 @@ struct r_core_t {
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
 	RThreadChannel *chan; // query
-
+#if R2_580
+	bool in_log_process // false;
+#endif
 	RMainCallback r_main_radare2;
 	// int (*r_main_radare2)(int argc, char **argv);
 	int (*r_main_rafind2)(int argc, const char **argv);

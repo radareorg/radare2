@@ -2177,7 +2177,7 @@ struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) 
 		bin->symbols_off = options->symbols_off;
 	}
 	bin->file = file;
-	size_t binsz;
+	size_t binsz = 0;
 	ut8 *buf = (ut8 *)r_file_slurp (file, &binsz);
 	bin->size = binsz;
 	if (!buf) {
