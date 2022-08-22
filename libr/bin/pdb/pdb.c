@@ -150,19 +150,19 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 	data_end = data + tmp_data_max_size;
 	if (tmp_data_max_size > data_size) {
 		R_FREE (data);
-		eprintf ("Invalid max tmp data size.\n");
+		R_LOG_ERROR ("Invalid max tmp data size");
 		return 0;
 	}
 	if (num_streams < 0 || tmp_data_max_size <= 0) {
 		R_FREE (data);
-		eprintf ("Too many streams: current PDB file is incorrect.\n");
+		R_LOG_ERROR ("Too many streams: current PDB file is incorrect");
 		return 0;
 	}
 
 	sizes = (int *) calloc (num_streams, 4);
 	if (!sizes) {
 		R_FREE (data);
-		eprintf ("Size too big: current PDB file is incorrect.\n");
+		R_LOG_ERROR ("Size too big: current PDB file is incorrect");
 		return 0;
 	}
 
@@ -197,7 +197,7 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 		page = R_NEW0 (SPage);
 		if (num_pages != 0) {
 			if ((pos + size) > tmp_data_max_size) {
-				eprintf ("Data overrun by num_pages.\n");
+				R_LOG_ERROR ("Data overrun by num_pages");
 				R_FREE (data);
 				R_FREE (sizes);
 				R_FREE (tmp);
@@ -457,7 +457,7 @@ static bool pdb7_parse(RPdb *pdb) {
 		goto error;
 	}
 	if (memcmp (signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN) != 0) {
-		eprintf ("Invalid signature for PDB7 format.\n");
+		R_LOG_ERROR ("Invalid signature for PDB7 format");
 		goto error;
 	}
 
@@ -1316,7 +1316,7 @@ static void print_types(const RPdb *pdb, PJ *pj, const int mode) {
 	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
 
 	if (!tpi_stream) {
-		eprintf ("There is no tpi stream in current pdb\n");
+		R_LOG_ERROR ("There is no tpi stream in current pdb");
 		return;
 	}
 	switch (mode) {
@@ -1359,7 +1359,7 @@ static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		}
 	}
 	if (!gsym) {
-		eprintf ("There is no global symbols in current PDB.\n");
+		R_LOG_ERROR ("There is no global symbols in current PDB");
 		return;
 	}
 
@@ -1430,7 +1430,7 @@ R_API bool init_pdb_parser_with_buf(RPdb *pdb, RBuffer* buf) {
 	int bytes_read = 0;
 
 	if (!pdb) {
-		eprintf ("R_PDB structure is incorrect.\n");
+		R_LOG_ERROR ("R_PDB structure is incorrect");
 		goto error;
 	}
 	if (!pdb->cb_printf) {
@@ -1438,18 +1438,18 @@ R_API bool init_pdb_parser_with_buf(RPdb *pdb, RBuffer* buf) {
 	}
 	pdb->buf = buf;
 	if (!pdb->buf) {
-		eprintf ("Invalid PDB buffer\n");
+		R_LOG_ERROR ("Invalid PDB buffer");
 		goto error;
 	}
 	signature = (char *) calloc (1, PDB7_SIGNATURE_LEN);
 	if (!signature) {
-		eprintf ("Memory allocation error.\n");
+		R_LOG_ERROR ("Memory allocation error");
 		goto error;
 	}
 
 	bytes_read = r_buf_read (pdb->buf, (ut8 *) signature, PDB7_SIGNATURE_LEN);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
-		eprintf ("PDB reading error.\n");
+		R_LOG_ERROR ("PDB reading error");
 		goto error;
 	}
 
@@ -1478,7 +1478,7 @@ error:
 R_API bool init_pdb_parser(RPdb *pdb, const char *filename) {
 	RBuffer *buf = r_buf_new_slurp (filename);
 	if (!buf) {
-		eprintf ("%s: Error reading file \"%s\"\n", __func__, filename);
+		R_LOG_ERROR ("%s: Error reading file \"%s\"", __func__, filename);
 		return false;
 	}
 	return init_pdb_parser_with_buf (pdb, buf);
