@@ -145,6 +145,15 @@ static const char *help_msg_slash[] = {
 	NULL
 };
 
+static const char *help_msg_slash_at[] = {
+	"Usage:", "/at[mjsf] [arg]", "Search for instructions matching type/family/mnemonic",
+	"/atf", " [family]", "search for given-family type of instructions",
+	"/at", " [optype,optype2]", "list instructions matching any of the comma separated optypes",
+	"/atl", "", "list all the instruction types (RAnalOp.Type)",
+	"/atm", "", "search matching only the instruction mnemonic",
+	NULL
+};
+
 static const char *help_msg_slash_a[] = {
 	"Usage:", "/a[?] [arg]", "Search for assembly instructions matching given properties",
 	"/a", " push rbp", "assemble given instruction and search the bytes",
@@ -2247,7 +2256,11 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		case 0:
 		case '?':
 		default:
-			r_core_cmd_help (core, help_msg_slash_a);
+			if (type == 't') {
+				r_core_cmd_help (core, help_msg_slash_at);
+			} else {
+				r_core_cmd_help (core, help_msg_slash_a);
+			}
 			return false;
 		}
 		input++;
