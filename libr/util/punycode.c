@@ -298,6 +298,10 @@ R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen) {
 		org_i = i;
 
 		for (w = 1, k = BASE;; k += BASE) {
+			if (si >= srclen) {
+				free (dst);
+				return NULL;
+			}
 			digit = decode_digit (src[si++]);
 
 			if (digit == UT32_MAX) {

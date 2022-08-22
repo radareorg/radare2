@@ -181,6 +181,9 @@ R_API bool r_x509_parse_tbscertificate(RX509TBSCertificate *tbsc, RASN1Object *o
 	if (shift < object->list.length && elems[shift]->klass == CLASS_UNIVERSAL && elems[shift]->tag == TAG_INTEGER) {
 		tbsc->serialNumber = r_asn1_stringify_integer (elems[shift]->sector, elems[shift]->length);
 	}
+	if (object->list.length < shift + 6) {
+		return false;
+	}
 	r_x509_parse_algorithmidentifier (&tbsc->signature, elems[shift + 1]);
 	r_x509_parse_name (&tbsc->issuer, elems[shift + 2]);
 	r_x509_parse_validity (&tbsc->validity, elems[shift + 3]);
