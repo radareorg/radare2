@@ -2,7 +2,10 @@ if get_option('enable_libfuzzer')
   targets = [
     'bin',
     'bin_demangle',
+    'pkcs7_parse',
+    'punycode_decode',
     'run_parseline',
+    'x509_parse',
   ]
 
   foreach target : targets
