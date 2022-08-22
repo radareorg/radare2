@@ -2,6 +2,7 @@ if get_option('enable_libfuzzer')
   targets = [
     'bin',
     'bin_demangle',
+    'pdb_parse',
     'pkcs7_parse',
     'protobuf_decode',
     'punycode_decode',
