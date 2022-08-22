@@ -48,10 +48,7 @@ static void free_pdb_stream(void *stream) {
  * @return char* Name or NULL if error
  */
 static char *create_type_name_from_offset(ut64 offset) {
-	int offset_length = snprintf (NULL, 0, "type_0x%" PFMT64x, offset);
-	char *str = malloc (offset_length + 1);
-	snprintf (str, offset_length + 1, "type_0x%" PFMT64x, offset);
-	return str;
+	return r_str_newf ("type_0x%" PFMT64x, offset);
 }
 
 // static void pdb_stream_get_data(R_PDB_STREAM *pdb_stream, char *data)
@@ -120,7 +117,6 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 	int *sizes = NULL;
 	int num_pages = 0;
 	int data_size = 0;
-	char *data = NULL;
 	int i = 0;
 	int pos = 0;
 
@@ -134,7 +130,10 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 	pdb_stream = &(root_stream7->pdb_stream);
 
 	stream_file_get_size (&pdb_stream->stream_file, &data_size);
-	data = (char *) calloc (1, data_size);
+	if (data_size > UT16_MAX || data_size < 1) {
+		return 0;
+	}
+	char *data = (char *) calloc (1, R_MAX (data_size, 8));
 	if (!data) {
 		return 0;
 	}
@@ -146,7 +145,7 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 
 	root_stream7->num_streams = num_streams;
 
-	tmp_data_max_size = (data_size - (num_streams * 4 - 4));
+	tmp_data_max_size = (data_size - (num_streams * 4) - 4);
 	data_end = data + tmp_data_max_size;
 	if (tmp_data_max_size > data_size) {
 		R_FREE (data);
@@ -462,6 +461,10 @@ static bool pdb7_parse(RPdb *pdb) {
 	}
 
 	num_root_pages = count_pages (root_size, page_size);
+	if (num_root_pages < 1) {
+		R_LOG_ERROR ("Invalid page count");
+		goto error;
+	}
 	num_root_index_pages = count_pages ((num_root_pages * 4), page_size);
 	root_index_pages = (int *) calloc (sizeof (int), R_MAX (num_root_index_pages, 1));
 	if (!root_index_pages) {
@@ -469,14 +472,23 @@ static bool pdb7_parse(RPdb *pdb) {
 		goto error;
 	}
 
-	bytes_read = r_buf_read (pdb->buf, (unsigned char *) root_index_pages, 4 * num_root_index_pages);
+	int index = 4 * num_root_index_pages;
+	if (index < 1) {
+		R_LOG_ERROR ("memory allocation");
+		goto error;
+	}
+	bytes_read = r_buf_read (pdb->buf, (unsigned char *) root_index_pages, index);
 	// fread(root_index_pages, 4, num_root_index_pages, pdb->fp);
 	if (bytes_read != 4 * num_root_index_pages) {
 		R_LOG_ERROR ("reading root_index_pages");
 		goto error;
 	}
-	if (page_size < 1 || num_root_index_pages < 1) {
+	if (page_size < 1 || page_size > UT16_MAX) {
 		R_LOG_ERROR ("Invalid root index pages size");
+		goto error;
+	}
+	if (num_root_index_pages > 4096 || num_root_index_pages < 1) {
+		R_LOG_ERROR ("memory allocation of root_page_data");
 		goto error;
 	}
 	root_page_data = (int *) calloc (page_size, num_root_index_pages);
@@ -1415,8 +1427,7 @@ static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			}
 			free (name);
 		} else {
-			//eprintf ("Skipping %s, segment %d does not exist\n",
-			//gdata->name.name, (gdata->segment - 1));
+			R_LOG_DEBUG ("Skipping %s, segment %d does not exist", gdata->name.name, (gdata->segment - 1));
 		}
 	}
 	if (format == 'j') {
