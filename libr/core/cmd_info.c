@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
-#include "../bin/pdb/pdb_downloader.h"
+#include "../bin/format/pdb/pdb_downloader.h"
 
 static const char *help_msg_i[] = {
 	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",

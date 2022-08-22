@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <r_main.h>
-#include "../../libr/bin/pdb/pdb_downloader.h"
+#include "../../libr/bin/format/pdb/pdb_downloader.h"
 
 static int rabin_show_help(int v) {
 	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
