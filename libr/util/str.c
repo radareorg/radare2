@@ -3972,3 +3972,20 @@ R_API bool r_str_startswith(const char *str, const char *needle) {
 	return !strncmp (str, needle, strlen (needle));
 }
 
+
+R_API R_NONNULL const char *r_str_skip(R_NONNULL const char *s, int n) {
+	int i;
+	r_return_val_if_fail (s && n >= 0, "");
+	for (i = 0; i < n && *s != 0; i++) {
+		s++;
+	}
+	return s;
+}
+
+R_API const char *r_str_skip_prefix(const char *s, const char *prefix) {
+	r_return_val_if_fail (s && prefix, NULL);
+	if (r_str_startswith (s, prefix)) {
+		s += strlen (prefix);
+	}
+	return s;
+}

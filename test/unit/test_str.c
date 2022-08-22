@@ -509,6 +509,48 @@ bool test_r_str_encoded_json(void) {
 	mu_end;
 }
 
+bool test_r_str_skip(void) {
+	const char *str;
+
+	str = r_str_skip ("", 0);
+	mu_assert_streq (str, "", "noop empty skip");
+
+	str = r_str_skip ("", 3);
+	mu_assert_streq (str, "", "skip past empty string");
+
+	str = r_str_skip ("bla", 0);
+	mu_assert_streq (str, "bla", "noop skip");
+
+	str = r_str_skip ("bla", 1);
+	mu_assert_streq (str, "la", "normal skip");
+
+	str = r_str_skip ("bla", 4);
+	mu_assert_streq (str, "", "oob skip");
+
+	mu_end;
+}
+
+bool test_r_str_skip_prefix(void) {
+	const char *str;
+
+	str = r_str_skip_prefix ("", "");
+	mu_assert_streq (str, "", "noop prefix skip");
+
+	str = r_str_skip_prefix ("", "pre");
+	mu_assert_streq (str, "", "empty message prefix skip");
+
+	str = r_str_skip_prefix ("pre", "pre");
+	mu_assert_streq (str, "", "complete skip");
+
+	str = r_str_skip_prefix ("premsg", "pre");
+	mu_assert_streq (str, "msg", "normal skip");
+
+	str = r_str_skip_prefix ("msg", "");
+	mu_assert_streq (str, "msg", "empty prefix");
+
+	mu_end;
+}
+
 bool all_tests () {
 	mu_run_test (test_r_str_wrap);
 	mu_run_test (test_r_str_newf);
@@ -541,6 +583,8 @@ bool all_tests () {
 	mu_run_test (test_r_str_format_msvc_argv);
 	mu_run_test (test_r_str_str_xy);
 	mu_run_test (test_r_str_encoded_json);
+	mu_run_test (test_r_str_skip);
+	mu_run_test (test_r_str_skip_prefix);
 	return tests_passed != tests_run;
 }
 

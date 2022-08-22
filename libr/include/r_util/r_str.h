@@ -63,6 +63,7 @@ R_API RCharsetRune *search_from_char(RCharsetRune *rcsr, const ut8 *ch);
 
 // str
 R_API char *r_str_repeat(const char *ch, int sz);
+R_API const char *r_str_skip(const char *s, int n);
 R_API const char *r_str_pad(const char ch, int len);
 R_API const char *r_str_rstr(const char *base, const char *p);
 R_API const char *r_strstr_ansi(const char *a, const char *b);
@@ -250,6 +251,7 @@ R_UNUSED static bool r_str_startswith_inline(const char *str, const char *needle
 	return !strncmp (str, needle, strlen (needle));
 }
 #define r_str_startswith r_str_startswith_inline
+R_API const char *r_str_skip_prefix(const char *str, const char *prefix);
 R_API bool r_str_endswith(const char *str, const char *needle);
 R_API bool r_str_isnumber(const char *str);
 R_API const char *r_str_last(const char *in, const char *ch);
