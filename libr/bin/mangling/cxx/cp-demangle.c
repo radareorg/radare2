@@ -3333,7 +3333,7 @@ d_expression_1 (struct d_info *di)
       d_advance (di, 2);
       if (peek == 't')
 	type = cplus_demangle_type (di);
-      if (!d_peek_next_char (di))
+      if (!d_peek_char (di) || !d_peek_next_char (di))
 	return NULL;
       return d_make_comp (di, DEMANGLE_COMPONENT_INITIALIZER_LIST,
 			  type, d_exprlist (di, 'E'));
