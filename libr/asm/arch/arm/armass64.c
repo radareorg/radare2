@@ -514,7 +514,7 @@ static ut32 ror(ArmOp *op) {
 static ut32 ngc(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
-	
+
 	check_cond(op->operands[0].type == ARM_GPR);
 	check_cond(op->operands[1].type == ARM_GPR);
 
@@ -1851,9 +1851,9 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	} else if (!strncmp (str, "lsl ", 4)) {
 		*op = r_n_math (&ops, 0x0020c09a, 0x0020c01a, has64reg (str));
 	} else if (!strncmp (str, "lsr ", 4)) {
-		*op = r_n_math (&ops, 0x0024c09a, 0x0024c01a, has64reg (str));	
+		*op = r_n_math (&ops, 0x0024c09a, 0x0024c01a, has64reg (str));
 	} else if (!strncmp (str, "adc ", 4)) {
-		*op = r_n_math (&ops, 0x0000009a, 0x0000001a, has64reg (str));	
+		*op = r_n_math (&ops, 0x0000009a, 0x0000001a, has64reg (str));
 	} else if (!strncmp (str, "adcs", 4)) {
 		*op = r_n_math (&ops, 0x000000ba, 0x0000003a, has64reg (str));
 	} else if (!strncmp (str, "sbc ", 4)) {
@@ -1863,13 +1863,13 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	} else if (!strncmp (str, "ror ", 4)) {
 		*op = ror (&ops);
 	} else if (!strncmp (str, "adds", 4)) {
-		*op = adds (&ops);	
+		*op = adds (&ops);
 	} else if (!strncmp (str, "ngc ", 4)) {
 		*op = ngc (&ops);
 	} else if (!strncmp (str, "rev", 3)) {
-		*op = rev (&ops);			
+		*op = rev (&ops);
 	} else if (!strncmp (str, "mvn", 3)) {
-		*op = mvn (&ops);	
+		*op = mvn (&ops);
 	} else if (!strncmp (str, "rbit", 4)) {
 		*op = rbit (&ops);
 	} else if (!strncmp (str, "tst", 3)) {

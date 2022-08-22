@@ -1595,8 +1595,8 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				pj_ks (pj, "name", var->name);
 				if (var->isarg) {
 					pj_ks (pj, "kind", "arg");
-				} else {				
-					pj_ks (pj, "kind", "var");			
+				} else {
+					pj_ks (pj, "kind", "var");
 				}
 				pj_ks (pj, "type", var->type);
 				pj_k (pj, "ref");
@@ -1783,7 +1783,6 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			comma = ", ";
 		}
 	}
-
 	r_list_foreach (cache->bvars, iter, var) {
 		if (var->isarg) {
 			tmp_len = strlen (var->type);
@@ -1795,7 +1794,6 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			}
 		}
 	}
-
 	r_list_foreach (cache->svars, iter, var) {
 		if (var->isarg) {
 			tmp_len = strlen (var->type);
@@ -1807,7 +1805,6 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			}
 		}
 	}
-
 beach:
 	r_strbuf_append (buf, ");");
 	R_FREE (type_fcn_name);

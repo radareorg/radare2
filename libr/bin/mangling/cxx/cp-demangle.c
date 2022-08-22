@@ -2617,7 +2617,7 @@ cplus_demangle_type (struct d_info *di)
 	    ret = NULL;
 	  can_subst = 1;
 	  break;
-	
+
 	case 'p':
 	  /* Pack expansion.  */
 	  ret = d_make_comp (di, DEMANGLE_COMPONENT_PACK_EXPANSION,
@@ -4390,7 +4390,7 @@ d_lookup_template_argument (struct d_print_info *dpi,
       d_print_error (dpi);
       return NULL;
     }
-	
+
   return d_index_template_argument
     (d_right (dpi->templates->template_decl),
      dc->u.s_number.number);

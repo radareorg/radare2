@@ -1547,7 +1547,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 				}
 			}
 		}
-		r_list_append (list, m2);	
+		r_list_append (list, m2);
 	}
 	r_list_sort (list, cmp);
  	r_list_free (modules);

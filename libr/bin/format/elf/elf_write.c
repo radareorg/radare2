@@ -48,7 +48,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 	}
 
 	eprintf ("delta: %"PFMT64d"\n", delta);
-	
+
 	/* rewrite rel's (imports) */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
 		if (!strcmp (&strtab[shdrp->sh_name], ".got")) {

@@ -23,11 +23,9 @@
 #ifndef SFLIB_H
 #define SFLIB_H
 
-
 #include "sfsysnr.h"
 #include "sfsyscall.h"
 #include "../common/sftypes.h"
-
 
 static inline _sfsyscall1(void, exit, int, status)
 static inline _sfsyscall0( pid_t, fork )
@@ -218,9 +216,7 @@ static inline _sfsyscall2( int, capget, cap_user_header_t, header, cap_user_data
 static inline _sfsyscall0( pid_t, vfork )
 // getrlimit
 static inline _sfsyscall6(void *,mmap, void *,start, size_t,length, int,prot , int,flags, int,fd, off_t,offset)
-	
-	
-#include "../common/sfsocketcall.h"
 
+#include "../common/sfsocketcall.h"
 
 #endif /* SFLIB_H */

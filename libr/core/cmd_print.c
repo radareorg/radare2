@@ -1581,7 +1581,7 @@ static void r_core_cmd_print_binformat(RCore *core, const char *arg, int mode) {
 	RBitmap *bm = r_bitmap_new (core->blocksize * 8);
 	r_bitmap_set_bytes (bm, core->block, core->blocksize);
 	RList *lart = lart_new ();
-	
+
 	while (*arg && *arg != ' ') {
 		if (IS_DIGIT (*arg)) {
 			n = atoi (arg);
@@ -7972,7 +7972,7 @@ static int cmd_print(void *data, const char *input) {
 	default:
 		if (*input && input[1] == 'j') {
 			r_cons_cmd_help_json (help_msg_p);
-		} else {	
+		} else {
 			r_core_cmd_help (core, help_msg_p);
 		}
 		break;

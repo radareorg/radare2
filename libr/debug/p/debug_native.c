@@ -152,7 +152,7 @@ static bool r_debug_native_attach(RDebug *dbg, int pid) {
 #else
 	int ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 	if (ret != -1) {
-		eprintf ("Trying to attach to %d\n", pid);
+		R_LOG_INFO ("Trying to attach to %d", pid);
 		r_sys_perror ("ptrace (PT_ATTACH)");
 	}
 	return true;
@@ -193,7 +193,7 @@ static bool r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 	errno = 0;
 	return ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0) == 0;
 #else
-	eprintf ("TODO: continue syscall not implemented yet\n");
+	R_LOG_INFO ("TODO: continue syscall not implemented yet");
 	return false;
 #endif
 }
@@ -506,15 +506,15 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	if (reason == R_DEBUG_REASON_UNKNOWN) {
 #endif
 		if (WIFEXITED (status)) {
-			eprintf ("child exited with status %d\n", WEXITSTATUS (status));
+			R_LOG_INFO ("child exited with status %d", WEXITSTATUS (status));
 			reason = R_DEBUG_REASON_DEAD;
 		} else if (WIFSIGNALED (status)) {
-			eprintf ("child received signal %d\n", WTERMSIG (status));
+			R_LOG_INFO ("child received signal %d", WTERMSIG (status));
 			reason = R_DEBUG_REASON_SIGNAL;
 		} else if (WIFSTOPPED (status)) {
 			if (WSTOPSIG (status) != SIGTRAP &&
 				WSTOPSIG (status) != SIGSTOP) {
-				eprintf ("Child stopped with signal %d\n", WSTOPSIG (status));
+				R_LOG_INFO ("Child stopped with signal %d", WSTOPSIG (status));
 			}
 
 			/* the ptrace documentation says GETSIGINFO is only necessary for
@@ -532,7 +532,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 #endif
 #ifdef WIFCONTINUED
 		} else if (WIFCONTINUED (status)) {
-			eprintf ("child continued...\n");
+			R_LOG_INFO ("child continued");
 			reason = R_DEBUG_REASON_NONE;
 #endif
 		} else if (status == 1) {
@@ -555,7 +555,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 
 	/* if we still don't know what to do, we have a problem... */
 	if (reason == R_DEBUG_REASON_UNKNOWN) {
-		eprintf ("%s: no idea what happened... wtf?!?!\n", __func__);
+		R_LOG_INFO ("no idea what happened here");
 		reason = R_DEBUG_REASON_ERROR;
 	}
 #endif // __APPLE__

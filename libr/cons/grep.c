@@ -757,7 +757,7 @@ R_API void r_cons_grepbuf(void) {
 		r_strbuf_free (ob);
 		return;
 	}
-	
+
 	const int ob_len = r_strbuf_length (ob);
 	if (ob_len >= cons->context->buffer_sz) {
 		cons->context->buffer_sz = ob_len + 1;

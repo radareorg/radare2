@@ -180,7 +180,7 @@ static int vas_count(ArrangementSpec vas) {
 	/* low 8-bit of v-reg considered as... */
 	case ARRSPEC_1BYTE: /* (.b) one 8-bit byte: REG_V0_B0 */
 		return 1;
-		
+
 	default:
 		return 0;
 	}
@@ -600,7 +600,7 @@ static void vector64_append(RStrBuf *sb, Instruction *insn, int n, int i) {
 
 static void vector64_dst_append(RStrBuf *sb, Instruction *insn, int n, int i) {
 	InstructionOperand op = INSOP64 (n);
-	
+
 	if (op.laneUsed) {
 		i = op.lane;
 	}
@@ -750,9 +750,9 @@ static void arm64fpmath(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		COMMA (&op->esil);
 		VEC64_APPEND (&op->esil, 1, i);
 		if (convert) {
-			r_strbuf_appendf (&op->esil, ",F2D,F%s,D2F,", opchar);	
+			r_strbuf_appendf (&op->esil, ",F2D,F%s,D2F,", opchar);
 		} else {
-			r_strbuf_appendf (&op->esil, ",F%s,", opchar);	
+			r_strbuf_appendf (&op->esil, ",F%s,", opchar);
 		}
 		VEC64_DST_APPEND (&op->esil, 0, i);
 		r_strbuf_appendf (&op->esil, ",=");
@@ -1398,7 +1398,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM64_ORNS:
 		OPCALL_NEG("|");
 		SET_FLAGS();
-		break;	
+		break;
 	case ARM64_ORN:
 		OPCALL_NEG("|");
 		break;
@@ -1480,7 +1480,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0),
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0),
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0)
-			);	
+			);
 		} else {
 			r_strbuf_setf (&op->esil,
 				"%d,%s,F2D,NAN,vf,:="
@@ -1838,7 +1838,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					r_strbuf_appendf (&op->esil, "%"PFMT64u",%s,+",
 							MEMDISP64 (1), MEMBASE64 (1));
 				}
-				
+
 
 				if (ISPREINDEX32 () || ISPOSTINDEX32 ()) {
 					r_strbuf_appendf (&op->esil, ",DUP,tmp,=");
@@ -1867,14 +1867,14 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					r_strbuf_setf (&op->esil, "%s,[%d],%s,=",
 						REG64 (1), size, REG64 (0));
 				} else if (OPCOUNT64 () == 3) {
-					
+
 						/*This seems like a capstone bug:
 						instructions like
 							ldr x16, [x13, x9]
 							ldrb w2, [x19, x23]
 						are not detected as ARM64_OP_MEM type and
 						fall in this case instead.*/
-					
+
 					if (ISREG64 (2)) {
 						r_strbuf_setf (&op->esil, "%s,%s,+,[%d],%s,=",
 							REG64 (1), REG64 (2), size, REG64 (0));
@@ -1941,7 +1941,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				}
 
 				r_strbuf_appendf (&op->esil, ",[%d],~,%s,=", size, REG64 (0));
-				
+
 				if (ISPOSTINDEX32()) {
 					if (ISREG64 (2)) { // not sure if register valued post indexing exists?
 						r_strbuf_appendf (&op->esil, ",tmp,%s,+,%s,=", REG64 (2), REG64 (1));
@@ -1957,14 +1957,14 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					r_strbuf_setf (&op->esil, "%d,%s,[%d],~,%s,=",
 						size*8, REG64 (1), size, REG64 (0));
 				} else if (OPCOUNT64 () == 3) {
-					
+
 						/*This seems like a capstone bug:
 						instructions like
 							ldr x16, [x13, x9]
 							ldrb w2, [x19, x23]
 						are not detected as ARM64_OP_MEM type and
 						fall in this case instead.*/
-					
+
 					if (ISREG64 (2)) {
 						r_strbuf_setf (&op->esil, "%d,%s,%s,+,[%d],~,%s,=",
 							size*8, REG64 (1), REG64 (2), size, REG64 (0));
@@ -1985,7 +1985,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		ARG64_APPEND(&op->esil, 0);
 		r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=",
 			REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) -1);
-	
+
 		if (insn->operation == ARM64_CCMP || insn->operation == ARM64_CCMN) {
 			r_strbuf_appendf (&op->esil, ",");
 			v35arm_prefix_cond(op, insn->operands[3].cond);
@@ -1999,7 +1999,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		ARG64_APPEND(&op->esil, 0);
 		r_strbuf_appendf (&op->esil, ",-1,*,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=",
 			REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) -1);
-	
+
 		if (insn->operation == ARM64_CCMN) {
 			r_strbuf_appendf (&op->esil, ",");
 			v35arm_prefix_cond(op, insn->operands[3].cond);
@@ -2168,7 +2168,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 							ldrb w2, [x19, x23]
 						are not detected as ARM64_OP_MEM type and
 						fall in this case instead.*/
-					
+
 					if (ISREG64 (2)) {
 						r_strbuf_setf (&op->esil, "%s,%s,%s,+,=[%d]",
 							REG64 (0), REG64 (1), REG64 (2), size);

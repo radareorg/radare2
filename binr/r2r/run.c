@@ -303,7 +303,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			proc_index = handles.len;
 			r_vector_push (&handles, &proc->proc);
 		}
-		
+
 		DWORD timeout = INFINITE;
 		if (timeout_us_abs != UT64_MAX) {
 			ut64 now = r_time_now_mono ();

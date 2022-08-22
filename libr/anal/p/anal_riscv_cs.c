@@ -328,7 +328,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	if (hndl == 0) {
 		return -1;
 	}
-	
+
 	int n, opsize = -1;
 	cs_insn* insn;
 	if (!op) {

@@ -178,7 +178,7 @@ static STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup ("uint8_t*");
 		break;
-		
+
 
 	case eT_INT16: // 16 bit
 	case eT_SHORT: // 16 bit short
@@ -321,7 +321,7 @@ static STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->size = 8;
 		simple_type->type = strdup ("uint64_t");
 				break;
-		
+
 	case eT_PUQUAD:
 	case eT_PUINT8:
 		simple_type->size = 2;

@@ -4289,7 +4289,7 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(RBinPEObj* pe) {
 				if (diff) {
 					pe_printf ("Warning: section %s not aligned to FileAlignment.\n", sections[j].name);
 					sections[j].paddr -= diff;
-					sections[j].size += diff;	
+					sections[j].size += diff;
 				}
 			}
 		}

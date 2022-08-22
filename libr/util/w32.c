@@ -320,7 +320,6 @@ R_API bool r_w32_init(void) {
 	// w32_DebugBreakProcess = (BOOL (*)(HANDLE)) GetProcAddress (lib, "DebugBreakProcess");
 	// Windows XP
 	// w32_CreateToolhelp32Snapshot = (HANDLE (*)(DWORD, DWORD)) GetProcAddress (lib, "CreateToolhelp32Snapshot");
-	
 	// only windows vista :(
 	w32_GetThreadId = (DWORD (*)(HANDLE))
 		GetProcAddress (lib, "GetThreadId");

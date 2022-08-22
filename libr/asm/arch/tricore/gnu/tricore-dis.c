@@ -1390,7 +1390,7 @@ print_decoded_insn (memaddr, info)
 	  abs = (dec_insn.cexp[i] << 1) + memaddr;
 	  (*info->print_address_func) (abs, info);
 	  break;
-	
+
 	case 'c':
 	  needs_creg = 1;
 	  /* Fall through. */

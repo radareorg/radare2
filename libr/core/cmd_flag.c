@@ -250,7 +250,7 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 				kw = r_str_ndup (fname, fname_len);
 			}
 		}
-		
+
 		bool found = false;
 		r_list_foreach (list, iter2, fn) {
 			if (r_cons_is_breaked ()) {
@@ -1594,14 +1594,14 @@ rep:
 								pj_ks (pj, "realname", flag->realname);
 							}
 							pj_end (pj);
-							
+
 						} else {
 							// Print realname if exists and asm.flags.real is enabled
 							if (core->flags->realnames && flag->realname) {
 								r_cons_println (flag->realname);
 							} else {
 								r_cons_println (flag->name);
-							}	
+							}
 						}
 					}
 				}

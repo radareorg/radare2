@@ -316,7 +316,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_list_foreach (ofiles, iter, desc) {
 				r_list_append (files, (void*)(size_t)desc->fd);
 			}
-		
+
 			void *_fd;
 			r_list_foreach (files, iter, _fd) {
 				int fd = (size_t)_fd;
@@ -338,7 +338,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			break;
 		}
 		core->allbins = false;
-		
+
 		char *v = input[2] ? strdup (input + 2) : NULL;
 		if (!v) {
 			eprintf ("Invalid arguments\n");
@@ -1655,7 +1655,7 @@ static bool cmd_onn(RCore *core, const char* input) {
 			return true;
 		}
 	}
-	
+
 	RIODesc *desc = r_io_open_at (core->io, ptr, perms, 0644, addr);
 	if (!desc || desc->fd == -1) {
 		R_LOG_ERROR ("Cannot open file '%s'", ptr);

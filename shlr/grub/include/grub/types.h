@@ -166,7 +166,7 @@ __inline grub_uint32_t grub_swap_bytes32(grub_uint32_t x)
    return _x;
 };
 
-__inline grub_uint64_t  grub_swap_bytes64(grub_uint64_t x)	
+__inline grub_uint64_t  grub_swap_bytes64(grub_uint64_t x)
 {
    grub_uint64_t _x = (x);
    _x = (grub_uint64_t) ((_x << 56)

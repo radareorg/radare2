@@ -11351,7 +11351,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 				bool isPreludableArch = core->rasm->config->bits == 64 && r_str_startswith (r_config_get (core->config, "asm.arch"), "arm");
-				
+
 				if (!didAap && isPreludableArch) {
 					didAap = true;
 					oldstr = r_print_rowlog (core->print, "Finding function preludes");
@@ -12256,7 +12256,7 @@ static bool core_anal_abf(RCore *core, const char* input) {
 	if (!addr || addr == UT64_MAX) {
 		addr = core->offset;
 	}
-	
+
 	RAnalBlock *bb, *bb2;
 	RListIter *iter, *iter2, *bbiter;
 	RAnalFunction *fcn;

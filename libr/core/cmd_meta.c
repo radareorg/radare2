@@ -255,7 +255,7 @@ static bool print_addrinfo_json(void *user, const char *k, const char *v) {
 		const char *cached_existance = sdb_const_get (fscache, file, NULL);
 		bool file_exists = false;
 		if (cached_existance) {
-			file_exists = !strcmp (cached_existance, "1");	
+			file_exists = !strcmp (cached_existance, "1");
 		} else {
 			if (r_file_exists (file)) {
 				sdb_set (fscache, file, "1", 0);

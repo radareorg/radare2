@@ -1575,9 +1575,8 @@ doinsert(struct parse *p, sop op, size_t opnd, sopno pos)
 				p->pend[i]++;
 			}
 		}
-	}	
-
-	memmove((char *)&p->strip[pos+1], (char *)&p->strip[pos],
+	}
+	memmove ((char *)&p->strip[pos+1], (char *)&p->strip[pos],
 						(HERE()-pos-1)*sizeof (sop));
 	p->strip[pos] = s;
 }
@@ -1585,9 +1584,7 @@ doinsert(struct parse *p, sop op, size_t opnd, sopno pos)
 /*
  - dofwd - complete a forward reference
  */
-static void
-dofwd(struct parse *p, sopno pos, sop value)
-{
+static void dofwd(struct parse *p, sopno pos, sop value) {
 	/* avoid making error situations worse */
 	if (p->error != 0) {
 		return;
@@ -1601,9 +1598,7 @@ dofwd(struct parse *p, sopno pos, sop value)
 /*
  - enlarge - enlarge the strip
  */
-static void
-enlarge(struct parse *p, sopno size)
-{
+static void enlarge(struct parse *p, sopno size) {
 	sop *sp;
 
 	if (p->ssize >= size) {

@@ -837,7 +837,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					} else {
 						esilprintf (op, "%s,%s,=", src, dst);
 					}
-				}				
+				}
 			}
 			break;
 		}
@@ -999,7 +999,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				"%s,%d,-,%s,<<,%s,%s,>>,|,1,%d,1,<<,-,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}",
 				shft, shft, dst_r, shft, src, bitsize-1, dst_r,
 				shft, bitsize, src, shft, dst_r, bitsize, dst_w, bitsize-1);
-			
+
 		}
 		break;
 	case X86_INS_PSLLDQ:
@@ -2142,11 +2142,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		case X86_INS_CVTSS2SI:
 		case X86_INS_CVTPS2PI:
 			esilprintf (op, "32,%s,F2D,D2I,%s", src, dst);
-			break;	
+			break;
 		case X86_INS_CVTSD2SI:
 		case X86_INS_CVTPD2PI:
 			esilprintf (op, "%s,D2I,%s", src, dst);
-			break;	
+			break;
 		case X86_INS_CVTSD2SS:
 		case X86_INS_CVTPD2PS:
 			esilprintf (op, "32,%s,D2F,%s", src, dst);
@@ -3597,7 +3597,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		return -1;
 	}
 	int mode = cs_omode;
-	
+
 	cs_insn *insn = NULL;
 	int n;
 

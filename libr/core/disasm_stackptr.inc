@@ -9,7 +9,7 @@ static void ds_update_stackptr(RDisasmState *ds, RAnalOp *op) {
 	}
 	ds->ostackptr = ds->stackptr;
 	switch (op->stackop) {
-	
+
 	case R_ANAL_STACK_RESET:
 		ds->stackptr = 0;
 		break;

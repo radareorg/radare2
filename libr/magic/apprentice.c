@@ -600,7 +600,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	wchar_t *wcpath;
 	char *cfname;
 	char subfn[1024];
-#else	
+#else
 	DIR *dir;
 	struct dirent *d;
 	char subfn[MAXPATHLEN];
@@ -1522,7 +1522,7 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 
 	if (file_nformats != file_nnames) {
 		return -1;
-	}		
+	}
 
 	if (m->type >= file_nformats) {
 		file_magwarn(ms, "Internal error inconsistency between "

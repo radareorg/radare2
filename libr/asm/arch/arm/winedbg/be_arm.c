@@ -192,7 +192,7 @@ static ut32 arm_disasm_dataprocessing(struct winedbg_arm_insn *arminsn, ut32 ins
 	if (!no_dst) {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %s, ", tbl_regs[get_nibble (inst, 3)]);
 	} else {
-		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " ");	
+		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " ");
 	}
 	if (no_op1) {
 		if (immediate) {

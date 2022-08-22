@@ -511,7 +511,7 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 		//val += ret;
 	}
 	return val;
-	
+
 }
 
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {

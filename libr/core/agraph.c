@@ -5048,7 +5048,7 @@ R_API RAGraph *create_agraph_from_graph(const RGraph/*<RGraphNodeInfo>*/ *graph)
 	// Cache lookup to build edges
 	HtPPOptions pointer_options = {0};
 	HtPP /*<RGraphNode *node, RANode *anode>*/ *hashmap = ht_pp_new_opt (&pointer_options);
-	
+
 	if (!hashmap) {
 		r_agraph_free (result_agraph);
 		return NULL;

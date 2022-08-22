@@ -326,9 +326,6 @@ static inline _sfsyscall1( time_t, time, time_t *, t )
 // inotify_init1
 // preadv
 // pwritev
-	
-	
+
 //#include "../common/sfsocketcall.h"
-
-
 #endif /* SFLIB_H */

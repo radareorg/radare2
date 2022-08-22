@@ -487,7 +487,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		for (i = 0; i < module_list.number_of_modules && offset < obj->size; i++) {
 			struct minidump_module *module = read_module (obj->b, offset);
 			if (!module) {
-				break;	
+				break;
 			}
 			r_list_append (obj->streams.modules, module);
 			offset += sizeof (*module);

@@ -253,10 +253,10 @@ bool callback(RTokenizer *tok) {
 		if (!strcmp (data->word, "case")) {
 			R_FREE (data->word);
 			data->incase = true;
-			break;	
+			break;
 		}
 		if (!strcmp (data->word, "default")) {
-			break;	
+			break;
 		}
 		if (!strcmp (data->word, "return")) {
 			if (data->pj) {
@@ -271,7 +271,7 @@ bool callback(RTokenizer *tok) {
 			return false;
 		}
 		if (!strcmp (data->word, "break")) {
-			break;	
+			break;
 		}
 		if (data->s) {
 			data->s = r_str_append (data->s, " ");

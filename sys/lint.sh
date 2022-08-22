@@ -13,7 +13,7 @@
 (git grep -n 'for (long' | grep -v sys/) && exit 1
 (git grep -n 'for (ut' | grep -v sys/) && exit 1
 (git grep -n 'for (size_t' | grep -v sys/) && exit 1
-# (git grep -n -e '	$' | grep -v sys/) && exit 1
+(git grep -n -e '	$' | grep libr/ | grep c:) && exit 1
 (git grep -n 'R_LOG_' | grep '\\n' | grep -v sys/) && exit 1
 (git grep "`printf '\tfree('`" libr | grep c: ) && exit 1
 (git grep '=0' libr| grep c:|grep -v '"' |grep -v '=0x') && exit 1

@@ -86,7 +86,7 @@ R_API int r_core_zdiff(RCore *c, RCore *c2) {
 			}
 		}
 	}
-	
+
 	/* Diff functions */
 	// r_anal_diff_fcn (cores[0]->anal, cores[0]->anal->fcns, cores[1]->anal->fcns);
 

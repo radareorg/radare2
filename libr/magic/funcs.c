@@ -309,7 +309,7 @@ const char *file_getbuffer(RMagic *ms) {
 #endif
 	for (np = ms->o.pbuf, op = ms->o.buf; *op; op++) {
 		if (isprint ((ut8)*op)) {
-			*np++ = *op;	
+			*np++ = *op;
 		} else {
 			OCTALIFY (np, op);
 		}

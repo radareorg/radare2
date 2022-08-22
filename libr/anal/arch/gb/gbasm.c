@@ -296,7 +296,7 @@ static int gbAsm(const char *buf, ut8 *outbuf) {
 			} else if (!strncmp (buf_asm, "[hl]", 4)) {
 				opbuf[0] = 0x35;
 			} else {
-				len = 0;	
+				len = 0;
 			}
 			break;
 		}
@@ -463,7 +463,7 @@ static int gbAsm(const char *buf, ut8 *outbuf) {
 			len = 0;
 		}
 		break;
-	case 0x706f70:			//pop	
+	case 0x706f70:			//pop
 		if (strlen (buf_asm) < 6) {
 			free (buf_asm);
 			return 0;

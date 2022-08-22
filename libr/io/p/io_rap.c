@@ -269,7 +269,7 @@ static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
 	}
 #endif
 #endif
-	
+
 	return NULL;
 }
 

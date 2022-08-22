@@ -1232,9 +1232,9 @@ static void arm64fpmath(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		COMMA (&op->esil);
 		VEC64_APPEND (&op->esil, 1, i);
 		if (convert) {
-			r_strbuf_appendf (&op->esil, ",F2D,F%s,D2F,", opchar);	
+			r_strbuf_appendf (&op->esil, ",F2D,F%s,D2F,", opchar);
 		} else {
-			r_strbuf_appendf (&op->esil, ",F%s,", opchar);	
+			r_strbuf_appendf (&op->esil, ",F%s,", opchar);
 		}
 		VEC64_DST_APPEND (&op->esil, 0, i);
 		r_strbuf_appendf (&op->esil, ",=");
@@ -1355,7 +1355,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_ORR:
 		OPCALL ("|");
 		break;
-#if CS_API_MAJOR > 4	
+#if CS_API_MAJOR > 4
 	case ARM64_INS_NAND:
 		OPCALL_NEG ("&");
 		break;
@@ -1475,7 +1475,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0),
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0),
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0)
-			);	
+			);
 		} else {
 			r_strbuf_setf (&op->esil,
 				"%d,%s,F2D,NAN,vf,:="
@@ -1850,7 +1850,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				}
 
 				r_strbuf_appendf (&op->esil, ",[%d],~,%s,=", size, REG64 (0));
-				
+
 				if (ISPOSTINDEX64 ()) {
 					if (ISREG64 (2)) { // not sure if register valued post indexing exists?
 						r_strbuf_appendf (&op->esil, ",tmp,%s,+,%s,=", REG64 (2), REG64 (1));
@@ -1894,7 +1894,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		ARG64_APPEND (&op->esil, 0);
 		r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=",
 			REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) - 1);
-	
+
 		if (insn->id == ARM64_INS_CCMP || insn->id == ARM64_INS_CCMN) {
 			r_strbuf_appendf (&op->esil, ",");
 			arm_prefix_cond (op, insn->detail->arm64.cc);
@@ -1908,7 +1908,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		ARG64_APPEND (&op->esil, 0);
 		r_strbuf_appendf (&op->esil, ",-1,*,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=",
 			REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) - 1);
-	
+
 		if (insn->id == ARM64_INS_CCMN) {
 			r_strbuf_appendf (&op->esil, ",");
 			arm_prefix_cond (op, insn->detail->arm64.cc);
@@ -1938,7 +1938,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_STLXR:
 	case ARM64_INS_STLXRH:
 	case ARM64_INS_STLXRB:
-	{	
+	{
 		int size = REGSIZE64 (1);
 		switch (insn->id) {
 			case ARM64_INS_STLXRB:

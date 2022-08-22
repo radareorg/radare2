@@ -350,7 +350,7 @@ static size_t get_operator_code(const char *buf, RList *names_l, bool memorize) 
 	str_info->len = strlen (str); \
 	str_info->str_ptr = strdup (str); \
 	r_list_append (names_l, str_info); \
-}	
+}
 	SStrInfo *str_info;
 	size_t read_len = 1;
 	switch (*++buf) {
@@ -668,7 +668,7 @@ static size_t get_namespace_and_name(const char *buf, STypeCodeStr *type_code_st
 			free (str.type_str);
 			continue;
 		}
-		
+
 		// Nested name
 		if (*tmp == '?') {
 			read_len++;
@@ -1022,7 +1022,7 @@ static inline void parse_type_modifier(SStateInfo *state, STypeCodeStr *type_cod
 		}
 		state->amount_of_read_chars += 2;
 	}
-	
+
 	SDataType mod2;
 	i = get_ptr_modifier (*state->buff_for_parsing, &mod2);
 	state->buff_for_parsing += i;
@@ -1213,7 +1213,7 @@ static EDemanglerErr parse_function_args(const char *sym, char **demangled_args,
 	if (*curr_pos != 'Z') {
 		err = eDemanglerErrUncorrectMangledSymbol;
 	}
-	
+
 	copy_string (&func_str, ")", 0);
 
 	if (demangled_args) {
@@ -1910,7 +1910,7 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 		// Managed function (Managed C++ or C++/CLI)
 		curr_pos += 3;
 	}
-	
+
 	if (curr_pos[0] == '_') {
 		// TODO: __based()
 		curr_pos++;
@@ -1987,7 +1987,7 @@ EDemanglerErr microsoft_demangle(SDemangler *demangler, char **demangled_name) {
 		err = eDemanglerErrMemoryAllocation;
 		goto microsoft_demangle_err;
 	}
-	
+
 	if (!strncmp (demangler->symbol, ".?", 2)) {
 		err = parse_microsoft_rtti_mangled_name (demangler->symbol + 2, demangled_name, NULL);
 	} else {

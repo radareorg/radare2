@@ -273,7 +273,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 
 	// XXX
 	q = getnum (p, NULL);
-	
+
 	// _TF or __TW
 	if (IS_DIGIT (*p) || *p == 'v' || *p == 'I' || *p == 'o' || *p == 'T' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') {
 		if (!strncmp (p + 1, "SS", 2)) {
@@ -511,7 +511,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 					if (len <= (q_end - q) && q[len]) {
 						const char *s = getstring (q, len);
 						if (s && *s) {
-							if (is_first) {	
+							if (is_first) {
 								strcat (out, is_generic?"<":": ");
 								is_first = 0;
 							}

@@ -188,7 +188,7 @@ static bool GetFirstHeapBlock(PDEBUG_HEAP_INFORMATION heapInfo, PHeapBlock hb) {
 
 	WPARAM flags = block[hb->index].flags;
 	UPDATE_FLAGS (hb, flags);
-	
+
 	hb->index = index;
 	return true;
 }

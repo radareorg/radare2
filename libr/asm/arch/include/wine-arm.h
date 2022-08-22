@@ -144,7 +144,7 @@
 #define ARM_DTM_LOAD (0x01<<20)
 #define ARM_DTM_STORE 0x00
 
-typedef struct _arm_label {	
+typedef struct _arm_label {
 	char  name[100];
 	unsigned int at;
 } arm_label;

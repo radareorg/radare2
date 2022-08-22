@@ -307,7 +307,7 @@ static const char *const completer_chars = ",CcY<>?!@+&U~FfGHINnOoZMadu|/=0123%e
    4) Opcodes without FLAG_STRICT should be ordered as follows:
       register index opcodes, long immediate opcodes, and finally
       short immediate opcodes.  */
-	
+
 static const struct pa_opcode pa_opcodes[] =
 {
 

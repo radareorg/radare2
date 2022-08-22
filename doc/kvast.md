@@ -89,7 +89,6 @@ This is an example
 	case '*':
 	case '/':
 		if (expect_arg) {
-			
 			expect_arg = ch;
 		}
 		break;

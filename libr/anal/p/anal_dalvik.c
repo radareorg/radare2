@@ -880,7 +880,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		break;
 	case 0x0a: // move-result
-	case 0x0b: // move-result-wide	
+	case 0x0b: // move-result-wide
 	case 0x0c: // move-result-object
 	case 0x0d: // move-exception
 	 	// TODO: add MOVRET OP TYPE ??

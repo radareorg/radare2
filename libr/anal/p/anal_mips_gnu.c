@@ -1075,7 +1075,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn*insn) {
 	default:
 		return -1;
 	}
-	
+
 	return 0;
 }
 
@@ -1092,7 +1092,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	if ((cpu != pre_cpu) && (a->config->features != pre_features)) {
 		free (disasm_obj.disassembler_options);
 		memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	}	
+	}
 
 	/* prepare disassembler */
 	if (cpu && (!pre_cpu || !strcmp (cpu, pre_cpu))) {
@@ -1175,7 +1175,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		op->addr = addr;
 		disassemble (anal, op, b, len);
 	}
-	
+
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = oplen;
 	op->addr = addr;
@@ -1187,7 +1187,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return oplen;
 	}
-	
+
 	opcode = r_swap_ut32(opcode);
 	buf = (ut8 *) & opcode;
 
@@ -1218,7 +1218,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		int rd = buf[2]>>3;
 		int sa = ((buf[2]&7)<<2)+(buf[3]>>6);
 		int fun = buf[3]&63;
-	
+
 		insn.r_reg.rs = mips_reg_decode (rs);
 		insn.r_reg.rd = mips_reg_decode (rd);
 		insn.r_reg.rt = mips_reg_decode (rt);
@@ -1500,7 +1500,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 						insn.id = MIPS_INS_BAL;
 					} else {
 						op->fail = addr+8;
-						insn.id = MIPS_INS_BGEZAL;	
+						insn.id = MIPS_INS_BGEZAL;
 					}
 					op->delay = 1;
 					op->type = R_ANAL_OP_TYPE_CALL;
@@ -1509,7 +1509,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 					op->delay = 1;
 					op->fail = addr+8;
 					break;
-			}	
+			}
 			break;
 		case 4: // beq
 			if (!insn.id) {
@@ -1538,7 +1538,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->jump = addr + (imm << 2) + 4;
 			op->fail = addr + 8;
 			op->delay = 1;
-			
+
 			snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
 			break;
 		// The following idiom is very common in mips 32 bit:
@@ -1634,7 +1634,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 				op->refptr =  8;
 				insn.id = MIPS_INS_LD;
 			}
-			
+
 			if (rs == 28) {
 				op->ptr = anal->gp + imm;
 			} else {

@@ -4496,7 +4496,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 	case 'r': // "dcr"
 		if (input[2] == '?') {
 			eprintf ("Usage: dcr: step over until ret instruction is found\n");
-		} else {	
+		} else {
 			r_reg_arena_swap (core->dbg->reg, true);
 			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
 		}

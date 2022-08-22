@@ -404,7 +404,6 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 		close (saved_stdin);
 		return -1;
 	}
-	
 	int fdm, pid = dyn_forkpty (&fdm, NULL, NULL, NULL);
 	if (pid == -1) {
 		close (saved_stdin);

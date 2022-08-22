@@ -335,7 +335,7 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 					break;
 				}
 			}
-#if 0	
+#if 0
 			if (rlen > 0) {
 				//printf ("Remove %d byte(s) at %d\n", rlen, offa);
 				printf ("r-%d @ 0x%"PFMT64x"\n", rlen, (ut64)offa);

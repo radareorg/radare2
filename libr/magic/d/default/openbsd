@@ -12,7 +12,7 @@
 # >16	belong			>0		not stripped
 #
 # 0	belong&0377777777	041400413	OpenBSD/i386 demand paged
-# >0	byte			&0x80		
+# >0	byte			&0x80
 # >>20	lelong			<4096		shared library
 # >>20	lelong			=4096		dynamically linked executable
 # >>20	lelong			>4096		dynamically linked executable
@@ -33,7 +33,7 @@
 # >12	string			>\0		from '%s'
 #
 # 0	belong&0377777777	041600413	OpenBSD/m68k demand paged
-# >0	byte			&0x80		
+# >0	byte			&0x80
 # >>20	belong			<8192		shared library
 # >>20	belong			=8192		dynamically linked executable
 # >>20	belong			>8192		dynamically linked executable
@@ -54,7 +54,7 @@
 # >12	string			>\0		from '%s'
 #
 # 0	belong&0377777777	042000413	OpenBSD/m68k4k demand paged
-# >0	byte			&0x80		
+# >0	byte			&0x80
 # >>20	belong			<4096		shared library
 # >>20	belong			=4096		dynamically linked executable
 # >>20	belong			>4096		dynamically linked executable
@@ -75,7 +75,7 @@
 # >12	string			>\0		from '%s'
 #
 # 0	belong&0377777777	042200413	OpenBSD/ns32532 demand paged
-# >0	byte			&0x80		
+# >0	byte			&0x80
 # >>20	lelong			<4096		shared library
 # >>20	lelong			=4096		dynamically linked executable
 # >>20	lelong			>4096		dynamically linked executable
@@ -96,7 +96,7 @@
 # >12	string			>\0		from '%s'
 #
 # 0	belong&0377777777	042400413	OpenBSD/sparc demand paged
-# >0	byte			&0x80		
+# >0	byte			&0x80
 # >>20	belong			<8192		shared library
 # >>20	belong			=8192		dynamically linked executable
 # >>20	belong			>8192		dynamically linked executable
@@ -117,7 +117,7 @@
 # >12	string			>\0		from '%s'
 #
 # 0	belong&0377777777	042600413	OpenBSD/pmax demand paged
-# >0	byte			&0x80		
+# >0	byte			&0x80
 # >>20	lelong			<4096		shared library
 # >>20	lelong			=4096		dynamically linked executable
 # >>20	lelong			>4096		dynamically linked executable
@@ -138,7 +138,7 @@
 # >12	string			>\0		from '%s'
 #
 # 0	belong&0377777777	043000413	OpenBSD/vax1k demand paged
-# >0	byte			&0x80		
+# >0	byte			&0x80
 # >>20	lelong			<4096		shared library
 # >>20	lelong			=4096		dynamically linked executable
 # >>20	lelong			>4096		dynamically linked executable
@@ -159,7 +159,7 @@
 # >12	string			>\0		from '%s'
 #
 # 0	belong&0377777777	045400413	OpenBSD/vax demand paged
-# >0	byte			&0x80		
+# >0	byte			&0x80
 # >>20	lelong			<4096		shared library
 # >>20	lelong			=4096		dynamically linked executable
 # >>20	lelong			>4096		dynamically linked executable
@@ -193,7 +193,7 @@
 #
 # # OpenBSD/mips64
 # 0	belong&0377777777	047400413	OpenBSD/mips64 demand paged
-# >0	byte			&0x80		
+# >0	byte			&0x80
 # >>20	belong			<8192		shared library
 # >>20	belong			=8192		dynamically linked executable
 # >>20	belong			>8192		dynamically linked executable
