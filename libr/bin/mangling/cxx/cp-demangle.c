@@ -4737,12 +4737,8 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 	    typed_name = d_right (typed_name);
 	    if (typed_name->type == DEMANGLE_COMPONENT_DEFAULT_ARG)
 	      typed_name = typed_name->u.s_unary_num.sub;
-	    if (typed_name == NULL)
-	      {
-		d_print_error (dpi);
-		return;
-	      }
-	    while (is_fnqual_component_type (typed_name->type))
+	    while (typed_name != NULL
+		   && is_fnqual_component_type (typed_name->type))
 	      {
 		if (i >= sizeof adpm / sizeof adpm[0])
 		  {
@@ -4760,6 +4756,11 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 		++i;
 
 		typed_name = d_left (typed_name);
+	      }
+	    if (typed_name == NULL)
+	      {
+		d_print_error (dpi);
+		return;
 	      }
 	  }
 
