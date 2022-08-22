@@ -39,6 +39,14 @@
     | grep -v -e ^libr/core/cmd -e ^libr/main/ -e ^libr/util/syscmd \
     | grep -v -e r_cons_eprintf -e alloc) && exit 1
 
+(
+ # ensure c++ compat
+ cd libr/include
+ git grep cplusplus|cut -d : -f1|grep -v heap|grep -v userconf | grep -v sflib | grep -v r_version | sort -u > /tmp/.a
+ find *| grep h$|grep -v r_version | grep -v userconf| grep -v heap|grep -v sflib | sort -u > /tmp/.b
+ diff -ru /tmp/.a /tmp/.b
+) || exit 1
+
 # pending cleanups
 # ( git grep 'desc = "[A-Z]' ) && exit 1
 # git grep -e "`printf '\x09static'`" libr | grep -v R_TH_LOCAL|grep -v const | grep -v '(' && exit 1
