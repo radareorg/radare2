@@ -82,7 +82,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 			break;
 		}
 		off++;
-		// int bank_number = (hb >> 5) & 7;
+		int bank_number = (hb >> 5) & 7;
 		int chunk_type = hb & 0x1f;
 		ut16 chunk_length = 0;
 		if (r_buf_read_at (buf, off, (ut8*)&chunk_length, 2) != 2) {
