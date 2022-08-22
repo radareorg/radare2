@@ -191,6 +191,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	return R_BIN_NM_C | (isBlocks?R_BIN_NM_BLOCKS:0);
 }
 
+// if its ipi no need to be prefixed with r_
 R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	int type = 0;
 	RBinPlugin *plugin;

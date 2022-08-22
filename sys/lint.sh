@@ -1,5 +1,8 @@
 #!/bin/sh
 
+
+# find calls without (
+#(git grep -n -e '[a-z]('  | grep -v static | grep -v _API | grep -v shlr | grep libr/core) && exit 1
 # validated and ready to go lintings
 (git grep -n 'cmp(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
 # (git grep -n 'len(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
@@ -10,6 +13,7 @@
 (git grep -n 'for (long' | grep -v sys/) && exit 1
 (git grep -n 'for (ut' | grep -v sys/) && exit 1
 (git grep -n 'for (size_t' | grep -v sys/) && exit 1
+# (git grep -n -e '	$' | grep -v sys/) && exit 1
 (git grep -n 'R_LOG_' | grep '\\n' | grep -v sys/) && exit 1
 (git grep "`printf '\tfree('`" libr | grep c: ) && exit 1
 (git grep '=0' libr| grep c:|grep -v '"' |grep -v '=0x') && exit 1

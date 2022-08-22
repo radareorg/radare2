@@ -2717,7 +2717,20 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			bin->dysymtab.nlocalsym + \
 			bin->dysymtab.nundefsym );
 	symbols_count += bin->nsymtab;
-	symbols_size = (symbols_count + 1) * 2 * sizeof (struct symbol_t);
+	ut64 tmp = symbols_count + 1;
+	if (SZT_MUL_OVFCHK (symbols_count + 1, 2)) {
+		// overflow may happen here
+		ht_pp_free (hash);
+		return NULL;
+	}
+	tmp *= 2;
+	if (SZT_MUL_OVFCHK (tmp, sizeof (struct symbol_t))) {
+		// overflow may happen here
+		ht_pp_free (hash);
+		return NULL;
+	}
+	tmp *= sizeof (struct symbol_t);
+	symbols_size = tmp;
 
 	if (symbols_size < 1 || !(symbols = calloc (1, symbols_size))) {
 		ht_pp_free (hash);

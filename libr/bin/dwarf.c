@@ -2336,10 +2336,8 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 		SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, false);
 		// Use the parsed information from _raw and transform it to more useful format
 		ls_foreach (ls, iter, kv) {
-			if (!strncmp (sdbkv_key (kv), "0x", 2)) {
-				ut64 addr;
-				RBinDwarfRow *row;
-				int line;
+			const char *key = sdbkv_key (kv);
+			if (r_str_startswith (key, "0x")) {
 				char *file = strdup (sdbkv_value (kv));
 				if (!file) {
 					free (buf);
@@ -2350,9 +2348,9 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 				char *tok = strchr (file, '|');
 				if (tok) {
 					*tok++ = 0;
-					line = atoi (tok);
-					addr = r_num_math (NULL, sdbkv_key (kv));
-					row = row_new (addr, file, line, 0);
+					int line = atoi (tok);
+					ut64 addr = r_num_math (NULL, key);
+					RBinDwarfRow *row = row_new (addr, file, line, 0);
 					r_list_append (list, row);
 				}
 				free (file);
