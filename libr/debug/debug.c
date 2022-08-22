@@ -619,6 +619,7 @@ R_API int r_debug_start(RDebug *dbg, const char *cmd) {
 	return false;
 }
 
+// 580 should be bool
 R_API int r_debug_detach(RDebug *dbg, int pid) {
 	int ret = 0;
 	if (dbg->h && dbg->h->detach) {
@@ -1640,7 +1641,7 @@ R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig) {
 		}
 		return -1;
 	}
-	eprintf ("Backend does not implement kill()\n");
+	R_LOG_WARN ("this debugger backend does not implement kill");
 	return false;
 }
 

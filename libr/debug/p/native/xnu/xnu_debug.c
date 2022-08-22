@@ -296,6 +296,11 @@ bool xnu_detach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
 	return r_debug_ptrace (dbg, PT_DETACH, pid, NULL, 0);
 #else
+	// Not calling PT_DETACH results in a zombie
+	int r = r_debug_ptrace (dbg, PT_DETACH, pid, NULL, 0);
+	if (r < 0) {
+		r_sys_perror ("ptrace(PT_DETACH)");
+	}
 	//do the cleanup necessary
 	//XXX check for errors and ref counts
 	(void)xnu_restore_exception_ports (pid);

@@ -1581,7 +1581,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 						}
 					} else {
 						if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
-							if (r_config_get_i (r->config, "dbg.exitkills") &&
+							if (r_config_get_b (r->config, "dbg.exitkills") &&
 									r_cons_yesno ('y', "Do you want to kill the process? (Y/n)")) {
 								r_debug_kill (r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 							} else {
