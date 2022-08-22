@@ -1324,8 +1324,14 @@ d_encoding (struct d_info *di, int top_level)
 	     really apply here; this happens when parsing a class
 	     which is local to a function.  */
 	  if (dc->type == DEMANGLE_COMPONENT_LOCAL_NAME)
-	    while (is_fnqual_component_type (d_right (dc)->type))
-	      d_right (dc) = d_left (d_right (dc));
+	    {
+	      while (d_right (dc) != NULL
+		     && is_fnqual_component_type (d_right (dc)->type))
+		d_right (dc) = d_left (d_right (dc));
+
+	      if (d_right (dc) == NULL)
+		dc = NULL;
+	    }
 	}
       else
 	{
