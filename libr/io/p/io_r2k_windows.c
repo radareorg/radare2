@@ -48,17 +48,17 @@ BOOL StartStopService(LPCTSTR lpServiceName, BOOL bStop) {
 		if (hService) {
 			if (!bStop) {
 				if (StartService (hService, 0, NULL)) {
-					eprintf ("Service started [OK]\n");
+					R_LOG_DEBUG ("Service started [OK]");
 					ret = TRUE;
 				} else {
-					eprintf ("Service started [FAIL]\n");
+					R_LOG_DEBUG ("Service started [FAIL]");
 				}
 			} else {
 				if (ControlService (hService, SERVICE_CONTROL_STOP, &ssStatus)) {
-					eprintf ("Service Stopped [OK]\n");
+					R_LOG_DEBUG ("Service Stopped [OK]");
 					ret = TRUE;
 				} else {
-					eprintf ("Service Stopped [FAIL]\n");
+					R_LOG_DEBUG ("Service Stopped [FAIL]");
 				}
 			}
 			CloseServiceHandle (hService);
@@ -95,7 +95,7 @@ int GetSystemModules(RIO *io) {
 	int bufmodsize = 1024 * 1024;
 	if (gHandleDriver) {
 		if (!(lpBufMods = malloc (bufmodsize))) {
-			eprintf ("[r2k] GetSystemModules: Error can't allocate %i bytes of memory.\n", bufmodsize);
+			R_LOG_ERROR ("GetSystemModules: Cannot allocate %i bytes of memory", bufmodsize);
 			return -1;
 		}
 		if (DeviceIoControl (gHandleDriver, IOCTL_GET_SYSTEM_MODULES, lpBufMods, bufmodsize, lpBufMods, bufmodsize, &bRead, NULL)) {
@@ -107,7 +107,7 @@ int GetSystemModules(RIO *io) {
 			}
 		}
 	} else {
-		eprintf ("Driver not initialized.\n");
+		R_LOG_ERROR ("Driver not initialized");
 	}
 	return 1;
 }
@@ -121,7 +121,7 @@ int ReadKernelMemory (ut64 address, ut8 *buf, int len) {
 	if (gHandleDriver) {
 		bufsize = sizeof (PA) + len;
 		if (!(lpBuffer = malloc (bufsize))) {
-			eprintf ("[r2k] ReadKernelMemory: Error can't allocate %i bytes of memory.\n", bufsize);
+			R_LOG_ERROR ("ReadKernelMemory: Cannot allocate %i bytes of memory", bufsize);
 			return -1;
 		}
 		p = (PPA)lpBuffer;
@@ -132,11 +132,10 @@ int ReadKernelMemory (ut64 address, ut8 *buf, int len) {
 			ret = len;
 		} else {
 			ret = -1;
-			//eprintf("[r2k] ReadKernelMemory: Error IOCTL_READ_KERNEL_MEM.\n");
 		}
 		free (lpBuffer);
 	} else {
-		eprintf ("Driver not initialized.\n");
+		R_LOG_ERROR ("Driver not initialized");
 	}
 	return ret;
 }
@@ -163,7 +162,7 @@ int WriteKernelMemory(ut64 address, const ut8 *buf, int len) {
 		}
 		free (lpBuffer);
 	} else {
-		eprintf ("Driver not initialized.\n");
+		R_LOG_ERROR ("Driver not initialized");
 	}
 	return ret;
 }
@@ -171,19 +170,19 @@ int WriteKernelMemory(ut64 address, const ut8 *buf, int len) {
 int Init (const char * driverPath) {
 	BOOL ret = FALSE;
 	if (InitDriver () == FALSE) {
-		if (strlen (driverPath)) {
+		if (R_STR_ISNOTEMPTY (driverPath)) {
 			StartStopService (TEXT ("r2k"),TRUE);
 			RemoveService (TEXT ("r2k"));
-			eprintf ("Installing driver: %s\n", driverPath);
+			R_LOG_INFO ("Installing driver: %s", driverPath);
 			if (InstallService (driverPath, TEXT ("r2k"), TEXT ("r2k"))) {
 				StartStopService (TEXT ("r2k"),FALSE);
 				ret = InitDriver ();
 			}
 		} else {
-			eprintf ("Error initalizating driver, try r2k://pathtodriver\nEx: radare2.exe r2k://c:\\r2k.sys\n");
+			R_LOG_ERROR ("Cannot load the r2k driver, try `r2 r2k://path/to/r2k.sys`");
 		}
 	} else {
-		eprintf ("Driver present [OK]\n");
+		R_LOG_DEBUG ("Driver was already present [OK]");
 		ret = TRUE;
 	}
 	return ret;

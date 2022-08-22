@@ -180,11 +180,11 @@ R_API void r_table_set_columnsf(RTable *t, const char *fmt, ...) {
 			r_table_add_column (t, typeNumber, name, 0);
 			break;
 		default:
-			eprintf ("Invalid format string char '%c', use 's' or 'n'\n", *f);
+			R_LOG_ERROR ("Invalid format string char '%c', use 's' or 'n'", *f);
 			break;
 		}
 	}
-	va_end(ap);
+	va_end (ap);
 }
 
 R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
@@ -233,7 +233,7 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 			}
 			break;
 		default:
-			eprintf ("Invalid format string char '%c', use 's' or 'n'\n", *f);
+			R_LOG_ERROR ("Invalid format string char '%c', use 's' or 'n'", *f);
 			break;
 		}
 	}
@@ -1098,7 +1098,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		int col = r_table_column_nth (t, columnName);
 		if (col == -1) {
 			if (columnName == NULL && strcmp (operation, "uniq")) {
-				eprintf ("Invalid column name (%s) for (%s)\n", columnName, query);
+				R_LOG_ERROR ("Invalid column name (%s) for (%s)", columnName, query);
 			} else if (columnName) {
 				if (*columnName == '[') {
 					col = atoi (columnName + 1);

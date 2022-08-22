@@ -366,7 +366,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (sdb_const_get (db, K_INDENT (bb->addr), 0)) {
 			// already analyzed, go pop and continue
 			// XXX check if can't pop
-			//eprintf ("%s// 0x%08llx already analyzed\n", indentstr, bb->addr);
+			R_LOG_DEBUG ("%s// 0x%08llx already analyzed", indentstr, bb->addr);
 			ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 			if (addr == UT64_MAX) {
 				int i;
@@ -408,7 +408,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 			bb = r_anal_bb_from_offset (core->anal, addr);
 			if (!bb) {
-				eprintf ("failed block\n");
+				R_LOG_ERROR ("failed block");
 				break;
 			}
 			nindent = sdb_num_get (db, K_INDENT (addr), NULL);
@@ -440,7 +440,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					if (!sdb_get (db, K_INDENT (fail), 0)) {
 						bb = r_anal_bb_from_offset (core->anal, fail);
 					} else {
-						eprintf (" // FAIL\n");
+						R_LOG_ERROR ("sdb.get fail");
 					}
 				} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);

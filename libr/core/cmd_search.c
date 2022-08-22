@@ -1,11 +1,7 @@
 /* radare - LGPL - Copyright 2010-2022 - pancake */
 
-#include <ht_uu.h>
 #include <r_core.h>
-#include <r_hash.h>
-#include "r_io.h"
-#include "r_list.h"
-#include "r_types_base.h"
+#include <ht_uu.h>
 #include "cmd_search_rop.c"
 
 static int cmd_search(void *data, const char *input);
@@ -274,15 +270,15 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 			st64 bufsz;
 			bufsz = to - from;
 			if (len > bufsz) {
-				eprintf ("Hash length is bigger than range 0x%"PFMT64x "\n", from);
+				R_LOG_ERROR ("Hash length is bigger than range 0x%"PFMT64x, from);
 				continue;
 			}
 			buf = malloc (bufsz);
 			if (!buf) {
-				eprintf ("Cannot allocate %"PFMT64d " bytes\n", bufsz);
+				R_LOG_ERROR ("Cannot allocate %"PFMT64d " bytes", bufsz);
 				goto hell;
 			}
-			eprintf ("Search in range 0x%08"PFMT64x " and 0x%08"PFMT64x "\n", from, to);
+			R_LOG_INFO ("Search in range 0x%08"PFMT64x " and 0x%08"PFMT64x, from, to);
 			int blocks = (int) (to - from - len);
 			eprintf ("Carving %d blocks...\n", blocks);
 			(void) r_io_read_at (core->io, from, buf, bufsz);
@@ -1208,7 +1204,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		// opsz = r_strbuf_length (asmop.buf);
 		char *opst = aop.mnemonic;
 		if (!opst) {
-			eprintf ("Missing mnemonic after disasm with '%s'\n", core->anal->cur->name);
+			R_LOG_ERROR ("Missing mnemonic after disasm with '%s'", core->anal->cur->name);
 			RAsmOp asmop;
 			r_asm_set_pc (core->rasm, addr);
 			if (r_asm_disassemble (core->rasm, &asmop, buf + idx, buflen - idx) < 0) {
@@ -1399,7 +1395,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			RAsmOp asmop;
 			const char *comment = rop_comments? r_meta_get_string (core->anal, R_META_TYPE_COMMENT, hit->addr): NULL;
 			if (hit->len < 0) {
-				eprintf ("Invalid hit length here\n");
+				R_LOG_ERROR ("Invalid hit length here");
 				continue;
 			}
 			ut8 *buf = malloc (1 + hit->len);
@@ -1485,7 +1481,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	}
 	if (max_instr <= 1) {
 		r_list_free (end_list);
-		eprintf ("ROP length (rop.len) must be greater than 1.\n");
+		R_LOG_ERROR ("ROP length (rop.len) must be greater than 1");
 		if (max_instr == 1) {
 			eprintf ("For rop.len = 1, use /c to search for single "
 				"instructions. See /c? for help.\n");
@@ -1776,7 +1772,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		// initialize esil vm
 		r_core_cmd0 (core, "aei");
 		if (!core->anal->esil) {
-			eprintf ("Cannot initialize the ESIL vm\n");
+			R_LOG_ERROR ("Cannot initialize the ESIL vm");
 			return;
 		}
 	}
@@ -1829,7 +1825,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			r_anal_esil_set_pc (core->anal->esil, addr);
 			if (!r_anal_esil_parse (core->anal->esil, input + 2)) {
 				// XXX: return value doesnt seems to be correct here
-				eprintf ("Cannot parse esil (%s)\n", input + 2);
+				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
 				break;
 			}
 			hit_happens = false;
@@ -1854,7 +1850,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 					}
 				}
 			} else {
-				eprintf ("Cannot parse esil (%s)\n", input + 2);
+				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
 				r_anal_esil_stack_free (core->anal->esil);
 				free (res);
 				break;
@@ -1871,7 +1867,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				}
 				hit_combo++;
 				if (hit_combo > hit_combo_limit) {
-					eprintf ("Hit search.esilcombo reached (%d). Stopping search. Use f-\n", hit_combo_limit);
+					R_LOG_INFO ("Hit search.esilcombo reached (%d). Stopping search. Use f-", hit_combo_limit);
 					break;
 				}
 			} else {
@@ -1978,7 +1974,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	}
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
 		r_anal_esil_free (esil);
 		free (previnstr);
 		return;
@@ -2229,7 +2225,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 				r_core_cmd0 (core, "aoml");
 				break;
 			default:
-				eprintf ("wat\n");
+				R_LOG_ERROR ("Unknown command");
 				break;
 			}
 			return false;
@@ -2609,7 +2605,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 					kw? kw->keyword_length: 0, bytestr, itv.addr, r_itv_end (itv));
 			}
 			if (r_sandbox_enable (0) && itv.size > 1024 * 64) {
-				eprintf ("Sandbox restricts search range\n");
+				R_LOG_ERROR ("Sandbox restricts search range");
 				break;
 			}
 			if (!core->search->bckwrds) {
@@ -2671,7 +2667,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 		r_cons_break_pop ();
 		free (buf);
 	} else {
-		eprintf ("No keywords defined\n");
+		R_LOG_ERROR ("No keywords defined");
 	}
 
 	if (param->outmode == R_MODE_JSON) {
@@ -2763,7 +2759,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 				free (out);
 			}
 		} else {
-			eprintf ("Invalid ROP class\n");
+			R_LOG_ERROR ("Invalid ROP class");
 		}
 		break;
 	default:
@@ -2876,7 +2872,7 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 	int i = 0;
 	ut8 *buf = calloc (1, bsize);
 	if (!buf) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
 		free (buf);
 		return NULL;
 	}
@@ -3008,7 +3004,7 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 	}
 	memcpy (buf, core->block, bufsz);
 	if (hashLength > sizeof (cmphash)) {
-		eprintf ("Hashlength mismatch %d %d\n", hashLength, (int)sizeof (cmphash));
+		R_LOG_INFO ("Hashlength mismatch %d %d", hashLength, (int)sizeof (cmphash));
 		free (buf);
 		return;
 	}
@@ -3017,7 +3013,7 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 	ut64 hashBits = r_hash_name_to_bits (hashName);
 	int hashSize = r_hash_size (hashBits);
 	if (hashLength != hashSize) {
-		eprintf ("Invalid hash size %d vs %d\n", hashLength, hashSize);
+		R_LOG_ERROR ("Invalid hash size %d vs %d", hashLength, hashSize);
 		free (buf);
 		return;
 	}
@@ -3198,7 +3194,7 @@ static void __core_cmd_search_backward(RCore *core, int delta) {
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	int maxopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 	if (minopsz < 1 || maxopsz < 1) {
-		eprintf ("Invalid MAX_OPSIZE. assuming 4\n");
+		R_LOG_ERROR ("Invalid MAX_OPSIZE. assuming 4");
 		minopsz = 4;
 		maxopsz = 4;
 	}
@@ -3293,18 +3289,18 @@ static int cmd_search(void *data, const char *input) {
 	int param_offset = 2;
 	char *inp;
 	if (!core || !core->io) {
-		eprintf ("Can't search if we don't have an open file.\n");
+		R_LOG_ERROR ("Can't search if we don't have an open file");
 		return false;
 	}
 	if (core->in_search) {
-		eprintf ("Can't search from within a search.\n");
+		R_LOG_ERROR ("Can't search from within a search");
 		return R_CMD_RC_SUCCESS;
 	}
 	if (input[0] == '/') {
 		if (core->lastsearch) {
 			input = core->lastsearch;
 		} else {
-			eprintf ("No previous search done\n");
+			R_LOG_ERROR ("No previous search done");
 			return R_CMD_RC_SUCCESS;
 		}
 	} else {
@@ -3317,7 +3313,7 @@ static int cmd_search(void *data, const char *input) {
 	const ut64 search_from = r_config_get_i (core->config, "search.from");
 	const ut64 search_to = r_config_get_i (core->config, "search.to");
 	if (search_from > search_to && search_to) {
-		eprintf ("Invalid search range where search.from > search.to.\n");
+		R_LOG_ERROR ("Invalid search range where search.from > search.to");
 		errcode = 0;
 		goto beach;
 	}
@@ -3325,7 +3321,7 @@ static int cmd_search(void *data, const char *input) {
 	RInterval search_itv = {search_from, search_to - search_from};
 	bool empty_search_itv = search_from == search_to && search_from != UT64_MAX;
 	if (empty_search_itv) {
-		eprintf ("Warning: from == to?\n");
+		R_LOG_WARN ("from == to?");
 		errcode = 0;
 		goto beach;
 	}
@@ -3488,7 +3484,7 @@ reread:
 		ut64 n = (input[1] == ' ' || (input[1] && input[2]==' '))
 			? r_num_math (core->num, input + 2): UT64_MAX;
 		if (!n) {
-			eprintf ("Cannot find null references.\n");
+			R_LOG_ERROR ("Cannot find null references");
 			break;
 		}
 		switch (input[1]) {

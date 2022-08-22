@@ -4353,6 +4353,7 @@ DEBUG: RCore.cmd('Cd 4[48] @ 0x12000')
 DEBUG: (cannot find opening [) in (48])
 DEBUG: RCore.cmd('Cd 4[56] @ 0x2fdd8')
 DEBUG: (cannot find opening [) in (56])
+DEBUG: format string is too large for this buffer
 DEBUG: RCore.cmd('=!')
 DEBUG: RCore.cmd('ieq')
 DEBUG: RCore.cmd('i~elf')

@@ -160,11 +160,9 @@ static void open_pidmem(RIOPtrace *iop) {
 	if (iop->fd == -1) {
 		iop->fd = open (pidmem, O_RDONLY);
 	}
-#if 0
-	if (iop->fd == -1)
-		eprintf ("Warning: Cannot open /proc/%d/mem. "
-			"Fallback to ptrace io.\n", iop->pid);
-#endif
+	if (iop->fd == -1) {
+		R_LOG_DEBUG ("Cannot open /proc/%d/mem. Fallback to ptrace io", iop->pid);
+	}
 #else
 	iop->fd = -1;
 #endif

@@ -187,7 +187,7 @@ static int update_self_regions(RIO *io, int pid) {
 	kern_return_t rc;
 	rc = task_for_pid (mach_task_self (), pid, &task);
 	if (rc) {
-		eprintf ("task_for_pid failed\n");
+		R_LOG_ERROR ("task_for_pid failed");
 		return false;
 	}
 	macosx_debug_regions (io, task, (size_t)1, 1000);
