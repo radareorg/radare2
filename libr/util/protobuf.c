@@ -72,10 +72,10 @@ static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 pa
 		ut8 wire = buffer[0] & 0x3;
 		buffer++;
 		if (buffer < start || buffer >= end) {
-			eprintf ("\ninvalid buffer pointer.\n");
+			R_LOG_WARN ("invalid buffer pointer");
 			break;
 		} else if (wire > WIRE_32_BIT) {
-			eprintf ("\nunknown wire id (%u).\n", wire);
+			R_LOG_WARN ("unknown wire id (%u)", wire);
 			return;
 		}
 		if (wire != WIRE_END_GRP) {
@@ -118,7 +118,7 @@ static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 pa
 					}
 					bytes_read += var64;
 				} else {
-					eprintf ("\ninvalid delimited length (%"PFMT64u").\n", var64);
+					R_LOG_WARN ("invalid delimited length (%"PFMT64u")", var64);
 					return;
 				}
 			}
@@ -152,7 +152,7 @@ static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 pa
 
 R_API char *r_protobuf_decode(const ut8* start, const ut64 size, bool debug) {
 	if (!start || !size) {
-		eprintf ("Invalid buffer pointer or size.\n");
+		R_LOG_ERROR ("Invalid buffer pointer or size");
 		return NULL;
 	}
 	const ut8* end = start + size;
