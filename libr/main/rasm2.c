@@ -690,7 +690,7 @@ static int rasm_asm(RAsmState *as, const char *buf, ut64 offset, ut64 len, int b
 					for (i = 0; i < acode->len; i += sizeof (ut32)) {
 						ut32 dword = r_read_ble32 (acode->bytes + i, R_SYS_ENDIAN);
 						printf ("0x%08x ", dword);
-						if ((i/4) == 7) {
+						if ((i / 4) == 7) {
 							printf ("\n");
 						}
 					}
@@ -1028,9 +1028,11 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		if (p) {
 			*p = 0;
 			if (*filters) {
+				// R2_580 r_asm_input_filter (as->a, filters);
 				r_asm_sub_names_input (as->a, filters);
 			}
 			if (p[1]) {
+				// R2_580 r_asm_output_filter (as->a, p + 1);
 				r_asm_sub_names_output (as->a, p + 1);
 			}
 			*p = ':';
