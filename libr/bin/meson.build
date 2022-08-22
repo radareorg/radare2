@@ -129,7 +129,7 @@ r_bin_sources = [
   join_paths('format/pdb','pdb_downloader.c'),
   join_paths('format/pdb','stream_file.c'),
   join_paths('format/pdb','stream_pe.c'),
-  join_paths('format/pdb','tpi.c')
+  join_paths('format/pdb','tpi.c'),
 
   join_paths('mangling','cxx.c'),
   join_paths('mangling','cxx','cp-demangle.c'),
@@ -140,7 +140,7 @@ r_bin_sources = [
   join_paths('mangling','msvc.c'),
   join_paths('mangling','objc.c'),
   join_paths('mangling','swift-sd.c'),
-  join_paths('mangling','swift.c'),
+  join_paths('mangling','swift.c')
 ]
 
 r_bin_sources += r_bin_d_sources
