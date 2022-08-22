@@ -103,9 +103,11 @@ static bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 #elif __arm__ || __arm || __armv7__
 	thread->count = ARM_DEBUG_STATE_COUNT;
 	thread->flavor = ARM_DEBUG_STATE;
+	mach_msg_type_number_t count;
 	rc = thread_set_state (thread->port, thread->flavor,
 			       (thread_state_t)&thread->debug.drx,
-			       &thread->count);
+				&count);
+	thread->count = count;
 #elif __POWERPC__
 /* not supported */
 # ifndef PPC_DEBUG_STATE32
@@ -138,7 +140,6 @@ static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	// thread->flavor is used in a switch+case but in regs->tsh.flavor we
 	// specify
 	thread->state = &regs->uts;
-	thread->state = &regs;
 	thread->flavor = x86_THREAD_STATE;
 	thread->count = x86_THREAD_STATE_COUNT;
 	if (dbg->bits == R_SYS_BITS_64) {

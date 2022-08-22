@@ -605,10 +605,12 @@ static void xnu_free_threads_ports(RDebugPid *p) {
 */
 
 RList *xnu_thread_list(RDebug *dbg, int pid, RList *list) {
-#if __arm__ || __arm64__ || __aarch_64__
+#if __arm64__ || __aarch_64__
 	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
 		state.arm64.__pc : state.arm32.__pc
-		/* state.ts_64.__pc : state.ts_32.__pc */
+#elif __arm__ || __arm
+	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
+		state.ts_64.__pc : state.ts_32.__pc
 #elif __POWERPC__
 	#define CPU_PC state.srr0
 #elif __x86_64__ || __i386__

@@ -6,8 +6,7 @@
 #	define R_REG_T ppc_thread_state_t
 #	define R_REG_STATE_T PPC_THREAD_STATE
 #	define R_REG_STATE_SZ PPC_THREAD_STATE_SZ
-
-#elif __arm || __arm64 || __aarch64
+#elif __arm64 || __aarch64
 #	include <mach/arm/thread_status.h>
 #	ifndef ARM_THREAD_STATE
 #		define ARM_THREAD_STATE 1
@@ -15,13 +14,16 @@
 #	ifndef ARM_THREAD_STATE64
 #		define ARM_THREAD_STATE64 6
 #	endif
-typedef union rz_xnu_arm_reg_state_t {
+typedef union r_xnu_arm_reg_state_t {
 	// which one is used here is determined by RzXnuDebug.cpu
 	arm_thread_state32_t arm32;
 	arm_thread_state64_t arm64;
 } RXnuArmRegState;
-// #	define R_REG_T arm_unified_thread_state_t
+#undef R_REG_T
 #define R_REG_T        RXnuArmRegState
+#elif __arm || __arm__
+#undef R_REG_T
+#	define R_REG_T arm_unified_thread_state_t
 #	define R_REG_STATE_T MACHINE_THREAD_STATE
 #	define R_REG_STATE_SZ MACHINE_THREAD_STATE_COUNT
 #elif __x86_64__ || __i386__
