@@ -93,7 +93,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	host[sizeof (host) - 1] = '\0';
 	port = strchr (host, ':');
 	if (!port) {
-		eprintf ("Port not specified. Please use qnx://[host]:[port]\n");
+		R_LOG_ERROR ("Port not specified. Please use qnx://[host]:[port]");
 		return NULL;
 	}
 	*port = '\0';
@@ -104,7 +104,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 
 	if (r_sandbox_enable (0)) {
-		eprintf ("sandbox: Cannot use network\n");
+		R_LOG_ERROR ("sandbox: Cannot use network");
 		return NULL;
 	}
 	rioq = R_NEW0 (RIOQnx);
@@ -115,7 +115,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		rioqnx = r_io_desc_new (io, &r_io_plugin_qnx, file, rw, mode, rioq);
 		return rioqnx;
 	}
-	eprintf ("qnx.io.open: Cannot connect to host.\n");
+	R_LOG_ERROR ("qnx.io.open: Cannot connect to host");
 	free (rioq);
 	return NULL;
 }

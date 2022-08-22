@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2021 - pancake */
+/* radare2 - LGPL - Copyright 2009-2022 - pancake */
 
 #include "r_core.h"
 
@@ -11,7 +11,7 @@ R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach)
 	p = fd ? fd->data : NULL;
 	r_config_set_b (r->config, "cfg.debug", true);
 	if (!p) {
-		eprintf ("Invalid debug io\n");
+		R_LOG_ERROR ("Invalid debug io");
 		return false;
 	}
 
@@ -86,7 +86,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	}
 	buf = malloc (bs);
 	if (!buf) {
-		eprintf ("Cannot alloc %d byte(s)\n", bs);
+		R_LOG_ERROR ("Cannot alloc %d byte(s)", bs);
 		fclose (fd);
 		return false;
 	}
@@ -100,7 +100,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 		}
 		r_io_read_at (core->io, addr + i, buf, bs);
 		if (fwrite (buf, bs, 1, fd) < 1) {
-			eprintf ("write error\n");
+			R_LOG_ERROR ("write error");
 			break;
 		}
 	}
@@ -116,7 +116,7 @@ static bool __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
 	ut32 v32;
 	ut64 v64;
 	if (len != 8 && len != 4 && len != 2 && len != 1) {
-		eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
+		R_LOG_ERROR ("Invalid word size. Use 1, 2, 4 or 8");
 		return false;
 	}
 	if (len == 1) {
@@ -173,7 +173,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			// Output is invalid if there was just a single nibble,
 			// but in that case, len is negative (-1).
 			if (len <= 0) {
-				eprintf ("Invalid hexpair string\n");
+				R_LOG_ERROR ("Invalid hexpair string");
 				goto beach;
 			}
 		} else {  // use clipboard as key
@@ -215,7 +215,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			step = r_num_math (core->num, s);
 		}
 		free (os);
-		eprintf ("from %d to %d step %d size %d\n", from, to, step, wordsize);
+		R_LOG_INFO ("from %d to %d step %d size %d", from, to, step, wordsize);
 		dif = (to <= from)? UT8_MAX: to - from + 1;
 		if (wordsize == 1) {
 			from %= (UT8_MAX + 1);
@@ -249,7 +249,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 				r_write_le64 (buf + i, num64);
 			}
 		} else {
-			eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
+			R_LOG_ERROR ("Invalid word size. Use 1, 2, 4 or 8");
 		}
 	} else if (op == '2' || op == '4' || op == '8') { // "wo2" "wo4" "wo8"
 		int inc = op - '0';
@@ -283,7 +283,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 				buf[i+3] = buf[i+4];
 				buf[i+4] = tmp;
 			} else {
-				eprintf ("Invalid inc, use 2, 4 or 8.\n");
+				R_LOG_ERROR ("Invalid inc, use 2, 4 or 8");
 				break;
 			}
 		}
@@ -487,7 +487,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	}
 	shift_buf = calloc (b_size, 1);
 	if (!shift_buf) {
-		eprintf ("Cannot allocated %d byte(s)\n", (int)b_size);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", (int)b_size);
 		return false;
 	}
 

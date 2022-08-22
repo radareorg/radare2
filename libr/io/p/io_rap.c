@@ -45,7 +45,7 @@ static bool __rap_close(RIODesc *fd) {
 			}
 		}
 	} else {
-		eprintf ("__rap_close: fdesc is not a r_io_rap plugin\n");
+		R_LOG_ERROR ("__rap_close: fdesc is not a r_io_rap plugin");
 	}
 	return ret;
 }
@@ -88,11 +88,11 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 	}
 	if (listenmode) {
 		if (p <= 0) {
-			eprintf ("rap: cannot listen here. Try rap://:9999\n");
+			R_LOG_ERROR ("rap: cannot listen here. Try rap://:9999");
 			return NULL;
 		}
 		//TODO: Handle ^C signal (SIGINT, exit); // ???
-		eprintf ("rap: listening at port %s ssl %s\n", port, (is_ssl)?"on":"off");
+		R_LOG_INFO ("rap: listening at port %s ssl %s", port, is_ssl? "on": "off");
 		RIORap *rior = R_NEW0 (RIORap);
 		rior->listener = true;
 		rior->client = rior->fd = r_socket_new (is_ssl);
@@ -148,7 +148,7 @@ static RIODesc *__rap_open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		if (i > 0) {
-			eprintf ("rap connection was successful. open %d\n", i);
+			R_LOG_INFO ("rap connection was successful. open %d", i);
 			// io->coreb.cmd (io->coreb.core, "e io.va=0");
 			io->coreb.cmd (io->coreb.core, ".:i*");
 			io->coreb.cmd (io->coreb.core, ".:f*");
@@ -176,7 +176,7 @@ static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
 	buf[0] = RMT_CMD;
 	i = strlen (command) + 1;
 	if (i > RMT_MAX - 5) {
-		eprintf ("Command too long\n");
+		R_LOG_ERROR ("Command too long");
 		return NULL;
 	}
 	r_write_be32 (buf + 1, i);
@@ -209,13 +209,13 @@ static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
 		}
 		str = calloc (1, cmdlen + 1);
 		ret = r_socket_read_block (s, (ut8*)str, cmdlen);
-		eprintf ("RUN %d CMD(%s)\n", ret, str);
+		R_LOG_INFO ("RUN %d CMD(%s)", ret, str);
 		if (str && *str) {
 			res = io->cb_core_cmdstr (io->user, str);
 		} else {
 			res = strdup ("");
 		}
-		eprintf ("[%s]=>(%s)\n", str, res);
+		R_LOG_INFO ("[%s]=>(%s)", str, res);
 		reslen = strlen (res);
 		free (str);
 		r_write_be32 (buf + 1, reslen);
@@ -231,14 +231,14 @@ static char *__rap_system(RIO *io, RIODesc *fd, const char *command) {
 		return NULL;
 	}
 	if (buf[0] != (RMT_CMD | RMT_REPLY)) {
-		eprintf ("Unexpected rap cmd reply\n");
+		R_LOG_ERROR ("Unexpected rap cmd reply");
 		return NULL;
 	}
 
 	i = r_read_at_be32 (buf, 1);
 	ret = 0;
 	if (i > ST32_MAX) {
-		eprintf ("Invalid length\n");
+		R_LOG_ERROR ("Invalid length");
 		return NULL;
 	}
 	ptr = (char *)calloc (1, i + 1);
