@@ -2617,7 +2617,7 @@ static int cmd_panels(void *data, const char *input) {
 			if (r) {
 				free (r);
 			} else {
-				eprintf ("Cannot open file (%s)\n", sp + 1);
+				R_LOG_ERROR ("Cannot open file (%s)", sp + 1);
 			}
 		}
 		return false;
@@ -4099,7 +4099,7 @@ escape_backtick:
 repeat_arroba:
 		arroba = (ptr[0] && ptr[1] && ptr[2])?  strchr (ptr + 2, '@'): NULL;
 		if (!strncmp (ptr, "@@@", 3)) { // "@@@@"
-			eprintf ("Cannot iterate that much.\n");
+			R_LOG_ERROR ("Cannot iterate that much");
 			goto fuji;
 		}
 		if (arroba) {
@@ -4151,7 +4151,7 @@ repeat_arroba:
 				}
 			} else {
 				// WAT DU
-				eprintf ("TODO: what do you expect for @. import offset from file maybe?\n");
+				R_LOG_INFO ("TODO: what do you expect for @. import offset from file maybe?");
 			}
 		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
 			switch (ptr[0]) {
@@ -4176,7 +4176,7 @@ repeat_arroba:
 							eprintf ("The current basic block has %d instructions\n", bb->ninstr);
 						}
 					} else {
-						eprintf ("Can't find a basic block for 0x%08"PFMT64x"\n", core->offset);
+						R_LOG_ERROR ("Can't find a basic block for 0x%08"PFMT64x, core->offset);
 					}
 					break;
 				}
@@ -4199,7 +4199,7 @@ repeat_arroba:
 						}
 					}
 				} else {
-					eprintf ("cannot open '%s'\n", ptr + 3);
+					R_LOG_ERROR ("cannot open '%s'", ptr + 3);
 				}
 				break;
 			case 'r': // "@r:" // regname
@@ -4289,7 +4289,7 @@ repeat_arroba:
 						r_core_block_read (core);
 					}
 				} else {
-					eprintf ("Invalid @v: syntax\n");
+					R_LOG_ERROR ("Invalid @v: syntax");
 				}
 				break;
 			case 'x': // "@x:" // hexpairs
@@ -4318,10 +4318,10 @@ repeat_arroba:
 						}
 						free (buf);
 					} else {
-						eprintf ("cannot allocate\n");
+						R_LOG_ERROR ("cannot allocate");
 					}
 				} else {
-					eprintf ("Invalid @x: syntax\n");
+					R_LOG_ERROR ("Invalid @x: syntax");
 				}
 				break;
 			case 'k': // "@k"
@@ -4423,7 +4423,7 @@ ignore:
 
 		if (isalpha ((ut8)ptr[1]) && !addr) {
 			if (!r_flag_get (core->flags, ptr + 1)) {
-				eprintf ("Invalid address (%s)\n", ptr + 1);
+				R_LOG_ERROR ("Invalid address (%s)", ptr + 1);
 				goto fail;
 			}
 		} else {
@@ -4944,13 +4944,13 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		}
 		break;
 	case 0:
-		eprintf ("Nothing to repeat. Check @@@?\n");
+		R_LOG_INFO ("Nothing to repeat. Check @@@?");
 		break;
 	case '@':
-		eprintf ("I can't iterate that much!\n");
+		R_LOG_WARN ("I can't iterate that much!");
 		break;
 	default:
-		eprintf ("Invalid repeat type, Check @@@? for help\n");
+		R_LOG_ERROR ("Invalid repeat type, Check @@@? for help");
 		break;
 	}
 	r_list_free (list);
@@ -5098,7 +5098,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		free (ostr);
 		return 0;
 	case 0:
-		eprintf ("Nothing to repeat. Check @@?\n");
+		R_LOG_ERROR ("Nothing to repeat. Check @@?");
 		break;
 	case '?': // "@@?"
 		r_core_cmd_help (core, help_msg_at_at);
@@ -5289,7 +5289,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			r_core_seek (core, oseek, false);
 			r_list_free (list);
 		} else {
-			eprintf("Invalid for-each statement. Use @@=dbt[abs]\n");
+			R_LOG_ERROR ("Invalid for-each statement. Use @@=dbt[abs]");
 		}
 		break;
 	case 'k': // "@@k"
@@ -5372,7 +5372,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				free (buf);
 				fclose (fd);
 			} else {
-				eprintf ("cannot open file '%s' to read offsets\n", each + 1);
+				R_LOG_ERROR ("cannot open file '%s' to read offsets", each + 1);
 			}
 		}
 		break;
@@ -5529,7 +5529,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 	}
 	if (!strncmp (cstr, "/*", 2)) {
 		if (r_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
+			R_LOG_ERROR ("This command is disabled in sandbox mode");
 			goto beach; // false
 		}
 		core->incomment = true;

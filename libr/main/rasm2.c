@@ -759,8 +759,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	char *log_level = r_sys_getenv ("R2_LOG_LEVEL");
 	if (R_STR_ISNOTEMPTY (log_level)) {
 		r_log_set_level (atoi (log_level));
-		free (log_level);
 	}
+	R_FREE (log_level);
 	RAsmState *as = __as_new ();
 
 	// TODO set addrbytes
@@ -1084,8 +1084,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 				len -= skip;
 				usrstr[len] = 0;
 			}
-			// XXX this is a wrong usage of endianness
-			if (!strncmp (usrstr, "0x", 2)) {
+			if (r_str_startswith (usrstr, "0x")) {
 				memmove (usrstr, usrstr + 2, strlen (usrstr + 2) + 1);
 			}
 			if (rad) {

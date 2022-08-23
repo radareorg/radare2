@@ -84,6 +84,7 @@ static int fs_zip_read(RFSFile *file, ut64 addr, int len) {
 		return ret;
 	}
 #endif
+	free (abs_path);
 	return -1;
 }
 
@@ -102,13 +103,9 @@ static void append_file(RList *list, const char *name, int type, int time, ut64 
 	r_list_append (list, fsf);
 }
 
-static RList *fs_zip_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
-	RList *list = r_list_new ();
-	if (!list) {
-		return NULL;
-	}
+static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 	ut64 addr = 0;
-	RIOMap *map = root->iob.map_get_at(root->iob.io, addr);
+	RIOMap *map = root->iob.map_get_at (root->iob.io, addr);
 	if (!map) {
 		R_LOG_ERROR ("no map");
 		return NULL;
@@ -124,24 +121,31 @@ static RList *fs_zip_dir(RFSRoot *root, const char *path, int view /*ignored*/) 
 	int res = root->iob.read_at (root->iob.io, 0, buf, buflen);
 	if (res < 1) {
 		R_LOG_ERROR ("io read problems");
+		free (buf);
 		return NULL;
 	}
 	// open dir and enumerate files
 	zip_error_t error;
 	zip_source_t *zs = zip_source_buffer_create (buf, buflen, 0, &error);
 	if (!zs) {
+		free (buf);
 		return NULL;
 	}
 	int _flags = 0;
 	zip_t *za = zip_open_from_source (zs, _flags, &error);
 	if (!za) {
 		R_LOG_ERROR ("failed to open zip from source");
+		free (buf);
 		return NULL;
 	}
 	int num_entries = zip_get_num_files (za);
 	int i;
 	bool hasdir = false;
 	bool hasfailed = false;
+	RList *list = r_list_new ();
+	if (!list) {
+		return NULL;
+	}
 	for (i = 0; i < num_entries; i++) {
 		struct zip_stat sb;
 		zip_stat_init (&sb);
