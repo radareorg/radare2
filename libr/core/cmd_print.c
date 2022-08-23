@@ -6196,7 +6196,7 @@ static int cmd_print(void *data, const char *input) {
 		case ',': // "pd,"
 		case 't': // "pdt" // R_DEPRECATE pdt imho
 			if (input[2] == '?') {
-				R_LOG_WARN ("Missing help for pd,? command");
+				r_core_cmd_help_match (core, help_msg_pd, "pd,", true);
 				return 0;
 			} else {
 				r_core_disasm_table (core, l, r_str_trim_head_ro (input + 2));
@@ -6206,7 +6206,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'k': // "pdk" -print class
 			if (input[2] == '?') {
-				R_LOG_WARN ("Missing help for pdk? command");
+				r_core_cmd_help_match (core, help_msg_pd, "pdk", true);
 				return 0;
 			} else {
 				int len = 0;
@@ -6216,7 +6216,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'i': // "pdi" // "pDi"
 			if (input[2] == '?') {
-				R_LOG_WARN ("Missing help for pdi? command");
+				r_core_cmd_help_match (core, help_msg_pd, "pdi", true);
 				return 0;
 			} else {
 				processed_cmd = true;
