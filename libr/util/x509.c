@@ -259,16 +259,23 @@ R_API RX509Certificate *r_x509_parse_certificate2(const ut8 *buffer, ut32 length
 }
 
 R_API RX509CRLEntry *r_x509_parse_crlentry(RASN1Object *object) {
-	RX509CRLEntry *entry;
 	if (!object || object->list.length != 2) {
 		return NULL;
 	}
-	entry = (RX509CRLEntry *)malloc (sizeof (RX509CRLEntry));
+	RX509CRLEntry *entry = R_NEW0 (RX509CRLEntry);
 	if (!entry) {
 		return NULL;
 	}
-	entry->userCertificate = r_asn1_create_binary (object->list.objects[0]->sector, object->list.objects[0]->length);
-	entry->revocationDate = r_asn1_stringify_utctime (object->list.objects[1]->sector, object->list.objects[1]->length);
+	struct r_asn1_object_t *obj0 = object->list.objects[0];
+	if (!obj0) {
+		return NULL;
+	}
+	entry->userCertificate = r_asn1_create_binary (obj0->sector, obj0->length);
+	struct r_asn1_object_t *obj1 = object->list.objects[1];
+	if (!obj1) {
+		return NULL;
+	}
+	entry->revocationDate = r_asn1_stringify_utctime (obj1->sector, obj1->length);
 	return entry;
 }
 

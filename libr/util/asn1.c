@@ -4,6 +4,7 @@
 #include <r_util.h>
 
 static R_TH_LOCAL int ASN1_STD_FORMAT = 1;
+static R_TH_LOCAL char temp_name[4096] = {0};
 
 R_API void asn1_setformat(int fmt) {
 	ASN1_STD_FORMAT = fmt;
@@ -153,7 +154,7 @@ R_API RASN1Binary *r_asn1_create_binary(const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return NULL;
 	}
-	ut8* buf = (ut8*) calloc (sizeof (*buf), length);
+	ut8* buf = (ut8*) calloc (1, length);
 	if (!buf) {
 		return NULL;
 	}
@@ -268,7 +269,6 @@ R_API char *r_asn1_to_string(RASN1Object *object, ut32 depth, RStrBuf *sb) {
 	}
 	//this shall not be freed. it's a pointer into the buffer.
 	RASN1String* asn1str = NULL;
-	static R_TH_LOCAL char temp_name[4096] = {0};
 	const char* name = "";
 	const char* string = "";
 

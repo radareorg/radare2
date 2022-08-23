@@ -1,7 +1,5 @@
 /* radare2 - LGPL - Copyright 2017-2022 - wargio */
 
-#include <stdlib.h>
-#include <string.h>
 #include <r_util.h>
 #include "x509.h"
 
