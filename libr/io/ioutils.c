@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2017-2021 - condret, pancake */
+/* radare - LGPL - Copyright 2017-2022 - condret, pancake */
 
 #include <r_io.h>
-#include <r_util.h>
-#include <r_types.h>
 
 //This helper function only check if the given vaddr is mapped, it does not account
 //for map perms
@@ -19,6 +17,7 @@ R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 	r_return_val_if_fail (io, false);
 	if (io->cached) {
 		ut8 word[4] = { 0xff, 0xff, 0xff, 0xff};
+		(void) r_io_read_at (io, offset, (ut8*)&word, 4);
 		if (!r_io_cache_read (io, offset, (ut8*)&word, 4)) {
 			if (!r_io_read_at (io, offset, (ut8*)&word, 4)) {
 				return false;
