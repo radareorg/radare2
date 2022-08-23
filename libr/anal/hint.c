@@ -68,14 +68,14 @@ static void arch_hint_record_free_rb(RBNode *node, void *user) {
 }
 
 // used in anal.c, but no API needed
-void r_anal_hint_storage_init(RAnal *a) {
+R_IPI void r_anal_hint_storage_init(RAnal *a) {
 	a->addr_hints = ht_up_new (NULL, addr_hint_record_ht_free, NULL);
 	a->arch_hints = NULL;
 	a->bits_hints = NULL;
 }
 
 // used in anal.c, but no API needed
-void r_anal_hint_storage_fini(RAnal *a) {
+R_IPI void r_anal_hint_storage_fini(RAnal *a) {
 	ht_up_free (a->addr_hints);
 	r_rbtree_free (a->arch_hints, arch_hint_record_free_rb, NULL);
 	r_rbtree_free (a->bits_hints, bits_hint_record_free_rb, NULL);

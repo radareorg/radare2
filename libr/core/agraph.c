@@ -2222,7 +2222,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	int saved_stackptr = core->anal->stackptr;
 	char *shortcut = 0;
 	int shortcuts = 0;
-	core->keep_asmqjmps = false;
+	r_core_priv (core)->keep_asmqjmps = false;
 
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
@@ -2264,7 +2264,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 			free (body);
 		}
 		free (title);
-		core->keep_asmqjmps = true;
+		r_core_priv (core)->keep_asmqjmps = true;
 	}
 
 	if (emu) {
@@ -2368,7 +2368,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	int saved_arena_size = 0;
 	ut8 *saved_arena = NULL;
 	int saved_stackptr = core->anal->stackptr;
-	core->keep_asmqjmps = false;
+	r_core_priv (core)->keep_asmqjmps = false;
 
 	if (!fcn) {
 		return false;
@@ -2390,7 +2390,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		}
 	}
 
-	core->keep_asmqjmps = false;
+	r_core_priv (core)->keep_asmqjmps = false;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (bb->addr == UT64_MAX) {
 			continue;
@@ -2419,7 +2419,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (!node) {
 			goto cleanup;
 		}
-		core->keep_asmqjmps = true;
+		r_core_priv (core)->keep_asmqjmps = true;
 	}
 
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -5017,7 +5017,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	core->cons->event_data = NULL;
 	core->vmode = o_vmode;
 	core->is_asmqjmps_letter = o_asmqjmps_letter;
-	core->keep_asmqjmps = false;
+	r_core_priv (core)->keep_asmqjmps = false;
 
 	free (grd);
 	if (graph_allocated) {

@@ -762,7 +762,8 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 		}
 		cc = "reg";
 	}
-	fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
+	// XXX note that r_anal_priv shouldnt be used outside r_anal.h, therefor we need an api for this in here!
+	fcn->cc = r_str_constpool_get (&(r_anal_priv (core->anal)->constpool), cc);
 	r_warn_if_fail (fcn->cc);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {

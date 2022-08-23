@@ -5620,12 +5620,12 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 			R_LOG_ERROR ("This command is disabled in sandbox mode");
 			goto beach; // false
 		}
-		core->incomment = true;
+		r_core_priv (core)->incomment = true;
 	} else if (!strncmp (cstr, "*/", 2)) {
-		core->incomment = false;
+		r_core_priv (core)->incomment = false;
 		goto beach; // false
 	}
-	if (core->incomment) {
+	if (r_core_priv (core)->incomment) {
 		goto beach; // false
 	}
 	if (log && (*cstr && (*cstr != '.' || !strncmp (cstr, ".(", 2)))) {

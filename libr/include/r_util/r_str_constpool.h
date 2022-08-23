@@ -21,6 +21,8 @@ typedef struct r_str_constpool_t {
 
 R_API bool r_str_constpool_init(RStrConstPool *pool);
 R_API void r_str_constpool_fini(RStrConstPool *pool);
+R_API RStrConstPool *r_str_constpool_new(void);
+R_API void r_str_constpool_free(RStrConstPool *cp);
 R_API const char *r_str_constpool_get(RStrConstPool *pool, const char *str);
 
 #ifdef __cplusplus

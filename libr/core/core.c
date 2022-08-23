@@ -2986,6 +2986,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	core->chan = NULL;
 	r_core_setenv (core);
+	core->priv = R_NEW0 (RCorePriv);
 	core->rfs = r_fs_shell_new ();
 	core->ev = r_event_new (core);
 	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler, NULL);
@@ -2995,7 +2996,7 @@ R_API bool r_core_init(RCore *core) {
 	core->cmdfilter = NULL;
 	core->switch_file_view = 0;
 	core->cmdremote = 0;
-	core->incomment = false;
+	r_core_priv (core)->incomment = false;
 	core->config = NULL;
 	core->prj = r_project_new ();
 	core->http_up = false;
@@ -3241,6 +3242,10 @@ R_API void r_core_bind_cons(RCore *core) {
 	core->cons->user = (void*)core;
 }
 
+static void r_core_priv_fini(RCore *c) {
+	R_FREE (c->priv);
+}
+
 R_API void r_core_fini(RCore *c) {
 	if (!c) {
 		return;
@@ -3249,6 +3254,7 @@ R_API void r_core_fini(RCore *c) {
 		r_th_channel_free (c->chan);
 	}
 	r_crypto_free (c->crypto);
+	r_core_priv_fini (c);
 	r_core_task_break_all (&c->tasks);
 	r_core_task_join (&c->tasks, NULL, -1);
 	r_core_wait (c);

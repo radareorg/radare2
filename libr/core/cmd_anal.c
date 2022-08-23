@@ -4665,7 +4665,7 @@ static int cmd_af(RCore *core, const char *input) {
 					  const char *asmOs = r_config_get (core->config, "asm.os");
 					  R_LOG_ERROR ("afc: Unknown calling convention '%s' for '%s'. See afcl for available types", cc, asmOs);
 				  } else {
-					  fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
+					  fcn->cc = r_str_constpool_get (&(r_anal_priv (core->anal)->constpool), cc);
 				  }
 				  free (cc);
 			  }

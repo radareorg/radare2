@@ -5543,13 +5543,12 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 	// TODO: per-function register state trace
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
-	{ /* used by asm.emu */
-		r_reg_arena_push (core->anal->reg);
-	}
+	/* used by asm.emu */
+	r_reg_arena_push (core->anal->reg);
 
 	ds_reflines_init (ds);
 	/* reset jmp table if not asked to keep it */
-	if (!core->keep_asmqjmps) { // hack
+	if (!r_core_priv (core)->keep_asmqjmps) { // hack
 		core->asmqjmps_count = 0;
 		ut64 *p = realloc (core->asmqjmps, R_CORE_ASMQJMPS_NUM * sizeof (ut64));
 		if (p) {

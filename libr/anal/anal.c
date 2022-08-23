@@ -84,10 +84,9 @@ R_API RAnal *r_anal_new(void) {
 	if (!anal) {
 		return NULL;
 	}
-	if (!r_str_constpool_init (&anal->constpool)) {
-		free (anal);
-		return NULL;
-	}
+	anal->priv = R_NEW0 (RAnalPriv);
+	RAnalPriv *ap = r_anal_priv (anal);
+	ap->constpool = r_str_constpool_new ();
 	anal->bb_tree = NULL;
 	anal->ht_addr_fun = ht_up_new0 ();
 	anal->ht_name_fun = ht_pp_new0 ();
@@ -152,11 +151,16 @@ R_API void r_anal_plugin_free(RAnalPlugin *p) {
 
 void __block_free_rb(RBNode *node, void *user);
 
+static inline void r_anal_priv_free(RAnal *a) {
+	R_FREE (a->priv);
+}
+
 R_API void r_anal_free(RAnal *a) {
 	if (!a) {
 		return;
 	}
 	/* TODO: Free anals here */
+	r_anal_priv_free (a);
 	free (a->pincmd);
 	r_list_free (a->fcns);
 	ht_up_free (a->ht_addr_fun);
@@ -183,7 +187,7 @@ R_API void r_anal_free(RAnal *a) {
 	}
 	free (a->last_disasm_reg);
 	r_list_free (a->imports);
-	r_str_constpool_fini (&a->constpool);
+	r_str_constpool_free (r_anal_priv (a)->constpool);
 	free (a);
 }
 

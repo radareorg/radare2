@@ -174,14 +174,15 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 		query = r_strf ("cc.%s.argn", convention);
 		ret = sdb_const_get (DB, query, 0);
 	}
-	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
+	return ret? r_str_constpool_get (&(r_anal_priv (anal)->constpool), ret): NULL;
 }
 
 R_API const char *r_anal_cc_self(RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
 	r_strf_var (query, 64, "cc.%s.self", convention);
+	RStrConstPool *pool = &(r_anal_priv (anal)->constpool);
 	const char *self = sdb_const_get (DB, query, 0);
-	return self? r_str_constpool_get (&anal->constpool, self): NULL;
+	return self? r_str_constpool_get (pool, self): NULL;
 }
 
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self) {
@@ -198,7 +199,7 @@ R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
 	r_strf_var (query, 64, "cc.%s.error", convention);
 	const char *error = sdb_const_get (DB, query, 0);
-	return error? r_str_constpool_get (&anal->constpool, error): NULL;
+	return error? r_str_constpool_get (&(r_anal_priv (anal)->constpool), error): NULL;
 }
 
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error) {

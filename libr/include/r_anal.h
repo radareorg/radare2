@@ -596,6 +596,10 @@ typedef struct r_anal_hint_cb_t {
 	void (*on_bits) (struct r_anal_t *a, ut64 addr, int bits, bool set);
 } RHintCb;
 
+typedef struct r_anal_priv_t {
+	RStrConstPool *constpool;
+} RAnalPriv;
+
 typedef struct r_anal_t {
 	RArchConfig *config;
 	int lineswidth; // asm.lines.width
@@ -664,11 +668,16 @@ typedef struct r_anal_t {
 	REvent *ev;
 	RList/*<char *>*/ *imports; // global imports
 	SetU *visited;
-	RStrConstPool constpool;
 	RList *leaddrs;
 	char *pincmd;
+	RAnalPriv *priv;
 	R_DIRTY_VAR;
 } RAnal;
+
+static inline RAnalPriv *r_anal_priv(RAnal *a) {
+	r_return_val_if_fail (a, NULL);
+	return a->priv;
+}
 
 typedef enum r_anal_addr_hint_type_t {
 	R_ANAL_ADDR_HINT_TYPE_IMMBASE,
@@ -1970,6 +1979,8 @@ R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr,
 
 /* hints */
 
+R_IPI void r_anal_hint_storage_init(RAnal *a);
+R_IPI void r_anal_hint_storage_fini(RAnal *a);
 R_API void r_anal_hint_del(RAnal *anal, ut64 addr, ut64 size); // delete all hints that are contained within the given range, if size > 1, this operation is quite heavy!
 R_API void r_anal_hint_clear(RAnal *a);
 R_API void r_anal_hint_free(RAnalHint *h);

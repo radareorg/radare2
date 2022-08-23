@@ -271,6 +271,12 @@ R_API void r_project_free(RProject *p);
 R_API bool r_project_is_loaded(RProject *p);
 R_API bool r_core_project_is_dirty(RCore *core);
 
+// private struct
+typedef struct r_core_priv_t {
+	bool incomment;
+	bool keep_asmqjmps;
+} RCorePriv;
+
 struct r_core_t {
 	RBin *bin;
 	RConfig *config;
@@ -324,7 +330,6 @@ struct r_core_t {
 	int asmqjmps_count;
 	int asmqjmps_size;
 	bool is_asmqjmps_letter;
-	bool keep_asmqjmps;
 	RCoreVisual visual;
 	// visual // TODO: move them into RCoreVisual
 	bool http_up;
@@ -338,7 +343,6 @@ struct r_core_t {
 	int max_cmd_depth;
 	ut8 switch_file_view;
 	Sdb *sdb;
-	int incomment;
 	int curtab; // current tab
 	int seltab; // selected tab
 	char *cmdremote;
@@ -369,6 +373,7 @@ struct r_core_t {
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
 	RThreadChannel *chan; // query
+	RCorePriv *priv;
 #if R2_580
 	bool in_log_process // false;
 #endif
@@ -422,6 +427,11 @@ typedef int RCmdReturnCode;
 #define R_CMD_RC_FASTQUIT -1
 #define r_core_return_value(core, val) (core)->num->value = (val)
 #define r_core_return_code(core, val) (core)->rc = (val)
+
+static inline RCorePriv *r_core_priv(RCore *core) {
+	r_return_val_if_fail (core, NULL);
+	return (RCorePriv *)core->priv;
+}
 
 R_API RList *r_core_list_themes(RCore *core);
 R_API char *r_core_get_theme(RCore *core);
