@@ -368,6 +368,7 @@ static const char *help_msg_drp[] = {
 	"drp", "", "show the current register profile",
 	"drp", " [regprofile-file]", "set the current register profile",
 	"drp", " [gdb] [regprofile-file]", "parse gdb register profile and dump an r2 profile string",
+	"drp*", "", "print r2 commands creating flags for each register inside the arena offset",
 	"drpc", "", "show register profile comments",
 	"drpi", "", "show internal representation of the register profile",
 	"drp.", "", "show the current fake size",
@@ -2088,6 +2089,19 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 	case 'c': // "drpc" "arpc"
 		if (core->dbg->reg->reg_profile_cmt) {
 			r_cons_println (r->reg_profile_cmt);
+		}
+		break;
+	case '*': // "drp*"
+		{
+			RList *list = r_reg_get_list (core->anal->reg, R_REG_TYPE_GPR);
+			RListIter *iter;
+			RRegItem *ri;
+			r_list_foreach (list, iter, ri) {
+				if (ri->type != R_REG_TYPE_GPR) {
+					continue;
+				}
+				r_cons_printf ("f %s.%s=%d\n", "gpr", ri->name, ri->offset / 8);
+			}
 		}
 		break;
 	case 'g': // "drpg" "arpg"
