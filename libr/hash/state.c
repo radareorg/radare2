@@ -39,6 +39,10 @@
 #define CHKFLAG(x) if (!flags || flags & (x))
 
 R_API RHash *r_hash_new(bool rst, ut64 flags) {
+	if (R_HASH_NUM_INDICES > 63) {
+		// needs a non-bitmask way to do that, maybe using RBitmap
+		R_LOG_WARN ("Too many hash algorithms registered, some may be unavailable");
+	}
 	RHash *ctx = R_NEW0 (RHash);
 	if (ctx) {
 		r_hash_do_begin (ctx, flags);
@@ -67,6 +71,17 @@ R_API void r_hash_do_end(RHash *ctx, ut64 flags) {
 
 R_API void r_hash_free(RHash *ctx) {
 	free (ctx);
+}
+
+R_API ut8 *r_hash_do_sip(RHash *ctx, const ut8 *input, int len) {
+	if (len < 0) {
+		return NULL;
+	}
+	ut64 res = r_hash_sip (input, len);
+	if (res) {
+		memcpy (ctx->digest, &res, sizeof (res));
+	}
+	return ctx->digest;
 }
 
 R_API ut8 *r_hash_do_ssdeep(RHash *ctx, const ut8 *input, int len) {
