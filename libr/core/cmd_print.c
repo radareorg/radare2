@@ -1303,7 +1303,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 					free (res);
 				}
 			} else {
-				R_LOG_ERROR ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)");
+				R_LOG_ERROR ("Malformed object: did you supply enough data? try to change the block size (see b?)");
 			}
 		}
 		break;
@@ -1330,7 +1330,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				}
 				r_x509_free_certificate (x509);
 			} else {
-				R_LOG_ERROR ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)");
+				R_LOG_ERROR ("Malformed object: did you supply enough data? try to change the block size (see b?)");
 			}
 		}
 		break;
@@ -1345,7 +1345,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				}
 				r_pkcs7_free_cms (cms);
 			} else {
-				R_LOG_ERROR ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)");
+				R_LOG_ERROR ("Malformed object: did you supply enough data? try to change the block size (see b?)");
 			}
 		}
 		break;
@@ -1365,7 +1365,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				r_cons_printf ("%s", s);
 				free (s);
 			} else {
-				R_LOG_ERROR ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)");
+				R_LOG_ERROR ("Malformed object: did you supply enough data? try to change the block size (see b?)");
 			}
 		}
 		break;
