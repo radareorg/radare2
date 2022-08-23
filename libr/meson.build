@@ -359,6 +359,7 @@ fs_plugins += [
 io_plugins += [
   'ar',
   'fd',
+  'reg',
   'bfdbg',
   'bochs',
   'debug',
