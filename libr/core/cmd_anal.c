@@ -9606,13 +9606,13 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 	switch (*input) {
 	case ' ': { // "agn"
 		char *newbody = NULL;
-		char **args, *body;
+		char *body;
 		int n_args, B_LEN = strlen ("base64:");
 		char *color = NULL;
 		input++;
-		args = r_str_argv (input, &n_args);
+		char **args = r_str_argv (input, &n_args);
 		if (n_args < 1 || n_args > 3) {
-			r_cons_printf ("Wrong arguments\n");
+			R_LOG_ERROR ("wrong arguments for agn");
 			r_str_argv_free (args);
 			break;
 		}
@@ -9624,7 +9624,7 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 				newbody = (char *)r_base64_decode_dyn (body + B_LEN, -1);
 				free (body);
 				if (!newbody) {
-					eprintf ("Cannot allocate buffer\n");
+					R_LOG_ERROR ("Cannot allocate buffer");
 					r_str_argv_free (args);
 					break;
 				}
@@ -9647,13 +9647,11 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 		break;
 	}
 	case '-': { // "agn-"
-		char **args;
-		int n_args;
-
 		input++;
-		args = r_str_argv (input, &n_args);
+		int n_args;
+		char **args = r_str_argv (input, &n_args);
 		if (n_args != 1) {
-			r_cons_printf ("Wrong arguments\n");
+			R_LOG_ERROR ("Wrong arguments");
 			r_str_argv_free (args);
 			break;
 		}
@@ -9786,7 +9784,7 @@ static void mermaid_graph(RGraph *graph, node_content_cb get_body) {
 		return;
 	}
 	if (r_list_empty (graph->nodes)) {
-		eprintf ("Graph is empty\n");
+		R_LOG_INFO ("The graph is empty");
 		return;
 	}
 	bool printit = true;
@@ -9883,7 +9881,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 				r_core_seek (core, oseek, false);
 			}
 		} else {
-			eprintf ("This graph contains no nodes\n");
+			R_LOG_INFO ("This graph contains no nodes");
 		}
 		break;
 	}
@@ -10041,7 +10039,7 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 					r_core_seek (core, oseek, false);
 				}
 			} else {
-				eprintf ("This graph contains no nodes\n");
+				R_LOG_INFO ("This graph contains no nodes");
 			}
 			break;
 		}
@@ -10256,12 +10254,6 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	r_cons_enable_highlight (false);
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_ag);
-		return;
-	}
-	if (strchr (input, '?')) {
-		// causes infinite recursion in ?*
-		// r_core_cmd_help (core, help_msg_ag);
-		// eprintf ("See ag?");
 		return;
 	}
 	switch (input[0]) {
@@ -10654,9 +10646,9 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 					break;
 				}
 				if (!from && !to) {
-					eprintf ("Cannot determine xref search boundaries\n");
+					R_LOG_ERROR ("Cannot determine xref search boundaries");
 				} else if (to - from > UT32_MAX) {
-					eprintf ("Skipping huge range\n");
+					R_LOG_ERROR ("Skipping huge range");
 				} else {
 					if (rad == 'j') {
 						pj_ki (pj, "mapid", map->id);
@@ -10681,7 +10673,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 		from = core->offset;
 		to = core->offset + r_num_math (core->num, r_str_word_get0 (ptr, 0));
 	} else {
-		eprintf ("Invalid number of arguments\n");
+		R_LOG_ERROR ("Invalid number of arguments");
 	}
 	free (ptr);
 
@@ -10889,7 +10881,7 @@ static void cmd_anal_aaw(RCore *core, const char *input) {
 				r_flag_set (core->flags, fn, node->start, true);
 				free (fn);
 			} else if (core->anal->verbose) {
-				eprintf ("Unknown pointer 0x%"PFMT64x" at 0x%"PFMT64x"\n", n, (ut64)node->start);
+				R_LOG_WARN ("Unknown pointer 0x%"PFMT64x" at 0x%"PFMT64x, n, (ut64)node->start);
 			}
 		}
 	}
