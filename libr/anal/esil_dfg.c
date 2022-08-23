@@ -568,6 +568,16 @@ static bool _edf_consume_2_set_reg(RAnalEsil *esil, const bool use_origin) {
 	edf->old = old_dst_node;
 	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, dst);
 	result->type = R_ANAL_ESIL_DFG_BLOCK_RESULT | R_ANAL_ESIL_DFG_BLOCK_VAR;
+	if (use_origin) {
+		if (((RAnalEsilDFGNode *)(src_node->data))->type & R_ANAL_ESIL_DFG_BLOCK_CONST) {
+			result->type |= R_ANAL_ESIL_DFG_BLOCK_CONST;
+		}
+	} else {
+		if ((((RAnalEsilDFGNode *)(src_node->data))->type & R_ANAL_ESIL_DFG_BLOCK_CONST) &&
+			(((RAnalEsilDFGNode *)(dst_node->data))->type & R_ANAL_ESIL_DFG_BLOCK_CONST)) {
+			result->type |= R_ANAL_ESIL_DFG_BLOCK_CONST;
+		}
+	}
 
 	r_strbuf_appendf (result->content, ":var_%d", edf->idx++);
 	dst_node = r_graph_add_node (edf->flow, result);
@@ -607,7 +617,9 @@ static bool edf_consume_2_push_1(RAnalEsil *esil) {
 		const int src_type = r_anal_esil_get_parm_type (esil, src[i]);
 		if (src_type == R_ANAL_ESIL_PARM_REG) {
 			src_node[i] = _edf_reg_get (edf, src[i]);
-			const_result = false;
+			RAnalEsilDFGNode *ec_node = (RAnalEsilDFGNode *)src_node[i]->data;
+			const_result &= !!(ec_node->type & R_ANAL_ESIL_DFG_BLOCK_CONST);
+//			const_result = false;
 		} else if (src_type == R_ANAL_ESIL_PARM_NUM) {
 			RGraphNode *n_value = r_graph_add_node (edf->flow, r_anal_esil_dfg_node_new (edf, src[i]));
 			RAnalEsilDFGNode *ec_node = r_anal_esil_dfg_node_new (edf, src[i]);
@@ -664,6 +676,8 @@ static bool edf_consume_1_push_1(RAnalEsil *esil) {
 	// no need to check pointer here, bc this cannot fail if this function got called
 	if (src_type == R_ANAL_ESIL_PARM_REG) {
 		src_node = _edf_reg_get (edf, src);
+		RAnalEsilDFGNode *ec_node = (RAnalEsilDFGNode *)src_node->data;
+		const_result = (!!(ec_node->type & R_ANAL_ESIL_DFG_BLOCK_CONST)) & (eop_type == R_ANAL_ESIL_OP_TYPE_MATH);
 	} else if (src_type == R_ANAL_ESIL_PARM_NUM) {
 		RGraphNode *n_value = r_graph_add_node (edf->flow, r_anal_esil_dfg_node_new (edf, src));
 		RAnalEsilDFGNode *ec_node = r_anal_esil_dfg_node_new (edf, src);
@@ -988,6 +1002,7 @@ static void _dfg_filter_rev_dfs(RGraphNode *n, RAnalEsilDFGFilter *filter) {
 	case R_ANAL_ESIL_DFG_BLOCK_CONST:
 	case R_ANAL_ESIL_DFG_BLOCK_VAR:
 	case R_ANAL_ESIL_DFG_BLOCK_PTR:
+	case R_ANAL_ESIL_DFG_BLOCK_VAR | R_ANAL_ESIL_DFG_BLOCK_CONST:
 		break;
 	case R_ANAL_ESIL_DFG_BLOCK_GENERATIVE:
 		r_crbtree_insert (filter->tree, node, _dfg_node_filter_insert_cmp, NULL);
