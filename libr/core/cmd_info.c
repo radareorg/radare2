@@ -464,6 +464,53 @@ static bool isKnownPackage(const char *cn) {
 	return false;
 }
 
+static void cmd_ic_comma(RCore *core, const char *input) {
+	r_return_if_fail (core && input[0] == 'c' && input[1] == ',');
+	const char *q = input + 2;
+	RList *objs = r_core_bin_files (core);
+	RListIter *objs_iter;
+	RBinFile *bf;
+	RBinFile *cur = core->bin->cur;
+	RTable *t = r_core_table (core, "flags");
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeNumber = r_table_type ("number");
+	r_table_add_column (t, typeNumber, "addr", 0);
+	r_table_add_column (t, typeString, "type", 0);
+	r_table_add_column (t, typeString, "klass", 0);
+	r_table_add_column (t, typeString, "name", 0);
+	r_list_foreach (objs, objs_iter, bf) {
+		RBinObject *obj = bf->o;
+		RBinClass *klass;
+		RListIter *iter, *iter2;
+		core->bin->cur = bf;
+		r_list_foreach (obj->classes, iter, klass) {
+			if (!klass->name) {
+				continue;
+			}
+			RBinSymbol *method;
+			r_list_foreach (klass->methods, iter2, method) {
+				char *addr = r_str_newf ("0x%08"PFMT64x, method->vaddr);
+				r_table_add_row (t, addr, "method", klass->name, method->name, NULL);
+				free (addr);
+			}
+			RBinField *field;
+			r_list_foreach (klass->fields, iter2, field) {
+				char *addr = r_str_newf ("0x%08"PFMT64x, field->vaddr);
+				r_table_add_row (t, addr, "field", klass->name, field->name, NULL);
+				free (addr);
+			}
+		}
+	}
+	core->bin->cur = cur;
+	r_list_free (objs);
+	if (r_table_query (t, q)) {
+		char *s = r_table_tostring (t);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
+	r_table_free (t);
+}
+
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	int fd = r_io_fd_get_current (core->io);
@@ -1249,6 +1296,9 @@ static int cmd_info(void *data, const char *input) {
 			// XXX this is dupe of cbin.c:bin_classes()
 			if (input[1] == '?') {
 				eprintf ("Usage: ic[glbjqc**] [class-index or name]\n");
+			} else if (input[1] == ',') { // "ic,"
+				// ic,
+				cmd_ic_comma (core, input);
 			} else if (input[1] == 'g') {
 				RBinClass *cls;
 				RListIter *iter;
