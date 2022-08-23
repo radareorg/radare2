@@ -8,7 +8,7 @@ static const char *help_msg_w[] = {
 	"w"," foobar","write string 'foobar'",
 	"w+","string","write string and seek at the end of it",
 	"w0"," [len]","write 'len' bytes with value 0x00",
-	"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
+	"w6","[d|e|x] base64/string/hex","write base64 [d]ecoded or [e]ncoded string",
 	"wa","[?] push ebp","write opcode, separated by ';' (use '\"' around the command)",
 	"waf"," f.asm","assemble file and write bytes",
 	"waF"," f.asm","assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
@@ -918,7 +918,9 @@ static int cmd_w6(void *data, const char *input) {
 	int len = 0, str_len;
 
 	if (input[0] && input[1] != ' ') {
-		fail = true;
+		if (input[0] != 'e' && input[0] != 'd') {
+			fail = true;
+		}
 	}
 	const char *str = (input[0] && input[1] && input[2])? input + 2: "";
 	str_len = strlen (str) + 1;
@@ -926,16 +928,16 @@ static int cmd_w6(void *data, const char *input) {
 		switch (input[0]) {
 		case 'd': // "w6d"
 			buf = malloc (str_len);
-			if (!buf) {
-				break;
-			}
-			len = r_base64_decode (buf, str, -1);
-			if (len < 0) {
-				free (buf);
-				fail = true;
+			if (buf) {
+				len = r_base64_decode (buf, str, -1);
+				if (len < 0) {
+					R_LOG_WARN ("Invalid hexpair string");
+					R_FREE (buf);
+					fail = true;
+				}
 			}
 			break;
-		case 'e': { // "w6e"
+		case 'x': { // "w6x"
 			ut8 *bin_buf = malloc (str_len);
 			if (!bin_buf) {
 				break;
@@ -947,9 +949,26 @@ static int cmd_w6(void *data, const char *input) {
 				buf = calloc (str_len + 1, 4);
 				len = r_base64_encode ((char *)buf, bin_buf, bin_len);
 				if (len == 0) {
-					free (buf);
+					R_FREE (buf);
 					fail = true;
 				}
+			}
+			free (bin_buf);
+			}
+			break;
+		case 'e': { // "w6e"
+			ut8 *bin_buf = malloc (str_len);
+			if (!bin_buf) {
+				break;
+			}
+			char *s = r_str_trim_dup (input + 1);
+			int slen = strlen (s);
+			free (buf);
+			buf = malloc ((4+slen) * 4);
+			len = r_base64_encode ((char *)buf, (const ut8*)s, slen);
+			if (len == 0) {
+				R_FREE (buf);
+				fail = true;
 			}
 			free (bin_buf);
 			break;
@@ -967,7 +986,7 @@ static int cmd_w6(void *data, const char *input) {
 		r_core_block_read (core);
 		free (buf);
 	} else {
-		eprintf ("Usage: w6[de] base64/hex\n");
+		eprintf ("Usage: w6[d|e|x] base64/string/hex\n");
 	}
 	return 0;
 }
