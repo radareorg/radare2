@@ -4,8 +4,7 @@
 #include <r_core.h>
 
 static bool item_matches_filter(RAnalMetaItem *item, RAnalMetaType type, R_NULLABLE const RSpace *space) {
-	return (type == R_META_TYPE_ANY || item->type == type)
-		   && (!space || item->space == space);
+	return (type == R_META_TYPE_ANY || item->type == type) && (!space || item->space == space);
 }
 
 typedef struct {
@@ -550,8 +549,10 @@ beach:
 			pj_end (pj);
 			r_cons_printf ("%s\n", pj_string (pj));
 			pj_free (pj);
+			pj = NULL;
 		}
 	}
+	pj_free (pj);
 }
 
 R_API void r_meta_print_list_all(RAnal *a, int type, int rad, const char *tq) {

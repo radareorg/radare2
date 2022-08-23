@@ -145,12 +145,16 @@ static int load_reloc_table(RelReloc *out, RBuffer *buf, ut64 addr) {
 	r_buf_seek (buf, addr, R_BUF_SET);
 	int i;
 	for (i = 0; i < MAX_RELOC_COUNT; i++) {
-		RelReloc reloc;
-		if (r_buf_fread (buf, (void *)&reloc, "SccI", 1) == -1 || reloc.type == R_RVL_STOP) {
+		RelReloc reloc = {0};
+		if (r_buf_fread (buf, (void *)&reloc, "SccI", 1) == -1) {
+			break;
+		}
+		if (reloc.type == R_RVL_STOP) {
 			break;
 		}
 		if (out) {
-			*(out++) = reloc;
+			*out = reloc;
+			out++;
 		}
 	}
 	if (i == MAX_RELOC_COUNT) {
@@ -160,7 +164,7 @@ static int load_reloc_table(RelReloc *out, RBuffer *buf, ut64 addr) {
 }
 
 static bool vread_at_be32(RBin *b, ut32 vaddr, ut32 *out) {
-	ut8 buf[4];
+	ut8 buf[4] = {0};
 	if (!b->iob.read_at (b->iob.io, vaddr, (void *)&buf, sizeof (buf))) {
 		return false;
 	}
@@ -485,14 +489,12 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 	case R_RVL_NONE:
 	case R_RVL_SECT:
 		return NULL;
-
 	case R_PPC_ADDR32:     size = 4; value = S + A;                              break;
 	case R_PPC_ADDR24:     size = 4; value = set_low24(value, (S + A) >> 2);     break;
 	case R_PPC_REL24:      size = 4; value = set_low24(value, (S + A - P) >> 2); break;
 	case R_PPC_ADDR16_LO:  size = 2; value = set_half16(value, lo(S + A));       break;
 	case R_PPC_ADDR16_HI:  size = 2; value = set_half16(value, hi(S + A));       break;
 	case R_PPC_ADDR16_HA:  size = 2; value = set_half16(value, ha(S + A));       break;
-
 	default:
 		R_LOG_ERROR ("REL: Unsupported reloc type %d", reloc->type);
 		return NULL;
@@ -521,9 +523,9 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 		return NULL;
 	}
 	switch (size) {
-	case 1: ret->type = R_BIN_RELOC_8; break;
+	// UNREACHABLE case 1: ret->type = R_BIN_RELOC_8; break;
 	case 2: ret->type = R_BIN_RELOC_16; break;
-	case 3: ret->type = R_BIN_RELOC_24; break;
+	// UNREACHABLE case 3: ret->type = R_BIN_RELOC_24; break;
 	case 4: ret->type = R_BIN_RELOC_32; break;
 	default:
 		R_LOG_DEBUG ("Cannot convert reloc of size %d to RBinReloc", size);
