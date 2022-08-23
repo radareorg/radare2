@@ -95,9 +95,13 @@ static const char *help_msg_pc[] = {
 };
 
 static const char *help_msg_p6[] = {
-	"Usage: p6[de]", "[len]", "base64 decoding/encoding",
-	"p6d", "[len]", "decode base64",
-	"p6e", "[len]", "encode base64",
+	"Usage: p6[d|e][s|z]", " [len]", "base64 decoding/encoding",
+	"p6d", "[s|z] [len]", "decode current block as base64",
+	"p6e", "[s|z][len]", "encode current block in base64",
+	"p6ez", "", "encode base64 zero-terminated string",
+	"p6es", " hello world", "encode given string to base64",
+	"p6ds", " AAA=", "decode given base64 string",
+	"p6dz", "", "decode null-terminated base64 string in block",
 	NULL
 };
 
@@ -1135,7 +1139,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 	if (buf) {
 		r_io_read_at (core->io, addr, buf, len);
 	} else {
-		eprintf ("Cannot allocate %d byte(s)\n", len);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", len);
 		return 1;
 	}
 
@@ -1150,15 +1154,15 @@ static int cmd_pdu(RCore *core, const char *input) {
 		ut64 to = r_num_get (core->num, arg);
 
 		if (!to) {
-			eprintf ("Couldn't parse address \"%s\"\n", arg);
+			R_LOG_ERROR ("Couldn't parse address \"%s\"", arg);
 			ret = 1;
 			break;
 		} else if (to < addr) {
-			eprintf ("Can't print until an earlier address\n");
+			R_LOG_ERROR ("Can't print until an earlier address");
 			ret = 2;
 			break;
 		} else if (to == addr) {
-			eprintf ("Can't print until the start address\n");
+			R_LOG_ERROR ("Can't print until the start address");
 			ret = 2;
 			break;
 		}
@@ -1236,7 +1240,7 @@ static void cmd_pDj(RCore *core, const char *arg) {
 		r_core_print_disasm_json (core, core->offset, buf, bsize, 0, pj);
 		free (buf);
 	} else {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
 	}
 	pj_end (pj);
 	r_cons_println (pj_string (pj));
@@ -1299,7 +1303,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 					free (res);
 				}
 			} else {
-				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+				R_LOG_ERROR ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)");
 			}
 		}
 		break;
@@ -1326,7 +1330,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				}
 				r_x509_free_certificate (x509);
 			} else {
-				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+				R_LOG_ERROR ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)");
 			}
 		}
 		break;
@@ -1341,7 +1345,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				}
 				r_pkcs7_free_cms (cms);
 			} else {
-				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+				R_LOG_ERROR ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)");
 			}
 		}
 		break;
@@ -1361,7 +1365,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				r_cons_printf ("%s", s);
 				free (s);
 			} else {
-				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+				R_LOG_ERROR ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)");
 			}
 		}
 		break;
@@ -1421,7 +1425,7 @@ static void cmd_print_gadget(RCore *core, const char *_input) {
 			r_cons_printf ("\"pg %d %d %d %d %s\"\n", g->x, g->y, g->w, g->h, g->cmd);
 		}
 	} else if (*_input == 'b') { // "pgb"
-		eprintf ("TODO: Change gadget background color\n");
+		R_LOG_INFO ("TODO: Change gadget background color");
 	} else if (*_input == 'm') { // "pgm"
 		int nth = atoi (_input + 1);
 		RCoreGadget *g = r_list_get_n (core->gadgets, nth);
@@ -1759,7 +1763,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				if (val) {
 					r_cons_printf ("%s\n", val);
 				} else {
-					eprintf ("Struct %s is not defined\n", _input);
+					R_LOG_ERROR ("Struct %s is not defined", _input);
 				}
 			}
 		} else {
@@ -7700,7 +7704,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case '6': // "p6"
-		if (l) {
+		if (1) {
 			int malen = (core->blocksize * 4) + 1;
 			ut8 *buf = malloc (malen);
 			if (!buf) {
@@ -7709,20 +7713,84 @@ static int cmd_print(void *data, const char *input) {
 			memset (buf, 0, malen);
 			switch (input[1]) {
 			case 'd': // "p6d"
-				if (r_base64_decode (buf, (const char *) block, len)) {
-					r_cons_println ((const char *) buf);
-				} else {
-					R_LOG_ERROR ("r_base64_decode: invalid stream");
+				switch (input[2]) {
+				case '?':
+					r_core_cmd_help_match (core, help_msg_p6, "p6d", true);
+					break;
+				case 's': // "p6ds"
+					if (input[3] == '?') {
+						r_core_cmd_help_match (core, help_msg_p6, "p6ds", true);
+					} else {
+						char *a = r_str_trim_dup (input + 3);
+						char *out = malloc ((4 + strlen (a)) * 4);
+						if (r_base64_decode ((ut8 *)out,(const char *) a, strlen (a))) {
+							r_cons_println ((const char *) out);
+						} else {
+							R_LOG_ERROR ("r_base64_decode: invalid stream");
+						}
+						free (a);
+						free (out);
+					}
+					break;
+				case 'z': // "p6dz"
+					if (input[3] == '?') {
+						r_core_cmd_help_match (core, help_msg_p6, "p6dz", true);
+					} else {
+						len = r_str_nlen ((const char *)block, len);
+						if (r_base64_decode (buf, (const char *) block, len)) {
+							r_cons_println ((const char *) buf);
+						} else {
+							R_LOG_ERROR ("r_base64_decode: invalid stream");
+						}
+						r_cons_println ((const char *) buf);
+					}
+					break;
+				default:
+					len = len > core->blocksize? core->blocksize: len;
+					if (r_base64_decode (buf, (const char *) block, len)) {
+						r_cons_println ((const char *) buf);
+					} else {
+						R_LOG_ERROR ("r_base64_decode: invalid stream");
+					}
+					break;
 				}
 				break;
 			case 'e': // "p6e"
+				switch (input[2]) {
+				case '?':
+					r_core_cmd_help_match (core, help_msg_p6, "p6e", true);
+					break;
+				case 's': // "p6es"
+					if (input[3] == '?') {
+						r_core_cmd_help_match (core, help_msg_p6, "p6es", true);
+					} else {
+						char *a = r_str_trim_dup (input + 3);
+						char *out = calloc ((4 + strlen (a)), 4);
+						r_base64_encode ((char *) out, (const ut8*)a, strlen (a));
+						r_cons_println ((const char *) out);
+						free (a);
+						free (out);
+					}
+					break;
+				case 'z': // "p6ez"
+					if (input[3] == '?') {
+						r_core_cmd_help_match (core, help_msg_p6, "p6ez", true);
+					} else {
+						len = r_str_nlen ((const char *)block, len);
+						r_base64_encode ((char *) buf, block, len);
+						r_cons_println ((const char *) buf);
+					}
+					break;
+				default:
 					len = len > core->blocksize? core->blocksize: len;
 					r_base64_encode ((char *) buf, block, len);
 					r_cons_println ((const char *) buf);
+					break;
+				}
 				break;
 			case '?':
 			default:
-				r_core_cmd_help(core, help_msg_p6);
+				r_core_cmd_help (core, help_msg_p6);
 				break;
 			}
 			free (buf);
