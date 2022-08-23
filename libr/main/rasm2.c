@@ -1084,7 +1084,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 				len -= skip;
 				usrstr[len] = 0;
 			}
-			if (r_str_startswith (usrstr, "0x", 2)) {
+			if (r_str_startswith (usrstr, "0x")) {
 				memmove (usrstr, usrstr + 2, strlen (usrstr + 2) + 1);
 			}
 			if (rad) {
