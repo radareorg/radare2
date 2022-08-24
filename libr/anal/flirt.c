@@ -1441,7 +1441,7 @@ R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
 		return;
 	}
 
-	node = flirt_parse (anal, flirt_buf, f);
+	node = flirt_parse (anal, flirt_buf, &f);
 	r_buf_free (flirt_buf);
 	if (node) {
 		print_node (anal, node, -1);
@@ -1464,7 +1464,7 @@ R_API void r_sign_flirt_scan(RAnal *anal, const char *flirt_file) {
 		return;
 	}
 
-	node = flirt_parse (anal, flirt_buf, f);
+	node = flirt_parse (anal, flirt_buf, &f);
 	r_buf_free (flirt_buf);
 	if (node) {
 		if (!node_match_functions (anal, node)) {
