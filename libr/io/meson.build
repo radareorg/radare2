@@ -66,6 +66,7 @@ r_io_deps = [
   r_crypto_dep,
   bochs_dep,
   gdb_dep,
+  dap_dep,
   winkd_dep,
   qnx_dep,
   zip_dep,

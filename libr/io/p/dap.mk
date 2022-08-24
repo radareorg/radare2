@@ -7,6 +7,10 @@ STATIC_OBJ+=${OBJ_DAP}
 TARGET_DAP=io_dap.${EXT_SO}
 ALL_TARGETS+=${TARGET_DAP}
 
+LIB_PATH=$(SHLR)/dap/
+CFLAGS+=-I$(SHLR)/dap/include/
+LDFLAGS+=$(SHLR)/dap/lib/libgdbr.$(EXT_AR)
+
 ifeq (${WITHPIC},0)
 LINKFLAGS+=../../util/libr_util.a
 LINKFLAGS+=../../io/libr_io.a
