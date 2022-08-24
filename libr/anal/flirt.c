@@ -373,38 +373,38 @@ static ut8 read_byte(RBuffer *b, RFlirt *f) {
 }
 
 static ut16 read_short(RBuffer *b, RFlirt *f) {
-	ut16 r = (read_byte (b, &f) << 8);
-	r += read_byte (b, &f);
+	ut16 r = (read_byte (b, f) << 8);
+	r += read_byte (b, f);
 	return r;
 }
 
 static ut32 read_word(RBuffer *b, RFlirt *f) {
-	ut32 r = (read_short (b, &f) << 16);
-	r += read_short (b, &f);
+	ut32 r = (read_short (b, f) << 16);
+	r += read_short (b, f);
 	return r;
 }
 
 static ut16 read_max_2_bytes(RBuffer *b, RFlirt *f) {
-	ut16 r = read_byte (b, &f);
+	ut16 r = read_byte (b, f);
 	return (r & 0x80)
-		? ((r & 0x7f) << 8) + read_byte (b, &f)
+		? ((r & 0x7f) << 8) + read_byte (b, f)
 		: r;
 }
 
 static ut32 read_multiple_bytes(RBuffer *b, RFlirt *f) {
-	ut32 r = read_byte (b, &f);
+	ut32 r = read_byte (b, f);
 	if ((r & 0x80) != 0x80) {
 		return r;
 	}
 	if ((r & 0xc0) != 0xc0) {
-		return ((r & 0x7f) << 8) + read_byte (b, &f);
+		return ((r & 0x7f) << 8) + read_byte (b, f);
 	}
 	if ((r & 0xe0) != 0xe0) {
-		r = ((r & 0x3f) << 24) + (read_byte (b, &f) << 16);
-		r += read_short (b, &f);
+		r = ((r & 0x3f) << 24) + (read_byte (b, f) << 16);
+		r += read_short (b, f);
 		return r;
 	}
-	return read_word (b, &f);
+	return read_word (b, f);
 }
 
 static void module_free(RFlirtModule *module) {
@@ -705,7 +705,7 @@ static ut8 read_module_tail_bytes(RFlirtModule *module, RBuffer *b, RFlirt *f) {
 	}
 
 	if (f->version >= 8) { // this counter was introduced in version 8
-		number_of_tail_bytes = read_byte (b, &f); // XXX are we sure it's not read_multiple_bytes?
+		number_of_tail_bytes = read_byte (b, f); // XXX are we sure it's not read_multiple_bytes?
 		if (f->buf_eof || f->buf_err) {
 			goto err_exit;
 		}
@@ -719,17 +719,17 @@ static ut8 read_module_tail_bytes(RFlirtModule *module, RBuffer *b, RFlirt *f) {
 		}
 		if (f->version >= 9) {
 			/*/!\ XXX don't trust ./zipsig output because it will write a version 9 header, but keep the old version offsets*/
-			tail_byte->offset = read_multiple_bytes (b, &f);
+			tail_byte->offset = read_multiple_bytes (b, f);
 			if (f->buf_eof || f->buf_err) {
 				goto err_exit;
 			}
 		} else {
-			tail_byte->offset = read_max_2_bytes (b, &f);
+			tail_byte->offset = read_max_2_bytes (b, f);
 			if (f->buf_eof || f->buf_err) {
 				goto err_exit;
 			}
 		}
-		tail_byte->value = read_byte (b, &f);
+		tail_byte->value = read_byte (b, f);
 		if (f->buf_eof || f->buf_err) {
 			goto err_exit;
 		}
@@ -756,7 +756,7 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b, RF
 	module->referenced_functions = r_list_new ();
 
 	if (f->version >= 8) { // this counter was introduced in version 8
-		number_of_referenced_functions = read_byte (b, &f); // XXX are we sure it's not read_multiple_bytes?
+		number_of_referenced_functions = read_byte (b, f); // XXX are we sure it's not read_multiple_bytes?
 		if (f->buf_eof || f->buf_err) {
 			goto err_exit;
 		}
@@ -770,23 +770,23 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b, RF
 			goto err_exit;
 		}
 		if (f->version >= 9) {
-			ref_function->offset = read_multiple_bytes (b, &f);
+			ref_function->offset = read_multiple_bytes (b, f);
 			if (f->buf_eof || f->buf_err) {
 				goto err_exit;
 			}
 		} else {
-			ref_function->offset = read_max_2_bytes (b, &f);
+			ref_function->offset = read_max_2_bytes (b, f);
 			if (f->buf_eof || f->buf_err) {
 				goto err_exit;
 			}
 		}
-		ref_function_name_length = read_byte (b, &f);
+		ref_function_name_length = read_byte (b, f);
 		if (f->buf_eof || f->buf_err) {
 			goto err_exit;
 		}
 		if (!ref_function_name_length) {
 			// not sure why it's not read_multiple_bytes() in the first place
-			ref_function_name_length = read_multiple_bytes (b, &f); // XXX might be read_max_2_bytes, need more data
+			ref_function_name_length = read_multiple_bytes (b, f); // XXX might be read_max_2_bytes, need more data
 			if (f->buf_eof || f->buf_err) {
 				goto err_exit;
 			}
@@ -795,7 +795,7 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b, RF
 			goto err_exit;
 		}
 		for (j = 0; j < ref_function_name_length; j++) {
-			ref_function->name[j] = read_byte (b, &f);
+			ref_function->name[j] = read_byte (b, f);
 			if (f->buf_eof || f->buf_err) {
 				goto err_exit;
 			}
@@ -830,19 +830,19 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 	do {
 		function = R_NEW0 (RFlirtFunction);
 		if (f->version >= 9) {   // seems like version 9 introduced some larger offsets
-			offset += read_multiple_bytes (b, &f); // offsets are dependent of the previous ones
+			offset += read_multiple_bytes (b, f); // offsets are dependent of the previous ones
 			if (f->buf_eof || f->buf_err) {
 				goto err_exit;
 			}
 		} else {
-			offset += read_max_2_bytes (b, &f); // offsets are dependent of the previous ones
+			offset += read_max_2_bytes (b, f); // offsets are dependent of the previous ones
 			if (f->buf_eof || f->buf_err) {
 				goto err_exit;
 			}
 		}
 		function->offset = offset;
 
-		current_byte = read_byte (b, &f);
+		current_byte = read_byte (b, f);
 		if (f->buf_eof || f->buf_err) {
 			goto err_exit;
 		}
@@ -859,7 +859,7 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 				R_LOG_DEBUG ("Investigate public name: %02X @ %04Xn", current_byte, r_buf_tell (b) + header_size);
 			}
 #endif
-			current_byte = read_byte (b, &f);
+			current_byte = read_byte (b, f);
 			if (f->buf_eof || f->buf_err) {
 				goto err_exit;
 			}
@@ -867,7 +867,7 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 
 		for (i = 0; current_byte >= 0x20 && i < R_FLIRT_NAME_MAX; i++) {
 			function->name[i] = current_byte;
-			current_byte = read_byte (b, &f);
+			current_byte = read_byte (b, f);
 			if (f->buf_eof || f->buf_err) {
 				goto err_exit;
 			}
@@ -906,10 +906,10 @@ static ut8 parse_leaf(const RAnal *anal, RBuffer *b, RFlirtNode *node, RFlirt *f
 	node->module_list = r_list_new ();
 	do { // loop for all modules having the same prefix
 
-		crc_length = read_byte (b, &f); if (f->buf_eof || f->buf_err) {
+		crc_length = read_byte (b, f); if (f->buf_eof || f->buf_err) {
 			goto err_exit;
 		}
-		crc16 = read_short (b, &f); if (f->buf_eof || f->buf_err) {
+		crc16 = read_short (b, f); if (f->buf_eof || f->buf_err) {
 			goto err_exit;
 		}
 #if DEBUG
@@ -931,12 +931,12 @@ static ut8 parse_leaf(const RAnal *anal, RBuffer *b, RFlirtNode *node, RFlirt *f
 
 			if (f->version >= 9) { // seems like version 9 introduced some larger length
 				/*/!\ XXX don't trust ./zipsig output because it will write a version 9 header, but keep the old version offsets*/
-				module->length = read_multiple_bytes (b, &f); // should be < 0x8000
+				module->length = read_multiple_bytes (b, f); // should be < 0x8000
 				if (f->buf_eof || f->buf_err) {
 					goto err_exit;
 				}
 			} else {
-				module->length = read_max_2_bytes (b, &f); // should be < 0x8000
+				module->length = read_max_2_bytes (b, f); // should be < 0x8000
 				if (f->buf_eof || f->buf_err) {
 					goto err_exit;
 				}
@@ -945,17 +945,17 @@ static ut8 parse_leaf(const RAnal *anal, RBuffer *b, RFlirtNode *node, RFlirt *f
 			R_LOG_DEBUG ("module_length: %04X", module->length);
 #endif
 
-			if (!read_module_public_functions (module, b, &flags, &f)) {
+			if (!read_module_public_functions (module, b, &flags, f)) {
 				goto err_exit;
 			}
 
 			if (flags & IDASIG__PARSE__READ_TAIL_BYTES) { // we need to read some tail bytes because in this leaf we have functions with same crc
-				if (!read_module_tail_bytes (module, b, &f)) {
+				if (!read_module_tail_bytes (module, b, f)) {
 					goto err_exit;
 				}
 			}
 			if (flags & IDASIG__PARSE__READ_REFERENCED_FUNCTIONS) { // we need to read some referenced functions
-				if (!read_module_referenced_functions (module, b, &f)) {
+				if (!read_module_referenced_functions (module, b, f)) {
 					goto err_exit;
 				}
 			}
@@ -972,7 +972,7 @@ err_exit:
 }
 
 static ut8 read_node_length(RFlirtNode *node, RBuffer *b, RFlirt *f) {
-	node->length = read_byte (b, &f);
+	node->length = read_byte (b, f);
 	if (f->buf_eof || f->buf_err) {
 		return false;
 	}
@@ -987,17 +987,17 @@ static ut8 read_node_variant_mask(RFlirtNode *node, RBuffer *b, RFlirt *f) {
 	/*read the non-variant bytes following.*/
 	/*returns false on parsing error*/
 	if (node->length < 0x10) {
-		node->variant_mask = read_max_2_bytes (b, &f);
+		node->variant_mask = read_max_2_bytes (b, f);
 		if (f->buf_eof || f->buf_err) {
 			return false;
 		}
 	} else if (node->length <= 0x20) {
-		node->variant_mask = read_multiple_bytes (b, &f);
+		node->variant_mask = read_multiple_bytes (b, f);
 		if (f->buf_eof || f->buf_err) {
 			return false;
 		}
 	} else if (node->length <= 0x40) { // it shouldn't be more than 64 bytes
-		node->variant_mask = ((ut64)read_multiple_bytes (b, &f) << 32) + read_multiple_bytes (b, &f);
+		node->variant_mask = ((ut64)read_multiple_bytes (b, f) << 32) + read_multiple_bytes (b, f);
 		if (f->buf_eof || f->buf_err) {
 			return false;
 		}
@@ -1026,7 +1026,7 @@ static bool read_node_bytes(RFlirtNode *node, RBuffer *b, RFlirt *f) {
 		if (node->variant_mask & current_mask_bit) {
 			node->pattern_bytes[i] = 0x00;
 		} else {
-			node->pattern_bytes[i] = read_byte (b, &f);
+			node->pattern_bytes[i] = read_byte (b, f);
 			if (f->buf_eof || f->buf_err) {
 				return false;
 			}
@@ -1039,12 +1039,12 @@ static ut8 parse_tree(const RAnal *anal, RBuffer *b, RFlirtNode *root_node, RFli
 	/*parse a signature pattern tree or sub-tree*/
 	/*returns false on parsing error*/
 	RFlirtNode *node = NULL;
-	int i, tree_nodes = read_multiple_bytes (b, &f); // confirmed it's not read_byte(), XXX could it be read_max_2_bytes() ???
+	int i, tree_nodes = read_multiple_bytes (b, f); // confirmed it's not read_byte(), XXX could it be read_max_2_bytes() ???
 	if (f->buf_eof || f->buf_err) {
 		return false;
 	}
 	if (tree_nodes == 0) { // if there's no tree nodes remaining, that means we are on the leaf
-		return parse_leaf (anal, b, root_node, &f);
+		return parse_leaf (anal, b, root_node, f);
 	}
 	root_node->child_list = r_list_new ();
 
@@ -1052,17 +1052,17 @@ static ut8 parse_tree(const RAnal *anal, RBuffer *b, RFlirtNode *root_node, RFli
 		if (!(node = R_NEW0 (RFlirtNode))) {
 			goto err_exit;
 		}
-		if (!read_node_length (node, b, &f)) {
+		if (!read_node_length (node, b, f)) {
 			goto err_exit;
 		}
-		if (!read_node_variant_mask (node, b, &f)) {
+		if (!read_node_variant_mask (node, b, f)) {
 			goto err_exit;
 		}
-		if (!read_node_bytes (node, b, &f)) {
+		if (!read_node_bytes (node, b, f)) {
 			goto err_exit;
 		}
 		r_list_append (root_node->child_list, node);
-		if (!parse_tree (anal, b, node, &f)) {
+		if (!parse_tree (anal, b, node, f)) {
 			goto err_exit; // parse child nodes
 		}
 	}
@@ -1389,7 +1389,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf, RFlirt *f)
 #if DEBUG
 	r_file_dump ("sig_dump", buf, size, false);
 #endif
-	if (parse_tree (anal, r_buf, node, &f)) {
+	if (parse_tree (anal, r_buf, node, f)) {
 		ret = node;
 	} else {
 		free (node);
@@ -1441,7 +1441,7 @@ R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
 		return;
 	}
 
-	node = flirt_parse (anal, flirt_buf, &f);
+	node = flirt_parse (anal, flirt_buf, f);
 	r_buf_free (flirt_buf);
 	if (node) {
 		print_node (anal, node, -1);
@@ -1464,7 +1464,7 @@ R_API void r_sign_flirt_scan(RAnal *anal, const char *flirt_file) {
 		return;
 	}
 
-	node = flirt_parse (anal, flirt_buf, &f);
+	node = flirt_parse (anal, flirt_buf, f);
 	r_buf_free (flirt_buf);
 	if (node) {
 		if (!node_match_functions (anal, node)) {
