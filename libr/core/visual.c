@@ -501,8 +501,8 @@ R_API int r_core_visual_hud(RCore *core) {
 		r_sys_prefix (NULL));
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	char *homehud = r_str_home (R2_HOME_HUD);
+	bool ready = false;
 	char *res = NULL;
-	char *p = 0;
 	r_cons_context ()->color_mode = use_color;
 
 	r_core_visual_showcursor (core, true);
@@ -518,22 +518,22 @@ R_API int r_core_visual_hud(RCore *core) {
 	if (!res) {
 		r_cons_message ("Cannot find hud file");
 	}
-
 	r_cons_clear ();
 	if (res) {
-		p = strchr (res, ';');
+		char *p = strchr (res, ';');
 		r_cons_println (res);
 		r_cons_flush ();
-		if (p) {
+		if (R_STR_ISNOTEMPTY (p)) {
 			r_core_cmd0 (core, p + 1);
 		}
-		free (res);
+		R_FREE (res);
+		ready = true;
 	}
 	r_core_visual_showcursor (core, false);
 	r_cons_flush ();
 	free (homehud);
 	free (f);
-	return (int) (size_t) p;
+	return ready;
 }
 
 R_API void r_core_visual_jump(RCore *core, ut8 ch) {
