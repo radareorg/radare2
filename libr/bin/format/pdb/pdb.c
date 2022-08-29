@@ -185,18 +185,22 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 		num_pages = count_pages (sizes[i], page_size);
 
 		if ((pos + num_pages) > tmp_data_max_size) {
+			R_LOG_WARN ("looks like there is no correct values of stream size in PDB file");
 			R_FREE (data);
 			R_FREE (sizes);
-			R_LOG_WARN ("looks like there is no correct values of stream size in PDB file");
 			return 0;
 		}
 		if (SZT_MUL_OVFCHK (num_pages, 4)) {
 			R_LOG_WARN ("num_pages overflow");
+			R_FREE (data);
+			R_FREE (sizes);
 			return 0;
 		}
 		ut32 size = num_pages * 4;
 		if (size > UT16_MAX) {
 			R_LOG_WARN ("too many pages");
+			R_FREE (data);
+			R_FREE (sizes);
 			return 0;
 		}
 		ut8 *tmp = (ut8 *) calloc (num_pages, 4);

@@ -971,6 +971,7 @@ static int cmd_w6(void *data, const char *input) {
 				fail = true;
 			}
 			free (bin_buf);
+			free (s);
 			break;
 		}
 		default:

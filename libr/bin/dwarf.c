@@ -2205,8 +2205,10 @@ static ut8 *get_section_bytes(RBin *bin, const char *sect_name, size_t *len) {
 		return NULL;
 	}
 	*len = section->size;
-	ut8 *buf = calloc (1,*len);
-	r_buf_read_at (binfile->buf, section->paddr, buf, *len);
+	ut8 *buf = calloc (1, *len);
+	if (buf) {
+		r_buf_read_at (binfile->buf, section->paddr, buf, *len);
+	}
 	return buf;
 }
 
@@ -2223,7 +2225,7 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin 
 	RBinDwarfDebugInfo *info = NULL;
 	RBinSection *debug_str;
 	RBinSection *section = getsection (bin, "debug_info");
-	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinFile *binfile = bin->cur;
 
 	ut64 debug_str_len = 0;
 	ut8 *debug_str_buf = NULL;

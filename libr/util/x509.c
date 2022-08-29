@@ -268,11 +268,13 @@ R_API RX509CRLEntry *r_x509_parse_crlentry(RASN1Object *object) {
 	}
 	struct r_asn1_object_t *obj0 = object->list.objects[0];
 	if (!obj0) {
+		free (entry);
 		return NULL;
 	}
 	entry->userCertificate = r_asn1_create_binary (obj0->sector, obj0->length);
 	struct r_asn1_object_t *obj1 = object->list.objects[1];
 	if (!obj1) {
+		free (entry);
 		return NULL;
 	}
 	entry->revocationDate = r_asn1_stringify_utctime (obj1->sector, obj1->length);
