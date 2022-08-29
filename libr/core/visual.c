@@ -495,7 +495,7 @@ static inline void prevPrintFormat(RCore *core) {
 	printFormat (core, -1);
 }
 
-R_API bool r_core_visual_hud(RCore *core) {
+R_API int r_core_visual_hud(RCore *core) {
 	const char *c = r_config_get (core->config, "hud.path");
 	char *f = r_str_newf (R_JOIN_3_PATHS ("%s", R2_HUD, "main"),
 		r_sys_prefix (NULL));
