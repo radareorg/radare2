@@ -1440,7 +1440,7 @@ R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
 		eprintf ("Can't open %s\n", flirt_file);
 		return;
 	}
-
+RFlirt *f = r_flirt_new (anal, flirt_buf);
 	node = flirt_parse (anal, flirt_buf, f);
 	r_buf_free (flirt_buf);
 	if (node) {
