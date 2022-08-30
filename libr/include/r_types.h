@@ -174,20 +174,10 @@
 # define __UNIX__ 1
 #endif
 
-#if 0
-// XXX any non-unix system dont have termios :? android?
-#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__ || __HAIKU__ || __serenity__ || __vinix__
-#define HAVE_PTY 1
-#else
-#define HAVE_PTY 0
-#endif
-#endif
-
 #undef HAVE_PTY
 #if EMSCRIPTEN || __wasi__ || defined(__serenity__)
 #define HAVE_PTY 0
 #else
-// #define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
 #define HAVE_PTY __UNIX__ && LIBC_HAVE_FORK && !__sun
 #endif
 
