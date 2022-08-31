@@ -366,7 +366,7 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 	return NULL;
 }
 
-// XXX make this api const char *text instead of char *text
+// XXX R2_580 make this api const char *text instead of char *text
 R_API RJson *r_json_parse(char *text) {
 	RJson js = {0};
 	if (!parse_value (&js, 0, text)) {
