@@ -1939,7 +1939,9 @@ repeat:
 			} else {
 				R_LOG_WARN ("Nothing to do");
 			}
-			r_core_seek (core, core->offset + acode->len, true);
+			if (*input == '+') {
+				r_core_seek (core, core->offset + acode->len, true);
+			}
 			r_asm_code_free (acode);
 		}
 		}
