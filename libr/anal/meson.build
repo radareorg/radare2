@@ -162,6 +162,7 @@ r_anal_sources = [
   '../asm/arch/pic/pic_baseline.c',
   '../asm/arch/pic/pic_pic18.c',
   '../asm/arch/ppc/libvle/vle.c',
+  '../asm/arch/ppc/libps/libps.c',
   '../asm/arch/ppc/gnu/ppc-dis.c',
   '../asm/arch/ppc/gnu/ppc-opc.c',
  # join_paths('arch','ppc','libvle','vle.c'),
