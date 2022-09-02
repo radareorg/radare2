@@ -123,7 +123,6 @@ asm_plugins += [
   'arm_winedbg',
   'or1k',
   'ppc_as',
-  'ppc_cs',
   'x86_as',
   'x86_nasm',
   'x86_nz',
