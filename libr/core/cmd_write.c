@@ -49,6 +49,7 @@ static const char *help_msg_wa[] = {
 	"wa", " nop", "write nopcode using asm.arch and asm.bits",
 	"wai", " jmp 0x8080", "write inside this op (fill with nops or error if doesnt fit)",
 	"wan", " jmp 0x8080", "write instruction(s) nopping the trailing bytes",
+	"wa+", " nop", "write a nop and seek after it (use 7wa+nop to write 7 consecutive nops)",
 	"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
 	"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
 	"waf", " f.asm" , "assemble file and write bytes",
@@ -1873,13 +1874,13 @@ static int cmd_wa(void *data, const char *input) {
 		}
 		break;
 	case ' ':
+	case '+':
 	case 'i':
 	case 'n':
 	case '*': {
 		const char *file = r_str_trim_head_ro (input + 1);
-		RAsmCode *acode;
 		r_asm_set_pc (core->rasm, core->offset);
-		acode = r_asm_massemble (core->rasm, file);
+		RAsmCode *acode = r_asm_massemble (core->rasm, file);
 		if (acode) {
 			if (input[0] == 'n') { // "wan"
 				int delta = 0;
@@ -1927,8 +1928,8 @@ repeat:
 					if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
 						cmd_write_fail (core);
 					} else {
-						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+1, hex);
+						if (r_config_get_b (core->config, "scr.prompt")) { // maybe check interactive?
+							R_LOG_INFO ("Written %d byte(s) (%s) = wx %s @ 0x%08"PFMT64x, acode->len, input + 1, hex, core->offset);
 						}
 						WSEEK (core, acode->len);
 					}
@@ -1937,6 +1938,9 @@ repeat:
 				free (hex);
 			} else {
 				R_LOG_WARN ("Nothing to do");
+			}
+			if (*input == '+') {
+				r_core_seek (core, core->offset + acode->len, true);
 			}
 			r_asm_code_free (acode);
 		}

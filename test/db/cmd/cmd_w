@@ -1,3 +1,20 @@
+NAME=wa+
+FILE=-
+ARGS=-a arm -b64
+CMDS=<<EOF
+3wa+nop
+s
+pd 4 @ 0
+EOF
+EXPECT=<<EOF
+0xc
+            0x00000000      1f2003d5       nop
+            0x00000004      1f2003d5       nop
+            0x00000008      1f2003d5       nop
+            0x0000000c      00000000       invalid
+EOF
+RUN
+
 NAME=wv4
 FILE=-
 CMDS=<<EOF
