@@ -835,7 +835,7 @@ machine  x86 64 all
 nx       false
 os       darwin
 pic      true
-relocs   false
+relocs   true
 sanitize false
 static   false
 stripped false

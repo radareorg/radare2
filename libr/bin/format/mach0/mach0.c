@@ -1224,8 +1224,8 @@ static int parse_dylib(struct MACH0_(obj_t) *bin, ut64 off) {
 	dl.dylib.current_version = r_read_ble32 (&sdl[16], bin->big_endian);
 	dl.dylib.compatibility_version = r_read_ble32 (&sdl[20], bin->big_endian);
 
-	if (off + dl.dylib.name > bin->size ||\
-	  off + dl.dylib.name + R_BIN_MACH0_STRING_LENGTH > bin->size) {
+	ut64 offname = off + dl.dylib.name;
+	if (offname + R_BIN_MACH0_STRING_LENGTH > bin->size) {
 		return false;
 	}
 
@@ -3416,7 +3416,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			return NULL;
 		}
 
-		if ((bind_size + lazy_size)<1) {
+		if ((bind_size + lazy_size) < 1) {
 			return NULL;
 		}
 		if (bin->dyld_info->bind_off > bin->size || bin->dyld_info->bind_off + bind_size > bin->size) {
