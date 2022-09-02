@@ -19,7 +19,7 @@ ALL_TARGETS=
 # TODO: rename to enabled plugins
 ARCHS=sparc_gnu.mk java.mk arm_gnu.mk
 ARCHS+=x86_as.mk x86_nz.mk cris_gnu.mk arc.mk
-ARCHS+=ppc_gnu.mk ppc_as.mk ppc_cs.mk x86_nasm.mk avr.mk
+ARCHS+=ppc_as.mk x86_nasm.mk avr.mk
 ARCHS+=sh.mk arm_winedbg.mk tms320.mk ebc.mk
 ARCHS+=cr16.mk v850.mk jdh8.mk riscv.mk
 ARCHS+=v810.mk lm32.mk mcore.mk

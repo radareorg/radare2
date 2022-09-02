@@ -5,6 +5,7 @@
 #include <capstone/capstone.h>
 #include <capstone/ppc.h>
 #include "../../asm/arch/ppc/libvle/vle.h"
+#include "../../asm/arch/ppc/libps/libps.h"
 
 #define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
 #define SPR_HID1 0x3f1 /* Hardware Implementation Register 1 */
@@ -602,17 +603,84 @@ static char *shrink(char *op) {
 	| (a->config->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN)
 #include "capstone.inc"
 
+static int decompile_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	vle_t* instr = 0;
+	vle_handle handle = {0};
+	if (len < 2) {
+		return -1;
+	}
+	if (!vle_init (&handle, buf, len) && (instr = vle_next (&handle))) {
+		op->size = instr->size;
+		char buf_asm[64];
+		vle_snprint (buf_asm, sizeof (buf_asm), addr, instr);
+		op->mnemonic = strdup (buf_asm);
+		vle_free (instr);
+	} else {
+		op->mnemonic = strdup ("invalid");
+		op->size = 2;
+		return -1;
+	}
+	return op->size;
+}
+
+static int decompile_ps(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	ppcps_t instr = {0};
+	if (len < 4) {
+		eprintf ("not eno\n");
+		return -1;
+	}
+	op->size = 4;
+	const ut32 data = (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+	if (libps_decode (data, &instr) < 1) {
+		return -1;
+	}
+	char buf_asm[64] = {0};
+	libps_snprint (buf_asm, sizeof (buf_asm), addr, &instr);
+	op->mnemonic = strdup (buf_asm);
+	eprintf ("Mnemonic (%s)\n", buf_asm);
+	return op->size;
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh handle = init_capstone (a);
 	if (handle == 0) {
 		return -1;
 	}
 
-	int n, ret;
+	int ret;
 	cs_insn *insn;
 	char *op1;
 
-	if (a->config->cpu && strncmp (a->config->cpu, "vle", 3) == 0) {
+	const char *cpu = a->config->cpu;
+	// capstone-next
+	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		ret = -1;
+		if (cpu && !strcmp (cpu, "vle")) {
+			if (!a->config->big_endian) {
+				return -1;
+			}
+			// vle is big-endian only
+			ret = decompile_vle (a, op, addr, buf, len);
+		} else if (cpu && !strcmp (cpu, "ps")) {
+			// libps is big-endian only
+			if (!a->config->big_endian) {
+				return -1;
+			}
+			ret = decompile_ps (a, op, addr, buf, len);
+		}
+		if (ret < 1) {
+			if (n > 0) {
+				op->mnemonic = r_str_newf ("%s%s%s",
+					insn->mnemonic,
+					insn->op_str[0]? " ": "",
+					insn->op_str);
+			} else {
+				op->mnemonic = strdup ("invalid");
+			}
+		}
+	}
+	if (cpu && !strcmp (cpu, "vle")) {
 		// vle is big-endian only
 		if (!a->config->big_endian) {
 			return -1;
@@ -625,8 +693,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 
 	op->size = 4;
 
-	// capstone-next
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
@@ -1344,11 +1410,13 @@ static RList *anal_preludes(RAnal *anal) {
 
 RAnalPlugin r_anal_plugin_ppc_cs = {
 	.name = "ppc",
-	.desc = "Capstone PowerPC analysis",
+	.desc = "Capstone (+vle+ps) PowerPC disassembler",
 	.license = "BSD",
 	.esil = true,
 	.arch = "ppc",
 	.bits = 32 | 64,
+	.cpus = "ppc,vle,ps",
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.archinfo = archinfo,
 	.preludes = anal_preludes,
 	.op = &analop,
