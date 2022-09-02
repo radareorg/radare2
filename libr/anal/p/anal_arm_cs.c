@@ -2555,15 +2555,12 @@ PUSH { r4, r5, r6, r7, lr }
 4,sp,-=,r5,sp,=[4],
 4,sp,-=,r4,sp,=[4]
 
-20,sp,-=,lr,r7,r6,r5,r4,5,sp,=[*]
+20,sp,-=,r4,sp,=[4],r5,sp,4,+,=[4],r6,sp,8,+,=[4],r7,sp,12,+,=[4],lr,sp,16,+,=[4]
 #endif
-		r_strbuf_appendf (&op->esil, "%d,sp,-=,",
-			4 * insn->detail->arm.op_count);
-		for (i = insn->detail->arm.op_count; i > 0; i--) {
-			r_strbuf_appendf (&op->esil, "%s,", REG (i - 1));
+		r_strbuf_setf (&op->esil, "%d,sp,-=,%s,sp,=[4]", insn->detail->arm.op_count * 4, REG (0));
+		for (i = 1; i < insn->detail->arm.op_count; i++) {
+			r_strbuf_appendf (&op->esil, ",%s,sp,%d,+,=[4]", REG (i), i * 4);
 		}
-		r_strbuf_appendf (&op->esil, "%d,sp,=[*]",
-			insn->detail->arm.op_count);
 		break;
 	case ARM_INS_STMDA:
 	case ARM_INS_STMDB:
