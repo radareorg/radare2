@@ -6804,6 +6804,8 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 	core->anal->esil->cb.hook_reg_write = regwrite_hook;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
 			addr, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+	const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	const ut64 old_pc = r_reg_getv (core->anal->reg, pcname);
 	if (fcn) {
 		bool anal_verbose = r_config_get_b (core->config, "anal.verbose");
 		// emulate every instruction in the function recursively across all the basic blocks
@@ -6846,6 +6848,7 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 						const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
 						// eprintf ("0x%08"PFMT64x"  %s\n", pc, op.mnemonic);
 						if (R_STR_ISNOTEMPTY (esilstr)) {
+							r_reg_setv (core->anal->reg, pcname, pc + op.size);
 							r_anal_esil_set_pc (core->anal->esil, pc);
 							r_anal_esil_parse (core->anal->esil, esilstr);
 							if (anal_verbose) {
@@ -6867,6 +6870,7 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 	}
 	core->anal->esil->cb.hook_reg_write = p;
 	core->anal->esil->user = u;
+	r_reg_setv (core->anal->reg, pcname, old_pc);
 #if 0
 	r_anal_esil_free (core->anal->esil);
 	core->anal->esil = NULL;
