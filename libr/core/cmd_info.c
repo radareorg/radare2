@@ -1538,14 +1538,17 @@ static int cmd_info(void *data, const char *input) {
 		case '.': // "i."
 			cmd_info_here (core, pj, input[1]);
 			goto done;
+		case ',':
+			// ignore comma
+			goto done;
 		default:
 	//		cmd_info_bin (core, va, pj, mode);
-			eprintf ("Invalid subcommand '%c'\n", input[0]);
+			R_LOG_WARN ("Invalid `i` subcommand '%c'", *input);
 			goto done;
 			break;
 		}
 		// input can be overwritten like the 'input = " ";' a few lines above
-		if (input[0] != ' ') {
+		if (*input != ' ') {
 			input++;
 			if ((*input == 'j' || *input == 'q') && (input[0] && !input[1])) {
 				break;

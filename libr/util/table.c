@@ -1076,7 +1076,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		__table_adjust (t);
 		return true;
 	}
-	if (*q == '?') {
+	if (*q == '?' || r_str_endswith (q, ":help")) {
 		const char *th = r_table_help ();
 		eprintf ("%s\n", th);
 		return false;
