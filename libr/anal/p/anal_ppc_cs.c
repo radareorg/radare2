@@ -626,17 +626,18 @@ static int decompile_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 static int decompile_ps(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	ppcps_t instr = {0};
 	if (len < 4) {
+		eprintf ("not eno\n");
 		return -1;
 	}
 	op->size = 4;
 	const ut32 data = (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
 	if (libps_decode (data, &instr) < 1) {
-		op->mnemonic = strdup ("invalid");
 		return -1;
 	}
-	char buf_asm[64];
+	char buf_asm[64] = {0};
 	libps_snprint (buf_asm, sizeof (buf_asm), addr, &instr);
 	op->mnemonic = strdup (buf_asm);
+	eprintf ("Mnemonic (%s)\n", buf_asm);
 	return op->size;
 }
 
@@ -654,25 +655,21 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	// capstone-next
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (mask & R_ANAL_OP_MASK_DISASM) {
+		ret = -1;
 		if (cpu && !strcmp (cpu, "vle")) {
 			if (!a->config->big_endian) {
 				return -1;
 			}
 			// vle is big-endian only
 			ret = decompile_vle (a, op, addr, buf, len);
-			if (ret < 1) {
-				return -1;
-			}
 		} else if (cpu && !strcmp (cpu, "ps")) {
 			// libps is big-endian only
 			if (!a->config->big_endian) {
 				return -1;
 			}
 			ret = decompile_ps (a, op, addr, buf, len);
-			if (ret < 1) {
-				return -1;
-			}
-		} else {
+		}
+		if (ret < 1) {
 			if (n > 0) {
 				op->mnemonic = r_str_newf ("%s%s%s",
 					insn->mnemonic,
