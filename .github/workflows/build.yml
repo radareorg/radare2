@@ -405,11 +405,15 @@ jobs:
       run: |
         cd prefix\bin
         r2blob -v
+	zip r2blob
+    - name: Zipping Executable
+      shell: cmd
+      run: 7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\r2blob.exe
     - uses: actions/upload-artifact@v2
       continue-on-error: true
       with:
         name: w64-static
-        path: prefix\bin\r2blob.static.exe
+        path: prefix\bin\r2blob.zip
 
   w64-meson:
     runs-on: windows-2019
@@ -721,6 +725,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/w64-static/r2blob.static.exe
+          asset_path: dist/artifacts/w64-static/r2blob.zip
           asset_name: r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
           asset_content_type: application/zip
