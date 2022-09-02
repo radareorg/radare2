@@ -405,7 +405,6 @@ jobs:
       run: |
         cd prefix\bin
         r2blob -v
-	zip r2blob
     - name: Zipping Executable
       shell: cmd
       run: 7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\r2blob.exe
