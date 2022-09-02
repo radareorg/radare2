@@ -889,7 +889,7 @@ EOF
 EXPECT=<<EOF
 address: 0x568
 opcode: push {r3, lr}
-esilcost: 16
+esilcost: 24
 disasm: push {r3, lr}
 pseudo: push (r3, lr) 
 mnemonic: push
@@ -902,7 +902,7 @@ size: 4
 sign: false
 type: push
 cycles: 1
-esil: 8,sp,-=,lr,r3,2,sp,=[*]
+esil: 8,sp,-=,r3,sp,=[4],lr,sp,4,+,=[4]
 family: cpu
 stackop: inc
 stackptr: 8
