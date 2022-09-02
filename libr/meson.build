@@ -193,8 +193,7 @@ if no_user_plugins
   if use_gpl
     asm_plugins += [
       # 'z80',
-      'arm_gnu',
-  #    'hppa_gnu',
+      # 'hppa_gnu',
       'm68k_gnu',
       'lanai_gnu',
     ]

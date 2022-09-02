@@ -1,6 +1,7 @@
 OBJ_M68KGNU=asm_m68k_gnu.o
 OBJ_M68KGNU+=../arch/m68k/gnu/m68k-dis.o
 OBJ_M68KGNU+=../arch/m68k/gnu/m68k-opc.o
+OBJ_M68KGNU+=../arch/arm/gnu/floatformat.o
 
 STATIC_OBJ+=${OBJ_M68KGNU}
 TARGET_M68KGNU=asm_m68k_gnu.${EXT_SO}
