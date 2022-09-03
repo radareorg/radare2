@@ -813,9 +813,9 @@ static int cmd_alias(void *data, const char *input) {
 			free (buf);
 			return 1;
 		} else if (v) {
-			eprintf ("Alias \"$%s\" is not a command\n", buf);
+			R_LOG_ERROR ("Alias \"$%s\" is not a command", buf);
 		} else {
-			eprintf ("No such alias \"$%s\"\n", buf);
+			R_LOG_ERROR ("No such alias \"$%s\"", buf);
 		}
 	} else if (*buf == '*') {
 		bool use_b64 = (buf[1] == '*');
@@ -1534,7 +1534,7 @@ static int cmd_join(void *data, const char *input) { // "join"
 		goto beach;
 	}
 	*end = '\0';
-	const char *arg2 = end+1;
+	const char *arg2 = end + 1;
 	if (!arg2) {
 		goto beach;
 	}
@@ -1568,21 +1568,22 @@ beach:
 
 static int cmd_plus(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	if (input[0]) {
+	if (*input) {
 		r_core_cmdf (core, "s+%s", r_str_trim_head_ro (input));
-		return 0;
+	} else {
+		r_core_cmd_help (core, help_msg_plus);
 	}
-	r_core_cmd_help (core, help_msg_plus);
-	return false;
+	return 0;
 }
 
 static int cmd_stdin(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	if (input[0] == '?') {
-		r_core_cmd_help (core, help_msg_dash);
-		return false;
-	} else if (input[0]) {
-		r_core_cmdf (core, "s-%s", r_str_trim_head_ro (input));
+	if (*input) {
+		if (input[0] == '?') {
+			r_core_cmd_help (core, help_msg_dash);
+		} else {
+			r_core_cmdf (core, "s-%s", r_str_trim_head_ro (input));
+		}
 		return 0;
 	}
 	return r_core_run_script (core, "-");
@@ -1592,14 +1593,14 @@ static void load_table_json(RCore *core, RTable *t, char *data) {
 	// parse json file and iterate over all the entries
 	// RTableRow *row = r_table_row_new (items);
 	// r_list_append (t->rows, row);
-	eprintf ("TODO: Loading tables from JSON is not yet implemented\n");
+	R_LOG_INFO ("TODO: Loading tables from JSON is not yet implemented");
 }
 
 static const char *get_type_string(const char *s) {
-	if (!strncmp (s, "0x", 2)) {
+	if (r_str_startswith (s, "0x")) {
 		return "x";
 	}
-	if (*s == '0' || atoi (s)) {
+	if (*s == '0' || isdigit (s[1])) {
 		return "d";
 	}
 	return "s";
@@ -1816,9 +1817,6 @@ static int cmd_table(void *data, const char *input) {
 		break;
 	case 'r': // add row
 		{
-			if (!core->table) {
-				core->table = r_table_new ("table");
-			}
 			char *args = r_str_trim_dup (input + 1);
 			if (*args) {
 				RList *list = r_str_split_list (args, " ", 0);
@@ -1849,7 +1847,7 @@ static int cmd_table(void *data, const char *input) {
 		} else {
 			const char *file = r_str_trim_head_ro (input + 1);
 			if (*file == '$' && !file[1]) {
-				eprintf ("No alias name given.\n");
+				R_LOG_ERROR ("No alias name given");
 			} else if (*file == '$') {
 				RCmdAliasVal *file_data = r_cmd_alias_get (core->rcmd, file+1);
 				if (file_data) {
@@ -1857,14 +1855,14 @@ static int cmd_table(void *data, const char *input) {
 					load_table (core, core->table, strdup (file_data_str));
 					free (file_data_str);
 				} else {
-					eprintf ("No such alias \"$%s\"\n", file+1);
+					R_LOG_ERROR ("No such alias \"$%s\"", file+1);
 				}
 			} else {
 				char *file_data = r_file_slurp (file, NULL);
 				if (file_data) {
 					load_table (core, core->table, file_data);
 				} else {
-					eprintf ("Cannot open file.\n");
+					R_LOG_ERROR ("Cannot open file");
 				}
 			}
 		}
@@ -1984,7 +1982,7 @@ static int cmd_interpret(void *data, const char *input) {
 		{
 			const char *script_file = r_str_trim_head_ro (input + 1);
 			if (*script_file == '$' && !script_file[1]) {
-				eprintf ("No alias name given.\n");
+				R_LOG_ERROR ("No alias name given");
 			} else if (*script_file == '$') {
 				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, script_file + 1);
 				if (v) {
@@ -1992,11 +1990,11 @@ static int cmd_interpret(void *data, const char *input) {
 					r_core_cmd0 (core, cmd_text);
 					free (cmd_text);
 				} else {
-					eprintf ("No such alias \"$%s\"\n", script_file+1);
+					R_LOG_ERROR ("No such alias \"$%s\"", script_file+1);
 				}
 			} else {
 				if (!r_core_run_script (core, script_file)) {
-					eprintf ("Cannot find script '%s'\n", script_file);
+					R_LOG_ERROR ("Cannot find script '%s'", script_file);
 					r_core_return_value (core, R_CMD_RC_FAILURE);
 				} else {
 					r_core_return_value (core, R_CMD_RC_SUCCESS);
@@ -2013,7 +2011,7 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	default:
 		if (*input >= 0 && *input <= 9) {
-			eprintf ("|ERROR| No .[0..9] to avoid infinite loops\n");
+			R_LOG_ERROR ("No .[0..9] to avoid infinite loops");
 			break;
 		}
 		inp = strdup (input);
@@ -2981,9 +2979,9 @@ static int cmd_system(void *data, const char *input) {
 					r_cons_write (out, olen);
 					free (out);
 					free (cmd);
-				} //else R_LOG_ERROR ("Error setting up system environment");
+				}
 			} else {
-				eprintf ("History saved to "R2_HOME_HISTORY"\n");
+				R_LOG_INFO ("History saved to "R2_HOME_HISTORY);
 				r_line_hist_save (R2_HOME_HISTORY);
 			}
 		}
@@ -3012,7 +3010,6 @@ static int cmd_system(void *data, const char *input) {
 			if (cmd) {
 				r_core_cmd0 (core, cmd);
 			}
-			//else R_LOG_ERROR ("Error setting up system environment");
 		} else {
 			char *cmd = r_core_sysenv_begin (core, input);
 			if (cmd) {
@@ -3025,7 +3022,7 @@ static int cmd_system(void *data, const char *input) {
 				r_core_sysenv_end (core, input);
 				free (cmd);
 			} else {
-				R_LOG_ERROR ("Error setting up system environment");
+				R_LOG_ERROR ("Cannot setup the environment");
 			}
 		}
 		break;
@@ -3221,7 +3218,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		if (pipe (fds) == 0) {
 			child = r_sys_fork ();
 			if (child == -1) {
-				eprintf ("Cannot fork\n");
+				R_LOG_ERROR ("Cannot fork");
 			} else if (child) {
 				dup2 (fds[1], 1);
 				close (fds[1]);
@@ -3390,7 +3387,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	// repeat command N times
 	if ((st64)rep > 0) {
-		while (IS_DIGIT (*cmd)) {
+		while (isdigit (*cmd)) {
 			cmd++;
 		}
 		// do not repeat null cmd
@@ -3424,7 +3421,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	r_cons_break_push (NULL, NULL);
 
 	bool ocur_enabled = core->print && core->print->cur_enabled;
-	while (rep-- && *cmd) {
+	while (rep-- > 0 && *cmd) {
 		if (r_cons_was_breaked ()) {
 			break;
 		}
@@ -3438,7 +3435,14 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 		char *cr = strdup (cmdrep);
 		core->break_loop = false;
-		ret = r_core_cmd_subst_i (core, cmd, colon, (rep == orep - 1) ? &tmpseek : NULL);
+		if (rep > 1 && strstr (cmd, "@")) {
+			char *repcmd = r_str_newf ("%"PFMT64d"%s", rep + 1, cmd);
+			ret = r_core_cmd_subst_i (core, repcmd, colon, (rep == orep - 1) ? &tmpseek : NULL);
+			free (repcmd);
+			rep = 0;
+		} else {
+			ret = r_core_cmd_subst_i (core, cmd, colon, (rep == orep - 1) ? &tmpseek : NULL);
+		}
 		if (*cmd == 's') {
 			// do not restore tmpseek if the command executed is the 's'eek
 			tmpseek = false;
@@ -3467,7 +3471,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (is_root_cmd) {
 		r_cons_break_clear ();
 	}
-
 	if (tmpseek) {
 		r_core_seek (core, orig_offset, true);
 		core->tmpseek = original_tmpseek;
@@ -3721,11 +3724,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	// TODO: must honor " and ` boundaries
 	//ptr = strrchr (cmd, ';');
 	if (*cmd != '#') {
-		if (is_macro_command (cmd)) {
-			ptr = find_ch_after_macro (cmd, ';');
-		} else {
-			ptr = (char *)r_str_lastbut (cmd, ';', quotestr);
-		}
+		ptr = (char *)(is_macro_command (cmd)
+			? find_ch_after_macro (cmd, ';')
+			: r_str_lastbut (cmd, ';', quotestr));
 		if (colon && ptr) {
 			int ret ;
 			*ptr = '\0';
@@ -3738,7 +3739,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			*ptr = ';';
 			r_list_free (tmpenvs);
 			return ret;
-			//r_cons_flush ();
 		}
 	}
 
@@ -4095,7 +4095,7 @@ escape_backtick:
 		*ptr++ = '\0';
 repeat_arroba:
 		arroba = (ptr[0] && ptr[1] && ptr[2])?  strchr (ptr + 2, '@'): NULL;
-		if (!strncmp (ptr, "@@@", 3)) { // "@@@@"
+		if (r_str_startswith (ptr, "@@@")) { // "@@@@"
 			R_LOG_ERROR ("Cannot iterate that much");
 			goto fuji;
 		}
@@ -4982,11 +4982,8 @@ static void foreachWord(RCore *core, const char *_cmd, const char *each) {
 			*nl = 0;
 		}
 		// space separated numbers
-		while (each && *each) {
-			// find spaces
-			while (*each == ' ') {
-				each++;
-			}
+		while (R_STR_ISNOTEMPTY (each)) {
+			each = r_str_trim_head_ro (each);
 			char *curword = NULL;
 			char *str = strchr (each, ' ');
 			if (str) {
@@ -5018,11 +5015,8 @@ static void foreachOffset(RCore *core, const char *_cmd, const char *each) {
 	char *nextLine = NULL;
 	ut64 addr;
 	/* foreach list of items */
-	while (each) {
-		// skip spaces
-		while (*each == ' ') {
-			each++;
-		}
+	while (R_STR_ISNOTEMPTY (each)) {
+		each = r_str_trim_head_ro (each);
 		// stahp if empty string
 		if (!*each) {
 			break;
@@ -5077,7 +5071,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	RListIter *iter;
 	RFlagItem *flag;
 	ut64 oseek, addr;
-
 	cmd = r_str_trim_head_ro (cmd);
 
 	oseek = core->offset;
@@ -5738,7 +5731,7 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 			free (_cmd);
 			return s? s: strdup ("");
 		}
-		eprintf ("slurp %s fails\n", tmp);
+		R_LOG_ERROR ("slurp %s fails", tmp);
 		r_file_rm (tmp);
 		free (tmp);
 		free (_cmd);
@@ -5905,8 +5898,6 @@ R_API void r_core_cmd_init(RCore *core) {
 		core->rcmd->macro.cb_printf = (PrintfCallback)r_cons_printf;
 		r_cmd_set_data (core->rcmd, core);
 		core->cmd_descriptors = r_list_newf (free);
-
-		// RCmdDesc *root = r_cmd_get_root (core->rcmd);
 		size_t i;
 		for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
 			r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
