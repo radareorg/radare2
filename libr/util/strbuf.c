@@ -266,7 +266,7 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 	va_list ap;
 
-	r_return_val_if_fail (sb && fmt, -1);
+	r_return_val_if_fail (sb && fmt, false);
 
 	va_start (ap, fmt);
 	bool ret = r_strbuf_vappendf (sb, fmt, ap);
@@ -279,7 +279,7 @@ R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_list ap2;
 	char string[1024];
 
-	r_return_val_if_fail (sb && fmt, -1);
+	r_return_val_if_fail (sb && fmt, false);
 
 	if (sb->weakref) {
 		return false;
