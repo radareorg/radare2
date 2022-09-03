@@ -20,7 +20,6 @@ jobs:
         name: linux-wasi
         path: radare2-*-wasi.zip
 
-
   # Linux
   linux-static:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
@@ -413,7 +412,7 @@ jobs:
       run: |
         cd prefix\bin
         dir
-        7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\r2blob.static.exe
+        7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip r2blob.static.exe
     - uses: actions/upload-artifact@v2
       continue-on-error: true
       with:
