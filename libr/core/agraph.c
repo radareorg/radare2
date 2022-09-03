@@ -1,16 +1,14 @@
-/* Copyright radare2 - 2014-2021 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2022 - pancake, ret2libc */
 
 #include <r_core.h>
-#include <r_cons.h>
 #include <r_util/r_graph_drawable.h>
-#include <ctype.h>
-#include <limits.h>
 
 static R_TH_LOCAL int mousemode = 0;
 static R_TH_LOCAL int disMode = 0;
 static R_TH_LOCAL int discroll = 0;
 static R_TH_LOCAL bool graphCursor = false;
-static const char *mousemodes[] = {
+
+static const char * const mousemodes[] = {
 	"canvas-y",
 	"canvas-x",
 	"node-y",
@@ -2122,18 +2120,17 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		r_config_hold_free (hc);
 		return res;
 	}
-	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
 
 	// configure options
-	r_config_set_i (core->config, "asm.lines.bb", false);
-	r_config_set_i (core->config, "asm.lines", false);
+	r_config_set_b (core->config, "asm.lines.bb", false);
+	r_config_set_b (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmt.col", 0);
-	r_config_set_i (core->config, "asm.marks", false);
-	r_config_set_i (core->config, "asm.cmt.right", (opts & BODY_SUMMARY) || o_cmtright);
-	r_config_set_i (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);
+	r_config_set_b (core->config, "asm.marks", false);
+	r_config_set_b (core->config, "asm.cmt.right", (opts & BODY_SUMMARY) || o_cmtright);
+	r_config_set_b (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);
 	r_config_set_i (core->config, "asm.bytes",
 		(opts & (BODY_SUMMARY | BODY_OFFSETS)) || o_bytes || o_flags_in_bytes);
-	r_config_set_i (core->config, "asm.bbmiddle", false);
+	r_config_set_b (core->config, "asm.bbmiddle", false);
 	core->print->cur_enabled = false;
 
 	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY || o_graph_offset) {
@@ -2142,8 +2139,14 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		r_config_set_i (core->config, "asm.offset", false);
 	}
 
-	bool html = r_config_get_i (core->config, "scr.html");
-	r_config_set_i (core->config, "scr.html", 0);
+	bool html = r_config_get_b (core->config, "scr.html");
+	r_config_set_b (core->config, "scr.html", false);
+
+	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
+	const char *bbcmd = r_config_get (core->config, "cmd.bbgraph");
+	if (R_STR_ISNOTEMPTY (bbcmd)) {
+		cmd = bbcmd;
+	}
 	if (r_config_get_i (core->config, "graph.aeab")) {
 		body = r_core_cmd_strf (core, "%s 0x%08"PFMT64x, "aeab", addr);
 	} else {
@@ -3192,8 +3195,7 @@ static void agraph_set_zoom(RAGraph *g, int v) {
 		const int K = 920;
 		if (g->zoom < v) {
 			g->can->sy = (g->can->sy * K) / 1000;
-		}
-		else {
+		} else {
 			g->can->sy = (g->can->sy * 1000) / K;
 		}
 		g->zoom = v;
@@ -3405,7 +3407,7 @@ static bool check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunc
 			free (title);
 		}
 		g->can->color = r_config_get_i (core->config, "scr.color");
-		g->hints = r_config_get_i (core->config, "graph.hints");
+		g->hints = r_config_get_b (core->config, "graph.hints");
 	}
 	if (g->update_seek_on || g->force_update_seek) {
 		RANode *n = g->update_seek_on;
@@ -4302,11 +4304,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->on_curnode_change = (RANodeCallback) seek_to_node;
 	g->on_curnode_change_data = core;
 	g->edgemode = r_config_get_i (core->config, "graph.edges");
-	g->hints = r_config_get_i (core->config, "graph.hints");
+	g->hints = r_config_get_b (core->config, "graph.hints");
 	g->is_interactive = is_interactive;
-	bool asm_comments = r_config_get_i (core->config, "asm.comments");
-	r_config_set (core->config, "asm.comments",
-			r_str_bool (r_config_get_i (core->config, "graph.comments")));
+	bool asm_comments = r_config_get_b (core->config, "asm.comments");
+	r_config_set_b (core->config, "asm.comments", r_config_get_b (core->config, "graph.comments"));
 
 	/* we want letters as shortcuts for call/jmps */
 	core->is_asmqjmps_letter = true;
@@ -4745,7 +4746,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
 				graphNodeMove (g, 'j', speed * 2);
 			} else {
-				can->sy -= (5*movspeed) * (invscroll? -1: 1);
+				can->sy -= (5 * movspeed) * (invscroll? -1: 1);
 			}
 			break;
 		case 'K':
