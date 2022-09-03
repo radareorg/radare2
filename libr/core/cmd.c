@@ -299,28 +299,28 @@ static const char *help_msg_uc[] = {
 };
 
 static const char *help_msg_y[] = {
-	"Usage:", "y[ptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
-	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
+	"Usage:", "y[fptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
+	"y!", "", "open cfg.editor to edit the clipboard",
 	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
+	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16", "copy 16 bytes into clipboard",
 	"y", "", "show yank buffer information (origin len bytes)",
-	"y-", "", "empty / reset clipboard",
-	"y!", "", "open cfg.editor to edit the clipboard",
 	"y*", "", "print in r2 commands what's been yanked",
-	"yf", " 64 0x200", "copy file 64 bytes from 0x200 from file",
-	"yfa", " file copy", "copy all bytes from file (opens w/ io)",
+	"y-", "", "empty / reset clipboard",
+	"y8", "", "print contents of clipboard in hexpairs",
+	"yf", " [L] [O] [file]", "copy [L] bytes from offset [O] of [file] into clipboard",
+	"yfa", " [filepath]", "copy all bytes from file into clipboard",
 	"yfx", " 10203040", "yank from hexpairs (same as ywx)",
 	"yj", "", "print in JSON commands what's been yanked",
 	"yp", "", "print contents of clipboard",
-	"yq", "", "print contents of clipboard in hexpairs",
 	"ys", "", "print contents of clipboard as string",
 	"yt", " 64 0x200", "copy 64 bytes from current seek to 0x200",
 	"ytf", " file", "dump the clipboard to given file",
 	"yw", " hello world", "yank from string",
 	"ywx", " 10203040", "yank from hexpairs (same as yfx)",
 	"yx", "", "print contents of clipboard in hexadecimal",
-	"yy", " @ 0x3344", "paste contents of clipboard to 0x3344",
 	"yy", " 0x3344", "paste contents of clipboard to 0x3344",
+	"yy", " @ 0x3344", "paste contents of clipboard to 0x3344",
 	"yy", "", "paste contents of clipboard at current seek",
 	"yz", " [len]", "copy nul-terminated string (up to blocksize) into clipboard",
 	NULL
@@ -1148,7 +1148,7 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	case 'f': // "yf"
 		switch (input[1]) {
-		case ' ': // "yf"
+		case ' ': // "yf" // "yf [filename] [nbytes] [offset]"
 			r_core_yank_file_ex (core, input + 1);
 			break;
 		case 'x': // "yfx"
@@ -1158,17 +1158,14 @@ static int cmd_yank(void *data, const char *input) {
 			r_core_yank_file_all (core, input + 2);
 			break;
 		default:
-			eprintf ("Usage: yf[xa] [arg]\n");
-			eprintf ("yf [file]     - copy blocksize from file into the clipboard\n");
-			eprintf ("yfa [path]    - yank the whole file\n");
-			eprintf ("yfx [hexpair] - yank from hexpair string\n");
+			r_core_cmd_help_match (core, help_msg_y, "yf", false);
 			break;
 		}
 		break;
 	case '!': // "y!"
 		{
 			char *sig = r_core_cmd_str (core, "y*");
-			if (!sig || !*sig) {
+			if (R_STR_ISEMPTY (sig)) {
 				free (sig);
 				sig = strdup ("wx 10203040");
 			}
@@ -1183,7 +1180,7 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	case '*': // "y*"
 	case 'j': // "yj"
-	case 'q': // "yq"
+	case '8': // "y8"
 	case '\0': // "y"
 		r_core_yank_dump (core, 0, input[0]);
 		break;
