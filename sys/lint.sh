@@ -1,5 +1,6 @@
 #!/bin/sh
 
+cd "$(dirname $0)"/..
 
 # find calls without (
 #(git grep -n -e '[a-z]('  | grep -v static | grep -v _API | grep -v shlr | grep libr/core) && exit 1
