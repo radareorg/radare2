@@ -3435,7 +3435,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 		char *cr = strdup (cmdrep);
 		core->break_loop = false;
-		if (rep > 1 && strstr (cmd, "@")) {
+		if (rep > 1 && strstr (cmd, "@@")) {
 			char *repcmd = r_str_newf ("%"PFMT64d"%s", rep + 1, cmd);
 			ret = r_core_cmd_subst_i (core, repcmd, colon, (rep == orep - 1) ? &tmpseek : NULL);
 			free (repcmd);
