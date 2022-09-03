@@ -1559,6 +1559,7 @@ static bool cb_cmdrepeat(void *user, void *data) {
 	return true;
 }
 
+// R2_580 rename to log.sink=file:path log.sink=echo etc..
 static bool cb_screrrmode(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
@@ -3889,6 +3890,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.hit", "", "run when a search hit is found");
 	SETPREF ("cmd.open", "", "run when file is opened");
 	SETPREF ("cmd.load", "", "run when binary is loaded");
+	SETPREF ("cmd.bbgraph", "", "show the output of this command in the graph basic blocks");
 	RConfigNode *cmdpdc = NODECB ("cmd.pdc", "", &cb_cmdpdc);
 	SETDESC (cmdpdc, "select pseudo-decompiler command to run after pdc");
 	update_cmdpdc_options (core, cmdpdc);
