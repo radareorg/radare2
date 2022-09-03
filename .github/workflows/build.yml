@@ -412,7 +412,7 @@ jobs:
       shell: cmd
       run: |
         cd prefix\bin
-	dir
+        dir
         7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\r2blob.static.exe
     - uses: actions/upload-artifact@v2
       continue-on-error: true
