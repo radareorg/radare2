@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2007-2021 - pancake */
+/* radare2 - LGPL - Copyright 2007-2022 - pancake */
 
 #include <r_util/r_print.h>
 #include <r_anal.h>
@@ -665,8 +665,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool zeroend = (options & R_PRINT_STRING_ZEROEND);
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
+	bool is_interactive = (p && p->cons) ? p->cons->context->is_interactive: false;
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
-	bool color = (p->flags & R_PRINT_FLAGS_COLOR);
+	bool use_color = (p->flags & R_PRINT_FLAGS_COLOR);
 	int col = 0;
 	i = 0;
 	for (; !r_print_is_interrupted () && i < len; i++) {
@@ -694,8 +695,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 				p->cb_printf ("\\\\");
 			} else if ((b == '\n' && !esc_nl)) {
 				p->cb_printf ("\n");
-				if (color)
+				if (use_color && is_interactive) {
 					p->cb_printf (R_CONS_CLEAR_FROM_CURSOR_TO_EOL);
+				}
 			} else if (IS_PRINTABLE (b)) {
 				p->cb_printf ("%c", b);
 			} else {
