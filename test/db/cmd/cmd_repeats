@@ -1,3 +1,34 @@
+NAME=repeat-foreach
+FILE=-
+ARGS=-a arm -b64
+CMDS=<<EOF
+3wa+nop@@= 0 0x20 0x40
+pi 20
+EOF
+EXPECT=<<EOF
+nop
+nop
+nop
+invalid
+invalid
+invalid
+invalid
+invalid
+nop
+nop
+nop
+invalid
+invalid
+invalid
+invalid
+invalid
+nop
+nop
+nop
+invalid
+EOF
+RUN
+
 NAME=repeat-help
 FILE=-
 CMDS=<<EOF
