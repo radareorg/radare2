@@ -393,6 +393,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
         pip install ninja r2pipe wget r2env
+    - name: Extract r2 version
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      id: r2v
     - name: Build with meson + ninja
       shell: cmd
       run: |
@@ -407,12 +410,15 @@ jobs:
         r2blob -v
     - name: Zipping Executable
       shell: cmd
-      run: 7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\r2blob.exe
+      run: |
+        cd prefix\bin
+	dir
+        7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\r2blob.static.exe
     - uses: actions/upload-artifact@v2
       continue-on-error: true
       with:
         name: w64-static
-        path: prefix\bin\r2blob.zip
+        path: prefix\bin\r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
 
   w64-meson:
     runs-on: windows-2019
