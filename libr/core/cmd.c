@@ -14,7 +14,7 @@
 #endif
 #endif
 
-static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
+static const char * const SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
 
 static bool isAnExport(RBinSymbol *s) {
 	/* workaround for some bin plugs */
@@ -57,7 +57,7 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_print.c"
 #include "cmd_help.c"
 
-static const char *help_msg_dollar[] = {
+static RCoreHelpMessage help_msg_dollar = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and data (See ?$? for help on $variables)",
 	"$", "", "list all defined aliases",
 	"$*", "", "list all defined aliases and their values, with unprintable characters escaped",
@@ -79,7 +79,7 @@ static const char *help_msg_dollar[] = {
 	NULL
 };
 
-static const char *help_msg_l[] = {
+static RCoreHelpMessage help_msg_l = {
 	"Usage:", "l[erls] [arg]", "Internal less (~..) and file listing (!ls)",
 	"ll", " [path]", "same as ls -l",
 	"lr", " [path]", "same as ls -r",
@@ -92,14 +92,14 @@ static const char *help_msg_l[] = {
 	NULL
 };
 
-static const char *help_msg_plus[] = {
+static RCoreHelpMessage help_msg_plus = {
 	"Usage:", "+", "seek forward, same as s+X (see s? and -? for more help)",
 	"+", "8", "seek 8 bytes forward, same as s+8",
 	"++", "", "seek one block forward. Same as s++ (see `b` command)",
 	NULL
 };
 
-static const char *help_msg_dash[] = {
+static RCoreHelpMessage help_msg_dash = {
 	"Usage:", "-", "open editor and run the r2 commands in the saved document",
 	"", "'-' '.-' '. -'", " those three commands do the same",
 	"-", "8", "same as s-8, but shorter to type (see +? command)",
@@ -107,7 +107,7 @@ static const char *help_msg_dash[] = {
 	NULL
 };
 
-static const char *help_msg_star[] = {
+static RCoreHelpMessage help_msg_star = {
 	"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
 	"*", "entry0=cc", "write trap in entrypoint",
 	"*", "entry0+10=0x804800", "write value in delta address",
@@ -116,7 +116,7 @@ static const char *help_msg_star[] = {
 	NULL
 };
 
-static const char *cmd_table_help[] = {
+static RCoreHelpMessage cmd_table_help = {
 	"Usage:", ",[,.-/*jhr] [file]", "# load table data",
 	",", "", "display table",
 	", ", "[table-query]", "filter and print table. See ,? for more details",
@@ -131,7 +131,7 @@ static const char *cmd_table_help[] = {
 	NULL
 };
 
-static const char *help_msg_dot[] = {
+static RCoreHelpMessage help_msg_dot = {
 	"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", "# define macro or interpret r2, r_lang,\n"
 	"    cparse, d, es6, exe, go, js, lsp, pl, py, rb, sh, vala or zig file",
 	".", "", "repeat last command backward",
@@ -151,7 +151,7 @@ static const char *help_msg_dot[] = {
 	NULL
 };
 
-static const char *help_msg_equal[] = {
+static RCoreHelpMessage help_msg_equal = {
 	"Usage:", " =[:!+-=ghH] [...]", " # connect with other instances of r2",
 	"\nremote commands:", "", "",
 	"=", "", "list all open connections",
@@ -182,7 +182,7 @@ static const char *help_msg_equal[] = {
 	NULL
 };
 
-static const char *help_msg_equalh[] = {
+static RCoreHelpMessage help_msg_equalh = {
 	"Usage:", " =[hH] [...]", " # http server",
 	"http server:", "", "",
 	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
@@ -195,14 +195,14 @@ static const char *help_msg_equalh[] = {
 	NULL
 };
 
-static const char *help_msg_equal_equal[] = {
+static RCoreHelpMessage help_msg_equal_equal = {
 	"Usage:", " ==[=] ", "# add connection to remote r2",
 	"==", "[fd]", "shell to send to the nth remote (see '=1 x' / '==1'",
 	"===", "event", "returns socket file or udp port to read events from",
 	NULL
 };
 
-static const char *help_msg_equal_more[] = {
+static RCoreHelpMessage help_msg_equal_more = {
 	"Usage:", " =+ [proto://][host]:[port](/[path])", " # add connection to remote r2",
 	"=+", "tcp://localhost:9090", "communicates with another instance running '& .:9090'",
 	"=+", "http://localhost:9090/cmd", "talks to remote r2 webserver '& =h'",
@@ -210,7 +210,7 @@ static const char *help_msg_equal_more[] = {
 	NULL
 };
 
-static const char *help_msg_equalg[] = {
+static RCoreHelpMessage help_msg_equalg = {
 	"Usage:", " =[g] [...]", " # gdb server",
 	"gdbserver:", "", "",
 	"=g", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
@@ -218,7 +218,7 @@ static const char *help_msg_equalg[] = {
 	NULL
 };
 
-static const char *help_msg_b[] = {
+static RCoreHelpMessage help_msg_b = {
 	"Usage:",  "b[f] [arg]\n", "Get/Set block size",
 	"b", " 33", "set block size to 33",
 	"b", " eip+4", "numeric argument can be an expression",
@@ -232,7 +232,7 @@ static const char *help_msg_b[] = {
 	NULL
 };
 
-static const char *help_msg_k[] = {
+static RCoreHelpMessage help_msg_k = {
 	"Usage:", "k[s] [key[=value]]", "Sdb Query",
 	"k", " anal/**", "list namespaces under anal",
 	"k", " anal/meta/*", "list kv from anal > meta namespaces",
@@ -249,7 +249,7 @@ static const char *help_msg_k[] = {
 	NULL,
 };
 
-static const char *help_msg_r[] = {
+static RCoreHelpMessage help_msg_r = {
 	"Usage:", "r[+-][ size]", "Resize file",
 	"r", "", "display file size",
 	"rj", "", "display the file size in JSON format",
@@ -272,7 +272,7 @@ static const char *help_msg_r[] = {
 	NULL
 };
 
-static const char *help_msg_u[] = {
+static RCoreHelpMessage help_msg_u = {
 	"Usage:", "u", "uname or undo write/seek",
 	"u", "", "show system uname",
 	"uw", "", "alias for wc (requires: e io.cache=true)",
@@ -284,7 +284,7 @@ static const char *help_msg_u[] = {
 	NULL
 };
 
-static const char *help_msg_uc[] = {
+static RCoreHelpMessage help_msg_uc = {
 	"Usage:", "uc [cmd],[revert-cmd]", "undo core commands (see `e cmd.undo`)",
 	"uc", " w hello,w world", "add a new undo command manually",
 	"uc", "", "list all core undos commands",
@@ -299,7 +299,9 @@ static const char *help_msg_uc[] = {
 };
 
 static const char *help_msg_y[] = {
-	"Usage:", "y[ptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
+	"Usage:", "y[fptxy] [len] [[@]addr]", " # See wd? for memcpy, same as 'yf'.",
+	"y!", "", "open cfg.editor to edit the clipboard",
+	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16", "copy 16 bytes into clipboard",
@@ -326,7 +328,7 @@ static const char *help_msg_y[] = {
 	NULL
 };
 
-static const char *help_msg_triple_exclamation[] = {
+static RCoreHelpMessage help_msg_triple_exclamation = {
 	"Usage:", "!!![-*][cmd] [arg|$type...]", " # user-defined autocompletion for commands",
 	"!!!", "", "list all autocompletions",
 	"!!!?", "", "show this help",
@@ -339,7 +341,7 @@ static const char *help_msg_triple_exclamation[] = {
 	NULL
 };
 
-static const char *help_msg_vertical_bar[] = {
+static RCoreHelpMessage help_msg_vertical_bar = {
 	"Usage:", "[cmd] | [program|H|T|.|]", "",
 	"", "[cmd] |?", "show this help",
 	"", "[cmd] |", "disable scr.html and scr.color",
@@ -350,7 +352,7 @@ static const char *help_msg_vertical_bar[] = {
 	NULL
 };
 
-static const char *help_msg_v[] = {
+static RCoreHelpMessage help_msg_v = {
 	"Usage:", "v[*i]", "",
 	"v", "", "open visual panels",
 	"v", " test", "load saved layout with name test",
@@ -360,16 +362,16 @@ static const char *help_msg_v[] = {
 	NULL
 };
 
-R_API void r_core_cmd_help(const RCore *core, const char *help[]) {
+R_API void r_core_cmd_help(const RCore *core, const char * const help[]) {
 	// r_cons_cmd_help_json (help);
 	r_cons_cmd_help (help, core->print->flags & R_PRINT_FLAGS_COLOR);
 }
 
-R_API void r_core_cmd_help_match(const RCore *core, const char *help[], R_BORROW R_NONNULL char *cmd, bool exact) {
+R_API void r_core_cmd_help_match(const RCore *core, const char * const help[], R_BORROW R_NONNULL char *cmd, bool exact) {
 	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0, exact);
 }
 
-R_API void r_core_cmd_help_match_spec(const RCore *core, const char *help[], R_BORROW R_NONNULL char *cmd, char spec, bool exact) {
+R_API void r_core_cmd_help_match_spec(const RCore *core, const char * const help[], R_BORROW R_NONNULL char *cmd, char spec, bool exact) {
 	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, spec, exact);
 }
 
