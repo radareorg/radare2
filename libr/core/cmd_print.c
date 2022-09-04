@@ -209,6 +209,16 @@ static const char *help_msg_pxd[] = {
 	NULL
 };
 
+static const char *help_msg_pxu[] = {
+	"Usage:", "pxu[1248] ([len])", "show unsigned decimal byte/short/word/dword dumps",
+	"pxu", "", "show base10 unsigned decimal hexdumps",
+	"pxu1", "", "show byte hexdump (int8_t)",
+	"pxu2", "", "show short hexdump (int16_t)",
+	"pxu4", "", "show dword hexdump (int32_t)",
+	"pxu8", "", "show qword hexdump (int64_t)",
+	NULL
+};
+
 static const char *help_msg_p_equal[] = {
 	"Usage:", "p=[=bep?][qj] [N] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
 	"e ", "zoom.in", "specify range for zoom",
@@ -553,6 +563,7 @@ static const char *help_msg_px[] = {
 	"pxr", "[1248][qj]", "show hexword references (q=quiet, j=json)",
 	"pxs", "", "show hexadecimal in sparse mode",
 	"pxt", "[*.] [origin]", "show delta pointer table in r2 commands",
+	"pxu", "[?1248]", "unsigned integer dump (1 byte, 2 and 4)",
 	"pxw", "", "show hexadecimal words dump (32bit)",
 	"pxW", "[q]", "same as above, but one per line (q=quiet)",
 	"pxx", "", "show N bytes of hex-less hexdump",
@@ -7313,29 +7324,35 @@ static int cmd_print(void *data, const char *input) {
 			}
 			}
 			break;
-		case 'd': // "pxd"
+		case 'u': // "pxu" // unsigned numbers
+		case 'd': // "pxd" // signed numbers
 			if (input[2] == '?') {
-				r_core_cmd_help (core, help_msg_pxd);
+				if (input[1] == 'u') {
+					r_core_cmd_help (core, help_msg_pxu);
+				} else {
+					r_core_cmd_help (core, help_msg_pxd);
+				}
 			} else if (l != 0) {
 				switch (input[2]) {
-				case '1':
+				case '1': // "pxd1"
 					// 1 byte signed words (byte)
 					if (input[3] == 'j') {
-						r_print_jsondump (core->print, core->block,
-							len, 8);
+						r_print_jsondump (core->print, core->block, len, 8);
 					} else {
+						const int nfmt = (input[1] == 'u')? -2: -1;
 						r_print_hexdump (core->print, core->offset,
-								 core->block, len, -1, 4, 1);
+								 core->block, len, nfmt, 4, 1);
 					}
 					break;
-				case '2':
+				case '2': // "pxd2"
 					// 2 byte signed words (short)
 					if (input[3] == 'j') {
 						r_print_jsondump (core->print, core->block,
 							len, 16);
 					} else {
+						const int nfmt = (input[1] == 'u')? -11: -10;
 						r_print_hexdump (core->print, core->offset,
-								 core->block, len, -10, 2, 1);
+								 core->block, len, nfmt, 2, 1);
 					}
 					break;
 				case '8':
@@ -7343,8 +7360,9 @@ static int cmd_print(void *data, const char *input) {
 						r_print_jsondump (core->print, core->block,
 							len, 64);
 					} else {
+						const int nfmt = (input[1] == 'u')? -9: -8;
 						r_print_hexdump (core->print, core->offset,
-								 core->block, len, -8, 4, 1);
+								 core->block, len, nfmt, 4, 1);
 					}
 					break;
 				case '4':
@@ -7356,8 +7374,9 @@ static int cmd_print(void *data, const char *input) {
 						r_print_jsondump (core->print, core->block,
 							len, 32);
 					} else {
+						const int nfmt = (input[1] == 'u')? 11: 10;
 						r_print_hexdump (core->print, core->offset,
-								 core->block, len, 10, 4, 1);
+								 core->block, len, nfmt, 4, 1);
 					}
 					break;
 				default:
