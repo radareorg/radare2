@@ -1508,7 +1508,7 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	RIODesc *desc = (RIODesc *)data;
 	RBinFile *bf = r_bin_file_find_by_fd (core->bin, desc->fd);
 	if (bf) {
-		p->cb_printf ("o %s 0x%08"PFMT64x" %s\n", desc->uri, bf->o->baddr, r_str_rwx_i (desc->perm));
+		p->cb_printf ("o \"%s\" 0x%08"PFMT64x" %s\n", desc->uri, bf->o->baddr, r_str_rwx_i (desc->perm));
 	} else {
 		p->cb_printf ("onnu %s %s\n", desc->uri, r_str_rwx_i (desc->perm));
 	}
