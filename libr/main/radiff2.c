@@ -68,8 +68,8 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 		return NULL;
 	}
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
-	r_config_set_i (c->config, "io.va", ro->useva);
-	r_config_set_i (c->config, "scr.interactive", false);
+	r_config_set_b (c->config, "io.va", ro->useva);
+	r_config_set_b (c->config, "scr.interactive", false);
 	r_list_foreach (ro->evals, iter, e) {
 		r_config_eval (c->config, e, false);
 	}
@@ -122,7 +122,7 @@ static void readstr(char *s, int sz, const ut8 *buf, int len) {
 		return;
 	}
 	s[sz - 1] = 0;
-	while (*s && *s == '\n') {
+	while (*s == '\n') {
 		s++;
 	}
 	strncpy (s, (char *) buf, last);
@@ -445,7 +445,7 @@ static int show_help(int v) {
 			"  -n         print bare addresses only (diff.bare=1)\n"
                         "  -m [aditsjJ]  choose the graph output mode\n"
 			"  -O         code diffing with opcode bytes only\n"
-			"  -p         use physical addressing (io.va=0)\n"
+			"  -p         use physical addressing (io.va=false) (only for radiff2 -AC)\n"
 			"  -q         quiet mode (disable colors, reduce output)\n"
 			"  -r         output in radare commands\n"
 			"  -s         compute edit distance (no substitution, Eugene W. Myers' O(ND) diff algorithm)\n"
