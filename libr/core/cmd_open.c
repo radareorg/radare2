@@ -273,7 +273,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					r_core_cmd0 (core, ".is*");
 					r_io_use_fd (core->io, saved_fd);
 				} else {
-					eprintf ("Cannot open '%s'\n", r_str_trim_head_ro (filename + 1));
+					R_LOG_ERROR ("Cannot open '%s'", r_str_trim_head_ro (filename + 1));
 				}
 			} else if (filename && *filename) {
 				ut64 baddr = r_num_math (core->num, filename);
@@ -284,12 +284,12 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					RBinFileOptions opt;
 					opt.baseaddr = baddr;
 					opt.loadaddr = addr;
-					opt.sz = 1024*1024*1;
+					opt.sz = 1024 * 1024 * 1;
 					r_bin_file_options_init (&opt, desc->fd, baddr, addr, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
 				} else {
-					eprintf ("No file to load bin from?\n");
+					R_LOG_ERROR ("No file to load bin from?");
 				}
 			} else {
 				ut64 addr = r_num_math (core->num, input + 2);
@@ -304,7 +304,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
 				} else {
-					eprintf ("No file to load bin from?\n");
+					R_LOG_ERROR ("No file to load bin from?");
 				}
 			}
 			free (arg);
@@ -341,7 +341,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 
 		char *v = input[2] ? strdup (input + 2) : NULL;
 		if (!v) {
-			eprintf ("Invalid arguments\n");
+			R_LOG_ERROR ("Invalid arguments");
 			break;
 		}
 		int n = r_str_word_set0 (v);
@@ -379,7 +379,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			ut32 fd = r_num_math (core->num, input + 3);
 			RBinFile *bf = r_bin_file_find_by_fd (core->bin, fd);
 			if (!bf || !r_core_bin_raise (core, bf->id)) {
-				eprintf ("Invalid RBinFile.id number.\n");
+				R_LOG_ERROR ("Invalid RBinFile.id number");
 			}
 		} else {
 			eprintf ("Usage: obb [bfid]\n");
@@ -392,18 +392,18 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			ut32 id;
 			value = r_str_trim_head_ro (input + 2);
 			if (!value) {
-				eprintf ("Invalid argument\n");
+				R_LOG_ERROR ("Invalid argument");
 				break;
 			}
 			id = (*value && r_is_valid_input_num_value (core->num, value)) ?
 					r_get_input_num_value (core->num, value) : UT32_MAX;
 			RBinFile *bf = r_bin_file_find_by_id (core->bin, id);
 			if (!bf) {
-				eprintf ("Invalid binid\n");
+				R_LOG_ERROR ("Invalid binid");
 				break;
 			}
 			if (!r_core_bin_delete (core, bf->id)) {
-				eprintf ("Cannot find an RBinFile associated with that id.\n");
+				R_LOG_ERROR ("Cannot find an RBinFile associated with that id");
 			}
 		}
 		break;
@@ -709,7 +709,7 @@ static void cmd_omd(RCore *core, const char* input) {
 					map = r_io_map_add (core->io, fd, desc->perm, pa, va, sz);
 				}
 				if (!map) {
-					eprintf ("Cannot create map\n");
+					R_LOG_ERROR ("Cannot create map");
 				}
 			}
 			break;
@@ -720,7 +720,7 @@ static void cmd_omd(RCore *core, const char* input) {
 		r_list_free (args);
 		r_free (inp);
 	} else {
-		eprintf ("Cannot get any fd\n");
+		R_LOG_ERROR ("Cannot get any fd");
 	}
 }
 
@@ -790,10 +790,10 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 			if (r_io_map_get (core->io, mapid)) {
 				r_io_bank_map_add_top (core->io, core->io->bank, mapid);
 			} else {
-				eprintf ("Invalid map id\n");
+				R_LOG_ERROR ("Invalid map id");
 			}
 		} else {
-			eprintf ("Expect a mapid number\n");
+			R_LOG_ERROR ("Expect a mapid number");
 		}
 		break;
 	case 'd': // "ombd"
@@ -803,7 +803,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 			if (bank) {
 				r_io_bank_del_map (core->io, core->io->bank, mapid);
 			} else {
-				eprintf ("Unknown bank id\n");
+				R_LOG_ERROR ("Unknown bank id");
 			}
 		}
 		break;
@@ -825,7 +825,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 	case 0: // "omb [id]"
 		{
 			if (!r_io_bank_use (core->io, r_num_get (NULL, argv[1]))) {
-				eprintf ("Cannot find bank by id %s\n", argv[1]);
+				R_LOG_ERROR ("Cannot find bank by id %s", argv[1]);
 			}
 		}
 		break;
@@ -937,19 +937,19 @@ static void cmd_open_map(RCore *core, const char *input) {
 			if (r_io_map_exists_for_id (core->io, id)) {
 				r_io_map_depriorize (core->io, id);
 			} else {
-				eprintf ("Cannot find any map with mapid %d\n", id);
+				R_LOG_ERROR ("Cannot find any map with mapid %d", id);
 			}
 			break;
 		case 'f': // "ompf"
 			fd = r_num_math (core->num, input + 3);
 			if (!r_io_map_priorize_for_fd (core->io, (int)fd)) {
-				eprintf ("Cannot prioritize any map for fd %d\n", (int)fd);
+				R_LOG_ERROR ("Cannot prioritize any map for fd %d", (int)fd);
 			}
 			break;
 		case 'b': // "ompb"
 			id = (ut32)r_num_math (core->num, input + 4);
 			if (!r_bin_file_set_cur_by_id (core->bin, id)) {
-				eprintf ("Cannot prioritize bin with fd %d\n", id);
+				R_LOG_ERROR ("Cannot prioritize bin with fd %d", id);
 			}
 			break;
 		case ' ': // "omp"
@@ -958,7 +958,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				r_io_map_priorize (core->io, id);
 				r_core_block_read (core);
 			} else {
-				eprintf ("Cannot find any map with mapid %d\n", id);
+				R_LOG_ERROR ("Cannot find any map with mapid %d", id);
 			}
 			break;
 		}
@@ -1214,7 +1214,7 @@ static RList *__save_old_sections(RCore *core) {
 
 	// Return an empty list
 	if (!sections) {
-		eprintf ("Warning: No sections found, functions and flags won't be rebased\n");
+		R_LOG_WARN ("No sections found, functions and flags won't be rebased");
 		return old_sections;
 	}
 
@@ -1348,7 +1348,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 	int fd;
 
 	if (!desc || !desc->uri) {
-		eprintf ("No file open?\n");
+		R_LOG_ERROR ("No file open?");
 		return;
 	}
 
@@ -1375,7 +1375,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 		}
 		r_core_bin_load (core, uri, addr);
 	} else {
-		eprintf ("cannot open file %s\n", uri);
+		R_LOG_ERROR ("cannot open file %s", uri);
 		r_list_free (old_sections);
 		return;
 	}
@@ -1391,20 +1391,20 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	RIODesc *desc = core->io->desc;
 
 	if (!desc || !desc->uri) {
-		eprintf ("No file open?\n");
+		R_LOG_ERROR ("No file open?");
 		return;
 	}
 
 	// Reopen the original file as read only since we can't open native debug while the
 	// file is open with write permissions
 	if (!(desc->plugin && desc->plugin->isdbg) && (desc->perm & R_PERM_W)) {
-		eprintf ("Cannot debug file (%s) with permissions set to 0x%x.\n"
+		R_LOG_ERROR ("Cannot debug file (%s) with permissions set to 0x%x"
 			"Reopening the original file in read-only mode.\n", desc->name, desc->perm);
 		int fd = desc->fd;
 		if (r_io_reopen (core->io, fd, R_PERM_RX, 755)) {
 			desc = r_io_desc_get (core->io, fd);
 		} else {
-			eprintf ("Cannot reopen\n");
+			R_LOG_ERROR ("Cannot reopen");
 			return;
 		}
 	}
@@ -1604,7 +1604,6 @@ static bool cmd_op(RCore *core, char mode, int fd) {
 			r_core_block_read (core);
 			return true;
 		}
-	//	eprintf ("Invalid RBinFile.id number.\n");
 	}
 	return next_fd != -1;
 }
@@ -1714,7 +1713,7 @@ static int cmd_open(void *data, const char *input) {
 				const char *filename = NULL;
 				i = r_str_word_set0 (ptr);
 				if (i < 2) {
-					eprintf ("Missing argument\n");
+					R_LOG_ERROR ("Missing argument");
 					free (ptr);
 					return 0;
 				}
@@ -1728,12 +1727,12 @@ static int cmd_open(void *data, const char *input) {
 				if (filename) {
 					file = r_bin_file_find_by_name (core->bin, filename);
 					if (!file) {
-						eprintf ("Cannot find file %s\n", filename);
+						R_LOG_ERROR ("Cannot find file %s", filename);
 					}
 				} else if (r_list_length (core->bin->binfiles) == 1) {
 					file = (RBinFile *)r_list_first (core->bin->binfiles);
 				} else {
-					eprintf ("More than one file is opened, specify the filename\n");
+					R_LOG_INFO ("More than one file is opened, you must specify the filename");
 				}
 				if (!file) {
 					free (ptr);
@@ -1806,7 +1805,7 @@ static int cmd_open(void *data, const char *input) {
 			fd = desc->fd;
 		}
 		if (fd == -1) {
-			eprintf ("Cannot open file '%s'\n", ptr);
+			R_LOG_ERROR ("Cannot open file '%s'", ptr);
 		}
 		r_str_argv_free (argv);
 		r_core_return_value (core, fd);
@@ -1840,7 +1839,7 @@ static int cmd_open(void *data, const char *input) {
 			case 'n': // "opn" - open next file
 			case 'p': // "opp" - open previous file
 				if (!cmd_op (core, input[1], -1)) {
-					eprintf ("Cannot find file\n");
+					R_LOG_ERROR ("Cannot find file");
 				}
 				break;
 			case ' ':
@@ -1849,7 +1848,7 @@ static int cmd_open(void *data, const char *input) {
 					if (fd >= 0 || input[1] == '0') {
 						cmd_op (core, 0, fd);
 					} else {
-						eprintf ("Invalid fd number\n");
+						R_LOG_ERROR ("Invalid fd number");
 					}
 				}
 				break;
@@ -1970,12 +1969,12 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case 'L': // "oL"
 		if (r_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
+			R_LOG_ERROR ("This command is disabled in sandbox mode");
 			return 0;
 		}
 		if (input[1] == ' ') {
 			if (r_lib_open (core->lib, input + 2) == -1) {
-				eprintf ("Oops\n");
+				R_LOG_ERROR ("Oops. Cannot open library");
 			}
 		} else {
 			if ('j' == input[1]) {
@@ -2020,7 +2019,7 @@ static int cmd_open(void *data, const char *input) {
 			{
 				int fd = (int)r_num_math (core->num, input + 1);
 				if (!r_io_fd_close (core->io, fd)) {
-					eprintf ("Unable to find file descriptor %d\n", fd);
+					R_LOG_ERROR ("Unable to find file descriptor %d", fd);
 				}
 			}
 			break;
@@ -2064,7 +2063,7 @@ static int cmd_open(void *data, const char *input) {
 					r_io_desc_write_at (desc, 0, data, len);
 				}
 			} else {
-				eprintf ("Cannot %s\n", uri);
+				R_LOG_ERROR ("Cannot %s", uri);
 			}
 			free (uri);
 			free (data);
@@ -2202,12 +2201,12 @@ static int cmd_open(void *data, const char *input) {
 						r_list_free (orig_sections);
 						free (file);
 					} else {
-						eprintf ("Nothing to do.\n");
+						R_LOG_WARN ("Nothing to do");
 					}
 				} else {
 					// r_io_reopen (core->io, fd, R_PERM_R, 644);
 					if (!r_io_reopen (core->io, fd, R_PERM_RX, 755)) {
-						eprintf ("Cannot reopen.\n");
+						R_LOG_ERROR ("Cannot reopen");
 					}
 				}
 			}
@@ -2223,11 +2222,11 @@ static int cmd_open(void *data, const char *input) {
 			eprintf ("Usage: oc [file]\n");
 		} else if (input[1] && input[2]) {
 			if (r_sandbox_enable (0)) {
-				eprintf ("This command is disabled in sandbox mode\n");
+				R_LOG_ERROR ("This command is disabled in sandbox mode");
 				return 0;
 			}
 			if (core->tasks.current_task != core->tasks.main_task) {
-				eprintf ("This command can only be executed on the main task!\n");
+				R_LOG_ERROR ("This command can only be executed on the main task!");
 				return 0;
 			}
 			// memleak? lose all settings wtf
@@ -2237,11 +2236,11 @@ static int cmd_open(void *data, const char *input) {
 			r_core_init (core);
 			r_core_task_sync_begin (&core->tasks);
 			if (!r_core_file_open (core, input + 2, R_PERM_RX, 0)) {
-				eprintf ("Cannot open file\n");
+				R_LOG_ERROR ("Cannot open file");
 			}
 			(void)r_core_bin_load (core, NULL, baddr);
 		} else {
-			eprintf ("Missing argument\n");
+			R_LOG_ERROR ("Missing argument");
 		}
 		break;
 	case 'x': // "ox"
