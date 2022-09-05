@@ -667,7 +667,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
 	bool is_interactive = (p && p->cons) ? p->cons->context->is_interactive: false;
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
-	bool use_color = (p->flags & R_PRINT_FLAGS_COLOR);
+	bool use_color = p && (p->flags & R_PRINT_FLAGS_COLOR);
 	int col = 0;
 	i = 0;
 	for (; !r_print_is_interrupted () && i < len; i++) {

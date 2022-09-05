@@ -534,6 +534,21 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->has_sanitizers = bin->has_sanitizers;
 		ret->dbg_info = bin->dbg_info;
 		ret->lang = bin->lang;
+		if (bin->dyld_info) {
+			ut64 allbinds = 0;
+			if ((int)bin->dyld_info->bind_size > 0) {
+				allbinds += bin->dyld_info->bind_size;
+			}
+			if ((int)bin->dyld_info->lazy_bind_size > 0) {
+				allbinds += bin->dyld_info->lazy_bind_size;
+			}
+			if ((int)bin->dyld_info->weak_bind_size > 0) {
+				allbinds += bin->dyld_info->weak_bind_size;
+			}
+			if (allbinds > 0) {
+				ret->dbg_info |= R_BIN_DBG_RELOCS;
+			}
+		}
 	}
 	ret->intrp = r_str_dup (NULL, MACH0_(get_intrp)(bf->o->bin_obj));
 	ret->compiler = strdup ("clang");
@@ -554,21 +569,6 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->has_va = true;
 	ret->has_pi = MACH0_(is_pie) (bf->o->bin_obj);
 	ret->has_nx = MACH0_(has_nx) (bf->o->bin_obj);
-	if (bin->dyld_info) {
-		ut64 allbinds = 0;
-		if ((int)bin->dyld_info->bind_size > 0) {
-			allbinds += bin->dyld_info->bind_size;
-		}
-		if ((int)bin->dyld_info->lazy_bind_size > 0) {
-			allbinds += bin->dyld_info->lazy_bind_size;
-		}
-		if ((int)bin->dyld_info->weak_bind_size > 0) {
-			allbinds += bin->dyld_info->weak_bind_size;
-		}
-		if (allbinds > 0) {
-			ret->dbg_info |= R_BIN_DBG_RELOCS;
-		}
-	}
 	return ret;
 }
 
