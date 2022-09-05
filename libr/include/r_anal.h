@@ -2283,6 +2283,7 @@ extern RAnalPlugin r_anal_plugin_pickle;
 extern RAnalPlugin r_anal_plugin_evm_cs;
 extern RAnalPlugin r_anal_plugin_bpf;
 extern RAnalPlugin r_anal_plugin_hppa_gnu;
+extern RAnalPlugin r_anal_plugin_lanai_gnu;
 extern RAnalPlugin r_anal_plugin_lm32;
 extern RAnalEsilPlugin r_esil_plugin_dummy;
 

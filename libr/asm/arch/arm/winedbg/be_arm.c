@@ -18,9 +18,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "r_types.h"
 #include "r_util.h"
 #include "be_arm.h"
@@ -389,8 +386,7 @@ static ut16 thumb_disasm_hireg(struct winedbg_arm_insn *arminsn, ut16 inst) {
 
 	if (op == 3) {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, "b%sx %s", h1?"l":"", tbl_regs[src]);
-	}
-	else {
+	} else {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s %s, %s", tbl_hiops_t[op], tbl_regs[dst], tbl_regs[src]);
 	}
 	return 0;
@@ -504,8 +500,7 @@ static ut16 thumb_disasm_addsprel(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	ut16 offset = (inst & 0x7f) << 2;
 	if ((inst >> 7) & 0x01) {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, "sub sp, sp, #%u", offset);
-	}
-	else {
+	} else {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, "add sp, sp, #%u", offset);
 	}
 	return 0;
@@ -557,8 +552,7 @@ static ut16 thumb_disasm_addsub(struct winedbg_arm_insn *arminsn, ut16 inst) {
 			tbl_regs[inst & 0x07], tbl_regs[(inst >> 3) & 0x07]);
 	if (immediate) {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, "#%d", (inst >> 6) & 0x07);
-	}
-	else {
+	} else {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s", tbl_regs[(inst >> 6) & 0x07]);
 	}
 	return 0;
@@ -704,8 +698,7 @@ static ut32 thumb2_disasm_coprocmov1(struct winedbg_arm_insn *arminsn, ut32 inst
 				"%s%s\tp%u, #%u, %s, cr%u, cr%u, #%u", (inst & 0x00100000)?"mrc":"mcr",
 				(inst & 0x10000000)?"2":"", get_nibble (inst, 2), opc1,
 				tbl_regs[get_nibble (inst, 3)], get_nibble (inst, 4), get_nibble (inst, 0), opc2);
-	}
-	else {
+	} else {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm,
 				"%s%s\tp%u, #%u, %s, cr%u, cr%u", (inst & 0x00100000)?"mrc":"mcr",
 				(inst & 0x10000000)?"2":"", get_nibble (inst, 2), opc1,
@@ -843,8 +836,7 @@ int arm_disasm_one_insn(struct winedbg_arm_insn *arminsn) {
 
 		if (!matched) {
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "Unknown ARM Instruction: %08x", inst);
-		}
-		else {
+		} else {
 			a_ptr->func(arminsn, inst);
 		}
 		arminsn->str_hex = r_str_appendf (arminsn->str_hex, "%02x%02x%02x%02x",
@@ -870,8 +862,7 @@ int arm_disasm_one_insn(struct winedbg_arm_insn *arminsn) {
 
 			if (!matched) {
 				arminsn->str_asm = r_str_appendf (arminsn->str_asm, "Unknown Thumb2 Instruction: %08x", inst);
-			}
-			else {
+			} else {
 				t2_ptr->func(arminsn, inst);
 			}
 			arminsn->str_hex = r_str_appendf (arminsn->str_hex, "%02x%02x%02x%02x",
@@ -892,8 +883,7 @@ int arm_disasm_one_insn(struct winedbg_arm_insn *arminsn) {
 
 		if (!matched) {
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "Unknown Thumb Instruction: %04x", tinst);
-		}
-		else {
+		} else {
 			t_ptr->func(arminsn, tinst);
 		}
 		arminsn->str_hex = r_str_appendf (arminsn->str_hex, "%02x%02x", *((ut8*)(&tinst)), *((ut8*)(&tinst)+1));

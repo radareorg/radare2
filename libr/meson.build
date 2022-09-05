@@ -195,11 +195,11 @@ if no_user_plugins
       # 'z80',
       # 'hppa_gnu',
       'm68k_gnu',
-      'lanai_gnu',
     ]
     anal_plugins += [
       'z80',
       'arm_gnu',
+      'lanai_gnu',
       'bpf',
       'mips_gnu',
       'loongarch_gnu',

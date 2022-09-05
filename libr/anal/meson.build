@@ -46,6 +46,10 @@ r_anal_sources = [
   'p/anal_6502_cs.c',
   'p/anal_8051.c',
 
+  'p/anal_lanai_gnu.c',
+  '../asm/arch/lanai/gnu/lanai-dis.c',
+  '../asm/arch/lanai/gnu/lanai-opc.c',
+
   'p/anal_alpha.c',
   '../asm/arch/alpha/gnu/alpha-dis.c',
   '../asm/arch/alpha/gnu/alpha-opc.c',
