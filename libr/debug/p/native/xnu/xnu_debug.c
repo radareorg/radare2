@@ -1115,7 +1115,7 @@ RDebugPid *xnu_get_pid (int pid) {
 	mib[1] = KERN_ARGMAX;
 	size = sizeof (argmax);
 	if (sysctl (mib, 2, &argmax, &size, NULL, 0) == -1) {
-		eprintf ("sysctl() error on getting argmax\n");
+		R_LOG_ERROR ("sysctl() on getting argmax");
 		return NULL;
 	}
 #endif
@@ -1451,7 +1451,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 #if 0
 	if (dbg->pid == 0) {
 		vm_address_t base = get_kernel_base (task);
-		eprintf ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
+		R_LOG_INFO ("Kernel Base Address: 0x%"PFMT64x, (ut64)base);
 		return NULL;
 	}
 #endif

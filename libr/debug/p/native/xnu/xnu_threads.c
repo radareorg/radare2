@@ -17,7 +17,7 @@ static void xnu_thread_free(xnu_thread_t *thread) {
 	// count
 	kr = mach_port_deallocate (mach_task_self (), thread->port);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocate thread port\n");
+		R_LOG_ERROR ("failed to deallocate thread port");
 	}
 	free (thread);
 }
@@ -236,14 +236,14 @@ static bool xnu_fill_info_thread(RDebug *dbg, xnu_thread_t *thread) {
 	kern_return_t kr = thread_info (thread->port, THREAD_BASIC_INFO,
 		(thread_info_t)&thread->basic_info, &count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Fail to get thread_basic_info\n");
+		R_LOG_ERROR ("Fail to get thread_basic_info");
 		return false;
 	}
 	count = THREAD_IDENTIFIER_INFO_COUNT;
 	kr = thread_info (thread->port, THREAD_IDENTIFIER_INFO,
 			  (thread_info_t)&identifier_info, &count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Fail to get thread_identifier_info\n");
+		R_LOG_ERROR ("Fail to get thread_identifier_info");
 		return false;
 	}
 	R_FREE (thread->name);

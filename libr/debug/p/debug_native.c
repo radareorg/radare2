@@ -1395,11 +1395,11 @@ static bool ll_arm64_hwbp_set(pid_t pid, ut64 _addr, int size, int wp, ut32 type
 	}
 
 	if (errno == EIO) {
-		eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s\n",
+		R_LOG_ERROR ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s",
 			strerror (errno));
 	}
 
-	eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s\n", strerror (errno));
+	R_LOG_ERROR ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s", strerror (errno));
 	return false;
 }
 
@@ -1416,11 +1416,11 @@ static bool ll_arm64_hwbp_del(pid_t pid, ut64 _addr, int size, int wp, ut32 type
 		return true;
 	}
 	if (errno == EIO) {
-		eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s\n",
+		R_LOG_ERROR ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s",
 			strerror (errno));
 	}
 
-	eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s\n", strerror (errno));
+	R_LOG_ERROR ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s", strerror (errno));
 	return false;
 }
 

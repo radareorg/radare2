@@ -372,7 +372,7 @@ static void cmd_info_bin(RCore *core, int va, PJ *pj, int mode) {
 			pj_end (pj);
 		}
 	} else {
-		eprintf ("No file selected\n");
+		R_LOG_ERROR ("No file selected");
 	}
 }
 
@@ -700,7 +700,7 @@ static int cmd_info(void *data, const char *input) {
 				ut64 limit = r_config_get_i (core->config, "bin.hashlimit");
 				RBinInfo *info = r_bin_get_info (core->bin);
 				if (!info) {
-					eprintf ("r_bin_get_info: Cannot get bin info\n");
+					R_LOG_ERROR ("Cannot get bin info");
 					return 0;
 				}
 
@@ -709,7 +709,7 @@ static int cmd_info(void *data, const char *input) {
 				bool equal = true;
 				if (!r_list_empty (new_hashes) && !r_list_empty (old_hashes)) {
 					if (!is_equal_file_hashes (new_hashes, old_hashes, &equal)) {
-						eprintf ("is_equal_file_hashes: Cannot compare file hashes\n");
+						R_LOG_ERROR ("is_equal_file_hashes: Cannot compare file hashes");
 						r_list_free (old_hashes);
 						return 0;
 					}
@@ -733,20 +733,20 @@ static int cmd_info(void *data, const char *input) {
 					pj_end (pj);
 				} else { // "it"
 					if (!equal) {
-						eprintf ("File has been modified.\n");
+						R_LOG_INFO ("File has been modified");
 						hiter_new = r_list_iterator (new_hashes);
 						hiter_old = r_list_iterator (old_hashes);
 						while (r_list_iter_next (hiter_new) && r_list_iter_next (hiter_old)) {
 							fh_new = (RBinFileHash *)r_list_iter_get (hiter_new);
 							fh_old = (RBinFileHash *)r_list_iter_get (hiter_old);
 							if (strcmp (fh_new->type, fh_old->type)) {
-								eprintf ("Wrong file hashes structure");
+								R_LOG_WARN ("Wrong file hashes structure");
 							}
 							if (!strcmp (fh_new->hex, fh_old->hex)) {
-								eprintf ("= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
+								r_cons_printf ("= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
 							} else {
 								// output diff-like two lines, one with old hash val `- hashtype hashval` and one with new `+ hashtype hashval`
-								eprintf ("- %s %s\n+ %s %s\n",
+								r_cons_printf ("- %s %s\n+ %s %s\n",
 									fh_old->type, fh_old->hex,
 									fh_new->type, fh_new->hex);
 							}
@@ -836,13 +836,13 @@ static int cmd_info(void *data, const char *input) {
 			if (input[1] == 'H') { // "iHH"
 				playMsg (core, "header", -1);
 				if (!r_core_bin_info (core, R_CORE_BIN_ACC_HEADER, pj, mode, va, NULL, NULL)) {
-					eprintf ("No header fields found\n");
+					R_LOG_ERROR ("No header fields found");
 				}
 				break;
 			} else {
 				playMsg (core, "fields", -1);
 				if (!r_core_bin_info (core, R_CORE_BIN_ACC_FIELDS, pj, mode, va, NULL, NULL)) {
-					eprintf ("No header fields found\n");
+					R_LOG_ERROR ("No header fields found");
 				}
 			}
 			break;
@@ -970,7 +970,7 @@ static int cmd_info(void *data, const char *input) {
 						}
 					}
 					if (r > 0) {
-						eprintf ("Error while downloading pdb file\n");
+						R_LOG_ERROR ("Cannot download the pdb file");
 					}
 					free (str);
 					r_list_free (server_l);
@@ -987,7 +987,7 @@ static int cmd_info(void *data, const char *input) {
 					} else {
 						/* Autodetect local file */
 						if (!info || !info->debug_file_name) {
-							eprintf ("Cannot get file's debug information\n");
+							R_LOG_ERROR ("Cannot get file's debug information");
 							break;
 						}
 						// Check raw path for debug filename
@@ -1026,9 +1026,9 @@ static int cmd_info(void *data, const char *input) {
 					if (!file_found) {
 						if (info->debug_file_name) {
 							const char *fn = r_file_basename (info->debug_file_name);
-							eprintf ("File '%s' not found in file directory or symbol store\n", fn);
+							R_LOG_ERROR ("File '%s' not found in file directory or symbol store", fn);
 						} else {
-							eprintf ("Cannot open file\n");
+							R_LOG_ERROR ("Cannot open file");
 						}
 						free (filename);
 						break;
@@ -1498,7 +1498,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'D': // "iD"
 			if (input[1] != ' ' || !demangle (core, input + 2)) {
-				eprintf ("|Usage: iD lang symbolname\n");
+				eprintf ("Usage: iD lang symbolname\n");
 			}
 			return 0;
 		case 'a': // "ia"

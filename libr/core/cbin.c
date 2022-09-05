@@ -195,12 +195,12 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 				r_cons_printf ("\"td %s\"\n", v);
 			} else if (IS_MODE_SET (mode)) {
 				char *code = r_str_newf ("%s;", v);
-				char *error_msg = NULL;
-				char *out = r_parse_c_string (core->anal, code, &error_msg);
+				char *errmsg = NULL;
+				char *out = r_parse_c_string (core->anal, code, &errmsg);
 				free (code);
-				if (error_msg) {
-					eprintf ("%s", error_msg);
-					free (error_msg);
+				if (errmsg) {
+					R_LOG_ERROR ("%s", errmsg);
+					free (errmsg);
 				}
 				if (out) {
 					r_anal_save_parsed_type (core->anal, out);

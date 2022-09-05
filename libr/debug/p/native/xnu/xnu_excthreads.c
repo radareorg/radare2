@@ -359,7 +359,7 @@ static int handle_exception_message(RDebug *dbg, exc_msg *msg, int *ret_code) {
 		ret = R_DEBUG_REASON_BREAKPOINT;
 		break;
 	default:
-		eprintf ("UNKNOWN\n");
+		R_LOG_ERROR ("UNKNOWN");
 		break;
 	}
 	kr = mach_port_deallocate (mach_task_self (), msg->task.name);
@@ -395,7 +395,7 @@ static int __xnu_wait(RDebug *dbg, int pid) {
 			reason = R_DEBUG_REASON_MACH_RCV_INTERRUPTED;
 			break;
 		} else if (kr != MACH_MSG_SUCCESS) {
-			eprintf ("message didn't succeeded\n");
+			R_LOG_WARN ("message didn't succeeded");
 			break;
 		}
 		ret = validate_mach_message (dbg, &msg);
@@ -450,13 +450,12 @@ bool xnu_create_exception_thread(RDebug *dbg, int pid) {
 	mach_port_t task_self = mach_task_self ();
 	task_t task = pid_to_task (pid);
 	if (!task) {
-		eprintf ("xnu_start_exception_thread: error to get task for pid %d\n", pid);
+		R_LOG_ERROR ("xnu_start_exception_thread: cannot get task for pid %d", pid);
 		return false;
 	}
 	r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0);
 	if (!MACH_PORT_VALID (task_self)) {
-		eprintf ("to get the task for the current process"
-				" xnu_start_exception_thread\n");
+		R_LOG_ERROR ("cannot get self task");
 		return false;
 	}
 	// Allocate an exception port that we will use to track our child process

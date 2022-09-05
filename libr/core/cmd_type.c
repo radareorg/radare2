@@ -1370,30 +1370,30 @@ static int cmd_type(void *data, const char *input) {
 				if (!strcmp (filename, "-")) {
 					char *tmp = r_core_editor (core, "*.h", "");
 					if (tmp) {
-						char *error_msg = NULL;
-						char *out = r_parse_c_string (core->anal, tmp, &error_msg);
+						char *errmsg = NULL;
+						char *out = r_parse_c_string (core->anal, tmp, &errmsg);
 						if (out) {
 							// r_cons_strcat (out);
 							r_anal_save_parsed_type (core->anal, out);
 							free (out);
 						}
-						if (error_msg) {
-							fprintf (stderr, "%s", error_msg);
-							free (error_msg);
+						if (errmsg) {
+							R_LOG_ERROR ("%s", errmsg);
+							free (errmsg);
 						}
 						free (tmp);
 					}
 				} else {
-					char *error_msg = NULL;
-					char *out = r_parse_c_file (core->anal, filename, dir, &error_msg);
+					char *errmsg = NULL;
+					char *out = r_parse_c_file (core->anal, filename, dir, &errmsg);
 					if (out) {
 						//r_cons_strcat (out);
 						r_anal_save_parsed_type (core->anal, out);
 						free (out);
 					}
-					if (error_msg) {
-						fprintf (stderr, "%s", error_msg);
-						free (error_msg);
+					if (errmsg) {
+						R_LOG_ERROR ("%s", errmsg);
+						free (errmsg);
 					}
 				}
 				free (homefile);
@@ -1417,17 +1417,17 @@ static int cmd_type(void *data, const char *input) {
 				char *str = r_core_cmd_strf (core , "tc %s", input + 2);
 				char *tmp = r_core_editor (core, "*.h", str);
 				if (tmp) {
-					char *error_msg = NULL;
-					char *out = r_parse_c_string (core->anal, tmp, &error_msg);
+					char *errmsg = NULL;
+					char *out = r_parse_c_string (core->anal, tmp, &errmsg);
 					if (out) {
 						// remove previous types and save new edited types
 						sdb_reset (TDB);
 						r_anal_save_parsed_type (core->anal, out);
 						free (out);
 					}
-					if (error_msg) {
-						eprintf ("%s\n", error_msg);
-						free (error_msg);
+					if (errmsg) {
+						R_LOG_ERROR ("%s", errmsg);
+						free (errmsg);
 					}
 					free (tmp);
 				}
@@ -1449,16 +1449,16 @@ static int cmd_type(void *data, const char *input) {
 			if (!tmp) {
 				break;
 			}
-			char *error_msg = NULL;
-			char *out = r_parse_c_string (core->anal, tmp, &error_msg);
+			char *errmsg = NULL;
+			char *out = r_parse_c_string (core->anal, tmp, &errmsg);
 			free (tmp);
 			if (out) {
 				r_anal_save_parsed_type (core->anal, out);
 				free (out);
 			}
-			if (error_msg) {
-				R_LOG_ERROR ("%s", error_msg);
-				free (error_msg);
+			if (errmsg) {
+				R_LOG_ERROR ("%s", errmsg);
+				free (errmsg);
 			}
 		} else {
 			R_LOG_ERROR ("Invalid use of td. See td? for help");
