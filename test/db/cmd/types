@@ -343,7 +343,8 @@ ts~addr,date,dox,name
 t addr
 EOF
 EXPECT_ERR=<<EOF
-bins/other/error.h:2: warning: #error your compiler doesn't have support to my API
+ERROR: bins/other/error.h:2: warning: #error your compiler doesn't have support to my API
+
 EOF
 EXPECT=<<EOF
 char

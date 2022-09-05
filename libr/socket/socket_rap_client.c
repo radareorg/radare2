@@ -133,7 +133,7 @@ R_API int r_socket_rap_client_write(RSocket *s, const ut8 *buf, int count) {
 	(void)r_socket_write (s, tmp, count + 5);
 	r_socket_flush (s);
 	if (r_socket_read_block (s, tmp, 5) != 5) { // TODO read_block?
-		R_LOG_ERROR ("error reading from socket");
+		R_LOG_ERROR ("cannot read from socket");
 		ret = -1;
 	} else {
 		ret = r_read_be32 (tmp + 1);

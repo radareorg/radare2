@@ -3903,7 +3903,7 @@ EXPECT=<<EOF
             0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; [19] -rw- section size 8 named .fini_array
 EOF
 EXPECT_ERR=<<EOF
-Cannot seek to unknown address 'section..preinit_array'
+ERROR: Cannot seek to unknown address 'section..preinit_array'
 EOF
 RUN
 
@@ -4141,15 +4141,15 @@ EXPECT=<<EOF
 md5 bf619eac0cdf3f68d496ea9344137e8b
 sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
 sha256 076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560
-EOF
-EXPECT_ERR=<<EOF
-File has been modified.
 - md5 bf619eac0cdf3f68d496ea9344137e8b
 + md5 afd010a5a5456c232dee59d59bd75cf6
 - sha1 5c3eb80066420002bc3dcc7ca4ab6efad7ed4ae5
 + sha1 3bfd02bb4fac6499c89278254f04a081887c38ea
 - sha256 076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560
 + sha256 91543b8000dc6bade2bcae4d44c16f3a33e07e6f96a910dcd702c5179a937c20
+EOF
+EXPECT_ERR=<<EOF
+INFO: File has been modified
 EOF
 RUN
 
@@ -4170,13 +4170,7 @@ om
 rm .tmp/it2-modfile
 EOF
 EXPECT_ERR=<<EOF
-File has been modified.
-- md5 84144530144b53a704c84d9c65ab5f92
-+ md5 9a99cca7bf3e27ee1c8964141cfad053
-- sha1 9016e215a321184c42c28ab03847554851932713
-+ sha1 17c5b6331a420fc3b48defe782090295294fee2e
-- sha256 95debaecaaaf89c7f5151218def15ef18c8be375aeccf0564a3b16416c361012
-+ sha256 53cb8b3aec20da6a313ac996ca8f518bca9fa4768ff771d35513be09a387f025
+INFO: File has been modified
 EOF
 EXPECT=<<EOF
 * 4 fd: 3 +0x00001000 0x100000000 - 0x100000fff r-x fmap.__TEXT
@@ -4190,6 +4184,12 @@ EXPECT=<<EOF
 md5 84144530144b53a704c84d9c65ab5f92
 sha1 9016e215a321184c42c28ab03847554851932713
 sha256 95debaecaaaf89c7f5151218def15ef18c8be375aeccf0564a3b16416c361012
+- md5 84144530144b53a704c84d9c65ab5f92
++ md5 9a99cca7bf3e27ee1c8964141cfad053
+- sha1 9016e215a321184c42c28ab03847554851932713
++ sha1 17c5b6331a420fc3b48defe782090295294fee2e
+- sha256 95debaecaaaf89c7f5151218def15ef18c8be375aeccf0564a3b16416c361012
++ sha256 53cb8b3aec20da6a313ac996ca8f518bca9fa4768ff771d35513be09a387f025
 EOF
 RUN
 

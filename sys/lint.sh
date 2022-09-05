@@ -21,7 +21,7 @@ cd "$(dirname $0)"/..
 
 (git grep eprintf libr| grep -i error | grep -v '/native/' | grep -v spp | grep -v cons) && exit 1
 
-## (git grep -i unkown libr ) && exit 1
+(git grep -i unkown libr ) && exit 1
 
 (git grep '=0' libr| grep c:|grep -v '"' |grep -v '=0x') && exit 1
 (git grep '=1' libr| grep c:|grep -v '"' |grep -v '//') && exit 1
