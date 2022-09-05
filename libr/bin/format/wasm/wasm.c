@@ -1,5 +1,7 @@
 /* radare2 - LGPL - Copyright 2017-2022 - pancake, cgvwzq, Dennis Goodlett */
 
+#define R_LOG_ORIGIN "bin.wasm"
+
 #include <r_lib.h>
 #include <r_bin.h>
 #include "wasm.h"
@@ -430,7 +432,7 @@ static inline RPVector *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryFcn pa
 			ut64 start = r_buf_tell (buf);
 			void *e = parse_entry (bin, bound, i);
 			if (!e || !r_pvector_push (vec, e)) {
-				eprintf ("[wasm] Failed to parse entry %u/%u of vec at 0x%" PFMT64x "\n", i, count, start);
+				R_LOG_ERROR ("Failed to parse entry %u/%u of vec at 0x%" PFMT64x, i, count, start);
 				free_entry (e);
 				break;
 			}
@@ -602,7 +604,7 @@ static RBinWasmCodeEntry *parse_code_entry(RBinWasmObj *bin, ut64 bound, ut32 in
 	r_buf_read (b, &end, 1);
 	if (end != R_BIN_WASM_END_OF_CODE) {
 		ut32 where = r_buf_tell (b) - 1;
-		eprintf ("[wasm] Code entry at starting at 0x%x has ending byte 0x%x at 0x%x, should be 0x%x\n",
+		R_LOG_WARN ("Wasm code entry at starting at 0x%x has ending byte 0x%x at 0x%x, should be 0x%x",
 			(ut32)ptr->file_offset, end, where, R_BIN_WASM_END_OF_CODE);
 		goto beach;
 	}
@@ -1071,14 +1073,14 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 			ptr->name_len = 4;
 			break;
 		default:
-			eprintf ("[wasm] error: unkown section id: %d\n", ptr->id);
+			R_LOG_ERROR ("unknown section id: %d", ptr->id);
 			r_buf_seek (b, ptr->size - 1, R_BUF_CUR);
 			continue;
 		}
 		if (ptr->offset + (ut64)ptr->size - 1 > bound) {
 			// TODO: Better error handling here
 			ut32 diff = ptr->size - (bound + 1 - ptr->offset);
-			eprintf ("[wasm] Artificially reducing size of section %s by 0x%x bytes so it fits in the file\n", ptr->name, diff);
+			R_LOG_INFO ("Artificially reducing size of section %s by 0x%x bytes so it fits in the file", ptr->name, diff);
 			ptr->size -= diff;
 		}
 		ptr->payload_data = r_buf_tell (b);
@@ -1096,7 +1098,7 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 	bin->g_sections = ret;
 	return ret;
 beach:
-	eprintf ("[wasm] error: beach sections\n");
+	R_LOG_ERROR ("beach sections");
 	free (ptr);
 	return ret;
 }

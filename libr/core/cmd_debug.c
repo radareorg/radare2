@@ -407,7 +407,6 @@ static const char *help_msg_drx[] = {
 	NULL
 };
 
-
 static const char *help_msg_drm[] = {
 	"Usage: drm", " [reg] [idx] [wordsize] [= value]", "Show multimedia packed registers",
 	"drm", "", "show XMM registers",
@@ -2644,7 +2643,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 					  }
 				  } else {
-					eprintf ("|usage: drx n [address] [length] [perm]\n");
+					eprintf ("Usage: drx n [address] [length] [perm]\n");
 				  }
 				  free (s);
 			  } break;
@@ -3340,10 +3339,10 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 					R_LOG_ERROR ("Cannot set command");
 				}
 			} else {
-				eprintf ("|Usage: dbic # cmd\n");
+				eprintf ("Usage: dbic # cmd\n");
 			}
 		} else {
-			eprintf ("|Usage: dbic # cmd\n");
+			eprintf ("Usage: dbic # cmd\n");
 		}
 		break;
 	case 'e': // "dbie"

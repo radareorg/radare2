@@ -1221,7 +1221,7 @@ static int cmd_wu(void *data, const char *input) {
 			free (data);
 		}
 	} else {
-		eprintf ("|Usage: wu [unified-diff-patch]    # see 'cu'\n");
+		eprintf ("Usage: wu [unified-diff-patch]    # see 'cu'\n");
 	}
 	return 0;
 }

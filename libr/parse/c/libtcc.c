@@ -341,8 +341,7 @@ static int tcc_compile(TCCState *s1) {
 		}
 #if 0
 		if (pvtop != vtop) {
-			eprintf ("internal compiler error:"
-				" vstack leak? (%d)", vtop - pvtop);
+			eprintf ("internal compiler vstack leak? (%d)", vtop - pvtop);
 		}
 #endif
 	}

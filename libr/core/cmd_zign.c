@@ -128,7 +128,7 @@ static inline bool za_add(RCore *core, const char *input) {
 	char *sig = strtok (NULL, "");
 
 	if (!stype || !sig || stype[1] != '\0') {
-		eprintf ("Invalid input\n");
+		R_LOG_ERROR ("Invalid input");
 		free (args);
 		return false;
 	}
@@ -177,7 +177,7 @@ static inline bool za_add(RCore *core, const char *input) {
 		ret = r_sign_add_hash (core->anal, name, t, sig, strlen (sig));
 		break;
 	default:
-		eprintf ("error: unknown zignature type\n");
+		R_LOG_ERROR ("unknown zignature type");
 	}
 	r_list_free (lst);
 	free (args);
@@ -211,10 +211,9 @@ static int cmdAdd(void *data, const char *input) {
 			if (fcni) {
 				r_sign_add_func (core->anal, fcni, zigname);
 			}
-
 			free (args);
 			if (!fcni) {
-				eprintf ("Could not find function\n");
+				R_LOG_ERROR ("Could not find function");
 				return false;
 			}
 		}
@@ -227,13 +226,13 @@ static int cmdAdd(void *data, const char *input) {
 	case 'F': // "zaF"
 	{
 		int count = r_sign_all_functions (core->anal, false);
-		eprintf ("generated zignatures: %d\n", count);
+		R_LOG_INFO ("generated zignatures: %d", count);
 		break;
 	}
 	case 'M': // "zaM"
 	{
 		int count = r_sign_all_functions (core->anal, true);
-		eprintf ("generated zignatures: %d\n", count);
+		R_LOG_INFO ("generated zignatures: %d", count);
 		break;
 	}
 	case '?':
@@ -589,7 +588,7 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 		}
 		(void)r_io_read_at (core->io, at, buf, rlen);
 		if (r_sign_search_update (core->anal, ss, &at, buf, rlen) == -1) {
-			eprintf ("search: update read error at 0x%08" PFMT64x "\n", at);
+			R_LOG_ERROR ("search update read error at 0x%08" PFMT64x, at);
 			retval = false;
 			break;
 		}
@@ -679,7 +678,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
 	} else {
 		if (!r_flag_space_push (core->flags, zign_prefix)) {
-			eprintf ("error: cannot create flagspace\n");
+			R_LOG_ERROR ("cannot create flagspace");
 			return false;
 		}
 	}
@@ -692,7 +691,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 	RSignSearchMetrics sm;
 	bool metsearch = fill_search_metrics (&sm, core, (void *)&ctx);
 	if (!metsearch) {
-		eprintf ("No zign types enabled\n");
+		R_LOG_ERROR ("No zign types enabled");
 		return false;
 	}
 	if (sm.stypes[0] == R_SIGN_BYTES && sm.stypes[1] == R_SIGN_END) {
@@ -709,7 +708,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 		RListIter *iter;
 		RIOMap *map;
 		r_list_foreach (list, iter, map) {
-			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
+			R_LOG_INFO ("searching 0x%08"PFMT64x" - 0x%08"PFMT64x, r_io_map_begin (map), r_io_map_end (map));
 			searchRange (core, r_io_map_begin (map), r_io_map_end (map), rad, &ctx);
 		}
 		r_list_free (list);
@@ -717,7 +716,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 
 	// Function search
 	if (!ctx.bytes_only) {
-		eprintf ("[+] searching function metrics\n");
+		R_LOG_INFO ("searching function metrics");
 		r_sign_metric_search (core->anal, &sm);
 	}
 
@@ -725,7 +724,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 		r_cons_printf ("fs-\n");
 	} else {
 		if (!r_flag_space_pop (core->flags)) {
-			eprintf ("error: cannot restore flagspace\n");
+			R_LOG_ERROR ("cannot restore flagspace");
 			return false;
 		}
 	}
@@ -797,7 +796,7 @@ static double get_zb_threshold(RCore *core) {
 	const char *th = r_config_get (core->config, "zign.threshold");
 	double thresh = r_num_get_float (NULL, th);
 	if (thresh < 0.0 || thresh > 1.0) {
-		eprintf ("Invalid zign.threshold %s, using 0.0\n", th);
+		R_LOG_ERROR ("Invalid zign.threshold %s, using 0.0", th);
 		thresh = 0.0;
 	}
 	return thresh;
@@ -814,7 +813,7 @@ static bool bestmatch_fcn(RCore *core, const char *input, bool json) {
 	int count = 5;
 	char *zigname = strtok (argv, " ");
 	if (!zigname) {
-		eprintf ("Need a signature\n");
+		R_LOG_ERROR ("Need a signature");
 		free (argv);
 		return false;
 	}
@@ -822,18 +821,18 @@ static bool bestmatch_fcn(RCore *core, const char *input, bool json) {
 	if (cs) {
 		if ((count = atoi (cs)) <= 0) {
 			free (argv);
-			eprintf ("Invalid count\n");
+			R_LOG_ERROR ("Invalid count");
 			return false;
 		}
 		if (strtok (NULL, " ")) {
 			free (argv);
-			eprintf ("Too many parameters\n");
+			R_LOG_ERROR ("Too many parameters");
 			return false;
 		}
 	}
 	RSignItem *it = item_frm_signame (core->anal, zigname);
 	if (!it) {
-		eprintf ("Couldn't get signature for %s\n", zigname);
+		R_LOG_ERROR ("Couldn't get signature for %s", zigname);
 		free (argv);
 		return false;
 	}
@@ -866,14 +865,14 @@ static bool bestmatch_sig(RCore *core, const char *input, bool json) {
 	if (!R_STR_ISEMPTY (input)) {
 		count = atoi (input);
 		if (count <= 0) {
-			eprintf ("[!!] invalid number %s\n", input);
+			R_LOG_ERROR ("invalid number %s", input);
 			return false;
 		}
 	}
 
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
-		eprintf ("No function at 0x%08" PFMT64x "\n", core->offset);
+		R_LOG_ERROR ("No function at 0x%08" PFMT64x, core->offset);
 		return false;
 	}
 
@@ -887,7 +886,7 @@ static bool bestmatch_sig(RCore *core, const char *input, bool json) {
 		RSignBytes *b = item->bytes;
 		int minsz = r_config_get_i (core->config, "zign.minsz");
 		if (b && b->size < minsz) {
-			eprintf ("Warning: Function signature is too small (%d < %d) See e zign.minsz \n", b->size, minsz);
+			R_LOG_WARN ("Function signature is too small (%d < %d) See e zign.minsz", b->size, minsz);
 		}
 	}
 	if (r_config_get_i (core->config, "zign.graph")) {
@@ -906,7 +905,7 @@ static bool bestmatch_sig(RCore *core, const char *input, bool json) {
 		}
 		r_cons_break_pop ();
 	} else {
-		eprintf ("Warning: no signatures types available for testing\n");
+		R_LOG_WARN ("no signatures types available for testing");
 	}
 
 	r_sign_item_free (item);
@@ -1059,7 +1058,7 @@ static bool diff_zig(void *data, const char *input) {
 
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
-		eprintf ("No function at 0x%08" PFMT64x "\n", core->offset);
+		R_LOG_ERROR ("No function at 0x%08" PFMT64x, core->offset);
 		return false;
 	}
 
@@ -1070,27 +1069,27 @@ static bool diff_zig(void *data, const char *input) {
 
 	char *zigname = strtok (argv, " ");
 	if (!zigname) {
-		eprintf ("Need a signature\n");
+		R_LOG_ERROR ("Need a signature");
 		free (argv);
 		return false;
 	}
 
 	if (strtok (NULL, " ")) {
-		eprintf ("too many arguments\n");
+		R_LOG_ERROR ("too many arguments");
 		free (argv);
 		return false;
 	}
 
 	RSignItem *it = item_frm_signame (core->anal, zigname);
 	if (!it) {
-		eprintf ("Couldn't get signature for %s\n", zigname);
+		R_LOG_ERROR ("Couldn't get signature for %s", zigname);
 		free (argv);
 		return false;
 	}
 	free (argv);
 
 	if (!it->bytes) {
-		eprintf ("Signature %s missing bytes\n", it->name);
+		R_LOG_ERROR ("Signature %s missing bytes", it->name);
 		return false;
 	}
 
@@ -1112,7 +1111,7 @@ static bool diff_zig(void *data, const char *input) {
 	RLevOp *ops = NULL;
 
 	if (r_diff_levenshtein_path (&a, &b, UT32_MAX, _sig_bytediff_cb, &ops) < 0) {
-		eprintf ("Diff failed\n");
+		R_LOG_ERROR ("Levenshtein diff has failed");
 	} else {
 		print_zig_diff (core, fit->bytes, it->bytes, ops);
 	}
@@ -1184,7 +1183,7 @@ static int cmdCheck(void *data, const char *input) {
 
 	RSignSearchMetrics sm;
 	if (!fill_search_metrics (&sm, core, (void *)&ctx)) {
-		eprintf ("Nothing to search for\n");
+		R_LOG_INFO ("Nothing to search for");
 		return 0;
 	}
 
@@ -1193,26 +1192,26 @@ static int cmdCheck(void *data, const char *input) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
 	} else {
 		if (!r_flag_space_push (core->flags, zign_prefix)) {
-			eprintf ("error: cannot create flagspace\n");
+			R_LOG_ERROR ("cannot create flagspace");
 			return false;
 		}
 	}
 
-	eprintf ("[+] searching function metrics\n");
+	R_LOG_INFO ("searching function metrics");
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
 	if (fcn) {
 		r_cons_break_push (NULL, NULL);
 		r_sign_fcn_match_metrics (&sm, fcn);
 		r_cons_break_pop ();
 	} else {
-		eprintf ("No function at 0x%08" PFMT64x "\n", core->offset);
+		R_LOG_ERROR ("No function at 0x%08" PFMT64x, core->offset);
 	}
 
 	if (ctx.rad) {
 		r_cons_printf ("fs-\n");
 	} else {
 		if (!r_flag_space_pop (core->flags)) {
-			eprintf ("error: cannot restore flagspace\n");
+			R_LOG_ERROR ("cannot restore flagspace");
 			return false;
 		}
 	}

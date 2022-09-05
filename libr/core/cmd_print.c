@@ -752,11 +752,11 @@ static void cmd_printmsg(RCore *core, const char *input) {
 	} else if (!strncmp (input, " ", 1)) {
 		r_cons_print (input + 1);
 	} else if (!strncmp (input, "f ", 2)) {
-		eprintf ("TODO: waiting for r2shell\n");
+		R_LOG_INFO ("TODO: waiting for r2shell");
 	} else if (!strncmp (input, "fln ", 2)) {
-		eprintf ("TODO: waiting for r2shell\n");
+		R_LOG_INFO ("TODO: waiting for r2shell");
 	} else {
-		eprintf ("Usage: print, println, printf, printfln");
+		R_LOG_INFO ("Usage: print, println, printf, printfln");
 	}
 }
 
@@ -1028,7 +1028,7 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 	}
 	RConsCanvas *c = r_cons_canvas_new (w, rows);
 	if (!c) {
-		eprintf ("Couldn't allocate a canvas with %d rows\n", rows);
+		R_LOG_ERROR ("Couldn't allocate a canvas with %d rows", rows);
 		goto err;
 	}
 
@@ -1382,7 +1382,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'B': // "pFB"
 		if (input[1] == '?') {
-			eprintf ("Usage: pFB[j] - parse binary plist format, check 'b'lock size on errors, pFBj for json output\n");
+			eprintf ("Usage: pFB[j] - parse binary plist format, check 'b'lock size, pFBj for json output\n");
 		} else {
 			PJ *pj = r_core_pj_new (core);
 			if (!r_bplist_parse (pj, data, size)) {
@@ -1807,12 +1807,12 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					r_core_cmd0 (core, ".ts*");
 					free (out);
 				} else {
-					eprintf ("Parse error: %s\n", error_msg);
+					R_LOG_ERROR ("Cannot parse: %s", error_msg);
 				}
 			} else {
 				if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
 					if (!r_core_cmd_file (core, _input + 3)) {
-						eprintf ("pfo: cannot open format file at '%s'\n", path);
+						R_LOG_ERROR ("pfo: cannot open format file at '%s'", path);
 					}
 				}
 			}

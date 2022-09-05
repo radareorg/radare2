@@ -341,12 +341,12 @@ static const char *help_msg_triple_exclamation[] = {
 
 static const char *help_msg_vertical_bar[] = {
 	"Usage:", "[cmd] | [program|H|T|.|]", "",
-	"", "[cmd] |?", "show this help",
-	"", "[cmd] |", "disable scr.html and scr.color",
-	"", "[cmd] |H", "enable scr.html, respect scr.color",
-	"", "[cmd] |T", "use scr.tts to speak out the stdout",
-	"", "[cmd] | [program]", "pipe output of command to program",
-	"", "[cmd] |.", "alias for .[cmd]",
+	"|", " [program]", "pipe output of command to program",
+	"|", "", "disable scr.html and scr.color",
+	"|.", "", "alias for .[cmd]",
+	"|?", "", "show this help",
+	"|H", "", "enable scr.html, respect scr.color",
+	"|T", "", "use scr.tts to speak out the stdout",
 	NULL
 };
 
@@ -788,12 +788,12 @@ static int cmd_alias(void *data, const char *input) {
 							if (decoded_sz > 0) {
 								r_cmd_alias_set_raw (core->rcmd, buf, decoded, decoded_sz);
 							} else {
-								eprintf ("Invalid base64.\n");
+								R_LOG_ERROR ("Invalid base64 string");
 							}
 							free (decoded);
 						}
 					} else {
-						eprintf ("Invalid base64.\n");
+						R_LOG_ERROR ("Invalid base64 string");
 					}
 				} else {
 					r_cmd_alias_set_cmd (core->rcmd, buf, def);
@@ -967,7 +967,7 @@ static int cmd_rap(void *data, const char *input) {
 		cmd_remote (core, r_str_trim_head_ro (input + 1), true);
 		break;
 	case 'j': // "=j"
-		eprintf ("TODO: list connections in json\n");
+		R_LOG_ERROR ("TODO: list connections in json");
 		break;
 	case '!': // "=!"
 		if (input[1] == 'q') {
@@ -1101,7 +1101,7 @@ static int cmd_yank(void *data, const char *input) {
 				if (len > 0) {
 					r_core_yank_set (core, core->offset, (const ut8*)out, len);
 				} else {
-					eprintf ("Invalid length\n");
+					R_LOG_ERROR ("Invalid length");
 				}
 				free (out);
 			} else {
@@ -1125,9 +1125,8 @@ static int cmd_yank(void *data, const char *input) {
 			ut64 tmpsz;
 			const char *file = r_str_trim_head_ro (input + 2);
 			const ut8 *tmp = r_buf_data (core->yank_buf, &tmpsz);
-
 			if (!tmpsz) {
-				eprintf ("No buffer yanked already\n");
+				R_LOG_ERROR ("No buffer has been yanked");
 				break;
 			}
 
@@ -1137,7 +1136,7 @@ static int cmd_yank(void *data, const char *input) {
 				r_core_cmd_help_match (core, help_msg_y, "ytf", true);
 			} else {
 				if (!r_file_dump (file, tmp, tmpsz, false)) {
-					eprintf ("Cannot dump to '%s'\n", file);
+					R_LOG_ERROR ("Cannot dump to '%s'", file);
 				}
 			}
 		} else if (input[1] == ' ') {
@@ -2217,15 +2216,11 @@ static int cmd_kuery(void *data, const char *input) {
 		break;
 	case 'o': // "ko"
 		if (r_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
+			R_LOG_ERROR ("This command is disabled in sandbox mode");
 			return 0;
 		}
 		if (input[1] == ' ') {
 			char *fn = strdup (input + 2);
-			if (!fn) {
-				eprintf("Unable to allocate memory\n");
-				return 0;
-			}
 			char *ns = strchr (fn, ' ');
 			if (ns) {
 				Sdb *db;
@@ -2237,16 +2232,16 @@ static int cmd_kuery(void *data, const char *input) {
 						if (newdb) {
 							sdb_drain  (db, newdb);
 						} else {
-							eprintf ("Cannot open sdb '%s'\n", fn);
+							R_LOG_ERROR ("Cannot open sdb '%s'", fn);
 						}
 					} else {
-						eprintf ("Cannot find sdb '%s'\n", ns);
+						R_LOG_ERROR ("Cannot find sdb '%s'", ns);
 					}
 				} else {
-					eprintf ("Cannot open file\n");
+					R_LOG_ERROR ("Cannot open file");
 				}
 			} else {
-				eprintf ("Missing sdb namespace\n");
+				R_LOG_ERROR ("Missing sdb namespace");
 			}
 			free (fn);
 		} else {
@@ -2255,7 +2250,7 @@ static int cmd_kuery(void *data, const char *input) {
 		break;
 	case 'd': // "kd"
 		if (r_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
+			R_LOG_ERROR ("The 'kd' command is disabled in sandbox mode");
 			return 0;
 		}
 		if (input[1] == ' ') {
@@ -2268,10 +2263,10 @@ static int cmd_kuery(void *data, const char *input) {
 					sdb_file (db, fn);
 					sdb_sync (db);
 				} else {
-					eprintf ("Cannot find sdb '%s'\n", ns);
+					R_LOG_ERROR ("Cannot find sdb '%s'", ns);
 				}
 			} else {
-				eprintf ("Missing sdb namespace\n");
+				R_LOG_ERROR ("Missing sdb namespace");
 			}
 			free (fn);
 		} else {
@@ -2331,7 +2326,7 @@ static int cmd_bsize(void *data, const char *input) {
 			if (flag) {
 				r_core_block_size (core, flag->size);
 			} else {
-				eprintf ("bf: cannot find flag named '%s'\n", input + 2);
+				R_LOG_ERROR ("bf: cannot find flag named '%s'", input + 2);
 			}
 		} else {
 			eprintf ("Usage: bf [flagname]\n");
@@ -2530,7 +2525,7 @@ static int cmd_resize(void *data, const char *input) {
 				newsize = r_num_math (core->num, arg);
 				if (newsize == 0) {
 					if (arg[1] == '0') {
-						eprintf ("Invalid size\n");
+						R_LOG_ERROR ("Invalid size");
 					}
 					return false;
 				}
@@ -2555,7 +2550,7 @@ static int cmd_resize(void *data, const char *input) {
 	if (grow) {
 		ret = r_io_resize (core->io, newsize);
 		if (ret < 1) {
-			eprintf ("r_io_resize: cannot resize\n");
+			R_LOG_ERROR ("r_io_resize: cannot resize");
 		}
 	}
 	if (delta && core->offset < newsize) {
@@ -2564,7 +2559,7 @@ static int cmd_resize(void *data, const char *input) {
 	if (!grow) {
 		ret = r_io_resize (core->io, newsize);
 		if (ret < 1) {
-			eprintf ("r_io_resize: cannot resize\n");
+			R_LOG_ERROR ("cannot resize");
 		}
 	}
 	if (newsize < (core->offset + core->blocksize) || oldsize < (core->offset + core->blocksize)) {
@@ -2590,7 +2585,7 @@ static int cmd_panels(void *data, const char *input) {
 		return false;
 	}
 	if (!r_cons_is_interactive ()) {
-		eprintf ("Panel mode requires scr.interactive=true.\n");
+		R_LOG_ERROR ("Panel mode requires scr.interactive=true");
 		return false;
 	}
 	if (*input == ' ') {
@@ -2631,7 +2626,7 @@ static int cmd_visual(void *data, const char *input) {
 		return false;
 	}
 	if (!r_cons_is_interactive ()) {
-		eprintf ("Visual mode requires scr.interactive=true.\n");
+		R_LOG_ERROR ("Visual mode requires scr.interactive=true");
 		return false;
 	}
 	return r_core_visual ((RCore *)data, input);
@@ -2660,7 +2655,7 @@ static int cmd_tasks(void *data, const char *input) {
 		break;
 	case 'b': { // "&b"
 		if (r_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
+			R_LOG_ERROR ("The &b command is disabled in sandbox mode");
 			return 0;
 		}
 		int tid = r_num_math (core->num, input + 1);
@@ -2671,7 +2666,7 @@ static int cmd_tasks(void *data, const char *input) {
 	}
 	case '&': { // "&&"
 		if (r_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
+			R_LOG_ERROR ("The && command is disabled in sandbox mode");
 			return 0;
 		}
 		int tid = r_num_math (core->num, input + 1);
@@ -2689,14 +2684,14 @@ static int cmd_tasks(void *data, const char *input) {
 				}
 				r_core_task_decref (task);
 			} else {
-				eprintf ("Cannot find task\n");
+				R_LOG_ERROR ("Cannot find task");
 			}
 		}
 		break;
 	}
 	case '-': // "&-"
 		if (r_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
+			R_LOG_ERROR ("The &- command is disabled in sandbox mode");
 			return 0;
 		}
 		if (input[1] == '*') {
@@ -2713,7 +2708,7 @@ static int cmd_tasks(void *data, const char *input) {
 	case '_': // "&_"
 	case 't': { // "&t"
 		if (r_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
+			R_LOG_ERROR ("This command is disabled in sandbox mode");
 			return 0;
 		}
 		RCoreTask *task = r_core_task_new (core, true, input + 1, NULL, core);
@@ -2823,7 +2818,7 @@ static int autocomplete_type(const char* strflag) {
 			return autocomplete_flags[i].type;
 		}
 	}
-	eprintf ("Invalid flag '%s'\n", strflag);
+	R_LOG_ERROR ("Invalid flag '%s'", strflag);
 	return R_CORE_AUTOCMPLT_END;
 }
 
@@ -2861,7 +2856,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 	if (*input == '-') {
 		const char *arg = input + 1;
 		if (!*input) {
-			eprintf ("Use !!!-* or !!!-<cmd>\n");
+			R_LOG_ERROR ("Use !!!-* or !!!-<cmd> to delete an autocompletion");
 			return;
 		}
 		r_core_autocomplete_remove (b, arg);
@@ -2874,7 +2869,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		}
 		if ((end - input) >= sizeof (arg)) {
 			// wtf?
-			eprintf ("Exceeded the max arg length (255).\n");
+			R_LOG_ERROR ("Exceeded the max arg length (255)");
 			return;
 		}
 		if (end == input) {
@@ -2886,10 +2881,10 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		input = r_str_trim_head_ro (end);
 		if (R_STR_ISNOTEMPTY (input) && !a) {
 			if (b->type == R_CORE_AUTOCMPLT_DFLT && !(b = r_core_autocomplete_add (b, arg, R_CORE_AUTOCMPLT_DFLT, false))) {
-				eprintf ("ENOMEM\n");
+				R_LOG_ERROR ("ENOMEM");
 				return;
 			} else if (b->type != R_CORE_AUTOCMPLT_DFLT) {
-				eprintf ("Cannot add autocomplete to '%s'. type not $dflt\n", b->cmd);
+				R_LOG_ERROR ("Cannot add autocomplete to '%s'. type not $dflt", b->cmd);
 				return;
 			}
 		} else if (R_STR_ISEMPTY (input) && !a) {
@@ -2901,11 +2896,11 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 					if (!b->cmd) {
 						return;
 					}
-					eprintf ("Changing type of '%s' is forbidden.\n", b->cmd);
+					R_LOG_ERROR ("Changing type of '%s' is forbidden", b->cmd);
 				}
 			} else {
 				if (!r_core_autocomplete_add (b, arg, R_CORE_AUTOCMPLT_DFLT, false)) {
-					eprintf ("ENOMEM\n");
+					R_LOG_ERROR ("ENOMEM");
 					return;
 				}
 			}
@@ -2917,7 +2912,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 			b = a;
 		}
 	}
-	eprintf ("Invalid usage of !!!\n");
+	R_LOG_ERROR ("Invalid usage of !!!");
 }
 
 static int cmd_last(void *data, const char *input) {
@@ -2964,7 +2959,7 @@ static int cmd_system(void *data, const char *input) {
 			free (cmd);
 		} else {
 			if (r_sandbox_enable (0)) {
-				eprintf ("This command is disabled in sandbox mode\n");
+				R_LOG_ERROR ("The !! command is disabled in sandbox mode");
 				return 0;
 			}
 			if (input[1]) {
@@ -3185,7 +3180,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	char *str, *out = NULL;
 
 	if (r_sandbox_enable (0)) {
-		eprintf ("Pipes are not allowed in sandbox mode\n");
+		R_LOG_ERROR ("Pipes are not allowed in sandbox mode");
 		return -1;
 	}
 	bool si = r_cons_is_interactive ();
@@ -3916,7 +3911,7 @@ escape_pipe:
 			ut8 *alias_data = r_buf_read_all (cmd_out, &alias_len);
 			if (appendResult) {
 				if (r_cmd_alias_append_raw (core->rcmd, str+1, alias_data, alias_len)) {
-					eprintf ("Alias \"$%s\" is a command - will not attempt to append.\n", str+1);
+					R_LOG_INFO ("Alias \"$%s\" is a command - will not attempt to append", str + 1);
 				} else {
 					/* No existing alias */
 					r_cmd_alias_set_raw (core->rcmd, str+1, alias_data, alias_len);
@@ -3949,7 +3944,7 @@ escape_pipe:
 				r_sys_cmdf ("%s '%s'", editor, str);
 				r_file_rm (str);
 			} else {
-				eprintf ("No cfg.editor configured\n");
+				R_LOG_ERROR ("No value defined for cfg.editor");
 			}
 			r_config_set_i (core->config, "scr.color", ocolor);
 			free (str);
@@ -4164,13 +4159,12 @@ repeat_arroba:
 						if (index < 0) {
 							index = bb->ninstr + index;
 						}
-
 						if (index >= 0 && index < bb->ninstr) {
 							ut16 inst_off = r_anal_bb_offset_inst (bb, index);
 							r_core_seek (core, bb->addr + inst_off, true);
 							cmd_tmpseek = core->tmpseek = true;
 						} else {
-							eprintf ("The current basic block has %d instructions\n", bb->ninstr);
+							R_LOG_INFO ("The current basic block has %d instructions", bb->ninstr);
 						}
 					} else {
 						R_LOG_ERROR ("Can't find a basic block for 0x%08"PFMT64x, core->offset);
@@ -5593,7 +5587,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 				if (data[1] == '!') {
 					ret = -1;
 				} else {
-					eprintf ("'q': quit ignored. Use 'q!'\n");
+					R_LOG_WARN ("'q': quit ignored. Use 'q!'");
 				}
 				data = nl + 1;
 				break;

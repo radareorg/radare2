@@ -15,7 +15,7 @@
 #define MAX_MESSAGE_LEN 80
 #define NULLVAL "-"
 
-//copies src to dst and creates the parent dirs if they do not exist.
+// copies src to dst and creates the parent dirs if they do not exist.
 static bool file_copyp(const char *src, const char *dst) {
 	if (r_file_is_directory (dst)) {
 		return r_file_copy (src, dst);
@@ -39,8 +39,8 @@ static bool file_copyp(const char *src, const char *dst) {
 	return res;
 }
 
-//should I move to file.c?
-bool file_copyrf(const char *src, const char *dst) {
+// should I move to file.c?
+static bool file_copyrf(const char *src, const char *dst) {
 	if (r_file_exists (src)) {
 		return file_copyp (src, dst);
 	}
