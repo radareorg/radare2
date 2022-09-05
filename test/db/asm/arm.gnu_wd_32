@@ -1,3 +1,7 @@
+a "add r2, r2, r1" 012082e0
+aB "nop   ; (mov r0, r0)" 0000a0e1
+a "bx r2" 12ff2fe1
+a "blx r5" 35ff2fe1
 d "bl 0x1900" 3e0600eb
 d "b 0x1900" 3e0600ea
 d "b 0xfffffffffe00d050" 123480ea

@@ -180,7 +180,6 @@ R_API ut8 *r_asm_op_get_buf(RAsmOp *op);
 /* plugin pointers */
 extern RAsmPlugin r_asm_plugin_arm_as;
 extern RAsmPlugin r_asm_plugin_arm;
-extern RAsmPlugin r_asm_plugin_arm_winedbg;
 extern RAsmPlugin r_asm_plugin_null;
 extern RAsmPlugin r_asm_plugin_h8300;
 extern RAsmPlugin r_asm_plugin_nios2;
