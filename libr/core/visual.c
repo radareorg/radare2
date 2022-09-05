@@ -2695,14 +2695,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_cons_enable_mouse (true);
 			}
 			if (*buf) {
+				ut64 off = core->offset;
 				if (core->print->cur_enabled) {
-					int t = core->offset + core->print->cur;
+					ut64 t = off + core->print->cur;
 					r_core_seek (core, t, false);
 				}
 				r_core_cmd (core, buf, true);
 				if (core->print->cur_enabled) {
-					int t = core->offset - core->print->cur;
-					r_core_seek (core, t, true);
+					r_core_seek (core, off, true);
 				}
 			}
 			r_core_visual_showcursor (core, false);
