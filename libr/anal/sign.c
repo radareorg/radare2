@@ -1919,7 +1919,7 @@ R_API const char *r_sign_type_to_name(int type) {
 		return "bbhash";
 	default:
 		r_warn_if_reached ();
-		return "UnkownType";
+		return "UnknownType";
 	}
 }
 

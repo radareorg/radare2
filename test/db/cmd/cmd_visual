@@ -74,7 +74,7 @@ V
 v
 EOF
 EXPECT_ERR=<<EOF
-Visual mode requires scr.interactive=true.
-Panel mode requires scr.interactive=true.
+ERROR: Visual mode requires scr.interactive=true
+ERROR: Panel mode requires scr.interactive=true
 EOF
 RUN

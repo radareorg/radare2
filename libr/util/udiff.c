@@ -804,11 +804,11 @@ static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst,
 }
 
 /**
- * \brief Return Levenshtein distance and put array of changes, of unkown
+ * \brief Return Levenshtein distance and put array of changes, of unknown
  * lenght, in chgs
  * \param bufa Structure to represent starting buffer
  * \param bufb Structure to represent the buffer to reach
- * \param maxdst Max Levenshtein distance need, send UT32_MAX if unkown.
+ * \param maxdst Max Levenshtein distance need, send UT32_MAX if unknown.
  * \param levdiff Function pointer returning true when there is a difference.
  * \param chgs Returned array of changes to get from bufa to bufb
  *

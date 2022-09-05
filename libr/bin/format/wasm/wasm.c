@@ -701,7 +701,7 @@ static inline bool parse_custom_name_section(RBinWasmObj *bin, ut64 bound) {
 
 	ut64 new_bound = start + size - 1;
 	if (new_bound > bound) {
-		eprintf ("[wasm] custom name subection at 0x%" PFMT64x " extends beyond the custom section\n", start);
+		R_LOG_WARN ("custom name subection at 0x%" PFMT64x " extends beyond the custom section", start);
 		new_bound = bound;
 	}
 
@@ -732,7 +732,7 @@ static inline bool parse_custom_name_section(RBinWasmObj *bin, ut64 bound) {
 		}
 		break;
 	default:
-		eprintf ("[wasm] Unkown custom name subsection with id: %d\n", type);
+		R_LOG_WARN ("Unknown custom name subsection with id: %d", type);
 		break;
 	}
 
@@ -908,7 +908,7 @@ static bool parse_import_sec(RBinWasmObj *bin) {
 		if (imp && imp->kind < R_ARRAY_SIZE (bin->g_imports_arr)) {
 			r_pvector_push (bin->g_imports_arr[imp->kind], imp);
 		} else {
-			eprintf ("[wasm] Failed to parse import entry %u/%u of vec at 0x%" PFMT64x "\n", i, count, start);
+			R_LOG_ERROR ("Failed to parse import entry %u/%u of vec at 0x%" PFMT64x, i, count, start);
 			free_import_entry (imp);
 			break;
 		}
