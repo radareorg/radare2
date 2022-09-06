@@ -883,7 +883,10 @@ static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_comp
 	print_new_results (state, prev_completed);
 	ut64 paths_completed = r_pvector_len (&state->completed_paths);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
-		printf ("[**] %50s ", (const char *)r_pvector_at (&state->completed_paths, prev_paths_completed));
+		printf ("[%d/%d] %50s ", 
+				(int)prev_paths_completed,
+				(int)paths_completed,
+				(const char *)r_pvector_at (&state->completed_paths, prev_paths_completed));
 		print_state_counts (state);
 		printf ("\n");
 	}
