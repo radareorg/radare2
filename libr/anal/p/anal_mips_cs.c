@@ -106,8 +106,8 @@ static inline void es_sign_n_64(RAnal *a, RAnalOp *op, const char *arg, int bit)
 static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const char *re, int bit) {
 	ut64 mask = 1ULL << (bit-1);
 	r_strbuf_appendf (&op->esil,
-		"%d,0x%" PFMT64x ",%s,%s,^,&,>>,%d,0x%" PFMT64x ",%s,%s,+,&,>>,|,1,==,$z,?{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",
-		bit-2, mask, a1, a2, bit-1, mask, a1, a2, a1, a2, re);
+		"%d,0x%" PFMT64x ",%s,%s,^,&,>>,%d,0x%" PFMT64x ",%s,%s,+,&,>>,|,1,==,$z,?{,0x%"PFMT64x",1,TRAP,}{,%s,%s,+,%s,=,}",
+		bit-2, mask, a1, a2, bit-1, mask, a1, a2, op->addr, a1, a2, re);
 }
 
 #define PROTECT_ZERO() \
@@ -420,176 +420,177 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			break;
 
 		/** signed -- sets overflow flag */
-		case MIPS_INS_ADD: {
+		case MIPS_INS_ADD:
+			{
+				PROTECT_ZERO () {
+					ES_ADD_CK32_OVERF (ARG(1), ARG(2), ARG(0));
+				}
+			}
+			break;
+		case MIPS_INS_ADDI:
 			PROTECT_ZERO () {
 				ES_ADD_CK32_OVERF (ARG(1), ARG(2), ARG(0));
-		}
-		}
-		break;
-	case MIPS_INS_ADDI:
-		PROTECT_ZERO () {
-			ES_ADD_CK32_OVERF (ARG(1), ARG(2), ARG(0));
-		}
-		break;
-	case MIPS_INS_DADD:
-	case MIPS_INS_DADDI:
-		ES_ADD_CK64_OVERF (ARG(1), ARG(2), ARG(0));
-		break;
-	/** unsigned */
-	case MIPS_INS_DADDU:
-	case MIPS_INS_ADDU:
-	case MIPS_INS_ADDIU:
-	case MIPS_INS_DADDIU:
-		{
-		const char *arg0 = ARG(0);
-		const char *arg1 = ARG(1);
-		const char *arg2 = ARG(2);
-		PROTECT_ZERO () {
-			if (*arg2 == '-') {
-				r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
-						arg2+1, arg1, arg0);
-			} else {
-				r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
-						arg2, arg1, arg0);
 			}
-		}
-		}
-		break;
-	case MIPS_INS_LI:
-	case MIPS_INS_LDI:
-		r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,=", (ut64)IMM(1), ARG(0));
-		break;
-	case MIPS_INS_LUI:
-		r_strbuf_appendf (&op->esil, "0x%" PFMT64x "0000,%s,=", (ut64)IMM(1), ARG(0));
-		break;
-	case MIPS_INS_LB:
-		op->sign = true;
-		ESIL_LOAD ("1");
-		break;
-	case MIPS_INS_LBU:
-		//one of these is wrong
-		ESIL_LOAD ("1");
-		break;
-	case MIPS_INS_LW:
-	case MIPS_INS_LWC1:
-	case MIPS_INS_LWC2:
-	case MIPS_INS_LWL:
-	case MIPS_INS_LWR:
-	case MIPS_INS_LWU:
-	case MIPS_INS_LL:
-		ESIL_LOAD ("4");
-		break;
+			break;
+		case MIPS_INS_DADD:
+		case MIPS_INS_DADDI:
+			ES_ADD_CK64_OVERF (ARG(1), ARG(2), ARG(0));
+			break;
+		/** unsigned */
+		case MIPS_INS_DADDU:
+		case MIPS_INS_ADDU:
+		case MIPS_INS_ADDIU:
+		case MIPS_INS_DADDIU:
+			{
+				const char *arg0 = ARG(0);
+				const char *arg1 = ARG(1);
+				const char *arg2 = ARG(2);
+				PROTECT_ZERO () {
+					if (*arg2 == '-') {
+						r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
+							arg2+1, arg1, arg0);
+					} else {
+						r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
+							arg2, arg1, arg0);
+					}
+				}
+			}
+			break;
+		case MIPS_INS_LI:
+		case MIPS_INS_LDI:
+			r_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,=", (ut64)IMM(1), ARG(0));
+			break;
+		case MIPS_INS_LUI:
+			r_strbuf_appendf (&op->esil, "0x%" PFMT64x "0000,%s,=", (ut64)IMM(1), ARG(0));
+			break;
+		case MIPS_INS_LB:
+			op->sign = true;
+			ESIL_LOAD ("1");
+			break;
+		case MIPS_INS_LBU:
+			//one of these is wrong
+			ESIL_LOAD ("1");
+			break;
+		case MIPS_INS_LW:
+		case MIPS_INS_LWC1:
+		case MIPS_INS_LWC2:
+		case MIPS_INS_LWL:
+		case MIPS_INS_LWR:
+		case MIPS_INS_LWU:
+		case MIPS_INS_LL:
+			ESIL_LOAD ("4");
+			break;
 
-	case MIPS_INS_LDL:
-	case MIPS_INS_LDC1:
-	case MIPS_INS_LDC2:
-	case MIPS_INS_LLD:
-	case MIPS_INS_LD:
-		ESIL_LOAD ("8");
-		break;
+		case MIPS_INS_LDL:
+		case MIPS_INS_LDC1:
+		case MIPS_INS_LDC2:
+		case MIPS_INS_LLD:
+		case MIPS_INS_LD:
+			ESIL_LOAD ("8");
+			break;
 
-	case MIPS_INS_LWX:
-	case MIPS_INS_LH:
-	case MIPS_INS_LHU:
-	case MIPS_INS_LHX:
-		ESIL_LOAD ("2");
-		break;
+		case MIPS_INS_LWX:
+		case MIPS_INS_LH:
+		case MIPS_INS_LHU:
+		case MIPS_INS_LHX:
+			ESIL_LOAD ("2");
+			break;
 
-	case MIPS_INS_AND:
-	case MIPS_INS_ANDI:
-		{
-		const char *arg0 = ARG(0);
-		const char *arg1 = ARG(1);
-		const char *arg2 = ARG(2);
-		if (!strcmp (arg0, arg1)) {
-			r_strbuf_appendf (&op->esil, "%s,%s,&=", arg2, arg1);
-		} else {
-			r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=", arg2, arg1, arg0);
-		}
-		}
-		break;
-	case MIPS_INS_OR:
-	case MIPS_INS_ORI:
-		{
-		const char *arg0 = ARG(0);
-		const char *arg1 = ARG(1);
-		const char *arg2 = ARG(2);
-		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "%s,%s,|,%s,=",
-				arg2, arg1, arg0);
-		}
-		}
-		break;
-	case MIPS_INS_XOR:
-	case MIPS_INS_XORI:
-		{
-		const char *arg0 = ARG(0);
-		const char *arg1 = ARG(1);
-		const char *arg2 = ARG(2);
-		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "%s,%s,^,%s,=",
-				arg2, arg1, arg0);
-		}
-		}
-		break;
-	case MIPS_INS_NOR:
-		{
-		const char *arg0 = ARG(0);
-		const char *arg1 = ARG(1);
-		const char *arg2 = ARG(2);
-		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "%s,%s,|,0xffffffff,^,%s,=",
-				arg2, arg1, arg0);
-		}
-		}
-		break;
-	case MIPS_INS_SLT:
-	case MIPS_INS_SLTI:
-		if (OPCOUNT () < 3) {
-			r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", ARG(1), ARG(0));
-		} else {
-			r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", ARG(2), ARG(1), ARG(0));
-		}
-		break;
-	case MIPS_INS_SLTU:
-	case MIPS_INS_SLTIU:
-		if (OPCOUNT () < 3) {
-			r_strbuf_appendf (&op->esil, ES_W("%s")","ES_W("%s")",<,t,=",
-				ARG (1), ARG (0));
-		} else {
-			r_strbuf_appendf (&op->esil, ES_W("%s")","ES_W("%s")",<,%s,=",
-				ARG (2), ARG (1), ARG (0));
-		}
-		break;
-	case MIPS_INS_MUL:
-		r_strbuf_appendf (&op->esil, ES_W("%s,%s,*")",%s,=", ARG(1), ARG(2), ARG(0));
-		ES_SIGN32_64 (ARG(0));
-		break;
-	case MIPS_INS_MULT:
-	case MIPS_INS_MULTU:
-		r_strbuf_appendf (&op->esil, ES_W("%s,%s,*")",lo,=", ARG (0), ARG (1));
-		ES_SIGN32_64 ("lo");
-		r_strbuf_appendf (&op->esil, ES_W("32,%s,%s,*,>>")",hi,=", ARG (0), ARG (1));
-		ES_SIGN32_64 ("hi");
-		break;
-	case MIPS_INS_MFLO:
-		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "lo,%s,=", REG (0));
-		}
-		break;
-	case MIPS_INS_MFHI:
-		PROTECT_ZERO () {
-			r_strbuf_appendf (&op->esil, "hi,%s,=", REG (0));
-		}
-		break;
-	case MIPS_INS_MTLO:
-		r_strbuf_appendf (&op->esil, "%s,lo,=", REG (0));
-		ES_SIGN32_64 ("lo");
-		break;
-	case MIPS_INS_MTHI:
-		r_strbuf_appendf (&op->esil, "%s,hi,=", REG (0));
-		ES_SIGN32_64 ("hi");
-		break;
+		case MIPS_INS_AND:
+		case MIPS_INS_ANDI:
+			{
+				const char *arg0 = ARG(0);
+				const char *arg1 = ARG(1);
+				const char *arg2 = ARG(2);
+				if (!strcmp (arg0, arg1)) {
+					r_strbuf_appendf (&op->esil, "%s,%s,&=", arg2, arg1);
+				} else {
+					r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=", arg2, arg1, arg0);
+				}
+			}
+			break;
+		case MIPS_INS_OR:
+		case MIPS_INS_ORI:
+			{
+			const char *arg0 = ARG(0);
+			const char *arg1 = ARG(1);
+			const char *arg2 = ARG(2);
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil, "%s,%s,|,%s,=",
+					arg2, arg1, arg0);
+				}
+			}
+			break;
+		case MIPS_INS_XOR:
+		case MIPS_INS_XORI:
+			{
+				const char *arg0 = ARG(0);
+				const char *arg1 = ARG(1);
+				const char *arg2 = ARG(2);
+				PROTECT_ZERO () {
+					r_strbuf_appendf (&op->esil, "%s,%s,^,%s,=",
+						arg2, arg1, arg0);
+				}
+			}
+			break;
+		case MIPS_INS_NOR:
+			{
+				const char *arg0 = ARG(0);
+				const char *arg1 = ARG(1);
+				const char *arg2 = ARG(2);
+				PROTECT_ZERO () {
+					r_strbuf_appendf (&op->esil, "%s,%s,|,0xffffffff,^,%s,=",
+						arg2, arg1, arg0);
+				}
+			}
+			break;
+		case MIPS_INS_SLT:
+		case MIPS_INS_SLTI:
+			if (OPCOUNT () < 3) {
+				r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", ARG(1), ARG(0));
+			} else {
+				r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", ARG(2), ARG(1), ARG(0));
+			}
+			break;
+		case MIPS_INS_SLTU:
+		case MIPS_INS_SLTIU:
+			if (OPCOUNT () < 3) {
+				r_strbuf_appendf (&op->esil, ES_W("%s")","ES_W("%s")",<,t,=",
+					ARG (1), ARG (0));
+			} else {
+				r_strbuf_appendf (&op->esil, ES_W("%s")","ES_W("%s")",<,%s,=",
+					ARG (2), ARG (1), ARG (0));
+			}
+			break;
+		case MIPS_INS_MUL:
+			r_strbuf_appendf (&op->esil, ES_W("%s,%s,*")",%s,=", ARG(1), ARG(2), ARG(0));
+			ES_SIGN32_64 (ARG(0));
+			break;
+		case MIPS_INS_MULT:
+		case MIPS_INS_MULTU:
+			r_strbuf_appendf (&op->esil, ES_W("%s,%s,*")",lo,=", ARG (0), ARG (1));
+			ES_SIGN32_64 ("lo");
+			r_strbuf_appendf (&op->esil, ES_W("32,%s,%s,*,>>")",hi,=", ARG (0), ARG (1));
+			ES_SIGN32_64 ("hi");
+			break;
+		case MIPS_INS_MFLO:
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil, "lo,%s,=", REG (0));
+			}
+			break;
+		case MIPS_INS_MFHI:
+			PROTECT_ZERO () {
+				r_strbuf_appendf (&op->esil, "hi,%s,=", REG (0));
+			}
+			break;
+		case MIPS_INS_MTLO:
+			r_strbuf_appendf (&op->esil, "%s,lo,=", REG (0));
+			ES_SIGN32_64 ("lo");
+			break;
+		case MIPS_INS_MTHI:
+			r_strbuf_appendf (&op->esil, "%s,hi,=", REG (0));
+			ES_SIGN32_64 ("hi");
+			break;
 #if 0
 	// could not test div
 	case MIPS_INS_DIV:
@@ -602,9 +603,15 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		break;
 #endif
-	default:
-		return -1;
+		default:
+			return -1;
+		}
 	}
+	if (strstr (r_strbuf_get (&op->esil), "$$")) {
+		char addr_str[19];	// "0x" + 64/4 + "\x00"
+		sprintf (addr_str, "0x%"PFMT64x, addr);	//yes, it's fine to use sprintf in this particular case
+		//TODO: alloc could fail below, but this is just a plugin and a very unlikely scenario
+		r_strbuf_setptr (&op->esil, r_str_replace (r_strbuf_drain_nofree (&op->esil), "$$", addr_str, 0), 0);
 	}
 	return 0;
 }
