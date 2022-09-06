@@ -157,6 +157,7 @@ anal_plugins += [
   'lm32',
   'loongarch_gnu',
   'm68k_cs',
+  'm68k_gnu',
   'm680x_cs',
   'malbolge',
   'mcore',
@@ -191,8 +192,6 @@ if no_user_plugins
   if use_gpl
     asm_plugins += [
       # 'z80',
-      # 'hppa_gnu',
-      'm68k_gnu',
     ]
     anal_plugins += [
       'z80',
@@ -204,6 +203,7 @@ if no_user_plugins
       's390_gnu',
       'pdp11_gnu',
       'ppc_gnu',
+      'm68k_gnu',
       'sparc_gnu',
     ]
   endif
