@@ -4815,7 +4815,6 @@ static void handle_var_stack_access(RAnalEsil *esil, ut64 addr, RAnalVarAccessTy
 		if (addr >= spaddr && addr < ctx->initial_sp) {
 			int stack_off = addr - ctx->initial_sp;
 			// int stack_off = ctx->initial_sp - addr; // R2STACK
-			eprintf ("%x\n", stack_off);
 			// eprintf (" (%llx) %llx = %d\n", ctx->initial_sp, addr, stack_off);
 			RAnalVar *var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_SPV, stack_off);
 			if (!var) {
