@@ -183,7 +183,6 @@ extern RAsmPlugin r_asm_plugin_arm;
 extern RAsmPlugin r_asm_plugin_null;
 extern RAsmPlugin r_asm_plugin_h8300;
 extern RAsmPlugin r_asm_plugin_nios2;
-extern RAsmPlugin r_asm_plugin_or1k;
 extern RAsmPlugin r_asm_plugin_pic;
 extern RAsmPlugin r_asm_plugin_ppc_as;
 extern RAsmPlugin r_asm_plugin_sparc_gnu;

@@ -120,7 +120,6 @@ if no_user_plugins
 asm_plugins += [
   'arm_as',
   'arm',
-  'or1k',
   'ppc_as',
   'x86_as',
   'x86_nasm',

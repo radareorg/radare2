@@ -14,7 +14,6 @@ r_asm_sources = [
   'arch/arm/gnu/floatformat.c',
 # join_paths('p','asm_lanai_gnu.c'),
   join_paths('p','asm_m68k_gnu.c'),
-  join_paths('p','asm_or1k.c'),
   join_paths('p','asm_ppc_as.c'),
   join_paths('p','asm_x86_as.c'),
   join_paths('p','asm_x86_nasm.c'),
@@ -35,7 +34,6 @@ r_asm_sources = [
 #  join_paths('arch','lanai','gnu','lanai-opc.c'),
   join_paths('arch','m68k','gnu','m68k-dis.c'),
   join_paths('arch','m68k','gnu','m68k-opc.c'),
-  join_paths('arch','or1k','or1k_disas.c'),
   join_paths('arch','v810','v810_disas.c'),
   # join_paths('arch','whitespace','wsdis.c'),
   #join_paths('arch','z80','expressions.c'),
@@ -52,7 +50,6 @@ r_asm_inc = [
     join_paths('arch'),
     join_paths('arch','h8300'),
     join_paths('arch','v810'),
-    join_paths('arch','or1k')
   )
 ]
 
