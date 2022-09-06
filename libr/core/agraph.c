@@ -177,16 +177,16 @@ static int mode2opts(const RAGraph *g) {
 
 // duplicated from visual.c
 static void rotateAsmemu(RCore *core) {
-	const bool isEmuStr = r_config_get_i (core->config, "emu.str");
-	const bool isEmu = r_config_get_i (core->config, "asm.emu");
+	const bool isEmuStr = r_config_get_b (core->config, "emu.str");
+	const bool isEmu = r_config_get_b (core->config, "asm.emu");
 	if (isEmu) {
 		if (isEmuStr) {
-			r_config_set (core->config, "emu.str", "false");
+			r_config_set_b (core->config, "emu.str", false);
 		} else {
-			r_config_set (core->config, "asm.emu", "false");
+			r_config_set_b (core->config, "asm.emu", false);
 		}
 	} else {
-		r_config_set (core->config, "emu.str", "true");
+		r_config_set_b (core->config, "emu.str", true);
 	}
 }
 
@@ -2128,7 +2128,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	r_config_set_b (core->config, "asm.marks", false);
 	r_config_set_b (core->config, "asm.cmt.right", (opts & BODY_SUMMARY) || o_cmtright);
 	r_config_set_b (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);
-	r_config_set_i (core->config, "asm.bytes",
+	r_config_set_b (core->config, "asm.bytes",
 		(opts & (BODY_SUMMARY | BODY_OFFSETS)) || o_bytes || o_flags_in_bytes);
 	r_config_set_b (core->config, "asm.bbmiddle", false);
 	core->print->cur_enabled = false;
@@ -2215,7 +2215,7 @@ static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
 static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
-	bool emu = r_config_get_i (core->config, "asm.emu");
+	const bool emu = r_config_get_b (core->config, "asm.emu");
 	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena = NULL;
 	int saved_arena_size = 0;
@@ -2361,8 +2361,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	char *shortcut = NULL;
 	int shortcuts = 0;
-	bool emu = r_config_get_i (core->config, "asm.emu");
-	bool few = r_config_get_i (core->config, "graph.few");
+	bool emu = r_config_get_b (core->config, "asm.emu");
+	bool few = r_config_get_b (core->config, "graph.few");
 	int ret = false;
 	ut64 saved_gp = core->anal->gp;
 	int saved_arena_size = 0;
@@ -3456,20 +3456,20 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	}
 	if (g->is_dis) {
 		(void) G (-g->can->sx + 1, -g->can->sy + 2);
-		int scr_utf8 = r_config_get_i (core->config, "scr.utf8");
-		int asm_bytes = r_config_get_i (core->config, "asm.bytes");
-		int asm_cmt_right = r_config_get_i (core->config, "asm.cmt.right");
-		r_config_set_i (core->config, "scr.utf8", 0);
-		r_config_set_i (core->config, "asm.bytes", 0);
-		r_config_set_i (core->config, "asm.cmt.right", 0);
+		bool scr_utf8 = r_config_get_b (core->config, "scr.utf8");
+		bool asm_bytes = r_config_get_b (core->config, "asm.bytes");
+		bool asm_cmt_right = r_config_get_b (core->config, "asm.cmt.right");
+		r_config_set_b (core->config, "scr.utf8", false);
+		r_config_set_b (core->config, "asm.bytes", false);
+		r_config_set_b (core->config, "asm.cmt.right", false);
 		char *str = r_core_cmd_str (core, "pd $r");
 		if (str) {
 			W (str);
 			free (str);
 		}
-		r_config_set_i (core->config, "scr.utf8", scr_utf8);
-		r_config_set_i (core->config, "asm.bytes", asm_bytes);
-		r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
+		r_config_set_b (core->config, "scr.utf8", scr_utf8);
+		r_config_set_b (core->config, "asm.bytes", asm_bytes);
+		r_config_set_b (core->config, "asm.cmt.right", asm_cmt_right);
 	}
 	if (g->title && *g->title) {
 		g->can->sy ++;

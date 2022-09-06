@@ -877,7 +877,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 		goto end;
 	}
 
-	bool debugMode = r_config_get_i (core->config, "cfg.debug");
+	const bool debugMode = r_config_get_b (core->config, "cfg.debug");
 	optypes_list = r_str_split_list (optypes, " ", 0);
 
 	r_cons_break_push (NULL, NULL);
@@ -2076,7 +2076,7 @@ static void cmd_drpi(RCore *core) {
 
 static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" and "drp"
 	const char *ptr;
-	RReg *r = r_config_get_i (core->config, "cfg.debug")? core->dbg->reg: core->anal->reg;
+	RReg *r = r_config_get_b (core->config, "cfg.debug")? core->dbg->reg: core->anal->reg;
 	switch (str[1]) {
 	case '\0': // "drp" "arp"
 		if (r->reg_profile_str) {
@@ -2961,7 +2961,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case '=': // "dr="
 		{
 			int pcbits2, pcbits = grab_bits (core, str + 1, &pcbits2);
-			if (r_config_get_i (core->config, "cfg.debug")) {
+			if (r_config_get_b (core->config, "cfg.debug")) {
 				if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 					if (pcbits && pcbits != bits) {
 						r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '=', use_color); // xxx detect which one is current usage
@@ -4753,7 +4753,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 		if (r_config_get_i (core->config, "dbg.skipover")) {
 			r_core_cmdf (core, "dss%s", input + 2);
 		} else {
-			if (r_config_get_i (core->config, "cfg.debug")) {
+			if (r_config_get_b (core->config, "cfg.debug")) {
 				char delb[128] = {0};
 				addr = r_debug_reg_get (core->dbg, "PC");
 				RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
@@ -4768,7 +4768,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 		}
 		break;
 	case 'b': // "dsb"
-		if (r_config_get_i (core->config, "cfg.debug")) {
+		if (r_config_get_b (core->config, "cfg.debug")) {
 			if (!core->dbg->session) {
 				R_LOG_ERROR ("Session has not started");
 			} else if (r_debug_step_back (core->dbg, times) < 0) {
@@ -5441,7 +5441,7 @@ static int cmd_debug(void *data, const char *input) {
 		cmd_debug_map (core, input + 1);
 		break;
 	case 'r': // "dr"
-		if (r_config_get_i (core->config, "cfg.debug") || input[1] == '?') {
+		if (r_config_get_b (core->config, "cfg.debug") || input[1] == '?') {
 			cmd_debug_reg (core, input + 1);
 		} else {
 			cmd_anal_reg (core, input + 1);
@@ -5700,7 +5700,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'o': // "doo" : reopen in debug mode
 			if (input[2] == 'f') { // "doof" : reopen in debug mode from the given file
-				r_config_set_i (core->config, "cfg.debug", true);
+				r_config_set_b (core->config, "cfg.debug", true);
 				char *s = r_str_newf ("oodf %s", input + 3);
 				r_core_cmd0 (core, s);
 				free (s);
