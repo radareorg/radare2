@@ -103,7 +103,7 @@ int GetSystemModules(RIO *io) {
 			PRTL_PROCESS_MODULE_INFORMATION pMod = pm->Modules;
 			for (i = 0; i < pm->NumberOfModules; i++) {
 				const char *fileName = GetFileName((const char*)pMod[i].FullPathName);
-				io->cb_printf ("f nt.%s 0x%x @ 0x%p\n", fileName, pMod[i].ImageSize, pMod[i].ImageBase);
+				io->cb_printf ("f nt.%s 0x%"PFMT64x" @ 0x"PFMT64x"\n", fileName, (ut64)pMod[i].ImageSize, (ut64)pMod[i].ImageBase);
 			}
 		}
 	} else {
