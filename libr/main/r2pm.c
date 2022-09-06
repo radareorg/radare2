@@ -30,7 +30,7 @@ static int r_main_r2pm_sh(int argc, const char **argv) {
 static const char *helpmsg = \
 "Usage: r2pm [-flags] [pkgs...]\n"\
 "Commands:\n"\
-" -c ([git/dir])    clear source cache (GITDIR)\n"\
+" -c ([git/dir])    clear source cache (R2PM_GITDIR)\n"\
 " -ci <pkgname>     clean + install\n"\
 " -cp               clean the user's home plugin directory\n"\
 " -d,doc [pkgname]  show documentation for given package\n"\
@@ -42,7 +42,7 @@ static const char *helpmsg = \
 " -i <pkgname>      install/update package and its dependencies (see -c, -g)\n"\
 " -l                list installed pkgs\n"\
 " -r [cmd ...args]  run shell command with R2PM_BINDIR in PATH\n"\
-" -s [<keyword>]    search in database\n"\
+" -s [<keyword>]    search available packages in database matching a string\n"\
 " -uci <pkgname>    uninstall + clean + install\n"\
 " -ui <pkgname>     uninstall + install\n"\
 " -u <pkgname>      r2pm -u baleful (See -f to force uninstall)\n"\
@@ -182,22 +182,23 @@ static char *r2pm_desc(const char *file) {
 	return r2pm_get (file, "\nR2PM_DESC ", TT_TEXTLINE);
 }
 
-static int r2pm_list(void) {
+static char *r2pm_list(void) {
 	char *path = r2pm_pkgdir ();
 	RList *files = r_sys_dir (path);
 	free (path);
 	if (!files) {
-		return 1;
+		return NULL;
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 	RListIter *iter;
 	const char *file;
 	r_list_foreach (files, iter, file) {
 		if (*file != '.') {
-			printf ("%s\n", file);
+			r_strbuf_appendf (sb, "%s\n", file);
 		}
 	}
 	r_list_free (files);
-	return 0;
+	return r_strbuf_drain (sb);
 }
 
 static int r2pm_update(void) {
@@ -662,7 +663,14 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	} else if (r2pm.clean) {
 		res = r2pm_clean (targets);
 	} else if (r2pm.list) {
-		res = r2pm_list ();
+		char *s = r2pm_list ();
+		if (s) {
+			r_cons_print (s);
+			// r_cons_flush ();
+			res = 0;
+		} else {
+			res = 1;
+		}
 	}
 	r_list_free (targets);
 	if (res != -1) {
