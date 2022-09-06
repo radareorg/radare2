@@ -1626,14 +1626,14 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_BRABZ:
 #endif
 	case ARM64_INS_BR:
-		r_strbuf_setf (&op->esil, "%s,pc,=", REG64 (0));
+		r_strbuf_setf (&op->esil, "%s,pc,:=", REG64 (0));
 		break;
 	case ARM64_INS_B:
 		/* capstone precompute resulting address, using PC + IMM */
-		r_strbuf_appendf (&op->esil, "%"PFMT64d",pc,=", IMM64 (0));
+		r_strbuf_appendf (&op->esil, "%"PFMT64d",pc,:=", IMM64 (0));
 		break;
 	case ARM64_INS_BL:
-		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64d",pc,=", IMM64 (0));
+		r_strbuf_setf (&op->esil, "pc,lr,:=,%"PFMT64d",pc,:=", IMM64 (0));
 		break;
 #if CS_API_MAJOR > 4
 	case ARM64_INS_BLRAA:
@@ -1642,7 +1642,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_BLRABZ:
 #endif
 	case ARM64_INS_BLR:
-		r_strbuf_setf (&op->esil, "pc,lr,=,%s,pc,=", REG64 (0));
+		r_strbuf_setf (&op->esil, "pc,lr,:=,%s,pc,:=", REG64 (0));
 		break;
 	case ARM64_INS_CLZ:
 	{
@@ -2056,23 +2056,23 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	}
 	break;
 	case ARM64_INS_CBZ:
-		r_strbuf_setf (&op->esil, "%s,!,?{,%"PFMT64d",pc,=,}",
+		r_strbuf_setf (&op->esil, "%s,!,?{,%"PFMT64d",pc,:=,}",
 				REG64 (0), IMM64 (1));
 		break;
 	case ARM64_INS_CBNZ:
-		r_strbuf_setf (&op->esil, "%s,?{,%"PFMT64d",pc,=,}",
+		r_strbuf_setf (&op->esil, "%s,?{,%"PFMT64d",pc,:=,}",
 				REG64 (0), IMM64 (1));
 		break;
 	case ARM64_INS_TBZ:
 		// tbnz x0, 4, label
 		// if ((1<<4) & x0) goto label;
-		r_strbuf_setf (&op->esil, "%" PFMT64d ",1,<<,%s,&,!,?{,%"PFMT64d",pc,=,}",
+		r_strbuf_setf (&op->esil, "%" PFMT64d ",1,<<,%s,&,!,?{,%"PFMT64d",pc,:=,}",
 				IMM64 (1), REG64 (0), IMM64 (2));
 		break;
 	case ARM64_INS_TBNZ:
 		// tbnz x0, 4, label
 		// if ((1<<4) & x0) goto label;
-		r_strbuf_setf (&op->esil, "%" PFMT64d ",1,<<,%s,&,?{,%"PFMT64d",pc,=,}",
+		r_strbuf_setf (&op->esil, "%" PFMT64d ",1,<<,%s,&,?{,%"PFMT64d",pc,:=,}",
 				IMM64 (1), REG64 (0), IMM64 (2));
 		break;
 	case ARM64_INS_STNP:
@@ -2274,10 +2274,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_ERETAB:
 #endif
 	case ARM64_INS_RET:
-		r_strbuf_set (&op->esil, "lr,pc,=");
+		r_strbuf_set (&op->esil, "lr,pc,:=");
 		break;
 	case ARM64_INS_ERET:
-		r_strbuf_set (&op->esil, "lr,pc,=");
+		r_strbuf_set (&op->esil, "lr,pc,:=");
 		break;
 	case ARM64_INS_BFI: // bfi w8, w8, 2, 1
 	case ARM64_INS_BFXIL:
@@ -2400,7 +2400,7 @@ static void arm32mathaddsub(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	const char *src;
 	bool noflags = false;
 	if (!strcmp (dst, "pc")) {	//this is because strbuf_prepend doesn't exist and E_TOO_LAZY
-		//		r_strbuf_append (&op->esil, "$$,pc,=,");
+		//		r_strbuf_append (&op->esil, "$$,pc,:=,");
 		noflags = true;
 	}
 	if (OPCOUNT () == 3) {
@@ -2701,11 +2701,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		}
 		break;
 	case ARM_INS_CBZ:
-		r_strbuf_appendf (&op->esil, "%s,!,?{,%" PFMT32u ",pc,=,}",
+		r_strbuf_appendf (&op->esil, "%s,!,?{,%" PFMT32u ",pc,:=,}",
 			REG (0), IMM (1));
 		break;
 	case ARM_INS_CBNZ:
-		r_strbuf_appendf (&op->esil, "%s,?{,%" PFMT32u ",pc,=,}",
+		r_strbuf_appendf (&op->esil, "%s,?{,%" PFMT32u ",pc,:=,}",
 			REG (0), IMM (1));
 		break;
 		// Encapsulated STR/H/B into a code section
