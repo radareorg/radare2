@@ -20,7 +20,7 @@ static const char *help_msg_o[] = {
 	"oa","[?][-] [A] [B] [filename]","specify arch and bits for given file",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
-	"of","[?] [file]","open file and map it at addr 0 as read-only",
+	"of","[?] [file]","open file without creating any map",
 	"oj","[?]","list opened files in JSON format",
 	"om","[?]","create, list, remove IO maps",
 	"on","[?][n] [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
@@ -28,12 +28,6 @@ static const char *help_msg_o[] = {
 	"op","[r|n|p|fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
 	"oq","","list all open files",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
-	NULL
-};
-
-static const char *help_msg_of[] = {
-	"Usage: of","[s] [file]","Open file without adding maps",
-	"of"," \"/bin/ls\" r-x", " open /bin/ls with r-x perms without creating maps",
 	NULL
 };
 
@@ -382,7 +376,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				R_LOG_ERROR ("Invalid RBinFile.id number");
 			}
 		} else {
-			eprintf ("Usage: obb [bfid]\n");
+			r_core_cmd_help_match (core, help_msg_ob, "obo", true);
 		}
 		break;
 	case '-': // "ob-"
@@ -1047,7 +1041,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 					r_io_map_set_name (map, desc->name);
 				}
 			} else {
-				eprintf ("Usage: omm [fd]\n");
+				r_core_cmd_help_match (core, help_msg_om, "oma", false);
 			}
 		}
 		break;
@@ -1062,7 +1056,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 					r_io_map_set_name (map, desc->name);
 				}
 			} else {
-				eprintf ("Usage: omm [fd]\n");
+				r_core_cmd_help_match (core, help_msg_om, "omm", false);
 			}
 		}
 		break;
@@ -1633,7 +1627,7 @@ static bool cmd_onn(RCore *core, const char* input) {
 	}
 	arg0 = r_str_trim_head_ro (arg0);
 	if (!*arg0) {
-		eprintf ("Usage: onn[u] [file] [perm]\n");
+		r_core_cmd_help_match (core, help_msg_on, "onn", false);
 		return false;
 	}
 	char *ptr = r_str_trim_dup (arg0);
@@ -1695,7 +1689,7 @@ static int cmd_open(void *data, const char *input) {
 				RBinFile *bf = NULL;
 				r_list_foreach (core->bin->binfiles, iter, bf) {
 					if (bf && bf->o && bf->o->info) {
-						eprintf ("oa %s %d %s\n", bf->o->info->arch, bf->o->info->bits, bf->file);
+						r_cons_printf ("oa %s %d %s\n", bf->o->info->arch, bf->o->info->bits, bf->file);
 					}
 				}
 				return 1;
@@ -1763,21 +1757,21 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1] == '*') { // "on*"
-			eprintf ("TODO: on* is not yet implemented\n");
+			R_LOG_INFO ("TODO: on* is not yet implemented");
 			return 0;
 		}
 		if (input[1] == '+') { // "on+"
 			write = true;
 			perms |= R_PERM_W;
 			if (input[2] != ' ') {
-				eprintf ("Usage: on+ file [addr] [rwx]\n");
+				r_core_cmd_help_match (core, help_msg_on, "on+", true);
 				return 0;
 			}
-			ptr = input + 3;
+			ptr = r_str_trim_head_ro (input + 3);
 		} else if (input[1] == ' ') {
 			ptr = input + 2;
 		} else {
-			eprintf ("Usage: on file [addr] [rwx]\n");
+			r_core_cmd_help (core, help_msg_on);
 			return 0;
 		}
 		argv = r_str_argv (ptr, &argc);
@@ -1817,7 +1811,7 @@ static int cmd_open(void *data, const char *input) {
 			ptr = r_str_trim_head_ro (input + 2);
 			argv = r_str_argv (ptr, &argc);
 			if (argc == 0 || input[1] == '?') {
-				r_core_cmd_help (core, help_msg_of);
+				r_core_cmd_help_match (core, help_msg_o, "of", true);
 				r_str_argv_free (argv);
 				return 0;
 			}
@@ -1828,7 +1822,7 @@ static int cmd_open(void *data, const char *input) {
 			r_core_return_value (core, fd);
 			r_str_argv_free (argv);
 		} else {
-			eprintf ("Usage: of [arg...]\n");
+			r_core_cmd_help_match (core, help_msg_o, "of", true);
 		}
 		return 0;
 	case 'p': // "op"
@@ -2181,7 +2175,7 @@ static int cmd_open(void *data, const char *input) {
 				} else {
 					fd = core->io->desc->fd;
 				}
-				if (r_config_get_i (core->config, "cfg.debug")) {
+				if (r_config_get_b (core->config, "cfg.debug")) {
 					RBinFile *bf = r_bin_cur (core->bin);
 					if (bf && r_file_exists (bf->file)) {
 						// Escape spaces so that o's argv parse will detect the path properly
@@ -2219,7 +2213,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case 'c': // "oc"
 		if (input[1] == '?') {
-			eprintf ("Usage: oc [file]\n");
+			r_core_cmd_help_match (core, help_msg_o, "oc", true);
 		} else if (input[1] && input[2]) {
 			if (r_sandbox_enable (0)) {
 				R_LOG_ERROR ("This command is disabled in sandbox mode");
@@ -2263,7 +2257,7 @@ static int cmd_open(void *data, const char *input) {
 			free (inp);
 			r_core_block_read (core);
 		} else {
-			eprintf ("Usage: ox [fd] [fdx] - exchange two file descriptors\n");
+			r_core_cmd_help_match (core, help_msg_o, "oxr", true);
 		}
 		break;
 	case '?': // "o?"
