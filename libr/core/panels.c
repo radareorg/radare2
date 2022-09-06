@@ -3894,7 +3894,9 @@ static void __update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuIt
 	p->view->pos.h += 4;
 	p->model->type = PANEL_TYPE_MENU;
 	p->view->refresh = true;
-	menu->refreshPanels[menu->n_refresh - 1] = p;
+	if (menu->n_refresh > 0) {
+		menu->refreshPanels[menu->n_refresh - 1] = p;
+	}
 }
 
 static void __handle_mouse_on_menu(RCore *core, int x, int y) {
@@ -4157,7 +4159,7 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 	const int idx = __get_panel_idx_in_pos (core, x, y);
 	char *word = __get_word_from_canvas (core, panels, x, y);
 	__set_curnode (core, idx);
-	__set_refresh_all (core, true, true);
+	//__set_refresh_all (core, true, true);
 	if (idx == -1 || R_STR_ISEMPTY (word)) {
 		free (word);
 		return false;
@@ -4511,7 +4513,7 @@ static void __print_decompiler_cb(void *user, void *p) {
 	if (core->panels_root->cur_pdc_cache) {
 		cmdstr = r_str_new ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,
 					r_num_as_string (NULL, func->addr, false), 0));
-		if (cmdstr) {
+		if (R_STR_ISNOTEMPTY (cmdstr)) {
 			__set_cmd_str_cache (core, panel, cmdstr);
 			__reset_scroll_pos (panel);
 			__update_pdc_contents (core, panel, cmdstr);
@@ -4519,7 +4521,7 @@ static void __print_decompiler_cb(void *user, void *p) {
 		}
 	}
 	cmdstr = __handle_cmd_str_cache (core, panel, false);
-	if (cmdstr) {
+	if (R_STR_ISNOTEMPTY (cmdstr)) {
 		__reset_scroll_pos (panel);
 		__set_decompiler_cache (core, cmdstr);
 		__update_pdc_contents (core, panel, cmdstr);
@@ -4626,7 +4628,9 @@ static void __print_stack_cb(void *user, void *p) {
 		cmd = r_str_append (cmd, s);
 	}
 	panel->model->cmd = cmd;
-	const char *cmdstr = r_core_cmd_str (core, r_str_newf ("%s%c%d", cmd, sign, absdelta));
+	char *k = r_str_newf ("%s%c%d", cmd, sign, absdelta);
+	const char *cmdstr = r_core_cmd_str (core, k);
+	free (k);
 	__update_panel_contents (core, panel, cmdstr);
 }
 
@@ -4856,7 +4860,6 @@ static int __file_history_down(RLine *line) {
 	r_list_free (files);
 	return true;
 }
-
 
 static int __open_file_cb(void *user) {
 	RCore *core = (RCore *)user;
