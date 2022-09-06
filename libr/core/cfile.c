@@ -252,6 +252,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 			}
 		}
 	}
+	r_sys_setenv ("R2PM_NATIVE", "1");
 	r_sys_setenv ("R2_OFFSET", r_strf ("%"PFMT64d, core->offset));
 	r_sys_setenv ("R2_XOFFSET", r_strf ("0x%08"PFMT64x, core->offset));
 	r_sys_setenv ("R2_ENDIAN", core->rasm->config->big_endian? "big": "little");
