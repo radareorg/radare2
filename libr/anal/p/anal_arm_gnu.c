@@ -14,8 +14,8 @@
 #include "disas-asm.h"
 #include "../../asm/arch/arm/gnu/opcode-arm.h"
 
-static unsigned int disarm_branch_offset(unsigned int pc, unsigned int insoff) {
-	unsigned int add = insoff << 2;
+static ut32 disarm_branch_offset(ut32 pc, ut32 insoff) {
+	ut32 add = insoff << 2;
 	/* zero extend if higher is 1 (0x02000000) */
 	if ((add & 0x02000000) == 0x02000000) {
 		add |= 0xFC000000;
@@ -34,7 +34,7 @@ static unsigned int disarm_branch_offset(unsigned int pc, unsigned int insoff) {
 
 #define API static
 
-static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
 	int op_code;
 	ut16 *_ins = (ut16 *) data;
 	ut16 ins = *_ins;
@@ -49,6 +49,17 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->size = arm_disasm_one_insn (arminsn);
 	op->jump = arminsn->jmp;
 	op->fail = arminsn->fail;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		const char *cpu = r_str_get_fail (anal->config->cpu, "");
+		if (!strcmp (cpu, "wd")) {
+			const char *asmstr = winedbg_arm_insn_asm (arminsn);
+			if (asmstr) {
+				op->mnemonic = strdup (asmstr);
+			} else {
+				op->mnemonic = strdup ("invalid");
+			}
+		}
+	}
 	arm_free (arminsn);
 
 	// TODO: handle 32bit instructions (branches are not correctly decoded //
@@ -192,10 +203,11 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
+static R_TH_LOCAL char *oldcpu = NULL;
+static R_TH_LOCAL int oldcpucode = 0;
+
 static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	const int bits = a->config->bits;
-	static R_TH_LOCAL char *oldcpu = NULL;
-	static R_TH_LOCAL int oldcpucode = 0;
 	int opsize;
 	struct disassemble_info obj;
 	char *options = (bits == 16)? "force-thumb": "no-force-thumb";
@@ -215,20 +227,6 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	/* prepare disassembler */
 	memset (&obj, '\0', sizeof (struct disassemble_info));
 	arm_mode = bits;
-#if 0
-typedef struct {
-  unsigned long core[2];
-  unsigned long coproc;
-} arm_feature_set;
-#endif
-#if 0
-arm_feature_set afs = ARM_ARCH_V7EM;
-arm_feature_set afp = FPU_ARCH_VFP_V4D16;
-printf ("v7em = core { 0x%x, 0x%x } copro 0x%x\n", afs.core[0], afs.core[1], afs.coproc);
-cpucode = afs.core[0];
-cpucode = 66471;
-#endif
-// printf ("fpu- = 0x%x\n", FPU_ARCH_VFP_V4D16);
 
 	struct {
 		const char name[32];
@@ -298,6 +296,7 @@ cpucode = 66471;
 			: print_insn_big_arm ((bfd_vma) Offset, &obj);
 	}
 	opsize = op->size;
+	op->mnemonic = NULL;
 	if (op->size == -1) {
 		op->mnemonic = strdup ("(data)");
 		op->size = 4;
@@ -306,24 +305,26 @@ cpucode = 66471;
 		op->size = 2;
 		opsize = 2;
 	}
-	op->mnemonic = r_strbuf_drain (buf_global);
+	if (!op->mnemonic) {
+		op->mnemonic = r_strbuf_drain (buf_global);
+	}
 	buf_global = NULL;
 	return opsize;
 }
 
 
-static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
 	const ut8 *b = (ut8 *) data;
 	ut8 ndata[4] = {0};
 	ut32 branch_dst_addr, i = 0;
 	ut32 *code = (ut32 *) data;
-	struct winedbg_arm_insn *arminsn;
 
 	if (!data) {
 		return 0;
 	}
-	arminsn = arm_new ();
+	struct winedbg_arm_insn *arminsn = arm_new ();
 	arm_set_thumb (arminsn, false);
+
 	arm_set_input_buffer (arminsn, data);
 	arm_set_pc (arminsn, addr);
 	op->addr = addr;
@@ -339,9 +340,20 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 	if (anal->config->bits == 16) {
 		arm_free (arminsn);
-		return op_thumb (anal, op, addr, data, len);
+		return op_thumb (anal, op, addr, data, len, mask);
 	}
-	op->size = 4;
+	op->size = arm_disasm_one_insn (arminsn);
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		const char *cpu = r_str_get_fail (anal->config->cpu, "");
+		if (!strcmp (cpu, "wd")) {
+			const char *asmstr = winedbg_arm_insn_asm (arminsn);
+			if (asmstr) {
+				op->mnemonic = strdup (asmstr);
+			} else {
+				op->mnemonic = strdup ("invalid");
+			}
+		}
+	}
 	op->cond = op_cond (data);
 	if (b[2] == 0x8f && b[3] == 0xe2) {
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -484,7 +496,6 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return op->size;
 }
 
-
 static ut64 getaddr(ut64 addr, const ut8 *d) {
 	if (d[2] >> 7) {
 		/// st32 n = (d[0] + (d[1] << 8) + (d[2] << 16) + (0xff << 24));
@@ -546,34 +557,15 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 
 static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		disassemble (anal, op, addr, data, len);
-#if 0
-		struct disassemble_info disasm_obj;
-		int n = 0;
-		RStrBuf *insn_strbuf = r_strbuf_new ("");
-		disasm_obj.stream = insn_strbuf;
-
-		insn_offset = addr;
-		/*Looks kind of lame*/
-		memcpy (insn_bytes, b, INSNLEN);
-
-		disasm_obj.fprintf_func = &insn_fprintf_func;
-		disasm_obj.memory_error_func = &insn_memory_error_func;
-		disasm_obj.read_memory_func = &insn_read_func;
-		disasm_obj.stream = insn_strbuf;
-		n = print_insn_loongarch (addr, &disasm_obj);
-		if (n < 0) {
-			op->mnemonic = strdup ("invalid");
-		} else {
-			op->mnemonic = strdup (insn_strbuf->buf);
+		const char *cpu = r_str_get_fail (anal->config->cpu, "");
+		if (strcmp (cpu, "wd")) {
+			disassemble (anal, op, addr, data, len);
 		}
-		r_strbuf_free (insn_strbuf);
-#endif
 	}
 	if (anal->config->bits == 64) {
 		return arm_op64 (anal, op, addr, data, len);
 	}
-	return arm_op32 (anal, op, addr, data, len);
+	return arm_op32 (anal, op, addr, data, len, mask);
 }
 
 static bool set_reg_profile(RAnal *anal) {
@@ -633,11 +625,11 @@ static int archinfo(RAnal *anal, int q) {
 RAnalPlugin r_anal_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
-	.cpus = "v2,v2a,v3M,v4,v5,v5t,v5te,v5j,XScale,ep9312,iWMMXt,iWMMXt2",
+	.cpus = "v2,v2a,v3M,v4,v5,v5t,v5te,v5j,XScale,ep9312,iWMMXt,iWMMXt2,wd",
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.license = "LGPL3",
 	.bits = 16 | 32 | 64,
-	.desc = "ARM code analysis plugin",
+	.desc = "ARM code analysis plugin (asm.cpu=wd for winedbg disassembler)",
 	.archinfo = archinfo,
 	.op = &arm_op,
 	.set_reg_profile = set_reg_profile,
