@@ -14,7 +14,7 @@
 #endif
 #endif
 
-static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
+static const char * const SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
 
 static bool isAnExport(RBinSymbol *s) {
 	/* workaround for some bin plugs */
@@ -1220,6 +1220,31 @@ static char *langFromHashbang(RCore *core, const char *file) {
 	return NULL;
 }
 
+// R2_580 - move into r_file_is_executable()
+static bool is_executable(const char *file) {
+	bool ret = false;
+#if __UNIX__
+	struct stat buf = {0};
+	if (stat (file, &buf) != 0) {
+		return false;
+	}
+	if (buf.st_mode & 0111) {
+		return true;
+	}
+#endif
+#if 0
+	int osz = 0;
+	char *data = r_file_slurp_range (file, 0, 1024, &osz);
+	if (data) {
+		if (!memcmp (data, "\xca\xfe\xba\xbe", 4)) {
+			ret = true;
+		}
+		free (data);
+	}
+#endif
+	return ret;
+}
+
 R_API bool r_core_run_script(RCore *core, const char *file) {
 	bool ret = false;
 	RListIter *iter;
@@ -1403,7 +1428,12 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 						R_LOG_ERROR ("Cannot find python in PATH");
 					}
 				} else {
-					ret = r_core_cmd_file (core, file);
+					if (is_executable (file)) {
+						r_core_cmdf (core, "#!pipe %s%s", (*file=='/')?"":"./", file);
+						ret = 1;
+					} else {
+						ret = r_core_cmd_file (core, file);
+					}
 				}
 			} else {
 				char *abspath = r_file_path (file);
@@ -1415,6 +1445,11 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					free (lang);
 					free (cmd);
 					ret = 1;
+				} else {
+					if (is_executable (file)) {
+						r_core_cmdf (core, "#!pipe %s%s", (*file=='/')?"":"./", file);
+						ret = 1;
+					}
 				}
 				free (abspath);
 			}
