@@ -57,6 +57,7 @@ typedef struct {
 	bool verbose;
 	RList *evals;
 	PJ *pj;
+	ut64 baddr;
 } RadiffOptions;
 
 static RCore *opencore(RadiffOptions *ro, const char *f) {
@@ -145,7 +146,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				if (!ro->quiet) {
 					printf (Color_RED);
 				}
-				printf ("-0x%08"PFMT64x":", op->a_off);
+				printf ("-0x%08"PFMT64x":", op->a_off + ro->baddr);
 				int len = op->a_len; // R_MIN (op->a_len, strlen (op->a_buf));
 				for (i = 0; i < len; i++) {
 					printf ("%02x ", op->a_buf[i]);
@@ -165,7 +166,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				if (!ro->quiet) {
 					printf (Color_GREEN);
 				}
-				printf ("+0x%08"PFMT64x":", op->b_off);
+				printf ("+0x%08"PFMT64x":", op->b_off + ro->baddr);
 				for (i = 0; i < op->b_len; i++) {
 					printf ("%02x ", op->b_buf[i]);
 				}
@@ -188,20 +189,20 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			for (i = 0; i < op->b_len; i++) {
 				printf ("%02x", op->b_buf[i]);
 			}
-			printf (" @ 0x%08"PFMT64x "\n", op->b_off);
+			printf (" @ 0x%08"PFMT64x "\n", op->b_off + ro->baddr);
 		} else {
 			if (op->a_len > 0) {
 				printf ("r-%d @ 0x%08"PFMT64x "\n",
-					op->a_len, op->a_off + ro->delta);
+					op->a_len, op->a_off + ro->delta + ro->baddr);
 			}
 			if (op->b_len > 0) {
 				printf ("r+%d @ 0x%08"PFMT64x "\n",
-					op->b_len, op->b_off + ro->delta);
+					op->b_len, op->b_off + ro->delta + ro->baddr);
 				printf ("wx ");
 				for (i = 0; i < op->b_len; i++) {
 					printf ("%02x", op->b_buf[i]);
 				}
-				printf (" @ 0x%08"PFMT64x "\n", op->b_off + ro->delta);
+				printf (" @ 0x%08"PFMT64x "\n", op->b_off + ro->delta + ro->baddr);
 			}
 			ro->delta += (op->b_off - op->a_off);
 		}
@@ -214,7 +215,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		{
 			PJ *pj = ro->pj;
 			pj_o (pj);
-			pj_kn (pj, "addr", op->a_off);
+			pj_kn (pj, "addr", op->a_off + ro->baddr);
 			char *hex_from = r_hex_bin2strdup (op->a_buf, op->a_len);
 			pj_ks (pj, "from", hex_from);
 			char *hex_to = r_hex_bin2strdup (op->b_buf, op->b_len);
@@ -226,7 +227,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	default:
 		if (ro->disasm) {
 			int i;
-			printf ("--- 0x%08"PFMT64x "  ", op->a_off);
+			printf ("--- 0x%08"PFMT64x "  ", op->a_off + ro->baddr);
 			if (!ro->core) {
 				ro->core = opencore (ro, ro->file);
 				if (ro->arch) {
@@ -257,14 +258,14 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				r_asm_code_free (ac);
 			}
 		} else {
-			printf ("0x%08"PFMT64x " ", op->a_off);
+			printf ("0x%08"PFMT64x " ", op->a_off + ro->baddr);
 			for (i = 0; i < op->a_len; i++) {
 				printf ("%02x", op->a_buf[i]);
 			}
 		}
 		if (ro->disasm) {
 			int i;
-			printf ("+++ 0x%08"PFMT64x "  ", op->b_off);
+			printf ("+++ 0x%08"PFMT64x "  ", op->b_off + ro->baddr);
 			if (!ro->core) {
 				ro->core = opencore (ro, NULL);
 			}
@@ -294,7 +295,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			for (i = 0; i < op->b_len; i++) {
 				printf ("%02x", op->b_buf[i]);
 			}
-			printf (" 0x%08"PFMT64x "\n", op->b_off);
+			printf (" 0x%08"PFMT64x "\n", op->b_off + ro->baddr);
 		}
 		return 1;
 	}
@@ -314,11 +315,11 @@ void print_bytes(const void *p, size_t len, bool big_endian) {
 static int bcb(RDiff *d, void *user, RDiffOp *op) {
 	RadiffOptions *ro = user;
 	ut64 offset_diff = op->a_off - ro->gdiff_start;
-	unsigned char opcode;
-	unsigned short USAddr = 0;
+	ut8 opcode;
+	ut16 USAddr = 0;
 	int IAddr = 0;
-	unsigned char UCLen = 0;
-	unsigned short USLen = 0;
+	ut8 UCLen = 0;
+	ut16 USLen = 0;
 	int ILen = 0;
 
 	// we copy from gdiff_start to a_off
@@ -426,13 +427,14 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 }
 
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-abBcCdeGhijnrOpqsSxuUvVzZ] [-A[A]] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
+	printf ("Usage: radiff2 [-1abcCdeGhijnropqsSxuUvVzZ] [-A[A]] [-B #] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
 	if (v) {
 		printf (
 			"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
 			"  -A [-A]    run aaa or aaaa after loading each binary (see -C)\n"
 			"  -b [bits]  specify register size for arch (16 (thumb), 32, 64, ..)\n"
-			"  -B         output in binary diff (GDIFF)\n"
+			"  -B [baddr] define the base address to add the offsets when listing\n"
+			"  -1         output in Generic binary DIFF (0xd1ffd1ff magic header)\n"
 			"  -c         count of changes\n"
 			"  -C         graphdiff code (columns: off-A, match-ratio, off-B) (see -A)\n"
 			"  -d         use delta diffing\n"
@@ -597,7 +599,7 @@ static void dump_cols_hexii(ut8 *a, int as, ut8 *b, int bs, int w) {
 	PrintfCallback p = r_cons_printf;
 	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < sz; i += w) {
-		if (r_cons_is_breaked()) {
+		if (r_cons_is_breaked ()) {
 			break;
 		}
 		if (i + w >= sz) {
@@ -982,7 +984,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 
 	radiff_options_init (&ro);
 
-	r_getopt_init (&opt, argc, argv, "Aa:b:BCDe:npg:m:G:Oi:jrhcdsS:uUvVxXt:zqZ");
+	r_getopt_init (&opt, argc, argv, "1Aa:b:B:CDe:npg:m:G:Oi:jrhcdsS:uUvVxXt:zqZ");
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
 		case 'a':
@@ -994,8 +996,12 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		case 'b':
 			ro.bits = atoi (opt.arg);
 			break;
-		case 'B':
+		case '1':
+			// maybe use '-o' to handle binary output to a file instead of screen :?
 			ro.diffmode = 'B';
+			break;
+		case 'B':
+			ro.baddr = r_num_math (NULL, opt.arg);
 			break;
 		case 'e':
 			r_list_append (ro.evals, (void*)opt.arg);

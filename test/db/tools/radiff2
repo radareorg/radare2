@@ -6,11 +6,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=radiff2 -a -O x86
+NAME=radiff2 -a -o x86
 FILE=-
-CMDS=!radiff2 -a x86 -O bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2
+CMDS=!radiff2 -a x86 -o bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2
 EXPECT=<<EOF
 0x00000000 91 => 90 0x00000000
+EOF
+RUN
+
+NAME=radiff2 -B 0x420000
+FILE=-
+CMDS=!radiff2 -a x86 -B 0x420000 -o bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2
+EXPECT=<<EOF
+0x00420000 91 => 90 0x00420000
 EOF
 RUN
 
@@ -80,9 +88,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=radiff2 -B (GDIFF support) #1
+NAME=radiff2 -1 (GDIFF support) #1
 FILE=-
-CMDS=!!radiff2 -B bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2 | rax2 -S
+CMDS=!!radiff2 -1 bins/other/radiff2/radiff2_c_1 bins/other/radiff2/radiff2_c_2 | rax2 -S
 EXPECT=<<EOF
 d1ffd1ff04019000
 EOF
