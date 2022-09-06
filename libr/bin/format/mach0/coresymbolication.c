@@ -164,7 +164,7 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 	if (!hdr) {
 		return NULL;
 	}
-	if (hdr->version != 1) {
+	if (hdr->version != 1 && hdr->version != 7) {
 		eprintf ("Unsupported CoreSymbolication cache version (%d)\n", hdr->version);
 		goto beach;
 	}
@@ -194,7 +194,10 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 		result->binary_version = str_dup_safe (b, b + (size_t)hdr->version_off, end);
 	}
 	const size_t word_size = bits / 8;
-	const ut64 start_of_sections = (ut64)hdr->n_segments * R_CS_EL_SIZE_SEG + R_CS_EL_OFF_SEGS;
+	ut64 start_of_sections = (ut64)hdr->n_segments * R_CS_EL_SIZE_SEG + R_CS_EL_OFF_SEGS;
+	if (hdr->p) {
+		start_of_sections += 8;
+	}
 	const ut64 sect_size = (bits == 32) ? R_CS_EL_SIZE_SECT_32 : R_CS_EL_SIZE_SECT_64;
 	const ut64 start_of_symbols = start_of_sections + (ut64)hdr->n_sections * sect_size;
 	const ut64 start_of_lined_symbols = start_of_symbols + (ut64)hdr->n_symbols * R_CS_EL_SIZE_SYM;
@@ -222,6 +225,9 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 		}
 		size_t i;
 		ut8 *cursor = b + R_CS_EL_OFF_SEGS;
+		if (hdr->p) {
+			cursor += 8;
+		}
 		for (i = 0; i < hdr->n_segments && cursor + sizeof (RCoreSymCacheElementSegment) < end; i++) {
 			RCoreSymCacheElementSegment *seg = &result->segments[i];
 			seg->paddr = seg->vaddr = r_read_le64 (cursor);
