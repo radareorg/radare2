@@ -10,6 +10,12 @@ CMDS=q
 EXPECT=
 RUN
 
+NAME=Xcode symbols cache new2 (just open)
+FILE=bins/mach0/E0055E1F-DFC2-3F7D-AC52-A3B1DCF6A1C7.symbols
+CMDS=q
+EXPECT=
+RUN
+
 NAME=Xcode symbols cache (header)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
 CMDS=<<EOF
@@ -43,6 +49,24 @@ sections: 35
 symbols: 67
 lined_symbols: 0
 line_info: 32
+EOF
+RUN
+
+NAME=Xcode symbols cache new2 (header)
+FILE=bins/mach0/E0055E1F-DFC2-3F7D-AC52-A3B1DCF6A1C7.symbols
+CMDS=<<EOF
+ih~{:
+EOF
+EXPECT=<<EOF
+cs_version: 7
+size: 10425
+name: /Users/ftamagni/Library/Developer/Xcode/DerivedData/TestRTTI-dzknecdezpyynidynetkpnnyuzdo/Build/Products/Debug-iphoneos/TestRTTI.app.dSYM/Contents/Resources/DWARF/TestRTTI
+uuid: e0055e1fdfc23f7dac52a3b1dcf6a1c7
+segments: 6
+sections: 32
+symbols: 93
+lined_symbols: 0
+line_info: 104
 EOF
 RUN
 
@@ -148,6 +172,54 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Xcode symbols cache new2 (segment and sections)
+FILE=bins/mach0/E0055E1F-DFC2-3F7D-AC52-A3B1DCF6A1C7.symbols
+CMDS=<<EOF
+f~segment
+f~section
+EOF
+EXPECT=<<EOF
+0x00000000 0 segment.__PAGEZERO
+0x100000000 32768 segment.__TEXT
+0x100008000 16384 segment.__DATA_CONST
+0x10000c000 16384 segment.__DATA
+0x100010000 8192 segment.__LINKEDIT
+0x100012000 925696 segment.__DWARF
+0x100000000 23428 section.MACH_HEADER
+0x100005b84 2036 section.__TEXT___text
+0x100006378 208 section.__TEXT___auth_stubs
+0x100006448 188 section.__TEXT___objc_methlist
+0x100006504 3564 section.__TEXT___objc_methname
+0x1000072f0 236 section.__TEXT___cstring
+0x1000073dc 112 section.__TEXT___objc_classname
+0x10000744c 2857 section.__TEXT___objc_methtype
+0x100007f75 12 section.__TEXT___const
+0x100007f84 124 section.__TEXT___unwind_info
+0x100008000 104 section.__DATA_CONST___auth_got
+0x100008068 840 section.__DATA_CONST___const
+0x1000083b0 96 section.__DATA_CONST___cfstring
+0x100008410 24 section.__DATA_CONST___objc_classlist
+0x100008428 32 section.__DATA_CONST___objc_protolist
+0x100008448 8 section.__DATA_CONST___objc_imageinfo
+0x10000c000 4632 section.__DATA___objc_const
+0x10000d218 128 section.__DATA___objc_selrefs
+0x10000d298 16 section.__DATA___objc_classrefs
+0x10000d2a8 8 section.__DATA___objc_superrefs
+0x10000d2b0 4 section.__DATA___objc_ivar
+0x10000d2b8 240 section.__DATA___objc_data
+0x10000d3a8 384 section.__DATA___data
+0x100012000 46200 section.__DWARF___debug_line
+0x10001d478 324313 section.__DWARF___debug_info
+0x10006c751 240 section.__DWARF___debug_aranges
+0x10006c841 2272 section.__DWARF___debug_abbrev
+0x10006d121 394736 section.__DWARF___debug_str
+0x1000cd711 1196 section.__DWARF___apple_names
+0x1000cdbbd 36 section.__DWARF___apple_namespac
+0x1000cdbe1 155126 section.__DWARF___apple_types
+0x1000f39d7 156 section.__DWARF___apple_objc
+EOF
+RUN
+
 NAME=Xcode symbols cache (symbols)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
 CMDS=<<EOF
@@ -224,6 +296,44 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Xcode symbols cache new2 (symbols)
+FILE=bins/mach0/E0055E1F-DFC2-3F7D-AC52-A3B1DCF6A1C7.symbols
+CMDS=<<EOF
+is*~SceneDelegate
+EOF
+EXPECT=<<EOF
+"f sym.__SceneDelegate_scene:willConnectToSession:options:_ 152 0x1000060b0"
+"f sym.__SceneDelegate_sceneDidDisconnect:_ 80 0x100006148"
+"f sym.__SceneDelegate_sceneDidBecomeActive:_ 80 0x100006198"
+"f sym.__SceneDelegate_sceneWillResignActive:_ 80 0x1000061e8"
+"f sym.__SceneDelegate_sceneWillEnterForeground:_ 80 0x100006238"
+"f sym.__SceneDelegate_sceneDidEnterBackground:_ 80 0x100006288"
+"f sym.__SceneDelegate_window_ 36 0x1000062d8"
+"f sym.__SceneDelegate_setWindow:_ 64 0x1000062fc"
+"f sym.__SceneDelegate_.cxx_destruct_ 60 0x10000633c"
+"f sym.__OBJC___INSTANCE_METHODS_SceneDelegate 116 0x100006490"
+"f sym.__OBJC_LABEL_PROTOCOL___UISceneDelegate 8 0x100008438"
+"f sym.__OBJC_LABEL_PROTOCOL___UIWindowSceneDelegate 8 0x100008440"
+"f sym.__OBJC___PROTOCOL_REFS_UISceneDelegate 24 0x10000ce58"
+"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate 320 0x10000ce70"
+"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UISceneDelegate 104 0x10000cfb0"
+"f sym.__OBJC___PROTOCOL_REFS_UIWindowSceneDelegate 24 0x10000d018"
+"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate 128 0x10000d030"
+"f sym.__OBJC___PROP_LIST_UIWindowSceneDelegate 24 0x10000d0b0"
+"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate 40 0x10000d0c8"
+"f sym.__OBJC_CLASS_PROTOCOLS___SceneDelegate 24 0x10000d0f0"
+"f sym.__OBJC_METACLASS_RO___SceneDelegate 72 0x10000d108"
+"f sym.__OBJC___INSTANCE_VARIABLES_SceneDelegate 40 0x10000d150"
+"f sym.__OBJC___PROP_LIST_SceneDelegate 88 0x10000d178"
+"f sym.__OBJC_CLASS_RO___SceneDelegate 72 0x10000d1d0"
+"f sym._OBJC_IVAR___SceneDelegate._window 4 0x10000d2b0"
+"f sym._OBJC_METACLASS___SceneDelegate 40 0x10000d358"
+"f sym._OBJC_CLASS___SceneDelegate 40 0x10000d380"
+"f sym.__OBJC_PROTOCOL___UISceneDelegate 96 0x10000d468"
+"f sym.__OBJC_PROTOCOL___UIWindowSceneDelegate 96 0x10000d4c8"
+EOF
+RUN
+
 NAME=Xcode symbols cache (line numbers)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
 CMDS=<<EOF
@@ -256,6 +366,22 @@ addr: 0x100006430
 EOF
 RUN
 
+NAME=Xcode symbols cache new2 (line numbers)
+FILE=bins/mach0/E0055E1F-DFC2-3F7D-AC52-A3B1DCF6A1C7.symbols
+CMDS=<<EOF
+CL `is~viewDidLoad[2]`
+CL 0x100005cea
+EOF
+EXPECT=<<EOF
+file: /Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m
+line: 18
+addr: 0x100005b84
+file: /Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m
+line: 30
+addr: 0x100005cea
+EOF
+RUN
+
 NAME=Xcode symbols cache (flags)
 FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
 CMDS=<<EOF
@@ -275,6 +401,18 @@ fdj@0x100006430~{:
 EOF
 EXPECT=<<EOF
 offset: 4294992900
+name: sym.__AppDelegate_application:configurationForConnectingSceneSession:options:_
+realname: -[AppDelegate application:configurationForConnectingSceneSession:options:]
+EOF
+RUN
+
+NAME=Xcode symbols cache new2 (flags)
+FILE=bins/mach0/E0055E1F-DFC2-3F7D-AC52-A3B1DCF6A1C7.symbols
+CMDS=<<EOF
+fdj@0x100005cea~{:
+EOF
+EXPECT=<<EOF
+offset: 4294990968
 name: sym.__AppDelegate_application:configurationForConnectingSceneSession:options:_
 realname: -[AppDelegate application:configurationForConnectingSceneSession:options:]
 EOF
