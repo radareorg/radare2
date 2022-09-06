@@ -50,11 +50,14 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->jump = arminsn->jmp;
 	op->fail = arminsn->fail;
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		const char *asmstr = winedbg_arm_insn_asm (arminsn);
-		if (asmstr) {
-			op->mnemonic = strdup (asmstr);
-		} else {
-			op->mnemonic = strdup ("invalid");
+		const char *cpu = r_str_get_fail (anal->config->cpu, "");
+		if (!strcmp (cpu, "wd")) {
+			const char *asmstr = winedbg_arm_insn_asm (arminsn);
+			if (asmstr) {
+				op->mnemonic = strdup (asmstr);
+			} else {
+				op->mnemonic = strdup ("invalid");
+			}
 		}
 	}
 	arm_free (arminsn);
