@@ -757,7 +757,6 @@ static int cmd_help(void *data, const char *input) {
 					pj_ks (pj, "octal", r_strf ("0%"PFMT64o, n));
 					pj_ks (pj, "unit", unit);
 					pj_ks (pj, "segment", r_strf ("%04x:%04x", s, a));
-
 				} else {
 					if (n >> 32) {
 						r_cons_printf ("int64   %"PFMT64d"\n", (st64)n);
@@ -820,7 +819,7 @@ static int cmd_help(void *data, const char *input) {
 			R_LOG_ERROR ("Division by Zero");
 		}
 		if (input[1] == '?') {
-			r_cons_printf ("|Usage: ?q [num]  # Update $? without printing anything\n"
+			r_cons_printf ("Usage: ?q [num]  # Update $? without printing anything\n"
 				"|?q 123; ?? x    # hexdump if 123 != 0");
 		} else {
 			const char *space = strchr (input, ' ');
