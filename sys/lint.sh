@@ -18,6 +18,8 @@ cd "$(dirname $0)"/..
 (git grep 'eprintf ("|' libr ) && exit 1
 (git grep -n 'R_LOG_' | grep '\\n' | grep -v sys/) && exit 1
 (git grep "`printf '\tfree('`" libr | grep c: ) && exit 1
+(git grep cfg.debug libr| grep get_i) && exit 1
+(git grep -e 'asm.bytes"' -e 'asm.xrefs"' -e 'asm.functions"' -e 'asm.emu"' -e 'emu.str"' libr| grep get_i) && exit 1
 
 (git grep eprintf libr| grep -i error | grep -v '/native/' | grep -v spp | grep -v cons) && exit 1
 

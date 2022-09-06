@@ -4895,8 +4895,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	} else {
-		bool asm_lines = r_config_get_i (core->config, "asm.lines.jmp");
-		bool emu = r_config_get_i (core->config, "asm.emu");
+		bool asm_lines = r_config_get_b (core->config, "asm.lines.jmp");
+		bool emu = r_config_get_b (core->config, "asm.emu");
 		ut64 saved_gp = 0;
 		int saved_arena_size = 0;
 		ut8 *saved_arena = NULL;

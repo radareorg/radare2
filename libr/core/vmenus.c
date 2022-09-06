@@ -3442,8 +3442,8 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 
 	level = 0;
 
-	int asmbytes = r_config_get_i (core->config, "asm.bytes");
-	r_config_set_i (core->config, "asm.bytes", 0);
+	bool asmbytes = r_config_get_b (core->config, "asm.bytes");
+	r_config_set_b (core->config, "asm.bytes", false);
 	for (;;) {
 		nfcns = r_list_length (core->anal->fcns);
 		addr = r_core_visual_anal_refresh (core);
@@ -3738,7 +3738,7 @@ beach:
 	core->cons->event_data = olde_user;
 	core->cons->event_resize = olde;
 	level = 0;
-	r_config_set_i (core->config, "asm.bytes", asmbytes);
+	r_config_set_b (core->config, "asm.bytes", asmbytes);
 }
 
 struct seek_flag_offset_t {

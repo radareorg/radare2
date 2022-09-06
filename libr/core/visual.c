@@ -153,39 +153,39 @@ R_API void r_core_visual_applyDisMode(RCore *core, int disMode) {
 	currentFormat = R_ABS (disMode) % 5;
 	switch (currentFormat) {
 	case 0:
-		r_config_set (core->config, "asm.pseudo", "false");
-		r_config_set (core->config, "asm.bytes", "true");
-		r_config_set (core->config, "asm.esil", "false");
-		r_config_set (core->config, "emu.str", "false");
-		r_config_set (core->config, "asm.emu", "false");
+		r_config_set_b (core->config, "asm.pseudo", false);
+		r_config_set_b (core->config, "asm.bytes", true);
+		r_config_set_b (core->config, "asm.esil", false);
+		r_config_set_b (core->config, "emu.str", false);
+		r_config_set_b (core->config, "asm.emu", false);
 		break;
 	case 1:
-		r_config_set (core->config, "asm.pseudo", "false");
-		r_config_set (core->config, "asm.bytes", "true");
-		r_config_set (core->config, "asm.esil", "false");
-		r_config_set (core->config, "asm.emu", "false");
-		r_config_set (core->config, "emu.str", "true");
+		r_config_set_b (core->config, "asm.pseudo", false);
+		r_config_set_b (core->config, "asm.bytes", true);
+		r_config_set_b (core->config, "asm.esil", false);
+		r_config_set_b (core->config, "asm.emu", false);
+		r_config_set_b (core->config, "emu.str", true);
 		break;
 	case 2:
-		r_config_set (core->config, "asm.pseudo", "true");
-		r_config_set (core->config, "asm.bytes", "true");
-		r_config_set (core->config, "asm.esil", "true");
-		r_config_set (core->config, "emu.str", "true");
-		r_config_set (core->config, "asm.emu", "true");
+		r_config_set_b (core->config, "asm.pseudo", true);
+		r_config_set_b (core->config, "asm.bytes", true);
+		r_config_set_b (core->config, "asm.esil", true);
+		r_config_set_b (core->config, "emu.str", true);
+		r_config_set_b (core->config, "asm.emu", true);
 		break;
 	case 3:
-		r_config_set (core->config, "asm.pseudo", "false");
-		r_config_set (core->config, "asm.bytes", "false");
-		r_config_set (core->config, "asm.esil", "false");
-		r_config_set (core->config, "asm.emu", "false");
-		r_config_set (core->config, "emu.str", "true");
+		r_config_set_b (core->config, "asm.pseudo", false);
+		r_config_set_b (core->config, "asm.bytes", false);
+		r_config_set_b (core->config, "asm.esil", false);
+		r_config_set_b (core->config, "asm.emu", false);
+		r_config_set_b (core->config, "emu.str", true);
 		break;
 	case 4:
-		r_config_set (core->config, "asm.pseudo", "true");
-		r_config_set (core->config, "asm.bytes", "false");
-		r_config_set (core->config, "asm.esil", "false");
-		r_config_set (core->config, "asm.emu", "false");
-		r_config_set (core->config, "emu.str", "true");
+		r_config_set_b (core->config, "asm.pseudo", true);
+		r_config_set_b (core->config, "asm.bytes", false);
+		r_config_set_b (core->config, "asm.esil", false);
+		r_config_set_b (core->config, "asm.emu", false);
+		r_config_set_b (core->config, "emu.str", true);
 		break;
 	}
 }
@@ -430,16 +430,16 @@ static void rotateAsmBits(RCore *core) {
 }
 
 static const char *rotateAsmemu(RCore *core) {
-	const bool isEmuStr = r_config_get_i (core->config, "emu.str");
-	const bool isEmu = r_config_get_i (core->config, "asm.emu");
+	const bool isEmuStr = r_config_get_b (core->config, "emu.str");
+	const bool isEmu = r_config_get_b (core->config, "asm.emu");
 	if (isEmu) {
 		if (isEmuStr) {
-			r_config_set (core->config, "emu.str", "false");
+			r_config_set_b (core->config, "emu.str", false);
 		} else {
-			r_config_set (core->config, "asm.emu", "false");
+			r_config_set_b (core->config, "asm.emu", false);
 		}
 	} else {
-		r_config_set (core->config, "emu.str", "true");
+		r_config_set_b (core->config, "emu.str", true);
 	}
 	return "pd";
 }
@@ -1485,7 +1485,7 @@ repeat:
 		r_cons_printf ("\n\n(no %srefs)\n", xref ? "x": "");
 	} else {
 		int h, w = r_cons_get_size (&h);
-		bool asm_bytes = r_config_get_i (core->config, "asm.bytes");
+		bool asm_bytes = r_config_get_b (core->config, "asm.bytes");
 		r_config_set_i (core->config, "asm.bytes", false);
 		r_core_cmd0 (core, "fd");
 

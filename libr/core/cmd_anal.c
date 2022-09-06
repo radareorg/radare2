@@ -7813,15 +7813,15 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		RAnalCycleHook *hook;
 		char *instr_tmp = NULL;
 		int ccl = input[1]? r_num_math (core->num, &input[2]): 0; //get cycles to look for
-		int cr = r_config_get_i (core->config, "asm.cmt.right");
-		int fun = r_config_get_i (core->config, "asm.functions");
-		int li = r_config_get_i (core->config, "asm.lines");
-		int xr = r_config_get_i (core->config, "asm.xrefs");
+		bool cr = r_config_get_b (core->config, "asm.cmt.right");
+		bool fu = r_config_get_b (core->config, "asm.functions");
+		bool li = r_config_get_b (core->config, "asm.lines");
+		bool xr = r_config_get_b (core->config, "asm.xrefs");
 
-		r_config_set_i (core->config, "asm.cmt.right", true);
-		r_config_set_i (core->config, "asm.functions", false);
-		r_config_set_i (core->config, "asm.lines", false);
-		r_config_set_i (core->config, "asm.xrefs", false);
+		r_config_set_b (core->config, "asm.cmt.right", true);
+		r_config_set_b (core->config, "asm.functions", false);
+		r_config_set_b (core->config, "asm.lines", false);
+		r_config_set_b (core->config, "asm.xrefs", false);
 
 		hooks = r_core_anal_cycles (core, ccl); //analyse
 		r_cons_clear_line (1);
@@ -7833,10 +7833,10 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		}
 		r_list_free (hooks);
 
-		r_config_set_i (core->config, "asm.cmt.right", cr); //reset settings
-		r_config_set_i (core->config, "asm.functions", fun);
-		r_config_set_i (core->config, "asm.lines", li);
-		r_config_set_i (core->config, "asm.xrefs", xr);
+		r_config_set_b (core->config, "asm.cmt.right", cr); //reset settings
+		r_config_set_b (core->config, "asm.functions", fu);
+		r_config_set_b (core->config, "asm.lines", li);
+		r_config_set_b (core->config, "asm.xrefs", xr);
 	}
 	break;
 	case 'd': // "aod"
@@ -10900,7 +10900,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	const char *analin = r_config_get (core->config, "anal.in");
 	char *tmp = strdup (analin);
 	bool asterisk = strchr (input, '*');
-	const bool is_debug = r_config_get_i (core->config, "cfg.debug");
+	const bool is_debug = r_config_get_b (core->config, "cfg.debug");
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
 	r_config_set (core->config, "anal.in", "io.maps.x");
