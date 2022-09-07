@@ -2258,7 +2258,7 @@ static RList *classes(RBinFile *bf) {
 			ut8 *cursor = pointers;
 			ut8 *pointers_end = pointers + sections[i].size;
 
-			for (; cursor < pointers_end; cursor += 8) {
+			for (; cursor + 8 <= pointers_end; cursor += 8) {
 				ut64 pointer_to_class = r_read_le64 (cursor);
 
 				RBinClass *klass;

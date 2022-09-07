@@ -232,12 +232,12 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 			RCoreSymCacheElementSegment *seg = &result->segments[i];
 			seg->paddr = seg->vaddr = r_read_le64 (cursor);
 			cursor += 8;
-			if (cursor >= end) {
+			if (cursor + 8 > end) {
 				break;
 			}
 			seg->size = seg->vsize = r_read_le64 (cursor);
 			cursor += 8;
-			if (cursor >= end) {
+			if (cursor + 16 > end) {
 				break;
 			}
 			seg->name = str_dup_safe_fixed (b, cursor, 16, end);
