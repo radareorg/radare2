@@ -203,14 +203,24 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 
 static int r2pm_install(RList *targets, bool uninstall, bool clean, bool global);
 
+static void striptrim(RList *list) {
+	char *s;
+	RListIter *iter, *iter2;
+	r_list_foreach_safe (list, iter, iter2, s) {
+		if (R_STR_ISEMPTY (s)) {
+			r_list_delete (list, iter);
+		}
+	}
+}
+
 static void r2pm_upgrade(void) {
 	char *s = r_sys_cmd_str ("r2 -qcq -- 2>&1 | grep r2pm | sed -e 's,$,;,g'", NULL, 0);
 	r_str_trim (s);
 	RList *list = r_str_split_list (s, "\n", -1);
+	striptrim (list);
 	if (r_list_length (list) < 1) {
 		eprintf ("Nothing to upgrade.\n");
 	} else {
-		eprintf ("TO UPGRADE: %s\n", s);
 		r2pm_install (list, false, true, false);
 	}
 	free (s);
@@ -474,6 +484,9 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool global)
 		r_sys_setenv ("GLOBAL", "0");
 	}
 	r_list_foreach (targets, iter, t) {
+		if (R_STR_ISEMPTY (t)) {
+			continue;
+		}
 		if (uninstall) {
 			r2pm_uninstall_pkg (t);
 		}
