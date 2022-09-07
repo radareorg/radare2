@@ -15,6 +15,25 @@ pf zd hello world
 EOF
 RUN
 
+NAME=ts add and delete
+FILE=--
+CMDS=<<EOF
+t-*
+?e --
+"td typedef struct {int a;} Foo;"
+ts
+ts Foo
+ts-Foo
+?e --
+ts~Foo
+EOF
+EXPECT=<<EOF
+--
+Foo
+--
+EOF
+RUN
+
 NAME=typelinks
 FILE=-
 CMDS=<<EOF

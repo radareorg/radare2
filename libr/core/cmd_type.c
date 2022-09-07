@@ -111,6 +111,7 @@ static const char *help_msg_te[] = {
 	"Usage: te[...]", "", "",
 	"te", "", "list all loaded enums",
 	"te", " <enum>", "print all values of enum for given name",
+	"te-", "<enum>", "delete enum type definition",
 	"tej", "", "list all loaded enums in json",
 	"tej", " <enum>", "show enum in json",
 	"te", " <enum> <value>", "show name for given enum number",
@@ -160,6 +161,7 @@ static const char *help_msg_ts[] = {
 	"Usage: ts[...]", " [type]", "",
 	"ts", "", "list all loaded structs",
 	"ts", " [type]", "show pf format string for given struct",
+	"ts-", "[type]", "delete struct type definition",
 	"tsj", "", "list all loaded structs in json",
 	"tsj", " [type]", "show pf format string for given struct in json",
 	"ts*", "", "show pf.<name> format string for all loaded structs",
@@ -295,7 +297,7 @@ static void cmd_tcc(RCore *core, const char *input) {
 static void showFormat(RCore *core, const char *name, int mode) {
 	const char *isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
-		eprintf ("IS ENUM\n");
+		R_LOG_INFO ("Type is an enum");
 	} else {
 		char *fmt = r_type_format (core->anal->sdb_types, name);
 		if (fmt) {
@@ -312,10 +314,15 @@ static void showFormat(RCore *core, const char *name, int mode) {
 				r_cons_printf ("%s", pj_string (pj));
 				pj_free (pj);
 			} else {
-				if (mode) {
-					r_cons_printf ("pf.%s %s\n", name, fmt);
+				if (R_STR_ISNOTEMPTY (fmt)) {
+					if (mode) {
+						r_cons_printf ("pf.%s %s\n", name, fmt);
+					} else {
+						r_cons_printf ("pf %s\n", fmt);
+					}
 				} else {
-					r_cons_printf ("pf %s\n", fmt);
+					// This happens when the type hasnt been fully removed
+					R_LOG_DEBUG ("Type wasnt properly deleted");
 				}
 			}
 			free (fmt);
@@ -1173,6 +1180,9 @@ static int cmd_type(void *data, const char *input) {
 				ls_free (l);
 			}
 			break;
+		case '-': // "ts-"
+			r_core_cmdf (core, "t-%s", r_str_trim_head_ro (input + 2));
+			break;
 		case ' ':
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
 			break;
@@ -1219,6 +1229,9 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		switch (input[1]) {
+		case '-':
+			r_core_cmdf (core, "t-%s", r_str_trim_head_ro (input + 2));
+			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_te);
 			break;
