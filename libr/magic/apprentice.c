@@ -653,7 +653,9 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 				if (*d->d_name == '.') {
 					continue;
 				}
-				snprintf (subfn, sizeof (subfn), "%s/%s", fn, d->d_name);
+				if (snprintf (subfn, sizeof (subfn), "%s/%s", fn, d->d_name) < 0) {
+					continue;
+				}
 				if (stat (subfn, &st) == 0 && S_ISREG (st.st_mode)) {
 					load_1 (ms, action, subfn, &errs, &marray, &marraycount);
 				}
