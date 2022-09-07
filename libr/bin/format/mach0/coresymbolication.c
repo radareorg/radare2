@@ -237,7 +237,7 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 			}
 			seg->size = seg->vsize = r_read_le64 (cursor);
 			cursor += 8;
-			if (cursor + 8 >= end) {
+			if (cursor + 16 > end) {
 				break;
 			}
 			seg->name = str_dup_safe_fixed (b, cursor, 16, end);
