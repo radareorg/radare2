@@ -99,6 +99,13 @@ static const char *help_msg_plus[] = {
 	NULL
 };
 
+static const char *help_msg_j[] = {
+	"Usage:", "j[:o]in", "run command with json facilities or join two files",
+	"j:", "?e", "run '?e' command and show the result stats in json",
+	"join", " f1 f2", "join the contents of two files",
+	NULL
+};
+
 static const char *help_msg_dash[] = {
 	"Usage:", "-", "open editor and run the r2 commands in the saved document",
 	"", "'-' '.-' '. -'", " those three commands do the same",
@@ -619,14 +626,14 @@ static int cmd_undo(void *data, const char *input) {
 	case 'c': // "uc"
 		switch (input[1]) {
 		case ' ': {
-			char *cmd = strdup (input + 2);
+			char *cmd = r_str_trim_dup (input + 2);
 			char *rcmd = strchr (cmd, ',');
 			if (rcmd) {
 				*rcmd++ = 0;
 				RCoreUndo *undo = r_core_undo_new (core->offset, cmd, rcmd);
 				r_core_undo_push (core, undo);
 			} else {
-				eprintf ("Usage: uc [cmd],[revert-cmd]\n");
+				r_core_cmd_help_match (core, help_msg_uc, "uc", true);
 			}
 			free (cmd);
 			}
@@ -1617,8 +1624,7 @@ static int cmd_join(void *data, const char *input) { // "join"
 	free (tmp);
 	return 0;
 beach:
-	eprintf ("Usage: join [file1] [file2] # join the contents of the two files\n");
-	eprintf ("| j:cmd   run the command and print stats in json\n");
+	r_core_cmd_help (core, help_msg_j);
 	free (tmp);
 	return 0;
 }
