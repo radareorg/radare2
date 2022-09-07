@@ -3380,7 +3380,7 @@ R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 			*e++ =  0;
 		}
 		r_str_trim (aux);
-		if (*aux) {
+		if (*aux || r_list_length (lst) > 0) {
 			r_list_append (lst, aux);
 		}
 		aux = e;
