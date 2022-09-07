@@ -1,11 +1,23 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake */
+/* radare - LGPL - Copyright 2011-2022 - pancake */
 
 #include <r_bin.h>
 #include "i/private.h"
 #include <cxx/demangle.h>
 
 R_API void r_bin_demangle_list(RBin *bin) {
-	const char *langs[] = { "c++", "java", "objc", "swift", "dlang", "msvc", "rust", NULL };
+	const char *langs[] = {
+		"c++",
+		"dart",
+		"dlang",
+		"groovy",
+		"java",
+		"msvc",
+		"objc",
+		"pascal",
+		"rust",
+		"swift",
+		NULL
+	};
 	RBinPlugin *plugin;
 	RListIter *it;
 	int i;
@@ -43,8 +55,20 @@ R_API int r_bin_demangle_type(const char *str) {
 		if (!strcmp (str, "java")) {
 			return R_BIN_NM_JAVA;
 		}
+		if (!strcmp (str, "kotlin")) {
+			return R_BIN_NM_KOTLIN;
+		}
+		if (!strcmp (str, "groovy")) {
+			return R_BIN_NM_GROOVY;
+		}
+		if (!strcmp (str, "dart")) {
+			return R_BIN_NM_DART;
+		}
 		if (!strcmp (str, "objc")) {
 			return R_BIN_NM_OBJC;
+		}
+		if (!strcmp (str, "pascal") || !strcmp (str, "freepascal")) {
+			return R_BIN_NM_PASCAL;
 		}
 		if (!strcmp (str, "cxx") || !strcmp (str, "c++")) {
 			return R_BIN_NM_CXX;
@@ -127,6 +151,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	case R_BIN_NM_OBJC: demangled = r_bin_demangle_objc (NULL, str); break;
 	case R_BIN_NM_SWIFT: demangled = r_bin_demangle_swift (str, bin? bin->demangle_usecmd: false, trylib); break;
 	case R_BIN_NM_CXX: demangled = r_bin_demangle_cxx (bf, str, vaddr); break;
+	case R_BIN_NM_PASCAL: demangled = r_bin_demangle_freepascal (str); break;
 	case R_BIN_NM_MSVC: demangled = r_bin_demangle_msvc (str); break;
 	case R_BIN_NM_DLANG: demangled = r_bin_demangle_plugin (bin, "dlang", str); break;
 	}

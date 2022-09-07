@@ -145,6 +145,9 @@ typedef enum {
 	R_BIN_NM_MSVC = 1<<7,
 	R_BIN_NM_RUST = 1<<8,
 	R_BIN_NM_KOTLIN = 1<<9,
+	R_BIN_NM_PASCAL = 1<<10,
+	R_BIN_NM_DART = 1<<11,
+	R_BIN_NM_GROOVY = 1<<12,
 	R_BIN_NM_BLOCKS = 1U<<31,
 	R_BIN_NM_ANY = -1,
 } RBinNameMangling;
@@ -782,6 +785,7 @@ R_API void r_bin_mem_free(void *data);
 // demangle functions
 R_API char *r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr, bool libs);
 R_API char *r_bin_demangle_java(const char *str);
+R_API char *r_bin_demangle_freepascal(const char *str);
 R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_msvc(const char *str);
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib);
