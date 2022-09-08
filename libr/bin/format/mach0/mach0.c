@@ -1621,7 +1621,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 						cur_seg->page_size = ps;
 						cur_seg->page_count = ((bin->segs[seg_idx].vmsize + (ps - 1)) & ~(ps - 1)) / ps;
 						if (cur_seg->page_count > 0) {
-							cur_seg->page_start = malloc (sizeof (ut16) * cur_seg->page_count);
+							cur_seg->page_start = R_NEWS0 (ut16, cur_seg->page_count);
 							if (!cur_seg->page_start) {
 								break;
 							}
@@ -1631,8 +1631,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 				}
 				if (cur_seg) {
 					ut32 page_index = (ut32)(seg_off / ps);
-					size_t maxsize = cur_seg->page_count * sizeof (ut16);
-					if (page_index < maxsize && cur_seg->page_start) {
+					if (page_index < cur_seg->page_count && cur_seg->page_start) {
 						cur_seg->page_start[page_index] = seg_off & 0xfff;
 					}
 				}
