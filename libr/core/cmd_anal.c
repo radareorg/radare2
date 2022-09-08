@@ -607,6 +607,7 @@ static const char *help_msg_afl[] = {
 	"aflq", "", "list functions in quiet mode",
 	"aflqj", "", "list functions in json quiet mode",
 	"afls", "[?asn]", "sort function list by address, size or name",
+	"aflx", "", "list function xrefs (who references or calls the current function)",
 	NULL
 };
 
@@ -1093,6 +1094,22 @@ static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *bu
 	return false;
 }
 #endif
+
+static ut64 faddr(RCore *core, ut64 addr, bool *nr) {
+	RList *fcns = r_anal_get_functions_in (core->anal, addr);
+	if (fcns && r_list_length (fcns) > 0) {
+		RListIter *iter;
+		RAnalFunction *fcn;
+		r_list_foreach (fcns, iter, fcn) {
+			if (nr && fcn->is_noreturn) {
+				*nr = true;
+			}
+			return fcn->addr;
+		}
+	}
+	r_list_free (fcns);
+	return addr;
+}
 
 // function argument types and names into anal/types
 static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
@@ -4420,6 +4437,35 @@ static int cmd_af(RCore *core, const char *input) {
 		case '?':
 			r_core_cmd_help (core, help_msg_afl);
 			break;
+		case 'x': // "aflx"
+			{
+				ut64 addr = faddr (core, core->offset, NULL);
+				RList *xrefs = r_anal_xrefs_get (core->anal, addr);
+				Sdb *db = sdb_new0 ();
+				// sort by function and uniq to avoid dupped results
+				RListIter *iter;
+				RAnalRef *ref;
+				r_list_foreach (xrefs, iter, ref) {
+					bool nr = false;
+					ut64 fa = faddr (core, ref->addr, &nr);
+					char *key = r_str_newf ("0x%08"PFMT64x, fa);
+					sdb_array_add_num (db, key, ref->addr, 0);
+				}
+				SdbList *keys = sdb_foreach_list (db, true);
+				SdbListIter *liter;
+				SdbKv *kv;
+				bool rad = input[3] == '*';
+				ls_foreach (keys, liter, kv) {
+					if (rad) {
+						r_cons_printf ("s %s;af-;af;s-\n", (const char *)kv->base.key);
+					} else {
+						r_cons_printf ("%s %s\n", (const char *)kv->base.key, (const char *)kv->base.value);
+					}
+				}
+				sdb_free (db);
+				ls_free (keys);
+			}
+			break;
 		case 's': // "afls"
 			switch (input[3]) {
 			default:
@@ -4467,8 +4513,12 @@ static int cmd_af(RCore *core, const char *input) {
 		case 'c': // "aflc"
 			r_cons_printf ("%d\n", r_list_length (core->anal->fcns));
 			break;
-		default: // "afl "
+		case ' ': // "afl [addr]" argument ignored
+		case 0: // "afl"
 			r_core_anal_fcn_list (core, NULL, "o");
+			break;
+		default: // "afl "
+			r_core_cmd_help (core, help_msg_afl);
 			break;
 		}
 		break;
