@@ -1,0 +1,24 @@
+#ifndef R_SM4_H
+#define R_SM4_H
+
+#include <r_util.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Constant Key CK */
+static const ut32 sm4_CK[32] = {
+	0x00070e15, 0x1c232a31, 0x383f464d, 0x545b6269, 0x70777e85, 0x8c939aa1, 0xa8afb6bd, 0xc4cbd2d9,
+	0xe0e7eef5, 0xfc030a11, 0x181f262d, 0x343b4249, 0x50575e65, 0x6c737a81, 0x888f969d, 0xa4abb2b9,
+	0xc0c7ced5, 0xdce3eaf1, 0xf8ff060d, 0x141b2229, 0x30373e45, 0x4c535a61, 0x686f767d, 0x848b9299,
+	0xa0a7aeb5, 0xbcc3cad1, 0xd8dfe6ed, 0xf4fb0209, 0x10171e25, 0x2c333a41, 0x484f565d, 0x646b7279
+};
+
+R_API ut32 sm4_RK(ut32 rk);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif //  R_SM4_H

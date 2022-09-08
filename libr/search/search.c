@@ -85,6 +85,7 @@ R_API int r_search_set_mode(RSearch *s, int mode) {
 	case R_SEARCH_KEYWORD: s->update = search_kw_update; break;
 	case R_SEARCH_REGEXP: s->update = search_regexp_update; break;
 	case R_SEARCH_AES: s->update = search_aes_update; break;
+	case R_SEARCH_SM4: s->update = search_sm4_update; break;
 	case R_SEARCH_PRIV_KEY: s->update = search_privkey_update; break;
 	case R_SEARCH_STRING: s->update = search_strings_update; break;
 	case R_SEARCH_DELTAKEY: s->update = search_deltakey_update; break;

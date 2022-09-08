@@ -5,6 +5,7 @@
  * */
 
 #include <r_crypto.h>
+#include <r_crypto/r_sm4.h>
 #include <r_util.h>
 #include <memory.h>
 
@@ -16,14 +17,6 @@
 
 /* Family Key FK */
 static const ut32 FK[4] = { 0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc };
-
-/* Constant Key CK */
-static const ut32 CK[32] = {
-	0x00070e15, 0x1c232a31, 0x383f464d, 0x545b6269, 0x70777e85, 0x8c939aa1, 0xa8afb6bd, 0xc4cbd2d9,
-	0xe0e7eef5, 0xfc030a11, 0x181f262d, 0x343b4249, 0x50575e65, 0x6c737a81, 0x888f969d, 0xa4abb2b9,
-	0xc0c7ced5, 0xdce3eaf1, 0xf8ff060d, 0x141b2229, 0x30373e45, 0x4c535a61, 0x686f767d, 0x848b9299,
-	0xa0a7aeb5, 0xbcc3cad1, 0xd8dfe6ed, 0xf4fb0209, 0x10171e25, 0x2c333a41, 0x484f565d, 0x646b7279
-};
 
 /* SM4 S-boxes */
 static const ut8 Sbox[256] = {
@@ -46,7 +39,7 @@ static const ut8 Sbox[256] = {
 };
 
 /* Calculating next round keys */
-static ut32 sm4_RK(ut32 rk) {
+R_API ut32 sm4_RK(ut32 rk) {
 	ut8 a[4];
 	ut8 b[4];
 	ut32 lb = 0;
@@ -125,7 +118,7 @@ static bool sm4_init(RCryptoJob *cj, ut32 *sk, const ut8 *key, int keylen, int d
 	k[2] = MK[2] ^ FK[2];
 	k[3] = MK[3] ^ FK[3];
 	for (i = 0; i < 32; i++) {
-		k[i + 4] = k[i] ^ (sm4_RK (k[i + 1] ^ k[i + 2] ^ k[i + 3] ^ CK[i]));
+		k[i + 4] = k[i] ^ (sm4_RK (k[i + 1] ^ k[i + 2] ^ k[i + 3] ^ sm4_CK[i]));
 
 		if (dir == 0) {
 			cj->sm4_sk[i] = k[i + 4];
