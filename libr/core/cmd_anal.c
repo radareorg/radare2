@@ -2857,6 +2857,8 @@ static void print_bb(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, cons
 	ut64 opaddr = __opaddr (b, addr);
 	if (pj) {
 		pj_o (pj);
+		pj_kn (pj, "addr", b->addr);
+		pj_ki (pj, "size", b->size);
 		if (b->jump != UT64_MAX) {
 			pj_kn (pj, "jump", b->jump);
 		}
@@ -2887,11 +2889,18 @@ static void print_bb(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, cons
 			pj_end (pj);
 		}
 		pj_kn (pj, "opaddr", opaddr);
-		pj_kn (pj, "addr", b->addr);
-		pj_ki (pj, "size", b->size);
 		pj_ki (pj, "inputs", inputs);
 		pj_ki (pj, "outputs", outputs);
 		pj_ki (pj, "ninstr", b->ninstr);
+		pj_ko (pj, "instrs");
+		{
+			int i;
+			for (i = 0; i <= b->ninstr; i++) {
+				int delta = (i > 0)? b->op_pos[i-1]: 0;
+				pj_n (pj, b->addr + delta);
+			}
+		}
+		pj_end (pj);
 		pj_kb (pj, "traced", b->traced);
 		pj_end (pj);
 	} else {
