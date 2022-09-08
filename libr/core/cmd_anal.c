@@ -603,7 +603,7 @@ static const char *help_msg_afl[] = {
 	"aflt", " [query]", "list functions in table format",
 	"afll", " [column]", "list functions in verbose mode (sorted by column name)",
 	"afllj", "", "list functions in verbose mode (alias to aflj)",
-	"aflm", "", "list functions in makefile style (af@@=`aflm~0x`)",
+	"aflm", "[?]", "list functions in makefile style (af@@=`aflm~0x`)",
 	"aflq", "", "list functions in quiet mode",
 	"aflqj", "", "list functions in json quiet mode",
 	"afls", "[?asn]", "sort function list by address, size or name",
