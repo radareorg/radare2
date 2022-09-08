@@ -127,6 +127,7 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 }
 
 // Create a new 0-sized basic block inside the function
+// XXX wtf append-bb is the same aas addblock or addnewblock
 static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	RAnalBlock *bb = r_anal_create_block (anal, addr, 0);
 	if (!bb) {
@@ -1197,7 +1198,6 @@ repeat:
 			/* call [dst] */
 			// XXX: this is TYPE_MCALL or indirect-call
 			(void) r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_CALL);
-
 			if (r_anal_noreturn_at (anal, op->ptr)) {
 				RAnalFunction *f = r_anal_get_function_at (anal, op->ptr);
 				if (f) {

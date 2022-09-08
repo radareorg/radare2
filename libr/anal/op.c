@@ -125,6 +125,16 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 				op->size = 1;
 			}
 		}
+		// check if call destination points to noreturn function and kill the fail branch
+#if 0
+		if (op->type == R_ANAL_OP_TYPE_CALL || op->type == R_ANAL_OP_TYPE_CJMP) {
+			if (r_anal_noreturn_at_addr (anal, op->jump)) {
+				op->type = R_ANAL_OP_TYPE_JMP;
+				op->fail = UT64_MAX;
+				eprintf ("noreturn call tail at 0x%08"PFMT64x" from 0x%08"PFMT64x"\n", op->jump, op->addr);
+			}
+		}
+#endif
 		op->addr = addr;
 		/* consider at least 1 byte to be part of the opcode */
 		if (op->nopcode < 1) {

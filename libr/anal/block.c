@@ -209,6 +209,43 @@ R_API void r_anal_delete_block(RAnalBlock *bb) {
 	r_anal_block_unref (bb);
 }
 
+static bool last_calls_noreturn(RAnalBlock *bb) {
+	// address of last instruction in this BB
+	int i;
+	ut8 *buf = malloc (bb->size);
+	bb->anal->iob.read_at (bb->anal->iob.io, bb->addr, buf, bb->size);
+	for (i = 0; i <= bb->ninstr; i++) {
+		int delta = i? bb->op_pos[i - 1]: 0;
+		ut64 op_addr = bb->addr + delta;
+		RAnalOp *op = r_anal_op_new ();
+		if (!op) {
+			break;
+		}
+		int rest = sizeof (buf) - delta;
+		if (rest < 1) {
+			break;
+		}
+		int rc = r_anal_op (bb->anal, op, op_addr, buf + delta, rest, R_ANAL_OP_MASK_VAL);
+		if (rc > 0) {
+			switch (op->type) {
+			case R_ANAL_OP_TYPE_CALL:
+			case R_ANAL_OP_TYPE_CJMP:
+				if (r_anal_noreturn_at_addr (bb->anal, op->jump)) {
+					r_anal_op_free (op);
+					return true;
+				}
+				break;
+			}
+
+		}
+		r_anal_op_free (op);
+	}
+	if (bb->addr == 0x100006780) {
+	//	return true;
+	}
+	return false;
+}
+
 R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size) {
 	if (block->size == size) {
 		return;
@@ -295,7 +332,12 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 
 	// resize the first block
 	r_anal_block_set_size (bbi, addr - bbi->addr);
-	bbi->jump = addr;
+	bbi->anal = anal;
+	if (0 && last_calls_noreturn (bbi)) {
+		bbi->jump = UT64_MAX;
+	} else {
+		bbi->jump = addr;
+	}
 	bbi->fail = UT64_MAX;
 	bbi->switch_op = NULL;
 	r_anal_block_update_hash (bbi);

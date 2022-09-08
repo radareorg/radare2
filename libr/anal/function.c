@@ -246,6 +246,12 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	if (r_list_contains (bb->fcns, fcn)) {
 		return;
 	}
+#if 0
+	if (r_anal_noreturn_at_addr (fcn->anal, bb->jump)) {
+		bb->fail = UT64_MAX;
+		bb->jump = UT64_MAX;
+	}
+#endif
 	r_list_append (bb->fcns, fcn); // associate the given fcn with this bb
 	r_anal_block_ref (bb);
 	r_list_append (fcn->bbs, bb);
