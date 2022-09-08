@@ -786,6 +786,7 @@ static bool esil_js(RAnalEsil *esil) {
 //	- condret
 // YES PLS KILL IT
 static bool esil_address(RAnalEsil *esil) {
+	R_LOG_WARN ("support for esil operation $$ is about to end soon, avoid using it!");
 	r_return_val_if_fail (esil, false);
 	// esil->address = r_reg_getv (esil->anal->reg, "pc");
 	return r_anal_esil_pushnum (esil, esil->address);
