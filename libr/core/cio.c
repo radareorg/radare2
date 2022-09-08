@@ -165,7 +165,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 		if (arg) {  // parse arg for key
 			// r_hex_str2bin() is guaranteed to output maximum half the
 			// input size, or 1 byte if there is just a single nibble.
-			str = (char *)malloc (strlen (arg) / 2 + 1);
+			str = (char *)malloc ((strlen (arg) / 2) + 1);
 			if (!str) {
 				goto beach;
 			}
@@ -288,12 +288,14 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			}
 		}
 	} else {
+#if 0
 		bool be = r_config_get_i (core->config, "cfg.bigendian");
 		if (!be) {
 			if (!__endian_swap ((ut8*)str, len, len)) {
 				goto beach;
 			}
 		}
+#endif
 		for (i = j = 0; i < core->blocksize; i++) {
 			switch (op) {
 			case 'x': buf[i] ^= str[j]; break;

@@ -100,27 +100,26 @@ static const char *help_msg_we[] = {
 };
 
 static const char *help_msg_wo[] = {
-	"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize]",
-	"wo[24aAdlmorwx]","", "without hexpair values, clipboard is used",
-	"wo2"," [val]","2=  2 byte endian swap (word)",
-	"wo4"," [val]", "4=  4 byte endian swap (dword)",
-	"wo8"," [val]", "8=  8 byte endian swap (qword)",
-	"woa"," [val]", "+=  addition (f.ex: woa 0102)",
-	"woA"," [val]","&=  and",
-	"wod"," [val]", "/=  divide",
-	"woD","[algo] [key] [IV]","decrypt current block with given algo and key",
-	"woe"," [from to] [step] [wsz=1]","..  create sequence",
-	"woE"," [algo] [key] [IV]", "encrypt current block with given algo and key",
-	"woi","", "inverse bytes in current block",
-	"wol"," [val]","<<= shift left",
-	"wom"," [val]", "*=  multiply",
-	"woo"," [val]","|=  or",
-	"wop[DO]"," [arg]","De Bruijn Patterns",
-	"wor"," [val]", ">>= shift right",
-	"woR","","random bytes (alias for 'wr $b')",
-	"wos"," [val]", "-=  substraction",
-	"wow"," [val]", "==  write looped value (alias for 'wb')",
-	"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
+	"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize] write operation in current block",
+	"wo2", "", "2=  2 byte endian swap (word)",
+	"wo4", "", "4=  4 byte endian swap (dword)",
+	"wo8", "", "8=  8 byte endian swap (qword)",
+	"woa", " [hexpair]", "+= addition (f.ex: woa 0102)",
+	"woA", " [hexpair]", "&=  and",
+	"wod", " [hexpair]", "/=  divide",
+	"woD", "[algo] [key] [IV]", "decrypt current block with given algo and key",
+	"woE", " [algo] [key] [IV]", "encrypt current block with given algo and key",
+	"woe", " [from to] [step] [wsz=1]","..  create sequence",
+	"woi", "", "inverse bytes in current block",
+	"wol", " [val]", "<<= shift left",
+	"wom", " [val]", "*=  multiply",
+	"woo", " [val]", "|=  or",
+	"wop[DO]", " [arg]", "De Bruijn Patterns",
+	"wor", " [val]", ">>= shift right",
+	"woR", "", "random bytes (alias for 'wr $b')",
+	"wos", " [val]", "-=  substraction",
+	"wow", " [val]", "==  write looped value (alias for 'wb')",
+	"wox", " [val]", "^=  xor  (f.ex: wox 0x90)",
 	NULL
 };
 
@@ -343,7 +342,11 @@ static int cmd_wo(void *data, const char *input) {
 	case '2': // "wo2"
 	case '4': // "wo4"
 	case '8': // "wo8"
-		if (input[1]) {  // parse val from arg
+		if (input[1] == '?') {  // parse val from arg
+			char s[8];
+			snprintf (s, sizeof (s), "wo%c", input[0]);
+			r_core_cmd_help_match (core, help_msg_wo, s, true);
+		} else if (input[1]) {  // parse val from arg
 			r_core_write_op (core, r_str_trim_head_ro (input + 2), input[0]);
 		} else {  // use clipboard instead of val
 			r_core_write_op (core, NULL, input[0]);
