@@ -9737,6 +9737,51 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 	}
 }
 
+R_API void cmd_agfb(RCore *core) {
+	const int c = r_config_get_b (core->config, "scr.color");
+	r_config_set_i (core->config, "scr.color", 0);
+	r_cons_push ();
+	r_core_visual_graph (core, NULL, NULL, false);
+	r_config_set_i (core->config, "scr.color", c);
+	char *s = strdup (r_cons_singleton()->context->buffer);
+	r_cons_pop ();
+	cmd_agfb2 (core, s);
+	free (s);
+}
+
+R_API void cmd_aggb(RCore *core) {
+	const int c = r_config_get_b (core->config, "scr.color");
+	r_config_set_i (core->config, "scr.color", 0);
+	r_cons_push ();
+	int ograph_zoom = r_config_get_i (core->config, "graph.zoom");
+	r_config_set_i (core->config, "graph.zoom", 1);
+	r_core_cmd0 (core, "agg");
+	r_config_set_i (core->config, "scr.color", c);
+	char *s = strdup (r_cons_singleton()->context->buffer);
+	r_cons_pop ();
+	cmd_agfb2 (core, s);
+	r_config_set_i (core->config, "graph.zoom", ograph_zoom);
+	free (s);
+}
+
+R_API void cmd_agfb3(RCore *core, const char *s, int x, int y) {
+	int h, w = r_str_size (s, &h);
+	RConsPixel *p = r_cons_pixel_new (w, h);
+	r_cons_pixel_sets (p, 0, 0, s);
+	r_cons_pixel_flush (p, x, y);
+	R_FREE (p);
+}
+
+R_API void cmd_agfb2(RCore *core, const char *s) {
+	int h, w = r_str_size (s, &h);
+	RConsPixel *p = r_cons_pixel_new (w, h);
+	r_cons_pixel_sets (p, 0, 0, s);
+	char *pix = r_cons_pixel_drain (p);
+	r_cons_printf ("%s\n", pix);
+	free (pix);
+}
+
+
 static char *mermaid_sanitize_str(const char *str) {
 	if (!str) {
 		return NULL;
@@ -9847,6 +9892,9 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		core->graph->is_tiny = false;
 		break;
 	}
+	case 'b': // "aggb"
+		cmd_aggb (core);
+		break;
 	case 'm': // "aggm"
 		if (core->graph) {
 			mermaid_graph (core->graph->graph, mermaid_anod_body);
@@ -10111,35 +10159,6 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		r_core_cmd_help (core, help_msg_ag);
 		break;
 	}
-}
-
-R_API void cmd_agfb(RCore *core) {
-	const int c = r_config_get_b (core->config, "scr.color");
-	r_config_set_i (core->config, "scr.color", 0);
-	r_cons_push ();
-	r_core_visual_graph (core, NULL, NULL, false);
-	r_config_set_i (core->config, "scr.color", c);
-	char *s = strdup (r_cons_singleton()->context->buffer);
-	r_cons_pop ();
-	cmd_agfb2 (core, s);
-	free (s);
-}
-
-R_API void cmd_agfb3(RCore *core, const char *s, int x, int y) {
-	int h, w = r_str_size (s, &h);
-	RConsPixel *p = r_cons_pixel_new (w, h);
-	r_cons_pixel_sets (p, 0, 0, s);
-	r_cons_pixel_flush (p, x, y);
-	R_FREE (p);
-}
-
-R_API void cmd_agfb2(RCore *core, const char *s) {
-	int h, w = r_str_size (s, &h);
-	RConsPixel *p = r_cons_pixel_new (w, h);
-	r_cons_pixel_sets (p, 0, 0, s);
-	char *pix = r_cons_pixel_drain (p);
-	r_cons_printf ("%s\n", pix);
-	free (pix);
 }
 
 static inline bool mermaid_add_node_asm(RAnal *a, RAnalBlock *bb, RStrBuf *nodes) {
