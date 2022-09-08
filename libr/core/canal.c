@@ -2679,6 +2679,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 }
 
 static int fcn_list_verbose(RCore *core, RList *fcns, const char *sortby) {
+	// TODO: use the r_table api no need to dup the work here its already implemented in `fcn_list_table`
 	bool use_color = r_config_get_i (core->config, "scr.color");
 	int headeraddr_width = 10;
 	char *headeraddr = "==========";
@@ -3228,6 +3229,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, typeNumber, "addr", 0);
 	r_table_add_column (t, typeNumber, "size", 0);
 	r_table_add_column (t, typeString, "name", 0);
+	r_table_add_column (t, typeNumber, "noret", 0);
 	r_table_add_column (t, typeNumber, "nbbs", 0);
 	r_table_add_column (t, typeNumber, "nins", 0);
 	r_table_add_column (t, typeNumber, "xref", 0);
@@ -3238,6 +3240,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		r_strf_var (fcnSize, 32, "%"PFMT64u, r_anal_function_linear_size (fcn)); // r_anal_function_size (fcn));
 		r_strf_var (nbbs, 32, "%d", r_list_length (fcn->bbs));
 		r_strf_var (nins, 32, "%d", r_anal_function_instrcount (fcn));
+		r_strf_var (noret, 32, "%d", fcn->is_noreturn);
 		RList *xrefs = r_anal_function_get_xrefs (fcn);
 		snprintf (xref, sizeof (xref), "%d", r_list_length (xrefs));
 		r_list_free (xrefs);
@@ -3248,9 +3251,10 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		r_list_free (calls);
 		snprintf (ccstr, sizeof (ccstr), "%d", r_anal_function_complexity (fcn));
 
-		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, nbbs, nins, xref, castr, ccstr, NULL);
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs, nins, xref, castr, ccstr, NULL);
 	}
 	if (r_table_query (t, q)) {
+		t->showHeader = false;
 		char *s = (fmt == 'j')
 			? r_table_tojson (t)
 			: r_table_tostring (t);
