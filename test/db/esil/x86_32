@@ -2364,6 +2364,7 @@ EOF
 RUN
 
 NAME=bsf reg32, reg32
+REQUIRE=gas linux x86
 CMDS=<<EOF
 #
 # Common parts
@@ -2426,6 +2427,7 @@ EOF
 RUN
 
 NAME=bsr reg32, reg32
+REQUIRE=gas linux x86
 CMDS=<<EOF
 #
 # Common parts
