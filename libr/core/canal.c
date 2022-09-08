@@ -6086,6 +6086,8 @@ static bool analyze_noreturn_function(RCore *core, RAnalFunction *f) {
 }
 
 R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
+	// r_core_cmd0 (core, ".aflx*@@=`afl,noret/eq/1,addr/cols/,:quiet`");
+
 	RList *todo = r_list_newf (free);
 	if (!todo) {
 		return;
