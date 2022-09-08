@@ -469,7 +469,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strncmp (name, "and", 3)) {
 			esilprintf (op, "%s,%s,&,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "auipc")) {
-			esilprintf (op, "%s000,$$,+,%s,=", ARG (1), ARG (0));
+			esilprintf (op, "%s000,0x%"PFMT64x",+,%s,=", ARG (1), addr, ARG (0));
 		} else if (!strncmp (name, "sll", 3)) {
 			esilprintf (op, "%s,%s,<<,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'w' || !strncmp (name, "slliw", 5)) {
@@ -560,16 +560,17 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		// jumps
 		else if (!strcmp (name, "jalr")) {
 			if (strcmp (ARG (0), "0")) {
-				esilprintf (op, "%s,%s,+,pc,=,%d,$$,+,%s,=", ARG (2), ARG (1), op->size, ARG (0));
+				esilprintf (op, "%s,%s,+,pc,=,0x%"PFMT64x",%s,=", ARG (2), ARG (1), addr + op->size, ARG (0));
 			} else {
 				esilprintf (op, "%s,%s,+,pc,=", ARG (2), ARG (1));
 			}
 		} else if (!strcmp (name, "jal")) {
 			if (strcmp (ARG (0), "0")) {
 				if (args.num == 1) {
-					esilprintf (op, "%d,$$,+,ra,=,%s,pc,=", op->size, ARG (0));
+					//esilprintf (op, "%d,$$,+,ra,=,%s,pc,=", op->size, ARG (0));
+					esilprintf (op, "pc,ra,=,%s,pc,=", ARG (0));
 				} else {
-					esilprintf (op, "%d,$$,+,%s,=,%s,pc,=", op->size, ARG (0), ARG (1));
+					esilprintf (op, "0x%"PFMT64x",%s,=,%s,pc,=", addr + op->size, ARG (0), ARG (1));
 				}
 			} else {
 				esilprintf (op, "%s,pc,=", ARG (1));
