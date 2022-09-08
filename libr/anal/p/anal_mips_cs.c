@@ -610,7 +610,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	if (strstr (r_strbuf_get (&op->esil), "$$")) {
 		char addr_str[19];	// "0x" + 64/4 + "\x00"
 		sprintf (addr_str, "0x%"PFMT64x, addr);	//yes, it's fine to use sprintf in this particular case
-		//TODO: alloc could fail below, but this is just a plugin and a very unlikely scenario
+		//TODO: use r_strbuf_replacef after 5.8.0
 		r_strbuf_setptr (&op->esil, r_str_replace (r_strbuf_drain_nofree (&op->esil), "$$", addr_str, 0), 0);
 	}
 	return 0;
