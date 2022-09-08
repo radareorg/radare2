@@ -151,6 +151,7 @@ static const char *help_msg_tn[] = {
 	"Usage:", "tn [-][0xaddr|symname]", " manage no-return marks",
 	"tn[a]", " 0x3000", "stop function analysis if call/jmp to this address",
 	"tn[n]", " sym.imp.exit", "same as above but for flag/fcn names",
+	"tnf", "", "same as `afl,noret/eq/1`",
 	"tn-", " 0x3000 sym.imp.exit ...", "remove some no-return references",
 	"tn-*", "", "remove all no-return references",
 	"tn", "", "list them all",
@@ -428,6 +429,9 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 				r_anal_noreturn_add (core->anal, arg, UT64_MAX);
 			}
 		}
+		break;
+	case 'f': // "tnf"
+		r_core_cmd0 (core, "afl,noret/eq/1");
 		break;
 	case 'a': // "tna"
 		if (input[1] == ' ') {

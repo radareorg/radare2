@@ -1047,12 +1047,15 @@ static bool __table_special(RTable *t, const char *columnName) {
 		return false;
 	}
 	if (!strcmp (columnName, ":quiet")) {
-		t->showHeader = true;
+		t->showHeader = false;
 	} else if (!strcmp (columnName, ":fancy")) {
+		t->showHeader = true;
 		t->showFancy = true;
 	} else if (!strcmp (columnName, ":sql")) {
 		t->showSQL = true;
+		t->showHeader = false;
 	} else if (!strcmp (columnName, ":simple")) {
+		t->showHeader = true;
 		t->showFancy = false;
 	} else if (!strcmp (columnName, ":r2")) {
 		t->showR2 = true;
