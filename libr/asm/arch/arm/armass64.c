@@ -1433,9 +1433,11 @@ static ut32 arithmetic(ArmOp *op, int k) {
 	data += (op->operands[1].reg >> 3) << 16;
 	if (op->operands[2].type & ARM_GPR) {
 		data += op->operands[2].reg << 8;
+	} else if (op->operands[2].type & ARM_CONSTANT) {
+		data += (op->operands[2].immediate & 0x3f) << 18;
+		data += (op->operands[2].immediate >> 6) << 8;
 	} else {
-		data += (op->operands[2].reg & 0x3f) << 18;
-		data += (op->operands[2].reg >> 6) << 8;
+		return UT32_MAX;
 	}
 
 	if (op->operands[2].type & ARM_CONSTANT && op->operands[3].type & ARM_SHIFT) {
