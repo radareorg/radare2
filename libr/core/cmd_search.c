@@ -9,6 +9,7 @@ static int cmd_search(void *data, const char *input);
 #define USE_EMULATION 1
 
 #define AES_SEARCH_LENGTH 40
+#define SM4_SEARCH_LENGTH         24
 #define PRIVATE_KEY_SEARCH_LENGTH 11
 
 static const char *help_msg_search_wide_string[] = {
@@ -175,7 +176,7 @@ static const char *help_msg_slash_a[] = {
 
 static const char *help_msg_slash_c[] = {
 	"Usage: /c", "", "Search for crypto materials",
-	"/ca", "", "search for AES keys expanded in memory",
+	"/ca", "[?] [algo]", "search for keys expanded in memory",
 	"/cc", "[algo] [digest]", "find collisions (bruteforce block length values until given checksum is found)",
 	"/cd", "", "search for ASN1/DER certificates",
 	"/cg", "", "search for GPG/PGP keys and signatures (Plaintext and binary form)",
@@ -243,8 +244,8 @@ struct search_parameters {
 	PJ *pj;
 	int outmode; // 0 or R_MODE_RADARE or R_MODE_JSON
 	bool inverse;
-	bool aes_search;
-	bool privkey_search;
+	bool key_search;
+	int key_search_len;
 	int c; // used for progress
 };
 
@@ -2618,8 +2619,8 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			if (r_cons_is_breaked ()) {
 				break;
 			}
+			RSearchKeyword *kw = r_list_first (core->search->kws);
 			if (param->outmode != R_MODE_JSON) {
-				RSearchKeyword *kw = r_list_first (core->search->kws);
 				int lenstr = kw? kw->keyword_length: 0;
 				const char *bytestr = lenstr > 1? "bytes": "byte";
 				eprintf ("Searching %d %s in [0x%"PFMT64x "-0x%"PFMT64x "]\n",
@@ -2662,15 +2663,10 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 					(void)r_io_read_at (core->io, at, buf, len);
 				}
 				r_search_update (core->search, at, buf, len);
-				if (param->aes_search) {
+				if (param->key_search) {
 					// Adjust length to search between blocks.
 					if (len == core->blocksize) {
-						len -= AES_SEARCH_LENGTH - 1;
-					}
-				} else if (param->privkey_search) {
-					// Adjust length to search between blocks.
-					if (len == core->blocksize) {
-						len -= PRIVATE_KEY_SEARCH_LENGTH - 1;
+						len -= param->key_search_len - 1;
 					}
 				}
 				if (core->search->maxhits > 0 && core->search->nhits >= core->search->maxhits) {
@@ -3298,8 +3294,8 @@ static int cmd_search(void *data, const char *input) {
 		.cmd_hit = r_config_get (core->config, "cmd.hit"),
 		.outmode = 0,
 		.inverse = false,
-		.aes_search = false,
-		.privkey_search = false,
+		.key_search = false,
+		.key_search_len = 0,
 		.c = 0,
 	};
 	if (!param.cmd_hit) {
@@ -3836,16 +3832,39 @@ reread:
 		case 'a': // "/ca"
 			{
 				RSearchKeyword *kw;
-				if (input[2] == 'j') {
-					param.outmode = R_MODE_JSON;
+
+				char *space = strchr (input, ' ');
+				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
+				if (!arg || *(space - 1) == '?') {
+					eprintf ("Usage: /ca [algo]\n");
+					eprintf ("Currently supported block ciphers:\n");
+					eprintf ("  aes\n");
+					eprintf ("  sm4\n");
+					goto beach;
+				} else {
+					kw = r_search_keyword_new_hexmask ("00", NULL);
+					if (input[2] == 'j') {
+						param.outmode = R_MODE_JSON;
+					}
+					if (!strcmp (arg, "aes")) {
+						// AES search is done over 40 bytes
+						param.key_search_len = AES_SEARCH_LENGTH;
+						r_search_reset (core->search, R_SEARCH_AES);
+					} else if (!strcmp (arg, "sm4")) {
+						param.key_search_len = SM4_SEARCH_LENGTH;
+						r_search_reset (core->search, R_SEARCH_SM4);
+					} else {
+						eprintf ("Unsupported block ciphers: %s\n", arg);
+						goto beach;
+					}
+					if (core->blocksize < param.key_search_len) {
+						eprintf ("Block size must be bigger than %d bytes for the search\n", param.key_search_len);
+						goto beach;
+					}
+					r_search_kw_add (search, kw);
+					r_search_begin (core->search);
+					param.key_search = true;
 				}
-				kw = r_search_keyword_new_hexmask ("00", NULL);
-				// AES search is done over 40 bytes
-				kw->keyword_length = AES_SEARCH_LENGTH;
-				r_search_reset (core->search, R_SEARCH_AES);
-				r_search_kw_add (search, kw);
-				r_search_begin (core->search);
-				param.aes_search = true;
 				break;
 			}
 		case 'r': // "/cr"
@@ -3860,7 +3879,7 @@ reread:
 				r_search_reset (core->search, R_SEARCH_PRIV_KEY);
 				r_search_kw_add (search, kw);
 				r_search_begin (core->search);
-				param.privkey_search = true;
+				param.key_search = true;
 				break;
 			}
 		default: {

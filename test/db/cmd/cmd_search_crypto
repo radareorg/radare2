@@ -1,6 +1,6 @@
 NAME=cmd.hit for /ca
 FILE=bins/other/aes.dump
-CMDS=/ca
+CMDS=/ca aes
 EXPECT=<<EOF
 0x0000001e hit0_0 0000000000000000000000000000000000000000000000000000000000000000
 EOF
@@ -8,15 +8,23 @@ RUN
 
 NAME=cmd.hit for /ca
 FILE=bins/other/aes_192.dump
-CMDS=/ca
+CMDS=/ca aes
 EXPECT=<<EOF
 0x000000fa hit0_0 000102030405060708090a0b0c0d0e0f1011121314151617
 EOF
 RUN
 
+NAME=cmd.hit for /ca sm4
+FILE=bins/other/sm4_key_schedule.bin
+CMDS=/ca sm4
+EXPECT=<<EOF
+0x000000ff hit0_0 f98621f1612b6641db28e44757dbe32c
+EOF
+RUN
+
 NAME=cmd.hit for /caj
 FILE=bins/other/aes_192.dump
-CMDS=/caj
+CMDS=/caj aes
 EXPECT=<<EOF
 [{"offset":250,"type":"hexpair","data":"000102030405060708090a0b0c0d0e0f1011121314151617"}]
 EOF
