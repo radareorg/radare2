@@ -5448,7 +5448,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 		if (!sn) {
-			R_LOG_WARN ("No SN reg alias for current architecture");
+			R_LOG_WARN ("No SN reg alias for '%s'", r_config_get (core->config, "asm.arch"));
 		}
 		if (sn && op.type == R_ANAL_OP_TYPE_SWI) {
 			r_strf_buffer (64);
