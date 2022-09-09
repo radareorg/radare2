@@ -117,7 +117,9 @@ typedef enum {
 } R2pmTokenType;
 
 static void r2pm_register(const char *pkg, bool g) {
-	char *f = r_str_newf ("%s/%s", r2pm_pkgdir (), pkg);
+	char *pkgdir = r2pm_pkgdir ();
+	char *f = r_str_newf ("%s/%s", pkgdir, pkg);
+	free (pkgdir);
 	if (f) {
 		RStrBuf *sb = r_strbuf_new ("");
 		r_strbuf_appendf (sb, "Global: %s\n", r_str_bool (g));
@@ -132,8 +134,10 @@ static void r2pm_register(const char *pkg, bool g) {
 }
 
 static void r2pm_unregister(const char *pkg) {
-	char *f = r_str_newf ("%s/%s", r2pm_pkgdir (), pkg);
-	if (f) {
+	char *pkgdir = r2pm_pkgdir ();
+	char *f = r_str_newf ("%s/%s", pkgdir, pkg);
+	free (pkgdir);
+	if (R_LIKELY (f)) {
 		r_file_rm (f);
 		free (f);
 	}
@@ -717,6 +721,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 			r_cons_print (s);
 			// r_cons_flush ();
 			res = 0;
+			free (s);
 		} else {
 			res = 1;
 		}

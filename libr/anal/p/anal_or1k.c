@@ -248,6 +248,7 @@ static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, R
 		}
 	}
 
+	free (line);
 	return op->size;
 }
 
