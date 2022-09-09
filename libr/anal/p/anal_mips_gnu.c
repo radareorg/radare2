@@ -64,7 +64,7 @@ static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
 #define ES_J(addr) addr ",SETJT,1,SETD"
 #else
 #define ES_TRAP_DS() ""
-#define ES_J(addr)   addr ",pc,="
+#define ES_J(addr)   addr ",pc,:="
 #endif
 
 #define ES_SIGN32_64(arg) es_sign_n_64 (a, op, arg, 32)
