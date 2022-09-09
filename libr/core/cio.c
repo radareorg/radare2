@@ -110,39 +110,6 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	return true;
 }
 
-#if 0
-static bool __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
-	ut32 i;
-	ut16 v16;
-	ut32 v32;
-	ut64 v64;
-	if (len != 8 && len != 4 && len != 2 && len != 1) {
-		R_LOG_ERROR ("Invalid word size. Use 1, 2, 4 or 8");
-		return false;
-	}
-	if (len == 1) {
-		return true;
-	}
-	for (i = 0; i < blocksize; i += len) {
-		switch (len) {
-		case 8:
-			v64 = r_read_at_be64 (buf, i);
-			r_write_at_le64 (buf, v64, i);
-			break;
-		case 4:
-			v32 = r_read_at_be32 (buf, i);
-			r_write_at_le32 (buf, v32, i);
-			break;
-		case 2:
-			v16 = r_read_at_be16 (buf, i);
-			r_write_at_le16 (buf, v16, i);
-			break;
-		}
-	}
-	return true;
-}
-#endif
-
 R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	int i, j;
 	ut64 len;
@@ -308,12 +275,24 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			str = calloc (8, 1);
 			switch (numsize) {
 			case 1:
+				if (n > UT8_MAX) {
+					R_LOG_ERROR ("%d doesnt fit in ut8.max", n);
+					goto beach;
+				}
 				str[0] = n;
 				break;
 			case 2:
+				if (n > UT16_MAX) {
+					R_LOG_ERROR ("%d doesnt fit in ut16.max", n);
+					goto beach;
+				}
 				r_write_ble16 (str, n, be);
 				break;
 			case 4:
+				if (n > UT32_MAX) {
+					R_LOG_ERROR ("%d doesnt fit in ut32.max", n);
+					goto beach;
+				}
 				r_write_ble32 (str, n, be);
 				break;
 			case 8:
