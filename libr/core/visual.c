@@ -52,13 +52,13 @@ static const char *printfmtColumns[NPF] = {
 };
 
 // to print the stack in the debugger view
-#define PRINT_HEX_FORMATS 10
+#define PRINT_HEX_FORMATS 11
 #define PRINT_3_FORMATS 2
 #define PRINT_4_FORMATS 9
 #define PRINT_5_FORMATS 7
 
 static const char *printHexFormats[PRINT_HEX_FORMATS] = {
-	"px", "pxa", "pxr", "prx", "pxb", "pxh", "pxw", "pxq", "pxd", "pxr",
+	"px", "pxa", "pxr", "prx", "pxb", "pxh", "pxw", "pxq", "pxu", "pxd", "pxr",
 };
 static R_TH_LOCAL int current3format = 0;
 static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its handled by the pd format
@@ -80,7 +80,7 @@ R_API void r_core_visual_applyHexMode(RCore *core, int hexMode) {
 	case 0: /* px */
 	case 3: /* prx */
 	case 6: /* pxw */
-	case 9: /* pxr */
+	case 10: /* pxr */
 		r_config_set (core->config, "hex.compact", "false");
 		r_config_set (core->config, "hex.comments", "true");
 		break;
@@ -95,7 +95,8 @@ R_API void r_core_visual_applyHexMode(RCore *core, int hexMode) {
 		break;
 	case 2: /* pxr */
 	case 5: /* pxh */
-	case 8: /* pxd */
+	case 8: /* pxu */
+	case 9: /* pxd */
 		r_config_set (core->config, "hex.compact", "false");
 		r_config_set (core->config, "hex.comments", "false");
 		break;
