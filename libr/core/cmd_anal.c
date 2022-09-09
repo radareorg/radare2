@@ -4438,7 +4438,7 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		default:
 			i = 1;
-			r_core_anal_fcn_list (core, input[2]? input + 2: input + 1, &i);
+			r_core_anal_fcn_list (core, input[2]? input + 2: "", &i);
 			break;
 		}
 		break;
