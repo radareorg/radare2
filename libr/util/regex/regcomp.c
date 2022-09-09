@@ -1120,16 +1120,17 @@ nonnewline(struct parse *p)
 {
 	char *oldnext = p->next;
 	char *oldend = p->end;
-	char bracket[4];
+	char bracket[5];
 
-	p->next = bracket;
-	p->end = bracket+3;
 	bracket[0] = '^';
 	bracket[1] = '\n';
 	bracket[2] = ']';
 	bracket[3] = '\0';
-	p_bracket(p);
-	if (p->next == bracket+3) {
+	bracket[4] = '\0';
+	p->next = bracket;
+	p->end = bracket + 3;
+	p_bracket (p);
+	if (p->next == bracket + 3) {
 		p->next = oldnext;
 		p->end = oldend;
 	}
