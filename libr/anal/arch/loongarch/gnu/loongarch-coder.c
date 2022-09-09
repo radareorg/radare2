@@ -379,11 +379,12 @@ loongarch_expand_macro_with_format_map (
   const char *(*map) (char esc1, char esc2, const char *arg),
   char *(*helper) (const char *const arg_strs[], void *context), void *context)
 {
-  char esc1s[MAX_ARG_NUM_PLUS_2 - 1], esc2s[MAX_ARG_NUM_PLUS_2 - 1];
-  const char *bit_fields[MAX_ARG_NUM_PLUS_2 - 1];
-  const char *src;
-  char *dest;
-  char buffer[8192];
+  char esc1s[MAX_ARG_NUM_PLUS_2 - 1] = {0};
+  char esc2s[MAX_ARG_NUM_PLUS_2 - 1] = {0};
+  const char *bit_fields[MAX_ARG_NUM_PLUS_2 - 1] = {0};
+  const char *src = NULL;
+  char *dest = NULL;
+  char buffer[8192] = {0};
 
   if (format)
     loongarch_parse_format (format, esc1s, esc2s, bit_fields);

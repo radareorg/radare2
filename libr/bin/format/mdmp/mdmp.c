@@ -1001,6 +1001,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 			continue;
 		}
 		int r = r_buf_read_at (obj->b, paddr, b, module->size_of_image);
+		//r_unref (buf);
 		r_buf_free (buf);
 		buf = r_buf_new_with_bytes (b, r);
 		dup = false;
@@ -1048,7 +1049,8 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 			r_list_append (obj->pe64_bins, pe64_bin);
 		}
 	}
-	r_buf_free (buf);
+	//r_unref (buf);
+	// r_unref (buf); // r_buf_free (buf);
 	buf = NULL;
 	return true;
 }

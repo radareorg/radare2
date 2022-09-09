@@ -236,11 +236,11 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	if (!c->b) {
 		goto beach;
 	}
-	c->blen = malloc (sizeof *c->blen * h);
+	c->blen = malloc ((sizeof *c->blen) * h);
 	if (!c->blen) {
 		goto beach;
 	}
-	c->bsize = malloc (sizeof *c->bsize * h);
+	c->bsize = malloc ((sizeof *c->bsize) * h);
 	if (!c->bsize) {
 		goto beach;
 	}
