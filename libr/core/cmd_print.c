@@ -6534,29 +6534,33 @@ static int cmd_print(void *data, const char *input) {
 			ut64 start;
 
 			if (bw_disassemble) {
-				block1 = malloc (core->blocksize);
+				int bs1 = (core->blocksize * 2) + 64;
+				block1 = malloc (bs1);
 				if (l < 0) {
 					l = -l;
 				}
 				if (block1) {
 					if (*input == 'D') { // pD
 						free (block1);
-						if (!(block1 = malloc (l))) {
+						if (!(block1 = malloc (bs1))) {
 							break;
 						}
-						r_io_read_at (core->io, addr - l, block1, l); // core->blocksize);
+						r_io_read_at (core->io, addr - l, block1, bs1);
 						int dislen = r_core_print_disasm (core, addr - l, block1, l, l, 0, NULL, true, formatted_json, NULL, NULL);
 						r_core_return_value (core, dislen);
 					} else { // pd
-						int instr_len;
 						if (!r_core_prevop_addr (core, core->offset, l, &start)) {
 							// anal ignorance.
 							start = r_core_prevop_addr_force (core, core->offset, l);
 						}
-						instr_len = core->offset - start;
+						int instr_len = core->offset - start;
 						ut64 prevaddr = core->offset;
-						int bs = core->blocksize, bs1 = addrbytes * instr_len;
-						if (bs1 > bs) {
+						int bs = core->blocksize;
+						int bs2 = addrbytes * instr_len;
+						if (bs2 > bs) {
+							bs1 += bs2 + 32;
+							bs2 = bs1;
+							bs = bs2;
 							ut8 *tmpblock = realloc (block1, bs1);
 							if (!tmpblock) {
 								R_LOG_ERROR ("Memory reallocation failed");
@@ -6565,13 +6569,8 @@ static int cmd_print(void *data, const char *input) {
 							}
 							block1 = tmpblock;
 						}
+						r_io_read_at (core->io, prevaddr - instr_len, block1, bs1);
 						r_core_seek (core, prevaddr - instr_len, true);
-						memcpy (block1, block, bs);
-						if (bs1 > bs) {
-							r_io_read_at (core->io, addr + bs / addrbytes,
-								block1 + (bs - bs % addrbytes),
-								bs1 - (bs - bs % addrbytes));
-						}
 						int dislen = r_core_print_disasm (core,
 								core->offset, block1,
 								R_MAX (bs, bs1), l, 0, NULL,
