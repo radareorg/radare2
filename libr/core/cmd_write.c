@@ -347,7 +347,7 @@ static int cmd_wo(void *data, const char *input) {
 			snprintf (s, sizeof (s), "wo%c", input[0]);
 			r_core_cmd_help_match (core, help_msg_wo, s, true);
 		} else if (input[1]) {  // parse val from arg
-			r_core_write_op (core, r_str_trim_head_ro (input + 2), input[0]);
+			r_core_write_op (core, r_str_trim_head_ro (input + 1), input[0]);
 		} else {  // use clipboard instead of val
 			r_core_write_op (core, NULL, input[0]);
 		}
