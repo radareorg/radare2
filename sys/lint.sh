@@ -23,6 +23,11 @@ cd "$(dirname $0)"/..
 
 (git grep eprintf libr| grep -i error | grep -v '/native/' | grep -v spp | grep -v cons) && exit 1
 
+# (git grep strbuf_appendf libr | grep -v '%') && exit 1
+(git grep appendf libr | grep '"' | grep -v '%') && exit 1
+(git grep strbuf_setf libr | grep '"' | grep -v '%') && exit 1
+(git grep 'strbuf_append (' libr | grep '"' | grep '%') && exit 1
+
 (git grep -i unkown libr ) && exit 1
 
 (git grep '=0' libr| grep c:|grep -v '"' |grep -v '=0x') && exit 1

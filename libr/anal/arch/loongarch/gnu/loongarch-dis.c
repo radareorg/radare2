@@ -96,9 +96,9 @@ static int32_t dis_one_arg(char esc1, char esc2, const char *bit_field, const ch
 			r_strbuf_appendf (args_buf, " %d", imm);
 		} else {
 			abs_imm = abs (imm);
-			r_strbuf_appendf (args_buf, " ");
+			r_strbuf_append (args_buf, " ");
 			if (abs_imm != imm) {
-				r_strbuf_appendf (args_buf, "-");
+				r_strbuf_append (args_buf, "-");
 			}
 			r_strbuf_appendf (args_buf, "0x%x", abs_imm);
 		}

@@ -1184,14 +1184,14 @@ static void esil_branch_compare_imm(xtensa_isa isa, xtensa_opcode opcode,
 	esil_push_signed_imm (&op->esil, cmp_imm);
 
 	r_strbuf_appendf (&op->esil, "%s" CM, compare_op);
-	r_strbuf_appendf (&op->esil, "?{" CM);
+	r_strbuf_append (&op->esil, "?{" CM);
 
 	// ISA defines branch target as offset + 4,
 	// but at the time of ESIL evaluation
 	// PC will be already incremented by 3
 	esil_push_signed_imm (&op->esil, branch_imm + 4 - 3);
 
-	r_strbuf_appendf (&op->esil, "pc" CM "+=" CM "}");
+	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
 }
 
 static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
@@ -1868,7 +1868,7 @@ static void analop_esil(xtensa_isa isa, xtensa_opcode opcode, xtensa_format form
 		break;
 	case 98: /* ret */
 	case 35: /* ret.n */
-		r_strbuf_setf (&op->esil, "a0,pc,=");
+		r_strbuf_set (&op->esil, "a0,pc,=");
 		break;
 	case 82: /* l16ui */
 	case 83: /* l16si */

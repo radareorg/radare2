@@ -688,23 +688,23 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	case X86_INS_STOSB:
 		if (bits < 32) {
-			r_strbuf_appendf (&op->esil, "al,di,=[1],df,?{,1,di,-=,},df,!,?{,1,di,+=,}");
+			r_strbuf_append (&op->esil, "al,di,=[1],df,?{,1,di,-=,},df,!,?{,1,di,+=,}");
 		} else {
-			r_strbuf_appendf (&op->esil, "al,edi,=[1],df,?{,1,edi,-=,},df,!,?{,1,edi,+=,}");
+			r_strbuf_append (&op->esil, "al,edi,=[1],df,?{,1,edi,-=,},df,!,?{,1,edi,+=,}");
 		}
 		break;
 	case X86_INS_STOSW:
 		if (bits < 32) {
-			r_strbuf_appendf (&op->esil, "ax,di,=[2],df,?{,2,di,-=,},df,!,?{,2,di,+=,}");
+			r_strbuf_append (&op->esil, "ax,di,=[2],df,?{,2,di,-=,},df,!,?{,2,di,+=,}");
 		} else {
-			r_strbuf_appendf (&op->esil, "ax,edi,=[2],df,?{,2,edi,-=,},df,!,?{,2,edi,+=,}");
+			r_strbuf_append (&op->esil, "ax,edi,=[2],df,?{,2,edi,-=,},df,!,?{,2,edi,+=,}");
 		}
 		break;
 	case X86_INS_STOSD:
-			r_strbuf_appendf (&op->esil, "eax,edi,=[4],df,?{,4,edi,-=,},df,!,?{,4,edi,+=,}");
+			r_strbuf_append (&op->esil, "eax,edi,=[4],df,?{,4,edi,-=,},df,!,?{,4,edi,+=,}");
 		break;
 	case X86_INS_STOSQ:
-			r_strbuf_appendf (&op->esil, "rax,rdi,=[8],df,?{,8,edi,-=,},df,!,?{,8,edi,+=,}");
+			r_strbuf_append (&op->esil, "rax,rdi,=[8],df,?{,8,edi,-=,},df,!,?{,8,edi,+=,}");
 		break;
 	case X86_INS_LODSB:
 			r_strbuf_appendf (&op->esil, "%s,[1],al,=,df,?{,1,%s,-=,},df,!,?{,1,%s,+=,}", si, si, si);
@@ -713,13 +713,13 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			r_strbuf_appendf (&op->esil, "%s,[2],ax,=,df,?{,2,%s,-=,},df,!,?{,2,%s,+=,}", si, si, si);
 		break;
 	case X86_INS_LODSD:
-		r_strbuf_appendf (&op->esil, "esi,[4],eax,=,df,?{,4,esi,-=,},df,!,?{,4,esi,+=,}");
+		r_strbuf_append (&op->esil, "esi,[4],eax,=,df,?{,4,esi,-=,},df,!,?{,4,esi,+=,}");
 		break;
 	case X86_INS_LODSQ:
-		r_strbuf_appendf (&op->esil, "rsi,[8],rax,=,df,?{,8,rsi,-=,},df,!,?{,8,rsi,+=,}");
+		r_strbuf_append (&op->esil, "rsi,[8],rax,=,df,?{,8,rsi,-=,},df,!,?{,8,rsi,+=,}");
 		break;
 	case X86_INS_PEXTRB:
-		r_strbuf_appendf (&op->esil, "TODO");
+		r_strbuf_append (&op->esil, "TODO");
 		break;
 	// string mov
 	// PS: MOVSD can correspond to one of the two instruction (yes, intel x86
@@ -731,7 +731,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	// https://mudongliang.github.io/x86/html/file_module_x86_id_204.html
 	case X86_INS_MOVSD:
 		// Handle "Move Scalar Double-Precision Floating-Point Value"
-		if (is_xmm_reg (INSOP(0)) || is_xmm_reg (INSOP(1))) {
+		if (is_xmm_reg (INSOP (0)) || is_xmm_reg (INSOP (1))) {
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
 			if (src && dst) {

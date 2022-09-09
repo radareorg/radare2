@@ -4420,7 +4420,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		sprintf (color, rgb_xxx_fmt, rcolor.r, rcolor.g, rcolor.b);
 		if (rcolor.r2 || rcolor.g2 || rcolor.b2) {
-			color = r_str_appendf (color, " ");
+			color = r_str_append (color, " ");
 			color = r_str_appendf (color, rgb_xxx_fmt, rcolor.r2, rcolor.g2, rcolor.b2);
 			rcolor.a = ALPHA_FGBG;
 		} else {

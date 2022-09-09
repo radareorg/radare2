@@ -189,7 +189,7 @@ static ut32 arm_disasm_dataprocessing(struct winedbg_arm_insn *arminsn, ut32 ins
 	if (!no_dst) {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %s, ", tbl_regs[get_nibble (inst, 3)]);
 	} else {
-		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " ");
+		arminsn->str_asm = r_str_append (arminsn->str_asm, " ");
 	}
 	if (no_op1) {
 		if (immediate) {
@@ -380,7 +380,7 @@ static ut16 thumb_disasm_hireg(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	}
 
 	if (op == 2 && dst == src) { /* mov rx, rx */
-		arminsn->str_asm = r_str_appendf (arminsn->str_asm, "nop");
+		arminsn->str_asm = r_str_append (arminsn->str_asm, "nop");
 		return 0;
 	}
 
@@ -419,7 +419,7 @@ static ut16 thumb_disasm_pushpop(struct winedbg_arm_insn *arminsn, ut16 inst) {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s", first ? "" : ", ", load ? "pc" : "lr");
 	}
 
-	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "}");
+	arminsn->str_asm = r_str_append (arminsn->str_asm, "}");
 	return 0;
 }
 
@@ -437,7 +437,7 @@ static ut16 thumb_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut16 inst)
 		}
 	}
 
-	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "}");
+	arminsn->str_asm = r_str_append (arminsn->str_asm, "}");
 	return 0;
 }
 
@@ -479,7 +479,7 @@ static ut16 thumb_disasm_swi(struct winedbg_arm_insn *arminsn, ut16 inst) {
 }
 
 static ut16 thumb_disasm_nop(struct winedbg_arm_insn *arminsn, ut16 inst) {
-	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "nop");
+	arminsn->str_asm = r_str_append (arminsn->str_asm, "nop");
 	return 0;
 }
 
@@ -590,16 +590,16 @@ static ut32 thumb2_disasm_misc(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	if (op1 == 1) {
 		switch (op2) {
 		case 0:
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "rev ");
+			arminsn->str_asm = r_str_append (arminsn->str_asm, "rev ");
 			break;
 		case 1:
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "rev16 ");
+			arminsn->str_asm = r_str_append (arminsn->str_asm, "rev16 ");
 			break;
 		case 2:
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "rbit ");
+			arminsn->str_asm = r_str_append (arminsn->str_asm, "rbit ");
 			break;
 		case 3:
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "revsh ");
+			arminsn->str_asm = r_str_append (arminsn->str_asm, "revsh ");
 			break;
 		}
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s, %s ", tbl_regs[get_nibble (inst, 2)], tbl_regs[get_nibble (inst, 0)]);
@@ -650,16 +650,16 @@ static ut32 thumb2_disasm_longmuldiv(struct winedbg_arm_insn *arminsn, ut32 inst
 	if (op2 == 0) {
 		switch (op1) {
 		case 0:
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "smull ");
+			arminsn->str_asm = r_str_append (arminsn->str_asm, "smull ");
 			break;
 		case 2:
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "umull ");
+			arminsn->str_asm = r_str_append (arminsn->str_asm, "umull ");
 			break;
 		case 4:
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "smlal ");
+			arminsn->str_asm = r_str_append (arminsn->str_asm, "smlal ");
 			break;
 		case 6:
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "umlal ");
+			arminsn->str_asm = r_str_append (arminsn->str_asm, "umlal ");
 			break;
 		default:
 			return inst;
@@ -673,10 +673,10 @@ static ut32 thumb2_disasm_longmuldiv(struct winedbg_arm_insn *arminsn, ut32 inst
 	if (op2 == 0xffff) {
 		switch (op1) {
 		case 1:
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "sdiv ");
+			arminsn->str_asm = r_str_append (arminsn->str_asm, "sdiv ");
 			break;
 		case 3:
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "udiv ");
+			arminsn->str_asm = r_str_append (arminsn->str_asm, "udiv ");
 			break;
 		default:
 			return inst;

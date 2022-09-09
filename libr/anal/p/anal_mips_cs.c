@@ -99,7 +99,7 @@ static inline void es_sign_n_64(RAnal *a, RAnalOp *op, const char *arg, int bit)
 	if (a->config->bits == 64) {
 		r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", bit, arg, arg);
 	} else {
-		r_strbuf_append (&op->esil,",");
+		r_strbuf_append (&op->esil, ",");
 	}
 }
 
@@ -112,7 +112,7 @@ static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const 
 
 #define PROTECT_ZERO() \
 	if (REG(0)[0] == 'z') {\
-		r_strbuf_appendf (&op->esil, ",");\
+		r_strbuf_append (&op->esil, ",");\
 	} else /**/
 
 #define ESIL_LOAD(size) \
@@ -219,7 +219,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	if (insn) {
 		switch (insn->id) {
 		case MIPS_INS_NOP:
-			r_strbuf_setf (&op->esil, ",");
+			r_strbuf_set (&op->esil, ",");
 			break;
 		case MIPS_INS_BREAK:
 			r_strbuf_setf (&op->esil, "%"PFMT64d",%" PFMT64d ",TRAP", (st64)IMM (0), (st64)IMM (0));

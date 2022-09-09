@@ -2101,11 +2101,11 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 			res = r_str_appendf (res, "0x%08" PFMT64x, arg);
 		}
 		if (i + 1 < item->args) {
-			res = r_str_appendf (res, ", ");
+			res = r_str_append (res, ", ");
 		}
 	}
 	r_syscall_item_free (item);
-	return r_str_appendf (res, ")");
+	return r_str_append (res, ")");
 }
 
 static bool mw(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
@@ -12376,7 +12376,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 						(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
 						r_str_getf (key));
 				if (!nargs) {
-					r_strbuf_appendf (sb, "void)\n");
+					r_strbuf_append (sb, "void)\n");
 				}
 			} else {
 				R_LOG_ERROR ("Cannot find any function signature");
@@ -12426,7 +12426,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 					free (res);
 				}
 			}
-			r_strbuf_appendf (sb, ")");
+			r_strbuf_append (sb, ")");
 		} else {
 			// function name not resolved
 			int i, nargs = 4; // DEFAULT_NARGS;
@@ -12444,7 +12444,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 					ut64 v = r_debug_arg_get (core->dbg, cc, i);
 					r_strbuf_appendf (sb, "%s0x%"PFMT64x, i?", ":"", v);
 				}
-				r_strbuf_appendf (sb, ")");
+				r_strbuf_append (sb, ")");
 			}
 		}
 		r_list_free (list);

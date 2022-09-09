@@ -6703,7 +6703,7 @@ static int cmd_print(void *data, const char *input) {
 						}
 						if (!ch) {
 							if (core->print->cur_enabled && core->print->cur == i) {
-								r_strbuf_appendf (sb, Color_INVERT"."Color_RESET);
+								r_strbuf_append (sb, Color_INVERT"."Color_RESET);
 							}
 							if (!hasnl) {
 								char *s = r_strbuf_drain (sb);
@@ -6726,7 +6726,7 @@ static int cmd_print(void *data, const char *input) {
 							}
 						} else {
 							if (core->print->cur_enabled && core->print->cur == i) {
-								r_strbuf_appendf (sb, Color_INVERT"."Color_RESET);
+								r_strbuf_append (sb, Color_INVERT"."Color_RESET);
 							}
 						}
 					}

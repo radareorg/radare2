@@ -489,7 +489,7 @@ R_API char *r_table_tor2cmds(RTable *t) {
 	RTableColumn *col;
 	RListIter *iter, *iter2;
 
-	r_strbuf_appendf (sb, ",h ");
+	r_strbuf_append (sb, ",h ");
 	r_list_foreach (t->cols, iter, col) {
 		char fmt = col->type == &r_table_type_string? 's': 'x';
 		r_strbuf_appendf (sb, "%c", fmt);
@@ -502,7 +502,7 @@ R_API char *r_table_tor2cmds(RTable *t) {
 	r_list_foreach (t->rows, iter, row) {
 		char *item;
 		int c = 0;
-		r_strbuf_appendf (sb, ",r");
+		r_strbuf_append (sb, ",r");
 		r_list_foreach (row->items, iter2, item) {
 			RTableColumn *col = r_list_get_n (t->cols, c);
 			if (col) {
@@ -534,7 +534,7 @@ R_API char *r_table_tosql(RTable *t) {
 		free (s);
 		primary_key = false;
 	}
-	r_strbuf_appendf (sb, ");\n");
+	r_strbuf_append (sb, ");\n");
 
 	r_list_foreach (t->rows, iter, row) {
 		const char *item;
