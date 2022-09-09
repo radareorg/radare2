@@ -2910,11 +2910,11 @@ static void print_bb(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, cons
 		pj_ki (pj, "inputs", inputs);
 		pj_ki (pj, "outputs", outputs);
 		pj_ki (pj, "ninstr", b->ninstr);
-		pj_ko (pj, "instrs");
+		pj_ka (pj, "instrs");
 		{
 			int i;
-			for (i = 0; i <= b->ninstr; i++) {
-				int delta = (i > 0)? b->op_pos[i-1]: 0;
+			for (i = 0; i < b->ninstr; i++) {
+				int delta = (i > 0)? b->op_pos[i - 1]: 0;
 				pj_n (pj, b->addr + delta);
 			}
 		}
