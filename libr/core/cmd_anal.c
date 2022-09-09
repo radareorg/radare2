@@ -737,6 +737,7 @@ static const char *help_msg_ag[] = {
 	"agR", "[format]", "global references graph",
 	"agx", "[format]", "cross references graph",
 	"agg", "[format]", "custom graph",
+	"agt", "[format]", "tree map graph",
 	"ag-", "", "clear the custom graph",
 	"agn", "[?] title body", "add a node to the custom graph",
 	"age", "[?] title1 title2", "add an edge to the custom graph",
@@ -4437,7 +4438,7 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		default:
 			i = 1;
-			r_core_anal_fcn_list (core, input + 2, &i);
+			r_core_anal_fcn_list (core, input[2]? input + 2: input + 1, &i);
 			break;
 		}
 		break;
@@ -9931,6 +9932,144 @@ static void mermaid_graph(RGraph *graph, node_content_cb get_body) {
 	r_strbuf_free (edges);
 }
 
+typedef struct {
+	RAnalFunction *fcn;
+	char *name;
+	ut64 addr;
+	int size;
+	int x;
+	int y;
+	int w;
+	int h;
+} TreeMapItem;
+
+static void *add_item(RAnalFunction *f, const char *name, ut64 addr, ut64 size) {
+	TreeMapItem *item = R_NEW0 (TreeMapItem);
+	item->fcn = f;
+	item->addr = addr;
+	item->name = strdup (name);
+	item->size = size;
+	return item;
+}
+
+static void free_item(void *a) {
+	TreeMapItem *item = a;
+	if (item) {
+		free (item->name);
+		free (item);
+	}
+}
+
+static int bysize(const void *_a, const void *_b) {
+	const TreeMapItem *a = _a;
+	const TreeMapItem *b = _b;
+	return b->size - a->size;
+}
+
+static void treemap_layout(RConsCanvas *canvas, RList *maps) {
+	RListIter *iter;
+	TreeMapItem *mi;
+	int i = 0;
+	int n = r_list_length (maps);
+	if (n == 0) {
+		return;
+	}
+	int nx = 0;
+	int ny = 0;
+	int nw = canvas->w;
+	int nh = canvas->h;
+	float mfact = 0.3;
+	int s = 0;
+
+	r_list_sort (maps, bysize);
+	r_list_foreach (maps, iter, mi) {
+		if ((i % 2 && nh / 2 > 2 * mi->w) || (!(i % 2) && nw / 2 > 2 * mi->w)) {
+			if (i < n - 1) {
+				if (i % 2) {
+					nh /= 2;
+				} else {
+					nw /= 2;
+				}
+				if ((i % 4) == 2 && !s) {
+					nx += nw;
+				} else if ((i % 4) == 3 && !s) {
+					ny += nh;
+				}
+			}
+			if ((i % 4) == 0) {
+				ny += (s)? nh: -nh;
+			} else if ((i % 4) == 1) {
+				nx += nw;
+			} else if ((i % 4) == 2) {
+				ny += nh;
+			} else if ((i % 4) == 3) {
+				nx += s? nw: -nw;
+			}
+			if (i == 0) {
+				if (n != 1) {
+					nw = canvas->w * mfact;
+				}
+				ny = 0;
+			} else if (i == 1) {
+				nw = canvas->w - nw;
+			}
+			i++;
+		}
+		mi->x = nx;
+		mi->y = ny;
+		mi->w = nw;
+		mi->h = nh;
+	}
+}
+
+R_API void r_core_agraph_treemap(RCore *core, int use_utf, const char *input) {
+	// walk all the functions and create a treemap and render it
+	int h, w = r_cons_get_size (&h);
+	w--;
+	h--;
+	RConsCanvas *canvas = r_cons_canvas_new (w, h);
+	r_cons_canvas_box (canvas, 1, 1, w - 1, h - 1, "");
+	RListIter *iter;
+	RAnalFunction *fcn = NULL;
+	RList *maps = r_list_newf (free_item);
+#if 1
+	RList *list = r_anal_get_fcns (core->anal);
+	r_list_foreach (list, iter, fcn) {
+		ut64 fsz = r_anal_function_realsize (fcn);
+		r_list_append (maps, add_item (fcn, fcn->name, fcn->addr, fsz));
+	}
+#else
+	RAnalBlock *bb;
+	if (!fcn) {
+		fcn = r_anal_get_function_at (core->anal, core->offset);
+		r_list_foreach (fcn->bbs, iter, bb) {
+			char *name = r_str_newf ("%d", (int)(size_t)(bb->addr - fcn->addr));
+			r_list_append (maps, add_item (fcn, name, bb->addr, bb->size));
+			free (name);
+		}
+	}
+#endif
+	treemap_layout (canvas, maps);
+	TreeMapItem *mi;
+	r_list_foreach (maps, iter, mi) {
+		// char *s = r_core_cmd_strf (core, "pdb@0x%"PFMT64x"@e:asm.byte=0@e:asm.bytes=0", mi->addr);
+		char *s = r_core_cmd_strf (core, "pid@0x%"PFMT64x"@e:asm.bytes=0", mi->addr);
+		char *ns = r_str_crop (s, 0, 0, mi->w  * 2, mi->h - 2);
+		r_cons_canvas_gotoxy (canvas, mi->x +2, mi->y + 2);
+		r_cons_canvas_write (canvas, ns);
+		free (ns);
+		free (s);
+	}
+	r_list_foreach (maps, iter, mi) {
+		r_cons_canvas_gotoxy (canvas, mi->x + 2, mi->y + 1);
+		r_cons_canvas_write (canvas, mi->name);
+		r_cons_canvas_box (canvas, mi->x, mi->y, mi->w, mi->h, "");
+	}
+	char *s = r_cons_canvas_to_string (canvas);
+	r_cons_println (s);
+	free (s);
+}
+
 R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 	if (use_utf != -1) {
 		r_config_set_i (core->config, "scr.utf8", use_utf);
@@ -10433,6 +10572,9 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		break;
 	case 'e': // "age"
 		cmd_agraph_edge (core, input + 1);
+		break;
+	case 't': // "agt"
+		r_core_agraph_treemap (core, -1, input + 1);
 		break;
 	case 'g': // "agg"
 		r_core_agraph_print (core, -1, input + 1);
