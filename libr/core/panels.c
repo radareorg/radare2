@@ -765,7 +765,7 @@ static void __update_help_title(RCore *core, RPanel *panel) {
 		r_strbuf_setf (title, "[X]   %s   ", panel->model->title);
 		if (panel->view->pos.w > 24) {
 			r_strbuf_setf (cache_title, "[Cache] %s", panel->model->cache ? "On" : "Off");
-			// r_strbuf_setf (cache_title, "[Cache] N/A");
+			// r_strbuf_set (cache_title, "[Cache] N/A");
 		}
 	}
 	if (panel->view->pos.w > 16) {

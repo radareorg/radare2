@@ -616,8 +616,8 @@ repeat:
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
 	case 'v':
-		r_strbuf_appendf (p, "Visual Views:\n\n");
-		r_strbuf_appendf (p,
+		r_strbuf_append (p, "Visual Views:\n\n");
+		r_strbuf_append (p,
 			" \\     toggle horizonal split mode\n"
 			" tt     create a new tab (same as t+)\n"
 			" t=     give a name to the current tab\n"
@@ -631,16 +631,16 @@ repeat:
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
 	case 'p':
-		r_strbuf_appendf (p, "Visual Print Modes:\n\n");
-		r_strbuf_appendf (p,
+		r_strbuf_append (p, "Visual Print Modes:\n\n");
+		r_strbuf_append (p,
 			" pP  -> change to the next/previous print mode (hex, dis, ..)\n"
 			" TAB -> rotate between all the configurations for the current print mode\n"
 		);
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
 	case 'e':
-		r_strbuf_appendf (p, "Visual Evals:\n\n");
-		r_strbuf_appendf (p,
+		r_strbuf_append (p, "Visual Evals:\n\n");
+		r_strbuf_append (p,
 			" E      toggle asm.hint.lea\n"
 			" &      rotate asm.bits=16,32,64\n"
 		);
@@ -651,8 +651,8 @@ repeat:
 		r_strbuf_free (p);
 		return ret;
 	case 'i':
-		r_strbuf_appendf (p, "Visual Insertion Help:\n\n");
-		r_strbuf_appendf (p,
+		r_strbuf_append (p, "Visual Insertion Help:\n\n");
+		r_strbuf_append (p,
 			" i   -> insert bits, bytes or text depending on view\n"
 			" a   -> assemble instruction and write the bytes in the current offset\n"
 			" A   -> visual assembler\n"
@@ -662,8 +662,8 @@ repeat:
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
 	case 'd':
-		r_strbuf_appendf (p, "Visual Debugger Help:\n\n");
-		r_strbuf_appendf (p,
+		r_strbuf_append (p, "Visual Debugger Help:\n\n");
+		r_strbuf_append (p,
 			" $   -> set the program counter (PC register)\n"
 			" s   -> step in\n"
 			" S   -> step over\n"
@@ -673,8 +673,8 @@ repeat:
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
 	case 'm':
-		r_strbuf_appendf (p, "Visual Moving Around:\n\n");
-		r_strbuf_appendf (p,
+		r_strbuf_append (p, "Visual Moving Around:\n\n");
+		r_strbuf_append (p,
 			" g        type flag/offset/register name to seek\n"
 			" hl       seek to the next/previous byte\n"
 			" jk       seek to the next row (core.offset += hex.cols)\n"
@@ -687,8 +687,8 @@ repeat:
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
 		break;
 	case 'a':
-		r_strbuf_appendf (p, "Visual Analysis:\n\n");
-		r_strbuf_appendf (p,
+		r_strbuf_append (p, "Visual Analysis:\n\n");
+		r_strbuf_append (p,
 			" df -> define function\n"
 			" du -> undefine function\n"
 			" dc -> define as code\n"
@@ -1548,7 +1548,7 @@ repeat:
 					// TODO: show disasm with context. not seek addr
 					// dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
 					dis = NULL;
-					res = r_str_appendf (res, "; ---------------------------\n");
+					res = r_str_append (res, "; ---------------------------\n");
 					switch (printMode) {
 					case 0:
 						dis = r_core_cmd_strf (core, "pd--6 @ 0x%08"PFMT64x, refi->addr);

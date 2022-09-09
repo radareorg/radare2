@@ -1362,7 +1362,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					r_strbuf_fini (&type);
 				}
 			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
-				r_strbuf_appendf (args, "va_args ...,");
+				r_strbuf_append (args, "va_args ...,");
 			}
 			if (child_die->has_children) {
 				child_depth++;

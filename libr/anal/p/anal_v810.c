@@ -253,19 +253,19 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		r_strbuf_appendf (&op->esil, "r%u,%hd,+,[1],r%u,=",
 						 REG1(word1), word2, REG2(word1));
-		r_strbuf_appendf (&op->esil, ",DUP,0x80,&,?{,0xffffff00,|,}");
+		r_strbuf_append (&op->esil, ",DUP,0x80,&,?{,0xffffff00,|,}");
 		break;
 	case V810_LDH:
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		r_strbuf_appendf (&op->esil, "r%u,%hd,+,0xfffffffe,&,[2],r%u,=",
 						 REG1(word1), word2, REG2(word1));
-		r_strbuf_appendf (&op->esil, ",DUP,0x8000,&,?{,0xffffff00,|,}");
+		r_strbuf_append (&op->esil, ",DUP,0x8000,&,?{,0xffffff00,|,}");
 		break;
 	case V810_LDW:
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		r_strbuf_appendf (&op->esil, "r%u,%hd,+,0xfffffffc,&,[4],r%u,=",
 						 REG1(word1), word2, REG2(word1));
-		r_strbuf_appendf (&op->esil, ",DUP,0x80000000,&,?{,0xffffff00,|,}");
+		r_strbuf_append (&op->esil, ",DUP,0x80000000,&,?{,0xffffff00,|,}");
 		break;
 	case V810_STB:
 		op->type = R_ANAL_OP_TYPE_STORE;
@@ -296,7 +296,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	case V810_RETI:
 		op->type = R_ANAL_OP_TYPE_RET;
-		//r_strbuf_appendf (&op->esil, "np,?{,fepc,fepsw,}{,eipc,eipsw,},psw,=,pc,=");
+		// r_strbuf_append (&op->esil, "np,?{,fepc,fepsw,}{,eipc,eipsw,},psw,=,pc,=");
 		break;
 	case V810_JAL:
 	case V810_JR:
