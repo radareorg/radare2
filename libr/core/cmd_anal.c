@@ -4069,8 +4069,6 @@ static void cmd_afci(RCore *core, RAnalFunction *fcn) {
 }
 
 static int cmd_af(RCore *core, const char *input) {
-	char i;
-
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
 	case '-': // "af-"
@@ -4437,8 +4435,11 @@ static int cmd_af(RCore *core, const char *input) {
 			}
 			break;
 		default:
-			i = 1;
-			r_core_anal_fcn_list (core, input[2]? input + 2: "", &i);
+			{
+				const char *arg = input[2]? input + 2: "";
+				const char *sec = "\x01";
+				r_core_anal_fcn_list (core, arg, sec);
+			}
 			break;
 		}
 		break;
