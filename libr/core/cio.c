@@ -110,6 +110,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	return true;
 }
 
+#if 0
 static bool __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
 	ut32 i;
 	ut16 v16;
@@ -140,6 +141,7 @@ static bool __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
 	}
 	return true;
 }
+#endif
 
 R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	int i, j;
@@ -148,6 +150,17 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
 	if (!buf) {
 		return NULL;
+	}
+	bool isnum = false;
+	const char *plus = arg? strchr (arg, '+'): NULL;
+	int numsize = 1;
+	if (plus) {
+		numsize = (*arg=='+')? 1: atoi (arg);
+		if (numsize < 1) {
+			numsize = 1;
+		}
+		isnum = true;
+		arg = r_str_trim_head_ro (plus + 1);
 	}
 	if (op == 'i') { // "woi"
 		int hbs = core->blocksize / 2;
@@ -162,7 +175,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 
 	if (op != 'e') {
 		// fill key buffer either from arg or from clipboard
-		if (arg) {  // parse arg for key
+		if (arg && !isnum) {  // parse arg for key
 			// r_hex_str2bin() is guaranteed to output maximum half the
 			// input size, or 1 byte if there is just a single nibble.
 			str = (char *)malloc ((strlen (arg) / 2) + 1);
@@ -288,14 +301,27 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			}
 		}
 	} else {
-#if 0
-		bool be = r_config_get_i (core->config, "cfg.bigendian");
-		if (!be) {
-			if (!__endian_swap ((ut8*)str, len, len)) {
-				goto beach;
+		if (isnum) {
+			ut64 n = r_num_math (core->num, arg);
+			bool be = r_config_get_i (core->config, "cfg.bigendian");
+			free (str);
+			str = calloc (8, 1);
+			switch (numsize) {
+			case 1:
+				str[0] = n;
+				break;
+			case 2:
+				r_write_ble16 (str, n, be);
+				break;
+			case 4:
+				r_write_ble32 (str, n, be);
+				break;
+			case 8:
+				r_write_ble64 (str, n, be);
+				break;
 			}
+			len = numsize;
 		}
-#endif
 		for (i = j = 0; i < core->blocksize; i++) {
 			switch (op) {
 			case 'x': buf[i] ^= str[j]; break;
