@@ -40,8 +40,7 @@ static ut32 mask32(ut32 mb, ut32 me) {
 	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
 }
 
-static const char* cmask64(const char *mb_c, const char *me_c) {
-	static R_TH_LOCAL char cmask[32];
+static const char* cmask64(char cmaskbuf[32], const char *mb_c, const char *me_c) {
 	ut64 mb = 0;
 	ut64 me = 0;
 	if (mb_c) {
@@ -50,12 +49,11 @@ static const char* cmask64(const char *mb_c, const char *me_c) {
 	if (me_c) {
 		me = strtol (me_c, NULL, 16);
 	}
-	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x, mask64 (mb, me));
-	return cmask;
+	snprintf (cmaskbuf, sizeof (cmaskbuf), "0x%"PFMT64x, mask64 (mb, me));
+	return cmaskbuf;
 }
 
-static const char* cmask32(const char *mb_c, const char *me_c) {
-	static R_TH_LOCAL char cmask[32];
+static const char* cmask32(char cmaskbuf[32], const char *mb_c, const char *me_c) {
 	ut32 mb = 0;
 	ut32 me = 0;
 	if (mb_c) {
@@ -64,8 +62,8 @@ static const char* cmask32(const char *mb_c, const char *me_c) {
 	if (me_c) {
 		me = strtol (me_c, NULL, 16);
 	}
-	snprintf (cmask, sizeof (cmask), "0x%"PFMT32x, mask32 (mb, me));
-	return cmask;
+	snprintf (cmaskbuf, sizeof (cmaskbuf), "0x%"PFMT32x, mask32 (mb, me));
+	return cmaskbuf;
 }
 
 static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
@@ -642,6 +640,7 @@ static int decompile_ps(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	char cmaskbuf[32] = {0};
 	csh handle = init_capstone (a);
 	if (handle == 0) {
 		return -1;
@@ -749,11 +748,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_CLRLWI:
 			op->type = R_ANAL_OP_TYPE_AND;
-			esilprintf (op, "%s,%s,&,%s,=", ARG (1), cmask32 (ARG (2), "0x1F"), ARG (0));
+			esilprintf (op, "%s,%s,&,%s,=", ARG (1), cmask32 (cmaskbuf, ARG (2), "0x1F"), ARG (0));
 			break;
 		case PPC_INS_RLWINM:
 			op->type = R_ANAL_OP_TYPE_ROL;
-			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask32 (ARG (3), ARG (4)), ARG (0));
+			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask32 (cmaskbuf, ARG (3), ARG (4)), ARG (0));
 			break;
 		case PPC_INS_SC:
 			op->type = R_ANAL_OP_TYPE_SWI;
@@ -1364,7 +1363,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_CLRLDI:
 			op->type = R_ANAL_OP_TYPE_AND;
-			esilprintf (op, "%s,%s,&,%s,=", ARG (1), cmask64 (ARG (2), "0x3F"), ARG (0));
+			esilprintf (op, "%s,%s,&,%s,=", ARG (1), cmask64 (cmaskbuf, ARG (2), "0x3F"), ARG (0));
 			break;
 		case PPC_INS_ROTLDI:
 			op->type = R_ANAL_OP_TYPE_ROL;
@@ -1373,12 +1372,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case PPC_INS_RLDCL:
 		case PPC_INS_RLDICL:
 			op->type = R_ANAL_OP_TYPE_ROL;
-			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask64 (ARG (3), "0x3F"), ARG (0));
+			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask64 (cmaskbuf, ARG (3), "0x3F"), ARG (0));
 			break;
 		case PPC_INS_RLDCR:
 		case PPC_INS_RLDICR:
 			op->type = R_ANAL_OP_TYPE_ROL;
-			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask64 (0, ARG (3)), ARG (0));
+			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask64 (cmaskbuf, 0, ARG (3)), ARG (0));
 			break;
 		}
 		if (mask & R_ANAL_OP_MASK_VAL) {
