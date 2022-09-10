@@ -279,6 +279,7 @@ typedef struct r_bin_object_t {
 	Sdb *kv;
 	HtUP *addr2klassmethod;
 	void *bin_obj; // internal pointer used by formats
+	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 } RBinObject;
 
 // XXX: RbinFile may hold more than one RBinObject
@@ -358,7 +359,6 @@ struct r_bin_t {
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
 	RStrConstPool constpool;
-	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 };
 
 typedef struct r_bin_xtr_metadata_t {
