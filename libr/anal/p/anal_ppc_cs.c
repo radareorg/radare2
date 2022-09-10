@@ -40,7 +40,8 @@ static ut32 mask32(ut32 mb, ut32 me) {
 	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
 }
 
-static const char* cmask64(char cmaskbuf[32], const char *mb_c, const char *me_c) {
+#define cmaskbuf_SIZEOF 32
+static const char* cmask64(char *cmaskbuf, const char *mb_c, const char *me_c) {
 	ut64 mb = 0;
 	ut64 me = 0;
 	if (mb_c) {
@@ -49,11 +50,11 @@ static const char* cmask64(char cmaskbuf[32], const char *mb_c, const char *me_c
 	if (me_c) {
 		me = strtol (me_c, NULL, 16);
 	}
-	snprintf (cmaskbuf, sizeof (cmaskbuf), "0x%"PFMT64x, mask64 (mb, me));
+	snprintf (cmaskbuf, cmaskbuf_SIZEOF, "0x%"PFMT64x, mask64 (mb, me));
 	return cmaskbuf;
 }
 
-static const char* cmask32(char cmaskbuf[32], const char *mb_c, const char *me_c) {
+static const char* cmask32(char *cmaskbuf, const char *mb_c, const char *me_c) {
 	ut32 mb = 0;
 	ut32 me = 0;
 	if (mb_c) {
@@ -62,7 +63,7 @@ static const char* cmask32(char cmaskbuf[32], const char *mb_c, const char *me_c
 	if (me_c) {
 		me = strtol (me_c, NULL, 16);
 	}
-	snprintf (cmaskbuf, sizeof (cmaskbuf), "0x%"PFMT32x, mask32 (mb, me));
+	snprintf (cmaskbuf, cmaskbuf_SIZEOF, "0x%"PFMT32x, mask32 (mb, me));
 	return cmaskbuf;
 }
 
@@ -640,7 +641,7 @@ static int decompile_ps(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	char cmaskbuf[32] = {0};
+	char cmaskbuf[cmaskbuf_SIZEOF] = {0};
 	csh handle = init_capstone (a);
 	if (handle == 0) {
 		return -1;
