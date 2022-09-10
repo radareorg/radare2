@@ -392,7 +392,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		if (bf && bf->sdb_addrinfo) {
 			ret = cmd_meta_add_fileline (bf->sdb_addrinfo, sp, offset);
 		} else {
-			R_LOG_INFO ("TODO: Support global SdbAddrinfo or dummy rbinfile to handlee this case\n");
+			R_LOG_INFO ("TODO: Support global SdbAddrinfo or dummy rbinfile to handlee this case");
 		}
 		free (file_line);
 		free (myp);

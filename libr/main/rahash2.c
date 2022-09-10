@@ -11,7 +11,7 @@
 
 
 typedef struct {
-	bool quiet;
+	int quiet;
 	int iterations;
 	bool incremental; //  = true;
 	ut64 from;
