@@ -5391,7 +5391,8 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 		}
 	} else if (f) {
 		RBinReloc *rel = NULL;
-		if (!ds->core->bin->is_reloc_patched) {
+		RBinObject *bo = r_bin_cur_object (ds->core->bin);
+		if (!bo->is_reloc_patched) {
 			rel = r_core_getreloc (ds->core, ds->analop.addr, ds->analop.size);
 		}
 		if (!rel) {
