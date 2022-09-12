@@ -457,6 +457,9 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	for (i = 0; i < h; i++) {
 		if (i < c->h) {
 			newline = realloc (c->b[i], sizeof (*c->b[i]) * (w + 1));
+			if (newline) {
+				c->b[i] = newline;
+			}
 		} else {
 			newline = malloc (w + 1);
 		}
