@@ -1101,7 +1101,7 @@ static ut64 resolve_symbols_off(RDyldCache *cache, ut64 pa) {
 			return 0;
 		}
 		ut32 cmdsize = r_buf_read_le32_at (cache->buf, cursor + sizeof (ut32));
-		if (cmdsize == UT32_MAX) {
+		if (cmdsize == UT32_MAX || cmdsize < 1) {
 			return 0;
 		}
 		if (cmd == LC_SEGMENT || cmd == LC_SEGMENT_64) {
