@@ -1002,7 +1002,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 		}
 		int r = r_buf_read_at (obj->b, paddr, b, module->size_of_image);
 		//r_unref (buf);
-		r_buf_free (buf);
+		// r_buf_free (buf); - still uaf, it could be freed if pe parsing fails
 		buf = r_buf_new_with_bytes (b, r);
 		dup = false;
 		if (check_pe32_buf (buf, module->size_of_image)) {
