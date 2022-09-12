@@ -110,6 +110,10 @@ static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 pa
 					R_LOG_ERROR ("Invalid delta in var64");
 					break;
 				}
+				if (UT64_ADD_OVFCHK ((size_t)ps, var64)) {
+					R_LOG_ERROR ("Invalid overflow in var64");
+					break;
+				}
 				const ut8* pe = (const ut8*)ps + var64;
 				if (ps > buffer && pe <= end) {
 					if (is_string (ps, pe)) {
