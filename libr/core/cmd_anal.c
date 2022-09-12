@@ -9979,32 +9979,40 @@ static void treemap_layout(RConsCanvas *canvas, RList *maps) {
 	int ny = 0;
 	int nw = canvas->w;
 	int nh = canvas->h;
-	float mfact = 0.3;
-	int s = 0;
+	float mfact = 0.33;
+	bool s = true; // layout
 
 	r_list_sort (maps, bysize);
 	r_list_foreach (maps, iter, mi) {
 		if ((i % 2 && nh / 2 > 2 * mi->w) || (!(i % 2) && nw / 2 > 2 * mi->w)) {
+			const int imodfour = (i % 4);
 			if (i < n - 1) {
 				if (i % 2) {
 					nh /= 2;
 				} else {
 					nw /= 2;
 				}
-				if ((i % 4) == 2 && !s) {
-					nx += nw;
-				} else if ((i % 4) == 3 && !s) {
-					ny += nh;
+				if (!s) {
+					if (imodfour == 2) {
+						nx += nw;
+					} else if (imodfour == 3) {
+						ny += nh;
+					}
 				}
 			}
-			if ((i % 4) == 0) {
-				ny += (s)? nh: -nh;
-			} else if ((i % 4) == 1) {
+			switch (imodfour) {
+			case 0:
+				ny += s? nh: -nh;
+				break;
+			case 1:
 				nx += nw;
-			} else if ((i % 4) == 2) {
+				break;
+			case 2:
 				ny += nh;
-			} else if ((i % 4) == 3) {
+				break;
+			case 3:
 				nx += s? nw: -nw;
+				break;
 			}
 			if (i == 0) {
 				if (n != 1) {
@@ -10013,6 +10021,15 @@ static void treemap_layout(RConsCanvas *canvas, RList *maps) {
 				ny = 0;
 			} else if (i == 1) {
 				nw = canvas->w - nw;
+				nx--;
+			} else if (i == 2) {
+				nh++;
+				// ny--;
+			}
+			if (2== (i%4)) {
+				nh++;
+				// nw--;
+				ny--;
 			}
 			i++;
 		}
@@ -10024,6 +10041,8 @@ static void treemap_layout(RConsCanvas *canvas, RList *maps) {
 }
 
 R_API void r_core_agraph_treemap(RCore *core, int use_utf, const char *input) {
+	int a = r_config_get_i (core->config, "scr.color");
+	r_config_set_i (core->config, "scr.color", 0);
 	// walk all the functions and create a treemap and render it
 	int h, w = r_cons_get_size (&h);
 	w--;
@@ -10055,20 +10074,29 @@ R_API void r_core_agraph_treemap(RCore *core, int use_utf, const char *input) {
 	r_list_foreach (maps, iter, mi) {
 		// char *s = r_core_cmd_strf (core, "pdb@0x%"PFMT64x"@e:asm.byte=0@e:asm.bytes=0", mi->addr);
 		char *s = r_core_cmd_strf (core, "pid@0x%"PFMT64x"@e:asm.bytes=0", mi->addr);
-		char *ns = r_str_crop (s, 0, 0, mi->w  * 2, mi->h - 2);
-		r_cons_canvas_gotoxy (canvas, mi->x +2, mi->y + 2);
-		r_cons_canvas_write (canvas, ns);
-		free (ns);
+		if (mi->w > 4 && mi->h > 3) {
+			char *ns = r_str_crop (s, 0, 0, mi->w * 2, mi->h - 2);
+			if (r_cons_canvas_gotoxy (canvas, mi->x + 2, mi->y + 2)) {
+				r_cons_canvas_write (canvas, ns);
+			}
+			free (ns);
+		}
 		free (s);
 	}
 	r_list_foreach (maps, iter, mi) {
-		r_cons_canvas_gotoxy (canvas, mi->x + 2, mi->y + 1);
-		r_cons_canvas_write (canvas, mi->name);
-		r_cons_canvas_box (canvas, mi->x, mi->y, mi->w, mi->h, "");
+		if (r_cons_canvas_gotoxy (canvas, mi->x + 2, mi->y + 1)) {
+			r_cons_canvas_write (canvas, mi->name);
+			r_cons_canvas_box (canvas, mi->x, mi->y, mi->w, mi->h, "");
+		}
 	}
 	char *s = r_cons_canvas_to_string (canvas);
-	r_cons_println (s);
-	free (s);
+	if (s) {
+		r_cons_println (s);
+		free (s);
+	}
+	r_list_free (maps);
+	r_config_set_i (core->config, "scr.color", a);
+	r_cons_canvas_free (canvas);
 }
 
 R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
