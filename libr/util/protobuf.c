@@ -106,7 +106,11 @@ static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 pa
 			{
 				bytes_read = read_u64_leb128 (buffer, end, &var64);
 				const ut8* ps = buffer + bytes_read;
-				const ut8* pe = ps + var64;
+				if ((int)var64 < 0) {
+					R_LOG_ERROR ("Invalid delta in var64");
+					break;
+				}
+				const ut8* pe = (const ut8*)ps + var64;
 				if (ps > buffer && pe <= end) {
 					if (is_string (ps, pe)) {
 						r_strbuf_appendf (sb, ": \"%.*s\"\n", (int)var64, (const char*) ps);
