@@ -1829,6 +1829,29 @@ static int cmd_open(void *data, const char *input) {
 		/* handle prioritize */
 		if (input[1]) {
 			switch (input[1]) {
+			case 'e': // "ope" - 'open'
+				{
+					const char *sp = strchr (input, ' ');
+					if (sp) {
+#if __WINDOWS__
+						r_sys_cmdf ("start %s", sp + 1);
+#else
+						if (r_file_exists ("/usr/bin/xdg-open")) {
+							r_sys_cmdf ("xdg-open %s", sp + 1);
+						} else if (r_file_exists ("/usr/local/bin/xdg-open")) {
+							r_sys_cmdf ("xdg-open %s", sp + 1);
+						} else if (r_file_exists ("/usr/bin/open")) {
+							r_sys_cmdf ("open %s", sp + 1);
+						} else {
+							eprintf ("Unknown open tool. Cannot find xdg-open\n");
+						}
+#endif
+
+					} else {
+						eprintf ("Usage: open [path]\n");
+					}
+				}
+				break;
 			case 'r': // "opr" - open next file + rotate if not found
 			case 'n': // "opn" - open next file
 			case 'p': // "opp" - open previous file
