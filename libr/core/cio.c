@@ -170,7 +170,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	// execute the operand
 	if (op == 'e') {
 		int wordsize = 1;
-		char *os, *p, *s = strdup (arg);
+		char *os, *p, *s = strdup (arg? arg: "");
 		int n = 0, from = 0, to = UT8_MAX, dif = 0, step = 1;
 		os = s;
 		p = strchr (s, ' ');

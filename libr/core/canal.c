@@ -2782,7 +2782,6 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 	RListIter *fcniter;
 	RAnalFunction *fcn;
 	RAnalRef *refi;
-	RList *refs = NULL;
 	PJ *pj = NULL;
 
 	if (mode == 'j') {
@@ -2806,7 +2805,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 	// Iterate over all functions
 	r_list_foreach (fcns, fcniter, fcn) {
 		// Get all refs for a function
-		refs = r_core_anal_fcn_get_calls (core, fcn);
+		RList *refs = r_core_anal_fcn_get_calls (core, fcn);
 		// Uniquify the list by ref->addr
 		r_list_uniq_inplace (refs, RAnalRef_val);
 
@@ -2855,7 +2854,6 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 				r_cons_newline();
 			}
 		}
-
 		r_list_free (refs);
 	}
 

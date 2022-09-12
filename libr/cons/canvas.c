@@ -182,7 +182,7 @@ R_API void r_cons_canvas_clear(RConsCanvas *c) {
 R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	bool ret = true;
 	if (!c) {
-		return 0;
+		return false;
 	}
 	y += c->sy;
 	x += c->sx;
