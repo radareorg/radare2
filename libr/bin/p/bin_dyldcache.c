@@ -1684,13 +1684,18 @@ static void populate_cache_maps(RDyldCache *cache) {
 	r_return_if_fail (cache && cache->buf);
 
 	ut32 i;
-	ut32 n_maps = 0;
+	size_t n_maps = 0;
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
 		if (!hdr->mappingCount || !hdr->mappingOffset) {
 			continue;
 		}
 		n_maps += hdr->mappingCount;
+	}
+
+	if (n_maps > (r_buf_size (cache->buf) / 4)) {
+		R_LOG_WARN ("Invalid n_maps (%d)", (int)n_maps);
+		return;
 	}
 
 	cache_map_t *maps = NULL;
