@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2021 - pancake */
+/* radare2 - LGPL - Copyright 2013-2022 - pancake */
 
 #include "index.h"
 #include <r_main.h>
@@ -82,7 +82,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 
 	if (so.httpauth) {
 		if (!httpauthfile) {
-			eprintf ("No authentication user list set\n");
+			R_LOG_ERROR ("No authentication user list set");
 			return usage (0);
 		}
 
@@ -91,7 +91,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		if (pfile) {
 			so.authtokens = r_str_split_list (pfile, "\n", 0);
 		} else {
-			eprintf ("Empty list of HTTP users\\n");
+			R_LOG_ERROR ("Empty list of HTTP users");
 			return usage (0);
 		}
 	}
@@ -115,7 +115,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		return 1;
 	}
 
-	eprintf ("http://localhost:%d/\n", s->port);
+	R_LOG_INFO ("http://localhost:%d/", s->port);
 	if (dosandbox && !r_sandbox_enable (true)) {
 		R_LOG_ERROR ("Cannot enable the sandbox");
 		free (pfile);
@@ -182,7 +182,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 				" - <a target='_blank' href='http://localhost:%d/'>open</a><br />"
 				" - <a href='/proc/kill/%d'>kill</a><br />"
 				"</body></html>", session_port, pid);
-				eprintf ("\nchild pid %d\n\n", pid);
+				R_LOG_DEBUG ("child pid %d", pid);
 			}
 		}
 		r_socket_http_response (rs, 200, result, 0, NULL);

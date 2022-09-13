@@ -157,12 +157,12 @@ static bool addBB(RList *block_list, ut64 start, ut64 end, ut64 jump, ut64 fail,
 	return true;
 }
 
-void dump_block(bb_t *block) {
+static void dump_block(bb_t *block) {
 	eprintf ("s: 0x%"PFMT64x" e: 0x%"PFMT64x" j: 0x%"PFMT64x" f: 0x%"PFMT64x" t: %d\n"
 			, block->start, block->end, block->jump, block->fail, block->type);
 }
 
-void dump_blocks (RList* list) {
+void dump_blocks(RList* list) {
 	RListIter *iter;
 	bb_t *block = NULL;
 	r_list_foreach (list, iter, block) {
@@ -251,7 +251,6 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	int block_score = 0;
 	bb_t *block = NULL;
 	int invalid_instruction_barrier = -20000;
-	const bool debug = r_config_get_b (core->config, "cfg.debug");
 	const bool nopskip = r_config_get_b (core->config, "anal.nopskip");
 
 	RList *block_list = r_list_new ();
@@ -259,10 +258,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		return false;
 	}
 
-	if (debug) {
-		eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
-		eprintf ("Creating basic blocks\n");
-	}
+	R_LOG_DEBUG ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]", start, start + size);
+	R_LOG_DEBUG ("Creating basic blocks");
 	ut64 cur = 0, base = 0;
 	while (cur >= base && cur < size) {
 		if (r_cons_is_breaked ()) {
@@ -347,9 +344,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		r_anal_op_free (op);
 	}
 
-	if (debug) {
-		eprintf ("Found %d basic blocks\n", block_list->length);
-	}
+	R_LOG_DEBUG ("Found %d basic blocks", block_list->length);
 
 	RList *result = r_list_newf (free);
 	if (!result) {
@@ -366,10 +361,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 
 	r_list_sort (block_list, (RListComparator)bbCMP);
 
-	if (debug) {
-		eprintf ("Sorting all blocks done\n");
-		eprintf ("Creating the complete graph\n");
-	}
+	R_LOG_DEBUG ("Sorting all blocks done");
+	R_LOG_DEBUG ("Creating the complete graph");
 
 	while (block_list->length > 0) {
 		block = r_list_pop (block_list);
@@ -433,9 +426,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	// finally search for functions
 	// we simply assume that non reached blocks or called blocks
 	// are functions
-	if (debug) {
-		R_LOG_ERROR ("Trying to create functions");
-	}
+	R_LOG_DEBUG ("Trying to create functions");
 
 	r_list_foreach (result, iter, block) {
 		if (r_cons_is_breaked ()) {
@@ -529,22 +520,18 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 	RAnalOp *op;
 	RListIter *iter;
 	int block_score = 0;
-	RList *block_list;
 	bb_t *block = NULL;
 	int invalid_instruction_barrier = -20000;
-	const bool debug = r_config_get_b (core->config, "cfg.debug");
 	ut64 lista[1024] = {0};
 	int idx = 0;
 	int x;
 
-	block_list = r_list_new ();
+	RList *block_list = r_list_new ();
 	if (!block_list) {
 		R_LOG_ERROR ("Failed to create block_list");
 	}
-	if (debug) {
-		eprintf ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]\n", start, start + size);
-		eprintf ("Creating basic blocks\n");
-	}
+	R_LOG_DEBUG ("Analyzing [0x%08"PFMT64x"-0x%08"PFMT64x"]", start, start + size);
+	R_LOG_DEBUG ("Creating basic blocks");
 	lista[idx++] = b_start;
 	for (x = 0; x < 1024; x++) {
 		if (lista[x] != 0) {
@@ -632,9 +619,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 			}
 		}
 	}
-	if (debug) {
-		eprintf ("Found %d basic blocks\n", block_list->length);
-	}
+	R_LOG_DEBUG ("Found %d basic blocks", block_list->length);
 
 	RList *result = r_list_newf (free);
 	if (!result) {
@@ -651,10 +636,8 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 
 	r_list_sort (block_list, (RListComparator)bbCMP);
 
-	if (debug) {
-		eprintf ("Sorting all blocks done\n");
-		eprintf ("Creating the complete graph\n");
-	}
+	R_LOG_DEBUG ("Sorting all blocks done");
+	R_LOG_DEBUG ("Creating the complete graph");
 
 	while (block_list->length > 0) {
 		block = r_list_pop (block_list);

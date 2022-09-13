@@ -46,7 +46,7 @@ R_PACKED (
 typedef struct {
 	char name[0x15];	//game title.
 	ut8 rom_setup;		//ROM setup (LoROM/HiROM, etc.)
-	ut8 rom_type;	
+	ut8 rom_type;
 	ut8 rom_size;		//in 1kb chunks
 	ut8 sram_size;		//in 1kb chunks
 	ut8 dest_code;

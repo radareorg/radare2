@@ -447,18 +447,14 @@ static RList *imports(RBinFile *bf) {
 
 static RList *relocs(RBinFile *bf) {
 	RList *ret = NULL;
-	struct MACH0_(obj_t) *bin = NULL;
 	RBinObject *obj = bf ? bf->o : NULL;
-	if (bf && bf->o) {
-		bin = bf->o->bin_obj;
-	}
+	struct MACH0_(obj_t) *bin = (bf && bf->o)? bf->o->bin_obj: NULL;
 	if (!obj || !obj->bin_obj || !(ret = r_list_newf (free))) {
 		return NULL;
 	}
 	ret->free = free;
-
-	RSkipList *relocs;
-	if (!(relocs = MACH0_(get_relocs) (bf->o->bin_obj))) {
+	RSkipList *relocs = MACH0_(get_relocs) (bf->o->bin_obj);
+	if (!relocs) {
 		return ret;
 	}
 
@@ -523,7 +519,6 @@ static RBinInfo *info(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	if (bf->file) {
 		ret->file = strdup (bf->file);
@@ -539,6 +534,21 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->has_sanitizers = bin->has_sanitizers;
 		ret->dbg_info = bin->dbg_info;
 		ret->lang = bin->lang;
+		if (bin->dyld_info) {
+			ut64 allbinds = 0;
+			if ((int)bin->dyld_info->bind_size > 0) {
+				allbinds += bin->dyld_info->bind_size;
+			}
+			if ((int)bin->dyld_info->lazy_bind_size > 0) {
+				allbinds += bin->dyld_info->lazy_bind_size;
+			}
+			if ((int)bin->dyld_info->weak_bind_size > 0) {
+				allbinds += bin->dyld_info->weak_bind_size;
+			}
+			if (allbinds > 0) {
+				ret->dbg_info |= R_BIN_DBG_RELOCS;
+			}
+		}
 	}
 	ret->intrp = r_str_dup (NULL, MACH0_(get_intrp)(bf->o->bin_obj));
 	ret->compiler = strdup ("clang");

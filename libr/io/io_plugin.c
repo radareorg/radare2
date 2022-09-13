@@ -94,7 +94,7 @@ R_API int r_io_plugin_list_json(RIO *io) {
 	if (!pj) {
 		return 0;
 	}
-	
+
 	char str[4];
 	int n = 0;
 	pj_a (pj);

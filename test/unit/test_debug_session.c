@@ -172,7 +172,7 @@ static bool test_session_load(void) {
 		// Registers
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			arena_eq (chkpt->arena[i], ref_chkpt->arena[i]);
-		}	
+		}
 		// Snaps
 		RListIter *actual_snaps_iter = r_list_iterator (chkpt->snaps);
 		RListIter *expected_snaps_iter = r_list_iterator (ref_chkpt->snaps);

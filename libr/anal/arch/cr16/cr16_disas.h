@@ -1,7 +1,7 @@
 #ifndef R2_CR16_DISASM_H
 #define R2_CR16_DISASM_H
 
-#define CR16_INSTR_MAXLEN 24
+#define CR16_INSTR_MAXLEN 32
 #define STOR_LOAD_MASK 0x181F
 
 enum cr16_cmd_types {

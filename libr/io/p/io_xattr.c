@@ -81,7 +81,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!attrvalue || size < 1) {
 		return NULL;
 	}
-	
+
 	RIOMalloc *mal = R_NEW0 (RIOMalloc);
 	if (!mal) {
 		return NULL;

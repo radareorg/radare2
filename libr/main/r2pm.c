@@ -30,7 +30,7 @@ static int r_main_r2pm_sh(int argc, const char **argv) {
 static const char *helpmsg = \
 "Usage: r2pm [-flags] [pkgs...]\n"\
 "Commands:\n"\
-" -c ([git/dir])    clear source cache (GITDIR)\n"\
+" -c ([git/dir])    clear source cache (R2PM_GITDIR)\n"\
 " -ci <pkgname>     clean + install\n"\
 " -cp               clean the user's home plugin directory\n"\
 " -d,doc [pkgname]  show documentation for given package\n"\
@@ -42,7 +42,7 @@ static const char *helpmsg = \
 " -i <pkgname>      install/update package and its dependencies (see -c, -g)\n"\
 " -l                list installed pkgs\n"\
 " -r [cmd ...args]  run shell command with R2PM_BINDIR in PATH\n"\
-" -s [<keyword>]    search in database\n"\
+" -s [<keyword>]    search available packages in database matching a string\n"\
 " -uci <pkgname>    uninstall + clean + install\n"\
 " -ui <pkgname>     uninstall + install\n"\
 " -u <pkgname>      r2pm -u baleful (See -f to force uninstall)\n"\
@@ -66,7 +66,7 @@ typedef struct r_r2pm_t {
 } R2Pm;
 
 static int git_pull(const char *dir) {
-	char *s = r_str_newf ("cd %s && git pull", dir);
+	char *s = r_str_newf ("cd %s && git pull ; git diff", dir);
 	int rc = r_sandbox_system (s, 1);
 	free (s);
 	return rc;
@@ -115,6 +115,33 @@ typedef enum {
 	TT_CODEBLOCK,
 	TT_ENDQUOTE,
 } R2pmTokenType;
+
+static void r2pm_register(const char *pkg, bool g) {
+	char *pkgdir = r2pm_pkgdir ();
+	char *f = r_str_newf ("%s/%s", pkgdir, pkg);
+	free (pkgdir);
+	if (f) {
+		RStrBuf *sb = r_strbuf_new ("");
+		r_strbuf_appendf (sb, "Global: %s\n", r_str_bool (g));
+		char *s = r_time_stamp_to_str (time (0));
+		r_strbuf_appendf (sb, "InstallationDate: %s\n", s);
+		free (s);
+		char *ss = r_strbuf_drain (sb);
+		r_file_dump (f, (const ut8*)ss, strlen (ss), false);
+		free (ss);
+		free (f);
+	}
+}
+
+static void r2pm_unregister(const char *pkg) {
+	char *pkgdir = r2pm_pkgdir ();
+	char *f = r_str_newf ("%s/%s", pkgdir, pkg);
+	free (pkgdir);
+	if (R_LIKELY (f)) {
+		r_file_rm (f);
+		free (f);
+	}
+}
 
 static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 	char *res = NULL;
@@ -178,33 +205,59 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 	return res;
 }
 
+static int r2pm_install(RList *targets, bool uninstall, bool clean, bool global);
+
+static void striptrim(RList *list) {
+	char *s;
+	RListIter *iter, *iter2;
+	r_list_foreach_safe (list, iter, iter2, s) {
+		if (R_STR_ISEMPTY (s)) {
+			r_list_delete (list, iter);
+		}
+	}
+}
+
+static void r2pm_upgrade(void) {
+	char *s = r_sys_cmd_str ("r2 -qcq -- 2>&1 | grep r2pm | sed -e 's,$,;,g'", NULL, 0);
+	r_str_trim (s);
+	RList *list = r_str_split_list (s, "\n", -1);
+	striptrim (list);
+	if (r_list_length (list) < 1) {
+		eprintf ("Nothing to upgrade.\n");
+	} else {
+		r2pm_install (list, false, true, false);
+	}
+	free (s);
+}
+
 static char *r2pm_desc(const char *file) {
 	return r2pm_get (file, "\nR2PM_DESC ", TT_TEXTLINE);
 }
 
-static int r2pm_list(void) {
+static char *r2pm_list(void) {
 	char *path = r2pm_pkgdir ();
 	RList *files = r_sys_dir (path);
 	free (path);
 	if (!files) {
-		return 1;
+		return NULL;
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 	RListIter *iter;
 	const char *file;
 	r_list_foreach (files, iter, file) {
 		if (*file != '.') {
-			printf ("%s\n", file);
+			r_strbuf_appendf (sb, "%s\n", file);
 		}
 	}
 	r_list_free (files);
-	return 0;
+	return r_strbuf_drain (sb);
 }
 
 static int r2pm_update(void) {
 	char *gpath = r2pm_gitdir ();
 	char *pmpath = r_str_newf ("%s/%s", gpath, "radare2-pm");
 	r_sys_mkdirp (gpath);
-	if (r_file_exists (pmpath)) {
+	if (r_file_is_directory (pmpath)) {
 		if (git_pull (pmpath) != 0) {
 			R_LOG_ERROR ("git pull");
 			free (pmpath);
@@ -294,7 +347,7 @@ static void r2pm_setenv(void) {
 	free (python);
 }
 
-static int r2pm_install_pkg(const char *pkg) {
+static int r2pm_install_pkg(const char *pkg, bool global) {
 	printf ("[r2pm] Installing %s ...\n", pkg);
 	char *deps = r2pm_get (pkg, "\nR2PM_DEPS ", TT_TEXTLINE);
 	if (deps) {
@@ -303,7 +356,7 @@ static int r2pm_install_pkg(const char *pkg) {
 		RList *l = r_str_split_list (deps, " ", 0);
 		r_list_foreach (l, iter, dep) {
 			eprintf ("(%s)\n", dep);
-			r2pm_install_pkg (dep);
+			r2pm_install_pkg (dep, false); // XXX get current pkg global value
 		}
 	}
 	char *srcdir = r2pm_gitdir ();
@@ -327,6 +380,9 @@ static int r2pm_install_pkg(const char *pkg) {
 	char *s = r_str_newf ("cd '%s/%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
+	if (res == 0) {
+		r2pm_register (pkg, global);
+	}
 #endif
 	free (srcdir);
 	return res;
@@ -383,6 +439,8 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 		srcdir, pkg, script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
+
+	r2pm_unregister (pkg);
 #endif
 	free (srcdir);
 	return res;
@@ -430,6 +488,9 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool global)
 		r_sys_setenv ("GLOBAL", "0");
 	}
 	r_list_foreach (targets, iter, t) {
+		if (R_STR_ISEMPTY (t)) {
+			continue;
+		}
 		if (uninstall) {
 			r2pm_uninstall_pkg (t);
 		}
@@ -437,7 +498,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool global)
 			r2pm_clean_pkg (t);
 		}
 		r2pm_clone (t);
-		rc |= r2pm_install_pkg (t);
+		rc |= r2pm_install_pkg (t, global);
 	}
 	return rc;
 }
@@ -525,34 +586,35 @@ static int r2pm_info(void) {
 	return 0;
 }
 
-static int r2pm_search(const char *grep) {
+static char *r2pm_search(const char *grep) {
 	char *path = r2pm_dbdir ();
 	RList *files = r_sys_dir (path);
 	free (path);
 	if (!files) {
-		return 1;
+		return NULL;
 	}
 	RListIter *iter;
 	const char *file;
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (files, iter, file) {
 		if (*file != '.') {
 			char *desc = r2pm_desc (file);
 			if (desc) {
 				if (!grep || (strstr (desc, grep) || strstr (file, grep))) {
-					eprintf ("%s%s%s\n", file, r_str_pad (' ', 20 - strlen (file)), desc);
+					r_strbuf_appendf (sb, "%s%s%s\n", file, r_str_pad (' ', 20 - strlen (file)), desc);
 				}
 				free (desc);
 			}
 		}
 	}
 	r_list_free (files);
-	return 0;
+	return r_strbuf_drain (sb);
 }
 
 static int r_main_r2pm_c(int argc, const char **argv) {
 	R2Pm r2pm = {0};
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "cdiIhflgrsu");
+	r_getopt_init (&opt, argc, argv, "cdiIhflgrsuU");
 	if (opt.ind < argc) {
 		// TODO: deprecate, only use flags imho
 		r2pm_actionword (&r2pm, argv[opt.ind]);
@@ -577,6 +639,10 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 			break;
 		case 'f':
 			r2pm.force = true;
+			break;
+		case 'U':
+			r2pm.init = true;
+			r2pm_upgrade ();
 			break;
 		case 'l':
 			r2pm.list = true;
@@ -650,7 +716,15 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	}
 	int res = -1;
 	if (r2pm.search) {
-		res = r2pm_search (argv[opt.ind]);
+		char *s = r2pm_search (argv[opt.ind]);
+		if (s) {
+			r_cons_print (s);
+			// r_cons_flush ();
+			res = 0;
+			free (s);
+		} else {
+			res = 1;
+		}
 	} else if (r2pm.info) {
 		res = r2pm_info ();
 	} else if (r2pm.doc) {
@@ -662,7 +736,14 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	} else if (r2pm.clean) {
 		res = r2pm_clean (targets);
 	} else if (r2pm.list) {
-		res = r2pm_list ();
+		char *s = r2pm_list ();
+		if (s) {
+			r_cons_print (s);
+			// r_cons_flush ();
+			res = 0;
+		} else {
+			res = 1;
+		}
 	}
 	r_list_free (targets);
 	if (res != -1) {

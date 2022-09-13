@@ -151,7 +151,7 @@ const char *skip_comment_c(const char *code) {
 		if (end) {
 			code = end + 2;
 		} else {
-			eprintf ("Missing closing comment\n");
+			R_LOG_ERROR ("Missing closing comment");
 		}
 	} else if (!strncmp (code, "//", 2)) {
 		char *end = strchr (code, '\n');
@@ -356,8 +356,7 @@ R_API int r_hex_pair2bin(const char *arg) {
 		}
 		d = c;
 		if (*ptr != '.' && r_hex_to_byte (&c, *ptr)) {
-			eprintf ("Invalid hexa string at char '%c' (%s).\n",
-				*ptr, arg);
+			R_LOG_ERROR ("Invalid hexa string at char '%c' (%s)", *ptr, arg);
 			return -1;
 		}
 		c |= d;

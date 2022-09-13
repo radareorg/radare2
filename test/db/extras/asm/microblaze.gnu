@@ -9,6 +9,6 @@ d "or    r4, r6, r5" 00288680
 d "rtsd    r15, 8" 08000fb6
 d "rsub    r31, r6, r30" 00f0e607
 d "sext8    r3, r3" 60006390
-d "srl    r6, r6" 4100c690 	
+d "srl    r6, r6" 4100c690
 d "swi    r17, r1, 0" 000021fa
 d "xori    r14, r5, 1" 0100c5a9

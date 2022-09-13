@@ -600,7 +600,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	wchar_t *wcpath;
 	char *cfname;
 	char subfn[1024];
-#else	
+#else
 	DIR *dir;
 	struct dirent *d;
 	char subfn[MAXPATHLEN];
@@ -653,7 +653,9 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 				if (*d->d_name == '.') {
 					continue;
 				}
-				snprintf (subfn, sizeof (subfn), "%s/%s", fn, d->d_name);
+				if (snprintf (subfn, sizeof (subfn), "%s/%s", fn, d->d_name) < 0) {
+					continue;
+				}
 				if (stat (subfn, &st) == 0 && S_ISREG (st.st_mode)) {
 					load_1 (ms, action, subfn, &errs, &marray, &marraycount);
 				}
@@ -1522,7 +1524,7 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 
 	if (file_nformats != file_nnames) {
 		return -1;
-	}		
+	}
 
 	if (m->type >= file_nformats) {
 		file_magwarn(ms, "Internal error inconsistency between "

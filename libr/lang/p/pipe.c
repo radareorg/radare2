@@ -149,7 +149,7 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 		}
 		return false;
 	}
-	
+
 	env ("R2PIPE_IN", input[0]);
 	env ("R2PIPE_OUT", output[1]);
 

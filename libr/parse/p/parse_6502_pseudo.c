@@ -80,12 +80,12 @@ static int replace(int argc, const char *argv[], char *newstr, ADDR_TYPE type) {
 				continue;
 			}
 		}
-		if (!strcmp(ops[i].op, argv[0])) {
+		if (!strcmp (ops[i].op, argv[0])) {
 			for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
 				if (IS_DIGIT(ops[i].str[j])) {
 					const char *w = argv[ops[i].str[j] - '0'];
 					if (w) {
-						strcpy(newstr + k, w);
+						strcpy (newstr + k, w);
 						k += strlen(w) - 1;
 					}
 				} else {

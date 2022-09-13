@@ -28,29 +28,29 @@ bool test_r_skyline_overlaps(void) {
 	r_skyline_add (&sky, (RInterval){ 10, 10 }, (void *)1);
 	const RSkylineItem *item = r_skyline_get_item (&sky, 10);
 	mu_assert_eq ((size_t)item->user, 1, "r_skyline_get should get 1st map");
-	
+
 	r_skyline_add (&sky, (RInterval){ 9, 2 }, (void *)2);
 	item = r_skyline_get_item (&sky, 10);
 	mu_assert_eq ((size_t)item->user, 2, "r_skyline_get should get 2nd map");
-	
+
 	r_skyline_add (&sky, (RInterval){ 19, 2 }, (void *)3);
 	item = r_skyline_get_item (&sky, 19);
 	mu_assert_eq ((size_t)item->user, 3, "r_skyline_get should get 3rd map");
-	
+
 	r_skyline_add (&sky, (RInterval){ 14, 3 }, (void *)4);
 	item = r_skyline_get_item (&sky, 14);
 	mu_assert_eq ((size_t)item->user, 4, "r_skyline_get should get 4th map");
-	
+
 	item = r_skyline_get_item (&sky, 12);
 	mu_assert_eq ((size_t)item->user, 1, "r_skyline_get should get 1st map head after it was overlapped");
 	mu_assert_eq (r_itv_begin (item->itv), 11, "1st map head should start at 11");
 	mu_assert_eq (r_itv_end (item->itv), 14, "1st map head should end at 14");
-	
+
 	item = r_skyline_get_item (&sky, 17);
 	mu_assert_eq ((size_t)item->user, 1, "r_skyline_get should get 1st map tail after it was overlapped");
 	mu_assert_eq (r_itv_begin (item->itv), 17, "1st map tail should start at 17");
 	mu_assert_eq (r_itv_end (item->itv), 19, "1st map tail should end at 19");
-	
+
 	r_skyline_add (&sky, (RInterval){ 0, 30 }, (void *)5);
 	mu_assert_eq (r_vector_len (&sky.v), 1, "5th map should cover entire skyline");
 	item = r_skyline_get_item (&sky, 10);
@@ -68,7 +68,7 @@ bool test_r_skyline_overlaps(void) {
 
 	item = r_skyline_get_item (&sky, 35);
 	mu_assert_eq (r_itv_begin (item->itv), 35, "9th map should begin at 35 after 10th covered its beginning");
-	
+
 	r_skyline_add (&sky, (RInterval){ 3, 5 }, (void *)11);
 	item = r_skyline_get_item (&sky, 0);
 	mu_assert_eq (r_itv_size (item->itv), 3, "6th map should have size of 3 after 11th covered its end");

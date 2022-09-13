@@ -32,12 +32,12 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		"{\"op\":\"write\",\"address\":%" PFMT64d ",\"data\":[%s]}",
 		io->off, bufnum);
 	if (len >= sizeof (fmt)) {
-		eprintf ("r2pipe_write: error, fmt string has been truncated\n");
+		R_LOG_ERROR ("fmt string has been truncated");
 		return -1;
 	}
 	rv = r2pipe_write (R2P (fd), fmt);
 	if (rv < 1) {
-		eprintf ("r2pipe_write: error\n");
+		R_LOG_ERROR ("r2pipe_write failed");
 		return -1;
 	}
 	res = r2pipe_read (R2P (fd));
@@ -67,7 +67,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		io->off, count);
 	rv = r2pipe_write (R2P (fd), fmt);
 	if (rv < 1) {
-		eprintf ("r2pipe_write: error\n");
+		R_LOG_ERROR ("r2pipe_write failed");
 		return -1;
 	}
 	res = r2pipe_read (R2P (fd));
@@ -164,7 +164,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *msg) {
 	int rv = r2pipe_write (R2P (fd), fmt);
 	pj_free (pj);
 	if (rv < 1) {
-		eprintf ("r2pipe_write: error\n");
+		R_LOG_ERROR ("r2pipe_write failed");
 		return NULL;
 	}
 	char *res = r2pipe_read (R2P (fd));
@@ -173,7 +173,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *msg) {
 	char *r = strstr (res, "result");
 	if (r) {
 		int rescount = atoi (r + 6 + 1);
-		eprintf ("RESULT %d\n", rescount);
+		R_LOG_INFO ("RESULT %d", rescount);
 	}
 	free (res);
 	return NULL;

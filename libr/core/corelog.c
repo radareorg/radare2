@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
 
 R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
+	r_return_val_if_fail (core && core->log, 0);
 	int printed = 0;
 	int count = 0, i, idx, id = core->log->first;
 	RStrpool *sp = core->log->sp;
@@ -63,17 +64,20 @@ R_API RCoreLog *r_core_log_new(void) {
 }
 
 R_API void r_core_log_init(RCoreLog *log) {
+	r_return_if_fail (log);
 	log->first = 1;
 	log->last = 1;
 	log->sp = r_strpool_new (0);
 }
 
 R_API void r_core_log_free(RCoreLog *log) {
-	r_strpool_free (log->sp);
-	free (log);
+	if (log) {
+		r_strpool_free (log->sp);
+		free (log);
+	}
 }
 
-R_API bool r_core_log_run(RCore *core, const char *_buf, RCoreLogCallback runLine) {
+R_API bool r_core_log_run(RCore *core, const char *_buf, RCoreLogCallback cb_runline) {
 	char *obuf = strdup (_buf);
 	char *buf = obuf;
 	while (buf) {
@@ -83,7 +87,7 @@ R_API bool r_core_log_run(RCore *core, const char *_buf, RCoreLogCallback runLin
 		}
 		char *sp = strchr (buf, ' ');
 		if (sp) {
-			runLine (core, atoi (buf), sp + 1);
+			cb_runline (core, atoi (buf), sp + 1);
 		}
 		if (nl) {
 			buf = nl + 1;
@@ -96,6 +100,7 @@ R_API bool r_core_log_run(RCore *core, const char *_buf, RCoreLogCallback runLin
 }
 
 R_API char *r_core_log_get(RCore *core, int index) {
+	r_return_val_if_fail (core && core->config, NULL);
 	const char *host = r_config_get (core->config, "http.sync");
 	if (host && *host) {
 		char *url = index > 0
@@ -108,18 +113,31 @@ R_API char *r_core_log_get(RCore *core, int index) {
 	return NULL;
 }
 
-static R_TH_LOCAL bool inProcess = false;
+#if !R2_580
+static R_TH_LOCAL bool in_log_process; // false;
+#endif
 R_API void r_core_log_add(RCore *core, const char *msg) {
+	r_return_if_fail (core && core->log);
 	r_strpool_append (core->log->sp, msg);
 	core->log->last++;
-	if (core->cmdlog && *core->cmdlog) {
-		if (inProcess) {
+	if (R_STR_ISNOTEMPTY (core->cmdlog)) {
+#if R2_580
+		if (core->in_log_process) {
 			// avoid infinite recursive calls
 			return;
 		}
-		inProcess = true;
+		core->in_log_process = true;
 		r_core_cmd0 (core, core->cmdlog);
-		inProcess = false;
+		core->in_log_process = false;
+#else
+		if (in_log_process) {
+			// avoid infinite recursive calls
+			return;
+		}
+		in_log_process = true;
+		r_core_cmd0 (core, core->cmdlog);
+		in_log_process = false;
+#endif
 	}
 }
 
@@ -141,7 +159,7 @@ R_API void r_core_log_del(RCore *core, int n) {
 		core->log->first += idx + 1;
 		char *msg = r_strpool_get_i (core->log->sp, idx);
 		// if (idx >= core->log->last) {
-		if (!msg || !*msg) {
+		if (R_STR_ISEMPTY (msg)) {
 			core->log->first = core->log->last;
 			r_strpool_empty (core->log->sp);
 		} else {

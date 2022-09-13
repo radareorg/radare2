@@ -322,7 +322,7 @@ static RList *trycatch(RBinFile *bf) {
 	int i;
 	ut64 offset;
 	ut32 c_handler = 0;
-	
+
 	struct PE_(r_bin_pe_obj_t) * bin = bf->o->bin_obj;
 	PE_(image_data_directory) *expdir = &bin->optional_header->DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION];
 	if (!expdir->Size) {

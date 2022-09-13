@@ -241,7 +241,7 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 		return NULL;
 	}
 	for (i = 0; argv[i]; i++) {
-		rp->_args[i] = argv[i];
+		rp->_args[i] = strdup (argv[i]);
 	}
 	rp->_args[i] = NULL;
 	if (!argv[0]) {
@@ -299,7 +299,6 @@ static void handle_posix_redirection(RRunProfile *rp, posix_spawn_file_actions_t
 // __UNIX__ (not windows)
 static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 	pid_t p = -1;
-	char **argv;
 	posix_spawn_file_actions_t fileActions;
 	ut32 ps_flags = POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK;
 	sigset_t no_signals;
@@ -323,7 +322,8 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 	ps_flags |= POSIX_SPAWN_START_SUSPENDED;
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
 	int ret;
-	argv = r_str_argv (cmd, NULL);
+	char *ncmd = strdup (cmd);
+	char **argv = r_str_argv (ncmd, NULL);
 	if (!argv) {
 		posix_spawn_file_actions_destroy (&fileActions);
 		return -1;
@@ -350,6 +350,7 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 		handle_posix_error (ret);
 	}
 	r_str_argv_free (argv);
+	free (ncmd);
 	r_run_free (rp);
 	posix_spawn_file_actions_destroy (&fileActions);
 	return p; // -1 ?

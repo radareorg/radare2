@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - pancake */
+/* radare - LGPL - Copyright 2020-2022 - pancake */
 
 // project class definition to be used by project.c
 
@@ -16,7 +16,7 @@ R_API bool r_project_rename(RProject *p, const char *newname) {
 	}
 	char *newprjdir = r_file_new (p->path, "..", newname, NULL);
 	if (r_file_exists (newprjdir)) {
-		R_LOG_ERROR ("Cannot rename");
+		R_LOG_ERROR ("Cannot rename project");
 		free (newprjdir);
 		return false;
 	}

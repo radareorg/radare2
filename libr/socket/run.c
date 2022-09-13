@@ -2,6 +2,7 @@
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
+#include <errno.h>
 #include <fcntl.h>
 #include <r_socket.h>
 #include <r_util.h>
@@ -97,7 +98,7 @@ static void dyn_init(void) {
 R_API RRunProfile *r_run_new(const char *str) {
 	RRunProfile *p = R_NEW0 (RRunProfile);
 	if (p) {
-		r_run_reset (p);
+		r_run_reset (p); // TODO: rename to r_run_init
 		if (str) {
 			r_run_parsefile (p, str);
 		}
@@ -107,6 +108,30 @@ R_API RRunProfile *r_run_new(const char *str) {
 
 R_API void r_run_reset(RRunProfile *p) {
 	r_return_if_fail (p);
+	int i;
+	for (i = 0; i < R_RUN_PROFILE_NARGS; i++) {
+		R_FREE (p->_args[i]);
+	}
+	R_FREE (p->_system);
+	R_FREE (p->_program);
+	R_FREE (p->_runlib);
+	R_FREE (p->_runlib_fcn);
+	R_FREE (p->_stdio);
+	R_FREE (p->_stdin);
+	R_FREE (p->_stdout);
+	R_FREE (p->_stderr);
+	R_FREE (p->_chgdir);
+	R_FREE (p->_chroot);
+	R_FREE (p->_libpath);
+	R_FREE (p->_preload);
+	R_FREE (p->_pidfile);
+	R_FREE (p->_connect);
+	R_FREE (p->_listen);
+	R_FREE (p->_input);
+	R_FREE (p->_setuid);
+	R_FREE (p->_seteuid);
+	R_FREE (p->_setgid);
+	R_FREE (p->_setegid);
 	memset (p, 0, sizeof (RRunProfile));
 	p->_aslr = -1;
 }
@@ -131,6 +156,7 @@ R_API bool r_run_parse(RRunProfile *pf, const char *profile) {
 }
 
 R_API void r_run_free(RRunProfile *r) {
+	int i;
 	if (r) {
 		free (r->_system);
 		free (r->_program);
@@ -144,6 +170,17 @@ R_API void r_run_free(RRunProfile *r) {
 		free (r->_chroot);
 		free (r->_libpath);
 		free (r->_preload);
+		free (r->_pidfile);
+		free (r->_connect);
+		free (r->_listen);
+		free (r->_input);
+		free (r->_setuid);
+		free (r->_seteuid);
+		free (r->_setgid);
+		free (r->_setegid);
+		for (i = 0; i < R_RUN_PROFILE_NARGS; i++) {
+			free (r->_args[i]);
+		}
 		free (r);
 	}
 }
@@ -162,28 +199,28 @@ static void set_limit(int n, int a, ut64 b) {
 }
 #endif
 
-static char *getstr(const char *src) {
-	int len;
+static char *getstr(const char *src, R_NULLABLE size_t *out_len) {
+	size_t len = 0;
 	char *ret = NULL;
 
-	switch (*src) {
+	switch (*(src++)) {
 	case '\'':
-		ret = strdup (src+1);
+		ret = strdup (src);
 		if (ret) {
 			len = strlen (ret);
 			if (len > 0) {
 				len--;
 				if (ret[len] == '\'') {
 					ret[len] = 0;
-					return ret;
+					goto beach;
 				}
-				R_LOG_ERROR ("Missing \"");
+				R_LOG_ERROR ("Unterminated string literal in input: ' expected");
 			}
 			free (ret);
 		}
 		return NULL;
 	case '"':
-		ret = strdup (src + 1);
+		ret = strdup (src);
 		if (ret) {
 			len = strlen (ret);
 			if (len > 0) {
@@ -191,72 +228,110 @@ static char *getstr(const char *src) {
 				if (ret[len] == '"') {
 					ret[len] = 0;
 					r_str_unescape (ret);
-					return ret;
+					goto beach;
 				}
-				R_LOG_ERROR ("Missing \"");
+				R_LOG_ERROR ("Unterminated string literal in input: \" expected");
 			}
 			free (ret);
 		}
 		return NULL;
 	case '@':
 		{
-			char *pat = strchr (src + 1, '@');
-			if (pat) {
-				size_t len;
-				long i, rep;
+			char *pat, *endptr;
+			if ((pat = strchr (src, '@'))) {
+				size_t i, pat_len;
 				*pat++ = 0;
-				rep = strtol (src + 1, NULL, 10);
-				len = strlen (pat);
-				if (rep > 0) {
-					char *buf = malloc (rep);
-					if (buf) {
-						for (i = 0; i < rep; i++) {
-							buf[i] = pat[i % len];
+				len = strtoul (src, &endptr, 10);
+				if (*endptr != 0) {
+					R_LOG_ERROR ("Invalid num in @<num>@<pattern> expr");
+					return NULL;
+				}
+				if (errno == EINVAL || errno == ERANGE || len > 64000000) {
+					R_LOG_ERROR ("Out-of-bounds num in @<num>@<pattern> expr");
+					return NULL;
+				}
+				pat_len = strlen (pat);
+				if (pat_len == 0) {
+					R_LOG_ERROR ("Missing pattern in @<num>@<pattern> expr");
+					return NULL;
+				}
+				if (len > 0) {
+					ret = malloc (len + 1);
+					if (ret) {
+						for (i = 0; i < len; i++) {
+							ret[i] = pat[i % pat_len];
 						}
+						ret[len] = 0;
 					}
-					return buf;
+					goto beach;
 				}
 			}
 			// slurp file
-			return r_file_slurp (src + 1, NULL);
+			ret = r_file_slurp (src, &len);
+			break;
 		}
 	case '`':
 		{
-		char *msg = strdup (src + 1);
-		int msg_len = strlen (msg);
-		if (msg_len > 0) {
-			msg [msg_len - 1] = 0;
-			char *ret = r_sys_cmd_str (msg, NULL, NULL);
-			r_str_trim_tail (ret);
-			free (msg);
-			return ret;
+		size_t msg_len = strlen (src);
+		if (msg_len == 0) {
+			R_LOG_ERROR ("Invalid backtick expression in input");
+			return NULL;
 		}
+		if (src [msg_len - 1] != '`') {
+			R_LOG_ERROR ("Unterminated backtick expr in input");
+			return NULL;
+		}
+		char *msg = strdup (src);
+		if (!msg) {
+			return NULL;
+		}
+		msg [msg_len - 1] = 0;
+		int cmd_len = 0;
+		ret = r_sys_cmd_str (msg, NULL, &cmd_len);
+		len = (size_t)cmd_len;
+		r_str_trim_tail (ret);
 		free (msg);
-		return strdup ("");
+		break;
 		}
 	case '!':
 		{
-		char *a = r_sys_cmd_str (src + 1, NULL, NULL);
-		r_str_trim_tail (a);
-		return a;
+		ret = r_sys_cmd_str (src, NULL, NULL);
+		if (!ret) {
+			return NULL;
+		}
+		r_str_trim_tail (ret);
+		len = strlen (ret);
+		break;
 		}
 	case ':':
-		if (src[1] == '!') {
-			ret = r_sys_cmd_str (src + 1, NULL, NULL);
-			r_str_trim_tail (ret); // why no head :?
-		} else {
-			ret = strdup (src);
+		{
+		char *hex = getstr (src, NULL);
+		if (!hex) {
+			return NULL;
 		}
-		len = r_hex_str2bin (src + 1, (ut8*)ret);
-		if (len > 0) {
+		int hexlen = r_hex_str2bin (hex, NULL);
+		if (hexlen <= 0) {
+			R_LOG_ERROR ("Invalid hexpair string");
+			free (hex);
+			return NULL;
+		}
+		len = (size_t)hexlen;
+		ret = malloc (len + 1);
+		if (ret) {
 			ret[len] = 0;
-			return ret;
+			r_hex_str2bin (hex, (ut8*)ret);
 		}
-		R_LOG_ERROR ("Invalid hexpair string");
-		free (ret);
-		return NULL;
+		free (hex);
+		}
+		break;
+	default:
+		len = r_str_unescape ((ret = strdup (src - 1)));
+		break;
 	}
-	r_str_unescape ((ret = strdup (src)));
+beach:
+	if (out_len) {
+		*out_len = len;
+	}
 	return ret;
 }
 
@@ -329,7 +404,6 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 		close (saved_stdin);
 		return -1;
 	}
-	
 	int fdm, pid = dyn_forkpty (&fdm, NULL, NULL, NULL);
 	if (pid == -1) {
 		close (saved_stdin);
@@ -501,7 +575,8 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		return 0;
 	}
 	if (!strcmp (b, "program")) {
-		p->_args[0] = p->_program = strdup (e);
+		p->_args[0] = strdup (e);
+		p->_program = strdup (e);
 	} else if (!strcmp (b, "daemon")) {
 		p->_daemon = true;
 	} else if (!strcmp (b, "system")) {
@@ -583,10 +658,11 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		p->_timeout = atoi (e);
 	} else if (!strcmp (b, "timeoutsig")) {
 		p->_timeout_sig = r_signal_from_string (e);
-	} else if (!memcmp (b, "arg", 3)) {
+	} else if (r_str_startswith (b, "arg")) {
 		int n = atoi (b + 3);
 		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
-			p->_args[n] = getstr (e);
+			free (p->_args[n]);
+			p->_args[n] = getstr (e, NULL);
 			p->_argc++;
 		} else {
 			R_LOG_ERROR ("Out of bounds args index: %d", n);
@@ -629,11 +705,11 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		char *V, *v = strchr (e, '=');
 		if (v) {
 			*v++ = 0;
-			V = getstr (v);
+			V = getstr (v, NULL);
 			r_sys_setenv (e, V);
 			free (V);
 		}
-	} else if (!strcmp(b, "clearenv")) {
+	} else if (!strcmp (b, "clearenv")) {
 		r_sys_clearenv ();
 	}
 	if (must_free == true) {
@@ -1033,17 +1109,17 @@ R_API int r_run_config_env(RRunProfile *p) {
 			R_LOG_ERROR ("Cannot create pipe");
 			return 1;
 		}
-		inp = getstr (p->_input);
+		size_t inpl;
+		inp = getstr (p->_input, &inpl);
 		if (inp) {
-			size_t inpl = strlen (inp);
 			if  (write (f2[1], inp, inpl) != inpl) {
 				R_LOG_ERROR ("Cannot write to the pipe");
 			}
-			close (f2[1]);
 			free (inp);
 		} else {
 			R_LOG_ERROR ("Invalid input");
 		}
+		close (f2[1]);
 	}
 #endif
 	if (p->_r2preload) {
@@ -1136,7 +1212,7 @@ R_API int r_run_start(RRunProfile *p) {
 	int ret;
 	posix_spawnattr_init (&attr);
 	if (p->_args[0]) {
-		char **envp = r_sys_get_environ();
+		char **envp = r_sys_get_environ ();
 		ut32 spflags = 0; //POSIX_SPAWN_START_SUSPENDED;
 		spflags |= POSIX_SPAWN_SETEXEC;
 		if (p->_aslr == 0) {

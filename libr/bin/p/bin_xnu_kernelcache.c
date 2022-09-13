@@ -815,7 +815,7 @@ static struct MACH0_(obj_t) *create_kext_shared_mach0(RKernelCacheObj *obj, RKex
 	opts.verbose = false;
 	opts.header_at = kext->range.offset;
 	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (buf, &opts);
-	r_buf_free (buf);
+	// RESULTS IN UAF we should ref and unref instead r_buf_free (buf);
 	return mach0;
 }
 

@@ -26,7 +26,7 @@ R_API void r_cons_cmd_help_json(const char *help[]) {
 		help_args = help[i + 1];
 		help_desc = help[i + 2];
 
-		
+
 		if (r_str_startswith (help_cmd, usage_str)) {
 			pj_ks (pj, "root", help_cmd);
 			pj_ks (pj, "args", help_args);
@@ -81,7 +81,8 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 
 		if (r_str_startswith (help_cmd, usage_str)) {
 			/* Usage header */
-			r_cons_printf ("%s%s",pal_args_color, help_cmd);
+			const char *afterusage = help_cmd + strlen (usage_str);
+			r_cons_printf ("Usage:%s%s", pal_args_color, afterusage);
 			if (help_args[0]) {
 				r_cons_printf (" %s", help_args);
 			}

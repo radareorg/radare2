@@ -39,6 +39,10 @@ sed \
  -e 's,RAnalysis,RAnal,g' \
  -e 's,RZ_,R_,g' \
  -e 's,rz_,r_,g' \
+ -e 's,\([a-z]+\),\1 (,g' \
+ -e 's,free(,free (,g' \
+ -e 's,)(,) (,g' \
+ -e 's,each(,each (,g' \
  -e 's,rz-test,r2r,g' \
  -e 's,tools/r_bin,tools/rabin2,g' \
  -e 's,analysis,anal,g' \

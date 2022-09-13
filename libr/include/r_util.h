@@ -88,6 +88,7 @@ extern "C" {
 #endif
 
 R_LIB_VERSION_HEADER (r_util);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,8 +1,9 @@
 # capstone
 
-OBJ_ARMCS=asm_arm_cs.o
+OBJ_ARMCS=asm_arm.o
 OBJ_ARMCS+=../arch/arm/armass.o
 OBJ_ARMCS+=../arch/arm/armass64.o
+# OBJ_ARMCS+=../arch/arm/gnu/floatformat.o
 
 include p/capstone.mk
 
@@ -10,7 +11,7 @@ include p/capstone.mk
 
 STATIC_OBJ+=${OBJ_ARMCS}
 SHARED_OBJ+=${SHARED_ARMCS}
-TARGET_ARMCS=asm_arm_cs.${EXT_SO}
+TARGET_ARMCS=asm_arm.${EXT_SO}
 
 ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${TARGET_ARMCS}

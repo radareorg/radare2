@@ -63,7 +63,7 @@ R_API bool r_anal_esil_plugin_activate(RAnalEsil *esil, const char *name) {
 	RListIter *iter;
 	RAnalEsilPlugin *ep;
 	r_list_foreach (esil->plugins, iter, ep) {
-		if (!strcmp(ep->name, name)) {
+		if (!strcmp (ep->name, name)) {
 			RAnalEsilActivePlugin *eap = R_NEW (RAnalEsilActivePlugin);
 			if (!eap) {
 				return false;

@@ -199,13 +199,11 @@ R_API bool r_sandbox_enable(bool e) {
 		};
 
 		size_t i, privrulescnt = sizeof (privrules) / sizeof (privrules[0]);
-		
 		if (!priv) {
 			eprintf ("sandbox: priv_allocset failed\n");
 			return false;
 		}
 		priv_basicset (priv);
-		
 		for (i = 0; i < privrulescnt; i ++) {
 			if (priv_delset (priv, privrules[i]) != 0) {
 				priv_emptyset (priv);

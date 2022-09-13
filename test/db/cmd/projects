@@ -403,7 +403,7 @@ EXPECT=<<EOF
  3 * r-x 0x000021da bins/elf/analysis/main
  4 - rw- 0x00000008 null://8
 --
-o bins/elf/analysis/main 0x00400000 r-x
+o "bins/elf/analysis/main" 0x00400000 r-x
 om $d 0x00600dc0 0x00000230 0x00000000 r-- fmap.LOAD1
 onnu null://8 rw-
 omu 4 0x00600910 0x00000008 0x00000000 rw- mmap.LOAD1

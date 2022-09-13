@@ -1,4 +1,6 @@
-OBJ_PPC_CS=anal_ppc_cs.o ../../asm/arch/ppc/libvle/vle.o
+OBJ_PPC_CS=anal_ppc_cs.o
+OBJ_PPC_CS+=../../asm/arch/ppc/libvle/vle.o
+OBJ_PPC_CS+=../../asm/arch/ppc/libps/libps.o
 
 include $(CURDIR)capstone.mk
 

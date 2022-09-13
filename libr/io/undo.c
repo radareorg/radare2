@@ -149,6 +149,22 @@ R_API RList *r_io_sundo_list(RIO *io, int mode) {
 				io->cb_printf ("0x%"PFMT64x"%s", addr, notLast? " > ": "");
 			}
 			break;
+		case 'r':
+			{
+				char *cmt = io->coreb.cmdstrf (io->coreb.core, "fd 0x%08"PFMT64x, addr);
+				r_str_trim (cmt);
+				if (j < undos) {
+					io->cb_printf ("0x%08"PFMT64x" ; %ds- # %s\n", addr, idx + 1, cmt);
+				} else if (j == undos && j != 0 && redos != 0) {
+					io->cb_printf ("0x%08"PFMT64x" ; # CUR %s\n", addr, cmt);
+				} else if (j != undos) {
+					io->cb_printf ("0x%08"PFMT64x" ; %ds+ # %s\n", addr, idx + 1, cmt);
+				} else if (addr != 0) {
+					io->cb_printf ("0x%08"PFMT64x" ; # CUR %s\n", addr, cmt);
+				}
+				free (cmt);
+			}
+			break;
 		case '*':
 			if (j < undos) {
 				io->cb_printf ("f undo_%d @ 0x%"PFMT64x"\n", idx, addr);

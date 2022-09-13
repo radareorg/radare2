@@ -21,7 +21,7 @@
 #
 0       string          7z\274\257\047\034      7-zip archive data,
 >6	byte		<0			invalid
->6	byte		0			
+>6	byte		0
 >>7	byte		0			invalid
 >6	byte		>20			invalid
 >6      byte            x                       version %d
@@ -81,7 +81,7 @@
 # case you don't know how to set a date in your gzip files. Brilliant.
 >4	lelong		=0		\b, NULL date
 >4	lelong		<0		\b, invalid date
->4	lelong		>0		
+>4	lelong		>0
 >>4	lelong		<694224000	\b, invalid date
 >>4	lelong		=694224000	\b, invalid date
 >>4	lelong		>694224000	\b, last modified

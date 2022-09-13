@@ -187,7 +187,7 @@ static int update_self_regions(RIO *io, int pid) {
 	kern_return_t rc;
 	rc = task_for_pid (mach_task_self (), pid, &task);
 	if (rc) {
-		eprintf ("task_for_pid failed\n");
+		R_LOG_ERROR ("task_for_pid failed");
 		return false;
 	}
 	macosx_debug_regions (io, task, (size_t)1, 1000);
@@ -472,7 +472,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cb) {
 				result = cb ();
 			} else {
-				eprintf ("No callback defined\n");
+				R_LOG_ERROR ("callback not defined");
 			}
 		} else if (argc == 2) {
 			size_t (*cb)(size_t a0) = (size_t(*)(size_t))cbptr;
@@ -480,7 +480,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
 				result = cb (a0);
 			} else {
-				eprintf ("No callback defined\n");
+				R_LOG_ERROR ("callback not defined");
 			}
 		} else if (argc == 3) {
 			size_t (*cb)(size_t a0, size_t a1) = (size_t(*)(size_t,size_t))cbptr;
@@ -489,7 +489,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cb) {
 				result = cb (a0, a1);
 			} else {
-				eprintf ("No callback defined\n");
+				R_LOG_ERROR ("callback not defined");
 			}
 		} else if (argc == 4) {
 			size_t (*cb)(size_t a0, size_t a1, size_t a2) = \
@@ -500,7 +500,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cb) {
 				result = cb (a0, a1, a2);
 			} else {
-				eprintf ("No callback defined\n");
+				R_LOG_ERROR ("callback not defined");
 			}
 		} else if (argc == 5) {
 			size_t (*cb)(size_t a0, size_t a1, size_t a2, size_t a3) = \
@@ -512,7 +512,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cb) {
 				result = cb (a0, a1, a2, a3);
 			} else {
-				eprintf ("No callback defined\n");
+				R_LOG_ERROR ("callback not defined");
 			}
 		} else if (argc == 6) {
 			size_t (*cb)(size_t a0, size_t a1, size_t a2, size_t a3, size_t a4) = \
@@ -559,13 +559,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		void *lib = r_lib_dl_open (NULL);
 		void *ptr = r_lib_dl_sym (lib, "_ZN12device_debug2goEj");
 	//	void *readmem = dlsym (lib, "_ZN23device_memory_interface11memory_readE16address_spacenumjiRy");
-		// readmem(0, )
 		if (ptr) {
-		//	gothis =
-			eprintf ("TODO: No MAME IO implemented yet\n");
+			R_LOG_INFO ("TODO: MAME IO is not yet implemented");
 			mameio = true;
 		} else {
-			eprintf ("This process is not a MAME!");
+			R_LOG_ERROR ("This process is not a MAME!");
 		}
 		r_lib_dl_close (lib);
 	} else if (!strcmp (cmd, "maps") || r_str_startswith (cmd, "dm")) {
@@ -577,16 +575,16 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				self_sections[i].name);
 		}
 	} else if (*cmd == '?') {
-		eprintf ("|Usage: :[cmd] [args]\n");
-		eprintf ("| :pid               show getpid()\n");
-		eprintf ("| :maps              show map regions (same as :dm)\n");
-		eprintf ("| :kill              commit suicide\n");
+		eprintf ("Usage: :[cmd] [args]\n");
+		eprintf (" :pid               show getpid()\n");
+		eprintf (" :maps              show map regions (same as :dm)\n");
+		eprintf (" :kill              commit suicide\n");
 #if !defined(__WINDOWS__)
-		eprintf ("| :alarm [secs]      setup alarm signal to raise r2 prompt\n");
+		eprintf (" :alarm [secs]      setup alarm signal to raise r2 prompt\n");
 #endif
-		eprintf ("| :dlsym [sym]       dlopen\n");
-		eprintf ("| :call [sym] [...]  nativelly call a function\n");
-		eprintf ("| :mameio            enter mame IO mode\n");
+		eprintf (" :dlsym [sym]       dlopen\n");
+		eprintf (" :call [sym] [...]  nativelly call a function\n");
+		eprintf (" :mameio            enter mame IO mode\n");
 	}
 	return NULL;
 }
@@ -652,7 +650,7 @@ void macosx_debug_regions(RIO *io, task_t task, mach_vm_address_t address, int m
 				(vm_region_recurse_info_t) &info, &count);
 		if (kret != KERN_SUCCESS) {
 			if (!num_printed) {
-				eprintf ("mach_vm_region_recurse: Error %d - %s", kret, mach_error_string(kret));
+				R_LOG_ERROR ("mach_vm_region_recurse: %d - %s", kret, mach_error_string (kret));
 			}
 			break;
 		}
@@ -726,7 +724,7 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 	};
 	int s = sysctl (mib, 4, NULL, &size, NULL, 0);
 	if (s == -1) {
-		eprintf ("sysctl failed: %s\n", strerror (errno));
+		R_LOG_ERROR ("sysctl failed: %s", strerror (errno));
 		return false;
 	}
 
@@ -735,7 +733,7 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 	if (p) {
 		s = sysctl (mib, 4, p, &size, NULL, 0);
 		if (s == -1) {
-			eprintf ("sysctl failed: %s\n", strerror (errno));
+			R_LOG_ERROR ("sysctl failed: %s", strerror (errno));
 			goto exit;
 		}
 		ut8 *p_start = p;
@@ -777,7 +775,7 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 
 		ret = true;
 	} else {
-		eprintf ("buffer allocation failed\n");
+		R_LOG_ERROR ("buffer allocation failed");
 	}
 
 exit:
@@ -792,7 +790,7 @@ exit:
 	};
 	int s = sysctl (mib, 3, &entry, &size, NULL, 0);
 	if (s == -1) {
-		eprintf ("sysctl failed: %s\n", strerror (errno));
+		R_LOG_ERROR ("sysctl failed: %s", strerror (errno));
 		return false;
 	}
 	endq = size;
@@ -835,7 +833,7 @@ exit:
 	};
 	int s = sysctl (mib, 5, NULL, &size, NULL, 0);
 	if (s == -1) {
-		eprintf ("sysctl failed: %s\n", strerror (errno));
+		R_LOG_ERROR ("sysctl failed: %s", strerror (errno));
 		return false;
 	}
 
@@ -844,7 +842,7 @@ exit:
 	if (p) {
 		s = sysctl (mib, 5, p, &size, NULL, 0);
 		if (s == -1) {
-			eprintf ("sysctl failed: %s\n", strerror (errno));
+			R_LOG_ERROR ("sysctl failed: %s", strerror (errno));
 			goto exit;
 		}
 		ut8 *p_start = p;
@@ -886,7 +884,7 @@ exit:
 
 		ret = true;
 	} else {
-		eprintf ("buffer allocation failed\n");
+		R_LOG_ERROR ("buffer allocation failed");
 	}
 
 exit:
@@ -903,7 +901,7 @@ exit:
 
 	kvm_t *k = kvm_openfiles (NULL, NULL, NULL, O_RDONLY, e);
 	if (!k) {
-		eprintf ("kvm_openfiles: `%s`\n", e);
+		R_LOG_ERROR ("kvm_openfiles: %s", e);
 		return false;
 	}
 

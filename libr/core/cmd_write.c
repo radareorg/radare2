@@ -8,7 +8,7 @@ static const char *help_msg_w[] = {
 	"w"," foobar","write string 'foobar'",
 	"w+","string","write string and seek at the end of it",
 	"w0"," [len]","write 'len' bytes with value 0x00",
-	"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
+	"w6","[d|e|x] base64/string/hex","write base64 [d]ecoded or [e]ncoded string",
 	"wa","[?] push ebp","write opcode, separated by ';' (use '\"' around the command)",
 	"waf"," f.asm","assemble file and write bytes",
 	"waF"," f.asm","assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
@@ -49,6 +49,7 @@ static const char *help_msg_wa[] = {
 	"wa", " nop", "write nopcode using asm.arch and asm.bits",
 	"wai", " jmp 0x8080", "write inside this op (fill with nops or error if doesnt fit)",
 	"wan", " jmp 0x8080", "write instruction(s) nopping the trailing bytes",
+	"wa+", " nop", "write a nop and seek after it (use 7wa+nop to write 7 consecutive nops)",
 	"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
 	"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
 	"waf", " f.asm" , "assemble file and write bytes",
@@ -99,27 +100,26 @@ static const char *help_msg_we[] = {
 };
 
 static const char *help_msg_wo[] = {
-	"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize]",
-	"wo[24aAdlmorwx]","", "without hexpair values, clipboard is used",
-	"wo2"," [val]","2=  2 byte endian swap (word)",
-	"wo4"," [val]", "4=  4 byte endian swap (dword)",
-	"wo8"," [val]", "8=  8 byte endian swap (qword)",
-	"woa"," [val]", "+=  addition (f.ex: woa 0102)",
-	"woA"," [val]","&=  and",
-	"wod"," [val]", "/=  divide",
-	"woD","[algo] [key] [IV]","decrypt current block with given algo and key",
-	"woe"," [from to] [step] [wsz=1]","..  create sequence",
-	"woE"," [algo] [key] [IV]", "encrypt current block with given algo and key",
-	"woi","", "inverse bytes in current block",
-	"wol"," [val]","<<= shift left",
-	"wom"," [val]", "*=  multiply",
-	"woo"," [val]","|=  or",
-	"wop[DO]"," [arg]","De Bruijn Patterns",
-	"wor"," [val]", ">>= shift right",
-	"woR","","random bytes (alias for 'wr $b')",
-	"wos"," [val]", "-=  substraction",
-	"wow"," [val]", "==  write looped value (alias for 'wb')",
-	"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
+	"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize] write operation in current block",
+	"wo2", "", "2=  2 byte endian swap (word)",
+	"wo4", "", "4=  4 byte endian swap (dword)",
+	"wo8", "", "8=  8 byte endian swap (qword)",
+	"woa", " [hexpair]", "+= addition (f.ex: woa 0102)",
+	"woA", " [hexpair]", "&=  and",
+	"wod", " [hexpair]", "/=  divide",
+	"woD", "[algo] [key] [IV]", "decrypt current block with given algo and key",
+	"woE", " [algo] [key] [IV]", "encrypt current block with given algo and key",
+	"woe", " [from to] [step] [wsz=1]","..  create sequence",
+	"woi", "", "inverse bytes in current block",
+	"wol", " [val]", "<<= shift left",
+	"wom", " [val]", "*=  multiply",
+	"woo", " [val]", "|=  or",
+	"wop[DO]", " [arg]", "De Bruijn Patterns",
+	"wor", " [val]", ">>= shift right",
+	"woR", "", "random bytes (alias for 'wr $b')",
+	"wos", " [val]", "-=  substraction",
+	"wow", " [val]", "==  write looped value (alias for 'wb')",
+	"wox", " [val]", "^=  xor  (f.ex: wox 0x90)",
 	NULL
 };
 
@@ -342,8 +342,12 @@ static int cmd_wo(void *data, const char *input) {
 	case '2': // "wo2"
 	case '4': // "wo4"
 	case '8': // "wo8"
-		if (input[1]) {  // parse val from arg
-			r_core_write_op (core, r_str_trim_head_ro (input + 2), input[0]);
+		if (input[1] == '?') {  // parse val from arg
+			char s[8];
+			snprintf (s, sizeof (s), "wo%c", input[0]);
+			r_core_cmd_help_match (core, help_msg_wo, s, true);
+		} else if (input[1]) {  // parse val from arg
+			r_core_write_op (core, r_str_trim_head_ro (input + 1), input[0]);
 		} else {  // use clipboard instead of val
 			r_core_write_op (core, NULL, input[0]);
 		}
@@ -918,7 +922,9 @@ static int cmd_w6(void *data, const char *input) {
 	int len = 0, str_len;
 
 	if (input[0] && input[1] != ' ') {
-		fail = true;
+		if (input[0] != 'e' && input[0] != 'd') {
+			fail = true;
+		}
 	}
 	const char *str = (input[0] && input[1] && input[2])? input + 2: "";
 	str_len = strlen (str) + 1;
@@ -926,16 +932,16 @@ static int cmd_w6(void *data, const char *input) {
 		switch (input[0]) {
 		case 'd': // "w6d"
 			buf = malloc (str_len);
-			if (!buf) {
-				break;
-			}
-			len = r_base64_decode (buf, str, -1);
-			if (len < 0) {
-				free (buf);
-				fail = true;
+			if (buf) {
+				len = r_base64_decode (buf, str, -1);
+				if (len < 0) {
+					R_LOG_WARN ("Invalid hexpair string");
+					R_FREE (buf);
+					fail = true;
+				}
 			}
 			break;
-		case 'e': { // "w6e"
+		case 'x': { // "w6x"
 			ut8 *bin_buf = malloc (str_len);
 			if (!bin_buf) {
 				break;
@@ -947,11 +953,29 @@ static int cmd_w6(void *data, const char *input) {
 				buf = calloc (str_len + 1, 4);
 				len = r_base64_encode ((char *)buf, bin_buf, bin_len);
 				if (len == 0) {
-					free (buf);
+					R_FREE (buf);
 					fail = true;
 				}
 			}
 			free (bin_buf);
+			}
+			break;
+		case 'e': { // "w6e"
+			ut8 *bin_buf = malloc (str_len);
+			if (!bin_buf) {
+				break;
+			}
+			char *s = r_str_trim_dup (input + 1);
+			int slen = strlen (s);
+			free (buf);
+			buf = malloc ((4+slen) * 4);
+			len = r_base64_encode ((char *)buf, (const ut8*)s, slen);
+			if (len == 0) {
+				R_FREE (buf);
+				fail = true;
+			}
+			free (bin_buf);
+			free (s);
 			break;
 		}
 		default:
@@ -967,7 +991,7 @@ static int cmd_w6(void *data, const char *input) {
 		r_core_block_read (core);
 		free (buf);
 	} else {
-		eprintf ("Usage: w6[de] base64/hex\n");
+		eprintf ("Usage: w6[d|e|x] base64/string/hex\n");
 	}
 	return 0;
 }
@@ -1200,7 +1224,7 @@ static int cmd_wu(void *data, const char *input) {
 			free (data);
 		}
 	} else {
-		eprintf ("|Usage: wu [unified-diff-patch]    # see 'cu'\n");
+		eprintf ("Usage: wu [unified-diff-patch]    # see 'cu'\n");
 	}
 	return 0;
 }
@@ -1853,13 +1877,13 @@ static int cmd_wa(void *data, const char *input) {
 		}
 		break;
 	case ' ':
+	case '+':
 	case 'i':
 	case 'n':
 	case '*': {
 		const char *file = r_str_trim_head_ro (input + 1);
-		RAsmCode *acode;
 		r_asm_set_pc (core->rasm, core->offset);
-		acode = r_asm_massemble (core->rasm, file);
+		RAsmCode *acode = r_asm_massemble (core->rasm, file);
 		if (acode) {
 			if (input[0] == 'n') { // "wan"
 				int delta = 0;
@@ -1907,8 +1931,8 @@ repeat:
 					if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
 						cmd_write_fail (core);
 					} else {
-						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+1, hex);
+						if (r_config_get_b (core->config, "scr.prompt")) { // maybe check interactive?
+							R_LOG_INFO ("Written %d byte(s) (%s) = wx %s @ 0x%08"PFMT64x, acode->len, input + 1, hex, core->offset);
 						}
 						WSEEK (core, acode->len);
 					}
@@ -1917,6 +1941,9 @@ repeat:
 				free (hex);
 			} else {
 				R_LOG_WARN ("Nothing to do");
+			}
+			if (*input == '+') {
+				r_core_seek (core, core->offset + acode->len, true);
 			}
 			r_asm_code_free (acode);
 		}

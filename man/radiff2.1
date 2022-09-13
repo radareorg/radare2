@@ -5,8 +5,9 @@
 .Nd unified binary diffing utility
 .Sh SYNOPSIS
 .Nm radiff2
-.Op Fl AabcCdDhOrspxXvzZ
+.Op Fl 1AabcCdDhOrspxXvzZ
 .Op Fl t Ar 0-100
+.Op Fl B Ar baddr
 .Op Fl i Ar i,s
 .Op Fl g Ar sym
 .Op Fl S Ar algo
@@ -16,14 +17,16 @@
 radiff2 implements many binary diffing algorithms for data and code.
 .Pp
 .Bl -tag -width Fl
+.It Fl 1
+Binary output (GDIFF format)
 .It Fl A
 Analyze binary after loading it with RCore (see -C) and use -AA to run aaaa instead of aaa.
 .It Fl a
 Specify architecture (x86, arm, ..)
 .It Fl b
 Select register size bits for given arch
-.It Fl B
-Binary output (GDIFF format)
+.It Fl B Ar baddr
+Specify the base address to add to the offsets in the diff listings
 .It Fl c
 Count number of differences.
 .It Fl e [k=v]

@@ -38,7 +38,7 @@ idp 404.pdb
 EOF
 EXPECT=
 EXPECT_ERR=<<EOF
-Cannot open file
+ERROR: Cannot open file
 EOF
 RUN
 

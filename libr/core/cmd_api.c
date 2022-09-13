@@ -911,7 +911,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 
 	pbody = strchr (name, ';');
 	if (!pbody) {
-		eprintf ("Invalid macro body\n");
+		R_LOG_ERROR ("Invalid macro body");
 		free (name);
 		return false;
 	}
@@ -919,7 +919,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	pbody++;
 
 	if (*name && name[1] && name[strlen (name)-1]==')') {
-		eprintf ("r_cmd_macro_add: missing macro body?\n");
+		R_LOG_ERROR ("missing macro body?");
 		free (name);
 		return false;
 	}
@@ -1031,7 +1031,7 @@ R_API void r_cmd_macro_list(RCmdMacro *mac, int mode) {
 		return;
 	}
 	if (mode == 'j') {
-		eprintf ("TODO: JSON output for macros\n");
+		R_LOG_ERROR ("TODO: JSON output for macros");
 		return;
 	}
 	RCmdMacroItem *m;
@@ -1085,7 +1085,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 					i += wordlen-1;
 					j++;
 				} else {
-					eprintf ("Undefined argument %d\n", w);
+					R_LOG_ERROR ("Undefined argument %d", w);
 				}
 			} else if (ptr[j+1]=='@') {
 				char off[32];
@@ -1205,7 +1205,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	}
 	ptr = strchr (str, ')');
 	if (!ptr) {
-		eprintf ("Missing end ')' parenthesis.\n");
+		R_LOG_ERROR ("Missing end ')' parenthesis");
 		free (str);
 		return false;
 	} else {
@@ -1221,7 +1221,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 
 	macro_level++;
 	if (macro_level > MACRO_LIMIT) {
-		eprintf ("Maximum macro recursivity reached.\n");
+		R_LOG_ERROR ("Maximum macro recursivity reached");
 		macro_level--;
 		free (str);
 		return 0;
@@ -1237,7 +1237,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 			char *ptr = m->code;
 			char *end = strchr (ptr, '\n');
 			if (m->nargs != 0 && nargs != m->nargs) {
-				eprintf ("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
+				R_LOG_ERROR ("Macro '%s' expects %d args, not %d", m->name, m->nargs, nargs);
 				macro_level--;
 				free (str);
 				r_cons_break_pop ();
@@ -1249,7 +1249,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					*end = '\0';
 				}
 				if (r_cons_is_breaked ()) {
-					eprintf ("Interrupted at (%s)\n", ptr);
+					R_LOG_INFO ("Interrupted at (%s)", ptr);
 					if (end) {
 						*end = '\n';
 					}
@@ -1261,7 +1261,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				/* Label handling */
 				ptr2 = r_cmd_macro_label_process (mac, &(labels[0]), &labels_n, ptr);
 				if (!ptr2) {
-					eprintf ("Oops. invalid label name\n");
+					R_LOG_ERROR ("Oops. invalid label name");
 					break;
 				} else if (ptr != ptr2) {
 					ptr = ptr2;
@@ -1303,7 +1303,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 			}
 		}
 	}
-	eprintf ("No macro named '%s'\n", str);
+	R_LOG_ERROR ("No macro named '%s'", str);
 	macro_level--;
 	free (str);
 out_clean:
@@ -1434,6 +1434,7 @@ R_API const char *r_cmd_parsed_args_cmd(RCmdParsedArgs *a) {
 
 /* RCmdDescriptor */
 
+// R2_580 - deprecate
 static RCmdDesc *argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help, bool ht_insert) {
 	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_ARGV, name, help, ht_insert);
 	if (!res) {
@@ -1444,23 +1445,25 @@ static RCmdDesc *argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArg
 	return res;
 }
 
+// R2_580 - deprecate
 R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help) {
 	r_return_val_if_fail (cmd && parent && name, NULL);
 	return argv_new (cmd, parent, name, cb, help, true);
 }
 
+// R2_580 - deprecate
 R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name, const RCmdDescHelp *help) {
 	r_return_val_if_fail (cmd && parent && name, NULL);
 	return create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_INNER, name, help, false);
 }
 
+// R2_580 - deprecate
 R_API RCmdDesc *r_cmd_desc_group_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help, const RCmdDescHelp *group_help) {
 	r_return_val_if_fail (cmd && parent && name, NULL);
 	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_GROUP, name, group_help, true);
 	if (!res) {
 		return NULL;
 	}
-
 	RCmdDesc *exec_cd = NULL;
 	if (cb && help) {
 		exec_cd = argv_new (cmd, res, name, cb, help, false);
@@ -1474,6 +1477,7 @@ R_API RCmdDesc *r_cmd_desc_group_new(RCmd *cmd, RCmdDesc *parent, const char *na
 	return res;
 }
 
+// R2_580 - deprecate
 R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb, const RCmdDescHelp *help) {
 	r_return_val_if_fail (cmd && parent && name && cb, NULL);
 	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_OLDINPUT, name, help, true);

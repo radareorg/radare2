@@ -231,7 +231,8 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 	if (ybl > 0) {
 		if (pos < ybl) {
 			switch (format) {
-			case 'q':
+			case '8':
+			case 'q': // R_DEPRECATE
 				for (i = pos; i < r_buf_size (core->yank_buf); i++) {
 					r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
 				}
@@ -409,33 +410,39 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 	if (!input) {
 		return res;
 	}
+	char *inp = strdup (input);
 	// get the number of bytes to yank
-	ut64 adv = consume_chars (input, ' ');
-	ut64 len = r_num_math (core->num, input + adv);
+	ut64 adv = consume_chars (inp, ' ');
+	ut64 len = r_num_math (core->num, inp + adv);
 	if (len == 0) {
+		free (inp);
 		R_LOG_ERROR ("Number of bytes read must be > 0");
 		return res;
 	}
 	// get the addr/offset from in the file we want to read
-	adv += find_next_char (input + adv, ' ');
+	adv += find_next_char (inp + adv, ' ');
 	if (adv == 0) {
+		free (inp);
 		R_LOG_ERROR ("Address must be specified");
 		return res;
 	}
 	adv++;
 
-	// XXX - bug, will fail if address needs to be computed and has spaces
-	ut64 addr = r_num_math (core->num, input + adv);
-
-	adv += find_next_char (input + adv, ' ');
-	if (adv == 0) {
+	ut64 next = find_next_char (inp + adv, ' ');
+	if (next) {
+		inp[adv+next] = 0;
+	} else {
 		R_LOG_ERROR ("File must be specified");
+		free (inp);
 		return res;
 	}
-	adv++;
+	ut64 addr = r_num_math (core->num, inp + adv);
+	adv += next + 1;
 	// grab the current file descriptor, so we can reset core and io state
 	// after our io op is done
-	return perform_mapped_file_yank (core, addr, len, input + adv);
+	bool b = perform_mapped_file_yank (core, addr, len, inp + adv);
+	free (inp);
+	return b;
 }
 
 // R2_580 R_API bool r_core_yank_file_all(RCore *core, const char *input) {

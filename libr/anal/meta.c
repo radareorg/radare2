@@ -1,11 +1,10 @@
-/* radare - LGPL - Copyright 2008-2020 - nibble, pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2008-2022 - nibble, pancake, thestr4ng3r */
 
 #include <r_anal.h>
 #include <r_core.h>
 
 static bool item_matches_filter(RAnalMetaItem *item, RAnalMetaType type, R_NULLABLE const RSpace *space) {
-	return (type == R_META_TYPE_ANY || item->type == type)
-		   && (!space || item->space == space);
+	return (type == R_META_TYPE_ANY || item->type == type) && (!space || item->space == space);
 }
 
 typedef struct {
@@ -538,18 +537,22 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, const char *
 	}
 
 beach:
-	if (t) {
-		if (tq) {
-			r_table_query (t, tq);
-		}
-		char *s = r_table_tostring (t);
-		r_cons_printf ("%s\n", s);
-		free (s);
-	} else if (pj) {
-		pj_end (pj);
-		r_cons_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
+	if (t && tq) {
+		r_table_query (t, tq);
 	}
+	if (!tq || !strstr (tq, "?")) {
+		if (t) {
+			char *s = r_table_tostring (t);
+			r_cons_printf ("%s\n", s);
+			free (s);
+		} else if (pj) {
+			pj_end (pj);
+			r_cons_printf ("%s\n", pj_string (pj));
+			pj_free (pj);
+			pj = NULL;
+		}
+	}
+	pj_free (pj);
 }
 
 R_API void r_meta_print_list_all(RAnal *a, int type, int rad, const char *tq) {

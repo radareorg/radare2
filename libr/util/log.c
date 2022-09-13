@@ -99,7 +99,7 @@ R_API bool r_log_match(int level, const char *origin) { // , const char *sub_ori
 			}
 		}
 	}
-	return level < rlog->level;
+	return level <= rlog->level;
 }
 
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *fmt, va_list ap) {

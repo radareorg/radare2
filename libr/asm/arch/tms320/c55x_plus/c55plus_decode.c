@@ -161,7 +161,7 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 		res = get_reg_name_1(ins_bits + 32);
 		break;
 	case 77:
-		if (!r_str_ncasecmp (reg_arg, "MA", 2) || !r_str_ncasecmp(reg_arg, "MR", 2)) {
+		if (!r_str_ncasecmp (reg_arg, "MA", 2) || !r_str_ncasecmp (reg_arg, "MR", 2)) {
 			res = get_reg_name_1(ins_bits);
 		} else {
 			res = get_reg_name_2(ins_bits);
@@ -171,9 +171,9 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 		res = get_reg_name_1(ins_bits);
 		break;
 	case 82:
-		if (!r_str_ncasecmp (reg_arg, "RA", 2) || !r_str_ncasecmp(reg_arg, "RL", 2)) {
+		if (!r_str_ncasecmp (reg_arg, "RA", 2) || !r_str_ncasecmp (reg_arg, "RL", 2)) {
 			res = get_reg_name_1(ins_bits);
-		} else if (!r_str_ncasecmp (reg_arg, "RLP", 3) || !r_str_ncasecmp(reg_arg, "RxP", 3)) {
+		} else if (!r_str_ncasecmp (reg_arg, "RLP", 3) || !r_str_ncasecmp (reg_arg, "RxP", 3)) {
 			res = get_reg_name_1(ins_bits + 1);
 		} else if (!r_str_ncasecmp (reg_arg, "RX", 2)) {
 			res = get_reg_name_1(ins_bits);

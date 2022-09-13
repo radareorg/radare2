@@ -2205,8 +2205,10 @@ static ut8 *get_section_bytes(RBin *bin, const char *sect_name, size_t *len) {
 		return NULL;
 	}
 	*len = section->size;
-	ut8 *buf = calloc (1,*len);
-	r_buf_read_at (binfile->buf, section->paddr, buf, *len);
+	ut8 *buf = calloc (1, *len);
+	if (buf) {
+		r_buf_read_at (binfile->buf, section->paddr, buf, *len);
+	}
 	return buf;
 }
 
@@ -2219,10 +2221,11 @@ static ut8 *get_section_bytes(RBin *bin, const char *sect_name, size_t *len) {
  * @return RBinDwarfDebugInfo* Parsed information, NULL if error
  */
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *bin, int mode) {
+	r_return_val_if_fail (da && bin, NULL);
 	RBinDwarfDebugInfo *info = NULL;
 	RBinSection *debug_str;
 	RBinSection *section = getsection (bin, "debug_info");
-	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinFile *binfile = bin->cur;
 
 	ut64 debug_str_len = 0;
 	ut8 *debug_str_buf = NULL;
@@ -2284,6 +2287,7 @@ cleanup:
 }
 
 static RBinDwarfRow *row_new(ut64 addr, const char *file, int line, int col) {
+	r_return_val_if_fail (file, NULL);
 	RBinDwarfRow *row = R_NEW0 (RBinDwarfRow);
 	if (!row) {
 		return NULL;
@@ -2296,17 +2300,20 @@ static RBinDwarfRow *row_new(ut64 addr, const char *file, int line, int col) {
 }
 
 static void row_free(void *p) {
-	RBinDwarfRow *row = (RBinDwarfRow*)p;
-	free (row->file);
-	free (row);
+	if (p) {
+		RBinDwarfRow *row = (RBinDwarfRow*)p;
+		free (row->file);
+		free (row);
+	}
 }
 
 R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
+	r_return_val_if_fail (bin, NULL);
 	ut8 *buf;
 	RList *list = NULL;
 	int len, ret;
 	RBinSection *section = getsection (bin, "debug_line");
-	RBinFile *binfile = bin ? bin->cur: NULL;
+	RBinFile *binfile = bin->cur;
 	if (binfile && section) {
 		len = section->size;
 		if (len < 1) {
@@ -2336,10 +2343,8 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 		SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, false);
 		// Use the parsed information from _raw and transform it to more useful format
 		ls_foreach (ls, iter, kv) {
-			if (!strncmp (sdbkv_key (kv), "0x", 2)) {
-				ut64 addr;
-				RBinDwarfRow *row;
-				int line;
+			const char *key = sdbkv_key (kv);
+			if (r_str_startswith (key, "0x")) {
 				char *file = strdup (sdbkv_value (kv));
 				if (!file) {
 					free (buf);
@@ -2350,9 +2355,9 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 				char *tok = strchr (file, '|');
 				if (tok) {
 					*tok++ = 0;
-					line = atoi (tok);
-					addr = r_num_math (NULL, sdbkv_key (kv));
-					row = row_new (addr, file, line, 0);
+					int line = atoi (tok);
+					ut64 addr = r_num_math (NULL, key);
+					RBinDwarfRow *row = row_new (addr, file, line, 0);
 					r_list_append (list, row);
 				}
 				free (file);

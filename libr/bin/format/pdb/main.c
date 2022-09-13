@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 			pdb_file = optarg;
 			strcpy (&pdb.file_name, optarg);
 			if (!init_pdb_parser (&pdb)) {
-				eprintf ("initialization error of pdb parser\n");
+				R_LOG_ERROR ("Cannot initialize the pdb parser");
 				return 0;
 			}
 			pdb.pdb_parse (&pdb);
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 			pdb.print_types (&pdb, 0);
 			break;
 		case 'g':
-			pdb.print_gvars (&pdb, 0, 'r'); //*(int *)optarg);
+			pdb.print_gvars (&pdb, 0, 'r');
 			break;
 		default:
 			print_usage ();

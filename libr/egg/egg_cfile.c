@@ -85,7 +85,6 @@ static struct cEnv_t* r_egg_cfile_set_cEnv(const char *arch, const char *os, int
 		output = r_sys_cmd_strf ("r2 -hh | grep INCDIR | awk '{print $2}'");
 		if (!output || (output[0] == '\0')) {
 			R_LOG_ERROR ("Cannot find SFLIBPATH env var");
-			eprintf ("Please define $SFLIBPATH, or fix r2 installation\n");
 			goto fail;
 		}
 
@@ -310,7 +309,7 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 		goto fail;
 	}
 	if (r_file_size (fileExt) == 0) {
-		eprintf ("FALLBACK: Using objcopy instead of rabin2\n");
+		R_LOG_INFO ("FALLBACK: Using objcopy instead of rabin2");
 		free (output);
 		if (isXNU (os)) {
 			output = r_sys_cmd_strf ("'%s' -j 0.__TEXT.__text -O binary '%s.o' '%s.text'",
@@ -320,7 +319,7 @@ R_API char* r_egg_cfile_parser(const char *file, const char *arch, const char *o
 					cEnv->OBJCOPY, file, file);
 		}
 		if (!output) {
-			eprintf ("objcopy failed!\n");
+			R_LOG_ERROR ("objcopy failed!");
 			goto fail;
 		}
 	}

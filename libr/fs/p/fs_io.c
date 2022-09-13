@@ -44,7 +44,7 @@ static int fs_io_read(RFSFile *file, ut64 addr, int len) {
 	if (!abs_path) {
 		return -1;
 	}
-	
+
 	char *enc_uri = enbase (abs_path);
 	free (abs_path);
 	char *cmd = r_str_newf ("mg %s 0x%08"PFMT64x" %d", enc_uri, addr, len);

@@ -534,7 +534,7 @@ xtensa_operand_regfile (xtensa_isa isa, xtensa_opcode opc, int opnd);
 
 extern int
 xtensa_operand_num_regs (xtensa_isa isa, xtensa_opcode opc, int opnd);
-				
+
 
 /* Some register operands do not completely identify the register being
    accessed.  For example, the operand value may be added to an internal

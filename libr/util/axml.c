@@ -223,7 +223,7 @@ static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *
 
 	char *name = string_lookup (pool, data, data_size, r_read_le32 (&element->name), NULL);
 	for (i = 0; i < *depth; i++) {
-		r_strbuf_appendf (sb, "\t");
+		r_strbuf_append (sb, "\t");
 	}
 
 	if (start) {
@@ -249,7 +249,7 @@ static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *
 		}
 
 		if (count * sizeof (attribute_t) > element_size) {
-			r_strbuf_appendf (sb, " />");
+			r_strbuf_append (sb, " />");
 			if (pj) {
 				pj_end (pj);
 			}
@@ -259,7 +259,7 @@ static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *
 		}
 
 		if (count != 0) {
-			r_strbuf_appendf (sb, " ");
+			r_strbuf_append (sb, " ");
 		}
 		for (i = 0; i < count; i++) {
 			attribute_t a = element->attributes[i];
@@ -300,7 +300,7 @@ static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *
 				}
 			}
 			if (i != count - 1) {
-				r_strbuf_appendf (sb, " ");
+				r_strbuf_append (sb, " ");
 			}
 			if (!resource_key) {
 				free ((char *)key);
@@ -311,7 +311,7 @@ static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *
 		r_strbuf_appendf (sb, "</%s", name);
 	}
 
-	r_strbuf_appendf (sb, ">\n");
+	r_strbuf_append (sb, ">\n");
 	if (pj) {
 		pj_end (pj);
 	}
