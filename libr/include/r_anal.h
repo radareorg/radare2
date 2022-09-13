@@ -559,6 +559,7 @@ typedef struct r_anal_options_t {
 	int graph_depth;
 	bool vars; //analyze local var and arguments
 	bool varname_stack; // name vars based on their offset in the stack
+	bool var_newstack; // new sp-relative variable analysis
 	int cjmpref;
 	int jmpref;
 	int jmpabove;

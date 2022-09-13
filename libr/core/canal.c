@@ -4848,6 +4848,8 @@ static void handle_var_stack_access(RAnalEsil *esil, ut64 addr, RAnalVarAccessTy
 		ut64 spaddr = r_reg_getv (esil->anal->reg, ctx->spname);
 		if (addr >= spaddr && addr < ctx->initial_sp) {
 			int stack_off = addr - ctx->initial_sp;
+			// int stack_off = ctx->initial_sp - addr; // R2STACK
+			// eprintf (" (%llx) %llx = %d\n", ctx->initial_sp, addr, stack_off);
 			RAnalVar *var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_SPV, stack_off);
 			if (!var) {
 				var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_BPV, stack_off);
@@ -5197,6 +5199,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
 	bool gp_fixed = r_config_get_b (core->config, "anal.gpfixed");
+	bool newstack = r_config_get_b (core->config, "anal.var.newstack");
 	RAnalEsil *ESIL = core->anal->esil;
 	ut64 refptr = 0LL;
 	char *pcname = NULL;
@@ -5295,7 +5298,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		&op,
 		fcn,
 		spname,
-		r_reg_getv (core->anal->reg, spname)
+		r_reg_getv (core->anal->reg, spname) // initial_sp
 	};
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
 	//this is necessary for the hook to read the id of analop
@@ -5304,12 +5307,16 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
 
 	if (fcn && fcn->reg_save_area) {
-		r_reg_setv (core->anal->reg, ctx.spname, ctx.initial_sp - fcn->reg_save_area);
+		if (newstack) {
+			r_reg_setv (core->anal->reg, ctx.spname, fcn->reg_save_area);
+		} else {
+			r_reg_setv (core->anal->reg, ctx.spname, ctx.initial_sp - fcn->reg_save_area);
+		}
 	}
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
 	const char *kpcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	if (!kpcname || !*kpcname) {
+	if (R_STR_ISEMPTY (kpcname)) {
 		R_LOG_ERROR ("Cannot find program counter register in the current profile");
 		return;
 	}
@@ -5397,8 +5404,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (i > iend) {
 			goto repeat;
 		}
-		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) {
-			i += minopsize - 1; //   XXX dupe in op.size below
+		int opflags = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT;
+		if (newstack) {
+			opflags |= R_ANAL_OP_MASK_DISASM;
+		}
+		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, opflags)) {
+			i += minopsize - 1; // XXX dupe in op.size below
 		}
 		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK) {
 			// i += 2
@@ -5406,7 +5417,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			goto repeat;
 		}
 		//we need to check again i because buf+i may goes beyond its boundaries
-		//because of i+= minopsize - 1
+		//because of i += minopsize - 1
 		if (op.size < 1) {
 			i += minopsize - 1;
 			goto repeat;
@@ -5497,6 +5508,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			}
 			if (cfg_anal_strings) {
 				add_string_ref (core, op.addr, op.ptr);
+			}
+			break;
+		case R_ANAL_OP_TYPE_SUB:
+			if (newstack && core->anal->cur && archIsArm) {
+				if (strstr (op.mnemonic, " sp,")) {
+					ctx.initial_sp -= op.val;
+				}
 			}
 			break;
 		case R_ANAL_OP_TYPE_ADD:

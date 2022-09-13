@@ -1742,8 +1742,8 @@ static int var_cmd(RCore *core, const char *str) {
 			R_LOG_ERROR ("Cannot find function in 0x%08"PFMT64x, core->offset);
 			return false;
 		}
-	case 'n':
-		if (str[1]) { // "afvn"
+	case 'n': // "afvn"
+		if (str[1]) {
 			RAnalOp *op = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_BASIC);
 			const char *new_name = r_str_trim_head_ro (strchr (ostr, ' '));
 			if (!new_name) {
@@ -1827,8 +1827,8 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'f': // "afvf"
 		__cmd_afvf (core, ostr);
 		break;
-	case 't':
-		if (fcn) { // "afvt"
+	case 't': // "afvt"
+		if (fcn) {
 			p = strchr (ostr, ' ');
 			if (!p++) {
 				free (ostr);
@@ -1899,9 +1899,9 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 		}
 		break;
-	case 's': // "afv[bsr]s"
+	case 's': // "afv[bsr]s" // "afvs"
 	case 'g': // "afv[bsr]g"
-		if (str[2] != '\0') {
+		if (str[2]) {
 			int idx = r_num_math (core->num, str + 2);
 			char *vaddr;
 			p = strchr (ostr, ' ');
@@ -1930,7 +1930,7 @@ static int var_cmd(RCore *core, const char *str) {
 			R_LOG_ERROR ("Missing argument");
 		}
 		break;
-	case ' ': { // "afv[bsr]"
+	case ' ': { // "afvs" "afvb" "afvr"
 		bool isarg = false;
 		const int size = 4;
 		p = strchr (ostr, ' ');
@@ -1972,6 +1972,7 @@ static int var_cmd(RCore *core, const char *str) {
 			r_str_trim (vartype);
 		}
 		if (type == 'b') {
+			eprintf ("DELTA\n");
 			delta -= fcn->bp_off;
 		}
 		if ((type == 'b') && delta > 0) {
