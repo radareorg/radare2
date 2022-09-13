@@ -4813,29 +4813,34 @@ typedef struct {
 } EsilBreakCtx;
 
 static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
+	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
+	RAnalValue *src = r_vector_index_ptr (op->srcs, 0);
 	if (type == R_ANAL_VAR_ACCESS_TYPE_WRITE) {
-		if (op->dst && op->dst->reg) {
-			return op->dst->reg->name;
+		if (dst && dst->reg) {
+			return dst->reg->name;
 		}
 	} else {
-		if (op->src[0] && op->src[0]->reg) {
-			return op->src[0]->reg->name;
+		if (src && src->reg) {
+			return src->reg->name;
 		}
 	}
 	return NULL;
 }
 
 static ut64 delta_for_access(RAnalOp *op, RAnalVarAccessType type) {
+	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
+	RAnalValue *src0 = r_vector_index_ptr (op->srcs, 0);
+	RAnalValue *src1 = r_vector_index_ptr (op->srcs, 1);
 	if (type == R_ANAL_VAR_ACCESS_TYPE_WRITE) {
-		if (op->dst) {
-			return op->dst->imm + op->dst->delta;
+		if (dst) {
+			return dst->imm + dst->delta;
 		}
 	} else {
-		if (op->src[1] && (op->src[1]->imm || op->src[1]->delta)) {
-			return op->src[1]->imm + op->src[1]->delta;
+		if (src1 && (src1->imm || src1->delta)) {
+			return src1->imm + src1->delta;
 		}
-		if (op->src[0]) {
-			return op->src[0]->imm + op->src[0]->delta;
+		if (src0) {
+			return src0->imm + src0->delta;
 		}
 	}
 	return 0;
@@ -5533,17 +5538,19 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				}
 			} else if ((core->anal->config->bits == 32 && core->anal->cur && arch == R2_ARCH_MIPS)) {
 				ut64 dst = ESIL->cur;
-				if (!op.src[0] || !op.src[0]->reg || !op.src[0]->reg->name) {
+				RAnalValue *opsrc0 = r_vector_index_ptr (op.srcs, 0);
+				RAnalValue *opsrc1 = r_vector_index_ptr (op.srcs, 1);
+				if (!opsrc0 || !opsrc0->reg || !opsrc0->reg->name) {
 					break;
 				}
-				if (!strcmp (op.src[0]->reg->name, "sp")) {
+				if (!strcmp (opsrc0->reg->name, "sp")) {
 					break;
 				}
-				if (!strcmp (op.src[0]->reg->name, "zero")) {
+				if (!strcmp (opsrc0->reg->name, "zero")) {
 					break;
 				}
 				if ((target && dst == ntarget) || !target) {
-					if (dst > 0xffff && op.src[1] && (dst & 0xffff) == (op.src[1]->imm & 0xffff) && myvalid (mycore->io, dst)) {
+					if (dst > 0xffff && opsrc1 && (dst & 0xffff) == (opsrc1->imm & 0xffff) && myvalid (mycore->io, dst)) {
 						RFlagItem *f;
 						char *str;
 						if (CHECKREF (dst) || CHECKREF (cur)) {
