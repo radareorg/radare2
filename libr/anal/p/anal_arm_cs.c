@@ -4313,6 +4313,7 @@ static void set_opdir(RAnalOp *op) {
 static void set_src_dst(RAnalValue *val, RReg *reg, csh *handle, cs_insn *insn, int x, int bits) {
 	cs_arm_op armop = INSOP (x);
 	cs_arm64_op arm64op = INSOP64 (x);
+	if (!val)	return;
 	if (bits == 64) {
 		parse_reg64_name (reg, &val->reg, &val->regdelta, *handle, insn, x);
 	} else {
