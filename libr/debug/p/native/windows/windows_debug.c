@@ -471,7 +471,7 @@ err_get_file_name_from_handle:
 		char *ret = r_sys_conv_win_to_utf8 (filename);
 		free (filename);
 		return ret;
-	}	
+	}
 	return NULL;
 }
 
@@ -637,7 +637,7 @@ bool w32_select(RDebug *dbg, int pid, int tid) {
 			wrap->pi.hThread = th->hThread;
 			selected = th->tid;
 			break;
-		}	
+		}
 	}
 
 	if (dbg->coreb.cfggeti (dbg->coreb.core, "dbg.threads")) {
@@ -670,7 +670,7 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 		}
 		return true;
 	}
-	
+
 	bool ret = false;
 	if (TerminateProcess (wrap->pi.hProcess, 1)) {
 		ret = true;
@@ -950,7 +950,7 @@ RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid) {
 				break;
 			default:
 				print_exception_event (&de);
-				if (is_exception_fatal (de.u.Exception.ExceptionRecord.ExceptionCode)) {				
+				if (is_exception_fatal (de.u.Exception.ExceptionRecord.ExceptionCode)) {
 					next_event = 0;
 					dbg->reason.type = exception_to_reason (de.u.Exception.ExceptionRecord.ExceptionCode);
 					dbg->reason.tid = de.dwThreadId;
@@ -1208,7 +1208,7 @@ static void __w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 		goto err___w32_info_user;
 	}
 	if (*usr_dom) {
-		rdi->usr = r_str_newf (W32_TCHAR_FSTR"\\"W32_TCHAR_FSTR, usr_dom, usr);		
+		rdi->usr = r_str_newf (W32_TCHAR_FSTR"\\"W32_TCHAR_FSTR, usr_dom, usr);
 	} else {
 		rdi->usr = r_sys_conv_win_to_utf8 (usr);
 	}

@@ -250,7 +250,7 @@ R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
 				PTCHAR f = r_sys_conv_utf8_to_win (file);
 				int s = GetFullPathName (f, MAX_PATH, abspath, NULL);
 				if (s > MAX_PATH) {
-					eprintf ("r_file_abspath/GetFullPathName: Path to file too long\n");
+					R_LOG_ERROR ("r_file_abspath/GetFullPathName: Path to file too long");
 				} else if (!s) {
 					r_sys_perror ("r_file_abspath/GetFullPathName");
 				} else {
@@ -735,7 +735,7 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 	FILE *fd;
 	int i,j;
 	if (!file || !*file || !buf || len < 0) {
-		eprintf ("r_file_hexdump file: %s buf: %p\n", file, buf);
+		R_LOG_ERROR ("r_file_hexdump file: %s buf: %p", file, buf);
 		return false;
 	}
 	if (append) {
@@ -1078,7 +1078,7 @@ R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
 	}
 	fd = r_sandbox_open (file, rw? RDWR_FLAGS: O_RDONLY, 0644);
 	if (fd == -1 && !rw) {
-		eprintf ("r_file_mmap: file does not exis.\n");
+		R_LOG_ERROR ("r_file_mmap: file (%s) does not exist", file);
 		//m->buf = malloc (m->len);
 		return m;
 	}

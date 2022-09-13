@@ -131,7 +131,7 @@ repeat:
 						cmdpos += 2;
 						break;
 					} else {
-						// eprintf ("|| failed\n");
+						// eprintf ("op || failed\n");
 						return 1;
 					}
 				} else {
@@ -143,7 +143,7 @@ repeat:
 			if (!inquote) {
 				if (pos == cmdpos) {
 					if (rc) {
-						// eprintf ("&& failed\n");
+						// eprintf ("op && failed\n");
 						return 1;
 					} else {
 						cmdpos += 2;

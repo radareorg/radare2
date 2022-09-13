@@ -1254,7 +1254,7 @@ UISupportedInterfaceOrientations~ipad:
   UIInterfaceOrientationLandscapeRight
 EOF
 EXPECT_ERR=<<EOF
-offset table offset points outside of valid range
+ERROR: offset table offset points outside of valid range
 ERROR: bplist parse error
 EOF
 RUN

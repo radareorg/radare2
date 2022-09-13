@@ -382,6 +382,13 @@ static bool cb_analvars_stackname(void *user, void *data) {
 	return true;
 }
 
+static bool cb_analvars_newstack(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->anal->opt.var_newstack = node->i_value;
+	return true;
+}
+
 static bool cb_anal_nonull(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -477,7 +484,7 @@ static bool cb_analarch(void *user, void *data) {
 		}
 		const char *aa = r_config_get (core->config, "asm.arch");
 		if (!aa || strcmp (aa, node->value)) {
-			eprintf ("anal.arch: cannot find '%s'\n", node->value);
+			R_LOG_ERROR ("anal.arch: cannot find '%s'", node->value);
 		} else {
 			r_config_set (core->config, "anal.arch", "null");
 			return true;
@@ -1559,6 +1566,7 @@ static bool cb_cmdrepeat(void *user, void *data) {
 	return true;
 }
 
+// R2_580 rename to log.sink=file:path log.sink=echo etc..
 static bool cb_screrrmode(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
@@ -2727,7 +2735,7 @@ static bool cb_zoombyte(void *user, void *data) {
 		core->print->zoom->mode = *node->value;
 		break;
 	default:
-		eprintf ("Invalid zoom.byte value. See pz? for help\n");
+		R_LOG_ERROR ("Invalid zoom.byte value. See pz? for help");
 		r_cons_printf ("pzp\npzf\npzs\npz0\npzF\npze\npzh\n");
 		return false;
 	}
@@ -3382,6 +3390,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("anal.types.constraint", "false", "enable constraint types analysis for variables");
 	SETCB ("anal.vars", "true", &cb_analvars, "analyze local variables and arguments");
 	SETCB ("anal.vars.stackname", "false", &cb_analvars_stackname, "name variables based on their offset on the stack");
+	SETCB ("anal.vars.newstack", "false", &cb_analvars_newstack, "use new sp-relative variable analysis (EXPERIMENTAL)");
 	SETBPREF ("anal.vinfun", "true",  "search values in functions (aav) (false by default to only find on non-code)");
 	SETBPREF ("anal.vinfunrange", "false",  "search values outside function ranges (requires anal.vinfun=false)\n");
 	SETCB ("anal.norevisit", "false", &cb_analnorevisit, "do not visit function analysis twice (EXPERIMENTAL)");
@@ -3666,8 +3675,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("prj.zip", "false", "use ZIP format for project files");
 	SETBPREF ("prj.gpg", "false", "TODO: encrypt project with GnuPGv2");
 	SETBPREF ("prj.sandbox", "false", "sandbox r2 while loading project files");
-	SETBPREF ("prj.alwasyprompt", "false", "even when the project is already\
-			saved, ask the user to save the project when qutting");
+	SETBPREF ("prj.alwasyprompt", "false", "even when the project is already saved, ask the user to save the project when qutting");
 
 	/* cfg */
 	n = SETCB ("cfg.charset", "", &cb_cfgcharset, "specify encoding to use when printing strings");
@@ -3890,6 +3898,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.hit", "", "run when a search hit is found");
 	SETPREF ("cmd.open", "", "run when file is opened");
 	SETPREF ("cmd.load", "", "run when binary is loaded");
+	SETPREF ("cmd.bbgraph", "", "show the output of this command in the graph basic blocks");
 	RConfigNode *cmdpdc = NODECB ("cmd.pdc", "", &cb_cmdpdc);
 	SETDESC (cmdpdc, "select pseudo-decompiler command to run after pdc");
 	update_cmdpdc_options (core, cmdpdc);

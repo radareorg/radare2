@@ -394,7 +394,7 @@ static int decode_known(struct state *s, struct directive *d) {
 		if (d->d_operand < 0) {
 			d->d_operand *= -1;
 			sign = "-";
-		}	
+		}
 	} else {
 		d->d_operand = s->s_prefix_val | in->in_operand;
 		if (d->d_operand & 0x80) {

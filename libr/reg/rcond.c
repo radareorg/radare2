@@ -93,7 +93,7 @@ R_API int r_reg_cond_from_string(const char *str) {
 		return R_REG_COND_LE;
 	}
 	// TODO: move this into core
-	eprintf ("| Usage: drc[=] [condition](=1,0)\n"
+	eprintf ("Usage: drc[=] [condition](=1,0)\n"
 		 "| eq    equal\n"
 		 "| ne    not equal\n"
 		 "| cf    carry flag set\n"

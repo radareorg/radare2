@@ -69,6 +69,8 @@ R_API const char *r_strstr_ansi(const char *a, const char *b);
 R_API const char *r_str_rchr(const char *base, const char *p, int ch);
 R_API const char *r_str_closer_chr(const char *b, const char *s);
 R_API int r_str_bounds(const char *str, int *h);
+R_API R_WIP bool r_str_eq(const char *s1, const char *s2);
+R_API R_WIP bool r_str_eqi(const char *s1, const char *s2);
 R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
 R_API char *r_str_scale(const char *r, int w, int h);
 R_API bool r_str_range_in(const char *r, ut64 addr);
@@ -95,6 +97,7 @@ R_API RList *r_str_split_list(char *str, const char *c, int n);
 R_API RList *r_str_split_duplist(const char *str, const char *c, bool trim);
 R_API size_t *r_str_split_lines(char *str, size_t *count);
 R_API R_MUSTUSE char* r_str_replace(char *str, const char *key, const char *val, int g);
+R_API R_MUSTUSE char* r_str_replace_all(char *str, const char *key, const char *val);
 R_API R_MUSTUSE char *r_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case);
 R_API char *r_str_replace_in(char *str, ut32 sz, const char *key, const char *val, int g);
 R_API R_MUSTUSE char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen, const char *key, const char *val, int g);
@@ -165,7 +168,7 @@ R_API const char *r_sub_str_rchr(const char *str, int start, int end, char chr);
 R_API char *r_str_ichr(char *str, char chr);
 R_API bool r_str_ccmp(const char *dst, const char *orig, int ch);
 R_API bool r_str_cmp_list(const char *list, const char *item, char sep);
-R_API int r_str_cmp(const char *dst, const char *orig, int len);
+R_API R_DEPRECATE int r_str_cmp(const char *dst, const char *orig, int len);
 R_API int r_str_casecmp(const char *dst, const char *orig);
 R_API int r_str_ncasecmp(const char *dst, const char *orig, size_t n);
 R_API int r_str_ccpy(char *dst, char *orig, int ch);
@@ -248,6 +251,12 @@ R_UNUSED static bool r_str_startswith_inline(const char *str, const char *needle
 	return !strncmp (str, needle, strlen (needle));
 }
 #define r_str_startswith r_str_startswith_inline
+R_UNUSED static const char *r_str_skip_prefix(const char *str, const char *prefix) {
+	if (r_str_startswith (str, prefix)) {
+		str += strlen (prefix);
+	}
+	return str;
+}
 R_API bool r_str_endswith(const char *str, const char *needle);
 R_API bool r_str_isnumber(const char *str);
 R_API const char *r_str_last(const char *in, const char *ch);

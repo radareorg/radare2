@@ -88,7 +88,6 @@ int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 		['f'] = &&l_unesc, ['n'] = &&l_unesc, ['r'] = &&l_unesc, ['t'] = &&l_unesc, ['u'] = &&l_unesc
 	};
 	const void *const *go = gostruct;
-	
 #if 0 
 printf ("                 gostrct= %p\n", gostruct);
 printf ("                 gobare = %p\n", gobare);

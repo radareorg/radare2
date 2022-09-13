@@ -61,9 +61,9 @@ static int cmd_quit(void *data, const char *input) {
 			core->num->value = 1;
 		}
 		if (input[1] == 'y') {
-			core->num->value += 10;	
+			core->num->value += 10;
 		} else if (input[1] == 'n') {
-			core->num->value += 2;	
+			core->num->value += 2;
 		}
 		return R_CMD_RC_QUIT;
 	}

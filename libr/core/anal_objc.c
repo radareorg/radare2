@@ -1,10 +1,12 @@
-/* radare2 - LGPL - Copyright 2019-2021 - pancake */
+/* radare2 - LGPL - Copyright 2019-2022 - pancake */
 
 /* This code has been written by pancake which has been based on Alvaro's
  * r2pipe-python script which was based on FireEye script for IDA Pro.
  *
  * https://www.fireeye.com/blog/threat-research/2017/03/introduction_to_reve.html
  */
+
+#define R_LOG_ORIGIN "anal.objc"
 
 #include <r_core.h>
 
@@ -19,7 +21,6 @@ typedef struct {
 	RBinSection *_const;
 	RBinSection *_data;
 } RCoreObjc;
-
 
 const size_t objc2ClassSize = 0x28;
 const size_t objc2ClassInfoOffs = 0x20;
@@ -142,13 +143,13 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	maxsize = R_MIN (maxsize, objc->file_size);
 	if (ss_const > maxsize) {
 		if (objc->core->bin->verbose) {
-			eprintf ("aao: Truncating ss_const from %u to %u\n", (int)ss_const, (int)maxsize);
+			R_LOG_WARN ("aao: Truncating ss_const from %u to %u", (int)ss_const, (int)maxsize);
 		}
 		ss_const = maxsize;
 	}
 	if (ss_selrefs > maxsize) {
 		if (objc->core->bin->verbose) {
-			eprintf ("aao: Truncating ss_selrefs from %u to %u\n", (int)ss_selrefs, (int)maxsize);
+			R_LOG_WARN ("aao: Truncating ss_selrefs from %u to %u", (int)ss_selrefs, (int)maxsize);
 		}
 		ss_selrefs = maxsize;
 	}
@@ -158,7 +159,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	}
 	const size_t word_size = objc->word_size; // assuming 8 because of the read_le64
 	if (!r_io_read_at (objc->core->io, objc->_const->vaddr, buf, ss_const)) {
-		eprintf ("aao: Cannot read the whole const section %u\n", (unsigned int)ss_const);
+		R_LOG_WARN ("aao: Cannot read the whole const section %u", (unsigned int)ss_const);
 		return false;
 	}
 	for (off = 0; off + word_size < ss_const && off + word_size < maxsize; off += word_size) {
@@ -169,7 +170,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 		}
 	}
 	if (!r_io_read_at (objc->core->io, va_selrefs, buf, ss_selrefs)) {
-		eprintf ("aao: Cannot read the whole selrefs section\n");
+		R_LOG_WARN ("aao: Cannot read the whole selrefs section");
 		return false;
 	}
 	for (off = 0; off + word_size < ss_selrefs && off + word_size < maxsize; off += word_size) {
@@ -273,7 +274,7 @@ static bool objc_find_refs(RCore *core) {
 		ut64 delta = (objc2ClassMethSize * count);
 		ut64 to = classMethodsVA + delta - 8;
 		if (delta > objc->file_size) {
-			eprintf ("Workaround: Corrupted objc data? checking next %"PFMT64x" !< %"PFMT64x"\n", classMethodsVA, to);
+			R_LOG_WARN ("Workarounding malformed objc data. checking next %"PFMT64x" !< %"PFMT64x, classMethodsVA, to);
 			count = (objc->_data->vsize / objc2ClassMethSize) - 1;
 			delta = objc2ClassMethSize * count;
 			to = classMethodsVA + delta;

@@ -15,7 +15,7 @@
 >>18	leshort		x		\b, %d entries
 # RIFF Device Independent Bitmap format
 >8	string		RDIB		\b, device-independent bitmap
->>16	string		BM		
+>>16	string		BM
 >>>30	leshort		12		\b, OS/2 1.x format
 >>>>34	leshort		x		\b, %d x
 >>>>36	leshort		x		%d
@@ -191,7 +191,7 @@
 >>18	beshort		x		\b, %d entries
 # RIFF Device Independent Bitmap format
 >8	string		RDIB		\b, device-independent bitmap
->>16	string		BM		
+>>16	string		BM
 >>>30	beshort		12		\b, OS/2 1.x format
 >>>>34	beshort		x		\b, %d x
 >>>>36	beshort		x		%d

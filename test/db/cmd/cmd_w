@@ -1,3 +1,20 @@
+NAME=wa+
+FILE=-
+ARGS=-a arm -b64
+CMDS=<<EOF
+3wa+nop
+s
+pd 4 @ 0
+EOF
+EXPECT=<<EOF
+0xc
+            0x00000000      1f2003d5       nop
+            0x00000004      1f2003d5       nop
+            0x00000008      1f2003d5       nop
+            0x0000000c      00000000       invalid
+EOF
+RUN
+
 NAME=wv4
 FILE=-
 CMDS=<<EOF
@@ -123,17 +140,33 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=w6
+NAME=w6x
 FILE=-
 CMDS=<<EOF
 w6d ESIz
 p8 3
-w6e 112233
+w6x 112233
 ps
 EOF
 EXPECT=<<EOF
 112233
 ESIz
+EOF
+RUN
+
+NAME=w6e
+FILE=-
+CMDS=<<EOF
+w6d ESIz
+p8 3
+w6x 112233
+psz
+p6e 3
+EOF
+EXPECT=<<EOF
+112233
+ESIz
+RVNJ
 EOF
 RUN
 

@@ -222,7 +222,6 @@ _zip_set_open_error(int *zep, const zip_error_t *err, int ze) {
 	    case ZIP_ET_LIBZIP:
 		errno = zip_error_code_system(err);
 		break;
-		
 	    default:
 		break;
         }

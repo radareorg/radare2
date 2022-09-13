@@ -6,10 +6,13 @@
 #include <r_reg.h>
 
 R_API bool r_debug_reg_sync(RDebug *dbg, int type, int write) {
+	r_return_val_if_fail (dbg && dbg->reg && dbg->h, false);
 	int i, n, size;
+#if 0
 	if (!dbg || !dbg->reg || !dbg->h) {
 		return false;
 	}
+#endif
 	// There's no point in syncing a dead target
 	if (r_debug_is_dead (dbg)) {
 		return false;
@@ -34,8 +37,8 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			int v = ((int)1 << i);
 			// skip checks on same request arena and check if this arena have inside the request arena type
 			if (n != i && (mask & v)) {
-				//eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
-				//eprintf(" request arena %i found at arena %i\n", i, n );
+				// eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
+				// eprintf(" request arena %i found at arena %i\n", i, n );
 				// if this arena have the request arena type, force to use this arena.
 				i = n;
 				break;
@@ -47,7 +50,7 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
 			if (!buf || !dbg->h->reg_write (dbg, i, buf, size)) {
 				if (i == R_REG_TYPE_GPR) {
-					eprintf ("r_debug_reg: error writing registers %d to %d\n", i, dbg->tid);
+					R_LOG_ERROR ("cannot write registers %d to %d", i, dbg->tid);
 				}
 				if (type != R_REG_TYPE_ALL || i == R_REG_TYPE_GPR) {
 					free (buf);

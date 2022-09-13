@@ -753,18 +753,18 @@ static void p_bracket(struct parse *p) {
 	int invert = 0;
 
 	/* Dept of Truly Sickening Special-Case Kludges */
-	if (p->next + 5 < p->end && strncmp(p->next, "[:<:]]", 6) == 0) {
-		EMIT(OBOW, 0);
-		NEXTn(6);
+	if (p->next + 5 < p->end && r_str_startswith (p->next, "[:<:]]")) {
+		EMIT (OBOW, 0);
+		NEXTn (6);
 		return;
 	}
-	if (p->next + 5 < p->end && strncmp(p->next, "[:>:]]", 6) == 0) {
-		EMIT(OEOW, 0);
-		NEXTn(6);
+	if (p->next + 5 < p->end && r_str_startswith (p->next, "[:>:]]")) {
+		EMIT (OEOW, 0);
+		NEXTn (6);
 		return;
 	}
 
-	if (!(cs = allocset(p))) {
+	if (!(cs = allocset (p))) {
 		/* allocset did set error status in p */
 		return;
 	}
@@ -773,7 +773,7 @@ static void p_bracket(struct parse *p) {
 		invert++; /* make note to invert set at end */
 	}
 	if (EAT (']')) {
-		CHadd(cs, ']');
+		CHadd (cs, ']');
 	} else if (EAT ('-')) {
 		CHadd (cs, '-');
 	}
@@ -783,19 +783,19 @@ static void p_bracket(struct parse *p) {
 	if (EAT ('-')) {
 		CHadd (cs, '-');
 	}
-	MUSTEAT(']', R_REGEX_EBRACK);
+	MUSTEAT (']', R_REGEX_EBRACK);
 
 	if (p->error != 0) {	/* don't mess things up further */
-		freeset(p, cs);
+		freeset (p, cs);
 		return;
 	}
 
-	if (p->g->cflags&R_REGEX_ICASE) {
+	if (p->g->cflags & R_REGEX_ICASE) {
 		int i;
 		int ci;
 
 		for (i = p->g->csetsize - 1; i >= 0; i--) {
-			if (CHIN(cs, i) && isalpha(i)) {
+			if (CHIN (cs, i) && isalpha (i)) {
 				ci = othercase(i);
 				if (ci != i) {
 					CHadd (cs, ci);
@@ -811,7 +811,7 @@ static void p_bracket(struct parse *p) {
 
 		for (i = p->g->csetsize - 1; i >= 0; i--) {
 			if (CHIN (cs, i)) {
-				CHsub(cs, i);
+				CHsub (cs, i);
 			} else {
 				CHadd (cs, i);
 			}
@@ -824,15 +824,15 @@ static void p_bracket(struct parse *p) {
 		}
 	}
 
-	if (cs->multis) {		/* xxx */
+	if (cs->multis) { /* xxx */
 		return;
 	}
 
-	if (nch(p, cs) == 1) {		/* optimize singleton sets */
-		ordinary(p, firstch(p, cs));
+	if (nch(p, cs) == 1) { /* optimize singleton sets */
+		ordinary (p, firstch (p, cs));
 		freeset(p, cs);
 	} else {
-		EMIT(OANYOF, freezeset(p, cs));
+		EMIT (OANYOF, freezeset (p, cs));
 	}
 }
 
@@ -847,10 +847,10 @@ static void p_b_term(struct parse *p, cset *cs) {
 	/* classify what we've got */
 	switch ((MORE()) ? PEEK() : '\0') {
 	case '[':
-		c = (MORE2()) ? PEEK2() : '\0';
+		c = MORE2 ()? PEEK2 () : '\0';
 		break;
 	case '-':
-		SETERROR(R_REGEX_ERANGE);
+		SETERROR (R_REGEX_ERANGE);
 		return;			/* NOTE RETURN */
 		break;
 	default:
@@ -910,7 +910,7 @@ static void p_b_cclass(struct parse *p, cset *cs) {
 	const char *u;
 	char c;
 
-	while (MORE () && isalpha ((unsigned char)PEEK ())) {
+	while (MORE () && isalpha ((ut8)PEEK ())) {
 		NEXT ();
 	}
 	len = p->next - sp;
@@ -1120,16 +1120,17 @@ nonnewline(struct parse *p)
 {
 	char *oldnext = p->next;
 	char *oldend = p->end;
-	char bracket[4];
+	char bracket[5];
 
-	p->next = bracket;
-	p->end = bracket+3;
 	bracket[0] = '^';
 	bracket[1] = '\n';
 	bracket[2] = ']';
 	bracket[3] = '\0';
-	p_bracket(p);
-	if (p->next == bracket+3) {
+	bracket[4] = '\0';
+	p->next = bracket;
+	p->end = bracket + 3;
+	p_bracket (p);
+	if (p->next == bracket + 3) {
 		p->next = oldnext;
 		p->end = oldend;
 	}
@@ -1575,9 +1576,8 @@ doinsert(struct parse *p, sop op, size_t opnd, sopno pos)
 				p->pend[i]++;
 			}
 		}
-	}	
-
-	memmove((char *)&p->strip[pos+1], (char *)&p->strip[pos],
+	}
+	memmove ((char *)&p->strip[pos+1], (char *)&p->strip[pos],
 						(HERE()-pos-1)*sizeof (sop));
 	p->strip[pos] = s;
 }
@@ -1585,9 +1585,7 @@ doinsert(struct parse *p, sop op, size_t opnd, sopno pos)
 /*
  - dofwd - complete a forward reference
  */
-static void
-dofwd(struct parse *p, sopno pos, sop value)
-{
+static void dofwd(struct parse *p, sopno pos, sop value) {
 	/* avoid making error situations worse */
 	if (p->error != 0) {
 		return;
@@ -1601,9 +1599,7 @@ dofwd(struct parse *p, sopno pos, sop value)
 /*
  - enlarge - enlarge the strip
  */
-static void
-enlarge(struct parse *p, sopno size)
-{
+static void enlarge(struct parse *p, sopno size) {
 	sop *sp;
 
 	if (p->ssize >= size) {

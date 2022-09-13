@@ -505,7 +505,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 				reloc->type = R_BIN_RELOC_64;
 				break;
 			}
-			
+
 			ut32 offset;
 			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
 				RBinImport *imp = R_NEW0 (RBinImport);

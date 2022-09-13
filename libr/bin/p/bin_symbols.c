@@ -241,7 +241,7 @@ static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, i
 		if (!memcmp ("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
 			off -= 8;
 		} else {
-			eprintf ("0x%08x  parsing error: invalid magic retry\n", off);
+			R_LOG_ERROR ("0x%08x parsing failed. invalid magic retry", off);
 		}
 	}
 	D eprintf ("0x%08x  magic  OK\n", off);

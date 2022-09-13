@@ -31,7 +31,7 @@ static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 }
 
 static char *fs_abspath(RFSShell *shell, const char *input) {
-	char *path = strdup (*shell->cwd);
+	char *path = strdup ((const char *)shell->cwd);
 	if (!strcmp (input, "..")) {
 		char* p = (char*) r_str_lchr (path, '/');
 		if (p) {
@@ -64,12 +64,12 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		r_sandbox_system (buf + 1, 1);
 	} else if (r_str_startswith (buf, "echo")) {
 		char *msg = r_str_trim_dup (buf + 4);
-		if (!handlePipes (fs, msg, NULL, *shell->cwd)) {
+		if (!handlePipes (fs, msg, NULL, (const char *)shell->cwd)) {
 			cb_printf ("%s\n", msg);
 		}
 		free (msg);
 	} else if (r_str_startswith (buf, "getall")) {
-		RList *list = r_fs_dir (fs, *shell->cwd);
+		RList *list = r_fs_dir (fs, (const char *)shell->cwd);
 		r_list_foreach (list, iter, file) {
 			if (file->type == 'f') {
 				R_LOG_INFO ("Downloading: %s", file->name);
@@ -83,19 +83,31 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		r_list_free (list);
 	} else if (r_str_startswith (buf, "ls")) {
 		char *cwd = NULL;
+		bool minus_ele = r_str_startswith (buf, "ls -l");
+		if (minus_ele) {
+			buf += 3;
+		}
 		if (buf[2] == ' ') {
 			if (buf[3] == '/') {
 				cwd = strdup (buf + 3);
 			} else {
-				cwd = r_str_newf ("%s/%s", *shell->cwd, buf + 3);
+				cwd = r_str_newf ("%s/%s", (const char *)shell->cwd, buf + 3);
 			}
 		} else {
-			cwd = strdup (*(shell->cwd));
+			cwd = strdup ((const char *)shell->cwd);
 		}
 		RList *list = r_fs_dir (fs, cwd);
 		if (list) {
 			r_list_foreach (list, iter, file) {
-				cb_printf ("%c %s\n", file->type, file->name);
+				if (minus_ele) {
+					cb_printf ("%c %8d %s\n", file->type, file->size, file->name);
+				} else {
+					cb_printf ("%c %s\n", file->type, file->name);
+				}
+			}
+		} else {
+			if (strlen (cwd) > 1) {
+				R_LOG_ERROR ("Invalid path");
 			}
 		}
 		r_list_free (list);
@@ -108,19 +120,19 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 				ls++;
 				*ls = 0;
 			}
-			if (r_str_startswith (base, *shell->cwd)) {
+			if (r_str_startswith (base, (const char *)shell->cwd)) {
 				cb_printf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
 			}
 			free (base);
 		}
 		free (cwd);
 	} else if (r_str_startswith (buf, "pwd")) {
-		cb_printf ("%s\n", *shell->cwd);
+		cb_printf ("%s\n", (const char *)shell->cwd);
 	} else if (r_str_startswith (buf, "cd ")) {
 		const char *input = r_str_trim_head_ro (buf + 3);
 		char *abspath = fs_abspath (shell, input);
-		free (*shell->cwd);
-		*shell->cwd = abspath;
+		free (shell->cwd);
+		shell->cwd = (char **)abspath;
 #if 0
 		RList *list = r_fs_dir (fs, path);
 		if (r_list_empty (list)) {
@@ -256,13 +268,13 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 	r_return_val_if_fail (shell && fs, false);
 	if (R_STR_ISNOTEMPTY (root)) {
-		free (*shell->cwd);
-		*shell->cwd = strdup (root);
+		free (shell->cwd);
+		shell->cwd = (char **)strdup (root);
 	}
 	char buf[PROMPT_PATH_BUFSIZE];
 	char prompt[PROMPT_PATH_BUFSIZE];
 	for (;;) {
-		snprintf (prompt, sizeof (prompt), "[%.*s]> ", (int)sizeof (prompt) - 5, *shell->cwd);
+		snprintf (prompt, sizeof (prompt), "[%.*s]> ", (int)sizeof (prompt) - 5, (const char *)shell->cwd);
 		if (shell) {
 			if (shell->set_prompt) {
 				shell->set_prompt (prompt);

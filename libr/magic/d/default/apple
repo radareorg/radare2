@@ -321,7 +321,7 @@
 #>0x230		string		x		first type: %s,
 #>0x210		string		x		name: %s,
 #>0x254		belong		x		number of blocks: %d,
-#>0x400		beshort		0x504D		
+#>0x400		beshort		0x504D
 #>>0x430		string		x		second type: %s,
 #>>0x410		string		x		name: %s,
 #>>0x454		belong		x		number of blocks: %d,
@@ -329,11 +329,11 @@
 #>>>0x630	string		x		third type: %s,
 #>>>0x610	string		x		name: %s,
 #>>>0x654	belong		x		number of blocks: %d,
-#>>0x800		beshort		0x504D		
+#>>0x800		beshort		0x504D
 #>>>0x830	string		x		fourth type: %s,
 #>>>0x810	string		x		name: %s,
 #>>>0x854	belong		x		number of blocks: %d,
-#>>>0xa00	beshort		0x504D		
+#>>>0xa00	beshort		0x504D
 #>>>>0xa30	string		x		fifth type: %s,
 #>>>>0xa10	string		x		name: %s,
 #>>>>0xa54	belong		x		number of blocks: %d
@@ -347,15 +347,15 @@
 #>0x230		string		x		first type: %s,
 #>0x210		string		x		name: %s,
 #>0x254		belong		x		number of blocks: %d,
-#>0x400		beshort		0x504D		
+#>0x400		beshort		0x504D
 #>>0x430		string		x		second type: %s,
 #>>0x410		string		x		name: %s,
 #>>0x454		belong		x		number of blocks: %d,
-#>>0x800		beshort		0x504D		
+#>>0x800		beshort		0x504D
 #>>>0x830	string		x		third type: %s,
 #>>>0x810	string		x		name: %s,
 #>>>0x854	belong		x		number of blocks: %d,
-#>>>0xa00	beshort		0x504D		
+#>>>0xa00	beshort		0x504D
 #>>>>0xa30	string		x		fourth type: %s,
 #>>>>0xa10	string		x		name: %s,
 #>>>>0xa54	belong		x		number of blocks: %d

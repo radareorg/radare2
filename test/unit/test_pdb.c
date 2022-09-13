@@ -3,7 +3,7 @@
 #include <r_bin.h>
 #include <r_core.h>
 #include <r_bin_dwarf.h>
-#include "../../libr/bin/pdb/types.h"
+#include "../../libr/bin/format/pdb/types.h"
 
 #define MODE 2
 

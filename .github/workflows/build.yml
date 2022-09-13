@@ -20,7 +20,6 @@ jobs:
         name: linux-wasi
         path: radare2-*-wasi.zip
 
-
   # Linux
   linux-static:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
@@ -393,6 +392,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
         pip install ninja r2pipe wget r2env
+    - name: Extract r2 version
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      id: r2v
     - name: Build with meson + ninja
       shell: cmd
       run: |
@@ -405,11 +407,17 @@ jobs:
       run: |
         cd prefix\bin
         r2blob -v
+    - name: Zipping Executable
+      shell: cmd
+      run: |
+        cd prefix\bin
+        dir
+        7z a r2blob-${{ steps.r2v.outputs.branch }}-w64.zip r2blob.static.exe
     - uses: actions/upload-artifact@v2
       continue-on-error: true
       with:
         name: w64-static
-        path: prefix\bin\r2blob.static.exe
+        path: prefix\bin\r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
 
   w64-meson:
     runs-on: windows-2019
@@ -464,36 +472,36 @@ jobs:
 
 
   # FreeBSD
-  freebsd:
-    runs-on: macos-10.15
-    steps:
-    - uses: actions/checkout@v2
-    - name: Build r2 in FreeBSD
-      id: build
-      uses: vmactions/freebsd-vm@v0.1.6
-      with:
-        usesh: true
-        prepare: pkg install -y curl gmake patch git python gawk
-        run: |
-          cd work || true
-          pwd
-          ls -lah
-          whoami
-          env
-          freebsd-version
-          echo DATE: ; date
-          pip install r2pipe
-          sys/install.sh
-          gmake install DESTDIR=/tmp/prefix
-          (cd /tmp/prefix ; tar czvf /tmp/radare2-freebsd.tgz *)
-          r2r test/db/cmd
-          rm -rf * .git*
-          cp /tmp/radare2-freebsd.tgz .
-          echo DATE: ; date
-    - uses: actions/upload-artifact@v2
-      with:
-        name: freebsd
-        path: radare2-freebsd.tgz
+#  freebsd:
+#    runs-on: macos-10.15
+#    steps:
+#    - uses: actions/checkout@v2
+#    - name: Build r2 in FreeBSD
+#      id: build
+#      uses: vmactions/freebsd-vm@v0.1.6
+#      with:
+#        usesh: true
+#        prepare: pkg install -y curl gmake patch git python gawk
+#        run: |
+#          cd work || true
+#          pwd
+#          ls -lah
+#          whoami
+#          env
+#          freebsd-version
+#          echo DATE: ; date
+#          pip install r2pipe
+#          sys/install.sh
+#          gmake install DESTDIR=/tmp/prefix
+#          (cd /tmp/prefix ; tar czvf /tmp/radare2-freebsd.tgz *)
+#          r2r test/db/cmd
+#          rm -rf * .git*
+#          cp /tmp/radare2-freebsd.tgz .
+#          echo DATE: ; date
+#    - uses: actions/upload-artifact@v2
+#      with:
+#        name: freebsd
+#        path: radare2-freebsd.tgz
 
 
   # Release creation
@@ -519,7 +527,7 @@ jobs:
       - linux-acr-deb-64
       - linux-acr-deb-32
       - linux-wasi
-      - freebsd
+#      - freebsd
 #      - android-meson
     runs-on: ubuntu-latest
     steps:
@@ -705,15 +713,15 @@ jobs:
           asset_path: dist/artifacts/linux-wasi/radare2-${{ steps.r2v.outputs.branch }}-wasi.zip
           asset_name: radare2-${{ steps.r2v.outputs.branch }}-wasi.zip
           asset_content_type: application/zip
-      - name: Upload asset for FreeBSD
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/freebsd/radare2-freebsd.tgz
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}-freebsd.tgz
-          asset_content_type: application/gzip
+#      - name: Upload asset for FreeBSD
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: dist/artifacts/freebsd/radare2-freebsd.tgz
+#          asset_name: radare2-${{ steps.r2v.outputs.branch }}-freebsd.tgz
+#          asset_content_type: application/gzip
       - name: Upload asset for Windows (w64-blob)
         continue-on-error: true
         uses: actions/upload-release-asset@v1
@@ -721,6 +729,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/w64-static/r2blob.static.exe
+          asset_path: dist/artifacts/w64-static/r2blob.zip
           asset_name: r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
           asset_content_type: application/zip

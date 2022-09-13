@@ -90,7 +90,7 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 		return out;
 	}
 	R_FREE (file_line);
-	
+
 	file[0] = 0;
 	if (r_bin_addr2line (bin, addr, file, sizeof (file), &line)) {
 		if (bin->srcdir && *bin->srcdir) {

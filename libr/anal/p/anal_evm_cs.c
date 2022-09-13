@@ -37,7 +37,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	if (hndl == 0) {
 		return -1;
 	}
-	
+
 	int n, opsize = -1;
 	cs_insn* insn;
 	char *str;
@@ -57,7 +57,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		goto beach;
 	}
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		if (!r_str_cmp(insn->op_str, "0x", 2)) {
+		if (!r_str_cmp (insn->op_str, "0x", 2)) {
 			str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 		} else {
 			str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " 0x": "", insn->op_str);

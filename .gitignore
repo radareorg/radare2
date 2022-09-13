@@ -141,3 +141,6 @@ libr/include/sdb
 **/d/*.inc
 # Artifacts
 /dist/artifacts
+# libFuzzer
+crash-*
+corpus*

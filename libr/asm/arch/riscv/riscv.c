@@ -253,7 +253,7 @@ static void get_insn_args(char *buf, const char *d, insn_t l, uint64_t pc) {
 			break;
 		default:
 			/* xgettext:c-format */
-			sprintf (buf+strlen (buf), "# internal error, undefined modifier (%c)",
+			sprintf (buf + strlen (buf), "# internal error, undefined modifier (%c)",
 			  *d);
 			return;
 		}
@@ -267,7 +267,7 @@ static struct riscv_opcode *get_opcode(insn_t word) {
 #define OP_HASH_IDX(i) ((i) & (riscv_insn_length (i) == 2 ? 3 : OP_MASK_OP))
 
 	if (!init) {
-		for (op=riscv_opcodes; op < &riscv_opcodes[NUMOPCODES]; op++) {
+		for (op = riscv_opcodes; op < &riscv_opcodes[NUMOPCODES]; op++) {
 			if (!riscv_hash[OP_HASH_IDX (op->match)]) {
 				riscv_hash[OP_HASH_IDX (op->match)] = op;
 			}

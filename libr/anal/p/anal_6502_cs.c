@@ -24,7 +24,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	static R_TH_LOCAL
 #endif
 	cs_insn *insn = NULL;
-	
+
 	csh handle = init_capstone (a);
 	if (handle == 0) {
 		return -1;

@@ -179,10 +179,10 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (reply) {
 			int rw = 7;
 			free (reply);
-			eprintf ("Wine-dbg is ready to go!\n");
+			R_LOG_INFO ("Wine-dbg is ready to go");
 			return r_io_desc_new (io, &r_io_plugin_winedbg, pathname, rw, mode, gs);
 		}
-		eprintf ("Can't find the Wine-dbg prompt\n");
+		R_LOG_ERROR ("Can't find the Wine-dbg prompt");
 	}
 	return NULL;
 }

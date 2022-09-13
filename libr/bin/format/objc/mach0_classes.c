@@ -432,7 +432,6 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 
 		if (!(property = R_NEW0 (RBinField))) {
 			// retain just for debug
-			// eprintf("RBinClass allocation error\n");
 			return;
 		}
 
@@ -593,7 +592,6 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 
 		if (!(method = R_NEW0 (RBinSymbol))) {
 			// retain just for debug
-			// eprintf ("RBinClass allocation error\n");
 			return;
 		}
 		struct MACH0_(SMethod) m;
@@ -1448,7 +1446,6 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 
 	if (!ret && !(ret = r_list_newf ((RListFree)r_bin_class_free))) {
 		// retain just for debug
-		// eprintf ("RList<RBinClass> allocation error\n");
 		goto get_classes_error;
 	}
 	if (!is_found) {
@@ -1466,17 +1463,14 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		}
 		if (!(klass = R_NEW0 (RBinClass))) {
 			// retain just for debug
-			// eprintf ("RBinClass allocation error\n");
 			goto get_classes_error;
 		}
 		if (!(klass->methods = r_list_new ())) {
 			// retain just for debug
-			// eprintf ("RList<RBinField> allocation error\n");
 			goto get_classes_error;
 		}
 		if (!(klass->fields = r_list_new ())) {
 			// retain just for debug
-			// eprintf ("RList<RBinSymbol> allocation error\n");
 			goto get_classes_error;
 		}
 		size = sizeof (mach0_ut);

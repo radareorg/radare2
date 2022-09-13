@@ -117,7 +117,7 @@ R_API bool r_name_filter_print(char *s) {
 	while (*s && s < es) {
 		int us = r_utf8_size ((const ut8*)s);
 		if (us > 1) {
-			s += us;	
+			s += us;
 			continue;
 		}
 		if (!r_name_validate_print (*s)) {

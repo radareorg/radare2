@@ -1105,7 +1105,6 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 	unsigned int x, len;
 	char *command, *reg, *buff, *value;
 	// read current register set
-	
 	command = buff = value = NULL;
 
 	if (!g) {

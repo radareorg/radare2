@@ -451,7 +451,7 @@ static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname
 		R_LOG_WARN ("RReg profile does not contain BP register");
 		return false;
 	}
-	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp(reg->name, bp)) || num)) { //I trust k-maps
+	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp (reg->name, bp)) || num)) { //I trust k-maps
 		r_reg_set_value (esil->anal->reg, reg, num);
 		return true;
 	}
@@ -608,7 +608,7 @@ R_API bool r_anal_esil_signext(RAnalEsil *esil, bool assign) {
 		return false;
 	}
 	free (p_dst);
-	
+
 	// Make sure the other bits are 0
 	ut64 m = 0;
 	if (dst > 0 && dst < 64) {
@@ -786,6 +786,7 @@ static bool esil_js(RAnalEsil *esil) {
 //	- condret
 // YES PLS KILL IT
 static bool esil_address(RAnalEsil *esil) {
+	R_LOG_WARN ("support for esil operation $$ is about to end soon, avoid using it!");
 	r_return_val_if_fail (esil, false);
 	// esil->address = r_reg_getv (esil->anal->reg, "pc");
 	return r_anal_esil_pushnum (esil, esil->address);
@@ -2133,7 +2134,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 	ut32 bytes = bits / 8;
 	char *dst = r_anal_esil_pop (esil);
 	if (!dst) {
-		eprintf ("ESIL-ERROR at 0x%08"PFMT64x": Cannot peek memory without specifying an address\n", esil->address);
+		R_LOG_ERROR ("ESIL failed at 0x%08"PFMT64x": Won't peek the memory unless the users tells that", esil->address);
 		return false;
 	}
 	//eprintf ("GONA PEEK %d dst:%s\n", bits, dst);
@@ -3136,7 +3137,7 @@ static bool esil_float_cmp(RAnalEsil *esil) {
 			ret = r_anal_esil_pushnum (esil, fabs(s - d) <= DBL_EPSILON);
 		}
 	} else {
-		ERR("esil_float_cmp: invalid parameters.");
+		ERR ("esil_float_cmp: invalid parameters.");
 	}
 	free (dst);
 	free (src);
@@ -3489,7 +3490,7 @@ static bool runword(RAnalEsil *esil, const char *word) {
 		}
 		return true;
 	}
-	if (esil->skip && strcmp(word, "?{")) {
+	if (esil->skip && strcmp (word, "?{")) {
 		return true;
 	}
 

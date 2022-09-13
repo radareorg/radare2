@@ -5,7 +5,7 @@ EXPECT=<<EOF
 Reassembling 8051... OK
 EOF
 EXPECT_ERR=<<EOF
-Warning: using oba to load the syminfo from different mapaddress.
+WARN: using oba to load the syminfo from different mapaddress
 EOF
 RUN
 
@@ -140,6 +140,7 @@ RUN
 
 NAME=rasm2 #1167 3
 FILE=-
+REQUIRE=gas linux x86
 CMDS=!rasm2 -s att -a x86.as -b 64 "test %rbx, %rax" 
 EXPECT=<<EOF
 4885d8
@@ -148,6 +149,7 @@ RUN
 
 NAME=rasm2 #1167 4
 FILE=-
+REQUIRE=gas linux x86
 CMDS=!rasm2 -s intel -a x86.as -b 64 "test rax, rbx" 
 EXPECT=<<EOF
 4885d8
@@ -156,6 +158,7 @@ RUN
 
 NAME=rasm2 #1167 5
 FILE=-
+REQUIRE=gas linux x86
 CMDS=!rasm2 -s att -a x86.as -b 64 "add \$33, %rbx"
 EXPECT=<<EOF
 4883c321
@@ -164,6 +167,7 @@ RUN
 
 NAME=rasm2 #1167 6
 FILE=-
+REQUIRE=gas linux x86
 CMDS=!rasm2 -s intel -a x86.as -b 64 "add rbx, 33" 
 EXPECT=<<EOF
 4883c321
@@ -187,33 +191,27 @@ RUN
 NAME=rasm2 #1900 (detect syntax error - case 1)
 FILE=-
 CMDS=!rasm2 -a x86 -b 32 "mov hello, eax"
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov hello, eax' at line 3
-invalid
 EOF
 RUN
 
 NAME=rasm2 #1900 (detect syntax error - case 2)
 FILE=-
 CMDS=!rasm2 -a x86 -b 32 "mov 33, eax"
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov 33, eax' at line 3
-invalid
 EOF
 RUN
 
 NAME=rasm2 #1900 (detect syntax error - case 3)
 FILE=-
 CMDS=!rasm2 -a x86 -b 32 "mov eax, hello"
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov eax, hello' at line 3
-invalid
 EOF
 RUN
 
@@ -223,7 +221,6 @@ CMDS=!rasm2 -a x86 -b 32 "mov eax, 0x1122334455"
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov eax, 0x1122334455' at line 3
-invalid
 EOF
 RUN
 
@@ -236,9 +233,7 @@ EOF
 EXPECT=
 EXPECT_ERR=<<EOF
 ERROR: Cannot assemble 'mov rax, 0x112233445566778899' at line 3
-invalid
 ERROR: Cannot assemble 'mov eax, 0x1122334455' at line 3
-invalid
 EOF
 RUN
 
@@ -332,6 +327,7 @@ RUN
 
 NAME=rasm2 -s att -a x86.as -b 64 movq %rdx, %rax
 FILE=-
+REQUIRE=gas linux x86
 CMDS=!rasm2 -s att -a x86.as -b 64 "movq %rdx, %rax"
 EXPECT=<<EOF
 4889d0
@@ -499,17 +495,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rasm2 -L
+NAME=rasm2 -LL
 FILE=-
-CMDS=!rasm2 -L | grep -c arm.gnu
+REQUIRE=unix
+CMDS=!rasm2 -LL | grep -c arm.gnu
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=rasm2 -qL
+NAME=rasm2 -LL internal grep
 FILE=-
-CMDS=!rasm2 -qL | grep -c arm.gnu
+CMDS=!!rasm2 -LL~arm.gnu?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rasm2 -qLL
+FILE=-
+REQUIRE=unix
+CMDS=!rasm2 -qLL | grep -c arm.gnu
 EXPECT=<<EOF
 1
 EOF

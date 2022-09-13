@@ -77,7 +77,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			//we cross a 64k boundary, so write in two steps
 			//04 record (ext address)
 			if (fw04b (out, addh0) < 0) {
-				eprintf("ihex:write: file error\n");
+				R_LOG_ERROR ("ihex:write:file error");
 				r_list_free (nonempty);
 				fclose (out);
 				return -1;
@@ -86,7 +86,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			tsiz = -addl0;
 			addl0 = 0;
 			if (fwblock (out, rbs->data, rbs->from, tsiz)) {
-				eprintf ("ihex:fwblock error\n");
+				R_LOG_ERROR ("ihex:fwblock error");
 				r_list_free (nonempty);
 				fclose (out);
 				return -1;
@@ -94,14 +94,14 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		}
 		//04 record (ext address)
 		if (fw04b (out, addh1) < 0) {
-			eprintf ("ihex:write: file error\n");
+			R_LOG_ERROR ("ihex:write: file error");
 			r_list_free (nonempty);
 			fclose (out);
 			return -1;
 		}
 		//00 records (remaining data)
 		if (fwblock (out, rbs->data + tsiz, (addh1 << 16) | addl0, rbs->size - tsiz)) {
-			eprintf ("ihex:fwblock error\n");
+			R_LOG_ERROR ("ihex:fwblock error");
 			r_list_free (nonempty);
 			fclose (out);
 			return -1;
@@ -238,7 +238,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 	do {
 		l = sscanf (str, ":%02x%04x%02x", &bc, &addr_tmp, &type);
 		if (l != 3) {
-			eprintf ("Invalid data in ihex file (%.*s)\n", 80, str);
+			R_LOG_ERROR ("Invalid data in ihex file (%.*s)", 80, str);
 			goto fail;
 		}
 		bc &= 0xff;
@@ -259,10 +259,9 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 
 			for (i = 0; i < bc; i++) {
 				if (sscanf (str + 9 + (i * 2), "%02x", &byte) != 1) {
-					eprintf ("unparsable data (%s)!\n", str);
+					R_LOG_ERROR ("unparsable data (%s)", str);
 					goto fail;
 				}
-// eprintf ("SEC(%02x)", byte);
 				if (sec_size + i < sec_count) {
 					sec_tmp[i] = (ut8) byte & 0xff;
 				}

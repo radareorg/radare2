@@ -1571,6 +1571,13 @@ R_API bool r_cons_is_tty(void) {
 		return false;
 	}
 	return true;
+#elif __WINDOWS__
+	HANDLE hOut = GetStdHandle (STD_OUTPUT_HANDLE);
+	if (GetFileType (hOut) == FILE_TYPE_CHAR) {
+		DWORD unused;
+		return GetConsoleMode (hOut, &unused);
+	}
+	return false;
 #else
 	/* non-UNIX do not have ttys */
 	return false;

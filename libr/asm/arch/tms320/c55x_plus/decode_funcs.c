@@ -103,7 +103,7 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 	res = malloc(50);
 	if (!res) {
 		return NULL;
-	}	
+	}
 	if (op2 == 2) {
 		if (op) {
 			sprintf (res, "*ar%ld(short(#0x%lx))",

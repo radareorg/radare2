@@ -6,7 +6,7 @@
 
 # .BAT files (Daniel Quinlan, quinlan@yggdrasil.com)
 # updated by Joerg Jenderek
-0	string	@			
+0	string	@
 #>1	string/cB	\ echo\ off	MS-DOS batch file text
 #>1	string/cB	echo\ off	MS-DOS batch file text
 #>1	string/cB	rem\ 		MS-DOS batch file text
@@ -276,24 +276,24 @@
 ##### Can be problematic because reading ffffffff results in identified hit
 ### 0	belong	0xffffffff		DOS executable (device driver)
 ### #CMD640X2.SYS
-### >10	string	>\x23			
-### >>10	string	!\x2e			
-### >>>17	string	<\x5B			
+### >10	string	>\x23
+### >>10	string	!\x2e
+### >>>17	string	<\x5B
 ### >>>>10	string	x			\b, name: %.8s
 ### #UDMA.SYS KEYB.SYS CMD640X2.SYS
-### >10	string	<\x41			
-### >>12	string	>\x40			
-### >>>10	string	!$			
+### >10	string	<\x41
+### >>12	string	>\x40
+### >>>10	string	!$
 ### >>>>12	string	x			\b, name: %.8s
 ### #BTCDROM.SYS ASPICD.SYS
-### >22	string	>\x40			
-### >>22	string	<\x5B			
-### >>>23	string	<\x5B			
+### >22	string	>\x40
+### >>22	string	<\x5B
+### >>>23	string	<\x5B
 ### >>>>22	string	x			\b, name: %.8s
 ### #ATAPICD.SYS
-### >76	string	\0			
-### >>77	string	>\x40			
-### >>>77	string	<\x5B			
+### >76	string	\0
+### >>77	string	>\x40
+### >>>77	string	<\x5B
 ### >>>>77	string	x			\b, name: %.8s
 ### #0	byte		0x8c		DOS executable (COM)
 ### # 0xeb conflicts with "sequent" magic
@@ -310,8 +310,8 @@
 ### # (32-bit COMBOOT) programs *.C32 contain 32-bit code and run in flat-memory 32-bit protected mode
 ### # start with assembler instructions mov eax,21cd4cffh
 ### >1	lelong          0x21cd4cff	(32-bit COMBOOT)
-0	string	\x81\xfc		
->4	string	\x77\x02\xcd\x20\xb9	
+0	string	\x81\xfc
+>4	string	\x77\x02\xcd\x20\xb9
 >>36	string	UPX! 			FREE-DOS executable (COM), UPX compressed
 252	string Must\ have\ DOS\ version	DR-DOS executable (COM)
 # many compressed/converted COMs start with a copy loop instead of a jump
