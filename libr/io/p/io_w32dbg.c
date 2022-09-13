@@ -141,7 +141,7 @@ static int __open_proc(RIO *io, int pid, bool attach) {
 	RW32Dw *wrap = (RW32Dw *)io->dbgwrap;
 	wrap->pi.dwProcessId = pid;
 	if (attach) {
-		/* Attach to the process */	
+		/* Attach to the process */
 		wrap->params.type = W32_ATTACH;
 		r_w32dw_waitret (wrap);
 		if (!r_w32dw_ret (wrap)) {

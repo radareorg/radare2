@@ -1,7 +1,5 @@
 /* radare2 - LGPL - Copyright 2017-2022 - wargio */
 
-#include <stdlib.h>
-#include <string.h>
 #include <r_util.h>
 #include "x509.h"
 
@@ -507,7 +505,7 @@ R_API char *r_pkcs7_cms_to_string(RCMS *container) {
 		}
 	}
 
-	r_strbuf_appendf (sb, "  SignerInfos:\n");
+	r_strbuf_append (sb, "  SignerInfos:\n");
 	if (container->signedData.signerinfos.elements) {
 		for (i = 0; i < container->signedData.signerinfos.length; i++) {
 			r_x509_signedinfo_dump (container->signedData.signerinfos.elements[i], "    ", sb);

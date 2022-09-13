@@ -86,10 +86,9 @@ return strdup (
 // special registers
 "gpr	fp	.64	232	0\n" // FP
 "gpr	lr	.64	236	0\n" // LR
-"gpr	sp	.64	240	0\n" // SP
-"gpr	pc	.64	248	0\n" // PC
-// "gpr	pstate	.64	256	0\n" // FLAGS
-"gpr	pstate	.64	256	0   _____tfiae_____________j__qvczn\n" // x0
+"gpr	sp	.64	248	0\n" // SP
+"gpr	pc	.64	256	0\n" // PC
+"gpr	pstate	.64	264	0   _____tfiae_____________j__qvczn\n" // x0
 "gpr	vf	.1	256.28	0	overflow\n" // set if overflows
 "gpr	cf	.1	256.29	0	carry\n" // set if last op carries
 "gpr	zf	.1	256.30	0	zero\n" // set if last op is 0

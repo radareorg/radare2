@@ -55,7 +55,7 @@ zip_source_pop(struct zip_source *src)
 //	if (src->is_open)
 //	    (void)src->cb.l(src, src->ud, NULL, 0, ZIP_SOURCE_CLOSE);
 	(void)src->cb.l(src, src->ud, NULL, 0, ZIP_SOURCE_FREE);
-	
+
 	free(src);
     }
 

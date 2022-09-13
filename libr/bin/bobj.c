@@ -92,7 +92,7 @@ static RList *classes_from_symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	RListIter *iter;
 	r_list_foreach (bf->o->symbols, iter, sym) {
-		if (sym->name[0] != '_') {
+		if (!sym->name || sym->name[0] != '_') {
 			continue;
 		}
 		const char *cn = sym->classname;

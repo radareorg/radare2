@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <stddef.h>
-#include "r_cons.h"
 #include "r_core.h"
 
 static const char *help_msg_fR[] = {
@@ -251,7 +250,7 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 				kw = r_str_ndup (fname, fname_len);
 			}
 		}
-		
+
 		bool found = false;
 		r_list_foreach (list, iter2, fn) {
 			if (r_cons_is_breaked ()) {
@@ -750,7 +749,6 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 	return true;
 }
 
-
 static void print_function_labels_for(RAnalFunction *fcn, int rad, PJ *pj) {
 	r_return_if_fail (fcn && (rad != 'j' || pj));
 	bool json = rad == 'j';
@@ -835,7 +833,7 @@ rep:
 			flagenum = 0;
 			break;
 		default:
-			eprintf ("|Usage: fe[-| name] @@= 1 2 3 4\n");
+			eprintf ("Usage: fe[-| name] @@= 1 2 3 4\n");
 			break;
 		}
 		break;
@@ -1596,14 +1594,14 @@ rep:
 								pj_ks (pj, "realname", flag->realname);
 							}
 							pj_end (pj);
-							
+
 						} else {
 							// Print realname if exists and asm.flags.real is enabled
 							if (core->flags->realnames && flag->realname) {
 								r_cons_println (flag->realname);
 							} else {
 								r_cons_println (flag->name);
-							}	
+							}
 						}
 					}
 				}

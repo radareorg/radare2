@@ -70,7 +70,7 @@ static void render(RCore *core, RList *list, int page) {
 				free (kv);
 			} else if (!strncmp (s, "--", 2)) {
 				// directive, do not print
-				
+
 			} else if (*s == '#') {
 				char *ss = r_str_ss (s, 0, 0);
 				r_cons_printf ("%s\n", ss);

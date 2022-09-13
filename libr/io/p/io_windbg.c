@@ -534,7 +534,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 			hr = ITHISCALL (dbgClient, CreateProcess, 0ULL, cmd, spawn_options);
 			free (cmd);
 		} else {
-			eprintf ("Missing argument for local spawn\n");
+			R_LOG_ERROR ("Missing argument for local spawn");
 		}
 		break;
 	case TARGET_LOCAL_ATTACH: // -p (PID)
@@ -542,7 +542,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 		break;
 	case TARGET_LOCAL_KERNEL: // -kl
 		if (ITHISCALL0 (dbgClient, IsKernelDebuggerEnabled) == S_FALSE) {
-			eprintf ("Live Kernel debug not available. Set the /debug boot switch to enable it\n");
+			R_LOG_ERROR ("Live Kernel debug not available. Set the /debug boot switch to enable it");
 		} else {
 			hr = ITHISCALL (dbgClient, AttachKernel, DEBUG_ATTACH_LOCAL_KERNEL, args);
 		}

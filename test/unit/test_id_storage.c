@@ -41,7 +41,7 @@ static bool test_r_id_storage_prev_next_eq_0(void) {
 	r_id_storage_get_prev (ids, &id);
 	r_id_storage_get_next (ids, &id);
 	r_id_storage_free (ids);
-	
+
 	mu_assert_eq (id, id1, "r_id_storage_{next/prev} reversal 0");
 	mu_end;
 }
@@ -63,7 +63,6 @@ static bool test_r_id_storage_prev_next_eq_1(void) {
 	r = r_id_storage_get_next (ids, &id);
 	mu_assert_true (r, "get_prev(1) must exist");
 	r_id_storage_free (ids);
-	
 	mu_assert_eq (id, id1, "r_id_storage_{next/prev} reversal 1");
 	mu_end;
 }
@@ -102,7 +101,6 @@ static bool test_r_id_storage_empty(void) {
 	r = r_id_storage_get_lowest (ids, &_id);
 	mu_assert_false (r, "get low from none");
 	r_id_storage_free (ids);
-	
 	mu_end;
 }
 
@@ -117,7 +115,6 @@ static bool test_r_id_storage_prev_next_eq_2(void) {
 	r_id_storage_get_prev (ids, &_id);
 	r_id_storage_get_next (ids, &_id);
 	r_id_storage_free (ids);
-	
 	mu_assert_eq (id, _id, "r_id_storage_{next/prev} reversal 2");
 	mu_end;
 }

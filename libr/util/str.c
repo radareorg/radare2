@@ -23,6 +23,16 @@ static const char * const rwxstr[] = {
 	[15] = "rwx",
 };
 
+// equal string, same case
+R_API R_WIP bool r_str_eq(const char *s1, const char *s2) {
+	return s1 && s2 && !strcmp (s1, s2);
+}
+
+// equal string, ignoring case
+R_API R_WIP bool r_str_eqi(const char *s1, const char *s2) {
+	return s1 && s2 && !r_str_casecmp (s1, s2);
+}
+
 R_API int r_str_casecmp(const char *s1, const char *s2) {
 #ifdef _MSC_VER
 	return stricmp (s1, s2);
@@ -745,7 +755,7 @@ R_API size_t r_str_ncpy(char *dst, const char *src, size_t n) {
 	return i;
 }
 
-/* memccmp("foo.bar", "foo.cow, '.') == 0 */
+/* memccmp ("foo.bar", "foo.cow, '.') == 0 */
 // Returns 1 if src and dst are equal up until the first instance of ch in src.
 R_API bool r_str_ccmp(const char *dst, const char *src, int ch) {
 	int i;
@@ -925,6 +935,18 @@ R_API char *r_str_appendf(char *ptr, const char *fmt, ...) {
 R_API char *r_str_appendch(char *x, char y) {
 	char b[2] = { y, 0 };
 	return r_str_append (x, b);
+}
+
+R_API R_MUSTUSE char* r_str_replace_all(char *str, const char *key, const char *val) {
+	char *res = str;
+	while (strstr (str, key)) {
+		res = r_str_replace (str, key, val, true);
+		if (!res) {
+			return str;
+		}
+		str = res;
+	}
+	return res;
 }
 
 R_API R_MUSTUSE char* r_str_replace(char *str, const char *key, const char *val, int g) {
@@ -1998,8 +2020,12 @@ R_API bool r_str_is_printable(const char *str) {
 }
 
 R_API bool r_str_is_printable_limited(const char *str, int size) {
+	int left = size;
+	if (size < 0) {
+		left = strlen (str);
+	}
 	while (size > 0 && *str) {
-		int ulen = r_utf8_decode ((const ut8*)str, strlen (str), NULL);
+		int ulen = r_utf8_decode ((const ut8*)str, left, NULL);
 		if (ulen > 1) {
 			str += ulen;
 			continue;
@@ -2009,6 +2035,7 @@ R_API bool r_str_is_printable_limited(const char *str, int size) {
 		}
 		str++;
 		size--;
+		left -= ulen;
 	}
 	return true;
 }
@@ -3919,7 +3946,7 @@ R_API char *r_str_version(const char *program) {
 			(R_SYS_BITS & 8)? 64: 32,
 			*R2_GITTAP ? R2_GITTAP: "");
 	if (*R2_GITTIP) {
-		s = r_str_appendf (s, "commit: "R2_GITTIP" build: "R2_BIRTH);
+		s = r_str_append (s, "commit: "R2_GITTIP" build: "R2_BIRTH);
 	}
 	return s;
 }

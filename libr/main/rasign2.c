@@ -1,4 +1,6 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, DennisGoodlett */
+/* radare - LGPL - Copyright 2009-2022 - pancake, DennisGoodlett */
+
+#define R_LOG_ORIGIN "rasign2"
 
 #include <r_main.h>
 #include <r_core.h>
@@ -32,7 +34,7 @@ static RCore *opencore(const char *fname) {
 	RIODesc * rfile = NULL;
 	RCore *c = r_core_new ();
 	if (!c) {
-		eprintf ("Count not get core\n");
+		R_LOG_ERROR ("Count not get core");
 		return NULL;
 	}
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
@@ -47,7 +49,7 @@ static RCore *opencore(const char *fname) {
 #endif
 
 		if (!rfile) {
-			eprintf ("Could not open file %s\n", fname);
+			R_LOG_ERROR ("Could not open file %s", fname);
 			r_core_free (c);
 			return NULL;
 		}
@@ -80,7 +82,7 @@ static int inline output(RAnal *anal, struct rasignconf *conf) {
 	}
 	// write sigs to file
 	if (conf->ofile && !r_sign_save (anal, conf->ofile)) {
-		eprintf ("Failed to write file\n");
+		R_LOG_ERROR ("Failed to write file");
 		return -1;
 	}
 	r_cons_flush ();
@@ -111,7 +113,7 @@ static int handle_sdb(const char *fname, struct rasignconf *conf) {
 static int signs_from_file(const char *fname, struct rasignconf *conf) {
 	RCore *core = opencore (fname);
 	if (!core) {
-		eprintf ("Could not get core\n");
+		R_LOG_ERROR ("Could not get core");
 		return -1;
 	}
 	if (conf->quiet) {
@@ -140,13 +142,13 @@ static RList *get_ar_file_uris(const char *fname) {
 	RIO *io = r_io_new ();
 	// core is only used to to list uri's in archive, then it's free'd
 	if (!io) {
-		eprintf ("Failed to alloc io\n");
+		R_LOG_ERROR ("Failed to alloc io");
 		return NULL;
 	}
 
 	char *allfiles = r_str_newf ("arall://%s", fname);
 	if (!allfiles) {
-		eprintf ("Failed to alloc\n");
+		R_LOG_ERROR ("Failed to alloc");
 		r_io_free (io);
 		return NULL;
 	}
@@ -207,13 +209,13 @@ static int handle_archive_files(const char *fname, struct rasignconf *conf) {
 				ret = err;
 			}
 		} else {
-			eprintf ("[!!] skipping %s because it is not a .o file\n", u);
+			R_LOG_WARN ("[!!] skipping %s because it is not a .o file", u);
 		}
 	}
 	r_list_free (uris);
 
 	if (collision) {
-		eprintf ("Computing collisions on sdb file\n");
+		R_LOG_INFO ("Computing collisions on sdb file");
 		RAnal *anal = r_anal_new ();
 		if (anal) {
 			r_sign_load (anal, conf->ofile, true);
@@ -282,13 +284,13 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	}
 
 	if (conf.a_cnt > 2) {
-		eprintf ("Invalid analysis (too many -a's?)\n");
+		R_LOG_ERROR ("Invalid analysis (too many -a's?)");
 		rasign_show_help ();
 		return -1;
 	}
 
 	if (opt.ind >= argc) {
-		eprintf ("must provide a file\n");
+		R_LOG_ERROR ("You must provide a file");
 		rasign_show_help ();
 		return -1;
 	}
@@ -296,36 +298,36 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	const char *ifile = argv[opt.ind];
 	if (conf.flirt) {
 		if (conf.rad || conf.ofile || conf.json) {
-			eprintf ("Only FLIRT output is supported for FLIRT files\n");
+			R_LOG_ERROR ("Only FLIRT output is supported for FLIRT files");
 			return -1;
 		}
 		if (conf.sdb) {
-			eprintf ("Can't use -S with -f\n");
+			R_LOG_ERROR ("Can't use -S with -f");
 			return -1;
 		}
 		return dump_flirt (ifile);
 	} else if (conf.ar) {
 		if (conf.json) {
-			eprintf ("JSON does not work with .a files currently\n");
+			R_LOG_ERROR ("JSON does not work with .a files currently");
 			return -1;
 		}
 		if (conf.collision && conf.rad) {
-			eprintf ("Rasign2 can not currently handle .a files with -c and -r\n");
+			R_LOG_ERROR ("Rasign2 can not currently handle .a files with -c and -r");
 			return -1;
 		}
 		if (conf.sdb) {
-			eprintf ("Can't use -S with -A\n");
+			R_LOG_ERROR ("Can't use -S with -A");
 			return -1;
 		}
 		return handle_archive_files (ifile, &conf);
 	} else if (conf.sdb) {
 		if (conf.a_cnt > 0) {
-			eprintf ("Option -a invalid with -S\n");
+			R_LOG_ERROR ("Option -a invalid with -S");
 			return -1;
 		}
 		if (conf.ofile && !strcmp (conf.ofile, "-")) {
 			if (!conf.collision) {
-				eprintf ("Option '-So -' is only useful with '-c'\n");
+				R_LOG_ERROR ("Option '-So -' is only useful with '-c'");
 				return -1;
 			}
 			conf.ofile = ifile;

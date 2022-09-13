@@ -1,3 +1,29 @@
+NAME=comma html
+FILE=-
+CMDS=<<EOF
+e,key/str/color.op,:html
+EOF
+EXPECT=<<EOF
+<table>
+  <tr>
+    <td></td>
+    <td>bool</td>
+    <td>scr.color.ophex</td>
+    <td>false</td>
+    <td>colorize in hexdump depending on opcode type (px)</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td>bool</td>
+    <td>scr.color.ops</td>
+    <td>true</td>
+    <td>colorize numbers and registers in opcodes</td>
+  </tr>
+</table>
+
+EOF
+RUN
+
 NAME=comma table
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
@@ -42,8 +68,8 @@ cat $a~?
 ,~?
 EOF
 EXPECT=<<EOF
-34
-37
+33
+36
 EOF
 RUN
 

@@ -1232,7 +1232,7 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags) {
 	/*
 	 * Convert the source args to unsigned here so that (1) the
-	 * compare will be unsigned as it is in strncmp() and (2) so
+	 * compare will be unsigned as it is in strncmp and (2) so
 	 * the ctype functions will work correctly without extra
 	 * casting.
 	 */
@@ -1241,7 +1241,7 @@ static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags)
 	ut64 v;
 
 	/*
-	 * What we want here is v = strncmp(s1, s2, len),
+	 * What we want here is v = strncmp (s1, s2, len),
 	 * but ignoring any nulls.
 	 */
 	v = 0;
@@ -1294,7 +1294,7 @@ static ut64 file_strncmp16(const char *a, const char *b, size_t len, ut32 flags)
 	 * At the moment, I am unsure.
 	 */
 	flags = 0;
-	return file_strncmp(a, b, len, flags);
+	return file_strncmp (a, b, len, flags);
 }
 
 static int magiccheck(RMagic *ms, struct r_magic *m) {

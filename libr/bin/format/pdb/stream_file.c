@@ -47,9 +47,9 @@ static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx, i
 void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res) {
 	size_t pn_start, off_start, pn_end, off_end;
 	if (size == -1) {
-		char *pdata = (char *) malloc(stream_file->pages_amount * stream_file->page_size);
+		char *pdata = (char *) calloc(stream_file->pages_amount, stream_file->page_size);
 		if (pdata) {
-			GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
+			GET_PAGE (pn_start, off_start, stream_file->pos, stream_file->page_size);
 			(void)off_end; // hack to remove unused warning
 			stream_file_read_pages (stream_file, 0, stream_file->pages_amount, pdata);
 			stream_file->pos = stream_file->end;

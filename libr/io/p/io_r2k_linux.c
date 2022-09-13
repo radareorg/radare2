@@ -679,7 +679,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			ut64 nextstart;
 			ut64 buffsize;
 			bool fflag = 0;
-			struct r2k_proc_info proc_data;
+			struct r2k_proc_info proc_data = {0};
 
 			if (*(buf + 1) == '*') {
 				fflag = 1;

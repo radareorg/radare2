@@ -5,8 +5,8 @@ pf?cat_sat_on_keyboard
 pf?CAT_SAT_ON_KEYBOARD
 EOF
 EXPECT_ERR=<<EOF
-Struct cat_sat_on_keyboard is not defined
-Struct CAT_SAT_ON_KEYBOARD is not defined
+ERROR: Struct cat_sat_on_keyboard is not defined
+ERROR: Struct CAT_SAT_ON_KEYBOARD is not defined
 EOF
 RUN
 
@@ -16,11 +16,10 @@ CMDS=<<EOF
 pf?cat_sat_on_keyboard
 pf?CAT_SAT_ON_KEYBOARD
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-Struct cat_sat_on_keyboard is not defined
-Struct CAT_SAT_ON_KEYBOARD is not defined
+ERROR: Struct cat_sat_on_keyboard is not defined
+ERROR: Struct CAT_SAT_ON_KEYBOARD is not defined
 EOF
 RUN
 

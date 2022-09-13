@@ -43,9 +43,9 @@ op
 opp
 EOF
 EXPECT_ERR=<<EOF
-Cannot find file
-Cannot find file
-Cannot find file
+ERROR: Cannot find file
+ERROR: Cannot find file
+ERROR: Cannot find file
 EOF
 EXPECT=<<EOF
 3

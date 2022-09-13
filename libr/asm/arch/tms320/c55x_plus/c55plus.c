@@ -45,6 +45,6 @@ int c55x_plus_disassemble(tms320_dasm_t *dasm, const ut8 *buf, int len) {
 	}
 	snprintf (dasm->syntax, sizeof (dasm->syntax), "%s", ins_decoded);
 	free (ins_decoded);
-	
+
 	return next_ins_pos;
 }

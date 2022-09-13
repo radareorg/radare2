@@ -28,10 +28,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (handle == 0) {
 		return -1;
 	}
-
 	op->size = 8;
 	op->addr = addr;
-
 	cs_insn *insn = NULL;
 	int n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
@@ -483,10 +481,10 @@ void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
 				"8,0xff,16,%s,>>,&,<<,tmp,|=,"
 				"0xff,24,%s,>>,&,tmp,|=,tmp,%s,=",
 				r0, r0, r0, r0, r0, r0);
-		
+
 		break;
 	}
-	case BPF_INS_BE64:	
+	case BPF_INS_BE64:
 	{
 		const char *r0 = REG (0);
 		esilprintf (op,

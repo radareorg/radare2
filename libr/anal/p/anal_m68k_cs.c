@@ -253,12 +253,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (handle == 0) {
 		return -1;
 	}
-	
+
 	int n, opsize = -1;
 	cs_insn* insn = NULL;
 	cs_m68k *m68k;
 	cs_detail *detail;
-	
+
 	op->size = 4;
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	int on = n;

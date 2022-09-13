@@ -164,7 +164,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	root->p = p;
 	root->iob = fs->iob;
 	root->cob = fs->cob;
-	if (!p->mount (root)) {
+	if (p->mount && !p->mount (root)) {
 		free (str);
 		free (heapFsType);
 		r_fs_root_free (root);
@@ -305,7 +305,7 @@ R_API RList* r_fs_dir(RFS* fs, const char* p) {
 	r_str_trim_path (path);
 	RList *roots = r_fs_root (fs, path);
 	r_list_foreach (roots, iter, root) {
-		if (root) {
+		if (root && root->p && root->p->dir) {
 			const char *dir = r_str_nlen (root->path, 2) == 1
 				? path: path + strlen (root->path);
 			if (!*dir) {
@@ -375,15 +375,13 @@ R_API bool r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 static void r_fs_find_off_aux(RFS* fs, const char* name, ut64 offset, RList* list) {
 	RListIter* iter;
 	RFSFile* item, * file;
-	char* found = NULL;
-
 	RList* dirs = r_fs_dir (fs, name);
 	r_list_foreach (dirs, iter, item) {
 		if (!strcmp (item->name, ".") || !strcmp (item->name, "..")) {
 			continue;
 		}
 
-		found = (char*) malloc (strlen (name) + strlen (item->name) + 2);
+		char *found = (char*) malloc (strlen (name) + strlen (item->name) + 2);
 		if (!found) {
 			break;
 		}

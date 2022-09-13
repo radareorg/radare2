@@ -244,7 +244,7 @@ enum __socket_type
                                    other similar things on the user level. */
 #define SOCK_PACKET SOCK_PACKET
 };
-	
+
 /* Protocol families.  */
 #define PF_UNSPEC       0       /* Unspecified.  */
 #define PF_LOCAL        1       /* Local to host (pipes and file-domain).  */
@@ -550,7 +550,7 @@ struct cmsghdr
 #define LOCK_WRITE      128     /* ... Which allows concurrent write operations */
 #define LOCK_RW         192     /* ... Which allows concurrent read & write ops */
 
-		
+
 /**************** from ptrace.h *********/
 
 

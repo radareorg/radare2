@@ -74,7 +74,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 #endif
 		if (fdd->fd < 0) {
 			free (fdd);
-			eprintf ("Invalid filedescriptor.\n");
+			R_LOG_ERROR ("Invalid filedescriptor");
 			return NULL;
 		}
 	}

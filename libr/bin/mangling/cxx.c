@@ -21,6 +21,9 @@ R_API char *r_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 	char *tmpstr = strdup (str);
 	char *p = tmpstr;
 
+	if (p[0] == 0) {
+		return p;
+	}
 	if (p[0] == p[1] && *p == '_') {
 		p++;
 	}

@@ -330,12 +330,12 @@ static void rcc_element(REgg *egg, char *str) {
 		switch (egg->lang.mode) {
 		case LANG_MODE_ALIAS:
 			if (!egg->lang.dstvar) {
-				eprintf ("does not set name or content for alias\n");
+				R_LOG_ERROR ("does not set name or content for alias");
 				break;
 			}
 			e->equ (egg, egg->lang.dstvar, str);
 			if (egg->lang.nalias > 255) {
-				eprintf ("global-buffer-overflow in aliases\n");
+				R_LOG_ERROR ("global-buffer-overflow in aliases");
 				break;
 			}
 			for (i = 0; i < egg->lang.nalias; i++) {
@@ -354,11 +354,11 @@ static void rcc_element(REgg *egg, char *str) {
 			break;
 		case LANG_MODE_SYSCALL:
 			if (!egg->lang.dstvar) {
-				eprintf ("does not set name or arg for syscall\n");
+				R_LOG_ERROR ("does not set name or arg for syscall");
 				break;
 			}
 			if (egg->lang.nsyscalls > 255) {
-				eprintf ("global-buffer-overflow in syscalls\n");
+				R_LOG_ERROR ("global-buffer-overflow in syscalls");
 				break;
 			}
 			{
@@ -394,11 +394,11 @@ static void rcc_element(REgg *egg, char *str) {
 					if ((p = strchr (ptr, '"'))) {
 						*p = '\x00';
 					} else {
-						eprintf ("loss back quote in include directory\n");
+						R_LOG_ERROR ("loss back quote in include directory");
 					}
 					egg->lang.includedir = strdup (ptr);
 				} else {
-					eprintf ("wrong include syntax\n");
+					R_LOG_ERROR ("wrong include syntax");
 					// for must use string to symbolize directory
 					egg->lang.includedir = NULL;
 				}
@@ -456,7 +456,7 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 				case 'x':
 					ch = r_hex_pair2bin (str + i + 2);
 					if (ch == -1) {
-						eprintf ("%s:%d Error string format\n",
+						R_LOG_ERROR ("%s:%d Error string format",
 							egg->lang.file, egg->lang.line);
 					}
 					str[i] = (char) ch;
@@ -538,9 +538,9 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 							return strdup (r_str_get (egg->lang.syscalls[i].arg));
 						}
 					}
-					eprintf ("Unknown arg for syscall '%s'\n", r_str_get (egg->lang.callname));
+					R_LOG_ERROR ("Unknown arg for syscall '%s'", r_str_get (egg->lang.callname));
 				} else {
-					eprintf ("NO CALLNAME '%s'\n", r_str_get (egg->lang.callname));
+					R_LOG_WARN ("No CallName '%s'", r_str_get (egg->lang.callname));
 				}
 			}
 		} else if (!strncmp (str + 1, "reg", 3)) {
@@ -552,7 +552,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 			}
 		} else {
 			out = str;	/* TODO: show error, invalid var name? */
-			eprintf ("Something is really wrong\n");
+			R_LOG_ERROR ("Something is really wrong in here");
 		}
 		ret = strdup (out);
 		free (oldstr);
@@ -909,7 +909,7 @@ static int parseinlinechar(REgg *egg, char c) {
 				R_FREE (egg->lang.dstval);
 				return 1;
 			}
-			eprintf ("Parse error\n");
+			R_LOG_ERROR ("Cannot parse expression");
 		}
 	}
 	if (egg->lang.dstval) {
@@ -1129,7 +1129,7 @@ static void rcc_next(REgg *egg) {
 						p = q;
 					}
 					if (egg->lang.varxs == '*' || egg->lang.varxs == '&') {
-						eprintf ("not support for *ptr in egg->lang.dstvar\n");
+						R_LOG_ERROR ("not support for *ptr in egg->lang.dstvar");
 					}
 					// XXX: Not support for pointer
 					type = ' ';
@@ -1242,7 +1242,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 	}
 	if (egg->lang.slurp) {
 		if (egg->lang.slurp != '"' && c == egg->lang.slurpin) {	// only happend when (...(...)...)
-			eprintf ("%s:%d Nesting of expressions not yet supported\n",
+			R_LOG_ERROR ("%s:%d Nesting of expressions not yet supported",
 					egg->lang.file, egg->lang.line);
 			return -1;
 		}
@@ -1274,7 +1274,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 		case '{':
 			if (CTX > 0) {
 				if (CTX > 31 || CTX < 0) {
-					eprintf ("Sinking before overflow\n");
+					R_LOG_ERROR ("Sinking before overflow");
 					CTX = 0;
 					break;
 				}

@@ -17,7 +17,7 @@ R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 			eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", val, at + off);
 			return true;
 		}
-		eprintf ("Invalid kind of type\n");
+		R_LOG_ERROR ("Invalid kind of type");
 	}
 	return false;
 }
@@ -597,7 +597,7 @@ R_API const char *r_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_nam
 #define MIN_MATCH_LEN 4
 
 static inline bool is_function(const char *name) {
-	return name && !strcmp("func", name);
+	return name && !strcmp ("func", name);
 }
 
 static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {

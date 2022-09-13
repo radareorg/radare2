@@ -15,13 +15,13 @@ R_IPI RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
 
 static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
 	ut8 bhdr[BFLT_HDR_SIZE] = {0};
-	
+
 	int len = r_buf_read_at (bin->b, 0, bhdr, BFLT_HDR_SIZE);
 	if (len < 1) {
 		R_LOG_WARN ("read bFLT hdr failed");
 		goto fail;
 	}
-	
+
 	if (strncmp ((const char *)bhdr, "bFLT", 4)) {
 		R_LOG_WARN ("wrong magic number in bFLT file");
 		goto fail;
@@ -31,7 +31,7 @@ static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
 		R_LOG_WARN ("couldn't allocate memory");
 		goto fail;
 	}
-	
+
 	int i = 4;
 	p_hdr->rev = READ (bhdr, i);
 	p_hdr->entry = READ (bhdr, i);

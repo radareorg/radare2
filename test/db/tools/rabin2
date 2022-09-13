@@ -76,10 +76,9 @@ RUN
 NAME=rabin -k file
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -k ${R2_FILE}
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-Missing file.
+[31mERROR: [0mMissing file
 EOF
 RUN
 
@@ -836,7 +835,7 @@ machine  x86 64 all
 nx       false
 os       darwin
 pic      true
-relocs   false
+relocs   true
 sanitize false
 static   false
 stripped false
@@ -914,7 +913,7 @@ NAME=rabin2 -D Unsupported
 FILE=--
 CMDS=!rabin2 -D XXX LOLILOL
 EXPECT_ERR=<<EOF
-Unsupported demangler
+[31mERROR: [0mUnsupported demangler
 EOF
 RUN
 
@@ -954,7 +953,7 @@ NAME=rabin2 -O bad op
 FILE=-
 CMDS=!rabin2 -O bad_op -
 EXPECT_ERR=<<EOF
-Unknown operation. use -O help
+[31mERROR: [0mUnknown operation. use -O help
 EOF
 RUN
 
@@ -1231,6 +1230,6 @@ NAME=rabin2 -S ""
 FILE=-
 CMDS=!rabin2 -S ""
 EXPECT_ERR=<<EOF
-Cannot open empty path
+[31mERROR: [0mCannot open empty path
 EOF
 RUN

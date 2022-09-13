@@ -446,7 +446,7 @@ static ut64 numvar_instruction_backward(RCore *core, const char *input) {
 		n = atoi (input + 1);
 	}
 	if (n < 1) {
-		eprintf ("Invalid negative value\n");
+		R_LOG_ERROR ("Invalid negative value");
 		n = 1;
 	}
 	int numinstr = n;
@@ -495,7 +495,7 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 		n = atoi (input + 1);
 	}
 	if (n < 1) {
-		eprintf ("Invalid negative value\n");
+		R_LOG_ERROR ("Invalid negative value");
 		n = 1;
 	}
 	for (i = 0; i < n; i++) {
@@ -511,7 +511,7 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 		//val += ret;
 	}
 	return val;
-	
+
 }
 
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
@@ -606,7 +606,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 1:
 			return r_read_ble8 (buf);
 		default:
-			r_cons_eprintf ("Invalid reference size: %d (%s)\n", refsz, str);
+			R_LOG_ERROR ("Invalid reference size: %d (%s)", refsz, str);
 			return 0LL;
 		}
 }
@@ -644,7 +644,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return r_debug_reg_get (core->dbg, str + 2);
 		case 'k': // $k{kv}
 			if (str[2] != '{') {
-				r_cons_eprintf ("Expected '{' after 'k'.\n");
+				R_LOG_ERROR ("Expected '{' after 'k'");
 				break;
 			}
 			bptr = strdup (str + 3);
@@ -659,7 +659,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			out = sdb_querys (core->sdb, NULL, 0, bptr);
 			if (out && *out) {
 				if (strstr (out, "$k{")) {
-					r_cons_eprintf ("Recursivity is not permitted here\n");
+					R_LOG_ERROR ("Recursivity is not permitted here");
 				} else {
 					ret = r_num_math (core->num, out);
 				}
@@ -863,7 +863,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 			return 0;
 		default:
-			r_cons_eprintf ("Invalid variable '%s'\n", str);
+			R_LOG_ERROR ("Invalid variable '%s'", str);
 			return 0;
 		}
 		break;
@@ -1150,13 +1150,12 @@ static void autocomplete_mount_point(RLineCompletion *completion, RCore *core, c
 
 static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const char *str, const char *path) {
 	r_return_if_fail (completion && core && str && path);
-	char *lpath = NULL, *dirname = NULL , *basename = NULL;
-	char *p = NULL;
-	char *pwd = (core->rfs && core->rfs->cwd && *(core->rfs->cwd)) ? *(core->rfs->cwd): ".";
+	char *dirname = NULL , *basename = NULL;
+	char *pwd = strdup (core->rfs->cwd? (const char *)core->rfs->cwd: ".");
 	int n = 0;
 	RFSFile *file;
-	lpath = r_str_new (path);
-	p = (char *)r_str_last (lpath, R_SYS_DIR);
+	char *lpath = r_str_new (path);
+	char *p = (char *)r_str_last (lpath, R_SYS_DIR);
 	if (p) {
 		*p = 0;
 		if (p == lpath) { // /xxx
@@ -1181,13 +1180,14 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
     		}
 		basename = r_str_new (lpath);
 	}
+	R_FREE (pwd);
 
 	if (!dirname || !basename) {
 		goto out;
 	}
 	RList *list = r_fs_dir (core->fs, dirname);
 	n = strlen (basename);
-	bool chgdir = !strncmp (str, "cd ", 3);
+	bool chgdir = r_str_startswith (str, "cd ");
 	if (list) {
 		RListIter *iter;
 		r_list_foreach (list, iter, file) {
@@ -1729,29 +1729,23 @@ static void autocomplete_macro(RCore *core, RLineCompletion *completion, const c
 static void autocomplete_file(RLineCompletion *completion, const char *str) {
 	r_return_if_fail (completion && str);
 	char *pipe = strchr (str, '>');
-
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
 	}
-	if (str && !*str) {
-		autocomplete_process_path (completion, str, "./");
-	} else {
-		autocomplete_process_path (completion, str, str);
-	}
+	const char *arg = (str && !*str)? "./": str;
+	autocomplete_process_path (completion, str, arg);
 }
 
 static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const char *str) {
 	r_return_if_fail (str);
 	char *pipe = strchr (str, '>');
-	char *path = (core->rfs && core->rfs->cwd && *(core->rfs->cwd)) ? *(core->rfs->cwd): "/";
+	char *path = strdup ((core->rfs->cwd && *core->rfs->cwd) ? (const char *)core->rfs->cwd: "/");
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
 	}
-	if (str && !*str) {
-		autocomplete_ms_path (completion, core, str, path);
-	} else {
-		autocomplete_ms_path (completion, core, str, str);
-	}
+	const char *arg = (str && !*str)? path: str;
+	autocomplete_ms_path (completion, core, str, arg);
+	free (path);
 }
 
 static void autocomplete_charsets(RCore *core, RLineCompletion *completion, const char *str) {
@@ -1935,7 +1929,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 	}
 	if (r_config_get_b (core->config, "scr.prompt.tabhelp")) {
 		if (buf->data[0] != '$' // handle aliases below
-				&& strncmp(buf->data, "#!", 2) // rlang help fails
+				&& strncmp (buf->data, "#!", 2) // rlang help fails
 				&& !strchr (buf->data, ' ')) {
 			r_line_completion_clear (completion);
 			char *s = r_core_cmd_strf (core, "%s?", buf->data);
@@ -2540,7 +2534,7 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 			case 2:
 				r = r_utf8_encode_str ((const RRune *)buf, widebuf, sizeof (widebuf) - 1);
 				if (r == -1) {
-					r_cons_eprintf ("Something was wrong with refs\n");
+					R_LOG_ERROR ("Something was wrong with refs");
 				} else {
 					if (pj) {
 						pj_ks (pj, "string", (const char *)widebuf);
@@ -2747,7 +2741,7 @@ static void __init_autocomplete_default(RCore* core) {
 	const char *files[] = {
 		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala", "v.",
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
-		"idp", "idpi", "L", "obf", "o+", "oc", "r2", "rabin2", "rasm2", "rahash2", "rax2",
+		"idp", "idpi", "L", "obf", "o+", "oc", "of", "r2", "rabin2", "rasm2", "rahash2", "rax2",
 		"rafind2", "cd", "ls", "on", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "dd", "dd+",
 		"vi", "vim", "nvi", "neovim", "nvim", "nano",
@@ -2992,6 +2986,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	core->chan = NULL;
 	r_core_setenv (core);
+	core->rfs = r_fs_shell_new ();
 	core->ev = r_event_new (core);
 	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler, NULL);
 	core->max_cmd_depth = R_CONS_CMD_DEPTH + 1;
@@ -3014,6 +3009,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->offsize = r_core_print_offsize;
 	core->print->cb_printf = r_cons_printf;
 #if __WINDOWS__
+	// XXX R2_580 deprecate this callback? we have the rlog apis
 	core->print->cb_eprintf = win_eprintf;
 #endif
 	core->print->cb_color = r_cons_rainbow_get;
@@ -3314,6 +3310,7 @@ R_API void r_core_fini(RCore *c) {
 	sdb_free (c->sdb);
 	r_core_log_free (c->log);
 	r_parse_free (c->parser);
+	r_fs_shell_free (c->rfs);
 	free (c->times);
 }
 

@@ -41,6 +41,8 @@ static const struct {
 	{ "fletcher32", R_HASH_FLETCHER32 },
 	{ "fletcher64", R_HASH_FLETCHER64 },
 
+	{ "sip", R_HASH_SIP },
+
 	{ "crc8smbus", R_HASH_CRC8_SMBUS },
 #if R_HAVE_CRC8_EXTRA
 	{ /* CRC-8/CDMA2000     */ "crc8cdma2000", R_HASH_CRC8_CDMA2000 },
@@ -278,6 +280,7 @@ R_API int r_hash_size(ut64 algo) {
 	ALGOBIT (CRC32_XFER);
 #endif /* #if R_HAVE_CRC32_EXTRA */
 
+	ALGOBIT (SIP);
 #if R_HAVE_CRC64
 	ALGOBIT (CRC64);
 #endif /* #if R_HAVE_CRC64 */
@@ -354,7 +357,7 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, R_NULLABLE RHashSee
 	free (buf);
 }
 
-R_API char *r_hash_to_string(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
+R_API R_MUSTUSE char *r_hash_to_string(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
 	r_return_val_if_fail (name && len >= 0, NULL);
 	ut64 algo = r_hash_name_to_bits (name);
 	char *digest_hex = NULL;

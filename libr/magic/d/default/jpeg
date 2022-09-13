@@ -41,85 +41,85 @@
 #  # is possible. And both endians are possible...
 #  # The combinations included below are from real-world JPEGs.
 #  # Little-endian
-#  >>12	string		II		
+#  >>12	string		II
 #  # IFD 0 Entry #5:
 #  >>>70	leshort		0x8769
 #  # EXIF IFD Entry #1:
-#  >>>>(78.l+14)	leshort	0x9000		
+#  >>>>(78.l+14)	leshort	0x9000
 #  >>>>>(78.l+23)	byte	x		%c
 #  >>>>>(78.l+24)	byte	x		\b.%c
 #  >>>>>(78.l+25)	byte	!0x30		\b%c
 #  # IFD 0 Entry #9:
 #  >>>118	leshort		0x8769
 #  # EXIF IFD Entry #3:
-#  >>>>(126.l+38)	leshort	0x9000		
+#  >>>>(126.l+38)	leshort	0x9000
 #  >>>>>(126.l+47)	byte	x		%c
 #  >>>>>(126.l+48)	byte	x		\b.%c
 #  >>>>>(126.l+49)	byte	!0x30		\b%c
 #  # IFD 0 Entry #10
 #  >>>130	leshort		0x8769
 #  # EXIF IFD Entry #3:
-#  >>>>(138.l+38)	leshort	0x9000		
+#  >>>>(138.l+38)	leshort	0x9000
 #  >>>>>(138.l+47)	byte	x		%c
 #  >>>>>(138.l+48)	byte	x		\b.%c
 #  >>>>>(138.l+49)	byte	!0x30		\b%c
 #  # EXIF IFD Entry #4:
-#  >>>>(138.l+50)	leshort	0x9000		
+#  >>>>(138.l+50)	leshort	0x9000
 #  >>>>>(138.l+59)	byte	x		%c
 #  >>>>>(138.l+60)	byte	x		\b.%c
 #  >>>>>(138.l+61)	byte	!0x30		\b%c
 #  # EXIF IFD Entry #5:
-#  >>>>(138.l+62)	leshort	0x9000		
+#  >>>>(138.l+62)	leshort	0x9000
 #  >>>>>(138.l+71)	byte	x		%c
 #  >>>>>(138.l+72)	byte	x		\b.%c
 #  >>>>>(138.l+73)	byte	!0x30		\b%c
 #  # IFD 0 Entry #11
 #  >>>142	leshort		0x8769
 #  # EXIF IFD Entry #3:
-#  >>>>(150.l+38)	leshort	0x9000		
+#  >>>>(150.l+38)	leshort	0x9000
 #  >>>>>(150.l+47)	byte	x		%c
 #  >>>>>(150.l+48)	byte	x		\b.%c
 #  >>>>>(150.l+49)	byte	!0x30		\b%c
 #  # EXIF IFD Entry #4:
-#  >>>>(150.l+50)	leshort	0x9000		
+#  >>>>(150.l+50)	leshort	0x9000
 #  >>>>>(150.l+59)	byte	x		%c
 #  >>>>>(150.l+60)	byte	x		\b.%c
 #  >>>>>(150.l+61)	byte	!0x30		\b%c
 #  # EXIF IFD Entry #5:
-#  >>>>(150.l+62)	leshort	0x9000		
+#  >>>>(150.l+62)	leshort	0x9000
 #  >>>>>(150.l+71)	byte	x		%c
 #  >>>>>(150.l+72)	byte	x		\b.%c
 #  >>>>>(150.l+73)	byte	!0x30		\b%c
 #  # Big-endian
-#  >>12	string		MM		
+#  >>12	string		MM
 #  # IFD 0 Entry #9:
 #  >>>118	beshort		0x8769
 #  # EXIF IFD Entry #1:
-#  >>>>(126.L+14)	beshort	0x9000		
+#  >>>>(126.L+14)	beshort	0x9000
 #  >>>>>(126.L+23)	byte	x		%c
 #  >>>>>(126.L+24)	byte	x		\b.%c
 #  >>>>>(126.L+25)	byte	!0x30		\b%c
 #  # EXIF IFD Entry #3:
-#  >>>>(126.L+38)	beshort	0x9000		
+#  >>>>(126.L+38)	beshort	0x9000
 #  >>>>>(126.L+47)	byte	x		%c
 #  >>>>>(126.L+48)	byte	x		\b.%c
 #  >>>>>(126.L+49)	byte	!0x30		\b%c
 #  # IFD 0 Entry #10
 #  >>>130	beshort		0x8769
 #  # EXIF IFD Entry #3:
-#  >>>>(138.L+38)	beshort	0x9000		
+#  >>>>(138.L+38)	beshort	0x9000
 #  >>>>>(138.L+47)	byte	x		%c
 #  >>>>>(138.L+48)	byte	x		\b.%c
 #  >>>>>(138.L+49)	byte	!0x30		\b%c
 #  # EXIF IFD Entry #5:
-#  >>>>(138.L+62)	beshort	0x9000		
+#  >>>>(138.L+62)	beshort	0x9000
 #  >>>>>(138.L+71)	byte	x		%c
 #  >>>>>(138.L+72)	byte	x		\b.%c
 #  >>>>>(138.L+73)	byte	!0x30		\b%c
 #  # IFD 0 Entry #11
 #  >>>142	beshort		0x8769
 #  # EXIF IFD Entry #4:
-#  >>>>(150.L+50)	beshort	0x9000		
+#  >>>>(150.L+50)	beshort	0x9000
 #  >>>>>(150.L+59)	byte	x		%c
 #  >>>>>(150.L+60)	byte	x		\b.%c
 #  >>>>>(150.L+61)	byte	!0x30		\b%c

@@ -301,7 +301,7 @@ continue_error:
 	}
 	return ct;
 out_error:
-	FREE_ROP;	
+	FREE_ROP;
 	r_list_free (constants);
 	return NULL;
 }
@@ -514,7 +514,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 				}
 			}
 		}
-continue_error:	
+continue_error:
 		FREE_ROP;
 	}
 	free (op_result);
@@ -522,7 +522,7 @@ continue_error:
 	return arithmetic;
 out_error:
 	FREE_ROP;
-	free (op_result);	
+	free (op_result);
 	free (op_result_r);
 	return NULL;
 }

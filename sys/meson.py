@@ -168,6 +168,8 @@ def build(args):
         options.append('-Duse_webui=true')
     if args.local:
         options.append('-Dlocal=true')
+    if args.fuzz:
+        options.append('-Denable_libfuzzer=true')
     if not os.path.exists(r2_builddir):
         meson('setup', builddir=r2_builddir, prefix=args.prefix, backend=args.backend,
               release=args.release, shared=args.shared, options=options)
@@ -198,6 +200,8 @@ def main():
     parser.add_argument('--sanitize', nargs='?',
             const='address,undefined,signed-integer-overflow', metavar='sanitizers',
             help='Build radare2 with sanitizer support (default: %(const)s)')
+    parser.add_argument('--fuzz', action='store_true',
+            help='Build radare2 with libFuzzer support')
     parser.add_argument('--project', action='store_true',
             help='Create a visual studio project and do not build.')
     parser.add_argument('--release', action='store_true',
@@ -237,15 +241,18 @@ def main():
         if os.uname().sysname == 'OpenBSD':
             log.error("Sanitizers unsupported under OpenBSD")
             sys.exit(1)
+        sanitizers = args.sanitize
+        if args.fuzz and 'fuzzer' not in sanitizers:
+            sanitizers = "fuzzer," + sanitizers
         cflags = os.environ.get('CFLAGS')
         if not cflags:
             cflags = ''
-        os.environ['CFLAGS'] = cflags + ' -fsanitize=' + args.sanitize
+        os.environ['CFLAGS'] = cflags + ' -fsanitize=' + sanitizers
         if os.uname().sysname != 'Darwin':
           ldflags = os.environ.get('LDFLAGS')
           if not ldflags:
               ldflags = ''
-          os.environ['LDFLAGS'] = ldflags + ' -fsanitize=' + args.sanitize
+          os.environ['LDFLAGS'] = ldflags + ' -fsanitize=' + sanitizers 
 
     # Check arguments
     if args.pull:

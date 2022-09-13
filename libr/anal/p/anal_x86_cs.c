@@ -688,23 +688,23 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	case X86_INS_STOSB:
 		if (bits < 32) {
-			r_strbuf_appendf (&op->esil, "al,di,=[1],df,?{,1,di,-=,},df,!,?{,1,di,+=,}");
+			r_strbuf_append (&op->esil, "al,di,=[1],df,?{,1,di,-=,},df,!,?{,1,di,+=,}");
 		} else {
-			r_strbuf_appendf (&op->esil, "al,edi,=[1],df,?{,1,edi,-=,},df,!,?{,1,edi,+=,}");
+			r_strbuf_append (&op->esil, "al,edi,=[1],df,?{,1,edi,-=,},df,!,?{,1,edi,+=,}");
 		}
 		break;
 	case X86_INS_STOSW:
 		if (bits < 32) {
-			r_strbuf_appendf (&op->esil, "ax,di,=[2],df,?{,2,di,-=,},df,!,?{,2,di,+=,}");
+			r_strbuf_append (&op->esil, "ax,di,=[2],df,?{,2,di,-=,},df,!,?{,2,di,+=,}");
 		} else {
-			r_strbuf_appendf (&op->esil, "ax,edi,=[2],df,?{,2,edi,-=,},df,!,?{,2,edi,+=,}");
+			r_strbuf_append (&op->esil, "ax,edi,=[2],df,?{,2,edi,-=,},df,!,?{,2,edi,+=,}");
 		}
 		break;
 	case X86_INS_STOSD:
-			r_strbuf_appendf (&op->esil, "eax,edi,=[4],df,?{,4,edi,-=,},df,!,?{,4,edi,+=,}");
+			r_strbuf_append (&op->esil, "eax,edi,=[4],df,?{,4,edi,-=,},df,!,?{,4,edi,+=,}");
 		break;
 	case X86_INS_STOSQ:
-			r_strbuf_appendf (&op->esil, "rax,rdi,=[8],df,?{,8,edi,-=,},df,!,?{,8,edi,+=,}");
+			r_strbuf_append (&op->esil, "rax,rdi,=[8],df,?{,8,edi,-=,},df,!,?{,8,edi,+=,}");
 		break;
 	case X86_INS_LODSB:
 			r_strbuf_appendf (&op->esil, "%s,[1],al,=,df,?{,1,%s,-=,},df,!,?{,1,%s,+=,}", si, si, si);
@@ -713,13 +713,13 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			r_strbuf_appendf (&op->esil, "%s,[2],ax,=,df,?{,2,%s,-=,},df,!,?{,2,%s,+=,}", si, si, si);
 		break;
 	case X86_INS_LODSD:
-		r_strbuf_appendf (&op->esil, "esi,[4],eax,=,df,?{,4,esi,-=,},df,!,?{,4,esi,+=,}");
+		r_strbuf_append (&op->esil, "esi,[4],eax,=,df,?{,4,esi,-=,},df,!,?{,4,esi,+=,}");
 		break;
 	case X86_INS_LODSQ:
-		r_strbuf_appendf (&op->esil, "rsi,[8],rax,=,df,?{,8,rsi,-=,},df,!,?{,8,rsi,+=,}");
+		r_strbuf_append (&op->esil, "rsi,[8],rax,=,df,?{,8,rsi,-=,},df,!,?{,8,rsi,+=,}");
 		break;
 	case X86_INS_PEXTRB:
-		r_strbuf_appendf (&op->esil, "TODO");
+		r_strbuf_append (&op->esil, "TODO");
 		break;
 	// string mov
 	// PS: MOVSD can correspond to one of the two instruction (yes, intel x86
@@ -731,7 +731,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	// https://mudongliang.github.io/x86/html/file_module_x86_id_204.html
 	case X86_INS_MOVSD:
 		// Handle "Move Scalar Double-Precision Floating-Point Value"
-		if (is_xmm_reg (INSOP(0)) || is_xmm_reg (INSOP(1))) {
+		if (is_xmm_reg (INSOP (0)) || is_xmm_reg (INSOP (1))) {
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
 			if (src && dst) {
@@ -837,7 +837,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					} else {
 						esilprintf (op, "%s,%s,=", src, dst);
 					}
-				}				
+				}
 			}
 			break;
 		}
@@ -999,7 +999,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				"%s,%d,-,%s,<<,%s,%s,>>,|,1,%d,1,<<,-,&,%s,$z,zf,:=,$p,pf,:=,%d,$s,sf,:=,}",
 				shft, shft, dst_r, shft, src, bitsize-1, dst_r,
 				shft, bitsize, src, shft, dst_r, bitsize, dst_w, bitsize-1);
-			
+
 		}
 		break;
 	case X86_INS_PSLLDQ:
@@ -1550,37 +1550,24 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		{
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
-			int bits = INSOP (0).size * 8;
 
-			/*
-			 * Here we first set ZF depending on the source operand
-			 * (and bail out if it's 0), then test each bit in a loop
-			 * by creating a mask on the stack and applying it, returning
-			 * result if bit is set.
-			 */
-			esilprintf (op, "%s,!,?{,1,zf,=,0,%s,=,BREAK,},0,zf,=,1,"
-					"DUP,1,<<,%s,&,?{,1,+,%s,=,BREAK,},"
-					"DUP,0,<,?{,1,+,DUP,%d,>,${,15,GOTO,},}",
-					src, dst,
-					dst, dst, bits);
+			esilprintf (op, "21,GOTO,"
+					"0x%"PFMT64x",%s,:=,DUP,%s,++,%s,:=,%s,1,<<,&,!,?{,5,GOTO,},"
+					"POP,BREAK,%s,!,zf,:=,zf,!,?{,%s,2,GOTO,}",
+					UT64_MAX, dst, dst, dst, dst, src, src);
 		}
 		break;
 	case X86_INS_BSR:
 		{
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
-			int bits = INSOP (0).size * 8;
+			const ut32 bits = INSOP (0).size * 8;
 
-			/*
-			 * Similar to BSF, except we naturally don't
-			 * need to subtract anything to create
-			 * a mask and return the result.
-			 */
-			esilprintf (op, "%s,!,?{,1,zf,=,0,%s,=,BREAK,},0,zf,=,1,"
-					"DUP,1,<<,%s,&,?{,1,+,%s,=,BREAK,},"
-					"DUP,0,<,?{,1,+,DUP,%d,>,${,15,GOTO,},}",
-					src, dst,
-					dst, dst, bits);
+			//we might need to unfold the loop for better analysis
+			esilprintf (op, "21,GOTO,"	// src can be a mem reference
+					"%d,%s,:=,DUP,%s,--,%s,:=,%s,1,<<,&,!,?{,5,GOTO,},"
+					"POP,BREAK,%s,!,zf,:=,zf,!,?{,%s,2,GOTO,}",
+					bits, dst, dst, dst, dst, src, src);
 		}
 		break;
 	case X86_INS_BSWAP:
@@ -2142,11 +2129,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		case X86_INS_CVTSS2SI:
 		case X86_INS_CVTPS2PI:
 			esilprintf (op, "32,%s,F2D,D2I,%s", src, dst);
-			break;	
+			break;
 		case X86_INS_CVTSD2SI:
 		case X86_INS_CVTPD2PI:
 			esilprintf (op, "%s,D2I,%s", src, dst);
-			break;	
+			break;
 		case X86_INS_CVTSD2SS:
 		case X86_INS_CVTPD2PS:
 			esilprintf (op, "32,%s,D2F,%s", src, dst);
@@ -3597,7 +3584,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		return -1;
 	}
 	int mode = cs_omode;
-	
+
 	cs_insn *insn = NULL;
 	int n;
 
@@ -3722,7 +3709,7 @@ static int x86_int_0x80(RAnalEsil *esil, int interrupt) {
 			return true;
 		}
 	}
-	eprintf ("syscall %d not implemented yet\n", syscall);
+	R_LOG_ERROR ("syscall %d not implemented yet", syscall);
 	return false;
 }
 #endif
@@ -3730,7 +3717,7 @@ static int x86_int_0x80(RAnalEsil *esil, int interrupt) {
 #if 0
 static int esil_x86_cs_intr(RAnalEsil *esil, int intr) {
 	if (!esil) return false;
-	eprintf ("INTERRUPT 0x%02x HAPPENS\n", intr);
+	R_LOG_DEBUG ("INTERRUPT 0x%02x HAPPENS", intr);
 	return true;
 }
 #endif

@@ -59,9 +59,9 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return opsize;
 }
 
-RAsmPlugin r_asm_plugin_arm_cs = {
+RAsmPlugin r_asm_plugin_arm = {
 	.name = "arm",
-	.desc = "Capstone "CAPSTONE_VERSION_STRING" ARM disassembler",
+	.desc = "Custom THUMB, ARM32, AARCH64 assembler for radare2",
 	.cpus = ",v8,cortex",
 	.features = "v8",
 	.license = "BSD",
@@ -82,7 +82,7 @@ RAsmPlugin r_asm_plugin_arm_cs = {
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_arm_cs,
+	.data = &r_asm_plugin_arm,
 	.version = R2_VERSION
 };
 #endif

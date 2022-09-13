@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2021 - condret, pancake */
+/* radare2 - LGPL - Copyright 2017-2022 - condret, pancake */
 
 #ifndef R2_IO_H
 #define R2_IO_H
@@ -588,6 +588,7 @@ extern RIOPlugin r_io_plugin_socket;
 extern RIOPlugin r_io_plugin_xattr;
 extern RIOPlugin r_io_plugin_isotp;
 extern RIOPlugin r_io_plugin_xalz;
+extern RIOPlugin r_io_plugin_reg;
 
 #if __cplusplus
 }

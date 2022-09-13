@@ -38,7 +38,24 @@
 #define R_BORROW /* pointer ownership is not transferred, it must not be freed by the receiver */
 #define R_NONNULL /* pointer can not be null */
 #define R_NULLABLE /* pointer can be null */
-#define R_DEPRECATE /* should not be used in new code and should/will be removed in the future */
+
+/* should not be used in new code and should/will be removed in the future */
+#ifdef __GNUC__
+#  define R_DEPRECATE
+#  define R_DEPRECATED __attribute__((deprecated))
+#else
+#  define R_DEPRECATE
+#  define R_DEPRECATED
+#endif
+
+#ifdef __GNUC__
+#  define R_WIP __attribute__((deprecated))
+// ("this function is considered as work-in-progress", "use it at your own risk")))
+// warning doesnt work on llvm/clang, its a gcc specific thing,
+// __attribute__((warning("Don't use this function yet. its too new")))
+#else
+#  define R_WIP /* should not be used in new code and should/will be removed in the future */
+#endif
 #define R_IFNULL(x) /* default value for the pointer when null */
 
 #ifdef R_NEW
@@ -157,20 +174,10 @@
 # define __UNIX__ 1
 #endif
 
-#if 0
-// XXX any non-unix system dont have termios :? android?
-#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__ || __HAIKU__ || __serenity__ || __vinix__
-#define HAVE_PTY 1
-#else
-#define HAVE_PTY 0
-#endif
-#endif
-
 #undef HAVE_PTY
 #if EMSCRIPTEN || __wasi__ || defined(__serenity__)
 #define HAVE_PTY 0
 #else
-// #define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
 #define HAVE_PTY __UNIX__ && LIBC_HAVE_FORK && !__sun
 #endif
 

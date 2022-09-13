@@ -83,16 +83,17 @@ R_API const char *r_bin_string_type(int type) {
 
 R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 	RBinXtrData *data = data_;
-	r_return_if_fail (data);
-	if (data->metadata) {
-		free (data->metadata->libname);
-		free (data->metadata->arch);
-		free (data->metadata->machine);
-		free (data->metadata);
+	if (data) {
+		if (data->metadata) {
+			free (data->metadata->libname);
+			free (data->metadata->arch);
+			free (data->metadata->machine);
+			free (data->metadata);
+		}
+		free (data->file);
+		r_buf_free (data->buf);
+		free (data);
 	}
-	free (data->file);
-	r_buf_free (data->buf);
-	free (data);
 }
 
 R_API RList *r_bin_raw_strings(RBinFile *bf, int min) {
@@ -130,7 +131,6 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	if (!rb) {
 		return;
 	}
-
 	r_list_free (rb->file_hashes);
 	free (rb->intrp);
 	free (rb->file);

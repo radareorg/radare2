@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2011-2022 - earada, pancake */
 
-#define R_LOG_ORIGIN "cbin"
+#define R_LOG_ORIGIN "core.bin"
 #include <r_core.h>
 #include <r_config.h>
 #include <r_util.h>
@@ -25,8 +25,6 @@
 
 // dup from cmd_info
 #define PAIR_WIDTH "9"
-
-#define bprintf if (binfile && binfile->rbin && binfile->rbin->verbose) eprintf
 
 static void pair(const char *key, const char *val) {
 	if (!val || !*val) {
@@ -197,12 +195,12 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 				r_cons_printf ("\"td %s\"\n", v);
 			} else if (IS_MODE_SET (mode)) {
 				char *code = r_str_newf ("%s;", v);
-				char *error_msg = NULL;
-				char *out = r_parse_c_string (core->anal, code, &error_msg);
+				char *errmsg = NULL;
+				char *out = r_parse_c_string (core->anal, code, &errmsg);
 				free (code);
-				if (error_msg) {
-					eprintf ("%s", error_msg);
-					free (error_msg);
+				if (errmsg) {
+					R_LOG_ERROR ("%s", errmsg);
+					free (errmsg);
 				}
 				if (out) {
 					r_anal_save_parsed_type (core->anal, out);
@@ -595,7 +593,7 @@ static bool bin_raw_strings(RCore *r, PJ *pj, int mode, int va) {
 		r_buf_write_at (bf->buf, 0, tmp, bf->size);
 	}
 	if (!r->io->desc) {
-		eprintf ("Core file not open\n");
+		R_LOG_ERROR ("Core doesnt have any file");
 		if (IS_MODE_JSON (mode)) {
 			pj_a (pj);
 			pj_end (pj);
@@ -1035,7 +1033,7 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			int len = r_hash_calculate (rh, hash, tmp, h->to);
 			free (tmp);
 			if (len < 1) {
-				eprintf ("Invalid checksum length\n");
+				R_LOG_ERROR ("Invalid checksum length");
 			}
 			r_hash_free (rh);
 			if (IS_MODE_JSON (mode)) {
@@ -1277,7 +1275,7 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 		return false;
 	}
 	if (!pdb.pdb_parse (&pdb)) {
-		eprintf ("pdb was not parsed\n");
+		R_LOG_ERROR ("pdb was not parsed");
 		pdb.finish_pdb_parse (&pdb);
 		return false;
 	}
@@ -2443,7 +2441,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 					fi->demangled = (bool)(size_t)sn.demname;
 				} else {
 					if (fn) {
-						eprintf ("[Warning] Can't find flag (%s)\n", fn);
+						R_LOG_WARN ("Can't find flag (%s)", fn);
 					}
 				}
 				free (fnp);
@@ -3366,7 +3364,7 @@ static char *objc_type_toc(const char *objc_type) {
 	if (!strcmp (objc_type, "q")) { return strdup ("long long"); }
 	if (!strcmp (objc_type, "C")) { return strdup ("uint8_t"); }
 	if (strlen (objc_type) == 1) {
-		eprintf ("Unknown objc type '%s'\n", objc_type);
+		R_LOG_WARN ("Unknown objc type '%s'", objc_type);
 	}
 	if (r_str_startswith (objc_type, "@\"")) {
 		char *s = r_str_newf ("struct %s", objc_type + 2);
