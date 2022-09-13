@@ -717,8 +717,8 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_symbols = r_config_get_i (core->config, "asm.symbol");
 	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
 	ds->asm_instr = r_config_get_i (core->config, "asm.instr");
-	ds->show_emu = r_config_get_i (core->config, "asm.emu");
-	ds->show_emu_str = r_config_get_i (core->config, "emu.str");
+	ds->show_emu = r_config_get_b (core->config, "asm.emu");
+	ds->show_emu_str = r_config_get_b (core->config, "emu.str");
 	ds->show_emu_stroff = r_config_get_i (core->config, "emu.str.off");
 	ds->show_emu_strinv = r_config_get_i (core->config, "emu.str.inv");
 	ds->show_emu_strflag = r_config_get_i (core->config, "emu.str.flag");
@@ -746,8 +746,8 @@ static RDisasmState *ds_init(RCore *core) {
 	}
 	ds->stackptr = core->anal->stackptr;
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
-	ds->show_flags = r_config_get_i (core->config, "asm.flags");
-	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
+	ds->show_flags = r_config_get_b (core->config, "asm.flags");
+	ds->show_bytes = r_config_get_b (core->config, "asm.bytes");
 	ds->show_bytes_right = r_config_get_i (core->config, "asm.bytes.right");
 	ds->show_bytes_opcolor = r_config_get_i (core->config, "asm.bytes.opcolor");
 	ds->show_optype = r_config_get_i (core->config, "asm.optype");
@@ -776,14 +776,14 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmt.flgrefs");
 	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
-	ds->show_xrefs = r_config_get_i (core->config, "asm.xrefs");
+	ds->show_xrefs = r_config_get_b (core->config, "asm.xrefs");
 	ds->show_cmtrefs = r_config_get_i (core->config, "asm.cmt.refs");
 	ds->cmtfold = r_config_get_i (core->config, "asm.cmt.fold");
 	ds->show_cmtoff = r_config_get (core->config, "asm.cmt.off");
 	if (!ds->show_cmtoff) {
 		ds->show_cmtoff = "nodup";
 	}
-	ds->show_functions = r_config_get_i (core->config, "asm.functions");
+	ds->show_functions = r_config_get_b (core->config, "asm.functions");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp (core->print->strconv_mode, "asciidot");
 	const char *strenc_str = r_config_get (core->config, "bin.str.enc");
@@ -4729,11 +4729,15 @@ static void ds_pre_emulation(RDisasmState *ds) {
 	}
 	ds->stackptr = ds->core->anal->stackptr;
 	esil->cb.hook_reg_write = NULL;
+	const ut64 pc = r_reg_getv (ds->core->anal->reg, r_reg_get_name (ds->core->anal->reg, R_REG_NAME_PC));
 	for (i = 0; i < end; i++) {
 		ut64 addr = base + i;
 		RAnalOp* op = r_core_anal_op (ds->core, addr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 		if (op) {
 			if (do_esil) {
+				// underlying assumption of esil expressions is pc register is set prior to emulation
+				r_reg_setv (ds->core->anal->reg, r_reg_get_name (ds->core->anal->reg, R_REG_NAME_PC),
+					addr + op->size);
 				r_anal_esil_set_pc (esil, addr);
 				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op->esil));
 				if (op->size > 0) {
@@ -4744,6 +4748,7 @@ static void ds_pre_emulation(RDisasmState *ds) {
 			r_anal_op_free (op);
 		}
 	}
+	r_reg_setv (ds->core->anal->reg, r_reg_get_name (ds->core->anal->reg, R_REG_NAME_PC), pc);
 	esil->cb.hook_reg_write = orig_cb;
 }
 
@@ -5116,8 +5121,8 @@ beach:
 }
 
 static void ds_print_calls_hints(RDisasmState *ds) {
-	int emu = r_config_get_i (ds->core->config, "asm.emu");
-	int emuwrite = r_config_get_i (ds->core->config, "emu.write");
+	bool emu = r_config_get_b (ds->core->config, "asm.emu");
+	bool emuwrite = r_config_get_b (ds->core->config, "emu.write");
 	if (emu && emuwrite) {
 		// this is done by ESIL
 		return;
@@ -6789,8 +6794,8 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 }
 
 R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt) {
-	bool show_offset = r_config_get_i (core->config, "asm.offset");
-	bool show_bytes = r_config_get_i (core->config, "asm.bytes");
+	bool show_offset = r_config_get_b (core->config, "asm.offset");
+	bool show_bytes = r_config_get_b (core->config, "asm.bytes");
 	int decode = r_config_get_i (core->config, "asm.decode");
 	bool subnames = r_config_get_b (core->config, "asm.sub.names");
 	int show_color = r_config_get_i (core->config, "scr.color");

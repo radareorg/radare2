@@ -58,13 +58,10 @@ static int r_debug_drx_at(RDebug *dbg, ut64 addr) {
  * r_debug_bp_hit handles stage 1.
  * r_debug_recoil handles stage 2.
  */
+// R2580 - return bool
 static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
-	RBreakpointItem *b;
-
-	if (!pb) {
-		eprintf ("BreakpointItem is NULL!\n");
-		return false;
-	}
+	r_return_val_if_fail (dbg && pc_ri && pb, false);
+	RBreakpointItem *b = NULL;
 	/* initialize the output parameter */
 	*pb = NULL;
 
@@ -154,11 +151,11 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	if (pc_off) {
 		pc -= pc_off;
 		if (!r_reg_set_value (dbg->reg, pc_ri, pc)) {
-			eprintf ("failed to set PC!\n");
+			R_LOG_ERROR ("failed to set PC");
 			return false;
 		}
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)) {
-			eprintf ("cannot set registers!\n");
+			R_LOG_ERROR ("cannot set registers");
 			return false;
 		}
 	}
@@ -1393,7 +1390,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	}
 
 	if (!dbg->anal || !dbg->reg) {
-		eprintf ("Undefined pointer at dbg->anal\n");
+		R_LOG_ERROR ("Undefined pointer at dbg->anal");
 		return false;
 	}
 
@@ -1591,7 +1588,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		}
 #endif
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
-			eprintf ("--> cannot sync regs, process is probably dead\n");
+			R_LOG_ERROR ("cannot sync regs, process is probably dead");
 			return -1;
 		}
 		reg = show_syscall (dbg, "SN");
@@ -1626,7 +1623,7 @@ R_API int r_debug_syscall(RDebug *dbg, int num) {
 	if (dbg->h->contsc) {
 		ret = dbg->h->contsc (dbg, dbg->pid, num);
 	}
-	eprintf ("TODO: show syscall information\n");
+	R_LOG_INFO ("TODO: show syscall information");
 	/* r2rc task? ala inject? */
 	return (int)ret;
 }

@@ -35,7 +35,7 @@ static const char* s_wire(const ut8 byte) {
 static void pad(RStrBuf *sb, ut32 count) {
 	ut32 i;
 	for (i = 0; i < count; i++) {
-		r_strbuf_appendf (sb, "    ");
+		r_strbuf_append (sb, "    ");
 	}
 }
 
@@ -55,7 +55,7 @@ static void decode_array(RStrBuf *sb, const ut8* start, const ut8* end) {
 		r_strbuf_appendf (sb, "%02x ", *start);
 		start++;
 	}
-	r_strbuf_appendf (sb, "\n");
+	r_strbuf_append (sb, "\n");
 }
 
 static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 padcnt, bool debug) {
@@ -106,15 +106,23 @@ static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 pa
 			{
 				bytes_read = read_u64_leb128 (buffer, end, &var64);
 				const ut8* ps = buffer + bytes_read;
-				const ut8* pe = ps + var64;
+				if ((int)var64 < 0) {
+					R_LOG_ERROR ("Invalid delta in var64");
+					break;
+				}
+				if (UT64_ADD_OVFCHK ((size_t)ps, var64)) {
+					R_LOG_ERROR ("Invalid overflow in var64");
+					break;
+				}
+				const ut8* pe = (const ut8*)ps + var64;
 				if (ps > buffer && pe <= end) {
 					if (is_string (ps, pe)) {
 						r_strbuf_appendf (sb, ": \"%.*s\"\n", (int)var64, (const char*) ps);
 					} else {
-						r_strbuf_appendf (sb, " {\n");
+						r_strbuf_append (sb, " {\n");
 						decode_buffer (sb, ps, pe, padcnt + 1, debug);
 						pad (sb, padcnt);
-						r_strbuf_appendf (sb, "}\n");
+						r_strbuf_append (sb, "}\n");
 					}
 					bytes_read += var64;
 				} else {
@@ -124,7 +132,7 @@ static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 pa
 			}
 			break;
 		case WIRE_START_GRP:
-			r_strbuf_appendf (sb, " {\n");
+			r_strbuf_append (sb, " {\n");
 			padcnt++;
 			break;
 		case WIRE_END_GRP:
@@ -132,7 +140,7 @@ static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 pa
 				padcnt--;
 			}
 			pad (sb, padcnt);
-			r_strbuf_appendf (sb, "}\n");
+			r_strbuf_append (sb, "}\n");
 			break;
 		case WIRE_32_BIT:
 			{

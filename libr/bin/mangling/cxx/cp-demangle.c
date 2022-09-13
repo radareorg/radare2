@@ -365,6 +365,7 @@ struct d_print_info
   int num_copy_templates;
   /* The nearest enclosing template, if any.  */
   const struct demangle_component *current_template;
+  int depth;
 };
 
 #ifdef CP_DEMANGLE_DEBUG
@@ -4311,6 +4312,7 @@ cplus_demangle_print_callback (int options,
     dpi.copy_templates = alloca (dpi.num_copy_templates
 				 * sizeof (*dpi.copy_templates));
 #endif
+    dpi.depth = 128;
 
     d_print_comp (&dpi, options, dc);
   }
@@ -4638,7 +4640,10 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
   /* Variable used to store the current templates while a previously
      captured scope is used.  */
   struct d_print_template *saved_templates;
-
+  if (--dpi->depth < 1) {
+    fprintf (stderr, "Stack exhaustion prevented\n");
+    return;
+  }
   /* Nonzero if templates have been stored in the above variable.  */
   int need_template_restore = 0;
 

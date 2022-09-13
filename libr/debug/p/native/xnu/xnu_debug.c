@@ -1115,7 +1115,7 @@ RDebugPid *xnu_get_pid (int pid) {
 	mib[1] = KERN_ARGMAX;
 	size = sizeof (argmax);
 	if (sysctl (mib, 2, &argmax, &size, NULL, 0) == -1) {
-		eprintf ("sysctl() error on getting argmax\n");
+		R_LOG_ERROR ("sysctl() on getting argmax");
 		return NULL;
 	}
 #endif
@@ -1425,7 +1425,6 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 	//bool contiguous = false;
 	//ut32 oldprot = UT32_MAX;
 	//ut32 oldmaxprot = UT32_MAX;
-	char buf[1024];
 	char module_name[MAXPATHLEN];
 	mach_vm_address_t address = MACH_VM_MIN_ADDRESS;
 	mach_vm_size_t size = (mach_vm_size_t) 0;
@@ -1451,7 +1450,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 #if 0
 	if (dbg->pid == 0) {
 		vm_address_t base = get_kernel_base (task);
-		eprintf ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
+		R_LOG_INFO ("Kernel Base Address: 0x%"PFMT64x, (ut64)base);
 		return NULL;
 	}
 #endif
@@ -1496,16 +1495,18 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 				maxperm[0] = 0;
 			}
 			// XXX: if its shared, it cannot be read?
-			snprintf (buf, sizeof (buf), "%02x_%s%s%s%s%s%s%s%s",
+			char *buf = r_str_newf ("%02x_%s%s%s%s%s%s%s%s",
 				i, unparse_inheritance (info.inheritance),
 				info.user_tag? "_user": "",
 				info.is_submap? "_sub": "",
 				"", info.is_submap ? "_submap": "",
 				module_name, maxperm, depthstr);
 			if (!(mr = r_debug_map_new (buf, address, address + size, xwr2rwx (info.protection), xwr2rwx (info.max_protection)))) {
+				free (buf);
 				R_LOG_ERROR ("Cannot create r_debug_map_new");
 				break;
 			}
+			free (buf);
 			RDebugMap *rdm = moduleAt (modules, address);
 			if (rdm) {
 				mr->file = strdup (rdm->name);

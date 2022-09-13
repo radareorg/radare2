@@ -415,8 +415,14 @@ R_API char *r_table_tostring(RTable *t) {
 	if (t->showSQL) {
 		return r_table_tosql (t);
 	}
+	if (t->showTSV) {
+		return r_table_totsv (t);
+	}
 	if (t->showCSV) {
 		return r_table_tocsv (t);
+	}
+	if (t->showHTML) {
+		return r_table_tohtml (t);
 	}
 	if (t->showJSON) {
 		char *s = r_table_tojson (t);
@@ -489,7 +495,7 @@ R_API char *r_table_tor2cmds(RTable *t) {
 	RTableColumn *col;
 	RListIter *iter, *iter2;
 
-	r_strbuf_appendf (sb, ",h ");
+	r_strbuf_append (sb, ",h ");
 	r_list_foreach (t->cols, iter, col) {
 		char fmt = col->type == &r_table_type_string? 's': 'x';
 		r_strbuf_appendf (sb, "%c", fmt);
@@ -502,7 +508,7 @@ R_API char *r_table_tor2cmds(RTable *t) {
 	r_list_foreach (t->rows, iter, row) {
 		char *item;
 		int c = 0;
-		r_strbuf_appendf (sb, ",r");
+		r_strbuf_append (sb, ",r");
 		r_list_foreach (row->items, iter2, item) {
 			RTableColumn *col = r_list_get_n (t->cols, c);
 			if (col) {
@@ -534,7 +540,7 @@ R_API char *r_table_tosql(RTable *t) {
 		free (s);
 		primary_key = false;
 	}
-	r_strbuf_appendf (sb, ");\n");
+	r_strbuf_append (sb, ");\n");
 
 	r_list_foreach (t->rows, iter, row) {
 		const char *item;
@@ -566,7 +572,7 @@ R_API char *r_table_tosql(RTable *t) {
 	return r_strbuf_drain (sb);
 }
 
-R_API char *r_table_tocsv(RTable *t) {
+static char *tocsv(RTable *t, const char *sep) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;
 	RTableColumn *col;
@@ -574,13 +580,13 @@ R_API char *r_table_tocsv(RTable *t) {
 	if (t->showHeader) {
 		const char *comma = "";
 		r_list_foreach (t->cols, iter, col) {
-			if (strchr (col->name, ',')) {
+			if (strchr (col->name, *sep)) {
 				// TODO. escaped string?
 				r_strbuf_appendf (sb, "%s\"%s\"", comma, col->name);
 			} else {
 				r_strbuf_appendf (sb, "%s%s", comma, col->name);
 			}
-			comma = ",";
+			comma = sep;
 		}
 		r_strbuf_append (sb, "\n");
 	}
@@ -591,17 +597,45 @@ R_API char *r_table_tocsv(RTable *t) {
 		r_list_foreach (row->items, iter2, item) {
 			RTableColumn *col = r_list_get_n (t->cols, c);
 			if (col) {
-				if (strchr (col->name, ',')) {
+				if (strchr (col->name, *sep)) {
 					r_strbuf_appendf (sb, "%s\"%s\"", comma, col->name);
 				} else {
 					r_strbuf_appendf (sb, "%s%s", comma, item);
 				}
-				comma = ",";
+				comma = sep;
 			}
 			c++;
 		}
 		r_strbuf_append (sb, "\n");
 	}
+	return r_strbuf_drain (sb);
+}
+
+R_API char *r_table_totsv(RTable *t) {
+	return tocsv (t, "\t");
+}
+
+R_API char *r_table_tocsv(RTable *t) {
+	return tocsv (t, ",");
+}
+
+R_API char *r_table_tohtml(RTable *t) {
+	PJ *pj = pj_new ();
+	RTableRow *row;
+	RListIter *iter, *iter2;
+	pj_a (pj);
+	RStrBuf *sb = r_strbuf_new ("");
+	r_strbuf_append (sb, "<table>\n");
+	// TODO: add th
+	r_list_foreach (t->rows, iter, row) {
+		char *item;
+		r_strbuf_append (sb, "  <tr>\n");
+		r_list_foreach (row->items, iter2, item) {
+			r_strbuf_appendf (sb, "    <td>%s</td>\n", item);
+		}
+		r_strbuf_append (sb, "  </tr>\n");
+	}
+	r_strbuf_append (sb, "</table>\n");
 	return r_strbuf_drain (sb);
 }
 
@@ -1035,7 +1069,9 @@ R_API const char *r_table_help(void) {
 		" c/sum          sum all the values of given column\n"
 		" :r2            .tostring() == .tor2()         # supports import/export\n"
 		" :csv           .tostring() == .tocsv()        # supports import/export\n"
+		" :tsv           .tostring() == .totsv()        # supports import/export\n"
 		" :fancy         .tostring() == .tofancystring()\n"
+		" :html          .tostring() == .tohtml()\n"
 		" :json          .tostring() == .tojson()\n"
 		" :simple        simple table output without lines\n"
 		" :sql           .tostring() == .tosql() # export table contents in SQL statements\n"
@@ -1047,17 +1083,24 @@ static bool __table_special(RTable *t, const char *columnName) {
 		return false;
 	}
 	if (!strcmp (columnName, ":quiet")) {
-		t->showHeader = true;
+		t->showHeader = false;
 	} else if (!strcmp (columnName, ":fancy")) {
+		t->showHeader = true;
 		t->showFancy = true;
 	} else if (!strcmp (columnName, ":sql")) {
 		t->showSQL = true;
+		t->showHeader = false;
 	} else if (!strcmp (columnName, ":simple")) {
+		t->showHeader = true;
 		t->showFancy = false;
 	} else if (!strcmp (columnName, ":r2")) {
 		t->showR2 = true;
 	} else if (!strcmp (columnName, ":csv")) {
 		t->showCSV = true;
+	} else if (!strcmp (columnName, ":html")) {
+		t->showHTML = true;
+	} else if (!strcmp (columnName, ":tsv")) {
+		t->showTSV = true;
 	} else if (!strcmp (columnName, ":json")) {
 		t->showJSON = true;
 	} else {
@@ -1299,13 +1342,11 @@ R_API void r_table_fromjson(RTable *t, const char *csv) {
 	//  TODO
 }
 
-R_API void r_table_fromcsv(RTable *t, const char *csv) {
-	//  TODO
+R_API void r_table_fromtsv(RTable *t, const char *csv) {
 }
 
-R_API char *r_table_tohtml(RTable *t) {
-	// TODO
-	return NULL;
+R_API void r_table_fromcsv(RTable *t, const char *csv) {
+	//  TODO
 }
 
 R_API void r_table_transpose(RTable *t) {

@@ -229,7 +229,7 @@ static RASN1String* r_asn1_print_hexdump_padded(RASN1Object *object, ut32 depth)
 		pad = "                                        : ";
 	} else {
 		pad = r_str_pad (' ', depth * 2);
-		r_strbuf_appendf (sb, "  ");
+		r_strbuf_append (sb, "  ");
 	}
 
 	for (i = 0, j = 0; i < object->length; i++, j++) {
@@ -244,7 +244,7 @@ static RASN1String* r_asn1_print_hexdump_padded(RASN1Object *object, ut32 depth)
 	}
 
 	while ((i % 16) != 0) {
-		r_strbuf_appendf (sb, "   ");
+		r_strbuf_append (sb, "   ");
 		i++;
 	}
 	r_strbuf_appendf (sb, "|%-16s|", readable);

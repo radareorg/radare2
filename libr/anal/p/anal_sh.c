@@ -281,14 +281,14 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->delay = 1;
 		op->eob = true;
-		r_strbuf_setf (&op->esil, "pr,pc,=");
+		r_strbuf_set (&op->esil, "pr,pc,=");
 	} else if (IS_RTE (code)) {
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->delay = 1;
 		op->eob = true;
-		//r_strbuf_setf (&op->esil, "1,SETD,r15,[4],4,+,pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
+		// r_strbuf_set (&op->esil, "1,SETD,r15,[4],4,+,pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
 		//not sure if should be added 4 to pc
-		r_strbuf_setf (&op->esil, "1,SETD,r15,[4],pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
+		r_strbuf_set (&op->esil, "1,SETD,r15,[4],pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
 	} else if (IS_MOVB_REG_TO_R0REL (code)) {	//0000nnnnmmmm0100 mov.b <REG_M>,@(R0,<REG_N>)
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -321,19 +321,19 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		r_strbuf_setf (&op->esil, "r0,r%d,+,[4],r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_NOP (code)) {
 		op->type = R_ANAL_OP_TYPE_NOP;
-		r_strbuf_setf (&op->esil, " ");
+		r_strbuf_set (&op->esil, " ");
 	} else if (IS_CLRT (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=");
+		r_strbuf_set (&op->esil, "0xFFFFFFFE,sr,&=");
 	} else if (IS_SETT (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
-		r_strbuf_setf (&op->esil, "0x1,sr,|=");
+		r_strbuf_set (&op->esil, "0x1,sr,|=");
 	} else if (IS_CLRMAC (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
-		r_strbuf_setf (&op->esil, "0,mach,=,0,macl,=");
+		r_strbuf_set (&op->esil, "0,mach,=,0,macl,=");
 	} else if (IS_DIV0U (code)) {
 		op->type = R_ANAL_OP_TYPE_DIV;
-		r_strbuf_setf (&op->esil, "0xFFFFFCFE,sr,&=");
+		r_strbuf_set (&op->esil, "0xFFFFFCFE,sr,&=");
 	} else if (IS_MOVT (code)) {
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
@@ -345,7 +345,7 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		r_strbuf_setf (&op->esil, "r%d,r%d,*,macl,=", GET_TARGET_REG (code), GET_SOURCE_REG (code));
 	} else if (IS_SLEEP (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
-		r_strbuf_setf (&op->esil, "sleep_called,TRAP");
+		r_strbuf_set (&op->esil, "sleep_called,TRAP");
 	} else if (IS_STSMACH (code)) {	//0000nnnn0000101_ sts MAC*,<REG_N>
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
@@ -375,7 +375,6 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		default:
 			r_strbuf_setf (&op->esil, "%s", "");
 			break;
-
 		}
 	} else if (IS_STSPR (code)) {	//0000nnnn00101010 sts PR,<REG_N>
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -779,7 +778,6 @@ static int movl_rdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	return op->size;
 }
 
-
 static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
 	if (IS_MOV_REGS (code)) {
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -820,7 +818,7 @@ static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
 			r_strbuf_setf (&op->esil, "r%d,0xFFFF,&,DUP,0x8000,&,?{,0xFFFF0000,|,},r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 			break;
 		default:
-			r_strbuf_setf (&op->esil, "TODO,NOT IMPLEMENTED");
+			r_strbuf_set (&op->esil, "TODO,NOT IMPLEMENTED");
 			break;
 		}
 	} else if (IS_MOVB_POP (code)) {

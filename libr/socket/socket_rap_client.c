@@ -23,7 +23,7 @@ R_API int r_socket_rap_client_open(RSocket *s, const char *file, int rw) {
 	r_socket_block_time (s, true, 1, 0);
 	size_t file_len0 = strlen (file) + 1;
 	if (file_len0 > 255) {
-		eprintf ("Filename too long\n");
+		R_LOG_ERROR ("Filename too long");
 		return -1;
 	}
 	char *buf = malloc (file_len0 + 7);
@@ -123,7 +123,7 @@ R_API int r_socket_rap_client_write(RSocket *s, const ut8 *buf, int count) {
 		count = RAP_PACKET_MAX;
 	}
 	if (!(tmp = (ut8 *)malloc (count + 5))) {
-		eprintf ("__rap_write: malloc failed\n");
+		R_LOG_ERROR ("rap_write malloc failed");
 		return -1;
 	}
 	tmp[0] = RAP_PACKET_WRITE;
@@ -133,7 +133,7 @@ R_API int r_socket_rap_client_write(RSocket *s, const ut8 *buf, int count) {
 	(void)r_socket_write (s, tmp, count + 5);
 	r_socket_flush (s);
 	if (r_socket_read_block (s, tmp, 5) != 5) { // TODO read_block?
-		eprintf ("__rap_write: error\n");
+		R_LOG_ERROR ("cannot read from socket");
 		ret = -1;
 	} else {
 		ret = r_read_be32 (tmp + 1);
@@ -163,13 +163,13 @@ R_API int r_socket_rap_client_read(RSocket *s, ut8 *buf, int count) {
 	// recv
 	int ret = r_socket_read_block (s, tmp, 5);
 	if (ret != 5 || tmp[0] != (RAP_PACKET_READ | RAP_PACKET_REPLY)) {
-		eprintf ("__rap_read: Unexpected rap read reply (%d=0x%02x) expected (%d=0x%02x)\n",
+		R_LOG_WARN ("Unexpected rap read reply (%d=0x%02x) expected (%d=0x%02x)",
 			ret, tmp[0], 2, (RAP_PACKET_READ | RAP_PACKET_REPLY));
 		return -1;
 	}
 	int i = r_read_at_be32 (tmp, 1);
 	if (i > count) {
-		eprintf ("__rap_read: Unexpected data size %d vs %d\n", i, count);
+		R_LOG_WARN ("Unexpected data size %d vs %d", i, count);
 		return -1;
 	}
 	r_socket_read_block (s, buf, i);
@@ -185,13 +185,13 @@ R_API int r_socket_rap_client_seek(RSocket *s, ut64 offset, int whence) {
 	r_socket_flush (s);
 	int ret = r_socket_read_block (s, (ut8*)&tmp, 9);
 	if (ret != 9) {
-		eprintf ("Truncated socket read\n");
+		R_LOG_ERROR ("Truncated socket read");
 		return -1;
 	}
 	if (tmp[0] != (RAP_PACKET_SEEK | RAP_PACKET_REPLY)) {
 		// eprintf ("%d %d  - %02x %02x %02x %02x %02x %02x %02x\n",
 		// ret, whence, tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5], tmp[6]);
-		eprintf ("Unexpected seek reply (%02x -> %02x)\n", tmp[0], (RAP_PACKET_SEEK | RAP_PACKET_REPLY));
+		R_LOG_WARN ("Unexpected seek reply (%02x -> %02x)", tmp[0], (RAP_PACKET_SEEK | RAP_PACKET_REPLY));
 		return -1;
 	}
 	return r_read_at_be64 (tmp, 1);

@@ -169,8 +169,8 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 						dst ++;
 						op->jump = dst;
 						r_strbuf_setf (&op->esil,
-								"$$,brk,=[1],brk,++=,"
-								"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
+								"0x%"PFMT64x",brk,=[1],brk,++=,"
+								"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", addr, dst);
 						goto beach;
 					}
 				}

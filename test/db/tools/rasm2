@@ -495,17 +495,27 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rasm2 -L
+NAME=rasm2 -LL
 FILE=-
-CMDS=!rasm2 -L | grep -c arm.gnu
+REQUIRE=unix
+CMDS=!rasm2 -LL | grep -c arm.gnu
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=rasm2 -qL
+NAME=rasm2 -LL internal grep
 FILE=-
-CMDS=!rasm2 -qL | grep -c arm.gnu
+CMDS=!!rasm2 -LL~arm.gnu?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rasm2 -qLL
+FILE=-
+REQUIRE=unix
+CMDS=!rasm2 -qLL | grep -c arm.gnu
 EXPECT=<<EOF
 1
 EOF

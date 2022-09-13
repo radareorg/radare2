@@ -2679,6 +2679,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 }
 
 static int fcn_list_verbose(RCore *core, RList *fcns, const char *sortby) {
+	// TODO: use the r_table api no need to dup the work here its already implemented in `fcn_list_table`
 	bool use_color = r_config_get_i (core->config, "scr.color");
 	int headeraddr_width = 10;
 	char *headeraddr = "==========";
@@ -2781,7 +2782,6 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 	RListIter *fcniter;
 	RAnalFunction *fcn;
 	RAnalRef *refi;
-	RList *refs = NULL;
 	PJ *pj = NULL;
 
 	if (mode == 'j') {
@@ -2789,15 +2789,33 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 		pj_a (pj);
 	}
 
+	ut64 cur_fcn_addr = core->offset;
+	if (mode == '.') {
+		RList *fcns = r_anal_get_functions_in (core->anal, cur_fcn_addr);
+		if (fcns && r_list_length (fcns) > 0) {
+			RListIter *iter;
+			RAnalFunction *fcn;
+			r_list_foreach (fcns, iter, fcn) {
+				cur_fcn_addr = fcn->addr;
+				break;
+			}
+		}
+		r_list_free (fcns);
+	}
 	// Iterate over all functions
 	r_list_foreach (fcns, fcniter, fcn) {
 		// Get all refs for a function
-		refs = r_core_anal_fcn_get_calls (core, fcn);
+		RList *refs = r_core_anal_fcn_get_calls (core, fcn);
 		// Uniquify the list by ref->addr
 		r_list_uniq_inplace (refs, RAnalRef_val);
 
 		// don't enter for functions with 0 refs
 		if (!r_list_empty (refs)) {
+			if (mode == '.') {
+				if (fcn->addr != cur_fcn_addr) {
+					continue;
+				}
+			}
 			if (pj) { // begin json output of function
 				pj_o (pj);
 				pj_ks (pj, "name", fcn->name);
@@ -2808,7 +2826,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 				r_cons_printf ("%s", fcn->name);
 			}
 
-			if (mode == 'm') {
+			if (mode == 'm' || mode == '.') {
 				r_cons_printf (":\n");
 			} else if (mode == 'q') {
 				r_cons_printf (" -> ");
@@ -2836,7 +2854,6 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 				r_cons_newline();
 			}
 		}
-
 		r_list_free (refs);
 	}
 
@@ -3210,6 +3227,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, typeNumber, "addr", 0);
 	r_table_add_column (t, typeNumber, "size", 0);
 	r_table_add_column (t, typeString, "name", 0);
+	r_table_add_column (t, typeNumber, "noret", 0);
 	r_table_add_column (t, typeNumber, "nbbs", 0);
 	r_table_add_column (t, typeNumber, "nins", 0);
 	r_table_add_column (t, typeNumber, "xref", 0);
@@ -3220,6 +3238,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		r_strf_var (fcnSize, 32, "%"PFMT64u, r_anal_function_linear_size (fcn)); // r_anal_function_size (fcn));
 		r_strf_var (nbbs, 32, "%d", r_list_length (fcn->bbs));
 		r_strf_var (nins, 32, "%d", r_anal_function_instrcount (fcn));
+		r_strf_var (noret, 32, "%d", fcn->is_noreturn);
 		RList *xrefs = r_anal_function_get_xrefs (fcn);
 		snprintf (xref, sizeof (xref), "%d", r_list_length (xrefs));
 		r_list_free (xrefs);
@@ -3230,9 +3249,10 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		r_list_free (calls);
 		snprintf (ccstr, sizeof (ccstr), "%d", r_anal_function_complexity (fcn));
 
-		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, nbbs, nins, xref, castr, ccstr, NULL);
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs, nins, xref, castr, ccstr, NULL);
 	}
 	if (r_table_query (t, q)) {
+		t->showHeader = false;
 		char *s = (fmt == 'j')
 			? r_table_tojson (t)
 			: r_table_tostring (t);
@@ -3253,8 +3273,20 @@ static int fcn_list_legacy(RCore *core, RList *fcns) {
 	return 0;
 }
 
+static const char *help_msg_aflm[] = {
+	"Usage:", "aflm", "[q.j] List functions in verbose mode",
+	"aflm", "", "list functions and what they call in makefile-like format",
+	"aflm.", "", "only print the summary for the current function (see pds)",
+	"aflmj", "", "same as above but in json format",
+	NULL
+};
+
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) {
 	char temp[64];
+	if (rad[0] == '?' || (*rad && rad[1] == '?')) {
+		r_core_cmd_help (core, help_msg_aflm);
+		return 0;
+	}
 	r_return_val_if_fail (core && core->anal, 0);
 	if (r_list_empty (core->anal->fcns)) {
 		if (*rad == 'j') {
@@ -3363,10 +3395,12 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		{
 			char mode = 'm';
 			if (rad[1] != 0) {
-				if (rad[1] == 'j') { // "aflmj"
-					mode = 'j';
-				} else if (rad[1] == 'q') { // "aflmq"
-					mode = 'q';
+				switch (rad[1]) {
+				case '.':
+				case 'j':
+				case 'q':
+					mode = rad[1];
+					break;
 				}
 			}
 			fcn_print_makestyle (core, fcns, mode);
@@ -4814,6 +4848,8 @@ static void handle_var_stack_access(RAnalEsil *esil, ut64 addr, RAnalVarAccessTy
 		ut64 spaddr = r_reg_getv (esil->anal->reg, ctx->spname);
 		if (addr >= spaddr && addr < ctx->initial_sp) {
 			int stack_off = addr - ctx->initial_sp;
+			// int stack_off = ctx->initial_sp - addr; // R2STACK
+			// eprintf (" (%llx) %llx = %d\n", ctx->initial_sp, addr, stack_off);
 			RAnalVar *var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_SPV, stack_off);
 			if (!var) {
 				var = r_anal_function_get_var (ctx->fcn, R_ANAL_VAR_KIND_BPV, stack_off);
@@ -5163,6 +5199,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
 	bool gp_fixed = r_config_get_b (core->config, "anal.gpfixed");
+	bool newstack = r_config_get_b (core->config, "anal.var.newstack");
 	RAnalEsil *ESIL = core->anal->esil;
 	ut64 refptr = 0LL;
 	char *pcname = NULL;
@@ -5261,7 +5298,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		&op,
 		fcn,
 		spname,
-		r_reg_getv (core->anal->reg, spname)
+		r_reg_getv (core->anal->reg, spname) // initial_sp
 	};
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
 	//this is necessary for the hook to read the id of analop
@@ -5270,12 +5307,16 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
 
 	if (fcn && fcn->reg_save_area) {
-		r_reg_setv (core->anal->reg, ctx.spname, ctx.initial_sp - fcn->reg_save_area);
+		if (newstack) {
+			r_reg_setv (core->anal->reg, ctx.spname, fcn->reg_save_area);
+		} else {
+			r_reg_setv (core->anal->reg, ctx.spname, ctx.initial_sp - fcn->reg_save_area);
+		}
 	}
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
 	const char *kpcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	if (!kpcname || !*kpcname) {
+	if (R_STR_ISEMPTY (kpcname)) {
 		R_LOG_ERROR ("Cannot find program counter register in the current profile");
 		return;
 	}
@@ -5363,8 +5404,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (i > iend) {
 			goto repeat;
 		}
-		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) {
-			i += minopsize - 1; //   XXX dupe in op.size below
+		int opflags = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT;
+		if (newstack) {
+			opflags |= R_ANAL_OP_MASK_DISASM;
+		}
+		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, opflags)) {
+			i += minopsize - 1; // XXX dupe in op.size below
 		}
 		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK) {
 			// i += 2
@@ -5372,7 +5417,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			goto repeat;
 		}
 		//we need to check again i because buf+i may goes beyond its boundaries
-		//because of i+= minopsize - 1
+		//because of i += minopsize - 1
 		if (op.size < 1) {
 			i += minopsize - 1;
 			goto repeat;
@@ -5412,7 +5457,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 		if (!sn) {
-			R_LOG_WARN ("No SN reg alias for current architecture");
+			R_LOG_WARN ("No SN reg alias for '%s'", r_config_get (core->config, "asm.arch"));
 		}
 		if (sn && op.type == R_ANAL_OP_TYPE_SWI) {
 			r_strf_buffer (64);
@@ -5463,6 +5508,13 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			}
 			if (cfg_anal_strings) {
 				add_string_ref (core, op.addr, op.ptr);
+			}
+			break;
+		case R_ANAL_OP_TYPE_SUB:
+			if (newstack && core->anal->cur && archIsArm) {
+				if (strstr (op.mnemonic, " sp,")) {
+					ctx.initial_sp -= op.val;
+				}
 			}
 			break;
 		case R_ANAL_OP_TYPE_ADD:
@@ -6050,6 +6102,8 @@ static bool analyze_noreturn_function(RCore *core, RAnalFunction *f) {
 }
 
 R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
+	// r_core_cmd0 (core, ".aflx*@@=`afl,noret/eq/1,addr/cols/,:quiet`");
+
 	RList *todo = r_list_newf (free);
 	if (!todo) {
 		return;

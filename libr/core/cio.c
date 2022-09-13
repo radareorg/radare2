@@ -110,37 +110,6 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	return true;
 }
 
-static bool __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
-	ut32 i;
-	ut16 v16;
-	ut32 v32;
-	ut64 v64;
-	if (len != 8 && len != 4 && len != 2 && len != 1) {
-		R_LOG_ERROR ("Invalid word size. Use 1, 2, 4 or 8");
-		return false;
-	}
-	if (len == 1) {
-		return true;
-	}
-	for (i = 0; i < blocksize; i += len) {
-		switch (len) {
-		case 8:
-			v64 = r_read_at_be64 (buf, i);
-			r_write_at_le64 (buf, v64, i);
-			break;
-		case 4:
-			v32 = r_read_at_be32 (buf, i);
-			r_write_at_le32 (buf, v32, i);
-			break;
-		case 2:
-			v16 = r_read_at_be16 (buf, i);
-			r_write_at_le16 (buf, v16, i);
-			break;
-		}
-	}
-	return true;
-}
-
 R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	int i, j;
 	ut64 len;
@@ -148,6 +117,17 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
 	if (!buf) {
 		return NULL;
+	}
+	bool isnum = false;
+	const char *plus = arg? strchr (arg, '+'): NULL;
+	int numsize = 1;
+	if (plus) {
+		numsize = (*arg=='+')? 1: atoi (arg);
+		if (numsize < 1) {
+			numsize = 1;
+		}
+		isnum = true;
+		arg = r_str_trim_head_ro (plus + 1);
 	}
 	if (op == 'i') { // "woi"
 		int hbs = core->blocksize / 2;
@@ -162,10 +142,10 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 
 	if (op != 'e') {
 		// fill key buffer either from arg or from clipboard
-		if (arg) {  // parse arg for key
+		if (arg && !isnum) {  // parse arg for key
 			// r_hex_str2bin() is guaranteed to output maximum half the
 			// input size, or 1 byte if there is just a single nibble.
-			str = (char *)malloc (strlen (arg) / 2 + 1);
+			str = (char *)malloc ((strlen (arg) / 2) + 1);
 			if (!str) {
 				goto beach;
 			}
@@ -190,7 +170,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	// execute the operand
 	if (op == 'e') {
 		int wordsize = 1;
-		char *os, *p, *s = strdup (arg);
+		char *os, *p, *s = strdup (arg? arg: "");
 		int n = 0, from = 0, to = UT8_MAX, dif = 0, step = 1;
 		os = s;
 		p = strchr (s, ' ');
@@ -288,11 +268,38 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			}
 		}
 	} else {
-		bool be = r_config_get_i (core->config, "cfg.bigendian");
-		if (!be) {
-			if (!__endian_swap ((ut8*)str, len, len)) {
-				goto beach;
+		if (isnum) {
+			ut64 n = r_num_math (core->num, arg);
+			bool be = r_config_get_i (core->config, "cfg.bigendian");
+			free (str);
+			str = calloc (8, 1);
+			switch (numsize) {
+			case 1:
+				if (n > UT8_MAX) {
+					R_LOG_ERROR ("%d doesnt fit in ut8.max", n);
+					goto beach;
+				}
+				str[0] = n;
+				break;
+			case 2:
+				if (n > UT16_MAX) {
+					R_LOG_ERROR ("%d doesnt fit in ut16.max", n);
+					goto beach;
+				}
+				r_write_ble16 (str, n, be);
+				break;
+			case 4:
+				if (n > UT32_MAX) {
+					R_LOG_ERROR ("%d doesnt fit in ut32.max", n);
+					goto beach;
+				}
+				r_write_ble32 (str, n, be);
+				break;
+			case 8:
+				r_write_ble64 (str, n, be);
+				break;
 			}
+			len = numsize;
 		}
 		for (i = j = 0; i < core->blocksize; i++) {
 			switch (op) {

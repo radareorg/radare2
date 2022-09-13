@@ -833,7 +833,7 @@ rep:
 			flagenum = 0;
 			break;
 		default:
-			eprintf ("|Usage: fe[-| name] @@= 1 2 3 4\n");
+			eprintf ("Usage: fe[-| name] @@= 1 2 3 4\n");
 			break;
 		}
 		break;

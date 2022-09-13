@@ -3,6 +3,7 @@
 OBJ_ARMCS=asm_arm.o
 OBJ_ARMCS+=../arch/arm/armass.o
 OBJ_ARMCS+=../arch/arm/armass64.o
+# OBJ_ARMCS+=../arch/arm/gnu/floatformat.o
 
 include p/capstone.mk
 

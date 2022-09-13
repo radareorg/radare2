@@ -1741,9 +1741,8 @@ R_API int r_core_visual_view_rop(RCore *core) {
 
 		char *wlist = r_str_widget_list (core, rops, rows, cur, print_rop);
 		r_cons_printf ("%s", wlist);
+		char *curline = r_str_trim_dup (wlist);
 		free (wlist);
-		char *curline = r_str_dup (NULL, r_str_trim_head_ro (r_str_widget_list (
-			core, rops, rows, cur, print_rop)));
 		if (curline) {
 			char *sp = strchr (curline, ' ');
 			if (sp) {
@@ -3443,8 +3442,8 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 
 	level = 0;
 
-	int asmbytes = r_config_get_i (core->config, "asm.bytes");
-	r_config_set_i (core->config, "asm.bytes", 0);
+	bool asmbytes = r_config_get_b (core->config, "asm.bytes");
+	r_config_set_b (core->config, "asm.bytes", false);
 	for (;;) {
 		nfcns = r_list_length (core->anal->fcns);
 		addr = r_core_visual_anal_refresh (core);
@@ -3739,7 +3738,7 @@ beach:
 	core->cons->event_data = olde_user;
 	core->cons->event_resize = olde;
 	level = 0;
-	r_config_set_i (core->config, "asm.bytes", asmbytes);
+	r_config_set_b (core->config, "asm.bytes", asmbytes);
 }
 
 struct seek_flag_offset_t {
@@ -4421,7 +4420,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		sprintf (color, rgb_xxx_fmt, rcolor.r, rcolor.g, rcolor.b);
 		if (rcolor.r2 || rcolor.g2 || rcolor.b2) {
-			color = r_str_appendf (color, " ");
+			color = r_str_append (color, " ");
 			color = r_str_appendf (color, rgb_xxx_fmt, rcolor.r2, rcolor.g2, rcolor.b2);
 			rcolor.a = ALPHA_FGBG;
 		} else {

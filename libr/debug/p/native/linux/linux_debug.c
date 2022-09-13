@@ -1264,7 +1264,7 @@ int linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 			}
 			if (r_debug_ptrace (dbg, PTRACE_POKEUSER, pid,
 					(void *)r_offsetof (struct user, u_debugreg[i]), (r_ptrace_data_t)val[i])) {
-				eprintf ("ptrace error for dr %d\n", i);
+				R_LOG_ERROR ("ptrace failed for dr %d", i);
 				r_sys_perror ("ptrace POKEUSER");
 			}
 		}

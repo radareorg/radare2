@@ -382,6 +382,13 @@ static bool cb_analvars_stackname(void *user, void *data) {
 	return true;
 }
 
+static bool cb_analvars_newstack(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->anal->opt.var_newstack = node->i_value;
+	return true;
+}
+
 static bool cb_anal_nonull(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -1559,6 +1566,7 @@ static bool cb_cmdrepeat(void *user, void *data) {
 	return true;
 }
 
+// R2_580 rename to log.sink=file:path log.sink=echo etc..
 static bool cb_screrrmode(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
@@ -3382,6 +3390,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("anal.types.constraint", "false", "enable constraint types analysis for variables");
 	SETCB ("anal.vars", "true", &cb_analvars, "analyze local variables and arguments");
 	SETCB ("anal.vars.stackname", "false", &cb_analvars_stackname, "name variables based on their offset on the stack");
+	SETCB ("anal.vars.newstack", "false", &cb_analvars_newstack, "use new sp-relative variable analysis (EXPERIMENTAL)");
 	SETBPREF ("anal.vinfun", "true",  "search values in functions (aav) (false by default to only find on non-code)");
 	SETBPREF ("anal.vinfunrange", "false",  "search values outside function ranges (requires anal.vinfun=false)\n");
 	SETCB ("anal.norevisit", "false", &cb_analnorevisit, "do not visit function analysis twice (EXPERIMENTAL)");
@@ -3889,6 +3898,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.hit", "", "run when a search hit is found");
 	SETPREF ("cmd.open", "", "run when file is opened");
 	SETPREF ("cmd.load", "", "run when binary is loaded");
+	SETPREF ("cmd.bbgraph", "", "show the output of this command in the graph basic blocks");
 	RConfigNode *cmdpdc = NODECB ("cmd.pdc", "", &cb_cmdpdc);
 	SETDESC (cmdpdc, "select pseudo-decompiler command to run after pdc");
 	update_cmdpdc_options (core, cmdpdc);

@@ -1429,8 +1429,7 @@ static void tc_state_start(SStateInfo *state, STypeCodeStr *type_code_str) {
 	ONE_LETTER_STATE (A)
 	ONE_LETTER_STATE ($)
 	default:
-		//eprintf("[uncorrect type] error while parsing type\n");
-
+		R_LOG_WARN ("invalid type");
 		state->state = eTCStateEnd;
 		state->err = eTCStateMachineErrUncorrectTypeCode;
 		break;

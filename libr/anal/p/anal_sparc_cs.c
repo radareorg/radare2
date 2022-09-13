@@ -335,6 +335,7 @@ performed in big-endian byte order.
 static bool set_reg_profile(RAnal *anal) {
 	const char *p = \
 		"=PC	pc\n"
+		"=SN	g1\n"
 		"=SP	sp\n"
 		"=BP	fp\n"
 		"=A0	i0\n"

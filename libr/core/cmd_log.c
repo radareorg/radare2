@@ -69,7 +69,7 @@ static void screenlock(RCore *core) {
 		return;
 	}
 	if (strcmp (pass, again)) {
-		eprintf ("Password mismatch!\n");
+		R_LOG_ERROR ("Password mismatch!");
 		free (pass);
 		free (again);
 		return;
@@ -92,7 +92,7 @@ static void screenlock(RCore *core) {
 		if (msg && !strcmp (msg, pass)) {
 			running = false;
 		} else {
-			eprintf ("\nInvalid password.\n");
+			R_LOG_ERROR ("Invalid password");
 			last = r_time_now ();
 			tries++;
 		}
@@ -102,7 +102,7 @@ static void screenlock(RCore *core) {
 	} while (running);
 	r_cons_set_cup (true);
 	free (pass);
-	eprintf ("Unlocked!\n");
+	R_LOG_INFO ("Unlocked!");
 }
 
 static int textlog_chat(RCore *core) {
@@ -147,7 +147,7 @@ static int textlog_chat(RCore *core) {
 		} else if (!strcmp (buf, "/quit")) {
 			return 0;
 		} else if (*buf == '/') {
-			eprintf ("Unknown command: %s\n", buf);
+			R_LOG_ERROR ("Unknown command: %s", buf);
 		} else {
 			snprintf (msg, sizeof (msg), "[%s] %s", me, buf);
 			r_core_log_add (core, msg);
@@ -189,13 +189,13 @@ static char *expr2cmd(RCoreLog *log, const char *line) {
 				return r_str_newf ("CCu base64:%s @ 0x%"PFMT64x"\n", msg, addr);
 			}
 		}
-		eprintf ("add-comment parsing error\n");
+		R_LOG_ERROR ("Cannot parse add-comment expression");
 	}
 	if (!strncmp (line, "del-comment", 11)) {
 		if (line[11] == ' ') {
 			return r_str_newf ("CC-%s\n", line + 12);
 		}
-		eprintf ("add-comment parsing error\n");
+		R_LOG_ERROR ("Cannot parse add-comment expression");
 	}
 	return NULL;
 }
@@ -241,7 +241,7 @@ static int cmd_log(void *data, const char *input) {
 					r_cons_less_str (b, NULL);
 					free (b);
 				} else {
-					eprintf ("File not found\n");
+					R_LOG_ERROR ("File not found");
 				}
 			} else {
 				eprintf ("Usage: less [filename]\n");
@@ -261,7 +261,7 @@ static int cmd_log(void *data, const char *input) {
 		if (r_cons_is_interactive ()) {
 			textlog_chat (core);
 		} else {
-			eprintf ("Only available when the screen is interactive\n");
+			R_LOG_ERROR ("The TT command needs scr.interactive=true");
 		}
 		break;
 	case '=': // "T="
@@ -277,7 +277,7 @@ static int cmd_log(void *data, const char *input) {
 				r_cons_break_pop ();
 			} else {
 				// TODO: Sucks that we can't enqueue functions, only commands
-				eprintf ("Background thread syncing with http.sync started.\n");
+				R_LOG_INFO ("Background thread syncing with http.sync started");
 				RCoreTask *task = r_core_task_new (core, true, "T=&&", NULL, core);
 				r_core_task_enqueue (&core->tasks, task);
 			}

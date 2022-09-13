@@ -57,49 +57,6 @@
 		SET_SRC_DST_3_REGS (op);\
 	}
 
-
-// ESIL macros:
-
-// put the sign bit on the stack
-#define ES_IS_NEGATIVE(arg) "1,"arg",<<<,1,&"
-
-
-// call with delay slot
-#define ES_CALL_DR(ra, addr) "pc,4,+,"ra",=,"ES_J(addr)
-#define ES_CALL_D(addr) ES_CALL_DR("ra", addr)
-
-// call without delay slot
-#define ES_CALL_NDR(ra, addr) "pc,"ra",=,"ES_J(addr)
-#define ES_CALL_ND(addr) ES_CALL_NDR("ra", addr)
-
-#define USE_DS 0
-#if USE_DS
-// emit ERR trap if executed in a delay slot
-#define ES_TRAP_DS() "$ds,!,!,?{,$$,1,TRAP,BREAK,},"
-// jump to address
-#define ES_J(addr) addr",SETJT,1,SETD"
-#else
-#define ES_TRAP_DS() ""
-#define ES_J(addr) addr",pc,="
-#endif
-
-// sign extend 32 -> 64
-#define ES_SIGN_EXT64(arg) \
-	arg",0x80000000,&,0,<,?{,"\
-		"0xffffffff00000000,"arg",|=,"\
-	"}"
-
-#define PROTECT_ZERO() \
-	if (REG(0)[0]=='z'){\
-		r_strbuf_appendf (&op->esil, ",");\
-	} else /**/
-
-#define ESIL_LOAD(size) \
-	PROTECT_ZERO () {\
-		r_strbuf_appendf (&op->esil, "%s,["size"],%s,=",\
-			ARG(1), REG(0));\
-	}
-
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new ();
@@ -195,7 +152,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		switch (insn->id) {
 		//case RISCV_INS_NOP:
-		//	r_strbuf_setf (&op->esil, ",");
+		//	r_strbuf_set (&op->esil, ",");
 		//	break;
 		}
 	}

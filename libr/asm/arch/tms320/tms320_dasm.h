@@ -115,8 +115,8 @@ typedef struct {
 	union {
 		ut8		opcode;
 		ut8		stream[8];
-		ut64		opcode64;
 	};
+	ut64		opcode64;
 
 #define TMS320_S_INVAL		0x01
 	ut8			status;

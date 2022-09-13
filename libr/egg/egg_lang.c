@@ -909,7 +909,7 @@ static int parseinlinechar(REgg *egg, char c) {
 				R_FREE (egg->lang.dstval);
 				return 1;
 			}
-			eprintf ("Parse error\n");
+			R_LOG_ERROR ("Cannot parse expression");
 		}
 	}
 	if (egg->lang.dstval) {

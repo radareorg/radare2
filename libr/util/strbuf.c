@@ -266,7 +266,7 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 R_API bool r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 	va_list ap;
 
-	r_return_val_if_fail (sb && fmt, -1);
+	r_return_val_if_fail (sb && fmt, false);
 
 	va_start (ap, fmt);
 	bool ret = r_strbuf_vappendf (sb, fmt, ap);
@@ -279,7 +279,7 @@ R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 	va_list ap2;
 	char string[1024];
 
-	r_return_val_if_fail (sb && fmt, -1);
+	r_return_val_if_fail (sb && fmt, false);
 
 	if (sb->weakref) {
 		return false;
@@ -340,6 +340,45 @@ R_API char *r_strbuf_drain_nofree(RStrBuf *sb) {
 	sb->len = 0;
 	sb->buf[0] = '\0';
 	return ret;
+}
+
+R_API bool r_strbuf_replace(RStrBuf *sb, const char *key, const char *val) {
+	r_return_val_if_fail (sb && key && val, false);
+	char *tmp = r_str_replace (strdup (r_strbuf_get (sb)), key, val, 0);
+	if (!tmp) {
+		return false;
+	}
+	free (r_strbuf_drain_nofree (sb));
+	return r_strbuf_setptr (sb, tmp, 0);
+}
+
+R_API bool r_strbuf_replacef(RStrBuf *sb, const char *key, const char *fmt, ...) {
+	r_return_val_if_fail (sb && key && fmt, false);
+	RStrBuf *sb_tmp = r_strbuf_new (NULL);
+	if (!sb_tmp) {
+		return false;
+	}
+	char *tmp = strdup (r_strbuf_get (sb));
+	if (!tmp) {
+		r_strbuf_free (sb_tmp);
+		return false;
+	}
+	va_list ap;
+	va_start (ap, fmt);
+	const bool vsret = r_strbuf_vsetf (sb_tmp, fmt, ap);
+	va_end (ap);
+	if (!vsret) {
+		r_strbuf_free (sb_tmp);
+		free (tmp);
+		return false;
+	}
+	tmp = r_str_replace (tmp, key, r_strbuf_get (sb_tmp), 0);
+	r_strbuf_free (sb_tmp);
+	if (!tmp) {
+		return false;
+	}
+	free (r_strbuf_drain_nofree (sb));
+	return r_strbuf_setptr (sb, tmp, 0);
 }
 
 R_API void r_strbuf_free(RStrBuf *sb) {

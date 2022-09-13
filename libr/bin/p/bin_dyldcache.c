@@ -1101,7 +1101,7 @@ static ut64 resolve_symbols_off(RDyldCache *cache, ut64 pa) {
 			return 0;
 		}
 		ut32 cmdsize = r_buf_read_le32_at (cache->buf, cursor + sizeof (ut32));
-		if (cmdsize == UT32_MAX) {
+		if (cmdsize == UT32_MAX || cmdsize < 1) {
 			return 0;
 		}
 		if (cmd == LC_SEGMENT || cmd == LC_SEGMENT_64) {
@@ -1684,13 +1684,18 @@ static void populate_cache_maps(RDyldCache *cache) {
 	r_return_if_fail (cache && cache->buf);
 
 	ut32 i;
-	ut32 n_maps = 0;
+	size_t n_maps = 0;
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
 		if (!hdr->mappingCount || !hdr->mappingOffset) {
 			continue;
 		}
 		n_maps += hdr->mappingCount;
+	}
+
+	if (n_maps > (r_buf_size (cache->buf) / 4)) {
+		R_LOG_WARN ("Invalid n_maps (%d)", (int)n_maps);
+		return;
 	}
 
 	cache_map_t *maps = NULL;
@@ -2258,7 +2263,7 @@ static RList *classes(RBinFile *bf) {
 			ut8 *cursor = pointers;
 			ut8 *pointers_end = pointers + sections[i].size;
 
-			for (; cursor < pointers_end; cursor += 8) {
+			for (; cursor + 8 <= pointers_end; cursor += 8) {
 				ut64 pointer_to_class = r_read_le64 (cursor);
 
 				RBinClass *klass;
@@ -2284,7 +2289,7 @@ static RList *classes(RBinFile *bf) {
 
 				if (!klass->name) {
 					if (bf->rbin->verbose) {
-						eprintf ("KLASS ERROR AT 0x%"PFMT64x", is_classlist %d\n", pointer_to_class, is_classlist);
+						R_LOG_ERROR ("KLASS failed at 0x%"PFMT64x", is_classlist %d", pointer_to_class, is_classlist);
 					}
 					klass->name = r_str_newf ("UnnamedClass%u", num_of_unnamed_class);
 					if (!klass->name) {

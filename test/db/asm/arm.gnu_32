@@ -2,3 +2,12 @@ a "add r2, r2, r1" 012082e0
 aB "nop   ; (mov r0, r0)" 0000a0e1
 a "bx r2" 12ff2fe1
 a "blx r5" 35ff2fe1
+d "bl 0x00001900" 3e0600eb
+d "b 0x00001900" 3e0600ea
+d "swp r1, r2, [r0]" 921000e1
+d "swpb r1, r2, [r0]" 921040e1
+d "beq 0x00000008" 0000000a
+d "movt r1, 12345" 391043e3
+d "movw r2, 54321" 31240de3
+d "moveq r0, sl" 0a00a001
+d "svc 0x00000003" 030000ef

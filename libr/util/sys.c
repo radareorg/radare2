@@ -1046,12 +1046,12 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	// TODO: define R_SYS_ALIGN_FORWARD in r_util.h
 	ut8 *bufptr = malloc (len);
 	if (!bufptr) {
-		eprintf ("r_sys_run_rop: Cannot allocate buffer\n");
+		R_LOG_ERROR ("Cannot allocate %d byte buffer", len);
 		return false;
 	}
 
 	if (!buf) {
-		eprintf ("r_sys_run_rop: Cannot execute empty rop chain\n");
+		R_LOG_ERROR ("Cannot execute empty rop chain");
 		free (bufptr);
 		return false;
 	}
@@ -1071,13 +1071,13 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	}
 	st = 0;
 	if (waitpid (pid, &st, 0) == -1) {
-		eprintf ("r_sys_run_rop: waitpid failed\n");
+		R_LOG_ERROR ("waitpid failed");
 		free (bufptr);
 		return -1;
 	}
 	if (WIFSIGNALED (st)) {
 		int num = WTERMSIG (st);
-		eprintf ("Got signal %d\n", num);
+		R_LOG_INFO ("Got signal %d", num);
 		ret = num;
 	} else {
 		ret = WEXITSTATUS (st);
@@ -1100,32 +1100,32 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 		// Upon failure fallback to GetProcessImageFileName
 		length = r_w32_GetProcessImageFileName (processHandle, filename, maxlength);
 		if (length == 0) {
-			eprintf ("r_sys_pid_to_path: Error calling GetProcessImageFileName\n");
+			R_LOG_ERROR ("calling GetProcessImageFileName failed");
 			return NULL;
 		}
 		// Convert NT path to win32 path
 		char *name = r_sys_conv_win_to_utf8 (filename);
 		if (!name) {
-			eprintf ("r_sys_pid_to_path: Error converting to utf8\n");
+			R_LOG_ERROR ("Error converting filepath to utf8");
 			return NULL;
 		}
 		char *tmp = strchr (name + 1, '\\');
 		if (!tmp) {
 			free (name);
-			eprintf ("r_sys_pid_to_path: Malformed NT path\n");
+			R_LOG_ERROR ("Malformed NT path");
 			return NULL;
 		}
 		tmp = strchr (tmp + 1, '\\');
 		if (!tmp) {
 			free (name);
-			eprintf ("r_sys_pid_to_path: Malformed NT path\n");
+			R_LOG_ERROR ("Malformed NT path");
 			return NULL;
 		}
 		length = tmp - name;
 		tmp = malloc (length + 1);
 		if (!tmp) {
 			free (name);
-			eprintf ("r_sys_pid_to_path: Error allocating memory\n");
+			R_LOG_ERROR ("Error allocating memory");
 			return NULL;
 		}
 		r_str_ncpy (tmp, name, length);
@@ -1137,7 +1137,7 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 				if (!dvc) {
 					free (name);
 					free (tmp);
-					eprintf ("r_sys_pid_to_path: Error converting to utf8\n");
+					R_LOG_ERROR ("Cannot convert to utf8");
 					return NULL;
 				}
 				if (!strcmp (tmp, dvc)) {
@@ -1146,14 +1146,13 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 					char *d = r_sys_conv_win_to_utf8 (drv);
 					if (!d) {
 						free (name);
-						eprintf ("r_sys_pid_to_path: Error converting to utf8\n");
+						R_LOG_ERROR ("Cannot convert to utf8");
 						return NULL;
 					}
 					tmp = r_str_newf ("%s%s", d, &name[length]);
 					free (d);
 					if (!tmp) {
 						free (name);
-						eprintf ("r_sys_pid_to_path: Error calling r_str_newf\n");
 						return NULL;
 					}
 					result = strdup (tmp);

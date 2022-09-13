@@ -603,12 +603,12 @@ static int cmd_help(void *data, const char *input) {
 		ut64 b = 0;
 		ut32 r = UT32_MAX;
 		if (input[1]) {
-			strncpy (out, input+(input[1]==' '? 2: 1), sizeof (out)-1);
+			strncpy (out, input + (input[1] ==' '? 2: 1), sizeof (out)-1);
 			p = strchr (out + 1, ' ');
 			if (p) {
 				*p = 0;
 				b = (ut32)r_num_math (core->num, out);
-				r = (ut32)r_num_math (core->num, p+1)-b;
+				r = (ut32)r_num_math (core->num, p + 1) - b;
 			} else {
 				r = (ut32)r_num_math (core->num, out);
 			}
@@ -629,7 +629,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
 			//b64 decoding takes at most strlen(str) * 4
-			const int buflen = (strlen (input+3) * 4) + 1;
+			const int buflen = (strlen (input + 3) * 4) + 1;
 			char* buf = calloc (buflen, sizeof (char));
 			if (!buf) {
 				return false;
@@ -676,7 +676,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == ' ') {
 			char *q, *p = strdup (input + 2);
 			if (!p) {
-				eprintf ("Cannot strdup\n");
+				R_LOG_ERROR ("Cannot strdup");
 				return 0;
 			}
 			q = strchr (p, ' ');
@@ -690,7 +690,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			free (p);
 		} else {
-			eprintf ("Whitespace expected after '?f'\n");
+			R_LOG_ERROR ("expected whitespace after '?f'");
 		}
 		break;
 	case 'o': // "?o"
@@ -737,7 +737,7 @@ static int cmd_help(void *data, const char *input) {
 				const char *err = NULL;
 				n = r_num_calc (core->num, str, &err);
 				if (core->num->dbz) {
-					eprintf ("RNum ERROR: Division by Zero\n");
+					R_LOG_ERROR ("Division by Zero");
 				}
 				if (err) {
 					R_LOG_ERROR (err);
@@ -757,7 +757,6 @@ static int cmd_help(void *data, const char *input) {
 					pj_ks (pj, "octal", r_strf ("0%"PFMT64o, n));
 					pj_ks (pj, "unit", unit);
 					pj_ks (pj, "segment", r_strf ("%04x:%04x", s, a));
-
 				} else {
 					if (n >> 32) {
 						r_cons_printf ("int64   %"PFMT64d"\n", (st64)n);
@@ -817,10 +816,10 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'q': // "?q"
 		if (core->num->dbz) {
-			eprintf ("RNum ERROR: Division by Zero\n");
+			R_LOG_ERROR ("Division by Zero");
 		}
 		if (input[1] == '?') {
-			r_cons_printf ("|Usage: ?q [num]  # Update $? without printing anything\n"
+			r_cons_printf ("Usage: ?q [num]  # Update $? without printing anything\n"
 				"|?q 123; ?? x    # hexdump if 123 != 0");
 		} else {
 			const char *space = strchr (input, ' ');
@@ -842,7 +841,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 		}
 		if (core->num->dbz) {
-			eprintf ("RNum ERROR: Division by Zero\n");
+			R_LOG_ERROR ("Division by Zero");
 		}
 		switch (input[1]) {
 		case '?':
@@ -900,7 +899,7 @@ static int cmd_help(void *data, const char *input) {
 					int val = strcmp (s, e);
 					r_core_return_value (core, val);
 				} else {
-					eprintf ("Missing secondary word in expression to compare\n");
+					R_LOG_ERROR ("Missing secondary word in expression to compare");
 				}
 				free (s);
 			} else {
@@ -1072,7 +1071,7 @@ static int cmd_help(void *data, const char *input) {
 					out[len] = 0;
 					r_cons_println ((const char*)out);
 				} else {
-					eprintf ("Error parsing the hexpair string\n");
+					R_LOG_ERROR ("invalid hexpair string");
 				}
 				free (out);
 			}
@@ -1302,7 +1301,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'i': // "?i" input num
 		r_cons_set_raw(0);
 		if (!r_cons_is_interactive ()) {
-			eprintf ("Not running in interactive mode\n");
+			R_LOG_ERROR ("Not running in interactive mode");
 		} else {
 			switch (input[1]) {
 			case 'f': // "?if"
@@ -1347,7 +1346,7 @@ static int cmd_help(void *data, const char *input) {
 		ut64 addr = r_num_math (core->num, input + 1);
 		char *rstr = core->print->hasrefs (core->print->user, addr, true);
 		if (!rstr) {
-			eprintf ("Cannot get refs\n");
+			R_LOG_ERROR ("Cannot get refs at 0x%08"PFMT64x, addr);
 			break;
 		}
 		r_cons_println (rstr);
@@ -1374,7 +1373,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 		} else {
 			if (core->num->dbz) {
-				eprintf ("RNum ERROR: Division by Zero\n");
+				R_LOG_ERROR ("Division by Zero");
 			}
 			r_cons_printf ("%"PFMT64d"\n", core->num->value);
 		}

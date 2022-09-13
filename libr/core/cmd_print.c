@@ -209,6 +209,16 @@ static const char *help_msg_pxd[] = {
 	NULL
 };
 
+static const char *help_msg_pxu[] = {
+	"Usage:", "pxu[1248] ([len])", "show unsigned decimal byte/short/word/dword dumps",
+	"pxu", "", "show base10 unsigned decimal hexdumps",
+	"pxu1", "", "show byte hexdump (int8_t)",
+	"pxu2", "", "show short hexdump (int16_t)",
+	"pxu4", "", "show dword hexdump (int32_t)",
+	"pxu8", "", "show qword hexdump (int64_t)",
+	NULL
+};
+
 static const char *help_msg_p_equal[] = {
 	"Usage:", "p=[=bep?][qj] [N] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
 	"e ", "zoom.in", "specify range for zoom",
@@ -553,6 +563,7 @@ static const char *help_msg_px[] = {
 	"pxr", "[1248][qj]", "show hexword references (q=quiet, j=json)",
 	"pxs", "", "show hexadecimal in sparse mode",
 	"pxt", "[*.] [origin]", "show delta pointer table in r2 commands",
+	"pxu", "[?1248]", "unsigned integer dump (1 byte, 2 and 4)",
 	"pxw", "", "show hexadecimal words dump (32bit)",
 	"pxW", "[q]", "same as above, but one per line (q=quiet)",
 	"pxx", "", "show N bytes of hex-less hexdump",
@@ -741,11 +752,11 @@ static void cmd_printmsg(RCore *core, const char *input) {
 	} else if (!strncmp (input, " ", 1)) {
 		r_cons_print (input + 1);
 	} else if (!strncmp (input, "f ", 2)) {
-		eprintf ("TODO: waiting for r2shell\n");
+		R_LOG_INFO ("TODO: waiting for r2shell");
 	} else if (!strncmp (input, "fln ", 2)) {
-		eprintf ("TODO: waiting for r2shell\n");
+		R_LOG_INFO ("TODO: waiting for r2shell");
 	} else {
-		eprintf ("Usage: print, println, printf, printfln");
+		R_LOG_INFO ("Usage: print, println, printf, printfln");
 	}
 }
 
@@ -1017,7 +1028,7 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 	}
 	RConsCanvas *c = r_cons_canvas_new (w, rows);
 	if (!c) {
-		eprintf ("Couldn't allocate a canvas with %d rows\n", rows);
+		R_LOG_ERROR ("Couldn't allocate a canvas with %d rows", rows);
 		goto err;
 	}
 
@@ -1371,7 +1382,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'B': // "pFB"
 		if (input[1] == '?') {
-			eprintf ("Usage: pFB[j] - parse binary plist format, check 'b'lock size on errors, pFBj for json output\n");
+			eprintf ("Usage: pFB[j] - parse binary plist format, check 'b'lock size, pFBj for json output\n");
 		} else {
 			PJ *pj = r_core_pj_new (core);
 			if (!r_bplist_parse (pj, data, size)) {
@@ -1796,12 +1807,12 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					r_core_cmd0 (core, ".ts*");
 					free (out);
 				} else {
-					eprintf ("Parse error: %s\n", error_msg);
+					R_LOG_ERROR ("Cannot parse: %s", error_msg);
 				}
 			} else {
 				if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
 					if (!r_core_cmd_file (core, _input + 3)) {
-						eprintf ("pfo: cannot open format file at '%s'\n", path);
+						R_LOG_ERROR ("pfo: cannot open format file at '%s'", path);
 					}
 				}
 			}
@@ -4884,8 +4895,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	} else {
-		bool asm_lines = r_config_get_i (core->config, "asm.lines.jmp");
-		bool emu = r_config_get_i (core->config, "asm.emu");
+		bool asm_lines = r_config_get_b (core->config, "asm.lines.jmp");
+		bool emu = r_config_get_b (core->config, "asm.emu");
 		ut64 saved_gp = 0;
 		int saved_arena_size = 0;
 		ut8 *saved_arena = NULL;
@@ -6523,29 +6534,33 @@ static int cmd_print(void *data, const char *input) {
 			ut64 start;
 
 			if (bw_disassemble) {
-				block1 = malloc (core->blocksize);
+				int bs1 = (core->blocksize * 2) + 64;
+				block1 = malloc (bs1);
 				if (l < 0) {
 					l = -l;
 				}
 				if (block1) {
 					if (*input == 'D') { // pD
 						free (block1);
-						if (!(block1 = malloc (l))) {
+						if (!(block1 = malloc (bs1))) {
 							break;
 						}
-						r_io_read_at (core->io, addr - l, block1, l); // core->blocksize);
+						r_io_read_at (core->io, addr - l, block1, bs1);
 						int dislen = r_core_print_disasm (core, addr - l, block1, l, l, 0, NULL, true, formatted_json, NULL, NULL);
 						r_core_return_value (core, dislen);
 					} else { // pd
-						int instr_len;
 						if (!r_core_prevop_addr (core, core->offset, l, &start)) {
 							// anal ignorance.
 							start = r_core_prevop_addr_force (core, core->offset, l);
 						}
-						instr_len = core->offset - start;
+						int instr_len = core->offset - start;
 						ut64 prevaddr = core->offset;
-						int bs = core->blocksize, bs1 = addrbytes * instr_len;
-						if (bs1 > bs) {
+						int bs = core->blocksize;
+						int bs2 = addrbytes * instr_len;
+						if (bs2 > bs) {
+							bs1 += bs2 + 32;
+							bs2 = bs1;
+							bs = bs2;
 							ut8 *tmpblock = realloc (block1, bs1);
 							if (!tmpblock) {
 								R_LOG_ERROR ("Memory reallocation failed");
@@ -6554,13 +6569,8 @@ static int cmd_print(void *data, const char *input) {
 							}
 							block1 = tmpblock;
 						}
+						r_io_read_at (core->io, prevaddr - instr_len, block1, bs1);
 						r_core_seek (core, prevaddr - instr_len, true);
-						memcpy (block1, block, bs);
-						if (bs1 > bs) {
-							r_io_read_at (core->io, addr + bs / addrbytes,
-								block1 + (bs - bs % addrbytes),
-								bs1 - (bs - bs % addrbytes));
-						}
 						int dislen = r_core_print_disasm (core,
 								core->offset, block1,
 								R_MAX (bs, bs1), l, 0, NULL,
@@ -6692,7 +6702,7 @@ static int cmd_print(void *data, const char *input) {
 						}
 						if (!ch) {
 							if (core->print->cur_enabled && core->print->cur == i) {
-								r_strbuf_appendf (sb, Color_INVERT"."Color_RESET);
+								r_strbuf_append (sb, Color_INVERT"."Color_RESET);
 							}
 							if (!hasnl) {
 								char *s = r_strbuf_drain (sb);
@@ -6715,7 +6725,7 @@ static int cmd_print(void *data, const char *input) {
 							}
 						} else {
 							if (core->print->cur_enabled && core->print->cur == i) {
-								r_strbuf_appendf (sb, Color_INVERT"."Color_RESET);
+								r_strbuf_append (sb, Color_INVERT"."Color_RESET);
 							}
 						}
 					}
@@ -7313,29 +7323,35 @@ static int cmd_print(void *data, const char *input) {
 			}
 			}
 			break;
-		case 'd': // "pxd"
+		case 'u': // "pxu" // unsigned numbers
+		case 'd': // "pxd" // signed numbers
 			if (input[2] == '?') {
-				r_core_cmd_help (core, help_msg_pxd);
+				if (input[1] == 'u') {
+					r_core_cmd_help (core, help_msg_pxu);
+				} else {
+					r_core_cmd_help (core, help_msg_pxd);
+				}
 			} else if (l != 0) {
 				switch (input[2]) {
-				case '1':
+				case '1': // "pxd1"
 					// 1 byte signed words (byte)
 					if (input[3] == 'j') {
-						r_print_jsondump (core->print, core->block,
-							len, 8);
+						r_print_jsondump (core->print, core->block, len, 8);
 					} else {
+						const int nfmt = (input[1] == 'u')? -2: -1;
 						r_print_hexdump (core->print, core->offset,
-								 core->block, len, -1, 4, 1);
+								 core->block, len, nfmt, 4, 1);
 					}
 					break;
-				case '2':
+				case '2': // "pxd2"
 					// 2 byte signed words (short)
 					if (input[3] == 'j') {
 						r_print_jsondump (core->print, core->block,
 							len, 16);
 					} else {
+						const int nfmt = (input[1] == 'u')? -11: -10;
 						r_print_hexdump (core->print, core->offset,
-								 core->block, len, -10, 2, 1);
+								 core->block, len, nfmt, 2, 1);
 					}
 					break;
 				case '8':
@@ -7343,8 +7359,9 @@ static int cmd_print(void *data, const char *input) {
 						r_print_jsondump (core->print, core->block,
 							len, 64);
 					} else {
+						const int nfmt = (input[1] == 'u')? -9: -8;
 						r_print_hexdump (core->print, core->offset,
-								 core->block, len, -8, 4, 1);
+								 core->block, len, nfmt, 4, 1);
 					}
 					break;
 				case '4':
@@ -7356,8 +7373,9 @@ static int cmd_print(void *data, const char *input) {
 						r_print_jsondump (core->print, core->block,
 							len, 32);
 					} else {
+						const int nfmt = (input[1] == 'u')? 11: 10;
 						r_print_hexdump (core->print, core->offset,
-								 core->block, len, 10, 4, 1);
+								 core->block, len, nfmt, 4, 1);
 					}
 					break;
 				default:

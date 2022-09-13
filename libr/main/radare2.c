@@ -1078,7 +1078,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				r_config_set (r->config, "asm.bits", asmbits);
 			}
 			r_config_set (r->config, "search.in", "dbg.map"); // implicit?
-			r_config_set (r->config, "cfg.debug", "true");
+			r_config_set_b (r->config, "cfg.debug", true);
 			perms = R_PERM_RWX;
 			if (opt.ind >= argc) {
 				R_LOG_ERROR ("No program given to -d");
@@ -1557,7 +1557,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				quietLeak = true;
 			}
 			ret = r->num->value;
-			debug = r_config_get_i (r->config, "cfg.debug");
+			debug = r_config_get_b (r->config, "cfg.debug");
 			if (ret != -1 && r_cons_is_interactive ()) {
 				char *question;
 				bool no_question_debug = ret & 1;

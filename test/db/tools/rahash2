@@ -205,6 +205,7 @@ h  fletcher8
 h  fletcher16
 h  fletcher32
 h  fletcher64
+h  sip
 e  base64
 e  base91
 e  punycode

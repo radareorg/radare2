@@ -6,7 +6,7 @@ typedef enum EDemanglerErr {
 	eDemanglerErrOK = 0, ///< if all is OK
 	eDemanglerErrMemoryAllocation, ///< some memory allocation problem
 	eDemanglerErrUnsupportedMangling, ///< unsupported mangling scheme yet
-	eDemanglerErrUnkown, ///< unknown mangling scheme
+	eDemanglerErrUnknown, ///< unknown mangling scheme
 	eDemanglerErrUncorrectMangledSymbol, ///< uncorrect mangled symbol
 	eDemanglerErrMax
 } EDemanglerErr;

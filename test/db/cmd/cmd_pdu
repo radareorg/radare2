@@ -55,6 +55,7 @@ EOF
 RUN
 
 NAME=pdua
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 5e4889e24883e4f05054
 pdua 10
@@ -76,6 +77,7 @@ EOF
 RUN
 
 NAME=pduc
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 5e4889e24883e4f0e841424344
 pduc
@@ -89,7 +91,9 @@ EOF
 RUN
 
 NAME=pdui
+ARGS=-a x86 -b 64
 CMDS=<<EOF
+e asm.arch=x86
 wx 5e4889e24883e4f05054
 pdui push rsp
 EOF
@@ -103,6 +107,7 @@ EOF
 RUN
 
 NAME=pduo
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 5e4889e24883e4f05054
 pduo push
@@ -116,6 +121,7 @@ EOF
 RUN
 
 NAME=pdus
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 wx 5e4889e24883e4f00f05
 pdus

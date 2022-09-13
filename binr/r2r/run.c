@@ -1242,11 +1242,25 @@ static bool require_check(const char *require) {
 	if (strstr (require, "gas")) {
 		res &= r_file_exists ("/usr/bin/as");
 	}
+	if (strstr (require, "unix")) {
+#if __UNIX__
+		res &= true;
+#else
+		res = false;
+#endif
+	}
+	if (strstr (require, "windows")) {
+#if __WINDOWS__
+		res &= true;
+#else
+		res = false;
+#endif
+	}
 	if (strstr (require, "linux")) {
 #if __linux__
 		res &= true;
 #else
-		res &= false;
+		res = false;
 #endif
 	}
 	if (strstr (require, "x86")) {
