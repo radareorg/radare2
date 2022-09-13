@@ -1550,37 +1550,24 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		{
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
-			int bits = INSOP (0).size * 8;
 
-			/*
-			 * Here we first set ZF depending on the source operand
-			 * (and bail out if it's 0), then test each bit in a loop
-			 * by creating a mask on the stack and applying it, returning
-			 * result if bit is set.
-			 */
-			esilprintf (op, "%s,!,?{,1,zf,=,0,%s,=,BREAK,},0,zf,=,1,"
-					"DUP,1,<<,%s,&,?{,1,+,%s,=,BREAK,},"
-					"DUP,0,<,?{,1,+,DUP,%d,>,${,15,GOTO,},}",
-					src, dst,
-					dst, dst, bits);
+			esilprintf (op, "21,GOTO,"
+					"0x%"PFMT64x",%s,:=,DUP,%s,++,%s,:=,%s,1,<<,&,!,?{,5,GOTO,},"
+					"POP,BREAK,%s,!,zf,:=,zf,!,?{,%s,2,GOTO,}",
+					UT64_MAX, dst, dst, dst, dst, src, src);
 		}
 		break;
 	case X86_INS_BSR:
 		{
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
-			int bits = INSOP (0).size * 8;
+			const ut32 bits = INSOP (0).size * 8;
 
-			/*
-			 * Similar to BSF, except we naturally don't
-			 * need to subtract anything to create
-			 * a mask and return the result.
-			 */
-			esilprintf (op, "%s,!,?{,1,zf,=,0,%s,=,BREAK,},0,zf,=,1,"
-					"DUP,1,<<,%s,&,?{,1,+,%s,=,BREAK,},"
-					"DUP,0,<,?{,1,+,DUP,%d,>,${,15,GOTO,},}",
-					src, dst,
-					dst, dst, bits);
+			//we might need to unfold the loop for better analysis
+			esilprintf (op, "21,GOTO,"	// src can be a mem reference
+					"%d,%s,:=,DUP,%s,--,%s,:=,%s,1,<<,&,!,?{,5,GOTO,},"
+					"POP,BREAK,%s,!,zf,:=,zf,!,?{,%s,2,GOTO,}",
+					bits, dst, dst, dst, dst, src, src);
 		}
 		break;
 	case X86_INS_BSWAP:
