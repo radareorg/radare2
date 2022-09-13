@@ -705,30 +705,33 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 	if (mask & R_ANAL_OP_MASK_VAL && args.num) {
 		int i, j = 1;
-		op->dst = R_NEW0 (RAnalValue);
+		RAnalValue *dst, *src;
+		dst = R_NEW0 (RAnalValue);
 		char *argf = strdup (o->args);
 		char *comma = strtok (argf, ",");
 		if (comma && strchr (comma, '(')) {
-			op->dst->delta = (st64)r_num_get (NULL, args.arg[0]);
-			op->dst->reg = r_reg_get (anal->reg, args.arg[1], -1);
+			dst->delta = (st64)r_num_get (NULL, args.arg[0]);
+			dst->reg = r_reg_get (anal->reg, args.arg[1], -1);
 			j = 2;
 		} else if (isdigit ((unsigned char)args.arg[j][0])) {
-			op->dst->imm = r_num_get (NULL, args.arg[0]);
+			dst->imm = r_num_get (NULL, args.arg[0]);
 		} else {
-			op->dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
+			dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
 		}
+		r_pvector_push(op->dsts, dst);
 		for (i = 0; j < args.num; i++, j++) {
-			op->src[i] = R_NEW0 (RAnalValue);
+			src = R_NEW0 (RAnalValue);
 			comma = strtok (NULL, ",");
 			if (comma && strchr (comma, '(')) {
-				op->src[i]->delta = (st64)r_num_get (NULL, args.arg[j]);
-				op->src[i]->reg = r_reg_get (anal->reg, args.arg[j + 1], -1);
+				src->delta = (st64)r_num_get (NULL, args.arg[j]);
+				src->reg = r_reg_get (anal->reg, args.arg[j + 1], -1);
 				j++;
 			} else if (isalpha ((unsigned char)args.arg[j][0])) {
-				op->src[i]->reg = r_reg_get (anal->reg, args.arg[j], -1);
+				src->reg = r_reg_get (anal->reg, args.arg[j], -1);
 			} else {
-				op->src[i]->imm = r_num_get (NULL, args.arg[j]);
+				src->imm = r_num_get (NULL, args.arg[j]);
 			}
+			r_pvector_push(op->srcs, src);
 		}
 		free (argf);
 	}

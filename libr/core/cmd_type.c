@@ -997,15 +997,20 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			int j, src_imm = -1, dst_imm = -1;
 			ut64 src_addr = UT64_MAX;
 			ut64 dst_addr = UT64_MAX;
-			for (j = 0; j < 3; j++) {
-				if (aop.src[j] && aop.src[j]->reg && aop.src[j]->reg->name) {
-					src_addr = r_reg_getv (esil->anal->reg, aop.src[j]->reg->name) + index;
-					src_imm = aop.src[j]->delta;
+			void **it = NULL;
+			r_pvector_foreach (aop.srcs, it) {
+				RAnalValue *src = *it;
+				if (src && src->reg && src->reg->name) {
+					src_addr = r_reg_getv (esil->anal->reg, src->reg->name) + index;
+					src_imm = src->delta;
 				}
 			}
-			if (aop.dst && aop.dst->reg && aop.dst->reg->name) {
-				dst_addr = r_reg_getv (esil->anal->reg, aop.dst->reg->name) + index;
-				dst_imm = aop.dst->delta;
+			r_pvector_foreach (aop.dsts, it) {
+				RAnalValue *dst = *it;
+				if (dst && dst->reg && dst->reg->name) {
+					dst_addr = r_reg_getv (esil->anal->reg, dst->reg->name) + index;
+					dst_imm = dst->delta;
+				}
 			}
 			RAnalVar *var = r_anal_get_used_function_var (core->anal, aop.addr);
 			if (false) { // src_addr != UT64_MAX || dst_addr != UT64_MAX) {

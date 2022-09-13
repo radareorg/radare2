@@ -28,6 +28,9 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->refptr = 0;
 		op->val = UT64_MAX;
 		op->disp = UT64_MAX;
+
+		op->srcs = r_pvector_new_with_len(r_anal_value_free, 3);
+		op->dsts = r_pvector_new_with_len(r_anal_value_free, 1);
 	}
 }
 
@@ -35,14 +38,10 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	if (!op) {
 		return;
 	}
-	r_anal_value_free (op->src[0]);
-	r_anal_value_free (op->src[1]);
-	r_anal_value_free (op->src[2]);
-	op->src[0] = NULL;
-	op->src[1] = NULL;
-	op->src[2] = NULL;
-	r_anal_value_free (op->dst);
-	op->dst = NULL;
+	r_pvector_free(op->srcs);
+	r_pvector_free(op->dsts);
+	op->srcs = NULL;
+	op->dsts = NULL;
 	r_list_free (op->access);
 	op->access = NULL;
 	r_strbuf_fini (&op->opex);
@@ -168,10 +167,12 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	} else {
 		nop->mnemonic = NULL;
 	}
-	nop->src[0] = r_anal_value_copy (op->src[0]);
-	nop->src[1] = r_anal_value_copy (op->src[1]);
-	nop->src[2] = r_anal_value_copy (op->src[2]);
-	nop->dst = r_anal_value_copy (op->dst);
+	nop->srcs = r_pvector_new_with_len(r_anal_value_free, 3);
+	nop->dsts = r_pvector_new_with_len(r_anal_value_free, 1);
+	r_pvector_push(nop->srcs, r_anal_value_copy(r_pvector_at(op->srcs, 0)));
+	r_pvector_push(nop->srcs, r_anal_value_copy(r_pvector_at(op->srcs, 1)));
+	r_pvector_push(nop->srcs, r_anal_value_copy(r_pvector_at(op->srcs, 2)));
+	r_pvector_push(nop->dsts, r_anal_value_copy(r_pvector_at(op->dsts, 0)));
 	if (op->access) {
 		RListIter *it;
 		RAnalValue *val;
@@ -397,9 +398,12 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	RAnalBlock *bb;
 	RAnalFunction *f;
 	char *cstr, ret[128];
-	char *r0 = r_anal_value_to_string (op->dst);
-	char *a0 = r_anal_value_to_string (op->src[0]);
-	char *a1 = r_anal_value_to_string (op->src[1]);
+	RAnalValue *dst = r_pvector_at(op->dsts, 0);
+	RAnalValue *src0 = r_pvector_at(op->srcs, 0);
+	RAnalValue *src1 = r_pvector_at(op->srcs, 1);
+	char *r0 = r_anal_value_to_string (dst);
+	char *a0 = r_anal_value_to_string (src0);
+	char *a1 = r_anal_value_to_string (src1);
 	if (!r0) {
 		r0 = strdup ("?");
 	}
@@ -687,10 +691,12 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
 	ut8 buf[32];
 	anal->iob.read_at (anal->iob.io, addr, buf, sizeof (buf));
 	RAnalOp op = {0};
+	RAnalValue *dst = NULL;
 	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL) > 0) {
-		if (op.dst && op.dst->reg && op.dst->reg->name && (!name || !strcmp (op.dst->reg->name, name))) {
-			if (op.src[0]) {
-				return op.src[0]->delta;
+		if (op.dsts)	dst = r_pvector_at(op.dsts, 0);
+		if (dst && dst->reg && dst->reg->name && (!name || !strcmp (dst->reg->name, name))) {
+			if (op.srcs && r_pvector_len(op.srcs)) {
+				return ((RAnalValue*)r_pvector_at(op.srcs, 0))->delta;
 			}
 		}
 	}

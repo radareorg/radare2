@@ -221,28 +221,32 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 
 static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	static R_TH_LOCAL RRegItem reg;
+	RAnalValue *src, *dst;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
 		ZERO_FILL (reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
-			op->src[0] = r_anal_value_new ();
-			op->src[0]->reg = &reg;
-			parse_reg_name (op->src[0]->reg, handle, insn, 1);
-			op->src[0]->delta = OPERAND(0).mem.disp;
+			src = r_anal_value_new ();
+			src->reg = &reg;
+			parse_reg_name (src->reg, handle, insn, 1);
+			src->delta = OPERAND(0).mem.disp;
+			r_pvector_push(op->srcs, src);
 		} else if (OPERAND(0).type == M68K_OP_MEM) {
-			op->dst = r_anal_value_new ();
-			op->dst->reg = &reg;
-			parse_reg_name (op->dst->reg, handle, insn, 0);
-			op->dst->delta = OPERAND(1).mem.disp;
+			dst = r_anal_value_new ();
+			dst->reg = &reg;
+			parse_reg_name (dst->reg, handle, insn, 0);
+			dst->delta = OPERAND(1).mem.disp;
+			r_pvector_push(op->dsts, dst);
 		}
 		break;
 	case R_ANAL_OP_TYPE_LEA:
 		ZERO_FILL (reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
-			op->dst = r_anal_value_new ();
-			op->dst->reg = &reg;
-			parse_reg_name (op->dst->reg, handle, insn, 1);
-			op->dst->delta = OPERAND(1).mem.disp;
+			dst = r_anal_value_new ();
+			dst->reg = &reg;
+			parse_reg_name (dst->reg, handle, insn, 1);
+			dst->delta = OPERAND(1).mem.disp;
+			r_pvector_push(op->dsts, dst);
 		}
 		break;
 	}
