@@ -1551,10 +1551,23 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
 
-			esilprintf (op, "21,GOTO,"
-					"0x%"PFMT64x",%s,:=,DUP,%s,++,%s,:=,%s,1,<<,&,!,?{,5,GOTO,},"
-					"POP,BREAK,%s,!,zf,:=,zf,!,?{,%s,2,GOTO,}",
-					UT64_MAX, dst, dst, dst, dst, src, src);
+			if (strcmp (src, dst)) {
+				const ut32 commas = r_str_char_count (src, ',');
+				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,},"
+						"0x%"PFMT64x",%s,:=,"
+						"%s,++,%s,:=,%s,1,<<,%s,&,!,?{,%d,GOTO,}",
+						src, UT64_MAX, dst, dst, dst, dst, src, 11 + commas * 2);
+			} else {
+				// unroll the loop to avoid use of DUP operation
+				const ut32 bits = INSOP (0).size * 8;
+				ut32 i = 0;
+				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}", src);
+				for (; i < bits - 1; i++) {
+					r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",%s,&,?{,%d,%s,:=,BREAK,}",
+						1ULL << i, src, i, dst);
+				}
+				r_strbuf_appendf (&op->esil, ",%d,%s,:=", i, dst);
+			}
 		}
 		break;
 	case X86_INS_BSR:
@@ -1563,11 +1576,22 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
 			const ut32 bits = INSOP (0).size * 8;
 
-			//we might need to unfold the loop for better analysis
-			esilprintf (op, "21,GOTO,"	// src can be a mem reference
-					"%d,%s,:=,DUP,%s,--,%s,:=,%s,1,<<,&,!,?{,5,GOTO,},"
-					"POP,BREAK,%s,!,zf,:=,zf,!,?{,%s,2,GOTO,}",
-					bits, dst, dst, dst, dst, src, src);
+			if (strcmp (src, dst)) {
+				const ut32 commas = r_str_char_count (src, ',');
+				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,},"
+						"%d,%s,:=,"
+						"%s,--,%s,:=,%s,1,<<,%s,&,!,?{,%d,GOTO,}",
+						src, bits, dst, dst, dst, dst, src, 11 + commas * 2);
+			} else {
+				// unroll the loop to avoid use of DUP operation
+				ut32 i = bits - 1;
+				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}", src);
+				for (; i; i--) {
+					r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",%s,&,?{,%d,%s,:=,BREAK,}",
+						1ULL << i, src, i, dst);
+				}
+				r_strbuf_appendf (&op->esil, ",0,%s,:=", dst);
+			}
 		}
 		break;
 	case X86_INS_BSWAP:
