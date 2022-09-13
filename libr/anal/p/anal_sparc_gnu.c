@@ -364,7 +364,7 @@ static RAnalValue * value_fill_addr_reg_disp(RAnal const *const anal, const int 
 static void anal_call(RAnalOp *op, const ut32 insn, const ut64 addr) {
 	const st64 disp = (get_immed_sgnext(insn, 29) * 4);
 	op->type = R_ANAL_OP_TYPE_CALL;
-	op->dst = value_fill_addr_pc_disp(addr, disp);
+	r_pvector_push(op->dsts, value_fill_addr_pc_disp(addr, disp));
 	op->jump = addr + disp;
 	op->fail = addr + 4;
 }
@@ -386,9 +386,9 @@ static void anal_jmpl(RAnal const *const anal, RAnalOp *op, const ut32 insn, con
 	op->eob = true;
 
 	if (X_LDST_I(insn)) {
-		op->dst = value_fill_addr_reg_disp (anal, X_RS1 (insn), disp);
+		r_pvector_push(op->dsts, value_fill_addr_reg_disp (anal, X_RS1 (insn), disp));
 	} else {
-		op->dst = value_fill_addr_reg_regdelta (anal, X_RS1 (insn), X_RS2 (insn));
+		r_pvector_push(op->dsts, value_fill_addr_reg_regdelta (anal, X_RS1 (insn), X_RS2 (insn)));
 	}
 }
 
@@ -423,7 +423,7 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 	} else if (X_OP2(insn) == OP2_BPr) {
 		disp = get_immed_sgnext (X_DISP16 (insn), 15) * 4;
 	}
-	op->dst = value_fill_addr_pc_disp (addr, disp);
+	r_pvector_push(op->dsts, value_fill_addr_pc_disp (addr, disp));
 	op->jump = addr + disp;
 }
 

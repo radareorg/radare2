@@ -1525,6 +1525,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		insn.i_reg.rt = mips_reg_decode (rt);
 		snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "%" PFMT32d, imm);
 
+		RAnalValue *src = r_pvector_at(op->srcs, 0);
+		RAnalValue *dst = r_pvector_at(op->dsts, 0);
 		switch (optype) {
 		case 1:
 			switch (rt) {
@@ -1601,19 +1603,19 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		case 15: // lui
 			insn.id = MIPS_INS_LUI;
 			snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
-			op->dst = r_anal_value_new ();
-			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
+			dst = r_anal_value_new ();
+			dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
 			op->val = imm;
 			break;
 		case 9: // addiu
 			insn.id = MIPS_INS_ADDIU;
 			op->type = R_ANAL_OP_TYPE_ADD;
-			op->dst = r_anal_value_new ();
-			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
+			dst = r_anal_value_new ();
+			dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
-			op->src[0] = r_anal_value_new ();
-			op->src[0]->reg = r_reg_get (anal->reg, mips_reg_decode (rs), R_REG_TYPE_GPR);
+			src = r_anal_value_new ();
+			src->reg = r_reg_get (anal->reg, mips_reg_decode (rs), R_REG_TYPE_GPR);
 			op->val = imm; // Beware: this one is signed... use `?vi $v`
 			if (rs == 0) {
 				insn.id = MIPS_INS_LI;
