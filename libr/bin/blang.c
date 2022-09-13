@@ -64,7 +64,7 @@ static bool check_msvc(RBinSymbol *sym) {
 }
 
 static inline bool check_kotlin(RBinSymbol *sym) {
-	return strstr (sym->name, "kotlin_");
+	return sym->name && strstr (sym->name, "kotlin_");
 }
 static inline bool check_groovy(RBinSymbol *sym) {
 	return strstr (sym->name, "_groovy");
@@ -87,7 +87,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	r_return_val_if_fail (binfile->o->info, R_BIN_NM_NONE);
 	RBinObject *o = binfile->o;
 	RBinInfo *info = o->info;
-	RBinSymbol *sym;
+	RBinSymbol *sym = NULL;
 	RListIter *iter, *iter2;
 	Langs cantbe = {0};
 	bool phobosIsChecked = false;
@@ -199,7 +199,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	if (isObjC) {
 		return R_BIN_NM_OBJC | (isBlocks?R_BIN_NM_BLOCKS:0);
 	}
-	{
+	if (sym) {
 		if (check_kotlin (sym)) {
 			info->lang = "kotlin";
 			return R_BIN_NM_KOTLIN;
