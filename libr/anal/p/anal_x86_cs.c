@@ -1552,7 +1552,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
 
 			esilprintf (op, "21,GOTO,"
-					"0x%"PFMT64x",%s,:=,DUP,%s,++,%s,:=,%s,1,>>,&,!,?{,5,GOTO,},"
+					"0x%"PFMT64x",%s,:=,DUP,%s,++,%s,:=,%s,1,<<,&,!,?{,5,GOTO,},"
 					"POP,BREAK,%s,!,zf,:=,zf,!,?{,%s,2,GOTO,}",
 					UT64_MAX, dst, dst, dst, dst, src, src);
 		}
