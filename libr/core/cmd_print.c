@@ -1,10 +1,6 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include "r_asm.h"
-#include "r_core.h"
-#include "r_config.h"
-#include "r_util.h"
-#include "r_types.h"
+#include <r_core.h>
 #include <limits.h>
 
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
@@ -1370,8 +1366,17 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		}
 		break;
 	case 'A': // "pFA"
-		{
-			char *s = r_axml_decode (data, size);
+		if (input[1] == 'j') {
+			PJ * pj = r_core_pj_new (core);
+			char *s = r_axml_decode (data, size, pj);
+			if (s) {
+				free (s);
+			}
+			s = pj_drain (pj);
+			r_cons_printf ("%s\n", s);
+			free (s);
+		} else {
+			char *s = r_axml_decode (data, size, NULL);
 			if (s) {
 				r_cons_printf ("%s", s);
 				free (s);
