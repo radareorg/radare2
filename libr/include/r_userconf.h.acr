@@ -1,6 +1,10 @@
 #ifndef R2_CONFIGURE_H
 #define R2_CONFIGURE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "r_version.h"
 
 #define R_CHECKS_LEVEL @R_CHECKS_LEVEL@
@@ -123,6 +127,10 @@
 #define HAVE_JEMALLOC 0
 #else
 #define HAVE_JEMALLOC @HAVE_JEMALLOC@
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

@@ -19,7 +19,7 @@ static RList *backtrace_x86_32(RDebug *dbg, ut64 at) {
 	_esp = (ut32) ((ri)? r_reg_get_value (reg, ri): at);
 		// TODO: implement [stack] map uptrace method too
 	esp = _esp;
-	for (i=0; i<dbg->btdepth; i++) {
+	for (i = 0; i < dbg->btdepth; i++) {
 		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
 		if (ebp2 == UT32_MAX)
 			break;
@@ -67,12 +67,12 @@ static RList *backtrace_x86_32_anal(RDebug *dbg, ut64 at) {
 		r_list_append (list, frame);
 	}
 
-	for (i=1; i<dbg->btdepth; i++) {
+	for (i = 1; i < dbg->btdepth; i++) {
 		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
 		if (ebp2 == UT32_MAX)
 			break;
 		*buf = '\0';
-		bio->read_at (bio->io, (ebp2-5)-(ebp2-5)%4, (void *)&buf, 4);
+		bio->read_at (bio->io, (ebp2 - 5) - (ebp2 - 5) % 4, (void *)&buf, 4);
 
 		// TODO: arch_is_call() here and this fun will be portable
 		if (buf[(ebp2-5)%4]==0xe8) {

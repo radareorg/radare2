@@ -1,16 +1,12 @@
 /* radare - LGPL - Copyright 2010-2022 - pancake */
 
-#include <ht_uu.h>
 #include <r_core.h>
-#include <r_hash.h>
-#include "r_io.h"
-#include "r_list.h"
-#include "r_types_base.h"
+#include <ht_uu.h>
 #include "cmd_search_rop.c"
 
 static int cmd_search(void *data, const char *input);
 
-#define USE_EMULATION 0
+#define USE_EMULATION 1
 
 #define AES_SEARCH_LENGTH 40
 #define PRIVATE_KEY_SEARCH_LENGTH 11
@@ -95,7 +91,7 @@ static const char *help_msg_slash_m[] = {
 
 static const char *help_msg_slash[] = {
 	"Usage:", "/[!bf] [arg]", "Search stuff (see 'e??search' for options)\n"
-	"|Use io.va for searching in non virtual addressing spaces",
+	"Use io.va for searching in non virtual addressing spaces",
 	"/", " foo\\x00", "search for string 'foo\\0'",
 	"/j", " foo\\x00", "search for string 'foo\\0' (json output)",
 	"/!", " ff", "search for first occurrence not matching, command modifier",
@@ -142,6 +138,15 @@ static const char *help_msg_slash[] = {
 	"e", " search.to = 0", "end address",
 	"e", " search.flags = true", "if enabled store flags on keyword hits",
 #endif
+	NULL
+};
+
+static const char *help_msg_slash_at[] = {
+	"Usage:", "/at[mjsf] [arg]", "Search for instructions matching type/family/mnemonic",
+	"/atf", " [family]", "search for given-family type of instructions",
+	"/at", " [optype,optype2]", "list instructions matching any of the comma separated optypes",
+	"/atl", "", "list all the instruction types (RAnalOp.Type)",
+	"/atm", "", "search matching only the instruction mnemonic",
 	NULL
 };
 
@@ -264,7 +269,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 	r_cons_break_push (NULL, NULL);
 	for (j = minlen; j <= maxlen; j++) {
 		ut32 len = j;
-		eprintf ("Searching %s for %d byte length.\n", hashname, j);
+		R_LOG_INFO ("Searching %s for %d byte length", hashname, j);
 		r_list_foreach (param->boundaries, iter, map) {
 			if (r_cons_is_breaked ()) {
 				break;
@@ -274,17 +279,17 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 			st64 bufsz;
 			bufsz = to - from;
 			if (len > bufsz) {
-				eprintf ("Hash length is bigger than range 0x%"PFMT64x "\n", from);
+				R_LOG_ERROR ("Hash length is bigger than range 0x%"PFMT64x, from);
 				continue;
 			}
 			buf = malloc (bufsz);
 			if (!buf) {
-				eprintf ("Cannot allocate %"PFMT64d " bytes\n", bufsz);
+				R_LOG_ERROR ("Cannot allocate %"PFMT64d " bytes", bufsz);
 				goto hell;
 			}
-			eprintf ("Search in range 0x%08"PFMT64x " and 0x%08"PFMT64x "\n", from, to);
+			R_LOG_INFO ("Search in range 0x%08"PFMT64x " and 0x%08"PFMT64x, from, to);
 			int blocks = (int) (to - from - len);
-			eprintf ("Carving %d blocks...\n", blocks);
+			R_LOG_INFO ("Carving %d blocks:", blocks);
 			(void) r_io_read_at (core->io, from, buf, bufsz);
 			for (i = 0; (from + i + len) < to; i++) {
 				if (r_cons_is_breaked ()) {
@@ -295,12 +300,12 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 					eprintf ("%d\r", i);
 				}
 				if (!s) {
-					eprintf ("Hash fail\n");
+					R_LOG_ERROR ("Hash fail");
 					break;
 				}
 				// eprintf ("0x%08"PFMT64x" %s\n", from+i, s);
 				if (!strcmp (s, hashstr)) {
-					eprintf ("Found at 0x%"PFMT64x "\n", from + i);
+					R_LOG_INFO ("Found at 0x%"PFMT64x, from + i);
 					r_cons_printf ("f hash.%s.%s = 0x%"PFMT64x "\n",
 						hashname, hashstr, from + i);
 					free (s);
@@ -313,7 +318,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 		}
 	}
 	r_cons_break_pop ();
-	eprintf ("No hashes found\n");
+	R_LOG_WARN ("No hashes found");
 	return 0;
 hell:
 	return -1;
@@ -392,7 +397,7 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	}
 	// TODO: handle sections ?
 	if (from >= to) {
-		eprintf ("aap: Invalid search range 0x%08"PFMT64x " - 0x%08"PFMT64x "\n", from, to);
+		R_LOG_ERROR ("aap: Invalid search range 0x%08"PFMT64x " - 0x%08"PFMT64x, from, to);
 		free (b);
 		return 0;
 	}
@@ -410,11 +415,11 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 		}
 		(void)r_io_read_at (core->io, at, b, core->blocksize);
 		if (r_search_update (core->search, at, b, core->blocksize) == -1) {
-			eprintf ("search: update read error at 0x%08"PFMT64x "\n", at);
+			R_LOG_ERROR ("update read error at 0x%08"PFMT64x, at);
 			break;
 		}
 	}
-	// r_search_reset might also benifet from having an if(s->data) R_FREE(s->data), but im not sure.
+	// r_search_reset might also benifet from having an if (s->data) R_FREE(s->data), but im not sure.
 	//add a commit that puts it in there to this PR if it wouldn't break anything. (don't have to worry about this happening again, since all searches start by resetting core->search)
 	//For now we will just use r_search_kw_reset
 	r_search_kw_reset (core->search);
@@ -513,7 +518,7 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 	r_list_foreach (list, iter, p) {
 		if ((r_itv_end (p->itv) - p->itv.addr) >= ST32_MAX) {
 			// skip searching in large regions
-			eprintf ("aap: skipping large range, please check 'anal.in' variable.\n");
+			R_LOG_ERROR ("aap: skipping large range, please check 'anal.in' variable");
 			continue;
 		}
 		if (log) {
@@ -543,21 +548,21 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 				}
 			} else {
 				if (log) {
-					eprintf ("ap: Unsupported asm.arch and asm.bits\n");
+					R_LOG_WARN ("ap: Unsupported asm.arch and asm.bits");
 				}
 			}
 			r_list_free (preds);
 		}
 		if (log) {
-			eprintf ("done\n");
+			R_LOG_INFO ("done");
 		}
 	}
 	if (log) {
 		if (list) {
 			size_t fc1 = r_list_length (core->anal->fcns);
-			eprintf ("Analyzed %d functions based on preludes\n", (int)(fc1 - fc0));
+			R_LOG_INFO ("Found %d new functions based on preludes", (int)(fc1 - fc0));
 		} else {
-			eprintf ("No executable section found, cannot analyze anything. Use 'S' to change or define permissions of sections\n");
+			R_LOG_ERROR ("No executable regions to scan, cannot analyze anything");
 		}
 	}
 	r_list_free (list);
@@ -648,7 +653,7 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 				}
 				*p = 0;
 			} else {
-				eprintf ("Cannot allocate %d\n", mallocsize);
+				R_LOG_ERROR ("Cannot allocate %d bytes", mallocsize);
 			}
 			s = str;
 			str = NULL;
@@ -735,7 +740,7 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 	map->perm = perms;
 	RInterval itv = {from, size};
 	if (size == -1) {
-		eprintf ("Warning: Invalid range. Use different search.in=? or anal.in=dbg.maps.x\n");
+		R_LOG_WARN ("Invalid range. Use different search.in=? or anal.in=dbg.maps.x");
 		free (map);
 		return;
 	}
@@ -1001,8 +1006,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 			}
 			append_bound (list, core->io, search_itv, from, size, 5);
 		} else {
-			eprintf ("Warning: search.in = ( anal.bb | anal.fcn )"\
-				"requires to seek into a valid function\n");
+			R_LOG_WARN ("search.in = ( anal.bb | anal.fcn ) requires to seek into a valid function");
 			append_bound (list, core->io, search_itv, core->offset, 1, 5);
 		}
 	} else if (!strncmp (mode, "dbg.", 4)) {
@@ -1208,7 +1212,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		// opsz = r_strbuf_length (asmop.buf);
 		char *opst = aop.mnemonic;
 		if (!opst) {
-			eprintf ("Missing mnemonic after disasm with '%s'\n", core->anal->cur->name);
+			R_LOG_ERROR ("Missing mnemonic after disasm with '%s'", core->anal->cur->name);
 			RAsmOp asmop;
 			r_asm_set_pc (core->rasm, addr);
 			if (r_asm_disassemble (core->rasm, &asmop, buf + idx, buflen - idx) < 0) {
@@ -1299,7 +1303,6 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 	char *buf_asm = NULL;
 	unsigned int size = 0;
 	RAnalOp analop = {0};
-	RAsmOp asmop;
 	Sdb *db = NULL;
 	const bool colorize = r_config_get_i (core->config, "scr.color");
 	const bool rop_comments = r_config_get_i (core->config, "rop.comments");
@@ -1307,10 +1310,10 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 	const bool rop_db = r_config_get_i (core->config, "rop.db");
 
 	if (rop_db) {
-		db = sdb_ns (core->sdb, "rop", true);
 		ropList = r_list_newf (free);
+		db = sdb_ns (core->sdb, "rop", true);
 		if (!db) {
-			eprintf ("Error: Could not create SDB 'rop' namespace\n");
+			R_LOG_ERROR ("Could not create SDB 'rop' namespace");
 			r_list_free (ropList);
 			return;
 		}
@@ -1321,6 +1324,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		pj_o (pj);
 		pj_ka (pj, "opcodes");
 		r_list_foreach (hitlist, iter, hit) {
+			RAsmOp asmop;
 			ut8 *buf = malloc (hit->len);
 			if (!buf) {
 				return;
@@ -1341,6 +1345,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			pj_ks (pj, "type", r_anal_optype_to_string (analop.type));
 			pj_end (pj);
 			free (buf);
+			r_asm_op_fini (&asmop);
 		}
 		pj_end (pj);
 		if (db && hit) {
@@ -1361,6 +1366,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		r_cons_printf ("0x%08"PFMT64x ":",
 			((RCoreAsmHit *) hitlist->head->data)->addr);
 		r_list_foreach (hitlist, iter, hit) {
+			RAsmOp asmop;
 			ut8 *buf = malloc (hit->len);
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
@@ -1382,6 +1388,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 				r_cons_printf (" %s;", r_asm_op_get_asm (&asmop));
 			}
 			free (buf);
+			r_asm_op_fini (&asmop);
 		}
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
@@ -1393,9 +1400,10 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 	default:
 		// Print gadgets with new instruction on a new line.
 		r_list_foreach (hitlist, iter, hit) {
+			RAsmOp asmop;
 			const char *comment = rop_comments? r_meta_get_string (core->anal, R_META_TYPE_COMMENT, hit->addr): NULL;
 			if (hit->len < 0) {
-				eprintf ("Invalid hit length here\n");
+				R_LOG_ERROR ("Invalid hit length here");
 				continue;
 			}
 			ut8 *buf = malloc (1 + hit->len);
@@ -1437,6 +1445,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			free (asm_op_hex);
 			free (buf);
 			r_anal_op_fini (&analop);
+			r_asm_op_fini (&asmop);
 		}
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
@@ -1468,7 +1477,6 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	int delta = 0;
 	ut8 *buf;
 	RIOMap *map;
-	RAsmOp asmop;
 
 	Sdb *gadgetSdb = NULL;
 	if (r_config_get_i (core->config, "rop.sdb")) {
@@ -1481,10 +1489,9 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	}
 	if (max_instr <= 1) {
 		r_list_free (end_list);
-		eprintf ("ROP length (rop.len) must be greater than 1.\n");
+		R_LOG_ERROR ("ROP length (rop.len) must be greater than 1");
 		if (max_instr == 1) {
-			eprintf ("For rop.len = 1, use /c to search for single "
-				"instructions. See /c? for help.\n");
+			R_LOG_ERROR ("For rop.len = 1, use /c to search for single instructions. See /c? for help");
 		}
 		return false;
 	}
@@ -1614,6 +1621,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			prev = 0;
 			// Start at just before the first end gadget.
 			for (i = next - ropdepth; i < (delta - max_inst_size_x86) && max_count; i += increment) {
+				RAsmOp asmop;
 				if (increment == 1) {
 					// give in-boundary instructions a shot
 					if (i < prev - max_inst_size_x86) {
@@ -1658,9 +1666,11 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 						from + i, buf, delta, i, grep, regexp,
 						rx_list, end_gadget, badstart);
 					if (!hitlist) {
+						r_asm_op_fini (&asmop);
 						continue;
 					}
 					if (align && (0 != ((from + i) % align))) {
+						r_asm_op_fini (&asmop);
 						continue;
 					}
 					if (gadgetSdb) {
@@ -1670,6 +1680,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 						char *headAddr = r_str_newf ("%"PFMT64x, hit->addr);
 						if (!headAddr) {
 							result = false;
+							r_asm_op_fini (&asmop);
 							goto bad;
 						}
 
@@ -1678,6 +1689,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 							if (!addr) {
 								free (headAddr);
 								result = false;
+								r_asm_op_fini (&asmop);
 								goto bad;
 							}
 							sdb_concat (gadgetSdb, headAddr, addr, 0);
@@ -1701,10 +1713,12 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 					if (max_count > 0) {
 						max_count--;
 						if (max_count < 1) {
+							r_asm_op_fini (&asmop);
 							break;
 						}
 					}
 				}
+				r_asm_op_fini (&asmop);
 				if (increment != 1) {
 					i = next;
 				}
@@ -1765,7 +1779,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		// initialize esil vm
 		r_core_cmd0 (core, "aei");
 		if (!core->anal->esil) {
-			eprintf ("Cannot initialize the ESIL vm\n");
+			R_LOG_ERROR ("Cannot initialize the ESIL vm");
 			return;
 		}
 	}
@@ -1812,13 +1826,13 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			r_anal_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
 #endif
 			if (r_cons_is_breaked ()) {
-				eprintf ("Breaked at 0x%08"PFMT64x "\n", addr);
+				R_LOG_INFO ("Breaked at 0x%08"PFMT64x, addr);
 				break;
 			}
 			r_anal_esil_set_pc (core->anal->esil, addr);
 			if (!r_anal_esil_parse (core->anal->esil, input + 2)) {
 				// XXX: return value doesnt seems to be correct here
-				eprintf ("Cannot parse esil (%s)\n", input + 2);
+				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
 				break;
 			}
 			hit_happens = false;
@@ -1843,7 +1857,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 					}
 				}
 			} else {
-				eprintf ("Cannot parse esil (%s)\n", input + 2);
+				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
 				r_anal_esil_stack_free (core->anal->esil);
 				free (res);
 				break;
@@ -1860,7 +1874,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				}
 				hit_combo++;
 				if (hit_combo > hit_combo_limit) {
-					eprintf ("Hit search.esilcombo reached (%d). Stopping search. Use f-\n", hit_combo_limit);
+					R_LOG_INFO ("Hit search.esilcombo reached (%d). Stopping search. Use f-", hit_combo_limit);
 					break;
 				}
 			} else {
@@ -1880,22 +1894,31 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 #define SUMARRAY(arr, size, res) do (res) += (arr)[--(size)]; while ((size))
 
 #if USE_EMULATION
+static const char *get_syscall_register(RCore *core) {
+	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	if (!strcmp (core->anal->config->arch, "arm") && core->anal->config->bits == 64) {
+		const char *os = core->anal->config->os;
+		if (!strcmp (os, "linux")) {
+			a0 = "x8";
+		} else if (!strcmp (os, "macos")) {
+			a0 = "x16";
+		}
+	}
+	return a0;
+}
 // IMHO This code must be deleted
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int i, inslen, bsize = R_MIN (64, core->blocksize);
-	ut8 *arr;
 	RAnalOp aop;
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	const char *a0 = get_syscall_register (core);
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
 	RRegItem *reg_a0 = r_reg_get (core->dbg->reg, a0, -1);
 
-	arr = malloc (bsize);
+	ut8 *arr = malloc (bsize);
 	if (!arr) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
-		free (arr);
 		return -1;
 	}
 	r_reg_set_value (core->dbg->reg, r, curpc);
@@ -1914,10 +1937,10 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 			}
 			i += incr;
 			curpc += incr;
-			if (r_anal_op_nonlinear (aop.type)) {	// skip the instr
+			if (r_anal_op_nonlinear (aop.type)) {
 				r_reg_set_value (core->dbg->reg, r, curpc + 1);
-			} else {	// step instr
-				r_core_esil_step (core, UT64_MAX, NULL, NULL);
+			} else {
+				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			}
 		}
 	}
@@ -1934,7 +1957,6 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 #if USE_EMULATION
 	ut64 curpc;
 #endif
-	ut8 *buf;
 	int curpos, idx = 0, count = 0;
 	RAnalOp aop = {0};
 	int i, ret, bsize = R_MAX (64, core->blocksize);
@@ -1957,17 +1979,20 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		r_anal_esil_free (esil);
 		return;
 	}
-	buf = malloc (bsize);
+	ut8 *buf = malloc (bsize);
 	if (!buf) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
 		r_anal_esil_free (esil);
 		free (previnstr);
 		return;
 	}
 	ut64 oldoff = core->offset;
+#if !USE_EMULATION
 	int syscallNumber = 0;
+#endif
 	r_cons_break_push (NULL, NULL);
-	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	// XXX: the syscall register depends on arcm
+	const char *a0 = get_syscall_register (core);
 	char *esp = r_str_newf ("%s,=", a0);
 	char *esp32 = NULL;
 	if (core->anal->config->bits == 64) {
@@ -1980,11 +2005,11 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
 		if (from >= to) {
-			eprintf ("Error: from must be lower than to\n");
+			R_LOG_ERROR ("from must be lower than to");
 			goto beach;
 		}
 		if (to == UT64_MAX) {
-			eprintf ("Error: Invalid destination boundary\n");
+			R_LOG_ERROR ("Invalid destination boundary");
 			goto beach;
 		}
 		for (i = 0, at = from; at < to; at++, i++) {
@@ -2003,18 +2028,20 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_ESIL);
 			curpos = idx++ % (MAXINSTR + 1);
 			previnstr[curpos] = ret; // This array holds prev n instr size + cur instr size
+#if !USE_EMULATION
 			if (aop.type == R_ANAL_OP_TYPE_MOV) {
 				const char *es = R_STRBUF_SAFEGET (&aop.esil);
 				if (strstr (es, esp)) {
 					if (aop.val != -1) {
 						syscallNumber = aop.val;
 					}
-				} else if (esp32 && strstr (es, esp32)){
+				} else if (esp32 && strstr (es, esp32)) {
 					if (aop.val != -1) {
 						syscallNumber = aop.val;
 					}
 				}
 			}
+#endif
 			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
 				int scVector = -1; // int 0x80, svc 0x70, ...
 				int scNumber = 0; // r0/eax/...
@@ -2051,7 +2078,9 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 					r_anal_op_fini (&aop);
 					break;
 				}
+#if !USE_EMULATION
 				syscallNumber = 0;
+#endif
 			}
 			int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
 			if (inc < 0) {
@@ -2080,10 +2109,10 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 	RAnalRef *ref;
 	RListIter *iter;
 	ut8 buf[12];
-	RAsmOp asmop;
 	RList *list = r_anal_xrefs_get (core->anal, addr);
 	if (list) {
 		r_list_foreach (list, iter, ref) {
+			RAsmOp asmop;
 			r_io_read_at (core->io, ref->addr, buf, size);
 			r_asm_set_pc (core->rasm, ref->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, size);
@@ -2113,6 +2142,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 				}
 			}
 			free (buf_fcn);
+			r_asm_op_fini (&asmop);
 		}
 	}
 	r_list_free (list);
@@ -2142,6 +2172,7 @@ static void cmd_search_aF(RCore *core, const char *input) {
 				size_t left = bb->size - bb->op_pos[i];
 				int ret = r_asm_disassemble (core->rasm, &asmop, idata, left);
 				if (ret  < 1) {
+					r_asm_op_fini (&asmop);
 					break;
 				}
 				char *s = NULL;
@@ -2155,6 +2186,7 @@ static void cmd_search_aF(RCore *core, const char *input) {
 					r_cons_printf ("0x%08"PFMT64x" %s: %s\n", addr, fcn->name, s);
 				}
 				free (s);
+				r_asm_op_fini (&asmop);
 			}
 			free (bbdata);
 		}
@@ -2200,7 +2232,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 				r_core_cmd0 (core, "aoml");
 				break;
 			default:
-				eprintf ("wat\n");
+				R_LOG_ERROR ("Unknown command");
 				break;
 			}
 			return false;
@@ -2218,20 +2250,17 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		case 0:
 		case '?':
 		default:
-			r_core_cmd_help (core, help_msg_slash_a);
+			if (type == 't') {
+				r_core_cmd_help (core, help_msg_slash_at);
+			} else {
+				r_core_cmd_help (core, help_msg_slash_a);
+			}
 			return false;
 		}
 		input++;
 	}
 	if (type == 's') {
-		eprintf ("Shouldn't reach\n");
-// ??
-#if 0
-	case 's': // "/s"
-		do_syscall_search (core, &param);
-		dosearch = false;
-		break;
-#endif
+		R_LOG_ERROR ("Shouldn't be reached");
 		return true;
 	}
 	if (mode == 'j') {
@@ -2241,6 +2270,9 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 	r_cons_break_push (NULL, NULL);
 	RIOMap* map;
 	RListIter *iter;
+	char *word = strdup (input);
+	RList *words = r_str_split_list (word, ",", 0);
+
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
@@ -2251,7 +2283,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 			at = from + i;
 			ut8 bufop[32];
 			r_io_read_at (core->io, at, bufop, sizeof (bufop));
-			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof(bufop), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 			if (ret) {
 				bool match = false;
 				if (type == 'm') {
@@ -2273,8 +2305,14 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 								isCandidate = true;
 							}
 						} else {
-							if (!strcmp (input, type)) {
-								isCandidate = true;
+							RListIter *iter;
+							const char *w;
+							r_list_foreach (words, iter, w) {
+								if (!strcmp (type, w)) {
+									isCandidate = true;
+									match = true;
+									break;
+								}
 							}
 						}
 						if (isCandidate) {
@@ -2291,7 +2329,6 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 					}
 				}
 				if (match) {
-					// char *opstr = r_core_disassemble_instr (core, at, 1);
 					char *opstr = r_core_op_str (core, at);
 					switch (mode) {
 					case 'j':
@@ -2328,6 +2365,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 					}
 					count++;
 					if (search->maxhits && count >= search->maxhits) {
+						r_anal_op_fini (&aop);
 						goto done;
 					}
 				}
@@ -2335,12 +2373,15 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 				if (inc < 0) {
 					inc = 0;
 				}
-	 			i += inc;
-	 			at += inc;
+				i += inc;
+				at += inc;
 			}
+			r_anal_op_fini (&aop);
 		}
 	}
 done:
+	r_list_free (words);
+	free (word);
 	if (mode == 'j') {
 		pj_end (param->pj);
 	}
@@ -2351,7 +2392,7 @@ done:
 static void do_section_search(RCore *core, struct search_parameters *param, const char *input) {
 	double threshold = 1;
 	bool r2mode = false;
-	if (input && *input) {
+	if (R_STR_ISNOTEMPTY (input)) {
 		if (*input == '*') {
 			r2mode = true;
 		}
@@ -2585,7 +2626,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 					kw? kw->keyword_length: 0, bytestr, itv.addr, r_itv_end (itv));
 			}
 			if (r_sandbox_enable (0) && itv.size > 1024 * 64) {
-				eprintf ("Sandbox restricts search range\n");
+				R_LOG_ERROR ("Sandbox restricts search range");
 				break;
 			}
 			if (!core->search->bckwrds) {
@@ -2647,7 +2688,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 		r_cons_break_pop ();
 		free (buf);
 	} else {
-		eprintf ("No keywords defined\n");
+		R_LOG_ERROR ("No keywords defined");
 	}
 
 	if (param->outmode == R_MODE_JSON) {
@@ -2657,15 +2698,15 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 
 static void rop_kuery(void *data, const char *input, PJ *pj) {
 	RCore *core = (RCore *) data;
-	Sdb *db_rop = sdb_ns (core->sdb, "rop", false);
 	SdbListIter *sdb_iter, *it;
 	SdbList *sdb_list;
 	SdbNs *ns;
 	SdbKv *kv;
 	char *out;
 
+	Sdb *db_rop = sdb_ns (core->sdb, "rop", false);
 	if (!db_rop) {
-		eprintf ("Error: could not find SDB 'rop' namespace\n");
+		R_LOG_ERROR ("could not find SDB 'rop' namespace");
 		return;
 	}
 
@@ -2739,7 +2780,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 				free (out);
 			}
 		} else {
-			eprintf ("Invalid ROP class\n");
+			R_LOG_ERROR ("Invalid ROP class");
 		}
 		break;
 	default:
@@ -2832,8 +2873,8 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 		pj_kN (param->pj, "value", to);
 		pj_end (param->pj);
 	}
-	r_core_cmdf (core, "f %s.value.0x%08"PFMT64x" %d = 0x%08"PFMT64x" \n", prefix, to, vsize, to); // flag at value of hit
-	r_core_cmdf (core, "f %s.offset.0x%08"PFMT64x" %d = 0x%08"PFMT64x " \n", prefix, from, vsize, from); // flag at offset of hit
+	r_core_cmdf (core, "f %s.value.0x%08"PFMT64x" %d = 0x%08"PFMT64x, prefix, to, vsize, to); // flag at value of hit
+	r_core_cmdf (core, "f %s.offset.0x%08"PFMT64x" %d = 0x%08"PFMT64x, prefix, from, vsize, from); // flag at offset of hit
 	const char *cmdHit = r_config_get (core->config, "cmd.hit");
 	if (cmdHit && *cmdHit) {
 		ut64 addr = core->offset;
@@ -2852,7 +2893,7 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 	int i = 0;
 	ut8 *buf = calloc (1, bsize);
 	if (!buf) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
 		free (buf);
 		return NULL;
 	}
@@ -2984,7 +3025,7 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 	}
 	memcpy (buf, core->block, bufsz);
 	if (hashLength > sizeof (cmphash)) {
-		eprintf ("Hashlength mismatch %d %d\n", hashLength, (int)sizeof (cmphash));
+		R_LOG_INFO ("Hashlength mismatch %d %d", hashLength, (int)sizeof (cmphash));
 		free (buf);
 		return;
 	}
@@ -2993,7 +3034,7 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 	ut64 hashBits = r_hash_name_to_bits (hashName);
 	int hashSize = r_hash_size (hashBits);
 	if (hashLength != hashSize) {
-		eprintf ("Invalid hash size %d vs %d\n", hashLength, hashSize);
+		R_LOG_ERROR ("Invalid hash size %d vs %d", hashLength, hashSize);
 		free (buf);
 		return;
 	}
@@ -3137,7 +3178,7 @@ static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool fo
 					if (forward) {
 						// do nothing
 					} else {
-						eprintf ("search: update read error at 0x%08"PFMT64x "\n", addr);
+						R_LOG_ERROR ("search update read failed at 0x%08"PFMT64x, addr);
 						r_flag_unset_name (core->flags, "hit.prelude");
 						fail = true;
 					}
@@ -3174,7 +3215,7 @@ static void __core_cmd_search_backward(RCore *core, int delta) {
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	int maxopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 	if (minopsz < 1 || maxopsz < 1) {
-		eprintf ("Invalid MAX_OPSIZE. assuming 4\n");
+		R_LOG_ERROR ("Invalid MAX_OPSIZE. assuming 4");
 		minopsz = 4;
 		maxopsz = 4;
 	}
@@ -3228,7 +3269,6 @@ static void __core_cmd_search_backward(RCore *core, int delta) {
 }
 
 static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
-	RAsmOp asmop;
 	ut8 buf[32];
 	int i;
 	r_io_read_at (core->io, 0, buf, sizeof (buf));
@@ -3236,6 +3276,7 @@ static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
 		return;
 	}
 	for (i = 0; i <= 0xff; i++) {
+		RAsmOp asmop;
 		buf[nth] = i;
 		if (r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf)) > 0) {
 			const char *asmstr = r_strbuf_get (&asmop.buf_asm);
@@ -3243,6 +3284,7 @@ static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
 				r_cons_printf ("%02x  %s\n", i, asmstr);
 			}
 		}
+		r_asm_op_fini (&asmop);
 	}
 }
 
@@ -3268,18 +3310,18 @@ static int cmd_search(void *data, const char *input) {
 	int param_offset = 2;
 	char *inp;
 	if (!core || !core->io) {
-		eprintf ("Can't search if we don't have an open file.\n");
+		R_LOG_ERROR ("Can't search if we don't have an open file");
 		return false;
 	}
 	if (core->in_search) {
-		eprintf ("Can't search from within a search.\n");
+		R_LOG_ERROR ("Can't search from within a search");
 		return R_CMD_RC_SUCCESS;
 	}
 	if (input[0] == '/') {
 		if (core->lastsearch) {
 			input = core->lastsearch;
 		} else {
-			eprintf ("No previous search done\n");
+			R_LOG_ERROR ("No previous search done");
 			return R_CMD_RC_SUCCESS;
 		}
 	} else {
@@ -3292,7 +3334,7 @@ static int cmd_search(void *data, const char *input) {
 	const ut64 search_from = r_config_get_i (core->config, "search.from");
 	const ut64 search_to = r_config_get_i (core->config, "search.to");
 	if (search_from > search_to && search_to) {
-		eprintf ("Invalid search range where search.from > search.to.\n");
+		R_LOG_ERROR ("Invalid search range where search.from > search.to");
 		errcode = 0;
 		goto beach;
 	}
@@ -3300,7 +3342,7 @@ static int cmd_search(void *data, const char *input) {
 	RInterval search_itv = {search_from, search_to - search_from};
 	bool empty_search_itv = search_from == search_to && search_from != UT64_MAX;
 	if (empty_search_itv) {
-		eprintf ("Warning: from == to?\n");
+		R_LOG_WARN ("from == to?");
 		errcode = 0;
 		goto beach;
 	}
@@ -3463,7 +3505,7 @@ reread:
 		ut64 n = (input[1] == ' ' || (input[1] && input[2]==' '))
 			? r_num_math (core->num, input + 2): UT64_MAX;
 		if (!n) {
-			eprintf ("Cannot find null references.\n");
+			R_LOG_ERROR ("Cannot find null references");
 			break;
 		}
 		switch (input[1]) {
@@ -3508,16 +3550,6 @@ reread:
 				dosearch = false;
 			}
 			break;
-		case 'r': // "/rr" - read refs
-			{
-				RListIter *iter;
-				RIOMap *map;
-				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
-					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 'r');
-				}
-			}
-			break;
 		case 'u': // "/ru"
 			{
 				bool v = r_config_get_i (core->config, "search.verbose");
@@ -3529,13 +3561,15 @@ reread:
 				dosearch = false;
 				break;
 			}
+		case 'r': // "/rr" - read refs
 		case 'w': // "/rw" - write refs
+		case 'x': // "/rx" - exec refs
 			{
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
 					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
-					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, 'w');
+					r_core_anal_search (core, r_io_map_begin (map), r_io_map_end (map), n, input[1]);
 				}
 			}
 			break;
@@ -4416,7 +4450,7 @@ again:
 		}
 		min = r_num_math (core->num, input + 2);
 		if (!r_search_set_string_limits (core->search, min, max)) {
-			eprintf ("Error: min must be lower than max\n");
+			R_LOG_ERROR ("min must be lower than max");
 			break;
 		}
 		r_search_reset (core->search, R_SEARCH_STRING);

@@ -220,7 +220,7 @@ SDB_API SdbListIter *ls_append(SdbList *list, void *data) {
 	it = R_NEW (SdbListIter);
 	if (!it) {
 		return NULL;
-	}	
+	}
 	if (list->tail) {
 		list->tail->n = it;
 	}

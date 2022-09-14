@@ -254,7 +254,7 @@ atomic_sub_u(unsigned *p, unsigned x)
 JEMALLOC_INLINE bool
 atomic_cas_u(unsigned *p, unsigned c, unsigned s)
 {
-if (sizeof(*p) == 8) {
+if (sizeof (*p) == 8) {
 	return (atomic_cas_uint64((uint64_t *)p, (uint64_t)c, (uint64_t)s));
 }
 	return (atomic_cas_uint32((uint32_t *)p, (uint32_t)c, (uint32_t)s));
@@ -264,7 +264,7 @@ JEMALLOC_INLINE void
 atomic_write_u(unsigned *p, unsigned x)
 {
 
-if (sizeof(*p) == 8) {
+if (sizeof (*p) == 8) {
 	atomic_write_uint64((uint64_t *)p, (uint64_t)x);
 } else {
 	atomic_write_uint32((uint32_t *)p, (uint32_t)x);

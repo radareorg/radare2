@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -11,9 +11,11 @@
 #include "../asm/arch/arm/asm-arm.h"
 #include "../asm/arch/arm/winedbg/be_arm.h"
 #include "./anal_arm_hacks.inc"
+#include "disas-asm.h"
+#include "../../asm/arch/arm/gnu/opcode-arm.h"
 
-static unsigned int disarm_branch_offset(unsigned int pc, unsigned int insoff) {
-	unsigned int add = insoff << 2;
+static ut32 disarm_branch_offset(ut32 pc, ut32 insoff) {
+	ut32 add = insoff << 2;
 	/* zero extend if higher is 1 (0x02000000) */
 	if ((add & 0x02000000) == 0x02000000) {
 		add |= 0xFC000000;
@@ -24,7 +26,7 @@ static unsigned int disarm_branch_offset(unsigned int pc, unsigned int insoff) {
 #define IS_BRANCH(x)  (((x) & ARM_BRANCH_I_MASK) == ARM_BRANCH_I)
 #define IS_BRANCHL(x) (IS_BRANCH (x) && ((x) & ARM_BRANCH_LINK) == ARM_BRANCH_LINK)
 #define IS_RETURN(x)  (((x) & (ARM_DTM_I_MASK | ARM_DTM_LOAD | (1 << 15))) == (ARM_DTM_I | ARM_DTM_LOAD | (1 << 15)))
-// if ( (inst & ( ARM_DTX_I_MASK | ARM_DTX_LOAD  | ( ARM_DTX_RD_MASK ) ) ) == ( ARM_DTX_LOAD | ARM_DTX_I | ( ARM_PC << 12 ) ) )
+// if ((inst & ( ARM_DTX_I_MASK | ARM_DTX_LOAD  | ( ARM_DTX_RD_MASK ) ) ) == ( ARM_DTX_LOAD | ARM_DTX_I | ( ARM_PC << 12 ) ) )
 #define IS_UNKJMP(x)  ((((ARM_DTX_RD_MASK))) == (ARM_DTX_LOAD | ARM_DTX_I | (ARM_PC << 12)))
 #define IS_LOAD(x)    (((x) & ARM_DTX_LOAD) == (ARM_DTX_LOAD))
 #define IS_CONDAL(x)  (((x) & ARM_COND_MASK) == ARM_COND_AL)
@@ -32,7 +34,7 @@ static unsigned int disarm_branch_offset(unsigned int pc, unsigned int insoff) {
 
 #define API static
 
-static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
 	int op_code;
 	ut16 *_ins = (ut16 *) data;
 	ut16 ins = *_ins;
@@ -47,6 +49,17 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->size = arm_disasm_one_insn (arminsn);
 	op->jump = arminsn->jmp;
 	op->fail = arminsn->fail;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		const char *cpu = r_str_get_fail (anal->config->cpu, "");
+		if (!strcmp (cpu, "wd")) {
+			const char *asmstr = winedbg_arm_insn_asm (arminsn);
+			if (asmstr) {
+				op->mnemonic = strdup (asmstr);
+			} else {
+				op->mnemonic = strdup ("invalid");
+			}
+		}
+	}
 	arm_free (arminsn);
 
 	// TODO: handle 32bit instructions (branches are not correctly decoded //
@@ -162,18 +175,156 @@ static int op_cond(const ut8 *data) {
 	return iconds[b];
 }
 
-static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static R_TH_LOCAL int arm_mode = 0;
+static R_TH_LOCAL unsigned long Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL unsigned char bytes[8];
+
+static int arm_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 4) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, length);
+	return 0;
+}
+
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+	return 0;
+}
+
+static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	// --
+}
+
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
+DECLARE_GENERIC_FPRINTF_FUNC()
+
+static R_TH_LOCAL char *oldcpu = NULL;
+static R_TH_LOCAL int oldcpucode = 0;
+
+static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	const int bits = a->config->bits;
+	int opsize;
+	struct disassemble_info obj;
+	char *options = (bits == 16)? "force-thumb": "no-force-thumb";
+
+	if (len < 2) {
+		return -1;
+	}
+	memset (bytes, 0, sizeof (bytes));
+	memcpy (bytes, buf, R_MIN (len, 4));
+	if (bits < 64 && len < (bits / 8)) {
+		return -1;
+	}
+	RStrBuf *insn_strbuf = r_strbuf_new ("");
+	buf_global = insn_strbuf;
+	Offset = addr;
+
+	/* prepare disassembler */
+	memset (&obj, '\0', sizeof (struct disassemble_info));
+	arm_mode = bits;
+
+	struct {
+		const char name[32];
+		int cpucode;
+	} arm_cpucodes[] = {
+		{ "v2", bfd_mach_arm_2 },
+		{ "v2a", bfd_mach_arm_2a },
+		{ "v3M", bfd_mach_arm_3M },
+		{ "v4", bfd_mach_arm_4 },
+		{ "v4t", bfd_mach_arm_4T },
+		{ "v5", bfd_mach_arm_5 },
+		{ "v5t", bfd_mach_arm_5T },
+		{ "v5te", bfd_mach_arm_5TE },
+		{ "v5j", bfd_mach_arm_5TE },
+		{ "XScale", bfd_mach_arm_XScale },
+		{ "ep9312", bfd_mach_arm_ep9312 },
+		{ "iWMMXt", bfd_mach_arm_iWMMXt },
+		{ "iWMMXt2", bfd_mach_arm_iWMMXt2 },
+	};
+
+	/* select cpu */
+	// XXX oldcpu leaks
+	char *cpu = a->config->cpu;
+	if (oldcpu != cpu) {
+		int cpucode = 0;
+		if (cpu) {
+ 			int i;
+			cpucode = atoi (cpu);
+			for (i = 0; i < (sizeof (arm_cpucodes) / sizeof (arm_cpucodes[0])); i++) {
+				if (!strcmp (arm_cpucodes[i].name, cpu)) {
+					cpucode = arm_cpucodes[i].cpucode;
+					break;
+				}
+			}
+		}
+		oldcpu = cpu;
+		oldcpucode = cpucode;
+	}
+
+	obj.arch = 0;
+	obj.mach = oldcpucode;
+
+	if (obj.mach)
+		obj.flags |= USER_SPECIFIED_MACHINE_TYPE;
+
+	obj.stream = insn_strbuf;
+	obj.buffer = bytes;
+	obj.read_memory_func = &arm_buffer_read_memory;
+	obj.symbol_at_address_func = &symbol_at_address;
+	obj.memory_error_func = &memory_error_func;
+	obj.print_address_func = &generic_print_address_func;
+	obj.endian = !a->config->big_endian;
+	obj.fprintf_func = &generic_fprintf_func;
+	obj.stream = stdout;
+	obj.bytes_per_chunk =
+		obj.bytes_per_line = (bits / 8);
+
+	// r_strbuf_set (&op->buf_asm, "");
+	if (bits == 64) {
+		obj.disassembler_options = NULL;
+		memcpy (bytes, buf, 4);
+		op->size = print_insn_aarch64 ((bfd_vma) Offset, &obj);
+	} else {
+		obj.disassembler_options = options;
+		op->size = (obj.endian == BFD_ENDIAN_LITTLE)
+			? print_insn_little_arm ((bfd_vma) Offset, &obj)
+			: print_insn_big_arm ((bfd_vma) Offset, &obj);
+	}
+	opsize = op->size;
+	op->mnemonic = NULL;
+	if (op->size == -1) {
+		op->mnemonic = strdup ("(data)");
+		op->size = 4;
+	} else if (strstr (r_strbuf_get (buf_global), "UNDEF")) {
+		op->mnemonic = strdup ("undefined");
+		op->size = 2;
+		opsize = 2;
+	}
+	if (!op->mnemonic) {
+		op->mnemonic = r_strbuf_drain (buf_global);
+	}
+	buf_global = NULL;
+	return opsize;
+}
+
+
+static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
 	const ut8 *b = (ut8 *) data;
 	ut8 ndata[4] = {0};
 	ut32 branch_dst_addr, i = 0;
 	ut32 *code = (ut32 *) data;
-	struct winedbg_arm_insn *arminsn;
 
 	if (!data) {
 		return 0;
 	}
-	arminsn = arm_new ();
+	struct winedbg_arm_insn *arminsn = arm_new ();
 	arm_set_thumb (arminsn, false);
+
 	arm_set_input_buffer (arminsn, data);
 	arm_set_pc (arminsn, addr);
 	op->addr = addr;
@@ -189,9 +340,20 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 	if (anal->config->bits == 16) {
 		arm_free (arminsn);
-		return op_thumb (anal, op, addr, data, len);
+		return op_thumb (anal, op, addr, data, len, mask);
 	}
-	op->size = 4;
+	op->size = arm_disasm_one_insn (arminsn);
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		const char *cpu = r_str_get_fail (anal->config->cpu, "");
+		if (!strcmp (cpu, "wd")) {
+			const char *asmstr = winedbg_arm_insn_asm (arminsn);
+			if (asmstr) {
+				op->mnemonic = strdup (asmstr);
+			} else {
+				op->mnemonic = strdup ("invalid");
+			}
+		}
+	}
 	op->cond = op_cond (data);
 	if (b[2] == 0x8f && b[3] == 0xe2) {
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -309,13 +471,9 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		    ((code[i] & 0xffffff00) == 0xe12fff00)) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		} else if (IS_BRANCHL (code[i])) {
-			if (IS_BRANCH (code[i])) {
-				op->type = R_ANAL_OP_TYPE_CALL;
-				op->jump = branch_dst_addr;
-				op->fail = addr + 4;
-			} else {
-				op->type = R_ANAL_OP_TYPE_RET;
-			}
+			op->type = R_ANAL_OP_TYPE_CALL;
+			op->jump = branch_dst_addr;
+			op->fail = addr + 4;
 		} else if (IS_BRANCH (code[i])) {
 			if (IS_CONDAL (code[i])) {
 				op->type = R_ANAL_OP_TYPE_JMP;
@@ -337,7 +495,6 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	arm_free (arminsn);
 	return op->size;
 }
-
 
 static ut64 getaddr(ut64 addr, const ut8 *d) {
 	if (d[2] >> 7) {
@@ -399,10 +556,16 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 }
 
 static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		const char *cpu = r_str_get_fail (anal->config->cpu, "");
+		if (strcmp (cpu, "wd")) {
+			disassemble (anal, op, addr, data, len);
+		}
+	}
 	if (anal->config->bits == 64) {
 		return arm_op64 (anal, op, addr, data, len);
 	}
-	return arm_op32 (anal, op, addr, data, len);
+	return arm_op32 (anal, op, addr, data, len, mask);
 }
 
 static bool set_reg_profile(RAnal *anal) {
@@ -462,9 +625,11 @@ static int archinfo(RAnal *anal, int q) {
 RAnalPlugin r_anal_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
+	.cpus = "v2,v2a,v3M,v4,v5,v5t,v5te,v5j,XScale,ep9312,iWMMXt,iWMMXt2,wd",
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.license = "LGPL3",
 	.bits = 16 | 32 | 64,
-	.desc = "ARM code analysis plugin",
+	.desc = "ARM code analysis plugin (asm.cpu=wd for winedbg disassembler)",
 	.archinfo = archinfo,
 	.op = &arm_op,
 	.set_reg_profile = set_reg_profile,

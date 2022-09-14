@@ -1,4 +1,5 @@
 #!/bin/sh
+# alias locdiff='echo $((`git diff |grep ^+ | wc -l`-`git diff |grep ^- | wc -l`))'
 #A=`hg diff $@ | grep -v '+++' | grep ^+ |wc -l`
 #B=`hg diff $@ | grep -v -- '---' | grep ^- |wc -l`
 A="$(git diff "$@" | grep -v '+++' | grep -c ^+)"

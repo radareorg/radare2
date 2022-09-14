@@ -50,7 +50,7 @@ static void showBuffer(RBuffer *b) {
 }
 
 #if 0
-static int compileShellcode(REgg *egg, const char *input){
+static int compileShellcode(REgg *egg, const char *input) {
 	int i = 0;
 	RBuffer *b;
 	if (!r_egg_shellcode (egg, input)) {

@@ -21,7 +21,7 @@
 #
 0       string          7z\274\257\047\034      7-zip archive data,
 >6	byte		<0			invalid
->6	byte		0			
+>6	byte		0
 >>7	byte		0			invalid
 >6	byte		>20			invalid
 >6      byte            x                       version %d
@@ -81,7 +81,7 @@
 # case you don't know how to set a date in your gzip files. Brilliant.
 >4	lelong		=0		\b, NULL date
 >4	lelong		<0		\b, invalid date
->4	lelong		>0		
+>4	lelong		>0
 >>4	lelong		<694224000	\b, invalid date
 >>4	lelong		=694224000	\b, invalid date
 >>4	lelong		>694224000	\b, last modified
@@ -109,13 +109,39 @@
 >6	byte&0x10	0				single-block stream
 >6	byte&0x10	0x10			multi-block stream
 
-## Classic LZMA signature
+## LZMA BE
 0        byte >0x5a
 >0        byte <0x5e
 >>5        belong 0xffffffff
 >>>1        belong    >0
 >>>>1        belong    <0xfffff
->>>>>1        belong    x        LZMA BE compressed data dictionary size: %d bytes,
+>>>>>1        belong    x        LZMA BE compressed data dictionary size: %d bytes
+>>6      byte 0xff
+>>>1     lelong    0x800000
+>>>>5    lelong    <0xfffffff
+>>>>>5   lelong    x        LZMA LE compressed data dictionary size: %d bytes
+#0	byte	&0
+#>0	byte	<0x5f
+#>>0	byte	>0x5a
+#>>>2	byte	0x00
+#>>>>5	belong	>0xff
+#>>>>>5	belong	<0xffffff	LZMA BE compressed data dictionary size: %d bytes
+
+
+# LZMA LE
+#0	byte	&0
+#>0	byte	>0x5a
+#>>0	byte	<0x5e
+#>>5     belong 0xffffffff
+#>>>1	byte	0x00
+#>>>>2	byte	0x00
+#>>>>>3	byte	0x80
+#>>>>>>5	lelong	>0xff
+#>>>>>>>4	lelong	<=0xffffffff	LZMA LE compressed data dictionary size: %d bytes
+
+# hardcoded
+#0        string \x5d\x00\x00\x80\x00
+#>6	byte 0xff LZME HIDER
 
 #0	string	\xff\x06\x00\x00\x73\x4e\x61\x50\x70\x59	Snappy compression, stream identifier
 

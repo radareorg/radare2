@@ -116,7 +116,7 @@ char *pic_pic18_disassemble(const ut8 *b, int blen, int *opsz) {
 		return NULL;
 	}
 	*opsz = 2;
-	ut16 instr = 0 ; // instruction
+	ut16 instr = 0; // instruction
 	memcpy (&instr, b, sizeof (instr));
 	r_strf_buffer (64);
 	// if still redundan code is reported think of this of instr=0x2

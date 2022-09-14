@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2021 - pancake */
+/* radare - LGPL - Copyright 2015-2022 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -231,8 +231,8 @@ static int parse(RParse *p, const char *data, char *str) {
 				ptr = strchr (ptr+1, '}');
 			}
 			if (!ptr) {
-				eprintf ("Unbalanced bracket\n");
-				free(buf);
+				R_LOG_ERROR ("Unbalanced bracket");
+				free (buf);
 				return false;
 			}
 			ptr = strchr (ptr, ',');
@@ -331,6 +331,7 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	RListIter *iter;
 	RAnal *anal = p->analb.anal;
 	char *oldstr;
+	bool newstack = anal->opt.var_newstack;
 	char *tstr = strdup (data);
 	if (!tstr) {
 		return false;
@@ -402,13 +403,16 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		free (oldstr);
 	}
 	r_list_foreach (spargs, iter, var) {
-		st64 delta = p->get_ptr_at
-			? p->get_ptr_at (f, var->delta, addr)
-			: ST64_MAX;
-		if (delta == ST64_MAX && var->field) {
-			delta = var->delta;
-		} else if (delta == ST64_MAX) {
-			continue;
+		st64 delta = var->delta;
+		if (!newstack) {
+			delta = p->get_ptr_at
+				? p->get_ptr_at (f, var->delta, addr)
+				: ST64_MAX;
+			if (delta == ST64_MAX && var->field) {
+				delta = var->delta;
+			} else if (delta == ST64_MAX) {
+				continue;
+			}
 		}
 		const char *reg = NULL;
 		if (p->get_reg_at) {

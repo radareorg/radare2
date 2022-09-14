@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2010-2021 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2022 - nibble, pancake */
+
+#define R_LOG_ORIGIN "anal.diff"
 
 #include <r_anal.h>
-#include <r_util.h>
 
 R_API RAnalDiff *r_anal_diff_new(void) {
 	RAnalDiff *diff = R_NEW0 (RAnalDiff);
@@ -27,8 +28,8 @@ R_API void r_anal_diff_setup(RAnal *anal, int doops, double thbb, double thfcn) 
 	if (doops >= 0) {
 		anal->diff_ops = doops;
 	}
-	anal->diff_thbb = (thbb>=0)? thbb: R_ANAL_THRESHOLDBB;
-	anal->diff_thfcn = (thfcn>=0)? thfcn: R_ANAL_THRESHOLDFCN;
+	anal->diff_thbb = (thbb >= 0)? thbb: R_ANAL_THRESHOLDBB;
+	anal->diff_thfcn = (thfcn >= 0)? thfcn: R_ANAL_THRESHOLDFCN;
 }
 
 /* 0-100 */
@@ -36,8 +37,8 @@ R_API void r_anal_diff_setup_i(RAnal *anal, int doops, int thbb, int thfcn) {
 	if (doops >= 0) {
 		anal->diff_ops = doops;
 	}
-	anal->diff_thbb = (thbb>=0)? ((double)thbb) / 100: R_ANAL_THRESHOLDBB;
-	anal->diff_thfcn = (thfcn>=0)? ((double)thfcn) / 100: R_ANAL_THRESHOLDFCN;
+	anal->diff_thbb = (thbb >= 0)? ((double)thbb) / 100: R_ANAL_THRESHOLDBB;
+	anal->diff_thfcn = (thfcn >= 0)? ((double)thfcn) / 100: R_ANAL_THRESHOLDFCN;
 }
 
 // Fingerprint function basic block
@@ -254,15 +255,15 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 				minsize = fcn_size;
 			}
 			if (maxsize * anal->diff_thfcn > minsize) {
-				eprintf ("Exceeded anal threshold while diffing %s and %s\n", fcn->name, fcn2->name);
+				R_LOG_WARN ("Exceeded anal threshold while diffing %s and %s", fcn->name, fcn2->name);
 				continue;
 			}
 			if (fcn2->diff->type != R_ANAL_DIFF_TYPE_NULL) {
-				eprintf ("Function %s already diffed\n", fcn2->name);
+				R_LOG_WARN ("Function %s already diffed", fcn2->name);
 				continue;
 			}
 			if ((fcn2->type != R_ANAL_FCN_TYPE_FCN && fcn2->type != R_ANAL_FCN_TYPE_SYM)) {
-				eprintf ("Function %s type not supported\n", fcn2->name);
+				R_LOG_WARN ("Function %s type not supported", fcn2->name);
 				continue;
 			}
 			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size, fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);

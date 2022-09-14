@@ -171,7 +171,7 @@ static CPU_MODEL *__get_cpu_model_recursive(const char *model) {
 	if (cpu && cpu->inherit && !cpu->inherit_cpu_p) {
 		cpu->inherit_cpu_p = get_cpu_model (cpu->inherit);
 		if (!cpu->inherit_cpu_p) {
-			R_LOG_ERROR ("Cannot inherit from unknown CPU model '%s'.", cpu->inherit);
+			R_LOG_ERROR ("Cannot inherit from unknown CPU model '%s'", cpu->inherit);
 		}
 	}
 	return cpu;
@@ -209,7 +209,7 @@ static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 	if (cpu->inherit_cpu_p) {
 		return const_by_name (cpu->inherit_cpu_p, type, c);
 	}
-	R_LOG_ERROR ("CONSTANT key[%s] NOT FOUND.", c);
+	R_LOG_ERROR ("CONSTANT key[%s] NOT FOUND", c);
 	return NULL;
 }
 
@@ -1887,7 +1887,6 @@ static bool avr_custom_spm_page_write(RAnalEsil *esil) {
 	// perform writing
 	//eprintf ("SPM_PAGE_WRITE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
 	if (!(t = malloc (1 << page_size_bits))) {
-		eprintf ("Cannot alloc a buffer for copying the temporary page.\n");
 		return false;
 	}
 	r_anal_esil_mem_read (esil, tmp_page, (ut8 *) t, 1 << page_size_bits);

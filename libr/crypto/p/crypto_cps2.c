@@ -694,7 +694,7 @@ main(cps_state,cps2crypt) {
 	ut32 lower;
 	ut32 upper;
 
-	std::string skey1 = parameter("cryptkey1");;
+	std::string skey1 = parameter("cryptkey1");
 	key[0] = strtoll(skey1.c_str(), nullptr, 16);
 
 	std::string skey2 = parameter("cryptkey2");

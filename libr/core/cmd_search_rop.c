@@ -235,7 +235,6 @@ static char* rop_classify_constant(RCore *core, RList *ropList) {
 	const bool stats = r_config_get_i (core->config, "esil.stats");
 
 	if (!romem || !stats) {
-		// eprintf ("Error: esil.romem and esil.stats must be set TRUE");
 		return NULL;
 	}
 
@@ -302,7 +301,7 @@ continue_error:
 	}
 	return ct;
 out_error:
-	FREE_ROP;	
+	FREE_ROP;
 	r_list_free (constants);
 	return NULL;
 }
@@ -320,7 +319,6 @@ static char* rop_classify_mov(RCore *core, RList *ropList) {
 	const bool stats = r_config_get_i (core->config, "esil.stats");
 
 	if (!romem || !stats) {
-		// eprintf ("Error: esil.romem and esil.stats must be set TRUE");
 		return NULL;
 	}
 
@@ -417,7 +415,6 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 	ut64 *op_result_r = R_NEW0 (ut64);
 
 	if (!romem || !stats) {
-		// eprintf ("Error: esil.romem and esil.stats must be set TRUE");
 		free (op_result);
 		free (op_result_r);
 		return NULL;
@@ -517,7 +514,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 				}
 			}
 		}
-continue_error:	
+continue_error:
 		FREE_ROP;
 	}
 	free (op_result);
@@ -525,7 +522,7 @@ continue_error:
 	return arithmetic;
 out_error:
 	FREE_ROP;
-	free (op_result);	
+	free (op_result);
 	free (op_result_r);
 	return NULL;
 }
@@ -544,7 +541,6 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 	ut64 *op_result_r = R_NEW0 (ut64);
 
 	if (!romem || !stats) {
-		// eprintf ("Error: esil.romem and esil.stats must be set TRUE");
 		R_FREE (op_result);
 		R_FREE (op_result_r);
 		return NULL;
@@ -661,7 +657,6 @@ static int rop_classify_nops(RCore *core, RList *ropList) {
 	const bool stats = r_config_get_i (core->config, "esil.stats");
 
 	if (!romem || !stats) {
-		// eprintf ("Error: esil.romem and esil.stats must be set TRUE\n");
 		return -2;
 	}
 
@@ -693,7 +688,7 @@ static void rop_classify(RCore *core, Sdb *db, RList *ropList, const char *key, 
 	Sdb *db_aritm_ct = sdb_ns (db, "arithm_ct", true);
 
 	if (!db_nop || !db_mov || !db_ct || !db_aritm || !db_aritm_ct) {
-		eprintf ("Error: Could not create SDB 'rop' sub-namespaces\n");
+		R_LOG_ERROR ("Could not create SDB 'rop' sub-namespaces");
 		return;
 	}
 	nop = rop_classify_nops (core, ropList);

@@ -2,9 +2,7 @@
 
 #define R_LOG_ORIGIN "filter"
 
-#include "r_types.h"
-#include "r_util.h"
-#include <stdio.h>
+#include <r_util.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -102,7 +100,7 @@ R_API bool r_file_truncate(const char *filename, ut64 newsize) {
 	int r = ftruncate (fd, newsize);
 #endif
 	if (r != 0) {
-		eprintf ("Could not resize %s file\n", filename);
+		R_LOG_ERROR ("Could not resize %s file", filename);
 		close (fd);
 		return false;
 	}
@@ -154,9 +152,7 @@ R_API bool r_file_is_c(const char *file) {
 	const char *ext = r_str_lchr (file, '.'); // TODO: add api in r_file_extension or r_str_ext for this
 	if (ext) {
 		ext++;
-		if (!strcmp (ext, "cparse")
-		||  !strcmp (ext, "c")
-		||  !strcmp (ext, "h")) {
+		if (!strcmp (ext, "cparse") || !strcmp (ext, "c") || !strcmp (ext, "h")) {
 			return true;
 		}
 	}
@@ -254,8 +250,7 @@ R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
 				PTCHAR f = r_sys_conv_utf8_to_win (file);
 				int s = GetFullPathName (f, MAX_PATH, abspath, NULL);
 				if (s > MAX_PATH) {
-					// R_LOG_ERROR ("r_file_abspath/GetFullPathName: Path to file too long.\n");
-					eprintf ("r_file_abspath/GetFullPathName: Path to file too long.\n");
+					R_LOG_ERROR ("r_file_abspath/GetFullPathName: Path to file too long");
 				} else if (!s) {
 					r_sys_perror ("r_file_abspath/GetFullPathName");
 				} else {
@@ -296,7 +291,7 @@ R_API char *r_file_binsh(void) {
 	if (R_STR_ISEMPTY (bin_sh)) {
 		free (bin_sh);
 		bin_sh = r_file_path ("sh");
-		if (R_STR_ISEMPTY (bin_sh)) {
+		if (!bin_sh || *bin_sh != '/') {
 			free (bin_sh);
 			bin_sh = strdup (SHELL_PATH);
 		}
@@ -359,7 +354,6 @@ R_API char *r_stdin_slurp(int *sz) {
 	for (i = ret = 0; i >= 0; i += ret) {
 		char *new = realloc (buf, i + BS);
 		if (!new) {
-			eprintf ("Cannot realloc to %d\n", i+BS);
 			free (buf);
 			return NULL;
 		}
@@ -461,7 +455,7 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 	}
 	size_t rsz = fread (ret, 1, sz, fd);
 	if (rsz != sz) {
-		eprintf ("Warning: r_file_slurp: fread: truncated read (%d / %d)\n", (int)rsz, (int)sz);
+		R_LOG_WARN ("r_file_slurp: fread: truncated read (%d / %d)", (int)rsz, (int)sz);
 		sz = rsz;
 	}
 	fclose (fd);
@@ -741,7 +735,7 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 	FILE *fd;
 	int i,j;
 	if (!file || !*file || !buf || len < 0) {
-		eprintf ("r_file_hexdump file: %s buf: %p\n", file, buf);
+		R_LOG_ERROR ("r_file_hexdump file: %s buf: %p", file, buf);
 		return false;
 	}
 	if (append) {
@@ -751,7 +745,7 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 		fd = r_sandbox_fopen (file, "wb");
 	}
 	if (!fd) {
-		eprintf ("Cannot open '%s' for writing\n", file);
+		R_LOG_ERROR ("Cannot open '%s' for writing", file);
 		return false;
 	}
 	for (i = 0; i < len; i += 16) {
@@ -791,7 +785,7 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
 		fd = r_sandbox_fopen (file, "wb");
 	}
 	if (!fd) {
-		eprintf ("Cannot open '%s' for writing\n", file);
+		R_LOG_ERROR ("Cannot open '%s' for writing", file);
 		return false;
 	}
 	if (buf) {
@@ -1084,7 +1078,7 @@ R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
 	}
 	fd = r_sandbox_open (file, rw? RDWR_FLAGS: O_RDONLY, 0644);
 	if (fd == -1 && !rw) {
-		eprintf ("r_file_mmap: file does not exis.\n");
+		R_LOG_ERROR ("r_file_mmap: file (%s) does not exist", file);
 		//m->buf = malloc (m->len);
 		return m;
 	}
@@ -1296,7 +1290,7 @@ R_API char *r_file_tmpdir(void) {
 	if (!r_file_is_directory (path)) {
 		free (path);
 		return NULL;
-		//eprintf ("Cannot find dir.tmp '%s'\n", path);
+		//R_LOG_ERROR ("Cannot find dir.tmp '%s'", path);
 	}
 	return path;
 }
@@ -1304,7 +1298,7 @@ R_API char *r_file_tmpdir(void) {
 R_API bool r_file_copy(const char *src, const char *dst) {
 	r_return_val_if_fail (R_STR_ISNOTEMPTY (src) && R_STR_ISNOTEMPTY (dst), false);
 	if (!strcmp (src, dst)) {
-		eprintf ("Cannot copy file '%s' to itself.\n", src);
+		R_LOG_ERROR ("Cannot copy file '%s' to itself", src);
 		return false;
 	}
 	/* TODO: implement in C */

@@ -110,17 +110,20 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
 		}
-		int pcalign = anal->config->pcalign;
-		if (pcalign && addr % pcalign) {
+		const int pcalign = anal->config->pcalign;
+		if (pcalign && (addr % pcalign)) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 			op->addr = addr;
-			// eprintf ("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", anal->bits, addr);
 			op->size = 1;
 			return -1;
 		}
 		ret = anal->cur->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
+			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			if (op->size < 0) {
+				op->size = 1;
+			}
 		}
 		op->addr = addr;
 		/* consider at least 1 byte to be part of the opcode */
@@ -137,7 +140,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 	if (!op->mnemonic && (mask & R_ANAL_OP_MASK_DISASM)) {
 		if (anal->verbose) {
-			eprintf ("Warning: unhandled R_ANAL_OP_MASK_DISASM in r_anal_op\n");
+			R_LOG_WARN ("unhandled R_ANAL_OP_MASK_DISASM in r_anal_op");
 		}
 	}
 	if (mask & R_ANAL_OP_MASK_HINT) {
@@ -560,7 +563,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_ROR:
 	case R_ANAL_OP_TYPE_SWITCH:
 	case R_ANAL_OP_TYPE_CASE:
-		eprintf ("Command not implemented.\n");
+		R_LOG_ERROR ("Command not implemented");
 		free (r0);
 		free (a0);
 		free (a1);

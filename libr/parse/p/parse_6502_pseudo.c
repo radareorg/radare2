@@ -80,12 +80,12 @@ static int replace(int argc, const char *argv[], char *newstr, ADDR_TYPE type) {
 				continue;
 			}
 		}
-		if (!strcmp(ops[i].op, argv[0])) {
+		if (!strcmp (ops[i].op, argv[0])) {
 			for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
 				if (IS_DIGIT(ops[i].str[j])) {
 					const char *w = argv[ops[i].str[j] - '0'];
 					if (w) {
-						strcpy(newstr + k, w);
+						strcpy (newstr + k, w);
 						k += strlen(w) - 1;
 					}
 				} else {
@@ -151,8 +151,8 @@ static int parse(RParse *p, const char *data, char *str) {
 			for (++ptr; *ptr == ' '; ptr++) {
 				;
 			}
-			strncpy (w0, buf, sizeof(w0) - 1);
-			strncpy (w1, ptr, sizeof(w1) - 1);
+			strncpy (w0, buf, sizeof (w0) - 1);
+			strncpy (w1, ptr, sizeof (w1) - 1);
 			optr = ptr;
 			ptr = strchr (ptr, ',');
 			if (ptr) {
@@ -160,11 +160,11 @@ static int parse(RParse *p, const char *data, char *str) {
 				for (++ptr; *ptr == ' '; ptr++) {
 					;
 				}
-				strncpy (w1, optr, sizeof(w1) - 1);
-				strncpy (w2, ptr, sizeof(w2) - 1);
+				strncpy (w1, optr, sizeof (w1) - 1);
+				strncpy (w2, ptr, sizeof (w2) - 1);
 			}
 		} else {
-			strncpy (w0, buf, sizeof(w0) - 1);
+			strncpy (w0, buf, sizeof (w0) - 1);
 		}
 
 		const char *wa[] = {w0, w1, w2};

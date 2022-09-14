@@ -227,7 +227,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	}
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	int nargs = r_type_func_args_count (TDB, key);
-	if (!r_anal_cc_func (core->anal, key)){
+	if (!r_anal_cc_func (core->anal, key)) {
 		return NULL;
 	}
 	char *cc = strdup (r_anal_cc_func (core->anal, key));

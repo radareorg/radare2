@@ -2,7 +2,6 @@
 
 #include <r_io.h>
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_util/r_print.h>
 
 #define USE_OWNTIMER 1
@@ -112,15 +111,12 @@ static void gprobe_frame_i2c(RBuffer *frame) {
 
 static int gprobe_get_reply_i2c(struct gport *port, ut8 cmd, RBuffer *reply) {
 	ut8 buf[131];
-	int count;
 	int ddc2bi3_len;
 	ut8 addr = 0x50;
-	ut8 checksum;
 
 	r_sys_usleep (40000);
 
-	count = read (port->fd, buf, sizeof (buf));
-
+	int count = read (port->fd, buf, sizeof (buf));
 	if (count != sizeof (buf)) {
 		return -1;
 	}
@@ -138,12 +134,10 @@ static int gprobe_get_reply_i2c(struct gport *port, ut8 cmd, RBuffer *reply) {
 		return -1;
 	}
 
-	checksum = gprobe_checksum_i2c (&addr, 1, 0);
-
+	ut8 checksum = gprobe_checksum_i2c (&addr, 1, 0);
 	if (gprobe_checksum_i2c (buf, ddc2bi3_len + 2, checksum) != buf[ddc2bi3_len + 2]) {
-		eprintf ("gprobe rx checksum error\n");
+		R_LOG_ERROR ("gprobe rx checksum error");
 	}
-
 	r_buf_append_bytes (reply, buf + 7, buf[5] - 3);
 
 	return 0;
@@ -159,10 +153,9 @@ static int gprobe_send_request_i2c(struct gport *port, RBuffer *request) {
 }
 
 static int i2c_open(struct gport *port) {
-	char *end, filename[32];
+	char *end = NULL, filename[32];
 	int i2cbus = strtol (port->name + 4, &end, 0);
-
-	if (*end) {
+	if (R_STR_ISNOTEMPTY (end)) {
 		return -1;
 	}
 
@@ -190,7 +183,7 @@ static int i2c_open(struct gport *port) {
 static int sp_close(struct gport *port) {
 #if __WINDOWS__
 	/* Returns non-zero upon success, 0 upon failure. */
-	if (CloseHandle (port->hdl) == 0){
+	if (CloseHandle (port->hdl) == 0) {
 		return -1;
 	}
 	port->hdl = INVALID_HANDLE_VALUE;
@@ -1166,13 +1159,13 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOGprobe *gprobe = (RIOGprobe *)fd->data;
 
 	if (!cmd[0] || cmd[0] == '?' || !strcmp (cmd, "help")) {
-		printf ("Usage: =!cmd args\n"
-			" =!reset code\n"
-			" =!debugon\n"
-			" =!debugoff\n"
-			" =!runcode address\n"
-			" =!getdeviceid\n"
-			" =!getinformation\n");
+		printf ("Usage: :cmd args\n"
+			" :reset code\n"
+			" :debugon\n"
+			" :debugoff\n"
+			" :runcode address\n"
+			" :getdeviceid\n"
+			" :getinformation\n");
 		return NULL;
 	}
 
@@ -1206,10 +1199,9 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 
 	if (r_str_startswith (cmd, "getdeviceid")) {
 		ut8 index = 0;
-
 		while (!gprobe_getdeviceid (&gprobe->gport, index++)) {
+			// do nothing
 		};
-
 		return NULL;
 	}
 
@@ -1219,7 +1211,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 
-	printf ("Try: '=!?'\n");
+	printf ("Try: ':?'\n");
 
 	return NULL;
 }

@@ -285,16 +285,16 @@
 /* For use by hash code. */
 /* #undef JEMALLOC_BIG_ENDIAN */
 
-/* sizeof(int) == 2^LG_SIZEOF_INT. */
+/* sizeof (int) == 2^LG_SIZEOF_INT. */
 #define LG_SIZEOF_INT 2
 
-/* sizeof(long) == 2^LG_SIZEOF_LONG. */
+/* sizeof (long) == 2^LG_SIZEOF_LONG. */
 #define LG_SIZEOF_LONG 3
 
-/* sizeof(long long) == 2^LG_SIZEOF_LONG_LONG. */
+/* sizeof (long long) == 2^LG_SIZEOF_LONG_LONG. */
 #define LG_SIZEOF_LONG_LONG 3
 
-/* sizeof(intmax_t) == 2^LG_SIZEOF_INTMAX_T. */
+/* sizeof (intmax_t) == 2^LG_SIZEOF_INTMAX_T. */
 #define LG_SIZEOF_INTMAX_T 3
 
 /* glibc malloc hooks (__malloc_hook, __realloc_hook, __free_hook). */

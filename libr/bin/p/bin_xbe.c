@@ -116,10 +116,10 @@ static RList *sections(RBinFile *bf) {
 		goto out_error;
 	}
 	addr = h->sechdr_addr - h->base;
-	if (addr > bf->size || addr + (sizeof(xbe_section) * h->sections) > bf->size) {
+	if (addr > bf->size || addr + (sizeof (xbe_section) * h->sections) > bf->size) {
 		goto out_error;
 	}
-	r = r_buf_read_at (bf->buf, addr, (ut8 *) sect, sizeof(xbe_section) * h->sections);
+	r = r_buf_read_at (bf->buf, addr, (ut8 *) sect, sizeof (xbe_section) * h->sections);
 	if (r < 1) {
 		goto out_error;
 	}
@@ -185,10 +185,10 @@ static RList *libs(RBinFile *bf) {
 	} else {
 		off = h->kernel_lib_addr - h->base;
 	}
-	if (off > bf->size || off + sizeof(xbe_lib) > bf->size) {
+	if (off > bf->size || off + sizeof (xbe_lib) > bf->size) {
 		goto out_error;
 	}
-	r = r_buf_read_at (bf->buf, off, (ut8 *) &lib, sizeof(xbe_lib));
+	r = r_buf_read_at (bf->buf, off, (ut8 *) &lib, sizeof (xbe_lib));
 	if (r < 1) {
 		goto out_error;
 	}
@@ -202,10 +202,10 @@ static RList *libs(RBinFile *bf) {
 	} else {
 		off = h->xapi_lib_addr - h->base;
 	}
-	if (off > bf->size || off + sizeof(xbe_lib) > bf->size) {
+	if (off > bf->size || off + sizeof (xbe_lib) > bf->size) {
 		goto out_error;
 	}
-	r = r_buf_read_at (bf->buf, off, (ut8 *) &lib, sizeof(xbe_lib));
+	r = r_buf_read_at (bf->buf, off, (ut8 *) &lib, sizeof (xbe_lib));
 	if (r < 1) {
 		goto out_error;
 	}
@@ -266,15 +266,15 @@ static RList *symbols(RBinFile *bf) {
 	ret->free = free;
 	eprintf ("sections %d\n", h->sections);
 	int limit = h->sections;
-	if (limit * (sizeof(xbe_section)) >= bf->size - h->sechdr_addr) {
+	if (limit * (sizeof (xbe_section)) >= bf->size - h->sechdr_addr) {
 		goto out_error;
 	}
 	for (i = 0; found == false && i < limit; i++) {
 		addr = h->sechdr_addr - h->base + (sizeof (xbe_section) * i);
-		if (addr > bf->size || addr + sizeof(sect) > bf->size) {
+		if (addr > bf->size || addr + sizeof (sect) > bf->size) {
 			goto out_error;
 		}
-		r_buf_read_at (bf->buf, addr, (ut8 *) &sect, sizeof(sect));
+		r_buf_read_at (bf->buf, addr, (ut8 *) &sect, sizeof (sect));
 		if (kt_addr >= sect.vaddr && kt_addr < sect.vaddr + sect.vsize) {
 			found = true;
 		}
@@ -283,7 +283,7 @@ static RList *symbols(RBinFile *bf) {
 		goto out_error;
 	}
 	addr = sect.offset + (kt_addr - sect.vaddr);
-	if (addr > bf->size || addr + sizeof(thunk_addr) > bf->size) {
+	if (addr > bf->size || addr + sizeof (thunk_addr) > bf->size) {
 		goto out_error;
 	}
 	i = r_buf_read_at (bf->buf, addr, (ut8 *) &thunk_addr, sizeof (thunk_addr));
@@ -334,7 +334,7 @@ static RBinInfo *info(RBinFile *bf) {
 	memset (dbg_name, 0, sizeof (dbg_name));
 	r_buf_read_at (bf->buf, obj->header.debug_name_addr -\
 		obj->header.base, dbg_name, sizeof (dbg_name));
-	dbg_name[sizeof(dbg_name) - 1] = 0;
+	dbg_name[sizeof (dbg_name) - 1] = 0;
 	ret->file = strdup ((char *) dbg_name);
 	ret->bclass = strdup ("program");
 	ret->machine = strdup ("Microsoft Xbox");

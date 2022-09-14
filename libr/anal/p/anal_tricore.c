@@ -48,7 +48,7 @@ static int cpu_to_mach(char *cpu_type) {
 
 static int tricore_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = memaddr - Offset;
-	if (delta >= 0 && length + delta < sizeof(bytes)) {
+	if (delta >= 0 && length + delta < sizeof (bytes)) {
 		memcpy (myaddr, bytes + delta, length);
 	}
 	return 0;

@@ -145,7 +145,10 @@ typedef enum {
 	R_BIN_NM_MSVC = 1<<7,
 	R_BIN_NM_RUST = 1<<8,
 	R_BIN_NM_KOTLIN = 1<<9,
-	R_BIN_NM_BLOCKS = 1<<31,
+	R_BIN_NM_PASCAL = 1<<10,
+	R_BIN_NM_DART = 1<<11,
+	R_BIN_NM_GROOVY = 1<<12,
+	R_BIN_NM_BLOCKS = 1U<<31,
 	R_BIN_NM_ANY = -1,
 } RBinNameMangling;
 
@@ -276,6 +279,7 @@ typedef struct r_bin_object_t {
 	Sdb *kv;
 	HtUP *addr2klassmethod;
 	void *bin_obj; // internal pointer used by formats
+	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 } RBinObject;
 
 // XXX: RbinFile may hold more than one RBinObject
@@ -355,7 +359,6 @@ struct r_bin_t {
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
 	RStrConstPool constpool;
-	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 };
 
 typedef struct r_bin_xtr_metadata_t {
@@ -782,6 +785,7 @@ R_API void r_bin_mem_free(void *data);
 // demangle functions
 R_API char *r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr, bool libs);
 R_API char *r_bin_demangle_java(const char *str);
+R_API char *r_bin_demangle_freepascal(const char *str);
 R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_msvc(const char *str);
 R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib);
@@ -858,6 +862,7 @@ extern RBinPlugin r_bin_plugin_omf;
 extern RBinPlugin r_bin_plugin_art;
 extern RBinPlugin r_bin_plugin_bootimg;
 extern RBinPlugin r_bin_plugin_dol;
+extern RBinPlugin r_bin_plugin_rel;
 extern RBinPlugin r_bin_plugin_nes;
 extern RBinPlugin r_bin_plugin_qnx;
 extern RBinPlugin r_bin_plugin_mbn;

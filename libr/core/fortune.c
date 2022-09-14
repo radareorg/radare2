@@ -1,7 +1,6 @@
 /* radare2 - LGPL - Copyright 2009-2022 - pancake, condret */
 
 #include <r_core.h>
-#include <r_util.h>
 
 static char *getFortuneFile(RCore *core, const char *type) {
 	char *ft = r_str_newf(R_JOIN_2_PATHS (R2_HOME_FORTUNES, "fortunes.%s"), type);
@@ -16,6 +15,7 @@ static char *getFortuneFile(RCore *core, const char *type) {
 	if (path && r_file_exists (path)) {
 		return path;
 	}
+	free (path);
 	return NULL;
 }
 

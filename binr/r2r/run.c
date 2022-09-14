@@ -303,7 +303,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			proc_index = handles.len;
 			r_vector_push (&handles, &proc->proc);
 		}
-		
+
 		DWORD timeout = INFINITE;
 		if (timeout_us_abs != UT64_MAX) {
 			ut64 now = r_time_now_mono ();
@@ -1234,6 +1234,44 @@ static bool check_cmd_asan_result(R2RProcessOutput *out) {
 }
 #endif
 
+static bool require_check(const char *require) {
+	if (R_STR_ISEMPTY (require)) {
+		return true;
+	}
+	bool res = true;
+	if (strstr (require, "gas")) {
+		res &= r_file_exists ("/usr/bin/as");
+	}
+	if (strstr (require, "unix")) {
+#if __UNIX__
+		res &= true;
+#else
+		res = false;
+#endif
+	}
+	if (strstr (require, "windows")) {
+#if __WINDOWS__
+		res &= true;
+#else
+		res = false;
+#endif
+	}
+	if (strstr (require, "linux")) {
+#if __linux__
+		res &= true;
+#else
+		res = false;
+#endif
+	}
+	if (strstr (require, "x86")) {
+#if __i386__ || __x86_64__
+		res &= true;
+#else
+		res &= false;
+#endif
+	}
+	return res;
+}
 R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	R2RTestResultInfo *ret = R_NEW0 (R2RTestResultInfo);
 	if (!ret) {
@@ -1249,6 +1287,13 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			ret->run_failed = false;
 		} else {
 			R2RCmdTest *cmd_test = test->cmd_test;
+			const char *require = cmd_test->require.value;
+			if (!require_check (require)) {
+				R_LOG_WARN ("Skipping because of %s", require);
+				success = true;
+				ret->run_failed = false;
+				break;
+			}
 			R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
 			success = r2r_check_cmd_test (out, cmd_test);
 			ret->proc_out = out;
@@ -1264,11 +1309,12 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			R2RAsmTest *at = test->asm_test;
 			R2RAsmTestOutput *out = r2r_run_asm_test (config, at);
 			success = r2r_check_asm_test (out, at);
-			if (!success) {
-				eprintf ("\n[rasm2:error] code: %s vs %s\n", at->disasm, out->disasm);
+			const bool is_broken = at->mode & R2R_ASM_TEST_MODE_BROKEN;
+			if (!success && !is_broken) {
 				char *b0 = r_hex_bin2strdup (at->bytes, at->bytes_size);
 				char *b1 = r_hex_bin2strdup (out->bytes, out->bytes_size);
-				eprintf ("[rasm2:error] data: %s vs %s\n", b0, b1);
+				eprintf ("\n"Color_RED"- %s"Color_RESET" # %s\n", at->disasm, b0);
+				eprintf (Color_GREEN"+ %s"Color_RESET" # %s\n", out->disasm, b1);
 				free (b0);
 				free (b1);
 			}

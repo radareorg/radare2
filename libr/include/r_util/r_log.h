@@ -30,8 +30,9 @@ typedef enum r_log_level {
 	R_LOGLVL_ERROR = 1,
 	R_LOGLVL_INFO = 2,
 	R_LOGLVL_WARN = 3,
-	R_LOGLVL_DEBUG = 4,
-	R_LOGLVL_LAST = 5,
+	R_LOGLVL_TODO = 4,
+	R_LOGLVL_DEBUG = 5,
+	R_LOGLVL_LAST = 6,
 } RLogLevel;
 
 typedef bool (*RLogCallback)(void *user, int type, const char *origin, const char *msg);
@@ -69,15 +70,17 @@ R_API void r_log_del_callback(RLogCallback cb);
 #define R_LOG_FATAL(f,...) do {} while(0)
 #define R_LOG_ERROR(f,...) do {} while(0)
 #define R_LOG_INFO(f,...) do {} while(0)
+#define R_LOG_TODO(f,...) do {} while(0)
 #define R_LOG_WARN(f,...) do {} while(0)
 #define R_LOG_DEBUG(f,...) do {} while(0)
 #else
-#define R_LOG(f,...) if (r_log_match(R_LOGLVL_INFO, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_FATAL(f,...) if (r_log_match(R_LOGLVL_FATAL, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_FATAL, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_ERROR(f,...) if (r_log_match(R_LOGLVL_ERROR, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_ERROR, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_INFO(f,...) if (r_log_match(R_LOGLVL_INFO, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_WARN(f,...) if (r_log_match(R_LOGLVL_WARN, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_WARN, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
-#define R_LOG_DEBUG(f,...) if (r_log_match(R_LOGLVL_DEBUG, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_DEBUG, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG(f,...) if (r_log_match (R_LOGLVL_INFO, R_LOG_ORIGIN)) {r_log_message (R_LOGLVL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_FATAL(f,...) if (r_log_match (R_LOGLVL_FATAL, R_LOG_ORIGIN)) {r_log_message (R_LOGLVL_FATAL, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_ERROR(f,...) if (r_log_match (R_LOGLVL_ERROR, R_LOG_ORIGIN)) {r_log_message (R_LOGLVL_ERROR, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_INFO(f,...) if (r_log_match (R_LOGLVL_INFO, R_LOG_ORIGIN)) {r_log_message (R_LOGLVL_INFO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_TODO(f,...) if (r_log_match (R_LOGLVL_TODO, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_TODO, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_WARN(f,...) if (r_log_match (R_LOGLVL_WARN, R_LOG_ORIGIN)) {r_log_message (R_LOGLVL_WARN, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
+#define R_LOG_DEBUG(f,...) if (r_log_match (R_LOGLVL_DEBUG, R_LOG_ORIGIN)) {r_log_message (R_LOGLVL_DEBUG, R_LOG_ORIGIN, __FILE__, __LINE__, f, ##__VA_ARGS__);}
 #endif
 
 R_API void r_log_set_file(const char *expr);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2017 - rakholiyajenish.07 */
+/* radare - LGPL - Copyright 2016-2022 - rakholiyajenish.07 */
 
 #include <r_lib.h>
 #include <r_crypto.h>
@@ -24,7 +24,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	if (!cry || !buf || len < 1) {
 		return false;
 	}
-	ut8 *obuf = malloc (olen);
+	ut8 *obuf = calloc (1, olen);
 	if (!obuf) {
 		return false;
 	}
@@ -44,6 +44,7 @@ static bool final(RCrypto *cry, const ut8 *buf, int len) {
 
 RCryptoPlugin r_crypto_plugin_base91 = {
 	.name = "base91",
+	// R2_580 .author = "pancake",
 	.set_key = base91_set_key,
 	.get_key_size = base91_get_key_size,
 	.use = base91_use,

@@ -23,6 +23,9 @@
 #ifndef SFLIB_H
 #define SFLIB_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "sfsysnr.h"
 #include "sfsyscall.h"
@@ -208,5 +211,9 @@ static inline _sfsyscall0( int, munlockall )
 // extattr_set_fd
 // extattr_get_fd
 // extattr_delete_fd
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SFLIB_H */

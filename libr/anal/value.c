@@ -55,7 +55,7 @@ R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 	case 4:
 	case 8:
 		//anal->bio ...
-		eprintf ("TODO: memref for to_ut64 not supported\n");
+		R_LOG_INFO ("memref for to_ut64 is not supported");
 		break;
 	}
 	return num;
@@ -69,7 +69,7 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 			r_mem_set_num (data, val->memref, num);
 			anal->iob.write_at (anal->iob.io, addr, data, val->memref);
 		} else {
-			eprintf ("No IO binded to r_anal\n");
+			R_LOG_ERROR ("No IO binded to r_anal");
 		}
 	} else {
 		if (val->reg) {

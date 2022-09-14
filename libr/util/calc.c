@@ -8,10 +8,8 @@
     ISBN: 0201700735
  */
 
-#include <r_types.h>
+#define R_LOG_ORIGIN "util.calc"
 #include <r_util.h>
-#include <ctype.h>
-#include <stdio.h>
 
 /* accessors */
 static inline RNumCalcValue Nset(ut64 v) { RNumCalcValue n; n.d =(double)v; n.n = v; return n; }
@@ -37,12 +35,12 @@ static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) { n.d += v.d;
 static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n >>= v.n; return n; }
 static inline RNumCalcValue Nrol(RNumCalcValue n, RNumCalcValue v) {
 	n.d += v.d;
-	n.n = (n.n << v.n) | (n.n >> (sizeof(n.n) * 8 - v.n));
+	n.n = (n.n << v.n) | (n.n >> (sizeof (n.n) * 8 - v.n));
 	return n;
 }
 static inline RNumCalcValue Nror(RNumCalcValue n, RNumCalcValue v) {
 	n.d += v.d;
-	n.n = (n.n >> v.n) | (n.n << (sizeof(n.n) * 8 - v.n));
+	n.n = (n.n >> v.n) | (n.n << (sizeof (n.n) * 8 - v.n));
 	return n;
 }
 static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
@@ -344,26 +342,33 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 			int i = 0;
 #define stringValueAppend(x) { \
 	const size_t max = sizeof (nc->string_value) - 1; \
-	if (i < max) nc->string_value[i++] = x; \
-	else nc->string_value[max] = 0; \
+	if (i < max) { nc->string_value[i++] = x; } \
+	else { nc->string_value[max] = 0; } \
 }
-			stringValueAppend(ch);
+			stringValueAppend (ch);
 			if (ch == '[') {
-				while (cin_get (num, nc, &ch) && ch!=']') {
+				while (cin_get (num, nc, &ch) && ch != ']') {
 					if (i > R_NUMCALC_STRSZ - 1) {
 						error (num, nc, "string too long");
 						return 0;
 					}
-					stringValueAppend(ch);
+					stringValueAppend (ch);
 				}
-				stringValueAppend(ch);
+				if (ch != ']') {
+					error (num, nc, "cannot find closing ]");
+					return 0;
+				}
+				stringValueAppend (ch);
+			} else if (ch == ']') {
+				error (num, nc, "cannot find opening [");
+				return 0;
 			} else {
 				while (cin_get (num, nc, &ch) && isvalidchar ((unsigned char)ch)) {
 					if (i >= R_NUMCALC_STRSZ) {
 						error (num, nc, "string too long");
 						return 0;
 					}
-					stringValueAppend(ch);
+					stringValueAppend (ch);
 				}
 			}
 			stringValueAppend (0);
@@ -385,7 +390,7 @@ static void load_token(RNum *num, RNumCalc *nc, const char *s) {
 R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	RNumCalcValue n;
 	RNumCalc *nc, nc_local;
-	if (!str || !*str) {
+	if (R_STR_ISEMPTY (str)) {
 		return 0LL;
 	}
 	if (num) {
@@ -414,6 +419,7 @@ R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	}
 	if (num) {
 		num->fvalue = n.d;
+		num->value = n.n;
 	}
 	nc->under_calc = false;
 	return n.n;

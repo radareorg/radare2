@@ -171,4 +171,4 @@ static const struct names {
 	{"<HTML",	L_HTML},
 	{"<!--",	L_HTML},
 };
-#define NNAMES (sizeof(names)/sizeof(struct names))
+#define NNAMES (sizeof (names)/sizeof (struct names))

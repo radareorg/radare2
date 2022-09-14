@@ -38,6 +38,7 @@ typedef struct r_crypto_t {
 
 typedef struct r_crypto_plugin_t {
 	const char *name;
+	// R2_580 const char *author;
 	const char *license;
 	int (*get_key_size)(RCrypto *cry);
 	bool (*set_iv)(RCrypto *cry, const ut8 *iv, int ivlen);
@@ -84,6 +85,7 @@ extern RCryptoPlugin r_crypto_plugin_punycode;
 extern RCryptoPlugin r_crypto_plugin_rc6;
 extern RCryptoPlugin r_crypto_plugin_cps2;
 extern RCryptoPlugin r_crypto_plugin_serpent;
+extern RCryptoPlugin r_crypto_plugin_sm4;
 extern RCryptoPlugin r_crypto_plugin_aes_wrap;
 
 #define R_CRYPTO_NONE 0ULL
@@ -101,6 +103,7 @@ extern RCryptoPlugin r_crypto_plugin_aes_wrap;
 #define R_CRYPTO_DES_ECB 1ULL<<11
 #define R_CRYPTO_XOR 1ULL<<12
 #define R_CRYPTO_SERPENT 1ULL<<13
+#define R_CRYPTO_SM4_ECB  1ULL << 14
 #define R_CRYPTO_ALL 0xFFFF
 
 #define R_CODEC_NONE 0ULL

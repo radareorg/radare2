@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
 
-#include <stdio.h>
-#include <r_types.h>
-#include <r_util.h>
 #include <r_asm.h>
 
 #if HAVE_GPERF
@@ -30,7 +27,6 @@ extern SdbGperf gperf_LH5801;
 extern SdbGperf gperf_arc;
 extern SdbGperf gperf_arm;
 extern SdbGperf gperf_msp430;
-extern SdbGperf gperf_propeller;
 extern SdbGperf gperf_pic18c;
 
 static const SdbGperf *gperfs[] = {
@@ -58,7 +54,6 @@ static const SdbGperf *gperfs[] = {
 	&gperf_arc,
 	&gperf_arm,
 	&gperf_msp430,
-	&gperf_propeller,
 	&gperf_pic18c,
 	NULL
 };

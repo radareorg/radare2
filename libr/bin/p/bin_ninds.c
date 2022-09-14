@@ -15,7 +15,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 			return true;
 		}
 		/* begin of Homebrew magic */
-		if (!memcmp (ninlogohead, "\xC8\x60\x4F\xE2\x01\x70", 6)){
+		if (!memcmp (ninlogohead, "\xC8\x60\x4F\xE2\x01\x70", 6)) {
 			return true;
 		}
 	}

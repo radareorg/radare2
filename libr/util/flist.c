@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2010-2013 - pancake */
+/* radare - LGPL - Copyright 2010-2022 - pancake */
 // XXX. this is dupped inside the r_flist.h for optimizations
 
 int r_flist_iterator(void **x) {
-	return *x!=0;
+	return *x != 0;
 }
 void** r_flist_next(void **x) {
 	return x;
@@ -12,14 +12,12 @@ void** r_flist_get(void **x) {
 }
 // XXX: forced free?? We need RFlist struct here
 #include <r_types.h>
-//#include <r_flist.h>
-// NOTE: reimplemnetation of r_flist in C (if no R_API defined)
 
 #if 1
 #define r_flist_t void**
 #define RFList void**
 #define r_flist_rewind(it) for (; (it)!=*(it); (it)--) {} (it)++
-#define r_flist_next(it) *(it)!=0
+#define r_flist_next(it) (*(it) != 0)
 #define r_flist_get(it) *((it)++)
 #define r_flist_iterator(x) x
 #define r_flist_unref(x) x

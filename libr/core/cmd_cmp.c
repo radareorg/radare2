@@ -21,10 +21,10 @@ static const char *help_msg_c[] = {
 	"Usage:", "c[?dfx] [argument]", " # Compare",
 	"c", " [string]", "compare a plain with escaped chars string",
 	"c*", " [string]", "same as above, but printing r2 commands instead",
-	"c1", " [addr]", "compare 8 bits from current offset",
-	"c2", " [value]", "compare a word from a math expression",
-	"c4", " [value]", "compare a doubleword from a math expression",
-	"c8", " [value]", "compare a quadword from a math expression",
+	"c1", " [addr]", "compare byte at addr with current offset",
+	"c2", "[*] [value]", "compare word at offset with given value",
+	"c4", "[*] [value]", "compare doubleword at offset with given value",
+	"c8", "[*] [value]", "compare quadword at offset with given value",
 	"cat", " [file]", "show contents of file (see pwd, ls)",
 	"cc", " [at]", "compares in two hexdump columns of block size",
 	"ccc", " [at]", "same as above, but only showing different lines",
@@ -401,12 +401,12 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 			pj_end (pj);
 			break;
 		default:
-			eprintf ("Unknown mode\n");
+			R_LOG_ERROR ("Unknown mode");
 			break;
 		}
 	}
 	if (mode == 0) {
-		eprintf ("Compare %d/%d equal bytes (%d%%)\n", eq, len, (eq / len) * 100);
+		R_LOG_INFO ("Compare %d/%d equal bytes (%d%%)", eq, len, (eq / len) * 100);
 	} else if (mode == 'j') {
 		pj_end (pj);
 		pj_ki (pj, "equal_bytes", eq);
@@ -416,6 +416,14 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 		r_cons_println (pj_string (pj));
 	}
 	return len - eq;
+}
+
+static void nowatchers(ut64 addr) {
+	if (addr == UT64_MAX) {
+		R_LOG_ERROR ("No watchers exist");
+	} else {
+		R_LOG_ERROR ("No watcher exists at address %" PFMT64x, addr);
+	}
 }
 
 /* Returns 0 if operation succeeded, 1 otherwise */
@@ -472,18 +480,18 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 
 			if (size < 1) {
 				ret = 1;
-				eprintf ("Can't create a watcher with size less than 1.\n");
+				R_LOG_ERROR ("Can't create a watcher with size less than 1");
 				goto out_free_argv;
 			}
 			if (size > INT_MAX) {
 				ret = 1;
-				eprintf ("Can't create a watcher with size larger than an int.\n");
+				R_LOG_ERROR ("Can't create a watcher with size larger than an int");
 				goto out_free_argv;
 			}
 
 			if (!r_core_cmpwatch_add (core, addr, (int)size, argv[2])) {
 				ret = 1;
-				eprintf ("Failed to add watcher.\n");
+				R_LOG_ERROR ("Failed to add watcher");
 			}
 		} else {
 			r_core_cmd_help_match (core, help_msg_cw, "cw ", true);
@@ -498,23 +506,15 @@ out_free_argv:
 			r_core_cmd_help_match (core, help_msg_cw, "cwd", true);
 			return 0;
 		}
-
 		if (input[1]) {
 			addr = r_num_math (core->num, input + 2);
 		}
-
-		if (addr == UT64_MAX &&
-				!r_cons_yesno ('n', "Delete all watchers? (y/N)")) {
+		if (addr == UT64_MAX && !r_cons_yesno ('n', "Delete all watchers? (y/N)")) {
 			return 1;
 		}
-
 		if (!r_core_cmpwatch_del (core, addr) && addr) {
 			ret = 1;
-			if (addr == UT64_MAX) {
-				eprintf ("No watchers exist.\n");
-			} else {
-				eprintf ("No watcher exists at address %" PFMT64x ".\n", addr);
-			}
+			nowatchers (addr);
 		}
 		break;
 	case 'r': // "cwr"
@@ -534,11 +534,7 @@ out_free_argv:
 
 		if (!r_core_cmpwatch_revert (core, addr)) {
 			ret = 0;
-			if (addr == UT64_MAX) {
-				eprintf ("No watchers exist.\n");
-			} else {
-				eprintf ("No watcher exists at address %" PFMT64x ".\n", addr);
-			}
+			nowatchers (addr);
 		}
 		break;
 	case 'u': // "cwu"
@@ -546,18 +542,12 @@ out_free_argv:
 			r_core_cmd_help_match (core, help_msg_cw, "cwu", true);
 			return 0;
 		}
-
 		if (input[1]) {
 			addr = r_num_math (core->num, input + 2);
 		}
-
 		if (!r_core_cmpwatch_update (core, addr)) {
 			ret = 1;
-			if (addr == UT64_MAX) {
-				eprintf ("No watchers exist.\n");
-			} else {
-				eprintf ("No watcher exists at address %" PFMT64x ".\n", addr);
-			}
+			nowatchers (addr);
 		}
 		break;
 	case '*': // "cw*"
@@ -568,20 +558,13 @@ out_free_argv:
 		if (*input && input[1]) {
 			addr = r_num_math (core->num, input + 2);
 		}
-
 		if (!r_core_cmpwatch_show (core, addr, mode)) {
 			ret = 1;
-
 			/* Skip error message for json, it will still show [] */
 			if (mode == 'j') {
 				break;
 			}
-
-			if (addr == UT64_MAX) {
-				eprintf ("No watchers exist.\n");
-			} else {
-				eprintf ("No watcher exists at address %" PFMT64x ".\n", addr);
-			}
+			nowatchers (addr);
 		}
 		break;
 	}
@@ -751,8 +734,7 @@ static int cmd_cp(void *data, const char *input) {
 		r_str_trim (file);
 
 		if (!r_file_exists (file)) {
-			eprintf ("%s is not a file on the disk. Can't copy.\n", file);
-			eprintf ("You may be looking for \"wt\".\n");
+			R_LOG_ERROR ("%s is not a file on the disk. Can't copy, see `wt?`", file);
 			free (file);
 			return false;
 		}
@@ -788,7 +770,7 @@ static int cmd_cp(void *data, const char *input) {
  * If scr.color is enabled, when bytes differ 1 is colored graph_true and 0 is
  * colored graph_false.
  */
-static void cmp_bits(RCore *core, ut64 addr) {
+static int cmp_bits(RCore *core, ut64 addr) {
 	RConsPrintablePalette *pal = &r_cons_singleton ()->context->pal;
 	const bool use_color = r_config_get_b (core->config, "scr.color");
 	const char *color_end = use_color? Color_RESET: "";
@@ -833,6 +815,10 @@ static void cmp_bits(RCore *core, ut64 addr) {
 		r_cons_printf ("%s%d%s%s", b_colors[i], b_bits[i], color_end, i? " ": "");
 	}
 	r_cons_newline ();
+
+	// 0 if equal, 1 if not equal
+	// same return pattern as ?==
+	return a != b;
 }
 
 static const RList *symbols_of(RCore *core, int id0) {
@@ -866,7 +852,7 @@ static void _core_cmp_info_libs(RCore *core, int id0, int id1) {
 	const RList *s0 = libs_of (core, id0);
 	const RList *s1 = libs_of (core, id1);
 	if (!s0 || !s1) {
-		eprintf ("Missing bin object\n");
+		R_LOG_ERROR ("Missing bin object");
 		return;
 	}
 	RListIter *iter, *iter2;
@@ -903,7 +889,7 @@ static void _core_cmp_info_imports(RCore *core, int id0, int id1) {
 	const RList *s0 = imports_of (core, id0);
 	const RList *s1 = imports_of (core, id1);
 	if (!s0 || !s1) {
-		eprintf ("Missing bin object\n");
+		R_LOG_ERROR ("Missing bin object");
 		return;
 	}
 	RListIter *iter, *iter2;
@@ -940,7 +926,7 @@ static void _core_cmp_info_symbols(RCore *core, int id0, int id1) {
 	const RList *s0 = symbols_of (core, id0);
 	const RList *s1 = symbols_of (core, id1);
 	if (!s0 || !s1) {
-		eprintf ("Missing bin object\n");
+		R_LOG_ERROR ("Missing bin object");
 		return;
 	}
 	RListIter *iter, *iter2;
@@ -1033,7 +1019,7 @@ static int cmd_cmp_posix(RCore *core, const char *a, const char *b) {
 	char *bb = myslurp (core, b, &sb);
 	int res = 0;
 	if (!ba || !bb) {
-		eprintf ("One or more files can't be read.\n");
+		R_LOG_ERROR ("One or more files can't be read");
 		res = 1;
 	} else {
 		if (sa == sb) {
@@ -1067,7 +1053,7 @@ static int cmd_cmp(void *data, const char *input) {
 		if (input[1] == 't') { // "cat"
 			const char *path = r_str_trim_head_ro (input + 2);
 			if (*path == '$' && !path[1]) {
-				eprintf ("No alias name given.\n");
+				R_LOG_ERROR ("No alias name given");
 			} else if (*path == '$') {
 				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, path + 1);
 				if (v) {
@@ -1075,7 +1061,7 @@ static int cmd_cmp(void *data, const char *input) {
 					r_cons_println (v_str);
 					free (v_str);
 				} else {
-					eprintf ("No such alias \"$%s\"\n", path+1);
+					R_LOG_ERROR ("No such alias \"$%s\"", path + 1);
 				}
 			} else if (*path) {
 				if (r_fs_check (core->fs, path)) {
@@ -1158,7 +1144,7 @@ static int cmd_cmp(void *data, const char *input) {
 
 		ret = r_hex_str2bin (filled, buf);
 		if (ret < 1) {
-			eprintf ("Cannot parse hexpair\n");
+			R_LOG_ERROR ("Cannot parse hexpair");
 		} else {
 			val = radare_compare (core, block, buf, ret, mode);
 		}
@@ -1170,7 +1156,7 @@ static int cmd_cmp(void *data, const char *input) {
 		if (buf) {
 			if (!r_io_read_at (core->io, r_num_math (core->num,
 					    input + 1), buf, core->blocksize)) {
-				eprintf ("Cannot read hexdump\n");
+				R_LOG_ERROR ("Cannot read hexdump");
 			} else {
 				val = radare_compare (core, block, buf, core->blocksize, mode);
 			}
@@ -1179,18 +1165,18 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case 'f': // "cf"
 		if (input[1] != ' ') {
-			eprintf ("Please. use 'cf [file]'\n");
+			R_LOG_INFO ("Please. use 'cf [file]'");
 			return false;
 		}
 		fd = r_sandbox_fopen (input + 2, "rb");
 		if (!fd) {
-			eprintf ("Cannot open file '%s'\n", input + 2);
+			R_LOG_ERROR ("Cannot open file '%s'", input + 2);
 			return false;
 		}
 		buf = (ut8 *) malloc (core->blocksize);
 		if (buf) {
 			if (fread (buf, 1, core->blocksize, fd) < 1) {
-				eprintf ("Cannot read file %s\n", input + 2);
+				R_LOG_ERROR ("Cannot read file %s", input + 2);
 			} else {
 				val = radare_compare (core, block, buf, core->blocksize, 0);
 			}
@@ -1209,7 +1195,7 @@ static int cmd_cmp(void *data, const char *input) {
 					char *newdir = oldcwd;
 					oldcwd = r_sys_getdir ();
 					if (r_sandbox_chdir (newdir) == -1) {
-						eprintf ("Cannot chdir to %s\n", newdir);
+						R_LOG_ERROR ("Cannot chdir to %s", newdir);
 						free (oldcwd);
 						oldcwd = newdir;
 					} else {
@@ -1225,50 +1211,63 @@ static int cmd_cmp(void *data, const char *input) {
 						free (oldcwd);
 						oldcwd = r_sys_getdir ();
 						if (r_sandbox_chdir (homepath) == -1) {
-							eprintf ("Cannot chdir to %s\n", homepath);
+							R_LOG_ERROR ("Cannot chdir to %s", homepath);
 						}
 					}
 					free (homepath);
 				} else {
-					eprintf ("Cannot find home\n");
+					R_LOG_ERROR ("Cannot find home");
 				}
 			} else {
 				free (oldcwd);
 				oldcwd = r_sys_getdir ();
 				if (r_sandbox_chdir (input + 1) == -1) {
-					eprintf ("Cannot chdir to %s\n", input + 1);
+					R_LOG_ERROR ("Cannot chdir to %s", input + 1);
 				}
 			}
 		} else {
 			char *home = r_sys_getenv (R_SYS_HOME);
 			if (!home || r_sandbox_chdir (home) == -1) {
-				eprintf ("Cannot find home.\n");
+				R_LOG_ERROR ("Cannot find home");
 			}
 			free (home);
 		}
 		break;
-	case '1': { // "c1"
-		const char *arg = input[1]? r_str_trim_head_ro (input + 2): NULL;
-		if (input[1] == '?' || input[1] != ' ' || R_STR_ISEMPTY (arg)) {
-			r_core_cmd_help_match (core, help_msg_c, "c1", true);
+	case '1':
+	case '2':
+	case '4':
+	case '8': {
+		const char width = *input++;
+		const char mode = *input == '*'? '*': 0;
+		const char *arg;
+		utAny cmp_val;
+
+		arg = *input? r_str_trim_head_ro (input + 1): NULL;
+
+		if (input[0] == '?' || R_STR_ISEMPTY (arg)) {
+			r_core_cmd_help_match_spec (core, help_msg_c, "c", width, true);
 			break;
 		}
 
-		cmp_bits (core, r_num_math (core->num, arg));
+		if (width == '1') {
+			if (mode == '*') {
+				R_LOG_ERROR ("c1 does not support * mode");
+				r_core_cmd_help_match (core, help_msg_c, "c1", true);
+			} else {
+				val = cmp_bits (core, r_num_math (core->num, arg));
+			}
+		} else if (width == '2') {
+			cmp_val.v16 = (ut16) r_num_math (core->num, arg);
+			val = radare_compare (core, block, (ut8 *) &cmp_val.v16, sizeof (wordcmp.v16), mode);
+		} else if (width == '4') {
+			cmp_val.v32 = (ut32) r_num_math (core->num, arg);
+			val = radare_compare (core, block, (ut8 *) &cmp_val.v32, sizeof (wordcmp.v32), mode);
+		} else if (width == '8') {
+			cmp_val.v64 = r_num_math (core->num, arg);
+			val = radare_compare (core, block, (ut8 *) &cmp_val.v64, sizeof (wordcmp.v64), mode);
+		}
 		break;
 	}
-	case '2': // "c2"
-		wordcmp.v16 = (ut16) r_num_math (core->num, input + 1);
-		val = radare_compare (core, block, (ut8 *) &wordcmp.v16, sizeof (wordcmp.v16), 0);
-		break;
-	case '4': // "c4"
-		wordcmp.v32 = (ut32) r_num_math (core->num, input + 1);
-		val = radare_compare (core, block, (ut8 *) &wordcmp.v32, sizeof (wordcmp.v32), 0);
-		break;
-	case '8': // "c8"
-		wordcmp.v64 = r_num_math (core->num, input + 1);
-		val = radare_compare (core, block, (ut8 *) &wordcmp.v64, sizeof (wordcmp.v64), 0);
-		break;
 	case 'c': // "cc"
 		if (input[1] == '?') { // "cc?"
 			r_core_cmd0 (core, "c?~cc");
@@ -1320,7 +1319,7 @@ static int cmd_cmp(void *data, const char *input) {
 			}
 			break;
 		case 'f':         // "cgf"
-			eprintf ("TODO: agf is experimental\n");
+			R_LOG_INFO ("TODO: agf is experimental");
 			r_anal_diff_setup (core->anal, true, -1, -1);
 			r_core_gdiff_fcn (core, core->offset,
 				r_num_math (core->num, input + 2));
@@ -1343,18 +1342,18 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 
 		if (r_file_size (file2) <= 0) {
-			eprintf ("Cannot compare with file %s\n", file2);
+			R_LOG_ERROR ("Cannot compare with file %s", file2);
 			return false;
 		}
 
 		if (!(core2 = r_core_new ())) {
-			eprintf ("Cannot init diff core\n");
+			R_LOG_ERROR ("Cannot init diff core");
 			return false;
 		}
 		r_core_loadlibs (core2, R_CORE_LOADLIBS_ALL, NULL);
 		core2->io->va = core->io->va;
 		if (!r_core_file_open (core2, file2, 0, 0LL)) {
-			eprintf ("Cannot open diff file '%s'\n", file2);
+			R_LOG_ERROR ("Cannot open diff file '%s'", file2);
 			r_core_free (core2);
 			r_core_bind_cons (core);
 			return false;

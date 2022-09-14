@@ -8,7 +8,7 @@
 #include "../../../shlr/java/class.h"
 
 #define DO_THE_DBG 0
-#define IFDBG  if(DO_THE_DBG)
+#define IFDBG  if (DO_THE_DBG)
 
 static R_TH_LOCAL ut64 METHOD_START = 0;
 
@@ -117,16 +117,16 @@ static ut64 extract_code_op(ut64 ranal2_op_type) {
 }
 
 static ut64 extract_load_store_op(ut64 ranal2_op_type) {
-	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_PUSH) == R_ANAL_JAVA_LDST_OP_PUSH) {
+	if ((ranal2_op_type & R_ANAL_JAVA_LDST_OP_PUSH) == R_ANAL_JAVA_LDST_OP_PUSH) {
 		return R_ANAL_OP_TYPE_PUSH;
 	}
-	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_POP) == R_ANAL_JAVA_LDST_OP_POP) {
+	if ((ranal2_op_type & R_ANAL_JAVA_LDST_OP_POP) == R_ANAL_JAVA_LDST_OP_POP) {
 		return R_ANAL_OP_TYPE_POP;
 	}
-	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_MOV) == R_ANAL_JAVA_LDST_OP_MOV) {
+	if ((ranal2_op_type & R_ANAL_JAVA_LDST_OP_MOV) == R_ANAL_JAVA_LDST_OP_MOV) {
 		return R_ANAL_OP_TYPE_MOV;
 	}
-	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_EFF_ADDR) == R_ANAL_JAVA_LDST_OP_EFF_ADDR) {
+	if ((ranal2_op_type & R_ANAL_JAVA_LDST_OP_EFF_ADDR) == R_ANAL_JAVA_LDST_OP_EFF_ADDR) {
 		return R_ANAL_OP_TYPE_LEA;
 	}
 	return R_ANAL_OP_TYPE_UNK;
@@ -197,7 +197,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	}
 	IFDBG {
 		R_LOG_DEBUG ("Extracting op from buffer (%d byte(s)) @ 0x%04x", (int)len, (ut32)addr);
-		R_LOG_DEBUG ("Parsing op: (0x%02x) %s.", op_byte, JAVA_OPS[op_byte].name);
+		R_LOG_DEBUG ("Parsing op: (0x%02x) %s", op_byte, JAVA_OPS[op_byte].name);
 	}
 	op->addr = addr;
 	op->size = sz;
@@ -209,6 +209,28 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		java_switch_op (anal, op, addr, data, len);
 		// IN_SWITCH_OP = 1;
 	}
+
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		RBinJavaObj *obj = NULL;
+		RBin *bin = anal->binb.bin;
+		RBinPlugin *plugin = bin && bin->cur && bin->cur->o ?
+			bin->cur->o->plugin : NULL;
+		if (plugin && plugin->name) {
+			if (!strcmp (plugin->name, "java")) { // XXX slow
+				obj = bin->cur->o->bin_obj; //o;
+				//eprintf("Handling: %s disasm.\n", b->cur.file);
+			}
+		}
+		const int buf_asm_len = 256;
+		op->mnemonic = calloc (buf_asm_len, 1);
+		if (op->mnemonic) {
+			op->size = r_java_disasm (obj, addr, data, len, op->mnemonic, buf_asm_len);
+			if (op->mnemonic[0] == 0) {
+				R_FREE (op->mnemonic);
+			}
+		}
+	}
+
 	/* TODO:
 	// not sure how to handle the states for IN_SWITCH_OP, SWITCH_OP_CASES,
 	// and NUM_CASES_SEEN, because these are dependent on whether or not we
@@ -217,7 +239,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	// the easy parts though
 	if (IN_SWITCH_OP) {
 		NUM_CASES_SEEN++;
-		if (NUM_CASES_SEEN == SWITCH_OP_CASES) IN_SWITCH_OP=0;
+		if (NUM_CASES_SEEN == SWITCH_OP_CASES) { IN_SWITCH_OP = 0; }
 		op->addr = addr;
 		op->size = 4;
 		op->type2 = 0;
@@ -230,7 +252,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->eob = r_anal_java_is_op_type_eop (op->type2);
 	IFDBG {
 		const char *ot_str = r_anal_optype_to_string (op->type);
-		R_LOG_DEBUG ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s.",
+		R_LOG_DEBUG ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s",
 			JAVA_OPS[op_byte].name, addr, (ut64)op->type2, (ut64)op->type,  ot_str);
 		//eprintf ("op_eob: 0x%02x.\n", op->eob);
 		//eprintf ("op_byte @ 0: 0x%02x op_byte @ 0x%04x: 0x%02x.\n", data[0], addr, data[addr]);
@@ -238,7 +260,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 
 	if (len < 4) {
 		// incomplete analysis here
-		return 0;
+		return op->size; // 0
 	}
 	if (op->type == R_ANAL_OP_TYPE_POP) {
 		op->stackop = R_ANAL_STACK_INC;
@@ -257,14 +279,16 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	} else if (op->type  == R_ANAL_OP_TYPE_JMP) {
 		op->jump = addr + (short)(USHORT (data, 1));
 		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x".\n", JAVA_OPS[op_byte].name, op->jump);
-	} else if ( (op->type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL ) {
+	} else if ((op->type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL ) {
 		op->jump = (int)(short)(USHORT (data, 1));
 		op->fail = addr + sz;
 		//IFDBG eprintf ("%s callto 0x%04x  failto 0x%04x.\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
 	}
-	//r_java_disasm(addr, data, len, output, outlen);
-	//IFDBG eprintf ("%s\n", output);
 	return op->size;
+}
+
+static int java_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
+	return r_java_assemble (addr, outbuf, str);
 }
 
 static void java_update_anal_types(RAnal *anal, RBinJavaObj *bin_obj) {
@@ -324,6 +348,7 @@ RAnalPlugin r_anal_plugin_java = {
 	.arch = "java",
 	.bits = 32,
 	.op = &java_op,
+	.opasm = &java_opasm,
 	.cmd_ext = java_cmd_ext,
 	0
 };

@@ -20,7 +20,7 @@ static ut8 *tcpme(const char *pathname, int *code, int *len) {
 		/* listen and wait for connection */
 		RSocket *sl = r_socket_new (false);
 		if (!r_socket_listen (sl, pathname + 1, NULL)) {
-			eprintf ("Cannot listen\n");
+			R_LOG_ERROR ("Cannot listen");
 			r_socket_free (sl);
 			return NULL;
 		}
@@ -55,7 +55,7 @@ static ut8 *tcpme(const char *pathname, int *code, int *len) {
 			}
 			r_socket_free (s);
 		} else {
-			eprintf ("Missing port.\n");
+			R_LOG_ERROR ("Missing port");
 		}
 		free (host);
 	}

@@ -99,7 +99,7 @@ f obj.empty_str 12 0x0804a064
 ps+ @ obj.empty_str
 EOF
 EXPECT_ERR=<<EOF
-Error: bitness of 16 not supported
+ERROR: bitness of 16 not supported
 EOF
 RUN
 

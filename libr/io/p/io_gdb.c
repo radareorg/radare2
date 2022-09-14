@@ -21,7 +21,7 @@ static bool __close(RIODesc *fd);
 static libgdbr_t *desc = NULL;
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	return (!strncmp (file, "gdb://", 6));
+	return r_str_startswith (file, "gdb://");
 }
 
 static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
@@ -78,15 +78,15 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		}
 	} else {
 		if (r_sandbox_enable (0)) {
-			eprintf ("sandbox: Cannot use network\n");
+			R_LOG_ERROR ("sandbox: Cannot use network");
 			return NULL;
 		}
 
 		port = strchr (host , ':');
 		if (!port) {
-			eprintf ("Invalid debugger URI. Port missing?\nPlease use either\n"
-				" - gdb://host:port[/pid] for a network gdbserver.\n"
-				" - gdb:///dev/DEVICENAME[@speed][:pid] for a serial gdbserver.\n");
+			R_LOG_ERROR ("Invalid debugger URI. Missing port number?");
+			R_LOG_INFO ("Use gdb://host:port[/pid] for a network gdbserver");
+			R_LOG_INFO ("Or gdb:///dev/DEVICENAME[@speed][:pid] for a serial gdbserver");
 			return NULL;
 		}
 		*port = '\0';
@@ -117,7 +117,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		if (pid > 0) { // FIXME this is here for now because RDebug's pid and libgdbr's aren't properly synced.
 			desc->pid = i_pid;
 			if (gdbr_attach (desc, i_pid) < 0) {
-				eprintf ("gdbr: Failed to attach to PID %i\n", i_pid);
+				R_LOG_ERROR ("gdbr: Failed to attach to PID %i", i_pid);
 				return NULL;
 			}
 		} else if ((i_pid = desc->pid) < 0) {
@@ -129,7 +129,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (riogdb) {
 		riogdb->name = gdbr_exec_file_read (desc, i_pid);
 	} else {
-		eprintf ("gdb.io.open: Cannot connect to host.\n");
+		R_LOG_ERROR ("gdb.io.open: Cannot connect to host");
 		free (riog);
 	}
 	return riogdb;
@@ -213,35 +213,32 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (cmd[0] == '?' || !strcmp (cmd, "help")) {
-		eprintf ("Usage: =!cmd args\n"
-			 " =!pid             - show targeted pid\n"
-			 " =!pkt s           - send packet 's'\n"
-			 " =!rd              - show reverse debugging availability\n"
-			 " =!dsb             - step backwards\n"
-			 " =!dcb             - continue backwards\n"
-			 " =!monitor cmd     - hex-encode monitor command and pass"
+		eprintf ("Usage: :cmd args\n"
+			 " :pid             - show targeted pid\n"
+			 " :pkt s           - send packet 's'\n"
+			 " :rd              - show reverse debugging availability\n"
+			 " :dsb             - step backwards\n"
+			 " :dcb             - continue backwards\n"
+			 " :monitor cmd     - hex-encode monitor command and pass"
 			                     " to target interpreter\n"
-			 " =!detach [pid]    - detach from remote/detach specific pid\n"
-			 " =!inv.reg         - invalidate reg cache\n"
-			 " =!pktsz           - get max packet size used\n"
-			 " =!pktsz bytes     - set max. packet size as 'bytes' bytes\n"
-			 " =!exec_file [pid] - get file which was executed for"
+			 " :detach [pid]    - detach from remote/detach specific pid\n"
+			 " :inv.reg         - invalidate reg cache\n"
+			 " :pktsz           - get max packet size used\n"
+			 " :pktsz bytes     - set max. packet size as 'bytes' bytes\n"
+			 " :exec_file [pid] - get file which was executed for"
 			                     " current/specified pid\n");
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "pktsz")) {
 		const char *ptr = r_str_trim_head_ro (cmd + 5);
 		if (!isdigit ((ut8)*ptr)) {
-			io->cb_printf ("packet size: %u bytes\n",
-				       desc->stub_features.pkt_sz);
+			io->cb_printf ("packet size: %u bytes\n", desc->stub_features.pkt_sz);
 			return NULL;
 		}
-		ut32 pktsz;
-		if (!(pktsz = (ut32) strtoul (ptr, NULL, 10))) {
-			// pktsz = 0 doesn't make sense
-			return NULL;
+		ut64 pktsz = r_num_get (NULL, ptr);
+		if (pktsz) {
+			desc->stub_features.pkt_sz = R_MAX (pktsz, 8); // min = 64
 		}
-		desc->stub_features.pkt_sz = R_MAX (pktsz, 8); // min = 64
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "detach")) {
@@ -267,7 +264,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			desc->data[desc->data_len] = '\0';
 			io->cb_printf ("reply:\n%s\n", desc->data);
 			if (!desc->no_ack) {
-				eprintf ("[waiting for ack]\n");
+				R_LOG_INFO ("waiting for the ack");
 			}
 		}
 		gdbr_lock_leave (desc);
@@ -285,7 +282,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (r_str_startswith (cmd, "dsb")) {
 		if (!desc->stub_features.ReverseStep) {
-			eprintf ("Stepping backwards is not supported in this gdbserver implementation\n");
+			R_LOG_ERROR ("Stepping backwards is not supported in this gdbserver implementation");
 			return NULL;
 		}
 		gdbr_lock_enter (desc);
@@ -293,11 +290,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			(void)read_packet (desc, false);
 			desc->data[desc->data_len] = '\0';
 			if (!desc->no_ack) {
-				eprintf ("[waiting for ack]\n");
+				R_LOG_INFO ("waiting for ack");
 			} else {
 				handle_stop_reason (desc);
 				if (desc->stop_reason.is_valid == false) {
-					eprintf("Thread (%d) stopped for an invalid reason: %d\n",
+					R_LOG_INFO ("Thread (%d) stopped for an invalid reason: %d",
 						desc->stop_reason.thread.tid, desc->stop_reason.reason);
 				}
 			}
@@ -308,7 +305,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (r_str_startswith (cmd, "dcb")) {
 		if (!desc->stub_features.ReverseContinue) {
-			eprintf ("Continue backwards is not supported in this gdbserver implementation\n");
+			R_LOG_ERROR ("Continue backwards is not supported in this gdbserver implementation");
 			return NULL;
 		}
 		gdbr_lock_enter (desc);
@@ -316,11 +313,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			(void)read_packet (desc, false);
 			desc->data[desc->data_len] = '\0';
 			if (!desc->no_ack) {
-				eprintf ("[waiting for ack]\n");
+				R_LOG_INFO ("waiting for the ACK");
 			} else {
 				handle_stop_reason (desc);
 				if (desc->stop_reason.is_valid == false) {
-					eprintf("Thread (%d) stopped for an invalid reason: %d\n",
+					R_LOG_INFO ("Thread (%d) stopped for an invalid reason: %d",
 						desc->stop_reason.thread.tid, desc->stop_reason.reason);
 				}
 			}
@@ -342,7 +339,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			qrcmd = "help";
 		}
 		if (gdbr_send_qRcmd (desc, qrcmd, io->cb_printf) < 0) {
-			eprintf ("remote error\n");
+			R_LOG_ERROR ("remote command error");
 			return NULL;
 		}
 		return NULL;
@@ -401,7 +398,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		desc->get_baddr = true;
 		return NULL;
 	}
-	eprintf ("Try: '=!?'\n");
+	eprintf ("Try: ':?'\n");
 	return NULL;
 }
 

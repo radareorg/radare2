@@ -1,6 +1,7 @@
-/* radare2 - Copyleft 2011-2021 - pancake */
+/* radare2 - Copyleft 2011-2022 - pancake */
 
-#include <r_util.h>
+#define R_LOG_ORIGIN "rarun2"
+
 #include <r_main.h>
 #include <r_socket.h>
 
@@ -38,7 +39,7 @@ R_API int r_main_rarun2(int argc, const char **argv) {
 		rarun2_tty ();
 		return 0;
 #else
-		eprintf ("Not supported\n");
+		R_LOG_ERROR ("TTY features not supported in this build");
 		return 1;
 #endif
 	}
@@ -71,7 +72,7 @@ R_API int r_main_rarun2(int argc, const char **argv) {
 	}
 	ret = r_run_config_env (p);
 	if (ret) {
-		printf("error while configuring the environment.\n");
+		R_LOG_ERROR ("cannot configure environment");
 		return 1;
 	}
 	ret = r_run_start (p);

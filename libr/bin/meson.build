@@ -58,6 +58,7 @@ r_bin_sources = [
   join_paths('p','bin_psxexe.c'),
   join_paths('p','bin_pyc.c'),
   join_paths('p','bin_qnx.c'),
+  join_paths('p','bin_rel.c'),
   join_paths('p','bin_s390.c'),
   join_paths('p','bin_sfc.c'),
   join_paths('p','bin_smd.c'),
@@ -120,7 +121,18 @@ r_bin_sources = [
   join_paths('format','wasm','wasm.c'),
   join_paths('format','zimg','zimg.c'),
 
+  join_paths('format/pdb','dbi.c'),
+  join_paths('format/pdb','fpo.c'),
+  join_paths('format/pdb','gdata.c'),
+  join_paths('format/pdb','omap.c'),
+  join_paths('format/pdb','pdb.c'),
+  join_paths('format/pdb','pdb_downloader.c'),
+  join_paths('format/pdb','stream_file.c'),
+  join_paths('format/pdb','stream_pe.c'),
+  join_paths('format/pdb','tpi.c'),
+
   join_paths('mangling','cxx.c'),
+  join_paths('mangling','pascal.c'),
   join_paths('mangling','cxx','cp-demangle.c'),
   join_paths('mangling','demangler.c'),
   join_paths('mangling','rust.c'),
@@ -129,17 +141,7 @@ r_bin_sources = [
   join_paths('mangling','msvc.c'),
   join_paths('mangling','objc.c'),
   join_paths('mangling','swift-sd.c'),
-  join_paths('mangling','swift.c'),
-
-  join_paths('pdb','dbi.c'),
-  join_paths('pdb','fpo.c'),
-  join_paths('pdb','gdata.c'),
-  join_paths('pdb','omap.c'),
-  join_paths('pdb','pdb.c'),
-  join_paths('pdb','pdb_downloader.c'),
-  join_paths('pdb','stream_file.c'),
-  join_paths('pdb','stream_pe.c'),
-  join_paths('pdb','tpi.c')
+  join_paths('mangling','swift.c')
 ]
 
 r_bin_sources += r_bin_d_sources

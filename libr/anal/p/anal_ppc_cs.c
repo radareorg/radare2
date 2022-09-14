@@ -5,6 +5,7 @@
 #include <capstone/capstone.h>
 #include <capstone/ppc.h>
 #include "../../asm/arch/ppc/libvle/vle.h"
+#include "../../asm/arch/ppc/libps/libps.h"
 
 #define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
 #define SPR_HID1 0x3f1 /* Hardware Implementation Register 1 */
@@ -39,8 +40,8 @@ static ut32 mask32(ut32 mb, ut32 me) {
 	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
 }
 
-static const char* cmask64(const char *mb_c, const char *me_c) {
-	static R_TH_LOCAL char cmask[32];
+#define cmaskbuf_SIZEOF 32
+static const char* cmask64(char *cmaskbuf, const char *mb_c, const char *me_c) {
 	ut64 mb = 0;
 	ut64 me = 0;
 	if (mb_c) {
@@ -49,12 +50,11 @@ static const char* cmask64(const char *mb_c, const char *me_c) {
 	if (me_c) {
 		me = strtol (me_c, NULL, 16);
 	}
-	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x"", mask64 (mb, me));
-	return cmask;
+	snprintf (cmaskbuf, cmaskbuf_SIZEOF, "0x%"PFMT64x, mask64 (mb, me));
+	return cmaskbuf;
 }
 
-static const char* cmask32(const char *mb_c, const char *me_c) {
-	static R_TH_LOCAL char cmask[32];
+static const char* cmask32(char *cmaskbuf, const char *mb_c, const char *me_c) {
 	ut32 mb = 0;
 	ut32 me = 0;
 	if (mb_c) {
@@ -63,8 +63,8 @@ static const char* cmask32(const char *mb_c, const char *me_c) {
 	if (me_c) {
 		me = strtol (me_c, NULL, 16);
 	}
-	snprintf (cmask, sizeof (cmask), "0x%"PFMT32x"", mask32 (mb, me));
-	return cmask;
+	snprintf (cmaskbuf, cmaskbuf_SIZEOF, "0x%"PFMT32x, mask32 (mb, me));
+	return cmaskbuf;
 }
 
 static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
@@ -602,17 +602,85 @@ static char *shrink(char *op) {
 	| (a->config->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN)
 #include "capstone.inc"
 
+static int decompile_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	vle_t* instr = 0;
+	vle_handle handle = {0};
+	if (len < 2) {
+		return -1;
+	}
+	if (!vle_init (&handle, buf, len) && (instr = vle_next (&handle))) {
+		op->size = instr->size;
+		char buf_asm[64];
+		vle_snprint (buf_asm, sizeof (buf_asm), addr, instr);
+		op->mnemonic = strdup (buf_asm);
+		vle_free (instr);
+	} else {
+		op->mnemonic = strdup ("invalid");
+		op->size = 2;
+		return -1;
+	}
+	return op->size;
+}
+
+static int decompile_ps(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	ppcps_t instr = {0};
+	if (len < 4) {
+		eprintf ("not eno\n");
+		return -1;
+	}
+	op->size = 4;
+	const ut32 data = (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+	if (libps_decode (data, &instr) < 1) {
+		return -1;
+	}
+	char buf_asm[64] = {0};
+	libps_snprint (buf_asm, sizeof (buf_asm), addr, &instr);
+	op->mnemonic = strdup (buf_asm);
+	eprintf ("Mnemonic (%s)\n", buf_asm);
+	return op->size;
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	char cmaskbuf[cmaskbuf_SIZEOF] = {0};
 	csh handle = init_capstone (a);
 	if (handle == 0) {
 		return -1;
 	}
 
-	int n, ret;
+	int ret;
 	cs_insn *insn;
 	char *op1;
 
-	if (a->config->cpu && strncmp (a->config->cpu, "vle", 3) == 0) {
+	const char *cpu = a->config->cpu;
+	// capstone-next
+	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		ret = -1;
+		if (cpu && !strcmp (cpu, "vle")) {
+			if (!a->config->big_endian) {
+				return -1;
+			}
+			// vle is big-endian only
+			ret = decompile_vle (a, op, addr, buf, len);
+		} else if (cpu && !strcmp (cpu, "ps")) {
+			// libps is big-endian only
+			if (!a->config->big_endian) {
+				return -1;
+			}
+			ret = decompile_ps (a, op, addr, buf, len);
+		}
+		if (ret < 1) {
+			if (n > 0) {
+				op->mnemonic = r_str_newf ("%s%s%s",
+					insn->mnemonic,
+					insn->op_str[0]? " ": "",
+					insn->op_str);
+			} else {
+				op->mnemonic = strdup ("invalid");
+			}
+		}
+	}
+	if (cpu && !strcmp (cpu, "vle")) {
 		// vle is big-endian only
 		if (!a->config->big_endian) {
 			return -1;
@@ -625,8 +693,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 
 	op->size = 4;
 
-	// capstone-next
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
@@ -683,11 +749,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_CLRLWI:
 			op->type = R_ANAL_OP_TYPE_AND;
-			esilprintf (op, "%s,%s,&,%s,=", ARG (1), cmask32 (ARG (2), "0x1F"), ARG (0));
+			esilprintf (op, "%s,%s,&,%s,=", ARG (1), cmask32 (cmaskbuf, ARG (2), "0x1F"), ARG (0));
 			break;
 		case PPC_INS_RLWINM:
 			op->type = R_ANAL_OP_TYPE_ROL;
-			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask32 (ARG (3), ARG (4)), ARG (0));
+			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask32 (cmaskbuf, ARG (3), ARG (4)), ARG (0));
 			break;
 		case PPC_INS_SC:
 			op->type = R_ANAL_OP_TYPE_SWI;
@@ -1298,7 +1364,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_CLRLDI:
 			op->type = R_ANAL_OP_TYPE_AND;
-			esilprintf (op, "%s,%s,&,%s,=", ARG (1), cmask64 (ARG (2), "0x3F"), ARG (0));
+			esilprintf (op, "%s,%s,&,%s,=", ARG (1), cmask64 (cmaskbuf, ARG (2), "0x3F"), ARG (0));
 			break;
 		case PPC_INS_ROTLDI:
 			op->type = R_ANAL_OP_TYPE_ROL;
@@ -1307,12 +1373,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case PPC_INS_RLDCL:
 		case PPC_INS_RLDICL:
 			op->type = R_ANAL_OP_TYPE_ROL;
-			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask64 (ARG (3), "0x3F"), ARG (0));
+			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask64 (cmaskbuf, ARG (3), "0x3F"), ARG (0));
 			break;
 		case PPC_INS_RLDCR:
 		case PPC_INS_RLDICR:
 			op->type = R_ANAL_OP_TYPE_ROL;
-			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask64 (0, ARG (3)), ARG (0));
+			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask64 (cmaskbuf, 0, ARG (3)), ARG (0));
 			break;
 		}
 		if (mask & R_ANAL_OP_MASK_VAL) {
@@ -1344,11 +1410,13 @@ static RList *anal_preludes(RAnal *anal) {
 
 RAnalPlugin r_anal_plugin_ppc_cs = {
 	.name = "ppc",
-	.desc = "Capstone PowerPC analysis",
+	.desc = "Capstone (+vle+ps) PowerPC disassembler",
 	.license = "BSD",
 	.esil = true,
 	.arch = "ppc",
 	.bits = 32 | 64,
+	.cpus = "ppc,vle,ps",
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.archinfo = archinfo,
 	.preludes = anal_preludes,
 	.op = &analop,

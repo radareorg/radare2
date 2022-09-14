@@ -41,11 +41,10 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define SZOF(a)	(sizeof(a) / sizeof(a[0]))
+#define SZOF(a)	(sizeof (a) / sizeof (a[0]))
 
 #ifndef COMPILE_ONLY
 void file_mdump(struct r_magic *m) {
-	static const char optyp[] = { FILE_OPS };
 	char pp[ASCTIME_BUF_MAXLEN];
 
 	(void) eprintf ("[%u", m->lineno);
@@ -59,8 +58,8 @@ void file_mdump(struct r_magic *m) {
 		if (m->in_op & FILE_OPINVERSE)
 			(void) fputc('~', stderr);
 		(void) eprintf ("%c%u),",
-			       ((m->in_op & FILE_OPS_MASK) < SZOF(optyp)) ?
-					optyp[m->in_op & FILE_OPS_MASK] : '?',
+			       ((m->in_op & FILE_OPS_MASK) < SZOF(FILE_OPS)) ?
+					FILE_OPS[m->in_op & FILE_OPS_MASK] : '?',
 				m->in_offset);
 	}
 	(void) eprintf (" %s%s", (m->flag & UNSIGNED) ? "u" : "",
@@ -88,8 +87,8 @@ void file_mdump(struct r_magic *m) {
 			(void) eprintf ("/%u", m->str_range);
 		}
 	} else {
-		if ((m->mask_op & FILE_OPS_MASK) < SZOF(optyp)) {
-			(void) fputc (optyp[m->mask_op & FILE_OPS_MASK], stderr);
+		if ((m->mask_op & FILE_OPS_MASK) < SZOF(FILE_OPS)) {
+			(void) fputc (FILE_OPS[m->mask_op & FILE_OPS_MASK], stderr);
 		} else {
 			(void) fputc ('?', stderr);
 		}
@@ -195,24 +194,6 @@ const char *file_fmttime(ut32 v, int local, char *pp) {
 	if (local) {
 		r_ctime_r (&t, pp);
 	} else {
-#ifndef HAVE_DAYLIGHT
-		static int daylight = 0;
-#ifdef HAVE_TM_ISDST
-		static time_t now = (time_t)0;
-
-		if (now == (time_t)0) {
-			struct tm *tm1;
-			(void)time (&now);
-			tm1 = localtime (&now);
-			if (!tm1)
-				return "*Invalid time*";
-			daylight = tm1->tm_isdst;
-		}
-#endif /* HAVE_TM_ISDST */
-#endif /* HAVE_DAYLIGHT */
-		if (daylight) {
-			t += 3600;
-		}
 #if __MINGW32__
 		// nothing
 #else

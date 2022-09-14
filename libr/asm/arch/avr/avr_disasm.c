@@ -46,7 +46,7 @@ static uint16_t extractDataFromMask(uint16_t data, uint16_t mask);
 static int lookupInstruction(uint16_t opcode, int offset) {
 	uint16_t opcodeSearch, operandTemp;
 	int insidx, ghostRegisterConfirmed, i, j;
-	
+
 	for (insidx = offset; insidx < AVR_TOTAL_INSTRUCTIONS; insidx++) {
 		opcodeSearch = opcode;
 		/* If we have a ghost register operand (OPERAND_REGISTER_GHOST),
@@ -111,8 +111,8 @@ int disassembleInstruction(avrDisassembleContext *context, disassembledInstructi
 		 * so in order to jump/call to the right address (which increments by
 		 * two for every instruction), we must multiply this distance by two. */
 		//printf ("ii=%d\n", insidx);
-		if(!strcmp(context->longInstruction.instruction->mnemonic, "call") ||
-		   !strcmp(context->longInstruction.instruction->mnemonic, "jmp")) {
+		if (!strcmp (context->longInstruction.instruction->mnemonic, "call") ||
+		   !strcmp (context->longInstruction.instruction->mnemonic, "jmp")) {
 				context->longAddress *= 2;
 		}
 		*dInstruction = context->longInstruction;
@@ -128,7 +128,7 @@ int disassembleInstruction(avrDisassembleContext *context, disassembledInstructi
 	dInstruction->address = aInstruction.address;
 	dInstruction->instruction = &instructionSet[insidx];
 	dInstruction->alternateInstruction = NULL;
-	
+
 	/* Copy out each operand, extracting the operand data from the original
 	 * opcode using the operand mask. */
 	for (i = 0; i < instructionSet[insidx].numOperands; i++) {
@@ -142,7 +142,7 @@ int disassembleInstruction(avrDisassembleContext *context, disassembledInstructi
 			context->longInstruction = *dInstruction;
 		}
 	}
-	
+
 	/* Disassemble operands */
 	if (disassembleOperands(dInstruction) < 0) {
 		return ERROR_INVALID_ARGUMENTS; /* Only possible error for disassembleOperands() */
@@ -162,7 +162,7 @@ int disassembleInstruction(avrDisassembleContext *context, disassembledInstructi
 static uint16_t extractDataFromMask(uint16_t data, uint16_t mask) {
 	int i, j;
 	uint16_t result = 0;
-	
+
 	/* i counts through every bit of the data,
 	 * j counts through every bit of the data we're copying out. */
 	for (i = 0, j = 0; i < 16; i++) {
@@ -177,14 +177,14 @@ static uint16_t extractDataFromMask(uint16_t data, uint16_t mask) {
 			j++;
 		}
 	}
-	
+
 	return result;
 }
 
 /* Disassembles/decodes operands back to their original form. */
 static int disassembleOperands(disassembledInstruction *dInstruction) {
 	int i;
-	
+
 	/* This should never happen */
 	if (!dInstruction || !dInstruction->instruction) {
 		return ERROR_INVALID_ARGUMENTS;

@@ -10,6 +10,7 @@ R_API RIO* r_io_new(void) {
 	return r_io_init (R_NEW0 (RIO));
 }
 
+// R2_580 - just return bool
 R_API RIO* r_io_init(RIO* io) {
 	r_return_val_if_fail (io, NULL);
 	io->addrbytes = 1;
@@ -166,7 +167,7 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 		}
 		return true;
 	}
-	eprintf ("Cannot reopen\n");
+	R_LOG_ERROR ("Cannot reopen");
 	return false;
 }
 #endif
@@ -637,11 +638,8 @@ R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user) {
 }
 #endif
 
-//remove all banks, maps and descs
 R_API void r_io_fini(RIO* io) {
-	if (!io) {
-		return;
-	}
+	r_return_if_fail (io);
 	r_io_bank_fini (io);
 	r_io_map_fini (io);
 	r_io_desc_cache_fini_all (io);

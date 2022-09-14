@@ -365,6 +365,7 @@ struct d_print_info
   int num_copy_templates;
   /* The nearest enclosing template, if any.  */
   const struct demangle_component *current_template;
+  int depth;
 };
 
 #ifdef CP_DEMANGLE_DEBUG
@@ -1324,8 +1325,14 @@ d_encoding (struct d_info *di, int top_level)
 	     really apply here; this happens when parsing a class
 	     which is local to a function.  */
 	  if (dc->type == DEMANGLE_COMPONENT_LOCAL_NAME)
-	    while (is_fnqual_component_type (d_right (dc)->type))
-	      d_right (dc) = d_left (d_right (dc));
+	    {
+	      while (d_right (dc) != NULL
+		     && is_fnqual_component_type (d_right (dc)->type))
+		d_right (dc) = d_left (d_right (dc));
+
+	      if (d_right (dc) == NULL)
+		dc = NULL;
+	    }
 	}
       else
 	{
@@ -2611,7 +2618,7 @@ cplus_demangle_type (struct d_info *di)
 	    ret = NULL;
 	  can_subst = 1;
 	  break;
-	
+
 	case 'p':
 	  /* Pack expansion.  */
 	  ret = d_make_comp (di, DEMANGLE_COMPONENT_PACK_EXPANSION,
@@ -3333,7 +3340,7 @@ d_expression_1 (struct d_info *di)
       d_advance (di, 2);
       if (peek == 't')
 	type = cplus_demangle_type (di);
-      if (!d_peek_next_char (di))
+      if (!d_peek_char (di) || !d_peek_next_char (di))
 	return NULL;
       return d_make_comp (di, DEMANGLE_COMPONENT_INITIALIZER_LIST,
 			  type, d_exprlist (di, 'E'));
@@ -3550,7 +3557,7 @@ d_expr_primary (struct d_info *di)
 	 floating point literal here.  The ABI specifies that the
 	 format of such literals is machine independent.  That's fine,
 	 but what's not fine is that versions of g++ up to 3.2 with
-	 -fabi-version=1 used upper case letters in the hex constant,
+	 -fabi-version = 1 used upper case letters in the hex constant,
 	 and dumped out gcc's internal representation.  That makes it
 	 hard to tell where the constant ends, and hard to dump the
 	 constant in any readable form anyhow.  We don't attempt to
@@ -3647,7 +3654,7 @@ d_local_name (struct d_info *di)
 /* <discriminator> ::= _ <number>    # when number < 10
                    ::= __ <number> _ # when number >= 10
 
-   <discriminator> ::= _ <number>    # when number >=10
+   <discriminator> ::= _ <number>    # when number >= 10
    is also accepted to support gcc versions that wrongly mangled that way.
 
    We demangle the discriminator, but we don't print it out.  FIXME:
@@ -3894,7 +3901,7 @@ d_substitution (struct d_info *di, int prefix)
 
       pend = (&standard_subs[0]
 	      + sizeof standard_subs / sizeof standard_subs[0]);
-      for (p = &standard_subs[0]; p < pend; ++p)
+      for (p = &standard_subs[0]; p < pend; p++)
 	{
 	  if (c == p->code)
 	    {
@@ -4305,6 +4312,7 @@ cplus_demangle_print_callback (int options,
     dpi.copy_templates = alloca (dpi.num_copy_templates
 				 * sizeof (*dpi.copy_templates));
 #endif
+    dpi.depth = 128;
 
     d_print_comp (&dpi, options, dc);
   }
@@ -4384,7 +4392,7 @@ d_lookup_template_argument (struct d_print_info *dpi,
       d_print_error (dpi);
       return NULL;
     }
-	
+
   return d_index_template_argument
     (d_right (dpi->templates->template_decl),
      dc->u.s_number.number);
@@ -4632,7 +4640,10 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
   /* Variable used to store the current templates while a previously
      captured scope is used.  */
   struct d_print_template *saved_templates;
-
+  if (--dpi->depth < 1) {
+    fprintf (stderr, "Stack exhaustion prevented\n");
+    return;
+  }
   /* Nonzero if templates have been stored in the above variable.  */
   int need_template_restore = 0;
 
@@ -4731,12 +4742,8 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 	    typed_name = d_right (typed_name);
 	    if (typed_name->type == DEMANGLE_COMPONENT_DEFAULT_ARG)
 	      typed_name = typed_name->u.s_unary_num.sub;
-	    if (typed_name == NULL)
-	      {
-		d_print_error (dpi);
-		return;
-	      }
-	    while (is_fnqual_component_type (typed_name->type))
+	    while (typed_name != NULL
+		   && is_fnqual_component_type (typed_name->type))
 	      {
 		if (i >= sizeof adpm / sizeof adpm[0])
 		  {
@@ -4754,6 +4761,11 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 		++i;
 
 		typed_name = d_left (typed_name);
+	      }
+	    if (typed_name == NULL)
+	      {
+		d_print_error (dpi);
+		return;
 	      }
 	  }
 
@@ -5651,7 +5663,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 
 	len = d_pack_length (a);
 	dc = d_left (dc);
-	for (i = 0; i < len; ++i)
+	for (i = 0; i < len; i++)
 	  {
 	    dpi->pack_index = i;
 	    d_print_comp (dpi, options, dc);
@@ -5753,7 +5765,7 @@ d_print_java_identifier (struct d_print_info *dpi, const char *name, int len)
   const char *end;
 
   end = name + len;
-  for (p = name; p < end; ++p)
+  for (p = name; p < end; p++)
     {
       if (end - p > 3
 	  && p[0] == '_'
@@ -5764,7 +5776,7 @@ d_print_java_identifier (struct d_print_info *dpi, const char *name, int len)
 	  const char *q;
 
 	  c = 0;
-	  for (q = p + 3; q < end; ++q)
+	  for (q = p + 3; q < end; q++)
 	    {
 	      int dig;
 
@@ -6744,7 +6756,7 @@ main (int argc, char *argv[])
     /* Demangle command line arguments.  */
     {
       /* Loop over command line arguments.  */
-      for (i = optind; i < argc; ++i)
+      for (i = optind; i < argc; i++)
 	{
 	  char *s;
 #ifdef IN_GLIBCPP_V3

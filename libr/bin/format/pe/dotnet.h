@@ -13,7 +13,7 @@
      (uint8_t*) (pointer) <= pe->data + pe->data_size - size)
 
 #define struct_fits_in_pe(pe, pointer, struct_type) \
-    fits_in_pe(pe, pointer, sizeof(struct_type))
+    fits_in_pe(pe, pointer, sizeof (struct_type))
 
 //
 // CLI header.

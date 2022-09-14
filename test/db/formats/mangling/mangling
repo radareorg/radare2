@@ -6,6 +6,2998 @@ _ZNSt2147483648ios_base4InitD1Ev
 EOF
 RUN
 
+NAME=demangler listing
+FILE=-
+CMDS=<<EOF
+iD list
+EOF
+EXPECT=<<EOF
+c++
+dart
+dlang
+groovy
+java
+msvc
+objc
+pascal
+rust
+swift
+EOF
+RUN
+
+NAME=pascal demangling
+FILE=-
+CMDS=<<EOF
+"iD pascal EXAMPLE$_$SUMOFSQUARES$LONGINT$$LONGINT"
+EOF
+EXPECT=<<EOF
+unit example sumofsquares(longint)longint
+EOF
+RUN
+
+NAME=freepascal detection
+FILE=bins/efi/freepascal_test_dwarf
+CMDS=i~lang
+EXPECT=<<EOF
+lang     pascal
+EOF
+RUN
+
+NAME=bin freepascal detection
+FILE=bins/efi/freepascal_test_dwarf
+CMDS=isq
+EXPECT=<<EOF
+0x00400190 0 .note.abi-tag()
+0x00401000 0 .text()
+0x00434000 0 .rodata()
+0x00436000 0 .data()
+0x00440240 0 .bss()
+0x00000000 0 .debug_info()
+0x00000000 0 .debug_abbrev()
+0x00000000 0 .debug_line()
+0x00000000 0 .debug_frame()
+0x00000000 0 pick_random.pas()
+0x00000000 0 .ldebug_linesection0()
+0x00000000 0 .ldebug_line0()
+0x00000000 0 .ldebug_abbrevsection0()
+0x00000000 0 .ldebug_abbrev0()
+0x00440240 256 unit u.p$mozgkigyo sccommand()
+0x00440340 256 unit u.p$mozgkigyo setnev()
+0x00440440 2 unit u.p$mozgkigyo setscore()
+0x00440450 2 unit u.p$mozgkigyo setszam()
+0x00440460 256 unit u.p$mozgkigyo neve()
+0x00440560 624 unit u.p$mozgkigyo tart()
+0x004407d0 1 unit u.p$mozgkigyo harveg()
+0x004407e0 1 unit u.p$mozgkigyo opt()
+0x004407f0 1 unit u.p$mozgkigyo jump()
+0x00440800 1 unit u.p$mozgkigyo omozg()
+0x00440810 1 unit u.p$mozgkigyo pmozg()
+0x00440820 1 unit u.p$mozgkigyo spmozg()
+0x00440830 1 unit u.p$mozgkigyo sckey()
+0x00440840 1 unit u.p$mozgkigyo cel()
+0x00440850 1 unit u.p$mozgkigyo pel()
+0x00440860 1 unit u.p$mozgkigyo c()
+0x00440870 1 unit u.p$mozgkigyo b()
+0x00440880 1 unit u.p$mozgkigyo nul()
+0x00440890 2 unit u.p$mozgkigyo score()
+0x004408a0 2 unit u.p$mozgkigyo coll()
+0x004408b0 2 unit u.p$mozgkigyo rank()
+0x004408c0 2 unit u.p$mozgkigyo otart()
+0x004408d0 2 unit u.p$mozgkigyo oel()
+0x004408e0 2 unit u.p$mozgkigyo gyor()
+0x004408f0 2 unit u.p$mozgkigyo ohosz()
+0x00440900 2 unit u.p$mozgkigyo lepes()
+0x00440910 2 unit u.p$mozgkigyo mag()
+0x00440920 2 unit u.p$mozgkigyo szel()
+0x00440930 2 unit u.p$mozgkigyo x()
+0x00440940 2 unit u.p$mozgkigyo y()
+0x00440950 2 unit u.p$mozgkigyo xel()
+0x00440960 2 unit u.p$mozgkigyo yel()
+0x00440970 8 unit u.p$mozgkigyo xarany()
+0x00440980 8 unit u.p$mozgkigyo yarany()
+0x00440990 2 unit u.p$mozgkigyo m()
+0x004409a0 2 unit u.p$mozgkigyo m2()
+0x004409b0 2 unit u.p$mozgkigyo sz()
+0x004409c0 2 unit u.p$mozgkigyo sz2()
+0x004409d0 1 unit u.p$mozgkigyo mozg()
+0x004409e0 2 unit u.p$mozgkigyo i()
+0x004409f0 2 unit u.p$mozgkigyo h()
+0x00440a00 2 unit u.p$mozgkigyo fo()
+0x00440a10 2 unit u.p$mozgkigyo maxx()
+0x00440a20 2 unit u.p$mozgkigyo maxy()
+0x00440a30 2 unit u.p$mozgkigyo xcsill()
+0x00440a40 2 unit u.p$mozgkigyo ycsill()
+0x00440a50 20000 unit u.p$mozgkigyo memx()
+0x00445870 20000 unit u.p$mozgkigyo memy()
+0x0044a690 2580 unit u.p$mozgkigyo leader()
+0x00000000 0 .ldebug_info0()
+0x000008e5 0 .la1()
+0x00000904 0 .la2()
+0x00000922 0 .la3()
+0x0000093c 0 .la4()
+0x0000095a 0 .la5()
+0x00000985 0 .la6()
+0x0000099c 0 .la7()
+0x00000a17 0 .ledebug_info0()
+0x00000030 0 .lehdebug_line0()
+0x000011bd 0 .ledebug_line0()
+0x00000000 0 system.pp()
+0x004360d0 0 .ld1()
+0x0044c410 12 unit u.system errno()
+0x0044c430 16 unit u.system exceptaddrstack()
+0x0044c440 16 unit u.system exceptobjectstack()
+0x0044c450 12 unit u.system excepttrylevel()
+0x0044c460 368 unit u.system variantmanager()
+0x0044c5d0 2496 unit u.system mt()
+0x0044cf90 232 unit u.system orphaned_freelists()
+0x0044d080 40 unit u.system heap_lock()
+0x0044d0b0 2 unit u.system heap_lock_use()
+0x0044d0c0 240 unit u.system freelists()
+0x0044d1b0 296 unit u.system currenttm()
+0x0044d2f0 256 unit u.system execpathstr()
+0x00436240 0 .ld53()
+0x00436320 0 .ld54()
+0x00436340 0 .ld55()
+0x00436370 24 unit vtbl.system tinterfacedobject_(_iunknown)
+0x00436460 0 .ld56()
+0x00436560 0 .ld57()
+0x00436580 0 .ld58()
+0x004365b0 24 unit vtbl.system tcontainedobject_(_iunknown)
+0x004369d0 8 unit tc.system calculated_cmdline()
+0x004369e0 4 unit tc.system oldrandseed()
+0x00436a00 16 unit tc.system popcntdata()
+0x00436a30 8 unit tc.system fpc_exp_real(extended)extended::ln2hi()
+0x00436a40 8 unit tc.system fpc_exp_real(extended)extended::ln2lo()
+0x00436a50 4 unit tc.system fpc_exp_real(extended)extended::large()
+0x00436a60 4 unit tc.system fpc_exp_real(extended)extended::two()
+0x00436a70 4 unit tc.system fpc_exp_real(extended)extended::half()
+0x00436a80 8 unit tc.system h2_54()
+0x00436a90 8 unit tc.system huge()
+0x00436aa0 8 unit tc.system one()
+0x00436ab0 8 unit tc.system zero()
+0x00436ac0 64 unit tc.system pio2chunked()
+0x00436b00 264 unit tc.system ipio2()
+0x00436c10 8 unit tc.system init_jk()
+0x00436c20 8 unit tc.system two24()
+0x00436c30 8 unit tc.system twon24()
+0x00436c40 8 unit tc.system rem_pio2(double,double)int64::tol()
+0x00436c50 320 unit tc.system fpower10(extended,longint)extended::pow32()
+0x00436d90 160 unit tc.system fpower10(extended,longint)extended::pow512()
+0x00436e30 100 unit tc.system fpower10(extended,longint)extended::pow4096()
+0x00436ea0 320 unit tc.system fpower10(extended,longint)extended::negpow32()
+0x00436fe0 160 unit tc.system fpower10(extended,longint)extended::negpow512()
+0x00437080 100 unit tc.system fpower10(extended,longint)extended::negpow4096()
+0x004370f0 8 unit tc.system textended80rec.specialtype()tfloatspecial::denormal()
+0x00437100 8 unit tc.system tdoublerec.specialtype()tfloatspecial::denormal()
+0x00437110 8 unit tc.system tsinglerec.specialtype()tfloatspecial::denormal()
+0x00437120 16 unit tc.system hextbl()
+0x00437130 28 unit tc.system float_format()
+0x00437150 4 unit tc.system c_str_inf()
+0x00437160 4 unit tc.system c_str_qnan()
+0x00437170 384 unit tc.system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10_)::base()
+0x004372f0 192 unit tc.system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10_)::factor_plus()
+0x004373b0 192 unit tc.system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10_)::factor_minus()
+0x00437470 272 unit tc.system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10_)::corrector()
+0x00437580 40 unit tc.system str_real(crcedbaa446_gen_digits_32,crc66c340fe_)::digits()
+0x004375b0 8 unit tc.system str_real(crcedbaa446_k_comp,smallint,smallint)smallint::d_log10_2()
+0x004375c0 888 unit tc.system val_real(shortstring,int64)extended_factor_10_inexact$crcddb8d7aa::factor()
+0x00437940 8 unit tc.system fpc_val_currency_shortstr(shortstring,int64)currency::minint64()
+0x00437950 8 unit tc.system fpc_val_currency_shortstr(shortstring,int64)currency::minint64edge()
+0x00437960 4 unit tc.system mti()
+0x00437970 8 unit tc.system genrand_mt19937()longint::mag01()
+0x00437980 8 unit tc.system exitproclist()
+0x00437990 96 unit tc.system memorymanager()
+0x004379f0 296 unit tc.system nothreadmanager()
+0x00437b20 88 unit tc.system resourcemanager()
+0x00437b80 8 unit tc.system ctrlbreakhandler()
+0x00000000 0 crt.pp()
+0x0043de90 0 .ld15()
+0x0044d540 1 unit u.crt currx()
+0x0044d550 1 unit u.crt curry()
+0x0044d560 1 unit u.crt outputredir()
+0x0044d570 1 unit u.crt inputredir()
+0x0044d580 256 unit u.crt inbuf()
+0x0044d680 4 unit u.crt incnt()
+0x0044d690 4 unit u.crt inhead()
+0x0044d6a0 4 unit u.crt intail()
+0x0044d6b0 1024 unit u.crt outbuf()
+0x0044dab0 4 unit u.crt outcnt()
+0x0044dac0 20 unit u.crt keybuffer()
+0x0044dae0 4 unit u.crt keyput()
+0x0044daf0 4 unit u.crt keysend()
+0x0044db00 1 unit u.crt lastansi()
+0x0044db10 256 unit u.crt ansicode()
+0x0044dc10 60 unit u.crt oldio()
+0x0044dc50 1 unit u.crt inputraw()
+0x0044dc60 1 unit u.crt outputraw()
+0x0043dfa0 1 unit tc.crt oldtextattr()
+0x0043dfb0 9 unit tc.crt ansitbl()
+0x0043dfc0 1 unit tc.crt ttyflush()
+0x0043dfd0 39 unit tc.crt altkeystr()
+0x0043e000 39 unit tc.crt altcodestr()
+0x00000000 0 baseunix.pp()
+0x00000000 0 unix.pp()
+0x0044dc90 4 unit u.unix num_transitions()
+0x0044dca0 4 unit u.unix num_leaps()
+0x0044dcb0 4 unit u.unix num_types()
+0x0043f260 8 unit tc.unix transitions()
+0x0043f270 8 unit tc.unix type_idxs()
+0x0043f280 8 unit tc.unix types()
+0x0043f290 8 unit tc.unix zone_names()
+0x0043f2a0 8 unit tc.unix leaps()
+0x00000000 0 termio.pp()
+0x00000000 0 unixtype.pp()
+0x00000000 0 unixutil.pp()
+0x0043c340 58 unit rtti.system def875()
+0x0041df20 102 fpc_finalize_array()
+0x00417270 152 unit system upcase(widechar)widechar
+0x00419ba0 39 fpc_intf_incr_ref()
+0x00417660 0 fpc_val_uint_unicodestr()
+0x0044d4e0 1 unit u.crt checksnow()
+0x00415020 0 fpc_unicodestr_decr_ref()
+0x0040d240 37 unit system tdoublerec.setexp(qword)
+0x0042b1e0 319 unit crt ansi2attr(shortstring,longint)longint
+0x004083c0 44 unit system fpopen(pchar,longint,longint)longint
+0x00434fd8 0 _(mozgkigyo,_ld105)
+0x0043f9b0 15 unit rtti.unixtype ptime()
+0x0042e5b0 119 unit baseunix fpgetdomainname(pchar,qword)longint
+0x0042a430 104 unit system setupcmdline_()::addbuf()
+0x0041bdf0 32 fpc_vararray_put()
+0x00419e40 0 fpc_intf_cast_class()
+0x0040b470 31 fpc_sqrt_real()
+0x0042de80 28 unit baseunix createshellargv(ansistring)ppchar
+0x00437c70 18 unit rtti.system longint()
+0x004384b0 19 unit rtti.system pcurrency()
+0x00437e10 13 unit rtti.system longstring()
+0x0040d680 128 unit system delete(openstring,int64,int64)
+0x00413a90 326 fpc_ansistr_setlength()
+0x0043e2e8 35 unit rtti.baseunix def12()
+0x0040a430 0 fpc_shortstr_compare()
+0x0043ab60 60 unit rtti.system tinterfaceentrytype_o2s()
+0x004343f0 0 _(mozgkigyo,_ld15)
+0x0043cbb0 48 unit rtti.system def1164()
+0x0041d900 95 unit system recordrtti(pointer,pointer,trttiproc)
+0x0041c150 23 unit system assign(shortstring)variant
+0x0044dcc8 8 operatingsystem_parameter_envp()
+0x0041be80 23 fpc_interface_to_variant()
+0x00414a80 126 unit system upcase(ansistring)ansistring
+0x0042c330 1464 unit crt readkey()char
+0x0043e220 35 unit rtti.baseunix def8()
+0x00436940 32 unit tc.system allowdirectoryseparators()
+0x0042fb80 103 unit baseunix fpopen(shortstring,longint,longint)longint
+0x00415060 35 fpc_unicodestr_incr_ref()
+0x0043e9e8 16 unit rtti.baseunix piovec()
+0x004352a8 0 _(system,_ld2)
+0x0042e0d0 75 unit baseunix fpfd_set(longint,tfdset)longint
+0x0042bb30 33 unit crt normvideo()
+0x00429ff0 27 unit system setresourcemanager(tresourcemanager)
+0x0041cb00 27 unit system greater_or_equal(variant,variant)boolean
+0x0041bac0 0 fpc_doneexception()
+0x0040d030 28 unit system textended80rec.setexp(qword)
+0x00413410 103 fpc_char_to_ansistr()
+0x0043b0c0 27 unit init.system taggregatedobject()
+0x00426470 0 fpc_read_text_char()
+0x00431760 102 unit unix selecttext(text,longint)longint
+0x00422db0 262 unit system fileopenfunc(textrec)
+0x0043f950 14 unit rtti.unixtype poff()
+0x0041cea0 23 unit system assign(olevariant)ansistring
+0x0043d220 39 unit rtti.system tgetcurrentthreadidhandler()
+0x004164c0 135 unit system unicodechartostring(punicodechar)unicodestring
+0x00434898 0 _(mozgkigyo,_ld42)
+0x0044c300 12 unit u.system softfloat_rounding_mode()
+0x00429760 164 unit system mkdir(shortstring)
+0x0041cfa0 23 unit system assign(olevariant)tdatetime
+0x0042ea80 29 unit baseunix fptimes(tms)qword
+0x004084a0 29 unit system fpunlink(pchar)longint
+0x0041ef10 41 unit system error(truntimeerror)
+0x00414e20 16 unit system defaultcharlengthpchar(pchar)int64
+0x0040a8c0 0 fpc_pchar_length()
+0x00408a50 32 unit system fpgettimeofday(ptimeval,ptimezone)longint
+0x004350f0 0 _(mozgkigyo,_ld121)
+0x00435400 0 _(system,_ld24)
+0x0041b9f0 0 fpc_catches()
+0x0040b1c0 59 fpc_varset_comp_sets()
+0x00416390 0 fpc_unicodestr_setlength()
+0x00419210 148 fpc_dynarray_clear()
+0x0041a7a0 279 unit system tobject.dispatch(formal)
+0x004243b0 27 fpc_write_end()
+0x00417980 194 fpc_unicodestr_bool()
+0x00423120 129 unit system assign(text,char)
+0x0041d0c0 28 unit system assign(qword)olevariant
+0x004312d0 75 unit unix readtimezonefile(shortstring_)::decode(longint)
+0x00422230 60 unit system dodirseparators(openstring)
+0x00416db0 71 unit system pos(widechar,unicodestring)int64
+0x00427330 94 unit system readstrcommon(textrec,pchar,int64)
+0x00424200 50 fpc_get_output()
+0x0044b130 896 unit u.system erroutput()
+0x00401080 761 unit p$mozgkigyo won()
+0x0040b4d0 31 fpc_sin_real()
+0x0040b5c0 41 fpc_int_real()
+0x00438570 19 unit rtti.system plongword()
+0x0040b180 49 fpc_varset_symdif_sets()
+0x0042f0c0 135 unit baseunix fputime(rawbytestring,putimbuf)longint
+0x0042ee00 11 unit baseunix wstopsig(longint)longint
+0x00435580 0 _(system,_ld38)
+0x00438b00 29 unit init.system trtlcriticalsection()
+0x00425950 223 unit system checkread(text)boolean
+0x00419b80 0 fpc_intf_decr_ref()
+0x0043e648 13 unit init.baseunix dir()
+0x0041e3d0 57 unit system random()extended
+0x0042d8f0 323 unit crt getconsolebuf()
+0x0041ae20 131 unit system tobject.getinterfacebystr(shortstring,formal)boolean
+0x0043df40 2 unit tc.crt lastmode()
+0x0043fd70 24 unit init.unixtype pthread_attr_t()
+0x00408c70 31 unit system wifsignaled(longint)boolean
+0x00414770 483 unit system insert(rawbytestring,rawbytestring,int64)
+0x00438540 15 unit rtti.system pbyte()
+0x004084e0 32 unit system fpstat(pchar,stat)longint
+0x004346e8 0 _(mozgkigyo,_ld29)
+0x0041c540 29 unit system assign(variant)longbool
+0x00408a30 32 unit system fpgetcwd(pchar,qword)pchar
+0x0041b4c0 0 fpc_pushexceptaddr()
+0x0040b420 16 unit system getssecsr()longword
+0x00421170 102 unit system relocateheap()
+0x00428e30 190 unit system do_rmdir(rawbytestring)
+0x004191d0 26 fpc_dynarray_length()
+0x0043b1e0 86 unit rtti.system texceptproc()
+0x00436720 1 unit tc.system stackerror()
+0x0043c2a0 43 unit rtti.system def872()
+0x00436920 8 unit tc.system growheapsize1()
+0x004244a0 236 fpc_write_text_shortstr()
+0x004298c0 164 unit system chdir(shortstring)
+0x00428fd0 1205 unit system do_getdir(byte,rawbytestring)
+0x0041edd0 53 unit system handleerroraddrframeind(longint,pointer,pointer)
+0x00414ba0 21 unit system stringelementsize(rawbytestring)word
+0x00425c30 539 unit system readreal(text,openstring)
+0x00420ab0 146 unit system sysfreemem_fixed(pfreelists,pmemchunk_fixed)qword
+0x004350a0 0 _(mozgkigyo,_ld117)
+0x0043b7c0 256 unit rtti.system tvarop_s2o()
+0x0042e9f0 34 unit baseunix fpfcntl(longint,longint)longint
+0x0043ca40 27 unit rtti.system pdynarraytypeinfo()
+0x00418fc0 252 unit system initunicodestringmanager()
+0x00413f20 0 fpc_val_currency_ansistr()
+0x00421ff0 71 unit system copy_unit_threadvars(pltvinitentry)
+0x0043f2e0 45 unit rtti.unix def9()
+0x0043dc90 54 unit rtti.system def1508()
+0x0041bfa0 28 unit system assign(longword)variant
+0x004330c0 241 unit termio ttyname(longint)shortstring
+0x0043d0c0 49 unit rtti.system tthreadhandler()
+0x00439d90 13 unit rtti.system def475()
+0x00435130 0 _(mozgkigyo,_ld125)
+0x0040f040 110 unit system str_real(crcedbaa446_)::k_comp(smallint,smallint)smallint
+0x00439d00 53 unit rtti.system def471()
+0x00437bd0 17 unit rtti.system pointer()
+0x0040d090 290 unit system textended80rec.specialtype()tfloatspecial
+0x0041f560 1 unit system fpc_emptymethod()
+0x0043a7f0 22 unit rtti.system pmsgstrtable()
+0x0043ea28 17 unit rtti.baseunix psigset()
+0x00435310 0 _(system,_ld9)
+0x0041bec0 23 fpc_idispatch_to_variant()
+0x00409580 1 unit system sysinitfpu()
+0x0042f150 247 unit baseunix fpgetcwd()rawbytestring
+0x0040d070 28 unit system textended80rec.setsign(boolean)
+0x0043a5a0 60 unit rtti.system tsafecallerrorproc()
+0x0041f970 22 unit system sysosfree(pointer,qword)
+0x00408830 0 fpc_sysc_fork()
+0x00415ca0 0 fpc_widechararray_to_shortstr()
+0x00435630 0 _(system,_ld41)
+0x0042a110 17 unit system lockresource(qword)pointer
+0x00434f78 0 _(mozgkigyo,_ld99)
+0x00415230 120 fpc_ansistr_to_unicodestr()
+0x004368b0 8 unit tc.system varclearproc()
+0x004340a0 0 _(mozgkigyo,_ld3)
+0x00415520 361 fpc_unicodestr_concat()
+0x00424960 254 fpc_write_text_pchar_as_pointer()
+0x0000092d 0 _(mozgkigyo,_ld142)
+0x00408550 29 unit system fprmdir(pchar)longint
+0x004349a0 0 _(mozgkigyo,_ld50)
+0x0043b4e0 54 unit rtti.system tvararrayboundarray()
+0x0041a360 90 unit system initinterfacepointers(tclass,pointer)
+0x00434140 0 _(mozgkigyo,_ld5)
+0x0041dbd0 692 fpc_copy()
+0x00420ce0 74 unit system try_finish_waitfixedlist(pfreelists)boolean
+0x0041a560 172 unit system tobject.methodname(pointer)shortstring
+0x00412810 51 fpc_ansistr_decr_ref()
+0x00434ef8 0 _(mozgkigyo,_ld89)
+0x004126d0 27 fpc_mul_longint_to_int64()
+0x00430ad0 442 unit unix getlocaltimezone(longint,longint,longint)
+0x0043c230 61 unit rtti.system def870()
+0x0042ab30 9 unit wrpr.system.tcontainedobject.iunknown.1.system taggregatedobject._addref()longint
+0x0041c760 29 unit system assign(variant)comp
+0x00427590 192 unit system openstdio(text,longint,longint)
+0x0040ac50 24 unit system beton(word)word
+0x0042a090 17 unit system findresource(qword,pchar,pchar)qword
+0x0042eb20 64 unit baseunix fpnice(longint)longint
+0x00438780 19 unit rtti.system plongbool()
+0x0041ad30 237 unit system tobject.getinterfaceweak(tguid,formal)boolean
+0x00408760 0 fpc_sysc_exit()
+0x0040b430 31 fpc_abs_real()
+0x0043a5e0 17 unit init.system jmp_buf()
+0x0041e0f0 80 unit system sgenrand_mt19937(longint)
+0x0041e500 0 fpc_divbyzero()
+0x00418930 167 unit system ansitoutf8(rawbytestring)rawbytestring
+0x0043ae60 14 unit init.system tvmt()
+0x00434d30 0 _(mozgkigyo,_ld81)
+0x0043ce60 13 unit rtti.system def1378()
+0x00419110 73 unit system tosinglebytefilesystemencodedfilename(array_of_widechar)rawbytestring
+0x0042c250 58 unit crt faltkey(char)byte
+0x0041df20 0 fpc_finalize_array()
+0x0043ed10 35 unit rtti.baseunix def52()
+0x0041fcc0 43 unit system append_to_list_var(pmemchunk_var)
+0x0042a270 433 unit system setupcmdline()
+0x0042ed60 21 unit baseunix fps_isreg(longint)boolean
+0x0041f8b0 43 fpc_setjmp()
+0x004081d0 0 fpc_sys_seterrno()
+0x00413db0 164 unit system pos(rawbytestring,rawbytestring)int64
+0x00422d20 35 unit system filereadfunc(textrec)
+0x0043f488 28 unit rtti.unix tfsearchoption_o2s()
+0x00431240 74 unit unix readtimezonefile(shortstring_)::readbufbyte()byte
+0x0043ae70 15 unit init.system tguid()
+0x0041ccc0 20 unit system assign(olevariant)smallint
+0x00438410 17 unit rtti.system terror()
+0x00419ea0 196 fpc_class_cast_intf()
+0x00420a20 78 unit system waitfree_fixed(pmemchunk_fixed,poschunk)
+0x00000a00 0 _(mozgkigyo,_ld151)
+0x0042ede0 14 unit baseunix wifexited(longint)boolean
+0x00412600 207 fpc_mul_int64()
+0x0041d710 140 unit system pos(variant,widestring)int64
+0x00439710 84 unit rtti.system tsinglerec()
+0x0041ff50 51 unit system modify_oschunk_freelists(poschunk,pfreelists)
+0x0041db20 161 fpc_addref()
+0x0040ddf0 0 fpc_shortstr_uint()
+0x00421e90 50 unit system nosemaphoreinit()pointer
+0x00425010 200 fpc_write_text_float()
+0x00438860 18 unit rtti.system pvariant()
+0x0043c5d0 76 unit rtti.system def888()
+0x0041f570 49 fpc_abstracterrorintern()
+0x0041c820 48 unit system or(variant,variant)variant
+0x0043d1e0 60 unit rtti.system tthreadgetpriorityhandler()
+0x0042ab10 9 unit wrpr.system.tinterfacedobject.iunknown.2.system tinterfacedobject._release()longint
+0x004152b0 69 fpc_unicodestr_to_widestr()
+0x00423990 129 unit system rename(text,char)
+0x0043e0f8 21 unit rtti.crt pconsolebuf()
+0x00428a90 122 fpc_reset_typed_iso()
+0x00438400 8 unit rtti.system ttime()
+0x00438320 24 unit rtti.system pucs4chararray()
+0x00435770 0 _(crt,_ld5)
+0x004261e0 23 fpc_read_text_shortstr()
+0x0043e860 16 unit rtti.baseunix pfdset()
+0x0043c1a0 43 unit rtti.system def867()
+0x0043dbe0 97 unit rtti.system def1506()
+0x00408260 51 unit system fpsyscall(int64,int64,int64)int64
+0x0040d200 23 unit system tdoublerec.exponent()longint
+0x004224e0 78 unit system do_rename(pchar,pchar,boolean,boolean)
+0x0041d1b0 126 unit system assign(widechar)olevariant
+0x0040d9a0 28 fpc_char_copy()
+0x0042d350 32 unit crt assigncrt(text)
+0x00438260 15 unit rtti.system pchar()
+0x0041c880 48 unit system xor(variant,variant)variant
+0x00409620 24 unit system swapendian(word)word
+0x00402ac0 651 unit p$mozgkigyo keret(smallint,smallint)
+0x004240e0 63 unit system seekeoln()boolean
+0x00420070 166 unit system concat_two_blocks(pmemchunk_var,pmemchunk_var)
+0x0042e8b0 50 unit baseunix fpmkfifo(pchar,longint)longint
+0x0042b390 66 unit crt ttysendchar(char)
+0x004383c0 18 unit rtti.system hresult()
+0x0043eb88 42 unit rtti.baseunix def47()
+0x00409f00 134 fpc_help_fail()
+0x0043f370 35 unit rtti.unix def126()
+0x00437d90 19 unit rtti.system longbool()
+0x00427390 35 unit system readstransi(textrec)
+0x0043f7c8 20 unit rtti.unixtype pcunsigned()
+0x00430160 122 unit unix fpstatfs(ansistring,pstatfs)longint
+0x0041bbe0 0 fpc_variant_addref()
+0x004211e0 326 unit system finalizeheap()
+0x00409640 5 unit system swapendian(longint)longint
+0x00414dd0 78 unit system defaultansi2unicodemove(pchar,word,unicodestring,int64)
+0x0043cd90 38 unit rtti.system def1371()
+0x0042a960 19 unit system getprocessid()qword
+0x00426f10 72 unit system utf8codepointlength(byte)int64
+0x0042eaa0 44 unit baseunix fpselect(longint,pfdset,pfdset,pfdset,ptimeval)longint
+0x00408de0 12 unit system get_caller_frame(pointer,pointer)pointer
+0x00418f20 22 unit system stringrefcount(unicodestring)int64
+0x00439270 76 unit rtti.system tfpuexception_s2o()
+0x0040ae20 0 fpc_popcnt_word()
+0x0041a0a0 206 fpc_class_as_intf()
+0x00436880 8 unit tc.system raiseproc()
+0x0043f708 17 unit rtti.unixtype pcshort()
+0x004386c0 18 unit rtti.system ppointer()
+0x004343c0 0 _(mozgkigyo,_ld14)
+0x0043f460 40 unit rtti.unix tfsearchoption_s2o()
+0x00435270 0 unit iid.system idispatch()
+0x0041b980 0 fpc_reraise()
+0x00435068 0 _(mozgkigyo,_ld113)
+0x00414bc0 22 unit system stringrefcount(rawbytestring)int64
+0x004330a0 18 unit termio isatty(text)longint
+0x004278d0 243 unit system rewrite(file,longint)
+0x0041cf20 29 unit system assign(olevariant)extended
+0x00432200 138 unit unix popen(text,unicodestring,char)longint
+0x00434190 0 _(mozgkigyo,_ld6)
+0x0040a9d0 152 unit system int_str(longint,openstring)
+0x00427030 224 unit system writestrunicodeintern(textrec,boolean)
+0x00411bd0 0 fpc_val_enum_shortstr()
+0x0043bdf0 24 unit rtti.system def846()
+0x00414090 0 fpc_ansistr_float()
+0x0040b2e0 16 unit system swap(qword)qword
+0x00435210 0 unit iid.system iinvokable()
+0x0043c560 43 unit rtti.system def886()
+0x004129e0 746 fpc_ansistr_concat()
+0x004387a0 20 unit rtti.system pnativeint()
+0x00408a70 32 unit system fpgetrlimit(longint,prlimit)longint
+0x004154e0 57 fpc_unicodestr_assign()
+0x00434e98 0 _(mozgkigyo,_ld86)
+0x0041cac0 27 unit system lower(variant,variant)boolean
+0x0043f828 21 unit rtti.unixtype pcslonglong()
+0x0040cfb0 17 unit system textended80rec.mantissa()qword
+0x0041a170 0 fpc_class_as_corbaintf()
+0x00435760 0 _(crt,_ld3)
+0x00418bc0 73 unit system unicodestringtoucs4string(unicodestring)ucs4string
+0x00419a70 0 fpc_dynarray_decr_ref()
+0x00412880 65 fpc_ansistr_assign()
+0x00410930 159 unit system val_real(shortstring,int64)extended::match_special(crcd4ab17d1)
+0x0042d4b0 19 unit crt textmode(word)
+0x00408810 32 unit system fpfstat(longint,stat)longint
+0x00436070 8 fpc_wideinittables()
+0x0041ca80 23 unit system minus(variant)variant
+0x00409f90 50 fpc_check_object()
+0x0042e310 32 unit baseunix getitimer(longint,itimerval)longint
+0x00434a88 0 _(mozgkigyo,_ld59)
+0x0043eca8 18 unit init.baseunix tsiginfo()
+0x004385d0 16 unit rtti.system pqword()
+0x0043b240 119 unit rtti.system texceptobject()
+0x004244a0 0 fpc_write_text_shortstr()
+0x00408520 34 unit system fpmkdir(pchar,longint)longint
+0x00424a60 453 fpc_write_text_ansistr()
+0x0041c020 29 unit system assign(boolean)variant
+0x00419bd0 0 fpc_intf_assign()
+0x004094a0 5 unit system interlockedexchange(longint,longint)longint
+0x0042b5b0 89 unit crt ttycolor(longint)
+0x00408760 31 unit system fpexit(longint)
+0x00429540 164 unit system rmdir(rawbytestring)
+0x0041b3f0 46 unit system raiselist()pexceptobject
+0x00420a70 59 unit system waitfree_var(pmemchunk_var)
+0x0043e830 41 unit rtti.baseunix tfdset()
+0x0043fe50 59 unit rtti.unixtype _pthread_fastlock()
+0x0041b840 0 fpc_popobjectstack()
+0x00419190 50 fpc_dynarray_rangecheck()
+0x0040d470 18 unit system tsinglerec.getsign()boolean
+0x00430a30 152 unit unix find_transition(longint)pttinfo
+0x004351d0 0 unit iid.system iunknown()
+0x00415ac0 76 fpc_uchar_to_ansistr()
+0x004216d0 17 unit system threadswitch()
+0x0041be40 23 fpc_dynarray_to_variant()
+0x00419da0 40 fpc_class_is_corbaintf()
+0x00434460 0 _(mozgkigyo,_ld17)
+0x0041bae0 29 fpc_raise_nested()
+0x00409480 17 unit system interlockedincrement(longint)longint
+0x00436700 4 unit tc.system ismultithread()
+0x00409540 57 unit system fpc_cpuinit()
+0x004352d0 0 _(system,_ld5)
+0x0041d230 23 unit system assign(shortstring)olevariant
+0x004114d0 148 fpc_chararray_float()
+0x00419850 45 unit system dynarraydim(pointer)smallint
+0x0040ae60 60 fpc_popcnt_dword()
+0x004387c0 21 unit rtti.system pnativeuint()
+0x00434f20 0 _(mozgkigyo,_ld93)
+0x0043fe30 27 unit init.unixtype _pthread_fastlock()
+0x0043f970 14 unit rtti.unixtype ppid()
+0x0043f900 15 unit rtti.unixtype pkdev()
+0x00437e90 12 unit rtti.system cextended()
+0x0042a890 122 unit system restoreoldsignalhandlers()
+0x0043faa8 50 unit rtti.unixtype timespec()
+0x00427d30 136 unit system blockwrite(file,formal,longint)
+0x0042d590 69 unit crt restorerawsettings(termios)
+0x00414b80 27 unit system stringcodepage(rawbytestring)word
+0x00426ed0 52 unit system writestransiflush(textrec)
+0x0041e360 99 unit system random(int64)int64
+0x0041bb80 0 fpc_variant_init()
+0x0042ed80 21 unit baseunix fps_isfifo(longint)boolean
+0x0041caa0 27 unit system equal(variant,variant)boolean
+0x00403680 301 unit p$mozgkigyo kori2(smallint,smallint)
+0x00437c00 19 unit rtti.system shortint()
+0x00426d80 145 unit system writestrshort(textrec)
+0x0040a920 6 unit system odd(longint)boolean
+0x0042bef0 28 unit crt wherex()tcrtcoord
+0x00437e20 14 unit rtti.system ansistring()
+0x0041d680 140 unit system pos(variant,ansistring)int64
+0x0041d290 36 unit system assign(single)olevariant
+0x00421d10 19 unit system noinitthreadvar(longword,longword)
+0x0041cfe0 34 unit system assign(byte)olevariant
+0x00421dc0 45 unit system nobasiceventwaitfor(longword,pointer)longint
+0x0041c070 35 unit system assign(longbool)variant
+0x0042fa60 21 unit baseunix fpopen(pchar,longint)longint
+0x00419af0 0 fpc_do_is()
+0x0041ee10 46 unit system handleerrorframe(longint,pointer)
+0x00409530 9 unit system interlockedcompareexchange64(int64,int64,int64)int64
+0x0042a240 38 unit system randomize()
+0x0043f6a8 17 unit rtti.unixtype pcschar()
+0x0043aba0 121 unit rtti.system tinterfaceentry()
+0x0041a030 103 fpc_intf_as_class()
+0x00418fb0 16 unit system stubcomparewidestring(widestring,widestring,tcompareoptions)int64
+0x0040e370 32 unit system diy_fp_multiply(crc6167dc43_)::u32_mul_u32_to_u64(longword,longword)qword
+0x0042ab20 13 unit wrpr.system.tcontainedobject.iunknown.0.system tcontainedobject.queryinterface(tguid,formal)longint
+0x0041be60 23 fpc_variant_to_interface()
+0x00437bf0 15 unit rtti.system byte()
+0x0043f720 18 unit rtti.unixtype pcsshort()
+0x00415060 0 fpc_unicodestr_incr_ref()
+0x00421c50 21 unit system nothreadgetpriority(qword)longint
+0x0041c590 130 unit system assign(variant)widechar
+0x004393e0 124 unit rtti.system tfloatspecial_s2o()
+0x0041d2f0 40 unit system assign(extended)olevariant
+0x00418f00 21 unit system stringelementsize(unicodestring)word
+0x0043a790 22 unit init.system tmsgstrtable()
+0x00430690 17 unit unix fpexecle(ansistring,array_of_ansistring,ppchar)longint
+0x004086d0 142 unit system fpreaddir(pdir)pdirent
+0x00424140 77 unit system settextlineending(text,shortstring)
+0x00438f50 47 unit rtti.system pointerarray()
+0x004234f0 121 unit system erase(text)
+0x0044dc70 1 unit u.unix tzdaylight()
+0x00435540 0 _(system,_ld35)
+0x00436900 4 unit tc.system maxkeptoschunks()
+0x0041e450 94 unit system stacktop()pointer
+0x00434d78 0 _(mozgkigyo,_ld82)
+0x00437e80 11 unit rtti.system extended()
+0x004099c0 132 unit system indexqword(formal,int64,qword)int64
+0x0040b3e0 18 unit system getmxcsr()longword
+0x00421a90 23 unit system semaphorepost(pointer)
+0x0040a030 57 fpc_shortstr_to_shortstr()
+0x0041c9c0 48 unit system slash(variant,variant)variant
+0x0041cce0 17 unit system assign(olevariant)longword
+0x0042ba40 59 unit crt textcolor(byte)
+0x0043bd90 19 unit init.system tdispdesc()
+0x00414be0 158 unit system internalsetcodepage(rawbytestring,word,boolean)
+0x004173d0 30 unit system lowercase(unicodestring)unicodestring
+0x004385f0 17 unit rtti.system puint64()
+0x0042e180 37 unit baseunix fpfd_zero(tfdset)longint
+0x0042eb00 32 unit baseunix fplstat(pchar,pstat)longint
+0x004093a0 62 unit system comparebyte(formal,formal,int64)int64
+0x0041cc40 23 unit system varcast(variant,variant,longint)
+0x00413340 0 fpc_ansistr_to_shortstr()
+0x00434aa8 0 _(mozgkigyo,_ld60)
+0x004335d0 252 unit unixutil epochtolocal(longint,word,word,word,word,word,word)
+0x00437e40 15 unit rtti.system unicodestring()
+0x00422d50 88 unit system filewritefunc(textrec)
+0x0041fac0 17 unit system memsize(pointer)qword
+0x0041c230 124 unit system assign(ucs4string)variant
+0x00419920 194 unit system isdynarrayrectangular(pointer,pointer)boolean
+0x0040d950 69 unit system pos(char,shortstring)int64
+0x00421bf0 21 unit system nothreadhandler(qword)longword
+0x00439e40 24 unit rtti.system def478()
+0x0043d250 48 unit rtti.system tcriticalsectionhandler()
+0x00421340 315 unit system initthread(qword)
+0x00439940 113 unit rtti.system tstandardcodepageenum()
+0x0043e978 17 unit rtti.baseunix prlimit()
+0x0043ffa0 24 unit init.unixtype pthread_cond_t()
+0x0041b840 170 fpc_popobjectstack()
+0x0041b4c0 72 fpc_pushexceptaddr()
+0x0042e280 39 unit baseunix fpsigsuspend(sigset_t)longint
+0x0043bc50 35 unit rtti.system def841()
+0x0040f310 303 unit system str_real(crcedbaa446_)::return_special(openstring,smallint,shortstring,smallint)
+0x0041cdf0 136 unit system assign(olevariant)widechar
+0x0041b8f0 0 fpc_popsecondobjectstack()
+0x004349b8 0 _(mozgkigyo,_ld51)
+0x004196a0 371 fpc_dynarray_copy()
+0x00429e90 16 unit system is_intresource(pchar)boolean
+0x00419160 37 unit system tosinglebytefilesystemencodedfilename(rawbytestring)rawbytestring
+0x0043ee58 35 unit rtti.baseunix def56()
+0x004395d0 35 unit rtti.system def346()
+0x0041f3c0 408 unit system stringtoppchar(pchar,smallint)ppchar
+0x0041e430 10 unit system dseg()word
+0x0043ff70 45 unit rtti.unixtype pthread_mutexattr_t()
+0x00422770 107 unit system do_filesize(longint)int64
+0x0043f4a8 45 unit rtti.unix def101()
+0x00410a00 35 unit system val_real(shortstring,int64)extended::count_leading_zero(longword)smallint
+0x0043f598 17 unit init.termio termios()
+0x00421ed0 19 unit system nosemaphorewait(pointer)
+0x00438e50 27 unit init.system tentryinformation()
+0x00410c20 45 fpc_shortstr_float()
+0x0042d4f0 26 unit crt cursoron()
+0x00426af0 115 fpc_read_text_float_iso()
+0x0043b2c0 23 unit rtti.system pexceptobject()
+0x00427ca0 43 unit system blockwrite(file,formal,word,word)
+0x00426a40 175 fpc_read_text_float()
+0x00425a30 511 unit system readinteger(text,openstring)
+0x0043bf10 35 unit rtti.system def854()
+0x0041b0c0 4 unit system tobject.gethashcode()int64
+0x004241a0 31 unit system settextcodepage(text,word)
+0x00413340 77 fpc_ansistr_to_shortstr()
+0x0043d2c0 64 unit rtti.system tinitthreadvarhandler()
+0x0041d3c0 28 unit system assign(terror)olevariant
+0x0041b3a0 26 unit system taggregatedobject.getcontroller()iunknown
+0x00435070 0 _(mozgkigyo,_ld114)
+0x004083a0 0 fpc_sysc_time()
+0x004383e0 12 unit rtti.system tdatetime()
+0x0040b250 17 unit system hi(byte)byte
+0x00408410 40 unit system fplseek(longint,int64,longint)int64
+0x00435008 0 _(mozgkigyo,_ld108)
+0x004131f0 0 fpc_ansistr_to_ansistr()
+0x0040dcf0 63 unit system hexstr(pointer)shortstring
+0x00415c20 119 fpc_widechararray_to_unicodestr()
+0x0040ffe0 108 unit system str_real_iso(longint,longint,extended,treal_type,openstring)
+0x0041c4c0 17 unit system assign(variant)qword
+0x00419c90 0 fpc_intf_is_class()
+0x004357c8 0 _(crt,_ld16)
+0x00438280 17 unit rtti.system pppchar()
+0x0040d8d0 126 unit system pos(shortstring,shortstring)int64
+0x004357a8 0 _(crt,_ld12)
+0x00412810 0 fpc_ansistr_decr_ref()
+0x0040a940 7 unit system odd(int64)boolean
+0x0041c2b0 36 unit system assign(single)variant
+0x00434528 0 _(mozgkigyo,_ld21)
+0x0042d4d0 26 unit crt cursorbig()
+0x0041ff00 78 unit system append_to_oslist_var(pmemchunk_var)
+0x00434958 0 _(mozgkigyo,_ld47)
+0x00438e90 107 unit rtti.system tentryinformation()
+0x00415020 51 fpc_unicodestr_decr_ref()
+0x00424290 149 unit system fpc_writebuffer(text,formal,int64)
+0x0042ed20 21 unit baseunix fps_ischr(longint)boolean
+0x004399c0 52 unit rtti.system tstandardcodepageenum_s2o()
+0x0040acd0 3 unit system leton(longint)longint
+0x00420b50 160 unit system sysfreemem_var(pfreelists,pmemchunk_var)qword
+0x0041f8b0 0 fpc_setjmp()
+0x0042e1b0 44 unit baseunix fpfdfillset(tfdset)longint
+0x00435190 0 _(mozgkigyo,_ld128)
+0x00439000 21 unit rtti.system ppchararray()
+0x0041cb60 99 unit system vararrayput(variant,variant,array_of_longint)
+0x00426e60 103 unit system writestransi(textrec)
+0x00434fb0 0 _(mozgkigyo,_ld103)
+0x00433740 158 unit unixutil gregoriantojulian(longint,longint,longint)longint
+0x004347d0 0 _(mozgkigyo,_ld37)
+0x00429f50 6 unit system defaultenumresourcelanguages(qword,pchar,pchar,enumreslangproc,int64)longbool
+0x0043cc70 21 unit init.system theapstatus()
+0x00415e40 119 fpc_widechararray_to_widestr()
+0x00416c30 200 fpc_unicodestr_copy()
+0x0044d4c0 1 unit u.crt checkeof()
+0x0041fa00 18 unit system getmem(pointer,qword)
+0x00414f80 27 unit system unicodestringerror()
+0x00435838 0 _(unix,_ld1)
+0x004124b0 0 fpc_mul_qword()
+0x00430060 244 unit baseunix fpreadlink(rawbytestring)rawbytestring
+0x00416790 180 unit system unicodecharlentostrvar(punicodechar,int64,ansistring)
+0x00420840 357 unit system sysgetmem_var(qword)pointer
+0x00413be0 78 unit system fpc_truely_ansistr_unique(pointer)pointer
+0x00426cf0 130 fpc_read_text_currency_iso()
+0x00426230 90 fpc_read_text_pchar_as_array()
+0x00425f50 207 fpc_readln_end_iso()
+0x0041c3c0 23 unit system assign(tdatetime)variant
+0x0040d490 25 unit system tsinglerec.setsign(boolean)
+0x0043e7c0 13 unit init.baseunix tms()
+0x0043ab00 88 unit rtti.system tinterfaceentrytype_s2o()
+0x0043f840 21 unit rtti.unixtype pculonglong()
+0x00434b28 0 _(mozgkigyo,_ld64)
+0x004367b0 1 unit tc.system writeerrorstostderr()
+0x0042f540 125 unit baseunix fpunlink(rawbytestring)longint
+0x000009c4 0 _(mozgkigyo,_ld139)
+0x0042f020 145 unit baseunix fpchown(rawbytestring,longword,longword)longint
+0x00437c50 19 unit rtti.system longword()
+0x0042fb10 98 unit baseunix fpopen(shortstring,longint)longint
+0x004178a0 213 fpc_unicodestr_enum()
+0x0043a810 29 unit init.system tstringmessagetable()
+0x00408960 35 unit system fpioctl(longint,longint,pointer)longint
+0x00434a00 0 _(mozgkigyo,_ld54)
+0x00435698 0 _(system,_ld46)
+0x0043ac90 25 unit rtti.system pinterfacetable()
+0x00408a90 0 fpc_sysc_setrlimit()
+0x0041bb00 122 fpc_safecallhandler()
+0x00426660 259 fpc_read_text_char_iso()
+0x0043beb0 35 unit rtti.system def852()
+0x00435390 0 _(system,_ld17)
+0x0041fba0 0 fpc_getmem()
+0x0041b380 28 unit system taggregatedobject._release()longint
+0x0044d4d0 1 unit u.crt directvideo()
+0x00431820 75 unit unix telldir(pdir)int64
+0x00413a90 0 fpc_ansistr_setlength()
+0x00418a60 339 unit system ucs4encode(pwidechar,int64,ucs4string)
+0x0042f4b0 135 unit baseunix fpmkdir(rawbytestring,longint)longint
+0x0042a760 296 unit system sysinitstdio()
+0x004176f0 155 fpc_val_sint_unicodestr()
+0x004302a0 70 unit unix pclose(text)longint
+0x004210f0 114 unit system initheap()
+0x0041c7a0 29 unit system assign(variant)currency
+0x00413870 471 fpc_ansistr_compare_equal()
+0x0042a6b0 0 _fpc_installdefaultsighandler()
+0x00426f60 195 unit system endoflastcompleteutf8codepoint(textrec)int64
+0x0042b430 202 unit crt ttyrecvchar()char
+0x0043d650 13 unit rtti.system def1438()
+0x00438370 14 unit rtti.system utf8string()
+0x00421510 58 unit system beginthread(tthreadfunc)qword
+0x0041fd30 59 unit system remove_from_list_var(pmemchunk_var)
+0x004096c0 28 unit system fillbyte(formal,int64,byte)
+0x0043a770 16 unit rtti.system tclass()
+0x004352e0 0 _(system,_ld6)
+0x0044d450 40 _fpc_oldsigbus()
+0x0041cd60 22 unit system assign(olevariant)boolean
+0x0041a740 31 unit system tobject.classnameis(shortstring)boolean
+0x00439c30 37 unit rtti.system def467()
+0x0040d4f0 197 unit system tsinglerec.specialtype()tfloatspecial
+0x004355c0 0 _(system,_ld40)
+0x0040dbd0 63 unit system hexstr(int64,byte)shortstring
+0x004285d0 422 unit system rename(file,rawbytestring)
+0x0041f990 27 unit system getmemorymanager(tmemorymanager)
+0x0040b4f0 31 fpc_cos_real()
+0x00430210 32 unit unix fpfstatfs(longint,pstatfs)longint
+0x00438700 22 unit rtti.system pcodepointer()
+0x0043be70 24 unit rtti.system def850()
+0x0042b320 57 unit crt ttyflushoutput()
+0x0040ca30 806 unit system rem_pio2(double,double)int64
+0x0041d7a0 188 unit system pos(variant,variant)int64
+0x0043d660 616 unit rtti.system tthreadmanager()
+0x0042e2e0 35 unit baseunix setitimer(longint,itimerval,itimerval)longint
+0x00422300 145 unit system dodirseparators(unicodestring)
+0x0041d610 51 unit system pos(variant,char)int64
+0x00408db0 4 unit system sptr()pointer
+0x00413c30 33 fpc_ansistr_unique()
+0x0040acb0 7 unit system leton(smallint)smallint
+0x00439350 131 unit rtti.system tfloatspecial()
+0x00410e80 0 fpc_shortstr_currency()
+0x0043cfc0 43 unit rtti.system tthreadfunc()
+0x0041aac0 98 unit system isguidequal(tguid,tguid)boolean
+0x00413eb0 0 fpc_val_real_ansistr()
+0x0043d090 48 unit rtti.system tendthreadhandler()
+0x00436780 1 operatingsystem_isconsole()
+0x0043f920 16 unit rtti.unixtype pino64()
+0x0043d5f0 47 unit rtti.system tsemaphorewaithandler()
+0x0041cb20 27 unit system lower_or_equal(variant,variant)boolean
+0x0043f1f8 17 unit rtti.baseunix pgrparr()
+0x0040bab0 3968 unit system k_rem_pio2(tda02,tda02,smallint,smallint,smallint)int64
+0x004345d0 0 _(mozgkigyo,_ld24)
+0x0040d1e0 32 unit system tdoublerec.fraction()extended
+0x00434b88 0 _(mozgkigyo,_ld67)
+0x0043f910 14 unit rtti.unixtype pino()
+0x0042ce80 203 unit crt dowrite(shortstring_)::sendtext()
+0x0043fa78 18 unit rtti.unixtype ptimeval()
+0x0043a540 92 unit rtti.system tasserterrorproc()
+0x004022e0 371 unit p$mozgkigyo exit(smallint,smallint)
+0x00434e50 0 _(mozgkigyo,_ld85)
+0x0043e060 51 unit rtti.crt tcharattr()
+0x004088e0 34 unit system fpdup2(longint,longint)longint
+0x0042f9a0 28 unit baseunix fpfstat(file,stat)boolean
+0x00424120 28 unit system settextbuf(text,formal,int64)
+0x0042bb60 126 unit crt gotoxy(tcrtcoord,tcrtcoord)
+0x0042e6b0 59 unit baseunix fpwait(longint)longint
+0x0042e400 28 unit baseunix fppause()longint
+0x0043e8e8 64 unit rtti.baseunix pollfd()
+0x0043fb38 35 unit rtti.unixtype def53()
+0x00432ff0 24 unit termio tcgetpgrp(longint,longint)longint
+0x0043f750 17 unit rtti.unixtype pcint32()
+0x00422490 76 unit system do_truncate(longint,int64)
+0x0043fee0 105 unit rtti.unixtype pthread_mutex_t()
+0x00435968 0 _(unix,_ld16)
+0x0042d3f0 96 unit crt sound(word)
+0x0043fae0 19 unit rtti.unixtype ptimespec()
+0x004353d0 0 _(system,_ld21)
+0x00434c08 0 _(mozgkigyo,_ld72)
+0x0041ebf0 49 unit system halt(longint)
+0x004306b0 27 unit unix fpexecl(ansistring,array_of_ansistring)longint
+0x004088e0 0 fpc_sysc_dup2()
+0x00401080 0 debugstart_(p,mozgkigyo)
+0x00414f20 50 unit system setwidestringmanager(tunicodestringmanager,tunicodestringmanager)
+0x0040b0c0 49 fpc_varset_add_sets()
+0x0042d370 58 unit crt delline()
+0x00422710 86 unit system do_seekend(longint)int64
+0x00416280 0 fpc_unicodestr_compare()
+0x0043c200 43 unit rtti.system def869()
+0x0041c640 23 unit system assign(variant)ansistring
+0x0041afb0 169 unit system tobject.getinterfaceentrybystr(shortstring)pinterfaceentry
+0x00432a70 881 unit unix fsearch(ansistring,ansistring,tfsearchoption)ansistring
+0x0041a480 25 unit system tobject.freeinstance()
+0x0040da10 100 unit system upcase(shortstring)shortstring
+0x0043e990 17 unit init.baseunix trlimit()
+0x00421910 23 unit system basiceventresetevent(pointer)
+0x00436760 1 unit tc.system moduleiscpp()
+0x004329d0 55 unit unix getdomainname()shortstring
+0x0043bc30 18 unit rtti.system pvardata()
+0x0043c0b0 43 unit rtti.system def862()
+0x004094c0 0 fpc_interlockedcompareexchange()
+0x004391f0 115 unit rtti.system tfpuexception()
+0x00412850 0 fpc_ansistr_incr_ref()
+0x0043ee30 35 unit rtti.baseunix def55()
+0x0041c190 23 unit system assign(widestring)variant
+0x0043ee00 18 unit rtti.baseunix pfpstate()
+0x0043da50 13 unit rtti.system def1501()
+0x00408200 45 unit system fpsyscall(int64)int64
+0x0041e420 10 unit system cseg()word
+0x0043d280 56 unit rtti.system tcriticalsectionhandlertryenter()
+0x0043a6c0 17 unit init.system tobject()
+0x00422090 40 unit system initthreadvars(trelocatethreadvarhandler)
+0x0043f8d8 22 unit rtti.unixtype pclongdouble()
+0x00438e80 13 unit rtti.system def142()
+0x0040ac70 16 unit system beton(longint)longint
+0x0043de60 35 unit rtti.system def4362()
+0x004392c0 52 unit rtti.system tfpuexception_o2s()
+0x0043e738 18 unit rtti.baseunix putimbuf()
+0x00421750 17 unit system threadgetpriority(qword)longint
+0x0040fd60 349 unit system str_real(crcedbaa446_)::gen_digits_64(tasciidigits,smallint,qword,boolean)smallint
+0x004381f0 28 unit init.system nestedprocpointer()
+0x0040b640 40 unit system float_raise(tfpuexception)
+0x0043a830 35 unit rtti.system def697()
+0x0043d190 74 unit rtti.system tthreadsetpriorityhandler()
+0x00415090 193 fpc_unicodestr_to_shortstr()
+0x0043faf8 17 unit init.unixtype tstatfs()
+0x0043f198 23 unit rtti.baseunix psigactionrec()
+0x00432320 678 unit unix assignstream(text,text,ansistring,array_of_ansistring)longint
+0x0041a2d0 66 unit system tobject.destroy()
+0x0040a7b0 0 fpc_chararray_to_shortstr()
+0x00438f80 23 unit rtti.system ppointerarray()
+0x0041c310 40 unit system assign(extended)variant
+0x0043e700 49 unit rtti.baseunix utimbuf()
+0x00409df0 0 fpc_help_constructor()
+0x00409670 7 unit system swapendian(qword)qword
+0x00423440 176 unit system flush(text)
+0x0043b580 28 unit rtti.system pvararraycoorarray()
+0x00438050 7 unit rtti.system comp()
+0x00436910 8 unit tc.system growheapsizesmall()
+0x00414090 306 fpc_ansistr_float()
+0x004142d0 0 fpc_ansistr_bool()
+0x00438880 21 unit rtti.system polevariant()
+0x00437cd0 18 unit rtti.system boolean()
+0x00435120 0 _(mozgkigyo,_ld124)
+0x0042eb60 71 unit baseunix fpgetpriority(longint,longint)longint
+0x0041cf00 31 unit system assign(olevariant)double
+0x0043d4d0 69 unit rtti.system trtleventhandlertimeout()
+0x0043b070 46 unit rtti.system tinterfacedobject()
+0x00416560 135 unit system widechartostring(pwidechar)unicodestring
+0x004201c0 191 unit system find_free_oschunk(pfreelists,qword,qword,qword)poschunk
+0x0041c680 120 unit system assign(variant)utf8string
+0x0040d700 264 unit system insert(shortstring,openstring,int64)
+0x0043f0c8 78 unit rtti.baseunix sigactionhandler_t()
+0x00402620 1178 unit p$mozgkigyo miniscores(smallint,smallint)
+0x0041f570 0 fpc_abstracterror()
+0x00430770 122 unit unix fpsystem(shortstring)longint
+0x0042d0c0 540 unit crt crtread(textrec)
+0x0040d440 34 unit system tsinglerec.setexp(qword)
+0x00421bb0 26 unit system nobeginthread(pointer,qword,tthreadfunc,pointer,longword,qword)qword
+0x00419c20 0 fpc_intf_is()
+0x0040d310 197 unit system tdoublerec.specialtype()tfloatspecial
+0x0043e598 16 unit init.baseunix dirent()
+0x0043df70 2 unit tc.crt windmax()
+0x0041fb30 16 unit system getmemory(qword)pointer
+0x0043a6a0 18 unit rtti.system pjmp_buf()
+0x00438210 60 unit rtti.system nestedprocpointer()
+0x0043f7e0 17 unit rtti.unixtype pcint64()
+0x0043e7d0 77 unit rtti.baseunix tms()
+0x004217b0 23 unit system donecriticalsection(trtlcriticalsection)
+0x00436080 8 fpc_resstrinittables()
+0x0042e6f0 26 unit baseunix fpgetppid()longint
+0x0043f9a0 16 unit rtti.unixtype pclock()
+0x00428180 170 unit system eof(file)boolean
+0x0040b400 20 unit system setssecsr(longword)
+0x00421d90 43 unit system nobasicevent(pointer)
+0x00408470 0 fpc_sysc_write()
+0x004358f8 0 _(unix,_ld12)
+0x00432e80 16 unit unix finalize()
+0x004368f0 8 unit tc.system vartowstrproc()
+0x0041e410 14 unit system ptr(longint,longint)pointer
+0x0043c460 43 unit rtti.system def882()
+0x0041e000 22 fpc_decref()
+0x00412cd0 1301 fpc_ansistr_concat_multi()
+0x00419ba0 0 fpc_intf_incr_ref()
+0x004083f0 0 fpc_sysc_close()
+0x004241c0 50 fpc_get_input()
+0x00000944 0 _(mozgkigyo,_ld144)
+0x00435818 0 _(baseunix,_ld1)
+0x004325d0 1016 unit unix assignstream(text,text,text,ansistring,array_of_ansistring)longint
+0x0040adf0 0 fpc_popcnt_byte()
+0x0042fa40 16 unit baseunix fppread(longint,formal,qword,int64)int64
+0x00416a80 131 unit system widechartostrvar(pwidechar,unicodestring)
+0x0044b0c0 4 unit u.system randseed()
+0x004366f0 1 unit tc.system filemode()
+0x00435788 0 _(crt,_ld8)
+0x0043b0e0 46 unit rtti.system taggregatedobject()
+0x0043e048 19 unit init.crt tcharattr()
+0x0041c440 22 unit system assign(variant)word
+0x0043a470 45 unit rtti.system def667()
+0x00428010 168 unit system filepos(file)int64
+0x004216f0 17 unit system killthread(qword)longword
+0x0044d3f0 40 _fpc_oldsigfpe()
+0x00408990 0 fpc_sysc_getpid()
+0x0042a580 33 unit system getfpustate(tsigcontext)word
+0x0041f5f0 689 unit system sysassert(shortstring,shortstring,longint,pointer)
+0x00419830 0 unit system dynarraysize(pointer)int64
+0x004360a0 0 __heapsize
+0x0043fb60 193 unit rtti.unixtype tstatfs()
+0x0040e080 740 unit system diy_fp_multiply(tdiy_fp,tdiy_fp,boolean)tdiy_fp
+0x00435758 0 _(crt,_ld2)
+0x00435410 0 _(system,_ld25)
+0x0041eed0 23 unit system runerror()
+0x004175c0 0 fpc_val_currency_unicodestr()
+0x00429f30 6 unit system defaultenumresourcetypes(qword,enumrestypeproc,int64)longbool
+0x00428950 22 unit system assign(typedfile,shortstring)
+0x004252e0 131 fpc_write_text_currency()
+0x004347b0 0 _(mozgkigyo,_ld36)
+0x000008f6 0 _(mozgkigyo,_ld131)
+0x00435520 0 _(system,_ld33)
+0x00424190 13 unit system gettextcodepage(text)word
+0x0041fa40 23 unit system freemem(pointer,qword)
+0x0040d020 12 unit system textended80rec.getexp()qword
+0x0043fc60 35 unit rtti.unixtype def57()
+0x0041cfc0 17 unit system assign(olevariant)terror
+0x00418730 256 unit system utf8encode(unicodestring)rawbytestring
+0x0043c140 43 unit rtti.system def865()
+0x0044b0d0 2 unit u.system defaultsystemcodepage()
+0x00414e30 28 unit system defaultcodepointlength(pchar,int64)int64
+0x0042ef90 135 unit baseunix fpchmod(rawbytestring,longint)longint
+0x0042c290 98 unit crt syskeypressed()boolean
+0x0043fd48 37 unit rtti.unixtype sched_param()
+0x0041d4f0 140 unit system pos(ansistring,variant)int64
+0x0041b160 59 unit system tinterfacedobject._release()longint
+0x00410ab0 283 unit system val_real(shortstring,int64)extended::factor_10_inexact(crcddb8d7aa)
+0x00401b40 395 unit p$mozgkigyo nyil(smallint,smallint)
+0x004126d0 0 fpc_mul_longint_to_int64()
+0x00439bc0 24 unit rtti.system def464()
+0x004113f0 219 fpc_chararray_uint()
+0x00433030 26 unit termio tcflow(longint,longint)longint
+0x00421730 22 unit system threadsetpriority(qword,longint)boolean
+0x0043c620 50 unit rtti.system def889()
+0x0040b450 31 fpc_sqr_real()
+0x004336d0 112 unit unixutil localtoepoch(word,word,word,word,word,word)longint
+0x0040b200 67 fpc_varset_contains_sets()
+0x00408d80 41 unit system do_isdevice(longint)boolean
+0x004386a0 19 unit rtti.system pplongint()
+0x0042e990 37 unit baseunix fpfcntl(longint,longint,longint)longint
+0x0043cac0 54 unit rtti.system fpc_normal_set_byte()
+0x00413870 0 fpc_ansistr_compare_equal()
+0x0043f1c8 42 unit rtti.baseunix tgrparr()
+0x00408ab0 175 unit system fpgetenv(pchar)pchar
+0x00426290 0 fpc_read_text_ansistr()
+0x00427430 82 fpc_setupreadstr_ansistr()
+0x00409860 164 unit system filldword(formal,int64,longword)
+0x004367c0 2 unit tc.system default8087cw()
+0x004169c0 180 unit system widecharlentostrvar(pwidechar,int64,ansistring)
+0x00436790 1 unit tc.system noerrmsg()
+0x00416700 141 unit system unicodecharlentostrvar(punicodechar,int64,unicodestring)
+0x00430230 32 unit unix fpstatfs(pchar,pstatfs)longint
+0x0040b140 51 fpc_varset_sub_sets()
+0x0042ecb0 0 fpc_sysc_writev()
+0x004089e0 0 fpc_sysc_sigprocmask()
+0x004358a8 0 _(unix,_ld6)
+0x0042a030 17 unit system enumresourcetypes(qword,enumrestypeproc,int64)longbool
+0x0040ada0 9 unit system ntole(word)word
+0x00436250 208 unit vmt.system tinterfacedobject()
+0x0042ab50 70 unit crt str(longint)shortstring
+0x00439a00 36 unit rtti.system tstandardcodepageenum_o2s()
+0x004094f0 0 fpc_interlockedincrement64()
+0x004084c0 0 fpc_sysc_rename()
+0x00434930 0 _(mozgkigyo,_ld46)
+0x0042f820 16 unit baseunix fplstat(pchar,stat)longint
+0x0041b7f0 0 fpc_popaddrstack()
+0x0042fd90 39 unit baseunix fpdup(file,file)longint
+0x0043a8f0 35 unit rtti.system def706()
+0x0042f390 125 unit baseunix fpchdir(rawbytestring)longint
+0x00408ca0 143 unit system posixtorunerror(longint)word
+0x0043e030 20 unit rtti.crt tcrtcoord()
+0x0041c0a0 48 unit system assign(char)variant
+0x00401fe0 371 unit p$mozgkigyo options(smallint,smallint)
+0x0043ca90 15 unit rtti.system fpc_small_set()
+0x00408410 0 fpc_sysc_lseek()
+0x0041a4b0 168 unit system tobject.methodaddress(shortstring)pointer
+0x004351e0 0 unit iidstr.system iunknown()
+0x0040ad90 7 unit system ntole(smallint)smallint
+0x0043cab0 16 unit rtti.system fpc_normal_set()
+0x00437d10 20 unit rtti.system boolean32()
+0x004272b0 76 fpc_setupwritestr_unicodestr()
+0x00434820 0 _(mozgkigyo,_ld39)
+0x004331e0 213 unit unixutil arraystringtoppchar(array_of_ansistring,longint)ppchar
+0x0043df90 4 unit tc.crt screenwidth()
+0x0041c370 36 unit system assign(real)variant
+0x00434f90 0 _(mozgkigyo,_ld101)
+0x00423e40 281 unit system eoln(text)boolean
+0x0044c420 8 fpc_emptyintf()
+0x0040aea0 0 fpc_popcnt_qword()
+0x004174a0 138 fpc_val_real_unicodestr()
+0x0040adc0 3 unit system ntole(longword)longword
+0x0042fd30 83 unit baseunix fpdup(text,text)longint
+0x0042d450 81 unit crt nosound()
+0x0041bfe0 23 unit system assign(qword)variant
+0x0042f250 145 unit baseunix fpexecve(rawbytestring,ppchar,ppchar)longint
+0x0042ea20 35 unit baseunix fpexecve(pchar,ppchar,ppchar)longint
+0x004083f0 31 unit system fpclose(longint)longint
+0x00417310 30 unit system upcase(unicodestring)unicodestring
+0x0043b970 18 unit init.system tvardata()
+0x0042b830 522 unit crt doscrollline(longint,longint,longint,longint)
+0x0042a910 67 unit system sysinitexecpath()
+0x0041da70 0 fpc_finalize()
+0x0043bfa0 58 unit rtti.system def857()
+0x00415690 434 fpc_unicodestr_concat_multi()
+0x004158f0 57 fpc_char_to_unicodestr()
+0x0044d510 4 unit u.crt windminy()
+0x0041a350 4 unit system tobject.instancesize()int64
+0x00434c28 0 _(mozgkigyo,_ld74)
+0x004400a8 35 unit rtti.unixtype def72()
+0x00408230 0 fpc_syscall1()
+0x0040dc90 28 unit system hexstr(qword,byte)shortstring
+0x0041ab30 270 unit system getinterfacebyentry(pointer,pinterfaceentry,formal)boolean
+0x0044dc80 16 unit u.unix tzname()
+0x0041ed30 156 unit system handleerroraddrframe(longint,pointer,pointer)
+0x0041ffe0 136 unit system split_block(pmemchunk_var,qword)qword
+0x00419cf0 172 fpc_class_is_intf()
+0x0042df20 103 unit baseunix fpsigaddset(sigset_t,longint)longint
+0x0041e140 484 unit system genrand_mt19937()longint
+0x004369f0 8 fpc_errorbase()
+0x0041f060 269 unit system dump_stack(text,longint)
+0x00438fd0 46 unit rtti.system tpchararray()
+0x00438560 16 unit rtti.system pdword()
+0x00436a10 16 fpc_absmask_single()
+0x004368c0 8 unit tc.system varaddrefproc()
+0x0040b3a0 23 unit system get8087cw()word
+0x00418f90 19 unit system stubwidecase(widestring)widestring
+0x0043df50 1 unit tc.crt textattr()
+0x0040ae20 64 fpc_popcnt_word()
+0x0044c2b0 10 unit u.system inoutres()
+0x0043b9c0 35 unit rtti.system def836()
+0x0041aab0 4 unit system tobject.beforedestruction()
+0x00429490 164 unit system mkdir(rawbytestring)
+0x00436740 1 unit tc.system moduleislib()
+0x0040ad60 16 unit system ntobe(longword)longword
+0x0043af40 17 unit init.system tmethod()
+0x0041d580 140 unit system pos(widestring,variant)int64
+0x0043f980 15 unit rtti.unixtype psize()
+0x00437ba0 9 unit rtti.system formal()
+0x0044b110 2 unit u.system utf8comparelocale()
+0x0042e710 26 unit baseunix fpgetuid()longword
+0x00422c40 176 unit system do_rename(pwidechar,pchar,boolean,boolean)
+0x00408660 0 fpc_sysc_closedir()
+0x00408960 0 fpc_sysc_ioctl()
+0x00434ee8 0 _(mozgkigyo,_ld88)
+0x004175c0 149 fpc_val_currency_unicodestr()
+0x00437dd0 15 unit rtti.system char()
+0x00432290 138 unit unix popen(file,unicodestring,char)longint
+0x0041c850 48 unit system and(variant,variant)variant
+0x0040aa70 120 unit system int_str_unsigned(longword,openstring)
+0x0043e158 35 unit rtti.baseunix def3()
+0x0043ecc0 35 unit rtti.baseunix def50()
+0x0042a050 17 unit system enumresourcenames(qword,pchar,enumresnameproc,int64)longbool
+0x00429f90 6 unit system defaultsizeofresource(qword,qword)longword
+0x0042e420 368 unit baseunix fpsleep(longword)longword
+0x004253e0 116 fpc_write_text_boolean_iso()
+0x00403070 511 unit p$mozgkigyo crown(smallint,smallint)
+0x0043e2d8 14 unit init.baseunix stat()
+0x0000097b 0 _(mozgkigyo,_ld145)
+0x00436060 8 fpc_resourcestringtables()
+0x00438900 21 unit rtti.system pwidestring()
+0x0041e500 27 fpc_divbyzero()
+0x0043b520 29 unit rtti.system pvararrayboundarray()
+0x00425e70 0 fpc_readln_end()
+0x0043be30 24 unit rtti.system def848()
+0x00434ff8 0 _(mozgkigyo,_ld107)
+0x0042e120 84 unit baseunix fpfd_clr(longint,tfdset)longint
+0x00438800 21 unit rtti.system pansistring()
+0x00409520 0 fpc_interlockedexchangeadd64()
+0x0043f670 16 unit rtti.unixtype pcint8()
+0x00409520 12 unit system interlockedexchangeadd64(int64,int64)int64
+0x00432e70 16 unit unix init()
+0x004353a0 0 _(system,_ld18)
+0x0043e588 15 unit rtti.baseunix pstat()
+0x00436980 1 unit tc.system filenamecasesensitive()
+0x00438430 17 unit rtti.system psingle()
+0x0044bbb0 896 unit u.system stdout()
+0x00422cf0 14 unit system min(int64,int64)int64
+0x0041fae0 17 unit system freemem(pointer)qword
+0x00415350 100 fpc_pwidechar_to_unicodestr()
+0x0041a320 38 unit system tobject.free()
+0x0041b140 20 unit system tinterfacedobject._addref()longint
+0x004115f0 131 fpc_chararray_bool()
+0x00409e80 0 fpc_help_destructor()
+0x0041ebe0 0 fpc_lib_exit()
+0x00413c30 0 fpc_ansistr_unique()
+0x004084a0 0 fpc_sysc_unlink()
+0x004082a0 0 fpc_syscall3()
+0x00429ec0 40 unit system findresource(qword,ansistring,ansistring)qword
+0x00416e90 129 unit system pos(shortstring,unicodestring)int64
+0x0040d000 23 unit system textended80rec.exponent()longint
+0x0042a180 27 unit system system_exit()
+0x0040d5d0 25 fpc_shortstr_setlength()
+0x00402460 441 unit p$mozgkigyo minigame(smallint,smallint)
+0x0042e330 91 unit baseunix fpalarm(longword)longword
+0x004369b0 4 unit tc.system defaulttextlinebreakstyle()
+0x00413fa0 0 fpc_val_uint_ansistr()
+0x00409f90 0 fpc_check_object()
+0x0041b1c0 30 unit system tinterfacedobject.beforedestruction()
+0x0041bae0 0 fpc_raise_nested()
+0x00419cf0 0 fpc_class_is_intf()
+0x00416f20 129 unit system pos(unicodestring,rawbytestring)int64
+0x00419b80 31 fpc_intf_decr_ref()
+0x00430cb0 143 unit unix timezonedir()shortstring
+0x0042b700 84 unit crt fullwin()boolean
+0x0043ce50 13 unit rtti.system def1377()
+0x00408a10 32 unit system fpnanosleep(ptimespec,ptimespec)longint
+0x00438250 7 unit rtti.system real()
+0x00440110 30 unit init.unixtype pthread_rwlockattr_t()
+0x0042f830 183 unit baseunix fplstat(rawbytestring,stat)longint
+0x004095d0 1 unit system readdependencybarrier()
+0x0042c1e0 66 unit crt popkey()char
+0x00439060 76 unit rtti.system tfpuroundingmode()
+0x00425560 264 fpc_write_text_char_iso()
+0x0043aee0 49 unit rtti.system tmethod()
+0x00431650 21 unit unix rereadlocaltime()
+0x00409530 0 fpc_interlockedcompareexchange64()
+0x0041fb00 16 unit system freememory(pointer)qword
+0x0041cbd0 99 unit system vararrayget(variant,array_of_longint)variant
+0x00410c50 337 unit system fpc_shortstr_enum_intern(int64,int64,pointer,pointer,openstring)longint
+0x004264c0 72 fpc_getbuf_text()
+0x00408850 0 fpc_sysc_waitpid()
+0x0042e770 26 unit baseunix fpgetegid()longword
+0x00434f18 0 _(mozgkigyo,_ld92)
+0x004357f8 0 _(crt,_ld21)
+0x0043b5a0 24 unit rtti.system pvararraybound()
+0x004219f0 23 unit system rtleventwaitfor(prtlevent)
+0x00420db0 31 unit system sysfreememsize(pointer,qword)qword
+0x0043f960 16 unit rtti.unixtype poff64()
+0x004342d0 0 _(mozgkigyo,_ld10)
+0x00415b80 146 fpc_chararray_to_unicodestr()
+0x0043e110 18 unit rtti.baseunix pblksize()
+0x00413690 473 fpc_ansistr_compare()
+0x0040f120 47 unit system str_real(crcedbaa446_)::count_leading_zero(qword)smallint
+0x0043de30 35 unit rtti.system def4361()
+0x0040a840 118 fpc_shortstr_to_chararray()
+0x0041aeb0 21 unit system tobject.getinterface(shortstring,formal)boolean
+0x00408360 64 unit system fpsyscall(int64,int64,int64,int64,int64,int64,int64)int64
+0x00427b20 65 unit system reset(file)
+0x00411680 133 fpc_chararray_currency()
+0x004395b0 20 unit init.system tdoublerec()
+0x004081a0 45 unit system geterrno()longint
+0x00408c60 11 unit system wstopsig(longint)longint
+0x0041dbd0 0 fpc_copy()
+0x004396b0 35 unit rtti.system def366()
+0x00436750 1 unit tc.system moduleispackage()
+0x0040b5f0 45 fpc_trunc_real()
+0x00424590 272 fpc_write_text_shortstr_iso()
+0x0043f398 45 unit rtti.unix def37()
+0x00417010 199 unit system delete(unicodestring,int64,int64)
+0x00435828 0 _(baseunix,_ld2)
+0x004088c0 31 unit system fpdup(longint)longint
+0x00410db0 0 fpc_shortstr_enum()
+0x0042e390 59 unit baseunix sigblock(longword)longint
+0x004189e0 128 unit system utf8toansi(rawbytestring)rawbytestring
+0x004109d0 47 unit system val_real(shortstring,int64)extended::count_leading_zero(qword)smallint
+0x00438d20 273 unit rtti.system textrec()
+0x00408790 95 unit system fpsigaction(longint,psigactionrec,psigactionrec)longint
+0x0043a860 61 unit rtti.system tstringmessagetable()
+0x004350e0 0 _(mozgkigyo,_ld120)
+0x00435988 0 _(unix,_ld17)
+0x0043c380 58 unit rtti.system def876()
+0x0042b3e0 78 unit crt ttysendstr(shortstring)
+0x00408550 0 fpc_sysc_rmdir()
+0x00408440 0 fpc_sysc_read()
+0x00427680 87 unit system assign(file,unicodestring)
+0x004094c0 7 unit system interlockedcompareexchange(longint,longint,longint)longint
+0x00421770 17 unit system getcurrentthreadid()qword
+0x00434a18 0 _(mozgkigyo,_ld55)
+0x0042a5b0 253 unit system signaltorunerror(longint,psiginfo,psigcontext)
+0x0041ee70 0 fpc_runerror()
+0x00435440 0 _(system,_ld28)
+0x0043df60 2 unit tc.crt windmin()
+0x0041fb10 17 unit system getmem(qword)pointer
+0x0041c720 31 unit system assign(variant)double
+0x0043f8f0 14 unit rtti.unixtype pdev()
+0x0042a980 93 unit system checkinitialstklen(qword)qword
+0x0042e060 112 unit baseunix fpsigismember(sigset_t,longint)longint
+0x0042fe60 59 unit baseunix fpdup2(file,file)longint
+0x0042f9c0 94 unit baseunix fpsignal(longint,signalhandler_t)signalhandler_t
+0x004033d0 371 unit p$mozgkigyo congratulation(smallint,smallint)
+0x0043f098 44 unit rtti.baseunix signalhandler_t()
+0x00435590 0 _(system,_ld39)
+0x00435800 0 _(crt,_ld22)
+0x00416280 113 fpc_unicodestr_compare()
+0x0043d520 35 unit rtti.system trtlcreateeventhandler()
+0x0043cb00 54 unit rtti.system fpc_normal_set_long()
+0x00438020 7 unit rtti.system file()
+0x0041ebc0 21 unit system do_exit()
+0x0041b9f0 108 fpc_catches()
+0x0040d4b0 22 unit system tsinglerec.getfrac()qword
+0x0041c900 48 unit system shr(variant,variant)variant
+0x00417fa0 62 unit system utf8tounicode(punicodechar,pchar,int64)int64
+0x0043e1a8 35 unit rtti.baseunix def5()
+0x0040b330 60 unit system assign(real48)extended
+0x004390b0 52 unit rtti.system tfpuroundingmode_s2o()
+0x00408570 0 fpc_sysc_opendir()
+0x00419ea0 0 fpc_class_cast_intf()
+0x00425670 392 fpc_write_text_widechar()
+0x00434790 0 _(mozgkigyo,_ld35)
+0x0042fbf0 127 unit baseunix fpopendir(rawbytestring)pdir
+0x0041db20 0 fpc_addref()
+0x00412120 135 unit system shortcomparetext(shortstring,shortstring)int64
+0x0043ea98 42 unit rtti.baseunix def43()
+0x00410e80 1168 fpc_shortstr_currency()
+0x00430710 31 unit unix fpexecv(ansistring,ppchar)longint
+0x004380b0 10 unit rtti.system def53()
+0x0042de60 23 unit baseunix createshellargv(shortstring)ppchar
+0x00416bc0 0 fpc_unicodestr_unique()
+0x0042a0f0 17 unit system sizeofresource(qword,qword)longword
+0x0042c8f0 58 unit crt delay(word)
+0x0043c300 58 unit rtti.system def874()
+0x0041fa20 22 unit system getmemory(pointer,qword)
+0x00439d40 26 unit rtti.system def472()
+0x004126f0 26 unit system translateplaceholdercp(word)word
+0x004289d0 22 fpc_rewrite_typed()
+0x0042e9c0 35 unit baseunix fpfcntl(longint,longint,flock)longint
+0x0040fec0 201 unit system str_real(crcedbaa446_)::gen_digits_32(tasciidigits,smallint,longword,boolean)smallint
+0x00431990 226 unit unix assignpipe(text,text)longint
+0x0043d100 33 unit rtti.system tthreadswitchhandler()
+0x00434ce8 0 _(mozgkigyo,_ld80)
+0x0043d5c0 47 unit rtti.system tsemaphoreposthandler()
+0x00439120 84 unit rtti.system tfpuprecisionmode()
+0x00439180 52 unit rtti.system tfpuprecisionmode_s2o()
+0x0043f698 16 unit rtti.unixtype pcchar()
+0x0043cc00 104 unit rtti.system tfpcheapstatus()
+0x0044b0b0 4 operatingsystem_result()
+0x00424dd0 125 fpc_write_text_sint()
+0x00437c90 23 unit rtti.system qword()
+0x00437f60 23 unit rtti.system nearcspointer()
+0x00434000 0 _(mozgkigyo,_ld1)
+0x0040a970 8 unit system sqr(int64)int64
+0x0043cff0 15 unit rtti.system trtlmethod()
+0x0043b6e0 215 unit rtti.system tvarop()
+0x0040b860 333 unit system ldexp(real,smallint)real
+0x00000915 0 _(mozgkigyo,_ld141)
+0x004357b0 0 _(crt,_ld13)
+0x00435650 0 _(system,_ld43)
+0x00431a80 148 unit unix assignpipe(file,file)longint
+0x0044b0e0 2 unit u.system defaultunicodecodepage()
+0x0042b130 163 unit crt attr2ansi(longint,longint)shortstring::addsep(char)
+0x0042ffe0 104 unit baseunix fpselect(text,int64)longint
+0x00412430 121 fpc_mod_int64()
+0x000009d0 0 _(mozgkigyo,_ld147)
+0x00427c70 38 unit system blockwrite(file,formal,longint,longint)
+0x0043af60 45 unit rtti.system iinvokable()
+0x004226b0 82 unit system do_seek(longint,int64)
+0x00435028 0 _(mozgkigyo,_ld110)
+0x0043c270 43 unit rtti.system def871()
+0x00421a30 17 unit system semaphoreinit()pointer
+0x00436090 0 __stklen
+0x0041b0d0 52 unit system tobject.tostring()ansistring
+0x0042ec00 32 unit baseunix fpsymlink(pchar,pchar)longint
+0x0043b540 53 unit rtti.system tvararraycoorarray()
+0x00417d00 671 unit system unicodetoutf8(pchar,qword,punicodechar,qword)qword
+0x00419210 0 fpc_dynarray_clear()
+0x0043cf80 24 unit init.system tmemorymanager()
+0x0041ec30 58 unit system sysbacktracestr(pointer)shortstring
+0x0040a590 537 unit system utf8codepointlen(pchar,int64,boolean)int64
+0x00421f40 0 _fpc_initsystemthreads()
+0x00416d00 166 unit system pos(unicodestring,unicodestring)int64
+0x00437eb0 39 unit rtti.system openchararray()
+0x0043d4a0 45 unit rtti.system trtleventhandler()
+0x004353f0 0 _(system,_ld23)
+0x0043e750 15 unit init.baseunix flock()
+0x004302f0 70 unit unix pclose(file)longint
+0x004173f0 74 fpc_setstring_unicodestr_pwidechar()
+0x00439c60 37 unit rtti.system def468()
+0x0042fec0 110 unit baseunix fpselect(longint,pfdset,pfdset,pfdset,longint)longint
+0x0041bf00 34 unit system assign(byte)variant
+0x00438820 15 unit rtti.system pdate()
+0x00438160 45 unit rtti.system vtblarray()
+0x0040ad30 24 unit system ntobe(word)word
+0x00000992 0 _(mozgkigyo,_ld137)
+0x0040a0c0 289 fpc_shortstr_concat()
+0x00434908 0 _(mozgkigyo,_ld45)
+0x0041d350 36 unit system assign(real)olevariant
+0x0040b010 80 fpc_varset_unset()
+0x004384e0 19 unit rtti.system psmallint()
+0x00438ba0 35 unit rtti.system def132()
+0x0040e390 752 unit system diy_fp_cached_power10(smallint,tdiy_fp_power_of_10)
+0x0040d270 28 unit system tdoublerec.getsign()boolean
+0x00427cd0 41 unit system blockwrite(file,formal,longword,longword)
+0x0042a150 17 unit system freeresource(qword)longbool
+0x00439b30 54 unit rtti.system def461()
+0x0041d030 34 unit system assign(word)olevariant
+0x0042a0b0 23 unit system findresourceex(qword,pchar,pchar,word)qword
+0x004296e0 128 unit system getdirstrfromshortstring(shortstring)rawbytestring
+0x0043b640 19 unit rtti.system pvararray()
+0x00408520 0 fpc_sysc_mkdir()
+0x0040a070 74 fpc_shortstr_assign()
+0x004367d0 4 unit tc.system defaultmxcsr()
+0x00437e60 9 unit rtti.system single()
+0x00429ef0 46 unit system findresourceex(qword,ansistring,ansistring,word)qword
+0x004357c0 0 _(crt,_ld14)
+0x004303d0 440 unit unix intfpexecvemaybep(ansistring,ppchar,ppchar,boolean)longint
+0x0043b110 26 unit init.system tcontainedobject()
+0x004166d0 48 unit system unicodecharlentostring(punicodechar,int64)unicodestring
+0x00410c20 0 fpc_shortstr_float()
+0x0043f140 86 unit rtti.baseunix sigactionrec()
+0x0042fc70 87 unit baseunix fpopendir(shortstring)pdir
+0x0040db90 50 unit system binstr(longint,byte)shortstring
+0x00429810 164 unit system rmdir(shortstring)
+0x00426200 35 fpc_read_text_pchar_as_pointer()
+0x00437bc0 16 unit rtti.system void()
+0x00434560 0 _(mozgkigyo,_ld22)
+0x00435778 0 _(crt,_ld6)
+0x0043c4d0 60 unit rtti.system def884()
+0x004236d0 441 unit system rename(text,rawbytestring)
+0x0042e830 26 unit baseunix fpsetsid()longint
+0x00430250 31 unit unix fpfsync(longint)longint
+0x0042bb00 33 unit crt lowvideo()
+0x0043c1d0 43 unit rtti.system def868()
+0x00427110 27 unit system writestrunicode(textrec)
+0x0041d100 29 unit system assign(boolean)olevariant
+0x0043bd20 67 unit rtti.system tdispdesc()
+0x00427170 91 unit system setupwritestrcommon(textrec,word)
+0x0043c050 43 unit rtti.system def860()
+0x00409f00 0 fpc_help_fail()
+0x00436050 12 fpc_threadvartables()
+0x0041b340 27 unit system taggregatedobject.queryinterface(tguid,formal)longint
+0x0041e040 0 unit system initializearray(pointer,pointer,int64)
+0x00427d00 43 unit system blockwrite(file,formal,word,smallint)
+0x0041d0e0 28 unit system assign(int64)olevariant
+0x0043f940 16 unit rtti.unixtype pnlink()
+0x0043f068 21 unit rtti.baseunix psigcontext()
+0x0043f868 16 unit rtti.unixtype pclong()
+0x004122b0 226 fpc_mod_qword()
+0x00419c20 103 fpc_intf_is()
+0x004094a0 0 fpc_interlockedexchange()
+0x004094d0 0 fpc_interlockeddecrement64()
+0x00434b48 0 _(mozgkigyo,_ld65)
+0x0041e560 0 fpc_invalidpointer()
+0x004154e0 0 fpc_unicodestr_assign()
+0x00439aa0 68 unit rtti.system def458()
+0x0043e310 35 unit rtti.baseunix def13()
+0x004356b8 0 _(system,_ld47)
+0x0042a070 17 unit system enumresourcelanguages(qword,pchar,pchar,enumreslangproc,int64)longbool
+0x004352b0 0 _(system,_ld3)
+0x00415ec0 257 fpc_unicodestr_to_chararray()
+0x00440058 44 unit rtti.unixtype pthread_condattr_t()
+0x0041d490 85 unit system pos(shortstring,variant)int64
+0x0041c500 22 unit system assign(variant)boolean
+0x00434050 0 _(mozgkigyo,_ld2)
+0x000009fb 0 _(mozgkigyo,_ld150)
+0x0043f7b0 18 unit rtti.unixtype pcsigned()
+0x0043d300 54 unit rtti.system trelocatethreadvarhandler()
+0x00421650 21 unit system endthread(longword)
+0x00438380 21 unit rtti.system putf8string()
+0x00436890 4 unit tc.system raisemaxframecount()
+0x00423a20 260 unit system eof(text)boolean
+0x0043cc90 181 unit rtti.system theapstatus()
+0x0042d5e0 169 unit crt setrawmode(boolean)
+0x00421950 17 unit system basiceventwaitfor(longword,pointer)longint
+0x004340f0 0 _(mozgkigyo,_ld4)
+0x004398c0 84 unit rtti.system tcompareoption_o2s()
+0x0043e630 17 unit rtti.baseunix pdirent()
+0x00436960 32 unit tc.system allowdriveseparators()
+0x00434608 0 _(mozgkigyo,_ld25)
+0x0042f980 28 unit baseunix fpfstat(text,stat)boolean
+0x00428970 22 unit system assign(typedfile,pchar)
+0x00438c90 17 unit init.system textrec()
+0x0040dc10 63 unit system octstr(int64,byte)shortstring
+0x0040d3f0 32 unit system tsinglerec.fraction()extended
+0x00435058 0 _(mozgkigyo,_ld112)
+0x00429bc0 153 unit system do_getdir(byte,unicodestring)
+0x00418ce0 130 unit system ucs4stringtounicodestring(ucs4string)unicodestring
+0x00434988 0 _(mozgkigyo,_ld49)
+0x00439ec0 28 unit rtti.system def481()
+0x00419af0 50 fpc_do_is()
+0x00425800 98 unit system nextchar(text,openstring)boolean
+0x0042e000 37 unit baseunix fpsigemptyset(sigset_t)longint
+0x0041cf80 29 unit system assign(olevariant)currency
+0x00438cc0 35 unit rtti.system def137()
+0x00438fa0 48 unit rtti.system tboundarray()
+0x00429fa0 11 unit system defaultlockresource(qword)pointer
+0x00421bd0 18 unit system noendthread(longword)
+0x004083c0 0 fpc_sysc_open()
+0x004251a0 309 fpc_write_text_enum()
+0x00435370 0 _(system,_ld15)
+0x00438bd0 113 unit rtti.system filerec()
+0x0044c2f0 12 unit u.system softfloat_exception_flags()
+0x00410dd0 0 fpc_shortstr_bool()
+0x0042d530 92 unit crt saverawsettings(termios)
+0x0043f240 17 unit rtti.baseunix pfildes()
+0x004229f0 175 unit system do_open(formal,pwidechar,longint,boolean)
+0x00435148 0 _(mozgkigyo,_ld126)
+0x00408be0 21 unit system fps_isfifo(longint)boolean
+0x0041c340 35 unit system assign(comp)variant
+0x00437f20 32 unit rtti.system parentfp_void_pointer()
+0x0042edc0 21 unit baseunix fps_issock(longint)boolean
+0x00417660 144 fpc_val_uint_unicodestr()
+0x00414d20 14 unit system setmultibytefilesystemcodepage(word)
+0x00434ba8 0 _(mozgkigyo,_ld68)
+0x0042ec50 41 unit baseunix fppwrite(longint,pchar,qword,int64)int64
+0x004296a0 49 unit system getdir(byte,rawbytestring)
+0x00414e80 27 unit system getunicodestringmanager(tunicodestringmanager)
+0x00421690 17 unit system resumethread(qword)longword
+0x000008f1 0 _(mozgkigyo,_ld134)
+0x0040a560 35 unit system strpas(pchar)shortstring
+0x00439b70 26 unit rtti.system def462()
+0x0042ec20 0 fpc_sysc_pread()
+0x0044d4b0 1 unit u.crt checkbreak()
+0x0041e720 139 fpc_initializeunits()
+0x0040ba40 103 unit system floord(double)double
+0x00408dc0 5 unit system get_pc_addr()pointer
+0x0043f810 20 unit rtti.unixtype pclonglong()
+0x0040a1f0 491 fpc_shortstr_concat_multi()
+0x0042d010 164 unit crt crtwrite(textrec)
+0x00435330 0 _(system,_ld11)
+0x0044dcd0 8 __stkptr
+0x0040b370 34 unit system set8087cw(word)
+0x0041bf30 32 unit system assign(shortint)variant
+0x0042ec80 40 unit baseunix fpreadv(longint,piovec,longint)int64
+0x004359b0 0 _(termio,_ld3)
+0x00427ec0 38 unit system blockread(file,formal,longint,longint)
+0x0043c590 61 unit rtti.system def887()
+0x00438a40 42 unit rtti.system def128()
+0x00427f20 41 unit system blockread(file,formal,longword,longword)
+0x00426860 130 fpc_read_text_sint_iso()
+0x004087f0 32 unit system fpftruncate(longint,int64)longint
+0x0041b070 64 unit system tobject.unitname()ansistring
+0x00436710 1 unit tc.system threadingalreadyused()
+0x00429f80 11 unit system defaultloadresource(qword,qword)qword
+0x0041e670 0 fpc_safecallcheck()
+0x00432e70 0 unit init unix()
+0x0041d880 127 unit system rttisize(pointer)int64
+0x00409e80 124 fpc_help_destructor()
+0x0041d960 135 unit system arrayrtti(pointer,pointer,trttiproc)
+0x00434f58 0 _(mozgkigyo,_ld98)
+0x00427f50 43 unit system blockread(file,formal,word,smallint)
+0x0042f700 135 unit baseunix fpstat(rawbytestring,stat)longint
+0x004354f0 0 _(system,_ld30)
+0x004317d0 72 unit unix seekdir(pdir,int64)
+0x00423910 128 unit system rename(text,pchar)
+0x00434bd8 0 _(mozgkigyo,_ld70)
+0x0042ee10 31 unit baseunix wifsignaled(longint)boolean
+0x00411310 219 fpc_chararray_sint()
+0x00411bb0 28 fpc_val_real_shortstr()
+0x004220c0 167 unit system dodirseparators(pchar,boolean)
+0x00412880 0 fpc_ansistr_assign()
+0x00401980 439 unit p$mozgkigyo palya(smallint,smallint)
+0x0041e6c0 0 fpc_stackcheck()
+0x0041d2c0 36 unit system assign(double)olevariant
+0x00430730 31 unit unix fpexecvp(ansistring,ppchar)longint
+0x0043f680 17 unit rtti.unixtype pcuint8()
+0x0042a5b0 0 _fpc_defaultsighandler()
+0x00420280 1166 unit system alloc_oschunk(pfreelists,qword,qword)pointer
+0x00418c60 127 unit system ucs4decode(ucs4string,pwidechar)
+0x0043aec0 25 unit init.system tinterfacetable()
+0x0042a0d0 17 unit system loadresource(qword,qword)qword
+0x0040a4e0 115 fpc_pchar_to_shortstr()
+0x0043ce10 24 unit rtti.system def1374()
+0x00421ab0 249 unit system nothreaderror()
+0x00434f00 0 _(mozgkigyo,_ld90)
+0x0041bc40 0 fpc_variant_copy_overwrite()
+0x00408470 38 unit system fpwrite(longint,pchar,qword)int64
+0x0043b1a0 19 unit rtti.system pdispatch()
+0x00414d30 14 unit system setmultibytertlfilesystemcodepage(word)
+0x0043f990 16 unit rtti.unixtype pssize()
+0x0041e330 37 unit system random(longint)longint
+0x0043db10 113 unit rtti.system def1504()
+0x00411bd0 320 fpc_val_enum_shortstr()
+0x00408850 50 unit system fpwaitpid(longint,pcint,longint)longint
+0x0042bad0 37 unit crt highvideo()
+0x00439320 41 unit rtti.system real48()
+0x0041b510 287 unit system pushexceptobject(tobject,pointer,pointer)
+0x00417fe0 1740 unit system utf8tounicode(punicodechar,qword,pchar,qword)qword
+0x0042e7c0 34 unit baseunix fpsetgid(longword)longint
+0x000009e8 0 _(mozgkigyo,_ld149)
+0x0044b830 896 unit u.system input()
+0x00409790 21 unit system fpc_shortstr_chararray_intern_charmove(shortstring,array_of_char,int64)
+0x0041e5e0 66 unit system ioresult()word
+0x0040adf0 46 fpc_popcnt_byte()
+0x0043a240 328 unit rtti.system truntimeerror_s2o()
+0x004387e0 22 unit rtti.system pshortstring()
+0x00409590 47 unit system sysresetfpu()
+0x0042fa50 16 unit baseunix fppwrite(longint,formal,qword,int64)int64
+0x0041e520 0 fpc_overflow()
+0x0044b0f0 2 unit u.system defaultfilesystemcodepage()
+0x00414010 0 fpc_val_sint_ansistr()
+0x0041fb60 17 unit system reallocmem(pointer,qword)pointer
+0x0041bf50 34 unit system assign(word)variant
+0x00433490 19 unit unixutil getfs(text)longint
+0x00408ab0 0 fpc_sysc_fpgetenvpchar()
+0x0043dd30 202 unit rtti.system tresourcemanager()
+0x0042e7f0 32 unit baseunix fpgetgroups(longint,tgrparr)longint
+0x00435480 0 _(system,_ld29)
+0x0043b660 24 unit init.system tvararraybound()
+0x0043dcd0 30 unit rtti.system def1509()
+0x004144f0 224 fpc_ansistr_uint()
+0x0043c400 24 unit rtti.system def879()
+0x00409420 23 unit system inclocked(longint)
+0x00408660 97 unit system fpclosedir(pdir)longint
+0x0041ee40 39 fpc_handleerror()
+0x0043ea40 35 unit rtti.baseunix def41()
+0x004349d0 0 _(mozgkigyo,_ld52)
+0x00424e50 125 fpc_write_text_uint()
+0x0041bbe0 39 unit system variant_addref(tvardata)
+0x00421ef0 43 unit system nosemaphore(pointer)
+0x00439d80 13 unit rtti.system def474()
+0x0040d5d0 0 fpc_shortstr_setlength()
+0x0040d290 36 unit system tdoublerec.setsign(boolean)
+0x0041f5b0 0 fpc_assert()
+0x0043bfe0 43 unit rtti.system def858()
+0x00411840 0 fpc_val_sint_shortstr()
+0x0044c3e0 8 unit u.system dispcallbyidproc()
+0x0043c660 35 unit rtti.system def890()
+0x0040a3e0 0 fpc_shortstr_append_shortstr()
+0x00439600 35 unit rtti.system def347()
+0x0041c170 23 unit system assign(ansistring)variant
+0x0041a700 5 unit system tobject.classinfo()pointer
+0x0043a710 81 unit rtti.system iunknown()
+0x00437cb0 23 unit rtti.system int64()
+0x004357d8 0 _(crt,_ld18)
+0x00419f70 44 fpc_class_cast_corbaintf()
+0x0042ef00 135 unit baseunix fpmkfifo(rawbytestring,longint)longint
+0x0040100c 0 _start()
+0x0043bf40 38 unit rtti.system def855()
+0x0041fbe0 79 unit system sysgetfpcheapstatus()tfpcheapstatus
+0x004282d0 141 unit system truncate(file)
+0x0041de90 22 fpc_copy_proc()
+0x0043c9d0 107 unit rtti.system tdynarraytypeinfo()
+0x0040d5c0 4 unit system aligntoptr(pointer)pointer
+0x00425e50 27 fpc_read_end()
+0x004394c0 24 unit init.system textended80rec()
+0x0041c4a0 17 unit system assign(variant)longint
+0x004142d0 224 fpc_ansistr_bool()
+0x004192b0 63 fpc_dynarray_incr_ref()
+0x0040b580 49 fpc_frac_real()
+0x00424c30 408 fpc_write_text_unicodestr()
+0x0040da80 31 unit system lowercase(char)char
+0x0044c2d0 16 unit u.system stacklength()
+0x0043fa90 18 unit init.unixtype timespec()
+0x0043b4a0 56 unit rtti.system tvararraybound()
+0x0041b1a0 23 unit system tinterfacedobject.afterconstruction()
+0x0042e850 31 unit baseunix fpgetsid(longint)longint
+0x0043d340 39 unit rtti.system tallocatethreadvarshandler()
+0x0043ae50 14 unit rtti.system pvmt()
+0x004396e0 35 unit rtti.system def367()
+0x0041cee0 31 unit system assign(olevariant)single
+0x004121b0 0 fpc_div_qword()
+0x0040d220 21 unit system tdoublerec.getexp()qword
+0x00439e60 24 unit rtti.system def479()
+0x0041d060 31 unit system assign(smallint)olevariant
+0x0043d130 84 unit rtti.system twaitforthreadterminatehandler()
+0x0043a520 31 unit rtti.system tabstracterrorproc()
+0x00438830 19 unit rtti.system pdatetime()
+0x00403550 301 unit p$mozgkigyo kori(smallint,smallint)
+0x0041fd70 116 unit system remove_freed_fixed_chunks(poschunk)
+0x0043bc80 83 unit rtti.system tcalldesc()
+0x00435170 0 _(mozgkigyo,_ld127)
+0x0040a990 24 unit system align(qword,qword)qword
+0x00434fa8 0 _(mozgkigyo,_ld102)
+0x00434730 0 _(mozgkigyo,_ld32)
+0x00438f00 47 unit rtti.system integerarray()
+0x0041ba60 89 unit system sysinitexceptions()
+0x004380f0 106 unit rtti.system __vtbl_ptr_type()
+0x0041d420 27 unit system getvariantmanager(tvariantmanager)
+0x0040b780 7 unit system float64sethigh(double,longint)
+0x00422650 86 unit system do_filepos(longint)int64
+0x0041e580 0 fpc_iocheck()
+0x00438a70 109 unit rtti.system trtlcriticalsection()
+0x0040b060 92 fpc_varset_set_range()
+0x004174a0 0 fpc_val_real_unicodestr()
+0x00425910 64 unit system readnumeric(text,openstring)
+0x00413e60 69 unit system pos(char,rawbytestring)int64
+0x00435250 0 unit iid.system ienumerable()
+0x00430340 142 unit unix waitprocess(longint)longint
+0x00437e70 9 unit rtti.system double()
+0x0043e6e8 17 unit init.baseunix utimbuf()
+0x00438610 17 unit rtti.system pptrint()
+0x0043da30 26 unit init.system tresourcemanager()
+0x0043ce40 13 unit rtti.system def1376()
+0x00409680 28 unit system fillchar(formal,int64,boolean)
+0x00437b90 12 unit rtti.system undefined()
+0x00408230 48 unit system fpsyscall(int64,int64)int64
+0x004097b0 173 unit system fillword(formal,int64,word)
+0x00427dc0 246 unit system blockread(file,formal,int64,int64)
+0x00436a20 16 fpc_absmask_double()
+0x004352c0 0 _(system,_ld4)
+0x004273c0 102 unit system setupreadstrcommon(textrec,word)
+0x0041cb40 23 unit system vararrayredim(variant,int64)
+0x004191d0 0 fpc_dynarray_length()
+0x00415090 0 fpc_unicodestr_to_shortstr()
+0x0041e4b0 46 unit system get_caller_stackinfo(pointer,pointer)
+0x0042f790 135 unit baseunix fplstat(rawbytestring,pstat)longint
+0x00440170 15 unit init.unixtype sem_t()
+0x0044d520 4 unit u.crt windmaxy()
+0x00425870 158 unit system ignorespaces(text)boolean
+0x00417440 86 fpc_setstring_unicodestr_pansichar()
+0x004380a0 15 unit rtti.system pvmt()
+0x0041aa40 4 unit system tobject.defaulthandler(formal)
+0x0041f9b0 27 unit system setmemorymanager(tmemorymanager)
+0x00434c50 0 _(mozgkigyo,_ld77)
+0x0042ba80 66 unit crt textbackground(byte)
+0x00432fd0 26 unit termio tcsetpgrp(longint,longint)longint
+0x00408500 29 unit system fpchdir(pchar)longint
+0x00430a20 16 unit unix w_stopcode(smallint)smallint
+0x00408890 34 unit system fpaccess(pchar,longint)longint
+0x00419320 0 fpc_dynarr_setlength()
+0x0041c740 29 unit system assign(variant)extended
+0x00427130 57 unit system writestrunicodeflush(textrec)
+0x0043bce0 19 unit rtti.system pcalldesc()
+0x00426770 235 fpc_read_text_sint()
+0x00436870 8 unit tc.system exceptproc()
+0x00429f70 11 unit system defaultfindresourceex(qword,pchar,pchar,word)qword
+0x00435830 0 _(baseunix,_ld3)
+0x0041df90 0 fpc_addref_array()
+0x0041b3c0 45 unit system tcontainedobject.queryinterface(tguid,formal)longint
+0x0043f6d8 17 unit rtti.unixtype pcint16()
+0x00420710 300 unit system sysgetmem_fixed(qword)pointer
+0x00409910 29 unit system fillqword(formal,int64,qword)
+0x0042e2b0 48 unit baseunix fpsigtimedwait(sigset_t,psiginfo,ptimespec)longint
+0x00435300 0 _(system,_ld8)
+0x0043cd70 24 unit rtti.system def1370()
+0x00408940 0 fpc_sysc_munmap()
+0x00413610 113 fpc_ansistr_to_chararray()
+0x00408780 13 unit system linux_restore()
+0x0043d550 34 unit rtti.system tsempahoreinithandler()
+0x004121b0 246 fpc_div_qword()
+0x00439a30 31 unit init.system tunicodestringmanager()
+0x0043e870 18 unit init.baseunix timezone()
+0x004366d0 8 unit tc.system erroraddr()
+0x0041b420 65 unit system acquireexceptionobject()pointer
+0x0042b500 166 unit crt ttygotoxy(longint,longint)
+0x00426470 77 fpc_read_text_char()
+0x004192b0 0 fpc_dynarray_incr_ref()
+0x0040deb0 251 unit system diy_util_shl(longword,qword,smallint)
+0x00434e08 0 _(mozgkigyo,_ld84)
+0x0041d870 16 unit system rttirecordsize(pointer)int64
+0x004358c8 0 _(unix,_ld8)
+0x0042fdc0 148 unit baseunix fpdup2(text,text)longint
+0x0042eda0 21 unit baseunix fps_islnk(longint)boolean
+0x00414f60 27 unit system setwidestringmanager(tunicodestringmanager)
+0x00411570 125 fpc_chararray_enum()
+0x0043fa28 17 unit init.unixtype timeval()
+0x0043f310 45 unit rtti.unix def11()
+0x00432a50 21 unit unix sigraise(smallint)
+0x0042e8f0 34 unit baseunix fpchmod(pchar,longint)longint
+0x00428d50 0 fpc_typed_read_iso()
+0x0041c000 23 unit system assign(int64)variant
+0x004357f0 0 _(crt,_ld20)
+0x0040a8f0 0 fpc_pwidechar_length()
+0x00422530 142 unit system do_write(longint,pointer,longint)longint
+0x0043aea0 25 unit init.system tinterfaceentry()
+0x00427b70 246 unit system blockwrite(file,formal,int64,int64)
+0x00434f10 0 _(mozgkigyo,_ld91)
+0x0043bd70 19 unit rtti.system pdispdesc()
+0x00427740 128 unit system assign(file,shortstring)
+0x00435018 0 _(mozgkigyo,_ld109)
+0x004334d0 250 unit unixutil juliantogregorian(longint,word,word,word)
+0x00413a50 50 fpc_ansistr_rangecheck()
+0x00438520 18 unit rtti.system pinteger()
+0x00419da0 0 fpc_class_is_corbaintf()
+0x004316b0 169 unit unix selecttext(text,ptimeval)longint
+0x0041c560 44 unit system assign(variant)char
+0x004382c0 19 unit rtti.system pucs4char()
+0x00428230 160 unit system seek(file,int64)
+0x00417530 134 fpc_val_enum_unicodestr()
+0x00422fc0 87 unit system assign(text,rawbytestring)
+0x00434ae8 0 _(mozgkigyo,_ld62)
+0x0040db10 58 unit system hexstr(longint,byte)shortstring
+0x0043a8c0 35 unit rtti.system def705()
+0x0040aba0 136 unit system int_str_unsigned(qword,openstring)
+0x0043e820 14 unit rtti.baseunix ptms()
+0x00409a50 336 unit system compareword(formal,formal,int64)int64
+0x0041e520 27 fpc_overflow()
+0x0041a8c0 376 unit system tobject.dispatchstr(formal)
+0x00438e70 13 unit rtti.system def141()
+0x004353e0 0 _(system,_ld22)
+0x00434f38 0 _(mozgkigyo,_ld96)
+0x0043b180 19 unit rtti.system ppunknown()
+0x00423890 128 unit system rename(text,shortstring)
+0x004219b0 23 unit system rtleventsetevent(prtlevent)
+0x0041eef0 23 unit system halt()
+0x00437bb0 14 unit rtti.system typedformal()
+0x00427650 42 unit system initfile(file)
+0x0041d150 35 unit system assign(longbool)olevariant
+0x00434bf0 0 _(mozgkigyo,_ld71)
+0x0041cec0 23 unit system assign(olevariant)widestring
+0x0041bbb0 39 fpc_variant_clear()
+0x00439510 35 unit rtti.system def327()
+0x00437fe0 23 unit rtti.system nearfspointer()
+0x00420160 81 unit system try_concat_free_chunk(pmemchunk_var)pmemchunk_var
+0x00416300 72 fpc_unicodestr_compare_equal()
+0x004309e0 19 unit unix wifstopped(smallint)boolean
+0x0041a610 210 unit system tobject.fieldaddress(shortstring)pointer
+0x0043a600 145 unit rtti.system jmp_buf()
+0x0043cfa0 19 unit rtti.system prtlevent()
+0x004388e0 21 unit rtti.system pppwidechar()
+0x0042a170 15 unit system syssetctrlbreakhandler(tctrlbreakhandler)tctrlbreakhandler
+0x00409460 0 fpc_interlockeddecrement()
+0x00422170 186 unit system dodirseparators(pwidechar,boolean)
+0x00434390 0 _(mozgkigyo,_ld13)
+0x0043f9d8 18 unit rtti.unixtype pwchar_t()
+0x0043a780 16 unit rtti.system pclass()
+0x00434490 0 _(mozgkigyo,_ld18)
+0x0041ac40 237 unit system tobject.getinterface(tguid,formal)boolean
+0x0043fa10 18 unit rtti.unixtype psocklen()
+0x00435670 0 _(system,_ld45)
+0x0041faa0 23 unit system getfpcheapstatus()tfpcheapstatus
+0x004149b0 106 fpc_setstring_ansistr_pansichar()
+0x0042cf50 179 unit crt dowrite(shortstring_)::ansipara(shortstring)byte
+0x00413530 219 fpc_chararray_to_ansistr()
+0x00437c20 15 unit rtti.system word()
+0x0044dcd8 8 __dl_fini
+0x0041ca20 48 unit system div(variant,variant)variant
+0x00437e50 13 unit rtti.system openstring()
+0x0043d420 120 unit rtti.system tbasiceventcreatehandler()
+0x00402ef0 371 unit p$mozgkigyo pause(smallint,smallint)
+0x00430c90 28 unit unix getlocaltimezone(longint)
+0x0043f210 42 unit rtti.baseunix tfildes()
+0x0041c480 17 unit system assign(variant)longword
+0x00429a40 113 unit system do_mkdir(unicodestring)
+0x00438940 24 unit rtti.system punicodestring()
+0x00435110 0 _(mozgkigyo,_ld123)
+0x0040d410 20 unit system tsinglerec.exponent()longint
+0x0040b2d0 13 unit system swap(longword)longword
+0x0043f528 17 unit init.termio winsize()
+0x0042ee40 181 unit baseunix fplink(rawbytestring,rawbytestring)longint
+0x004192f0 42 fpc_dynarray_assign()
+0x004151c0 109 fpc_unicodestr_to_ansistr()
+0x00432f50 18 unit termio cfsetospeed(termios,longword)
+0x0041c420 20 unit system assign(variant)shortint
+0x0043c990 25 unit rtti.system pvariantmanager()
+0x004368e0 8 unit tc.system vartolstrproc()
+0x0042ed00 21 unit baseunix fps_isdir(longint)boolean
+0x0041a710 36 unit system tobject.classname()shortstring
+0x00431530 52 unit unix initlocaltime()
+0x00402160 371 unit p$mozgkigyo scores(smallint,smallint)
+0x00408200 0 fpc_syscall0()
+0x00434a68 0 _(mozgkigyo,_ld58)
+0x004351a8 0 _(mozgkigyo,_ld129)
+0x0043a4a0 44 unit rtti.system tbacktracestrfunc()
+0x0042dec0 0 fpc_sysc_fpgetenv()
+0x004271d0 116 fpc_setupwritestr_shortstr()
+0x00422d00 19 unit system fileclosefunc(textrec)
+0x00419190 0 fpc_dynarray_rangecheck()
+0x0042ece0 32 unit baseunix fpsettimeofday(ptimeval,ptimezone)longint
+0x0043aa40 15 unit rtti.system pguid()
+0x0041bc10 39 fpc_variant_copy()
+0x0043c0e0 43 unit rtti.system def863()
+0x00439c00 37 unit rtti.system def466()
+0x00430590 246 unit unix intfpexecl(ansistring,array_of_ansistring,ppchar,boolean)longint
+0x00439770 200 unit rtti.system tcompareoption()
+0x00415160 83 fpc_shortstr_to_unicodestr()
+0x00417330 152 unit system lowercase(widechar)widechar
+0x004083a0 29 unit system fptime(ptime_t)int64
+0x0043da60 69 unit rtti.system def1502()
+0x0043cb80 48 unit rtti.system def1137()
+0x0041c2e0 36 unit system assign(double)variant
+0x0044b120 16 unit u.system threadid()
+0x00408bc0 21 unit system fps_isreg(longint)boolean
+0x0043ce30 13 unit rtti.system def1375()
+0x00412770 45 unit system fpc_shortstr_ansistr_intern_charmove(shortstring,int64,rawbytestring,int64,int64)
+0x00419f70 0 fpc_class_cast_corbaintf()
+0x00435808 0 _(crt,_ld23)
+0x004385e0 16 unit rtti.system pint64()
+0x004318c0 109 unit unix iopipe(text)longint
+0x0042edf0 11 unit baseunix wexitstatus(longint)longint
+0x0041fcf0 51 unit system remove_from_list_fixed(pmemchunk_fixed,ppmemchunk_fixed)
+0x0040d810 190 unit system insert(char,openstring,int64)
+0x004092a0 245 unit system indexword(formal,int64,word)int64
+0x00435928 0 _(unix,_ld14)
+0x004190c0 67 unit system tosinglebytefilesystemencodedfilename(unicodestring)rawbytestring
+0x00438340 47 unit rtti.system ucs4string()
+0x004384d0 15 unit rtti.system pcomp()
+0x00423f60 63 unit system eoln()boolean
+0x004122b0 0 fpc_mod_qword()
+0x00418f80 16 unit system stubcompareunicodestring(unicodestring,unicodestring,tcompareoptions)int64
+0x0043de00 35 unit rtti.system def4360()
+0x0042d300 77 unit crt crtopen(textrec)
+0x004367a0 1 unit tc.system firstdotatfilenamestartisextension()
+0x00435790 0 _(crt,_ld9)
+0x004350d0 0 _(mozgkigyo,_ld119)
+0x00440038 28 unit init.unixtype pthread_condattr_t()
+0x00419a70 22 fpc_dynarray_decr_ref()
+0x004346b0 0 _(mozgkigyo,_ld28)
+0x0042f640 181 unit baseunix fprename(rawbytestring,rawbytestring)longint
+0x0042f410 145 unit baseunix fpopen(rawbytestring,longint,longint)longint
+0x0041d080 28 unit system assign(longword)olevariant
+0x00408890 0 fpc_sysc_access()
+0x00432fb0 26 unit termio tcsendbreak(longint,longint)longint
+0x004219d0 23 unit system rtleventresetevent(prtlevent)
+0x0043af90 46 unit rtti.system ienumerator()
+0x00435420 0 _(system,_ld26)
+0x0041c0d0 122 unit system assign(widechar)variant
+0x00428470 352 unit system rename(file,unicodestring)
+0x00409480 0 fpc_interlockedincrement()
+0x00414400 0 fpc_ansistr_currency()
+0x0043f858 16 unit rtti.unixtype pcbool()
+0x0043f540 81 unit rtti.termio winsize()
+0x00411a50 348 fpc_val_uint_shortstr()
+0x004250e0 191 fpc_write_text_float_iso()
+0x00428c40 264 fpc_typed_read()
+0x0040ad70 16 unit system ntobe(int64)int64
+0x004383f0 8 unit rtti.system tdate()
+0x004349e8 0 _(mozgkigyo,_ld53)
+0x004125d0 0 fpc_mul_dword_to_qword()
+0x00420dd0 50 unit system sysmemsize(pointer)qword
+0x00438000 23 unit rtti.system neargspointer()
+0x0040d9c0 36 unit system pos(shortstring,char)int64
+0x00421c10 21 unit system nowaitforthreadterminate(qword,longint)longword
+0x00421480 129 unit system donethread()
+0x00409d80 111 unit system comparechar0(formal,formal,int64)int64
+0x00409100 282 unit system fillchar(formal,int64,byte)
+0x00435570 0 _(system,_ld37)
+0x0042c930 183 unit crt doln()
+0x00421f80 32 unit system init_unit_threadvars(pltvinitentry)
+0x004093e0 26 unit system declocked(longint)boolean
+0x004351c0 0 _(mozgkigyo,_ld130)
+0x00437ea0 11 unit rtti.system currency()
+0x0040ddf0 136 fpc_shortstr_uint()
+0x0041e560 27 unit system fpc_invalidpointer()
+0x0042e970 29 unit baseunix fppipe(tfildes)longint
+0x00414c80 137 unit system setcodepage(rawbytestring,word,boolean)
+0x0043c080 43 unit rtti.system def861()
+0x00437ee0 23 unit rtti.system char_pointer()
+0x004358d8 0 _(unix,_ld9)
+0x00409710 27 fpc_zeromem()
+0x004217d0 23 unit system entercriticalsection(trtlcriticalsection)
+0x00412740 36 unit system fpc_pchar_pchar_intern_charmove(pchar,int64,pchar,int64,int64)
+0x00430050 16 unit baseunix fpwaitpid(longint,longint,longint)longint
+0x00438a00 28 unit rtti.system ttextlinebreakstyle_o2s()
+0x0040a4b0 0 fpc_shortstr_compare_equal()
+0x004081a0 0 debugend_(p,mozgkigyo)
+0x004089e0 48 unit system fpsigprocmask(longint,psigset,psigset)longint
+0x00434230 0 _(mozgkigyo,_ld8)
+0x0040a3e0 70 fpc_shortstr_append_shortstr()
+0x0044c400 2 fpc_emptychar()
+0x00411da0 824 fpc_val_currency_shortstr()
+0x0043caa0 11 unit rtti.system def1053()
+0x00435948 0 _(unix,_ld15)
+0x00413480 168 fpc_pchar_to_ansistr()
+0x0040104e 0 _haltproc()
+0x0040dd60 0 fpc_shortstr_sint()
+0x0043e248 113 unit rtti.baseunix utsname()
+0x0042a1b0 134 unit system paramstr(longint)shortstring
+0x0043d8d0 88 unit rtti.system enumrestypeproc()
+0x00409510 0 fpc_interlockedexchange64()
+0x0040b2a0 22 unit system swap(smallint)smallint
+0x004348c0 0 _(mozgkigyo,_ld43)
+0x004125d0 33 fpc_mul_dword_to_qword()
+0x00428b10 0 fpc_rewrite_typed_iso()
+0x004301e0 34 unit unix fpflock(longint,longint)longint
+0x0041a760 38 unit system tobject.inheritsfrom(tclass)boolean
+0x00428db0 128 unit system do_mkdir(rawbytestring)
+0x00415300 69 fpc_widestr_to_unicodestr()
+0x00434750 0 _(mozgkigyo,_ld33)
+0x0042ee30 6 unit baseunix wtermsig(longint)longint
+0x0041fdf0 126 unit system free_oschunk(pfreelists,poschunk)
+0x00416e00 129 unit system pos(rawbytestring,unicodestring)int64
+0x004347f8 0 _(mozgkigyo,_ld38)
+0x00439da0 68 unit rtti.system def476()
+0x0043fe90 25 unit init.unixtype pthread_mutex_t()
+0x004359a0 0 _(termio,_ld2)
+0x0041ed30 0 fpc_break_error()
+0x00436830 8 unit tc.system asserterrorproc()
+0x0040d2e0 39 unit system tdoublerec.setfrac(qword)
+0x0040aee0 135 fpc_varset_load()
+0x0041bc40 47 fpc_variant_copy_overwrite()
+0x004086d0 0 fpc_sysc_readdir()
+0x004081d0 41 unit system seterrno(longint)
+0x0041e720 0 fpc_initializeunits()
+0x0040ac80 16 unit system beton(longword)longword
+0x00420bf0 147 unit system sysfreemem(pointer)qword
+0x00408ba0 21 unit system fps_isblk(longint)boolean
+0x00424a60 0 fpc_write_text_ansistr()
+0x00421070 122 unit system initheapthread()
+0x0040ad50 16 unit system ntobe(longint)longint
+0x00434fc8 0 _(mozgkigyo,_ld104)
+0x004170e0 397 unit system insert(unicodestring,unicodestring,int64)
+0x00438b20 17 unit init.system filerec()
+0x0040ad10 22 unit system ntobe(smallint)smallint
+0x004332c0 34 unit unixutil stringtoppchar(ansistring,smallint)ppchar
+0x00000190 0 __bss_start
+0x0043e5a8 35 unit rtti.baseunix def16()
+0x004227e0 525 unit system do_open(formal,pchar,longint,boolean)
+0x00431b30 774 unit unix popen_internal(text,rawbytestring,char)longint
+0x00438b70 35 unit rtti.system def131()
+0x0042a6b0 78 unit system installdefaultsignalhandler(longint,sigactionrec)
+0x00439af0 24 unit rtti.system def459()
+0x0043c690 761 unit rtti.system tvariantmanager()
+0x00408df0 0 fpc_move()
+0x0042a9e0 0 unit init system()
+0x00421710 17 unit system waitforthreadterminate(qword,longint)longword
+0x004358e8 0 _(unix,_ld11)
+0x00431870 65 unit unix openpipe(text)
+0x0044d4f0 4 unit u.crt windminx()
+0x0042e890 32 unit baseunix fplink(pchar,pchar)longint
+0x0043f9f0 14 unit rtti.unixtype puid()
+0x0043c440 24 unit rtti.system def881()
+0x00421c70 50 unit system nogetcurrentthreadid()qword
+0x00439540 104 unit rtti.system textended80rec()
+0x00434c58 0 _(mozgkigyo,_ld78)
+0x00438a20 23 unit rtti.system tprocedure()
+0x00421d30 26 unit system norelocatethreadvar(longword)pointer
+0x004094d0 24 unit system interlockeddecrement64(int64)int64
+0x004037b0 18924 main()
+0x00421790 23 unit system initcriticalsection(trtlcriticalsection)
+0x00421930 23 unit system basiceventsetevent(pointer)
+0x0041c9f0 48 unit system starstar(variant,variant)variant
+0x004191f0 22 fpc_dynarray_high()
+0x0043e2c0 18 unit rtti.baseunix putsname()
+0x00435780 0 _(crt,_ld7)
+0x0043af20 17 unit rtti.system pmethod()
+0x00432e90 24 unit termio tcgetattr(longint,termios)longint
+0x0043e658 125 unit rtti.baseunix dir()
+0x00435340 0 _(system,_ld12)
+0x00415fd0 283 fpc_ansistr_to_widechararray()
+0x004216b0 17 unit system closethread(qword)longword
+0x004160f0 259 fpc_shortstr_to_widechararray()
+0x0040a960 6 unit system sqr(longint)longint
+0x00435088 0 _(mozgkigyo,_ld116)
+0x00410dd0 164 fpc_shortstr_bool()
+0x0043ff50 29 unit init.unixtype pthread_mutexattr_t()
+0x0041c040 36 unit system assign(wordbool)variant
+0x00435750 0 _(crt,_ld1)
+0x0040f0b0 105 unit system str_real(crcedbaa446_)::make_frac_mask(longword,qword,smallint)
+0x00423570 352 unit system rename(text,unicodestring)
+0x004390f0 36 unit rtti.system tfpuroundingmode_o2s()
+0x0043b5c0 115 unit rtti.system tvararray()
+0x00427300 33 unit system readansistrfinal(textrec)
+0x0043e9f8 43 unit rtti.baseunix sigset_t()
+0x004368d0 8 unit tc.system varcopyproc()
+0x0040b280 24 unit system swap(word)word
+0x0041f910 81 unit system sysosalloc(qword)pointer
+0x0043fa40 49 unit rtti.unixtype timeval()
+0x0040a9b0 24 unit system align(pointer,qword)pointer
+0x0040f150 440 unit system str_real(crcedbaa446_)::u128_div_u64_to_u64(qword,qword,qword,qword,qword)boolean
+0x00435510 0 _(system,_ld32)
+0x0042e920 45 unit baseunix fpchown(pchar,longword,longword)longint
+0x004087f0 0 fpc_sysc_ftruncate()
+0x0041e7e0 82 unit system finalizeunits()
+0x00425e70 220 fpc_readln_end()
+0x0041bac0 24 fpc_doneexception()
+0x0043dcf0 30 unit rtti.system def1510()
+0x00425460 244 fpc_write_text_char()
+0x00436860 8 unit tc.system exceptclsproc()
+0x00412600 0 fpc_mul_int64()
+0x0042dd60 0 unit finalize crt()
+0x0041e580 93 fpc_iocheck()
+0x00401e60 371 unit p$mozgkigyo start(smallint,smallint)
+0x00408940 32 unit system fpmunmap(pointer,qword)longint
+0x00419820 0 unit system dynarraysetlength(pointer,pointer,int64,psizeint)
+0x000008d7 0 _(mozgkigyo,_ld133)
+0x00408c40 14 unit system wifexited(longint)boolean
+0x00408320 0 fpc_syscall5()
+0x0043e1d0 35 unit rtti.baseunix def6()
+0x0043e0c8 46 unit rtti.crt tconsolebuf()
+0x00435260 0 unit iidstr.system ienumerable()
+0x00416bc0 105 fpc_unicodestr_unique()
+0x0041aed0 210 unit system tobject.getinterfaceentry(tguid)pinterfaceentry
+0x0040d2c0 29 unit system tdoublerec.getfrac()qword
+0x0043cd50 27 unit rtti.system def1369()
+0x0041cae0 27 unit system greater(variant,variant)boolean
+0x004369c0 8 unit tc.system unixgetmodulebyaddrhook()
+0x00415b10 110 fpc_pchar_to_unicodestr()
+0x00421620 17 unit system beginthread(pointer,qword,tthreadfunc,pointer,longword,qword)qword
+0x004358e0 0 _(unix,_ld10)
+0x0040afc0 77 fpc_varset_set()
+0x0043b1c0 20 unit rtti.system ppdispatch()
+0x00435738 0 _(system,_ld51)
+0x00431190 161 unit unix readtimezonefile(shortstring_)::readbuf(formal,smallint)smallint
+0x00435718 0 _(system,_ld50)
+0x00408a10 0 fpc_sysc_nanosleep()
+0x0043b2e0 23 unit init.system texceptobject()
+0x004124b0 278 fpc_mul_qword()
+0x00434fe8 0 _(mozgkigyo,_ld106)
+0x0043f8a8 17 unit rtti.unixtype pcfloat()
+0x0043be50 24 unit rtti.system def849()
+0x0043e128 17 unit rtti.baseunix pblkcnt()
+0x00435998 0 _(termio,_ld1)
+0x0041b360 28 unit system taggregatedobject._addref()longint
+0x0041bc10 0 fpc_variant_copy()
+0x00413a50 0 fpc_ansistr_rangecheck()
+0x0040fc20 313 unit system str_real(crcedbaa446_)::round_digits(tasciidigits,smallint,smallint,boolean)smallint
+0x00421830 28 unit system getthreadmanager(tthreadmanager)boolean
+0x004095f0 4 unit system writebarrier()
+0x00415850 145 fpc_char_to_uchar()
+0x0042bde0 257 unit crt clreol()
+0x0043bdd0 24 unit rtti.system def845()
+0x00428910 22 unit system assign(typedfile,unicodestring)
+0x0041b6c0 291 fpc_raiseexception()
+0x00411a50 0 fpc_val_uint_shortstr()
+0x0044dce0 8 operatingsystem_parameter_argc()
+0x004186b0 123 unit system utf8encode(rawbytestring)rawbytestring
+0x0043c2d0 43 unit rtti.system def873()
+0x00421590 51 unit system beginthread(tthreadfunc,pointer,qword)qword
+0x0041cda0 29 unit system assign(olevariant)longbool
+0x0041b110 45 unit system tinterfacedobject.queryinterface(tguid,formal)longint
+0x00419ac0 34 fpc_dispatch_by_id()
+0x0041a170 62 fpc_class_as_corbaintf()
+0x0043fd30 21 unit init.unixtype sched_param()
+0x0043fd18 20 unit rtti.unixtype pmbstate_t()
+0x00414960 68 unit system stringofchar(char,int64)ansistring
+0x004082e0 0 fpc_syscall4()
+0x004123a0 0 fpc_div_int64()
+0x004095e0 4 unit system readwritebarrier()
+0x0043d930 110 unit rtti.system enumresnameproc()
+0x00419dd0 101 fpc_intf_cast()
+0x00438cf0 35 unit rtti.system def138()
+0x00418c10 73 unit system widestringtoucs4string(widestring)ucs4string
+0x00421c30 23 unit system nothreadsetpriority(qword,longint)boolean
+0x0040d3e0 8 unit system tsinglerec.mantissa()qword
+0x00409ce0 77 unit system movechar0(formal,formal,int64)
+0x00421e60 43 unit system nortleventwaitfortimeout(prtlevent,longint)
+0x0043f1b0 22 unit init.baseunix sigactionrec()
+0x00427ef0 43 unit system blockread(file,formal,word,word)
+0x00416930 141 unit system widecharlentostrvar(pwidechar,int64,unicodestring)
+0x0040b9f0 67 unit system p1evl(real,preal,int64)real
+0x00409fd0 89 fpc_check_object_ext()
+0x00419880 146 unit system dynarraybounds(pointer,pointer)tboundarray
+0x0043e6d8 14 unit rtti.baseunix pdir()
+0x00436730 8 unit tc.system initproc()
+0x00422040 73 unit system copy_all_unit_threadvars()
+0x00422b40 249 unit system do_rename(pwidechar,pwidechar,boolean,boolean)
+0x00411840 524 fpc_val_sint_shortstr()
+0x00409510 7 unit system interlockedexchange64(int64,int64)int64
+0x00409750 55 unit system fpc_shortstr_shortstr_intern_charmove(shortstring,byte,openstring,byte,byte)
+0x00437f80 23 unit rtti.system neardspointer()
+0x00435640 0 _(system,_ld42)
+0x00434358 0 _(mozgkigyo,_ld12)
+0x0044b4b0 896 unit u.system output()
+0x0044bf30 896 unit u.system stderr()
+0x0041d400 23 unit system null()variant
+0x0041a410 5 unit system tobject.classparent()tclass
+0x0042dd60 92 unit crt finalize()
+0x0040d430 16 unit system tsinglerec.getexp()qword
+0x0043bf70 38 unit rtti.system def856()
+0x00408d30 71 unit system errno2inoutres()word
+0x00422270 133 unit system dodirseparators(rawbytestring)
+0x00416850 170 unit system unicodechartostrvar(punicodechar,ansistring)
+0x00413eb0 102 fpc_val_real_ansistr()
+0x00436010 64 initfinal()
+0x004388c0 20 unit rtti.system ppwidechar()
+0x0042d690 593 unit crt getxy(byte,byte)
+0x00434f30 0 _(mozgkigyo,_ld95)
+0x0042bcc0 283 unit crt clrscr()
+0x0043b130 45 unit rtti.system tcontainedobject()
+0x00437f00 27 unit rtti.system widechar_pointer()
+0x00432e80 0 unit finalize unix()
+0x00435100 0 _(mozgkigyo,_ld122)
+0x004243d0 205 fpc_writeln_end()
+0x0043e8c0 19 unit rtti.baseunix ptimezone()
+0x0041c8b0 23 unit system not(variant)variant
+0x0043b990 35 unit rtti.system def835()
+0x004215d0 47 unit system beginthread(tthreadfunc,pointer,qword,qword)qword
+0x0041c960 48 unit system minus(variant,variant)variant
+0x0043fc28 17 unit rtti.unixtype pstatfs()
+0x00431930 64 unit unix flushpipe(text)longint
+0x0041d9f0 0 fpc_initialize()
+0x0043c3c0 24 unit rtti.system def877()
+0x00434a48 0 _(mozgkigyo,_ld57)
+0x0043ec38 82 unit rtti.baseunix tsiginfo()
+0x0042c230 30 unit crt pushext(byte)
+0x00409700 16 unit system comparechar(formal,formal,int64)int64
+0x0043eb68 26 unit rtti.baseunix def46()
+0x004306f0 17 unit unix fpexeclpe(ansistring,array_of_ansistring,ppchar)longint
+0x0041d9f0 126 fpc_initialize()
+0x00440130 62 unit rtti.unixtype pthread_rwlockattr_t()
+0x0044d480 40 _fpc_oldsigill()
+0x0040dc50 54 unit system binstr(int64,byte)shortstring
+0x00439690 20 unit init.system tsinglerec()
+0x004358c0 0 _(unix,_ld7)
+0x004192f0 0 fpc_dynarray_assign()
+0x00414fa0 113 unit system newunicodestring(int64)pointer
+0x004231b0 187 unit system close(text)
+0x00430270 0 fpc_sysc_assignpipe()
+0x0040a950 7 unit system odd(qword)boolean
+0x004369a0 1 unit tc.system ctrlzmarkseof()
+0x00421a10 23 unit system rtleventwaitfor(prtlevent,longint)
+0x00408a30 0 fpc_sysc_getcwd()
+0x00436000 0 data_start()
+0x00412850 35 fpc_ansistr_incr_ref()
+0x0040f440 794 unit system str_real(crcedbaa446_)::return_exponential(crcc3d7d0d1)
+0x0041e020 22 fpc_decref_array()
+0x0041e7b0 36 unit system fpc_libinitializeunits()
+0x00424f70 155 fpc_write_text_uint_iso()
+0x0043f768 18 unit rtti.unixtype pcuint32()
+0x0041a6f0 6 unit system tobject.safecallexception(tobject,pointer)hresult
+0x0044c2e0 12 unit u.system softfloat_exception_mask()
+0x0041c7c0 23 unit system assign(variant)tdatetime
+0x00421cb0 43 unit system nocriticalsection(formal)
+0x004218f0 23 unit system basiceventdestroy(pointer)
+0x0043db90 79 unit rtti.system def1505()
+0x0042e810 26 unit baseunix fpgetpgrp()longint
+0x00431290 63 unit unix readtimezonefile(shortstring_)::readfilebuf()
+0x0041cc80 20 unit system assign(olevariant)shortint
+0x004344f8 0 _(mozgkigyo,_ld20)
+0x0042e790 34 unit baseunix fpsetuid(longword)longint
+0x00427490 128 fpc_setupreadstr_shortstr()
+0x0040b620 22 fpc_round_real()
+0x0041e020 0 fpc_decref_array()
+0x0041b6c0 0 fpc_raiseexception()
+0x004094b0 0 fpc_interlockedexchangeadd()
+0x00434b08 0 _(mozgkigyo,_ld63)
+0x00428b70 204 fpc_typed_write()
+0x0042aba0 11 unit crt max(longint,longint)longint
+0x0040b2f0 16 unit system swap(int64)int64
+0x00434970 0 _(mozgkigyo,_ld48)
+0x0043d3d0 70 unit rtti.system tbasiceventwaitforhandler()
+0x0043a950 239 unit rtti.system tguid()
+0x004209b0 103 unit system sysgetmem(qword)pointer
+0x00418f40 27 unit system stringcodepage(unicodestring)word
+0x0041e050 0 unit system finalizearray(pointer,pointer,int64)
+0x0042e870 31 unit baseunix fpumask(longint)longint
+0x00403270 351 unit p$mozgkigyo nevjegy(smallint,smallint,shortstring,smallint,smallint)
+0x00421970 17 unit system rtleventcreate()prtlevent
+0x004145d0 224 fpc_ansistr_sint()
+0x0044b100 2 unit u.system defaultrtlfilesystemcodepage()
+0x00421a50 23 unit system semaphoredestroy(pointer)
+0x0041d320 35 unit system assign(comp)olevariant
+0x0043fa00 14 unit rtti.unixtype pgid()
+0x0042bf30 296 unit crt scrollscrnregionup(longint,longint,longint,longint,longint)
+0x00415ca0 282 fpc_widechararray_to_shortstr()
+0x00416350 0 fpc_unicodestr_rangecheck()
+0x00437e00 14 unit rtti.system shortstring()
+0x0043e338 590 unit rtti.baseunix stat()
+0x00420120 53 unit system try_concat_free_chunk_forward(pmemchunk_var)boolean
+0x004127a0 97 unit system newansistring(int64)pointer
+0x0042ab00 9 unit wrpr.system.tinterfacedobject.iunknown.1.system tinterfacedobject._addref()longint
+0x0041a790 5 unit system tobject.stringmessagetable()pstringmessagetable
+0x004218d0 29 unit system basiceventcreate(pointer,boolean,boolean,ansistring)pointer
+0x0043ffb8 35 unit rtti.unixtype def68()
+0x0043feb0 42 unit rtti.unixtype def65()
+0x00439ee0 431 unit rtti.system tunicodestringmanager()
+0x0041b200 316 unit system taggregatedobject.create(iunknown)taggregatedobject
+0x0042da40 0 unit init crt()
+0x00424590 0 fpc_write_text_shortstr_iso()
+0x0041e4e0 0 fpc_rangeerror()
+0x0043e940 49 unit rtti.baseunix trlimit()
+0x0043f780 15 unit rtti.unixtype pcint()
+0x0041d460 48 unit system pos(char,variant)int64
+0x0043cdc0 27 unit rtti.system def1372()
+0x00408910 45 unit system fpmmap(pointer,qword,longint,longint,longint,int64)pointer
+0x0042a700 82 unit system installsignals()
+0x004199f0 124 unit system dynarrayindex(pointer,array_of_int64,pointer)pointer
+0x00421df0 50 unit system nortleventcreate()prtlevent
+0x0042ea50 42 unit baseunix fpexecv(pchar,ppchar)longint
+0x004383a0 17 unit rtti.system rawbytestring()
+0x00435660 0 _(system,_ld44)
+0x004176f0 0 fpc_val_sint_unicodestr()
+0x0041e540 27 unit system fpc_threaderror()
+0x0043e8d8 16 unit init.baseunix pollfd()
+0x0041fb40 17 unit system allocmem(qword)pointer
+0x00408320 60 unit system fpsyscall(int64,int64,int64,int64,int64,int64)int64
+0x004341e0 0 _(mozgkigyo,_ld7)
+0x00429e70 28 unit system getdir(byte,unicodestring)
+0x0043be10 24 unit rtti.system def847()
+0x0041fba0 17 fpc_getmem()
+0x0040cd60 252 unit system real2double(real48)double
+0x0041ce80 23 unit system assign(olevariant)shortstring
+0x0041e440 10 unit system sseg()word
+0x0041d440 27 unit system setvariantmanager(tvariantmanager)
+0x00410bd0 65 unit system val_real(shortstring,int64)extended::pack_float(extended,boolean,smallint,qword)
+0x00425370 106 fpc_write_text_boolean()
+0x0040dcd0 28 unit system binstr(qword,byte)shortstring
+0x00435768 0 _(crt,_ld4)
+0x00432f70 58 unit termio cfmakeraw(termios)
+0x0041d380 31 unit system assign(currency)olevariant
+0x004196a0 0 fpc_dynarr_copy()
+0x00434f48 0 _(mozgkigyo,_ld97)
+0x004289d0 0 fpc_rewrite_typed()
+0x0042d510 26 unit crt cursoroff()
+0x0043f2b0 45 unit rtti.unix def7()
+0x0043f3f8 101 unit rtti.unix tfsearchoption()
+0x00438960 26 unit rtti.system pfiletextrecchar()
+0x004191f0 0 fpc_dynarray_high()
+0x00435240 0 unit iidstr.system ienumerator()
+0x00436840 8 unit tc.system safecallerrorproc()
+0x00439c90 37 unit rtti.system def469()
+0x00408dd0 13 unit system get_caller_addr(pointer,pointer)pointer
+0x00408c90 6 unit system wtermsig(longint)longint
+0x00428880 129 unit system rename(file,char)
+0x0041ec70 186 unit system capturebacktrace(int64,int64,pcodepointer)int64
+0x004141d0 248 fpc_ansistr_enum()
+0x00435858 0 _(unix,_ld2)
+0x0044dcc0 4 unit u.unixutil tzseconds()
+0x00435430 0 _(system,_ld27)
+0x00000976 0 _(mozgkigyo,_ld136)
+0x004095c0 4 unit system readbarrier()
+0x0043fc40 25 unit init.unixtype mbstate_value_t()
+0x00424240 41 fpc_textinit_iso()
+0x00434848 0 _(mozgkigyo,_ld40)
+0x00438670 19 unit rtti.system psizeuint()
+0x0041c8d0 48 unit system shl(variant,variant)variant
+0x0041d180 48 unit system assign(char)olevariant
+0x00412710 39 unit system fpc_pchar_ansistr_intern_charmove(pchar,int64,rawbytestring,int64,int64)
+0x00409930 130 unit system indexdword(formal,int64,longword)int64
+0x004223e0 171 unit system do_erase(pchar,boolean)
+0x00414010 114 fpc_val_sint_ansistr()
+0x0041df90 102 fpc_addref_array()
+0x0041b060 5 unit system tobject.getinterfacetable()pinterfacetable
+0x004094b0 10 unit system interlockedexchangeadd(longint,longint)longint
+0x00433050 26 unit termio tcflush(longint,longint)longint
+0x004096e0 22 unit system indexchar(formal,int64,char)int64
+0x00438850 16 unit rtti.system perror()
+0x0040d4d0 30 unit system tsinglerec.setfrac(qword)
+0x0043a4d0 70 unit rtti.system terrorproc()
+0x0041deb0 0 fpc_initialize_array()
+0x0041b1e0 28 unit system tinterfacedobject.newinstance()tobject
+0x0042df90 105 unit baseunix fpsigdelset(sigset_t,longint)longint
+0x0043cb40 54 unit rtti.system fpc_stub_dynarray()
+0x00438490 18 unit rtti.system ppdouble()
+0x00429ac0 113 unit system do_rmdir(unicodestring)
+0x0042b760 41 unit crt linewrite(shortstring)
+0x00429dc0 164 unit system chdir(unicodestring)
+0x00435798 0 _(crt,_ld10)
+0x00439020 49 unit rtti.system tctrlbreakhandler()
+0x0043e180 35 unit rtti.baseunix def4()
+0x00000a11 0 _(mozgkigyo,_ld152)
+0x00422aa0 155 unit system do_erase(pwidechar,boolean)
+0x004120e0 59 fpc_setstring_shortstr()
+0x00437e30 12 unit rtti.system widestring()
+0x0042b790 154 unit crt doemptyline(longint,longint,longint)
+0x0041ebe0 16 unit system lib_exit()
+0x004386e0 19 unit rtti.system pppointer()
+0x00436770 1 operatingsystem_islibrary()
+0x00434720 0 _(mozgkigyo,_ld30)
+0x0040b100 49 fpc_varset_mul_sets()
+0x0043b300 337 unit rtti.system tvarrec()
+0x00409600 22 unit system swapendian(smallint)smallint
+0x0043f878 17 unit rtti.unixtype pcslong()
+0x00420e10 45 unit system sysallocmem(qword)pointer
+0x00417a50 206 fpc_unicodestr_currency()
+0x0043eb08 90 unit rtti.baseunix def45()
+0x0044d530 8 unit u.crt consolebuf()
+0x0041a0a0 0 fpc_class_as_intf()
+0x0042ec20 41 unit baseunix fppread(longint,pchar,qword,int64)int64
+0x00430a00 18 unit unix w_exitcode(smallint,smallint)smallint
+0x004289b0 22 fpc_reset_typed()
+0x00435898 0 _(unix,_ld4)
+0x0043ac20 35 unit rtti.system def713()
+0x00420fb0 186 unit system sysreallocmem(pointer,qword)pointer
+0x00423350 70 unit system rewrite(text)
+0x0040b3c0 30 unit system setmxcsr(longword)
+0x00421600 23 unit system endthread()
+0x0043e098 46 unit init.crt tconsolebuf()
+0x00415dc0 128 fpc_widechararray_to_ansistr()
+0x0040dfb0 200 unit system diy_util_shr(longword,qword,smallint)
+0x00438980 69 unit rtti.system ttextlinebreakstyle()
+0x0041aa60 60 unit system tobject.cleanupinstance()
+0x004128d0 260 unit system ansistr_concat_complex(rawbytestring,rawbytestring,rawbytestring,word)
+0x0043f5d8 145 unit rtti.termio termios()
+0x0043f080 21 unit init.baseunix tsigcontext()
+0x00421670 17 unit system suspendthread(qword)longword
+0x00421640 16 unit system flushthread()
+0x0043f118 33 unit rtti.baseunix sigrestorerhandler_t()
+0x0041bf80 31 unit system assign(smallint)variant
+0x004356d8 0 _(system,_ld48)
+0x00412430 0 fpc_mod_int64()
+0x0042fa20 16 unit baseunix fpread(longint,formal,qword)int64
+0x0042a4a0 33 unit system get_cmdline()pchar
+0x00414e50 33 unit system defaultgetstandardcodepage(tstandardcodepageenum)word
+0x0042ed40 21 unit baseunix fps_isblk(longint)boolean
+0x00439840 124 unit rtti.system tcompareoption_s2o()
+0x0043b460 17 unit rtti.system pvarrec()
+0x00421d50 50 unit system nobasiceventcreate(pointer,boolean,boolean,ansistring)pointer
+0x00431570 209 unit unix donelocaltime()
+0x0043afc0 46 unit rtti.system ienumerable()
+0x0041a3c0 70 unit system tobject.initinstance(pointer)tobject
+0x00414b00 126 unit system lowercase(ansistring)ansistring
+0x00434c38 0 _(mozgkigyo,_ld75)
+0x0041a1b0 275 unit system tobject.create()tobject
+0x000009e3 0 _(mozgkigyo,_ld148)
+0x0040a070 0 fpc_shortstr_assign()
+0x004295f0 164 unit system chdir(rawbytestring)
+0x0041e000 0 fpc_decref()
+0x004153c0 95 fpc_pwidechar_to_ansistr()
+0x0042e030 37 unit baseunix fpsigfillset(sigset_t)longint
+0x0041c520 32 unit system assign(variant)wordbool
+0x00435038 0 _(mozgkigyo,_ld111)
+0x0044d420 40 _fpc_oldsigsegv()
+0x0042e590 29 unit baseunix fpuname(utsname)longint
+0x00421e30 43 unit system nortlevent(prtlevent)
+0x0043c510 77 unit rtti.system def885()
+0x00429fb0 6 unit system defaultunlockresource(qword)longbool
+0x0041c990 48 unit system star(variant,variant)variant
+0x00436930 8 unit tc.system growheapsize2()
+0x0041f2b0 213 unit system arraystringtoppchar(array_of_ansistring,longint)ppchar
+0x004348e0 0 _(mozgkigyo,_ld44)
+0x00438630 18 unit rtti.system pptruint()
+0x00423020 128 unit system assign(text,shortstring)
+0x004223a0 61 unit system do_close(longint)
+0x0040b270 13 unit system lo(byte)byte
+0x00431320 514 unit unix gettimezonefile()shortstring
+0x00438cb0 10 unit rtti.system def136()
+0x00430270 44 unit unix assignpipe(longint,longint)longint
+0x0043b680 54 unit init.system tvararrayboundarray()
+0x00409ba0 316 unit system comparedword(formal,formal,int64)int64
+0x00415930 168 fpc_uchar_to_char()
+0x0040d1c0 17 unit system tdoublerec.mantissa()qword
+0x00413390 116 fpc_shortstr_to_ansistr()
+0x00411710 294 unit system initval(shortstring,boolean,byte)int64
+0x0043bd00 19 unit init.system tcalldesc()
+0x00417b20 194 fpc_unicodestr_sint()
+0x00439460 84 unit rtti.system tfloatspecial_o2s()
+0x00429fd0 27 unit system getresourcemanager(tresourcemanager)
+0x0041b630 137 unit system dounhandledexception()
+0x0040ace0 3 unit system leton(longword)longword
+0x0040ad00 4 unit system leton(qword)qword
+0x0043c9b0 24 unit rtti.system pdynarrayindex()
+0x0043e9a8 15 unit init.baseunix iovec()
+0x00428b70 0 fpc_typed_write()
+0x00402d50 406 unit p$mozgkigyo keret2(smallint,smallint)
+0x0040d9f0 31 unit system upcase(char)char
+0x0044d2e0 8 fpc_threadvar_relocate()
+0x0042ff30 169 unit baseunix fpselect(text,ptimeval)longint
+0x00438500 19 unit rtti.system pshortint()
+0x00421fa0 73 unit system init_all_unit_threadvars()
+0x0043a090 430 unit rtti.system truntimeerror()
+0x0041f5b0 57 fpc_assert()
+0x00414400 236 fpc_ansistr_currency()
+0x00439b90 47 unit rtti.system def463()
+0x00439b10 24 unit rtti.system def460()
+0x004096a0 28 unit system fillchar(formal,int64,char)
+0x004263a0 204 fpc_read_text_unicodestr()
+0x00414ea0 50 unit system setunicodestringmanager(tunicodestringmanager,tunicodestringmanager)
+0x0040daa0 100 unit system lowercase(shortstring)shortstring
+0x0042fea0 19 unit baseunix fptime()int64
+0x00409660 7 unit system swapendian(int64)int64
+0x0043f340 45 unit rtti.unix def13()
+0x0043b8c0 172 unit rtti.system tvarop_o2s()
+0x0042ebb0 77 unit baseunix fpsetpriority(longint,longint,longint)longint
+0x0043acb0 414 unit rtti.system tvmt()
+0x0041fc30 129 unit system sysgetheapstatus()theapstatus
+0x00408a90 32 unit system fpsetrlimit(longint,prlimit)longint
+0x0041b8f0 138 fpc_popsecondobjectstack()
+0x004344c0 0 _(mozgkigyo,_ld19)
+0x00424330 122 unit system fpc_writeblanks(text,longint)
+0x00408790 0 fpc_sysc_sigaction()
+0x00436850 8 unit tc.system exceptobjproc()
+0x00434f28 0 _(mozgkigyo,_ld94)
+0x004385b0 19 unit rtti.system pcardinal()
+0x00431670 18 unit unix fpflock(text,longint)longint
+0x004289b0 0 fpc_reset_typed()
+0x0040acc0 9 unit system leton(word)word
+0x004358a0 0 _(unix,_ld5)
+0x0041d3a0 23 unit system assign(tdatetime)olevariant
+0x0040de80 40 unit system diy_util_add(longword,qword,longword,qword)
+0x0042e750 26 unit baseunix fpgetgid()longword
+0x0043d000 139 unit rtti.system tbeginthreadhandler()
+0x00409df0 129 fpc_help_constructor()
+0x004331c0 24 unit termio ttyname(text)shortstring
+0x0042f2f0 145 unit baseunix fpexecv(rawbytestring,ppchar)longint
+0x00436810 8 unit tc.system errorproc()
+0x0044c3f0 1 unit u.system returnnilifgrowheapfails()
+0x0041fa80 23 unit system getheapstatus()theapstatus
+0x004084c0 32 unit system fprename(pchar,pchar)longint
+0x00409fd0 0 fpc_check_object_ext()
+0x0043c490 60 unit rtti.system def883()
+0x0041bb00 0 fpc_safecallhandler()
+0x00416200 119 fpc_unicodestr_to_widechararray()
+0x00438590 18 unit rtti.system plongint()
+0x00418f60 19 unit system stubunicodecase(unicodestring)unicodestring
+0x00417bf0 194 fpc_unicodestr_uint()
+0x00435220 0 unit iidstr.system iinvokable()
+0x004334b0 19 unit unixutil getfs(file)longint
+0x00421f40 62 unit system initsystemthreads()
+0x0041cd20 17 unit system assign(olevariant)qword
+0x004037b0 0 pascalmain()
+0x0043d370 38 unit rtti.system treleasethreadvarshandler()
+0x00428a90 0 fpc_reset_typed_iso()
+0x00429ea0 25 unit system makelangid(word,word)word
+0x0043ca60 27 unit init.system tdynarraytypeinfo()
+0x004388a0 19 unit rtti.system pwidechar()
+0x0041bb80 37 fpc_variant_init()
+0x004082e0 57 unit system fpsyscall(int64,int64,int64,int64,int64)int64
+0x00409730 28 fpc_fillmem()
+0x0043e888 50 unit rtti.baseunix timezone()
+0x004352f0 0 _(system,_ld7)
+0x0040ac30 22 unit system beton(smallint)smallint
+0x00435500 0 _(system,_ld31)
+0x0040a980 8 unit system sqr(qword)qword
+0x0043fd88 168 unit rtti.unixtype pthread_attr_t()
+0x004380c0 35 unit rtti.system def54()
+0x00421f20 26 unit system setnothreadmanager()
+0x0040b490 31 fpc_arctan_real()
+0x0041bc70 0 fpc_write_text_variant()
+0x00413c60 190 fpc_ansistr_copy()
+0x00435530 0 _(system,_ld34)
+0x00428b10 94 fpc_rewrite_typed_iso()
+0x0041cf40 29 unit system assign(olevariant)comp
+0x00414d40 142 unit system defaultunicode2ansimove(punicodechar,rawbytestring,word,int64)
+0x00435810 0 _(crt,_ld24)
+0x0040a8c0 35 fpc_pchar_length()
+0x000009bf 0 _(mozgkigyo,_ld138)
+0x00421850 27 unit system setthreadmanager(tthreadmanager,tthreadmanager)boolean
+0x0041c7e0 23 unit system assign(variant)olevariant
+0x0042e950 32 unit baseunix fputime(pchar,putimbuf)longint
+0x0043dab0 91 unit rtti.system def1503()
+0x00438550 15 unit rtti.system pword()
+0x00410db0 30 fpc_shortstr_enum()
+0x00439a50 68 unit rtti.system def457()
+0x00434320 0 _(mozgkigyo,_ld11)
+0x0042dec0 87 unit baseunix fpgetenv(shortstring)pchar
+0x0041cd40 17 unit system assign(olevariant)int64
+0x00413d20 134 unit system pos(shortstring,rawbytestring)int64
+0x0041ebc0 0 fpc_do_exit()
+0x004401c0 45 unit rtti.unixutil def3()
+0x0042e630 113 unit baseunix fpgethostname(pchar,qword)longint
+0x004365d0 212 threadvarlist_(system)
+0x004089b0 0 fpc_sysc_readlink()
+0x004389d0 40 unit rtti.system ttextlinebreakstyle_s2o()
+0x0041f170 189 unit system dumpexceptionbacktrace(text)
+0x00411bb0 0 fpc_val_real_shortstr()
+0x0040ade0 4 unit system ntole(qword)qword
+0x0043bee0 35 unit rtti.system def853()
+0x0041cdc0 48 unit system assign(olevariant)char
+0x00415420 183 fpc_pwidechar_to_shortstr()
+0x0043ec90 18 unit rtti.baseunix psiginfo()
+0x00434428 0 _(mozgkigyo,_ld16)
+0x0043f930 15 unit rtti.unixtype pmode()
+0x00419b30 69 fpc_do_as()
+0x0042ec80 0 fpc_sysc_readv()
+0x00435360 0 _(system,_ld14)
+0x004280c0 179 unit system filesize(file)int64
+0x004279d0 248 unit system reset(file,longint)
+0x00409220 126 unit system indexbyte(formal,int64,byte)int64
+0x00434ac8 0 _(mozgkigyo,_ld61)
+0x004368a0 16 unit tc.system iobjectinstance()
+0x0043cbe0 24 unit init.system tfpcheapstatus()
+0x00438760 19 unit rtti.system pwordbool()
+0x00437d30 20 unit rtti.system boolean64()
+0x0042e730 26 unit baseunix fpgeteuid()longword
+0x00440088 26 unit init.unixtype pthread_rwlock_t()
+0x00438740 18 unit rtti.system pboolean()
+0x00432df0 121 unit unix fsearch(ansistring,ansistring)ansistring
+0x00422ec0 148 unit system inittext(text)
+0x0043fc88 57 unit rtti.unixtype mbstate_value_t()
+0x00439df0 68 unit rtti.system def477()
+0x00409460 17 unit system interlockeddecrement(longint)longint
+0x0042fa80 140 unit baseunix fpopen(rawbytestring,longint)longint
+0x0040d5f0 134 fpc_shortstr_copy()
+0x0042d2e0 4 unit crt crtreturn(textrec)
+0x0043ba20 514 unit rtti.system tvardata()
+0x00416900 48 unit system widecharlentostring(pwidechar,int64)unicodestring
+0x00440238 0 _edata()
+0x00434a30 0 _(mozgkigyo,_ld56)
+0x00439cc0 53 unit rtti.system def470()
+0x0041c620 23 unit system assign(variant)shortstring
+0x0043e760 95 unit rtti.baseunix flock()
+0x0041a420 93 unit system tobject.newinstance()tobject
+0x0043eac8 58 unit rtti.baseunix def44()
+0x0041e540 0 fpc_threaderror()
+0x00411da0 0 fpc_val_currency_shortstr()
+0x00432170 138 unit unix popen(file,rawbytestring,char)longint
+0x0043c010 58 unit rtti.system def859()
+0x00437fa0 23 unit rtti.system nearsspointer()
+0x0041fa60 22 unit system freememory(pointer,qword)
+0x00429c60 164 unit system mkdir(unicodestring)
+0x00429b40 113 unit system do_chdir(unicodestring)
+0x00425f50 0 fpc_readln_end_iso()
+0x0042bbe0 218 unit crt window(byte,byte,byte,byte)
+0x0041deb0 102 fpc_initialize_array()
+0x0040ce60 330 unit system fpower10(extended,longint)extended
+0x0043be90 24 unit rtti.system def851()
+0x0040a8f0 37 fpc_pwidechar_length()
+0x0041e4e0 27 fpc_rangeerror()
+0x0044dcf0 0 _end()
+0x0042ec50 0 fpc_sysc_pwrite()
+0x0042aaf0 9 unit wrpr.system.tinterfacedobject.iunknown.0.system tinterfacedobject.queryinterface(tguid,formal)longint
+0x0041fbc0 0 fpc_freemem()
+0x0042ab40 9 unit wrpr.system.tcontainedobject.iunknown.2.system taggregatedobject._release()longint
+0x00408c20 21 unit system fps_issock(longint)boolean
+0x0042e590 0 fpc_sysc_uname()
+0x0043ca80 11 unit rtti.system def1051()
+0x004217f0 17 unit system tryentercriticalsection(trtlcriticalsection)longint
+0x0043e9b8 47 unit rtti.baseunix iovec()
+0x0040a430 120 fpc_shortstr_compare()
+0x0041a4a0 4 unit system tobject.classtype()tclass
+0x00435320 0 _(system,_ld10)
+0x0042a4d0 168 unit system reenable_signal(longint)boolean
+0x004367e0 27 unit tc.system runtimeerrorexitcodes()
+0x0040a4b0 38 fpc_shortstr_compare_equal()
+0x0043d580 50 unit rtti.system tsemaphoredestroyhandler()
+0x00421330 6 unit system getcpucount()longword
+0x00435078 0 _(mozgkigyo,_ld115)
+0x00416350 50 fpc_unicodestr_rangecheck()
+0x00408b80 21 unit system fps_ischr(longint)boolean
+0x00438040 12 unit rtti.system olevariant()
+0x00401000 0 _dynamic_start()
+0x0043ebb8 122 unit rtti.baseunix def39()
+0x0040dcb0 28 unit system octstr(qword,byte)shortstring
+0x00438190 24 unit init.system methodpointer()
+0x004366c0 8 unit tc.system exitproc()
+0x0043e140 17 unit init.baseunix utsname()
+0x00432a10 53 unit unix gethostname()shortstring
+0x00420d80 48 unit system try_finish_waitvarlist(pfreelists)
+0x00409440 25 unit system inclocked(int64)
+0x00435878 0 _(unix,_ld3)
+0x004146b0 185 unit system delete(rawbytestring,int64,int64)
+0x0043ce80 216 unit rtti.system tmemorymanager()
+0x004225c0 142 unit system do_read(longint,pointer,longint)longint
+0x0041bbb0 0 fpc_variant_clear()
+0x00430d40 1094 unit unix readtimezonefile(shortstring)
+0x0041d270 23 unit system assign(widestring)olevariant
+0x00419e40 93 fpc_intf_cast_class()
+0x0040aea0 58 fpc_popcnt_qword()
+0x004268f0 195 fpc_read_text_uint()
+0x00438690 16 unit rtti.system ppbyte()
+0x0042a130 17 unit system unlockresource(qword)longbool
+0x00422f60 87 unit system assign(text,unicodestring)
+0x00408c00 21 unit system fps_islnk(longint)boolean
+0x00434770 0 _(mozgkigyo,_ld34)
+0x0041d860 16 unit system rttiarraysize(pointer)int64
+0x0040b300 44 unit system assign(real48)double
+0x00419fa0 0 fpc_intf_as()
+0x00437fc0 23 unit rtti.system nearespointer()
+0x00428930 22 unit system assign(typedfile,rawbytestring)
+0x0041b7f0 66 fpc_popaddrstack()
+0x00431970 25 unit unix closepipe(text)longint
+0x000009cb 0 _(mozgkigyo,_ld140)
+0x00439be0 24 unit rtti.system def465()
+0x00408a70 0 fpc_sysc_getrlimit()
+0x004289f0 145 unit system doassign(typedfile)
+0x00000949 0 _(mozgkigyo,_ld135)
+0x0043aa50 172 unit rtti.system tinterfaceentrytype()
+0x004143b0 73 fpc_val_enum_ansistr()
+0x004145d0 0 fpc_ansistr_valsint()
+0x004141d0 0 fpc_ansistr_enum()
+0x00438060 6 unit rtti.system text()
+0x00413f20 113 fpc_val_currency_ansistr()
+0x0043b480 17 unit init.system tvarrec()
+0x00434ca0 0 _(mozgkigyo,_ld79)
+0x0040b510 110 fpc_exp_real()
+0x00428c40 0 fpc_typed_read()
+0x00421550 51 unit system beginthread(tthreadfunc,pointer)qword
+0x0041e6c0 94 fpc_stackcheck()
+0x004081a0 0 fpc_sys_geterrno()
+0x00408a50 0 fpc_sysc_gettimeofday()
+0x0041c3e0 28 unit system assign(terror)variant
+0x0041bee0 23 fpc_dispinvoke_variant()
+0x0043e928 17 unit rtti.baseunix ppollfd()
+0x00434678 0 _(mozgkigyo,_ld27)
+0x00426510 336 fpc_read_text_widechar()
+0x004353c0 0 _(system,_ld20)
+0x00419dd0 0 fpc_intf_cast()
+0x0043f7a0 16 unit rtti.unixtype pcuint()
+0x00427510 128 fpc_setupreadstr_unicodestr()
+0x0041e7b0 0 fpc_libinitializeunits()
+0x0042c300 45 unit crt keypressed()boolean
+0x00435380 0 _(system,_ld16)
+0x0041c780 31 unit system assign(variant)real
+0x0043c3e0 24 unit rtti.system def878()
+0x00439300 28 unit rtti.system tfpuexceptionmask()
+0x0040a7b0 140 fpc_chararray_to_shortstr()
+0x0042abc0 826 unit crt xy2ansi(longint,longint,longint,longint)shortstring
+0x0040ac90 16 unit system beton(int64)int64
+0x00436390 208 unit vmt.system taggregatedobject()
+0x0041f260 73 unit system addexitproc(tprocedure)
+0x00439d60 26 unit rtti.system def473()
+0x00420c90 65 unit system finish_waitfixedlist(pfreelists)
+0x0041b980 103 fpc_reraise()
+0x0043ed38 194 unit rtti.baseunix tfpstate()
+0x00428780 128 unit system rename(file,shortstring)
+0x004159e0 156 fpc_uchar_to_shortstr()
+0x0043ee80 485 unit rtti.baseunix tsigcontext()
+0x00414d10 14 unit system setmultibyteconversioncodepage(word)
+0x0043df80 4 unit tc.crt screenheight()
+0x004143b0 0 fpc_val_enum_ansistr()
+0x0041f560 0 fpc_emptymethod()
+0x004277c0 128 unit system assign(file,pchar)
+0x00426020 441 unit system readpcharlen(text,pchar,longint)longint
+0x00429f40 6 unit system defaultenumresourcenames(qword,pchar,enumresnameproc,int64)longbool
+0x0042b360 33 unit crt ttysetflush(boolean)boolean
+0x00437c30 19 unit rtti.system smallint()
+0x0042fcd0 95 unit baseunix fpstat(shortstring,stat)longint
+0x0043f7f8 18 unit rtti.unixtype pcuint64()
+0x0041d250 23 unit system assign(ansistring)olevariant
+0x004131f0 335 fpc_ansistr_to_ansistr()
+0x0043ee18 18 unit init.baseunix tfpstate()
+0x00438920 22 unit rtti.system punicodechar()
+0x00419c90 87 fpc_intf_is_class()
+0x0042a010 17 unit system hinstance()qword
+0x0041e9d0 491 unit system internalexit()
+0x0042bf10 28 unit crt wherey()tcrtcoord
+0x00427f80 138 unit system blockread(file,formal,int64)
+0x004320e0 138 unit unix popen(text,rawbytestring,char)longint
+0x00421ce0 45 unit system notryentercriticalsection(formal)longint
+0x00000932 0 _(mozgkigyo,_ld143)
+0x0043b050 27 unit init.system tinterfacedobject()
+0x00438070 11 unit rtti.system typedfile()
+0x0040e680 2493 unit system str_real(smallint,smallint,extended,treal_type,openstring)
+0x0043f9c0 17 unit rtti.unixtype ptime_t()
+0x00439920 26 unit rtti.system tcompareoptions()
+0x0041f390 34 unit system stringtoppchar(ansistring,smallint)ppchar
+0x0040b4b0 31 fpc_ln_real()
+0x0043f6f0 18 unit rtti.unixtype pcuint16()
+0x0041fb80 23 unit system reallocmemory(pointer,qword)pointer
+0x0041ef40 281 unit system dump_stack(text,pointer,pointer)
+0x00436170 208 unit vmt.system tobject()
+0x0044c310 200 unit u.system widestringmanager()
+0x00428360 139 unit system close(file)
+0x00414f00 27 unit system getwidestringmanager(tunicodestringmanager)
+0x0043b0a0 26 unit rtti.system tinterfacedclass()
+0x0042a1a0 14 unit system paramcount()longint
+0x0042c9f0 1166 unit crt dowrite(shortstring)
+0x0040af70 75 fpc_varset_create_element()
+0x00436800 8 unit tc.system backtracestrfunc()
+0x0040cfd0 43 unit system textended80rec.fraction()extended
+0x0043f6c0 17 unit rtti.unixtype pcuchar()
+0x0043f790 16 unit rtti.unixtype pcsint()
+0x0041bc70 221 fpc_write_text_variant()
+0x00437db0 20 unit rtti.system qwordbool()
+0x00428990 28 unit system assign(typedfile,char)
+0x004307f0 483 unit unix fpsystem(ansistring)longint
+0x004210f0 0 _fpc_initheap()
+0x0043ac50 57 unit rtti.system tinterfacetable()
+0x0041b470 73 unit system releaseexceptionobject()
+0x00431e40 669 unit unix popen_internal(file,rawbytestring,char)longint
+0x00438650 18 unit rtti.system psizeint()
+0x004283f0 121 unit system erase(file)
+0x0040add0 4 unit system ntole(int64)int64
+0x0043fce0 51 unit rtti.unixtype mbstate_t()
+0x0042f8f0 135 unit baseunix fpaccess(rawbytestring,longint)longint
+0x004394e0 35 unit rtti.system def326()
+0x0043d9a0 130 unit rtti.system enumreslangproc()
+0x0043bdb0 25 unit init.system tvariantmanager()
+0x00433010 31 unit termio tcdrain(longint)longint
+0x0043c170 43 unit rtti.system def866()
+0x00423fa0 309 unit system seekeoln(text)boolean
+0x0041d120 36 unit system assign(wordbool)olevariant
+0x0043f500 35 unit rtti.unix def273()
+0x00414ee0 27 unit system setunicodestringmanager(tunicodestringmanager)
+0x00434870 0 _(mozgkigyo,_ld41)
+0x004247f0 357 fpc_write_text_pchar_as_array_iso()
+0x00419840 0 unit system dynarrayclear(pointer,pointer)
+0x00437de0 19 unit rtti.system widechar()
+0x004381b0 56 unit rtti.system methodpointer()
+0x0041d650 45 unit system pos(variant,shortstring)int64
+0x004165f0 214 unit system stringtowidechar(rawbytestring,pwidechar,int64)pwidechar
+0x00419b30 0 fpc_do_as()
+0x004094f0 24 unit system interlockedincrement64(int64)int64
+0x00438030 9 unit rtti.system variant()
+0x0041e630 53 unit system getthreadid()qword
+0x00428800 128 unit system rename(file,pchar)
+0x00419bd0 66 fpc_intf_assign()
+0x0042b610 228 unit crt ttywrite(shortstring)
+0x0041c460 20 unit system assign(variant)smallint
+0x00431b20 16 unit unix pclosetext(text)longint
+0x0044d500 4 unit u.crt windmaxx()
+0x004230a0 128 unit system assign(text,pchar)
+0x004366b0 2 unit tc.system max_frame_dump()
+0x00421a70 23 unit system semaphorewait(pointer)
+0x00426e20 53 unit system writestrshortflush(textrec)
+0x0041ee70 93 unit system runerror(word)
+0x0040aaf0 176 unit system int_str(int64,openstring)
+0x004276e0 87 unit system assign(file,rawbytestring)
+0x00418e00 255 unit system unimplementedunicodestring()
+0x0041be10 46 fpc_variant_to_dynarray()
+0x004356f8 0 _(system,_ld49)
+0x00423b30 63 unit system eof()boolean
+0x00437cf0 20 unit rtti.system boolean16()
+0x00423b70 646 unit system seekeof(text)boolean
+0x0042ddc0 145 unit baseunix internalcreateshellargv(pchar,longint)ppchar
+0x0041e7e0 0 fpc_finalizeunits()
+0x0043b9f0 35 unit rtti.system def837()
+0x00420e40 361 unit system systryresizemem(pointer,qword)boolean
+0x00409d30 79 unit system indexchar0(formal,int64,char)int64
+0x00429f20 11 unit system defaulthinstance()qword
+0x0041c700 31 unit system assign(variant)single
+0x00424270 22 fpc_textclose_iso()
+0x00430750 21 unit unix fpexecvpe(ansistring,ppchar,ppchar)longint
+0x00438720 23 unit rtti.system ppcodepointer()
+0x004360b0 0 __fpc_valgrind
+0x004082a0 54 unit system fpsyscall(int64,int64,int64,int64)int64
+0x0041bfc0 28 unit system assign(longint)variant
+0x0041ca50 48 unit system mod(variant,variant)variant
+0x00435230 0 unit iid.system ienumerator()
+0x00434f80 0 _(mozgkigyo,_ld100)
+0x00417cc0 62 unit system unicodetoutf8(pchar,punicodechar,int64)int64
+0x0043ce70 13 unit rtti.system def1379()
+0x00437d70 19 unit rtti.system wordbool()
+0x00408570 231 unit system fpopendir(pchar)pdir
+0x00420d30 65 unit system finish_waitvarlist(pfreelists)
+0x00428da0 8 fpc_getbuf_typedfile()
+0x0043c110 43 unit rtti.system def864()
+0x0043ffe0 88 unit rtti.unixtype pthread_cond_t()
+0x004144f0 0 fpc_ansistr_valuint()
+0x0041f230 45 unit system doexitproc()
+0x00429d10 164 unit system rmdir(unicodestring)
+0x0041c660 23 unit system assign(variant)widestring
+0x0043f5b0 35 unit rtti.termio def2()
+0x004269c0 120 fpc_read_text_uint_iso()
+0x0043f890 17 unit rtti.unixtype pculong()
+0x00425e50 0 fpc_read_end()
+0x0043a390 220 unit rtti.system truntimeerror_o2s()
+0x0041bd50 151 fpc_vararray_get()
+0x0042f5c0 125 unit baseunix fprmdir(rawbytestring)longint
+0x0041f9d0 45 unit system ismemorymanagerset()boolean
+0x0041d3e0 23 unit system unassigned()variant
+0x00435280 0 unit iidstr.system idispatch()
+0x00424ed0 155 fpc_write_text_sint_iso()
+0x00408260 0 fpc_syscall2()
+0x0042c190 73 unit crt pushkey(char)
+0x00427430 0 fpc_setupreadstr_ansistr()
+0x00429fc0 6 unit system defaultfreeresource(qword)longbool
+0x0040d050 20 unit system textended80rec.getsign()boolean
+0x00419320 894 fpc_dynarray_setlength()
+0x0040acf0 4 unit system leton(int64)int64
+0x0040a030 0 fpc_shortstr_to_shortstr()
+0x0043d620 24 unit init.system tthreadmanager()
+0x0043d640 13 unit rtti.system def1437()
+0x00415a80 54 fpc_uchar_to_unicodestr()
+0x004350c0 0 _(mozgkigyo,_ld118)
+0x0042a9e0 266 unit system init()
+0x0043f3c8 45 unit rtti.unix def39()
+0x004382e0 49 unit rtti.system tucs4chararray()
+0x00438470 19 unit rtti.system pextended()
+0x0041bea0 23 fpc_variant_to_idispatch()
+0x00438080 26 unit init.system __vtbl_ptr_type()
+0x0042e1e0 78 unit baseunix fpfd_isset(longint,tfdset)longint
+0x00426290 271 fpc_read_text_ansistr()
+0x00434598 0 _(mozgkigyo,_ld23)
+0x00432f30 18 unit termio cfsetispeed(termios,longword)
+0x0042e260 29 unit baseunix fpsigpending(sigset_t)longint
+0x0043ea68 42 unit rtti.baseunix def42()
+0x0044c2c0 16 unit u.system stackbottom()
+0x0041c400 22 unit system assign(variant)byte
+0x0042e3d0 38 unit baseunix sigpause(longint)longint
+0x0040fbe0 50 unit system str_real(crcedbaa446_)::do_fillchar(openstring,smallint,smallint,char)
+0x0043d3a0 46 unit rtti.system tbasiceventhandler()
+0x004360c0 0 fpc_reslocation()
+0x0043a7b0 54 unit rtti.system tmsgstrtable()
+0x004088c0 0 fpc_sysc_dup()
+0x004306d0 27 unit unix fpexeclp(ansistring,array_of_ansistring)longint
+0x00436000 0 __data_start
+0x00434dc0 0 _(mozgkigyo,_ld83)
+0x00434b68 0 _(mozgkigyo,_ld66)
+0x0041e060 130 unit system copyarray(pointer,pointer,pointer,int64)
+0x0040b7b0 6 unit system float64setlow(double,longint)
+0x0041da70 164 fpc_finalize()
+0x00427ad0 65 unit system rewrite(file)
+0x0041a030 0 fpc_intf_as_class()
+0x00416b10 170 unit system widechartostrvar(pwidechar,ansistring)
+0x00428ef0 217 unit system do_chdir(rawbytestring)
+0x0043ae80 25 unit rtti.system pinterfaceentry()
+0x00423e00 63 unit system seekeof()boolean
+0x00401380 1532 unit p$mozgkigyo over()
+0x004391c0 36 unit rtti.system tfpuprecisionmode_o2s()
+0x00433070 40 unit termio isatty(longint)longint
+0x0041c930 48 unit system plus(variant,variant)variant
+0x0043e5d0 96 unit rtti.baseunix dirent()
+0x0041d010 32 unit system assign(shortint)olevariant
+0x0040dd60 136 fpc_shortstr_sint()
+0x0041aa50 4 unit system tobject.defaulthandlerstr(formal)
+0x00434280 0 _(mozgkigyo,_ld9)
+0x0042e230 34 unit baseunix fpkill(longint,longint)longint
+0x004357a0 0 _(crt,_ld11)
+0x004353b0 0 _(system,_ld19)
+0x00408df0 771 unit system move(formal,formal,int64)
+0x0041cca0 22 unit system assign(olevariant)word
+0x00409400 28 unit system declocked(int64)boolean
+0x0043a920 35 unit rtti.system def707()
+0x004233f0 70 unit system append(text)
+0x0043fcc8 19 unit init.unixtype mbstate_t()
+0x00421810 23 unit system leavecriticalsection(trtlcriticalsection)
+0x00439e80 54 unit rtti.system def480()
+0x0042fa30 16 unit baseunix fpwrite(longint,formal,qword)int64
+0x0043dc50 54 unit rtti.system def1507()
+0x0041ee40 0 fpc_handleerror()
+0x0040dd30 37 unit system space(byte)shortstring
+0x00436480 216 unit vmt.system tcontainedobject()
+0x00418830 242 unit system utf8decode(rawbytestring)unicodestring
+0x0040f760 1143 unit system str_real(crcedbaa446_)::try_return_fixed(crc15f54820)
+0x0043f4d8 35 unit rtti.unix def265()
+0x00438f30 23 unit rtti.system pintegerarray()
+0x00414a20 96 fpc_setstring_ansistr_pwidechar()
+0x0043b160 18 unit rtti.system punknown()
+0x0040b2c0 13 unit system swap(longint)longint
+0x0043b6c0 19 unit init.system tvararray()
+0x00426c30 184 fpc_read_text_currency()
+0x0041c3a0 31 unit system assign(currency)variant
+0x00416390 293 fpc_unicodestr_setlength()
+0x00408500 0 fpc_sysc_chdir()
+0x004357d0 0 _(crt,_ld17)
+0x00408990 26 unit system fpgetpid()longint
+0x0043ece8 35 unit rtti.baseunix def51()
+0x00437d50 19 unit rtti.system bytebool()
+0x0043cde0 38 unit rtti.system def1373()
+0x00438b40 35 unit rtti.system def130()
+0x0040a4e0 0 fpc_pchar_to_shortstr()
+0x00423270 223 unit system opentext(text,longint,longint)
+0x00408830 26 unit system fpfork()longint
+0x00426b70 179 fpc_read_text_enum()
+0x0041ff90 74 unit system modify_freelists(pfreelists,pfreelists)poschunk
+0x00440180 63 unit rtti.unixtype sem_t()
+0x004084e0 0 fpc_sysc_stat()
+0x004357e0 0 _(crt,_ld19)
+0x0043f738 18 unit rtti.unixtype pcushort()
+0x00437f40 21 unit rtti.system nearpointer()
+0x00438450 17 unit rtti.system pdouble()
+0x004123a0 141 fpc_div_int64()
+0x00435908 0 _(unix,_ld13)
+0x0042da40 787 unit crt init()
+0x00401cd0 395 unit p$mozgkigyo nyilur(smallint,smallint)
+0x0042c060 296 unit crt scrollscrnregiondown(longint,longint,longint,longint,longint)
+0x0041f8e0 0 fpc_longjmp()
+0x0040ff90 80 unit system str_real(crcedbaa446_)::unpack_float(extended,boolean)tdiy_fp
+0x00434c18 0 _(mozgkigyo,_ld73)
+0x0040adb0 3 unit system ntole(longint)longint
+0x0042af00 554 unit crt attr2ansi(longint,longint)shortstring
+0x004233a0 70 unit system reset(text)
+0x00435350 0 _(system,_ld13)
+0x0040b790 19 unit system float64low(double)longint
+0x0040aca0 16 unit system beton(qword)qword
+0x00434640 0 _(mozgkigyo,_ld26)
+0x00416300 0 fpc_unicodestr_compare_equal()
+0x00413690 0 fpc_ansistr_compare()
+0x00434ee0 0 _(mozgkigyo,_ld87)
+0x0043a6e0 36 unit rtti.system tobject()
+0x0040b9b0 59 unit system polevl(real,preal,int64)real
+0x004366e0 2 unit tc.system errorcode()
+0x00421870 93 unit system setthreadmanager(tthreadmanager)boolean
+0x00429f60 11 unit system defaultfindresource(qword,pchar,pchar)qword
+0x00427840 129 unit system assign(file,char)
+0x0041cf60 31 unit system assign(olevariant)real
+0x00411d10 131 unit system fpc_val_enum_shortstr(crc294bb90c_)::string_compare(shortstring,shortstring)int64
+0x0040b760 20 unit system float64high(double)longint
+0x0040b7c0 151 unit system frexp(real,smallint)real
+0x0042ead0 40 unit baseunix fppoll(ppollfd,longword,int64)longint
+0x0041aaa0 4 unit system tobject.afterconstruction()
+0x00435990 0 _(unix,_ld18)
+0x0041f8e0 39 fpc_longjmp()
+0x00000910 0 _(mozgkigyo,_ld132)
+0x0041cd00 17 unit system assign(olevariant)longint
+0x00408440 38 unit system fpread(longint,pchar,qword)int64
+0x0041c800 17 unit system assign(variant)terror
+0x00408910 0 fpc_sysc_mmap()
+0x00438270 16 unit rtti.system ppchar()
+0x00416550 16 unit system stringtounicodechar(rawbytestring,punicodechar,int64)punicodechar
+0x004089b0 35 unit system fpreadlink(pchar,pchar,qword)longint
+0x00435560 0 _(system,_ld36)
+0x00438c60 42 unit rtti.system textbuf()
+0x00416fb0 89 unit system pos(char,unicodestring)int64
+0x0040db50 58 unit system octstr(longint,byte)shortstring
+0x00409650 5 unit system swapendian(longword)longword
+0x0041c4e0 17 unit system assign(variant)int64
+0x0041cd80 32 unit system assign(olevariant)wordbool
+0x0040b750 13 unit system fpe_helper(extended)boolean
+0x0040b670 220 unit system float_raise(tfpuexceptionmask)
+0x0043e1f8 35 unit rtti.baseunix def7()
+0x0041fe70 129 unit system append_to_oslist(poschunk)
+0x0041e670 76 fpc_safecallcheck()
+0x00408360 0 fpc_syscall6()
+0x00434bc0 0 _(mozgkigyo,_ld69)
+0x0040ae60 0 fpc_popcnt_dword()
+0x00418d70 130 unit system ucs4stringtowidestring(ucs4string)widestring
+0x0043cf60 24 unit rtti.system pmemorymanager()
+0x0040ad80 16 unit system ntobe(qword)qword
+0x00410a30 120 unit system val_real(shortstring,int64)extended::add_digit(longword,qword,byte)
+0x00438ae0 29 unit rtti.system prtlcriticalsection()
+0x004382a0 19 unit rtti.system ucs4char()
+0x00421990 23 unit system rtleventdestroy(prtlevent)
+0x0042dea0 28 unit baseunix freeshellargv(ppchar)
+0x0000098d 0 _(mozgkigyo,_ld146)
+0x00408b60 21 unit system fps_isdir(longint)boolean
+0x00417790 266 fpc_unicodestr_float()
+0x0041cc60 22 unit system assign(olevariant)byte
+0x004332f0 408 unit unixutil stringtoppchar(pchar,smallint)ppchar
+0x00408810 0 fpc_sysc_fstat()
+0x0043c420 24 unit rtti.system def880()
+0x00435740 0 _(system,_ld52)
+0x00419a90 36 unit system dodispcallbyiderror(pointer,idispatch,pdispdesc,pointer)
+0x0042ecb0 40 unit baseunix fpwritev(longint,piovec,longint)int64
+0x0043f8c0 18 unit rtti.unixtype pcdouble()
+0x0042d2f0 11 unit crt crtclose(textrec)
+0x00439630 84 unit rtti.system tdoublerec()
+0x00410050 2272 unit system val_real(shortstring,int64)extended
+0x0041e840 391 unit system sysflushstdio()
+0x0043aff0 82 unit rtti.system idispatch()
+0x0041fbc0 23 fpc_freemem()
+0x0041b0b0 12 unit system tobject.equals(tobject)boolean
+0x00432eb0 123 unit termio tcsetattr(longint,longint,termios)longint
+0x00419fa0 129 fpc_intf_as()
+0x0040a930 6 unit system odd(longword)boolean
+0x00436820 8 unit tc.system abstracterrorproc()
+0x00431690 18 unit unix fpflock(file,longint)longint
+0x00413fa0 103 fpc_val_uint_ansistr()
+0x00438e40 15 unit rtti.system ptext()
+0x0042abb0 11 unit crt min(longint,longint)longint
+0x00428d50 69 fpc_typed_read_iso()
+0x0042d3b0 58 unit crt insline()
+0x00408c50 11 unit system wexitstatus(longint)longint
+0x00429970 193 unit system getdir(byte,openstring)
+0x0041c1b0 124 unit system assign(utf8string)variant
+0x00436990 1 unit tc.system filenamecasepreserving()
+0x004246a0 325 fpc_write_text_pchar_as_array()
+0x00427250 91 fpc_setupwritestr_ansistr()
+0x0043fb10 35 unit rtti.unixtype def52()
+0x00438c50 14 unit rtti.system tlineendstr()
+0x0043a8a0 29 unit rtti.system pstringmessagetable()
+0x00434728 0 _(mozgkigyo,_ld31)
+0x0044dce8 8 operatingsystem_parameter_argv()
+0x0041d0a0 28 unit system assign(longint)olevariant
+0x00434c48 0 _(mozgkigyo,_ld76)
+0x004400d0 58 unit rtti.unixtype pthread_rwlock_t()
+0x0043dd10 30 unit rtti.system def1511()
+EOF
+RUN
+
 NAME=m128 parsing test
 FILE=-
 CMDS="!rabin2 -D msvc ?var__m128@@3T__m128@@A"

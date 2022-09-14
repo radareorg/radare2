@@ -537,7 +537,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, -1);
 		RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 		if (!fcn && !fi) {
-			eprintf ("Can't find Function at given address\n");
+			R_LOG_ERROR ("Can't find Function at given address");
 			return false;
 		}
 		tmp_name = fcn ? fcn->name: fi->name;
@@ -555,10 +555,10 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 			if (name) {
 				sdb_bool_set (TDB, K_NORET_FUNC (name), true, 0);
 			} else {
-				eprintf ("Can't find prototype for: %s\n", tmp_name);
+				R_LOG_WARN ("Can't find prototype for: %s", tmp_name);
 			}
 		} else {
-			eprintf ("Can't find prototype for: %s\n", tmp_name);
+			R_LOG_WARN ("Can't find prototype for: %s", tmp_name);
 		}
 		//return false;
 	}
@@ -632,7 +632,7 @@ static bool noreturn_recurse(RAnal *anal, ut64 addr) {
 	ut8 bbuf[0x10] = {0};
 	ut64 recurse_addr = UT64_MAX;
 	if (!anal->iob.read_at (anal->iob.io, addr, bbuf, sizeof (bbuf))) {
-		eprintf ("Couldn't read buffer\n");
+		R_LOG_ERROR ("Couldn't read buffer");
 		return false;
 	}
 	if (r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL) < 1) {

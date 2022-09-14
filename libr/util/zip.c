@@ -62,7 +62,7 @@ static ut8 *r_inflatew(const ut8 *src, int srcLen, int *consumed, int *dstLen, i
 		}
 		err = inflate (&stream, Z_NO_FLUSH);
 		if (err < 0) {
-			eprintf ("inflate error: %d %s\n", err, gzerr (-err));
+			R_LOG_ERROR ("inflate failed: %d %s", err, gzerr (-err));
 			goto err_exit;
 		}
 	} while (err != Z_STREAM_END);

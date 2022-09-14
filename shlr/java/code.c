@@ -1,14 +1,6 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_list.h>
 #include <r_anal.h>
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdarg.h>
 #include "ops.h"
 #include "code.h"
 #include "class.h"
@@ -28,7 +20,7 @@ static int update_switch_op(ut64 addr, const ut8 * bytes);
 static int update_bytes_consumed(int sz);
 static int handle_switch_op(ut64 addr, const ut8 * bytes, char *output, int outlen);
 
-static ut8 IN_SWITCH_OP = 0;
+static R_TH_LOCAL ut8 IN_SWITCH_OP = 0;
 typedef struct current_table_switch_t {
 	ut64 addr;
 	int def_jmp;
@@ -37,15 +29,15 @@ typedef struct current_table_switch_t {
 	int cur_val;
 } CurrentTableSwitch;
 
-static CurrentTableSwitch SWITCH_OP;
-static ut64 BYTES_CONSUMED = 0LL;
+static R_TH_LOCAL CurrentTableSwitch SWITCH_OP;
+static R_TH_LOCAL ut64 BYTES_CONSUMED = 0LL;
 //static RBinJavaObj *BIN_OBJ = NULL;
 
-static void init_switch_op (void) {
+static void init_switch_op(void) {
 	memset (&SWITCH_OP, 0, sizeof (SWITCH_OP));
 }
 
-static int enter_switch_op (ut64 addr, const ut8* bytes, int len) {
+static int enter_switch_op(ut64 addr, const ut8* bytes, int len) {
 #if 0
 	int sz = ((BYTES_CONSUMED+1) % 4)
 		? (1 + 4 - (BYTES_CONSUMED+1) % 4)
@@ -57,7 +49,7 @@ static int enter_switch_op (ut64 addr, const ut8* bytes, int len) {
 	int sz = 4;
 
 	IFDBG {
-		int sz2 = (4 - (addr+1) % 4) + (addr+1)  % 4;
+		int sz2 = (4 - (addr + 1) % 4) + (addr+1)  % 4;
 		eprintf ("Addr approach: 0x%04x and BYTES_CONSUMED approach: 0x%04"PFMT64x", BYTES_CONSUMED%%4 = 0x%04x\n",
 			sz2, BYTES_CONSUMED, sz);
 	}
@@ -71,7 +63,7 @@ static int enter_switch_op (ut64 addr, const ut8* bytes, int len) {
 	return sz;
 }
 
-static bool isRelative (ut32 type) {
+static bool isRelative(ut32 type) {
 	if (type & R_ANAL_JAVA_CODEOP_CJMP) {
 		return true;
 	}
@@ -81,43 +73,46 @@ static bool isRelative (ut32 type) {
 	return false;
 }
 
-static int update_bytes_consumed (int sz) {
+static int update_bytes_consumed(int sz) {
 	BYTES_CONSUMED += sz;
 	return sz;
 }
 
-static int update_switch_op (ut64 addr, const ut8 * bytes) {
+static int update_switch_op(ut64 addr, const ut8 * bytes) {
 	int sz = 4;
+	if (addr == SWITCH_OP.addr) {
+		SWITCH_OP.cur_val = 0;
+	} else {
+		SWITCH_OP.cur_val = (addr - SWITCH_OP.addr - 16) / 4;
+	}
 	int ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
-	SWITCH_OP.cur_val++;
-	if (ccase+1 > SWITCH_OP.max_val) {
+	if (ccase + 1 > SWITCH_OP.max_val) {
 		IN_SWITCH_OP = 0;
 	}
-	IFDBG {
-		eprintf ("Addr approach: 0x%04"PFMT64x
-		" and BYTES_CONSUMED approach: 0x%04"PFMT64x
-		"\n", addr, BYTES_CONSUMED);
-	}
+	R_LOG_DEBUG ("Addr approach: 0x%04"PFMT64x" and BYTES_CONSUMED approach: 0x%04"PFMT64x, addr, BYTES_CONSUMED);
 	return update_bytes_consumed (sz);
 }
 
-static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen ) {
+static int handle_switch_op(ut64 addr, const ut8 * bytes, char *output, int outlen) {
 	int sz = 4;
 	ut32 jmp = (int)(UINT (bytes, 0)) + SWITCH_OP.addr;
+	update_switch_op (addr, bytes);
 	int ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
 	snprintf (output, outlen, "case %d: goto 0x%04x", ccase, jmp);
-	update_switch_op (addr, bytes);
 	return update_bytes_consumed (sz);
 }
 
 R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, int len, char *output, int outlen) {
-	char *arg = NULL; //(char *) malloc (1024);
+	if (idx < 0 || idx >= JAVA_OPS_COUNT) {
+		return -1;
+	}
+	char *arg = NULL;
 	int sz = 0;
 	ut32 val_one = 0;
 	ut32 val_two = 0;
 	ut8 op_byte = JAVA_OPS[idx].byte;
 	if (IN_SWITCH_OP) {
-		return handle_switch_op (addr, bytes, output, outlen );
+		return handle_switch_op (addr, bytes, output, outlen);
 	}
 
 #if 0
@@ -259,7 +254,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	return update_bytes_consumed (JAVA_OPS[idx].size);
 }
 
-R_API void r_java_new_method (void) {
+R_API void r_java_new_method(void) {
 	IFDBG eprintf ("Reseting the bytes consumed, they were: 0x%04"PFMT64x".\n", BYTES_CONSUMED);
 	init_switch_op ();
 	IN_SWITCH_OP = 0;
@@ -272,8 +267,12 @@ R_API void U(r_java_set_obj)(RBinJavaObj *obj) {
 }
 
 R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen) {
+	r_return_val_if_fail (bytes && output && outlen > 0, -1);
 	//r_cons_printf ("r_java_disasm (allowed %d): 0x%02x, 0x%0x.\n", outlen, bytes[0], addr);
-	return java_print_opcode (obj, addr, bytes[0], bytes, len, output, outlen);
+	if (len > 0) {
+		return java_print_opcode (obj, addr, bytes[0], bytes, len, output, outlen);
+	}
+	return -1;
 }
 
 static int parseJavaArgs(char *str, ut64 *args, int args_sz) {

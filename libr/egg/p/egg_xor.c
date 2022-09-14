@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2016 - pancake */
+/* radare - LGPL - Copyright 2011-2022 - pancake */
 
 /* based on @santitox patch */
 #include <r_egg.h>
@@ -15,34 +15,34 @@ static RBuffer *build(REgg *egg) {
 	if (!key || !*key) {
 		free (key);
 		key = strdup (default_key);
-		eprintf ("XOR key not provided. Using (%s) as the key\n", key);
+		R_LOG_WARN ("XOR key not provided. Using (%s) as the key", key);
 	}
 	nkey = r_num_math (NULL, key);
 	if (nkey == 0) {
-		eprintf ("Invalid key (%s)\n", key);
+		R_LOG_ERROR ("Invalid key (%s)", key);
 		free (key);
 		return false;
 	}
 	if (nkey != (nkey & 0xff)) {
 		nkey &= 0xff;
-		eprintf ("xor key wrapped to (%d)\n", nkey);
+		R_LOG_INFO ("xor key wrapped to (%d)", nkey);
 	}
 	if (r_buf_size (egg->bin) > 240) { // XXX
-		eprintf ("shellcode is too long :(\n");
+		R_LOG_ERROR ("shellcode is too long :(");
 		free (key);
 		return NULL;
 	}
 	sc = egg->bin; // hack
 	if (!r_buf_size (sc)) {
-		eprintf ("No shellcode found!\n");
+		R_LOG_ERROR ("No shellcode found!");
 		free (key);
 		return NULL;
 	}
 
-	for (i = 0; i<r_buf_size (sc); i++) {
+	for (i = 0; i < r_buf_size (sc); i++) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
-		if ((r_buf_read8_at (sc, i) ^ nkey)==0) {
-			eprintf ("This xor key generates null bytes. Try again.\n");
+		if ((r_buf_read8_at (sc, i) ^ nkey) == 0) {
+			R_LOG_INFO ("This xor key generates null bytes. Try again");
 			free (key);
 			return NULL;
 		}
@@ -76,7 +76,7 @@ static RBuffer *build(REgg *egg) {
 
 		r_buf_append_bytes (buf, stub, STUBLEN);
 
-		for (i = 0; i<r_buf_size (sc); i++) {
+		for (i = 0; i < r_buf_size (sc); i++) {
 			ut8 v = r_buf_read8_at (sc, i) ^ nkey;
 			r_buf_write_at (sc, i, &v, sizeof (v));
 		}

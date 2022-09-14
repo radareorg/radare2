@@ -1,12 +1,6 @@
-/* Copyright (C) 2008-2021 - pancake, unlogic, emvivre */
+/* Copyright (C) 2008-2022 - pancake, unlogic, emvivre */
 
-#include <r_flag.h>
 #include <r_core.h>
-#include <r_asm.h>
-#include <r_lib.h>
-#include <r_types.h>
-#include <stdio.h>
-#include <string.h>
 
 static ut64 getnum(RAsm *a, const char *s);
 
@@ -232,7 +226,7 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 	} else if (op->operands[0].type & OT_BYTE) {
 		if (op->operands[1].immediate > 255) {
-			eprintf ("Error: Immediate exceeds bounds\n");
+			R_LOG_ERROR ("Immediate exceeds bounds");
 			return -1;
 		}
 		data[l++] = 0x80;
@@ -314,7 +308,7 @@ static int process_group_2(RAsm *a, ut8 *data, const Opcode *op) {
 
 	st32 immediate = op->operands[1].immediate * op->operands[1].sign;
 	if (immediate > 255 || immediate < -128) {
-		eprintf ("Error: Immediate exceeds bounds\n");
+		R_LOG_ERROR ("Immediate exceeds bounds");
 		return -1;
 	}
 
@@ -406,7 +400,7 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 				&& op->operands[1].type & (OT_DWORD | OT_QWORD)) {
 			data[l++] = op1 + 0x1;
 		} else {
-			eprintf ("Error: mismatched operand sizes\n");
+			R_LOG_ERROR ("mismatched operand sizes");
 			return -1;
 		}
 		reg = op->operands[1].reg;
@@ -434,7 +428,7 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 					&& op->operands[1].type & (OT_DWORD | OT_QWORD)) {
 				data[l++] = op1 + 0x3;
 			} else {
-				eprintf ("Error: mismatched operand sizes\n");
+				R_LOG_ERROR ("mismatched operand sizes");
 				return -1;
 			}
 			reg = op->operands[0].reg;
@@ -999,7 +993,7 @@ static int opaam(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type) {
-		eprintf ("Error: Invalid operands\n");
+		R_LOG_ERROR ("Invalid operands");
 		return -1;
 	}
 	is_valid_registers (op);
@@ -1231,7 +1225,7 @@ static int opimul(RAsm *a, ut8 *data, const Opcode *op) {
 		if ((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) {
 			if (op->operands[1].type & OT_CONSTANT) {
 				if (op->operands[1].immediate == -1) {
-					eprintf ("Error: Immediate exceeds max\n");
+					R_LOG_ERROR ("Immediate exceeds max");
 					return -1;
 				}
 				immediate = op->operands[1].immediate * op->operands[1].sign;
@@ -1414,7 +1408,7 @@ static int opclflush(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opinc(RAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type) {
-		eprintf ("Error: Invalid operands\n");
+		R_LOG_ERROR ("Invalid operands");
 		return -1;
 	}
 	is_valid_registers (op);
@@ -1684,7 +1678,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	} else if (!strcmp (op->mnemonic, "jo")) {
 		data[l++] = 0x80;
 	} else if (!strcmp (op->mnemonic, "jp")
-			|| !strcmp(op->mnemonic, "jpe")) {
+			|| !strcmp (op->mnemonic, "jpe")) {
 		data[l++] = 0x8a;
 	} else if (!strcmp (op->mnemonic, "js")
 			|| !strcmp (op->mnemonic, "jz")) {
@@ -1704,7 +1698,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplea(RAsm *a, ut8 *data, const Opcode *op){
+static int oplea(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int mod = 0;
 	st32 offset = 0;
@@ -1773,7 +1767,7 @@ static int oples(RAsm *a, ut8* data, const Opcode *op) {
 	int l = 0;
 	int offset = 0;
 	int mod = 0;
-	
+
 	if (op->operands[1].type & OT_MEMORY) {
 		data[l++] = 0xc4;
 		if (op->operands[1].type & OT_GPREG) {
@@ -1822,7 +1816,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 		if (immediate_out_of_range (bits, op->operands[1].immediate)) {
 			return -1;
-		}	
+		}
 		immediate = op->operands[1].immediate * op->operands[1].sign;
 		if (op->operands[0].type & OT_GPREG && !(op->operands[0].type & OT_MEMORY)) {
 			if ((op->operands[0].type & OT_DWORD)
@@ -2375,9 +2369,6 @@ static int oppop(RAsm *a, ut8 *data, const Opcode *op) {
 	int offset = 0;
 	int mod = 0;
 	if ((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) {
-		if (op->operands[0].type & OT_MEMORY) {
-			return -1;
-		}
 		if (op->operands[0].type & OT_REGTYPE & OT_SEGMENTREG) {
 			ut8 base;
 			if (op->operands[0].reg & X86R_FS) {
@@ -2427,7 +2418,7 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int mod = 0;
-	st32 immediate = 0;;
+	st32 immediate = 0;
 	st32 offset = 0;
 	if (op->operands[0].type & OT_GPREG
 			&& !(op->operands[0].type & OT_MEMORY)) {
@@ -2446,7 +2437,7 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 			ut8 base = 0x50;
 			if (op->operands[0].reg == X86R_RIP) {
-				eprintf ("Invalid register\n");
+				R_LOG_ERROR ("Invalid register");
 				return -1;
 			}
 			data[l++] = base + op->operands[0].reg;
@@ -2479,7 +2470,7 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 	} else {
 		if (immediate_out_of_range (a->config->bits, op->operands[0].immediate)) {
 			return -1;
-		}	
+		}
 		immediate = op->operands[0].immediate * op->operands[0].sign;
 		if (immediate >= 128 || immediate < -128) {
 			data[l++] = 0x68;
@@ -2582,14 +2573,14 @@ static int opretf(RAsm *a, ut8 *data, const Opcode *op) {
 static int opstos(RAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
-	if (!strcmp(op->mnemonic, "stosw")) {
+	if (!strcmp (op->mnemonic, "stosw")) {
 		data[l++] = 0x66;
 	}
-	if (!strcmp(op->mnemonic, "stosb")) {
+	if (!strcmp (op->mnemonic, "stosb")) {
 		data[l++] = 0xaa;
-	} else if (!strcmp(op->mnemonic, "stosw")) {
+	} else if (!strcmp (op->mnemonic, "stosw")) {
 		data[l++] = 0xab;
-	} else if (!strcmp(op->mnemonic, "stosd")) {
+	} else if (!strcmp (op->mnemonic, "stosd")) {
 		data[l++] = 0xab;
 	}
 	return l;
@@ -2663,7 +2654,7 @@ static int optest(RAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	if (!op->operands[0].type || !op->operands[1].type) {
-		eprintf ("Error: Invalid operands\n");
+		R_LOG_ERROR ("Invalid operands");
 		return -1;
 	}
 	if (a->config->bits == 64) {
@@ -4790,13 +4781,13 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		// read number
 		// const int maxreg = (a->config->bits == 64) ? 15 : 7;
 		if (getToken (token, pos, &nextpos) != TT_NUMBER) {
-			eprintf ("Expected register number '%s'\n", str + *pos);
+			R_LOG_ERROR ("Expected register number '%s'", str + *pos);
 			return X86R_UNDEFINED;
 		}
 		reg = getnum (a, token + *pos);
 		// st and mm go up to 7, xmm up to 15
 		if ((reg > 15) || ((*type & (OT_FPUREG | OT_MMXREG) & ~OT_REGALL) && reg > 7))   {
-			eprintf ("Too large register index!\n");
+			R_LOG_ERROR ("Too large register index!");
 			return X86R_UNDEFINED;
 		}
 		*pos = nextpos;
@@ -4895,7 +4886,6 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		bool first_reg = true;
 		while (str[pos] != ']') {
 			if (pos > nextpos) {
-			//	eprintf ("Error parsing instruction\n");
 				break;
 			}
 			pos = nextpos;
@@ -5172,7 +5162,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	LookupTable *lt_ptr;
 	int retval = -1;
 	Opcode instr = {0};
-	
+
 	strncpy (op, str, sizeof (op) - 1);
 	op[sizeof (op) - 1] = '\0';
 	parseOpcode (a, op, &instr);

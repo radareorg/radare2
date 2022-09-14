@@ -1,19 +1,89 @@
-/* radare - LGPL - Copyright 2016-2017 - bobby.smiles32@gmail.com */
+/* radare - LGPL - Copyright 2016-2022 - bobby.smiles32@gmail.com, condret */
 /*
  * TODO: finish esil support of the non vector instructions
- * TODO: implement vector instruction using custom esil commands
- * (will be easier than pure esil approach)
  * TODO: refactor code to simplify per opcode analysis
  */
 
 #include <string.h>
 #include <r_types.h>
 #include <r_lib.h>
-#include <r_asm.h>
 #include <r_anal.h>
-#include "../../asm/arch/rsp/rsp_idec.h"
+#include <rsp/rsp_idec.h>
+
+static RStrBuf *disassemble(RStrBuf *buf_asm, rsp_instruction *r_instr) {
+	int i;
+
+	r_strbuf_append (buf_asm, r_instr->mnemonic);
+	for (i = 0; i < r_instr->noperands; i++) {
+		r_strbuf_append (buf_asm, (i == 0) ? " " : ", ");
+
+		switch (r_instr->operands[i].type) {
+		case RSP_OPND_GP_REG:
+			r_strbuf_append (buf_asm, rsp_gp_reg_soft_names[r_instr->operands[i].u]);
+			break;
+		case RSP_OPND_OFFSET:
+		case RSP_OPND_TARGET:
+			r_strbuf_appendf (buf_asm, "0x%08"PFMT64x, r_instr->operands[i].u);
+			break;
+		case RSP_OPND_ZIMM:
+			{
+			int shift = (r_instr->operands[i].u & ~0xffff) ? 16 : 0;
+			r_strbuf_appendf (buf_asm, "0x%04"PFMT64x,
+				r_instr->operands[i].u >> shift);
+			}
+			break;
+		case RSP_OPND_SIMM:
+			r_strbuf_appendf (buf_asm, "%s0x%04"PFMT64x,
+			(r_instr->operands[i].s<0)?"-":"",
+			(r_instr->operands[i].s<0)?-r_instr->operands[i].s:r_instr->operands[i].s);
+			break;
+		case RSP_OPND_SHIFT_AMOUNT:
+			r_strbuf_appendf (buf_asm, "%"PFMT64u, r_instr->operands[i].u);
+			break;
+		case RSP_OPND_BASE_OFFSET:
+			r_strbuf_appendf (buf_asm, "%s0x%04x(%s)",
+			(r_instr->operands[i].s<0)?"-":"",
+			(ut32)((r_instr->operands[i].s<0)?-r_instr->operands[i].s:r_instr->operands[i].s),
+			rsp_gp_reg_soft_names[r_instr->operands[i].u]);
+			break;
+		case RSP_OPND_C0_REG:
+			r_strbuf_append (buf_asm, rsp_c0_reg_soft_names[r_instr->operands[i].u]);
+			break;
+		case RSP_OPND_C2_CREG:
+			r_strbuf_append (buf_asm, rsp_c2_creg_names[r_instr->operands[i].u]);
+			break;
+		case RSP_OPND_C2_ACCU:
+			r_strbuf_append (buf_asm, rsp_c2_accu_names[r_instr->operands[i].u]);
+			break;
+		case RSP_OPND_C2_VREG:
+			r_strbuf_append (buf_asm, rsp_c2_vreg_names[r_instr->operands[i].u]);
+			break;
+		case RSP_OPND_C2_VREG_BYTE:
+		case RSP_OPND_C2_VREG_SCALAR:
+			r_strbuf_appendf (buf_asm, "%s[%u]", rsp_c2_vreg_names[r_instr->operands[i].u],
+				(ut32)r_instr->operands[i].s);
+			break;
+		case RSP_OPND_C2_VREG_ELEMENT:
+			r_strbuf_appendf (buf_asm, "%s%s", rsp_c2_vreg_names[r_instr->operands[i].u],
+				rsp_c2_vreg_element_names[r_instr->operands[i].s]);
+			break;
+		default: /* should not happend */
+			r_strbuf_append (buf_asm, "invalid");
+			break;
+		}
+	}
+
+	return buf_asm;
+}
 
 static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
+	if (len < 4) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
+		return op->size = 0;
+	}
 	int i;
 	typedef struct {
 		RAnalValue* value;
@@ -24,10 +94,6 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	memset (parsed_operands, 0, sizeof (ParsedOperands) * RSP_MAX_OPNDS);
 	rsp_instruction r_instr;
 
-	if (!op) {
-		return 4;
-	}
-
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 4;
 	op->addr = addr;
@@ -35,6 +101,13 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 
 	ut32 iw = r_read_ble32 (b, anal->config->big_endian);
 	r_instr = rsp_instruction_decode (addr, iw);
+
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		RStrBuf *buf_asm = r_strbuf_new ("");
+		if (buf_asm) {
+			op->mnemonic = r_strbuf_drain (disassemble (buf_asm, &r_instr));
+		} // else ???
+	}
 
 	/* parse operands */
 	for (i = 0; i < r_instr.noperands; i++) {

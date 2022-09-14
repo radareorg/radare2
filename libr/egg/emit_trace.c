@@ -119,21 +119,20 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 	/* NOTE that jb/ja are inverted to fit cmp opcode */
 	if (b) {
 		*b = '\0';
-		op = e?"bge":"bgt";
-		arg = b+1;
-	} else
-	if (g) {
+		op = e? "bge": "bgt";
+		arg = b + 1;
+	} else if (g) {
 		*g = '\0';
-		op = e?"ble":"blt";
-		arg = g+1;
+		op = e? "ble": "blt";
+		arg = g + 1;
 	}
 	if (!arg) {
 		if (e) {
-			arg = e+1;
+			arg = e + 1;
 			op = "bne";
 		} else {
 			arg = "0";
-			op = n?"bne":"beq";
+			op = n? "bne": "beq";
 		}
 	}
 

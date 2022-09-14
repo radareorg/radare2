@@ -91,8 +91,7 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 
 		yxml_ret_t r = yxml_parse (&x, doc);
 		if (r < 0) {
-			eprintf ("Parsing error at :%" PRIu32 ":%" PRIu64 " byte offset %" PRIu64 "\n",
-				x.line, x.byte, x.total);
+			R_LOG_ERROR ("Parse at :%" PRIu32 ":%" PRIu64 " byte offset %" PRIu64, x.line, x.byte, x.total);
 			goto beach;
 		}
 

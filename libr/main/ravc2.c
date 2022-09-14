@@ -11,20 +11,20 @@ static void help(void) {
 	usage ();
 	printf (
 		"Flags:\n"
-		" -g                 Use git instead of rvc\n"
-		" -h                 Show this help\n"
-		" -q                 Be quiet\n"
-		" -v                 Show version\n"
-		" RAVC2_USER=[n]     Override cfg.user value to author commit.\n"
-		" init               Initialize repository in current directory\n"
-		" add [file ..]      Add files to the current repository\n"
-		" checkout [name]    Checkout given branch name\n"
-		" log                List commits in current branch\n"
-		" branch             List all available branches\n"
-		" commit [a] [m] [f] Perform a commit with the added files\n"
-		" branch [name]      Change to another branch\n"
+		" -g                 use git instead of rvc\n"
+		" -h                 show this help\n"
+		" -q                 be quiet\n"
+		" -v                 show version\n"
+		" RAVC2_USER=[n]     override cfg.user value to author commit.\n"
+		" init               initialize repository in current directory\n"
+		" add [file ..]      add files to the current repository\n"
+		" checkout [name]    checkout given branch name\n"
+		" log                list commits in current branch\n"
+		" branch             list all available branches\n"
+		" commit [a] [m] [f] perform a commit with the added files\n"
+		" branch [name]      change to another branch\n"
 		"Environment:\n"
-		" RAVC2_USER=[n]     Override cfg.user value to author commit.\n"
+		" RAVC2_USER=[n]     override cfg.user value to author commit.\n"
 		"Examples:\n"
 		"  ravc2 init\n"
 		"  man ravc2\n"
@@ -81,8 +81,8 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 
 	if (git) {
-		eprintf ("TODO: r_vc_git APIs should be called from r_vc\n");
-		eprintf ("TODO: r_vc_new should accept options argument\n");
+		R_LOG_WARN ("TODO: r_vc_git APIs should be called from r_vc");
+		R_LOG_WARN ("TODO: r_vc_new should accept options argument");
 	}
 	const char *action = opt.argv[opt.ind];
 	if (!action) {
@@ -113,7 +113,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 	bool save = false; // only save the db if the command ran successfully
 	// commands that need Rvc *
-	if (!strcmp(action, "branch")) {
+	if (!strcmp (action, "branch")) {
 		if (opt.argc <= 2) {
 			RList *branches = r_vc_get_branches(rvc);
 			RListIter *iter;
@@ -125,7 +125,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		} else {
 			save = r_vc_branch (rvc, opt.argv[opt.ind + 1]);
 		}
-	} else if (!strcmp(action, "commit")) {
+	} else if (!strcmp (action, "commit")) {
 		if (opt.argc < 4) {
 			eprintf ("Usage: ravc2 commit [message] [files...]\n");
 			free (rp);
@@ -135,7 +135,8 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		if (message) {
 			RList *files = r_list_new();
 			if (files) {
-				for (size_t i = 2; i < argc - 1; i++) {
+				size_t i;
+				for (i = 2; i < argc - 1; i++) {
 					char *file = r_str_new(argv[opt.ind + i]);
 					if (!file || !r_list_append (files, file)) {
 						free (message);
@@ -153,9 +154,9 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			}
 			free (message);
 		}
-	} else if (!strcmp(action, "checkout") && opt.argc > 2) {
+	} else if (!strcmp (action, "checkout") && opt.argc > 2) {
 		save =  r_vc_checkout(rvc, opt.argv[opt.ind + 1]);
-	} else if (!strcmp(action, "status")) {
+	} else if (!strcmp (action, "status")) {
 		char *current_branch = r_vc_current_branch(rvc);
 		if (current_branch) {
 			printf ("Branch: %s\n", current_branch);
@@ -172,9 +173,9 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			}
 			r_list_free (uncommitted);
 		}
-	} else if (!strcmp(action, "reset")) {
+	} else if (!strcmp (action, "reset")) {
 		save = r_vc_reset(rvc);
-	} else if (!strcmp(action, "log")) {
+	} else if (!strcmp (action, "log")) {
 		RList *commits = r_vc_log(rvc);
 		RListIter *iter;
 		const char *commit;
@@ -184,7 +185,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		r_list_free (commits);
 		return 0;
 	}
-	eprintf ("Incorrect command\n");
+	R_LOG_ERROR ("Incorrect command");
 ret:
 	r_vc_close (rvc, save);
 	return !save;

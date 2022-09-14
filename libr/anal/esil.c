@@ -1,9 +1,8 @@
-/* radare - LGPL - Copyright 2014-2021 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2022 - pancake, condret */
+
+#define R_LOG_ORIGIN "anal.esil"
 
 #include <r_anal.h>
-#include <r_types.h>
-#include <r_util.h>
-#include <r_bind.h>
 
 #if __wasi__ || EMSCRIPTEN
 #define FE_OVERFLOW 0
@@ -17,6 +16,7 @@
 #define ESIL_MACRO 0
 #define IFDBG if (esil && esil->verbose > 1)
 #define IFVBS if (esil && esil->verbose > 0)
+#define ERR(...) if (esil->verbose) { R_LOG_ERROR (__VA_ARGS__); }
 #define FLG(x) R_ANAL_ESIL_FLAG_##x
 #define cpuflag(x, y)\
 if (esil) {\
@@ -38,8 +38,6 @@ static inline ut64 genmask(int bits) {
 	}
 	return m;
 }
-
-#define ERR(x) if (esil->verbose) { eprintf ("%s\n", x); }
 
 static bool isnum(RAnalEsil *esil, const char *str, ut64 *num) {
 	if (!esil || !str) {
@@ -99,8 +97,10 @@ static bool popRN(RAnalEsil *esil, ut64 *n) {
 /* R_ANAL_ESIL API */
 
 static void esil_ops_free(HtPPKv *kv) {
-	free (kv->key);
-	free (kv->value);
+	if (kv) {
+		free (kv->key);
+		free (kv->value);
+	}
 }
 
 R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
@@ -133,11 +133,10 @@ R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb cod
 	if (!eop) {
 		eop = R_NEW (RAnalEsilOp);
 		if (!eop) {
-			eprintf ("Cannot allocate esil-operation %s\n", op);
 			return false;
 		}
 		if (!ht_pp_insert (esil->ops, op, eop)) {
-			eprintf ("Cannot set esil-operation %s\n", op);
+			R_LOG_ERROR ("Cannot set esil-operation %s", op);
 			free (eop);
 			return false;
 		}
@@ -441,18 +440,18 @@ static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname
 	const char *bp = r_reg_get_name (esil->anal->reg, R_REG_NAME_BP);
 
 	if (!pc) {
-		eprintf ("Warning: RReg profile does not contain PC register\n");
+		R_LOG_WARN ("RReg profile does not contain PC register");
 		return false;
 	}
 	if (!sp) {
-		eprintf ("Warning: RReg profile does not contain SP register\n");
+		R_LOG_WARN ("RReg profile does not contain SP register");
 		return false;
 	}
 	if (!bp) {
-		eprintf ("Warning: RReg profile does not contain BP register\n");
+		R_LOG_WARN ("RReg profile does not contain BP register");
 		return false;
 	}
-	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp(reg->name, bp)) || num)) { //I trust k-maps
+	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp (reg->name, bp)) || num)) { //I trust k-maps
 		r_reg_set_value (esil->anal->reg, reg, num);
 		return true;
 	}
@@ -609,7 +608,7 @@ R_API bool r_anal_esil_signext(RAnalEsil *esil, bool assign) {
 		return false;
 	}
 	free (p_dst);
-	
+
 	// Make sure the other bits are 0
 	ut64 m = 0;
 	if (dst > 0 && dst < 64) {
@@ -787,6 +786,7 @@ static bool esil_js(RAnalEsil *esil) {
 //	- condret
 // YES PLS KILL IT
 static bool esil_address(RAnalEsil *esil) {
+	R_LOG_WARN ("support for esil operation $$ is about to end soon, avoid using it!");
 	r_return_val_if_fail (esil, false);
 	// esil->address = r_reg_getv (esil->anal->reg, "pc");
 	return r_anal_esil_pushnum (esil, esil->address);
@@ -822,9 +822,7 @@ static bool esil_eq(RAnalEsil *esil) {
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 	if (!src || !dst) {
-		if (esil->verbose) {
-			eprintf ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x"\n", esil->address);
-		}
+		ERR ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x, esil->address);
 		free (src);
 		free (dst);
 		return false;
@@ -1142,7 +1140,7 @@ static int esil_ifset(RAnalEsil *esil) {
 }
 #endif
 
-static bool esil_if(RAnalEsil *esil) {
+static bool esil_if (RAnalEsil *esil) {
 	ut64 num = 0LL;
 	if (esil->skip) {
 		esil->skip++;
@@ -1171,11 +1169,8 @@ static bool esil_lsl(RAnalEsil *esil) {
 			if (num2 > sizeof (ut64) * 8) {
 				ERR ("esil_lsl: shift is too big");
 			} else {
-				if (num2 > 63) {
-					r_anal_esil_pushnum (esil, 0);
-				} else {
-					r_anal_esil_pushnum (esil, num << num2);
-				}
+				const ut64 shift = (num2 > 63)? 0: num << num2;
+				r_anal_esil_pushnum (esil, shift);
 				ret = true;
 			}
 		} else {
@@ -2111,7 +2106,7 @@ static bool esil_poke_some(RAnalEsil *esil) {
 					const int size_bytes = regsize / 8;
 					const ut32 written = r_anal_esil_mem_write (esil, ptr, b, size_bytes);
 					if (written != size_bytes) {
-						//eprintf ("Cannot write at 0x%08" PFMT64x "\n", ptr);
+						//R_LOG_ERROR ("Cannot write at 0x%08" PFMT64x, ptr);
 						esil->trap = 1;
 					}
 					ptr += size_bytes;
@@ -2139,7 +2134,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 	ut32 bytes = bits / 8;
 	char *dst = r_anal_esil_pop (esil);
 	if (!dst) {
-		eprintf ("ESIL-ERROR at 0x%08"PFMT64x": Cannot peek memory without specifying an address\n", esil->address);
+		R_LOG_ERROR ("ESIL failed at 0x%08"PFMT64x": Won't peek the memory unless the users tells that", esil->address);
 		return false;
 	}
 	//eprintf ("GONA PEEK %d dst:%s\n", bits, dst);
@@ -2157,7 +2152,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 			return ret;
 		}
 		ut64 bitmask = genmask (bits - 1);
-		ut8 a[sizeof(ut64)] = {0};
+		ut8 a[sizeof (ut64)] = {0};
 		ret = !!r_anal_esil_mem_read (esil, addr, a, bytes);
 #if 0
 		ut64 b = r_read_ble64 (a, esil->anal->config->big_endian);
@@ -2224,7 +2219,7 @@ static bool esil_peek_some(RAnalEsil *esil) {
 					bool oks = r_anal_esil_mem_read (esil, ptr, a, 4);
 					if (!oks) {
 						if (esil->verbose) {
-							eprintf ("Cannot peek from 0x%08" PFMT64x "\n", ptr);
+							R_LOG_ERROR ("Cannot peek from 0x%08" PFMT64x, ptr);
 						}
 						free (dst);
 						free (count);
@@ -3018,7 +3013,7 @@ static bool esil_is_nan(RAnalEsil *esil) {
 		} else {
 			ERR("esil_is_nan: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_is_nan: fail to get argument from stack.");
 	}
@@ -3039,7 +3034,7 @@ static bool esil_int_to_double(RAnalEsil *esil, int sign) {
 		} else {
 			ERR("esil_int_to_float: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_int_to_float: fail to get argument from stack.");
 	}
@@ -3067,7 +3062,7 @@ static bool esil_double_to_int(RAnalEsil *esil) {
 		} else {
 			ERR("esil_float_to_int: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_float_to_int: fail to get argument from stack.");
 	}
@@ -3098,8 +3093,8 @@ static bool esil_double_to_float(RAnalEsil *esil) {
 		ERR("esil_float_to_float: invalid parameters.");
 	}
 
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3124,8 +3119,8 @@ static bool esil_float_to_double(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_to_float: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3142,10 +3137,10 @@ static bool esil_float_cmp(RAnalEsil *esil) {
 			ret = r_anal_esil_pushnum (esil, fabs(s - d) <= DBL_EPSILON);
 		}
 	} else {
-		ERR("esil_float_cmp: invalid parameters.");
+		ERR ("esil_float_cmp: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3164,8 +3159,8 @@ static bool esil_float_negcmp(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_negcmp: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3234,8 +3229,8 @@ static bool esil_float_add(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_add: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3264,8 +3259,8 @@ static bool esil_float_sub(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_sub: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3294,8 +3289,8 @@ static bool esil_float_mul(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_mul: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3324,8 +3319,8 @@ static bool esil_float_div(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_div: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3340,7 +3335,7 @@ static bool esil_float_neg(RAnalEsil *esil) {
 		} else {
 			ERR("esil_float_neg: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_float_neg: fail to get element from stack.");
 	}
@@ -3362,7 +3357,7 @@ static bool esil_float_ceil(RAnalEsil *esil) {
 		} else {
 			ERR("esil_float_ceil: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_float_ceil: fail to get element from stack.");
 	}
@@ -3384,7 +3379,7 @@ static bool esil_float_floor(RAnalEsil *esil) {
 		} else {
 			ERR("esil_float_floor: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_float_floor: fail to get element from stack.");
 	}
@@ -3407,7 +3402,7 @@ static bool esil_float_round(RAnalEsil *esil) {
 		} else {
 			ERR("esil_float_round: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_float_round: fail to get element from stack.");
 	}
@@ -3429,7 +3424,7 @@ static bool esil_float_sqrt(RAnalEsil *esil) {
 		} else {
 			ERR("esil_float_sqrt: invalid parameters.");
 		}
-		free(src);
+		free (src);
 	} else {
 		ERR("esil_float_sqrt: fail to get element from stack.");
 	}
@@ -3495,7 +3490,7 @@ static bool runword(RAnalEsil *esil, const char *word) {
 		}
 		return true;
 	}
-	if (esil->skip && strcmp(word, "?{")) {
+	if (esil->skip && strcmp (word, "?{")) {
 		return true;
 	}
 
@@ -3574,7 +3569,7 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 			return 2;
 		}
 		if (esil->verbose) {
-			eprintf ("Cannot find word %d\n", esil->parse_goto);
+			R_LOG_ERROR ("Cannot find word %d", esil->parse_goto);
 		}
 		return 1;
 	}
@@ -3588,15 +3583,14 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 }
 
 static bool __stepOut(RAnalEsil *esil, const char *cmd) {
-	static R_TH_LOCAL bool inCmdStep = false;
-	if (cmd && esil && esil->cmd && !inCmdStep) {
-		inCmdStep = true;
+	if (cmd && esil && esil->cmd && !esil->in_cmd_step) {
+		esil->in_cmd_step = true;
 		if (esil->cmd (esil, cmd, esil->address, 0)) {
-			inCmdStep = false;
+			esil->in_cmd_step = false;
 			// if returns 1 we skip the impl
 			return true;
 		}
-		inCmdStep = false;
+		esil->in_cmd_step = false;
 	}
 	return false;
 }
@@ -3745,7 +3739,7 @@ R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 		}
 		free (popped);
 	} else {
-		eprintf ("Warning: Cannot pop because The ESIL stack is empty\n");
+		R_LOG_WARN ("Cannot pop because The ESIL stack is empty");
 		return -1;
 	}
 	return ret;

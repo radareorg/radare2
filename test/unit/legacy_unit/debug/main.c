@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 
 	ret = r_debug_use (dbg, "native");
 	printf ("Using native debugger = %s\n", r_str_bool(ret));
-	
+
 	tid = pid = r_io_system (io, "pid");
 	eprintf (" My pid is : %d\n", pid);
 	r_debug_select (dbg, pid, tid);

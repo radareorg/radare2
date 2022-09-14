@@ -438,7 +438,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"fpu	q29h	.64	760	0\n"
 		"fpu	q30h	.64	776	0\n"
 		"fpu	q31h	.64	792	0\n"
-		
+
 		/* scalable vector registers */
 		// these can be more than 128 bit
 		// adding mostly to stop ESIL errors

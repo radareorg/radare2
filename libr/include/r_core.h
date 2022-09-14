@@ -4,32 +4,32 @@
 #define R2_CORE_H
 
 #include <r_main.h>
-#include "r_socket.h"
-#include "r_types.h"
-#include "r_magic.h"
-#include "r_agraph.h"
-#include "r_io.h"
-#include "r_fs.h"
-#include "r_lib.h"
-#include "r_egg.h"
-#include "r_lang.h"
-#include "r_asm.h"
-#include "r_parse.h"
-#include "r_anal.h"
-#include "r_cmd.h"
-#include "r_cons.h"
-#include "r_search.h"
-#include "r_sign.h"
-#include "r_debug.h"
-#include "r_flag.h"
-#include "r_config.h"
-#include "r_bin.h"
-#include "r_hash.h"
-#include "r_util.h"
-#include "r_util/r_print.h"
-#include "r_crypto.h"
-#include "r_bind.h"
-#include "r_codemeta.h"
+#include <r_socket.h>
+#include <r_types.h>
+#include <r_magic.h>
+#include <r_agraph.h>
+#include <r_io.h>
+#include <r_fs.h>
+#include <r_lib.h>
+#include <r_egg.h>
+#include <r_lang.h>
+#include <r_asm.h>
+#include <r_parse.h>
+#include <r_anal.h>
+#include <r_cmd.h>
+#include <r_cons.h>
+#include <r_search.h>
+#include <r_sign.h>
+#include <r_debug.h>
+#include <r_flag.h>
+#include <r_config.h>
+#include <r_bin.h>
+#include <r_hash.h>
+#include <r_util.h>
+#include <r_util/r_print.h>
+#include <r_crypto.h>
+#include <r_bind.h>
+#include <r_codemeta.h>
 
 // TODO: thois var should be 1 at some point :D
 #define SHELLFILTER 0
@@ -220,7 +220,6 @@ typedef struct r_core_visual_t {
 	RList *tabs;
 	int tab;
 } RCoreVisual;
-// #define RCoreVisual Visual
 
 typedef struct {
 	int x;
@@ -285,7 +284,7 @@ struct r_core_t {
 	ut64 yank_addr;
 	bool tmpseek;
 	bool vmode; // is r2 in visual or panels mode?
-	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
+	int interrupted; // XXX R2_580 - this variable is unused and must be removed
 	/* files */
 	RCons *cons;
 	RIO *io;
@@ -328,7 +327,7 @@ struct r_core_t {
 	bool keep_asmqjmps;
 	RCoreVisual visual;
 	// visual // TODO: move them into RCoreVisual
-	int http_up;
+	int http_up; // R2_580 bool
 	int gdbserver_up;
 	RCoreVisualMode printidx;
 	char *stkcmd;
@@ -347,6 +346,9 @@ struct r_core_t {
 	char *cmdfilter;
 	bool break_loop;
 	RList *undos;
+#if R2_580
+	int undoindex;
+#endif
 	bool binat;
 	bool fixedbits; // will be true when using @b:
 	bool fixedarch; // will be true when using @a:
@@ -369,7 +371,9 @@ struct r_core_t {
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
 	RThreadChannel *chan; // query
-
+#if R2_580
+	bool in_log_process // false;
+#endif
 	RMainCallback r_main_radare2;
 	// int (*r_main_radare2)(int argc, char **argv);
 	int (*r_main_rafind2)(int argc, const char **argv);
@@ -506,7 +510,7 @@ R_API int r_core_visual_xrefs_x(RCore *core);
 R_API int r_core_visual_xrefs_X(RCore *core);
 R_API void r_core_visual_showcursor(RCore *core, int x);
 R_API void r_core_visual_offset(RCore *core);
-R_API int r_core_visual_hud(RCore *core);
+R_API int r_core_visual_hud(RCore *core); // R2_580 bool
 R_API void r_core_visual_jump(RCore *core, ut8 ch);
 R_API void r_core_visual_disasm_up(RCore *core, int *cols);
 R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols);
@@ -840,6 +844,7 @@ R_API void r_core_hack_help(const RCore *core);
 R_API int r_core_hack(RCore *core, const char *op);
 R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append);
 R_API void r_core_diff_show(RCore *core, RCore *core2);
+R_API void r_core_diff_show_json(RCore *core, RCore *core2);
 R_API void r_core_clippy(RCore *core, const char *msg);
 
 /* watchers */
@@ -857,6 +862,10 @@ R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond);
 R_API void r_core_undo_free(RCoreUndo *cu);
 R_API void r_core_undo_push(RCore *core, RCoreUndo *cu);
 R_API void r_core_undo_pop(RCore *core);
+#if R2_580
+R_API void r_core_undo_up(RCore *core);
+R_API void r_core_undo_down(RCore *core);
+#endif
 
 /* logs */
 typedef int (*RCoreLogCallback)(RCore *core, int count, const char *message);
@@ -874,10 +883,10 @@ typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);
 R_API char *r_str_widget_list(void *user, RList *list, int rows, int cur, PrintItemCallback cb);
 R_API PJ *r_core_pj_new(RCore *core);
 /* help */
-R_API void r_core_cmd_help(const RCore *core, const char *help[]);
-R_API void r_core_cmd_help_json(const RCore *core, const char *help[]);
-R_API void r_core_cmd_help_match(const RCore *core, const char *help[], R_BORROW R_NONNULL char *cmd, bool exact);
-R_API void r_core_cmd_help_match_spec(const RCore *core, const char *help[], R_BORROW R_NONNULL char *cmd, char spec, bool exact);
+R_API void r_core_cmd_help(const RCore *core, RCoreHelpMessage help);
+R_API void r_core_cmd_help_json(const RCore *core, RCoreHelpMessage help);
+R_API void r_core_cmd_help_match(const RCore *core, RCoreHelpMessage help, R_BORROW R_NONNULL char *cmd, bool exact);
+R_API void r_core_cmd_help_match_spec(const RCore *core, const char * const help[], R_BORROW R_NONNULL char *cmd, char spec, bool exact);
 
 /* anal stats */
 

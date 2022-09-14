@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2021 - pancake */
+/* radare - LGPL - Copyright 2011-2022 - pancake */
 
 #include <r_socket.h>
 #include <r_util.h>
@@ -72,7 +72,7 @@ static char *socket_http_answer(RSocket *s, int *code, int *rlen, ut32 redirecti
 	p = r_str_casestr (buf, "Location:");
 	if (p) {
 		if (!redirections) {
-			eprintf ("Too many redirects\n");
+			R_LOG_ERROR ("Too many redirects");
 			goto exit;
 		}
 		p += strlen ("Location:");
@@ -224,7 +224,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	bool ssl = r_str_startswith (url, "https://");
 #if !HAVE_LIB_SSL
 	if (ssl) {
-		eprintf ("Tried to get '%s', but SSL support is disabled, set R2_CURL=1 to use curl\n", url);
+		R_LOG_ERROR ("Tried to get '%s', but SSL support is disabled, set R2_CURL=1 to use curl", url);
 		return NULL;
 	}
 #endif
@@ -236,7 +236,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	host = strstr (uri, "://");
 	if (!host) {
 		free (uri);
-		eprintf ("r_socket_http_get: Invalid URI\n");
+		R_LOG_ERROR ("r_socket_http_get: Invalid URI");
 		return NULL;
 	}
 	host += 3;
@@ -260,7 +260,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	}
 	s = r_socket_new (ssl);
 	if (!s) {
-		eprintf ("r_socket_http_get: Cannot create socket\n");
+		R_LOG_ERROR ("Cannot create socket");
 		free (uri);
 		return NULL;
 	}
@@ -273,7 +273,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 				"\r\n", path, host, port);
 		response = socket_http_answer (s, code, rlen, redirections);
 	} else {
-		eprintf ("Cannot connect to %s:%s\n", host, port);
+		R_LOG_ERROR ("Cannot connect to %s:%s", host, port);
 		response = NULL;
 	}
 	free (uri);
@@ -297,7 +297,7 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 	char *host = strstr (uri, "://");
 	if (!host) {
 		free (uri);
-		eprintf ("Invalid URI\n");
+		R_LOG_ERROR ("Invalid URI");
 		return NULL;
 	}
 	host += 3;
@@ -315,12 +315,12 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 	}
 	s = r_socket_new (ssl);
 	if (!s) {
-		eprintf ("Cannot create socket\n");
+		R_LOG_ERROR ("Cannot create socket");
 		free (uri);
 		return NULL;
 	}
 	if (!r_socket_connect_tcp (s, host, port, 0)) {
-		eprintf ("Cannot connect to %s:%s\n", host, port);
+		R_LOG_ERROR ("Cannot connect to %s:%s", host, port);
 		free (uri);
 		r_socket_free (s);
 		return NULL;

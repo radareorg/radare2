@@ -190,7 +190,7 @@ static int inithist(void) {
 	if ((I.history.size + 1024) * sizeof (char *) < I.history.size) {
 		return false;
 	}
-	I.history.data = (char **) calloc ((I.history.size + 1024), sizeof(char *));
+	I.history.data = (char **) calloc ((I.history.size + 1024), sizeof (char *));
 	if (!I.history.data) {
 		return false;
 	}
@@ -224,11 +224,6 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 		return -1;
 	}
 	*s = ch;
-#if 0
-	if ((t = read (0, s, 1)) != 1) {
-		return t;
-	}
-#endif
 	*s = r_cons_controlz (*s);
 	if (*s < 0x80) {
 		len = 1;
@@ -2000,7 +1995,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 			} else {
 #if USE_UTF8
-				if ((I.buffer.length + utflen) < sizeof (I.buffer.data)) {
+				if ((I.buffer.length + utflen + 1) < sizeof (I.buffer.data)) {
 					memcpy (I.buffer.data + I.buffer.length, buf, utflen);
 					I.buffer.length += utflen;
 				}
@@ -2072,9 +2067,8 @@ _end:
 
 	R_FREE (I.sel_widget);
 
-	// should be here or not?
-	if (!memcmp (I.buffer.data, "!history", 8)) {
-		// if (I.buffer.data[0]=='!' && I.buffer.data[1]=='\0') {
+	// shouldnt be here
+	if (r_str_startswith (I.buffer.data, "!history")) {
 		r_line_hist_list ();
 		return "";
 	}

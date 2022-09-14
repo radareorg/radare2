@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake */
+/* radare - LGPL - Copyright 2010-2022 - pancake */
 
 #include <r_search.h>
 
 static int ignoreMask(const ut8 *bm, int len) {
 	int i;
-	for (i=0; i<len; i++) {
+	for (i = 0; i < len; i++) {
 		if (bm[i] != 0xff) {
 			return 0;
 		}
@@ -55,7 +55,7 @@ R_API void r_search_keyword_free(RSearchKeyword *kw) {
 }
 
 R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bmstr, const char *data, int ignore_case) {
-	RSearchKeyword *kw;
+	r_return_val_if_fail (kwbuf, NULL);
 	ut8 *bmbuf = NULL;
 	int bmlen = 0;
 
@@ -64,12 +64,12 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bm
 		if (!bmbuf) {
 			return NULL;
 		}
-		bmlen = r_hex_str2bin (bmstr, bmbuf);
+		int bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
 			R_FREE (bmbuf);
 		}
 	}
-	kw = r_search_keyword_new ((ut8 *)kwbuf, strlen (kwbuf), bmbuf, bmlen, data);
+	RSearchKeyword *kw = r_search_keyword_new ((ut8 *)kwbuf, strlen (kwbuf), bmbuf, bmlen, data);
 	if (kw) {
 		kw->icase = ignore_case;
 		kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
@@ -97,13 +97,13 @@ R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *b
 		}
 	}
 
-	len = strlen(kwbuf);
-	str = malloc((len+1)*2);
-	for (p2=kwbuf, p=str; *p2; ) {
+	len = strlen (kwbuf);
+	str = malloc ((len + 1) * 2);
+	for (p2 = kwbuf, p = str; *p2; ) {
 		RRune ch;
 		int num_utf8_bytes = r_utf8_decode ((const ut8 *)p2, kwbuf + len - p2, &ch);
 		if (num_utf8_bytes < 1) {
-			eprintf ("Warning: Malformed UTF8 at pos %d\n", (int)(p2 - kwbuf));
+			R_LOG_WARN ("Malformed UTF8 at pos %d", (int)(p2 - kwbuf));
 			p[0] = *p2;
 			p[1] = 0;
 			p2++;
@@ -120,11 +120,11 @@ R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *b
 	}
 
 	kw = r_search_keyword_new ((ut8 *)str, p - str, bmbuf, bmlen, data);
-	free(str);
+	free (str);
 	if (kw) {
 		kw->icase = ignore_case;
 	}
-	free(bmbuf);
+	free (bmbuf);
 	return kw;
 }
 
@@ -137,7 +137,7 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 		return NULL;
 	}
 
-	kwbuf = malloc (strlen (kwstr)+1);
+	kwbuf = malloc (strlen (kwstr) + 1);
 	if (!kwbuf) {
 		return NULL;
 	}
@@ -193,9 +193,9 @@ R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char
 
 /* Validate a regexp in the canonical format /<regexp>/<options> */
 R_API RSearchKeyword *r_search_keyword_new_regexp(const char *str, const char *data) {
-	RSearchKeyword *kw;
 	int i = 0, start, length;
 
+	// TODO: use r_str_trim_head_ro (str);
 	while (isspace ((const unsigned char)str[i])) {
 		i++;
 	}
@@ -223,19 +223,17 @@ R_API RSearchKeyword *r_search_keyword_new_regexp(const char *str, const char *d
 		return NULL;
 	}
 
-	kw = R_NEW0(RSearchKeyword);
+	RSearchKeyword *kw = R_NEW0 (RSearchKeyword);
 	if (!kw) {
 		return NULL;
 	}
-
 	kw->bin_keyword = malloc (length+1);
 	if (!kw->bin_keyword) {
 		r_search_keyword_free (kw);
 		return NULL;
 	}
-
-	kw->bin_keyword[length]=0;
-	memcpy(kw->bin_keyword, str + start, length);
+	kw->bin_keyword[length] = 0;
+	memcpy (kw->bin_keyword, str + start, length);
 	kw->keyword_length = length - specials;
 	kw->type = R_SEARCH_KEYWORD_TYPE_STRING;
 	kw->data = (void *) data;

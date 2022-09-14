@@ -26,6 +26,7 @@ static R_TH_LOCAL RLog *rlog = NULL;
 R_API void r_log_init(void) {
 	if (!rlog) {
 		rlog = R_NEW0 (RLog);
+		rlog->level = R_LOGLVL_DEFAULT;
 	}
 }
 
@@ -103,7 +104,7 @@ R_API bool r_log_match(int level, const char *origin) { // , const char *sub_ori
 			}
 		}
 	}
-	return level < rlog->level;
+	return level <= rlog->level;
 }
 
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap) {
@@ -178,6 +179,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		r_sys_backtrace ();
 		r_sys_breakpoint ();
 	}
+	free (s);
 }
 
 R_API void r_log_message(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, ...) {

@@ -21,7 +21,7 @@ int utf32len (ut32 *input) {
 
 ut8 *utf32toutf8 (ut32 *input) {
 	if (!input) {
-		eprintf ("ERROR input is null\n");
+		R_LOG_ERROR ("input is null");
 		return NULL;
 	}
 
@@ -30,7 +30,6 @@ ut8 *utf32toutf8 (ut32 *input) {
 	int len = utf32len (input);
 	ut8 *result = calloc (4, len + 1);
 	if (!result) {
-		eprintf ("ERROR: out of memory\n");
 		return NULL;
 	}
 
@@ -54,7 +53,7 @@ ut8 *utf32toutf8 (ut32 *input) {
 			result[j] = 0xf0 | ((input[i] >> 18) & 0x7);
 			j += 4;
 		} else {
-			eprintf ("ERROR in toutf8. Seems like input is invalid\n");
+			R_LOG_ERROR ("toutf8: invalid input");
 			free (result);
 			return NULL;
 		}
@@ -66,7 +65,6 @@ ut8 *utf32toutf8 (ut32 *input) {
 
 ut32 *utf8toutf32 (const ut8 *input) {
 	if (!input) {
-		eprintf ("ERROR input is null\n");
 		return NULL;
 	}
 
@@ -77,7 +75,6 @@ ut32 *utf8toutf32 (const ut8 *input) {
 	ut32 *result = calloc (strlen ((const char *) input) + 1, 4);
 
 	if (!result) {
-		eprintf ("ERROR: out of memory\n");
 		return NULL;
 	}
 
@@ -101,7 +98,7 @@ ut32 *utf8toutf32 (const ut8 *input) {
 			(input[i + 3] & 0x3f);
 			i += 4;
 		} else {
-			eprintf ("ERROR in toutf32. Seems like input is invalid.\n");
+			R_LOG_ERROR ("toutf32: invalid input");
 			free (result);
 			return NULL;
 		}
@@ -301,6 +298,10 @@ R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen) {
 		org_i = i;
 
 		for (w = 1, k = BASE;; k += BASE) {
+			if (si >= srclen) {
+				free (dst);
+				return NULL;
+			}
 			digit = decode_digit (src[si++]);
 
 			if (digit == UT32_MAX) {
@@ -345,7 +346,7 @@ R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen) {
 		n += i / (di + 1);
 		i %= (di + 1);
 
-		memmove (dst + i + 1, dst + i, (di - i) * sizeof(ut32));
+		memmove (dst + i + 1, dst + i, (di - i) * sizeof (ut32));
 		dst[i++] = n;
 	}
 
@@ -354,7 +355,7 @@ R_API char *r_punycode_decode(const char *src, int srclen, int *dstlen) {
 	if (finaldst) {
 		*dstlen = strlen ((const char *) finaldst);
 	} else {
-		eprintf ("ERROR: finaldst is null\n");
+		R_LOG_ERROR ("finaldst can't be null");
 		return NULL;
 	}
 	return (char *) finaldst;

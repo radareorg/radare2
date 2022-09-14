@@ -1,14 +1,16 @@
 <img src="doc/images/r2emoji.png" alt="screenshot" align="left" width="128px">
 
-## Radare2: The Libre Unix-Like Reverse Engineering Framework
+## Radare2: Libre Reversing Framework for Unix Geeks
 
-[![Latest packaged version](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions) [![Tests Status](https://github.com/radareorg/radare2/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/ci.yml?query=branch%3Amaster) [![build](https://github.com/radareorg/radare2/actions/workflows/build.yml/badge.svg)](https://github.com/radareorg/radare2/actions/workflows/build.yml) [![tcc](https://github.com/radareorg/radare2/actions/workflows/tcc.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/tcc.yml)
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) [![TODO](https://img.shields.io/github/search/radareorg/radare2/TODO.svg)](https://github.com/radareorg/radare2/search?q=TODO) [![XXX](https://img.shields.io/github/search/radareorg/radare2/XXX.svg)](https://github.com/radareorg/radare2/search?q=XXX) [![Discord](https://badgen.net/discord/members/MgEdxrMnqx)](https://discord.gg/MgEdxrMnqx)
+[![Latest packaged version](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions) [![Tests Status](https://github.com/radareorg/radare2/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/ci.yml?query=branch%3Amaster) [![build](https://github.com/radareorg/radare2/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/build.yml?query=branch%3Amaster) [![tcc](https://github.com/radareorg/radare2/actions/workflows/tcc.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/tcc.yml)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) [![TODO](https://img.shields.io/github/search/radareorg/radare2/TODO.svg)](https://github.com/radareorg/radare2/search?q=TODO) [![GLOBALS](https://img.shields.io/github/search/radareorg/radare2/R_TH_LOCAL.svg)](https://github.com/radareorg/radare2/search?q=R_TH_LOCAL)[![XXX](https://img.shields.io/github/search/radareorg/radare2/XXX.svg)](https://github.com/radareorg/radare2/search?q=XXX) [![Discord](https://badgen.net/discord/members/MgEdxrMnqx)](https://discord.gg/MgEdxrMnqx)
 
 See the [Releases](https://github.com/radareorg/radare2/releases) page for
-downloads. The current git `master` branch is `5.7.3`, next will be `5.7.4`.
+downloads. The current git `master` branch is `5.7.9`, next will be `5.8.0`.
 
-* Since 5.6.0 it's [abi stable](doc/abi.md) for all the patch releases.
+* Since r2-5.6.0 all the patch releases are [abi stable](doc/abi.md)
+* Odd patch versions are used in git builds only, releases use even numbers
+* No need to recompile the plugins, bindings or tools if the major and minor version are the same
 
 ### Description
 
@@ -78,15 +80,14 @@ $ r2 /bin/ls   # open the binary in read-only mode
 
 ## Resources
 
-* [Official radare2 book](https://book.rada.re): Read about r2 usage.
-* [COMMUNITY.md](COMMUNITY.md): Community engagement and loose guidelines.
+* [Official radare2 book](https://book.rada.re): Read about r2 usage
+* [COMMUNITY.md](COMMUNITY.md): Community engagement and loose guidelines
 * [CONTRIBUTING.md](CONTRIBUTING.md): Information about reporting issues and
-  contributing. See also the [Contributing](#Contributing) section below.
-* [DEVELOPERS.md](DEVELOPERS.md): Development guidelines for r2.
-* [SECURITY.md](SECURITY.md): Instructions for reporting vulnerabilities.
-* [USAGE.md](USAGE.md): Some example commands.
-* [INSTALL.md](INSTALL.md): Full instructions for different installation
-  methods.
+  contributing. See also [Contributing](#Contributing)
+* [DEVELOPERS.md](DEVELOPERS.md): Development guidelines for r2
+* [SECURITY.md](SECURITY.md): Instructions for reporting vulnerabilities
+* [USAGE.md](USAGE.md): Some example commands
+* [INSTALL.md](INSTALL.md): Installation instructions using make or meson
 
 ## Plugins
 
@@ -100,12 +101,12 @@ r2pm -ci <pkg> # install a package
 
 Most popular packages are:
 
-* [esilsolve](https://github.com/radareorg/esilsolve): The symbolic execution plugin, based on esil and z3.
-* [iaito](https://github.com/radareorg/iaito): The official Qt graphical interface.
-* [radius](https://github.com/aemmitt-ns/radius): A fast symbolic execution engine based on boolector and r2.
-* [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command.
-* [r2ghidra](https://github.com/radareorg/r2ghidra): The native ghidra decompiler plugin, accessed with the `pdg` command.
-* [r2frida](https://github.com/nowsecure/r2frida): The frida io plugin. Start r2 with `r2 frida://0` to use it.
+* [esilsolve](https://github.com/radareorg/esilsolve): The symbolic execution plugin, based on esil and z3
+* [iaito](https://github.com/radareorg/iaito): The official Qt graphical interface
+* [radius2](https://github.com/nowsecure/radius2): A fast symbolic execution engine based on boolector and esil
+* [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command
+* [r2ghidra](https://github.com/radareorg/r2ghidra): The native ghidra decompiler plugin, accessed with the `pdg` command
+* [r2frida](https://github.com/nowsecure/r2frida): The frida io plugin. Start r2 with `r2 frida://0` to use it
 
 # Contributing
 
@@ -142,7 +143,7 @@ book](https://book.rada.re), here are some methods to contact us:
 
 ## Operating Systems
 
-Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Android
+Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Android,
 [Dragonfly, Net, Free, Open] BSD, Z/OS, QNX, SerenityOS, Solaris, Haiku, Vinix, FirefoxOS.
 
 ## Architectures

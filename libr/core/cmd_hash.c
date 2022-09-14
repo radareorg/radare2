@@ -229,7 +229,7 @@ static void handle_crc16_riello(const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_RIELLO));
 }
 
-static void handle_crc16_t10dif(const ut8 *block, int len) {
+static void handle_crc16_t10dif (const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_T10_DIF));
 }
 
@@ -402,7 +402,7 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 				if (r_cons_is_interactive ()) {
 					r_lang_prompt (core->lang);
 				} else {
-					eprintf ("Error: scr.interactive required to run the rlang prompt\n");
+					R_LOG_ERROR ("scr.interactive required to run the rlang prompt");
 				}
 			}
 		} else if (av[0][0] == '?' && av[0][1] == 'j') {

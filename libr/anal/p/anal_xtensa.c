@@ -1184,14 +1184,14 @@ static void esil_branch_compare_imm(xtensa_isa isa, xtensa_opcode opcode,
 	esil_push_signed_imm (&op->esil, cmp_imm);
 
 	r_strbuf_appendf (&op->esil, "%s" CM, compare_op);
-	r_strbuf_appendf (&op->esil, "?{" CM);
+	r_strbuf_append (&op->esil, "?{" CM);
 
 	// ISA defines branch target as offset + 4,
 	// but at the time of ESIL evaluation
 	// PC will be already incremented by 3
 	esil_push_signed_imm (&op->esil, branch_imm + 4 - 3);
 
-	r_strbuf_appendf (&op->esil, "pc" CM "+=" CM "}");
+	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
 }
 
 static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
@@ -1347,7 +1347,7 @@ static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
 	case 68:	/* ball */
 		snprintf(
 			compare_val,
-			sizeof(compare_val),
+			sizeof (compare_val),
 			"%s%d",
 			xtensa_regfile_shortname (isa, op2_rf),
 			op2_reg
@@ -1457,8 +1457,11 @@ static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xten
 
 	bit_clear = opcode == 56;
 	cmp_op = bit_clear ? "==,$z" : "==,$z,!";
-	mask = 1 << imm_bit;
-
+	if (imm_bit > 31) {
+		mask = 0;
+	} else {
+		mask = (ut32)1 << imm_bit;
+	}
 	sign_extend (&imm_offset, 7);
 	imm_offset += 4 - 3;
 
@@ -1643,7 +1646,9 @@ static void esil_call(xtensa_isa isa, xtensa_opcode opcode,
 	sign_extend (&imm_offset, 17);
 
 	if (call) {
-		imm_offset <<= 2;
+		ut32 uimm_offset = (imm_offset & (UT32_MAX >> 2));
+		uimm_offset <<= 2;
+		imm_offset = uimm_offset;
 	}
 
 	imm_offset += 4 - 3;
@@ -1863,7 +1868,7 @@ static void analop_esil(xtensa_isa isa, xtensa_opcode opcode, xtensa_format form
 		break;
 	case 98: /* ret */
 	case 35: /* ret.n */
-		r_strbuf_setf (&op->esil, "a0,pc,=");
+		r_strbuf_set (&op->esil, "a0,pc,=");
 		break;
 	case 82: /* l16ui */
 	case 83: /* l16si */
@@ -2005,7 +2010,7 @@ static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origina
 		slot_buffer = xtensa_insnbuf_alloc (isa);
 	}
 
-	memset (insn_buffer, 0,	xtensa_insnbuf_size (isa) * sizeof(xtensa_insnbuf_word));
+	memset (insn_buffer, 0,	xtensa_insnbuf_size (isa) * sizeof (xtensa_insnbuf_word));
 
 	xtensa_insnbuf_from_chars (isa, insn_buffer, buffer, len);
 	format = xtensa_format_decode (isa, insn_buffer);

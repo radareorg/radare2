@@ -78,11 +78,11 @@
 # MS Compress
 4	string	\x88\xf0\x27 MS Compress archive data
 # updated by Joerg Jenderek
->9	string	\0		
->>0	string	KWAJ		
+>9	string	\0
+>>0	string	KWAJ
 >>>7	string	\321\003	MS Compress archive data
 >>>>14	ulong	>0		\b, original size: %d byte(s)
->>>>18		ubyte	>0x65  	
+>>>>18		ubyte	>0x65
 >>>>>18		string	x    	\b, was %.8s
 >>>>>(10.b-4)	string	x    	\b.%.3s
 
@@ -133,60 +133,62 @@
 # ZIP footer
 0       string      PK\005\006      End of Zip archive
 
-# OpenOffice.org / KOffice / StarOffice documents
-# From: Abel Cheung <abel@oaka.org>
-# Listed here because they are basically zip files
->>30	string		mimetype
-
-# KOffice (1.2 or above) formats
->>>50	string	vnd.kde.		KOffice (>=1.2)
->>>>58	string	karbon			Karbon document
->>>>58	string	kchart			KChart document
->>>>58	string	kformula		KFormula document
->>>>58	string	kivio			Kivio document
->>>>58	string	kontour			Kontour document
->>>>58	string	kpresenter		KPresenter document
->>>>58	string	kspread			KSpread document
->>>>58	string	kword			KWord document
-
-# OpenOffice formats (for OpenOffice 1.x / StarOffice 6/7)
->>>50	string	vnd.sun.xml.		OpenOffice.org 1.x
->>>>62	string	writer			Writer
->>>>>68	byte	!0x2e			document
->>>>>68	string	.template		template
->>>>>68	string	.global			global document
->>>>62	string	calc			Calc
->>>>>66	byte	!0x2e			spreadsheet
->>>>>66	string	.template		template
->>>>62	string	draw			Draw
->>>>>66	byte	!0x2e			document
->>>>>66	string	.template		template
->>>>62	string	impress			Impress
->>>>>69	byte	!0x2e			presentation
->>>>>69	string	.template		template
->>>>62	string	math			Math document
-
-# OpenDocument formats (for OpenOffice 2.x / StarOffice >= 8)
-# http://lists.oasis-open.org/archives/office/200505/msg00006.html
->>>50	string	vnd.oasis.opendocument.	OpenDocument
->>>>73	string	text
->>>>>77	byte	!0x2d			Text
-!:mime	application/vnd.oasis.opendocument.text
->>>>>77	string	-template		Text Template
->>>>>77	string	-web			HTML Document Template
->>>>>77	string	-master			Master Document
->>>>73	string	graphics		Drawing
->>>>>81	string	-template		Template
->>>>73	string	presentation		Presentation
->>>>>85	string	-template		Template
->>>>73	string	spreadsheet		Spreadsheet
->>>>>84	string	-template		Template
->>>>73	string	chart			Chart
->>>>>78	string	-template		Template
->>>>73	string	formula			Formula
->>>>>80	string	-template		Template
->>>>73	string	database		Database
->>>>73	string	image			Image
+# commented because barely used and barely used
+#
+# # OpenOffice.org / KOffice / StarOffice documents
+# # From: Abel Cheung <abel@oaka.org>
+# # Listed here because they are basically zip files
+# >>30	string		mimetype
+#
+# # KOffice (1.2 or above) formats
+# >>>50	string	vnd.kde.		KOffice (>=1.2)
+# >>>>58	string	karbon			Karbon document
+# >>>>58	string	kchart			KChart document
+# >>>>58	string	kformula		KFormula document
+# >>>>58	string	kivio			Kivio document
+# >>>>58	string	kontour			Kontour document
+# >>>>58	string	kpresenter		KPresenter document
+# >>>>58	string	kspread			KSpread document
+# >>>>58	string	kword			KWord document
+#
+# # OpenOffice formats (for OpenOffice 1.x / StarOffice 6/7)
+# >>>50	string	vnd.sun.xml.		OpenOffice.org 1.x
+# >>>>62	string	writer			Writer
+# >>>>>68	byte	!0x2e			document
+# >>>>>68	string	.template		template
+# >>>>>68	string	.global			global document
+# >>>>62	string	calc			Calc
+# >>>>>66	byte	!0x2e			spreadsheet
+# >>>>>66	string	.template		template
+# >>>>62	string	draw			Draw
+# >>>>>66	byte	!0x2e			document
+# >>>>>66	string	.template		template
+# >>>>62	string	impress			Impress
+# >>>>>69	byte	!0x2e			presentation
+# >>>>>69	string	.template		template
+# >>>>62	string	math			Math document
+#
+# # OpenDocument formats (for OpenOffice 2.x / StarOffice >= 8)
+# # http://lists.oasis-open.org/archives/office/200505/msg00006.html
+# >>>50	string	vnd.oasis.opendocument.	OpenDocument
+# >>>>73	string	text
+# >>>>>77	byte	!0x2d			Text
+# !:mime	application/vnd.oasis.opendocument.text
+# >>>>>77	string	-template		Text Template
+# >>>>>77	string	-web			HTML Document Template
+# >>>>>77	string	-master			Master Document
+# >>>>73	string	graphics		Drawing
+# >>>>>81	string	-template		Template
+# >>>>73	string	presentation		Presentation
+# >>>>>85	string	-template		Template
+# >>>>73	string	spreadsheet		Spreadsheet
+# >>>>>84	string	-template		Template
+# >>>>73	string	chart			Chart
+# >>>>>78	string	-template		Template
+# >>>>73	string	formula			Formula
+# >>>>>80	string	-template		Template
+# >>>>73	string	database		Database
+# >>>>73	string	image			Image
 
 # Zoo archiver
 20	lelong		0xfdc4a7dc	Zoo archive data

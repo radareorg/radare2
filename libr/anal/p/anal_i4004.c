@@ -132,7 +132,7 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			}
 		}
 		break;
-	case 1: 
+	case 1:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		if (mask & R_ANAL_OP_MASK_DISASM) {
 			snprintf (basm, basz, "jcn 0x%x 0x%x", low, buf[1]);
@@ -267,7 +267,7 @@ static int i4004_anal_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, i
 	RStrBuf *sbuf = r_strbuf_new (elems[0]);
 	for (i = 1; i < nelems; i++) {
 		if (r_is_valid_input_num_value (NULL, elems[i])) {
-			r_strbuf_appendf (sbuf, " 0x%"PFMT64x"", r_num_get (NULL, elems[i]));
+			r_strbuf_appendf (sbuf, " 0x%"PFMT64x, r_num_get (NULL, elems[i]));
 		} else {
 			r_strbuf_appendf (sbuf, " %s", elems[i]);
 		}

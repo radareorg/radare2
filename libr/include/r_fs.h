@@ -82,11 +82,20 @@ typedef struct r_fs_partition_t {
 } RFSPartition;
 
 typedef struct r_fs_shell_t {
-	char **cwd;
+	char **cwd; // R2_580 char *
 	void (*set_prompt)(const char *prompt);
 	const char* (*readline)(void);
 	int (*hist_add)(const char *line);
 } RFSShell;
+
+static inline RFSShell *r_fs_shell_new(void) {
+	return R_NEW0 (RFSShell);
+}
+
+static inline void r_fs_shell_free(RFSShell *s) {
+	free (s->cwd);
+	free (s);
+}
 
 #define R_FS_FILE_TYPE_MOUNTPOINT 'm'
 #define R_FS_FILE_TYPE_DIRECTORY 'd'
@@ -102,7 +111,7 @@ typedef struct r_fs_partition_type_t {
 	RFSPartitionIterator iterate;
 	//RFSPartitionIterator parhook;
 } RFSPartitionType;
-#define R_FS_PARTITIONS_LENGTH (int)(sizeof (partitions)/sizeof(RFSPartitionType)-1)
+#define R_FS_PARTITIONS_LENGTH (int)(sizeof (partitions)/sizeof (RFSPartitionType)-1)
 
 enum {
 	R_FS_VIEW_NORMAL = 0,
@@ -171,6 +180,7 @@ extern RFSPlugin r_fs_plugin_cpio;
 extern RFSPlugin r_fs_plugin_xfs;
 extern RFSPlugin r_fs_plugin_fb;
 extern RFSPlugin r_fs_plugin_minix;
+extern RFSPlugin r_fs_plugin_zip;
 extern RFSPlugin r_fs_plugin_posix;
 #endif
 

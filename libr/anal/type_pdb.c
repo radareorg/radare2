@@ -1,7 +1,9 @@
+/* radare - LGPL - Copyright 2020-2022 - HoundThe, Florian Markl */
+
 #include <r_bin.h>
 #include <r_core.h>
 #include <r_anal.h>
-#include "../bin/pdb/types.h"
+#include "../bin/format/pdb/types.h"
 #include "base_types.h"
 
 static bool is_parsable_type(const ELeafType type) {

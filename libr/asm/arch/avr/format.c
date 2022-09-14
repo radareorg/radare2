@@ -23,9 +23,6 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include "format.h"
 #include "r_util.h"
 #include "avr_disasm.h"

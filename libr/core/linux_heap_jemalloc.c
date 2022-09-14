@@ -48,7 +48,7 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 			return GHT_MAX;
 		}
 		r_list_foreach (syms, iter, s) {
-			if (!strcmp(s->name, symname)) {
+			if (!strcmp (s->name, symname)) {
 				vaddr = s->vaddr;
 				break;
 			}
@@ -97,7 +97,7 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 	const char *path = NULL;
 	ut64 jemalloc_addr = UT64_MAX;
 
-	if (!core || !core->dbg || !core->dbg->maps){
+	if (!core || !core->dbg || !core->dbg->maps) {
 		return false;
 	}
 	r_debug_map_sync (core->dbg);
@@ -109,14 +109,14 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 		}
 	}
 	if (!path) {
-		eprintf ("Warning: cannot find jemalloc mapped in memory (see `dm`)\n");
+		R_LOG_WARN ("cannot find jemalloc mapped in memory (see `dm`)");
 		return false;
 	}
 #if __linux__
 	bool is_debug_file = GH(je_matched)(path, "/usr/local/lib");
 
 	if (!is_debug_file) {
-		eprintf ("Warning: Cannot find libjemalloc.so.2 in /usr/local/lib\n");
+		R_LOG_WARN ("Cannot find libjemalloc.so.2 in /usr/local/lib");
 		return false;
 	}
 	if (r_file_exists (path)) {
@@ -202,7 +202,6 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 			extent_node_t *head = R_NEW0 (extent_node_t);
 
 			if (!node || !head) {
-				eprintf ("Error calling calloc\n");
 				free (ar);
 				free (node);
 				free (head);
@@ -273,13 +272,13 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 			PRINTF_GA ("narenas : %"PFMT64d"\n", (ut64)narenas);
 		}
 		if (narenas == 0) {
-			eprintf ("No arenas allocated.\n");
+			R_LOG_ERROR ("No arenas allocated");
 			free (stats);
 			free (ar);
 			return;
 		}
 		if (narenas == GHT_MAX) {
-			eprintf ("Cannot find narenas_total\n");
+			R_LOG_ERROR ("Cannot find narenas_total");
 			free (stats);
 			free (ar);
 			return;
@@ -367,7 +366,7 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 			break;
 		}
 		if (!GH(r_resolve_jemalloc)(core, "je_arena_bin_info", &bin_info)) {
-			eprintf ("Error resolving je_arena_bin_info\n");
+			R_LOG_ERROR ("resolving je_arena_bin_info");
 			R_FREE (b);
 			break;
 		}
@@ -433,11 +432,10 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 	case ' ':
 		{
 			int pageind;
-			ut64 npages, chunksize_mask, map_bias, map_misc_offset, chunk, mapbits;;
+			ut64 npages, chunksize_mask, map_bias, map_misc_offset, chunk, mapbits;
 			arena_chunk_t *c = R_NEW0 (arena_chunk_t);
 
 			if (!c) {
-				eprintf ("Error calling calloc\n");
 				return;
 			}
 
@@ -445,19 +443,19 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 			chunk = r_num_math (core->num, input);
 
 			if (!GH(r_resolve_jemalloc)(core, "je_chunk_npages", &npages)) {
-				eprintf ("Error resolving je_chunk_npages\n");
+				R_LOG_ERROR ("resolving je_chunk_npages");
 				return;
 			}
 			if (!GH(r_resolve_jemalloc)(core, "je_chunksize_mask", &chunksize_mask)) {
-				eprintf ("Error resolving je_chunksize_mask\n");
+				R_LOG_ERROR ("resolving je_chunksize_mask");
 				return;
 			}
 			if (!GH(r_resolve_jemalloc)(core, "je_map_bias", &map_bias)) {
-				eprintf ("Error resolving je_map_bias");
+				eprintf ("resolving je_map_bias");
 				return;
 			}
 			if (!GH(r_resolve_jemalloc)(core, "je_map_misc_offset", &map_misc_offset)) {
-				eprintf ("Error resolving je_map_misc_offset");
+				eprintf ("resolving je_map_misc_offset");
 				return;
 			}
 
@@ -480,7 +478,7 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 
 			arena_run_t *r = R_NEW0 (arena_run_t);
 			if (!r) {
-				eprintf ("Error calling calloc\n");
+				R_LOG_ERROR ("calling calloc");
 				return;
 			}
 			for (pageind = map_bias; pageind < npages; pageind++) {

@@ -1,14 +1,9 @@
 /* radare - LGPL - Copyright 2008-2022 nibble, pancake, inisider */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <r_hash.h>
-#include <r_types.h>
 #include <r_util.h>
-#include "pe.h"
-#include <time.h>
 #include <ht_uu.h>
+#include "pe.h"
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
 #define MAX_METADATA_STRING_LENGTH 256
@@ -830,6 +825,10 @@ static struct r_bin_pe_export_t* parse_symbol_table(RBinPEObj* pe, struct r_bin_
 		sz = exports_sz;
 		exports = malloc (sz + export_t_sz);
 		exp = exports;
+		if (!exports) {
+			free (buf);
+			return NULL;
+		}
 	}
 
 	sections = pe->sections;
@@ -1022,7 +1021,8 @@ int PE_(bin_pe_get_actual_checksum)(RBinPEObj* pe) {
 		return 0;
 	}
 	checksum_offset = pe->nt_header_offset + 4 + sizeof (PE_(image_file_header)) + 0x40;
-	for (i = 0, j = 0; i < pe->size / 4; i++) {
+	const size_t quarter = pe->size / 4;
+	for (i = 0, j = 0; i < quarter; i++) {
 		cur = r_read_at_ble32 (buf, j * 4, pe->endian);
 		j++;
 		// skip the checksum bytes
@@ -1234,7 +1234,7 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 		goto fail;
 	}
 
-	R_LOG_DEBUG ("Metadata Signature: 0x%"PFMT64x" 0x%"PFMT64x" %d\n",
+	R_LOG_DEBUG ("Metadata Signature: 0x%"PFMT64x" 0x%"PFMT64x" %d",
 		(ut64)metadata_directory, (ut64)metadata->Signature, (int)metadata->VersionStringLength);
 
 	// read the version string
@@ -1252,7 +1252,7 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 			free (metadata);
 			return 0;
 		}
-		R_LOG_DEBUG (".NET Version: %s\n", metadata->VersionString);
+		R_LOG_DEBUG (".NET Version: %s", metadata->VersionString);
 	}
 
 	// read the header after the string
@@ -1261,7 +1261,7 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 	if (rr < 1) {
 		goto fail;
 	}
-	R_LOG_DEBUG ("Number of Metadata Streams: %d\n", metadata->NumberOfStreams);
+	R_LOG_DEBUG ("Number of Metadata Streams: %d", metadata->NumberOfStreams);
 	pe->metadata_header = metadata;
 
 	// read metadata streams
@@ -1305,7 +1305,7 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 			free (streams);
 			goto fail;
 		}
-		R_LOG_DEBUG ("Stream name: %s %d\n", stream_name, c);
+		R_LOG_DEBUG ("Stream name: %s %d", stream_name, c);
 		stream->Name = stream_name;
 		streams[count] = stream;
 		stream_addr += 8 + c;
@@ -1313,7 +1313,7 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj* pe) {
 	pe->streams = streams;
 	return true;
 fail:
-	R_LOG_DEBUG ("Warning: read (metadata header)");
+	R_LOG_DEBUG ("read (metadata header)");
 	free (metadata);
 	return false;
 }
@@ -2973,7 +2973,7 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			break;
 		}
 		if (read_image_resource_directory_entry (pe->b, off, &entry) < 0) {
-			eprintf ("Warning: read resource entry\n");
+			R_LOG_WARN ("read resource entry");
 			break;
 		}
 		if (entry.u1.Name >> 31) {
@@ -3004,7 +3004,7 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			off = rsrc_base + OffsetToDirectory;
 			int len = read_image_resource_directory (pe->b, off, &identEntry);
 			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
-				eprintf ("Warning: parsing resource directory\n");
+				R_LOG_WARN ("parsing resource directory");
 			}
 			_parse_resource_directory (pe, &identEntry, OffsetToDirectory, type, entry.u1.Name & 0xffff, dirs, resourceEntryName);
 			R_FREE (resourceEntryName);
@@ -3022,7 +3022,7 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			break;
 		}
 		if (read_image_resource_data_entry (pe->b, off, data) != sizeof (*data)) {
-			eprintf ("Warning: read (resource data entry)\n");
+			R_LOG_WARN ("read (resource data entry)");
 			free (data);
 			break;
 		}
@@ -3138,7 +3138,9 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 	curRes = rs_directory->NumberOfNamedEntries;
 	totalRes = curRes + rs_directory->NumberOfIdEntries;
 	if (totalRes > R_PE_MAX_RESOURCES) {
-		eprintf ("Error parsing resource directory\n");
+		if (pe->verbose) {
+			R_LOG_ERROR ("parsing resource directory");
+		}
 		ht_uu_free (dirs);
 		return;
 	}
@@ -3150,7 +3152,7 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 			break;
 		}
 		if (read_image_resource_directory_entry (pe->b, off, &typeEntry) < 0) {
-			eprintf ("Warning: read resource directory entry\n");
+			R_LOG_WARN ("read resource directory entry");
 			break;
 		}
 		if (typeEntry.u2.OffsetToData >> 31) {
@@ -3159,7 +3161,7 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 			off = rsrc_base + OffsetToDirectory;
 			int len = read_image_resource_directory (pe->b, off, &identEntry);
 			if (len != sizeof (identEntry)) {
-				eprintf ("Warning: parsing resource directory\n");
+				R_LOG_WARN ("parsing resource directory");
 			}
 			(void)_parse_resource_directory (pe, &identEntry, OffsetToDirectory, typeEntry.u1.Name & 0xffff, 0, dirs, NULL);
 		}
@@ -3276,11 +3278,11 @@ static int bin_pe_init(RBinPEObj* pe) {
 	pe->cms = NULL;
 	pe->spcinfo = NULL;
 	if (!bin_pe_init_hdr (pe)) {
-		eprintf ("Warning: File is not PE\n");
+		R_LOG_WARN ("File is not PE");
 		return false;
 	}
 	if (!bin_pe_init_sections (pe)) {
-		eprintf ("Warning: Cannot initialize sections\n");
+		R_LOG_WARN ("Cannot initialize sections");
 		return false;
 	}
 	pe->sections = PE_(r_bin_pe_get_sections) (pe);
@@ -3457,6 +3459,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(RBinPEObj* pe) {
 		// we cant exit with export_sz > pe->size, us r_bin_pe_export_t is 256+256+8+8+8+4 bytes is easy get over file size
 		// to avoid fuzzing we can abort on export_directory->NumberOfFunctions>0xffff
 		if (exports_sz < 0 || pe->export_directory->NumberOfFunctions + 1 > 0xffff) {
+			return NULL;
+		}
+		if (pe->export_directory->NumberOfNames > pe->export_directory->NumberOfFunctions) {
 			return NULL;
 		}
 		if (!(exports = malloc (exports_sz))) {
@@ -4148,7 +4153,7 @@ void PE_(r_bin_pe_check_sections)(RBinPEObj* pe, struct r_bin_pe_section_t* * se
 					if (addr_beg <= entry->vaddr || entry->vaddr < addr_end) {
 						if (!(sections[j].perm & PE_IMAGE_SCN_MEM_EXECUTE)) {
 							if (pe->verbose) {
-								eprintf ("Warning: Found entrypoint in non-executable section.\n");
+								R_LOG_WARN ("Found entrypoint in non-executable section");
 							}
 							sections[j].perm |= PE_IMAGE_SCN_MEM_EXECUTE;
 						}
@@ -4285,7 +4290,7 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(RBinPEObj* pe) {
 				if (diff) {
 					pe_printf ("Warning: section %s not aligned to FileAlignment.\n", sections[j].name);
 					sections[j].paddr -= diff;
-					sections[j].size += diff;	
+					sections[j].size += diff;
 				}
 			}
 		}

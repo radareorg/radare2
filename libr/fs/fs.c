@@ -3,7 +3,6 @@
 #include <r_fs.h>
 #include <config.h>
 #include "types.h"
-#include <errno.h>
 
 #if WITH_GPL
 # ifndef USE_GRUB
@@ -22,7 +21,7 @@ static RFSPlugin* fs_static_plugins[] = {
 	R_FS_STATIC_PLUGINS
 };
 
-R_API RFS* r_fs_new(void) {
+R_API R_MUSTUSE RFS* r_fs_new(void) {
 	int i;
 	RFSPlugin* static_plugin;
 	RFS* fs = R_NEW0 (RFS);
@@ -67,14 +66,13 @@ R_API RFSPlugin* r_fs_plugin_get(RFS* fs, const char* name) {
 }
 
 R_API void r_fs_free(RFS* fs) {
-	if (!fs) {
-		return;
+	if (fs) {
+		//r_io_free (fs->iob.io);
+		//root makes use of plugin so revert to avoid UaF
+		r_list_free (fs->roots);
+		r_list_free (fs->plugins);
+		free (fs);
 	}
-	//r_io_free (fs->iob.io);
-	//root makes use of plugin so revert to avoid UaF
-	r_list_free (fs->roots);
-	r_list_free (fs->plugins);
-	free (fs);
 }
 
 /* plugins */
@@ -166,7 +164,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	root->p = p;
 	root->iob = fs->iob;
 	root->cob = fs->cob;
-	if (!p->mount (root)) {
+	if (p->mount && !p->mount (root)) {
 		free (str);
 		free (heapFsType);
 		r_fs_root_free (root);
@@ -278,7 +276,7 @@ R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len
 	if (fs && file) {
 		// TODO: fill file->data ? looks like dupe of rbuffer
 		if (file->p && file->p->write) {
-			return file->p->write (file, addr, data, len);;
+			return file->p->write (file, addr, data, len);
 		}
 		R_LOG_ERROR ("null file->p->write");
 	}
@@ -307,7 +305,7 @@ R_API RList* r_fs_dir(RFS* fs, const char* p) {
 	r_str_trim_path (path);
 	RList *roots = r_fs_root (fs, path);
 	r_list_foreach (roots, iter, root) {
-		if (root) {
+		if (root && root->p && root->p->dir) {
 			const char *dir = r_str_nlen (root->path, 2) == 1
 				? path: path + strlen (root->path);
 			if (!*dir) {
@@ -377,15 +375,13 @@ R_API bool r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 static void r_fs_find_off_aux(RFS* fs, const char* name, ut64 offset, RList* list) {
 	RListIter* iter;
 	RFSFile* item, * file;
-	char* found = NULL;
-
 	RList* dirs = r_fs_dir (fs, name);
 	r_list_foreach (dirs, iter, item) {
 		if (!strcmp (item->name, ".") || !strcmp (item->name, "..")) {
 			continue;
 		}
 
-		found = (char*) malloc (strlen (name) + strlen (item->name) + 2);
+		char *found = (char*) malloc (strlen (name) + strlen (item->name) + 2);
 		if (!found) {
 			break;
 		}
@@ -579,13 +575,8 @@ R_API RList* r_fs_partitions(RFS* fs, const char* ptype, ut64 delta) {
 		return list;
 	}
 	if (R_STR_ISNOTEMPTY (ptype)) {
-		R_LOG_ERROR ("Unknown partition type '%s'", ptype);
+		R_LOG_ERROR ("Unknown partition type '%s'. Use 'mL' command to list them all", ptype);
 	}
-	eprintf ("Supported types:\n");
-	for (i = 0; partitions[i].name; i++) {
-		eprintf (" %s", partitions[i].name);
-	}
-	eprintf ("\n");
 	return NULL;
 }
 

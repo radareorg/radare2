@@ -36,11 +36,15 @@ static void flag_skiplist_free(void *data) {
 }
 
 static int flag_skiplist_cmp(const void *va, const void *vb) {
-	const RFlagsAtOffset *a = (RFlagsAtOffset *)va, *b = (RFlagsAtOffset *)vb;
-	if (a->off == b->off) {
-		return 0;
+	const ut64 ao = ((RFlagsAtOffset *)va)->off;
+	const ut64 bo = ((RFlagsAtOffset *)vb)->off;
+	if (R_LIKELY (ao < bo)) {
+		return -1;
 	}
-	return a->off < b->off? -1: 1;
+	if (R_LIKELY (ao > bo)) {
+		return 1;
+	}
+	return 0;
 }
 
 static ut64 num_callback(RNum *user, const char *name, int *ok) {
@@ -643,17 +647,14 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 				continue;
 			}
 			if (item->offset == off) {
-				eprintf ("XXX Should never happend\n");
+				R_LOG_ERROR ("The impossible happened");
 				return evalFlag (f, item);
 			}
 			nice = item;
 			break;
 		}
-		if (!nice && flags_at->off) {
-			flags_at = r_flag_get_nearest_list (f, flags_at->off - 1, -1);
-		} else {
-			flags_at = NULL;
-		}
+		flags_at = (!nice && flags_at->off) ?
+			r_flag_get_nearest_list (f, flags_at->off - 1, -1): NULL;
 	}
 	return nice? evalFlag (f, nice): NULL;
 }
@@ -757,7 +758,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	}
 	// this should never happen because the name is filtered before..
 	if (!r_name_check (itemname)) {
-		eprintf ("Invalid flag name '%s'\n", name);
+		R_LOG_ERROR ("Invalid flag name '%s'", name);
 		return NULL;
 	}
 

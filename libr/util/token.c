@@ -253,10 +253,10 @@ bool callback(RTokenizer *tok) {
 		if (!strcmp (data->word, "case")) {
 			R_FREE (data->word);
 			data->incase = true;
-			break;	
+			break;
 		}
 		if (!strcmp (data->word, "default")) {
-			break;	
+			break;
 		}
 		if (!strcmp (data->word, "return")) {
 			if (data->pj) {
@@ -271,7 +271,7 @@ bool callback(RTokenizer *tok) {
 			return false;
 		}
 		if (!strcmp (data->word, "break")) {
-			break;	
+			break;
 		}
 		if (data->s) {
 			data->s = r_str_append (data->s, " ");
@@ -349,10 +349,10 @@ bool callback(RTokenizer *tok) {
 		} else if (tok->ch == '(') {
 			data->parlevel++;
 			if (data->word) {
-				if ( !strcmp (data->word, "if")) {
+				if (!strcmp (data->word, "if")) {
 					indent (tok);
 					eprintf ("IF %d%c", tok->indent, 10);
-				} else if ( !strcmp (data->word, "switch")) {
+				} else if (!strcmp (data->word, "switch")) {
 					data->inswitch = true;
 					indent (tok);
 					eprintf ("SWITCH%c", 10);
@@ -523,7 +523,7 @@ int main() {
 		);
 	Data data = {0};
 	char *s = r_file_slurp ("a.c", NULL);
-	data.pj = pj_new ();;
+	data.pj = pj_new ();
 	pj_o (data.pj);
 	tokenize (s, callback, &data);
 	pj_end (data.pj);

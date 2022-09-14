@@ -37,7 +37,7 @@ static inline void **r_flist_init(void **it, int n) {
 
 static inline void **r_flist_new(int n) {
 	void **it;
-	if (((n + 2) * sizeof(void*)) < sizeof(void*)) return NULL;
+	if (((n + 2) * sizeof (void*)) < sizeof (void*)) return NULL;
 	if (!(it = (void **)calloc ((n + 2), sizeof (void*)))) {
 		return NULL;
 	}
@@ -57,7 +57,9 @@ static inline void r_flist_set(void **it, int idx, void *data) {
 static inline void r_flist_delete(void **it, int idx) {
 	r_flist_rewind (it);
 	free (it[idx]);
-	for(it += idx; *it; it++) *it = *(it+1);
+	for (it += idx; *it; it++) {
+		*it = *(it + 1);
+	}
 }
 
 #define r_flist_foreach(it, pos) \
@@ -66,8 +68,9 @@ static inline void r_flist_delete(void **it, int idx) {
 
 static inline void r_flist_free(void **it) {
 	void *pos;
-	r_flist_foreach (it, pos)
+	r_flist_foreach (it, pos) {
 		free (pos);
+	}
 	r_flist_rewind (it);
 	free (--it);
 }

@@ -28,7 +28,7 @@ static const char *r2v_body = \
 	"    o := C.r_core_cmd_str (core, s.str)\n"
 	"    if o != 0 {\n"
 	"      strs := o.vstring().clone()\n"
-	"      free(o)\n"
+	"      free (o)\n"
 	"      return strs\n"
 	"    }\n"
 	"    return ''\n"
@@ -100,11 +100,11 @@ static void runlib(void *user, const char *lib) {
 		if (fcn) {
 			fcn (user, 0, NULL);
 		} else {
-			eprintf ("Cannot find '%s' symbol in library\n", r2v_sym);
+			R_LOG_ERROR ("Cannot find '%s' symbol in library", r2v_sym);
 		}
 		r_lib_dl_close (vl);
 	} else {
-		eprintf ("Cannot open '%s' library\n", lib);
+		R_LOG_ERROR ("Cannot open '%s' library", lib);
 	}
 }
 
@@ -132,7 +132,7 @@ static bool __run(RLang *lang, const char *code, int len) {
 		vcode_fini (&vcode);
 		return true;
 	}
-	eprintf ("Cannot open .tmp.v\n");
+	R_LOG_ERROR ("Cannot open .tmp.v");
 	return false;
 }
 

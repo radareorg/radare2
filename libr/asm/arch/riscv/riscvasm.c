@@ -1,7 +1,6 @@
-/* radare - Copyright 2021 - pancake */
+/* radare - Copyright 2021-2022 - pancake */
 // inspired by https://www.csl.cornell.edu/courses/ece5745/handouts/ece5745-tinyrv-isa.txt
 
-#include <r_types.h>
 #include <r_util.h>
 
 static const char *const regs[33] = {
@@ -76,6 +75,7 @@ static const char *const aregs[33] = {
 	"t6",
 	NULL
 };
+
 static struct {
 	ut32 op;
 	const char *name;
@@ -121,8 +121,8 @@ static int riscv_rri(ut8 *b, int op, int rs, int rt, int imm) {
 
 static int getreg(const char *p) {
 	int n;
-	if (!p || !*p) {
-		eprintf ("Missing argument\n");
+	if (R_STR_ISEMPTY (p)) {
+		R_LOG_ERROR ("Missing argument");
 		return -1;
 	}
 	/* check if it's a register */
@@ -139,7 +139,7 @@ static int getreg(const char *p) {
 	}
 	/* try to convert it into a number */
 	if (p[0] == '-') {
-		n = (int) r_num_get (NULL, &p[1]);
+		n = (int) r_num_get (NULL, p + 1);
 		n = -n;
 	} else {
 		n = (int) r_num_get (NULL, p);
@@ -147,7 +147,7 @@ static int getreg(const char *p) {
 	if (n != 0 || p[0] == '0') {
 		return n;
 	}
-	eprintf ("Invalid reg name (%s) at pos %d\n", p, n);
+	R_LOG_ERROR ("Invalid reg name (%s) at pos %d", p, n);
 	return -1;
 }
 
@@ -168,63 +168,60 @@ R_IPI int riscv_assemble(const char *str, ut64 pc, ut8 *out) {
 	*w1 = 0;
 	*w2 = 0;
 	*w3 = 0;
-
 	sscanf (s, "%31s", w0);
 	if (*w0) {
 		for (i = 0; ops[i].name; i++) {
-			if (!strcmp (ops[i].name, w0)) {
-				switch (ops[i].args) {
-				case 3: sscanf (s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
-				case 2: sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
-				case 1: sscanf (s, "%31s %31s", w0, w1); break;
-				case 0: sscanf (s, "%31s", w0); break;
-				}
-				if (hasp) {
-					char tmp[32];
-					strcpy (tmp, w2);
-					strcpy (w2, w3);
-					strcpy (w3, tmp);
-				}
-				switch (ops[i].type) {
-				case 'I': {
-					int op = 0, rs = 0, rt = 0, imm = 0;
-					switch (ops[i].args) {
-					case 2: // lui x0, 33
-						rt = getreg (w1);
-						imm = getreg (w2);
-						free (s);
-						return riscv_ri (out, ops[i].op, rt, imm);
-						break;
-					case 3: // addi x1, x2, 3
-						rs = getreg (w2);
-						rt = getreg (w1);
-						imm = getreg (w3);
-						free (s);
-						return riscv_rri (out, ops[i].op, rs, rt, imm);
-						break;
-					default:
-						// invalid
-						op = ops[i].op;
-						free (s);
-						return riscv_ri (out, op, rs, imm);
-					}
-					break;
-				}
-				case 'N': // nop
-					memset (out, 0, 4);
-					out[0] = ops[i].op;
-					free (s);
-					return 4;
-				default:
-					eprintf ("Unknown type\n");
-					break;
-				}
-				free (s);
-				return -1;
+			if (strcmp (ops[i].name, w0)) {
+				continue;
 			}
+			switch (ops[i].args) {
+			case 3: sscanf (s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
+			case 2: sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
+			case 1: sscanf (s, "%31s %31s", w0, w1); break;
+			case 0: sscanf (s, "%31s", w0); break;
+			}
+			if (hasp) {
+				char tmp[32];
+				strcpy (tmp, w2);
+				strcpy (w2, w3);
+				strcpy (w3, tmp);
+			}
+			switch (ops[i].type) {
+			case 'I': {
+				int op = 0, rs = 0, rt = 0, imm = 0;
+				switch (ops[i].args) {
+				case 2: // lui x0, 33
+					rt = getreg (w1);
+					imm = getreg (w2);
+					free (s);
+					return riscv_ri (out, ops[i].op, rt, imm);
+				case 3: // addi x1, x2, 3
+					rs = getreg (w2);
+					rt = getreg (w1);
+					imm = getreg (w3);
+					free (s);
+					return riscv_rri (out, ops[i].op, rs, rt, imm);
+				default:
+					// invalid
+					op = ops[i].op;
+					free (s);
+					return riscv_ri (out, op, rs, imm);
+				}
+				break;
+			}
+			case 'N': // nop
+				memset (out, 0, 4);
+				out[0] = ops[i].op;
+				free (s);
+				return 4;
+			default:
+				R_LOG_ERROR ("Unknown type");
+				break;
+			}
+			free (s);
+			return -1;
 		}
 	}
 	free (s);
 	return -1;
 }
-

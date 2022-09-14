@@ -1,10 +1,85 @@
-/* radare - LGPL - Copyright 2012-2016 - pancake */
+/* radare - LGPL - Copyright 2012-2022 - pancake */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
-#include <r_asm.h>
 #include <r_anal.h>
+
+//////////////////
+#include "disas-asm.h"
+#include <mybfd.h>
+
+/* extern */
+extern int decodeInstr(bfd_vma address, disassemble_info * info);
+extern int ARCTangent_decodeInstr(bfd_vma address, disassemble_info * info);
+extern int ARCompact_decodeInstr(bfd_vma address, disassemble_info * info);
+
+/* ugly globals */
+static R_TH_LOCAL ut32 Offset = 0;
+static R_TH_LOCAL RStrBuf *buf_global = NULL;
+static R_TH_LOCAL int buf_len = 0;
+static R_TH_LOCAL ut8 bytes[32] = {0};
+
+static int arc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1; // disable backward reads
+	}
+	if ((delta + length) > sizeof (bytes)) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, R_MIN (buf_len - delta, length));
+	return 0;
+}
+
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+	return 0;
+}
+
+static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	//--
+}
+
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
+DECLARE_GENERIC_FPRINTF_FUNC()
+
+static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+	struct disassemble_info disasm_obj = {0};
+	if (len < 2) {
+		return -1;
+	}
+	buf_global = r_strbuf_new ("");
+	Offset = op->addr;
+	if (len > sizeof (bytes)) {
+		len = sizeof (bytes);
+	}
+	memcpy (bytes, buf, len); // TODO handle compact
+	buf_len = len;
+	/* prepare disassembler */
+	disasm_obj.buffer = bytes;
+	disasm_obj.buffer_length = len;
+	disasm_obj.read_memory_func = &arc_buffer_read_memory;
+	disasm_obj.symbol_at_address_func = &symbol_at_address;
+	disasm_obj.memory_error_func = &memory_error_func;
+	disasm_obj.print_address_func = &generic_print_address_func;
+	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.fprintf_func = &generic_fprintf_func;
+	disasm_obj.stream = stdout;
+	disasm_obj.mach = 0;
+	if (a->config->bits == 16) {
+		op->size = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+	} else {
+		ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+		//op->size = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+	}
+	if (op->size == -1) {
+		op->mnemonic = strdup ("(data)");
+		r_strbuf_free (buf_global);
+	} else {
+		op->mnemonic = r_strbuf_drain (buf_global);
+	}
+	buf_global = NULL;
+	return op->size;
+}
+//////////////////
 
 #define ARC_REG_ILINK1 0x1d
 #define ARC_REG_ILINK2 0x1e
@@ -246,6 +321,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	case 0x15: /* add with left shift by 2 */
 	case 0x16: /* add with left shift by 3 */
 		op->type = R_ANAL_OP_TYPE_ADD;
+		op->size = 8;
 		break;
 	case 0x02: /* subtract */
 	case 0x03: /* subtract with carry */
@@ -951,6 +1027,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			break;
 		case 3: /* Add gp-relative (32-bit aligned) to r0 */
 			op->type = R_ANAL_OP_TYPE_ADD;
+			op->size = 8;
 			break;
 		}
 		op->type = R_ANAL_OP_TYPE_UNK;
@@ -1016,12 +1093,19 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	const ut8 *b = (ut8 *)data;
 
+	op->addr = addr;
+	op->size = len;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		disassemble (anal, op, data, len);
+		//op->size = disassemble (anal, op, data, len);
+	}
 	if (anal->config->bits == 16) {
-		return arcompact_op (anal, op, addr, data, len);
+		(void)arcompact_op (anal, op, addr, data, len);
+		// eprintf ("%d %d\n", r, op->size);
+		return op->size;
 	}
 
 	/* ARCtangent A4 */
-	op->size = 4;
 	op->fail = addr + 4;
 	ut8 basecode = (len > 3)? ((b[3] & 0xf8) >> 3): 0;
 	switch (basecode) {
@@ -1038,6 +1122,7 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len,
 	case 0x08:
 	case 0x09:
 		op->type = R_ANAL_OP_TYPE_ADD;
+		op->size = 8;
 		break;
 	case 0x0a:
 	case 0x0b:
@@ -1140,6 +1225,7 @@ static bool set_reg_profile(RAnal *anal) {
 RAnalPlugin r_anal_plugin_arc = {
 	.name = "arc",
 	.arch = "arc",
+	.author = "pancake",
 	.license = "LGPL3",
 	.bits = 16 | 32,
 	.desc = "ARC code analysis plugin",

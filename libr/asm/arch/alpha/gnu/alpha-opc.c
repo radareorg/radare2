@@ -326,7 +326,7 @@ const struct alpha_operand alpha_operands[] =
     insert_ev6hwjhint, extract_ev6hwjhint }
 };
 
-const unsigned alpha_num_operands = sizeof(alpha_operands)/sizeof(*alpha_operands);
+const unsigned alpha_num_operands = sizeof (alpha_operands)/sizeof (*alpha_operands);
 
 
 /* Macros used to form opcodes.  */
@@ -1494,4 +1494,4 @@ const struct alpha_opcode alpha_opcodes[] =
   { "bgt",		BRA(0x3F), BASE, ARG_BRA },
 };
 
-const unsigned alpha_num_opcodes = sizeof(alpha_opcodes)/sizeof(*alpha_opcodes);
+const unsigned alpha_num_opcodes = sizeof (alpha_opcodes)/sizeof (*alpha_opcodes);

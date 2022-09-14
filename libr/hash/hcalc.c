@@ -9,7 +9,7 @@
 			r_write_be##rbits (ctx->digest, res); \
 			return R_HASH_SIZE_##aname; \
 		} \
-	} while(0)
+	} while (0)
 
 /* TODO: do it more beautiful with structs and not spaguetis */
 R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
@@ -19,6 +19,10 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	if (algobit & R_HASH_SSDEEP) {
 		r_hash_do_ssdeep (ctx, buf, len);
 		return R_HASH_SIZE_SSDEEP;
+	}
+	if (algobit & R_HASH_SIP) {
+		r_hash_do_sip (ctx, buf, len);
+		return R_HASH_SIZE_SIP;
 	}
 	if (algobit & R_HASH_MD4) {
 		r_hash_do_md4 (ctx, buf, len);

@@ -3,8 +3,6 @@
 #include "r2r.h"
 
 #define WORKERS_DEFAULT        8
-#define RADARE2_CMD_DEFAULT    "radare2"
-#define RASM2_CMD_DEFAULT      "rasm2"
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
 // 30 seconds is the maximum time a test can run
 #define TIMEOUT_DEFAULT        (30*60)
@@ -32,6 +30,15 @@ typedef struct r2r_state_t {
 	RPVector results;
 } R2RState;
 
+static RThreadFunctionRet worker_th(RThread *th);
+static void print_state(R2RState *state, ut64 prev_completed);
+static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
+static void interact(R2RState *state);
+static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results);
+static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results);
+static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results);
+static void interact_diffchar(R2RTestResultInfo *result);
+
 static void parse_skip(const char *arg) {
 	if (strstr (arg, "arch")) {
 		r_sys_setenv ("R2R_SKIP_ARCHOS", "1");
@@ -50,15 +57,6 @@ static void parse_skip(const char *arg) {
 	}
 }
 
-static RThreadFunctionRet worker_th(RThread *th);
-static void print_state(R2RState *state, ut64 prev_completed);
-static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
-static void interact(R2RState *state);
-static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results);
-static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results);
-static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results);
-static void interact_diffchar(R2RTestResultInfo *result);
-
 static int help(bool verbose) {
 	printf ("Usage: r2r [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
@@ -71,12 +69,10 @@ static int help(bool verbose) {
 		" -h           print this help\n"
 		" -i           interactive mode\n"
 		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
-		" -m [rasm2]   path to rasm2 executable (default is "RASM2_CMD_DEFAULT")\n"
 		" -n           do nothing (don't run any test, just load/parse them)\n"
 		" -o [file]    output test run information in JSON format to file\n"
 		" -q           quiet\n"
-		" -r [radare2] path to radare2 executable (default is "RADARE2_CMD_DEFAULT")\n"
-		" -s [ignore]  Set R2R_SKIP_(xxx)=1 to skip running those tests\n"
+		" -s [ignore]  set R2R_SKIP_(xxx)=1 to skip running those tests\n"
 		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
 		" -u           do not git pull/clone test/bins\n"
 		" -v           show version\n"
@@ -104,7 +100,14 @@ static bool r2r_chdir(const char *argv0) {
 		return true;
 	}
 	char *src_path = malloc (PATH_MAX);
+	if (!src_path) {
+		return false;
+	}
 	char *r2r_path = r_file_path (argv0);
+	if (!r2r_path) {
+		free (src_path);
+		return false;
+	}
 	bool found = false;
 	if (readlink (r2r_path, src_path, PATH_MAX) != -1) {
 		src_path[PATH_MAX - 1] = 0;
@@ -203,8 +206,6 @@ int main(int argc, char **argv) {
 	bool quiet = false;
 	bool log_mode = false;
 	bool interactive = false;
-	char *radare2_cmd = NULL;
-	char *rasm2_cmd = NULL;
 	char *json_test_file = NULL;
 	char *output_file = NULL;
 	char *fuzz_dir = NULL;
@@ -218,11 +219,11 @@ int main(int argc, char **argv) {
 	{
 		HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 		DWORD mode;
+		DWORD mode_flags = ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 		int i;
 		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
 			GetConsoleMode (streams[i], &mode);
-			SetConsoleMode (streams[i],
-					mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+			SetConsoleMode (streams[i], mode | mode_flags);
 		}
 	}
 #endif
@@ -273,19 +274,11 @@ int main(int argc, char **argv) {
 				goto beach;
 			}
 			break;
-		case 'r':
-			free (radare2_cmd);
-			radare2_cmd = strdup (opt.arg);
-			break;
 		case 'C':
 			r2r_dir = opt.arg;
 			break;
 		case 'n':
 			nothing = true;
-			break;
-		case 'm':
-			free (rasm2_cmd);
-			rasm2_cmd = strdup (opt.arg);
 			break;
 		case 'f':
 			free (json_test_file);
@@ -346,15 +339,20 @@ int main(int argc, char **argv) {
 	}
 	atexit (r2r_subprocess_fini);
 
-	r_sys_setenv ("ASAN_OPTIONS", "detect_leaks=false");
+	char *have_options = r_sys_getenv ("ASAN_OPTIONS");
+	if (have_options) {
+		free (have_options);
+	} else {
+		r_sys_setenv ("ASAN_OPTIONS", "detect_leaks=false detect_odr_violation=0");
+	}
 	r_sys_setenv ("RABIN2_TRYLIB", "0");
 	r_sys_setenv ("R2_DEBUG_ASSERT", "1");
 	r_sys_setenv ("R2_DEBUG_EPRINT", "0");
 	r_sys_setenv ("TZ", "UTC");
 	ut64 time_start = r_time_now_mono ();
 	R2RState state = {{0}};
-	state.run_config.r2_cmd = radare2_cmd ? radare2_cmd : RADARE2_CMD_DEFAULT;
-	state.run_config.rasm2_cmd = rasm2_cmd ? rasm2_cmd : RASM2_CMD_DEFAULT;
+	state.run_config.r2_cmd = "radare2";
+	state.run_config.rasm2_cmd = "rasm2";
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;
 	state.verbose = verbose;
@@ -554,11 +552,10 @@ coast:
 	r_pvector_clear (&state.results);
 	r_pvector_clear (&state.completed_paths);
 	r2r_test_database_free (state.db);
+	ht_pp_free (state.path_left);
 	r_th_lock_free (state.lock);
 	r_th_cond_free (state.cond);
 beach:
-	free (radare2_cmd);
-	free (rasm2_cmd);
 	free (json_test_file);
 	free (fuzz_dir);
 #if __WINDOWS__
@@ -746,6 +743,9 @@ static R2RProcessOutput *print_runner(const char *file, const char *args[], size
 	printf ("%s", file);
 	for (i = 0; i < args_size; i++) {
 		const char *str = args[i];
+		if (R_STR_ISEMPTY (str)) {
+			break;
+		}
 		if (strpbrk (str, "\n \'\"")) {
 			printf (" '%s'", str); // TODO: escape
 		} else {
@@ -775,14 +775,14 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	case R2R_TEST_TYPE_CMD: {
 		r2r_run_cmd_test (config, result->test->cmd_test, print_runner, NULL);
 		const char *expect = result->test->cmd_test->expect.value;
-		const char *out = result->proc_out->out;
+		const char *out = result->proc_out? result->proc_out->out: "";
 		const char *regexp_out = result->test->cmd_test->regexp_out.value;
 		if ((expect || regexp_out) && !r_test_cmp_cmd_output (out, expect, regexp_out)) {
 			printf ("-- stdout\n");
 			print_diff (out, expect, false, regexp_out);
 		}
 		expect = result->test->cmd_test->expect_err.value;
-		const char *err = result->proc_out->err;
+		const char *err = result->proc_out? result->proc_out->err: "";
 		const char *regexp_err = result->test->cmd_test->regexp_err.value;
 		if ((expect || regexp_err) && !r_test_cmp_cmd_output (err, expect, regexp_err)) {
 			printf ("-- stderr\n");
@@ -790,7 +790,7 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 		} else if (*err) {
 			printf ("-- stderr\n%s\n", err);
 		}
-		if (result->proc_out->ret != 0) {
+		if (result->proc_out && result->proc_out->ret != 0) {
 			printf ("-- exit status: "Color_RED"%d"Color_RESET"\n", result->proc_out->ret);
 		}
 		break;
@@ -882,8 +882,12 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed) {
 	print_new_results (state, prev_completed);
 	ut64 paths_completed = r_pvector_len (&state->completed_paths);
+	int a = r_pvector_len (&state->queue);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
-		printf ("[**] %50s ", (const char *)r_pvector_at (&state->completed_paths, prev_paths_completed));
+		printf ("[%d/%d] %50s ",
+				(int)paths_completed,
+				(int)(a + prev_paths_completed),
+				(const char *)r_pvector_at (&state->completed_paths, prev_paths_completed));
 		print_state_counts (state);
 		printf ("\n");
 	}
@@ -1088,7 +1092,7 @@ static char *replace_cmd_kv(const char *path, const char *content, size_t line_b
 static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RPVector *fixup_results) {
 	char *content = r_file_slurp (path, NULL);
 	if (!content) {
-		eprintf ("Failed to read file \"%s\"\n", path);
+		R_LOG_ERROR ("Failed to read file \"%s\"", path);
 		return;
 	}
 	char *newc = replace_cmd_kv (path, content, line_begin, line_end, key, value, fixup_results);
@@ -1101,7 +1105,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 		sync ();
 #endif
 	} else {
-		eprintf ("Failed to write file \"%s\"\n", path);
+		R_LOG_ERROR ("Failed to write file \"%s\"", path);
 	}
 	free (newc);
 }
@@ -1141,12 +1145,12 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 	int fd = r_file_mkstemp ("r2r-cmds", &name);
 	if (fd == -1) {
 		free (name);
-		eprintf ("Failed to open tmp file\n");
+		R_LOG_ERROR ("Failed to open tmp file");
 		return;
 	}
 	size_t cmds_sz = strlen (test->cmds.value);
 	if (write (fd, test->cmds.value, cmds_sz) != cmds_sz) {
-		eprintf ("Failed to write to tmp file\n");
+		R_LOG_ERROR ("Failed to write to tmp file");
 		free (name);
 		close (fd);
 		return;
@@ -1167,7 +1171,7 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 
 	char *newcmds = r_file_slurp (name, NULL);
 	if (!newcmds) {
-		eprintf ("Failed to read edited command file\n");
+		R_LOG_ERROR ("Failed to read edited command file");
 		free (name);
 		return;
 	}

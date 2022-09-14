@@ -244,7 +244,7 @@ R_API bool r_lang_run_file(RLang *lang, const char *file) {
 				size_t len;
 				char *code = r_file_slurp (file, &len);
 				if (!code) {
-					eprintf ("Could not open '%s'.\n", file);
+					R_LOG_ERROR ("Could not open '%s'", file);
 					return 0;
 				}
 				ret = lang->cur->run (lang, code, (int)len);

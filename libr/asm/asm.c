@@ -17,7 +17,7 @@ static const char *directives[] = {
 	".else", ".set", ".get", NULL
 };
 
-static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
+static const RAsmPlugin * const asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
 static void parseHeap(RParse *p, RStrBuf *s) {
 	char *op_buf_asm = r_strbuf_get (s);
@@ -59,7 +59,7 @@ static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
 
 static inline int r_asm_pseudo_arch(RAsm *a, const char *input) {
 	if (!r_asm_use (a, input)) {
-		eprintf ("Error: Unknown plugin\n");
+		R_LOG_ERROR ("Unknown plugin");
 		return -1;
 	}
 	return 0;
@@ -67,7 +67,7 @@ static inline int r_asm_pseudo_arch(RAsm *a, const char *input) {
 
 static inline int r_asm_pseudo_bits(RAsm *a, const char *input) {
 	if (!(r_asm_set_bits (a, r_num_math (NULL, input)))) {
-		eprintf ("Error: Unsupported value for .bits.\n");
+		R_LOG_ERROR ("Unsupported value for .bits");
 		return -1;
 	}
 	return 0;
@@ -84,7 +84,7 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	long int l;
 	ut64 s64 = r_num_math (NULL, input);
 	if (n != 8 && s64 >> (n * 8)) {
-		eprintf ("int16 Out is out of range\n");
+		R_LOG_ERROR ("int16 Out is out of range");
 		return 0;
 	}
 	// XXX honor endian here
@@ -144,8 +144,8 @@ static inline int r_asm_pseudo_fill(RAsmOp *op, const char *input) {
 	if (strchr (input, ',')) {
 		int res = sscanf (input, "%d,%d,%d", &repeat, &size, &value); // use r_num?
 		if (res != 3) {
-			eprintf ("Invalid usage of .fill repeat,size,value\n");
-			eprintf ("for example: .fill 1,0x100,0\n");
+			R_LOG_ERROR ("Invalid usage of .fill repeat,size,value");
+			R_LOG_ERROR ("for example: .fill 1,0x100,0");
 			return -1;
 		}
 	} else {
@@ -179,7 +179,7 @@ static inline int r_asm_pseudo_incbin(RAsmOp *op, char *input) {
 	size_t count = (size_t)r_num_math (NULL,r_str_word_get0 (input, 2));
 	char *content = r_file_slurp (input, &bytes_read);
 	if (!content) {
-		eprintf ("Could not open '%s'.\n", input);
+		R_LOG_ERROR ("Could not open '%s'", input);
 		return -1;
 	}
 	if (skip > 0) {
@@ -218,7 +218,7 @@ R_API RAsm *r_asm_new(void) {
 	}
 	a->config = r_arch_config_new ();
 	for (i = 0; asm_static_plugins[i]; i++) {
-		r_asm_add (a, asm_static_plugins[i]);
+		r_asm_add (a, (RAsmPlugin*)asm_static_plugins[i]);
 	}
 	return a;
 }
@@ -262,7 +262,7 @@ R_API void r_asm_free(RAsm *a) {
 	if (a->cur && a->cur->fini) {
 		a->cur->fini (a->cur->user);
 	}
-	r_unref (a->config);
+	// r_unref (a->config);
 	if (a->plugins) {
 		r_list_free (a->plugins);
 		a->plugins = NULL;
@@ -298,14 +298,14 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 }
 
 R_API bool r_asm_is_valid(RAsm *a, const char *name) {
-	RAsmPlugin *h;
-	RListIter *iter;
-	if (!name || !*name) {
-		return false;
-	}
-	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->name, name)) {
-			return true;
+	// r_return_val_if_fail (a && name, false);
+	if (a && R_STR_ISNOTEMPTY (name)) {
+		RAsmPlugin *h;
+		RListIter *iter;
+		r_list_foreach (a->plugins, iter, h) {
+			if (!strcmp (h->name, name)) {
+				return true;
+			}
 		}
 	}
 	return false;
@@ -329,14 +329,16 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 }
 
 static void load_asm_descriptions(RAsm *a, RAsmPlugin *p) {
-	const char *arch = ((!p || !strcmp (p->name, "null")) && a->config->arch)
-		? a->config->arch: (p? p->arch: NULL);
-	if (!arch || (p && !strcmp (p->name, "r2ghidra"))) {
-		if (a->config->cpu) {
-			arch = a->config->cpu;
-		} else {
-			arch = p->name;
-		}
+	const char *arch;
+
+	if (a->config->arch && (!p || !strcmp (p->name, "null"))) {
+		arch = a->config->arch;
+	} else if (p && !strcmp (p->name, "r2ghidra")) {
+		arch = p->name;
+	} else if (p) {
+		arch = p->arch;
+	} else {
+		arch = a->config->cpu;
 	}
 #if HAVE_GPERF
 	SdbGperf *gp = r_asm_get_gperf (arch); // p->name);
@@ -415,7 +417,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		if (a->analb.use (a->analb.anal, name)) {
 			load_asm_descriptions (a, NULL);
 		} else {
-			eprintf ("Cannot find arch plugin with this name. See rasm2 -L and rasm2 -LL\n");
+			R_LOG_ERROR ("Cannot find arch plugin with this name. See rasm2 -L and rasm2 -LL");
 		}
 	}
 #if 0
@@ -448,24 +450,27 @@ R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 }
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
-	r_return_val_if_fail (a && a->cur, false);
-	a->config->big_endian = false; // little endian by default
-	// TODO: Use a->config->endian the same as a->cur->endian, and save this switch
-	switch (a->cur->endian) {
-	case R_SYS_ENDIAN_NONE:
-	case R_SYS_ENDIAN_BI:
-		// TODO: not yet implemented
+	r_return_val_if_fail (a, false);
+	a->config->big_endian = (bool)R_SYS_ENDIAN; // default is host endian
+	if (a->cur) {
+		switch (a->cur->endian) {
+		case R_SYS_ENDIAN_NONE:
+		case R_SYS_ENDIAN_BI:
+			// TODO: not yet implemented
+			a->config->big_endian = b;
+			break;
+		case R_SYS_ENDIAN_LITTLE:
+			a->config->big_endian = false;
+			break;
+		case R_SYS_ENDIAN_BIG:
+			a->config->big_endian = true;
+			break;
+		default:
+			R_LOG_WARN ("RAsmPlugin doesn't specify endianness");
+			break;
+		}
+	} else {
 		a->config->big_endian = b;
-		break;
-	case R_SYS_ENDIAN_LITTLE:
-		a->config->big_endian = false;
-		break;
-	case R_SYS_ENDIAN_BIG:
-		a->config->big_endian = true;
-		break;
-	default:
-		R_LOG_WARN ("RAsmPlugin doesn't specify endianness");
-		break;
 	}
 	return a->config->big_endian;
 }
@@ -532,7 +537,11 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		a->analb.opinit (&aop);
 		ret = a->analb.decode (a->analb.anal, &aop, a->pc, buf, len, R_ANAL_OP_MASK_DISASM);
 		op->size = aop.size;
-		r_strbuf_set (&op->buf_asm, aop.mnemonic);
+		if (aop.mnemonic) {
+			r_strbuf_set (&op->buf_asm, aop.mnemonic);
+		} else {
+			r_strbuf_set (&op->buf_asm, "");
+		}
 		a->analb.opfini (&aop);
 	}
 	if (ret < 0) {
@@ -581,7 +590,6 @@ static bool assemblerMatches(RAsm *a, RAsmPlugin *h) {
 }
 
 static Ase findAssembler(RAsm *a, const char *kw) {
-	Ase ase = NULL;
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (a->acur && a->acur->assemble) {
@@ -594,11 +602,11 @@ static Ase findAssembler(RAsm *a, const char *kw) {
 					return h->assemble;
 				}
 			} else {
-				ase = h->assemble;
+				return h->assemble;
 			}
 		}
 	}
-	return ase;
+	return NULL;
 }
 
 static char *replace_directives_for(char *str, const char *token) {
@@ -716,9 +724,8 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	RStrBuf *buf_asm;
 	RAsmCode *acode;
 	ut64 pc = a->pc;
-	RAsmOp op = {0};
 	ut64 idx;
-	size_t ret;
+	int ret;
 	const size_t addrbytes = a->user? ((RCore *)a->user)->io->addrbytes: 1;
 
 	if (!(acode = r_asm_code_new ())) {
@@ -732,6 +739,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		return r_asm_code_free (acode);
 	}
 	for (idx = 0; idx + addrbytes <= len; idx += (addrbytes * ret)) {
+		RAsmOp op = {0};
 		r_asm_set_pc (a, pc + idx);
 		ret = r_asm_disassemble (a, &op, buf + idx, len - idx);
 		if (ret < 1) {
@@ -742,8 +750,8 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		}
 		r_strbuf_append (buf_asm, r_strbuf_get (&op.buf_asm));
 		r_strbuf_append (buf_asm, "\n");
+		r_asm_op_fini (&op);
 	}
-	r_asm_op_fini (&op);
 	acode->assembly = r_strbuf_drain (buf_asm);
 	acode->len = idx;
 	return acode;
@@ -863,12 +871,12 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			const size_t new_tokens_size = tokens_size * 2;
 			if (sizeof (char*) * new_tokens_size <= sizeof (char*) * tokens_size) {
 				// overflow
-				eprintf ("Too many tokens\n");
+				R_LOG_ERROR ("Too many tokens");
 				goto fail;
 			}
 			char **new_tokens = realloc (tokens, sizeof (char*) * new_tokens_size);
 			if (!new_tokens) {
-				eprintf ("Too many tokens\n");
+				R_LOG_ERROR ("Too many tokens");
 				goto fail;
 			}
 			tokens_size = new_tokens_size;
@@ -927,7 +935,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				if (cptr && ptr && cptr < ptr) {
 					likely_comment = false;
 					for (cptr += 1; cptr < ptr ; cptr += 1) {
-						if ( ! isspace ((unsigned char) *cptr)) {
+						if (! isspace ((unsigned char) *cptr)) {
 							likely_comment = true;
 							break;
 						}
@@ -1057,7 +1065,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				} else if ((!strncmp (ptr, ".byte ", 6)) || (!strncmp (ptr, ".int8 ", 6))) {
 					ret = r_asm_pseudo_byte (&op, ptr + 6);
 				} else if (!strncmp (ptr, ".glob", 5)) { // .global .globl
-									 //	eprintf (".global directive not yet implemented\n");
+									 //	R_LOG_ERROR (".global directive not yet implemented");
 					ret = 0;
 					continue;
 				} else if (!strncmp (ptr, ".equ ", 5)) {
@@ -1072,32 +1080,32 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 						*ptr2 = '\0';
 						r_asm_code_set_equ (acode, ptr + 5, ptr2 + 1);
 					} else {
-						eprintf ("Invalid syntax for '.equ': Use '.equ <word> <word>'\n");
+						R_LOG_ERROR ("Invalid syntax for '.equ': Use '.equ <word> <word>'");
 					}
 				} else if (!strncmp (ptr, ".org ", 5)) {
 					ret = r_asm_pseudo_org (a, ptr + 5);
 					off = a->pc;
 				} else if (r_str_startswith (ptr, ".offset ")) {
-					eprintf ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'.\n");
+					R_LOG_ERROR ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'");
 				} else if (!strncmp (ptr, ".text", 5)) {
 					acode->code_offset = a->pc;
 				} else if (!strncmp (ptr, ".data", 5)) {
 					acode->data_offset = a->pc;
 				} else if (!strncmp (ptr, ".incbin", 7)) {
 					if (ptr[7] != ' ') {
-						eprintf ("incbin missing filename\n");
+						R_LOG_ERROR ("incbin missing filename");
 						continue;
 					}
 					ret = r_asm_pseudo_incbin (&op, ptr + 8);
 				} else {
-					eprintf ("Unknown directive (%s)\n", ptr);
+					R_LOG_ERROR ("Unknown directive (%s)", ptr);
 					goto fail;
 				}
 				if (!ret) {
 					continue;
 				}
 				if (ret < 0) {
-					eprintf ("!!! Oops (%s)\n", ptr);
+					R_LOG_ERROR ("!!! Oops (%s)", ptr);
 					goto fail;
 				}
 			} else { /* Instruction */
@@ -1118,14 +1126,11 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 						continue;
 					}
 					ret = r_asm_assemble (a, &op, ptr_start);
-					// XXX This fixes a leak, unsure
-					// why op_fini below doesn't catch it
-					r_strbuf_fini (&op.buf_asm);
 				}
 			}
 			if (stage == STAGES - 1) {
 				if (ret < 1) {
-					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
+					R_LOG_ERROR ("Cannot assemble '%s' at line %d", ptr_start, linenum);
 					goto fail;
 				}
 				acode->len = idx + ret;

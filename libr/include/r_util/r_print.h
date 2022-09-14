@@ -100,7 +100,7 @@ typedef struct r_print_t {
 	bool scr_prompt;
 	int (*disasm)(void *p, ut64 addr);
 	PrintfCallback oprintf;
-	RArchConfig *config; // 
+	RArchConfig *config;
 	int width;
 	int limit;
 	bool histblock;

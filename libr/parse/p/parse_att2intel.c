@@ -1,37 +1,32 @@
-/* radare - LGPL - Copyright 2011 pancake<@nopcode.org> */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+/* radare - LGPL - Copyright 2011-2022 - pancake */
 
 #include <r_lib.h>
-#include <r_util.h>
 #include <r_flag.h>
 #include <r_anal.h>
 #include <r_parse.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
 	int i,j,k;
-	struct {
+	const struct {
 		const char *op;
 		const char *str;
 	} ops[] = {
-		{ "cmpl",  "cmp 2, 1"},
+		{ "cmpl", "cmp 2, 1"},
 		{ "testl", "test 2, 1"},
-		{ "leal",  "lea 2, 1"},
-		{ "movl",  "mov 2, 1"},
-		{ "xorl",  "xor 2, 1"},
-		{ "andl",  "and 2, 1"},
-		{ "orl",   "or 2, 1"},
-		{ "addl",  "add 2, 1"},
-		{ "incl",  "inc 1"},
-		{ "decl",  "dec 1"},
-		{ "subl",  "sub 2, 1"},
-		{ "mull",  "mul 2, 1"},
-		{ "divl",  "div 2, 1"},
+		{ "leal", "lea 2, 1"},
+		{ "movl", "mov 2, 1"},
+		{ "xorl", "xor 2, 1"},
+		{ "andl", "and 2, 1"},
+		{ "orl", "or 2, 1"},
+		{ "addl", "add 2, 1"},
+		{ "incl", "inc 1"},
+		{ "decl", "dec 1"},
+		{ "subl", "sub 2, 1"},
+		{ "mull", "mul 2, 1"},
+		{ "divl", "div 2, 1"},
 		{ "pushl", "push 1"},
-		{ "popl",  "pop 1"},
-		{ "ret",  "ret"},
+		{ "popl", "pop 1"},
+		{ "ret", "ret"},
 		{ NULL }
 	};
 
@@ -58,7 +53,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	/* TODO: this is slow */
 	if (newstr) {
 		newstr[0] = '\0';
-		for (i=0; i<argc; i++) {
+		for (i = 0; i < argc; i++) {
 			strcat (newstr, argv[i]);
 			strcat (newstr, (i == 0 || i== argc - 1)?" ":",");
 		}
@@ -131,8 +126,8 @@ static int parse(RParse *p, const char *data, char *str) {
 			for (++ptr; *ptr == ' '; ptr++) {
 				;
 			}
-			strncpy (w0, buf, sizeof(w0) - 1);
-			strncpy (w1, ptr, sizeof(w1) - 1);
+			strncpy (w0, buf, sizeof (w0) - 1);
+			strncpy (w1, ptr, sizeof (w1) - 1);
 
 			optr = ptr;
 			ptr = strchr (ptr, ',');
@@ -141,23 +136,23 @@ static int parse(RParse *p, const char *data, char *str) {
 				for (++ptr; *ptr == ' '; ptr++) {
 					;
 				}
-				strncpy (w1, optr, sizeof(w1)-1);
-				strncpy (w2, ptr, sizeof(w2)-1);
+				strncpy (w1, optr, sizeof (w1)-1);
+				strncpy (w2, ptr, sizeof (w2)-1);
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
 					for (++ptr; *ptr == ' '; ptr++) {
 						;
 					}
-					strncpy (w2, optr, sizeof(w2)-1);
-					strncpy (w3, ptr, sizeof(w3)-1);
+					strncpy (w2, optr, sizeof (w2)-1);
+					strncpy (w3, ptr, sizeof (w3)-1);
 				}
 			}
 		}
 		{
 			const char *wa[] = { w0, w1, w2, w3 };
 			int nw = 0;
-			for (i=0; i<4; i++) {
+			for (i = 0; i < 4; i++) {
 				if (wa[i][0] != '\0') {
 					nw++;
 				}
@@ -172,8 +167,6 @@ static int parse(RParse *p, const char *data, char *str) {
 RParsePlugin r_parse_plugin_att2intel = {
 	.name = "att2intel",
 	.desc = "X86 att 2 intel plugin",
-	.init = NULL,
-	.fini = NULL,
 	.parse = &parse,
 };
 

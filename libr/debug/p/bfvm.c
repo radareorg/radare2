@@ -266,9 +266,9 @@ R_API int bfvm_cont(BfvmCPU *c, ut64 until) {
 }
 
 R_API int bfvm_trace(BfvmCPU *c, ut64 until) {
-	c->trace=1;
+	c->trace = 1;
 	bfvm_cont (c, until);
-	c->trace=0;
+	c->trace = 0;
 	return 0;
 }
 

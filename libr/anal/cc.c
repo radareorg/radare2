@@ -116,13 +116,13 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	int i;
 	// get cc by name and print the expr
 	if (r_str_cmp (sdb_const_get (DB, name, 0), "cc", -1)) {
-		eprintf ("This is not a valid calling convention name (%s)\n", name);
+		R_LOG_ERROR ("This is not a valid calling convention name (%s)", name);
 		return NULL;
 	}
 	r_strf_var (ccret, 128, "cc.%s.ret", name);
 	const char *ret = sdb_const_get (DB, ccret, 0);
 	if (!ret) {
-		eprintf ("Cannot find return type for %s\n", name);
+		R_LOG_ERROR ("Cannot find return type for %s", name);
 		return NULL;
 	}
 	RStrBuf *sb = r_strbuf_new (NULL);

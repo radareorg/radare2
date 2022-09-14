@@ -1,22 +1,22 @@
-/* radare2 - LGPL - Copyright 2021 - pancake */
+/* radare2 - LGPL - Copyright 2021-2022 - pancake */
 
-#include <string.h>
-#include <r_types.h>
+#define R_LOG_ORIGIN "esil.dummy"
+
 #include <r_lib.h>
 #include <r_anal.h>
 
 static bool esil_dummy_operation(RAnalEsil *esil) {
-	eprintf ("Dummy: Operation executed\n");
+	R_LOG_INFO ("Dummy: Operation executed");
 	return true;
 }
 
 static bool esil_dummy_interrupt_handler(RAnalEsil *esil, ut32 intr, void *user) {
-	eprintf ("Dummy: Interrupt %d fired\n", intr);
+	R_LOG_INFO ("Dummy: Interrupt %d fired", intr);
 	return true;
 }
 
 static bool esil_dummy_syscall_handler(RAnalEsil *esil, ut32 sysc, void *user) {
-	eprintf ("Dummy: Syscall %d called\n", sysc);
+	R_LOG_INFO ("Dummy: Syscall %d called", sysc);
 	return true;
 }
 
@@ -27,7 +27,7 @@ static void *r_esil_dummy_init(RAnalEsil *esil) {
 		esil_dummy_interrupt_handler, NULL);
 	r_anal_esil_set_syscall (esil, 1337,
 		esil_dummy_syscall_handler, NULL);
-	eprintf ("Dummy: Activated\n");
+	R_LOG_INFO ("Activated");
 	return NULL;
 }
 
@@ -42,7 +42,7 @@ static void r_esil_dummy_fini(RAnalEsil *esil, void *user) {
 	if (r_anal_esil_get_syscall (esil, 1337) == esil_dummy_syscall_handler) {
 		r_anal_esil_del_syscall (esil, 1337);
 	}
-	eprintf ("Dummy: Deactivated\n");
+	R_LOG_INFO ("Deactivated");
 }
 
 RAnalEsilPlugin r_esil_plugin_dummy = {

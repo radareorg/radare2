@@ -11,7 +11,7 @@ typedef struct r_io_mmo_t {
 	bool rawio;
 	bool nocache;
 	RBuffer *buf;
-	RIO * io_backref;
+	RIO *io_backref;
 } RIOMMapFileObj;
 
 static int __io_posix_open(const char *file, int perm, int mode) {
@@ -146,7 +146,7 @@ static bool r_io_def_mmap_check_default(const char *filename) {
 	if (r_str_startswith (filename, "file://")) {
 		filename += strlen ("file://");
 	}
-	const char * peekaboo = (!strncmp (filename, "nocache://", 10))
+	const char * peekaboo = r_str_startswith (filename, "nocache://")
 		? NULL : strstr (filename, "://");
 	return (!peekaboo || (peekaboo - filename) > 10);
 }
@@ -198,7 +198,7 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 		if (!(mmo->perm & R_PERM_W)) {
 			return -1;
 		}
-		if ( (count + addr > r_buf_size (mmo->buf)) || r_buf_size (mmo->buf) == 0) {
+		if ((count + addr > r_buf_size (mmo->buf)) || r_buf_size (mmo->buf) == 0) {
 			ut64 sz = count + addr;
 			r_file_truncate (mmo->filename, sz);
 		}
@@ -213,7 +213,7 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 		len = write (fd->fd, buf, count);
 	}
 	if (!r_io_def_mmap_refresh_def_mmap_buf (mmo) ) {
-		eprintf ("io_def_mmap: failed to refresh the def_mmap backed buffer.\n");
+		R_LOG_ERROR ("io_def_mmap: failed to refresh the def_mmap backed buffer");
 		// XXX - not sure what needs to be done here (error handling).
 	}
 	return len;
@@ -251,10 +251,10 @@ static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int perm, int mode
 static int r_io_def_mmap_truncate(RIOMMapFileObj *mmo, ut64 size) {
 	bool res = r_file_truncate (mmo->filename, size);
 	if (res && !r_io_def_mmap_refresh_def_mmap_buf (mmo) ) {
-		eprintf ("r_io_def_mmap_truncate: Error trying to refresh the def_mmap'ed file.");
+		R_LOG_ERROR ("r_io_def_mmap_truncate: Can't refresh the def_mmap'ed file");
 		res = false;
 	} else if (!res) {
-		eprintf ("r_io_def_mmap_truncate: Error trying to resize the file.");
+		R_LOG_ERROR ("r_io_def_mmap_truncate: Error trying to resize the file");
 	}
 	return res;
 }

@@ -71,6 +71,7 @@ typedef int (*RConsGetCursor)(int *rows);
 typedef bool (*RConsIsBreaked)(void);
 typedef void (*RConsFlush)(void);
 typedef void (*RConsGrepCallback)(const char *grep);
+typedef const char * const RCoreHelpMessage[];
 
 typedef struct r_cons_bind_t {
 	RConsGetSize get_size;
@@ -524,6 +525,7 @@ typedef struct r_cons_t {
 
 #define R_CONS_KEY_ESC 0x1b
 
+#define R_CONS_CLEAR_FROM_CURSOR_TO_EOL "\x1b[0K\r"
 #define R_CONS_CLEAR_LINE "\x1b[2K\r"
 #define R_CONS_CLEAR_SCREEN "\x1b[2J\r"
 #define R_CONS_CLEAR_FROM_CURSOR_TO_END "\x1b[0J\r"
@@ -884,6 +886,7 @@ R_API int r_cons_write(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
+// R2_580 - R_API char *r_cons_drain(void);
 R_API void r_cons_print_fps(int col);
 R_API void r_cons_last(void);
 R_API int r_cons_less_str(const char *str, const char *exitkeys);
@@ -894,9 +897,9 @@ R_API void r_cons_visual_flush(void);
 R_API void r_cons_visual_write(char *buffer);
 R_API bool r_cons_is_utf8(void);
 R_API bool r_cons_is_windows(void);
-R_API void r_cons_cmd_help(const char *help[], bool use_color);
-R_API void r_cons_cmd_help_json(const char *help[]);
-R_API void r_cons_cmd_help_match(const char *help[], bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact);
+R_API void r_cons_cmd_help(const char * const help[], bool use_color);
+R_API void r_cons_cmd_help_json(const char * const help[]);
+R_API void r_cons_cmd_help_match(RCoreHelpMessage help, bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact);
 R_API void r_cons_log_stub(const char *output, const char *funcname, const char *filename,
  unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(7, 8);
 

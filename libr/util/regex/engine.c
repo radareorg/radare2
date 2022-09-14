@@ -215,8 +215,7 @@ static int matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch p
 					STATETEARDOWN (m);
 					return R_REGEX_ESPACE;
 				}
-				m->lastpos = (char **)malloc ((g->nplus+1) *
-							sizeof(char *));
+				m->lastpos = (char **)calloc (g->nplus + 1, sizeof (char *));
 			}
 			if (g->nplus > 0 && !m->lastpos) {
 				free (m->pmatch);
@@ -523,7 +522,7 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 				return NULL;
 			break;
 		case OBOL:
-			if ( (sp == m->beginp && !(m->eflags&R_REGEX_NOTBOL)) ||
+			if ((sp == m->beginp && !(m->eflags&R_REGEX_NOTBOL)) ||
 					(sp < m->endp && *(sp-1) == '\n' &&
 						(m->g->cflags&R_REGEX_NEWLINE)) )
 				{ /* yes */ }
@@ -531,7 +530,7 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 				return NULL;
 			break;
 		case OEOL:
-			if ( (sp == m->endp && !(m->eflags&R_REGEX_NOTEOL)) ||
+			if ((sp == m->endp && !(m->eflags&R_REGEX_NOTEOL)) ||
 					(sp < m->endp && *sp == '\n' &&
 						(m->g->cflags&R_REGEX_NEWLINE)) )
 				{ /* yes */ }
@@ -718,12 +717,12 @@ fast(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 		/* is there an EOL and/or BOL between lastc and c? */
 		flagch = '\0';
 		i = 0;
-		if ( (lastc == '\n' && m->g->cflags&R_REGEX_NEWLINE) ||
+		if ((lastc == '\n' && m->g->cflags&R_REGEX_NEWLINE) ||
 				(lastc == OUT && !(m->eflags&R_REGEX_NOTBOL)) ) {
 			flagch = BOL;
 			i = m->g->nbol;
 		}
-		if ( (c == '\n' && m->g->cflags&R_REGEX_NEWLINE) ||
+		if ((c == '\n' && m->g->cflags&R_REGEX_NEWLINE) ||
 				(c == OUT && !(m->eflags&R_REGEX_NOTEOL)) ) {
 			flagch = (flagch == BOL) ? BOLEOL : EOL;
 			i += m->g->neol;
@@ -736,11 +735,11 @@ fast(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 		}
 
 		/* how about a word boundary? */
-		if ( (flagch == BOL || (lastc != OUT && !ISWORD (lastc))) &&
+		if ((flagch == BOL || (lastc != OUT && !ISWORD (lastc))) &&
 					(c != OUT && ISWORD(c)) ) {
 			flagch = BOW;
 		}
-		if ( (lastc != OUT && ISWORD (lastc)) &&
+		if ((lastc != OUT && ISWORD (lastc)) &&
 				(flagch == EOL || (c != OUT && !ISWORD (c))) ) {
 			flagch = EOW;
 		}
@@ -806,12 +805,12 @@ slow(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 		/* is there an EOL and/or BOL between lastc and c? */
 		flagch = '\0';
 		i = 0;
-		if ( (lastc == '\n' && m->g->cflags&R_REGEX_NEWLINE) ||
+		if ((lastc == '\n' && m->g->cflags&R_REGEX_NEWLINE) ||
 				(lastc == OUT && !(m->eflags&R_REGEX_NOTBOL)) ) {
 			flagch = BOL;
 			i = m->g->nbol;
 		}
-		if ( (c == '\n' && m->g->cflags&R_REGEX_NEWLINE) ||
+		if ((c == '\n' && m->g->cflags&R_REGEX_NEWLINE) ||
 				(c == OUT && !(m->eflags&R_REGEX_NOTEOL)) ) {
 			flagch = (flagch == BOL) ? BOLEOL : EOL;
 			i += m->g->neol;
@@ -824,11 +823,11 @@ slow(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 		}
 
 		/* how about a word boundary? */
-		if ( (flagch == BOL || (lastc != OUT && !ISWORD (lastc))) &&
+		if ((flagch == BOL || (lastc != OUT && !ISWORD (lastc))) &&
 					(c != OUT && ISWORD (c)) ) {
 			flagch = BOW;
 		}
-		if ( (lastc != OUT && ISWORD (lastc)) &&
+		if ((lastc != OUT && ISWORD (lastc)) &&
 				(flagch == EOL || (c != OUT && !ISWORD (c))) ) {
 			flagch = EOW;
 		}

@@ -104,8 +104,10 @@ default:
 }
 ```
 
-* Lines should be at most 78 characters in length. A tab is considered 8
-  characters.
+* Lines should be at most 140 characters in length. Considering tabs are 8
+  characters long. Originally this limit was 78, and it's still considered
+  as a good practice, try to keep your functions short and readable, with
+  minimum number of function arguments and not much nesting.
 
 * Braces open on the same line as the for/while/if/else/function/etc. Closing
   braces are put on a line of their own, except in the else of an if statement

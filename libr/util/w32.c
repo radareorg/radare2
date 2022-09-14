@@ -19,7 +19,7 @@ static inline HANDLE w32_loadlib(const char *name, const char *libname) {
 	if (!lib) {
 		lib = LoadLibrary (TEXT (libname));
 		if (!lib) {
-			eprintf ("Cannot load %s to resolve %s. Aborting\n", libname, name);
+			R_LOG_ERROR ("Cannot load %s to resolve %s. Aborting", libname, name);
 			return (HANDLE)(size_t)0;
 		}
 	}
@@ -303,7 +303,7 @@ static bool setup_debug_privilege_noarg(void) {
 		//	eprintf ("Successfully changed token privileges.\n");
 		// XXX if we cant get the token nobody tells?? wtf
 	} else {
-		eprintf ("Failed to change token privileges 0x%x\n", (int)GetLastError());
+		R_LOG_ERROR ("Failed to change token privileges 0x%x", (int)GetLastError());
 		ret = false;
 	}
 	CloseHandle (hToken);
@@ -320,7 +320,6 @@ R_API bool r_w32_init(void) {
 	// w32_DebugBreakProcess = (BOOL (*)(HANDLE)) GetProcAddress (lib, "DebugBreakProcess");
 	// Windows XP
 	// w32_CreateToolhelp32Snapshot = (HANDLE (*)(DWORD, DWORD)) GetProcAddress (lib, "CreateToolhelp32Snapshot");
-	
 	// only windows vista :(
 	w32_GetThreadId = (DWORD (*)(HANDLE))
 		GetProcAddress (lib, "GetThreadId");

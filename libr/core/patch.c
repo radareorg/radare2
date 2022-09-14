@@ -76,7 +76,7 @@ static bool __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 				r_buf_append_bytes (b, (const ut8*)str, strlen (str));
 				snprintf (tmp, sizeof (tmp), "0x%08"PFMT64x, *noff);
 				r_buf_append_bytes (b, (const ut8*)tmp, strlen (tmp));
-				r_buf_append_bytes (b, (const ut8*)end+1, strlen (end+1));
+				r_buf_append_bytes (b, (const ut8*)end + 1, strlen (end + 1));
 			}
 		} else {
 			r_buf_append_bytes (b, (const ut8*)str, strlen (str));
@@ -128,7 +128,7 @@ R_API int r_core_patch(RCore *core, const char *patch) {
 		case '\0':
 			break;
 		case ':':
-			r_core_cmd0 (core, str+1);
+			r_core_cmd0 (core, str + 1);
 			break;
 		case '.':
 		case '!':
@@ -146,8 +146,6 @@ R_API int r_core_patch(RCore *core, const char *patch) {
 		}
 		str = p;
 	}
-//	eprintf ("%d\n", *p);
-//	eprintf ("Missing newline\n");
 	free (p0);
 	return 0;
 }

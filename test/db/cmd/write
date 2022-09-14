@@ -248,7 +248,7 @@ EXPECT=<<EOF
 1024
 EOF
 EXPECT_ERR=<<EOF
-Dumped 1024 bytes from 0x00000000 into a_piece_of_ls_saved_to_PWD
+INFO: Dumped 1024 bytes from 0x00000000 into a_piece_of_ls_saved_to_PWD
 EOF
 RUN
 

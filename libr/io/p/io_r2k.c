@@ -82,14 +82,14 @@ static ut64 r2k__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool r2k__plugin_open(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "r2k://", 6));
+	return r_str_startswith (pathname, "r2k://");
 }
 
 static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "")) {
 		return NULL;
 	}
-	if (!strncmp (cmd, "mod", 3)) {
+	if (r_str_startswith (cmd, "mod")) {
 #if __WINDOWS__
 		GetSystemModules (io);
 #endif
@@ -98,19 +98,19 @@ static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 		(void)run_ioctl_command (io, fd, cmd);
 		return NULL;
 #else
-		eprintf ("Try: '=!mod'\n    '.=!mod'\n");
+		eprintf ("Try: ':mod'\n    '.:mod'\n");
 #endif
 	}
 	return NULL;
 }
 
 static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
-	if (!strncmp (pathname, "r2k://", 6)) {
+	if (r_str_startswith (pathname, "r2k://")) {
 		rw |= R_PERM_WX;
 #if __WINDOWS__
 		RIOW32 *w32 = R_NEW0 (RIOW32);
-		if (Init (&pathname[6]) == FALSE) {
-			eprintf ("r2k__open: Error cant init driver: %s\n", &pathname[6]);
+		if (!w32 || !Init (pathname + 6)) {
+			R_LOG_ERROR ("r2k__open: Error cant init driver: %s", pathname + 6);
 			free (w32);
 			return NULL;
 		}

@@ -25,8 +25,8 @@ static bool lang_lib_file_run(RLang *user, const char *file) {
 	if (!r_file_exists (libpath)) {
 		free (libpath);
 		return false;
-	}	
-	
+	}
+
 	lib = r_lib_dl_open (libpath);
 	if (lib) {
 		void (*fcn)(RCore *);
@@ -34,7 +34,7 @@ static bool lang_lib_file_run(RLang *user, const char *file) {
 		if (fcn) {
 			fcn (user->user);
 		} else {
-			eprintf ("Cannot find 'entry' symbol in library\n");
+			R_LOG_ERROR ("Cannot find 'entry' symbol in library");
 		}
 		r_lib_dl_close (lib);
 	}

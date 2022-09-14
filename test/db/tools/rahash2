@@ -136,10 +136,9 @@ RUN
 NAME=rahash2 -a md5 -x "61646d696e" -s "admin"
 FILE=-
 CMDS=!rahash2 -a md5 -x "61646d696e" -s "admin"
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-Hashstring already defined
+WARN: Hashstring already defined
 EOF
 RUN
 
@@ -206,6 +205,7 @@ h  fletcher8
 h  fletcher16
 h  fletcher32
 h  fletcher64
+h  sip
 e  base64
 e  base91
 e  punycode
@@ -223,6 +223,7 @@ c  cps2
 c  des-ecb
 c  xor
 c  serpent-ecb
+c  sm4-ecb
 EOF
 RUN
 
@@ -407,7 +408,6 @@ FILE=-
 CMDS=!rahash2 -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=<<EOF
 0x00000000-0x00000004 md5: 21232f297a57a5a743894a0e4a801fc3
-rahash2: Computed hash matches the expected one.
 EOF
 RUN
 
@@ -418,7 +418,7 @@ EXPECT=<<EOF
 0x00000000-0x00000004 md5: 21232f297a57a5a743894a0e4a801fc3
 EOF
 EXPECT_ERR=<<EOF
-rahash2: Computed hash doesn't match the expected one.
+WARN: Computed hash doesn't match the expected one
 EOF
 RUN
 
@@ -427,87 +427,78 @@ FILE=-
 CMDS=!rahash2 -q -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc3
 EXPECT=<<EOF
 21232f297a57a5a743894a0e4a801fc3
-rahash2: Computed hash matches the expected one.
 EOF
 RUN
 
 NAME=rahash2 -c with missing nibble
 FILE=-
 CMDS=!rahash2 -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801fc
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-rahash2: Invalid -c hex hash
+ERROR: Invalid -c hex hash
 EOF
 RUN
 
 NAME=rahash2 -c with incorrect md5 hash length
 FILE=-
 CMDS=!rahash2 -a md5 -s "admin" -c 21232f297a57a5a743894a0e4a801f
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-rahash2: Given -c hash has 15 byte(s) but the selected algorithm returns 16 byte(s).
+ERROR: Given -c hash has 15 byte(s) but the selected algorithm returns 16 byte(s)
 EOF
 RUN
 
 NAME=rahash2 -c with incorrect sha1 hash length
 FILE=-
 CMDS=!rahash2 -a sha1 -s "admin" -c 21232f297a57a5a743894a0e4a801f
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-rahash2: Given -c hash has 15 byte(s) but the selected algorithm returns 20 byte(s).
+ERROR: Given -c hash has 15 byte(s) but the selected algorithm returns 20 byte(s)
 EOF
 RUN
 
 NAME=rahash2 -c with 2 hash algorithms
 FILE=-
 CMDS=!rahash2 -a md5,sha1 -s "admin" -c 21232f297a57a5a743894a0e4a801f
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-rahash2: Option -c incompatible with multiple algorithms in -a.
+ERROR: Option -c incompatible with multiple algorithms in -a
 EOF
 RUN
 
 NAME=rahash2 -c with all hash algorithms
 FILE=-
 CMDS=!rahash2 -a all -s "admin" -c 21232f297a57a5a743894a0e4a801f
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-rahash2: Option -c incompatible with multiple algorithms in -a.
+ERROR: Option -c incompatible with multiple algorithms in -a
 EOF
 RUN
 
 NAME=rahash2 -c with custom block size and per-block hash
 FILE=-
 CMDS=!rahash2 -b 1 -B -s "admin" -c 21232f297a57a5a743894a0e4a801f
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-rahash2: Option -c incompatible with -b and -B options.
+ERROR: Option -c incompatible with -b and -B options
 EOF
 RUN
 
 NAME=rahash2 -c with base64 encoding
 FILE=-
 CMDS=!rahash2 -E base64 -s "admin" -c 21232f297a57a5a743894a0e4a801f
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-rahash2: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.
+ERROR: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options
 EOF
 RUN
 
 NAME=rahash2 -c with base64 decoding
 FILE=-
 CMDS=!rahash2 -D base64 -s "admin" -c 21232f297a57a5a743894a0e4a801f
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-rahash2: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.
+ERROR: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options
 EOF
 RUN
 
@@ -1013,6 +1004,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rahash2 -E sm4-ecb
+FILE=-
+CMDS=!rahash2 -E sm4-ecb -S "0123456789abcdeffedcba9876543210" -x "aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffffaaaaaaaabbbbbbbb" | rax2 -S
+EXPECT=<<EOF
+5ec8143de509cff7b5179f8f474b86192f1d305a7fb17df985f81c8482192304
+EOF
+RUN
+
 NAME=rahash2 -a fletcher8 -s hello-world
 FILE=-
 CMDS=!rahash2 -a fletcher8 -s hello-world
@@ -1049,7 +1048,7 @@ NAME=rahash2 empty single path
 FILE=-
 CMDS=!rahash2 -a md5 ""
 EXPECT_ERR=<<EOF
-Cannot open empty path
+ERROR: Cannot open empty path
 EOF
 RUN
 
@@ -1060,7 +1059,7 @@ EXPECT=<<EOF
 bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 md5: c957bd5bd6204470256bc15248ccafd4
 EOF
 EXPECT_ERR=<<EOF
-Cannot open empty path
+ERROR: Cannot open empty path
 EOF
 RUN
 
@@ -1068,7 +1067,7 @@ NAME=rahash2 empty first file
 FILE=-
 CMDS=!rahash2 -a md5 "" bins/elf/analysis/hello-linux-x86_64
 EXPECT_ERR=<<EOF
-Cannot open empty path
+ERROR: Cannot open empty path
 EOF
 RUN
 

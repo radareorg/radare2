@@ -421,13 +421,13 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 			if (gdbr_read_file (g, (unsigned char *)status, sizeof (status)) != -1) {
 				pid_info = _extract_pid_info (status, cmdline, ipid);
 			} else {
-				eprintf ("Failed to read from data from procfs file of pid (%d)\n", ipid);
+				R_LOG_ERROR ("Failed to read from data from procfs file of pid (%d)", ipid);
 			}
 			if (gdbr_close_file (g) != 0) {
-				eprintf ("Failed to close procfs file of pid (%d)\n", ipid);
+				R_LOG_ERROR ("Failed to close procfs file of pid (%d)", ipid);
 			}
 		} else {
-			eprintf ("Failed to open procfs file of pid (%d)\n", ipid);
+			R_LOG_ERROR ("Failed to open procfs file of pid (%d)", ipid);
 			if (!(pid_info = R_NEW0 (RDebugPid)) || !(pid_info->path = strdup (cmdline))) {
 				ret = -1;
 				goto end;

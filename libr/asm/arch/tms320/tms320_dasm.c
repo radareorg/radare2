@@ -273,8 +273,7 @@ int run_f_list(tms320_dasm_t * dasm) {
 	return 1;
 }
 
-int run_m_list(tms320_dasm_t * dasm)
-{
+int run_m_list(tms320_dasm_t * dasm) {
 	insn_mask_t * mask;
 
 	if (!dasm->insn->m_list) {
@@ -291,8 +290,7 @@ int run_m_list(tms320_dasm_t * dasm)
 	return 1;
 }
 
-int vreplace(char * string, const char * token, const char * fmt, va_list args)
-{
+int vreplace(char * string, const char * token, const char * fmt, va_list args) {
 	char data[64];
 	char * pos;
 
@@ -301,7 +299,7 @@ int vreplace(char * string, const char * token, const char * fmt, va_list args)
 		return 0;
 	}
 
-	vsnprintf(data, sizeof(data), fmt, args);
+	vsnprintf(data, sizeof (data), fmt, args);
 
 	memmove(pos + strlen(data), pos + strlen(token), strlen(pos + strlen(token)) + 1);
 	memmove(pos, data, strlen(data));
@@ -309,8 +307,7 @@ int vreplace(char * string, const char * token, const char * fmt, va_list args)
 	return 1;
 }
 
-int replace(char * string, const char * token, const char * fmt, ...)
-{
+int replace(char * string, const char * token, const char * fmt, ...) {
 	int result;
 	va_list args;
 
@@ -321,8 +318,7 @@ int replace(char * string, const char * token, const char * fmt, ...)
 	return result;
 }
 
-void substitute(char * string, const char * token, const char * fmt, ...)
-{
+void substitute(char * string, const char * token, const char * fmt, ...) {
 	int result;
 	va_list args;
 
@@ -333,8 +329,7 @@ void substitute(char * string, const char * token, const char * fmt, ...)
 	} while (result);
 }
 
-const char * get_xreg_str(ut8 key, char * str)
-{
+const char * get_xreg_str(ut8 key, char * str) {
 	static const char * table[16] = {
 		"ac0", "ac1", "ac2", "ac3", "xsp", "xssp", "xdp", "xcdp",
 		"xar0", "xar1", "xar2", "xar3", "xar4", "xar5", "xar6", "xar7",
@@ -343,8 +338,7 @@ const char * get_xreg_str(ut8 key, char * str)
 	return table[ key & 15 ];
 }
 
-const char * get_freg_str(ut8 key, char * str)
-{
+const char * get_freg_str(ut8 key, char * str) {
 	static const char * table[16] = {
 		"ac0", "ac1", "ac2", "ac3", "t0", "t1", "t2", "t3",
 		"ar0", "ar1", "ar2", "ar3", "ar4", "ar5", "ar6", "ar7",
@@ -353,8 +347,7 @@ const char * get_freg_str(ut8 key, char * str)
 	return table[ key & 15 ];
 }
 
-const char * get_swap_str(ut8 key, char * str)
-{
+const char * get_swap_str(ut8 key, char * str) {
 	switch (key) {
 	case 0: return "swap ac0, ac2";
 	case 1: return "swap ac1, ac3";
@@ -378,8 +371,7 @@ const char * get_swap_str(ut8 key, char * str)
 	return "invalid";
 }
 
-const char * get_relop_str(ut8 key, char * str)
-{
+const char * get_relop_str(ut8 key, char * str) {
 	static const char * table[] = {
 		"==", "<", ">=", "!="
 	};
@@ -387,8 +379,7 @@ const char * get_relop_str(ut8 key, char * str)
 	return table[ key & 3 ];
 }
 
-const char * get_cond_str(ut8 key, char * str)
-{
+const char * get_cond_str(ut8 key, char * str) {
 	/* 000 FSSS ... 101 FSSS */
 	if ((key >> 4) <= 5) {
 		static const char * op[6] = { "==", "!=", "<", "<=", ">", ">=" };
@@ -435,8 +426,7 @@ const char * get_cond_str(ut8 key, char * str)
 	return "invalid";
 }
 
-const char * get_v_str(ut8 key, char * str)
-{
+const char * get_v_str(ut8 key, char * str) {
 	static const char * table[2] = {
 		"carry", "tc2",
 	};
@@ -444,8 +434,7 @@ const char * get_v_str(ut8 key, char * str)
 	return table[ key & 1 ];
 }
 
-const char * get_t_str(ut8 key, char * str)
-{
+const char * get_t_str(ut8 key, char * str) {
 	static const char * table[2] = {
 		"tc1", "tc2",
 	};
@@ -453,8 +442,7 @@ const char * get_t_str(ut8 key, char * str)
 	return table[ key & 1 ];
 }
 
-const char * get_cmem_str(ut8 key, char * str)
-{
+const char * get_cmem_str(ut8 key, char * str) {
 	static const char * table[4] = {
 		"*cdp", "*cdp+", "*cdp-", "*(cdp+t0)",
 	};
@@ -462,8 +450,7 @@ const char * get_cmem_str(ut8 key, char * str)
 	return table[ key & 3 ];
 }
 
-const char * get_smem_str(ut8 key, char * str)
-{
+const char * get_smem_str(ut8 key, char * str) {
 	// direct memory
 
 	if ((key & 0x01) == 0) {
@@ -539,8 +526,7 @@ const char * get_smem_str(ut8 key, char * str)
 	return "invalid";
 }
 
-const char * get_mmm_str(ut8 key, char * str)
-{
+const char * get_mmm_str(ut8 key, char * str) {
 	switch (key & 7) {
 	default:
 	case 0x00: return "*ARn";
@@ -567,8 +553,7 @@ const char * get_mmm_str(ut8 key, char * str)
  * syntax decoders
  */
 
-void decode_bits(tms320_dasm_t * dasm)
-{
+void decode_bits(tms320_dasm_t * dasm) {
 	// rounding
 	if (field_valid (dasm, R)) {
 		substitute (dasm->syntax, "[r]", "%s", field_value (dasm, R) ? "r" : "");
@@ -590,8 +575,7 @@ void decode_bits(tms320_dasm_t * dasm)
 	}
 }
 
-void decode_braces(tms320_dasm_t * dasm)
-{
+void decode_braces(tms320_dasm_t * dasm) {
 	char * pos;
 
 	pos = strstr(dasm->syntax, "[(saturate]");
@@ -643,8 +627,7 @@ void decode_braces(tms320_dasm_t * dasm)
 	substitute(dasm->syntax, "[]", "%s", "");
 }
 
-void decode_constants(tms320_dasm_t * dasm)
-{
+void decode_constants(tms320_dasm_t * dasm) {
 	// signed constant
 
 	if (field_valid (dasm, K8)) {
@@ -699,8 +682,7 @@ void decode_constants(tms320_dasm_t * dasm)
 	}
 }
 
-void decode_addresses(tms320_dasm_t * dasm)
-{
+void decode_addresses(tms320_dasm_t * dasm) {
 	// program address label
 
 	if (field_valid (dasm, L7)) {
@@ -738,8 +720,7 @@ void decode_addresses(tms320_dasm_t * dasm)
 	}
 }
 
-void decode_swap(tms320_dasm_t * dasm)
-{
+void decode_swap(tms320_dasm_t * dasm) {
 	char tmp[64];
 
 	if (field_valid (dasm, k6)) {
@@ -747,15 +728,13 @@ void decode_swap(tms320_dasm_t * dasm)
 	}
 }
 
-void decode_relop(tms320_dasm_t * dasm)
-{
+void decode_relop(tms320_dasm_t * dasm) {
 	if (field_valid (dasm, cc)) {
 		substitute (dasm->syntax, "RELOP", get_relop_str (field_value (dasm, cc), NULL));
 	}
 }
 
-void decode_cond(tms320_dasm_t * dasm)
-{
+void decode_cond(tms320_dasm_t * dasm) {
 	char tmp[64];
 
 	if (field_valid (dasm, CCCCCCC)) {
@@ -765,8 +744,7 @@ void decode_cond(tms320_dasm_t * dasm)
 	substitute(dasm->syntax, "[label, ]", "");
 }
 
-void decode_registers(tms320_dasm_t * dasm)
-{
+void decode_registers(tms320_dasm_t * dasm) {
 	ut8 code = 0;
 
 	// transition register
@@ -911,8 +889,7 @@ void decode_registers(tms320_dasm_t * dasm)
 	}
 }
 
-void decode_addressing_modes(tms320_dasm_t * dasm)
-{
+void decode_addressing_modes(tms320_dasm_t * dasm) {
 	// Cmem
 
 	if (field_valid (dasm, mm)) {
@@ -936,7 +913,7 @@ void decode_addressing_modes(tms320_dasm_t * dasm)
 	if (field_valid(dasm, AAAAAAAI)) {
 		char str[64], tmp[64];
 
-		snprintf(tmp, sizeof(tmp), "%s", get_smem_str(field_value(dasm, AAAAAAAI), str));
+		snprintf(tmp, sizeof (tmp), "%s", get_smem_str(field_value(dasm, AAAAAAAI), str));
 
 		if (field_value(dasm, AAAAAAAI) & 1) {
 			if (strstr(tmp, "k16")) {
@@ -958,8 +935,7 @@ void decode_addressing_modes(tms320_dasm_t * dasm)
 	}
 }
 
-void decode_qualifiers(tms320_dasm_t * dasm)
-{
+void decode_qualifiers(tms320_dasm_t * dasm) {
 	switch (dasm->stream[dasm->length]) {
 	case 0x98:
 		// 1001 1000 - mmap
@@ -983,8 +959,7 @@ void decode_qualifiers(tms320_dasm_t * dasm)
 	}
 }
 
-static insn_item_t * finalize(tms320_dasm_t *dasm)
-{
+static insn_item_t * finalize(tms320_dasm_t *dasm) {
 	// remove odd spaces
 
 	substitute(dasm->syntax, "  ", "%s", " ");
@@ -1001,11 +976,10 @@ static insn_item_t * finalize(tms320_dasm_t *dasm)
 	return dasm->insn;
 }
 
-insn_item_t * decode_insn(tms320_dasm_t * dasm)
-{
+insn_item_t * decode_insn(tms320_dasm_t * dasm) {
 	dasm->length = dasm->head->size;
 
-	snprintf(dasm->syntax, sizeof(dasm->syntax), \
+	snprintf(dasm->syntax, sizeof (dasm->syntax), \
 		 field_valid(dasm, E) && field_value(dasm, E) ? "|| %s" : "%s", dasm->insn->syntax);
 
 	decode_bits(dasm);
@@ -1079,31 +1053,26 @@ insn_head_t * lookup_insn_head(tms320_dasm_t * dasm) {
 	return dasm->head;
 }
 
-static void init_dasm(tms320_dasm_t * dasm, const ut8 *stream, int len)
-{
-	strcpy(dasm->syntax, "invalid");
-	memcpy(dasm->stream, stream, min(sizeof(dasm->stream), len));
-
+static void init_dasm(tms320_dasm_t * dasm, const ut8 *stream, int len) {
+	strcpy (dasm->syntax, "invalid");
+	memset (dasm->stream, 0, sizeof (dasm->stream));
+	memcpy (dasm->stream, stream, R_MIN (sizeof (dasm->stream), len));
 	dasm->status = 0;
 	dasm->length = 0;
-
-	memset(&dasm->f, 0, sizeof(dasm->f));
-
+	memset (&dasm->f, 0, sizeof (dasm->f));
+	dasm->opcode64 = r_read_le64 (dasm->stream);
 	dasm->head = NULL;
 	dasm->insn = NULL;
 }
 
-static int full_insn_size(tms320_dasm_t *dasm)
-{
+static int full_insn_size(tms320_dasm_t *dasm) {
 	int qualifier_size = 0;
-
 	if (field_value (dasm, q_cr)) {
 		qualifier_size = 1;
 	}
 	if (field_value (dasm, q_lr)) {
 		qualifier_size = 1;
 	}
-
 	return dasm->length + qualifier_size;
 }
 
@@ -1150,7 +1119,7 @@ bool tms320_dasm_init(tms320_dasm_t * dasm) {
 	if (!dasm->map) {
 		return false;
 	}
-	for (i = 0; i < ARRAY_SIZE(c55x_list); i++) {
+	for (i = 0; i < R_ARRAY_SIZE (c55x_list); i++) {
 		ht_up_insert (dasm->map, c55x_list[i].byte, &c55x_list[i]);
 	}
 	tms320_f_set_cpu (dasm, TMS320_F_CPU_C55X);

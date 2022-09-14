@@ -369,11 +369,12 @@ static PUT_CALLBACK(spp_r2_fputs) {
 #if HAVE_SYSTEM
 	if (spp_r2_pipe_fd) {
 		fprintf (spp_r2_pipe_fd, "%s", buf);
-	} else
-#endif
-	{
+	} else {
 		r_cons_printf ("%s", buf);
 	}
+#else
+	r_cons_printf ("%s", buf);
+#endif
 	return 0;
 }
 

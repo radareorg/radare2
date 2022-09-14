@@ -827,9 +827,9 @@ afr
 afl
 EOF
 EXPECT=<<EOF
-0x00001f80    1 41           main
-0x00001f50    1 47           sym._foo
-0x00001f00    4 73           sym._bar
+0x00001f80    1     41 main
+0x00001f50    1     47 sym._foo
+0x00001f00    4     73 sym._bar
 EOF
 RUN
 
@@ -841,7 +841,7 @@ aF
 afl
 EOF
 EXPECT=<<EOF
-0x00001f80    1 41           main
+0x00001f80    1     41 main
 EOF
 RUN
 
@@ -867,9 +867,9 @@ aap
 afl
 EOF
 EXPECT=<<EOF
-0x00001f00    4 73           sym._bar
-0x00001f50    1 47           sym._foo
-0x00001f80    1 41           main
+0x00001f00    4     73 sym._bar
+0x00001f50    1     47 sym._foo
+0x00001f80    1     41 main
 EOF
 RUN
 
@@ -1391,14 +1391,14 @@ EXPECT=<<EOF
 |     |||   0x000113e6      mov ecx, 7
 |     |||   0x000113eb      lea rdi, [rip + 0x7ebb]                    ; str._.libs_
 |     |||                                                              ; 0x192ad ; "/.libs/"
-|     |||   0x000113f2      repe cmpsb byte [rsi], byte ptr [rdi]
+|     |||   0x000113f2      repe cmpsb byte [rsi], byte [rdi]
 |    ,====< 0x000113f4      jne 0x11424
 |    ||||   0x000113f6      mov ecx, 3
 |    ||||   0x000113fb      mov rsi, rdx
 |    ||||   0x000113fe      mov rbx, rdx
 |    ||||   0x00011401      lea rdi, [rip + 0x7ead]                    ; "lt-"
 |    ||||                                                              ; 0x192b5
-|    ||||   0x00011408      repe cmpsb byte [rsi], byte ptr [rdi]
+|    ||||   0x00011408      repe cmpsb byte [rsi], byte [rdi]
 |    ||||   0x0001140a      seta sil
 |    ||||   0x0001140e      setb cl
 |    ||||   0x00011411      cmp sil, cl
@@ -3844,7 +3844,7 @@ RUN
 NAME=./noncode
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
-e anal.noncode=false
+e anal.in=io.maps.x
 afr
 afl~?str.
 EOF
@@ -3856,7 +3856,7 @@ RUN
 NAME=./noncode
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
-e anal.noncode=false
+e anal.in=io.maps
 e anal.calls=true
 af
 afl~?str.

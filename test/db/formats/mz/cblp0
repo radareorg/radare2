@@ -3,7 +3,7 @@ FILE=bins/mz/cblp0.exe
 ARGS=-A
 CMDS=afl
 EXPECT=<<EOF
-0x00000000    1 512          entry0
+0x00000000    1    512 entry0
 EOF
 RUN
 

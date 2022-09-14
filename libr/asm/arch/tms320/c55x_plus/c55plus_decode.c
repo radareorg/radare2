@@ -43,7 +43,7 @@ static ut32 get_q_bits(ut32 val, const char *ins, ut32 ins_len, int *err_code) {
 		res = (val >> 10) & 1;
 	} else {
 		/* INVALID CONDITION */
-		eprintf ("Invalid token %s\n", ins);
+		R_LOG_ERROR ("Invalid token %s", ins);
 		*err_code = -1;
 	}
 	return res;
@@ -74,7 +74,7 @@ static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, const char *ins,
 		if (!aux) {
 			aux = strchr (op_str, ins[i]);
 			if (!aux) {
-				eprintf ("Invalid token %s\n", ins); *err_code = -1; return 0;
+				R_LOG_ERROR ("Invalid token %s", ins); *err_code = -1; return 0;
 			}
 		}
 
@@ -101,7 +101,7 @@ static bool check_arg(ut32 ins_bits, int *err_code) {
 	} else if (ins_bits >= 32 && ins_bits <= 252) {
 		res = false;
 	} else {
-		eprintf ("Invalid arg: %u\n", ins_bits);
+		R_LOG_ERROR ("Invalid arg: %u", ins_bits);
 		*err_code = -1;
 	}
 
@@ -122,7 +122,7 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 		break;
 	case 100:
 		if (r_str_ncasecmp (reg_arg, "d(ALLx", 6)) {
-			eprintf ("invalid register! %s\n", reg_arg);
+			R_LOG_ERROR ("invalid register! %s", reg_arg);
 			*err_code = -1;
 			return NULL;
 		}
@@ -133,7 +133,7 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 		break;
 	case 41:
 		if (r_str_ncasecmp (reg_arg, ")ALLx", 5)) {
-			eprintf ("invalid register! %s\n", reg_arg);
+			R_LOG_ERROR ("invalid register! %s", reg_arg);
 			*err_code = -1;
 			return NULL;
 		}
@@ -161,7 +161,7 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 		res = get_reg_name_1(ins_bits + 32);
 		break;
 	case 77:
-		if (!r_str_ncasecmp (reg_arg, "MA", 2) || !r_str_ncasecmp(reg_arg, "MR", 2)) {
+		if (!r_str_ncasecmp (reg_arg, "MA", 2) || !r_str_ncasecmp (reg_arg, "MR", 2)) {
 			res = get_reg_name_1(ins_bits);
 		} else {
 			res = get_reg_name_2(ins_bits);
@@ -171,9 +171,9 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 		res = get_reg_name_1(ins_bits);
 		break;
 	case 82:
-		if (!r_str_ncasecmp (reg_arg, "RA", 2) || !r_str_ncasecmp(reg_arg, "RL", 2)) {
+		if (!r_str_ncasecmp (reg_arg, "RA", 2) || !r_str_ncasecmp (reg_arg, "RL", 2)) {
 			res = get_reg_name_1(ins_bits);
-		} else if (!r_str_ncasecmp (reg_arg, "RLP", 3) || !r_str_ncasecmp(reg_arg, "RxP", 3)) {
+		} else if (!r_str_ncasecmp (reg_arg, "RLP", 3) || !r_str_ncasecmp (reg_arg, "RxP", 3)) {
 			res = get_reg_name_1(ins_bits + 1);
 		} else if (!r_str_ncasecmp (reg_arg, "RX", 2)) {
 			res = get_reg_name_1(ins_bits);
@@ -226,7 +226,7 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 	// get pseudo instruction
 	ins = ins_str[1 + 2 + hash_code * 4];
 	if (!ins /*|| ins_str[4 * hash_code] == 0*/) {
-		eprintf ("Invalid instruction /hash %x\n", hash_code);
+		R_LOG_ERROR ("Invalid instruction /hash %x", hash_code);
 		*err_code = -1;
 		return NULL;
 	}
@@ -247,14 +247,14 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 			pos++;
 			aux = strchr (pos, '`');
 			if (!aux || pos == aux) {
-				eprintf ("Invalid instruction %s\n", ins);
+				R_LOG_ERROR ("Invalid instruction %s", ins);
 				free (res_decode);
 				*err_code = -1;
 				return NULL;
 			}
 			len = (ut32)(size_t)(aux-pos);
 			if (len >= 80) {
-				eprintf ("Invalid length token %d\n", len);
+				R_LOG_ERROR ("Invalid length token %d", len);
 				free (res_decode);
 				*err_code = -1;
 				return NULL;
@@ -345,7 +345,7 @@ void set_magic_value(ut32 *magic_value, st32 hash_code, int *err_code) {
 		*magic_value |= 0x400;
 		break;
 	default:
-		eprintf ("invalid hash code 0x%x for magic value 0x%x\n", hash_code, *magic_value);
+		R_LOG_ERROR ("invalid hash code 0x%x for magic value 0x%x", hash_code, *magic_value);
 		*err_code = -1;
 	}
 }
@@ -830,7 +830,7 @@ static char* get_token_decoded(st32 hash_code, const char *ins_token, ut32 ins_t
 		} else if (!r_str_ncasecmp (ins_token, "q_LINR", 6)) {
 			res = ins_bits? ".lr": NULL;
 		} else {
-			eprintf ("Invalid instruction %s\n!", ins_token);
+			R_LOG_ERROR ("Invalid instruction %s!", ins_token);
 			*err_code = -1;
 			return NULL;
 		}

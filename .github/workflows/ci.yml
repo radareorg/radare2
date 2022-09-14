@@ -44,14 +44,44 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Linting
+      run: sys/lint.sh
     - name: Building without capstone
+      env:
+        CFLAGS: -O0
       run: |
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
         ./configure --without-capstone --with-rpath && make -j
-        sudo make symstall
-    - name: Building muon/samu
+        sudo make install
+    - name: Running c/m with self-hosted libmagic
+      run:
+        time r2 -a gb -e search.verbose=false -qc/m test/bins/mach0/ls-m1 > /tmp/m.1 2>&1 || true
+        cat /tmp/m.1
+    - name: Uninstall test
       run: |
-        r2pm -gci muon # installs samurai as dependency
+        sudo make uninstall
+    - name: Building with libmagic
+      env:
+        CFLAGS: -O0
+      run: |
+        sudo apt install -y libmagic-dev
+        git clean -xdf ; rm -rf shlr/capstone
+        cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
+        ./configure --with-sysmagic --without-capstone --with-rpath && make -j
+        sudo make install
+    - name: Running c/m with system libmagic
+      run:
+        time r2 -a gb -e search.verbose=false -qc/m test/bins/mach0/ls-m1 > /tmp/m.2 2>&1 || true
+        cat /tmp/m.2
+    - name: Compare magic times and results
+      run: |
+        echo ===== m.1
+        cat /tmp/m.1
+        echo ===== m.2
+        cat /tmp/m.2
+    #- name: Building muon/samu
+    #  run: |
+    #    r2pm -gci muon # installs samurai as dependency
         # ./preconfigure
         # XXX muon setup m && samu -C m -j5
   build-acr-gperf:

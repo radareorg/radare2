@@ -9,12 +9,12 @@ static int r_bin_dmp64_init_memory_runs(struct r_bin_dmp64_obj_t *obj) {
 	int i, j;
 	dmp64_p_memory_desc *mem_desc = &obj->header->PhysicalMemoryBlockBuffer;
 	if (!memcmp (mem_desc, DMP_UNUSED_MAGIC, 4)) {
-		eprintf ("Warning: Invalid PhysicalMemoryDescriptor\n");
+		R_LOG_WARN ("Invalid PhysicalMemoryDescriptor");
 		return false;
 	}
 	ut64 num_runs = mem_desc->NumberOfRuns;
 	if (num_runs * sizeof (dmp_p_memory_run) >= r_offsetof (dmp64_header, ContextRecord)) {
-		eprintf ("Warning: Invalid PhysicalMemoryDescriptor\n");
+		R_LOG_WARN ("Invalid PhysicalMemoryDescriptor");
 		return false;
 	}
 	obj->pages = r_list_newf (free);
@@ -24,7 +24,7 @@ static int r_bin_dmp64_init_memory_runs(struct r_bin_dmp64_obj_t *obj) {
 	dmp_p_memory_run *runs = calloc (num_runs, sizeof (dmp_p_memory_run));
 	ut64 num_runs_offset = r_offsetof (dmp64_header, PhysicalMemoryBlockBuffer) + r_offsetof (dmp64_p_memory_desc, NumberOfRuns);
 	if (r_buf_read_at (obj->b, num_runs_offset, (ut8*)runs, num_runs * sizeof (dmp_p_memory_run)) < 0) {
-		eprintf ("Warning: read memory runs\n");
+		R_LOG_WARN ("read memory runs");
 		free (runs);
 		return false;
 	};
@@ -46,7 +46,7 @@ static int r_bin_dmp64_init_memory_runs(struct r_bin_dmp64_obj_t *obj) {
 		}
 	}
 	if (mem_desc->NumberOfPages != num_page) {
-		eprintf ("Warning: Number of Pages not matches\n");
+		R_LOG_WARN ("Number of Pages not matches");
 	}
 
 	free (runs);
@@ -59,7 +59,7 @@ static int r_bin_dmp64_init_header(struct r_bin_dmp64_obj_t *obj) {
 		return false;
 	}
 	if (r_buf_read_at (obj->b, 0, (ut8*)obj->header, sizeof (dmp64_header)) < 0) {
-		eprintf ("Warning: read header\n");
+		R_LOG_WARN ("read header");
 		return false;
 	}
 	obj->dtb = obj->header->DirectoryTableBase;
@@ -82,7 +82,7 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 	r_bitmap_set_bytes (bitmap, obj->bitmap, num_pages / 8);
 
 	ut64 num_bitset = 0;
-	for(i = 0; i < num_pages; i++) {
+	for (i = 0; i < num_pages; i++) {
 		if (!r_bitmap_test(bitmap, i)) {
 			continue;
 		}
@@ -96,7 +96,7 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 		num_bitset++;
 	}
 	if (obj->bmp_header->TotalPresentPages != num_bitset) {
-		eprintf ("Warning: TotalPresentPages not matched\n");
+		R_LOG_WARN ("TotalPresentPages not matched");
 		return false;
 	}
 
@@ -110,17 +110,17 @@ static int r_bin_dmp64_init_bmp_header(struct r_bin_dmp64_obj_t *obj) {
 		return false;
 	}
 	if (r_buf_read_at (obj->b, sizeof (dmp64_header), (ut8*)obj->bmp_header, offsetof (dmp_bmp_header, Bitmap)) < 0) {
-		eprintf ("Warning: read bmp_header\n");
+		R_LOG_WARN ("read bmp_header");
 		return false;
 	}
 	if (!!memcmp (obj->bmp_header, DMP_BMP_MAGIC, 8)) {
-		eprintf ("Warning: Invalid Bitmap Magic\n");
+		R_LOG_WARN ("Invalid Bitmap Magic");
 		return false;
 	}
 	ut64 bitmapsize = obj->bmp_header->Pages / 8;
 	obj->bitmap = calloc (1, bitmapsize);
 	if (r_buf_read_at (obj->b, sizeof (dmp64_header) + offsetof (dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
-		eprintf ("Warning: read bitmap\n");
+		R_LOG_WARN ("read bitmap");
 		return false;
 	}
 
@@ -129,7 +129,7 @@ static int r_bin_dmp64_init_bmp_header(struct r_bin_dmp64_obj_t *obj) {
 
 static int r_bin_dmp64_init(struct r_bin_dmp64_obj_t *obj) {
 	if (!r_bin_dmp64_init_header (obj)) {
-		eprintf ("Warning: Invalid Kernel Dump x64 Format\n");
+		R_LOG_WARN ("Invalid Kernel Dump x64 Format");
 		return false;
 	}
 	switch (obj->header->DumpType) {
@@ -148,11 +148,10 @@ static int r_bin_dmp64_init(struct r_bin_dmp64_obj_t *obj) {
 	return true;
 }
 
-void r_bin_dmp64_free(struct r_bin_dmp64_obj_t *obj) {
+R_IPI void r_bin_dmp64_free(struct r_bin_dmp64_obj_t *obj) {
 	if (!obj) {
 		return;
 	}
-
 	r_buf_free (obj->b);
 	obj->b = NULL;
 	free (obj->header);
@@ -163,7 +162,7 @@ void r_bin_dmp64_free(struct r_bin_dmp64_obj_t *obj) {
 	free (obj);
 }
 
-struct r_bin_dmp64_obj_t *r_bin_dmp64_new_buf(RBuffer* buf) {
+R_IPI struct r_bin_dmp64_obj_t *r_bin_dmp64_new_buf(RBuffer* buf) {
 	struct r_bin_dmp64_obj_t *obj = R_NEW0 (struct r_bin_dmp64_obj_t);
 	if (!obj) {
 		return NULL;

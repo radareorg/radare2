@@ -1,4 +1,4 @@
-project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.49', version : '5.7.3')
+project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.49', version : '5.7.8')
 
 py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
@@ -37,6 +37,9 @@ if git_exe.found()
   if git_rev_list.returncode() == 0
     version_commit = git_rev_list.stdout().strip()
   endif
+  if version_commit == ''
+    version_commit = '0'
+  endif
 
   # Get gittap
   git_describe = run_command(git_exe, '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
@@ -66,6 +69,10 @@ endif
 
 if get_option('r2_gittip') != ''
   gittip = get_option('r2_gittip')
+endif
+
+if gittip == ''
+  gittip = r2_version
 endif
 
 # Get current date
@@ -638,6 +645,7 @@ if get_option('use_webui')
 endif
 
 subdir('test/unit')
+subdir('test/fuzz')
 
 install_data(
   'doc/fortunes.fun',

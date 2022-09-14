@@ -186,7 +186,7 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 #define LEB128_9(type) (BYTE_AT (type, 8, 56) | LEB128_8 (type))
 #define LEB128_10(type) (BYTE_AT (type, 9, 63) | LEB128_9 (type))
 
-#define SHIFT_AMOUNT(type, sign_bit) (sizeof(type) * 8 - 1 - (sign_bit))
+#define SHIFT_AMOUNT(type, sign_bit) (sizeof (type) * 8 - 1 - (sign_bit))
 #define SIGN_EXTEND(type, value, sign_bit) \
 	((type)((value) << SHIFT_AMOUNT (type, sign_bit)) >> \
 		SHIFT_AMOUNT (type, sign_bit))

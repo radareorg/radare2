@@ -1,3 +1,23 @@
+NAME=e,
+FILE=-
+CMDS=<<EOF
+e,key/cols/value,key/str/color
+EOF
+EXPECT=<<EOF
+key               value
+-----------------------
+asm.bytes.opcolor false
+log.color         false
+scr.color         0
+scr.color.args    true
+scr.color.bytes   true
+scr.color.grep    false
+scr.color.ophex   false
+scr.color.ops     true
+scr.color.pipe    false
+
+EOF
+RUN
 NAME=et
 FILE=-
 CMDS=<<EOF

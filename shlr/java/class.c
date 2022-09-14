@@ -1,15 +1,8 @@
 /* Apache 2.0 - Copyright 2007-2022 - pancake and dso
    class.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
  */
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <r_types.h>
-#include <r_util.h>
 #include <r_bin.h>
 #include <math.h>
-#include <sdb.h>
 #include "class.h"
 
 #ifdef IFDBG
@@ -1623,11 +1616,11 @@ R_API RBinJavaCPTypeObj *r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 			java_obj->file_offset = offset;
 			// IFDBG eprintf ("java_obj->file_offset = 0x%08"PFMT64x".\n",java_obj->file_offset);
 		} else if (!java_obj) {
-			eprintf ("Unable to parse the tag '%d' and create valid object.\n", tag);
+			R_LOG_ERROR ("Unable to parse the tag '%d' and create valid object", tag);
 		} else if (!java_obj->metas) {
-			eprintf ("Unable to parse the tag '%d' and create valid object.\n", tag);
+			R_LOG_ERROR ("Unable to parse the tag '%d' and create valid object", tag);
 		} else {
-			eprintf ("Failed to set the java_obj->metas-file_offset for '%d' offset is(0x%08"PFMT64x ").\n", tag, offset);
+			R_LOG_ERROR ("Failed to set the java_obj->metas-file_offset for '%d' offset is(0x%08"PFMT64x ")", tag, offset);
 		}
 	}
 	free (cp_buf);
@@ -2145,11 +2138,11 @@ R_API ut64 r_bin_java_parse_cp_pool(RBinJavaObj *bin, const ut64 offset, const u
 			IFDBG ((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->print_summary (obj);
 			adv += ((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->calc_size (obj);
 			if (offset + adv > len) {
-				eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile after Constant Pool Object: %d.\n", ord);
+				R_LOG_ERROR ("r_bin_java: Error unable to parse remainder of classfile after Constant Pool Object: %d", ord);
 				break;
 			}
 		} else {
-			IFDBG eprintf ("Failed to read ConstantPoolItem %d\n", bin->cp_idx);
+			IFDBG R_LOG_ERROR ("Failed to read ConstantPoolItem %d", bin->cp_idx);
 			break;
 		}
 	}
@@ -2220,7 +2213,7 @@ R_API ut64 r_bin_java_parse_fields(RBinJavaObj *bin, const ut64 offset, const ut
 					break;
 				}
 			} else {
-				IFDBG eprintf ("Failed to read Field %d\n", i);
+				IFDBG R_LOG_ERROR ("Failed to read Field %d", i);
 				break;
 			}
 		}
@@ -7387,7 +7380,7 @@ R_API char *r_bin_java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 space_bn_name_
 		}
 		return str;
 	}
-	if (strcmp (cp_name, "Class") == 0) {
+	if (!strcmp (cp_name, "Class")) {
 		item2 = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (BIN_OBJ, idx);
 		// str = r_bin_java_get_name_from_bin_cp_list (BIN_OBJ, idx-1);
 		class_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item);
@@ -7413,9 +7406,7 @@ R_API char *r_bin_java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 space_bn_name_
 		if (desc_str != empty) {
 			free (desc_str);
 		}
-	} else if (!strcmp (cp_name, "MethodRef") ||
-	!strcmp (cp_name, "FieldRef") ||
-	!strcmp (cp_name, "InterfaceMethodRef")) {
+	} else if (!strcmp (cp_name, "MethodRef") || !strcmp (cp_name, "FieldRef") || !strcmp (cp_name, "InterfaceMethodRef")) {
 		/*
 		*  The MethodRef, FieldRef, and InterfaceMethodRef structures
 		*/
@@ -7654,7 +7645,7 @@ R_API RList *r_bin_java_find_cp_const_by_val(RBinJavaObj *bin_obj, const ut8 *by
 	case R_BIN_JAVA_CP_DOUBLE: return r_bin_java_find_cp_const_by_val_double (bin_obj, bytes, len);
 	case R_BIN_JAVA_CP_UNKNOWN:
 	default:
-		eprintf ("Failed to perform the search for: %s\n", bytes);
+		R_LOG_ERROR ("Failed to perform the search for: %s", bytes);
 		return r_list_new ();
 	}
 }
@@ -8242,9 +8233,9 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 		if (desc_str != empty) {
 			free (desc_str);
 		}
-	} else if (strcmp (cp_name, "MethodRef") == 0 ||
-	strcmp (cp_name, "FieldRef") == 0 ||
-	strcmp (cp_name, "InterfaceMethodRef") == 0) {
+	} else if (!strcmp (cp_name, "MethodRef") ||
+	!strcmp (cp_name, "FieldRef") ||
+	!strcmp (cp_name, "InterfaceMethodRef")) {
 		/*
 		*  The MethodRef, FieldRef, and InterfaceMethodRef structures
 		*/
@@ -8279,7 +8270,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 		if (desc_str != empty) {
 			free (desc_str);
 		}
-	} else if (strcmp (cp_name, "String") == 0) {
+	} else if (!strcmp (cp_name, "String")) {
 		ut32 length = r_bin_java_get_utf8_len_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx);
 		string_str = r_bin_java_get_utf8_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx);
 		str = NULL;
@@ -8302,14 +8293,14 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 		if (string_str != empty) {
 			free (string_str);
 		}
-	} else if (strcmp (cp_name, "Utf8") == 0) {
+	} else if (!strcmp (cp_name, "Utf8")) {
 		ut64 sz = item->info.cp_utf8.length ? item->info.cp_utf8.length + 10 : 10;
 		str = malloc (sz);
 		memset (str, 0, sz);
 		if (sz > 10) {
 			r_base64_encode (str, item->info.cp_utf8.bytes, item->info.cp_utf8.length);
 		}
-	} else if (strcmp (cp_name, "Long") == 0) {
+	} else if (!strcmp (cp_name, "Long")) {
 		str = malloc (34);
 		if (str) {
 			snprintf (str, 34, "0x%"PFMT64x, r_bin_java_raw_to_long (item->info.cp_long.bytes.raw, 0));
@@ -8317,7 +8308,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			free (str);
 			str = out;
 		}
-	} else if (strcmp (cp_name, "Double") == 0) {
+	} else if (!strcmp (cp_name, "Double")) {
 		str = malloc (1000);
 		if (str) {
 			snprintf (str, 1000, "%f", r_bin_java_raw_to_double (item->info.cp_double.bytes.raw, 0));
@@ -8325,7 +8316,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			free (str);
 			str = out;
 		}
-	} else if (strcmp (cp_name, "Integer") == 0) {
+	} else if (!strcmp (cp_name, "Integer")) {
 		str = calloc (34, 1);
 		if (str) {
 			snprintf (str, 34, "0x%08x", R_BIN_JAVA_UINT (item->info.cp_integer.bytes.raw, 0));
@@ -8333,7 +8324,7 @@ R_API char *r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			free (str);
 			str = out;
 		}
-	} else if (strcmp (cp_name, "Float") == 0) {
+	} else if (!strcmp (cp_name, "Float")) {
 		str = malloc (34);
 		if (str) {
 			snprintf (str, 34, "%f", R_BIN_JAVA_FLOAT (item->info.cp_float.bytes.raw, 0));
@@ -8440,7 +8431,7 @@ R_API ConstJavaValue *U(r_bin_java_resolve_to_const_value)(RBinJavaObj * BIN_OBJ
 	}
 	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
 	IFDBG eprintf ("java_resolve Resolved: (%d) %s\n", idx, cp_name);
-	if (strcmp (cp_name, "Class") == 0) {
+	if (!strcmp (cp_name, "Class")) {
 		item2 = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (BIN_OBJ, idx);
 		// str = r_bin_java_get_name_from_bin_cp_list (BIN_OBJ, idx-1);
 		class_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item);
@@ -8469,9 +8460,9 @@ R_API ConstJavaValue *U(r_bin_java_resolve_to_const_value)(RBinJavaObj * BIN_OBJ
 		if (desc_str != empty) {
 			free (desc_str);
 		}
-	} else if (strcmp (cp_name, "MethodRef") == 0 ||
-	strcmp (cp_name, "FieldRef") == 0 ||
-	strcmp (cp_name, "InterfaceMethodRef") == 0) {
+	} else if (!strcmp (cp_name, "MethodRef")
+	|| !strcmp (cp_name, "FieldRef")
+	|| !strcmp (cp_name, "InterfaceMethodRef")) {
 		/*
 		*  The MethodRef, FieldRef, and InterfaceMethodRef structures
 		*/
@@ -8501,7 +8492,7 @@ R_API ConstJavaValue *U(r_bin_java_resolve_to_const_value)(RBinJavaObj * BIN_OBJ
 		if (desc_str != empty) {
 			free (desc_str);
 		}
-	} else if (strcmp (cp_name, "String") == 0) {
+	} else if (!strcmp (cp_name, "String")) {
 		ut32 length = r_bin_java_get_utf8_len_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx);
 		string_str = r_bin_java_get_utf8_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx);
 		IFDBG eprintf ("java_resolve String got: (%d) %s\n", item->info.cp_string.string_idx, string_str);
@@ -8520,25 +8511,25 @@ R_API ConstJavaValue *U(r_bin_java_resolve_to_const_value)(RBinJavaObj * BIN_OBJ
 		if (string_str != empty) {
 			free (string_str);
 		}
-	} else if (strcmp (cp_name, "Utf8") == 0) {
+	} else if (!strcmp (cp_name, "Utf8")) {
 		result->type = "str";
 		result->value._str = R_NEW0 (struct java_const_value_str_t);
 		result->value._str->str = malloc (item->info.cp_utf8.length);
 		result->value._str->len = item->info.cp_utf8.length;
 		memcpy (result->value._str->str, item->info.cp_utf8.bytes, item->info.cp_utf8.length);
-	} else if (strcmp (cp_name, "Long") == 0) {
+	} else if (!strcmp (cp_name, "Long")) {
 		result->type = "long";
 		result->value._long = r_bin_java_raw_to_long (item->info.cp_long.bytes.raw, 0);
-	} else if (strcmp (cp_name, "Double") == 0) {
+	} else if (!strcmp (cp_name, "Double")) {
 		result->type = "double";
 		result->value._double = r_bin_java_raw_to_double (item->info.cp_double.bytes.raw, 0);
-	} else if (strcmp (cp_name, "Integer") == 0) {
+	} else if (!strcmp (cp_name, "Integer")) {
 		result->type = "int";
 		result->value._int = R_BIN_JAVA_UINT (item->info.cp_integer.bytes.raw, 0);
-	} else if (strcmp (cp_name, "Float") == 0) {
+	} else if (!strcmp (cp_name, "Float")) {
 		result->type = "float";
 		result->value._float = R_BIN_JAVA_FLOAT (item->info.cp_float.bytes.raw, 0);
-	} else if (strcmp (cp_name, "NameAndType") == 0) {
+	} else if (!strcmp (cp_name, "NameAndType")) {
 		result->value._ref = R_NEW0 (struct java_const_value_ref_t);
 		result->type = "ref";
 		name_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item);

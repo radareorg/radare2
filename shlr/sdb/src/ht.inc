@@ -1,4 +1,4 @@
-/* radare2 - BSD 3 Clause License - crowell, pancake, ret2libc 2016-2018 */
+/* radare2 - BSD 3 Clause License - crowell, pancake, ret2libc 2016-2022 */
 
 #define LOAD_FACTOR 1
 #define S_ARRAY_SIZE(x) (sizeof (x) / sizeof (x[0]))
@@ -100,24 +100,24 @@ static inline HT_(Kv) *next_kv(HtName_(Ht) *ht, HT_(Kv) *kv) {
 // calcsize - function to calculate the size of a value. if NULL, just stores 0.
 static HtName_(Ht)* internal_ht_new(ut32 size, ut32 prime_idx, HT_(Options) *opt) {
 	HtName_(Ht)* ht = (HtName_(Ht)*)calloc (1, sizeof (*ht));
-	if (!ht) {
-		return NULL;
+	if (SDB_LIKELY (ht)) {
+		ht->size = size;
+		ht->count = 0;
+		ht->prime_idx = prime_idx;
+		ht->table = (HT_(Bucket)*)calloc (ht->size, sizeof (*ht->table));
+		if (!ht->table) {
+			free (ht);
+			return NULL;
+		}
+		ht->opt = *opt;
+		// if not provided, assume we are dealing with a regular HtName_(Ht), with
+		// HT_(Kv) as elements
+		if (ht->opt.elem_size == 0) {
+			ht->opt.elem_size = sizeof (HT_(Kv));
+		}
+		return ht;
 	}
-	ht->size = size;
-	ht->count = 0;
-	ht->prime_idx = prime_idx;
-	ht->table = (HT_(Bucket)*)calloc (ht->size, sizeof (*ht->table));
-	if (!ht->table) {
-		free (ht);
-		return NULL;
-	}
-	ht->opt = *opt;
-	// if not provided, assume we are dealing with a regular HtName_(Ht), with
-	// HT_(Kv) as elements
-	if (ht->opt.elem_size == 0) {
-		ht->opt.elem_size = sizeof (HT_(Kv));
-	}
-	return ht;
+	return NULL;
 }
 
 SDB_API HtName_(Ht) *Ht_(new_opt)(HT_(Options) *opt) {
@@ -125,26 +125,22 @@ SDB_API HtName_(Ht) *Ht_(new_opt)(HT_(Options) *opt) {
 }
 
 SDB_API void Ht_(free)(HtName_(Ht)* ht) {
-	if (!ht) {
-		return;
-	}
-
-	ut32 i;
-	for (i = 0; i < ht->size; i++) {
-		HT_(Bucket) *bt = &ht->table[i];
-		HT_(Kv) *kv;
-		ut32 j;
-
-		if (ht->opt.freefn) {
-			BUCKET_FOREACH (ht, bt, j, kv) {
-				ht->opt.freefn (kv);
+	if (SDB_LIKELY (ht)) {
+		ut32 i, htsize = ht->size;
+		for (i = 0; i < htsize; i++) {
+			HT_(Bucket) *bt = &ht->table[i];
+			HT_(Kv) *kv;
+			ut32 j;
+			if (ht->opt.freefn) {
+				BUCKET_FOREACH (ht, bt, j, kv) {
+					ht->opt.freefn (kv);
+				}
 			}
+			free (bt->arr);
 		}
-
-		free (bt->arr);
+		free (ht->table);
+		free (ht);
 	}
-	free (ht->table);
-	free (ht);
 }
 
 // Increases the size of the hashtable by 2.
@@ -204,10 +200,11 @@ static HT_(Kv) *reserve_kv(HtName_(Ht) *ht, const KEY_TYPE key, const int key_le
 	if (bt->count + 1 >= bt->size) {
 		bt->size = (bt->count + 5) * 2;
 		HT_(Kv) *newkvarr = (HT_(Kv)*)realloc (bt->arr, (bt->size) * ht->opt.elem_size);
-		if (!newkvarr) {
+		if (SDB_LIKELY (newkvarr)) {
+			bt->arr = newkvarr;
+		} else {
 			return NULL;
 		}
-		bt->arr = newkvarr;
 	}
 	bt->count++;
 	ht->count++;
@@ -216,28 +213,26 @@ static HT_(Kv) *reserve_kv(HtName_(Ht) *ht, const KEY_TYPE key, const int key_le
 
 SDB_API bool Ht_(insert_kv)(HtName_(Ht) *ht, HT_(Kv) *kv, bool update) {
 	HT_(Kv) *kv_dst = reserve_kv (ht, kv->key, kv->key_len, update);
-	if (!kv_dst) {
-		return false;
+	if (SDB_LIKELY (kv_dst)) {
+		memcpy (kv_dst, kv, ht->opt.elem_size);
+		check_growing (ht);
+		return true;
 	}
-
-	memcpy (kv_dst, kv, ht->opt.elem_size);
-	check_growing (ht);
-	return true;
+	return false;
 }
 
 static bool insert_update(HtName_(Ht) *ht, const KEY_TYPE key, VALUE_TYPE value, bool update) {
 	ut32 key_len = calcsize_key (ht, key);
 	HT_(Kv)* kv_dst = reserve_kv (ht, key, key_len, update);
-	if (!kv_dst) {
-		return false;
+	if (SDB_LIKELY (kv_dst)) {
+		kv_dst->key = dupkey (ht, key);
+		kv_dst->key_len = key_len;
+		kv_dst->value = dupval (ht, value);
+		kv_dst->value_len = calcsize_val (ht, value);
+		check_growing (ht);
+		return true;
 	}
-
-	kv_dst->key = dupkey (ht, key);
-	kv_dst->key_len = key_len;
-	kv_dst->value = dupval (ht, value);
-	kv_dst->value_len = calcsize_val (ht, value);
-	check_growing (ht);
-	return true;
+	return false;
 }
 
 // Inserts the key value pair key, value into the hashtable.
@@ -355,9 +350,9 @@ SDB_API bool Ht_(delete)(HtName_(Ht)* ht, const KEY_TYPE key) {
 }
 
 SDB_API void Ht_(foreach)(HtName_(Ht) *ht, HT_(ForeachCallback) cb, void *user) {
-	ut32 i;
+	ut32 i, htsize = ht->size;
 
-	for (i = 0; i < ht->size; ++i) {
+	for (i = 0; i < htsize; i++) {
 		HT_(Bucket) *bt = &ht->table[i];
 		HT_(Kv) *kv;
 		ut32 j, count;

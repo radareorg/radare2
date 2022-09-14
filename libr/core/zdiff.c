@@ -1,7 +1,5 @@
-/* radare - LGPL - Copyright 2019 - nibble, pancake */
+/* radare - LGPL - Copyright 2019-2022 - nibble, pancake */
 
-#include <stdio.h>
-#include <string.h>
 #include <r_core.h>
 
 static bool matchBytes(RSignItem *a, RSignItem *b) {
@@ -88,7 +86,7 @@ R_API int r_core_zdiff(RCore *c, RCore *c2) {
 			}
 		}
 	}
-	
+
 	/* Diff functions */
 	// r_anal_diff_fcn (cores[0]->anal, cores[0]->anal->fcns, cores[1]->anal->fcns);
 

@@ -1316,7 +1316,7 @@ static bool init_dynstr(ELFOBJ *bin) {
 		section_name = &bin->shstrtab[bin->shdr[i].sh_name];
 		if (bin->shdr[i].sh_type == SHT_STRTAB && !strcmp (section_name, ".dynstr")) {
 			if (!(bin->dynstr = (char*) calloc (bin->shdr[i].sh_size + 1, sizeof (char)))) {
-				R_LOG_ERROR ("Cannot allocate memory for dynamic strings\n");
+				R_LOG_ERROR ("Cannot allocate memory for dynamic strings");
 				return false;
 			}
 			if (bin->shdr[i].sh_offset > bin->size) {
@@ -2573,6 +2573,9 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 			bool regs_found = false;
 			ut64 offset = 0;
 
+			if (!elf_nhdr) {
+				return NULL;
+			}
 			while (!regs_found) {
 				ut32 n_descsz, n_namesz, n_type;
 				int ret;
@@ -2620,6 +2623,9 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 					break;
 			}
 			ut8 *buf = malloc (regsize);
+			if (!buf) {
+				return NULL;
+			}
 			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset + offset + regdelta, buf, regsize) != regsize) {
 				free (buf);
 				R_LOG_DEBUG ("Cannot read register state from CORE file");
@@ -2631,7 +2637,7 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 			return buf;
 		}
 	}
-	R_LOG_DEBUG ("Cannot find NOTE section.");
+	R_LOG_DEBUG ("Cannot find NOTE section");
 	return NULL;
 }
 
@@ -3017,7 +3023,7 @@ static RBinElfSection *get_sections_from_phdr(ELFOBJ *bin) {
 RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 	RBinElfSection *ret = NULL;
 	char unknown_s[32], invalid_s[32];
-	int i, nidx, unknown_c=0, invalid_c=0;
+	int i, nidx, unknown_c = 0, invalid_c = 0;
 
 	r_return_val_if_fail (bin, NULL);
 	if (bin->g_sections) {
@@ -3231,7 +3237,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS && sym[i].st_shndx == SHT_NULL) {
 			if (sym[i].st_value) {
 				toffset = sym[i].st_value;
-			} else if ((toffset = get_import_addr (bin, i)) == -1){
+			} else if ((toffset = get_import_addr (bin, i)) == -1) {
 				toffset = 0;
 			}
 			tsize = 16;
@@ -3553,8 +3559,11 @@ static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 					return false;
 				}
 				ut8 *data = malloc (size + 1);
+				if (!data) {
+					return NULL;
+				}
 				if (r_buf_read_at (bin->b, addr, data, size) == -1) {
-					eprintf ("Cannot read%c\n", 10);
+					R_LOG_ERROR ("Cannot read");
 				}
 				size_t osize;
 				ut8 *odata = r_sys_unxz (data, size, &osize);
@@ -3720,7 +3729,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			}
 			void *rett = realloc (ret, (ret_size + nsym) * sizeof (RBinElfSymbol));
 			if (!rett) {
-				R_LOG_ERROR ("Cannot allocate %d symbols.", (int)(nsym + ret_size));
+				R_LOG_ERROR ("Cannot allocate %d symbols", (int)(nsym + ret_size));
 				goto beach;
 			}
 			ret = rett;
@@ -3763,7 +3772,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				}
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name + 1 > strtab_section->sh_size) {
-					R_LOG_DEBUG ("index out of strtab range (%"PFMT64d" / %"PFMT64d")\n",
+					R_LOG_DEBUG ("index out of strtab range (%"PFMT64d" / %"PFMT64d")",
 						(ut64)sym[k].st_name, (ut64)strtab_section->sh_size);
 					continue;
 				}
@@ -3918,13 +3927,13 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	//free (bin->strtab_section);
 	size_t i;
 	if (bin->imports_by_ord) {
-		for (i = 0; i<bin->imports_by_ord_size; i++) {
+		for (i = 0; i < bin->imports_by_ord_size; i++) {
 			free (bin->imports_by_ord[i]);
 		}
 		free (bin->imports_by_ord);
 	}
 	if (bin->symbols_by_ord) {
-		for (i = 0; i<bin->symbols_by_ord_size; i++) {
+		for (i = 0; i < bin->symbols_by_ord_size; i++) {
 			r_bin_symbol_free (bin->symbols_by_ord[i]);
 		}
 		free (bin->symbols_by_ord);
@@ -4073,6 +4082,9 @@ static bool get_nt_file_maps(ELFOBJ *bin, RList *core_maps) {
 			ut64 offset = 0;
 			bool found = false;
 
+			if (!elf_nhdr) {
+				goto fail;
+			}
 			while (!found) {
 				int ret;
 				ut32 n_descsz, n_namesz, n_type;
@@ -4080,7 +4092,7 @@ static bool get_nt_file_maps(ELFOBJ *bin, RList *core_maps) {
 						bin->phdr[ph].p_offset + offset,
 						elf_nhdr, elf_nhdr_size);
 				if (ret != elf_nhdr_size) {
-					eprintf ("Cannot read more NOTES header from CORE\n");
+					R_LOG_ERROR ("Cannot read more NOTES header from CORE");
 					free (elf_nhdr);
 					goto fail;
 				}
@@ -4175,7 +4187,7 @@ RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin) {
 
 	if (!r_list_empty (maps)) {
 		if (!get_nt_file_maps (bin, maps)) {
-			eprintf ("Could not retrieve the names of all maps from NT_FILE\n");
+			R_LOG_ERROR ("Could not retrieve the names of all maps from NT_FILE");
 		}
 	}
 

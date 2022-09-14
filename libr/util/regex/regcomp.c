@@ -322,7 +322,7 @@ R_API int r_regex_init(RRegex *preg, const char *pattern, int cflags) {
 	g->nsub = 0;
 	g->ncategories = 1;	/* category 0 is "everything else" */
 	g->categories = &g->catspace[-(CHAR_MIN)]; // WTF
-	(void) memset ((char *)g->catspace, 0, NC*sizeof(cat_t));
+	(void) memset ((char *)g->catspace, 0, NC*sizeof (cat_t));
 	g->backrefs = 0;
 
 	/* do it */
@@ -753,18 +753,18 @@ static void p_bracket(struct parse *p) {
 	int invert = 0;
 
 	/* Dept of Truly Sickening Special-Case Kludges */
-	if (p->next + 5 < p->end && strncmp(p->next, "[:<:]]", 6) == 0) {
-		EMIT(OBOW, 0);
-		NEXTn(6);
+	if (p->next + 5 < p->end && r_str_startswith (p->next, "[:<:]]")) {
+		EMIT (OBOW, 0);
+		NEXTn (6);
 		return;
 	}
-	if (p->next + 5 < p->end && strncmp(p->next, "[:>:]]", 6) == 0) {
-		EMIT(OEOW, 0);
-		NEXTn(6);
+	if (p->next + 5 < p->end && r_str_startswith (p->next, "[:>:]]")) {
+		EMIT (OEOW, 0);
+		NEXTn (6);
 		return;
 	}
 
-	if (!(cs = allocset(p))) {
+	if (!(cs = allocset (p))) {
 		/* allocset did set error status in p */
 		return;
 	}
@@ -773,7 +773,7 @@ static void p_bracket(struct parse *p) {
 		invert++; /* make note to invert set at end */
 	}
 	if (EAT (']')) {
-		CHadd(cs, ']');
+		CHadd (cs, ']');
 	} else if (EAT ('-')) {
 		CHadd (cs, '-');
 	}
@@ -783,19 +783,19 @@ static void p_bracket(struct parse *p) {
 	if (EAT ('-')) {
 		CHadd (cs, '-');
 	}
-	MUSTEAT(']', R_REGEX_EBRACK);
+	MUSTEAT (']', R_REGEX_EBRACK);
 
 	if (p->error != 0) {	/* don't mess things up further */
-		freeset(p, cs);
+		freeset (p, cs);
 		return;
 	}
 
-	if (p->g->cflags&R_REGEX_ICASE) {
+	if (p->g->cflags & R_REGEX_ICASE) {
 		int i;
 		int ci;
 
 		for (i = p->g->csetsize - 1; i >= 0; i--) {
-			if (CHIN(cs, i) && isalpha(i)) {
+			if (CHIN (cs, i) && isalpha (i)) {
 				ci = othercase(i);
 				if (ci != i) {
 					CHadd (cs, ci);
@@ -811,7 +811,7 @@ static void p_bracket(struct parse *p) {
 
 		for (i = p->g->csetsize - 1; i >= 0; i--) {
 			if (CHIN (cs, i)) {
-				CHsub(cs, i);
+				CHsub (cs, i);
 			} else {
 				CHadd (cs, i);
 			}
@@ -824,15 +824,15 @@ static void p_bracket(struct parse *p) {
 		}
 	}
 
-	if (cs->multis) {		/* xxx */
+	if (cs->multis) { /* xxx */
 		return;
 	}
 
-	if (nch(p, cs) == 1) {		/* optimize singleton sets */
-		ordinary(p, firstch(p, cs));
+	if (nch(p, cs) == 1) { /* optimize singleton sets */
+		ordinary (p, firstch (p, cs));
 		freeset(p, cs);
 	} else {
-		EMIT(OANYOF, freezeset(p, cs));
+		EMIT (OANYOF, freezeset (p, cs));
 	}
 }
 
@@ -847,10 +847,10 @@ static void p_b_term(struct parse *p, cset *cs) {
 	/* classify what we've got */
 	switch ((MORE()) ? PEEK() : '\0') {
 	case '[':
-		c = (MORE2()) ? PEEK2() : '\0';
+		c = MORE2 ()? PEEK2 () : '\0';
 		break;
 	case '-':
-		SETERROR(R_REGEX_ERANGE);
+		SETERROR (R_REGEX_ERANGE);
 		return;			/* NOTE RETURN */
 		break;
 	default:
@@ -910,7 +910,7 @@ static void p_b_cclass(struct parse *p, cset *cs) {
 	const char *u;
 	char c;
 
-	while (MORE () && isalpha ((unsigned char)PEEK ())) {
+	while (MORE () && isalpha ((ut8)PEEK ())) {
 		NEXT ();
 	}
 	len = p->next - sp;
@@ -1120,16 +1120,17 @@ nonnewline(struct parse *p)
 {
 	char *oldnext = p->next;
 	char *oldend = p->end;
-	char bracket[4];
+	char bracket[5];
 
-	p->next = bracket;
-	p->end = bracket+3;
 	bracket[0] = '^';
 	bracket[1] = '\n';
 	bracket[2] = ']';
 	bracket[3] = '\0';
-	p_bracket(p);
-	if (p->next == bracket+3) {
+	bracket[4] = '\0';
+	p->next = bracket;
+	p->end = bracket + 3;
+	p_bracket (p);
+	if (p->next == bracket + 3) {
 		p->next = oldnext;
 		p->end = oldend;
 	}
@@ -1244,7 +1245,7 @@ static cset *allocset(struct parse *p) {
 		}
 		nbytes = nc / CHAR_BIT * css;
 
-		ptr = (cset *)realloc((char *)p->g->sets, nc * sizeof(cset));
+		ptr = (cset *)realloc((char *)p->g->sets, nc * sizeof (cset));
 		if (!ptr) {
 			goto nomem;
 		}
@@ -1476,7 +1477,7 @@ categorize(struct parse *p, struct re_guts *g)
 	}
 
 	for (c = CHAR_MIN; c <= CHAR_MAX; c++) {
-		if ( *(cats+c) && isinsets(g, c)) {
+		if (*(cats+c) && isinsets(g, c)) {
 			cat = g->ncategories++;
 			cats[c] = cat;
 			for (c2 = c + 1; c2 <= CHAR_MAX; c2++) {
@@ -1506,7 +1507,7 @@ dupl(struct parse *p,
 		enlarge(p, p->ssize + len);	/* this many unexpected additions */
 		if (p->ssize >= p->slen + len) {
 			(void) memcpy((char *)(p->strip + p->slen),
-			  (char *)(p->strip + start), (size_t)len*sizeof(sop));
+			  (char *)(p->strip + start), (size_t)len*sizeof (sop));
 			p->slen += len;
 			return(ret);
 		}
@@ -1575,19 +1576,16 @@ doinsert(struct parse *p, sop op, size_t opnd, sopno pos)
 				p->pend[i]++;
 			}
 		}
-	}	
-
-	memmove((char *)&p->strip[pos+1], (char *)&p->strip[pos],
-						(HERE()-pos-1)*sizeof(sop));
+	}
+	memmove ((char *)&p->strip[pos+1], (char *)&p->strip[pos],
+						(HERE()-pos-1)*sizeof (sop));
 	p->strip[pos] = s;
 }
 
 /*
  - dofwd - complete a forward reference
  */
-static void
-dofwd(struct parse *p, sopno pos, sop value)
-{
+static void dofwd(struct parse *p, sopno pos, sop value) {
 	/* avoid making error situations worse */
 	if (p->error != 0) {
 		return;
@@ -1601,16 +1599,14 @@ dofwd(struct parse *p, sopno pos, sop value)
 /*
  - enlarge - enlarge the strip
  */
-static void
-enlarge(struct parse *p, sopno size)
-{
+static void enlarge(struct parse *p, sopno size) {
 	sop *sp;
 
 	if (p->ssize >= size) {
 		return;
 	}
 
-	sp = (sop *)realloc(p->strip, size*sizeof(sop));
+	sp = (sop *)realloc(p->strip, size*sizeof (sop));
 	if (!sp) {
 		SETERROR(R_REGEX_ESPACE);
 		return;
@@ -1622,13 +1618,11 @@ enlarge(struct parse *p, sopno size)
 /*
  - stripsnug - compact the strip
  */
-static void
-stripsnug(struct parse *p, struct re_guts *g)
-{
+static void stripsnug(struct parse *p, struct re_guts *g) {
 	g->nstates = p->slen;
-	g->strip = (sop *)realloc((char *)p->strip, p->slen * sizeof(sop));
+	g->strip = (sop *)realloc((char *)p->strip, p->slen * sizeof (sop));
 	if (!g->strip) {
-		SETERROR(R_REGEX_ESPACE);
+		SETERROR (R_REGEX_ESPACE);
 		g->strip = p->strip;
 	}
 }
@@ -1642,9 +1636,7 @@ stripsnug(struct parse *p, struct re_guts *g)
  *
  * Note that must and mlen got initialized during setup.
  */
-static void
-findmust(struct parse *p, struct re_guts *g)
-{
+static void findmust(struct parse *p, struct re_guts *g) {
 	sop *scan;
 	sop *start = NULL;    /* start initialized in the default case, after that */
 	sop *newstart = NULL; /* newstart was initialized in the OCHAR case */

@@ -9,24 +9,27 @@
 #include <r_anal.h>
 #include "../../asm/arch/tms320/tms320_dasm.h"
 
-// c55x
-ut32 get_ins_len(ut8 opcode);
+static R_TH_LOCAL tms320_dasm_t engine = {0};
 
-int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	ut16 *ins = (ut16*)buf;
-	ut32 ins_len;
-
-	if (!buf || len <= 0) {
+int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_buf, int len, RAnalOpMask mask) {
+	if (!_buf || len < 1) {
 		return 0;
 	}
+	ut8 buf[16] = {0};
+	memcpy (buf, _buf, R_MIN (len, sizeof (buf)));
+	ut16 _ins = r_read_le16 (buf);
+	ut16 *ins = &_ins;
 
-	ins_len = get_ins_len(buf[0]);
-	if (ins_len == 0) {
+
+	int ins_len = tms320_dasm (&engine, buf, len);
+	if (ins_len <= 0) {
 		return 0;
 	}
-
-	op->addr = addr;
 	op->size = ins_len;
+	op->addr = addr;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = strdup (engine.syntax);
+	}
 
 	if (ins_len == 1) {
 		if (*ins == 0x20) {
@@ -110,31 +113,33 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	}
 	pj_o (pj);
 	pj_ka (pj, "operands");
-	cs_tms320c64x *x = &insn->detail->tms320c64x;
-	for (i = 0; i < x->op_count; i++) {
-		cs_tms320c64x_op *op = x->operands + i;
-		pj_o (pj);
-		switch (op->type) {
-		case TMS320C64X_OP_REG:
-			pj_ks (pj, "type", "reg");
-			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
-			break;
-		case TMS320C64X_OP_IMM:
-			pj_ks (pj, "type", "imm");
-			pj_ki (pj, "value", op->imm);
-			break;
-		case TMS320C64X_OP_MEM:
-			pj_ks (pj, "type", "mem");
-			if (op->mem.base != SPARC_REG_INVALID) {
-				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
+	if (insn->detail) {
+		cs_tms320c64x *x = &insn->detail->tms320c64x;
+		for (i = 0; i < x->op_count; i++) {
+			cs_tms320c64x_op *op = x->operands + i;
+			pj_o (pj);
+			switch (op->type) {
+				case TMS320C64X_OP_REG:
+					pj_ks (pj, "type", "reg");
+					pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+					break;
+				case TMS320C64X_OP_IMM:
+					pj_ks (pj, "type", "imm");
+					pj_ki (pj, "value", op->imm);
+					break;
+				case TMS320C64X_OP_MEM:
+					pj_ks (pj, "type", "mem");
+					if (op->mem.base != SPARC_REG_INVALID) {
+						pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
+					}
+					pj_kN (pj, "disp", (st64)op->mem.disp);
+					break;
+				default:
+					pj_ks (pj, "type", "invalid");
+					break;
 			}
-			pj_kN (pj, "disp", (st64)op->mem.disp);
-			break;
-		default:
-			pj_ks (pj, "type", "invalid");
-			break;
+			pj_end (pj); /* o operand */
 		}
-		pj_end (pj); /* o operand */
 	}
 	pj_end (pj); /* a operands */
 	pj_end (pj);
@@ -144,31 +149,45 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
-static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	static csh handle = 0;
-	static int omode;
-	cs_insn *insn;
-	int mode = 0, n, ret;
+#define CSINC_MODE CS_MODE_BIG_ENDIAN
+#define CSINC TMS320C64X
+#include "capstone.inc"
 
-	if (mode != omode) {
-		cs_close (&handle);
-		handle = 0;
-		omode = mode;
-	}
+static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	csh handle = init_capstone (a);
 	if (handle == 0) {
-		ret = cs_open (CS_ARCH_TMS320C64X, mode, &handle);
-		if (ret != CS_ERR_OK) {
-			return -1;
-		}
-		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
+		return -1;
 	}
-	// capstone-next
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	int ret = cs_open (CS_ARCH_TMS320C64X, 0, &handle);
+	if (ret != CS_ERR_OK) {
+		return -1;
+	}
+	cs_insn *insn = NULL;
+	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
+	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
 	} else {
 		if (mask & R_ANAL_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
+		}
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			// this is a bug in capstone, disassembling needs to use detail=off to avoid appending the instruction suffix
+			cs_insn *deinsn = NULL;
+			cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
+			int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &deinsn);
+			if (n > 0) {
+				char *str = r_str_newf ("%s%s%s", deinsn->mnemonic, deinsn->op_str[0]? " ": "", deinsn->op_str);
+				r_str_replace_char (str, '%', 0);
+				r_str_case (str, false);
+				op->mnemonic = str;
+			} else {
+				op->mnemonic = strdup ("invalid");
+			}
+			cs_free (deinsn, n);
 		}
 		op->size = insn->size;
 		op->id = insn->id;
@@ -208,7 +227,9 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 		case TMS320C64X_INS_B:
 			op->type = R_ANAL_OP_TYPE_JMP;
 			// higher 32bits of the 64bit address is lost, lets clone
-			op->jump = INSOP(0).imm + (addr & 0xFFFFFFFF00000000);
+			if (insn->detail) {
+				op->jump = INSOP(0).imm + (addr & 0xFFFFFFFF00000000);
+			}
 			break;
 		case TMS320C64X_INS_LDB:
 		case TMS320C64X_INS_LDBU:
@@ -266,32 +287,37 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 	return op->size;
 }
 #endif
-static R_TH_LOCAL tms320_dasm_t engine = {0};
 
-typedef int (* TMS_ANAL_OP_FN)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
+typedef int (* TMS_ANAL_OP_FN)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
 
-int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
-int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
-int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
+int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
+int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
+int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
 
 static bool match(const char * str, const char *token) {
-	return !strncasecmp(str, token, strlen(token));
+	return !strncasecmp (str, token, strlen (token));
 }
 
-int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	// TODO: add the implementation
-	return 0;
+int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	op->size = tms320_dasm (&engine, buf, len);
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = strdup (engine.syntax);
+	}
+	return op->size;
 }
 
-int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	const char * str = engine.syntax;
 
 	op->delay = 0;
-	op->size = tms320_dasm(&engine, buf, len);
+	op->size = tms320_dasm (&engine, buf, len);
 	op->type = R_ANAL_OP_TYPE_NULL;
 
-	str = strstr(str, "||") ? str + 3 : str;
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = strdup (str);
+	}
 
+	str = strstr(str, "||") ? str + 3 : str;
 	if (match (str, "B ")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
 		if (match (str, "B AC")) {
@@ -347,14 +373,17 @@ int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len, R
 			return -1;
 #endif
 		} else if (!r_str_casecmp (cpu, "c54x")) {
+			tms320_f_set_cpu (&engine, TMS320_F_CPU_C54X);
 			aop = tms320_c54x_op;
 		} else if (!r_str_casecmp (cpu, "c55x")) {
+			tms320_f_set_cpu (&engine, TMS320_F_CPU_C55X);
 			aop = tms320_c55x_op;
 		} else if (!r_str_casecmp (cpu, "c55x+")) {
+			tms320_f_set_cpu (&engine, TMS320_F_CPU_C55X_PLUS);
 			aop = tms320_c55x_plus_op;
 		}
 	}
-	return aop (anal, op, addr, buf, len);
+	return aop (anal, op, addr, buf, len, mask);
 }
 
 static int tms320_init(void *unused) {
@@ -381,6 +410,7 @@ RAnalPlugin r_anal_plugin_tms320 = {
 	.desc = "TMS320 DSP family (c54x,c55x,c55x+)",
 #endif
 	.op = &tms320_op,
+	.mnemonics = &cs_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE

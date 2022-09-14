@@ -626,6 +626,12 @@ static RBinInfo *info(RBinFile *bf) {
 			break;
 		}
 		break;
+	case COFF_FILE_MACHINE_POWERPC:
+		ret->machine = strdup ("ppc");
+		ret->arch = strdup ("ppc");
+		ret->big_endian = true;
+		ret->bits = 32;
+		break;
 	default:
 		ret->machine = strdup ("unknown");
 	}

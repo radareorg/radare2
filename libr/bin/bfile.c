@@ -125,12 +125,12 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		return 0;
 	}
 	if (from > to) {
-		eprintf ("Invalid range to find strings 0x%"PFMT64x" .. 0x%"PFMT64x"\n", from, to);
+		R_LOG_ERROR ("Invalid range to find strings 0x%"PFMT64x" .. 0x%"PFMT64x, from, to);
 		return -1;
 	}
 	st64 len = (st64)(to - from);
 	if (len < 1 || len > ST32_MAX) {
-		eprintf ("String scan range is invalid (%"PFMT64d" bytes)\n", len);
+		R_LOG_ERROR ("String scan range is invalid (%"PFMT64d" bytes)", len);
 		return -1;
 	}
 	ut8 *buf = calloc (len, 1);
@@ -167,11 +167,9 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				len = res;
 				free (buf);
 				buf = out;
-			} else {
-				eprintf ("Cannot allocate\n");
 			}
 		} else {
-			eprintf ("Invalid value for RABIN2_CHARSET.\n");
+			R_LOG_ERROR ("Invalid value for RABIN2_CHARSET");
 		}
 		r_charset_free (ch);
 	}
@@ -482,7 +480,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	} else if (!strcmp (enc, "utf32le")) {
 		type = R_STRING_TYPE_WIDE32;
 	} else { // TODO utf16be, utf32be
-		eprintf ("ERROR: encoding %s not supported\n", enc);
+		R_LOG_ERROR ("encoding %s not supported", enc);
 		return;
 	}
 	string_scan_range (list, bf, min, from, to, type, raw, section);
@@ -502,6 +500,9 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int ra
 		bf->fd = fd;
 		bf->curxtr = xtrname ? r_bin_get_xtrplugin_by_name (bin, xtrname) : NULL;
 		bf->sdb = sdb;
+		if ((st64)file_sz < 0) {
+			file_sz = 1024 * 64;
+		}
 		bf->size = file_sz;
 		bf->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
 		bf->xtr_obj = NULL;
@@ -805,7 +806,7 @@ R_IPI RBinFile *r_bin_file_xtr_load_buffer(RBin *bin, RBinXtrPlugin *xtr, const 
 	} else if (xtr->extractall_from_bytes) {
 		ut64 sz = 0;
 		const ut8 *bytes = r_buf_data (buf, &sz);
-		eprintf ("TODO: Implement extractall_from_buffer in '%s' xtr.bin plugin\n", xtr->name);
+		R_LOG_WARN ("TODO: Implement extractall_from_buffer in '%s' xtr.bin plugin", xtr->name);
 		bf->xtr_data = xtr->extractall_from_bytes (bin, bytes, sz);
 	}
 	if (bf->xtr_data) {
@@ -922,6 +923,7 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 	return false;
 }
 
+// TODO: do not compute md5 or sha1, those are weak and vulnerable hashes
 R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	r_return_val_if_fail (bin && bin->cur && bin->cur->o, NULL);
 	ut64 buf_len = 0, r = 0;
@@ -937,14 +939,13 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
 		if (bin->verbose) {
-			eprintf ("Warning: r_bin_file_hash: file exceeds bin.hashlimit\n");
+			R_LOG_WARN ("r_bin_file_hash: file exceeds bin.hashlimit");
 		}
 		return NULL;
 	}
 	const size_t blocksize = 64000;
 	ut8 *buf = malloc (blocksize);
 	if (!buf) {
-		eprintf ("Cannot allocate computation buffer\n");
 		return NULL;
 	}
 
@@ -963,7 +964,7 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 		const size_t rem_len = buf_len-r;
 		int b = r_io_desc_read (iod, buf, rem_len);
 		if (b < 1) {
-			eprintf ("r_io_desc_read: error\n");
+			R_LOG_ERROR ("cannot read from descriptor");
 		} else {
 			(void)r_hash_do_md5 (ctx, buf, b);
 			(void)r_hash_do_sha1 (ctx, buf, b);
@@ -1072,7 +1073,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 
 	RBinClass *c = r_bin_file_add_class (bf, klass, NULL, 0);
 	if (!c) {
-		eprintf ("Cannot allocate class %s\n", klass);
+		R_LOG_ERROR ("Cannot allocate class %s", klass);
 		return NULL;
 	}
 	RBinSymbol *sym = __getMethod (bf, klass, method);
@@ -1090,8 +1091,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 }
 
 R_API RBinField *r_bin_file_add_field(RBinFile *binfile, const char *classname, const char *name) {
-	//TODO: add_field into class
-	//eprintf ("TODO add field: %s \n", name);
+	R_LOG_ERROR ("TODO: RBinFile.addField() is not implemented");
 	return NULL;
 }
 

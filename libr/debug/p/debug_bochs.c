@@ -24,7 +24,7 @@ static bool isBochs(RDebug *dbg) {
 			return true;
 		}
 	}
-	eprintf ("error: the iodesc data is not bochs friendly\n");
+	R_LOG_ERROR ("the iodesc data is not bochs friendly");
 	return false;
 }
 
@@ -72,7 +72,7 @@ static int r_debug_bochs_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool se
 					}
 				}
 				i += 48;
-			} while (desc->data[i] != '<' && i<lenRec-4);
+			} while (desc->data[i] != '<' && i < lenRec - 4);
 		}
 		if (a == b->addr) {
 			snprintf (bufcmd, sizeof (bufcmd), "d %i", n);
@@ -100,12 +100,12 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		bochs_send_cmd (desc, "regs", true);
 		//r14: 00000000_00000000 r15: 00000000_00000000
 		//rip: 00000000_0000e07b
-		//eflags 0x00000046: id vip vif ac vm rf nt IOPL=0 of df if tf sf ZF af PF cf
+		//"eflags 0x00000046: id vip vif ac vm rf nt IOPL=0 of df if tf sf ZF af PF cf"
 		//<bochs:109>return -1;
 		pos = 0x78;
 		lenRec = strlen (desc->data);
 		while (desc->data[i] != 0 && i < lenRec -4 ) {
-			if ( (desc->data[i] == (ut8)'r' && desc->data[i + 3] == (ut8)':')) {
+			if ((desc->data[i] == (ut8)'r' && desc->data[i + 3] == (ut8)':')) {
 				strncpy (regname, &desc->data[i], 3);
 				regname[3] = 0;
 				strncpy (&strReg[2], &desc->data[i + 5], 8);
@@ -155,8 +155,8 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		   Data segment, base=0x00000000, limit=0x0000ffff, Read/Write, Accessed
 		   gs:0x0000, dh=0x00009300, dl=0x0000ffff, valid=7
 		   Data segment, base=0x00000000, limit=0x0000ffff, Read/Write, Accessed
-		   ldtr:0x0000, dh=0x00008200, dl=0x0000ffff, valid=1
-		   tr:0x0000, dh=0x00008b00, dl=0x0000ffff, valid=1
+		   ldtr:0x0000, dh=0x00008200, dl=0x0000ffff, valid = 1
+		   tr:0x0000, dh=0x00008b00, dl=0x0000ffff, valid = 1
 		   gdtr:base=0x0000000000000000, limit=0xffff
 		   idtr:base=0x0000000000000000, limit=0xffff
 		*/
@@ -302,7 +302,7 @@ static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 				//eprintf("stop on breakpoint%s\n",desc->data);
 				break;
 			}
-		} while(1);
+		} while (1);
 		r_cons_break_pop ();
 	}
 	//eprintf ("bochs_wait: loop done\n");

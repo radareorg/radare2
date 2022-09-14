@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
-#include "../bin/pdb/pdb_downloader.h"
+#include "../bin/format/pdb/pdb_downloader.h"
 
 static const char *help_msg_i[] = {
 	"Usage: i", "", "Get info from opened file (see rabin2's manpage)",
@@ -14,11 +14,13 @@ static const char *help_msg_i[] = {
 	"iA", "", "list archs",
 	"ia", "", "show all info (imports, exports, sections..)",
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
-	"ic", "", "List classes, methods and fields",
+	"ic", "", "List classes, methods and fields (icj for json)",
 	"icc", "", "List classes, methods and fields in Header Format",
 	"icg", " [str]", "List classes as agn/age commands to create class hirearchy graphs (matches str if provided)",
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
+	"icl", "", "Show addresses of class and it methods, without names",
+	"ics", "", "Show class symbols in an easy to parse format",
 	"iC", "[j]", "show signature info (entitlements, ...)",
 	"id", "[?]", "show DWARF source lines information",
 	"iD", " lang sym", "demangle symbolname for given language",
@@ -101,6 +103,7 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	case R_BIN_NM_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
 	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc (s); break;
 	case R_BIN_NM_RUST: res = r_bin_demangle_rust (core->bin->cur, s, 0); break;
+	case R_BIN_NM_PASCAL: res = r_bin_demangle_freepascal (s); break;
 	default:
 		r_bin_demangle_list (core->bin);
 		return true;
@@ -330,14 +333,14 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 	}
 }
 
-static int bin_is_executable(RBinObject *obj){
+static int bin_is_executable(RBinObject *obj) {
 	RListIter *it;
 	RBinSection *sec;
 	if (obj) {
 		if (obj->info && obj->info->arch) {
 			return true;
 		}
-		r_list_foreach (obj->sections, it, sec){
+		r_list_foreach (obj->sections, it, sec) {
 			if (sec->perm & R_PERM_X) {
 				return true;
 			}
@@ -370,7 +373,7 @@ static void cmd_info_bin(RCore *core, int va, PJ *pj, int mode) {
 			pj_end (pj);
 		}
 	} else {
-		eprintf ("No file selected\n");
+		R_LOG_ERROR ("No file selected");
 	}
 }
 
@@ -460,6 +463,53 @@ static bool isKnownPackage(const char *cn) {
 		}
 	}
 	return false;
+}
+
+static void cmd_ic_comma(RCore *core, const char *input) {
+	r_return_if_fail (core && input[0] == 'c' && input[1] == ',');
+	const char *q = input + 2;
+	RList *objs = r_core_bin_files (core);
+	RListIter *objs_iter;
+	RBinFile *bf;
+	RBinFile *cur = core->bin->cur;
+	RTable *t = r_core_table (core, "flags");
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeNumber = r_table_type ("number");
+	r_table_add_column (t, typeNumber, "addr", 0);
+	r_table_add_column (t, typeString, "type", 0);
+	r_table_add_column (t, typeString, "klass", 0);
+	r_table_add_column (t, typeString, "name", 0);
+	r_list_foreach (objs, objs_iter, bf) {
+		RBinObject *obj = bf->o;
+		RBinClass *klass;
+		RListIter *iter, *iter2;
+		core->bin->cur = bf;
+		r_list_foreach (obj->classes, iter, klass) {
+			if (!klass->name) {
+				continue;
+			}
+			RBinSymbol *method;
+			r_list_foreach (klass->methods, iter2, method) {
+				char *addr = r_str_newf ("0x%08"PFMT64x, method->vaddr);
+				r_table_add_row (t, addr, "method", klass->name, method->name, NULL);
+				free (addr);
+			}
+			RBinField *field;
+			r_list_foreach (klass->fields, iter2, field) {
+				char *addr = r_str_newf ("0x%08"PFMT64x, field->vaddr);
+				r_table_add_row (t, addr, "field", klass->name, field->name, NULL);
+				free (addr);
+			}
+		}
+	}
+	core->bin->cur = cur;
+	r_list_free (objs);
+	if (r_table_query (t, q)) {
+		char *s = r_table_tostring (t);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
+	r_table_free (t);
 }
 
 static int cmd_info(void *data, const char *input) {
@@ -651,7 +701,7 @@ static int cmd_info(void *data, const char *input) {
 				ut64 limit = r_config_get_i (core->config, "bin.hashlimit");
 				RBinInfo *info = r_bin_get_info (core->bin);
 				if (!info) {
-					eprintf ("r_bin_get_info: Cannot get bin info\n");
+					R_LOG_ERROR ("Cannot get bin info");
 					return 0;
 				}
 
@@ -660,7 +710,7 @@ static int cmd_info(void *data, const char *input) {
 				bool equal = true;
 				if (!r_list_empty (new_hashes) && !r_list_empty (old_hashes)) {
 					if (!is_equal_file_hashes (new_hashes, old_hashes, &equal)) {
-						eprintf ("is_equal_file_hashes: Cannot compare file hashes\n");
+						R_LOG_ERROR ("is_equal_file_hashes: Cannot compare file hashes");
 						r_list_free (old_hashes);
 						return 0;
 					}
@@ -684,20 +734,20 @@ static int cmd_info(void *data, const char *input) {
 					pj_end (pj);
 				} else { // "it"
 					if (!equal) {
-						eprintf ("File has been modified.\n");
+						R_LOG_INFO ("File has been modified");
 						hiter_new = r_list_iterator (new_hashes);
 						hiter_old = r_list_iterator (old_hashes);
 						while (r_list_iter_next (hiter_new) && r_list_iter_next (hiter_old)) {
 							fh_new = (RBinFileHash *)r_list_iter_get (hiter_new);
 							fh_old = (RBinFileHash *)r_list_iter_get (hiter_old);
 							if (strcmp (fh_new->type, fh_old->type)) {
-								eprintf ("Wrong file hashes structure");
+								R_LOG_WARN ("Wrong file hashes structure");
 							}
 							if (!strcmp (fh_new->hex, fh_old->hex)) {
-								eprintf ("= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
+								r_cons_printf ("= %s %s\n", fh_new->type, fh_new->hex); // output one line because hash remains same `= hashtype hashval`
 							} else {
 								// output diff-like two lines, one with old hash val `- hashtype hashval` and one with new `+ hashtype hashval`
-								eprintf ("- %s %s\n+ %s %s\n",
+								r_cons_printf ("- %s %s\n+ %s %s\n",
 									fh_old->type, fh_old->hex,
 									fh_new->type, fh_new->hex);
 							}
@@ -787,13 +837,13 @@ static int cmd_info(void *data, const char *input) {
 			if (input[1] == 'H') { // "iHH"
 				playMsg (core, "header", -1);
 				if (!r_core_bin_info (core, R_CORE_BIN_ACC_HEADER, pj, mode, va, NULL, NULL)) {
-					eprintf ("No header fields found\n");
+					R_LOG_ERROR ("No header fields found");
 				}
 				break;
 			} else {
 				playMsg (core, "fields", -1);
 				if (!r_core_bin_info (core, R_CORE_BIN_ACC_FIELDS, pj, mode, va, NULL, NULL)) {
-					eprintf ("No header fields found\n");
+					R_LOG_ERROR ("No header fields found");
 				}
 			}
 			break;
@@ -921,7 +971,7 @@ static int cmd_info(void *data, const char *input) {
 						}
 					}
 					if (r > 0) {
-						eprintf ("Error while downloading pdb file\n");
+						R_LOG_ERROR ("Cannot download the pdb file");
 					}
 					free (str);
 					r_list_free (server_l);
@@ -938,7 +988,7 @@ static int cmd_info(void *data, const char *input) {
 					} else {
 						/* Autodetect local file */
 						if (!info || !info->debug_file_name) {
-							eprintf ("Cannot get file's debug information\n");
+							R_LOG_ERROR ("Cannot get file's debug information");
 							break;
 						}
 						// Check raw path for debug filename
@@ -977,9 +1027,9 @@ static int cmd_info(void *data, const char *input) {
 					if (!file_found) {
 						if (info->debug_file_name) {
 							const char *fn = r_file_basename (info->debug_file_name);
-							eprintf ("File '%s' not found in file directory or symbol store\n", fn);
+							R_LOG_ERROR ("File '%s' not found in file directory or symbol store", fn);
 						} else {
-							eprintf ("Cannot open file\n");
+							R_LOG_ERROR ("Cannot open file");
 						}
 						free (filename);
 						break;
@@ -1246,7 +1296,10 @@ static int cmd_info(void *data, const char *input) {
 		case 'c': // "ic"
 			// XXX this is dupe of cbin.c:bin_classes()
 			if (input[1] == '?') {
-				eprintf ("Usage: ic[gljqc**] [class-index or name]\n");
+				eprintf ("Usage: ic[glbjqc**] [class-index or name]\n");
+			} else if (input[1] == ',') { // "ic,"
+				// ic,
+				cmd_ic_comma (core, input);
 			} else if (input[1] == 'g') {
 				RBinClass *cls;
 				RListIter *iter;
@@ -1286,7 +1339,7 @@ static int cmd_info(void *data, const char *input) {
 					}
 				}
 				goto done;
-			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
+			} else if (input[1] == ' ' || input[1] == 's' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
 				RList *objs = r_core_bin_files (core);
 				RListIter *objs_iter;
 				RBinFile *bf;
@@ -1389,6 +1442,16 @@ static int cmd_info(void *data, const char *input) {
 									r_cons_printf ("%s\n", cls->name);
 								}
 							}
+						} else if (input[1] == 's') { // "ics"
+							r_list_foreach (obj->classes, iter, cls) {
+								r_list_foreach (cls->methods, iter2, sym) {
+									if (sym->vaddr == 0 || sym->vaddr == UT64_MAX) {
+										continue;
+									}
+									r_cons_printf ("0x%"PFMT64d" [%s] %s\n",
+										sym->vaddr, cls->name, sym->name);
+								}
+							}
 						} else if (input[1] == 'l') { // "icl"
 							r_list_foreach (obj->classes, iter, cls) {
 								r_list_foreach (cls->methods, iter2, sym) {
@@ -1436,7 +1499,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'D': // "iD"
 			if (input[1] != ' ' || !demangle (core, input + 2)) {
-				eprintf ("|Usage: iD lang symbolname\n");
+				eprintf ("Usage: iD lang symbolname\n");
 			}
 			return 0;
 		case 'a': // "ia"
@@ -1476,14 +1539,17 @@ static int cmd_info(void *data, const char *input) {
 		case '.': // "i."
 			cmd_info_here (core, pj, input[1]);
 			goto done;
+		case ',':
+			// ignore comma
+			goto done;
 		default:
 	//		cmd_info_bin (core, va, pj, mode);
-			eprintf ("Invalid subcommand '%c'\n", input[0]);
+			R_LOG_WARN ("Invalid `i` subcommand '%c'", *input);
 			goto done;
 			break;
 		}
 		// input can be overwritten like the 'input = " ";' a few lines above
-		if (input[0] != ' ') {
+		if (*input != ' ') {
 			input++;
 			if ((*input == 'j' || *input == 'q') && (input[0] && !input[1])) {
 				break;
