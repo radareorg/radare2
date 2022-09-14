@@ -1,12 +1,8 @@
-/* radare - LGPL - Copyright 2018 pancake */
+/* radare - LGPL - Copyright 2018-2022 pancake */
 
-#include <r_lib.h>
 #include <r_core.h>
-#include <r_lang.h>
 
 static bool lang_zig_file(RLang *lang, const char *file) {
-	void *lib;
-	char *a, *cc, *p;
 	const char *libpath, *libname;
 
 	if (!r_file_exists (file)) {
@@ -15,7 +11,7 @@ static bool lang_zig_file(RLang *lang, const char *file) {
 	}
 	char *name = strdup (file);
 
-	a = (char*)r_str_lchr (name, '/');
+	char *a = (char*)r_str_lchr (name, '/');
 	if (a) {
 		*a = 0;
 		libpath = name;
@@ -24,11 +20,11 @@ static bool lang_zig_file(RLang *lang, const char *file) {
 		libpath = ".";
 		libname = name;
 	}
-	p = strstr (name, ".zig");
+	char *p = strstr (name, ".zig");
 	if (p) {
 		*p = 0;
 	}
-	cc = r_sys_getenv ("ZIG");
+	char *cc = r_sys_getenv ("ZIG");
 	if (cc && !*cc) {
 		R_FREE (cc);
 	}
@@ -45,7 +41,7 @@ static bool lang_zig_file(RLang *lang, const char *file) {
 	free (cmd);
 
 	char *path = r_str_newf ("%s/%s.%s", libpath, libname, R_LIB_EXT);
-	lib = r_lib_dl_open (path);
+	void *lib = r_lib_dl_open (path);
 	if (lib) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");
@@ -105,6 +101,7 @@ static bool lang_zig_run(RLang *lang, const char *code, int len) {
 static RLangPlugin r_lang_plugin_zig = {
 	.name = "zig",
 	.ext = "zig",
+	.author = "pancake",
 	.license = "MIT",
 	.desc = "Zig language extension",
 	.run = lang_zig_run,

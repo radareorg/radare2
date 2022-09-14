@@ -44,6 +44,7 @@ static bool lang_lib_file_run(RLang *user, const char *file) {
 
 static RLangPlugin r_lang_plugin_lib = {
 	.name = "lib",
+	.author = "pancake",
 	.ext = R_LIB_EXT,
 	.desc = "Load libs directly into r2",
 	.license = "LGPL",
