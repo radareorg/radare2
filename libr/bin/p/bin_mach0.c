@@ -893,7 +893,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 	RBuffer *buf = r_buf_new ();
 #ifndef R_BIN_MACH064
 	if (opt->bits == 64) {
-		eprintf ("TODO: Please use mach064 instead of mach0\n");
+		R_LOG_TODO ("Please use mach064 instead of mach0");
 		free (buf);
 		return NULL;
 	}

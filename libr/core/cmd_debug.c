@@ -4246,11 +4246,11 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 #if 0
 		RListIter *iter;
 		RDebugSignal *ds;
-		eprintf ("TODO: list signal handlers of child\n");
+		R_LOG_TODO ("list signal handlers of child");
 		RList *list = r_debug_kill_list (core->dbg);
 		r_list_foreach (list, iter, ds) {
 			// TODO: resolve signal name by number and show handler offset
-			eprintf ("--> %d\n", ds->num);
+			R_LOG_TODO ("--> %d", ds->num);
 		}
 		r_list_free (list);
 #endif

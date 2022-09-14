@@ -749,7 +749,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 #else
 		return bsd_reg_write (dbg, type, buf, size);
 #endif
-	} //else eprintf ("TODO: reg_write_non-gpr (%d)\n", type);
+	} //else R_LOG_TODO ("reg_write_non-gpr (%d)", type);
 	return false;
 }
 

@@ -97,7 +97,7 @@ static int cmd_project(void *data, const char *input) {
 				if (r_file_is_directory (".git")) {
 					r_sys_cmdf ("git diff @~%d", atoi (input + 1));
 				} else {
-					eprintf ("TODO: Not a git project. Diffing projects is WIP for now.\n");
+					R_LOG_TODO ("Not a git project. Diffing projects is WIP for now");
 				}
 				r_syscmd_popd ();
 			}

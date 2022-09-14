@@ -303,7 +303,7 @@ static int cmd_egg(void *data, const char *input) {
 			break;
 		case '\0':
 			// r_pair_list (egg->pair,NULL);
-			eprintf ("TODO: list options\n");
+			R_LOG_TODO ("list options");
 			break;
 		default:
 			eprintf ("Usage: gc [k=v]\n");
