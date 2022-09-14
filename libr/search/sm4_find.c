@@ -1,5 +1,5 @@
 /* radare2 - LGPL - Copyright 2022 - Sylvain Pelissier */
-#include <r_crypto/r_sm4.h>
+#include <r_crypto.h>
 #include <r_search.h>
 #include <r_util.h>
 
