@@ -6280,6 +6280,9 @@ static bool handle_backwards_disasm(RCore *core, int *nb_opcodes, int *nb_bytes)
 			if (nbytes > core->blocksize) {
 				r_core_block_size (core, nbytes);
 			}
+			if (nbytes < 1) {
+				return false;
+			}
 			r_io_read_at (core->io, core->offset, core->block, nbytes);
 		}
 	} else {
