@@ -539,10 +539,6 @@ R_API const char* r_fs_partition_type_get(int n) {
 	return partitions[n].name;
 }
 
-R_API int r_fs_partition_get_size(void) {
-	return R_FS_PARTITIONS_LENGTH;
-}
-
 R_API RList* r_fs_partitions(RFS* fs, const char* ptype, ut64 delta) {
 	r_return_val_if_fail (fs && ptype, NULL);
 	int i, cur = -1;

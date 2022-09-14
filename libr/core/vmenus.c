@@ -2820,14 +2820,18 @@ R_API void r_core_visual_mounts(RCore *core) {
 			case 'j':
 				if (mode == 0) {
 					n = r_fs_partition_type_get (partition);
-					list = r_fs_partitions (core->fs, n, 0);
+					if (!n) {
+						partition = 0;
+						n = r_fs_partition_type_get (0);
+					}
+					if (n) {
+						list = r_fs_partitions (core->fs, n, 0);
+					}
 					if (option < r_list_length (list) - 1) {
 						option++;
 					}
 				} else if (mode == 1) {
-					if (partition < r_fs_partition_get_size () - 1) {
-						partition++;
-					}
+					partition++;
 				} else if (mode == 3) {
 					if (option < r_list_length (core->fs->roots) - 1) {
 						option++;

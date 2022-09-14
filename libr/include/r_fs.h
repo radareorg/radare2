@@ -59,6 +59,7 @@ typedef struct r_fs_root_t {
 typedef struct r_fs_plugin_t {
 	const char *name;
 	const char *desc;
+	const char *author;
 	const char *license;
 	RFSFile* (*slurp)(RFSRoot *root, const char *path);
 	RFSFile* (*open)(RFSRoot *root, const char *path, bool create);
@@ -69,7 +70,7 @@ typedef struct r_fs_plugin_t {
 	RList *(*dir)(RFSRoot *root, const char *path, int view);
 	void (*init)(void);
 	void (*fini)(void);
-	int (*mount)(RFSRoot *root);
+	bool (*mount)(RFSRoot *root);
 	void (*umount)(RFSRoot *root);
 } RFSPlugin;
 
@@ -82,7 +83,7 @@ typedef struct r_fs_partition_t {
 } RFSPartition;
 
 typedef struct r_fs_shell_t {
-	char **cwd; // R2_580 char *
+	char *cwd;
 	void (*set_prompt)(const char *prompt);
 	const char* (*readline)(void);
 	int (*hist_add)(const char *line);
@@ -122,13 +123,15 @@ enum {
 
 #ifdef R_API
 R_API RFS *r_fs_new(void);
-R_API void r_fs_view(RFS* fs, int view);
 R_API void r_fs_free(RFS* fs);
+
+R_API void r_fs_view(RFS* fs, int view);
 R_API void r_fs_add(RFS *fs, RFSPlugin *p);
 R_API void r_fs_del(RFS *fs, RFSPlugin *p);
+
 R_API RFSRoot *r_fs_mount(RFS* fs, const char *fstype, const char *path, ut64 delta);
 R_API bool r_fs_umount(RFS* fs, const char *path);
-R_API RList *r_fs_root(RFS *fs, const char *path);
+
 R_API RFSFile *r_fs_open(RFS* fs, const char *path, bool create);
 R_API void r_fs_close(RFS* fs, RFSFile *file);
 R_API int r_fs_read(RFS* fs, RFSFile *file, ut64 addr, int len);
@@ -136,52 +139,55 @@ R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len
 R_API RFSFile *r_fs_slurp(RFS* fs, const char *path);
 R_API RList *r_fs_dir(RFS* fs, const char *path);
 R_API bool r_fs_dir_dump(RFS* fs, const char *path, const char *name);
+
 R_API RList *r_fs_find_name(RFS* fs, const char *name, const char *glob);
 R_API RList *r_fs_find_off(RFS* fs, const char *name, ut64 off);
 R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
+
 R_API char *r_fs_name(RFS *fs, ut64 offset);
-R_API int r_fs_prompt(RFS *fs, const char *root);
 R_API bool r_fs_check(RFS *fs, const char *p);
-R_API int r_fs_shell_prompt(RFSShell *shell, RFS *fs, const char *root);
+R_API bool r_fs_shell(RFSShell *shell, RFS *fs, const char *root);
 
 /* file.c */
 R_API RFSFile *r_fs_file_new(RFSRoot *root, const char *path);
 R_API void r_fs_file_free(RFSFile *file);
 R_API char* r_fs_file_copy_abs_path(RFSFile* file);
+
+// root
+R_API RList *r_fs_root(RFS *fs, const char *path);
 R_API RFSRoot *r_fs_root_new(const char *path, ut64 delta);
 R_API void r_fs_root_free(RFSRoot *root);
 R_API RFSPartition *r_fs_partition_new(int num, ut64 start, ut64 length);
 R_API void r_fs_partition_free(RFSPartition *p);
 R_API const char *r_fs_partition_type(const char *part, int type);
 R_API const char *r_fs_partition_type_get(int n);
-R_API int r_fs_partition_get_size(void); // WTF. wrong function name
 
 /* plugins */
-extern RFSPlugin r_fs_plugin_io;
-extern RFSPlugin r_fs_plugin_r2;
+extern RFSPlugin r_fs_plugin_affs;
+extern RFSPlugin r_fs_plugin_afs;
+extern RFSPlugin r_fs_plugin_btrfs;
+extern RFSPlugin r_fs_plugin_cpio;
 extern RFSPlugin r_fs_plugin_ext2;
 extern RFSPlugin r_fs_plugin_fat;
-extern RFSPlugin r_fs_plugin_ntfs;
+extern RFSPlugin r_fs_plugin_fb;
 extern RFSPlugin r_fs_plugin_hfs;
 extern RFSPlugin r_fs_plugin_hfsplus;
-extern RFSPlugin r_fs_plugin_reiserfs;
-extern RFSPlugin r_fs_plugin_tar;
+extern RFSPlugin r_fs_plugin_io;
 extern RFSPlugin r_fs_plugin_iso9660;
-extern RFSPlugin r_fs_plugin_udf;
-extern RFSPlugin r_fs_plugin_ufs;
-extern RFSPlugin r_fs_plugin_ufs2;
+extern RFSPlugin r_fs_plugin_jfs;
+extern RFSPlugin r_fs_plugin_minix;
+extern RFSPlugin r_fs_plugin_ntfs;
+extern RFSPlugin r_fs_plugin_posix;
+extern RFSPlugin r_fs_plugin_r2;
+extern RFSPlugin r_fs_plugin_reiserfs;
 extern RFSPlugin r_fs_plugin_sfs;
 extern RFSPlugin r_fs_plugin_tar;
-extern RFSPlugin r_fs_plugin_btrfs;
-extern RFSPlugin r_fs_plugin_jfs;
-extern RFSPlugin r_fs_plugin_afs;
-extern RFSPlugin r_fs_plugin_affs;
-extern RFSPlugin r_fs_plugin_cpio;
+extern RFSPlugin r_fs_plugin_tar;
+extern RFSPlugin r_fs_plugin_udf;
+extern RFSPlugin r_fs_plugin_ufs2;
+extern RFSPlugin r_fs_plugin_ufs;
 extern RFSPlugin r_fs_plugin_xfs;
-extern RFSPlugin r_fs_plugin_fb;
-extern RFSPlugin r_fs_plugin_minix;
 extern RFSPlugin r_fs_plugin_zip;
-extern RFSPlugin r_fs_plugin_posix;
 #endif
 
 #ifdef __cplusplus

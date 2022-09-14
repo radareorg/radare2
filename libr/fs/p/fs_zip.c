@@ -193,30 +193,15 @@ static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 	return list;
 }
 
-#if 0
-// 580 - should return bool and check if its a valid zip
-static int fs_zip_mount(RFSRoot *root) {
-	root->ptr = NULL;
-	return true;
-}
-
-static void fs_zip_umount(RFSRoot *root) {
-	root->ptr = NULL;
-}
-#endif
-
 RFSPlugin r_fs_plugin_zip = {
 	.name = "zip",
+	.author = "pancake",
 	.desc = "access compressed zip contents",
 	.license = "MIT",
 	.open = fs_zip_open,
 	.read = fs_zip_read,
 	.close = fs_zip_close,
 	.dir = &fs_zip_dir,
-/*
-	.mount = fs_zip_mount,
-	.umount = fs_zip_umount,
-*/
 };
 
 #ifndef R2_PLUGIN_INCORE
