@@ -3586,7 +3586,7 @@ static bool __stepOut(RAnalEsil *esil, const char *cmd) {
 	if (cmd && esil && esil->cmd && !esil->in_cmd_step) {
 		esil->in_cmd_step = true;
 		if (esil->cmd (esil, cmd, esil->address, 0)) {
-			inCmdStep = false;
+			esil->in_cmd_step = false;
 			// if returns 1 we skip the impl
 			return true;
 		}

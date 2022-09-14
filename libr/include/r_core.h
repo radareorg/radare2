@@ -346,9 +346,7 @@ struct r_core_t {
 	char *cmdfilter;
 	bool break_loop;
 	RList *undos;
-#if R2_580
 	int undoindex;
-#endif
 	bool binat;
 	bool fixedbits; // will be true when using @b:
 	bool fixedarch; // will be true when using @a:
@@ -582,6 +580,7 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile);
 
 #define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
+R_API void r_core_yank_unset(RCore *core);
 R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen);
 R_API bool r_core_yank_hexpair(RCore *core, const char *input);
 R_API int r_core_yank_paste(RCore *core, ut64 addr, int len);
@@ -862,10 +861,8 @@ R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond);
 R_API void r_core_undo_free(RCoreUndo *cu);
 R_API void r_core_undo_push(RCore *core, RCoreUndo *cu);
 R_API void r_core_undo_pop(RCore *core);
-#if R2_580
 R_API void r_core_undo_up(RCore *core);
 R_API void r_core_undo_down(RCore *core);
-#endif
 
 /* logs */
 typedef int (*RCoreLogCallback)(RCore *core, int count, const char *message);

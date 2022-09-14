@@ -93,6 +93,7 @@ static RLangPlugin r_lang_plugin_cpipe = {
 	.name = "cpipe",
 	.ext = "c2",
 	.desc = "r2pipe scripting in C",
+	.author = "pancake",
 	.license = "LGPL",
 	.run = lang_cpipe_run,
 	.init = (void*)lang_cpipe_init,

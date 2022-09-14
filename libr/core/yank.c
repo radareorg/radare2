@@ -382,13 +382,10 @@ R_API int r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 	return res;
 }
 
-#if R2_580
 R_API void r_core_yank_unset(RCore *core) {
 	r_buf_free (core->yank_buf);
 	core->yank_addr = UT64_MAX;
 }
-
-#endif
 
 R_API bool r_core_yank_hexpair(RCore *core, const char *input) {
 	if (R_STR_ISEMPTY (input)) {

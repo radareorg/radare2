@@ -46,7 +46,7 @@ CMDS=px 16 @ section.text_1; px 16 @ section.data_1
 EXPECT=<<EOF
 - offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
 0000:1000  ba0e 00b9 0000 bb01 00b8 0400 cd80 b801  ................
-- offset -  0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+- offset - 1314 1516 1718 191A 1B1C 1D1E 1F20 2122  3456789ABCDEF012
 0000:1013  4865 6c6c 6f2c 2077 6f72 6c64 210a ffff  Hello, world!...
 EOF
 RUN
