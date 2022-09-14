@@ -1000,9 +1000,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					if  (use_hdroff) {
 						if (use_pair) {
-							printfmt ("%c%c",
+							if ((((i + k) >> 4) + K) % 16) {
+								printfmt ("%c%c",
 									hex[(((i+k) >> 4) + K) % 16],
 									hex[(i + k) % 16]);
+							} else {
+								printfmt (" %c", hex[(i + k) % 16]);
+							}
 						} else {
 							printfmt (" %c", hex[(i + k) % 16]);
 						}
