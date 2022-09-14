@@ -78,7 +78,7 @@ FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -k ${R2_FILE}
 EXPECT=
 EXPECT_ERR=<<EOF
-[31mERROR: [0mMissing file
+[31mERROR:[0m Missing file
 EOF
 RUN
 
@@ -913,7 +913,7 @@ NAME=rabin2 -D Unsupported
 FILE=--
 CMDS=!rabin2 -D XXX LOLILOL
 EXPECT_ERR=<<EOF
-[31mERROR: [0mUnsupported demangler
+[31mERROR:[0m Unsupported demangler
 EOF
 RUN
 
@@ -953,7 +953,7 @@ NAME=rabin2 -O bad op
 FILE=-
 CMDS=!rabin2 -O bad_op -
 EXPECT_ERR=<<EOF
-[31mERROR: [0mUnknown operation. use -O help
+[31mERROR:[0m Unknown operation. use -O help
 EOF
 RUN
 
@@ -1230,6 +1230,6 @@ NAME=rabin2 -S ""
 FILE=-
 CMDS=!rabin2 -S ""
 EXPECT_ERR=<<EOF
-[31mERROR: [0mCannot open empty path
+[31mERROR:[0m Cannot open empty path
 EOF
 RUN

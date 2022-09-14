@@ -120,6 +120,9 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		}
 	}
 	RStrBuf *sb = r_strbuf_new ("");
+	if (func && r_str_startswith (func, "./")) {
+		func += 2;
+	}
 	if (rlog->color) {
 		const char *k = Color_YELLOW;
 		switch (level) {

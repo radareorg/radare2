@@ -21,6 +21,7 @@ extern "C" {
 #define R_LOG_DISABLE 0
 #endif
 
+// unused, but could be a good replacement for eprintf when fully transitioned?
 #define etrace(m) eprintf ("--> %s:%d : %s\n", __FUNCTION__, __LINE__, m)
 
 #define R_LOGLVL_DEFAULT R_LOGLVL_WARN
