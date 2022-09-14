@@ -163,6 +163,7 @@ static bool lang_go_run(RLang *lang, const char *code, int len) {
 static RLangPlugin r_lang_plugin_go = {
 	.name = "go",
 	.ext = "go",
+	.author = "pancake",
 	.example = r_lang_go_example,
 	.desc = "GO language extension",
 	.license = "MIT",

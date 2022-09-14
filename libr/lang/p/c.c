@@ -120,6 +120,7 @@ static RLangPlugin r_lang_plugin_c = {
 	.name = "c",
 	.ext = "c",
 	.desc = "C language extension",
+	.author = "pancake",
 	.license = "LGPL",
 	.example = r_lang_c_example,
 	.run = lang_c_run,
