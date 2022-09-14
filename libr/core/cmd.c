@@ -296,10 +296,8 @@ static RCoreHelpMessage help_msg_uc = {
 	"uc", " w hello,w world", "add a new undo command manually",
 	"uc", "", "list all core undos commands",
 	"uc*", "", "list all core undos as r2 commands",
-#if R2_580
 	"ucu", "", "up : undo previous action",
 	"ucd", "", "down : redo action",
-#endif
 	"uc-", "", "undo last action",
 	"uc.", "", "list all reverts in current",
 	NULL
@@ -656,7 +654,6 @@ static int cmd_undo(void *data, const char *input) {
 		case '-': // "uc-"
 			r_core_undo_pop (core);
 			break;
-#if R2_580
 		case 'u': // "ucu"
 			r_core_undo_up (core);
 			break;
@@ -665,7 +662,6 @@ static int cmd_undo(void *data, const char *input) {
 			r_core_undo_down (core);
 			r_config_set_b (core->config, "cmd.undo", true);
 			break;
-#endif
 		default:
 			r_core_undo_print (core, 0, NULL);
 			break;
