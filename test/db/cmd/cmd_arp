@@ -260,7 +260,7 @@ EXPECT=<<EOF
 0x00000000
 EOF
 EXPECT_ERR=<<EOF
-ERROR: [profile.c] =A0 not defined
+ERROR: [r_reg_set_profile_string] =A0 not defined
 EOF
 RUN
 
@@ -309,6 +309,7 @@ RUN
 NAME=bad regprofile 2
 FILE=-
 CMDS=<<EOF
+e log.origin=true
 e asm.arch=x86
 e asm.bits=64
 arps
@@ -325,6 +326,6 @@ EXPECT=<<EOF
 160
 EOF
 EXPECT_ERR=<<EOF
-ERROR: Parse error @ line 3 (Invalid syntax: Wrong number of columns)
+ERROR: [r_reg_set_profile_string] Parse error @ line 3 (Invalid syntax: Wrong number of columns)
 EOF
 RUN
