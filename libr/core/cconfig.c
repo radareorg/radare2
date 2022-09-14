@@ -4223,7 +4223,6 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* file */
 	SETBPREF ("file.info", "true", "RBin info loaded");
-	SETPREF ("file.offset", "", "offset where the file will be mapped at");
 	SETPREF ("file.type", "", "type of current file");
 	SETI ("file.loadalign", 1024, "alignment of load addresses");
 	/* magic */
