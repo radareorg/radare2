@@ -725,7 +725,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	RAsmCode *acode;
 	ut64 pc = a->pc;
 	ut64 idx;
-	size_t ret;
+	int ret;
 	const size_t addrbytes = a->user? ((RCore *)a->user)->io->addrbytes: 1;
 
 	if (!(acode = r_asm_code_new ())) {
