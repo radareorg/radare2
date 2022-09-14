@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2014-2021 - pancake */
+/* radare - LGPL - Copyright 2014-2022 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
-#include <errno.h>
+#define R_LOG_ORIGIN "socket.run"
+
 #include <fcntl.h>
 #include <r_socket.h>
 #include <r_util.h>
@@ -169,7 +170,7 @@ R_API void r_run_free(RRunProfile *r) {
 		free (r->_chgdir);
 		free (r->_chroot);
 		free (r->_libpath);
-		free (r->_preload);
+		r_list_free (r->_preload);
 		free (r->_pidfile);
 		free (r->_connect);
 		free (r->_listen);
@@ -639,7 +640,10 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 	} else if (!strcmp (b, "libpath")) {
 		p->_libpath = strdup (e);
 	} else if (!strcmp (b, "preload")) {
-		p->_preload = strdup (e);
+		if (!p->_preload) {
+			p->_preload = r_list_newf (free);
+		}
+		r_list_append (p->_preload, strdup (e));
 	} else if (!strcmp (b, "r2preload")) {
 		p->_r2preload = parseBool (e);
 	} else if (!strcmp (b, "r2preweb")) {
@@ -759,7 +763,7 @@ R_API const char *r_run_help(void) {
 	"# chroot=/mnt/chroot\n"
 	"# libpath=$PWD:/tmp/lib\n"
 	"# r2preload=yes\n"
-	"# preload=/lib/libfoo.so\n"
+	"# preload=/lib/libfoo.so # you can load more than one lib by using this directive many times\n"
 	"# setuid=2000\n"
 	"# seteuid=2000\n"
 	"# setgid=2001\n"
@@ -1123,13 +1127,13 @@ R_API int r_run_config_env(RRunProfile *p) {
 	}
 #endif
 	if (p->_r2preload) {
-		if (p->_preload) {
-			R_LOG_WARN ("Only one library can be opened at a time");
-		}
-#ifdef __WINDOWS__
-		p->_preload = r_str_r2_prefix (R_JOIN_2_PATHS (R2_LIBDIR, "libr2."R_LIB_EXT));
+#if __WINDOWS__
+		R_LOG_ERROR ("r2preload is not supported in this platform");
 #else
-		p->_preload = strdup (R2_LIBDIR"/libr2."R_LIB_EXT);
+		if (!p->_preload) {
+			p->_preload = r_list_newf (free);
+		}
+		r_list_append (p->_preload, strdup (R2_LIBDIR"/libr2."R_LIB_EXT));
 #endif
 	}
 	if (p->_libpath) {
@@ -1148,17 +1152,21 @@ R_API int r_run_config_env(RRunProfile *p) {
 #endif
 	}
 	if (p->_preload) {
-#if __APPLE__
+		char *ps = r_str_list_join (p->_preload, ":");
+#if __WINDOWS__
+		R_LOG_WARN ("The preload directive doesn't work on windows");
+#elif __APPLE__
 		// 10.6
 #ifndef __MAC_10_7
-		r_sys_setenv ("DYLD_PRELOAD", p->_preload);
+		r_sys_setenv ("DYLD_PRELOAD", ps);
 #endif
-		r_sys_setenv ("DYLD_INSERT_LIBRARIES", p->_preload);
+		r_sys_setenv ("DYLD_INSERT_LIBRARIES", ps);
 		// 10.8
 		r_sys_setenv ("DYLD_FORCE_FLAT_NAMESPACE", "1");
 #else
-		r_sys_setenv ("LD_PRELOAD", p->_preload);
+		r_sys_setenv ("LD_PRELOAD", ps);
 #endif
+		free (ps);
 	}
 	if (p->_timeout) {
 #if __wasi__
