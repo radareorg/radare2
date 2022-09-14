@@ -899,12 +899,12 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		if (!strcmp (file, "-")) {
 			for (;;) {
 				file = stdin_gets (false);
-				if (!file || !*file) {
+				if (R_STR_ISEMPTY (file)) {
 					break;
 				}
 				res = __demangleAs (bin, type, file);
 				if (!res) {
-					R_LOG_ERROR ("Unknown lang to demangle. Use: cxx, java, objc, swift");
+					R_LOG_ERROR ("Unknown lang to demangle. Use: cxx, msvc, dlang, rust, pascal, java, objc, swift");
 					r_core_fini (&core);
 					return 1;
 				}

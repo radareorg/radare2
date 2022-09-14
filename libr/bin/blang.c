@@ -63,6 +63,23 @@ static bool check_msvc(RBinSymbol *sym) {
 	return *sym->name == '?';
 }
 
+static inline bool check_kotlin(RBinSymbol *sym) {
+	return sym->name && strstr (sym->name, "kotlin_");
+}
+static inline bool check_groovy(RBinSymbol *sym) {
+	return strstr (sym->name, "_groovy");
+}
+static inline bool check_dart(RBinSymbol *sym) {
+	return strstr (sym->name, "io_flutter_");
+}
+
+static inline bool check_pascal(RBinSymbol *sym) {
+	if (strstr (sym->name, "$_$")) {
+		return true;
+	}
+	return strstr (sym->name, "_$$_");
+}
+
 /* This is about 10% of the loading time, optimize if possible */
 R_API int r_bin_load_languages(RBinFile *binfile) {
 	r_return_val_if_fail (binfile, R_BIN_NM_NONE);
@@ -70,7 +87,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	r_return_val_if_fail (binfile->o->info, R_BIN_NM_NONE);
 	RBinObject *o = binfile->o;
 	RBinInfo *info = o->info;
-	RBinSymbol *sym;
+	RBinSymbol *sym = NULL;
 	RListIter *iter, *iter2;
 	Langs cantbe = {0};
 	bool phobosIsChecked = false;
@@ -182,6 +199,24 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	if (isObjC) {
 		return R_BIN_NM_OBJC | (isBlocks?R_BIN_NM_BLOCKS:0);
 	}
+	if (sym) {
+		if (check_kotlin (sym)) {
+			info->lang = "kotlin";
+			return R_BIN_NM_KOTLIN;
+		}
+		if (check_groovy (sym)) {
+			info->lang = "groovy";
+			return R_BIN_NM_GROOVY;
+		}
+		if (check_dart (sym)) {
+ 			info->lang = "dart";
+ 			return R_BIN_NM_DART;
+ 		}
+		if (check_pascal (sym)) {
+ 			info->lang = "pascal";
+ 			return R_BIN_NM_PASCAL;
+ 		}
+	}
 	if (canBeCxx) {
 		return R_BIN_NM_CXX | (isBlocks?R_BIN_NM_BLOCKS:0);
 	}
@@ -228,6 +263,10 @@ R_API const char *r_bin_lang_tostring(int lang) {
 		return "java";
 	case R_BIN_NM_KOTLIN:
 		return "kotlin";
+	case R_BIN_NM_DART:
+		return "dart";
+	case R_BIN_NM_GROOVY:
+		return "groovy";
 	case R_BIN_NM_C:
 		return (lang & R_BIN_NM_BLOCKS)? "c with blocks": "c";
 	case R_BIN_NM_CXX:

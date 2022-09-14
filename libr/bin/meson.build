@@ -132,6 +132,7 @@ r_bin_sources = [
   join_paths('format/pdb','tpi.c'),
 
   join_paths('mangling','cxx.c'),
+  join_paths('mangling','pascal.c'),
   join_paths('mangling','cxx','cp-demangle.c'),
   join_paths('mangling','demangler.c'),
   join_paths('mangling','rust.c'),

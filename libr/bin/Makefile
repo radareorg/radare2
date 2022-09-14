@@ -28,6 +28,7 @@ OBJS+=mangling/microsoft_demangle.o
 OBJS+=mangling/objc.o mangling/cxx.o mangling/msvc.o
 OBJS+=mangling/swift.o mangling/swift-sd.o
 OBJS+=mangling/java.o
+OBJS+=mangling/pascal.o
 OBJS+=mangling/rust.o
 
 include $(TOP)/libr/bin/format/pdb/deps.mk

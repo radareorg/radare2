@@ -103,6 +103,7 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	case R_BIN_NM_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
 	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc (s); break;
 	case R_BIN_NM_RUST: res = r_bin_demangle_rust (core->bin->cur, s, 0); break;
+	case R_BIN_NM_PASCAL: res = r_bin_demangle_freepascal (s); break;
 	default:
 		r_bin_demangle_list (core->bin);
 		return true;
