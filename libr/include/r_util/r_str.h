@@ -143,7 +143,7 @@ R_API int r_str_ansi_trim(char *str, int str_len, int n);
 R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len);
 R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
 R_API int r_str_word_count(const char *string);
-R_API int r_str_char_count(const char *string, char ch);
+R_API size_t r_str_char_count(const char *string, char ch);
 R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen);
 R_API int r_str_word_set0(char *str);
 R_API int r_str_word_set0_stack(char *str);
