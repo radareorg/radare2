@@ -580,6 +580,7 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile);
 
 #define R_CORE_FOREIGN_ADDR -1
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
+R_API void r_core_yank_unset(RCore *core);
 R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen);
 R_API bool r_core_yank_hexpair(RCore *core, const char *input);
 R_API int r_core_yank_paste(RCore *core, ut64 addr, int len);

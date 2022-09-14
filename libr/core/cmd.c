@@ -1072,12 +1072,7 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_yank (core, core->offset, r_num_math (core->num, input + 1));
 		break;
 	case '-': // "y-"
-#if R2_580
 		r_core_yank_unset (core);
-#else
-		r_buf_set_bytes (core->yank_buf, (const ut8*)"", 0);
-		core->yank_addr = UT64_MAX;
-#endif
 		break;
 	case 'l': // "yl"
 		r_core_return_value (core, r_buf_size (core->yank_buf));
