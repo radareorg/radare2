@@ -89,6 +89,16 @@ typedef struct r_fs_shell_t {
 	int (*hist_add)(const char *line);
 } RFSShell;
 
+typedef struct r_fs_type_t {
+	const char * const name;
+	int bufoff;
+	const char * const buf;
+	int buflen;
+	int byteoff;
+	ut8 byte;
+	int bytelen;
+} RFSType;
+
 static inline RFSShell *r_fs_shell_new(void) {
 	return R_NEW0 (RFSShell);
 }

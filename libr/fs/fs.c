@@ -2,7 +2,6 @@
 
 #include <r_fs.h>
 #include <config.h>
-#include "types.h"
 
 #if WITH_GPL
 # ifndef USE_GRUB
@@ -17,8 +16,19 @@
 
 R_LIB_VERSION (r_fs);
 
-static RFSPlugin* fs_static_plugins[] = {
+static const RFSPlugin* fs_static_plugins[] = {
 	R_FS_STATIC_PLUGINS
+};
+
+static const RFSType fstypes[] = {
+	{ "hfs", 0x400, "BD", 2, 0, 0, 0x400 },
+	{ "hfsplus", 0x400, "H+", 2, 0, 0, 0x400 },
+	{ "fat", 0x36, "FAT12", 5, 0, 0, 0 },
+	{ "fat", 0x52, "FAT32", 5, 0, 0, 0 },
+	{ "ext2", 0x438, "\x53\xef", 2, 0, 0, 0 },
+	{ "btrfs", 0x10040, "_BHRfS_M", 8, 0, 0, 0x0 },
+	{ "iso9660", 0x8000, "\x01" "CD0", 4, 0, 0, 0x8000 },
+	{ NULL }
 };
 
 R_API R_MUSTUSE RFS* r_fs_new(void) {
@@ -637,7 +647,7 @@ R_API char* r_fs_name(RFS* fs, ut64 offset) {
 	int i, j, len, ret = false;
 
 	for (i = 0; fstypes[i].name; i++) {
-		RFSType* f = &fstypes[i];
+		const RFSType* f = &fstypes[i];
 		len = R_MIN (f->buflen, sizeof (buf) - 1);
 		fs->iob.read_at (fs->iob.io, offset + f->bufoff, buf, len);
 		if (f->buflen > 0 && !memcmp (buf, f->buf, f->buflen)) {
