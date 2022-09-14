@@ -139,22 +139,22 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		default:
 			break;
 		}
-		r_strbuf_appendf (sb, "%s%s: ", k, level_name (level));
+		r_strbuf_appendf (sb, "%s%s:", k, level_name (level));
 		if (rlog->show_origin) {
-			r_strbuf_appendf (sb, Color_YELLOW "[%s]" Color_RESET, origin);
+			r_strbuf_appendf (sb, " "Color_YELLOW "[%s]" Color_RESET, origin);
 		} else {
 			r_strbuf_appendf (sb, Color_RESET);
 		}
 		if (rlog->show_source) {
-			r_strbuf_appendf (sb, "[%s:%d]", func, line);
+			r_strbuf_appendf (sb, " [%s:%d]", func, line);
 		}
 	} else {
-		r_strbuf_appendf (sb, "%s: ", level_name (level));
+		r_strbuf_appendf (sb, "%s:", level_name (level));
 		if (rlog->show_origin) {
-			r_strbuf_appendf (sb, "[%s]", origin);
+			r_strbuf_appendf (sb, " [%s]", origin);
 		}
 		if (rlog->show_source) {
-			r_strbuf_appendf (sb, "[%s:%d]", func, line);
+			r_strbuf_appendf (sb, " [%s:%d]", func, line);
 		}
 	}
 	char ts[32] = {0};

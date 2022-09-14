@@ -26,13 +26,14 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
-ERROR: [cmd_write_fail][cmd_write.c:193] Cannot write. Check `omp` or reopen the file with `oo+`
+ERROR: [./cmd_write.c:192] Cannot write. Check `omp` or reopen the file with `oo+`
 EOF
 RUN
 
 NAME=write-on-ro-then-cache
 FILE=bins/elf/analysis/pie
 CMDS=<<EOF
+e log.origin=true
 w hello
 ps
 e io.cache=1
