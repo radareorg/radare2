@@ -216,7 +216,9 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 				"system=%s\n"
 				"listen=%d\n", cmd, port);
 		RRunProfile *rp = r_run_new (profile);
-		r_run_start (rp);
+		if (!r_run_start (rp)) {
+			R_LOG_ERROR ("r_run_start failed");
+		}
 		r_run_free (rp);
 		free (profile);
 #endif

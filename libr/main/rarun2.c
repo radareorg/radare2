@@ -24,7 +24,7 @@ static void rarun2_tty(void) {
 
 R_API int r_main_rarun2(int argc, const char **argv) {
 	RRunProfile *p;
-	int i, ret;
+	int i;
 	if (argc == 1 || !strcmp (argv[1], "-h")) {
 		printf ("Usage: rarun2 -v|-t|script.rr2 [directive ..]\n");
 		printf ("%s", r_run_help ());
@@ -70,12 +70,11 @@ R_API int r_main_rarun2(int argc, const char **argv) {
 	if (!p) {
 		return 1;
 	}
-	ret = r_run_config_env (p);
-	if (ret) {
-		R_LOG_ERROR ("cannot configure environment");
+	if (!r_run_config_env (p)) {
+		R_LOG_ERROR ("cannot setup the environment");
 		return 1;
 	}
-	ret = r_run_start (p);
+	bool ret = r_run_start (p);
 	r_run_free (p);
-	return ret;
+	return ret? 0: 1;
 }
