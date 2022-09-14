@@ -74,7 +74,7 @@ R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max) {
 }
 
 static int search_magic_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
-	eprintf ("TODO: import libr/core/cmd_search.c /m implementation into rsearch\n");
+	R_LOG_TODO ("import libr/core/cmd_search.c /m implementation into rsearch");
 	return false;
 }
 

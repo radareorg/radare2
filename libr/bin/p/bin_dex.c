@@ -1848,7 +1848,7 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 	case 'f':
 		return dex_field_offset (dex, idx);
 	case 'o': // objects
-		eprintf ("TODO: getoffset object\n");
+		R_LOG_TODO ("getoffset object");
 		return 0; // //chdex_object_offset (dex, idx);
 	case 's': // strings
 		if (dex->header.strings_size > idx) {

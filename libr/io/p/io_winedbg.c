@@ -325,7 +325,7 @@ const char *msg =
 	} else if (r_str_startswith (cmd, "dc")) {
 		free (runcmd ("cont"));
 	} else if (r_str_startswith (cmd, "dso")) {
-		eprintf ("TODO: dso\n");
+		R_LOG_TODO ("dso");
 	} else if (r_str_startswith (cmd, "dp")) {
 		printcmd (io, "info thread");
 	} else if (r_str_startswith (cmd, "dm")) {

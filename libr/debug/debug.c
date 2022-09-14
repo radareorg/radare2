@@ -1375,7 +1375,7 @@ R_API int r_debug_continue_pass_exception(RDebug *dbg) {
 #endif
 
 R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
-	eprintf ("TODO\n");
+	R_LOG_TODO ("not implemented");
 	return false;
 }
 

@@ -15,7 +15,7 @@ static bool is_io_esil(RDebug *dbg) {
 #endif
 
 static bool __esil_step_over(RDebug *dbg) {
-	eprintf ("TODO: ESIL STEP OVER\n");
+	R_LOG_TODO ("ESIL STEP OVER");
 	return true;
 }
 
@@ -41,7 +41,7 @@ static bool __esil_step(RDebug *dbg) {
 		}
 	}
 	r_anal_op_fini (&op);
-	eprintf ("TODO: ESIL STEP\n");
+	R_LOG_TODO ("ESIL STEP");
 	return true;
 }
 
@@ -53,12 +53,12 @@ static bool __esil_init(RDebug *dbg) {
 }
 
 static bool __esil_continue(RDebug *dbg, int pid, int tid, int sig) {
-	eprintf ("TODO continue\n");
+	R_LOG_TODO ("continue");
 	return true;
 }
 
 static bool __esil_continue_syscall(RDebug *dbg, int pid, int num) {
-	eprintf ("TODO: esil continue until syscall\n");
+	R_LOG_TODO ("esil continue until syscall");
 	return true;
 }
 

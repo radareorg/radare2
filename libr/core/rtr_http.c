@@ -596,8 +596,8 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 		if (httpthread) {
 			eprintf ("HTTP Thread is already running\n");
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
-			eprintf ("TODO: Use different eval environ for scr. for the web\n");
-			eprintf ("TODO: Visual mode should be enabled on local\n");
+			R_LOG_TODO ("Use different eval environ for scr. for the web");
+			R_LOG_TODO ("Visual mode should be enabled on local");
 		} else {
 			const char *tpath = r_str_trim_head_ro (path + 1);
 			//HttpThread ht = { core, launch, strdup (tpath) };

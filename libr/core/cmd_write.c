@@ -1384,7 +1384,7 @@ static int cmd_wc(void *data, const char *input) {
 	case '+': // "wc+"
 		if (input[1]=='*') { // "wc+*"
 			//r_io_cache_reset (core->io, core->io->cached);
-			eprintf ("TODO\n");
+			R_LOG_TODO ("wc+*");
 		} else if (input[1]==' ') { // "wc+ "
 			char *p = strchr (input + 2, ' ');
 			ut64 to, from;
@@ -2083,7 +2083,7 @@ static int cmd_wm(void *data, const char *input) {
 	int size = r_hex_str2bin (input, (ut8 *)str);
 	switch (input[0]) {
 	case '\0':
-		eprintf ("TODO: Display current write mask");
+		R_LOG_TODO ("Display current write mask");
 		break;
 	case '?':
 		break;

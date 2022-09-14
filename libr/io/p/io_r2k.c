@@ -71,7 +71,7 @@ static bool r2k__close(RIODesc *fd) {
 		close ((int)(size_t)fd->data);
 	}
 #else
-	eprintf ("TODO: r2k not implemented for this plataform.\n");
+	R_LOG_TODO ("r2k not implemented for this plataform");
 #endif
 	return true;
 }
