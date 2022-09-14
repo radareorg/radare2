@@ -32,9 +32,7 @@ R_API void r_core_undo_free(RCoreUndo *cu) {
 R_API void r_core_undo_push(RCore *core, RCoreUndo *cu) {
 	r_return_if_fail (core && cu);
 	r_list_append (core->undos, cu);
-#if R2_580
 	core->undoindex ++;
-#endif
 }
 
 R_API void r_core_undo_pop(RCore *core) {
@@ -76,11 +74,7 @@ R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond) {
 		ut64 now = r_time_now ();
 		int i = 0;
 		r_list_foreach (core->undos, iter, cu) {
-#if R2_580
 			const char * arrow = (i == core->undoindex - 1)? "*": "-";
-#else
-			const char * arrow = "-";
-#endif
 			r_cons_printf ("%s 0x%08"PFMT64x" old:% ds cmd: %s (revert: %s)\n",
 				arrow, cu->offset, (int)((now - cu->tstamp) / 1000000), cu->action, cu->revert);
 			i++;
@@ -88,7 +82,6 @@ R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond) {
 	}
 }
 
-#if R2_580
 R_API void r_core_undo_down(RCore *core) {
 	// undo
 	int undos = r_list_length (core->undos);
@@ -117,4 +110,3 @@ R_API void r_core_undo_up(RCore *core) {
 	}
 	r_config_set_b (core->config, "cmd.undo", cmd_undo);
 }
-#endif
