@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_list.h>
 #include <r_crypto/r_des.h>
+#include <r_crypto/r_sm4.h>
 
 #ifdef __cplusplus
 extern "C" {
