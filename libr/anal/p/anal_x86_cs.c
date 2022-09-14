@@ -1564,7 +1564,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}", src);
 				for (; i < bits - 1; i++) {
 					r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",%s,&,?{,%d,%s,:=,BREAK,}",
-						1ULL << i, src, i, dst);
+						((ut64)1) << i, src, i, dst);
 				}
 				r_strbuf_appendf (&op->esil, ",%d,%s,:=", i, dst);
 			}
@@ -1588,7 +1588,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				esilprintf (op, "%s,!,zf,:=,zf,?{,BREAK,}", src);
 				for (; i; i--) {
 					r_strbuf_appendf (&op->esil, ",0x%"PFMT64x",%s,&,?{,%d,%s,:=,BREAK,}",
-						1ULL << i, src, i, dst);
+						((ut64)1) << i, src, i, dst);
 				}
 				r_strbuf_appendf (&op->esil, ",0,%s,:=", dst);
 			}
