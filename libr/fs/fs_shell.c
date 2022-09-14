@@ -1,8 +1,8 @@
 /* radare2 - LGPL - Copyright 2018-2022 - pancake */
 
-#include <r_fs.h>
+#define R_LOG_ORIGIN "fs.shell"
 
-#define PROMPT_PATH_BUFSIZE 1024
+#include <r_fs.h>
 
 static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 	char *red = strchr (msg, '>');
@@ -263,6 +263,8 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 	}
 	return true;
 }
+
+#define PROMPT_PATH_BUFSIZE 1024
 
 R_API bool r_fs_shell(RFSShell* shell, RFS* fs, const char* root) {
 	r_return_val_if_fail (shell && fs, false);

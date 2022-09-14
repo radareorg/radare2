@@ -3,8 +3,6 @@
 #define R_LOG_ORIGIN "bin"
 
 #include <r_bin.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <config.h>
 #include "i/private.h"
 

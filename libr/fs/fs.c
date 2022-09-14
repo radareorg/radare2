@@ -1,5 +1,7 @@
 /* radare2 - LGPL - Copyright 2011-2022 - pancake */
 
+#define R_LOG_ORIGIN "fs"
+
 #include <r_fs.h>
 #include <config.h>
 
@@ -30,6 +32,13 @@ static const RFSType fstypes[] = {
 	{ "iso9660", 0x8000, "\x01" "CD0", 4, 0, 0, 0x8000 },
 	{ NULL }
 };
+
+R_API R_MUSTUSE const RFSType* r_fs_type_index(int i) {
+	if (i < 0 || i >= R_ARRAY_SIZE (fstypes)) {
+		return NULL;
+	}
+	return &fstypes[i];
+}
 
 R_API R_MUSTUSE RFS* r_fs_new(void) {
 	int i;

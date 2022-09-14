@@ -589,6 +589,7 @@ subdir('libr/search')
 subdir('libr/magic')
 subdir('libr/flag')
 subdir('libr/reg')
+subdir('libr/fs')
 subdir('libr/bin')
 subdir('libr/config')
 subdir('libr/parse')
@@ -596,7 +597,6 @@ subdir('libr/lang')
 subdir('libr/asm')
 subdir('libr/anal')
 subdir('libr/egg')
-subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
 subdir('libr/cons/d')
@@ -610,7 +610,6 @@ if meson.is_subproject()
     dependencies: [
       r_anal_dep,
       r_asm_dep,
-      r_bin_dep,
       r_bp_dep,
       r_config_dep,
       r_cons_dep,
@@ -621,6 +620,7 @@ if meson.is_subproject()
       r_egg_dep,
       r_flag_dep,
       r_fs_dep,
+      r_bin_dep,
       r_hash_dep,
       r_io_dep,
       r_lang_dep,

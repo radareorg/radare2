@@ -154,6 +154,8 @@ R_API RList *r_fs_find_name(RFS* fs, const char *name, const char *glob);
 R_API RList *r_fs_find_off(RFS* fs, const char *name, ut64 off);
 R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
 
+R_API R_MUSTUSE const RFSType *r_fs_type_index(int i);
+
 R_API char *r_fs_name(RFS *fs, ut64 offset);
 R_API bool r_fs_check(RFS *fs, const char *p);
 R_API bool r_fs_shell(RFSShell *shell, RFS *fs, const char *root);
