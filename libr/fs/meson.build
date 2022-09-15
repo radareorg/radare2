@@ -11,7 +11,7 @@ r_fs_sources = [
 r_fs_deps = [ r_util_dep, zip_dep ]
 r_fs_cflags = [ library_cflags ]
 if get_option('blob')
-  r_fs_static_deps = [ r_util_static_dep ]
+  r_fs_static_deps = [ r_util_static_dep, zip_dep ]
 endif
 
 if not user_plugins.contains('nogrub') and not get_option('nogpl')
