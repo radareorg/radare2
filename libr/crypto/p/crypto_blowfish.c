@@ -6,6 +6,7 @@
 #include <r_lib.h>
 #include <r_crypto.h>
 #include <r_util/r_assert.h>
+#include <r_util/r_log.h>
 #include <memory.h>
 
 #define BLOCK_SIZE 8
@@ -179,7 +180,7 @@ static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf,
 	if (!state || !inbuf || !outbuf || buflen < 0 || buflen%8 != 0) {
 		//let user deal with padding
 		if (buflen % 8 != 0) {
-			eprintf ("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
+			R_LOG_ERROR ("Invalid input length %d. Expected length is multiple of 8 bytes", buflen);
 		}
 		return;
 	}

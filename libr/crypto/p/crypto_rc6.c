@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2016 - pancake */
+/* radare - LGPL - Copyright 2016-2022 - pancake */
 
 //Implemented AES version of RC6. keylen = 16, 23, or 32 bytes; w = 32; and r = 20.
 #include <r_lib.h>
 #include <r_crypto.h>
+#include <r_util/r_log.h>
 
 #define Pw 0xb7e15163
 #define Qw 0x9e3779b9
@@ -165,7 +166,7 @@ static int rc6_get_key_size(RCryptoJob *cj) {
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	if (len % BLOCK_SIZE != 0) { //let user handle with with pad.
-		eprintf ("Input should be multiple of 128bit.\n");
+		R_LOG_ERROR ("Input should be multiple of 128bit");
 		return false;
 	}
 

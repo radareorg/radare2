@@ -2,6 +2,7 @@
 
 #include "crypto_serpent_algo.h"
 #include "r_util/r_assert.h"
+#include "r_util/r_log.h"
 
 static const ut8 S[][16] = {
 	{ 3, 8,15, 1,10, 6, 5,11,14,13, 4, 2, 7, 0, 9,12 },/* S0: */
@@ -94,7 +95,7 @@ static void apply_FP(ut32 in[DW_BY_BLOCK], ut32 out[DW_BY_BLOCK]) {
 static bool serpent_keyschedule(struct serpent_state st, ut32 subkeys[NB_SUBKEYS *DW_BY_BLOCK]) {
 	if ((st.key_size != 128) && (st.key_size != 192)
 			&& (st.key_size != 256)) {
-		eprintf ("Invalid key size");
+		R_LOG_ERROR ("Invalid key size");
 		return false;
 	}
 
