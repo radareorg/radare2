@@ -6,5 +6,6 @@ OBJS+=regexp.o keyword.o uds.o rabin_karp.o
 # OBJ+=rsakey.o
 R2DEPS=r_util r_crypto
 CFLAGS+=-g
+CFLAGS+= -L../../crypto -lr_crypto
 
 include ../rules.mk
