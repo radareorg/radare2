@@ -17,6 +17,16 @@ static const RCmdDescHelp root_help = {
 	.description = "",
 };
 
+static void cmd_desc_free(RCmdDesc *cd) {
+	if (!cd) {
+		return;
+	}
+
+	r_pvector_clear (&cd->children);
+	free (cd->name);
+	free (cd);
+}
+
 static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
 	r_return_val_if_fail (cd && !cd->parent, false);
 	if (parent) {
@@ -27,32 +37,6 @@ static bool cmd_desc_set_parent(RCmdDesc *cd, RCmdDesc *parent) {
 	return true;
 }
 
-static bool cmd_desc_remove_from_ht_cmds(RCmd *cmd, RCmdDesc *cd) {
-	void **it_cd;
-	bool res = ht_pp_delete (cmd->ht_cmds, cd->name);
-	r_return_val_if_fail (res, false);
-	r_cmd_desc_children_foreach (cd, it_cd) {
-		RCmdDesc *child_cd = *it_cd;
-		cmd_desc_remove_from_ht_cmds (cmd, child_cd);
-	}
-	return res;
-}
-static void cmd_desc_unset_parent(RCmdDesc *cd) {
-	r_return_if_fail (cd && cd->parent);
-	RCmdDesc *parent = cd->parent;
-	r_pvector_remove_data (&parent->children, cd);
-	parent->n_children--;
-	cd->parent = NULL;
-}
-static void cmd_desc_free(RCmdDesc *cd) {
-	if (!cd) {
-		return;
-	}
-
-	r_pvector_clear (&cd->children);
-	free (cd->name);
-	free (cd);
-}
 static RCmdDesc *create_cmd_desc(RCmd *cmd, RCmdDesc *parent, RCmdDescType type, const char *name, const RCmdDescHelp *help, bool ht_insert) {
 	RCmdDesc *res = R_NEW0 (RCmdDesc);
 	if (!res) {
@@ -77,12 +61,13 @@ err:
 }
 
 static void alias_freefn(HtPPKv *kv) {
-	char *k = kv->key;
-	RCmdAliasVal *v = kv->value;
-
-	free (v->data);
-	free (k);
-	free (v);
+	if (kv) {
+		char *k = kv->key;
+		RCmdAliasVal *v = kv->value;
+		free (v->data);
+		free (k);
+		free (v);
+	}
 }
 
 static void *alias_dupkey(const void *k) {
@@ -1119,90 +1104,4 @@ R_API char *r_cmd_parsed_args_execstr(RCmdParsedArgs *a) {
 R_API const char *r_cmd_parsed_args_cmd(RCmdParsedArgs *a) {
 	r_return_val_if_fail (a && a->argv && a->argv[0], NULL);
 	return a->argv[0];
-}
-
-/* RCmdDescriptor */
-
-// R2_580 - deprecate
-static RCmdDesc *argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help, bool ht_insert) {
-	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_ARGV, name, help, ht_insert);
-	if (!res) {
-		return NULL;
-	}
-
-	res->d.argv_data.cb = cb;
-	return res;
-}
-
-// R2_580 - deprecate
-R_API RCmdDesc *r_cmd_desc_argv_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help) {
-	r_return_val_if_fail (cmd && parent && name, NULL);
-	return argv_new (cmd, parent, name, cb, help, true);
-}
-
-// R2_580 - deprecate
-R_API RCmdDesc *r_cmd_desc_inner_new(RCmd *cmd, RCmdDesc *parent, const char *name, const RCmdDescHelp *help) {
-	r_return_val_if_fail (cmd && parent && name, NULL);
-	return create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_INNER, name, help, false);
-}
-
-// R2_580 - deprecate
-R_API RCmdDesc *r_cmd_desc_group_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdArgvCb cb, const RCmdDescHelp *help, const RCmdDescHelp *group_help) {
-	r_return_val_if_fail (cmd && parent && name, NULL);
-	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_GROUP, name, group_help, true);
-	if (!res) {
-		return NULL;
-	}
-	RCmdDesc *exec_cd = NULL;
-	if (cb && help) {
-		exec_cd = argv_new (cmd, res, name, cb, help, false);
-		if (!exec_cd) {
-			r_cmd_desc_remove (cmd, res);
-			return NULL;
-		}
-	}
-
-	res->d.group_data.exec_cd = exec_cd;
-	return res;
-}
-
-// R2_580 - deprecate
-R_API RCmdDesc *r_cmd_desc_oldinput_new(RCmd *cmd, RCmdDesc *parent, const char *name, RCmdCb cb, const RCmdDescHelp *help) {
-	r_return_val_if_fail (cmd && parent && name && cb, NULL);
-	RCmdDesc *res = create_cmd_desc (cmd, parent, R_CMD_DESC_TYPE_OLDINPUT, name, help, true);
-	if (!res) {
-		return NULL;
-	}
-	res->d.oldinput_data.cb = cb;
-	return res;
-}
-
-R_API RCmdDesc *r_cmd_desc_parent(RCmdDesc *cd) {
-	r_return_val_if_fail (cd, NULL);
-	return cd->parent;
-}
-
-R_API bool r_cmd_desc_has_handler(RCmdDesc *cd) {
-	r_return_val_if_fail (cd, false);
-	switch (cd->type) {
-	case R_CMD_DESC_TYPE_ARGV:
-		return cd->d.argv_data.cb;
-	case R_CMD_DESC_TYPE_OLDINPUT:
-		return cd->d.oldinput_data.cb;
-	case R_CMD_DESC_TYPE_INNER:
-		return false;
-	case R_CMD_DESC_TYPE_GROUP:
-		return cd->d.group_data.exec_cd && r_cmd_desc_has_handler (cd->d.group_data.exec_cd);
-	}
-	return false;
-}
-
-R_API bool r_cmd_desc_remove(RCmd *cmd, RCmdDesc *cd) {
-	r_return_val_if_fail (cmd && cd, false);
-	if (cd->parent) {
-		cmd_desc_unset_parent (cd);
-	}
-	cmd_desc_remove_from_ht_cmds (cmd, cd);
-	cmd_desc_free (cd);
-	return true;
 }

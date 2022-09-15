@@ -52,7 +52,6 @@ typedef struct r_cmd_macro_t {
 	ut64 _brk_value;
 	int brk;
 	int macro_level;
-// 	int (*cmd)(void *user, const char *cmd);
 	RCoreCmd cmd;
 	PrintfCallback cb_printf;
 	void *user;
@@ -215,12 +214,9 @@ typedef struct r_cmd_descriptor_t {
 #ifdef R_API
 R_API RCmd *r_cmd_new(void);
 R_API RCmd *r_cmd_free(RCmd *cmd);
+R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API void r_cmd_set_data(RCmd *cmd, void *data);
 R_API bool r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);
-R_API bool r_core_del(RCmd *cmd, const char *command);
-R_API int r_cmd_call(RCmd *cmd, const char *command);
-R_API RCmdDesc *r_cmd_get_root(RCmd *cmd);
-R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier);
 
 static inline RCmdStatus r_cmd_int2status(int v) {
 	if (v == -2) {
