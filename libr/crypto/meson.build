@@ -1,3 +1,5 @@
+subdir('hash')
+
 r_crypto_sources = [
   'des.c',
   'crypto.c',
@@ -23,9 +25,11 @@ r_crypto_sources = [
   'p/crypto_xor.c',
 ]
 
+r_crypto_sources += r_hash_sources
+
 r_crypto = library('r_crypto', r_crypto_sources,
   include_directories: [platform_inc],
-  dependencies: [r_util_dep],
+  dependencies: [r_util_dep, dependencies],
   link_with: [r_util],
   c_args: library_cflags,
   install: true,
@@ -41,7 +45,7 @@ if get_option('blob')
 r_crypto_static = static_library('r_crypto_static', r_crypto_sources,
   include_directories: [platform_inc],
   dependencies: [r_util_static_dep],
-  link_with: [r_util_static],
+  link_with: [r_util_static, r_hash_static],
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,

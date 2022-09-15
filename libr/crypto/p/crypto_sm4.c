@@ -4,16 +4,12 @@
  *
  * */
 
-#include <r_lib.h>
 #include <r_crypto.h>
 #include <r_util.h>
 #include <memory.h>
 
 #define BLOCK_SIZE   16
 #define SM4_KEY_SIZE 16
-
-/* Round keys */
-static R_TH_LOCAL ut32 sm4_sk[32];
 
 /* Rotate left */
 #define ROTL(rs, sh) (((rs) << (sh)) | ((rs) >> (32 - (sh))))
@@ -93,7 +89,7 @@ static void sm4_round(const ut32 *sk, const ut8 *input, ut8 *output) {
 	tmp[3] = r_read_at_be32 (input, 12);
 	while (i < 32) {
 		/* Round F function */
-		tmp[i + 4] = tmp[i] ^ sm4_T (tmp[i + 1] ^ tmp[i + 2] ^ tmp[i + 3] ^ sm4_sk[i]);
+		tmp[i + 4] = tmp[i] ^ sm4_T (tmp[i + 1] ^ tmp[i + 2] ^ tmp[i + 3] ^ sk[i]);
 		i++;
 	}
 	r_write_at_be32 (output, tmp[35], 0);
@@ -104,14 +100,14 @@ static void sm4_round(const ut32 *sk, const ut8 *input, ut8 *output) {
 
 static void sm4_crypt(const ut32 *sk, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 	for (; buflen > 0; buflen -= BLOCK_SIZE) {
-		sm4_round (sm4_sk, inbuf, outbuf);
+		sm4_round (sk, inbuf, outbuf);
 		inbuf += BLOCK_SIZE;
 		outbuf += BLOCK_SIZE;
 	}
 }
 
 /* SM4 key schedule */
-static bool sm4_init(ut32 *sk, const ut8 *key, int keylen, int dir) {
+static bool sm4_init(RCryptoJob *cj, ut32 *sk, const ut8 *key, int keylen, int dir) {
 	ut32 MK[4];
 	ut32 k[36];
 	int i = 0;
@@ -132,54 +128,53 @@ static bool sm4_init(ut32 *sk, const ut8 *key, int keylen, int dir) {
 		k[i + 4] = k[i] ^ (sm4_RK (k[i + 1] ^ k[i + 2] ^ k[i + 3] ^ CK[i]));
 
 		if (dir == 0) {
-			sm4_sk[i] = k[i + 4];
+			cj->sm4_sk[i] = k[i + 4];
 		} else {
-			sm4_sk[31 - i] = k[i + 4];
+			cj->sm4_sk[31 - i] = k[i + 4];
 		}
 	}
 	return true;
 }
 
-static bool sm4_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	cry->dir = direction;
-	return sm4_init (sm4_sk, key, keylen, direction);
+static bool sm4_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+	cj->dir = direction;
+	return sm4_init (cj, cj->sm4_sk, key, keylen, direction);
 }
 
-static int sm4_get_key_size(RCrypto *cry) {
+static int sm4_get_key_size(RCryptoJob *cry) {
 	return SM4_KEY_SIZE;
 }
 
-static bool sm4_use(const char *algo) {
+static bool sm4_check(const char *algo) {
 	return !strcmp (algo, "sm4-ecb");
 }
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
-	if (!cry || !buf) {
-		return false;
-	}
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
+	r_return_val_if_fail (cj&& buf, false);
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
 	/* SM4 encryption or decryption */
-	sm4_crypt (sm4_sk, buf, obuf, len);
-	r_crypto_append (cry, obuf, len);
+	sm4_crypt (cj->sm4_sk, buf, obuf, len);
+	r_crypto_job_append (cj, obuf, len);
 	free (obuf);
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
+	return update (cj, buf, len);
 }
 
 RCryptoPlugin r_crypto_plugin_sm4 = {
 	.name = "sm4-ecb",
+	.author = "Sylvain Pelissier",
 	.license = "LGPL3",
 	.set_key = sm4_set_key,
 	.get_key_size = sm4_get_key_size,
-	.use = sm4_use,
+	.check = sm4_check,
 	.update = update,
-	.final = final
+	.end = end
 };
 
 #ifndef R2_PLUGIN_INCORE

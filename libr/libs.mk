@@ -2,7 +2,7 @@
 
 ifeq ($(LIBS0),)
 LIBS0=util
-LIBS1=socket hash reg cons magic bp search config
+LIBS1=socket reg cons magic bp search config
 LIBS2=syscall lang crypto flag
 LIBS3=parse io
 LIBS4=asm fs

@@ -1,4 +1,4 @@
-r_hash_sources = [
+r_hash_sources = files(
   'adler32.c',
   'hcalc.c',
   'crca.c',
@@ -10,20 +10,20 @@ r_hash_sources = [
   'ssdeep.c',
   'luhn.c',
   'state.c'
-]
+)
 
 dependencies = [mth, r_util_dep]
 
 if use_sys_xxhash
-  dependencies += [sys_xxhash]
+  dependencies += files(sys_xxhash)
 else
-  r_hash_sources += ['xxhash.c']
+  r_hash_sources += files('xxhash.c')
 endif
 
 if use_sys_openssl
   dependencies += [sys_openssl]
 else
-  r_hash_sources += ['md4.c', 'md5.c', 'sha1.c', 'sha2.c']
+  r_hash_sources += files('md4.c', 'md5.c', 'sha1.c', 'sha2.c')
 endif
 
 r_hash = library('r_hash', r_hash_sources,
@@ -51,14 +51,14 @@ r_hash_static_dep = declare_dependency(link_with: r_hash_static,
   include_directories: [platform_inc])
 endif
 
-pkgconfig_mod.generate(r_hash,
-  subdirs: 'libr',
-  version: r2_version,
-  name: 'r_hash',
-  filebase: 'r_hash',
-  libraries: pkgcfg_sanitize_libs,
-  requires: [
-    'r_util'
-  ],
-  description: 'radare foundation libraries'
-)
+# pkgconfig_mod.generate(r_hash,
+#   subdirs: 'libr',
+#   version: r2_version,
+#   name: 'r_hash',
+#   filebase: 'r_hash',
+#   libraries: pkgcfg_sanitize_libs,
+#   requires: [
+#     'r_util'
+#   ],
+#   description: 'radare foundation libraries'
+# )

@@ -39,7 +39,6 @@ static int r_main_version_verify(bool show, bool json) {
 		{ "r_bp", r_bp_version },
 		{ "r_debug", r_debug_version },
 		{ "r_main", r_main_version },
-		{ "r_hash", r_hash_version },
 		{ "r_fs", r_fs_version },
 		{ "r_io", r_io_version },
 #if !USE_LIB_MAGIC
