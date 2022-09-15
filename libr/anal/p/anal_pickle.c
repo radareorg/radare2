@@ -468,9 +468,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 static inline bool write_num_sz(ut64 n, int byte_sz, ut8 *outbuf, int outsz) {
 	int bits = r_num_to_bits (NULL, n);
 	// TODO: signedness prbly wrong...
-	if (bits > byte_sz * 8) {
+	if (n && bits > byte_sz * 8) {
 		R_LOG_ERROR ("Arg 0x%" PFMT64x " is more than %d bits", n, bits);
-		false;
+		return false;
 	}
 	switch (byte_sz) {
 	case 1:
