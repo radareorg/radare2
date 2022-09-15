@@ -526,13 +526,13 @@ R_API const char *r_str_word_get0(const char *str, int idx) {
 // Return the number of times that the character ch appears in the string.
 R_API size_t r_str_char_count(const char *string, char ch) {
 	r_return_val_if_fail (string, 0);
-	ut32 i, count = 0;
+	size_t i, count = 0;
 	for (i = 0; string[i]; i++) {
 		if (string[i] == ch) {
 			count++;
 		}
 	}
-	return R_MAX (0, count);
+	return count;
 }
 
 // Counts the number of words (separated by separator characters: newlines, tabs,
