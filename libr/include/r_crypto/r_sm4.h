@@ -59,6 +59,9 @@ static inline ut32 sm4_RK(ut32 rk) {
 	return lb ^ (SM4_ROTL (lb, 13)) ^ (SM4_ROTL (lb, 23));
 }
 
+void sm4_round(const ut32 *sk, const ut8 *input, ut8 *output);
+bool sm4_init(ut32 *sk, const ut8 *key, int keylen, int dir);
+
 #ifdef __cplusplus
 }
 #endif
