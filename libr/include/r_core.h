@@ -287,6 +287,7 @@ struct r_core_t {
 	int interrupted; // XXX R2_580 - this variable is unused and must be removed
 	/* files */
 	RCons *cons;
+	RCrypto *crypto;
 	RIO *io;
 	RNum *num;
 	ut64 rc; // command's return code .. related to num->value;
