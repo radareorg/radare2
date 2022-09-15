@@ -227,8 +227,7 @@ static void apply_round_inv(int round, ut32 block[DW_BY_BLOCK],
 	apply_xor (block, subkeys + 4 * round);
 }
 
-void serpent_encrypt(struct serpent_state *st, ut32 in[DW_BY_BLOCK],
-		ut32 out[DW_BY_BLOCK]) {
+void serpent_encrypt(struct serpent_state *st, ut32 in[DW_BY_BLOCK], ut32 out[DW_BY_BLOCK]) {
 	int i;
 	ut32 subkeys[DW_BY_BLOCK * NB_SUBKEYS] = {0};
 	ut32 tmp_block[DW_BY_BLOCK] = {0};
@@ -244,8 +243,7 @@ void serpent_encrypt(struct serpent_state *st, ut32 in[DW_BY_BLOCK],
 	apply_FP (tmp_block, out);
 }
 
-void serpent_decrypt(struct serpent_state *st, ut32 in[DW_BY_BLOCK],
-		ut32 out[DW_BY_BLOCK]) {
+void serpent_decrypt(struct serpent_state *st, ut32 in[DW_BY_BLOCK], ut32 out[DW_BY_BLOCK]) {
 	int i;
 	ut32 subkeys[DW_BY_BLOCK * NB_SUBKEYS] = {0};
 	ut32 tmp_block[DW_BY_BLOCK] = {0};

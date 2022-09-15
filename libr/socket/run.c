@@ -988,7 +988,8 @@ R_API bool r_run_config_env(RRunProfile *p) {
 						r_socket_free (child);
 						r_socket_free (fd);
 						return false;
-					} else if (child_pid != 0) {
+					}
+					if (child_pid != 0) {
 						// parent code
 						is_child = false;
 						if (p->_pid) {
