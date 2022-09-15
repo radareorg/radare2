@@ -438,7 +438,6 @@ libr_pc = configure_file(
 
 subdir('shlr/zip')
 
-
 # handle sdb dependency
 # NOTE: copying most of the stuff from sdb to here for the moment, since we
 # should use subpackages to handle this well
@@ -577,7 +576,6 @@ endif
 subdir('shlr/lz4')
 subdir('libr/util')
 subdir('libr/socket')
-subdir('libr/hash')
 subdir('libr/crypto')
 subdir('shlr')
 subdir('libr/cons')

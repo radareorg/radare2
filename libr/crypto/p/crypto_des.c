@@ -14,7 +14,7 @@ struct des_state {
 	int i;
 };
 
-static struct des_state st = {{0}};
+static R_TH_LOCAL struct des_state st = {{0}};
 
 static ut32 be32(const ut8 *buf4) {
 	ut32 val = buf4[0] << 8;
@@ -77,7 +77,7 @@ static int des_decrypt(struct des_state *st, const ut8 *input, ut8 *output) {
 	return true;
 }
 
-static bool des_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool des_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
 	ut32 keylo, keyhi, i;
 	if (keylen != DES_KEY_SIZE) {
 		return false;
@@ -88,7 +88,7 @@ static bool des_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int 
 
 	st.key_size = DES_KEY_SIZE;
 	st.rounds = 16;
-	cry->dir = direction; // = direction == 0;
+	cj->dir = direction; // = direction == 0;
 	// key permutation to derive round keys
 	r_des_permute_key (&keylo, &keyhi);
 
@@ -100,15 +100,15 @@ static bool des_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int 
 	return true;
 }
 
-static int des_get_key_size(RCrypto *cry) {
+static int des_get_key_size(RCryptoJob *cj) {
 	return st.key_size;
 }
 
-static bool des_use(const char *algo) {
+static bool des_check(const char *algo) {
 	return algo && !strcmp (algo, "des-ecb");
 }
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	if (len <= 0) {
 		return false;
 	}
@@ -138,7 +138,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 //	}
 
 	int i;
-	if (cry->dir) {
+	if (cj->dir) {
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (DES_BLOCK_SIZE * i);
 			des_decrypt (&st, ibuf + next, obuf + next);
@@ -150,23 +150,25 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 		}
 	}
 
-	r_crypto_append (cry, obuf, size);
+	r_crypto_job_append (cj, obuf, size);
 	free (obuf);
 	free (ibuf);
 	return 0;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
+	return update (cj, buf, len);
 }
 
 RCryptoPlugin r_crypto_plugin_des = {
 	.name = "des-ecb",
+	.author = "deroad",
+	.license = "LGPL",
 	.set_key = des_set_key,
 	.get_key_size = des_get_key_size,
-	.use = des_use,
+	.check = des_check,
 	.update = update,
-	.final = final
+	.end = end
 };
 
 #ifndef R2_PLUGIN_INCORE

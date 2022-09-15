@@ -34,7 +34,7 @@ r_debug_sources = [
 
 r_debug_deps = [
   r_util_dep,
-  r_hash_dep,
+  r_crypto_dep,
   r_reg_dep,
   r_syscall_dep,
   r_anal_dep,

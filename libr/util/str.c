@@ -3380,10 +3380,11 @@ R_API bool r_str_endswith(const char *str, const char *needle) {
 }
 
 // Splits the string <str> by string <c> and returns the result in a list.
+// XXX should take const char * as argument!!
 R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 	r_return_val_if_fail (str && c, NULL);
 	RList *lst = r_list_newf (NULL);
-	char *aux = str;
+	char *aux = str; // XXX should be an strdup
 	int i = 0;
 	char  *e = aux;
 	for (;e;) {

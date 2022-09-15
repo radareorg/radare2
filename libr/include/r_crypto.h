@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <r_list.h>
+#include <r_th.h>
 #include <r_crypto/r_des.h>
 
 #ifdef __cplusplus
@@ -25,6 +26,7 @@ enum {
 
 typedef struct r_crypto_t {
 	struct r_crypto_plugin_t* h;
+#if 0
 	ut8 *key;
 	ut8 *iv;
 	int key_len;
@@ -32,38 +34,78 @@ typedef struct r_crypto_t {
 	int output_len;
 	int output_size;
 	int dir;
+#endif
 	void *user;
 	RList *plugins;
 } RCrypto;
 
+typedef struct r_crypto_job_t {
+	struct r_crypto_plugin_t* h;
+	struct r_crypto_t* c;
+	int flag;
+	ut8 *key;
+	ut8 *iv;
+	int key_len;
+	ut8 *output;
+	int output_len;
+	int output_size;
+	int dir;
+	RList *plugins;
+	ut32 sm4_sk[32];
+	void *data;
+	ut32 cps2key[2];
+	ut8 rot_key;
+} RCryptoJob;
+
 typedef struct r_crypto_plugin_t {
 	const char *name;
-	// R2_580 const char *author;
+	const char *author;
 	const char *license;
-	int (*get_key_size)(RCrypto *cry);
-	bool (*set_iv)(RCrypto *cry, const ut8 *iv, int ivlen);
-	bool (*set_key)(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction);
-	bool (*update)(RCrypto *cry, const ut8 *buf, int len);
-	bool (*final)(RCrypto *cry, const ut8 *buf, int len);
-	bool (*use)(const char *algo);
-	int (*fini)(RCrypto *cry);
+	const char *implements;
+	bool (*check)(const char *algo); // must be deprecated
+
+	int (*get_key_size)(RCryptoJob *cry);
+	bool (*set_iv)(RCryptoJob *ci, const ut8 *iv, int ivlen);
+	bool (*set_key)(RCryptoJob *ci, const ut8 *key, int keylen, int mode, int direction);
+
+	RCryptoJob* (*begin)(RCrypto *cry);
+	bool (*update)(RCryptoJob *ci, const ut8 *buf, int len);
+	bool (*end)(RCryptoJob *ci, const ut8 *buf, int len);
+
+#if 0
+	bool (*init)(RCrypto *cry, struct r_crypto_plugin_t *cp);
+	bool (*fini)(RCrypto *cry, struct r_crypto_plugin_t *cp);
+#endif
 } RCryptoPlugin;
+
+typedef struct r_hash_plugin_t {
+	const char *name;
+	const char *author;
+	const char *license;
+} RHashPlugin;
 
 typedef ut64 RCryptoSelector;
 
 #ifdef R_API
 R_API RCrypto *r_crypto_init(RCrypto *cry, int hard);
 R_API RCrypto *r_crypto_as_new(RCrypto *cry);
-R_API int r_crypto_add(RCrypto *cry, RCryptoPlugin *h);
+R_API bool r_crypto_add(RCrypto *cry, RCryptoPlugin *h);
 R_API RCrypto *r_crypto_new(void);
-R_API RCrypto *r_crypto_free(RCrypto *cry);
-R_API bool r_crypto_use(RCrypto *cry, const char *algo);
-R_API bool r_crypto_set_key(RCrypto *cry, const ut8* key, int keylen, int mode, int direction);
-R_API bool r_crypto_set_iv(RCrypto *cry, const ut8 *iv, int ivlen);
-R_API int r_crypto_update(RCrypto *cry, const ut8 *buf, int len);
-R_API int r_crypto_final(RCrypto *cry, const ut8 *buf, int len);
-R_API int r_crypto_append(RCrypto *cry, const ut8 *buf, int len);
-R_API ut8 *r_crypto_get_output(RCrypto *cry, int *size);
+R_API void r_crypto_free(RCrypto *cry);
+
+R_API RCryptoJob *r_crypto_use(RCrypto *cry, const char *algo);
+R_API bool r_crypto_job_set_key(RCryptoJob *cry, const ut8* key, int keylen, int mode, int direction);
+R_API bool r_crypto_job_set_iv(RCryptoJob *cry, const ut8 *iv, int ivlen);
+
+R_API RCryptoJob *r_crypto_job_new(RCrypto *cry, RCryptoPlugin *cp);
+R_API void r_crypto_job_free(RCryptoJob *cj);
+
+R_API RCryptoJob *r_crypto_begin(RCrypto *cry);
+R_API bool r_crypto_job_update(RCryptoJob *cry, const ut8 *buf, int len);
+R_API bool r_crypto_job_end(RCryptoJob *cry, const ut8 *buf, int len);
+R_API int r_crypto_job_append(RCryptoJob *cry, const ut8 *buf, int len);
+R_API ut8 *r_crypto_job_get_output(RCryptoJob *cry, int *size);
+
 R_API const char *r_crypto_name(const RCryptoSelector bit);
 R_API const char *r_crypto_codec_name(const RCryptoSelector bit);
 #endif

@@ -11,6 +11,7 @@
 #include <r_cons.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <errno.h>
 
 #if __APPLE__ && LIBC_HAVE_FORK
 #if !__POWERPC__

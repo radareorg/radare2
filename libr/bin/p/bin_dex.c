@@ -3,8 +3,9 @@
 #include <r_bin.h>
 #include "../i/private.h"
 #include "dex/dex.h"
+// XXX use rhash/crytpo/trans api instead
 #define r_hash_adler32 __adler32
-#include "../../hash/adler32.c"
+#include "../../crypto/hash/adler32.c"
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 
