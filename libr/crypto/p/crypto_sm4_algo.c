@@ -6,8 +6,6 @@
 #include <r_util.h>
 #include <memory.h>
 
-static R_TH_LOCAL ut32 sm4_sk[4] = {0};
-
 /* Permutations T */
 static ut32 sm4_T(ut32 x) {
 	ut8 a[4];
@@ -26,7 +24,7 @@ static ut32 sm4_T(ut32 x) {
 }
 
 /* SM4 round */
-static void sm4_round(const ut32 *sk, const ut8 *input, ut8 *output) {
+void sm4_round(const ut32 *sk, const ut8 *input, ut8 *output) {
 	int i;
 	ut32 tmp[36] = { 0 };
 
@@ -36,7 +34,7 @@ static void sm4_round(const ut32 *sk, const ut8 *input, ut8 *output) {
 	tmp[3] = r_read_at_be32 (input, 12);
 	for (i = 0; i < 32; i++) {
 		/* Round F function */
-		tmp[i + 4] = tmp[i] ^ sm4_T (tmp[i + 1] ^ tmp[i + 2] ^ tmp[i + 3] ^ sm4_sk[i % 4]);
+		tmp[i + 4] = tmp[i] ^ sm4_T (tmp[i + 1] ^ tmp[i + 2] ^ tmp[i + 3] ^ sk[i]);
 	}
 	r_write_at_be32 (output, tmp[35], 0);
 	r_write_at_be32 (output, tmp[34], 4);
@@ -66,18 +64,10 @@ bool sm4_init(ut32 *sk, const ut8 *key, int keylen, int dir) {
 		k[i + 4] = k[i] ^ (sm4_RK (k[i + 1] ^ k[i + 2] ^ k[i + 3] ^ sm4_CK[i]));
 
 		if (dir == 0) {
-			sm4_sk[i] = k[i + 4];
+			sk[i] = k[i + 4];
 		} else {
-			sm4_sk[31 - i] = k[i + 4];
+			sk[31 - i] = k[i + 4];
 		}
 	}
 	return true;
-}
-
-void sm4_crypt(const ut32 *sk, const ut8 *inbuf, ut8 *outbuf, int buflen) {
-	for (; buflen > 0; buflen -= SM4_BLOCK_SIZE) {
-		sm4_round (sm4_sk, inbuf, outbuf);
-		inbuf += SM4_BLOCK_SIZE;
-		outbuf += SM4_BLOCK_SIZE;
-	}
 }

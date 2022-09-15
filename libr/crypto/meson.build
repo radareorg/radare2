@@ -21,6 +21,7 @@ r_crypto_sources = [
   'p/crypto_rot.c',
   'p/crypto_serpent.c',
   'p/crypto_sm4.c',
+  'p/crypto_sm4_algo.c',
   'p/crypto_serpent_algo.c',
   'p/crypto_xor.c',
 ]
