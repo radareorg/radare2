@@ -97,10 +97,6 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
-	return update (cj, buf, len);
-}
-
 RCryptoPlugin r_crypto_plugin_aes_cbc = {
 	.name = "aes-cbc",
 	.set_key = aes_cbc_set_key,
@@ -108,7 +104,7 @@ RCryptoPlugin r_crypto_plugin_aes_cbc = {
 	.set_iv = aes_cbc_set_iv,
 	.check = aes_cbc_check,
 	.update = update,
-	.end = end 
+	.end = update
 };
 
 #ifndef R2_PLUGIN_INCORE

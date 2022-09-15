@@ -30,17 +30,13 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool end(RCryptoJob *cj, const ut8* buf, int len) {
-	return update (cj, buf, len);
-}
-
 RCryptoPlugin r_crypto_plugin_punycode = {
 	.name = "punycode",
 	.set_key = punycode_set_key,
 	.get_key_size = punycode_get_key_size,
 	.check = punycode_check,
 	.update = update,
-	.end = end 
+	.end = update
 };
 
 #ifndef R2_PLUGIN_INCORE

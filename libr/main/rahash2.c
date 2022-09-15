@@ -365,20 +365,21 @@ static int encrypt_or_decrypt(RahashOptions *ro, const char *algo, int direction
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo); // TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || ro->s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
-		if (r_crypto_use (cry, algo)) {
-			if (r_crypto_set_key (cry, ro->s.buf, ro->s.len, 0, direction)) {
+		RCryptoJob *cj = r_crypto_use (cry, algo);
+		if (cj) {
+			if (r_crypto_job_set_key (cj, ro->s.buf, ro->s.len, 0, direction)) {
 				const char *buf = hashstr;
 				int buflen = hashstr_len;
 
-				if (iv && !r_crypto_set_iv (cry, iv, ivlen)) {
+				if (iv && !r_crypto_job_set_iv (cj, iv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					return 0;
 				}
 
-				r_crypto_update (cry, (const ut8 *) buf, buflen);
+				r_crypto_job_update (cj, (const ut8 *) buf, buflen);
 
 				int result_size = 0;
-				ut8 *result = r_crypto_get_output (cry, &result_size);
+				ut8 *result = r_crypto_job_get_output (cj, &result_size);
 				if (result) {
 					if (write (1, result, result_size) != result_size) {
 						R_LOG_WARN ("cannot write result");
@@ -403,8 +404,9 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *algo, int dire
 	bool no_key_mode = !strcmp ("base64", algo) || !strcmp ("base91", algo) || !strcmp ("punycode", algo); // TODO: generalise this for all non key encoding/decoding.
 	if (no_key_mode || ro->s.len > 0) {
 		RCrypto *cry = r_crypto_new ();
-		if (r_crypto_use (cry, algo)) {
-			if (r_crypto_set_key (cry, ro->s.buf, ro->s.len, 0, direction)) {
+		RCryptoJob *cj = r_crypto_use (cry, algo);
+		if (cj) {
+			if (r_crypto_job_set_key (cj, ro->s.buf, ro->s.len, 0, direction)) {
 				size_t file_size;
 				ut8 *buf;
 				if (!strcmp (filename, "-")) {
@@ -419,16 +421,16 @@ static int encrypt_or_decrypt_file(RahashOptions *ro, const char *algo, int dire
 					return -1;
 				}
 
-				if (iv && !r_crypto_set_iv (cry, iv, ivlen)) {
+				if (iv && !r_crypto_job_set_iv (cj, iv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					free (buf);
 					return 0;
 				}
 
-				r_crypto_update (cry, buf, file_size);
+				r_crypto_job_update (cj, buf, file_size);
 
 				int result_size = 0;
-				ut8 *result = r_crypto_get_output (cry, &result_size);
+				ut8 *result = r_crypto_job_get_output (cj, &result_size);
 				if (result) {
 					(void)write (1, result, result_size);
 					free (result);

@@ -290,11 +290,15 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 }
 
 static struct blowfish_state *get_st(RCryptoJob *cj) {
-	struct blowfish_state *st = cj->data;
-	if (!cj->data) {
-		cj->data = R_NEW0 (struct blowfish_state);
+	if (cj) {
+		struct blowfish_state *st = cj->data;
+		if (!cj->data) {
+			cj->data = R_NEW0 (struct blowfish_state);
+			st = cj->data;
+		}
+		return st;
 	}
-	return st;
+	return NULL;
 }
 
 static bool blowfish_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
@@ -311,13 +315,9 @@ static int blowfish_get_key_size(RCryptoJob *cj) {
 	return -1;
 }
 
-static bool blowfish_check(const char *algo) {
-	return !strcmp (algo, "blowfish");
-}
-
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	r_return_val_if_fail (cj && cj->data && buf, false);
-	struct blowfish_state *st = cj->data;
+	struct blowfish_state *st = get_st (cj);
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
@@ -341,9 +341,9 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 RCryptoPlugin r_crypto_plugin_blowfish = {
 	.name = "blowfish",
 	.license = "LGPL3",
+	.implements = "blowfish",
 	.set_key = blowfish_set_key,
 	.get_key_size = blowfish_get_key_size,
-	.check = blowfish_check,
 	.update = update,
 	.end = end
 };

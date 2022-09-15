@@ -246,9 +246,9 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 		free (binkey);
 		return false;
 	}
-	RCrypto *cry = r_crypto_new ();
-	if (r_crypto_use (cry, algo)) {
-		if (r_crypto_set_key (cry, binkey, keylen, 0, direction)) {
+	RCryptoJob *cj = r_crypto_use (core->crypto, algo);
+	if (cj) {
+		if (r_crypto_job_set_key (cj, binkey, keylen, 0, direction)) {
 			if (iv) {
 				ut8 *biniv = malloc (strlen (iv) + 1);
 				int ivlen = r_hex_str2bin (iv, biniv);
@@ -256,15 +256,15 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 					ivlen = strlen(iv);
 					strcpy ((char *)biniv, iv);
 				}
-				if (!r_crypto_set_iv (cry, biniv, ivlen)) {
+				if (!r_crypto_job_set_iv (cj, biniv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					return 0;
 				}
 			}
-			r_crypto_update (cry, (const ut8*)core->block, core->blocksize);
+			r_crypto_job_update (cj, (const ut8*)core->block, core->blocksize);
 
 			int result_size = 0;
-			ut8 *result = r_crypto_get_output (cry, &result_size);
+			ut8 *result = r_crypto_job_get_output (cj, &result_size);
 			if (result) {
 				if (!r_core_write_at (core, core->offset, result, result_size)) {
 					R_LOG_ERROR ("write failed at 0x%08"PFMT64x, core->offset);
@@ -276,12 +276,10 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 			R_LOG_ERROR ("Invalid key");
 		}
 		free (binkey);
-		r_crypto_free (cry);
 		return 0;
 	} else {
 		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((!direction) ? "encryption" : "decryption") ,algo);
 	}
-	r_crypto_free (cry);
 	return 1;
 }
 
