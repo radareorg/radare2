@@ -466,13 +466,13 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 }
 #endif
 
-static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
+static bool handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #if __APPLE__ && !__POWERPC__
 	//XXX handle this in other layer since things changes a little bit
 	//this seems like a really good place to refactor stuff
-	return 0;
+	return true;
 #else
-	if (!cmd || !*cmd) {
+	if (R_STR_ISEMPTY (cmd)) {
 		return true;
 	}
 	if (cmd[0] == '"') {
@@ -893,7 +893,7 @@ static bool redirect_socket_to_pty(RSocket *sock) {
 	cfmakeraw (&t);
 	tcsetattr (0, TCSANOW, &t);
 
-	return 0;
+	return true;
 #else
 	// Fallback to socket to I/O redirection
 	return redirect_socket_to_stdio (sock);
@@ -974,7 +974,7 @@ R_API bool r_run_config_env(RRunProfile *p) {
 		if (!r_socket_listen (fd, p->_listen, NULL)) {
 			R_LOG_ERROR ("Cannot listen");
 			r_socket_free (fd);
-			return 1;
+			return false;
 		}
 		while (true) {
 			child = r_socket_accept (fd);
