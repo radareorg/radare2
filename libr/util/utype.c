@@ -3,7 +3,7 @@
 #include <r_util.h>
 
 // R2_580 - return bool instead of int
-R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
+R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	const char *kind;
 	char var[128];
 	sprintf (var, "link.%08"PFMT64x, at);
@@ -22,9 +22,9 @@ R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	return false;
 }
 
-R_API int r_type_kind(Sdb *TDB, const char *name) {
-	r_return_val_if_fail (TDB, -1);
-	if (!name) {
+R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
+	r_return_val_if_fail (TDB && name, -1);
+	if (R_STR_ISEMPTY (name)) {
 		// XXX should assert too
 		return -1;
 	}
