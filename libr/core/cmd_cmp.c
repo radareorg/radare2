@@ -1319,7 +1319,7 @@ static int cmd_cmp(void *data, const char *input) {
 			}
 			break;
 		case 'f':         // "cgf"
-			R_LOG_INFO ("TODO: agf is experimental");
+			R_LOG_TODO ("agf is experimental");
 			r_anal_diff_setup (core->anal, true, -1, -1);
 			r_core_gdiff_fcn (core, core->offset,
 				r_num_math (core->num, input + 2));

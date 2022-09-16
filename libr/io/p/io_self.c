@@ -560,7 +560,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		void *ptr = r_lib_dl_sym (lib, "_ZN12device_debug2goEj");
 	//	void *readmem = dlsym (lib, "_ZN23device_memory_interface11memory_readE16address_spacenumjiRy");
 		if (ptr) {
-			R_LOG_INFO ("TODO: MAME IO is not yet implemented");
+			R_LOG_TODO ("MAME IO is not yet implemented");
 			mameio = true;
 		} else {
 			R_LOG_ERROR ("This process is not a MAME!");

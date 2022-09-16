@@ -748,9 +748,9 @@ static void cmd_printmsg(RCore *core, const char *input) {
 	} else if (!strncmp (input, " ", 1)) {
 		r_cons_print (input + 1);
 	} else if (!strncmp (input, "f ", 2)) {
-		R_LOG_INFO ("TODO: waiting for r2shell");
+		R_LOG_TODO ("waiting for r2shell");
 	} else if (!strncmp (input, "fln ", 2)) {
-		R_LOG_INFO ("TODO: waiting for r2shell");
+		R_LOG_TODO ("waiting for r2shell");
 	} else {
 		R_LOG_INFO ("Usage: print, println, printf, printfln");
 	}
@@ -1440,7 +1440,7 @@ static void cmd_print_gadget(RCore *core, const char *_input) {
 			r_cons_printf ("\"pg %d %d %d %d %s\"\n", g->x, g->y, g->w, g->h, g->cmd);
 		}
 	} else if (*_input == 'b') { // "pgb"
-		R_LOG_INFO ("TODO: Change gadget background color");
+		R_LOG_TODO ("Change gadget background color");
 	} else if (*_input == 'm') { // "pgm"
 		int nth = atoi (_input + 1);
 		RCoreGadget *g = r_list_get_n (core->gadgets, nth);

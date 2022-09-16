@@ -4188,7 +4188,7 @@ onemoretime:
 		r_core_cmdf (core, "afm $$+$F @0x%08"PFMT64x, off);
 		break;
 	case 'k':
-		R_LOG_INFO ("TODO: merge up");
+		R_LOG_TODO ("merge up");
 		r_cons_any_key (NULL);
 		break;
 	// very weak and incomplete

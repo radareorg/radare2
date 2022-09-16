@@ -461,7 +461,7 @@ static int r2pm_clone(const char *pkg) {
 			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_TEXTLINE);
 			bool use_c_impl = false;
 			if (use_c_impl) {
-				R_LOG_INFO ("TODO: wget tarball from '%s'", url);
+				R_LOG_TODO ("wget tarball from '%s'", url);
 			} else {
 				// TODO. run wget
 			}

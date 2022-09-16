@@ -681,7 +681,7 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 		r_socket_write (rtr_host[rtr_n].fd, str, strlen (str));
 		break;
 	case RTR_PROTOCOL_HTTP:
-		R_LOG_INFO ("TODO");
+		R_LOG_TODO ("RTR_PROTOCOL_HTTP");
 		break;
 	case RTR_PROTOCOL_TCP:
 	case RTR_PROTOCOL_UDP:
