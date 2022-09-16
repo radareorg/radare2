@@ -5,7 +5,7 @@
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
-	if (a->config->syntax != R_ASM_SYNTAX_INTEL) {
+	if (a->config->syntax != R_ARCH_SYNTAX_INTEL) {
 		R_LOG_ERROR ("asm.x86.nasm does not support non-intel syntax");
 		return -1;
 	}
