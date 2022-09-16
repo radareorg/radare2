@@ -1757,7 +1757,7 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1] == '*') { // "on*"
-			R_LOG_INFO ("TODO: on* is not yet implemented");
+			R_LOG_TODO ("on* is not yet implemented");
 			return 0;
 		}
 		if (input[1] == '+') { // "on+"

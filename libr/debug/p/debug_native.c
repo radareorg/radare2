@@ -193,7 +193,7 @@ static bool r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 	errno = 0;
 	return ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0) == 0;
 #else
-	R_LOG_INFO ("TODO: continue syscall not implemented yet");
+	R_LOG_TODO ("continue syscall not implemented yet");
 	return false;
 #endif
 }

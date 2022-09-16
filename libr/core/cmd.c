@@ -1664,7 +1664,7 @@ static void load_table_json(RCore *core, RTable *t, char *data) {
 	// parse json file and iterate over all the entries
 	// RTableRow *row = r_table_row_new (items);
 	// r_list_append (t->rows, row);
-	R_LOG_INFO ("TODO: Loading tables from JSON is not yet implemented");
+	R_LOG_TODO ("Loading tables from JSON is not yet implemented");
 }
 
 static const char *get_type_string(const char *s) {
@@ -4247,7 +4247,7 @@ repeat_arroba:
 				}
 			} else {
 				// WAT DU
-				R_LOG_INFO ("TODO: what do you expect for @. import offset from file maybe?");
+				R_LOG_TODO ("what do you expect for @. import offset from file maybe?");
 			}
 		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
 			switch (ptr[0]) {

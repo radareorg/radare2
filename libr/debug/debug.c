@@ -1623,7 +1623,7 @@ R_API int r_debug_syscall(RDebug *dbg, int num) {
 	if (dbg->h->contsc) {
 		ret = dbg->h->contsc (dbg, dbg->pid, num);
 	}
-	R_LOG_INFO ("TODO: show syscall information");
+	R_LOG_TODO ("show syscall information");
 	/* r2rc task? ala inject? */
 	return (int)ret;
 }

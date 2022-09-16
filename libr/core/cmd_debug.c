@@ -1098,7 +1098,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 					(int) r_num_math (core->num, input + 3));
 			break;
 		case 'n': // "dptn"
-			R_LOG_INFO ("TODO: debug_clone: %d", r_debug_child_clone (core->dbg));
+			R_LOG_TODO ("debug_clone: %d", r_debug_child_clone (core->dbg));
 			break;
 		case '?': // "dpt?"
 		default:
@@ -5342,7 +5342,7 @@ static int cmd_debug(void *data, const char *input) {
 						core->anal->esil->trace->db = sdb_new0 ();
 					}
 				} else {
-					R_LOG_INFO ("TODO: dte- cannot delete specific logs. Use dte-*");
+					R_LOG_TODO ("dte- cannot delete specific logs. Use dte-*");
 				}
 				break;
 			case ' ': { // "dte "
@@ -5429,7 +5429,7 @@ static int cmd_debug(void *data, const char *input) {
 		r_core_cmd_bp (core, input);
 		break;
 	case 'H': // "dH"
-		R_LOG_INFO ("TODO: transplant process");
+		R_LOG_TODO ("transplant process");
 		break;
 	case 'c': // "dc"
 		r_cons_break_push (static_debug_stop, core->dbg);
