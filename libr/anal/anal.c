@@ -152,7 +152,11 @@ R_API void r_anal_plugin_free(RAnalPlugin *p) {
 void __block_free_rb(RBNode *node, void *user);
 
 static inline void r_anal_priv_free(RAnal *a) {
-	R_FREE (a->priv);
+	RAnalPriv *ap = r_anal_priv (a);
+	if (ap) {
+		r_str_constpool_free (ap->constpool);
+		R_FREE (a->priv);
+	}
 }
 
 R_API void r_anal_free(RAnal *a) {
@@ -187,7 +191,6 @@ R_API void r_anal_free(RAnal *a) {
 	}
 	free (a->last_disasm_reg);
 	r_list_free (a->imports);
-	r_str_constpool_free (r_anal_priv (a)->constpool);
 	free (a);
 }
 
