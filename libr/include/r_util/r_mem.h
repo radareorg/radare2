@@ -57,6 +57,17 @@ R_API bool r_mem_is_printable(const ut8 *a, int la);
 R_API bool r_mem_is_zero(const ut8 *b, int l);
 R_API void *r_mem_mmap_resize(RMmap *m, ut64 newsize);
 
+// 27bit middle endian parser
+typedef ut32 ut27;
+static inline ut27 r_read_me27(const ut8 *buf, int boff) {
+	ut27 ret = 0;
+	r_mem_copybits_delta ((ut8 *)&ret, 18, buf, boff, 9);
+	r_mem_copybits_delta ((ut8 *)&ret, 9, buf, boff + 9, 9);
+	r_mem_copybits_delta ((ut8 *)&ret, 0, buf, boff + 18, 9);
+	return ret;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

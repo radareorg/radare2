@@ -284,7 +284,6 @@ struct r_core_t {
 	ut64 yank_addr;
 	bool tmpseek;
 	bool vmode; // is r2 in visual or panels mode?
-	int interrupted; // XXX R2_580 - this variable is unused and must be removed
 	/* files */
 	RCons *cons;
 	RCrypto *crypto;
@@ -328,8 +327,8 @@ struct r_core_t {
 	bool keep_asmqjmps;
 	RCoreVisual visual;
 	// visual // TODO: move them into RCoreVisual
-	int http_up; // R2_580 bool
-	int gdbserver_up;
+	bool http_up;
+	bool gdbserver_up;
 	RCoreVisualMode printidx;
 	char *stkcmd;
 	bool in_search;

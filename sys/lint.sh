@@ -2,6 +2,8 @@
 
 cd "$(dirname $0)"/..
 
+
+# USE r_config_set_b ## git grep r_config_set| grep '"fal'
 # find calls without (
 #(git grep -n -e '[a-z]('  | grep -v static | grep -v _API | grep -v shlr | grep libr/core) && exit 1
 # validated and ready to go lintings

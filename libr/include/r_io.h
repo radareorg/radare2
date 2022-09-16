@@ -386,7 +386,7 @@ R_API void r_io_bank_drain(RIO *io, const ut32 bankid);
 
 //io.c
 R_API RIO *r_io_new(void);
-R_API RIO *r_io_init(RIO *io);
+R_API void r_io_init(RIO *io);
 R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode);		//should return int
 R_API RIODesc *r_io_open(RIO *io, const char *uri, int flags, int mode);
 R_API RIODesc *r_io_open_at(RIO *io, const char *uri, int flags, int mode, ut64 at);

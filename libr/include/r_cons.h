@@ -770,8 +770,10 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h);
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch);
 R_API void r_cons_canvas_line_square_defined(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bendpoint, int isvert);
 R_API void r_cons_canvas_line_back_edge(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
+
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void);
+R_API void r_cons_chop(void);
 R_API RConsContext *r_cons_context(void);
 R_API RCons *r_cons_free(void);
 R_API char *r_cons_lastline(int *size);
@@ -865,7 +867,6 @@ R_API void r_cons_line(int x, int y, int x2, int y2, int ch);
 R_API void r_cons_show_cursor(int cursor);
 R_API char *r_cons_swap_ground(const char *col);
 R_API bool r_cons_drop(int n);
-R_API void r_cons_chop(void); // XXX R2_580 this function hasnt been implemented and nobody miss it, just rimraf't
 R_API void r_cons_set_raw(bool b);
 R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_last_interactive(void);
@@ -886,7 +887,7 @@ R_API int r_cons_write(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
-// R2_580 - R_API char *r_cons_drain(void);
+R_API char *r_cons_drain(void);
 R_API void r_cons_print_fps(int col);
 R_API void r_cons_last(void);
 R_API int r_cons_less_str(const char *str, const char *exitkeys);
@@ -1096,7 +1097,7 @@ struct r_line_t {
 	RLineHud *hud;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
-	int vtmode; // R2_580 duplicated and unused from the global RCons.vtmode
+	int vtmode;
 }; /* RLine */
 
 #ifdef R_API
@@ -1114,7 +1115,7 @@ typedef int (RLineReadCallback)(void *user, const char *line);
 R_API const char *r_line_readline(void);
 R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user);
 
-R_API int r_line_hist_load(const char *file);
+R_API bool r_line_hist_load(const char *file);
 R_API int r_line_hist_add(const char *line);
 R_API bool r_line_hist_save(const char *file);
 R_API int r_line_hist_label(const char *label, void(*cb)(const char*));

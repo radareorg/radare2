@@ -7,14 +7,15 @@
 R_LIB_VERSION (r_io);
 
 R_API RIO* r_io_new(void) {
-	return r_io_init (R_NEW0 (RIO));
+	RIO *io = R_NEW0 (RIO);
+	r_io_init (io);
+	return io;
 }
 
-// R2_580 - just return bool
-R_API RIO* r_io_init(RIO* io) {
-	r_return_val_if_fail (io, NULL);
+R_API void r_io_init(RIO* io) {
+	r_return_if_fail (io);
 	io->addrbytes = 1;
-	io->cb_printf = printf; // r_cons_printf;
+	io->cb_printf = printf;
 	r_io_desc_init (io);
 	r_io_bank_init (io);
 	r_io_map_init (io);
@@ -27,7 +28,6 @@ R_API RIO* r_io_init(RIO* io) {
 		io->bank = bank->id;
 		r_io_bank_add (io, bank);
 	}
-	return io;
 }
 
 R_API void r_io_free(RIO *io) {
@@ -39,6 +39,7 @@ R_API void r_io_free(RIO *io) {
 }
 
 R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
+	r_return_val_if_fail (io && b, NULL);
 #if 0
 	ut64 bufSize = r_buf_size (b);
 	char *uri = r_str_newf ("malloc://%" PFMT64d, bufSize);
