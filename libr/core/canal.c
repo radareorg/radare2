@@ -553,7 +553,7 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 	if (num_syms) {
 		R_LOG_INFO ("Found %d symbols and saved them at sym.go.*", num_syms);
 	} else {
-		R_LOG_ERROR ("Found no symbols.");
+		R_LOG_ERROR ("Found no symbols");
 	}
 }
 
