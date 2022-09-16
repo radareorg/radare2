@@ -3183,7 +3183,6 @@ R_API bool r_core_init(RCore *core) {
 	core->dbg->bp->cb_printf = r_cons_printf;
 	core->dbg->ev = core->ev;
 	r_core_config_init (core);
-
 	r_core_loadlibs_init (core);
 	//r_core_loadlibs (core);
 

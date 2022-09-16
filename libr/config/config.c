@@ -547,10 +547,28 @@ R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i
 
 R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b) {
 	RConfigNode *node = r_config_node_get (cfg, name);
-	if (node && r_config_node_is_bool (node)) {
+	if (node) {
+		if (r_config_node_is_ro (node)) {
+			return NULL;
+		}
+		if (!r_config_node_is_bool (node)) {
+			R_LOG_WARN ("This node is not boolean");
+			return NULL;
+		}
 		return r_config_set_i (cfg, name, b? 1: 0);
+	} else {
+		node = r_config_node_new (name, r_str_bool (b));
+		if (!node) {
+			return NULL;
+		}
+		node->flags = CN_RW | CN_BOOL;
+		node->i_value = b;
+		ht_pp_insert (cfg->ht, node->name, node);
+		if (cfg->nodes) {
+			r_list_append (cfg->nodes, node);
+		}
 	}
-	return NULL;
+	return node;
 }
 
 R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) {

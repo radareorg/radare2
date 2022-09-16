@@ -1436,6 +1436,7 @@ static char *palColorFor(const char *k) {
 		RColor rcolor = r_cons_pal_get (k);
 		return r_cons_rgb_tostring (rcolor.r, rcolor.g, rcolor.b);
 	}
+	return NULL;
 }
 
 static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
