@@ -52,12 +52,12 @@ EOF
 RUN
 
 NAME=/cg PGP search ASCII armor
-FILE=bins/other/jeje.gpg
+FILE=bins/other/private.pgp
 CMDS=<<EOF
 /cg
 EOF
 EXPECT=<<EOF
-0x00000007 hit0_0 "jkasdfBEGIN PGP PRIVATE KEYsadjfjasf"
+0x00000005 hit0_0 "-----BEGIN PGP PRIVATE KEY BLOCK-----lQW"
 EOF
 RUN
 
