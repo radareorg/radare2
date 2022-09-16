@@ -4040,7 +4040,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.font", "Courier", "Font for dot graphs");
 	SETBPREF ("graph.offset", "false", "show offsets in graphs");
 	SETBPREF ("graph.bytes", "false", "show opcode bytes in graphs");
-	SETBPREF ("graph.web", "false", "display graph in web browser (VV)"); // R2_580 deprecate!
 	SETI ("graph.from", UT64_MAX, "lower bound address when drawing global graphs");
 	SETI ("graph.to", UT64_MAX, "upper bound address when drawing global graphs");
 	SETI ("graph.scroll", 5, "scroll speed in ascii-art graph");

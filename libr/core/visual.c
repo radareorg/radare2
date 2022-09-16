@@ -3064,9 +3064,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case ' ':
 		case 'V':
-			if (r_config_get_i (core->config, "graph.web")) {
-				r_core_cmd0 (core, "agv $$");
-			} else {
+			{
 				RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 				int ocolor = r_config_get_i (core->config, "scr.color");
 				if (!fun) {

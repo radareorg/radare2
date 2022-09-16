@@ -6679,11 +6679,7 @@ virtualmouse:
 		}
 		break;
 	case ' ':
-		if (r_config_get_i (core->config, "graph.web")) {
-			r_core_cmd0 (core, "agv $$");
-		} else {
-			__call_visual_graph (core);
-		}
+		__call_visual_graph (core);
 		break;
 	case ':':
 		__handlePrompt(core, panels);
@@ -6969,11 +6965,7 @@ virtualmouse:
 		}
 		break;
 	case 'V':
-		if (r_config_get_i (core->config, "graph.web")) {
-			r_core_cmd0 (core, "agv $$");
-		} else {
-			__call_visual_graph (core);
-		}
+		__call_visual_graph (core);
 		break;
 	case ']':
 		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {

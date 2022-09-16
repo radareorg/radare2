@@ -753,7 +753,7 @@ static const char *help_msg_ag[] = {
 	"m", "", "mermaid",
 	"t", "", "tiny ascii art",
 	"v", "", "interactive ascii art",
-	"w", " [path]", "write to path or display graph image (see graph.gv.format and graph.web)",
+	"w", " [path]", "write to path or display graph image (see graph.gv.format)",
 	NULL
 };
 
@@ -10207,9 +10207,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		r_cons_print ("]\n");
 		break;
 	case 'w': // "aggw"
-		if (r_config_get_i (core->config, "graph.web")) {
-			r_core_cmd0 (core, "=H /graph/");
-		} else {
+		{
 			const char *filename = r_str_trim_head_ro (input + 1);
 			convert_dotcmd_to_image (core, "aggd", filename);
 		}
@@ -10581,9 +10579,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 			}
 		case 'w': // "agfw"
-			if (r_config_get_i (core->config, "graph.web")) {
-				R_LOG_ERROR ("graph.web is deprecated");
-			} else {
+			 {
 				char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
 				convert_dotcmd_to_image (core, cmdargs, input + 2);
 				free (cmdargs);
@@ -10835,9 +10831,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		r_core_cmdf (core, "agfv%s", input + 1);
 		break;
 	case 'w':// "agw"
-		if (r_config_get_i (core->config, "graph.web")) {
-			R_LOG_ERROR ("graph.web is deprecated");
-		} else {
+		{
 			char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
 			convert_dotcmd_to_image (core, cmdargs, input + 1);
 			free (cmdargs);
