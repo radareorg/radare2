@@ -29,8 +29,8 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->val = UT64_MAX;
 		op->disp = UT64_MAX;
 
-		op->srcs = r_vector_new (sizeof(RAnalValue), NULL, NULL);
-		op->dsts = r_vector_new (sizeof(RAnalValue), NULL, NULL);
+		op->srcs = r_vector_new (sizeof (RAnalValue), NULL, NULL);
+		op->dsts = r_vector_new (sizeof (RAnalValue), NULL, NULL);
 		r_vector_reserve (op->srcs, 3);
 		r_vector_reserve (op->dsts, 1);
 	}
