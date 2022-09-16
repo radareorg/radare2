@@ -497,7 +497,6 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 	RList* section_list = r_bin_get_sections (core->bin);
 	RListIter *iter;
-	const char* oldstr = NULL;
 	RBinSection *section;
 	ut64 gopclntab = 0;
 	r_list_foreach (section_list, iter, section) {
