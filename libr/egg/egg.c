@@ -337,7 +337,7 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 		r_asm_use (egg->rasm, asm_name);
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, egg->endian);
-		r_asm_set_syntax (egg->rasm, R_ASM_SYNTAX_INTEL);
+		r_asm_set_syntax (egg->rasm, R_ARCH_SYNTAX_INTEL);
 		code = r_buf_to_string (egg->buf);
 		asmcode = r_asm_massemble (egg->rasm, code);
 		if (asmcode) {

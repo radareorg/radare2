@@ -9,14 +9,13 @@ extern "C" {
 
 #include <r_util.h>
 
-// TODO: rename to R_ARCH
 enum {
-	R_ASM_SYNTAX_NONE = 0,
-	R_ASM_SYNTAX_INTEL,
-	R_ASM_SYNTAX_ATT,
-	R_ASM_SYNTAX_MASM,
-	R_ASM_SYNTAX_REGNUM, // alias for capstone's NOREGNAME
-	R_ASM_SYNTAX_JZ, // hack to use jz instead of je on x86
+	R_ARCH_SYNTAX_NONE = 0,
+	R_ARCH_SYNTAX_INTEL,
+	R_ARCH_SYNTAX_ATT,
+	R_ARCH_SYNTAX_MASM,
+	R_ARCH_SYNTAX_REGNUM, // alias for capstone's NOREGNAME
+	R_ARCH_SYNTAX_JZ, // hack to use jz instead of je on x86
 };
 
 // TODO: add reference counting and accessor APIs
