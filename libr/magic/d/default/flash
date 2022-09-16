@@ -7,16 +7,21 @@
 #
 #	http://www.macromedia.com/software/flash/open/
 #
-0	string		FWS		Macromedia Flash data,
->3	byte		x		version %d
+0	 string		FWS		
+>3	 byte		<11		
+>>3	 byte		>0      Macromedia Flash data, version %d
+>>4  ulelong    x       file size (header included) %d
 !:mime	application/x-shockwave-flash
-0	string		CWS		Macromedia Flash data (compressed),
+
+0   string		CWS		
+>3  byte		<11		
+>>3 byte		>0      Macromedia Flash data (compressed), version %d
+>4  ulelong     x       file size (header included) %d
 !:mime	application/x-shockwave-flash
->3	byte		x		version %d
+
 # From: Cal Peake <cp@absolutedigital.net>
 0	string		FLV		Macromedia Flash Video
 !:mime	video/x-flv
 
-#
 # From Dave Wilson
 0	string AGD4\xbe\xb8\xbb\xcb\x00	Macromedia Freehand 9 Document
