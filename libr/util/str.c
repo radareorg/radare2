@@ -24,12 +24,12 @@ static const char * const rwxstr[] = {
 };
 
 // equal string, same case
-R_API R_WIP bool r_str_eq(const char *s1, const char *s2) {
+R_API bool r_str_eq(const char *s1, const char *s2) {
 	return s1 && s2 && !strcmp (s1, s2);
 }
 
 // equal string, ignoring case
-R_API R_WIP bool r_str_eqi(const char *s1, const char *s2) {
+R_API bool r_str_eqi(const char *s1, const char *s2) {
 	return s1 && s2 && !r_str_casecmp (s1, s2);
 }
 

@@ -1049,15 +1049,13 @@ static void optimize(void) {
 	free (oldstr);
 }
 
-#if R2_580
 R_API char *r_cons_drain(void) {
-	const char *buf = r_cons_get_buffer();
-	size_t buf_size = r_cons_get_buffer_size();
+	const char *buf = r_cons_get_buffer ();
+	size_t buf_size = r_cons_get_buffer_len ();
 	char *s = r_str_ndup (buf, buf_size);
 	r_cons_reset ();
 	return s;
 }
-#endif
 
 R_API void r_cons_flush(void) {
 	if (!r_cons_instance) {

@@ -65,32 +65,19 @@ static RCryptoPlugin *crypto_static_plugins[] = {
 	R_CRYPTO_STATIC_PLUGINS
 };
 
-R_API RCrypto *r_crypto_init(RCrypto *cry, int hard) {
+R_API void r_crypto_init(RCrypto *cry) {
+	r_return_if_fail (cry);
 	int i;
-	if (cry) {
-#if 0
-		cry->iv = NULL;
-		cry->key = NULL;
-		cry->key_len = 0;
-#endif
-		cry->user = NULL;
-		if (hard) {
-			// first call initializes the output_* variables
-			// r_crypto_job_get_output (cj, NULL);
-			cry->plugins = r_list_newf (NULL);
-			for (i = 0; crypto_static_plugins[i]; i++) {
-				RCryptoPlugin *p = R_NEW0 (RCryptoPlugin);
-				if (!p) {
-					free (cry);
-					return NULL;
-				}
-				memcpy (p, crypto_static_plugins[i], sizeof (RCryptoPlugin));
-				r_crypto_add (cry, p);
-				// also register hash algorithms supported
-			}
+	cry->user = NULL;
+	cry->plugins = r_list_newf (NULL);
+	for (i = 0; crypto_static_plugins[i]; i++) {
+		RCryptoPlugin *p = R_NEW0 (RCryptoPlugin);
+		if (p) {
+			memcpy (p, crypto_static_plugins[i], sizeof (RCryptoPlugin));
+			r_crypto_add (cry, p);
 		}
 	}
-	return cry;
+	// TODO register hash algorithms
 }
 
 R_API bool r_crypto_add(RCrypto *cry, RCryptoPlugin *h) {
@@ -107,16 +94,8 @@ R_API bool r_crypto_del(RCrypto *cry, RCryptoPlugin *h) {
 
 R_API RCrypto *r_crypto_new(void) {
 	RCrypto *cry = R_NEW0 (RCrypto);
-	return r_crypto_init (cry, true);
-}
-
-R_API RCrypto *r_crypto_as_new(RCrypto *cry) {
-	RCrypto *c = R_NEW0 (RCrypto);
-	if (c) {
-		r_crypto_init (c, false); // soft init
-		memcpy (&c->plugins, &cry->plugins, sizeof (cry->plugins));
-	}
-	return c;
+	r_crypto_init (cry);
+	return cry;
 }
 
 R_API void r_crypto_job_free(RCryptoJob *cj) {

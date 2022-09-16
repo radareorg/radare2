@@ -509,11 +509,7 @@ R_API void r_line_hist_free(void) {
 }
 
 /* load history from file. TODO: if file == NULL load from ~/.<prg>.history or so */
-#if R2_580
 R_API bool r_line_hist_load(const char *file) {
-#else
-R_API int r_line_hist_load(const char *file) {
-#endif
 	r_return_val_if_fail (file, false);
 	char *buf = calloc (1, R_LINE_BUFSIZE);
 	FILE *fd = r_sandbox_fopen (file, "rb");

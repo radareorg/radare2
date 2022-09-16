@@ -88,8 +88,7 @@ typedef struct r_hash_plugin_t {
 typedef ut64 RCryptoSelector;
 
 #ifdef R_API
-R_API RCrypto *r_crypto_init(RCrypto *cry, int hard);
-R_API RCrypto *r_crypto_as_new(RCrypto *cry);
+R_API void r_crypto_init(RCrypto *cry);
 R_API bool r_crypto_add(RCrypto *cry, RCryptoPlugin *h);
 R_API RCrypto *r_crypto_new(void);
 R_API void r_crypto_free(RCrypto *cry);
