@@ -189,18 +189,19 @@ static int inithist(void) {
 	if (I.history.data) {
 		int new_size = I.hist_size;
 		if (new_size > 0 && I.history.size != new_size) {
-			char **new_data = (char **) calloc (new_size, sizeof(char *));
+			char **new_data = (char **) calloc (new_size, sizeof (char *));
 			if (new_data) {
-				int nb_copy_lines = R_MIN(I.history.top + 1, new_size);
-				memcpy(new_data, I.history.data + (I.history.top + 1 - nb_copy_lines), sizeof(char *) * nb_copy_lines);
-				for (int i = 0; i < I.history.top + 1 - nb_copy_lines; i++) {
-				    free(I.history.data[i]);
+				int nb_copy_lines = R_MIN (I.history.top + 1, new_size);
+				memcpy (new_data, I.history.data + (I.history.top + 1 - nb_copy_lines), sizeof (char *) * nb_copy_lines);
+				int i;
+				for (i = 0; i < I.history.top + 1 - nb_copy_lines; i++) {
+				    free (I.history.data[i]);
 				}
-				free(I.history.data);
+				free (I.history.data);
 				I.history.data = new_data;
 				I.history.size = new_size;
-				I.history.top = R_MIN(I.history.top, nb_copy_lines - 1);
-				I.history.index = R_MIN(I.history.index, nb_copy_lines - 1);
+				I.history.top = R_MIN (I.history.top, nb_copy_lines - 1);
+				I.history.index = R_MIN (I.history.index, nb_copy_lines - 1);
 			}
 		}
 		return true;
@@ -486,7 +487,7 @@ static int r_line_hist_down(void) {
 }
 
 R_API void r_line_hist_set_size(int size) {
-	I.hist_size = R_MIN(size, 65536);
+	I.hist_size = R_MIN (size, 65536);
 }
 
 R_API int r_line_hist_get_size(void) {

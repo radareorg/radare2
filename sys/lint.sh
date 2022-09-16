@@ -7,6 +7,7 @@ cd "$(dirname $0)"/..
 # find calls without (
 #(git grep -n -e '[a-z]('  | grep -v static | grep -v _API | grep -v shlr | grep libr/core) && exit 1
 # validated and ready to go lintings
+(git grep -e 'R_MIN(' -e 'R_MAX(' libr | grep c:) && exit 1
 (git grep -n 'cmp(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
 # (git grep -n 'len(' libr | grep -v R_API | grep -v static | grep c:) && exit 1
 # (git grep -n ',"' libr | grep -v R_API | grep -v static | grep c:) && exit 1

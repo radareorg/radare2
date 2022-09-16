@@ -1989,7 +1989,7 @@ static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origina
 	xtensa_op0_fns[(buf_original[0] & 0xf)] (anal, op, addr, buf_original);
 
 	ut8 buffer[XTENSA_MAX_LENGTH] = {0};
-	int len = R_MIN(op->size, XTENSA_MAX_LENGTH);
+	int len = R_MIN (op->size, XTENSA_MAX_LENGTH);
 	memcpy (buffer, buf_original, len);
 
 	unsigned int i;
