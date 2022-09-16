@@ -507,8 +507,7 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 		}
 	}
 	if (!gopclntab) {
-		oldstr = r_print_rowlog (core->print, "Could not find .gopclntab section");
-		r_print_rowlog_done (core->print, oldstr);
+		R_LOG_ERROR ("Could not find .gopclntab section");
 		return;
 	}
 	int ptr_size = core->anal->config->bits / 8;
@@ -552,12 +551,9 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 	}
 	r_flag_space_pop (core->flags);
 	if (num_syms) {
-		r_strf_var (msg, 128, "Found %d symbols and saved them at sym.go.*", num_syms);
-		oldstr = r_print_rowlog (core->print, msg);
-		r_print_rowlog_done (core->print, oldstr);
+		R_LOG_INFO ("Found %d symbols and saved them at sym.go.*", num_syms);
 	} else {
-		oldstr = r_print_rowlog (core->print, "Found no symbols.");
-		r_print_rowlog_done (core->print, oldstr);
+		R_LOG_ERROR ("Found no symbols.");
 	}
 }
 

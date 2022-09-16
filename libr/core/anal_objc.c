@@ -79,7 +79,7 @@ static inline ut64 readQword(RCoreObjc *objc, ut64 addr, bool *success) {
 }
 
 static void objc_analyze(RCore *core) {
-	const char *oldstr = r_print_rowlog (core->print, "Analyzing code to find selref references");
+	R_LOG_INFO ("Analyzing code to find selref references");
 	r_core_cmd0 (core, "aar");
 	if (!strcmp ("arm", r_config_get (core->config, "asm.arch"))) {
 		const bool emu_lazy = r_config_get_i (core->config, "emu.lazy");
@@ -87,7 +87,6 @@ static void objc_analyze(RCore *core) {
 		r_core_cmd0 (core, "aae");
 		r_config_set_b (core->config, "emu.lazy", emu_lazy);
 	}
-	r_print_rowlog_done (core->print, oldstr);
 }
 
 static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
@@ -243,8 +242,7 @@ static bool objc_find_refs(RCore *core) {
 		core_objc_free (objc);
 		return false;
 	}
-	const char *oldstr = r_print_rowlog (core->print, "Parsing metadata in ObjC to find hidden xrefs");
-	r_print_rowlog_done (core->print, oldstr);
+	R_LOG_INFO ("Parsing metadata in ObjC to find hidden xrefs");
 
 	ut64 off;
 	size_t total_xrefs = 0;
@@ -315,9 +313,7 @@ static bool objc_find_refs(RCore *core) {
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
 	const ut64 ss_selrefs = va_selrefs + objc->_selrefs->vsize;
 
-	char rs[128];
-	snprintf (rs, sizeof (rs), "Found %u objc xrefs...", (unsigned int)total_xrefs);
-	r_print_rowlog (core->print, rs);
+	R_LOG_INFO ("Found %u objc xrefs", (unsigned int)total_xrefs);
 	size_t total_words = 0;
 	ut64 a;
 	const size_t word_size = objc->word_size;
@@ -326,8 +322,7 @@ static bool objc_find_refs(RCore *core) {
 		r_meta_set (core->anal, R_META_TYPE_DATA, a, word_size, NULL);
 		total_words++;
 	}
-	snprintf (rs, sizeof (rs), "Found %u objc xrefs in %u dwords.", (unsigned int)total_xrefs, (unsigned int)total_words);
-	r_print_rowlog_done (core->print, rs);
+	R_LOG_INFO ("Found %u objc xrefs in %u dwords", (unsigned int)total_xrefs, (unsigned int)total_words);
 	core_objc_free (objc);
 	return true;
 }

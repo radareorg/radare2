@@ -311,3 +311,4 @@ Every journey begins with a choice
 Do 'r2pm -i r2premium; echo "e cfg.fortunes.type = nsfw" >> ~/.radare2rc' for a even more fun with r2
 pneumonic
 Click below to prove you are not a bot
+Sorry, not sorry.
