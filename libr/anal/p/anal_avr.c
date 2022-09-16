@@ -1887,7 +1887,6 @@ static bool avr_custom_spm_page_write(RAnalEsil *esil) {
 	// perform writing
 	//eprintf ("SPM_PAGE_WRITE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
 	if (!(t = malloc (1 << page_size_bits))) {
-		eprintf ("Cannot alloc a buffer for copying the temporary page.\n");
 		return false;
 	}
 	r_anal_esil_mem_read (esil, tmp_page, (ut8 *) t, 1 << page_size_bits);

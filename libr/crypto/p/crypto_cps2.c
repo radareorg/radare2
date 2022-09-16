@@ -694,7 +694,7 @@ main(cps_state,cps2crypt) {
 	ut32 lower;
 	ut32 upper;
 
-	std::string skey1 = parameter("cryptkey1");;
+	std::string skey1 = parameter("cryptkey1");
 	key[0] = strtoll(skey1.c_str(), nullptr, 16);
 
 	std::string skey2 = parameter("cryptkey2");
@@ -713,15 +713,13 @@ main(cps_state,cps2crypt) {
 }
 #endif
 
-static ut32 cps2key[2] = {0};
-
-static bool set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	cry->dir = direction;
+static bool set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+	cj->dir = direction;
 	if (keylen == 8) { // old hardcoded MAME keys
 		/* fix key endianness */
 		const ut32* key32 = (const ut32*)key;
-		cps2key[0] = r_read_be32(key32);
-		cps2key[1] = r_read_be32(key32 + 1);
+		cj->cps2key[0] = r_read_be32(key32);
+		cj->cps2key[1] = r_read_be32(key32 + 1);
 		return true;
 	} else if (keylen == 20) {
 		const ut8* key8 = (const ut8*)key;
@@ -733,36 +731,41 @@ static bool set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int dire
 				decoded[b / 16] |= (0x8000 >> (b % 16));
 			}
 		}
-		cps2key[0] = ((uint32_t)decoded[0] << 16) | decoded[1];
-		cps2key[1] = ((uint32_t)decoded[2] << 16) | decoded[3];
+		cj->cps2key[0] = ((uint32_t)decoded[0] << 16) | decoded[1];
+		cj->cps2key[1] = ((uint32_t)decoded[2] << 16) | decoded[3];
 		return true;
 	}
 	return false;
 }
 
-static int get_key_size(RCrypto *cry) {
+static int get_key_size(RCryptoJob *cj) {
 	/* 64bit key */
 	return 8;
 }
 
-static bool cps2_use(const char *algo) {
+static bool cps2_check(const char *algo) {
 	return !strcmp (algo, "cps2");
 }
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	ut8 *output = calloc (1, len);
-	/* TODO : control decryption errors */
-	cps2_crypt (cry->dir, (const ut16 *)buf, (ut16*)output, len, cps2key, UPPER_LIMIT);
-	r_crypto_append (cry, output, len);
+	if (!output) {
+		return false;
+	}
+	/* TODO : handle decryption errors */
+	cps2_crypt (cj->dir, (const ut16 *)buf, (ut16*)output, len, cj->cps2key, UPPER_LIMIT);
+	r_crypto_job_append (cj, output, len);
 	free (output);
 	return true;
 }
 
 RCryptoPlugin r_crypto_plugin_cps2 = {
 	.name = "cps2",
+	.author = "pof,esanfelix",
+	.license = "LGPL",
 	.set_key = set_key,
 	.get_key_size = get_key_size,
-	.use = cps2_use,
+	.check = cps2_check,
 	.update = update
 };
 

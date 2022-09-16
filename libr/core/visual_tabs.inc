@@ -91,10 +91,10 @@ static void visual_tabget(RCore *core, RCoreVisualTab *tab) {
 
 	tab->offset = core->offset;
 	tab->printidx = core->printidx;
-	tab->asm_offset = r_config_get_i (core->config, "asm.offset");
+	tab->asm_offset = r_config_get_b (core->config, "asm.offset");
 	tab->asm_instr = r_config_get_i (core->config, "asm.instr");
 	tab->asm_indent = r_config_get_i (core->config, "asm.indent");
-	tab->asm_bytes = r_config_get_i (core->config, "asm.bytes");
+	tab->asm_bytes = r_config_get_b (core->config, "asm.bytes");
 	tab->asm_cmt_col = r_config_get_i (core->config, "asm.cmt.col");
 	tab->cur_enabled = core->print->cur_enabled;
 	tab->cur = core->print->cur;

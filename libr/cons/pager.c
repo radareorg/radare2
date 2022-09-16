@@ -76,7 +76,7 @@ R_IPI int pager_next_match(int from, RList **mla, int lcount) {
 	if (from > lcount - 2) {
 		return from;
 	}
-	for (l = from + 1; l < lcount; l++){
+	for (l = from + 1; l < lcount; l++) {
 		/* if there's at least one match on the line */
 		if (r_list_first (mla[l])) {
 			return l;

@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include "r_core.h"
 
+static R_TH_LOCAL bool getNext = false;
+
 static const char *help_msg_e[] = {
 	"Usage:", "e [var[=value]]", "Evaluable vars",
 	"e","?asm.bytes", "show description",
@@ -13,7 +15,9 @@ static const char *help_msg_e[] = {
 	"e var=?", "", "print all valid values of var",
 	"e var=??", "", "print all valid values of var with description",
 	"e.", "a=b", "same as 'e a=b' but without using a space",
-	"e,", "k=v,k=v,k=v", "comma separated k[=v]",
+	"e,", "[table-query]", "show the output in table format",
+	"e/", "asm", "filter configuration variables by name",
+	"e:", "k=v:k=v:k=v", "comma or colon separated k[=v]",
 	"e-", "", "reset config vars",
 	"e*", "", "dump config vars in r commands",
 	"e!", "a", "invert the boolean value of 'a' var",
@@ -21,6 +25,7 @@ static const char *help_msg_e[] = {
 	"ee", "var", "open editor to change the value of var",
 	"ed", "", "open editor to change the ~/.radare2rc",
 	"ej", "", "list config vars in JSON",
+	"eJ", "", "list config vars in verbose JSON",
 	"en", "", "list environment vars",
 	"env", " [k[=v]]", "get/set environment variable",
 	"er", " [key]", "set config key as readonly. no way back",
@@ -67,8 +72,6 @@ static const char *help_msg_eco[] = {
 	NULL
 };
 
-static bool getNext = false;
-
 static bool load_theme(RCore *core, const char *path) {
 	if (!r_file_exists (path)) {
 		return false;
@@ -82,6 +85,34 @@ static bool load_theme(RCore *core, const char *path) {
 	return res;
 }
 
+static void cmd_eval_table(RCore *core, const char *input) {
+	const char fmt = *input;
+	const char *q = input;
+	RTable *t = r_core_table (core, "eval");
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeBoolean = r_table_type ("bool");
+	r_table_add_column (t, typeBoolean, "ro", 0);
+	r_table_add_column (t, typeString, "type", 0);
+	r_table_add_column (t, typeString, "key", 0);
+	r_table_add_column (t, typeString, "value", 0);
+	r_table_add_column (t, typeString, "desc", 0);
+
+	RListIter *iter;
+	RConfigNode *node;
+	r_list_foreach (core->config->nodes, iter, node) {
+		r_strf_var (type, 32, "%s", r_config_node_type (node));
+		r_strf_var (ro, 32, "%s", r_config_node_is_ro (node)? "ro": "");
+		r_table_add_row (t, ro, type, node->name, node->value, node->desc, NULL);
+	}
+	if (r_table_query (t, q)) {
+		char *s = (fmt == 'j')
+			? r_table_tojson (t)
+			: r_table_tostring (t);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
+	r_table_free (t);
+}
 static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 	const char *fn = r_str_lchr (file, '/');
 	if (!fn) fn = file;
@@ -140,21 +171,24 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 
 	if (load_theme (core, home)) {
 		core->theme = r_str_dup (core->theme, arg);
+		free (core->themepath);
 		core->themepath = home;
 		home = NULL;
 	} else {
 		if (load_theme (core, path)) {
 			core->theme = r_str_dup (core->theme, arg);
+			free (core->themepath);
 			core->themepath = path;
 			path = NULL;
 		} else {
 			if (load_theme (core, arg)) {
 				core->theme = r_str_dup (core->theme, arg);
+				free (core->themepath);
 				core->themepath = arg;
 				arg = NULL;
 			} else {
 				char *absfile = r_file_abspath (arg);
-				eprintf ("eco: cannot open colorscheme profile (%s)\n", absfile);
+				R_LOG_ERROR ("eco: cannot open colorscheme profile (%s)", absfile);
 				free (absfile);
 				failed = true;
 			}
@@ -304,6 +338,7 @@ done:
 	if (getNext) {
 		R_FREE (core->theme);
 		nextpal (core, mode);
+		r_list_free (files);
 		return;
 	}
 	if (mode == 'l' && !core->theme && !r_list_empty (files)) {
@@ -410,6 +445,9 @@ static int cmd_eval(void *data, const char *input) {
 	case 'x': // "ex"
 		// XXX we need headers for the cmd_xxx files.
 		return cmd_quit (data, "");
+	case 'J': // "eJ"
+		r_config_list (core->config, NULL, 'J');
+		break;
 	case 'j': // "ej"
 		r_config_list (core->config, NULL, 'j');
 		break;
@@ -460,8 +498,12 @@ static int cmd_eval(void *data, const char *input) {
 				r_list_free (themes_list);
 			}
 			break;
-		case 's': r_cons_pal_show (); break; // "ecs"
-		case '*': r_cons_pal_list (1, NULL); break; // "ec*"
+		case 's': // "ecs"
+			r_cons_pal_show ();
+			break;
+		case '*': // "ec*"
+			r_cons_pal_list (1, NULL);
+			break;
 		case 'h': // echo
 			if (input[2] == 'o') {
 				r_core_echo (core, input + 3);
@@ -541,7 +583,7 @@ static int cmd_eval(void *data, const char *input) {
 					color_code = r_cons_pal_parse (dup, NULL);
 					R_FREE (dup);
 					if (!color_code) {
-						eprintf ("Unknown color %s\n", argv[0]);
+						R_LOG_ERROR ("Unknown color %s", argv[0]);
 						r_str_argv_free (argv);
 						return true;
 					}
@@ -559,7 +601,7 @@ static int cmd_eval(void *data, const char *input) {
 					color_code = r_cons_pal_parse (dup, NULL);
 					R_FREE (dup);
 					if (!color_code) {
-						eprintf ("Unknown color %s\n", argv[1]);
+						R_LOG_ERROR ("Unknown color %s", argv[1]);
 						r_str_argv_free (argv);
 						free (word);
 						return true;
@@ -567,7 +609,7 @@ static int cmd_eval(void *data, const char *input) {
 				}
 				break;
 			default:
-				eprintf ("See ecH?\n");
+				R_LOG_INFO ("See ecH?");
 				r_str_argv_free (argv);
 				return true;
 			}
@@ -647,8 +689,12 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case '!': // "e!"
 		input = r_str_trim_head_ro (input + 1);
-		if (!r_config_toggle (core->config, input)) {
-			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
+		if (R_STR_ISNOTEMPTY (input) && *input != '?') {
+			if (!r_config_toggle (core->config, input)) {
+				R_LOG_ERROR ("'%s' is not a boolean variable", input);
+			}
+		} else {
+			r_core_cmd_help_match (core, help_msg_e, "e!", true);
 		}
 		break;
 	case 's': // "es"
@@ -665,14 +711,17 @@ static int cmd_eval(void *data, const char *input) {
 		if (input[1]) {
 			const char *key = input + ((input[1] == ' ')? 2: 1);
 			if (!r_config_readonly (core->config, key)) {
-				eprintf ("cannot find key '%s'\n", key);
+				R_LOG_ERROR ("cannot find key '%s'", key);
 			}
 		} else {
 			eprintf ("Usage: er [key]  # make an eval key PERMANENTLY read only\n");
 		}
 		break;
-	case ',': // "e."
+	case ':': // "e:"
 		r_config_eval (core->config, input + 1, true);
+		break;
+	case ',': // "e,"
+		cmd_eval_table (core, input + 1);
 		break;
 	case '.': // "e "
 	case ' ': // "e "

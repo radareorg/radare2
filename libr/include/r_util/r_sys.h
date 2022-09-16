@@ -77,7 +77,7 @@ R_API bool r_sys_aslr(int val);
 R_API int r_sys_thp_mode(void);
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr);
 #if __WINDOWS__
-#if UNICODE
+#ifdef UNICODE
 #define W32_TCHAR_FSTR "%S"
 #define W32_TCALL(name) name"W"
 #define r_sys_conv_utf8_to_win(buf) r_utf8_to_utf16 (buf)

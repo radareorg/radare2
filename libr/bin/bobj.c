@@ -92,7 +92,7 @@ static RList *classes_from_symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	RListIter *iter;
 	r_list_foreach (bf->o->symbols, iter, sym) {
-		if (sym->name[0] != '_') {
+		if (!sym->name || sym->name[0] != '_') {
 			continue;
 		}
 		const char *cn = sym->classname;
@@ -105,7 +105,6 @@ static RList *classes_from_symbols(RBinFile *bf) {
 			char *dn = sym->dname;
 			char *fn = swiftField (dn, cn);
 			if (fn) {
-				// eprintf ("FIELD %s  %s\n", cn, fn);
 				RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL, false);
 				r_list_append (c->fields, f);
 				free (fn);
@@ -221,8 +220,6 @@ static void filter_classes(RBinFile *bf, RList *list) {
 					r_bin_filter_sym (bf, ht, sym->vaddr, sym);
 				}
 			}
-		} else {
-			eprintf ("Cannot alloc %d byte(s)\n", namepad_len);
 		}
 	}
 	ht_pu_free (db);
@@ -244,8 +241,9 @@ static RRBTree *list2rbtree(RList *relocs) {
 
 static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 	ht_pp_free (bo->classes_ht);
-	ht_pp_free (bo->methods_ht);
 	bo->classes_ht = ht_pp_new0 ();
+
+	ht_pp_free (bo->methods_ht);
 	bo->methods_ht = ht_pp_new0 ();
 
 	RListIter *it, *it2;
@@ -427,21 +425,15 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 R_IPI RRBTree *r_bin_object_patch_relocs(RBin *bin, RBinObject *bo) {
 	r_return_val_if_fail (bin && bo, NULL);
 
-	static R_TH_LOCAL bool first = true;
-	// r_bin_object_set_items set o->relocs but there we don't have access
-	// to io so we need to be run from bin_relocs, free the previous reloc and get
-	// the patched ones
-	if (first && bo->plugin && bo->plugin->patch_relocs) {
+	if (!bo->is_reloc_patched && bo->plugin && bo->plugin->patch_relocs) {
 		RList *tmp = bo->plugin->patch_relocs (bin);
-		first = false;
 		if (!tmp) {
 			return bo->relocs;
 		}
 		r_crbtree_free (bo->relocs);
 		REBASE_PADDR (bo, tmp, RBinReloc);
 		bo->relocs = list2rbtree (tmp);
-		first = false;
-		bin->is_reloc_patched = true;
+		bo->is_reloc_patched = true;
 		tmp->free = NULL;
 		r_list_free (tmp);
 	}

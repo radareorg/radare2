@@ -120,7 +120,7 @@ insn_type_descr_t types[] = {
 	},
 };
 
-size_t types_count = sizeof(types) / sizeof(insn_type_descr_t);
+size_t types_count = sizeof (types) / sizeof (insn_type_descr_t);
 
 insn_extra_t extra_0x5[] = {
 	{(0x05<<26)|(0x1<<24), "l.nop", INSN_K, INSN_OPCODE_MASK | (0x3 << 24), R_ANAL_OP_TYPE_NOP},
@@ -330,7 +330,7 @@ insn_t or1k_insns[] = {
 	[0x3f] = {(0x3f<<26), "l.cust8", INSN_X},
 };
 
-size_t insns_count = sizeof(or1k_insns) / sizeof(insn_t);
+size_t insns_count = sizeof (or1k_insns) / sizeof (insn_t);
 
 insn_extra_t *find_extra_descriptor(insn_extra_t *extra_descr, ut32 insn) {
 	ut32 opcode;

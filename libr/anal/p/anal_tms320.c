@@ -295,7 +295,7 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
 
 static bool match(const char * str, const char *token) {
-	return !strncasecmp(str, token, strlen(token));
+	return !strncasecmp (str, token, strlen (token));
 }
 
 int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {

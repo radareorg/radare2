@@ -112,7 +112,7 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 	const char *me = r_config_get (core->config, "cfg.user");
 	char *ret, msg[1024] = {0};
 
-	eprintf ("Type '/help' for commands and ^D to quit:\n");
+	R_LOG_INFO ("Type '/help' for commands and ^D to quit:");
 	char *oldprompt = strdup (r_line_singleton ()->prompt);
 	snprintf (prompt, sizeof (prompt) - 1, "[%s]> ", me);
 	r_line_set_prompt (prompt);
@@ -160,8 +160,8 @@ static void rtr_textlog_chat(RCore *core, TextLog T) {
 			free (rtrcmd (T, "T-"));
 		} else if (!strcmp (buf, "/quit")) {
 			goto beach;
-		} else if (*buf=='/') {
-			eprintf ("Unknown command: %s\n", buf);
+		} else if (*buf == '/') {
+			R_LOG_ERROR ("Unknown command: %s", buf);
 		} else {
 			char *cmd = r_str_newf ("T [%s] %s", me, buf);
 			free (rtrcmd (T, cmd));
@@ -201,7 +201,7 @@ static char *rtr_dir_files(const char *path) {
 	RListIter *iter;
 	// list files
 	RList *files = r_sys_dir (path);
-	eprintf ("Listing directory %s\n", path);
+	R_LOG_INFO ("Listing directory %s", path);
 	r_list_foreach (files, iter, file) {
 		if (file[0] == '.') {
 			continue;
@@ -215,7 +215,7 @@ static char *rtr_dir_files(const char *path) {
 
 #if __UNIX__
 static void dietime(int sig) {
-	eprintf ("It's Die Time!\n");
+	eprintf ("It's Time To Die!\n");
 	exit (0);
 }
 #endif
@@ -248,8 +248,7 @@ static int write_reg_val(char *buf, ut64 sz, ut64 reg, int regsize, bool bigendi
 			reg = r_swap_ut64 (reg);
 			break;
 		default:
-			eprintf ("%s: Unsupported reg size: %d\n",
-				 __func__, regsize);
+			R_LOG_ERROR ("Unsupported reg size: %d", regsize);
 			return -1;
 		}
 	}
@@ -288,8 +287,7 @@ static int write_big_reg(char *buf, ut64 sz, const utX *val, int regsize, bool b
 				 r_swap_ut64 (val->v128.Low),
 				 r_swap_ut64 (val->v128.High));
 	default:
-		eprintf ("%s: big registers (%d byte(s)) not yet supported\n",
-			 __func__, regsize);
+		R_LOG_ERROR ("big registers (%d byte(s)) not yet supported", regsize);
 		return -1;
 	}
 }
@@ -335,8 +333,7 @@ static int swap_big_regs(char *dest, ut64 sz, const char *src, int regsz) {
 		return snprintf (dest, sz, "0x%016"PFMT64x"%016"PFMT64x,
 				 val.v128.High, val.v128.Low);
 	default:
-		eprintf ("%s: big registers (%d byte(s)) not yet supported\n",
-			 __func__, regsz);
+		R_LOG_ERROR ("big registers (%d byte(s)) not yet supported", regsz);
 		return -1;
 	}
 }
@@ -560,20 +557,20 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		path++;
 	}
 	if (!(path = r_str_trim_head_ro (path)) || !*path) {
-		eprintf ("gdbserver: Port not specified\n");
+		R_LOG_ERROR ("gdbserver: Port not specified");
 		return -1;
 	}
 	if (!(p = atoi (path)) || p < 0 || p > 65535) {
-		eprintf ("gdbserver: Invalid port: %d\n", p);
+		R_LOG_ERROR ("gdbserver: Invalid port: %d", p);
 		return -1;
 	}
 	snprintf (port, sizeof (port) - 1, "%d", p);
 	if (!(file = strchr (path, ' '))) {
-		eprintf ("gdbserver: File not specified\n");
+		R_LOG_ERROR ("gdbserver: File not specified");
 		return -1;
 	}
 	if (!(file = (char *)r_str_trim_head_ro (file)) || !*file) {
-		eprintf ("gdbserver: File not specified\n");
+		R_LOG_ERROR ("gdbserver: File not specified");
 		return -1;
 	}
 	args = strchr (file, ' ');
@@ -587,23 +584,23 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	}
 
 	if (!r_core_file_open (core, file, R_PERM_RX, 0)) {
-		eprintf ("Cannot open file (%s)\n", file);
+		R_LOG_ERROR ("Cannot open file (%s)", file);
 		return -1;
 	}
 	r_core_file_reopen_debug (core, args);
 
 	if (!(sock = r_socket_new (false))) {
-		eprintf ("gdbserver: Could not open socket for listening\n");
+		R_LOG_ERROR ("gdbserver: Could not open socket for listening");
 		return -1;
 	}
 	if (!r_socket_listen (sock, port, NULL)) {
 		r_socket_free (sock);
-		eprintf ("gdbserver: Cannot listen on port: %s\n", port);
+		R_LOG_ERROR ("gdbserver: Cannot listen on port: %s", port);
 		return -1;
 	}
 	if (!(g = R_NEW0 (libgdbr_t))) {
 		r_socket_free (sock);
-		eprintf ("gdbserver: Cannot alloc libgdbr instance\n");
+		R_LOG_ERROR ("gdbserver: Cannot alloc libgdbr instance");
 		return -1;
 	}
 	gdbr_init (g, true);
@@ -612,7 +609,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 	int bits = r_config_get_i (core->config, "asm.bits");
 	gdbr_set_architecture (g, arch, bits);
 	core->gdbserver_up = 1;
-	eprintf ("gdbserver started on port: %s, file: %s\n", port, file);
+	R_LOG_INFO ("gdbserver started on port: %s, file: %s", port, file);
 
 	for (;;) {
 		if (!(g->sock = r_socket_accept (sock))) {
@@ -684,7 +681,7 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 		r_socket_write (rtr_host[rtr_n].fd, str, strlen (str));
 		break;
 	case RTR_PROTOCOL_HTTP:
-		R_LOG_INFO ("TODO");
+		R_LOG_TODO ("RTR_PROTOCOL_HTTP");
 		break;
 	case RTR_PROTOCOL_TCP:
 	case RTR_PROTOCOL_UDP:
@@ -780,7 +777,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	}
 
 	if (r_sandbox_enable (0)) {
-		eprintf ("sandbox: connect disabled\n");
+		R_LOG_ERROR ("sandbox: connect disabled");
 		return;
 	}
 
@@ -796,7 +793,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			char *uri = r_str_newf ("http://%s:%s/%s", host, port, file);
 			char *str = r_socket_http_get (uri, NULL, &len);
 			if (!str) {
-				eprintf ("Cannot find peer\n");
+				R_LOG_ERROR ("Cannot find peer");
 				r_socket_free (fd);
 				return;
 			}
@@ -812,7 +809,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			return;
 		} else {
 			int n = r_socket_rap_client_open (fd, file, 0);
-			eprintf ("opened as fd = %d\n", n);
+			R_LOG_INFO ("opened as fd = %d", n);
 		}
 		break;
 	case RTR_PROTOCOL_UNIX:
@@ -823,7 +820,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			return;
 		}
 		r_core_return_value (core, R_CMD_RC_SUCCESS);
-		eprintf ("Connected to: 'unix://%s'\n", host);
+		R_LOG_INFO ("Connected to: 'unix://%s'", host);
 		break;
 	case RTR_PROTOCOL_TCP:
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
@@ -833,7 +830,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			return;
 		}
 		r_core_return_value (core, R_CMD_RC_SUCCESS);
-		eprintf ("Connected to: %s at port %s\n", host, port);
+		R_LOG_INFO ("Connected to: %s at port %s", host, port);
 		break;
 	case RTR_PROTOCOL_UDP:
 		if (!r_socket_connect_udp (fd, host, port, timeout)) { //TODO: Use rap.ssl
@@ -843,7 +840,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			return;
 		}
 		r_core_return_value (core, R_CMD_RC_SUCCESS);
-		eprintf ("Connected to: %s at port %s\n", host, port);
+		R_LOG_INFO ("Connected to: %s at port %s", host, port);
 		break;
 	}
 	ret = core->num->value;
@@ -863,7 +860,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		break;
 	}
 	r_core_return_value (core, ret);
-	// double free wtf is freed this here? r_socket_free(fd);
+	// double free wtf is freed this here? r_socket_free (fd);
 	//r_core_rtr_list (core);
 }
 
@@ -921,15 +918,15 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 				dup2 (ff, 2);
 				errmsg_fd = ff;
 			} else {
-				eprintf ("Cannot open fifo: %s\n", f);
+				R_LOG_ERROR ("Cannot open fifo: %s", f);
 			}
 		}
 		// r_core_event (core, );
 		free (s);
 		free (f);
-		// TODO: those files are leaked when closing r_core_free() should be deleted
+		// TODO: those files are leaked when closing r_core_free () should be deleted
 #else
-		eprintf ("Not supported for your platform.\n");
+		R_LOG_ERROR ("Not supported for your platform");
 #endif
 	} else {
 		eprintf ("(%s)\n", input);
@@ -993,8 +990,8 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 
 	if (*input == '&') { // "=h&" "=&:9090"
 		if (rapthread) {
-			eprintf ("RAP Thread is already running\n");
-			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
+			R_LOG_INFO ("RAP Thread is already running");
+			R_LOG_INFO ("This is experimental and probably buggy. Use at your own risk");
 		} else {
 			// TODO: use tasks
 			RapThread *RT = R_NEW0 (RapThread);
@@ -1006,8 +1003,8 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 				int cpuaff = (int)r_config_get_i (core->config, "cfg.cpuaffinity");
 				r_th_setaffinity (rapthread, cpuaff);
 				r_th_setname (rapthread, "rapthread");
-				r_th_start (rapthread, true);
-				eprintf ("Background rap server started.\n");
+				r_th_start (rapthread, false);
+				R_LOG_INFO ("Background rap server started");
 			}
 		}
 		return;
@@ -1069,7 +1066,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		char *uri = r_str_newf ("http://%s:%d/cmd/%s", rh->host, rh->port, cmd);
 		char *str = r_socket_http_get (uri, NULL, &len);
 		if (!str) {
-			eprintf ("Cannot find '%s'\n", uri);
+			R_LOG_ERROR ("Cannot find '%s'", uri);
 			return;
 		}
 		r_core_return_value (core, R_CMD_RC_SUCCESS);
@@ -1124,7 +1121,7 @@ R_API char *r_core_rtr_cmds_query(RCore *core, const char *host, const char *por
 			rbuf = r_str_append (rbuf, (const char *)buf);
 		}
 	} else {
-		eprintf ("Cannot connect\n");
+		R_LOG_ERROR ("Cannot connect");
 	}
 	r_socket_free (s);
 	return rbuf;
@@ -1172,11 +1169,9 @@ static void rtr_cmds_alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv
 
 static void rtr_cmds_write(uv_write_t *req, int status) {
 	rtr_cmds_client_context *context = req->data;
-
 	if (status) {
-		eprintf ("Write error: %s\n", uv_strerror (status));
+		R_LOG_ERROR ("Cannot write %s", uv_strerror (status));
 	}
-
 	free (req);
 	rtr_cmds_client_close (context->client, true);
 }
@@ -1187,7 +1182,7 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 
 	if (nread < 0) {
 		if (nread != UV_EOF) {
-			eprintf ("Failed to read: %s\n", uv_err_name ((int) nread));
+			R_LOG_ERROR ("Failed to read: %s", uv_err_name ((int) nread));
 		}
 		rtr_cmds_client_close ((uv_tcp_t *) client, true);
 		return;
@@ -1229,7 +1224,7 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 
 static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
 	if (status < 0) {
-		eprintf ("New connection error: %s\n", uv_strerror (status));
+		R_LOG_ERROR ("New connection failed: %s", uv_strerror (status));
 		return;
 	}
 
@@ -1308,7 +1303,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	uv_tcp_bind (&context.server, (const struct sockaddr *) &addr, 0);
 	int r = uv_listen ((uv_stream_t *)&context.server, 32, rtr_cmds_new_connection);
 	if (r) {
-		eprintf ("Failed to listen: %s\n", uv_strerror (r));
+		R_LOG_ERROR ("Failed to listen: %s", uv_strerror (r));
 		goto beach;
 	}
 
@@ -1350,7 +1345,7 @@ R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 		return false;
 	}
 
-	eprintf ("Listening for commands on port %s\n", port);
+	R_LOG_INFO ("Listening for commands on port %s", port);
 	listenport = port;
 	r_cons_break_push ((RConsBreak)r_core_rtr_http_stop, core);
 	for (;;) {

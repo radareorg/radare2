@@ -1,8 +1,9 @@
 /* radare2 - LGPL - Copyright 2011-2022 - pancake */
 
+#define R_LOG_ORIGIN "fs"
+
 #include <r_fs.h>
 #include <config.h>
-#include "types.h"
 
 #if WITH_GPL
 # ifndef USE_GRUB
@@ -17,9 +18,27 @@
 
 R_LIB_VERSION (r_fs);
 
-static RFSPlugin* fs_static_plugins[] = {
+static const RFSPlugin* fs_static_plugins[] = {
 	R_FS_STATIC_PLUGINS
 };
+
+static const RFSType fstypes[] = {
+	{ "hfs", 0x400, "BD", 2, 0, 0, 0x400 },
+	{ "hfsplus", 0x400, "H+", 2, 0, 0, 0x400 },
+	{ "fat", 0x36, "FAT12", 5, 0, 0, 0 },
+	{ "fat", 0x52, "FAT32", 5, 0, 0, 0 },
+	{ "ext2", 0x438, "\x53\xef", 2, 0, 0, 0 },
+	{ "btrfs", 0x10040, "_BHRfS_M", 8, 0, 0, 0x0 },
+	{ "iso9660", 0x8000, "\x01" "CD0", 4, 0, 0, 0x8000 },
+	{ NULL }
+};
+
+R_API R_MUSTUSE const RFSType* r_fs_type_index(int i) {
+	if (i < 0 || i >= R_ARRAY_SIZE (fstypes)) {
+		return NULL;
+	}
+	return &fstypes[i];
+}
 
 R_API R_MUSTUSE RFS* r_fs_new(void) {
 	int i;
@@ -164,7 +183,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	root->p = p;
 	root->iob = fs->iob;
 	root->cob = fs->cob;
-	if (!p->mount (root)) {
+	if (p->mount && !p->mount (root)) {
 		free (str);
 		free (heapFsType);
 		r_fs_root_free (root);
@@ -276,7 +295,7 @@ R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len
 	if (fs && file) {
 		// TODO: fill file->data ? looks like dupe of rbuffer
 		if (file->p && file->p->write) {
-			return file->p->write (file, addr, data, len);;
+			return file->p->write (file, addr, data, len);
 		}
 		R_LOG_ERROR ("null file->p->write");
 	}
@@ -305,7 +324,7 @@ R_API RList* r_fs_dir(RFS* fs, const char* p) {
 	r_str_trim_path (path);
 	RList *roots = r_fs_root (fs, path);
 	r_list_foreach (roots, iter, root) {
-		if (root) {
+		if (root && root->p && root->p->dir) {
 			const char *dir = r_str_nlen (root->path, 2) == 1
 				? path: path + strlen (root->path);
 			if (!*dir) {
@@ -375,15 +394,13 @@ R_API bool r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 static void r_fs_find_off_aux(RFS* fs, const char* name, ut64 offset, RList* list) {
 	RListIter* iter;
 	RFSFile* item, * file;
-	char* found = NULL;
-
 	RList* dirs = r_fs_dir (fs, name);
 	r_list_foreach (dirs, iter, item) {
 		if (!strcmp (item->name, ".") || !strcmp (item->name, "..")) {
 			continue;
 		}
 
-		found = (char*) malloc (strlen (name) + strlen (item->name) + 2);
+		char *found = (char*) malloc (strlen (name) + strlen (item->name) + 2);
 		if (!found) {
 			break;
 		}
@@ -541,10 +558,6 @@ R_API const char* r_fs_partition_type_get(int n) {
 	return partitions[n].name;
 }
 
-R_API int r_fs_partition_get_size(void) {
-	return R_FS_PARTITIONS_LENGTH;
-}
-
 R_API RList* r_fs_partitions(RFS* fs, const char* ptype, ut64 delta) {
 	r_return_val_if_fail (fs && ptype, NULL);
 	int i, cur = -1;
@@ -643,7 +656,7 @@ R_API char* r_fs_name(RFS* fs, ut64 offset) {
 	int i, j, len, ret = false;
 
 	for (i = 0; fstypes[i].name; i++) {
-		RFSType* f = &fstypes[i];
+		const RFSType* f = &fstypes[i];
 		len = R_MIN (f->buflen, sizeof (buf) - 1);
 		fs->iob.read_at (fs->iob.io, offset + f->bufoff, buf, len);
 		if (f->buflen > 0 && !memcmp (buf, f->buf, f->buflen)) {

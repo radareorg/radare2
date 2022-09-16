@@ -16,7 +16,6 @@
 
 	# expression can be a number or a range (if .. is found)
 	# The <=, >=, ==, <, > comparisons are also supported
-
 #endif
 
 typedef struct {
@@ -26,11 +25,11 @@ typedef struct {
 } EsilBreak;
 
 // TODO: Kill those globals
-RDebug *dbg = NULL;
-static bool has_match = false;
-static int prestep = 1; // TODO: make it configurable
-static ut64 opc = 0;
-RList *esil_watchpoints = NULL;
+static R_TH_LOCAL RDebug *dbg = NULL;
+static R_TH_LOCAL bool has_match = false;
+static R_TH_LOCAL int prestep = 1; // TODO: make it configurable
+static R_TH_LOCAL ut64 opc = 0;
+static R_TH_LOCAL RList *esil_watchpoints = NULL;
 #define EWPS esil_watchpoints
 #define ESIL dbg->anal->esil
 
@@ -155,7 +154,7 @@ static int exprmatchreg(RDebug *dbg, const char *regname, const char *expr) {
 	if (!strcmp (regname, s)) {
 		ret = 1;
 	} else {
-#define CURVAL 0){}r_str_trim (s);if (!strcmp(regname,s) && regval
+#define CURVAL 0){}r_str_trim (s);if (!strcmp (regname,s) && regval
 		ut64 regval = r_debug_reg_get_err (dbg, regname, NULL, NULL);
 		if (exprtoken (dbg, s, ">=", &p)) {
 			if (CURVAL >= r_num_math (dbg->num, p))
@@ -210,6 +209,7 @@ static bool esilbreak_reg_write(RAnalEsil *esil, const char *regname, ut64 *num)
 }
 
 R_API void r_debug_esil_prestep(RDebug *d, int p) {
+	r_return_if_fail (d);
 	prestep = p;
 }
 
@@ -243,7 +243,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 		// required when a exxpression is like <= == ..
 		// otherwise it will stop at the next instruction
 		if (r_debug_step (dbg, 1)<1) {
-			eprintf ("Step failed\n");
+			R_LOG_WARN ("Step failed");
 			return false;
 		}
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
@@ -252,7 +252,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 
 	if (r_anal_op (dbg->anal, &op, opc, obuf, sizeof (obuf), R_ANAL_OP_MASK_ESIL)) {
 		if (esilbreak_check_pc (dbg, opc)) {
-			eprintf ("STOP AT 0x%08"PFMT64x"\n", opc);
+			R_LOG_WARN ("STOP AT 0x%08"PFMT64x, opc);
 			ret = 0;
 		} else {
 			r_anal_esil_set_pc (ESIL, opc);
@@ -266,7 +266,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 	if (!prestep) {
 		if (ret && !has_match) {
 			if (r_debug_step (dbg, 1) < 1) {
-				eprintf ("Step failed\n");
+				R_LOG_WARN ("Step has failed");
 				return 0;
 			}
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
@@ -277,6 +277,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 }
 
 R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count) {
+	r_return_val_if_fail (dbg, UT64_MAX);
 	count++;
 	has_match = false;
 	r_cons_break_push (NULL, NULL);
@@ -285,7 +286,7 @@ R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count) {
 			break;
 		}
 		if (has_match) {
-			eprintf ("EsilBreak match at 0x%08"PFMT64x"\n", opc);
+			R_LOG_INFO ("EsilBreak match at 0x%08"PFMT64x, opc);
 			break;
 		}
 		if (count > 0) {

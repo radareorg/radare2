@@ -36,14 +36,6 @@ R_LIB_VERSION_HEADER(r_asm);
 #define R_ASM_ARCH_ARC R_SYS_ARCH_ARC
 #define R_ASM_ARCH_HPPA R_SYS_ARCH_HPPA
 
-#define R_ASM_GET_OFFSET(x,y,z) \
-	(x && x->binb.bin && x->binb.get_offset)? \
-		x->binb.get_offset (x->binb.bin, y, z): -1
-
-#define R_ASM_GET_NAME(x,y,z) \
-	(x && x->binb.bin && x->binb.get_name)? \
-		x->binb.get_name (x->binb.bin, y, z, x->pseudo): NULL
-
 enum {
 	R_ASM_MOD_RAWVALUE = 'r',
 	R_ASM_MOD_VALUE = 'v',
@@ -99,7 +91,7 @@ typedef struct r_asm_t {
 	RSyscall *syscall;
 	RNum *num;
 	int dataalign;
-	bool immdisp; // Display immediates with # symbol (for arm stuff).
+	bool immdisp; //TODO: Remove this for 5.8.
 	HtPP *flags;
 	bool pseudo;
 } RAsm;
@@ -187,25 +179,16 @@ R_API ut8 *r_asm_op_get_buf(RAsmOp *op);
 
 /* plugin pointers */
 extern RAsmPlugin r_asm_plugin_arm_as;
-extern RAsmPlugin r_asm_plugin_arm_cs;
-extern RAsmPlugin r_asm_plugin_arm_gnu;
-extern RAsmPlugin r_asm_plugin_arm_winedbg;
+extern RAsmPlugin r_asm_plugin_arm;
 extern RAsmPlugin r_asm_plugin_null;
-extern RAsmPlugin r_asm_plugin_dalvik;
 extern RAsmPlugin r_asm_plugin_h8300;
-extern RAsmPlugin r_asm_plugin_hppa_gnu;
-extern RAsmPlugin r_asm_plugin_lanai_gnu;
 extern RAsmPlugin r_asm_plugin_nios2;
-extern RAsmPlugin r_asm_plugin_or1k;
 extern RAsmPlugin r_asm_plugin_pic;
 extern RAsmPlugin r_asm_plugin_ppc_as;
-extern RAsmPlugin r_asm_plugin_ppc_cs;
-extern RAsmPlugin r_asm_plugin_riscv;
 extern RAsmPlugin r_asm_plugin_sparc_gnu;
 extern RAsmPlugin r_asm_plugin_tricore;
 extern RAsmPlugin r_asm_plugin_v810;
 extern RAsmPlugin r_asm_plugin_v850;
-extern RAsmPlugin r_asm_plugin_m68k_gnu;
 extern RAsmPlugin r_asm_plugin_x86_as;
 extern RAsmPlugin r_asm_plugin_x86_nasm;
 extern RAsmPlugin r_asm_plugin_x86_nz;

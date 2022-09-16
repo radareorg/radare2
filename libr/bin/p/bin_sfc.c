@@ -31,7 +31,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return (cksum1 == (ut16)~cksum2);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (bf, b);
 }
 
@@ -47,23 +47,21 @@ static RBinInfo* info(RBinFile *bf) {
 	int reat = r_buf_read_at (bf->buf, 0x7FC0 + hdroffset,
 		(ut8*)&sfchdr, SFC_HDR_SIZE);
 	if (reat != SFC_HDR_SIZE) {
-		eprintf ("Unable to read SFC/SNES header\n");
+		R_LOG_ERROR ("Unable to read SFC/SNES header");
 		return NULL;
 	}
 
-	if ( (sfchdr.comp_check != (ut16)~(sfchdr.checksum)) || ((sfchdr.rom_setup & 0x1) != 0) ){
-
+	if ((sfchdr.comp_check != (ut16)~(sfchdr.checksum)) || ((sfchdr.rom_setup & 0x1) != 0) ) {
 		// if the fixed 0x33 byte or the LoROM indication are not found, then let's try interpreting the ROM as HiROM
 
 		reat = r_buf_read_at (bf->buf, 0xFFC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
 		if (reat != SFC_HDR_SIZE) {
-			eprintf ("Unable to read SFC/SNES header\n");
+			R_LOG_ERROR ("Unable to read SFC/SNES header");
 			return NULL;
 		}
 
-		if ( (sfchdr.comp_check != (ut16)~(sfchdr.checksum)) || ((sfchdr.rom_setup & 0x1) != 1) ) {
-
-			eprintf ("Cannot determine if this is a LoROM or HiROM file\n");
+		if ((sfchdr.comp_check != (ut16)~(sfchdr.checksum)) || ((sfchdr.rom_setup & 0x1) != 1) ) {
+			R_LOG_ERROR ("Cannot determine if this is a LoROM or HiROM file");
 			return NULL;
 		}
 	}
@@ -128,23 +126,22 @@ static RList* sections(RBinFile *bf) {
 
 	int reat = r_buf_read_at (bf->buf, 0x7FC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
 	if (reat != SFC_HDR_SIZE) {
-		eprintf ("Unable to read SFC/SNES header\n");
+		R_LOG_ERROR ("Unable to read SFC/SNES header");
 		return NULL;
 	}
 
-	if ( (sfchdr.comp_check != (ut16)~(sfchdr.checksum)) || ((sfchdr.rom_setup & 0x1) != 0) ){
+	if ((sfchdr.comp_check != (ut16)~(sfchdr.checksum)) || ((sfchdr.rom_setup & 0x1) != 0) ) {
 
 		// if the fixed 0x33 byte or the LoROM indication are not found, then let's try interpreting the ROM as HiROM
 
 		reat = r_buf_read_at (bf->buf, 0xFFC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
 		if (reat != SFC_HDR_SIZE) {
-			eprintf ("Unable to read SFC/SNES header\n");
+			R_LOG_ERROR ("Unable to read SFC/SNES header");
 			return NULL;
 		}
 
-		if ( (sfchdr.comp_check != (ut16)~(sfchdr.checksum)) || ((sfchdr.rom_setup & 0x1) != 1) ) {
-
-			eprintf ("Cannot determine if this is a LoROM or HiROM file\n");
+		if ((sfchdr.comp_check != (ut16)~(sfchdr.checksum)) || ((sfchdr.rom_setup & 0x1) != 1) ) {
+			R_LOG_ERROR ("Cannot determine if this is a LoROM or HiROM file");
 			return NULL;
 		}
 		is_hirom = true;
@@ -164,8 +161,7 @@ static RList* sections(RBinFile *bf) {
 		}
 
 	} else {
-		for (i=0; i < ((bf->size - hdroffset)/ 0x8000) ; i++) {
-
+		for (i = 0; i < ((bf->size - hdroffset)/ 0x8000) ; i++) {
 			addrom(ret,"ROM",i,hdroffset + i*0x8000,0x8000 + (i*0x10000), 0x8000);
 		}
 	}

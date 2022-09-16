@@ -127,7 +127,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		/* listen and wait for connection */
 		data->sc = r_socket_new (false);
 		if (!r_socket_connect (data->sc, host, port, R_SOCKET_PROTO_TCP, 0)) {
-			eprintf ("Cannot connect\n");
+			R_LOG_ERROR ("Cannot connect");
 			free (host);
 			free_socketdata (data);
 			return NULL;

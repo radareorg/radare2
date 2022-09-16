@@ -432,7 +432,6 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 
 		if (!(property = R_NEW0 (RBinField))) {
 			// retain just for debug
-			// eprintf("RBinClass allocation error\n");
 			return;
 		}
 
@@ -593,7 +592,6 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 
 		if (!(method = R_NEW0 (RBinSymbol))) {
 			// retain just for debug
-			// eprintf ("RBinClass allocation error\n");
 			return;
 		}
 		struct MACH0_(SMethod) m;
@@ -1172,7 +1170,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 		return;
 	}
 	if (left < size) {
-		eprintf ("Cannot parse obj class info out of bounds\n");
+		R_LOG_ERROR ("Cannot parse obj class info out of bounds");
 		return;
 	}
 	len = r_buf_read_at (bf->buf, r, sc, size);
@@ -1246,14 +1244,14 @@ typedef struct {
 	st32 *fieldmd;
 	ut64 fieldmd_addr;
 	size_t fieldmd_size;
-} SwiftType; 
+} SwiftType;
 
 static SwiftType parse_type_entry(RBinFile *bf, ut64 typeaddr) {
 	SwiftType st = {0};
 	ut32 words[16] = {0};
 	st32 *swords = (st32*)&words;
 	if (r_buf_read_at (bf->buf, typeaddr, (ut8*)&words, sizeof (words)) < 1) {
-		eprintf ("Invalid pointers.\n");
+		R_LOG_ERROR ("Invalid pointers");
 		return st;
 	}
 #if 0
@@ -1448,7 +1446,6 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 
 	if (!ret && !(ret = r_list_newf ((RListFree)r_bin_class_free))) {
 		// retain just for debug
-		// eprintf ("RList<RBinClass> allocation error\n");
 		goto get_classes_error;
 	}
 	if (!is_found) {
@@ -1461,22 +1458,19 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	for (i = 0; i < s_size; i += sizeof (mach0_ut)) {
 		left = s_size - i;
 		if (left < sizeof (mach0_ut)) {
-			eprintf ("Chopped classlist data\n");
+			R_LOG_ERROR ("Chopped classlist data");
 			break;
 		}
 		if (!(klass = R_NEW0 (RBinClass))) {
 			// retain just for debug
-			// eprintf ("RBinClass allocation error\n");
 			goto get_classes_error;
 		}
 		if (!(klass->methods = r_list_new ())) {
 			// retain just for debug
-			// eprintf ("RList<RBinField> allocation error\n");
 			goto get_classes_error;
 		}
 		if (!(klass->fields = r_list_new ())) {
 			// retain just for debug
-			// eprintf ("RList<RBinSymbol> allocation error\n");
 			goto get_classes_error;
 		}
 		size = sizeof (mach0_ut);
@@ -1613,7 +1607,7 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipLis
 		return;
 	}
 	if (left < size) {
-		eprintf ("Cannot parse obj category info out of bounds\n");
+		R_LOG_ERROR ("Cannot parse obj category info out of bounds");
 		return;
 	}
 	len = r_buf_read_at (bf->buf, r, sc, size);

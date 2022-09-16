@@ -199,13 +199,11 @@ R_API bool r_sandbox_enable(bool e) {
 		};
 
 		size_t i, privrulescnt = sizeof (privrules) / sizeof (privrules[0]);
-		
 		if (!priv) {
 			eprintf ("sandbox: priv_allocset failed\n");
 			return false;
 		}
 		priv_basicset (priv);
-		
 		for (i = 0; i < privrulescnt; i ++) {
 			if (priv_delset (priv, privrules[i]) != 0) {
 				priv_emptyset (priv);
@@ -274,7 +272,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 		if (argv) {
 			char *argv0 = r_file_path (argv[0]);
 			if (!argv0) {
-				eprintf ("Cannot find '%s'\n", argv[0]);
+				R_LOG_ERROR ("Cannot find '%s'", argv[0]);
 				return -1;
 			}
 			pid = 0;
@@ -294,7 +292,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 	}
 #endif
 	char *bin_sh = r_file_binsh ();
-	int rc = execl (bin_sh, "sh", "-c", x, (const char*)NULL);
+	int rc = execl (bin_sh, bin_sh, "-c", x, (const char*)NULL);
 	if (rc == -1) {
 		r_sys_perror ("execl");
 	}
@@ -308,10 +306,15 @@ R_API bool r_sandbox_creat(const char *path, int mode) {
 	if (G_enabled) {
 		return false;
 #if 0
-		if (mode & O_CREAT) return -1;
-		if (mode & O_RDWR) return -1;
-		if (!r_sandbox_check_path (path))
+		if (mode & O_CREAT) {
 			return -1;
+		}
+		if (mode & O_RDWR) {
+			return -1;
+		}
+		if (!r_sandbox_check_path (path)) {
+			return -1;
+		}
 #endif
 	}
 	int fd = open (path, O_CREAT | O_TRUNC | O_WRONLY, mode);

@@ -74,7 +74,7 @@ void file_oomem(struct r_magic_set *, size_t);
 void file_error(struct r_magic_set *, int, const char *, ...);
 void file_magerror(struct r_magic_set *, const char *, ...);
 void file_magwarn(struct r_magic_set *, const char *, ...);
-void file_mdump(struct r_magic *);
+void file_mdump(struct r_magic_set *, struct r_magic *);
 void file_showstr(FILE *, const char *, size_t);
 size_t file_mbswidth(const char *);
 const char *file_getbuffer(struct r_magic_set *);

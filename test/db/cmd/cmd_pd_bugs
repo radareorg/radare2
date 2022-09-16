@@ -1,3 +1,18 @@
+NAME=pd asmdescribe on string
+FILE=bins/mach0/mac-ls4
+ARGS=-a arm -b64
+CMDS=<<EOF
+s 0x100003ac0
+Cz
+e asm.describe=1
+pd 2
+EOF
+EXPECT=<<EOF
+            0x100003ac0     .string "\xbf\n" ; len=3
+            0x100003ac3                     unaligned
+EOF
+RUN
+
 NAME=pd call sym bug
 FILE=bins/mach0/hello-objc-arm
 CMDS=<<EOF
@@ -19,7 +34,7 @@ NAME=pd+reloff+colors
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 af
-e asm.reloff=true
+e asm.offset.relative=true
 pd 10
 e scr.color=1
 pd 10

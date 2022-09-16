@@ -1,9 +1,17 @@
 #!/bin/sh 
-TAGS=`git tag| grep -e  '^\d\..\.' | grep -v '\d-'`
+if [ -n "$1" ]; then
+	if [ "$1" = "-h" ]; then
+		echo "Usage: "
+		exit 0
+	fi
+	TAGS="$1"
+else
+	TAGS=`git tag| grep -e  '^\d\..\.' | grep -v '\d-'`
+fi
 control_c() {
-  echo "^C"
-  rm -rf r2loc
-  exit 1
+	echo "^C"
+	rm -rf r2loc
+	exit 1
 }
 trap control_c 2
 rm -rf r2loc

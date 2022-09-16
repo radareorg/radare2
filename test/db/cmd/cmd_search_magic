@@ -1,0 +1,9 @@
+NAME=search magic
+FILE=bins/swf/CurveBall.swf  
+CMDS=<<EOF
+/m
+EOF
+EXPECT=<<EOF
+0x00000000 1 Macromedia Flash data, version 5 file size (header included) 67765
+EOF
+RUN

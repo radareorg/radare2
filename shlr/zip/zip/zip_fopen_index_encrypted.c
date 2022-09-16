@@ -1,9 +1,9 @@
 /*
   zip_fopen_index_encrypted.c -- open file for reading by index w/ password
-  Copyright (C) 1999-2013 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2021 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
-  The authors can be contacted at <libzip@nih.at>
+  The authors can be contacted at <info@libzip.org>
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions
@@ -31,37 +31,36 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "zipint.h"
 
-static struct zip_file *_zip_file_new(struct zip *za);
+static zip_file_t *_zip_file_new(zip_t *za);
 
-
 
-ZIP_EXTERN struct zip_file *
-zip_fopen_index_encrypted(struct zip *za, zip_uint64_t index, zip_flags_t flags,
-			  const char *password)
-{
-    struct zip_file *zf;
-    struct zip_source *src;
+ZIP_EXTERN zip_file_t *
+zip_fopen_index_encrypted(zip_t *za, zip_uint64_t index, zip_flags_t flags, const char *password) {
+    zip_file_t *zf;
+    zip_source_t *src;
 
-    if ((src=_zip_source_zip_new(za, za, index, flags, 0, 0, password)) == NULL)
-	return NULL;
+    if (password != NULL && password[0] == '\0') {
+        password = NULL;
+    }
+    
+    if ((src = _zip_source_zip_new(za, index, flags, 0, 0, password, &za->error)) == NULL)
+        return NULL;
 
     if (zip_source_open(src) < 0) {
-	_zip_error_set_from_source(&za->error, src);
-	zip_source_free(src);
-	return NULL;
+        _zip_error_set_from_source(&za->error, src);
+        zip_source_free(src);
+        return NULL;
     }
 
-    if ((zf=_zip_file_new(za)) == NULL) {
-	zip_source_free(src);
-	return NULL;
+    if ((zf = _zip_file_new(za)) == NULL) {
+        zip_source_free(src);
+        return NULL;
     }
 
     zf->src = src;
@@ -69,36 +68,18 @@ zip_fopen_index_encrypted(struct zip *za, zip_uint64_t index, zip_flags_t flags,
     return zf;
 }
 
-
 
-static struct zip_file *
-_zip_file_new(struct zip *za)
-{
-    struct zip_file *zf, **file;
+static zip_file_t *
+_zip_file_new(zip_t *za) {
+    zip_file_t *zf;
 
-    if ((zf=(struct zip_file *)malloc(sizeof(struct zip_file))) == NULL) {
-	_zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
-	return NULL;
+    if ((zf = (zip_file_t *)malloc(sizeof(struct zip_file))) == NULL) {
+        zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
+        return NULL;
     }
-
-    if (za->nfile+1 >= za->nfile_alloc) {
-	unsigned int n;
-	n = za->nfile_alloc + 10;
-	file = (struct zip_file **)realloc(za->file,
-					   n*sizeof(struct zip_file *));
-	if (file == NULL) {
-	    _zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
-	    free(zf);
-	    return NULL;
-	}
-	za->nfile_alloc = n;
-	za->file = file;
-    }
-
-    za->file[za->nfile++] = zf;
 
     zf->za = za;
-    _zip_error_init(&zf->error);
+    zip_error_init(&zf->error);
     zf->eof = 0;
     zf->src = NULL;
 

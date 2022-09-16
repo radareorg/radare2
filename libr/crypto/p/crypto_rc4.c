@@ -72,42 +72,38 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 
 ///////////////////////////////////////////////////////////
 
-static struct rc4_state st;
+static R_TH_LOCAL struct rc4_state st;
 
-static bool rc4_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool rc4_set_key(RCryptoJob *cry, const ut8 *key, int keylen, int mode, int direction) {
 	return rc4_init (&st, key, keylen);
 }
 
-static int rc4_get_key_size(RCrypto *cry) {
+static int rc4_get_key_size(RCryptoJob *cry) {
 	return st.key_size;
 }
 
-static bool rc4_use(const char *algo) {
-	return !strcmp (algo, "rc4");
-}
-
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
 	rc4_crypt (&st, buf, obuf, len);
-	r_crypto_append (cry, obuf, len);
+	r_crypto_job_append (cj, obuf, len);
 	free (obuf);
 	return false;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
+	return update (cj, buf, len);
 }
 
 RCryptoPlugin r_crypto_plugin_rc4 = {
 	.name = "rc4",
+	.implements = "rc4",
 	.set_key = rc4_set_key,
 	.get_key_size = rc4_get_key_size,
-	.use = rc4_use,
 	.update = update,
-	.final = final
+	.end = end
 };
 
 #ifndef R2_PLUGIN_INCORE

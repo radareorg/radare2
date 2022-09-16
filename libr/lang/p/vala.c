@@ -129,9 +129,7 @@ static bool lang_vala_run(RLang *lang, const char *code, int len) {
 static RLangPlugin r_lang_plugin_vala = {
 	.name = "vala",
 	.ext = "vala",
-#if R2_580
 	.author = "pancake",
-#endif
 	.license = "LGPL",
 	.desc = "Vala language extension",
 	.run = lang_vala_run,

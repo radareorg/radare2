@@ -1,4 +1,4 @@
-project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.49', version : '5.7.5')
+project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.49', version : '5.7.9')
 
 py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
@@ -37,6 +37,9 @@ if git_exe.found()
   if git_rev_list.returncode() == 0
     version_commit = git_rev_list.stdout().strip()
   endif
+  if version_commit == ''
+    version_commit = '0'
+  endif
 
   # Get gittap
   git_describe = run_command(git_exe, '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
@@ -66,6 +69,10 @@ endif
 
 if get_option('r2_gittip') != ''
   gittip = get_option('r2_gittip')
+endif
+
+if gittip == ''
+  gittip = r2_version
 endif
 
 # Get current date
@@ -431,7 +438,6 @@ libr_pc = configure_file(
 
 subdir('shlr/zip')
 
-
 # handle sdb dependency
 # NOTE: copying most of the stuff from sdb to here for the moment, since we
 # should use subpackages to handle this well
@@ -570,7 +576,6 @@ endif
 subdir('shlr/lz4')
 subdir('libr/util')
 subdir('libr/socket')
-subdir('libr/hash')
 subdir('libr/crypto')
 subdir('shlr')
 subdir('libr/cons')
@@ -582,6 +587,7 @@ subdir('libr/search')
 subdir('libr/magic')
 subdir('libr/flag')
 subdir('libr/reg')
+subdir('libr/fs')
 subdir('libr/bin')
 subdir('libr/config')
 subdir('libr/parse')
@@ -589,7 +595,6 @@ subdir('libr/lang')
 subdir('libr/asm')
 subdir('libr/anal')
 subdir('libr/egg')
-subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
 subdir('libr/cons/d')
@@ -603,7 +608,6 @@ if meson.is_subproject()
     dependencies: [
       r_anal_dep,
       r_asm_dep,
-      r_bin_dep,
       r_bp_dep,
       r_config_dep,
       r_cons_dep,
@@ -614,7 +618,7 @@ if meson.is_subproject()
       r_egg_dep,
       r_flag_dep,
       r_fs_dep,
-      r_hash_dep,
+      r_bin_dep,
       r_io_dep,
       r_lang_dep,
       r_magic_dep,
@@ -638,6 +642,7 @@ if get_option('use_webui')
 endif
 
 subdir('test/unit')
+subdir('test/fuzz')
 
 install_data(
   'doc/fortunes.fun',

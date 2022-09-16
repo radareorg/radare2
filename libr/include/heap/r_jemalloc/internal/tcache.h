@@ -193,7 +193,7 @@ tcache_enabled_get(void)
 	tsd_t *tsd;
 	tcache_enabled_t tcache_enabled;
 
-	if(unlikely(!config_tcache))
+	if (unlikely(!config_tcache))
 		return false;
 	tsd = tsd_fetch();
 	tcache_enabled = tsd_tcache_enabled_get(tsd);

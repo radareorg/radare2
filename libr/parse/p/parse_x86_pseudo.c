@@ -185,7 +185,6 @@ static int parse(RParse *p, const char *data, char *str) {
 	*w0 = *w1 = *w2 = *w3 = '\0';
 	if (*buf) {
 		end = buf + strlen (buf);
-		
 		ptr = strchr (buf, '(');
 		if (!ptr) {
 			ptr = strchr (buf, ' ');
@@ -560,11 +559,17 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	return ret;
 }
 
+static int fini(RParse *p, void *usr) {
+	R_FREE (p->retleave_asm);
+	return 0;
+}
+
 RParsePlugin r_parse_plugin_x86_pseudo = {
 	.name = "x86.pseudo",
 	.desc = "X86 pseudo syntax",
 	.parse = &parse,
 	.subvar = &subvar,
+	.fini = &fini,
 };
 
 #ifndef R2_PLUGIN_INCORE

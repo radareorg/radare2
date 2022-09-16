@@ -39,7 +39,7 @@ typedef struct r_num_calc_t {
 	char string_value[R_NUMCALC_STRSZ];
 	int errors;
 	char oc;
-	const char *calc_err;
+	const char *calc_err; // rename to errstr
 	int calc_i;
 	const char *calc_buf;
 	int calc_len;

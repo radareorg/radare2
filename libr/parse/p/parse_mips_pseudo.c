@@ -94,21 +94,21 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ NULL }
 	};
 
-	for (i=0; ops[i].op; i++) {
+	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr) {
-				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
+				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
 					if (can_replace (ops[i].str, j, ops[i].max_operands)) {
 						const char *w = argv[ ops[i].str[j]-'0' ];
 						if (w) {
-							strcpy (newstr+k, w);
+							strcpy (newstr + k, w);
 							k += strlen (w) - 1;
 						}
 					} else {
 						newstr[k] = ops[i].str[j];
 					}
 				}
-				newstr[k]='\0';
+				newstr[k] = '\0';
 			}
 			return true;
 		}
@@ -117,7 +117,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	/* TODO: this is slow */
 	if (newstr) {
 		newstr[0] = '\0';
-		for (i=0; i<argc; i++) {
+		for (i = 0; i < argc; i++) {
 			strcat (newstr, argv[i]);
 			strcat (newstr, (i == 0 || i== argc - 1)?" ":", ");
 		}
@@ -206,7 +206,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		{
 			const char *wa[] = { w0, w1, w2, w3, w4 };
 			int nw = 0;
-			for (i=0; i<4; i++) {
+			for (i = 0; i < 4; i++) {
 				if (wa[i][0] != '\0') {
 					nw++;
 				}

@@ -5,8 +5,10 @@
 #include <r_cons.h>
 #include <r_th.h>
 
+// R2_580 - Move into rcons_instance, breaks the abi
 static R_TH_LOCAL int color_table[256] = {0};
-static R_TH_LOCAL int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
+
+static const int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
 
 static void init_color_table(void) {
 	int i, r, g, b;
@@ -46,7 +48,7 @@ static void init_color_table(void) {
 static int __lookup_rgb(int r, int g, int b) {
 	int i, color = (r << 16) + (g << 8) + b;
 	// lookup extended colors only, coz non-extended can be changed by users.
-	for (i = 16; i < 256; i++) {
+	for (i = 16; i < 232; i++) {
 		if (color_table[i] == color) {
 			return i;
 		}
@@ -75,10 +77,10 @@ static ut32 __approximate_rgb(int r, int g, int b) {
 	b &= 0xff;
 	return (ut32)((G * M * M)  + (g * M) + b) + 16;
 #else
-	const int k = (int)(256.0 / 6);
-	r = R_DIM ((int)(r / k), 0, 6);
-	g = R_DIM ((int)(g / k), 0, 6);
-	b = R_DIM ((b / k), 0, 6);
+	const int k = 256 / 6;
+	r = R_DIM (r / k, 0, 5);
+	g = R_DIM (g / k, 0, 5);
+	b = R_DIM (b / k, 0, 5);
 	return 16 + (r * 36) + (g * 6) + b;
 #endif
 }
@@ -258,17 +260,11 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 				: (r == 0xff || g == 0xff || b == 0xff)
 					? 60
 					: 0;  // eco bright-specific
-			if (r == g && g == b) {
-				r = (r > 0x7f) ? 1 : 0;
-				g = (g > 0x7f) ? 1 : 0;
-				b = (b > 0x7f) ? 1 : 0;
-			} else {
-				ut8 k = (r + g + b) / 3;
-				r = (r >= k) ? 1 : 0;
-				g = (g >= k) ? 1 : 0;
-				b = (b >= k) ? 1 : 0;
-			}
-			c = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
+			ut8 k = (r + g + b) / 3;
+			r = (r >= k) ? 1 : 0;
+			g = (g >= k) ? 1 : 0;
+			b = (b >= k) ? 1 : 0;
+			c = r + (g << 1) + (b << 2);
 		}
 		written = snprintf (outstr + i, sz - i, "%dm", fgbg + bright + c);
 		break;

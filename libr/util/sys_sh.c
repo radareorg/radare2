@@ -58,7 +58,7 @@ R_API int r_sys_tem_statement(const char *l) {
 			progname = s;
 		} else {
 			r_strbuf_append (sb, " ");
-			// TODO: replace env vars 
+			// TODO: replace env vars
 			// s = r_str_replace (s, "$FOO", "TMP", 1);
 			r_strbuf_append (sb, s);
 			free (s);
@@ -131,7 +131,7 @@ repeat:
 						cmdpos += 2;
 						break;
 					} else {
-						// eprintf ("|| failed\n");
+						// eprintf ("op || failed\n");
 						return 1;
 					}
 				} else {
@@ -143,7 +143,7 @@ repeat:
 			if (!inquote) {
 				if (pos == cmdpos) {
 					if (rc) {
-						// eprintf ("&& failed\n");
+						// eprintf ("op && failed\n");
 						return 1;
 					} else {
 						cmdpos += 2;

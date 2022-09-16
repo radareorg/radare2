@@ -64,7 +64,7 @@ int w32_first_thread(int pid) {
 		}
 	} while (Thread32Next (th, &te32));
 err_load_th:
-	eprintf ("Could not find an active thread for pid %d\n", pid);
+	R_LOG_ERROR ("Could not find an active thread for pid %d", pid);
 	CloseHandle (th);
 	return pid;
 }
@@ -608,22 +608,22 @@ static int GetAVX(HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
 	}
 	Success = r_w32_InitializeContext (buffer, CONTEXT_ALL | CONTEXT_XSTATE, &Context, &ContextSize);
 	if (!Success) {
-		free(buffer);
+		free (buffer);
 		return 0;
 	}
 	Success = r_w32_SetXStateFeaturesMask (Context, XSTATE_MASK_AVX);
 	if (!Success) {
-		free(buffer);
+		free (buffer);
 		return 0;
 	}
 	Success = GetThreadContext (hThread, Context);
 	if (!Success) {
-		free(buffer);
+		free (buffer);
 		return 0;
 	}
 	Success = r_w32_GetXStateFeaturesMask (Context, &FeatureMask);
 	if (!Success) {
-		free(buffer);
+		free (buffer);
 		return 0;
 	}
 	Xmm = (ut128 *)r_w32_LocateXStateFeature(Context, XSTATE_LEGACY_SSE, &FeatureLength);

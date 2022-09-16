@@ -17,7 +17,7 @@ static const char *directives[] = {
 	".else", ".set", ".get", NULL
 };
 
-static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
+static const RAsmPlugin * const asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
 static void parseHeap(RParse *p, RStrBuf *s) {
 	char *op_buf_asm = r_strbuf_get (s);
@@ -218,7 +218,7 @@ R_API RAsm *r_asm_new(void) {
 	}
 	a->config = r_arch_config_new ();
 	for (i = 0; asm_static_plugins[i]; i++) {
-		r_asm_add (a, asm_static_plugins[i]);
+		r_asm_add (a, (RAsmPlugin*)asm_static_plugins[i]);
 	}
 	return a;
 }
@@ -262,7 +262,7 @@ R_API void r_asm_free(RAsm *a) {
 	if (a->cur && a->cur->fini) {
 		a->cur->fini (a->cur->user);
 	}
-	r_unref (a->config);
+	// r_unref (a->config);
 	if (a->plugins) {
 		r_list_free (a->plugins);
 		a->plugins = NULL;
@@ -329,10 +329,16 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 }
 
 static void load_asm_descriptions(RAsm *a, RAsmPlugin *p) {
-	const char *arch = ((!p || !strcmp (p->name, "null")) && a->config->arch)
-		? a->config->arch: (p? p->arch: NULL);
-	if (!arch || (p && !strcmp (p->name, "r2ghidra"))) {
-		arch = (a->config->cpu)? a->config->cpu: p->name;
+	const char *arch;
+
+	if (a->config->arch && (!p || !strcmp (p->name, "null"))) {
+		arch = a->config->arch;
+	} else if (p && !strcmp (p->name, "r2ghidra")) {
+		arch = p->name;
+	} else if (p) {
+		arch = p->arch;
+	} else {
+		arch = a->config->cpu;
 	}
 #if HAVE_GPERF
 	SdbGperf *gp = r_asm_get_gperf (arch); // p->name);
@@ -444,24 +450,27 @@ R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 }
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
-	r_return_val_if_fail (a && a->cur, false);
-	a->config->big_endian = false; // little endian by default
-	// TODO: Use a->config->endian the same as a->cur->endian, and save this switch
-	switch (a->cur->endian) {
-	case R_SYS_ENDIAN_NONE:
-	case R_SYS_ENDIAN_BI:
-		// TODO: not yet implemented
+	r_return_val_if_fail (a, false);
+	a->config->big_endian = (bool)R_SYS_ENDIAN; // default is host endian
+	if (a->cur) {
+		switch (a->cur->endian) {
+		case R_SYS_ENDIAN_NONE:
+		case R_SYS_ENDIAN_BI:
+			// TODO: not yet implemented
+			a->config->big_endian = b;
+			break;
+		case R_SYS_ENDIAN_LITTLE:
+			a->config->big_endian = false;
+			break;
+		case R_SYS_ENDIAN_BIG:
+			a->config->big_endian = true;
+			break;
+		default:
+			R_LOG_WARN ("RAsmPlugin doesn't specify endianness");
+			break;
+		}
+	} else {
 		a->config->big_endian = b;
-		break;
-	case R_SYS_ENDIAN_LITTLE:
-		a->config->big_endian = false;
-		break;
-	case R_SYS_ENDIAN_BIG:
-		a->config->big_endian = true;
-		break;
-	default:
-		R_LOG_WARN ("RAsmPlugin doesn't specify endianness");
-		break;
 	}
 	return a->config->big_endian;
 }
@@ -581,7 +590,6 @@ static bool assemblerMatches(RAsm *a, RAsmPlugin *h) {
 }
 
 static Ase findAssembler(RAsm *a, const char *kw) {
-	Ase ase = NULL;
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (a->acur && a->acur->assemble) {
@@ -594,11 +602,11 @@ static Ase findAssembler(RAsm *a, const char *kw) {
 					return h->assemble;
 				}
 			} else {
-				ase = h->assemble;
+				return h->assemble;
 			}
 		}
 	}
-	return ase;
+	return NULL;
 }
 
 static char *replace_directives_for(char *str, const char *token) {
@@ -716,9 +724,8 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	RStrBuf *buf_asm;
 	RAsmCode *acode;
 	ut64 pc = a->pc;
-	RAsmOp op = {0};
 	ut64 idx;
-	size_t ret;
+	int ret;
 	const size_t addrbytes = a->user? ((RCore *)a->user)->io->addrbytes: 1;
 
 	if (!(acode = r_asm_code_new ())) {
@@ -732,6 +739,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		return r_asm_code_free (acode);
 	}
 	for (idx = 0; idx + addrbytes <= len; idx += (addrbytes * ret)) {
+		RAsmOp op = {0};
 		r_asm_set_pc (a, pc + idx);
 		ret = r_asm_disassemble (a, &op, buf + idx, len - idx);
 		if (ret < 1) {
@@ -742,8 +750,8 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		}
 		r_strbuf_append (buf_asm, r_strbuf_get (&op.buf_asm));
 		r_strbuf_append (buf_asm, "\n");
+		r_asm_op_fini (&op);
 	}
-	r_asm_op_fini (&op);
 	acode->assembly = r_strbuf_drain (buf_asm);
 	acode->len = idx;
 	return acode;
@@ -927,7 +935,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				if (cptr && ptr && cptr < ptr) {
 					likely_comment = false;
 					for (cptr += 1; cptr < ptr ; cptr += 1) {
-						if ( ! isspace ((unsigned char) *cptr)) {
+						if (! isspace ((unsigned char) *cptr)) {
 							likely_comment = true;
 							break;
 						}
@@ -1118,14 +1126,11 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 						continue;
 					}
 					ret = r_asm_assemble (a, &op, ptr_start);
-					// XXX This fixes a leak, unsure
-					// why op_fini below doesn't catch it
-					r_strbuf_fini (&op.buf_asm);
 				}
 			}
 			if (stage == STAGES - 1) {
 				if (ret < 1) {
-					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
+					R_LOG_ERROR ("Cannot assemble '%s' at line %d", ptr_start, linenum);
 					goto fail;
 				}
 				acode->len = idx + ret;

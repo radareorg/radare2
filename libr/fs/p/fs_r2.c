@@ -283,7 +283,7 @@ static RList *fs_r2_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	return NULL;
 }
 
-static int fs_r2_mount(RFSRoot *root) {
+static bool fs_r2_mount(RFSRoot *root) {
 	root->ptr = NULL;
 	return true;
 }

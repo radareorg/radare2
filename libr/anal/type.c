@@ -443,7 +443,7 @@ static void save_enum(const RAnal *anal, const RAnalBaseType *type) {
 	char *sname = r_str_sanitize_sdb_key (type->name);
 	sdb_set (anal->sdb_types, sname, "enum", 0);
 
-	RStrBuf *arglist = r_strbuf_new ("");;
+	RStrBuf *arglist = r_strbuf_new ("");
 	int i = 0;
 	RAnalEnumCase *cas;
 	r_vector_foreach (&type->enum_data.cases, cas) {

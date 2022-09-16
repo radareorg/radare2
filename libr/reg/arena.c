@@ -132,9 +132,8 @@ R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len) {
 	return false;
 }
 
-// R2_580: return void
-R_API int r_reg_fit_arena(RReg *reg) {
-	r_return_val_if_fail (reg, false);
+R_API void r_reg_fit_arena(RReg *reg) {
+	r_return_if_fail (reg);
 	RRegArena *arena;
 	RListIter *iter;
 	RRegItem *r;
@@ -166,10 +165,10 @@ R_API int r_reg_fit_arena(RReg *reg) {
 			}
 		}
 	}
-	return true;
 }
 
 R_API RRegArena *r_reg_arena_new(int size) {
+	// if arena is resized, the constructor should take 0 arguments imho
 	RRegArena *arena = R_NEW0 (RRegArena);
 	if (arena) {
 		if (size < 1) {

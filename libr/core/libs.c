@@ -139,7 +139,7 @@ R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
 	ut64 prev = r_time_now_mono ();
 	__loadSystemPlugins (core, where, path);
 	/* TODO: all those default plugin paths should be defined in r_lib */
-	if (!r_config_get_i (core->config, "cfg.plugins")) {
+	if (!r_config_get_b (core->config, "cfg.plugins")) {
 		core->times->loadlibs_time = 0;
 		return false;
 	}

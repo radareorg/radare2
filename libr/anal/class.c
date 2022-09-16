@@ -470,7 +470,7 @@ static void r_anal_class_rename_flag(RAnal *anal, const char *old_name, const ch
 
 static RAnalClassErr r_anal_class_add_attr_unique_raw(RAnal *anal, const char *class_name, RAnalClassAttrType attr_type, const char *content, char *attr_id_out, size_t attr_id_out_size) {
 	char attr_id[16];
-	r_anal_class_unique_attr_id_raw (anal, class_name, attr_type, attr_id, sizeof(attr_id));
+	r_anal_class_unique_attr_id_raw (anal, class_name, attr_type, attr_id, sizeof (attr_id));
 
 	RAnalClassErr err = r_anal_class_set_attr (anal, class_name, attr_type, attr_id, content);
 	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
@@ -548,7 +548,7 @@ static void r_anal_class_method_fini_proxy(void *e, void *user) {
 }
 
 R_API RVector/*<RAnalMethod>*/ *r_anal_class_method_get_all(RAnal *anal, const char *class_name) {
-	RVector *vec = r_vector_new (sizeof(RAnalMethod), r_anal_class_method_fini_proxy, NULL);
+	RVector *vec = r_vector_new (sizeof (RAnalMethod), r_anal_class_method_fini_proxy, NULL);
 	if (!vec) {
 		return NULL;
 	}
@@ -715,7 +715,7 @@ static void r_anal_class_base_fini_proxy(void *e, void *user) {
 }
 
 R_API RVector/*<RAnalBaseClass>*/ *r_anal_class_base_get_all(RAnal *anal, const char *class_name) {
-	RVector *vec = r_vector_new (sizeof(RAnalBaseClass), r_anal_class_base_fini_proxy, NULL);
+	RVector *vec = r_vector_new (sizeof (RAnalBaseClass), r_anal_class_base_fini_proxy, NULL);
 	if (!vec) {
 		return NULL;
 	}
@@ -901,7 +901,7 @@ static void r_anal_class_vtable_fini_proxy(void *e, void *user) {
 }
 
 R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const char *class_name) {
-	RVector *vec = r_vector_new (sizeof(RAnalVTable), r_anal_class_vtable_fini_proxy, NULL);
+	RVector *vec = r_vector_new (sizeof (RAnalVTable), r_anal_class_vtable_fini_proxy, NULL);
 	if (!vec) {
 		return NULL;
 	}

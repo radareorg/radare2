@@ -93,7 +93,7 @@ ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data)
 		} else {
 			nb_alloc = nb * 2;
 		}
-		pp = realloc (pp, nb_alloc * sizeof(void *));
+		pp = realloc (pp, nb_alloc * sizeof (void *));
 		*ptab = pp;
 	}
 	pp[nb++] = data;
@@ -161,25 +161,25 @@ static void error1(TCCState *s1, int is_warning, const char *fmt, va_list ap) {
 	}
 	if (f) {
 		for (pf = s1->include_stack; pf < s1->include_stack_ptr; pf++) {
-			strcat_printf (buf, sizeof(buf), "In file included from %s:%d:\n",
+			strcat_printf (buf, sizeof (buf), "In file included from %s:%d:\n",
 				(*pf)->filename, (*pf)->line_num);
 		}
 		if (f->line_num > 0) {
-			strcat_printf (buf, sizeof(buf), "%s:%d: ",
+			strcat_printf (buf, sizeof (buf), "%s:%d: ",
 				f->filename, f->line_num);
 		} else {
-			strcat_printf (buf, sizeof(buf), "%s: ",
+			strcat_printf (buf, sizeof (buf), "%s: ",
 				f->filename);
 		}
 	} else {
-		strcat_printf (buf, sizeof(buf), "tcc: ");
+		strcat_printf (buf, sizeof (buf), "tcc: ");
 	}
 	if (is_warning) {
-		strcat_printf (buf, sizeof(buf), "warning: ");
+		strcat_printf (buf, sizeof (buf), "warning: ");
 	} else {
-		strcat_printf (buf, sizeof(buf), "error: ");
+		strcat_printf (buf, sizeof (buf), "error: ");
 	}
-	strcat_vprintf (buf, sizeof(buf), fmt, ap);
+	strcat_vprintf (buf, sizeof (buf), fmt, ap);
 
 	if (!s1->error_func) {
 		/* default case */
@@ -234,7 +234,7 @@ ST_FUNC bool tcc_open_bf(TCCState *s1, const char *filename, int initlen) {
 	bf->buf_ptr = bf->buffer;
 	bf->buf_end = bf->buffer + initlen;
 	bf->buf_end[0] = CH_EOB;/* put eob symbol */
-	r_str_ncpy (bf->filename, filename, sizeof(bf->filename));
+	r_str_ncpy (bf->filename, filename, sizeof (bf->filename));
 #ifdef __WINDOWS__
 	normalize_slashes (bf->filename);
 #endif
@@ -341,8 +341,7 @@ static int tcc_compile(TCCState *s1) {
 		}
 #if 0
 		if (pvtop != vtop) {
-			eprintf ("internal compiler error:"
-				" vstack leak? (%d)", vtop - pvtop);
+			eprintf ("internal compiler vstack leak? (%d)", vtop - pvtop);
 		}
 #endif
 	}

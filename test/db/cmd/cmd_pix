@@ -10,7 +10,7 @@ stp x20, x19, [sp, 0x10]
 stp x29, x30, [sp, 0x20]
 add x29, sp, 0x20
 mov x19, x1
-invalid
+???
 EOF
 RUN
 
@@ -41,7 +41,7 @@ mov r6, r0
 blx 
 vsubhn.i32 d4, q13, q0
 mov r8, r0
-invalid
+???
 EOF
 RUN
 

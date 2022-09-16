@@ -207,7 +207,6 @@ static ut64 get_die_size(const RBinDwarfDie *die) {
  */
 static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
 	if (idx < 0 || idx >= ctx->count) {
-		// eprintf ("die out of bounds\n");
 		return;
 	}
 	const RBinDwarfDie *die = &ctx->all_dies[idx++];
@@ -985,7 +984,7 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *
 	case 49: return "ldtr";
 
 	default:
-		eprintf ("Unhandled dwarf register reference number %d\n", (int)reg_num);
+		R_LOG_WARN ("Unhandled dwarf register reference number %d", (int)reg_num);
 		*kind = LOCATION_UNKNOWN;
 		return "unsupported_reg";
 	}
@@ -1123,7 +1122,6 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 			i++;
 			const ut8 *dump = block.data + i;
 			if (loc->block.length > block.length) {
-				// eprintf ("skip = %d%c", loc->block.length, 10);
 				return NULL;
 			}
 			offset = r_sleb128 (&dump, block.data + loc->block.length);
@@ -1364,7 +1362,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					r_strbuf_fini (&type);
 				}
 			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
-				r_strbuf_appendf (args, "va_args ...,");
+				r_strbuf_append (args, "va_args ...,");
 			}
 			if (child_die->has_children) {
 				child_depth++;

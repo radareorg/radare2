@@ -64,7 +64,6 @@ static bool test_anal_sign_get_set(void) {
 	r_sign_add_comment (anal, "sym.boring", "gee it sure is boring around here");
 
 	// --
-	
 	r_spaces_set (&anal->zign_spaces, NULL);
 	item = r_sign_get_item (anal, "sym.mahboi");
 	mu_assert_notnull (item, "get item");
@@ -107,7 +106,6 @@ static bool test_anal_sign_get_set(void) {
 	mu_assert_notnull (item->hash, "hash");
 	mu_assert_streq (item->hash->bbhash, "7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851", "hash val");
 	r_sign_item_free (item);
-	
 	r_spaces_set (&anal->zign_spaces, "koridai");
 	item = r_sign_get_item (anal, "sym.boring");
 	mu_assert_notnull (item, "get item in space");

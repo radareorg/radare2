@@ -40,12 +40,14 @@ R_API void r_debug_bp_update(RDebug *dbg) {
 	}
 }
 
+#if __i386__ || __x86_64__
 static int r_debug_drx_at(RDebug *dbg, ut64 addr) {
 	if (dbg && dbg->h && dbg->h->drx) {
 		return dbg->h->drx (dbg, 0, addr, 0, 0, 0, DRX_API_GET_BP);
 	}
 	return -1;
 }
+#endif
 
 /*
  * Recoiling after a breakpoint has two stages:
@@ -56,13 +58,10 @@ static int r_debug_drx_at(RDebug *dbg, ut64 addr) {
  * r_debug_bp_hit handles stage 1.
  * r_debug_recoil handles stage 2.
  */
+// R2580 - return bool
 static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
-	RBreakpointItem *b;
-
-	if (!pb) {
-		eprintf ("BreakpointItem is NULL!\n");
-		return false;
-	}
+	r_return_val_if_fail (dbg && pc_ri && pb, false);
+	RBreakpointItem *b = NULL;
 	/* initialize the output parameter */
 	*pb = NULL;
 
@@ -124,7 +123,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	}
 
 	if (!dbg->pc_at_bp_set) {
-		eprintf ("failed to determine position of pc after breakpoint\n");
+		R_LOG_ERROR ("failed to determine position of pc after breakpoint");
 	}
 
 	if (dbg->pc_at_bp) {
@@ -152,11 +151,11 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	if (pc_off) {
 		pc -= pc_off;
 		if (!r_reg_set_value (dbg->reg, pc_ri, pc)) {
-			eprintf ("failed to set PC!\n");
+			R_LOG_ERROR ("failed to set PC");
 			return false;
 		}
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)) {
-			eprintf ("cannot set registers!\n");
+			R_LOG_ERROR ("cannot set registers");
 			return false;
 		}
 	}
@@ -535,12 +534,12 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	ri_sp = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_SP], R_REG_TYPE_GPR);
 
 	if (!ri_pc) {
-		eprintf ("r_debug_execute: Cannot get program counter\n");
+		R_LOG_ERROR ("r_debug_execute: Cannot get program counter");
 		return false;
 	}
 
 	if (restore && !ignore_stack && !ri_sp) {
-		eprintf ("r_debug_execute: Cannot get stack pointer\n");
+		R_LOG_ERROR ("r_debug_execute: Cannot get stack pointer");
 		return false;
 	}
 
@@ -548,7 +547,7 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	reg_backup = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &reg_backup_sz);
 
 	if (!reg_backup) {
-		eprintf ("Cannot get register arena bytes\n");
+		R_LOG_ERROR ("Cannot get register arena bytes");
 		return false;
 	}
 
@@ -617,6 +616,7 @@ R_API int r_debug_start(RDebug *dbg, const char *cmd) {
 	return false;
 }
 
+// 580 should be bool
 R_API int r_debug_detach(RDebug *dbg, int pid) {
 	int ret = 0;
 	if (dbg->h && dbg->h->detach) {
@@ -643,7 +643,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 #endif
 	if (pid == -1 && tid == -1) {
 		if (dbg->pid != -1) {
-			eprintf ("Child %d is dead\n", dbg->pid);
+			R_LOG_ERROR ("Child %d is dead", dbg->pid);
 		}
 	}
 	if (pid < 0 || tid < 0) {
@@ -663,7 +663,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 			free (pidcmd);
 		}
 	} else {
-		eprintf ("Cannot find pid for child %d\n", dbg->pid);
+		R_LOG_ERROR ("Cannot find pid for child %d", dbg->pid);
 	}
 
 	// Synchronize with the current thread's data
@@ -786,7 +786,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			/* get the program coounter */
 			pc_ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
 			if (!pc_ri) { /* couldn't find PC?! */
-				eprintf ("Couldn't find the program counter!\n");
+				R_LOG_ERROR ("Couldn't find the program counter!");
 				return R_DEBUG_REASON_ERROR;
 			}
 
@@ -1021,7 +1021,7 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 			dbg->session->maxcnum++;
 			dbg->session->bp = 0;
 			if (!r_debug_trace_ins_before (dbg)) {
-				eprintf ("trace_ins_before: failed\n");
+				R_LOG_ERROR ("trace_ins_before: failed");
 			}
 		}
 
@@ -1031,13 +1031,13 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 			ret = r_debug_step_hard (dbg, &bp);
 		}
 		if (!ret) {
-			eprintf ("Stepping failed!\n");
+			R_LOG_ERROR ("Stepping failed!");
 			return steps_taken;
 		}
 
 		if (dbg->session && dbg->recoil_mode == R_DBG_RECOIL_NONE) {
 			if (!r_debug_trace_ins_after (dbg)) {
-				eprintf ("trace_ins_after: failed\n");
+				R_LOG_ERROR ("trace_ins_after: failed");
 			}
 			dbg->session->reasontype = dbg->reason.type;
 			dbg->session->bp = bp;
@@ -1109,7 +1109,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		}
 		// Analyze the opcode
 		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_BASIC)) {
-			eprintf ("debug-step-over: Decode error at %"PFMT64x"\n", pc);
+			R_LOG_ERROR ("debug-step-over: Decode error at %"PFMT64x, pc);
 			return steps_taken;
 		}
 		if (op.fail == -1) {
@@ -1121,13 +1121,13 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		// Skip over all the subroutine calls
 		if (isStepOverable (op.type)) {
 			if (!r_debug_continue_until (dbg, ins_size)) {
-				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
+				R_LOG_ERROR ("Could not step over call @ 0x%"PFMT64x, pc);
 				return steps_taken;
 			}
 		} else if ((op.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK))) {
-			//eprintf ("REP: skip to next instruction...\n");
+			//R_LOG_ERROR ("REP: skip to next instruction");
 			if (!r_debug_continue_until (dbg, ins_size)) {
-				eprintf ("step over failed over rep\n");
+				R_LOG_ERROR ("step over failed over rep");
 				return steps_taken;
 			}
 		} else {
@@ -1191,7 +1191,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 			}
 			has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC);
 			if (has_bp) {
-				eprintf ("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
+				R_LOG_INFO ("hit breakpoint at: 0x%" PFMT64x " cnum: %d", reg->data, reg->cnum);
 				r_debug_goto_cnum (dbg, reg->cnum);
 				return dbg->tid;
 			}
@@ -1375,7 +1375,7 @@ R_API int r_debug_continue_pass_exception(RDebug *dbg) {
 #endif
 
 R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
-	eprintf ("TODO\n");
+	R_LOG_TODO ("not implemented");
 	return false;
 }
 
@@ -1390,7 +1390,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	}
 
 	if (!dbg->anal || !dbg->reg) {
-		eprintf ("Undefined pointer at dbg->anal\n");
+		R_LOG_ERROR ("Undefined pointer at dbg->anal");
 		return false;
 	}
 
@@ -1415,7 +1415,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 		}
 		// Analyze the opcode
 		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_BASIC)) {
-			eprintf ("Decode error at %"PFMT64x"\n", pc);
+			R_LOG_ERROR ("Decode error at %"PFMT64x, pc);
 			return false;
 		}
 		if (op.type == type) {
@@ -1427,7 +1427,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			: r_debug_step (dbg, 1);
 
 		if (!ret) {
-			eprintf ("r_debug_step: failed\n");
+			R_LOG_ERROR ("r_debug_step: failed");
 			break;
 		}
 		n++;
@@ -1526,10 +1526,9 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 	}
 	eprintf ("--> %s 0x%08"PFMT64x" syscall %d %s (", sysreg,
 			r_debug_reg_get (dbg, "PC"), reg, sysname);
-	for (i=0; i<args; i++) {
-		ut64 val;
-		snprintf (regname, sizeof (regname)-1, "A%d", i);
-		val = r_debug_reg_get (dbg, regname);
+	for (i = 0; i < args; i++) {
+		snprintf (regname, sizeof (regname) - 1, "A%d", i);
+		ut64 val = r_debug_reg_get (dbg, regname);
 		if (((st64)val<0) && ((st64)val>-0xffff)) {
 			eprintf ("%"PFMT64d"%s", val, (i+1==args)?"":" ");
 		} else {
@@ -1541,9 +1540,11 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 	return reg;
 }
 
+// R2_580 R_API bool r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
+	r_return_val_if_fail (dbg, false);
 	int i, err, reg, ret = false;
-	if (!dbg || !dbg->h || r_debug_is_dead (dbg)) {
+	if (!dbg->h || r_debug_is_dead (dbg)) {
 		return false;
 	}
 	if (!dbg->h->contsc) {
@@ -1553,12 +1554,12 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	}
 
 	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
-		eprintf ("--> cannot read registers\n");
+		R_LOG_ERROR ("--> cannot read registers");
 		return -1;
 	}
 	reg = (int)r_debug_reg_get_err (dbg, "SN", &err, NULL);
 	if (err) {
-		eprintf ("Cannot find 'sn' register for current arch-os.\n");
+		R_LOG_ERROR ("Cannot find 'sn' register for current arch-os");
 		return -1;
 	}
 	for (;;) {
@@ -1587,7 +1588,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		}
 #endif
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
-			eprintf ("--> cannot sync regs, process is probably dead\n");
+			R_LOG_ERROR ("cannot sync regs, process is probably dead");
 			return -1;
 		}
 		reg = show_syscall (dbg, "SN");
@@ -1622,7 +1623,7 @@ R_API int r_debug_syscall(RDebug *dbg, int num) {
 	if (dbg->h->contsc) {
 		ret = dbg->h->contsc (dbg, dbg->pid, num);
 	}
-	eprintf ("TODO: show syscall information\n");
+	R_LOG_TODO ("show syscall information");
 	/* r2rc task? ala inject? */
 	return (int)ret;
 }
@@ -1637,7 +1638,7 @@ R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig) {
 		}
 		return -1;
 	}
-	eprintf ("Backend does not implement kill()\n");
+	R_LOG_WARN ("this debugger backend does not implement kill");
 	return false;
 }
 

@@ -54,7 +54,7 @@ R_API void r_debug_signal_init(RDebug *dbg) {
 	int i;
 	// XXX
 	DB = sdb_new (NULL, "signals", 0);
-	for (i=0; signals[i].k; i++) {
+	for (i = 0; signals[i].k; i++) {
 		sdb_set (DB, signals[i].k, signals[i].v, 0);
 		sdb_set (DB, signals[i].v, signals[i].k, 0);
 	}
@@ -157,7 +157,7 @@ R_API RList *r_debug_kill_list(RDebug *dbg) {
 }
 
 R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action) {
-	eprintf ("TODO: set signal handlers of child\n");
+	R_LOG_TODO ("set signal handlers of child");
 	// TODO: must inject code to call signal()
 #if 0
 	if (dbg->h->kill_setup)

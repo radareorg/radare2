@@ -59,6 +59,12 @@ all: plugins.cfg libr/include/r_version.h
 GIT_TAP=$(shell git describe --tags --match '[0-9]*' 2>/dev/null)
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo $(R2_VERSION))
 R2_VER=$(shell ./configure -qV)
+ifeq ($(GIT_TAP),)
+GIT_TAP=$(R2_VER)
+endif
+ifeq ($(GIT_TIP),)
+GIT_TIP=$(R2_VER)
+endif
 ifdef SOURCE_DATE_EPOCH
 GIT_NOW=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u "+%Y-%m-%d")
 else

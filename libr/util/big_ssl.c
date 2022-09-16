@@ -1,5 +1,6 @@
 #include <r_util.h>
 
+#if HAVE_LIB_SSL
 R_API RNumBig *r_big_new(void) {
 	return BN_new ();
 }
@@ -256,3 +257,4 @@ R_API void r_big_isqrt(RNumBig *b, RNumBig *a) {
 	r_big_free (high);
 	r_big_free (mid);
 }
+#endif

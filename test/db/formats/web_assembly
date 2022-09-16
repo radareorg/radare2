@@ -87,46 +87,26 @@ NAME=WASM: Functions are renamed from custom name section
 FILE=bins/wasm/sections.wasm
 CMDS=aa;afl
 EXPECT=<<EOF
-0x00000207    1 3            entry0
-0x00000516    1 19           sym.emscripten_stack_init
-0x0000023d    3 209          sym.main
-0x0000032d    1 126          sym.atoi_via_import
-0x000003b9    1 54           sym.static_int_sum
-0x000003f3    3 14           fcn.000003f3
-0x000004ab    1 3            sym.__original_main
-0x00000415    6 148          sym.__main_void
-0x000004df    1 12           sym.exit
-0x000004b0    1 1            sym.dummy
-0x000004b5    3 40           sym.libc_exit_fini
-0x000004ed    1 6            sym._Exit
-0x00000403    1 7            sym.main_2e_1
-0x000004f5    1 3            sym.stackSave
-0x000004fa    1 5            sym.stackRestore
-0x00000505    1 15           sym.stackAlloc
-0x0000052b    1 6            sym.emscripten_stack_get_free
-0x00000533    1 3            sym.emscripten_stack_get_base
-0x00000538    1 3            sym.emscripten_stack_get_end
-0x0000053d    1 4            sym.__errno_location
-EOF
-RUN
-
-NAME=WASM Export functions with custom section
-FILE=bins/wasm/sections.wasm
-CMDS=iE
-EXPECT=<<EOF
-[Exports]
-
-nth paddr      vaddr      bind   type size lib name
----------------------------------------------------
-8   0x000003f1 0x000003f1 GLOBAL FUNC 16       _start
-16  0x000004f5 0x000004f5 GLOBAL FUNC 3        stackSave
-17  0x000004fa 0x000004fa GLOBAL FUNC 5        stackRestore
-18  0x00000505 0x00000505 GLOBAL FUNC 15       stackAlloc
-19  0x00000516 0x00000516 GLOBAL FUNC 19       emscripten_stack_init
-20  0x0000052b 0x0000052b GLOBAL FUNC 6        emscripten_stack_get_free
-21  0x00000533 0x00000533 GLOBAL FUNC 3        emscripten_stack_get_base
-22  0x00000538 0x00000538 GLOBAL FUNC 3        emscripten_stack_get_end
-23  0x0000053d 0x0000053d GLOBAL FUNC 4        __errno_location
+0x00000207    1      3 entry0
+0x00000516    1     19 sym.emscripten_stack_init
+0x0000023d    3    209 sym.main
+0x0000032d    1    126 sym.atoi_via_import
+0x000003b9    1     54 sym.static_int_sum
+0x000003f3    3     14 fcn.000003f3
+0x000004ab    1      3 sym.__original_main
+0x00000415    6    148 sym.__main_void
+0x000004df    1     12 sym.exit
+0x000004b0    1      1 sym.dummy
+0x000004b5    3     40 sym.libc_exit_fini
+0x000004ed    1      6 sym._Exit
+0x00000403    1      7 sym.main_2e_1
+0x000004f5    1      3 sym.stackSave
+0x000004fa    1      5 sym.stackRestore
+0x00000505    1     15 sym.stackAlloc
+0x0000052b    1      6 sym.emscripten_stack_get_free
+0x00000533    1      3 sym.emscripten_stack_get_base
+0x00000538    1      3 sym.emscripten_stack_get_end
+0x0000053d    1      4 sym.__errno_location
 EOF
 RUN
 
@@ -197,5 +177,47 @@ pd 2~sym.static_int_sum[4]
 EOF
 EXPECT=<<EOF
 0x3b9
+EOF
+RUN
+
+NAME=WASM check all symbols
+FILE=bins/wasm/sections.wasm
+CMDS=<<EOF
+is
+EOF
+EXPECT=<<EOF
+[Symbols]
+
+nth paddr      vaddr      bind   type size lib                    name
+----------------------------------------------------------------------
+0   ---------- ---------- NONE   FUNC 0    env                    imp.emscripten_asm_const_int
+1   ---------- ---------- NONE   FUNC 0    wasi_snapshot_preview1 imp.args_sizes_get
+2   ---------- ---------- NONE   FUNC 0    wasi_snapshot_preview1 imp.args_get
+3   ---------- ---------- NONE   FUNC 0    wasi_snapshot_preview1 imp.proc_exit
+4   0x00000207 0x00000207 NONE   FUNC 3                           __wasm_call_ctors
+5   0x0000023d 0x0000023d NONE   FUNC 209                         main
+6   0x0000032d 0x0000032d NONE   FUNC 126                         atoi_via_import
+7   0x000003b9 0x000003b9 NONE   FUNC 54                          static_int_sum
+8   0x000003f1 0x000003f1 GLOBAL FUNC 16                          _start
+9   0x00000403 0x00000403 NONE   FUNC 7                           main_2e_1
+10  0x00000415 0x00000415 NONE   FUNC 148                         __main_void
+11  0x000004ab 0x000004ab NONE   FUNC 3                           __original_main
+12  0x000004b0 0x000004b0 NONE   FUNC 1                           dummy
+13  0x000004b5 0x000004b5 NONE   FUNC 40                          libc_exit_fini
+14  0x000004df 0x000004df NONE   FUNC 12                          exit
+15  0x000004ed 0x000004ed NONE   FUNC 6                           _Exit
+16  0x000004f5 0x000004f5 GLOBAL FUNC 3                           stackSave
+17  0x000004fa 0x000004fa GLOBAL FUNC 5                           stackRestore
+18  0x00000505 0x00000505 GLOBAL FUNC 15                          stackAlloc
+19  0x00000516 0x00000516 GLOBAL FUNC 19                          emscripten_stack_init
+20  0x0000052b 0x0000052b GLOBAL FUNC 6                           emscripten_stack_get_free
+21  0x00000533 0x00000533 GLOBAL FUNC 3                           emscripten_stack_get_base
+22  0x00000538 0x00000538 GLOBAL FUNC 3                           emscripten_stack_get_end
+23  0x0000053d 0x0000053d GLOBAL FUNC 4                           __errno_location
+0   0x000000f8 0x000000f8 NONE   i32  4                           global.0
+1   0x00000100 0x00000100 NONE   i32  4                           global.1
+2   0x00000105 0x00000105 NONE   i32  4                           global.2
+3   0x0000010a 0x0000010a NONE   i32  4                           global.3
+4   0x00000110 0x00000110 NONE   i32  4                           global.4
 EOF
 RUN

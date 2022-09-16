@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2021 - condret, pancake */
+/* radare2 - LGPL - Copyright 2017-2022 - condret, pancake */
 
 #ifndef R2_IO_H
 #define R2_IO_H
@@ -235,7 +235,7 @@ typedef struct r_io_cache_t {
 	int written;
 } RIOCache;
 
-#define R_IO_DESC_CACHE_SIZE (sizeof(ut64) * 8)
+#define R_IO_DESC_CACHE_SIZE (sizeof (ut64) * 8)
 typedef struct r_io_desc_cache_t {
 	ut64 cached;
 	ut8 cdata[R_IO_DESC_CACHE_SIZE];
@@ -386,7 +386,7 @@ R_API void r_io_bank_drain(RIO *io, const ut32 bankid);
 
 //io.c
 R_API RIO *r_io_new(void);
-R_API RIO *r_io_init(RIO *io);
+R_API void r_io_init(RIO *io);
 R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode);		//should return int
 R_API RIODesc *r_io_open(RIO *io, const char *uri, int flags, int mode);
 R_API RIODesc *r_io_open_at(RIO *io, const char *uri, int flags, int mode, ut64 at);
@@ -585,8 +585,10 @@ extern RIOPlugin r_io_plugin_winedbg;
 extern RIOPlugin r_io_plugin_gprobe;
 extern RIOPlugin r_io_plugin_fd;
 extern RIOPlugin r_io_plugin_socket;
+extern RIOPlugin r_io_plugin_xattr;
 extern RIOPlugin r_io_plugin_isotp;
 extern RIOPlugin r_io_plugin_xalz;
+extern RIOPlugin r_io_plugin_reg;
 
 #if __cplusplus
 }

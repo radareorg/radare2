@@ -122,8 +122,7 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 		addr = r_num_get (NULL, p);
 		addr2 = r_num_get (NULL, p2);
 		r_range_add (rgs, addr, addr2, 1);
-	} else
-	if (p) {
+	} else if (p) {
 		addr = r_num_get (NULL, p);
 		r_range_add (rgs, addr, addr + 1, 1);
 	}

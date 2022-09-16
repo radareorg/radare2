@@ -5,8 +5,8 @@
 #define VERIFY_OFFSET                   36
 
 #define QNX_MAX_REC_SIZE                (0x8000 - 512) // was 0xFFFF
-#define QNX_MAX_DATA_SIZE               (QNX_MAX_REC_SIZE - sizeof(lmf_data))
-#define VERIFY_END                      (VERIFY_OFFSET + sizeof(RWEndRec.verify))
+#define QNX_MAX_DATA_SIZE               (QNX_MAX_REC_SIZE - sizeof (lmf_data))
+#define VERIFY_END                      (VERIFY_OFFSET + sizeof (RWEndRec.verify))
 #define QNX_MAX_FIXUPS                  (0x8000 - 512)
 
 #define QNX_MAGIC                       "\x00\x00\x38\x00\x00\x00"

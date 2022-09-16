@@ -141,7 +141,7 @@ static int __open_proc(RIO *io, int pid, bool attach) {
 	RW32Dw *wrap = (RW32Dw *)io->dbgwrap;
 	wrap->pi.dwProcessId = pid;
 	if (attach) {
-		/* Attach to the process */	
+		/* Attach to the process */
 		wrap->params.type = W32_ATTACH;
 		r_w32dw_waitret (wrap);
 		if (!r_w32dw_ret (wrap)) {
@@ -240,13 +240,13 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				if (ht) {
 					wrap->pi.hThread = ht;
 				} else {
-					eprintf ("Cannot attach to %d (%s)\n", pid, cmd);
+					R_LOG_ERROR ("Cannot attach to %d (%s)", pid, cmd);
 				}
 			}
 		}
 		return r_str_newf ("%lu", wrap->pi.dwProcessId);
 	} else {
-		eprintf ("Try: '=!pid'\n");
+		eprintf ("Try: ':pid'\n");
 	}
 	return NULL;
 }

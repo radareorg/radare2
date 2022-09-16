@@ -1,3 +1,4 @@
+ecd
 ec comment cyan
 ec usrcmt cyan
 ec args cyan
@@ -35,7 +36,7 @@ ec swi black yellow
 ec cmp cyan
 ec reg rgb:f0f0f0
 ec creg yellow
-ec num yellow
+ec num yellow black
 ec mov rgb:d0d0d0
 ec func_var white
 ec func_var_type yellow

@@ -125,7 +125,7 @@ static int decode_reg_reg(const ut16 instr, struct v810_cmd *cmd) {
 
 	opcode = OPCODE(instr);
 
-	if (opcode >= sizeof(instrs) / sizeof(char *)) {
+	if (opcode >= sizeof (instrs) / sizeof (char *)) {
 		return -1;
 	}
 
@@ -148,7 +148,7 @@ static int decode_imm_reg(const ut16 instr, struct v810_cmd *cmd) {
 
 	opcode = OPCODE(instr);
 
-	if (opcode >= sizeof(instrs) / sizeof(char *)) {
+	if (opcode >= sizeof (instrs) / sizeof (char *)) {
 		return -1;
 	}
 

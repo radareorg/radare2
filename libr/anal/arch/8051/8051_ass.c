@@ -88,7 +88,7 @@
  *               ------- -------------*/
 
 static bool parse_hexadecimal(char const* hexstr, ut16* out) {
-	if ( !hexstr || hexstr[0] != '0'
+	if (!hexstr || hexstr[0] != '0'
 		|| !(hexstr[1] == 'x' || hexstr[1] == 'X')) {
 		return false;
 	}
@@ -96,11 +96,11 @@ static bool parse_hexadecimal(char const* hexstr, ut16* out) {
 	char const*p;
 	for (p = hexstr + 2; p < hexstr + 6 && *p ; p += 1) {
 		*out <<= 4;
-		if ( '0' <= *p && *p <= '9' ) {
+		if ('0' <= *p && *p <= '9' ) {
 			*out |= *p - '0';
-		} else if ( 'a' <= *p && *p <= 'f' ) {
+		} else if ('a' <= *p && *p <= 'f' ) {
 			*out |= *p - 'a' + 10;
-		} else if ( 'A' <= *p && *p <= 'F' ) {
+		} else if ('A' <= *p && *p <= 'F' ) {
 			*out |= *p - 'A' + 10;
 		} else {
 			return false;
@@ -319,7 +319,7 @@ static parse_mnem_args match_prefix_f(int*args, char const*str, ftable const tbl
  */
 static bool is_indirect_reg(char const*str)
 {
-	if ( !str) {
+	if (!str) {
 		return false;
 	}
 
@@ -1191,17 +1191,17 @@ static bool mnem_jmp(char const*const*arg, ut16 pc, ut8**out) {
 		return false;
 	}
 	ut16 reladdr;
-	if ( pc < address ) {
+	if (pc < address ) {
 		reladdr = address - pc;
 	}
 	else {
 		reladdr = pc - address;
 	}
 
-	if ( reladdr < 0x100 ) {
+	if (reladdr < 0x100 ) {
 		return mnem_sjmp (arg, pc, out);
 	}
-	else if ( reladdr < 0x08FF ) {
+	else if (reladdr < 0x08FF ) {
 		return mnem_ajmp (arg, pc, out);
 	}
 	else {

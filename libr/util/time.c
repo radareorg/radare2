@@ -51,7 +51,7 @@ R_API ut64 r_time_now_mono(void) {
 }
 
 // R_API char *r_time_stamp_to_str(ut32 timeStamp) {
-R_API char *r_time_stamp_to_str(time_t timeStamp) {
+R_API R_MUSTUSE char *r_time_stamp_to_str(time_t timeStamp) {
 #if __WINDOWS__
 	time_t rawtime;
 	struct tm *tminfo;
@@ -104,7 +104,7 @@ R_API ut32 r_time_dos_time_stamp_to_posix(ut32 timeStamp) {
 	t.tm_isdst = -1;
 	time_t epochTime = mktime (&t);
 
-	return (ut32) epochTime;
+	return (ut32) (epochTime & UT32_MAX);
 }
 
 R_API bool r_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const ut32 possiblePosixOrDosTimeStamp) {
@@ -117,10 +117,9 @@ R_API bool r_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const ut
 
 
 R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len) {
-	if(len < 4) {
+	if (len < 4) {
 		return 0;
 	}
-
 	ut32 dt = buf[3] << 24 | buf[2] << 16 | buf[1] << 8 | buf[0];
 	char *s = r_time_stamp_to_str (r_time_dos_time_stamp_to_posix (dt));
 	if (!s) {

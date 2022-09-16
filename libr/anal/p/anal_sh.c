@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 eloi<limited-entropy.com> */
+/* radare - LGPL - Copyright 2010-2022 eloi <limited-entropy.com> */
 
 #include <r_lib.h>
 #include <r_asm.h>
@@ -218,7 +218,7 @@ static RAnalValue *anal_fill_im(RAnal *anal, st32 v) {
 	return ret;
 }
 
-/* Implements @(disp,Rn) , size=1 for .b, 2 for .w, 4 for .l */
+/* Implements @(disp,Rn), size = 1 for .b, 2 for .w, 4 for .l */
 static RAnalValue *anal_fill_reg_disp_mem(RAnal *anal, int reg, st64 delta, st64 size) {
 	RAnalValue *ret = anal_fill_ai_rg (anal, reg);
 	ret->memref = size;
@@ -281,14 +281,14 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->delay = 1;
 		op->eob = true;
-		r_strbuf_setf (&op->esil, "pr,pc,=");
+		r_strbuf_set (&op->esil, "pr,pc,=");
 	} else if (IS_RTE (code)) {
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->delay = 1;
 		op->eob = true;
-		//r_strbuf_setf (&op->esil, "1,SETD,r15,[4],4,+,pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
+		// r_strbuf_set (&op->esil, "1,SETD,r15,[4],4,+,pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
 		//not sure if should be added 4 to pc
-		r_strbuf_setf (&op->esil, "1,SETD,r15,[4],pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
+		r_strbuf_set (&op->esil, "1,SETD,r15,[4],pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
 	} else if (IS_MOVB_REG_TO_R0REL (code)) {	//0000nnnnmmmm0100 mov.b <REG_M>,@(R0,<REG_N>)
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -321,19 +321,19 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		r_strbuf_setf (&op->esil, "r0,r%d,+,[4],r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_NOP (code)) {
 		op->type = R_ANAL_OP_TYPE_NOP;
-		r_strbuf_setf (&op->esil, " ");
+		r_strbuf_set (&op->esil, " ");
 	} else if (IS_CLRT (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=");
+		r_strbuf_set (&op->esil, "0xFFFFFFFE,sr,&=");
 	} else if (IS_SETT (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
-		r_strbuf_setf (&op->esil, "0x1,sr,|=");
+		r_strbuf_set (&op->esil, "0x1,sr,|=");
 	} else if (IS_CLRMAC (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
-		r_strbuf_setf (&op->esil, "0,mach,=,0,macl,=");
+		r_strbuf_set (&op->esil, "0,mach,=,0,macl,=");
 	} else if (IS_DIV0U (code)) {
 		op->type = R_ANAL_OP_TYPE_DIV;
-		r_strbuf_setf (&op->esil, "0xFFFFFCFE,sr,&=");
+		r_strbuf_set (&op->esil, "0xFFFFFCFE,sr,&=");
 	} else if (IS_MOVT (code)) {
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
@@ -345,7 +345,7 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		r_strbuf_setf (&op->esil, "r%d,r%d,*,macl,=", GET_TARGET_REG (code), GET_SOURCE_REG (code));
 	} else if (IS_SLEEP (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
-		r_strbuf_setf (&op->esil, "sleep_called,TRAP");
+		r_strbuf_set (&op->esil, "sleep_called,TRAP");
 	} else if (IS_STSMACH (code)) {	//0000nnnn0000101_ sts MAC*,<REG_N>
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
@@ -375,7 +375,6 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		default:
 			r_strbuf_setf (&op->esil, "%s", "");
 			break;
-
 		}
 	} else if (IS_STSPR (code)) {	//0000nnnn00101010 sts PR,<REG_N>
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -412,7 +411,7 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 	return op->size;
 }
 
-//nibble=1; 0001nnnnmmmmi4*4 mov.l <REG_M>,@(<disp>,<REG_N>)
+//nibble = 1; 0001nnnnmmmmi4*4 mov.l <REG_M>,@(<disp>,<REG_N>)
 static int movl_reg_rdisp(RAnal* anal, RAnalOp* op, ut16 code) {
 	op->type = R_ANAL_OP_TYPE_STORE;
 	op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -732,7 +731,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 	} else if (IS_DT (code)) {
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,1,r%d,-=,$z,sr,|,sr,:=", GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_UNK;
-	} else if (IS_MACW(code)){
+	} else if (IS_MACW(code)) {
 		r_strbuf_setf (&op->esil,
 			"0x2,sr,&,!,?{," //if S==0
 				S16_EXT("r%d,[2]")"," //@Rn sign extended
@@ -746,7 +745,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 				"*,"
 				"0xffffffff00000000,&,>>,mach,=," //MACH > mach
 				"0xffffffff,&,macl,=,"
-			"}{," //if S==1
+			"}{," //if S == 1
 				S16_EXT("r%d,[2]")"," //@Rn sign extended
 				S16_EXT("r%d,[2]")"," //@Rm sign extended
 				"*"
@@ -778,7 +777,6 @@ static int movl_rdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	r_strbuf_setf (&op->esil, "r%d,0x%x,+,[4],r%d,=", GET_SOURCE_REG (code), (code&0xF) * 4, GET_TARGET_REG (code));
 	return op->size;
 }
-
 
 static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
 	if (IS_MOV_REGS (code)) {
@@ -820,7 +818,7 @@ static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
 			r_strbuf_setf (&op->esil, "r%d,0xFFFF,&,DUP,0x8000,&,?{,0xFFFF0000,|,},r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 			break;
 		default:
-			r_strbuf_setf (&op->esil, "TODO,NOT IMPLEMENTED");
+			r_strbuf_set (&op->esil, "TODO,NOT IMPLEMENTED");
 			break;
 		}
 	} else if (IS_MOVB_POP (code)) {
@@ -927,7 +925,7 @@ static int movw_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	op->src[0] = r_anal_value_new ();
 	op->src[0]->base = (code & 0xFF) * 2+op->addr + 4;
-	op->src[0]->memref=1;
+	op->src[0]->memref = 1;
 	r_strbuf_setf (&op->esil, "0x%" PFMT64x ",[2],r%d,=,r%d,0x8000,&,?{,0xFFFF0000,r%d,|=,}", op->src[0]->base, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 	return op->size;
 }

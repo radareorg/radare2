@@ -464,14 +464,14 @@ static void linux_dbg_wait_break_main(RDebug *dbg) {
 	// in another process group.
 	if (dpgid != tpgid) {
 		if (!linux_kill_thread (dbg->pid, SIGINT)) {
-			eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
+			R_LOG_ERROR ("Could not interrupt pid (%d)", dbg->pid);
 		}
 	}
 }
 
 static void linux_dbg_wait_break(RDebug *dbg) {
 	if (!linux_kill_thread (dbg->pid, SIGINT)) {
-		eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
+		R_LOG_ERROR ("Could not interrupt pid (%d)", dbg->pid);
 	}
 }
 
@@ -670,13 +670,13 @@ static bool linux_attach_single_pid(RDebug *dbg, int pid) {
 		// Make sure SIGSTOP is delivered and wait for it since we can't affect the pid
 		// until it hits SIGSTOP.
 		if (!linux_stop_thread (dbg, pid)) {
-			eprintf ("Could not stop pid (%d)\n", pid);
+			R_LOG_ERROR ("Could not stop pid (%d)", pid);
 			return false;
 		}
 	}
 
 	if (!linux_set_options (dbg, pid)) {
-		eprintf("failed set_options on %d\n", pid);
+		R_LOG_ERROR("failed set_options on %d", pid);
 		return false;
 	}
 	dbg->pid = pid;
@@ -922,7 +922,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 #define MAXPID 99999
 		/* otherwise, brute force the pids */
 		for (i = pid; i < MAXPID; i++) { // XXX
-			if (procfs_pid_slurp (i, "status", buf, sizeof(buf)) == -1) {
+			if (procfs_pid_slurp (i, "status", buf, sizeof (buf)) == -1) {
 				continue;
 			}
 			int uid = 0;
@@ -940,9 +940,9 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 					continue;
 				}
 
-				if (procfs_pid_slurp (i, "comm", buf, sizeof(buf)) == -1) {
+				if (procfs_pid_slurp (i, "comm", buf, sizeof (buf)) == -1) {
 					/* fall back to auto-id */
-					snprintf (buf, sizeof(buf), "thread_%d", thid++);
+					snprintf (buf, sizeof (buf), "thread_%d", thid++);
 				}
 				r_list_append (list, r_debug_pid_new (buf, i, uid, 's', 0));
 			}
@@ -970,7 +970,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 	r_cons_printf ("foo = 0x%04lx          \n", (fpregs).foo);\
 	r_cons_printf ("fos = 0x%04lx              ", (fpregs).fos)
 
-static void print_fpu(void *f){
+static void print_fpu(void *f) {
 #if __x86_64__
 	int i,j;
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
@@ -1214,7 +1214,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		struct _xstate xstate;
 		struct iovec iov = {};
 		iov.iov_base = &xstate;
-		iov.iov_len = sizeof(struct _xstate);
+		iov.iov_len = sizeof (struct _xstate);
 		ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)NT_X86_XSTATE, &iov);
 		if (errno == ENODEV) {
 			// ignore ENODEV, it just means this CPU or kernel doesn't support XSTATE
@@ -1229,7 +1229,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		// stitch together xstate.fpstate._xmm and xstate.ymmh assuming LE
 		int ri,rj;
 		for (ri = 0; ri < 16; ri++)	{
-			for (rj=0; rj < 4; rj++)	{
+			for (rj = 0; rj < 4; rj++)	{
 #ifdef __ANDROID__
 				ymm_space[ri*8+rj] = ((struct _libc_fpstate*) &xstate.fpstate)->_xmm[ri].element[rj];
 #else
@@ -1264,7 +1264,7 @@ int linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 			}
 			if (r_debug_ptrace (dbg, PTRACE_POKEUSER, pid,
 					(void *)r_offsetof (struct user, u_debugreg[i]), (r_ptrace_data_t)val[i])) {
-				eprintf ("ptrace error for dr %d\n", i);
+				R_LOG_ERROR ("ptrace failed for dr %d", i);
 				r_sys_perror ("ptrace POKEUSER");
 			}
 		}

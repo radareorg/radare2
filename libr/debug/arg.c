@@ -15,14 +15,14 @@ R_API ut64 r_debug_arg_get(RDebug *dbg, const char *cc, int num) {
 					ut64 n64;
 					sp += 8; // skip return address, assume we are inside the call
 					sp += 8 * num;
-					dbg->iob.read_at (dbg->iob.io, sp, (ut8*)&n64, sizeof(ut64));
+					dbg->iob.read_at (dbg->iob.io, sp, (ut8*)&n64, sizeof (ut64));
 					// TODO: honor endianness of platform
 					return (ut64)n64;
 				} else {
 					sp += 4; // skip return address, assume we are inside the call
 					sp += 4 * num;
 					ut32 n32;
-					dbg->iob.read_at (dbg->iob.io, sp, (ut8*)&n32, sizeof(ut32));
+					dbg->iob.read_at (dbg->iob.io, sp, (ut8*)&n32, sizeof (ut32));
 					// TODO: honor endianness of platform
 					return (ut64)n32;
 				}

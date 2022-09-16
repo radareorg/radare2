@@ -167,7 +167,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	if (!IS_NULLSTR (str)) {
 		str = r_str_trim_head_ro (str);
 		len = strlen (str);
-		if (len > 0 && str[0] == 'j') {
+		if (len > 0 && (str[0] == 'j' || str[0] == 'J')) {
 			str++;
 			len--;
 			json = true;
@@ -400,19 +400,28 @@ R_API RConfigNode* r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue,
 	return node;
 }
 
+R_API RConfigNode* r_config_set_b_cb(RConfig *cfg, const char *name, bool ivalue, RConfigCallback cb) {
+	RConfigNode *node = r_config_set_b (cfg, name, ivalue);
+	if (node && (node->setter = cb)) {
+		if (!node->setter (cfg->user, node)) {
+			return NULL;
+		}
+	}
+	return node;
+}
+
 static inline bool is_true_or_false(const char *s) {
 	return s && (!r_str_casecmp (s, "true") || !r_str_casecmp (s, "false"));
 }
 
 /* TODO: reduce number of strdups here */
 R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *value) {
-	RConfigNode *node = NULL;
 	char *ov = NULL;
 	ut64 oi;
 	r_return_val_if_fail (cfg && cfg->ht, NULL);
 	r_return_val_if_fail (!IS_NULLSTR (name), NULL);
 
-	node = r_config_node_get (cfg, name);
+	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		if (r_config_node_is_ro (node)) {
 			R_LOG_ERROR ("Key '%s' is readonly", name);
@@ -538,10 +547,28 @@ R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i
 
 R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b) {
 	RConfigNode *node = r_config_node_get (cfg, name);
-	if (node && r_config_node_is_bool (node)) {
+	if (node) {
+		if (r_config_node_is_ro (node)) {
+			return NULL;
+		}
+		if (!r_config_node_is_bool (node)) {
+			R_LOG_WARN ("This node is not boolean");
+			return NULL;
+		}
 		return r_config_set_i (cfg, name, b? 1: 0);
+	} else {
+		node = r_config_node_new (name, r_str_bool (b));
+		if (!node) {
+			return NULL;
+		}
+		node->flags = CN_RW | CN_BOOL;
+		node->i_value = b;
+		ht_pp_insert (cfg->ht, node->name, node);
+		if (cfg->nodes) {
+			r_list_append (cfg->nodes, node);
+		}
 	}
-	return NULL;
+	return node;
 }
 
 R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) {
@@ -641,7 +668,8 @@ R_API bool r_config_eval(RConfig *cfg, const char *str, bool many) {
 	if (many) {
 		// space separated list of k=v k=v,..
 		// if you want to use spaces go for base64 or e.
-		RList *list = r_str_split_list (s, ",", 0);
+		const char *ch = strstr (s, ":")? ":": ","; // R2_580 change to only use ':' imho
+		RList *list = r_str_split_list (s, ch, 0);
 		RListIter *iter;
 		char *name;
 		r_list_foreach (list, iter, name) {

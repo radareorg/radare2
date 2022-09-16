@@ -426,6 +426,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 	while (!r_list_empty (block->fcns)) {
 		RAnalFunction *other_fcn = r_list_first (block->fcns);
 		if (other_fcn->addr == block->addr) {
+			r_anal_block_unref (block);
 			return false;
 		}
 		// Steal vars from this block
@@ -944,7 +945,7 @@ repeat:
 				if ((buf[2] == 0xff || buf[2] == 0xfe) && buf[3] == 0xff) {
 					leaddr_pair *pair = R_NEW (leaddr_pair);
 					if (!pair) {
-						eprintf ("Cannot create leaddr_pair\n");
+						R_LOG_ERROR ("Cannot create leaddr_pair");
 						gotoBeach (R_ANAL_RET_ERROR);
 					}
 					pair->op_addr = op->addr;
@@ -965,7 +966,7 @@ repeat:
 			if (op->ptr != UT64_MAX) {
 				leaddr_pair *pair = R_NEW (leaddr_pair);
 				if (!pair) {
-					eprintf ("Cannot create leaddr_pair\n");
+					R_LOG_ERROR ("Cannot create leaddr_pair");
 					gotoBeach (R_ANAL_RET_ERROR);
 				}
 				pair->op_addr = op->addr;
@@ -1676,6 +1677,7 @@ R_API RAnalFunction *r_anal_get_function_byname(RAnal *a, const char *name) {
 }
 
 /* rename RAnalFunctionBB.add() */
+// R2580 - R_API bool r_anal_function_add_new_block(RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff) {
 R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff) {
 	if (size == 0) { // empty basic blocks allowed?
 		R_LOG_WARN ("empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion", addr);
@@ -1715,7 +1717,6 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 	r_anal_function_add_block (fcn, block);
 
 	block->jump = jump;
-	block->fail = fail;
 	block->fail = fail;
 	if (diff) {
 		if (!block->diff) {
@@ -1803,7 +1804,7 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	} else {
 		realname = function->name;
 	}
-	
+
 	char *args = strdup ("");
 	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
 	char *sdb_args = r_str_newf ("func.%s.args", realname);
@@ -2296,7 +2297,7 @@ static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 			fcn->ninstr -= bb->ninstr;
 			r_anal_function_remove_block (fcn, bb);
 		}
-		
+
 		RList *bbs = r_list_clone (fcn->bbs);
 		r_anal_block_automerge (bbs);
 		r_anal_function_delete_unused_vars (fcn);
@@ -2309,7 +2310,7 @@ static void calc_reachable_and_remove_block(RList *fcns, RAnalFunction *fcn, RAn
 	clear_bb_vars (fcn, bb, bb->addr, bb->addr + bb->size);
 	if (!r_list_contains (fcns, fcn)) {
 		r_list_append (fcns, fcn);
-		
+
 		// Calculate reachable blocks from the start of function
 		HtUP *ht = ht_up_new0 ();
 		BlockRecurseCtx ctx = { fcn, ht };
@@ -2334,12 +2335,12 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 	HtUP *reachable = ht_up_new (NULL, free_ht_up, NULL);
 	const int align = r_anal_archinfo (anal, R_ANAL_ARCHINFO_ALIGN);
 	const ut64 end_write = addr + size;
-	
+
 	r_list_foreach (blocks, it, bb) {
 		if (!r_anal_block_was_modified (bb)) {
 			continue;
 		}
-		r_list_foreach_safe (bb->fcns, it2, tmp, fcn) {			
+		r_list_foreach_safe (bb->fcns, it2, tmp, fcn) {
 			if (align > 1) {
 				if ((end_write < r_anal_bb_opaddr_i (bb, bb->ninstr - 1))
 					&& (!bb->switch_op || end_write < bb->switch_op->addr)) {

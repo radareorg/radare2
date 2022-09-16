@@ -43,7 +43,7 @@ static void loadGP(RCore *core) {
 			r_config_set (core->config, "anal.roregs", "zero,gp");
 			gp = r_reg_getv (core->anal->reg, "gp");
 		}
-		// eprintf ("[mips] gp: 0x%08"PFMT64x"\n", gp);
+		R_LOG_DEBUG ("[mips] gp: 0x%08"PFMT64x, gp);
 		r_config_set_i (core->config, "anal.gp", gp);
 	}
 }
@@ -147,8 +147,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 			}
 		}
 		r_io_fd_close (core->io, odesc->fd);
-		eprintf ("File %s reopened in %s mode\n", path,
-			(perm & R_PERM_W)? "read-write": "read-only");
+		R_LOG_INFO ("File %s reopened in %s mode", path, (perm & R_PERM_W)? "read-write": "read-only");
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
 			ut64 baddr;
 			if (isdebug) {
@@ -253,6 +252,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 			}
 		}
 	}
+	r_sys_setenv ("R2PM_NATIVE", "1");
 	r_sys_setenv ("R2_OFFSET", r_strf ("%"PFMT64d, core->offset));
 	r_sys_setenv ("R2_XOFFSET", r_strf ("0x%08"PFMT64x, core->offset));
 	r_sys_setenv ("R2_ENDIAN", core->rasm->config->big_endian? "big": "little");
@@ -338,20 +338,20 @@ static bool setbpint(RCore *r, const char *mode, const char *sym) {
 #endif
 		return true;
 	}
-	eprintf ("Cannot set breakpoint at %s\n", sym);
+	R_LOG_ERROR ("Cannot set breakpoint at %s", sym);
 	return false;
 }
 #endif
 
 // XXX - need to handle index selection during debugging
-static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *filenameuri) {
+static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, R_NULLABLE const char *filenameuri) {
 	RIODesc *desc = r->io->desc;
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin;
 	int xtr_idx = 0; // if 0, load all if xtr is used
 
 	// TODO : Honor file.path eval var too?
-	if (!strncmp ("dbg://", filenameuri, 6)) {
+	if (filenameuri && r_str_startswith (filenameuri, "dbg://")) {
 		filenameuri += 6;
 	}
 	if (!desc) {
@@ -372,8 +372,8 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	r_bin_file_options_init (&opt, fd, baseaddr, UT64_MAX, false);
 	opt.xtr_idx = xtr_idx;
 	if (!r_bin_open (r->bin, filenameuri, &opt)) {
-		eprintf ("RBinLoad: Cannot open %s\n", filenameuri);
-		if (r_config_get_i (r->config, "bin.rawstr")) {
+		R_LOG_ERROR ("bin.open failed %s", filenameuri);
+		if (r_config_get_b (r->config, "bin.rawstr")) {
 			r_bin_file_options_init (&opt, fd, baseaddr, UT64_MAX, true);
 			opt.xtr_idx = xtr_idx;
 			if (!r_bin_open (r->bin, filenameuri, &opt)) {
@@ -399,7 +399,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	if (plugin && !strcmp (plugin->name, "any")) {
 		// set use of raw strings
 		// r_config_set_i (r->config, "io.va", false);
-		//\\ r_config_set (r->config, "bin.rawstr", "true");
+		// r_config_set_b (r->config, "bin.rawstr", true);
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
@@ -453,7 +453,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		// set use of raw strings
 		r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 		// r_config_set_i (r->config, "io.va", false);
-		// r_config_set (r->config, "bin.rawstr", "true");
+		// r_config_set_b (r->config, "bin.rawstr", true);
 		// get bin.minstr
 		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
@@ -543,11 +543,11 @@ static void load_scripts_for(RCore *core, const char *name) {
 	char *path = r_str_home (hdir);
 	RList *files = r_sys_dir (path);
 	if (!r_list_empty (files)) {
-		eprintf ("[binrc] path: %s\n", path);
+		R_LOG_INFO ("[binrc] path: %s", path);
 	}
 	r_list_foreach (files, iter, file) {
 		if (*file && *file != '.') {
-			eprintf ("[binrc] loading %s\n", file);
+			R_LOG_INFO ("[binrc] loading %s", file);
 			r_core_cmdf (core, ". %s/%s", path, file);
 		}
 	}
@@ -665,8 +665,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				? UT64_MAX : r_io_desc_size (desc);
 			r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, size);
 			// set use of raw strings
-			//r_config_set (r->config, "bin.rawstr", "true");
-			// r_config_set_i (r->config, "io.va", false);
+			// r_config_set_b (r->config, "bin.rawstr", true);
+			// r_config_set_b (r->config, "io.va", false);
 			// get bin.minstr
 			r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 			r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
@@ -692,7 +692,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			}
 		}
 	} else {
-		if (desc) {
+		bool basemap = r_config_get_b (r->config, "io.basemap");
+		if (desc && basemap) {
 			r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
 		}
 		if (binfile) {
@@ -718,7 +719,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			if (file_is_loaded (r, lib)) {
 				continue;
 			}
-			eprintf ("[bin.libs] Opening %s\n", lib);
+			R_LOG_INFO ("[bin.libs] Opening %s", lib);
 			ut64 baddr = (r->io->bits == 64)? 0x60000000000LL: 0x60000000;	// do we really need io->bits?
 			if (r_io_map_locate (r->io, &baddr, 0x200000, 1)) {
 				r_core_file_loadlib (r, lib, baddr);
@@ -735,7 +736,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			RFlagItem *impsym = r_flag_get (r->flags, flagname);
 			free (flagname);
 			if (!impsym) {
-				//eprintf ("Cannot find '%s' import in the PLT\n", imp->name);
+				//R_LOG_ERROR ("Cannot find '%s' import in the PLT", imp->name);
 				continue;
 			}
 			ut64 imp_addr = impsym->offset;
@@ -743,7 +744,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			RCoreLinkData linkdata = {imp->name, UT64_MAX, r->bin};
 			r_id_storage_foreach (r->io->files, linkcb, &linkdata);
 			if (linkdata.addr != UT64_MAX) {
-				eprintf ("0x%08"PFMT64x"\n", linkdata.addr);
+				eprintf ("0x%08"PFMT64x, linkdata.addr);
 				ut64 a = linkdata.addr;
 				ut64 b = imp_addr;
 				r_core_cmdf (r, "ax 0x%08"PFMT64x" 0x%08"PFMT64x, a, b);
@@ -759,7 +760,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// Setting the right arch and bits, so regstate will be shown correctly
 		if (plugin->info) {
 			RBinInfo *inf = plugin->info (binfile);
-			eprintf ("Setting up coredump arch-bits to: %s-%d\n", inf->arch, inf->bits);
+			R_LOG_INFO ("Setting up coredump arch-bits to: %s-%d", inf->arch, inf->bits);
 			r_config_set (r->config, "asm.arch", inf->arch);
 			r_config_set_i (r->config, "asm.bits", inf->bits);
 			r_bin_info_free (inf);
@@ -805,7 +806,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_list_free (maps);
 			o->maps = NULL;
 		}
-		eprintf ("Setting up coredump: %d maps have been found and created\n", map);
+		R_LOG_INFO ("Setting up coredump: %d maps have been found and created", map);
 		goto beach;
 	}
 beach:

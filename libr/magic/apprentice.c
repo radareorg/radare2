@@ -70,11 +70,6 @@ struct r_magic_entry {
 	ut32 max_count;
 };
 
-static int magic_file_formats[FILE_NAMES_SIZE];
-static const size_t file_nformats = FILE_NAMES_SIZE;
-static const char *magic_file_names[FILE_NAMES_SIZE];
-static const size_t file_nnames = FILE_NAMES_SIZE;
-
 static int getvalue(RMagic *ms, struct r_magic *, const char **, int);
 static int hextoint(int);
 static const char *getstr(RMagic *, const char *, char *, int, int *, int);
@@ -98,11 +93,11 @@ static int check_format(RMagic *, struct r_magic *);
 static int get_op(char);
 
 static size_t maxmagic = 0;
-static size_t magicsize = sizeof(struct r_magic);
+static size_t magicsize = sizeof (struct r_magic);
 
 static const char usg_hdr[] = "cont\toffset\ttype\topcode\tmask\tvalue\tdesc";
 static const char mime_marker[] = "!:mime";
-static const size_t mime_marker_len = sizeof(mime_marker) - 1;
+static const size_t mime_marker_len = sizeof (mime_marker) - 1;
 
 static const struct type_tbl_s {
 	const char name[16];
@@ -169,19 +164,14 @@ static int get_type(const char *l, const char **t) {
 	return p->type;
 }
 
-static void init_file_tables(void) {
-	static R_TH_LOCAL bool done = false;
+void init_file_tables(RMagic *m) {
 	const struct type_tbl_s *p;
-	if (done) {
-		return;
-	}
-	done = true;
 	for (p = type_tbl; p->len; p++) {
 		if (p->type >= FILE_NAMES_SIZE) {
 			continue;
 		}
-		magic_file_names[p->type] = p->name;
-		magic_file_formats[p->type] = p->format;
+		m->magic_file_names[p->type] = p->name;
+		m->magic_file_formats[p->type] = p->format;
 	}
 }
 
@@ -272,12 +262,11 @@ void file_delmagic(struct r_magic *p, int type, size_t entries) {
 }
 
 /* const char *fn: list of magic files and directories */
-struct mlist * file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int action) {
+struct mlist *file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int action) {
 	char *p, *mfn;
 	int file_err, errs = -1;
 	struct mlist *mlist;
 
-	init_file_tables ();
 	if (!fn) {
 		return NULL;
 	}
@@ -296,7 +285,7 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int a
 	mlist->next = mlist->prev = mlist;
 
 	while (fn) {
-		p = strchr (fn, PATHSEP);
+		p = strstr (fn, R_SYS_ENVSEP);
 		if (p) {
 			*p++ = '\0';
 		}
@@ -600,7 +589,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	wchar_t *wcpath;
 	char *cfname;
 	char subfn[1024];
-#else	
+#else
 	DIR *dir;
 	struct dirent *d;
 	char subfn[MAXPATHLEN];
@@ -653,7 +642,9 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 				if (*d->d_name == '.') {
 					continue;
 				}
-				snprintf (subfn, sizeof (subfn), "%s/%s", fn, d->d_name);
+				if (snprintf (subfn, sizeof (subfn), "%s/%s", fn, d->d_name) < 0) {
+					continue;
+				}
 				if (stat (subfn, &st) == 0 && S_ISREG (st.st_mode)) {
 					load_1 (ms, action, subfn, &errs, &marray, &marraycount);
 				}
@@ -1322,7 +1313,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 		}
 	}
 	if (action == FILE_CHECK) {
-		file_mdump (m);
+		file_mdump (ms, m);
 	}
 	m->mimetype[0] = '\0';		/* initialise MIME type to none */
 	if (m->cont_level == 0) {
@@ -1520,23 +1511,19 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 		return 1;
 	}
 
-	if (file_nformats != file_nnames) {
-		return -1;
-	}		
-
-	if (m->type >= file_nformats) {
+	if (m->type >= FILE_NAMES_SIZE) {
 		file_magwarn(ms, "Internal error inconsistency between "
 		    "m->type and format strings");
 		return -1;
 	}
-	if (magic_file_formats[m->type] == FILE_FMT_NONE) {
+	if (ms->magic_file_formats[m->type] == FILE_FMT_NONE) {
 		file_magwarn(ms, "No format string for `%s' with description "
-		    "`%s'", m->desc, magic_file_names[m->type]);
+		    "`%s'", m->desc, ms->magic_file_names[m->type]);
 		return -1;
 	}
 
 	ptr++;
-	if (ptr && check_format_type(ptr, magic_file_formats[m->type]) == -1) {
+	if (ptr && check_format_type (ptr, ms->magic_file_formats[m->type]) == -1) {
 		/*
 		 * TODO: this error message is unhelpful if the format
 		 * string is not one character long
@@ -1544,7 +1531,7 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 		file_magwarn(ms, "Printf format `%c' is not valid for type "
 		    "`%s' in description `%s'",
 		    ptr && *ptr ? *ptr : '?',
-		    magic_file_names[m->type], m->desc);
+		    ms->magic_file_names[m->type], m->desc);
 		return -1;
 	}
 
@@ -1553,7 +1540,7 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 			file_magwarn (ms,
 			    "Too many format strings (should have at most one) "
 			    "for `%s' with description `%s'",
-			    magic_file_names[m->type], m->desc);
+			    ms->magic_file_names[m->type], m->desc);
 			return -1;
 		}
 	}
@@ -1916,7 +1903,7 @@ error1:
 #if QUICK
 		(void)munmap((void *)mm, (size_t)st.st_size);
 #else
-		free(mm);
+		free (mm);
 #endif
 	} else {
 		*magicp = NULL;
@@ -1969,9 +1956,9 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 
 	rv = 0;
 beach:
-	(void)close(fd);
+	(void)close (fd);
 out:
-	free(dbname);
+	free (dbname);
 	return rv;
 }
 
@@ -2045,6 +2032,7 @@ static ut32 swap4(ut32 sv) {
  * swap a quad
  */
 static ut64 swap8(ut64 sv) {
+	// we have r_read apis for that, dont dupe!
 	ut64 rv;
 	ut8 *s = (ut8 *)(void *)&sv;
 	ut8 *d = (ut8 *)(void *)&rv;

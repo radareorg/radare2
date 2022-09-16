@@ -257,7 +257,7 @@ STREAMS dotnet_parse_stream_headers(
   char stream_name[DOTNET_STREAM_NAME_SIZE + 1];
   unsigned int i;
 
-  memset(&headers, '\0', sizeof(STREAMS));
+  memset(&headers, '\0', sizeof (STREAMS));
 
   stream_header = (PSTREAM_HEADER) (pe->data + offset);
 
@@ -290,24 +290,24 @@ STREAMS dotnet_parse_stream_headers(
     // Store necessary bits to parse these later. Not all tables will be
     // parsed, but are referenced from others. For example, the #Strings
     // stream is referenced from various tables in the #~ heap.
-    if (strncmp(stream_name, "#GUID", 5) == 0)
+    if (strncmp (stream_name, "#GUID", 5))
       headers.guid = stream_header;
     // Believe it or not, I have seen at least one binary which has a #- stream
     // instead of a #~ (215e1b54ae1aac153e55596e6f1a4350). This isn't in the
     // documentation anywhere but the structure is the same. I'm chosing not
     // to parse it for now.
-    else if (strncmp(stream_name, "#~", 2) == 0 && headers.tilde == NULL)
+    else if (strncmp (stream_name, "#~", 2) == 0 && headers.tilde == NULL)
       headers.tilde = stream_header;
-    else if (strncmp(stream_name, "#Strings", 8) == 0 && headers.string == NULL)
+    else if (strncmp (stream_name, "#Strings", 8) == 0 && headers.string == NULL)
       headers.string = stream_header;
-    else if (strncmp(stream_name, "#Blob", 5) == 0)
+    else if (strncmp (stream_name, "#Blob", 5) == 0)
       headers.blob = stream_header;
-    else if (strncmp(stream_name, "#US", 3) == 0 && headers.us == NULL)
+    else if (strncmp (stream_name, "#US", 3) == 0 && headers.us == NULL)
       headers.us = stream_header;
 
     // Stream name is padded to a multiple of 4.
     stream_header = (PSTREAM_HEADER) ((uint8_t*) stream_header +
-        sizeof(STREAM_HEADER) +
+        sizeof (STREAM_HEADER) +
         strlen(stream_name) +
         4 - (strlen(stream_name) % 4));
   }
@@ -410,7 +410,7 @@ void dotnet_parse_tilde_2(
 
   row_offset = (uint32_t*) (tilde_header + 1);
   table_offset = (uint8_t*) row_offset;
-  table_offset += sizeof(uint32_t) * valid_rows;
+  table_offset += sizeof (uint32_t) * valid_rows;
 
 #define DOTNET_STRING_INDEX(Name) \
   index_sizes.string == 2 ? Name.Name_Short : Name.Name_Long
@@ -801,7 +801,7 @@ void dotnet_parse_tilde_2(
                   pe, string_offset, *(WORD*) typeref_row);
             }
 
-            if (name && strncmp(name, "GuidAttribute", 13) != 0)
+            if (name && strncmp (name, "GuidAttribute", 13) != 0)
             {
               row_ptr += row_size;
               continue;
@@ -1259,7 +1259,7 @@ void dotnet_parse_tilde_2(
           if (!fits_in_pe(
                 pe,
                 pe->data + resource_base + resource_offset,
-                sizeof(DWORD)))
+                sizeof (DWORD)))
           {
             row_ptr += row_size;
             continue;
@@ -1377,10 +1377,10 @@ void dotnet_parse_tilde(
 
   // Default all rows to 0. They will be set to actual values later on, if
   // they exist in the file.
-  memset(&rows, '\0', sizeof(ROWS));
+  memset(&rows, '\0', sizeof (ROWS));
 
   // Default index sizes are 2. Will be bumped to 4 if necessary.
-  memset(&index_sizes, 2, sizeof(index_sizes));
+  memset(&index_sizes, 2, sizeof (index_sizes));
 
   tilde_header = (PTILDE_HEADER) (
       pe->data +
@@ -1414,7 +1414,7 @@ void dotnet_parse_tilde(
       continue;
 
 #define ROW_CHECK(name) \
-    if (fits_in_pe(pe, row_offset, (matched_bits + 1) * sizeof(uint32_t))) \
+    if (fits_in_pe(pe, row_offset, (matched_bits + 1) * sizeof (uint32_t))) \
       rows.name = *(row_offset + matched_bits);
 
 #define ROW_CHECK_WITH_INDEX(name) \
@@ -1574,7 +1574,7 @@ void dotnet_parse_com(PE* pe, ut64 baddr) {
 	// We must manually parse things from here on out.
 	//
 	// Flags are 2 bytes (always 0).
-	offset += sizeof(NET_METADATA) + metadata->Length + 2;
+	offset += sizeof (NET_METADATA) + metadata->Length + 2;
 
 	// 2 bytes for Streams.
 	if (!fits_in_pe(pe, pe->data + offset, 2))

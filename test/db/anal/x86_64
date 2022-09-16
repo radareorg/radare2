@@ -827,9 +827,9 @@ afr
 afl
 EOF
 EXPECT=<<EOF
-0x00001f80    1 41           main
-0x00001f50    1 47           sym._foo
-0x00001f00    4 73           sym._bar
+0x00001f80    1     41 main
+0x00001f50    1     47 sym._foo
+0x00001f00    4     73 sym._bar
 EOF
 RUN
 
@@ -841,7 +841,7 @@ aF
 afl
 EOF
 EXPECT=<<EOF
-0x00001f80    1 41           main
+0x00001f80    1     41 main
 EOF
 RUN
 
@@ -867,9 +867,9 @@ aap
 afl
 EOF
 EXPECT=<<EOF
-0x00001f00    4 73           sym._bar
-0x00001f50    1 47           sym._foo
-0x00001f80    1 41           main
+0x00001f00    4     73 sym._bar
+0x00001f50    1     47 sym._foo
+0x00001f80    1     41 main
 EOF
 RUN
 
@@ -3844,7 +3844,7 @@ RUN
 NAME=./noncode
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
-e anal.noncode=false
+e anal.in=io.maps.x
 afr
 afl~?str.
 EOF
@@ -3856,7 +3856,7 @@ RUN
 NAME=./noncode
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
-e anal.noncode=false
+e anal.in=io.maps
 e anal.calls=true
 af
 afl~?str.

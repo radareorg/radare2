@@ -97,10 +97,10 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 		if (!str) {
 			return false;
 		}
-		for (i=0; i < len; i+=nopsize) {
-			memcpy (str + i * 2, nopcode, nopsize*2);
+		for (i = 0; i < len; i+=nopsize) {
+			memcpy (str + i * 2, nopcode, nopsize * 2);
 		}
-		str[len*2] = '\0';
+		str[len * 2] = '\0';
 		r_core_cmdf (core, "wx %s", str);
 		free (str);
 	} else if (!strcmp (op, "jinf")) {

@@ -8,7 +8,7 @@ extern "C" {
 typedef struct {
 	char buf[32];
 	size_t len; // string length in chars or binary buffer size
-	char *ptr; // ptr replacing buf in case strlen > sizeof(buf)
+	char *ptr; // ptr replacing buf in case strlen > sizeof (buf)
 	size_t ptrlen; // string length + 1 or binary buffer size
 	bool weakref; // ptr is not owned
 } RStrBuf;
@@ -29,6 +29,8 @@ R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap);
 R_API char *r_strbuf_get(RStrBuf *sb);
 R_API char *r_strbuf_drain(RStrBuf *sb);
 R_API char *r_strbuf_drain_nofree(RStrBuf *sb);
+R_API bool r_strbuf_replace(RStrBuf *sb, const char *key, const char *val);
+R_API bool r_strbuf_replacef(RStrBuf *sb, const char *key, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_API int r_strbuf_length(RStrBuf *sb);
 R_API int r_strbuf_size(RStrBuf *sb);
 R_API void r_strbuf_free(RStrBuf *sb);

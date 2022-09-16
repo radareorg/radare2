@@ -34,7 +34,7 @@ static char* regstate(RBinFile *bf) {
 		obj->ehdr.e_machine != EM_ARM &&
 		obj->ehdr.e_machine != EM_386 &&
 		obj->ehdr.e_machine != EM_X86_64) {
-		eprintf ("Cannot retrieve regstate on: %s (not yet supported)\n",
+		R_LOG_ERROR ("Cannot retrieve regstate on: %s (not yet supported)",
 					Elf_(r_bin_elf_get_machine_name)(obj));
 		return NULL;
 	}
@@ -420,7 +420,7 @@ static RList* entries(RBinFile *bf) {
 		ptr->hvaddr = UT64_MAX;
 
 		if (ptr->vaddr != (ut64)obj->ehdr.e_entry && Elf_(r_bin_elf_is_executable) (obj)) {
-			eprintf ("Cannot determine entrypoint, using 0x%08" PFMT64x ".\n", ptr->vaddr);
+			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
 		if (bf->o->sections) {

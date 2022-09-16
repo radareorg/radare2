@@ -3,6 +3,10 @@
 #ifndef R2_ARCH_H
 #define R2_ARCH_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <r_util.h>
 
 // TODO: rename to R_ARCH
@@ -38,5 +42,9 @@ R_API void r_arch_use(RArchConfig *config, R_NULLABLE const char *arch);
 R_API void r_arch_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu);
 R_API void r_arch_set_bits(RArchConfig *config, int bits);
 R_API RArchConfig *r_arch_config_new(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

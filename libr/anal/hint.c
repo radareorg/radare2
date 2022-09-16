@@ -181,7 +181,7 @@ static RAnalAddrHintRecord *ensure_addr_hint_record(RAnal *anal, RAnalAddrHintTy
 		break; \
 	} \
 	setcode \
-} while(0)
+} while (0)
 
 static RAnalRangedHintRecordBase *ensure_ranged_hint_record(RBTree *tree, ut64 addr, size_t sz) {
 	RBNode *node = r_rbtree_find (*tree, &addr, ranged_hint_record_cmp, NULL);

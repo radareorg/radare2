@@ -211,7 +211,7 @@ R_API void r_socket_http_free(RSocketHTTPRequest *rs) {
 int main() {
 	RSocket *s = r_socket_new (false);
 	if (!r_socket_listen (s, "8080", NULL)) {
-		eprintf ("Cannot listen here\n");
+		R_LOG_ERROR ("Cannot listen here");
 		return 1;
 	}
 	for (;;) {
@@ -221,16 +221,14 @@ int main() {
 			r_socket_http_response (rs, 200,
 			"<html><body><form method=post action=/>"
 			"<input name=a /><input type=button></form></body>");
-		} else
-		if (!strcmp (rs->method, "POST")) {
+		} else if (!strcmp (rs->method, "POST")) {
 			char *buf = malloc (rs->data_length+ 50);
 			strcpy (buf, "<html><body><h2>XSS test</h2>\n");
 			r_str_unescape (rs->data);
 			strcat (buf, rs->data);
 			r_socket_http_response (rs, 200, buf);
 			free (buf);
-		} else
-		if (!strcmp (rs->method, "OPTIONS")) {
+		} else if (!strcmp (rs->method, "OPTIONS")) {
 			r_socket_http_response (rs, 200,"");
 		} else {
 			r_socket_http_response (rs, 404, "Invalid protocol");

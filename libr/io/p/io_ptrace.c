@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2021 - pancake */
+/* radare - LGPL - Copyright 2008-2022 - pancake */
 
 #include <r_userconf.h>
 #include <r_util.h>
@@ -7,7 +7,7 @@
 #include <r_cons.h>
 #include <r_debug.h>
 
-#if DEBUGGER && (__linux__ || __BSD__)
+#if DEBUGGER && (__linux__ || __BSD__ || defined(__serenity__))
 
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -54,7 +54,7 @@ static int __waitpid(int pid) {
 
 #define debug_read_raw(io,x,y) r_io_ptrace((io), PTRACE_PEEKTEXT, (x), (void *)(y), R_PTRACE_NODATA)
 #define debug_write_raw(io,x,y,z) r_io_ptrace((io), PTRACE_POKEDATA, (x), (void *)(y), (r_ptrace_data_t)(z))
-#if __OpenBSD__ || __NetBSD__ || __KFBSD__
+#if __OpenBSD__ || __NetBSD__ || __KFBSD__ || defined(__serenity__)
 typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, int data);
 #else
 typedef size_t ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
@@ -102,7 +102,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	// /proc/pid/mem fails on latest linux
 	if (fd != -1) {
 		ret = lseek (fd, addr, SEEK_SET);
-		if (ret >=0) {
+		if (ret >= 0) {
 			// Workaround for the buggy Debian Wheeze's /proc/pid/mem
 			if (read (fd, buf, len) != -1) {
 				return ret;
@@ -160,11 +160,9 @@ static void open_pidmem(RIOPtrace *iop) {
 	if (iop->fd == -1) {
 		iop->fd = open (pidmem, O_RDONLY);
 	}
-#if 0
-	if (iop->fd == -1)
-		eprintf ("Warning: Cannot open /proc/%d/mem. "
-			"Fallback to ptrace io.\n", iop->pid);
-#endif
+	if (iop->fd == -1) {
+		R_LOG_DEBUG ("Cannot open /proc/%d/mem. Fallback to ptrace io", iop->pid);
+	}
 #else
 	iop->fd = -1;
 #endif
@@ -289,11 +287,11 @@ static bool __close(RIODesc *desc) {
 }
 
 static void show_help(void) {
-	eprintf ("Usage: =!cmd args\n"
-		" =!ptrace   - use ptrace io\n"
-		" =!mem      - use /proc/pid/mem io if possible\n"
-		" =!pid      - show targeted pid\n"
-		" =!pid <#>  - select new pid\n");
+	eprintf ("Usage: :cmd args\n"
+		" :ptrace   - use ptrace io\n"
+		" :mem      - use /proc/pid/mem io if possible\n"
+		" :pid      - show targeted pid\n"
+		" :pid <#>  - select new pid\n");
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
@@ -305,14 +303,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	}
 	if (!strcmp (cmd, "help")) {
 		show_help ();
-	} else
-	if (!strcmp (cmd, "ptrace")) {
+	} else if (!strcmp (cmd, "ptrace")) {
 		close_pidmem (iop);
-	} else
-	if (!strcmp (cmd, "mem")) {
+	} else if (!strcmp (cmd, "mem")) {
 		open_pidmem (iop);
-	} else
-	if (r_str_startswith (cmd, "pid")) {
+	} else if (r_str_startswith (cmd, "pid")) {
 		if (iop) {
 			if (cmd[3] == ' ') {
 				int pid = atoi (cmd + 4);

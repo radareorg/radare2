@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <r_core.h>
 
-#if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__
+#if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__ || __serenity__
 #define DEBUGGER_SUPPORTED 1
 #else
 #define DEBUGGER_SUPPORTED 0
@@ -192,7 +192,11 @@ static void trace_me(void) {
 #if __APPLE__
 	r_sys_signal (SIGTRAP, SIG_IGN); //NEED BY STEP
 #endif
-#if __APPLE__ || __BSD__
+#if __serenity__
+	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
+		r_sys_perror ("ptrace-traceme");
+	}
+#elif __APPLE__ || __BSD__
 	/* we can probably remove this #if..as long as PT_TRACE_ME is redefined for OSX in r_debug.h */
 	r_sys_signal (SIGABRT, inferior_abort_handler);
 	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
@@ -232,12 +236,12 @@ static void handle_posix_error(int err) {
 static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	char *expr = NULL;
 	int i;
-	RRunProfile *rp = r_run_new (NULL);
+	RRunProfile *rp = r_run_new ("");
 	if (!rp) {
 		return NULL;
 	}
 	for (i = 0; argv[i]; i++) {
-		rp->_args[i] = argv[i];
+		rp->_args[i] = strdup (argv[i]);
 	}
 	rp->_args[i] = NULL;
 	if (!argv[0]) {
@@ -269,7 +273,7 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 		r_run_parseline (rp, expr = strdup ("bits=32"));
 	}
 	free (expr);
-	if (r_run_config_env (rp)) {
+	if (!r_run_config_env (rp)) {
 		R_LOG_ERROR ("Cannot configure the environment");
 		r_run_free (rp);
 		return NULL;
@@ -295,7 +299,6 @@ static void handle_posix_redirection(RRunProfile *rp, posix_spawn_file_actions_t
 // __UNIX__ (not windows)
 static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 	pid_t p = -1;
-	char **argv;
 	posix_spawn_file_actions_t fileActions;
 	ut32 ps_flags = POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK;
 	sigset_t no_signals;
@@ -319,7 +322,8 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 	ps_flags |= POSIX_SPAWN_START_SUSPENDED;
 #define _POSIX_SPAWN_DISABLE_ASLR 0x0100
 	int ret;
-	argv = r_str_argv (cmd, NULL);
+	char *ncmd = strdup (cmd);
+	char **argv = r_str_argv (ncmd, NULL);
 	if (!argv) {
 		posix_spawn_file_actions_destroy (&fileActions);
 		return -1;
@@ -346,6 +350,7 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 		handle_posix_error (ret);
 	}
 	r_str_argv_free (argv);
+	free (ncmd);
 	r_run_free (rp);
 	posix_spawn_file_actions_destroy (&fileActions);
 	return p; // -1 ?
@@ -466,8 +471,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 		return NULL;
 	}
-	if (!strncmp (file, "waitfor://", 10)) {
-		const char *procname = file + 10;
+	if (r_str_startswith (file, "waitfor://")) {
+		const char *procname = file + strlen ("waitfor://");
 		R_LOG_INFO ("Waiting for %s", procname);
 		while (true) {
 			int target_pid = get_pid_of (io, procname);
@@ -478,7 +483,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 			r_sys_usleep (100);
 		}
-	} else if (!strncmp (file, "pidof://", 8)) {
+	} else if (r_str_startswith (file, "pidof://")) {
 		const char *procname = file + 8;
 		int target_pid = get_pid_of (io, procname);
 		if (target_pid == -1) {

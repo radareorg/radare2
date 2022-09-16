@@ -625,7 +625,7 @@ found:
 				// bd completly overlaps sm => nothing to do
 				free (sm);
 				return true;
-			} // else
+			}
 			// adjust sm
 			// r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
 		} else {
@@ -719,7 +719,7 @@ R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, ut64 *addr, const ut64 s
 		load_align = 1;
 	}
 	RIOSubMap fake_sm;
-	memset (&fake_sm, 0x00, sizeof(RIOSubMap));
+	memset (&fake_sm, 0x00, sizeof (RIOSubMap));
 	fake_sm.itv.addr = *addr + (load_align - *addr % load_align) % load_align;
 	fake_sm.itv.size = size;
 	RRBNode *entry = _find_entry_submap_node (bank, &fake_sm);

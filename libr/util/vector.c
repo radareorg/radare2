@@ -19,6 +19,11 @@
 
 #define RESIZE_OR_RETURN_NULL(next_capacity) do { \
 		size_t new_capacity = next_capacity; \
+		if (new_capacity == 0) { \
+			R_FREE (vec->a); \
+			vec->capacity = 0; \
+			break; \
+		} \
 		void **new_a = realloc (vec->a, vec->elem_size * new_capacity); \
 		if (!new_a) { \
 			return NULL; \

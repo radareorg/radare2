@@ -39,7 +39,6 @@ static int r_main_version_verify(bool show, bool json) {
 		{ "r_bp", r_bp_version },
 		{ "r_debug", r_debug_version },
 		{ "r_main", r_main_version },
-		{ "r_hash", r_hash_version },
 		{ "r_fs", r_fs_version },
 		{ "r_io", r_io_version },
 #if !USE_LIB_MAGIC
@@ -95,7 +94,7 @@ static int r_main_version_verify(bool show, bool json) {
 			}
 		}
 		if (ret) {
-			eprintf ("Warning: r2 library versions mismatch! Check r2 -V\n");
+			R_LOG_WARN ("r2 library versions mismatch! Check r2 -V");
 		}
 	}
 	return ret;
@@ -150,7 +149,6 @@ static int main_help(int line) {
 #if USE_THREADS && ALLOW_THREADED
 		" -t           load rabin2 info in thread\n"
 #endif
-		" -T           do not compute file hashes\n"
 		" -u           set bin.filter=false to get raw sym/sec/cls names\n"
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
@@ -274,13 +272,13 @@ static bool run_commands(RCore *r, RList *cmds, RList *files, bool quiet, int do
 	bool has_failed = false;
 	r_list_foreach (files, iter, file) {
 		if (!r_file_exists (file)) {
-			eprintf ("Script '%s' not found.\n", file);
+			R_LOG_ERROR ("Script '%s' not found", file);
 			goto beach;
 		}
 		int ret = r_core_run_script (r, file);
 		r_cons_flush ();
 		if (ret == -2) {
-			eprintf ("[c] Cannot open '%s'\n", file);
+			R_LOG_ERROR ("Cannot open '%s'", file);
 		}
 		if (ret < 0) {
 			has_failed = true;
@@ -487,7 +485,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 	r = r_core_new ();
 	if (!r) {
-		eprintf ("Cannot initialize RCore\n");
+		R_LOG_ERROR ("Cannot initialize RCore");
 		free (envprofile);
 		LISTS_FREE ();
 		return 1;
@@ -535,7 +533,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	const char *project_name = NULL;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "=02AjMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuXt");
+	r_getopt_init (&opt, argc, argv, "=02AjMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuXt");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'j':
@@ -551,13 +549,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case '0':
 			zerosep = true;
 			/* implicit -q */
-			r_config_set (r->config, "scr.interactive", "false");
-			r_config_set (r->config, "scr.prompt", "false");
+			r_config_set_b (r->config, "scr.interactive", false);
+			r_config_set_b (r->config, "scr.prompt", false);
 			r_config_set_i (r->config, "scr.color", COLOR_MODE_DISABLED);
 			quiet = true;
 			break;
 		case 'u':
-			r_config_set (r->config, "bin.filter", "false");
+			r_config_set_b (r->config, "bin.filter", false);
 			break;
 		case 'a':
 			asmarch = opt.arg;
@@ -576,7 +574,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			baddr = r_num_math (r->num, opt.arg);
 			break;
 		case 'X':
-			r_config_set (r->config, "bin.usextr", "false");
+			r_config_set_b (r->config, "bin.usextr", false);
 			break;
 		case 'c':
 			r_list_append (cmds, (void*)opt.arg);
@@ -588,7 +586,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #if DEBUGGER
 			debug = 1;
 #else
-			eprintf ("Sorry. No debugger backend available.\n");
+			R_LOG_ERROR ("Sorry. No debugger backend available");
 			return 1;
 #endif
 			break;
@@ -626,10 +624,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			main_print_var (opt.arg);
 			LISTS_FREE ();
 			free (debugbackend);
+			free (envprofile);
+			r_core_free (r);
 			return 0;
 		case 'i':
 			if (R_STR_ISEMPTY (opt.arg)) {
-				eprintf ("Cannot open empty script path\n");
+				R_LOG_ERROR ("Cannot open empty script path");
 				ret = 1;
 				goto beach;
 			}
@@ -637,7 +637,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'I':
 			if (R_STR_ISEMPTY (opt.arg)) {
-				eprintf ("Cannot open empty script path\n");
+				R_LOG_ERROR ("Cannot open empty script path");
 				ret = 1;
 				goto beach;
 			}
@@ -656,11 +656,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set_i (r->config, "io.va", 1);
 			mapaddr = r_num_math (r->num, opt.arg);
 			s_seek = opt.arg;
-			r_config_set_i (r->config, "file.offset", mapaddr);
 			break;
 		case 'M':
-			r_config_set (r->config, "bin.demangle", "false");
-			r_config_set (r->config, "asm.demangle", "false");
+			r_config_set_b (r->config, "bin.demangle", false);
+			r_config_set_b (r->config, "asm.demangle", false);
 			break;
 		case 'n':
 			if (load_bin == LOAD_BIN_ALL) { // "-n"
@@ -668,7 +667,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			} else if (load_bin == LOAD_BIN_NOTHING) { // second n => "-nn"
 				load_bin = LOAD_BIN_STRUCTURES_ONLY;
 			}
-			r_config_set (r->config, "file.info", "false");
+			r_config_set_b (r->config, "file.info", false);
 			break;
 		case 'N':
 			if (run_rc) {
@@ -690,7 +689,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'P':
 			if (R_STR_ISEMPTY (opt.arg)) {
-				eprintf ("Cannot open empty rapatch path\n");
+				R_LOG_ERROR ("Cannot open empty rapatch path");
 				ret = 1;
 				goto beach;
 			}
@@ -701,9 +700,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			quietLeak = true;
 			break;
 		case 'q':
-			r_config_set (r->config, "scr.interactive", "false");
-			r_config_set (r->config, "scr.prompt", "false");
-			r_config_set (r->config, "cfg.fortunes", "false");
+			r_config_set_b (r->config, "scr.interactive", false);
+			r_config_set_b (r->config, "scr.prompt", false);
+			r_config_set_b (r->config, "cfg.fortunes", false);
 			if (quiet) {
 				forcequit = true;
 			}
@@ -711,7 +710,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'r':
 			if (R_STR_ISEMPTY (opt.arg)) {
-				eprintf ("Cannot open empty rarun2 profile path\n");
+				R_LOG_ERROR ("Cannot open empty rarun2 profile path");
 				ret = 1;
 				goto beach;
 			}
@@ -732,13 +731,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #if ALLOW_THREADED
 			threaded = true;
 #else
-			eprintf ("Warning: -t is temporarily disabled!\n");
+			R_LOG_WARN ("Warning: -t is temporarily disabled!");
 #endif
 			break;
 #endif
-		case 'T':
-//R2_580 remove this shitty flag compute_hashes = false;
-			break;
 		case 'v':
 			show_version = true;
 			break;
@@ -750,13 +746,17 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'x':
 			perms &= ~R_PERM_X;
-			r_config_set (r->config, "io.exec", "false");
+			r_config_set_b (r->config, "io.exec", false);
 			break;
 		default:
 			help++;
 		}
 	}
 	if (show_versions) {
+		LISTS_FREE();
+		free (debugbackend);
+		free (envprofile);
+		r_core_free (r);
 		return r_main_version_verify (1, json);
 	}
 	if (show_version) {
@@ -789,8 +789,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			LISTS_FREE ();
 			free (customRarunProfile);
 			free (debugbackend);
+			free (envprofile);
+			r_core_free (r);
 			return r_main_version_print ("radare2");
 		}
+		free (envprofile);
+		r_core_free (r);
 		return 0;
 	}
 	if (noStderr) {
@@ -847,7 +851,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 				free (msg);
 			} else {
-				eprintf ("Cannot read dbg.profile '%s'\n", dbg_profile);
+				R_LOG_ERROR ("Cannot read dbg.profile '%s'", dbg_profile);
 				pfile = NULL; //strdup ("");
 			}
 		} else {
@@ -856,13 +860,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 
 	if (pfile && !*pfile) {
-		eprintf ("Cannot open empty path\n");
+		R_LOG_ERROR ("Cannot open empty path");
 		ret = 1;
 		goto beach;
 	}
 
 	if (do_list_io_plugins) {
-		if (r_config_get_i (r->config, "cfg.plugins")) {
+		if (r_config_get_b (r->config, "cfg.plugins")) {
 			r_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
 		}
 		run_commands (r, NULL, prefiles, false, do_analysis);
@@ -896,7 +900,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (customRarunProfile) {
 		char *tfn = r_file_temp (".rarun2");
 		if (!r_file_dump (tfn, (const ut8*)customRarunProfile, strlen (customRarunProfile), 0)) {
-			eprintf ("Cannot create %s\n", tfn);
+			R_LOG_ERROR ("Cannot create %s", tfn);
 		} else {
 			haveRarunProfile = true;
 			r_config_set (r->config, "dbg.profile", tfn);
@@ -906,7 +910,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 	if (debug == 1) {
 		if (opt.ind >= argc && !haveRarunProfile) {
-			eprintf ("Missing argument for -d\n");
+			R_LOG_ERROR ("Missing argument for -d");
 			LISTS_FREE ();
 			free (debugbackend);
 			free (envprofile);
@@ -935,10 +939,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	tmp = NULL;
 	if (!load_l || (tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
-		r_config_set_i (r->config, "cfg.plugins", 0);
+		r_config_set_b (r->config, "cfg.plugins", false);
 		free (tmp);
 	}
-	if (r_config_get_i (r->config, "cfg.plugins")) {
+	if (r_config_get_b (r->config, "cfg.plugins")) {
 		r_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
 	}
 	ret = run_commands (r, NULL, prefiles, false, do_analysis);
@@ -949,7 +953,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	if (project_name) {
 		if (!r_core_project_open (r, project_name)) {
-			eprintf ("Cannot find project.\n");
+			R_LOG_ERROR ("Cannot find project");
 			free (debugbackend);
 			free (envprofile);
 			return 1;
@@ -959,7 +963,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (do_connect) {
 		const char *uri = argv[opt.ind];
 		if (opt.ind >= argc) {
-			eprintf ("Missing URI for -C\n");
+			R_LOG_ERROR ("Missing URI for -C");
 			LISTS_FREE ();
 			free (debugbackend);
 			free (envprofile);
@@ -977,21 +981,27 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	switch (zflag) {
 	case 1:
-		r_config_set (r->config, "bin.strings", "false");
+		r_config_set_b (r->config, "bin.strings", false);
 		break;
 	case 2:
-		r_config_set (r->config, "bin.rawstr", "true");
+		r_config_set_b (r->config, "bin.rawstr", true);
 		break;
 	}
 	if (zflag > 3) {
-		eprintf ("Sleeping now...\n");
+		R_LOG_INFO ("Sleeping in progress");
 		r_sys_sleep (zflag);
 	}
 
 	if (run_rc) {
 		r_core_parse_radare2rc (r);
 	} else {
-		r_config_set (r->config, "scr.utf8", "false");
+		r_config_set_b (r->config, "scr.utf8", false);
+	}
+
+	char *histpath = r_str_home (".cache/radare2/history");
+	if (histpath) {
+		r_line_hist_load (histpath);
+		free (histpath);
 	}
 
 	if (r_config_get_b (r->config, "zign.autoload")) {
@@ -1028,7 +1038,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		(void)freopen ("/dev/tty", "w", stdout);
 		(void)freopen ("/dev/tty", "w", stderr);
 #else
-		eprintf ("Cannot reopen stdin without UNIX\n");
+		R_LOG_ERROR ("Cannot reopen stdin without UNIX");
 		free (buf);
 		R_FREE (debugbackend);
 		free (envprofile);
@@ -1068,10 +1078,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				r_config_set (r->config, "asm.bits", asmbits);
 			}
 			r_config_set (r->config, "search.in", "dbg.map"); // implicit?
-			r_config_set (r->config, "cfg.debug", "true");
+			r_config_set_b (r->config, "cfg.debug", true);
 			perms = R_PERM_RWX;
 			if (opt.ind >= argc) {
-				eprintf ("No program given to -d\n");
+				R_LOG_ERROR ("No program given to -d");
 				LISTS_FREE ();
 				free (debugbackend);
 				free (envprofile);
@@ -1113,7 +1123,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 									}
 									r_core_bin_load (r, NULL, addr);
 								}
-							} else if (fh->name && r_str_startswith (fh->name, "gdb://")) {
+							} else if (fh && fh->name && r_str_startswith (fh->name, "gdb://")) {
 								filepath = iod->name;
 								if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
 									if (addr == UT64_MAX) {
@@ -1201,7 +1211,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			const char *dbg_profile = r_config_get (r->config, "dbg.profile");
 			if (opt.ind == argc && dbg_profile && *dbg_profile) {
 				if (R_STR_ISEMPTY (pfile)) {
-					eprintf ("Missing file to open\n");
+					R_LOG_ERROR ("Missing file to open");
 					ret = 1;
 					R_FREE (debugbackend);
 					goto beach;
@@ -1228,7 +1238,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 						if (fh) {
 							r_config_set_i (r->config, "io.va", false);
 						} else {
-							 eprintf ("r_io_create: Permission denied.\n");
+							 R_LOG_ERROR ("Permission denied");
 						}
 					}
 					if (baddr == UT64_MAX) {
@@ -1260,7 +1270,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 								RBinFile *bi = r_bin_cur (r->bin);
 								bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
 								if (!haveBinInfo && baddr != UT64_MAX) {
-									eprintf ("Warning: Don't use -B on unknown files. Consider using -m.\n");
+									R_LOG_WARN ("Don't use -B on unknown files. Consider using -m");
 								}
 							}
 						} else {
@@ -1281,7 +1291,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 						// load_bin = LOAD_BIN_NOTHING;
 						load_bin = LOAD_BIN_STRUCTURES_ONLY;
 					} else {
-						eprintf ("Cannot find project file\n");
+						R_LOG_ERROR ("Cannot find project file");
 					}
 				} else {
 					if (fh) {
@@ -1295,7 +1305,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 			if (mapaddr) {
 				if (r_config_get_i (r->config, "file.info")) {
-					eprintf ("Warning: using oba to load the syminfo from different mapaddress.\n");
+					R_LOG_WARN ("using oba to load the syminfo from different mapaddress");
 					// load symbols when using r2 -m 0x1000 /bin/ls
 					r_core_cmdf (r, "oba 0 0x%"PFMT64x, mapaddr);
 					r_core_cmd0 (r, ".ies*");
@@ -1320,7 +1330,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__ && __x86_64__
 						ut64 bitness = r_config_get_i (r->config, "asm.bits");
 						if (bitness == 32) {
-							eprintf ("glibc.fc_offset = 0x00148\n");
+							R_LOG_INFO ("glibc.fc_offset = 0x00148");
 							r_config_set_i (r->config, "dbg.glibc.fc_offset", 0x00148);
 						}
 #endif
@@ -1341,12 +1351,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (pfile && *pfile) {
 				r_cons_flush ();
 				if (perms & R_PERM_W) {
-					eprintf ("[w] Cannot open '%s' for writing.\n", pfile);
+					R_LOG_ERROR ("Cannot open '%s' for writing", pfile);
 				} else {
-					eprintf ("[r] Cannot open '%s'\n", pfile);
+					R_LOG_ERROR ("Cannot open '%s'", pfile);
 				}
 			} else {
-				eprintf ("Missing file to open\n");
+				R_LOG_ERROR ("Missing file to open");
 			}
 			ret = 1;
 			goto beach;
@@ -1406,7 +1416,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 #if 0
 		if (o && o->info && compute_hashes) {
-			// TODO: recall with limit=0 ?
+			// TODO: recall with !limit ?
 			ut64 limit = r_config_get_i (r->config, "bin.hashlimit");
 			r_bin_file_set_hashes (r->bin, r_bin_file_compute_hashes (r->bin, limit));
 		}
@@ -1509,12 +1519,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 	}
 	if (sandbox) {
-		r_config_set (r->config, "cfg.sandbox", "true");
+		r_config_set_b (r->config, "cfg.sandbox", true);
 	}
 	if (quiet) {
-		r_config_set (r->config, "scr.wheel", "false");
-		r_config_set (r->config, "scr.interactive", "false");
-		r_config_set (r->config, "scr.prompt", "false");
+		r_config_set_b (r->config, "scr.wheel", false);
+		r_config_set_b (r->config, "scr.interactive", false);
+		r_config_set_b (r->config, "scr.prompt", false);
 	}
 	r->num->value = 0;
 	if (patchfile) {
@@ -1524,7 +1534,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_core_seek (r, 0, true);
 			free (data);
 		} else {
-			eprintf ("[p] Cannot open '%s'\n", patchfile);
+			R_LOG_ERROR ("Cannot open '%s'", patchfile);
 		}
 	}
 	if ((patchfile && !quiet) || !patchfile) {
@@ -1534,7 +1544,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (seek != UT64_MAX) {
 			r_core_seek (r, seek, true);
 		}
-
 		// no flagspace selected by default the beginning
 		r_flag_space_set (r->flags, NULL);
 		if (!debug && r->bin && r->bin->cur && r->bin->cur->o && r->bin->cur->o->info) {
@@ -1548,7 +1557,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				quietLeak = true;
 			}
 			ret = r->num->value;
-			debug = r_config_get_i (r->config, "cfg.debug");
+			debug = r_config_get_b (r->config, "cfg.debug");
 			if (ret != -1 && r_cons_is_interactive ()) {
 				char *question;
 				bool no_question_debug = ret & 1;
@@ -1567,12 +1576,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 				if (debug) {
 					if (no_question_debug) {
-						if (r_config_get_i (r->config, "dbg.exitkills") && y_kill_debug){
+						if (r_config_get_i (r->config, "dbg.exitkills") && y_kill_debug) {
 							r_debug_kill (r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 						}
 					} else {
 						if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
-							if (r_config_get_i (r->config, "dbg.exitkills") &&
+							if (r_config_get_b (r->config, "dbg.exitkills") &&
 									r_cons_yesno ('y', "Do you want to kill the process? (Y/n)")) {
 								r_debug_kill (r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
 							} else {

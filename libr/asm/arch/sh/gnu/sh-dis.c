@@ -71,7 +71,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
       int rn = 0;
       int rm = 0;
       int rb = 0;
-      int disp_pc=0;
+      int disp_pc = 0;
       bfd_vma disp_pc_addr = 0;
 
       for (n = 0; n < 4; n++)
@@ -354,7 +354,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 				val=(info->flags & LITTLE_BIT)? bfd_getl32 (bytes):bfd_getb32 (bytes);
 			}
 			// XXX this will not work until read_memory_func() is fixed.
-			//fprintf_fn (stream, " ;[0x%X]=0x%X", (unsigned int) disp_pc_addr, val);
+			//fprintf_fn (stream, " ;[0x%X] = 0x%X", (unsigned int) disp_pc_addr, val);
 	}
 
       return 2;

@@ -77,14 +77,14 @@ static void gorunlib(void *user, const char *lib) {
 		if (fcn) {
 			fcn (user, 0, NULL);
 		} else {
-			eprintf ("Cannot find '%s' symbol in library.\n", r2go_sym);
+			R_LOG_ERROR ("Cannot find '%s' symbol in library", r2go_sym);
 		}
 		// dlclosing causes a crash, this is a know issue by Golang
 		// https://github.com/golang/go/issues/32497
 		// https://github.com/golang/go/issues/11100
 	// 	r_lib_dl_close (vl);
 	} else {
-		eprintf ("Cannot open '%s' library.\n", lib);
+		R_LOG_ERROR ("Cannot open '%s' library", lib);
 	}
 }
 
@@ -115,7 +115,7 @@ static bool __gorun(RLang *lang, const char *code, int len) {
 		gocode_fini (&gocode);
 		return true;
 	}
-	eprintf ("Cannot open tmp.go\n");
+	R_LOG_ERROR ("Cannot open tmp.go");
 	return false;
 }
 
@@ -163,6 +163,7 @@ static bool lang_go_run(RLang *lang, const char *code, int len) {
 static RLangPlugin r_lang_plugin_go = {
 	.name = "go",
 	.ext = "go",
+	.author = "pancake",
 	.example = r_lang_go_example,
 	.desc = "GO language extension",
 	.license = "MIT",

@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2015 - inisider */
+/* radare - LGPL - Copyright 2015-2022 - inisider */
 
 #include "demangler.h"
-#include <stdlib.h>
-
-#include <r_types.h> // eprintf()
-
+#include <r_types.h>
 #include "microsoft_demangle.h"
 
 typedef enum EManglingType {
@@ -41,7 +38,7 @@ EDemanglerErr create_demangler(SDemangler **demangler)
 {
 	EDemanglerErr err = eDemanglerErrOK;
 
-	*demangler = (SDemangler *) malloc(sizeof(SDemangler));
+	*demangler = (SDemangler *) malloc(sizeof (SDemangler));
 
 	if (!*demangler) {
 		err = eDemanglerErrMemoryAllocation;
@@ -79,7 +76,7 @@ EDemanglerErr init_demangler(SDemangler *demangler, char *sym)
 		err = eDemanglerErrUnsupportedMangling;
 		break;
 	case eManglingUnknown:
-		err = eDemanglerErrUnkown;
+		err = eDemanglerErrUnknown;
 		break;
 	default:
 		break;

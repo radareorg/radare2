@@ -24,8 +24,14 @@ R_LIB_VERSION (r_magic);
 #undef R_API
 #define R_API
 
-R_API RMagic* r_magic_new(int flags) { return magic_open(flags); }
-R_API void r_magic_free(RMagic* m) { if(m) { magic_close(m); } }
+R_API RMagic* r_magic_new(int flags) {
+	return magic_open (flags);
+}
+R_API void r_magic_free(RMagic* m) {
+	if (m) {
+		magic_close (m);
+	}
+}
 R_API const char *r_magic_file(RMagic* m, const char *f) { return magic_file(m, f); }
 R_API const char *r_magic_descriptor(RMagic* m, int fd) { return magic_descriptor(m, fd); }
 R_API const char *r_magic_buffer(RMagic* m, const void *b, size_t s) { return magic_buffer(m, b, s); }
@@ -106,7 +112,7 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 	 * one extra for terminating '\0', and
 	 * some overlapping space for matches near EOF
 	 */
-#define SLOP (1 + sizeof(union VALUETYPE))
+#define SLOP (1 + sizeof (union VALUETYPE))
 	if (!(buf = malloc (HOWMANY + SLOP))) {
 		return NULL;
 	}
@@ -126,7 +132,7 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 			ispipe = true;
 		}
 	} else {
-		int flags = O_RDONLY|O_BINARY;
+		int flags = O_RDONLY | O_BINARY;
 
 		if (stat (inname, &sb) == 0 && S_ISFIFO (sb.st_mode)) {
 #if O_NONBLOCK
@@ -198,12 +204,15 @@ done:
 
 /* API */
 
+extern void init_file_tables(RMagic *m);
+
 // TODO: reinitialize all the time
 R_API RMagic* r_magic_new(int flags) {
 	RMagic *ms = R_NEW0 (RMagic);
 	if (!ms) {
 		return NULL;
 	}
+	init_file_tables (ms);
 	r_magic_setflags (ms, flags);
 	ms->o.buf = ms->o.pbuf = NULL;
 	ms->c.li = malloc ((ms->c.len = 10) * sizeof (*ms->c.li));

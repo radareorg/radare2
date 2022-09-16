@@ -152,7 +152,7 @@ static bool r_debug_native_attach(RDebug *dbg, int pid) {
 #else
 	int ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 	if (ret != -1) {
-		eprintf ("Trying to attach to %d\n", pid);
+		R_LOG_INFO ("Trying to attach to %d", pid);
 		r_sys_perror ("ptrace (PT_ATTACH)");
 	}
 	return true;
@@ -193,7 +193,7 @@ static bool r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 	errno = 0;
 	return ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0) == 0;
 #else
-	eprintf ("TODO: continue syscall not implemented yet\n");
+	R_LOG_TODO ("continue syscall not implemented yet");
 	return false;
 #endif
 }
@@ -506,15 +506,15 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	if (reason == R_DEBUG_REASON_UNKNOWN) {
 #endif
 		if (WIFEXITED (status)) {
-			eprintf ("child exited with status %d\n", WEXITSTATUS (status));
+			R_LOG_INFO ("child exited with status %d", WEXITSTATUS (status));
 			reason = R_DEBUG_REASON_DEAD;
 		} else if (WIFSIGNALED (status)) {
-			eprintf ("child received signal %d\n", WTERMSIG (status));
+			R_LOG_INFO ("child received signal %d", WTERMSIG (status));
 			reason = R_DEBUG_REASON_SIGNAL;
 		} else if (WIFSTOPPED (status)) {
 			if (WSTOPSIG (status) != SIGTRAP &&
 				WSTOPSIG (status) != SIGSTOP) {
-				eprintf ("Child stopped with signal %d\n", WSTOPSIG (status));
+				R_LOG_INFO ("Child stopped with signal %d", WSTOPSIG (status));
 			}
 
 			/* the ptrace documentation says GETSIGINFO is only necessary for
@@ -532,30 +532,30 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 #endif
 #ifdef WIFCONTINUED
 		} else if (WIFCONTINUED (status)) {
-			eprintf ("child continued...\n");
+			R_LOG_INFO ("child continued");
 			reason = R_DEBUG_REASON_NONE;
 #endif
 		} else if (status == 1) {
 			/* XXX(jjd): does this actually happen? */
-			eprintf ("EEK DEAD DEBUGEE!\n");
+			R_LOG_ERROR ("EEK DEAD DEBUGEE!");
 			reason = R_DEBUG_REASON_DEAD;
 		} else if (status == 0) {
 			/* XXX(jjd): does this actually happen? */
-			eprintf ("STATUS=0?!?!?!?\n");
+			R_LOG_ERROR ("STATUS=0?!?!?!?");
 			reason = R_DEBUG_REASON_DEAD;
 		} else {
 			if (ret != pid) {
 				reason = R_DEBUG_REASON_NEW_PID;
 			} else {
 				/* ugh. still don't know :-/ */
-				eprintf ("CRAP. returning from wait without knowing why...\n");
+				R_LOG_ERROR ("CRAP. returning from wait without knowing why");
 			}
 		}
 	}
 
 	/* if we still don't know what to do, we have a problem... */
 	if (reason == R_DEBUG_REASON_UNKNOWN) {
-		eprintf ("%s: no idea what happened... wtf?!?!\n", __func__);
+		R_LOG_INFO ("no idea what happened here");
 		reason = R_DEBUG_REASON_ERROR;
 	}
 #endif // __APPLE__
@@ -639,7 +639,7 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 	{
 		// TODO
 		struct dbreg dbr;
-		ret = ptrace (PT_GETDBREGS, pid, (caddr_t)&dbr, sizeof(dbr));
+		ret = ptrace (PT_GETDBREGS, pid, (caddr_t)&dbr, sizeof (dbr));
 		if (ret != 0) return false;
 		// XXX: maybe the register map is not correct, must review
 	}
@@ -677,7 +677,7 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 			size = sizeof (regs);
 		}
 		memcpy (buf, &regs, size);
-		return sizeof(regs);
+		return sizeof (regs);
 		}
 		break;
 	}
@@ -749,7 +749,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 #else
 		return bsd_reg_write (dbg, type, buf, size);
 #endif
-	} //else eprintf ("TODO: reg_write_non-gpr (%d)\n", type);
+	} //else R_LOG_TODO ("reg_write_non-gpr (%d)", type);
 	return false;
 }
 
@@ -800,7 +800,7 @@ static bool linux_map_thp(RDebug *dbg, ut64 addr, int size) {
 	const size_t thpsize = 1<<21;
 
 	if (size % thpsize) {
-		eprintf ("size not a power of huge pages size\n");
+		R_LOG_ERROR ("size not a power of huge pages size");
 		return false;
 	}
 #if __linux__
@@ -808,7 +808,7 @@ static bool linux_map_thp(RDebug *dbg, ut64 addr, int size) {
 	// even though the address might not have the 'hg'
 	// vmflags
 	if (thp_mode () != 1) {
-		eprintf ("transparent huge page mode is not in madvise mode\n");
+		R_LOG_ERROR ("transparent huge page mode is not in madvise mode");
 		return false;
 	}
 #endif
@@ -823,11 +823,11 @@ static bool linux_map_thp(RDebug *dbg, ut64 addr, int size) {
 	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
 	r_egg_load (dbg->egg, code, 0);
 	if (!r_egg_compile (dbg->egg)) {
-		eprintf ("Cannot compile.\n");
+		R_LOG_ERROR ("Cannot compile");
 		goto err_linux_map_thp;
 	}
 	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOG_ERROR ("r_egg_assemble: invalid assembly");
 		goto err_linux_map_thp;
 	}
 	buf = r_egg_get_bin (dbg->egg);
@@ -836,7 +836,7 @@ static bool linux_map_thp(RDebug *dbg, ut64 addr, int size) {
 		r_reg_arena_push (dbg->reg);
 		const ut8 *tmp = r_buf_data (buf, &tmpsz);
 		if (!r_debug_execute (dbg, tmp, tmpsz, &retval, true, false)) {
-			eprintf ("Failed to execute code.\n");
+			R_LOG_ERROR ("Failed to execute code");
 		}
 		ret = (retval == 0);
 		r_reg_arena_pop (dbg->reg);
@@ -880,11 +880,11 @@ static RDebugMap* linux_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
 	r_egg_load (dbg->egg, code, 0);
 	if (!r_egg_compile (dbg->egg)) {
-		eprintf ("Cannot compile.\n");
+		R_LOG_ERROR ("Cannot compile");
 		goto err_linux_map_alloc;
 	}
 	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOG_ERROR ("r_egg_assemble: invalid assembly");
 		goto err_linux_map_alloc;
 	}
 	buf = r_egg_get_bin (dbg->egg);
@@ -895,15 +895,14 @@ static RDebugMap* linux_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 		ut64 tmpsz;
 		const ut8 *tmp = r_buf_data (buf, &tmpsz);
 		if (!r_debug_execute (dbg, tmp, tmpsz, &map_addr, true, false)) {
-			eprintf ("Failed to execute code.\n");
+			R_LOG_ERROR ("Failed to execute code");
 			goto err_linux_map_alloc;
 		}
 		r_reg_arena_pop (dbg->reg);
 		if (map_addr < UT64_MAX) {
 			if (thp) {
 				if (!linux_map_thp (dbg, map_addr, size)) {
-					// Not overly dramatic
-					eprintf ("map promotion to huge page failed\n");
+					R_LOG_WARN ("map promotion to huge page failed");
 				}
 			}
 			r_debug_map_sync (dbg);
@@ -934,11 +933,11 @@ static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
 	r_egg_load (dbg->egg, code, 0);
 	if (!r_egg_compile (dbg->egg)) {
-		eprintf ("Cannot compile.\n");
+		R_LOG_ERROR ("Cannot compile");
 		goto err_linux_map_dealloc;
 	}
 	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOG_ERROR ("r_egg_assemble: invalid assembly");
 		goto err_linux_map_dealloc;
 	}
 	buf = r_egg_get_bin (dbg->egg);
@@ -947,7 +946,7 @@ static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 		ut64 tmpsz;
 		const ut8 *tmp = r_buf_data (buf, &tmpsz);
 		if (!r_debug_execute (dbg, tmp, tmpsz, &ret, true, false)) {
-			eprintf ("Failed to execute code.\n");
+			R_LOG_ERROR ("Failed to execute code");
 		}
 		r_reg_arena_pop (dbg->reg);
 	}
@@ -1009,7 +1008,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #if __sun
 	char path[1024];
 	/* TODO: On solaris parse /proc/%d/map */
-	snprintf (path, sizeof(path) - 1, "pmap %d >&2", ps.tid);
+	snprintf (path, sizeof (path) - 1, "pmap %d >&2", ps.tid);
 	system (path);
 #else
 	RDebugMap *map;
@@ -1090,7 +1089,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 			name[0] = '\0';
 		}
 #else
-		ut64 offset = 0;;
+		ut64 offset = 0;
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
 		i = sscanf (line, "%s %s %08"PFMT64x" %*s %*s %[^\n]", &region[2], perms, &offset, name);
 		if (i == 3) {
@@ -1270,7 +1269,7 @@ static void sync_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 #if __i386__ || __x86_64__
 static void set_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
-	if (num_regs != NUM_DRX_REGISTERS){
+	if (num_regs != NUM_DRX_REGISTERS) {
 		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
 		return;
 	}
@@ -1396,11 +1395,11 @@ static bool ll_arm64_hwbp_set(pid_t pid, ut64 _addr, int size, int wp, ut32 type
 	}
 
 	if (errno == EIO) {
-		eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s\n",
+		R_LOG_ERROR ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s",
 			strerror (errno));
 	}
 
-	eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s\n", strerror (errno));
+	R_LOG_ERROR ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s", strerror (errno));
 	return false;
 }
 
@@ -1417,11 +1416,11 @@ static bool ll_arm64_hwbp_del(pid_t pid, ut64 _addr, int size, int wp, ut32 type
 		return true;
 	}
 	if (errno == EIO) {
-		eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s\n",
+		R_LOG_ERROR ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s",
 			strerror (errno));
 	}
 
-	eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s\n", strerror (errno));
+	R_LOG_ERROR ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s", strerror (errno));
 	return false;
 }
 
@@ -1494,7 +1493,7 @@ static RList *xnu_desc_list(int pid) {
 	int i, nb, type = 0;
 	int maxfd = getMaxFiles();
 
-	for (i = 0 ; i < maxfd; i++) {
+	for (i = 0; i < maxfd; i++) {
 		nb = proc_pidfdinfo (pid, i, PROC_PIDFDVNODEPATHINFO, &vi, sizeof (vi));
 		if (nb < 1) {
 			continue;
@@ -1552,11 +1551,11 @@ static int r_debug_native_map_protect(RDebug *dbg, ut64 addr, int size, int perm
 	r_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
 	r_egg_load (dbg->egg, code, 0);
 	if (!r_egg_compile (dbg->egg)) {
-		eprintf ("Cannot compile.\n");
+		R_LOG_ERROR ("Cannot compile");
 		return false;
 	}
 	if (!r_egg_assemble (dbg->egg)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOG_ERROR ("r_egg_assemble: invalid assembly");
 		return false;
 	}
 	buf = r_egg_get_bin (dbg->egg);
@@ -1565,7 +1564,7 @@ static int r_debug_native_map_protect(RDebug *dbg, ut64 addr, int size, int perm
 		ut64 tmpsz;
 		const ut8 *tmp = r_buf_data (buf, &tmpsz);
 		if (!r_debug_execute (dbg, tmp, tmpsz, NULL, true, false)) {
-			eprintf ("Failed to execute code.\n");
+			R_LOG_ERROR ("Failed to execute code");
 		}
 		r_reg_arena_pop (dbg->reg);
 		return true;

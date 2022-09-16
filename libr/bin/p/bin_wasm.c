@@ -41,19 +41,6 @@ static int _export_finder(const void *_exp, const void *_needle) {
 	return diff > 0? 1: -1;
 }
 
-static int _export_sorter(const void *_a, const void *_b) {
-	const RBinWasmExportEntry *a = _a;
-	const RBinWasmExportEntry *b = _b;
-	st64 diff = (st64)a->kind - b->kind;
-	if (!diff) {
-		diff = (st64)a->index - b->index;
-		if (!diff) { // index collision shouldn't happen
-			diff = (st64)a->sec_i - b->sec_i;
-		}
-	}
-	return diff > 0? 1: -1;
-}
-
 static inline RBinWasmExportEntry *find_export(RPVector *exports, ut8 kind, ut32 index) {
 	if (!exports) {
 		return NULL;
@@ -107,10 +94,13 @@ static RList *entries(RBinFile *bf) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (!ptr || !ret || !r_list_append (ret, ptr)) {
 		r_list_free (ret);
+		ret = NULL;
 		R_FREE (ptr);
 	}
-	ptr->paddr = addr;
-	ptr->vaddr = addr;
+	if (ptr) {
+		ptr->paddr = addr;
+		ptr->vaddr = addr;
+	}
 	return ret;
 }
 
@@ -201,18 +191,38 @@ static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RList *l
 	return true;
 }
 
+static inline char *name_from_export(RBinWasmObj *bin, int type, int ord) {
+	RPVector *exports = r_bin_wasm_get_exports (bin);
+	RBinWasmExportEntry *exp = find_export (exports, type, ord);
+	return exp? strdup (exp->field_str): NULL;
+}
+
+static inline void set_sym_name(RBinWasmObj *bin, int type, RBinSymbol *sym) {
+	sym->name = name_from_export (bin, type, sym->ordinal);
+	if (sym->name) {
+		sym->bind = R_BIN_BIND_GLOBAL_STR;
+	} else {
+		const char *typestr = NULL;
+		const char *name = NULL;
+		switch (type) {
+		case R_BIN_WASM_EXTERNALKIND_Function:
+			name = r_bin_wasm_get_function_name (bin, sym->ordinal);
+			typestr = "fcn";
+			break;
+		case R_BIN_WASM_EXTERNALKIND_Global:
+			typestr = "global";
+			break;
+		}
+		sym->name = name? strdup (name): r_str_newf ("%s.%d", typestr, sym->ordinal);
+	}
+}
+
 static inline bool symbols_add_code(RBinWasmObj *bin, RList *list) {
 	RPVector *codes = r_bin_wasm_get_codes (bin);
 	if (!codes) {
 		return false;
 	}
-	RPVector *exports = r_bin_wasm_get_exports (bin);
-	if (exports) {
-		r_pvector_sort (exports, _export_sorter);
-	}
-
 	ut32 ordinal = first_ord_not_import (bin, R_BIN_WASM_EXTERNALKIND_Function);
-	RBinWasmExportEntry *exp;
 	void **p;
 	r_pvector_foreach (codes, p) {
 		RBinWasmCodeEntry *func = *p;
@@ -220,21 +230,79 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RList *list) {
 		if (!sym) {
 			return false;
 		}
-		exp = find_export (exports, R_BIN_WASM_EXTERNALKIND_Function, ordinal);
-		if (exp) {
-			sym->name = strdup (exp->field_str);
-			sym->bind = R_BIN_BIND_GLOBAL_STR;
-		} else {
-			sym->bind = "NONE";
-			const char *name = r_bin_wasm_get_function_name (bin, ordinal);
-			sym->name = name? strdup (name): r_str_newf ("fcn.%d", ordinal);
-		}
 		sym->forwarder = "NONE";
 		sym->type = R_BIN_TYPE_FUNC_STR;
 		sym->size = func->len;
 		sym->vaddr = (ut64)func->code;
 		sym->paddr = (ut64)func->code;
 		sym->ordinal = ordinal++;
+		sym->bind = "NONE";
+		set_sym_name (bin, R_BIN_WASM_EXTERNALKIND_Function, sym);
+		r_list_append (list, sym);
+	}
+	return true;
+}
+
+static void sym_set_content_type(RBinSymbol *sym, int t) {
+	switch (t) {
+	case R_BIN_WASM_VALUETYPE_i32:
+		sym->size = 4;
+		sym->type = "i32";
+		break;
+	case R_BIN_WASM_VALUETYPE_f32:
+		sym->size = 4;
+		sym->type = "u32";
+		break;
+	case R_BIN_WASM_VALUETYPE_i64:
+		sym->size = 8;
+		sym->type = "i64";
+		break;
+	case R_BIN_WASM_VALUETYPE_f64:
+		sym->size = 8;
+		sym->type = "f64";
+		break;
+	case R_BIN_WASM_VALUETYPE_v128:
+		sym->size = 16;
+		sym->type = "v128";
+		break;
+	case R_BIN_WASM_VALUETYPE_REFTYPE:
+		sym->type = "REF";
+		break;
+	case R_BIN_WASM_VALUETYPE_EXTERNREF:
+		sym->type = "EXTREF";
+		break;
+	case R_BIN_WASM_VALUETYPE_FUNC:
+		sym->type = R_BIN_TYPE_FUNC_STR;
+		break;
+	case R_BIN_WASM_VALUETYPE_VOID:
+		sym->type = "VOID";
+		break;
+	default:
+		R_LOG_WARN ("Unknown type 0x%x offset: 0x%x ord: %d", t, sym->paddr, sym->ordinal);
+	}
+}
+
+static inline bool symbols_add_globals(RBinWasmObj *bin, RList *list) {
+	RPVector *globals = r_bin_wasm_get_globals (bin);
+	if (!globals) {
+		return true;
+	}
+	ut32 ordinal = first_ord_not_import (bin, R_BIN_WASM_EXTERNALKIND_Global);
+	void **p;
+	r_pvector_foreach (globals, p) {
+		// not real confident in any of this
+		RBinWasmGlobalEntry *gl = *p;
+		RBinSymbol *sym = R_NEW0 (RBinSymbol);
+		if (!sym) {
+			return false;
+		}
+		sym->forwarder = "NONE";
+		sym->paddr = gl->file_offset;
+		sym->vaddr = UT64_MAX;
+		sym->ordinal = ordinal++;
+		sym->bind = "NONE";
+		set_sym_name (bin, R_BIN_WASM_EXTERNALKIND_Global, sym);
+		sym_set_content_type (sym, gl->content_type); // size and type
 		r_list_append (list, sym);
 	}
 	return true;
@@ -256,12 +324,15 @@ static RList *symbols(RBinFile *bf) {
 		}
 	}
 
-	// add code to symbols
 	if (!symbols_add_code (bin, ret)) {
 		goto bad_alloc;
 	}
 
-	// TODO: globals, tables and memories
+	if (!symbols_add_globals (bin, ret)) {
+		goto bad_alloc;
+	}
+
+	// TODO: tables and memories
 	return ret;
 bad_alloc:
 	r_list_free (ret);
@@ -299,7 +370,7 @@ static RList *get_imports(RBinFile *bf) {
 			r_list_append (ret, ptr);
 		}
 	}
-
+	return ret;
 bad_alloc:
 	r_list_free (ret);
 	return NULL;
@@ -310,23 +381,21 @@ static RList *libs(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (ret) {
+		ret->file = strdup (bf->file);
+		ret->bclass = strdup ("module");
+		ret->rclass = strdup ("wasm");
+		ret->os = strdup ("WebAssembly");
+		ret->arch = strdup ("wasm");
+		ret->machine = strdup (ret->arch);
+		ret->subsystem = strdup ("wasm");
+		ret->type = strdup ("EXEC");
+		ret->bits = 32;
+		ret->has_va = 0;
+		ret->big_endian = false;
+		ret->dbg_info = 0;
 	}
-	ret->file = strdup (bf->file);
-	ret->bclass = strdup ("module");
-	ret->rclass = strdup ("wasm");
-	ret->os = strdup ("WebAssembly");
-	ret->arch = strdup ("wasm");
-	ret->machine = strdup (ret->arch);
-	ret->subsystem = strdup ("wasm");
-	ret->type = strdup ("EXEC");
-	ret->bits = 32;
-	ret->has_va = 0;
-	ret->big_endian = false;
-	ret->dbg_info = 0;
 	return ret;
 }
 

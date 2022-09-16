@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2021 - pancake */
+/* radare2 - LGPL - Copyright 2009-2022 - pancake */
 
 #include "r_core.h"
 
@@ -11,11 +11,11 @@ R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach)
 	p = fd ? fd->data : NULL;
 	r_config_set_b (r->config, "cfg.debug", true);
 	if (!p) {
-		eprintf ("Invalid debug io\n");
+		R_LOG_ERROR ("Invalid debug io");
 		return false;
 	}
 
-	r_config_set (r->config, "io.ff", "true");
+	r_config_set_b (r->config, "io.ff", true);
 	r_core_cmdf (r, "dL %s", debugbackend);
 	if (!is_gdb) {
 		pid = r_io_desc_get_pid (fd);
@@ -25,7 +25,7 @@ R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach)
 				r_core_cmdf (r, "dpa %d", pid);
 			}
 		} else {
-			eprintf ("Cannot retrieve pid from io.\n");
+			R_LOG_ERROR ("Cannot retrieve pid from io");
 		}
 	}
 	//this makes to attach twice showing warnings in the output
@@ -77,7 +77,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 		fd = r_sandbox_fopen (file, "wb");
 	}
 	if (!fd) {
-		eprintf ("Cannot open '%s' for writing\n", file);
+		R_LOG_ERROR ("Cannot open '%s' for writing", file);
 		return false;
 	}
 	/* some io backends seems to be buggy in those cases */
@@ -86,7 +86,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	}
 	buf = malloc (bs);
 	if (!buf) {
-		eprintf ("Cannot alloc %d byte(s)\n", bs);
+		R_LOG_ERROR ("Cannot alloc %d byte(s)", bs);
 		fclose (fd);
 		return false;
 	}
@@ -100,44 +100,13 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 		}
 		r_io_read_at (core->io, addr + i, buf, bs);
 		if (fwrite (buf, bs, 1, fd) < 1) {
-			eprintf ("write error\n");
+			R_LOG_ERROR ("write error");
 			break;
 		}
 	}
 	r_cons_break_pop ();
 	fclose (fd);
 	free (buf);
-	return true;
-}
-
-static bool __endian_swap(ut8 *buf, ut32 blocksize, ut8 len) {
-	ut32 i;
-	ut16 v16;
-	ut32 v32;
-	ut64 v64;
-	if (len != 8 && len != 4 && len != 2 && len != 1) {
-		eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
-		return false;
-	}
-	if (len == 1) {
-		return true;
-	}
-	for (i = 0; i < blocksize; i += len) {
-		switch (len) {
-		case 8:
-			v64 = r_read_at_be64 (buf, i);
-			r_write_at_le64 (buf, v64, i);
-			break;
-		case 4:
-			v32 = r_read_at_be32 (buf, i);
-			r_write_at_le32 (buf, v32, i);
-			break;
-		case 2:
-			v16 = r_read_at_be16 (buf, i);
-			r_write_at_le16 (buf, v16, i);
-			break;
-		}
-	}
 	return true;
 }
 
@@ -148,6 +117,17 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
 	if (!buf) {
 		return NULL;
+	}
+	bool isnum = false;
+	const char *plus = arg? strchr (arg, '+'): NULL;
+	int numsize = 1;
+	if (plus) {
+		numsize = (*arg=='+')? 1: atoi (arg);
+		if (numsize < 1) {
+			numsize = 1;
+		}
+		isnum = true;
+		arg = r_str_trim_head_ro (plus + 1);
 	}
 	if (op == 'i') { // "woi"
 		int hbs = core->blocksize / 2;
@@ -162,10 +142,10 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 
 	if (op != 'e') {
 		// fill key buffer either from arg or from clipboard
-		if (arg) {  // parse arg for key
+		if (arg && !isnum) {  // parse arg for key
 			// r_hex_str2bin() is guaranteed to output maximum half the
 			// input size, or 1 byte if there is just a single nibble.
-			str = (char *)malloc (strlen (arg) / 2 + 1);
+			str = (char *)malloc ((strlen (arg) / 2) + 1);
 			if (!str) {
 				goto beach;
 			}
@@ -173,7 +153,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			// Output is invalid if there was just a single nibble,
 			// but in that case, len is negative (-1).
 			if (len <= 0) {
-				eprintf ("Invalid hexpair string\n");
+				R_LOG_ERROR ("Invalid hexpair string");
 				goto beach;
 			}
 		} else {  // use clipboard as key
@@ -190,7 +170,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	// execute the operand
 	if (op == 'e') {
 		int wordsize = 1;
-		char *os, *p, *s = strdup (arg);
+		char *os, *p, *s = strdup (arg? arg: "");
 		int n = 0, from = 0, to = UT8_MAX, dif = 0, step = 1;
 		os = s;
 		p = strchr (s, ' ');
@@ -215,7 +195,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			step = r_num_math (core->num, s);
 		}
 		free (os);
-		eprintf ("from %d to %d step %d size %d\n", from, to, step, wordsize);
+		R_LOG_INFO ("from %d to %d step %d size %d", from, to, step, wordsize);
 		dif = (to <= from)? UT8_MAX: to - from + 1;
 		if (wordsize == 1) {
 			from %= (UT8_MAX + 1);
@@ -249,7 +229,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 				r_write_le64 (buf + i, num64);
 			}
 		} else {
-			eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
+			R_LOG_ERROR ("Invalid word size. Use 1, 2, 4 or 8");
 		}
 	} else if (op == '2' || op == '4' || op == '8') { // "wo2" "wo4" "wo8"
 		int inc = op - '0';
@@ -283,16 +263,43 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 				buf[i+3] = buf[i+4];
 				buf[i+4] = tmp;
 			} else {
-				eprintf ("Invalid inc, use 2, 4 or 8.\n");
+				R_LOG_ERROR ("Invalid inc, use 2, 4 or 8");
 				break;
 			}
 		}
 	} else {
-		bool be = r_config_get_i (core->config, "cfg.bigendian");
-		if (!be) {
-			if (!__endian_swap ((ut8*)str, len, len)) {
-				goto beach;
+		if (isnum) {
+			ut64 n = r_num_math (core->num, arg);
+			bool be = r_config_get_i (core->config, "cfg.bigendian");
+			free (str);
+			str = calloc (8, 1);
+			switch (numsize) {
+			case 1:
+				if (n > UT8_MAX) {
+					R_LOG_ERROR ("%d doesnt fit in ut8.max", n);
+					goto beach;
+				}
+				str[0] = n;
+				break;
+			case 2:
+				if (n > UT16_MAX) {
+					R_LOG_ERROR ("%d doesnt fit in ut16.max", n);
+					goto beach;
+				}
+				r_write_ble16 (str, n, be);
+				break;
+			case 4:
+				if (n > UT32_MAX) {
+					R_LOG_ERROR ("%d doesnt fit in ut32.max", n);
+					goto beach;
+				}
+				r_write_ble32 (str, n, be);
+				break;
+			case 8:
+				r_write_ble64 (str, n, be);
+				break;
 			}
+			len = numsize;
 		}
 		for (i = j = 0; i < core->blocksize; i++) {
 			switch (op) {
@@ -487,24 +494,24 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	}
 	shift_buf = calloc (b_size, 1);
 	if (!shift_buf) {
-		eprintf ("Cannot allocated %d byte(s)\n", (int)b_size);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", (int)b_size);
 		return false;
 	}
 
 	// cases
 	// addr + b_size + dist > file_end
-	//if ( (addr+b_size) + dist > file_end ) {
+	//if ((addr+b_size) + dist > file_end ) {
 	//	res = false;
 	//}
 	// addr + b_size + dist < file_start (should work since dist is signed)
-	//else if ( (addr+b_size) + dist < 0 ) {
+	//else if ((addr+b_size) + dist < 0 ) {
 	//	res = false;
 	//}
 	// addr + dist < file_start
 	if (addr + dist < fstart) {
 		res = false;
 	// addr + dist > file_end
-	} else if ( (addr) + dist > fend) {
+	} else if ((addr) + dist > fend) {
 		res = false;
 	} else {
 		r_io_read_at (core->io, addr, shift_buf, b_size);

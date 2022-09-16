@@ -43,15 +43,15 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 	}
 
 	if (delta == 0) {
-		eprintf ("Cannot find section\n");
+		R_LOG_ERROR ("Cannot find section");
 		return 0;
 	}
 
 	eprintf ("delta: %"PFMT64d"\n", delta);
-	
+
 	/* rewrite rel's (imports) */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
-		if (!strcmp(&strtab[shdrp->sh_name], ".got")) {
+		if (!strcmp (&strtab[shdrp->sh_name], ".got")) {
 			got_addr = (ut64)shdrp->sh_addr;
 			got_offset = (ut64)shdrp->sh_offset;
 		}
@@ -71,7 +71,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1) {
 				r_sys_perror("read (rel)");
 			}
-			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rel)), relp++) {
+			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof (Elf_(Rel)), relp++) {
 				/* rewrite relp->r_offset */
 				if (relp->r_offset - got_addr + got_offset >= rsz_offset + rsz_osize) {
 					relp->r_offset+=delta;
@@ -81,7 +81,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 					}
 				}
 			}
-			free(rel);
+			free (rel);
 			break;
 		} else if (!strcmp (&strtab[shdrp->sh_name], ".rela.plt")) {
 			Elf_(Rela) *rel, *relp;
@@ -93,7 +93,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1) {
 				r_sys_perror("read (rel)");
 			}
-			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rela)), relp++) {
+			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof (Elf_(Rela)), relp++) {
 				/* rewrite relp->r_offset */
 				if (relp->r_offset - got_addr + got_offset >= rsz_offset + rsz_osize) {
 					relp->r_offset+=delta;
@@ -103,7 +103,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 					}
 				}
 			}
-			free(rel);
+			free (rel);
 			break;
 		}
 	}

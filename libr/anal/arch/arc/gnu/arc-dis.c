@@ -67,7 +67,7 @@ typedef enum
 
 #define BIT(word,n)	((word) & (1 << (n)))
 /* START ARC LOCAL */
-#define BITS(word,s,e)  (((word) << (sizeof(word)*8-1 - (e))) >> ((s) + (sizeof(word)*8-1 - (e))))
+#define BITS(word,s,e)  (((word) << (sizeof (word)*8-1 - (e))) >> ((s) + (sizeof (word)*8-1 - (e))))
 /* END ARC LOCAL */
 #define OPCODE(word)	(BITS ((word), 27, 31))
 #define FIELDA(word)	(BITS ((word), 21, 26))
@@ -523,7 +523,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
   instrName = 0;
   decodingClass = CLASS_A4_ARITH; /* default!  */
   repeatsOp = 0;
-  condCodeIsPartOfName=0;
+  condCodeIsPartOfName = 0;
   state->commNum = 0;
   state->tcnt = 0;
   state->acnt = 0;
@@ -724,22 +724,20 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	  instrName = "nop";
 	  decodingClass = CLASS_A4_OP3_SUBOPC3F;
       } else {
-	      instrName = "xor";
+          instrName = "xor";
       }
       break;
 
     default:
       instrName = instruction_name (state,state->_opcode,0,&flags);
-      /* if (instrName) printf ("FLAGS=0x%x\n", flags); */
-      if (!instrName)
-	{
-	  instrName = "???";
-	  state->flow=invalid_instr;
-	}
-	if (flags & IGNORE_FIRST_OPD) {
-		ignoreFirstOpd = 1;
-	}
-	break;
+      if (!instrName) {
+        instrName = "???";
+        state->flow=invalid_instr;
+      }
+      if (flags & IGNORE_FIRST_OPD) {
+        ignoreFirstOpd = 1;
+      }
+      break;
     }
 
   fieldAisReg = fieldBisReg = fieldCisReg = 1; /* Assume regs for now.  */
@@ -1115,7 +1113,7 @@ ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info)
   void *stream = info->stream; 	/* Output stream.  */
   fprintf_ftype func = info->fprintf_func;
 
-  memset (&s, 0, sizeof(struct arcDisState));
+  memset (&s, 0, sizeof (struct arcDisState));
 
   /* Read first instruction.  */
   status = (*info->read_memory_func) (address, buffer, 4, info);

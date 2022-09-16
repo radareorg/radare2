@@ -440,7 +440,7 @@ LZ4_memcpy_using_offset_base(BYTE* dstPtr, const BYTE* srcPtr, BYTE* dstEnd, con
 {
     assert(srcPtr + offset == dstPtr);
     if (offset < 8) {
-        LZ4_write32(dstPtr, 0);   /* silence an msan warning when offset==0 */
+        LZ4_write32(dstPtr, 0);   /* silence an msan warning when offset == 0 */
         dstPtr[0] = srcPtr[0];
         dstPtr[1] = srcPtr[1];
         dstPtr[2] = srcPtr[2];
@@ -589,7 +589,7 @@ static unsigned LZ4_NbCommonBytes (reg_t val)
             Just to avoid some static analyzer complaining about shift by 32 on 32-bits target.
             Note that this code path is never triggered in 32-bits mode. */
             unsigned r;
-            if (!(val>>by32)) { r=4; } else { r=0; val>>=by32; }
+            if (!(val>>by32)) { r=4; } else { r = 0; val >>= by32; }
             if (!(val>>16)) { r+=2; val>>=8; } else { val>>=24; }
             r += (!val);
             return r;
@@ -1168,7 +1168,7 @@ _next_match:
             LZ4_putPosition(ip, cctx->hashTable, tableType, base);
             if ( (match+LZ4_DISTANCE_MAX >= ip)
               && (LZ4_read32(match) == LZ4_read32(ip)) )
-            { token=op++; *token=0; goto _next_match; }
+            { token=op++; *token = 0; goto _next_match; }
 
         } else {   /* byU32, byU16 */
 
@@ -1204,8 +1204,8 @@ _next_match:
             if ( ((dictIssue==dictSmall) ? (matchIndex >= prefixIdxLimit) : 1)
               && (((tableType==byU16) && (LZ4_DISTANCE_MAX == LZ4_DISTANCE_ABSOLUTE_MAX)) ? 1 : (matchIndex+LZ4_DISTANCE_MAX >= current))
               && (LZ4_read32(match) == LZ4_read32(ip)) ) {
-                token=op++;
-                *token=0;
+                token = op++;
+                *token = 0;
                 if (maybe_extMem) offset = current - matchIndex;
                 DEBUGLOG(6, "seq.start:%i, literals=%u, match.start:%i",
                             (int)(anchor-(const BYTE*)source), 0, (int)(ip-(const BYTE*)source));
@@ -1569,8 +1569,8 @@ static void LZ4_renormDictT(LZ4_stream_t_internal* LZ4_dict, int nextSize)
         const BYTE* dictEnd = LZ4_dict->dictionary + LZ4_dict->dictSize;
         int i;
         DEBUGLOG(4, "LZ4_renormDictT");
-        for (i=0; i<LZ4_HASH_SIZE_U32; i++) {
-            if (LZ4_dict->hashTable[i] < delta) LZ4_dict->hashTable[i]=0;
+        for (i = 0; i < LZ4_HASH_SIZE_U32; i++) {
+            if (LZ4_dict->hashTable[i] < delta) LZ4_dict->hashTable[i] = 0;
             else LZ4_dict->hashTable[i] -= delta;
         }
         LZ4_dict->currentOffset = 64 KB;
@@ -1804,7 +1804,7 @@ LZ4_decompress_generic(
 
         /* Special cases */
         assert(lowPrefix <= op);
-        if ((endOnInput) && (unlikely(outputSize==0))) {
+        if ((endOnInput) && (unlikely(outputSize == 0))) {
             /* Empty output buffer */
             if (partialDecoding) return 0;
             return ((srcSize==1) && (*ip==0)) ? 0 : -1;

@@ -844,13 +844,16 @@ static RDyldRebaseInfos *get_rebase_infos(RBinFile *bf, RDyldCache *cache) {
 	}
 
 	if (!cache->hdr->slideInfoOffset || !cache->hdr->slideInfoSize) {
-		ut32 total_slide_infos = 0;
+		size_t total_slide_infos = 0;
 		ut32 n_slide_infos[MAX_N_HDR];
 
-		ut32 i;
+		size_t i;
 		for (i = 0; i < cache->n_hdr && i < MAX_N_HDR; i++) {
 			ut64 hdr_offset = cache->hdr_offset[i];
 			if ((n_slide_infos[i] = r_buf_read_le32_at (cache->buf, 0x13c + hdr_offset)) == UT32_MAX) {
+				goto beach;
+			}
+			if (SZT_ADD_OVFCHK (total_slide_infos, n_slide_infos[i])) {
 				goto beach;
 			}
 			total_slide_infos += n_slide_infos[i];
@@ -865,7 +868,7 @@ static RDyldRebaseInfos *get_rebase_infos(RBinFile *bf, RDyldCache *cache) {
 			goto beach;
 		}
 
-		ut32 k = 0;
+		size_t k = 0;
 		for (i = 0; i < cache->n_hdr && i < MAX_N_HDR; i++) {
 			ut64 hdr_offset = cache->hdr_offset[i];
 			ut64 slide_infos_offset;
@@ -1098,7 +1101,7 @@ static ut64 resolve_symbols_off(RDyldCache *cache, ut64 pa) {
 			return 0;
 		}
 		ut32 cmdsize = r_buf_read_le32_at (cache->buf, cursor + sizeof (ut32));
-		if (cmdsize == UT32_MAX) {
+		if (cmdsize == UT32_MAX || cmdsize < 1) {
 			return 0;
 		}
 		if (cmd == LC_SEGMENT || cmd == LC_SEGMENT_64) {
@@ -1408,7 +1411,7 @@ static void rebase_bytes_v3(RDyldRebaseInfo3 *rebase_info, ut8 *buf, ut64 offset
 		if (first_rebase_off >= page_offset && first_rebase_off < page_offset + count) {
 			do {
 				ut64 position = in_buf + first_rebase_off - page_offset;
-				if (position + 8 >= count) {
+				if (position + 8 > count) {
 					break;
 				}
 				ut64 raw_value = r_read_le64 (buf + position);
@@ -1538,7 +1541,7 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		if (rounded_count > rebase_info->page_size) {
 			internal_buf = malloc (rounded_count);
 			if (!internal_buf) {
-				eprintf ("Cannot allocate memory for 'internal_buf'\n");
+				R_LOG_ERROR ("Cannot allocate memory for 'internal_buf'");
 				return -1;
 			}
 		}
@@ -1681,13 +1684,18 @@ static void populate_cache_maps(RDyldCache *cache) {
 	r_return_if_fail (cache && cache->buf);
 
 	ut32 i;
-	ut32 n_maps = 0;
+	size_t n_maps = 0;
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
 		if (!hdr->mappingCount || !hdr->mappingOffset) {
 			continue;
 		}
 		n_maps += hdr->mappingCount;
+	}
+
+	if (n_maps > (r_buf_size (cache->buf) / 4)) {
+		R_LOG_WARN ("Invalid n_maps (%d)", (int)n_maps);
+		return;
 	}
 
 	cache_map_t *maps = NULL;
@@ -1826,7 +1834,7 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 			}
 			ut64 cursor = selrefs_offset;
 			ut64 end = cursor + selrefs_size;
-			while (cursor + 8 < end) {
+			while (cursor + 8 <= end) {
 				ut64 sel_ptr = r_buf_read_le64_at (cache->buf, cursor);
 				if (sel_ptr == UT64_MAX) {
 					break;
@@ -2255,7 +2263,7 @@ static RList *classes(RBinFile *bf) {
 			ut8 *cursor = pointers;
 			ut8 *pointers_end = pointers + sections[i].size;
 
-			for (; cursor < pointers_end; cursor += 8) {
+			for (; cursor + 8 <= pointers_end; cursor += 8) {
 				ut64 pointer_to_class = r_read_le64 (cursor);
 
 				RBinClass *klass;
@@ -2281,7 +2289,7 @@ static RList *classes(RBinFile *bf) {
 
 				if (!klass->name) {
 					if (bf->rbin->verbose) {
-						eprintf ("KLASS ERROR AT 0x%"PFMT64x", is_classlist %d\n", pointer_to_class, is_classlist);
+						R_LOG_ERROR ("KLASS failed at 0x%"PFMT64x", is_classlist %d", pointer_to_class, is_classlist);
 					}
 					klass->name = r_str_newf ("UnnamedClass%u", num_of_unnamed_class);
 					if (!klass->name) {

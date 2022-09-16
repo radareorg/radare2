@@ -38,11 +38,11 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 #endif
 
 #undef _NELEM
-#define _NELEM(ary)	(sizeof(ary) / sizeof((ary)[0]))
+#define _NELEM(ary)	(sizeof (ary) / sizeof ((ary)[0]))
 
 #define BIT(word,n)       ((word) & (1 << (n)))
 /* START ARC LOCAL */
-#define BITS(word,s,e)    (((word) << (sizeof(word)*8-1 - (e))) >> ((s)+(sizeof(word)*8-1 - (e))))
+#define BITS(word,s,e)    (((word) << (sizeof (word)*8-1 - (e))) >> ((s)+(sizeof (word)*8-1 - (e))))
 /* END ARC LOCAL */
 #define OPCODE(word)      (BITS ((word), 27, 31))
 #define FIELDA(word)      (BITS ((word), 0, 5))
@@ -97,14 +97,14 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 	} \
 	}
 
-#define CHECK_NULLIFY() do{		\
-	state->nullifyMode = BITS(state->words[0],5,5);	\
-	}while(0)
+#define CHECK_NULLIFY() do { \
+	state->nullifyMode = BITS (state->words[0],5,5);	\
+	} while (0)
 
 #define CHECK_COND_NULLIFY() do {		\
-	state->nullifyMode = BITS(state->words[0],5,5);	\
+	state->nullifyMode = BITS (state->words[0],5,5);	\
 	cond = BITS(state->words[0],0,4);	\
-	}while(0)
+	} while (0)
 
 #define CHECK_FLAG_COND_NULLIFY() do{	\
 	if (is_shimm == 0) {			\
@@ -112,7 +112,7 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 	  state->nullifyMode = BITS(state->words[0],5,5); \
 	  cond = BITS(state->words[0],0,4);	\
 	}					\
-	}while(0)
+	} while (0)
 
 #define CHECK_FLAG_COND() {		\
 	if (is_shimm == 0) {			\
@@ -664,19 +664,18 @@ sign_extend (int value, int bits)
 static int
 dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 {
-
   int subopcode, mul;
-  int condCodeIsPartOfName=0;
+  int condCodeIsPartOfName = 0;
   int decodingClass;
   const char *instrName;
-  int fieldAisReg=1, fieldBisReg=1, fieldCisReg=1;
-  int fieldA=0, fieldB=0, fieldC=0;
-  int flag=0, cond=0, is_shimm=0, is_limm=0;
-  int signExtend=0, addrWriteBack=0, directMem=0;
-  int is_linked=0;
-  int offset=0;
+  int fieldAisReg = 1, fieldBisReg = 1, fieldCisReg = 1;
+  int fieldA = 0, fieldB = 0, fieldC = 0;
+  int flag = 0, cond = 0, is_shimm = 0, is_limm = 0;
+  int signExtend = 0, addrWriteBack = 0, directMem = 0;
+  int is_linked = 0;
+  int offset = 0;
   int usesAuxReg = 0;
-  int usesSimdRegA= 0, usesSimdRegB=0, usesSimdRegC=0,simd_scale_u8=-1;
+  int usesSimdRegA= 0, usesSimdRegB = 0, usesSimdRegC = 0,simd_scale_u8=-1;
   int flags = !E_ARC_MACH_A4;
   char formatString[60];
 
@@ -704,9 +703,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  }
 	  /* Get the major opcode of the ARCtangent-A5 32-bit instruction. */
 	  state->_opcode = OPCODE (state->words[0]);
-  }
-  else
-  {
+  } else {
     /* ARCompact 16-bit instruction */
     if (!NEXT_WORD_AC (0)) {
 	    return 0;
@@ -718,7 +715,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
   instrName = 0;
   decodingClass = 0; /* default! */
   mul = 0;
-  condCodeIsPartOfName=0;
+  condCodeIsPartOfName = 0;
   state->commNum = 0;
   state->tcnt = 0;
   state->acnt = 0;
@@ -827,13 +824,11 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       case 9: instrName = "min";  break;
       case 10:
 	{
-	  if(state->words[0] == 0x264a7000)
+	  if (state->words[0] == 0x264a7000)
 	    {
 	      instrName = "nop";
 	      decodingClass = 26;
-	    }
-	  else
-	    {
+	    } else {
 	      instrName = "mov";
 	      decodingClass = 12;
 	    }
@@ -963,8 +958,8 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	case 1: instrName = "lsr"; break;
 	case 2: instrName = "asr"; break;
 	case 3: instrName = "ror"; break;
-	case 4: instrName = "mul64"; mul =1; decodingClass = 2; break;
-	case 5: instrName = "mulu64"; mul =1; decodingClass = 2; break;
+	case 4: instrName = "mul64"; mul = 1; decodingClass = 2; break;
+	case 5: instrName = "mulu64"; mul = 1; decodingClass = 2; break;
 
 	  /* ARC A700 */
       case 6: instrName = "adds" ;break;
@@ -1038,9 +1033,9 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  case 68:
 	    instrName = "vld32";
 	    decodingClass = 37;
-	    usesSimdRegA=1;
-	    usesSimdRegB=2;
-	    usesSimdRegC=0;
+	    usesSimdRegA = 1;
+	    usesSimdRegB = 2;
+	    usesSimdRegC = 0;
 	    simd_scale_u8 = 2;
 	    break;
 
@@ -1300,12 +1295,12 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 		{
 		case 0:
 		  instrName = "vaddw"; decodingClass = 42;
-		  usesSimdRegA = usesSimdRegB = usesSimdRegC =1;
+		  usesSimdRegA = usesSimdRegB = usesSimdRegC = 1;
 		  break;
 
 		case 1:
 		  instrName = "vaddaw"; decodingClass = 42;
-		  usesSimdRegA = usesSimdRegB = usesSimdRegC =1;
+		  usesSimdRegA = usesSimdRegB = usesSimdRegC = 1;
 		  break;
 
 		case 2:
@@ -1987,9 +1982,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	    state->flow = invalid_instr;
 	    break;
 	  }
-      }
-    else
-      {
+      } else {
 	instrName = "???_SIMD";
 	state->flow = invalid_instr;
       }
@@ -2122,7 +2115,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
         case 6 : instrName = "bic_s"; break;
         case 7 : instrName = "xor_s"; break;
 	case 11: instrName = "tst_s"; decodingClass = 14; break;
-	case 12: instrName = "mul64_s"; mul =1; decodingClass = 14; break;
+	case 12: instrName = "mul64_s"; mul = 1; decodingClass = 14; break;
 	case 13: instrName = "sexb_s"; decodingClass = 14; break;
 	case 14: instrName = "sexw_s"; decodingClass = 14; break;
 	case 15: instrName = "extb_s"; decodingClass = 14; break;
@@ -2344,9 +2337,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 		  default:
 			  mwerror (state, "Invalid syntax class\n");
 		  }
-	}
-      else
-	{
+	} else {
 /* Must do the above for this one too */
 	  switch (flags)
 	    {
@@ -2402,9 +2393,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  {
 	    /* If fieldC is not a limm, then fieldB may be a limm value */
             CHECK_FIELD_B();
-	  }
-      	  else
-	  {
+	  } else {
             FIELD_B();
 	    if (!fieldBisReg) {
 		    fieldB = fieldC;
@@ -2472,17 +2461,13 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 		    fieldCisReg = 0;
 		    fieldC = fieldB;
 	    }
-	  }
-	  else
-	  {
+	  } else {
 	    fieldA = fieldB;
             if (BIT(state->words[0],5))
 	    {
               FIELD_C();
               fieldCisReg = 0;
-	    }
-	    else
-	    {
+	    } else {
               CHECK_FIELD_C();
 	    }
 	  }
@@ -2540,9 +2525,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  if (!fieldBisReg) {
 		  fieldB = fieldC;
 	  }
-	}
-	else
-	{
+	} else {
       	  CHECK_FIELD_B();
 	}
       }
@@ -2578,9 +2561,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
         WRITE_FORMAT_COMMA_x(C);
         WRITE_NOP_COMMENT();
         my_sprintf(state, state->operandBuffer, formatString, 0, fieldB, fieldC);
-      }
-      else
-      {
+      } else {
 	WRITE_FORMAT_x(B);
         WRITE_FORMAT_COMMA_x(C);
         WRITE_NOP_COMMENT();
@@ -2651,9 +2632,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	{
 	  state->flow = is_linked ? direct_call : direct_jump;
 	  add_target(fieldC);
-	}
-      else
-	{
+	} else {
 	  state->flow = is_linked ? indirect_call : indirect_jump;
 	  /*
 	   * We should also treat this as indirect call if NOT linked
@@ -2682,7 +2661,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       CHECK_FIELD_A();
       CHECK_FIELD_B();
 
-      if(FIELDA(state->words[0]) == 62)
+      if (FIELDA(state->words[0]) == 62)
 	{
 	  instrName = "prefetch";
 	}
@@ -2695,9 +2674,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	if (!fieldCisReg) {
 		fieldC = fieldB;
 	}
-      }
-      else
-      {
+      } else {
         CHECK_FIELD_C();
       }
       if (dbg) {
@@ -2758,10 +2735,9 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       /* Support for Prefetch */
       /* Fixme :: Check for A700 within this function */
 
-      if(FIELDA(state->words[0]) == 62)
-	{
+      if (FIELDA(state->words[0]) == 62) {
 	  instrName = "prefetch";
-	}
+      }
 
       fieldC = FIELDD9(state->words[0]);
       fieldCisReg = 0;
@@ -2802,9 +2778,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	{
 	  fieldB = state->_offset;
 	  WRITE_FORMAT_x_RB(B);
-	}
-      else
-	{
+	} else {
 	  WRITE_FORMAT_x(B);
 	  WRITE_FORMAT_COMMA_x_RB(C);
 	}
@@ -2818,7 +2792,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       state->source_operand.registerNum = fieldC;
       state->sourceType = fieldCisReg ? ARC_REGISTER : ARC_LIMM ;
       fieldA  = FIELDD9(state->words[0]); /* shimm */
-      fieldAisReg=0;
+      fieldAisReg = 0;
 
       /* [B,A offset] */
 #if 0
@@ -2848,9 +2822,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       if (fieldA == 0)
       {
         WRITE_FORMAT_x_RB(B);
-      }
-      else
-      {
+      } else {
 	WRITE_FORMAT_x(B);
         fieldAisReg = 0;
         WRITE_FORMAT_COMMA_x_RB(A);
@@ -3051,9 +3023,8 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 
       if (BIT (state->words[0], 16) && state->_opcode == op_BC) {
 	      CHECK_NULLIFY ();
-      } else
+      } else if ((state->_opcode == op_BLC && BITS (state->words[0], 16, 17) == 2) || (state->_opcode == op_BC && (BIT (state->words[0], 16)))) {
 	      /* Checking for bl unconditionally FIX For Bug #553 */
-	      if ((state->_opcode == op_BLC && BITS (state->words[0], 16, 17) == 2) || (state->_opcode == op_BC && (BIT (state->words[0], 16)))) {
 	      CHECK_NULLIFY ();
       } else {
 	      CHECK_COND_NULLIFY ();
@@ -3809,7 +3780,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
   lowbyte = ((info->endian == BFD_ENDIAN_LITTLE) ? 1 : 0);
   highbyte = ((info->endian == BFD_ENDIAN_LITTLE) ? 0 : 1);
 
-  memset(&s, 0, sizeof(struct arcDisState));
+  memset(&s, 0, sizeof (struct arcDisState));
 
   /* read first instruction */
   status = (*info->read_memory_func) (address, buffer, 2, info);
@@ -3946,7 +3917,7 @@ arcAnalyzeInstr
   lowbyte = ((info->endian == BFD_ENDIAN_LITTLE) ? 1 : 0);
   highbyte = ((info->endian == BFD_ENDIAN_LITTLE) ? 0 : 1);
 
-  memset(&s, 0, sizeof(struct arcDisState));
+  memset(&s, 0, sizeof (struct arcDisState));
 
   /* read first instruction */
   status = (*info->read_memory_func) (address, buffer, 2, info);

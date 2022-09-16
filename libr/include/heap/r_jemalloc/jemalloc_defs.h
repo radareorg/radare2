@@ -42,5 +42,5 @@
 #  endif
 #endif
 
-/* sizeof(void *) == 2^LG_SIZEOF_PTR. */
+/* sizeof (void *) == 2^LG_SIZEOF_PTR. */
 #define LG_SIZEOF_PTR 3

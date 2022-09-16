@@ -1,5 +1,7 @@
 /* radare2 - LGPL - Copyright 2017-2022 - pancake, cgvwzq, Dennis Goodlett */
 
+#define R_LOG_ORIGIN "bin.wasm"
+
 #include <r_lib.h>
 #include <r_bin.h>
 #include "wasm.h"
@@ -421,7 +423,9 @@ static inline RPVector *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryFcn pa
 	if (!consume_u32_r (buf, bound, &count)) {
 		return NULL;
 	}
-
+	if (count > r_buf_size (buf)) {
+		count = r_buf_size (buf) - r_buf_tell (buf);
+	}
 	RPVector *vec = r_pvector_new (free_entry);
 	if (vec) {
 		r_pvector_reserve (vec, count);
@@ -430,7 +434,7 @@ static inline RPVector *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryFcn pa
 			ut64 start = r_buf_tell (buf);
 			void *e = parse_entry (bin, bound, i);
 			if (!e || !r_pvector_push (vec, e)) {
-				eprintf ("[wasm] Failed to parse entry %u/%u of vec at 0x%" PFMT64x "\n", i, count, start);
+				R_LOG_ERROR ("Failed to parse entry %u/%u of vec at 0x%" PFMT64x, i, count, start);
 				free_entry (e);
 				break;
 			}
@@ -602,7 +606,7 @@ static RBinWasmCodeEntry *parse_code_entry(RBinWasmObj *bin, ut64 bound, ut32 in
 	r_buf_read (b, &end, 1);
 	if (end != R_BIN_WASM_END_OF_CODE) {
 		ut32 where = r_buf_tell (b) - 1;
-		eprintf ("[wasm] Code entry at starting at 0x%x has ending byte 0x%x at 0x%x, should be 0x%x\n",
+		R_LOG_WARN ("Wasm code entry at starting at 0x%x has ending byte 0x%x at 0x%x, should be 0x%x",
 			(ut32)ptr->file_offset, end, where, R_BIN_WASM_END_OF_CODE);
 		goto beach;
 	}
@@ -699,7 +703,7 @@ static inline bool parse_custom_name_section(RBinWasmObj *bin, ut64 bound) {
 
 	ut64 new_bound = start + size - 1;
 	if (new_bound > bound) {
-		eprintf ("[wasm] custom name subection at 0x%" PFMT64x " extends beyond the custom section\n", start);
+		R_LOG_WARN ("custom name subection at 0x%" PFMT64x " extends beyond the custom section", start);
 		new_bound = bound;
 	}
 
@@ -730,7 +734,7 @@ static inline bool parse_custom_name_section(RBinWasmObj *bin, ut64 bound) {
 		}
 		break;
 	default:
-		eprintf ("[wasm] Unkown custom name subsection with id: %d\n", type);
+		R_LOG_WARN ("Unknown custom name subsection with id: %d", type);
 		break;
 	}
 
@@ -906,7 +910,7 @@ static bool parse_import_sec(RBinWasmObj *bin) {
 		if (imp && imp->kind < R_ARRAY_SIZE (bin->g_imports_arr)) {
 			r_pvector_push (bin->g_imports_arr[imp->kind], imp);
 		} else {
-			eprintf ("[wasm] Failed to parse import entry %u/%u of vec at 0x%" PFMT64x "\n", i, count, start);
+			R_LOG_ERROR ("Failed to parse import entry %u/%u of vec at 0x%" PFMT64x, i, count, start);
 			free_import_entry (imp);
 			break;
 		}
@@ -1071,14 +1075,14 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 			ptr->name_len = 4;
 			break;
 		default:
-			eprintf ("[wasm] error: unkown section id: %d\n", ptr->id);
+			R_LOG_ERROR ("unknown section id: %d", ptr->id);
 			r_buf_seek (b, ptr->size - 1, R_BUF_CUR);
 			continue;
 		}
 		if (ptr->offset + (ut64)ptr->size - 1 > bound) {
 			// TODO: Better error handling here
 			ut32 diff = ptr->size - (bound + 1 - ptr->offset);
-			eprintf ("[wasm] Artificially reducing size of section %s by 0x%x bytes so it fits in the file\n", ptr->name, diff);
+			R_LOG_INFO ("Artificially reducing size of section %s by 0x%x bytes so it fits in the file", ptr->name, diff);
 			ptr->size -= diff;
 		}
 		ptr->payload_data = r_buf_tell (b);
@@ -1096,7 +1100,7 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 	bin->g_sections = ret;
 	return ret;
 beach:
-	eprintf ("[wasm] error: beach sections\n");
+	R_LOG_ERROR ("beach sections");
 	free (ptr);
 	return ret;
 }
@@ -1117,7 +1121,21 @@ ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin) {
 	return 0;
 }
 
+static int _export_sorter(const void *_a, const void *_b) {
+	const RBinWasmExportEntry *a = _a;
+	const RBinWasmExportEntry *b = _b;
+	st64 diff = (st64)a->kind - b->kind;
+	if (!diff) {
+		diff = (st64)a->index - b->index;
+		if (!diff) { // index collision shouldn't happen
+			diff = (st64)a->sec_i - b->sec_i;
+		}
+	}
+	return diff > 0? 1: -1;
+}
+
 static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
+	RPVectorComparator sorter = NULL;
 	RPVector **cache = NULL;
 	RPVectorFree pfree = (RPVectorFree)free;
 	ParseEntryFcn parser;
@@ -1147,6 +1165,7 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 		parser = (ParseEntryFcn)parse_export_entry;
 		pfree = (RPVectorFree)free_export_entry;
 		cache = &bin->g_exports;
+		sorter = (RPVectorComparator)_export_sorter;
 		break;
 	case R_BIN_WASM_SECTION_ELEMENT:
 		parser = (ParseEntryFcn)parse_element_entry;
@@ -1180,6 +1199,9 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 	}
 
 	*cache = parse_vec (bin, bound, parser, pfree);
+	if (sorter) {
+		r_pvector_sort (*cache, sorter);
+	}
 	return *cache;
 }
 

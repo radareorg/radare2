@@ -76,6 +76,10 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		return r_main_version_print ("ravc2");
 	}
 
+	if (git) {
+		R_LOG_WARN ("TODO: r_vc_git APIs should be called from r_vc");
+		R_LOG_WARN ("TODO: r_vc_new should accept options argument");
+	}
 	const char *action = opt.argv[opt.ind];
 	if (!action) {
 		return 1;
@@ -106,7 +110,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 	bool save = false; // only save the db if the command ran successfully
 	// commands that need Rvc *
-	if (!strcmp(action, "branch")) {
+	if (!strcmp (action, "branch")) {
 		if (opt.argc <= 2) {
 			RList *branches = rvc->get_branches(rvc);
 			RListIter *iter;
@@ -118,7 +122,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		} else {
 			save = rvc->branch (rvc, opt.argv[opt.ind + 1]);
 		}
-	} else if (!strcmp(action, "commit")) {
+	} else if (!strcmp (action, "commit")) {
 		if (opt.argc < 4) {
 			eprintf ("Usage: ravc2 commit [message] [files...]\n");
 			free (rp);
@@ -147,10 +151,10 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			}
 			free (message);
 		}
-	} else if (!strcmp(action, "checkout") && opt.argc > 2) {
-		save =  rvc->checkout (rvc, opt.argv[opt.ind + 1]);
-	} else if (!strcmp(action, "status")) {
-		char *current_branch = rvc->current_branch (rvc);
+	} else if (!strcmp (action, "checkout") && opt.argc > 2) {
+		save =  r_vc_checkout(rvc, opt.argv[opt.ind + 1]);
+	} else if (!strcmp (action, "status")) {
+		char *current_branch = r_vc_current_branch(rvc);
 		if (current_branch) {
 			printf ("Branch: %s\n", current_branch);
 			RList *uncommitted = rvc->get_uncommitted (rvc);
@@ -166,18 +170,14 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			}
 			r_list_free (uncommitted);
 		}
-	} else if (!strcmp(action, "reset")) {
-		save = rvc->reset (rvc);
-	} else if (!strcmp(action, "log")) {
-		if (!rvc->print_commits (rvc)) {
-			save = false;
-		}
-		goto ret;
-	} else if (!strcmp (action, "clone")) {
-		free (rp);
-		if (opt.argc < 3) {
-			eprintf ("Usage: %s [src] [dst]\n", argv[0]);
-			return -1;
+	} else if (!strcmp (action, "reset")) {
+		save = r_vc_reset(rvc);
+	} else if (!strcmp (action, "log")) {
+		RList *commits = r_vc_log(rvc);
+		RListIter *iter;
+		const char *commit;
+		r_list_foreach(commits, iter, commit) {
+			printf ("%s\n****\n", commit);
 		}
 		return !rvc->clone (rvc, argv[2 + opt.ind]);
 	} else {

@@ -2,16 +2,6 @@
 
 #include <r_reg.h>
 
-typedef ut32 ut27;
-// 580 move to r_util
-static ut27 r_read_me27(const ut8 *buf, int boff) {
-	ut27 ret = 0;
-	r_mem_copybits_delta ((ut8 *)&ret, 18, buf, boff, 9);
-	r_mem_copybits_delta ((ut8 *)&ret, 9, buf, boff + 9, 9);
-	r_mem_copybits_delta ((ut8 *)&ret, 0, buf, boff + 18, 9);
-	return ret;
-}
-
 R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 	r_return_val_if_fail (reg && item, 0);
 
@@ -294,8 +284,7 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 }
 
 // TODO: support packbits=128 for xmm registers
-// R2_580 : return bool instead of int
-R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
+R_API bool r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
 	r_return_val_if_fail (reg && reg->regset->arena && item, false);
 
 	if (packbits < 1) {

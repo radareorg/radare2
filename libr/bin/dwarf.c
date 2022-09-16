@@ -402,7 +402,7 @@ static inline ut64 dwarf_read_address(size_t size, const ut8 **buf, const ut8 *b
 	default:
 		result = 0;
 		*buf += size;
-		eprintf ("Weird dwarf address size: %u.\n", (int)size);
+		R_LOG_WARN ("Unsupported dwarf address size: %u", (int)size);
 	}
 	return result;
 }
@@ -1097,15 +1097,15 @@ static bool parse_line_raw(const RBin *a, const ut8 *obuf, ut64 len, int mode) {
 	return true;
 }
 
-#define READ_BUF(x,y) if (idx+sizeof(y)>=len) { return false;} \
-	(x)=*(y*)buf; idx+=sizeof(y);buf+=sizeof(y)
+#define READ_BUF(x,y) if (idx+sizeof (y)>=len) { return false;} \
+	(x)=*(y*)buf; idx+=sizeof (y);buf+=sizeof (y)
 
-#define READ_BUF64(x) if (idx+sizeof(ut64)>=len) { return false;} \
-	(x)=r_read_ble64(buf, big_end); idx+=sizeof(ut64);buf+=sizeof(ut64)
-#define READ_BUF32(x) if (idx+sizeof(ut32)>=len) { return false;} \
-	(x)=r_read_ble32(buf, big_end); idx+=sizeof(ut32);buf+=sizeof(ut32)
-#define READ_BUF16(x) if (idx+sizeof(ut16)>=len) { return false;} \
-	(x)=r_read_ble16(buf, big_end); idx+=sizeof(ut16);buf+=sizeof(ut16)
+#define READ_BUF64(x) if (idx+sizeof (ut64)>=len) { return false;} \
+	(x)=r_read_ble64(buf, big_end); idx+=sizeof (ut64);buf+=sizeof (ut64)
+#define READ_BUF32(x) if (idx+sizeof (ut32)>=len) { return false;} \
+	(x)=r_read_ble32(buf, big_end); idx+=sizeof (ut32);buf+=sizeof (ut32)
+#define READ_BUF16(x) if (idx+sizeof (ut16)>=len) { return false;} \
+	(x)=r_read_ble16(buf, big_end); idx+=sizeof (ut16);buf+=sizeof (ut16)
 
 static int parse_aranges_raw(const ut8 *obuf, int len, int mode, PrintfCallback print) {
 	ut32 length, offset;
@@ -1627,7 +1627,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->address = READ64 (buf);
 			break;
 		default:
-			eprintf ("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->address_size);
+			R_LOG_WARN ("DWARF: Unexpected pointer size: %u", (unsigned)hdr->address_size);
 			return NULL;
 		}
 		break;
@@ -1850,7 +1850,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->uconstant = 0;
 		return NULL;
 	default:
-		eprintf ("Unknown DW_FORM 0x%02" PFMT64x "\n", def->attr_form);
+		R_LOG_WARN ("Unknown DW_FORM 0x%02" PFMT64x, def->attr_form);
 		value->uconstant = 0;
 		return NULL;
 	}
@@ -2185,7 +2185,7 @@ RBinSection *getsection(RBin *a, const char *sn) {
 	RBinFile *binfile = a ? a->cur: NULL;
 	RBinObject *o = binfile ? binfile->o : NULL;
 
-	if ( o && o->sections) {
+	if (o && o->sections) {
 		r_list_foreach (o->sections, iter, section) {
 			if (strstr (section->name, sn)) {
 				return section;
@@ -2205,8 +2205,10 @@ static ut8 *get_section_bytes(RBin *bin, const char *sect_name, size_t *len) {
 		return NULL;
 	}
 	*len = section->size;
-	ut8 *buf = calloc (1,*len);
-	r_buf_read_at (binfile->buf, section->paddr, buf, *len);
+	ut8 *buf = calloc (1, *len);
+	if (buf) {
+		r_buf_read_at (binfile->buf, section->paddr, buf, *len);
+	}
 	return buf;
 }
 
@@ -2219,10 +2221,11 @@ static ut8 *get_section_bytes(RBin *bin, const char *sect_name, size_t *len) {
  * @return RBinDwarfDebugInfo* Parsed information, NULL if error
  */
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *bin, int mode) {
+	r_return_val_if_fail (da && bin, NULL);
 	RBinDwarfDebugInfo *info = NULL;
 	RBinSection *debug_str;
 	RBinSection *section = getsection (bin, "debug_info");
-	RBinFile *binfile = bin ? bin->cur : NULL;
+	RBinFile *binfile = bin->cur;
 
 	ut64 debug_str_len = 0;
 	ut8 *debug_str_buf = NULL;
@@ -2284,6 +2287,7 @@ cleanup:
 }
 
 static RBinDwarfRow *row_new(ut64 addr, const char *file, int line, int col) {
+	r_return_val_if_fail (file, NULL);
 	RBinDwarfRow *row = R_NEW0 (RBinDwarfRow);
 	if (!row) {
 		return NULL;
@@ -2296,17 +2300,20 @@ static RBinDwarfRow *row_new(ut64 addr, const char *file, int line, int col) {
 }
 
 static void row_free(void *p) {
-	RBinDwarfRow *row = (RBinDwarfRow*)p;
-	free (row->file);
-	free (row);
+	if (p) {
+		RBinDwarfRow *row = (RBinDwarfRow*)p;
+		free (row->file);
+		free (row);
+	}
 }
 
 R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
+	r_return_val_if_fail (bin, NULL);
 	ut8 *buf;
 	RList *list = NULL;
 	int len, ret;
 	RBinSection *section = getsection (bin, "debug_line");
-	RBinFile *binfile = bin ? bin->cur: NULL;
+	RBinFile *binfile = bin->cur;
 	if (binfile && section) {
 		len = section->size;
 		if (len < 1) {
@@ -2336,10 +2343,8 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 		SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, false);
 		// Use the parsed information from _raw and transform it to more useful format
 		ls_foreach (ls, iter, kv) {
-			if (!strncmp (sdbkv_key (kv), "0x", 2)) {
-				ut64 addr;
-				RBinDwarfRow *row;
-				int line;
+			const char *key = sdbkv_key (kv);
+			if (r_str_startswith (key, "0x")) {
 				char *file = strdup (sdbkv_value (kv));
 				if (!file) {
 					free (buf);
@@ -2350,9 +2355,9 @@ R_API RList *r_bin_dwarf_parse_line(RBin *bin, int mode) {
 				char *tok = strchr (file, '|');
 				if (tok) {
 					*tok++ = 0;
-					line = atoi (tok);
-					addr = r_num_math (NULL, sdbkv_key (kv));
-					row = row_new (addr, file, line, 0);
+					int line = atoi (tok);
+					ut64 addr = r_num_math (NULL, key);
+					RBinDwarfRow *row = row_new (addr, file, line, 0);
 					r_list_append (list, row);
 				}
 				free (file);

@@ -37,7 +37,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (bf, b);
 }
 
@@ -88,7 +88,7 @@ static RList *symbols(RBinFile *bf) {
 	if (left < sizeof (gbuf)) {
 		return NULL;
 	}
-	if(!memcmp (gbuf, "AB", 2)) {
+	if (!memcmp (gbuf, "AB", 2)) {
 		MSX_Header_ROM *hdr = (MSX_Header_ROM*)gbuf;
 		addsym (ret, "ROMSignature", r_offsetof (MSX_Header_ROM, ROMSignature));
 		addsym (ret, "InitAddress", r_read_le16 (&hdr->InitAddress));

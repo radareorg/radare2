@@ -1,6 +1,10 @@
 #ifndef R2_UTIL_TOKEN_H
 #define R2_UTIL_TOKEN_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	R_TOKEN_NONE,
 	R_TOKEN_INT,
@@ -33,5 +37,9 @@ typedef struct r_tokenizer_t {
 R_API char *r_str_tokenize_json(const char *buf);
 R_API RTokenizer *r_tokenizer_new(void);
 R_API void r_str_tokenize(const char *buf, RTokenizerCallback cb, void *user);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

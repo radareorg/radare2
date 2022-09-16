@@ -1211,7 +1211,7 @@ print_decoded_insn (memaddr, info)
 	    }
   }
   else
-  if (!strncmp(insn->name,"ret",3)) {
+  if (!strncmp (insn->name, "ret", 3)) {
 	int i = 0;
 	for (i = 2; i < 8; i++) {
 		load_areg[i] = false;
@@ -1390,7 +1390,7 @@ print_decoded_insn (memaddr, info)
 	  abs = (dec_insn.cexp[i] << 1) + memaddr;
 	  (*info->print_address_func) (abs, info);
 	  break;
-	
+
 	case 'c':
 	  needs_creg = 1;
 	  /* Fall through. */

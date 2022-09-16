@@ -5,7 +5,7 @@ You can mark an offset in visual mode with the cursor and the ',' key. Later pre
 You can debug a program from the graph view ('ag') using standard radare2 commands
 Use the '[' and ']' keys in visual mode to adjust the screen width
 Select your architecture with: 'e asm.arch=<arch>' or r2 -a from the shell
-Move between your search hits in visual mode using the 'f' and 'F' keys
+Move between your search hits in visual mode using the 'n' and 'N' keys
 Save your projects with 'Ps <project-filename>' and restore then with 'Po <project-filename>'
 Enable asm.trace to see the tracing information inside the disassembly
 Change the registers of the child process in this way: 'dr eax=0x333'
@@ -55,10 +55,8 @@ Bindiff two files with '$ radiff2 /bin/true /bin/false'
 Execute commands on a temporary offset by appending '@ offset' to your command.
 Temporally drop the verbosity prefixing the commands with ':'
 Change the graph block definition with graph.callblocks, graph.jmpblocks, graph.flagblocks
-Use scr.accel to browse the file faster!
 Use the 'id' command to see the source line related to the current seek
 Analyze socket connections with the socket plugin: 'radare2 socket://www.foo.com:80'. Use 'w' to send data
-Setup dbg.fpregs to true to visualize the fpu registers in the debugger view.
 To debug a program, you can call r2 with 'dbg://<path-to-program>' or '-d <path..>'
 Use 'e' and 't' in Visual mode to edit configuration and track flags.
 Use 'rabin2 -ris' to get the import/export symbols of any binary.
@@ -67,7 +65,7 @@ Enable the PAGER with 'e scr.pager=less -R'
 Use 'e asm.offset=true' to show offsets in 16bit segment addressing mode.
 The '?' command can be used to evaluate math expressions. Like this: '? (0x34+22)*4'
 Set 'e bin.dbginfo=true' to load debug information at startup.
-Rename a function using the 'afr <newname> @ <offset>' command.
+Rename a function using the 'afn <newname> @ <offset>' command.
 You can redefine descriptive commands in the hud file and using the 'V_' command.
 Pass '-j' to rabin2 to get the information of the binary in JSON format.
 Use rarun2 to launch your programs with a predefined environment.

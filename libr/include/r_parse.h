@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
 
 #ifndef R2_PARSE_H
 #define R2_PARSE_H
@@ -55,7 +55,7 @@ typedef struct r_parse_plugin_t {
 #ifdef R_API
 
 /* lifecycle */
-R_API struct r_parse_t *r_parse_new(void);
+R_API RParse *r_parse_new(void);
 R_API void r_parse_free(RParse *p);
 
 /* plugins */

@@ -71,7 +71,7 @@ static bool r2k__close(RIODesc *fd) {
 		close ((int)(size_t)fd->data);
 	}
 #else
-	eprintf ("TODO: r2k not implemented for this plataform.\n");
+	R_LOG_TODO ("r2k not implemented for this plataform");
 #endif
 	return true;
 }
@@ -98,7 +98,7 @@ static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 		(void)run_ioctl_command (io, fd, cmd);
 		return NULL;
 #else
-		eprintf ("Try: '=!mod'\n    '.=!mod'\n");
+		eprintf ("Try: ':mod'\n    '.:mod'\n");
 #endif
 	}
 	return NULL;

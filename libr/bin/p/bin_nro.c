@@ -127,7 +127,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = false;
 		r_list_append (ret, ptr);
 	} else {
-		eprintf ("Invalid MOD0 address\n");
+		R_LOG_ERROR ("Invalid MOD0 address");
 	}
 
 	ut32 sig0 = r_buf_read_le32_at (bf->buf, 0x18);
@@ -145,7 +145,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	} else {
-		eprintf ("Invalid SIG0 address\n");
+		R_LOG_ERROR ("Invalid SIG0 address");
 	}
 
 	// add text segment

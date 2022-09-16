@@ -8,8 +8,8 @@ anal_plugins = [ 'null' ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = [ 'xtr_sep64' ]
-io_plugins = [ 'malloc', 'fd', 'default', 'null', 'rbuf', 'r2pipe' , 'r2pipe']
-fs_plugins = [ 'r2', 'posix', 'io' ]
+io_plugins = [ 'malloc', 'xattr', 'fd', 'default', 'null', 'rbuf', 'r2pipe' , 'r2pipe']
+fs_plugins = [ 'r2', 'posix', 'io', 'zip' ]
 bp_plugins = [ 'bf' ]
 crypto_plugins = [ 'xor', 'punycode' ]
 core_plugins = [ 'a2f' ]
@@ -62,7 +62,7 @@ if not no_user_plugins
     io_plugins += [ 'r2web' ]
   endif
   if user_plugins.contains('arm')
-    asm_plugins += [ 'arm_cs' ]
+    asm_plugins += [ 'arm' ]
     anal_plugins += [ 'arm_cs' ]
     bp_plugins += [ 'arm' ]
     parse_plugins += [ 'arm_pseudo' ]
@@ -77,10 +77,6 @@ if not no_user_plugins
   endif
   if user_plugins.contains('sparc')
     anal_plugins += [ 'sparc_cs' ]
-    if use_gpl
-      asm_plugins += [ 'sparc_gnu' ]
-      anal_plugins += [ 'sparc_gnu' ]
-    endif
     bp_plugins += [ 'sparc' ]
     # missing parse_plugins += [ 'sparc_pseudo' ]
   endif
@@ -94,12 +90,10 @@ if not no_user_plugins
   endif
   if user_plugins.contains('dalvik')
     bin_plugins += [ 'dex' ]
-    asm_plugins += [ 'dalvik' ]
     anal_plugins += [ 'dalvik' ]
     parse_plugins += [ 'dalvik_pseudo' ]
   endif
   if user_plugins.contains('riscv')
-    asm_plugins += [ 'riscv' ]
     anal_plugins += [ 'riscv' ]
     parse_plugins += [ 'riscv_pseudo' ]
   endif
@@ -125,13 +119,8 @@ if no_user_plugins
 
 asm_plugins += [
   'arm_as',
-  'arm_cs',
-  'arm_winedbg',
-  'dalvik',
-  'or1k',
+  'arm',
   'ppc_as',
-  'ppc_cs',
-  'riscv',
   'x86_as',
   'x86_nasm',
   'x86_nz',
@@ -168,6 +157,7 @@ anal_plugins += [
   'lm32',
   'loongarch_gnu',
   'm68k_cs',
+  'm68k_gnu',
   'm680x_cs',
   'malbolge',
   'mcore',
@@ -202,21 +192,18 @@ if no_user_plugins
   if use_gpl
     asm_plugins += [
       # 'z80',
-      'arm_gnu',
-  #    'hppa_gnu',
-      'm68k_gnu',
-      'lanai_gnu',
-      'sparc_gnu'
     ]
     anal_plugins += [
       'z80',
       'arm_gnu',
+      'lanai_gnu',
       'bpf',
       'mips_gnu',
       'loongarch_gnu',
       's390_gnu',
       'pdp11_gnu',
       'ppc_gnu',
+      'm68k_gnu',
       'sparc_gnu',
     ]
   endif
@@ -267,6 +254,7 @@ bin_plugins += [
   'pebble',
   'prg',
   'psxexe',
+  'rel',
   'sfc',
   'smd',
   'sms',
@@ -367,6 +355,7 @@ fs_plugins += [
 io_plugins += [
   'ar',
   'fd',
+  'reg',
   'bfdbg',
   'bochs',
   'debug',
@@ -557,7 +546,9 @@ r_util_files = [
 install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 
 r_crypto_files = [
-  'include/r_crypto/r_des.h'
+  'include/r_crypto/r_aes.h',
+  'include/r_crypto/r_des.h',
+  'include/r_crypto/r_sm4.h'
 ]
 install_headers(r_crypto_files, install_dir: join_paths(r2_incdir, 'r_crypto'))
 

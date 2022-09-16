@@ -66,10 +66,10 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ NULL }
 	};
 
-	for (i=0; ops[i].op; i++) {
+	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr) {
-				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
+				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
 					if (can_replace(ops[i].str, j, ops[i].max_operands)) {
 						const char *w = argv[ ops[i].str[j]-'0' ];
 						if (w) {
@@ -80,7 +80,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						newstr[k] = ops[i].str[j];
 					}
 				}
-				newstr[k]='\0';
+				newstr[k] = '\0';
 			}
 			return true;
 		}
@@ -89,7 +89,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	/* TODO: this is slow */
 	if (newstr) {
 		newstr[0] = '\0';
-		for (i=0; i<argc; i++) {
+		for (i = 0; i < argc; i++) {
 			strcat (newstr, argv[i]);
 			strcat (newstr, (i == 0 || i== argc - 1)?" ":", ");
 		}
@@ -117,7 +117,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	if (!(buf = malloc (len + 1))) {
 		return false;
 	}
-	memcpy (buf, data, len+1);
+	memcpy (buf, data, len + 1);
 
 	r_str_replace_in (buf, len+1, ".l", "", 1);
 	r_str_replace_in (buf, len+1, ".w", "", 1);
@@ -137,9 +137,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		}
 		if (ptr) {
 			*ptr = '\0';
-			for (++ptr; *ptr == ' '; ptr++) {
-				;
-			}
+			ptr = (char *)r_str_trim_head_ro (ptr + 1);
 			strncpy (w0, buf, WSZ - 1);
 			strncpy (w1, ptr, WSZ - 1);
 
@@ -147,9 +145,7 @@ static int parse(RParse *p, const char *data, char *str) {
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (++ptr; *ptr == ' '; ptr++) {
-					;
-				}
+				ptr = (char *)r_str_trim_head_ro (ptr + 1);
 				strncpy (w1, optr, WSZ - 1);
 				strncpy (w2, ptr, WSZ - 1);
 				optr=ptr;

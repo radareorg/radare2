@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2016 - pancake */
+/* radare - LGPL - Copyright 2016-2022 - pancake */
 
 //Implemented AES version of RC6. keylen = 16, 23, or 32 bytes; w = 32; and r = 20.
 #include <r_lib.h>
 #include <r_crypto.h>
+#include <r_util/r_log.h>
 
 #define Pw 0xb7e15163
 #define Qw 0x9e3779b9
@@ -12,12 +13,13 @@
 #define ROTL(x,y) (((x)<<((y)&(w-1))) | ((x)>>(w-((y)&(w-1)))))
 #define ROTR(x,y) (((x)>>((y)&(w-1))) | ((x)<<(w-((y)&(w-1)))))
 
-struct rc6_state{
+struct rc6_state {
 	ut32 S[2*r+4];
 	int key_size;
 };
 
-static bool flag;
+static R_TH_LOCAL struct rc6_state st;
+static R_TH_LOCAL bool flag;
 
 static bool rc6_init(struct rc6_state *const state, const ut8 *key, int keylen, int direction) {
 	if (keylen != 128/8 && keylen != 192/8 && keylen != 256/8) {
@@ -154,23 +156,17 @@ static void rc6_decrypt(struct rc6_state *const state, const ut8 *inbuf, ut8 *ou
 	}
 }
 
-static struct rc6_state st;
-
-static bool rc6_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool rc6_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
 	return rc6_init (&st, key, keylen, direction);
 }
 
-static int rc6_get_key_size(RCrypto *cry) {
+static int rc6_get_key_size(RCryptoJob *cj) {
 	return st.key_size;
 }
 
-static bool rc6_use(const char *algo) {
-	return !strcmp (algo, "rc6");
-}
-
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	if (len % BLOCK_SIZE != 0) { //let user handle with with pad.
-		eprintf ("Input should be multiple of 128bit.\n");
+		R_LOG_ERROR ("Input should be multiple of 128bit");
 		return false;
 	}
 
@@ -192,22 +188,19 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 		}
 	}
 
-	r_crypto_append (cry, obuf, len);
+	r_crypto_job_append (cj, obuf, len);
 	free (obuf);
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
-}
-
 RCryptoPlugin r_crypto_plugin_rc6 = {
 	.name = "rc6",
+	.implements = "rc6",
+	.author = "pancake",
 	.set_key = rc6_set_key,
 	.get_key_size = rc6_get_key_size,
-	.use = rc6_use,
 	.update = update,
-	.final = final
+	.end = update
 };
 
 #ifndef R2_PLUGIN_INCORE

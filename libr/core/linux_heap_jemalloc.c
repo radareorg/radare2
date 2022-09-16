@@ -48,7 +48,7 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 			return GHT_MAX;
 		}
 		r_list_foreach (syms, iter, s) {
-			if (!strcmp(s->name, symname)) {
+			if (!strcmp (s->name, symname)) {
 				vaddr = s->vaddr;
 				break;
 			}
@@ -97,7 +97,7 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 	const char *path = NULL;
 	ut64 jemalloc_addr = UT64_MAX;
 
-	if (!core || !core->dbg || !core->dbg->maps){
+	if (!core || !core->dbg || !core->dbg->maps) {
 		return false;
 	}
 	r_debug_map_sync (core->dbg);
@@ -272,13 +272,13 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 			PRINTF_GA ("narenas : %"PFMT64d"\n", (ut64)narenas);
 		}
 		if (narenas == 0) {
-			eprintf ("No arenas allocated.\n");
+			R_LOG_ERROR ("No arenas allocated");
 			free (stats);
 			free (ar);
 			return;
 		}
 		if (narenas == GHT_MAX) {
-			eprintf ("Cannot find narenas_total\n");
+			R_LOG_ERROR ("Cannot find narenas_total");
 			free (stats);
 			free (ar);
 			return;
@@ -432,7 +432,7 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 	case ' ':
 		{
 			int pageind;
-			ut64 npages, chunksize_mask, map_bias, map_misc_offset, chunk, mapbits;;
+			ut64 npages, chunksize_mask, map_bias, map_misc_offset, chunk, mapbits;
 			arena_chunk_t *c = R_NEW0 (arena_chunk_t);
 
 			if (!c) {

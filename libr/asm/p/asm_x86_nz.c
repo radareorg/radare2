@@ -1,12 +1,6 @@
-/* Copyright (C) 2008-2021 - pancake, unlogic, emvivre */
+/* Copyright (C) 2008-2022 - pancake, unlogic, emvivre */
 
-#include <r_flag.h>
 #include <r_core.h>
-#include <r_asm.h>
-#include <r_lib.h>
-#include <r_types.h>
-#include <stdio.h>
-#include <string.h>
 
 static ut64 getnum(RAsm *a, const char *s);
 
@@ -1684,7 +1678,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	} else if (!strcmp (op->mnemonic, "jo")) {
 		data[l++] = 0x80;
 	} else if (!strcmp (op->mnemonic, "jp")
-			|| !strcmp(op->mnemonic, "jpe")) {
+			|| !strcmp (op->mnemonic, "jpe")) {
 		data[l++] = 0x8a;
 	} else if (!strcmp (op->mnemonic, "js")
 			|| !strcmp (op->mnemonic, "jz")) {
@@ -1704,7 +1698,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 	return l;
 }
 
-static int oplea(RAsm *a, ut8 *data, const Opcode *op){
+static int oplea(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int mod = 0;
 	st32 offset = 0;
@@ -1773,7 +1767,7 @@ static int oples(RAsm *a, ut8* data, const Opcode *op) {
 	int l = 0;
 	int offset = 0;
 	int mod = 0;
-	
+
 	if (op->operands[1].type & OT_MEMORY) {
 		data[l++] = 0xc4;
 		if (op->operands[1].type & OT_GPREG) {
@@ -1822,7 +1816,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 		if (immediate_out_of_range (bits, op->operands[1].immediate)) {
 			return -1;
-		}	
+		}
 		immediate = op->operands[1].immediate * op->operands[1].sign;
 		if (op->operands[0].type & OT_GPREG && !(op->operands[0].type & OT_MEMORY)) {
 			if ((op->operands[0].type & OT_DWORD)
@@ -2375,9 +2369,6 @@ static int oppop(RAsm *a, ut8 *data, const Opcode *op) {
 	int offset = 0;
 	int mod = 0;
 	if ((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) {
-		if (op->operands[0].type & OT_MEMORY) {
-			return -1;
-		}
 		if (op->operands[0].type & OT_REGTYPE & OT_SEGMENTREG) {
 			ut8 base;
 			if (op->operands[0].reg & X86R_FS) {
@@ -2427,7 +2418,7 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 	int mod = 0;
-	st32 immediate = 0;;
+	st32 immediate = 0;
 	st32 offset = 0;
 	if (op->operands[0].type & OT_GPREG
 			&& !(op->operands[0].type & OT_MEMORY)) {
@@ -2479,7 +2470,7 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 	} else {
 		if (immediate_out_of_range (a->config->bits, op->operands[0].immediate)) {
 			return -1;
-		}	
+		}
 		immediate = op->operands[0].immediate * op->operands[0].sign;
 		if (immediate >= 128 || immediate < -128) {
 			data[l++] = 0x68;
@@ -2582,14 +2573,14 @@ static int opretf(RAsm *a, ut8 *data, const Opcode *op) {
 static int opstos(RAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
-	if (!strcmp(op->mnemonic, "stosw")) {
+	if (!strcmp (op->mnemonic, "stosw")) {
 		data[l++] = 0x66;
 	}
-	if (!strcmp(op->mnemonic, "stosb")) {
+	if (!strcmp (op->mnemonic, "stosb")) {
 		data[l++] = 0xaa;
-	} else if (!strcmp(op->mnemonic, "stosw")) {
+	} else if (!strcmp (op->mnemonic, "stosw")) {
 		data[l++] = 0xab;
-	} else if (!strcmp(op->mnemonic, "stosd")) {
+	} else if (!strcmp (op->mnemonic, "stosd")) {
 		data[l++] = 0xab;
 	}
 	return l;
@@ -5171,7 +5162,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	LookupTable *lt_ptr;
 	int retval = -1;
 	Opcode instr = {0};
-	
+
 	strncpy (op, str, sizeof (op) - 1);
 	op[sizeof (op) - 1] = '\0';
 	parseOpcode (a, op, &instr);

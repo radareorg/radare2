@@ -6,7 +6,7 @@
 enum {
 	V850_ARG_TYPE_UNKNOWN,
 	V850_ARG_TYPE_STRING,
-	V850_ARG_TYPE_NUMBER 
+	V850_ARG_TYPE_NUMBER
 };
 
 static const ut8 v850_cacheop_codes[] = {
@@ -433,7 +433,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 			}
 
 			// first argument have no special processing
-			const char *prefix = (operand->flags & V850_OPERAND_BANG)? "|" :(operand->flags & V850_OPERAND_PERCENT)? "%":""; 
+			const char *prefix = (operand->flags & V850_OPERAND_BANG)? "|" :(operand->flags & V850_OPERAND_PERCENT)? "%":"";
 #define IS_PUSHPOP(x) (!strcmp ((x), "pushsp") || !strcmp ((x), "popsp") || !strcmp ((x), "dbpush" ))
 			if (opnum == 1 && opnum == memop) {
 				r_strbuf_append (sb, "[");
@@ -593,7 +593,7 @@ int v850np_disasm(v850np_inst *inst, int cpumodel, ut64 addr, const ut8* buffer,
 	}
 
 	if (length == 0 && (cpumodel & V850_CPU_E3V5_UP)) {
-		if ( /* ld.dw 23bit (v850e3v5) */
+		if (/* ld.dw 23bit (v850e3v5) */
 				((insn & 0xffe0) == 0x07a0 && (insn2 & 0x000f) == 0x0009)
 				|| /* st.dw 23bit (v850e3v5) */
 				((insn & 0xffe0) == 0x07a0 && (insn2 & 0x000f) == 0x000f)) {

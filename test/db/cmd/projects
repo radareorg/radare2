@@ -90,14 +90,12 @@ EXPECT=<<EOF
             0x100003c19      4881ec380600.  sub rsp, 0x638
             0x100003c20      4989f7         mov r15, rsi
             0x100003c23      4189fe         mov r14d, edi
- 4 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT
+ 3 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT
 554889e54157415641554154534881ec
  3 * r-x 0x0002daa0 bins/mach0/ls-m1
-- 5 fd: 3 +0x00000000 0x00000000 - 0x0002da9f r-x
-* 4 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT
-- 3 fd: 3 +0x0000c000 0x100008000 - 0x10000bfff r-- fmap.__DATA
-- 2 fd: 3 +0x00010000 0x10000c000 - 0x100013fff r-- fmap.__LINKEDIT
-- 1 fd: 3 +0x00000000 0x100000000 - 0x10002da9f r-x
+* 3 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT
+- 2 fd: 3 +0x0000c000 0x100008000 - 0x10000bfff r-- fmap.__DATA
+- 1 fd: 3 +0x00010000 0x10000c000 - 0x100013fff r-- fmap.__LINKEDIT
 EOF
 RUN
 
@@ -403,7 +401,7 @@ EXPECT=<<EOF
  3 * r-x 0x000021da bins/elf/analysis/main
  4 - rw- 0x00000008 null://8
 --
-o bins/elf/analysis/main 0x00400000 r-x
+o "bins/elf/analysis/main" 0x00400000 r-x
 om $d 0x00600dc0 0x00000230 0x00000000 r-- fmap.LOAD1
 onnu null://8 rw-
 omu 4 0x00600910 0x00000008 0x00000000 rw- mmap.LOAD1

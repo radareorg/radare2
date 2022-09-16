@@ -81,14 +81,14 @@ static task_t task_for_pid_workaround(int pid) {
 	}
 	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
-//		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
+		R_LOG_DEBUG ("host_processor_set_priv failed with error 0x%x", kr);
 		//mach_error ("host_processor_set_priv",kr);
 		return MACH_PORT_NULL;
 	}
 	numTasks = 0;
 	kr = processor_set_tasks (psDefault_control, &tasks, &numTasks);
 	if (kr != KERN_SUCCESS) {
-//		eprintf ("processor_set_tasks failed with error %x\n", kr);
+		R_LOG_DEBUG ("processor_set_tasks failed with error %x", kr);
 		return MACH_PORT_NULL;
 	}
 	if (pid == 0) {
@@ -135,7 +135,7 @@ static task_t pid_to_task(RIODesc *fd, int pid) {
 		//since we are going to get a new task
 		kr = mach_port_deallocate (mach_task_self (), old_task);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("pid_to_task: fail to deallocate port\n");
+			R_LOG_ERROR ("pid_to_task: fail to deallocate port");
 			return 0;
 		}
 	}
@@ -145,8 +145,8 @@ static task_t pid_to_task(RIODesc *fd, int pid) {
 		if (task == MACH_PORT_NULL) {
 			task = task_for_pid_ios9pangu (pid);
 			if (task != MACH_PORT_NULL) {
-				//eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
-				//eprintf ("Missing priviledges? 0x%x: %s\n", err, MACH_ERROR_STRING (err));
+				//R_LOG_ERROR ("Failed to get task %d for pid %d", (int)task, (int)pid);
+				//R_LOG_ERROR ("Missing priviledges? 0x%x: %s", err, MACH_ERROR_STRING (err));
 				return -1;
 			}
 		}
@@ -250,7 +250,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 			(pointer_t)buf + copied, &size);
 		switch (err) {
 		case KERN_PROTECTION_FAILURE:
-			//eprintf ("r_io_mach_read: kern protection failure.\n");
+			R_LOG_DEBUG ("r_io_mach_read: kern protection failure");
 			break;
 		case KERN_INVALID_ADDRESS:
 			if (blocksize == 1) {
@@ -348,17 +348,16 @@ static int mach_write_at(RIO *io, RIODesc *desc, const void *buf, int len, ut64 
 	}
 	operms = tsk_getperm (io, task, pageaddr);
 	if (!tsk_setperm (io, task, pageaddr, total_size, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
-		eprintf ("io.mach: Cannot set page perms for %d byte(s) at 0x%08"
-			PFMT64x"\n", (int)pagesize, (ut64)pageaddr);
+		R_LOG_ERROR ("io.mach: Cannot set page perms for %d byte(s) at 0x%08" PFMT64x, (int)pagesize, (ut64)pageaddr);
 		return -1;
 	}
 	if (!tsk_write (task, vaddr, buf, len)) {
-		eprintf ("io.mach: Cannot write on memory\n");
+		R_LOG_ERROR ("io.mach: Cannot write on memory");
 		len = -1;
 	}
 	if (operms) {
 		if (!tsk_setperm (io, task, pageaddr, total_size, operms)) {
-			eprintf ("io.mach: Cannot restore page perms\n");
+			R_LOG_ERROR ("io.mach: Cannot restore page perms");
 			return -1;
 		}
 	}
@@ -404,7 +403,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		 * the pid > 0 check  doesn't seem to be reasonable to me too
 		 * what was this intended to check anyway ? */
 		if (pid > 0 && io->referer && !strncmp (io->referer, "dbg://", 6)) {
-			eprintf ("Child killed\n");
+			R_LOG_INFO ("Child killed");
 			kill (pid, SIGKILL);
 		}
 #endif
@@ -414,7 +413,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			break;
 		case EINVAL:
 			r_sys_perror ("ptrace: Cannot attach");
-			eprintf ("Possibly unsigned r2. Please see doc/macos.md\n");
+			R_LOG_INFO ("Possibly unsigned r2. Please see doc/macos.md");
 			break;
 		default:
 			R_LOG_ERROR ("unknown error in debug_attach");
@@ -502,7 +501,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			task_t task = pid_to_task (fd, iodd->tid);
 			tsk_setperm (io, task, io->off, pagesize, perm);
 		} else {
-			eprintf ("Usage: =!perm [rwx]\n");
+			eprintf ("Usage: :perm [rwx]\n");
 		}
 		return NULL;
 	}
@@ -532,7 +531,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				return NULL;
 			}
 		}
-		eprintf ("io_mach_system: Invalid pid %d\n", pid);
+		R_LOG_ERROR ("Invalid pid %d", pid);
 	} else {
 		eprintf ("Try: ':pid' or ':perm'\n");
 	}

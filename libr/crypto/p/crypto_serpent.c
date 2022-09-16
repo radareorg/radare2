@@ -4,9 +4,9 @@
 #include <r_crypto.h>
 #include "crypto_serpent_algo.h"
 
-static struct serpent_state st = {{0}};
+static R_TH_LOCAL struct serpent_state st = {{0}};
 
-static bool serpent_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool serpent_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
 	eprintf ("key_size: %d\n", keylen);
 	if ((keylen != 128 / 8) && (keylen != 192 / 8) && (keylen != 256 / 8)) {
 		return false;
@@ -14,21 +14,21 @@ static bool serpent_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, 
 	st.key_size = keylen * 8;
 	eprintf ("key_size: %d\n", st.key_size);
 	memcpy (st.key, key, keylen);
-	cry->dir = direction;
+	cj->dir = direction;
 	return true;
 }
 
-static int serpent_get_key_size(RCrypto *cry) {
+static int serpent_get_key_size(RCryptoJob *cj) {
 	return st.key_size;
 }
 
-static bool serpent_use(const char *algo) {
+static bool serpent_check(const char *algo) {
 	return !strcmp (algo, "serpent-ecb");
 }
 
 #define BLOCK_SIZE 16
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	// Pad to the block size, do not append dummy block
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
@@ -61,13 +61,13 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 		ibuf[len / 4] = r_read_le32 (tail);
 	}
 
-	if (cry->dir == 0) {
+	if (cj->dir == 0) {
 		for (i = 0; i < blocks; i++) {
 			// delta in number of ut32
 			const int delta = (BLOCK_SIZE * i) / 4;
 			serpent_encrypt (&st, ibuf + delta, tmp + delta);
 		}
-	} else if (cry->dir > 0) {
+	} else if (cj->dir > 0) {
 		for (i = 0; i < blocks; i++) {
 			// delta in number of ut32
 			const int delta = (BLOCK_SIZE * i) / 4;
@@ -85,24 +85,24 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 		obuf[k + 3] = (tmp[j] >> 24) & 0xff;
 	}
 
-	r_crypto_append (cry, obuf, size);
+	r_crypto_job_append (cj, obuf, size);
 	free (obuf);
 	free (ibuf);
 	free (tmp);
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
+	return update (cj, buf, len);
 }
 
 RCryptoPlugin r_crypto_plugin_serpent = {
 	.name = "serpent-ecb",
 	.set_key = serpent_set_key,
 	.get_key_size = serpent_get_key_size,
-	.use = serpent_use,
+	.check = serpent_check,
 	.update = update,
-	.final = final
+	.end = end
 };
 
 #ifndef R2_PLUGIN_INCORE

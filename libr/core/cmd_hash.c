@@ -229,7 +229,7 @@ static void handle_crc16_riello(const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_RIELLO));
 }
 
-static void handle_crc16_t10dif(const ut8 *block, int len) {
+static void handle_crc16_t10dif (const ut8 *block, int len) {
 	r_cons_printf ("%04" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC16_T10_DIF));
 }
 

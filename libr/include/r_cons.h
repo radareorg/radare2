@@ -71,6 +71,7 @@ typedef int (*RConsGetCursor)(int *rows);
 typedef bool (*RConsIsBreaked)(void);
 typedef void (*RConsFlush)(void);
 typedef void (*RConsGrepCallback)(const char *grep);
+typedef const char * const RCoreHelpMessage[];
 
 typedef struct r_cons_bind_t {
 	RConsGetSize get_size;
@@ -524,6 +525,7 @@ typedef struct r_cons_t {
 
 #define R_CONS_KEY_ESC 0x1b
 
+#define R_CONS_CLEAR_FROM_CURSOR_TO_EOL "\x1b[0K\r"
 #define R_CONS_CLEAR_LINE "\x1b[2K\r"
 #define R_CONS_CLEAR_SCREEN "\x1b[2J\r"
 #define R_CONS_CLEAR_FROM_CURSOR_TO_END "\x1b[0J\r"
@@ -768,8 +770,10 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h);
 R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch);
 R_API void r_cons_canvas_line_square_defined(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bendpoint, int isvert);
 R_API void r_cons_canvas_line_back_edge(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
+
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void);
+R_API void r_cons_chop(void);
 R_API RConsContext *r_cons_context(void);
 R_API RCons *r_cons_free(void);
 R_API char *r_cons_lastline(int *size);
@@ -863,7 +867,6 @@ R_API void r_cons_line(int x, int y, int x2, int y2, int ch);
 R_API void r_cons_show_cursor(int cursor);
 R_API char *r_cons_swap_ground(const char *col);
 R_API bool r_cons_drop(int n);
-R_API void r_cons_chop(void); // XXX R2_580 this function hasnt been implemented and nobody miss it, just rimraf't
 R_API void r_cons_set_raw(bool b);
 R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_last_interactive(void);
@@ -884,7 +887,7 @@ R_API int r_cons_write(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
-// R2_580 - R_API char *r_cons_drain(void);
+R_API char *r_cons_drain(void);
 R_API void r_cons_print_fps(int col);
 R_API void r_cons_last(void);
 R_API int r_cons_less_str(const char *str, const char *exitkeys);
@@ -895,9 +898,9 @@ R_API void r_cons_visual_flush(void);
 R_API void r_cons_visual_write(char *buffer);
 R_API bool r_cons_is_utf8(void);
 R_API bool r_cons_is_windows(void);
-R_API void r_cons_cmd_help(const char *help[], bool use_color);
-R_API void r_cons_cmd_help_json(const char *help[]);
-R_API void r_cons_cmd_help_match(const char *help[], bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact);
+R_API void r_cons_cmd_help(const char * const help[], bool use_color);
+R_API void r_cons_cmd_help_json(const char * const help[]);
+R_API void r_cons_cmd_help_match(RCoreHelpMessage help, bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact);
 R_API void r_cons_log_stub(const char *output, const char *funcname, const char *filename,
  unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(7, 8);
 
@@ -1095,6 +1098,7 @@ struct r_line_t {
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
 	int vtmode; // R2_580 duplicated and unused from the global RCons.vtmode
+	int hist_size;
 }; /* RLine */
 
 #ifdef R_API
@@ -1112,12 +1116,14 @@ typedef int (RLineReadCallback)(void *user, const char *line);
 R_API const char *r_line_readline(void);
 R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user);
 
-R_API int r_line_hist_load(const char *file);
+R_API bool r_line_hist_load(const char *file);
 R_API int r_line_hist_add(const char *line);
 R_API bool r_line_hist_save(const char *file);
 R_API int r_line_hist_label(const char *label, void(*cb)(const char*));
 R_API void r_line_label_show(void);
 R_API int r_line_hist_list(void);
+R_API int r_line_hist_get_size(void);
+R_API void r_line_hist_set_size(int size);
 R_API const char *r_line_hist_get(int n);
 
 R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb cb_up, RLineHistoryDownCb cb_down);

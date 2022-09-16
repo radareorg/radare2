@@ -49,7 +49,6 @@ LINK+=$(LIBR)/reg/libr_reg.a
 LINK+=$(LIBR)/bp/libr_bp.a
 LINK+=$(LIBR)/io/libr_io.a
 LINK+=$(LIBR)/flag/libr_flag.a
-LINK+=$(LIBR)/hash/libr_hash.a
 LINK+=$(LIBR)/syscall/libr_syscall.a
 LINK+=$(LIBR)/egg/libr_egg.a
 LINK+=$(LIBR)/fs/libr_fs.a

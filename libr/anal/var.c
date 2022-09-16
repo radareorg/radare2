@@ -896,7 +896,7 @@ static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta) {
 static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	st64 ptr = 0;
 	char *addr, *esil_buf = NULL;
-	const st64 maxstackframe = 1024 * 8; 
+	const st64 maxstackframe = 1024 * 8;
 
 	r_return_if_fail (anal && fcn && op && reg);
 
@@ -1033,12 +1033,6 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			}
 		}
 		if (varname) {
-#if 0
-			if (isarg && frame_off > 48) {
-				free (varname);
-				goto beach;
-			}
-#endif
 			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, vartype, anal->config->bits / 8, isarg, varname);
 			if (var) {
 				r_anal_var_set_access (var, reg, op->addr, rw, ptr);
@@ -1406,11 +1400,10 @@ R_API RList *r_anal_var_list(RAnal *a, RAnalFunction *fcn, int kind) {
 }
 
 static void var_field_free(RAnalVarField *field) {
-	if (!field) {
-		return;
+	if (field) {
+		free (field->name);
+		free (field);
 	}
-	free (field->name);
-	free (field);
 }
 
 R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
@@ -1465,7 +1458,7 @@ static int regvar_comparator(const RAnalVar *a, const RAnalVar *b) {
 	// return (a && b)? (a->argnum > b->argnum) - (a->argnum < b->argnum): 0;
 }
 
-static int var_comparator(const RAnalVar *a, const RAnalVar *b){
+static int var_comparator(const RAnalVar *a, const RAnalVar *b) {
 	if (a && b) {
 		if (a->isarg && !b->isarg) {
 			return -1;
@@ -1512,6 +1505,7 @@ static int var_comparator(const RAnalVar *a, const RAnalVar *b){
 }
 
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ *pj) {
+	bool newstack = anal->opt.var_newstack;
 	RList *list = r_anal_var_list (anal, fcn, kind);
 	RAnalVar *var;
 	RListIter *iter;
@@ -1595,8 +1589,8 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				pj_ks (pj, "name", var->name);
 				if (var->isarg) {
 					pj_ks (pj, "kind", "arg");
-				} else {				
-					pj_ks (pj, "kind", "var");			
+				} else {
+					pj_ks (pj, "kind", "var");
 				}
 				pj_ks (pj, "type", var->type);
 				pj_k (pj, "ref");
@@ -1640,7 +1634,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				break;
 			case R_ANAL_VAR_KIND_SPV:
 			{
-				int delta = fcn->maxstack + var->delta;
+				int delta = newstack? var->delta: fcn->maxstack + var->delta;
 				if (!var->isarg) {
 					char sign = (-var->delta <= fcn->maxstack) ? '+' : '-';
 					anal->cb_printf ("var %s %s @ %s%c0x%x\n",
@@ -1783,7 +1777,6 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			comma = ", ";
 		}
 	}
-
 	r_list_foreach (cache->bvars, iter, var) {
 		if (var->isarg) {
 			tmp_len = strlen (var->type);
@@ -1795,7 +1788,6 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			}
 		}
 	}
-
 	r_list_foreach (cache->svars, iter, var) {
 		if (var->isarg) {
 			tmp_len = strlen (var->type);
@@ -1807,7 +1799,6 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			}
 		}
 	}
-
 beach:
 	r_strbuf_append (buf, ");");
 	R_FREE (type_fcn_name);

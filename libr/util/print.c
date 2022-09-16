@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2007-2021 - pancake */
+/* radare2 - LGPL - Copyright 2007-2022 - pancake */
 
 #include <r_util/r_print.h>
 #include <r_anal.h>
@@ -665,7 +665,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool zeroend = (options & R_PRINT_STRING_ZEROEND);
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
+	bool is_interactive = (p && p->cons) ? p->cons->context->is_interactive: false;
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
+	bool use_color = p && (p->flags & R_PRINT_FLAGS_COLOR);
 	int col = 0;
 	i = 0;
 	for (; !r_print_is_interrupted () && i < len; i++) {
@@ -691,7 +693,12 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 		} else {
 			if (b == '\\') {
 				p->cb_printf ("\\\\");
-			} else if ((b == '\n' && !esc_nl) || IS_PRINTABLE (b)) {
+			} else if ((b == '\n' && !esc_nl)) {
+				p->cb_printf ("\n");
+				if (use_color && is_interactive) {
+					p->cb_printf (R_CONS_CLEAR_FROM_CURSOR_TO_EOL);
+				}
+			} else if (IS_PRINTABLE (b)) {
 				p->cb_printf ("%c", b);
 			} else {
 				p->cb_printf ("\\x%02x", b);
@@ -887,6 +894,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 	switch (base) {
 	case -10:
+	case -11:
 		bytefmt = "0x%08x ";
 		pre = " ";
 		if (inc < 4) {
@@ -894,6 +902,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 		break;
 	case -1:
+	case -2:
 		bytefmt = "0x%08x ";
 		pre = "  ";
 		if (inc < 4) {
@@ -906,6 +915,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		break;
 	case 10:
 		bytefmt = "%3d";
+		pre = " ";
+		break;
+	case 11:
+		bytefmt = "%3u";
 		pre = " ";
 		break;
 	case 16:
@@ -987,9 +1000,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					if  (use_hdroff) {
 						if (use_pair) {
-							printfmt ("%c%c",
+							if ((((i + k) >> 4) + K) % 16) {
+								printfmt ("%c%c",
 									hex[(((i+k) >> 4) + K) % 16],
 									hex[(i + k) % 16]);
+							} else {
+								printfmt (" %c", hex[(i + k) % 16]);
+							}
 						} else {
 							printfmt (" %c", hex[(i + k) % 16]);
 						}
@@ -1126,8 +1143,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 				if (p && (base == 32 || base == 64)) {
 					int left = len - i;
-					/* TODO: check step. it should be 2/4 for base(32) and 8 for
-					 *       base(64) */
+					// TODO: check step. it should be 2/4 for base(32) and 8 for base64
 					ut64 n = 0;
 					size_t sz_n = (base == 64)
 						? sizeof (ut64) : (step == 2)
@@ -1194,7 +1210,18 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt ("%23" PFMT64d " ", (st64)w);
 					r_print_cursor (p, j, 8, 0);
 					j += 7;
-				} else if (base == -1) {
+				} else if (base == -9) {
+					st64 w = r_read_ble64 (buf + j, be);
+					r_print_cursor (p, j, 8, 1);
+					printfmt ("%23" PFMT64u " ", (st64)w);
+					r_print_cursor (p, j, 8, 0);
+					j += 7;
+				} else if (base == -2) { // pxu1
+					ut8 w = buf[j];
+					r_print_cursor (p, j, 1, 1);
+					printfmt ("%4u ", w);
+					r_print_cursor (p, j, 1, 0);
+				} else if (base == -1) { // pxd1
 					st8 w = r_read_ble8 (buf + j);
 					r_print_cursor (p, j, 1, 1);
 					printfmt ("%4d ", w);
@@ -1207,11 +1234,27 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						r_print_cursor (p, j, 2, 0);
 					}
 					j += 1;
-				} else if (base == 10) { // "pxd"
+				} else if (base == -11) { // pxu2
+					if (j + 1 < len) {
+						ut16 w = r_read_ble16 (buf + j, be);
+						r_print_cursor (p, j, 2, 1);
+						printfmt ("%7u ", (w & 0xFFFF));
+						r_print_cursor (p, j, 2, 0);
+					}
+					j += 1;
+				} else if (base == 10) { // "pxd2"
 					if (j + 3 < len) {
 						int w = r_read_ble32 (buf + j, be);
 						r_print_cursor (p, j, 4, 1);
 						printfmt ("%13d ", w);
+						r_print_cursor (p, j, 4, 0);
+					}
+					j += 3;
+				} else if (base == 11) { // "pxu"
+					if (j + 3 < len) {
+						int w = r_read_ble32 (buf + j, be);
+						r_print_cursor (p, j, 4, 1);
+						printfmt ("%13u ", w);
 						r_print_cursor (p, j, 4, 0);
 					}
 					j += 3;
@@ -1447,7 +1490,6 @@ static const char* getchardiff(RPrint *p, char *fmt, ut8 a, ut8 b) {
 	} else {
 		sprintf (fmt, "%c", ch);
 	}
-	//else { fmt[0] = ch; fmt[1]=0; }
 	return fmt;
 }
 
@@ -1847,10 +1889,9 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	for (i = 0; i < size; i++) {
 		cols = arr[i] > cols ? arr[i] : cols;
 	}
-	cols /= 5;
+	int div = R_MAX (255 / (p->cols * 3), 1);
+	cols /= div;
 	for (i = 0; i < size; i++) {
-		ut8 next = (i + 1 < size)? arr[i + 1]: 0;
-		int base = 0, k = 0;
 		if (addr != UT64_MAX && step > 0) {
 			ut64 at = addr + (i * step);
 			if (show_offset) {
@@ -1871,34 +1912,8 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		} else {
 			p->cb_printf ("%s", v_line);
 		}
-		if (next < INC) {
-			base = 1;
-		}
-		if (next < arr[i]) {
-			if (arr[i] > INC) {
-				for (j = 0; j < next + base; j += INC) {
-					printHistBlock (p, k, cols);
-					k++;
-				}
-			}
-			for (j = next + INC; j + base < arr[i]; j += INC) {
-				printHistBlock (p, k, cols);
-				k++;
-			}
-		} else {
-			printHistBlock (p, k, cols);
-			k++;
-		}
-		if (i + 1 == size) {
-			for (j = arr[i] + INC + base; j + base < next; j += INC) {
-				printHistBlock (p, k, cols);
-				k++;
-			}
-		} else if (arr[i + 1] > arr[i]) {
-			for (j = arr[i] + INC + base; j + base < next; j += INC) {
-				printHistBlock (p, k, cols);
-				k++;
-			}
+		for (j = 0; j < arr[i] / div; j++) {
+			printHistBlock (p, j, cols);
 		}
 		if (show_colors) {
 			p->cb_printf ("%s", Color_RESET);
@@ -1951,8 +1966,11 @@ static void r_print_2bpp_newline(RPrint *p, bool useColor) {
 }
 
 R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, size_t buflen, ut32 tiles, const char **colors) {
+	if (!tiles) {
+		return;
+	}
 	if (!colors) {
-		colors = (const char *[]){
+		colors = (const char *[]) {
 			Color_BGWHITE,
 			Color_BGRED,
 			Color_BGBLUE,

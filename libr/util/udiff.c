@@ -1,10 +1,9 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nikolai */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nikolai */
 
 #include <r_util/r_diff.h>
 
 // the non-system-diff doesnt work well
 #define USE_SYSTEM_DIFF 1
-
 
 R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b) {
 	RDiff *d = R_NEW0 (RDiff);
@@ -243,7 +242,7 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 	lb = R_ABS (lb);
 	if (la != lb) {
 		len = R_MIN (la, lb);
-		eprintf ("Buffer truncated to %d byte(s) (%d not compared)\n", len, R_ABS(lb - la));
+		R_LOG_INFO ("Buffer truncated to %d byte(s) (%d not compared)", len, R_ABS(lb - la));
 	} else {
 		len = la;
 	}
@@ -633,7 +632,7 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 		} else if (!a_ch && b_ch) {
 			cur_align = R2R_ALIGN_TOP_GAP;
 		} else if (a_ch != b_ch) {
-			eprintf ("Internal error: mismatch detected!\n");
+			R_LOG_ERROR ("Internal mismatch detected!");
 			cur_align = R2R_ALIGN_MISMATCH;
 		} else {
 			cur_align = R2R_ALIGN_MATCH;
@@ -805,11 +804,11 @@ static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst,
 }
 
 /**
- * \brief Return Levenshtein distance and put array of changes, of unkown
+ * \brief Return Levenshtein distance and put array of changes, of unknown
  * lenght, in chgs
  * \param bufa Structure to represent starting buffer
  * \param bufb Structure to represent the buffer to reach
- * \param maxdst Max Levenshtein distance need, send UT32_MAX if unkown.
+ * \param maxdst Max Levenshtein distance need, send UT32_MAX if unknown.
  * \param levdiff Function pointer returning true when there is a difference.
  * \param chgs Returned array of changes to get from bufa to bufb
  *
@@ -842,7 +841,8 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 	size_t skip;
 	ut32 alen = bufa->len;
 	ut32 blen = bufb->len;
-	for (skip=0; skip < alen && !levdiff (bufa, bufb, skip, skip); skip++) {}
+	for (skip = 0; skip < alen && !levdiff (bufa, bufb, skip, skip); skip++) {
+	}
 
 	// strip suffix as long as bytes don't diff
 	size_t i;
@@ -951,11 +951,11 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 	{
 		// for debugging matrix
 		size_t total = 0;
-		for (i=0; i <= alen; i++) {
+		for (i = 0; i <= alen; i++) {
 			Levrow *bow = matrix + i;
 			ut32 j;
 			printf ("   ");
-			for (j=0; j <= blen; j++) {
+			for (j = 0; j <= blen; j++) {
 				ut32 val = lev_get_val (bow, j);
 				if (val >= UT32_MAX - 1) {
 					printf (" ..");

@@ -10,6 +10,10 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #undef eprintf
 #define eprintf(...) fprintf(stderr,__VA_ARGS__)
 
@@ -38,7 +42,7 @@
 #define __MINGW__ 1
 #endif
 
-#if __WIN32__ || __MINGW__ || __WINDOWS__ || _MSC_VER
+#if defined __WIN32__ || __MINGW__ > 0 || __WINDOWS__ > 0 || _MSC_VER > 0
 #define __SDB_WINDOWS__ 1
 #undef DIRSEP
 #define DIRSEP '\\'
@@ -148,5 +152,9 @@ static inline void ut32_unpack(char s[4], ut32 *u) {
 	result += (ut8) s[0];
 	*u = result;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -45,7 +45,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 		return 0;
 	ut64 naddr;
 	eprintf ("%d vs %d\n", task, ___task);
-	for (count=128; count; count--) {
+	for (count = 128; count; count--) {
 		// get next memory region
 		naddr = addr;
 		ret = vm_region_recurse_64 (task, (vm_address_t*)&naddr, (vm_size_t*)&size,
@@ -90,7 +90,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 #if 0
 	if (dbg->pid == 0) {
 		vm_address_t base = get_kernel_base (task);
-		eprintf ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
+		R_LOG_INFO ("Kernel Base Address: 0x%"PFMT64x, (ut64)base);
 		return NULL;
 	}
 #endif
@@ -106,7 +106,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 		kr = mach_vm_region_recurse (task, &address, &size, &depth,
 			(vm_region_recurse_info_t) &info, &info_count);
 		if (kr != KERN_SUCCESS) {
-			//eprintf ("Cannot kern succ recurse\n");
+			//R_LOG_ERROR ("Cannot kern succ recurse");
 			break;
 		}
 		if (!list) {
@@ -127,7 +127,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 			}
 		} else contiguous = false;
 		oldprot = info.protection;
-		if (info.max_protection!=0 && !contiguous) {
+		if (info.max_protection != 0 && !contiguous) {
 			char module_name[1024];
 			module_name[0] = 0;
 #ifndef __POWERPC__
@@ -154,7 +154,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 			mr = r_debug_map_new (buf, address, address+size,
 					xwr2rwx (info.protection), 0);
 			if (!mr) {
-				eprintf ("Cannot create r_debug_map_new\n");
+				R_LOG_ERROR ("Cannot create r_debug_map_new");
 				break;
 			}
 			mr->file = strdup (module_name);
@@ -206,18 +206,19 @@ static RList *osx_dbg_maps(RDebug *dbg) {
 	prev_size = size;
 	nsubregions = 1;
 
-	for (i=0; ; i++) {
+	for (i = 0; ; i++) {
 		int done = 0;
 
 		address = prev_address + prev_size;
 		print = 0;
 
-		if (prev_size==0)
+		if (prev_size == 0) {
 			break;
+		}
 		/* Check to see if address space has wrapped around. */
-		if (address == 0)
+		if (address == 0) {
 			done = 1;
-
+		}
 		if (!done) {
 			count = VM_REGION_BASIC_INFO_COUNT_64;
 			kret = mach_vm_region (task, (mach_vm_address_t *)&address,
@@ -259,7 +260,7 @@ static RList *osx_dbg_maps(RDebug *dbg) {
 			mr = r_debug_map_new (buf, prev_address, prev_address+prev_size,
 				xwr2rwx (prev_info.protection), 0);
 			if (!mr) {
-				eprintf ("Cannot create r_debug_map_new\n");
+				R_LOG_ERROR ("Cannot create r_debug_map_new");
 				break;
 			}
 			mr->file = strdup (module_name);
@@ -267,7 +268,7 @@ static RList *osx_dbg_maps(RDebug *dbg) {
 		}
 }
 #if 0
-		if (1==0 && rest) { /* XXX never pritn this info here */
+		if (1 == 0 && rest) { /* XXX never pritn this info here */
 			addr = 0LL;
 			addr = (ut64) (ut32) prev_address;
 			if (num_printed == 0)

@@ -113,7 +113,7 @@ R_API int r_core_yank_set(RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
 R_API int r_core_yank_set_str(RCore *core, ut64 addr, const char *str, ut32 len) {
 	// free (core->yank_buf);
 	int res = r_core_yank_set (core, addr, (ut8 *)str, len);
-	if (res == true) {
+	if (res) {
 		ut8 zero = 0;
 		r_buf_write_at (core->yank_buf, len - 1, &zero, sizeof (zero));
 	}
@@ -231,7 +231,8 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 	if (ybl > 0) {
 		if (pos < ybl) {
 			switch (format) {
-			case 'q':
+			case '8':
+			case 'q': // R_DEPRECATE
 				for (i = pos; i < r_buf_size (core->yank_buf); i++) {
 					r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
 				}
@@ -300,6 +301,7 @@ R_API int r_core_yank_hexdump(RCore *core, ut64 pos) {
 			r_print_hexdump (core->print, pos,
 				buf, ybl - pos, 16, 1, 1);
 			res = true;
+			free (buf);
 		} else {
 			R_LOG_ERROR ("Position exceeds buffer length");
 		}
@@ -321,6 +323,7 @@ R_API int r_core_yank_cat(RCore *core, ut64 pos) {
 			r_buf_read_at (core->yank_buf, pos, (ut8 *)buf, sz);
 			r_cons_write (buf, sz);
 			r_cons_newline ();
+			free (buf);
 			return true;
 		}
 		R_LOG_ERROR ("Position exceeds buffer length");
@@ -343,6 +346,7 @@ R_API int r_core_yank_cat_string(RCore *core, ut64 pos) {
 			int len = r_str_nlen (buf, sz);
 			r_cons_write (buf, len);
 			r_cons_newline ();
+			free (buf);
 			return true;
 		}
 		R_LOG_ERROR ("Position exceeds buffer length");
@@ -353,18 +357,13 @@ R_API int r_core_yank_cat_string(RCore *core, ut64 pos) {
 }
 
 R_API int r_core_yank_hud_file(RCore *core, const char *input) {
-	char *buf = NULL;
-	bool res = false;
-	ut32 len = 0;
-	if (!input || !*input) {
+	if (R_STR_ISEMPTY (input)) {
 		return false;
 	}
-	for (input++; *input == ' '; input++) {
-		/* nothing */
-	}
-	buf = r_cons_hud_file (input);
-	len = buf? strlen ((const char *) buf) + 1: 0;
-	res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
+	input = r_str_trim_head_ro (input + 1);
+	char *buf = r_cons_hud_file (input);
+	ut32 len = buf? strlen ((const char *) buf) + 1: 0;
+	bool res = r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
 	free (buf);
 	return res;
 }
@@ -383,8 +382,13 @@ R_API int r_core_yank_hud_path(RCore *core, const char *input, int dir) {
 	return res;
 }
 
+R_API void r_core_yank_unset(RCore *core) {
+	r_buf_free (core->yank_buf);
+	core->yank_addr = UT64_MAX;
+}
+
 R_API bool r_core_yank_hexpair(RCore *core, const char *input) {
-	if (!input || !*input) {
+	if (R_STR_ISEMPTY (input)) {
 		return false;
 	}
 	char *out = strdup (input);
@@ -397,45 +401,50 @@ R_API bool r_core_yank_hexpair(RCore *core, const char *input) {
 }
 
 R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
-	ut64 len = 0, adv = 0, addr = 0;
+	r_return_val_if_fail (core, false);
 	bool res = false;
 
 	if (!input) {
 		return res;
 	}
+	char *inp = strdup (input);
 	// get the number of bytes to yank
-	adv = consume_chars (input, ' ');
-	len = r_num_math (core->num, input + adv);
+	ut64 adv = consume_chars (inp, ' ');
+	ut64 len = r_num_math (core->num, inp + adv);
 	if (len == 0) {
+		free (inp);
 		R_LOG_ERROR ("Number of bytes read must be > 0");
 		return res;
 	}
 	// get the addr/offset from in the file we want to read
-	adv += find_next_char (input + adv, ' ');
+	adv += find_next_char (inp + adv, ' ');
 	if (adv == 0) {
+		free (inp);
 		R_LOG_ERROR ("Address must be specified");
 		return res;
 	}
 	adv++;
 
-	// XXX - bug, will fail if address needs to be computed and has spaces
-	addr = r_num_math (core->num, input + adv);
-
-	adv += find_next_char (input + adv, ' ');
-	if (adv == 0) {
+	ut64 next = find_next_char (inp + adv, ' ');
+	if (next) {
+		inp[adv+next] = 0;
+	} else {
 		R_LOG_ERROR ("File must be specified");
+		free (inp);
 		return res;
 	}
-	adv++;
+	ut64 addr = r_num_math (core->num, inp + adv);
+	adv += next + 1;
 	// grab the current file descriptor, so we can reset core and io state
 	// after our io op is done
-	return perform_mapped_file_yank (core, addr, len, input + adv);
+	bool b = perform_mapped_file_yank (core, addr, len, inp + adv);
+	free (inp);
+	return b;
 }
 
+// R2_580 R_API bool r_core_yank_file_all(RCore *core, const char *input) {
 R_API int r_core_yank_file_all(RCore *core, const char *input) {
-	if (!input) {
-		return false;
-	}
+	r_return_val_if_fail (core && input, false);
 	ut64 adv = consume_chars (input, ' ');
 	return perform_mapped_file_yank (core, 0, -1, input + adv);
 }
