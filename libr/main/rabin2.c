@@ -772,7 +772,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			if (argv[opt.ind] && argv[opt.ind+1] && \
 				(!argv[opt.ind+1][0] || !strcmp (argv[opt.ind+1], "all"))) {
 				r_config_set (core.config, "bin.lang", argv[opt.ind]);
-				r_config_set (core.config, "bin.demangle", "true");
+				r_config_set_b (core.config, "bin.demangle", true);
 				opt.ind += 2;
 			} else {
 				do_demangle = argv[opt.ind];

@@ -4187,7 +4187,7 @@ static int cmd_af(RCore *core, const char *input) {
 			c = r_config_get (core->config, "anal.limits");
 			r_config_set_i (core->config, "anal.from", addr);
 			r_config_set_i (core->config, "anal.to", addr_end);
-			r_config_set (core->config, "anal.limits", "true");
+			r_config_set_b (core->config, "anal.limits", true);
 
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (fcn) {
@@ -11690,7 +11690,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						r_core_task_yield (&core->tasks);
 					}
 					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
-					r_config_set (core->config, "anal.types.constraint", "true");
+					r_config_set_b (core->config, "anal.types.constraint", true);
 					r_print_rowlog_done (core->print, oldstr);
 				} else {
 					oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");

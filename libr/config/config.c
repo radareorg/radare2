@@ -400,6 +400,16 @@ R_API RConfigNode* r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue,
 	return node;
 }
 
+R_API RConfigNode* r_config_set_b_cb(RConfig *cfg, const char *name, bool ivalue, RConfigCallback cb) {
+	RConfigNode *node = r_config_set_b (cfg, name, ivalue);
+	if (node && (node->setter = cb)) {
+		if (!node->setter (cfg->user, node)) {
+			return NULL;
+		}
+	}
+	return node;
+}
+
 static inline bool is_true_or_false(const char *s) {
 	return s && (!r_str_casecmp (s, "true") || !r_str_casecmp (s, "false"));
 }

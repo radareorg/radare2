@@ -2210,7 +2210,7 @@ static int cmd_open(void *data, const char *input) {
 
 						r_core_cmd0 (core, "ob-*");
 						r_io_close_all (core->io);
-						r_config_set (core->config, "cfg.debug", "false");
+						r_config_set_b (core->config, "cfg.debug", false);
 						r_core_cmdf (core, "o %s", file);
 
 						r_core_block_read (core);

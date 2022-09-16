@@ -1418,7 +1418,7 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		const bool scrColor = r_config_get (core->config, "scr.color");
 		const bool scrUtf8 = r_config_get (core->config, "scr.utf8");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-		r_config_set (core->config, "scr.utf8", "false");
+		r_config_set_b (core->config, "scr.utf8", false);
 		snprintf (cmd, sizeof (cmd), "pD %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
 		cmdstr = r_core_cmd_str (core, cmd);
 		r_config_set_i (core->config, "scr.color", scrColor);
@@ -1432,11 +1432,10 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 }
 
 static char *palColorFor(const char *k) {
-	if (!r_cons_singleton ()) {
-		return NULL;
+	if (r_cons_singleton ()) {
+		RColor rcolor = r_cons_pal_get (k);
+		return r_cons_rgb_tostring (rcolor.r, rcolor.g, rcolor.b);
 	}
-	RColor rcolor = r_cons_pal_get (k);
-	return r_cons_rgb_tostring (rcolor.r, rcolor.g, rcolor.b);
 }
 
 static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {

@@ -400,7 +400,7 @@ static bool cb_analstrings(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->i_value) {
-		r_config_set (core->config, "bin.strings", "false");
+		r_config_set_b (core->config, "bin.strings", false);
 	}
 	return true;
 }
@@ -987,7 +987,7 @@ static bool cb_emustr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		r_config_set (core->config, "asm.emu", "true");
+		r_config_set_b (core->config, "asm.emu", true);
 	}
 	return true;
 }
@@ -4071,12 +4071,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "encode numbers from json outputs using the specified option");
 	SETOPTIONS (n, "none", "string", "hex", NULL);
 
-
 	/* scr */
 #if __EMSCRIPTEN__ || __wasi__
-	r_config_set_cb (cfg, "scr.fgets", "true", cb_scrfgets);
+	r_config_set_b_cb (cfg, "scr.fgets", true, cb_scrfgets);
 #else
-	r_config_set_cb (cfg, "scr.fgets", "false", cb_scrfgets);
+	r_config_set_b_cb (cfg, "scr.fgets", false, cb_scrfgets);
 #endif
 	r_config_desc (cfg, "scr.fgets", "use fgets() instead of dietline for prompt input");
 	SETCB ("scr.echo", "false", &cb_screcho, "show rcons output in realtime to stderr and buffer");

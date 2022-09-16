@@ -77,8 +77,11 @@ R_API void r_config_bump(RConfig *cfg, const char *key);
 R_API bool r_config_get_b(RConfig *cfg, const char *name);
 R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b);
 R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i);
+
 R_API RConfigNode *r_config_set_cb(RConfig *cfg, const char *name, const char *value, RConfigCallback cb);
 R_API RConfigNode *r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue, RConfigCallback cb);
+R_API RConfigNode *r_config_set_b_cb(RConfig *cfg, const char *name, int ivalue, RConfigCallback cb);
+
 R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *value);
 R_API bool r_config_rm(RConfig *cfg, const char *name);
 R_API ut64 r_config_get_i(RConfig *cfg, const char *name);

@@ -4955,7 +4955,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	}
 	r_anal_esil_stack_free (esil);
 	r_config_hold (hc, "io.cache", NULL);
-	r_config_set (core->config, "io.cache", "true");
+	r_config_set_b (core->config, "io.cache", true);
 	if (!ds->show_comments) {
 		goto beach;
 	}

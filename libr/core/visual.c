@@ -81,24 +81,24 @@ R_API void r_core_visual_applyHexMode(RCore *core, int hexMode) {
 	case 3: /* prx */
 	case 6: /* pxw */
 	case 10: /* pxr */
-		r_config_set (core->config, "hex.compact", "false");
-		r_config_set (core->config, "hex.comments", "true");
+		r_config_set_b (core->config, "hex.compact", false);
+		r_config_set_b (core->config, "hex.comments", true);
 		break;
 	case 1: /* pxa */
-		r_config_set (core->config, "hex.compact", "false");
-		r_config_set (core->config, "hex.comments", "true");
+		r_config_set_b (core->config, "hex.compact", false);
+		r_config_set_b (core->config, "hex.comments", true);
 		break;
 	case 4: /* pxb */
 	case 7: /* pxq */
-		r_config_set (core->config, "hex.compact", "true");
-		r_config_set (core->config, "hex.comments", "true");
+		r_config_set_b (core->config, "hex.compact", true);
+		r_config_set_b (core->config, "hex.comments", true);
 		break;
 	case 2: /* pxr */
 	case 5: /* pxh */
 	case 8: /* pxu */
 	case 9: /* pxd */
-		r_config_set (core->config, "hex.compact", "false");
-		r_config_set (core->config, "hex.comments", "false");
+		r_config_set_b (core->config, "hex.compact", false);
+		r_config_set_b (core->config, "hex.comments", false);
 		break;
 	}
 }
@@ -119,20 +119,20 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 	"asm.indent", "asm.bytes", "asm.comments", "asm.dwarf", "asm.usercomments", "asm.instr", NULL);
 	if (for_graph) {
 		r_config_set (core->config, "asm.hint.pos", "-2");
-		r_config_set (core->config, "asm.lines", "false");
-		r_config_set (core->config, "asm.indent", "false");
+		r_config_set_b (core->config, "asm.lines", false);
+		r_config_set_b (core->config, "asm.indent", false);
 	} else {
 		r_config_set (core->config, "asm.hint.pos", "0");
-		r_config_set (core->config, "asm.indent", "true");
-		r_config_set (core->config, "asm.lines", "true");
+		r_config_set_b (core->config, "asm.indent", true);
+		r_config_set_b (core->config, "asm.lines", true);
 	}
-	r_config_set (core->config, "asm.cmt.col", "0");
-	r_config_set (core->config, "asm.offset", "false");
-	r_config_set (core->config, "asm.dwarf", "true");
-	r_config_set (core->config, "asm.bytes", "false");
-	r_config_set (core->config, "asm.comments", "false");
-	r_config_set (core->config, "asm.usercomments", "true");
-	r_config_set (core->config, "asm.instr", "false");
+	r_config_set_i (core->config, "asm.cmt.col", 0);
+	r_config_set_b (core->config, "asm.offset", false);
+	r_config_set_b (core->config, "asm.dwarf", true);
+	r_config_set_b (core->config, "asm.bytes", false);
+	r_config_set_b (core->config, "asm.comments", false);
+	r_config_set_b (core->config, "asm.usercomments", true);
+	r_config_set_b (core->config, "asm.instr", false);
 }
 
 static void setcursor(RCore *core, bool cur) {

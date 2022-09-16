@@ -117,7 +117,7 @@ static int signs_from_file(const char *fname, struct rasignconf *conf) {
 		return -1;
 	}
 	if (conf->quiet) {
-		r_config_set (core->config, "scr.prompt", "false");
+		r_config_set_b (core->config, "scr.prompt", false);
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	}
 	if (conf->space) {

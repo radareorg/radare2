@@ -15,7 +15,7 @@ R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach)
 		return false;
 	}
 
-	r_config_set (r->config, "io.ff", "true");
+	r_config_set_b (r->config, "io.ff", true);
 	r_core_cmdf (r, "dL %s", debugbackend);
 	if (!is_gdb) {
 		pid = r_io_desc_get_pid (fd);
