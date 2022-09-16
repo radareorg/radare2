@@ -1254,10 +1254,11 @@ static bool is_executable(const char *file) {
 		return is_executable_header (file);
 	}
 #elif __WINDOWS__
-	char *ext = r_file_extension (file);
-	const bool is_exe = !strcmp (ext, "exe") || !strcmp (ext, "com") || !strcmp (ext, "bat");
-	free (ext);
-	return is_exe;
+	const char *ext = r_str_lchr (file, '.');
+	if (ext) {
+		ext++;
+		return !strcmp (ext, "exe") || !strcmp (ext, "com") || !strcmp (ext, "bat");
+	}
 #endif
 	return ret;
 }
