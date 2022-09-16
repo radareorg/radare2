@@ -1221,6 +1221,27 @@ static char *langFromHashbang(RCore *core, const char *file) {
 	return NULL;
 }
 
+#if __UNIX__
+// R2_580 - move into r_file_is_executable()
+static bool is_executable_header(const char *file) {
+	bool ret = false;
+	int osz = 0;
+	char *data = r_file_slurp_range (file, 0, 1024, &osz);
+	if (data && osz > 4) {
+		// 0xfeedface 0xcefaedfe) // 32bit
+		// 0xfeedfacf 0xcffaedfe) // 64bit
+		if (!memcmp (data, "\xca\xfe\xba\xbe", 4)) {
+			ret = true;
+		} else if (!memcmp (data, "#!/", 3)) {
+			ret = true;
+		} else if (!memcmp (data, "\x7f" "ELF", 4)) {
+			ret = true;
+		}
+	}
+	free (data);
+	return ret;
+}
+#endif
 // R2_580 - move into r_file_is_executable()
 static bool is_executable(const char *file) {
 	bool ret = false;
@@ -1230,18 +1251,13 @@ static bool is_executable(const char *file) {
 		return false;
 	}
 	if (buf.st_mode & 0111) {
-		return true;
+		return is_executable_header (file);
 	}
-#endif
-#if 0
-	int osz = 0;
-	char *data = r_file_slurp_range (file, 0, 1024, &osz);
-	if (data) {
-		if (!memcmp (data, "\xca\xfe\xba\xbe", 4)) {
-			ret = true;
-		}
-		free (data);
-	}
+#elif __WINDOWS__
+	char *ext = r_file_extension (file);
+	const bool is_exe = !strcmp (ext, "exe") || !strcmp (ext, "com") || !strcmp (ext, "bat");
+	free (ext);
+	return is_exe;
 #endif
 	return ret;
 }

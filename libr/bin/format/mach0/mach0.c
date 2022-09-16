@@ -961,9 +961,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 						free (ident);
 					}
 				} else {
-					if (bin->verbose) {
-						eprintf ("Invalid code slot size\n");
-					}
+					R_LOG_DEBUG ("Invalid code slot size");
 				}
 			}
 			break;
@@ -972,7 +970,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		case CSSLOT_APPLICATION: // 4;
 			// TODO: parse those codesign slots
 			if (bin->verbose) {
-				R_LOG_INFO ("TODO: Some codesign slots are not yet supported");
+				R_LOG_TODO ("Some codesign slots are not yet supported");
 			}
 			break;
 		default:
