@@ -72,10 +72,10 @@ R_API char *r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr)
 			y += (input & 0x2) ? 1 : -1;
 
 			/* assure we are still in bounds */
-			x = R_MAX(x, 0);
-			y = R_MAX(y, 0);
-			x = R_MIN(x, FLDSIZE_X - 1);
-			y = R_MIN(y, FLDSIZE_Y - 1);
+			x = R_MAX (x, 0);
+			y = R_MAX (y, 0);
+			x = R_MIN (x, FLDSIZE_X - 1);
+			y = R_MIN (y, FLDSIZE_Y - 1);
 
 			/* augment the field */
 			if (field[x][y] < len - 2) {

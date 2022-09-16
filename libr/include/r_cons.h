@@ -1097,7 +1097,8 @@ struct r_line_t {
 	RLineHud *hud;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
-	int vtmode;
+	int vtmode; // R2_580 duplicated and unused from the global RCons.vtmode
+	int hist_size;
 }; /* RLine */
 
 #ifdef R_API
@@ -1121,6 +1122,8 @@ R_API bool r_line_hist_save(const char *file);
 R_API int r_line_hist_label(const char *label, void(*cb)(const char*));
 R_API void r_line_label_show(void);
 R_API int r_line_hist_list(void);
+R_API int r_line_hist_get_size(void);
+R_API void r_line_hist_set_size(int size);
 R_API const char *r_line_hist_get(int n);
 
 R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb cb_up, RLineHistoryDownCb cb_down);

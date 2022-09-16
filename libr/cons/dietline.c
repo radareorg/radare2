@@ -186,15 +186,35 @@ static void unix_word_rubout(void) {
 }
 
 static int inithist(void) {
+	if (I.history.data) {
+		int new_size = I.hist_size;
+		if (new_size > 0 && I.history.size != new_size) {
+			char **new_data = (char **) calloc (new_size, sizeof (char *));
+			if (new_data) {
+				int nb_copy_lines = R_MIN (I.history.top + 1, new_size);
+				memcpy (new_data, I.history.data + (I.history.top + 1 - nb_copy_lines), sizeof (char *) * nb_copy_lines);
+				int i;
+				for (i = 0; i < I.history.top + 1 - nb_copy_lines; i++) {
+				    free (I.history.data[i]);
+				}
+				free (I.history.data);
+				I.history.data = new_data;
+				I.history.size = new_size;
+				I.history.top = R_MIN (I.history.top, nb_copy_lines - 1);
+				I.history.index = R_MIN (I.history.index, nb_copy_lines - 1);
+			}
+		}
+		return true;
+	}
 	ZERO_FILL (I.history);
-	if ((I.history.size + 1024) * sizeof (char *) < I.history.size) {
+	I.history.size = I.hist_size;
+	if (I.history.size <= 0) {
 		return false;
 	}
-	I.history.data = (char **) calloc ((I.history.size + 1024), sizeof (char *));
+	I.history.data = (char **) calloc (I.history.size, sizeof (char *));
 	if (!I.history.data) {
 		return false;
 	}
-	I.history.size = R_LINE_HISTSIZE;
 	return true;
 }
 
@@ -362,8 +382,8 @@ R_API int r_line_hist_cmd_up(RLine *line) {
 	if (line->hist_up) {
 		return line->hist_up (line->user);
 	}
-	if (!line->history.data) {
-		inithist ();
+	if (!inithist ()) {
+		return false;
 	}
 	if (line->history.index > 0 && line->history.data) {
 		setup_hist_match (line);
@@ -466,11 +486,17 @@ static int r_line_hist_down(void) {
 	return I.cb_history_down (&I);
 }
 
+R_API void r_line_hist_set_size(int size) {
+	I.hist_size = R_MIN (size, 65536);
+}
+
+R_API int r_line_hist_get_size(void) {
+	return I.history.size;
+}
+
 R_API const char *r_line_hist_get(int n) {
 	int i = 0;
-	if (!I.history.data) {
-		inithist ();
-	}
+	inithist ();
 	n--;
 	if (I.history.data) {
 		for (i = 0; i < I.history.size && I.history.data[i]; i++) {
@@ -484,9 +510,7 @@ R_API const char *r_line_hist_get(int n) {
 
 R_API int r_line_hist_list(void) {
 	int i = 0;
-	if (!I.history.data) {
-		inithist ();
-	}
+	inithist ();
 	if (I.history.data) {
 		for (i = 0; i < I.history.size && I.history.data[i]; i++) {
 			const char *pad = r_str_pad (' ', 32 - strlen (I.history.data[i]));
