@@ -9446,7 +9446,6 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			}
 			char *ptr = strchr (type, '=');
 			ut64 offimm = 0;
-			int i = 0;
 			ut64 addr;
 
 			if (ptr) {

@@ -994,7 +994,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			if (aop.ireg) {
 				index = r_reg_getv (esil->anal->reg, aop.ireg) * aop.scale;
 			}
-			int j, src_imm = -1, dst_imm = -1;
+			int src_imm = -1, dst_imm = -1;
 			ut64 src_addr = UT64_MAX;
 			ut64 dst_addr = UT64_MAX;
 			RAnalValue *src = NULL;
