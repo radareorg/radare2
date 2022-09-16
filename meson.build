@@ -619,7 +619,6 @@ if meson.is_subproject()
       r_flag_dep,
       r_fs_dep,
       r_bin_dep,
-      r_hash_dep,
       r_io_dep,
       r_lang_dep,
       r_magic_dep,

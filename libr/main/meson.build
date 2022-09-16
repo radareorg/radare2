@@ -64,7 +64,6 @@ r_main_static_deps = [
   r_asm_static_dep,
   r_core_static_dep,
   r_debug_static_dep,
-  r_hash_static_dep,
   r_bin_static_dep,
   r_lang_static_dep,
   r_io_static_dep,
