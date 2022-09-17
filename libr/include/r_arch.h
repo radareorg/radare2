@@ -58,6 +58,8 @@ typedef struct r_arch_config_t {
 #define	R_ARCH_OP_MASK_OPEX	4	// It fills RAnalop->opex info
 #define	R_ARCH_OP_MASK_DISASM	8	// It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
 
+typedef	RAnalOp	RArchOp;	//define this properly later
+
 typedef struct r_arch_plugin_t {
 	char *name;
 	char *desc;
@@ -66,10 +68,10 @@ typedef struct r_arch_plugin_t {
 	char *author;
 	char *version;
 	char *cpus;
-	bool (*init)(void *user);
+	bool (*init)(void **user);
 	void (*fini)(void *user);
-	int (*info)(int query);
-	int (*op)(RArch *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask);
+	int (*info)(ut32 query);
+	int (*decode)(RArch *a, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask);
 	bool (*set_reg_profile)(RArchConfig *cfg, RReg *reg);
 	bool (*esil_init)(RAnalEsil *esil);
 	void (*esil_fini)(RAnalEsil *esil);
@@ -83,9 +85,22 @@ typedef struct r_arch_decoder_t {
 
 typedef struct r_arch_t {
 	RList *plugins;	//all plugins
+	RArchDecoder *current;	//currently used decoder
 	HtPP *decoders;	//as decoders instantiated plugins
 	RArchConfig *cfg;	//config
 } RArch;
+
+R_API RArch *r_arch_new(void);
+R_API void r_arch_free(RArch *arch);
+//dname is name of decoder to use, NULL if current
+R_API bool r_arch_load_decoder(RArch *arch, const char *dname);
+R_API bool r_arch_unload_decoder(RArch *arch, const char *dname);
+R_API int r_arch_info(RArch *arch, const char *dname, ut32 query);
+R_API int r_arch_decode(RArch *arch, const char *dname, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask);
+R_API bool r_arch_set_reg_profile(RArch *arch, const char *dname, RReg *reg);
+R_API bool r_arch_esil_init(RArch *arch, const char *dname, RAnalEsil *esil);
+R_API void r_arch_esil_fini(RArch *arch, const char *dname, RAnalEsil *esil);
+
 #endif
 
 R_API void r_arch_use(RArchConfig *config, R_NULLABLE const char *arch);
