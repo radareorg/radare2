@@ -388,7 +388,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 				if (!strcmp (vv + 1, h->name)) {
 					char *arch = r_str_ndup (name, vv - name);
 #if 0
-					r_arch_set_cpu (a->config, arch);
+					r_arch_config_set_cpu (a->config, arch);
 					// r_asm_set_cpu (a, arch);
 					// h->arch = name;
 					// r_arch_use (a->config, arch);
@@ -402,7 +402,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 			} else {
 				if (!strcmp (name, h->name)) {
 #if 0
-					r_arch_set_cpu (a->config, NULL);
+					r_arch_config_set_cpu (a->config, NULL);
 #else
 					h->arch = name;
 					r_asm_set_cpu (a, NULL);
@@ -434,7 +434,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 // XXX this is r_arch
 R_DEPRECATE R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
 	r_return_if_fail (a);
-	r_arch_set_cpu (a->config, cpu);
+	r_arch_config_set_cpu (a->config, cpu);
 }
 
 static bool has_bits(RAsmPlugin *h, int bits) {

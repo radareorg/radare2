@@ -501,7 +501,7 @@ static bool cb_analcpu(void *user, void *data) {
 		ranal2_list (core, r_config_get (core->config, "anal.arch"), node->value[1]);
 	}
 	// r_anal_set_cpu (core->anal, node->value);
-	r_arch_set_cpu (core->anal->config, node->value);
+	r_arch_config_set_cpu (core->anal->config, node->value);
 	/* set pcalign */
 	int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
  	if (v != -1) {
@@ -679,7 +679,7 @@ static bool cb_asmcpu(void *user, void *data) {
 		return 0;
 	}
 	r_asm_set_cpu (core->rasm, node->value);
-	r_arch_set_cpu (core->rasm->config, node->value);
+	r_arch_config_set_cpu (core->rasm->config, node->value);
 	int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
  	if (v != -1) {
  		core->anal->config->pcalign = v;
