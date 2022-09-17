@@ -548,25 +548,23 @@ R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i
 R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
-		if (r_config_node_is_ro (node)) {
-			return NULL;
+		if (!r_config_node_is_ro (node)) {
+			if (r_config_node_is_bool (node)) {
+				return r_config_set (cfg, name, b? "true": "false");
+			}
 		}
-		if (!r_config_node_is_bool (node)) {
-			R_LOG_WARN ("This node is not boolean");
-			return NULL;
-		}
-		return r_config_set_i (cfg, name, b? 1: 0);
-	} else {
-		node = r_config_node_new (name, r_str_bool (b));
-		if (!node) {
-			return NULL;
-		}
-		node->flags = CN_RW | CN_BOOL;
-		node->i_value = b;
-		ht_pp_insert (cfg->ht, node->name, node);
-		if (cfg->nodes) {
-			r_list_append (cfg->nodes, node);
-		}
+		R_LOG_WARN ("This node is not boolean");
+		return NULL;
+	}
+	node = r_config_node_new (name, r_str_bool (b));
+	if (!node) {
+		return NULL;
+	}
+	node->flags = CN_RW | CN_BOOL;
+	node->i_value = b;
+	ht_pp_insert (cfg->ht, node->name, node);
+	if (cfg->nodes) {
+		r_list_append (cfg->nodes, node);
 	}
 	return node;
 }
@@ -668,7 +666,7 @@ R_API bool r_config_eval(RConfig *cfg, const char *str, bool many) {
 	if (many) {
 		// space separated list of k=v k=v,..
 		// if you want to use spaces go for base64 or e.
-		const char *ch = strstr (s, ":")? ":": ","; // R2_580 change to only use ':' imho
+		const char *ch = strstr (s, ":")? ":": ","; // R2_580 change to only use ':' imho but comma looks more natural
 		RList *list = r_str_split_list (s, ch, 0);
 		RListIter *iter;
 		char *name;
@@ -779,9 +777,9 @@ static bool load_config_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-// TODO 580 -> return void
 R_API bool r_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_NULLABLE char **err) {
 	r_return_val_if_fail (config && db, false);
+	*err = NULL;
 	sdb_foreach (db, load_config_cb, config);
-	return true;
+	return *err == NULL;
 }
