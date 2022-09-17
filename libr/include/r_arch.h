@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2022 - nibble, pancake, xvilka */
+/* radare2 - LGPL - Copyright 2022 - pancake, condret */
 
 #ifndef R2_ARCH_H
 #define R2_ARCH_H
