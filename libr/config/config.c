@@ -550,7 +550,7 @@ R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b) {
 	if (node) {
 		if (!r_config_node_is_ro (node)) {
 			if (r_config_node_is_bool (node)) {
-				return r_config_set (cfg, name, b? "true": "false");
+				return r_config_set (cfg, name, r_str_bool (b));
 			}
 		}
 		R_LOG_WARN ("This node is not boolean");
