@@ -21,14 +21,14 @@ R_API void r_arch_use(RArchConfig *config, R_NULLABLE const char *arch) {
 	config->arch = R_STR_ISNOTEMPTY (arch) ? strdup (arch) : NULL;
 }
 
-R_API void r_arch_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu) {
+R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu) {
 	r_return_if_fail (config);
 	// R_LOG_DEBUG ("RArch.CPU (%s)", cpu);
 	free (config->cpu);
 	config->cpu = R_STR_ISNOTEMPTY (cpu) ? strdup (cpu) : NULL;
 }
 
-R_API void r_arch_set_bits(RArchConfig *config, int bits) {
+R_API void r_arch_config_set_bits(RArchConfig *config, int bits) {
 	r_return_if_fail (config);
 	config->bits = bits;
 	// callback

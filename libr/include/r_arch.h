@@ -89,8 +89,8 @@ typedef struct r_arch_t {
 #endif
 
 R_API void r_arch_use(RArchConfig *config, R_NULLABLE const char *arch);
-R_API void r_arch_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu);
-R_API void r_arch_set_bits(RArchConfig *config, int bits);
+R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu);
+R_API void r_arch_config_set_bits(RArchConfig *config, int bits);
 R_API RArchConfig *r_arch_config_new(void);
 
 #ifdef __cplusplus
