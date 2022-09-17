@@ -20,6 +20,7 @@ LDFLAGS+=-L../../libr/io -lr_io
 LDFLAGS+=-L../../libr/bp -lr_bp
 LDFLAGS+=-L../../libr/socket -lr_socket
 LDFLAGS+=-L../../libr/bin -lr_bin
+LDFLAGS+=-L../../libr/arch -lr_arch
 LDFLAGS+=-L../../libr/reg -lr_reg
 LDFLAGS+=-L../../libr/asm -lr_asm
 LDFLAGS+=-L../../libr/lang -lr_lang
