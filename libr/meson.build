@@ -5,6 +5,7 @@ no_user_plugins = get_option('plugins') == ''
 esil_plugins = [ 'dummy' ]
 asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
+arch_plugins = [ 'null' ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = [ 'xtr_sep64' ]
