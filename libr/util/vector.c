@@ -30,7 +30,7 @@
 		} \
 		vec->a = new_a; \
 		if (new_capacity > vec->capacity) { \
-			memset (vec->a + (vec->elem_size * vec->capacity), 0, (new_capacity - vec->capacity) * vec->elem_size); \
+			memset (((ut8 *)vec->a) + (vec->elem_size * vec->capacity), 0, (new_capacity - vec->capacity) * vec->elem_size); \
 		} \
 		vec->capacity = new_capacity; \
 	} while (0)
