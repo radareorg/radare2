@@ -24,12 +24,14 @@
 			vec->capacity = 0; \
 			break; \
 		} \
-		void **new_a = realloc (vec->a, vec->elem_size * new_capacity); \
+		void *new_a = realloc (vec->a, vec->elem_size * new_capacity); \
 		if (!new_a) { \
 			return NULL; \
 		} \
 		vec->a = new_a; \
-		memset (vec->a + (vec->elem_size * vec->capacity), 0, (new_capacity - vec->capacity) * vec->elem_size); \
+		if (new_capacity > vec->capacity) { \
+			memset (vec->a + (vec->elem_size * vec->capacity), 0, (new_capacity - vec->capacity) * vec->elem_size); \
+		} \
 		vec->capacity = new_capacity; \
 	} while (0)
 
