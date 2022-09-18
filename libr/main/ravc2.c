@@ -94,7 +94,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		} else if (!strcmp (opt.argv[opt.ind + 1], "rvc")) {
 			rvc = r_vc_new (rp);
 		} else {
-			R_LOG_ERROR ("unkown option %s", opt.argv[opt.ind + 1]);
+			R_LOG_ERROR ("unknown option %s", opt.argv[opt.ind + 1]);
 		}
 		free (rp);
 		return rvc? !r_vc_save(rvc) : 1;
@@ -120,7 +120,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		}
 	} else if (!strcmp (action, "commit")) {
 		if (opt.argc < 4) {
-			R_LOG_ERROR ("Usage: ravc2 commit [message] [files...]\n");
+			R_LOG_ERROR ("Usage: ravc2 commit [message] [files...]");
 			free (rp);
 			return 1;
 		}
@@ -171,9 +171,9 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	} else if (!strcmp (action, "log")) {
 		save = rvc->print_commits(rvc);
 	} else {
-		R_LOG_ERROR ("Incorrect command\n");
+		R_LOG_ERROR ("Incorrect command");
 	}
 ret:
-	rvc->close (rvc, save);
+	rvc_git_close(rvc, save);
 	return !save;
 }

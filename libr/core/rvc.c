@@ -1515,7 +1515,12 @@ R_API Rvc *rvc_git_init(const RCore *core, const char *path) {
 		}
 		return rvc;
 	}
-	R_LOG_ERROR ("%s is not a valid vc type\n", vname);
+	R_LOG_ERROR ("%s is not a valid vc type", vname);
 	return NULL;
+}
+
+R_API void rvc_git_close(struct r_vc_t *vc, bool save)
+{
+	vc->close(vc, true);
 }
 
