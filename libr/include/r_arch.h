@@ -94,6 +94,7 @@ R_API RArch *r_arch_new(void);
 R_API void r_arch_free(RArch *arch);
 //dname is name of decoder to use, NULL if current
 R_API bool r_arch_load_decoder(RArch *arch, const char *dname);
+R_API bool r_arch_use_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_unload_decoder(RArch *arch, const char *dname);
 R_API int r_arch_info(RArch *arch, const char *dname, ut32 query);
 R_API int r_arch_decode(RArch *arch, const char *dname, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask);
