@@ -96,7 +96,7 @@ SDB_API ut8 sdb_hash_byte(const char *s) {
 }
 
 SDB_API char *sdb_itoa(ut64 n, int base, char *os, int oslen) {
-	if (base < 1) {
+	if (base == 0) {
 		base = SDB_NUM_BASE;
 	}
 	static const char *const lookup = "0123456789abcdef";
@@ -116,14 +116,18 @@ SDB_API char *sdb_itoa(ut64 n, int base, char *os, int oslen) {
 		copy_string = 0;
 		base = -base;
 	}
-	if ((base > 16) || (base < 1)) {
+	if (base > 16) {
 		return NULL;
 	}
 	if (!n) {
 		if (!os) {
 			return strdup ("0");
 		}
-		strcpy (os, "0");
+		if (sl > 1) {
+			memcpy (os, "0", 2);
+		} else {
+			*os = 0;
+		}
 		return os;
 	}
 	s[imax + 1] = '\0';
