@@ -3282,7 +3282,7 @@ static const char *help_msg_aflm[] = {
 };
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) {
-	char temp[64];
+	char temp[SDB_NUM_BUFSZ];
 	if (rad[0] == '?' || (*rad && rad[1] == '?')) {
 		r_core_cmd_help (core, help_msg_aflm);
 		return 0;
@@ -3348,7 +3348,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		}
 		ls_foreach (fcns, iter, fcn) {
 			RInterval inter = {r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn) };
-			RListInfo *info = r_listinfo_new (r_core_anal_fcn_name (core, fcn), inter, inter, -1, sdb_itoa (fcn->bits, temp, 10));
+			char *fcn_name = r_core_anal_fcn_name (core, fcn);
+			char *bitstr = sdb_itoa (fcn->bits, 10, temp, sizeof (temp));
+			RListInfo *info = r_listinfo_new (fcn_name, inter, inter, -1, bitstr);
 			if (!info) {
 				break;
 			}

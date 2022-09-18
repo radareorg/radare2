@@ -20,37 +20,38 @@
 }
 
 SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
-	char buf[128], *e_str, *out = NULL;
+	char buf[SDB_NUM_BUFSZ], *e_str, *out = NULL;
 	int n, len = 0;
 	if (!p || !fmt) {
 		return NULL;
 	}
 	for (; *fmt; fmt++) {
 		n = 4;
+		const ut8 *nbuf = ((ut8*)p) + len;
 		switch (*fmt) {
 		case 'b':
-			concat (sdb_itoa ((ut64)*((ut8*)p + len), buf, 10));
+			concat (sdb_itoa ((ut64)*(nbuf), 10, buf, sizeof (buf)));
 			break;
 		case 'h':
-			concat (sdb_itoa ((ut64)*((short*)((ut8*)p + len)), buf, 10));
+			concat (sdb_itoa ((ut64)*((short*)nbuf), 10, buf, sizeof (buf)));
 			break;
 		case 'd':
-			concat (sdb_itoa ((ut64)*((int*)((ut8*)p + len)), buf, 10));
+			concat (sdb_itoa ((ut64)*((int*)nbuf), 10, buf, sizeof (buf)));
 			break;
 		case 'q':
-			concat (sdb_itoa (*((ut64*)((ut8*)p + len)), buf, 10));
+			concat (sdb_itoa (*((ut64*)nbuf), 10, buf, sizeof (buf)));
 			n = 8;
 			break;
 		case 'z':
 			concat ((char*)p + len);
 			break;
 		case 's':
-			e_str = sdb_encode ((const ut8*)*((char**)((ut8*)p + len)), -1);
+			e_str = sdb_encode ((const ut8*)*((char**)nbuf), -1);
 			concat (e_str);
 			free (e_str);
 			break;
 		case 'p':
-			concat (sdb_itoa ((ut64)*((size_t*)((ut8*)p + len)), buf, 16));
+			concat (sdb_itoa ((ut64)*((size_t*)(nbuf)), 16, buf, sizeof (buf)));
 			n = sizeof (size_t);
 			break;
 		}

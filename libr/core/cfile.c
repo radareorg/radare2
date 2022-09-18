@@ -274,7 +274,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	r_sys_setenv ("RABIN2_DEMANGLE", r_config_get (core->config, "bin.demangle"));
 	r_sys_setenv ("R2_ARCH", r_config_get (core->config, "asm.arch"));
 	r_sys_setenv ("R2_BITS", r_strf ("%"PFMT64u, r_config_get_i (core->config, "asm.bits")));
-	char *s = sdb_itoa (r_config_get_i (core->config, "scr.color"), NULL, 10);
+	char *s = sdb_itoas (r_config_get_i (core->config, "scr.color"), 10);
 	r_sys_setenv ("R2_COLOR", s);
 	free (s);
 	r_sys_setenv ("R2_UTF8", r_config_get_b (core->config, "scr.utf8")? "1": "0");

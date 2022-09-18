@@ -460,7 +460,7 @@ static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname
 
 R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 	char str[SDB_NUM_BUFSZ] = {0};
-	sdb_itoa (num, str, 16);
+	sdb_itoa (num, 16, str, sizeof (str));
 	return r_anal_esil_push (esil, str);
 }
 
@@ -2144,9 +2144,9 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 			ret = r_anal_esil_mem_read (esil, addr, a, bytes);
 			ut64 b = r_read_ble64 (&a, 0); //esil->anal->config->big_endian);
 			ut64 c = r_read_ble64 (&a[8], 0); //esil->anal->config->big_endian);
-			sdb_itoa (b, res, 16);
+			sdb_itoa (b, 16, res, sizeof (res));
 			r_anal_esil_push (esil, res);
-			sdb_itoa (c, res, 16);
+			sdb_itoa (c, 16, res, sizeof (res));
 			r_anal_esil_push (esil, res);
 			free (dst);
 			return ret;
@@ -2162,7 +2162,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 			r_mem_swapendian ((ut8*)&b, (const ut8*)&b, bytes);
 		}
 #endif
-		sdb_itoa (b & bitmask, res, 16);
+		sdb_itoa (b & bitmask, 16, res, sizeof (res));
 		r_anal_esil_push (esil, res);
 		esil->lastsz = bits;
 	}

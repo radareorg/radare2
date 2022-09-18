@@ -46,8 +46,8 @@ R_API const char *r_anal_pin_get(RAnal *a, const char *name) {
 }
 
 R_API const char *r_anal_pin_at(RAnal *a, ut64 addr) {
-	char buf[64];
-	const char *key = sdb_itoa (addr, buf, 16);
+	char buf[SDB_NUM_BUFSZ];
+	const char *key = sdb_itoa (addr, 16, buf, sizeof (buf));
 	return sdb_const_get (a->sdb_pins, key, NULL);
 }
 
@@ -81,7 +81,7 @@ R_API void r_anal_pin_fini(RAnal *a) {
 }
 
 R_API void r_anal_pin(RAnal *a, ut64 addr, const char *name) {
-	char buf[64];
+	char buf[SDB_NUM_BUFSZ];
 	const char *eq = strchr (name, '=');
 	if (eq) {
 		char *n = r_str_ndup (name, (int)(size_t)(eq -name));
@@ -90,20 +90,20 @@ R_API void r_anal_pin(RAnal *a, ut64 addr, const char *name) {
 		sdb_set (DB, key, eq + 1, 0);
 		free (key);
 	} else {
-		const char *key = sdb_itoa (addr, buf, 16);
+		const char *key = sdb_itoa (addr, 16, buf, sizeof (buf));
 		sdb_set (DB, key, name, 0);
 	}
 }
 
 R_API void r_anal_pin_unset(RAnal *a, ut64 addr) {
-	char buf[64];
-	const char *key = sdb_itoa (addr, buf, 16);
+	char buf[SDB_NUM_BUFSZ];
+	const char *key = sdb_itoa (addr, 16, buf, sizeof (buf));
 	sdb_unset (DB, key, 0);
 }
 
 R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
-	char buf[64];
-	const char *key = sdb_itoa (addr, buf, 16);
+	char buf[SDB_NUM_BUFSZ];
+	const char *key = sdb_itoa (addr, 16, buf, sizeof (buf));
 	if (key) {
 		r_strf_buffer (128);
 		const char *name = sdb_const_get (DB, key, NULL);

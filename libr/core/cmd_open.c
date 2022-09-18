@@ -403,7 +403,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case '=': // "ob="
 		{
-			char temp[64];
+			char temp[SDB_NUM_BUFSZ];
 			RListIter *iter;
 			RList *list = r_list_newf ((RListFree) r_listinfo_free);
 			RBinFile *bf = NULL;
@@ -413,7 +413,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			}
 			r_list_foreach (bin->binfiles, iter, bf) {
 				RInterval inter = (RInterval) {bf->o->baddr, bf->o->size};
-				RListInfo *info = r_listinfo_new (bf->file, inter, inter, -1,  sdb_itoa (bf->fd, temp, 10));
+				RListInfo *info = r_listinfo_new (bf->file, inter, inter, -1, sdb_itoa (bf->fd, 10, temp, sizeof (temp)));
 				if (!info) {
 					break;
 				}

@@ -674,7 +674,7 @@ static const ut8 *parse_line_header(
 static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 line, int mode, PrintfCallback print) {
 	const char *p;
 	char *fileline;
-	char offset[64];
+	char offset[SDB_NUM_BUFSZ];
 	char *offset_ptr;
 
 	if (!s || !file) {
@@ -703,7 +703,7 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 	p = file;
 #endif
 	fileline = r_str_newf ("%s|%"PFMT64d, p, line);
-	offset_ptr = sdb_itoa (addr, offset, 16);
+	offset_ptr = sdb_itoa (addr, 16, offset, sizeof (offset));
 	sdb_add (s, offset_ptr, fileline, 0);
 	sdb_add (s, fileline, offset_ptr, 0);
 	free (fileline);

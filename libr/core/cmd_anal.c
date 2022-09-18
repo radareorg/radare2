@@ -6173,7 +6173,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	r_io_map_set_name (stack_map, name);
 	// r_flag_set (core->flags, name, addr, size);	//why is this here?
 	char val[128], *v;
-	v = sdb_itoa (esil->stack_fd, val, 10);
+	v = sdb_itoa (esil->stack_fd, 10, val, sizeof (val));
 	sdb_set (core->sdb, "aeim.fd", v, 0);
 
 	r_config_set_i (core->config, "io.va", true);
@@ -8440,7 +8440,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 			} else if (is_json) {
 				char taddr[64];
 				pj_o (pj);
-				pj_k (pj, sdb_itoa (addr, taddr, 10));
+				pj_k (pj, sdb_itoa (addr, 10, taddr, sizeof (taddr)));
 				pj_o (pj);
 				pj_ks (pj, "type", "fcn");
 				pj_kn (pj, "fcn_addr", fcn->addr);
@@ -8460,7 +8460,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 			} else if (is_json) {
 				char taddr[64];
 				pj_o (pj);
-				pj_k (pj, sdb_itoa (addr, taddr, 10));
+				pj_k (pj, sdb_itoa (addr, 10, taddr, sizeof (taddr)));
 				pj_o (pj);
 				pj_k (pj, "refs");
 				pj_a (pj);
@@ -8483,7 +8483,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 				if (level == 0) {
 					char taddr[64];
 					pj_o (pj);
-					pj_k (pj, sdb_itoa (ref->addr, taddr, 10));
+					pj_k (pj, sdb_itoa (ref->addr, 10, taddr, sizeof (taddr)));
 					pj_o (pj);
 					pj_ks (pj, "type", "fcn");
 					pj_kn (pj, "fcn_addr", fcn->addr);
@@ -8497,7 +8497,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 					pj_end (pj);
 					pj_end (pj);
 					pj_o (pj);
-					pj_k (pj, sdb_itoa (ref->addr, taddr, 10));
+					pj_k (pj, sdb_itoa (ref->addr, 10, taddr, sizeof (taddr)));
 					pj_o (pj);
 					pj_ks (pj, "type", "fcn");
 					pj_kn (pj, "fcn_addr", fcn->addr);
@@ -8526,7 +8526,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 			} else if (is_json) {
 				char taddr[64];
 				pj_o (pj);
-				pj_k (pj, sdb_itoa (ref->addr, taddr, 10));
+				pj_k (pj, sdb_itoa (ref->addr, 10, taddr, sizeof (taddr)));
 				pj_o (pj);
 				pj_ks (pj, "type", "???");
 				pj_k (pj, "refs");

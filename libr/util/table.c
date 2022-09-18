@@ -357,11 +357,11 @@ R_API char *r_table_tofancystring(RTable *t) {
 	}
 
 	if (t->showSum) {
-		char tmp[64];
+		char tmp[SDB_NUM_BUFSZ];
 		__computeTotal (t);
 		r_strbuf_appendf (sb, "%s%s%s\n", l_intersect, h_line_str, r_intersect);
 		r_list_foreach (t->cols, iter, col) {
-			char *num = col->total == -1 ? "" : sdb_itoa (col->total, tmp, 10);
+			char *num = col->total == -1 ? "" : sdb_itoa (col->total, 10, tmp, sizeof (tmp));
 			int l = __strbuf_append_col_aligned_fancy (t, sb, col, num);
 			len = R_MAX (len, l);
 		}
@@ -472,7 +472,7 @@ R_API char *r_table_tosimplestring(RTable *t) {
 		r_strbuf_append (sb, "\n");
 	}
 	if (t->showSum) {
-		char tmp[64];
+		char tmp[SDB_NUM_BUFSZ];
 		__computeTotal (t);
 		if (maxlen > 0) {
 			char *l = r_str_repeat (h_line, maxlen);
@@ -483,7 +483,7 @@ R_API char *r_table_tosimplestring(RTable *t) {
 		}
 		r_list_foreach (t->cols, iter, col) {
 			bool nopad = !iter->n;
-			(void)__strbuf_append_col_aligned (sb, col, sdb_itoa (col->total, tmp, 10), nopad);
+			(void)__strbuf_append_col_aligned (sb, col, sdb_itoa (col->total, 10, tmp, sizeof (tmp)), nopad);
 		}
 	}
 	return r_strbuf_drain (sb);
