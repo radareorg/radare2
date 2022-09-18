@@ -277,6 +277,7 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_asm.pc
 	pkgcfg/r_bin.pc
 	pkgcfg/r_anal.pc
+	pkgcfg/r_arch.pc
 	pkgcfg/r_cons.pc
 	pkgcfg/r_core.pc
 	pkgcfg/r_lang.pc
