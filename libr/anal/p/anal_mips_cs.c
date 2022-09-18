@@ -26,18 +26,13 @@ static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
 	}
 
 #define CREATE_SRC_DST_3(op) \
-	src0 = r_anal_value_new ();\
-	src1 = r_anal_value_new ();\
-	dst = r_anal_value_new ();\
-	r_pvector_push((op)->srcs, src0);\
-	r_pvector_push((op)->srcs, src1);\
-	r_pvector_push((op)->dsts, dst);
+	src0 = r_vector_push ((op)->srcs, NULL);\
+	src1 = r_vector_push ((op)->srcs, NULL);\
+	dst = r_vector_push ((op)->dsts, NULL);
 
 #define CREATE_SRC_DST_2(op) \
-	src0 = r_anal_value_new ();\
-	dst = r_anal_value_new ();\
-	r_pvector_push((op)->srcs, src0);\
-	r_pvector_push((op)->dsts, dst);
+	src0 = r_vector_push ((op)->srcs, NULL);\
+	dst = r_vector_push ((op)->dsts, NULL);
 
 #define SET_SRC_DST_3_REGS(op) \
 	CREATE_SRC_DST_3 (op);\
@@ -700,21 +695,19 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
 			ZERO_FILL (reg);
-			src0 = r_anal_value_new ();
+			src0 = r_vector_push (op->srcs, NULL);
 			src0->reg = &reg;
 			parse_reg_name (src0->reg, *handle, insn, 1);
 			src0->delta = OPERAND(1).mem.disp;
-			r_pvector_push(op->srcs, src0);
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
 			ZERO_FILL (reg);
-			dst = r_anal_value_new ();
+			dst = r_vector_push (op->dsts, NULL);
 			dst->reg = &reg;
 			parse_reg_name (dst->reg, *handle, insn, 1);
 			dst->delta = OPERAND(1).mem.disp;
-			r_pvector_push(op->dsts, dst);
 		}
 		break;
 	case R_ANAL_OP_TYPE_SHL:

@@ -9472,9 +9472,8 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			int ret = r_anal_op (core->anal, &op, core->offset, code, core->blocksize, R_ANAL_OP_MASK_VAL);
 			if (ret >= 0) {
 				// HACK: Just convert only the first imm seen
-				void **it = NULL;
-				r_pvector_foreach(op.srcs, it) {
-					RAnalValue *src = *it;
+				RAnalValue *src = NULL;
+				r_vector_foreach (op.srcs, src) {
 					if (src) {
 						if (src->imm) {
 							offimm = src->imm;
@@ -9484,14 +9483,12 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 					}
 				}
 				if (!offimm) {
-					r_pvector_foreach(op.dsts, it) {
-						RAnalValue *dst = *it;
-						if (dst) {
-							if (dst->imm) {
-								offimm = dst->imm;
-							} else if (dst->delta) {
-								offimm = dst->delta;
-							}
+					RAnalValue *dst = r_vector_index_ptr (op.dsts, 0);
+					if (dst) {
+						if (dst->imm) {
+							offimm = dst->imm;
+						} else if (dst->delta) {
+							offimm = dst->delta;
 						}
 					}
 				}

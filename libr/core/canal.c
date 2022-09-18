@@ -4813,8 +4813,8 @@ typedef struct {
 } EsilBreakCtx;
 
 static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
-	RAnalValue *dst = r_pvector_at(op->dsts, 0);
-	RAnalValue *src = r_pvector_at(op->srcs, 0);
+	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
+	RAnalValue *src = r_vector_index_ptr (op->srcs, 0);
 	if (type == R_ANAL_VAR_ACCESS_TYPE_WRITE) {
 		if (dst && dst->reg) {
 			return dst->reg->name;
@@ -4828,9 +4828,9 @@ static const char *reg_name_for_access(RAnalOp* op, RAnalVarAccessType type) {
 }
 
 static ut64 delta_for_access(RAnalOp *op, RAnalVarAccessType type) {
-	RAnalValue *dst = r_pvector_at(op->dsts, 0);
-	RAnalValue *src0 = r_pvector_at(op->srcs, 0);
-	RAnalValue *src1 = r_pvector_at(op->srcs, 1);
+	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
+	RAnalValue *src0 = r_vector_index_ptr (op->srcs, 0);
+	RAnalValue *src1 = r_vector_index_ptr (op->srcs, 1);
 	if (type == R_ANAL_VAR_ACCESS_TYPE_WRITE) {
 		if (dst) {
 			return dst->imm + dst->delta;
@@ -5538,8 +5538,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				}
 			} else if ((core->anal->config->bits == 32 && core->anal->cur && arch == R2_ARCH_MIPS)) {
 				ut64 dst = ESIL->cur;
-				RAnalValue *opsrc0 = r_pvector_at(op.srcs, 0);
-				RAnalValue *opsrc1 = r_pvector_at(op.srcs, 1);
+				RAnalValue *opsrc0 = r_vector_index_ptr (op.srcs, 0);
+				RAnalValue *opsrc1 = r_vector_index_ptr (op.srcs, 1);
 				if (!opsrc0 || !opsrc0->reg || !opsrc0->reg->name) {
 					break;
 				}

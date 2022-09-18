@@ -29,8 +29,10 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->val = UT64_MAX;
 		op->disp = UT64_MAX;
 
-		op->srcs = r_pvector_new_with_len(r_anal_value_free, 3);
-		op->dsts = r_pvector_new_with_len(r_anal_value_free, 1);
+		op->srcs = r_vector_new (sizeof(RAnalValue), NULL, NULL);
+		op->dsts = r_vector_new (sizeof(RAnalValue), NULL, NULL);
+		r_vector_reserve (op->srcs, 3);
+		r_vector_reserve (op->dsts, 1);
 	}
 }
 
@@ -38,8 +40,8 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	if (!op) {
 		return;
 	}
-	r_pvector_free(op->srcs);
-	r_pvector_free(op->dsts);
+	r_vector_free (op->srcs);
+	r_vector_free (op->dsts);
 	op->srcs = NULL;
 	op->dsts = NULL;
 	r_list_free (op->access);
@@ -167,12 +169,8 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	} else {
 		nop->mnemonic = NULL;
 	}
-	nop->srcs = r_pvector_new_with_len(r_anal_value_free, 3);
-	nop->dsts = r_pvector_new_with_len(r_anal_value_free, 1);
-	r_pvector_push(nop->srcs, r_anal_value_copy(r_pvector_at(op->srcs, 0)));
-	r_pvector_push(nop->srcs, r_anal_value_copy(r_pvector_at(op->srcs, 1)));
-	r_pvector_push(nop->srcs, r_anal_value_copy(r_pvector_at(op->srcs, 2)));
-	r_pvector_push(nop->dsts, r_anal_value_copy(r_pvector_at(op->dsts, 0)));
+	nop->srcs = r_vector_clone (op->srcs);
+	nop->dsts = r_vector_clone (op->dsts);
 	if (op->access) {
 		RListIter *it;
 		RAnalValue *val;
@@ -398,9 +396,9 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	RAnalBlock *bb;
 	RAnalFunction *f;
 	char *cstr, ret[128];
-	RAnalValue *dst = r_pvector_at(op->dsts, 0);
-	RAnalValue *src0 = r_pvector_at(op->srcs, 0);
-	RAnalValue *src1 = r_pvector_at(op->srcs, 1);
+	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
+	RAnalValue *src0 = r_vector_index_ptr (op->srcs, 0);
+	RAnalValue *src1 = r_vector_index_ptr (op->srcs, 1);
 	char *r0 = r_anal_value_to_string (dst);
 	char *a0 = r_anal_value_to_string (src0);
 	char *a1 = r_anal_value_to_string (src1);
@@ -693,10 +691,10 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
 	RAnalOp op = {0};
 	RAnalValue *dst = NULL;
 	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL) > 0) {
-		if (op.dsts)	dst = r_pvector_at(op.dsts, 0);
+		dst = r_vector_index_ptr (op.dsts, 0);
 		if (dst && dst->reg && dst->reg->name && (!name || !strcmp (dst->reg->name, name))) {
-			if (op.srcs && r_pvector_len(op.srcs)) {
-				return ((RAnalValue*)r_pvector_at(op.srcs, 0))->delta;
+			if (r_vector_len (op.srcs)) {
+				return ((RAnalValue*)r_vector_index_ptr (op.srcs, 0))->delta;
 			}
 		}
 	}

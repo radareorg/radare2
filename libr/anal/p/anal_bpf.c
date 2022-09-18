@@ -711,10 +711,8 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 	(op)->ptrsize = (size);
 
 #define NEW_SRC_DST(op) \
-	src = r_anal_value_new (); \
-	dst = r_anal_value_new (); \
-	r_pvector_push((op)->dsts, dst); \
-	r_pvector_push((op)->srcs, src);
+	src = r_vector_push ((op)->srcs, NULL); \
+	dst = r_vector_push ((op)->dsts, NULL);
 
 #define SET_REG_SRC_DST(op, _src, _dst) \
 	NEW_SRC_DST ((op)); \
@@ -727,14 +725,12 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 	src->imm = (_imm);
 
 #define SET_A_SRC(op) \
-	src = r_anal_value_new (); \
-	src->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR); \
-	r_pvector_push((op)->srcs, src);
+	src = r_vector_push ((op)->srcs, NULL); \
+	src->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
 
 #define SET_A_DST(op) \
-	dst = r_anal_value_new (); \
-	dst->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR); \
-	r_pvector_push((op)->dsts, dst);
+	dst = r_vector_push ((op)->dsts, NULL); \
+	dst->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
 
 // (k) >= 0 must also be true, but the value is already unsigned
 #define INSIDE_M(k) ((k) < 16)

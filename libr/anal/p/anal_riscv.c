@@ -706,7 +706,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (mask & R_ANAL_OP_MASK_VAL && args.num) {
 		int i, j = 1;
 		RAnalValue *dst, *src;
-		dst = R_NEW0 (RAnalValue);
+		dst = r_vector_push (op->dsts, NULL);
 		char *argf = strdup (o->args);
 		char *comma = strtok (argf, ",");
 		if (comma && strchr (comma, '(')) {
@@ -718,9 +718,8 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else {
 			dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
 		}
-		r_pvector_push(op->dsts, dst);
 		for (i = 0; j < args.num; i++, j++) {
-			src = R_NEW0 (RAnalValue);
+			src = r_vector_push (op->srcs, NULL);
 			comma = strtok (NULL, ",");
 			if (comma && strchr (comma, '(')) {
 				src->delta = (st64)r_num_get (NULL, args.arg[j]);
@@ -731,7 +730,6 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			} else {
 				src->imm = r_num_get (NULL, args.arg[j]);
 			}
-			r_pvector_push(op->srcs, src);
 		}
 		free (argf);
 	}

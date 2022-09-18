@@ -265,7 +265,7 @@ static RAnalValue *anal_regrel_jump(RAnal* anal, RAnalOp* op, ut8 reg) {
 
 /* 16 decoder routines, based on 1st nibble value */
 static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
-	RAnalValue *dst=NULL, *src0=NULL, *src1=NULL;
+	RAnalValue *dst = NULL, *src0 = NULL, *src1 = NULL;
 	if (IS_BSRF (code)) {
 		/* Call 'far' subroutine Rn+PC+4 */
 		op->type = R_ANAL_OP_TYPE_UCALL;
@@ -409,9 +409,18 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 			GET_TARGET_REG (code), GET_SOURCE_REG (code));
 		op->type = R_ANAL_OP_TYPE_MUL;
 	}
-	if (dst)	r_pvector_push(op->dsts, dst);
-	if (src0)	r_pvector_push(op->srcs, src0);
-	if (src1)	r_pvector_push(op->srcs, src1);
+	if (dst) {
+		r_vector_push (op->dsts, dst);
+		r_anal_value_free (dst);
+	}
+	if (src0) {
+		r_vector_push (op->srcs, src0);
+		r_anal_value_free (src0);
+	}
+	if (src1) {
+		r_vector_push (op->srcs, src1);
+		r_anal_value_free (src1);
+	}
 	return op->size;
 }
 
@@ -422,13 +431,15 @@ static int movl_reg_rdisp(RAnal* anal, RAnalOp* op, ut16 code) {
 	src = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 	dst = anal_fill_reg_disp_mem (anal, GET_TARGET_REG (code), code & 0x0F, LONG_SIZE);
 	r_strbuf_setf (&op->esil, "r%d,r%d,0x%x,+,=[4]", GET_SOURCE_REG (code), GET_TARGET_REG (code), (code & 0xF) << 2);
-	r_pvector_push(op->dsts, dst);
-	r_pvector_push(op->srcs, src);
+	r_vector_push (op->dsts, dst);
+	r_vector_push (op->srcs, src);
+	r_anal_value_free (dst);
+	r_anal_value_free (src);
 	return op->size;
 }
 
 static int first_nibble_is_2(RAnal* anal, RAnalOp* op, ut16 code) {
-	RAnalValue *dst=NULL, *src0=NULL, *src1=NULL;
+	RAnalValue *dst = NULL, *src0 = NULL, *src1 = NULL;
 	if (IS_MOVB_REG_TO_REGREF (code)) {	// 0010nnnnmmmm0000 mov.b <REG_M>,@<REG_N>
 		op->type = R_ANAL_OP_TYPE_STORE;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -497,15 +508,24 @@ static int first_nibble_is_2(RAnal* anal, RAnalOp* op, ut16 code) {
 		r_strbuf_setf (&op->esil, S16_EXT("r%d") "," S16_EXT("r%d") ",*,macl,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	}
 
-	if (dst)	r_pvector_push(op->dsts, dst);
-	if (src0)	r_pvector_push(op->srcs, src0);
-	if (src1)	r_pvector_push(op->srcs, src1);
+	if (dst) {
+		r_vector_push (op->dsts, dst);
+		r_anal_value_free (dst);
+	}
+	if (src0) {
+		r_vector_push (op->srcs, src0);
+		r_anal_value_free (src0);
+	}
+	if (src1) {
+		r_vector_push (op->srcs, src1);
+		r_anal_value_free (src1);
+	}
 	return op->size;
 }
 
 
 static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
-	RAnalValue *dst=NULL, *src0=NULL, *src1=NULL;
+	RAnalValue *dst = NULL, *src0 = NULL, *src1 = NULL;
 	//TODO Handle carry/overflow , CMP/xx?
 	if (IS_ADD (code)) {
 		op->type = R_ANAL_OP_TYPE_ADD;
@@ -601,16 +621,25 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 		src1 = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "32,r%d,r%d,0x80000000,&,?{,0xFFFFFFFF00000000,+,},r%d,r%d,0x80000000,&,?{,0xFFFFFFFF00000000,+,},*,DUP,0xFFFFFFFF,&,macl,=,>>,mach,=", GET_SOURCE_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 	}
-	if (dst)	r_pvector_push(op->dsts, dst);
-	if (src0)	r_pvector_push(op->srcs, src0);
-	if (src1)	r_pvector_push(op->srcs, src1);
+	if (dst) {
+		r_vector_push (op->dsts, dst);
+		r_anal_value_free (dst);
+	}
+	if (src0) {
+		r_vector_push (op->srcs, src0);
+		r_anal_value_free (src0);
+	}
+	if (src1) {
+		r_vector_push (op->srcs, src1);
+		r_anal_value_free (src1);
+	}
 	return op->size;
 }
 
 
 
 static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
-	RAnalValue *dst=NULL;
+	RAnalValue *dst = NULL;
 	switch(code & 0xF0FF) { //TODO: change to common } else if construction
 	case 0x4020:	//shal
 		op->type = R_ANAL_OP_TYPE_SAL;
@@ -782,7 +811,10 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 			GET_TARGET_REG (code), GET_SOURCE_REG (code));
 		op->type = R_ANAL_OP_TYPE_MUL;
 	}
-	if (dst)	r_pvector_push(op->dsts, dst);
+	if (dst) {
+		r_vector_push (op->dsts, dst);
+		r_anal_value_free (dst);
+	}
 	return op->size;
 }
 
@@ -793,13 +825,15 @@ static int movl_rdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	src = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, LONG_SIZE);
 	r_strbuf_setf (&op->esil, "r%d,0x%x,+,[4],r%d,=", GET_SOURCE_REG (code), (code&0xF) * 4, GET_TARGET_REG (code));
-	r_pvector_push(op->dsts, dst);
-	r_pvector_push(op->srcs, src);
+	r_vector_push (op->dsts, dst);
+	r_vector_push (op->srcs, src);
+	r_anal_value_free (dst);
+	r_anal_value_free (src);
 	return op->size;
 }
 
 static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
-	RAnalValue *dst=NULL, *src=NULL;
+	RAnalValue *dst = NULL, *src = NULL;
 	if (IS_MOV_REGS (code)) {
 		op->type = R_ANAL_OP_TYPE_MOV;
 		src = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -879,8 +913,14 @@ static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
 		r_strbuf_setf (&op->esil, "16,r%d,0xFFFF,&,<<,16,r%d,0xFFFF0000,&,>>,|,r%d,=", GET_SOURCE_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_MOV;
 	}
-	if (dst)	r_pvector_push(op->dsts, dst);
-	if (src)	r_pvector_push(op->srcs, src);
+	if (dst) {
+		r_vector_push (op->dsts, dst);
+		r_anal_value_free (dst);
+	}
+	if (src) {
+		r_vector_push (op->srcs, src);
+		r_anal_value_free (src);
+	}
 	return op->size;
 }
 
@@ -892,13 +932,15 @@ static int add_imm(RAnal* anal, RAnalOp* op, ut16 code) {
 	src = anal_fill_im (anal, (st8)(code & 0xFF)); //Casting to (st8) forces sign-extension.
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	r_strbuf_setf (&op->esil, "0x%x,DUP,0x80,&,?{,0xFFFFFF00,|,},r%d,+=", code & 0xFF, GET_TARGET_REG (code));
-	r_pvector_push(op->dsts, dst);
-	r_pvector_push(op->srcs, src);
+	r_vector_push (op->dsts, dst);
+	r_vector_push (op->srcs, src);
+	r_anal_value_free (dst);
+	r_anal_value_free (src);
 	return op->size;
 }
 
 static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code) {
-	RAnalValue *dst=NULL, *src=NULL;
+	RAnalValue *dst = NULL, *src = NULL;
 	if (IS_BT_OR_BF (code)) {
 		op->type = R_ANAL_OP_TYPE_CJMP; //Jump if true or jump if false insns
 		op->jump = disarm_8bit_offset (op->addr, GET_BTF_OFFSET (code));
@@ -943,8 +985,14 @@ static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code) {
 		dst = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, WORD_SIZE);
 		r_strbuf_setf (&op->esil, "r0,0xFFFF,&,0x%x,r%d,+,=[2]", (code & 0xF) * 2, GET_SOURCE_REG (code));
 	}
-	if (dst)	r_pvector_push(op->dsts, dst);
-	if (src)	r_pvector_push(op->srcs, src);
+	if (dst) {
+		r_vector_push (op->dsts, dst);
+		r_anal_value_free (dst);
+	}
+	if (src) {
+		r_vector_push (op->srcs, src);
+		r_anal_value_free (src);
+	}
 	return op->size;
 }
 
@@ -957,8 +1005,10 @@ static int movw_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	src->base = (code & 0xFF) * 2+op->addr + 4;
 	src->memref = 1;
 	r_strbuf_setf (&op->esil, "0x%" PFMT64x ",[2],r%d,=,r%d,0x8000,&,?{,0xFFFF0000,r%d,|=,}", src->base, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
-	r_pvector_push(op->dsts, dst);
-	r_pvector_push(op->srcs, src);
+	r_vector_push (op->dsts, dst);
+	r_vector_push (op->srcs, src);
+	r_anal_value_free (dst);
+	r_anal_value_free (src);
 	return op->size;
 }
 
@@ -984,7 +1034,7 @@ static int bsr(RAnal* anal, RAnalOp* op, ut16 code) {
 }
 
 static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
-	RAnalValue *dst=NULL, *src0=NULL, *src1=NULL;
+	RAnalValue *dst = NULL, *src0 = NULL, *src1 = NULL;
 	if (IS_TRAP (code)) {
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->val = (ut8)(code & 0xFF);
@@ -1066,9 +1116,18 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[4],r0,=", (code & 0xFF) * 4);
 	}
 
-	if (dst)	r_pvector_push(op->dsts, dst);
-	if (src0)	r_pvector_push(op->srcs, src0);
-	if (src1)	r_pvector_push(op->srcs, src1);
+	if (dst) {
+		r_vector_push (op->dsts, dst);
+		r_anal_value_free (dst);
+	}
+	if (src0) {
+		r_vector_push (op->srcs, src0);
+		r_anal_value_free (src0);
+	}
+	if (src1) {
+		r_vector_push (op->srcs, src1);
+		r_anal_value_free (src1);
+	}
 	return op->size;
 }
 
@@ -1081,8 +1140,10 @@ static int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	//r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + (op->addr & 0xfffffff3) + 4, GET_TARGET_REG (code));
 	r_strbuf_setf (&op->esil, "0x%" PFMT64x ",[4],r%d,=", (code & 0xFF) * 4 + ((op->addr >> 2)<<2) + 4, GET_TARGET_REG (code));
-	r_pvector_push(op->dsts, dst);
-	r_pvector_push(op->srcs, src);
+	r_vector_push (op->dsts, dst);
+	r_vector_push (op->srcs, src);
+	r_anal_value_free (dst);
+	r_anal_value_free (src);
 	return op->size;
 }
 
@@ -1093,8 +1154,10 @@ static int mov_imm_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	src = anal_fill_im (anal, (st8)(code & 0xFF));
 	r_strbuf_setf (&op->esil, "0x%x,r%d,=,r%d,0x80,&,?{,0xFFFFFF00,r%d,|=,}", code & 0xFF, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
-	r_pvector_push(op->dsts, dst);
-	r_pvector_push(op->srcs, src);
+	r_vector_push (op->dsts, dst);
+	r_vector_push (op->srcs, src);
+	r_anal_value_free (dst);
+	r_anal_value_free (src);
 	return op->size;
 }
 

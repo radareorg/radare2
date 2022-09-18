@@ -521,10 +521,10 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 static RRegItem base_regs[4];
 
 static void create_src_dst(RAnalOp *op) {
-	r_pvector_push(op->srcs, r_anal_value_new ());
-	r_pvector_push(op->srcs, r_anal_value_new ());
-	r_pvector_push(op->srcs, r_anal_value_new ());
-	r_pvector_push(op->dsts, r_anal_value_new ());
+	r_vector_push (op->srcs, NULL);
+	r_vector_push (op->srcs, NULL);
+	r_vector_push (op->srcs, NULL);
+	r_vector_push (op->dsts, NULL);
 	ZERO_FILL (base_regs[0]);
 	ZERO_FILL (base_regs[1]);
 	ZERO_FILL (base_regs[2]);
@@ -551,10 +551,10 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
 
 static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	create_src_dst (op);
-	RAnalValue *src0 = r_pvector_at(op->srcs, 0);
-	RAnalValue *src1 = r_pvector_at(op->srcs, 1);
-	RAnalValue *src2 = r_pvector_at(op->srcs, 2);
-	RAnalValue *dst = r_pvector_at(op->dsts, 0);
+	RAnalValue *src0 = r_vector_index_ptr (op->srcs, 0);
+	RAnalValue *src1 = r_vector_index_ptr (op->srcs, 1);
+	RAnalValue *src2 = r_vector_index_ptr (op->srcs, 2);
+	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_CMP:

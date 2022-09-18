@@ -203,10 +203,11 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 			mov_aop = *aop;
 			o_reg_dst = cur_dst.reg;
 			RAnalValue *rval = NULL;
-			rval = r_pvector_at(mov_aop.dsts, 0);
-			if (rval)
+			rval = r_vector_index_ptr (mov_aop.dsts, 0);
+			if (rval) {
 				cur_dst = *rval;
-			rval = r_pvector_at(mov_aop.srcs, 0);
+			}
+			rval = r_vector_index_ptr (mov_aop.srcs, 0);
 			if (rval) {
 				cur_scr = *rval;
 				reg_src = cur_scr.regdelta;
@@ -547,7 +548,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	}
 	// TODO Store all this stuff in the heap so we save memory in the stack
 	RAnalOp *op = NULL;
-	RAnalValue *dst=NULL, *src0=NULL, *src1=NULL;
+	RAnalValue *dst = NULL, *src0 = NULL, *src1 = NULL;
 	char *movbasereg = NULL;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
 	char *last_reg_mov_lea_name = NULL;
@@ -715,13 +716,13 @@ repeat:
 			// RET_END causes infinite loops somehow
 			gotoBeach (R_ANAL_RET_END);
 		}
-		dst = r_pvector_at(op->dsts, 0);
+		dst = r_vector_index_ptr (op->dsts, 0);
 		free (op_dst);
 		op_dst = (dst && dst->reg && dst->reg->name)? strdup (dst->reg->name): NULL;
-		src0 = r_pvector_at(op->srcs, 0);
+		src0 = r_vector_index_ptr (op->srcs, 0);
 		free (op_src);
 		op_src = (src0 && src0->reg && src0->reg->name) ? strdup (src0->reg->name): NULL;
-		src1 = r_pvector_at(op->srcs, 1);
+		src1 = r_vector_index_ptr (op->srcs, 1);
 
 		if (anal->opt.nopskip && fcn->addr == at) {
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
@@ -1259,7 +1260,7 @@ repeat:
 						RAnalOp *prev_op = r_anal_op_new ();
 						anal->iob.read_at (anal->iob.io, op->addr - op->size, buf, sizeof (buf));
 						if (r_anal_op (anal, prev_op, op->addr - op->size, buf, sizeof (buf), R_ANAL_OP_MASK_VAL) > 0) {
-							RAnalValue *prev_dst = r_pvector_at(prev_op->dsts, 0);
+							RAnalValue *prev_dst = r_vector_index_ptr (prev_op->dsts, 0);
 							bool prev_op_has_dst_name = prev_dst && prev_dst->reg && prev_dst->reg->name;
 							bool op_has_src_name = src0 && src0->reg && src0->reg->name;
 							bool same_reg = (op->ireg && prev_op_has_dst_name && !strcmp (op->ireg, prev_dst->reg->name))
@@ -2077,8 +2078,8 @@ R_API bool r_anal_function_purity(RAnalFunction *fcn) {
 }
 
 static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
-	RAnalValue *dst = r_pvector_at(op->dsts, 0);
-	RAnalValue *src = r_pvector_at(op->srcs, 0);
+	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
+	RAnalValue *src = r_vector_index_ptr (op->srcs, 0);
 	const char *opdreg = (dst && dst->reg) ? dst->reg->name : NULL;
 	const char *opsreg = (src && src->reg) ? src->reg->name : NULL;
 	const char *bp_name = anal->reg->name[R_REG_NAME_BP];
@@ -2106,7 +2107,7 @@ static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 	}
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RAnalOp op;
-		RAnalValue *src=NULL;
+		RAnalValue *src = NULL;
 		ut64 at, end = bb->addr + bb->size;
 		ut8 *buf = malloc (bb->size);
 		if (!buf) {
@@ -2119,7 +2120,7 @@ static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 			if (op.size < 1) {
 				op.size = 1;
 			}
-			src = r_pvector_at(op.srcs, 0);
+			src = r_vector_index_ptr (op.srcs, 0);
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_MOV:
 			case R_ANAL_OP_TYPE_LEA:

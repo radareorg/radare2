@@ -878,9 +878,9 @@ typedef struct r_anal_op_t {
 	int ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr;  /* stack pointer */
 	int refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
-	RPVector/*RAnalValue*/	*srcs;
+	RVector/*RAnalValue*/	*srcs;
 	//RAnalValue *src[3];
-	RPVector/*RAnalValue*/	*dsts;
+	RVector/*RAnalValue*/	*dsts;
 	//RAnalValue *dst;
 	RList *access; /* RAnalValue access information */
 	RStrBuf esil;
