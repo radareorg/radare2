@@ -251,6 +251,7 @@ typedef enum {
 
 typedef struct r_vc_t {
 	char *path;
+	VcType type;
 	Sdb *db;
 	bool (*commit) (struct r_vc_t *rvc, const char *message, const char *author, const RList *files);
 	bool (*branch) (struct r_vc_t *rvc, const char *bname);

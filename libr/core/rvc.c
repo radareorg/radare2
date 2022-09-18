@@ -1267,18 +1267,6 @@ static void warn(void) {
 	R_LOG_WARN ("rvc is still under development and can be unstable, be careful");
 }
 
-R_API Rvc *rvc_git_init(const RCore *core, const char *path) {
-	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
-		return r_vc_git_init (path);
-	}
-	warn ();
-	Rvc *rvc = r_vc_new (path);
-	if (!rvc || !r_vc_save (rvc)) {
-		return NULL;
-	}
-	return rvc;
-}
-
 R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files) {
 	const char *m = r_config_get (core->config, "prj.vc.message");
 	if (!*m) {
@@ -1294,14 +1282,7 @@ R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char
 		r_vc_commit (rvc, message, author, files);
 		return r_vc_save (rvc);
 	}
-	char *path;
-	RListIter *iter;
-	r_list_foreach (files, iter, path) {
-		if (!r_vc_git_add (rvc->path, path)) {
-			return false;
-		}
-	}
-	return r_vc_git_commit (rvc->path, message);
+	return r_vc_git_commit (rvc, message, author, files);
 }
 
 R_API bool rvc_git_branch(Rvc *rvc, const char *bname) {
@@ -1310,16 +1291,16 @@ R_API bool rvc_git_branch(Rvc *rvc, const char *bname) {
 		r_vc_branch (rvc, bname);
 		return r_vc_save(rvc);
 	}
-	return !r_vc_git_branch (rvc->path, bname);
+	return !r_vc_git_branch (rvc, bname);
 }
 
-R_API bool rvc_git_checkout(const RCore *core, Rvc *rvc, const char *bname) {
+R_API bool rvc_git_checkout(Rvc *rvc, const char *bname) {
 	if (rvc->type == VC_GIT) {
 		warn ();
 		r_vc_checkout (rvc, bname);
 		return r_vc_save(rvc);
 	}
-	return r_vc_git_checkout (rvc->path, bname);
+	return r_vc_git_checkout (rvc, bname);
 }
 
 R_API bool rvc_git_repo_exists(const RCore *core, const char *path) {
@@ -1523,8 +1504,18 @@ R_API Rvc *rvc_git_open(const char *path) {
 
 R_API Rvc *rvc_git_init(const RCore *core, const char *path) {
 	r_return_val_if_fail (core && path, NULL);
-	if (!strcmp ("git", r_config_get (core->config, "prj.vc.type"))) {
+	const char *vname = r_config_get (core->config, "prj.vc.type");
+	if (!strcmp(vname, "git")) {
 		return r_vc_git_init (path);
+	} else if (!strcmp(vname, "rvc")) {
+		warn ();
+		Rvc *rvc = r_vc_new (path);
+		if (!rvc || !r_vc_save (rvc)) {
+			return NULL;
+		}
+		return rvc;
 	}
-	return r_vc_new (path);
+	R_LOG_ERROR("%s is not a valid vc type\n", vname);
+	return NULL;
 }
+

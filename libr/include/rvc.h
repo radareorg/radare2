@@ -43,6 +43,7 @@ R_API char *r_vc_git_current_branch(Rvc *rvc);
 R_API bool r_vc_git_reset(Rvc *rvc);
 R_API bool r_vc_git_clone(const Rvc *rvc, const char *dst);
 R_API void r_vc_git_close(Rvc *vc, bool save);
+R_API bool rvc_git_checkout(Rvc *rvc, const char *bname);
 
 R_API Rvc *rvc_git_init(const RCore *core, const char *path);
 R_API Rvc *rvc_git_open(const char *path);
