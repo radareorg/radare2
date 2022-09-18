@@ -139,7 +139,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 				}
 				char *author = get_author();
 				if (author) {
-					save = r_vc_git_commit(rvc, message, author,
+					save = rvc->commit(rvc, message, author,
 							files);
 					free (author);
 				}
@@ -167,9 +167,9 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			r_list_free (uncommitted);
 		}
 	} else if (!strcmp (action, "reset")) {
-		save = r_vc_reset (rvc);
+		save = rvc->reset(rvc);
 	} else if (!strcmp (action, "log")) {
-		save = r_vc_git_log(rvc);
+		save = rvc->print_commits(rvc);
 	} else {
 		eprintf ("Incorrect command\n");
 	}

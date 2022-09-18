@@ -1295,7 +1295,7 @@ R_API bool rvc_git_branch(Rvc *rvc, const char *bname) {
 }
 
 R_API bool rvc_git_checkout(Rvc *rvc, const char *bname) {
-	if (rvc->type == VC_GIT) {
+	if (rvc->type == VC_RVC) {
 		warn ();
 		r_vc_checkout (rvc, bname);
 		return r_vc_save(rvc);

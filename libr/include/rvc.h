@@ -48,6 +48,7 @@ R_API bool rvc_git_checkout(Rvc *rvc, const char *bname);
 R_API Rvc *rvc_git_init(const RCore *core, const char *path);
 R_API Rvc *rvc_git_open(const char *path);
 R_API bool r_vc_use(Rvc *vc, VcType);
+R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files);
 
 #ifdef __cplusplus
 }
