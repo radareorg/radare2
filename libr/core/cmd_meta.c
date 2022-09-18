@@ -154,8 +154,8 @@ static const char *help_msg_Cvs[] = {
 };
 
 static int remove_meta_offset(RCore *core, ut64 offset) {
-	char aoffset[64];
-	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
+	char aoffset[SDB_NUM_BUFSZ];
+	char *aoffsetptr = sdb_itoa (offset, 16, aoffset, sizeof (aoffset));
 	if (!aoffsetptr) {
 		R_LOG_ERROR ("Failed to convert %"PFMT64x" to a key", offset);
 		return -1;
@@ -303,9 +303,8 @@ static bool print_addrinfo(void *user, const char *k, const char *v) {
 }
 
 static int cmd_meta_add_fileline(Sdb *s, char *fileline, ut64 offset) {
-	char aoffset[64];
-	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
-
+	char aoffset[SDB_NUM_BUFSZ];
+	char *aoffsetptr = sdb_itoa (offset, 16, aoffset, sizeof (aoffset));
 	if (!aoffsetptr) {
 		return -1;
 	}

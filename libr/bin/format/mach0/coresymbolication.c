@@ -120,12 +120,12 @@ static void meta_add_fileline(RBinFile *bf, ut64 vaddr, ut32 size, RCoreSymCache
 	if (!s) {
 		return;
 	}
-	char aoffset[64];
+	char aoffset[SDB_NUM_BUFSZ];
 	ut64 cursor = vaddr;
 	ut64 end = cursor + R_MAX (size, 1);
 	char *fileline = r_str_newf ("%s:%d", flc->file, flc->line);
 	while (cursor < end) {
-		char *aoffsetptr = sdb_itoa (cursor, aoffset, 16);
+		char *aoffsetptr = sdb_itoa (cursor, 16, aoffset, sizeof (aoffset));
 		if (!aoffsetptr) {
 			break;
 		}

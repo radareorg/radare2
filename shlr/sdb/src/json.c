@@ -95,8 +95,8 @@ static bool isstring(const char *s) {
 
 // JSON only supports base16 numbers
 SDB_API int sdb_json_num_set(Sdb *s, const char *k, const char *p, int v, ut32 cas) {
-	char *_str, str[64];
-	_str = sdb_itoa (v, str, 10);
+	char *_str, str[SDB_NUM_BUFSZ];
+	_str = sdb_itoa (v, 10, str, sizeof (str));
 	return sdb_json_set (s, k, p, _str, cas);
 }
 
