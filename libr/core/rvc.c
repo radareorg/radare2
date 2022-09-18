@@ -1505,9 +1505,9 @@ R_API Rvc *rvc_git_open(const char *path) {
 R_API Rvc *rvc_git_init(const RCore *core, const char *path) {
 	r_return_val_if_fail (core && path, NULL);
 	const char *vname = r_config_get (core->config, "prj.vc.type");
-	if (!strcmp(vname, "git")) {
+	if (!strcmp (vname, "git")) {
 		return r_vc_git_init (path);
-	} else if (!strcmp(vname, "rvc")) {
+	} else if (!strcmp (vname, "rvc")) {
 		warn ();
 		Rvc *rvc = r_vc_new (path);
 		if (!rvc || !r_vc_save (rvc)) {
