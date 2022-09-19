@@ -10,7 +10,7 @@ static RCoreHelpMessage help_msg_P = {
 	"P-", " [name]", "delete project",
 	"P*", "", "save project (same as Ps, but doesnt checks for changes)",
 	"P!", "([cmd])", "open a shell in the project directory",
-	"Pc", " [file]", "show project script to console (R2_580 -> PS*)",
+	"Pc", "", "close current project",
 	"Pd", " [N]", "diff Nth commit",
 	"Pi", " [file]", "show project information",
 	"Pl", "", "list all projects",
@@ -19,7 +19,6 @@ static RCoreHelpMessage help_msg_P = {
 	"Ps", " [file]", "save project (see dir.projects)",
 	"PS", " [file]", "save script file",
 	"PS*", "", "print the project script file (Like PS /dev/stdout)",
-	"Px", "-", "close the opened project (R2_580 -> Pc)",
 	"NOTE:", "", "the 'e prj.name' evar can save/open/rename/list projects.",
 	"NOTE:", "", "see the other 'e??prj.' evars for more options.",
 	"NOTE:", "", "project are stored in dir.projects",
@@ -63,15 +62,11 @@ static int cmd_project(void *data, const char *input) {
 	file = arg;
 	switch (input[0]) {
 	case 'c': // "Pc"
-		// R2_580 - old Px code moves here..
-		if (input[1] == '?') {
-			eprintf ("Usage: Pc [prjname]\n");
-		} else if (input[1] == '\0' && fileproject) {
-			r_core_project_cat (core, fileproject);
-		} else if (input[1] == ' ') {
-			r_core_project_cat (core, input + 2);
+		if (R_STR_ISNOTEMPTY (r_config_get (core->config, "prj.name"))) {
+			r_project_close (core->prj);
+			r_config_set (core->config, "prj.name", "");
 		} else {
-			eprintf ("Usage: Pc [prjname]\n");
+			R_LOG_WARN ("No project to close");
 		}
 		break;
 	case 'o': // "Po" DEPRECATED
@@ -164,8 +159,12 @@ static int cmd_project(void *data, const char *input) {
 	case 'S': // "PS"
 		if (input[1] == ' ') {
 			r_core_project_save_script (core, r_str_trim_head_ro (input + 2), R_CORE_PRJ_ALL);
-		} else if (input[1] == '*') {
-			r_core_project_save_script (core, "/dev/stdout", R_CORE_PRJ_ALL);
+		} else if (input[1] == '*') { // "PS*"
+			if (input[2]) {
+				r_core_project_cat (core, r_str_trim_head_ro (input + 2));
+			} else {
+				r_core_project_cat (core, fileproject);
+			}
 		} else {
 			eprintf ("Usage: PS[*] [projectname]\n");
 		}
@@ -311,10 +310,6 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case '.': // "P."
 		r_cons_printf ("%s\n", fileproject);
-		break;
-	case 'x':
-		r_project_close (core->prj);
-		r_config_set (core->config, "prj.name", "");
 		break;
 	case 0: // "P"
 	case 'P':
