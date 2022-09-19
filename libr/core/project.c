@@ -2,7 +2,6 @@
 
 #include <r_core.h>
 #include <rvc.h>
-#define USE_R2 1
 #include <spp/spp.h>
 
 #define PROJECT_EXPERIMENTAL 0

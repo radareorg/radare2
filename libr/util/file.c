@@ -1458,3 +1458,50 @@ R_API RList* r_file_glob(const char *_globbed_path, int maxdepth) {
 	free (globbed_path);
 	return files;
 }
+
+#if __UNIX__
+static bool is_executable_header(const char *file) {
+	bool ret = false;
+	int osz = 0;
+	char *data = r_file_slurp_range (file, 0, 1024, &osz);
+	if (data && osz > 4) {
+		// 0xfeedface 0xcefaedfe) // 32bit
+		// 0xfeedfacf 0xcffaedfe) // 64bit
+		if (!memcmp (data, "\xca\xfe\xba\xbe", 4)) {
+			ret = true;
+		} else if (!memcmp (data, "#!/", 3)) {
+			ret = true;
+		} else if (!memcmp (data, "\x7f" "ELF", 4)) {
+			ret = true;
+		}
+	}
+	free (data);
+	return ret;
+}
+#endif
+R_API bool r_file_is_executable(const char *file) {
+	bool ret = false;
+#if __UNIX__
+	struct stat buf = {0};
+	if (stat (file, &buf) != 0) {
+		return false;
+	}
+	if (buf.st_mode & 0111) {
+		return is_executable_header (file);
+	}
+#elif __WINDOWS__
+	const char *ext = r_file_extension (file);
+	if (ext) {
+		return !strcmp (ext, "exe") || !strcmp (ext, "com") || !strcmp (ext, "bat");
+	}
+#endif
+	return ret;
+}
+
+R_API const char *r_file_extension(const char *str) {
+	const char *dot = r_str_lchr (str, '.');
+	if (dot) {
+		return dot + 1;
+	}
+	return NULL;
+}

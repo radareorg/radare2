@@ -438,9 +438,9 @@ R_API RDebug *r_debug_new(int hard);
 R_API void r_debug_free(RDebug *dbg);
 
 R_API bool r_debug_attach(RDebug *dbg, int pid);
-R_API int r_debug_detach(RDebug *dbg, int pid);
-R_API int r_debug_startv(RDebug *dbg, int argc, char **argv);
-R_API int r_debug_start(RDebug *dbg, const char *cmd);
+R_API bool r_debug_detach(RDebug *dbg, int pid);
+R_API bool r_debug_startv(RDebug *dbg, int argc, char **argv);
+R_API bool r_debug_start(RDebug *dbg, const char *cmd);
 
 /* reason we stopped */
 R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg);

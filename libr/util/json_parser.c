@@ -366,10 +366,12 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 	return NULL;
 }
 
-// XXX R2_580 make this api const char *text instead of char *text
-R_API RJson *r_json_parse(char *text) {
+R_API RJson *r_json_parse(const char *_text) {
 	RJson js = {0};
-	if (!parse_value (&js, 0, text)) {
+	char *text = strdup (_text);
+	bool res = parse_value (&js, 0, text);
+	free (text);
+	if (!res) {
 		if (js.children.first) {
 			r_json_free (js.children.first);
 		}

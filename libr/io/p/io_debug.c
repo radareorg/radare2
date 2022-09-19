@@ -250,7 +250,6 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	}
 	rp->_program = strdup (argv[0]);
 
-	rp->_dodebug = true;
 	if (io->runprofile && *io->runprofile) {
 		if (!r_run_parsefile (rp, io->runprofile)) {
 			R_LOG_ERROR ("Can't find profile '%s'", io->runprofile);

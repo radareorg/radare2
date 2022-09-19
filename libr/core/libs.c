@@ -114,9 +114,8 @@ R_API void r_core_loadlibs_init(RCore *core) {
 }
 
 static bool __isScriptFilename(const char *name) {
-	const char *ext = r_str_lchr (name, '.');
+	const char *ext = r_file_extension (name);
 	if (ext) {
-		ext++;
 		if (0
 		|| !strcmp (ext, "c")
 		|| !strcmp (ext, "go")

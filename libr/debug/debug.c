@@ -58,8 +58,7 @@ static int r_debug_drx_at(RDebug *dbg, ut64 addr) {
  * r_debug_bp_hit handles stage 1.
  * r_debug_recoil handles stage 2.
  */
-// R2580 - return bool
-static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
+static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
 	r_return_val_if_fail (dbg && pc_ri && pb, false);
 	RBreakpointItem *b = NULL;
 	/* initialize the output parameter */
@@ -605,20 +604,20 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	return true;
 }
 
-R_API int r_debug_startv(struct r_debug_t *dbg, int argc, char **argv) {
+R_API bool r_debug_startv(struct r_debug_t *dbg, int argc, char **argv) {
 	/* TODO : r_debug_startv unimplemented */
 	return false;
 }
 
-R_API int r_debug_start(RDebug *dbg, const char *cmd) {
+R_API bool r_debug_start(RDebug *dbg, const char *cmd) {
 	/* TODO: this argc/argv parser is done in r_io */
 	// TODO: parse cmd and generate argc and argv
 	return false;
 }
 
-// 580 should be bool
-R_API int r_debug_detach(RDebug *dbg, int pid) {
-	int ret = 0;
+R_API bool r_debug_detach(RDebug *dbg, int pid) {
+	r_return_val_if_fail (dbg, false);
+	bool ret = false;
 	if (dbg->h && dbg->h->detach) {
 		ret = dbg->h->detach (dbg, pid);
 		if (dbg->pid == pid) {
