@@ -224,7 +224,7 @@ int file_reset(RMagic *ms) {
 	ms->haderr = 0;
 	ms->error = -1;
 	if (!ms->mlist) {
-		R_LOG_ERROR ("no magic files loaded, nothing to scan");
+		eprintf ("no magic files loaded, nothing to scan\n");
 		return -1;
 	}
 	return 0;
