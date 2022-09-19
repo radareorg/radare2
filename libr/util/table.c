@@ -1075,6 +1075,7 @@ R_API const char *r_table_help(void) {
 		" :json          .tostring() == .tojson()\n"
 		" :simple        simple table output without lines\n"
 		" :sql           .tostring() == .tosql() # export table contents in SQL statements\n"
+		" :header        show column headers (see :quiet and :noheader)\n"
 		" :quiet         do not print column names header\n";
 }
 
@@ -1084,6 +1085,10 @@ static bool __table_special(RTable *t, const char *columnName) {
 	}
 	if (!strcmp (columnName, ":quiet")) {
 		t->showHeader = false;
+	} else if (r_str_startswith (columnName, ":nohead")) {
+		t->showHeader = false;
+	} else if (r_str_startswith (columnName, ":head")) {
+		t->showHeader = true;
 	} else if (!strcmp (columnName, ":fancy")) {
 		t->showHeader = true;
 		t->showFancy = true;

@@ -3253,7 +3253,6 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, noret, nbbs, nins, xref, castr, ccstr, NULL);
 	}
 	if (r_table_query (t, q)) {
-		t->showHeader = false;
 		char *s = (fmt == 'j')
 			? r_table_tojson (t)
 			: r_table_tostring (t);
@@ -3378,7 +3377,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 			fcn_list_verbose_json (core, fcns);
 		} else {
 			char *sp = strchr (rad, ' ');
-			fcn_list_verbose (core, fcns, sp?sp+1: NULL);
+			fcn_list_verbose (core, fcns, sp? sp + 1: NULL);
 		}
 		break;
 	case 'q':
