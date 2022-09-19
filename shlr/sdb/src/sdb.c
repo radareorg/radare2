@@ -683,6 +683,18 @@ SDB_API int sdb_nset(Sdb* s, ut64 nkey, const char *val, ut32 cas) {
 	return sdb_set_internal (s, key, (char *)val, false, cas);
 }
 
+SDB_API int sdb_num_nset(Sdb* s, ut64 nkey, ut64 nval, ut32 cas) {
+	char buf[SDB_NUM_BUFSZ];
+	const char *key = sdb_itoa (nkey, 16, buf, sizeof (buf));
+	return sdb_num_set (s, key, nval, cas);
+}
+
+SDB_API ut64 sdb_num_nget(Sdb *s, ut64 nkey, ut32 *cas) {
+	char buf[SDB_NUM_BUFSZ];
+	const char *key = sdb_itoa (nkey, 16, buf, sizeof (buf));
+	return sdb_num_get (s, key, cas);
+}
+
 static bool sdb_foreach_list_cb(void *user, const char *k, const char *v) {
 	SdbList *list = (SdbList *)user;
 	SdbKv *kv = R_NEW0 (SdbKv);

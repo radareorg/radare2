@@ -208,6 +208,8 @@ SDB_API const char *sdb_const_get(Sdb*, const char *key, ut32 *cas);
 SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *cas);
 SDB_API int sdb_set(Sdb*, const char *key, const char *data, ut32 cas);
 SDB_API int sdb_nset(Sdb*, ut64 nkey, const char *data, ut32 cas);
+SDB_API ut64 sdb_num_nget(Sdb *s, ut64 nkey, ut32 *cas);
+SDB_API int sdb_num_nset(Sdb* s, ut64 nkey, ut64 nval, ut32 cas);
 SDB_API int sdb_set_owned(Sdb* s, const char *key, char *val, ut32 cas);
 SDB_API int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas);
 SDB_API int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas);
