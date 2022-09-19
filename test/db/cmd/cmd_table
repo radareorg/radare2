@@ -68,8 +68,8 @@ cat $a~?
 ,~?
 EOF
 EXPECT=<<EOF
-33
-36
+34
+37
 EOF
 RUN
 
