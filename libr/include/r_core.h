@@ -369,9 +369,7 @@ struct r_core_t {
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
 	RThreadChannel *chan; // query
-#if R2_580
-	bool in_log_process // false;
-#endif
+	bool in_log_process; // false;
 	RMainCallback r_main_radare2;
 	// int (*r_main_radare2)(int argc, char **argv);
 	int (*r_main_rafind2)(int argc, const char **argv);
@@ -508,7 +506,7 @@ R_API int r_core_visual_xrefs_x(RCore *core);
 R_API int r_core_visual_xrefs_X(RCore *core);
 R_API void r_core_visual_showcursor(RCore *core, int x);
 R_API void r_core_visual_offset(RCore *core);
-R_API int r_core_visual_hud(RCore *core); // R2_580 bool
+R_API bool r_core_visual_hud(RCore *core);
 R_API void r_core_visual_jump(RCore *core, ut8 ch);
 R_API void r_core_visual_disasm_up(RCore *core, int *cols);
 R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols);
