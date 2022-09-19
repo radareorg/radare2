@@ -483,7 +483,7 @@ R_API const char *r_utf_block_name(int idx) {
 	return r_utf_blocks[idx].name;
 }
 
-#define r_utf_blocks_count (sizeof (r_utf_blocks) / sizeof (r_utf_blocks[0]))
+#define R_UTF_BLOCKS_COUNT (sizeof (r_utf_blocks) / sizeof (r_utf_blocks[0]))
 
 /* Convert an UTF-8 buf into a unicode RRune */
 R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
@@ -721,7 +721,7 @@ R_API char *r_acp_to_utf8_l(const char *str, int len) {
 #endif // __WINDOWS__
 
 R_API int r_utf_block_idx(RRune ch) {
-	const int last = r_utf_blocks_count;
+	const int last = R_UTF_BLOCKS_COUNT;
 	int low, hi, mid;
 
 	low = 0;
@@ -740,7 +740,7 @@ R_API int r_utf_block_idx(RRune ch) {
 		}
 	} while (low <= hi);
 
-	return r_utf_blocks_count - 1; /* index for "No_Block" */
+	return R_UTF_BLOCKS_COUNT - 1; /* index for "No_Block" */
 }
 
 /* str must be UTF8-encoded */
@@ -751,7 +751,7 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	if (len < 0) {
 		len = strlen ((const char *)str);
 	}
-	static R_TH_LOCAL int block_freq[r_utf_blocks_count] = {0};
+	int block_freq[R_UTF_BLOCKS_COUNT] = {0};
 	int *list = R_NEWS (int, len + 1);
 	if (!list) {
 		return NULL;
@@ -773,7 +773,7 @@ R_API int *r_utf_block_list(const ut8 *str, int len, int **freq_list) {
 		int block_idx;
 		int ch_bytes = r_utf8_decode (str_ptr, str_end - str_ptr, &ch);
 		if (!ch_bytes) {
-			block_idx = r_utf_blocks_count - 1;
+			block_idx = R_UTF_BLOCKS_COUNT - 1;
 			ch_bytes = 1;
 		} else {
 			block_idx = r_utf_block_idx (ch);
