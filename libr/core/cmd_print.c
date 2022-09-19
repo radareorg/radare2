@@ -659,10 +659,10 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 	int i, j;
 	char ch, ch2, *color;
 	int cols = r_config_get_i (core->config, "hex.cols");
-	bool show_color = r_config_get_i (core->config, "scr.color");
-	bool show_flags = r_config_get_i (core->config, "asm.flags");
-	bool show_section = r_config_get_i (core->config, "hex.section");
-	bool show_offset = r_config_get_i (core->config, "hex.offset");
+	bool show_color = r_config_get_b (core->config, "scr.color");
+	bool show_flags = r_config_get_b (core->config, "asm.flags");
+	bool show_section = r_config_get_b (core->config, "hex.section");
+	bool show_offset = r_config_get_b (core->config, "hex.offset");
 	bool show_cursor = core->print->cur_enabled;
 	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
 	if (cols < 1 || cols > 0xfffff) {

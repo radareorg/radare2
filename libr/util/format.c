@@ -651,7 +651,7 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode, const char
 		}
 	} else if (MUSTSEEJSON) {
 		if (size == -1) {
-			p->cb_printf ("0x%08"PFMT64x, addr);
+			p->cb_printf ("%"PFMT64d, addr);
 		} else {
 			p->cb_printf ("[ ");
 			while (size--) {
