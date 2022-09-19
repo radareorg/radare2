@@ -543,3 +543,84 @@ EXPECT=<<EOF
 fd
 EOF
 RUN
+
+NAME=ij.gron
+FILE=bins/elf/crackme
+CMDS=<<EOF
+ij~{=}
+EOF
+EXPECT=<<EOF
+json = {};
+json.core = {};
+json.core.type = "EXEC (Executable file)";
+json.core.file = "bins/elf/crackme";
+json.core.fd = 3;
+json.core.size = 7441;
+json.core.humansz = "7.3K";
+json.core.iorw = false;
+json.core.mode = "r-x";
+json.core.minopsz = 1;
+json.core.maxopsz = 16;
+json.core.invopsz = 1;
+json.core.block = 256;
+json.core.format = "elf64";
+json.bin = {};
+json.bin.arch = "x86";
+json.bin.baddr = 4194304;
+json.bin.binsz = 7441;
+json.bin.bintype = "elf";
+json.bin.bits = 64;
+json.bin.canary = false;
+json.bin.class = "ELF64";
+json.bin.compiled = "";
+json.bin.compiler = "GCC: (Debian 4.4.5-8) 4.4.5";
+json.bin.crypto = false;
+json.bin.dbg_file = "";
+json.bin.endian = "little";
+json.bin.havecode = true;
+json.bin.guid = "";
+json.bin.intrp = "/lib64/ld-linux-x86-64.so.2";
+json.bin.laddr = 0;
+json.bin.lang = "c";
+json.bin.linenum = true;
+json.bin.lsyms = true;
+json.bin.machine = "AMD x86-64 architecture";
+json.bin.nx = true;
+json.bin.os = "linux";
+json.bin.cc = "";
+json.bin.pic = false;
+json.bin.relocs = true;
+json.bin.relro = "no";
+json.bin.rpath = "NONE";
+json.bin.sanitize = false;
+json.bin.static = false;
+json.bin.stripped = false;
+json.bin.subsys = "linux";
+json.bin.va = true;
+json.bin.checksums = {};
+EOF
+RUN
+
+NAME=ij.gron.grep
+FILE=bins/elf/crackme
+CMDS=<<EOF
+ij~{=}opsz
+EOF
+EXPECT=<<EOF
+json.core.minopsz = 1;
+json.core.maxopsz = 16;
+json.core.invopsz = 1;
+EOF
+RUN
+
+NAME=ij.gron.grep.two
+FILE=bins/elf/crackme
+CMDS=<<EOF
+ij~{=}~opsz
+EOF
+EXPECT=<<EOF
+json.core.minopsz = 1;
+json.core.maxopsz = 16;
+json.core.invopsz = 1;
+EOF
+RUN
