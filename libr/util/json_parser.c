@@ -398,3 +398,22 @@ R_API const RJson *r_json_item(const RJson *json, size_t idx) {
 	return NULL;
 }
 
+R_API const char *r_json_type(const RJson *json) {
+	switch (json->type) {
+	case R_JSON_ARRAY:
+		return "array";
+	case R_JSON_OBJECT:
+		return "object";
+	case R_JSON_INTEGER:
+		return "integer";
+	case R_JSON_BOOLEAN:
+		return "boolean";
+	case R_JSON_DOUBLE:
+		return "double";
+	case R_JSON_STRING:
+		return "string";
+	case R_JSON_NULL:
+		return "null";
+	}
+	return "";
+}

@@ -91,7 +91,8 @@ typedef struct r_cons_grep_t {
 	int less;
 	bool hud;
 	bool human;
-	int json;
+	bool gron;
+	bool json;
 	char *json_path;
 	int range_line;
 	int line;

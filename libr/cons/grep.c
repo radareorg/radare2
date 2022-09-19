@@ -2,6 +2,7 @@
 
 #include <r_cons.h>
 #include <r_util/r_print.h>
+#include <r_util/r_json.h>
 #include <sdb.h>
 
 #define I(x) r_cons_singleton ()->x
@@ -46,6 +47,7 @@ static const char *help_detail_tilde[] = {
 	" {}",       "", "json indentation",
 	" {}..",     "", "less json indentation",
 	" {}...",    "", "hud json indentation",
+	" {=}",       "", "gron-like output (key=value)",
 	" {path}",   "", "json path grep",
 	"endmodifier:", "", "",
 	" $",        "", "words must be placed at the end of line",
@@ -157,6 +159,9 @@ static void parse_grep_expression(const char *str) {
 					} else if (r_str_startswith (ptr, "{:..")) {
 						grep->less = 1;
 					}
+				} else if (ptr[1] == '=' && ptr[2] == '}') {
+					grep->gron = true;
+					ptr += 2;
 				} else if (ptr[1] == '}') {
 					// standard json indentation
 					grep->json = 1;
@@ -404,17 +409,16 @@ static char *find_next_intgrep(char *cmd, const char *quotes) {
  * with reshaped grep expression.
 */
 static char *preprocess_filter_expr(char *cmd, const char *quotes) {
-	char *p1, *p2, *ns = NULL;
+	char *p2, *ns = NULL;
 	const char *strsep = "&";
-	int len;
 	int i;
 
-	p1 = find_next_intgrep (cmd, quotes);
+	char *p1 = find_next_intgrep (cmd, quotes);
 	if (!p1) {
 		return NULL;
 	}
 
-	len = strlen (p1);
+	int len = strlen (p1);
 	if (len > 4 && r_str_endswith (p1, "~?") && p1[len - 3] != '\\') {
 		p1[len - 2] = '\0';
 		ns = r_str_append (ns, "?");
@@ -504,10 +508,68 @@ static int cmp(const void *a, const void *b) {
 	return strcmp (a, b);
 }
 
+static bool gron(RStrBuf *sb, RJson *node, const char *root) {
+	if (!sb || !node || !root) {
+		return false;
+	}
+	switch (node->type) {
+	case R_JSON_ARRAY:
+		{
+			RJson *cn = node->children.first;
+			int n = 0;
+			r_strbuf_appendf (sb, "%s = [];\n", root);
+			while (cn) {
+				char *newroot = r_str_newf ("%s[%d]", root, n);
+				gron (sb, cn, newroot);
+				free (newroot);
+				cn = cn->next;
+				n++;
+			}
+		}
+		break;
+	case R_JSON_OBJECT:
+		{
+			RJson *cn = node->children.first;
+			r_strbuf_appendf (sb, "%s = {};\n", root);
+			while (cn) {
+				char *newroot = r_str_newf ("%s.%s", root, cn->key);
+				gron (sb, cn, newroot);
+				cn = cn->next;
+			}
+		}
+		break;
+	case R_JSON_STRING:
+		{
+			size_t l = strlen (node->str_value);
+			char *estr = r_str_encoded_json (node->str_value, l, PJ_ENCODING_STR_DEFAULT);
+			r_strbuf_appendf (sb, "%s = \"%s\";\n", root, estr);
+			free (estr);
+		}
+		break;
+	case R_JSON_BOOLEAN:
+		r_strbuf_appendf (sb, "%s = %s;\n", root, r_str_bool (node->num.u_value));
+		break;
+	case R_JSON_INTEGER:
+		r_strbuf_appendf (sb, "%s = %"PFMT64d";\n", root, node->num.u_value);
+		break;
+	case R_JSON_NULL:
+		r_strbuf_appendf (sb, "%s = null;\n", root);
+		break;
+	case R_JSON_DOUBLE:
+		r_strbuf_appendf (sb, "%s = %lf;\n", root, node->num.dbl_value);
+		break;
+		break;
+	default:
+		eprintf ("unk %s\n", r_json_type (node));
+		break;
+	}
+	return true;
+}
+
 R_API void r_cons_grepbuf(void) {
 	RCons *cons = r_cons_singleton ();
 	const char *buf = cons->context->buffer;
-	const int len = cons->context->buffer_len;
+	size_t len = cons->context->buffer_len;
 	RConsGrep *grep = &cons->context->grep;
 	const char *in = buf;
 	int ret, total_lines = 0, l = 0, tl = 0;
@@ -542,9 +604,9 @@ R_API void r_cons_grepbuf(void) {
 	}
 
 	if ((!len || !buf || !*buf) && (grep->json || grep->less)) {
-		grep->json = 0;
+		grep->json = false;
+		grep->hud = false;
 		grep->less = 0;
-		grep->hud = 0;
 		return;
 	}
 	if (grep->ascart) {
@@ -571,6 +633,23 @@ R_API void r_cons_grepbuf(void) {
 		grep->zoom = 0;
 		grep->zoomy = 0;
 		free (sin);
+		return;
+	}
+	if (grep->gron) {
+		char *a = strdup (cons->context->buffer);
+		RJson *node = r_json_parse (a);
+		RStrBuf *sb = r_strbuf_new ("");
+		gron (sb, node, "json");
+		char *s = r_strbuf_drain (sb);
+		R_FREE (cons->context->buffer);
+		cons->context->buffer_len = 0;
+		cons->context->buffer_sz = 0;
+		r_cons_print (s);
+		buf = cons->context->buffer;
+		len = cons->context->buffer_len;
+		goto continuation;
+		r_json_free (node);
+		free (a);
 		return;
 	}
 	if (grep->json) {
@@ -643,7 +722,9 @@ R_API void r_cons_grepbuf(void) {
 		}
 		return;
 	}
-	RStrBuf *ob = r_strbuf_new ("");
+	RStrBuf *ob = NULL;
+continuation:
+	ob = r_strbuf_new ("");
 	// if we modify cons->lines we should update I.context->buffer too
 	cons->lines = 0;
 	// used to count lines and change negative grep.line values
