@@ -260,6 +260,7 @@ struct r_magic_set {
 	union VALUETYPE ms_value;	/* either number or string */
 	int magic_file_formats[FILE_NAMES_SIZE];
 	const char *magic_file_names[FILE_NAMES_SIZE];
+	ut32 last_cont_level;
 };
 
 #if USE_LIB_MAGIC
