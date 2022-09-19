@@ -1,10 +1,11 @@
 /* radare - LGPL - Copyright 2010-2022 - pancake, rhl */
 
+#define USE_R2 1
+#define PROJECT_EXPERIMENTAL 0
+
 #include <r_core.h>
 #include <rvc.h>
 #include <spp/spp.h>
-
-#define PROJECT_EXPERIMENTAL 0
 
 // project apis to be used from cmd_project.c
 

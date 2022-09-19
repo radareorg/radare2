@@ -366,11 +366,9 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 	return NULL;
 }
 
-R_API RJson *r_json_parse(const char *_text) {
+R_API R_MUSTUSE RJson *r_json_parse(R_BORROW char *text) {
 	RJson js = {0};
-	char *text = strdup (_text);
 	bool res = parse_value (&js, 0, text);
-	free (text);
 	if (!res) {
 		if (js.children.first) {
 			r_json_free (js.children.first);
