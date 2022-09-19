@@ -96,11 +96,11 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		ret = -1;
 		goto seek_exit;
 	}
-	str = r_magic_buffer (ck, core->block+delta, core->blocksize - delta);
+	str = r_magic_buffer (ck, core->block + delta, core->blocksize - delta);
 	if (str) {
 		const char *cmdhit;
 #if USE_LIB_MAGIC
-		if (!v && (!strcmp (str, "data") || strstr(str, "ASCII") || strstr (str, "ISO") || strstr (str, "no line terminator"))) {
+		if (!v && (!strcmp (str, "data") || strstr (str, "ASCII") || strstr (str, "ISO") || strstr (str, "no line terminator"))) {
 #else
 		if (!v && (!strcmp (str, "data"))) {
 #endif
@@ -117,8 +117,8 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		p = strdup (str);
 		fmt = p;
 		// processing newlinez
-		for (q=p; *q; q++) {
-			if (q[0]=='\\' && q[1]=='n') {
+		for (q = p; *q; q++) {
+			if (q[0] == '\\' && q[1]=='n') {
 				*q = '\n';
 				strcpy (q + 1, q + ((q[2] == ' ')? 3: 2));
 			}
@@ -163,7 +163,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 					} else {
 						sscanf (q + 1, "%"PFMT64d, &addr);
 					}
-					if (!fmt || !*fmt) {
+					if (R_STR_ISEMPTY (fmt)) {
 						fmt = file;
 					}
 					r_core_magic_at (core, fmt, addr, depth, 1, pj, hits);

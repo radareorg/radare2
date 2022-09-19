@@ -133,6 +133,7 @@ static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut
 }
 
 /*VARARGS*/
+// XXX deprecate and just use R_LOG
 void file_error(RMagic *ms, int error, const char *f, ...) {
 	va_list va;
 	va_start (va, f);
@@ -217,12 +218,13 @@ int file_reset(RMagic *ms) {
 	if (!ms) {
 		return 0;
 	}
+	ms->last_cont_level = 0;
 	free (ms->o.buf);
 	ms->o.buf = NULL;
 	ms->haderr = 0;
 	ms->error = -1;
 	if (!ms->mlist) {
-		file_error (ms, 0, "no magic files loaded! ");
+		R_LOG_ERROR ("no magic files loaded, nothing to scan");
 		return -1;
 	}
 	return 0;
