@@ -594,7 +594,7 @@ R_API int r_core_yank_cat_string(RCore *core, ut64 pos);
 R_API int r_core_yank_hud_file(RCore *core, const char *input);
 R_API int r_core_yank_hud_path(RCore *core, const char *input, int dir);
 R_API bool r_core_yank_file_ex(RCore *core, const char *input);
-R_API int r_core_yank_file_all(RCore *core, const char *input);
+R_API bool r_core_yank_file_all(RCore *core, const char *input);
 
 #define R_CORE_LOADLIBS_ENV 1
 #define R_CORE_LOADLIBS_HOME 2
