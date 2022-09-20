@@ -160,7 +160,7 @@ int main() {
 	int i;
 #if 1
 	// 10.4s
-	for (i = 0;i< 10000000; i++) {
+	for (i = 0; i < 10000000; i++) {
 		RString s = r_string_new ("  hello world", -1);
 		r_string_appendf (&s, " [PATATA %s:%d]  ", "jeje", 23);
 		r_string_trim (&s);

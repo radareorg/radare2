@@ -383,7 +383,7 @@ typedef struct r_debug_plugin_t {
 	RList *(*threads)(RDebug *dbg, int pid);
 	RList *(*pids)(RDebug *dbg, int pid);
 	RList *(*tids)(RDebug *dbg, int pid);
-	RFList (*backtrace)(RDebug *dbg, int count);
+	RList (*backtrace)(RDebug *dbg, int count);
 	/* flow */
 	int (*stop)(RDebug *dbg);
 	bool (*step)(RDebug *dbg);
