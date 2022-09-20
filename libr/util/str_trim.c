@@ -182,8 +182,34 @@ R_API void r_str_trim_tail(char *str) {
 // Removes spaces from the head of the string, and zeros out whitespaces from
 // the tail of the string. The string is changed in place.
 R_API void r_str_trim(char *str) {
-	r_str_trim_head (str);
-	r_str_trim_tail (str);
+	r_str_ntrim (str, strlen (str));
+	// r_str_trim_head (str);
+	// r_str_trim_tail (str);
+}
+
+R_API int r_str_ntrim(char *str, int length) {
+	// r_str_trim_head (str);
+	char *p = str;
+	int left = 0;
+	for (; *p && IS_WHITECHAR (*p) && length > 0; p++) {
+		length--;
+		left++;
+	}
+	if (p && p != str && length > 0) {
+		memmove (str, p, length + 1);
+	}
+	// r_str_trim_tail (str);
+	while (length > 0) {
+		const int newlength = length - 1;
+		if (IS_WHITECHAR (str[newlength])) {
+			str[newlength] = '\0';
+		} else {
+			break;
+		}
+		length = newlength;
+	}
+	str[length] = 0;
+	return length;
 }
 
 // no copy, like trim_head+tail but with trim_head_ro, beware heap issues
