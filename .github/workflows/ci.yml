@@ -97,7 +97,7 @@ jobs:
         sudo apt install gperf
     - name: Installing with symlinks
       run: |
-        export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
+        export CFLAGS="-O0 -Wsign-conversion -Werror -Wno-unused-result -Wno-stringop-truncation"
         sys/install.sh
     - name: Running tests
       run: r2r -o /tmp/r2r.json test/db/cmd
