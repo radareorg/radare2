@@ -15,6 +15,10 @@ static int r_main_r2pm_sh(int argc, const char **argv) {
 #else
 	int i;
 	char *r2pm_sh = r_file_path ("r2pm.sh");
+	if (*r2pm_sh != '/') {
+		free (r2pm_sh);
+		return 1;
+	}
 	RStrBuf *sb = r_strbuf_new (r2pm_sh);
 	free (r2pm_sh);
 	for (i = 1; i < argc; i++) {

@@ -83,8 +83,8 @@ static int cmd_project(void *data, const char *input) {
 		} else if (input[1]) { // "Po"
 			r_core_project_open (core, file);
 		} else {
-			if (str && *str) {
-				r_cons_println (file);
+			if (R_STR_ISNOTEMPTY (str)) {
+				r_cons_println (str);
 			}
 		}
 		break;
@@ -300,8 +300,12 @@ static int cmd_project(void *data, const char *input) {
 				free (prj_name);
 			}
 		} else if (r_project_is_loaded (core->prj)) {
-			r_cons_println (core->prj->name);
-			r_cons_println (core->prj->path);
+			if (R_STR_ISNOTEMPTY (core->prj->name)) {
+				r_cons_println (core->prj->name);
+			}
+			if (R_STR_ISNOTEMPTY (core->prj->path)) {
+				r_cons_println (core->prj->path);
+			}
 		}
 		break;
 	case '.': // "P."
