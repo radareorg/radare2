@@ -618,7 +618,7 @@ EXPECT=<<EOF
 0x00010298    1     12 sym.imp.printf
 0x000102a4    1     12 sym.imp.__libc_start_main
 0x000102bc    1     12 sym.imp.abort
-0x000102c8    1     60 entry0
+0x000102c8    1     44 entry0
 0x00010304    1     28 sym.call_weak_fn
 0x00010328    1     36 sym.deregister_tm_clones
 0x00010358    1     44 sym.register_tm_clones
