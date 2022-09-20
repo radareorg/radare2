@@ -1,7 +1,8 @@
 r_arch_sources = [
   'arch.c',
-  'api.c',
-# 'p/arch_chungus2.c',
+  'aconfig.c',
+  'decoder.c',
+  'p/arch_null.c',
 ]
 
 r_arch = library('r_arch', r_arch_sources,

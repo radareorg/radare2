@@ -1,52 +1,71 @@
-/* radare2 - LGPL - Copyright 2022 - pancake */
+/* radare - LGPL - Copyright 2022 - pancake */
 
 #include <r_arch.h>
+#include "../config.h"
 
-static void my_ac_free(RArchConfig *cfg) {
-	if (cfg) {
-		free (cfg->arch);
-		free (cfg->cpu);
-		free (cfg->os);
-		free (cfg);
-	}
+static const RArchPlugin * const arch_static_plugins[] = { R_ARCH_STATIC_PLUGINS };
+
+static void plugin_free (void *p) {
 }
 
-R_API void r_arch_use(RArchConfig *config, R_NULLABLE const char *arch) {
-	r_return_if_fail (config);
-	// R_LOG_DEBUG ("RArch.USE (%s)", arch);
-	if (arch && !strcmp (arch, "null")) {
-		return;
-	}
-	free (config->arch);
-	config->arch = R_STR_ISNOTEMPTY (arch) ? strdup (arch) : NULL;
-}
-
-R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu) {
-	r_return_if_fail (config);
-	// R_LOG_DEBUG ("RArch.CPU (%s)", cpu);
-	free (config->cpu);
-	config->cpu = R_STR_ISNOTEMPTY (cpu) ? strdup (cpu) : NULL;
-}
-
-R_API void r_arch_config_set_bits(RArchConfig *config, int bits) {
-	r_return_if_fail (config);
-	config->bits = bits;
-	// callback
-	// r_signal_now (config->events, "bits"
-	// r_signal_on (config->events, "bits", &cb_bitschange);
-}
-
-R_API RArchConfig *r_arch_config_new(void) {
-	RArchConfig *ac = R_NEW0 (RArchConfig);
-	if (!ac) {
+R_API RArch *r_arch_new(void) {
+	int i;
+	RArch *a = R_NEW0 (RArch);
+	if (!a) {
 		return NULL;
 	}
-	ac->arch = strdup (R_SYS_ARCH);
-	ac->bits = R_SYS_BITS;
-	ac->bitshift = 0;
-	// ac->free = (void (*)(void*))my_ac_free;
-	ac->syntax = R_ARCH_SYNTAX_INTEL;
-	r_ref_init (ac, &my_ac_free);
-	ac->big_endian = false;
-	return (RArchConfig *)r_ref (ac);
+	a->plugins = r_list_newf ((RListFree)plugin_free);
+	if (!a->plugins) {
+		free (a);
+		return NULL;
+	}
+	for (i = 0; arch_static_plugins[i]; i++) {
+		r_arch_add (a, (RArchPlugin*)arch_static_plugins[i]);
+	}
+	return NULL;
 }
+
+R_API int r_arch_del(RArch *a, const char *name) {
+	/* TODO: r_arch_del not implemented */
+	return false;
+}
+
+R_API bool r_arch_add(RArch *a, RArchPlugin *foo) {
+	if (!foo->name) {
+		return false;
+	}
+	// TODO: do more checks
+	r_list_append (a->plugins, foo);
+	return true;
+}
+
+R_API void r_arch_free(RArch *a) {
+	free (a);
+}
+
+R_API RArchDecoder *r_arch_use(RArch *a, RArchConfig *ac, const char *name) {
+	RListIter *iter;
+	RArchPlugin *ap = NULL;
+	RArchPlugin *p = NULL;
+	r_list_foreach (a->plugins, iter, p) {
+		if (!strcmp (name, p->name)) {
+			ap = p;
+			break;
+		}
+	}
+	if (ap) {
+		RArchDecoder *ad = R_NEW0 (RArchDecoder);
+		ad->data = ap->init ((void *)a, ac);
+		ad->p = ap;
+		ad->ac = ac; // XXX copy instead of reference?
+		return ad;
+	}
+	return NULL;
+}
+
+#if 0
+R_API RArchOp *r_arch_decode(RArchDecoder *ad, const ut8 *buf, size_t len) {
+	ad->p->decode (ad, buf, len);
+	return NULL;
+}
+#endif
