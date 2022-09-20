@@ -265,22 +265,24 @@ static int r2pm_update(void) {
 			return 1;
 		}
 	} else {
-		const char *giturl = "https://github.com/radareorg/radare2-pm";
-		git_clone (pmpath, giturl);
+		git_clone (pmpath, R2PM_GITURL);
 	}
+	char *dbpath = r2pm_dbdir ();
 
 	// copy files from git into db
-	char *dbpath = r2pm_dbdir ();
 	r_sys_mkdirp (dbpath);
-	RList *files = r_sys_dir (pmpath);
+	char *pmdbpath = r_str_newf ("%s/db", pmpath);
+	RList *files = r_sys_dir (pmdbpath);
 	if (files) {
 		RListIter *iter;
 		const char *file;
 		r_list_foreach (files, iter, file) {
 			if (*file != '.') {
-				char *src = r_str_newf ("%s/%s", pmpath, file);
+				char *src = r_str_newf ("%s/%s", pmdbpath, file);
 				char *dst = r_str_newf ("%s/%s", dbpath, file);
-				if (!r_file_copy (src, dst)) {
+				if (r_file_copy (src, dst)) {
+					R_LOG_DEBUG ("Copying '%s' into '%s'", src, dst);
+				} else {
 					R_LOG_WARN ("Cannot copy '%s' into '%s'", file, dbpath);
 				}
 				free (src);
@@ -289,6 +291,7 @@ static int r2pm_update(void) {
 		}
 		r_list_free (files);
 	}
+	free (pmdbpath);
 	free (pmpath);
 	free (gpath);
 	free (dbpath);
@@ -612,12 +615,21 @@ static char *r2pm_search(const char *grep) {
 }
 
 static int r_main_r2pm_c(int argc, const char **argv) {
+	bool havetoflush = false;
+	if (!r_cons_is_initialized ()) {
+		havetoflush = true;
+		r_cons_new ();
+	}
 	R2Pm r2pm = {0};
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "cdiIhflgrsuU");
 	if (opt.ind < argc) {
-		// TODO: deprecate, only use flags imho
+		// TODO: fully deprecate during the 5.9.x cycle
 		r2pm_actionword (&r2pm, argv[opt.ind]);
+	}
+	int level = r_sys_getenv_asint ("R2_LOG_LEVEL");
+	if (level > 0) {
+		r_log_set_level (level);
 	}
 	int i, c;
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -670,11 +682,12 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		char *r2pm_gitskip = strdup ("");
 		printf ("%s", helpmsg);
 		printf ("Environment:\n"\
+				" R2_LOG_LEVEL\n"\
 				" SUDO=sudo         use this tool as sudo\n"\
 				" R2PM_PLUGDIR=%s\n"\
 				" R2PM_BINDIR=%s\n"\
 				" R2PM_OFFLINE=0    disabled by default, avoid init/update calls if set to !=0\n"\
-				" R2PM_NATIVE=0     set to 1 to use the native C codepath for r2pm\n"\
+				" R2PM_LEGACY=0     set to 1 to use the old r2pm shellscript\n"\
 				" R2PM_DBDIR=%s\n"\
 				" R2PM_GITDIR=%s\n"\
 				" R2PM_GITSKIP=%s\n",
@@ -719,7 +732,9 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		char *s = r2pm_search (argv[opt.ind]);
 		if (s) {
 			r_cons_print (s);
-			// r_cons_flush ();
+			if (havetoflush) {
+				r_cons_flush ();
+			}
 			res = 0;
 			free (s);
 		} else {
@@ -739,7 +754,9 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		char *s = r2pm_list ();
 		if (s) {
 			r_cons_print (s);
-			// r_cons_flush ();
+			if (havetoflush) {
+				r_cons_flush ();
+			}
 			res = 0;
 		} else {
 			res = 1;
@@ -752,25 +769,13 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	if (opt.ind == 1) {
 		return 0;
 	}
-#if __WINDOWS__
-	bool use_c_impl = true;
-#else
-	bool use_c_impl = r_sys_getenv_asbool ("R2PM_NATIVE");
-#endif
-	if (use_c_impl) {
-		return 1;
-	}
-	return r_main_r2pm_sh (argc, argv);
+	return 1;
 }
 
 R_API int r_main_r2pm(int argc, const char **argv) {
-#if __WINDOWS__ || R2PM_DEFAULT_NATIVE
-	bool use_c_impl = true;
-#else
-	bool use_c_impl = r_sys_getenv_asbool ("R2PM_NATIVE");
-#endif
-	if (use_c_impl) {
-		return r_main_r2pm_c (argc, argv);
+	bool use_sh_impl = r_sys_getenv_asbool ("R2PM_LEGACY");
+	if (use_sh_impl) {
+		return r_main_r2pm_sh (argc, argv);
 	}
-	return r_main_r2pm_sh (argc, argv);
+	return r_main_r2pm_c (argc, argv);
 }
