@@ -171,7 +171,7 @@ Environment:
  R2PM_PLUGDIR=${R2PM_PLUGDIR}
  R2PM_BINDIR=${R2PM_BINDIR}
  R2PM_OFFLINE=0              disabled by default, avoid init/update calls if set to !=0
- R2PM_NATIVE=0               set to 1 to use the native C codepath for r2pm
+ R2PM_LEGACY=0               set to 1 to use the old shellscript implementation of r2pm
  R2PM_DBDIR=${R2PM_DBDIR}
  R2PM_GITDIR=${R2PM_GITDIR}
  R2PM_GITSKIP=${R2PM_GITSKIP}
