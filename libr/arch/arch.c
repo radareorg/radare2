@@ -44,8 +44,9 @@ R_API RArchConfig *r_arch_config_new(void) {
 	ac->arch = strdup (R_SYS_ARCH);
 	ac->bits = R_SYS_BITS;
 	ac->bitshift = 0;
+	// ac->free = (void (*)(void*))my_ac_free;
 	ac->syntax = R_ARCH_SYNTAX_INTEL;
-	ac->free = (void (*)(void*))my_ac_free;
+	r_ref_init (ac, &my_ac_free);
 	ac->big_endian = false;
-	return r_ref (ac);
+	return (RArchConfig *)r_ref (ac);
 }
