@@ -11,6 +11,7 @@ r_util_sources = [
   'token.c',
   'table.c',
   'bplist.c',
+  'rstr.c',
   'sstext.c',
   'getopt.c',
   'print_code.c',
