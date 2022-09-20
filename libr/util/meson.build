@@ -27,7 +27,6 @@ r_util_sources = [
   'udiff.c',
   'event.c',
   'file.c',
-  'flist.c',
   'graph.c',
   'graph_drawable.c',
   'hex.c',

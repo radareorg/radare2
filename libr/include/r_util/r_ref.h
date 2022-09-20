@@ -5,6 +5,10 @@
 #include <r_th.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if USE_THREADSAFE_REFS
 
 #define R_REF_NAME ref
@@ -63,3 +67,6 @@ typedef int RRef;
 
 #endif
 
+#ifdef __cplusplus
+}
+#endif

@@ -193,9 +193,12 @@ bool test_references(void) {
 	mu_assert_streq (tt->name, "foo", "typetest name should be foo");
 	mu_assert_eq (r_ref_count (tt), 1, "reference count issue");
 	r_unref (tt); // tt becomes invalid
-	mu_assert_eq (r_ref_count (tt), 0, "reference count issue");
-	mu_assert_streq (tt->name, "", "typetest name should be foo");
-	free (tt);
+	if (tt) {
+		mu_assert_eq (0, 1, "reference count invalidation is failing");
+		// mu_assert_eq (r_ref_count (tt), 0, "reference count issue");
+		// mu_assert_streq (tt->name, "", "typetest name should be foo");
+		free (tt);
+	}
 	mu_end;
 }
 
