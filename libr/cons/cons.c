@@ -2206,10 +2206,10 @@ R_API void r_cons_clear_buffer(void) {
 
 R_API void r_cons_thready(void) {
 	r_th_lock_enter (&r_cons_lock);
+	C->unbreakable = true;
+	r_sys_signable (false); // disable signal handling
 	if (!r_cons_instance) {
 		r_cons_new ();
 	}
-	C->unbreakable = true;
-	r_sys_signable (false); // disable signal handling
 	r_th_lock_leave (&r_cons_lock);
 }
