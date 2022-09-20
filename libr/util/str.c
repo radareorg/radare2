@@ -3816,7 +3816,7 @@ R_API int r_str_fmtargs(const char *fmt) {
 // Returns "true" or "false" as a string given an input integer. The returned
 // value is consistent with C's definition of 0 is false, and all other values
 // are true.
-R_API const char *r_str_bool(int b) {
+R_API const char *r_str_bool(bool b) {
 	return b? "true": "false";
 }
 

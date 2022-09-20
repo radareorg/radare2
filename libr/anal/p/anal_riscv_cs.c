@@ -25,30 +25,30 @@
 	}
 
 #define CREATE_SRC_DST_3(op) \
-	(op)->src[0] = r_anal_value_new ();\
-	(op)->src[1] = r_anal_value_new ();\
-	(op)->dst = r_anal_value_new ();
+	src0 = r_vector_push ((op)->srcs, NULL);\
+	src1 = r_vector_push ((op)->srcs, NULL);\
+	dst = r_vector_push ((op)->dsts, NULL);
 
 #define CREATE_SRC_DST_2(op) \
-	(op)->src[0] = r_anal_value_new ();\
-	(op)->dst = r_anal_value_new ();
+	src0 = r_vector_push ((op)->srcs, NULL);\
+	dst = r_vector_push ((op)->dsts, NULL);
 
 #define SET_SRC_DST_3_REGS(op) \
 	CREATE_SRC_DST_3 (op);\
-	(op)->dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	(op)->src[0]->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
-	(op)->src[1]->reg = r_reg_get (anal->reg, REG (2), R_REG_TYPE_GPR);
+	dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
+	src0->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
+	src1->reg = r_reg_get (anal->reg, REG (2), R_REG_TYPE_GPR);
 
 #define SET_SRC_DST_3_IMM(op) \
 	CREATE_SRC_DST_3 (op);\
-	(op)->dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	(op)->src[0]->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
-	(op)->src[1]->imm = IMM (2);
+	dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
+	src0->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
+	src1->imm = IMM (2);
 
 #define SET_SRC_DST_2_REGS(op) \
 	CREATE_SRC_DST_2 (op);\
-	(op)->dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	(op)->src[0]->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);
+	dst->reg = r_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
+	src0->reg = r_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);
 
 #define SET_SRC_DST_3_REG_OR_IMM(op) \
 	if (OPERAND(2).type == RISCV_OP_IMM) {\
@@ -180,23 +180,24 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 
 static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
 	static R_TH_LOCAL RRegItem reg;
+	RAnalValue *dst, *src0, *src1;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (OPERAND(1).type == RISCV_OP_MEM) {
 			ZERO_FILL (reg);
-			op->src[0] = r_anal_value_new ();
-			op->src[0]->reg = &reg;
-			parse_reg_name (op->src[0]->reg, *handle, insn, 1);
-			op->src[0]->delta = OPERAND(1).mem.disp;
+			src0 = r_vector_push (op->srcs, NULL);
+			src0->reg = &reg;
+			parse_reg_name (src0->reg, *handle, insn, 1);
+			src0->delta = OPERAND(1).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (OPERAND(1).type == RISCV_OP_MEM) {
 			ZERO_FILL (reg);
-			op->dst = r_anal_value_new ();
-			op->dst->reg = &reg;
-			parse_reg_name (op->dst->reg, *handle, insn, 1);
-			op->dst->delta = OPERAND(1).mem.disp;
+			dst = r_vector_push (op->dsts, NULL);
+			dst->reg = &reg;
+			parse_reg_name (dst->reg, *handle, insn, 1);
+			dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_SHL:

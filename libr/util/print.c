@@ -2482,35 +2482,6 @@ R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	free (buf);
 }
 
-R_API const char* r_print_rowlog(RPrint *print, const char *str) {
-	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
-	bool verbose = print->scr_prompt;
-	r_return_val_if_fail (print->cb_eprintf, NULL);
-	if (!verbose) {
-		return NULL;
-	}
-	if (use_color) {
-		print->cb_eprintf ("[ ] "Color_YELLOW"%s\r["Color_RESET, str);
-	} else {
-		print->cb_eprintf ("[ ] %s\r[", str);
-	}
-	return str;
-}
-
-R_API void r_print_rowlog_done(RPrint *print, const char *str) {
-	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
-	bool verbose =  print->scr_prompt;
-	r_return_if_fail (print->cb_eprintf);
-	if (verbose) {
-		if (use_color) {
-			print->cb_eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", str);
-		} else {
-			print->cb_eprintf ("\r[x] %s\n", str);
-		}
-	}
-}
-
-
 R_API RBraile r_print_braile(int u) {
 #define CH0(x) ((x) >> 8)
 #define CH1(x) ((x) & 0xff)

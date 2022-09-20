@@ -3811,9 +3811,9 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 		RAnalMetaItem *mi = r_meta_get_at (ds->core->anal, ds->at, R_META_TYPE_ANY, &size);
 		if (mi) {
 			int obits = ds->core->rasm->config->bits;
-			r_arch_set_bits (ds->core->rasm->config, size * 8);
+			r_arch_config_set_bits (ds->core->rasm->config, size * 8);
 			slen = ds_print_shortcut(ds, get_ptr (ds, ds->at), pos);
-			r_arch_set_bits (ds->core->rasm->config, obits);
+			r_arch_config_set_bits (ds->core->rasm->config, obits);
 			gotShortcut = true;
 		}
 	}
@@ -5869,10 +5869,10 @@ toro:
 			ret = ds_print_middle (ds, ret);
 
 			ds_print_asmop_payload (ds, ds_bufat (ds));
-			if (core->rasm->config->syntax != R_ASM_SYNTAX_INTEL) {
+			if (core->rasm->config->syntax != R_ARCH_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->rasm->config->syntax;
-				r_asm_set_syntax (core->rasm, R_ASM_SYNTAX_INTEL);
+				r_asm_set_syntax (core->rasm, R_ARCH_SYNTAX_INTEL);
 				r_asm_disassemble (core->rasm, &ao, ds_bufat (ds), ds_left (ds) + 5);
 				r_asm_set_syntax (core->rasm, os);
 				r_asm_op_fini (&ao);
@@ -5909,10 +5909,10 @@ toro:
 			ret = ds_print_middle (ds, ret);
 
 			ds_print_asmop_payload (ds, ds_bufat (ds));
-			if (core->rasm->config->syntax != R_ASM_SYNTAX_INTEL) {
+			if (core->rasm->config->syntax != R_ARCH_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->rasm->config->syntax;
-				r_asm_set_syntax (core->rasm, R_ASM_SYNTAX_INTEL);
+				r_asm_set_syntax (core->rasm, R_ARCH_SYNTAX_INTEL);
 				r_asm_disassemble (core->rasm, &ao, ds_bufat (ds), ds_left (ds) + 5);
 				r_asm_set_syntax (core->rasm, os);
 				r_asm_op_fini (&ao);

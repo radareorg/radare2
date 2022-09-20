@@ -1221,48 +1221,6 @@ static char *langFromHashbang(RCore *core, const char *file) {
 	return NULL;
 }
 
-#if __UNIX__
-// R2_580 - move into r_file_is_executable()
-static bool is_executable_header(const char *file) {
-	bool ret = false;
-	int osz = 0;
-	char *data = r_file_slurp_range (file, 0, 1024, &osz);
-	if (data && osz > 4) {
-		// 0xfeedface 0xcefaedfe) // 32bit
-		// 0xfeedfacf 0xcffaedfe) // 64bit
-		if (!memcmp (data, "\xca\xfe\xba\xbe", 4)) {
-			ret = true;
-		} else if (!memcmp (data, "#!/", 3)) {
-			ret = true;
-		} else if (!memcmp (data, "\x7f" "ELF", 4)) {
-			ret = true;
-		}
-	}
-	free (data);
-	return ret;
-}
-#endif
-// R2_580 - move into r_file_is_executable()
-static bool is_executable(const char *file) {
-	bool ret = false;
-#if __UNIX__
-	struct stat buf = {0};
-	if (stat (file, &buf) != 0) {
-		return false;
-	}
-	if (buf.st_mode & 0111) {
-		return is_executable_header (file);
-	}
-#elif __WINDOWS__
-	const char *ext = r_str_lchr (file, '.');
-	if (ext) {
-		ext++;
-		return !strcmp (ext, "exe") || !strcmp (ext, "com") || !strcmp (ext, "bat");
-	}
-#endif
-	return ret;
-}
-
 R_API bool r_core_run_script(RCore *core, const char *file) {
 	bool ret = false;
 	RListIter *iter;
@@ -1319,9 +1277,8 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 #else
 #define cmdstr(x) r_str_newf (x" '%s'", file);
 #endif
-			const char *p = r_str_lchr (file, '.');
-			if (p) {
-				const char *ext = p + 1;
+			const char *ext = r_file_extension (file);
+			if (ext) {
 				/* TODO: handle this inside r_lang_pipe with new APIs */
 				if (!strcmp (ext, "js")) {
 					char *cmd = cmdstr ("node");
@@ -1446,7 +1403,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 						R_LOG_ERROR ("Cannot find python in PATH");
 					}
 				} else {
-					if (is_executable (file)) {
+					if (r_file_is_executable (file)) {
 						r_core_cmdf (core, "#!pipe %s%s", (*file=='/')?"":"./", file);
 						ret = 1;
 					} else {
@@ -1464,7 +1421,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					free (cmd);
 					ret = 1;
 				} else {
-					if (is_executable (file)) {
+					if (r_file_is_executable (file)) {
 						r_core_cmdf (core, "#!pipe %s%s", (*file=='/')?"":"./", file);
 						ret = 1;
 					}

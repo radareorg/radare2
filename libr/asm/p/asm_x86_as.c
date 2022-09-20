@@ -13,10 +13,10 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 #endif
 	const char *syntaxstr = "";
 	switch (a->config->syntax) {
-	case R_ASM_SYNTAX_INTEL:
+	case R_ARCH_SYNTAX_INTEL:
 		syntaxstr = ".intel_syntax noprefix\n";
 		break;
-	case R_ASM_SYNTAX_ATT:
+	case R_ARCH_SYNTAX_ATT:
 		syntaxstr = ".att_syntax\n";
 		break;
 	}

@@ -753,7 +753,7 @@ static const char *help_msg_ag[] = {
 	"m", "", "mermaid",
 	"t", "", "tiny ascii art",
 	"v", "", "interactive ascii art",
-	"w", " [path]", "write to path or display graph image (see graph.gv.format and graph.web)",
+	"w", " [path]", "write to path or display graph image (see graph.gv.format)",
 	NULL
 };
 
@@ -6173,7 +6173,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	r_io_map_set_name (stack_map, name);
 	// r_flag_set (core->flags, name, addr, size);	//why is this here?
 	char val[128], *v;
-	v = sdb_itoa (esil->stack_fd, val, 10);
+	v = sdb_itoa (esil->stack_fd, 10, val, sizeof (val));
 	sdb_set (core->sdb, "aeim.fd", v, 0);
 
 	r_config_set_i (core->config, "io.va", true);
@@ -8440,7 +8440,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 			} else if (is_json) {
 				char taddr[64];
 				pj_o (pj);
-				pj_k (pj, sdb_itoa (addr, taddr, 10));
+				pj_k (pj, sdb_itoa (addr, 10, taddr, sizeof (taddr)));
 				pj_o (pj);
 				pj_ks (pj, "type", "fcn");
 				pj_kn (pj, "fcn_addr", fcn->addr);
@@ -8460,7 +8460,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 			} else if (is_json) {
 				char taddr[64];
 				pj_o (pj);
-				pj_k (pj, sdb_itoa (addr, taddr, 10));
+				pj_k (pj, sdb_itoa (addr, 10, taddr, sizeof (taddr)));
 				pj_o (pj);
 				pj_k (pj, "refs");
 				pj_a (pj);
@@ -8483,7 +8483,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 				if (level == 0) {
 					char taddr[64];
 					pj_o (pj);
-					pj_k (pj, sdb_itoa (ref->addr, taddr, 10));
+					pj_k (pj, sdb_itoa (ref->addr, 10, taddr, sizeof (taddr)));
 					pj_o (pj);
 					pj_ks (pj, "type", "fcn");
 					pj_kn (pj, "fcn_addr", fcn->addr);
@@ -8497,7 +8497,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 					pj_end (pj);
 					pj_end (pj);
 					pj_o (pj);
-					pj_k (pj, sdb_itoa (ref->addr, taddr, 10));
+					pj_k (pj, sdb_itoa (ref->addr, 10, taddr, sizeof (taddr)));
 					pj_o (pj);
 					pj_ks (pj, "type", "fcn");
 					pj_kn (pj, "fcn_addr", fcn->addr);
@@ -8526,7 +8526,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 			} else if (is_json) {
 				char taddr[64];
 				pj_o (pj);
-				pj_k (pj, sdb_itoa (ref->addr, taddr, 10));
+				pj_k (pj, sdb_itoa (ref->addr, 10, taddr, sizeof (taddr)));
 				pj_o (pj);
 				pj_ks (pj, "type", "???");
 				pj_k (pj, "refs");
@@ -9446,7 +9446,6 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			}
 			char *ptr = strchr (type, '=');
 			ut64 offimm = 0;
-			int i = 0;
 			ut64 addr;
 
 			if (ptr) {
@@ -9472,20 +9471,24 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			int ret = r_anal_op (core->anal, &op, core->offset, code, core->blocksize, R_ANAL_OP_MASK_VAL);
 			if (ret >= 0) {
 				// HACK: Just convert only the first imm seen
-				for (i = 0; i < 3; i++) {
-					if (op.src[i]) {
-						if (op.src[i]->imm) {
-							offimm = op.src[i]->imm;
-						} else if (op.src[i]->delta) {
-							offimm = op.src[i]->delta;
+				RAnalValue *src = NULL;
+				r_vector_foreach (op.srcs, src) {
+					if (src) {
+						if (src->imm) {
+							offimm = src->imm;
+						} else if (src->delta) {
+							offimm = src->delta;
 						}
 					}
 				}
-				if (!offimm && op.dst) {
-					if (op.dst->imm) {
-						offimm = op.dst->imm;
-					} else if (op.dst->delta) {
-						offimm = op.dst->delta;
+				if (!offimm) {
+					RAnalValue *dst = r_vector_index_ptr (op.dsts, 0);
+					if (dst) {
+						if (dst->imm) {
+							offimm = dst->imm;
+						} else if (dst->delta) {
+							offimm = dst->delta;
+						}
 					}
 				}
 				if (offimm != 0) {
@@ -10207,9 +10210,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		r_cons_print ("]\n");
 		break;
 	case 'w': // "aggw"
-		if (r_config_get_i (core->config, "graph.web")) {
-			r_core_cmd0 (core, "=H /graph/");
-		} else {
+		{
 			const char *filename = r_str_trim_head_ro (input + 1);
 			convert_dotcmd_to_image (core, "aggd", filename);
 		}
@@ -10581,9 +10582,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 			}
 		case 'w': // "agfw"
-			if (r_config_get_i (core->config, "graph.web")) {
-				R_LOG_ERROR ("graph.web is deprecated");
-			} else {
+			 {
 				char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
 				convert_dotcmd_to_image (core, cmdargs, input + 2);
 				free (cmdargs);
@@ -10835,9 +10834,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		r_core_cmdf (core, "agfv%s", input + 1);
 		break;
 	case 'w':// "agw"
-		if (r_config_get_i (core->config, "graph.web")) {
-			R_LOG_ERROR ("graph.web is deprecated");
-		} else {
+		{
 			char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
 			convert_dotcmd_to_image (core, cmdargs, input + 1);
 			free (cmdargs);
@@ -10951,8 +10948,6 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	}
 	return res;
 }
-
-static R_TH_LOCAL const char *oldstr = NULL;
 
 static int compute_coverage(RCore *core) {
 	RListIter *iter;
@@ -11154,15 +11149,13 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
 	r_config_set (core->config, "anal.in", "io.maps.x");
-	oldstr = r_print_rowlog (core->print, "Finding xrefs in noncode section (e anal.in=io.maps.x)");
-	r_print_rowlog_done (core->print, oldstr);
+	R_LOG_INFO ("Finding xrefs in noncode section (e anal.in=io.maps.x)");
 
 	int vsize = 4; // 32bit dword
 	if (core->rasm->config->bits == 64) {
 		vsize = 8;
 	}
-	oldstr = r_print_rowlog (core->print, "Analyze value pointers (aav)");
-	r_print_rowlog_done (core->print, oldstr);
+	R_LOG_INFO ("Analyze value pointers (aav)");
 	r_cons_break_push (NULL, NULL);
 	if (is_debug) {
 		RList *list = r_core_get_boundaries_prot (core, 0, "dbg.map", "anal");
@@ -11207,13 +11200,10 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 					break;
 				}
 				if (end - begin > UT32_MAX) {
-					oldstr = r_print_rowlog (core->print, "Skipping huge range");
-					r_print_rowlog_done (core->print, oldstr);
+					R_LOG_INFO ("Skipping huge range");
 					continue;
 				}
-				r_strf_var (msg2, 128, "aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x, from, to, begin, end);
-				oldstr = r_print_rowlog (core->print, msg2);
-				r_print_rowlog_done (core->print, oldstr);
+				R_LOG_INFO ("aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x, from, to, begin, end);
 				(void)r_core_search_value_in_range (core, relative, map->itv, from, to, vsize, _CbInRangeAav, (void *)(size_t)asterisk);
 			}
 		}
@@ -11490,18 +11480,17 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			bool didAap = false;
 			char *dh_orig = NULL;
 			if (!strncmp (input, "aaaaa", 5)) {
-				eprintf ("An r2 developer is coming to your place to manually analyze this program. Please wait for it\n");
+				R_LOG_INFO ("An r2 developer is coming to your place to manually analyze this program. Please wait for it");
 				if (r_cons_is_interactive ()) {
 					r_cons_any_key (NULL);
 				}
 				goto jacuzzi;
 			}
 			ut64 curseek = core->offset;
-			oldstr = r_print_rowlog (core->print, "Analyze all flags starting with sym. and entry0 (aa)");
+			R_LOG_INFO ("Analyze all flags starting with sym. and entry0 (aa)");
 			r_cons_break_push (NULL, NULL);
 			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 			r_core_anal_all (core);
-			r_print_rowlog_done (core->print, oldstr);
 			r_core_task_yield (&core->tasks);
 			if (r_cons_is_breaked ()) {
 				goto jacuzzi;
@@ -11509,10 +11498,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 			// Run afvn in all fcns
 			if (r_config_get_b (core->config, "anal.vars")) {
-				oldstr = r_print_rowlog (core->print, "Analyze all functions arguments/locals");
+				R_LOG_INFO ("Analyze all functions arguments/locals");
 				// r_core_cmd0 (core, "afva@@f");
 				r_core_cmd0 (core, "afva@@@F");
-				r_print_rowlog_done (core->print, oldstr);
 			}
 
 			// Run pending analysis immediately after analysis
@@ -11531,12 +11519,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 			if (*input == 'a') { // "aaa" .. which is checked just in the case above
 				if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
-					oldstr = r_print_rowlog (core->print, "Find function and symbol names from golang binaries (aang)");
-					r_print_rowlog_done (core->print, oldstr);
+					R_LOG_INFO ("Find function and symbol names from golang binaries (aang)");
 					r_core_anal_autoname_all_golang_fcns (core);
-					oldstr = r_print_rowlog (core->print, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
+					R_LOG_INFO ("Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 					r_core_cmd0 (core, "aF @@@F:sym.go.*");
-					r_print_rowlog_done (core->print, oldstr);
 				}
 				r_core_task_yield (&core->tasks);
 				if (!cfg_debug) {
@@ -11552,44 +11538,39 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 
-				oldstr = r_print_rowlog (core->print, "Analyze function calls (aac)");
+				R_LOG_INFO ("Analyze function calls (aac)");
 				(void)cmd_anal_calls (core, "", false, false); // "aac"
 				r_core_seek (core, curseek, true);
-				// oldstr = r_print_rowlog (core->print, "Analyze data refs as code (LEA)");
+				// R_LOG_INFO ("Analyze data refs as code (LEA)");
 				// (void) cmd_anal_aad (core, NULL); // "aad"
-				r_print_rowlog_done (core->print, oldstr);
 				r_core_task_yield (&core->tasks);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
 
 				if (is_unknown_file (core)) {
-					oldstr = r_print_rowlog (core->print, "find and analyze function preludes (aap)");
+					R_LOG_INFO ("find and analyze function preludes (aap)");
 					(void)r_core_search_preludes (core, false); // "aap"
 					didAap = true;
-					r_print_rowlog_done (core->print, oldstr);
 					r_core_task_yield (&core->tasks);
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
 					}
 				}
 
-				oldstr = r_print_rowlog (core->print, "Analyze len bytes of instructions for references (aar)");
+				R_LOG_INFO ("Analyze len bytes of instructions for references (aar)");
 				(void)r_core_anal_refs (core, ""); // "aar"
-				r_print_rowlog_done (core->print, oldstr);
 				r_core_task_yield (&core->tasks);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
 				if (is_apple_target (core)) {
-					oldstr = r_print_rowlog (core->print, "Check for objc references (aao)");
-					r_print_rowlog_done (core->print, oldstr);
+					R_LOG_INFO ("Check for objc references (aao)");
 					cmd_anal_objc (core, input + 1, true);
 				}
 				r_core_task_yield (&core->tasks);
-				oldstr = r_print_rowlog (core->print, "Finding and parsing C++ vtables (avrr)");
+				R_LOG_INFO ("Finding and parsing C++ vtables (avrr)");
 				r_core_cmd0 (core, "avrr");
-				r_print_rowlog_done (core->print, oldstr);
 				r_core_task_yield (&core->tasks);
 				r_config_set_i (core->config, "anal.calls", c);
 				r_core_task_yield (&core->tasks);
@@ -11600,24 +11581,21 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 				if (!didAap && isPreludableArch) {
 					didAap = true;
-					oldstr = r_print_rowlog (core->print, "Finding function preludes");
+					R_LOG_INFO ("Finding function preludes");
 					(void)r_core_search_preludes (core, false); // "aap"
-					r_print_rowlog_done (core->print, oldstr);
 					r_core_task_yield (&core->tasks);
 				}
 				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
 					r_core_cmd0 (core, "aav");
 					r_core_task_yield (&core->tasks);
 					if (cfg_debug) {
-						oldstr = r_print_rowlog (core->print, "Skipping function emulation in debugger mode (aaef)");
+						R_LOG_INFO ("Skipping function emulation in debugger mode (aaef)");
 						// nothing to do
-						r_print_rowlog_done (core->print, oldstr);
 					} else {
 						bool ioCache = r_config_get_i (core->config, "io.pcache");
 						r_config_set_i (core->config, "io.pcache", 1);
-						oldstr = r_print_rowlog (core->print, "Emulate functions to find computed references (aaef)");
+						R_LOG_INFO ("Emulate functions to find computed references (aaef)");
 						r_core_cmd0 (core, "aaef");
-						r_print_rowlog_done (core->print, oldstr);
 						r_core_task_yield (&core->tasks);
 						r_config_set_i (core->config, "io.pcache", ioCache);
 					}
@@ -11626,11 +11604,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 				}
 				if (r_config_get_i (core->config, "anal.autoname")) {
-					oldstr = r_print_rowlog (core->print,
-							"Speculatively constructing a function name "
-							"for fcn.* and sym.func.* functions (aan)");
+					R_LOG_INFO ("Speculatively constructing a function name for fcn.* and sym.func.* functions (aan)");
 					r_core_anal_autoname_all_fcns (core);
-					r_print_rowlog_done (core->print, oldstr);
 					r_core_task_yield (&core->tasks);
 				}
 				if (core->anal->opt.vars) {
@@ -11652,49 +11627,41 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_task_yield (&core->tasks);
 				}
 				if (!sdb_isempty (core->anal->sdb_zigns)) {
-					oldstr = r_print_rowlog (core->print, "Check for zignature from zigns folder (z/)");
+					R_LOG_INFO ("Check for zignature from zigns folder (z/)");
 					r_core_cmd0 (core, "z/");
-					r_print_rowlog_done (core->print, oldstr);
 					r_core_task_yield (&core->tasks);
 				}
 				if (cfg_debug) {
-					oldstr = r_print_rowlog (core->print, "Skipping type matching analysis in debugger mode (aaft)");
+					R_LOG_INFO ("Skipping type matching analysis in debugger mode (aaft)");
 					// nothing to do
-					r_print_rowlog_done (core->print, oldstr);
 				} else {
-					oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (aaft)");
+					R_LOG_INFO ("Type matching analysis for all functions (aaft)");
 					r_core_cmd0 (core, "aaft");
-					r_print_rowlog_done (core->print, oldstr);
 				}
 				r_core_task_yield (&core->tasks);
 
-				oldstr = r_print_rowlog (core->print, "Propagate noreturn information (aanr)");
+				R_LOG_INFO ("Propagate noreturn information (aanr)");
 				r_core_anal_propagate_noreturn (core, UT64_MAX);
-				r_print_rowlog_done (core->print, oldstr);
 				r_core_task_yield (&core->tasks);
 
 				// apply dwarf function information
 				Sdb *dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
 				if (dwarf_sdb) {
-					oldstr = r_print_rowlog (core->print, "Integrate dwarf function information.");
+					R_LOG_INFO ("Integrate dwarf function information");
 					r_anal_dwarf_integrate_functions (core->anal, core->flags, dwarf_sdb);
-					r_print_rowlog_done (core->print, oldstr);
 				}
 
 				if (input[1] == 'a') { // "aaaa"
 					if (!didAap) {
 						didAap = true;
-						oldstr = r_print_rowlog (core->print, "Finding function preludes");
+						R_LOG_INFO ("Finding function preludes");
 						(void)r_core_search_preludes (core, false); // "aap"
-						r_print_rowlog_done (core->print, oldstr);
 						r_core_task_yield (&core->tasks);
 					}
-					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
+					R_LOG_INFO ("Enable constraint types analysis for variables");
 					r_config_set_b (core->config, "anal.types.constraint", true);
-					r_print_rowlog_done (core->print, oldstr);
 				} else {
-					oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
-					r_print_rowlog_done (core->print, oldstr);
+					R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
 				}
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {

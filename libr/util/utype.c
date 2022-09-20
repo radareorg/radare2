@@ -315,7 +315,7 @@ static void types_range_del(Sdb *db, ut64 addr) {
 	ut64 base = TYPE_RANGE_BASE (addr);
 	r_strf_var (k, 64, "range.%"PFMT64x, base);
 	char valstr[SDB_NUM_BUFSZ];
-	const char *v = sdb_itoa (addr, valstr, SDB_NUM_BASE);
+	const char *v = sdb_itoa (addr, SDB_NUM_BASE, valstr, sizeof (valstr));
 	sdb_array_remove (db, k, v, 0);
 }
 

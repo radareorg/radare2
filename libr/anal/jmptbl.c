@@ -268,7 +268,9 @@ static bool detect_casenum_shift(RAnalOp *op, RRegItem **cmp_reg, st64 *start_ca
 	if (!*cmp_reg) {
 		return true;
 	}
-	if (op->dst && op->dst->reg && op->dst->reg->offset == (*cmp_reg)->offset) {
+	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
+	RAnalValue *src = r_vector_index_ptr (op->srcs, 0);
+	if (dst && dst->reg && dst->reg->offset == (*cmp_reg)->offset) {
 		if (op->type == R_ANAL_OP_TYPE_LEA && op->ptr == UT64_MAX) {
 			*start_casenum_shift = -(st64)op->disp;
 		} else if (op->val != UT64_MAX) {
@@ -278,7 +280,7 @@ static bool detect_casenum_shift(RAnalOp *op, RRegItem **cmp_reg, st64 *start_ca
 				*start_casenum_shift = op->val;
 			}
 		} else if (op->type == R_ANAL_OP_TYPE_MOV) {
-			*cmp_reg = op->src[0]->reg;
+			*cmp_reg = src->reg;
 			return false;
 		}
 		return true;
@@ -344,12 +346,14 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 		}
 		r_vector_push (&v, &i);
 		r_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, search_sz - i, R_ANAL_OP_MASK_VAL);
-		if (tmp_aop.dst && tmp_aop.dst->reg) {
-			cmp_reg = tmp_aop.dst->reg;
+		RAnalValue *tmp_src = r_vector_index_ptr (tmp_aop.srcs, 0);
+		RAnalValue *tmp_dst = r_vector_index_ptr (tmp_aop.dsts, 0);
+		if (tmp_dst && tmp_dst->reg) {
+			cmp_reg = tmp_dst->reg;
 		} else if (tmp_aop.reg) {
 			cmp_reg = r_reg_get (anal->reg, tmp_aop.reg, R_REG_TYPE_ALL);
-		} else if (tmp_aop.src[0] && tmp_aop.src[0]->reg) {
-			cmp_reg = tmp_aop.src[0]->reg;
+		} else if (tmp_src && tmp_src->reg) {
+			cmp_reg = tmp_src->reg;
 		}
 		r_anal_op_fini (&tmp_aop);
 		// TODO: check the jmp for whether val is included in valid range or not (ja vs jae)
@@ -514,12 +518,14 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 			r_anal_op (anal, &tmp_aop, op_addr,
 					bb_buf + prev_pos, buflen,
 					R_ANAL_OP_MASK_VAL);
-			if (tmp_aop.dst && tmp_aop.dst->reg) {
-				cmp_reg = tmp_aop.dst->reg;
+			RAnalValue *tmp_dst = r_vector_index_ptr (tmp_aop.dsts, 0);
+			RAnalValue *tmp_src = r_vector_index_ptr (tmp_aop.srcs, 0);
+			if (tmp_dst && tmp_dst->reg) {
+				cmp_reg = tmp_dst->reg;
 			} else if (tmp_aop.reg) {
 				cmp_reg = r_reg_get (anal->reg, tmp_aop.reg, R_REG_TYPE_ALL);
-			} else if (tmp_aop.src[0] && tmp_aop.src[0]->reg) {
-				cmp_reg = tmp_aop.src[0]->reg;
+			} else if (tmp_src && tmp_src->reg) {
+				cmp_reg = tmp_src->reg;
 			}
 		}
 		r_anal_op_fini (&tmp_aop);

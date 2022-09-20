@@ -85,7 +85,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 					insn->mnemonic, insn->op_str[0]? " ": "",
 					insn->op_str);
 			// if syntax is not AT&T
-			if (a->config->syntax != R_ASM_SYNTAX_ATT) {
+			if (a->config->syntax != R_ARCH_SYNTAX_ATT) {
 				op->mnemonic = r_str_replace (op->mnemonic, "%", "", -1);
 			}
 		}

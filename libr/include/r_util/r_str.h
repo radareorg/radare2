@@ -132,7 +132,7 @@ R_API int r_str_distance(const char *a, const char *b);
 R_API char *r_str_newlen(const char *str, int len);
 R_API const char *r_str_sysbits(const int v);
 R_API char *r_str_trunc_ellipsis(const char *str, int len);
-R_API const char *r_str_bool(int b);
+R_API const char *r_str_bool(bool b);
 R_API bool r_str_is_true(const char *s);
 R_API bool r_str_is_false(const char *s);
 R_API bool r_str_is_bool(const char *val);

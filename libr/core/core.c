@@ -1,10 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
-#include <r_socket.h>
 #include <config.h>
-#include <r_config.h>
-#include <r_util.h>
 #if __UNIX__
 #include <signal.h>
 #endif
@@ -2164,6 +2161,7 @@ static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLineProm
 }
 
 R_API int r_core_fgets(char *buf, int len) {
+	r_return_val_if_fail (buf, -1);
 	RCons *cons = r_cons_singleton ();
 	RLine *rli = cons->line;
 	bool prompt = cons->context->is_interactive;
@@ -2986,6 +2984,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	core->chan = NULL;
 	r_core_setenv (core);
+	core->in_log_process = false;
 	core->rfs = r_fs_shell_new ();
 	core->ev = r_event_new (core);
 	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler, NULL);

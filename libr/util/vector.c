@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2020 - maskray, thestr4ng3r */
+/* radare - LGPL - Copyright 2017-2022 - pancake, maskray, thestr4ng3r */
 
 #include "r_vector.h"
 
@@ -24,11 +24,14 @@
 			vec->capacity = 0; \
 			break; \
 		} \
-		void **new_a = realloc (vec->a, vec->elem_size * new_capacity); \
+		void *new_a = realloc (vec->a, vec->elem_size * new_capacity); \
 		if (!new_a) { \
 			return NULL; \
 		} \
 		vec->a = new_a; \
+		if (new_capacity > vec->capacity) { \
+			memset (((ut8 *)vec->a) + (vec->elem_size * vec->capacity), 0, (new_capacity - vec->capacity) * vec->elem_size); \
+		} \
 		vec->capacity = new_capacity; \
 	} while (0)
 
@@ -43,10 +46,9 @@ R_API void r_vector_init(RVector *vec, size_t elem_size, RVectorFree free, void 
 
 R_API RVector *r_vector_new(size_t elem_size, RVectorFree free, void *free_user) {
 	RVector *vec = R_NEW (RVector);
-	if (!vec) {
-		return NULL;
+	if (R_LIKELY (vec)) {
+		r_vector_init (vec, elem_size, free, free_user);
 	}
-	r_vector_init (vec, elem_size, free, free_user);
 	return vec;
 }
 
@@ -91,7 +93,7 @@ static bool vector_clone(RVector *dst, RVector *src) {
 	if (!dst->len) {
 		dst->a = NULL;
 	} else {
-		dst->a = malloc (src->elem_size * src->capacity);
+		dst->a = calloc (src->elem_size, src->capacity);
 		if (!dst->a) {
 			return false;
 		}

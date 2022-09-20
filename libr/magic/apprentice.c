@@ -905,8 +905,7 @@ static int get_cond(const char *l, const char **t) {
 }
 
 static int check_cond(RMagic *ms, int cond, ut32 cont_level) {
-	int last_cond;
-	last_cond = ms->c.li[cont_level].last_cond;
+	int last_cond = ms->c.li[cont_level].last_cond;
 
 	switch (cond) {
 	case COND_IF:
@@ -949,7 +948,6 @@ static int check_cond(RMagic *ms, int cond, ut32 cont_level) {
  * parse one line from magic file, put into magic[index++] if valid
  */
 static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, const char *line, size_t lineno, int action) {
-	static R_TH_LOCAL ut32 last_cont_level = 0;
 	size_t i;
 	struct r_magic_entry *me;
 	struct r_magic *m;
@@ -961,12 +959,12 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	for (; *l == '>'; l++, cont_level++) {
 		;
 	}
-	if (cont_level == 0 || cont_level > last_cont_level) {
+	if (cont_level == 0 || cont_level > ms->last_cont_level) {
 		if (file_check_mem (ms, cont_level) == -1) {
 			return -1;
 		}
 	}
-	last_cont_level = cont_level;
+	ms->last_cont_level = cont_level;
 #define ALLOC_CHUNK	(size_t)10
 #define ALLOC_INCR	(size_t)200
 	if (cont_level != 0) {

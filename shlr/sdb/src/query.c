@@ -419,26 +419,22 @@ next_quote:
 				} else {
 					// never happens
 				}
-				nstr = sdb_itoa (curnum, numstr, 10);
+				nstr = sdb_itoa (curnum, 10, numstr, sizeof (numstr));
 				strbuf_append (out, nstr, 1);
 			}
 		} else if (val) {
 			if (sdb_isnum (val)) {
 				int op = *cmd;
 				if (*val == '-') {
-					if (*cmd == '-') {
-						op = '+';
-					} else {
-						op = '-';
-					}
+					op = (*cmd == '-')? '+': '-';
 					d = sdb_atoi (val + 1);
 				} else {
 					d = sdb_atoi (val);
 				}
-				if (op=='+') {
-					sdb_num_inc (s, cmd+1, d, 0);
+				if (op == '+') {
+					sdb_num_inc (s, cmd + 1, d, 0);
 				} else {
-					sdb_num_dec (s, cmd+1, d, 0);
+					sdb_num_dec (s, cmd + 1, d, 0);
 				}
 			} else {
 				if (*cmd == '+') {

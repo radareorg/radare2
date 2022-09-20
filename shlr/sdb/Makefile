@@ -4,8 +4,10 @@ VALADIR=bindings/vala
 PWD=$(shell pwd)
 PFX=${DESTDIR}${PREFIX}
 HGFILES=`find sdb-${SDBVER} -type f | grep -v hg | grep -v swp`
-ASANOPTS=address undefined signed-integer-overflow leak
+ASANOPTS=address undefined signed-integer-overflow
+LEAKOPTS=leak
 CFLAGS_ASAN=$(addprefix -fsanitize=,$(ASANOPTS))
+CFLAGS_LEAK=$(addprefix -fsanitize=,$(LEAKOPTS))
 MKDIR=mkdir
 
 all: pkgconfig src/sdb_version.h
@@ -42,12 +44,18 @@ wasi wasm: $(WASI_SDK)
 test:
 	${MAKE} -C test
 
+asan:
+	$(MAKE) src/sdb_version.h
+	CC=gcc LDFLAGS="$(CFLAGS_ASAN)" CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C src all
 asantest:
+	export ASAN_OPTIONS=detect_leaks=0 ; \
 	CC=gcc CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C test
 
-asan:
-	${MAKE} src/sdb_version.h
-	CC=gcc LDFLAGS="$(CFLAGS_ASAN)" CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C src all
+leak:
+	$(MAKE) src/sdb_version.h
+	CC=gcc LDFLAGS="$(CFLAGS_LEAK)" CFLAGS="$(CFLAGS_LEAK)" $(MAKE) -C src all
+leaktest:
+	CC=gcc CFLAGS="$(CFLAGS_LEAK)" $(MAKE) -C test
 
 pkgconfig:
 	[ -d pkgconfig ] && ${MAKE} -C pkgconfig || true

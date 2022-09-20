@@ -113,15 +113,11 @@ R_API char *r_core_log_get(RCore *core, int index) {
 	return NULL;
 }
 
-#if !R2_580
-static R_TH_LOCAL bool in_log_process; // false;
-#endif
 R_API void r_core_log_add(RCore *core, const char *msg) {
 	r_return_if_fail (core && core->log);
 	r_strpool_append (core->log->sp, msg);
 	core->log->last++;
 	if (R_STR_ISNOTEMPTY (core->cmdlog)) {
-#if R2_580
 		if (core->in_log_process) {
 			// avoid infinite recursive calls
 			return;
@@ -129,15 +125,6 @@ R_API void r_core_log_add(RCore *core, const char *msg) {
 		core->in_log_process = true;
 		r_core_cmd0 (core, core->cmdlog);
 		core->in_log_process = false;
-#else
-		if (in_log_process) {
-			// avoid infinite recursive calls
-			return;
-		}
-		in_log_process = true;
-		r_core_cmd0 (core, core->cmdlog);
-		in_log_process = false;
-#endif
 	}
 }
 

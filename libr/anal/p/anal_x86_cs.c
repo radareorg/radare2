@@ -388,6 +388,7 @@ static const char *reg32_to_name(ut8 reg) {
 }
 
 static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+	RAnalValue *val = NULL;
 	const int bits = a->config->bits;
 	int rs = bits / 8;
 	const char *pc, *sp, *bp, *si;
@@ -1485,10 +1486,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		case X86_OP_REG:
 			{
 			src = getarg (&gop, 0, 0, NULL, SRC_AR, NULL);
-			op->src[0] = r_anal_value_new ();
-			if (op->src[0]) {
-				op->src[0]->reg = r_reg_get (a->reg, src, R_REG_TYPE_GPR);
-			}
+			val = r_vector_push (op->srcs, NULL);
+			val->reg = r_reg_get (a->reg, src, R_REG_TYPE_GPR);
 			//XXX fallthrough
 			}
 		//case X86_OP_FP:
@@ -2463,10 +2462,10 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 }
 
 #define CREATE_SRC_DST(op) \
-	(op)->src[0] = r_anal_value_new (); \
-	(op)->src[1] = r_anal_value_new (); \
-	(op)->src[2] = r_anal_value_new (); \
-	(op)->dst = r_anal_value_new ();
+	src0 = r_vector_push ((op)->srcs, NULL); \
+	src1 = r_vector_push ((op)->srcs, NULL); \
+	src2 = r_vector_push ((op)->srcs, NULL); \
+	dst = r_vector_push ((op)->dsts, NULL);
 
 static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, int x) {
 	if (!val) {
@@ -2493,6 +2492,7 @@ static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, 
 }
 
 static void op_fillval(RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn, int mode) {
+	RAnalValue *dst, *src0, *src1, *src2;
 	set_access_info (a->reg, op, handle, insn, mode);
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
@@ -2515,15 +2515,15 @@ static void op_fillval(RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn, int mo
 	case R_ANAL_OP_TYPE_NOT:
 	case R_ANAL_OP_TYPE_ACMP:
 		CREATE_SRC_DST (op);
-		set_src_dst (a->reg, op->dst, handle, insn, 0);
-		set_src_dst (a->reg, op->src[0], handle, insn, 1);
-		set_src_dst (a->reg, op->src[1], handle, insn, 2);
-		set_src_dst (a->reg, op->src[2], handle, insn, 3);
+		set_src_dst (a->reg, dst, handle, insn, 0);
+		set_src_dst (a->reg, src0, handle, insn, 1);
+		set_src_dst (a->reg, src1, handle, insn, 2);
+		set_src_dst (a->reg, src2, handle, insn, 3);
 		break;
 	case R_ANAL_OP_TYPE_UPUSH:
 		if ((op->type & R_ANAL_OP_TYPE_REG)) {
 			CREATE_SRC_DST (op);
-			set_src_dst (a->reg, op->src[0], handle, insn, 0);
+			set_src_dst (a->reg, src0, handle, insn, 0);
 		}
 		break;
 	default:
@@ -3646,10 +3646,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				insn->op_str[0]?" ":"",
 				insn->op_str);
 			if (op->mnemonic) {
-				if (a->config->syntax != R_ASM_SYNTAX_MASM) {
+				if (a->config->syntax != R_ARCH_SYNTAX_MASM) {
 					op->mnemonic = r_str_replace (op->mnemonic, "ptr ", "", true);
 				}
-				if (a->config->syntax == R_ASM_SYNTAX_JZ) {
+				if (a->config->syntax == R_ARCH_SYNTAX_JZ) {
 					if (r_str_startswith (op->mnemonic, "je ")) {
 						op->mnemonic[1] = 'z';
 					} else if (r_str_startswith (op->mnemonic, "jne ")) {

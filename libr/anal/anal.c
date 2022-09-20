@@ -320,7 +320,7 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 
 R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	int obits = anal->config->bits;
-	r_arch_set_bits (anal->config, bits);
+	r_arch_config_set_bits (anal->config, bits);
 	if (bits != obits) {
 		r_anal_set_reg_profile (anal, NULL);
 	}

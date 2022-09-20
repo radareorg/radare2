@@ -617,16 +617,16 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 
 	RListIter *iter1;
 	struct dex_debug_position_t *pos;
-// Loading the debug info takes too much time and nobody uses this afaik
-// 0.5s of 5s is spent in this loop
+	// Loading the debug info takes too much time and nobody uses this afaik
+	// 0.5s of 5s is spent in this loop
 	r_list_foreach (debug_positions, iter1, pos) {
 		const char *line = getstr (dex, pos->source_file_idx);
-		char offset[64] = {0};
-		if (!line || !*line) {
+		char offset[SDB_NUM_BUFSZ] = {0};
+		if (R_STR_ISEMPTY (line)) {
 			continue;
 		}
 		char *fileline = r_str_newf ("%s|%"PFMT64d, line, pos->line);
-		char *offset_ptr = sdb_itoa (pos->address + paddr, offset, 16);
+		char *offset_ptr = sdb_itoa (pos->address + paddr, 16, offset, sizeof (offset));
 		sdb_set (bf->sdb_addrinfo, offset_ptr, fileline, 0);
 		sdb_set (bf->sdb_addrinfo, fileline, offset_ptr, 0);
 		free (fileline);

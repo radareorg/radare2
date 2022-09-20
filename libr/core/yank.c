@@ -6,7 +6,7 @@
  * perform_mapped_file_yank will map in a file and yank from offset the number of len bytes from
  * filename.  if the len is -1, the all the bytes are mapped into the yank buffer.
  */
-static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const char *filename);
+static bool perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const char *filename);
 static ut32 find_next_char(const char *input, char b);
 static ut32 consume_chars(const char *input, char b);
 
@@ -30,13 +30,13 @@ static ut32 consume_chars(const char *input, char b) {
 	return i;
 }
 
-static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const char *filename) {
+static bool perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const char *filename) {
 	// grab the current file descriptor, so we can reset core and io state
 	// after our io op is done
 	RIODesc *yankdesc = NULL;
 	ut64 fd = core->io->desc ? core->io->desc->fd: -1, yank_file_sz = 0,
 	     loadaddr = 0, addr = offset;
-	int res = false;
+	bool res = false;
 
 	if (filename && *filename) {
 		ut64 load_align = r_config_get_i (core->config, "file.loadalign");
@@ -71,18 +71,18 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 	// this wont happen if the file failed to open or the file failed to
 	// map into the IO layer
 	if (yankdesc) {
-		ut64 res = r_io_seek (core->io, addr, R_IO_SEEK_SET);
+		ut64 nres = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 		ut64 actual_len = len <= yank_file_sz? len: 0;
 		ut8 *buf = NULL;
-		if (actual_len > 0 && res == addr) {
+		if (actual_len > 0 && nres == addr) {
 			buf = malloc (actual_len);
 			if (!r_io_read_at (core->io, addr, buf, actual_len)) {
 				actual_len = 0;
 			}
 			r_core_yank_set (core, R_CORE_FOREIGN_ADDR, buf, len);
 			res = true;
-		} else if (res != addr) {
-			R_LOG_ERROR ("Unable to yank data from file: (loadaddr (0x%" PFMT64x ") (addr (0x%" PFMT64x ") > file_sz (0x%"PFMT64x ")", res, addr, yank_file_sz);
+		} else if (nres != addr) {
+			R_LOG_ERROR ("Unable to yank data from file: (loadaddr (0x%" PFMT64x ") (addr (0x%" PFMT64x ") > file_sz (0x%"PFMT64x ")", nres, addr, yank_file_sz);
 		} else if (actual_len == 0) {
 			R_LOG_ERROR ("Unable to yank from file: addr+len (0x%" PFMT64x ") > file_sz (0x%"PFMT64x ")", addr + len, yank_file_sz);
 		}
@@ -442,8 +442,7 @@ R_API bool r_core_yank_file_ex(RCore *core, const char *input) {
 	return b;
 }
 
-// R2_580 R_API bool r_core_yank_file_all(RCore *core, const char *input) {
-R_API int r_core_yank_file_all(RCore *core, const char *input) {
+R_API bool r_core_yank_file_all(RCore *core, const char *input) {
 	r_return_val_if_fail (core && input, false);
 	ut64 adv = consume_chars (input, ' ');
 	return perform_mapped_file_yank (core, 0, -1, input + adv);
