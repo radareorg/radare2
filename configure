@@ -36,7 +36,7 @@ USE_ZIP=0
 USE_XXHASH=0
 WITH_GPL=1
 WANT_OPENSSL=0
-WANT_LIBUV=1
+WANT_LIBUV=0
 USE_RPATH=0
 [ -z "${USERCC}" ] && USERCC="gcc"
 [ -z "${USEROSTYPE}" ] && USEROSTYPE="auto"
@@ -134,12 +134,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='radare2' ; VERSION='5.7.8' ; VERSION_MAJOR=5; VERSION_MINOR=7; VERSION_PATCH=8; VERSION_NUMBER=50708; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2' ; VERSION='5.7.9' ; VERSION_MAJOR=5; VERSION_MINOR=7; VERSION_PATCH=9; VERSION_NUMBER=50709; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-5.7.8 to adapt to many kinds of systems.
+'configure' configures radare2-5.7.9 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -201,7 +201,7 @@ Optional Features:
   --with-sysxxhash       force to use system's xxhash
   --without-gpl          do not build GPL code (grub, cxx, ... )
   --with-openssl         build with openssl if possible
-  --without-libuv        disable libuv dependency
+  --with-libuv           disable libuv dependency
   --with-rpath           use rpath to build
   --with-compiler        Define compiler to use (see mk/) (USERCC=gcc)
   --with-ostype          Choose OS ( android windows wsl mingw32 bsd solaris gnulinux darwin haiku ) (USEROSTYPE=auto)
@@ -244,10 +244,10 @@ ocho() {
 
 show_version() {
 if [ "$QUIET" = 1 ]; then
-	echo "5.7.8"
+	echo "5.7.9"
 	exit 0
 fi
-echo "radare2-5.7.8 configuration script done with acr v2.0.0.
+echo "radare2-5.7.9 configuration script done with acr v2.0.0.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -276,12 +276,12 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:   radare2"
-echo "VERSION:   5.7.8"
+echo "VERSION:   5.7.9"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
 echo "PKG-CONFIG:  capstone liblz4 openssl libuv"
-echo "FLAGS:     --disable-debugger --with-sysmagic --disable-threads --disable-loadlibs --without-dylink --without-fork --without-ptrace-wrap --without-gperf --without-capstone --with-libr --with-capstone5 --with-capstone4 --with-syscapstone --with-syslz4 --with-syszip --with-sysxxhash --without-gpl --with-openssl --without-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2"
+echo "FLAGS:     --disable-debugger --with-sysmagic --disable-threads --disable-loadlibs --without-dylink --without-fork --without-ptrace-wrap --without-gperf --without-capstone --with-libr --with-capstone5 --with-capstone4 --with-syscapstone --with-syslz4 --with-syszip --with-sysxxhash --without-gpl --with-openssl --with-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2"
 	exit 0
 	;;
 --cache-file)
@@ -349,7 +349,7 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --disable-threads --disable-
 "--with-sysxxhash") USE_XXHASH="1"; ;;
 "--without-gpl") WITH_GPL="0"; ;;
 "--with-openssl") WANT_OPENSSL="1"; ;;
-"--without-libuv") WANT_LIBUV="0"; ;;
+"--with-libuv") WANT_LIBUV="1"; ;;
 "--with-rpath") USE_RPATH="1"; ;;
 --with-compiler) if [ -z "${value}" ]; then USERCC="gcc"; else USERCC="${value}" ; fi ;;
 --with-ostype) if [ -z "${value}" ]; then USEROSTYPE="auto"; else USEROSTYPE="${value}" ; fi ;;
