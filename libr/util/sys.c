@@ -554,6 +554,14 @@ R_API bool r_sys_getenv_asbool(const char *key) {
 	return res;
 }
 
+R_API int r_sys_getenv_asint(const char *key) {
+	r_return_val_if_fail (key, false);
+	char *env = r_sys_getenv (key);
+	const int res = env? atoi (env): 0;
+	free (env);
+	return res;
+}
+
 R_API char *r_sys_getdir(void) {
 #if __WINDOWS__
 	return _getcwd (NULL, 0);
