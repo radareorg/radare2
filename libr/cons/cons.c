@@ -1472,11 +1472,11 @@ R_API void r_cons_memset(char ch, int len) {
 }
 
 R_API void r_cons_strcat(const char *str) {
-	int len;
-	if (!str || I->null) {
+	r_return_if_fail (str);
+	if (!I || I->null) {
 		return;
 	}
-	len = strlen (str);
+	size_t len = strlen (str);
 	if (len > 0) {
 		r_cons_write (str, len);
 	}

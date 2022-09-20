@@ -3107,8 +3107,9 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 			r_cons_printf ("   ");
 		}
 	}
-
-	r_cons_strcat (ds->color_mov);
+	if (R_STR_ISNOTEMPTY (ds->color_mov)) {
+		r_cons_strcat (ds->color_mov);
+	}
 	switch (ib) {
 	case 1:
 		r_str_bits (msg, buf, size * 8, NULL);
