@@ -119,17 +119,19 @@ jobs:
           ./configure --prefix=/usr --with-compiler=tcc
           make -j
           sudo make install
+    - name: Initialize and update the r2pm package database
+      run: r2pm -U
     - name: Install samurai
       run: r2pm -i samurai
     - name: Install samurai (clean)
       run: r2pm -ci samurai
     - name: Install samurai (native)
-      run: R2PM_NATIVE=1 r2pm -i samurai
+      run: r2pm -i samurai
     - name: Install muon
       run: r2pm -i muon
     - name: Install muon (native)
-      run: R2PM_NATIVE=1 r2pm -i muon
+      run: r2pm -i muon
     - name: Building r2 with muon+samu
       run: |
-          R2PM_NATIVE=1 r2pm -r muon setup b
-          R2PM_NATIVE=1 r2pm -r samu -j4 -C b >/dev/null
+          r2pm -r muon setup b
+          r2pm -r samu -j4 -C b >/dev/null
