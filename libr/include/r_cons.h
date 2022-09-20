@@ -783,6 +783,7 @@ R_API void r_cons_set_click(int x, int y);
 R_API bool r_cons_get_click(int *x, int *y);
 
 typedef void (*RConsBreak)(void *);
+R_API bool r_cons_is_initialized(void);
 R_API bool r_cons_is_breaked(void);
 R_API bool r_cons_was_breaked(void);
 R_API bool r_cons_is_interactive(void);

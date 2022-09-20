@@ -29,6 +29,10 @@ static RConsContext *getctx(void) {
 	return r_cons_instance->context;
 }
 
+R_API bool r_cons_is_initialized(void) {
+	return r_cons_instance != NULL;
+}
+
 //this structure goes into cons_stack when r_cons_push/pop
 typedef struct {
 	char *buf;
