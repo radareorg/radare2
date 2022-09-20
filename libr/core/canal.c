@@ -3351,6 +3351,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 			char *fcn_name = r_core_anal_fcn_name (core, fcn);
 			char *bitstr = sdb_itoa (fcn->bits, 10, temp, sizeof (temp));
 			RListInfo *info = r_listinfo_new (fcn_name, inter, inter, -1, bitstr);
+			free (fcn_name);
 			if (!info) {
 				break;
 			}

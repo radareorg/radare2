@@ -590,7 +590,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	}
 
 	// check if address is readable //:
-	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
+	if (anal->iob.io && !anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
 		if (addr != UT64_MAX && !anal->iob.io->va) {
 			R_LOG_DEBUG ("Invalid address 0x%"PFMT64x ". Try with io.va=true", addr);
 		}

@@ -647,10 +647,9 @@ R_API void r_cons_grepbuf(void) {
 		r_cons_print (s);
 		buf = cons->context->buffer;
 		len = cons->context->buffer_len;
-		goto continuation;
 		r_json_free (node);
 		free (a);
-		return;
+		goto continuation;
 	}
 	if (grep->json) {
 		if (grep->json_path) {

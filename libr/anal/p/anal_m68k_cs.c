@@ -282,7 +282,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				r_str_replace_char (p, '#', 0);
 				op->mnemonic = p;
 			} else {
-				free (str);
+				free (p);
 			}
 		}
 	}

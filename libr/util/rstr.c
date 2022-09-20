@@ -95,6 +95,9 @@ R_API RString r_string_newf(const char *fmt, ...) {
 	}
 	va_end (ap2);
 	va_end (ap);
+	if (myp) {
+		free (p);
+	}
 	return s; //r_string_from (p, ret);
 }
 
