@@ -3,16 +3,13 @@
 #ifndef R2_ARCH_H
 #define R2_ARCH_H
 
+#include <r_util.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <r_util.h>
-#if 0
-#include <r_anal.h>	//remove this later
-#include <r_reg.h>
-#include <sdb.h>
-#endif
+R_LIB_VERSION_HEADER(r_arch);
 
 enum {
 	R_ARCH_SYNTAX_NONE = 0,
@@ -42,6 +39,43 @@ typedef struct r_arch_config_t {
 	R_REF_TYPE;
 } RArchConfig;
 
+#define R_Arch struct r_arch_t
+
+// TODO: import R_SYS_ARCH_* to R_ARCH_TYPE_{ARM,X86,..}
+
+typedef struct r_arch_plugin_t {
+	char *name;
+	char *desc;
+	char *license;
+	char *arch;
+	char *author;
+	char *version;
+	char *cpus;
+	void *(*init)(void *a, void *user);
+	void (*fini)(void *a, void *user);
+	int (*info)(ut32 query);
+	// int (*decode)(RArch *a, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask);
+	// bool (*set_reg_profile)(RArchConfig *cfg, RReg *reg);
+	// bool (*esil_init)(RAnalEsil *esil);
+	// void (*esil_fini)(RAnalEsil *esil);
+} RArchPlugin;
+
+typedef struct r_arch_decoder_t {
+	void *data;
+	RArchPlugin *p;
+	RArchConfig *ac;
+} RArchDecoder;
+
+typedef struct r_arch_t {
+	RList *plugins;	//all plugins
+	RArchDecoder *current;	//currently used decoder
+	HtPP *decoders;	//as decoders instantiated plugins
+	RArchConfig *cfg;	//config
+} RArch;
+
+R_API RArch *r_arch_new(void);
+R_API void r_arch_free(RArch *arch);
+
 #if 0
 #define R_ARCH_INFO_MIN_OP_SIZE	0
 #define R_ARCH_INFO_MAX_OP_SIZE	1
@@ -60,22 +94,6 @@ typedef struct r_arch_config_t {
 
 typedef	RAnalOp	RArchOp;	//define this properly later
 
-typedef struct r_arch_plugin_t {
-	char *name;
-	char *desc;
-	char *license;
-	char *arch;
-	char *author;
-	char *version;
-	char *cpus;
-	bool (*init)(void **user);
-	void (*fini)(void *user);
-	int (*info)(ut32 query);
-	int (*decode)(RArch *a, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask);
-	bool (*set_reg_profile)(RArchConfig *cfg, RReg *reg);
-	bool (*esil_init)(RAnalEsil *esil);
-	void (*esil_fini)(RAnalEsil *esil);
-} RArchPlugin;
 
 typedef struct r_arch_decoder_t {
 	RArchPlugin *p;
@@ -83,15 +101,6 @@ typedef struct r_arch_decoder_t {
 	ut32 refctr;
 } RArchDecoder;
 
-typedef struct r_arch_t {
-	RList *plugins;	//all plugins
-	RArchDecoder *current;	//currently used decoder
-	HtPP *decoders;	//as decoders instantiated plugins
-	RArchConfig *cfg;	//config
-} RArch;
-
-R_API RArch *r_arch_new(void);
-R_API void r_arch_free(RArch *arch);
 //dname is name of decoder to use, NULL if current
 R_API bool r_arch_load_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_use_decoder(RArch *arch, const char *dname);
@@ -104,10 +113,19 @@ R_API void r_arch_esil_fini(RArch *arch, const char *dname, RAnalEsil *esil);
 
 #endif
 
-R_API void r_arch_use(RArchConfig *config, R_NULLABLE const char *arch);
+// arch
+R_API RArchDecoder *r_arch_use(RArch *arch, RArchConfig *config, const char *name);
+
+R_API void r_arch_config_use(RArchConfig *config, R_NULLABLE const char *arch);
+R_API bool r_arch_add(RArch *a, RArchPlugin *foo);
+R_API int r_arch_del(RArch *a, const char *name);
+R_API void r_arch_free(RArch *a);
+// aconfig
 R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu);
 R_API void r_arch_config_set_bits(RArchConfig *config, int bits);
 R_API RArchConfig *r_arch_config_new(void);
+
+extern RArchPlugin r_arch_plugin_null;
 
 #ifdef __cplusplus
 }

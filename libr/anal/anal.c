@@ -237,7 +237,7 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 			}
 #endif
 			anal->cur = h;
-			r_arch_use (anal->config, h->arch);
+			r_arch_config_use (anal->config, h->arch);
 			r_anal_set_reg_profile (anal, NULL);
 			return true;
 		}
