@@ -760,19 +760,4 @@ static inline void r_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, v
 #define container_of(ptr, type, member) (ptr? ((type *)((char *)(ptr) - r_offsetof(type, member))): NULL)
 #endif
 
-// reference counter
-typedef int RRef;
-
-#define R_REF_NAME refcount
-#define r_ref(x) ((x)->R_REF_NAME++, (x));
-#define r_ref_init(x,y) (x)->R_REF_NAME = 1;(x)->free = (void *)(y)
-// #define r_unref(x) { assert (x->R_REF_NAME > 0); if (!--(x->R_REF_NAME)) { x->free(x); } }
-#define r_unref(x) { if ((x) != NULL && (x)->R_REF_NAME > 0 && !--((x)->R_REF_NAME)) { (x)->free(x); (x) = NULL; } }
-#define r_ref_set(x,y) do { if ((x) != (y) && (x) != NULL) { r_unref(x); } (x)=(y); (y)->R_REF_NAME++; } while(0)
-
-#define R_REF_TYPE RRef R_REF_NAME; void (*free)(void*)
-#define R_REF_FUNCTIONS(s, n) \
-static inline void n##_ref(s *x) { x->R_REF_NAME++; } \
-static inline void n##_unref(s *x) { r_unref(x); }
-
 #endif // R2_TYPES_H

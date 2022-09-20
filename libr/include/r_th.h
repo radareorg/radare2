@@ -1,5 +1,5 @@
-#ifndef R_TH_H
-#define R_TH_H
+#ifndef R2_TH_H
+#define R2_TH_H
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
