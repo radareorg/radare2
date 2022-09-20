@@ -123,6 +123,7 @@ typedef enum {
 
 static void r2pm_register(const char *pkg, bool g) {
 	char *pkgdir = r2pm_pkgdir ();
+	r_sys_mkdirp (pkgdir);
 	char *f = r_str_newf ("%s/%s", pkgdir, pkg);
 	free (pkgdir);
 	if (f) {
