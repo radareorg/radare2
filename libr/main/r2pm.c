@@ -419,6 +419,7 @@ static int r2pm_doc_pkg(const char *pkg) {
 		printf ("%s\n", script);
 		free (script);
 	} else {
+		R_LOG_ERROR ("Cannot find package: %s", pkg);
 		rc = 1;
 	}
 	free (pkgfile);
