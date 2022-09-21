@@ -6,18 +6,15 @@
 
 #define INSOP(n) insn->detail->sysz.operands[n]
 
-static R_TH_LOCAL unsigned long Offset = 0;
-static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL unsigned char bytes[8];
-
 static int s390_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-	int delta = (memaddr - Offset);
+	int delta = (memaddr - info->buffer_vma);
 	if (delta < 0) {
-		return -1;      // disable backward reads
+		return -1; // disable backward reads
 	}
 	if ((delta + length) > 6) {
 		return -1;
 	}
+	ut8 *bytes = info->buffer;
 	memcpy (myaddr, bytes + delta, length);
 	return 0;
 }
@@ -30,18 +27,18 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	ut8 bytes[8] = {0};
 	char options[64];
 	struct disassemble_info disasm_obj;
 	if (len < 6) {
 		// r_asm_op_set_asm (op, "truncated");
 		return 2;
 	}
-	buf_global = r_strbuf_new ("");
-	Offset = addr;
+	RStrBuf *buf_global = r_strbuf_new ("");
 	memcpy (bytes, buf, 6); // TODO handle thumb
 
 	/* prepare disassembler */
@@ -62,8 +59,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	disasm_obj.endian = 0; // !a->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
+	disasm_obj.buffer_vma = addr;
+	disasm_obj.stream = buf_global;
+	disasm_obj.application_data = buf_global;
 	disassemble_init_s390 (&disasm_obj);
-	op->size = print_insn_s390 ((bfd_vma)Offset, &disasm_obj);
+	op->size = print_insn_s390 ((bfd_vma)addr, &disasm_obj);
 	if (op->size < 1) {
 		op->mnemonic = strdup ("invalid");
 		op->type = R_ANAL_OP_TYPE_ILL;
