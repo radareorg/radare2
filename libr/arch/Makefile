@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_arch
-R2DEPS+=r_util
+R2DEPS+=r_util r_reg
 
 CFLAGS+=-DR2_PLUGIN_INCORE
 

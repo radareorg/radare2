@@ -381,15 +381,15 @@ On x86 according to Wikipedia
 	Prefix group 4
 	0x67: Address-size override prefix
 #endif
-	typedef enum {
-		R_ANAL_OP_PREFIX_COND     = 1,
-		R_ANAL_OP_PREFIX_REP      = 1<<1,
-		R_ANAL_OP_PREFIX_REPNE    = 1<<2,
-		R_ANAL_OP_PREFIX_LOCK     = 1<<3,
-		R_ANAL_OP_PREFIX_LIKELY   = 1<<4,
-		R_ANAL_OP_PREFIX_UNLIKELY = 1<<5
-		/* TODO: add segment override typemods? */
-	} RAnalOpPrefix;
+typedef enum {
+	R_ANAL_OP_PREFIX_COND     = 1,
+	R_ANAL_OP_PREFIX_REP      = 1<<1,
+	R_ANAL_OP_PREFIX_REPNE    = 1<<2,
+	R_ANAL_OP_PREFIX_LOCK     = 1<<3,
+	R_ANAL_OP_PREFIX_LIKELY   = 1<<4,
+	R_ANAL_OP_PREFIX_UNLIKELY = 1<<5
+	/* TODO: add segment override typemods? */
+} RAnalOpPrefix;
 
 // XXX: this definition is plain wrong. use enum or empower bits
 #define R_ANAL_OP_TYPE_MASK 0x8000ffff
