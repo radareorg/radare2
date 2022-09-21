@@ -1274,7 +1274,7 @@ static bool __rebase_refs(void *user, const ut64 k, const void *v) {
 static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base) {
 	RListIter *it, *itit, *ititit;
 	RAnalFunction *fcn;
-	ut64 new_base = core->bin->cur->o->baddr_shift;
+	ut64 new_base = (core->bin->cur && core->bin->cur->o)? core->bin->cur->o->baddr_shift: 0;
 	RBinSection *old_section;
 	ut64 diff = new_base - old_base;
 	if (!diff) {
@@ -1417,7 +1417,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	}
 
 	RList *old_sections = __save_old_sections (core);
-	ut64 old_base = core->bin->cur->o->baddr_shift;
+	ut64 old_base = (core->bin->cur && core->bin->cur->o)? core->bin->cur->o->baddr_shift: 0;
 	int bits = core->rasm->config->bits;
 	char *bin_abspath = r_file_abspath (binpath);
 	if (strstr (bin_abspath, "://")) {
