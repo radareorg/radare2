@@ -20,6 +20,7 @@ static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size);
 struct r_debug_desc_plugin_t r_debug_desc_plugin_native;
+bool linux_generate_corefile(RDebug *dbg, RBuffer *dest);
 
 #include "native/bt.c"
 
