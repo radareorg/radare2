@@ -1184,7 +1184,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				.iov_base = &regs,
 				.iov_len = sizeof (regs)
 			};
-			ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (size_t)1, &io);
+			ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)(size_t)1, &io);
 			// ret = ptrace (PTRACE_GETREGSET, pid, (void*)(size_t)(NT_PRSTATUS), NULL); // &io);
 #elif __BSD__ && (__POWERPC__ || __sparc__)
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
