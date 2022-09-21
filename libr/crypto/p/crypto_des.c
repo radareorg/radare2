@@ -82,6 +82,8 @@ static bool des_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, in
 	keylo = be32 (key);
 	keyhi = be32 (key + 4);
 
+	free (cj->data);
+	cj->data = R_NEW0 (struct des_state);
 	struct des_state *st = cj->data;
 	st->key_size = DES_KEY_SIZE;
 	st->rounds = 16;

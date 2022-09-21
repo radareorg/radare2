@@ -33,6 +33,8 @@ static void ror_crypt(struct ror_state *const state, const ut8 *inbuf, ut8 *outb
 
 static bool ror_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
 	cj->flag = direction;
+	free (cj->data);
+	cj->data = R_NEW0 (struct ror_state);
 	struct ror_state *st = (struct ror_state*)cj->data;
 	return ror_init (st, key, keylen);
 }
