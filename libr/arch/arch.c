@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2022 - pancake */
 
 #include <r_arch.h>
-#include "../config.h"
+#include <config.h>
 
 static const RArchPlugin * const arch_static_plugins[] = { R_ARCH_STATIC_PLUGINS };
 
