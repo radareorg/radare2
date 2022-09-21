@@ -222,7 +222,7 @@ static void striptrim(RList *list) {
 }
 
 static void r2pm_upgrade(void) {
-	char *s = r_sys_cmd_str ("r2 -qcq -- 2>&1 | grep r2pm | sed -e 's,$,;,g'", NULL, 0);
+	char *s = r_sys_cmd_str ("radare2 -qcq -- 2>&1 | grep r2pm | sed -e 's,$,;,g'", NULL, 0);
 	r_str_trim (s);
 	RList *list = r_str_split_list (s, "\n", -1);
 	striptrim (list);
@@ -472,9 +472,9 @@ static int r2pm_clone(const char *pkg) {
 			char *dir = strchr (url, ' ');
 			if (dir) {
 				*dir++ = 0;
-			}
-			if (strcmp (dir, pkg)) {
-				R_LOG_WARN ("pkgname != clonedir");
+				if (strcmp (dir, pkg)) {
+					R_LOG_WARN ("pkgname != clonedir");
+				}
 			}
 			git_clone (srcdir, url);
 			free (url);
@@ -500,6 +500,11 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool global)
 	const char *t;
 	int rc = 0;
 	char *r2v = r_sys_cmd_str ("radare2 -qv", NULL, NULL);
+	if (R_STR_ISEMPTY (r2v)) {
+		R_LOG_ERROR ("Cannot run r2 -qv");
+		free (r2v);
+		return -1;
+	}
 	r_str_trim (r2v);
 	R_LOG_INFO ("Using r2-%s and r2pm-"R2_VERSION, r2v);
 	free (r2v);

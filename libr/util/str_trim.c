@@ -182,9 +182,8 @@ R_API void r_str_trim_tail(char *str) {
 // Removes spaces from the head of the string, and zeros out whitespaces from
 // the tail of the string. The string is changed in place.
 R_API void r_str_trim(char *str) {
+	r_return_if_fail (str);
 	r_str_ntrim (str, strlen (str));
-	// r_str_trim_head (str);
-	// r_str_trim_tail (str);
 }
 
 R_API int r_str_ntrim(char *str, int length) {
