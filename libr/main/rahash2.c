@@ -314,7 +314,7 @@ static int do_help(int line) {
 		"             (- will slurp the key from stdin, the @ prefix points to a file\n"
 		" -k          show hash using the openssh's randomkey algorithm\n"
 		" -q          run in quiet mode (-qq to show only the hash)\n"
-		" -L          list all available algorithms (see -a)\n"
+		" -L          list crypto plugins (combines with -q, used by -a, -E and -D)\n"
 		" -r          output radare commands\n"
 		" -s string   hash this string instead of files\n"
 		" -t to       stop hashing at given address\n"
@@ -323,9 +323,9 @@ static int do_help(int line) {
 	return 0;
 }
 
-static void algolist(void) {
+static void algolist(int mode) {
 	RCrypto *cry = r_crypto_new ();
-	r_crypto_list (cry, NULL, 0);
+	r_crypto_list (cry, NULL, mode);
 	r_crypto_free (cry);
 }
 
@@ -473,6 +473,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	ut64 algobit;
 	RHash *ctx;
 	RIO *io = NULL;
+	bool listplugins = false;
 	int _ret = 0;
 
 	ro->incremental = true;
@@ -499,7 +500,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		case 'n': numblocks = 1; break;
 		case 'D': decrypt = opt.arg; break;
 		case 'E': encrypt = opt.arg; break;
-		case 'L': algolist (); ret(0);
+		case 'L': listplugins = true; break;
 		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
@@ -521,6 +522,14 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	if (encrypt && decrypt) {
 		R_LOG_ERROR ("Option -E and -D are incompatible with each other");
 		ret (1);
+	}
+	if (listplugins) {
+		if (ro->quiet) {
+			algolist ('q');
+		} else {
+			algolist (0);
+		}
+		ret(0);
 	}
 	if (compareStr) {
 		int compareBin_len;
