@@ -3,15 +3,15 @@
 
 #define NAME "ror"
 
-enum { MAX_ror_KEY_SIZE = 32768 };
+enum { MAX_ROR_KEY_SIZE = 32768 };
 
 struct ror_state {
-	ut8 key[MAX_ror_KEY_SIZE];
+	ut8 key[MAX_ROR_KEY_SIZE];
 	int key_size;
 };
 
 static bool ror_init(struct ror_state *const state, const ut8 *key, int keylen) {
-	if (!state || !key || keylen < 1 || keylen > MAX_ror_KEY_SIZE) {
+	if (!state || !key || keylen < 1 || keylen > MAX_ROR_KEY_SIZE) {
 		return false;
 	}
 	int i;
@@ -31,16 +31,15 @@ static void ror_crypt(struct ror_state *const state, const ut8 *inbuf, ut8 *outb
 	}
 }
 
-static R_TH_LOCAL struct ror_state st;
-static R_TH_LOCAL int flag = 0;
-
 static bool ror_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
-	flag = direction;
-	return ror_init (&st, key, keylen);
+	cj->flag = direction;
+	struct ror_state *st = (struct ror_state*)cj->data;
+	return ror_init (st, key, keylen);
 }
 
 static int ror_get_key_size(RCryptoJob *cj) {
-	return st.key_size;
+	struct ror_state *st = (struct ror_state*)cj->data;
+	return st->key_size;
 }
 
 static bool ror_check(const char *algo) {
@@ -48,17 +47,22 @@ static bool ror_check(const char *algo) {
 }
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
-	if (flag) {
-		eprintf ("USE ROL\n");
+	if (cj->flag) {
 		return false;
 	}
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
-	ror_crypt (&st, buf, obuf, len);
+	struct ror_state *st = (struct ror_state*)cj->data;
+	ror_crypt (st, buf, obuf, len);
 	r_crypto_job_append (cj, obuf, len);
 	free (obuf);
+	return true;
+}
+
+static bool fini(RCryptoJob *cj) {
+	R_FREE (cj->data);
 	return true;
 }
 
@@ -69,6 +73,7 @@ RCryptoPlugin r_crypto_plugin_ror = {
 	.check = ror_check,
 	.update = update,
 	.end = update,
+	.fini = fini,
 };
 
 #ifndef R2_PLUGIN_INCORE

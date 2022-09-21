@@ -1,8 +1,7 @@
-/* radare - LGPL - Copyright 2016 - pancake */
+/* radare - LGPL - Copyright 2016-2022 - pancake */
 
 #include <r_lib.h>
 #include <r_crypto.h>
-
 
 struct rc4_state {
 	ut8 perm[256];
@@ -54,6 +53,9 @@ static bool rc4_init(struct rc4_state *const state, const ut8 *key, int keylen) 
  * for both encryption and decryption.
  */
 static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
+	if (!state || !inbuf || !outbuf || buflen < 1) {
+		return;
+	}
 	int i;
 	ut8 j;
 
@@ -62,8 +64,7 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 		state->index1++;
 		state->index2 += state->perm[state->index1];
 		/* Modify permutation */
-		swap_bytes (&state->perm[state->index1],
-		    &state->perm[state->index2]);
+		swap_bytes (&state->perm[state->index1], &state->perm[state->index2]);
 		/* Encrypt/decrypt next byte */
 		j = state->perm[state->index1] + state->perm[state->index2];
 		outbuf[i] = inbuf[i] ^ state->perm[j];
@@ -72,14 +73,16 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 
 ///////////////////////////////////////////////////////////
 
-static R_TH_LOCAL struct rc4_state st;
-
-static bool rc4_set_key(RCryptoJob *cry, const ut8 *key, int keylen, int mode, int direction) {
-	return rc4_init (&st, key, keylen);
+static bool rc4_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+	free (cj->data);
+	cj->data = R_NEW0 (struct rc4_state);
+	struct rc4_state *st = (struct rc4_state *)cj->data;
+	return rc4_init (st, key, keylen);
 }
 
-static int rc4_get_key_size(RCryptoJob *cry) {
-	return st.key_size;
+static int rc4_get_key_size(RCryptoJob *cj) {
+	struct rc4_state *st = (struct rc4_state *)cj->data;
+	return st? st->key_size: 0;
 }
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
@@ -87,7 +90,8 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	if (!obuf) {
 		return false;
 	}
-	rc4_crypt (&st, buf, obuf, len);
+	struct rc4_state *st = (struct rc4_state *)cj->data;
+	rc4_crypt (st, buf, obuf, len);
 	r_crypto_job_append (cj, obuf, len);
 	free (obuf);
 	return false;
@@ -97,13 +101,19 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 	return update (cj, buf, len);
 }
 
+static bool fini(RCryptoJob *cj) {
+	R_FREE (cj->data);
+	return true;
+}
+
 RCryptoPlugin r_crypto_plugin_rc4 = {
 	.name = "rc4",
 	.implements = "rc4",
 	.set_key = rc4_set_key,
 	.get_key_size = rc4_get_key_size,
 	.update = update,
-	.end = end
+	.end = end,
+	.fini = fini
 };
 
 #ifndef R2_PLUGIN_INCORE
