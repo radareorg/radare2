@@ -67,11 +67,17 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 	ut32 var32 = 0;
 	ut64 var64 = 0;
 	bool havepj = pj != NULL;
-	if (mode == 'j' && !pj) {
-		pj = pj_new ();
-		pj_o (pj);
-		pj_ks (pj, "type", "array");
-		pj_ka (pj, "values");
+	if (!pj) {
+		if (mode == 'J') {
+			pj = pj_new ();
+			pj_o (pj);
+			pj_ks (pj, "type", "array");
+			pj_ka (pj, "values");
+		} else if (mode == 'j') {
+			pj = pj_new ();
+			pj_o (pj);
+			pj_ka (pj, "protobuf");
+		}
 	}
 	const ut8* buffer = start;
 	while (buffer >= start && buffer < end) {
@@ -92,6 +98,7 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 		if (wire != WIRE_END_GRP) {
 			switch (mode) {
 			case 'j':
+			case 'J':
 		//		pj_i (pj, number);
 				break;
 			case 'v':
@@ -109,11 +116,13 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 			{
 				st64* i = (st64*) &var64;
 				bytes_read = read_u64_leb128 (buffer, end, &var64);
-				if (mode == 'j') {
+				if (mode == 'J') {
 					pj_o (pj);
 					pj_ks (pj, "type", "varint");
 					pj_kn (pj, "value", *i);
 					pj_end (pj);
+				} else if (mode == 'j') {
+					pj_n (pj, *i);
 				} else {
 					r_strbuf_appendf (sb, ": %"PFMT64u" | %"PFMT64d"\n", var64, *i);
 				}
@@ -124,12 +133,14 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 				ft64* f = (ft64*) &var64;
 				st64* i = (st64*) &var64;
 				bytes_read = read_u64_leb128 (buffer, end, &var64);
-				if (mode == 'j') {
+				if (mode == 'J') {
 					pj_o (pj);
 					pj_ks (pj, "type", "64bit");
 					pj_kn (pj, "value", *i);
 					pj_kn (pj, "fvalue", *f);
 					pj_end (pj);
+				} else if (mode == 'j') {
+					pj_n (pj, *i);
 				} else {
 					r_strbuf_appendf (sb, ": %"PFMT64u" | %"PFMT64d" | %f\n", var64, *i, *f);
 				}
@@ -150,26 +161,32 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 				const ut8* pe = (const ut8*)ps + var64;
 				if (ps > buffer && pe <= end) {
 					if (is_string (ps, pe)) {
-						if (mode == 'j') {
+						if (mode == 'J') {
 							pj_o (pj);
 							pj_ks (pj, "type", "len-delim");
 							char *ss = r_str_ndup ((const char *)ps, var64);
 							pj_ks (pj, "value", ss);
 							free (ss);
 							pj_end (pj);
+						} else if (mode == 'j') {
+							char *ss = r_str_ndup ((const char *)ps, var64);
+							pj_s (pj, ss);
+							free (ss);
 						} else {
 							r_strbuf_appendf (sb, ": \"%.*s\"\n", (int)var64, (const char*) ps);
 						}
 					} else {
-						if (mode == 'j') {
+						if (mode == 'J') {
 							pj_o (pj);
 							pj_ks (pj, "type", "array");
 							pj_ka (pj, "values");
+						} else if (mode == 'j') {
+							pj_a (pj);
 						} else {
 							r_strbuf_append (sb, " {\n");
 						}
 						char *child = decode_buffer (pj, ps, pe, padcnt + 1, mode);
-						if (mode == 'j') {
+						if (mode == 'j' || mode == 'J') {
 							pj_end (pj);
 							pj_end (pj);
 						} else {
@@ -187,7 +204,7 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 			}
 			break;
 		case WIRE_START_GRP:
-			if (mode == 'j') {
+			if (mode == 'j' || mode == 'J') {
 				pj_o (pj);
 			} else {
 				r_strbuf_append (sb, " {\n");
@@ -198,7 +215,7 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 			if (padcnt > 1) {
 				padcnt--;
 			}
-			if (mode == 'j') {
+			if (mode == 'j' || mode == 'J') {
 				pj_end (pj);
 			} else {
 				pad (sb, padcnt);
@@ -210,19 +227,21 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 				ft32* f = (ft32*) &var32;
 				st32* i = (st32*) &var32;
 				bytes_read = read_u32_leb128 (buffer, end, &var32);
-				if (mode == 'j') {
+				if (mode == 'J') {
 					pj_o (pj);
 					pj_ks (pj, "type", "32bit");
 					pj_kn (pj, "value", *i);
 					pj_kn (pj, "fvalue", *f);
 					pj_end (pj);
+				} else if (mode == 'j') {
+					pj_n (pj, *i);
 				} else {
 					r_strbuf_appendf (sb, ": %u | %d | %f\n", var32, *i, *f);
 				}
 			}
 			break;
 		default:
-			if (mode == 'j') {
+			if (mode == 'J') {
 				pj_o (pj);
 				pj_ks (pj, "type", "array");
 				char *v = decode_array (buffer - 1, end);
@@ -230,6 +249,9 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 				free (v);
 				pj_end (pj);
 				pj_end (pj);
+			} else if (mode == 'j') {
+				char *v = decode_array (buffer - 1, end);
+				pj_s (pj, v);
 			} else {
 				char *s = decode_array (buffer - 1, end);
 				r_strbuf_appendf (sb, "%s", s);
