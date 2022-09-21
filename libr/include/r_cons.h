@@ -428,6 +428,7 @@ typedef struct r_cons_context_t {
 	bool filter;
 	bool use_tts;
 	bool flush;
+	int colors[256];
 } RConsContext;
 
 #define HUD_BUF_SIZE 512
