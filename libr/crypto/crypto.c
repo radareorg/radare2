@@ -198,13 +198,12 @@ R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
 		cb_printf ("%c %12s %5s %s %s\n", mode, cp->name, license, desc, author);
 	}
 	// TODO: move all those static hashes into crypto plugins
-	ut64 bits;
 	int i;
-	for (i = 0; ; i++) {
-		bits = ((ut64)1) << i;
+	for (i = 0; i < 64; i++) {
+		ut64 bits = ((ut64)1) << i;
 		const char *name = r_hash_name (bits);
 		if R_STR_ISEMPTY (name) {
-			break;
+			continue;
 		}
 		cb_printf ("h %12s\n", name);
 	}

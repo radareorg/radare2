@@ -162,68 +162,69 @@ NAME=rahash2 -L
 FILE=-
 CMDS=!rahash2 -L
 EXPECT=<<EOF
-h  md5
-h  sha1
-h  sha256
-h  sha384
-h  sha512
-h  md4
-h  xor
-h  xorpair
-h  parity
-h  entropy
-h  hamdist
-h  pcprint
-h  mod255
-h  xxhash
-h  adler32
-h  luhn
-h  ssdeep
-h  crc8smbus
-h  crc15can
-h  crc16
-h  crc16hdlc
-h  crc16usb
-h  crc16citt
-h  crc24
-h  crc32
-h  crc32c
-h  crc32ecma267
-h  crc32bzip2
-h  crc32d
-h  crc32mpeg2
-h  crc32posix
-h  crc32q
+c      aes-ecb   MIT  pancake
+c      aes-cbc  LGPL  
+c     aes-wrap  LGPL  Sylvain Pelissier
+e       base64  LGPL  rakholiyajenish.07
+e       base91  LGPL  pancake
+c     blowfish LGPL3  
+c         cps2  LGPL  pof,esanfelix
+c      des-ecb  LGPL  deroad
+h      entropy   MIT  pancake
+e     punycode  LGPL  
+c          rc2  LGPL  
+c          rc4  LGPL  
+c          rc6  LGPL  pancake
+c          rol  LGPL  pancake
+c          ror  LGPL  
+c          rot   MIT  pancake
+c  serpent-ecb  LGPL  
+c      sm4-ecb LGPL3  Sylvain Pelissier
+c          xor  LGPL  
+h          md5
+h         sha1
+h       sha256
+h       sha384
+h       sha512
+h          md4
+h          xor
+h      xorpair
+h       parity
+h      entropy
+h      hamdist
+h      pcprint
+h       mod255
+h       xxhash
+h      adler32
+h         luhn
+h       ssdeep
+h    crc8smbus
+h     crc15can
+h        crc16
+h    crc16hdlc
+h     crc16usb
+h    crc16citt
+h        crc24
+h        crc32
+h       crc32c
+h crc32ecma267
+h   crc32bzip2
+h       crc32d
+h   crc32mpeg2
+h   crc32posix
+h       crc32q
 h  crc32jamcrc
-h  crc32xfer
-h  crc64
-h  crc64ecma
-h  crc64we
-h  crc64xz
-h  crc64iso
-h  fletcher8
-h  fletcher16
-h  fletcher32
-h  fletcher64
-h  sip
-e  base64
-e  base91
-e  punycode
-c  rc2
-c  rc4
-c  rc6
-c  aes-ecb
-c  aes-cbc
-c  aes-wrap
-c  ror
-c  rol
-c  rot
-c  blowfish
-c  cps2
-c  des-ecb
-c  xor
-c  serpent-ecb
-c  sm4-ecb
+h    crc32xfer
+h        crc64
+h    crc64ecma
+h      crc64we
+h      crc64xz
+h     crc64iso
+h    fletcher8
+h   fletcher16
+h   fletcher32
+h   fletcher64
+h          sip
 EOF
 RUN
 

@@ -174,6 +174,7 @@ R_API ut32 r_hash_xxhash(const ut8 *buf, ut64 len) {
 	return XXH32 (buf, (size_t)len, 0);
 }
 
+// XXX unused what is a hash deviation? :D how can we expose that . this is unused code from 2010!
 R_API ut8 r_hash_deviation(const ut8 *b, ut64 len) {
 	int i, c;
 	for (c = i = 0, len--; i < len; i++) {
@@ -182,6 +183,7 @@ R_API ut8 r_hash_deviation(const ut8 *b, ut64 len) {
 	return c;
 }
 
+// XXX deprecate!! all those items should be moved to crypto plugins!
 R_API const char *r_hash_name(ut64 bit) {
 	int i;
 	for (i = 1; hash_name_bytes[i].bit; i++) {
