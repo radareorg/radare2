@@ -105,8 +105,9 @@ static const char *help_msg_pF[] = {
 	"Usage: pF[apdbA]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml",
 	"pFa", "[len]", "decode ASN1 from current block",
 	"pFaq", "[len]", "decode ASN1 from current block (quiet output)",
-	"pFb", "[len]", "decode raw proto buffers.",
-	"pFbv", "[len]", "decode raw proto buffers (verbose).",
+	"pFb", "[len]", "decode raw proto buffers",
+	"pFbv", "[len]", "decode raw proto buffers (verbose)",
+	"pFbj", "[len]", "decode raw proto buffers in JSON format",
 	"pFo", "[len]", "decode ASN1 OID",
 	"pFp", "[len]", "decode PKCS7",
 	"pFx", "[len]", "Same with X509",
@@ -1356,8 +1357,10 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		}
 		break;
 	case 'b': // "pFb"
-		{
-			char *s = r_protobuf_decode (data, size, input[1] == 'v');
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_pF, "pFb", false);
+		} else {
+			char *s = r_protobuf_decode (data, size, input[1]);
 			if (s) {
 				r_cons_printf ("%s", s);
 				free (s);

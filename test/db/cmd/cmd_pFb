@@ -35,3 +35,48 @@ EXPECT=<<EOF
 }
 EOF
 RUN
+
+NAME=pFbj.test simple protobuf (json)
+FILE=-
+CMDS=<<EOF
+wx 0a 2e 0a 07 56 69 6e 63 65 6e 74 10 09 1a 10 56 69 6e 63 65 6e 74 40 74 65 73 74 2e 63 6f 6d 22 0f 0a 0b 31 35 30 31 31 31 31 31 31 31 31 10 02
+pFbj~{}
+EOF
+EXPECT=<<EOF
+{
+  "type": "array",
+  "values": [
+    {
+      "type": "array",
+      "values": [
+        {
+          "type": "len-delim",
+          "value": "Vincent"
+        },
+        {
+          "type": "varint",
+          "value": 9
+        },
+        {
+          "type": "len-delim",
+          "value": "Vincent@test.com"
+        },
+        {
+          "type": "array",
+          "values": [
+            {
+              "type": "len-delim",
+              "value": "15011111111"
+            },
+            {
+              "type": "varint",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+EOF
+RUN
