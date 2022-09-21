@@ -1,8 +1,7 @@
-/* radare - LGPL - Copyright 2016-2021 pancake */
+/* radare - LGPL - Copyright 2016-2022 pancake */
 
-#include <r_io.h>
-#include <r_asm.h>
 #include <r_debug.h>
+#include <r_asm.h>
 
 static bool __io_step(RDebug *dbg) {
 	free (dbg->iob.system (dbg->iob.io, "ds"));
@@ -90,13 +89,13 @@ static char *__io_reg_profile(RDebug *dbg) {
 }
 
 // "dr8" read register state
-static int __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static bool __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	char *dr8 = dbg->iob.system (dbg->iob.io, "dr8");
 	if (!dr8) {
 		const char *fb = r_cons_get_buffer ();
-		if (!fb || !*fb) {
-			eprintf ("debug.io: Failed to get dr8 from io\n");
-			return -1;
+		if (R_STR_ISEMPTY (fb)) {
+			R_LOG_ERROR ("Failed to get dr8 from io");
+			return false;
 		}
 		dr8 = strdup (fb);
 		r_cons_reset ();
@@ -104,21 +103,16 @@ static int __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	ut8 *bregs = calloc (1, strlen (dr8));
 	if (!bregs) {
 		free (dr8);
-		return -1;
+		return false;
 	}
 	r_str_trim ((char *)bregs);
 	int sz = r_hex_str2bin (dr8, bregs);
 	if (sz > 0) {
 		memcpy (buf, bregs, R_MIN (size, sz));
-		free (bregs);
-		free (dr8);
-		return size;
-	} else {
-		// eprintf ("SIZE %d (%s)\n", sz, regs);
 	}
 	free (bregs);
 	free (dr8);
-	return -1;
+	return (sz > 0);
 }
 
 // "dc" continue execution

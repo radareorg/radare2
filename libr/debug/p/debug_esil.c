@@ -126,13 +126,13 @@ static int __esil_stop(RDebug *dbg) {
 	return true;
 }
 
-static int __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static bool __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int sz;
 	/* do nothing */
 	ut8 *bytes = r_reg_get_bytes (dbg->reg, type, &sz);
 	memcpy (buf, bytes, R_MIN (size, sz));
 	free (bytes);
-	return size;
+	return true;
 }
 
 RDebugPlugin r_debug_plugin_esil = {

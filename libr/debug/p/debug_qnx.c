@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, defragger, madprogrammer */
+/* radare - LGPL - Copyright 2009-2022 - pancake, defragger, madprogrammer */
 
 #include <r_asm.h>
 #include <r_debug.h>
@@ -7,14 +7,13 @@
 /* HACK_FOR_PLUGIN_LINKAGE */
 R_API RDebugPid *__r_debug_pid_new(const char *path, int pid, char status, ut64 pc) {
 	RDebugPid *p = R_NEW0 (RDebugPid);
-	if (!p) {
-		return NULL;
+	if (R_LIKELY (p)) {
+		p->path = strdup (path);
+		p->pid = pid;
+		p->status = status;
+		p->runnable = true;
+		p->pc = pc;
 	}
-	p->path = strdup (path);
-	p->pid = pid;
-	p->status = status;
-	p->runnable = true;
-	p->pc = pc;
 	return p;
 }
 R_API void *__r_debug_pid_free(RDebugPid *pid) {
@@ -64,21 +63,20 @@ static RList *r_debug_qnx_pids(RDebug *dbg, int pid) {
 	return list;
 }
 
-static int r_debug_qnx_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static bool r_debug_qnx_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int copy_size;
 	int buflen = 0;
 	if (!desc) {
-		return -1;
+		return false;
 	}
 	int len = qnxr_read_registers (desc);
 	if (len <= 0) {
-		return -1;
+		return false;
 	}
 	// read the len of the current area
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	if (size < len) {
-		eprintf ("r_debug_qnx_reg_read: small buffer %d vs %d\n",
-			 (int)size, (int)len);
+		R_LOG_WARN ("qnx_reg_read got a small buffer %d vs %d", (int)size, (int)len);
 	}
 	copy_size = R_MIN (len, size);
 	buflen = R_MAX (len, buflen);
@@ -86,7 +84,7 @@ static int r_debug_qnx_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		if (buf_size < copy_size) {
 			ut8 *new_buf = realloc (reg_buf, copy_size);
 			if (!new_buf) {
-				return -1;
+				return false;
 			}
 			reg_buf = new_buf;
 			buflen = copy_size;
@@ -95,7 +93,7 @@ static int r_debug_qnx_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	} else {
 		reg_buf = calloc (buflen, 1);
 		if (!reg_buf) {
-			return -1;
+			return false;
 		}
 		buf_size = buflen;
 	}
@@ -103,22 +101,21 @@ static int r_debug_qnx_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	memcpy ((void *)(volatile void *) buf, desc->recv.data, copy_size);
 	memset ((void *)(volatile void *) reg_buf, 0, buflen);
 	memcpy ((void *)(volatile void *) reg_buf, desc->recv.data, copy_size);
-
-	return len;
+	return true; // len
 }
 
 static RList *r_debug_qnx_map_get(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_qnx_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+static bool r_debug_qnx_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	int buflen = 0;
 	int bits = dbg->anal->config->bits;
 	const char *pcname = r_reg_get_name (dbg->anal->reg, R_REG_NAME_PC);
 	RRegItem *reg = r_reg_get (dbg->anal->reg, pcname, 0);
 	if (!reg_buf) {
 		// we cannot write registers before we once read them
-		return -1;
+		return false;
 	}
 	if (reg) {
 		if (bits != reg->size) {
@@ -135,7 +132,7 @@ static int r_debug_qnx_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	if (buf_size < buflen) {
 		ut8 *new_buf = realloc (reg_buf, buflen * sizeof (ut8));
 		if (!new_buf) {
-			return -1;
+			return false;
 		}
 		reg_buf = new_buf;
 		memset (new_buf + buf_size, 0, buflen - buf_size);
@@ -148,7 +145,7 @@ static int r_debug_qnx_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 			break;
 		}
 		ut64 val = r_reg_get_value (dbg->reg, current);
-		int bytes = bits / 8;
+		const int bytes = bits / 8;
 		qnxr_write_reg (desc, current->name, (char *)&val, bytes);
 	}
 	return true;

@@ -425,11 +425,11 @@ char *xnu_reg_profile(RDebug *dbg) {
 //using getcurthread has some drawbacks. You lose the ability to select
 //the thread you want to write or read from. but how that feature
 //is not implemented yet i don't care so much
-int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+bool xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	bool ret;
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th) {
-		return 0;
+		return false;
 	}
 	switch (type) {
 	case R_REG_TYPE_DRX:
@@ -469,35 +469,36 @@ int xnu_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	return ret;
 }
 
-int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+bool xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th) {
-		return 0;
+		return false;
 	}
 	switch (type) {
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:
 	case R_REG_TYPE_GPR:
 		if (!xnu_thread_get_gpr (dbg, th)) {
-			return 0;
+			return false;
 		}
 		break;
 	case R_REG_TYPE_DRX:
 		if (!xnu_thread_get_drx (dbg, th)) {
-			return 0;
+			return false;
 		}
 		break;
 	default:
-		return 0;
+		return false;
 	}
 	if (th->state) {
 		int rsz = R_MIN (th->state_size, size);
 		if (rsz > 0) {
 			memcpy (buf, th->state, rsz);
-			return rsz;
+			// return rsz;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 RDebugMap *xnu_map_alloc(RDebug *dbg, ut64 addr, int size) {
