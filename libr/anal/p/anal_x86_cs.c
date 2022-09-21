@@ -108,8 +108,8 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 	}
 }
 
-static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
-	csh handle = cs_handle;
+static void opex(RAnal *anal, RStrBuf *buf, cs_insn *insn, int mode) {
+	csh handle = anal->cs_handle;
 
 	int i;
 	PJ *pj = pj_new ();
@@ -132,7 +132,7 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 		switch (op->type) {
 		case X86_OP_REG:
 			pj_ks (pj, "type", "reg");
-			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "value", r_str_get (cs_reg_name (handle, op->reg)));
 			break;
 		case X86_OP_IMM:
 			pj_ks (pj, "type", "imm");
@@ -141,13 +141,13 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 		case X86_OP_MEM:
 			pj_ks (pj, "type", "mem");
 			if (op->mem.segment != X86_REG_INVALID) {
-				pj_ks (pj, "segment", cs_reg_name (handle, op->mem.segment));
+				pj_ks (pj, "segment", r_str_get (cs_reg_name (handle, op->mem.segment)));
 			}
 			if (op->mem.base != X86_REG_INVALID) {
-				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
+				pj_ks (pj, "base", r_str_get (cs_reg_name (handle, op->mem.base)));
 			}
 			if (op->mem.index != X86_REG_INVALID) {
-				pj_ks (pj, "index", cs_reg_name (handle, op->mem.index));
+				pj_ks (pj, "index", r_str_get (cs_reg_name (handle, op->mem.index)));
 			}
 			pj_ki (pj, "scale", op->mem.scale);
 			pj_kN (pj, "disp", op->mem.disp);
@@ -173,10 +173,10 @@ static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
 	}
 	if (x->sib_index != X86_REG_INVALID) {
 		pj_ki (pj, "sib_scale", x->sib_scale);
-		pj_ks (pj, "sib_index", cs_reg_name (handle, x->sib_index));
+		pj_ks (pj, "sib_index", r_str_get (cs_reg_name (handle, x->sib_index)));
 	}
 	if (x->sib_base != X86_REG_INVALID) {
-		pj_ks (pj, "sib_base", cs_reg_name (handle, x->sib_base));
+		pj_ks (pj, "sib_base", r_str_get (cs_reg_name (handle, x->sib_base)));
 	}
 	pj_end (pj);
 
@@ -3607,7 +3607,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (handle == 0) {
 		return -1;
 	}
-	int mode = cs_omode;
+	int mode = a->cs_omode;
 
 	cs_insn *insn = NULL;
 	int n;
@@ -3683,7 +3683,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			anop_esil (a, op, addr, buf, len, &handle, insn);
 		}
 		if (mask & R_ANAL_OP_MASK_OPEX) {
-			opex (&op->opex, insn, mode);
+			opex (a, &op->opex, insn, mode);
 		}
 		if (mask & R_ANAL_OP_MASK_VAL) {
 			op_fillval (a, op, &handle, insn, mode);
