@@ -4,22 +4,27 @@
 #include <r_crypto.h>
 #include "crypto_serpent_algo.h"
 
-static R_TH_LOCAL struct serpent_state st = {{0}};
-
 static bool serpent_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
-	eprintf ("key_size: %d\n", keylen);
+	free (cj->data);
+	cj->data = R_NEW0 (struct serpent_state);
+	struct serpent_state *st = cj->data;
+	if (!st) {
+		return false;
+	}
+	R_LOG_INFO ("key_length: %d", keylen);
 	if ((keylen != 128 / 8) && (keylen != 192 / 8) && (keylen != 256 / 8)) {
 		return false;
 	}
-	st.key_size = keylen * 8;
-	eprintf ("key_size: %d\n", st.key_size);
-	memcpy (st.key, key, keylen);
+	st->key_size = keylen * 8;
+	R_LOG_INFO ("key_size: %d", st->key_size);
+	memcpy (st->key, key, keylen);
 	cj->dir = direction;
 	return true;
 }
 
 static int serpent_get_key_size(RCryptoJob *cj) {
-	return st.key_size;
+	struct serpent_state *st = cj->data;
+	return st? st->key_size: 0;
 }
 
 static bool serpent_check(const char *algo) {
@@ -61,17 +66,22 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 		ibuf[len / 4] = r_read_le32 (tail);
 	}
 
+	struct serpent_state *st = cj->data;
+	if (!st) {
+		R_LOG_ERROR ("No state");
+		return false;
+	}
 	if (cj->dir == 0) {
 		for (i = 0; i < blocks; i++) {
 			// delta in number of ut32
 			const int delta = (BLOCK_SIZE * i) / 4;
-			serpent_encrypt (&st, ibuf + delta, tmp + delta);
+			serpent_encrypt (st, ibuf + delta, tmp + delta);
 		}
 	} else if (cj->dir > 0) {
 		for (i = 0; i < blocks; i++) {
 			// delta in number of ut32
 			const int delta = (BLOCK_SIZE * i) / 4;
-			serpent_decrypt (&st, ibuf + delta, tmp + delta);
+			serpent_decrypt (st, ibuf + delta, tmp + delta);
 		}
 	}
 

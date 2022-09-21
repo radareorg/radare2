@@ -46,6 +46,9 @@ R_API RCrypto *r_crypto_new(void) {
 
 R_API void r_crypto_job_free(RCryptoJob *cj) {
 	if (cj) {
+		if (cj->h->fini) {
+			cj->h->fini (cj);
+		}
 		free (cj->output);
 		free (cj->key);
 		free (cj->iv);

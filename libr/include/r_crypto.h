@@ -84,8 +84,8 @@ typedef struct r_crypto_plugin_t {
 
 #if 0
 	bool (*init)(RCrypto *cry, struct r_crypto_plugin_t *cp);
-	bool (*fini)(RCrypto *cry, struct r_crypto_plugin_t *cp);
 #endif
+	bool (*fini)(RCryptoJob *cj);
 } RCryptoPlugin;
 
 typedef struct r_hash_plugin_t {

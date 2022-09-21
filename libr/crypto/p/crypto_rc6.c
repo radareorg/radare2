@@ -18,15 +18,10 @@ struct rc6_state {
 	int key_size;
 };
 
-static R_TH_LOCAL struct rc6_state st;
-static R_TH_LOCAL bool flag;
-
 static bool rc6_init(struct rc6_state *const state, const ut8 *key, int keylen, int direction) {
 	if (keylen != 128/8 && keylen != 192/8 && keylen != 256/8) {
 		return false;
 	}
-
-	flag = (direction != 0);
 
 	int u = w / 8;
 	int c = keylen / u;
@@ -156,17 +151,31 @@ static void rc6_decrypt(struct rc6_state *const state, const ut8 *inbuf, ut8 *ou
 	}
 }
 
+static struct rc6_state *getnewstate(RCryptoJob *cj) {
+	free (cj->data);
+	cj->data = R_NEW0 (struct rc6_state);
+	return (struct rc6_state*)cj->data;
+}
+
 static bool rc6_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
-	return rc6_init (&st, key, keylen, direction);
+	struct rc6_state *st = getnewstate (cj);
+	cj->flag = (direction != 0);
+	return rc6_init (st, key, keylen, direction);
 }
 
 static int rc6_get_key_size(RCryptoJob *cj) {
-	return st.key_size;
+	struct rc6_state *st = (struct rc6_state*)cj->data;
+	return st? st->key_size: 0;
 }
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	if (len % BLOCK_SIZE != 0) { //let user handle with with pad.
 		R_LOG_ERROR ("Input should be multiple of 128bit");
+		return false;
+	}
+	struct rc6_state *st = (struct rc6_state*)cj->data;
+	if (!st) {
+		R_LOG_ERROR ("No key set for rc6");
 		return false;
 	}
 
@@ -178,13 +187,13 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	}
 
 	int i;
-	if (flag) {
+	if (cj->flag) {
 		for (i = 0; i < blocks; i++) {
-			rc6_decrypt (&st, buf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
+			rc6_decrypt (st, buf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 		}
 	} else {
 		for (i = 0; i < blocks; i++) {
-			rc6_encrypt (&st, buf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
+			rc6_encrypt (st, buf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 		}
 	}
 

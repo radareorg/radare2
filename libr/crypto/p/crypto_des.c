@@ -14,8 +14,6 @@ struct des_state {
 	int i;
 };
 
-static R_TH_LOCAL struct des_state st = {{0}};
-
 static ut32 be32(const ut8 *buf4) {
 	ut32 val = buf4[0] << 8;
 	val |= buf4[1];
@@ -43,8 +41,8 @@ static int des_encrypt(struct des_state *st, const ut8 *input, ut8 *output) {
 	//first permutation
 	r_des_permute_block0 (&st->buflo, &st->bufhi);
 
- 	for (st->i = 0; st->i < 16; st->i++) {
-	   r_des_round (&st->buflo, &st->bufhi, &st->keylo[st->i], &st->keyhi[st->i]);
+	for (st->i = 0; st->i < 16; st->i++) {
+		r_des_round (&st->buflo, &st->bufhi, &st->keylo[st->i], &st->keyhi[st->i]);
 	}
  	//last permutation
 	r_des_permute_block1 (&st->bufhi, &st->buflo);
@@ -56,17 +54,15 @@ static int des_encrypt(struct des_state *st, const ut8 *input, ut8 *output) {
 	return true;
 }
 
-static int des_decrypt(struct des_state *st, const ut8 *input, ut8 *output) {
-	if (!st || !input || !output) {
-		return false;
-	}
+static bool des_decrypt(struct des_state *st, const ut8 *input, ut8 *output) {
+	r_return_val_if_fail (st && input && output, false);
 	st->buflo = be32 (input + 0);
 	st->bufhi = be32 (input + 4);
 	//first permutation
 	r_des_permute_block0 (&st->buflo, &st->bufhi);
 
 	for (st->i = 0; st->i < 16; st->i++) {
-	   r_des_round (&st->buflo, &st->bufhi, &st->keylo[15 - st->i], &st->keyhi[15 - st->i]);
+		r_des_round (&st->buflo, &st->bufhi, &st->keylo[15 - st->i], &st->keyhi[15 - st->i]);
 	}
 
 	//last permutation
@@ -86,22 +82,24 @@ static bool des_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, in
 	keylo = be32 (key);
 	keyhi = be32 (key + 4);
 
-	st.key_size = DES_KEY_SIZE;
-	st.rounds = 16;
+	struct des_state *st = cj->data;
+	st->key_size = DES_KEY_SIZE;
+	st->rounds = 16;
 	cj->dir = direction; // = direction == 0;
 	// key permutation to derive round keys
 	r_des_permute_key (&keylo, &keyhi);
 
 	for (i = 0; i < 16; i++) {
 		// filling round keys space
-		r_des_round_key (i, &st.keylo[i], &st.keyhi[i], &keylo, &keyhi);
+		r_des_round_key (i, &st->keylo[i], &st->keyhi[i], &keylo, &keyhi);
 	}
 
 	return true;
 }
 
 static int des_get_key_size(RCryptoJob *cj) {
-	return st.key_size;
+	struct des_state *st = cj->data;
+	return st? st->key_size: 0;
 }
 
 static bool des_check(const char *algo) {
@@ -110,6 +108,11 @@ static bool des_check(const char *algo) {
 
 static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	if (len <= 0) {
+		return false;
+	}
+	struct des_state *st = cj->data;
+	if (!st) {
+		R_LOG_ERROR ("No key set");
 		return false;
 	}
 
@@ -131,22 +134,22 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 
 	memset (ibuf + len, 0, (size - len));
 	memcpy (ibuf, buf, len);
-// got it from AES, should be changed??
-// Padding should start like 100000...
-//	if (diff) {
-//		ibuf[len] = 8; //0b1000;
-//	}
+	// got it from AES, should be changed??
+	// Padding should start like 100000...
+	// if (diff) {
+	//   ibuf[len] = 8; //0b1000;
+	//  }
 
 	int i;
 	if (cj->dir) {
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (DES_BLOCK_SIZE * i);
-			des_decrypt (&st, ibuf + next, obuf + next);
+			des_decrypt (st, ibuf + next, obuf + next);
 		}
 	} else {
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (DES_BLOCK_SIZE * i);
-			des_encrypt (&st, ibuf + next, obuf + next);
+			des_encrypt (st, ibuf + next, obuf + next);
 		}
 	}
 

@@ -198,16 +198,18 @@ static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, in
 
 ///////////////////////////////////////////////////////////
 
-static R_TH_LOCAL struct rc2_state state;
-
 static bool rc2_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+	free (cj->data);
+	cj->data = R_NEW0 (struct rc2_state);
+	struct rc2_state *state = cj->data;
 	cj->flag = direction;
-	state.key_size = 1024;
-	return rc2_expandKey (&state, key, keylen);
+	state->key_size = 1024;
+	return rc2_expandKey (state, key, keylen);
 }
 
 static int rc2_get_key_size(RCryptoJob *cj) {
-	return state.key_size;
+	struct rc2_state *state = cj->data;
+	return state? state->key_size: 0;
 }
 
 static bool rc2_check(const char *algo) {
@@ -219,13 +221,22 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	if (!obuf) {
 		return false;
 	}
+	struct rc2_state *state = cj->data;
+	if (!state) {
+		return false;
+	}
 	if (cj->flag == 0) {
-		rc2_crypt (&state, buf, obuf, len);
+		rc2_crypt (state, buf, obuf, len);
 	} else if (cj->flag == 1) {
-		rc2_dcrypt (&state, buf, obuf, len);
+		rc2_dcrypt (state, buf, obuf, len);
 	}
 	r_crypto_job_append (cj, obuf, len);
 	free (obuf);
+	return true;
+}
+
+static bool fini(RCryptoJob *cj) {
+	R_FREE (cj->data);
 	return true;
 }
 
@@ -235,7 +246,8 @@ RCryptoPlugin r_crypto_plugin_rc2 = {
 	.get_key_size = rc2_get_key_size,
 	.check = rc2_check,
 	.update = update,
-	.end = update
+	.end = update,
+	.fini = fini
 };
 
 #ifndef R2_PLUGIN_INCORE
