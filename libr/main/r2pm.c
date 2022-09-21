@@ -55,6 +55,7 @@ static const char *helpmsg = \
 
 typedef struct r_r2pm_t {
 	bool help;
+	bool envhelp;
 	bool clean;
 	bool force;
 	bool global;
@@ -638,6 +639,58 @@ static char *r2pm_search(const char *grep) {
 	return r_strbuf_drain (sb);
 }
 
+static void r2pm_envhelp(bool verbose) {
+	if (verbose) {
+		char *r2pm_plugdir = r_sys_getenv ("R2PM_PLUGDIR");
+		char *r2pm_bindir = r_sys_getenv ("R2PM_BINDIR");
+		char *r2pm_dbdir = r_sys_getenv ("R2PM_DBDIR");
+		char *r2pm_gitdir = r_sys_getenv ("R2PM_GITDIR");
+		char *r2pm_gitskip = strdup ("");
+		printf ("Environment:\n"\
+			" R2_LOG_LEVEL=2         # define log.level for r2pm\n"\
+			" SUDO=sudo              # path to the SUDO executable\n"\
+			" MAKE=make              # path to the GNU MAKE executable\n"\
+			" R2PM_PLUGDIR=%s\n"\
+			" R2PM_BINDIR=%s\n"\
+			" R2PM_OFFLINE=0\n"\
+			" R2PM_LEGACY=0\n"\
+			" R2PM_DBDIR=%s\n"\
+			" R2PM_GITDIR=%s\n"\
+			" R2PM_GITSKIP=%s\n",
+				r2pm_plugdir,
+				r2pm_bindir,
+				r2pm_dbdir,
+				r2pm_gitdir,
+				r2pm_gitskip
+		       );
+		free (r2pm_plugdir);
+		free (r2pm_bindir);
+		free (r2pm_dbdir);
+		free (r2pm_gitdir);
+		free (r2pm_gitskip);
+	} else {
+		printf ("R2_LOG_LEVEL\n"\
+			"R2PM_PLUGDIR\n"\
+			"R2PM_BINDIR\n"\
+			"R2PM_OFFLINE\n"\
+			"R2PM_LEGACY\n"\
+			"R2PM_DBDIR\n"\
+			"R2PM_GITDIR\n"\
+			"R2PM_GITSKIP\n");
+	}
+}
+
+static void r2pm_varprint(const char *name) {
+	if (R_STR_ISEMPTY (name)) {
+		r2pm_envhelp (false);
+	} else if (r_str_startswith (name, "R2PM_")) {
+		r2pm_setenv ();
+		char *v = r_sys_getenv (name);
+		printf ("%s\n", v);
+		free (v);
+	}
+}
+
 static int r_main_r2pm_c(int argc, const char **argv) {
 	bool havetoflush = false;
 	if (!r_cons_is_initialized ()) {
@@ -646,7 +699,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	}
 	R2Pm r2pm = {0};
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "cdiIhflgrsuU");
+	r_getopt_init (&opt, argc, argv, "cdiIhHflgrsuUv");
 	if (opt.ind < argc) {
 		// TODO: fully deprecate during the 5.9.x cycle
 		r2pm_actionword (&r2pm, argv[opt.ind]);
@@ -692,35 +745,30 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		case 'g':
 			r2pm.global = true;
 			break;
+		case 'H':
+			r2pm_varprint (argv[opt.ind]);
+			break;
 		case 'h':
-			r2pm.help = true;
+			if (r2pm.help) {
+				r2pm.envhelp = true;
+			} else {
+				r2pm.help = true;
+			}
+			break;
+		case 'v':
+			r2pm.version = true;
 			break;
 		}
 	}
+	if (r2pm.version) {
+		return r_main_version_print ("r2pm");
+	}
 	if (r2pm.help || argc == 1) {
 		r2pm_setenv ();
-		char *r2pm_plugdir = r_sys_getenv ("R2PM_PLUGDIR");
-		char *r2pm_bindir = r_sys_getenv ("R2PM_BINDIR");
-		char *r2pm_dbdir = r_sys_getenv ("R2PM_DBDIR");
-		char *r2pm_gitdir = r_sys_getenv ("R2PM_GITDIR");
-		char *r2pm_gitskip = strdup ("");
 		printf ("%s", helpmsg);
-		printf ("Environment:\n"\
-				" R2_LOG_LEVEL\n"\
-				" SUDO=sudo         use this tool as sudo\n"\
-				" R2PM_PLUGDIR=%s\n"\
-				" R2PM_BINDIR=%s\n"\
-				" R2PM_OFFLINE=0    disabled by default, avoid init/update calls if set to !=0\n"\
-				" R2PM_LEGACY=0     set to 1 to use the old r2pm shellscript\n"\
-				" R2PM_DBDIR=%s\n"\
-				" R2PM_GITDIR=%s\n"\
-				" R2PM_GITSKIP=%s\n",
-				r2pm_plugdir,
-				r2pm_bindir,
-				r2pm_dbdir,
-				r2pm_gitdir,
-				r2pm_gitskip
-		       );
+		if (r2pm.envhelp) {
+			r2pm_envhelp (true);
+		}
 		return 0;
 	}
 	if (r2pm.init) {
