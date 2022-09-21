@@ -524,6 +524,7 @@ R_API void r_cons_break_end(void) {
 }
 
 R_API void *r_cons_sleep_begin(void) {
+	r_th_lock_enter (lock);
 	if (!r_cons_instance) {
 		r_cons_thready ();
 	}
@@ -534,12 +535,15 @@ R_API void *r_cons_sleep_begin(void) {
 }
 
 R_API void r_cons_sleep_end(void *user) {
+	//r_lock_enter (lock);
+	// guard with a mutex
 	if (!r_cons_instance) {
 		r_cons_thready ();
 	}
 	if (I->cb_sleep_end) {
 		I->cb_sleep_end (I->user, user);
 	}
+	r_th_lock_leave (lock);
 }
 
 #if __WINDOWS__

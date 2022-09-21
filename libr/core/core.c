@@ -2697,18 +2697,22 @@ static bool r_core_anal_read_at(struct r_anal_t *anal, ut64 addr, ut8 *buf, int 
 }
 
 static void *r_core_sleep_begin(RCore *core) {
+	r_th_lock_enter (core->lock);
 	RCoreTask *task = r_core_task_self (&core->tasks);
 	if (task) {
 		r_core_task_sleep_begin (task);
 	}
+	r_th_lock_leave (core->lock);
 	return task;
 }
 
 static void r_core_sleep_end(RCore *core, void *user) {
+	r_th_lock_enter (core->lock);
 	RCoreTask *task = (RCoreTask *)user;
 	if (task) {
 		r_core_task_sleep_end (task);
 	}
+	r_th_lock_leave (core->lock);
 }
 
 static void __foreach(RCore *core, const char **cmds, int type) {
@@ -2990,6 +2994,7 @@ R_API bool r_core_init(RCore *core) {
 	core->ev = r_event_new (core);
 	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler, NULL);
 	core->max_cmd_depth = R_CONS_CMD_DEPTH + 1;
+	core->lock = r_th_lock_new (true);
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;

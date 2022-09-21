@@ -297,6 +297,7 @@ struct r_core_t {
 	RAnal *anal;
 	RAsm *rasm;
 	/* ^^ */
+	RThreadLock *lock;
 	RCoreTimes *times;
 	RParse *parser;
 	RPrint *print;
