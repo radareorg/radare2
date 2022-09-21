@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2022 - pancake */
 
 #include <r_arch.h>
+#include <r_util.h>
 
 #if 0
 static int null_arch(RArch *arch, RArchOp *op, ut64 addr, const ut8 *data, int len, RArchOpMask mask) {
@@ -12,12 +13,19 @@ static bool null_set_reg_profile(RArch* arch) {
 }
 #endif
 
+static int info (ut32 query) {
+	if (query == R_ARCH_INFO_BITS) {
+		return R_SYS_BITS_64 | R_SYS_BITS_32 | R_SYS_BITS_27 | R_SYS_BITS_16 | R_SYS_BITS_8;
+	}
+	return -1;
+}
+
 RArchPlugin r_arch_plugin_null = {
 	.name = "null",
 	.desc = "Fallback/Null archysis plugin",
 	.arch = "none",
 	.license = "LGPL3",
-//	.bits = 8|16|32|64,
+	.info = info,
 //	.op = &null_arch,
 //	.set_reg_profile = &null_set_reg_profile,
 };

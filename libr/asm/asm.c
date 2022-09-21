@@ -376,10 +376,6 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 					r_asm_set_cpu (a, NULL);
 				}
 				a->cur = h;
-#if 0
-				r_arch_use (a->config, h->arch);
-				r_arch_use (a->config, h->name);
-#endif
 				return true;
 			}
 		} else {
@@ -391,7 +387,6 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 					r_arch_config_set_cpu (a->config, arch);
 					// r_asm_set_cpu (a, arch);
 					// h->arch = name;
-					// r_arch_use (a->config, arch);
 #else
 					r_asm_set_cpu (a, arch);
 #endif

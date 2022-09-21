@@ -3,8 +3,6 @@
 #include <r_arch.h>
 #include <r_util.h>
 
-#if 1
-
 R_API bool r_arch_load_decoder(RArch *arch, const char *dname) {
 	r_return_val_if_fail (dname && arch && arch->plugins && arch->decoders, false);
 	RArchDecoder *decoder = (RArchDecoder *)ht_pp_find (arch->decoders, dname, NULL);
@@ -88,11 +86,7 @@ R_API bool r_arch_unload_decoder(RArch *arch, const char *dname) {
 	if (decoder->refctr) {
 		return true;
 	}
-	if (decoder->p->fini) {
-		decoder->p->fini (decoder->user);
-	}
 	ht_pp_delete (arch->decoders, decoder->p->name);
-	free (decoder);
 	if (arch->current == decoder) {
 		arch->current = NULL;
 		ht_pp_foreach (arch->decoders, (HtPPForeachCallback)_pick_any_decoder_as_current, arch);
@@ -127,5 +121,3 @@ R_API int r_arch_decode(RArch *arch, const char *dname, RArchOp *op, ut64 addr, 
 	}
 	return decoder->p->decode (arch, op, addr, data, len, mask);
 }
-
-#endif
