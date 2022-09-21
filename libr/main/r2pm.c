@@ -303,7 +303,13 @@ static int r2pm_update(void) {
 }
 
 static void r2pm_setenv(void) {
-	r_sys_setenv ("MAKE", "make");
+	char *gmake = r_file_path ("gmake");
+	if (gmake && *gmake == '/') {
+		r_sys_setenv ("MAKE", gmake);
+	} else {
+		free (gmake);
+		r_sys_setenv ("MAKE", "make");
+	}
 	char *r2_plugdir = r_str_home (R2_HOME_PLUGINS);
 	r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
 	free (r2_plugdir);
@@ -384,6 +390,7 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 		free (srcdir);
 		return 1;
 	}
+	R_LOG_DEBUG ("script (%s)", script);
 	char *s = r_str_newf ("cd '%s/%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
@@ -462,6 +469,13 @@ static int r2pm_clone(const char *pkg) {
 	} else {
 		char *url = r2pm_get (pkg, "\nR2PM_GIT ", TT_TEXTLINE);
 		if (url) {
+			char *dir = strchr (url, ' ');
+			if (dir) {
+				*dir++ = 0;
+			}
+			if (strcmp (dir, pkg)) {
+				R_LOG_WARN ("pkgname != clonedir");
+			}
 			git_clone (srcdir, url);
 			free (url);
 		} else {
