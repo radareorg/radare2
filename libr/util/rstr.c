@@ -25,7 +25,7 @@ R_API char *r_string_get(const RString *s, int *len) {
 	return strdup (s->str);
 }
 
-R_API R_WIP RString r_string_new(const char *is, int len) {
+R_API RString r_string_new(const char *is, int len) {
 	RString s = {0};
 	if (is) {
 		size_t sl = len < 0 ? strlen (is): len;

@@ -34,22 +34,24 @@ static int r_main_r2pm_sh(int argc, const char **argv) {
 static const char *helpmsg = \
 "Usage: r2pm [-flags] [pkgs...]\n"\
 "Commands:\n"\
+" -a [repository]   add or -delete external repository\n"\
 " -c ([git/dir])    clear source cache (R2PM_GITDIR)\n"\
 " -ci <pkgname>     clean + install\n"\
 " -cp               clean the user's home plugin directory\n"\
 " -d,doc [pkgname]  show documentation and source for given package\n"\
 " -f                force operation (install, uninstall, ..)\n"\
 " -gi <pkg>         global install (system-wide)\n"\
-" -h                show this message\n"\
-" -H variable       show value of given variable\n"\
-" -I                information about repository and installed packages\n"\
+" -h                display this help message\n"\
+" -H variable       show the value of given internal environment variable\n"\
 " -i <pkgname>      install/update package and its dependencies (see -c, -g)\n"\
-" -l                list installed pkgs\n"\
+" -I                information about repository and installed packages\n"\
+" -l                list installed packages\n"\
+" -q                be quiet\n"\
 " -r [cmd ...args]  run shell command with R2PM_BINDIR in PATH\n"\
 " -s [<keyword>]    search available packages in database matching a string\n"\
+" -u <pkgname>      r2pm -u baleful (See -f to force uninstall)\n"\
 " -uci <pkgname>    uninstall + clean + install\n"\
 " -ui <pkgname>     uninstall + install\n"\
-" -u <pkgname>      r2pm -u baleful (See -f to force uninstall)\n"\
 " -U                initialize/update database and upgrade all outdated packages\n"\
 " -v                show version\n";
 
@@ -60,11 +62,13 @@ typedef struct r_r2pm_t {
 	bool force;
 	bool global;
 	bool list;
+	bool add;
 	bool init;
 	bool run;
 	bool doc;
 	bool search;
 	bool version;
+	bool quiet;
 	bool info;
 	bool install;
 	bool uninstall;
@@ -100,6 +104,10 @@ static bool r2pm_actionword(R2Pm *r2pm, const char *action) {
 	return true;
 }
 
+static bool r2pm_add(R2Pm *r2pm, const char *repository) {
+	R_LOG_INFO ("r2pm.add is not implemented");
+	return false;
+}
 static char *r2pm_bindir(void) {
 	return r_str_home (".local/share/radare2/prefix/bin");
 }
@@ -515,7 +523,7 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool global)
 	int rc = 0;
 	char *r2v = r_sys_cmd_str ("radare2 -qv", NULL, NULL);
 	if (R_STR_ISEMPTY (r2v)) {
-		R_LOG_ERROR ("Cannot run r2 -qv");
+		R_LOG_ERROR ("Cannot run radare2 -qv");
 		free (r2v);
 		return -1;
 	}
@@ -712,7 +720,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	}
 	R2Pm r2pm = {0};
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "cdiIhHflgrsuUv");
+	r_getopt_init (&opt, argc, argv, "aqcdiIhHflgrsuUv");
 	if (opt.ind < argc) {
 		// TODO: fully deprecate during the 5.9.x cycle
 		r2pm_actionword (&r2pm, argv[opt.ind]);
@@ -724,6 +732,12 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	int i, c;
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
+		case 'a':
+			r2pm.add = true;
+			break;
+		case 'q':
+			r2pm.quiet = true;
+			break;
 		case 'c':
 			r2pm.clean = true;
 			break;
@@ -774,6 +788,10 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		}
 	}
 	if (r2pm.version) {
+		if (r2pm.quiet) {
+			printf ("%s\n", R2_VERSION);
+			return 0;
+		}
 		return r_main_version_print ("r2pm");
 	}
 	if (r2pm.help || argc == 1) {
@@ -807,6 +825,16 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		int res = r_sandbox_system (cmd, 1);
 		free (cmd);
 		return res;
+	}
+	if (r2pm.add) {
+		if (opt.ind == argc) {
+			printf ("https://github.com/radareorg/radare2-pm\n");
+		} else {
+			for (i = opt.ind; i < argc; i++) {
+				r2pm_add (&r2pm, argv[i]);
+			}
+		}
+		return 0;
 	}
 	RList *targets = r_list_newf (free);
 	for (i = opt.ind; i < argc; i++) {
