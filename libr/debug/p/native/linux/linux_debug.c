@@ -1096,7 +1096,7 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 			long ret = r_debug_ptrace (dbg, PTRACE_PEEKUSER, pid,
 					(void *)r_offsetof (struct user, u_debugreg[i]), 0);
-			if ((i+1) * sizeof (ret) > size) {
+			if ((i + 1) * sizeof (ret) > size) {
 				R_LOG_ERROR ("Buffer of %d is too small for ptrace.peekuser", size);
 				break;
 			}
@@ -1114,8 +1114,8 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	case R_REG_TYPE_FPU:
 	case R_REG_TYPE_MMX:
 	case R_REG_TYPE_XMM:
-#if __x86_64__ || __i386__
 		{
+#if __x86_64__ || __i386__
 		struct user_fpregs_struct fpregs;
 		if (type == R_REG_TYPE_FPU) {
 #if __x86_64__
@@ -1169,13 +1169,14 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #endif // !__ANDROID__
 #endif // __i386__
 		}
-		}
+		return size;
 #else
 		if (showfpu) {
 			print_fpu (NULL);
 		}
 	#warning getfpregs not implemented for this platform
 #endif
+		}
 		break;
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:

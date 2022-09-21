@@ -17,8 +17,8 @@
 #include "r_cons.h"
 
 static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
-static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
-static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size);
+static bool r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
+static bool r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size);
 struct r_debug_desc_plugin_t r_debug_desc_plugin_native;
 bool linux_generate_corefile(RDebug *dbg, RBuffer *dest);
 
@@ -690,7 +690,7 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
-static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static bool r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	if (size < 1) {
 		return false;
 	}
@@ -708,7 +708,7 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #endif
 }
 
-static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size) {
+static bool r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size) {
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #if __i386__ || __x86_64__
@@ -734,8 +734,9 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 #elif __sun
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid,
 			(void*)(size_t)buf, sizeof (R_DEBUG_REG_T));
-		if (sizeof (R_DEBUG_REG_T) < size)
+		if (sizeof (R_DEBUG_REG_T) < size) {
 			size = sizeof (R_DEBUG_REG_T);
+		}
 		return ret == 0;
 #else
 		return bsd_reg_write (dbg, type, buf, size);
