@@ -141,6 +141,7 @@ RUN
 NAME=rasm2 #1167 3
 FILE=-
 REQUIRE=gas linux x86
+BROKEN=1
 CMDS=!rasm2 -s att -a x86.as -b 64 "test %rbx, %rax" 
 EXPECT=<<EOF
 4885d8
