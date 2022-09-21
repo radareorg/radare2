@@ -48,5 +48,6 @@ R_API RArchConfig *r_arch_config_new(void) {
 	ac->syntax = R_ARCH_SYNTAX_INTEL;
 	r_ref_init (ac, &my_ac_free);
 	ac->big_endian = false;
-	return (RArchConfig *)r_ref (ac);
+	r_ref (ac);
+	return (RArchConfig *)ac;
 }

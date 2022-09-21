@@ -31,12 +31,14 @@ typedef struct {
 #define r_ref_count(x) (x)->R_REF_NAME.count
 
 static inline void *r_ref_(void *p, RRef *ref) {
-	r_th_lock_enter (ref->lock);
-	ref->count++;
-	r_th_lock_leave (ref->lock);
+	if (ref) {
+		r_th_lock_enter (ref->lock);
+		ref->count++;
+		r_th_lock_leave (ref->lock);
+	}
 	return p;
 }
-#define r_ref(x) r_ref_((x), &(x)->R_REF_NAME)
+#define r_ref(x) r_ref_((x), (x)?&(x)->R_REF_NAME: NULL)
 
 static inline void *r_unref_(void *p, RRef *ref) {
 	if (!p || !ref) {
@@ -51,7 +53,10 @@ static inline void *r_unref_(void *p, RRef *ref) {
 	return p;
 }
 #define r_unref(x) r_unref_(x, (x)?&(x)->R_REF_NAME: NULL)
-#define r_ref_set(x,y) do { if ((x) != (y) && (x) != NULL) { r_unref(x); } (x)=(y); (y)->ref.count++; } while(0)
+// #define r_ref_set(x,y) do { if ((x) != (y) && (x) != NULL) { r_unref(x); (x)=r_ref((y)); } while(0)
+// #define r_ref_set(x,y) do { void *a = (x); (x)=r_ref((y)); r_unref (a); } while(0)
+// #define r_ref_set(x,y) do { void *a = (x); (x)=r_ref((y)); } while(0)
+#define r_ref_set(x,y) do { void *a = r_ref((y)); r_unref(x); x=y; } while(0)
 
 #else
 typedef int RRef;
