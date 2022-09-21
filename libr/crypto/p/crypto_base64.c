@@ -52,6 +52,7 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 RCryptoPlugin r_crypto_plugin_base64 = {
 	.name = "base64",
    	.author = "rakholiyajenish.07",
+	.type = R_CRYPTO_TYPE_ENCODER,
 	.set_key = base64_set_key,
 	.get_key_size = base64_get_key_size,
 	.check = base64_check,

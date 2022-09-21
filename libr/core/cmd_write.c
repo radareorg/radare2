@@ -381,35 +381,7 @@ static int cmd_wo(void *data, const char *input) {
 				encrypt_or_decrypt_block (core, algo, key, direction, iv);
 			} else {
 				eprintf ("Usage: wo%c [algo] [key] [IV]\n", ((!direction)?'E':'D'));
-				eprintf ("Currently supported hashes:\n");
-				ut64 bits;
-				int i;
-				for (i = 0; ; i++) {
-					bits = ((ut64)1) << i;
-					const char *name = r_hash_name (bits);
-					if R_STR_ISEMPTY (name) {
-						break;
-					}
-					printf ("  %s\n", name);
-				}
-				eprintf ("Available Encoders/Decoders: \n");
-				for (i = 0; ; i++) {
-					bits = (1ULL) << i;
-					const char *name = r_crypto_codec_name ((const RCryptoSelector)bits);
-					if (R_STR_ISEMPTY (name)) {
-						break;
-					}
-					printf ("  %s\n", name);
-				}
-				eprintf ("Currently supported crypto algos:\n");
-				for (i = 0; ; i++) {
-					bits = (1ULL) << i;
-					const char *name = r_crypto_name ((const RCryptoSelector)bits);
-					if R_STR_ISEMPTY (name) {
-						break;
-					}
-					printf ("  %s\n", name);
-				}
+				r_crypto_list (core->crypto, r_cons_printf, 0);
 			}
 			free (args);
 		}
