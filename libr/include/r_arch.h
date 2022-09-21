@@ -44,7 +44,6 @@ typedef struct r_arch_config_t {
 	R_REF_TYPE;
 } RArchConfig;
 
-#if 1
 // XXX: this definition is plain wrong. use enum or empower bits
 #define R_ARCH_OP_TYPE_MASK 0x8000ffff
 #define R_ARCH_OP_HINT_MASK 0xf0000000
@@ -352,8 +351,6 @@ typedef struct r_arch_plugin_t {
 //	void (*esil_fini)(RAnalEsil *esil);
 } RArchPlugin;
 
-//R_API RArch *r_arch_new(void);
-//R_API void r_arch_free(RArch *arch);
 //dname is name of decoder to use, NULL if current
 R_API bool r_arch_load_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_use_decoder(RArch *arch, const char *dname);
@@ -364,16 +361,15 @@ R_API bool r_arch_set_reg_profile(RArch *arch, const char *dname, struct r_reg_t
 //R_API bool r_arch_esil_init(RArch *arch, const char *dname, RAnalEsil *esil);
 //R_API void r_arch_esil_fini(RArch *arch, const char *dname, RAnalEsil *esil);
 
-#endif
-
 // arch
-R_API RArchDecoder *r_arch_use(RArch *arch, RArchConfig *config, const char *name);
+R_API RArch *r_arch_new(void);
+R_API bool r_arch_use(RArch *arch, RArchConfig *config);
+R_API bool r_arch_add(RArch *arch, RArchPlugin *ap);
+R_API bool r_arch_del(RArch *arch, const char *name);
+R_API void r_arch_free(RArch *arch);
 
-R_API void r_arch_config_use(RArchConfig *config, R_NULLABLE const char *arch);
-R_API bool r_arch_add(RArch *a, RArchPlugin *foo);
-R_API int r_arch_del(RArch *a, const char *name);
-R_API void r_arch_free(RArch *a);
 // aconfig
+R_API void r_arch_config_use(RArchConfig *config, R_NULLABLE const char *arch);
 R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu);
 R_API void r_arch_config_set_bits(RArchConfig *config, int bits);
 R_API RArchConfig *r_arch_config_new(void);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2022 - pancake */
+/* radare - LGPL - Copyright 2022 - pancake, condret */
 
 #include <r_arch.h>
 #include <config.h>
@@ -8,8 +8,16 @@ static const RArchPlugin * const arch_static_plugins[] = { R_ARCH_STATIC_PLUGINS
 static void plugin_free (void *p) {
 }
 
+static void _decoder_free_cb (HtPPKv *kv) {
+	free (kv->key);
+	RArchDecoder *decoder = (RArchDecoder *)kv->value;
+	if (decoder->p->fini) {
+		decoder->p->fini (decoder->user);
+	}
+	free (decoder);
+}
+
 R_API RArch *r_arch_new(void) {
-	int i;
 	RArch *a = R_NEW0 (RArch);
 	if (!a) {
 		return NULL;
@@ -19,53 +27,103 @@ R_API RArch *r_arch_new(void) {
 		free (a);
 		return NULL;
 	}
-	for (i = 0; arch_static_plugins[i]; i++) {
+	a->decoders = ht_pp_new (NULL, _decoder_free_cb, NULL);
+	if (!a->decoders) {
+		r_list_free (a->plugins);
+		free (a);
+		return NULL;
+	}
+	ut32 i = 0;
+	while (arch_static_plugins[i++]) {
 		r_arch_add (a, (RArchPlugin*)arch_static_plugins[i]);
 	}
-	return NULL;
+	return a;
 }
 
-R_API int r_arch_del(RArch *a, const char *name) {
-	/* TODO: r_arch_del not implemented */
-	return false;
-}
-
-R_API bool r_arch_add(RArch *a, RArchPlugin *foo) {
-	if (!foo->name) {
+R_API bool r_arch_use(RArch *a, RArchConfig *config) {
+	r_return_val_if_fail (a && config && config->arch, false);
+	ut32 bits_bits;
+	switch (config->bits) {
+	case 64:
+		bits_bits = R_SYS_BITS_64;
+		break;
+	case 32:
+		bits_bits = R_SYS_BITS_32;
+		break;
+	case 27:
+		bits_bits = R_SYS_BITS_27;
+		break;
+	case 16:
+		bits_bits = R_SYS_BITS_16;
+		break;
+	case 8:
+		bits_bits = R_SYS_BITS_8;
+		break;
+	default:
 		return false;
 	}
-	// TODO: do more checks
-	r_list_append (a->plugins, foo);
+	char *dname = NULL;
+	RArchPlugin *p = NULL;
+	RListIter *iter;
+	r_list_foreach (a->plugins, iter, p) {
+		if (!strcmp (p->arch, config->arch)) {
+			//TODO: add more checks here
+			const int info_bits = p->info (R_ARCH_INFO_BITS);
+			if (info_bits == -1) {
+				continue;
+			}
+			if (info_bits & bits_bits) {
+				dname = p->name;
+			}
+		}
+	}
+	if (!dname) {
+		return false;
+	}
+	r_ref (config);
+	if (a->cfg) {
+		r_unref (a->cfg);
+	}
+	r_arch_use_decoder (a, dname);	//use load here?
 	return true;
 }
 
-R_API void r_arch_free(RArch *a) {
-	free (a);
+R_API bool r_arch_add(RArch *a, RArchPlugin *ap) {
+	r_return_val_if_fail (a && ap->name && ap->arch && ap->info, false);
+	return !!r_list_append (a->plugins, ap);
 }
 
-R_API RArchDecoder *r_arch_use(RArch *a, RArchConfig *ac, const char *name) {
+static bool _pick_any_decoder_as_current (void *user, const char *dname, const void *dec) {
+	RArch *arch = (RArch *)user;
+	arch->current = (RArchDecoder *)dec;
+	return false;
+}
+
+R_API bool r_arch_del(RArch *a, const char *name) {
+	r_return_val_if_fail (a && a->plugins && name, false);
+	if (a->current && !strcmp (a->current->p->name, name)) {
+		a->current = NULL;
+	}
+	if (a->decoders) {
+		ht_pp_delete (a->decoders, name);
+	}
 	RListIter *iter;
-	RArchPlugin *ap = NULL;
-	RArchPlugin *p = NULL;
+	RArchPlugin *p;
 	r_list_foreach (a->plugins, iter, p) {
 		if (!strcmp (name, p->name)) {
-			ap = p;
-			break;
+			r_list_delete (a->plugins, iter);
+			if (!a->current) {
+				ht_pp_foreach (a->decoders, (HtPPForeachCallback)_pick_any_decoder_as_current, a);
+			}
+			return true;
 		}
 	}
-	if (ap) {
-		RArchDecoder *ad = R_NEW0 (RArchDecoder);
-		ad->data = ap->init ((void *)a, ac);
-		ad->p = ap;
-		ad->ac = ac; // XXX copy instead of reference?
-		return ad;
-	}
-	return NULL;
+	return false;
 }
 
-#if 0
-R_API RArchOp *r_arch_decode(RArchDecoder *ad, const ut8 *buf, size_t len) {
-	ad->p->decode (ad, buf, len);
-	return NULL;
+R_API void r_arch_free(RArch *a) {
+	r_return_if_fail (a);
+	ht_pp_free (a->decoders);
+	r_list_free (a->plugins);
+	free (a);
 }
-#endif
