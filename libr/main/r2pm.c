@@ -37,7 +37,7 @@ static const char *helpmsg = \
 " -c ([git/dir])    clear source cache (R2PM_GITDIR)\n"\
 " -ci <pkgname>     clean + install\n"\
 " -cp               clean the user's home plugin directory\n"\
-" -d,doc [pkgname]  show documentation for given package\n"\
+" -d,doc [pkgname]  show documentation and source for given package\n"\
 " -f                force operation (install, uninstall, ..)\n"\
 " -gi <pkg>         global install (system-wide)\n"\
 " -h                show this message\n"\
@@ -410,8 +410,20 @@ static int r2pm_doc_pkg(const char *pkg) {
 		free (docstr);
 		return 0;
 	}
-	R_LOG_ERROR ("Cannot find documentation for '%s'", pkg);
-	return 1;
+	// R_LOG_ERROR ("Cannot find documentation for '%s'", pkg);
+	char *dbdir = r2pm_dbdir ();
+	char *pkgfile = r_str_newf ("%s/%s", dbdir, pkg);
+	int rc = 0;
+	char *script = r_file_slurp (pkgfile, NULL);
+	if (script) {
+		printf ("%s\n", script);
+		free (script);
+	} else {
+		rc = 1;
+	}
+	free (pkgfile);
+	free (dbdir);
+	return rc;
 }
 
 static int r2pm_clean_pkg(const char *pkg) {

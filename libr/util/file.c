@@ -384,6 +384,7 @@ R_API char *r_stdin_slurp(int *sz) {
 #endif
 }
 
+// returns null terminated buffer with contents of the file
 R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 	r_return_val_if_fail (str, NULL);
 	if (usz) {
@@ -448,7 +449,7 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 		sz = UT16_MAX;
 	}
 	rewind (fd);
-	char *ret = (char *)calloc (sz + 1, 1);
+	char *ret = (char *)malloc (sz + 1);
 	if (!ret) {
 		fclose (fd);
 		return NULL;
