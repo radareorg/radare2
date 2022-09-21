@@ -1557,7 +1557,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			td->core = r;
 			th_ana = r_th_new (th_analysis, td, false);
 			r_th_start (th_ana, false);
-			R_LOG_INFO ("TODO: run analysis in background\n");
+			R_LOG_INFO ("TODO: run analysis in background");
 		} else {
 			perform_analysis (r, do_analysis);
 		}
