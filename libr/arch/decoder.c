@@ -3,7 +3,7 @@
 #include <r_arch.h>
 #include <r_util.h>
 
-#if 0
+#if 1
 
 R_API bool r_arch_load_decoder(RArch *arch, const char *dname) {
 	r_return_val_if_fail (dname && arch && arch->plugins && arch->decoders, false);
@@ -95,7 +95,7 @@ R_API bool r_arch_unload_decoder(RArch *arch, const char *dname) {
 	free (decoder);
 	if (arch->current == decoder) {
 		arch->current = NULL;
-		ht_pp_foreach (arch->decoders, _pick_any_decoder_as_current, arch);
+		ht_pp_foreach (arch->decoders, (HtPPForeachCallback)_pick_any_decoder_as_current, arch);
 	}
 	return true;
 }

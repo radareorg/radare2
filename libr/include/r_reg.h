@@ -1,6 +1,7 @@
 #ifndef R2_REG_H
 #define R2_REG_H
 
+struct r_arch_config_t;
 #include <r_types.h>
 #include <r_arch.h>
 #include <r_list.h>
@@ -131,7 +132,7 @@ typedef struct r_reg_t {
 	int size;
 	int bits_default;
 	ut64 hasbits;
-	RArchConfig *config;
+	struct r_arch_config_t *config;
 } RReg;
 
 R_API bool r_reg_hasbits_check(RReg *reg, int size);
