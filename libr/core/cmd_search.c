@@ -176,7 +176,7 @@ static const char *help_msg_slash_a[] = {
 
 static const char *help_msg_slash_c[] = {
 	"Usage: /c", "", "Search for crypto materials",
-	"/ca", "[?] [algo]", "search for keys expanded in memory",
+	"/ca", "[?] [algo]", "search for keys expanded in memory (algo can be 'aes' or 'sm4')",
 	"/cc", "[algo] [digest]", "find collisions (bruteforce block length values until given checksum is found)",
 	"/cd", "", "search for ASN1/DER certificates",
 	"/cg", "", "search for GPG/PGP keys and signatures (Plaintext and binary form)",
@@ -3836,10 +3836,7 @@ reread:
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || *(space - 1) == '?') {
-					eprintf ("Usage: /ca [algo]\n");
-					eprintf ("Currently supported block ciphers:\n");
-					eprintf ("  aes\n");
-					eprintf ("  sm4\n");
+					r_core_cmd_help_match (core, help_msg_slash_c, "/ca", true);
 					goto beach;
 				} else {
 					kw = r_search_keyword_new_hexmask ("00", NULL);
