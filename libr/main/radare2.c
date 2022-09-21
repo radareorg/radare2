@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #define USE_THREADS 1
-#define ALLOW_THREADED 0
+#define ALLOW_THREADED 1
 #define UNCOLORIZE_NONTTY 0
 #ifdef _MSC_VER
 #ifndef WIN32_LEAN_AND_MEAN
@@ -402,6 +402,66 @@ static void set_color_default(RCore *r) {
 	}
 }
 
+
+typedef struct {
+	char *filepath;
+	ut64 baddr;
+	RCore *core;
+	int do_analysis;
+} ThreadData;
+
+static void perform_analysis(RCore *r, int do_analysis) {
+	switch (do_analysis) {
+	case 1: r_core_cmd0 (r, "aa"); break;
+	case 2: r_core_cmd0 (r, "aaa"); break;
+	case 3: r_core_cmd0 (r, "aaaa"); break;
+	default: r_core_cmd0 (r, "aaaaa"); break;
+	}
+	r_cons_flush ();
+}
+
+static RThreadFunctionRet th_analysis(RThread *th) {
+	R_LOG_INFO ("loading binary information in background");
+	r_cons_thready ();
+	r_cons_new ();
+	ThreadData *td = (ThreadData*)th->user;
+	perform_analysis (td->core, td->do_analysis);
+	R_FREE (th->user);
+	R_LOG_INFO ("bin.load done");
+	return false;
+}
+
+static RThreadFunctionRet th_binload(RThread *th) {
+	R_LOG_INFO ("loading binary information in background");
+	r_cons_thready ();
+	r_cons_new ();
+	ThreadData *td = (ThreadData*)th->user;
+	RCore *r = td->core;
+	const char *filepath = td->filepath;
+	const ut64 baddr = UT64_MAX;
+	(void)r_core_bin_load (r, filepath, baddr);
+	// check if bin info is loaded and complain if -B was used
+	RBinFile *bi = r_bin_cur (r->bin);
+	bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
+	if (!haveBinInfo && baddr != UT64_MAX) {
+		R_LOG_WARN ("Don't use -B on unknown files. Consider using -m");
+	}
+	free (td->filepath);
+	R_FREE (th->user);
+	R_LOG_INFO ("bin.load done");
+	return false;
+}
+
+static void binload(RCore *r, const char *filepath, ut64 baddr) {
+	(void)r_core_bin_load (r, filepath, baddr);
+	// check if bin info is loaded and complain if -B was used
+	RBinFile *bi = r_bin_cur (r->bin);
+	bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
+	if (!haveBinInfo && baddr != UT64_MAX) {
+		R_LOG_WARN ("Don't use -B on unknown files. Consider using -m");
+	}
+}
+
 R_API int r_main_radare2(int argc, const char **argv) {
 	RCore *r;
 	bool forcequit = false;
@@ -437,6 +497,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	bool quietLeak = false;
 	bool is_gdb = false;
 	const char * s_seek = NULL;
+	RThread *th_bin = NULL;
+	RThread *th_ana = NULL;
 	// bool compute_hashes = true;
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
@@ -528,6 +590,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	bool show_version = false;
 	bool show_versions = false;
 	bool json = false;
+	bool threaded = false;
 	bool load_l = true;
 	char *debugbackend = strdup ("native");
 	const char *project_name = NULL;
@@ -1265,12 +1328,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 							/* Load rbin info from r2 dbg:// or r2 /bin/ls */
 							/* the baddr should be set manually here */
 							if (filepath) {
-								(void)r_core_bin_load (r, filepath, baddr);
-								// check if bin info is loaded and complain if -B was used
-								RBinFile *bi = r_bin_cur (r->bin);
-								bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
-								if (!haveBinInfo && baddr != UT64_MAX) {
-									R_LOG_WARN ("Don't use -B on unknown files. Consider using -m");
+								if (threaded) {
+									ThreadData *td = R_NEW0 (ThreadData);
+									td->filepath = strdup (filepath);
+									td->baddr = baddr;
+									td->core = r;
+									th_bin = r_th_new (th_binload, td, false);
+									r_th_start (th_bin, false);
+								} else {
+									binload (r, filepath, baddr);
 								}
 							}
 						} else {
@@ -1478,13 +1544,21 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		free (s);
 	}
 	if (do_analysis > 0) {
-		switch (do_analysis) {
-		case 1: r_core_cmd0 (r, "aa"); break;
-		case 2: r_core_cmd0 (r, "aaa"); break;
-		case 3: r_core_cmd0 (r, "aaaa"); break;
-		default: r_core_cmd0 (r, "aaaaa"); break;
+		if (threaded) {
+			if (th_bin) {
+				r_th_wait (th_bin);
+				r_th_free (th_bin);
+				th_bin = NULL;
+			}
+			ThreadData *td = R_NEW0 (ThreadData);
+			td->do_analysis = do_analysis;
+			td->core = r;
+			R_LOG_INFO ("Running analysis level %d in background", do_analysis);
+			th_ana = r_th_new (th_analysis, td, false);
+			r_th_start (th_ana, false);
+		} else {
+			perform_analysis (r, do_analysis);
 		}
-		r_cons_flush ();
 	}
 #if UNCOLORIZE_NONTTY
 #if __UNIX__
@@ -1636,13 +1710,20 @@ beach:
 		exit (r->rc);
 		return ret;
 	}
+	if (th_bin) {
+		r_th_wait (th_bin);
+		r_th_free (th_bin);
+	}
+	if (th_ana) {
+		r_th_wait (th_ana);
+		r_th_free (th_ana);
+	}
 
 	r_core_task_sync_end (&r->tasks);
 
 	// not really needed, cause r_core_fini will close the file
-	// and this fh may be come stale during the command
-	// execution.
-	//r_core_file_close (r, fh);
+	// and this fh may be come stale during the command execution.
+	// r_core_file_close (r, fh);
 	free (envprofile);
 	free (debugbackend);
 	r_core_free (r);
