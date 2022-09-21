@@ -132,7 +132,7 @@ static void opex(RAnal *anal, RStrBuf *buf, cs_insn *insn, int mode) {
 		switch (op->type) {
 		case X86_OP_REG:
 			pj_ks (pj, "type", "reg");
-			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "value", r_str_get (cs_reg_name (handle, op->reg)));
 			break;
 		case X86_OP_IMM:
 			pj_ks (pj, "type", "imm");
@@ -141,13 +141,13 @@ static void opex(RAnal *anal, RStrBuf *buf, cs_insn *insn, int mode) {
 		case X86_OP_MEM:
 			pj_ks (pj, "type", "mem");
 			if (op->mem.segment != X86_REG_INVALID) {
-				pj_ks (pj, "segment", cs_reg_name (handle, op->mem.segment));
+				pj_ks (pj, "segment", r_str_get (cs_reg_name (handle, op->mem.segment)));
 			}
 			if (op->mem.base != X86_REG_INVALID) {
-				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
+				pj_ks (pj, "base", r_str_get (cs_reg_name (handle, op->mem.base)));
 			}
 			if (op->mem.index != X86_REG_INVALID) {
-				pj_ks (pj, "index", cs_reg_name (handle, op->mem.index));
+				pj_ks (pj, "index", r_str_get (cs_reg_name (handle, op->mem.index)));
 			}
 			pj_ki (pj, "scale", op->mem.scale);
 			pj_kN (pj, "disp", op->mem.disp);
@@ -173,10 +173,10 @@ static void opex(RAnal *anal, RStrBuf *buf, cs_insn *insn, int mode) {
 	}
 	if (x->sib_index != X86_REG_INVALID) {
 		pj_ki (pj, "sib_scale", x->sib_scale);
-		pj_ks (pj, "sib_index", cs_reg_name (handle, x->sib_index));
+		pj_ks (pj, "sib_index", r_str_get (cs_reg_name (handle, x->sib_index)));
 	}
 	if (x->sib_base != X86_REG_INVALID) {
-		pj_ks (pj, "sib_base", cs_reg_name (handle, x->sib_base));
+		pj_ks (pj, "sib_base", r_str_get (cs_reg_name (handle, x->sib_base)));
 	}
 	pj_end (pj);
 
