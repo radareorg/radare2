@@ -2421,7 +2421,6 @@ static void arm32mathaddsub(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
 	int i;
 	const char *postfix = NULL;
-	// char str[32][32];
 	RStringShort str[32] = {{0}};
 	int msr_flags;
 	int pcdelta = (thumb? 4: 8);
@@ -4432,10 +4431,6 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 	}
 }
 
-static R_TH_LOCAL csh cs_handle = 0;
-static R_TH_LOCAL int omode = -1;
-static R_TH_LOCAL int obits = 32;
-
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	cs_insn *insn = NULL;
 	int mode = (a->config->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
@@ -4453,30 +4448,30 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		strstr (a->config->features, "v8")) {
 		mode |= CS_MODE_V8;
 	}
-	if (mode != omode || a->config->bits != obits) {
-		if (cs_handle != 0) {
-			cs_close (&cs_handle);
-			cs_handle = 0;
+	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
+		if (a->cs_handle != 0) {
+			cs_close (&a->cs_handle);
+			a->cs_handle = 0;
 		}
-		omode = mode;
-		obits = a->config->bits;
+		a->cs_omode = mode;
+		a->cs_obits = a->config->bits;
 	}
 	op->size = (a->config->bits == 16)? 2: 4;
 	op->addr = addr;
-	if (cs_handle == 0) {
+	if (a->cs_handle == 0) {
 		ret = (a->config->bits == 64)?
-			cs_open (CS_ARCH_ARM64, mode, &cs_handle):
-			cs_open (CS_ARCH_ARM, mode, &cs_handle);
-		cs_option (cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
+			cs_open (CS_ARCH_ARM64, mode, &a->cs_handle):
+			cs_open (CS_ARCH_ARM, mode, &a->cs_handle);
+		cs_option (a->cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 		if (ret != CS_ERR_OK) {
 			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_ARM%s, %x, ...): %s",
 				(a->config->bits == 64) ? "64" : "", mode, cs_strerror (ret));
-			cs_handle = 0;
+			a->cs_handle = 0;
 			return -1;
 		}
 	}
 
-	n = cs_disasm (cs_handle, (ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (a->cs_handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n > 0 && !(insn->mnemonic[0] == 'h' && insn->mnemonic[1] == 'i' &&
 		insn->mnemonic[2] == 'n' && insn->mnemonic[3] == 't')) {
 		if (mask & R_ANAL_OP_MASK_DISASM) {
@@ -4491,25 +4486,25 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->size = insn->size;
 		op->id = insn->id;
 		if (a->config->bits == 64) {
-			anop64 (cs_handle, op, insn);
+			anop64 (a->cs_handle, op, insn);
 			if (mask & R_ANAL_OP_MASK_OPEX) {
-				opex64 (&op->opex, cs_handle, insn);
+				opex64 (&op->opex, a->cs_handle, insn);
 			}
 			if (mask & R_ANAL_OP_MASK_ESIL) {
-				analop64_esil (a, op, addr, buf, len, &cs_handle, insn);
+				analop64_esil (a, op, addr, buf, len, &a->cs_handle, insn);
 			}
 		} else {
-			anop32 (a, cs_handle, op, insn, thumb, (ut8*)buf, len);
+			anop32 (a, a->cs_handle, op, insn, thumb, (ut8*)buf, len);
 			if (mask & R_ANAL_OP_MASK_OPEX) {
-				opex (&op->opex, cs_handle, insn);
+				opex (&op->opex, a->cs_handle, insn);
 			}
 			if (mask & R_ANAL_OP_MASK_ESIL) {
-				analop_esil (a, op, addr, buf, len, &cs_handle, insn, thumb);
+				analop_esil (a, op, addr, buf, len, &a->cs_handle, insn, thumb);
 			}
 		}
 		set_opdir (op);
 		if (mask & R_ANAL_OP_MASK_VAL) {
-			op_fillval (a, op, cs_handle, insn, a->config->bits);
+			op_fillval (a, op, a->cs_handle, insn, a->config->bits);
 		}
 		cs_free (insn, n);
 	} else {
@@ -4552,30 +4547,30 @@ static char *arm_mnemonics(RAnal *a, int id, bool json) {
 		strstr (a->config->features, "v8")) {
 		mode |= CS_MODE_V8;
 	}
-	if (mode != omode || a->config->bits != obits) {
-		if (cs_handle != 0) {
-			cs_close (&cs_handle);
-			cs_handle = 0;
+	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
+		if (a->cs_handle != 0) {
+			cs_close (&a->cs_handle);
+			a->cs_handle = 0;
 		}
-		omode = mode;
-		obits = a->config->bits;
+		a->cs_omode = mode;
+		a->cs_obits = a->config->bits;
 	}
-	if (cs_handle == 0) {
+	if (a->cs_handle == 0) {
 		int ret = (a->config->bits == 64)?
-			cs_open (CS_ARCH_ARM64, mode, &cs_handle):
-			cs_open (CS_ARCH_ARM, mode, &cs_handle);
-		cs_option (cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
+			cs_open (CS_ARCH_ARM64, mode, &a->cs_handle):
+			cs_open (CS_ARCH_ARM, mode, &a->cs_handle);
+		cs_option (a->cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 		if (ret != CS_ERR_OK) {
 			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_ARM%s, %x, ...): %s",
 				(a->config->bits == 64) ? "64" : "", mode, cs_strerror (ret));
-			cs_handle = 0;
+			a->cs_handle = 0;
 			return NULL;
 		}
 	}
 
 	PJ *pj = NULL;
 	if (id != -1) {
-		const char *name = cs_insn_name (cs_handle, id);
+		const char *name = cs_insn_name (a->cs_handle, id);
 		if (name) {
 			if (json) {
 				pj = pj_new ();
@@ -4599,7 +4594,7 @@ static char *arm_mnemonics(RAnal *a, int id, bool json) {
 	const int ins_ending = a->config->bits == 64 ? ARM64_INS_ENDING : ARM_INS_ENDING;
 	int i = 1;
 	for (; i < ins_ending; i++) {
-		const char *op = cs_insn_name (cs_handle, i);
+		const char *op = cs_insn_name (a->cs_handle, i);
 		if (!op) {
 			continue;
 		}

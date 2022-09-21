@@ -108,8 +108,8 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 	}
 }
 
-static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
-	csh handle = cs_handle;
+static void opex(RAnal *anal, RStrBuf *buf, cs_insn *insn, int mode) {
+	csh handle = anal->cs_handle;
 
 	int i;
 	PJ *pj = pj_new ();
@@ -3607,7 +3607,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (handle == 0) {
 		return -1;
 	}
-	int mode = cs_omode;
+	int mode = a->cs_omode;
 
 	cs_insn *insn = NULL;
 	int n;
@@ -3683,7 +3683,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			anop_esil (a, op, addr, buf, len, &handle, insn);
 		}
 		if (mask & R_ANAL_OP_MASK_OPEX) {
-			opex (&op->opex, insn, mode);
+			opex (a, &op->opex, insn, mode);
 		}
 		if (mask & R_ANAL_OP_MASK_VAL) {
 			op_fillval (a, op, &handle, insn, mode);

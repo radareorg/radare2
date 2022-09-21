@@ -14,19 +14,16 @@
 #define CSINC_ARCH CSINC_ARCH_(CSINC)
 #define CSINC_ARCH_(y) TOKEN_PASTE(CS_ARCH_, y)
 
-static R_TH_LOCAL int cs_obits = 32;
-static R_TH_LOCAL int cs_omode = 0;
-static R_TH_LOCAL csh cs_handle = 0;
-
 static csh init_capstone (RAnal *a) {
+	csh cs_handle = a->cs_handle;
 	int mode = (CSINC_MODE);
-	if (mode != cs_omode || a->config->bits != cs_obits) {
+	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
 		if (cs_handle != 0) {
 			cs_close (&cs_handle);
 			cs_handle = 0; // unnecessary
 		}
-		cs_omode = mode;
-		cs_obits = a->config->bits;
+		a->cs_omode = mode;
+		a->cs_obits = a->config->bits;
 	}
 	if (cs_handle == 0) {
 		int ret = cs_open (CSINC_ARCH, mode, &cs_handle);
