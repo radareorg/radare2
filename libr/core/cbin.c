@@ -4744,7 +4744,9 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	R_RETURN_VAL_IF_FAIL (core, false);
 	const char *name = (filter && filter->name)? filter->name : NULL;
 	bool ret = true;
-	ut64 at = UT64_MAX, loadaddr = r_bin_get_laddr (core->bin);
+	const char *name = NULL;
+	ut64 at = UT64_MAX;
+	ut64 loadaddr = r_bin_get_laddr (core->bin);
 	if (filter && filter->offset) {
 		at = filter->offset;
 	}
