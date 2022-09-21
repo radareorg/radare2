@@ -423,9 +423,9 @@ static void perform_analysis(RCore *r, int do_analysis) {
 static RThreadFunctionRet th_analysis(RThread *th) {
 	R_LOG_INFO ("loading binary information in background");
 	r_cons_thready ();
+	r_cons_new ();
 	ThreadData *td = (ThreadData*)th->user;
 	perform_analysis (td->core, td->do_analysis);
-
 	R_FREE (th->user);
 	R_LOG_INFO ("bin.load done");
 	return false;
@@ -434,6 +434,7 @@ static RThreadFunctionRet th_analysis(RThread *th) {
 static RThreadFunctionRet th_binload(RThread *th) {
 	R_LOG_INFO ("loading binary information in background");
 	r_cons_thready ();
+	r_cons_new ();
 	ThreadData *td = (ThreadData*)th->user;
 	RCore *r = td->core;
 	const char *filepath = td->filepath;
@@ -1710,6 +1711,14 @@ beach:
 	if (quietLeak) {
 		exit (r->rc);
 		return ret;
+	}
+	if (th_bin) {
+		r_th_wait (th_bin);
+		r_th_free (th_bin);
+	}
+	if (th_ana) {
+		r_th_wait (th_ana);
+		r_th_free (th_ana);
 	}
 
 	r_core_task_sync_end (&r->tasks);
