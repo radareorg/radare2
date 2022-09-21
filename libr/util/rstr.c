@@ -4,7 +4,7 @@
 #include <r_util.h>
 
 // #define r_string_get(x) ((char *)((x).ptr?(x).ptr:(char *)&(x).buf))
-#define r_string_free(x) if (!(x).weak) {free ((x).ptr);}
+// #define r_string_free(x) if (!(x).weak) {free ((x).ptr);}
 
 R_API char *r_string_get(const RString *s, int *len) {
 	if (len) {
@@ -25,7 +25,7 @@ R_API char *r_string_get(const RString *s, int *len) {
 	return strdup (s->str);
 }
 
-R_API RString r_string_new(const char *is, int len) {
+R_API R_WIP RString r_string_new(const char *is, int len) {
 	RString s = {0};
 	if (is) {
 		size_t sl = len < 0 ? strlen (is): len;
@@ -39,6 +39,15 @@ R_API RString r_string_new(const char *is, int len) {
 		s.len = sl;
 	}
 	return s;
+}
+
+R_API void r_string_free(RString *s) {
+	if (s->weak) {
+		return;
+	}
+	s->len = 0;
+	s->str = (char *)&s->buf;
+	R_FREE (s->ptr);
 }
 
 R_API RString r_string_from(const char *is, int len) {
@@ -70,8 +79,7 @@ R_API void r_string_trim(RString *s) {
 	s->len = r_str_ntrim (s->str, s->len);
 }
 
-R_API RString r_string_newf(const char *fmt, ...) {
-	RString s = {0};
+R_API R_WIP RString r_string_newf(const char *fmt, ...) {
 	va_list ap, ap2;
 
 	va_start (ap, fmt);
@@ -82,23 +90,23 @@ R_API RString r_string_newf(const char *fmt, ...) {
 	va_copy (ap2, ap);
 	int ret = vsnprintf (NULL, 0, fmt, ap2);
 	ret++;
+	RString s = {0};
 	char *p = NULL;
-	bool myp = false;
-	if (ret >= sizeof (s.buf)) {
-		myp = true;
+	if (ret + 2 >= sizeof (s.buf)) {
 		p = calloc (1, ret);
+		s.ptr = p;
 	} else {
 		p = (char *)&s.buf;
+		R_FREE (s.ptr);
 	}
+	s.str = (char *)p;
+	s.len = ret;
 	if (p) {
 		(void)vsnprintf (p, ret, fmt, ap);
 	}
 	va_end (ap2);
 	va_end (ap);
-	if (myp) {
-		free (p);
-	}
-	return s; //r_string_from (p, ret);
+	return s;
 }
 
 R_API bool r_string_append(RString *a, const char *s) {

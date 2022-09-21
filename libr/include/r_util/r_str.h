@@ -286,11 +286,12 @@ R_API char *r_str_ss(const char* msg, const char *nl, int cs);
 // rstr
 
 R_API char *r_string_get(const RString *s, int *len);
-R_API RString r_string_new(const char *is, int len);
+R_API R_WIP RString r_string_new(const char *is, int len);
+R_API void r_string_free(RString *s);
 R_API RString r_string_from(const char *is, int len);
 R_API void r_string_unweak(RString *a);
 R_API void r_string_trim(RString *s);
-R_API RString r_string_newf(const char *fmt, ...);
+R_API R_WIP RString r_string_newf(const char *fmt, ...);
 R_API bool r_string_append(RString *a, const char *s);
 R_API void r_string_appendf(RString *a, const char *fmt, ...);
 
