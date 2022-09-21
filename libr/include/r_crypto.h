@@ -56,13 +56,22 @@ typedef struct r_crypto_job_t {
 	void *data;
 	ut32 cps2key[2];
 	ut8 rot_key;
-} RCryptoJob;
+	double entropy;
+} RCryptoJob; // rename to CryptoState
+
+typedef enum {
+	R_CRYPTO_TYPE_ENCODER = 'e',
+	R_CRYPTO_TYPE_HASH = 'h',
+	R_CRYPTO_TYPE_ENCRYPT = 'c',
+} RCryptoType;
 
 typedef struct r_crypto_plugin_t {
 	const char *name;
 	const char *author;
 	const char *license;
+	const char *desc;
 	const char *implements;
+	RCryptoType type;
 	bool (*check)(const char *algo); // must be deprecated
 
 	int (*get_key_size)(RCryptoJob *cry);
@@ -92,6 +101,7 @@ R_API void r_crypto_init(RCrypto *cry);
 R_API bool r_crypto_add(RCrypto *cry, RCryptoPlugin *h);
 R_API RCrypto *r_crypto_new(void);
 R_API void r_crypto_free(RCrypto *cry);
+R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode);
 
 R_API RCryptoJob *r_crypto_use(RCrypto *cry, const char *algo);
 R_API bool r_crypto_job_set_key(RCryptoJob *cry, const ut8* key, int keylen, int mode, int direction);
@@ -105,9 +115,6 @@ R_API bool r_crypto_job_update(RCryptoJob *cry, const ut8 *buf, int len);
 R_API bool r_crypto_job_end(RCryptoJob *cry, const ut8 *buf, int len);
 R_API int r_crypto_job_append(RCryptoJob *cry, const ut8 *buf, int len);
 R_API ut8 *r_crypto_job_get_output(RCryptoJob *cry, int *size);
-
-R_API const char *r_crypto_name(const RCryptoSelector bit);
-R_API const char *r_crypto_codec_name(const RCryptoSelector bit);
 #endif
 
 /* plugin pointers */
@@ -129,6 +136,7 @@ extern RCryptoPlugin r_crypto_plugin_cps2;
 extern RCryptoPlugin r_crypto_plugin_serpent;
 extern RCryptoPlugin r_crypto_plugin_sm4;
 extern RCryptoPlugin r_crypto_plugin_aes_wrap;
+extern RCryptoPlugin r_crypto_plugin_entropy;
 
 #define R_CRYPTO_NONE 0ULL
 #define R_CRYPTO_RC2 1ULL

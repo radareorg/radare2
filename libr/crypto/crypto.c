@@ -1,65 +1,11 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include "r_crypto.h"
-#include "r_util.h"
+#include "r_hash.h"
 #include "config.h"
 #include "r_util/r_assert.h"
 
 R_LIB_VERSION (r_crypto);
-
-static const struct {
-	const char *name;
-	RCryptoSelector bit;
-} crypto_name_bytes[] = {
-	{ "all", UT64_MAX },
-	{ "rc2", R_CRYPTO_RC2 },
-	{ "rc4", R_CRYPTO_RC4 },
-	{ "rc6", R_CRYPTO_RC6 },
-	{ "aes-ecb", R_CRYPTO_AES_ECB },
-	{ "aes-cbc", R_CRYPTO_AES_CBC },
-	{ "aes-wrap", R_CRYPTO_AES_WRAP },
-	{ "ror", R_CRYPTO_ROR },
-	{ "rol", R_CRYPTO_ROL },
-	{ "rot", R_CRYPTO_ROT },
-	{ "blowfish", R_CRYPTO_BLOWFISH },
-	{ "cps2", R_CRYPTO_CPS2 },
-	{ "des-ecb", R_CRYPTO_DES_ECB },
-	{ "xor", R_CRYPTO_XOR },
-	{ "serpent-ecb", R_CRYPTO_SERPENT },
-	{ "sm4-ecb", R_CRYPTO_SM4_ECB },
-	{ NULL, 0 }
-};
-
-static const struct {
-	const char *name;
-	RCryptoSelector bit;
-} codec_name_bytes[] = {
-	{ "all", UT64_MAX },
-	{ "base64", R_CODEC_B64 },
-	{ "base91", R_CODEC_B91 },
-	{ "punycode", R_CODEC_PUNYCODE },
-	{ NULL, 0 }
-};
-
-R_API const char *r_crypto_name(const RCryptoSelector bit) {
-	size_t i;
-	for (i = 1; crypto_name_bytes[i].bit; i++) {
-		if (bit & crypto_name_bytes[i].bit) {
-			return crypto_name_bytes[i].name;
-		}
-	}
-	return "";
-}
-
-R_API const char *r_crypto_codec_name(const RCryptoSelector bit) {
-	size_t i;
-	for (i = 1; codec_name_bytes[i].bit; i++) {
-		if (bit & codec_name_bytes[i].bit) {
-			return codec_name_bytes[i].name;
-		}
-	}
-	return "";
-}
 
 static RCryptoPlugin *crypto_static_plugins[] = {
 	R_CRYPTO_STATIC_PLUGINS
@@ -233,4 +179,30 @@ R_API ut8 *r_crypto_job_get_output(RCryptoJob *cj, int *size) {
 		return NULL;
 	}
 	return buf;
+}
+
+R_API void r_crypto_list(RCrypto *cry, PrintfCallback cb_printf, int mode) {
+	if (!cb_printf) {
+		cb_printf = (PrintfCallback)printf;
+	}
+	RListIter *iter;
+	RCryptoPlugin *cp;
+	r_list_foreach (cry->plugins, iter, cp) {
+		char mode = cp->type? cp->type: 'c';
+		const char *license = cp->license? cp->license: "LGPL";
+		const char *desc = r_str_get (cp->desc);
+		const char *author = r_str_get (cp->author);
+		cb_printf ("%c %12s %5s %s %s\n", mode, cp->name, license, desc, author);
+	}
+	// TODO: move all those static hashes into crypto plugins
+	ut64 bits;
+	int i;
+	for (i = 0; ; i++) {
+		bits = ((ut64)1) << i;
+		const char *name = r_hash_name (bits);
+		if R_STR_ISEMPTY (name) {
+			break;
+		}
+		cb_printf ("h %12s\n", name);
+	}
 }

@@ -32,6 +32,7 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 
 RCryptoPlugin r_crypto_plugin_punycode = {
 	.name = "punycode",
+	.type = R_CRYPTO_TYPE_ENCODER,
 	.set_key = punycode_set_key,
 	.get_key_size = punycode_get_key_size,
 	.check = punycode_check,

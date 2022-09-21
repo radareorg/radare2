@@ -77,6 +77,7 @@ static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
 }
 
 RCryptoPlugin r_crypto_plugin_aes = {
+	.type = R_CRYPTO_TYPE_ENCRYPT,
 	.name = "aes-ecb",
 	.author = "pancake",
 	.license = "MIT",

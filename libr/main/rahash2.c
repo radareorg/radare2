@@ -324,27 +324,9 @@ static int do_help(int line) {
 }
 
 static void algolist(void) {
-	ut64 bits;
-	ut64 i;
-	for (i = 0; i < R_HASH_NBITS; i++) {
-		bits = 1ULL << i;
-		const char *name = r_hash_name (bits);
-		if (name && *name) {
-			printf ("h  %s\n", name);
-		}
-	}
-	// TODO: do not hardcode
-	printf ("e  base64\n");
-	printf ("e  base91\n");
-	printf ("e  punycode\n");
-	for (i = 0;; i++) {
-		bits = ((ut64) 1) << i;
-		const char *name = r_crypto_name (bits);
-		if (!name || !*name) {
-			break;
-		}
-		printf ("c  %s\n", name);
-	}
+	RCrypto *cry = r_crypto_new ();
+	r_crypto_list (cry, NULL, 0);
+	r_crypto_free (cry);
 }
 
 #define setHashString(x, y) {\
