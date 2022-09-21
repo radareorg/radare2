@@ -64,8 +64,20 @@ R_API RArchDecoder *r_arch_use(RArch *a, RArchConfig *ac, const char *name) {
 }
 
 #if 0
+	ac->arch = strdup (R_SYS_ARCH);
+	ac->bits = R_SYS_BITS;
+	ac->bitshift = 0;
+	// ac->free = (void (*)(void*))my_ac_free;
+	ac->syntax = R_ARCH_SYNTAX_INTEL;
+	r_ref_init (ac, &my_ac_free);
+	ac->big_endian = false;
+	return (RArchConfig *)r_ref_ptr (ac);
+#endif
+
+#if 0
 R_API RArchOp *r_arch_decode(RArchDecoder *ad, const ut8 *buf, size_t len) {
 	ad->p->decode (ad, buf, len);
 	return NULL;
+
 }
 #endif

@@ -59,7 +59,8 @@ typedef int RRef;
 #define R_REF_TYPE RRef R_REF_NAME; void (*free)(void*)
 #define r_ref_count(x) (x)->R_REF_NAME
 
-#define r_ref(x) ((x)->R_REF_NAME++, (x));
+#define r_ref(x) (x)->R_REF_NAME++
+#define r_ref_ptr(x) ((x)->R_REF_NAME++, (x));
 #define r_ref_init(x,y) (x)->R_REF_NAME = 1;(x)->free = (void *)(y)
 // #define r_unref(x) { assert (x->R_REF_NAME > 0); if (!--(x->R_REF_NAME)) { x->free(x); } }
 #define r_unref(x) { if ((x) != NULL && (x)->R_REF_NAME > 0 && !--((x)->R_REF_NAME)) { (x)->free(x); (x) = NULL; } }

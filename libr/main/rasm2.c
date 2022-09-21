@@ -35,7 +35,7 @@ static RAsmState *__as_new(void) {
 		as->anal = r_anal_new ();
 		r_unref (as->anal->config);
 		as->a->num = r_num_new (NULL, NULL, NULL);
-		as->anal->config = r_ref (as->a->config);
+		as->anal->config = r_ref_ptr (as->a->config);
 		r_anal_bind (as->anal, &as->a->analb);
 		__load_plugins (as);
 		__as_set_archbits (as);
