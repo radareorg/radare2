@@ -14,6 +14,7 @@ R_LIB_VERSION_HEADER(r_arch);
 struct r_reg_item_t;
 struct r_reg_t;
 #include <r_reg.h>
+#include <r_io.h>
 #include <sdb.h>
 
 enum {
@@ -379,6 +380,27 @@ R_API RArchSwitchOp *r_arch_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val,
 R_API RArchCaseOp *r_arch_case_op_new(ut64 addr, ut64 val, ut64 jump);
 R_API void r_arch_switch_op_free(RArchSwitchOp *swop);
 R_API RArchCaseOp* r_arch_switch_op_add_case(RArchSwitchOp *swop, ut64 addr, ut64 value, ut64 jump);
+
+// archvalue
+R_API RArchValue *r_arch_value_new(void);
+R_API RArchValue *r_arch_value_copy(RArchValue *ov);
+R_API void r_arch_value_free(RArchValue *value);
+R_API ut64 r_arch_value_to_ut64(RArchValue *val, struct r_reg_t *reg);
+R_API bool r_arch_value_set_ut64(RArchValue *val, struct r_reg_t *reg, RIOBind *iob, ut64 num);
+R_API char *r_arch_value_to_string(RArchValue *value);
+
+// archop.c
+R_API RArchOp *r_arch_op_new(void);
+R_API void r_arch_op_init(RArchOp *op);
+R_API void r_arch_op_fini(RArchOp *op);
+R_API void r_arch_op_free(void *_op);
+R_API RArchOp *r_arch_op_copy(RArchOp *op);
+R_API int r_arch_optype_from_string(const char *type);
+R_API const char *r_arch_optype_to_string(int t);
+R_API const char *r_arch_stackop_to_string(int s);
+R_API const char *r_arch_op_family_to_string(int n);
+R_API int r_arch_op_family_from_string(const char *f);
+R_API const char *r_arch_op_direction_to_string(RArchOp *op);
 
 extern RArchPlugin r_arch_plugin_null;
 
