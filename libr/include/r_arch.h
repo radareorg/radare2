@@ -353,6 +353,7 @@ typedef struct r_arch_plugin_t {
 //	void (*esil_fini)(RAnalEsil *esil);
 } RArchPlugin;
 
+// decoder.c
 //dname is name of decoder to use, NULL if current
 R_API bool r_arch_load_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_use_decoder(RArch *arch, const char *dname);
@@ -363,14 +364,14 @@ R_API bool r_arch_set_reg_profile(RArch *arch, const char *dname, struct r_reg_t
 //R_API bool r_arch_esil_init(RArch *arch, const char *dname, RAnalEsil *esil);
 //R_API void r_arch_esil_fini(RArch *arch, const char *dname, RAnalEsil *esil);
 
-// arch
+// arch.c
 R_API RArch *r_arch_new(void);
 R_API bool r_arch_use(RArch *arch, RArchConfig *config);
 R_API bool r_arch_add(RArch *arch, RArchPlugin *ap);
 R_API bool r_arch_del(RArch *arch, const char *name);
 R_API void r_arch_free(RArch *arch);
 
-// aconfig
+// aconfig.c
 R_API void r_arch_config_use(RArchConfig *config, R_NULLABLE const char *arch);
 R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu);
 R_API void r_arch_config_set_bits(RArchConfig *config, int bits);
@@ -382,7 +383,7 @@ R_API RArchCaseOp *r_arch_case_op_new(ut64 addr, ut64 val, ut64 jump);
 R_API void r_arch_switch_op_free(RArchSwitchOp *swop);
 R_API RArchCaseOp* r_arch_switch_op_add_case(RArchSwitchOp *swop, ut64 addr, ut64 value, ut64 jump);
 
-// archvalue
+// archvalue.c
 R_API RArchValue *r_arch_value_new(void);
 R_API RArchValue *r_arch_value_copy(RArchValue *ov);
 R_API void r_arch_value_free(RArchValue *value);
@@ -402,6 +403,9 @@ R_API const char *r_arch_stackop_to_string(int s);
 R_API const char *r_arch_op_family_to_string(int n);
 R_API int r_arch_op_family_from_string(const char *f);
 R_API const char *r_arch_op_direction_to_string(RArchOp *op);
+
+// archcond.c
+R_API const char *r_arch_cond_to_string(RArchCond cc);
 
 extern RArchPlugin r_arch_plugin_null;
 
