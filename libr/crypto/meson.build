@@ -52,8 +52,6 @@ else
   r_crypto_sources += files('hash/md4.c', 'hash/md5.c', 'hash/sha1.c', 'hash/sha2.c')
 endif
 
-r_crypto_sources += r_crypto_sources
-
 r_crypto = library('r_crypto', r_crypto_sources,
   include_directories: [platform_inc],
   dependencies: r_crypto_deps,
