@@ -374,6 +374,12 @@ R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu
 R_API void r_arch_config_set_bits(RArchConfig *config, int bits);
 R_API RArchConfig *r_arch_config_new(void);
 
+// switchop
+R_API RArchSwitchOp *r_arch_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val);
+R_API RArchCaseOp *r_arch_case_op_new(ut64 addr, ut64 val, ut64 jump);
+R_API void r_arch_switch_op_free(RArchSwitchOp *swop);
+R_API RArchCaseOp* r_arch_switch_op_add_case(RArchSwitchOp *swop, ut64 addr, ut64 value, ut64 jump);
+
 extern RArchPlugin r_arch_plugin_null;
 
 #ifdef __cplusplus
