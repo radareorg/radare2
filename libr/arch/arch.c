@@ -68,11 +68,7 @@ R_API bool r_arch_use(RArch *a, RArchConfig *config) {
 	r_list_foreach (a->plugins, iter, p) {
 		if (!strcmp (p->arch, config->arch)) {
 			//TODO: add more checks here
-			const int info_bits = p->info (R_ARCH_INFO_BITS);
-			if (info_bits == -1) {
-				continue;
-			}
-			if (info_bits & bits_bits) {
+			if (p->bits & bits_bits) {
 				dname = p->name;
 			}
 		}
@@ -89,7 +85,7 @@ R_API bool r_arch_use(RArch *a, RArchConfig *config) {
 }
 
 R_API bool r_arch_add(RArch *a, RArchPlugin *ap) {
-	r_return_val_if_fail (a && ap->name && ap->arch && ap->info, false);
+	r_return_val_if_fail (a && ap->name && ap->arch, false);
 	return !!r_list_append (a->plugins, ap);
 }
 

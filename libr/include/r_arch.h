@@ -311,9 +311,7 @@ typedef struct r_arch_op_t {
 #define R_ARCH_INFO_INV_OP_SIZE	2
 #define R_ARCH_INFO_ALIGN	4
 #define R_ARCH_INFO_DATA_ALIGN	8
-#define R_ARCH_INFO_BITS	16	//supported bitness
-#define R_ARCH_INFO_ENDIAN	32	//supported endianness
-#define R_ARCH_INFO_ESIL	64	//support for esil
+#define R_ARCH_INFO_JMPMID	16	//supported jmpmid
 
 #define	R_ARCH_OP_MASK_BASIC	0	// Just fills basic op info , it's fast
 #define R_ARCH_OP_MASK_ESIL	1	// It fills RAnalop->esil info
@@ -342,6 +340,9 @@ typedef struct r_arch_plugin_t {
 	char *author;
 	char *version;
 	char *cpus;
+	ut32 endian;
+	ut32 bits;
+	bool esil;
 	bool (*init)(void **user);
 	void (*fini)(void *user);
 	int (*info)(ut32 query);
