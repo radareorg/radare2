@@ -1416,6 +1416,14 @@ void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena)
 		while (GH(is_arena) (core, m_arena, ta->GH(next)) && ta->GH(next) != m_arena) {
 			PRINT_YA ("thread arena @ ");
 			PRINTF_BA ("0x%"PFMT64x, (ut64)ta->GH(next));
+			// if the next pointer is equal to unsigned -1 we assume its invalid
+			// and return. otherwise we get undefined behavior and weird output offten
+			// times with thousands of lines in the output
+			// saying thread arenas are at 0xffff... which is obviously incorrect
+			// related to issue #20767
+			if (ta->GH(next) == GHT_MAX) {
+				break;
+			}
 			if (!GH(update_main_arena) (core, ta->GH(next), ta)) {
 				free (ta);
 				return;
