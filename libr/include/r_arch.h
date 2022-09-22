@@ -342,11 +342,12 @@ typedef struct r_arch_plugin_t {
 	char *cpus;
 	ut32 endian;
 	ut32 bits;
+	ut32 addr_bits;
 	bool esil;
 	bool (*init)(void **user);
 	void (*fini)(void *user);
-	int (*info)(ut32 query);
-	int (*decode)(RArch *a, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask);
+	int (*info)(RArchConfig *cfg, ut32 query);
+	int (*decode)(void *user, RArchConfig *cfg, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask);
 	bool (*set_reg_profile)(RArchConfig *cfg, struct r_reg_t *reg);
 //TODO: reenable this later
 //	bool (*esil_init)(RAnalEsil *esil);

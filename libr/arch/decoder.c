@@ -105,7 +105,7 @@ R_API int r_arch_info(RArch *arch, const char *dname, ut32 query) {
 	if (!decoder || !decoder->p->info) {
 		return -1;
 	}
-	return decoder->p->info (query);
+	return decoder->p->info (arch->cfg, query);
 }
 
 R_API int r_arch_decode(RArch *arch, const char *dname, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
@@ -119,5 +119,5 @@ R_API int r_arch_decode(RArch *arch, const char *dname, RArchOp *op, ut64 addr, 
 	if (!decoder || !decoder->p->decode) {
 		return -1;
 	}
-	return decoder->p->decode (arch, op, addr, data, len, mask);
+	return decoder->p->decode (decoder->user, arch->cfg, op, addr, data, len, mask);
 }
