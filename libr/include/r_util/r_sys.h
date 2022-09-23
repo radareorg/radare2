@@ -16,19 +16,21 @@ extern "C" {
 #endif
 
 #if 1
-#define R_SYS_BITS_8 1
-#define R_SYS_BITS_16 2
-#define R_SYS_BITS_32 4
-#define R_SYS_BITS_64 8
-#define R_SYS_BITS_27 16
-#define R_SYS_BITS_4 32
+#define R_SYS_BITS_8	1
+#define R_SYS_BITS_16	2
+#define R_SYS_BITS_32	4
+#define R_SYS_BITS_64	8
+#define R_SYS_BITS_27	16
+#define R_SYS_BITS_4	32
+#define R_SYS_BITS_12	64
 #else
 #define R_SYS_BITS_4	1
 #define R_SYS_BITS_8	2
-#define R_SYS_BITS_16	4
-#define R_SYS_BITS_27	8
-#define R_SYS_BITS_32	16
-#define R_SYS_BITS_64	32
+#define R_SYS_BITS_12	4
+#define R_SYS_BITS_16	8
+#define R_SYS_BITS_27	16
+#define R_SYS_BITS_32	32
+#define R_SYS_BITS_64	64
 #endif
 
 typedef struct {
