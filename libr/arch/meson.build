@@ -2,13 +2,21 @@ r_arch_sources = [
   'arch.c',
   'aconfig.c',
   'decoder.c',
+  'switchop.c',
+  'archop.c',
+  'archcond.c',
+  'archvalue.c',
   'p/arch_null.c',
+  'p/arch_i4004.c',
 ]
 
 r_arch = library('r_arch', r_arch_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
-  dependencies: [r_util_dep],
+  dependencies: [
+    r_util_dep,
+    r_reg_dep
+  ],
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
@@ -38,7 +46,8 @@ pkgconfig_mod.generate(r_arch,
   filebase: 'r_arch',
   libraries: pkgcfg_sanitize_libs,
   requires: [
-    'r_util'
+    'r_util',
+    'r_reg',
   ],
   description: 'radare foundation libraries'
 )
