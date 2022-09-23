@@ -121,6 +121,12 @@ if get_option('static_runtime')
   endif
 endif
 
+if get_option('threadsafety')
+  r2_critical_enabled = 1
+else
+  r2_critical_enabled = 0
+endif
+
 if get_option('wasan')
   add_project_arguments('/DEBUG', language: 'c')
   add_project_arguments('/MD', language: 'c')
@@ -241,12 +247,6 @@ conf_data.set('plugins_debug', '&r_debug_plugin_' + ', &r_debug_plugin_'.join(de
 conf_data.set('plugins_egg', '&r_egg_plugin_' + ', &r_egg_plugin_'.join(egg_plugins) + ', 0')
 conf_data.set('plugins_lang', '&r_lang_plugin_' + ', &r_lang_plugin_'.join(lang_plugins) + ', 0')
 conf_data.set('plugins_parse', '&r_parse_plugin_' + ', &r_parse_plugin_'.join(parse_plugins) + ', 0')
-
-# userconf_h = configure_file(
-#  input: 'libr/include/r_userconf.h.acr',
-#  output: 'r_userconf.h',
-#  configuration: conf_data
-#)
 
 config_h = configure_file(
   input: 'libr/config.h.in',
@@ -375,6 +375,7 @@ userconf.set10('WANT_DYLINK', use_dylink)
 userconf.set10('WANT_THREADS', get_option('want_threads'))
 userconf.set10('WANT_CAPSTONE', get_option('want_capstone'))
 userconf.set10('HAVE_PTRACE', have_ptrace)
+userconf.set('R_CRITICAL_ENABLED', r2_critical_enabled)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', not get_option('nogpl'))
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')

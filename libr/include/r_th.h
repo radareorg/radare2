@@ -223,6 +223,13 @@ R_API bool r_th_lock_tryenter(RThreadLock *thl);
 R_API bool r_th_lock_enter(RThreadLock *thl);
 R_API bool r_th_lock_leave(RThreadLock *thl);
 R_API void *r_th_lock_free(RThreadLock *thl);
+#if R_CRITICAL_ENABLED
+#define R_CRITICAL_ENTER(x) r_th_lock_enter(x->lock)
+#define R_CRITICAL_LEAVE(x) r_th_lock_leave(x->lock)
+#else
+#define R_CRITICAL_ENTER(x)
+#define R_CRITICAL_LEAVE(x)
+#endif
 
 R_API RThreadCond *r_th_cond_new(void);
 R_API void r_th_cond_signal(RThreadCond *cond);
