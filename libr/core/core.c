@@ -2984,6 +2984,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	core->chan = NULL;
 	r_core_setenv (core);
+       core->lock = r_th_lock_new (true);
 	core->in_log_process = false;
 	core->rfs = r_fs_shell_new ();
 	core->ev = r_event_new (core);
@@ -3553,6 +3554,7 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize) {
 		r_cons_eprintf ("Block size %d is too big\n", bsize);
 		return false;
 	}
+	R_CRITICAL_ENTER (core);
 	core->offset = addr;
 	if (bsize < 1) {
 		bsize = 1;
@@ -3572,6 +3574,7 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize) {
 		memset (core->block, 0xff, core->blocksize);
 		r_core_block_read (core);
 	}
+	R_CRITICAL_LEAVE (core);
 	return ret;
 }
 

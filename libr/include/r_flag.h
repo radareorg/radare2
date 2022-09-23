@@ -59,6 +59,7 @@ typedef struct r_flag_t {
 	PrintfCallback cb_printf;
 	RList *zones;
 	ut64 mask;
+	RThreadLock *lock;
 	R_DIRTY_VAR;
 } RFlag;
 
@@ -158,15 +159,24 @@ static inline bool r_flag_space_unset(RFlag *f, const char *name) {
 }
 
 static inline bool r_flag_space_rename(RFlag *f, const char *oname, const char *nname) {
-	return r_spaces_rename (&f->spaces, oname, nname);
+	R_CRITICAL_ENTER (f);
+	const bool res = r_spaces_rename (&f->spaces, oname, nname);
+	R_CRITICAL_LEAVE (f);
+	return res;
 }
 
 static inline bool r_flag_space_push(RFlag *f, const char *name) {
-	return r_spaces_push (&f->spaces, name);
+	R_CRITICAL_ENTER (f);
+	const bool res = r_spaces_push (&f->spaces, name);
+	R_CRITICAL_LEAVE (f);
+	return res;
 }
 
 static inline bool r_flag_space_pop(RFlag *f) {
-	return r_spaces_pop (&f->spaces);
+	R_CRITICAL_ENTER (f);
+	bool res = r_spaces_pop (&f->spaces);
+	R_CRITICAL_LEAVE (f);
+	return res;
 }
 
 static inline int r_flag_space_count(RFlag *f, const char *name) {

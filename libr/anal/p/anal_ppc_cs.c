@@ -640,7 +640,7 @@ static int decompile_ps(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	char buf_asm[64] = {0};
 	libps_snprint (buf_asm, sizeof (buf_asm), addr, &instr);
 	op->mnemonic = strdup (buf_asm);
-	eprintf ("Mnemonic (%s)\n", buf_asm);
+	// eprintf ("Mnemonic (%s)\n", buf_asm);
 	return op->size;
 }
 

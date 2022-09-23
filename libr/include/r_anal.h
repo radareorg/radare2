@@ -668,8 +668,7 @@ typedef struct r_anal_t {
 	RList *leaddrs;
 	char *pincmd;
 	/* private */
-	ut8 cache[1024];
-	ut64 cache_addr;
+	RThreadLock *lock;
 	ut64 cmpval;
 	ut64 lea_jmptbl_ip;
 	int cs_obits;

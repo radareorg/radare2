@@ -1421,9 +1421,13 @@ R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
 	if (kind < 1) {
 		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
 	}
+	R_CRITICAL_ENTER (fcn->anal);
 	void **it;
 	r_pvector_foreach (&fcn->vars, it) {
 		RAnalVar *var = *it;
+		if (!var) {
+			break;
+		}
 		if (var->kind != kind) {
 			continue;
 		}
@@ -1443,6 +1447,7 @@ R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
 		field->delta = var->delta;
 		r_list_push (list, field);
 	}
+	R_CRITICAL_LEAVE (fcn->anal);
 	return list;
 }
 
