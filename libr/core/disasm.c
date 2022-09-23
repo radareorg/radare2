@@ -7,6 +7,9 @@
 #define DEFAULT_NARGS 4
 #define FLAG_PREFIX ";-- "
 
+// ideally this code must be rewritten to work without the `doseek`
+#define DOSEEK 0
+
 #define COLOR(ds, field)       ((ds)->show_color? (ds)->field: "")
 #define COLOR_ARG(ds, field)   ((ds)->show_color && (ds)->show_color_args? (ds)->field: "")
 #define COLOR_CONST(ds, color) ((ds)->show_color? Color_##color: "")
@@ -6652,7 +6655,9 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			break;
 		}
 	}
+#if DOSEEK
 	core->offset = old_offset;
+#endif
 	r_anal_op_fini (&ds->analop);
 	ds_free (ds);
 	if (!result) {
@@ -6809,7 +6814,10 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	int flags = r_config_get_i (core->config, "asm.flags");
 	bool asm_immtrim = r_config_get_i (core->config, "asm.imm.trim");
 	int i = 0, j, ret, err = 0;
+#if DOSEEK
 	ut64 old_offset = core->offset;
+#endif
+	ut64 addr = core->offset;
 	const char *color_reg = R_CONS_COLOR_DEF (reg, Color_YELLOW);
 	const char *color_num = R_CONS_COLOR_DEF (num, Color_CYAN);
 	const size_t addrbytes = buf ? 1 : core->io->addrbytes;
@@ -6822,14 +6830,23 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	if (nb_opcodes < 1 && nb_bytes < 1) {
 		return 0;
 	}
-
+	bool mybuf = false;
 	if (!buf) {
+#if DOSEEK
 		r_core_seek (core, address, true);
 		buf = core->block;
+#endif
+		buf = malloc (nb_bytes);
+		mybuf = true;
+		r_io_read_at (core->io, address, buf, nb_bytes);
 	}
+	addr = address;
+	ut64 addr_end = address + nb_bytes;
 
 	r_cons_break_push (NULL, NULL);
+#if 0 // DOSEEK
 	r_core_seek (core, address, false);
+#endif
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	int midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
@@ -6850,7 +6867,7 @@ toro:
 			err = 1;
 			break;
 		}
-		ut64 at = core->offset + i;
+		ut64 at = addr + i;
 		if (flags) {
 			if (fmt != 'e') { // pie
 				RFlagItem *item = r_flag_get_i (core->flags, at);
@@ -6873,7 +6890,7 @@ toro:
 			case R_META_TYPE_DATA:
 				i += meta_size;
 				{
-					ut64 at = core->offset + i;
+					ut64 at = addr + i;
 					int hexlen = nb_bytes - i;
 					int delta = at - meta_start;
 					if (meta_size < hexlen) {
@@ -6910,13 +6927,13 @@ toro:
 				break;
 			}
 		}
-		r_asm_set_pc (core->rasm, core->offset + i);
+		r_asm_set_pc (core->rasm, addr + i);
 		ret = r_asm_disassemble (core->rasm, &asmop, buf + addrbytes * i,
 			nb_bytes - addrbytes * i);
 		if (midflags || midbb) {
 			RDisasmState ds = {
 				.oplen = ret,
-				.at = core->offset + i,
+				.at = addr + i,
 				.midflags = midflags
 			};
 			int skip_bytes_flag = 0, skip_bytes_bb = 0;
@@ -6934,9 +6951,9 @@ toro:
 			}
 		}
 		if (fmt == 'C') {
-			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, core->offset + i);
+			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + i);
 			if (comment) {
-				r_cons_printf ("0x%08" PFMT64x " %s\n", core->offset + i, comment);
+				r_cons_printf ("0x%08" PFMT64x " %s\n", addr + i, comment);
 			}
 			i += ret;
 			continue;
@@ -6966,7 +6983,7 @@ toro:
 					0
 				};
 				char *tmpopstr, *opstr = NULL;
-				r_anal_op (core->anal, &analop, core->offset + i,
+				r_anal_op (core->anal, &analop, addr + i,
 					buf + addrbytes * i, nb_bytes - addrbytes * i, R_ANAL_OP_MASK_ALL);
 				tmpopstr = r_anal_op_to_string (core->anal, &analop);
 				if (fmt == 'e') { // pie
@@ -7014,8 +7031,8 @@ toro:
 					RAnalOp aop = {
 						0
 					};
-					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset + i, R_ANAL_FCN_TYPE_NULL);
-					r_anal_op (core->anal, &aop, core->offset + i,
+					RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr + i, R_ANAL_FCN_TYPE_NULL);
+					r_anal_op (core->anal, &aop, addr + i,
 						buf + addrbytes * i, nb_bytes - addrbytes * i, R_ANAL_OP_MASK_BASIC);
 					asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false, f ? f->addr : 0);
 					r_cons_printf ("%s%s"Color_RESET "\n",
@@ -7031,14 +7048,23 @@ toro:
 		i += ret;
 		r_asm_op_fini (&asmop);
 	}
-	if (buf == core->block && nb_opcodes > 0 && j < nb_opcodes) {
-		r_core_seek (core, core->offset + i, true);
+	if ((nb_opcodes > 0 && j < nb_opcodes) && (addr + i < addr_end)) {
+#if DOSEEK
+		r_core_seek (core, addr, true); // core->offset + i, true);
+#endif
+		addr += i;
+		r_io_read_at (core->io, addr, buf, nb_bytes);
 		i = 0;
 		goto toro;
 	}
+	if (mybuf) {
+		free (buf);
+	}
 	r_config_set_b (core->config, "asm.marks", asmmarks);
 	r_cons_break_pop ();
+#if DOSEEK
 	r_core_seek (core, old_offset, true);
+#endif
 	return err;
 }
 
