@@ -113,29 +113,26 @@ static int serenity_debug_regions(RIO *io, int pid) {
 	// pid is ignored
 	const char *path = "/proc/self/vm";
 #if 0
-[
-  {
-    "readable": true,
-    "writable": true,
-    "executable": true,
-    "stack": true,
-    "shared": true,
-    "syscall": true,
-    "purgeable": true,
-    "cacheable": true,
-    "address": 1234,
-    "size": 4096,
-    "amount_resident": 4096,
-    "amount_dirty": 4096,
-    "cow_pages": 0,
-    "name": "/bin/cat",
-    "vmobject": "/bin/cat",
-    "pagemap": "P",
-  },
-  {
-  ...
-  }
-]
+	[ {
+		"readable": true,
+			"writable": true,
+			"executable": true,
+			"stack": true,
+			"shared": true,
+			"syscall": true,
+			"purgeable": true,
+			"cacheable": true,
+			"address": 1234,
+			"size": 4096,
+			"amount_resident": 4096,
+			"amount_dirty": 4096,
+			"cow_pages": 0,
+			"name": "/bin/cat",
+			"vmobject": "/bin/cat",
+			"pagemap": "P",
+	}, {
+		...
+	} ]
 #endif
 	char *pos_c;
 	int i, l, perm;

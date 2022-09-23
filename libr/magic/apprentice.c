@@ -595,8 +595,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	char subfn[MAXPATHLEN];
 #endif
 	ms->flags |= R_MAGIC_CHECK;	/* Enable checks for parsed files */
-
-        maxmagic = MAXMAGIS;
+	maxmagic = MAXMAGIS;
 	if (!(marray = calloc (maxmagic, sizeof (*marray)))) {
 		file_oomem (ms, maxmagic * sizeof (*marray));
 		return -1;
@@ -681,9 +680,9 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 				if (marray[i].mp->flag & BINTEST) {
 #define SYMLEN 4 /* strlen("text") */
 					char *p = strstr(marray[i].mp->desc, "text");
-					if (p && (p == marray[i].mp->desc || isspace((unsigned char)p[-1])) &&
+					if (p && (p == marray[i].mp->desc || isspace ((ut8)p[-1])) &&
 					    (p + SYMLEN - marray[i].mp->desc == MAXstring ||
-					     (p[SYMLEN] == '\0' || isspace((unsigned char)p[SYMLEN])))) {
+					     (p[SYMLEN] == '\0' || isspace ((ut8 )p[SYMLEN])))) {
 						(void)fprintf(stderr,
 							      "*** Possible binary test for text type\n");
 					}
@@ -839,7 +838,7 @@ static int string_modifier_check(RMagic *ms, struct r_magic *m) {
 		if (m->str_range == 0) {
 			file_magwarn(ms,
 			    "missing range; defaulting to %d\n",
-                            STRING_DEFAULT_RANGE);
+			    STRING_DEFAULT_RANGE);
 			m->str_range = STRING_DEFAULT_RANGE;
 			return -1;
 		}
@@ -1016,9 +1015,9 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	m->lineno = lineno;
 
 	if (*l == '&') {  /* m->cont_level == 0 checked below. */
-                ++l;            /* step over */
-                m->flag |= OFFADD;
-        }
+		++l;            /* step over */
+		m->flag |= OFFADD;
+	}
 	if (*l == '(') {
 		++l;		/* step over */
 		m->flag |= INDIR;
@@ -1301,10 +1300,10 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 		}
 	}
 
-        /*
+	/*
 	 * We only do this check while compiling, or if any of the magic
 	 * files were not compiled.
-         */
+	 */
 	if (ms->flags & R_MAGIC_CHECK) {
 		if (check_format (ms, m) == -1) {
 			return -1;
@@ -1913,7 +1912,7 @@ error2:
 }
 
 static const ut32 ar[] = {
-    MAGICNO, VERSIONNO
+	MAGICNO, VERSIONNO
 };
 
 /*

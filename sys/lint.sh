@@ -2,6 +2,7 @@
 
 cd "$(dirname $0)"/..
 
+# (git grep '^\ \ \ ' libr | grep -v mangl | grep c:) && exit 1
 (git grep 'TODO' libr | grep R_LOG_INFO) && exit 1
 ( git grep r_config_set libr binr | grep -e '"fal' -e '"tru') && exit 1
 # find calls without (

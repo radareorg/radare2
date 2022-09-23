@@ -860,10 +860,11 @@ static RDebugMap* linux_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 			"x86", "x86.as",
 			"x64", "x86.as",
 			NULL};
-
-	/* NOTE: Since kernel 2.4,  that  system  call  has  been  superseded  by
-       		 mmap2(2 and  nowadays  the  glibc  mmap()  wrapper  function invokes
-       		 mmap2(2)). If arch is x86_32 then usage mmap2() */
+#if 0
+NOTE: Since kernel 2.4,  that  system  call  has  been  superseded  by
+mmap2(2 and  nowadays  the  glibc  mmap()  wrapper  function invokes
+mmap2(2)). If arch is x86_32 then usage mmap2() */
+#endif
 	if (!strcmp (dbg->arch, "x86") && dbg->bits == 4) {
 		sc_name = "mmap2";
 	} else {
@@ -980,7 +981,7 @@ static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 #elif __linux__
 	return linux_map_dealloc (dbg, addr, size);
 #else
-    // mdealloc not implemented for this platform
+	// mdealloc not implemented for this platform
 	return false;
 #endif
 }

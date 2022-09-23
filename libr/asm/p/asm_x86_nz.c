@@ -4585,7 +4585,7 @@ static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 		++(*begin);
 	}
 
-        if (!str[*begin]) {                // null byte
+	if (!str[*begin]) {                // null byte
 		*end = *begin;
 		return TT_EOF;
 	}
@@ -4602,7 +4602,7 @@ static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 			++(*end);
 		}
 		return TT_NUMBER;
-        } else {                           // special character: [, ], +, *, ...
+	} else {                           // special character: [, ], +, *, ...
 		*end = *begin + 1;
 		return TT_SPECIAL;
 	}
@@ -5031,7 +5031,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 			strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
 			op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
 		}
-        } else {	// immediate
+	} else {	// immediate
 		// We don't know the size, so let's just set no size flag.
 		op->type = OT_CONSTANT;
 		op->sign = 1;
