@@ -34,8 +34,8 @@ R_API RArch *r_arch_new(void) {
 		return NULL;
 	}
 	ut32 i = 0;
-	while (arch_static_plugins[i++]) {
-		r_arch_add (a, (RArchPlugin*)arch_static_plugins[i]);
+	while (arch_static_plugins[i]) {
+		r_arch_add (a, (RArchPlugin*)arch_static_plugins[i++]);
 	}
 	return a;
 }
