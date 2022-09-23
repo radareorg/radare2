@@ -772,7 +772,6 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	if (!fcn->name) {
 		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
 	}
-	r_anal_function_invalidate_read_ahead_cache (core->anal);
 	do {
 		RFlagItem *f;
 		ut64 delta = r_anal_function_linear_size (fcn);

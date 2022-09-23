@@ -47,44 +47,37 @@ R_API const char *r_anal_functiontype_tostring(int type) {
 	return "unk";
 }
 
-#if READ_AHEAD
+typedef struct {
+	ut8 cache[1024];
+	ut64 cache_addr;
+} ReadAhead;
 
 // TODO: move into io :?
-static int read_ahead(RAnal *anal, ut64 addr, ut8 *buf, int len) {
-	const int cache_len = sizeof (anal->cache);
-
+static int read_ahead(ReadAhead *ra, RAnal *anal, ut64 addr, ut8 *buf, int len) {
+	const size_t cache_len = sizeof (ra->cache);
 	if (len < 1) {
-		return 0;
+		return -1;
 	}
-	if (len > cache_len) {
-		int a = anal->iob.read_at (anal->iob.io, addr, buf, len); // double read
-		memcpy (anal->cache, buf, cache_len);
-		anal->cache_addr = addr;
-		return a;
-	}
-
-	ut64 addr_end = UT64_ADD_OVFCHK (addr, len)? UT64_MAX: addr + len;
-	ut64 cache_addr_end = UT64_ADD_OVFCHK (anal->cache_addr, cache_len)? UT64_MAX: anal->cache_addr + cache_len;
-	bool isCached = ((addr != UT64_MAX) && (addr >= anal->cache_addr) && (addr_end < cache_addr_end));
-	if (isCached) {
-		memcpy (buf, anal->cache + (addr - anal->cache_addr), len);
-	} else {
-		anal->iob.read_at (anal->iob.io, addr, anal->cache, sizeof (anal->cache));
-		memcpy (buf, anal->cache, len);
-		anal->cache_addr = addr;
-	}
-	return len;
-}
-#else
-static int read_ahead(RAnal *anal, ut64 addr, ut8 *buf, int len) {
-	return anal->iob.read_at (anal->iob.io, addr, buf, len);
-}
-#endif
-
-R_API void r_anal_function_invalidate_read_ahead_cache(RAnal *anal) {
+	bool is_cached = false;
 #if READ_AHEAD
-	anal->cache_addr = UT64_MAX;
+	if (ra->cache_addr != UT64_MAX && addr >= ra->cache_addr && addr < ra->cache_addr + sizeof (ra->cache)) {
+		ut64 addr_end = UT64_ADD_OVFCHK (addr, len)? UT64_MAX: addr + len;
+		ut64 cache_addr_end = UT64_ADD_OVFCHK (ra->cache_addr, cache_len)? UT64_MAX: ra->cache_addr + cache_len;
+		is_cached = ((addr != UT64_MAX) && (addr >= ra->cache_addr) && (addr_end < cache_addr_end));
+	}
 #endif
+	if (!is_cached) {
+		if (len > sizeof (ra->cache)) {
+			len = sizeof (ra->cache);
+		}
+		(void)anal->iob.read_at (anal->iob.io, addr, ra->cache, sizeof (ra->cache));
+		ra->cache_addr = addr;
+	}
+	int delta = addr - ra->cache_addr;
+	r_return_val_if_fail (delta >= 0, -1);
+	size_t length = sizeof (ra->cache) - delta;
+	memcpy (buf, ra->cache + delta, R_MIN (len, length));
+	return len;
 }
 
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
@@ -168,7 +161,7 @@ static bool next_instruction_is_symbol(RAnal *anal, RAnalOp *op) {
 	return (fi && fi->name && is_symbol_flag (fi->name));
 }
 
-static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RAnalOp *jmp_aop) {
+static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RAnalOp *jmp_aop) {
 	int i;
 	ut64 dst;
 	st32 jmptbl[64] = {0};
@@ -180,7 +173,7 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 	RAnalOp add_aop = {0};
 	RRegItem *reg_src = NULL, *o_reg_dst = NULL;
 	RAnalValue cur_scr, cur_dst = {0};
-	read_ahead (anal, addr, (ut8*)buf, sizeof (buf));
+	read_ahead (ra, anal, addr, (ut8*)buf, sizeof (buf));
 	bool isValid = false;
 	for (i = 0; i + 8 < JMPTBL_LEA_SEARCH_SZ; i++) {
 		ut64 at = addr + i;
@@ -249,7 +242,7 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 	}
 #endif
 	/* check if jump table contains valid deltas */
-	read_ahead (anal, *jmptbl_addr, (ut8 *)&jmptbl, 64);
+	read_ahead (ra, anal, *jmptbl_addr, (ut8 *)&jmptbl, 64);
 	for (i = 0; i < 3; i++) {
 		dst = lea_ptr + (st32)r_read_le32 (jmptbl);
 		if (!anal->iob.is_valid_offset (anal->iob.io, dst, 0)) {
@@ -536,6 +529,8 @@ static inline bool has_vars(RAnal *anal, ut64 addr) {
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
+	ReadAhead ra = {0};
+	ra.cache_addr = UT64_MAX; // invalidate the cache
 	char *bp_reg = NULL;
 	char *sp_reg = NULL;
 	char *op_dst = NULL;
@@ -691,12 +686,12 @@ repeat:
 		ut32 at_delta = addrbytes * idx;
 		ut64 at = addr + at_delta;
 		ut64 bytes_read = R_MIN (len - at_delta, sizeof (buf));
-		ret = read_ahead (anal, at, buf, bytes_read);
-
+		ret = read_ahead (&ra, anal, at, buf, bytes_read);
 		if (ret < 0) {
 			R_LOG_ERROR ("Failed to read");
 			break;
 		}
+		// ret is the max length of bytes available
 		if (is_invalid_memory (anal, buf, bytes_read)) {
 			if (anal->verbose) {
 				R_LOG_WARN ("FFFF opcode at 0x%08"PFMT64x, at);
@@ -1008,7 +1003,7 @@ repeat:
 				RAnalOp *jmp_aop = r_anal_op_new ();
 				ut64 jmptbl_addr = op->ptr;
 				ut64 casetbl_addr = op->ptr;
-				if (is_delta_pointer_table (anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, jmp_aop)) {
+				if (is_delta_pointer_table (&ra, anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, jmp_aop)) {
 					ut64 table_size, default_case = 0;
 					st64 case_shift = 0;
 					// we require both checks here since try_get_jmptbl_info uses
@@ -1706,7 +1701,6 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 	const bool is_x86 = a->cur->arch && !strcmp (a->cur->arch, "x86");
 	// TODO fix this x86-ism
 	if (is_x86) {
-		r_anal_function_invalidate_read_ahead_cache (a);
 		fcn_recurse (a, fcn, addr, size, 1);
 		block = r_anal_get_block_at (a, addr);
 		if (block) {
@@ -2276,7 +2270,6 @@ static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 	RAnalFunction *fcn;
 	bool old_jmpmid = anal->opt.jmpmid;
 	anal->opt.jmpmid = true;
-	r_anal_function_invalidate_read_ahead_cache (anal);
 	r_list_foreach (fcns, it, fcn) {
 		// Recurse through blocks of function, mark reachable,
 		// analyze edges that don't have a block
