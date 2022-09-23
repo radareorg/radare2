@@ -105,8 +105,7 @@ R_API void r_magic_from_ebcdic(const ut8 *buf, size_t nbytes, ut8 *out) {
 		  || (x) == 0x85 || (x) == '\f')
 
 static int looks_ascii(const ut8 *, size_t, unichar *, size_t *);
-static int looks_utf8_with_BOM(const ut8 *, size_t, unichar *,
-    size_t *);
+static int looks_utf8_with_BOM(const ut8 *, size_t, unichar *, size_t *);
 int file_looks_utf8(const ut8 *, size_t, unichar *, size_t *);
 static int looks_ucs16(const ut8 *, size_t, unichar *, size_t *);
 static int looks_latin1(const ut8 *, size_t, unichar *, size_t *);
@@ -522,7 +521,7 @@ static int ascmatch(const ut8 *s, const unichar *us, size_t ulen) {
 static char text_chars[256] = {
 	/*                  BEL BS HT LF    FF CR    */
 	F, F, F, F, F, F, F, T, T, T, T, F, T, T, F, F,  /* 0x0X */
-        /*                              ESC          */
+	/*                              ESC          */
 	F, F, F, F, F, F, F, F, F, F, F, T, F, F, F, F,  /* 0x1X */
 	T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T,  /* 0x2X */
 	T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T,  /* 0x3X */

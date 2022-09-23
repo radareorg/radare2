@@ -78,10 +78,12 @@ static void free_item_name(RFlagItem *item) {
 	}
 }
 
-/* return the list of flag at the nearest position.
-   dir == -1 -> result <= off
-   dir == 0 ->  result == off
-   dir == 1 ->  result >= off*/
+#if 0
+return the list of flag at the nearest position:
+dir == -1 -> result <= off
+dir == 0 ->  result == off
+dir == 1 ->  result >= off
+#endif
 static RFlagsAtOffset *r_flag_get_nearest_list(RFlag *f, ut64 off, int dir) {
 	RFlagsAtOffset key = { .off = off };
 	RFlagsAtOffset *flags = (dir >= 0)

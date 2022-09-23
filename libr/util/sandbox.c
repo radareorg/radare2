@@ -67,7 +67,7 @@ R_API bool r_sandbox_check_path(const char *path) {
 	}
 
 	// ./ path is not allowed
-        if (path[0]=='.' && path[1]=='/') {
+	if (path[0]=='.' && path[1]=='/') {
 		return false;
 	}
 	// Properly check for directory traversal using "..". First, does it start with a .. part?

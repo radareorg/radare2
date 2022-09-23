@@ -570,8 +570,8 @@ static void p_str(struct parse *p) {
  * The amount of lookahead needed to avoid this kludge is excessive.
  */
 static void p_bre(struct parse *p,
-    int end1,		/* first terminating character */
-    int end2)		/* second terminating character */
+		int end1,		/* first terminating character */
+		int end2)		/* second terminating character */
 {
 	sopno start = HERE();
 	int first = 1;			/* first subexpression? */
@@ -598,11 +598,9 @@ static void p_bre(struct parse *p,
 
 /*
  - p_simp_re - parse a simple RE, an atom possibly followed by a repetition
+was the simple RE an unbackslashed $?
  */
-static int			/* was the simple RE an unbackslashed $? */
-p_simp_re(struct parse *p,
-    int starordinary)		/* is a leading * an ordinary character? */
-{
+static int p_simp_re(struct parse *p, int starordinary) { /* is a leading * an ordinary character? */
 	int c;
 	int count;
 	int count2;
@@ -727,9 +725,7 @@ p_simp_re(struct parse *p,
 /*
  - p_count - parse a repetition count
  */
-static int			/* the value */
-p_count(struct parse *p)
-{
+static int p_count(struct parse *p) {
 	int count = 0;
 	int ndigits = 0;
 
@@ -949,9 +945,7 @@ static void p_b_eclass(struct parse *p, cset *cs) {
 /*
  - p_b_symbol - parse a character or [..]ed multicharacter collating symbol
  */
-static char			/* value of symbol */
-p_b_symbol(struct parse *p)
-{
+static char p_b_symbol(struct parse *p) {
 	char value;
 
 	REQUIRE(MORE(), R_REGEX_EBRACK);
@@ -969,9 +963,7 @@ p_b_symbol(struct parse *p)
  - p_b_coll_elem - parse a collating-element name and look it up
  */
 static char			/* value of collating element */
-p_b_coll_elem(struct parse *p,
-    int endc)			/* name ended by endc,']' */
-{
+p_b_coll_elem(struct parse *p, int endc) { /* name ended by endc,']' */
 	char *sp = p->next;
 	struct cname *cp;
 	int len;
@@ -997,17 +989,15 @@ p_b_coll_elem(struct parse *p,
 }
 
 /*
- - othercase - return the case counterpart of an alphabetic
+ - othercase - return the case counterpart of an alphabetic if no counterpart, return ch
  */
-static char			/* if no counterpart, return ch */
-othercase(int ch)
-{
+static char othercase(int ch) {
 	ch = (ut8)ch;
-	if (isalpha(ch)) {
+	if (isalpha (ch)) {
 		if (isupper (ch)) {
-			return ((ut8)tolower(ch));
+			return ((ut8)tolower (ch));
 		} else if (islower (ch)) {
-			return ((ut8)toupper(ch));
+			return ((ut8)toupper (ch));
 		} else { /* peculiar, but could happen */
 			return (ch);
 		}
@@ -1139,11 +1129,10 @@ nonnewline(struct parse *p)
 /*
  - repeat - generate code for a bounded repetition, recursively if needed
  */
-static void
-repeat(struct parse *p,
-    sopno start,		/* operand from here to end of strip */
-    int from,			/* repeated from this number */
-    int to)			/* to this number of times (maybe INTFINITY) */
+static void repeat(struct parse *p,
+		sopno start,		/* operand from here to end of strip */
+		int from,			/* repeated from this number */
+		int to)			/* to this number of times (maybe INTFINITY) */
 {
 	sopno finish = HERE();
 #	define	N	2
@@ -1494,8 +1483,8 @@ categorize(struct parse *p, struct re_guts *g)
  */
 static sopno			/* start of duplicate */
 dupl(struct parse *p,
-    sopno start,		/* from here */
-    sopno finish)		/* to this less one */
+		sopno start,		/* from here */
+		sopno finish)		/* to this less one */
 {
 	sopno ret = HERE();
 	sopno len = finish - start;
@@ -1522,9 +1511,7 @@ dupl(struct parse *p,
  * hard-case backup, but it's just too big and messy unless there are
  * some changes to the data structures.  Maybe later.
  */
-static void
-doemit(struct parse *p, sop op, size_t opnd)
-{
+static void doemit(struct parse *p, sop op, size_t opnd) {
 	/* avoid making error situations worse */
 	if (p->error != 0) {
 		return;
@@ -1547,9 +1534,7 @@ doemit(struct parse *p, sop op, size_t opnd)
 /*
  - doinsert - insert a sop into the strip
  */
-static void
-doinsert(struct parse *p, sop op, size_t opnd, sopno pos)
-{
+static void doinsert(struct parse *p, sop op, size_t opnd, sopno pos) {
 	sopno sn;
 	sop s;
 	int i;

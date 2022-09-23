@@ -2,11 +2,11 @@
 // TODO: integrate floating point support
 // TODO: do not use global variables
 /*
-   Reference Chapter 6:
-   "The C++ Programming Language", Special Edition.
-   Bjarne Stroustrup,Addison-Wesley Pub Co; 3 edition (February 15, 2000)
-    ISBN: 0201700735
- */
+	Reference Chapter 6:
+	"The C++ Programming Language", Special Edition.
+	Bjarne Stroustrup,Addison-Wesley Pub Co; 3 edition (February 15, 2000)
+	ISBN: 0201700735
+*/
 
 #define R_LOG_ORIGIN "util.calc"
 #include <r_util.h>

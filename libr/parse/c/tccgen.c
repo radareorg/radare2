@@ -79,7 +79,7 @@ ST_INLN bool not_structured(CType *t) {
 /* ------------------------------------------------------------------------- */
 #if 0
 /* we use our own 'finite' function to avoid potential problems with
-   non standard math libs */
+ * non standard math libs */
 /* XXX: endianness dependent */
 ST_FUNC int ieee_finite(double d) {
 	int *p = (int *) &d;
@@ -573,9 +573,9 @@ static bool is_compatible_func(CType *type1, CType *type2) {
 }
 
 /* return true if type1 and type2 are the same.  If unqualified is
-   true, qualifiers on the types are ignored.
+true, qualifiers on the types are ignored.
 
-   - enums are not checked as gcc __builtin_types_compatible_p ()
+- enums are not checked as gcc __builtin_types_compatible_p ()
  */
 static bool compare_types(CType *type1, CType *type2, int unqualified) {
 	int t1 = type1->t & VT_TYPE;
@@ -604,7 +604,7 @@ static bool compare_types(CType *type1, CType *type2, int unqualified) {
 }
 
 /* return true if type1 and type2 are exactly the same (including
-   qualifiers).
+ * qualifiers).
 */
 static bool is_compatible_types(CType *type1, CType *type2) {
 	return compare_types (type1, type2, 0);
@@ -617,7 +617,7 @@ static bool is_compatible_parameter_types(CType *type1, CType *type2) {
 }
 
 /* print a type. If 'varstr' is not NULL, then the variable is also
-   printed in the type */
+ * printed in the type */
 /* XXX: union */
 /* XXX: add array and function pointers */
 static void type_to_str(TCCState *s1, char *buf, int buf_size, CType *type, const char *varstr) {
@@ -746,11 +746,11 @@ no_var:
 }
 
 /* Parse GNUC __attribute__ extension. Currently, the following
-   extensions are recognized:
-   - aligned(n) : set data/function alignment.
-   - packed : force data alignment to 1
-   - unused : currently ignored, but may be used someday.
-   - regparm(n) : pass function parameters in registers (i386 only)
+ * extensions are recognized:
+ * - aligned(n) : set data/function alignment.
+ * - packed : force data alignment to 1
+ * - unused : currently ignored, but may be used someday.
+ * - regparm(n) : pass function parameters in registers (i386 only)
  */
 static void parse_attribute(TCCState *s1, AttributeDef *ad) {
 	int t;
@@ -1192,7 +1192,7 @@ do_decl:
 }
 
 /* parse an expression of the form '(type)' or '(expr)' and return its
-   type */
+ * type */
 static void parse_expr_type(TCCState *s1, CType *type) {
 	int n;
 	AttributeDef ad;
@@ -1207,7 +1207,7 @@ static void parse_expr_type(TCCState *s1, CType *type) {
 }
 
 /* return 0 if no type declaration. otherwise, return the basic type
-   and skip it.
+ * and skip it.
  */
 static int parse_btype(TCCState *s1, CType *type, AttributeDef *ad) {
 	int t, u, type_found, typespec_found, typedef_found;
@@ -1458,7 +1458,7 @@ the_end:
 }
 
 /* convert a function parameter type (array to pointer and function to
-   function pointer) */
+ * function pointer) */
 static inline void convert_parameter_type(TCCState *s1, CType *pt) {
 	/* remove const and volatile qualifiers (XXX: const could be used
 	   to indicate a const function parameter */
@@ -1620,10 +1620,10 @@ old_proto:
 }
 
 /* Parse a type declaration (except basic type), and return the type
-   in 'type'. 'td' is a bitmask indicating which kind of type decl is
-   expected. 'type' should contain the basic type. 'ad' is the
-   attribute definition of the basic type. It can be modified by
-   type_decl().
+ * in 'type'. 'td' is a bitmask indicating which kind of type decl is
+ * expected. 'type' should contain the basic type. 'ad' is the
+ * attribute definition of the basic type. It can be modified by
+ * type_decl().
  */
 static void type_decl(TCCState *s1, CType *type, AttributeDef *ad, int *v, int td) {
 	Sym *s;
@@ -2273,7 +2273,7 @@ static void expr_type(TCCState *s1, CType *type) {
 }
 
 /* parse a unary expression and return its type without any side
-   effect. */
+ * effect. */
 static void unary_type(TCCState *s1, CType *type) {
 	bool a = s1->nocode_wanted;
 	s1->nocode_wanted = true;
@@ -2301,7 +2301,7 @@ ST_FUNC long long expr_const(TCCState *s1) {
 }
 
 /* return the label token if current token is a label, otherwise
-   return zero */
+ * return zero */
 static bool is_label(TCCState *s1) {
 	int last_tok;
 
@@ -2321,9 +2321,9 @@ static bool is_label(TCCState *s1) {
 }
 
 /* t is the array or struct type. c is the array or struct
-   address. cur_index/cur_field is the pointer to the current
-   value. 'size_only' is true if only size info is needed (only used
-   in arrays) */
+ * address. cur_index/cur_field is the pointer to the current
+ * value. 'size_only' is true if only size info is needed (only used
+ * in arrays) */
 static void decl_designator(TCCState *s1, CType *type, unsigned long c,
 			    long long *cur_index, Sym **cur_field,
 			    int size_only)
@@ -2479,10 +2479,10 @@ static void init_putz(TCCState *s1, CType *t, unsigned long c, int size) {
 }
 
 /* 't' contains the type and storage info. 'c' is the offset of the
-   object in section 'sec'. If 'sec' is NULL, it means stack based
-   allocation. 'first' is true if array '{' must be read (multi
-   dimension implicit array init handling). 'size_only' is true if
-   size only evaluation is wanted (only for arrays). */
+ * object in section 'sec'. If 'sec' is NULL, it means stack based
+ * allocation. 'first' is true if array '{' must be read (multi
+ * dimension implicit array init handling). 'size_only' is true if
+ * size only evaluation is wanted (only for arrays). */
 static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int first, int size_only) {
 	long long index;
 	int n, no_oblock, nb, parlevel, parlevel1;
@@ -2719,13 +2719,13 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
 }
 
 /* parse an initializer for type 't' if 'has_init' is non zero, and
-   allocate space in local or global data space ('r' is either
-   VT_LOCAL or VT_CONST). If 'v' is non zero, then an associated
-   variable 'v' with an associated name represented by 'asm_label' of
-   scope 'scope' is declared before initializers are parsed. If 'v' is
-   zero, then a reference to the new object is put in the value stack.
-   If 'has_init' is 2, a special parsing is done to handle string
-   constants. */
+ * allocate space in local or global data space ('r' is either
+ * VT_LOCAL or VT_CONST). If 'v' is non zero, then an associated
+ * variable 'v' with an associated name represented by 'asm_label' of
+ * scope 'scope' is declared before initializers are parsed. If 'v' is
+ * zero, then a reference to the new object is put in the value stack.
+ * If 'has_init' is 2, a special parsing is done to handle string
+ * constants. */
 static void decl_initializer_alloc(TCCState *s1, CType *type, AttributeDef *ad, int r, int has_init, int v, char *asm_label, int scope) {
 	int size, align, addr;
 	int level;
