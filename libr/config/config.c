@@ -554,7 +554,8 @@ R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b) {
 			}
 		}
 		R_LOG_WARN ("This node is not boolean");
-		return NULL;
+		r_return_val_if_fail (false, NULL);
+		// return NULL;
 	}
 	node = r_config_node_new (name, r_str_bool (b));
 	if (!node) {
