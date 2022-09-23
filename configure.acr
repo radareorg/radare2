@@ -30,6 +30,8 @@ ARG_DISABLE WANT_THREADS threads disable use of thread apis ;
 (( useful for static builds . see sys/static.sh ))
 ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
+ARG_ENABLE R_CRITICAL_ENABLED threadsafety enable mutexes in critical code paths ;
+
 ARG_WITHOUT WANT_DYLINK dylink disable support for dynamic loading of plugins ;
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap build ptrace-wrap support needed for the iaito debugger on Linux ;
