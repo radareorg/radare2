@@ -380,7 +380,7 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 	if (!table) {
 		return;
 	}
-	r_th_lock_enter (r->lock);
+	R_CRITICAL_ENTER (r);
 	bool b64str = r_config_get_i (r->config, "bin.b64str");
 	int minstr = r_config_get_i (r->config, "bin.minstr");
 	int maxstr = r_config_get_i (r->config, "bin.maxstr");
@@ -579,7 +579,7 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 		}
 	}
 	r_table_free (table);
-	r_th_lock_leave (r->lock);
+	R_CRITICAL_LEAVE (r);
 }
 
 static bool bin_raw_strings(RCore *r, PJ *pj, int mode, int va) {

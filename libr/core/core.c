@@ -2697,22 +2697,22 @@ static bool r_core_anal_read_at(struct r_anal_t *anal, ut64 addr, ut8 *buf, int 
 }
 
 static void *r_core_sleep_begin(RCore *core) {
-	r_th_lock_enter (core->lock);
+	R_CRITICAL_ENTER (core);
 	RCoreTask *task = r_core_task_self (&core->tasks);
 	if (task) {
 		r_core_task_sleep_begin (task);
 	}
-	r_th_lock_leave (core->lock);
+	R_CRITICAL_LEAVE (core);
 	return task;
 }
 
 static void r_core_sleep_end(RCore *core, void *user) {
-	r_th_lock_enter (core->lock);
+	R_CRITICAL_ENTER (core);
 	RCoreTask *task = (RCoreTask *)user;
 	if (task) {
 		r_core_task_sleep_end (task);
 	}
-	r_th_lock_leave (core->lock);
+	R_CRITICAL_LEAVE (core);
 }
 
 static void __foreach(RCore *core, const char **cmds, int type) {

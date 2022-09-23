@@ -428,14 +428,14 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	if (fd < 0) {
 		return false;
 	}
-	r_th_lock_enter (r->lock);
+	R_CRITICAL_ENTER (r);
 	r_io_use_fd (r->io, fd);
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, fd, baseaddr, loadaddr, r->bin->rawstr);
 	// opt.fd = fd;
 	opt.xtr_idx = xtr_idx;
 	if (!r_bin_open_io (r->bin, &opt)) {
-		r_th_lock_leave (r->lock);
+		R_CRITICAL_LEAVE (r);
 		return false;
 	}
 	binfile = r_bin_cur (r->bin);
@@ -449,7 +449,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
-			r_th_lock_leave (r->lock);
+			R_CRITICAL_LEAVE (r);
 			return false;
 		}
 		info->bits = r->rasm->config->bits;
@@ -464,7 +464,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
-			r_th_lock_leave (r->lock);
+			R_CRITICAL_LEAVE (r);
 			return false;
 		}
 		if (plugin) {
@@ -476,7 +476,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	if (plugin && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex;wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"");
 	}
-	r_th_lock_leave (r->lock);
+	R_CRITICAL_LEAVE (r);
 	return true;
 }
 
@@ -608,7 +608,7 @@ static bool linkcb(void *user, void *data, ut32 id) {
 
 R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	r_return_val_if_fail (r && r->io, false);
-	r_th_lock_enter (r->lock);
+	R_CRITICAL_ENTER (r);
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin = NULL;
@@ -621,7 +621,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// hack for openmany handlers
 		if (!filenameuri || *filenameuri == '-') {
 			// filenameuri = "malloc://512";
-			r_th_lock_leave (r->lock);
+			R_CRITICAL_LEAVE (r);
 			return false;
 		}
 		r_core_file_open (r, filenameuri, 0, baddr);
@@ -634,7 +634,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
-	r_th_lock_leave (r->lock);
+	R_CRITICAL_LEAVE (r);
 	if (is_io_load) {
 		// TODO? necessary to restore the desc back?
 		// Fix to select pid before trying to load the binary
