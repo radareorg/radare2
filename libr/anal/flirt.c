@@ -11,7 +11,7 @@
 
 #define DEBUG 0
 
-#if 0
+/*
 Flirt file format
 =================
 High level layout:
@@ -32,7 +32,7 @@ Parsing:
 
 parse_tree (cf. parse_tree):
 - read number of initial root nodes: 1 byte if strictly inferior to 127 otherwise 2 bytes,
-stored in big endian mode, and the most significant bit isn't used. cf. read_multiple_bytes().
+stored in big endian mode, and the most significant bit isnt used. cf. read_multiple_bytes().
 if 0, this is a leaf, goto leaf (cf. parse_leaf). else continue parsing (cf. parse_tree).
 
 	- for number of root node do:
@@ -101,7 +101,7 @@ non-variant bytes, they only differ by the functions they call. These functions 
 identified.
 The offset is from the start of the function to the referenced function name.
 They appear as "(REF XXXX: NAME)" in dumpsig output
-#endif
+*/
 
 /* arch flags */
 #define IDASIG__ARCH__386        0       // Intel 80x86
