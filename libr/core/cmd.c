@@ -3379,6 +3379,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		return r_core_cmd0 (core, cmd);
 	}
 
+	R_CRITICAL_ENTER (core);
 	/* must store a local orig_offset because there can be
 	 * nested call of this function */
 	ut64 orig_offset = core->offset;
@@ -3392,6 +3393,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	cmd = (char *)r_str_trim_head_ro (icmd);
 	r_str_trim_tail (cmd);
+	R_CRITICAL_LEAVE (core);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (!*cmd) {
 		if (core->cmdrepeat > 0) {
@@ -3456,8 +3458,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		r_cons_break_clear ();
 	}
 	r_cons_break_push (NULL, NULL);
-
+	R_CRITICAL_ENTER (core);
 	bool ocur_enabled = core->print && core->print->cur_enabled;
+	R_CRITICAL_LEAVE (core);
 	while (rep-- > 0 && *cmd) {
 		if (r_cons_was_breaked ()) {
 			break;
@@ -3471,7 +3474,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			}
 		}
 		char *cr = strdup (cmdrep);
+		R_CRITICAL_ENTER (core);
 		core->break_loop = false;
+		R_CRITICAL_LEAVE (core);
 		if (rep > 1 && strstr (cmd, "@@")) {
 			char *repcmd = r_str_newf ("%"PFMT64d"%s", rep + 1, cmd);
 			ret = r_core_cmd_subst_i (core, repcmd, colon, (rep == orep - 1) ? &tmpseek : NULL);
@@ -3605,6 +3610,7 @@ static char *r_core_cmd_find_subcmd_end(char *cmd, bool backquote) {
 }
 
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek) {
+	R_CRITICAL_ENTER (core);
 	RList *tmpenvs = r_list_newf (tmpenvs_free);
 	const char *quotestr = "`";
 	const char *tick = NULL;
@@ -3630,6 +3636,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	}
 	r_str_trim (cmd);
 
+	R_CRITICAL_LEAVE (core);
 	/* quoted / raw command */
 	switch (*cmd) {
 	case '.':

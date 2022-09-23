@@ -289,10 +289,12 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	RCoreTaskScheduler *scheduler = &core->tasks;
 	bool stop = next_state != R_CORE_TASK_STATE_RUNNING;
 
+	R_CRITICAL_ENTER (core);
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
 	if (scheduler->oneshot_running || (!stop && scheduler->tasks_running == 1 && scheduler->oneshots_enqueued == 0)) {
 		tasks_lock_leave (scheduler, &old_sigset);
+		R_CRITICAL_LEAVE (core);
 		return;
 	}
 
@@ -347,6 +349,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 			r_cons_context_reset ();
 		}
 	}
+	R_CRITICAL_LEAVE (core);
 }
 
 static void task_wakeup(RCoreTask *current) {
@@ -354,6 +357,7 @@ static void task_wakeup(RCoreTask *current) {
 		return;
 	}
 	RCore *core = current->core;
+	R_CRITICAL_ENTER (core);
 	RCoreTaskScheduler *scheduler = &core->tasks;
 
 	TASK_SIGSET_T old_sigset;
@@ -391,6 +395,7 @@ static void task_wakeup(RCoreTask *current) {
 	} else {
 		r_cons_context_reset ();
 	}
+	R_CRITICAL_LEAVE (core);
 }
 
 R_API void r_core_task_yield(RCoreTaskScheduler *scheduler) {

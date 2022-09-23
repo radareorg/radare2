@@ -8,14 +8,10 @@
 
 R_LIB_VERSION (r_cons);
 
-// Stub function that cb_main_output gets pointed to in util/log.c by r_cons_new
-// This allows Iaito to set per-task logging redirection
 static R_TH_LOCAL int oldraw = -1;
-static R_TH_LOCAL RThreadLock *lock = NULL;
 static R_TH_LOCAL RConsContext r_cons_context_default = {{{{0}}}};
 static R_TH_LOCAL RCons g_cons_instance = {0};
 static R_TH_LOCAL RCons *r_cons_instance = NULL;
-static R_TH_LOCAL RThreadLock r_cons_lock = R_THREAD_LOCK_INIT;
 static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
 static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
 #define I (r_cons_instance)
@@ -33,7 +29,6 @@ R_API bool r_cons_is_initialized(void) {
 	return r_cons_instance != NULL;
 }
 
-//this structure goes into cons_stack when r_cons_push/pop
 typedef struct {
 	char *buf;
 	int buf_len;
@@ -49,7 +44,7 @@ typedef struct {
 
 static void cons_grep_reset(RConsGrep *grep) {
 	if (grep) {
-		R_FREE (grep->str); // double-free
+		R_FREE (grep->str);
 		ZERO_FILL (*grep);
 		grep->line = -1;
 		grep->sort = -1;
@@ -65,11 +60,6 @@ static void break_stack_free(void *ptr) {
 static void cons_stack_free(void *ptr) {
 	RConsStack *s = (RConsStack *)ptr;
 	R_FREE (s->buf);
-/*
-	if (s->grep) {
-		R_FREE (s->grep->str); // FREE
-	}
-*/
 	cons_grep_reset (s->grep);
 	R_FREE (s->grep);
 	free (s);
@@ -348,8 +338,7 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 	if (!context || !context->break_stack) {
 		return;
 	}
-
-	//if we don't have any element in the stack start the signal
+	// if we don't have any element in the stack start the signal
 	RConsBreakStack *b = R_NEW0 (RConsBreakStack);
 	if (!b) {
 		return;
@@ -364,11 +353,11 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 #endif
 		context->breaked = false;
 	}
-	//save the actual state
+	// save the actual state
 	b->event_interrupt = context->event_interrupt;
 	b->event_interrupt_data = context->event_interrupt_data;
 	r_stack_push (context->break_stack, b);
-	//configure break
+	// configure break
 	context->event_interrupt = cb;
 	context->event_interrupt_data = user;
 }
@@ -524,6 +513,7 @@ R_API void r_cons_break_end(void) {
 }
 
 R_API void *r_cons_sleep_begin(void) {
+	R_CRITICAL_ENTER (I);
 	if (!r_cons_instance) {
 		r_cons_thready ();
 	}
@@ -540,6 +530,7 @@ R_API void r_cons_sleep_end(void *user) {
 	if (I->cb_sleep_end) {
 		I->cb_sleep_end (I->user, user);
 	}
+	R_CRITICAL_LEAVE (I);
 }
 
 #if __WINDOWS__
@@ -635,12 +626,12 @@ R_API RCons *r_cons_new(void) {
 	if (I->refcnt != 1) {
 		return I;
 	}
-	if (lock) {
-		r_th_lock_wait (lock);
+	if (I->lock) {
+		r_th_lock_wait (I->lock);
 	} else {
-		lock = r_th_lock_new (false);
+		I->lock = r_th_lock_new (false);
 	}
-	r_th_lock_enter (lock);
+	R_CRITICAL_ENTER (I);
 	I->use_utf8 = r_cons_is_utf8 ();
 	I->rgbstr = r_cons_rgb_str_off;
 	I->line = r_line_new ();
@@ -692,7 +683,7 @@ R_API RCons *r_cons_new(void) {
 	GetConsoleMode (h, &I->term_buf);
 	I->term_raw = 0;
 	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE)) {
-		R_LOG_ERROR ("r_cons: Cannot set control console handler");
+		R_LOG_ERROR ("Cannot set control console handler");
 	}
 #endif
 	I->pager = NULL; /* no pager by default */
@@ -700,10 +691,8 @@ R_API RCons *r_cons_new(void) {
 	I->show_vals = false;
 	r_cons_reset ();
 	r_cons_rgb_init ();
-
 	r_print_set_is_interrupted_cb (r_cons_is_breaked);
-	r_th_lock_leave (lock);
-
+	R_CRITICAL_LEAVE (I);
 	return I;
 }
 
@@ -740,11 +729,10 @@ static bool palloc(int moar) {
 		return false;
 	}
 	if (!C->buffer) {
-		int new_sz;
 		if ((INT_MAX - MOAR) < moar) {
 			return false;
 		}
-		new_sz = moar + MOAR;
+		size_t new_sz = moar + MOAR;
 		temp = calloc (1, new_sz);
 		if (temp) {
 			C->buffer_sz = new_sz;
@@ -1442,13 +1430,13 @@ R_API int r_cons_write(const char *str, int len) {
 		}
 	}
 	if (str && len > 0 && !I->null) {
-		r_th_lock_enter (&r_cons_lock);
+		R_CRITICAL_ENTER (I);
 		if (palloc (len + 1)) {
 			memcpy (C->buffer + C->buffer_len, str, len);
 			C->buffer_len += len;
 			C->buffer[C->buffer_len] = 0;
 		}
-		r_th_lock_leave (&r_cons_lock);
+		R_CRITICAL_LEAVE (I);
 	}
 	if (C->flush) {
 		r_cons_flush ();
@@ -2205,11 +2193,15 @@ R_API void r_cons_clear_buffer(void) {
 }
 
 R_API void r_cons_thready(void) {
-	r_th_lock_enter (&r_cons_lock);
+	if (r_cons_instance) {
+		R_CRITICAL_ENTER (I);
+	}
 	C->unbreakable = true;
 	r_sys_signable (false); // disable signal handling
 	if (!r_cons_instance) {
 		r_cons_new ();
 	}
-	r_th_lock_leave (&r_cons_lock);
+	if (r_cons_instance) {
+		R_CRITICAL_LEAVE (I);
+	}
 }

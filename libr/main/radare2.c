@@ -1599,6 +1599,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (sandbox) {
 		r_config_set_b (r->config, "cfg.sandbox", true);
 	}
+	R_CRITICAL_ENTER (r);
 	if (quiet) {
 		r_config_set_b (r->config, "scr.wheel", false);
 		r_config_set_b (r->config, "scr.interactive", false);
@@ -1615,6 +1616,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			R_LOG_ERROR ("Cannot open '%s'", patchfile);
 		}
 	}
+	R_CRITICAL_LEAVE (r);
 	if ((patchfile && !quiet) || !patchfile) {
 		if (zerosep) {
 			r_cons_zero ();

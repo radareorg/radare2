@@ -376,13 +376,14 @@ R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 }
 
 static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
-	bool b64str = r_config_get_i (r->config, "bin.b64str");
-	int minstr = r_config_get_i (r->config, "bin.minstr");
-	int maxstr = r_config_get_i (r->config, "bin.maxstr");
 	RTable *table = r_core_table (r, "strings");
 	if (!table) {
 		return;
 	}
+	R_CRITICAL_ENTER (r);
+	bool b64str = r_config_get_i (r->config, "bin.b64str");
+	int minstr = r_config_get_i (r->config, "bin.minstr");
+	int maxstr = r_config_get_i (r->config, "bin.maxstr");
 	RBin *bin = r->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
 	RListIter *iter;
@@ -578,6 +579,7 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 		}
 	}
 	r_table_free (table);
+	R_CRITICAL_LEAVE (r);
 }
 
 static bool bin_raw_strings(RCore *r, PJ *pj, int mode, int va) {
