@@ -11,11 +11,10 @@ R_LIB_VERSION (r_cons);
 // Stub function that cb_main_output gets pointed to in util/log.c by r_cons_new
 // This allows Iaito to set per-task logging redirection
 static R_TH_LOCAL int oldraw = -1;
-static R_TH_LOCAL RThreadLock *lock = NULL;
 static R_TH_LOCAL RConsContext r_cons_context_default = {{{{0}}}};
 static R_TH_LOCAL RCons g_cons_instance = {0};
 static R_TH_LOCAL RCons *r_cons_instance = NULL;
-static R_TH_LOCAL RThreadLock r_cons_lock = R_THREAD_LOCK_INIT;
+// static R_TH_LOCAL RThreadLock r_cons_lock = R_THREAD_LOCK_INIT;
 static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
 static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
 #define I (r_cons_instance)
@@ -524,7 +523,7 @@ R_API void r_cons_break_end(void) {
 }
 
 R_API void *r_cons_sleep_begin(void) {
-	r_th_lock_enter (lock);
+	R_CRITICAL_ENTER (I);
 	if (!r_cons_instance) {
 		r_cons_thready ();
 	}
@@ -535,15 +534,13 @@ R_API void *r_cons_sleep_begin(void) {
 }
 
 R_API void r_cons_sleep_end(void *user) {
-	//r_lock_enter (lock);
-	// guard with a mutex
 	if (!r_cons_instance) {
 		r_cons_thready ();
 	}
 	if (I->cb_sleep_end) {
 		I->cb_sleep_end (I->user, user);
 	}
-	r_th_lock_leave (lock);
+	R_CRITICAL_LEAVE (I);
 }
 
 #if __WINDOWS__
@@ -639,12 +636,12 @@ R_API RCons *r_cons_new(void) {
 	if (I->refcnt != 1) {
 		return I;
 	}
-	if (lock) {
-		r_th_lock_wait (lock);
+	if (I->lock) {
+		r_th_lock_wait (I->lock);
 	} else {
-		lock = r_th_lock_new (false);
+		I->lock = r_th_lock_new (false);
 	}
-	r_th_lock_enter (lock);
+	R_CRITICAL_ENTER (I);
 	I->use_utf8 = r_cons_is_utf8 ();
 	I->rgbstr = r_cons_rgb_str_off;
 	I->line = r_line_new ();
@@ -706,7 +703,7 @@ R_API RCons *r_cons_new(void) {
 	r_cons_rgb_init ();
 
 	r_print_set_is_interrupted_cb (r_cons_is_breaked);
-	r_th_lock_leave (lock);
+	R_CRITICAL_LEAVE (I);
 
 	return I;
 }
@@ -1446,13 +1443,13 @@ R_API int r_cons_write(const char *str, int len) {
 		}
 	}
 	if (str && len > 0 && !I->null) {
-		r_th_lock_enter (&r_cons_lock);
+		R_CRITICAL_ENTER (I);
 		if (palloc (len + 1)) {
 			memcpy (C->buffer + C->buffer_len, str, len);
 			C->buffer_len += len;
 			C->buffer[C->buffer_len] = 0;
 		}
-		r_th_lock_leave (&r_cons_lock);
+		R_CRITICAL_LEAVE (I);
 	}
 	if (C->flush) {
 		r_cons_flush ();
@@ -2209,11 +2206,15 @@ R_API void r_cons_clear_buffer(void) {
 }
 
 R_API void r_cons_thready(void) {
-	r_th_lock_enter (&r_cons_lock);
+	if (r_cons_instance) {
+		R_CRITICAL_ENTER (I);
+	}
 	C->unbreakable = true;
 	r_sys_signable (false); // disable signal handling
 	if (!r_cons_instance) {
 		r_cons_new ();
 	}
-	r_th_lock_leave (&r_cons_lock);
+	if (r_cons_instance) {
+		R_CRITICAL_LEAVE (I);
+	}
 }

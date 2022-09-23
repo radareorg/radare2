@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <r_types.h>
+#include <r_th.h>
 #include <r_util/pj.h>
 #include <r_util/r_graph.h>
 #include <r_util/r_hex.h>
@@ -509,6 +510,7 @@ typedef struct r_cons_t {
 	int click_y;
 	bool show_vals;		// show which section in Vv
 	// TODO: move into instance? + avoid unnecessary copies
+	RThreadLock *lock;
 	RConsCursorPos cpos;
 } RCons;
 
