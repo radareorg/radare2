@@ -11,21 +11,21 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 loadaddr, const char *fi
 static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr);
 
 static bool close_but_cb(void *user, void *data, ut32 id) {
-       RCore *core = (RCore *)user;
-       RIODesc *desc = (RIODesc *)data;
-       if (core && desc && core->io->desc) {
-	       if (desc->fd != core->io->desc->fd) {
-		       // TODO: use the API
-		       r_core_cmdf (core, "o-%d", desc->fd);
-	       }
-       }
-       return true;
+	RCore *core = (RCore *)user;
+	RIODesc *desc = (RIODesc *)data;
+	if (core && desc && core->io->desc) {
+		if (desc->fd != core->io->desc->fd) {
+			// TODO: use the API
+			r_core_cmdf (core, "o-%d", desc->fd);
+		}
+	}
+	return true;
 }
 
 // TODO: move to IO as a helper?
 R_API bool r_core_file_close_all_but(RCore *core) {
-       r_id_storage_foreach (core->io->files, close_but_cb, core);
-       return true;
+	r_id_storage_foreach (core->io->files, close_but_cb, core);
+	return true;
 }
 
 static bool its_a_mips(RCore *core) {

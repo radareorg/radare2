@@ -124,7 +124,7 @@ static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut
 		(void)file_printf (ms, "line %u: ", lineno);
 	}
 	// OPENBSDBUG
-        file_vprintf (ms, f, va);
+	file_vprintf (ms, f, va);
 	if (error > 0) {
 		(void)file_printf (ms, " (%s)", strerror (error));
 	}

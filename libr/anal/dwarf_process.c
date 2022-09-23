@@ -775,7 +775,7 @@ static void get_spec_die_type(Context *ctx, RBinDwarfDie *die, RStrBuf *ret_type
 }
 
 /* For some languages linkage name is more informative like C++,
-   but for Rust it's rubbish and the normal name is fine */
+ * but for Rust it's rubbish and the normal name is fine */
 static bool prefer_linkage_name(const char *lang) {
 	if (!lang || !strcmp (lang, "rust") || !strcmp (lang, "ada")) {
 		return false;
@@ -1036,7 +1036,7 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, VariableLocationKind
 }
 
 /* returns string literal register name!
-   TODO add more arches                 */
+ * TODO add more arches                 */
 static const char *get_dwarf_reg_name(const char *arch, int reg_num, VariableLocationKind *kind, int bits) {
 	R_LOG_DEBUG ("get_dwarf_reg_name %s %d", arch, bits);
 	if (arch && !strcmp (arch, "x86")) {

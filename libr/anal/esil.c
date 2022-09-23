@@ -1087,16 +1087,16 @@ CF - carry flag -- Set on high-order bit carry or borrow; cleared otherwise
 	num>>63
 PF - parity flag
 	(num&0xff)
-    Set if low-order eight bits of result contain an even number of "1" bits; cleared otherwise
+	Set if low-order eight bits of result contain an even number of "1" bits; cleared otherwise
 ZF - zero flags
-    Set if result is zero; cleared otherwise
+	Set if result is zero; cleared otherwise
 	zf = num?0:1;
 SF - sign flag
-    Set equal to high-order bit of result (0 if positive 1 if negative)
+	Set equal to high-order bit of result (0 if positive 1 if negative)
 	sf = ((st64)num)<0)?1:0;
 OF - overflow flag
 	if (a>0&&b>0 && (a+b)<0)
-    Set if result is too large a positive number or too small a negative number (excluding sign bit) to fit in destination operand; cleared otherwise
+	Set if result is too large a positive number or too small a negative number (excluding sign bit) to fit in destination operand; cleared otherwise
 
 JBE: CF = 1 || ZF = 1
 
@@ -1717,23 +1717,23 @@ static bool esil_diveq(RAnalEsil *esil) {
 
 // 128 bit multiplication result
 static void mult64to128(ut64 op1, ut64 op2, ut64 *hi, ut64 *lo) {
-    ut64 u1 = (op1 & 0xffffffff);
-    ut64 v1 = (op2 & 0xffffffff);
-    ut64 t = (u1 * v1);
-    ut64 w3 = (t & 0xffffffff);
-    ut64 k = (t >> 32);
+	ut64 u1 = (op1 & 0xffffffff);
+	ut64 v1 = (op2 & 0xffffffff);
+	ut64 t = (u1 * v1);
+	ut64 w3 = (t & 0xffffffff);
+	ut64 k = (t >> 32);
 
-    op1 >>= 32;
-    t = (op1 * v1) + k;
-    k = (t & 0xffffffff);
-    ut64 w1 = (t >> 32);
+	op1 >>= 32;
+	t = (op1 * v1) + k;
+	k = (t & 0xffffffff);
+	ut64 w1 = (t >> 32);
 
-    op2 >>= 32;
-    t = (u1 * op2) + k;
-    k = (t >> 32);
+	op2 >>= 32;
+	t = (u1 * op2) + k;
+	k = (t >> 32);
 
-    *hi = (op1 * op2) + w1 + k;
-    *lo = (t << 32) + w3;
+	*hi = (op1 * op2) + w1 + k;
+	*lo = (t << 32) + w3;
 }
 
 static bool esil_long_mul(RAnalEsil *esil) {

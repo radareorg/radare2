@@ -1126,7 +1126,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		if (STR_EQUAL (opdreg, regname)) {
 			return false;
 		}
-    		return false;
+		return false;
 	case R_ANAL_OP_TYPE_XOR:
 		if (STR_EQUAL (opsreg, opdreg) && !src->memref && !dst->memref) {
 			return false;

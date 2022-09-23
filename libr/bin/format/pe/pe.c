@@ -433,10 +433,10 @@ static char* resolveModuleOrdinal(Sdb* sdb, const char* module, int ordinal) {
 }
 
 static int bin_pe_parse_imports(RBinPEObj* pe,
-                                struct r_bin_pe_import_t** importp, int* nimp,
-                                const char* dll_name,
-                                PE_DWord OriginalFirstThunk,
-                                PE_DWord FirstThunk) {
+		struct r_bin_pe_import_t** importp, int* nimp,
+		const char* dll_name,
+		PE_DWord OriginalFirstThunk,
+		PE_DWord FirstThunk) {
 	char import_name[PE_NAME_LENGTH + 1];
 	char name[PE_NAME_LENGTH + 1];
 	PE_Word import_hint, import_ordinal = 0;

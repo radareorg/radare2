@@ -174,7 +174,7 @@ static ut32 encodeBitMasksWithSize(ut64 imm, ut32 reg_size) {
 			size <<= 1;
 			break;
 		}
-   } while (size > 2);
+	} while (size > 2);
 	// determine rot to make element be 0^m 1^n
 	ut32 cto, i;
 	ut64 mask = UT64_MAX >> (64 - size);
@@ -385,12 +385,12 @@ static ut32 cl(ArmOp *op) {
 }
 
 static ut32 r_n_math(ArmOp *op, ut32 data_64, ut32 data_32 , bool is64) {
-        ut32 data = UT32_MAX;
+	ut32 data = UT32_MAX;
 	int k = 0;
 	if (is64) {
-	        k = data_64;
+		k = data_64;
 	} else {
-	        k = data_32;
+		k = data_32;
 	}
 	check_cond (op->operands[0].type == ARM_GPR);
 	check_cond (op->operands[1].type == ARM_GPR);
@@ -404,7 +404,7 @@ static ut32 r_n_math(ArmOp *op, ut32 data_64, ut32 data_32 , bool is64) {
 }
 
 static ut32 adds(ArmOp *op) {
-        ut32 data = UT32_MAX;
+	ut32 data = UT32_MAX;
 	int k = 0;
 	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
@@ -412,7 +412,7 @@ static ut32 adds(ArmOp *op) {
 	bool check4 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].type & ARM_CONSTANT;
 
 	if (op->operands[0].type == ARM_GPR && op->operands[1].type == ARM_GPR && op->operands[2].type == ARM_GPR) {
-        	if (check1) {
+		if (check1) {
 			k = 0x000000ab;
 		} else if (check2) {
 			k = 0x0000002b;
@@ -636,27 +636,27 @@ static ut32 tst(ArmOp *op) {
 		// not implemented yet
 	} else if (op->operands[1].type & ARM_CONSTANT) {
 		return data;
-		/*
-             check_cond (op->operands[1].immediate <= 0xfffffffffffffff);
-             if (check3) {
-                    k = 0x1f0040f2;
-             } else if (check4) {
-                    k = 0x1f000072;
-             }
-             data = k | (op->operands[0].reg & 0x7) << 29;
-             data |= (op->operands[0].reg & 0x18) << 13;
+#if 0
+		   check_cond (op->operands[1].immediate <= 0xfffffffffffffff);
+		   if (check3) {
+		   k = 0x1f0040f2;
+		   } else if (check4) {
+		   k = 0x1f000072;
+		   }
+		   data = k | (op->operands[0].reg & 0x7) << 29;
+		   data |= (op->operands[0].reg & 0x18) << 13;
 
-            	// encode immediate for tst
-             data |= (op->operands[1].immediate & 0x0) << 0x0;
-             data |= (op->operands[1].immediate & 0x0) << 0x0;
-	     return data;
-      */
+		// encode immediate for tst
+		data |= (op->operands[1].immediate & 0x0) << 0x0;
+		data |= (op->operands[1].immediate & 0x0) << 0x0;
+		return data;
+#endif
 	}
 	return data;
 }
 
 static ut32 ccmn(ArmOp *op, const char *str) {
-        ut32 data = UT32_MAX;
+	ut32 data = UT32_MAX;
 	int k = 0;
 	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].type & ARM_CONSTANT;
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].type & ARM_CONSTANT;
@@ -710,9 +710,9 @@ static ut32 ccmn(ArmOp *op, const char *str) {
 }
 
 static ut32 csel(ArmOp *op, const char *str) {
-        ut32 data_32 = 0;
-        ut32 data_64 = 0;
-        bool is64 = false;
+	ut32 data_32 = 0;
+	ut32 data_64 = 0;
+	bool is64 = false;
 	bool check1 = op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64 && op->operands[2].reg_type & ARM_REG64;
 	bool check2 = op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32 && op->operands[2].reg_type & ARM_REG32;
 
@@ -726,7 +726,7 @@ static ut32 csel(ArmOp *op, const char *str) {
 			return UT32_MAX;
 		}
 	} else {
-         	if (check1) {
+		if (check1) {
 			is64 = true;
 			data_64 = 0x0010809a;
 		} else if (check2) {
@@ -755,7 +755,7 @@ static ut32 cset(ArmOp *op, const char *str) {
 			return data;
 		}
 	} else {
-         	if (reg_64) {
+		if (reg_64) {
 			k = 0xe0079f9a;
 		} else if (reg_32) {
 			k = 0xe0079f1a;
@@ -1356,10 +1356,9 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 		return UT32_MAX;
 	}
 #if 0
-        31   30 29   28 ... 24   23..5  4..0
-        ---+-------+-----------+-------+----
+	31   30 29   28 ... 24   23..5  4..0
+	---+-------+-----------+-------+----
 	op | immlo | 1 0 0 0 0 | immhi | Rd
-
 	op = 0 (adr) || 1 (adrp)
 #endif
 	ut32 immlo = (at & 3) << 29;

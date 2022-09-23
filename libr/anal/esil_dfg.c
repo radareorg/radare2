@@ -166,7 +166,7 @@ static int _rv_del_alloc_cmp(void *incoming, void *in, void *user) {
 
 	/*
 	  =incoming=
-        ===in===
+	  ===in===
 
 	up-shrink in
 
