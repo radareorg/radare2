@@ -1693,7 +1693,6 @@ R_API bool r_anal_function_add_bb(RAnal *anal, RAnalFunction *fcn,
 		ut64 addr, ut64 size,
 		ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff);
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
-R_API void r_anal_function_invalidate_read_ahead_cache(RAnal *anal);
 
 R_API void r_anal_function_check_bp_use(RAnalFunction *fcn);
 R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size);
