@@ -12,7 +12,7 @@ static R_TH_LOCAL bool __has_debug = false;
 /* XXX : this must be registered in runtime */
 static const char *r_lib_types[] = {
 	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bin_xtr", "bin_ldr",
-	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", NULL
+	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", "arch", NULL
 };
 
 static const char *__lib_types_get(int idx) {

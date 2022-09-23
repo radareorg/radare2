@@ -9,7 +9,7 @@ all: ${ALL_TARGETS}
 
 ALL_TARGETS=
 #x86.mk arm.mk
-ARCHS=
+ARCHS=i4004.mk
 include $(ARCHS)
 
 clean:

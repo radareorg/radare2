@@ -26,7 +26,7 @@ RArchPlugin r_arch_plugin_null = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = R_LIB_TYPE_ARCH,
 	.data = &r_arch_plugin_null,
 	.version = R2_VERSION
 };
