@@ -409,6 +409,7 @@ R_API const char *r_arch_op_direction_to_string(RArchOp *op);
 R_API const char *r_arch_cond_to_string(RArchCond cc);
 
 extern RArchPlugin r_arch_plugin_null;
+extern RArchPlugin r_arch_plugin_i4004;
 
 #ifdef __cplusplus
 }
