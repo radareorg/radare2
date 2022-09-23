@@ -4,7 +4,7 @@
 #include <r_parse.h>
 #include <r_util.h>
 
-#define READ_AHEAD 0
+#define READ_AHEAD 1
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
 // XXX must be configurable by the user
 #define JMPTBLSZ 512
@@ -56,23 +56,27 @@ typedef struct {
 static int read_ahead(ReadAhead *ra, RAnal *anal, ut64 addr, ut8 *buf, int len) {
 	const size_t cache_len = sizeof (ra->cache);
 	if (len < 1) {
-		return 0;
+		return -1;
 	}
 	bool is_cached = false;
 #if READ_AHEAD
-	if (ra->cache_addr != UT64_MAX && addr >= ra->cache_addr) {
+	if (ra->cache_addr != UT64_MAX && addr >= ra->cache_addr && addr < ra->cache_addr + sizeof (ra->cache)) {
 		ut64 addr_end = UT64_ADD_OVFCHK (addr, len)? UT64_MAX: addr + len;
 		ut64 cache_addr_end = UT64_ADD_OVFCHK (ra->cache_addr, cache_len)? UT64_MAX: ra->cache_addr + cache_len;
 		is_cached = ((addr != UT64_MAX) && (addr >= ra->cache_addr) && (addr_end < cache_addr_end));
 	}
 #endif
 	if (!is_cached) {
-		int a = anal->iob.read_at (anal->iob.io, addr, buf, len); // double read
-		memcpy (ra->cache, buf, cache_len);
+		if (len > sizeof (ra->cache)) {
+			len = sizeof (ra->cache);
+		}
+		(void)anal->iob.read_at (anal->iob.io, addr, ra->cache, sizeof (ra->cache));
 		ra->cache_addr = addr;
-		return a;
 	}
-	memcpy (buf, ra->cache + (addr - ra->cache_addr), len);
+	int delta = addr - ra->cache_addr;
+	r_return_val_if_fail (delta >= 0, -1);
+	size_t length = sizeof (ra->cache) - delta;
+	memcpy (buf, ra->cache + delta, R_MIN (len, length));
 	return len;
 }
 
@@ -683,11 +687,11 @@ repeat:
 		ut64 at = addr + at_delta;
 		ut64 bytes_read = R_MIN (len - at_delta, sizeof (buf));
 		ret = read_ahead (&ra, anal, at, buf, bytes_read);
-
 		if (ret < 0) {
 			R_LOG_ERROR ("Failed to read");
 			break;
 		}
+		// ret is the max length of bytes available
 		if (is_invalid_memory (anal, buf, bytes_read)) {
 			if (anal->verbose) {
 				R_LOG_WARN ("FFFF opcode at 0x%08"PFMT64x, at);
