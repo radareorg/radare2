@@ -408,6 +408,7 @@ typedef struct {
 	ut64 baddr;
 	RCore *core;
 	int do_analysis;
+	RThread *th_bin;
 } ThreadData;
 
 static void perform_analysis(RCore *r, int do_analysis) {
@@ -421,10 +422,16 @@ static void perform_analysis(RCore *r, int do_analysis) {
 }
 
 static RThreadFunctionRet th_analysis(RThread *th) {
+	ThreadData *td = (ThreadData*)th->user;
+	if (td->th_bin) {
+		R_LOG_INFO ("waiting for rbin parsing");
+		r_th_wait (td->th_bin);
+		r_th_free (td->th_bin);
+		td->th_bin = NULL;
+	}
 	R_LOG_INFO ("loading binary information in background");
 	r_cons_thready ();
 	r_cons_new ();
-	ThreadData *td = (ThreadData*)th->user;
 	perform_analysis (td->core, td->do_analysis);
 	R_FREE (th->user);
 	R_LOG_INFO ("bin.load done");
@@ -1334,7 +1341,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 									td->baddr = baddr;
 									td->core = r;
 									th_bin = r_th_new (th_binload, td, false);
-									r_th_start (th_bin, false);
+									r_th_start (th_bin, true);
 								} else {
 									binload (r, filepath, baddr);
 								}
@@ -1545,17 +1552,14 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 	if (do_analysis > 0) {
 		if (threaded) {
-			if (th_bin) {
-				r_th_wait (th_bin);
-				r_th_free (th_bin);
-				th_bin = NULL;
-			}
 			ThreadData *td = R_NEW0 (ThreadData);
+			td->th_bin = th_bin;
 			td->do_analysis = do_analysis;
 			td->core = r;
 			R_LOG_INFO ("Running analysis level %d in background", do_analysis);
 			th_ana = r_th_new (th_analysis, td, false);
 			r_th_start (th_ana, false);
+			th_bin = NULL;
 		} else {
 			perform_analysis (r, do_analysis);
 		}
@@ -1713,6 +1717,7 @@ beach:
 	if (th_bin) {
 		r_th_wait (th_bin);
 		r_th_free (th_bin);
+		th_bin = NULL;
 	}
 	if (th_ana) {
 		r_th_wait (th_ana);
