@@ -7,9 +7,6 @@
 #define DEFAULT_NARGS 4
 #define FLAG_PREFIX ";-- "
 
-// ideally this code must be rewritten to work without the `doseek`
-#define DOSEEK 0
-
 #define COLOR(ds, field)       ((ds)->show_color? (ds)->field: "")
 #define COLOR_ARG(ds, field)   ((ds)->show_color && (ds)->show_color_args? (ds)->field: "")
 #define COLOR_CONST(ds, color) ((ds)->show_color? Color_##color: "")
@@ -6655,9 +6652,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			break;
 		}
 	}
-#if DOSEEK
-	core->offset = old_offset;
-#endif
 	r_anal_op_fini (&ds->analop);
 	ds_free (ds);
 	if (!result) {
@@ -6814,9 +6808,6 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	int flags = r_config_get_i (core->config, "asm.flags");
 	bool asm_immtrim = r_config_get_i (core->config, "asm.imm.trim");
 	int i = 0, j, ret, err = 0;
-#if DOSEEK
-	ut64 old_offset = core->offset;
-#endif
 	ut64 addr = core->offset;
 	const char *color_reg = R_CONS_COLOR_DEF (reg, Color_YELLOW);
 	const char *color_num = R_CONS_COLOR_DEF (num, Color_CYAN);
@@ -6832,10 +6823,6 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	}
 	bool mybuf = false;
 	if (!buf) {
-#if DOSEEK
-		r_core_seek (core, address, true);
-		buf = core->block;
-#endif
 		buf = malloc (nb_bytes);
 		mybuf = true;
 		r_io_read_at (core->io, address, buf, nb_bytes);
@@ -6844,9 +6831,6 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	ut64 addr_end = address + nb_bytes;
 
 	r_cons_break_push (NULL, NULL);
-#if 0 // DOSEEK
-	r_core_seek (core, address, false);
-#endif
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	int midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
@@ -7049,9 +7033,6 @@ toro:
 		r_asm_op_fini (&asmop);
 	}
 	if ((nb_opcodes > 0 && j < nb_opcodes) && (addr + i < addr_end)) {
-#if DOSEEK
-		r_core_seek (core, addr, true); // core->offset + i, true);
-#endif
 		addr += i;
 		r_io_read_at (core->io, addr, buf, nb_bytes);
 		i = 0;
@@ -7062,9 +7043,6 @@ toro:
 	}
 	r_config_set_b (core->config, "asm.marks", asmmarks);
 	r_cons_break_pop ();
-#if DOSEEK
-	r_core_seek (core, old_offset, true);
-#endif
 	return err;
 }
 
