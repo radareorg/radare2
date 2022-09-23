@@ -235,6 +235,7 @@ R_API RFlag *r_flag_new(void) {
 		r_flag_free (f);
 		return NULL;
 	}
+	f->lock = r_th_lock_new (true);
 	f->base = 0;
 	f->cb_printf = (PrintfCallback)printf;
 	f->zones = r_list_newf (r_flag_zone_item_free);
@@ -279,6 +280,8 @@ R_API void r_flag_item_free(RFlagItem *item) {
 
 R_API RFlag *r_flag_free(RFlag *f) {
 	r_return_val_if_fail (f, NULL);
+	r_th_lock_free (f->lock);
+	f->lock = NULL;
 	r_skiplist_free (f->by_off);
 	ht_pp_free (f->ht_name);
 	sdb_free (f->tags);

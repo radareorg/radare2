@@ -524,8 +524,11 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 }
 
 R_API int r_core_block_read(RCore *core) {
+	int res = -1;
+	R_CRITICAL_ENTER (core);
 	if (core && core->block) {
-		return r_io_read_at (core->io, core->offset, core->block, core->blocksize);
+		res = r_io_read_at (core->io, core->offset, core->block, core->blocksize);
 	}
-	return -1;
+	R_CRITICAL_LEAVE (core);
+	return res;
 }
