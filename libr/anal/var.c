@@ -581,13 +581,16 @@ R_API int r_anal_var_get_argnum(RAnalVar *var) {
 		return -1;
 	}
 	int i;
-	int arg_max = var->fcn->cc ? r_anal_cc_max_arg (anal, var->fcn->cc) : 0;
+	char *cc = var->fcn->cc ? strdup (var->fcn->cc): NULL;
+	int arg_max = cc ? r_anal_cc_max_arg (anal, cc) : 0;
 	for (i = 0; i < arg_max; i++) {
-		const char *reg_arg = r_anal_cc_arg (anal, var->fcn->cc, i);
+		const char *reg_arg = r_anal_cc_arg (anal, cc, i);
 		if (reg_arg && !strcmp (reg->name, reg_arg)) {
+			free (cc);
 			return i;
 		}
 	}
+	free (cc);
 	return -1;
 }
 

@@ -2960,7 +2960,7 @@ static RThreadFunctionRet thchan_handler(RThread *th) {
 			// eprintf ("thchan_handler no message\n");
 		//	r_th_sem_post (cm->sem);
 		//	r_th_channel_write (core->chan, NULL);
-		//r_th_lock_leave (cm->lock);
+		// r_th_lock_leave (cm->lock);
 			continue;
 		}
 		char *res = r_core_cmd_str (core, (const char *)cm->msg);
