@@ -23,8 +23,6 @@ R_API void r_arch_op_init(RArchOp *op) {
 
 		op->srcs = r_vector_new (sizeof (RArchValue), NULL, NULL);
 		op->dsts = r_vector_new (sizeof (RArchValue), NULL, NULL);
-		r_vector_reserve (op->srcs, 3);
-		r_vector_reserve (op->dsts, 1);
 	}
 }
 

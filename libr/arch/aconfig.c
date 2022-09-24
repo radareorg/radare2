@@ -2,8 +2,9 @@
 
 #include <r_arch.h>
 
-static void my_ac_free(RArchConfig *cfg) {
+static void _ac_free(RArchConfig *cfg) {
 	if (cfg) {
+		free (cfg->decoder);
 		free (cfg->arch);
 		free (cfg->cpu);
 		free (cfg->os);
@@ -46,7 +47,7 @@ R_API RArchConfig *r_arch_config_new(void) {
 	ac->bitshift = 0;
 	// ac->free = (void (*)(void*))my_ac_free;
 	ac->syntax = R_ARCH_SYNTAX_INTEL;
-	r_ref_init (ac, &my_ac_free);
+	r_ref_init (ac, &_ac_free);
 	ac->big_endian = false;
 	r_ref (ac);
 	return (RArchConfig *)ac;
