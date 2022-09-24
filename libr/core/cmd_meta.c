@@ -714,7 +714,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 
 static int cmd_meta_others(RCore *core, const char *input) {
 	int n, type = input[0], subtype;
-	char *t = 0, *p, *p2, name[256];
+	char *t = 0, *p, *p2, name[256] = {0};
 	int repeat = 1;
 	ut64 addr = core->offset;
 
@@ -726,7 +726,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '?':
 		switch (input[0]) {
 		case 'f': // "Cf?"
-			r_cons_println(
+			r_cons_println (
 				"Usage: Cf[-] [sz] [fmt..] [@addr]\n\n"
 				"'sz' indicates the byte size taken up by struct.\n"
 				"'fmt' is a 'pf?' style format string. It controls only the display format.\n\n"
@@ -970,7 +970,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						if (type != 's') {
 							fi = r_flag_get_i (core->flags, addr);
 							if (fi) {
-								strncpy (name, fi->name, sizeof (name)-1);
+								strncpy (name, fi->name, sizeof (name) - 1);
 							}
 						}
 					}

@@ -613,6 +613,7 @@ static bool isFunctionFlag(const char *n) {
  * NULL is returned if such a item is not found. */
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 	r_return_val_if_fail (f, NULL);
+	R_CRITICAL_ENTER (f);
 	if (f->mask) {
 		off &= f->mask;
 	}
@@ -621,6 +622,7 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 	RListIter *iter;
 	const RFlagsAtOffset *flags_at = r_flag_get_nearest_list (f, off, -1);
 	if (!flags_at) {
+		R_CRITICAL_LEAVE (f);
 		return NULL;
 	}
 	if (flags_at->off == off) {
@@ -638,11 +640,13 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 			}
 		}
 		if (nice) {
+			R_CRITICAL_LEAVE (f);
 			return evalFlag (f, nice);
 		}
 	}
 
 	if (!closest) {
+		R_CRITICAL_LEAVE (f);
 		return NULL;
 	}
 	while (!nice && flags_at) {
@@ -661,7 +665,9 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 		flags_at = (!nice && flags_at->off) ?
 			r_flag_get_nearest_list (f, flags_at->off - 1, -1): NULL;
 	}
-	return nice? evalFlag (f, nice): NULL;
+	RFlagItem *fi = nice? evalFlag (f, nice): NULL;
+	R_CRITICAL_LEAVE (f);
+	return fi;
 }
 
 static bool append_to_list(RFlagItem *fi, void *user) {

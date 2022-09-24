@@ -143,19 +143,31 @@ static inline RSpace *r_flag_space_get(RFlag *f, const char *name) {
 }
 
 static inline RSpace *r_flag_space_cur(RFlag *f) {
-	return r_spaces_current (&f->spaces);
+	R_CRITICAL_ENTER (f);
+	RSpace *sp = r_spaces_current (&f->spaces);
+	R_CRITICAL_LEAVE (f);
+	return sp;
 }
 
 static inline const char *r_flag_space_cur_name(RFlag *f) {
-	return r_spaces_current_name (&f->spaces);
+	R_CRITICAL_ENTER (f);
+	const char *s = r_spaces_current_name (&f->spaces);
+	R_CRITICAL_LEAVE (f);
+	return s; // XXX should strdup
 }
 
 static inline RSpace *r_flag_space_set(RFlag *f, const char *name) {
-	return r_spaces_set (&f->spaces, name);
+	R_CRITICAL_ENTER (f);
+	RSpace *s = r_spaces_set (&f->spaces, name);
+	R_CRITICAL_LEAVE(f);
+	return s;
 }
 
 static inline bool r_flag_space_unset(RFlag *f, const char *name) {
-	return r_spaces_unset (&f->spaces, name);
+	R_CRITICAL_ENTER (f);
+	bool res = r_spaces_unset (&f->spaces, name);
+	R_CRITICAL_LEAVE(f);
+	return res;
 }
 
 static inline bool r_flag_space_rename(RFlag *f, const char *oname, const char *nname) {

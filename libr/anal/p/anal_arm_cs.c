@@ -4432,6 +4432,7 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	R_CRITICAL_ENTER (a);
 	cs_insn *insn = NULL;
 	int mode = (a->config->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	int n, ret;
@@ -4467,6 +4468,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_ARM%s, %x, ...): %s",
 				(a->config->bits == 64) ? "64" : "", mode, cs_strerror (ret));
 			a->cs_handle = 0;
+			R_CRITICAL_LEAVE (a);
 			return -1;
 		}
 	}
@@ -4514,6 +4516,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			if (mask & R_ANAL_OP_MASK_DISASM) {
 				op->mnemonic = strdup ("invalid");
 			}
+			R_CRITICAL_LEAVE (a);
 			return -1;
 		}
 		hackyArmAnal (a, op, buf, len);
@@ -4529,6 +4532,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_close (cs_handle);
 	cs_handle = 0;
 #endif
+	R_CRITICAL_LEAVE (a);
 	return op->size;
 }
 
