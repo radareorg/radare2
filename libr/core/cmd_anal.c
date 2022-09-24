@@ -4101,7 +4101,7 @@ static void cmd_aflxj(RCore *core) {
 	pj_end(pj);
 	char *s = pj_drain (pj);
 	r_cons_printf ("%s\n", s);
-	free(s);
+	free (s);
 	sdb_free (db);
 	ls_free (keys);
 }
