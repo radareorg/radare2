@@ -1901,12 +1901,12 @@ R_API void r_cons_invert(int set, int color) {
 	r_cons_strcat (R_CONS_INVERT (set, color));
 }
 
-/*
-  Enable/Disable scrolling in terminal:
-    FMI: cd libr/cons/t ; make ti ; ./ti
-  smcup: disable terminal scrolling (fullscreen mode)
-  rmcup: enable terminal scrolling (normal mode)
-*/
+#if 0
+Enable/Disable scrolling in terminal:
+FMI: cd libr/cons/t ; make ti ; ./ti
+smcup: disable terminal scrolling (fullscreen mode)
+rmcup: enable terminal scrolling (normal mode)
+#endif
 R_API bool r_cons_set_cup(bool enable) {
 #if __UNIX__
 	const char *code = enable

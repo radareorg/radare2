@@ -166,7 +166,7 @@ R_API void r_anal_free(RAnal *a) {
 	ht_pp_free (a->ht_name_fun);
 	set_u_free (a->visited);
 	r_anal_hint_storage_fini (a);
-       r_th_lock_free (a->lock);
+	r_th_lock_free (a->lock);
 	r_interval_tree_fini (&a->meta);
 	r_unref (a->config);
 	free (a->zign_path);

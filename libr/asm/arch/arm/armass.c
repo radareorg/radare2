@@ -6482,10 +6482,10 @@ return 0;
 	// INVALID thisplay("str r1, [pc, r2]");
 	// INVALID thisplay("str r1, [sp, r2]");
 #if 0
-   0:   8991            ldrh    r1, [r2, #12]
-   2:   7b11            ldrb    r1, [r2, #12]
-   4:   8191            strh    r1, [r2, #12]
-   6:   7311            strb    r1, [r2, #12]
+	   0:   8991            ldrh    r1, [r2, #12]
+	   2:   7b11            ldrb    r1, [r2, #12]
+	   4:   8191            strh    r1, [r2, #12]
+	   6:   7311            strb    r1, [r2, #12]
 #endif
 	thisplay("ldrh r1, [r2, 8]"); // aligned to 4
 	thisplay("ldrh r1, [r3, 8]"); // aligned to 4
@@ -6543,8 +6543,8 @@ return 0;
 	display("pop {pc}");
 #endif
 
-   //10ab4:       00047e30        andeq   r7, r4, r0, lsr lr
-   //10ab8:       00036e70        andeq   r6, r3, r0, ror lr
+	   //10ab4:       00047e30        andeq   r7, r4, r0, lsr lr
+	   //10ab8:       00036e70        andeq   r6, r3, r0, ror lr
 
 	display("andeq r7, r4, r0, lsr lr");
 	display("andeq r6, r3, r0, ror lr");

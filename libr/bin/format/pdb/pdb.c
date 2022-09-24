@@ -588,8 +588,8 @@ static void finish_pdb_parse(RPdb *pdb) {
 	int i = 0;
 #if 1
 /* r_list_free should be enough, all the items in a list should be freeable using a generic destructor
-   hacking up things like that may only produce problems. so it is better to not assume that a specific
-   element in a list is of a specific type and just store this info in the type struct or so.
+ * hacking up things like that may only produce problems. so it is better to not assume that a specific
+ * element in a list is of a specific type and just store this info in the type struct or so.
 */
 // XXX: this loop is fucked up. i prefer to leak than crash
 	it = r_list_iterator (pdb->pdb_streams);
@@ -651,11 +651,11 @@ static void finish_pdb_parse(RPdb *pdb) {
 static SimpleTypeMode get_simple_type_mode(PDB_SIMPLE_TYPES type) {
 	ut32 value = type; // cast to unsigned for defined bitwise operations
 	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
-        .---------------------------.------.----------.
-        |           Unused          | Mode |   Kind   |
-        '---------------------------'------'----------'
-        |+32                        |+12   |+8        |+0
-	*/
+	     .---------------------------.------.----------.
+	     |           Unused          | Mode |   Kind   |
+	     '---------------------------'------'----------'
+	     |+32                        |+12   |+8        |+0
+	 */
 	// because mode is only number between 0-7, 1 byte is enough
 	return (value & 0x00000000F0000);
 }
@@ -663,10 +663,10 @@ static SimpleTypeMode get_simple_type_mode(PDB_SIMPLE_TYPES type) {
 static SimpleTypeKind get_simple_type_kind(PDB_SIMPLE_TYPES type) {
 	ut32 value = type; // cast to unsigned for defined bitwise operations
 	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
-        .---------------------------.------.----------.
-        |           Unused          | Mode |   Kind   |
-        '---------------------------'------'----------'
-        |+32                        |+12   |+8        |+0
+	     .---------------------------.------.----------.
+	     |           Unused          | Mode |   Kind   |
+	     '---------------------------'------'----------'
+	     |+32                        |+12   |+8        |+0
 	*/
 	return (value & 0x00000000000FF);
 }

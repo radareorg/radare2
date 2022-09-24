@@ -116,7 +116,7 @@ R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size) {
 	RRBTree *relocs = r_bin_get_relocs (core->bin);
 	if (!relocs) {
 		return NULL;
-        }
+	}
 	struct getreloc_t gr = { .vaddr = addr, .size = size };
 	return r_crbtree_find (relocs, &gr, getreloc_tree, NULL);
 }
@@ -1160,21 +1160,21 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 		} else if (lpath[0] == '.') { // ./xxx/yyy
 			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
 		} else if (lpath[0] == '/') { // /xxx/yyy
-      			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
-    		} else { // xxx/yyy
-      			if (strlen (pwd) == 1) { // if pwd is root
+			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
+		} else { // xxx/yyy
+			if (strlen (pwd) == 1) { // if pwd is root
 				dirname = r_file_new ("", lpath, NULL);
-      			} else {
+			} else {
 				dirname = r_file_new (pwd, lpath, NULL);
-      			}
+			}
 		}
 		basename = r_str_new (p + 1);
 	} else { // xxx
-    		if (strlen (pwd) == 1) {
-      			dirname = r_str_newf ("%s", R_SYS_DIR);
-    		} else {
-      			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
-    		}
+		if (strlen (pwd) == 1) {
+			dirname = r_str_newf ("%s", R_SYS_DIR);
+		} else {
+			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
+		}
 		basename = r_str_new (lpath);
 	}
 	R_FREE (pwd);
@@ -2982,13 +2982,12 @@ R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
 	if (!core->block) {
-		r_cons_eprintf ("Cannot allocate %d byte(s)\n", R_CORE_BLOCKSIZE);
-		/* XXX memory leak */
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", R_CORE_BLOCKSIZE);
 		return false;
 	}
 	core->chan = NULL;
 	r_core_setenv (core);
-       core->lock = r_th_lock_new (true);
+	core->lock = r_th_lock_new (true);
 	core->in_log_process = false;
 	core->rfs = r_fs_shell_new ();
 	core->ev = r_event_new (core);

@@ -1529,12 +1529,12 @@ static ut64 read_val(RBitmap *bm, int pos, int sz) {
 	int i;
 	ut64 n = 0;
 #if 0
-0 1 2 3 4 5 6 7
-    ^
-7 6 5 4 3 2 1 0
-          ^
-7-2 = 5
-7-3 = 4
+	0 1 2 3 4 5 6 7
+	    ^
+	7 6 5 4 3 2 1 0
+		  ^
+	7-2 = 5
+	7-3 = 4
 #endif
 	bool be = true;
 	for (i = 0; i < sz; i++) {

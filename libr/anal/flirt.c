@@ -12,97 +12,97 @@
 #define DEBUG 0
 
 /*
-   Flirt file format
-   =================
-   High level layout:
-   After the v5 header, there might be two more header fields depending of the version.
-   If version == 6 or version == 7, there is one more header field.
-   If version == 8 or version == 9, there is two more header field.
-   See idasig_v* structs for their description.
-   Next there is the non null terminated library name of library_name_len length.
-   Next see Parsing below.
+Flirt file format
+=================
+High level layout:
+After the v5 header, there might be two more header fields depending of the version.
+If version == 6 or version == 7, there is one more header field.
+If version == 8 or version == 9, there is two more header field.
+See idasig_v* structs for their description.
+Next there is the non null terminated library name of library_name_len length.
+Next see Parsing below.
 
-   Endianness:
-   All multi bytes values are stored in little endian form in the headers.
-   For the rest of the file they are stored in big endian form.
+Endianness:
+All multi bytes values are stored in little endian form in the headers.
+For the rest of the file they are stored in big endian form.
 
-   Parsing:
-   - described headers
-   - library name, not null terminated, length of library_name_len.
+Parsing:
+- described headers
+- library name, not null terminated, length of library_name_len.
 
-   parse_tree (cf. parse_tree):
-   - read number of initial root nodes: 1 byte if strictly inferior to 127 otherwise 2 bytes,
-   stored in big endian mode, and the most significant bit isn't used. cf. read_multiple_bytes().
-   if 0, this is a leaf, goto leaf (cf. parse_leaf). else continue parsing (cf. parse_tree).
+parse_tree (cf. parse_tree):
+- read number of initial root nodes: 1 byte if strictly inferior to 127 otherwise 2 bytes,
+stored in big endian mode, and the most significant bit isnt used. cf. read_multiple_bytes().
+if 0, this is a leaf, goto leaf (cf. parse_leaf). else continue parsing (cf. parse_tree).
 
-   - for number of root node do:
-    - read node length, one unsigned byte (the pattern size in this node) (cf. read_node_length)
-    - read node variant mask (bit array) (cf. read_node_variant_mask):
-      if node length < 0x10 read up to two bytes. cf. read_max_2_bytes
-      if node length < 0x20 read up to five bytes. cf. read_multiple_bytes
-    - read non-variant bytes (cf. read_node_bytes)
-    - goto parse_tree
+	- for number of root node do:
+	 - read node length, one unsigned byte (the pattern size in this node) (cf. read_node_length)
+	 - read node variant mask (bit array) (cf. read_node_variant_mask):
+	  - if node length < 0x10 read up to two bytes. cf. read_max_2_bytes
+	  - if node length < 0x20 read up to five bytes. cf. read_multiple_bytes
+	 - read non-variant bytes (cf. read_node_bytes)
+	 - goto parse_tree
 
-   leaf (cf. parse_leaf):
-   - read crc length, 1 byte
-   - read crc value, 2 bytes
-   module:
-    - read total module length:
-      if version >= 9 read up to five bytes, cf. read_multiple_bytes
-      else read up to two bytes, cf. read_max_2_bytes
-    - read module public functions (cf. read_module_public_functions):
-    same crc:
-      public function name:
-        - read function offset:
-          if version >= 9 read up to five bytes, cf. read_multiple_bytes
-          else read up to two bytes, cf. read_max_2_bytes
-        - if current byte < 0x20, read it : this is a function flag, see IDASIG_FUNCTION* defines
-        - read function name until current byte < 0x20
-        - read parsing flag, 1 byte
-        - if flag & IDASIG__PARSE__MORE_PUBLIC_NAMES: goto public function name
-        - if flag & IDASIG__PARSE__READ_TAIL_BYTES, read tail bytes, cf. read_module_tail_bytes:
-          - if version >= 8: read number of tail bytes, else suppose one
-          - for number of tail bytes do:
-            - read tail byte offset:
-              if version >= 9 read up to five bytes, cf. read_multiple_bytes
-              else read up to two bytes, cf. read_max_2_bytes
-            - read tail byte value, one byte
+	leaf (cf. parse_leaf):
+	- read crc length, 1 byte
+	- read crc value, 2 bytes
+	module:
+	 - read total module length:
+	  - if version >= 9 read up to five bytes, cf. read_multiple_bytes
+	  - else read up to two bytes, cf. read_max_2_bytes
+	 - read module public functions (cf. read_module_public_functions):
+	 same crc:
+	  - public function name:
+	     - read function offset:
+	       if version >= 9 read up to five bytes, cf. read_multiple_bytes
+	       else read up to two bytes, cf. read_max_2_bytes
+	     - if current byte < 0x20, read it : this is a function flag, see IDASIG_FUNCTION* defines
+	     - read function name until current byte < 0x20
+	     - read parsing flag, 1 byte
+	     - if flag & IDASIG__PARSE__MORE_PUBLIC_NAMES: goto public function name
+	     - if flag & IDASIG__PARSE__READ_TAIL_BYTES, read tail bytes, cf. read_module_tail_bytes:
+	       - if version >= 8: read number of tail bytes, else suppose one
+	       - for number of tail bytes do:
+		 - read tail byte offset:
+		   if version >= 9 read up to five bytes, cf. read_multiple_bytes
+		   else read up to two bytes, cf. read_max_2_bytes
+		 - read tail byte value, one byte
 
-        - if flag & IDASIG__PARSE__READ_REFERENCED_FUNCTIONS, read referenced functions, cf. read_module_referenced_functions:
-          - if version >= 8: read number of referenced functions, else suppose one
-          - for number of referenced functions do:
-            - read referenced function offset:
-              if version >= 9 read up to five bytes, cf. read_multiple_bytes
-              else read up to two bytes, cf. read_max_2_bytes
-            - read referenced function name length, one byte:
-              - if name length == 0, read length up to five bytes, cf. read_multiple_bytes
-            - for name length, read name chars:
-              - if name is null terminated, it means the offset is negative
+	     - if flag & IDASIG__PARSE__READ_REFERENCED_FUNCTIONS, read referenced functions, cf. read_module_referenced_functions:
+	       - if version >= 8: read number of referenced functions, else suppose one
+	       - for number of referenced functions do:
+		 - read referenced function offset:
+		   if version >= 9 read up to five bytes, cf. read_multiple_bytes
+		   else read up to two bytes, cf. read_max_2_bytes
+		 - read referenced function name length, one byte:
+		   - if name length == 0, read length up to five bytes, cf. read_multiple_bytes
+		 - for name length, read name chars:
+		   - if name is null terminated, it means the offset is negative
 
-        - if flag & IDASIG__PARSE__MORE_MODULES_WITH_SAME_CRC, goto same crc, read function with same crc
-        - if flag & IDASIG__PARSE__MORE_MODULES, goto module, to read another module
+	     - if flag & IDASIG__PARSE__MORE_MODULES_WITH_SAME_CRC, goto same crc, read function with same crc
+	     - if flag & IDASIG__PARSE__MORE_MODULES, goto module, to read another module
 
+More Information
+-----------------
+Function flags:
+- local functions ((l) with dumpsig) which are static ones.
+- collision functions ((!) with dumpsig) are the result of an unresolved collision.
 
-   More Information
-   -----------------
-   Function flags:
-   - local functions ((l) with dumpsig) which are static ones.
-   - collision functions ((!) with dumpsig) are the result of an unresolved collision.
+Tail bytes:
+When two modules have the same pattern, and same crc, flirt tries to identify
+a byte which is different in all the same modules.
+Their offset is from the first byte after the crc.
+They appear as "(XXXX: XX)" in dumpsig output
 
-   Tail bytes:
-   When two modules have the same pattern, and same crc, flirt tries to identify
-   a byte which is different in all the same modules.
-   Their offset is from the first byte after the crc.
-   They appear as "(XXXX: XX)" in dumpsig output
-
-   Referenced functions:
-   When two modules have the same pattern, and same crc, and are identical in
-   non-variant bytes, they only differ by the functions they call. These functions are
-   "referenced functions". They need to be identified first before the module can be
-   identified.
-   The offset is from the start of the function to the referenced function name.
-   They appear as "(REF XXXX: NAME)" in dumpsig output
+Referenced functions:
+When two modules have the same pattern, and same crc, and are identical in
+non-variant bytes, they only differ by the functions they call. These functions are
+"referenced functions". They need to be identified first before the module can be
+identified.
+The offset is from the start of the function to the referenced function name.
+They appear as "(REF XXXX: NAME)" in dumpsig output
 */
+
 /* arch flags */
 #define IDASIG__ARCH__386        0       // Intel 80x86
 #define IDASIG__ARCH__Z80        1       // 8085, Z80
@@ -261,18 +261,18 @@ typedef struct idasig_v10_t {
 
 /* newer header only add fields, that's why we'll always read a v5 header first */
 #if 0
-   arch             : target architecture
-   file_types       : files where we expect to find the functions (exe, coff, ...)
-   os_types         : os where we expect to find the functions
-   app_types        : applications in which we expect to find the functions
-   features         : signature file features
-   old_n_functions  : number of functions
-   crc16            : certainly crc16 of the tree
-   ctype[12]        : unknown field
-   library_name_len : length of the library name, which is right after the header
-   ctypes_crc16     : unknown field
-   n_functions      : number of functions
-   pattern_size     : number of the leading pattern bytes
+arch             : target architecture
+file_types       : files where we expect to find the functions (exe, coff, ...)
+os_types         : os where we expect to find the functions
+app_types        : applications in which we expect to find the functions
+features         : signature file features
+old_n_functions  : number of functions
+crc16            : certainly crc16 of the tree
+ctype[12]        : unknown field
+library_name_len : length of the library name, which is right after the header
+ctypes_crc16     : unknown field
+n_functions      : number of functions
+pattern_size     : number of the leading pattern bytes
 #endif
 
 #define R_FLIRT_NAME_MAX 1024

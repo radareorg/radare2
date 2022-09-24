@@ -102,7 +102,7 @@ static void walkSymbols(RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab,
 		r_list_append (bin->methods_list, sym);
 		i += 8 - 1;
 	}
-    return;
+	return;
 
 out_walk_symbol:
 	R_FREE (sym);

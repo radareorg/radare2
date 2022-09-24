@@ -35,11 +35,9 @@ char *strcat_dup(char *s1, char *s2, st32 n_free) {
 }
 
 char *get_hex_str(ut32 hex_num) {
-    char aux[3];
-
-    aux[2] = '\0';
-    aux[1] = hex_str[hex_num & 0xF];
-    aux[0] = hex_str[(hex_num >> 4) & 0xF];
-
-    return strdup(aux);
+	char aux[3];
+	aux[2] = '\0';
+	aux[1] = hex_str[hex_num & 0xF];
+	aux[0] = hex_str[(hex_num >> 4) & 0xF];
+	return strdup (aux);
 }

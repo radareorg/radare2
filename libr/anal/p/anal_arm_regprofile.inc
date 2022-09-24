@@ -334,10 +334,10 @@ static char *get_reg_profile(RAnal *anal) {
 		"fpu	v30h	.64	776	0\n"
 		"fpu	v31h	.64	792	0\n"
 
-        // this sucks but q* is a valid alias
-        // for the vector registers in arm64
+		// this sucks but q* is a valid alias
+		// for the vector registers in arm64
 
-        /* 128 bit vector */
+		/* 128 bit vector */
 		"fpu	q0	.128	288	0\n"
 		"fpu	q1	.128	304	0\n"
 		"fpu	q2	.128	320	0\n"

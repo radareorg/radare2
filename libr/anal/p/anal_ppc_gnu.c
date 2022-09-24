@@ -161,7 +161,7 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 }
 
 static bool set_reg_profile(RAnal *anal) {
-    const char *p =
+	const char *p =
 	"=PC	srr0\n"
 	"=SR	srr1\n" // status register
 	"=A0	r0\n"
@@ -246,42 +246,42 @@ R_API RLibStruct radare_plugin = {
 #if 0
 NOTES:
 ======
-     10000
-     AA = absolute address
-     LK = link bit
-     BD = bits 16-19
-       address
-     if (AA) {
-       address = (int32) BD << 2
-     } else {
-       address += (int32) BD << 2
-     }
-    AA LK
-    30 31
-     0  0  bc
-     1  0  bca
-     0  1  bcl
-     1  1  bcla
+	 10000
+	 AA = absolute address
+	 LK = link bit
+	 BD = bits 16-19
+	   address
+	 if (AA) {
+	   address = (int32) BD << 2
+	 } else {
+	   address += (int32) BD << 2
+	 }
+	AA LK
+	30 31
+	 0  0  bc
+	 1  0  bca
+	 0  1  bcl
+	 1  1  bcla
 
-     10011
-     BCCTR
-     LK = 31
+	 10011
+	 BCCTR
+	 LK = 31
 
-     bclr or bcr (Branch Conditional Link Register) Instruction
-     10011
+	 bclr or bcr (Branch Conditional Link Register) Instruction
+	 10011
 
-     6-29 -> LL (addr) ?
-     B  10010 -> branch
-     30 31
-     0  0   b
-     1  0   ba
-     0  1   bl
-     1  1   bla
-     SC SYSCALL 5 first bytes 10001
-     SVC SUPERVISORCALL
-     30 31
-     0  0  svc
-     0  1  svcl
-     1  0  svca
-     1  1  svcla
+	 6-29 -> LL (addr) ?
+	 B  10010 -> branch
+	 30 31
+	 0  0   b
+	 1  0   ba
+	 0  1   bl
+	 1  1   bla
+	 SC SYSCALL 5 first bytes 10001
+	 SVC SUPERVISORCALL
+	 30 31
+	 0  0  svc
+	 0  1  svcl
+	 1  0  svca
+	 1  1  svcla
 #endif

@@ -1,5 +1,5 @@
 /* radare - LGPL - Copyright 2021-2022 - Sylvain Pelissier
-   Implementation of AES Key Wrap Algorithm (RFC 3394) */
+ * Implementation of AES Key Wrap Algorithm (RFC 3394) */
 
 #include <r_lib.h>
 #include <r_crypto.h>

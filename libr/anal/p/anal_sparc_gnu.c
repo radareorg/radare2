@@ -151,9 +151,10 @@ enum {
 	FCC_UL = 0x3,
 	FCC_ULE = 0xe,
 };
+
 /* Define some additional conditions that are nor mappable to
-   the existing R_ANAL_COND* ones and need to be handled in a
-   special way. */
+ * the existing R_ANAL_COND* ones and need to be handled in a
+ * special way. */
 enum {
 	R_ANAL_COND_ALWAYS = -1,
 	R_ANAL_COND_NEVER = -2,
