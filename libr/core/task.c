@@ -592,9 +592,7 @@ R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler) {
 	if (!scheduler) {
 		return NULL;
 	}
-	R_CRITICAL_ENTER (scheduler->core);
 	RCoreTask *res = scheduler->current_task ? scheduler->current_task : scheduler->main_task;
-	R_CRITICAL_LEAVE (scheduler->core);
 	return res;
 }
 
