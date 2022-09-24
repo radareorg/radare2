@@ -40,47 +40,75 @@ R_API RArch *r_arch_new(void) {
 	return a;
 }
 
-R_API bool r_arch_use(RArch *a, RArchConfig *config) {
-	r_return_val_if_fail (a && config && config->arch, false);
-	ut32 bits_bits;
-	switch (config->bits) {
+static char *_find_bestmatch(RList *plugins, RArchConfig *cfg) {
+	ut32 bits;
+	switch (cfg->bits) {
 	case 64:
-		bits_bits = R_SYS_BITS_64;
+		bits = R_SYS_BITS_64;
 		break;
 	case 32:
-		bits_bits = R_SYS_BITS_32;
+		bits = R_SYS_BITS_32;
 		break;
 	case 27:
-		bits_bits = R_SYS_BITS_27;
+		bits = R_SYS_BITS_27;
 		break;
 	case 16:
-		bits_bits = R_SYS_BITS_16;
+		bits = R_SYS_BITS_16;
+		break;
+	case 12:
+		bits = R_SYS_BITS_12;
 		break;
 	case 8:
-		bits_bits = R_SYS_BITS_8;
+		bits = R_SYS_BITS_8;
+		break;
+	case 4:
+		bits = R_SYS_BITS_4;
 		break;
 	default:
-		return false;
+		bits = UT32_MAX;
 	}
-	char *dname = NULL;
-	RArchPlugin *p = NULL;
+	ut8 best_score = 0;
+	char *name = NULL;
 	RListIter *iter;
-	r_list_foreach (a->plugins, iter, p) {
-		if (!strcmp (p->arch, config->arch)) {
-			//TODO: add more checks here
-			if (p->bits & bits_bits) {
-				dname = p->name;
-			}
+	RArchPlugin *p;
+	r_list_foreach (plugins, iter, p) {
+		ut32 score = 0;
+		if (!strcmp (p->arch, cfg->arch)) {
+			score = 50;
+		}
+		if (p->bits & bits) {
+			score += (!!score) * 30;
+		}
+		if (p->endian & cfg->endian) {
+			score += (!!score) * 20;
+		}
+		if (score > best_score) {
+			best_score = score;
+			name = p->name;
+		}
+		if (score == 100) {
+			break;
 		}
 	}
+	return name;
+}
+
+R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
+	r_return_val_if_fail (arch && config && (config->arch || config->decoder), false);
+	const char *dname = config->decoder ? config->decoder: _find_bestmatch (arch->plugins, config);
 	if (!dname) {
 		return false;
 	}
 	r_ref (config);
-	if (a->cfg) {
-		r_unref (a->cfg);
+	if (!r_arch_use_decoder (arch, dname)) {
+		r_unref (config);
+		return false;
 	}
-	r_arch_use_decoder (a, dname);	//use load here?
+	r_unref (arch->cfg);
+	arch->cfg = config;
+	if (!config->decoder) {
+		config->decoder = strdup (arch->current->p->name);
+	}
 	return true;
 }
 

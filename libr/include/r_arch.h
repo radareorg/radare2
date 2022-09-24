@@ -28,11 +28,15 @@ enum {
 
 // TODO: add reference counting and accessor APIs
 typedef struct r_arch_config_t {
+	char *decoder;
 	char *arch;
 	char *cpu;
 	char *os;
 	int bits;
-	int big_endian;
+	union {
+		int big_endian;
+		ut32 endian;
+	};
 	int syntax;
 	//
 	int pcalign;
