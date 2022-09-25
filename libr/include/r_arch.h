@@ -334,6 +334,7 @@ typedef struct r_arch_t {
 	RArchDecoder *current;	//currently used decoder
 	HtPP *decoders;	//as decoders instantiated plugins
 	RArchConfig *cfg;	//config
+	bool autoselect;
 } RArch;
 
 typedef struct r_arch_plugin_t {
@@ -372,6 +373,9 @@ R_API bool r_arch_set_reg_profile(RArch *arch, const char *dname, struct r_reg_t
 // arch.c
 R_API RArch *r_arch_new(void);
 R_API bool r_arch_use(RArch *arch, RArchConfig *config);
+R_API bool r_arch_set_bits(RArch *arch, ut32 bits);
+R_API bool r_arch_set_endian(RArch *arch, ut32 endian);
+R_API bool r_arch_set_arch(RArch *arch, char *archname);
 R_API bool r_arch_add(RArch *arch, RArchPlugin *ap);
 R_API bool r_arch_del(RArch *arch, const char *name);
 R_API void r_arch_free(RArch *arch);

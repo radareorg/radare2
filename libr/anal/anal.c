@@ -94,6 +94,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->ht_addr_fun = ht_up_new0 ();
 	anal->ht_name_fun = ht_pp_new0 ();
 	anal->config = r_arch_config_new ();
+	anal->arch = r_arch_new ();
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
@@ -169,6 +170,7 @@ R_API void r_anal_free(RAnal *a) {
 	r_th_lock_free (a->lock);
 	r_interval_tree_fini (&a->meta);
 	r_unref (a->config);
+	r_arch_free (a->arch);
 	free (a->zign_path);
 	r_list_free (a->plugins);
 	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);

@@ -40,7 +40,7 @@ R_API RArch *r_arch_new(void) {
 	return a;
 }
 
-static char *_find_bestmatch(RList *plugins, RArchConfig *cfg) {
+static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg) {
 	ut32 bits;
 	switch (cfg->bits) {
 	case 64:
@@ -67,21 +67,26 @@ static char *_find_bestmatch(RList *plugins, RArchConfig *cfg) {
 	default:
 		bits = UT32_MAX;
 	}
+	ut32 score = 0;
+	if (!strcmp (p->arch, cfg->arch)) {
+		score = 50;
+	}
+	if (p->bits & bits) {
+		score += (!!score) * 30;
+	}
+	if (p->endian & cfg->endian) {
+		score += (!!score) * 20;
+	}
+	return score;
+}
+
+static char *_find_bestmatch(RList *plugins, RArchConfig *cfg) {
 	ut8 best_score = 0;
 	char *name = NULL;
 	RListIter *iter;
 	RArchPlugin *p;
 	r_list_foreach (plugins, iter, p) {
-		ut32 score = 0;
-		if (!strcmp (p->arch, cfg->arch)) {
-			score = 50;
-		}
-		if (p->bits & bits) {
-			score += (!!score) * 30;
-		}
-		if (p->endian & cfg->endian) {
-			score += (!!score) * 20;
-		}
+		const ut32 score = _rate_compat (p, cfg);
 		if (score > best_score) {
 			best_score = score;
 			name = p->name;
@@ -109,6 +114,104 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
 	if (!config->decoder) {
 		config->decoder = strdup (arch->current->p->name);
 	}
+	return true;
+}
+
+R_API bool r_arch_set_bits(RArch *arch, ut32 bits) {
+	r_return_val_if_fail (arch && bits, false);
+	if (!arch->cfg) {
+		arch->cfg = r_arch_config_new ();
+		if (!arch->cfg) {
+			return false;
+		}
+		arch->cfg->bits = bits;
+		if (!r_arch_use (arch, arch->cfg)) {
+			r_unref (arch->cfg);
+			arch->cfg = NULL;
+			return false;
+		}
+	}
+	if (arch->autoselect) {
+		if (arch->current) {
+			const ut32 score = _rate_compat (arch->current->p, arch->cfg);
+			arch->cfg->bits = bits;
+			if (!score || score > _rate_compat (arch->current->p, arch->cfg)) {
+				return r_arch_use (arch, arch->cfg);
+			}
+			return true;
+		}
+		arch->cfg->bits = bits;
+		return r_arch_use (arch, arch->cfg);
+	}
+	arch->cfg->bits = bits;
+	return true;
+}
+
+R_API bool r_arch_set_endian(RArch *arch, ut32 endian) {
+	r_return_val_if_fail (arch, false);
+	if (!arch->cfg) {
+		arch->cfg = r_arch_config_new ();
+		if (!arch->cfg) {
+			return false;
+		}
+		arch->cfg->endian = endian;
+		if (!r_arch_use (arch, arch->cfg)) {
+			r_unref (arch->cfg);
+			arch->cfg = NULL;
+			return false;
+		}
+	}
+	if (arch->autoselect) {
+		if (arch->current) {
+			const ut32 score = _rate_compat (arch->current->p, arch->cfg);
+			arch->cfg->endian = endian;
+			if (!score || score > _rate_compat (arch->current->p, arch->cfg)) {
+				return r_arch_use (arch, arch->cfg);
+			}
+			return true;
+		}
+		arch->cfg->endian = endian;
+		return r_arch_use (arch, arch->cfg);
+	}
+	arch->cfg->bits = endian;
+	return true;
+}
+
+R_API bool r_arch_set_arch(RArch *arch, char *archname) {
+	r_return_val_if_fail (arch && archname, false);
+	char *_arch = strdup (archname);
+	if (!_arch) {
+		return false;
+	}
+	if (!arch->cfg) {
+		arch->cfg = r_arch_config_new ();
+		if (!arch->cfg) {
+			free (_arch);
+			return false;
+		}
+		arch->cfg->arch = _arch;
+		if (!r_arch_use (arch, arch->cfg)) {
+			r_unref (arch->cfg);
+			arch->cfg = NULL;
+			return false;
+		}
+	}
+	if (arch->autoselect) {
+		if (arch->current) {
+			const ut32 score = _rate_compat (arch->current->p, arch->cfg);
+			free (arch->cfg->arch);
+			arch->cfg->arch = _arch;
+			if (!score || score > _rate_compat (arch->current->p, arch->cfg)) {
+				return r_arch_use (arch, arch->cfg);
+			}
+			return true;
+		}
+		free (arch->cfg->arch);
+		arch->cfg->arch = _arch;
+		return r_arch_use (arch, arch->cfg);
+	}
+	free (arch->cfg->arch);
+	arch->cfg->arch = _arch;
 	return true;
 }
 
@@ -149,5 +252,8 @@ R_API void r_arch_free(RArch *a) {
 	r_return_if_fail (a);
 	ht_pp_free (a->decoders);
 	r_list_free (a->plugins);
+	if (a->cfg) {
+		r_unref (a->cfg);
+	}
 	free (a);
 }
