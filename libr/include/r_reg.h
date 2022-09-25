@@ -104,6 +104,7 @@ typedef struct r_reg_item_t {
 	char *comment;
 	int index;
 	int arena; /* in which arena is this reg living */
+       R_REF_TYPE;
 } RRegItem;
 
 typedef struct r_reg_arena_t {

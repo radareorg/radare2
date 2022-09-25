@@ -408,6 +408,7 @@ static bool internal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *n
 				eprintf ("%s < %x\n", regname, (int)*num);
 			}
 		}
+		r_unref (reg);
 		return true;
 	}
 	return false;

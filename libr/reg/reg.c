@@ -339,14 +339,24 @@ R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item) {
 
 R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val) {
 	r_return_val_if_fail (reg && name, UT64_MAX);
+	ut64 res = UT64_MAX;
 	RRegItem *ri = r_reg_get (reg, name, -1);
-	return ri? r_reg_set_value (reg, ri, val): UT64_MAX;
+	if (ri) {
+		res = r_reg_set_value (reg, ri, val);
+		// r_unref (ri);
+	}
+	return res;
 }
 
 R_API ut64 r_reg_getv(RReg *reg, const char *name) {
 	r_return_val_if_fail (reg && name, UT64_MAX);
 	RRegItem *ri = r_reg_get (reg, name, -1);
-	return ri? r_reg_get_value (reg, ri): UT64_MAX;
+	ut64 res = UT64_MAX;
+	if (ri) {
+		res = r_reg_get_value (reg, ri);
+		// r_unref (ri);
+	}
+	return res;
 }
 
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
@@ -376,6 +386,7 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 			bool found = false;
 			RRegItem *item = ht_pp_find (pp, name, &found);
 			if (found) {
+				r_ref (item);
 				return item;
 			}
 		}
