@@ -27,6 +27,8 @@ static R_TH_LOCAL int currentFormat = 0;
 static R_TH_LOCAL int current0format = 0;
 static R_TH_LOCAL char numbuf[32] = {0};
 static R_TH_LOCAL int numbuf_i = 0;
+static R_TH_LOCAL bool splitView = false;
+static R_TH_LOCAL ut64 splitPtr = UT64_MAX;
 
 typedef struct {
 	int x;
@@ -367,9 +369,6 @@ static const char *help_msg_visual_fn[] = {
 	NULL
 };
 
-static bool splitView = false;
-static ut64 splitPtr = UT64_MAX;
-
 #undef USE_THREADS
 #define USE_THREADS 1
 
@@ -556,7 +555,7 @@ R_API void r_core_visual_jump(RCore *core, ut8 ch) {
 }
 
 // TODO: merge with r_cons_cmd_help
-R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char **help) {
+R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char ** const help) {
 	RCons *cons = r_cons_singleton ();
 	bool use_color = cons->context->color_mode;
 	const char

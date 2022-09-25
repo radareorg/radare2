@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static const char *help_msg_P[] = {
+static RCoreHelpMessage help_msg_P = {
 	"Usage:", "P[?.+-*cdilnsS] [file]", "Project management",
 	"P", " [file]", "open project (formerly Po)",
 	"P.", "", "show current loaded project (see prj.name)",
@@ -26,7 +26,7 @@ static const char *help_msg_P[] = {
 	NULL
 };
 
-static const char *help_msg_Pn[] = {
+static RCoreHelpMessage help_msg_Pn = {
 	"Usage:", "Pn[j-?] [...]", "Project Notes",
 	"Pn", "", "show project notes",
 	"Pn", " -", "edit notes with cfg.editor",
@@ -95,6 +95,7 @@ static int cmd_project(void *data, const char *input) {
 				r_config_get (core->config, "prj.name"), NULL);
 			if (r_syscmd_pushd (pdir)) {
 				if (r_file_is_directory (".git")) {
+					// TODO: Use ravc2 api
 					r_sys_cmdf ("git diff @~%d", atoi (input + 1));
 				} else {
 					R_LOG_TODO ("Not a git project. Diffing projects is WIP for now");
