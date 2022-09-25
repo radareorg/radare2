@@ -4090,10 +4090,10 @@ static void cmd_aflxj(RCore *core) {
 		ut64 fcn_xref_addr = r_num_get (NULL, key);
 		ut64 xref_addr = r_num_get (NULL, value);
 		RAnalFunction *xref = r_anal_get_fcn_in (core->anal, fcn_xref_addr, R_ANAL_FCN_TYPE_ANY);
-		pj_kn(pj, "address", fcn->addr);
-		pj_ks(pj, "name", fcn->name);
+		pj_kn(pj, "address", (fcn)? fcn->addr: 0);
+		pj_ks(pj, "name", (fcn)? fcn->name: "null");
 		pj_ko(pj, "xrefs");
-		pj_ka(pj, xref->name);
+		pj_ka(pj, (xref)? xref->name: "null");
 		pj_n(pj, xref_addr);
 		pj_end(pj);
 		pj_end(pj);
