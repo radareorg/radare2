@@ -207,7 +207,7 @@ static const char *cache_white_list_cmds[] = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_panels = {
+static const char *help_msg_panels[] = {
 	"|",        "split current panel vertically",
 	"-",        "split current panel horizontally",
 	":",        "run r2 command in prompt",
@@ -260,7 +260,7 @@ static RCoreHelpMessage help_msg_panels = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_panels_window = {
+static const char * const help_msg_panels_window[] = {
 	":",        "run r2 command in prompt",
 	";",        "add/remove comment",
 	"\"",       "create a panel from the list and replace the current one",
@@ -280,7 +280,7 @@ static RCoreHelpMessage help_msg_panels_window = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_panels_zoom = {
+static const char * const help_msg_panels_zoom[] = {
 	"?",        "show this help",
 	":",        "run r2 command in prompt",
 	";",        "add/remove comment",
@@ -1078,7 +1078,7 @@ static void __update_help(RCore *core, RPanels *ps) {
 		if (!strncmp (p->model->cmd, help, strlen (help))) {
 			RStrBuf *rsb = r_strbuf_new (NULL);
 			const char *title;
-			const char **msg;
+			const char * const * msg;
 			switch (ps->mode) {
 			case PANEL_MODE_WINDOW:
 				title = "Panels Window Mode";

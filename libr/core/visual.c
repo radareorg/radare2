@@ -555,7 +555,7 @@ R_API void r_core_visual_jump(RCore *core, ut8 ch) {
 }
 
 // TODO: merge with r_cons_cmd_help
-R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char ** const help) {
+R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char * const * help) {
 	RCons *cons = r_cons_singleton ();
 	bool use_color = cons->context->color_mode;
 	const char
