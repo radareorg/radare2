@@ -4,30 +4,21 @@
 #include <r_list.h>
 
 static void usage(void) {
-	printf ("Usage: ravc2 [-ghqv] [action] [args ...]\n");
+	printf ("Usage: ravc2 [action] [args ...]\n");
 }
 
 static void help(void) {
 	usage ();
 	printf (
-		"Flags:\n"
-		" -g                 use git instead of rvc\n"
-		" -h                 show this help\n"
-		" -q                 be quiet\n"
-		" -v                 show version\n"
-		" RAVC2_USER=[n]     override cfg.user value to author commit.\n"
-		" init               initialize repository in current directory\n"
-		" add [file ..]      add files to the current repository\n"
-		" checkout [name]    checkout given branch name\n"
-		" log                list commits in current branch\n"
-		" branch             list all available branches\n"
-		" commit [a] [m] [f] perform a commit with the added files\n"
-		" branch [name]      change to another branch\n"
-		"Environment:\n"
-		" RAVC2_USER=[n]     override cfg.user value to author commit.\n"
-		"Examples:\n"
-		"  ravc2 init\n"
-		"  man ravc2\n"
+		"Actions:\n"
+		" init     [git | rvc]          initialize a repository with the given vc.\n" 
+		" branch   [name]               if a name is provided, create a branch with that name otherwise list branches."
+		" commit   [message] [files...] commit the files with the message."
+		" checkout [branch]             set the current branch to the given branch."
+		" status                        print a status message."
+		" reset                         remove all uncommitted changes."
+		" log                           print all commits."
+		" RAVC2_USER=[n]                override cfg.user value to author commit.\n"
 	);
 }
 
