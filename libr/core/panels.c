@@ -207,7 +207,7 @@ static const char *cache_white_list_cmds[] = {
 	NULL
 };
 
-static const char *help_msg_panels[] = {
+static RCoreHelpMessage help_msg_panels = {
 	"|",        "split current panel vertically",
 	"-",        "split current panel horizontally",
 	":",        "run r2 command in prompt",
@@ -260,7 +260,7 @@ static const char *help_msg_panels[] = {
 	NULL
 };
 
-static const char *help_msg_panels_window[] = {
+static RCoreHelpMessage help_msg_panels_window = {
 	":",        "run r2 command in prompt",
 	";",        "add/remove comment",
 	"\"",       "create a panel from the list and replace the current one",
@@ -280,7 +280,7 @@ static const char *help_msg_panels_window[] = {
 	NULL
 };
 
-static const char *help_msg_panels_zoom[] = {
+static RCoreHelpMessage help_msg_panels_zoom = {
 	"?",        "show this help",
 	":",        "run r2 command in prompt",
 	";",        "add/remove comment",
