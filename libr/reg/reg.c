@@ -337,13 +337,13 @@ R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item) {
 	return false;
 }
 
-R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val) {
+R_API bool r_reg_setv(RReg *reg, const char *name, ut64 val) {
 	r_return_val_if_fail (reg && name, UT64_MAX);
-	ut64 res = UT64_MAX;
+	bool res = false;
 	RRegItem *ri = r_reg_get (reg, name, -1);
 	if (ri) {
 		res = r_reg_set_value (reg, ri, val);
-		// r_unref (ri);
+		r_unref (ri);
 	}
 	return res;
 }
