@@ -7522,10 +7522,17 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'q': // "pxq"
 			if (l) {
+				int bs = core->blocksize;
+				if (r_core_block_size (core, len)) {
+					r_core_block_read (core);
+				}
 				if (input[2] == 'j') {
 					r_print_jsondump (core->print, core->block, len, 64);
 				} else {
 					r_print_hexdump (core->print, core->offset, core->block, len, 64, 8, 1);
+				}
+				if (bs != core->blocksize) {
+					r_core_block_size (core, bs);
 				}
 			}
 			break;

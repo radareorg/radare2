@@ -2,6 +2,7 @@
 
 cd "$(dirname $0)"/..
 
+# (git grep -e '_[a-z][a-z](' libr | grep -v '{'| grep c:) && exit 1
 (git grep '^\ \ \ ' libr | grep -v '/arch/' | grep -v dotnet | grep -v mangl | grep c:) && exit 1
 # (git grep '^\ \ \ ' libr | grep -v '/arch/' | grep -v dotnet | grep -v mangl | grep h:) && exit 1
 (git grep 'TODO' libr | grep R_LOG_INFO) && exit 1
