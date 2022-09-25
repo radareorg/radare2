@@ -202,7 +202,8 @@ static const char *function_rotate[] = {
 };
 
 static const char *cache_white_list_cmds[] = {
-	"pdc", "pddo", "agf", "Help",
+	// "pdc", "pdco", "agf", "Help",
+	"agf", "Help",
 	NULL
 };
 
@@ -4038,6 +4039,12 @@ static void __exec_modal(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db
 			break;
 		}
 	}
+	panel->view->sy = 0;
+	panel->view->sx = 0;
+#if 0
+	panel->model->cache = false;
+	R_FREE (panel->model->cmdStrCache);
+#endif
 }
 
 static void __delete_modal(RCore *core, RModal *modal, Sdb *menu_db) {
@@ -4132,6 +4139,7 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 			__exec_modal (core, panel, modal, menu_db, PANEL_LAYOUT_HORIZONTAL);
 			__free_modal (&modal);
 			break;
+		case ' ':
 		case 0x0d:
 			__exec_modal (core, panel, modal, menu_db, PANEL_LAYOUT_NONE);
 			__free_modal (&modal);
@@ -4512,11 +4520,6 @@ static void __print_default_cb(void *user, void *p) {
 	char *cmdstr = __find_cmd_str_cache (core, panel);
 	if (update || !cmdstr) {
 		cmdstr = __handle_cmd_str_cache (core, panel, false);
-#if 0
-		if (panel->model->cache && panel->model->cmdStrCache) {
-			__reset_scroll_pos (panel);
-		}
-#endif
 	}
 	__update_panel_contents (core, panel, cmdstr);
 }
@@ -4582,12 +4585,13 @@ static void __print_disassembly_cb(void *user, void *p) {
 	core->print->screen_bounds = 1LL;
 	char *cmdstr = __find_cmd_str_cache (core, panel);
 	if (cmdstr) {
-		__update_panel_contents (core, panel, cmdstr);
-		return;
+	//	__update_panel_contents (core, panel, cmdstr);
+		// return;
 	}
 	char *ocmd = panel->model->cmd;
-	// panel->model->cmd = r_str_newf ("%s %d", panel->model->cmd, panel->view->pos.h - 3);
-	if (panel->model->cmd) {
+	if (panel->model->cmd && !strcmp (panel->model->cmd, "pd")) {
+		panel->model->cmd = r_str_newf ("%s %d", panel->model->cmd, panel->view->pos.h - 3);
+	} else {
 		panel->model->cmd = r_str_newf ("%s", panel->model->cmd);
 	}
 	ut64 o_offset = core->offset;
