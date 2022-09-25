@@ -626,6 +626,7 @@ typedef struct r_anal_t {
 	struct r_anal_esil_t *esil;
 	struct r_anal_plugin_t *cur;
 	struct r_anal_esil_plugin_t *esil_cur; // ???
+	RArch *arch;
 	RAnalRange *limit; // anal.from, anal.to
 	RList *plugins; // anal plugins
 	RList *esil_plugins;
