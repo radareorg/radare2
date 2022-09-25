@@ -99,7 +99,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	// commands that need Rvc *
 	if (!strcmp (action, "branch")) {
 		if (opt.argc <= 2) {
-			RList *branches = r_vc_git_get_branches(rvc);
+			RList *branches = rvc_git_get_branches(rvc);
 			RListIter *iter;
 			char *branch;
 			r_list_foreach(branches, iter, branch) {

@@ -1267,6 +1267,10 @@ static void warn(void) {
 	R_LOG_WARN ("rvc is still under development and can be unstable, be careful");
 }
 
+R_API RList *rvc_git_get_branches(Rvc *rvc) {
+	return rvc->get_branches(rvc);
+}
+
 R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files) {
 	const char *m = r_config_get (core->config, "prj.vc.message");
 	if (!*m) {
