@@ -178,11 +178,10 @@ R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
 }
 
 R_API RAnalBlock *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size) {
-	R_CRITICAL_ENTER (anal);
 	if (r_anal_get_block_at (anal, addr)) {
-		R_CRITICAL_LEAVE (anal);
 		return NULL;
 	}
+	R_CRITICAL_ENTER (anal);
 	RAnalBlock *block = block_new (anal, addr, size);
 	if (!block) {
 		R_CRITICAL_LEAVE (anal);

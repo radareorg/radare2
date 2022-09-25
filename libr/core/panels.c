@@ -933,6 +933,9 @@ static char *__find_cmd_str_cache(RCore *core, RPanel* panel) {
 }
 
 static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache) {
+	if (panel->model->cache) {
+		return NULL;
+	}
 	char *cmd = __apply_filter_cmd (core, panel);
 	bool b = core->print->cur_enabled && __get_cur_panel (core->panels) != panel;
 	char *out = NULL;
@@ -1503,7 +1506,7 @@ static void __activate_cursor(RCore *core) {
 	bool abnormal = __is_abnormal_cursor_type (core, cur);
 	if (normal || abnormal) {
 		if (normal && cur->model->cache) {
-			if (__show_status_yesno (core, 1, "You need to turn off cache to use cursor. Turn off now?(Y/n)")) {
+			if (__show_status_yesno (core, 1, "You need to turn off cache to use cursor. Turn off now? (Y/n)")) {
 				cur->model->cache = false;
 				__set_cmd_str_cache (core, cur, NULL);
 				(void)__show_status (core, "Cache is off and cursor is on");
@@ -4502,14 +4505,27 @@ static void __print_decompiler_cb(void *user, void *p) {
 	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
 	// TODO should chk if fcn is the same not the offset
 	// if (core->offset != panel->model->addr) { update = true; }
-	if (!update) {
+	if (panel->model->cache) { // !update) {
 		cmdstr = __find_cmd_str_cache (core, panel);
-		if (R_STR_ISNOTEMPTY (cmdstr)) {
-			__update_pdc_contents (core, panel, cmdstr);
+		if (cmdstr) {
+			free (panel->model->cmdStrCache);
+			panel->model->cmdStrCache = strdup (cmdstr);
+		__update_pdc_contents (core, panel, cmdstr);
 		}
-		return;
+	} else {
+		cmdstr = __find_cmd_str_cache (core, panel);
+		if (cmdstr) {
+			free (panel->model->cmdStrCache);
+			panel->model->cmdStrCache = strdup (cmdstr);
+			cmdstr = panel->model->cmdStrCache;
+			if (R_STR_ISNOTEMPTY (cmdstr)) {
+				__update_pdc_contents (core, panel, cmdstr);
+			}
+		}
 	}
+	return;
 #endif
+#if 0
 	if (core->panels_root->cur_pdc_cache) {
 		cmdstr = r_str_new ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,
 					r_num_as_string (NULL, func->addr, false), 0));
@@ -4520,12 +4536,18 @@ static void __print_decompiler_cb(void *user, void *p) {
 			return;
 		}
 	}
+#endif
+#if 0
 	cmdstr = __handle_cmd_str_cache (core, panel, false);
 	if (R_STR_ISNOTEMPTY (cmdstr)) {
 		__reset_scroll_pos (panel);
 		__set_decompiler_cache (core, cmdstr);
 		__update_pdc_contents (core, panel, cmdstr);
 	}
+		if (R_STR_ISNOTEMPTY (panel->model->cmdStrCache)) {
+			__update_pdc_contents (core, panel, panel->model->cmdStrCache);
+		}
+#endif
 }
 
 static void __print_disasmsummary_cb(void *user, void *p) {
@@ -6863,9 +6885,11 @@ virtualmouse:
 		// all panels containing decompiler data should be cached
 		RPanel *p = __get_cur_panel (core->panels);
 		__cache_white_list (core, p);
+#if 0
 		if (strstr (cur->model->title, "Decomp")) {
 			cur->model->cache = true;
 		}
+#endif
 		break;
 	case 'O':
 		__handle_print_rotate (core);
