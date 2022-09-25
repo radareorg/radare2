@@ -43,7 +43,6 @@ static char *get_author(void) {
 R_API int r_main_ravc2(int argc, const char **argv) {
 	RGetopt opt;
 	int c;
-	bool git = false;
 	bool quiet = false;
 	bool version = false;
 
@@ -54,9 +53,6 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	r_getopt_init (&opt, argc, argv, "gqvh");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
-		case 'g':
-			git = true;
-			break;
 		case 'q':
 			quiet = true;
 			break;
@@ -80,10 +76,6 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		return r_main_version_print ("ravc2");
 	}
 
-	if (git) {
-		R_LOG_WARN ("TODO: r_vc_git APIs should be called from r_vc");
-		R_LOG_WARN ("TODO: r_vc_new should accept options argument");
-	}
 	const char *action = opt.argv[opt.ind];
 	if (!action) {
 		return 1;
@@ -94,19 +86,20 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 	// commands that don't need Rvc *
 	if (!strcmp (action, "init")) {
-		Rvc *rvc = r_vc_new (rp);
+		Rvc *rvc = NULL;
+		if (opt.argc <= 2) {
+			R_LOG_ERROR("Usage: ravc2 <git | rvc>");
+		} else if (!strcmp (opt.argv[opt.ind + 1], "git")) {
+			rvc = r_vc_git_init (rp);
+		} else if (!strcmp (opt.argv[opt.ind + 1], "rvc")) {
+			rvc = r_vc_new (rp);
+		} else {
+			R_LOG_ERROR ("unknown option %s", opt.argv[opt.ind + 1]);
+		}
 		free (rp);
 		return rvc? !r_vc_save(rvc) : 1;
 	}
-	if (!strcmp (action, "clone")) {
-		free (rp);
-		if (opt.argc < 3) {
-			eprintf ("Usage: %s [src] [dst]\n", argv[0]);
-			return -1;
-		}
-		return !r_vc_clone (argv[1 + opt.ind], argv[2 + opt.ind]);
-	}
-	Rvc *rvc = r_vc_open (rp);
+	Rvc *rvc = rvc_git_open (rp);
 	R_FREE (rp);
 	if (!rvc) {
 		return 1;
@@ -115,19 +108,19 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	// commands that need Rvc *
 	if (!strcmp (action, "branch")) {
 		if (opt.argc <= 2) {
-			RList *branches = r_vc_get_branches(rvc);
+			RList *branches = r_vc_git_get_branches(rvc);
 			RListIter *iter;
 			char *branch;
 			r_list_foreach(branches, iter, branch) {
-				printf ("%s\n", branch + (r_str_len_utf8 (BPREFIX)));
+				printf ("%s\n", branch);
 			}
 			r_list_free(branches);
 		} else {
-			save = r_vc_branch (rvc, opt.argv[opt.ind + 1]);
+			save = rvc->branch (rvc, opt.argv[opt.ind + 1]);
 		}
 	} else if (!strcmp (action, "commit")) {
 		if (opt.argc < 4) {
-			eprintf ("Usage: ravc2 commit [message] [files...]\n");
+			R_LOG_ERROR ("Usage: ravc2 commit [message] [files...]");
 			free (rp);
 			return 1;
 		}
@@ -146,7 +139,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 				}
 				char *author = get_author();
 				if (author) {
-					save = r_vc_commit (rvc, message, author,
+					save = rvc->commit(rvc, message, author,
 							files);
 					free (author);
 				}
@@ -155,12 +148,12 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			free (message);
 		}
 	} else if (!strcmp (action, "checkout") && opt.argc > 2) {
-		save =  r_vc_checkout(rvc, opt.argv[opt.ind + 1]);
+		save =  rvc_git_checkout(rvc, opt.argv[opt.ind + 1]);
 	} else if (!strcmp (action, "status")) {
 		char *current_branch = r_vc_current_branch(rvc);
 		if (current_branch) {
 			printf ("Branch: %s\n", current_branch);
-			RList *uncommitted = r_vc_get_uncommitted(rvc);
+			RList *uncommitted = rvc->get_uncommitted (rvc);
 			if (r_list_empty (uncommitted)) {
 				printf("All files are committed\n");
 			} else {
@@ -174,19 +167,13 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			r_list_free (uncommitted);
 		}
 	} else if (!strcmp (action, "reset")) {
-		save = r_vc_reset(rvc);
+		save = rvc->reset(rvc);
 	} else if (!strcmp (action, "log")) {
-		RList *commits = r_vc_log(rvc);
-		RListIter *iter;
-		const char *commit;
-		r_list_foreach(commits, iter, commit) {
-			printf ("%s\n****\n", commit);
-		}
-		r_list_free (commits);
-		return 0;
+		save = rvc->print_commits(rvc);
+	} else {
+		R_LOG_ERROR ("Incorrect command");
 	}
-	R_LOG_ERROR ("Incorrect command");
 ret:
-	r_vc_close (rvc, save);
+	rvc_git_close(rvc, save);
 	return !save;
 }
