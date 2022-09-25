@@ -374,6 +374,7 @@ struct r_core_t {
 	RMainCallback r_main_radare2;
 	// int (*r_main_radare2)(int argc, char **argv);
 	int (*r_main_rafind2)(int argc, const char **argv);
+	int (*r_main_ravc2)(int argc, const char **argv);
 	int (*r_main_r2pm)(int argc, const char **argv);
 	int (*r_main_radiff2)(int argc, const char **argv);
 	int (*r_main_rabin2)(int argc, const char **argv);

@@ -270,6 +270,7 @@ static RCoreHelpMessage help_msg_r = {
 	"rafind2", " [...]", "run rafind2's main",
 	"rahash2", " [...]", "run rahash2's main",
 	"rasm2", " [...]", "run rasm2's main",
+	"ravc2", " [...]", "run ravc2's main",
 	"rax2", " [...]", "run rax2's main",
 	"rb", "oldbase @ newbase", "rebase all flags, bin.info, breakpoints and analysis",
 	"rm" ," [file]", "remove file",
@@ -2431,6 +2432,8 @@ static bool cmd_r2cmd(RCore *core, const char *_input) {
 	} else if (r_str_startswith (input, "ragg2")) {
 		r_sys_cmdf ("%s", input);
 		// rc = __runMain (core->r_main_ragg2, input);
+	} else if (r_str_startswith (input, "ravc2")) {
+		rc = __runMain (core->r_main_ravc2, input);
 	} else if (r_str_startswith (input, "r2pm")) {
 		rc = __runMain (core->r_main_r2pm, input);
 	} else if (r_str_startswith (input, "radiff2")) {
