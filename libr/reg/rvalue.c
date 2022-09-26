@@ -134,7 +134,13 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 
 R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegisterId role) {
 	// TODO use mapping from RRegisterId to RRegItem (via RRegSet)
-	return r_reg_get_value (reg, r_reg_get (reg, r_reg_get_name (reg, role), -1));
+	RRegItem *ri = r_reg_get (reg, r_reg_get_name (reg, role), -1);
+	ut64 res = UT64_MAX;
+	if (ri) {
+		res = r_reg_get_value (reg, ri);
+		r_unref (ri);
+	}
+	return res;
 }
 
 R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
@@ -212,7 +218,12 @@ R_API bool r_reg_set_value_by_role(RReg *reg, RRegisterId role, ut64 val) {
 	r_return_val_if_fail (reg, false);
 	// TODO use mapping from RRegisterId to RRegItem (via RRegSet)
 	RRegItem *r = r_reg_get (reg, r_reg_get_name (reg, role), -1);
-	return r? r_reg_set_value (reg, r, val): false;
+	bool res = false;
+	if (r) {
+		res = r_reg_set_value (reg, r, val);
+		r_unref (r);
+	}
+	return res;
 }
 
 R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str) {
