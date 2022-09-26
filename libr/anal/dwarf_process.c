@@ -99,22 +99,23 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
 	}
 	size_t newlen = l + sb->len;
 	char *ns = malloc (newlen + 1);
+	if (!ns) {
+		return false;
+	}
 	bool ret = false;
 	char *sb_str = sb->ptr ? sb->ptr : sb->buf;
 	char *pivot = strrchr (sb_str, c);
-	if (!pivot) {
-		free (ns);
-		return false;
-	}
-	size_t idx = pivot - sb_str;
-	if (ns) {
+	if (pivot) {
+		size_t idx = pivot - sb_str;
 		memcpy (ns, sb_str, idx);
 		memcpy (ns + idx, s, l);
 		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
 		ns[newlen] = 0;
 		ret = r_strbuf_set (sb, ns);
+	} else {
 		free (ns);
 	}
+	free (ns);
 	return ret;
 }
 /**
@@ -990,6 +991,49 @@ ARM64 - dwarf register mapping
 	return "unk"; // please complete the list :___
 }
 
+static const char *map_dwarf_reg_to_v850_reg(ut64 reg_num, VariableLocationKind *kind) {
+	*kind = LOCATION_REGISTER;
+	switch (reg_num) {
+	case 0: return "r0"; // wired to ground so it may shift
+	case 1: return "r1";
+	case 2: return "r2";
+	case 3: return "r3";
+	case 4: return "r4";
+	case 5: return "r5";
+	case 6: return "r6";
+	case 7: return "r7";
+	case 8: return "r8";
+	case 9: return "r9";
+	case 10: return "r10";
+	case 11: return "r11";
+	case 12: return "r12";
+	case 13: return "r13";
+	case 14: return "r14";
+	case 15: return "r15";
+	case 16: return "r16";
+	case 17: return "r17";
+	case 18: return "r18";
+	case 19: return "r19";
+	case 20: return "r20";
+	case 21: return "r21";
+	case 22: return "r22";
+	case 23: return "r23";
+	case 24: return "r24";
+	case 25: return "r25";
+	case 26: return "r26";
+	case 27: return "r27";
+	case 28: return "r28";
+	case 29: return "r29";
+	case 30: return "r30";
+	case 31: return "r31";
+	case 32: return "pc"; // uhm
+	default:
+		R_LOG_WARN ("Unhandled dwarf register reference number %d", (int)reg_num);
+		*kind = LOCATION_UNKNOWN;
+		return "unsupported_reg";
+	}
+}
+
 /* x86 https://01.org/sites/default/files/file_attach/intel386-psabi-1.0.pdf */
 static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
@@ -1106,17 +1150,22 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, VariableLocationKind
  * TODO add more arches                 */
 static const char *get_dwarf_reg_name(const char *arch, int reg_num, VariableLocationKind *kind, int bits) {
 	R_LOG_DEBUG ("get_dwarf_reg_name %s %d", arch, bits);
-	if (arch && !strcmp (arch, "x86")) {
-		if (bits == 64) {
-			return map_dwarf_reg_to_x86_64_reg (reg_num, kind);
+	if (arch) {
+		if (!strcmp (arch, "x86")) {
+			if (bits == 64) {
+				return map_dwarf_reg_to_x86_64_reg (reg_num, kind);
+			}
+			return map_dwarf_reg_to_x86_reg (reg_num, kind);
 		}
-		return map_dwarf_reg_to_x86_reg (reg_num, kind);
-	}
-	if (arch && !strcmp (arch, "arm") && bits == 64) {
-		return map_dwarf_reg_to_arm64_reg (reg_num, kind);
-	}
-	if (arch && !strcmp (arch, "ppc") && bits == 64) {
-		return map_dwarf_reg_to_ppc64_reg (reg_num, kind);
+		if (!strcmp (arch, "arm") && bits == 64) {
+			return map_dwarf_reg_to_arm64_reg (reg_num, kind);
+		}
+		if (!strcmp (arch, "v850")) {
+			return map_dwarf_reg_to_v850_reg (reg_num, kind);
+		}
+		if (!strcmp (arch, "ppc") && bits == 64) {
+			return map_dwarf_reg_to_ppc64_reg (reg_num, kind);
+		}
 	}
 	// this can be very anoying as its printed over 9000 times
 	R_LOG_WARN ("get_dwarf_reg_name: unsupported arch: '%s' with %d bits", arch, bits);
