@@ -376,8 +376,8 @@ iA
 iAj
 EOF
 EXPECT=<<EOF
-0   0x00000000 266108 mips_32 mips1 o32 
-{"bins":[{"arch":"mips","bits":32,"offset":0,"size":266108,"isa":"mips1","features":"o32","machine":"MIPS R3000"}]}
+0   0x00000000 266108 mips_32 cpu=mips1 abi=o32 machine=MIPS R3000 
+{"bins":[{"arch":"mips","bits":32,"offset":0,"size":266108,"abi":"o32","isa":"mips1","flags":"0x1007","machine":"MIPS R3000"}]}
 EOF
 RUN
 
@@ -388,8 +388,8 @@ iA
 iAj
 EOF
 EXPECT=<<EOF
-0   0x00000000 1039368 mips_64 mips64r2 n64 
-{"bins":[{"arch":"mips","bits":64,"offset":0,"size":1039368,"isa":"mips64r2","features":"n64","machine":"MIPS R3000"}]}
+0   0x00000000 1039368 mips_64 cpu=mips64r2 abi=n64 machine=MIPS R3000 
+{"bins":[{"arch":"mips","bits":64,"offset":0,"size":1039368,"abi":"n64","isa":"mips64r2","flags":"0x80000007","machine":"MIPS R3000"}]}
 EOF
 RUN
 
@@ -397,7 +397,7 @@ NAME=iA (file x86)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=iA
 EXPECT=<<EOF
-0   0x00000000 4899 x86_32 
+0   0x00000000 4899 x86_32 machine=Intel 80386 
 EOF
 RUN
 
@@ -3212,7 +3212,7 @@ NAME=iA (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=iA
 EXPECT=<<EOF
-0   0x00000000 6710 x86_64 
+0   0x00000000 6710 x86_64 machine=AMD x86-64 architecture 
 EOF
 RUN
 
