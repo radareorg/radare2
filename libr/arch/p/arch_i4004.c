@@ -1,11 +1,6 @@
 /* radare - LGPL - Copyright 2016-2022 - pancake, condret */
 
-#include <string.h>
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
 #include <r_arch.h>
-#include <r_reg.h>
 
 static bool set_reg_profile(RArchConfig *cfg, RReg *reg) {
 	const char *p =
@@ -47,7 +42,6 @@ static bool set_reg_profile(RArchConfig *cfg, RReg *reg) {
 		"gpr	PC2	.12	.104	0\n"
 		"gpr	PC3	.12	.120	0\n"
 		;
-
 	return r_reg_set_profile_string (reg, p);
 }
 

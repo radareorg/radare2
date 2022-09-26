@@ -218,8 +218,11 @@ R_API bool r_reg_set_value_by_role(RReg *reg, RRegisterId role, ut64 val) {
 	r_return_val_if_fail (reg, false);
 	// TODO use mapping from RRegisterId to RRegItem (via RRegSet)
 	RRegItem *r = r_reg_get (reg, r_reg_get_name (reg, role), -1);
-	bool res = r? r_reg_set_value (reg, r, val): false;
-	r_unref (r);
+	bool res = false;
+	if (r) {
+		res = r_reg_set_value (reg, r, val);
+		r_unref (r);
+	}
 	return res;
 }
 

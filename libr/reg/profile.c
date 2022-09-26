@@ -64,7 +64,6 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	if (!item) {
 		return "Unable to allocate memory";
 	}
-
 	item->type = type;
 	item->name = strdup (tok[1]);
 	// All the numeric arguments are strictly checked
@@ -120,10 +119,12 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	if (!reg->regset[type2].regs) {
 		reg->regset[type2].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
+	r_ref (item);
 	r_list_append (reg->regset[type2].regs, item);
 	if (!reg->regset[type2].ht_regs) {
 		reg->regset[type2].ht_regs = ht_pp_new0 ();
 	}
+	// r_ref (item);
 	ht_pp_insert (reg->regset[type2].ht_regs, item->name, item);
 
 	// Update the overall profile size

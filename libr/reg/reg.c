@@ -127,9 +127,12 @@ R_API int r_reg_type_by_name(const char *str) {
 }
 
 R_API void r_reg_item_free(RRegItem *item) {
-	free (item->name);
-	free (item->flags);
-	free (item);
+	if (item) {
+		// TODO use unref here :?
+		free (item->name);
+		free (item->flags);
+		free (item);
+	}
 }
 
 R_API int r_reg_get_name_idx(const char *type) {
@@ -354,7 +357,7 @@ R_API ut64 r_reg_getv(RReg *reg, const char *name) {
 	ut64 res = UT64_MAX;
 	if (ri) {
 		res = r_reg_get_value (reg, ri);
-		// r_unref (ri);
+		r_unref (ri);
 	}
 	return res;
 }
