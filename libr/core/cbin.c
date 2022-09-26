@@ -872,12 +872,13 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			} else {
 				r_config_set (r->config, "anal.cxxabi", "itanium");
 			}
+			if (R_STR_ISNOTEMPTY (info->abi)) {
+				r_config_set (r->config, "asm.abi", info->abi);
+			}
 			// we can take the eabi from bin.features from arm (f.ex eabi4 eabi5)
 			r_config_set (r->config, "asm.arch", info->arch);
-			if (info->cpu && *info->cpu) {
-				r_config_set (r->config, "asm.cpu", info->cpu);
-			}
 			r_config_set (r->config, "anal.arch", info->arch);
+			// r_config_set (r->config, "arch.decoder", info->arch);
 			if (R_STR_ISNOTEMPTY (info->charset)) {
 				r_config_set (r->config, "cfg.charset", info->charset);
 			}
@@ -885,6 +886,9 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			r_config_set (r->config, "asm.bits", str);
 			r_config_set (r->config, "asm.dwarf",
 				(R_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
+			if (R_STR_ISNOTEMPTY (info->cpu)) {
+				r_config_set (r->config, "asm.cpu", info->cpu);
+			}
 		}
 		r_core_anal_type_init (r);
 		r_core_anal_cc_init (r);
@@ -922,8 +926,7 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 				r_cons_printf ("e cfg.charset=%s\n", info->charset);
 			}
 			if (R_STR_ISNOTEMPTY (info->rclass)) {
-				r_cons_printf ("e file.type=%s\n",
-					info->rclass);
+				r_cons_printf ("e file.type=%s\n", info->rclass);
 			}
 			if (info->os) {
 				r_cons_printf ("e asm.os=%s\n", info->os);
@@ -933,6 +936,9 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			}
 			if (R_STR_ISNOTEMPTY (info->cpu)) {
 				r_cons_printf ("e asm.cpu=%s\n", info->cpu);
+			}
+			if (R_STR_ISNOTEMPTY (info->abi)) {
+				r_cons_printf ("e asm.abi=%s\n", info->abi);
 			}
 			if (R_STR_ISNOTEMPTY (info->default_cc)) {
 				r_cons_printf ("e anal.cc=%s", info->default_cc);
@@ -966,8 +972,11 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 		pair_str (pj, "compiled", compiled);
 		pair_str (pj, "compiler", info->compiler);
-		if (R_STR_ISNOTEMPTY (info->features)) {
-			pair_str (pj, "features", info->features);
+		if (R_STR_ISNOTEMPTY (info->flags)) {
+			pair_str (pj, "flags", info->flags);
+		}
+		if (R_STR_ISNOTEMPTY (info->abi)) {
+			pair_str (pj, "abi", info->abi);
 		}
 		pair_bool (pj, "crypto", info->has_crypto);
 		pair_str (pj, "dbg_file", info->debug_file_name);

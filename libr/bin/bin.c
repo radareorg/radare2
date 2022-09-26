@@ -130,25 +130,26 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 		return;
 	}
 	r_list_free (rb->file_hashes);
-	free (rb->intrp);
-	free (rb->file);
-	free (rb->charset);
-	free (rb->type);
-	free (rb->bclass);
-	free (rb->rclass);
-	free (rb->arch);
-	free (rb->cpu);
-	free (rb->machine);
-	free (rb->os);
-	free (rb->subsystem);
-	free (rb->default_cc);
-	free (rb->rpath);
-	free (rb->guid);
-	free (rb->debug_file_name);
+	free (rb->abi);
 	free (rb->actual_checksum);
+	free (rb->arch);
+	free (rb->bclass);
+	free (rb->charset);
 	free (rb->claimed_checksum);
 	free (rb->compiler);
-	free (rb->features);
+	free (rb->cpu);
+	free (rb->debug_file_name);
+	free (rb->default_cc);
+	free (rb->file);
+	free (rb->flags);
+	free (rb->guid);
+	free (rb->intrp);
+	free (rb->machine);
+	free (rb->os);
+	free (rb->rclass);
+	free (rb->rpath);
+	free (rb->subsystem);
+	free (rb->type);
 	free (rb);
 }
 
@@ -1036,7 +1037,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 			pj_kn (pj, "size", obj_size);
 			if (!strcmp (arch, "mips")) {
 				pj_ks (pj, "isa", info->cpu);
-				pj_ks (pj, "features", info->features);
+				pj_ks (pj, "flags", info->flags);
 			}
 			if (machine) {
 				pj_ks (pj, "machine", machine);
@@ -1068,7 +1069,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 				pj_kn (pj, "size", obj_size);
 				if (!strcmp (arch, "mips")) {
 					pj_ks (pj, "isa", info->cpu);
-					pj_ks (pj, "features", info->features);
+					pj_ks (pj, "flags", info->flags);
 				}
 				if (machine) {
 					pj_ks (pj, "machine", machine);

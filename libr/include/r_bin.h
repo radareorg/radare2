@@ -217,7 +217,8 @@ typedef struct r_bin_info_t {
 	char *arch;
 	char *cpu;
 	char *machine;
-	char *features;
+	char *flags; // elf.flags, which can ship info about cpu features or the abi used
+	char *abi;
 	char *os;
 	char *subsystem;
 	char *rpath;

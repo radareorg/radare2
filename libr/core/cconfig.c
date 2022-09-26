@@ -753,14 +753,16 @@ static bool cb_asmarch(void *user, void *data) {
 			char *nac = strdup (new_asm_cpu);
 			char *comma = strchr (nac, ',');
 			if (comma) {
-				if (!*asm_cpu || (*asm_cpu && !strstr(nac, asm_cpu))) {
+				if (!*asm_cpu || (*asm_cpu && !strstr (nac, asm_cpu))) {
 					*comma = 0;
 					r_config_set (core->config, "asm.cpu", nac);
 				}
 			}
 			free (nac);
 		} else {
-			r_config_set (core->config, "asm.cpu", "");
+			// TODO: set to '' only if the new arch plugin doesnt handle
+			// the given asm.cpu setup, but we can ignore for now
+			// r_config_set (core->config, "asm.cpu", "");
 		}
 		bits = core->rasm->cur->bits;
 		if (8 & bits) {
@@ -3103,6 +3105,14 @@ static bool cb_anal_bb_max_size(void *user, void *data) {
 	return true;
 }
 
+static bool cb_asmabi(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	free (core->anal->config->abi);
+	core->anal->config->abi = strdup (node->value);
+	return true;
+}
+
 static bool cb_anal_cxxabi(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -3406,6 +3416,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("anal.cxxabi", "itanium", &cb_anal_cxxabi);
 	SETDESC (n, "select C++ RTTI ABI");
 	SETOPTIONS (n, "itanium", "msvc", NULL);
+	SETCB ("asm.abi", "", &cb_asmabi, "specify the abi taken from bin headeres or compiler details");
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 	n = NODECB ("dbg.malloc", "glibc", &cb_malloc);

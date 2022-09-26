@@ -420,7 +420,6 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 	ut64 oi;
 	r_return_val_if_fail (cfg && cfg->ht, NULL);
 	r_return_val_if_fail (!IS_NULLSTR (name), NULL);
-
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		if (r_config_node_is_ro (node)) {

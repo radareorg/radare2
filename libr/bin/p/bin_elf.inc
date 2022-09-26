@@ -1173,14 +1173,10 @@ static RBinInfo* info(RBinFile *bf) {
 		return NULL;
 	}
 	ret->arch = str;
+	ret->cpu = Elf_(r_bin_elf_get_cpu) (obj);
 
-	if ((str = Elf_(r_bin_elf_get_cpu) (obj))) {
-		ret->cpu = str;
-	}
-	if ((str = Elf_(r_bin_elf_get_abi) (obj))) {
-		ret->features = str;
-	}
-
+	ret->flags = r_str_newf ("0x%x", ((ELFOBJ *)obj)->ehdr.e_flags);
+	ret->abi = Elf_(r_bin_elf_get_abi) (obj);
 	ret->rclass = strdup ("elf");
 	ret->bits = Elf_(r_bin_elf_get_bits) (obj);
 	if (!strcmp (ret->arch, "avr")) {

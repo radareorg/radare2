@@ -820,7 +820,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 				break;
 			default:
 				free (tmp_val);
-				tmp_val = r_str_newf ("%x ", data[i+j] & 0x7FFF);
+				tmp_val = r_str_newf ("%x ", data[i + j] & 0x7FFF);
 				check_def = true;
 				if (bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]) {
 					Elf_(Verneed) vn;
@@ -2218,9 +2218,6 @@ char* Elf_(r_bin_elf_get_abi)(ELFOBJ *bin) {
 		}
 		break;
 	}
-	if (bin->ehdr.e_flags) {
-		return r_str_newf ("0x%x", bin->ehdr.e_flags);
-	}
 	return NULL;
 }
 
@@ -2228,16 +2225,16 @@ char* Elf_(r_bin_elf_get_cpu)(ELFOBJ *bin) {
 	if (bin->phdr && bin->ehdr.e_machine == EM_MIPS) {
 		const ut32 mipsType = bin->ehdr.e_flags & EF_MIPS_ARCH;
 		switch (mipsType) {
-		case EF_MIPS_ARCH_1:        return strdup ("mips1");
-		case EF_MIPS_ARCH_2:        return strdup ("mips2");
-		case EF_MIPS_ARCH_3:        return strdup ("mips3");
-		case EF_MIPS_ARCH_4:        return strdup ("mips4");
-		case EF_MIPS_ARCH_5:        return strdup ("mips5");
-		case EF_MIPS_ARCH_32:       return strdup ("mips32");
-		case EF_MIPS_ARCH_64:       return strdup ("mips64");
-		case EF_MIPS_ARCH_32R2:     return strdup ("mips32r2");
-		case EF_MIPS_ARCH_64R2:     return strdup ("mips64r2");
-		default :                   return strdup (" Unknown mips ISA");
+		case EF_MIPS_ARCH_1: return strdup ("mips1");
+		case EF_MIPS_ARCH_2: return strdup ("mips2");
+		case EF_MIPS_ARCH_3: return strdup ("mips3");
+		case EF_MIPS_ARCH_4: return strdup ("mips4");
+		case EF_MIPS_ARCH_5: return strdup ("mips5");
+		case EF_MIPS_ARCH_32: return strdup ("mips32");
+		case EF_MIPS_ARCH_64: return strdup ("mips64");
+		case EF_MIPS_ARCH_32R2: return strdup ("mips32r2");
+		case EF_MIPS_ARCH_64R2: return strdup ("mips64r2");
+		default : return strdup ("Unknown mips ISA");
 		}
 	}
 	return NULL;
