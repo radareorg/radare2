@@ -45,7 +45,7 @@ typedef struct r_arch_config_t {
 	int seggrn;
 	int invhex;
 	int bitshift;
-	char *features;
+	char *abi;
 	R_REF_TYPE;
 } RArchConfig;
 

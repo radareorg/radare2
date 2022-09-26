@@ -12,7 +12,6 @@ static R_TH_LOCAL unsigned long Offset = 0;
 static R_TH_LOCAL RStrBuf *buf_global = NULL;
 static R_TH_LOCAL ut8 bytes[8] = { 0 };
 static R_TH_LOCAL char *pre_cpu = NULL;
-static R_TH_LOCAL char *pre_features = NULL;
 static R_TH_LOCAL int mips_mode = 0;
 
 static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
@@ -1130,10 +1129,6 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	memcpy (&bytes, buf, R_MIN (len, 8));
 
 	const char *cpu = a->config->cpu;
-	if ((cpu != pre_cpu) && (a->config->features != pre_features)) {
-		free (disasm_obj.disassembler_options);
-		memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	}
 
 	/* prepare disassembler */
 	if (cpu && (!pre_cpu || !strcmp (cpu, pre_cpu))) {
@@ -1166,21 +1161,16 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		disasm_obj.mach = bfd_mach_mips_loongson_2f;
 	}
 
-	const char *features = a->config->features;
-	if (features && (!pre_features || !strcmp (features, pre_features))) {
-		free (disasm_obj.disassembler_options);
-		if (strstr (features, "n64")) {
-			disasm_obj.disassembler_options = r_str_new ("abi=n64");
-		} else if (strstr (features, "n32")) {
-			disasm_obj.disassembler_options = r_str_new ("abi=n32");
-		} else if (strstr (features, "o32")) {
-			disasm_obj.disassembler_options = r_str_new ("abi=o32");
-		}
-		pre_features = r_str_dup (pre_features, features);
+	const char *abi = a->config->abi;
+	// const char *features = a->config->features;
+	disasm_obj.disassembler_options = NULL;
+	if (R_STR_ISNOTEMPTY (abi)) {
+		// n32, n64, o32
+		disasm_obj.disassembler_options = r_str_newf ("abi=%s", abi);
 	}
 
 	mips_mode = a->config->bits;
-	disasm_obj.arch = CPU_LOONGSON_2F;
+	disasm_obj.arch = CPU_LOONGSON_2F; // XXX should be different see .mach
 	disasm_obj.buffer = (ut8 *)&bytes;
 	disasm_obj.read_memory_func = &mips_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -1200,6 +1190,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		op->mnemonic = r_strbuf_drain (buf_global);
 		buf_global = NULL;
 	}
+	free (disasm_obj.disassembler_options);
 	return op->size;
 }
 
@@ -1931,6 +1922,7 @@ RAnalPlugin r_anal_plugin_mips_gnu = {
 	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
 	.license = "LGPL3",
+	.cpus = "mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",
 	.bits = 32,
 	.esil = true,

@@ -820,7 +820,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 				break;
 			default:
 				free (tmp_val);
-				tmp_val = r_str_newf ("%x ", data[i+j] & 0x7FFF);
+				tmp_val = r_str_newf ("%x ", data[i + j] & 0x7FFF);
 				check_def = true;
 				if (bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]) {
 					Elf_(Verneed) vn;
@@ -2177,19 +2177,46 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	default: return strdup ("Unknown or unsupported arch");
 	}
 }
+
 char* Elf_(r_bin_elf_get_abi)(ELFOBJ *bin) {
 	Elf_(Ehdr)* ehdr = (Elf_(Ehdr) *) &bin->ehdr;
+	ut32 eflags = bin->ehdr.e_flags;
 
-	if (ehdr->e_machine == EM_MIPS) {
-		if (is_elfclass64 (ehdr)) {
-			return strdup ("n64");
+	switch (ehdr->e_machine) {
+	case EM_68K:
+		if (eflags & 0x1000000) {
+			return strdup ("68000");
 		}
-		if (is_mips_n32 (ehdr)) {
-			return strdup ("n32");
+		if (eflags & 0x810000) {
+			return strdup ("cpu32");
 		}
-		if (is_mips_o32 (ehdr)) {
-			return strdup ("o32");
+		if (eflags == 0) {
+			return strdup ("68020");
 		}
+	case EM_ARM:
+		{
+			int v = (eflags >> 24);
+			const char *arg = "";
+			if (eflags & 0x800000) {
+				arg = " be8";
+			} else if (eflags & 0x400000) {
+				arg = " le8";
+			}
+			return r_str_newf ("eabi%d%s", v, arg);
+		}
+	case EM_MIPS:
+		{
+			if (is_elfclass64 (ehdr)) {
+				return strdup ("n64");
+			}
+			if (is_mips_n32 (ehdr)) {
+				return strdup ("n32");
+			}
+			if (is_mips_o32 (ehdr)) {
+				return strdup ("o32");
+			}
+		}
+		break;
 	}
 	return NULL;
 }
@@ -2198,37 +2225,19 @@ char* Elf_(r_bin_elf_get_cpu)(ELFOBJ *bin) {
 	if (bin->phdr && bin->ehdr.e_machine == EM_MIPS) {
 		const ut32 mipsType = bin->ehdr.e_flags & EF_MIPS_ARCH;
 		switch (mipsType) {
-		case EF_MIPS_ARCH_1:        return strdup ("mips1");
-		case EF_MIPS_ARCH_2:        return strdup ("mips2");
-		case EF_MIPS_ARCH_3:        return strdup ("mips3");
-		case EF_MIPS_ARCH_4:        return strdup ("mips4");
-		case EF_MIPS_ARCH_5:        return strdup ("mips5");
-		case EF_MIPS_ARCH_32:       return strdup ("mips32");
-		case EF_MIPS_ARCH_64:       return strdup ("mips64");
-		case EF_MIPS_ARCH_32R2:     return strdup ("mips32r2");
-		case EF_MIPS_ARCH_64R2:     return strdup ("mips64r2");
-		default :                   return strdup (" Unknown mips ISA");
+		case EF_MIPS_ARCH_1: return strdup ("mips1");
+		case EF_MIPS_ARCH_2: return strdup ("mips2");
+		case EF_MIPS_ARCH_3: return strdup ("mips3");
+		case EF_MIPS_ARCH_4: return strdup ("mips4");
+		case EF_MIPS_ARCH_5: return strdup ("mips5");
+		case EF_MIPS_ARCH_32: return strdup ("mips32");
+		case EF_MIPS_ARCH_64: return strdup ("mips64");
+		case EF_MIPS_ARCH_32R2: return strdup ("mips32r2");
+		case EF_MIPS_ARCH_64R2: return strdup ("mips64r2");
+		default : return strdup ("Unknown mips ISA");
 		}
 	}
 	return NULL;
-}
-
-char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin) {
-	char *head_flag = NULL;
-	char *str = Elf_(r_bin_elf_get_cpu) (bin);
-	if (str) {
-		head_flag = r_str_append (head_flag, str);
-		free (str);
-	}
-	str = Elf_(r_bin_elf_get_abi) (bin);
-	if (str) {
-		head_flag = r_str_appendf (head_flag, " %s", str);
-		free (str);
-	}
-	if (R_STR_ISEMPTY (head_flag)) {
-		head_flag = r_str_append (head_flag, "unknown_flag");
-	}
-	return head_flag;
 }
 
 // http://www.sco.com/developers/gabi/latest/ch4.eheader.html

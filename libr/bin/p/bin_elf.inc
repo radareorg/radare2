@@ -1168,24 +1168,18 @@ static RBinInfo* info(RBinFile *bf) {
 		return NULL;
 	}
 	ret->machine = str;
-	if (!(str = Elf_(r_bin_elf_get_head_flag) (obj))) {
-		free (ret);
-		return NULL;
-	}
-	ret->head_flag = str;
 	if (!(str = Elf_(r_bin_elf_get_arch) (obj))) {
 		free (ret);
 		return NULL;
 	}
 	ret->arch = str;
+	ret->cpu = Elf_(r_bin_elf_get_cpu) (obj);
 
-	if ((str = Elf_(r_bin_elf_get_cpu) (obj))) {
-		ret->cpu = str;
+	ut32 elf_flags = ((ELFOBJ *)obj)->ehdr.e_flags;
+	if (elf_flags) {
+		ret->flags = r_str_newf ("0x%x", elf_flags);
 	}
-	if ((str = Elf_(r_bin_elf_get_abi) (obj))) {
-		ret->features = str;
-	}
-
+	ret->abi = Elf_(r_bin_elf_get_abi) (obj);
 	ret->rclass = strdup ("elf");
 	ret->bits = Elf_(r_bin_elf_get_bits) (obj);
 	if (!strcmp (ret->arch, "avr")) {

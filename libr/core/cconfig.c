@@ -753,14 +753,16 @@ static bool cb_asmarch(void *user, void *data) {
 			char *nac = strdup (new_asm_cpu);
 			char *comma = strchr (nac, ',');
 			if (comma) {
-				if (!*asm_cpu || (*asm_cpu && !strstr(nac, asm_cpu))) {
+				if (!*asm_cpu || (*asm_cpu && !strstr (nac, asm_cpu))) {
 					*comma = 0;
 					r_config_set (core->config, "asm.cpu", nac);
 				}
 			}
 			free (nac);
 		} else {
-			r_config_set (core->config, "asm.cpu", "");
+			// TODO: set to '' only if the new arch plugin doesnt handle
+			// the given asm.cpu setup, but we can ignore for now
+			// r_config_set (core->config, "asm.cpu", "");
 		}
 		bits = core->rasm->cur->bits;
 		if (8 & bits) {
@@ -938,42 +940,11 @@ static bool cb_asmbits(void *user, void *data) {
 	return ret;
 }
 
-static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
-	if (core && core->rasm && core->rasm->cur) {
-		if (core->rasm->cur->features) {
-			char *features = strdup (core->rasm->cur->features);
-			int i, argc = r_str_split (features, ',');
-			for (i = 0; i < argc; i++) {
-				const char *feature = r_str_word_get0 (features, i);
-				if (feature) {
-					r_config_node_add_option (node, feature);
-				}
-			}
-			free (features);
-		}
-	}
-}
-
 static bool cb_flag_realnames(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->flags->realnames = node->i_value;
 	return true;
-}
-
-static bool cb_asmfeatures(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	if (*node->value == '?') {
-		update_asmfeatures_options (core, node);
-		print_node_options (node);
-		return 0;
-	}
-	R_FREE (core->rasm->config->features);
-	if (node->value[0]) {
-		core->rasm->config->features = strdup (node->value);
-	}
-	return 1;
 }
 
 static bool cb_asmlineswidth(void *user, void *data) {
@@ -3134,6 +3105,14 @@ static bool cb_anal_bb_max_size(void *user, void *data) {
 	return true;
 }
 
+static bool cb_asmabi(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	free (core->anal->config->abi);
+	core->anal->config->abi = strdup (node->value);
+	return true;
+}
+
 static bool cb_anal_cxxabi(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -3437,6 +3416,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("anal.cxxabi", "itanium", &cb_anal_cxxabi);
 	SETDESC (n, "select C++ RTTI ABI");
 	SETOPTIONS (n, "itanium", "msvc", NULL);
+	SETCB ("asm.abi", "", &cb_asmabi, "specify the abi taken from bin headeres or compiler details");
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 	n = NODECB ("dbg.malloc", "glibc", &cb_malloc);
@@ -3614,9 +3594,6 @@ R_API int r_core_config_init(RCore *core) {
 	/* we need to have both asm.arch and asm.cpu defined before updating options */
 	update_asmarch_options (core, asmarch);
 	update_asmcpu_options (core, asmcpu);
-	n = NODECB ("asm.features", "", &cb_asmfeatures);
-	SETDESC (n, "specify supported features by the target CPU");
-	update_asmfeatures_options (core, n);
 	n = NODECB ("asm.parser", "x86.pseudo", &cb_asmparser);
 	SETDESC (n, "set the asm parser to use");
 	update_asmparser_options (core, n);

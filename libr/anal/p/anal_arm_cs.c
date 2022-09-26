@@ -4445,10 +4445,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			mode |= CS_MODE_V8;
 		}
 	}
-	if (a->config->bits != 64 && R_STR_ISNOTEMPTY (a->config->features) &&
-		strstr (a->config->features, "v8")) {
-		mode |= CS_MODE_V8;
-	}
 	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
 		if (a->cs_handle != 0) {
 			cs_close (&a->cs_handle);
@@ -4546,10 +4542,6 @@ static char *arm_mnemonics(RAnal *a, int id, bool json) {
 		if (a->config->bits != 64 && strstr (a->config->cpu, "v8")) {
 			mode |= CS_MODE_V8;
 		}
-	}
-	if (a->config->bits != 64 && R_STR_ISNOTEMPTY (a->config->features) &&
-		strstr (a->config->features, "v8")) {
-		mode |= CS_MODE_V8;
 	}
 	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
 		if (a->cs_handle != 0) {
