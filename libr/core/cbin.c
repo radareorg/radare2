@@ -872,6 +872,7 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			} else {
 				r_config_set (r->config, "anal.cxxabi", "itanium");
 			}
+			// we can take the eabi from bin.features from arm (f.ex eabi4 eabi5)
 			r_config_set (r->config, "asm.arch", info->arch);
 			if (info->cpu && *info->cpu) {
 				r_config_set (r->config, "asm.cpu", info->cpu);
@@ -965,7 +966,9 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 		pair_str (pj, "compiled", compiled);
 		pair_str (pj, "compiler", info->compiler);
-		pair_str (pj, "features", info->features);
+		if (R_STR_ISNOTEMPTY (info->features)) {
+			pair_str (pj, "features", info->features);
+		}
 		pair_bool (pj, "crypto", info->has_crypto);
 		pair_str (pj, "dbg_file", info->debug_file_name);
 		pair_str (pj, "endian", info->big_endian ? "big" : "little");
