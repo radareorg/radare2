@@ -2217,27 +2217,70 @@ char* Elf_(r_bin_elf_get_abi)(ELFOBJ *bin) {
 			}
 		}
 		break;
+	case EM_V800:
+	case EM_V850:
+		break;
+	}
+	return NULL;
+}
+
+static char *mips_flags_to_cpu(ut32 mipsType) {
+	switch (mipsType) {
+	case EF_MIPS_ARCH_1: return "mips1";
+	case EF_MIPS_ARCH_2: return "mips2";
+	case EF_MIPS_ARCH_3: return "mips3";
+	case EF_MIPS_ARCH_4: return "mips4";
+	case EF_MIPS_ARCH_5: return "mips5";
+	case EF_MIPS_ARCH_32: return "mips32";
+	case EF_MIPS_ARCH_64: return "mips64";
+	case EF_MIPS_ARCH_32R2: return "mips32r2";
+	case EF_MIPS_ARCH_64R2: return "mips64r2";
+	default: return "Unknown mips ISA";
+	}
+}
+
+#if 0
+/* Flags for the st_other field.  */
+#define V850_OTHER_SDA		0x10	/* Symbol had SDA relocations.  */
+#define V850_OTHER_ZDA		0x20	/* Symbol had ZDA relocations.  */
+#define V850_OTHER_TDA		0x40	/* Symbol had TDA relocations.  */
+#define V850_OTHER_ERROR	0x80	/* Symbol had an error reported.  */
+#endif
+
+#define EF_V850_ARCH		0xf0000000
+#define E_V850_ARCH		0x00000000
+#define E_V850E_ARCH		0x10000000
+#define E_V850E1_ARCH		0x20000000
+#define E_V850E2_ARCH		0x30000000
+#define E_V850E2V3_ARCH		0x40000000
+#define E_V850E3V5_ARCH		0x60000000
+
+static const char *v850_flags_to_cpu(ut32 type) {
+	switch (type) {
+	case E_V850_ARCH: return "0";
+	case E_V850E_ARCH: return "e";
+	case E_V850E1_ARCH: return "e1";
+	case E_V850E2_ARCH: return "e2";
+	case E_V850E2V3_ARCH: return "e2v3";
+	case EF_V850_ARCH: return "e1"; // type = 0xf0
 	}
 	return NULL;
 }
 
 char* Elf_(r_bin_elf_get_cpu)(ELFOBJ *bin) {
-	if (bin->phdr && bin->ehdr.e_machine == EM_MIPS) {
-		const ut32 mipsType = bin->ehdr.e_flags & EF_MIPS_ARCH;
-		switch (mipsType) {
-		case EF_MIPS_ARCH_1: return strdup ("mips1");
-		case EF_MIPS_ARCH_2: return strdup ("mips2");
-		case EF_MIPS_ARCH_3: return strdup ("mips3");
-		case EF_MIPS_ARCH_4: return strdup ("mips4");
-		case EF_MIPS_ARCH_5: return strdup ("mips5");
-		case EF_MIPS_ARCH_32: return strdup ("mips32");
-		case EF_MIPS_ARCH_64: return strdup ("mips64");
-		case EF_MIPS_ARCH_32R2: return strdup ("mips32r2");
-		case EF_MIPS_ARCH_64R2: return strdup ("mips64r2");
-		default : return strdup ("Unknown mips ISA");
-		}
+	const char *cpu = NULL;
+	switch (bin->ehdr.e_machine) {
+	case EM_MIPS:
+		cpu = bin->phdr ? mips_flags_to_cpu (bin->ehdr.e_flags & EF_MIPS_ARCH): NULL;
+		break;
+	case EM_V800:
+	case EM_V850:
+		cpu = v850_flags_to_cpu (bin->ehdr.e_flags & EF_V850_ARCH);
+		break;
+	default:
+		break;
 	}
-	return NULL;
+	return cpu? strdup (cpu): NULL;
 }
 
 // http://www.sco.com/developers/gabi/latest/ch4.eheader.html
