@@ -758,7 +758,9 @@ R_API bool r_core_project_is_dirty(RCore *core) {
 }
 
 R_API void r_core_project_undirty(RCore *core) {
+	R_CRITICAL_ENTER (core);
 	core->config->is_dirty = false;
 	core->anal->is_dirty = false;
 	core->flags->is_dirty = false;
+	R_CRITICAL_LEAVE (core);
 }
