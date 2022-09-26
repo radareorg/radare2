@@ -217,7 +217,6 @@ typedef struct r_bin_info_t {
 	char *arch;
 	char *cpu;
 	char *machine;
-	char *head_flag;
 	char *features;
 	char *os;
 	char *subsystem;
@@ -244,6 +243,7 @@ typedef struct r_bin_info_t {
 	ut64 dbg_info;
 	RBinHash sum[3];
 	ut64 baddr;
+	char *abi;
 	char *intrp;
 	char *compiler;
 	char *charset;

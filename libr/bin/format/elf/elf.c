@@ -2177,19 +2177,49 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	default: return strdup ("Unknown or unsupported arch");
 	}
 }
+
 char* Elf_(r_bin_elf_get_abi)(ELFOBJ *bin) {
 	Elf_(Ehdr)* ehdr = (Elf_(Ehdr) *) &bin->ehdr;
+	ut32 eflags = bin->ehdr.e_flags;
 
-	if (ehdr->e_machine == EM_MIPS) {
-		if (is_elfclass64 (ehdr)) {
-			return strdup ("n64");
+	switch (ehdr->e_machine) {
+	case EM_68K:
+		if (eflags & 0x1000000) {
+			return strdup ("68000");
 		}
-		if (is_mips_n32 (ehdr)) {
-			return strdup ("n32");
+		if (eflags & 0x810000) {
+			return strdup ("cpu32");
 		}
-		if (is_mips_o32 (ehdr)) {
-			return strdup ("o32");
+		if (eflags == 0) {
+			return strdup ("68020");
 		}
+	case EM_ARM:
+		{
+			int v = (eflags >> 24);
+			const char *arg = "";
+			if (eflags & 0x800000) {
+				arg = " be8";
+			} else if (eflags & 0x400000) {
+				arg = " le8";
+			}
+			return r_str_newf ("eabi%d%s", v, arg);
+		}
+	case EM_MIPS:
+		{
+			if (is_elfclass64 (ehdr)) {
+				return strdup ("n64");
+			}
+			if (is_mips_n32 (ehdr)) {
+				return strdup ("n32");
+			}
+			if (is_mips_o32 (ehdr)) {
+				return strdup ("o32");
+			}
+		}
+		break;
+	}
+	if (bin->ehdr.e_flags) {
+		return r_str_newf ("0x%x", bin->ehdr.e_flags);
 	}
 	return NULL;
 }
@@ -2211,24 +2241,6 @@ char* Elf_(r_bin_elf_get_cpu)(ELFOBJ *bin) {
 		}
 	}
 	return NULL;
-}
-
-char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin) {
-	char *head_flag = NULL;
-	char *str = Elf_(r_bin_elf_get_cpu) (bin);
-	if (str) {
-		head_flag = r_str_append (head_flag, str);
-		free (str);
-	}
-	str = Elf_(r_bin_elf_get_abi) (bin);
-	if (str) {
-		head_flag = r_str_appendf (head_flag, " %s", str);
-		free (str);
-	}
-	if (R_STR_ISEMPTY (head_flag)) {
-		head_flag = r_str_append (head_flag, "unknown_flag");
-	}
-	return head_flag;
 }
 
 // http://www.sco.com/developers/gabi/latest/ch4.eheader.html

@@ -938,42 +938,11 @@ static bool cb_asmbits(void *user, void *data) {
 	return ret;
 }
 
-static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
-	if (core && core->rasm && core->rasm->cur) {
-		if (core->rasm->cur->features) {
-			char *features = strdup (core->rasm->cur->features);
-			int i, argc = r_str_split (features, ',');
-			for (i = 0; i < argc; i++) {
-				const char *feature = r_str_word_get0 (features, i);
-				if (feature) {
-					r_config_node_add_option (node, feature);
-				}
-			}
-			free (features);
-		}
-	}
-}
-
 static bool cb_flag_realnames(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->flags->realnames = node->i_value;
 	return true;
-}
-
-static bool cb_asmfeatures(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	if (*node->value == '?') {
-		update_asmfeatures_options (core, node);
-		print_node_options (node);
-		return 0;
-	}
-	R_FREE (core->rasm->config->features);
-	if (node->value[0]) {
-		core->rasm->config->features = strdup (node->value);
-	}
-	return 1;
 }
 
 static bool cb_asmlineswidth(void *user, void *data) {
@@ -3614,9 +3583,6 @@ R_API int r_core_config_init(RCore *core) {
 	/* we need to have both asm.arch and asm.cpu defined before updating options */
 	update_asmarch_options (core, asmarch);
 	update_asmcpu_options (core, asmcpu);
-	n = NODECB ("asm.features", "", &cb_asmfeatures);
-	SETDESC (n, "specify supported features by the target CPU");
-	update_asmfeatures_options (core, n);
 	n = NODECB ("asm.parser", "x86.pseudo", &cb_asmparser);
 	SETDESC (n, "set the asm parser to use");
 	update_asmparser_options (core, n);

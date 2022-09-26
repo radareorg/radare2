@@ -876,9 +876,6 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			if (info->cpu && *info->cpu) {
 				r_config_set (r->config, "asm.cpu", info->cpu);
 			}
-			if (info->features && *info->features) {
-				r_config_set (r->config, "asm.features", info->features);
-			}
 			r_config_set (r->config, "anal.arch", info->arch);
 			if (R_STR_ISNOTEMPTY (info->charset)) {
 				r_config_set (r->config, "cfg.charset", info->charset);
@@ -968,6 +965,7 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 		pair_str (pj, "compiled", compiled);
 		pair_str (pj, "compiler", info->compiler);
+		pair_str (pj, "features", info->features);
 		pair_bool (pj, "crypto", info->has_crypto);
 		pair_str (pj, "dbg_file", info->debug_file_name);
 		pair_str (pj, "endian", info->big_endian ? "big" : "little");
@@ -1064,11 +1062,11 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 	}
 	const char *dir_prefix = r_config_get (r->config, "dir.prefix");
-	char spath[1024];
-	snprintf (spath, sizeof (spath), "%s/"R2_SDB_FCNSIGN"/spec.sdb", dir_prefix);
+	char *spath = r_str_newf ("%s/"R2_SDB_FCNSIGN"/spec.sdb", dir_prefix);
 	if (r_file_exists (spath)) {
 		sdb_concat_by_path (r->anal->sdb_fmts, spath);
 	}
+	free (spath);
 	return true;
 }
 

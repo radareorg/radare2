@@ -1168,11 +1168,6 @@ static RBinInfo* info(RBinFile *bf) {
 		return NULL;
 	}
 	ret->machine = str;
-	if (!(str = Elf_(r_bin_elf_get_head_flag) (obj))) {
-		free (ret);
-		return NULL;
-	}
-	ret->head_flag = str;
 	if (!(str = Elf_(r_bin_elf_get_arch) (obj))) {
 		free (ret);
 		return NULL;

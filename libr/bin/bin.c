@@ -148,7 +148,7 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	free (rb->actual_checksum);
 	free (rb->claimed_checksum);
 	free (rb->compiler);
-	free (rb->head_flag);
+	free (rb->features);
 	free (rb);
 }
 
@@ -1015,7 +1015,6 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 	ut64 obj_size = obj->obj_size;
 	const char *arch = info? info->arch: NULL;
 	const char *machine = info? info->machine: "unknown_machine";
-	const char *h_flag = info? info->head_flag: NULL;
 	char * str_fmt;
 	if (!arch) {
 		snprintf (unk, sizeof (unk), "unk_0");
@@ -1045,9 +1044,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 			pj_end (pj);
 			break;
 		default:
-			str_fmt = h_flag && strcmp (h_flag, "unknown_flag")
-				? r_str_newf ("%s_%i %s", arch, bits, h_flag) \
-				: r_str_newf ("%s_%i", arch, bits);
+			str_fmt = r_str_newf ("%s_%i", arch, bits);
 			r_table_add_rowf (table, fmt, 0, boffset, obj_size, str_fmt, machine);
 			free (str_fmt);
 			bin->cb_printf ("%s", r_table_tostring (table));
@@ -1079,9 +1076,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 				pj_end (pj);
 				break;
 			default:
-				str_fmt = h_flag && strcmp (h_flag, "unknown_flag")
-					? r_str_newf ("%s_%i %s", arch, bits, h_flag)
-					: r_str_newf ("%s_%i", arch, bits);
+				str_fmt = r_str_newf ("%s_%i", arch, bits);
 				r_table_add_rowf (table, fmt, 0, boffset, obj_size, str_fmt, "");
 				free (str_fmt);
 				bin->cb_printf ("%s", r_table_tostring (table));
