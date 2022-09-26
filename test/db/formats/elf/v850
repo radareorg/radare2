@@ -26,6 +26,7 @@ bits     32
 canary   false
 class    ELF32
 compiler GCC: (GNU) 9.3.0
+flags    0xf0100000
 crypto   false
 endian   little
 havecode true
