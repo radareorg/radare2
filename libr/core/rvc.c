@@ -328,7 +328,6 @@ static int branch_exists(Rvc *rvc, const char *bname) {
 	char *branch;
 	bool ret = 0;
 	r_list_foreach (branches, iter, branch) {
-		branch = branch + r_str_len_utf8 (BPREFIX);
 		if (!strcmp (branch, bname)) {
 			ret = 1;
 			break;
@@ -786,7 +785,13 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 		R_LOG_ERROR ("Nothing to commit");
 		return false;
 	}
-	commit_hash = write_commit (rvc, message, author, blobs);
+	if (R_STR_ISEMPTY (author)) {
+		char *au = r_sys_whoami ();
+		commit_hash = write_commit (rvc, message, au, blobs);
+		free (au);
+	} else {
+		commit_hash = write_commit (rvc, message, author, blobs);
+	}
 	if (!commit_hash) {
 		free_blobs (blobs);
 		return false;
@@ -827,11 +832,12 @@ R_API RList *r_vc_get_branches(Rvc *rvc) {
 	SdbListIter *i;
 	SdbKv *kv;
 	ls_foreach (keys, i, kv) {
+		size_t bplen = r_str_len_utf8 (BPREFIX);
 		if (r_str_cmp ((char *)kv->base.key,
-					BPREFIX, r_str_len_utf8 (BPREFIX))) {
+					BPREFIX, bplen)) {
 			continue;
 		}
-		if (!r_list_append (ret, r_str_new (kv->base.key))
+		if (!r_list_append (ret, r_str_new ((char *)kv->base.key + bplen))
 				&& !ret->head->data) {
 			r_list_free (ret);
 			ret = NULL;
@@ -916,21 +922,30 @@ R_API Rvc *r_vc_new(const char *path) {
 		R_LOG_ERROR ("Can't create The RVC branches database");
 		free (rvc->path);
 		free (rvc);
-		return false;
+		return NULL;
 	}
 	if (!sdb_set (rvc->db, FIRST_BRANCH, NULLVAL, 0)) {
 		sdb_unlink (rvc->db);
 		sdb_free (rvc->db);
 		free (rvc->path);
 		free (rvc);
-		return false;
+		return NULL;
 	}
 	if (!sdb_set (rvc->db, CURRENTB, FIRST_BRANCH, 0)) {
 		sdb_unlink (rvc->db);
 		sdb_free (rvc->db);
-		return false;
+		free (rvc->path);
+		free (rvc);
+		return NULL;
 	}
-	return rvc;
+	if (!r_vc_use (rvc, VC_RVC)) {
+		sdb_unlink (rvc->db);
+		sdb_free (rvc->db);
+		free (rvc->path);
+		free (rvc);
+		return NULL;
+	}
+	return r_vc_save (rvc)? rvc : NULL;
 }
 
 R_API bool r_vc_checkout(Rvc *rvc, const char *bname) {
@@ -994,43 +1009,46 @@ fail_ret:
 	return false;
 }
 
-R_API RList *r_vc_log(Rvc *rvc) {
+R_API bool r_vc_log(Rvc *rvc) {
 	if (!repo_exists (rvc->path)) {
 		R_LOG_ERROR ("No valid repo in %s", rvc->path);
 		return false;
 	}
 	RList *commits = get_commits (rvc, 0);
 	if (!commits) {
-		return NULL;
+		return false;
 	}
+	bool ret = true;
 	RListIter *iter;
 	char *ch;
 	r_list_foreach_prev (commits, iter, ch) {
 		char *cp = r_file_new (rvc->path, ".rvc", "commits", ch, NULL);
 		if (!cp) {
-			goto fail_ret;
+			ret = false;
+			break;
 		}
 		char *contnet = r_file_slurp (cp, 0);
 		free (cp);
 		if (!contnet) {
-			goto fail_ret;
+			ret = false;
+			break;
 		}
-		iter->data = r_str_newf ("hash=%s", (char *) iter->data);
+		printf ("hash=%s", (char *) iter->data);
 		if (!iter->data) {
 			free (contnet);
-			goto fail_ret;
+			ret = false;
+			break;
 		}
 		free (ch);
-		iter->data = r_str_appendf (iter->data, "\n%s", contnet);
+		printf ("\n%s\n****\n", contnet);
 		free (contnet);
 		if (!iter->data) {
-			goto fail_ret;
+			ret = false;
+			break;
 		}
 	}
-	return commits;
-fail_ret:
 	r_list_free (commits);
-	return NULL;
+	return ret;
 }
 
 R_API char *r_vc_current_branch(Rvc *rvc) {
@@ -1041,16 +1059,16 @@ R_API char *r_vc_current_branch(Rvc *rvc) {
 	if (!rvc->db) {
 		return NULL;
 	}
-	//TODO: return consistently either BPREFIX.bname or bname
-	char *ret = r_str_new (sdb_const_get (rvc->db, CURRENTB, 0) + r_str_len_utf8 (BPREFIX));
+	char *ret = r_str_new (sdb_const_get (rvc->db, CURRENTB, 0)
+			+ r_str_len_utf8 (BPREFIX));
 	return ret;
 }
 
-R_API bool r_vc_clone(const char *src, const char *dst) {
+R_API bool r_vc_clone(const Rvc *rvc, const char *dst) {
 	char *drp = r_file_new (dst, ".rvc", NULL);
 	bool ret = false;
 	if (drp) {
-		char *srp = r_file_new (src, ".rvc", NULL);
+		char *srp = r_file_new (rvc->path, ".rvc", NULL);
 		if (srp) {
 			if (file_copyrf (srp, drp)) {
 				Rvc *dst_repo = r_vc_open (dst);
@@ -1092,7 +1110,7 @@ R_API Rvc *r_vc_git_open(const char *path) {
 		return NULL;
 	}
 	vc->db = NULL;
-	vc->type = VC_GIT;
+	r_vc_use (vc, VC_GIT);
 	return vc;
 }
 
@@ -1103,8 +1121,8 @@ R_API Rvc *r_vc_git_init(const char *path) {
 	return !ret? r_vc_git_open (path) : NULL;
 }
 
-R_API bool r_vc_git_branch(const char *path, const char *name) {
-	char *escpath = r_str_escape (path);
+R_API bool r_vc_git_branch(Rvc *vc, const char *name) {
+	char *escpath = r_str_escape (vc->path);
 	if (!escpath) {
 		return false;
 	}
@@ -1119,8 +1137,8 @@ R_API bool r_vc_git_branch(const char *path, const char *name) {
 	return !ret;
 }
 
-R_API bool r_vc_git_checkout(const char *path, const char *name) {
-	char *escpath = r_str_escape (path);
+R_API bool r_vc_git_checkout(Rvc *vc, const char *name) {
+	char *escpath = r_str_escape (vc->path);
 	char *escname = r_str_escape (name);
 	int ret = r_sys_cmdf ("git -C \"%s\" checkout \"%s\"", escpath, escname);
 	free (escname);
@@ -1128,39 +1146,74 @@ R_API bool r_vc_git_checkout(const char *path, const char *name) {
 	return !ret;
 }
 
-R_API bool r_vc_git_add(const char *path, const char *fname) {
+R_API bool r_vc_git_add(Rvc *vc, const RList *files) {
+	RListIter *iter;
+	const char *fname;
 	char *cwd = r_sys_getdir ();
 	if (!cwd) {
 		return false;
 	}
-	if (!r_sys_chdir (path)) {
+	if (!r_sys_chdir (vc->path)) {
 		free (cwd);
 		return false;
 	}
-	char *escfname = r_str_escape (fname);
-	int ret = r_sys_cmdf ("git add \"%s\"", escfname);
-	free (escfname);
+	bool ret = true;
+	r_list_foreach(files, iter, fname) {
+		char *escfname = r_str_escape (fname);
+		if (!escfname) {
+			ret = false;
+			break;
+		}
+		ret &= !r_sys_cmdf ("git add \"%s\"", escfname);
+		free (escfname);
+	}
 	if (!r_sys_chdir (cwd)) {
 		free (cwd);
 		return false;
 	}
 	free (cwd);
-	return ret == 0;
+	return ret;
 }
 
-R_API bool r_vc_git_commit(const char *path, const char *message) {
-	if (R_STR_ISEMPTY (message)) {
-		char *epath = r_str_escape (path);
-		int res = r_sys_cmdf ("git -C \"%s\" commit", epath);
-		free (epath);
-		return res == 0;
+R_API bool r_vc_git_commit(Rvc *vc, const char *message, const char *author, const RList *files) {
+	if (!r_vc_git_add (vc, files)) {
+		return false;
 	}
-	char *epath = r_str_escape (path);
-	char *emsg = r_str_escape (message);
-	int res = r_sys_cmdf ("git -C %s commit -m %s", epath, emsg);
-	free (epath);
-	free (emsg);
-	return res == 0;
+	char *escauth;
+	if (!author) {
+		char *user = r_sys_whoami ();
+		escauth = r_str_escape (user);
+		free (user);
+	} else {
+		escauth = r_str_escape (author);
+	}
+	if (!escauth) {
+		return false;
+	}
+	if (R_STR_ISEMPTY (message)) {
+		char *epath = r_str_escape (vc->path);
+		if (epath) {
+			int res = r_sys_cmdf ("git -C \"%s\" commit --author \"%s <%s@localhost>\"",
+					epath, escauth, escauth);
+			free (escauth);
+			free (epath);
+			return res == 0;
+		}
+		return false;
+	}
+	char *epath = r_str_escape (vc->path);
+	if (epath) {
+		char *emsg = r_str_escape (message);
+		if (emsg) {
+			int res = r_sys_cmdf ("git -C %s commit -m %s --author \"%s <%s@localhost>\"",
+					epath, emsg, escauth, escauth);
+			free (escauth);
+			free (epath);
+			free (emsg);
+			return res == 0;
+		}
+	}
+	return false;
 }
 
 R_API bool r_vc_reset(Rvc *rvc) {
@@ -1214,16 +1267,8 @@ static void warn(void) {
 	R_LOG_WARN ("rvc is still under development and can be unstable, be careful");
 }
 
-R_API Rvc *rvc_git_init(const RCore *core, const char *path) {
-	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
-		return r_vc_git_init (path);
-	}
-	warn ();
-	Rvc *rvc = r_vc_new (path);
-	if (!rvc || !r_vc_save (rvc)) {
-		return NULL;
-	}
-	return rvc;
+R_API RList *rvc_git_get_branches(Rvc *rvc) {
+	return rvc->get_branches(rvc);
 }
 
 R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files) {
@@ -1241,14 +1286,7 @@ R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char
 		r_vc_commit (rvc, message, author, files);
 		return r_vc_save (rvc);
 	}
-	char *path;
-	RListIter *iter;
-	r_list_foreach (files, iter, path) {
-		if (!r_vc_git_add (rvc->path, path)) {
-			return false;
-		}
-	}
-	return r_vc_git_commit (rvc->path, message);
+	return r_vc_git_commit (rvc, message, author, files);
 }
 
 R_API bool rvc_git_branch(Rvc *rvc, const char *bname) {
@@ -1257,16 +1295,16 @@ R_API bool rvc_git_branch(Rvc *rvc, const char *bname) {
 		r_vc_branch (rvc, bname);
 		return r_vc_save(rvc);
 	}
-	return !r_vc_git_branch (rvc->path, bname);
+	return !r_vc_git_branch (rvc, bname);
 }
 
-R_API bool rvc_git_checkout(const RCore *core, Rvc *rvc, const char *bname) {
-	if (rvc->type == VC_GIT) {
+R_API bool rvc_git_checkout(Rvc *rvc, const char *bname) {
+	if (rvc->type == VC_RVC) {
 		warn ();
 		r_vc_checkout (rvc, bname);
 		return r_vc_save(rvc);
 	}
-	return r_vc_git_checkout (rvc->path, bname);
+	return r_vc_git_checkout (rvc, bname);
 }
 
 R_API bool rvc_git_repo_exists(const RCore *core, const char *path) {
@@ -1287,7 +1325,7 @@ R_API Rvc *r_vc_open(const char *rp) {
 		repo->path = r_str_new (rp);
 		if (repo->path) {
 			repo->db = vcdb_open (rp) ;
-			if (repo->db) {
+			if (repo->db && r_vc_use (repo, VC_RVC)) {
 				return repo;
 			}
 			free (repo->path);
@@ -1312,3 +1350,181 @@ R_API void r_vc_close(Rvc *vc, bool save) {
 		free (vc);
 	}
 }
+
+R_API RList *r_vc_git_get_branches(Rvc *rvc) {
+	RList *ret = NULL;
+	char *esc_path = r_str_escape (rvc->path);
+	if (esc_path) {
+		char *output = r_sys_cmd_strf ("git -C %s branch --color=never",
+				esc_path);
+		r_str_trim (output);
+		free (esc_path);
+		if (!R_STR_ISEMPTY (output)) {
+			ret = r_str_split_duplist (output, "\n", true);
+			RListIter *iter;
+			char *name;
+			r_list_foreach (ret, iter, name) {
+				if (*(char *)iter->data == '*') {
+					iter->data = r_str_new (name + 2);
+					free (name);
+				}
+
+			}
+		}
+	}
+	return ret;
+}
+
+R_API RList *r_vc_git_get_uncommitted(Rvc *rvc) {
+	RList *ret = NULL;
+	char *esc_path = r_str_escape (rvc->path);
+	if (esc_path) {
+		char *output = r_sys_cmd_strf ("git -C %s status --short",
+				esc_path);
+		free (esc_path);
+		if (!R_STR_ISEMPTY (output)) {
+			r_str_trim(output);
+			ret = r_str_split_duplist (output, "\n", true);
+			free (output);
+			RListIter *iter;
+			char *i;
+			r_list_foreach (ret, iter, i) {
+				//after we add one to the output, there maybe
+				//a space so trim that
+				char *ni = r_str_trim_dup (i + 2);
+				if (!ni) {
+					r_list_free (ret);
+					ret = NULL;
+					break;
+				}
+				free (i);
+				iter->data = ni;
+			}
+		} else {
+			ret = r_list_new ();
+		}
+
+	}
+	return ret;
+}
+
+R_API bool r_vc_git_log(Rvc *rvc) {
+	bool ret = true;
+	char *esc_path = r_str_escape (rvc->path);
+	if (esc_path) {
+		ret = !r_sys_cmdf ("git -C %s log", esc_path);
+		free (esc_path);
+	}
+	return ret;
+}
+
+R_API char *r_vc_git_current_branch(Rvc *rvc) {
+	char *ret = NULL;
+	char *esc_path = r_str_escape (rvc->path);
+	if (esc_path) {
+		char *branch = r_sys_cmd_strf ("git -C %s rev-parse --abbrev-ref HEAD",
+				esc_path);
+		if (!R_STR_ISEMPTY (branch)) {
+			ret = r_str_ndup (branch, strlen (branch) - 1);
+		}
+		free (branch);
+	}
+	return ret;
+}
+
+R_API bool r_vc_git_reset(Rvc *rvc) {
+	char *esc_path = r_str_escape (rvc->path);
+	if (esc_path) {
+		bool ret = r_sys_cmdf ("git -C %s checkout .", esc_path);
+		free (esc_path);
+		return !ret;
+	}
+	return false;
+}
+
+R_API bool r_vc_git_clone(const Rvc *rvc, const char *dst) {
+	char *esc_src = r_str_escape (rvc->path);
+	char *esc_dst = r_str_escape (dst);
+	bool ret = false;
+	if (esc_src && esc_dst) {
+		ret = !r_sys_cmdf ("git clone %s %s", esc_src, esc_dst);
+	}
+	free (esc_src);
+	free (esc_dst);
+	return ret;
+}
+
+R_API void r_vc_git_close(Rvc *vc, bool save) {
+	if (vc) {
+		free (vc->path);
+		free (vc);
+	}
+}
+
+R_API bool r_vc_git_save(Rvc *vc) {
+	//do nothing, since git commands are automatically executed
+	return true;
+}
+R_API bool r_vc_use(Rvc *vc, VcType type) {
+	switch (type) {
+	case VC_GIT:
+		vc->commit = r_vc_git_commit;
+		vc->branch = r_vc_git_branch;
+		vc->checkout = r_vc_git_checkout;
+		vc->get_branches = r_vc_git_get_branches;
+		vc->get_uncommitted = r_vc_git_get_uncommitted;
+		vc->print_commits = r_vc_git_log;
+		vc->current_branch = r_vc_git_current_branch;
+		vc->reset = r_vc_git_reset;
+		vc->clone = r_vc_git_clone;
+		vc->close = r_vc_git_close;
+		vc->save = r_vc_git_save;
+		break;
+	case VC_RVC:
+		vc->commit = r_vc_commit;
+		vc->branch = r_vc_branch;
+		vc->checkout = r_vc_checkout;
+		vc->get_branches = r_vc_get_branches;
+		vc->get_uncommitted = r_vc_get_uncommitted;
+		vc->print_commits = r_vc_log;
+		vc->current_branch = r_vc_current_branch;
+		vc->reset = r_vc_reset;
+		vc->clone = r_vc_clone;
+		vc->close = r_vc_close;
+		vc->save = r_vc_save;
+		break;
+	default:
+		r_return_val_if_reached (false);
+	}
+	return true;
+}
+
+R_API Rvc *rvc_git_open(const char *path) {
+	if (repo_exists (path)) {
+		return r_vc_open (path);
+	}
+	return r_vc_git_open (path);
+}
+
+R_API Rvc *rvc_git_init(const RCore *core, const char *path) {
+	r_return_val_if_fail (core && path, NULL);
+	const char *vname = r_config_get (core->config, "prj.vc.type");
+	if (!strcmp (vname, "git")) {
+		return r_vc_git_init (path);
+	} else if (!strcmp (vname, "rvc")) {
+		warn ();
+		Rvc *rvc = r_vc_new (path);
+		if (!rvc || !r_vc_save (rvc)) {
+			return NULL;
+		}
+		return rvc;
+	}
+	R_LOG_ERROR ("%s is not a valid vc type", vname);
+	return NULL;
+}
+
+R_API void rvc_git_close(struct r_vc_t *vc, bool save)
+{
+	vc->close(vc, true);
+}
+

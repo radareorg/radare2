@@ -320,11 +320,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	char *prj_path = r_file_dirname(rcpath);
 	if (prj_path) {
 		//check if the project uses git
-		Rvc *vc = r_vc_git_open (prj_path);
-		if (!vc) {
-			// if the project does not use git, try rvc
-			vc = r_vc_open (prj_path);
-		}
+		Rvc *vc = rvc_git_open (prj_path);
 		core->prj->rvc = vc;
 		free (prj_path);
 	} else {
@@ -700,13 +696,13 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		RList *paths = r_list_new ();
 		if (paths) {
 			if (r_list_append (paths, prj_dir)) {
-				if (!rvc_git_commit (core, core->prj->rvc,
-							NULL, NULL, paths)) {
+				if (!rvc_git_commit (core, core->prj->rvc, NULL, NULL, paths)) {
 					r_list_free (paths);
 					free (prj_dir);
 					free (script_path);
 					return false;
 				}
+				r_vc_save (core->prj->rvc);
 			} else {
 				r_list_free (paths);
 				free (prj_dir);
