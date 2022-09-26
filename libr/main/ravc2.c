@@ -162,9 +162,9 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			printf ("Branch: %s\n", current_branch);
 			RList *uncommitted = rvc->get_uncommitted (rvc);
 			if (r_list_empty (uncommitted)) {
-				printf ("All files are committed\n");
+				R_LOG_INFO ("All files are committed");
 			} else {
-				printf ("The following files were NOT committed:\n");
+				R_LOG_INFO ("The following files were NOT committed");
 				RListIter *iter;
 				char *file;
 				r_list_foreach (uncommitted, iter, file) {
