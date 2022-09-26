@@ -4082,23 +4082,27 @@ static void cmd_aflxj(RCore *core) {
 	SdbKv *kv;
 	PJ * pj = r_core_pj_new (core);
 	if (pj) {
-		pj_o(pj);
+		pj_o (pj);
 	}
 	ls_foreach (keys, liter, kv) {
-		const char *key = sdbkv_key(kv);
+		const char *key = sdbkv_key (kv);
 		const char *value = sdbkv_value (kv);
 		ut64 fcn_xref_addr = r_num_get (NULL, key);
 		ut64 xref_addr = r_num_get (NULL, value);
 		RAnalFunction *xref = r_anal_get_fcn_in (core->anal, fcn_xref_addr, R_ANAL_FCN_TYPE_ANY);
-		pj_kn(pj, "address", (fcn)? fcn->addr: 0);
-		pj_ks(pj, "name", (fcn)? fcn->name: "null");
-		pj_ko(pj, "xrefs");
-		pj_ka(pj, (xref)? xref->name: "null");
-		pj_n(pj, xref_addr);
-		pj_end(pj);
-		pj_end(pj);
+		if (fcn && xref) {
+			pj_kn (pj, "address", fcn->addr);
+			pj_ks (pj, "name", fcn->name);
+			pj_ko (pj, "xrefs");
+			pj_ka (pj, xref->name);
+			pj_n (pj, xref_addr);
+			pj_end (pj);
+			pj_end (pj);
+		} else {
+			R_LOG_WARN ("No function defined here");
+		}
 	}
-	pj_end(pj);
+	pj_end (pj);
 	char *s = pj_drain (pj);
 	r_cons_printf ("%s\n", s);
 	free (s);
