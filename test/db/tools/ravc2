@@ -15,7 +15,6 @@ EXPECT=<<EOF
 ./.rvc/branches.sdb
 ./.rvc/commits
 Branch: master
-All files are committed
 EOF
 RUN
 
