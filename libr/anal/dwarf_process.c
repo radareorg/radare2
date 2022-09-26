@@ -923,6 +923,73 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKin
 	}
 }
 
+static const char *map_dwarf_reg_to_arm64_reg(ut64 reg_num, VariableLocationKind *kind) {
+	*kind = LOCATION_REGISTER;
+	switch (reg_num) {
+	case 0: return "x0";
+	case 1: return "x1";
+	case 2: return "x2";
+	case 3: return "x3";
+	case 4: return "x4";
+	case 5: return "x5";
+	case 6: return "x6";
+	case 7: return "x7";
+	case 8: return "x8";
+	case 9: return "x9";
+	case 10: return "x10";
+	case 11: return "x11";
+	case 12: return "x12";
+	case 13: return "x13";
+	case 14: return "x14";
+	case 15: return "x15";
+	case 16: return "x16";
+	case 17: return "x17";
+	case 18: return "x18";
+	case 19: return "x19";
+	case 20: return "x20";
+	case 21: return "x21";
+	case 22: return "x22";
+	case 23: return "x23";
+	case 24: return "x24";
+	case 25: return "x25";
+	case 26: return "x26";
+	case 27: return "x27";
+	case 28: return "x28";
+	case 29: return "x29";
+	case 30: return "x30";
+	case 31: return "sp";
+	case 32: return "pc";
+	case 33: return "elr_mode";
+	case 34: return "rasign_state";
+	case 35: return "tpidrr0_el0";
+	case 36: return "tpidr_el0";
+	case 37: return "tpidr_el1";
+	case 38: return "tpidr_el2";
+	case 39: return "tpidr_el3";
+	}
+#if 0
+ARM64 - dwarf register mapping
+0–30	X0–X30	64-bit general registers (Note 1)
+31	SP	64-bit stack pointer
+32	PC	64-bit program counter (Note 9)
+33	ELR_mode	The current mode exception link register
+34	RA_SIGN_STATE	Return address signed state pseudo-register (Note 8)
+35	TPIDRRO_ELO	EL0 Read-Only Software Thread ID register
+36	TPIDR_ELO	EL0 Read/Write Software Thread ID register
+37	TPIDR_EL1	EL1 Software Thread ID register
+38	TPIDR_EL2	EL2 Software Thread ID register
+39	TPIDR_EL3	EL3 Software Thread ID register
+40-45	Reserved	-
+46	VG (Beta)	64-bit SVE vector granule pseudo-register (Note 2, Note 3)
+47	FFR (Beta)	VG × 8-bit SVE first fault register (Note 4)
+48-63	P0-P15 (Beta)	VG × 8-bit SVE predicate registers (Note 4)
+64-95	V0-V31	128-bit FP/Advanced SIMD registers (Note 5, Note 7)
+96-127	Z0-Z31 (Beta)	VG × 64-bit SVE vector registers (Note 6, Note 7)
+#endif
+	*kind = LOCATION_UNKNOWN;
+	return "unk"; // please complete the list :___
+}
+
 /* x86 https://01.org/sites/default/files/file_attach/intel386-psabi-1.0.pdf */
 static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
@@ -1044,13 +1111,14 @@ static const char *get_dwarf_reg_name(const char *arch, int reg_num, VariableLoc
 			return map_dwarf_reg_to_x86_64_reg (reg_num, kind);
 		}
 		return map_dwarf_reg_to_x86_reg (reg_num, kind);
-	} else if (arch && !strcmp (arch, "ppc")) {
-		if (bits == 64) {
-			return map_dwarf_reg_to_ppc64_reg (reg_num, kind);
-		}
-	} else {
-		// unknwown arch
 	}
+	if (arch && !strcmp (arch, "arm") && bits == 64) {
+		return map_dwarf_reg_to_arm64_reg (reg_num, kind);
+	}
+	if (arch && !strcmp (arch, "ppc") && bits == 64) {
+		return map_dwarf_reg_to_ppc64_reg (reg_num, kind);
+	}
+	// this can be very anoying as its printed over 9000 times
 	R_LOG_WARN ("get_dwarf_reg_name: unsupported arch: '%s' with %d bits", arch, bits);
 	*kind = LOCATION_UNKNOWN;
 	return "unsupported_reg";
