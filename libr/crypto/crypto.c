@@ -68,6 +68,7 @@ R_API void r_crypto_free(RCrypto *cry) {
 		}
 #endif
 		r_list_free (cry->plugins);
+		free (cry);
 	}
 }
 

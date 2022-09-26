@@ -69,6 +69,9 @@ static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	struct serpent_state *st = cj->data;
 	if (!st) {
 		R_LOG_ERROR ("No state");
+		free (obuf);
+		free (ibuf);
+		free (tmp);
 		return false;
 	}
 	if (cj->dir == 0) {

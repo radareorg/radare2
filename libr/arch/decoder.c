@@ -40,6 +40,7 @@ R_API bool r_arch_load_decoder(RArch *arch, const char *dname) {
 			return false;
 		}
 	}
+	free (decoder);
 	return false;
 }
 

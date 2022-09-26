@@ -187,6 +187,7 @@ R_API void r_str_trim(char *str) {
 }
 
 R_API int r_str_ntrim(char *str, int length) {
+	r_return_val_if_fail (str && length >= 0, -1);
 	// r_str_trim_head (str);
 	char *p = str;
 	int left = 0;
@@ -194,7 +195,7 @@ R_API int r_str_ntrim(char *str, int length) {
 		length--;
 		left++;
 	}
-	if (p && p != str && length > 0) {
+	if (p != str && length > 0) {
 		memmove (str, p, length + 1);
 	}
 	// r_str_trim_tail (str);

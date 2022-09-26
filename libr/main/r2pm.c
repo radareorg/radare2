@@ -316,9 +316,9 @@ static void r2pm_setenv(void) {
 	if (gmake && *gmake == '/') {
 		r_sys_setenv ("MAKE", gmake);
 	} else {
-		free (gmake);
 		r_sys_setenv ("MAKE", "make");
 	}
+	free (gmake);
 	char *r2_plugdir = r_str_home (R2_HOME_PLUGINS);
 	r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
 	free (r2_plugdir);

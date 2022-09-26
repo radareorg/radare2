@@ -227,6 +227,9 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		break;
 	case EVM_INS_PUSH1:
 		esilprintf (op, "0x%s,sp,=[1],32,sp,+=", insn->op_str);
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		evm_add_push_to_db (op, addr, buf, len);
+		break;
 	case EVM_INS_PUSH2:
 	case EVM_INS_PUSH3:
 	case EVM_INS_PUSH4:

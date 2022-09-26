@@ -649,6 +649,7 @@ R_API void r_cons_grepbuf(void) {
 		len = cons->context->buffer_len;
 		r_json_free (node);
 		free (a);
+		free (s);
 		goto continuation;
 	}
 	if (grep->json) {
