@@ -74,7 +74,7 @@ static int get_move_cycles (m68k_address_mode dst, m68k_address_mode src, bool i
 // clang-format on
 
 static int get_capstone_mode (RAnal *a) {
-	int mode = a->config->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	int mode = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	// replace this with the asm.features?
 	const char *cpu = a->config->cpu;

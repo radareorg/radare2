@@ -592,7 +592,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		ut8 buf[sizeof (ut64)] = {0};
 		(void)r_io_read_at (core->io, n, buf, R_MIN (sizeof (buf), refsz));
-		bool be = core->rasm->config->big_endian;
+		const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 		switch (refsz) {
 		case 8:
 			return r_read_ble64 (buf, be);

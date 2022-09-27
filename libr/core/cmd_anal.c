@@ -2160,7 +2160,7 @@ static inline RAnalEsil *esil_new_setup(RCore *core) {
 }
 
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
-	bool be = core->rasm->config->big_endian;
+	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
 	int ret, i, j, idx, size;
@@ -8643,7 +8643,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	RAsmOp asmop = {0};
 	char *buf_asm = NULL;
 	bool asm_subvar = r_config_get_b (core->config, "asm.sub.var");
-	bool be = core->rasm->config->big_endian;
+	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	core->parser->pseudo = r_config_get_b (core->config, "asm.pseudo");
 	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
 	core->parser->localvar_only = r_config_get_b (core->config, "asm.sub.varonly");
@@ -8720,7 +8720,7 @@ static void axfm(RCore *core) {
 }
 
 static bool cmd_anal_refs(RCore *core, const char *input) {
-	bool be = core->print->config->big_endian;
+	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
 	ut64 addr = core->offset;
 	switch (input[0]) {
 	case '-': { // "ax-"
@@ -11163,7 +11163,7 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user
 }
 
 static void cmd_anal_aaw(RCore *core, const char *input) {
-	bool be = core->print->config->big_endian;
+	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
 	int bits = core->anal->config->bits;
 	RIntervalTreeIter it;
 	RAnalMetaItem *item;

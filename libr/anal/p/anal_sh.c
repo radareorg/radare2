@@ -1266,7 +1266,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
 
@@ -1298,7 +1298,7 @@ static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, 
 		op->size = disassemble (anal, op, data, len);
 		// should be always 2?
 	}
-	bool be = anal->config->big_endian;
+	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
 	ut8 msb = be? data[0]: data[1];
 	ut8 lsb = be? data[1]: data[0];
 	return first_nibble_decode[(msb >> 4) & 0x0F](anal, op, (ut16)(((ut16)msb << 8) | lsb));

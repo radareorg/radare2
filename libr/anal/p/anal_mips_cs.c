@@ -788,7 +788,7 @@ static void set_opdir(RAnalOp *op) {
 }
 
 static int get_capstone_mode (RAnal *anal) {
-	int mode = anal->config->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	int mode = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	const char *cpu = anal->config->cpu;
 	if (R_STR_ISNOTEMPTY (cpu)) {
 		if (!strcmp (cpu, "micro")) {
@@ -1288,7 +1288,7 @@ static RList *anal_preludes(RAnal *anal) {
 
 static int mips_cs_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *buf, int len) {
 	int ret = mips_assemble (s, addr, buf);
-	if (anal->config->big_endian) {
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)) {
 		ut8 tmp = buf[0];
 		buf[0] = buf[3];
 		buf[3] = tmp;

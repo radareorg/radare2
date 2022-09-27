@@ -1056,7 +1056,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool printValue = true;
 	bool oPrintValue = true;
 	bool isPxr = (p && p->flags & R_PRINT_FLAGS_REFS);
-	bool be = p->config? p->config->big_endian: R_SYS_ENDIAN;
+	bool be = p->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 
 	for (i = j = 0; i < len; i += (stride? stride: inc)) {
 		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
@@ -2413,7 +2413,7 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	}
 	int i, words = (len / bytesize);
 	p->cb_printf ("[");
-	bool be = p->config? p->config->big_endian: R_SYS_ENDIAN;
+	bool be = p->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	for (i = 0; i < words; i++) {
 		switch (wordsize) {
 		case 8: {

@@ -2104,7 +2104,7 @@ beach:
 
 static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct search_parameters *param) {
 	const int size = 12;
-	bool be = core->print->config->big_endian;
+	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
 	char str[512];
 	RAnalFunction *fcn;
 	RAnalRef *ref;
@@ -2461,7 +2461,7 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode, RInterval search_itv) {
 	RCoreAsmHit *hit;
 	RListIter *iter, *itermap;
-	bool be = core->rasm->config->big_endian;
+	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	int count = 0, maxhits = 0, filter = 0;
 	int kwidx = core->search->n_kws; // (int)r_config_get_i (core->config, "search.kwidx")-1;
 	RList *hits;
@@ -2903,18 +2903,18 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 			break;
 		case '2':
 			n16 = r_num_math (core->num, r_list_pop_head (nums));
-			r_write_ble16 (ptr, n16, core->anal->config->big_endian);
+			r_write_ble16 (ptr, n16, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config));
 			ptr = (ut8 *) ptr + sizeof (ut16);
 			break;
 		case '4':
 			n32 = (ut32)r_num_math (core->num, r_list_pop_head (nums));
-			r_write_ble32 (ptr, n32, core->anal->config->big_endian);
+			r_write_ble32 (ptr, n32, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config));
 			ptr = (ut8 *) ptr + sizeof (ut32);
 			break;
 		default:
 		case '8':
 			n64 = r_num_math (core->num, r_list_pop_head (nums));
-			r_write_ble64 (ptr, n64, core->anal->config->big_endian);
+			r_write_ble64 (ptr, n64, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config));
 			ptr = (ut8 *) ptr + sizeof (ut64);
 			break;
 		}

@@ -2047,7 +2047,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (!formatname) {
 		return 0;
 	}
-	fmt = sdb_get (p->formats, formatname, NULL);
+	fmt = p? sdb_get (p->formats, formatname, NULL): NULL;
 	if (fmt) {
 		fmt_owned = true;
 	} else {
@@ -2077,7 +2077,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		return 0;
 	}
 	memcpy (buf, b, len);
-	endian = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
+	endian = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 
 	if (ofield && ofield != MINUSONE) {
 		field = strdup (ofield);

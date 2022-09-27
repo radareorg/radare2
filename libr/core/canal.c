@@ -624,7 +624,7 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 		for (offs = 0; offs < offe; offs += sz, ref1.at += sz) {
 			ut8 bo[8];
 			r_io_read_at (core->io, ref->addr + offs, bo, R_MIN (sizeof (bo), sz));
-			bool be = core->anal->config->big_endian;
+			const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config);
 			switch (sz) {
 			case 1:
 				i8 = r_read_ble8 (bo);
@@ -4921,13 +4921,16 @@ static bool esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 		bool trace = true;
 		switch (len) {
 		case 2:
-			esilbreak_last_data = refptr = (ut64)r_read_ble16 (buf, esil->anal->config->big_endian);
+			esilbreak_last_data = refptr = (ut64)r_read_ble16 (buf,
+				R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
 			break;
 		case 4:
-			esilbreak_last_data = refptr = (ut64)r_read_ble32 (buf, esil->anal->config->big_endian);
+			esilbreak_last_data = refptr = (ut64)r_read_ble32 (buf,
+				R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
 			break;
 		case 8:
-			esilbreak_last_data = refptr = r_read_ble64 (buf, esil->anal->config->big_endian);
+			esilbreak_last_data = refptr = r_read_ble64 (buf,
+				R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
 			break;
 		default:
 			trace = false;

@@ -58,10 +58,10 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
-	if (a->config->big_endian) {
+	if (disasm_obj.endian) {
 		op->size = print_insn_big_powerpc ((bfd_vma)addr, &disasm_obj);
 	} else {
 		op->size = print_insn_little_powerpc ((bfd_vma)addr, &disasm_obj);

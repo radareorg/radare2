@@ -255,7 +255,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	r_sys_setenv ("R2PM_LEGACY", "0");
 	r_sys_setenv ("R2_OFFSET", r_strf ("%"PFMT64d, core->offset));
 	r_sys_setenv ("R2_XOFFSET", r_strf ("0x%08"PFMT64x, core->offset));
-	r_sys_setenv ("R2_ENDIAN", core->rasm->config->big_endian? "big": "little");
+	r_sys_setenv ("R2_ENDIAN", R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config)? "big": "little");	//XXX
 	r_sys_setenv ("R2_BSIZE", r_strf ("%d", core->blocksize));
 #if 0
 	// dump current config file so other r2 tools can use the same options

@@ -10,7 +10,7 @@
 #define CSINC BPF
 #define CSINC_MODE \
 	((a->config->bits == 32)? CS_MODE_BPF_CLASSIC: CS_MODE_BPF_EXTENDED) \
-	| ((a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
+	| ((R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config))? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
 #include "capstone.inc"
 
 #define OP(n) insn->detail->bpf.operands[n]

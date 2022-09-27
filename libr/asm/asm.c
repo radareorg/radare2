@@ -92,7 +92,7 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	if (!buf) {
 		return 0;
 	}
-	bool be = a->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	if (n == 2) {
 		s = (short)s64;
 		r_write_ble16 (buf, s, be);
@@ -446,28 +446,28 @@ R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 	r_return_val_if_fail (a, false);
-	a->config->big_endian = (bool)R_SYS_ENDIAN; // default is host endian
+	a->config->endian = R_SYS_ENDIAN ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE; // default is host endian
 	if (a->cur) {
 		switch (a->cur->endian) {
 		case R_SYS_ENDIAN_NONE:
 		case R_SYS_ENDIAN_BI:
 			// TODO: not yet implemented
-			a->config->big_endian = b;
+			a->config->big_endian = b ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
 			break;
 		case R_SYS_ENDIAN_LITTLE:
-			a->config->big_endian = false;
+			a->config->endian = R_SYS_ENDIAN_LITTLE;
 			break;
 		case R_SYS_ENDIAN_BIG:
-			a->config->big_endian = true;
+			a->config->big_endian = R_SYS_ENDIAN_BIG;
 			break;
 		default:
 			R_LOG_WARN ("RAsmPlugin doesn't specify endianness");
 			break;
 		}
 	} else {
-		a->config->big_endian = b;
+		a->config->endian = b ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
 	}
-	return a->config->big_endian;
+	return R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 }
 
 R_API bool r_asm_set_syntax(RAsm *a, int syntax) {

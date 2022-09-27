@@ -28,7 +28,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		return -1;
 	}
 	ut8 opbuf[4];
-	const bool be = a->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	if (is_thumb) {
 		const int o = opcode >> 16;
 		opsize = o > 0? 4: 2;

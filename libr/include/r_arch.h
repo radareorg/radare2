@@ -49,6 +49,8 @@ typedef struct r_arch_config_t {
 	R_REF_TYPE;
 } RArchConfig;
 
+#define	R_ARCH_CONFIG_IS_BIG_ENDIAN(cfg_)	(((cfg_)->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG)
+
 // XXX: this definition is plain wrong. use enum or empower bits
 #define R_ARCH_OP_TYPE_MASK 0x8000ffff
 #define R_ARCH_OP_HINT_MASK 0xf0000000

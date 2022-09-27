@@ -1031,7 +1031,7 @@ static const char *get_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
 
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
-	const bool be = core->rasm->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ds->core->rasm->config);
 	if (ds->use_esil) {
 		free (ds->opstr);
 		if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
@@ -2691,7 +2691,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			default: {
 				char *op_hex = r_asm_op_get_hex (&ds->asmop);
 				r_asm_op_set_asm (&ds->asmop, r_strf (".hex %s%s", op_hex, tail));
-				const bool be = core->rasm->config->big_endian;
+				const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 				int immbase = (ds->hint && ds->hint->immbase)? ds->hint->immbase: 0;
 				switch (meta_size) {
 				case 2:
@@ -3084,7 +3084,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 	ut8 buf[sizeof (ut64)] = {0};
 	memcpy (buf, obuf, R_MIN (sizeof (ut64), size));
 	// adjust alignment
-	const bool be = core->rasm->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	ut64 n = r_read_ble (buf, be, size * 8);
 	if (ds->asm_hint_imm) { // thats not really an imm.. but well dont add more hints for now
 		(void) ds_print_shortcut (ds, n, ds->asm_hint_pos);
@@ -3773,13 +3773,13 @@ static ut64 get_ptr(RDisasmState *ds, ut64 addr) {
 
 static ut64 get_ptr_ble(RDisasmState *ds, ut64 addr) {
 	ut8 buf[sizeof (ut64)] = {0};
-	int endian = ds->core->rasm->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ds->core->rasm->config);
 	ut64 n64_32;
 	r_io_read_at (ds->core->io, addr, buf, sizeof (buf));
 	if (ds->core->rasm->config->bits == 64) {
-		n64_32 = r_read_ble64 (buf, endian);
+		n64_32 = r_read_ble64 (buf, be);
 	} else {
-		n64_32 = r_read_ble32 (buf, endian);
+		n64_32 = r_read_ble32 (buf, be);
 	}
 	return n64_32;
 }
@@ -4136,7 +4136,7 @@ static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
 /* convert numeric value in opcode to ascii char or number */
 static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	RCore *core = ds->core;
-	const bool be = core->rasm->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	ut64 p = ds->analop.ptr;
 	ut64 v = ds->analop.val;
 	ut64 refaddr = p;
@@ -6408,7 +6408,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	// k = delta from addr
 	ds = ds_init (core);
 	bool result = false;
-	const bool be = core->rasm->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 
 	for (;;) {
 		RAsmOp asmop;
@@ -6688,7 +6688,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		}
 		pj_a (pj);
 	}
-	const bool be = core->rasm->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	r_cons_break_push (NULL, NULL);
@@ -7004,7 +7004,7 @@ toro:
 					}
 				}
 				if (subnames) {
-					const bool be = core->rasm->config->big_endian;
+					const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 					RAnalHint *hint = r_anal_hint_get (core->anal, at);
 					r_parse_filter (core->parser, at, core->flags, hint,
 						asm_str, opstr, sizeof (opstr) - 1, be);

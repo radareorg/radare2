@@ -132,12 +132,11 @@ R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len) {
 
 R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 	const int hfs_unix_delta = 2082844800;
-	time_t t = 0;
 	int ret = 0;
 
-	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
+	const bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	if (p && len >= sizeof (ut32)) {
-		t = r_read_ble32 (buf, be);
+		time_t t = r_read_ble32 (buf, be);
 		if (p->datefmt[0]) {
 			t += p->datezone * 60 * 60;
 			t += hfs_unix_delta;
@@ -150,12 +149,11 @@ R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 }
 
 R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
-	time_t t = 0;
 	int ret = 0;
 
-	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
+	const bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	if (p && len >= sizeof (ut32)) {
-		t = r_read_ble32 (buf, be);
+		time_t t = r_read_ble32 (buf, be);
 		if (p->datefmt[0]) {
 			t += p->datezone * (60*60);
 			char *datestr = r_time_stamp_to_str (t);
@@ -184,16 +182,15 @@ R_DEPRECATE R_API int r_print_date_get_now(RPrint *p, char *str) {
 }
 
 R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
-	ut64 l, L = 0x2b6109100LL;
-	time_t t;
+	const ut64 L = 0x2b6109100LL;
 	int ret = 0;
 
-	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
+	const bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	if (p && len >= sizeof (ut64)) {
-		l = r_read_ble64 (buf, be);
+		ut64 l = r_read_ble64 (buf, be);
 		l /= 10000000; // 100ns to s
 		l = (l > L ? l-L : 0); // isValidUnixTime?
-		t = (time_t) l; // TODO limit above!
+		time_t t = (time_t) l; // TODO limit above!
 		if (p->datefmt[0]) {
 			p->cb_printf ("%s\n", r_time_stamp_to_str (t));
 			ret = sizeof (time_t);

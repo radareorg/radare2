@@ -24,7 +24,7 @@ static int riscv_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int ou
 	}
 	ut8 *opbuf = outbuf;
 	int ret = riscv_assemble (str, addr, opbuf);
-	if (a->config->big_endian) {
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)) {
 		ut8 *buf = opbuf;
 		ut8 tmp = buf[0];
 		buf[0] = buf[3];
@@ -349,7 +349,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 4;
-	bool be = anal->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
 	if (len < 2) {
 		op->size = 2;
 		return -1;

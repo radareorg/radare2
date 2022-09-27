@@ -100,7 +100,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	op->addr = addr;
 	r_strbuf_set (&op->esil, "TODO");
 
-	ut32 iw = r_read_ble32 (b, anal->config->big_endian);
+	ut32 iw = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
 	r_instr = rsp_instruction_decode (addr, iw);
 
 	if (mask & R_ANAL_OP_MASK_DISASM) {

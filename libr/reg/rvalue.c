@@ -67,7 +67,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	if (!regset->arena) {
 		return 0LL;
 	}
-	bool be = (reg->config)? reg->config->big_endian: false;
+	bool be = reg->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (reg->config): false;
 	switch (item->size) {
 	case 1: {
 		int offset = item->offset / 8;
@@ -159,7 +159,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	if (!arena) {
 		return false;
 	}
-	bool be = (reg->config)? reg->config->big_endian: false;
+	bool be = reg->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (reg->config): false;
 	switch (item->size) {
 	case 80:
 	case 96: // long floating value

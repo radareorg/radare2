@@ -551,7 +551,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	dtrace->ht = ht_pp_new_size (fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
 	dtrace->ht->opt = opt;
 
-	const bool be = core->rasm->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	char *fcn_name = NULL;
 	char *ret_type = NULL;
 	bool str_flag = false;
