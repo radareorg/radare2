@@ -12,21 +12,18 @@ extern int decodeInstr(bfd_vma address, disassemble_info * info);
 extern int ARCTangent_decodeInstr(bfd_vma address, disassemble_info * info);
 extern int ARCompact_decodeInstr(bfd_vma address, disassemble_info * info);
 
-/* ugly globals */
-static R_TH_LOCAL ut32 Offset = 0;
-static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL int buf_len = 0;
-static R_TH_LOCAL ut8 bytes[32] = {0};
+#define BUFSZ 32
 
 static int arc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
-	int delta = (memaddr - Offset);
+	int delta = (memaddr - info->buffer_vma);
 	if (delta < 0) {
 		return -1; // disable backward reads
 	}
-	if ((delta + length) > sizeof (bytes)) {
+	if ((delta + length) > BUFSZ) {
 		return -1;
 	}
-	memcpy (myaddr, bytes + delta, R_MIN (buf_len - delta, length));
+	ut8 *bytes = info->buffer;
+	memcpy (myaddr, bytes + delta, R_MIN (BUFSZ - delta, length));
 	return 0;
 }
 
@@ -38,21 +35,20 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+	ut8 bytes[BUFSZ] = {0};
 	struct disassemble_info disasm_obj = {0};
 	if (len < 2) {
 		return -1;
 	}
-	buf_global = r_strbuf_new ("");
-	Offset = op->addr;
+	RStrBuf *sb = r_strbuf_new ("");
 	if (len > sizeof (bytes)) {
 		len = sizeof (bytes);
 	}
-	memcpy (bytes, buf, len); // TODO handle compact
-	buf_len = len;
+	memcpy (bytes, buf, R_MIN (len, BUFSZ));
 	/* prepare disassembler */
 	disasm_obj.buffer = bytes;
 	disasm_obj.buffer_length = len;
@@ -65,18 +61,17 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.stream = stdout;
 	disasm_obj.mach = 0;
 	if (a->config->bits == 16) {
-		op->size = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+		op->size = ARCompact_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
 	} else {
-		ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
-		//op->size = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+		ARCTangent_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
+		//op->size = ARCTangent_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
 	}
 	if (op->size == -1) {
 		op->mnemonic = strdup ("(data)");
-		r_strbuf_free (buf_global);
+		r_strbuf_free (sb);
 	} else {
-		op->mnemonic = r_strbuf_drain (buf_global);
+		op->mnemonic = r_strbuf_drain (sb);
 	}
-	buf_global = NULL;
 	return op->size;
 }
 //////////////////
