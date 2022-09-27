@@ -1,23 +1,19 @@
-/* radare2 - LGPL - Copyright 2016-2018 - pancake */
+/* radare2 - LGPL - Copyright 2016-2022 - pancake */
 
 #include <r_asm.h>
 #include <r_anal.h>
 #include <xtensa-isa.h>
 
-// GNU DISASM BEGIN
-
 #include "disas-asm.h"
 
 #define INSN_BUFFER_SIZE 4
 
-static R_TH_LOCAL ut64 offset = 0;
-static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL ut8 bytes[INSN_BUFFER_SIZE];
-
 static int xtensa_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+	// TODO honor delta ?
 	if (length > INSN_BUFFER_SIZE) {
 		length = INSN_BUFFER_SIZE;
 	}
+	ut8 *bytes = info->buffer;
 	memcpy (myaddr, bytes, length);
 	return 0;
 }
@@ -30,13 +26,13 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	ut8 bytes[INSN_BUFFER_SIZE] = {0};
 	struct disassemble_info disasm_obj;
-	buf_global = r_strbuf_new ("");
-	offset = addr;
+	RStrBuf *sb = r_strbuf_new ("");
 	if (len > INSN_BUFFER_SIZE) {
 		len = INSN_BUFFER_SIZE;
 	}
@@ -46,22 +42,21 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	disasm_obj.disassembler_options = (a->config->bits == 64)?"64":"";
 	disasm_obj.buffer = bytes;
-	disasm_obj.buffer_length = len;
+	disasm_obj.buffer_vma = len;
+	disasm_obj.buffer_length = R_MIN (len, INSN_BUFFER_SIZE);
 	disasm_obj.read_memory_func = &xtensa_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.endian = !a->config->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
+	disasm_obj.stream = sb;
 
-	op->size = print_insn_xtensa ((bfd_vma)offset, &disasm_obj);
+	op->size = print_insn_xtensa ((bfd_vma)addr, &disasm_obj);
 	if (op->size == -1) {
-		op->mnemonic = strdup ("(data)");
-	} else {
-		op->mnemonic = r_strbuf_drain (buf_global);
-		buf_global = NULL;
+		r_strbuf_set (sb, "(data)");
 	}
+	op->mnemonic = r_strbuf_drain (sb);
 	return op->size;
 }
 // GNU DISASM END
