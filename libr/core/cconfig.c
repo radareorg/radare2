@@ -506,9 +506,9 @@ static void update_archdecoder_options(RCore *core, RConfigNode *node) {
 }
 
 static bool cb_archdecoder(void *user, void *data) {
-	RCore *core = (RCore*) user;
+	RCore *core = (RCore *)user;
 	r_return_val_if_fail (core && core->anal && core->anal->arch, false);
-	RConfigNode *node = (RConfigNode*) data;
+	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
 		update_archdecoder_options (core, node);
 		print_node_options (node);
@@ -519,6 +519,21 @@ static bool cb_archdecoder(void *user, void *data) {
 			return true;
 		}
 		R_LOG_ERROR ("arch.decoder: cannot find '%s'", node->value);
+	}
+	return false;
+}
+
+static bool cb_archendian(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	r_return_val_if_fail (core && core->anal && core->anal->arch, false);
+	RConfigNode *node = (RConfigNode *)data;
+	if (!strcmp (node->value, "big") || !strcmp (node->value, "bigswap")) {
+		r_arch_set_endian (core->anal->arch, R_SYS_ENDIAN_BIG);
+		return true;
+	}
+	if (!strcmp (node->value, "little") || !strcmp (node->value, "littleswap")) {
+		r_arch_set_endian (core->anal->arch, R_SYS_ENDIAN_LITTLE);
+		return true;
 	}
 	return false;
 }
@@ -3436,6 +3451,9 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("arch.decoder", "null", &cb_archdecoder);
 	SETDESC (n, "select the instruction decoder to use");
 	update_archdecoder_options (core, n);
+	n = NODECB ("arch.endian", R_SYS_ENDIAN? "big": "little", &cb_archendian);
+	SETDESC (n, "set arch endianess");
+	SETOPTIONS (n, "big", "little", "bigswap", "littleswap", NULL);
 	SETCB ("arch.autoselect", "false", &cb_archautoselect, "automagically select matching decoder on arch related config changes (has no effect atm)");
 	SETICB ("asm.lines.maxref", 0, &cb_analmaxrefs, "maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
