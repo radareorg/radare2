@@ -12,18 +12,15 @@ http://developer.axis.com/old/documentation/hw/etraxfs/iop_howto/iop_howto.pdf
 
 #endif
 
-static R_TH_LOCAL unsigned long Offset = 0;
-static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL ut8 bytes[8];
-
 static int cris_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-	int delta = (memaddr - Offset);
+	int delta = (memaddr - info->buffer_vma);
 	if (delta < 0) {
 		return -1;      // disable backward reads
 	}
 	if ((delta + length) > 8) {
 		return -1;
 	}
+	const ut8 *bytes = info->buffer;
 	memcpy (myaddr, bytes + delta, length);
 	return 0;
 }
@@ -36,8 +33,8 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 bfd_boolean cris_parse_disassembler_options(disassemble_info *info, int distype);
 
@@ -50,13 +47,14 @@ int print_insn_crisv32_with_register_prefix(bfd_vma vma, disassemble_info *info)
 int print_insn_crisv32_without_register_prefix(bfd_vma vma, disassemble_info *info);
 
 static char *disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+	ut8 bytes[8] = { 0 };
 	struct disassemble_info disasm_obj;
 	int mode = 2;
 	if (len < 4) {
 		return NULL;
 	}
-	buf_global = r_strbuf_new ("");
-	Offset = op->addr;
+	RStrBuf *sb = r_strbuf_new ("");
+	const ut64 addr = op->addr;
 	memcpy (bytes, buf, R_MIN (len, 8)); // TODO handle thumb
 
 	/* prepare disassembler */
@@ -69,7 +67,8 @@ static char *disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.endian = !a->config->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
+	disasm_obj.stream = sb;
+	disasm_obj.buffer_vma = op->addr;
 
 	const char *cpu = a->config->cpu;
 	if (R_STR_ISNOTEMPTY (cpu)) {
@@ -91,33 +90,31 @@ static char *disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	if (a->config->syntax == R_ARCH_SYNTAX_ATT) {
 		switch (mode) {
 		case 0:
-			op->size = print_insn_cris_with_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_cris_with_register_prefix ((bfd_vma)addr, &disasm_obj);
 			break;
 		case 1:
-			op->size = print_insn_crisv10_v32_with_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_crisv10_v32_with_register_prefix ((bfd_vma)addr, &disasm_obj);
 			break;
 		default:
-			op->size = print_insn_crisv32_with_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_crisv32_with_register_prefix ((bfd_vma)addr, &disasm_obj);
 			break;
 		}
 	} else {
 		switch (mode) {
 		case 0:
-			op->size = print_insn_cris_without_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_cris_without_register_prefix ((bfd_vma)addr, &disasm_obj);
 			break;
 		case 1:
-			op->size = print_insn_crisv10_v32_without_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_crisv10_v32_without_register_prefix ((bfd_vma)addr, &disasm_obj);
 			break;
 		default:
-			op->size = print_insn_crisv32_without_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_crisv32_without_register_prefix ((bfd_vma)addr, &disasm_obj);
 			break;
 		}
 	}
 	if (op->size == -1) {
-		r_strbuf_set (buf_global, "(data)");
+		r_strbuf_set (sb, "(data)");
 	}
-	RStrBuf *sb = buf_global;
-	buf_global = NULL;
 	return r_strbuf_drain (sb);
 }
 
