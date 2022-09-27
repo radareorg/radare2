@@ -15,13 +15,6 @@
 #define MAX_MESSAGE_LEN 80
 #define NULLVAL "-"
 
-#if 0
-Rvc *vc = rvc_open (".");
-RList *commits = rvc_commits (vc);
-rvc_close (vc);
-vc = NULL;
-#endif
-
 //Access both git and rvc functionality from one set of functions
 static inline void warn(void) {
 	R_LOG_WARN ("rvc is still under development and can be unstable, be careful");
@@ -1282,16 +1275,6 @@ R_API RList *rvc_git_get_branches(Rvc *rvc) {
 // R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files)
 R_API bool rvc_git_commit(Rvc *rvc, const char *message, const char *author, const RList *files) {
 	r_return_val_if_fail (rvc && message && author && files, false);
-#if 0
-	const char *m = r_config_get (core->config, "prj.vc.message");
-	if (!*m) {
-		if (!r_cons_is_interactive ()) {
-			r_config_set (core->config, "prj.vc.message", "test");
-			m = r_config_get (core->config, "prj.vc.message");
-		}
-	}
-	message = R_STR_ISEMPTY (message)? m : message;
-#endif
 	if (rvc->p->type == RVC_TYPE_RVC) {
 #if 0
 		author = author? author : r_config_get (core->config, "cfg.user");
@@ -1385,20 +1368,23 @@ R_API Rvc *r_vc_open(const char *rp, RvcType type) {
 }
 
 R_API bool r_vc_save(Rvc *vc) {
-	r_return_val_if_fail (vc && vc->db, false);
-	sdb_sync (vc->db);
-	return true;
+	r_return_val_if_fail (vc, false);
+	if (vc->db) {
+		sdb_sync (vc->db);
+		return true;
+	}
+	return false;
 }
 
 R_API void r_vc_free(Rvc *vc) {
 	if (vc) {
+		// sdb_sync ()
 		sdb_close (vc->db);
 		free (vc->path);
 		free (vc);
 	}
 }
 
-// XXX deprecate function. what's saving and whats closing in a repository context?
 R_API void r_vc_close(Rvc *vc, bool save) {
 	r_return_if_fail (vc);
 	if (save) {
@@ -1411,8 +1397,7 @@ R_API RList *r_vc_git_get_branches(Rvc *rvc) {
 	RList *ret = NULL;
 	char *esc_path = r_str_escape (rvc->path);
 	if (esc_path) {
-		char *output = r_sys_cmd_strf ("git -C %s branch --color=never",
-				esc_path);
+		char *output = r_sys_cmd_strf ("git -C %s branch --color=never", esc_path);
 		r_str_trim (output);
 		free (esc_path);
 		if (!R_STR_ISEMPTY (output)) {

@@ -698,7 +698,9 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		RList *paths = r_list_new ();
 		if (paths) {
 			if (r_list_append (paths, prj_dir)) {
-				if (!rvc_git_commit (core->prj->rvc, NULL, NULL, paths)) {
+				const char *author = r_config_get (core->config, "cfg.user");
+				const char *message = r_config_get (core->config, "prj.vc.message");
+				if (!rvc_git_commit (core->prj->rvc, author, message, paths)) {
 					r_list_free (paths);
 					free (prj_dir);
 					free (script_path);
