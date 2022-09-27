@@ -29,6 +29,7 @@ R_API bool r_project_rename(RProject *p, const char *newname) {
 }
 
 R_API bool r_project_is_git(RProject *p) {
+	r_return_val_if_fail (p, false);
 	char *f = r_str_newf ("%s"R_SYS_DIR".git", p->path);
 	bool ig = r_file_is_directory (f);
 	free (f);
@@ -36,11 +37,15 @@ R_API bool r_project_is_git(RProject *p) {
 }
 
 R_API void r_project_close(RProject *p) {
-	// close the current project
-	R_FREE (p->name);
-	R_FREE (p->path);
-	r_vc_close (p->rvc, true);
-	p->rvc = NULL;
+	if (p) {
+		// close the current project
+		R_FREE (p->name);
+		R_FREE (p->path);
+		if (p->rvc) {
+			r_vc_close (p->rvc, true);
+			p->rvc = NULL;
+		}
+	}
 }
 
 R_API bool r_project_open(RProject *p, const char *name, const char *path) {
@@ -71,5 +76,6 @@ R_API void r_project_free(RProject *p) {
 }
 
 R_API bool r_project_is_loaded(RProject *p) {
-	return !R_STR_ISEMPTY (p->name);
+	r_return_val_if_fail (p, false);
+	return R_STR_ISNOTEMPTY (p->name);
 }

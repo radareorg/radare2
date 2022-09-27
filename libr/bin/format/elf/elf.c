@@ -2193,6 +2193,7 @@ char* Elf_(r_bin_elf_get_abi)(ELFOBJ *bin) {
 		if (eflags == 0) {
 			return strdup ("68020");
 		}
+		break;
 	case EM_ARM:
 		{
 			int v = (eflags >> 24);
@@ -2204,6 +2205,7 @@ char* Elf_(r_bin_elf_get_abi)(ELFOBJ *bin) {
 			}
 			return r_str_newf ("eabi%d%s", v, arg);
 		}
+		break;
 	case EM_MIPS:
 		{
 			if (is_elfclass64 (ehdr)) {
