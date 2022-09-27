@@ -5,12 +5,6 @@
 #include <r_anal.h>
 #include "disas-asm.h"
 
-static R_TH_LOCAL unsigned long Offset = 0;
-static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL unsigned char bytes[4];
-
-#define API static
-
 #define LONG_SIZE 4
 #define WORD_SIZE 2
 #define BYTE_SIZE 1
@@ -1232,8 +1226,12 @@ static int archinfo(RAnal *anal, int q) {
 }
 
 static int sh_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
-	//this is obviously wrong. but how can we read arbitrary data @ memaddr from here?
-	memcpy (myaddr, bytes, length);
+	int delta = (memaddr - info->buffer_vma);
+	if (delta < 0) {
+		return -1; // disable backward reads
+	}
+	ut8 *bytes = info->buffer;
+	memcpy (myaddr, bytes + delta, length);
 	return 0;
 }
 
@@ -1248,38 +1246,40 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS ()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS ()
 
 static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj = {0};
 	if (len < 2) {
 		return -1;
 	}
-	buf_global = r_strbuf_new ("");
-	Offset = op->addr;
+	RStrBuf *sb = r_strbuf_new ("");
+	const ut64 addr = op->addr;
 	memcpy (bytes, buf, 2);
 
 	/* prepare disassembler */
 	disasm_obj.buffer = bytes;
+	disasm_obj.buffer_vma = op->addr;
 	disasm_obj.read_memory_func = &sh_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.endian = !a->config->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
+	disasm_obj.stream = sb;
 
 	if (disasm_obj.endian == BFD_ENDIAN_BIG) {
-		op->size = print_insn_shb ((bfd_vma)Offset, &disasm_obj);
+		op->size = print_insn_shb ((bfd_vma)addr, &disasm_obj);
 	} else {
-		op->size = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
+		op->size = print_insn_shl ((bfd_vma)addr, &disasm_obj);
 	}
 	if (op->size == -1) {
 		op->mnemonic = strdup ("(data)");
-		r_strbuf_free (buf_global);
+		r_strbuf_free (sb);
 	} else {
-		op->mnemonic = r_strbuf_drain (buf_global);
+		op->mnemonic = r_strbuf_drain (sb);
 	}
 	return op->size;
 }
