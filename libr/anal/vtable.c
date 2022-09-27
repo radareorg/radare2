@@ -43,7 +43,7 @@ R_API bool r_anal_vtable_begin(RAnal *anal, RVTableContext *context) {
 	if (is_arm && context->word_size < 4) {
 		context->word_size = 4;
 	}
-	const bool be = anal->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
 	switch (context->word_size) {
 	case 1:
 		context->read_addr = be? vtable_read_addr_be8 : vtable_read_addr_le8;

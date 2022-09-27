@@ -2021,10 +2021,10 @@ static bool esil_poke_n(RAnalEsil *esil, int bits) {
 			if (bits == 128) {
 				src2 = r_anal_esil_pop (esil);
 				if (src2 && r_anal_esil_get_parm (esil, src2, &num2)) {
-					r_write_ble (b, num, esil->anal->config->big_endian, 64);
+					r_write_ble (b, num, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), 64);
 					ret = r_anal_esil_mem_write (esil, addr, b, bytes);
 					if (ret == 0) {
-						r_write_ble (b, num2, esil->anal->config->big_endian, 64);
+						r_write_ble (b, num2, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), 64);
 						ret = r_anal_esil_mem_write (esil, addr + 8, b, bytes);
 					}
 					goto out;
@@ -2038,12 +2038,12 @@ static bool esil_poke_n(RAnalEsil *esil, int bits) {
 			esil->cb.hook_mem_read = NULL;
 			r_anal_esil_mem_read (esil, addr, b, bytes);
 			esil->cb.hook_mem_read = oldhook;
-			n = r_read_ble64 (b, esil->anal->config->big_endian);
+			n = r_read_ble64 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
 			esil->old = n;
 			esil->cur = num;
 			esil->lastsz = bits;
 			num = num & bitmask;
-			r_write_ble (b, num, esil->anal->config->big_endian, bits);
+			r_write_ble (b, num, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), bits);
 			ret = r_anal_esil_mem_write (esil, addr, b, bytes);
 		}
 	}
@@ -2103,7 +2103,7 @@ static bool esil_poke_some(RAnalEsil *esil) {
 					}
 					r_anal_esil_get_parm_size (esil, foo, &tmp, &regsize);
 					isregornum (esil, foo, &num64);
-					r_write_ble (b, num64, esil->anal->config->big_endian, regsize);
+					r_write_ble (b, num64, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), regsize);
 					const int size_bytes = regsize / 8;
 					const ut32 written = r_anal_esil_mem_write (esil, ptr, b, size_bytes);
 					if (written != size_bytes) {
@@ -2159,7 +2159,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 		ut64 b = r_read_ble64 (a, esil->anal->config->big_endian);
 #else
 		ut64 b = r_read_ble64 (a, 0);
-		if (esil->anal->config->big_endian) {
+		if (R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config)) {
 			r_mem_swapendian ((ut8*)&b, (const ut8*)&b, bytes);
 		}
 #endif
@@ -2226,7 +2226,7 @@ static bool esil_peek_some(RAnalEsil *esil) {
 						free (count);
 						return false;
 					}
-					ut32 num32 = r_read_ble32 (a, esil->anal->config->big_endian);
+					ut32 num32 = r_read_ble32 (a, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
 					r_anal_esil_reg_write (esil, foo, num32);
 					ptr += 4;
 					free (foo);

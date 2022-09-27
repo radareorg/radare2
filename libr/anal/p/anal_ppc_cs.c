@@ -603,7 +603,7 @@ static char *shrink(char *op) {
 #define CSINC PPC
 #define CSINC_MODE \
 	((a->config->bits == 64) ? CS_MODE_64 : (a->config->bits == 32) ? CS_MODE_32 : 0) \
-	| (a->config->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN)
+	| (R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN)
 #include "capstone.inc"
 
 static int decompile_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
@@ -661,14 +661,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (mask & R_ANAL_OP_MASK_DISASM) {
 		ret = -1;
 		if (cpu && !strcmp (cpu, "vle")) {
-			if (!a->config->big_endian) {
+			if (!R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)) {
 				return -1;
 			}
 			// vle is big-endian only
 			ret = decompile_vle (a, op, addr, buf, len);
 		} else if (cpu && !strcmp (cpu, "ps")) {
 			// libps is big-endian only
-			if (!a->config->big_endian) {
+			if (!R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)) {
 				return -1;
 			}
 			ret = decompile_ps (a, op, addr, buf, len);
@@ -686,7 +686,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	}
 	if (cpu && !strcmp (cpu, "vle")) {
 		// vle is big-endian only
-		if (!a->config->big_endian) {
+		if (!R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)) {
 			return -1;
 		}
 		ret = analop_vle (a, op, addr, buf, len);

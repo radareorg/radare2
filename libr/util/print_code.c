@@ -30,7 +30,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 
 	const int orig_align = p->coreb.cfggeti (p->coreb.core, "asm.cmt.col") - 40;
 	size_t k, i = 0;
-	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
+	bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 
 	while (!r_print_is_interrupted () && i < len) {
 		ut64 at = addr + i;
@@ -70,7 +70,7 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 	size_t i;
 
 	ws = R_MAX (1, R_MIN (ws, 8));
-	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
+	bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	int bits = ws * 8;
 	const char *fmtstr = bits_to_c_code_fmtstr (bits);
 	len /= ws;

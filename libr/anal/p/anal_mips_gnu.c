@@ -1173,7 +1173,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.buffer_vma = addr;
 	disasm_obj.buffer_length = 4;
-	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
 	op->size = (disasm_obj.endian == BFD_ENDIAN_LITTLE)
@@ -1207,7 +1207,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 	op->size = oplen;
 	op->addr = addr;
 	// Be endian aware
-	opcode = r_read_ble32 (b, anal->config->big_endian);
+	opcode = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
 
 	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], anal->big_endian);
 	if (opcode == 0) {

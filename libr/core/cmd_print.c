@@ -3431,7 +3431,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	const char *stack[] = {
 		"ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL
 	};
-	const bool be = core->print->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
 	ut8 *block = core->block;
 	int blocksize = core->blocksize;
 	ut8 *heaped_block = NULL;
@@ -3500,7 +3500,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		break;
 	case '*': { // "pv*"
 		for (i = 0; i < repeat; i++) {
-			const bool be = core->anal->config->big_endian;
+			const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config);
 			ut64 at = core->offset + (i * n);
 			ut8 buf[8];
 			r_io_read_at (core->io, at, buf, sizeof (buf));
@@ -3554,14 +3554,14 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				pj_i (pj, r_read_ble8 (buf));
 				break;
 			case 2:
-				pj_i (pj, r_read_ble16 (buf, core->anal->config->big_endian));
+				pj_n (pj, r_read_ble16 (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config)));
 				break;
 			case 4:
-				pj_n (pj, (ut64)r_read_ble32 (buf, core->anal->config->big_endian));
+				pj_n (pj, r_read_ble32 (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config)));
 				break;
 			case 8:
 			default:
-				pj_n (pj, r_read_ble64 (buf, core->anal->config->big_endian));
+				pj_n (pj, r_read_ble64 (buf, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config)));
 				break;
 			}
 			pj_ks (pj, "string", str);
@@ -4780,7 +4780,7 @@ static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
 	ut64 n = 0;
 	ut8 *buf = calloc (core->blocksize, 1);
 	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
-	const bool be = core->print->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
 	while (p + 4 < core->blocksize) {
 		if (core->rasm->config->bits == 64) {
 			n = r_read_ble64 (buf + p, be);
@@ -5098,7 +5098,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 	ut64 o_offset = core->offset;
 	if (mode == 'j' || mode == ',' || mode == '*' || mode == 'q') {
 		size_t i;
-		const int be = core->anal->config->big_endian;
+		const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config);
 		if (pj) {
 			pj_a (pj);
 		}
@@ -7395,7 +7395,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'W': // "pxW"
 			if (l) {
 				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
-				bool be = core->print->config->big_endian;
+				bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
 				len = len - (len % 4);
 				for (i = 0; i < len; i += 4) {
 					const char *a, *b;
@@ -7476,7 +7476,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'H': // "pxH"
 			if (l != 0) {
-				const bool be = core->rasm->config->big_endian;
+				const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 				len = len - (len % 2);
 				for (i = 0; i < len; i += 2) {
 					const char *a, *b;
@@ -7532,7 +7532,7 @@ static int cmd_print(void *data, const char *input) {
 			// TODO. show if flag name, or inside function
 			if (l) {
 				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.offset"));
-				const bool be = core->rasm->config->big_endian;
+				const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 				len = len - (len % 8);
 				for (i = 0; i < len; i += 8) {
 					const char *a, *b;

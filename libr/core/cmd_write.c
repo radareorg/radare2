@@ -2150,11 +2150,11 @@ static int cmd_ws(void *data, const char *input) {
 				r_io_write_at (core->io, core->offset, lenbuf, 1);
 				break;
 			case 2:
-				r_write_ble16 (lenbuf, len, core->anal->config->big_endian);
+				r_write_ble16 (lenbuf, len, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config));
 				r_io_write_at (core->io, core->offset, lenbuf, 2);
 				break;
 			case 4:
-				r_write_ble32 (lenbuf, len, core->anal->config->big_endian);
+				r_write_ble32 (lenbuf, len, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config));
 				r_io_write_at (core->io, core->offset, lenbuf, 4);
 				break;
 			}

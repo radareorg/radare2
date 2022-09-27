@@ -56,7 +56,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
 	disasm_obj.mach = 0;
@@ -540,7 +540,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	op->refptr = 0;
 	op->delay = 0;
 
-	if (anal->config->big_endian) {
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)) {
 		words[0] = r_read_be32 (&data[0]);
 		words[1] = r_read_be32 (&data[4]);
 	} else {

@@ -4436,7 +4436,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_insn *insn = NULL;
 	int mode = (a->config->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	int n, ret;
-	mode |= (a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	mode |= R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (R_STR_ISNOTEMPTY (a->config->cpu)) {
 		if (strstr (a->config->cpu, "cortex")) {
 			mode |= CS_MODE_MCLASS;
@@ -4534,7 +4534,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 
 static char *arm_mnemonics(RAnal *a, int id, bool json) {
 	int mode = (a->config->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
-	mode |= (a->config->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	mode |= R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (R_STR_ISNOTEMPTY (a->config->cpu)) {
 		if (strstr (a->config->cpu, "cortex")) {
 			mode |= CS_MODE_MCLASS;
@@ -4648,7 +4648,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	ret = malloc (size);
 	memset (ret, 0xff, size);
 
-	const bool be = anal->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
 	while (idx < size) {
 		hint = r_anal_hint_get (anal, at + idx);
 		if (hint) {
@@ -4761,7 +4761,7 @@ static ut8 *anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 static RList *anal_preludes(RAnal *anal) {
 #define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
 	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
-	if (anal->config->big_endian) {
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)) {
 		switch (anal->config->bits) {
 		case 16:
 			KW ("\xb5\x00", 2, "\xff\x0f", 2);

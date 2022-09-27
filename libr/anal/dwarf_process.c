@@ -1226,7 +1226,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 	const char *reg_name = NULL; /* literal */
 	const char *arch = ctx->anal->config->arch;
 	const int bits = ctx->anal->config->bits;
-	const bool be = ctx->anal->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ctx->anal->config);
 	size_t i;
 	for (i = 0; i < block.length; i++) {
 		switch (block.data[i]) {
