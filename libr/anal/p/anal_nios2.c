@@ -33,16 +33,18 @@ DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj;
 	if (len < 4) {
 		return -1;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
+	memcpy (bytes, buf, R_MIN (len, sizeof (bytes)));
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	disasm_obj.disassembler_options = "";
-	disasm_obj.buffer = buf;
+	disasm_obj.buffer = bytes;
 	disasm_obj.buffer_vma = addr;
 	disasm_obj.read_memory_func = &nios2_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
