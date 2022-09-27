@@ -123,7 +123,8 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			}
 			r_list_free(branches);
 		} else {
-			save = rvc->branch (rvc, opt.argv[opt.ind + 1]);
+			// TODO: use api not plugin fields: rvc_branch (rvc, opt.argv[opt.ind + 1]);
+			save = rvc->p->branch (rvc, opt.argv[opt.ind + 1]);
 		}
 	} else if (!strcmp (action, "commit")) {
 		if (opt.argc < 4) {
@@ -146,8 +147,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 				}
 				char *author = get_author();
 				if (author) {
-					save = rvc->commit(rvc, message, author,
-							files);
+					save = rvc->p->commit (rvc, message, author, files);
 					free (author);
 				}
 				r_list_free (files);
@@ -157,10 +157,10 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	} else if (!strcmp (action, "checkout") && opt.argc > 2) {
 		save =  rvc_git_checkout (rvc, opt.argv[opt.ind + 1]);
 	} else if (!strcmp (action, "status")) {
-		char *current_branch = r_vc_current_branch(rvc);
+		char *current_branch = r_vc_current_branch (rvc);
 		if (current_branch) {
 			printf ("Branch: %s\n", current_branch);
-			RList *uncommitted = rvc->get_uncommitted (rvc);
+			RList *uncommitted = rvc->p->get_uncommitted (rvc);
 			if (r_list_empty (uncommitted)) {
 				printf ("All files are committed\n");
 			} else {
@@ -174,9 +174,9 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			r_list_free (uncommitted);
 		}
 	} else if (!strcmp (action, "reset")) {
-		save = rvc->reset (rvc);
+		save = rvc->p->reset (rvc);
 	} else if (!strcmp (action, "log")) {
-		save = rvc->print_commits (rvc);
+		save = rvc->p->print_commits (rvc);
 	} else {
 		R_LOG_ERROR ("Incorrect command");
 	}
