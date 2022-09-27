@@ -1373,7 +1373,7 @@ R_API Rvc *r_vc_open(const char *rp, RvcType type) {
 				}
 				break;
 			default:
-				// unkown vc type
+				// unknown vc type
 				break;
 			}
 			sdb_free (repo->db);
