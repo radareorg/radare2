@@ -92,7 +92,7 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	}
 
 	// XXX this is something we should probably do for all the archs
-	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
+	bool is_arm = anal->cur->arch && r_str_startswith (anal->cur->arch, "arm");
 	if (is_arm) {
 		return true;
 	}
@@ -632,6 +632,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	bool last_is_reg_mov_lea = false;
 	bool last_is_push = false;
 	bool last_is_mov_lr_pc = false;
+	bool last_is_add_lr_pc = false;
 	ut64 last_push_addr = UT64_MAX;
 	if (anal->limit && addr + idx < anal->limit->from) {
 		gotoBeach (R_ANAL_RET_END);
@@ -1041,6 +1042,12 @@ repeat:
 			break;
 			// Case of valid but unused "add [rax], al"
 		case R_ANAL_OP_TYPE_ADD:
+			if (is_arm && anal->config->bits == 32) {
+				if (!memcmp (buf, "\x00\xe0\x8f\xe2", 4)) {
+					// add lr, pc, 0 //
+					last_is_add_lr_pc = true; // TODO: support different values, not just 0
+				}
+			}
 			if (anal->opt.ijmp) {
 				if ((op->size + 4 <= bytes_read) && !memcmp (buf + op->size, "\x00\x00\x00\x00", 4)) {
 					r_anal_block_set_size (bb, bb->size - oplen);
@@ -1222,7 +1229,11 @@ repeat:
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RJMP:
-			if (is_arm && last_is_mov_lr_pc) {
+			if (is_arm && anal->config->bits == 32 && last_is_mov_lr_pc) {
+				break;
+			} else if (is_arm && anal->config->bits == 32 && last_is_add_lr_pc) {
+				op->type = R_ANAL_OP_TYPE_CALL;
+				op->fail = op->addr + 4;
 				break;
 			} else if (is_v850 && anal->opt.jmptbl) {
 				int ptsz = (anal->cmpval && anal->cmpval != UT64_MAX)? anal->cmpval + 1: 4;
