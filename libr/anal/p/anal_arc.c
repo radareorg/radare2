@@ -3,7 +3,6 @@
 #include <r_lib.h>
 #include <r_anal.h>
 
-//////////////////
 #include "disas-asm.h"
 #include <mybfd.h>
 
@@ -51,6 +50,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	memcpy (bytes, buf, R_MIN (len, BUFSZ));
 	/* prepare disassembler */
 	disasm_obj.buffer = bytes;
+	disasm_obj.buffer_vma = op->addr;
 	disasm_obj.buffer_length = len;
 	disasm_obj.read_memory_func = &arc_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -58,7 +58,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.endian = !a->config->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
+	disasm_obj.stream = sb;
 	disasm_obj.mach = 0;
 	if (a->config->bits == 16) {
 		op->size = ARCompact_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
@@ -67,11 +67,9 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		//op->size = ARCTangent_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
 	}
 	if (op->size == -1) {
-		op->mnemonic = strdup ("(data)");
-		r_strbuf_free (sb);
-	} else {
-		op->mnemonic = r_strbuf_drain (sb);
+		r_strbuf_set (sb, "(data)");
 	}
+	op->mnemonic = r_strbuf_drain (sb);
 	return op->size;
 }
 //////////////////

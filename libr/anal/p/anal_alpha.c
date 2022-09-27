@@ -1,16 +1,9 @@
 /* radare - LGPL - Copyright 2015-2022 - pancake */
 
-// TODO: no assembler support
-
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_asm.h>
 
+#define BUFSZ 8
 #include "disas-asm.h"
 #include "../../asm/arch/include/opcode/alpha.h"
 
@@ -20,7 +13,7 @@ static int alpha_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 leng
 		return -1; // disable backward reads
 	}
 	ut8 *bytes = info->buffer;
-	memcpy (myaddr, bytes + delta, length); // R_MIN (length, bytes_size));
+	memcpy (myaddr, bytes + delta, R_MIN (length, BUFSZ));
 	return 0;
 }
 
@@ -36,7 +29,7 @@ DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int alpha_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	ut8 bytes [8] = {0};
+	ut8 bytes[BUFSZ] = {0};
 	RStrBuf *sb = NULL;
 	struct disassemble_info disasm_obj = {0};
 	if (len < 4) {
@@ -45,10 +38,11 @@ static int alpha_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	if (mask & R_ANAL_OP_MASK_DISASM) {
 		sb = r_strbuf_new (NULL);
 	}
-	// bytes_size = len;
 
+	memcpy (bytes, buf, R_MIN (len, BUFSZ));
 	/* prepare disassembler */
 	disasm_obj.buffer = (ut8*)bytes;
+	disasm_obj.buffer_vma = addr;
 	disasm_obj.read_memory_func = &alpha_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
