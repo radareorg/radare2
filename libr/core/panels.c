@@ -2751,7 +2751,7 @@ static void __direction_default_cb(void *user, int direction) {
 		}
 		break;
 	case DOWN:
-		if (cur->view->sx < MAX_CANVAS_SIZE) {
+		if (cur->view->sy < MAX_CANVAS_SIZE) {
 			cur->view->sy++;
 		}
 		break;

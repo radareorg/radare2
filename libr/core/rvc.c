@@ -15,6 +15,18 @@
 #define MAX_MESSAGE_LEN 80
 #define NULLVAL "-"
 
+#if 0
+Rvc *vc = rvc_open (".");
+RList *commits = rvc_commits (vc);
+rvc_close (vc);
+vc = NULL;
+#endif
+
+//Access both git and rvc functionality from one set of functions
+static inline void warn(void) {
+	R_LOG_WARN ("rvc is still under development and can be unstable, be careful");
+}
+
 // copies src to dst and creates the parent dirs if they do not exist.
 static bool file_copyp(const char *src, const char *dst) {
 	if (r_file_is_directory (dst)) {
@@ -230,12 +242,11 @@ char *rp2absp(Rvc *rvc, const char *path) {
 //TODO:Make the tree related functions abit cleaner & more efficient
 
 static RList *get_commits(Rvc *rvc, const size_t max_num) {
-	char *i;
 	RList *ret = r_list_new ();
 	if (!ret) {
 		return NULL;
 	}
-	i = sdb_get (rvc->db, sdb_const_get (rvc->db, CURRENTB, 0), 0);
+	char *i = sdb_get (rvc->db, sdb_const_get (rvc->db, CURRENTB, 0), 0);
 	if (!i) {
 		r_list_free (ret);
 		ret = NULL;
@@ -745,7 +756,7 @@ fail_ret:
 }
 
 R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const RList *files) {
-	char *commit_hash;
+	warn ();
 	if (!repo_exists (rvc->path)) {
 		R_LOG_ERROR ("No valid repo in %s", rvc->path);
 		return false;
@@ -785,6 +796,7 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 		R_LOG_ERROR ("Nothing to commit");
 		return false;
 	}
+	char *commit_hash = NULL;
 	if (R_STR_ISEMPTY (author)) {
 		char *au = r_sys_whoami ();
 		commit_hash = write_commit (rvc, message, au, blobs);
@@ -888,7 +900,7 @@ R_API Rvc *r_vc_new(const char *path) {
 		R_LOG_ERROR ("A repo already exists in %s", path);
 		return NULL;
 	}
-	Rvc *rvc = R_NEW(Rvc);
+	Rvc *rvc = R_NEW (Rvc);
 	if (!rvc) {
 		R_LOG_ERROR ("Failed to create repo");
 		return NULL;
@@ -938,7 +950,7 @@ R_API Rvc *r_vc_new(const char *path) {
 		free (rvc);
 		return NULL;
 	}
-	if (!r_vc_use (rvc, VC_RVC)) {
+	if (!r_vc_use (rvc, RVC_TYPE_RVC)) {
 		sdb_unlink (rvc->db);
 		sdb_free (rvc->db);
 		free (rvc->path);
@@ -1071,12 +1083,12 @@ R_API bool r_vc_clone(const Rvc *rvc, const char *dst) {
 		char *srp = r_file_new (rvc->path, ".rvc", NULL);
 		if (srp) {
 			if (file_copyrf (srp, drp)) {
-				Rvc *dst_repo = r_vc_open (dst);
+				Rvc *dst_repo = r_vc_open (dst, RVC_TYPE_RVC);
 				if (dst_repo) {
 					if (r_vc_reset (dst_repo)) {
 						ret = true;
 					} else {
-						R_LOG_ERROR("Failed to reset");
+						R_LOG_ERROR ("Failed to reset");
 					}
 				}
 			} else {
@@ -1110,7 +1122,7 @@ R_API Rvc *r_vc_git_open(const char *path) {
 		return NULL;
 	}
 	vc->db = NULL;
-	r_vc_use (vc, VC_GIT);
+	r_vc_use (vc, RVC_TYPE_GIT);
 	return vc;
 }
 
@@ -1262,16 +1274,15 @@ R_API bool r_vc_reset(Rvc *rvc) {
 	return ret;
 }
 
-//Access both git and rvc functionality from one set of functions
-static void warn(void) {
-	R_LOG_WARN ("rvc is still under development and can be unstable, be careful");
-}
-
 R_API RList *rvc_git_get_branches(Rvc *rvc) {
-	return rvc->get_branches(rvc);
+	r_return_val_if_fail (rvc, NULL);
+	return rvc->p->get_branches (rvc);
 }
 
-R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files) {
+// R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files)
+R_API bool rvc_git_commit(Rvc *rvc, const char *message, const char *author, const RList *files) {
+	r_return_val_if_fail (rvc && message && author && files, false);
+#if 0
 	const char *m = r_config_get (core->config, "prj.vc.message");
 	if (!*m) {
 		if (!r_cons_is_interactive ()) {
@@ -1280,9 +1291,11 @@ R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char
 		}
 	}
 	message = R_STR_ISEMPTY (message)? m : message;
-	if (rvc->type == VC_RVC) {
+#endif
+	if (rvc->p->type == RVC_TYPE_RVC) {
+#if 0
 		author = author? author : r_config_get (core->config, "cfg.user");
-		warn ();
+#endif
 		r_vc_commit (rvc, message, author, files);
 		return r_vc_save (rvc);
 	}
@@ -1290,7 +1303,8 @@ R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char
 }
 
 R_API bool rvc_git_branch(Rvc *rvc, const char *bname) {
-	if (rvc->type == VC_RVC) {
+	r_return_val_if_fail (rvc && bname, false);
+	if (rvc->p->type == RVC_TYPE_RVC) {
 		warn ();
 		r_vc_branch (rvc, bname);
 		return r_vc_save(rvc);
@@ -1299,15 +1313,18 @@ R_API bool rvc_git_branch(Rvc *rvc, const char *bname) {
 }
 
 R_API bool rvc_git_checkout(Rvc *rvc, const char *bname) {
-	if (rvc->type == VC_RVC) {
+#if 0
+	return rvc->p->checkout (rvc, bname);
+#endif
+	if (rvc->p->type == RVC_TYPE_RVC) {
 		warn ();
 		r_vc_checkout (rvc, bname);
-		return r_vc_save(rvc);
+		return r_vc_save (rvc);
 	}
 	return r_vc_git_checkout (rvc, bname);
 }
 
-R_API bool rvc_git_repo_exists(const RCore *core, const char *path) {
+R_API bool MELLLLLOQUTOrvc_git_repo_exists(const RCore *core, const char *path) {
 	char *frp = !strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")?
 		r_file_new (path, ".rvc", NULL):
 		r_file_new (path, ".git", NULL);
@@ -1319,15 +1336,47 @@ R_API bool rvc_git_repo_exists(const RCore *core, const char *path) {
 	return false;
 }
 
-R_API Rvc *r_vc_open(const char *rp) {
-	Rvc *repo = R_NEW(Rvc);
+R_API Rvc *r_vc_open(const char *rp, RvcType type) {
+	Rvc *repo = R_NEW (Rvc);
 	if (repo) {
 		repo->path = r_str_new (rp);
 		if (repo->path) {
 			repo->db = vcdb_open (rp) ;
-			if (repo->db && r_vc_use (repo, VC_RVC)) {
-				return repo;
+			switch (type) {
+			case RVC_TYPE_RVC:
+			case RVC_TYPE_GIT:
+				if (r_vc_use (repo, type)) {
+					return repo;
+				}
+				break;
+			case RVC_TYPE_ANY:
+				{
+					char *rvcdir = r_str_newf ("%s/.rvc/" DBNAME, rp);
+					// check if .git exists and then .rvc or the other way
+					if (r_file_exists (rvcdir)) {
+						free (rvcdir);
+						type = RVC_TYPE_RVC;
+						if (r_vc_use (repo, type)) {
+							return repo;
+						}
+					}
+					free (rvcdir);
+					char *gitdir = r_str_newf ("%s/.git/config", rp);
+					if (r_file_exists (gitdir)) {
+						free (gitdir);
+						type = RVC_TYPE_GIT;
+						if (r_vc_use (repo, type)) {
+							return repo;
+						}
+					}
+					free (gitdir);
+				}
+				break;
+			default:
+				// unkown vc type
+				break;
 			}
+			sdb_free (repo->db);
 			free (repo->path);
 		}
 		free (repo);
@@ -1336,19 +1385,26 @@ R_API Rvc *r_vc_open(const char *rp) {
 }
 
 R_API bool r_vc_save(Rvc *vc) {
-	sdb_sync(vc->db);
+	r_return_val_if_fail (vc && vc->db, false);
+	sdb_sync (vc->db);
 	return true;
 }
 
-R_API void r_vc_close(Rvc *vc, bool save) {
+R_API void r_vc_free(Rvc *vc) {
 	if (vc) {
-		if (save) {
-			r_vc_save(vc);
-		}
 		sdb_close (vc->db);
 		free (vc->path);
 		free (vc);
 	}
+}
+
+// XXX deprecate function. what's saving and whats closing in a repository context?
+R_API void r_vc_close(Rvc *vc, bool save) {
+	r_return_if_fail (vc);
+	if (save) {
+		r_vc_save (vc);
+	}
+	r_vc_free (vc);
 }
 
 R_API RList *r_vc_git_get_branches(Rvc *rvc) {
@@ -1422,12 +1478,12 @@ R_API char *r_vc_git_current_branch(Rvc *rvc) {
 	char *ret = NULL;
 	char *esc_path = r_str_escape (rvc->path);
 	if (esc_path) {
-		char *branch = r_sys_cmd_strf ("git -C %s rev-parse --abbrev-ref HEAD",
-				esc_path);
+		char *branch = r_sys_cmd_strf ("git -C %s rev-parse --abbrev-ref HEAD", esc_path);
 		if (!R_STR_ISEMPTY (branch)) {
 			ret = r_str_ndup (branch, strlen (branch) - 1);
 		}
 		free (branch);
+		free (esc_path);
 	}
 	return ret;
 }
@@ -1465,33 +1521,46 @@ R_API bool r_vc_git_save(Rvc *vc) {
 	//do nothing, since git commands are automatically executed
 	return true;
 }
-R_API bool r_vc_use(Rvc *vc, VcType type) {
+
+static const RvcPlugin vc_plugin_git = {
+	.name = "git",
+	.type = RVC_TYPE_GIT,
+	.commit = r_vc_git_commit,
+	.branch = r_vc_git_branch,
+	.checkout = r_vc_git_checkout,
+	.get_branches = r_vc_git_get_branches,
+	.get_uncommitted = r_vc_git_get_uncommitted,
+	.print_commits = r_vc_git_log,
+	.current_branch = r_vc_git_current_branch,
+	.reset = r_vc_git_reset,
+	.clone = r_vc_git_clone,
+	.close = r_vc_git_close,
+	.save = r_vc_git_save,
+};
+
+static const RvcPlugin vc_plugin_rvc = {
+	.name = "rvc",
+	.type = RVC_TYPE_RVC,
+	.commit = r_vc_commit,
+	.branch = r_vc_branch,
+	.checkout = r_vc_checkout,
+	.get_branches = r_vc_get_branches,
+	.get_uncommitted = r_vc_get_uncommitted,
+	.print_commits = r_vc_log,
+	.current_branch = r_vc_current_branch,
+	.reset = r_vc_reset,
+	.clone = r_vc_clone,
+	.close = r_vc_close,
+	.save = r_vc_save,
+};
+
+R_API bool r_vc_use(Rvc *vc, RvcType type) {
 	switch (type) {
-	case VC_GIT:
-		vc->commit = r_vc_git_commit;
-		vc->branch = r_vc_git_branch;
-		vc->checkout = r_vc_git_checkout;
-		vc->get_branches = r_vc_git_get_branches;
-		vc->get_uncommitted = r_vc_git_get_uncommitted;
-		vc->print_commits = r_vc_git_log;
-		vc->current_branch = r_vc_git_current_branch;
-		vc->reset = r_vc_git_reset;
-		vc->clone = r_vc_git_clone;
-		vc->close = r_vc_git_close;
-		vc->save = r_vc_git_save;
+	case RVC_TYPE_GIT:
+		vc->p = &vc_plugin_git;
 		break;
-	case VC_RVC:
-		vc->commit = r_vc_commit;
-		vc->branch = r_vc_branch;
-		vc->checkout = r_vc_checkout;
-		vc->get_branches = r_vc_get_branches;
-		vc->get_uncommitted = r_vc_get_uncommitted;
-		vc->print_commits = r_vc_log;
-		vc->current_branch = r_vc_current_branch;
-		vc->reset = r_vc_reset;
-		vc->clone = r_vc_clone;
-		vc->close = r_vc_close;
-		vc->save = r_vc_save;
+	case RVC_TYPE_RVC:
+		vc->p = &vc_plugin_rvc;
 		break;
 	default:
 		r_return_val_if_reached (false);
@@ -1500,31 +1569,38 @@ R_API bool r_vc_use(Rvc *vc, VcType type) {
 }
 
 R_API Rvc *rvc_git_open(const char *path) {
+	r_return_val_if_fail (path, NULL);
 	if (repo_exists (path)) {
-		return r_vc_open (path);
+		return r_vc_open (path, RVC_TYPE_ANY);
 	}
 	return r_vc_git_open (path);
 }
 
-R_API Rvc *rvc_git_init(const RCore *core, const char *path) {
-	r_return_val_if_fail (core && path, NULL);
-	const char *vname = r_config_get (core->config, "prj.vc.type");
-	if (!strcmp (vname, "git")) {
+R_API Rvc *rvc_init(const char *path, RvcType type) {
+	r_return_val_if_fail (path, NULL);
+	switch (type) {
+	case RVC_TYPE_GIT:
 		return r_vc_git_init (path);
-	} else if (!strcmp (vname, "rvc")) {
-		warn ();
-		Rvc *rvc = r_vc_new (path);
-		if (!rvc || !r_vc_save (rvc)) {
-			return NULL;
+		break;
+	case RVC_TYPE_RVC:
+		{
+			warn ();
+			Rvc *rvc = r_vc_new (path);
+			if (!rvc || !r_vc_save (rvc)) {
+				return NULL;
+			}
+			return rvc;
 		}
-		return rvc;
+		break;
+	default:
+		break;
 	}
-	R_LOG_ERROR ("%s is not a valid vc type", vname);
+	R_LOG_ERROR ("Unknown version control");
 	return NULL;
 }
 
-R_API void rvc_git_close(struct r_vc_t *vc, bool save)
-{
-	vc->close(vc, true);
+R_API void rvc_git_close(Rvc *vc, bool save) {
+	r_return_if_fail (vc && vc->p);
+	vc->p->close (vc, true);
 }
 
