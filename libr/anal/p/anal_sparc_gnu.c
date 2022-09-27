@@ -5,20 +5,17 @@
 #include <r_anal.h>
 #include "disas-asm.h"
 
-static R_TH_LOCAL unsigned long Offset = 0;
-static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL ut8 bytes[4] = {0};
-
 // XXX This can be a generic function defined in a macro
 static int sparc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
-	int delta = (memaddr - Offset);
+	int delta = (memaddr - info->buffer_vma);
 	if (delta < 0) {
 		return -1;      // disable backward reads
 	}
 	if ((delta + length) > 4) {
 		return -1;
 	}
-	memcpy (myaddr, bytes, length);
+	ut8 *bytes = info->buffer;
+	memcpy (myaddr, bytes + delta, length);
 	return 0;
 }
 
@@ -30,37 +27,37 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj;
 	if (len < 4) {
 		return -1;
 	}
-	buf_global = r_strbuf_new ("");
-	Offset = addr;
+	RStrBuf *sb = r_strbuf_new ("");
 	// disasm inverted
-	memcpy (bytes, buf, 4);
+	memcpy (bytes, buf, R_MIN (sizeof (bytes), len));
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	disasm_obj.buffer = bytes;
+	disasm_obj.buffer_vma = addr;
 	disasm_obj.read_memory_func = &sparc_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.endian = 0; // a->config->big_endian;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
+	disasm_obj.stream = sb;
 	disasm_obj.mach = ((a->config->bits == 64)
 			   ? bfd_mach_sparc_v9b
 			   : 0);
 
-	op->size = print_insn_sparc ((bfd_vma)Offset, &disasm_obj);
+	op->size = print_insn_sparc ((bfd_vma)addr, &disasm_obj);
 
-	char *s = r_strbuf_drain (buf_global);
-	buf_global = NULL;
+	char *s = r_strbuf_drain (sb);
 	if (R_STR_ISEMPTY (s) || r_str_startswith (s, "unknown")) {
 		free (s);
 		op->mnemonic = strdup ("invalid");
