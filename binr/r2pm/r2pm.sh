@@ -63,8 +63,6 @@ fi
 if [ "${R2PMCACHE_LOADED}" != 1 ]; then
 	export LIBEXT="$R2_LIBEXT"
 	LIBDIR="$R2_LIBDIR"
-	export R2CONFIGHOME="$R2_RCONFIGHOME"
-	export R2DATAHOME="$R2_RDATAHOME"
 	PREFIX="$R2_PREFIX"
 fi
 BINDIR="${PREFIX}/bin/"
@@ -104,7 +102,7 @@ export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
 export R2PM_PYPATH="${R2PM_PREFIX}/python"
 export R2PM_OLDPWD="${PWD}"
 
-export RHOMEDIR="$R2_RCONFIGHOME"
+export R2_CONFIG_HOME="$R2_CONFIG_HOME"
 
 if [ "`uname`" = Darwin ]; then
 	export LD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
@@ -217,10 +215,10 @@ thePurge() {
 		exit 1
 	fi
 	countDown "Self destroying in" 3
-	confirm "> Delete $RHOMEDIR" && (
-		rm -rf "$RHOMEDIR"
-	)
-	R2PATHS="${PREFIX}:/usr:/usr/local:/opt/radare2:${RHOMEDIR}/prefix:/"
+	if [ -n "${R2_CONFIG_HOME}" ]; then
+		confirm "> Delete $R2_CONFIG_HOME" && ( rm -rf "$R2_CONFIG_HOME" )
+	fi
+	R2PATHS="${PREFIX}:/usr:/usr/local:/opt/radare2:${R2_CONFIG_HOME}/prefix:/"
 	IFS=:
 	for a in $R2PATHS ; do
 		if [ -x "${a}/bin/radare2" ]; then

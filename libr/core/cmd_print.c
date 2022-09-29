@@ -1513,16 +1513,9 @@ static void cmd_print_gadget(RCore *core, const char *_input) {
 static void cmd_pfo_help(RCore *core) {
 	const char *help[] = {
 		"Usage:", "pfo [format-file]", "# List all format definition files (fdf)",
-		/* literally, whitespaces to prevent help system rendering rows as headers */
-		R_JOIN_3_PATHS ("~", R2_HOME_SDB_FORMAT, ""), " ", " ",
-		"<insert sys prefix path here>", " ", " ",
 		NULL
 	};
-
-	char *buf = r_str_newf ("%s"R_SYS_DIR"%s", R2_SDB_FORMAT, r_sys_prefix (NULL));
-	help[6] = buf;
 	r_core_cmd_help (core, help);
-	free (buf);
 }
 
 static ut64 read_val(RBitmap *bm, int pos, int sz) {
@@ -1800,10 +1793,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			cmd_pfo_help (core);
 		} else if (_input[2] == ' ') {
 			const char *fname = r_str_trim_head_ro (_input + 3);
-			char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_SDB_FORMAT, "%s"), fname);
-			char *home = r_str_home (tmp);
-			free (tmp);
-			tmp = r_str_newf (R_JOIN_2_PATHS (R2_SDB_FORMAT, "%s"), fname);
+			char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_SDB_FORMAT, "%s"), fname);
 			char *path = r_str_r2_prefix (tmp);
 			if (r_str_endswith (_input, ".h")) {
 				char *error_msg = NULL;
@@ -1817,20 +1807,22 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					R_LOG_ERROR ("Cannot parse: %s", error_msg);
 				}
 			} else {
+				/// XXX not sure what this code is suposed to be used for
+				char *home = r_xdg_datadir ("format");
 				if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
 					if (!r_core_cmd_file (core, _input + 3)) {
 						R_LOG_ERROR ("pfo: cannot open format file at '%s'", path);
 					}
 				}
+				free (home);
 			}
-			free (home);
 			free (path);
 			free (tmp);
 		} else {
 			RList *files;
 			RListIter *iter;
 			const char *fn;
-			char *home = r_str_home (R2_HOME_SDB_FORMAT R_SYS_DIR);
+			char *home = r_xdg_datadir ("format");
 			if (home) {
 				files = r_sys_dir (home);
 				r_list_foreach (files, iter, fn) {

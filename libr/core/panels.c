@@ -5054,7 +5054,7 @@ static void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenu
 }
 
 static char *__get_panels_config_dir_path(void) {
-	return r_str_home (R_JOIN_2_PATHS (R2_HOME_DATADIR, ".r2panels"));
+	return r_xdg_datadir ("r2panels");
 }
 
 static void __add_menu(RCore *core, const char *parent, const char *name, RPanelsMenuCallback cb) {

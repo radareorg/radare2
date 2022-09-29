@@ -792,8 +792,9 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
 	char *dbpath = r_str_newf (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "cc-%s-%d.sdb"),
 		dir_prefix, anal_arch, bits);
-	char *dbhomepath = r_str_newf (R_JOIN_3_PATHS ("~", R2_HOME_SDB_FCNSIGN, "cc-%s-%d.sdb"),
-		anal_arch, bits);
+	char *fcnsigndir = r_xdg_datadir ("fcnsign");
+	char *dbhomepath = r_str_newf ("%s/cc-%s-%d.sdb", fcnsigndir, anal_arch, bits);
+	free (fcnsigndir);
 	Sdb *cc = core->anal->sdb_cc;
 	// Avoid sdb reloading
 	if (cc->path && (!strcmp (cc->path, dbpath) || !strcmp (cc->path, dbhomepath))) {

@@ -54,13 +54,13 @@ static const char *help_msg_ec[] = {
 	"Vars:", "", "",
 	"colors:", "", "rgb:000, red, green, blue, #ff0000, ...",
 	"e scr.color", "=0", "use more colors (0: no color 1: ansi 16, 2: 256, 3: 16M)",
-	"$DATADIR/radare2/cons", "", R_JOIN_2_PATHS ("~", R2_HOME_THEMES) " ./",
+	"$DATADIR/radare2/cons", "", "~/.local/share/radare2/cons", // XXX should be themes
 	NULL
 };
 
 static const char *help_msg_eco[] = {
 	"Usage: eco[jc] [theme]", "", "load theme (cf. Path and dir.prefix)",
-	"eco", "", "list available themes",
+	"eco", "", "list available themes (See e dir.themes)",
 	"eco.", "", "display current theme name",
 	"eco*", "", "show current theme script",
 	"eco!", "", "edit and reload current theme",
@@ -68,7 +68,7 @@ static const char *help_msg_eco[] = {
 	"ecoq", "", "list available themes without showing the current one",
 	"ecoj", "", "list available themes in JSON",
 	"Path:", "", "",
-	"$DATADIR/radare2/cons", "", R_JOIN_2_PATHS ("~", R2_HOME_THEMES) " ./",
+	"$DATADIR/radare2/cons", "", "~/.local/share/radare2/cons", // XXX should be themes
 	NULL
 };
 
@@ -154,18 +154,17 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 	if (!_arg || !*_arg) {
 		return false;
 	}
-	if (!r_str_cmp (_arg, "default", strlen (_arg))) {
+	if (!strcmp (_arg, "default")) {
 		core->theme = r_str_dup (core->theme, _arg);
 		r_cons_pal_init (core->cons->context);
 		return true;
 	}
 	char *arg = strdup (_arg);
+	// system themes directory
+	char *home = r_xdg_datadir ("cons");
 
-	char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_THEMES, "%s"), arg);
-	char *home = tmp ? r_str_home (tmp) : NULL;
-	free (tmp);
-
-	tmp = r_str_newf (R_JOIN_2_PATHS (R2_THEMES, "%s"), arg);
+	// system themes directory
+	char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_THEMES, "%s"), arg);
 	path = tmp ? r_str_r2_prefix (tmp) : NULL;
 	free (tmp);
 
@@ -221,7 +220,7 @@ R_API RList *r_core_list_themes(RCore *core) {
 	getNext = false;
 	char *tmp = strdup ("default");
 	r_list_append (list, tmp);
-	char *path = r_str_home (R2_HOME_THEMES R_SYS_DIR);
+	char *path = r_xdg_datadir ("cons");
 	if (path) {
 		list_themes_in_path (list, path);
 		R_FREE (path);
@@ -251,7 +250,7 @@ static void nextpal(RCore *core, int mode) {
 		}
 		pj_a (pj);
 	}
-	char *home = r_str_home (R2_HOME_THEMES R_SYS_DIR);
+	char *home = r_xdg_datadir ("cons");
 
 	getNext = false;
 	// spaguetti!
