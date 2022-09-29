@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "r2pm"
 
 #include <r_main.h>
+#include <r_lib.h>
 
 #define R2PM_GITURL "https://github.com/radareorg/radare2-pm"
 
@@ -326,6 +327,8 @@ static void r2pm_setenv(void) {
 	char *dbdir = r2pm_dbdir ();
 	r_sys_setenv ("R2PM_DBDIR", dbdir);
 	free (dbdir);
+
+	r_sys_setenv ("R2_LIBEXT", R_LIB_EXT);
 
 	char *gdir = r2pm_gitdir ();
 	r_sys_setenv ("R2PM_GITDIR", gdir);
