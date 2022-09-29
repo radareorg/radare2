@@ -51,7 +51,6 @@ static int evm_add_push_to_db(RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut64 next_cmd_addr = 0;
 	ut64 dst_addr = 0;
 	size_t i, push_size;
-	char key[16] = { 0 }, value[16] = { 0 };
 
 	push_size = op->id - EVM_INS_PUSH1;
 	next_cmd_addr = addr + push_size + 2;
@@ -62,25 +61,15 @@ static int evm_add_push_to_db(RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	}
 
 	if (evm_ai) {
-		snprintf (key, sizeof (key) - 1, "%08" PFMT64x, (ut64)next_cmd_addr);
-		snprintf (value, sizeof (value) - 1, "%08" PFMT64x, (ut64)dst_addr);
-		sdb_set (evm_ai->pushs_db, key, value, 0);
+		sdb_num_nset (evm_ai->pushs_db, next_cmd_addr, dst_addr, 0);
 	}
 
 	return 0;
 }
 
 static ut64 evm_get_jmp_addr(ut64 addr) {
-	char key[16] = { 0 };
-	const char *value;
 	ut64 ret = -1;
-
-	snprintf (key, sizeof (key) - 1, "%08x", (unsigned)addr);
-	value = sdb_const_get (evm_ai->pushs_db, key, 0);
-
-	if (value) {
-		sscanf (value, "%08" PFMT64x, &ret);
-	}
+	ret = sdb_num_nget (evm_ai->pushs_db, addr, 0);
 	return ret;
 }
 
