@@ -199,6 +199,11 @@ static int main_help(int line) {
 
 static int main_print_var(const char *var_name) {
 	int i = 0;
+#if 0
+XDG_DATA_HOME si no existeix hauria de ser ~/.local/share/
+XDG_CONFIG_HOME si no existeix hauria de ser ~/.config/
+XDG_CACHE_HOME si no existeix hauria de ser ~/.cache/
+#endif
 #ifdef __WINDOWS__
 	char *incdir = r_str_r2_prefix (R2_INCDIR);
 	char *libdir = r_str_r2_prefix (R2_LIBDIR);
@@ -214,7 +219,7 @@ static int main_print_var(const char *var_name) {
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
 	char *historyhome = r_str_home (R2_HOME_HISTORY);
-	struct radare2_var_t {
+	struct {
 		const char *name;
 		const char *value;
 	} r2_vars[] = {

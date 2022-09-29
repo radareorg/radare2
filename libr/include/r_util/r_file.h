@@ -68,6 +68,12 @@ R_API RList* r_file_glob(const char *globbed_path, int maxdepth);
 R_API RMmap *r_file_mmap_arch(RMmap *map, const char *filename, int fd);
 R_API RList *r_file_lsrf(const char *dir);
 R_API bool r_file_rm_rf(const char *dir);
+
+// XDG
+R_API char *r_xdg_configdir(const char *s);
+R_API char *r_xdg_datadir(const char *s);
+R_API char *r_xdg_cachedir(const char *s);
+
 #ifdef __cplusplus
 }
 #endif
