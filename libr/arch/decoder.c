@@ -135,5 +135,5 @@ R_API int r_arch_decode(RArch *arch, const char *dname, RArchOp *op, ut64 addr, 
 	if (!decoder || !decoder->p->decode) {
 		return -1;
 	}
-	return decoder->p->decode (decoder->user, arch->cfg, op, addr, data, len, mask);
+	return decoder->p->decode (arch->cfg, op, addr, data, len, mask, decoder->user);
 }
