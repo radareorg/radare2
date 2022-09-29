@@ -354,7 +354,7 @@ typedef struct r_arch_plugin_t {
 	bool (*init)(void **user);
 	void (*fini)(void *user);
 	int (*info)(RArchConfig *cfg, ut32 query);
-	int (*decode)(void *user, RArchConfig *cfg, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask);
+	int (*decode)(RArchConfig *cfg, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user);
 	bool (*set_reg_profile)(RArchConfig *cfg, struct r_reg_t *reg);
 //TODO: reenable this later
 //	bool (*esil_init)(RAnalEsil *esil);
