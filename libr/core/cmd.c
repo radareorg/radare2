@@ -2979,7 +2979,9 @@ static int cmd_system(void *data, const char *input) {
 	case '-': //!-
 		if (input[1]) {
 			r_line_hist_free ();
-			r_line_hist_save (R2_HOME_HISTORY);
+			char *history_file = r_xdg_cachedir ("history");
+			r_line_hist_save (history_file);
+			free (history_file);
 		} else {
 			r_line_hist_free ();
 		}
@@ -3021,8 +3023,10 @@ static int cmd_system(void *data, const char *input) {
 					free (cmd);
 				}
 			} else {
-				R_LOG_INFO ("History saved to "R2_HOME_HISTORY);
-				r_line_hist_save (R2_HOME_HISTORY);
+				char *history_file = r_xdg_cachedir ("history");
+				R_LOG_INFO ("History saved to %s", history_file);
+				r_line_hist_save (history_file);
+				free (history_file);
 			}
 		}
 		break;

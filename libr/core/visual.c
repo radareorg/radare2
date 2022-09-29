@@ -500,7 +500,7 @@ R_API bool r_core_visual_hud(RCore *core) {
 	char *f = r_str_newf (R_JOIN_3_PATHS ("%s", R2_HUD, "main"),
 		r_sys_prefix (NULL));
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	char *homehud = r_str_home (R2_HOME_HUD);
+	char *homehud = r_xdg_datadir ("hud");
 	bool ready = false;
 	char *res = NULL;
 	r_cons_context ()->color_mode = use_color;

@@ -22,7 +22,7 @@ static RCoreHelpMessage help_msg_P = {
 	"Px", "-", "close the opened project (R2_580 -> Pc)",
 	"NOTE:", "", "the 'e prj.name' evar can save/open/rename/list projects.",
 	"NOTE:", "", "see the other 'e??prj.' evars for more options.",
-	"NOTE:", "", "project are stored in " R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS),
+	"NOTE:", "", "project are stored in dir.projects",
 	NULL
 };
 

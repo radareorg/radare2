@@ -157,53 +157,52 @@ static int main_help(int line) {
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
-		char *datahome = r_str_home (R2_HOME_DATADIR);
-		const char *dirPrefix = r_sys_prefix (NULL);
-		printf (
-		"Scripts:\n"
-		" system          ${R2_PREFIX}/share/radare2/radare2rc\n"
-		" user            ~/.radare2rc " R_JOIN_2_PATHS ("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS ("~", R2_HOME_RC_DIR,"") ")\n"
-		" file            ${filename}.r2\n"
-		"Plugins:\n"
-		" binrc           " R_JOIN_4_PATHS ("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
-		" R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
-		" R2_USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
-		" R2_USER_ZIGNS   " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
+		char *datahome = r_xdg_datadir (NULL);
+		const char *dirPrefix = R2_PREFIX;
+		RStrBuf *sb = r_strbuf_new ("");
+
+		r_strbuf_append (sb, "Scripts:\n");
+		r_strbuf_appendf (sb, " system          %s/share/radare2/radare2rc\n", dirPrefix);
+		r_strbuf_append (sb, " user            ~/.radare2rc ${XDG_CONFIG_DIR:=~/.local/share/}/radare2/radare2rc{.d/}\n");
+		r_strbuf_append (sb, " file            ${filename}.r2\n");
+		r_strbuf_append (sb, "Plugins:\n");
+		r_strbuf_appendf (sb, " R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
+		" R2_USER_PLUGINS ${XDG_DATA_DIR:=~/.local/share/radare2}/plugins\n"
+		" R2_USER_ZIGNS   ${XDG_DATA_DIR:=~/.local/share/radare2}/zigns\n"
 		"Environment:\n"
 		" R2_COLOR        sets the initial value for 'scr.color'. set to 0 for no color\n"
 		" R2_DEBUG        if defined, show error messages and crash signal.\n"
 		" R2_DEBUG_ASSERT set a breakpoint when hitting an assert.\n"
 		" R2_IGNVER       load plugins ignoring the specified version. (be careful)\n"
-		" R2_MAGICPATH    " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
-		" R2_NOPLUGINS    do not load r2 shared plugins\n"
-		" R2_HISTORY      " R2_HOME_HISTORY "\n"
-		" R2_RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
+		" R2_MAGICPATH    %s/"R2_SDB_MAGIC"\n"
+		" R2_NOPLUGINS    do not load r2 shared plugins\n", dirPrefix, dirPrefix);
+		r_strbuf_append (sb, " R2_HISTORY      ${XDG_CACHE_DIR:=~/.cache/radare2}/history\n");
+		r_strbuf_append (sb, " R2_RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 		" R2_CURL         set to '1' to use system curl program instead of r2 apis\n"
-		" R2_RDATAHOME    %s\n" // TODO: rename to RHOME R2HOME?
+		);
+		r_strbuf_appendf (sb, " R2_DATA_HOME    %s\n"
 		" R2_VERSION      contains the current version of r2\n"
 		" R2_LOG_LEVEL    numeric value of the max level of messages to show\n"
 		" R2_LOG_FILE     dump all logs to a file\n"
-#if 0
-		" R2_COLOR     \n"
-#endif
 		"Paths:\n"
 		" R2_INCDIR    "R2_INCDIR"\n"
 		" R2_LIBDIR    "R2_LIBDIR"\n"
 		" R2_LIBEXT    "R_LIB_EXT"\n"
 		" R2_PREFIX    "R2_PREFIX"\n"
-		, dirPrefix, datahome, dirPrefix);
+		, datahome);
 		free (datahome);
+
+		char *helpmsg = r_strbuf_drain (sb);
+		if (helpmsg) {
+			printf ("%s", helpmsg);
+			free (helpmsg);
+		}
 	}
 	return 0;
 }
 
 static int main_print_var(const char *var_name) {
 	int i = 0;
-#if 0
-XDG_DATA_HOME si no existeix hauria de ser ~/.local/share/
-XDG_CONFIG_HOME si no existeix hauria de ser ~/.config/
-XDG_CACHE_HOME si no existeix hauria de ser ~/.cache/
-#endif
 #ifdef __WINDOWS__
 	char *incdir = r_str_r2_prefix (R2_INCDIR);
 	char *libdir = r_str_r2_prefix (R2_LIBDIR);
@@ -211,14 +210,14 @@ XDG_CACHE_HOME si no existeix hauria de ser ~/.cache/
 	char *incdir = strdup (R2_INCDIR);
 	char *libdir = strdup (R2_LIBDIR);
 #endif
-	char *confighome = r_str_home (R2_HOME_CONFIGDIR);
-	char *datahome = r_str_home (R2_HOME_DATADIR);
-	char *cachehome = r_str_home (R2_HOME_CACHEDIR);
-	char *homeplugins = r_str_home (R2_HOME_PLUGINS);
-	char *homezigns = r_str_home (R2_HOME_ZIGNS);
+	char *confighome = r_xdg_configdir (NULL);
+	char *datahome = r_xdg_datadir (NULL);
+	char *cachehome = r_xdg_cachedir (NULL);
+	char *homeplugins = r_xdg_datadir ("plugins");
+	char *homezigns = r_xdg_datadir ("zigns");
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
-	char *historyhome = r_str_home (R2_HOME_HISTORY);
+	char *historyhome = r_xdg_cachedir ("history");
 	struct {
 		const char *name;
 		const char *value;
@@ -229,13 +228,13 @@ XDG_CACHE_HOME si no existeix hauria de ser ~/.cache/
 		{ "R2_INCDIR", incdir },
 		{ "R2_LIBDIR", libdir },
 		{ "R2_LIBEXT", R_LIB_EXT },
-		{ "R2_RCONFIGHOME", confighome },
 		{ "R2_RDATAHOME", datahome },
 		{ "R2_HISTORY", historyhome },
-		{ "R2_RCACHEHOME", cachehome },
+		{ "R2_CONFIG_HOME", confighome }, // from xdg
+		{ "R2_CACHE_HOME", cachehome }, //  fro xdg
 		{ "R2_LIBR_PLUGINS", plugins },
 		{ "R2_USER_PLUGINS", homeplugins },
-		{ "R2_USER_ZIGNS", homezigns },
+		{ "R2_ZIGNS_HOME", homezigns },
 		{ NULL, NULL }
 	};
 	int delta = 0;
@@ -540,6 +539,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	char *envprofile = r_run_get_environ_profile (env);
 
 	if (r_sys_getenv_asbool ("R2_DEBUG")) {
+		r_log_set_level (R_LOGLVL_DEBUG);
 		char *sysdbg = r_sys_getenv ("R2_DEBUG_TOOL");
 		char *fmt = (sysdbg && *sysdbg)
 			? strdup (sysdbg)
@@ -1713,7 +1713,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 
 	if (mustSaveHistory (r->config)) {
-		r_line_hist_save (R2_HOME_HISTORY);
+		char *history_file = r_xdg_cachedir ("history");
+		if (history_file) {
+			r_line_hist_save (history_file);
+			free (history_file);
+		}
 	}
 
 	ret = r->rc;

@@ -3326,8 +3326,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("pdb.useragent", "microsoft-symbol-server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Semi-colon separated list of base URLs for Microsoft symbol servers");
 	{
-		char *pdb_path = r_str_home (R2_HOME_PDB);
-		SETPREF ("pdb.symstore", pdb_path, "path to downstream symbol store");
+		char *pdb_path = r_xdg_datadir ("pdb");
+		SETPREF ("pdb.symstore", pdb_path, "path to downstream symbol store"); // XXX rename to dir.pdb
 		R_FREE(pdb_path);
 	}
 	SETI ("pdb.extract", 1, "avoid extract of the pdb file, just download");
@@ -3761,7 +3761,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("zign.refs", "true", "use references for matching");
 	SETBPREF ("zign.hash", "true", "use Hash for matching");
 	SETBPREF ("zign.types", "true", "use types for matching");
-	SETBPREF ("zign.autoload", "false", "autoload all zignatures located in " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS));
+	SETBPREF ("zign.autoload", "false", "autoload all zignatures located in dir.zigns");
 	SETPREF ("zign.diff.bthresh", "1.0", "threshold for diffing zign bytes [0, 1] (see zc?)");
 	SETPREF ("zign.diff.gthresh", "1.0", "threshold for diffing zign graphs [0, 1] (see zc?)");
 	SETPREF ("zign.threshold", "0.0", "minimum similarity required for inclusion in zb output");
@@ -3796,8 +3796,12 @@ R_API int r_core_config_init(RCore *core) {
 	p = r_sys_getenv (R_SYS_TMP);
 	SETCB ("dir.tmp", r_str_get (p), &cb_dirtmp, "path of the tmp directory");
 	free (p);
-	SETCB ("dir.projects", R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS), &cb_dir_projects, "default path for projects");
-	SETCB ("dir.zigns", R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS), &cb_dirzigns, "default path for zignatures (see zo command)");
+	char *prjdir = r_xdg_datadir ("projects");
+	SETCB ("dir.projects", prjdir, &cb_dir_projects, "default path for projects");
+	free (prjdir);
+	char *zigndir = r_xdg_datadir ("zigns");
+	SETCB ("dir.zigns", zigndir, &cb_dirzigns, "default path for zignatures (see zo command)");
+	free (zigndir);
 	SETPREF ("stack.reg", "SP", "which register to use as stack pointer in the visual debug");
 	SETBPREF ("stack.bytes", "true", "show bytes instead of words in stack");
 	SETBPREF ("stack.anotated", "false", "show anotated hexdump in visual debug");
@@ -3965,7 +3969,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("http.maxsize", 0, "maximum file size for upload");
 	SETPREF ("http.index", "index.html", "main html file to check in directory");
 	SETPREF ("http.bind", "localhost", "server address (use 'public' for binding to 0.0.0.0)");
-	SETPREF ("http.homeroot", R_JOIN_2_PATHS ("~", R2_HOME_WWWROOT), "http home root directory");
+	char *www = r_xdg_datadir ("www");
+	if (www) {
+		SETPREF ("http.homeroot", www, "http home root directory");
+		free (www);
+	}
 #if __WINDOWS__
 	{
 		char *wwwroot = r_str_newf ("%s\\share\\www", r_sys_prefix (NULL));
@@ -4263,7 +4271,6 @@ R_API int r_core_config_init(RCore *core) {
 }
 
 R_API void r_core_parse_radare2rc(RCore *r) {
-	bool has_debug = r_sys_getenv_asbool ("R2_DEBUG");
 	char *rcfile = r_sys_getenv ("R2_RCFILE");
 	char *homerc = NULL;
 	if (!R_STR_ISEMPTY (rcfile)) {
@@ -4273,21 +4280,19 @@ R_API void r_core_parse_radare2rc(RCore *r) {
 		homerc = r_str_home (".radare2rc");
 	}
 	if (homerc && r_file_is_regular (homerc)) {
-		if (has_debug) {
-			eprintf ("USER CONFIG loaded from %s\n", homerc);
-		}
+		R_LOG_DEBUG ("user script loaded from %s", homerc);
 		r_core_cmd_file (r, homerc);
 	}
 	free (homerc);
-	homerc = r_str_home (R2_HOME_RC);
+	char *configdir = r_xdg_configdir (NULL);
+	homerc = r_file_new (configdir, "radare2rc", NULL);
 	if (homerc && r_file_is_regular (homerc)) {
-		if (has_debug) {
-			eprintf ("USER CONFIG loaded from %s\n", homerc);
-		}
+		R_LOG_DEBUG ("user script loaded from %s", homerc);
 		r_core_cmd_file (r, homerc);
 	}
 	free (homerc);
-	homerc = r_str_home (R2_HOME_RC_DIR);
+	homerc = r_file_new (configdir, "radare2rc.d", NULL);
+	free (configdir);
 	if (homerc) {
 		if (r_file_is_directory (homerc)) {
 			char *file;
@@ -4295,11 +4300,9 @@ R_API void r_core_parse_radare2rc(RCore *r) {
 			RList *files = r_sys_dir (homerc);
 			r_list_foreach (files, iter, file) {
 				if (*file != '.') {
-					char *path = r_str_newf ("%s/%s", homerc, file);
+					char *path = r_file_new (homerc, file, NULL);
 					if (r_file_is_regular (path)) {
-						if (has_debug) {
-							eprintf ("USER CONFIG loaded from %s\n", homerc);
-						}
+						R_LOG_DEBUG ("user script loaded from %s", homerc);
 						r_core_cmd_file (r, path);
 					}
 					free (path);

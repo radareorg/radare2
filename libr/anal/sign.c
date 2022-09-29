@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
 
-#include <r_anal.h>
-#include <r_sign.h>
-#include <r_search.h>
 #include <r_core.h>
 
 R_LIB_VERSION (r_sign);
@@ -2897,8 +2894,8 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 		}
 		free (abs);
 	} else {
-		char *home = r_str_home (R2_HOME_ZIGNS);
-		abs = r_str_newf ("%s%s%s", home, R_SYS_DIR, file);
+		char *home = r_xdg_datadir ("zigns");
+		abs = r_file_new (home, file, NULL);
 		free (home);
 		if (r_file_is_regular (abs)) {
 			return abs;

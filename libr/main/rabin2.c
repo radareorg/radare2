@@ -587,7 +587,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	bin = core.bin;
 
 	if (!(tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
-		char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
+		char *homeplugindir = r_xdg_datadir ("plugins");
 		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
 		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
 		char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);

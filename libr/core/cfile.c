@@ -541,7 +541,9 @@ R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 	return ret;
 }
 
+#if 0
 static void load_scripts_for(RCore *core, const char *name) {
+	// imho nobody uses this: run scripts depending on a specific filetype
 	char *file;
 	RListIter *iter;
 	char *hdir = r_str_newf (R_JOIN_2_PATHS (R2_HOME_BINRC, "bin-%s"), name);
@@ -560,6 +562,7 @@ static void load_scripts_for(RCore *core, const char *name) {
 	free (path);
 	free (hdir);
 }
+#endif
 
 typedef struct {
 	const char *name;
@@ -656,11 +659,13 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		msg[1] = 0;
 		r_config_set (r->config, "bin.str.filter", msg);
 	}
-	//r_core_bin_set_env (r, binfile);
 	plugin = r_bin_file_cur_plugin (binfile);
+#if 0
+	//r_core_bin_set_env (r, binfile);
 	if (plugin && plugin->name) {
 		load_scripts_for (r, plugin->name);
 	}
+#endif
 	r_core_bin_export_info (r, R_MODE_SET);
 	cmd_load = r_config_get (r->config, "cmd.load");
 	if (cmd_load && *cmd_load) {

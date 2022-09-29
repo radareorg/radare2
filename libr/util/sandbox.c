@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2021 - pancake */
+/* radare - LGPL - Copyright 2012-2022 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
@@ -24,7 +24,7 @@ static R_TH_LOCAL int G_graintype = R_SANDBOX_GRAIN_NONE;
 static bool inHomeWww(const char *path) {
 	r_return_val_if_fail (path, false);
 	bool ret = false;
-	char *homeWww = r_str_home (R2_HOME_WWWROOT R_SYS_DIR);
+	char *homeWww = r_xdg_datadir ("www");
 	if (homeWww) {
 		if (r_str_startswith (path, homeWww)) {
 			ret = true;

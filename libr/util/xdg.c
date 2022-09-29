@@ -2,6 +2,13 @@
 
 // move into file.c ?
 #include <r_util.h>
+#if 0
+macOS:
+*  ~/Library/radare2?
+Windows
+* %AppData% ?= XDG_DATA_HOME
+* %LocalAppData% ?= XDG_CACHE_HOME
+#endif
 
 static char *xdg(const char *env, const char *a, const char *s) {
 	char *dir = r_sys_getenv (env);
