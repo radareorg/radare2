@@ -110,19 +110,19 @@ static bool r2pm_add(R2Pm *r2pm, const char *repository) {
 	return false;
 }
 static char *r2pm_bindir(void) {
-	return r_str_home (".local/share/radare2/prefix/bin");
+	return r_xdg_datadir ("prefix/bin");
 }
 
 static char *r2pm_gitdir(void) {
-	return r_str_home (".local/share/radare2/r2pm/git");
+	return r_xdg_datadir ("r2pm/git");
 }
 
 static char *r2pm_dbdir(void) {
-	return r_str_home (".local/share/radare2/r2pm/db");
+	return r_xdg_datadir ("r2pm/db");
 }
 
 static char *r2pm_pkgdir(void) {
-	return r_str_home (".local/share/radare2/r2pm/pkg");
+	return r_xdg_datadir ("r2pm/pkg");
 }
 
 typedef enum {
@@ -342,9 +342,19 @@ static void r2pm_setenv(void) {
 	char *r2_prefix = r_xdg_datadir ("prefix");
 	r_sys_setenv ("R2PM_PREFIX", r2_prefix);
 
-	char *r2pm_bindir = r_str_newf ("%s/bin", r2_prefix);
-	r_sys_setenv ("R2PM_BINDIR", r2pm_bindir);
-	free (r2pm_bindir);
+	char *pkgcfg = r_sys_getenv ("PKG_CONFIG_PATH");
+	if (R_STR_ISNOTEMPTY (pkgcfg)) {
+		char *pcp = r_str_newf ("%s:%s", R2_PREFIX "/lib/pkgconfig", pkgcfg);
+		r_sys_setenv ("PKG_CONFIG_PATH", pcp);
+		free (pcp);
+	} else {
+		r_sys_setenv ("PKG_CONFIG_PATH", R2_PREFIX "/lib/pkgconfig");
+	}
+	free (pkgcfg);
+
+	char *bindir = r_str_newf ("%s/bin", r2_prefix);
+	r_sys_setenv ("R2PM_BINDIR", bindir);
+	free (bindir);
 
 	char *oldpath = r_sys_getenv ("PATH");
 	if (!strstr (oldpath, r2_prefix)) {
@@ -354,6 +364,17 @@ static void r2pm_setenv(void) {
 	}
 	free (oldpath);
 	free (r2_prefix);
+
+	char *opath = r_sys_getenv ("PATH");
+	if (opath) {
+		char *bindir = r2pm_bindir ();
+		const char *sep = R_SYS_ENVSEP;
+		char *newpath = r_str_newf ("%s%s%s", bindir, sep, opath);
+		r_sys_setenv ("PATH", newpath);
+		free (newpath);
+		free (opath);
+		free (bindir);
+	}
 
 	// GLOBAL = 0 # depends on r2pm.global, which is set on r2pm_install
 	char *python = r_sys_getenv ("PYTHON");
@@ -809,22 +830,13 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		return r2pm_update ();
 	}
 	if (r2pm.run) {
-		char *opath = r_sys_getenv ("PATH");
-		if (opath) {
-			char *bindir = r2pm_bindir ();
-			const char *sep = R_SYS_ENVSEP;
-			char *newpath = r_str_newf ("%s%s%s", bindir, sep, opath);
-			r_sys_setenv ("PATH", newpath);
-			free (newpath);
-			free (opath);
-			free (bindir);
-		}
 		int i;
 		RStrBuf *sb = r_strbuf_new ("");
 		for (i = opt.ind; i < argc; i++) {
 			r_strbuf_appendf (sb, " %s", argv[i]);
 		}
 		char *cmd = r_strbuf_drain (sb);
+		r2pm_setenv ();
 		int res = r_sandbox_system (cmd, 1);
 		free (cmd);
 		return res;
