@@ -432,6 +432,7 @@ endif
 
 include_files = [
   'include/r2naked.h',
+  'include/rvc.h',
   'include/r_agraph.h',
   'include/r_anal.h',
   'include/r_arch.h',
