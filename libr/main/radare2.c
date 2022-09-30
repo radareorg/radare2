@@ -1250,9 +1250,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					R_FREE (path);
 				}
 #elif __WINDOWS__
-				char *f2 = r_acp_to_utf8 (f);
-				free (f);
-				f = f2;
+				char *acpfile = r_acp_to_utf8 (f);
+				// backslashes must be escaped because they are unscaped when parsing the uri
+				char *r = r_str_replace (acpfile, "\\", "\\\\", true);
+				if (r) {
+					acpfile = r;
+				}
+				file = r_str_newf ("dbg://%s", acpfile);
 #else
 				if (f) {
 					char *escaped_path = r_str_arg_escape (f);
