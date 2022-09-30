@@ -1991,8 +1991,39 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			sdb_set (bin->kv, cmd_flagname, "dylib", 0);
 			/* TODO */
 			break;
+		case LC_ID_DYLIB:
+			{
+				ut64 addr = off;
+				bool isBe = false;
+				RBuffer *buf = bin->b;
+				ut32 str_off = r_buf_read_ble32_at (buf, addr, isBe);
+				char *s = r_str_newf ("%d.%d.%d",
+						r_buf_read_le16_at (buf, addr + 10),
+						r_buf_read8_at (buf, addr + 9),
+						r_buf_read8_at (buf, addr + 8));
+				sdb_set (bin->kv, "id.version", s, 0);
+				free (s);
+				s = r_str_newf ("%d.%d.%d",
+						r_buf_read_le16_at (buf, addr + 14),
+						r_buf_read8_at (buf, addr + 13),
+						r_buf_read8_at (buf, addr + 12));
+				sdb_set (bin->kv, "id.compat", s, 0);
+				free (s);
+				char *id = r_buf_get_string (buf, addr + str_off - 8);
+				if (R_STR_ISNOTEMPTY (id)) {
+					sdb_set (bin->kv, "id.name", id, 0);
+					free (id);
+				}
+			}
+			break;
+		case LC_DYLD_EXPORTS_TRIE:
+			break;
+		case LC_DYLD_CHAINED_FIXUPS:
+			break;
+		case LC_BUILD_VERSION:
+			break;
 		default:
-			R_LOG_DEBUG ("Unknown header command %x", lc.cmd);
+			R_LOG_DEBUG ("Unknown header %d command 0x%x at 0x%08"PFMT64x, i, lc.cmd, off);
 			break;
 		}
 	}
@@ -2064,9 +2095,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				if (r_buf_read_at (bin->b, off + 8, buf, sizeof (buf)) == sizeof (buf)) {
 					ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
 					ut32 datasize = r_read_ble32 (buf + 4, bin->big_endian);
-					if (bin->verbose) {
-						eprintf ("chained fixups at 0x%x size %d\n", dataoff, datasize);
-					}
+					R_LOG_DEBUG ("chained fixups at 0x%08x with size %d", (ut64)dataoff, (int)datasize);
 					has_chained_fixups = parse_chained_fixups (bin, dataoff, datasize);
 				}
 			}
@@ -4364,9 +4393,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 				r_buf_read8_at (buf, addr + 12));
 			cb_printf ("0x%08"PFMT64x"  id          %s\n",
 				pvaddr + str_off - 8, r_str_get (id));
-			if (id) {
-				free (id);
-			}
+			free (id);
 			break;
 		}
 		case LC_UUID:
