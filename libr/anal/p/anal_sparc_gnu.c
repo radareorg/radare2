@@ -31,12 +31,15 @@ DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	ut8 bytes[8] = {0};
+	ut8 bytes[4] = {0};
 	struct disassemble_info disasm_obj;
 	if (len < 4) {
 		return -1;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		return -1;
+	}
 	// disasm inverted
 	memcpy (bytes, buf, R_MIN (sizeof (bytes), len));
 
@@ -435,7 +438,7 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 // TODO: this implementation is just a fast hack. needs to be rewritten and completed
 static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	int sz = 4;
-	ut32 insn;
+	ut32 insn = 0;
 
 	op->family = R_ANAL_OP_FAMILY_CPU;
 	op->addr = addr;
@@ -443,7 +446,7 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 	r_mem_swaporcopy ((ut8*)&insn, data, 4, !anal->config->big_endian);
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		disassemble (anal, op, addr, (ut8 *)&insn, len);
+		disassemble (anal, op, addr, (ut8 *)&insn, 4);
 	}
 
 	if (X_OP (insn) == OP_0) {

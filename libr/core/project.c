@@ -700,7 +700,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 			if (r_list_append (paths, prj_dir)) {
 				const char *author = r_config_get (core->config, "cfg.user");
 				const char *message = r_config_get (core->config, "prj.vc.message");
-				if (!rvc_git_commit (core->prj->rvc, author, message, paths)) {
+				if (!rvc_git_commit (core->prj->rvc, message, author, paths)) {
 					r_list_free (paths);
 					free (prj_dir);
 					free (script_path);

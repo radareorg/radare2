@@ -70,6 +70,7 @@ R_API bool r_vc_clone(const Rvc *rvc, const char *dst);
 R_API Rvc *r_vc_open(const char *rp, RvcType type);
 R_API void r_vc_close(Rvc *vc, bool save);
 R_API bool r_vc_save(Rvc *vc);
+R_API void r_vc_free(Rvc *vc);
 
 R_API RList *r_vc_git_get_branches(Rvc *rvc);
 R_API RList *r_vc_git_get_uncommitted(Rvc *rvc);
