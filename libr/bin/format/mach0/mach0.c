@@ -2343,7 +2343,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 			char *segment_name = r_str_newf ("%u.%s", (ut32)i, bin->segs[segment_index].segname);
 			s->name = r_str_newf ("%s.%s", segment_name, section_name);
 			if (strstr (s->name, "__const")) {
-				s->format = r_str_newf ("Cd 4[%"PFMT64d"]", s->size / 4);
+				s->format = r_str_newf ("Cd 4 %"PFMT64d, s->size / 4);
 			}
 			s->is_data = is_data_section (s);
 			if (strstr (section_name, "interpos") || strstr (section_name, "__mod_")) {
