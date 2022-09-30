@@ -415,7 +415,9 @@ static RThread *sigchld_thread;
 
 static void handle_sigchld(int sig) {
 	ut8 b = 1;
-	(void)write (sigchld_pipe[1], &b, 1);
+	if (write (sigchld_pipe[1], &b, 1) != 1) {
+		return;
+	}
 }
 
 static RThreadFunctionRet sigchld_th(RThread *th) {
@@ -502,7 +504,9 @@ R_API bool r2r_subprocess_init(void) {
 R_API void r2r_subprocess_fini(void) {
 	r_sys_signal (SIGCHLD, SIG_IGN);
 	ut8 b = 0;
-	(void)write (sigchld_pipe[1], &b, 1);
+	if (write (sigchld_pipe[1], &b, 1) != 1) {
+		// nothing relevant here
+	}
 	close (sigchld_pipe [1]);
 	r_th_wait (sigchld_thread);
 	close (sigchld_pipe [0]);
@@ -743,7 +747,9 @@ R_API void r2r_subprocess_kill(R2RSubprocess *proc) {
 }
 
 R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_t buf_size) {
-	(void)write (proc->stdin_fd, buf, buf_size);
+	if (write (proc->stdin_fd, buf, buf_size) != buf_size) {
+		// another ignored result
+	}
 	close (proc->stdin_fd);
 	proc->stdin_fd = -1;
 }

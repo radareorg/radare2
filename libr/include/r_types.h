@@ -154,6 +154,8 @@
 #  define UNUSED_FUNCTION(x) UNUSED_ ## x
 #endif
 
+#define R_UNUSED_RESULT(x) if ((x)) {}
+
 #if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
 #define __KFBSD__ 1
 #else

@@ -343,13 +343,17 @@ static void r2pm_setenv(void) {
 	r_sys_setenv ("R2PM_PREFIX", r2_prefix);
 
 	char *pkgcfg = r_sys_getenv ("PKG_CONFIG_PATH");
+	char *r2pm_pkgcfg = r_xdg_datadir ("prefix/lib/pkgconfig");
 	if (R_STR_ISNOTEMPTY (pkgcfg)) {
-		char *pcp = r_str_newf ("%s:%s", R2_PREFIX "/lib/pkgconfig", pkgcfg);
+		char *pcp = r_str_newf ("%s:%s:%s", R2_PREFIX "/lib/pkgconfig", r2pm_pkgcfg, pkgcfg);
 		r_sys_setenv ("PKG_CONFIG_PATH", pcp);
 		free (pcp);
 	} else {
-		r_sys_setenv ("PKG_CONFIG_PATH", R2_PREFIX "/lib/pkgconfig");
+		char *pcp = r_str_newf ("%s:%s", r2pm_pkgcfg, R2_PREFIX "/lib/pkgconfig");
+		r_sys_setenv ("PKG_CONFIG_PATH", pcp);
+		free (pcp);
 	}
+	free (r2pm_pkgcfg);
 	free (pkgcfg);
 
 	char *bindir = r_str_newf ("%s/bin", r2_prefix);

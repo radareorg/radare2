@@ -886,7 +886,7 @@ static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
 		return false;
 	}
 
-	ut16 jmp_addr;
+	ut16 jmp_addr = 0;
 	if (!to_address (arg[1], &jmp_addr)) {
 		R_LOG_DEBUG ("address %x not found", jmp_addr);
 		return false;

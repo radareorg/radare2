@@ -390,15 +390,15 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 	// we append data
 	if (op->b_len <= 246) {
 		ut8 data = op->b_len;
-		(void) write (1, &data, 1);
+		R_UNUSED_RESULT (write (1, &data, 1));
 	} else if (op->b_len <= USHRT_MAX) {
 		USLen = (ut16) op->b_len;
 		ut8 data = 247;
-		(void) write (1, &data, 1);
+		R_UNUSED_RESULT (write (1, &data, 1));
 		print_bytes (&USLen, sizeof (USLen), true);
 	} else if (op->b_len <= INT_MAX) {
 		ut8 data = 248;
-		(void) write (1, &data, 1);
+		R_UNUSED_RESULT (write (1, &data, 1));
 		ILen = (int) op->b_len;
 		print_bytes (&ILen, sizeof (ILen), true);
 	} else {
@@ -1307,7 +1307,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			pj_ka (ro.pj, "changes");
 		}
 		if (ro.diffmode == 'B') {
-			(void) write (1, "\xd1\xff\xd1\xff\x04", 5);
+			R_UNUSED_RESULT (write (1, "\xd1\xff\xd1\xff\x04", 5));
 		}
 		if (ro.diffmode == 'U') {
 			char *res = r_diff_buffers_unified (d, bufa, (int)sza, bufb, (int)szb);
@@ -1318,7 +1318,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		} else if (ro.diffmode == 'B') {
 			r_diff_set_callback (d, &bcb, &ro);
 			r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
-			(void) write (1, "\x00", 1);
+			R_UNUSED_RESULT (write (1, "\x00", 1));
 		} else {
 			r_diff_set_callback (d, &cb, &ro);
 			r_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
