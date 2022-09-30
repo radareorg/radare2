@@ -1083,6 +1083,7 @@ R_API bool r_vc_clone(const Rvc *rvc, const char *dst) {
 					} else {
 						R_LOG_ERROR ("Failed to reset");
 					}
+					r_vc_free (dst_repo);
 				}
 			} else {
 				R_LOG_ERROR ("Failed to copy files");
@@ -1115,7 +1116,10 @@ R_API Rvc *r_vc_git_open(const char *path) {
 		return NULL;
 	}
 	vc->db = NULL;
-	r_vc_use (vc, RVC_TYPE_GIT);
+	if (!r_vc_use (vc, RVC_TYPE_GIT)) {
+		r_vc_free (vc);
+		return NULL;
+	}
 	return vc;
 }
 
