@@ -566,7 +566,7 @@ static inline int l_num_to_bytes(ut64 n, bool sign) {
 		test = -test;
 		flip = true;
 	}
-	st64 last;
+	st64 last = 0;
 	while (test) {
 		last = test;
 		test = test >> 8;
