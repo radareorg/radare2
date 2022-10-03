@@ -8,6 +8,7 @@ r_arch_sources = [
   'archvalue.c',
   'p/arch_null.c',
   'p/arch_i4004.c',
+  'p/arch_amd29k.c',
 ]
 
 r_arch = library('r_arch', r_arch_sources,
