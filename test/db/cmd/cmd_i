@@ -4346,6 +4346,7 @@ EOF
 EXPECT_ERR=<<EOF
 DEBUG: RCore.cmd('=!')
 DEBUG: Dynamic tag 16 not handled
+DEBUG: bin object have no information
 ERROR: Cannot determine entrypoint, using 0x00000d28
 DEBUG: RCore.cmd('Cd 4[48] @ 0x12000')
 DEBUG: (cannot find opening [) in (48])

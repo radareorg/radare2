@@ -724,6 +724,7 @@ R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
 	}
 	if (obj) {
 		if (!obj->info) {
+			R_LOG_DEBUG ("bin object have no information");
 			return false;
 		}
 		if (!obj->info->lang) {
@@ -939,7 +940,7 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
 		if (bin->verbose) {
-			R_LOG_WARN ("r_bin_file_hash: file exceeds bin.hashlimit");
+			R_LOG_WARN ("file size exceeds bin.hashlimit");
 		}
 		return NULL;
 	}

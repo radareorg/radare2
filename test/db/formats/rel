@@ -43,6 +43,7 @@ DEBUG: imp 4: 2 relocs
 DEBUG: imp 5: 2 relocs
 DEBUG: imp 6: 7 relocs
 DEBUG: imp 7: 16 relocs
+DEBUG: bin object have no information
 ERROR: Imports from other REL (00000002) not yet implemented
 ERROR: Imports from other REL (00000003) not yet implemented
 ERROR: Imports from other REL (00000004) not yet implemented

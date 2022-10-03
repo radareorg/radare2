@@ -23,10 +23,10 @@ static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int co
 static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 
 
-static R_TH_LOCAL void *origread = NULL;
-static R_TH_LOCAL int origdesc = 0;
-static R_TH_LOCAL RIOPlugin *origplugin = NULL;
-static R_TH_LOCAL RIOPlugin *heapplugin = NULL;
+static R_TH_LOCAL void *Gorigread = NULL;
+static R_TH_LOCAL int Gorigdesc = 0;
+static R_TH_LOCAL RIOPlugin *Gorigplugin = NULL;
+static R_TH_LOCAL RIOPlugin *Gheapplugin = NULL;
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
@@ -69,15 +69,15 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	if (origplugin) {
+	if (Gorigplugin) {
 		RIOBind *iob = &bf->rbin->iob;
 		RIO *io = iob->io;
-		RIODesc *desc = iob->desc_get (io, origdesc);
+		RIODesc *desc = iob->desc_get (io, Gorigdesc);
 		if (desc) {
-			desc->plugin = origplugin;
+			desc->plugin = Gorigplugin;
 		}
-		origplugin = NULL;
-		R_FREE (heapplugin);
+		Gorigplugin = NULL;
+		R_FREE (Gheapplugin);
 	}
 	MACH0_(mach0_free) (bf->o->bin_obj);
 }
@@ -747,17 +747,21 @@ beach:
 static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io) {
 	r_return_if_fail (io && io->desc && io->desc->plugin);
 	RIOPlugin *plugin = R_NEW0 (RIOPlugin);
-	if (heapplugin) {
+	if (Gheapplugin) {
 		R_LOG_WARN ("Here be dragons");
+		return;
+	} else {
+		Gorigplugin = io->desc->plugin;
+		Gorigdesc = io->desc->fd;
 	}
-	origplugin = io->desc->plugin;
-	origdesc = io->desc->fd;
-	memcpy (plugin, origplugin, sizeof (RIOPlugin));
+	memcpy (plugin, Gorigplugin, sizeof (RIOPlugin));
 	io->desc->plugin = plugin;
 	obj->original_io_read = plugin->read;
-	origread = plugin->read;
+	if (Gorigread == NULL) {
+		Gorigread = plugin->read;
+	}
 	plugin->read = &rebasing_and_stripping_io_read;
-	heapplugin = plugin;
+	Gheapplugin = plugin;
 }
 
 static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
