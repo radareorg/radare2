@@ -37,10 +37,10 @@ static csh init_capstone (RAnal *a) {
 		}
 	}
 	if (a->cs_handle) {
-		if (a->config->syntax == R_ARCH_SYNTAX_ATT) {
+		if (a->config->syntax == R_ARCH_ASM_SYNTAX_ATT) {
 			cs_option (a->cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
 #if CS_API_MAJOR >= 4
-		} else if (a->config->syntax == R_ARCH_SYNTAX_MASM) {
+		} else if (a->config->syntax == R_ARCH_ASM_SYNTAX_MASM) {
 			cs_option (a->cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
 #endif
 		} else {

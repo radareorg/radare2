@@ -568,7 +568,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 	op->size = inst.size;
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		if (anal->config->syntax == R_ARCH_SYNTAX_ATT) {
+		if (anal->config->syntax == R_ARCH_ASM_SYNTAX_ATT) {
 			op->mnemonic = r_str_replace (inst.text, "[r", "[%r", -1);
 			op->mnemonic = r_str_replace (op->mnemonic, " r", " %r", -1);
 			op->mnemonic = r_str_replace (op->mnemonic, "(r", "(%r", -1);

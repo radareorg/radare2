@@ -817,7 +817,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		return -1;
 	}
 
-	if (anal->config->syntax == R_ARCH_SYNTAX_REGNUM) {
+	if (anal->config->syntax == R_ARCH_ASM_SYNTAX_REGNUM) {
 		cs_option (hndl, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
 	} else {
 		cs_option (hndl, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);

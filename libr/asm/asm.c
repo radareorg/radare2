@@ -473,11 +473,11 @@ R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 R_API bool r_asm_set_syntax(RAsm *a, int syntax) {
 	// TODO: move into r_arch ?
 	switch (syntax) {
-	case R_ARCH_SYNTAX_REGNUM:
-	case R_ARCH_SYNTAX_INTEL:
-	case R_ARCH_SYNTAX_MASM:
-	case R_ARCH_SYNTAX_ATT:
-	case R_ARCH_SYNTAX_JZ:
+	case R_ARCH_ASM_SYNTAX_REGNUM:
+	case R_ARCH_ASM_SYNTAX_INTEL:
+	case R_ARCH_ASM_SYNTAX_MASM:
+	case R_ARCH_ASM_SYNTAX_ATT:
+	case R_ARCH_ASM_SYNTAX_JZ:
 		a->config->syntax = syntax;
 		return true;
 	default:
@@ -992,9 +992,9 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				ptr = ptr_start;
 				r_str_trim (ptr);
 				if (!strncmp (ptr, ".intel_syntax", 13)) {
-					a->config->syntax = R_ARCH_SYNTAX_INTEL;
+					a->config->syntax = R_ARCH_ASM_SYNTAX_INTEL;
 				} else if (!strncmp (ptr, ".att_syntax", 11)) {
-					a->config->syntax = R_ARCH_SYNTAX_ATT;
+					a->config->syntax = R_ARCH_ASM_SYNTAX_ATT;
 				} else if (!strncmp (ptr, ".endian", 7)) {
 					r_asm_set_big_endian (a, atoi (ptr + 7));
 				} else if (!strncmp (ptr, ".big_endian", 7 + 4)) {
@@ -1213,19 +1213,19 @@ R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l) {
 R_API int r_asm_syntax_from_string(const char *name) {
 	r_return_val_if_fail (name, -1);
 	if (!strcmp (name, "regnum")) {
-		return R_ARCH_SYNTAX_REGNUM;
+		return R_ARCH_ASM_SYNTAX_REGNUM;
 	}
 	if (!strcmp (name, "jz")) {
-		return R_ARCH_SYNTAX_JZ;
+		return R_ARCH_ASM_SYNTAX_JZ;
 	}
 	if (!strcmp (name, "intel")) {
-		return R_ARCH_SYNTAX_INTEL;
+		return R_ARCH_ASM_SYNTAX_INTEL;
 	}
 	if (!strcmp (name, "masm")) {
-		return R_ARCH_SYNTAX_MASM;
+		return R_ARCH_ASM_SYNTAX_MASM;
 	}
 	if (!strcmp (name, "att")) {
-		return R_ARCH_SYNTAX_ATT;
+		return R_ARCH_ASM_SYNTAX_ATT;
 	}
 	return -1;
 }

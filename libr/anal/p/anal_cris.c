@@ -87,7 +87,7 @@ static char *disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		mode = 2;
 	}
 	(void)cris_parse_disassembler_options (&disasm_obj, mode);
-	if (a->config->syntax == R_ARCH_SYNTAX_ATT) {
+	if (a->config->syntax == R_ARCH_ASM_SYNTAX_ATT) {
 		switch (mode) {
 		case 0:
 			op->size = print_insn_cris_with_register_prefix ((bfd_vma)addr, &disasm_obj);
