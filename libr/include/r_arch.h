@@ -420,6 +420,7 @@ R_API const char *r_arch_cond_to_string(RArchCond cc);
 
 extern RArchPlugin r_arch_plugin_null;
 extern RArchPlugin r_arch_plugin_i4004;
+extern RArchPlugin r_arch_plugin_amd29k;
 
 #ifdef __cplusplus
 }
