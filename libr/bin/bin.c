@@ -285,11 +285,15 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 			return false;
 		}
 	}
+	// r_list_append (bin->binfiles, bf); // uaf
+	bool res = r_id_storage_set (bin->ids, bin->cur, bf->id);
 	if (!r_bin_file_set_cur_binfile (bin, bf)) {
+		R_LOG_WARN ("Cannot set the current binfile");
 		return false;
 	}
-	r_id_storage_set (bin->ids, bin->cur, bf->id);
-	return true;
+	// r_ref (bf);
+	bin->cur = bf;
+	return res;
 }
 
 R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
@@ -337,7 +341,6 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 		r_buf_free (buf);
 		buf = slice;
 	}
-
 	opt->filename = fname;
 	bool res = r_bin_open_buf (bin, buf, opt);
 	r_buf_free (buf);

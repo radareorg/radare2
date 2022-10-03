@@ -212,6 +212,20 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
+static bool isfile(const char *filename) {
+	if (R_STR_ISEMPTY (filename)) {
+		return false;
+	}
+	// check for ./ or /
+	if (r_file_exists (filename)) {
+		return true;
+	}
+	if (r_str_startswith (filename, "./") || r_str_startswith (filename, "/")) {
+		return true;
+	}
+	return false;
+}
+
 // HONOR bin.at
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char *value = NULL;
@@ -254,7 +268,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		if (input[2] && input[3]) {
 			char *arg = strdup (input + 3);
 			char *filename = strchr (arg, ' ');
-			if (filename && *filename && (filename[1] == '/' || filename[1] == '.')) {
+			if (filename && isfile (filename + 1)) {
 				int saved_fd = r_io_fd_get_current (core->io);
 				RIODesc *desc = r_io_open (core->io, filename + 1, R_PERM_RX, 0);
 				if (desc) {
@@ -263,13 +277,14 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					RBinFileOptions opt;
 					r_bin_file_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
-					r_io_desc_close (desc);
+					r_core_bin_load (core, NULL, UT64_MAX);
 					r_core_cmd0 (core, ".is*");
+					r_io_desc_close (desc);
 					r_io_use_fd (core->io, saved_fd);
 				} else {
 					R_LOG_ERROR ("Cannot open '%s'", r_str_trim_head_ro (filename + 1));
 				}
-			} else if (filename && *filename) {
+			} else if (R_STR_ISNOTEMPTY (filename)) {
 				ut64 baddr = r_num_math (core->num, filename);
 				ut64 addr = r_num_math (core->num, input + 2); // mapaddr
 				int fd = r_io_fd_get_current (core->io);
@@ -360,7 +375,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		r_core_bin_rebase (core, r_num_math (core->num, input + 3));
 		r_core_cmd0 (core, ".is*");
 		break;
-	case 'f':
+	case 'f': // "obf"
 		if (input[2] == ' ') {
 			r_core_cmdf (core, "oba 0 %s", input + 3);
 		} else {

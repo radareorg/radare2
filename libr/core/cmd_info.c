@@ -352,7 +352,7 @@ static int bin_is_executable(RBinObject *obj) {
 static void cmd_info_bin(RCore *core, int va, PJ *pj, int mode) {
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	int array = 0;
-	if (core->io->desc) {
+	if (core->io->desc || obj) {
 		if (mode & R_MODE_JSON) {
 			if (!(mode & R_MODE_ARRAY)) {
 				pj_o (pj);
