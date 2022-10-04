@@ -446,7 +446,14 @@ R_API ut8 *r_buf_read_all(RBuffer *b, int *blen) {
 	}
 	ut8 *buf = malloc (buflen + 1);
 	buf_seek (b, 0, R_BUF_SET);
-	buf_read (b, buf, buflen);
+	st64 newlen = buf_read (b, buf, buflen);
+	if (newlen != buflen) {
+		if (newlen > 0) {
+			buflen = newlen;
+		} else {
+			R_LOG_WARN ("buf_read_all fails");
+		}
+	}
 	if (blen) {
 		*blen = buflen;
 	}
@@ -558,9 +565,12 @@ R_API st64 r_buf_fread(RBuffer *b, ut8 *buf, const char *fmt, int n) {
 	r_return_val_if_fail (b && buf && fmt, -1);
 	// XXX: we assume the caller knows what he's doing
 	RBuffer *dst = r_buf_new_with_pointers (buf, UT64_MAX, false);
-	st64 res = buf_format (dst, b, fmt, n);
-	r_buf_free (dst);
-	return res;
+	if (dst) {
+		st64 res = buf_format (dst, b, fmt, n);
+		r_buf_free (dst);
+		return res;
+	}
+	return -1;
 }
 
 R_API st64 r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
@@ -604,7 +614,7 @@ R_API st64 r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len) {
 		return r;
 	}
 	r = r_buf_read (b, buf, len);
-	r_buf_seek (b, o_addr, R_BUF_SET);
+	r_buf_seek (b, (ut64)o_addr, R_BUF_SET);
 	return r;
 }
 
@@ -629,7 +639,6 @@ R_API void r_buf_fini(RBuffer *b) {
 		b->refctr--;
 		return;
 	}
-
 	// free the whole_buf only if it was initially allocated by the buf types
 	if (b->methods->get_whole_buf) {
 		if (b->methods->free_whole_buf) {
