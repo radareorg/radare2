@@ -209,7 +209,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	ut8 offs[sizeof (mach0_ut)] = {0};
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("uncorrect RBinFile pointer\n");
+		R_LOG_WARN ("incorrect RBinFile pointer");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -390,7 +390,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	ut8 sop[sizeof (struct MACH0_(SObjcProperty))] = {0};
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("uncorrect RBinFile pointer\n");
+		R_LOG_WARN ("incorrect RBinFile pointer");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -537,7 +537,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 
 	RBinSymbol *method = NULL;
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("incorrect RBinFile pointer\n");
+		R_LOG_WARN ("incorrect RBinFile pointer");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -741,7 +741,7 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass, objc
 	ut8 sptr[sizeof (mach0_ut)] = {0};
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("get_protocol_list_t: Invalid RBinFile pointer\n");
+		R_LOG_WARN ("get_protocol_list_t: Invalid RBinFile pointer");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -923,23 +923,21 @@ static char *demangle_classname(const char *s) {
 }
 
 static char *get_class_name(mach0_ut p, RBinFile *bf) {
-	struct MACH0_(obj_t) *bin;
 	ut32 offset, left;
 	ut64 r;
 	int len;
-	bool bigendian;
 	ut8 sc[sizeof (mach0_ut)] = {0};
 	const ut32 ptr_size = sizeof (mach0_ut);
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("Invalid RBinFile pointer\n");
+		R_LOG_WARN ("Invalid RBinFile pointer");
 		return NULL;
 	}
 	if (!p) {
 		return NULL;
 	}
-	bigendian = bf->o->info->big_endian;
-	bin = (struct MACH0_(obj_t) *)bf->o->bin_obj;
+	bool bigendian = bf->o->info->big_endian;
+	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->o->bin_obj;
 
 	if (!(r = va2pa (p, &offset, &left, bf))) {
 		return NULL;
@@ -1550,7 +1548,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs, objc_cac
 		mach0_ut p;
 
 		if ((s_size - i) < ptr_size) {
-			eprintf ("Chopped catlist data\n");
+			R_LOG_WARN ("Chopped catlist data");
 			break;
 		}
 		if (!(klass = R_NEW0 (RBinClass))) {
