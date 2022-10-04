@@ -116,6 +116,7 @@ RUN
 
 NAME=anal classes arm64e
 FILE=bins/mach0/TestRTTI-arm64e
+ARGS=-e bin.cache=true
 CMDS=<<EOF
 avrr
 acl

@@ -11,22 +11,16 @@ typedef struct {
 	ut8 *buf;
 	int count;
 	ut64 off;
+	RIO *io;
+	struct MACH0_(obj_t) *obj;
 } RFixupRebaseContext;
-
-// wip settings
 
 extern RBinWrite r_bin_write_mach0;
 
+static bool rebase_buffer_callback2(void * context, RFixupEventDetails * event_details);
 static RBinInfo *info(RBinFile *bf);
-static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io);
-static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
-static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
+static RBuffer *swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io);
 
-
-static R_TH_LOCAL void *Gorigread = NULL;
-static R_TH_LOCAL int Gorigdesc = 0;
-static R_TH_LOCAL RIOPlugin *Gorigplugin = NULL;
-static R_TH_LOCAL RIOPlugin *Gheapplugin = NULL;
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
@@ -59,7 +53,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	if (res) {
 		if (res->chained_starts) {
 			RIO *io = bf->rbin->iob.io;
-			swizzle_io_read (res, io);
+			bf->buf = swizzle_io_read (res, io);
 		}
 		sdb_ns_set (sdb, "info", res->kv);
 		*bin_obj = res;
@@ -69,16 +63,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	if (Gorigplugin) {
-		RIOBind *iob = &bf->rbin->iob;
-		RIO *io = iob->io;
-		RIODesc *desc = iob->desc_get (io, Gorigdesc);
-		if (desc) {
-			desc->plugin = Gorigplugin;
-		}
-		Gorigplugin = NULL;
-		R_FREE (Gheapplugin);
-	}
 	MACH0_(mach0_free) (bf->o->bin_obj);
 }
 
@@ -623,7 +607,7 @@ static RList* patch_relocs(RBin *b) {
 	RList *ret = NULL;
 	RIO *io = NULL;
 	RBinObject *obj = NULL;
-	struct MACH0_(obj_t) *bin = NULL;
+	struct MACH0_(obj_t) *mo = NULL;
 	RIOMap *g = NULL;
 	HtUU *relocs_by_sym = NULL;
 	RIODesc *gotr2desc = NULL;
@@ -638,9 +622,9 @@ static RList* patch_relocs(RBin *b) {
 	if (!obj) {
 		return NULL;
 	}
-	bin = obj->bin_obj;
+	mo = obj->bin_obj;
 
-	RSkipList * all_relocs = MACH0_(get_relocs)(bin);
+	RSkipList * all_relocs = MACH0_(get_relocs)(mo);
 	if (!all_relocs) {
 		return NULL;
 	}
@@ -649,12 +633,24 @@ static RList* patch_relocs(RBin *b) {
 		goto beach;
 	}
 	RSkipListNode *it;
-	struct reloc_t * reloc;
+	struct reloc_t *reloc;
 	r_skiplist_foreach (all_relocs, it, reloc) {
 		if (!reloc->external) {
 			continue;
 		}
 		r_list_append (ext_relocs, reloc);
+	}
+	RBinReloc *r;
+	RListIter *iter2;
+
+	r_list_foreach (mo->reloc_fixups, iter2, r) {
+		ut64 paddr = r->paddr + mo->baddr;
+		ut8 buf[8], obuf[8];
+		r_write_ble64 (buf, r->vaddr, false);
+		r_io_read_at (io, paddr, obuf, 8);
+		if (memcmp (buf, obuf, 8)) {
+			r_io_write_at (io, paddr, buf, 8);
+		}
 	}
 	ut64 num_ext_relocs = r_list_length (ext_relocs);
 	if (!num_ext_relocs) {
@@ -662,7 +658,7 @@ static RList* patch_relocs(RBin *b) {
 	}
 
 	if (!io->cached) {
-		eprintf ("Warning: run r2 with -e bin.cache=true to fix relocations in disassembly\n");
+		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
 		goto beach;
 	}
 
@@ -713,7 +709,7 @@ static RList* patch_relocs(RBin *b) {
 			ht_uu_insert (relocs_by_sym, reloc->ord, vaddr);
 			vaddr += cdsz;
 		}
-		if (!_patch_reloc (bin, &b->iob, reloc, sym_addr)) {
+		if (!_patch_reloc (mo, &b->iob, reloc, sym_addr)) {
 			continue;
 		}
 		RBinReloc *ptr = NULL;
@@ -722,8 +718,8 @@ static RList* patch_relocs(RBin *b) {
 		}
 		ptr->type = reloc->type;
 		ptr->additive = 0;
-		RBinImport *imp;
-		if (!(imp = import_from_name (b, (char*) reloc->name, bin->imports_by_name))) {
+		RBinImport *imp = import_from_name (b, (char*) reloc->name, mo->imports_by_name);
+		if (!imp) {
 			R_FREE (ptr);
 			goto beach;
 		}
@@ -748,97 +744,59 @@ beach:
 	return NULL;
 }
 
-static void swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io) {
-	r_return_if_fail (io && io->desc && io->desc->plugin);
-	RIOPlugin *plugin = R_NEW0 (RIOPlugin);
-	if (Gheapplugin) {
-		R_LOG_WARN ("Here be dragons");
-		return;
-	} else {
-		Gorigplugin = io->desc->plugin;
-		Gorigdesc = io->desc->fd;
-	}
-	memcpy (plugin, Gorigplugin, sizeof (RIOPlugin));
-	io->desc->plugin = plugin;
-	obj->original_io_read = plugin->read;
-	if (Gorigread == NULL) {
-		Gorigread = plugin->read;
-	}
-	plugin->read = &rebasing_and_stripping_io_read;
-	Gheapplugin = plugin;
+static RBuffer *swizzle_io_read(struct MACH0_(obj_t) *obj, RIO *io) {
+	r_return_val_if_fail (io && io->desc && io->desc->plugin, NULL);
+	RFixupRebaseContext ctx = {0};
+	RBuffer *nb = r_buf_new_with_buf (obj->b);
+	RBuffer *ob = obj->b;
+	obj->b = nb;
+	ut64 count = r_buf_size (obj->b);
+	ctx.io = io;
+	ctx.obj = obj;
+	ut64 off = 0;
+	ctx.off = off;
+	MACH0_(iterate_chained_fixups) (obj, off, off + count, R_FIXUP_EVENT_MASK_ALL, &rebase_buffer_callback2, &ctx);
+	obj->b = ob;
+	return nb;
 }
 
-static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	r_return_val_if_fail (io, -1);
-	RCore *core = (RCore*) io->coreb.core;
-	if (!core || !core->bin || !core->bin->binfiles) {
-		return -1;
+static void add_fixup(RList *list, ut64 addr, ut64 value) {
+	RBinReloc *r = R_NEW0 (RBinReloc);
+	if (r) {
+		r->vaddr = value;
+		r->paddr = addr;
+		r_list_append (list, r);
 	}
-	struct MACH0_(obj_t) *obj = NULL;
-	RListIter *iter;
-	RBinFile *bf;
-	r_list_foreach (core->bin->binfiles, iter, bf) {
-		if (bf->fd == fd->fd) {
-			/* The first field of MACH0_(obj_t) is
-			 * the mach_header, whose first field is
-			 * the MH magic.
-			 * This code assumes that bin objects are
-			 * at least 4 bytes long.
-			 */
-			if (bf->o) {
-				ut32 *magic = bf->o->bin_obj;
-				if (magic && (*magic == MH_MAGIC ||
-							*magic == MH_CIGAM ||
-							*magic == MH_MAGIC_64 ||
-							*magic == MH_CIGAM_64)) {
-					obj = bf->o->bin_obj;
-				}
-			}
-			break;
-		}
-	}
-	if (!obj || !obj->original_io_read) {
-		if (fd->plugin->read == &rebasing_and_stripping_io_read) {
-			return -1;
-		}
-		return fd->plugin->read (io, fd, buf, count);
-	}
-	if (!obj->original_io_read) {
-		return -1;
-	}
-	if (obj->rebasing_buffer) {
-		return obj->original_io_read (io, fd, buf, count);
-	}
-	if (count > obj->internal_buffer_size) {
-		R_FREE (obj->internal_buffer);
-		obj->internal_buffer_size = R_MAX (count, 8);
-		obj->internal_buffer = (ut8 *) calloc (1, obj->internal_buffer_size);
-		if (!obj->internal_buffer) {
-			obj->internal_buffer_size = 0;
-			return -1;
-		}
-	}
-	ut64 io_off = io->off;
-	int result = obj->original_io_read (io, fd, obj->internal_buffer, count);
-	if (result == count) {
-		rebase_buffer (obj, io_off - bf->o->boffset, fd, obj->internal_buffer, obj->internal_buffer_size);
-		memcpy (buf, obj->internal_buffer, result);
-	}
-	return result;
 }
-
-static bool rebase_buffer_callback(void * context, RFixupEventDetails * event_details) {
+static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_details) {
 	RFixupRebaseContext *ctx = context;
-
 	ut64 in_buf = event_details->offset - ctx->off;
+	RList *rflist = ctx->obj->reloc_fixups;
+
+	if (!rflist) {
+		rflist = r_list_newf (free);
+		ctx->obj->reloc_fixups = rflist;
+	}
 	switch (event_details->type) {
 	case R_FIXUP_EVENT_BIND:
 	case R_FIXUP_EVENT_BIND_AUTH:
-		r_write_le64 (&ctx->buf[in_buf], 0);
+		r_buf_write_at (ctx->obj->b, in_buf, (const ut8*)"\x00\x00\x00\x00\x00\x00\x00", 8);
+		ut8 data[8] = {0};
+		r_buf_read_at (ctx->obj->b, in_buf, data, 8);
+		add_fixup (rflist, in_buf, 0);
+		if (data[0]) {
+			eprintf ("DATA0 write has failed\n");
+		}
 		break;
 	case R_FIXUP_EVENT_REBASE:
 	case R_FIXUP_EVENT_REBASE_AUTH:
-		r_write_le64 (&ctx->buf[in_buf], ((RFixupRebaseEventDetails *) event_details)->ptr_value);
+		{
+			ut8 data[8] = {0};
+			ut64 v = ((RFixupRebaseEventDetails *) event_details)->ptr_value;
+			add_fixup (rflist, in_buf, v);
+			memcpy (&data, &v, sizeof (data));
+			r_buf_write_at (ctx->obj->b, in_buf, data, 8);
+		}
 		break;
 	default:
 		R_LOG_ERROR ("Unexpected event while rebasing buffer");
@@ -846,22 +804,6 @@ static bool rebase_buffer_callback(void * context, RFixupEventDetails * event_de
 	}
 
 	return true;
-}
-
-static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 *buf, int count) {
-	if (obj->rebasing_buffer) {
-		return;
-	}
-	obj->rebasing_buffer = true;
-
-	RFixupRebaseContext ctx;
-
-	ctx.buf = buf;
-	ctx.count = count;
-	ctx.off = off;
-
-	MACH0_(iterate_chained_fixups) (obj, off, off + count, R_FIXUP_EVENT_MASK_ALL, &rebase_buffer_callback, &ctx);
-	obj->rebasing_buffer = false;
 }
 
 static RList *classes(RBinFile *bf) {
