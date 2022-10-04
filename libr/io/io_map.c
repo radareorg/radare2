@@ -20,7 +20,6 @@ static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64
 	}
 	map->fd = fd;
 	map->delta = delta;
-	map->ts = io->mts++;
 	// RIOMap describes an interval of addresses
 	// r_io_map_from (map) -> r_io_map_to (map)
 	map->itv = (RInterval){ addr, size };
@@ -480,5 +479,5 @@ R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref) {
 	r_return_val_if_fail (io && ref, NULL);
 	RIOMap *map = r_io_map_get (io, ref->id);
 	// trigger cleanup if ts don't match?
-	return (map && map->ts == ref->ts) ? map : NULL;
+	return map;
 }

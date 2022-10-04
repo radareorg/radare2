@@ -117,7 +117,6 @@ typedef struct r_io_t {
 	ut32 cached; // uses R_PERM_RWX // wtf cache for exec?
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	ut32 p_cache; // uses 1, 2, 4.. probably R_PERM_RWX :D
-	ut64 mts;	// map "timestamps", this sucks somehow
 	RIDStorage *files;	// RIODescs accessible by their fd
 	RIDStorage *maps;	// RIOMaps accessible by their id
 	RIDStorage *banks;	// RIOBanks accessible by their id
@@ -212,7 +211,6 @@ typedef struct r_io_map_t {
 	int fd;
 	int perm;
 	ut32 id;
-	ut64 ts;
 	RInterval itv;
 	union {
 		ut64 delta; // paddr = vaddr - itv.addr + delta
@@ -223,7 +221,6 @@ typedef struct r_io_map_t {
 
 typedef struct r_io_map_ref_t {
 	ut32 id;
-	ut64 ts;
 } RIOMapRef;
 
 typedef struct r_io_submap_t {
