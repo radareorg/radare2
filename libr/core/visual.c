@@ -231,7 +231,7 @@ static const char *__core_visual_print_command(RCore *core) {
 			return tab->name + 1;
 		}
 	}
-	if (r_config_get_i (core->config, "scr.dumpcols")) {
+	if (r_config_get_b (core->config, "scr.dumpcols")) {
 		free (core->stkcmd);
 		core->stkcmd = r_str_new (stackPrintCommand (core));
 		return printfmtColumns[PIDX];

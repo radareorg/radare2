@@ -79,7 +79,7 @@ static void visual_tabset(RCore *core, RCoreVisualTab *tab) {
 	r_config_set_i (core->config, "asm.indent", tab->asm_indent);
 	r_config_set_i (core->config, "asm.cmt.col", tab->asm_cmt_col);
 	r_config_set_i (core->config, "hex.cols", tab->cols);
-	r_config_set_i (core->config, "scr.dumpcols", tab->dumpCols);
+	r_config_set_b (core->config, "scr.dumpcols", tab->dumpCols);
 	printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
 	printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
 	printfmtSingle[3] = print4Formats[R_ABS(current4format) % PRINT_4_FORMATS];
@@ -100,7 +100,7 @@ static void visual_tabget(RCore *core, RCoreVisualTab *tab) {
 	tab->cur = core->print->cur;
 	tab->ocur = core->print->ocur;
 	tab->cols = r_config_get_i (core->config, "hex.cols");
-	tab->dumpCols = r_config_get_i (core->config, "scr.dumpcols");
+	tab->dumpCols = r_config_get_b (core->config, "scr.dumpcols");
 	tab->disMode = disMode;
 	tab->hexMode = hexMode;
 	tab->printMode = printMode;
