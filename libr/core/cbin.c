@@ -1678,7 +1678,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 
 	char flagname[R_FLAG_NAME_SIZE];
 	char *reloc_name = construct_reloc_name (reloc, NULL);
-	if (!reloc_name || !*reloc_name) {
+	if (R_STR_ISEMPTY (reloc_name)) {
 		free (reloc_name);
 		return;
 	}

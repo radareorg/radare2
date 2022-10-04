@@ -610,7 +610,11 @@ static bool _patch_reloc(struct MACH0_(obj_t) *bin, RIOBind *iob, struct reloc_t
 
 	ut8 buf[8];
 	r_write_ble (buf, val, false, reloc->size * 8);
-	iob->write_at (iob->io, reloc->addr, buf, reloc->size);
+	if (reloc->size > 0) {
+		iob->write_at (iob->io, reloc->addr, buf, reloc->size);
+	} else {
+		R_LOG_WARN ("invalid reloc size %d at 0x%08"PFMT64x, reloc->size, reloc->addr);
+	}
 
 	return true;
 }
