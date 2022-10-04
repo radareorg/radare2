@@ -2,15 +2,15 @@
 
 #include <r_io.h>
 
-R_API RIOSubMap *r_io_submap_new(RIO *io, RIOMapRef *mapref) {
-	r_return_val_if_fail (io && mapref, NULL);
-	RIOMap *map = r_io_map_get_by_ref (io, mapref);
+R_API RIOSubMap *r_io_submap_new(RIO *io, ut32 mapref_id) {
+	r_return_val_if_fail (io, NULL);
+	RIOMap *map = r_io_map_get_by_ref (io, mapref_id);
 	if (!map) {
 		return NULL;
 	}
 	RIOSubMap *sm = R_NEW (RIOSubMap);
 	if (sm) {
-		sm->mapref = *mapref;
+		sm->map_id = mapref_id;
 		sm->itv = map->itv;
 	}
 	return sm;

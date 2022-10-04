@@ -265,9 +265,9 @@ R_API RIOMap *r_io_map_get_paddr(RIO* io, ut64 paddr) {
 	RIOBank *bank = r_io_bank_get (io, io->bank);
 	if (bank) {
 		RListIter *iter;
-		RIOMapRef *mapref;
+		ut32 *mapref;
 		r_list_foreach_prev (bank->maprefs, iter, mapref) {
-			RIOMap *map = r_io_map_get_by_ref (io, mapref);
+			RIOMap *map = r_io_map_get_by_ref (io, (ut32)(size_t)mapref);
 			if (map && map->delta <= paddr && paddr < map->delta + r_io_map_size (map)) {
 				return map;
 			}
@@ -414,9 +414,10 @@ R_API RList* r_io_map_get_by_fd(RIO* io, int fd) {
 		return NULL;
 	}
 	RListIter *iter;
-	RIOMapRef *mapref;
-	r_list_foreach_prev (bank->maprefs, iter, mapref) {
-		RIOMap *map = (RIOMap *)r_id_storage_get (io->maps, mapref->id);
+	ut32 *maprefid;
+	r_list_foreach_prev (bank->maprefs, iter, maprefid) {
+		ut32 refmapid = (ut32)(size_t)maprefid;
+		RIOMap *map = (RIOMap *)r_id_storage_get (io->maps, refmapid);
 		if (map->fd == fd) {
 			r_list_append (map_list, map);
 		}
@@ -475,9 +476,9 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	return true;
 }
 
-R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref) {
-	r_return_val_if_fail (io && ref, NULL);
-	RIOMap *map = r_io_map_get (io, ref->id);
+R_API RIOMap *r_io_map_get_by_ref(RIO *io, ut32 refmapid) {
+	r_return_val_if_fail (io, NULL);
+	RIOMap *map = r_io_map_get (io, refmapid);
 	// trigger cleanup if ts don't match?
 	return map;
 }

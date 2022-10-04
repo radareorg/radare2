@@ -472,10 +472,10 @@ static void map_list(RCore *core, int mode, RPrint *print, int fd) {
 		pj_free (pj);
 		return;
 	}
-	RIOMapRef *mapref;
+	ut32 *maprefid;
 	RListIter *iter;
-	r_list_foreach_prev (bank->maprefs, iter, mapref) {
-		RIOMap *map = r_io_map_get (io, mapref->id);
+	r_list_foreach_prev (bank->maprefs, iter, maprefid) {
+		RIOMap *map = r_io_map_get (io, (ut32)(size_t)maprefid);
 		if (fd >= 0 && map->fd != fd) {
 			continue;
 		}
@@ -759,10 +759,10 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 					RIOBank *bank = r_id_storage_get (core->io->banks, bank_id);
 					const char ch = core->io->bank == bank_id? '*': '-';
 					r_cons_printf ("%c %d %s [", ch, bank->id, bank->name);
-					RIOMapRef *mapref;
+					ut32 *maprefid;
 					RListIter *iter;
-					r_list_foreach (bank->maprefs, iter, mapref) {
-						r_cons_printf (" %d", mapref->id);
+					r_list_foreach (bank->maprefs, iter, maprefid) {
+						r_cons_printf (" %d", (ut32)(size_t)maprefid);
 					}
 					r_cons_printf (" ]\n");
 					// list all the associated maps
@@ -1138,9 +1138,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 			return;
 		}
 		RListIter *iter;
-		RIOMapRef *mapref;
-		r_list_foreach_prev (bank->maprefs, iter, mapref) {
-			RIOMap *map = r_io_map_get (core->io, mapref->id);
+		ut32 *maprefid;
+		r_list_foreach_prev (bank->maprefs, iter, maprefid) {
+			RIOMap *map = r_io_map_get (core->io, (ut32)(size_t)maprefid);
 			char temp[32];
 			snprintf (temp, sizeof (temp), "%d", map->fd);
 			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, temp);

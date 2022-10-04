@@ -219,12 +219,8 @@ typedef struct r_io_map_t {
 	char *name;
 } RIOMap;
 
-typedef struct r_io_map_ref_t {
-	ut32 id;
-} RIOMapRef;
-
 typedef struct r_io_submap_t {
-	RIOMapRef mapref;
+	ut32 map_id;
 	RInterval itv;
 } RIOSubMap;
 
@@ -340,7 +336,7 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut
 R_API RIOMap *r_io_reloc_map_add(RIO *io, int fd, int perm, RIORelocMap *rm, ut64 addr, ut64 size);
 R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 R_API RIOMap *r_io_map_get_at(RIO *io, ut64 vaddr); // returns the map at vaddr with the highest priority
-R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref);
+R_API RIOMap *r_io_map_get_by_ref(RIO *io, ut32 map_id);
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr);
 R_API RIOMap *r_io_map_get_paddr(RIO *io, ut64 paddr);		//returns the map at paddr with the highest priority
 R_API void r_io_map_reset(RIO* io);
@@ -366,7 +362,7 @@ R_API ut64 r_io_p2v(RIO *io, ut64 pa);
 R_API ut64 r_io_v2p(RIO *io, ut64 va);
 
 //io_submap.c
-R_API RIOSubMap *r_io_submap_new(RIO *io, RIOMapRef *mapref);
+R_API RIOSubMap *r_io_submap_new(RIO *io, ut32 map_id);
 R_API bool r_io_submap_set_from(RIOSubMap *sm, const ut64 from);
 R_API bool r_io_submap_set_to(RIOSubMap *sm, const ut64 to);
 

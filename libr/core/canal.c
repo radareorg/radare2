@@ -278,10 +278,10 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 			// sections
 			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 			if (bank) {
-				RIOMapRef *mapref;
+				ut32 *maprefid;
 				RListIter *iter;
-				r_list_foreach (bank->maprefs, iter, mapref) {
-					RIOMap *s = r_io_map_get (core->io, mapref->id);
+				r_list_foreach (bank->maprefs, iter, maprefid) {
+					RIOMap *s = r_io_map_get (core->io, (ut32)(size_t)maprefid);
 					if (addr >= s->itv.addr && addr < (s->itv.addr + s->itv.size)) {
 						// sections overlap, so we want to get the one with lower perms
 						_perm = (_perm != -1) ? R_MIN (_perm, s->perm) : s->perm;

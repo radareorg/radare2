@@ -11007,10 +11007,10 @@ static int compute_coverage(RCore *core) {
 	RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 	if (bank) {
 		r_list_foreach (core->anal->fcns, iter, fcn) {
-			RIOMapRef *mapref;
+			ut32 *maprefid;
 			RListIter *ator;
-			r_list_foreach (bank->maprefs, ator, mapref) {
-				RIOMap *map = r_io_map_get (core->io, mapref->id);
+			r_list_foreach (bank->maprefs, ator, maprefid) {
+				RIOMap *map = r_io_map_get (core->io, (ut32)(size_t)maprefid);
 				if (map->perm & R_PERM_X) {
 					ut64 section_end = r_io_map_end (map);
 					ut64 s = r_anal_function_realsize (fcn);
@@ -11028,10 +11028,10 @@ static int compute_code(RCore* core) {
 	int code = 0;
 	RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 	if (bank) {
-		RIOMapRef *mapref;
+		ut32 *maprefid;
 		RListIter *ator;
-		r_list_foreach (bank->maprefs, ator, mapref) {
-			RIOMap *map = r_io_map_get (core->io, mapref->id);
+		r_list_foreach (bank->maprefs, ator, maprefid) {
+			RIOMap *map = r_io_map_get (core->io, (ut32)(size_t)maprefid);
 			if (map->perm & R_PERM_X) {
 				code += r_io_map_size (map);
 			}

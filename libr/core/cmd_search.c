@@ -821,10 +821,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		ut64 end = UT64_MAX;
 		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 		RListIter *iter;
-		RIOMapRef *mapref;
+		ut32 *maprefid;
 		if (bank) {
-			r_list_foreach (bank->maprefs, iter, mapref) {
-				RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+			r_list_foreach (bank->maprefs, iter, maprefid) {
+				RIOMap *map = r_io_map_get_by_ref (core->io, (ut32)(size_t)maprefid);
 				if (!map) {
 					continue;
 				}
@@ -857,10 +857,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		// bool only = (bool)(size_t)strstr (mode, ".only");
 		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 		RListIter *iter;
-		RIOMapRef *mapref;
+		ut32 *maprefid;
 		if (bank) {
-			r_list_foreach (bank->maprefs, iter, mapref) {
-				RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+			r_list_foreach (bank->maprefs, iter, maprefid) {
+				RIOMap *map = r_io_map_get_by_ref (core->io, (ut32)(size_t)maprefid);
 				if (!map) {
 					continue;
 				}
@@ -914,10 +914,10 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 			if (from == UT64_MAX) {
 				int mask = 1;
 				RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
-				RIOMapRef *mapref;
+				ut32 *maprefid;
 				if (bank) {
-					r_list_foreach (bank->maprefs, iter, mapref) {
-						RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+					r_list_foreach (bank->maprefs, iter, maprefid) {
+						RIOMap *map = r_io_map_get_by_ref (core->io, (ut32)(size_t)maprefid);
 						if (!map) {
 							continue;
 						}

@@ -970,11 +970,11 @@ static RList* patch_relocs(RBin *b) {
 	}
 	RIOBank *bank = b->iob.bank_get (io, io->bank);
 	RListIter *iter;
-	RIOMapRef *mapref;
+	ut32 *maprefid;
 	RIOMap *g = NULL;
 	ut64 offset = 0;
-	r_list_foreach (bank->maprefs, iter, mapref) {
-		RIOMap *map = b->iob.map_get (io, mapref->id);
+	r_list_foreach (bank->maprefs, iter, maprefid) {
+		RIOMap *map = b->iob.map_get (io, (ut32)(size_t)maprefid);
 		if (r_io_map_from (map) > offset) {
 			offset = r_io_map_from (map);
 			g = map;
