@@ -53,7 +53,9 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	if (res) {
 		if (res->chained_starts) {
 			RIO *io = bf->rbin->iob.io;
-			bf->buf = swizzle_io_read (res, io);
+			RBuffer *nb = swizzle_io_read (res, io);
+			r_buf_free (bf->buf);
+			bf->buf = nb;
 		}
 		sdb_ns_set (sdb, "info", res->kv);
 		*bin_obj = res;
