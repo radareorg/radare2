@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2020 - n4x0r, soez, pancake */
+/* radare2 - LGPL - Copyright 2016-2022 - n4x0r, soez, pancake */
 
 #ifndef INCLUDE_HEAP_GLIBC_C
 #define INCLUDE_HEAP_GLIBC_C
@@ -229,10 +229,10 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 		if (!bank) {
 			return;
 		}
-		RIOMapRef *mapref;
+		ut32 *maprefid;
 		RListIter *iter;
-		r_list_foreach (bank->maprefs, iter, mapref) {
-			RIOMap *map = r_io_map_get (core->io, mapref->id);
+		r_list_foreach (bank->maprefs, iter, maprefid) {
+			RIOMap *map = r_io_map_get (core->io, (ut32)(size_t)maprefid);
 			if (map->name) {
 				if (strstr (map->name, "[heap]")) {
 					*brk_start = r_io_map_begin (map);
@@ -432,10 +432,10 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		if (!bank) {
 			return false;
 		}
-		RIOMapRef *mapref;
+		ut32 *maprefid;
 		RListIter *iter;
-		r_list_foreach (bank->maprefs, iter, mapref) {
-			RIOMap *map = r_io_map_get (core->io, mapref->id);
+		r_list_foreach (bank->maprefs, iter, maprefid) {
+			RIOMap *map = r_io_map_get (core->io, (ut32)(size_t)maprefid);
 			if (map->name && strstr (map->name, "arena")) {
 				libc_addr_sta = r_io_map_begin (map);
 				libc_addr_end = r_io_map_end (map);
