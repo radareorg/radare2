@@ -211,7 +211,7 @@ typedef struct r_core_visual_tab_t {
 	int current3format;
 	int current4format;
 	int current5format;
-	int dumpCols;
+	bool dumpCols;
 	char name[32]; // XXX leak because no  r_core_visual_tab_free
 	// TODO: cursor and such
 } RCoreVisualTab;
