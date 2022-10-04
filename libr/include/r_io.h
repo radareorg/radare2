@@ -204,7 +204,7 @@ typedef struct r_io_reloc_map_t {
 	void *data;
 	int (*read)(RIO *io, struct r_io_map_t *map, ut64 addr, ut8 *buf, int len);
 	int (*write)(RIO *io, struct r_io_map_t *map, ut64 addr, const ut8 *buf, int len);
-	bool (*relocate)(RIO *io, struct r_io_map_t *map, ut64 addr);
+	bool (*remap)(RIO *io, struct r_io_map_t *map, ut64 addr);
 	void (*free)(void *data);
 } RIORelocMap;
 

@@ -35,6 +35,16 @@ R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
 	const ut64 ofrom = r_io_map_from (map);
 	const ut64 oto = r_io_map_to (map);
 	ut64 size = r_io_map_size (map);
+	if (map->perm & R_PERM_RELOC) {
+		if (R_UNLIKELY (UT64_MAX - size + 1 < addr)) {
+			R_LOG_ERROR ("Mapsplit for reloc maps is not possible");
+			return false;
+		}
+		if (map->reloc_map->remap && !map->reloc_map->remap (io, map, addr)) {
+			R_LOG_ERROR ("Remapping reloc map %u failed", map->id);
+			return false;
+		}
+	}
 	r_io_map_set_begin (map, addr);
 	if (R_UNLIKELY (UT64_MAX - size + 1 < addr)) {
 		st64 saddr = (st64)addr;
@@ -419,6 +429,10 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	r_return_val_if_fail (io, false);
 	RIOMap *map;
 	if (!newsize || !(map = r_io_map_get (io, id))) {
+		return false;
+	}
+	if (map->perm & R_PERM_RELOC) {
+		R_LOG_WARN ("Resizing reloc maps is not possible");
 		return false;
 	}
 	ut64 addr = r_io_map_begin (map);
