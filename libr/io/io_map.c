@@ -86,6 +86,10 @@ R_API bool r_io_map_remap_fd(RIO *io, int fd, ut64 addr) {
 static bool _map_free_cb(void *user, void *data, ut32 id) {
 	RIOMap *map = (RIOMap *)data;
 	if (map) {
+		if ((map->perm & R_PERM_RELOC) && map->reloc_map && map->reloc_map->free) {
+			map->reloc_map->free (map->reloc_map->data);
+			// don't free map->reloc_map here, could be static
+		}
 		free (map->name);
 		free (map);
 	}
@@ -190,6 +194,9 @@ R_API RIOMap *r_io_reloc_map_add(RIO *io, int fd, int perm, RIORelocMap *rm, ut6
 		if (!r_io_bank_map_add_top (io, io->bank, map->id)) {
 			r_id_storage_delete (io->maps, map->id);
 			free (map);
+			if (rm->free) {
+				rm->free (rm->data);
+			}
 			return NULL;
 		}
 		map->reloc_map = rm;
