@@ -1582,6 +1582,29 @@ struct dyld_chained_ptr_arm64e_auth_bind24 {
 		auth : 1; // == 1
 };
 
+struct dyld_chained_ptr_32_rebase {
+	uint32_t target : 26,
+		next : 5,
+		bind : 1; // == 0
+};
+
+struct dyld_chained_ptr_32_bind {
+	uint32_t ordinal : 20,
+		addend : 6,
+		next : 5,
+		bind : 1; // == 1
+};
+
+struct dyld_chained_ptr_32_cache_rebase {
+	uint32_t target : 30,
+		next : 2;
+};
+
+struct dyld_chained_ptr_32_firmware_rebase {
+	uint32_t target : 26,
+		next : 6;
+};
+
 enum {
 	DYLD_CHAINED_IMPORT          = 1,
 	DYLD_CHAINED_IMPORT_ADDEND   = 2,
