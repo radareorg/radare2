@@ -146,6 +146,7 @@ R_API bool r_str_is_true(const char *s);
 R_API bool r_str_is_false(const char *s);
 R_API bool r_str_is_bool(const char *val);
 R_API const char *r_str_ansi_chrn(const char *str, size_t n);
+R_API size_t r_str_ansi_strip(char *str);
 R_API size_t r_str_ansi_len(const char *str);
 R_API size_t r_str_ansi_nlen(const char *str, size_t len);
 R_API int r_str_ansi_trim(char *str, int str_len, int n);
@@ -154,6 +155,7 @@ R_API char *r_str_ansi_crop(const char *str, unsigned int x, unsigned int y, uns
 R_API int r_str_word_count(const char *string);
 R_API size_t r_str_char_count(const char *string, char ch);
 R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen);
+R_API char *r_str_insert(char *src, int pos, const char *str);
 R_API int r_str_word_set0(char *str);
 R_API int r_str_word_set0_stack(char *str);
 R_API const char *r_str_word_get0(const char *str, int idx);

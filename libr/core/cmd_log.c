@@ -39,7 +39,7 @@ static const char *help_msg_L[] = {
 };
 
 static const char *help_msg_T[] = {
-	"Usage:", "T", "[-][ num|msg]",
+	"Usage:", "T", "[-][ num|msg] # text-log utility with timestamps",
 	"T", "", "list all Text log messages",
 	"T", " message", "add new log message",
 	"T", " 123", "list log from 123",
@@ -50,7 +50,6 @@ static const char *help_msg_T[] = {
 	"Tl", "", "get last log message id",
 	"Tj", "", "list in json format",
 	"Tm", " [idx]", "display log messages without index",
-	"Ts", "", "list files in current directory (see pwd, cd)",
 	"TT", "", "enter into the text log chat console",
 	"T=", "[.]", "pull logs from remote r2 instance specified by http.sync",
 	"T=&", "", "start background thread syncing with the remote server",

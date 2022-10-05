@@ -1958,6 +1958,30 @@ R_API size_t r_str_ansi_nlen(const char *str, size_t slen) {
 	return len; // len > 0 ? len: 1;
 }
 
+// remove ansi escape codes from string, decolorizing it
+R_API size_t r_str_ansi_strip(char *str) {
+	size_t i = 0;
+	while (str[i]) {
+		size_t chlen = __str_ansi_length (str + i);
+		if (chlen > 1) {
+			r_str_cpy (str + i + 1, str + i + chlen);
+		}
+		i++;
+	}
+	return i;
+}
+
+// insert a string into another string, supports ansi control chars
+R_API char *r_str_insert(R_OWN char *src, int pos, const char *str) {
+	char *a = r_str_ndup (src, pos);
+	char *b = strdup (src + pos + r_str_ansi_len (str));
+	char *r = r_str_newf ("%s%s%s", a, str, b);
+	free (a);
+	free (b);
+	free (src);
+	return r;
+}
+
 R_API size_t r_str_ansi_len(const char *str) {
 	return r_str_ansi_nlen (str, 0);
 }
