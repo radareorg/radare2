@@ -7,7 +7,7 @@
 
 #define R2PM_GITURL "https://github.com/radareorg/radare2-pm"
 
-static int r2pm_install(RList *targets, bool uninstall, bool clean, bool global);
+static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, bool global);
 
 static int r_main_r2pm_sh(int argc, const char **argv) {
 #if __WINDOWS__
@@ -246,7 +246,8 @@ static void striptrim(RList *list) {
 	}
 }
 
-static void r2pm_upgrade(void) {
+static void r2pm_upgrade(bool force) {
+#if __UNIX__
 	char *s = r_sys_cmd_str ("radare2 -qcq -- 2>&1 | grep r2pm | sed -e 's,$,;,g'", NULL, 0);
 	r_str_trim (s);
 	RList *list = r_str_split_list (s, "\n", -1);
@@ -254,9 +255,12 @@ static void r2pm_upgrade(void) {
 	if (r_list_length (list) < 1) {
 		R_LOG_INFO ("Nothing to upgrade");
 	} else {
-		r2pm_install (list, false, true, false);
+		r2pm_install (list, false, true, force, false);
 	}
 	free (s);
+#else
+	// R_LOG_INFO ("Auto upgrade feature is not supported on windows");
+#endif
 }
 
 static char *r2pm_desc(const char *file) {
@@ -286,6 +290,9 @@ static int r2pm_update(bool force) {
 	char *gpath = r2pm_gitdir ();
 	char *pmpath = r_str_newf ("%s/%s", gpath, "radare2-pm");
 	r_sys_mkdirp (gpath);
+	if (force) {
+		r_file_rm_rf (pmpath);
+	}
 	if (r_file_is_directory (pmpath)) {
 		if (git_pull (pmpath, force) != 0) {
 			R_LOG_ERROR ("git pull");
@@ -534,7 +541,7 @@ static int r2pm_clone(const char *pkg) {
 	return 0;
 }
 
-static int r2pm_install(RList *targets, bool uninstall, bool clean, bool global) {
+static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, bool global) {
 	RListIter *iter;
 	const char *t;
 	int rc = 0;
@@ -775,7 +782,6 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 			break;
 		case 'U':
 			r2pm.init = true;
-			r2pm_upgrade ();
 			break;
 		case 'l':
 			r2pm.list = true;
@@ -804,6 +810,9 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 			break;
 		}
 	}
+	if (r2pm.init) {
+		r2pm_upgrade (r2pm.force);
+	}
 	if (r2pm.version) {
 		if (r2pm.quiet) {
 			printf ("%s\n", R2_VERSION);
@@ -820,7 +829,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		return 0;
 	}
 	if (r2pm.init) {
-		return r2pm_update (r2pm.force);
+		r2pm_update (r2pm.force);
 	}
 	if (r2pm.run) {
 		int i;
@@ -866,7 +875,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	} else if (r2pm.doc) {
 		res = r2pm_doc (targets);
 	} else if (r2pm.install) {
-		res = r2pm_install (targets, r2pm.uninstall, r2pm.clean, r2pm.global);
+		res = r2pm_install (targets, r2pm.uninstall, r2pm.clean, r2pm.force, r2pm.global);
 	} else if (r2pm.uninstall) {
 		res = r2pm_uninstall (targets);
 	} else if (r2pm.clean) {
