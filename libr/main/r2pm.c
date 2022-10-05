@@ -78,7 +78,7 @@ typedef struct r_r2pm_t {
 static int git_pull(const char *dir, bool reset) {
 	if (reset) {
 		char *s = r_str_newf ("cd %s && git clean -xdf && git reset --hard @~2 && git checkout", dir);
-		int rc = r_sandbox_system (s, 1);
+		R_UNUSED_RESULT (r_sandbox_system (s, 1));
 		free (s);
 	}
 	char *s = r_str_newf ("cd %s && git pull ; git diff", dir);
@@ -89,6 +89,7 @@ static int git_pull(const char *dir, bool reset) {
 
 static int git_clone(const char *dir, const char *url) {
 	char *cmd = r_str_newf ("git clone --depth=10 --recursive %s %s", url, dir);
+	R_LOG_DEBUG ("%s", cmd);
 	int rc = r_sandbox_system (cmd, 1);
 	free (cmd);
 	return rc;
@@ -123,9 +124,14 @@ static char *r2pm_gitdir(void) {
 }
 
 static char *r2pm_dbdir(void) {
+	char *e = r_sys_getenv ("R2PM_DBDIR");
+	if (R_STR_ISNOTEMPTY (e)) {
+		return e;
+	}
+	free (e);
 	// return r_xdg_datadir ("r2pm/db");
 	char *gitdir = r2pm_gitdir ();
-	char *res = r_str_newf ("%s/radare2-pm", gitdir);
+	char *res = r_str_newf ("%s/radare2-pm/db", gitdir);
 	free (gitdir);
 	return res;
 }
