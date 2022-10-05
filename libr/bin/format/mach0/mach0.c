@@ -4622,6 +4622,8 @@ struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf) {
 	return macho_hdr;
 }
 
+#define IS_FMT_32BIT(x) (x == DYLD_CHAINED_PTR_32 || x == DYLD_CHAINED_PTR_32_CACHE || x == DYLD_CHAINED_PTR_32_FIRMWARE)
+
 void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *mo, ut64 limit_start, ut64 limit_end, ut32 event_mask, RFixupCallback callback, void * context) {
 	int i = 0;
 	for (; i < mo->nsegs && i < mo->segs_count; i++) {
@@ -4658,14 +4660,15 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *mo, ut64 limit_start, 
 						break;
 					}
 					mo->rebasing_buffer = previous_rebasing;
-					ut64 raw_ptr = r_read_le64 (tmp);
+					ut16 pointer_format = mo->chained_starts[i]->pointer_format;
+					ut64 raw_ptr = IS_FMT_32BIT (pointer_format)? r_read_le32 (tmp) : r_read_le64 (tmp);
 					ut64 ptr_value = raw_ptr;
 					ut64 delta, stride, addend;
-					ut16 pointer_format = mo->chained_starts[i]->pointer_format;
 					RFixupEvent event = R_FIXUP_EVENT_NONE;
 					ut8 key = 0, addr_div = 0;
 					ut16 diversity = 0;
 					ut32 ordinal = UT32_MAX;
+					ut8 ptr_size = 8;
 					switch (pointer_format) {
 					case DYLD_CHAINED_PTR_ARM64E:
 						{
@@ -4769,6 +4772,48 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *mo, ut64 limit_start, 
 						}
 						}
 						break;
+					case DYLD_CHAINED_PTR_32:
+						{
+						stride = 4;
+						ptr_size = 4;
+						struct dyld_chained_ptr_32_bind *bind =
+								(struct dyld_chained_ptr_32_bind *) &raw_ptr;
+						if (bind->bind) {
+							event = R_FIXUP_EVENT_BIND;
+							delta = bind->next;
+							ordinal = bind->ordinal;
+							addend = bind->addend;
+						} else {
+							struct dyld_chained_ptr_32_rebase *p =
+								(struct dyld_chained_ptr_32_rebase *) &raw_ptr;
+							event = R_FIXUP_EVENT_REBASE;
+							delta = p->next;
+							ptr_value = p->target;
+						}
+						}
+						break;
+					case DYLD_CHAINED_PTR_32_CACHE:
+						{
+						stride = 4;
+						ptr_size = 4;
+						struct dyld_chained_ptr_32_cache_rebase *p =
+							(struct dyld_chained_ptr_32_cache_rebase *) &raw_ptr;
+						event = R_FIXUP_EVENT_REBASE;
+						delta = p->next;
+						ptr_value = p->target;
+						}
+						break;
+					case DYLD_CHAINED_PTR_32_FIRMWARE:
+						{
+						stride = 4;
+						ptr_size = 4;
+						struct dyld_chained_ptr_32_firmware_rebase *p =
+							(struct dyld_chained_ptr_32_firmware_rebase *) &raw_ptr;
+						event = R_FIXUP_EVENT_REBASE;
+						delta = p->next;
+						ptr_value = p->target;
+						}
+						break;
 					default:
 						R_LOG_WARN ("Unsupported chained pointer format %d", pointer_format);
 						return;
@@ -4783,6 +4828,7 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *mo, ut64 limit_start, 
 							event_details.bin = mo;
 							event_details.offset = cursor;
 							event_details.raw_ptr = raw_ptr;
+							event_details.ptr_size = ptr_size;
 							event_details.ordinal = ordinal;
 							event_details.addend = addend;
 
@@ -4796,6 +4842,7 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *mo, ut64 limit_start, 
 							event_details.bin = mo;
 							event_details.offset = cursor;
 							event_details.raw_ptr = raw_ptr;
+							event_details.ptr_size = ptr_size;
 							event_details.ordinal = ordinal;
 							event_details.key = key;
 							event_details.addr_div = addr_div;
@@ -4811,6 +4858,7 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *mo, ut64 limit_start, 
 							event_details.bin = mo;
 							event_details.offset = cursor;
 							event_details.raw_ptr = raw_ptr;
+							event_details.ptr_size = ptr_size;
 							event_details.ptr_value = ptr_value;
 
 							carry_on = callback (context, (RFixupEventDetails *) &event_details);
@@ -4823,6 +4871,7 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *mo, ut64 limit_start, 
 							event_details.bin = mo;
 							event_details.offset = cursor;
 							event_details.raw_ptr = raw_ptr;
+							event_details.ptr_size = ptr_size;
 							event_details.ptr_value = ptr_value;
 							event_details.key = key;
 							event_details.addr_div = addr_div;
