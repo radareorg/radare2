@@ -5,7 +5,7 @@ CMDS=
 EXPECT_ERR=<<EOF
 INFO: REL module ID 00000001
 INFO: REL version 3
-Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
+WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
 EOF
 RUN
 

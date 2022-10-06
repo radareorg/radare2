@@ -25,7 +25,7 @@ EXPECT=<<EOF
 1\xed^\x89\xe1\x83\xe4\xf0PTR\xe8"
 EOF
 EXPECT_ERR=<<EOF
-Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
+WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
 ERROR: [cmd_write.c:192] Cannot write. Check `omp` or reopen the file with `oo+`
 EOF
 RUN
@@ -45,7 +45,7 @@ EXPECT=<<EOF
 hello
 EOF
 EXPECT_ERR=<<EOF
-Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
+WARN: run r2 with -e bin.cache=true to fix relocations in disassembly
 ERROR: [cmd_write_fail] Cannot write. Check `omp` or reopen the file with `oo+`
 EOF
 RUN
