@@ -4018,3 +4018,23 @@ R_API bool r_str_startswith(const char *str, const char *needle) {
 	return !strncmp (str, needle, strlen (needle));
 }
 
+R_API void r_str_fixspaces(char *str) {
+	// add space after commas
+	char *os = strdup (str);
+	int i, j;
+	for (i = j = 0; os[i]; i++,j++) {
+		char ch = os[i];
+		str[j] = ch;
+		if (ch == ',') {
+			j++;
+			str[j] = ' ';
+			while (os[i + 1] == ' ') {
+				i++;
+			}
+		}
+	}
+	str[j] = 0;
+	free (os);
+	r_str_trim_tail (str);
+}
+

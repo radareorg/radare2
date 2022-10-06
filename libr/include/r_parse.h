@@ -71,7 +71,6 @@ R_API bool r_parse_subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, cha
 R_API char *r_parse_immtrim(char *opstr);
 
 /* c */
-R_API char *r_parse_justify(char *str);
 R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg);
 R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
 R_API void r_parse_c_reset(RParse *p);
@@ -94,6 +93,7 @@ extern RParsePlugin r_parse_plugin_x86_pseudo;
 extern RParsePlugin r_parse_plugin_z80_pseudo;
 extern RParsePlugin r_parse_plugin_tms320_pseudo;
 extern RParsePlugin r_parse_plugin_v850_pseudo;
+extern RParsePlugin r_parse_plugin_bpf_pseudo;
 #endif
 
 #ifdef __cplusplus

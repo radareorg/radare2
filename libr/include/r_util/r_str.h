@@ -128,6 +128,7 @@ R_API int r_str_arg_unescape(char *arg);
 R_API char **r_str_argv(const char *str, int *_argc);
 R_API void r_str_argv_free(char **argv);
 R_API char *r_str_new(const char *str);
+R_API void r_str_fixspaces(char *str);
 R_API int r_snprintf(char *string, int len, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 R_API bool r_str_is_ascii(const char *str);
 R_API char *r_str_nextword(char *s, char ch);
