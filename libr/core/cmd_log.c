@@ -216,6 +216,40 @@ static int log_callback_all(RCore *log, int count, const char *line) {
 	return 0;
 }
 
+R_API void r_core_log_view(RCore *core, int num) {
+	if (num < 1) {
+		num = 1;
+	}
+	int i;
+	for (i = num - 3; i < num + 3; i++) {
+		r_cons_printf ("%s", (num == i)? "* ": "  ");
+		if (i < 1) {
+			r_cons_printf ("   ^\n");
+			continue;
+		}
+		if (i >= core->log->last) {
+			r_cons_printf ("   $\n");
+			continue;
+		}
+		if (i < core->log->first) {
+			r_cons_printf ("   ^\n");
+			continue;
+		}
+		const char *msg = r_strpool_get_i (core->log->sp, i);
+		if (msg) {
+			char *m = r_str_ndup (msg, 60);
+			char *nl = strchr (m, '\n');
+			if (nl) {
+				*nl = 0;
+			}
+			r_cons_printf ("%d %s\n", i, m);
+			free (m);
+		} else {
+			r_cons_printf ("%d ..\n", i);
+		}
+	}
+}
+
 static int cmd_log(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	const char *arg, *input2;
@@ -246,6 +280,9 @@ static int cmd_log(void *data, const char *input) {
 				eprintf ("Usage: less [filename]\n");
 			}
 		}
+		break;
+	case 'v': // "Tv"
+		r_core_log_view (core, (int)r_num_math (core->num, input + 2));
 		break;
 	case 'l': // "Tl"
 		r_cons_printf ("%d\n", core->log->last - 1);

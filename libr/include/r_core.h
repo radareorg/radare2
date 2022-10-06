@@ -857,6 +857,7 @@ R_API void r_core_undo_down(RCore *core);
 /* logs */
 typedef int (*RCoreLogCallback)(RCore *core, int count, const char *message);
 R_API void r_core_log_free(RCoreLog *log);
+R_API void r_core_log_view(RCore *core, int num);
 R_API void r_core_log_init(RCoreLog *log);
 R_API char *r_core_log_get(RCore *core, int index);
 R_API RCoreLog *r_core_log_new(void);
