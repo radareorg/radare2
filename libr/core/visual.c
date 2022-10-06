@@ -1741,16 +1741,22 @@ char *getcommapath(RCore *core) {
 static void visual_textlogs(RCore *core) {
 	int index = 1;
 	while (true) {
+		int log_level = r_log_get_level ();
 		r_cons_clear00 ();
-		const char *title = "[q] [visual-text-logs] Move with [hjkl], `i` to insert, `-` trim logs\n";
+		const char *title = "[q] [visual-text-logs] Move with [jk] `i` to insert `-` trim logs [+-] log.level =";
 		if (r_config_get_i (core->config, "scr.color") > 0) {
-			r_cons_printf (Color_YELLOW"%s"Color_RESET, title);
+			r_cons_printf (Color_YELLOW"%s %d\n"Color_RESET, title, log_level);
 		} else {
-			r_cons_printf ("%s", title);
+			r_cons_printf ("%s %d\n", title, log_level);
 		}
 		r_core_cmdf (core, "Tv %d", index);
 		r_cons_printf ("--\n");
 		char *s = r_core_cmd_strf (core, "Tm %d~{}", index);
+		r_str_trim (s);
+		if (R_STR_ISEMPTY (s)) {
+			free (s);
+			s = r_core_cmd_strf (core, "Tm %d", index);
+		}
 		int w = r_cons_get_size (NULL);
 		s = r_str_wrap (s, w);
 		r_cons_printf ("%s\n", s);
@@ -1766,7 +1772,13 @@ static void visual_textlogs(RCore *core) {
 		case 'j':
 			index++;
 			break;
+		case '+':
+			r_log_set_level (log_level + 1);
+			break;
 		case '-':
+			r_log_set_level (log_level - 1);
+			break;
+		case '!':
 			r_core_cmdf (core, "T-%d", index);
 			break;
 		case 'k':

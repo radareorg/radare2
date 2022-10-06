@@ -2977,6 +2977,17 @@ static RThreadFunctionRet thchan_handler(RThread *th) {
 	return 0;
 }
 
+static bool cbcore(void *user, int type, const char *origin, const char *msg) {
+	if (!msg) {
+		return false;
+	}
+	RCore *core = (RCore*)user;
+	char *s = msg? r_str_newf ("%s %s", origin?origin: "*", msg): strdup (origin);
+	r_core_log_add (core, s);
+	free (s);
+	return false;
+}
+
 R_API bool r_core_init(RCore *core) {
 	r_w32_init ();
 	core->blocksize = R_CORE_BLOCKSIZE;
@@ -3079,6 +3090,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	core->print->cons = core->cons;
 	r_cons_bind (&core->print->consbind);
+	r_log_add_callback (cbcore, core);
 
 	// We save the old num ad user, in order to restore it after free
 	core->lang = r_lang_new ();
