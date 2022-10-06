@@ -209,7 +209,7 @@ typedef struct {
 	struct MACH0_(obj_t) *bin;
 	ut64 offset;
 	ut64 raw_ptr;
-	ut8 ptr_size;
+	ut64 ptr_size;
 } RFixupEventDetails;
 
 typedef struct {
@@ -217,7 +217,7 @@ typedef struct {
 	struct MACH0_(obj_t) *bin;
 	ut64 offset;
 	ut64 raw_ptr;
-	ut8 ptr_size;
+	ut64 ptr_size;
 	ut64 ordinal;
 	ut64 addend;
 } RFixupBindEventDetails;
@@ -227,7 +227,7 @@ typedef struct {
 	struct MACH0_(obj_t) *bin;
 	ut64 offset;
 	ut64 raw_ptr;
-	ut8 ptr_size;
+	ut64 ptr_size;
 	ut32 ordinal;
 	ut8 key;
 	ut8 addr_div;
@@ -239,7 +239,7 @@ typedef struct {
 	struct MACH0_(obj_t) *bin;
 	ut64 offset;
 	ut64 raw_ptr;
-	ut8 ptr_size;
+	ut64 ptr_size;
 	ut64 ptr_value;
 } RFixupRebaseEventDetails;
 
@@ -248,7 +248,7 @@ typedef struct {
 	struct MACH0_(obj_t) *bin;
 	ut64 offset;
 	ut64 raw_ptr;
-	ut8 ptr_size;
+	ut64 ptr_size;
 	ut64 ptr_value;
 	ut8 key;
 	ut8 addr_div;
