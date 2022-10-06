@@ -642,16 +642,23 @@ static RList* patch_relocs(RBin *b) {
 		}
 		r_list_append (ext_relocs, reloc);
 	}
-	RBinReloc *r;
-	RListIter *iter2;
+	if (mo->reloc_fixups && r_list_length (mo->reloc_fixups) > 0) {
+		if (!io->cached) {
+			R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
+			goto beach;
+		} else {
+			RBinReloc *r;
+			RListIter *iter2;
 
-	r_list_foreach (mo->reloc_fixups, iter2, r) {
-		ut64 paddr = r->paddr + mo->baddr;
-		ut8 buf[8], obuf[8];
-		r_write_ble64 (buf, r->vaddr, false);
-		r_io_read_at (io, paddr, obuf, 8);
-		if (memcmp (buf, obuf, 8)) {
-			r_io_write_at (io, paddr, buf, 8);
+			r_list_foreach (mo->reloc_fixups, iter2, r) {
+				ut64 paddr = r->paddr + mo->baddr;
+				ut8 buf[8], obuf[8];
+				r_write_ble64 (buf, r->vaddr, false);
+				r_io_read_at (io, paddr, obuf, 8);
+				if (memcmp (buf, obuf, 8)) {
+					r_io_write_at (io, paddr, buf, 8);
+				}
+			}
 		}
 	}
 	ut64 num_ext_relocs = r_list_length (ext_relocs);
