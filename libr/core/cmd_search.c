@@ -171,7 +171,7 @@ static const char *help_msg_slash_a[] = {
 	"/ao", " instr", "search for instruction 'instr' (in all offsets)",
 	"/as", "[l] ([type])", "search for syscalls (See /at swi and /af priv)",
 	"/at", "[l] ([type])", "search for instructions of given type",
-	"/az", " ([minstr])", "search strings constructed with assembly",
+	"/az[q]", " ([minstr])", "search assembly constructed strings (q)uiet reduces false positives",
 	NULL
 };
 
@@ -2195,7 +2195,34 @@ static void cmd_search_aF(RCore *core, const char *input) {
 	}
 }
 
-static bool do_analstr_search(RCore *core, struct search_parameters *param, const char *input) {
+static bool check_false_positive(const char *s) {
+	if (strlen (s) < 4) {
+		return false;
+	}
+	bool ok = true;
+	int rep = 0;
+	char s0 = *s;
+	if (!isalpha (s0) && !isdigit (s0)) {
+		return false;
+	}
+	while (*s) {
+		if (rep > 3) {
+			ok = false;
+			break;
+		}
+		if (*s == '%') {
+			ok = false;
+			break;
+		}
+		if (s0 == *s) {
+			rep++;
+		}
+		s++;
+	}
+	return ok;
+}
+
+static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
 	ut64 at;
 	RAnalOp aop;
 	int mode = 0;
@@ -2261,9 +2288,16 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, cons
 				} else if (lastch != UT64_MAX) {
 					if (r_strbuf_length (sb) > minstr) { // maybe 2
 						const char *s = r_strbuf_get (sb);
-						r_strbuf_appendf (rb, "0x%08"PFMT64x" %s\n", firstch, s);
-						r_strbuf_set (sb, "");
+						if (quiet) {
+							if (!check_false_positive (s)) {
+								s = "";
+							}
+						}
+						if (*s) {
+							r_strbuf_appendf (rb, "0x%08"PFMT64x" %s\n", firstch, s);
+						}
 					}
+					r_strbuf_set (sb, "");
 					lastch = UT64_MAX;
 				}
 				int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
@@ -3756,8 +3790,12 @@ reread:
 		case 'z':
 			if (input[2] == '?') { // "az"
 				r_core_cmd_help_match (core, help_msg_slash_a, "/az", true);
+			} else if (input[2] == 'q') {
+				do_analstr_search (core, &param, true, r_str_trim_head_ro (input + 3));
+			} else if (input[2] == ' ' ) {
+				do_analstr_search (core, &param, false, r_str_trim_head_ro (input + 2));
 			} else { // "az"
-				do_analstr_search (core, &param, r_str_trim_head_ro (input + 2));
+				r_core_cmd_help_match (core, help_msg_slash_a, "/az", true);
 			}
 			dosearch = false;
 			break;

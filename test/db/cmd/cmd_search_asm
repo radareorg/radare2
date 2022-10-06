@@ -1,0 +1,227 @@
+NAME=search constructed strings
+FILE=bins/mach0/iGoat-Swift.arm_64.1
+CMDS=<<EOF
+/az 8
+EOF
+EXPECT=<<EOF
+0x1000184e8 *8'$ddd,"A
+0x100024380 r@D33#--5yJj
+0x10002fee4 !V@EM)HPX
+0x100042584 hdddddddd
+0x10006055c 22/gd(P(d
+0x100070780 d((bZjt((
+0x100079d8c Jdddddddd
+0x10007da34 ddddddddd
+0x100099e44 _(2M*DI2D
+0x10009aa4c F26EIQWE5
+0x10009b76c 9+/66I\GX
+0x1000afd74 Sd7d`0dd`0
+0x1000c1704 (dd('Yaid
+0x1000c9494 r@iGoatEmpty entry!!
+0x1000c9588 Incorrect!
+0x1000c99e0 /Try Harder!
+0x1000c9ae8 b@nkP@ssword12
+0x1000c9b08 b@nkP@ssword12
+0x1000c9d88 encrypted
+0x1000c9ec0 myencrytionkey
+0x1000ca02c myencrytionkey
+0x1000ca5cc SuccessDismiss
+0x1000cac30 opacityfade
+0x1000cafec pathcircleMask
+0x1000d0f20 !r@!statusBarWindo
+0x1000d3dc0 9191menur@
+0x1000d3ed4 iGoatcontactNumber
+0x1000d4020 messageMessage "
+0x1000d406c " sent to 
+0x1000d4758 iGoat<br/><br/>
+0x1000d4980 <br/><br/>
+0x1000d4bf8 <hr></hrname
+0x1000d4c60 description
+0x1000d4dd4 hintscreditsFile
+0x1000d4fd0 solutionT
+0x1000d8480 XX(((msgchecksum
+0x1000d8cd4 =&POSTiGoat
+0x1000d922c dollar!}}  
+0x1000d9424 'iGoatJohnDoe@yap.co
+0x1000d944c YapKeyEmail
+0x1000d94bc iGoatTheUnknown
+0x1000d94dc YapKeyPassword
+0x1000d9638 iGoatFailedSuccess!
+0x1000d9728 !iGoatYapKeyEmail
+0x1000d981c iGoatYapKeyPassword
+0x1000da588 iGoatStart
+0x1000da644 Introduction
+0x1000db394 firstName
+0x1000db75c lastNamePOST
+0x1000db788 Content-Type
+0x1000db7c8 Acceptclose
+0x1000db7d8 Connection
+0x1000dbae8 X-Goat-Secure
+0x1000dbc90 ErrorOwned
+0x1000dcd5c   Error Error
+0x1000dced0 Error1634
+0x1000dcf48 1634926926
+0x1000dcf68 iGoatVerified!!
+0x1000dd5e8 HccNo: %@
+0x1000dd708 HcvvNo: %@
+0x1000dd82c HpinNo: %@
+0x1000ddcbc Success42
+0x1000decbc (((iGoatX-Goat-Secure
+0x1000dee00 ErrorOwned
+0x1000deecc 9+&password=
+0x1000df2b8 articles.sqlit
+0x1000df5b4 Snap!%%%%
+0x1000df644 =' AND premium=
+0x1000dfc44 iGoatEmpty entry!!
+0x1000e0cb0 H%02hhx@@
+0x1000e206c r@AboutCell
+0x1000e2e70 ((MainAbout iGoat
+0x1000e3094 ArticlesCell
+0x1000e3710 CellSentinel
+0x1000e37d8 txtSentinel
+0x1000e3fdc txtCydia.app
+0x1000e40a8 bashsshdapt
+0x1000e40d0 Sentinel.txt
+0x1000e44ac CoreData, 
+0x1000e4810 ,ErrorFields empty
+0x1000e4954 SuccessFailediGoat
+0x1000e4df0 UserUserjohn@test.com
+0x1000e4e34 coredbpassword
+0x1000e5738 , hideshow
+0x1000e5b20 iGoatiGoat
+0x1000e615c iGoatCredentials
+0x1000e6244 plistUser
+0x1000e651c PasswordMessage
+0x1000e9a90 (#>>miGoat
+0x1000e9e20 taoGiSaveUser
+0x1000ea008 SaveUser)
+0x1000ea2c8 'FailSuccess
+0x1000ea344 iGoatError
+0x1000ea354 Fields empty
+0x1000eb7a8 !!Success
+0x1000ebb18 iGoatroot
+0x1000ebb9c rootiGoat
+0x1000ebbac Congratulation
+0x1000ec040 $&message=
+0x1000ed460 Error: Content-Type
+0x1000ed4b4 Accepttoken=key
+0x1000eda6c POSTError
+0x1000edcb8  Passcode: 
+0x1000edd68 SuccessFail
+0x1000edd74 Try Again!!
+0x1000ef080  Error: 0123456789
+0x1000f0010  >k>kiGoat
+0x1000f0020 Empty entry!!
+0x1000f0744 !Success!
+0x1000f07d4 er!!Try HardiGoat
+0x1000f083c Success!!
+0x1000f12b4 PRAGMA key = '
+0x1000f231c 'FailedSuccess
+0x1000f2450 iGoatJohn Doe
+0x1000f2cc4 911John Doe
+0x1000f2e1c 91153cr3tP
+0x1000f3000 PINErrorEnter details!
+0x1000f3224 PINSuccess
+0x1000f3260  Invalid!
+0x1000f3274 Try harder!!
+0x1000f4bac (gfX((gf(
+0x1000f52e0 XXXnamedescription
+0x1000f5368 exercises
+0x1000f56c8 XQ/Assets.plist
+0x1000f5a80 namename(
+0x1000f5dd0 3QiGoatiGoat
+0x1000f6918 .couchbasedb
+0x1000f6a4c documentID
+0x1000f6e58 documentID
+0x1000f71b4 FailedSuccess!
+0x1000f72e8 !iGoatdocumentID
+0x1000f7ccc Jane Roe52
+0x1000f7d04 FemaleCancer
+0x1000f8360 Jane Roe52
+0x1000f8398 FemaleCancer
+0x1000f84d0 Plist Storage
+0x1000f891c  ErrorUser
+0x1000f8a3c PasswordInvalid!
+0x1000f8a50 Try little bit
+0x1000f9474 Success iGoat_Swift.
+0x1000f9764 V:|[childView]
+0x1000f9890 wchildVie
+0x1000f9b80 w|[childView]|
+0x1000fb248 childVieFailedSuccess!
+0x1000fc8a0 !iGoat!Hints
+0x1000fd1fc 4<html>hI
+0x1000fd488  (/)</h2>
+0x1000fd4bc </body></html>
+0x1000ffdd4 token=key
+0x1000fff10 POSTcontent-
+0x1000fff54 typeaccept
+0x100100aa4 Error SecretPass
+0x100100e20 !Success!
+0x100100e7c er!!..Try Hard
+0x100101774 iGoatUser
+0x100109fec _t(}-JP=(
+0x10010b7dc Tefg(\(\d
+0x10011545c Xdddd..W @
+0x100119d68 v@/vdAKXP
+0x10011e050 osAB(==AA
+0x100122a94 5he....c/
+0x10012e3f0 PQR--C(vt
+0x10013aa8c /o$%MdN3X
+0x100146c5c (.2&=H9vK
+0x10014ec50 Y22d-;:;;
+0x100158a34 d^';ABNS[
+0x100162724 e=(;XX(%&
+0x10016a784 ,$QuB{LOn
+0x10016e36c h"#1(\Oh+
+0x100171b48 )l}CDE%dd
+0x10017500c b`y^^'jPP
+0x10018329c NdHe.}---
+0x10018d93c --{aW=]JY
+0x100190d54 kzG\uUB%K
+0x100196b68 "(KO,Z{[G
+0x10019e1fc HuAu{DK_4
+0x1001a3010 NTUYPC(%2
+0x1001b293c f.Peeac}e
+0x1001c347c ({}{}gfzd
+0x1001c7ab4 dzdaaaaaa
+0x1001c84b0  @aIaaaaa
+0x1001c87f8 2@%bymeemst
+0x1001c938c (meemsteay
+0x1001c9704 ayayayayay
+0x1001ca298 ayayct(rYy
+0x1001ca3d4 ayayayaya
+0x1001ca7f8 aaaaaaaaa
+0x1001cb4bc a+aa#a&aa
+0x1001cc958 aaaaaaaaa
+0x1001ccbe0 aaaaaaa%3
+0x1001cd4d0 Wacgaaaaa
+0x1001cdeac aaaaaaaaa
+0x1001ce490 0@aaaaaaa
+0x1001ce680 aaaaaaaa-
+0x1001cf9f0 d.$aaaaaa
+0x1001d016c a `btbtay
+0x1001d0418 ayayayayay
+0x1001d08d8 Yyayayay(r
+0x1001d0cd4 Yyayayaa"@
+0x1001d117c bzaaaaaaa
+0x1001d1308 aaaaaaaaa
+0x1001d1d5c a..^aaa"h
+0x1001d3e20 "h"hi3aaa
+0x1001d43d4 a%aaeaeiou
+0x1001d4fb8 ouaaaiaia
+0x1001d53c0 iaaaaaaaa
+0x1001d5e9c ,*aaaaaaa
+
+EOF
+RUN
+
+NAME=search constructed strings with less false positives
+FILE=bins/mach0/iGoat-Swift.arm_64.1
+CMDS=<<EOF
+/azq 8
+EOF
+EXPECT=<<EOF
+je
+EOF
+RUN
+
