@@ -57,7 +57,7 @@ CS_REV=
 CS_PATCHES=1
 endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwinkd bochs sdbs
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libdapr libwinkd bochs sdbs
 
 ifeq ($(shell gcc -v > /dev/null 2>&1 && echo works),works)
 HOST_CC?=gcc
@@ -65,9 +65,9 @@ endif
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-# MODS=sdb zip java mpc
-MODS=zip java mpc
-MODS+=gdb qnx ar
+# MODS=sdb zip java mpc yxml
+MODS=zip java mpc yxml
+MODS+=dap gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
 ifeq (1,$(WITH_GPL))
@@ -164,6 +164,9 @@ I=../libr/include
 
 libgdbr:
 	$(MAKE) -C gdb all
+
+libdapr:
+	$(MAKE) -C dap all
 
 libwinkd:
 	$(MAKE) -C winkd all
@@ -336,6 +339,7 @@ spp: spp-sync
 SHLRS+=ar/libr_ar.a
 SHLRS+=bochs/lib/libbochs.a
 SHLRS+=capstone/libcapstone.a
+SHLRS+=dap/lib/libdapr.a
 SHLRS+=gdb/lib/libgdbr.a
 SHLRS+=grub/libgrubfs.a
 SHLRS+=java/libr_java.a

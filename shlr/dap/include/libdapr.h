@@ -1,6 +1,10 @@
 #ifndef SHLR_DAP_INCLUDE_LIBDAPR_H_
 #define SHLR_DAP_INCLUDE_LIBDAPR_H_
 
+#ifdef _MSC_VER
+typedef unsigned int ssize_t;
+#endif
+
 typedef struct libdapr_t {
 	char *send_buff; // defines a buffer for reading and sending stuff
 	ssize_t send_len;

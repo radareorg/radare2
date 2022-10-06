@@ -9,7 +9,7 @@ ALL_TARGETS+=${TARGET_DAP}
 
 LIB_PATH=$(SHLR)/dap/
 CFLAGS+=-I$(SHLR)/dap/include/
-LDFLAGS+=$(SHLR)/dap/lib/libgdbr.$(EXT_AR)
+LDFLAGS+=$(SHLR)/dap/lib/libdapr.$(EXT_AR)
 
 ifeq (${WITHPIC},0)
 LINKFLAGS+=../../util/libr_util.a

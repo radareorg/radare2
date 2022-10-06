@@ -78,14 +78,14 @@ clean:
 
 unit: lib
 	$(CC) $(CFLAGS) $(TEST_INCLUDES) -c $(UNIT_TEST) -o $(TEST_D)/unit.o
-	$(LD) $(TEST_D)/unit.o -o $(TEST_D)/unit -L$(LIB) -lgdbr -lglib-2.0
+	$(LD) $(TEST_D)/unit.o -o $(TEST_D)/unit -L$(LIB) -ldapr -lglib-2.0
 
 run_unit: unit
 	LD_LIBRARY_PATH=./lib ./test/unit
 
 client: lib
 	$(CC) $(CFLAGS) $(INCLUDES) -c $(CLIENT) -o $(TEST_D)/client.o
-	$(LD) $(TEST_D)/client.o -o $(TEST_D)/client -L$(LIB) -lgdbr
+	$(LD) $(TEST_D)/client.o -o $(TEST_D)/client -L$(LIB) -ldapr
 
 #run_test: client
 #	rarun2 libpath=./lib program=./test/client
