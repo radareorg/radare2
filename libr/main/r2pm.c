@@ -77,11 +77,11 @@ typedef struct r_r2pm_t {
 
 static int git_pull(const char *dir, bool reset) {
 	if (reset) {
-		char *s = r_str_newf ("cd %s && git clean -xdf && git reset --hard @~2 && git checkout", dir);
+		char *s = r_str_newf ("cd \"%s\" && git clean -xdf && git reset --hard @~2 && git checkout", dir);
 		R_UNUSED_RESULT (r_sandbox_system (s, 1));
 		free (s);
 	}
-	char *s = r_str_newf ("cd %s && git pull ; git diff", dir);
+	char *s = r_str_newf ("cd %s && git pull && git diff", dir);
 	int rc = r_sandbox_system (s, 1);
 	free (s);
 	return rc;
@@ -896,7 +896,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	if (res != -1) {
 		return res;
 	}
-	if (opt.ind == 1) {
+	if (r2pm.init || opt.ind == 1) {
 		return 0;
 	}
 	return 1;
