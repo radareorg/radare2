@@ -1287,7 +1287,7 @@ enum {
 typedef struct r_anal_esil_dfg_t {
 	ut32 idx;
 	Sdb *regs;		//resolves regnames to intervals
-	RRBTree *reg_vars;	//vars represented in regs
+	RRBTree *vars;		//vars represented in regs and mem
 	RQueue *todo;		//todo-queue allocated in this struct for perf
 	void *insert;		//needed for setting regs in dfg
 	RGraph *flow;
