@@ -37,7 +37,7 @@ e asm.bits=16
 aoml~?
 EOF
 EXPECT=<<EOF
-udf
+invalid
 1288
 471
 471

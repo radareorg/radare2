@@ -274,6 +274,25 @@ static int parse(RParse *p, const char *data, char *str) {
 		free (s);
 	}
 	free (buf);
+	// add space after commas
+	{
+		char *os = strdup (str);
+		int i, j;
+		for (i = j = 0; os[i]; i++,j++) {
+			char ch = os[i];
+			str[j] = ch;
+			if (ch == ',') {
+				j++;
+				str[j] = ' ';
+				while (os[i + 1] == ' ') {
+					i++;
+				}
+			}
+		}
+		str[j] = 0;
+		free (os);
+	}
+	r_str_trim_tail (str);
 	return true;
 }
 
