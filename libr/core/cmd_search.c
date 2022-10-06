@@ -171,6 +171,7 @@ static const char *help_msg_slash_a[] = {
 	"/ao", " instr", "search for instruction 'instr' (in all offsets)",
 	"/as", "[l] ([type])", "search for syscalls (See /at swi and /af priv)",
 	"/at", "[l] ([type])", "search for instructions of given type",
+	"/az", " ([minstr])", "search strings constructed with assembly",
 	NULL
 };
 
@@ -2194,6 +2195,99 @@ static void cmd_search_aF(RCore *core, const char *input) {
 	}
 }
 
+static bool do_analstr_search(RCore *core, struct search_parameters *param, const char *input) {
+	ut64 at;
+	RAnalOp aop;
+	int mode = 0;
+	int i, ret;
+	input = r_str_trim_head_ro (input);
+	r_cons_break_push (NULL, NULL);
+	RIOMap* map;
+	RListIter *iter;
+	char *word = strdup (input);
+	RList *words = r_str_split_list (word, ",", 0);
+	RStrBuf *sb = r_strbuf_new ("");
+	RStrBuf *rb = r_strbuf_new ("");
+	ut64 lastch = UT64_MAX;
+	ut64 firstch = UT64_MAX;
+	int minstr = r_num_math (core->num, input);
+	if (minstr < 1) {
+		minstr = 1;
+	}
+
+	r_list_foreach (param->boundaries, iter, map) {
+		ut64 from = r_io_map_begin (map);
+		ut64 to = r_io_map_end (map);
+		for (i = 0, at = from; at < to; i++, at++) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			at = from + i;
+			ut8 bufop[32];
+			r_io_read_at (core->io, at, bufop, sizeof (bufop));
+			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+			if (ret) {
+				bool hasch = false;
+				switch (aop.type) {
+				case R_ANAL_OP_TYPE_MOV:
+					if (aop.val > 0 && aop.val < UT16_MAX) {
+						if (aop.val < 255) {
+							if (IS_PRINTABLE (aop.val)) {
+								char chstr[2] = {aop.val, 0};
+								r_strbuf_append (sb, chstr);
+								hasch = true;
+								// eprintf ("MOVE %llx = %d '%c'\n", at, (int)aop.val, (char)aop.val);
+							}
+						} else {
+							char ch0 = aop.val & 0xff;
+							char ch1 = (aop.val >> 8) & 0xff;
+							if (IS_PRINTABLE (ch0) && IS_PRINTABLE (ch1)) {
+								char chstr[2] = {ch0, 0};
+								r_strbuf_append (sb, chstr);
+								chstr[0] = ch1;
+								r_strbuf_append (sb, chstr);
+								hasch = true;
+								// eprintf ("MOVE %llx = %d '%c%c'\n", at, (int)aop.val, ch0, ch1);
+							}
+						}
+					}
+					break;
+				}
+				if (hasch) {
+					if (lastch == UT64_MAX) {
+						firstch = at;
+					}
+					lastch = at;
+				} else if (lastch != UT64_MAX) {
+					if (r_strbuf_length (sb) > minstr) { // maybe 2
+						const char *s = r_strbuf_get (sb);
+						r_strbuf_appendf (rb, "0x%08"PFMT64x" %s\n", firstch, s);
+						r_strbuf_set (sb, "");
+					}
+					lastch = UT64_MAX;
+				}
+				int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
+				if (inc < 0) {
+					inc = 0;
+				}
+				i += inc;
+				at += inc;
+			}
+			r_anal_op_fini (&aop);
+		}
+	}
+	r_list_free (words);
+	free (word);
+	if (mode == 'j') {
+		pj_end (param->pj);
+	}
+	r_cons_break_pop ();
+	char *res = r_strbuf_drain (rb);
+	r_cons_println (res);
+	free (res);
+	return false;
+}
+
 static bool do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
 	RSearch *search = core->search;
 	ut64 at;
@@ -3656,6 +3750,14 @@ reread:
 				r_core_cmd0 (core, "asl");
 			} else { // "as"
 				do_syscall_search (core, &param);
+			}
+			dosearch = false;
+			break;
+		case 'z':
+			if (input[2] == '?') { // "az"
+				r_core_cmd_help_match (core, help_msg_slash_a, "/az", true);
+			} else { // "az"
+				do_analstr_search (core, &param, r_str_trim_head_ro (input + 2));
 			}
 			dosearch = false;
 			break;
