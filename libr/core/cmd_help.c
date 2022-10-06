@@ -217,6 +217,18 @@ static const char *help_msg_root[] = {
 	NULL
 };
 
+static const char *help_msg_question_i[] = {
+	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
+	"?i", " ([prompt])", "inquery the user and save that text into the yank clipboard (y)",
+	"?ie", " [msg]", "same as ?i, but prints the output, useful for oneliners",
+	"?iy", " [question]", "dialog yes/no with default Yes",
+	"?if", " [math-expr]", "evaluates math expression returns true if result is zero",
+	"?in", " [question]", "dialog yes/no with default No",
+	"?im", " [msg]", "like ?ie, but using RCons.message (clear-screen + press-any-key)",
+	"?ik", "", "press any key",
+	"?ip", " ([path])", "interactive hud mode to find files in given path",
+	NULL
+};
 static const char *help_msg_question_e[] = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
@@ -1304,6 +1316,9 @@ static int cmd_help(void *data, const char *input) {
 			R_LOG_ERROR ("Not running in interactive mode");
 		} else {
 			switch (input[1]) {
+			case '?': // "?i?"
+				r_core_cmd_help (core, help_msg_question_i);
+				break;
 			case 'f': // "?if"
 				r_core_return_value (core, !r_num_conditional (core->num, input + 2));
 				eprintf ("%s\n", r_str_bool (!core->num->value));
