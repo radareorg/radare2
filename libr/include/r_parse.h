@@ -71,7 +71,7 @@ R_API bool r_parse_subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, cha
 R_API char *r_parse_immtrim(char *opstr);
 
 /* c */
-// why we have anal scoped things in rparse
+R_API char *r_parse_justify(char *str);
 R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg);
 R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg);
 R_API void r_parse_c_reset(RParse *p);
