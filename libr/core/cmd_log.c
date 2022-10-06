@@ -341,7 +341,14 @@ static int cmd_log(void *data, const char *input) {
 		if (n > 0 || *input == '0') {
 			r_core_log_list (core, n, n2, *input);
 		} else {
-			r_core_log_add (core, input + 1);
+			const char *arg = input + 1;
+			if (r_str_startswith (arg, "base64:")) {
+				ut8 *s = r_base64_decode_dyn (arg + 7, -1);
+				r_core_log_add (core, (const char *)s);
+				free (s);
+			} else {
+				r_core_log_add (core, arg);
+			}
 		}
 		break;
 	case 'm': // "Tm"
