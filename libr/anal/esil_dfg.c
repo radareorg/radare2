@@ -246,6 +246,42 @@ static bool _edf_reg_set(RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) {
 	return true;
 }
 
+static bool _edf_mem_set(RAnalEsilDFG *dfg, ut64 addr, ut32 size, RGraphNode *node) {
+	r_return_val_if_fail (dfg && !dfg->malloc_failed && size, false);
+	EsilDFGVar *mv = R_NEW0 (EsilDFGVar);
+	if (!mv) {
+		return false;
+	}
+
+	mv->from = addr;
+	mv->to = addr + size - 1;
+	mv->type = VAR_TYPE_MEM;
+	r_queue_enqueue (dfg->todo, mv);
+	while (!r_queue_is_empty (dfg->todo) && !dfg->malloc_failed) {
+		// rbtree api does sadly not allow deleting multiple items at once :(
+		mv = r_queue_dequeue (dfg->todo);
+		r_crbtree_delete (dfg->vars, mv, _rv_del_alloc_cmp, dfg);
+		if (dfg->insert && !dfg->malloc_failed) {
+			r_crbtree_insert (dfg->vars, dfg->insert, _rv_ins_cmp, NULL);
+			dfg->insert = NULL;
+		}
+		free (mv);
+	}
+	if (dfg->malloc_failed) {
+		while (!r_queue_is_empty (dfg->todo)) {
+			free (r_queue_dequeue (dfg->todo));
+		}
+		return false;
+	}
+	mv = R_NEW0 (EsilDFGVar);
+	mv->from = addr;
+	mv->to = addr + size - 1;
+	mv->type = VAR_TYPE_MEM;
+	mv->node = node;
+	r_crbtree_insert (dfg->vars, mv, _rv_ins_cmp, NULL);
+	return true;
+}
+
 static int _rv_find_cmp(void *incoming, void *in, void *user) {
 	EsilDFGVar *rv_incoming = (EsilDFGVar *)incoming;
 	EsilDFGVar *rv_in = (EsilDFGVar *)in;
@@ -748,6 +784,16 @@ static bool edf_consume_2_set_mem(RAnalEsil *esil) {
 		return 0;
 	}
 
+	ut32 memsize = 0;
+	if (r_str_endswith (op_string, "[1]")) {
+		memsize = 1;
+	} else if (r_str_endswith (op_string, "[2]")) {
+		memsize = 2;
+	} else if (r_str_endswith (op_string, "[4]")) {
+		memsize = 4;
+	} else if (r_str_endswith (op_string, "[8]")) {
+		memsize = 8;
+	}
 	int dst_type = r_anal_esil_get_parm_type (esil, dst);
 
 	const int src_type = r_anal_esil_get_parm_type (esil, src);
@@ -765,22 +811,26 @@ static bool edf_consume_2_set_mem(RAnalEsil *esil) {
 		src_node = _edf_var_get (edf, src);
 	}
 
-	RGraphNode *dst_node = _edf_reg_get (edf, dst);
-	if (!dst_node) {
+	RGraphNode *dst_node = NULL;
+	bool write_result = false;
+	ut64 dst_addr = 0;
+	if (dst_type == R_ANAL_ESIL_PARM_REG) {
+		dst_node = _edf_reg_get (edf, dst);
+		RAnalEsilDFGNode *ev_node = (RAnalEsilDFGNode *)dst_node->data;
+		ev_node->type |= R_ANAL_ESIL_DFG_BLOCK_PTR;
+		// TODO: try to resolve addr here
+	} else if (dst_type == R_ANAL_ESIL_PARM_NUM) {
+		dst_addr = r_num_get (NULL, dst);
+		RAnalEsilDFGNode *ec_node = r_anal_esil_dfg_node_new (edf, dst);
+		ec_node->type = R_ANAL_ESIL_DFG_BLOCK_CONST | R_ANAL_ESIL_DFG_BLOCK_PTR;
+		r_strbuf_appendf (ec_node->content, ":const_ptr_%d", edf->idx++);
+		dst_node = r_graph_add_node (edf->flow, ec_node);
+		write_result = true;
+	} else {
 		dst_node = _edf_var_get (edf, dst);
-	}
-	//probably dead code
-	if (!dst_node) {
-		if (dst_type == R_ANAL_ESIL_PARM_REG) {
-			RGraphNode *n_reg = r_graph_add_node (edf->flow, r_anal_esil_dfg_node_new (edf, dst));
-			RAnalEsilDFGNode *ev_node = r_anal_esil_dfg_node_new (edf, dst);
-			ev_node->type = R_ANAL_ESIL_DFG_BLOCK_VAR | R_ANAL_ESIL_DFG_BLOCK_PTR;
-			r_strbuf_appendf (ev_node->content, ":var_ptr_%d", edf->idx++);
-			dst_node = r_graph_add_node (edf->flow, ev_node);
-			//			_edf_reg_set (edf, dst, ev_node);
-			r_graph_add_edge (edf->flow, n_reg, dst_node);
-		}
-		// TODO: const pointers
+		RAnalEsilDFGNode *ev_node = (RAnalEsilDFGNode *)dst_node->data;
+		ev_node->type |= R_ANAL_ESIL_DFG_BLOCK_PTR;
+		// TODO: try to resolve addr here
 	}
 
 	if (!src_node || !dst_node) {
@@ -802,6 +852,9 @@ static bool edf_consume_2_set_mem(RAnalEsil *esil) {
 	result->type = R_ANAL_ESIL_DFG_BLOCK_VAR;
 	r_strbuf_appendf (result->content, ":var_mem_%d", edf->idx++);
 	dst_node = r_graph_add_node (edf->flow, result);
+	if (write_result) {
+		_edf_mem_set (edf, dst_addr, memsize, dst_node);
+	}
 	r_graph_add_edge (edf->flow, op_node, dst_node);
 	free (dst);
 	return true;
