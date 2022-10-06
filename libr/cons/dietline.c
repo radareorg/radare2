@@ -558,33 +558,29 @@ R_API bool r_line_hist_save(const char *file) {
 	r_return_val_if_fail (file && *file, false);
 	int i;
 	bool ret = false;
-	char *path = r_str_home (file);
-	if (path) {
-		char *p = (char *) r_str_lastbut (path, R_SYS_DIR[0], NULL);	// TODO: use fs
-		if (p) {
-			*p = 0;
-			if (!r_sys_mkdirp (path)) {
-				if (r_sandbox_check (R_SANDBOX_GRAIN_FILES)) {
-					R_LOG_ERROR ("Could not save history into %s", path);
-				}
-				goto end;
+	char *p = (char *) r_str_lastbut (file, R_SYS_DIR[0], NULL);
+	if (p) {
+		*p = 0;
+		if (!r_sys_mkdirp (file)) {
+			if (r_sandbox_check (R_SANDBOX_GRAIN_FILES)) {
+				R_LOG_ERROR ("Could not save history into %s", file);
 			}
-			*p = R_SYS_DIR[0];
+			goto end;
 		}
-		FILE *fd = r_sandbox_fopen (path, "w");
-		if (fd) {
-			if (I.history.data) {
-				for (i = 0; i < I.history.index; i++) {
-					fputs (I.history.data[i], fd);
-					fputs ("\n", fd);
-				}
-				ret = true;
+		*p = R_SYS_DIR[0];
+	}
+	FILE *fd = r_sandbox_fopen (file, "w");
+	if (fd) {
+		if (I.history.data) {
+			for (i = 0; i < I.history.index; i++) {
+				fputs (I.history.data[i], fd);
+				fputs ("\n", fd);
 			}
-			fclose (fd);
+			ret = true;
 		}
+		fclose (fd);
 	}
 end:
-	free (path);
 	return ret;
 }
 
