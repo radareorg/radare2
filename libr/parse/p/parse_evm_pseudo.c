@@ -30,8 +30,8 @@ static int replace(int argc, char *argv[], char *newstr, size_t len) {
 		const char *op;
 		const char **res;
 	} ops[] = {
-		{ "add",  (const char*[]){ argv[1], " += ", argv[2], NULL } },
 #if 0
+		{ "add",  (const char*[]){ argv[1], " += ", argv[2], NULL } },
 		{ "subn", (const char*[]){ argv[1], " = ", argv[2], " - ", argv[1], NULL } },
 		{ "xor",  (const char*[]){ argv[1], " ^= ", argv[2], NULL } },
 #endif
@@ -86,16 +86,16 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-RParsePlugin r_parse_plugin_bpf_pseudo = {
-	.name = "bpf.pseudo",
-	.desc = "bpf pseudo syntax",
+RParsePlugin r_parse_plugin_evm_pseudo = {
+	.name = "evm.pseudo",
+	.desc = "evm pseudo syntax",
 	.parse = parse,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_bpf_pseudo,
+	.data = &r_parse_plugin_evm_pseudo,
 	.version = R2_VERSION
 };
 #endif
