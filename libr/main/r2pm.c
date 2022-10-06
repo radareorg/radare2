@@ -43,7 +43,7 @@ static const char *helpmsg = \
 " -f                force operation (Use in combination of -U, -i, -u, ..)\n"\
 " -gi <pkg>         global install (system-wide)\n"\
 " -h                display this help message\n"\
-" -H variable       show the value of given internal environment variable\n"\
+" -H variable       show the value of given internal environment variable (See -HH)\n"\
 " -i <pkgname>      install/update package and its dependencies (see -c, -g)\n"\
 " -I                information about repository and installed packages\n"\
 " -l                list installed packages\n"\
@@ -690,48 +690,45 @@ static void r2pm_envhelp(bool verbose) {
 		char *r2pm_bindir = r_sys_getenv ("R2PM_BINDIR");
 		char *r2pm_dbdir = r_sys_getenv ("R2PM_DBDIR");
 		char *r2pm_gitdir = r_sys_getenv ("R2PM_GITDIR");
-		char *r2pm_gitskip = strdup ("");
-		printf ("Environment:\n"\
-			" R2_LOG_LEVEL=2         # define log.level for r2pm\n"\
-			" SUDO=sudo              # path to the SUDO executable\n"\
-			" MAKE=make              # path to the GNU MAKE executable\n"\
-			" R2PM_PLUGDIR=%s\n"\
-			" R2PM_BINDIR=%s\n"\
-			" R2PM_OFFLINE=0\n"\
-			" R2PM_LEGACY=0\n"\
-			" R2PM_DBDIR=%s\n"\
-			" R2PM_GITDIR=%s\n"\
-			" R2PM_GITSKIP=%s\n",
+		printf ("R2_LOG_LEVEL=2         # define log.level for r2pm\n"\
+			"SUDO=sudo              # path to the SUDO executable\n"\
+			"MAKE=make              # path to the GNU MAKE executable\n"\
+			"R2PM_PLUGDIR=%s\n"\
+			"R2PM_BINDIR=%s\n"\
+			"R2PM_OFFLINE=0\n"\
+			"R2PM_LEGACY=0\n"\
+			"R2PM_DBDIR=%s\n"\
+			"R2PM_GITDIR=%s\n",
 				r2pm_plugdir,
 				r2pm_bindir,
 				r2pm_dbdir,
-				r2pm_gitdir,
-				r2pm_gitskip
+				r2pm_gitdir
 		       );
 		free (r2pm_plugdir);
 		free (r2pm_bindir);
 		free (r2pm_dbdir);
 		free (r2pm_gitdir);
-		free (r2pm_gitskip);
 	} else {
-		printf ("R2_LOG_LEVEL\n"\
+		r_cons_printf ("R2_LOG_LEVEL\n"\
 			"R2PM_PLUGDIR\n"\
 			"R2PM_BINDIR\n"\
 			"R2PM_OFFLINE\n"\
 			"R2PM_LEGACY\n"\
 			"R2PM_DBDIR\n"\
-			"R2PM_GITDIR\n"\
-			"R2PM_GITSKIP\n");
+			"R2PM_GITDIR\n");
+		r_cons_flush ();
 	}
 }
 
 static void r2pm_varprint(const char *name) {
 	if (R_STR_ISEMPTY (name)) {
 		r2pm_envhelp (false);
-	} else if (r_str_startswith (name, "R2PM_")) {
+	} else {
 		r2pm_setenv ();
 		char *v = r_sys_getenv (name);
-		printf ("%s\n", v);
+		if (R_STR_ISNOTEMPTY (v)) {
+			printf ("%s\n", v);
+		}
 		free (v);
 	}
 }
@@ -742,16 +739,27 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		havetoflush = true;
 		r_cons_new ();
 	}
-	R2Pm r2pm = {0};
-	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "aqcdiIhHflgrsuUv");
-	if (opt.ind < argc) {
-		// TODO: fully deprecate during the 5.9.x cycle
-		r2pm_actionword (&r2pm, argv[opt.ind]);
-	}
 	int level = r_sys_getenv_asint ("R2_LOG_LEVEL");
 	if (level > 0) {
 		r_log_set_level (level);
+	} else {
+		level = 2;
+	}
+	char *levelstr = r_str_newf ("%d", level);
+	r_sys_setenv ("R2_LOG_LEVEL", levelstr);
+	free (levelstr);
+	// -H option without argument
+	if (argc == 2 && !strcmp (argv[1], "-H")) {
+		r2pm_varprint (NULL); // argv[opt.ind]);
+	//	main_print_var (NULL);
+		return 0;
+	}
+	R2Pm r2pm = {0};
+	RGetopt opt;
+	r_getopt_init (&opt, argc, argv, "aqcdiIhH:flgrsuUv");
+	if (opt.ind < argc) {
+		// TODO: fully deprecate during the 5.9.x cycle
+		r2pm_actionword (&r2pm, argv[opt.ind]);
 	}
 	int i, c;
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -796,8 +804,13 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 			r2pm.global = true;
 			break;
 		case 'H':
-			r2pm_varprint (argv[opt.ind]);
-			break;
+			if (!strcmp (opt.arg, "H")) {
+				r2pm_setenv ();
+				r2pm_envhelp (true);
+			} else {
+				r2pm_varprint (opt.arg);
+			}
+			return 0;
 		case 'h':
 			if (r2pm.help) {
 				r2pm.envhelp = true;
