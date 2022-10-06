@@ -77,7 +77,7 @@ typedef struct r_r2pm_t {
 
 static int git_pull(const char *dir, bool reset) {
 	if (reset) {
-		char *s = r_str_newf ("cd \"%s\" && git clean -xdf && git reset --hard @~2 && git checkout", dir);
+		char *s = r_str_newf ("cd %s && git clean -xdf && git reset --hard @~2 && git checkout", dir);
 		R_UNUSED_RESULT (r_sandbox_system (s, 1));
 		free (s);
 	}
@@ -413,7 +413,7 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 		R_LOG_ERROR ("This package does not have R2PM_INSTALL_WINDOWS instructions");
 		return 1;
 	}
-	char *s = r_str_newf ("cd %s\ncd %s\n%s", srcdir, pkg, script);
+	char *s = r_str_newf ("cd %s && cd %s && %s", srcdir, pkg, script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #else
@@ -485,7 +485,7 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 		free (srcdir);
 		return 1;
 	}
-	char *s = r_str_newf ("cd %s\ncd %s\n%s", srcdir, pkg, script);
+	char *s = r_str_newf ("cd %s && cd %s && %s", srcdir, pkg, script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #else
