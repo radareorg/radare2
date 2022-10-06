@@ -63,7 +63,7 @@ R_API void r_log_fini(void);
 R_API bool r_log_match(int level, const char *origin);
 R_API void r_log_message(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, ...);
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap);
-R_API void r_log_add_callback(RLogCallback cb);
+R_API void r_log_add_callback(RLogCallback cb, void *user);
 R_API void r_log_del_callback(RLogCallback cb);
 
 #if R_LOG_DISABLE
@@ -92,6 +92,8 @@ R_API void r_log_show_source(bool show_source);
 R_API void r_log_set_quiet(bool be_quiet);
 R_API void r_log_set_level(RLogLevel level);
 R_API void r_log_show_ts(bool ts);
+R_API RLogLevel r_log_get_level(void);
+R_API RLogLevel r_log_get_traplevel(void);
 R_API void r_log_set_traplevel(RLogLevel level);
 R_API void r_log_set_callback(RLogCallback cbfunc);
 

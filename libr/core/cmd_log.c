@@ -212,7 +212,7 @@ static int log_callback_r2(RCore *core, int count, const char *line) {
 }
 
 static int log_callback_all(RCore *log, int count, const char *line) {
-	r_cons_printf ("%d %s\n", count, line);
+	r_cons_printf ("%.2d %s\n", count, line);
 	return 0;
 }
 
@@ -242,10 +242,10 @@ R_API void r_core_log_view(RCore *core, int num) {
 			if (nl) {
 				*nl = 0;
 			}
-			r_cons_printf ("%d %s\n", i, m);
+			r_cons_printf ("%.2d %s\n", i, m);
 			free (m);
 		} else {
-			r_cons_printf ("%d ..\n", i);
+			r_cons_printf ("%.2d ..\n", i);
 		}
 	}
 }
@@ -285,7 +285,7 @@ static int cmd_log(void *data, const char *input) {
 		r_core_log_view (core, (int)r_num_math (core->num, input + 2));
 		break;
 	case 'l': // "Tl"
-		r_cons_printf ("%d\n", core->log->last - 1);
+		r_cons_printf ("%.2d\n", core->log->last - 1);
 		break;
 	case '-': //  "T-"
 		r_core_log_del (core, n);
