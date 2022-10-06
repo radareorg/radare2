@@ -326,24 +326,24 @@ a "msr SP_EL0, x3" 034118d5
 a "msr sp_el0, x3" 034118d5
 a "cbnz w3, 0x1fffd4" a3feff35
 a "cbz x3, 0x1fffe8" 43ffffb4
-d "addg x0, sp, 0x80, 0x4" e0138891
-dE "addg x12, x8, 0x0, 0x2" 91a0090c
+d "addg x0, sp, 0x80, 4" e0138891
+dE "addg x12, x8, 0x200, 2" 91a0090c
 d "subg x0, sp, 0x20, 0xf" e03f82d1
 d "irg sp, x0" 1f10df9a
 d "irg x13, x3, x7" 6d10c79a
 d "subp x13, x7, sp" ed00df9a
 d "gmi x13, x3, x7" 6d14c79a
 d "subps x13, x3, x7" 6d00c7ba
-d "cmpp sp, x13" ff03cdba
-d "stg x13, [x3], 0x0" 6d0420d9
+dB "cmpp sp, x13" ff03cdba
+d "stg x13, [x3], 0" 6d0420d9
 d "stg x13, [x3, 0x10]" 6d1820d9
 d "stg x13, [x3, 0x10]!" 6d1c20d9
 d "stzgm x12, [x0]" 0c0020d9
 d "ldg x13, [x3, 0x10]" 6d1060d9
-d "ldg x13, [x3, 0x0]" 6d0060d9
+d "ldg x13, [x3]" 6d0060d9
 d "stzg x13, [x3], 0x10" 6d1460d9
-d "stzg x13, [x3, 0x0]" 6d0860d9
-d "stzg x13, [x3, 0x0]!" 6d0c60d9
+d "stzg x13, [x3]" 6d0860d9
+d "stzg x13, [x3, 0]!" 6d0c60d9
 d "st2g sp, [sp], 0x20" ff27a0d9
 d "stgm x0, [x1]" 2000a0d9
 d "stz2g sp, [sp], 0x50" ff57e0d9
