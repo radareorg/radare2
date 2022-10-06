@@ -1319,6 +1319,9 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		r_strbuf_setf (&op->esil, "%s,%s,*,0,-,%s,=",
 			REG64 (2), REG64 (1), REG64 (0));
 		break;
+#if CS_API_MAJOR > 4
+	case ARM64_INS_ADDG:
+#endif
 	case ARM64_INS_ADD:
 	case ARM64_INS_ADC: // Add with carry.
 		OPCALL ("+");
@@ -3303,6 +3306,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 
 	switch (insn->id) {
 #if CS_API_MAJOR > 4
+	case ARM64_INS_UDF:
+		op->type = R_ANAL_OP_TYPE_ILL;
+		break;
 	case ARM64_INS_PACDA:
 	case ARM64_INS_PACDB:
 	case ARM64_INS_PACDZA:
@@ -3387,6 +3393,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->cycles = 4;
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
+#if CS_API_MAJOR > 4
+	case ARM64_INS_ADDG:
+#endif
 	case ARM64_INS_ADD:
 		if (ISREG64 (0) && REGID64 (0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
@@ -3398,7 +3407,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 				op->stackptr = -IMM64 (2);
 			}
 			op->val = op->stackptr;
-		} else {
+		} else if (REGID64 (0) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_RESET;
 			op->stackptr = 0;
 		}
@@ -3630,6 +3639,10 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		}
 		break;
 #if CS_API_MAJOR > 4
+	case ARM64_INS_IRG:
+		op->family = R_ANAL_OP_FAMILY_SECURITY;
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
 	case ARM64_INS_BLRAA:
 	case ARM64_INS_BLRAAZ:
 	case ARM64_INS_BLRAB:
@@ -4431,6 +4444,10 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 	}
 }
 
+static inline bool is_valid_mnemonic(const char *m) {
+	return !r_str_startswith (m, "hint") && !r_str_startswith (m, "udf");
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	R_CRITICAL_ENTER (a);
 	cs_insn *insn = NULL;
@@ -4468,10 +4485,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			return -1;
 		}
 	}
-
 	n = cs_disasm (a->cs_handle, (ut8*)buf, len, addr, 1, &insn);
-	if (n > 0 && !(insn->mnemonic[0] == 'h' && insn->mnemonic[1] == 'i' &&
-		insn->mnemonic[2] == 'n' && insn->mnemonic[3] == 't')) {
+	if (n > 0 && is_valid_mnemonic (insn->mnemonic)) {
 		if (mask & R_ANAL_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
 				insn->mnemonic,

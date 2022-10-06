@@ -98,7 +98,7 @@ mnemonic: irg
 description: insert random tag
 mask: ffffffff
 prefix: 0
-id: 0
+id: 429
 bytes: e813c89a
 refptr: 0
 size: 4
@@ -108,22 +108,23 @@ cycles: 0
 family: sec
 --
 address: 0x100007f14
-opcode: addg x9, x8, 0x20, 0x0
+opcode: addg x9, x8, 0x20, 0
 esilcost: 0
-disasm: addg x9, x8, 0x20, 0x0
-pseudo: addg x9,x8,0x20, 0x0 
+disasm: addg x9, x8, 0x20, 0
+pseudo: addg x9,x8,0x20, 0 
 mnemonic: addg
 description: add with tag
 mask: ffffffff
 prefix: 0
-id: 0
+id: 7
 bytes: 09018291
 refptr: 0
 size: 4
 sign: false
 type: add
-cycles: 0
-family: sec
+cycles: 1
+esil: 0x20,x8,+,x9,=
+family: cpu
 EOF
 RUN
 
@@ -140,40 +141,42 @@ ao@8
 EOF
 EXPECT=<<EOF
 address: 0x0
-opcode: addg x12, x8, 0x0, 0x2
+opcode: addg x12, x8, 0x200, 2
 esilcost: 0
-disasm: addg x12, x8, 0x0, 0x2
-pseudo: addg x12,x8,0x0, 0x2 
+disasm: addg x12, x8, 0x200, 2
+pseudo: addg x12,x8,0x200, 2 
 mnemonic: addg
 description: add with tag
 mask: ffffffff
 prefix: 0
-id: 0
+id: 7
 bytes: 91a0090c
 refptr: 0
 size: 4
 sign: false
 type: add
-cycles: 0
-family: sec
+cycles: 1
+esil: 0x200,x8,+,x12,=
+family: cpu
 ---
 address: 0x4
-opcode: addg x9, x8, 0x20, 0x0
+opcode: addg x9, x8, 0x20, 0
 esilcost: 0
-disasm: addg x9, x8, 0x20, 0x0
-pseudo: addg x9,x8,0x20, 0x0 
+disasm: addg x9, x8, 0x20, 0
+pseudo: addg x9,x8,0x20, 0 
 mnemonic: addg
 description: add with tag
 mask: ffffffff
 prefix: 0
-id: 0
+id: 7
 bytes: 91820109
 refptr: 0
 size: 4
 sign: false
 type: add
-cycles: 0
-family: sec
+cycles: 1
+esil: 0x20,x8,+,x9,=
+family: cpu
 ---
 address: 0x8
 opcode: irg x8, sp, x8
@@ -184,7 +187,7 @@ mnemonic: irg
 description: insert random tag
 mask: ffffffff
 prefix: 0
-id: 0
+id: 429
 bytes: 9ac813e8
 refptr: 0
 size: 4
