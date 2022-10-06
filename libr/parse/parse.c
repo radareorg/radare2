@@ -130,6 +130,27 @@ R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
 		? p->cur->parse (p, data, str) : false;
 }
 
+R_API char *r_parse_justify(char *str) {
+	// add space after commas
+	char *os = strdup (str);
+	int i, j;
+	for (i = j = 0; os[i]; i++,j++) {
+		char ch = os[i];
+		str[j] = ch;
+		if (ch == ',') {
+			j++;
+			str[j] = ' ';
+			while (os[i + 1] == ' ') {
+				i++;
+			}
+		}
+	}
+	str[j] = 0;
+	free (os);
+	r_str_trim_tail (str);
+	return str;
+}
+
 R_API char *r_parse_immtrim(char *opstr) {
 	if (R_STR_ISEMPTY (opstr)) {
 		return NULL;

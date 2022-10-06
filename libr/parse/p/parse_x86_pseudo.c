@@ -298,7 +298,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	} else {
 		replace (nw, wa, str);
 	}
-	r_str_trim (str);
+	str = r_parse_justify (str);
 	free (buf);
 	return true;
 }
