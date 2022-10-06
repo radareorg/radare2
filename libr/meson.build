@@ -412,6 +412,7 @@ endif
 
 parse_plugins += [
   '6502_pseudo',
+  'bpf_pseudo',
   'arm_pseudo',
   'avr_pseudo',
   'chip8_pseudo',
