@@ -3288,9 +3288,19 @@ R_API char *r_str_wrap(const char *str, int w) {
 	}
 	size_t r_size = 8 * strlen (str);
 	r = ret = malloc (r_size);
+	if (!r) {
+		return NULL;
+	}
 	char *end = r + r_size;
 	int cw = 0;
 	while (*str && r + 1 < end) {
+		size_t ansilen = __str_ansi_length (str);
+		if (ansilen > 1) {
+			memcpy (r, str, ansilen);
+			str += ansilen;
+			r += ansilen;
+			continue;
+		}
 		if (*str == '\t') {
 			// skip
 		} else if (*str == '\r') {

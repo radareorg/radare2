@@ -1742,7 +1742,7 @@ static void visual_textlogs(RCore *core) {
 	int index = 1;
 	while (true) {
 		r_cons_clear00 ();
-		const char *title = "[visual-text-logs] Use [hjkl] to move, `i` to insert, `q` to quit\n";
+		const char *title = "[q] [visual-text-logs] Move with [hjkl], `i` to insert, `-` trim logs\n";
 		if (r_config_get_i (core->config, "scr.color") > 0) {
 			r_cons_printf (Color_YELLOW"%s"Color_RESET, title);
 		} else {
@@ -1751,6 +1751,8 @@ static void visual_textlogs(RCore *core) {
 		r_core_cmdf (core, "Tv %d", index);
 		r_cons_printf ("--\n");
 		char *s = r_core_cmd_strf (core, "Tm %d~{}", index);
+		int w = r_cons_get_size (NULL);
+		s = r_str_wrap (s, w);
 		r_cons_printf ("%s\n", s);
 		free (s);
 		r_cons_visual_flush ();
