@@ -93,7 +93,7 @@ address: 0x100007f10
 opcode: irg x8, sp, x8
 esilcost: 0
 disasm: irg x8, sp, x8
-pseudo: irg x8,sp,x8 
+pseudo: irg x8, sp, x8
 mnemonic: irg
 description: insert random tag
 mask: ffffffff
@@ -111,7 +111,7 @@ address: 0x100007f14
 opcode: addg x9, x8, 0x20, 0
 esilcost: 0
 disasm: addg x9, x8, 0x20, 0
-pseudo: addg x9,x8,0x20, 0 
+pseudo: addg x9, x8, 0x20, 0
 mnemonic: addg
 description: add with tag
 mask: ffffffff
@@ -144,7 +144,7 @@ address: 0x0
 opcode: addg x12, x8, 0x200, 2
 esilcost: 0
 disasm: addg x12, x8, 0x200, 2
-pseudo: addg x12,x8,0x200, 2 
+pseudo: addg x12, x8, 0x200, 2
 mnemonic: addg
 description: add with tag
 mask: ffffffff
@@ -163,7 +163,7 @@ address: 0x4
 opcode: addg x9, x8, 0x20, 0
 esilcost: 0
 disasm: addg x9, x8, 0x20, 0
-pseudo: addg x9,x8,0x20, 0 
+pseudo: addg x9, x8, 0x20, 0
 mnemonic: addg
 description: add with tag
 mask: ffffffff
@@ -182,7 +182,7 @@ address: 0x8
 opcode: irg x8, sp, x8
 esilcost: 0
 disasm: irg x8, sp, x8
-pseudo: irg x8,sp,x8 
+pseudo: irg x8, sp, x8
 mnemonic: irg
 description: insert random tag
 mask: ffffffff
