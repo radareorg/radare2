@@ -29,6 +29,7 @@ address: 0x4
 opcode: jump
 esilcost: 1
 disasm: jump
+pseudo: jump
 mnemonic: jump
 mask: ff
 prefix: 0
