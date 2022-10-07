@@ -3534,7 +3534,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 				r_name_filter (method, -1);
 				r_flag_set (r->flags, method, sym->vaddr, 1);
 			}
-#if 0
+#if 1
 			r_list_foreach (c->fields, iter2, f) {
 				char *fn = r_str_newf ("field.%s.%s", classname, f->name);
 				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
@@ -3685,9 +3685,18 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			}
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
-				r_cons_printf ("0x%08"PFMT64x" method %d %s %s\n",
-					sym->vaddr, m, mflags, sym->dname? sym->dname: sym->name);
+				const char *ls = r_bin_lang_tostring (sym->lang);
+				r_cons_printf ("0x%08"PFMT64x" %s method %d %s %s\n",
+					sym->vaddr, ls?ls:"?", m, mflags, sym->dname? sym->dname: sym->name);
 				R_FREE (mflags);
+				m++;
+			}
+			m = 0;
+			const char *ls = r_bin_lang_tostring (c->lang);
+			r_list_foreach (c->fields, iter3, f) {
+				char *mflags = r_core_bin_method_flags_str (f->flags, mode);
+				r_cons_printf ("0x%08"PFMT64x" %s field %d %s %s\n",
+					f->vaddr, ls, m, mflags, f->name);
 				m++;
 			}
 		}
