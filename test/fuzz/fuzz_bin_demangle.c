@@ -7,7 +7,7 @@
 #include <r_util/r_sys.h>
 #include <r_util/r_sandbox.h>
 
-static int demangle_type = R_BIN_NM_CXX;
+static int demangle_type = R_BIN_LANG_CXX;
 
 static void usage() {
 	printf (
@@ -73,12 +73,12 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	char *demangled = NULL;
 	// TODO: replace with r_bin_demangle
 	switch (demangle_type) {
-	case R_BIN_NM_JAVA: demangled = r_bin_demangle_java (str); break;
-	case R_BIN_NM_RUST: demangled = r_bin_demangle_rust (NULL, str, vaddr); break;
-	case R_BIN_NM_OBJC: demangled = r_bin_demangle_objc (NULL, str); break;
-	case R_BIN_NM_SWIFT: demangled = r_bin_demangle_swift (str, false, false); break;
-	case R_BIN_NM_CXX: demangled = r_bin_demangle_cxx (NULL, str, vaddr); break;
-	case R_BIN_NM_MSVC: demangled = r_bin_demangle_msvc (str); break;
+	case R_BIN_LANG_JAVA: demangled = r_bin_demangle_java (str); break;
+	case R_BIN_LANG_RUST: demangled = r_bin_demangle_rust (NULL, str, vaddr); break;
+	case R_BIN_LANG_OBJC: demangled = r_bin_demangle_objc (NULL, str); break;
+	case R_BIN_LANG_SWIFT: demangled = r_bin_demangle_swift (str, false, false); break;
+	case R_BIN_LANG_CXX: demangled = r_bin_demangle_cxx (NULL, str, vaddr); break;
+	case R_BIN_LANG_MSVC: demangled = r_bin_demangle_msvc (str); break;
 	default:
 		abort();
 	}
@@ -86,7 +86,7 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	free (str);
 	free (demangled);
 
-	if (demangle_type == R_BIN_NM_MSVC) {
+	if (demangle_type == R_BIN_LANG_MSVC) {
 		// Flush out globals
 		free (r_bin_demangle_msvc ("."));
 	}

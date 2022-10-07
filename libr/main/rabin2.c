@@ -519,7 +519,7 @@ static int __lib_bin_ldr_dt(RLibPlugin *pl, void *p, void *u) {
 
 static void setup_trylib_from_environment(RBin *bin, int type) {
 	bool trylib = false;
-	if (type == R_BIN_NM_SWIFT) {
+	if (type == R_BIN_LANG_SWIFT) {
 		trylib = true;
 		char *swiftlib = r_sys_getenv ("RABIN2_TRYLIB");
 		if (swiftlib) {
@@ -534,12 +534,12 @@ static char *__demangleAs(RBin *bin, int type, const char *file) {
 	bool syscmd = bin->demangle_usecmd;
 	char *res = NULL;
 	switch (type) {
-	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (NULL, file, 0); break;
-	case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
-	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
-	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file, syscmd, bin->demangle_trylib); break;
-	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc (file); break;
-	case R_BIN_NM_RUST: res = r_bin_demangle_rust (NULL, file, 0); break;
+	case R_BIN_LANG_CXX: res = r_bin_demangle_cxx (NULL, file, 0); break;
+	case R_BIN_LANG_JAVA: res = r_bin_demangle_java (file); break;
+	case R_BIN_LANG_OBJC: res = r_bin_demangle_objc (NULL, file); break;
+	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (file, syscmd, bin->demangle_trylib); break;
+	case R_BIN_LANG_MSVC: res = r_bin_demangle_msvc (file); break;
+	case R_BIN_LANG_RUST: res = r_bin_demangle_rust (NULL, file, 0); break;
 	default:
 		R_LOG_ERROR ("Unsupported demangler");
 		break;

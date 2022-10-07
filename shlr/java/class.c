@@ -2772,7 +2772,7 @@ R_API RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx) {
 				break;
 			}
 			sym->name = strdup (field->name);
-			sym->lang = R_BIN_NM_JAVA;
+			sym->lang = R_BIN_LANG_JAVA;
 			// func defintion
 			// sym->paddr = field->file_offset + bin->loadaddr;
 			// code implementation
@@ -2885,7 +2885,7 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 	k->name = r_bin_java_get_this_class_name (bin);
 	k->super = r_bin_java_get_name_from_bin_cp_list (bin, bin->cf2.super_class);
 	k->index = (idx++);
-	k->lang = R_BIN_NM_JAVA;
+	k->lang = R_BIN_LANG_JAVA;
 	r_list_append (classes, k);
 	r_list_foreach (bin->cp_list, iter, cp_obj) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_CLASS
