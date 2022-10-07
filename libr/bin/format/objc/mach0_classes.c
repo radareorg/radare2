@@ -1267,11 +1267,14 @@ ut32 fields_count;
 ut32 fields_offset;
 #endif
 #define NCD(x) (typeaddr + (x*4) + swords[x])
+#if 0
 	eprintf ("0x%08"PFMT64x " swift_type_entry:\n", typeaddr);
 	eprintf ("  flags:   0x%08x\n", words[0]);
 	eprintf ("  parent:  0x%08"PFMT64x"\n", NCD (NCD_PARENT));
+#endif
 	ut64 typename_addr = NCD (NCD_NAME);
 	st.name_addr = typename_addr;
+#if 0
 	char *typename = readstr (bf, typename_addr);
 	eprintf ("  name:    0x%08"PFMT64x" (%s)\n", typename_addr, typename);
 	eprintf ("  access:  0x%08"PFMT64x"\n", bf->o->baddr + NCD (NCD_ACCESSFCNPTR));
@@ -1280,21 +1283,27 @@ ut32 fields_offset;
 	eprintf ("  members: 0x%08"PFMT64x"\n", NCD (NCD_MEMBERS));
 	eprintf ("  fields:  0x%08"PFMT64x"\n", NCD (NCD_NFIELDS));
 	eprintf ("  fieldsat:0x%08"PFMT64x"\n", NCD (NCD_OFIELDS));
+
 	char * tn = r_name_filter_dup (typename);
 	r_cons_printf ("f sym.swift.%s.init = 0x%08"PFMT64x"\n",
 		tn, bf->o->baddr + NCD (NCD_ACCESSFCNPTR));
 	free (tn);
+	free (typename);
+#endif
 	st.valid = true;
 	st.fields = NCD (NCD_FIELDS);
 	st.members = NCD (NCD_MEMBERS);
 	st.members_count = NCD (NCD_MEMBERS);
-	free (typename);
 	return st;
 }
 
-static void parse_type(RBinFile *bf, SwiftType st) {
+static void parse_type(RList *list, RBinFile *bf, SwiftType st) {
 	char *otypename = readstr (bf, st.name_addr);
 	char *typename = r_name_filter_dup (otypename);
+	RBinClass *klass = r_bin_class_new (typename, NULL, false);
+	// eprintf ("Type name (%s)\n", typename);
+	klass->addr = st.addr;
+	klass->lang = R_BIN_NM_SWIFT;
 	// eprintf ("methods:\n");
 	if (st.members != UT64_MAX) {
 		ut8 buf[512];
@@ -1320,32 +1329,47 @@ static void parse_type(RBinFile *bf, SwiftType st) {
 					break;
 				}
 			}
+			sym = r_bin_symbol_new (method_name, method_addr, method_addr);
+			sym->lang = R_BIN_NM_SWIFT;
+			r_list_append (klass->methods, sym);
+#if 0
 			// TODO. try to resolve the method name by symbol table or debug info
 			r_cons_printf ("f sym.swift.%s.method.%s = 0x%" PFMT64x"\n", typename, method_name, method_addr);
+#endif
 			free (method_name);
 		}
 	}
+	r_list_append (list, klass);
 
 	// eprintf ("fields:\n");
 #define FCD(x) (st.fieldmd_addr + ((6+j+x) * 4) + st.fieldmd[6+j+x])
 	if (st.fields != UT64_MAX) {
 		int i;
-		for (i = 0; i < 128; i+= 3) {
+		for (i = 0; i < 128; i += 3) {
 			int j = (st.fields - st.fieldmd_addr) / 4;
 			if (((6 + j + i) * 4) >= st.fieldmd_size) {
 				break;
 			}
+			RBinField *field = R_NEW0 (RBinField);
+			if (!field) {
+				break;
+			}
 			ut64 field_name_addr = FCD (i);
-			ut64 field_method_addr = FCD (i);
+			ut64 field_method_addr = FCD (i); // XXX address of the string
+			ut64 vaddr = r_bin_file_get_baddr(bf) + field_method_addr;
 			char *field_name = readstr (bf, field_name_addr);
 			if (!field_name) {
 				break;
 			}
-			char *fn = r_name_filter_dup (field_name);
+			field->name = r_name_filter_dup (field_name);
+			field->paddr = field_method_addr;
+			field->vaddr = vaddr;
+#if 0
 			r_cons_printf ("f sym.swift.%s.field.%s = 0x%08"PFMT64x"\n",
-				typename, fn, bf->o->baddr + field_method_addr);
-			free (fn);
+				typename, field->name, bf->o->baddr + field_method_addr);
+#endif
 			free (field_name);
+			r_list_append (klass->fields, field);
 		}
 	}
 #undef FCD
@@ -1409,8 +1433,13 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		}
 	}
 	R_FREE (sections);
+	if (!ret && !(ret = r_list_newf ((RListFree)r_bin_class_free))) {
+		// retain just for debug
+		goto get_classes_error;
+	}
 
-	if (bf->rbin->verbose && swift5_types_addr != UT64_MAX) {
+	bool want_swift = !r_sys_getenv_asbool ("RABIN2_NOSWIFT");
+	if (want_swift && swift5_types_addr != UT64_MAX) {
 		// eprintf ("Parsing Swift metadata\n");
 		const int aligned_fieldmd_size = swift5_fieldmd_size + (swift5_fieldmd_size % 4);
 		st32 *fieldmd = malloc (aligned_fieldmd_size);
@@ -1429,8 +1458,9 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 					st.fieldmd = fieldmd;
 					st.fieldmd_addr = swift5_fieldmd_addr;
 					st.fieldmd_size = aligned_fieldmd_size;
+					// eprintf ("Name address %llx\n", st.name_addr);
 					if (st.fields != UT64_MAX) {
-						parse_type (bf, st);
+						parse_type (ret, bf, st);
 					}
 				}
 				free (words);
@@ -1442,10 +1472,6 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		goto get_classes_error;
 	}
 
-	if (!ret && !(ret = r_list_newf ((RListFree)r_bin_class_free))) {
-		// retain just for debug
-		goto get_classes_error;
-	}
 	if (!is_found) {
 		// retain just for debug
 		// eprintf ("there is no section __objc_classlist\n");

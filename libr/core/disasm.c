@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2022 - nibble, pancake, dso, lazula */
 
+#define R_LOG_ORIGIN "disasm"
+
 #include "r_core.h"
 
 #define HASRETRY 1
