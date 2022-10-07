@@ -96,14 +96,14 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	char *res = NULL;
 	int type = r_bin_demangle_type (lang);
 	switch (type) {
-	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (core->bin->cur, s, 0); break;
-	case R_BIN_NM_JAVA: res = r_bin_demangle_java (s); break;
-	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, s); break;
-	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (s, core->bin->demangle_usecmd, core->bin->demangle_trylib); break;
-	case R_BIN_NM_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
-	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc (s); break;
-	case R_BIN_NM_RUST: res = r_bin_demangle_rust (core->bin->cur, s, 0); break;
-	case R_BIN_NM_PASCAL: res = r_bin_demangle_freepascal (s); break;
+	case R_BIN_LANG_CXX: res = r_bin_demangle_cxx (core->bin->cur, s, 0); break;
+	case R_BIN_LANG_JAVA: res = r_bin_demangle_java (s); break;
+	case R_BIN_LANG_OBJC: res = r_bin_demangle_objc (NULL, s); break;
+	case R_BIN_LANG_SWIFT: res = r_bin_demangle_swift (s, core->bin->demangle_usecmd, core->bin->demangle_trylib); break;
+	case R_BIN_LANG_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
+	case R_BIN_LANG_MSVC: res = r_bin_demangle_msvc (s); break;
+	case R_BIN_LANG_RUST: res = r_bin_demangle_rust (core->bin->cur, s, 0); break;
+	case R_BIN_LANG_PASCAL: res = r_bin_demangle_freepascal (s); break;
 	default:
 		r_bin_demangle_list (core->bin);
 		return true;

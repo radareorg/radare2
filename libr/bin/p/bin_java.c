@@ -152,7 +152,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 }
 
 static int retdemangle(const char *str) {
-	return R_BIN_NM_JAVA;
+	return R_BIN_LANG_JAVA;
 }
 
 static RBinAddr *binsym(RBinFile *bf, int sym) {

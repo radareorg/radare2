@@ -1077,7 +1077,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 		R_LOG_ERROR ("Cannot allocate class %s", klass);
 		return NULL;
 	}
-	int lang = (strstr (method, "JNI") || strstr (klass, "JNI"))? R_BIN_NM_JNI: R_BIN_NM_CXX;
+	int lang = (strstr (method, "JNI") || strstr (klass, "JNI"))? R_BIN_LANG_JNI: R_BIN_LANG_CXX;
 	c->lang = lang;
 	RBinSymbol *sym = __getMethod (bf, klass, method);
 	if (!sym) {
@@ -1095,7 +1095,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 }
 
 R_API RBinField *r_bin_file_add_field(RBinFile *binfile, const char *classname, const char *name) {
-	R_LOG_ERROR ("TODO: RBinFile.addField() is not implemented");
+	R_LOG_TODO ("RBinFile.addField() is not implemented");
 	return NULL;
 }
 

@@ -698,7 +698,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 			method->rtype = strdup (rtype);
 			R_FREE (rtype);
 		}
-		method->lang = R_BIN_NM_OBJC;
+		method->lang = R_BIN_LANG_OBJC;
 		method->vaddr = m.imp;
 		if (!method->vaddr) {
 			R_FREE (method);
@@ -1303,7 +1303,7 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st) {
 	RBinClass *klass = r_bin_class_new (typename, NULL, false);
 	// eprintf ("Type name (%s)\n", typename);
 	klass->addr = st.addr;
-	klass->lang = R_BIN_NM_SWIFT;
+	klass->lang = R_BIN_LANG_SWIFT;
 	// eprintf ("methods:\n");
 	if (st.members != UT64_MAX) {
 		ut8 buf[512];
@@ -1330,7 +1330,7 @@ static void parse_type(RList *list, RBinFile *bf, SwiftType st) {
 				}
 			}
 			sym = r_bin_symbol_new (method_name, method_addr, method_addr);
-			sym->lang = R_BIN_NM_SWIFT;
+			sym->lang = R_BIN_LANG_SWIFT;
 			r_list_append (klass->methods, sym);
 #if 0
 			// TODO. try to resolve the method name by symbol table or debug info
@@ -1489,7 +1489,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			// retain just for debug
 			goto get_classes_error;
 		}
-		klass->lang = R_BIN_NM_OBJC;
+		klass->lang = R_BIN_LANG_OBJC;
 		if (!(klass->methods = r_list_new ())) {
 			// retain just for debug
 			goto get_classes_error;
