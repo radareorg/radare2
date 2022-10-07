@@ -30,7 +30,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int flags, int mode) {
     return r_io_desc_new (io, &r_io_plugin_dap, pathname, flags, mode, rio_dap);
 }
 
-static int __close(RIODesc *fd) {
+static bool __close(RIODesc *fd) {
     printf("%s\n", __func__);
     if (!fd || !fd->data)
         return -1;
@@ -61,7 +61,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
-    RIODap *rio_foo = NULL;
+    //RIODap *rio_foo = NULL;
 
     printf("%s, offset: %lx\n", __func__, io->off);
 
@@ -80,7 +80,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 }
 
 static int __getpid(RIODesc *fd) {
-    RIODap *rio_foo = NULL;
+    //RIODap *rio_foo = NULL;
 
     fd->io->cb_printf ("name = %s\n", fd->name);
 
