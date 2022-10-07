@@ -68,7 +68,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
     if (!fd || !fd->data)
         return -1;
 
-    rio_foo = fd->data;
+    //rio_foo = fd->data;
 
     return 0;
 }
@@ -90,14 +90,14 @@ static int __getpid(RIODesc *fd) {
         return -1;
     }
 
-    rio_foo = fd->data;
+    //rio_foo = fd->data;
     return 0;
 }
 
-static int __gettid(RIODesc *fd) {
+/*static int __gettid(RIODesc *fd) {
     printf("%s\n", __func__);
     return 0;
-}
+}*/
 
 static char *__system(RIO *io, RIODesc *fd, const char *command) {
     printf("%s command: %s\n", __func__, command);
