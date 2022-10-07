@@ -1743,6 +1743,14 @@ static void visual_textlogs(RCore *core) {
 	while (true) {
 		int log_level = r_log_get_level ();
 		r_cons_clear00 ();
+		int notch = r_config_get_i (core->config, "scr.notch");
+		while (notch-- > 0) {
+			r_cons_newline ();
+		}
+		const char *vi = r_config_get (core->config, "cmd.vprompt");
+		if (R_STR_ISNOTEMPTY (vi)) {
+			r_core_cmd0 (core, vi);
+		}
 		const char *title = "[q] [visual-text-logs] Move with [jk] `i` to insert `-` trim logs [+-] log.level =";
 		if (r_config_get_i (core->config, "scr.color") > 0) {
 			r_cons_printf (Color_YELLOW"%s %d\n"Color_RESET, title, log_level);
@@ -1777,6 +1785,20 @@ static void visual_textlogs(RCore *core) {
 			break;
 		case '-':
 			r_log_set_level (log_level - 1);
+			break;
+		case '=':
+			{ // TODO: edit
+				r_core_visual_showcursor (core, true);
+				const char *buf = NULL;
+				#define I core->cons
+				const char *cmd = r_config_get (core->config, "cmd.vprompt");
+				r_line_set_prompt ("cmd.vprompt> ");
+				I->line->contents = strdup (cmd);
+				buf = r_line_readline ();
+				I->line->contents = NULL;
+				(void)r_config_set (core->config, "cmd.vprompt", buf);
+				r_core_visual_showcursor (core, false);
+			}
 			break;
 		case '!':
 			r_core_cmdf (core, "T-%d", index);
