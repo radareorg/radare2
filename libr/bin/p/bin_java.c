@@ -23,11 +23,11 @@ static int init(void *user) {
 }
 
 static int fini(void *user) {
-	IFDBG_BIN_JAVA eprintf("Calling plugin fini = %d.\n", DB? 1: 0);
+	IFDBG_BIN_JAVA eprintf ("Calling plugin fini = %d.\n", DB? 1: 0);
 	if (!DB) {
-		IFDBG_BIN_JAVA eprintf("plugin DB already uninited.\n");
+		IFDBG_BIN_JAVA eprintf ("plugin DB already uninited.\n");
 	} else {
-		IFDBG_BIN_JAVA eprintf("plugin DB beeing uninited.\n");
+		IFDBG_BIN_JAVA eprintf ("plugin DB beeing uninited.\n");
 		sdb_free (DB);
 		DB = NULL;
 	}

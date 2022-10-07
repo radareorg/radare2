@@ -19,13 +19,13 @@ EXPECT=<<EOF
 - 2 5 dalvik-32 ba:0x0004fb90 sz:230068 ?
 - 3 6 dalvik-32 ba:0x0008c0f8 sz:213928 ?
 * 4 7 dalvik-32 ba:0x000c4848 sz:286000 ?
-1383
+2652
 * 0 3 dalvik-64 ba:0x00000000 sz:2736 ?
 * 1 4 dalvik-32 ba:0x00005560 sz:285464 ?
 * 2 5 dalvik-32 ba:0x0004fb90 sz:230068 ?
 * 3 6 dalvik-32 ba:0x0008c0f8 sz:213928 ?
 * 4 7 dalvik-32 ba:0x000c4848 sz:286000 ?
-5363
+9784
 EOF
 RUN
 
@@ -50,13 +50,13 @@ EXPECT=<<EOF
 - 2 5 dalvik-32 ba:0x0004fb90 sz:230068 ?
 - 3 6 dalvik-32 ba:0x0008c0f8 sz:213928 ?
 * 4 7 dalvik-32 ba:0x000c4848 sz:286000 ?
-1383
+2652
 * 0 3 dalvik-64 ba:0x00000000 sz:2736 ?
 * 1 4 dalvik-32 ba:0x00005560 sz:285464 ?
 * 2 5 dalvik-32 ba:0x0004fb90 sz:230068 ?
 * 3 6 dalvik-32 ba:0x0008c0f8 sz:213928 ?
 * 4 7 dalvik-32 ba:0x000c4848 sz:286000 ?
-5363
+9784
 EOF
 RUN
 

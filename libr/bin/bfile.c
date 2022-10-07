@@ -1077,11 +1077,14 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 		R_LOG_ERROR ("Cannot allocate class %s", klass);
 		return NULL;
 	}
+	int lang = (strstr (method, "JNI") || strstr (klass, "JNI"))? R_BIN_NM_JNI: R_BIN_NM_CXX;
+	c->lang = lang;
 	RBinSymbol *sym = __getMethod (bf, klass, method);
 	if (!sym) {
 		sym = R_NEW0 (RBinSymbol);
 		if (sym) {
 			sym->name = strdup (method);
+			sym->lang = lang;
 			r_list_append (c->methods, sym);
 			char *name = r_str_newf ("%s::%s", klass, method);
 			ht_pp_insert (bf->o->methods_ht, name, sym);

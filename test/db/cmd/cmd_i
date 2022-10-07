@@ -484,19 +484,19 @@ ic~_JNIEnv
 ic~FindClass
 EOF
 EXPECT=<<EOF
-0x00000000 [0x00006060 - 0x0000697c]   2332 class 0 _JNIEnv
-0x000074f8 method 0      inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)
-0x0000699c method 1      findBaseDexClassloader(_JNIEnv*, _jobject*)
-0x00006a2c method 2      getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)
-0x00006abc method 3      getPathList(_JNIEnv*, _jobject*)
-0x00006af4 method 4      getDexElements(_JNIEnv*, _jobject*)
-0x00006b1c method 5      setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*)
-0x00006bb0 method 6      combineArray(_JNIEnv*, _jobject*, _jobject*)
-0x00006d00 method 7      injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
-0x00006e5c method 8      appendArray(_JNIEnv*, _jobject*, _jobject*)
-0x00006f68 method 9      injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*)
-0x0000720c method 10      injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
-0x00006060 method 0      FindClass(char const*)
+0x00000000 [0x00006060 - 0x0000697c]   2332 jni class 0 _JNIEnv
+0x000074f8 jni method 0      inject(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x0000699c jni method 1      findBaseDexClassloader(_JNIEnv*, _jobject*)
+0x00006a2c jni method 2      getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)
+0x00006abc jni method 3      getPathList(_JNIEnv*, _jobject*)
+0x00006af4 jni method 4      getDexElements(_JNIEnv*, _jobject*)
+0x00006b1c jni method 5      setField(_JNIEnv*, _jobject*, _jobject*, _jstring*, _jobject*)
+0x00006bb0 jni method 6      combineArray(_JNIEnv*, _jobject*, _jobject*)
+0x00006d00 jni method 7      injectAboveEqualApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x00006e5c jni method 8      appendArray(_JNIEnv*, _jobject*, _jobject*)
+0x00006f68 jni method 9      injectInAliyunOs(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x0000720c jni method 10      injectBelowApiLevel14(_JNIEnv*, _jobject*, _jstring*, _jstring*)
+0x00006060 jni method 0      FindClass(char const*)
 EOF
 RUN
 
@@ -581,6 +581,7 @@ EXPECT=<<EOF
   {
     "classname": "_JNIEnv",
     "addr": 0,
+    "lang": "jni",
     "index": 0,
     "methods": [
       {
@@ -657,6 +658,7 @@ EXPECT=<<EOF
   {
     "classname": "SystemClassLoaderInjector",
     "addr": 0,
+    "lang": "jni",
     "index": 1,
     "methods": [
       {
@@ -733,6 +735,7 @@ EXPECT=<<EOF
   {
     "classname": "std",
     "addr": 0,
+    "lang": "c++",
     "index": 2,
     "methods": [
       {
@@ -773,6 +776,7 @@ EXPECT=<<EOF
   {
     "classname": "std::exception",
     "addr": 0,
+    "lang": "c++",
     "index": 3,
     "methods": [
       {
@@ -795,6 +799,7 @@ EXPECT=<<EOF
   {
     "classname": "std::bad_exception",
     "addr": 0,
+    "lang": "c++",
     "index": 4,
     "methods": [
       {
@@ -817,6 +822,7 @@ EXPECT=<<EOF
   {
     "classname": "__cxxabiv1::__forced_unwind",
     "addr": 0,
+    "lang": "c++",
     "index": 5,
     "methods": [
       {
@@ -833,6 +839,7 @@ EXPECT=<<EOF
   {
     "classname": "__cxxabiv1::__foreign_exception",
     "addr": 0,
+    "lang": "c++",
     "index": 6,
     "methods": [
       {
@@ -849,6 +856,7 @@ EXPECT=<<EOF
   {
     "classname": "__eh_globals_init",
     "addr": 0,
+    "lang": "c++",
     "index": 7,
     "methods": [
       {
@@ -865,6 +873,7 @@ EXPECT=<<EOF
   {
     "classname": "__cxxabiv1",
     "addr": 0,
+    "lang": "c++",
     "index": 8,
     "methods": [
       {
@@ -887,6 +896,7 @@ EXPECT=<<EOF
   {
     "classname": "__cxxabiv1::__fundamental_type_info",
     "addr": 0,
+    "lang": "c++",
     "index": 9,
     "methods": [
       {
@@ -903,6 +913,7 @@ EXPECT=<<EOF
   {
     "classname": "std::type_info",
     "addr": 0,
+    "lang": "c++",
     "index": 10,
     "methods": [
       {
@@ -949,6 +960,7 @@ EXPECT=<<EOF
   {
     "classname": "__cxxabiv1::__pointer_type_info",
     "addr": 0,
+    "lang": "c++",
     "index": 11,
     "methods": [
       {
@@ -977,6 +989,7 @@ EXPECT=<<EOF
   {
     "classname": "__cxxabiv1::__pbase_type_info",
     "addr": 0,
+    "lang": "c++",
     "index": 12,
     "methods": [
       {
@@ -1005,6 +1018,7 @@ EXPECT=<<EOF
   {
     "classname": "__cxxabiv1::__si_class_type_info",
     "addr": 0,
+    "lang": "c++",
     "index": 13,
     "methods": [
       {
@@ -1039,6 +1053,7 @@ EXPECT=<<EOF
   {
     "classname": "__cxxabiv1::__class_type_info",
     "addr": 0,
+    "lang": "c++",
     "index": 14,
     "methods": [
       {
@@ -1085,6 +1100,7 @@ EXPECT=<<EOF
   {
     "classname": "__gnu_cxx",
     "addr": 0,
+    "lang": "c++",
     "index": 15,
     "methods": [
       {
@@ -1113,6 +1129,7 @@ EXPECT=<<EOF
   {
     "classname": "__gnu_cxx::__concurrence_lock_error",
     "addr": 0,
+    "lang": "c++",
     "index": 16,
     "methods": [
       {
@@ -1135,6 +1152,7 @@ EXPECT=<<EOF
   {
     "classname": "__gnu_cxx::__concurrence_unlock_error",
     "addr": 0,
+    "lang": "c++",
     "index": 17,
     "methods": [
       {
@@ -1157,6 +1175,7 @@ EXPECT=<<EOF
   {
     "classname": "std::bad_cast",
     "addr": 0,
+    "lang": "c++",
     "index": 18,
     "methods": [
       {
@@ -1179,6 +1198,7 @@ EXPECT=<<EOF
   {
     "classname": "std::bad_typeid",
     "addr": 0,
+    "lang": "c++",
     "index": 19,
     "methods": [
       {
@@ -4238,10 +4258,10 @@ NAME=ic (file Java)
 FILE=bins/java/Hello.class
 CMDS=ic
 EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002aa]    127 class 0 Hello :: java/lang/Object
-0x0000022b method 0      <init>
-0x00000263 method 1      say
-0x000002aa method 2      main
+0x00000000 [0x0000022b - 0x000002aa]    127 java class 0 Hello :: java/lang/Object
+0x0000022b java method 0      <init>
+0x00000263 java method 1      say
+0x000002aa java method 2      main
 EOF
 RUN
 
@@ -4264,7 +4284,7 @@ NAME=icq (file Java)
 FILE=bins/java/Hello.class
 CMDS=icq
 EXPECT=<<EOF
-0x00000000 [0x0000022b - 0x000002aa] Hello java/lang/Object
+0x00000000 [0x0000022b - 0x000002aa] java Hello java/lang/Object
 EOF
 RUN
 
