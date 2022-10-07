@@ -312,3 +312,5 @@ Do 'r2pm -i r2premium; echo "e cfg.fortunes.type = nsfw" >> ~/.radare2rc' for a 
 pneumonic
 Click below to prove you are not a bot
 Sorry, not sorry.
+fix it or set the machine on fire
+burn it before the bug spreads to other installations
