@@ -881,15 +881,16 @@ NAME=rabin2 -c
 FILE=bins/java/test.class
 CMDS=!rabin2 -c ${R2_FILE}
 EXPECT=<<EOF
-0x00000000 [0x000008f9 - 0x00000b99]    672 class 0 test :: groovy/lang/Script
-0x000008f9 method 0      <init>
-0x0000092e method 1      <init>
-0x0000096e method 2      main
-0x000009ae method 3      run
-0x00000aba method 4      $getStaticMetaClass
-0x00000afb method 5      $createCallSiteArray_1
-0x00000b6a method 6      $createCallSiteArray
-0x00000b99 method 7      $getCallSiteArray
+0x00000000 [0x000008f9 - 0x00000b99]    672 java class 0 test :: groovy/lang/Script
+0x000008f9 java method 0      <init>
+0x0000092e java method 1      <init>
+0x0000096e java method 2      main
+0x000009ae java method 3      run
+0x00000aba java method 4      $getStaticMetaClass
+0x00000afb java method 5      $createCallSiteArray_1
+0x00000b6a java method 6      $createCallSiteArray
+0x00000b99 java method 7      $getCallSiteArray
+0x00000000 java field 0      __$stMC
 EOF
 RUN
 
@@ -897,7 +898,7 @@ NAME=rabin2 -cq
 FILE=bins/java/test.class
 CMDS=!rabin2 -cq ${R2_FILE}
 EXPECT=<<EOF
-0x00000000 [0x000008f9 - 0x00000b99] test groovy/lang/Script
+0x00000000 [0x000008f9 - 0x00000b99] java test groovy/lang/Script
 EOF
 RUN
 

@@ -452,7 +452,7 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 			}
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf ("0x%"PFMT64x" %d %.4d %s\n", vaddr,
+			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", vaddr,
 				string->size, string->length, string->string);
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (string->string);
@@ -996,7 +996,9 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		pair_str (pj, "guid", info->guid);
 		pair_str (pj, "intrp", info->intrp);
 		pair_ut64x (pj, "laddr", laddr);
-		pair_str (pj, "lang", info->lang);
+		if (info->lang && *info->lang != '?') {
+			pair_str (pj, "lang", info->lang);
+		}
 		pair_bool (pj, "linenum", R_BIN_DBG_LINENUMS & info->dbg_info);
 		pair_bool (pj, "lsyms", R_BIN_DBG_SYMS & info->dbg_info);
 		pair_str (pj, "machine", info->machine);
@@ -4156,7 +4158,9 @@ static void bin_pe_resources(RCore *r, PJ *pj, int mode) {
 			pj_ks (pj, "type", type);
 			pj_kn (pj, "vaddr", vaddr);
 			pj_ki (pj, "size", size);
-			pj_ks (pj, "lang", lang);
+			if (lang && *lang != '?') {
+				pj_ks (pj, "lang", lang);
+			}
 			pj_ks (pj, "timestamp", timestr);
 			pj_end (pj);
 		} else {
