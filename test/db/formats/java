@@ -35,11 +35,11 @@ NAME=java classes
 FILE=bins/java/DemoTest.class
 CMDS=ic
 EXPECT=<<EOF
-0x00000000 [0x00000190 - 0x00000211]    129 class 0 DemoTest :: java/lang/Object
-0x00000190 method 0      fun
-0x000001b9 method 1      <init>
-0x000001e8 method 2      res
-0x00000211 method 3      main
+0x00000000 [0x00000190 - 0x00000211]    129 java class 0 DemoTest :: java/lang/Object
+0x00000190 java method 0      fun
+0x000001b9 java method 1      <init>
+0x000001e8 java method 2      res
+0x00000211 java method 3      main
 EOF
 RUN
 
