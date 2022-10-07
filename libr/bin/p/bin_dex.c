@@ -1090,6 +1090,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		sym->name = r_str_replace (sym->name, "method.", "", 0);
 		r_str_replace_char (sym->name, ';', 0);
 		sym->paddr = sym->vaddr = total;
+		sym->lang = R_BIN_NM_JAVA;
 		sym->ordinal = (*sym_count)++;
 
 		if (dex->dexdump) {
@@ -1117,8 +1118,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 
 // TODO: refactor this method
 // XXX it needs a lot of love!!!
-static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls,
-		int *sym_count, ut64 DM, int *methods, bool is_direct) {
+static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls, int *sym_count, ut64 DM, int *methods, bool is_direct) {
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	RBinDexObj *dex = bf->o->bin_obj;
 	bool bin_dbginfo = bf->rbin->want_dbginfo;
@@ -1369,6 +1369,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				sym->vaddr = encoded_method_addr;
 			}
 			dex->code_from = R_MIN (dex->code_from, sym->paddr);
+			sym->lang = R_BIN_NM_JAVA;
 			sym->bind = ((MA & 1) == 1) ? R_BIN_BIND_GLOBAL_STR : R_BIN_BIND_LOCAL_STR;
 			sym->method_flags = get_method_flags (MA);
 			sym->ordinal = (*sym_count)++;
@@ -1422,6 +1423,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			} else {
 				sym->size = 0;
 				r_list_append (dex->methods_list, sym);
+				sym->lang = R_BIN_NM_JAVA;
 				r_list_append (cls->methods, sym);
 			}
 			if (MC > 0 && debug_info_off > 0 && dex->header.data_offset < debug_info_off &&
@@ -1456,6 +1458,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		goto beach;
 	}
 	cls->name = dex_class_name (dex, c);
+	cls->lang = R_BIN_NM_JAVA;
 	if (!cls->name) {
 		goto beach;
 	}
@@ -1721,6 +1724,7 @@ static bool dex_loadcode(RBinFile *bf) {
 				//XXX use r_buf API!!
 				sym->paddr = sym->vaddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i) ;
 				sym->ordinal = sym_count++;
+				sym->lang = R_BIN_NM_JAVA;
 				r_list_append (dex->methods_list, sym);
 				r_strf_var (mname, 64, "method.%"PFMT64d, (ut64)i);
 				sdb_num_set (dex->mdb, mname, sym->paddr, 0);

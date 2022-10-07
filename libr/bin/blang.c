@@ -267,6 +267,8 @@ R_API const char *r_bin_lang_tostring(int lang) {
 		return "dart";
 	case R_BIN_NM_GROOVY:
 		return "groovy";
+	case R_BIN_NM_JNI:
+		return "jni";
 	case R_BIN_NM_C:
 		return (lang & R_BIN_NM_BLOCKS)? "c with blocks": "c";
 	case R_BIN_NM_CXX:
@@ -280,6 +282,5 @@ R_API const char *r_bin_lang_tostring(int lang) {
 	case R_BIN_NM_RUST:
 		return "rust";
 	}
-	return NULL;
+	return "?";
 }
-

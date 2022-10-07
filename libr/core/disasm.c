@@ -656,7 +656,6 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->show_color_bytes = r_config_get_i (core->config, "scr.color.bytes");
 	ds->show_color_args = r_config_get_i (core->config, "scr.color.args");
 	ds->colorop = r_config_get_b (core->config, "scr.color.ops");
-	R_LOG_TODO ("find a better name for 'scr.color.ops'");
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
 	ds->acase = r_config_get_i (core->config, "asm.ucase");
 	ds->capitalize = r_config_get_i (core->config, "asm.capitalize");

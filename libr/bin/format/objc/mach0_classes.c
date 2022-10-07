@@ -698,7 +698,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 			method->rtype = strdup (rtype);
 			R_FREE (rtype);
 		}
-
+		method->lang = R_BIN_NM_OBJC;
 		method->vaddr = m.imp;
 		if (!method->vaddr) {
 			R_FREE (method);
@@ -1463,6 +1463,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			// retain just for debug
 			goto get_classes_error;
 		}
+		klass->lang = R_BIN_NM_OBJC;
 		if (!(klass->methods = r_list_new ())) {
 			// retain just for debug
 			goto get_classes_error;

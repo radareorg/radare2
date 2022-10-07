@@ -31,7 +31,7 @@ typedef struct {
 } RTrieState;
 
 typedef struct {
-	ut8 * imports;
+	ut8 *imports;
 	RSkipList *relocs;
 } RWalkBindChainsContext;
 
@@ -2796,6 +2796,9 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 		}
 		for (i = from; i < to && j < symbols_count; i++, j++) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			if (!sym) {
+				break;
+			}
 			sym->vaddr = bin->symtab[i].n_value;
 			sym->paddr = addr_to_offset (bin, sym->vaddr);
 			symbols[j].size = 0; /* TODO: Is it anywhere? */
@@ -2845,6 +2848,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			if (!sym) {
 				break;
 			}
+			sym->lang = R_BIN_NM_C;
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset;
 			sym->name = symbol.name;
