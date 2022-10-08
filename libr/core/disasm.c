@@ -198,6 +198,7 @@ typedef struct {
 	int vliw_count;
 	bool show_varaccess;
 	bool show_vars;
+	bool asm_flags_right;
 	bool show_fcnsig;
 	bool hinted_line;
 	int show_varsum;
@@ -665,6 +666,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->atabsonce = r_config_get_b (core->config, "asm.tabs.once");
 	ds->atabsoff = r_config_get_i (core->config, "asm.tabs.off");
 	ds->midflags = r_config_get_i (core->config, "asm.flags.middle");
+	ds->asm_flags_right = r_config_get_i (core->config, "asm.flags.right");
 	ds->midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	ds->midcursor = r_config_get_i (core->config, "asm.midcursor");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
@@ -2381,7 +2383,7 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 	RFlagItem *flag;
 	RListIter *iter;
 
-	if (!ds->show_flags) {
+	if (ds->asm_flags_right || !ds->show_flags) {
 		return;
 	}
 	RCore *core = ds->core;
@@ -5205,6 +5207,22 @@ static void ds_print_comments_right(RDisasmState *ds) {
 			break;
 		}
 		mi = NULL;
+	}
+	if (ds->asm_flags_right) {
+		const RList *flaglist = r_flag_get_list (core->flags, ds->at);
+		RFlagItem *fi;
+		RListIter *iter;
+		if (!r_list_empty (flaglist)) {
+			ds_align_comment (ds);
+			if (ds->show_color) {
+				r_cons_strcat (ds->color_comment);
+			}
+			r_cons_strcat (";-- ");
+			r_list_foreach (flaglist, iter, fi) {
+				r_cons_printf ("%s%s", fi->name, iter->n? ", ": " ");
+			}
+		}
+		return;
 	}
 	if (is_code && ds->asm_describe && !ds->has_description) {
 		char *op, *locase = strdup (r_asm_op_get_asm (&ds->asmop));
