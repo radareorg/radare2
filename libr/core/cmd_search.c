@@ -2224,7 +2224,7 @@ static bool check_false_positive(const char *s) {
 }
 
 // XXX must use searchhit and be generic RSearchHit *hit) {
-static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsmHit *hit) {
+static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsmHit *hit, const char *str) {
 	bool asm_sub_names = r_config_get_b (core->config, "asm.sub.names");
 	const int kwidx = core->search->n_kws;
 	const char *cmdhit = r_config_get (core->config, "cmd.hit");
@@ -2232,7 +2232,7 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 	if (R_STR_ISNOTEMPTY (cmdhit)) {
 		r_core_cmdf (core, "%s @ 0x%"PFMT64x, cmdhit, hit->addr);
 	}
-	if (!hit->code)
+	if (!str)
 	switch (param->outmode) {
 	case R_MODE_JSON:
 		pj_o (param->pj);
@@ -2269,8 +2269,8 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 		break;
 	}
 	if (searchflags) {
-		char *flagname = (R_STR_ISNOTEMPTY (hit->code)) // XXX i think hit->code is not used anywhere
-			? r_str_newf ("asm.str.%d_%s_%d", kwidx, hit->code, param->count)
+		char *flagname = (R_STR_ISNOTEMPTY (str)) // XXX i think hit->code is not used anywhere
+			? r_str_newf ("asm.str.%d_%s_%d", kwidx, str, param->count)
 			: r_str_newf ("%s%d_%d", searchprefix, kwidx, param->count);
 		if (flagname) {
 			r_flag_set (core->flags, flagname, hit->addr, hit->len);
@@ -2359,11 +2359,10 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 							{
 								r_name_filter (ss, -1);
 								RCoreAsmHit cah = {
-									.code = ss,
 									.addr = firstch,
 									.len = lastch - firstch,
 								};
-								search_hit_at (core, param, &cah);
+								search_hit_at (core, param, &cah, ss);
 							}
 							free (ss);
 						}
@@ -2711,7 +2710,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				search_hit_at (core, param, hit);
+				search_hit_at (core, param, hit, NULL);
 			}
 			r_list_free (hits);
 		}
