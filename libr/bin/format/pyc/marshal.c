@@ -6,7 +6,7 @@
 #include "pyc_magic.h"
 
 // avoiding using r2 internals asserts
-#define if_true_return(cond,ret) if (cond){return(ret);}
+#define if_true_return(cond,ret) if (cond) { return (ret); }
 
 // TODO: kill globals
 static R_TH_LOCAL ut32 magic_int;

@@ -1781,7 +1781,7 @@ static void visual_textlogs(RCore *core) {
 			index++;
 			break;
 		case 'J':
-			index+=10;
+			index += 10;
 			break;
 		case '+':
 			if (log_level <= R_LOGLVL_LAST) {

@@ -719,7 +719,7 @@ static int p_simp_re(struct parse *p, int starordinary) { /* is a leading * an o
 		return (1);
 	}
 
-	return(0);
+	return 0;
 }
 
 /*
@@ -735,7 +735,7 @@ static int p_count(struct parse *p) {
 	}
 
 	REQUIRE(ndigits > 0 && count <= DUPMAX, R_REGEX_BADBR);
-	return(count);
+	return count;
 }
 
 /*
@@ -956,7 +956,7 @@ static char p_b_symbol(struct parse *p) {
 	/* collating symbol */
 	value = p_b_coll_elem(p, '.');
 	REQUIRE(EATTWO('.', ']'), R_REGEX_ECOLLATE);
-	return(value);
+	return value;
 }
 
 /*
@@ -973,7 +973,7 @@ p_b_coll_elem(struct parse *p, int endc) { /* name ended by endc,']' */
 	}
 	if (!MORE()) {
 		SETERROR(R_REGEX_EBRACK);
-		return(0);
+		return 0;
 	}
 	len = p->next - sp;
 	for (cp = cnames; cp->name; cp++) {
@@ -985,7 +985,7 @@ p_b_coll_elem(struct parse *p, int endc) { /* name ended by endc,']' */
 		return (*sp); /* single character */
 	}
 	SETERROR(R_REGEX_ECOLLATE);			/* neither */
-	return(0);
+	return 0;
 }
 
 /*
@@ -1210,7 +1210,7 @@ seterr(struct parse *p, int e)
 	}
 	p->next = nuls;		/* try to bring things to a halt */
 	p->end = nuls;
-	return(0);		/* make the return value well-defined */
+	return 0;		/* make the return value well-defined */
 }
 
 /*
@@ -1264,14 +1264,14 @@ static cset *allocset(struct parse *p) {
 	cs->smultis = 0;
 	cs->multis = NULL;
 
-	return(cs);
+	return cs;
 nomem:
 	R_FREE(p->g->sets);
 	R_FREE(p->g->setbits);
 
 	SETERROR(R_REGEX_ESPACE);
 	/* caller's responsibility not to do set ops */
-	return(NULL);
+	return NULL;
 }
 
 /*
@@ -1328,7 +1328,7 @@ freezeset(struct parse *p, cset *cs)
 		cs = cs2;
 	}
 
-	return((int)(cs - p->g->sets));
+	return (int)(cs - p->g->sets);
 }
 
 /*
@@ -1345,7 +1345,7 @@ firstch(struct parse *p, cset *cs)
 			return ((char)i);
 		}
 	}
-	return(0);		/* arbitrary */
+	return 0;		/* arbitrary */
 }
 
 /*
@@ -1361,7 +1361,7 @@ static int nch(struct parse *p, cset *cs) {
 			n++;
 		}
 	}
-	return(n);
+	return n;
 }
 
 /*
@@ -1413,9 +1413,7 @@ static void mccase(struct parse *p, cset *cs) {
 /*
  - isinsets - is this character in any sets?
  */
-static int			/* predicate */
-isinsets(struct re_guts *g, int c)
-{
+static int isinsets(struct re_guts *g, int c) {
 	ut8 *col;
 	int i;
 	int ncols = (g->ncsets+(CHAR_BIT-1)) / CHAR_BIT;
@@ -1426,15 +1424,13 @@ isinsets(struct re_guts *g, int c)
 			return (1);
 		}
 	}
-	return(0);
+	return 0;
 }
 
 /*
  - samesets - are these two characters in exactly the same sets?
  */
-static int			/* predicate */
-samesets(struct re_guts *g, int c1, int c2)
-{
+static int samesets(struct re_guts *g, int c1, int c2) {
 	ut8 *col;
 	int i;
 	int ncols = (g->ncsets+(CHAR_BIT-1)) / CHAR_BIT;
@@ -1446,15 +1442,13 @@ samesets(struct re_guts *g, int c1, int c2)
 			return (0);
 		}
 	}
-	return(1);
+	return 1;
 }
 
 /*
  - categorize - sort out character categories
  */
-static void
-categorize(struct parse *p, struct re_guts *g)
-{
+static void categorize(struct parse *p, struct re_guts *g) {
 	cat_t *cats = g? g->categories : NULL;
 	unsigned int c;
 	unsigned int c2;
@@ -1498,7 +1492,7 @@ dupl(struct parse *p,
 			(void) memcpy((char *)(p->strip + p->slen),
 			  (char *)(p->strip + start), (size_t)len*sizeof (sop));
 			p->slen += len;
-			return(ret);
+			return ret;
 		}
 	}
 	return ret;
@@ -1703,9 +1697,7 @@ static void findmust(struct parse *p, struct re_guts *g) {
 /*
  - pluscount - count + nesting
  */
-static sopno			/* nesting depth */
-pluscount(struct parse *p, struct re_guts *g)
-{
+static sopno pluscount(struct parse *p, struct re_guts *g) {
 	sop *scan;
 	sop s;
 	sopno plusnest = 0;
@@ -1733,5 +1725,5 @@ pluscount(struct parse *p, struct re_guts *g)
 	if (plusnest != 0) {
 		g->iflags |= BAD;
 	}
-	return(maxnest);
+	return maxnest;
 }

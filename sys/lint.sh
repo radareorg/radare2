@@ -4,7 +4,6 @@ cd "$(dirname $0)"/..
 
 # (git grep -e '_[a-z][a-z](' libr | grep -v '{'| grep c:) && exit 1
 (git grep '^\ \ \ ' libr | grep -v '/arch/' | grep -v dotnet | grep -v mangl | grep c:) && exit 1
-# (git grep '^\ \ \ ' libr | grep -v '/arch/' | grep -v dotnet | grep -v mangl | grep h:) && exit 1
 (git grep 'TODO' libr | grep R_LOG_INFO) && exit 1
 ( git grep r_config_set libr binr | grep -e '"fal' -e '"tru') && exit 1
 # find calls without (
@@ -44,6 +43,7 @@ cd "$(dirname $0)"/..
 ( git grep '){$' libr| grep if) && exit 1
 (git grep -e 'sizeof(' -e 'for(' -e 'while(' -e 'if(' libr | grep -v :static | grep -v :R_API | grep c:) && exit 1
 ( git grep 'else$' libr | grep -v '#' | grep '}' | grep 'c:') && exit 1
+( git grep 'return(' libr | grep c:) && exit 1
 # ( git grep if' (' libr| grep ')$'| grep -v '//'|grep -v '#' | grep c:) && exit 1
 # ( git grep strcmp | grep '== 0') && exit 1
 # ( git grep strncmp | grep '== 0') && exit 1 ## must use r_str_startswith

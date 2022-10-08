@@ -633,8 +633,9 @@ static char *backref(struct match *m, char *start, char *stop, sopno startst, so
 		}
 		for (;;) {	/* find first matching branch */
 			dp = backref(m, sp, stop, ssub, esub, lev, rec);
-			if (dp)
+			if (dp) {
 				return dp;
+			}
 			/* that one missed, try next one */
 			if (OP (m->g->strip[esub]) == O_CH)
 				return NULL;	/* there is none */
@@ -658,10 +659,11 @@ static char *backref(struct match *m, char *start, char *stop, sopno startst, so
 			offsave = m->pmatch[i].rm_so;
 			m->pmatch[i].rm_so = sp - m->offp;
 			dp = backref(m, sp, stop, ss+1, stopst, lev, rec);
-			if (dp)
-				return(dp);
+			if (dp) {
+				return dp;
+			}
 			m->pmatch[i].rm_so = offsave;
-			return(NULL);
+			return NULL;
 		}
 		break;
 	case ORPAREN:		/* must undo assignment if rest fails */

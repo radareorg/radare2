@@ -4420,7 +4420,7 @@ arc_opval_supported (const struct arc_operand_value *opval ATTRIBUTE_UNUSED)
     return 1;
   return 0;
 #endif
-  return(1);
+  return 1;
 }
 
 
