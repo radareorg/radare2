@@ -6202,7 +6202,6 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 					goto kontinue;
 				}
 			} else {
-				// r_anal_block_chop_noreturn() might free the block!
 				block = r_anal_block_chop_noreturn (block, chop_addr);
 			}
 
