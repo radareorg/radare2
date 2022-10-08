@@ -455,6 +455,7 @@ static const char *help_msg_pi[] = {
 static const char *help_msg_pie[] = {
 	"Usage:", "pie[fq]", " # print esil of N instructions",
 	"pie", "", "print esil of N instructions",
+	"pieb", "", "alias for `pie $Fi`",
 	"pieq", "", "same as above but hiding the offset",
 	"pief", "", "print esil of all the function basic blocks",
 	"piefq", "", "same as above but hiding the offset",
@@ -5260,6 +5261,13 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 	case 'e': // "pie"
 		if (strchr (input + 2, '?')) { // "pie?"
 			r_core_cmd_help (core, help_msg_pie);
+		} else if (input[2] == 'b') { // "pieb"
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			if (fcn) {
+				r_core_cmd0 (core, "pie $Fi");
+			} else {
+				R_LOG_ERROR ("no function to pieb in 0x%08"PFMT64x, core->offset);
+			}
 		} else if (input[2] == 'f') { // "pief"
 			const bool asm_offset = r_config_get_b (core->config, "asm.offset");
 			if (input[3] == 'q') { // "piefq"
