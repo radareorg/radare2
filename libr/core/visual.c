@@ -1780,11 +1780,18 @@ static void visual_textlogs(RCore *core) {
 		case 'j':
 			index++;
 			break;
+		case 'J':
+			index+=10;
+			break;
 		case '+':
-			r_log_set_level (log_level + 1);
+			if (log_level <= R_LOGLVL_LAST) {
+				r_log_set_level (log_level + 1);
+			}
 			break;
 		case '-':
-			r_log_set_level (log_level - 1);
+			if (log_level > 0) {
+				r_log_set_level (log_level - 1);
+			}
 			break;
 		case '=':
 			{ // TODO: edit
@@ -1806,6 +1813,16 @@ static void visual_textlogs(RCore *core) {
 		case 'k':
 			if (index > 1) {
 				index--;
+			} else {
+				index = 1;
+			}
+			break;
+		case '0':
+			index = 0;
+			break;
+		case 'K':
+			if (index > 10) {
+				index -= 10;
 			} else {
 				index = 1;
 			}

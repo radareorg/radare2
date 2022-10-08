@@ -26,6 +26,7 @@ extern "C" {
 
 #define R_LOGLVL_DEFAULT R_LOGLVL_WARN
 
+// TODO .rename to R_LOG_LEVEL_XXXX
 typedef enum r_log_level {
 	R_LOGLVL_FATAL = 0, // This will call r_sys_breakpoint() and trap the process for debugging!
 	R_LOGLVL_ERROR = 1,
