@@ -2982,7 +2982,7 @@ static bool cbcore(void *user, int type, const char *origin, const char *msg) {
 		return false;
 	}
 	RCore *core = (RCore*)user;
-	char *s = msg? r_str_newf ("%s %s", origin?origin: "*", msg): strdup (origin);
+	char *s = R_STR_ISNOTEMPTY (msg)? r_str_newf ("%s %s", origin? origin: "*", msg): strdup (origin);
 	r_core_log_add (core, s);
 	free (s);
 	return false;
@@ -3048,7 +3048,6 @@ R_API bool r_core_init(RCore *core) {
 	core->vmode = false;
 	core->printidx = 0;
 	core->lastcmd = NULL;
-	core->cmdlog = NULL;
 
 	if (core->print->charset) {
 		sdb_free (core->print->charset->db);
@@ -3090,6 +3089,7 @@ R_API bool r_core_init(RCore *core) {
 	}
 	core->print->cons = core->cons;
 	r_cons_bind (&core->print->consbind);
+	core->cmdlog = NULL;
 	r_log_add_callback (cbcore, core);
 
 	// We save the old num ad user, in order to restore it after free
@@ -3269,7 +3269,7 @@ R_API void r_core_fini(RCore *c) {
 	r_list_free (c->ropchain);
 	r_table_free (c->table);
 	r_event_free (c->ev);
-	free (c->cmdlog);
+	R_FREE (c->cmdlog);
 	free (c->lastsearch);
 	r_list_free (c->cmdqueue);
 	free (c->lastcmd);
