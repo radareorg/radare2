@@ -248,6 +248,7 @@ struct search_parameters {
 	bool key_search;
 	int key_search_len;
 	int c; // used for progress
+	int count;
 };
 
 struct endlist_pair {
@@ -2222,6 +2223,62 @@ static bool check_false_positive(const char *s) {
 	return ok;
 }
 
+// XXX must use searchhit and be generic RSearchHit *hit) {
+static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsmHit *hit, const char *str) {
+	bool asm_sub_names = r_config_get_b (core->config, "asm.sub.names");
+	const int kwidx = core->search->n_kws;
+	const char *cmdhit = r_config_get (core->config, "cmd.hit");
+	param->count++;
+	if (R_STR_ISNOTEMPTY (cmdhit)) {
+		r_core_cmdf (core, "%s @ 0x%"PFMT64x, cmdhit, hit->addr);
+	}
+	if (!str)
+	switch (param->outmode) {
+	case R_MODE_JSON:
+		pj_o (param->pj);
+		pj_kN (param->pj, "offset", hit->addr);
+		pj_ki (param->pj, "len", hit->len);
+		pj_ks (param->pj, "code", hit->code);
+		pj_end (param->pj);
+		break;
+	case R_MODE_RADARE:
+		r_cons_printf ("f %s%d_%i = 0x%08"PFMT64x "\n",
+				searchprefix, kwidx, param->count, hit->addr);
+		break;
+	default:
+		if (asm_sub_names) {
+			char tmp[128] = { 0 };
+			RAnalHint *hint = r_anal_hint_get (core->anal, hit->addr);
+			const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
+			r_parse_filter (core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp), be);
+			r_anal_hint_free (hint);
+			if (param->outmode == R_MODE_SIMPLE) {
+				r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, tmp);
+			} else {
+				char *s = (hit->len > 0)
+					? r_core_cmd_strf (core, "pDi %d @e:asm.flags=0@0x%08"PFMT64x, (int)hit->len, hit->addr)
+					: r_core_cmd_strf (core, "pdi 1 @e:asm.flags=0@0x%08"PFMT64x, hit->addr);
+				if (s) {
+					r_cons_printf ("%s", s);
+				}
+				free (s);
+			}
+		} else {
+			r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, hit->code);
+		}
+		break;
+	}
+	if (searchflags) {
+		char *flagname = (R_STR_ISNOTEMPTY (str)) // XXX i think hit->code is not used anywhere
+			? r_str_newf ("asm.str.%d_%s_%d", kwidx, str, param->count)
+			: r_str_newf ("%s%d_%d", searchprefix, kwidx, param->count);
+		if (flagname) {
+			r_flag_set (core->flags, flagname, hit->addr, hit->len);
+			free (flagname);
+		}
+	}
+}
+
 static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
 	ut64 at;
 	RAnalOp aop;
@@ -2295,10 +2352,18 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 								s = "";
 							}
 						}
-						if (*s) {
+						if (R_STR_ISNOTEMPTY (s)) {
 							char *ss = strdup (s);
 							r_str_trim (ss);
 							r_strbuf_appendf (rb, "0x%08"PFMT64x" %s\n", firstch, ss);
+							{
+								r_name_filter (ss, -1);
+								RCoreAsmHit cah = {
+									.addr = firstch,
+									.len = lastch - firstch,
+								};
+								search_hit_at (core, param, &cah, ss);
+							}
 							free (ss);
 						}
 					}
@@ -2589,11 +2654,9 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 }
 
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode, RInterval search_itv) {
-	RCoreAsmHit *hit;
+	RCoreAsmHit *hit; // WTF LOL must use RSearchHit in here!
 	RListIter *iter, *itermap;
-	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
-	int count = 0, maxhits = 0, filter = 0;
-	int kwidx = core->search->n_kws; // (int)r_config_get_i (core->config, "search.kwidx")-1;
+	int count = 0, maxhits = 0;
 	RList *hits;
 	RIOMap *map;
 	bool regexp = input[1] == '/'; // "/c/"
@@ -2620,7 +2683,6 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	}
 
 	maxhits = (int) r_config_get_i (core->config, "search.maxhits");
-	filter = (int) r_config_get_i (core->config, "asm.sub.names");
 	if (param->outmode == R_MODE_JSON) {
 		pj_a (param->pj);
 	}
@@ -2644,59 +2706,11 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 				from, to, maxhits, regexp, everyByte, mode);
 		if (hits) {
 			r_cons_singleton ()->context->breaked = false;
-			const char *cmdhit = r_config_get (core->config, "cmd.hit");
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				if (cmdhit && *cmdhit) {
-					r_core_cmdf (core, "%s @ 0x%"PFMT64x, cmdhit, hit->addr);
-				}
-				switch (param->outmode) {
-				case R_MODE_JSON:
-					pj_o (param->pj);
-					pj_kN (param->pj, "offset", hit->addr);
-					pj_ki (param->pj, "len", hit->len);
-					pj_ks (param->pj, "code", hit->code);
-					pj_end (param->pj);
-					break;
-				case R_MODE_RADARE:
-					r_cons_printf ("f %s%d_%i = 0x%08"PFMT64x "\n",
-						searchprefix, kwidx, count, hit->addr);
-					break;
-				default:
-					if (filter) {
-						char tmp[128] = {
-							0
-						};
-						RAnalHint *hint = r_anal_hint_get (core->anal, hit->addr);
-						r_parse_filter (core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp), be);
-						r_anal_hint_free (hint);
-						if (param->outmode == R_MODE_SIMPLE) {
-							r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, tmp);
-						} else {
-							char *s = (hit->len > 0)
-								? r_core_cmd_strf (core, "pDi %d @e:asm.flags=0@0x%08"PFMT64x, (int)hit->len, hit->addr)
-								: r_core_cmd_strf (core, "pdi 1 @e:asm.flags=0@0x%08"PFMT64x, hit->addr);
-							if (s) {
-								r_cons_printf ("%s", s);
-							}
-							free (s);
-						}
-					} else {
-						r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n",
-							hit->addr, hit->len, hit->code);
-					}
-					break;
-				}
-				if (searchflags) {
-					char *flagname = r_str_newf ("%s%d_%d", searchprefix, kwidx, count);
-					if (flagname) {
-						r_flag_set (core->flags, flagname, hit->addr, hit->len);
-						free (flagname);
-					}
-				}
-				count++;
+				search_hit_at (core, param, hit, NULL);
 			}
 			r_list_free (hits);
 		}
@@ -3426,6 +3440,7 @@ static int cmd_search(void *data, const char *input) {
 		.inverse = false,
 		.key_search = false,
 		.key_search_len = 0,
+		.count = 0,
 		.c = 0,
 	};
 	if (!param.cmd_hit) {
