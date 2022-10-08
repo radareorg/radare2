@@ -3632,6 +3632,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.flags", "true", "show flags");
 	SETICB ("asm.flags.maxname", 0, &cb_maxname, "maximum length of flag name with smart chopping");
 	SETI ("asm.flags.limit", 0, "maximum number of flags to show in a single offset");
+	SETBPREF ("asm.flags.right", "false", "show flags as comments at the right side of the disassembly");
 	SETBPREF ("asm.flags.offset", "false", "show offset in flags");
 	SETBPREF ("asm.flags.inbytes", "false",  "display flags inside the bytes space");
 	SETBPREF ("asm.flags.inline", "false",  "display flags in line separated by commas instead of newlines");
