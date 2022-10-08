@@ -78,6 +78,7 @@ static const char *help_msg_pc[] = {
 	"pck", "", "kotlin",
 	"pco", "", "Objective-C",
 	"pcp", "", "python",
+	"pcq", "", "quiet C (include-friendly)",
 	"pcr", "", "rust",
 	"pcg", "", "Golang",
 	"pcS", "", "shellscript that reconstructs the bin",

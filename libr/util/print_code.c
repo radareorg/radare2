@@ -65,7 +65,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 	p->cb_printf ("};\n");
 }
 
-static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w) {
+static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w, bool headers) {
 	r_return_if_fail (p && p->cb_printf);
 	size_t i;
 
@@ -75,12 +75,22 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 	const char *fmtstr = bits_to_c_code_fmtstr (bits);
 	len /= ws;
 
-	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-	p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {", bits);
+	if (headers) {
+		p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
+		p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {", bits);
+	}
 
 	for (i = 0; !r_print_is_interrupted () && i < len; i++) {
-		if (!(i % w)) {
-			p->cb_printf ("\n  ");
+		if (headers) {
+			if (!(i % w)) {
+				p->cb_printf ("\n  ");
+			}
+		} else {
+			if (i == 0) {
+				p->cb_printf ("  ");
+			} else if (!(i % w)) {
+				p->cb_printf ("\n  ");
+			}
 		}
 		r_print_cursor (p, i, 1, 1);
 		p->cb_printf (fmtstr, r_read_ble (buf, be, bits));
@@ -94,7 +104,9 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 		r_print_cursor (p, i, 1, 0);
 		buf += ws;
 	}
-	p->cb_printf ("\n};\n");
+	if (headers) {
+		p->cb_printf ("\n};\n");
+	}
 }
 
 R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang) {
@@ -104,6 +116,9 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		w = 1;
 	}
 	switch (lang) {
+	case 'q':
+		print_c_code (p, addr, buf, len, 1, (int)(p->cols / 1.5), false);
+		break;
 	case '*':
 		p->cb_printf ("wx+");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
@@ -303,19 +318,19 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		p->cb_printf ("\n");
 		break;
 	case 'h': // "pch"
-		print_c_code (p, addr, buf, len, 2, p->cols / 2); // 9
+		print_c_code (p, addr, buf, len, 2, p->cols / 2, true); // 9
 		break;
 	case 'w': // "pcw"
-		print_c_code (p, addr, buf, len, 4, p->cols / 3); // 6);
+		print_c_code (p, addr, buf, len, 4, p->cols / 3, true); // 6);
 		break;
 	case 'i': // "pci"
 		print_c_instructions (p, addr, buf, len);
 		break;
 	case 'd': // "pcd"
-		print_c_code (p, addr, buf, len, 8, p->cols / 5); //3);
+		print_c_code (p, addr, buf, len, 8, p->cols / 5, true); //3);
 		break;
 	default:
-		print_c_code (p, addr, buf, len, 1, (int)(p->cols / 1.5)); // 12);
+		print_c_code (p, addr, buf, len, 1, (int)(p->cols / 1.5), true); // 12);
 		break;
 	}
 }
