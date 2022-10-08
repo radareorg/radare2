@@ -2024,7 +2024,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 
 bool Elf_(r_bin_elf_get_stripped)(ELFOBJ *bin) {
 	if (!bin->shdr) {
-		return false;
+		return true;
 	}
 	if (bin->g_sections) {
 		size_t i;
