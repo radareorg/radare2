@@ -6,11 +6,11 @@ dE "bsr 0x00000004"	0xb000
 dE "bsr 0x00000002"	0xbfff
 dE "bsr 0x0000000e"	0xbffd 0x10
 dE "tst 0xFF, r0"	0xc8ff
-dE "mov.w @(0x0,pc), r0"	0x9000
-dE "mov.w @(0x1fe,pc), r0"	0x90ff
-dE "mov.l @(0x0,pc), r0"	0xd000
-dE "mov.l @(0x3fc,pc), r0"	0xd0ff
-dE "mov.w @(0x0,gbr), r0"	0xc500
-dE "mov.w @(0x1fe,gbr), r0"	0xc5ff
-dE "mov.l @(0x0,gbr), r0"	0xc600
-dE "mov.l @(0x3fc,gbr), r0"	0xc6ff
+dE "mov.w @(0x0,pc), r0"	9000
+dEB "mov.w @(0x1fe,pc), r0"	90ff
+dE "mov.l @(0x0,pc), r0"	d000
+dE "mov.w @(0x0,gbr), r0"	c500
+dE "mov.w @(0x1fe,gbr), r0"	c5ff
+dE "mov.l @(0x0,gbr), r0"	c600
+dEB "mov.l @(0x3fc,pc), r0"	d0ff
+dE "mov.l @(0x3fc,gbr), r0"	c6ff

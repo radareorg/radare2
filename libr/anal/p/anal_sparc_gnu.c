@@ -15,7 +15,9 @@ static int sparc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned 
 		return -1;
 	}
 	ut8 *bytes = info->buffer;
-	memcpy (myaddr, bytes + delta, length);
+	if (length > 0) {
+		memcpy (myaddr, bytes + delta, length);
+	}
 	return 0;
 }
 

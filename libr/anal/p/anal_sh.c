@@ -5,7 +5,7 @@
 #include <r_anal.h>
 #include "disas-asm.h"
 
-#define BUFSZ 8
+#define BUFSZ 16
 #define LONG_SIZE 4
 #define WORD_SIZE 2
 #define BYTE_SIZE 1
@@ -1231,6 +1231,9 @@ static int sh_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int
 	if (delta < 0) {
 		return -1; // disable backward reads
 	}
+	if (delta >= BUFSZ) {
+		return -1;
+	}
 	ut8 *bytes = info->buffer;
 	int nlen = R_MIN (length, BUFSZ - delta);
 	if (nlen > 0) {
@@ -1261,7 +1264,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	}
 	RStrBuf *sb = r_strbuf_new ("");
 	const ut64 addr = op->addr;
-	memcpy (bytes, buf, 2);
+	memcpy (bytes, buf, R_MIN (len, BUFSZ));
 
 	/* prepare disassembler */
 	disasm_obj.buffer = bytes;
