@@ -275,12 +275,12 @@ R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
 	return ret;
 }
 
-R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits) {
+R_API bool r_anal_set_triplet(RAnal *anal, R_NULLABLE const char *os, R_NULLABLE const char *arch, int bits) {
 	r_return_val_if_fail (anal, false);
-	if (!os || !*os) {
+	if (R_STR_ISEMPTY (os)) {
 		os = R_SYS_OS;
 	}
-	if (!arch || !*arch) {
+	if (R_STR_ISEMPTY (arch)) {
 		arch = anal->cur? anal->cur->arch: R_SYS_ARCH;
 	}
 	if (bits < 1) {
@@ -294,10 +294,13 @@ R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int
 
 // copypasta from core/cbin.c
 static void sdb_concat_by_path(Sdb *s, const char *path) {
+	r_return_if_fail (s && path);
 	Sdb *db = sdb_new (0, path, 0);
-	sdb_merge (s, db);
-	sdb_close (db);
-	sdb_free (db);
+	if (db) {
+		sdb_merge (s, db);
+		sdb_close (db);
+		sdb_free (db);
+	}
 }
 
 R_API bool r_anal_set_os(RAnal *anal, const char *os) {
