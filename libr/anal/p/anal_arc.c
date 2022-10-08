@@ -22,7 +22,10 @@ static int arc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned in
 		return -1;
 	}
 	ut8 *bytes = info->buffer;
-	memcpy (myaddr, bytes + delta, R_MIN (BUFSZ - delta, length));
+	int nlen = R_MIN (BUFSZ - delta, length);
+	if (nlen > 0) {
+		memcpy (myaddr, bytes + delta, nlen);
+	}
 	return 0;
 }
 

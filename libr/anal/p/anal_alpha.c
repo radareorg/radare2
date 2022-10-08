@@ -13,7 +13,10 @@ static int alpha_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 leng
 		return -1; // disable backward reads
 	}
 	ut8 *bytes = info->buffer;
-	memcpy (myaddr, bytes + delta, R_MIN (length, BUFSZ));
+	int nlen = R_MIN (length, BUFSZ - delta);
+	if (nlen > 0) {
+		memcpy (myaddr, bytes + delta, nlen);
+	}
 	return 0;
 }
 

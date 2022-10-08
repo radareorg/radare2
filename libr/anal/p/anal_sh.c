@@ -5,6 +5,7 @@
 #include <r_anal.h>
 #include "disas-asm.h"
 
+#define BUFSZ 8
 #define LONG_SIZE 4
 #define WORD_SIZE 2
 #define BYTE_SIZE 1
@@ -1231,7 +1232,10 @@ static int sh_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int
 		return -1; // disable backward reads
 	}
 	ut8 *bytes = info->buffer;
-	memcpy (myaddr, bytes + delta, length);
+	int nlen = R_MIN (length, BUFSZ - delta);
+	if (nlen > 0) {
+		memcpy (myaddr, bytes + delta, nlen);
+	}
 	return 0;
 }
 
@@ -1250,7 +1254,7 @@ DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS ()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS ()
 
 static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
-	ut8 bytes[8] = {0};
+	ut8 bytes[BUFSZ] = {0};
 	struct disassemble_info disasm_obj = {0};
 	if (len < 2) {
 		return -1;
