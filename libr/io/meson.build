@@ -110,6 +110,7 @@ r_io_static_deps = [
   winkd_static_dep,
   bochs_static_dep,
   gdb_static_dep,
+  dap_static_dep,
   qnx_static_dep,
   ar_static_dep,
   zip_dep,

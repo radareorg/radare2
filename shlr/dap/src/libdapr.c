@@ -48,3 +48,11 @@ int dapr_init(libdapr_t *dap, bool is_server) {
 	//dap->isbreaked = false;
 	return 0;
 }
+
+int dapr_connect (libdapr_t *g, const char *host, int port) {
+	return -1;
+}
+
+int dapr_attach(libdapr_t *g, int pid) {
+	return -1;
+}

@@ -52,5 +52,7 @@ typedef struct libdapr_t {
 } libdapr_t;
 
 int dapr_init(libdapr_t *dap, bool is_server);
+int dapr_connect (libdapr_t *g, const char *host, int port);
+int dapr_attach (libdapr_t *g, int pid);
 
 #endif /* SHLR_DAP_INCLUDE_LIBDAPR_H_ */
