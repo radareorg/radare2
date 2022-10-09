@@ -99,25 +99,89 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	return 0;
 }
 
+R_API void r_arch_op_to_analop(RAnalOp *op, RArchOp *archop) {
+	r_anal_op_init (op);
+	op->mnemonic = strdup (r_str_get (archop->mnemonic));
+	op->addr = archop->addr;
+	op->size = archop->size;
+	op->cond = archop->cond;
+	op->id = archop->id;
+	op->cycles = archop->cycles;
+	op->delay = archop->delay;
+	op->type = archop->type;
+	op->prefix = archop->prefix;
+	op->stackop = archop->stackop;
+	op->jump = archop->jump;
+	op->fail = archop->fail;
+	op->ptr = archop->ptr;
+	op->scale = archop->scale;
+	op->val = archop->val;
+	op->nopcode = archop->nopcode;
+	op->disp = archop->disp;
+	op->direction = archop->direction;
+	op->ptrsize = archop->ptrsize;
+	op->refptr = archop->refptr;
+	op->srcs = archop->srcs;
+	op->dsts = archop->dsts;
+	op->esil = archop->esil;
+	op->opex = archop->opex;
+	op->access = archop->access;
+	op->stackptr= archop->stackptr;
+	op->family = archop->family;
+}
+
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
 
+	// use core binding to set asm.bits correctly based on the addr
+	// this is because of the hassle of arm/thumb
+	// this causes the reg profile to be invalidated
+	if (anal && anal->coreb.archbits) {
+		anal->coreb.archbits (anal->coreb.core, addr);
+	}
+	const int pcalign = anal->config->pcalign;
+	if (pcalign && (addr % pcalign)) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->addr = addr;
+		op->size = 1;
+		return -1;
+	}
 	int ret = R_MIN (2, len);
-	if (len > 0 && anal->cur && anal->cur->op) {
-		// use core binding to set asm.bits correctly based on the addr
-		// this is because of the hassle of arm/thumb
-		// this causes the reg profile to be invalidated
-		if (anal && anal->coreb.archbits) {
-			anal->coreb.archbits (anal->coreb.core, addr);
+	if (len > 0 && anal->arch->current) {
+		RArchOp archop = {0};
+		ut32 archmask = 0;
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			archmask |= R_ARCH_OP_MASK_DISASM;
 		}
-		const int pcalign = anal->config->pcalign;
-		if (pcalign && (addr % pcalign)) {
+		if (mask & R_ANAL_OP_MASK_ESIL) {
+			archmask |= R_ARCH_OP_MASK_ESIL;
+		}
+		if (mask & R_ANAL_OP_MASK_VAL) {
+			archmask |= R_ARCH_OP_MASK_VAL;
+		}
+		if (mask & R_ANAL_OP_MASK_OPEX) {
+			archmask |= R_ARCH_OP_MASK_OPEX;
+		}
+		if (mask & R_ANAL_OP_MASK_BASIC) {
+			archmask |= R_ARCH_OP_MASK_BASIC;
+		}
+		ret = r_arch_decode (anal->arch, NULL, &archop, addr, data, len, archmask);
+		r_arch_op_to_analop (op, &archop);
+		// ret = anal->arch->op (anal, op, addr, data, len, mask);
+		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
-			op->addr = addr;
-			op->size = 1;
-			return -1;
+			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			if (op->size < 0) {
+				op->size = 1;
+			}
 		}
+		op->addr = addr;
+		/* consider at least 1 byte to be part of the opcode */
+		if (op->nopcode < 1) {
+			op->nopcode = 1;
+		}
+	} else if (len > 0 && anal->cur && anal->cur->op) {
 		ret = anal->cur->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;

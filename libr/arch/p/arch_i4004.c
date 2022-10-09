@@ -104,7 +104,7 @@ static int i4004_decode(RArchConfig *cfg, RArchOp *op, ut64 addr, const ut8 *buf
 	if (!op) {
 		return 2;
 	}
-	ut8 high = (*buf & 0xf0)>>4;
+	ut8 high = (*buf & 0xf0) >> 4;
 	ut8 low = (*buf & 0xf);
 	basm[0] = 0;
 
