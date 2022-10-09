@@ -2282,6 +2282,7 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
 	ut64 at;
 	RAnalOp aop;
+	int hasch = 0;
 	int i, ret;
 	input = r_str_trim_head_ro (input);
 	r_cons_break_push (NULL, NULL);
@@ -2313,18 +2314,19 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 			r_io_read_at (core->io, at, bufop, sizeof (bufop));
 			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 			if (ret) {
-				bool hasch = false;
-				switch (aop.type) {
-				case R_ANAL_OP_TYPE_MOV:
-					if (aop.val > 0 && aop.val < UT16_MAX) {
+				if (hasch > 0) {
+					hasch--;
+				}
+				if (aop.type & R_ANAL_OP_TYPE_MOV) {
+					if (aop.val > 0 && aop.val < UT32_MAX) {
 						if (aop.val < 255) {
 							if (IS_PRINTABLE (aop.val)) {
 								char chstr[2] = {aop.val, 0};
 								r_strbuf_append (sb, chstr);
-								hasch = true;
+								hasch = 1;
 								// eprintf ("MOVE %llx = %d '%c'\n", at, (int)aop.val, (char)aop.val);
 							}
-						} else {
+						} else if (aop.val < UT16_MAX) {
 							char ch0 = aop.val & 0xff;
 							char ch1 = (aop.val >> 8) & 0xff;
 							if (IS_PRINTABLE (ch0) && IS_PRINTABLE (ch1)) {
@@ -2332,12 +2334,29 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 								r_strbuf_append (sb, chstr);
 								chstr[0] = ch1;
 								r_strbuf_append (sb, chstr);
-								hasch = true;
+								hasch = 1;
+								// eprintf ("MOVE %llx = %d '%c%c'\n", at, (int)aop.val, ch0, ch1);
+							}
+						} else if (aop.val < UT32_MAX) {
+							char ch0 = aop.val & 0xff;
+							char ch1 = (aop.val >> 8) & 0xff;
+							char ch2 = (aop.val >> 16) & 0xff;
+							char ch3 = (aop.val >> 24) & 0xff;
+							if (IS_PRINTABLE (ch0) && IS_PRINTABLE (ch1) && IS_PRINTABLE (ch2)) {
+								eprintf ("JAJA LE STRING IS %c %c %c %c\n", ch0, ch1, ch2, ch3);
+								char chstr[2] = {ch0, 0};
+								r_strbuf_append (sb, chstr);
+								chstr[0] = ch1;
+								r_strbuf_append (sb, chstr);
+								chstr[0] = ch2;
+								r_strbuf_append (sb, chstr);
+								chstr[0] = ch3;
+								r_strbuf_append (sb, chstr);
+								hasch = 2;
 								// eprintf ("MOVE %llx = %d '%c%c'\n", at, (int)aop.val, ch0, ch1);
 							}
 						}
 					}
-					break;
 				}
 				if (hasch) {
 					if (lastch == UT64_MAX) {
