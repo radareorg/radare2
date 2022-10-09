@@ -229,24 +229,31 @@ R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
 }
 
 R_API bool r_anal_use(RAnal *anal, const char *name) {
+	r_return_val_if_fail (anal, false);
+	if (anal->arch) {
+		bool res = r_arch_use (anal->arch, anal->config);
+		if (res) {
+			R_LOG_WARN ("Using experimental r_arch plugin");
+		} else {
+			anal->arch->current = NULL;
+		}
+	}
 	RListIter *it;
 	RAnalPlugin *h;
-	if (anal) {
-		r_list_foreach (anal->plugins, it, h) {
-			if (!h->name || strcmp (h->name, name)) {
-				continue;
-			}
+	r_list_foreach (anal->plugins, it, h) {
+		if (!h->name || strcmp (h->name, name)) {
+			continue;
+		}
 #if 0
-			// regression happening here for asm.emu
-			if (anal->cur && anal->cur == h) {
-				return true;
-			}
-#endif
-			anal->cur = h;
-			r_arch_config_use (anal->config, h->arch);
-			r_anal_set_reg_profile (anal, NULL);
+		// regression happening here for asm.emu
+		if (anal->cur && anal->cur == h) {
 			return true;
 		}
+#endif
+		anal->cur = h;
+		r_arch_config_use (anal->config, h->arch);
+		r_anal_set_reg_profile (anal, NULL);
+		return true;
 	}
 	return false;
 }

@@ -89,6 +89,11 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 			return r_read_at_ble8 (regset->arena->bytes, off);
 		}
 		break;
+	case 12:
+		if (regset->arena->size - off - 2 >= 0) {
+			return r_read_ble16 (regset->arena->bytes + off, be) & 0x7ff;
+		}
+		break;
 	case 16:
 		if (regset->arena->size - off - 2 >= 0) {
 			return r_read_ble16 (regset->arena->bytes + off, be);

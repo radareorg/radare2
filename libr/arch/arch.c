@@ -100,7 +100,13 @@ static char *_find_bestmatch(RList *plugins, RArchConfig *cfg) {
 
 // use config as new arch config and use matching decoder as current
 R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
-	r_return_val_if_fail (arch && config && (config->arch || config->decoder), false);
+	r_return_val_if_fail (arch, false);
+	if (!config) {
+		config = arch->cfg;
+	}
+	if (!config) {
+	//	arch->decoder = NULL;
+	}
 	const char *dname = config->decoder ? config->decoder: _find_bestmatch (arch->plugins, config);
 	if (!dname) {
 		return false;
@@ -111,6 +117,7 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
 	if (!r_arch_use_decoder (arch, dname)) {
 		arch->cfg = oconfig;
 		r_unref (config);
+		arch->current = NULL;
 		return false;
 	}
 	r_unref (oconfig);

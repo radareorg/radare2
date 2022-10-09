@@ -414,6 +414,8 @@ R_API const char *r_arch_stackop_to_string(int s);
 R_API const char *r_arch_op_family_to_string(int n);
 R_API int r_arch_op_family_from_string(const char *f);
 R_API const char *r_arch_op_direction_to_string(RArchOp *op);
+struct r_anal_op_t;
+R_API void r_arch_op_to_analop(struct r_anal_op_t *op, struct r_arch_op_t *archop);
 
 // archcond.c
 R_API const char *r_arch_cond_to_string(RArchCond cc);
