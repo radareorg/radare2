@@ -9,8 +9,7 @@ EXPECT=<<EOF
 0x1000c9494 Empty entry!!
 0x1000c9588 Incorrect!
 0x1000c99e0 Try Harder!
-0x1000c9ae8 b@nkP@ssword12
-0x1000c9b08 b@nkP@ssword12
+0x1000c9ae8 b@nkP@ssword123b@nkP@ssword123
 0x1000c9d88 encrypted
 0x1000c9ec0 myencrytionkey
 0x1000ca02c myencrytionkey
@@ -20,7 +19,7 @@ EXPECT=<<EOF
 0x1000cac30 fade
 0x1000caeec path
 0x1000cafec circleMask
-0x1000d0f20 statusBarWindo
+0x1000d0f20 statusBarWindow
 0x1000d3d48 menu
 0x1000d3e34 iGoat
 0x1000d3ed4 contactNumber
@@ -44,7 +43,7 @@ EXPECT=<<EOF
 0x1000d9184 dollar!
 0x1000d922c }}
 0x1000d92ec iGoat
-0x1000d9424 JohnDoe@yap.co
+0x1000d9424 JohnDoe@yap.com
 0x1000d944c YapKeyEmail
 0x1000d9470 iGoat
 0x1000d94bc TheUnknown
@@ -86,9 +85,9 @@ EXPECT=<<EOF
 0x1000deda4 Error
 0x1000dee00 Owned
 0x1000deecc &password=
-0x1000df2b8 articles.sqlit
+0x1000df2b8 articles.sqlite
 0x1000df400 Snap!
-0x1000df644 ' AND premium=
+0x1000df644 ' AND premium=0
 0x1000dfc34 iGoat
 0x1000dfc44 Empty entry!!
 0x1000e0120 %02hhx
@@ -139,7 +138,7 @@ EXPECT=<<EOF
 0x1000ebb18 root
 0x1000ebb58 root
 0x1000ebb9c iGoat
-0x1000ebbac Congratulation
+0x1000ebbac Congratulations
 0x1000ec040 &message=
 0x1000ec8f0 Error:
 0x1000ed460 Content-Type
@@ -199,10 +198,10 @@ EXPECT=<<EOF
 0x1000f891c User
 0x1000f89b4 Password
 0x1000f8a3c Invalid!
-0x1000f8a50 Try little bit
+0x1000f8a50 Try little bit.
 0x1000f8b90 Success
 0x1000f9474 iGoat_Swift.
-0x1000f9764 V:|[childView]
+0x1000f9764 V:|[childView]|
 0x1000f9890 childVie
 0x1000f9b80 |[childView]|
 0x1000f9c58 childVie
@@ -238,13 +237,12 @@ EXPECT=<<EOF
 0x1000c9494 Empty entry!!
 0x1000c9588 Incorrect!
 0x1000c99e0 Try Harder!
-0x1000c9ae8 b@nkP@ssword12
-0x1000c9b08 b@nkP@ssword12
+0x1000c9ae8 b@nkP@ssword123b@nkP@ssword123
 0x1000c9d88 encrypted
 0x1000c9ec0 myencrytionkey
 0x1000ca02c myencrytionkey
 0x1000cafec circleMask
-0x1000d0f20 statusBarWindo
+0x1000d0f20 statusBarWindow
 0x1000d3ed4 contactNumber
 0x1000d4020 Message "
 0x1000d406c " sent to
@@ -252,7 +250,7 @@ EXPECT=<<EOF
 0x1000d4980 <br/><br/>
 0x1000d4c60 description
 0x1000d4dd4 creditsFile
-0x1000d9424 JohnDoe@yap.co
+0x1000d9424 JohnDoe@yap.com
 0x1000d944c YapKeyEmail
 0x1000d94bc TheUnknown
 0x1000d94dc YapKeyPassword
@@ -268,8 +266,8 @@ EXPECT=<<EOF
 0x1000dd82c pinNo: %@
 0x1000decbc X-Goat-Secure
 0x1000deecc &password=
-0x1000df2b8 articles.sqlit
-0x1000df644 ' AND premium=
+0x1000df2b8 articles.sqlite
+0x1000df644 ' AND premium=0
 0x1000dfc44 Empty entry!!
 0x1000e206c AboutCell
 0x1000e2e70 About iGoat
@@ -282,7 +280,7 @@ EXPECT=<<EOF
 0x1000e615c Credentials
 0x1000ea2c8 FailSuccess
 0x1000ea354 Fields empty
-0x1000ebbac Congratulation
+0x1000ebbac Congratulations
 0x1000ec040 &message=
 0x1000ed460 Content-Type
 0x1000ed4b4 token=key
@@ -305,9 +303,9 @@ EXPECT=<<EOF
 0x1000f71b4 FailedSuccess!
 0x1000f72e8 documentID
 0x1000f84d0 Plist Storage
-0x1000f8a50 Try little bit
+0x1000f8a50 Try little bit.
 0x1000f9474 iGoat_Swift.
-0x1000f9764 V:|[childView]
+0x1000f9764 V:|[childView]|
 0x1000f9b80 |[childView]|
 0x1000fb248 FailedSuccess!
 0x1000fd4bc </body></html>
@@ -326,18 +324,17 @@ EXPECT=<<EOF
 0x1000c9494 Empty entry!!
 0x1000c9588 Incorrect!
 0x1000c99e0 Try Harder!
-0x1000c9ae8 b@nkP@ssword12
-0x1000c9b08 b@nkP@ssword12
+0x1000c9ae8 b@nkP@ssword123b@nkP@ssword123
 0x1000c9d88 encrypted
 0x1000c9ec0 myencrytionkey
 0x1000ca02c myencrytionkey
 0x1000cafec circleMask
-0x1000d0f20 statusBarWindo
+0x1000d0f20 statusBarWindow
 0x1000d3ed4 contactNumber
 0x1000d4020 Message "
 0x1000d4c60 description
 0x1000d4dd4 creditsFile
-0x1000d9424 JohnDoe@yap.co
+0x1000d9424 JohnDoe@yap.com
 0x1000d944c YapKeyEmail
 0x1000d94bc TheUnknown
 0x1000d94dc YapKeyPassword
@@ -350,7 +347,7 @@ EXPECT=<<EOF
 0x1000dbae8 X-Goat-Secure
 0x1000dcf68 Verified!!
 0x1000decbc X-Goat-Secure
-0x1000df2b8 articles.sqlit
+0x1000df2b8 articles.sqlite
 0x1000dfc44 Empty entry!!
 0x1000e206c AboutCell
 0x1000e2e70 About iGoat
@@ -363,7 +360,7 @@ EXPECT=<<EOF
 0x1000e615c Credentials
 0x1000ea2c8 FailSuccess
 0x1000ea354 Fields empty
-0x1000ebbac Congratulation
+0x1000ebbac Congratulations
 0x1000ed460 Content-Type
 0x1000ed4b4 token=key
 0x1000edcb8 Passcode:
@@ -385,9 +382,9 @@ EXPECT=<<EOF
 0x1000f71b4 FailedSuccess!
 0x1000f72e8 documentID
 0x1000f84d0 Plist Storage
-0x1000f8a50 Try little bit
+0x1000f8a50 Try little bit.
 0x1000f9474 iGoat_Swift.
-0x1000f9764 V:|[childView]
+0x1000f9764 V:|[childView]|
 0x1000fb248 FailedSuccess!
 0x1000ffdd4 token=key
 0x100100aa4 SecretPass

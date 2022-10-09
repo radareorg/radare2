@@ -2329,7 +2329,10 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 						} else if (aop.val < UT16_MAX) {
 							char ch0 = aop.val & 0xff;
 							char ch1 = (aop.val >> 8) & 0xff;
-							if (IS_PRINTABLE (ch0) && IS_PRINTABLE (ch1)) {
+							if ((ut8)ch1 == 0xef) {
+								ch1 = 0;
+							}
+							if (IS_PRINTABLE (ch0) && (!ch1 || IS_PRINTABLE (ch1))) {
 								char chstr[2] = {ch0, 0};
 								r_strbuf_append (sb, chstr);
 								chstr[0] = ch1;
