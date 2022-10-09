@@ -10,6 +10,9 @@ enum {
 	MODE_DIFF_STRS,
 	MODE_DIFF_IMPORTS,
 	MODE_DIFF_SYMBOLS,
+	MODE_DIFF_CLASSES,
+	MODE_DIFF_METHODS,
+	MODE_DIFF_FIELDS,
 	MODE_DIST_MYERS,
 	MODE_DIST_LEVENSHTEIN,
 	MODE_CODE,
@@ -442,7 +445,7 @@ static int show_help(int v) {
 			"  -e [k=v]   set eval config var value for all RCore instances\n"
 			"  -g [arg]   graph diff of [sym] or functions in [off1,off2]\n"
 			"  -G [cmd]   run an r2 command on every RCore instance created\n"
-			"  -i [i,s]   diff symbols or imports of target files (-U is default)\n"
+			"  -i [ifscm] diff imports | fields | symbols | classes | methods\n"
 			"  -j         output in json format\n"
 			"  -n         print bare addresses only (diff.bare=1)\n"
 			"  -m [mode]  choose the graph output mode (aditsjJ)\n"
@@ -748,6 +751,72 @@ static int import_cmp(const RBinImport *a, const RBinImport *b) {
 	return strcmp (a->name, b->name);
 }
 
+static ut8 *get_classes(RCore *c, int *len) {
+	RListIter *iter;
+
+	if (!c || !len) {
+		return NULL;
+	}
+
+	RBinClass *klass;
+	const RList *list = r_bin_get_classes (c->bin);
+	RList *reslist = r_list_newf (free);
+	r_list_foreach (list, iter, klass) {
+		r_list_append (reslist, strdup (klass->name));
+	}
+	r_list_sort (reslist, (RListComparator)strcmp);
+	char *buf = r_str_list_join (reslist, "\n");
+	*len = strlen (buf);
+	r_list_free (reslist);
+	return (ut8*)buf;
+}
+
+static ut8 *get_fields(RCore *c, int *len) {
+	RListIter *iter, *iter2;
+
+	if (!c || !len) {
+		return NULL;
+	}
+
+	RBinClass *klass;
+	const RList *list = r_bin_get_classes (c->bin);
+	RList *reslist = r_list_newf (free);
+	r_list_foreach (list, iter, klass) {
+		RBinField *field;
+		r_list_foreach (klass->fields, iter2, field) {
+			r_list_append (reslist, r_str_newf ("%s.%s", klass->name, field->name));
+		}
+	}
+	r_list_sort (reslist, (RListComparator)strcmp);
+	char *buf = r_str_list_join (reslist, "\n");
+	*len = strlen (buf);
+	r_list_free (reslist);
+	return (ut8*)buf;
+}
+
+static ut8 *get_methods(RCore *c, int *len) {
+	RListIter *iter, *iter2;
+
+	if (!c || !len) {
+		return NULL;
+	}
+
+	RBinClass *klass;
+	RBinSymbol *sym;
+	const RList *list = r_bin_get_classes (c->bin);
+	RList *reslist = r_list_newf (free);
+	r_list_foreach (list, iter, klass) {
+		r_list_foreach (klass->methods, iter2, sym) {
+			r_list_append (reslist, r_str_newf ("%s.%s", klass->name, sym->name));
+		}
+	}
+	r_list_sort (reslist, (RListComparator)strcmp);
+	char *buf = r_str_list_join (reslist, "\n");
+	*len = strlen (buf);
+	r_list_free (reslist);
+	return (ut8*)buf;
+}
+
 static ut8 *get_symbols(RCore *c, int *len) {
 	RListIter *iter;
 
@@ -1049,8 +1118,17 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			case 's':
 				ro.mode = MODE_DIFF_SYMBOLS;
 				break;
+			case 'f':
+				ro.mode = MODE_DIFF_FIELDS;
+				break;
+			case 'm':
+				ro.mode = MODE_DIFF_METHODS;
+				break;
+			case 'c':
+				ro.mode = MODE_DIFF_CLASSES;
+				break;
 			default:
-				R_LOG_ERROR ("-i expects [s,i] for symbols or imports diffing");
+				R_LOG_ERROR ("-i expects [s|f|i|c|m] for symbols or imports diffing");
 				return 1;
 			}
 			break;
@@ -1138,6 +1216,9 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	case MODE_GRAPH:
 	case MODE_CODE:
 	case MODE_DIFF_STRS:
+	case MODE_DIFF_METHODS:
+	case MODE_DIFF_CLASSES:
+	case MODE_DIFF_FIELDS:
 	case MODE_DIFF_SYMBOLS:
 	case MODE_DIFF_IMPORTS:
 		c = opencore (&ro, ro.file);
@@ -1225,6 +1306,24 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 					r_core_diff_show (c, c2);
 				}
 			}
+		} else if (ro.mode == MODE_DIFF_FIELDS) {
+			int sz;
+			bufa = get_fields (c, &sz);
+			sza = sz;
+			bufb = get_fields (c2, &sz);
+			szb = sz;
+		} else if (ro.mode == MODE_DIFF_METHODS) {
+			int sz;
+			bufa = get_methods (c, &sz);
+			sza = sz;
+			bufb = get_methods (c2, &sz);
+			szb = sz;
+		} else if (ro.mode == MODE_DIFF_CLASSES) {
+			int sz;
+			bufa = get_classes (c, &sz);
+			sza = sz;
+			bufb = get_classes (c2, &sz);
+			szb = sz;
 		} else if (ro.mode == MODE_DIFF_SYMBOLS) {
 			int sz;
 			bufa = get_symbols (c, &sz);
@@ -1294,7 +1393,10 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		break;
 	case MODE_DIFF:
 	case MODE_DIFF_STRS:
+	case MODE_DIFF_FIELDS:
 	case MODE_DIFF_SYMBOLS:
+	case MODE_DIFF_METHODS:
+	case MODE_DIFF_CLASSES:
 	case MODE_DIFF_IMPORTS:
 		d = r_diff_new ();
 		r_diff_set_delta (d, delta);
