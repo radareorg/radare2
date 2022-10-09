@@ -11702,6 +11702,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 
 				if (input[1] == 'a') { // "aaaa"
+					r_core_cmd0 (core, "/azq");
 					if (!didAap) {
 						didAap = true;
 						R_LOG_INFO ("Finding function preludes");
