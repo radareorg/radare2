@@ -281,6 +281,9 @@ endif
 endif
 endif
 
+headsup:
+	[ "`cd capstone && git rev-parse HEAD`" = "$(CS_TIP)" ]
+
 ../../radare2-webui:
 	cd ../.. ; git clone --depth 1 https://github.com/radareorg/radare2-webui
 
