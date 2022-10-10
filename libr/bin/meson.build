@@ -146,7 +146,7 @@ r_bin_sources = [
 
 r_bin_sources += r_bin_d_sources
 
-r_bin_inc = [platform_inc, yxml_inc, include_directories('mangling', 'format')]
+r_bin_inc = [platform_inc, include_directories('mangling', 'format')]
 
 r_bin = library('r_bin', r_bin_sources,
   include_directories: r_bin_inc,
@@ -161,8 +161,7 @@ r_bin = library('r_bin', r_bin_sources,
     r_socket_dep,
     r_syscall_dep,
     java_dep,
-    lz4_dep,
-    yxml_dep
+    lz4_dep
   ],
   install: true,
   implicit_include_directories: false,
@@ -187,8 +186,7 @@ r_bin_static = static_library('r_bin_static', r_bin_sources,
     r_socket_static_dep,
     r_syscall_static_dep,
     java_static_dep,
-    lz4_dep,
-    yxml_dep
+    lz4_dep
   ],
   install: true,
   implicit_include_directories: false,
