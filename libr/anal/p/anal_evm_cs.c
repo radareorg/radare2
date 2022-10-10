@@ -344,7 +344,10 @@ static int evm_anal_init(void *user) {
 }
 
 static int evm_anal_fini(void *user) {
-	R_FREE (evm_ai);
+	if (evm_ai) {
+		sdb_free (evm_ai->pushs_db);
+		R_FREE (evm_ai);
+	}
 	return true;
 }
 
