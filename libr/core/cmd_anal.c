@@ -7005,7 +7005,7 @@ static void print_esil_dfg_as_commands(RCore *core, RAnalEsilDFG *dfg) {
 			return;
 		}
 		r_strbuf_set (sb, esc_str);
-		if (enode->type == R_ANAL_ESIL_DFG_BLOCK_GENERATIVE) {
+		if (enode->type & R_ANAL_ESIL_DFG_BLOCK_GENERATIVE) {
 			r_strbuf_prepend (sb, "generative:");
 		}
 		char *b64_buf = r_base64_encode_dyn (r_strbuf_get (sb), sb->len);
@@ -7032,18 +7032,17 @@ static void print_esil_dfg_as_commands(RCore *core, RAnalEsilDFG *dfg) {
 
 static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 	r_return_if_fail (core && argc >= 0 && argv);
-	if (argc == 0) {
-		r_core_cmd0 (core, ".aeg*;agg");
-		return;
-	}
-	if ((argc == 1) && !argv[0][0]) {	// "aeg"
-		RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[0]);
-		r_return_if_fail (dfg);
-		print_esil_dfg_as_commands (core, dfg);
-		r_anal_esil_dfg_free (dfg);
-		return;
-	}
-	switch (argv[0][0]) {
+	switch (argv[0][1]) {
+	case '\x00':	// "aeg"
+		if (argc == 1) {
+			r_core_cmd0 (core, ".aeg*;agg");
+		} else {
+			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
+			r_return_if_fail (dfg);
+			print_esil_dfg_as_commands (core, dfg);
+			r_anal_esil_dfg_free (dfg);
+		}
+		break;
 	case '*':	// "aeg*"
 	{
 		RAnalOp *aop = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_ESIL);
@@ -7576,7 +7575,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 	case 'g': // "aeg"
 		{
 			int argc;
-			char **argv = r_str_argv (&input[1], &argc);
+			char **argv = r_str_argv (input, &argc);
 			r_return_if_fail (argv);
 			cmd_aeg (core, argc, argv);
 			int i;
