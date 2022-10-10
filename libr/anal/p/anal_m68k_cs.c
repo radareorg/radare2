@@ -116,7 +116,7 @@ static inline ut64 make_64bits_address(ut64 address) {
 	return UT32_MAX & address;
 }
 
-static inline void handle_branch_instruction(RAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type, int index) {
+static inline void handle_branch_instruction(RArchOp *op, ut64 addr, cs_m68k *m68k, ut32 type, int index) {
 #if CS_API_MAJOR >= 4
 	if (m68k->operands[index].type == M68K_OP_BR_DISP) {
 		op->type = type;
@@ -132,7 +132,7 @@ static inline void handle_branch_instruction(RAnalOp *op, ut64 addr, cs_m68k *m6
 #endif
 }
 
-static inline void handle_jump_instruction(RAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type) {
+static inline void handle_jump_instruction(RArchOp *op, ut64 addr, cs_m68k *m68k, ut32 type) {
 	op->type = type;
 
 	// Handle PC relative mode jump
@@ -219,11 +219,11 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 	return 0;
 }
 
-static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
+static void op_fillval(RArchOp *op, csh handle, cs_insn *insn) {
 	static R_TH_LOCAL RRegItem reg;
 	RAnalValue *src, *dst;
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_MOV:
+	switch (op->type & R_ARCH_OP_TYPE_MASK) {
+	case R_ARCH_OP_TYPE_MOV:
 		ZERO_FILL (reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
 			src = r_vector_push (op->srcs, NULL);
@@ -237,7 +237,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 			dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
-	case R_ANAL_OP_TYPE_LEA:
+	case R_ARCH_OP_TYPE_LEA:
 		ZERO_FILL (reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
 			dst = r_vector_push (op->dsts, NULL);
@@ -249,7 +249,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	csh handle = init_capstone (a);
 	if (handle == 0) {
 		return -1;
@@ -264,17 +264,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	int on = n;
 	if (!insn || !strncmp (insn->mnemonic, "dc.w", 4)) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 			n = 2;
 		} else {
 			n = -1;
 		}
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = 2;
 		goto beach;
-	} else if (mask & R_ANAL_OP_MASK_DISASM) {
+	} else if (mask & R_ARCH_OP_MASK_DISASM) {
 		char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 		if (str) {
 			char *p = r_str_replace (str, "$", "0x", true);
@@ -287,13 +287,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 	}
 	if (n < 1 || insn->size < 1) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;
 		goto beach;
 	}
 	if (!memcmp (buf, "\xff\xff", R_MIN (len, 2))) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;
 		goto beach;
@@ -302,29 +302,29 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	m68k = &detail->m68k;
 	op->id = insn->id;
 	opsize = op->size = insn->size;
-	if (mask & R_ANAL_OP_MASK_OPEX) {
+	if (mask & R_ARCH_OP_MASK_OPEX) {
 		opex (&op->opex, handle, insn);
 	}
 	switch (insn->id) {
 	case M68K_INS_INVALID:
-		op->type  = R_ANAL_OP_TYPE_ILL;
+		op->type  = R_ARCH_OP_TYPE_ILL;
 		break;
 	case M68K_INS_ADD:
 	case M68K_INS_ADDA:
 	case M68K_INS_ADDI:
 	case M68K_INS_ADDQ:
 	case M68K_INS_ADDX:
-		op->type  = R_ANAL_OP_TYPE_ADD;
+		op->type  = R_ARCH_OP_TYPE_ADD;
 		break;
 	case M68K_INS_AND:
 	case M68K_INS_ANDI:
-		op->type  = R_ANAL_OP_TYPE_AND;
+		op->type  = R_ARCH_OP_TYPE_AND;
 		break;
 	case M68K_INS_ASL:
-		op->type  = R_ANAL_OP_TYPE_SHL;
+		op->type  = R_ARCH_OP_TYPE_SHL;
 		break;
 	case M68K_INS_ASR:
-		op->type  = R_ANAL_OP_TYPE_SHR;
+		op->type  = R_ARCH_OP_TYPE_SHR;
 		break;
 	case M68K_INS_ABCD:
 		break;
@@ -344,13 +344,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_BLT:
 	case M68K_INS_BGT:
 	case M68K_INS_BLE:
-		handle_branch_instruction (op, addr, m68k, R_ANAL_OP_TYPE_CJMP, 0);
+		handle_branch_instruction (op, addr, m68k, R_ARCH_OP_TYPE_CJMP, 0);
 		break;
 	case M68K_INS_BRA:
-		handle_branch_instruction (op, addr, m68k, R_ANAL_OP_TYPE_JMP, 0);
+		handle_branch_instruction (op, addr, m68k, R_ARCH_OP_TYPE_JMP, 0);
 		break;
 	case M68K_INS_BSR:
-		handle_branch_instruction (op, addr, m68k, R_ANAL_OP_TYPE_CALL, 0);
+		handle_branch_instruction (op, addr, m68k, R_ARCH_OP_TYPE_CALL, 0);
 		break;
 	case M68K_INS_BCHG:
 	case M68K_INS_BCLR:
@@ -378,12 +378,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_CMPI:
 	case M68K_INS_CMPM:
 	case M68K_INS_CMP2:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		break;
 	case M68K_INS_CINVL:
 	case M68K_INS_CINVP:
 	case M68K_INS_CINVA:
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		break;
 	case M68K_INS_CPUSHL:
 	case M68K_INS_CPUSHP:
@@ -406,20 +406,20 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_DBGT:
 	case M68K_INS_DBLE:
 	case M68K_INS_DBRA:
-		handle_branch_instruction (op, addr, m68k, R_ANAL_OP_TYPE_CJMP, 1);
+		handle_branch_instruction (op, addr, m68k, R_ARCH_OP_TYPE_CJMP, 1);
 		break;
 	case M68K_INS_DIVS:
 	case M68K_INS_DIVSL:
 	case M68K_INS_DIVU:
 	case M68K_INS_DIVUL:
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = R_ARCH_OP_TYPE_DIV;
 		break;
 	case M68K_INS_EOR:
 	case M68K_INS_EORI:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		break;
 	case M68K_INS_EXG:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case M68K_INS_EXT:
 	case M68K_INS_EXTB:
@@ -611,41 +611,41 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_FTRAPST:
 	case M68K_INS_FTST:
 	case M68K_INS_FTWOTOX:
-		op->type = R_ANAL_OP_TYPE_UNK;
-		op->family = R_ANAL_OP_FAMILY_FPU;
+		op->type = R_ARCH_OP_TYPE_UNK;
+		op->family = R_ARCH_OP_FAMILY_FPU;
 		break;
 	case M68K_INS_HALT:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		break;
 	case M68K_INS_ILLEGAL:
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		break;
 	case M68K_INS_JMP:
-		handle_jump_instruction (op, addr, m68k, R_ANAL_OP_TYPE_JMP);
+		handle_jump_instruction (op, addr, m68k, R_ARCH_OP_TYPE_JMP);
 		break;
 	case M68K_INS_JSR:
-		handle_jump_instruction (op, addr, m68k, R_ANAL_OP_TYPE_CALL);
+		handle_jump_instruction (op, addr, m68k, R_ARCH_OP_TYPE_CALL);
 		break;
 	case M68K_INS_LPSTOP:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		break;
 	case M68K_INS_LSL:
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = R_ARCH_OP_TYPE_SHL;
 		break;
 	case M68K_INS_LINK:
-		op->type = R_ANAL_OP_TYPE_PUSH;
-		op->stackop = R_ANAL_STACK_INC;
+		op->type = R_ARCH_OP_TYPE_PUSH;
+		op->stackop = R_ARCH_STACK_INC;
 		op->stackptr = -(st16)IMM(1);
 		break;
 	case M68K_INS_LSR:
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = R_ARCH_OP_TYPE_SHR;
 		break;
 	case M68K_INS_PEA:
 	case M68K_INS_LEA:
-		op->type = R_ANAL_OP_TYPE_LEA;
+		op->type = R_ARCH_OP_TYPE_LEA;
 		break;
 	case M68K_INS_MOVE:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		assert (m68k->op_count >= 2);
 		assert (m68k->op_size.type == M68K_SIZE_TYPE_CPU);
 		bool is_long = m68k->op_size.cpu_size == M68K_CPU_SIZE_LONG;
@@ -658,25 +658,25 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_MOVEQ:
 	case M68K_INS_MOVES:
 	case M68K_INS_MOVE16:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case M68K_INS_MULS:
 	case M68K_INS_MULU:
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		break;
 	case M68K_INS_NBCD:
 	case M68K_INS_NEG:
 	case M68K_INS_NEGX:
 		break;
 	case M68K_INS_NOP:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		break;
 	case M68K_INS_NOT:
-		op->type = R_ANAL_OP_TYPE_NOT;
+		op->type = R_ARCH_OP_TYPE_NOT;
 		break;
 	case M68K_INS_OR:
 	case M68K_INS_ORI:
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = R_ARCH_OP_TYPE_OR;
 		break;
 	case M68K_INS_PACK:
 	case M68K_INS_PFLUSH:
@@ -697,10 +697,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_RESET:
 		break;
 	case M68K_INS_ROL:
-		op->type = R_ANAL_OP_TYPE_ROL;
+		op->type = R_ARCH_OP_TYPE_ROL;
 		break;
 	case M68K_INS_ROR:
-		op->type = R_ANAL_OP_TYPE_ROR;
+		op->type = R_ARCH_OP_TYPE_ROR;
 		break;
 	case M68K_INS_ROXL:
 	case M68K_INS_ROXR:
@@ -710,7 +710,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_RTM:
 	case M68K_INS_RTR:
 	case M68K_INS_RTS:
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		break;
 	case M68K_INS_SBCD:
 	case M68K_INS_ST:
@@ -738,10 +738,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_SUBI:
 	case M68K_INS_SUBQ:
 	case M68K_INS_SUBX:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		break;
 	case M68K_INS_SWAP:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case M68K_INS_TAS:
 		break;
@@ -765,22 +765,22 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M68K_INS_TRAPLT:
 	case M68K_INS_TRAPGT:
 	case M68K_INS_TRAPLE:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = R_ARCH_OP_TYPE_TRAP;
 		break;
 	case M68K_INS_TST:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		break;
 	case M68K_INS_UNPK: // unpack BCD
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case M68K_INS_UNLK:
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 		// reset stackframe
-		op->stackop = R_ANAL_STACK_SET;
+		op->stackop = R_ARCH_STACK_SET;
 		op->stackptr = 0;
 		break;
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
+	if (mask & R_ARCH_OP_MASK_VAL) {
 		op_fillval (op, handle, insn);
 	}
 beach:

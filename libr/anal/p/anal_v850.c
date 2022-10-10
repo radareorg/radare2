@@ -128,7 +128,7 @@ static const char* V850_REG_NAMES[] = {
 	"lp",
 };
 
-static void update_flags(RAnalOp *op, int flags) {
+static void update_flags(RArchOp *op, int flags) {
 	if (flags & V850_FLAG_CY) {
 		r_strbuf_append (&op->esil, "31,$c,cy,:=");
 	}
@@ -143,7 +143,7 @@ static void update_flags(RAnalOp *op, int flags) {
 	}
 }
 
-static void clear_flags(RAnalOp *op, int flags) {
+static void clear_flags(RArchOp *op, int flags) {
 	if (flags & V850_FLAG_CY) {
 		r_strbuf_append (&op->esil, ",0,cy,:=");
 	}
@@ -158,7 +158,7 @@ static void clear_flags(RAnalOp *op, int flags) {
 	}
 }
 
-static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int v850e0_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	ut8 opcode = 0;
 	const char *reg1 = NULL;
 	const char *reg2 = NULL;
@@ -175,7 +175,7 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	if (ret < 1) {
 		return ret;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (R_STR_ISNOTEMPTY (cmd.operands)) {
 			op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
  		} else {
@@ -193,7 +193,7 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case V850_MOV_IMM5:
 	case V850_MOV:
 		// 2 formats
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		if (opcode != V850_MOV_IMM5) { // Format I
 			r_strbuf_appendf (&op->esil, "%s,%s,=", F1_RN1(word1), F1_RN2(word1));
 		} else { // Format II
@@ -201,16 +201,16 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		}
 		break;
 	case V850_MOVEA:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		// FIXME: to decide about reading 16/32 bit and use only macros to access
 		r_strbuf_appendf (&op->esil, "%s,0xffff,&,%u,+,%s,=", F6_RN1(word1), word2, F6_RN2(word1));
 		break;
 	case V850_SLDB:
 	case V850_SLDH:
 	case V850_SLDW:
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		if (F4_REG2(word1) == V850_SP) {
-			op->stackop = R_ANAL_STACK_GET;
+			op->stackop = R_ARCH_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = 0;
 		}
@@ -218,30 +218,30 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case V850_SSTB:
 	case V850_SSTH:
 	case V850_SSTW:
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		if (F4_REG2(word1) == V850_SP) {
-			op->stackop = R_ANAL_STACK_SET;
+			op->stackop = R_ARCH_STACK_SET;
 			op->stackptr = 0;
 			op->ptr = 0;
 		}
 		break;
 	case V850_NOT:
-		op->type = R_ANAL_OP_TYPE_NOT;
+		op->type = R_ARCH_OP_TYPE_NOT;
 		r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,=",F1_RN1(word1), F1_RN2(word1));
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
 	case V850_DIVH:
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = R_ARCH_OP_TYPE_DIV;
 		r_strbuf_appendf (&op->esil, "%s,%s,0xffff,&,/,%s,=",
 						 F1_RN1(word1), F1_RN2(word1), F1_RN2(word1));
 		update_flags (op, V850_FLAG_OV | V850_FLAG_S | V850_FLAG_Z);
 		break;
 	case V850_JMP:
 		if (F1_REG1 (word1) == 31) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 		} else {
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = R_ARCH_OP_TYPE_UJMP;
 		}
 		op->jump = word1; // UT64_MAX; // this is n RJMP instruction .. F1_RN1 (word1);
 		op->fail = addr + 2;
@@ -249,7 +249,7 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		break;
 	case V850_JARL2:
 		// TODO: fix displacement reading
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		op->jump = addr + F5_DISP(((ut32)word2 << 16) | word1);
 		op->fail = addr + 4;
 		r_strbuf_appendf (&op->esil, "pc,%s,=,pc,%u,+=", F5_RN2(word1), F5_DISP(((ut32)word2 << 16) | word1));
@@ -257,18 +257,18 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 #if 0 // WTF - same opcode as JARL?
 	case V850_JR:
 		jumpdisp = DISP26(word1, word2);
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		r_strbuf_appendf (&op->esil, "$$,%d,+,pc,=", jumpdisp);
 		break;
 #endif
 	case V850_OR:
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = R_ARCH_OP_TYPE_OR;
 		r_strbuf_appendf (&op->esil, "%s,%s,|=", F1_RN1(word1), F1_RN2(word1));
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
 	case V850_ORI:
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = R_ARCH_OP_TYPE_OR;
 		r_strbuf_appendf (&op->esil, "%hu,%s,|,%s,=",
 						 word2, F6_RN1(word1), F6_RN2(word1));
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
@@ -276,67 +276,67 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		break;
 	case V850_MULH:
 	case V850_MULH_IMM5:
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		break;
 	case V850_XOR:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		r_strbuf_appendf (&op->esil, "%s,%s,^=", F1_RN1(word1), F1_RN2(word1));
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
 	case V850_XORI:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		r_strbuf_appendf (&op->esil, "%hu,%s,^,%s,=", word2, F6_RN1(word1), F6_RN2(word1));
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
 	case V850_AND:
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = R_ARCH_OP_TYPE_AND;
 		r_strbuf_appendf (&op->esil, "%s,%s,&=", F1_RN1(word1), F1_RN2(word1));
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
 	case V850_ANDI:
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = R_ARCH_OP_TYPE_AND;
 		r_strbuf_appendf (&op->esil, "%hu,%s,&,%s,=", word2, F6_RN1(word1), F6_RN2(word1));
 		update_flags (op, V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV | V850_FLAG_S);
 		break;
 	case V850_CMP:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		r_strbuf_appendf (&op->esil, "%s,%s,==", F1_RN1(word1), F1_RN2(word1));
 		update_flags (op, -1);
 		break;
 	case V850_CMP_IMM5:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		r_strbuf_appendf (&op->esil, "%d,%s,==", (st8)SEXT5(F2_IMM(word1)), F2_RN2(word1));
 		update_flags (op, -1);
 		break;
 	case V850_TST:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		r_strbuf_appendf (&op->esil, "%s,%s,&", F1_RN1(word1), F1_RN2(word1));
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
 	case V850_SUB:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		r_strbuf_appendf (&op->esil, "%s,%s,-=", F1_RN1(word1), F1_RN2(word1));
 		update_flags (op, -1);
 		break;
 	case V850_SUBR:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		r_strbuf_appendf (&op->esil, "%s,%s,-,%s=", F1_RN2 (word1), F1_RN1 (word1), F1_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_ADD:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		r_strbuf_appendf (&op->esil, "%s,%s,+=", F1_RN1 (word1), F1_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_ADD_IMM5:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		if (F2_REG2(word1) == V850_SP) {
-			op->stackop = R_ANAL_STACK_INC;
+			op->stackop = R_ARCH_STACK_INC;
 			op->stackptr = F2_IMM (word1);
 			op->val = op->stackptr;
 		}
@@ -344,9 +344,9 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		update_flags (op, -1);
 		break;
 	case V850_ADDI:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		if (F6_REG2(word1) == V850_SP) {
-			op->stackop = R_ANAL_STACK_INC;
+			op->stackop = R_ARCH_STACK_INC;
 			op->stackptr = (st64) word2;
 			op->val = op->stackptr;
 		}
@@ -354,13 +354,13 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		update_flags (op, -1);
 		break;
 	case V850_SHR_IMM5:
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = R_ARCH_OP_TYPE_SHR;
 		r_strbuf_appendf (&op->esil, "%u,%s,>>=", (ut8)F2_IMM (word1), F2_RN2 (word1));
 		update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
 	case V850_SAR_IMM5:
-		op->type = R_ANAL_OP_TYPE_SAR;
+		op->type = R_ARCH_OP_TYPE_SAR;
 		ut16 imm5 = F2_IMM(word1);
 		reg2 = F2_RN2(word1);
 		r_strbuf_appendf (&op->esil, "31,%s,>>,?{,%u,32,-,%u,1,<<,--,<<,}{,0,},%u,%s,>>,|,%s,=", reg2, (ut8)imm5, (ut8)imm5, (ut8)imm5, reg2, reg2);
@@ -368,7 +368,7 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		clear_flags (op, V850_FLAG_OV);
 		break;
 	case V850_SHL_IMM5:
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = R_ARCH_OP_TYPE_SHL;
 		r_strbuf_appendf (&op->esil, "%u,%s,<<=", (ut8)F2_IMM(word1), F2_RN2(word1));
 		update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
@@ -386,7 +386,7 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		}
 		op->jump = addr + destaddrs;
 		op->fail = addr + 2;
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		switch (F3_COND(word1)) {
 		case V850_COND_V:
 			r_strbuf_append (&op->esil, "ov");
@@ -456,19 +456,19 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case V850_EXT1:
 		switch (get_subopcode(word1 | (ut32)word2 << 16)) {
 		case V850_EXT_SHL:
-			op->type = R_ANAL_OP_TYPE_SHL;
+			op->type = R_ARCH_OP_TYPE_SHL;
 			r_strbuf_appendf (&op->esil, "%s,%s,<<=", F9_RN1(word1), F9_RN2(word1));
 			update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 			clear_flags (op, V850_FLAG_OV);
 			break;
 		case V850_EXT_SHR:
-			op->type = R_ANAL_OP_TYPE_SHR;
+			op->type = R_ARCH_OP_TYPE_SHR;
 			r_strbuf_appendf (&op->esil, "%s,%s,>>=", F9_RN1(word1), F9_RN2(word1));
 			update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 			clear_flags (op, V850_FLAG_OV);
 			break;
 		case V850_EXT_SAR:
-			op->type = R_ANAL_OP_TYPE_SAR;
+			op->type = R_ARCH_OP_TYPE_SAR;
 			reg1 = F9_RN1 (word1);
 			reg2 = F9_RN2 (word1);
 			r_strbuf_appendf (&op->esil, "31,%s,>>,?{,%s,32,-,%s,1,<<,--,<<,}{,0,},%s,%s,>>,|,%s,=", reg2, reg1, reg1, reg1, reg2, reg2);
@@ -517,7 +517,7 @@ static int cpumodel_from_string(const char *s) {
 	return num? num: DEFAULT_CPU_MODEL;
 }
 
-static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int v850_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	int cpumodel = cpumodel_from_string (anal->config->cpu);
 	if (cpumodel == V850_CPU_E0) {
 		return v850e0_op (anal, op, addr, buf, len, mask);
@@ -531,43 +531,43 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	if (op->size < 2) {
 		op->size = 2;
 	}
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		r_strbuf_set (&op->esil, inst.esil);
 	}
 	if (inst.op) {
 		op->type = inst.op->type;
 		op->family = inst.op->family;
 		if (len >= 2 && !memcmp (buf, "\x7f\x00", 2)) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 		}
 	}
 	switch (op->type) {
-	case R_ANAL_OP_TYPE_MOV:
+	case R_ARCH_OP_TYPE_MOV:
 		op->val = inst.value;
 		break;
-	case R_ANAL_OP_TYPE_STORE:
-	case R_ANAL_OP_TYPE_LOAD:
+	case R_ARCH_OP_TYPE_STORE:
+	case R_ARCH_OP_TYPE_LOAD:
 		op->ptr = inst.value;
 		break;
-	case R_ANAL_OP_TYPE_JMP:
+	case R_ARCH_OP_TYPE_JMP:
 		op->jump = addr + inst.value;
 		break;
-	case R_ANAL_OP_TYPE_CJMP:
+	case R_ARCH_OP_TYPE_CJMP:
 		op->jump = addr + inst.value;
 		op->fail = addr + inst.size;
 		break;
-	case R_ANAL_OP_TYPE_POP:
+	case R_ARCH_OP_TYPE_POP:
 		if (inst.op && strstr (inst.op->esil, "#2")) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 		}
 		break;
-	case R_ANAL_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_CALL:
 		op->jump = addr + inst.value;
 		op->fail = addr + inst.size;
 		break;
 	}
 	op->size = inst.size;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (anal->config->syntax == R_ARCH_SYNTAX_ATT) {
 			op->mnemonic = r_str_replace (inst.text, "[r", "[%r", -1);
 			op->mnemonic = r_str_replace (op->mnemonic, " r", " %r", -1);

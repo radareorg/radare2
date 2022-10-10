@@ -61,10 +61,10 @@ typedef struct {
 
 typedef struct {
 	char *op_name;
-	void (*func)(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg);
+	void (*func)(RArchOp *op, pyc_opcode_object *op_obj, ut32 oparg);
 } op_anal_func;
 
-void anal_pyc_op(RAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg);
+void anal_pyc_op(RArchOp *op, pyc_opcode_object *op_obj, ut32 oparg);
 
 pyc_opcodes *opcode_2x(void);
 pyc_opcodes *opcode_3x(void);

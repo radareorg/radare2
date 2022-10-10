@@ -23,9 +23,9 @@ typedef struct v850_opcode {
 	unsigned char operands[8];
 	unsigned int memop; // which operand is accessing the memory?
 	unsigned int processors; // mask for cpu models
-	int type; // R_ANAL_OP_TYPE_xxx
+	int type; // R_ARCH_OP_TYPE_xxx
 	char *esil;
-	int family; // R_ANAL_OP_FAMILY_xxx
+	int family; // R_ARCH_OP_FAMILY_xxx
 } v850_opcode;
 
 typedef struct {

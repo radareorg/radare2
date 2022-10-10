@@ -50,7 +50,7 @@ R_API RCoreItem *r_core_item_at(RCore *core, ut64 addr) {
 		ci->sectname = strdup (sec->name);
 	}
 	if (!ci->data) {
-		RAnalOp* op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
+		RArchOp* op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 		if (op) {
 			if (!ci->data) {
 				if (op->mnemonic) {

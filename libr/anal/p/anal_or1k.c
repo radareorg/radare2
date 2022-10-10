@@ -103,7 +103,7 @@ static ut64 n_oper_to_addr(ut32 n, ut32 mask, ut64 addr) {
 	return (ut64) ((st64) ((st32) (sign_extend(n, mask) << 2)) + addr);
 }
 
-static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
+static int insn_to_op(RAnal *a, RArchOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
 	struct operands o = {0};
 	insn_type_t type = type_of_opcode(descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
@@ -129,14 +129,14 @@ static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extr
 		break;
 	case 0x03: /* l.bnf */
 		o.n = get_operand_value (insn, type_descr, INSN_OPER_N);
-		op->cond = R_ANAL_COND_NE;
+		op->cond = R_ARCH_OP_COND_NE;
 		op->jump = n_oper_to_addr (o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
 		op->fail = addr + 8;
 		op->delay = 1;
 		break;
 	case 0x04: /* l.bf */
 		o.n = get_operand_value (insn, type_descr, INSN_OPER_N);
-		op->cond = R_ANAL_COND_EQ;
+		op->cond = R_ARCH_OP_COND_EQ;
 		op->jump = n_oper_to_addr (o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
 		op->fail = addr + 8;
 		op->delay = 1;
@@ -197,14 +197,14 @@ static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extr
 	}
 
 	/* temporary solution to prevent using wrong register values */
-	if ((op->type & R_ANAL_OP_TYPE_JMP) == R_ANAL_OP_TYPE_JMP) {
+	if ((op->type & R_ARCH_OP_TYPE_JMP) == R_ARCH_OP_TYPE_JMP) {
 		/* FIXME: handle delay slot after branches */
 		cpu_enable = 0;
 	}
 	return 4;
 }
 
-static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int or1k_op(RAnal *a, RArchOp *op, ut64 addr, const ut8 *data, int len, RArchOpMask mask) {
 	insn_t *insn_descr;
 	insn_extra_t *extra_descr;
 
@@ -239,7 +239,7 @@ static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, R
 		insn_to_op (a, op, addr, insn_descr, NULL, insn);
 		line = insn_to_str (a, addr, insn_descr, NULL, insn);
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (line) {
 			op->mnemonic = line;
 			line = NULL;

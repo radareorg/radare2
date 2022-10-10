@@ -89,208 +89,208 @@ ut16 load_shift[4] = { 2, 0, 1, 0 };
 
 #define MCORE_INSTRS 265
 mcore_ops_t mcore_instructions[MCORE_INSTRS] = {
-	{ "bkpt"    , MCORE_CPU_DFLT, 0x0, R_ANAL_OP_TYPE_ILL  , 0, {{0},{0},{0},{0},{0}} },
-	{ "sync"    , MCORE_CPU_DFLT, 0x1, R_ANAL_OP_TYPE_SYNC , 0, {{0},{0},{0},{0},{0}} },
-	{ "rte"     , MCORE_CPU_DFLT, 0x2, R_ANAL_OP_TYPE_RET  , 0, {{0},{0},{0},{0},{0}} },
-	{ "rfi"     , MCORE_CPU_DFLT, 0x3, R_ANAL_OP_TYPE_RET  , 0, {{0},{0},{0},{0},{0}} },
-	{ "stop"    , MCORE_CPU_DFLT, 0x4, R_ANAL_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
-	{ "wait"    , MCORE_CPU_DFLT, 0x5, R_ANAL_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
-	{ "doze"    , MCORE_CPU_DFLT, 0x6, R_ANAL_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
-	{ "idly4"   , MCORE_CPU_DFLT, 0x7, R_ANAL_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
+	{ "bkpt"    , MCORE_CPU_DFLT, 0x0, R_ARCH_OP_TYPE_ILL  , 0, {{0},{0},{0},{0},{0}} },
+	{ "sync"    , MCORE_CPU_DFLT, 0x1, R_ARCH_OP_TYPE_SYNC , 0, {{0},{0},{0},{0},{0}} },
+	{ "rte"     , MCORE_CPU_DFLT, 0x2, R_ARCH_OP_TYPE_RET  , 0, {{0},{0},{0},{0},{0}} },
+	{ "rfi"     , MCORE_CPU_DFLT, 0x3, R_ARCH_OP_TYPE_RET  , 0, {{0},{0},{0},{0},{0}} },
+	{ "stop"    , MCORE_CPU_DFLT, 0x4, R_ARCH_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
+	{ "wait"    , MCORE_CPU_DFLT, 0x5, R_ARCH_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
+	{ "doze"    , MCORE_CPU_DFLT, 0x6, R_ARCH_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
+	{ "idly4"   , MCORE_CPU_DFLT, 0x7, R_ARCH_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
 	// 0b00000000000010ii, trap #ii
-	{ "trap"    , MCORE_CPU_DFLT, 0xb, R_ANAL_OP_TYPE_NULL , 1, {{ 0x3, 0, TYPE_IMM },{0},{0},{0},{0}} },
+	{ "trap"    , MCORE_CPU_DFLT, 0xb, R_ARCH_OP_TYPE_NULL , 1, {{ 0x3, 0, TYPE_IMM },{0},{0},{0},{0}} },
 	// 0b0000000000001100, mvtc 510E
-	{ "mvtc"    , MCORE_CPU_510E, 0xc, R_ANAL_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
+	{ "mvtc"    , MCORE_CPU_510E, 0xc, R_ARCH_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
 	// 0b0000000000001101, cprc cp
-	{ "cprc"    , MCORE_CPU_DFLT, 0xd, R_ANAL_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
+	{ "cprc"    , MCORE_CPU_DFLT, 0xd, R_ARCH_OP_TYPE_NULL , 0, {{0},{0},{0},{0},{0}} },
 	// 0b000000000000111x, --
 	// 0b000000000001iiii, cpseti cp
-	{ "cpseti"  , MCORE_CPU_DFLT, 0x1f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_IMM },{0},{0},{0},{0}} },
+	{ "cpseti"  , MCORE_CPU_DFLT, 0x1f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_IMM },{0},{0},{0},{0}} },
 	// 0b000000000010rrrr, mvc
-	{ "mvc"     , MCORE_CPU_DFLT, 0x2f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "mvc"     , MCORE_CPU_DFLT, 0x2f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000000011rrrr, mvcv
-	{ "mvcv"    , MCORE_CPU_DFLT, 0x3f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "mvcv"    , MCORE_CPU_DFLT, 0x3f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000000100rrrr, ldq
-	{ "ldq"     , MCORE_CPU_DFLT, 0x4f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "ldq"     , MCORE_CPU_DFLT, 0x4f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000000101rrrr, stq
-	{ "stq"     , MCORE_CPU_DFLT, 0x5f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "stq"     , MCORE_CPU_DFLT, 0x5f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000000110rrrr, ldm
-	{ "ldm"     , MCORE_CPU_DFLT, 0x6f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "ldm"     , MCORE_CPU_DFLT, 0x6f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000000111rrrr, stm
-	{ "stm"     , MCORE_CPU_DFLT, 0x7f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "stm"     , MCORE_CPU_DFLT, 0x7f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000001000rrrr, dect
-	{ "dect"    , MCORE_CPU_DFLT, 0x8f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "dect"    , MCORE_CPU_DFLT, 0x8f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000001001rrrr, decf
-	{ "decf"    , MCORE_CPU_DFLT, 0x9f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "decf"    , MCORE_CPU_DFLT, 0x9f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000001010rrrr, inct
-	{ "inct"    , MCORE_CPU_DFLT, 0xaf, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "inct"    , MCORE_CPU_DFLT, 0xaf, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000001011rrrr, incf
-	{ "incf"    , MCORE_CPU_DFLT, 0xbf, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "incf"    , MCORE_CPU_DFLT, 0xbf, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000001100rrrr, jmp
-	{ "jmp"     , MCORE_CPU_DFLT, 0xcf, R_ANAL_OP_TYPE_CALL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "jmp"     , MCORE_CPU_DFLT, 0xcf, R_ARCH_OP_TYPE_CALL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000001101rrrr, jsr
-	{ "jsr"     , MCORE_CPU_DFLT, 0xdf, R_ANAL_OP_TYPE_RET  , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "jsr"     , MCORE_CPU_DFLT, 0xdf, R_ARCH_OP_TYPE_RET  , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000001110rrrr, ff1
-	{ "ff1"     , MCORE_CPU_DFLT, 0xef, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "ff1"     , MCORE_CPU_DFLT, 0xef, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000001111rrrr, brev
-	{ "brev"    , MCORE_CPU_DFLT, 0xff, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "brev"    , MCORE_CPU_DFLT, 0xff, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000010000rrrr, xtrb3
-	{ "xtrb3"   , MCORE_CPU_DFLT, 0x10f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "xtrb3"   , MCORE_CPU_DFLT, 0x10f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000010001rrrr, xtrb2
-	{ "xtrb2"   , MCORE_CPU_DFLT, 0x11f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "xtrb2"   , MCORE_CPU_DFLT, 0x11f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000010010rrrr, xtrb1
-	{ "xtrb1"   , MCORE_CPU_DFLT, 0x12f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "xtrb1"   , MCORE_CPU_DFLT, 0x12f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000010011rrrr, xtrb0
-	{ "xtrb0"   , MCORE_CPU_DFLT, 0x13f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "xtrb0"   , MCORE_CPU_DFLT, 0x13f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000010100rrrr, zextb
-	{ "zextb"   , MCORE_CPU_DFLT, 0x14f, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf, 0, TYPE_REG },{0},{0},{0}} },
+	{ "zextb"   , MCORE_CPU_DFLT, 0x14f, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf, 0, TYPE_REG },{0},{0},{0}} },
 	// 0b000000010101rrrr, sextb
-	{ "sextb"   , MCORE_CPU_DFLT, 0x15f, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf, 0, TYPE_REG },{0},{0},{0}} },
+	{ "sextb"   , MCORE_CPU_DFLT, 0x15f, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf, 0, TYPE_REG },{0},{0},{0}} },
 	// 0b000000010110rrrr, zexth
-	{ "zexth"   , MCORE_CPU_DFLT, 0x16f, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf, 0, TYPE_REG },{0},{0},{0}} },
+	{ "zexth"   , MCORE_CPU_DFLT, 0x16f, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf, 0, TYPE_REG },{0},{0},{0}} },
 	// 0b000000010111rrrr, sexth
-	{ "sexth"   , MCORE_CPU_DFLT, 0x17f, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf, 0, TYPE_REG },{0},{0},{0}} },
+	{ "sexth"   , MCORE_CPU_DFLT, 0x17f, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf, 0, TYPE_REG },{0},{0},{0}} },
 	// 0b000000011000rrrr, declt
-	{ "declt"   , MCORE_CPU_DFLT, 0x18f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "declt"   , MCORE_CPU_DFLT, 0x18f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000011001rrrr, tstnbz
-	{ "declt"   , MCORE_CPU_DFLT, 0x19f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "declt"   , MCORE_CPU_DFLT, 0x19f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000011010rrrr, decgt
-	{ "decgt"   , MCORE_CPU_DFLT, 0x1af, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "decgt"   , MCORE_CPU_DFLT, 0x1af, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000011011rrrr, decne
-	{ "decne"   , MCORE_CPU_DFLT, 0x1bf, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "decne"   , MCORE_CPU_DFLT, 0x1bf, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000011100rrrr, clrt
-	{ "clrt"    , MCORE_CPU_DFLT, 0x1cf, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "clrt"    , MCORE_CPU_DFLT, 0x1cf, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000011101rrrr, clrf
-	{ "clrf"    , MCORE_CPU_DFLT, 0x1df, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "clrf"    , MCORE_CPU_DFLT, 0x1df, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000011110rrrr, abs
-	{ "abs"     , MCORE_CPU_DFLT, 0x1ef, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "abs"     , MCORE_CPU_DFLT, 0x1ef, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b000000011111rrrr, not
-	{ "not"     , MCORE_CPU_DFLT, 0x1ff, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "not"     , MCORE_CPU_DFLT, 0x1ff, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b00000010ssssrrrr, movt
-	{ "movt"    , MCORE_CPU_DFLT, 0x2ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "movt"    , MCORE_CPU_DFLT, 0x2ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00000011ssssrrrr, mult
-	{ "mult"    , MCORE_CPU_DFLT, 0x3ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "mult"    , MCORE_CPU_DFLT, 0x3ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00000101ssssrrrr, subu
-	{ "subu"    , MCORE_CPU_DFLT, 0x5ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "subu"    , MCORE_CPU_DFLT, 0x5ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00000110ssssrrrr, addc
-	{ "addc"    , MCORE_CPU_DFLT, 0x6ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "addc"    , MCORE_CPU_DFLT, 0x6ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00000111ssssrrrr, subc
-	{ "subc"    , MCORE_CPU_DFLT, 0x7ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "subc"    , MCORE_CPU_DFLT, 0x7ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b0000100sssssrrrr, cprgr cp
-	{ "cprgr"   , MCORE_CPU_DFLT, 0x9ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "cprgr"   , MCORE_CPU_DFLT, 0x9ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00001010ssssrrrr, movf
-	{ "movf"    , MCORE_CPU_DFLT, 0xaff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "movf"    , MCORE_CPU_DFLT, 0xaff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00001011ssssrrrr, lsr
-	{ "lsr"     , MCORE_CPU_DFLT, 0xbff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "lsr"     , MCORE_CPU_DFLT, 0xbff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00001100ssssrrrr, cmphs
-	{ "cmphs"   , MCORE_CPU_DFLT, 0xbff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "cmphs"   , MCORE_CPU_DFLT, 0xbff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00001101ssssrrrr, cmplt
-	{ "cmplt"   , MCORE_CPU_DFLT, 0xdff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "cmplt"   , MCORE_CPU_DFLT, 0xdff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00001110ssssrrrr, tst
-	{ "tst"     , MCORE_CPU_DFLT, 0xeff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "tst"     , MCORE_CPU_DFLT, 0xeff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00001111ssssrrrr, cmpne
-	{ "cmpne"   , MCORE_CPU_DFLT, 0xfff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "cmpne"   , MCORE_CPU_DFLT, 0xfff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b0001000cccccrrrr, mfcr
-	{ "mfcr"    , MCORE_CPU_DFLT, 0x11ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_CTRL},{0},{0},{0}} },
+	{ "mfcr"    , MCORE_CPU_DFLT, 0x11ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_CTRL},{0},{0},{0}} },
 	// 0b0001000111110bbb, psrclr
-	{ "psrclr"  , MCORE_CPU_DFLT, 0x11f7, R_ANAL_OP_TYPE_NULL , 1, {{ 0x7, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "psrclr"  , MCORE_CPU_DFLT, 0x11f7, R_ARCH_OP_TYPE_NULL , 1, {{ 0x7, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b0001000111111bbb, psrset
-	{ "psrset"  , MCORE_CPU_DFLT, 0x11ff, R_ANAL_OP_TYPE_NULL , 1, {{ 0x7, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "psrset"  , MCORE_CPU_DFLT, 0x11ff, R_ARCH_OP_TYPE_NULL , 1, {{ 0x7, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b00010010ssssrrrr, mov
-	{ "mov"     , MCORE_CPU_DFLT, 0x12ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "mov"     , MCORE_CPU_DFLT, 0x12ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00010011ssssrrrr, bgenr
-	{ "bgenr"   , MCORE_CPU_DFLT, 0x13ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "bgenr"   , MCORE_CPU_DFLT, 0x13ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00010100ssssrrrr, rsub
-	{ "rsub"    , MCORE_CPU_DFLT, 0x14ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "rsub"    , MCORE_CPU_DFLT, 0x14ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00010101ssssrrrr, lxw
-	{ "lxw"     , MCORE_CPU_DFLT, 0x15ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "lxw"     , MCORE_CPU_DFLT, 0x15ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00010110ssssrrrr, and
-	{ "and"     , MCORE_CPU_DFLT, 0x16ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "and"     , MCORE_CPU_DFLT, 0x16ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00010111ssssrrrr, xor
-	{ "xor"     , MCORE_CPU_DFLT, 0x17ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "xor"     , MCORE_CPU_DFLT, 0x17ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b0001100cccccrrrr, mtcr
-	{ "mtcr"    , MCORE_CPU_DFLT, 0x11ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_CTRL},{0},{0},{0}} },
+	{ "mtcr"    , MCORE_CPU_DFLT, 0x11ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_CTRL},{0},{0},{0}} },
 	// 0b00011010ssssrrrr, asr
-	{ "asr"     , MCORE_CPU_DFLT, 0x1aff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "asr"     , MCORE_CPU_DFLT, 0x1aff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00011011ssssrrrr, lsl
-	{ "lsl"     , MCORE_CPU_DFLT, 0x1bff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "lsl"     , MCORE_CPU_DFLT, 0x1bff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00011100ssssrrrr, addu
-	{ "addu"    , MCORE_CPU_DFLT, 0x1cff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "addu"    , MCORE_CPU_DFLT, 0x1cff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00011101ssssrrrr, lxh
-	{ "lxh"     , MCORE_CPU_DFLT, 0x1dff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "lxh"     , MCORE_CPU_DFLT, 0x1dff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00011110ssssrrrr, or
-	{ "or"      , MCORE_CPU_DFLT, 0x1eff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "or"      , MCORE_CPU_DFLT, 0x1eff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00011111ssssrrrr, andn
-	{ "andn"    , MCORE_CPU_DFLT, 0x1fff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
+	{ "andn"    , MCORE_CPU_DFLT, 0x1fff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b0010000iiiiirrrr, addi
-	{ "addi"    , MCORE_CPU_DFLT, 0x21ff, R_ANAL_OP_TYPE_NULL , 3, {{ 0xf, 0, TYPE_REG },{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0}} },
+	{ "addi"    , MCORE_CPU_DFLT, 0x21ff, R_ARCH_OP_TYPE_NULL , 3, {{ 0xf, 0, TYPE_REG },{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0}} },
 	// 0b0010001iiiiirrrr, cmplti
-	{ "cmplti"  , MCORE_CPU_DFLT, 0x23ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "cmplti"  , MCORE_CPU_DFLT, 0x23ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b0010010iiiiirrrr, subi
-	{ "subi"    , MCORE_CPU_DFLT, 0x25ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "subi"    , MCORE_CPU_DFLT, 0x25ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b0010011sssssrrrr, cpwgr cp
-	{ "cpwgr"   , MCORE_CPU_DFLT, 0x27ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_CTRL},{0},{0},{0}} },
+	{ "cpwgr"   , MCORE_CPU_DFLT, 0x27ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_CTRL},{0},{0},{0}} },
 	// 0b0010100iiiiirrrr, rsubi
-	{ "rsubi"   , MCORE_CPU_DFLT, 0x29ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "rsubi"   , MCORE_CPU_DFLT, 0x29ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b0010101iiiiirrrr, cmpnei
-	{ "cmpnei"  , MCORE_CPU_DFLT, 0x2bff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "cmpnei"  , MCORE_CPU_DFLT, 0x2bff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b001011000000rrrr, bmaski #32(set)
-	{ "bmaski"  , MCORE_CPU_DFLT, 0x2c0f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "bmaski"  , MCORE_CPU_DFLT, 0x2c0f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001011000001rrrr, divu
-	{ "divu"    , MCORE_CPU_DFLT, 0x2c1f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "divu"    , MCORE_CPU_DFLT, 0x2c1f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001011000010rrrr, mflos 610E
-	{ "mflos"   , MCORE_CPU_610E, 0x2c2f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "mflos"   , MCORE_CPU_610E, 0x2c2f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001011000011rrrr, mfhis 610E
-	{ "mfhis"   , MCORE_CPU_610E, 0x2c2f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "mfhis"   , MCORE_CPU_610E, 0x2c2f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001011000100rrrr, mtlo 620
-	{ "mtlo"    , MCORE_CPU_620 , 0x2c4f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "mtlo"    , MCORE_CPU_620 , 0x2c4f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001011000101rrrr, mthi 620
-	{ "mthi"    , MCORE_CPU_620 , 0x2c5f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "mthi"    , MCORE_CPU_620 , 0x2c5f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001011000110rrrr, mflo 620
-	{ "mtlo"    , MCORE_CPU_620 , 0x2c6f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "mtlo"    , MCORE_CPU_620 , 0x2c6f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001011000111rrrr, mfhi 620
-	{ "mthi"    , MCORE_CPU_620 , 0x2c7f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "mthi"    , MCORE_CPU_620 , 0x2c7f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001011001iiirrrr, bmaski
-	{ "bmaski"  , MCORE_CPU_DFLT, 0x2cff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x70, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "bmaski"  , MCORE_CPU_DFLT, 0x2cff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x70, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b00101101iiiirrrr, bmaski
-	{ "bmaski"  , MCORE_CPU_DFLT, 0x2dff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "bmaski"  , MCORE_CPU_DFLT, 0x2dff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b0010111iiiiirrrr, andi
-	{ "andi"    , MCORE_CPU_DFLT, 0x2fff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "andi"    , MCORE_CPU_DFLT, 0x2fff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b0011000iiiiirrrr, bclri
-	{ "bclri"   , MCORE_CPU_DFLT, 0x31ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "bclri"   , MCORE_CPU_DFLT, 0x31ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b001100100000rrrr, cpwir cp
-	{ "cpwir"   , MCORE_CPU_DFLT, 0x320f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "cpwir"   , MCORE_CPU_DFLT, 0x320f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001100100001rrrr, divs
-	{ "divs"    , MCORE_CPU_DFLT, 0x321f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "divs"    , MCORE_CPU_DFLT, 0x321f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001100100010rrrr, cprsr cp
-	{ "cprsr"   , MCORE_CPU_DFLT, 0x322f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "cprsr"   , MCORE_CPU_DFLT, 0x322f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001100100011rrrr, cpwsr cp
-	{ "cpwsr"   , MCORE_CPU_DFLT, 0x323f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "cpwsr"   , MCORE_CPU_DFLT, 0x323f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001100100100rrrr, --
 	// 0b001100100101rrrr, --
 	// 0b001100100110rrrr, --
 	// 0b001100100111rrrr, bgeni
-	{ "bgeni"   , MCORE_CPU_DFLT, 0x327f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "bgeni"   , MCORE_CPU_DFLT, 0x327f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b001100101iiirrrr, bgeni
-	{ "bgeni"   , MCORE_CPU_DFLT, 0x32ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x70, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "bgeni"   , MCORE_CPU_DFLT, 0x32ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x70, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b00110011iiiirrrr, bgeni
-	{ "bgeni"   , MCORE_CPU_DFLT, 0x33ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "bgeni"   , MCORE_CPU_DFLT, 0x33ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0xf0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b0011010iiiiirrrr, bseti
-	{ "bgeni"   , MCORE_CPU_DFLT, 0x35ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "bgeni"   , MCORE_CPU_DFLT, 0x35ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b0011011iiiiirrrr, btsti
-	{ "btsti"   , MCORE_CPU_DFLT, 0x37ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "btsti"   , MCORE_CPU_DFLT, 0x37ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b001110000000rrrr, xsr
-	{ "xsr"     , MCORE_CPU_DFLT, 0x380f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "xsr"     , MCORE_CPU_DFLT, 0x380f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b0011100iiiiirrrr, rotli
-	{ "rotli"   , MCORE_CPU_DFLT, 0x39ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "rotli"   , MCORE_CPU_DFLT, 0x39ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b001110100000rrrr, asrc
-	{ "asrc"    , MCORE_CPU_DFLT, 0x3a0f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "asrc"    , MCORE_CPU_DFLT, 0x3a0f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b0011101iiiiirrrr, asri
-	{ "asri"    , MCORE_CPU_DFLT, 0x3bff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "asri"    , MCORE_CPU_DFLT, 0x3bff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b001111000000rrrr, lslc
-	{ "lslc"    , MCORE_CPU_DFLT, 0x3c0f, R_ANAL_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
+	{ "lslc"    , MCORE_CPU_DFLT, 0x3c0f, R_ARCH_OP_TYPE_NULL , 1, {{ 0xf, 0, TYPE_REG },{0},{0},{0},{0}} },
 	// 0b0011110iiiiirrrr, lsli
-	{ "lsli"    , MCORE_CPU_DFLT, 0x3dff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "lsli"    , MCORE_CPU_DFLT, 0x3dff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x1f0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b001111100000rrrr, lsrc
 	// 0b0011111iiiiirrrr, lsri
 	// 0b01000000ssssrrrr, omflip0 620
@@ -317,7 +317,7 @@ mcore_ops_t mcore_instructions[MCORE_INSTRS] = {
 	// 0b01011110ssssrrrr, vmulsws 610E
 	// 0b01011111ssssrrrr, --
 	// 0b01100iiiiiiirrrr, movi
-	{ "movi"    , MCORE_CPU_DFLT, 0x67ff, R_ANAL_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x7f0, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "movi"    , MCORE_CPU_DFLT, 0x67ff, R_ARCH_OP_TYPE_NULL , 2, {{ 0xf, 0, TYPE_REG },{ 0x7f0, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b01101000ssssrrrr, mulsh
 	// 0b01101001ssssrrrr, mulsha 610E
 	// 0b01101010ssssrrrr, mulshs 610E
@@ -326,33 +326,33 @@ mcore_ops_t mcore_instructions[MCORE_INSTRS] = {
 	// 0b01101101ssssrrrr, mulswa 610E
 	// 0b01101110ssssrrrr, mulsws 610E
 	// 0b01101111sssssrrr, cpwcr cp
-	{ "cpwcr"   , MCORE_CPU_DFLT, 0x6fff, R_ANAL_OP_TYPE_NULL , 2, {{ 0x7, 0, TYPE_REG },{ 0xf8, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "cpwcr"   , MCORE_CPU_DFLT, 0x6fff, R_ARCH_OP_TYPE_NULL , 2, {{ 0x7, 0, TYPE_REG },{ 0xf8, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b01110000dddddddd, jmpi
-	{ "jmpi"    , MCORE_CPU_DFLT, 0x70ff, R_ANAL_OP_TYPE_JMP  , 2, {{ 0xff, 0, TYPE_JMP },{0},{0},{0},{0}} },
+	{ "jmpi"    , MCORE_CPU_DFLT, 0x70ff, R_ARCH_OP_TYPE_JMP  , 2, {{ 0xff, 0, TYPE_JMP },{0},{0},{0},{0}} },
 	// 0b0111zzzzdddddddd, lrw
-	{ "lrw"     , MCORE_CPU_DFLT, 0x7fff, R_ANAL_OP_TYPE_LOAD , 2, {{ 0xff, 0, TYPE_MEM },{ 0xf00, 8, TYPE_REG },{0},{0},{0}} },
+	{ "lrw"     , MCORE_CPU_DFLT, 0x7fff, R_ARCH_OP_TYPE_LOAD , 2, {{ 0xff, 0, TYPE_MEM },{ 0xf00, 8, TYPE_REG },{0},{0},{0}} },
 	// 0b01111111dddddddd, jsri
-	{ "jsri"    , MCORE_CPU_DFLT, 0x7fff, R_ANAL_OP_TYPE_CALL , 1, {{ 0xff, 0, TYPE_JMPI},{0},{0},{0},{0}} },
+	{ "jsri"    , MCORE_CPU_DFLT, 0x7fff, R_ARCH_OP_TYPE_CALL , 1, {{ 0xff, 0, TYPE_JMPI},{0},{0},{0},{0}} },
 	// 0b1000zzzziiiirrrr, ld.w
-	{ "ld.w"    , MCORE_CPU_DFLT, 0x8fff, R_ANAL_OP_TYPE_LOAD , 4, {{ 0xf, 0, TYPE_NONE},{ 0xf0, 4, TYPE_NONE},{ 0xf00, 8, TYPE_NONE},{ 0x6000, 13, TYPE_NONE},{0}} },
+	{ "ld.w"    , MCORE_CPU_DFLT, 0x8fff, R_ARCH_OP_TYPE_LOAD , 4, {{ 0xf, 0, TYPE_NONE},{ 0xf0, 4, TYPE_NONE},{ 0xf00, 8, TYPE_NONE},{ 0x6000, 13, TYPE_NONE},{0}} },
 	// 0b1001zzzziiiirrrr, st.w
-	{ "st.w"    , MCORE_CPU_DFLT, 0x9fff, R_ANAL_OP_TYPE_STORE, 4, {{ 0xf, 0, TYPE_NONE},{ 0xf0, 4, TYPE_NONE},{ 0xf00, 8, TYPE_NONE},{ 0x6000, 13, TYPE_NONE},{0}} },
+	{ "st.w"    , MCORE_CPU_DFLT, 0x9fff, R_ARCH_OP_TYPE_STORE, 4, {{ 0xf, 0, TYPE_NONE},{ 0xf0, 4, TYPE_NONE},{ 0xf00, 8, TYPE_NONE},{ 0x6000, 13, TYPE_NONE},{0}} },
 	// 0b1010zzzziiiirrrr, ld.b
-	{ "ld.b"    , MCORE_CPU_DFLT, 0xafff, R_ANAL_OP_TYPE_LOAD , 4, {{ 0xf, 0, TYPE_NONE},{ 0xf0, 4, TYPE_NONE},{ 0xf00, 8, TYPE_NONE},{ 0x6000, 13, TYPE_NONE},{0}} },
+	{ "ld.b"    , MCORE_CPU_DFLT, 0xafff, R_ARCH_OP_TYPE_LOAD , 4, {{ 0xf, 0, TYPE_NONE},{ 0xf0, 4, TYPE_NONE},{ 0xf00, 8, TYPE_NONE},{ 0x6000, 13, TYPE_NONE},{0}} },
 	// 0b1011zzzziiiirrrr, st.b
-	{ "st.b"    , MCORE_CPU_DFLT, 0xbfff, R_ANAL_OP_TYPE_STORE, 4, {{ 0xf, 0, TYPE_NONE},{ 0xf0, 4, TYPE_NONE},{ 0xf00, 8, TYPE_NONE},{ 0x6000, 13, TYPE_NONE},{0}} },
+	{ "st.b"    , MCORE_CPU_DFLT, 0xbfff, R_ARCH_OP_TYPE_STORE, 4, {{ 0xf, 0, TYPE_NONE},{ 0xf0, 4, TYPE_NONE},{ 0xf00, 8, TYPE_NONE},{ 0x6000, 13, TYPE_NONE},{0}} },
 	// 0b1100zzzziiiirrrr, ld.h
-	{ "ld.h"    , MCORE_CPU_DFLT, 0xcfff, R_ANAL_OP_TYPE_LOAD , 4, {{ 0xf, 0, TYPE_NONE},{ 0xf0, 4, TYPE_NONE},{ 0xf00, 8, TYPE_NONE},{ 0x6000, 13, TYPE_NONE},{0}} },
+	{ "ld.h"    , MCORE_CPU_DFLT, 0xcfff, R_ARCH_OP_TYPE_LOAD , 4, {{ 0xf, 0, TYPE_NONE},{ 0xf0, 4, TYPE_NONE},{ 0xf00, 8, TYPE_NONE},{ 0x6000, 13, TYPE_NONE},{0}} },
 	// 0b1101zzzziiiirrrr, st.h
-	{ "st.h"    , MCORE_CPU_DFLT, 0xdfff, R_ANAL_OP_TYPE_STORE, 4, {{ 0xf, 0, TYPE_NONE},{ 0xf0, 4, TYPE_NONE},{ 0xf00, 8, TYPE_NONE},{ 0x6000, 13, TYPE_NONE},{0}} },
+	{ "st.h"    , MCORE_CPU_DFLT, 0xdfff, R_ARCH_OP_TYPE_STORE, 4, {{ 0xf, 0, TYPE_NONE},{ 0xf0, 4, TYPE_NONE},{ 0xf00, 8, TYPE_NONE},{ 0x6000, 13, TYPE_NONE},{0}} },
 	// 0b11100ddddddddddd, bt
-	{ "bt"      , MCORE_CPU_DFLT, 0xe7ff, R_ANAL_OP_TYPE_CJMP , 1, {{ 0x7ff, 0, TYPE_JMP},{0},{0},{0},{0}} },
+	{ "bt"      , MCORE_CPU_DFLT, 0xe7ff, R_ARCH_OP_TYPE_CJMP , 1, {{ 0x7ff, 0, TYPE_JMP},{0},{0},{0},{0}} },
 	// 0b11101ddddddddddd, bf
-	{ "bf"      , MCORE_CPU_DFLT, 0xefff, R_ANAL_OP_TYPE_CJMP , 1, {{ 0x7ff, 0, TYPE_JMP},{0},{0},{0},{0}} },
+	{ "bf"      , MCORE_CPU_DFLT, 0xefff, R_ARCH_OP_TYPE_CJMP , 1, {{ 0x7ff, 0, TYPE_JMP},{0},{0},{0},{0}} },
 	// 0b11110ddddddddddd, br
-	{ "br"      , MCORE_CPU_DFLT, 0xf7ff, R_ANAL_OP_TYPE_CJMP , 1, {{ 0x7ff, 0, TYPE_JMP},{0},{0},{0},{0}} },
+	{ "br"      , MCORE_CPU_DFLT, 0xf7ff, R_ARCH_OP_TYPE_CJMP , 1, {{ 0x7ff, 0, TYPE_JMP},{0},{0},{0},{0}} },
 	// 0b11111ddddddddddd, bsr
-	{ "bsr"     , MCORE_CPU_DFLT, 0xffff, R_ANAL_OP_TYPE_CALL , 1, {{ 0x7ff, 0, TYPE_JMP},{0},{0},{0},{0}} },
+	{ "bsr"     , MCORE_CPU_DFLT, 0xffff, R_ARCH_OP_TYPE_CALL , 1, {{ 0x7ff, 0, TYPE_JMP},{0},{0},{0},{0}} },
 };
 
 static mcore_t *find_instruction(const ut8* buffer) {
@@ -467,8 +467,8 @@ void mcore_snprint(char* str, int size, ut64 addr, mcore_t* instr) {
 		return;
 	}
 	switch (instr->type) {
-	case R_ANAL_OP_TYPE_LOAD:
-	case R_ANAL_OP_TYPE_STORE:
+	case R_ARCH_OP_TYPE_LOAD:
+	case R_ARCH_OP_TYPE_STORE:
 		imm = instr->args[1].value << load_shift[instr->args[3].value];
 		snprintf (str, size, "%s r%u, (r%u, 0x%x)",
 			instr->name, instr->args[2].value, instr->args[0].value, imm);

@@ -31,7 +31,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int disassemble(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len) {
 	char options[64];
 	ut8 bytes[8] = { 0 };
 	struct disassemble_info disasm_obj = {0};
@@ -82,7 +82,7 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len, RAnalOpMask mask) {
+static int ppc_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *bytes, int len, RArchOpMask mask) {
 //int arch_ppc_op(ut64 addr, const u8 *bytes, struct op_t *op)
 	// XXX hack
 	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
@@ -95,18 +95,18 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	op->addr = addr;
 	op->type = 0;
 	op->size = 4;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		int res = disassemble (anal, op, addr, bytes, len);
 		if (res == -1) {
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 		}
 	}
 	R_LOG_DEBUG ("OPCODE IS %08x : %02x (opcode=%d) baddr = %d", addr, bytes[0], opcode, baddr);
 
 	switch (opcode) {
-//	case 0: // bl op->type = R_ANAL_OP_TYPE_NOP; break;
+//	case 0: // bl op->type = R_ARCH_OP_TYPE_NOP; break;
 	case 11: // cmpi
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		break;
 	case 9: // pure branch
 		if (bytes[0] == 0x4e) {
@@ -120,19 +120,19 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 		op->eob = 1;
 		break;
 	case 6: // bc // conditional jump
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		op->jump = aa? baddr: addr + baddr + 4;
 		op->eob = 1;
 		break;
 #if 0
 	case 7: // sc/svc
-		op->type = R_ANAL_OP_TYPE_SWI;
+		op->type = R_ARCH_OP_TYPE_SWI;
 		break;
 #endif
 #if 0
 	case 15: // bl
 		// OK
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		op->jump = (aa)?(baddr):(addr+baddr);
 		op->fail = addr+4;
 		op->eob = 1;
@@ -140,13 +140,13 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 #endif
 	case 8: // bne i tal
 		// OK
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		op->jump = (aa)?(baddr):(addr+baddr+4);
 		op->fail = addr+4;
 		op->eob = 1;
 		break;
 	case 19: // bclr/bcr/bcctr/bcc
-		op->type = R_ANAL_OP_TYPE_RET; // jump to LR
+		op->type = R_ARCH_OP_TYPE_RET; // jump to LR
 		if (lk) {
 			op->jump = UT32_MAX; // LR ?!?
 			op->fail = addr+4;

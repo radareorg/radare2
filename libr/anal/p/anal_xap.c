@@ -37,7 +37,7 @@ static inline ut16 i2ut16(struct instruction *in) {
 	return *((uint16_t*)in);
 }
 
-static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len, RAnalOpMask mask) {
+static int xap_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *bytes, int len, RArchOpMask mask) {
 	struct instruction *in = (struct instruction *)bytes;
 	ut16 lol, ins;
 	struct directive d = {{0}};
@@ -60,26 +60,26 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	xap_decode (&s, &d);
 	d.d_operand = get_operand (&s, &d);
 
-	memset (op, 0, sizeof (RAnalOp));
-	op->type = R_ANAL_OP_TYPE_UNK;
+	memset (op, 0, sizeof (RArchOp));
+	op->type = R_ARCH_OP_TYPE_UNK;
 	op->size = 2;
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_ndup (d.d_asm, sizeof (d.d_asm));
 	}
 
 	switch (i2ut16 (in)) {
 	case INST_NOP:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		break;
 	case INST_BRK:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = R_ARCH_OP_TYPE_TRAP;
 		break;
 	case INST_BC:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = R_ARCH_OP_TYPE_TRAP;
 		break;
 	case INST_BRXL:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = R_ARCH_OP_TYPE_TRAP;
 		break;
 	default:
 		switch (in->in_opcode) {
@@ -89,49 +89,49 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 			case 2:
 			case 3:
 			case 0xa:
-				op->type = R_ANAL_OP_TYPE_PUSH;
+				op->type = R_ARCH_OP_TYPE_PUSH;
 				break;
 			case 4:
 			case 5:
 			case 6:
 			case 7:
 			case 0xe:
-				op->type = R_ANAL_OP_TYPE_POP;
+				op->type = R_ARCH_OP_TYPE_POP;
 				break;
 			}
 			break;
 		case 1:
-			op->type = R_ANAL_OP_TYPE_POP;
+			op->type = R_ARCH_OP_TYPE_POP;
 			break;
 		case 2:
-			op->type = R_ANAL_OP_TYPE_PUSH;
+			op->type = R_ARCH_OP_TYPE_PUSH;
 			break;
 		case 3:
 		case 4:
 		case 7:
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		case 5:
 		case 6:
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = R_ARCH_OP_TYPE_SUB;
 			break;
 		case 8:
-			op->type = R_ANAL_OP_TYPE_CMP;
+			op->type = R_ARCH_OP_TYPE_CMP;
 			break;
 		case 9:
 			switch(in->in_reg) {
 			case 0:
-				op->type = R_ANAL_OP_TYPE_MUL;
+				op->type = R_ARCH_OP_TYPE_MUL;
 				break;
 			case 1:
-				op->type = R_ANAL_OP_TYPE_DIV;
+				op->type = R_ARCH_OP_TYPE_DIV;
 				break;
 			case 2:
-				op->type = R_ANAL_OP_TYPE_CMP;
+				op->type = R_ARCH_OP_TYPE_CMP;
 				break;
 			case 3:
 				// BSR
-				op->type = R_ANAL_OP_TYPE_CALL;
+				op->type = R_ARCH_OP_TYPE_CALL;
 				op->jump = label_off (&d);
 				if (op->jump & 1) {
 					op->jump += 3;
@@ -142,18 +142,18 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 			}
 			break;
 		case 0xb:
-			op->type = R_ANAL_OP_TYPE_OR;
+			op->type = R_ARCH_OP_TYPE_OR;
 			break;
 		case 0xc:
-			op->type = R_ANAL_OP_TYPE_AND;
+			op->type = R_ARCH_OP_TYPE_AND;
 			break;
 		case 0xd:
-			op->type = R_ANAL_OP_TYPE_XOR;
+			op->type = R_ARCH_OP_TYPE_XOR;
 			break;
 		case 0xe:
 			switch (in->in_reg) {
 			case 0: // BRA
-				op->type = R_ANAL_OP_TYPE_JMP;
+				op->type = R_ARCH_OP_TYPE_JMP;
 				op->jump = label_off (&d)+4;
 				if (op->jump & 1) {
 					op->jump += 3;
@@ -162,7 +162,7 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 				break;
 			case 1:
 				// BLT
-				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->type = R_ARCH_OP_TYPE_CJMP;
 				op->jump = label_off (&d);
 				if (op->jump & 1) {
 					op->jump += 3;
@@ -172,7 +172,7 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 				break;
 			case 2:
 				// BPL
-				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->type = R_ARCH_OP_TYPE_CJMP;
 				op->jump = label_off (&d);
 				if (op->jump & 1) {
 					op->jump += 3;
@@ -182,7 +182,7 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 				break;
 			case 3:
 				// BMI
-				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->type = R_ARCH_OP_TYPE_CJMP;
 				op->jump = label_off (&d);
 				if (op->jump & 1) {
 					op->jump += 3;
@@ -198,7 +198,7 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 			case 1: // BEQ
 			case 2: // BCC
 			case 3: // BCS
-				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->type = R_ARCH_OP_TYPE_CJMP;
 				op->jump = label_off (&d);
 				if (op->jump & 1) {
 					op->jump += 3;

@@ -2669,7 +2669,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 	char buf[2];
 	char *bgcolor, *fgcolor, *text;
 	ut64 i, c, oi;
-	RAnalOp op;
+	RArchOp op;
 	ut8 *data;
 	int datalen;
 	if (*input == 'v') {
@@ -2718,152 +2718,152 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 		bgcolor = Color_BGBLACK;
 		fgcolor = Color_WHITE;
 		text = NULL;
-		if (r_anal_op (core->anal, &op, core->offset + i, data + i, len - i, R_ANAL_OP_MASK_BASIC) <= 0) {
+		if (r_anal_op (core->anal, &op, core->offset + i, data + i, len - i, R_ARCH_OP_MASK_BASIC) <= 0) {
 			op.type = 0;
 			bgcolor = Color_BGRED;
 			op.size = 1;
 		}
 		switch (op.type) {
-		case R_ANAL_OP_TYPE_LEA:
-		case R_ANAL_OP_TYPE_MOV:
-		case R_ANAL_OP_TYPE_CAST:
-		case R_ANAL_OP_TYPE_LENGTH:
-		case R_ANAL_OP_TYPE_CMOV:
+		case R_ARCH_OP_TYPE_LEA:
+		case R_ARCH_OP_TYPE_MOV:
+		case R_ARCH_OP_TYPE_CAST:
+		case R_ARCH_OP_TYPE_LENGTH:
+		case R_ARCH_OP_TYPE_CMOV:
 			text = "mv";
 			bgcolor = pal->mov;
 			fgcolor = Color_YELLOW;
 			break;
-		case R_ANAL_OP_TYPE_PUSH:
-		case R_ANAL_OP_TYPE_UPUSH:
-		case R_ANAL_OP_TYPE_RPUSH:
+		case R_ARCH_OP_TYPE_PUSH:
+		case R_ARCH_OP_TYPE_UPUSH:
+		case R_ARCH_OP_TYPE_RPUSH:
 			bgcolor = pal->push;
 			fgcolor = Color_WHITE;
 			text = "->";
 			break;
-		case R_ANAL_OP_TYPE_IO:
+		case R_ARCH_OP_TYPE_IO:
 			bgcolor = pal->swi;
 			fgcolor = Color_WHITE;
 			text = "io";
 			break;
-		case R_ANAL_OP_TYPE_TRAP:
-		case R_ANAL_OP_TYPE_SWI:
-		case R_ANAL_OP_TYPE_NEW:
+		case R_ARCH_OP_TYPE_TRAP:
+		case R_ARCH_OP_TYPE_SWI:
+		case R_ARCH_OP_TYPE_NEW:
 			// bgcolor = Color_BGRED;
 			bgcolor = pal->trap; // r_cons_swap_ground (pal->trap);
 			fgcolor = Color_WHITE;
 			text = "$$";
 			break;
-		case R_ANAL_OP_TYPE_POP:
+		case R_ARCH_OP_TYPE_POP:
 			text = "<-";
 			bgcolor = r_cons_swap_ground (pal->pop);
 			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			break;
-		case R_ANAL_OP_TYPE_NOP:
+		case R_ARCH_OP_TYPE_NOP:
 			fgcolor = Color_WHITE;
 			bgcolor = r_cons_swap_ground (pal->nop);
 			bgcolor_in_heap = true;
 			text = "..";
 			break;
-		case R_ANAL_OP_TYPE_MUL:
+		case R_ARCH_OP_TYPE_MUL:
 			fgcolor = Color_BLACK;
 			bgcolor = r_cons_swap_ground (pal->math);
 			bgcolor_in_heap = true;
 			text = "_*";
 			break;
-		case R_ANAL_OP_TYPE_DIV:
+		case R_ARCH_OP_TYPE_DIV:
 			bgcolor = r_cons_swap_ground (pal->math);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_/";
 			break;
-		case R_ANAL_OP_TYPE_AND:
+		case R_ARCH_OP_TYPE_AND:
 			bgcolor = r_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_&";
 			break;
-		case R_ANAL_OP_TYPE_XOR:
+		case R_ARCH_OP_TYPE_XOR:
 			bgcolor = r_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_^";
 			break;
-		case R_ANAL_OP_TYPE_OR:
+		case R_ARCH_OP_TYPE_OR:
 			bgcolor = r_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_|";
 			break;
-		case R_ANAL_OP_TYPE_SHR:
+		case R_ARCH_OP_TYPE_SHR:
 			bgcolor = r_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = ">>";
 			break;
-		case R_ANAL_OP_TYPE_SHL:
+		case R_ARCH_OP_TYPE_SHL:
 			bgcolor = r_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "<<";
 			break;
-		case R_ANAL_OP_TYPE_SUB:
+		case R_ARCH_OP_TYPE_SUB:
 			bgcolor = r_cons_swap_ground (pal->math);
 			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "--";
 			break;
-		case R_ANAL_OP_TYPE_ADD:
+		case R_ARCH_OP_TYPE_ADD:
 			bgcolor = r_cons_swap_ground (pal->math);
 			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "++";
 			break;
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_UJMP:
-		case R_ANAL_OP_TYPE_IJMP:
-		case R_ANAL_OP_TYPE_RJMP:
-		case R_ANAL_OP_TYPE_IRJMP:
-		case R_ANAL_OP_TYPE_MJMP:
+		case R_ARCH_OP_TYPE_JMP:
+		case R_ARCH_OP_TYPE_UJMP:
+		case R_ARCH_OP_TYPE_IJMP:
+		case R_ARCH_OP_TYPE_RJMP:
+		case R_ARCH_OP_TYPE_IRJMP:
+		case R_ARCH_OP_TYPE_MJMP:
 			bgcolor = r_cons_swap_ground (pal->jmp);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_J";
 			break;
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_UCJMP:
+		case R_ARCH_OP_TYPE_CJMP:
+		case R_ARCH_OP_TYPE_UCJMP:
 			bgcolor = r_cons_swap_ground (pal->cjmp);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "cJ";
 			break;
-		case R_ANAL_OP_TYPE_CALL:
-		case R_ANAL_OP_TYPE_UCALL:
-		case R_ANAL_OP_TYPE_ICALL:
-		case R_ANAL_OP_TYPE_RCALL:
-		case R_ANAL_OP_TYPE_IRCALL:
-		case R_ANAL_OP_TYPE_UCCALL:
+		case R_ARCH_OP_TYPE_CALL:
+		case R_ARCH_OP_TYPE_UCALL:
+		case R_ARCH_OP_TYPE_ICALL:
+		case R_ARCH_OP_TYPE_RCALL:
+		case R_ARCH_OP_TYPE_IRCALL:
+		case R_ARCH_OP_TYPE_UCCALL:
 			bgcolor = r_cons_swap_ground (pal->call);
 			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "_C";
 			break;
-		case R_ANAL_OP_TYPE_ACMP:
-		case R_ANAL_OP_TYPE_CMP:
+		case R_ARCH_OP_TYPE_ACMP:
+		case R_ARCH_OP_TYPE_CMP:
 			bgcolor = r_cons_swap_ground (pal->cmp);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "==";
 			break;
-		case R_ANAL_OP_TYPE_RET:
+		case R_ARCH_OP_TYPE_RET:
 			bgcolor = r_cons_swap_ground (pal->ret);
 			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "_R";
 			break;
 		case -1:
-		case R_ANAL_OP_TYPE_ILL:
-		case R_ANAL_OP_TYPE_UNK:
+		case R_ARCH_OP_TYPE_ILL:
+		case R_ARCH_OP_TYPE_UNK:
 			bgcolor = r_cons_swap_ground (pal->invalid);
 			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
@@ -3007,7 +3007,7 @@ static void _handle_call(RCore *core, char *line, char **str) {
 }
 
 // TODO: this is just a PoC, the disasm loop should be rewritten
-// TODO: this is based on string matching, it should be written upon RAnalOp to know
+// TODO: this is based on string matching, it should be written upon RArchOp to know
 // when we have a call and such
 static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	const char *linecolor = NULL;
@@ -3905,34 +3905,34 @@ cleanup:
 	return result;
 }
 
-static bool checkAnalType(RAnalOp *op, int t) {
+static bool checkAnalType(RArchOp *op, int t) {
 	if (t == 'c') {
 		switch (op->type) {
-		case R_ANAL_OP_TYPE_RCALL:
-		case R_ANAL_OP_TYPE_UCALL:
-		case R_ANAL_OP_TYPE_CALL:
+		case R_ARCH_OP_TYPE_RCALL:
+		case R_ARCH_OP_TYPE_UCALL:
+		case R_ARCH_OP_TYPE_CALL:
 			return true;
 		}
 	} else if (t == 's') {
-		if (op->family == R_ANAL_OP_FAMILY_PRIV) {
+		if (op->family == R_ARCH_OP_FAMILY_PRIV) {
 			return true;
 		}
 		switch (op->type) {
-		case R_ANAL_OP_TYPE_SWI:
+		case R_ARCH_OP_TYPE_SWI:
 			return true;
 		}
 	} else if (t == 'i') {
 		switch (op->type) {
-		case R_ANAL_OP_TYPE_TRAP:
-		case R_ANAL_OP_TYPE_ILL:
+		case R_ARCH_OP_TYPE_TRAP:
+		case R_ARCH_OP_TYPE_ILL:
 			return true;
 		}
 	} else if (t == 'j') {
 		switch (op->type) {
-		case R_ANAL_OP_TYPE_JMP:
-		//case R_ANAL_OP_TYPE_RJMP:
-		//case R_ANAL_OP_TYPE_UJMP:
-		case R_ANAL_OP_TYPE_CJMP:
+		case R_ARCH_OP_TYPE_JMP:
+		//case R_ARCH_OP_TYPE_RJMP:
+		//case R_ARCH_OP_TYPE_UJMP:
+		case R_ARCH_OP_TYPE_CJMP:
 			return true;
 		default:
 			break;
@@ -3992,7 +3992,7 @@ static ut8 *analBars(RCore *core, size_t type, size_t nblocks, size_t blocksize,
 				}
 				continue;
 			}
-			RAnalOp *op = r_core_anal_op (core, off + j, R_ANAL_OP_MASK_BASIC);
+			RArchOp *op = r_core_anal_op (core, off + j, R_ARCH_OP_MASK_BASIC);
 			if (op) {
 				if (op->size < 1) {
 					// do nothing
@@ -4749,7 +4749,7 @@ static void disasm_until_optype(RCore *core, ut64 addr, char type_print, int opt
 	const bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	int i;
 	for (i = 0; i < limit; i++) {
-		RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+		RArchOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 		if (op) {
 			char *mnem = op->mnemonic;
 			char *m = malloc ((strlen (mnem) * 2) + 32);
@@ -4769,7 +4769,7 @@ static void disasm_until_optype(RCore *core, ut64 addr, char type_print, int opt
 			if ((op->type & 0xfffff) == optype) {
 				goto beach;
 			}
-			if (op->type == R_ANAL_OP_TYPE_JMP) {
+			if (op->type == R_ARCH_OP_TYPE_JMP) {
 				addr = op->jump;
 			} else {
 				addr += op->size;
@@ -4799,7 +4799,7 @@ static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
 			n = r_read_ble32 (buf + p, be);
 		}
 		r_cons_printf ("[0x%08"PFMT64x"] 0x%08"PFMT64x"\n", addr + p, n);
-		disasm_until_optype (core, n, type_print, R_ANAL_OP_TYPE_RET, 1024);
+		disasm_until_optype (core, n, type_print, R_ARCH_OP_TYPE_RET, 1024);
 		if (core->rasm->config->bits == 64) {
 			p += 8;
 		} else {
@@ -4810,7 +4810,7 @@ static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
 }
 
 static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print) {
-	RAnalOp aop = {0};
+	RArchOp aop = {0};
 	int ret;
 	ut8 buf[128];
 	PJ *pj = NULL;
@@ -4824,7 +4824,7 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 	while (count-- > 0) {
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
 		r_anal_op_fini (&aop);
-		ret = r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
+		ret = r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
 		if (ret < 0 || aop.size < 1) {
 			addr++;
 			continue;
@@ -4836,12 +4836,12 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 			r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr);
 		}
 		switch (aop.type) {
-		case R_ANAL_OP_TYPE_JMP:
+		case R_ARCH_OP_TYPE_JMP:
 			addr = aop.jump;
 			continue;
-		case R_ANAL_OP_TYPE_UCJMP:
+		case R_ARCH_OP_TYPE_UCJMP:
 			break;
-		case R_ANAL_OP_TYPE_RET:
+		case R_ARCH_OP_TYPE_RET:
 			count = 0;	// stop disassembling when hitting RET
 			break;
 		default:
@@ -4999,7 +4999,7 @@ static void print_json_string(RCore *core, const char* block, int len, const cha
 	}
 }
 
-static char *__op_refs(RCore *core, RAnalOp *op, int n) {
+static char *__op_refs(RCore *core, RArchOp *op, int n) {
 	RStrBuf *sb = r_strbuf_new ("");
 	if (n) {
 		// RList *list = r_anal_xrefs_get_from (core->anal, op->addr);
@@ -5036,10 +5036,10 @@ static void r_core_disasm_table(RCore *core, int l, const char *input) {
 	}
 	r_table_set_columnsf (t, "snssssss", "name", "addr", "bytes", "disasm", "comment", "esil", "refs", "xrefs");
 	const int minopsz = 1;
-	const int options = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_DISASM | R_ANAL_OP_MASK_ESIL;
+	const int options = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_DISASM | R_ARCH_OP_MASK_ESIL;
 	ut64 ea = core->offset;
 	for (i = 0; i < l; i++) {
-		RAnalOp *op = r_core_anal_op (core, ea, options);
+		RArchOp *op = r_core_anal_op (core, ea, options);
 		if (!op || op->size < 1) {
 			i += minopsz;
 			ea += minopsz;
@@ -5243,10 +5243,10 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				optype = r_anal_optype_from_string (instruction);
 				free (instruction);
 				if (optype == -1) {
-					optype = R_ANAL_OP_TYPE_RET;
+					optype = R_ARCH_OP_TYPE_RET;
 				}
 			} else {
-				optype = R_ANAL_OP_TYPE_RET;
+				optype = R_ARCH_OP_TYPE_RET;
 			}
 			disasm_until_optype (core, core->offset, print_type, optype, 1024);
 		} break;
@@ -5365,7 +5365,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 								R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 						char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
 						char *dst2 = NULL;
-						RAnalOp *op = r_core_anal_op (core, refi->addr, R_ANAL_OP_MASK_BASIC);
+						RArchOp *op = r_core_anal_op (core, refi->addr, R_ARCH_OP_MASK_BASIC);
 						RBinReloc *rel = r_core_getreloc (core, refi->addr, op->size);
 						if (rel) {
 							if (rel && rel->import && rel->import->name) {
@@ -5462,7 +5462,7 @@ static void core_print_decompile(RCore *core, const char *input) {
 	// r_anal_esil_setup (esil, core->anal, true, 0, 0);
 	esil2c_setup (core, esil);
 	for (i = 0; i < count; i++) {
-		RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_ESIL);
+		RArchOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
 		if (!op) {
 			addr += minopsize;
 			continue;
@@ -5918,7 +5918,7 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				int printed = 0;
 				int bufsz;
-				RAnalOp aop = {0};
+				RArchOp aop = {0};
 				r_asm_set_pc (core->rasm, core->offset);
 				RAsmCode *acode = r_asm_massemble (core->rasm, input + 2);
 				if (acode) {
@@ -5926,7 +5926,7 @@ static int cmd_print(void *data, const char *input) {
 					while (printed < bufsz) {
 						aop.size = 0;
 						if (r_anal_op (core->anal, &aop, core->offset,
-							    (const ut8 *)acode->bytes + printed, bufsz - printed, R_ANAL_OP_MASK_ESIL) > 0) {
+							    (const ut8 *)acode->bytes + printed, bufsz - printed, R_ARCH_OP_MASK_ESIL) > 0) {
 							const char *str = R_STRBUF_SAFEGET (&aop.esil);
 							r_cons_println (str);
 						} else {
@@ -5956,14 +5956,14 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					int printed = 0;
 					int bufsz;
-					RAnalOp aop = {0};
+					RArchOp aop = {0};
 					char *hex_arg = calloc (1, strlen (arg) + 1);
 					if (hex_arg) {
 						bufsz = r_hex_str2bin (arg + 1, (ut8 *)hex_arg);
 						while (printed < bufsz) {
 							aop.size = 0;
 							if (r_anal_op (core->anal, &aop, core->offset,
-								    (const ut8 *)hex_arg + printed, bufsz - printed, R_ANAL_OP_MASK_ESIL) > 0) {
+								    (const ut8 *)hex_arg + printed, bufsz - printed, R_ARCH_OP_MASK_ESIL) > 0) {
 								const char *str = R_STRBUF_SAFEGET (&aop.esil);
 								r_cons_println (str);
 							} else {

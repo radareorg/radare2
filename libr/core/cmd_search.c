@@ -146,7 +146,7 @@ static const char *help_msg_slash_at[] = {
 	"Usage:", "/at[mjsf] [arg]", "Search for instructions matching type/family/mnemonic",
 	"/atf", " [family]", "search for given-family type of instructions",
 	"/at", " [optype,optype2]", "list instructions matching any of the comma separated optypes",
-	"/atl", "", "list all the instruction types (RAnalOp.Type)",
+	"/atl", "", "list all the instruction types (RArchOp.Type)",
 	"/atm", "", "search matching only the instruction mnemonic",
 	NULL
 };
@@ -1125,32 +1125,32 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	return list;
 }
 
-static bool is_end_gadget(const RAnalOp *aop, const ut8 crop) {
-	if (aop->family == R_ANAL_OP_FAMILY_SECURITY) {
+static bool is_end_gadget(const RArchOp *aop, const ut8 crop) {
+	if (aop->family == R_ARCH_OP_FAMILY_SECURITY) {
 		return false;
 	}
 	switch (aop->type) {
-	case R_ANAL_OP_TYPE_TRAP:
-	case R_ANAL_OP_TYPE_RET:
-	case R_ANAL_OP_TYPE_UCALL:
-	case R_ANAL_OP_TYPE_RCALL:
-	case R_ANAL_OP_TYPE_ICALL:
-	case R_ANAL_OP_TYPE_IRCALL:
-	case R_ANAL_OP_TYPE_UJMP:
-	case R_ANAL_OP_TYPE_RJMP:
-	case R_ANAL_OP_TYPE_IJMP:
-	case R_ANAL_OP_TYPE_IRJMP:
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_TRAP:
+	case R_ARCH_OP_TYPE_RET:
+	case R_ARCH_OP_TYPE_UCALL:
+	case R_ARCH_OP_TYPE_RCALL:
+	case R_ARCH_OP_TYPE_ICALL:
+	case R_ARCH_OP_TYPE_IRCALL:
+	case R_ARCH_OP_TYPE_UJMP:
+	case R_ARCH_OP_TYPE_RJMP:
+	case R_ARCH_OP_TYPE_IJMP:
+	case R_ARCH_OP_TYPE_IRJMP:
+	case R_ARCH_OP_TYPE_JMP:
+	case R_ARCH_OP_TYPE_CALL:
 		return true;
 	}
 	if (crop) { // if conditional jumps, calls and returns should be used for the gadget-search too
 		switch (aop->type) {
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_UCJMP:
-		case R_ANAL_OP_TYPE_CCALL:
-		case R_ANAL_OP_TYPE_UCCALL:
-		case R_ANAL_OP_TYPE_CRET:   // i'm a condret
+		case R_ARCH_OP_TYPE_CJMP:
+		case R_ARCH_OP_TYPE_UCJMP:
+		case R_ARCH_OP_TYPE_CCALL:
+		case R_ARCH_OP_TYPE_UCCALL:
+		case R_ARCH_OP_TYPE_CRET:   // i'm a condret
 			return true;
 		}
 	}
@@ -1167,7 +1167,7 @@ static bool insert_into(void *user, const ut64 k, const ut64 v) {
 static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen, int idx, const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget, HtUU *badstart) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
-	RAnalOp aop = {0};
+	RArchOp aop = {0};
 	const char *start = NULL, *end = NULL;
 	char *grep_str = NULL;
 	RCoreAsmHit *hit = NULL;
@@ -1206,8 +1206,8 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 	}
 	while (nb_instr < max_instr) {
 		ht_uu_insert (localbadstart, idx, 1);
-		int error = r_anal_op (core->anal, &aop, addr, buf + idx, buflen - idx, R_ANAL_OP_MASK_DISASM);
-		if (error < 0 || (nb_instr == 0 && (is_end_gadget (&aop, 0) || aop.type == R_ANAL_OP_TYPE_NOP))) {
+		int error = r_anal_op (core->anal, &aop, addr, buf + idx, buflen - idx, R_ARCH_OP_MASK_DISASM);
+		if (error < 0 || (nb_instr == 0 && (is_end_gadget (&aop, 0) || aop.type == R_ARCH_OP_TYPE_NOP))) {
 			valid = false;
 			goto ret;
 		}
@@ -1305,7 +1305,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 	RList *ropList = NULL;
 	char *buf_asm = NULL;
 	unsigned int size = 0;
-	RAnalOp analop = {0};
+	RArchOp analop = {0};
 	Sdb *db = NULL;
 	const bool colorize = r_config_get_i (core->config, "scr.color");
 	const bool rop_comments = r_config_get_i (core->config, "rop.comments");
@@ -1335,9 +1335,9 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ESIL);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_ESIL);
 			size += hit->len;
-			if (analop.type != R_ANAL_OP_TYPE_RET) {
+			if (analop.type != R_ARCH_OP_TYPE_RET) {
 				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
 				r_list_append (ropList, (void *) opstr_n);
 			}
@@ -1374,10 +1374,10 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_BASIC);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_BASIC);
 			size += hit->len;
 			const char *opstr = R_STRBUF_SAFEGET (&analop.esil);
-			if (analop.type != R_ANAL_OP_TYPE_RET) {
+			if (analop.type != R_ARCH_OP_TYPE_RET) {
 				r_list_append (ropList, r_str_newf (" %s", opstr));
 			}
 			if (esil) {
@@ -1417,9 +1417,9 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ESIL);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_ESIL);
 			size += hit->len;
-			if (analop.type != R_ANAL_OP_TYPE_RET) {
+			if (analop.type != R_ARCH_OP_TYPE_RET) {
 				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
 				r_list_append (ropList, (void *) opstr_n);
 			}
@@ -1570,10 +1570,10 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 
 		// Find the end gadgets.
 		for (i = 0; i + 32 < delta; i += increment) {
-			RAnalOp end_gadget = {0};
+			RArchOp end_gadget = {0};
 			// Disassemble one.
 			if (r_anal_op (core->anal, &end_gadget, from + i, buf + i,
-				    delta - i, R_ANAL_OP_MASK_BASIC) < 1) {
+				    delta - i, R_ARCH_OP_MASK_BASIC) < 1) {
 				r_anal_op_fini (&end_gadget);
 				continue;
 			}
@@ -1912,7 +1912,7 @@ static const char *get_syscall_register(RCore *core) {
 // IMHO This code must be deleted
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int i, inslen, bsize = R_MIN (64, core->blocksize);
-	RAnalOp aop;
+	RArchOp aop;
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	const char *a0 = get_syscall_register (core);
@@ -1932,7 +1932,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 		if (!i) {
 			r_io_read_at (core->io, curpc, arr, bsize);
 		}
-		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_BASIC);
+		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ARCH_OP_MASK_BASIC);
 		if (inslen) {
  			int incr = (core->search->align > 0)? core->search->align - 1:  inslen - 1;
 			if (incr < 0) {
@@ -1961,7 +1961,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	ut64 curpc;
 #endif
 	int curpos, idx = 0, count = 0;
-	RAnalOp aop = {0};
+	RArchOp aop = {0};
 	int i, ret, bsize = R_MAX (64, core->blocksize);
 	int kwidx = core->search->n_kws;
 	RIOMap* map;
@@ -2028,11 +2028,11 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
 			}
-			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_ESIL);
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ARCH_OP_MASK_ESIL);
 			curpos = idx++ % (MAXINSTR + 1);
 			previnstr[curpos] = ret; // This array holds prev n instr size + cur instr size
 #if !USE_EMULATION
-			if (aop.type == R_ANAL_OP_TYPE_MOV) {
+			if (aop.type == R_ARCH_OP_TYPE_MOV) {
 				const char *es = R_STRBUF_SAFEGET (&aop.esil);
 				if (strstr (es, esp)) {
 					if (aop.val != -1) {
@@ -2045,7 +2045,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				}
 			}
 #endif
-			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
+			if ((aop.type == R_ARCH_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
 				int scVector = -1; // int 0x80, svc 0x70, ...
 				int scNumber = 0; // r0/eax/...
 #if USE_EMULATION
@@ -2120,7 +2120,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 			r_asm_set_pc (core->rasm, ref->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, size);
 			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
-			RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
+			RArchOpHint *hint = r_anal_hint_get (core->anal, ref->addr);
 			r_parse_filter (core->parser, ref->addr, core->flags, hint, r_strbuf_get (&asmop.buf_asm),
 				str, sizeof (str), be);
 			r_anal_hint_free (hint);
@@ -2248,7 +2248,7 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 	default:
 		if (asm_sub_names) {
 			char tmp[128] = { 0 };
-			RAnalHint *hint = r_anal_hint_get (core->anal, hit->addr);
+			RArchOpHint *hint = r_anal_hint_get (core->anal, hit->addr);
 			const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 			r_parse_filter (core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp), be);
 			r_anal_hint_free (hint);
@@ -2281,7 +2281,7 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 
 static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
 	ut64 at;
-	RAnalOp aop;
+	RArchOp aop;
 	int hasch = 0;
 	int i, ret;
 	input = r_str_trim_head_ro (input);
@@ -2312,12 +2312,12 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 			at = from + i;
 			ut8 bufop[32];
 			r_io_read_at (core->io, at, bufop, sizeof (bufop));
-			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 			if (ret) {
 				if (hasch > 0) {
 					hasch--;
 				}
-				if (aop.type & R_ANAL_OP_TYPE_MOV) {
+				if (aop.type & R_ARCH_OP_TYPE_MOV) {
 					if (aop.val > 0 && aop.val < UT32_MAX) {
 						if (aop.val < 255) {
 							if (IS_PRINTABLE (aop.val)) {
@@ -2414,7 +2414,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 static bool do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
 	RSearch *search = core->search;
 	ut64 at;
-	RAnalOp aop;
+	RArchOp aop;
 	int type = 0;
 	int mode = 0;
 	int kwidx = core->search->n_kws;
@@ -2501,7 +2501,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 			at = from + i;
 			ut8 bufop[32];
 			r_io_read_at (core->io, at, bufop, sizeof (bufop));
-			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 			if (ret) {
 				bool match = false;
 				if (type == 'm') {
@@ -3276,7 +3276,7 @@ static void __core_cmd_search_asm_infinite(RCore *core, const char *arg) {
 	RList *boundaries = r_core_get_boundaries_prot (core, -1, search_in, "search");
 	RListIter *iter;
 	RIOMap *map;
-	RAnalOp analop;
+	RArchOp analop;
 	ut64 at;
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach (boundaries, iter, map) {
@@ -3292,7 +3292,7 @@ static void __core_cmd_search_asm_infinite(RCore *core, const char *arg) {
 		}
 		(void) r_io_read_at (core->io, map_begin, buf, map_size);
 		for (at = map_begin; at + 24 < map_end; at += 1) {
-			r_anal_op (core->anal, &analop, at, buf + (at - map_begin), 24, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+			r_anal_op (core->anal, &analop, at, buf + (at - map_begin), 24, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 			if (at == analop.jump) {
 				r_cons_printf ("0x%08"PFMT64x"\n", at);
 			}
@@ -3371,7 +3371,7 @@ static void __core_cmd_search_backward(RCore *core, int delta) {
 	RList *boundaries = r_core_get_boundaries_prot (core, -1, search_in, "search");
 	RListIter *iter;
 	RIOMap *map;
-	RAnalOp analop;
+	RArchOp analop;
 	ut64 at;
 	r_cons_break_push (NULL, NULL);
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
@@ -3396,7 +3396,7 @@ static void __core_cmd_search_backward(RCore *core, int delta) {
 			}
 			int left = R_MIN ((map_end - at), maxopsz);
 			int rc = r_anal_op (core->anal, &analop, at, buf + (at - map_begin), left,
-				R_ANAL_OP_MASK_DISASM | R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+				R_ARCH_OP_MASK_DISASM | R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 			if (rc < 1) {
 				at += minopsz - 1;
 				continue;
@@ -3405,8 +3405,8 @@ static void __core_cmd_search_backward(RCore *core, int delta) {
 				// at, map_end, analop.size, analop.mnemonic);
 			bool found = false;
 			switch (analop.type) {
-			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_CJMP:
+			case R_ARCH_OP_TYPE_JMP:
+			case R_ARCH_OP_TYPE_CJMP:
 				if (analop.jump < at) {
 					found = true;
 					if (delta > 0) {

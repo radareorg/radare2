@@ -247,7 +247,7 @@ typedef struct {
 	const char *color_func_var_addr;
 
 	RFlagItem *lastflag;
-	RAnalHint *hint;
+	RArchOpHint *hint;
 	RPrint *print;
 
 	ut64 esil_old_pc;
@@ -272,7 +272,7 @@ typedef struct {
 	bool count_bytes;
 	char chref;
 	RAsmOp asmop;
-	RAnalOp analop;
+	RArchOp analop;
 	RAnalFunction *fcn;
 	RAnalFunction *pdf;
 	const ut8 *buf;
@@ -1016,7 +1016,7 @@ static void __replaceImports(RDisasmState *ds) {
 static char *get_op_ireg(void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	char *res = NULL;
-	RAnalOp *op = r_core_anal_op (core, addr, 0);
+	RArchOp *op = r_core_anal_op (core, addr, 0);
 	if (op && op->ireg) {
 		res = strdup (op->ireg);
 	}
@@ -1057,9 +1057,9 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	core->parser->subreg = r_config_get_i (core->config, "asm.sub.reg");
 	core->parser->subrel_addr = 0;
 	if (core->parser->subrel
-			&& (ds->analop.type == R_ANAL_OP_TYPE_LEA
-				|| ds->analop.type == R_ANAL_OP_TYPE_MOV
-				|| ds->analop.type == R_ANAL_OP_TYPE_CMP)
+			&& (ds->analop.type == R_ARCH_OP_TYPE_LEA
+				|| ds->analop.type == R_ARCH_OP_TYPE_MOV
+				|| ds->analop.type == R_ARCH_OP_TYPE_CMP)
 			&& ds->analop.ptr != UT64_MAX) {
 		core->parser->subrel_addr = ds->analop.ptr;
 	}
@@ -1081,7 +1081,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			RAnalRef *ref;
 			r_list_foreach (list, iter, ref) {
 				int rt = R_ANAL_REF_TYPE_MASK (ref->type);
-				if ((rt == R_ANAL_REF_TYPE_DATA || rt == R_ANAL_REF_TYPE_STRING) && ds->analop.type == R_ANAL_OP_TYPE_LEA) {
+				if ((rt == R_ANAL_REF_TYPE_DATA || rt == R_ANAL_REF_TYPE_STRING) && ds->analop.type == R_ARCH_OP_TYPE_LEA) {
 					core->parser->subrel_addr = ref->addr;
 					break;
 				}
@@ -1104,7 +1104,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	if (ds->subnames) {
 		RSpace *ofs = core->parser->flagspace;
 		RSpace *fs = ds->flagspace_ports;
-		if (ds->analop.type == R_ANAL_OP_TYPE_IO) {
+		if (ds->analop.type == R_ARCH_OP_TYPE_IO) {
 			core->parser->notin_flagspace = NULL;
 			core->parser->flagspace = fs;
 		} else {
@@ -1210,7 +1210,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 }
 
-R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
+R_API RArchOpHint *r_core_hint_begin(RCore *core, RArchOpHint* hint, ut64 at) {
 	static R_TH_LOCAL char *hint_syntax = NULL;
 	r_anal_hint_free (hint);
 	hint = r_anal_hint_get (core->anal, at);
@@ -1234,7 +1234,7 @@ R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
 	if (fcn) {
 		if (fcn->bits == 16 || fcn->bits == 32) {
 			if (!hint) {
-				hint = R_NEW0 (RAnalHint);
+				hint = R_NEW0 (RArchOpHint);
 			}
 			hint->bits = fcn->bits;
 			hint->new_bits = fcn->bits;
@@ -1353,11 +1353,11 @@ static void ds_show_refs(RDisasmState *ds) {
 			ds_comment (ds, true, "; (%s)", cmt);
 		}
 		if (ref->type & R_ANAL_REF_TYPE_CALL) {
-			RAnalOp aop;
+			RArchOp aop;
 			ut8 buf[12];
 			r_io_read_at (ds->core->io, ref->at, buf, sizeof (buf));
-			r_anal_op (ds->core->anal, &aop, ref->at, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
-			if ((aop.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
+			r_anal_op (ds->core->anal, &aop, ref->at, buf, sizeof (buf), R_ARCH_OP_MASK_ALL);
+			if ((aop.type & R_ARCH_OP_TYPE_MASK) == R_ARCH_OP_TYPE_UCALL) {
 				RAnalFunction * fcn = r_anal_get_function_at (ds->core->anal, ref->addr);
 				ds_begin_comment (ds);
 				if (fcn) {
@@ -2801,15 +2801,15 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 		RFlagItem *item;
 		if (ds->asm_anal) {
 			switch (ds->analop.type) {
-			case R_ANAL_OP_TYPE_CALL:
+			case R_ARCH_OP_TYPE_CALL:
 				r_core_cmdf (ds->core, "af @ 0x%"PFMT64x, ds->analop.jump);
 				break;
 			}
 		}
 		switch (ds->analop.type) {
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_CALL:
+		case R_ARCH_OP_TYPE_JMP:
+		case R_ARCH_OP_TYPE_CJMP:
+		case R_ARCH_OP_TYPE_CALL:
 			item = r_flag_get_i (ds->core->flags, ds->analop.jump);
 			if (item && item->comment) {
 				if (ds->show_color) {
@@ -3377,8 +3377,8 @@ static void ds_cdiv_optimization(RDisasmState *ds) {
 		return;
 	}
 	switch (ds->analop.type) {
-	case R_ANAL_OP_TYPE_MOV:
-	case R_ANAL_OP_TYPE_MUL:
+	case R_ARCH_OP_TYPE_MOV:
+	case R_ARCH_OP_TYPE_MUL:
 		esil = R_STRBUF_SAFEGET (&ds->analop.esil);
 		while (esil) {
 			comma = strchr (esil, ',');
@@ -3607,7 +3607,7 @@ static void ds_print_sysregs(RDisasmState *ds) {
 	}
 	switch (ds->analop.type) {
 	// Syscalls first
-	case R_ANAL_OP_TYPE_IO:
+	case R_ARCH_OP_TYPE_IO:
 		{
 			const int imm = (int)ds->analop.val;
 			RSyscall *sc = core->anal->syscall;
@@ -3620,10 +3620,10 @@ static void ds_print_sysregs(RDisasmState *ds) {
 		}
 		break;
 	// Then sysregs
-	case R_ANAL_OP_TYPE_MOV:
-	case R_ANAL_OP_TYPE_LEA:
-	case R_ANAL_OP_TYPE_LOAD:
-	case R_ANAL_OP_TYPE_STORE:
+	case R_ARCH_OP_TYPE_MOV:
+	case R_ARCH_OP_TYPE_LEA:
+	case R_ARCH_OP_TYPE_LOAD:
+	case R_ARCH_OP_TYPE_STORE:
 		{
 			const int imm = (int)ds->analop.ptr;
 			const char *sr = r_syscall_sysreg (core->anal->syscall, "reg", imm);
@@ -3642,9 +3642,9 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 	if (!ds->show_comments) {
 		return;
 	}
-	if (ds->analop.type != R_ANAL_OP_TYPE_JMP
-		&& ds->analop.type != R_ANAL_OP_TYPE_CJMP
-		&& ds->analop.type != R_ANAL_OP_TYPE_CALL) {
+	if (ds->analop.type != R_ARCH_OP_TYPE_JMP
+		&& ds->analop.type != R_ARCH_OP_TYPE_CJMP
+		&& ds->analop.type != R_ARCH_OP_TYPE_CALL) {
 		return;
 	}
 	RAnalFunction *f = fcnIn (ds, ds->analop.jump, R_ANAL_FCN_TYPE_NULL);
@@ -3750,7 +3750,7 @@ static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
 	RAnal *a = core->anal;
-	RAnalHint *hint = r_anal_hint_get (a, ds->at);
+	RArchOpHint *hint = r_anal_hint_get (a, ds->at);
 	bool res = false;
 	if (hint) {
 		if (hint->jump != UT64_MAX) {
@@ -3822,10 +3822,10 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 		}
 	}
 	switch (ds->analop.type) {
-	case R_ANAL_OP_TYPE_UJMP:
-	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND:
-	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_COND:
-	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_REG:
+	case R_ARCH_OP_TYPE_UJMP:
+	case R_ARCH_OP_TYPE_UJMP | R_ARCH_OP_TYPE_IND:
+	case R_ARCH_OP_TYPE_UJMP | R_ARCH_OP_TYPE_IND | R_ARCH_OP_TYPE_COND:
+	case R_ARCH_OP_TYPE_UJMP | R_ARCH_OP_TYPE_IND | R_ARCH_OP_TYPE_REG:
 		if (ds->asm_hint_lea) {
 			if (ds->analop.ptr != UT64_MAX && ds->analop.ptr != UT32_MAX) {
 				slen = ds_print_shortcut (ds, get_ptr (ds, ds->analop.ptr), pos);
@@ -3833,9 +3833,9 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 			}
 		}
 		break;
-	case R_ANAL_OP_TYPE_MOV:
-	case R_ANAL_OP_TYPE_LEA:
-	case R_ANAL_OP_TYPE_LOAD:
+	case R_ARCH_OP_TYPE_MOV:
+	case R_ARCH_OP_TYPE_LEA:
+	case R_ARCH_OP_TYPE_LOAD:
 		if (ds->asm_hint_imm) {
 			if (ds->analop.val != UT64_MAX && ds->analop.val != UT32_MAX && ds->analop.val > 256) {
 				slen = ds_print_shortcut (ds, ds->analop.val, pos);
@@ -3848,9 +3848,9 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 			}
 		}
 		break;
-	case R_ANAL_OP_TYPE_UCALL:
-	case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_IND:
-	case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_IND:
+	case R_ARCH_OP_TYPE_UCALL:
+	case R_ARCH_OP_TYPE_UCALL | R_ARCH_OP_TYPE_REG | R_ARCH_OP_TYPE_IND:
+	case R_ARCH_OP_TYPE_UCALL | R_ARCH_OP_TYPE_IND:
 		if (ds->asm_hint_call) {
 			if (ds->analop.jump != UT64_MAX) {
 				slen = ds_print_shortcut (ds, ds->analop.jump, pos);
@@ -3866,22 +3866,22 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 			gotShortcut = true;
 		}
 		break;
-	case R_ANAL_OP_TYPE_RJMP:
-	case R_ANAL_OP_TYPE_RCALL:
+	case R_ARCH_OP_TYPE_RJMP:
+	case R_ARCH_OP_TYPE_RCALL:
 		if (ds->analop.jump != UT64_MAX && ds->analop.jump != UT32_MAX) {
 			slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			gotShortcut = true;
 		}
 		break;
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_CJMP:
+	case R_ARCH_OP_TYPE_JMP:
+	case R_ARCH_OP_TYPE_CJMP:
 		if (ds->asm_hint_jmp) {
 			slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			gotShortcut = true;
 		}
 		break;
-	case R_ANAL_OP_TYPE_CALL:
-	case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_COND | R_ARCH_OP_TYPE_CALL:
 		if (ds->asm_hint_call) {
 			slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			gotShortcut = true;
@@ -3984,14 +3984,14 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 		//r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
 		int v = ds->analop.ptr;
 		switch (ds->analop.stackop) {
-		case R_ANAL_STACK_GET:
+		case R_ARCH_STACK_GET:
 			if (v < 0) {
 				r_cons_printf (" ; local.get %d", -v);
 			} else {
 				r_cons_printf (" ; arg.get %d", v);
 			}
 			break;
-		case R_ANAL_STACK_SET:
+		case R_ARCH_STACK_SET:
 			if (v < 0) {
 				r_cons_printf (" ; local.set %d", -v);
 			} else {
@@ -4101,7 +4101,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 		return;
 	}
 	// do not resolve strings on arm64 pointed with ADRP
-	if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
+	if (ds->analop.type == R_ARCH_OP_TYPE_LEA) {
 		if (ds->core->rasm->config->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
 			return;
 		}
@@ -4150,10 +4150,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}
-	const int opType = ds->analop.type & R_ANAL_OP_TYPE_MASK;
-	bool canHaveChar = opType == R_ANAL_OP_TYPE_MOV;
+	const int opType = ds->analop.type & R_ARCH_OP_TYPE_MASK;
+	bool canHaveChar = opType == R_ARCH_OP_TYPE_MOV;
 	if (!canHaveChar) {
-		canHaveChar = opType == R_ANAL_OP_TYPE_PUSH;
+		canHaveChar = opType == R_ARCH_OP_TYPE_PUSH;
 	}
 
 	ds->chref = 0;
@@ -4202,8 +4202,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		}
 	}
 	r_list_free (list);
-	if (ds->analop.type == (R_ANAL_OP_TYPE_MOV | R_ANAL_OP_TYPE_REG)
-	    && ds->analop.stackop == R_ANAL_STACK_SET
+	if (ds->analop.type == (R_ARCH_OP_TYPE_MOV | R_ARCH_OP_TYPE_REG)
+	    && ds->analop.stackop == R_ARCH_STACK_SET
 	    && ds->analop.val != UT64_MAX && ds->analop.val > 10) {
 		const char *arch = r_config_get (core->config, "asm.arch");
 		if (arch && !strcmp (arch, "x86")) {
@@ -4243,7 +4243,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			ut64 num = r_read_ble (msg, be, refptr * 8);
 			st64 n = (st64)num;
 			st32 n32 = (st32)(n & UT32_MAX);
-			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
+			if (ds->analop.type == R_ARCH_OP_TYPE_LEA) {
 				char str[128] = {0};
 				f = r_flag_get_i (core->flags, refaddr);
 				if (!f && ds->show_slow) {
@@ -4459,9 +4459,9 @@ static void ds_print_demangled(RDisasmState *ds) {
 	RFlagItem *f;
 	int optype = ds->analop.type & 0xFFFF;
 	switch (optype) {
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_UJMP:
-	case R_ANAL_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_JMP:
+	case R_ARCH_OP_TYPE_UJMP:
+	case R_ARCH_OP_TYPE_CALL:
 		f = r_flag_get_by_spaces (core->flags, ds->analop.jump, R_FLAGS_FS_SYMBOLS, NULL);
 		if (f && f->demangled && f->realname && ds->opstr && !strstr (ds->opstr, f->realname)) {
 			ds_begin_nl_comment (ds);
@@ -4566,7 +4566,7 @@ static bool myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	if (!ds) {
 		return false;
 	}
-	if (!ds->show_emu_strlea && ds->analop.type == R_ANAL_OP_TYPE_LEA) {
+	if (!ds->show_emu_strlea && ds->analop.type == R_ARCH_OP_TYPE_LEA) {
 		// useful for ARM64
 		// reduce false positives in emu.str=true when loading strings via adrp+add
 		return false;
@@ -4620,21 +4620,21 @@ static bool myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			bool jump_op = false;
 			bool ignored = false;
 			switch (ds->analop.type) {
-			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_UJMP:
-			case R_ANAL_OP_TYPE_RJMP:
-			case R_ANAL_OP_TYPE_IJMP:
-			case R_ANAL_OP_TYPE_IRJMP:
-			case R_ANAL_OP_TYPE_CJMP:
-			case R_ANAL_OP_TYPE_MJMP:
-			case R_ANAL_OP_TYPE_UCJMP:
+			case R_ARCH_OP_TYPE_JMP:
+			case R_ARCH_OP_TYPE_UJMP:
+			case R_ARCH_OP_TYPE_RJMP:
+			case R_ARCH_OP_TYPE_IJMP:
+			case R_ARCH_OP_TYPE_IRJMP:
+			case R_ARCH_OP_TYPE_CJMP:
+			case R_ARCH_OP_TYPE_MJMP:
+			case R_ARCH_OP_TYPE_UCJMP:
 				jump_op = true;
 				break;
-			case R_ANAL_OP_TYPE_TRAP:
-			case R_ANAL_OP_TYPE_RET:
+			case R_ARCH_OP_TYPE_TRAP:
+			case R_ARCH_OP_TYPE_RET:
 				ignored = true;
 				break;
-			case R_ANAL_OP_TYPE_LEA:
+			case R_ARCH_OP_TYPE_LEA:
 				if (ds->core->rasm->config->bits == 64 && r_str_startswith (r_config_get (ds->core->config, "asm.arch"), "arm")) {
 					ignored = true;
 				}
@@ -4735,7 +4735,7 @@ static void ds_pre_emulation(RDisasmState *ds) {
 	const ut64 pc = r_reg_getv (ds->core->anal->reg, r_reg_get_name (ds->core->anal->reg, R_REG_NAME_PC));
 	for (i = 0; i < end; i++) {
 		ut64 addr = base + i;
-		RAnalOp* op = r_core_anal_op (ds->core, addr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
+		RArchOp* op = r_core_anal_op (ds->core, addr, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 		if (op) {
 			if (do_esil) {
 				// underlying assumption of esil expressions is pc register is set prior to emulation
@@ -4964,17 +4964,17 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		goto beach;
 	}
 	switch (ds->analop.type) {
-	case R_ANAL_OP_TYPE_SWI: {
+	case R_ARCH_OP_TYPE_SWI: {
 		char *s = cmd_syscall_dostr (core, ds->analop.val, at);
 		if (s) {
 			ds_comment_esil (ds, true, true, "; %s", s);
 			free (s);
 		}
 		} break;
-	case R_ANAL_OP_TYPE_CJMP:
+	case R_ARCH_OP_TYPE_CJMP:
 		ds_comment_esil (ds, true, true, ds->esil_likely? "; likely" : "; unlikely");
 		break;
-	case R_ANAL_OP_TYPE_JMP:
+	case R_ARCH_OP_TYPE_JMP:
 		{
 			ut64 addr = ds->analop.jump;
 			if (!r_anal_get_function_at (ds->core->anal, addr)
@@ -4982,11 +4982,11 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				break;
 			}
 		}
-	case R_ANAL_OP_TYPE_UCALL:
-	case R_ANAL_OP_TYPE_ICALL:
-	case R_ANAL_OP_TYPE_RCALL:
-	case R_ANAL_OP_TYPE_IRCALL:
-	case R_ANAL_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_UCALL:
+	case R_ARCH_OP_TYPE_ICALL:
+	case R_ARCH_OP_TYPE_RCALL:
+	case R_ARCH_OP_TYPE_IRCALL:
+	case R_ARCH_OP_TYPE_CALL:
 		{
 			RAnalFunction *fcn;
 			RAnalFuncArg *arg;
@@ -4995,7 +4995,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 			const char *fcn_name = NULL;
 			char *key = NULL;
 			ut64 pcv = ds->analop.jump;
-			if (ds->analop.type == R_ANAL_OP_TYPE_RCALL) {
+			if (ds->analop.type == R_ARCH_OP_TYPE_RCALL) {
 				pcv = UT64_MAX;
 			}
 			if (pcv == UT64_MAX) {
@@ -5134,7 +5134,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	Sdb *TDB = anal->sdb_types;
 	char *name;
 	char *full_name = NULL;
-	if (ds->analop.type == R_ANAL_OP_TYPE_CALL) {
+	if (ds->analop.type == R_ARCH_OP_TYPE_CALL) {
 		// RAnalFunction *fcn = r_anal_get_fcn_in (anal, ds->analop.jump, -1);
 		RAnalFunction *fcn = fcnIn (ds, ds->analop.jump, -1);
 		if (fcn) {
@@ -5293,18 +5293,18 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	}
 	free (desc);
 #if 1
-	if ((ds->analop.type == R_ANAL_OP_TYPE_CALL || ds->analop.type & R_ANAL_OP_TYPE_UCALL) && ds->show_calls) {
+	if ((ds->analop.type == R_ARCH_OP_TYPE_CALL || ds->analop.type & R_ARCH_OP_TYPE_UCALL) && ds->show_calls) {
 		ds_print_calls_hints (ds);
 	}
 #else
 	if (ds->show_calls) {
 		switch (ds->analop.type) {
-		case R_ANAL_OP_TYPE_CALL:
-		case R_ANAL_OP_TYPE_ICALL:
-		case R_ANAL_OP_TYPE_CCALL:
-		case R_ANAL_OP_TYPE_UCCALL:
-		case R_ANAL_OP_TYPE_UCALL:
-		case R_ANAL_OP_TYPE_RCALL:
+		case R_ARCH_OP_TYPE_CALL:
+		case R_ARCH_OP_TYPE_ICALL:
+		case R_ARCH_OP_TYPE_CCALL:
+		case R_ARCH_OP_TYPE_UCCALL:
+		case R_ARCH_OP_TYPE_UCALL:
+		case R_ARCH_OP_TYPE_RCALL:
 			ds_print_calls_hints (ds);
 			break;
 		}
@@ -5395,9 +5395,9 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	}
 	int optype = ds->analop.type & 0xFFFF;
 	switch (optype) {
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_UJMP:
-	case R_ANAL_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_JMP:
+	case R_ARCH_OP_TYPE_UJMP:
+	case R_ARCH_OP_TYPE_CALL:
 		break;
 	default:
 		return str;
@@ -5593,7 +5593,7 @@ toro:
 		// TODO: support in-the-middle-of-instruction too
 		r_anal_op_fini (&ds->analop);
 		if (r_anal_op (core->anal, &ds->analop, core->offset + core->print->cur,
-			buf + core->print->cur, (int)(len - core->print->cur), R_ANAL_OP_MASK_ALL)) {
+			buf + core->print->cur, (int)(len - core->print->cur), R_ARCH_OP_MASK_ALL)) {
 			// TODO: check for ds->analop.type and ret
 			ds->dest = ds->analop.jump;
 		}
@@ -5670,7 +5670,7 @@ toro:
 		r_asm_set_pc (core->rasm, ds->at);
 		ds_update_ref_lines (ds);
 		r_anal_op_fini (&ds->analop);
-		r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ANAL_OP_MASK_ALL);
+		r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL);
 		if (ds_must_strip (ds)) {
 			inc = ds->analop.size;
 			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
@@ -5766,12 +5766,12 @@ toro:
 		ds_atabs_option (ds);
 		if (ds->analop.addr != ds->at) {
 			r_anal_op_fini (&ds->analop);
-			r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ANAL_OP_MASK_ALL);
+			r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL);
 		}
 		if (ret < 1) {
 			r_strbuf_fini (&ds->analop.esil);
 			r_strbuf_init (&ds->analop.esil);
-			ds->analop.type = R_ANAL_OP_TYPE_ILL;
+			ds->analop.type = R_ARCH_OP_TYPE_ILL;
 		}
 		if (ds->hint) {
 			if (ds->hint->size) {
@@ -5837,7 +5837,7 @@ toro:
 			if (ds->show_emu) {
 				ds_print_esil_anal (ds);
 			}
-			if ((ds->analop.type == R_ANAL_OP_TYPE_CALL || ds->analop.type & R_ANAL_OP_TYPE_UCALL) && ds->show_calls) {
+			if ((ds->analop.type == R_ARCH_OP_TYPE_CALL || ds->analop.type & R_ARCH_OP_TYPE_UCALL) && ds->show_calls) {
 				ds_print_calls_hints (ds);
 			}
 			ds_show_comments_describe (ds);
@@ -5970,7 +5970,7 @@ toro:
 		core->print->resetbg = true;
 		ds_newline (ds);
 		if (ds->line) {
-			if (ds->show_lines_ret && ds->analop.type == R_ANAL_OP_TYPE_RET) {
+			if (ds->show_lines_ret && ds->analop.type == R_ARCH_OP_TYPE_RET) {
 				if (strchr (ds->line, '>')) {
 					memset (ds->line, ' ', r_str_len_utf8 (ds->line));
 				}
@@ -6163,7 +6163,7 @@ toro:
 		r_anal_op_fini (&ds->analop);
 		if (!hasanal) {
 			// XXX we probably don't need MASK_ALL
-			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * i, nb_bytes - addrbytes * i, R_ANAL_OP_MASK_ALL);
+			r_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * i, nb_bytes - addrbytes * i, R_ARCH_OP_MASK_ALL);
 			hasanal = true;
 		}
 		if (ds_must_strip (ds)) {
@@ -6188,7 +6188,7 @@ toro:
 			if (ds->decode && !ds->immtrim) {
 				R_FREE (ds->opstr);
 				if (!hasanal) {
-					r_anal_op (core->anal, &ds->analop, ds->at, buf + i, nb_bytes - i, R_ANAL_OP_MASK_ALL);
+					r_anal_op (core->anal, &ds->analop, ds->at, buf + i, nb_bytes - i, R_ARCH_OP_MASK_ALL);
 					hasanal = true;
 				}
 				tmpopstr = r_anal_op_to_string (core->anal, &ds->analop);
@@ -6205,7 +6205,7 @@ toro:
 				if (!hasanal) {
 					r_anal_op (core->anal, &ds->analop,
 						ds->at, buf + i,
-						nb_bytes - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
+						nb_bytes - i, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 					hasanal = true;
 				}
 				if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
@@ -6216,7 +6216,7 @@ toro:
 				char *asm_str;
 				RSpace *ofs = core->parser->flagspace;
 				RSpace *fs = ds->flagspace_ports;
-				if (ds->analop.type == R_ANAL_OP_TYPE_IO) {
+				if (ds->analop.type == R_ARCH_OP_TYPE_IO) {
 					core->parser->notin_flagspace = NULL;
 					core->parser->flagspace = fs;
 				} else {
@@ -6474,7 +6474,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 		ds->has_description = false;
 		r_anal_op_fini (&ds->analop);
-		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i, R_ANAL_OP_MASK_ALL);
+		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i, R_ARCH_OP_MASK_ALL);
 
 		if (ds->pseudo) {
 			r_parse_parse (core->parser, opstr, opstr);
@@ -6746,9 +6746,9 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 				r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, r_asm_op_get_asm (&asmop),
 						str, sizeof (str), be);
 				if (scr_color) {
-					RAnalOp aop;
+					RArchOp aop;
 					RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
-					r_anal_op (core->anal, &aop, addr, buf+i, l-i, R_ANAL_OP_MASK_ALL);
+					r_anal_op (core->anal, &aop, addr, buf+i, l-i, R_ARCH_OP_MASK_ALL);
 					char *buf_asm = r_print_colorize_opcode (core->print, str,
 							core->cons->context->pal.reg, core->cons->context->pal.num, false, f ? f->addr : 0);
 					if (buf_asm) {
@@ -6982,12 +6982,12 @@ toro:
 			if (!asm_instr) {
 				r_cons_newline ();
 			} else if (!asm_immtrim && (decode || esil)) {
-				RAnalOp analop = {
+				RArchOp analop = {
 					0
 				};
 				char *tmpopstr, *opstr = NULL;
 				r_anal_op (core->anal, &analop, addr + i,
-					buf + addrbytes * i, nb_bytes - addrbytes * i, R_ANAL_OP_MASK_ALL);
+					buf + addrbytes * i, nb_bytes - addrbytes * i, R_ARCH_OP_MASK_ALL);
 				tmpopstr = r_anal_op_to_string (core->anal, &analop);
 				if (fmt == 'e') { // pie
 					char *esil = (R_STRBUF_SAFEGET (&analop.esil));
@@ -7024,19 +7024,19 @@ toro:
 				}
 				if (subnames) {
 					const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
-					RAnalHint *hint = r_anal_hint_get (core->anal, at);
+					RArchOpHint *hint = r_anal_hint_get (core->anal, at);
 					r_parse_filter (core->parser, at, core->flags, hint,
 						asm_str, opstr, sizeof (opstr) - 1, be);
 					r_anal_hint_free (hint);
 					asm_str = (char *)&opstr;
 				}
 				if (show_color) {
-					RAnalOp aop = {
+					RArchOp aop = {
 						0
 					};
 					RAnalFunction *f = r_anal_get_fcn_in (core->anal, addr + i, R_ANAL_FCN_TYPE_NULL);
 					r_anal_op (core->anal, &aop, addr + i,
-						buf + addrbytes * i, nb_bytes - addrbytes * i, R_ANAL_OP_MASK_BASIC);
+						buf + addrbytes * i, nb_bytes - addrbytes * i, R_ARCH_OP_MASK_BASIC);
 					asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false, f ? f->addr : 0);
 					r_cons_printf ("%s%s"Color_RESET "\n",
 						r_print_color_op_type (core->print, aop.type),
@@ -7147,16 +7147,16 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		if (!read_ahead (core->io, &buf, &buf_sz, op_addr, block_sz, read_len)) {
 			break;
 		}
-		RAnalOp op;
-		int ret = r_anal_op (core->anal, &op, op_addr, buf + block_sz, read_len, R_ANAL_OP_MASK_ESIL);
-		const bool invalid_instr = ret < 1 || op.size < 1 || op.type == R_ANAL_OP_TYPE_ILL;
+		RArchOp op;
+		int ret = r_anal_op (core->anal, &op, op_addr, buf + block_sz, read_len, R_ARCH_OP_MASK_ESIL);
+		const bool invalid_instr = ret < 1 || op.size < 1 || op.type == R_ARCH_OP_TYPE_ILL;
 		bool end_of_block = false;
-		switch (op.type & R_ANAL_OP_TYPE_MASK & ~R_ANAL_OP_HINT_MASK) {
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_UJMP:
-		case R_ANAL_OP_TYPE_CALL:
-		case R_ANAL_OP_TYPE_UCALL:
-		case R_ANAL_OP_TYPE_RET:
+		switch (op.type & R_ARCH_OP_TYPE_MASK & ~R_ARCH_OP_HINT_MASK) {
+		case R_ARCH_OP_TYPE_JMP:
+		case R_ARCH_OP_TYPE_UJMP:
+		case R_ARCH_OP_TYPE_CALL:
+		case R_ARCH_OP_TYPE_UCALL:
+		case R_ARCH_OP_TYPE_RET:
 			end_of_block = true;
 			break;
 		}

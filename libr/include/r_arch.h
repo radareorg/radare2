@@ -51,6 +51,38 @@ typedef struct r_arch_config_t {
 
 #define	R_ARCH_CONFIG_IS_BIG_ENDIAN(cfg_)	(((cfg_)->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG)
 
+typedef struct r_arch_op_hint_t {
+	ut64 addr;
+	ut64 ptr;
+	ut64 val; // used to hint jmp rax
+	ut64 jump;
+	ut64 fail;
+	ut64 ret; // hint for function ret values
+	char *arch;
+	char *opcode;
+	char *syntax;
+	char *esil;
+	char *offset;
+	ut32 type;
+	ut64 size;
+	int bits;
+	int new_bits; // change asm.bits after evaluating this instruction
+	int immbase;
+	bool high; // highlight hint
+	int nword;
+	ut64 stackframe;
+} RArchOpHint;
+
+typedef enum {
+	R_ARCH_OP_MASK_BASIC = 0, // Just fills basic op info , it's fast
+	R_ARCH_OP_MASK_ESIL  = 1, // It fills RAnalop->esil info
+	R_ARCH_OP_MASK_VAL   = 2, // It fills RAnalop->dst/src info
+	R_ARCH_OP_MASK_HINT  = 4, // It calls r_anal_op_hint to override anal options
+	R_ARCH_OP_MASK_OPEX  = 8, // It fills RAnalop->opex info
+	R_ARCH_OP_MASK_DISASM = 16, // It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
+	R_ARCH_OP_MASK_ALL   = 1 | 2 | 4 | 8 | 16
+} RArchOpMask;
+
 // XXX: this definition is plain wrong. use enum or empower bits
 #define R_ARCH_OP_TYPE_MASK 0x8000ffff
 #define R_ARCH_OP_HINT_MASK 0xf0000000
@@ -176,23 +208,23 @@ typedef enum {
 
 /* TODO: what to do with signed/unsigned conditionals? */
 typedef enum {
-	R_ARCH_COND_AL = 0,        // Always executed (no condition)
-	R_ARCH_COND_EQ,            // Equal
-	R_ARCH_COND_NE,            // Not equal
-	R_ARCH_COND_GE,            // Greater or equal
-	R_ARCH_COND_GT,            // Greater than
-	R_ARCH_COND_LE,            // Less or equal
-	R_ARCH_COND_LT,            // Less than
-	R_ARCH_COND_NV,            // Never executed             must be a nop? :D
-	R_ARCH_COND_HS,            // Carry set                  >, ==, or unordered
-	R_ARCH_COND_LO,            // Carry clear                Less than
-	R_ARCH_COND_MI,            // Minus, negative            Less than
-	R_ARCH_COND_PL,            // Plus, positive or zero     >, ==, or unordered
-	R_ARCH_COND_VS,            // Overflow                   Unordered
-	R_ARCH_COND_VC,            // No overflow                Not unordered
-	R_ARCH_COND_HI,            // Unsigned higher            Greater than, or unordered
-	R_ARCH_COND_LS             // Unsigned lower or same     Less than or equal
-} RArchCond;
+	R_ARCH_OP_COND_AL = 0,        // Always executed (no condition)
+	R_ARCH_OP_COND_EQ,            // Equal
+	R_ARCH_OP_COND_NE,            // Not equal
+	R_ARCH_OP_COND_GE,            // Greater or equal
+	R_ARCH_OP_COND_GT,            // Greater than
+	R_ARCH_OP_COND_LE,            // Less or equal
+	R_ARCH_OP_COND_LT,            // Less than
+	R_ARCH_OP_COND_NV,            // Never executed             must be a nop? :D
+	R_ARCH_OP_COND_HS,            // Carry set                  >, ==, or unordered
+	R_ARCH_OP_COND_LO,            // Carry clear                Less than
+	R_ARCH_OP_COND_MI,            // Minus, negative            Less than
+	R_ARCH_OP_COND_PL,            // Plus, positive or zero     >, ==, or unordered
+	R_ARCH_OP_COND_VS,            // Overflow                   Unordered
+	R_ARCH_OP_COND_VC,            // No overflow                Not unordered
+	R_ARCH_OP_COND_HI,            // Unsigned higher            Greater than, or unordered
+	R_ARCH_OP_COND_LS             // Unsigned lower or same     Less than or equal
+} RArchOpCond;
 
 typedef enum {
 	R_ARCH_OP_FAMILY_UNKNOWN = -1,
@@ -271,6 +303,16 @@ typedef enum {
 	R_ARCH_DATATYPE_FLOAT,
 } RArchDataType;
 
+typedef enum {
+	R_ARCH_OP_STACK_NULL = 0,
+	R_ARCH_OP_STACK_NOP,
+	R_ARCH_OP_STACK_INC,
+	R_ARCH_OP_STACK_GET,
+	R_ARCH_OP_STACK_SET,
+	R_ARCH_OP_STACK_RESET,
+	R_ARCH_OP_STACK_ALIGN,
+} RArchOpStack;
+
 typedef struct r_arch_op_t {
 	char *mnemonic; /* mnemonic.. it actually contains the args too, we should replace rasm with this */
 	ut64 addr;      /* address */
@@ -278,7 +320,7 @@ typedef struct r_arch_op_t {
 	RArchOpPrefix prefix;	/* type of opcode prefix (rep,lock,..) */
 	RArchOpType type2;	/* used by java */
 	RArchStackOp stackop;	/* operation on stack? */
-	RArchCond cond;	/* condition type */
+	RArchOpCond cond;	/* condition type */
 	int size;       /* size in bytes of opcode */
 	ut32 nopcode;    /* number of bytes representing the opcode (not the arguments) TODO: find better name */
 	ut32 cycles;	/* cpu-cycles taken by instruction */
@@ -310,6 +352,7 @@ typedef struct r_arch_op_t {
 	ut32 new_bits;
 	RArchDataType datatype;
 	int vliw; // begin of opcode block.
+	RArchOpHint hint;
 } RArchOp;
 
 #define R_ARCH_INFO_MIN_OP_SIZE	0
@@ -323,7 +366,7 @@ typedef struct r_arch_op_t {
 #define R_ARCH_OP_MASK_ESIL	1	// It fills RAnalop->esil info
 #define R_ARCH_OP_MASK_VAL	2	// It fills RAnalop->dst/src info
 #define	R_ARCH_OP_MASK_OPEX	4	// It fills RAnalop->opex info
-#define	R_ARCH_OP_MASK_DISASM	8	// It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
+#define	R_ARCH_OP_MASK_DISASM	8	// It fills RAnalop->mnemonic // should be RArchOp->disasm // only from r_core_anal_op()
 
 typedef struct r_arch_decoder_t {
 	struct r_arch_plugin_t *p;
@@ -414,11 +457,9 @@ R_API const char *r_arch_stackop_to_string(int s);
 R_API const char *r_arch_op_family_to_string(int n);
 R_API int r_arch_op_family_from_string(const char *f);
 R_API const char *r_arch_op_direction_to_string(RArchOp *op);
-struct r_anal_op_t;
-R_API void r_arch_op_to_analop(struct r_anal_op_t *op, struct r_arch_op_t *archop);
 
 // archcond.c
-R_API const char *r_arch_cond_to_string(RArchCond cc);
+// UNUSED R_API const char *r_arch_op_cond_to_string(RArchOpCond cc);
 
 extern RArchPlugin r_arch_plugin_null;
 extern RArchPlugin r_arch_plugin_i4004;

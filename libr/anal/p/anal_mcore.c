@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include "../../asm/arch/mcore/mcore.h"
 
-static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int mcore_anal(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	mcore_handle handle = {0};
 	mcore_t* instr = NULL;
 
@@ -16,28 +16,28 @@ static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 
 	op->size = 2;
 	if ((instr = mcore_next (&handle))) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			char tmp[256];
 			mcore_snprint (tmp, sizeof (tmp), addr, instr);
 			op->mnemonic = strdup (tmp);
 		}
 		op->type = instr->type;
 		switch (instr->type) {
-		case R_ANAL_OP_TYPE_CALL:
-		case R_ANAL_OP_TYPE_CJMP:
+		case R_ARCH_OP_TYPE_CALL:
+		case R_ARCH_OP_TYPE_CJMP:
 			op->fail = addr + 2;
 			op->jump = addr + instr->args[0].value + 1;
 			break;
-		case R_ANAL_OP_TYPE_JMP:
+		case R_ARCH_OP_TYPE_JMP:
 			op->jump = addr + instr->args[0].value + 1;
 			break;
-		case R_ANAL_OP_TYPE_ICALL:
+		case R_ARCH_OP_TYPE_ICALL:
 			// the loading address depends on the word
 			// that this pointer points to.
 			// op->jump = addr + ((instr->args[i].value << 2) & 0xfffffffc);
 			break;
-		case R_ANAL_OP_TYPE_RET:
-		case R_ANAL_OP_TYPE_ILL:
+		case R_ARCH_OP_TYPE_RET:
+		case R_ARCH_OP_TYPE_ILL:
 			op->eob = true;
 			break;
 		default:

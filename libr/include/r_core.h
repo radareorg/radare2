@@ -598,7 +598,7 @@ R_API int r_core_cmd_buffer(RCore *core, const char *buf);
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each);
 R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each);
 R_API char *r_core_op_str(RCore *core, ut64 addr);
-R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr, RAnalOpMask mask);
+R_API RArchOp *r_core_op_anal(RCore *core, ut64 addr, RArchOpMask mask);
 R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l);
 R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 
@@ -609,7 +609,7 @@ R_API char *resolve_fcn_name(RAnal *anal, const char *func_name);
 R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to);
 
 /* anal.c */
-R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask);
+R_API RArchOp* r_core_anal_op(RCore *core, ut64 addr, int mask);
 R_IPI int core_type_by_addr(RCore *core, ut64 addr);
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *addr);
 R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2);

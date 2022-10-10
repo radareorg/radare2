@@ -73,11 +73,11 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 	return 0;
 }
 
-static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
+static void op_fillval(RArchOp *op, csh handle, cs_insn *insn) {
 	static R_TH_LOCAL RRegItem reg;
 	RAnalValue *val;
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_LOAD:
+	switch (op->type & R_ARCH_OP_TYPE_MASK) {
+	case R_ARCH_OP_TYPE_LOAD:
 		if (INSOP (0).type == SPARC_OP_MEM) {
 			ZERO_FILL (reg);
 			val = r_vector_push (op->srcs, NULL);
@@ -86,7 +86,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 			val->delta = INSOP(0).mem.disp;
 		}
 		break;
-	case R_ANAL_OP_TYPE_STORE:
+	case R_ARCH_OP_TYPE_STORE:
 		if (INSOP (1).type == SPARC_OP_MEM) {
 			ZERO_FILL (reg);
 			val = r_vector_push (op->dsts, NULL);
@@ -117,7 +117,7 @@ static int get_capstone_mode(RAnal *a) {
 #define CSINC_MODE get_capstone_mode(a)
 #include "capstone.inc"
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	csh handle = init_capstone (a);
 	if (handle == 0) {
 		return -1;
@@ -132,12 +132,12 @@ performed in big-endian byte order.
 	// capstone-next
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 	} else {
-		if (mask & R_ANAL_OP_MASK_OPEX) {
+		if (mask & R_ARCH_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
 		}
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
 					insn->mnemonic, insn->op_str[0]? " ": "",
 					insn->op_str);
@@ -147,19 +147,19 @@ performed in big-endian byte order.
 		op->id = insn->id;
 		switch (insn->id) {
 		case SPARC_INS_INVALID:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 			break;
 		case SPARC_INS_MOV:
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			break;
 		case SPARC_INS_RETT:
 		case SPARC_INS_RET:
 		case SPARC_INS_RETL:
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 			op->delay = 1;
 			break;
 		case SPARC_INS_UNIMP:
-			op->type = R_ANAL_OP_TYPE_UNK;
+			op->type = R_ARCH_OP_TYPE_UNK;
 			break;
 		case SPARC_INS_CALL:
 			switch (INSOP(0).type) {
@@ -167,25 +167,25 @@ performed in big-endian byte order.
 				// TODO
 				break;
 			case SPARC_OP_REG:
-				op->type = R_ANAL_OP_TYPE_UCALL;
+				op->type = R_ARCH_OP_TYPE_UCALL;
 				op->delay = 1;
 				break;
 			default:
-				op->type = R_ANAL_OP_TYPE_CALL;
+				op->type = R_ARCH_OP_TYPE_CALL;
 				op->delay = 1;
 				op->jump = INSOP(0).imm;
 				break;
 			}
 			break;
 		case SPARC_INS_NOP:
-			op->type = R_ANAL_OP_TYPE_NOP;
+			op->type = R_ARCH_OP_TYPE_NOP;
 			break;
 		case SPARC_INS_CMP:
-			op->type = R_ANAL_OP_TYPE_CMP;
+			op->type = R_ARCH_OP_TYPE_CMP;
 			break;
 		case SPARC_INS_JMP:
 		case SPARC_INS_JMPL:
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ARCH_OP_TYPE_JMP;
 			op->delay = 1;
 			op->jump = INSOP(0).imm;
 			break;
@@ -198,7 +198,7 @@ performed in big-endian byte order.
 		case SPARC_INS_LDUB:
 		case SPARC_INS_LDUH:
 		case SPARC_INS_LDX:
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = R_ARCH_OP_TYPE_LOAD;
 			break;
 		case SPARC_INS_STBAR:
 		case SPARC_INS_STB:
@@ -207,13 +207,13 @@ performed in big-endian byte order.
 		case SPARC_INS_STH:
 		case SPARC_INS_STQ:
 		case SPARC_INS_STX:
-			op->type = R_ANAL_OP_TYPE_STORE;
+			op->type = R_ARCH_OP_TYPE_STORE;
 			break;
 		case SPARC_INS_ORCC:
 		case SPARC_INS_ORNCC:
 		case SPARC_INS_ORN:
 		case SPARC_INS_OR:
-			op->type = R_ANAL_OP_TYPE_OR;
+			op->type = R_ARCH_OP_TYPE_OR;
 			break;
 		case SPARC_INS_B:
 		case SPARC_INS_BMASK:
@@ -226,7 +226,7 @@ performed in big-endian byte order.
 		case SPARC_INS_FB:
 			switch (INSOP(0).type) {
 			case SPARC_OP_REG:
-				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->type = R_ARCH_OP_TYPE_CJMP;
 				op->delay = 1;
 				if (INSCC != SPARC_CC_ICC_N) { // never
 					op->jump = INSOP (1).imm;
@@ -236,7 +236,7 @@ performed in big-endian byte order.
 				}
 				break;
 			case SPARC_OP_IMM:
-				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->type = R_ARCH_OP_TYPE_CJMP;
 				op->delay = 1;
 				if (INSCC != SPARC_CC_ICC_N) { // never
 					op->jump = INSOP (0).imm;
@@ -265,7 +265,7 @@ performed in big-endian byte order.
 		case SPARC_INS_SUB:
 		case SPARC_INS_TSUBCCTV:
 		case SPARC_INS_TSUBCC:
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = R_ARCH_OP_TYPE_SUB;
 			break;
 		case SPARC_INS_ADDCC:
 		case SPARC_INS_ADDX:
@@ -289,7 +289,7 @@ performed in big-endian byte order.
 		case SPARC_INS_FPADD64:
 		case SPARC_INS_TADDCCTV:
 		case SPARC_INS_TADDCC:
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		case SPARC_INS_FDMULQ:
 		case SPARC_INS_FMUL8SUX16:
@@ -311,7 +311,7 @@ performed in big-endian byte order.
 		case SPARC_INS_UMUL:
 		case SPARC_INS_XMULX:
 		case SPARC_INS_XMULXHI:
-			op->type = R_ANAL_OP_TYPE_MUL;
+			op->type = R_ARCH_OP_TYPE_MUL;
 			break;
 		case SPARC_INS_FDIVD:
 		case SPARC_INS_FDIVQ:
@@ -322,10 +322,10 @@ performed in big-endian byte order.
 		case SPARC_INS_UDIVCC:
 		case SPARC_INS_UDIVX:
 		case SPARC_INS_UDIV:
-			op->type = R_ANAL_OP_TYPE_DIV;
+			op->type = R_ARCH_OP_TYPE_DIV;
 			break;
 		}
-		if (mask & R_ANAL_OP_MASK_VAL) {
+		if (mask & R_ARCH_OP_MASK_VAL) {
 			op_fillval (op, handle, insn);
 		}
 		cs_free (insn, n);

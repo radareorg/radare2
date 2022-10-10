@@ -16,22 +16,22 @@ struct evm_anal_info {
 
 static R_TH_LOCAL struct evm_anal_info *evm_ai = NULL;
 
-static void set_opdir(RAnalOp *op) {
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_LOAD:
-		op->direction = R_ANAL_OP_DIR_READ;
+static void set_opdir(RArchOp *op) {
+	switch (op->type & R_ARCH_OP_TYPE_MASK) {
+	case R_ARCH_OP_TYPE_LOAD:
+		op->direction = R_ARCH_OP_DIR_READ;
 		break;
-	case R_ANAL_OP_TYPE_STORE:
-		op->direction = R_ANAL_OP_DIR_WRITE;
+	case R_ARCH_OP_TYPE_STORE:
+		op->direction = R_ARCH_OP_DIR_WRITE;
 		break;
-	case R_ANAL_OP_TYPE_LEA:
-		op->direction = R_ANAL_OP_DIR_REF;
+	case R_ARCH_OP_TYPE_LEA:
+		op->direction = R_ARCH_OP_DIR_REF;
 		break;
-	case R_ANAL_OP_TYPE_CALL:
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_UJMP:
-	case R_ANAL_OP_TYPE_UCALL:
-		op->direction = R_ANAL_OP_DIR_EXEC;
+	case R_ARCH_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_JMP:
+	case R_ARCH_OP_TYPE_UJMP:
+	case R_ARCH_OP_TYPE_UCALL:
+		op->direction = R_ARCH_OP_DIR_EXEC;
 		break;
 	default:
 		break;
@@ -47,7 +47,7 @@ static void set_opdir(RAnalOp *op) {
  * addr of the push instruction, but at the addr of next jumpi instruction.
  * So in our example we are inserting (0xf, 0x42)
  */
-static int evm_add_push_to_db(RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int evm_add_push_to_db(RArchOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut64 next_cmd_addr = 0;
 	ut64 dst_addr = 0;
 	size_t i, push_size;
@@ -73,7 +73,7 @@ static ut64 evm_get_jmp_addr(ut64 addr) {
 	return ret;
 }
 
-static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	csh hndl = init_capstone (anal);
 
 	if (hndl == 0) {
@@ -89,16 +89,16 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		return -1;
 	}
 	op->size = 1;
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ARCH_OP_TYPE_UNK;
 	n = cs_disasm (hndl, (ut8 *)buf, len, addr, 1, &insn);
 	opsize = 1;
 	if (n < 1 || insn->size < 1) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 		goto beach;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (!r_str_cmp (insn->op_str, "0x", 2)) {
 			str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 		} else {
@@ -110,34 +110,34 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	op->id = insn->id;
 	switch (insn->id) {
 	case EVM_INS_SUB:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		break;
 	case EVM_INS_MOD:
 	case EVM_INS_SMOD:
-		op->type = R_ANAL_OP_TYPE_MOD;
+		op->type = R_ARCH_OP_TYPE_MOD;
 		break;
 	case EVM_INS_JUMP:
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		op->fail = op->addr + 1;
 		op->jump = evm_get_jmp_addr (addr);
 		esilprintf (op, "32,sp,-=,sp,[1],pc,:=");
 		break;
 	case EVM_INS_JUMPDEST:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		break;
 	case EVM_INS_JUMPI:
 		op->fail = op->addr + 1;
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		op->jump = evm_get_jmp_addr (addr);
 		break;
 	case EVM_INS_MLOAD:
 	case EVM_INS_SLOAD:
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		break;
 	case EVM_INS_MSTORE:
 	case EVM_INS_MSTORE8:
 	case EVM_INS_SSTORE:
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		break;
 	case EVM_INS_LT:
 	case EVM_INS_GT:
@@ -145,56 +145,56 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_SGT:
 	case EVM_INS_EQ:
 	case EVM_INS_ISZERO:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		break;
 	case EVM_INS_COINBASE:
 	case EVM_INS_BLOCKHASH:
 		break;
 	case EVM_INS_SHA3:
-		op->type = R_ANAL_OP_TYPE_CRYPTO;
+		op->type = R_ARCH_OP_TYPE_CRYPTO;
 		break;
 	case EVM_INS_CODECOPY:
 	case EVM_INS_SWAP1:
 	case EVM_INS_SWAP2:
 	case EVM_INS_SWAP12:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case EVM_INS_GAS:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case EVM_INS_MUL:
 	case EVM_INS_EXP:
 	case EVM_INS_MULMOD:
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		break;
 	case EVM_INS_STOP:
 	case EVM_INS_SUICIDE:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = R_ARCH_OP_TYPE_TRAP;
 		break;
 	case EVM_INS_DELEGATECALL:
 	case EVM_INS_CALLDATACOPY:
 	case EVM_INS_CALLDATALOAD:
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		break;
 	case EVM_INS_DIV:
 	case EVM_INS_SDIV:
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = R_ARCH_OP_TYPE_DIV;
 		break;
 	case EVM_INS_AND:
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = R_ARCH_OP_TYPE_AND;
 		break;
 	case EVM_INS_OR:
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = R_ARCH_OP_TYPE_OR;
 		break;
 	case EVM_INS_XOR:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		break;
 	case EVM_INS_NOT:
-		op->type = R_ANAL_OP_TYPE_NOT;
+		op->type = R_ARCH_OP_TYPE_NOT;
 		break;
 	case EVM_INS_REVERT:
 	case EVM_INS_RETURN:
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		break;
 	case EVM_INS_DUP1:
 	case EVM_INS_DUP2:
@@ -212,11 +212,11 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_DUP14:
 	case EVM_INS_DUP15:
 	case EVM_INS_DUP16:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		break;
 	case EVM_INS_PUSH1:
 		esilprintf (op, "0x%s,sp,=[1],32,sp,+=", insn->op_str);
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		evm_add_push_to_db (op, addr, buf, len);
 		break;
 	case EVM_INS_PUSH2:
@@ -239,76 +239,76 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_PUSH21:
 	case EVM_INS_PUSH22:
 	case EVM_INS_PUSH23:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		evm_add_push_to_db (op, addr, buf, len);
 		break;
 	// Handle https://github.com/capstone-engine/capstone/pull/1231. Can be removed when merged.
 	case EVM_INS_PUSH24:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		opsize = op->size = 25;
 		break;
 	case EVM_INS_PUSH25:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		opsize = op->size = 26;
 		break;
 	case EVM_INS_PUSH26:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		opsize = op->size = 27;
 		break;
 	case EVM_INS_PUSH27:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		opsize = op->size = 28;
 		break;
 	case EVM_INS_PUSH28:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		opsize = op->size = 29;
 		break;
 	case EVM_INS_PUSH29:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		opsize = op->size = 30;
 		break;
 	case EVM_INS_PUSH30:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		opsize = op->size = 31;
 		break;
 	case EVM_INS_PUSH31:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		opsize = op->size = 32;
 		break;
 	case EVM_INS_PUSH32:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		opsize = op->size = 33;
 		break;
 	case EVM_INS_ADD:
 	case EVM_INS_ADDMOD:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		break;
 	case EVM_INS_POP:
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 		break;
 	case EVM_INS_CODESIZE:
-		op->type = R_ANAL_OP_TYPE_LENGTH;
+		op->type = R_ARCH_OP_TYPE_LENGTH;
 		break;
 	case EVM_INS_LOG0:
 	case EVM_INS_LOG1:
 	case EVM_INS_LOG2:
 	case EVM_INS_LOG3:
 	case EVM_INS_LOG4:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = R_ARCH_OP_TYPE_TRAP;
 		break;
 	}
 beach:
 	set_opdir (op);
 #if 0
-	if (insn && mask & R_ANAL_OP_MASK_OPEX) {
+	if (insn && mask & R_ARCH_OP_MASK_OPEX) {
 		opex (&op->opex, hndl, insn);
 	}
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
+	if (mask & R_ARCH_OP_MASK_VAL) {
 		op_fillval (anal, op, &hndl, insn);
 	}
 #endif

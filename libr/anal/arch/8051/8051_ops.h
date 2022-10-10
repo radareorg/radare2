@@ -91,7 +91,7 @@ typedef struct {
 	ut8 op;
 	int cycles;
 	op8051 instr;	// instruction
-	_RAnalOpType type;
+	RArchOpType type;
 	char* string;	// disassembly output
 	size_t len;
 	argmask8051 mask;	// bits masked to determine opcode
@@ -101,7 +101,7 @@ typedef struct {
 } _8051_op_t;
 
 static _8051_op_t _8051_ops[] = {
-#	define T(op) R_ANAL_OP_TYPE_ ## op
+#	define T(op) R_ARCH_OP_TYPE_ ## op
 	{0x00, 1, OP_NOP, T (NOP), "nop", 1, M_NONE, 0, 0, 0},
 	{0x01, 2, OP_JMP, T (JMP), "ajmp 0x%04x", 2, M_ADDR11, A_ADDR11, 0, 0},
 	{0x02, 2, OP_JMP, T (JMP), "ljmp 0x%04x", 3, M_NONE, A_ADDR16, 0, 0},

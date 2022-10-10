@@ -30,7 +30,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	ut8 bytes[8] = {0};
 	char options[64];
 	struct disassemble_info disasm_obj;
@@ -64,7 +64,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	op->size = print_insn_s390 ((bfd_vma)addr, &disasm_obj);
 	if (op->size < 1) {
 		op->mnemonic = strdup ("invalid");
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		op->size = 2;
 	} else {
 		op->mnemonic = r_strbuf_drain (buf_global);

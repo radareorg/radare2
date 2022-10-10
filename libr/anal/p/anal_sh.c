@@ -178,7 +178,7 @@
 #define PC_IDX 16
 
 /* for {bra,bsr} only: (sign-extend 12bit offset)<<1 + PC +4 */
-static ut64 disarm_12bit_offset(RAnalOp *op, unsigned int insoff) {
+static ut64 disarm_12bit_offset(RArchOp *op, unsigned int insoff) {
 	ut64 off = insoff;
 	/* sign extend if higher bit is 1 (0x0800) */
 	if ((off & 0x0800) == 0x0800) {
@@ -237,7 +237,7 @@ static RAnalValue *anal_fill_r0_reg_ref(RAnal *anal, int reg, st64 size) {
 }
 
 // @(disp,PC) for size=2(.w), size=4(.l). disp is 0-extended
-static RAnalValue *anal_pcrel_disp_mov(RAnal* anal, RAnalOp* op, ut8 disp, int size) {
+static RAnalValue *anal_pcrel_disp_mov(RAnal* anal, RArchOp* op, ut8 disp, int size) {
 	RAnalValue *ret = r_anal_value_new ();
 	if (size==2) {
 		ret->base = op->addr + 4;
@@ -251,7 +251,7 @@ static RAnalValue *anal_pcrel_disp_mov(RAnal* anal, RAnalOp* op, ut8 disp, int s
 }
 
 //= PC+4+R<reg>
-static RAnalValue *anal_regrel_jump(RAnal* anal, RAnalOp* op, ut8 reg) {
+static RAnalValue *anal_regrel_jump(RAnal* anal, RArchOp* op, ut8 reg) {
 	RAnalValue *ret = r_anal_value_new ();
 	ret->reg = r_reg_get (anal->reg, regs[reg], R_REG_TYPE_GPR);
 	ret->base = op->addr + 4;
@@ -259,103 +259,103 @@ static RAnalValue *anal_regrel_jump(RAnal* anal, RAnalOp* op, ut8 reg) {
 }
 
 /* 16 decoder routines, based on 1st nibble value */
-static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
+static int first_nibble_is_0(RAnal* anal, RArchOp* op, ut16 code) { //STOP
 	RAnalValue *dst = NULL, *src0 = NULL, *src1 = NULL;
 	if (IS_BSRF (code)) {
 		/* Call 'far' subroutine Rn+PC+4 */
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = R_ARCH_OP_TYPE_UCALL;
 		op->delay = 1;
 		dst = anal_regrel_jump (anal, op, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "1,SETD,pc,2,+,pr,=,r%d,2,+,pc,+=", GET_TARGET_REG (code));
 	} else if (IS_BRAF (code)) {
-		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->type = R_ARCH_OP_TYPE_UJMP;
 		dst = anal_regrel_jump (anal, op, GET_TARGET_REG (code));
 		op->eob = true;
 		op->delay = 1;
 		r_strbuf_setf (&op->esil, "1,SETD,r%d,2,+,pc,+=", GET_TARGET_REG (code));
 	} else if (IS_RTS (code)) {
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		op->delay = 1;
 		op->eob = true;
 		r_strbuf_set (&op->esil, "pr,pc,=");
 	} else if (IS_RTE (code)) {
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		op->delay = 1;
 		op->eob = true;
 		// r_strbuf_set (&op->esil, "1,SETD,r15,[4],4,+,pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
 		//not sure if should be added 4 to pc
 		r_strbuf_set (&op->esil, "1,SETD,r15,[4],pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
 	} else if (IS_MOVB_REG_TO_R0REL (code)) {	//0000nnnnmmmm0100 mov.b <REG_M>,@(R0,<REG_N>)
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_r0_reg_ref (anal, GET_TARGET_REG (code), BYTE_SIZE);
 		r_strbuf_setf (&op->esil, "r%d,0xFF,&,r0,r%d,+,=[1]", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_MOVW_REG_TO_R0REL (code)) {
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_r0_reg_ref (anal, GET_TARGET_REG (code), WORD_SIZE);
 		r_strbuf_setf (&op->esil, "r%d,0xFFFF,&,r0,r%d,+,=[2]", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_MOVL_REG_TO_R0REL (code)) {
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_r0_reg_ref(anal, GET_TARGET_REG (code), LONG_SIZE);
 		r_strbuf_setf (&op->esil, "r%d,r0,r%d,+,=[4]", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_MOVB_R0REL_TO_REG (code)) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		src0 = anal_fill_r0_reg_ref (anal, GET_SOURCE_REG (code), BYTE_SIZE);
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r0,r%d,+,[1],r%d,=,0x000000FF,r%d,&=,r%d,0x80,&,?{,0xFFFFFF00,r%d,|=,}", GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 	} else if (IS_MOVW_R0REL_TO_REG (code)) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		src0 = anal_fill_r0_reg_ref (anal, GET_SOURCE_REG (code), WORD_SIZE);
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r0,r%d,+,[2],r%d,=,0x0000FFFF,r%d,&=,r%d,0x8000,&,?{,0xFFFF0000,r%d,|=,}", GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 	} else if (IS_MOVL_R0REL_TO_REG (code)) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		src0 = anal_fill_r0_reg_ref (anal, GET_SOURCE_REG (code), LONG_SIZE);
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r0,r%d,+,[4],r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_NOP (code)) {
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		r_strbuf_set (&op->esil, " ");
 	} else if (IS_CLRT (code)) {
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		r_strbuf_set (&op->esil, "0xFFFFFFFE,sr,&=");
 	} else if (IS_SETT (code)) {
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		r_strbuf_set (&op->esil, "0x1,sr,|=");
 	} else if (IS_CLRMAC (code)) {
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		r_strbuf_set (&op->esil, "0,mach,=,0,macl,=");
 	} else if (IS_DIV0U (code)) {
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = R_ARCH_OP_TYPE_DIV;
 		r_strbuf_set (&op->esil, "0xFFFFFCFE,sr,&=");
 	} else if (IS_MOVT (code)) {
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "0x1,sr,&,r%d,=", GET_TARGET_REG (code));
 	} else if (IS_MULL (code)) { //multiply long
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		src0 = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		src1 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		r_strbuf_setf (&op->esil, "r%d,r%d,*,macl,=", GET_TARGET_REG (code), GET_SOURCE_REG (code));
 	} else if (IS_SLEEP (code)) {
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		r_strbuf_set (&op->esil, "sleep_called,TRAP");
 	} else if (IS_STSMACH (code)) {	//0000nnnn0000101_ sts MAC*,<REG_N>
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "mach,r%d,=", GET_TARGET_REG (code));
 	} else if (IS_STSMACL (code)) {	//0000nnnn0000101_ sts MAC*,<REG_N>
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "macl,r%d,=", GET_TARGET_REG (code));
 	} else if (IS_STSLMACL (code)) {
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "macl,r%d,=", GET_TARGET_REG (code));
 	} else if (IS_STCSR1 (code)) {	//0000nnnn00010010 stc {sr,gbr,vbr,ssr},<REG_N>
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		//todo: plug in src
 		switch(GET_SOURCE_REG (code)) {
@@ -373,7 +373,7 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 			break;
 		}
 	} else if (IS_STSPR (code)) {	//0000nnnn00101010 sts PR,<REG_N>
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "pr,r%d,=", GET_TARGET_REG (code));
 	} else if (IS_MACL (code)) {
@@ -402,7 +402,7 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 			, GET_TARGET_REG (code), GET_SOURCE_REG (code),
 			GET_TARGET_REG (code), GET_SOURCE_REG (code),
 			GET_TARGET_REG (code), GET_SOURCE_REG (code));
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 	}
 	if (dst) {
 		r_vector_push (op->dsts, dst);
@@ -420,9 +420,9 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 }
 
 //nibble = 1; 0001nnnnmmmmi4*4 mov.l <REG_M>,@(<disp>,<REG_N>)
-static int movl_reg_rdisp(RAnal* anal, RAnalOp* op, ut16 code) {
+static int movl_reg_rdisp(RAnal* anal, RArchOp* op, ut16 code) {
 	RAnalValue *dst, *src;
-	op->type = R_ANAL_OP_TYPE_STORE;
+	op->type = R_ARCH_OP_TYPE_STORE;
 	src = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 	dst = anal_fill_reg_disp_mem (anal, GET_TARGET_REG (code), code & 0x0F, LONG_SIZE);
 	r_strbuf_setf (&op->esil, "r%d,r%d,0x%x,+,=[4]", GET_SOURCE_REG (code), GET_TARGET_REG (code), (code & 0xF) << 2);
@@ -433,71 +433,71 @@ static int movl_reg_rdisp(RAnal* anal, RAnalOp* op, ut16 code) {
 	return op->size;
 }
 
-static int first_nibble_is_2(RAnal* anal, RAnalOp* op, ut16 code) {
+static int first_nibble_is_2(RAnal* anal, RArchOp* op, ut16 code) {
 	RAnalValue *dst = NULL, *src0 = NULL, *src1 = NULL;
 	if (IS_MOVB_REG_TO_REGREF (code)) {	// 0010nnnnmmmm0000 mov.b <REG_M>,@<REG_N>
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_reg_ref (anal, GET_TARGET_REG (code), BYTE_SIZE);
 		r_strbuf_setf (&op->esil, "r%d,r%d,=[1]", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_MOVW_REG_TO_REGREF (code)) {
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_reg_ref (anal, GET_TARGET_REG (code), WORD_SIZE);
 		r_strbuf_setf (&op->esil, "r%d,r%d,=[2]", GET_SOURCE_REG (code) & 0xFF, GET_TARGET_REG (code));
 	} else if (IS_MOVL_REG_TO_REGREF (code)) {
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_reg_ref (anal, GET_TARGET_REG (code), LONG_SIZE);
 		r_strbuf_setf (&op->esil, "r%d,r%d,=[4]", GET_SOURCE_REG (code) & 0xFF, GET_TARGET_REG (code));
 	} else if (IS_AND_REGS (code)) {
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = R_ARCH_OP_TYPE_AND;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r%d,r%d,&=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_XOR_REGS (code)) {
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r%d,r%d,^=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_OR_REGS (code)) {
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = R_ARCH_OP_TYPE_OR;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r%d,r%d,|=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_PUSHB (code)) {
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		r_strbuf_setf (&op->esil, "1,r%d,-=,r%d,r%d,=[1]", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_PUSHW (code)) {
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		r_strbuf_setf (&op->esil, "2,r%d,-=,r%d,r%d,=[2]", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_PUSHL (code)) {
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		r_strbuf_setf (&op->esil, "4,r%d,-=,r%d,r%d,=[4]", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_TSTRR (code)) {
-		op->type = R_ANAL_OP_TYPE_ACMP;
+		op->type = R_ARCH_OP_TYPE_ACMP;
 		r_strbuf_setf (&op->esil, "1,sr,|=,r%d,r%d,&,?{,0xFFFFFFFE,sr,&=,}", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_CMPSTR (code)) {	//0010nnnnmmmm1100 cmp/str <REG_M>,<REG_N>
-		op->type = R_ANAL_OP_TYPE_ACMP;	//maybe not?
+		op->type = R_ARCH_OP_TYPE_ACMP;	//maybe not?
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		src1 = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,24,r%d,r%d,^,>>,0xFF,&,!,?{,1,sr,|=,},16,r%d,r%d,^,>>,0xFF,&,!,?{,1,sr,|=,},8,r%d,r%d,^,>>,0xFF,&,!,?{,1,sr,|=,},r%d,r%d,^,0xFF,&,!,?{,1,sr,|=,}", GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_XTRCT (code)) {	//0010nnnnmmmm1101 xtrct <REG_M>,<REG_N>
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		src1 = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "16,r%d,0xFFFF,&,<<,16,r%d,0xFFFF0000,&,>>,|,r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 	} else if (IS_DIV0S (code)) {
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = R_ARCH_OP_TYPE_DIV;
 		r_strbuf_setf (&op->esil, "0xFFFFFCFE,sr,&=,r%d,0x80000000,&,?{,0x200,sr,|=,},r%d,0x80000000,&,?{,0x100,sr,|=,},sr,1,sr,<<,^,0x200,&,?{,1,sr,|=,}", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_MULUW (code)) {
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		src0 = anal_fill_ai_rg(anal, GET_SOURCE_REG (code));
 		src1 = anal_fill_ai_rg(anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r%d,0xFFFF,&,r%d,0xFFFF,&,*,macl,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_MULSW (code)) {	//0010nnnnmmmm111_ mul{s,u}.w <REG_M>,<REG_N>
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		src0 = anal_fill_ai_rg(anal, GET_SOURCE_REG (code));
 		src1 = anal_fill_ai_rg(anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, S16_EXT("r%d") "," S16_EXT("r%d") ",*,macl,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
@@ -519,66 +519,66 @@ static int first_nibble_is_2(RAnal* anal, RAnalOp* op, ut16 code) {
 }
 
 
-static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
+static int first_nibble_is_3(RAnal* anal, RArchOp* op, ut16 code) {
 	RAnalValue *dst = NULL, *src0 = NULL, *src1 = NULL;
 	//TODO Handle carry/overflow , CMP/xx?
 	if (IS_ADD (code)) {
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r%d,r%d,+=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_ADDC (code)) {
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "sr,0x1,&,0xFFFFFFFE,sr,&=,r%d,+=,31,$c,sr,|,sr,:=,r%d,r%d,+=,31,$c,sr,|,sr,:=", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_ADDV (code)) {
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,r%d,+=,31,$o,sr,|=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_SUB (code)) {
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r%d,r%d,-=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_SUBC (code)) {
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "sr,1,&," CLR_T ",r%d,-=,31,$b,sr,|,sr,:=,r%d,r%d,-=,31,$b,sr,|,sr,:=", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_SUBV (code)) {
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, CLR_T ",r%d,r%d,-=,31,$o,sr,|,sr,:=", GET_SOURCE_REG(code), GET_TARGET_REG (code));
 	} else if (IS_CMPEQ (code)) {
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		src0 = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		src1 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&,r%d,r%d,^,!,|,sr,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_CMPGE (code)) {
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		src0 = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		src1 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,r%d,>=,?{,0x1,sr,|=,}", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_CMPGT (code)) {
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		src0 = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		src1 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,r%d,>,?{,0x1,sr,|=,}", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_CMPHI (code)) {
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		src0 = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		src1 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x100000000,+,r%d,0x100000000,+,>,?{,0x1,sr,|=,}", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_CMPHS (code)) {
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		src0 = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		src1 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x100000000,+,r%d,0x100000000,+,>=,?{,0x1,sr,|=,}", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_DIV1 (code)) {
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = R_ARCH_OP_TYPE_DIV;
 		src0 = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		src1 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		r_strbuf_setf (&op->esil,
@@ -606,12 +606,12 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 			GET_SOURCE_REG(code), GET_TARGET_REG (code),
 			GET_TARGET_REG (code));
 	} else if (IS_DMULU (code)) {
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		src1 = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "32,r%d,r%d,*,DUP,0xFFFFFFFF,&,macl,=,>>,mach,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_DMULS (code)) {
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		src0 = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		src1 = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "32,r%d,r%d,0x80000000,&,?{,0xFFFFFFFF00000000,+,},r%d,r%d,0x80000000,&,?{,0xFFFFFFFF00000000,+,},*,DUP,0xFFFFFFFF,&,macl,=,>>,mach,=", GET_SOURCE_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
@@ -633,144 +633,144 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 
 
 
-static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
+static int first_nibble_is_4(RAnal* anal, RArchOp* op, ut16 code) {
 	RAnalValue *dst = NULL;
 	switch(code & 0xF0FF) { //TODO: change to common } else if construction
 	case 0x4020:	//shal
-		op->type = R_ANAL_OP_TYPE_SAL;
+		op->type = R_ARCH_OP_TYPE_SAL;
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x80000000,&,?{,0x1,sr,|=,},1,r%d,<<=", GET_TARGET_REG (code), GET_TARGET_REG (code));
 		break;
 	case 0x4021:	//shar
-		op->type = R_ANAL_OP_TYPE_SAR;
+		op->type = R_ARCH_OP_TYPE_SAR;
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x1,&,?{,0x1,sr,|=,},0,r%d,0x80000000,&,?{,0x80000000,+,},1,r%d,>>=,r%d,|=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 		break;
 	case 0x4000:	//shll
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = R_ARCH_OP_TYPE_SHL;
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x80000000,&,?{,0x1,sr,|=,},1,r%d,<<=", GET_TARGET_REG (code), GET_TARGET_REG (code));
 		break;
 	case 0x4008:	//shll2
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = R_ARCH_OP_TYPE_SHL;
 		r_strbuf_setf (&op->esil, "2,r%d,<<=", GET_TARGET_REG (code));
 		break;
 	case 0x4018:	//shll8
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = R_ARCH_OP_TYPE_SHL;
 		r_strbuf_setf (&op->esil, "8,r%d,<<=", GET_TARGET_REG (code));
 		break;
 	case 0x4028:	//shll16
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = R_ARCH_OP_TYPE_SHL;
 		r_strbuf_setf (&op->esil, "16,r%d,<<=", GET_TARGET_REG (code));
 		break;
 	case 0x4001:	//shlr
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x1,&,?{,0x1,sr,|=,},1,r%d,>>=", GET_TARGET_REG (code), GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = R_ARCH_OP_TYPE_SHR;
 		break;
 	case 0x4009:	//shlr2
 		r_strbuf_setf (&op->esil, "2,r%d,>>=", GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = R_ARCH_OP_TYPE_SHR;
 		break;
 	case 0x4019:	//shlr8
 		r_strbuf_setf (&op->esil, "8,r%d,>>=", GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = R_ARCH_OP_TYPE_SHR;
 		break;
 	case 0x4029:	//shlr16
 		r_strbuf_setf (&op->esil, "16,r%d,>>=", GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = R_ARCH_OP_TYPE_SHR;
 		break;
 	default:
 		break;
 	}
 
 	if (IS_JSR (code)) {
-		// op->type = R_ANAL_OP_TYPE_UCALL; //call to reg
-		op->type = R_ANAL_OP_TYPE_RCALL; //call to reg
+		// op->type = R_ARCH_OP_TYPE_UCALL; //call to reg
+		op->type = R_ARCH_OP_TYPE_RCALL; //call to reg
 		op->delay = 1;
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "1,SETD,pc,2,+,pr,=,r%d,pc,=", GET_TARGET_REG (code));
 	} else if (IS_JMP (code)) {
-		op->type = R_ANAL_OP_TYPE_UJMP; //jmp to reg
+		op->type = R_ARCH_OP_TYPE_UJMP; //jmp to reg
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		op->delay = 1;
 		op->eob = true;
 		r_strbuf_setf (&op->esil, "1,SETD,r%d,pc,=", GET_TARGET_REG (code));
 	} else if (IS_CMPPL (code)) {
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0,r%d,>,?{,0x1,sr,|=,}", GET_TARGET_REG (code));
 	} else if (IS_CMPPZ (code)) {
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0,r%d,>=,?{,0x1,sr,|=,}", GET_TARGET_REG (code));
 	} else if (IS_LDCLSR (code)) {
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 		r_strbuf_setf (&op->esil, "r%d,[4],0x0FFF0FFF,&,sr,=,4,r%d,+=", GET_TARGET_REG (code), GET_TARGET_REG (code));
 	} else if (IS_LDCLSRGBR (code)) {
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 		r_strbuf_setf (&op->esil, "r%d,[4],gbr,=,4,r%d,+=", GET_TARGET_REG (code), GET_TARGET_REG (code));
 	} else if (IS_LDCLSRVBR (code)) {
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 		r_strbuf_setf (&op->esil, "r%d,[4],vbr,=,4,r%d,+=", GET_TARGET_REG (code), GET_TARGET_REG (code));
 		//todo ssr?
 	} else if (IS_LDSLMACH (code)) {
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 		r_strbuf_setf (&op->esil, "r%d,[4],mach,=,4,r%d,+=", GET_TARGET_REG (code), GET_TARGET_REG (code));
 	} else if (IS_LDSLMACL (code)) {
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 		r_strbuf_setf (&op->esil, "r%d,[4],macl,=,4,r%d,+=", GET_TARGET_REG (code), GET_TARGET_REG (code));
 	} else if (IS_LDSLPR (code)) {
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 		r_strbuf_setf (&op->esil, "r%d,[4],pr,=,4,r%d,+=", GET_TARGET_REG (code), GET_TARGET_REG (code));
 	} else if (IS_LDCSR (code)) {
 		r_strbuf_setf (&op->esil, "r%d,0x0FFF0FFF,&,sr,=", GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 	} else if (IS_LDCGBR (code)) {
 		r_strbuf_setf (&op->esil, "r%d,gbr,=", GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 	} else if (IS_LDCVBR (code)) {
 		r_strbuf_setf (&op->esil, "r%d,vbr,=", GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 	} else if (IS_LDSMACH (code)) {
 		r_strbuf_setf (&op->esil, "r%d,mach,=", GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 	} else if (IS_LDSMACL (code)) {
 		r_strbuf_setf (&op->esil, "r%d,macl,=", GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 	} else if (IS_LDSPR (code)) {
 		r_strbuf_setf (&op->esil, "r%d,pr,=", GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 	} else if (IS_ROTR (code)) {
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x1,&,sr,|=,0x1,r%d,>>>,r%d,=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
-		op->type = (code & 1)? R_ANAL_OP_TYPE_ROR:R_ANAL_OP_TYPE_ROL;
+		op->type = (code & 1)? R_ARCH_OP_TYPE_ROR:R_ARCH_OP_TYPE_ROL;
 	} else if (IS_ROTL (code)) {
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0x1,r%d,<<<,r%d,=,r%d,0x1,&,sr,|=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
-		op->type = (code & 1)? R_ANAL_OP_TYPE_ROR:R_ANAL_OP_TYPE_ROL;
+		op->type = (code & 1)? R_ARCH_OP_TYPE_ROR:R_ARCH_OP_TYPE_ROL;
 	} else if (IS_ROTCR (code)) {
 		r_strbuf_setf (&op->esil, "0,sr,0x1,&,?{,0x80000000,},0xFFFFFFFE,sr,&=,r%d,1,&,sr,|=,1,r%d,>>=,r%d,|=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
-		op->type = (code & 1)? R_ANAL_OP_TYPE_ROR:R_ANAL_OP_TYPE_ROL;
+		op->type = (code & 1)? R_ARCH_OP_TYPE_ROR:R_ARCH_OP_TYPE_ROL;
 	} else if (IS_ROTCL (code)) {
 		r_strbuf_setf (&op->esil, "sr,0x1,&,0xFFFFFFFE,sr,&=,r%d,0x80000000,&,?{,1,sr,|=,},1,r%d,<<=,r%d,|=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
-		op->type = (code & 1)? R_ANAL_OP_TYPE_ROR:R_ANAL_OP_TYPE_ROL;
+		op->type = (code & 1)? R_ARCH_OP_TYPE_ROR:R_ARCH_OP_TYPE_ROL;
 	} else if (IS_STCLSR (code)) {
 		r_strbuf_setf (&op->esil, "4,r%d,-=,sr,r%d,=[4]", GET_TARGET_REG (code), GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 	} else if (IS_STCLGBR (code)) {
 		r_strbuf_setf (&op->esil, "4,r%d,-=,gbr,r%d,=[4]", GET_TARGET_REG (code), GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 	} else if (IS_STCLVBR (code)) {
 		r_strbuf_setf (&op->esil, "4,r%d,-=,vbr,r%d,=[4]", GET_TARGET_REG (code), GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 	} else if (IS_STSLMACL (code)) {
 		r_strbuf_setf (&op->esil, "4,r%d,-=,macl,r%d,=[4]", GET_TARGET_REG (code), GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 	} else if (IS_STSLMACH (code)) {
 		r_strbuf_setf (&op->esil, "4,r%d,-=,mach,r%d,=[4]", GET_TARGET_REG (code), GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 	} else if (IS_STSLPR (code)) {
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		r_strbuf_setf (&op->esil, "4,r%d,-=,pr,r%d,=[4]", GET_TARGET_REG (code), GET_TARGET_REG (code));
 	} else if (IS_TASB (code)) {
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,[1],!,?{,0x80,r%d,=[1],1,sr,|=,}", GET_TARGET_REG (code), GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 	} else if (IS_DT (code)) {
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,1,r%d,-=,$z,sr,|,sr,:=", GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 	} else if (IS_MACW(code)) {
 		r_strbuf_setf (&op->esil,
 			"0x2,sr,&,!,?{," //if S==0
@@ -804,7 +804,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 			GET_TARGET_REG (code), GET_SOURCE_REG (code),
 			GET_TARGET_REG (code), GET_SOURCE_REG (code),
 			GET_TARGET_REG (code), GET_SOURCE_REG (code));
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 	}
 	if (dst) {
 		r_vector_push (op->dsts, dst);
@@ -814,9 +814,9 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 }
 
 //nibble=5; 0101nnnnmmmmi4*4 mov.l @(<disp>,<REG_M>),<REG_N>
-static int movl_rdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
+static int movl_rdisp_reg(RAnal* anal, RArchOp* op, ut16 code) {
 	RAnalValue *dst, *src;
-	op->type = R_ANAL_OP_TYPE_LOAD;
+	op->type = R_ARCH_OP_TYPE_LOAD;
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	src = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, LONG_SIZE);
 	r_strbuf_setf (&op->esil, "r%d,0x%x,+,[4],r%d,=", GET_SOURCE_REG (code), (code&0xF) * 4, GET_TARGET_REG (code));
@@ -827,31 +827,31 @@ static int movl_rdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	return op->size;
 }
 
-static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
+static int first_nibble_is_6(RAnal* anal, RArchOp* op, ut16 code) {
 	RAnalValue *dst = NULL, *src = NULL;
 	if (IS_MOV_REGS (code)) {
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		src = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r%d,r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_MOVB_REGREF_TO_REG (code)) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		src = anal_fill_reg_ref (anal, GET_SOURCE_REG (code), BYTE_SIZE);
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "0x000000FF,r%d,&=,r%d,[1],DUP,0x80,&,?{,0xFFFFFF00,|=,},r%d,=", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_MOVW_REGREF_TO_REG (code)) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		src = anal_fill_reg_ref (anal, GET_SOURCE_REG (code), WORD_SIZE);
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "0x0000FFFF,r%d,&=,r%d,[2],DUP,0x8000,&,?{,0xFFFF0000,|=,},r%d,=", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_MOVL_REGREF_TO_REG (code)) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		src = anal_fill_reg_ref (anal, GET_SOURCE_REG (code), LONG_SIZE);
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r%d,[4],r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_EXT (code)) {
 		//ext{s,u}.{b,w} instructs. todo : more detail ?
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		src = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		switch(code & 0xF) {
@@ -872,41 +872,41 @@ static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
 			break;
 		}
 	} else if (IS_MOVB_POP (code)) {
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r%d,[1],DUP,0x80,&,?{,0xFFFFFF00,|,},r%d,=,1,r%d,+=", GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_SOURCE_REG (code));
 	} else if (IS_MOVW_POP (code)) {
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r%d,[2],DUP,0x8000,&,?{,0xFFFF0000,|,},r%d,=,2,r%d,+=", GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_SOURCE_REG (code));
 	} else if (IS_MOVL_POP (code)) {
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "r%d,[4],r%d,=,4,r%d,+=", GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_SOURCE_REG (code));
 	} else if (IS_NEG (code)) {
 		//todo: neg and negc details
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		r_strbuf_setf (&op->esil, "r%d,0,-,r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 		src = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	} else if (IS_NEGC (code)) {
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		r_strbuf_setf (&op->esil, "1,sr,&,0xFFFFFFFE,sr,&=,r%d,+,0,-,31,$b,sr,|,sr,=,r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 		src = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	} else if (IS_NOT (code)) {
 		//todo : details?
 		r_strbuf_setf (&op->esil, "0xFFFFFFFF,r%d,^,r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_NOT;
+		op->type = R_ARCH_OP_TYPE_NOT;
 		src = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	} else if (IS_SWAPB (code)) {
 		r_strbuf_setf (&op->esil, "r%d,0xFFFF0000,&,8,r%d,0xFF,&,<<,|,8,r%d,0xFF00,&,>>,|,r%d,=", GET_SOURCE_REG (code), GET_SOURCE_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		//todo : details
 	} else if (IS_SWAPW (code)) {
 		r_strbuf_setf (&op->esil, "16,r%d,0xFFFF,&,<<,16,r%d,0xFFFF0000,&,>>,|,r%d,=", GET_SOURCE_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 	}
 	if (dst) {
 		r_vector_push (op->dsts, dst);
@@ -921,9 +921,9 @@ static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
 
 
 //nibble=7; 0111nnnni8*1.... add #<imm>,<REG_N>
-static int add_imm(RAnal* anal, RAnalOp* op, ut16 code) {
+static int add_imm(RAnal* anal, RArchOp* op, ut16 code) {
 	RAnalValue *dst, *src;
-	op->type = R_ANAL_OP_TYPE_ADD;
+	op->type = R_ARCH_OP_TYPE_ADD;
 	src = anal_fill_im (anal, (st8)(code & 0xFF)); //Casting to (st8) forces sign-extension.
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	r_strbuf_setf (&op->esil, "0x%x,DUP,0x80,&,?{,0xFFFFFF00,|,},r%d,+=", code & 0xFF, GET_TARGET_REG (code));
@@ -934,10 +934,10 @@ static int add_imm(RAnal* anal, RAnalOp* op, ut16 code) {
 	return op->size;
 }
 
-static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code) {
+static int first_nibble_is_8(RAnal* anal, RArchOp* op, ut16 code) {
 	RAnalValue *dst = NULL, *src = NULL;
 	if (IS_BT_OR_BF (code)) {
-		op->type = R_ANAL_OP_TYPE_CJMP; //Jump if true or jump if false insns
+		op->type = R_ARCH_OP_TYPE_CJMP; //Jump if true or jump if false insns
 		op->jump = disarm_8bit_offset (op->addr, GET_BTF_OFFSET (code));
 		op->fail = op->addr + 2 ;
 		op->eob = true;
@@ -954,28 +954,28 @@ static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code) {
 		}
 	} else if (IS_MOVB_REGDISP_R0 (code)) {
 		// 10000100mmmmi4*1 mov.b @(<disp>,<REG_M>),R0
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		dst = anal_fill_ai_rg (anal, 0);
 		src = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, BYTE_SIZE);
 		r_strbuf_setf (&op->esil, "r%d,0x%x,+,[1],DUP,0x80,&,?{,0xFFFFFF00,|,},r0,=", GET_SOURCE_REG (code), code & 0xF);
 	} else if (IS_MOVW_REGDISP_R0 (code)) {
 		// 10000101mmmmi4*2 mov.w @(<disp>,<REG_M>),R0
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		dst = anal_fill_ai_rg (anal, 0);
 		src = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, WORD_SIZE);
 		r_strbuf_setf (&op->esil, "r%d,0x%x,+,[2],DUP,0x8000,&,?{,0xFFFF0000,|,},r0,=", GET_SOURCE_REG (code), (code & 0xF) * 2);
 	} else if (IS_CMPIMM (code)) {
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0x%x,DUP,0x80,&,?{,0xFFFFFF00,|,},r0,==,$z,sr,|,sr,:=", code & 0xFF);
 	} else if (IS_MOVB_R0_REGDISP (code)) {
 		/* 10000000mmmmi4*1 mov.b R0,@(<disp>,<REG_M>)*/
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		src = anal_fill_ai_rg (anal, 0);
 		dst = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, BYTE_SIZE);
 		r_strbuf_setf (&op->esil, "r0,0xFF,&,0x%x,r%d,+,=[1]", code & 0xF, GET_SOURCE_REG (code));
 	} else if (IS_MOVW_R0_REGDISP (code)) {
 		// 10000001mmmmi4*2 mov.w R0,@(<disp>,<REG_M>))
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		src = anal_fill_ai_rg (anal, 0);
 		dst = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, WORD_SIZE);
 		r_strbuf_setf (&op->esil, "r0,0xFFFF,&,0x%x,r%d,+,=[2]", (code & 0xF) * 2, GET_SOURCE_REG (code));
@@ -992,9 +992,9 @@ static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code) {
 }
 
 //nibble=9; 1001nnnni8p2.... mov.w @(<disp>,PC),<REG_N>
-static int movw_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
+static int movw_pcdisp_reg(RAnal* anal, RArchOp* op, ut16 code) {
 	RAnalValue *dst, *src;
-	op->type = R_ANAL_OP_TYPE_LOAD;
+	op->type = R_ARCH_OP_TYPE_LOAD;
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	src = r_anal_value_new ();
 	src->base = (code & 0xFF) * 2+op->addr + 4;
@@ -1008,9 +1008,9 @@ static int movw_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 }
 
 //nibble=A; 1010i12......... bra <bdisp12>
-static int bra(RAnal* anal, RAnalOp* op, ut16 code) {
+static int bra(RAnal* anal, RArchOp* op, ut16 code) {
 	/* Unconditional branch, relative to PC */
-	op->type = R_ANAL_OP_TYPE_JMP;
+	op->type = R_ARCH_OP_TYPE_JMP;
 	op->delay = 1;
 	op->jump = disarm_12bit_offset (op, GET_BRA_OFFSET (code));
 	op->eob = true;
@@ -1019,24 +1019,24 @@ static int bra(RAnal* anal, RAnalOp* op, ut16 code) {
 }
 
 //nibble=B; 1011i12......... bsr <bdisp12>
-static int bsr(RAnal* anal, RAnalOp* op, ut16 code) {
+static int bsr(RAnal* anal, RArchOp* op, ut16 code) {
 	/* Subroutine call, relative to PC */
-	op->type = R_ANAL_OP_TYPE_CALL;
+	op->type = R_ARCH_OP_TYPE_CALL;
 	op->jump = disarm_12bit_offset (op, GET_BRA_OFFSET (code));
 	op->delay = 1;
 	r_strbuf_setf (&op->esil, "1,SETD,pc,2,+,pr,=,0x%" PFMT64x ",pc,=", op->jump);
 	return op->size;
 }
 
-static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
+static int first_nibble_is_c(RAnal* anal, RArchOp* op, ut16 code) {
 	RAnalValue *dst = NULL, *src0 = NULL, *src1 = NULL;
 	if (IS_TRAP (code)) {
-		op->type = R_ANAL_OP_TYPE_SWI;
+		op->type = R_ARCH_OP_TYPE_SWI;
 		op->val = (ut8)(code & 0xFF);
 		r_strbuf_setf (&op->esil, "4,r15,-=,sr,r15,=[4],4,r15,-=,2,pc,-,r15,=[4],2,0x%x,<<,4,+,vbr,+,pc,=", code & 0xFF);
 	} else if (IS_MOVA_PCREL_R0 (code)) {
 		// 11000111i8p4.... mova @(<disp>,PC),R0
-		op->type = R_ANAL_OP_TYPE_LEA;
+		op->type = R_ARCH_OP_TYPE_LEA;
 		src0 = anal_pcrel_disp_mov (anal, op, code & 0xFF, LONG_SIZE);	//this is wrong !
 		dst = anal_fill_ai_rg (anal, 0); //Always R0
 		r_strbuf_setf (&op->esil, "0x%x,pc,+,r0,=", (code & 0xFF) * 4);
@@ -1047,19 +1047,19 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 		switch(code & 0xFF00) {
 		case 0xC800:	//tst
 			//TODO : get correct op->dst ! (T flag)
-			op->type = R_ANAL_OP_TYPE_ACMP;
+			op->type = R_ARCH_OP_TYPE_ACMP;
 			r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r0,0x%x,&,!,?{,1,sr,|=,}", code & 0xFF);
 			break;
 		case 0xC900:	//and
-			op->type = R_ANAL_OP_TYPE_AND;
+			op->type = R_ARCH_OP_TYPE_AND;
 			r_strbuf_setf (&op->esil, "0x%x,r0,&=", code & 0xFF);
 			break;
 		case 0xCA00:	//xor
-			op->type = R_ANAL_OP_TYPE_XOR;
+			op->type = R_ARCH_OP_TYPE_XOR;
 			r_strbuf_setf (&op->esil, "0x%x,r0,^=", code & 0xFF);
 			break;
 		case 0xCB00:	//or
-			op->type = R_ANAL_OP_TYPE_OR;
+			op->type = R_ARCH_OP_TYPE_OR;
 			r_strbuf_setf (&op->esil, "0x%x,r0,|=", code & 0xFF);
 			break;
 		}
@@ -1068,45 +1068,45 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 		switch(code & 0xFF00) {
 		case 0xCC00:	//tst
 			//TODO : get correct op->dst ! (T flag)
-			op->type = R_ANAL_OP_TYPE_ACMP;
+			op->type = R_ARCH_OP_TYPE_ACMP;
 			r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r0,gbr,+,[1],0x%x,&,!,?{,1,sr,|=,}", code & 0xFF);
 			break;
 		case 0xCD00:	//and
-			op->type = R_ANAL_OP_TYPE_AND;
+			op->type = R_ARCH_OP_TYPE_AND;
 			r_strbuf_setf (&op->esil, "r0,gbr,+,[1],0x%x,&,r0,gbr,+,=[1]", code & 0xFF);
 			break;
 		case 0xCE00:	//xor
-			op->type = R_ANAL_OP_TYPE_XOR;
+			op->type = R_ARCH_OP_TYPE_XOR;
 			r_strbuf_setf (&op->esil, "r0,gbr,+,[1],0x%x,^,r0,gbr,+,=[1]", code & 0xFF);
 			break;
 		case 0xCF00:	//or
-			op->type = R_ANAL_OP_TYPE_OR;
+			op->type = R_ARCH_OP_TYPE_OR;
 			r_strbuf_setf (&op->esil, "r0,gbr,+,[1],0x%x,|,r0,gbr,+,=[1]", code & 0xFF);
 			break;
 		}
 		//TODO : implement @(R0,gbr) dest and src[1]
 	} else if (IS_MOVB_R0_GBRREF (code)) {
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		src0 = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[1]", code & 0xFF);
 	} else if (IS_MOVW_R0_GBRREF (code)) {
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		src0 = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[2]", (code & 0xFF) * 2);
 	} else if (IS_MOVL_R0_GBRREF (code)) {
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		src0 = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[4]", (code & 0xFF) * 4);
 	} else if (IS_MOVB_GBRREF_R0 (code)) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		dst = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[1],DUP,0x80,&,?{,0xFFFFFF00,|,},r0,=", (code & 0xFF));
 	} else if (IS_MOVW_GBRREF_R0 (code)) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		dst = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[2],DUP,0x8000,&,?{,0xFFFF0000,|,},r0,=", (code & 0xFF)*2);
 	} else if (IS_MOVL_GBRREF_R0 (code)) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		dst = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[4],r0,=", (code & 0xFF) * 4);
 	}
@@ -1127,9 +1127,9 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 }
 
 //nibble=d; 1101nnnni8 : mov.l @(<disp>,PC), Rn
-static int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
+static int movl_pcdisp_reg(RAnal* anal, RArchOp* op, ut16 code) {
 	RAnalValue *dst, *src;
-	op->type = R_ANAL_OP_TYPE_LOAD;
+	op->type = R_ARCH_OP_TYPE_LOAD;
 	src = anal_pcrel_disp_mov (anal, op, code & 0xFF, LONG_SIZE);
 	//TODO: check it
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
@@ -1143,9 +1143,9 @@ static int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 }
 
 //nibble=e; 1110nnnni8*1.... mov #<imm>,<REG_N>
-static int mov_imm_reg(RAnal* anal, RAnalOp* op, ut16 code) {
+static int mov_imm_reg(RAnal* anal, RArchOp* op, ut16 code) {
 	RAnalValue *dst, *src;
-	op->type = R_ANAL_OP_TYPE_MOV;
+	op->type = R_ARCH_OP_TYPE_MOV;
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	src = anal_fill_im (anal, (st8)(code & 0xFF));
 	r_strbuf_setf (&op->esil, "0x%x,r%d,=,r%d,0x80,&,?{,0xFFFFFF00,r%d,|=,}", code & 0xFF, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
@@ -1157,14 +1157,14 @@ static int mov_imm_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 }
 
 //nibble=f;
-static int fpu_insn(RAnal* anal, RAnalOp* op, ut16 code) {
+static int fpu_insn(RAnal* anal, RArchOp* op, ut16 code) {
 	//Not interested on FPU stuff for now
-	op->family = R_ANAL_OP_FAMILY_FPU;
+	op->family = R_ARCH_OP_FAMILY_FPU;
 	return op->size;
 }
 
 /* Table of routines for further analysis based on 1st nibble */
-static int (*first_nibble_decode[])(RAnal*,RAnalOp*,ut16) = {
+static int (*first_nibble_decode[])(RAnal*,RArchOp*,ut16) = {
 	first_nibble_is_0,
 	movl_reg_rdisp,
 	first_nibble_is_2,
@@ -1256,7 +1256,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS ()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS ()
 
-static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+static int disassemble(RAnal *a, RArchOp *op, const ut8 *buf, int len) {
 	ut8 bytes[BUFSZ] = {0};
 	struct disassemble_info disasm_obj = {0};
 	if (len < 2) {
@@ -1294,14 +1294,14 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 /* This is the basic operation analysis. Just initialize and jump to
  * routines defined in first_nibble_decode table
  */
-static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int sh_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *data, int len, RArchOpMask mask) {
 	if (!op || !data || len < 2) {
 		return 0;
 	}
 	op->addr = addr;
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ARCH_OP_TYPE_UNK;
 	op->size = 2;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->size = disassemble (anal, op, data, len);
 		// should be always 2?
 	}

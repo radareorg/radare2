@@ -86,7 +86,7 @@ struct loongarch_anal_opcode {
 	const ut32 mask; /* High 1 byte is main opcode and it must be 0xf. */
 	const char * const name;
 	const ut32 index;
-	const ut32 r_type; /*R_ANAL_OP_TYPE*/
+	const ut32 r_type; /*R_ARCH_OP_TYPE*/
 };
 
 #define HT_NUM 32
@@ -501,16 +501,16 @@ static struct loongarch_anal_opcode la_lmm_opcodes[] = {
 	{ 0x2800000, 0xffc00000, "addi.w", LA_INS_ADDI_W },
 	{ 0x2c00000, 0xffc00000, "addi.d", LA_INS_ADDI_D },
 	{ 0x3000000, 0xffc00000, "lu52i.d", LA_INS_LU52I_D },
-	{ 0x3400000, 0xffc00000, "andi", LA_INS_ANDI, R_ANAL_OP_TYPE_AND },
-	{ 0x3800000, 0xffc00000, "ori", LA_INS_ORI, R_ANAL_OP_TYPE_OR},
-	{ 0x3c00000, 0xffc00000, "xori", LA_INS_XORI, R_ANAL_OP_TYPE_XOR },
-	{ 0x10000000, 0xfc000000, "addu16i.d", LA_INS_ADDU16I_D, R_ANAL_OP_TYPE_ADD },
+	{ 0x3400000, 0xffc00000, "andi", LA_INS_ANDI, R_ARCH_OP_TYPE_AND },
+	{ 0x3800000, 0xffc00000, "ori", LA_INS_ORI, R_ARCH_OP_TYPE_OR},
+	{ 0x3c00000, 0xffc00000, "xori", LA_INS_XORI, R_ARCH_OP_TYPE_XOR },
+	{ 0x10000000, 0xfc000000, "addu16i.d", LA_INS_ADDU16I_D, R_ARCH_OP_TYPE_ADD },
 	{ 0x14000000, 0xfe000000, "lu12i.w", LA_INS_LU12I_W },
 	{ 0x16000000, 0xfe000000, "lu32i.d", LA_INS_LU32I_D },
-	{ 0x18000000, 0xfe000000, "pcaddi", LA_INS_PCADDI, R_ANAL_OP_TYPE_ADD},
-	{ 0x1a000000, 0xfe000000, "pcalau12i", LA_INS_PCALAU12I, R_ANAL_OP_TYPE_ADD },
-	{ 0x1c000000, 0xfe000000, "pcaddu12i", LA_INS_PCADDU12I, R_ANAL_OP_TYPE_ADD},
-	{ 0x1e000000, 0xfe000000, "pcaddu18i", LA_INS_PCADDU18I, R_ANAL_OP_TYPE_ADD },
+	{ 0x18000000, 0xfe000000, "pcaddi", LA_INS_PCADDI, R_ARCH_OP_TYPE_ADD},
+	{ 0x1a000000, 0xfe000000, "pcalau12i", LA_INS_PCALAU12I, R_ARCH_OP_TYPE_ADD },
+	{ 0x1c000000, 0xfe000000, "pcaddu12i", LA_INS_PCADDU12I, R_ARCH_OP_TYPE_ADD},
+	{ 0x1e000000, 0xfe000000, "pcaddu18i", LA_INS_PCADDU18I, R_ARCH_OP_TYPE_ADD },
 	{0}
 };
 static struct loongarch_anal_opcode la_privilege_opcodes[] = {
@@ -541,75 +541,75 @@ static struct loongarch_anal_opcode la_privilege_opcodes[] = {
 };
 
 static struct loongarch_anal_opcode la_jmp_opcodes[] = {
-	{ 0x40000000, 0xfc000000, "beqz", LA_INS_BEQZ, R_ANAL_OP_TYPE_CJMP },
-	{ 0x44000000, 0xfc000000, "bnez", LA_INS_BNEZ, R_ANAL_OP_TYPE_CJMP },
-	{ 0x48000000, 0xfc000300, "bceqz", LA_INS_BCEQZ, R_ANAL_OP_TYPE_CJMP },
-	{ 0x48000100, 0xfc000300, "bcnez", LA_INS_BCNEZ, R_ANAL_OP_TYPE_CJMP },
-	{ 0x4c000000, 0xfc000000, "jirl", LA_INS_JIRL, R_ANAL_OP_TYPE_RCALL },
-	{ 0x50000000, 0xfc000000, "b", LA_INS_B, R_ANAL_OP_TYPE_JMP },
-	{ 0x54000000, 0xfc000000, "bl", LA_INS_BL, R_ANAL_OP_TYPE_CALL },
-	{ 0x58000000, 0xfc000000, "beq", LA_INS_BEQ, R_ANAL_OP_TYPE_CJMP },
-	{ 0x5c000000, 0xfc000000, "bne", LA_INS_BNE, R_ANAL_OP_TYPE_CJMP },
-	{ 0x60000000, 0xfc000000, "blt", LA_INS_BLT, R_ANAL_OP_TYPE_CJMP },
-	{ 0x60000000, 0xfc000000, "bgt", LA_INS_BGT, R_ANAL_OP_TYPE_CJMP },
-	{ 0x60000000, 0xfc00001f, "bltz", LA_INS_BLTZ, R_ANAL_OP_TYPE_CJMP },
-	{ 0x60000000, 0xfc0003e0, "bgtz", LA_INS_BGTZ, R_ANAL_OP_TYPE_CJMP },
-	{ 0x64000000, 0xfc000000, "bge", LA_INS_BGE, R_ANAL_OP_TYPE_CJMP },
-	{ 0x64000000, 0xfc000000, "ble", LA_INS_BLE, R_ANAL_OP_TYPE_CJMP },
-	{ 0x64000000, 0xfc00001f, "bgez", LA_INS_BGEZ, R_ANAL_OP_TYPE_CJMP },
-	{ 0x64000000, 0xfc0003e0, "blez", LA_INS_BLEZ, R_ANAL_OP_TYPE_CJMP },
-	{ 0x68000000, 0xfc000000, "bltu", LA_INS_BLTU, R_ANAL_OP_TYPE_CJMP },
-	{ 0x68000000, 0xfc000000, "bgtu", LA_INS_BGTU, R_ANAL_OP_TYPE_CJMP },
-	{ 0x6c000000, 0xfc000000, "bgeu", LA_INS_BGEU, R_ANAL_OP_TYPE_CJMP },
-	{ 0x6c000000, 0xfc000000, "bleu", LA_INS_BLEU, R_ANAL_OP_TYPE_CJMP },
+	{ 0x40000000, 0xfc000000, "beqz", LA_INS_BEQZ, R_ARCH_OP_TYPE_CJMP },
+	{ 0x44000000, 0xfc000000, "bnez", LA_INS_BNEZ, R_ARCH_OP_TYPE_CJMP },
+	{ 0x48000000, 0xfc000300, "bceqz", LA_INS_BCEQZ, R_ARCH_OP_TYPE_CJMP },
+	{ 0x48000100, 0xfc000300, "bcnez", LA_INS_BCNEZ, R_ARCH_OP_TYPE_CJMP },
+	{ 0x4c000000, 0xfc000000, "jirl", LA_INS_JIRL, R_ARCH_OP_TYPE_RCALL },
+	{ 0x50000000, 0xfc000000, "b", LA_INS_B, R_ARCH_OP_TYPE_JMP },
+	{ 0x54000000, 0xfc000000, "bl", LA_INS_BL, R_ARCH_OP_TYPE_CALL },
+	{ 0x58000000, 0xfc000000, "beq", LA_INS_BEQ, R_ARCH_OP_TYPE_CJMP },
+	{ 0x5c000000, 0xfc000000, "bne", LA_INS_BNE, R_ARCH_OP_TYPE_CJMP },
+	{ 0x60000000, 0xfc000000, "blt", LA_INS_BLT, R_ARCH_OP_TYPE_CJMP },
+	{ 0x60000000, 0xfc000000, "bgt", LA_INS_BGT, R_ARCH_OP_TYPE_CJMP },
+	{ 0x60000000, 0xfc00001f, "bltz", LA_INS_BLTZ, R_ARCH_OP_TYPE_CJMP },
+	{ 0x60000000, 0xfc0003e0, "bgtz", LA_INS_BGTZ, R_ARCH_OP_TYPE_CJMP },
+	{ 0x64000000, 0xfc000000, "bge", LA_INS_BGE, R_ARCH_OP_TYPE_CJMP },
+	{ 0x64000000, 0xfc000000, "ble", LA_INS_BLE, R_ARCH_OP_TYPE_CJMP },
+	{ 0x64000000, 0xfc00001f, "bgez", LA_INS_BGEZ, R_ARCH_OP_TYPE_CJMP },
+	{ 0x64000000, 0xfc0003e0, "blez", LA_INS_BLEZ, R_ARCH_OP_TYPE_CJMP },
+	{ 0x68000000, 0xfc000000, "bltu", LA_INS_BLTU, R_ARCH_OP_TYPE_CJMP },
+	{ 0x68000000, 0xfc000000, "bgtu", LA_INS_BGTU, R_ARCH_OP_TYPE_CJMP },
+	{ 0x6c000000, 0xfc000000, "bgeu", LA_INS_BGEU, R_ARCH_OP_TYPE_CJMP },
+	{ 0x6c000000, 0xfc000000, "bleu", LA_INS_BLEU, R_ARCH_OP_TYPE_CJMP },
 	{0}
 };
 
 static struct loongarch_anal_opcode la_load_opcodes[] = {
-	{ 0x20000000, 0xff000000, "ll.w", LA_INS_LL_W, R_ANAL_OP_TYPE_LOAD },
-	{ 0x21000000, 0xff000000, "sc.w", LA_INS_SC_W, R_ANAL_OP_TYPE_STORE },
-	{ 0x22000000, 0xff000000, "ll.d", LA_INS_LL_D, R_ANAL_OP_TYPE_LOAD },
-	{ 0x23000000, 0xff000000, "sc.d", LA_INS_SC_D, R_ANAL_OP_TYPE_STORE },
-	{ 0x24000000, 0xff000000, "ldptr.w", LA_INS_LDPTR_W, R_ANAL_OP_TYPE_LOAD },
-	{ 0x25000000, 0xff000000, "stptr.w", LA_INS_STPTR_W, R_ANAL_OP_TYPE_STORE },
-	{ 0x26000000, 0xff000000, "ldptr.d", LA_INS_LDPTR_D, R_ANAL_OP_TYPE_LOAD },
-	{ 0x27000000, 0xff000000, "stptr.d", LA_INS_STPTR_D, R_ANAL_OP_TYPE_STORE },
-	{ 0x28000000, 0xffc00000, "ld.b", LA_INS_LD_B, R_ANAL_OP_TYPE_LOAD },
-	{ 0x28400000, 0xffc00000, "ld.h", LA_INS_LD_H, R_ANAL_OP_TYPE_LOAD },
-	{ 0x28800000, 0xffc00000, "ld.w", LA_INS_LD_W, R_ANAL_OP_TYPE_LOAD },
-	{ 0x28c00000, 0xffc00000, "ld.d", LA_INS_LD_D, R_ANAL_OP_TYPE_LOAD },
-	{ 0x29000000, 0xffc00000, "st.b", LA_INS_ST_B, R_ANAL_OP_TYPE_LOAD },
-	{ 0x29400000, 0xffc00000, "st.h", LA_INS_ST_H, R_ANAL_OP_TYPE_LOAD },
-	{ 0x29800000, 0xffc00000, "st.w", LA_INS_ST_W, R_ANAL_OP_TYPE_LOAD },
-	{ 0x29c00000, 0xffc00000, "st.d", LA_INS_ST_D, R_ANAL_OP_TYPE_LOAD },
-	{ 0x2a000000, 0xffc00000, "ld.bu", LA_INS_LD_BU, R_ANAL_OP_TYPE_LOAD },
-	{ 0x2a400000, 0xffc00000, "ld.hu", LA_INS_LD_HU, R_ANAL_OP_TYPE_LOAD },
-	{ 0x2a800000, 0xffc00000, "ld.wu", LA_INS_LD_WU, R_ANAL_OP_TYPE_LOAD },
-	{ 0x2ac00000, 0xffc00000, "preld", LA_INS_PRELD, R_ANAL_OP_TYPE_LOAD },
-	{ 0x2b000000, 0xffc00000, "fld.s", LA_INS_FLD_S, R_ANAL_OP_TYPE_LOAD },
-	{ 0x2b400000, 0xffc00000, "fst.s", LA_INS_FST_S, R_ANAL_OP_TYPE_STORE },
-	{ 0x2b800000, 0xffc00000, "fld.d", LA_INS_FLD_D, R_ANAL_OP_TYPE_LOAD },
-	{ 0x2bc00000, 0xffc00000, "fst.d", LA_INS_FST_D, R_ANAL_OP_TYPE_STORE },
-	{ 0x38000000, 0xffff8000, "ldx.b", LA_INS_LDX_B, R_ANAL_OP_TYPE_LOAD },
-	{ 0x38040000, 0xffff8000, "ldx.h", LA_INS_LDX_H, R_ANAL_OP_TYPE_LOAD },
-	{ 0x38080000, 0xffff8000, "ldx.w", LA_INS_LDX_W, R_ANAL_OP_TYPE_LOAD },
-	{ 0x380c0000, 0xffff8000, "ldx.d", LA_INS_LDX_D, R_ANAL_OP_TYPE_LOAD },
-	{ 0x38100000, 0xffff8000, "stx.b", LA_INS_STX_B, R_ANAL_OP_TYPE_STORE },
-	{ 0x38140000, 0xffff8000, "stx.h", LA_INS_STX_H, R_ANAL_OP_TYPE_STORE },
-	{ 0x38180000, 0xffff8000, "stx.w", LA_INS_STX_W, R_ANAL_OP_TYPE_STORE },
-	{ 0x381c0000, 0xffff8000, "stx.d", LA_INS_STX_D, R_ANAL_OP_TYPE_STORE },
-	{ 0x38200000, 0xffff8000, "ldx.bu", LA_INS_LDX_BU, R_ANAL_OP_TYPE_LOAD },
-	{ 0x38240000, 0xffff8000, "ldx.hu", LA_INS_LDX_HU, R_ANAL_OP_TYPE_LOAD },
-	{ 0x38280000, 0xffff8000, "ldx.wu", LA_INS_LDX_WU, R_ANAL_OP_TYPE_LOAD },
-	{ 0x382c0000, 0xffff8000, "preldx", LA_INS_PRELDX, R_ANAL_OP_TYPE_LOAD },
-	{ 0x38300000, 0xffff8000, "fldx.s", LA_INS_FLDX_S, R_ANAL_OP_TYPE_LOAD },
-	{ 0x38340000, 0xffff8000, "fldx.d", LA_INS_FLDX_D, R_ANAL_OP_TYPE_LOAD },
-	{ 0x38380000, 0xffff8000, "fstx.s", LA_INS_FSTX_S, R_ANAL_OP_TYPE_STORE },
-	{ 0x383c0000, 0xffff8000, "fstx.d", LA_INS_FSTX_D, R_ANAL_OP_TYPE_STORE },
-	{ 0x38600000, 0xffff8000, "amswap.w", LA_INS_AMSWAP_W, R_ANAL_OP_TYPE_XCHG },
-	{ 0x38608000, 0xffff8000, "amswap.d", LA_INS_AMSWAP_D, R_ANAL_OP_TYPE_XCHG },
-	{ 0x38610000, 0xffff8000, "amadd.w", LA_INS_AMADD_W, R_ANAL_OP_TYPE_ADD },
-	{ 0x38618000, 0xffff8000, "amadd.d", LA_INS_AMADD_D, R_ANAL_OP_TYPE_ADD },
+	{ 0x20000000, 0xff000000, "ll.w", LA_INS_LL_W, R_ARCH_OP_TYPE_LOAD },
+	{ 0x21000000, 0xff000000, "sc.w", LA_INS_SC_W, R_ARCH_OP_TYPE_STORE },
+	{ 0x22000000, 0xff000000, "ll.d", LA_INS_LL_D, R_ARCH_OP_TYPE_LOAD },
+	{ 0x23000000, 0xff000000, "sc.d", LA_INS_SC_D, R_ARCH_OP_TYPE_STORE },
+	{ 0x24000000, 0xff000000, "ldptr.w", LA_INS_LDPTR_W, R_ARCH_OP_TYPE_LOAD },
+	{ 0x25000000, 0xff000000, "stptr.w", LA_INS_STPTR_W, R_ARCH_OP_TYPE_STORE },
+	{ 0x26000000, 0xff000000, "ldptr.d", LA_INS_LDPTR_D, R_ARCH_OP_TYPE_LOAD },
+	{ 0x27000000, 0xff000000, "stptr.d", LA_INS_STPTR_D, R_ARCH_OP_TYPE_STORE },
+	{ 0x28000000, 0xffc00000, "ld.b", LA_INS_LD_B, R_ARCH_OP_TYPE_LOAD },
+	{ 0x28400000, 0xffc00000, "ld.h", LA_INS_LD_H, R_ARCH_OP_TYPE_LOAD },
+	{ 0x28800000, 0xffc00000, "ld.w", LA_INS_LD_W, R_ARCH_OP_TYPE_LOAD },
+	{ 0x28c00000, 0xffc00000, "ld.d", LA_INS_LD_D, R_ARCH_OP_TYPE_LOAD },
+	{ 0x29000000, 0xffc00000, "st.b", LA_INS_ST_B, R_ARCH_OP_TYPE_LOAD },
+	{ 0x29400000, 0xffc00000, "st.h", LA_INS_ST_H, R_ARCH_OP_TYPE_LOAD },
+	{ 0x29800000, 0xffc00000, "st.w", LA_INS_ST_W, R_ARCH_OP_TYPE_LOAD },
+	{ 0x29c00000, 0xffc00000, "st.d", LA_INS_ST_D, R_ARCH_OP_TYPE_LOAD },
+	{ 0x2a000000, 0xffc00000, "ld.bu", LA_INS_LD_BU, R_ARCH_OP_TYPE_LOAD },
+	{ 0x2a400000, 0xffc00000, "ld.hu", LA_INS_LD_HU, R_ARCH_OP_TYPE_LOAD },
+	{ 0x2a800000, 0xffc00000, "ld.wu", LA_INS_LD_WU, R_ARCH_OP_TYPE_LOAD },
+	{ 0x2ac00000, 0xffc00000, "preld", LA_INS_PRELD, R_ARCH_OP_TYPE_LOAD },
+	{ 0x2b000000, 0xffc00000, "fld.s", LA_INS_FLD_S, R_ARCH_OP_TYPE_LOAD },
+	{ 0x2b400000, 0xffc00000, "fst.s", LA_INS_FST_S, R_ARCH_OP_TYPE_STORE },
+	{ 0x2b800000, 0xffc00000, "fld.d", LA_INS_FLD_D, R_ARCH_OP_TYPE_LOAD },
+	{ 0x2bc00000, 0xffc00000, "fst.d", LA_INS_FST_D, R_ARCH_OP_TYPE_STORE },
+	{ 0x38000000, 0xffff8000, "ldx.b", LA_INS_LDX_B, R_ARCH_OP_TYPE_LOAD },
+	{ 0x38040000, 0xffff8000, "ldx.h", LA_INS_LDX_H, R_ARCH_OP_TYPE_LOAD },
+	{ 0x38080000, 0xffff8000, "ldx.w", LA_INS_LDX_W, R_ARCH_OP_TYPE_LOAD },
+	{ 0x380c0000, 0xffff8000, "ldx.d", LA_INS_LDX_D, R_ARCH_OP_TYPE_LOAD },
+	{ 0x38100000, 0xffff8000, "stx.b", LA_INS_STX_B, R_ARCH_OP_TYPE_STORE },
+	{ 0x38140000, 0xffff8000, "stx.h", LA_INS_STX_H, R_ARCH_OP_TYPE_STORE },
+	{ 0x38180000, 0xffff8000, "stx.w", LA_INS_STX_W, R_ARCH_OP_TYPE_STORE },
+	{ 0x381c0000, 0xffff8000, "stx.d", LA_INS_STX_D, R_ARCH_OP_TYPE_STORE },
+	{ 0x38200000, 0xffff8000, "ldx.bu", LA_INS_LDX_BU, R_ARCH_OP_TYPE_LOAD },
+	{ 0x38240000, 0xffff8000, "ldx.hu", LA_INS_LDX_HU, R_ARCH_OP_TYPE_LOAD },
+	{ 0x38280000, 0xffff8000, "ldx.wu", LA_INS_LDX_WU, R_ARCH_OP_TYPE_LOAD },
+	{ 0x382c0000, 0xffff8000, "preldx", LA_INS_PRELDX, R_ARCH_OP_TYPE_LOAD },
+	{ 0x38300000, 0xffff8000, "fldx.s", LA_INS_FLDX_S, R_ARCH_OP_TYPE_LOAD },
+	{ 0x38340000, 0xffff8000, "fldx.d", LA_INS_FLDX_D, R_ARCH_OP_TYPE_LOAD },
+	{ 0x38380000, 0xffff8000, "fstx.s", LA_INS_FSTX_S, R_ARCH_OP_TYPE_STORE },
+	{ 0x383c0000, 0xffff8000, "fstx.d", LA_INS_FSTX_D, R_ARCH_OP_TYPE_STORE },
+	{ 0x38600000, 0xffff8000, "amswap.w", LA_INS_AMSWAP_W, R_ARCH_OP_TYPE_XCHG },
+	{ 0x38608000, 0xffff8000, "amswap.d", LA_INS_AMSWAP_D, R_ARCH_OP_TYPE_XCHG },
+	{ 0x38610000, 0xffff8000, "amadd.w", LA_INS_AMADD_W, R_ARCH_OP_TYPE_ADD },
+	{ 0x38618000, 0xffff8000, "amadd.d", LA_INS_AMADD_D, R_ARCH_OP_TYPE_ADD },
 	{ 0x38620000, 0xffff8000, "amand.w", LA_INS_AMAND_W },
 	{ 0x38628000, 0xffff8000, "amand.d", LA_INS_AMAND_D },
 	{ 0x38630000, 0xffff8000, "amor.w", LA_INS_AMOR_W },
@@ -624,10 +624,10 @@ static struct loongarch_anal_opcode la_load_opcodes[] = {
 	{ 0x38678000, 0xffff8000, "ammax.du", LA_INS_AMMAX_DU },
 	{ 0x38680000, 0xffff8000, "ammin.wu", LA_INS_AMMIN_WU },
 	{ 0x38688000, 0xffff8000, "ammin.du", LA_INS_AMMIN_DU },
-	{ 0x38690000, 0xffff8000, "amswap_db.w", LA_INS_AMSWAP_DB_W, R_ANAL_OP_TYPE_XCHG },
-	{ 0x38698000, 0xffff8000, "amswap_db.d", LA_INS_AMSWAP_DB_D, R_ANAL_OP_TYPE_XCHG },
-	{ 0x386a0000, 0xffff8000, "amadd_db.w", LA_INS_AMADD_DB_W, R_ANAL_OP_TYPE_ADD },
-	{ 0x386a8000, 0xffff8000, "amadd_db.d", LA_INS_AMADD_DB_D, R_ANAL_OP_TYPE_ADD },
+	{ 0x38690000, 0xffff8000, "amswap_db.w", LA_INS_AMSWAP_DB_W, R_ARCH_OP_TYPE_XCHG },
+	{ 0x38698000, 0xffff8000, "amswap_db.d", LA_INS_AMSWAP_DB_D, R_ARCH_OP_TYPE_XCHG },
+	{ 0x386a0000, 0xffff8000, "amadd_db.w", LA_INS_AMADD_DB_W, R_ARCH_OP_TYPE_ADD },
+	{ 0x386a8000, 0xffff8000, "amadd_db.d", LA_INS_AMADD_DB_D, R_ARCH_OP_TYPE_ADD },
 	{ 0x386b0000, 0xffff8000, "amand_db.w", LA_INS_AMAND_DB_W },
 	{ 0x386b8000, 0xffff8000, "amand_db.d", LA_INS_AMAND_DB_D },
 	{ 0x386c0000, 0xffff8000, "amor_db.w", LA_INS_AMOR_DB_W },
@@ -702,45 +702,45 @@ static struct loongarch_anal_opcode la_fix_opcodes[] = {
 	{ 0x60000, 0xfffe0000, "alsl.wu", LA_INS_ALSL_WU },
 	{ 0x80000, 0xfffe0000, "bytepick.w", LA_INS_BYTEPICK_W },
 	{ 0xc0000, 0xfffc0000, "bytepick.d", LA_INS_BYTEPICK_D },
-	{ 0x100000, 0xffff8000, "add.w", LA_INS_ADD_W, R_ANAL_OP_TYPE_ADD },
-	{ 0x108000, 0xffff8000, "add.d", LA_INS_ADD_D, R_ANAL_OP_TYPE_ADD },
-	{ 0x110000, 0xffff8000, "sub.w", LA_INS_SUB_W, R_ANAL_OP_TYPE_SUB },
-	{ 0x118000, 0xffff8000, "sub.d", LA_INS_SUB_D, R_ANAL_OP_TYPE_SUB },
+	{ 0x100000, 0xffff8000, "add.w", LA_INS_ADD_W, R_ARCH_OP_TYPE_ADD },
+	{ 0x108000, 0xffff8000, "add.d", LA_INS_ADD_D, R_ARCH_OP_TYPE_ADD },
+	{ 0x110000, 0xffff8000, "sub.w", LA_INS_SUB_W, R_ARCH_OP_TYPE_SUB },
+	{ 0x118000, 0xffff8000, "sub.d", LA_INS_SUB_D, R_ARCH_OP_TYPE_SUB },
 	{ 0x120000, 0xffff8000, "slt", LA_INS_SLT },
 	{ 0x128000, 0xffff8000, "sltu", LA_INS_SLTU },
 	{ 0x130000, 0xffff8000, "maskeqz", LA_INS_MASKEQZ },
 	{ 0x138000, 0xffff8000, "masknez", LA_INS_MASKNEZ },
-	{ 0x140000, 0xffff8000, "nor", LA_INS_NOR, R_ANAL_OP_TYPE_NOR },
-	{ 0x148000, 0xffff8000, "and", LA_INS_AND, R_ANAL_OP_TYPE_AND },
-	{ 0x150000, 0xfffffc00, "move", LA_INS_MOVE, R_ANAL_OP_TYPE_MOV },
-	{ 0x150000, 0xffff8000, "or", LA_INS_OR, R_ANAL_OP_TYPE_OR },
-	{ 0x158000, 0xffff8000, "xor", LA_INS_XOR, R_ANAL_OP_TYPE_XOR },
+	{ 0x140000, 0xffff8000, "nor", LA_INS_NOR, R_ARCH_OP_TYPE_NOR },
+	{ 0x148000, 0xffff8000, "and", LA_INS_AND, R_ARCH_OP_TYPE_AND },
+	{ 0x150000, 0xfffffc00, "move", LA_INS_MOVE, R_ARCH_OP_TYPE_MOV },
+	{ 0x150000, 0xffff8000, "or", LA_INS_OR, R_ARCH_OP_TYPE_OR },
+	{ 0x158000, 0xffff8000, "xor", LA_INS_XOR, R_ARCH_OP_TYPE_XOR },
 	{ 0x160000, 0xffff8000, "orn", LA_INS_ORN },
 	{ 0x168000, 0xffff8000, "andn", LA_INS_ANDN },
-	{ 0x170000, 0xffff8000, "sll.w", LA_INS_SLL_W, R_ANAL_OP_TYPE_SHL },
-	{ 0x178000, 0xffff8000, "srl.w", LA_INS_SRL_W, R_ANAL_OP_TYPE_SHR },
-	{ 0x180000, 0xffff8000, "sra.w", LA_INS_SRA_W, R_ANAL_OP_TYPE_SHR },
-	{ 0x188000, 0xffff8000, "sll.d", LA_INS_SLL_D, R_ANAL_OP_TYPE_SHL },
-	{ 0x190000, 0xffff8000, "srl.d", LA_INS_SRL_D, R_ANAL_OP_TYPE_SHL },
-	{ 0x198000, 0xffff8000, "sra.d", LA_INS_SRA_D, R_ANAL_OP_TYPE_SHR },
-	{ 0x1b0000, 0xffff8000, "rotr.w", LA_INS_ROTR_W, R_ANAL_OP_TYPE_ROR },
-	{ 0x1b8000, 0xffff8000, "rotr.d", LA_INS_ROTR_D, R_ANAL_OP_TYPE_ROR },
-	{ 0x1c0000, 0xffff8000, "mul.w", LA_INS_MUL_W, R_ANAL_OP_TYPE_MUL },
-	{ 0x1c8000, 0xffff8000, "mulh.w", LA_INS_MULH_W, R_ANAL_OP_TYPE_MUL },
-	{ 0x1d0000, 0xffff8000, "mulh.wu", LA_INS_MULH_WU, R_ANAL_OP_TYPE_MUL },
-	{ 0x1d8000, 0xffff8000, "mul.d", LA_INS_MUL_D, R_ANAL_OP_TYPE_MUL },
-	{ 0x1e0000, 0xffff8000, "mulh.d", LA_INS_MULH_D, R_ANAL_OP_TYPE_MUL },
-	{ 0x1e8000, 0xffff8000, "mulh.du", LA_INS_MULH_DU, R_ANAL_OP_TYPE_MUL },
-	{ 0x1f0000, 0xffff8000, "mulw.d.w", LA_INS_MULW_D_W, R_ANAL_OP_TYPE_MUL },
-	{ 0x1f8000, 0xffff8000, "mulw.d.wu", LA_INS_MULW_D_WU, R_ANAL_OP_TYPE_MUL },
-	{ 0x200000, 0xffff8000, "div.w", LA_INS_DIV_W, R_ANAL_OP_TYPE_DIV },
-	{ 0x208000, 0xffff8000, "mod.w", LA_INS_MOD_W, R_ANAL_OP_TYPE_MOD },
-	{ 0x210000, 0xffff8000, "div.wu", LA_INS_DIV_WU, R_ANAL_OP_TYPE_DIV },
-	{ 0x218000, 0xffff8000, "mod.wu", LA_INS_MOD_WU, R_ANAL_OP_TYPE_MOD },
-	{ 0x220000, 0xffff8000, "div.d", LA_INS_DIV_D, R_ANAL_OP_TYPE_DIV },
-	{ 0x228000, 0xffff8000, "mod.d", LA_INS_MOD_D, R_ANAL_OP_TYPE_MOD },
-	{ 0x230000, 0xffff8000, "div.du", LA_INS_DIV_DU, R_ANAL_OP_TYPE_DIV },
-	{ 0x238000, 0xffff8000, "mod.du", LA_INS_MOD_DU, R_ANAL_OP_TYPE_MOD },
+	{ 0x170000, 0xffff8000, "sll.w", LA_INS_SLL_W, R_ARCH_OP_TYPE_SHL },
+	{ 0x178000, 0xffff8000, "srl.w", LA_INS_SRL_W, R_ARCH_OP_TYPE_SHR },
+	{ 0x180000, 0xffff8000, "sra.w", LA_INS_SRA_W, R_ARCH_OP_TYPE_SHR },
+	{ 0x188000, 0xffff8000, "sll.d", LA_INS_SLL_D, R_ARCH_OP_TYPE_SHL },
+	{ 0x190000, 0xffff8000, "srl.d", LA_INS_SRL_D, R_ARCH_OP_TYPE_SHL },
+	{ 0x198000, 0xffff8000, "sra.d", LA_INS_SRA_D, R_ARCH_OP_TYPE_SHR },
+	{ 0x1b0000, 0xffff8000, "rotr.w", LA_INS_ROTR_W, R_ARCH_OP_TYPE_ROR },
+	{ 0x1b8000, 0xffff8000, "rotr.d", LA_INS_ROTR_D, R_ARCH_OP_TYPE_ROR },
+	{ 0x1c0000, 0xffff8000, "mul.w", LA_INS_MUL_W, R_ARCH_OP_TYPE_MUL },
+	{ 0x1c8000, 0xffff8000, "mulh.w", LA_INS_MULH_W, R_ARCH_OP_TYPE_MUL },
+	{ 0x1d0000, 0xffff8000, "mulh.wu", LA_INS_MULH_WU, R_ARCH_OP_TYPE_MUL },
+	{ 0x1d8000, 0xffff8000, "mul.d", LA_INS_MUL_D, R_ARCH_OP_TYPE_MUL },
+	{ 0x1e0000, 0xffff8000, "mulh.d", LA_INS_MULH_D, R_ARCH_OP_TYPE_MUL },
+	{ 0x1e8000, 0xffff8000, "mulh.du", LA_INS_MULH_DU, R_ARCH_OP_TYPE_MUL },
+	{ 0x1f0000, 0xffff8000, "mulw.d.w", LA_INS_MULW_D_W, R_ARCH_OP_TYPE_MUL },
+	{ 0x1f8000, 0xffff8000, "mulw.d.wu", LA_INS_MULW_D_WU, R_ARCH_OP_TYPE_MUL },
+	{ 0x200000, 0xffff8000, "div.w", LA_INS_DIV_W, R_ARCH_OP_TYPE_DIV },
+	{ 0x208000, 0xffff8000, "mod.w", LA_INS_MOD_W, R_ARCH_OP_TYPE_MOD },
+	{ 0x210000, 0xffff8000, "div.wu", LA_INS_DIV_WU, R_ARCH_OP_TYPE_DIV },
+	{ 0x218000, 0xffff8000, "mod.wu", LA_INS_MOD_WU, R_ARCH_OP_TYPE_MOD },
+	{ 0x220000, 0xffff8000, "div.d", LA_INS_DIV_D, R_ARCH_OP_TYPE_DIV },
+	{ 0x228000, 0xffff8000, "mod.d", LA_INS_MOD_D, R_ARCH_OP_TYPE_MOD },
+	{ 0x230000, 0xffff8000, "div.du", LA_INS_DIV_DU, R_ARCH_OP_TYPE_DIV },
+	{ 0x238000, 0xffff8000, "mod.du", LA_INS_MOD_DU, R_ARCH_OP_TYPE_MOD },
 	{ 0x240000, 0xffff8000, "crc.w.b.w", LA_INS_CRC_W_B_W },
 	{ 0x248000, 0xffff8000, "crc.w.h.w", LA_INS_CRC_W_H_W },
 	{ 0x250000, 0xffff8000, "crc.w.w.w", LA_INS_CRC_W_W_W },
@@ -752,15 +752,15 @@ static struct loongarch_anal_opcode la_fix_opcodes[] = {
 	{ 0x2a0000, 0xffff8000, "break", LA_INS_BREAK },
 	{ 0x2a8000, 0xffff8000, "dbcl", LA_INS_DBCL },
 	{ 0x2b0000, 0xffff8000, "syscall", LA_INS_SYSCALL },
-	{ 0x2c0000, 0xfffe0000, "alsl.d", LA_INS_ALSL_D , R_ANAL_OP_TYPE_SHL},
-	{ 0x408000, 0xffff8000, "slli.w", LA_INS_SLLI_W, R_ANAL_OP_TYPE_SHL },
-	{ 0x410000, 0xffff0000, "slli.d", LA_INS_SLLI_D, R_ANAL_OP_TYPE_SHL },
-	{ 0x448000, 0xffff8000, "srli.w", LA_INS_SRLI_W, R_ANAL_OP_TYPE_SHL },
-	{ 0x450000, 0xffff0000, "srli.d", LA_INS_SRLI_D, R_ANAL_OP_TYPE_SHL },
-	{ 0x488000, 0xffff8000, "srai.w", LA_INS_SRAI_W, R_ANAL_OP_TYPE_SHR },
-	{ 0x490000, 0xffff0000, "srai.d", LA_INS_SRAI_D, R_ANAL_OP_TYPE_SHR },
-	{ 0x4c8000, 0xffff8000, "rotri.w", LA_INS_ROTRI_W, R_ANAL_OP_TYPE_ROR },
-	{ 0x4d0000, 0xffff0000, "rotri.d", LA_INS_ROTRI_D, R_ANAL_OP_TYPE_ROR },
+	{ 0x2c0000, 0xfffe0000, "alsl.d", LA_INS_ALSL_D , R_ARCH_OP_TYPE_SHL},
+	{ 0x408000, 0xffff8000, "slli.w", LA_INS_SLLI_W, R_ARCH_OP_TYPE_SHL },
+	{ 0x410000, 0xffff0000, "slli.d", LA_INS_SLLI_D, R_ARCH_OP_TYPE_SHL },
+	{ 0x448000, 0xffff8000, "srli.w", LA_INS_SRLI_W, R_ARCH_OP_TYPE_SHL },
+	{ 0x450000, 0xffff0000, "srli.d", LA_INS_SRLI_D, R_ARCH_OP_TYPE_SHL },
+	{ 0x488000, 0xffff8000, "srai.w", LA_INS_SRAI_W, R_ARCH_OP_TYPE_SHR },
+	{ 0x490000, 0xffff0000, "srai.d", LA_INS_SRAI_D, R_ARCH_OP_TYPE_SHR },
+	{ 0x4c8000, 0xffff8000, "rotri.w", LA_INS_ROTRI_W, R_ARCH_OP_TYPE_ROR },
+	{ 0x4d0000, 0xffff0000, "rotri.d", LA_INS_ROTRI_D, R_ARCH_OP_TYPE_ROR },
 	{ 0x600000, 0xffe08000, "bstrins.w", LA_INS_BSTRINS_W },
 	{ 0x608000, 0xffe08000, "bstrpick.w", LA_INS_BSTRPICK_W },
 	{ 0x800000, 0xffc00000, "bstrins.d", LA_INS_BSTRINS_D },
@@ -921,7 +921,7 @@ struct loongarch_ASE la_ases[] = {
 	{0}
 };
 
-static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
+static int analop_esil(RAnal *a, RArchOp *op, ut32 opcode) {
 	ut32 insn_id = op->id;
 
 	switch (insn_id) {
@@ -1193,7 +1193,7 @@ static void insn_memory_error_func(int status, bfd_vma memaddr, struct disassemb
 	//TODO
 }
 
-static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
+static int loongarch_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *b, int len, RArchOpMask mask) {
 	struct loongarch_ASE *ase = NULL;
 	struct loongarch_anal_opcode *it;
 	ut32 opcode, optype;
@@ -1201,7 +1201,7 @@ static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int l
 	if (!op || (len < INSNLEN)) {
 		return INSNLEN;
 	}
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ARCH_OP_TYPE_UNK;
 	op->size = INSNLEN;
 	op->addr = addr;
 	// Be endian aware
@@ -1272,16 +1272,16 @@ static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int l
 		break;
 	}
 
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, opcode)) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
+	if (mask & R_ARCH_OP_MASK_VAL) {
 		//TODO: add op_fillval (anal, op, &insn);
 	}
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		struct disassemble_info disasm_obj;
 		int n = 0;
 		RStrBuf *insn_strbuf = r_strbuf_new ("");

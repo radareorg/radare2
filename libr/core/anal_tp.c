@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2016-2021 - oddcoder, sivaramaaa, pancake */
+/* radare - LGPL - Copyright 2016-2022 - oddcoder, sivaramaaa, pancake */
 /* type matching - type propagation */
 
-#include <r_anal.h>
-#include <r_util.h>
 #include <r_core.h>
 #define LOOP_MAX 10
 
@@ -22,8 +20,8 @@ static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, RAnal
 	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	if ((bp && !r_reg_getv (core->anal->reg, bp)) && (sp && !r_reg_getv (core->anal->reg, sp))) {
-		eprintf ("Stack isn't initialized.\n");
-		eprintf ("Try running aei and aeim commands before aft for default stack initialization\n");
+		R_LOG_WARN ("Stack isn't initialized");
+		R_LOG_INFO ("Try running aei and aeim commands before aft for default stack initialization");
 		return false;
 	}
 	return (core->dbg->trace && core->anal->esil->trace);
@@ -148,7 +146,7 @@ static void __var_retype(RAnal *anal, RAnalVar *var, const char *vname, const ch
 
 static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 	RAnal *anal = core->anal;
-	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL);
+	RArchOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL);
 	if (!op || r_strbuf_is_empty (&op->esil)) {
 		r_anal_op_free (op);
 		return;
@@ -182,16 +180,16 @@ static ut64 get_addr(Sdb *trace, const char *regname, int idx) {
 	return r_num_math (NULL, sdb_const_get (trace, query, 0));
 }
 
-static _RAnalCond cond_invert(RAnal *anal, _RAnalCond cond) {
+static RArchOpCond cond_invert(RAnal *anal, RArchOpCond cond) {
 	switch (cond) {
-	case R_ANAL_COND_LE:
-		return R_ANAL_COND_GT;
-	case R_ANAL_COND_LT:
-		return R_ANAL_COND_GE;
-	case R_ANAL_COND_GE:
-		return R_ANAL_COND_LT;
-	case R_ANAL_COND_GT:
-		return R_ANAL_COND_LE;
+	case R_ARCH_OP_COND_LE:
+		return R_ARCH_OP_COND_GT;
+	case R_ARCH_OP_COND_LT:
+		return R_ARCH_OP_COND_GE;
+	case R_ARCH_OP_COND_GE:
+		return R_ARCH_OP_COND_LT;
+	case R_ARCH_OP_COND_GT:
+		return R_ARCH_OP_COND_LE;
 	default:
 		if (anal->verbose) {
 			eprintf ("Unhandled conditional swap\n");
@@ -357,21 +355,21 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 			if (instr_addr < baddr) {
 				break;
 			}
-			RAnalOp *op = r_core_anal_op (core, instr_addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL);
+			RArchOp *op = r_core_anal_op (core, instr_addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
 			if (!op) {
 				r_anal_op_free (op);
 				break;
 			}
-			RAnalOp *next_op = r_core_anal_op (core, instr_addr + op->size, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL);
-			if (!next_op || (j != idx && (next_op->type == R_ANAL_OP_TYPE_CALL
-							|| next_op->type == R_ANAL_OP_TYPE_JMP))) {
+			RArchOp *next_op = r_core_anal_op (core, instr_addr + op->size, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
+			if (!next_op || (j != idx && (next_op->type == R_ARCH_OP_TYPE_CALL
+							|| next_op->type == R_ARCH_OP_TYPE_JMP))) {
 				r_anal_op_free (op);
 				r_anal_op_free (next_op);
 				break;
 			}
 			RAnalVar *var = r_anal_get_used_function_var (anal, op->addr);
 			r_strf_var (query, 32, "%d.mem.read", j);
-			if (op->type == R_ANAL_OP_TYPE_MOV && sdb_const_get (trace, query, 0)) {
+			if (op->type == R_ARCH_OP_TYPE_MOV && sdb_const_get (trace, query, 0)) {
 				memref = ! (!memref && var && (var->kind != R_ANAL_VAR_KIND_REG));
 			}
 			// Match type from function param to instr
@@ -425,13 +423,13 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 					res = true;
 				} else {
 					switch (op->type) {
-					case R_ANAL_OP_TYPE_MOV:
-					case R_ANAL_OP_TYPE_PUSH:
+					case R_ARCH_OP_TYPE_MOV:
+					case R_ARCH_OP_TYPE_PUSH:
 						get_src_regname (core, instr_addr, regname, sizeof (regname));
 						break;
-					case R_ANAL_OP_TYPE_LEA:
-					case R_ANAL_OP_TYPE_LOAD:
-					case R_ANAL_OP_TYPE_STORE:
+					case R_ARCH_OP_TYPE_LEA:
+					case R_ARCH_OP_TYPE_LOAD:
+					case R_ARCH_OP_TYPE_STORE:
 						res = true;
 						break;
 					}
@@ -460,7 +458,7 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 }
 
 #define SLOW_STEP 1
-static bool fast_step(RCore *core, RAnalOp *aop) {
+static bool fast_step(RCore *core, RArchOp *aop) {
 #if SLOW_STEP
 	return r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 #else
@@ -482,7 +480,7 @@ static bool fast_step(RCore *core, RAnalOp *aop) {
 	}
 	// const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	// ut64 addr = r_reg_getv (core->anal->reg, name);
-	int ret = (aop->type == R_ANAL_OP_TYPE_ILL) ? -1: aop->size;
+	int ret = (aop->type == R_ARCH_OP_TYPE_ILL) ? -1: aop->size;
 	// TODO: sometimes this is dupe
 	// if type is JMP then we execute the next N instructions
 	// update the esil pointer because RAnal.op() can change it
@@ -509,10 +507,10 @@ static bool fast_step(RCore *core, RAnalOp *aop) {
 }
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
-	const int op_tions = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT;
+	const int op_tions = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT;
 	RAnalBlock *bb;
 	RListIter *it;
-	RAnalOp aop = {0};
+	RArchOp aop = {0};
 	bool resolved = false;
 
 	r_return_if_fail (core && core->anal && fcn);
@@ -620,7 +618,7 @@ repeat:
 			}
 			r_strf_var (addr_count, 32, "0x%"PFMT64x".count", addr);
 			int loop_count = sdb_num_get (anal->esil->trace->db, addr_count, 0);
-			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET) {
+			if (loop_count > LOOP_MAX || aop.type == R_ARCH_OP_TYPE_RET) {
 				r_anal_op_fini (&aop);
 				break;
 			}
@@ -647,12 +645,12 @@ repeat:
 			Sdb *trace = anal->esil->trace->db;
 			cur_idx = sdb_num_get (trace, "idx", 0);
 			RAnalVar *var = r_anal_get_used_function_var (anal, aop.addr);
-			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ANAL_OP_MASK_BASIC); // | _VAL ?
-			ut32 type = aop.type & R_ANAL_OP_TYPE_MASK;
-			if (aop.type == R_ANAL_OP_TYPE_CALL || aop.type & R_ANAL_OP_TYPE_UCALL) {
+			RArchOp *next_op = r_core_anal_op (core, addr + ret, R_ARCH_OP_MASK_BASIC); // | _VAL ?
+			ut32 type = aop.type & R_ARCH_OP_TYPE_MASK;
+			if (aop.type == R_ARCH_OP_TYPE_CALL || aop.type & R_ARCH_OP_TYPE_UCALL) {
 				char *full_name = NULL;
 				ut64 callee_addr;
-				if (aop.type == R_ANAL_OP_TYPE_CALL) {
+				if (aop.type == R_ARCH_OP_TYPE_CALL) {
 					RAnalFunction *fcn_call = r_anal_get_fcn_in (anal, aop.jump, -1);
 					if (fcn_call) {
 						full_name = fcn_call->name;
@@ -696,11 +694,11 @@ repeat:
 					if (!strcmp (fcn_name, "__stack_chk_fail")) {
 						r_strf_var (query, 32, "%d.addr", cur_idx - 1);
 						ut64 mov_addr = sdb_num_get (trace, query, 0);
-						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_BASIC);
+						RArchOp *mop = r_core_anal_op (core, mov_addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_BASIC);
 						if (mop) {
 							RAnalVar *mopvar = r_anal_get_used_function_var (anal, mop->addr);
-							ut32 vt = mop->type & R_ANAL_OP_TYPE_MASK;
-							if (vt == R_ANAL_OP_TYPE_MOV) {
+							ut32 vt = mop->type & R_ARCH_OP_TYPE_MASK;
+							if (vt == R_ARCH_OP_TYPE_MOV) {
 								__var_rename (anal, mopvar, "canary", addr);
 							}
 						}
@@ -715,10 +713,10 @@ repeat:
 				const char *cur_dest = sdb_const_get (trace, query, 0);
 				get_src_regname (core, aop.addr, src, sizeof (src));
 				if (ret_reg && *src && strstr (ret_reg, src)) {
-					if (var && aop.direction == R_ANAL_OP_DIR_WRITE) {
+					if (var && aop.direction == R_ARCH_OP_DIR_WRITE) {
 						__var_retype (anal, var, NULL, ret_type, false, false);
 						resolved = true;
-					} else if (type == R_ANAL_OP_TYPE_MOV) {
+					} else if (type == R_ARCH_OP_TYPE_MOV) {
 						R_FREE (ret_reg);
 						if (cur_dest) {
 							ret_reg = strdup (cur_dest);
@@ -732,14 +730,14 @@ repeat:
 					}
 					if (ret_reg && (strstr (ret_reg, foo) || (tmp && strstr (ret_reg, tmp)))) {
 						resolved = true;
-					} else if (type == R_ANAL_OP_TYPE_MOV && (next_op && next_op->type == R_ANAL_OP_TYPE_MOV)) {
+					} else if (type == R_ARCH_OP_TYPE_MOV && (next_op && next_op->type == R_ARCH_OP_TYPE_MOV)) {
 						// Progate return type passed using pointer
 						// int *ret; *ret = strlen(s);
 						// TODO: memref check , dest and next src match
 						char nsrc[REGNAME_SIZE] = {0};
 						get_src_regname (core, next_op->addr, nsrc, sizeof (nsrc));
 						if (ret_reg && *nsrc && strstr (ret_reg, nsrc) && var &&
-								aop.direction == R_ANAL_OP_DIR_READ) {
+								aop.direction == R_ARCH_OP_DIR_READ) {
 							__var_retype (anal, var, NULL, ret_type, true, false);
 						}
 					}
@@ -749,7 +747,7 @@ repeat:
 			// Type propagation using instruction access pattern
 			if (var) {
 				bool sign = false;
-				if ((type == R_ANAL_OP_TYPE_CMP) && next_op) {
+				if ((type == R_ARCH_OP_TYPE_CMP) && next_op) {
 					if (next_op->sign) {
 						sign = true;
 					} else {
@@ -763,7 +761,7 @@ repeat:
 				}
 				// lea rax , str.hello  ; mov [local_ch], rax;
 				// mov rdx , [local_4h] ; mov [local_8h], rdx;
-				if (prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
+				if (prev_dest && (type == R_ARCH_OP_TYPE_MOV || type == R_ARCH_OP_TYPE_STORE)) {
 					char reg[REGNAME_SIZE] = {0};
 					get_src_regname (core, addr, reg, sizeof (reg));
 					bool match = strstr (prev_dest, reg);
@@ -774,21 +772,21 @@ repeat:
 						__var_retype (anal, var, NULL, prev_type, false, false);
 					}
 				}
-				if (chk_constraint && var && (type == R_ANAL_OP_TYPE_CMP && aop.disp != UT64_MAX)
-						&& next_op && next_op->type == R_ANAL_OP_TYPE_CJMP) {
+				if (chk_constraint && var && (type == R_ARCH_OP_TYPE_CMP && aop.disp != UT64_MAX)
+						&& next_op && next_op->type == R_ARCH_OP_TYPE_CJMP) {
 					bool jmp = false;
-					RAnalOp *jmp_op = {0};
+					RArchOp *jmp_op = {0};
 					ut64 jmp_addr = next_op->jump;
 					RAnalBlock *jmpbb = r_anal_function_bbget_in (anal, fcn, jmp_addr);
 
 					// Check exit status of jmp branch
 					for (i = 0; i < MAX_INSTR ; i++) {
-						jmp_op = r_core_anal_op (core, jmp_addr, R_ANAL_OP_MASK_BASIC);
+						jmp_op = r_core_anal_op (core, jmp_addr, R_ARCH_OP_MASK_BASIC);
 						if (!jmp_op) {
 							break;
 						}
-						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_block_contains (jmpbb, jmp_addr))
-								|| jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
+						if ((jmp_op->type == R_ARCH_OP_TYPE_RET && r_anal_block_contains (jmpbb, jmp_addr))
+								|| jmp_op->type == R_ARCH_OP_TYPE_CJMP) {
 							jmp = true;
 							r_anal_op_free (jmp_op);
 							break;
@@ -803,16 +801,16 @@ repeat:
 					r_anal_var_add_constraint (var, &constr);
 				}
 			}
-			prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ);
+			prev_var = (var && aop.direction == R_ARCH_OP_DIR_READ);
 			str_flag = false;
 			prop = false;
 			prev_dest = NULL;
 			switch (type) {
-			case R_ANAL_OP_TYPE_MOV:
-			case R_ANAL_OP_TYPE_LEA:
-			case R_ANAL_OP_TYPE_LOAD:
+			case R_ARCH_OP_TYPE_MOV:
+			case R_ARCH_OP_TYPE_LEA:
+			case R_ARCH_OP_TYPE_LOAD:
 				if (aop.ptr && aop.refptr && aop.ptr != UT64_MAX) {
-					if (type == R_ANAL_OP_TYPE_LOAD) {
+					if (type == R_ARCH_OP_TYPE_LOAD) {
 						ut8 sbuf[256] = {0};
 						r_io_read_at (core->io, aop.ptr, sbuf, sizeof (sbuf) - 1);
 						ut64 ptr = r_read_ble (sbuf, be, aop.refptr * 8);

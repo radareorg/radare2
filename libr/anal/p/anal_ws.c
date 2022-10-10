@@ -29,66 +29,66 @@ static ut64 ws_find_label(int l, const RIOBind *iob) {
 	return 0;
 }
 
-static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int ws_anal(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *data, int len, RArchOpMask mask) {
 	op->addr = addr;
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ARCH_OP_TYPE_UNK;
 	RStrBuf *mn = r_strbuf_new (NULL);
 	op->size = wsdis (mn, data, len);
 	if (op->size) {
 		char *buf_asm = r_strbuf_drain (mn);
 		switch (*buf_asm) {
 		case 'n':
-			op->type = R_ANAL_OP_TYPE_NOP;
+			op->type = R_ARCH_OP_TYPE_NOP;
 			break;
 		case 'e':
-			op->type = R_ANAL_OP_TYPE_TRAP;
+			op->type = R_ARCH_OP_TYPE_TRAP;
 			break;
 		case 'd':
-			op->type = (buf_asm[1] == 'u')? R_ANAL_OP_TYPE_UPUSH: R_ANAL_OP_TYPE_DIV;
+			op->type = (buf_asm[1] == 'u')? R_ARCH_OP_TYPE_UPUSH: R_ARCH_OP_TYPE_DIV;
 			break;
 		case 'i':
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 			break;
 		case 'a':
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		case 'm':
-			op->type = (buf_asm[1] == 'o') ? R_ANAL_OP_TYPE_MOD : R_ANAL_OP_TYPE_MUL;
+			op->type = (buf_asm[1] == 'o') ? R_ARCH_OP_TYPE_MOD : R_ARCH_OP_TYPE_MUL;
 			break;
 		case 'r':
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 			break;
 		case 'l':
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = R_ARCH_OP_TYPE_LOAD;
 			break;
 		case 'c':
 			if (buf_asm[1] == 'a') {
-				op->type = R_ANAL_OP_TYPE_CALL;
+				op->type = R_ARCH_OP_TYPE_CALL;
 				op->fail = addr + op->size;
 				op->jump = ws_find_label (atoi (buf_asm + 5), &anal->iob);
 			} else {
-				op->type = R_ANAL_OP_TYPE_UPUSH;
+				op->type = R_ARCH_OP_TYPE_UPUSH;
 			}
 			break;
 		case 'j':
 			if (buf_asm[1] == 'm') {
-				op->type = R_ANAL_OP_TYPE_JMP;
+				op->type = R_ARCH_OP_TYPE_JMP;
 				op->jump = ws_find_label(atoi (buf_asm + 4), &anal->iob);
 			} else {
-				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->type = R_ARCH_OP_TYPE_CJMP;
 				op->jump = ws_find_label(atoi(buf_asm + 3), &anal->iob);
 			}
 			op->fail = addr + op->size;
 			break;
 		case 'g':
-			op->type = R_ANAL_OP_TYPE_IO;
+			op->type = R_ARCH_OP_TYPE_IO;
 			break;
 		case 'p':
 			if (buf_asm[1] == 'o') {
-				op->type = R_ANAL_OP_TYPE_POP;
+				op->type = R_ARCH_OP_TYPE_POP;
 			} else {
 				if (buf_asm[2] == 's') {
-					op->type = R_ANAL_OP_TYPE_PUSH;
+					op->type = R_ARCH_OP_TYPE_PUSH;
 					if (127 > atoi (buf_asm + 5) && atoi (buf_asm + 5) >= 33) {
 						char c[4];
 						c[3] = '\0';
@@ -97,28 +97,28 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 						r_meta_set_string (anal, R_META_TYPE_COMMENT, addr, c);
 					}
 				} else {
-					op->type = R_ANAL_OP_TYPE_IO;
+					op->type = R_ARCH_OP_TYPE_IO;
 				}
 			}
 			break;
 		case 's':
 			switch (buf_asm[1]) {
 			case 'u':
-				op->type = R_ANAL_OP_TYPE_SUB;
+				op->type = R_ARCH_OP_TYPE_SUB;
 				break;
 			case 't':
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = R_ARCH_OP_TYPE_STORE;
 				break;
 			case 'l':
-				op->type = R_ANAL_OP_TYPE_LOAD;	// XXX
+				op->type = R_ARCH_OP_TYPE_LOAD;	// XXX
 				break;
 			case 'w':
-				op->type = R_ANAL_OP_TYPE_ROR;
+				op->type = R_ARCH_OP_TYPE_ROR;
 			}
 			break;
 		}
 
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = buf_asm;
 		} else {
 			free (buf_asm);

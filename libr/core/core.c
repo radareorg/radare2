@@ -464,9 +464,9 @@ static ut64 numvar_instruction_backward(RCore *core, const char *input) {
 			if (prev_addr == UT64_MAX || prev_addr >= core->offset) {
 				break;
 			}
-			RAnalOp op = {0};
+			RArchOp op = {0};
 			ret = r_anal_op (core->anal, &op, prev_addr, data,
-				sizeof (data), R_ANAL_OP_MASK_BASIC);
+				sizeof (data), R_ARCH_OP_MASK_BASIC);
 			if (ret < 1) {
 				ret = 1;
 			}
@@ -497,9 +497,9 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 	}
 	for (i = 0; i < n; i++) {
 		r_io_read_at (core->io, val, data, sizeof (data));
-		RAnalOp op;
+		RArchOp op;
 		ret = r_anal_op (core->anal, &op, val, data,
-			sizeof (data), R_ANAL_OP_MASK_BASIC);
+			sizeof (data), R_ARCH_OP_MASK_BASIC);
 		if (ret < 1) {
 			ret = 1;
 		}
@@ -517,7 +517,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	char *ptr, *bptr, *out = NULL;
 	RFlagItem *flag;
 	RBinSection *s;
-	RAnalOp op = {0};
+	RArchOp op = {0};
 	ut64 ret = 0;
 
 	if (ok) {
@@ -619,7 +619,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'm':
 		case 'v':
 		case 'l':
-			r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC);
+			r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC);
 			r_anal_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
 			break;
 		default:
@@ -2609,7 +2609,7 @@ R_API const char *colorforop(RCore *core, ut64 addr) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (addr >= bb->addr && addr < (bb->addr + bb->size)) {
 			ut64 opat = r_anal_bb_opaddr_at (bb, addr);
-			RAnalOp *op = r_core_anal_op (core, opat, 0);
+			RArchOp *op = r_core_anal_op (core, opat, 0);
 			if (op) {
 				const char* res = r_print_color_op_type (core->print, op->type);
 				r_anal_op_free (op);
@@ -3638,9 +3638,9 @@ R_API char *r_core_op_str(RCore *core, ut64 addr) {
 	return str;
 }
 
-R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr, RAnalOpMask mask) {
+R_API RArchOp *r_core_op_anal(RCore *core, ut64 addr, RArchOpMask mask) {
 	ut8 buf[64];
-	RAnalOp *op = R_NEW (RAnalOp);
+	RArchOp *op = R_NEW (RArchOp);
 	r_io_read_at (core->io, addr, buf, sizeof (buf));
 	r_anal_op (core->anal, op, addr, buf, sizeof (buf), mask);
 	return op;

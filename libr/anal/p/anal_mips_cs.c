@@ -95,7 +95,7 @@ static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
 #define ES_ADD_CK32_OVERF(x, y, z) es_add_ck (op, x, y, z, 32)
 #define ES_ADD_CK64_OVERF(x, y, z) es_add_ck (op, x, y, z, 64)
 
-static inline void es_sign_n_64(RAnal *a, RAnalOp *op, const char *arg, int bit) {
+static inline void es_sign_n_64(RAnal *a, RArchOp *op, const char *arg, int bit) {
 	if (a->config->bits == 64) {
 		r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", bit, arg, arg);
 	} else {
@@ -103,7 +103,7 @@ static inline void es_sign_n_64(RAnal *a, RAnalOp *op, const char *arg, int bit)
 	}
 }
 
-static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const char *re, int bit) {
+static inline void es_add_ck(RArchOp *op, const char *a1, const char *a2, const char *re, int bit) {
 	ut64 mask = 1ULL << (bit-1);
 	r_strbuf_appendf (&op->esil,
 		"%d,0x%" PFMT64x ",%s,%s,^,&,>>,%d,0x%" PFMT64x ",%s,%s,+,&,>>,|,1,==,$z,?{,0x%"PFMT64x",1,TRAP,}{,%s,%s,+,%s,=,}",
@@ -201,7 +201,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 
 #define ARG(x) (*str[x] != 0)?str[x]:arg(handle, insn, str[x], x)
 
-static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static int analop_esil(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	char str[8][32] = {{0}};
 	int i;
 
@@ -688,11 +688,11 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 	return 0;
 }
 
-static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
+static void op_fillval(RAnal *anal, RArchOp *op, csh *handle, cs_insn *insn) {
 	static R_TH_LOCAL RRegItem reg = {0};
 	RAnalValue *dst, *src0, *src1;
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_LOAD:
+	switch (op->type & R_ARCH_OP_TYPE_MASK) {
+	case R_ARCH_OP_TYPE_LOAD:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
 			ZERO_FILL (reg);
 			src0 = r_vector_push (op->srcs, NULL);
@@ -701,7 +701,7 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
 			src0->delta = OPERAND(1).mem.disp;
 		}
 		break;
-	case R_ANAL_OP_TYPE_STORE:
+	case R_ARCH_OP_TYPE_STORE:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
 			ZERO_FILL (reg);
 			dst = r_vector_push (op->dsts, NULL);
@@ -710,20 +710,20 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
 			dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
-	case R_ANAL_OP_TYPE_SHL:
-	case R_ANAL_OP_TYPE_SHR:
-	case R_ANAL_OP_TYPE_SAR:
-	case R_ANAL_OP_TYPE_XOR:
-	case R_ANAL_OP_TYPE_SUB:
-	case R_ANAL_OP_TYPE_AND:
-	case R_ANAL_OP_TYPE_ADD:
-	case R_ANAL_OP_TYPE_OR:
+	case R_ARCH_OP_TYPE_SHL:
+	case R_ARCH_OP_TYPE_SHR:
+	case R_ARCH_OP_TYPE_SAR:
+	case R_ARCH_OP_TYPE_XOR:
+	case R_ARCH_OP_TYPE_SUB:
+	case R_ARCH_OP_TYPE_AND:
+	case R_ARCH_OP_TYPE_ADD:
+	case R_ARCH_OP_TYPE_OR:
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
-	case R_ANAL_OP_TYPE_MOV:
+	case R_ARCH_OP_TYPE_MOV:
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
-	case R_ANAL_OP_TYPE_DIV: // UDIV
+	case R_ARCH_OP_TYPE_DIV: // UDIV
 #if 0
 capstone bug
 ------------
@@ -765,22 +765,22 @@ capstone bug
 	}
 }
 
-static void set_opdir(RAnalOp *op) {
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_LOAD:
-		op->direction = R_ANAL_OP_DIR_READ;
+static void set_opdir(RArchOp *op) {
+	switch (op->type & R_ARCH_OP_TYPE_MASK) {
+	case R_ARCH_OP_TYPE_LOAD:
+		op->direction = R_ARCH_OP_DIR_READ;
 		break;
-	case R_ANAL_OP_TYPE_STORE:
-		op->direction = R_ANAL_OP_DIR_WRITE;
+	case R_ARCH_OP_TYPE_STORE:
+		op->direction = R_ARCH_OP_DIR_WRITE;
 		break;
-	case R_ANAL_OP_TYPE_LEA:
-		op->direction = R_ANAL_OP_DIR_REF;
+	case R_ARCH_OP_TYPE_LEA:
+		op->direction = R_ARCH_OP_DIR_REF;
 		break;
-	case R_ANAL_OP_TYPE_CALL:
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_UJMP:
-	case R_ANAL_OP_TYPE_UCALL:
-		op->direction = R_ANAL_OP_DIR_EXEC;
+	case R_ARCH_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_JMP:
+	case R_ARCH_OP_TYPE_UJMP:
+	case R_ARCH_OP_TYPE_UCALL:
+		op->direction = R_ARCH_OP_DIR_EXEC;
 		break;
 	default:
 		break;
@@ -811,7 +811,7 @@ static int get_capstone_mode (RAnal *anal) {
 #define CSINC_MODE get_capstone_mode(a)
 #include "capstone.inc"
 
-static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	csh hndl = init_capstone (anal);
 	if (hndl == 0) {
 		return -1;
@@ -834,13 +834,13 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	op->size = 4;
 	n = cs_disasm (hndl, buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 			opsize = 4;
 		}
 		goto beach;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s%s%s",
 			insn->mnemonic,
 			insn->op_str[0]?" ":"",
@@ -854,7 +854,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	op->refptr = 0;
 	switch (insn->id) {
 	case MIPS_INS_INVALID:
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		break;
 	case MIPS_INS_LB:
 	case MIPS_INS_LBU:
@@ -877,7 +877,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_LDL:
 	case MIPS_INS_LDR:
 	case MIPS_INS_LDXC1:
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		if (!op->refptr) {
 			op->refptr = 8;
 		}
@@ -912,24 +912,24 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_SWL:
 	case MIPS_INS_SWR:
 	case MIPS_INS_SWXC1:
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		break;
 	case MIPS_INS_NOP:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		break;
 	case MIPS_INS_SYSCALL:
-		op->type = R_ANAL_OP_TYPE_SWI;
+		op->type = R_ARCH_OP_TYPE_SWI;
 		break;
 	case MIPS_INS_BREAK:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = R_ARCH_OP_TYPE_TRAP;
 		break;
 	case MIPS_INS_JALR:
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = R_ARCH_OP_TYPE_UCALL;
 		op->delay = 1;
 		if (REGID(0) == MIPS_REG_25) {
 			op->jump = t9_pre;
 			t9_pre = UT64_MAX;
-			op->type = R_ANAL_OP_TYPE_RCALL;
+			op->type = R_ARCH_OP_TYPE_RCALL;
 		}
 		break;
 	case MIPS_INS_JAL:
@@ -948,7 +948,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_BGTZALC:
 	case MIPS_INS_JIALC:
 	case MIPS_INS_JIC:
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		op->jump = IMM(0);
 
 		switch (insn->id) {
@@ -971,10 +971,10 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_LI:
 	case MIPS_INS_LUI:
 		SET_VAL (op, 1);
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case MIPS_INS_MOVE:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case MIPS_INS_ADD:
 	case MIPS_INS_ADDI:
@@ -985,12 +985,12 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_DADDIU:
 		SET_VAL (op, 2);
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD);
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		if (REGID(0) == MIPS_REG_T9) {
 				t9_pre += IMM(2);
 		}
 		if (REGID(0) == MIPS_REG_SP) {
-			op->stackop = R_ANAL_STACK_INC;
+			op->stackop = R_ARCH_STACK_INC;
 			op->stackptr = -IMM(2);
 		}
 		break;
@@ -1008,7 +1008,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_SUBUH_R:
 		SET_VAL (op,2);
 		op->sign = insn->id == MIPS_INS_SUB;
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		break;
 	case MIPS_INS_MULV:
 	case MIPS_INS_MULT:
@@ -1017,28 +1017,28 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_MUL:
 	case MIPS_INS_DMULT:
 	case MIPS_INS_DMULTU:
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		break;
 	case MIPS_INS_XOR:
 	case MIPS_INS_XORI:
 		SET_VAL (op,2);
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		break;
 	case MIPS_INS_AND:
 	case MIPS_INS_ANDI:
 		SET_VAL (op,2);
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = R_ARCH_OP_TYPE_AND;
 		if (REGID(0) == MIPS_REG_SP) {
-			op->stackop = R_ANAL_STACK_ALIGN;
+			op->stackop = R_ARCH_STACK_ALIGN;
 		}
 		break;
 	case MIPS_INS_NOT:
-		op->type = R_ANAL_OP_TYPE_NOT;
+		op->type = R_ARCH_OP_TYPE_NOT;
 		break;
 	case MIPS_INS_OR:
 	case MIPS_INS_ORI:
 		SET_VAL (op,2);
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = R_ARCH_OP_TYPE_OR;
 		break;
 	case MIPS_INS_DIV:
 	case MIPS_INS_DIVU:
@@ -1047,13 +1047,13 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_FDIV:
 	case MIPS_INS_DIV_S:
 	case MIPS_INS_DIV_U:
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = R_ARCH_OP_TYPE_DIV;
 		break;
 	case MIPS_INS_CMPGDU:
 	case MIPS_INS_CMPGU:
 	case MIPS_INS_CMPU:
 	case MIPS_INS_CMPI:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		break;
 	case MIPS_INS_J:
 	case MIPS_INS_B:
@@ -1082,9 +1082,9 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_BLTZC:
 	case MIPS_INS_BGTZC:
 		if (insn->id == MIPS_INS_J || insn->id == MIPS_INS_B ) {
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ARCH_OP_TYPE_JMP;
 		} else {
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 		}
 
 		if (OPERAND(0).type == MIPS_OP_IMM) {
@@ -1113,11 +1113,11 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		break;
 	case MIPS_INS_JR:
 	case MIPS_INS_JRC:
-		op->type = R_ANAL_OP_TYPE_RJMP;
+		op->type = R_ARCH_OP_TYPE_RJMP;
 		op->delay = 1;
 		// register is $ra, so jmp is a return
 		if (insn->detail->mips.operands[0].reg == MIPS_REG_RA) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 			t9_pre = UT64_MAX;
 		}
 		if (REGID(0) == MIPS_REG_25) {
@@ -1139,32 +1139,32 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_SHRA:
 	case MIPS_INS_SHRA_R:
 	case MIPS_INS_SRA:
-		op->type = R_ANAL_OP_TYPE_SAR;
+		op->type = R_ARCH_OP_TYPE_SAR;
 		SET_VAL (op,2);
 		break;
 	case MIPS_INS_SHRL:
 	case MIPS_INS_SRLV:
 	case MIPS_INS_SRL:
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = R_ARCH_OP_TYPE_SHR;
 		SET_VAL (op,2);
 		break;
 	case MIPS_INS_SLLV:
 	case MIPS_INS_SLL:
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = R_ARCH_OP_TYPE_SHL;
 		SET_VAL (op,2);
 		break;
 	}
 beach:
 	set_opdir (op);
-	if (insn && mask & R_ANAL_OP_MASK_OPEX) {
+	if (insn && mask & R_ARCH_OP_MASK_OPEX) {
 		opex (&op->opex, hndl, insn);
 	}
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
+	if (mask & R_ARCH_OP_MASK_VAL) {
 		op_fillval (anal, op, &hndl, insn);
 	}
 	cs_free (insn, n);

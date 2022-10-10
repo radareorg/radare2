@@ -791,8 +791,8 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 
 static bool is_repeatable_inst(RCore *core, ut64 addr) {
 	// we have read the bytes already
-	RAnalOp *op = r_core_op_anal (core, addr, R_ANAL_OP_MASK_ALL);
-	bool ret = op && ((op->prefix & R_ANAL_OP_PREFIX_REP) || (op->prefix & R_ANAL_OP_PREFIX_REPNE));
+	RArchOp *op = r_core_op_anal (core, addr, R_ARCH_OP_MASK_ALL);
+	bool ret = op && ((op->prefix & R_ARCH_OP_PREFIX_REP) || (op->prefix & R_ARCH_OP_PREFIX_REPNE));
 	r_anal_op_free (op);
 	return ret;
 }
@@ -859,7 +859,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 	RListIter *iter;
 	char *optype = NULL;
 	char *optypes = strdup (r_str_trim_head_ro ((char *) _optypes));
-	RAnalOp op;
+	RArchOp op;
 	ut8 buf[32];
 	ut64 pc;
 	bool res = true;
@@ -913,7 +913,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 		}
 		r_io_read_at (core->io, pc, buf, sizeof (buf));
 
-		if (!r_anal_op (core->dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC)) {
+		if (!r_anal_op (core->dbg->anal, &op, pc, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC)) {
 			R_LOG_ERROR ("r_anal_op failed");
 			res = false;
 			goto cleanup_after_push;
@@ -1175,7 +1175,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 }
 
 static void cmd_debug_backtrace(RCore *core, const char *input) {
-	RAnalOp analop;
+	RArchOp analop;
 	ut64 addr, len = r_num_math (core->num, input);
 	if (!len) {
 		r_bp_traptrace_list (core->dbg->bp);
@@ -1202,7 +1202,7 @@ static void cmd_debug_backtrace(RCore *core, const char *input) {
 			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 			// XXX Do asm.arch should define the max size of opcode?
 			r_io_read_at (core->io, addr, buf, 32); // XXX longer opcodes?
-			r_anal_op (core->anal, &analop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
+			r_anal_op (core->anal, &analop, addr, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
 		} while (r_bp_traptrace_at (core->dbg->bp, addr, analop.size));
 		r_bp_traptrace_enable (core->dbg->bp, false);
 	}
@@ -3948,7 +3948,7 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 
 	while (true) {
 		ut8 buf[32];
-		RAnalOp aop;
+		RArchOp aop;
 		int addr_in_range;
 
 		if (r_cons_is_breaked()) {
@@ -3975,13 +3975,13 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 		addr_in_range = addr >= from && addr < to;
 
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
-		r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
+		r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
 		eprintf ("%d %"PFMT64x"\r", n++, addr);
 		switch (aop.type) {
-		case R_ANAL_OP_TYPE_UCALL:
-		case R_ANAL_OP_TYPE_ICALL:
-		case R_ANAL_OP_TYPE_RCALL:
-		case R_ANAL_OP_TYPE_IRCALL:
+		case R_ARCH_OP_TYPE_UCALL:
+		case R_ARCH_OP_TYPE_ICALL:
+		case R_ARCH_OP_TYPE_RCALL:
+		case R_ARCH_OP_TYPE_IRCALL:
 			{
 				ut64 called_addr;
 				int called_in_range;
@@ -4004,7 +4004,7 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 				// TODO: push pc+aop.length into the call path stack
 				break;
 			}
-		case R_ANAL_OP_TYPE_CALL:
+		case R_ARCH_OP_TYPE_CALL:
 			{
 				int called_in_range = aop.jump >= from && aop.jump < to;
 				if (!called_in_range && addr_in_range && !shallow_trace) {
@@ -4018,7 +4018,7 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 				}
 				break;
 			}
-		case R_ANAL_OP_TYPE_RET:
+		case R_ARCH_OP_TYPE_RET:
 #if 0
 			// TODO: we must store ret value for each call in the graph path to do this check
 			r_debug_step (dbg, 1);
@@ -4500,9 +4500,9 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		} else {
 			r_reg_arena_swap (core->dbg->reg, true);
 			if (input[2] == 'u') {
-				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_UCALL, 0);
+				r_debug_continue_until_optype (core->dbg, R_ARCH_OP_TYPE_UCALL, 0);
 			} else {
-				r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_CALL, 0);
+				r_debug_continue_until_optype (core->dbg, R_ARCH_OP_TYPE_CALL, 0);
 			}
 		}
 		break;
@@ -4511,7 +4511,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 			eprintf ("Usage: dcr: step over until ret instruction is found\n");
 		} else {
 			r_reg_arena_swap (core->dbg->reg, true);
-			r_debug_continue_until_optype (core->dbg, R_ANAL_OP_TYPE_RET, 1);
+			r_debug_continue_until_optype (core->dbg, R_ARCH_OP_TYPE_RET, 1);
 		}
 		break;
 	case 'k':
@@ -4621,7 +4621,7 @@ static char *get_corefile_name(const char *raw_name, int pid) {
 static int cmd_debug_step(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	ut8 buf[64];
-	RAnalOp aop;
+	RArchOp aop;
 	int i, times = 1;
 	char *ptr = strchr (input, ' ');
 	if (ptr) {
@@ -4705,12 +4705,12 @@ static int cmd_debug_step(RCore *core, const char *input) {
 		for (i = 0; i < times; i++) {
 			ut8 buf[64];
 			ut64 addr;
-			RAnalOp aop;
+			RArchOp aop;
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 			addr = r_debug_reg_get (core->dbg, "PC");
 			r_io_read_at (core->io, addr, buf, sizeof (buf));
-			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
-			if (aop.type == R_ANAL_OP_TYPE_CALL) {
+			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
+			if (aop.type == R_ARCH_OP_TYPE_CALL) {
 				RBinObject *o = r_bin_cur_object (core->bin);
 				RBinSection *s = r_bin_get_section_at (o, aop.jump, true);
 				if (!s) {
@@ -4731,7 +4731,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 			for (i = 0; i < times; i++) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 				r_io_read_at (core->io, addr, buf, sizeof (buf));
-				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
+				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
 #if 0
 				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
 					eprintf ("Don't know how to skip this instruction\n");
@@ -5168,7 +5168,7 @@ static int cmd_debug(void *data, const char *input) {
 	RList *list;
 	RDebugPid *p;
 	RDebugTracepoint *trace;
-	RAnalOp *op;
+	RArchOp *op;
 	int ret = 0;
 	ut64 old_seek = core->offset;
 
@@ -5237,7 +5237,7 @@ static int cmd_debug(void *data, const char *input) {
 			} else if (input[2] == 'i') {
 				int n = 0;
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
-					op = r_core_anal_op (core, trace->addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+					op = r_core_anal_op (core, trace->addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 					if (n >= min) {
 						r_cons_printf ("%d %s\n", trace->count, op->mnemonic);
 					}
@@ -5247,7 +5247,7 @@ static int cmd_debug(void *data, const char *input) {
 			} else if (input[2] == ' ') {
 				int n = 0;
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
-					op = r_core_anal_op (core, trace->addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+					op = r_core_anal_op (core, trace->addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 					if (n >= min) {
 						r_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, op->mnemonic);
 					}
@@ -5258,7 +5258,7 @@ static int cmd_debug(void *data, const char *input) {
 				// TODO: reimplement using the api
 				//r_core_cmd0 (core, "pd 1 @@= `dtq`");
 				r_list_foreach (core->dbg->trace->traces, iter, trace) {
-					op = r_core_anal_op (core, trace->addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+					op = r_core_anal_op (core, trace->addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 					r_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, op->mnemonic);
 					r_anal_op_free (op);
 				}
@@ -5292,7 +5292,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (ptr) {
 					count = r_num_math (core->num, ptr + 1);
 				}
-				RAnalOp *op = r_core_op_anal (core, addr, R_ANAL_OP_MASK_HINT);
+				RArchOp *op = r_core_op_anal (core, addr, R_ARCH_OP_MASK_HINT);
 				if (op) {
 					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
 					if (!tp) {
@@ -5329,7 +5329,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (!addr) {
 					addr = core->offset;
 				}
-				RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
+				RArchOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_ESIL);
 				if (op) {
 					r_anal_esil_trace_op (core->anal->esil, op);
 				}

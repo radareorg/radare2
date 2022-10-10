@@ -129,7 +129,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 	r_strf_buffer (32);
 	ut64 oaddr = addr;
 	ut64 *value = NULL;
-	RAnalOp *op;
+	RArchOp *op;
 	int cur = 0;
 	bool block_end = false;
 	RStack *stack = r_stack_newf (10, free);
@@ -148,7 +148,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 		free (value);
 		cur = 0;
 		while (!block_end && cur < maxfcnsize) {
-			op = r_core_anal_op (core, addr + cur, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+			op = r_core_anal_op (core, addr + cur, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 			if (!op || !op->mnemonic) {
 				R_LOG_ERROR ("a2f: Cannot analyze opcode at 0x%"PFMT64x, addr+cur);
 				oaddr = UT64_MAX;
@@ -162,7 +162,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 
 			bbAddOpcode (addr + cur);
 			switch (op->type) {
-			case R_ANAL_OP_TYPE_NOP:
+			case R_ARCH_OP_TYPE_NOP:
 				// skip nops
 				if (cur == 0) {
 					cur -= op->size;
@@ -170,19 +170,19 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 					oaddr += op->size;
 				}
 				break;
-			case R_ANAL_OP_TYPE_CALL:
+			case R_ARCH_OP_TYPE_CALL:
 				/* A call instruction implies that the destination
 				 * is a new function unless the address is inside
 				 * the same range than the current function */
 				addCall (op->jump);
 				r_list_append (delayed_commands, r_str_newf ("axC %"PFMT64d" %"PFMT64d, op->jump, addr + cur));
 				break;
-			case R_ANAL_OP_TYPE_UCALL:
-			case R_ANAL_OP_TYPE_ICALL:
-			case R_ANAL_OP_TYPE_RCALL:
-			case R_ANAL_OP_TYPE_IRCALL:
-			case R_ANAL_OP_TYPE_CCALL:
-			case R_ANAL_OP_TYPE_UCCALL:
+			case R_ARCH_OP_TYPE_UCALL:
+			case R_ARCH_OP_TYPE_ICALL:
+			case R_ARCH_OP_TYPE_RCALL:
+			case R_ARCH_OP_TYPE_IRCALL:
+			case R_ARCH_OP_TYPE_CCALL:
+			case R_ARCH_OP_TYPE_UCCALL:
 				/* unknown calls depend on ESIL or DEBUG tracing
 				 * information to know the destination, we can mark
 				 * those 'calls' for later adding tracepoints in
@@ -192,13 +192,13 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 					r_list_append (delayed_commands, r_str_newf ("axC %"PFMT64d" %"PFMT64d, op->ptr, addr + cur));
 				}
 				break;
-			case R_ANAL_OP_TYPE_MJMP:
-			case R_ANAL_OP_TYPE_MCJMP:
-			case R_ANAL_OP_TYPE_UCJMP:
-			case R_ANAL_OP_TYPE_UJMP:
-			case R_ANAL_OP_TYPE_RJMP:
-			case R_ANAL_OP_TYPE_IJMP:
-			case R_ANAL_OP_TYPE_IRJMP:
+			case R_ARCH_OP_TYPE_MJMP:
+			case R_ARCH_OP_TYPE_MCJMP:
+			case R_ARCH_OP_TYPE_UCJMP:
+			case R_ARCH_OP_TYPE_UJMP:
+			case R_ARCH_OP_TYPE_RJMP:
+			case R_ARCH_OP_TYPE_IJMP:
+			case R_ARCH_OP_TYPE_IRJMP:
 				/* an unknown jump use to go into computed destinations
 				 * outside the current function, but it may result
 				 * on an antidisasm trick */
@@ -206,7 +206,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 				/* An unknown jump breaks the basic blocks */
 				block_end = true; // XXX more investigation here
 				break;
-			case R_ANAL_OP_TYPE_TRAP:
+			case R_ARCH_OP_TYPE_TRAP:
 				if (cur == 0) {
 					// skip leading int3
 					cur -= op->size;
@@ -216,13 +216,13 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 					block_end = true;
 				}
 				break;
-			case R_ANAL_OP_TYPE_CRET:
-			case R_ANAL_OP_TYPE_RET:
+			case R_ARCH_OP_TYPE_CRET:
+			case R_ARCH_OP_TYPE_RET:
 				addRet (addr + cur);
 				bbAdd (db, addr, addr + cur + op->size, UT64_MAX, UT64_MAX);
 				block_end = true;
 				break;
-			case R_ANAL_OP_TYPE_CJMP:
+			case R_ARCH_OP_TYPE_CJMP:
 				addCjmp (addr+cur);
 				bbAdd (db, addr, addr + cur + op->size, op->jump, addr + cur + op->size);
 				addTarget (core, stack, db, op->jump);
@@ -230,15 +230,15 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 				block_end = true;
 				r_list_append (delayed_commands, r_str_newf ("axc %"PFMT64d" %"PFMT64d, op->jump, addr + cur));
 				break;
-			case R_ANAL_OP_TYPE_JMP:
+			case R_ARCH_OP_TYPE_JMP:
 				addUjmp (addr+cur);
 				bbAdd (db, addr, addr + cur + op->size, op->jump, UT64_MAX);
 				addTarget (core, stack, db, op->jump);
 				block_end = true;
 				r_list_append (delayed_commands, r_str_newf ("axc %"PFMT64d" %"PFMT64d, op->jump, addr + cur));
 				break;
-			case R_ANAL_OP_TYPE_UNK:
-			case R_ANAL_OP_TYPE_ILL:
+			case R_ARCH_OP_TYPE_UNK:
+			case R_ARCH_OP_TYPE_ILL:
 				eprintf ("a2f: Invalid instruction\n");
 				block_end = true;
 				break;

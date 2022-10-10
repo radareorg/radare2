@@ -143,7 +143,7 @@ static void __replaceRegisters(RReg *reg, char *s, bool x86) {
 	}
 }
 
-static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+static bool filter(RParse *p, ut64 addr, RFlag *f, RArchOpHint *hint, char *data, char *str, int len, bool big_endian) {
 	char *ptr = data, *ptr2, *ptr_backup;
 	RAnalFunction *fcn;
 	RFlagItem *flag;
@@ -580,7 +580,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 // TODO we shouhld use RCoreBind and use the hintGet/flagGet methods, but we can also have rflagbind+ranalbind, but kiss pls
 // TODO: NEW SIGNATURE: R_API char *r_parse_filter(RParse *p, ut64 addr, const char *str)
 // DEPRECATE
-R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RArchOpHint *hint, char *data, char *str, int len, bool big_endian) {
 	filter (p, addr, f, hint, data, str, len, big_endian);
 	if (p->cur && p->cur->filter) {
 		return p->cur->filter (p, addr, f, data, str, len, big_endian);

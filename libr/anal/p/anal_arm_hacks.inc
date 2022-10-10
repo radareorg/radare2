@@ -1,5 +1,5 @@
 #include "r_anal.h"
-static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
+static int hack_handle_dp_reg(ut32 insn, RArchOp *op) {
 	const bool op0 = (insn >> 30) & 0x1;
 	const bool op1 = (insn >> 28) & 0x1;
 	const ut8 op2 = (insn >> 21) & 0xf;
@@ -13,20 +13,20 @@ static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
 			if (!S) {
 				if (opcode == 4) {
 					// irg
-					op->type = R_ANAL_OP_TYPE_MOV;
+					op->type = R_ARCH_OP_TYPE_MOV;
 					return op->size = 4;
 				} else if (opcode == 0) {
 					// subp
-					op->type = R_ANAL_OP_TYPE_SUB;
+					op->type = R_ARCH_OP_TYPE_SUB;
 					return op->size = 4;
 				} else if (opcode == 5) {
 					// gmi
-					op->type = R_ANAL_OP_TYPE_MOV;
+					op->type = R_ARCH_OP_TYPE_MOV;
 					return op->size = 4;
 				}
 			} else if (S && opcode == 0) {
 				// subps
-				op->type = R_ANAL_OP_TYPE_SUB;
+				op->type = R_ARCH_OP_TYPE_SUB;
 				return op->size = 4;
 			}
 		}
@@ -34,7 +34,7 @@ static int hack_handle_dp_reg(ut32 insn, RAnalOp *op) {
 	return -1;
 }
 
-static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
+static int hack_handle_ldst(ut32 insn, RArchOp *op) {
 	const ut8 op0 = (insn >> 28) & 0xf;
 	const bool op1 = (insn >> 26) & 0x1;
 	ut8 op2 = (insn >> 23) & 0x3;
@@ -48,38 +48,38 @@ static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
 			switch (opc) {
 			case 0:
 				// stg
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = R_ARCH_OP_TYPE_STORE;
 				return op->size = 4;
 			case 1:
 				// stzg
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = R_ARCH_OP_TYPE_STORE;
 				return op->size = 4;
 			case 2:
 				// st2g
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = R_ARCH_OP_TYPE_STORE;
 				return op->size = 4;
 			case 3:
 				// stz2g
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = R_ARCH_OP_TYPE_STORE;
 				return op->size = 4;
 			}
 		} else if (op2 == 0) {
 			switch (opc) {
 			case 0:
 				// stzgm
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = R_ARCH_OP_TYPE_STORE;
 				return op->size = 4;
 			case 1:
 				// ldg
-				op->type = R_ANAL_OP_TYPE_LOAD;
+				op->type = R_ARCH_OP_TYPE_LOAD;
 				return op->size = 4;
 			case 2:
 				// stgm
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = R_ARCH_OP_TYPE_STORE;
 				return op->size = 4;
 			case 3:
 				// ldgm
-				op->type = R_ANAL_OP_TYPE_LOAD;
+				op->type = R_ARCH_OP_TYPE_LOAD;
 				return op->size = 4;
 			}
 		}
@@ -90,14 +90,14 @@ static int hack_handle_ldst(ut32 insn, RAnalOp *op) {
 		const bool L = (insn >> 22) & 0x1;
 		if (opc == 1 && !V && !L) {
 			// stgp
-			op->type = R_ANAL_OP_TYPE_STORE;
+			op->type = R_ARCH_OP_TYPE_STORE;
 			return op->size = 4;
 		}
 	}
 	return -1;
 }
 
-static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
+static int hack_handle_dp_imm(ut32 insn, RArchOp *op) {
 	const ut8 op0 = (insn >> 23) & 0x7;
 
 	// Add/subtract (immediate, with tags)
@@ -109,18 +109,18 @@ static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
 		if (sf && !S && !o2) {
 			if (op_ ) {
 				// subg
-				op->type = R_ANAL_OP_TYPE_SUB;
+				op->type = R_ARCH_OP_TYPE_SUB;
 				return op->size = 4;
 			}
 			// addg
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			return op->size = 4;
 		}
 	}
 	return -1;
 }
 
-static int hack_handle_br_exc_sys(ut32 insn, RAnalOp *op) {
+static int hack_handle_br_exc_sys(ut32 insn, RArchOp *op) {
 	const ut8 op0 = (insn >> 29) & 0x7;
 	const ut16 op1 = (insn >> 12) & 0x3fff;
 	ut8 op2 = insn & 0x1f;
@@ -135,7 +135,7 @@ static int hack_handle_br_exc_sys(ut32 insn, RAnalOp *op) {
 			case 2:
 			case 4:
 			case 6:
-				op->type = R_ANAL_OP_TYPE_CMP;
+				op->type = R_ARCH_OP_TYPE_CMP;
 				return op->size = 4;
 			}
 		}
@@ -143,7 +143,7 @@ static int hack_handle_br_exc_sys(ut32 insn, RAnalOp *op) {
 	return -1;
 }
 
-static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+static inline int hackyArmAnal(RAnal *a, RArchOp *op, const ut8 *buf, int len) {
 	int ret = -1;
 	// Hacky support for ARMv8.3 and ARMv8.5
 	if (a->config->bits == 64 && len >= 4) {
@@ -151,17 +151,17 @@ static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		int insn_class = (insn >> 25) & 0xf;
 		// xpaci // e#43c1da
 		if (!memcmp (buf + 1, "\x43\xc1\xda", 3)) {
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			return op->size = 4;
 		}
 		// retaa
 		if (!memcmp (buf, "\xff\x0b\x5f\xd6", 4)) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 			return op->size = 4;
 		}
 		// retab
 		if (!memcmp (buf, "\xff\x0f\x5f\xd6", 4)) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 			return op->size = 4;
 		}
 
@@ -196,7 +196,7 @@ static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		}
 
 		if (ret > 0) {
-			op->family = R_ANAL_OP_FAMILY_SECURITY;
+			op->family = R_ARCH_OP_FAMILY_SECURITY;
 		}
 
 	}

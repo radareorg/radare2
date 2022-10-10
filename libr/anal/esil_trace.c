@@ -205,7 +205,7 @@ static bool trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int
 	return ret;
 }
 
-R_API void r_anal_esil_trace_op(RAnalEsil *esil, RAnalOp *op) {
+R_API void r_anal_esil_trace_op(RAnalEsil *esil, RArchOp *op) {
 	r_return_if_fail (esil && op);
 	r_strf_buffer (128);
 	const char *expr = r_strbuf_get (&op->esil);

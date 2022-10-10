@@ -229,7 +229,7 @@ static const char *kvx_reg_profile = ""
  * bundle or if it needs to decode a new bundle */
 static R_TH_LOCAL bundle_t bundle;
 
-static int kvx_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
+static int kvx_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *b, int len, RArchOpMask mask) {
 	char strasm[64];
 	r_return_val_if_fail (anal && op, -1);
 
@@ -245,7 +245,7 @@ static int kvx_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	op->size = insn->len * sizeof (ut32);
 
 	if (insn->opc) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			kvx_instr_print (insn, addr, strasm, sizeof (strasm));
 			op->mnemonic = strdup (strasm);
 		}
@@ -257,18 +257,18 @@ static int kvx_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		 * exemple branch isntruction comes first but will be effective
 		 * at the end of the bundle, after the remaning instructions. */
 		op->delay = insn->rem;
-		if ((op->type & R_ANAL_OP_TYPE_CJMP) == R_ANAL_OP_TYPE_CJMP) {
+		if ((op->type & R_ARCH_OP_TYPE_CJMP) == R_ARCH_OP_TYPE_CJMP) {
 			/* if fail goto next bundle */
 			op->fail = bundle.addr + bundle.size;
 		}
-		if ((op->type & R_ANAL_OP_TYPE_JMP) == R_ANAL_OP_TYPE_JMP) {
+		if ((op->type & R_ARCH_OP_TYPE_JMP) == R_ARCH_OP_TYPE_JMP) {
 			op->jump = kvx_instr_jump (insn, addr);
 		}
-		if ((op->type & R_ANAL_OP_TYPE_RET) == R_ANAL_OP_TYPE_RET) {
+		if ((op->type & R_ARCH_OP_TYPE_RET) == R_ARCH_OP_TYPE_RET) {
 			op->eob = true;
 		}
 	} else {
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 	}
 
 	return op->size;

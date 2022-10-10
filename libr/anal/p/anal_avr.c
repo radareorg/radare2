@@ -38,7 +38,7 @@ typedef struct _cpu_model_tag {
 static R_TH_LOCAL RDESContext desctx;
 static R_TH_LOCAL CPU_MODEL *Gcpu = NULL;
 
-typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
+typedef void (*inst_handler_t) (RAnal *anal, RArchOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
 
 typedef struct _opcodes_tag_ {
 	const char *const name;
@@ -50,7 +50,7 @@ typedef struct _opcodes_tag_ {
 	ut64 type;
 } OPCODE_DESC;
 
-static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu);
+static OPCODE_DESC* avr_op_analyze(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu);
 
 #define CPU_MODEL_DECL(model, pc, consts)\
 	{				 \
@@ -62,9 +62,9 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 #define CPU_PC_MASK(cpu)		MASK((cpu)->pc)
 #define CPU_PC_SIZE(cpu) cpu? ((((cpu)->pc) >> 3) + ((((cpu)->pc) & 0x07) ? 1 : 0)): 0
 
-#define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RAnal *anal, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu)
-#define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), R_ANAL_OP_TYPE_ ## T }
-#define INST_LAST			{ "unknown", 0, 0, (void *) 0, 2, 1, R_ANAL_OP_TYPE_UNK }
+#define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RAnal *anal, RArchOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu)
+#define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), R_ARCH_OP_TYPE_ ## T }
+#define INST_LAST			{ "unknown", 0, 0, (void *) 0, 2, 1, R_ARCH_OP_TYPE_UNK }
 
 #define INST_CALL(OPCODE_NAME)		_inst__ ## OPCODE_NAME (anal, op, buf, len, fail, cpu)
 #define INST_INVALID			{ *fail = 1; return; }
@@ -257,7 +257,7 @@ static RStrBuf *__generic_io_dest(ut8 port, int write, CPU_MODEL *cpu) {
 	return r;
 }
 
-static void __generic_ld_st(RAnalOp *op, char *mem, char ireg, int use_ramp, int prepostdec, int offset, int st) {
+static void __generic_ld_st(RArchOp *op, char *mem, char ireg, int use_ramp, int prepostdec, int offset, int st) {
 	if (ireg) {
 		// preincrement index register
 		if (prepostdec < 0) {
@@ -285,7 +285,7 @@ static void __generic_ld_st(RAnalOp *op, char *mem, char ireg, int use_ramp, int
 	}
 }
 
-static void __generic_pop(RAnalOp *op, int sz) {
+static void __generic_pop(RArchOp *op, int sz) {
 	if (sz > 1) {
 		ESIL_A ("1,sp,+,_ram,+,");	// calc SRAM(sp+1)
 		ESIL_A ("[%d],", sz);		// read value
@@ -296,7 +296,7 @@ static void __generic_pop(RAnalOp *op, int sz) {
 	}
 }
 
-static void __generic_push(RAnalOp *op, int sz) {
+static void __generic_push(RArchOp *op, int sz) {
 	ESIL_A ("sp,_ram,+,");			// calc pointer SRAM(sp)
 	if (sz > 1) {
 		ESIL_A ("-%d,+,", sz - 1);	// dec SP by 'sz'
@@ -506,7 +506,7 @@ INST_HANDLER (cbi) {	// CBI A, b
 	int b = buf[0] & 0x07;
 	RStrBuf *io_port;
 
-	op->family = R_ANAL_OP_FAMILY_IO;
+	op->family = R_ARCH_OP_FAMILY_IO;
 	op->type2 = 1;
 	op->val = a;
 
@@ -583,7 +583,7 @@ INST_HANDLER (cpse) {	// CPSE Rd, Rr
 	}
 	int r = (buf[0] & 0xf) | ((buf[1] & 0x2) << 3);
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
-	RAnalOp next_op = {0};
+	RArchOp next_op = {0};
 
 	// calculate next instruction size (call recursively avr_op_analyze)
 	// and free next_op's esil string (we dont need it now)
@@ -620,7 +620,7 @@ INST_HANDLER (dec) {	// DEC Rd
 
 INST_HANDLER (des) {	// DES k
 	if (desctx.round < 16) {	//DES
-		op->type = R_ANAL_OP_TYPE_CRYPTO;
+		op->type = R_ARCH_OP_TYPE_CRYPTO;
 		op->cycles = 1;		//redo this
 		r_strbuf_setf (&op->esil, "%d,des", desctx.round);
 	}
@@ -761,7 +761,7 @@ INST_HANDLER (in) {	// IN Rd, A
 	RStrBuf *io_src = __generic_io_dest (a, 0, cpu);
 	op->type2 = 0;
 	op->val = a;
-	op->family = R_ANAL_OP_FAMILY_IO;
+	op->family = R_ARCH_OP_FAMILY_IO;
 	ESIL_A ("%s,r%d,=,", r_strbuf_get (io_src), r);
 	r_strbuf_free (io_src);
 }
@@ -1109,7 +1109,7 @@ INST_HANDLER (out) {	// OUT A, Rr
 	RStrBuf *io_dst = __generic_io_dest (a, 1, cpu);
 	op->type2 = 1;
 	op->val = a;
-	op->family = R_ANAL_OP_FAMILY_IO;
+	op->family = R_ARCH_OP_FAMILY_IO;
 	ESIL_A ("r%d,%s,", r, r_strbuf_get (io_dst));
 	r_strbuf_free (io_dst);
 }
@@ -1174,7 +1174,7 @@ INST_HANDLER (ret) {	// RET
 
 INST_HANDLER (reti) {	// RETI
 	//XXX: There are not privileged instructions in ATMEL/AVR
-	op->family = R_ANAL_OP_FAMILY_PRIV;
+	op->family = R_ARCH_OP_FAMILY_PRIV;
 
 	// first perform a standard 'ret'
 	INST_CALL (ret);
@@ -1279,7 +1279,7 @@ INST_HANDLER (sbi) {	// SBI A, b
 
 	op->type2 = 1;
 	op->val = a;
-	op->family = R_ANAL_OP_FAMILY_IO;
+	op->family = R_ARCH_OP_FAMILY_IO;
 
 	// read port a and clear bit b
 	io_port = __generic_io_dest (a, 0, cpu);
@@ -1299,12 +1299,12 @@ INST_HANDLER (sbix) {	// SBIC A, b
 	}
 	int a = (buf[0] >> 3) & 0x1f;
 	int b = buf[0] & 0x07;
-	RAnalOp next_op = {0};
+	RArchOp next_op = {0};
 	RStrBuf *io_port;
 
 	op->type2 = 0;
 	op->val = a;
-	op->family = R_ANAL_OP_FAMILY_IO;
+	op->family = R_ARCH_OP_FAMILY_IO;
 
 	// calculate next instruction size (call recursively avr_op_analyze)
 	// and free next_op's esil string (we dont need it now)
@@ -1356,7 +1356,7 @@ INST_HANDLER (sbrx) {	// SBRC Rr, b
 	}
 	int b = buf[0] & 0x7;
 	int r = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x01) << 4);
-	RAnalOp next_op = {0};
+	RArchOp next_op = {0};
 
 	// calculate next instruction size (call recursively avr_op_analyze)
 	// and free next_op's esil string (we dont need it now)
@@ -1605,10 +1605,10 @@ OPCODE_DESC opcodes[] = {
 	INST_LAST
 };
 
-static void set_invalid_op(RAnalOp *op, ut64 addr) {
+static void set_invalid_op(RArchOp *op, ut64 addr) {
 	// Unknown or invalid instruction.
-	op->family = R_ANAL_OP_FAMILY_UNKNOWN;
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->family = R_ARCH_OP_FAMILY_UNKNOWN;
+	op->type = R_ARCH_OP_TYPE_UNK;
 	op->addr = addr;
 	op->nopcode = 1;
 	op->cycles = 1;
@@ -1617,7 +1617,7 @@ static void set_invalid_op(RAnalOp *op, ut64 addr) {
 	r_strbuf_set (&op->esil, "1,$");
 }
 
-static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu) {
+static OPCODE_DESC* avr_op_analyze(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu) {
 	OPCODE_DESC *opcode_desc;
 	if (len < 2) {
 		return NULL;
@@ -1652,7 +1652,7 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 				// eprintf ("opcode %s @%"PFMT64x" returned 0 cycles.\n", opcode_desc->name, op->addr);
 				opcode_desc->cycles = 2;
 			}
-			op->nopcode = (op->type == R_ANAL_OP_TYPE_UNK);
+			op->nopcode = (op->type == R_ARCH_OP_TYPE_UNK);
 
 			// remove trailing coma (COMETE LA COMA)
 			t = r_strbuf_get (&op->esil);
@@ -1675,8 +1675,8 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 INVALID_OP:
 	// An unknown or invalid option has appeared.
 	//  -- Throw pokeball!
-	op->family = R_ANAL_OP_FAMILY_UNKNOWN;
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->family = R_ARCH_OP_FAMILY_UNKNOWN;
+	op->type = R_ARCH_OP_TYPE_UNK;
 	op->addr = addr;
 	op->nopcode = 1;
 	op->cycles = 1;
@@ -1693,7 +1693,7 @@ INVALID_OP:
 }
 
 //TODO: remove register analysis comment when each avr cpu will be implemented in asm plugin
-static int avr_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int avr_op (RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	const int mnemonic_len = 32;
 	op->mnemonic = calloc (mnemonic_len, 1);
 
@@ -2298,7 +2298,7 @@ static int archinfo(RAnal *anal, int q) {
 }
 
 static ut8 *anal_mask_avr(RAnal *anal, int size, const ut8 *data, ut64 at) {
-	RAnalOp *op = NULL;
+	RArchOp *op = NULL;
 	ut8 *ret = NULL;
 	int idx;
 

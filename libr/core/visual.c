@@ -411,7 +411,7 @@ static void printSnow(RCore *core) {
 #endif
 
 static void rotateAsmBits(RCore *core) {
-	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
+	RArchOpHint *hint = r_anal_hint_get (core->anal, core->offset);
 	int bits = hint? hint->bits : r_config_get_i (core->config, "asm.bits");
 	int retries = 4;
 	while (retries > 0) {
@@ -1194,7 +1194,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	ut8 buf[OPDELTA * 2];
 	ut64 target, base;
 	RAnalBlock *bb;
-	RAnalOp op;
+	RArchOp op;
 	int len, ret, i;
 	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	int maxop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
@@ -1226,7 +1226,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	r_io_read_at (core->io, base, buf, sizeof (buf));
 	for (i = 0; i < sizeof (buf); i++) {
 		ret = r_anal_op (core->anal, &op, base + i,
-			buf + i, sizeof (buf) - i, R_ANAL_OP_MASK_BASIC);
+			buf + i, sizeof (buf) - i, R_ARCH_OP_MASK_BASIC);
 		if (ret) {
 			len = op.size;
 			if (len < 1) {
@@ -1911,7 +1911,7 @@ static ut64 insoff(RCore *core, int delta) {
 
 static void nextOpcode(RCore *core) {
 	ut64 opaddr = insoff (core, core->print->cur);
-	RAnalOp *aop = r_core_anal_op (core, opaddr, R_ANAL_OP_MASK_BASIC);
+	RArchOp *aop = r_core_anal_op (core, opaddr, R_ARCH_OP_MASK_BASIC);
 	RPrint *p = core->print;
 	if (aop) {
 		p->cur += aop->size;
@@ -2690,18 +2690,18 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				buf[1] = 0;
 				r_core_visual_cmd(core, buf);
 			} else {
-			RAnalOp *op;
+			RArchOp *op;
 			int wheel = r_config_get_i (core->config, "scr.wheel");
 			if (wheel) {
 				r_cons_enable_mouse (true);
 			}
 			do {
-				op = r_core_anal_op (core, core->offset + core->print->cur, R_ANAL_OP_MASK_BASIC);
+				op = r_core_anal_op (core, core->offset + core->print->cur, R_ARCH_OP_MASK_BASIC);
 				if (op) {
-					if (op->type == R_ANAL_OP_TYPE_JMP ||
-					op->type == R_ANAL_OP_TYPE_CJMP ||
-					op->type == R_ANAL_OP_TYPE_CALL ||
-					op->type == R_ANAL_OP_TYPE_CCALL) {
+					if (op->type == R_ARCH_OP_TYPE_JMP ||
+					op->type == R_ARCH_OP_TYPE_CJMP ||
+					op->type == R_ARCH_OP_TYPE_CALL ||
+					op->type == R_ARCH_OP_TYPE_CCALL) {
 						if (core->print->cur_enabled) {
 							int delta = R_ABS ((st64) op->jump - (st64) offset);
 							if (op->jump < core->offset || op->jump >= core->print->screen_bounds) {

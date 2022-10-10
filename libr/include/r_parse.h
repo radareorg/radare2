@@ -66,7 +66,7 @@ R_API bool r_parse_use(RParse *p, const char *name);
 /* action */
 R_API bool r_parse_parse(RParse *p, const char *data, char *str);
 R_API bool r_parse_assemble(RParse *p, char *data, char *str); // XXX deprecate, unused and probably useless, related to write-hack
-R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, char *str, int len, bool big_endian);
+R_API bool r_parse_filter(RParse *p, ut64 addr, RFlag *f, RArchOpHint *hint, char *data, char *str, int len, bool big_endian);
 R_API bool r_parse_subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 R_API char *r_parse_immtrim(char *opstr);
 

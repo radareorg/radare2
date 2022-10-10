@@ -134,7 +134,7 @@ static struct {
 	{0x53, "sre (0x%02x),y", 2},
 	{-1, NULL, 0}};
 
-static int _6502Disass(ut64 pc, RAnalOp *op, const ut8 *buf, ut64 len) {
+static int _6502Disass(ut64 pc, RArchOp *op, const ut8 *buf, ut64 len) {
 	int i;
 	for (i = 0; ops[i].name; i++) {
 		if (ops[i].op == buf[0]) {

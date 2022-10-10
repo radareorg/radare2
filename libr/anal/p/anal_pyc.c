@@ -6,7 +6,7 @@
 
 static R_TH_LOCAL pyc_opcodes *ops = NULL;
 
-static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int disassemble(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len) {
 	RList *shared = NULL;
 
 	RBin *bin = a->binb.bin;
@@ -88,7 +88,7 @@ static RList *get_pyc_code_obj(RAnal *anal) {
 	return is_pyc? b->cur->o->bin_obj: NULL;
 }
 
-static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int pyc_op(RAnal *a, RArchOp *op, ut64 addr, const ut8 *data, int len, RArchOpMask mask) {
 	RList *pyobj = get_pyc_code_obj (a);
 	if (!pyobj) {
 		return -1;
@@ -106,7 +106,7 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 		return -1;
 	}
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		disassemble (a, op, addr, data, len);
 	}
 	ut64 func_base = func->start_offset;
@@ -114,7 +114,7 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 	ut8 op_code = data[0];
 	op->addr = addr;
 	op->sign = true;
-	op->type = R_ANAL_OP_TYPE_ILL;
+	op->type = R_ARCH_OP_TYPE_ILL;
 	op->id = op_code;
 
 	if (!ops || !pyc_opcodes_equal (ops, a->config->cpu)) {
@@ -126,7 +126,7 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 	bool is_python36 = bits == 8;
 	pyc_opcode_object *op_obj = &ops->opcodes[op_code];
 	if (!op_obj->op_name) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		op->size = 1;
 		goto anal_end;
 	}
@@ -142,29 +142,29 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 	}
 
 	if (op_obj->type & HASJABS) {
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		op->jump = func_base + oparg;
 
 		if (op_obj->type & HASCONDITION) {
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 			op->fail = addr + ((is_python36)? 2: 3);
 		}
 		goto anal_end;
 	}
 	if (op_obj->type & HASJREL) {
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		op->jump = addr + oparg + ((is_python36)? 2: 3);
 		op->fail = addr + ((is_python36)? 2: 3);
 
 		if (op_obj->type & HASCONDITION) {
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 			//op->fail = addr + ((is_python36)? 2: 3);
 		}
 		//goto anal_end;
 	}
 
 	if (op_obj->type & HASCOMPARE) {
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		goto anal_end;
 	}
 

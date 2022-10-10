@@ -399,27 +399,27 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	return "data";
 }
 
-R_API const char *r_anal_datatype_to_string(RAnalDataType t) {
+R_API const char *r_anal_datatype_to_string(RArchDataType t) {
 	switch (t) {
-	case R_ANAL_DATATYPE_NULL:
+	case R_ARCH_DATATYPE_NULL:
 		return NULL;
-	case R_ANAL_DATATYPE_ARRAY:
+	case R_ARCH_DATATYPE_ARRAY:
 		return "array";
-	case R_ANAL_DATATYPE_OBJECT: // instance
+	case R_ARCH_DATATYPE_OBJECT: // instance
 		return "object";
-	case R_ANAL_DATATYPE_STRING:
+	case R_ARCH_DATATYPE_STRING:
 		return "string";
-	case R_ANAL_DATATYPE_CLASS:
+	case R_ARCH_DATATYPE_CLASS:
 		return "class";
-	case R_ANAL_DATATYPE_BOOLEAN:
+	case R_ARCH_DATATYPE_BOOLEAN:
 		return "boolean";
-	case R_ANAL_DATATYPE_INT16:
+	case R_ARCH_DATATYPE_INT16:
 		return "int16";
-	case R_ANAL_DATATYPE_INT32:
+	case R_ARCH_DATATYPE_INT32:
 		return "int32";
-	case R_ANAL_DATATYPE_INT64:
+	case R_ARCH_DATATYPE_INT64:
 		return "int64";
-	case R_ANAL_DATATYPE_FLOAT:
+	case R_ARCH_DATATYPE_FLOAT:
 		return "float";
 	}
 	return NULL;

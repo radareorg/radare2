@@ -7,7 +7,7 @@
 #include <string.h>
 #include "snes_op_table.h"
 
-static int snesDisass(int M_flag, int X_flag, ut64 pc, RAnalOp *op, const ut8 *buf, int len) {
+static int snesDisass(int M_flag, int X_flag, ut64 pc, RArchOp *op, const ut8 *buf, int len) {
 	snes_op_t *s_op = &snes_op[buf[0]];
 	int op_len = snes_op_get_size (M_flag, X_flag, s_op);
 	if (len < op_len) {

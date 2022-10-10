@@ -57,17 +57,17 @@ static void __as_free(RAsmState *as) {
 
 static char *stackop2str(int type) {
 	switch (type) {
-	case R_ANAL_STACK_NULL: return strdup ("null");
-	case R_ANAL_STACK_NOP: return strdup ("nop");
-	//case R_ANAL_STACK_INCSTACK: return strdup ("incstack");
-	case R_ANAL_STACK_GET: return strdup ("get");
-	case R_ANAL_STACK_SET: return strdup ("set");
+	case R_ARCH_STACK_NULL: return strdup ("null");
+	case R_ARCH_STACK_NOP: return strdup ("nop");
+	//case R_ARCH_STACK_INCSTACK: return strdup ("incstack");
+	case R_ARCH_STACK_GET: return strdup ("get");
+	case R_ARCH_STACK_SET: return strdup ("set");
 	}
 	return strdup ("unknown");
 }
 
-static int showanal(RAsmState *as, RAnalOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
-	int ret = r_anal_op (as->anal, op, offset, buf, len, R_ANAL_OP_MASK_ESIL);
+static int showanal(RAsmState *as, RArchOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
+	int ret = r_anal_op (as->anal, op, offset, buf, len, R_ARCH_OP_MASK_ESIL);
 	if (ret < 1) {
 		return ret;
 	}
@@ -130,13 +130,13 @@ static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
 		free (buf);
 		return 0;
 	}
-	RAnalOp aop = {0};
+	RArchOp aop = {0};
 	if (as->json) {
 		pj_a (pj);
 	}
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
-		if (r_anal_op (as->anal, &aop, offset, buf + ret, len - ret, R_ANAL_OP_MASK_BASIC) < 1) {
+		if (r_anal_op (as->anal, &aop, offset, buf + ret, len - ret, R_ARCH_OP_MASK_BASIC) < 1) {
 			R_LOG_ERROR ("instruction analysis failed at 0x%08"PFMT64x, offset);
 			break;
 		}
@@ -515,10 +515,10 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 	}
 
 	if (hex == 2) {
-		RAnalOp aop = {0};
+		RArchOp aop = {0};
 		while (ret < len) {
 			aop.size = 0;
-			if (r_anal_op (as->anal, &aop, addr, data + ret, len - ret, R_ANAL_OP_MASK_ESIL) > 0) {
+			if (r_anal_op (as->anal, &aop, addr, data + ret, len - ret, R_ARCH_OP_MASK_ESIL) > 0) {
 				printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
 			}
 			if (aop.size < 1) {

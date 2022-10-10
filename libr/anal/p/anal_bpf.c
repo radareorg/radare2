@@ -5,7 +5,7 @@
 #include "../arch/bpf/bpf.h"
 
 // disassembly
-static int disassemble(RAnalOp *r_op, ut64 pc, const ut8 *buf, int len) {
+static int disassemble(RArchOp *r_op, ut64 pc, const ut8 *buf, int len) {
 	const char *op, *fmt;
 	RBpfSockFilter *f = (RBpfSockFilter *)buf;
 	int val = f->k;
@@ -701,12 +701,12 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 /// analysis
 
 #define EMIT_CJMP(op, addr, f) \
-	(op)->type = R_ANAL_OP_TYPE_CJMP; \
+	(op)->type = R_ARCH_OP_TYPE_CJMP; \
 	(op)->jump = (addr) + 8 + (f)->jt * 8; \
 	(op)->fail = (addr) + 8 + (f)->jf * 8;
 
 #define EMIT_LOAD(op, addr, size) \
-	(op)->type = R_ANAL_OP_TYPE_LOAD; \
+	(op)->type = R_ARCH_OP_TYPE_LOAD; \
 	(op)->ptr = (addr); \
 	(op)->ptrsize = (size);
 
@@ -759,30 +759,30 @@ static const char *M[] = {
 	"m[15]"
 };
 
-static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int bpf_anal (RAnal *anal, RArchOp *op, ut64 addr, const ut8 *data, int len, RArchOpMask mask) {
 	RAnalValue *dst, *src;
 	RBpfSockFilter *f = (RBpfSockFilter *)data;
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;
 	op->ptr = UT64_MAX;
 	op->val = -1;
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ARCH_OP_TYPE_UNK;
 	op->size = 8;
 	op->addr = addr;
 
 	r_strbuf_init (&op->esil);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		(void)disassemble (op, addr, data, len);
 	}
 
 	switch (f->code) {
 	case BPF_RET | BPF_A:
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		esilprintf (op, "a,r0,=,0,$");
 		break;
 	case BPF_RET | BPF_K:
 	case BPF_RET | BPF_X:
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		if (BPF_SRC (f->code) == BPF_K) {
 			esilprintf (op, "%" PFMT64d ",r0,=,0,$", (ut64)f->k);
 		} else if (BPF_SRC (f->code) == BPF_X) {
@@ -790,40 +790,40 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		break;
 	case BPF_MISC_TAX:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		SET_REG_SRC_DST (op, "a", "x");
 		esilprintf (op, "a,x,=");
 		break;
 	case BPF_MISC_TXA:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		SET_REG_SRC_DST (op, "x", "a");
 		esilprintf (op, "x,a,=");
 		break;
 	case BPF_ST:
 		if (INSIDE_M (f->k)) {
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			SET_REG_SRC_DST (op, "a", M[f->k]);
 			esilprintf (op, "a,m[%" PFMT64d "],=", (ut64)f->k);
 		} else {
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 		}
 		break;
 	case BPF_STX:
 		if (INSIDE_M (f->k)) {
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			SET_REG_SRC_DST (op, "x", M[f->k]);
 			esilprintf (op, "x,m[%" PFMT64d "],=", (ut64)f->k);
 		} else {
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 		}
 		break;
 	case BPF_LD_W | BPF_LEN:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		SET_REG_SRC_DST (op, "len", "a");
 		esilprintf (op, "%" PFMT64d ",a,=", (ut64)f->k);
 		break;
 	case BPF_LDX | BPF_LEN:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		SET_REG_SRC_DST (op, "len", "x");
 		esilprintf (op, "%" PFMT64d ",x,=", (ut64)f->k);
 		break;
@@ -851,7 +851,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			(ut64)f->k + 1, op->ptr);
 		break;
 	case BPF_LD_W | BPF_IND:
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		op->ptrsize = 4;
 		SET_A_DST (op);
 		esilprintf (op,
@@ -860,7 +860,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			(st64)f->k + 4, anal->gp + (st32)f->k);
 		break;
 	case BPF_LD_H | BPF_IND:
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		op->ptrsize = 2;
 		SET_A_DST (op);
 		esilprintf (op,
@@ -869,7 +869,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			(st64)f->k + 2, anal->gp + (st32)f->k);
 		break;
 	case BPF_LD_B | BPF_IND:
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		op->ptrsize = 1;
 		SET_A_DST (op);
 		esilprintf (op,
@@ -878,44 +878,44 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			(st64)f->k + 1, anal->gp + (st32)f->k);
 		break;
 	case BPF_LD | BPF_IMM:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		op->val = f->k;
 		SET_REG_DST_IMM (op, "a", (ut64)f->k);
 		esilprintf (op, "0x%08" PFMT64x ",a,=", (ut64)f->k);
 		break;
 	case BPF_LDX | BPF_IMM:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		op->val = f->k;
 		SET_REG_DST_IMM (op, "x", (ut64)f->k);
 		esilprintf (op, "0x%08" PFMT64x ",x,=", (ut64)f->k);
 		break;
 	case BPF_LDX_B | BPF_MSH:
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		op->ptrsize = 1;
 		op->ptr = anal->gp + f->k;
 		SET_A_DST (op);
 		esilprintf (op, "%" PFMT64d ",[1],0xf,&,4,*,x,=", op->ptr);
 		break;
 	case BPF_LD | BPF_MEM:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		if (INSIDE_M (f->k)) {
 			SET_REG_SRC_DST (op, M[f->k], "a");
 			esilprintf (op, "m[%" PFMT64d "],a,=", (ut64)f->k);
 		} else {
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 		}
 		break;
 	case BPF_LDX | BPF_MEM:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		if (INSIDE_M (f->k)) {
 			SET_REG_SRC_DST (op, M[f->k], "x");
 			esilprintf (op, "m[%" PFMT64d "],x,=", (ut64)f->k);
 		} else {
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 		}
 		break;
 	case BPF_JMP_JA:
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		op->jump = addr + 8 + f->k * 8;
 		esilprintf (op, "%" PFMT64d ",pc,=", op->jump);
 
@@ -923,7 +923,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case BPF_JMP_JGT | BPF_X:
 	case BPF_JMP_JGT | BPF_K:
 		EMIT_CJMP (op, addr, f);
-		op->cond = R_ANAL_COND_GT;
+		op->cond = R_ARCH_OP_COND_GT;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			esilprintf (op,
@@ -934,13 +934,13 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 				"x,a,>,?{,%" PFMT64d ",pc,=,BREAK,},%" PFMT64d ",pc,=",
 				op->jump, op->fail);
 		} else {
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 		}
 		break;
 	case BPF_JMP_JGE | BPF_X:
 	case BPF_JMP_JGE | BPF_K:
 		EMIT_CJMP (op, addr, f);
-		op->cond = R_ANAL_COND_GE;
+		op->cond = R_ARCH_OP_COND_GE;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			esilprintf (op,
@@ -955,7 +955,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case BPF_JMP_JEQ | BPF_X:
 	case BPF_JMP_JEQ | BPF_K:
 		EMIT_CJMP (op, addr, f);
-		op->cond = R_ANAL_COND_EQ;
+		op->cond = R_ARCH_OP_COND_EQ;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			esilprintf (op,
@@ -982,13 +982,13 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		break;
 	case BPF_ALU_NEG:
-		op->type = R_ANAL_OP_TYPE_NOT;
+		op->type = R_ARCH_OP_TYPE_NOT;
 		esilprintf (op, "a,0,-,a,=");
 		SET_REG_SRC_DST (op, "a", "a");
 		break;
 	case BPF_ALU_LSH | BPF_X:
 	case BPF_ALU_LSH | BPF_K:
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = R_ARCH_OP_TYPE_SHL;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			SET_REG_DST_IMM (op, "a", (ut64)f->k);
@@ -1000,7 +1000,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_ALU_RSH | BPF_X:
 	case BPF_ALU_RSH | BPF_K:
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = R_ARCH_OP_TYPE_SHR;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			SET_REG_DST_IMM (op, "a", (ut64)f->k);
@@ -1012,7 +1012,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_ALU_ADD | BPF_X:
 	case BPF_ALU_ADD | BPF_K:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			SET_REG_DST_IMM (op, "a", op->val);
@@ -1024,7 +1024,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_ALU_SUB | BPF_X:
 	case BPF_ALU_SUB | BPF_K:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			SET_REG_DST_IMM (op, "a", op->val);
@@ -1037,7 +1037,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_ALU_MUL | BPF_X:
 	case BPF_ALU_MUL | BPF_K:
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			SET_REG_DST_IMM (op, "a", (ut64)f->k);
@@ -1049,7 +1049,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_ALU_DIV | BPF_X:
 	case BPF_ALU_DIV | BPF_K:
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = R_ARCH_OP_TYPE_DIV;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			SET_REG_DST_IMM (op, "a", (ut64)f->k);
@@ -1065,7 +1065,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_ALU_MOD | BPF_X:
 	case BPF_ALU_MOD | BPF_K:
-		op->type = R_ANAL_OP_TYPE_MOD;
+		op->type = R_ARCH_OP_TYPE_MOD;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			SET_REG_DST_IMM (op, "a", (ut64)f->k);
@@ -1081,7 +1081,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_ALU_AND | BPF_X:
 	case BPF_ALU_AND | BPF_K:
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = R_ARCH_OP_TYPE_AND;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			SET_REG_DST_IMM (op, "a", (ut64)f->k);
@@ -1093,7 +1093,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_ALU_OR | BPF_X:
 	case BPF_ALU_OR | BPF_K:
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = R_ARCH_OP_TYPE_OR;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			SET_REG_DST_IMM (op, "a", (ut64)f->k);
@@ -1105,7 +1105,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case BPF_ALU_XOR | BPF_X:
 	case BPF_ALU_XOR | BPF_K:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		if (BPF_SRC (f->code) == BPF_K) {
 			op->val = f->k;
 			SET_REG_DST_IMM (op, "a", (ut64)f->k);
@@ -1116,7 +1116,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		break;
 	default:
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		break;
 	}
 	return op->size;

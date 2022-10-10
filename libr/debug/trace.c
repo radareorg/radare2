@@ -56,11 +56,11 @@ R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 	if (!dbg->iob.read_at (dbg->iob.io, pc, buf_pc, sizeof (buf_pc))) {
 		return false;
 	}
-	dbg->cur_op = R_NEW0 (RAnalOp);
+	dbg->cur_op = R_NEW0 (RArchOp);
 	if (!dbg->cur_op) {
 		return false;
 	}
-	if (!r_anal_op (dbg->anal, dbg->cur_op, pc, buf_pc, sizeof (buf_pc), R_ANAL_OP_MASK_VAL)) {
+	if (!r_anal_op (dbg->anal, dbg->cur_op, pc, buf_pc, sizeof (buf_pc), R_ARCH_OP_MASK_VAL)) {
 		r_anal_op_free (dbg->cur_op);
 		dbg->cur_op = NULL;
 		return false;
@@ -160,13 +160,13 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
  */
 R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	ut8 buf[32];
-	RAnalOp op = {0};
+	RArchOp op = {0};
 	if (!dbg->iob.is_valid_offset (dbg->iob.io, pc, 0)) {
 		R_LOG_ERROR ("trace_pc: cannot read memory at 0x%"PFMT64x, pc);
 		return false;
 	}
 	(void)dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ESIL) < 1) {
+	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ARCH_OP_MASK_ESIL) < 1) {
 		R_LOG_ERROR ("trace_pc: cannot get opcode size at 0x%"PFMT64x, pc);
 		return false;
 	}
@@ -175,7 +175,7 @@ R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 	return true;
 }
 
-R_API void r_debug_trace_op(RDebug *dbg, RAnalOp *op) {
+R_API void r_debug_trace_op(RDebug *dbg, RArchOp *op) {
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
 		if (dbg->anal->esil) {

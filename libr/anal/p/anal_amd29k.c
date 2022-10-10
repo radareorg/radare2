@@ -282,7 +282,7 @@ static int archinfo(RAnal *a, int q) {
 	return 4;
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	op->size = 4;
 	op->eob = false;
 
@@ -290,7 +290,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 
 	amd29k_instr_t instruction = {0};
 	if (amd29k_instr_decode (buf, len, &instruction, a->config->cpu)) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			const int buf_asm_len = 64;
 			char *buf_asm = calloc (buf_asm_len, 1);
 			if (buf_asm) {
@@ -301,23 +301,23 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 
 		op->type = instruction.op_type;
 		switch (op->type) {
-		case R_ANAL_OP_TYPE_JMP:
+		case R_ARCH_OP_TYPE_JMP:
 			op->jump = amd29k_instr_jump (addr, &instruction);
 			//op->delay = 1;
 			break;
-		case R_ANAL_OP_TYPE_CJMP:
+		case R_ARCH_OP_TYPE_CJMP:
 			op->jump = amd29k_instr_jump (addr, &instruction);
 			op->fail = addr + 4;
 			//op->delay = 1;
 			break;
-		case R_ANAL_OP_TYPE_ICALL:
+		case R_ARCH_OP_TYPE_ICALL:
 			if (amd29k_instr_is_ret (&instruction)) {
-				op->type = R_ANAL_OP_TYPE_RET;
+				op->type = R_ARCH_OP_TYPE_RET;
 				op->eob = true;
 			}
 			//op->delay = 1;
 			break;
-		case R_ANAL_OP_TYPE_RET:
+		case R_ARCH_OP_TYPE_RET:
 			op->eob = true;
 			//op->delay = 1;
 			break;

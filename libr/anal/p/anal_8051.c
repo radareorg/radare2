@@ -241,11 +241,11 @@ static RI8051Reg registers[] = {
 #define ev_sp2 0
 #define ev_sp1 0
 
-static void exr_a(RAnalOp *op, ut8 dummy) {
+static void exr_a(RArchOp *op, ut8 dummy) {
 	e ("a,");
 }
 
-static void exr_dir1(RAnalOp *op, ut8 addr) {
+static void exr_dir1(RArchOp *op, ut8 addr) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,[1],", addr);
 	} else {
@@ -253,58 +253,58 @@ static void exr_dir1(RAnalOp *op, ut8 addr) {
 	}
 }
 
-static void exr_bit(RAnalOp *op, ut8 addr) {
+static void exr_bit(RArchOp *op, ut8 addr) {
 	exr_dir1 (op, addr);
 }
 
-static void exr_dpx(RAnalOp *op, ut8 dummy) {
+static void exr_dpx(RArchOp *op, ut8 dummy) {
 	e ("_xdata,dptr,+,[1],");
 }
 
-static void exr_imm1(RAnalOp *op, ut8 val) {
+static void exr_imm1(RArchOp *op, ut8 val) {
 	ef ("%d,", val);
 }
 
-static void exr_imm2(RAnalOp *op, ut8 val) {
+static void exr_imm2(RArchOp *op, ut8 val) {
 	ef ("%d,", val);
 }
 
-static void exr_imm16(RAnalOp *op, ut16 val) {
+static void exr_imm16(RArchOp *op, ut16 val) {
 	ef ("%d,", val);
 }
 
-static void exr_ri(RAnalOp *op, ut8 reg) {
+static void exr_ri(RArchOp *op, ut8 reg) {
 	ef ("_idata,r%d,+,[1],", reg);
 }
 
-static void exr_rix(RAnalOp *op, ut8 reg) {
+static void exr_rix(RArchOp *op, ut8 reg) {
 	ef ("8,0xff,_pdata,&,<<,_xdata,+,r%d,+,[1],", reg);
 }
 
-static void exr_rn(RAnalOp *op, ut8 reg) {
+static void exr_rn(RArchOp *op, ut8 reg) {
 	ef ("r%d,", reg);
 }
 
-static void exr_sp1(RAnalOp *op, ut8 dummy) {
+static void exr_sp1(RArchOp *op, ut8 dummy) {
 	e ("_idata,sp,+,[1],");
 	e ("1,sp,-=,");
 }
 
-static void exr_sp2(RAnalOp *op, ut8 dummy) {
+static void exr_sp2(RArchOp *op, ut8 dummy) {
 	e ("1,sp,-=,");
 	e ("_idata,sp,+,[2],");
 	e ("1,sp,-=,");
 }
 
-static void exw_a(RAnalOp *op, ut8 dummy) {
+static void exw_a(RArchOp *op, ut8 dummy) {
 	e ("a,=,");
 }
 
-static void exw_c(RAnalOp *op, ut8 dummy) {
+static void exw_c(RArchOp *op, ut8 dummy) {
 	e ("c,=,");
 }
 
-static void exw_dir1(RAnalOp *op, ut8 addr) {
+static void exw_dir1(RArchOp *op, ut8 addr) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,=[1],", addr);
 	} else {
@@ -312,58 +312,58 @@ static void exw_dir1(RAnalOp *op, ut8 addr) {
 	}
 }
 
-static void exw_dir2(RAnalOp *op, ut8 addr) {
+static void exw_dir2(RArchOp *op, ut8 addr) {
 	exw_dir1 (op, addr);
 }
 
-static void exw_bit(RAnalOp *op, ut8 addr) {
+static void exw_bit(RArchOp *op, ut8 addr) {
 	exw_dir1 (op, addr);
 }
 
-static void exw_dp(RAnalOp *op, ut8 dummy) {
+static void exw_dp(RArchOp *op, ut8 dummy) {
 	e ("dptr,=,");
 }
 
-static void exw_dpx(RAnalOp *op, ut8 dummy) {
+static void exw_dpx(RArchOp *op, ut8 dummy) {
 	e ("_xdata,dptr,+,=[1],");
 }
 
-static void exw_ri(RAnalOp *op, ut8 reg) {
+static void exw_ri(RArchOp *op, ut8 reg) {
 	ef ("_idata,r%d,+,=[1],", reg);
 }
 
-static void exw_rix(RAnalOp *op, ut8 reg) {
+static void exw_rix(RArchOp *op, ut8 reg) {
 	ef ("8,0xff,_pdata,&,<<,_xdata,+,r%d,+,=[1],", reg);
 }
 
-static void exw_rn(RAnalOp *op, ut8 reg) {
+static void exw_rn(RArchOp *op, ut8 reg) {
 	ef ("r%d,=,", reg);
 }
 
-static void exw_sp1(RAnalOp *op, ut8 dummy) {
+static void exw_sp1(RArchOp *op, ut8 dummy) {
 	e ("1,sp,+=,");
 	e ("_idata,sp,+,=[1],");
 }
 
-static void exw_sp2(RAnalOp *op, ut8 dummy) {
+static void exw_sp2(RArchOp *op, ut8 dummy) {
 	e ("1,sp,+=,");
 	e ("_idata,sp,+,=[2],");
 	e ("1,sp,+=,");
 }
 
-static void exi_a(RAnalOp *op, ut8 dummy, const char* operation) {
+static void exi_a(RArchOp *op, ut8 dummy, const char* operation) {
 	ef ("a,%s=,", operation);
 }
 
-static void exi_c(RAnalOp *op, ut8 dummy, const char* operation) {
+static void exi_c(RArchOp *op, ut8 dummy, const char* operation) {
 	ef ("c,%s=,", operation);
 }
 
-static void exi_dp(RAnalOp *op, ut8 dummy, const char *operation) {
+static void exi_dp(RArchOp *op, ut8 dummy, const char *operation) {
 	ef ("dptr,%s=,", operation);
 }
 
-static void exi_dir1(RAnalOp *op, ut8 addr, const char *operation) {
+static void exi_dir1(RArchOp *op, ut8 addr, const char *operation) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,%s=[1],", addr, operation);
 	} else {
@@ -371,15 +371,15 @@ static void exi_dir1(RAnalOp *op, ut8 addr, const char *operation) {
 	}
 }
 
-static void exi_bit(RAnalOp *op, ut8 addr, const char *operation) {
+static void exi_bit(RArchOp *op, ut8 addr, const char *operation) {
 	exi_dir1 (op, addr, operation);
 }
 
-static void exi_ri(RAnalOp *op, ut8 reg, const char *operation) {
+static void exi_ri(RArchOp *op, ut8 reg, const char *operation) {
 	ef ("_idata,r%d,+,%s=[1],", reg, operation);
 }
 
-static void exi_rn(RAnalOp *op, ut8 reg, const char *operation) {
+static void exi_rn(RArchOp *op, ut8 reg, const char *operation) {
 	ef ("r%d,%s=,", reg, operation);
 }
 
@@ -434,7 +434,7 @@ static void exi_rn(RAnalOp *op, ut8 reg, const char *operation) {
 	case base + 0xE: case base + 0xF: \
 		alu_op (rn, aluop, flags); break;
 
-static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
+static void analop_esil(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 
@@ -883,7 +883,7 @@ static ut32 map_direct_addr(RAnal *anal, ut8 addr) {
 	}
 }
 
-static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int i8051_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	set_cpu_model (anal, false);
 
 	int i = 0;
@@ -899,7 +899,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	op->nopcode = 1;
 	op->size = _8051_ops[i].len;
 	op->type = _8051_ops[i].type;
-	op->family = R_ANAL_OP_FAMILY_CPU; // maybe also FAMILY_IO...
+	op->family = R_ARCH_OP_FAMILY_CPU; // maybe also FAMILY_IO...
 	op->id = i;
 
 	switch (_8051_ops[i].instr) {
@@ -908,20 +908,20 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case OP_JB:
 	case OP_JBC:
 	case OP_JNZ:
-		op->cond = R_ANAL_COND_NE;
+		op->cond = R_ARCH_OP_COND_NE;
 		break;
 	case OP_JNB:
 	case OP_JZ:
-		op->cond = R_ANAL_COND_EQ;
+		op->cond = R_ARCH_OP_COND_EQ;
 		break;
 	case OP_JC:
-		op->cond = R_ANAL_COND_HS;
+		op->cond = R_ARCH_OP_COND_HS;
 		break;
 	case OP_JNC:
-		op->cond = R_ANAL_COND_LO;
+		op->cond = R_ARCH_OP_COND_LO;
 		break;
 	default:
-		op->cond = R_ANAL_COND_AL;
+		op->cond = R_ARCH_OP_COND_AL;
 		break;
 	}
 
@@ -992,19 +992,19 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	switch (_8051_ops[i].instr) {
 	case OP_PUSH:
-		op->stackop = R_ANAL_STACK_INC;
+		op->stackop = R_ARCH_STACK_INC;
 		op->stackptr = 1;
 		break;
 	case OP_POP:
-		op->stackop = R_ANAL_STACK_INC;
+		op->stackop = R_ARCH_STACK_INC;
 		op->stackptr = -1;
 		break;
 	case OP_RET:
-		op->stackop = R_ANAL_STACK_INC;
+		op->stackop = R_ARCH_STACK_INC;
 		op->stackptr = -2;
 		break;
 	case OP_CALL:
-		op->stackop = R_ANAL_STACK_INC;
+		op->stackop = R_ARCH_STACK_INC;
 		op->stackptr = 2;
 		if (arg1 == A_ADDR11) {
 			op->jump = arg_addr11 (addr + op->size, buf);
@@ -1047,7 +1047,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->refptr = 1;
 	}
 
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		ut8 copy[3] = {0, 0, 0};
 		memcpy (copy, buf, len >= 3 ? 3 : len);
 		analop_esil (anal, op, addr, copy);

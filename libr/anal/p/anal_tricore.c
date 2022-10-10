@@ -61,7 +61,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int disassemble(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut8 bytes[BUFSZ] = {0};
 	struct disassemble_info disasm_obj;
 	RStrBuf *sb = r_strbuf_new ("");
@@ -179,7 +179,7 @@ static int archinfo(RAnal *anal, int q) {
 	return 4; // XXX
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	return disassemble (a, op, addr, buf, len);
 }
 

@@ -32,7 +32,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int disassemble(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut8 bytes[4] = {0};
 	struct disassemble_info disasm_obj;
 	if (len < 4) {
@@ -155,48 +155,48 @@ enum {
 };
 
 /* Define some additional conditions that are nor mappable to
- * the existing R_ANAL_COND* ones and need to be handled in a
+ * the existing R_ARCH_OP_COND* ones and need to be handled in a
  * special way. */
 enum {
-	R_ANAL_COND_ALWAYS = -1,
-	R_ANAL_COND_NEVER = -2,
-	R_ANAL_COND_UNKNOWN = -3,
+	R_ARCH_OP_COND_ALWAYS = -1,
+	R_ARCH_OP_COND_NEVER = -2,
+	R_ARCH_OP_COND_UNKNOWN = -3,
 };
 
 static int icc_to_r_cond(const int cond) {
 	/* we treat signed and unsigned the same here */
 	switch(cond) {
-	case ICC_A: return R_ANAL_COND_ALWAYS;
-	case ICC_CC: return R_ANAL_COND_GE;
-	case ICC_CS: return R_ANAL_COND_LT;
-	case ICC_E: return R_ANAL_COND_EQ;
-	case ICC_G: return R_ANAL_COND_GT;
-	case ICC_GE: return R_ANAL_COND_GE;
-	case ICC_GU: return R_ANAL_COND_GT;
-	case ICC_L: return R_ANAL_COND_LT;
-	case ICC_LE: return R_ANAL_COND_LE;
-	case ICC_LEU: return R_ANAL_COND_LE;
-	case ICC_N: return R_ANAL_COND_NEVER;
-	case ICC_NE: return R_ANAL_COND_NE;
+	case ICC_A: return R_ARCH_OP_COND_ALWAYS;
+	case ICC_CC: return R_ARCH_OP_COND_GE;
+	case ICC_CS: return R_ARCH_OP_COND_LT;
+	case ICC_E: return R_ARCH_OP_COND_EQ;
+	case ICC_G: return R_ARCH_OP_COND_GT;
+	case ICC_GE: return R_ARCH_OP_COND_GE;
+	case ICC_GU: return R_ARCH_OP_COND_GT;
+	case ICC_L: return R_ARCH_OP_COND_LT;
+	case ICC_LE: return R_ARCH_OP_COND_LE;
+	case ICC_LEU: return R_ARCH_OP_COND_LE;
+	case ICC_N: return R_ARCH_OP_COND_NEVER;
+	case ICC_NE: return R_ARCH_OP_COND_NE;
 	case ICC_NEG:
 	case ICC_POS:
 	case ICC_VC:
 	case ICC_VS:
-	default: return R_ANAL_COND_UNKNOWN;
+	default: return R_ARCH_OP_COND_UNKNOWN;
 	}
 }
 
 static int fcc_to_r_cond(const int cond) {
 	switch (cond) {
-	case FCC_A: return R_ANAL_COND_ALWAYS;
-	case FCC_E: return R_ANAL_COND_EQ;
-	case FCC_G: return R_ANAL_COND_GT;
-	case FCC_GE: return R_ANAL_COND_GE;
-	case FCC_L: return R_ANAL_COND_LT;
-	case FCC_LE: return R_ANAL_COND_LE;
-	case FCC_LG: return R_ANAL_COND_NE;
-	case FCC_N: return R_ANAL_COND_NEVER;
-	case FCC_NE: return R_ANAL_COND_NE;
+	case FCC_A: return R_ARCH_OP_COND_ALWAYS;
+	case FCC_E: return R_ARCH_OP_COND_EQ;
+	case FCC_G: return R_ARCH_OP_COND_GT;
+	case FCC_GE: return R_ARCH_OP_COND_GE;
+	case FCC_L: return R_ARCH_OP_COND_LT;
+	case FCC_LE: return R_ARCH_OP_COND_LE;
+	case FCC_LG: return R_ARCH_OP_COND_NE;
+	case FCC_N: return R_ARCH_OP_COND_NEVER;
+	case FCC_NE: return R_ARCH_OP_COND_NE;
 	case FCC_O:
 	case FCC_U:
 	case FCC_UE:
@@ -205,7 +205,7 @@ static int fcc_to_r_cond(const int cond) {
 	case FCC_UL:
 	case FCC_ULE:
 	default:
-		return R_ANAL_COND_UNKNOWN;
+		return R_ARCH_OP_COND_UNKNOWN;
 	}
 }
 
@@ -364,9 +364,9 @@ static RAnalValue * value_fill_addr_reg_disp(RAnal const *const anal, const int 
 	return val;
 }
 
-static void anal_call(RAnalOp *op, const ut32 insn, const ut64 addr) {
+static void anal_call(RArchOp *op, const ut32 insn, const ut64 addr) {
 	const st64 disp = (get_immed_sgnext(insn, 29) * 4);
-	op->type = R_ANAL_OP_TYPE_CALL;
+	op->type = R_ARCH_OP_TYPE_CALL;
 	RAnalValue *val = value_fill_addr_pc_disp (addr, disp);
 	r_vector_push (op->dsts, val);
 	r_anal_value_free (val);
@@ -374,20 +374,20 @@ static void anal_call(RAnalOp *op, const ut32 insn, const ut64 addr) {
 	op->fail = addr + 4;
 }
 
-static void anal_jmpl(RAnal const *const anal, RAnalOp *op, const ut32 insn, const ut64 addr) {
+static void anal_jmpl(RAnal const *const anal, RArchOp *op, const ut32 insn, const ut64 addr) {
 	st64 disp = 0;
 	if (X_LDST_I (insn)) {
 		disp = get_immed_sgnext (insn, 12);
 	}
 	if (X_RD (insn) == GPR_O7) {
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = R_ARCH_OP_TYPE_UCALL;
 		op->fail = addr + 4;
 	} else if (X_RD (insn) == GPR_G0 && X_LDST_I (insn) == 1 && (X_RS1 (insn) == GPR_I7 || X_RS1 (insn) == GPR_O7) && disp == 8) {
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		op->eob = true;
 		return;
 	}
-	op->type = R_ANAL_OP_TYPE_UJMP;
+	op->type = R_ARCH_OP_TYPE_UJMP;
 	op->eob = true;
 
 	RAnalValue *val;
@@ -400,7 +400,7 @@ static void anal_jmpl(RAnal const *const anal, RAnalOp *op, const ut32 insn, con
 	r_anal_value_free (val);
 }
 
-static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
+static void anal_branch(RArchOp *op, const ut32 insn, const ut64 addr) {
 	st64 disp = 0;
 	int r_cond = 0;
 	op->eob = true;
@@ -411,16 +411,16 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 	} else if (X_OP2(insn) == OP2_FBfcc || X_OP2(insn) == OP2_FBPfcc) {
 		r_cond = fcc_to_r_cond (X_COND(insn));
 	} else if (X_OP2(insn) == OP2_BPr) {
-		r_cond = R_ANAL_COND_UNKNOWN;
+		r_cond = R_ARCH_OP_COND_UNKNOWN;
 	}
 
-	if (r_cond == R_ANAL_COND_ALWAYS) {
-		op->type = R_ANAL_OP_TYPE_JMP;
-	} else if (r_cond == R_ANAL_COND_NEVER) {
-		op->type = R_ANAL_OP_TYPE_NOP;
+	if (r_cond == R_ARCH_OP_COND_ALWAYS) {
+		op->type = R_ARCH_OP_TYPE_JMP;
+	} else if (r_cond == R_ARCH_OP_COND_NEVER) {
+		op->type = R_ARCH_OP_TYPE_NOP;
 		return;
 	}
-	op->type = R_ANAL_OP_TYPE_CJMP;
+	op->type = R_ARCH_OP_TYPE_CJMP;
 	op->fail = addr + 4;
 
 	/* handle displacement */
@@ -438,16 +438,16 @@ static void anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr) {
 }
 
 // TODO: this implementation is just a fast hack. needs to be rewritten and completed
-static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int sparc_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *data, int len, RArchOpMask mask) {
 	int sz = 4;
 	ut32 insn = 0;
 
-	op->family = R_ANAL_OP_FAMILY_CPU;
+	op->family = R_ARCH_OP_FAMILY_CPU;
 	op->addr = addr;
 	op->size = sz;
 
 	r_mem_swaporcopy ((ut8*)&insn, data, 4, !R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		disassemble (anal, op, addr, (ut8 *)&insn, 4);
 	}
 
@@ -455,7 +455,7 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		switch(X_OP2 (insn)) {
 		case OP2_ILLTRAP:
 		case OP2_INV:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 			sz = 0; /* make r_core_anal_bb stop */
 			break;
 		case OP2_BPcc:
@@ -476,24 +476,24 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		case OP32_INV3:
 		case OP32_INV4:
 		case OP32_INV5:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 			sz = 0; /* make r_core_anal_bb stop */
 			break;
 		case OP32_CONDINV1:
 			if (X_RD (insn) == 1) {
-				op->type = R_ANAL_OP_TYPE_ILL;
+				op->type = R_ARCH_OP_TYPE_ILL;
 				sz = 0; /* make r_core_anal_bb stop */
 			}
 			break;
 		case OP32_CONDINV2:
 			if (X_RS1(insn) == 1) {
-				op->type = R_ANAL_OP_TYPE_ILL;
+				op->type = R_ARCH_OP_TYPE_ILL;
 				sz = 0; /* make r_core_anal_bb stop */
 			}
 			break;
 		case OP32_CONDINV3:
 			if (X_RS1(insn) != 0) {
-				op->type = R_ANAL_OP_TYPE_ILL;
+				op->type = R_ARCH_OP_TYPE_ILL;
 				sz = 0; /* make r_core_anal_bb stop */
 			}
 			break;
@@ -520,7 +520,7 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		case OP33_INV14:
 		case OP33_INV15:
 		case OP33_INV16:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 			sz = 0; /* make r_core_anal_bb stop */
 			break;
 		 }

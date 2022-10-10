@@ -1999,81 +1999,81 @@ R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, size_t buflen, ut32 tiles, co
 // probably move somewhere else. RPrint doesnt needs to know about the R_ANAL_ enums
 R_API const char* r_print_color_op_type(RPrint *p, ut32 anal_type) {
 	RConsPrintablePalette *pal = &p->cons->context->pal;
-	switch (anal_type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_NOP:
+	switch (anal_type & R_ARCH_OP_TYPE_MASK) {
+	case R_ARCH_OP_TYPE_NOP:
 		return pal->nop;
-	case R_ANAL_OP_TYPE_ADD:
-	case R_ANAL_OP_TYPE_SUB:
-	case R_ANAL_OP_TYPE_MUL:
-	case R_ANAL_OP_TYPE_DIV:
-	case R_ANAL_OP_TYPE_MOD:
-	case R_ANAL_OP_TYPE_LENGTH:
+	case R_ARCH_OP_TYPE_ADD:
+	case R_ARCH_OP_TYPE_SUB:
+	case R_ARCH_OP_TYPE_MUL:
+	case R_ARCH_OP_TYPE_DIV:
+	case R_ARCH_OP_TYPE_MOD:
+	case R_ARCH_OP_TYPE_LENGTH:
 		return pal->math;
-	case R_ANAL_OP_TYPE_AND:
-	case R_ANAL_OP_TYPE_OR:
-	case R_ANAL_OP_TYPE_XOR:
-	case R_ANAL_OP_TYPE_NOT:
-	case R_ANAL_OP_TYPE_SHL:
-	case R_ANAL_OP_TYPE_SAL:
-	case R_ANAL_OP_TYPE_SAR:
-	case R_ANAL_OP_TYPE_SHR:
-	case R_ANAL_OP_TYPE_ROL:
-	case R_ANAL_OP_TYPE_ROR:
-	case R_ANAL_OP_TYPE_CPL:
+	case R_ARCH_OP_TYPE_AND:
+	case R_ARCH_OP_TYPE_OR:
+	case R_ARCH_OP_TYPE_XOR:
+	case R_ARCH_OP_TYPE_NOT:
+	case R_ARCH_OP_TYPE_SHL:
+	case R_ARCH_OP_TYPE_SAL:
+	case R_ARCH_OP_TYPE_SAR:
+	case R_ARCH_OP_TYPE_SHR:
+	case R_ARCH_OP_TYPE_ROL:
+	case R_ARCH_OP_TYPE_ROR:
+	case R_ARCH_OP_TYPE_CPL:
 		return pal->bin;
-	case R_ANAL_OP_TYPE_IO:
+	case R_ARCH_OP_TYPE_IO:
 		return pal->swi;
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_UJMP:
+	case R_ARCH_OP_TYPE_JMP:
+	case R_ARCH_OP_TYPE_UJMP:
 		return pal->ujmp;
-	case R_ANAL_OP_TYPE_IJMP:
-	case R_ANAL_OP_TYPE_RJMP:
-	case R_ANAL_OP_TYPE_IRJMP:
-	case R_ANAL_OP_TYPE_MJMP:
+	case R_ARCH_OP_TYPE_IJMP:
+	case R_ARCH_OP_TYPE_RJMP:
+	case R_ARCH_OP_TYPE_IRJMP:
+	case R_ARCH_OP_TYPE_MJMP:
 		return pal->jmp;
-	case R_ANAL_OP_TYPE_CJMP:
-	case R_ANAL_OP_TYPE_UCJMP:
-	case R_ANAL_OP_TYPE_SWITCH:
+	case R_ARCH_OP_TYPE_CJMP:
+	case R_ARCH_OP_TYPE_UCJMP:
+	case R_ARCH_OP_TYPE_SWITCH:
 		return pal->cjmp;
-	case R_ANAL_OP_TYPE_CMP:
-	case R_ANAL_OP_TYPE_ACMP:
+	case R_ARCH_OP_TYPE_CMP:
+	case R_ARCH_OP_TYPE_ACMP:
 		return pal->cmp;
-	case R_ANAL_OP_TYPE_UCALL:
+	case R_ARCH_OP_TYPE_UCALL:
 		return pal->ucall;
-	case R_ANAL_OP_TYPE_ICALL:
-	case R_ANAL_OP_TYPE_RCALL:
-	case R_ANAL_OP_TYPE_IRCALL:
-	case R_ANAL_OP_TYPE_UCCALL:
-	case R_ANAL_OP_TYPE_CALL:
-	case R_ANAL_OP_TYPE_CCALL:
+	case R_ARCH_OP_TYPE_ICALL:
+	case R_ARCH_OP_TYPE_RCALL:
+	case R_ARCH_OP_TYPE_IRCALL:
+	case R_ARCH_OP_TYPE_UCCALL:
+	case R_ARCH_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_CCALL:
 		return pal->call;
-	case R_ANAL_OP_TYPE_NEW:
-	case R_ANAL_OP_TYPE_SWI:
+	case R_ARCH_OP_TYPE_NEW:
+	case R_ARCH_OP_TYPE_SWI:
 		return pal->swi;
-	case R_ANAL_OP_TYPE_ILL:
-	case R_ANAL_OP_TYPE_TRAP:
+	case R_ARCH_OP_TYPE_ILL:
+	case R_ARCH_OP_TYPE_TRAP:
 		return pal->trap;
-	case R_ANAL_OP_TYPE_CRET:
-	case R_ANAL_OP_TYPE_RET:
+	case R_ARCH_OP_TYPE_CRET:
+	case R_ARCH_OP_TYPE_RET:
 		return pal->ret;
-	case R_ANAL_OP_TYPE_CAST:
-	case R_ANAL_OP_TYPE_MOV:
-	case R_ANAL_OP_TYPE_LEA:
-	case R_ANAL_OP_TYPE_CMOV: // TODO: add cmov cathegory?
+	case R_ARCH_OP_TYPE_CAST:
+	case R_ARCH_OP_TYPE_MOV:
+	case R_ARCH_OP_TYPE_LEA:
+	case R_ARCH_OP_TYPE_CMOV: // TODO: add cmov cathegory?
 		return pal->mov;
-	case R_ANAL_OP_TYPE_PUSH:
-	case R_ANAL_OP_TYPE_UPUSH:
-	case R_ANAL_OP_TYPE_RPUSH:
-	case R_ANAL_OP_TYPE_LOAD:
+	case R_ARCH_OP_TYPE_PUSH:
+	case R_ARCH_OP_TYPE_UPUSH:
+	case R_ARCH_OP_TYPE_RPUSH:
+	case R_ARCH_OP_TYPE_LOAD:
 		return pal->push;
-	case R_ANAL_OP_TYPE_POP:
-	case R_ANAL_OP_TYPE_STORE:
+	case R_ARCH_OP_TYPE_POP:
+	case R_ARCH_OP_TYPE_STORE:
 		return pal->pop;
-	case R_ANAL_OP_TYPE_CRYPTO:
+	case R_ARCH_OP_TYPE_CRYPTO:
 		return pal->crypto;
-	case R_ANAL_OP_TYPE_NULL:
+	case R_ARCH_OP_TYPE_NULL:
 		return pal->other;
-	case R_ANAL_OP_TYPE_UNK:
+	case R_ARCH_OP_TYPE_UNK:
 	default:
 		return pal->invalid;
 	}

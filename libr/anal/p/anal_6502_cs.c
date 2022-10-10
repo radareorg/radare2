@@ -19,7 +19,7 @@
 #define CSINC MOS65XX
 #include "capstone.inc"
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 #if USE_ITER_API
 	static R_TH_LOCAL
 #endif
@@ -47,33 +47,33 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 #endif
 	if (n < 1) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 	} else {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 			op->mnemonic = str;
 		}
 		op->nopcode = 1;
 		op->size = insn->size;
 		op->id = insn->id;
-		op->family = R_ANAL_OP_FAMILY_CPU; // almost everything is CPU
+		op->family = R_ARCH_OP_FAMILY_CPU; // almost everything is CPU
 		op->prefix = 0;
 		op->cond = 0;
 		switch (insn->id) {
 		case MOS65XX_INS_INVALID:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 			break;
 		case MOS65XX_INS_ADC:
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		case MOS65XX_INS_AND:
-			op->type = R_ANAL_OP_TYPE_AND;
+			op->type = R_ARCH_OP_TYPE_AND;
 			break;
 		case MOS65XX_INS_ASL:
-			op->type = R_ANAL_OP_TYPE_SHL;
+			op->type = R_ARCH_OP_TYPE_SHL;
 			break;
 		case MOS65XX_INS_BCC:
 		case MOS65XX_INS_BCS:
@@ -82,85 +82,85 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case MOS65XX_INS_BMI:
 		case MOS65XX_INS_BNE:
 		case MOS65XX_INS_BPL:
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 			break;
 		case MOS65XX_INS_BRK:
-			op->type = R_ANAL_OP_TYPE_TRAP;
+			op->type = R_ARCH_OP_TYPE_TRAP;
 			break;
 		case MOS65XX_INS_BVC:
 		case MOS65XX_INS_BVS:
-			op->type = R_ANAL_OP_TYPE_RCJMP;
+			op->type = R_ARCH_OP_TYPE_RCJMP;
 			break;
 		case MOS65XX_INS_CLC:
 		case MOS65XX_INS_CLD:
 		case MOS65XX_INS_CLI:
 		case MOS65XX_INS_CLV:
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			break;
 		case MOS65XX_INS_CPX:
 		case MOS65XX_INS_CPY:
 		case MOS65XX_INS_CMP:
-			op->type = R_ANAL_OP_TYPE_CMP;
+			op->type = R_ARCH_OP_TYPE_CMP;
 			break;
 		case MOS65XX_INS_DEC:
 		case MOS65XX_INS_DEX:
 		case MOS65XX_INS_DEY:
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = R_ARCH_OP_TYPE_SUB;
 			break;
 		case MOS65XX_INS_EOR:
-			op->type = R_ANAL_OP_TYPE_XOR;
+			op->type = R_ARCH_OP_TYPE_XOR;
 			break;
 		case MOS65XX_INS_INC:
 		case MOS65XX_INS_INX:
 		case MOS65XX_INS_INY:
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		case MOS65XX_INS_JMP:
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ARCH_OP_TYPE_JMP;
 			break;
 		case MOS65XX_INS_JSR:
-			op->type = R_ANAL_OP_TYPE_RJMP;
+			op->type = R_ARCH_OP_TYPE_RJMP;
 			break;
 		case MOS65XX_INS_LDA:
 		case MOS65XX_INS_LDX:
 		case MOS65XX_INS_LDY:
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = R_ARCH_OP_TYPE_LOAD;
 			break;
 		case MOS65XX_INS_LSR:
 		case MOS65XX_INS_NOP:
-			op->type = R_ANAL_OP_TYPE_NOP;
+			op->type = R_ARCH_OP_TYPE_NOP;
 			break;
 		case MOS65XX_INS_ORA:
-			op->type = R_ANAL_OP_TYPE_OR;
+			op->type = R_ARCH_OP_TYPE_OR;
 			break;
 		case MOS65XX_INS_PHA:
 		case MOS65XX_INS_PLA:
 		case MOS65XX_INS_PHP:
 		case MOS65XX_INS_PLP:
-			op->type = R_ANAL_OP_TYPE_PUSH;
+			op->type = R_ARCH_OP_TYPE_PUSH;
 			break;
 		case MOS65XX_INS_ROL:
-			op->type = R_ANAL_OP_TYPE_SHR;
+			op->type = R_ARCH_OP_TYPE_SHR;
 			break;
 		case MOS65XX_INS_ROR:
-			op->type = R_ANAL_OP_TYPE_ROR;
+			op->type = R_ARCH_OP_TYPE_ROR;
 			break;
 		case MOS65XX_INS_RTI:
 		case MOS65XX_INS_RTS:
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 			break;
 		case MOS65XX_INS_SBC:
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = R_ARCH_OP_TYPE_SUB;
 			break;
 		case MOS65XX_INS_SEC:
 		case MOS65XX_INS_SED:
 		case MOS65XX_INS_SEI:
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			break;
 		case MOS65XX_INS_STA:
 		case MOS65XX_INS_STX:
 		case MOS65XX_INS_STY:
-			op->type = R_ANAL_OP_TYPE_STORE;
+			op->type = R_ARCH_OP_TYPE_STORE;
 			break;
 		case MOS65XX_INS_TAX:
 		case MOS65XX_INS_TAY:
@@ -168,7 +168,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case MOS65XX_INS_TXA:
 		case MOS65XX_INS_TXS:
 		case MOS65XX_INS_TYA:
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			break;
 		}
 	}

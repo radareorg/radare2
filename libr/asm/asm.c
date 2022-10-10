@@ -528,9 +528,9 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	} else if (a->analb.anal) {
 		// disassemble using the analysis plugin if found
-		RAnalOp aop;
+		RArchOp aop;
 		a->analb.opinit (&aop);
-		ret = a->analb.decode (a->analb.anal, &aop, a->pc, buf, len, R_ANAL_OP_MASK_DISASM);
+		ret = a->analb.decode (a->analb.anal, &aop, a->pc, buf, len, R_ARCH_OP_MASK_DISASM);
 		op->size = aop.size;
 		if (aop.mnemonic) {
 			r_strbuf_set (&op->buf_asm, aop.mnemonic);
@@ -687,7 +687,7 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			if (!ase && a->analb.anal) {
 				// disassemble using the analysis plugin if found
 				ase = NULL;
-				RAnalOp aop;
+				RArchOp aop;
 				a->analb.opinit (&aop);
 				ut8 buf[256] = {0};
 				ret = a->analb.encode (a->analb.anal, a->pc, b, buf, sizeof (buf));

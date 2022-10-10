@@ -3,17 +3,17 @@
 #define USE_BB_STACKPTR 0
 #define USE_BB_LINEAR 1
 
-static void ds_update_stackptr(RDisasmState *ds, RAnalOp *op) {
+static void ds_update_stackptr(RDisasmState *ds, RArchOp *op) {
 	if (!ds->show_stackptr) {
 		return;
 	}
 	ds->ostackptr = ds->stackptr;
 	switch (op->stackop) {
 
-	case R_ANAL_STACK_RESET:
+	case R_ARCH_STACK_RESET:
 		ds->stackptr = 0;
 		break;
-	case R_ANAL_STACK_INC:
+	case R_ARCH_STACK_INC:
 		ds->stackptr += op->stackptr;
 		break;
 	default:
@@ -21,8 +21,8 @@ static void ds_update_stackptr(RDisasmState *ds, RAnalOp *op) {
 		break;
 	}
 	/* XXX if we reset the stackptr 'ret 0x4' has not effect.
-	 * Use RAnalFunction->RAnalOp->stackptr? */
-	if (op->type == R_ANAL_OP_TYPE_RET) {
+	 * Use RAnalFunction->RArchOp->stackptr? */
+	if (op->type == R_ARCH_OP_TYPE_RET) {
 		ds->stackptr = 0;
 	}
 }
@@ -32,14 +32,14 @@ static int _stackptr_range(RDisasmState *ds, ut64 addr, ut64 addr_end, int stack
 	ut64 end = addr_end;
 	while (at < end) {
 		int sz = 1;
-		RAnalOp* op = r_core_anal_op (ds->core, at, 0);
+		RArchOp* op = r_core_anal_op (ds->core, at, 0);
 		if (op) {
 			*ostackptr = stackptr;
 			switch (op->stackop) {
-			case R_ANAL_STACK_RESET:
+			case R_ARCH_STACK_RESET:
 				stackptr = 0;
 				break;
-			case R_ANAL_STACK_INC:
+			case R_ARCH_STACK_INC:
 				stackptr += op->stackptr;
 				break;
 			default:
@@ -119,8 +119,8 @@ static void ds_print_stackptr(RDisasmState *ds) {
 	int stackptr = ds_ostackptr_at (ds, &ostackptr);
 	if (ds->show_stackptr) {
 		r_cons_printf ("%5d%s", stackptr,
-			ds->analop.type == R_ANAL_OP_TYPE_CALL?">":
-			ds->analop.stackop == R_ANAL_STACK_ALIGN? "=":
+			ds->analop.type == R_ARCH_OP_TYPE_CALL?">":
+			ds->analop.stackop == R_ARCH_STACK_ALIGN? "=":
 			stackptr > ostackptr? "+":
 			stackptr < ostackptr? "-": " ");
 		ds_update_stackptr (ds, &ds->analop);

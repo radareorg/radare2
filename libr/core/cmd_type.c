@@ -840,7 +840,7 @@ static void typesList(RCore *core, int mode) {
 	}
 }
 
-static void set_offset_hint(RCore *core, RAnalOp *op, const char *type, ut64 laddr, ut64 at, int offimm) {
+static void set_offset_hint(RCore *core, RArchOp *op, const char *type, ut64 laddr, ut64 at, int offimm) {
 	char *res = r_type_get_struct_memb (core->anal->sdb_types, type, offimm);
 	const char *cmt = ((offimm == 0) && res)? res: type;
 	if (offimm > 0) {
@@ -865,12 +865,12 @@ R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to) {
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	while (at < to) {
-		RAnalOp *op = r_core_anal_op (core, at, R_ANAL_OP_MASK_BASIC);
+		RArchOp *op = r_core_anal_op (core, at, R_ARCH_OP_MASK_BASIC);
 		if (!op || op->size <= 0) {
 			at += minopcode;
 			continue;
 		}
-		if ((op->stackop == R_ANAL_STACK_INC) && R_ABS (op->stackptr) < 8096) {
+		if ((op->stackop == R_ARCH_STACK_INC) && R_ABS (op->stackptr) < 8096) {
 			stack += op->stackptr;
 			if (stack > maxstack) {
 				maxstack = stack;
@@ -884,7 +884,7 @@ R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to) {
 
 static void set_retval(RCore *core, ut64 at) {
 	RAnal *anal = core->anal;
-	RAnalHint *hint = r_anal_hint_get (anal, at);
+	RArchOpHint *hint = r_anal_hint_get (anal, at);
 	RAnalFunction *fcn = r_anal_get_fcn_in (anal, at, 0);
 
 	if (!hint || !fcn || !fcn->name) {
@@ -909,7 +909,7 @@ beach:
 R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
-	RAnalOp aop = {0};
+	RArchOp aop = {0};
 	bool ioCache = r_config_get_b (core->config, "io.cache");
 	bool stack_set = false;
 	bool resolved = false;
@@ -981,7 +981,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
 			}
-			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_VAL);
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ARCH_OP_MASK_VAL);
 			if (ret <= 0) {
 				i += minopcode;
 				at += minopcode;

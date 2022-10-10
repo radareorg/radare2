@@ -40,7 +40,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+static int disassemble(RAnal *a, RArchOp *op, const ut8 *buf, int len) {
 	ut8 bytes[BUFSZ] = {0};
 	struct disassemble_info disasm_obj = {0};
 	if (len < 2) {
@@ -139,74 +139,74 @@ static int sex(int bits, int imm) {
 
 static int map_cond2radare(ut8 cond) {
 	switch (cond) {
-	case 0: return R_ANAL_COND_AL;
-	case 1: return R_ANAL_COND_EQ;
-	case 2: return R_ANAL_COND_NE;
-	case 3: return R_ANAL_COND_PL;
-	case 4: return R_ANAL_COND_MI;
-	case 7: return R_ANAL_COND_VS;
-	case 8: return R_ANAL_COND_VC;
-	case 9: return R_ANAL_COND_GT;
-	case 0xa: return R_ANAL_COND_GE;
-	case 0xb: return R_ANAL_COND_LT;
-	case 0xc: return R_ANAL_COND_LE;
-	case 0xd: return R_ANAL_COND_HI;
-	case 0xe: return R_ANAL_COND_LS;
+	case 0: return R_ARCH_OP_COND_AL;
+	case 1: return R_ARCH_OP_COND_EQ;
+	case 2: return R_ARCH_OP_COND_NE;
+	case 3: return R_ARCH_OP_COND_PL;
+	case 4: return R_ARCH_OP_COND_MI;
+	case 7: return R_ARCH_OP_COND_VS;
+	case 8: return R_ARCH_OP_COND_VC;
+	case 9: return R_ARCH_OP_COND_GT;
+	case 0xa: return R_ARCH_OP_COND_GE;
+	case 0xb: return R_ARCH_OP_COND_LT;
+	case 0xc: return R_ARCH_OP_COND_LE;
+	case 0xd: return R_ARCH_OP_COND_HI;
+	case 0xe: return R_ARCH_OP_COND_LS;
 #if 0
 	/* TODO: */
-	/* - radare defines R_ANAL_COND_LO as carry clear and _HS as carry set */
+	/* - radare defines R_ARCH_OP_COND_LO as carry clear and _HS as carry set */
 	/*   which appears different to the ARC definitions. */
 	/*   Need to do some math and double check the details */
-	case 5: return R_ANAL_COND_?? - CS,C,LO - Carry set & LO
-	case 6: return R_ANAL_COND_?? - CC,NC,HS - Carry clear & HS
+	case 5: return R_ARCH_OP_COND_?? - CS,C,LO - Carry set & LO
+	case 6: return R_ARCH_OP_COND_?? - CC,NC,HS - Carry clear & HS
 	/* - Positive non-zero doesnt map to any Radare cond code.  Perhaps just add it? */
-	case 0xf: return R_ANAL_COND_?? - PNZ - Positive non-zero
+	case 0xf: return R_ARCH_OP_COND_?? - PNZ - Positive non-zero
 #endif
 	}
 	return -1;
 }
 
-static void arcompact_jump(RAnalOp *op, ut64 addr, ut64 jump, ut8 delay) {
+static void arcompact_jump(RArchOp *op, ut64 addr, ut64 jump, ut8 delay) {
 	op->jump = jump;
 	op->fail = addr + op->size;
 	op->delay = delay;
 }
 
-static void arcompact_jump_cond(RAnalOp *op, ut64 addr, ut64 jump, ut8 delay, ut8 cond) {
+static void arcompact_jump_cond(RArchOp *op, ut64 addr, ut64 jump, ut8 delay, ut8 cond) {
 	arcompact_jump (op, addr, jump, delay);
 	op->cond = map_cond2radare (cond);
 }
 
-static void arcompact_branch(RAnalOp *op, ut64 addr, st64 offset, ut8 delay) {
+static void arcompact_branch(RArchOp *op, ut64 addr, st64 offset, ut8 delay) {
 	arcompact_jump (op, addr, (addr & ~3) + offset, delay);
 }
 
-static void map_zz2refptr(RAnalOp *op, ut8 mode_zz) {
+static void map_zz2refptr(RArchOp *op, ut8 mode_zz) {
 	switch (mode_zz) {
 	case 0: op->refptr = 4; break;
 	case 1: op->refptr = 1; break;
 	case 2: op->refptr = 2; break;
 	default:
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		break;
 	}
 }
 
-static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basic_type) {
+static int arcompact_genops_jmp(RArchOp *op, ut64 addr, arc_fields *f, ut64 basic_type) {
 	ut64 type_ujmp;
 	ut64 type_cjmp;
 	ut64 type_ucjmp;
 
 	switch (basic_type) {
-	case R_ANAL_OP_TYPE_JMP:
-		type_ujmp = R_ANAL_OP_TYPE_UJMP;
-		type_cjmp = R_ANAL_OP_TYPE_CJMP;
-		type_ucjmp = R_ANAL_OP_TYPE_UCJMP;
+	case R_ARCH_OP_TYPE_JMP:
+		type_ujmp = R_ARCH_OP_TYPE_UJMP;
+		type_cjmp = R_ARCH_OP_TYPE_CJMP;
+		type_ucjmp = R_ARCH_OP_TYPE_UCJMP;
 		break;
-	case R_ANAL_OP_TYPE_CALL:
-		type_ujmp = R_ANAL_OP_TYPE_UCALL;
-		type_cjmp = R_ANAL_OP_TYPE_CCALL;
-		type_ucjmp = R_ANAL_OP_TYPE_UCCALL;
+	case R_ARCH_OP_TYPE_CALL:
+		type_ujmp = R_ARCH_OP_TYPE_UCALL;
+		type_cjmp = R_ARCH_OP_TYPE_CCALL;
+		type_ucjmp = R_ARCH_OP_TYPE_UCCALL;
 		break;
 	default:
 		return -1; /* Should not happen */
@@ -225,7 +225,7 @@ static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basi
 		if (f->c == ARC_REG_ILINK1 || f->c == ARC_REG_ILINK2 || f->c == ARC_REG_BLINK) {
 			/* ilink1, ilink2, blink */
 			/* Note: not valid for basic_type == CALL */
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 			op->delay = f->mode_n;
 			return op->size;
 		}
@@ -251,7 +251,7 @@ static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basi
 			if (f->c == ARC_REG_ILINK1 || f->c == ARC_REG_ILINK2 || f->c == ARC_REG_BLINK) {
 				/* ilink1, ilink2, blink */
 				/* Note: not valid for basic_type == CALL */
-				op->type = R_ANAL_OP_TYPE_CRET;
+				op->type = R_ARCH_OP_TYPE_CRET;
 				op->cond = map_cond2radare (f->cond);
 				op->delay = f->mode_n;
 				return op->size;
@@ -271,7 +271,7 @@ static int arcompact_genops_jmp(RAnalOp *op, ut64 addr, arc_fields *f, ut64 basi
 	return 0;
 }
 
-static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
+static int arcompact_genops(RArchOp *op, ut64 addr, ut32 words[2]) {
 	arc_fields fields = {0};
 
 	fields.format = (words[0] & 0x00c00000) >> 22;
@@ -316,7 +316,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	case 0x14: /* add with left shift by 1 */
 	case 0x15: /* add with left shift by 2 */
 	case 0x16: /* add with left shift by 3 */
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		op->size = 8;
 		break;
 	case 0x02: /* subtract */
@@ -325,34 +325,34 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	case 0x17: /* subtract with left shift by 1 */
 	case 0x18: /* subtract with left shift by 2 */
 	case 0x19: /* subtract with left shift by 3 */
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		break;
 	case 0x04: /* logical bitwise AND */
 	case 0x06: /* logical bitwise AND with invert */
 	case 0x10: /* bit clear */
 	case 0x13: /* bit mask */
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = R_ARCH_OP_TYPE_AND;
 		break;
 	case 0x05: /* logical bitwise OR */
 	case 0x0f: /* bit set */
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = R_ARCH_OP_TYPE_OR;
 		break;
 	case 0x07: /* logical bitwise exclusive-OR */
 	case 0x12: /* bit xor */
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		break;
 	case 0x08: /* larger of 2 signed integers */
 	case 0x09: /* smaller of 2 signed integers */
-		op->type = R_ANAL_OP_TYPE_CMOV;
+		op->type = R_ARCH_OP_TYPE_CMOV;
 		break;
 	case 0x0a: /* move */
 		if (fields.format == 2) {
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			op->val = SEX_S12 (fields.a << 6 | fields.c);
 		} else if (fields.format == 3) {
 			fields.cond = fields.a & 0x1f;
 			op->cond = map_cond2radare (fields.cond);
-			op->type = R_ANAL_OP_TYPE_CMOV;
+			op->type = R_ARCH_OP_TYPE_CMOV;
 			if ((fields.a & 0x20)) {
 				/* its a move from imm u6 */
 				op->val = fields.c;
@@ -366,27 +366,27 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	case 0x0c: /* compare */
 	case 0x0d: /* reverse compare */
 	case 0x11: /* bit test */
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		break;
 	case 0x1a: /* 32 X 32 signed multiply */
 	case 0x1b: /* 32 X 32 signed multiply */
 	case 0x1c: /* 32 X 32 unsigned multiply */
 	case 0x1d: /* 32 X 32 unsigned multiply */
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		break;
 	case 0x21: /* Jump with delay slot */
 		fields.mode_n = 1;
 	/* fall through */
 	case 0x20: /* Jump */
 		fields.mode_m = (words[0] & 0x20) >> 5;
-		arcompact_genops_jmp (op, addr, &fields, R_ANAL_OP_TYPE_JMP);
+		arcompact_genops_jmp (op, addr, &fields, R_ARCH_OP_TYPE_JMP);
 		break;
 	case 0x23: /* jump and link with delay slot */
 		fields.mode_n = 1;
 	/* fall through */
 	case 0x22: /* jump and link */
 		fields.mode_m = (words[0] & 0x20) >> 5;
-		arcompact_genops_jmp (op, addr, &fields, R_ANAL_OP_TYPE_CALL);
+		arcompact_genops_jmp (op, addr, &fields, R_ARCH_OP_TYPE_CALL);
 		break;
 	case 0x1e: /* Reserved */
 	case 0x1f: /* Reserved */
@@ -405,7 +405,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	case 0x3d: /* Reserved */
 	case 0x3e: /* Reserved */
 	case 0x3f: /* Reserved */
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		break;
 	case 0x28: /* loop (16-bit aligned target address) */
 		/* this is essentially a COME FROM instruction!! */
@@ -414,7 +414,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 		case 2: /* Loop Set Up (Unconditional) */
 			fields.imm = SEX_S13 ((fields.c | (fields.a << 6)) << 1);
 			op->jump = (addr & ~3) + fields.imm;
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 			op->fail = addr + op->size;
 			break;
 		case 3: /* Loop Set Up (Conditional) */
@@ -422,82 +422,82 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 			fields.cond = fields.a & 0x1f;
 			op->cond = map_cond2radare (fields.a & 0x1f);
 			op->jump = (addr & ~3) + fields.imm;
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 			op->fail = addr + op->size;
 			break;
 		default:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 			break;
 		}
 		break;
 	case 0x29: /* set status flags */
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case 0x2a: /* load from auxiliary register. */
 	case 0x2b: /* store to auxiliary register. */
-		op->type = R_ANAL_OP_TYPE_IO;
+		op->type = R_ARCH_OP_TYPE_IO;
 		break;
 	case 0x2f: /* Single Operand Instructions, 0x04, [0x2F, 0x00 - 0x3F] */
 		switch (fields.a) {
 		case 0: /* Arithmetic shift left by one */
-			op->type = R_ANAL_OP_TYPE_SAL;
+			op->type = R_ARCH_OP_TYPE_SAL;
 			break;
 		case 1: /* Arithmetic shift right by one */
-			op->type = R_ANAL_OP_TYPE_SAR;
+			op->type = R_ARCH_OP_TYPE_SAR;
 			break;
 		case 2: /* Logical shift right by one */
-			op->type = R_ANAL_OP_TYPE_SHR;
+			op->type = R_ARCH_OP_TYPE_SHR;
 			break;
 		case 3: /* Rotate right */
 		case 4: /* Rotate right through carry */
-			op->type = R_ANAL_OP_TYPE_ROR;
+			op->type = R_ARCH_OP_TYPE_ROR;
 			break;
 		case 5: /* Sign extend byte */
 		case 6: /* Sign extend word */
 		case 7: /* Zero extend byte */
 		case 8: /* Zero extend word */
-			// op->type = R_ANAL_OP_TYPE_UNK;
-			op->type = R_ANAL_OP_TYPE_MOV;
+			// op->type = R_ARCH_OP_TYPE_UNK;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			/* TODO: a better encoding for SEX and EXT instructions */
 			break;
 		case 9: /* Absolute */
-			op->type = R_ANAL_OP_TYPE_ABS;
+			op->type = R_ARCH_OP_TYPE_ABS;
 			break;
 		case 0xa: /* Logical NOT */
-			op->type = R_ANAL_OP_TYPE_NOT;
+			op->type = R_ARCH_OP_TYPE_NOT;
 			break;
 		case 0xb: /* Rotate left through carry */
-			op->type = R_ANAL_OP_TYPE_ROL;
+			op->type = R_ARCH_OP_TYPE_ROL;
 			break;
 		case 0xc: /* Atomic Exchange */
-			op->type = R_ANAL_OP_TYPE_XCHG;
+			op->type = R_ARCH_OP_TYPE_XCHG;
 			break;
 		case 0x3f: /* See Zero operand (ZOP) table */
 			switch (fields.b) {
 			case 1: /* Sleep */
 				/* TODO: a better encoding for this */
-				op->type = R_ANAL_OP_TYPE_NULL;
+				op->type = R_ARCH_OP_TYPE_NULL;
 				break;
 			case 2: /* Software interrupt */
-				op->type = R_ANAL_OP_TYPE_SWI;
+				op->type = R_ARCH_OP_TYPE_SWI;
 				break;
 			case 3: /* Wait for all data-based memory transactions to complete */
 				/* TODO: a better encoding for this */
-				op->type = R_ANAL_OP_TYPE_NULL;
+				op->type = R_ARCH_OP_TYPE_NULL;
 				break;
 			case 4: /* Return from interrupt/exception */
-				op->type = R_ANAL_OP_TYPE_RET;
+				op->type = R_ARCH_OP_TYPE_RET;
 				break;
 			case 5: /* Breakpoint instruction */
-				op->type = R_ANAL_OP_TYPE_TRAP;
+				op->type = R_ARCH_OP_TYPE_TRAP;
 				break;
 			default:
-				op->type = R_ANAL_OP_TYPE_ILL;
+				op->type = R_ARCH_OP_TYPE_ILL;
 				break;
 			}
 			break;
 		default:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 			break;
 		}
 		break;
@@ -509,7 +509,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	case 0x35:
 	case 0x36:
 	case 0x37: /* Load Register-Register, 0x04, [0x30 - 0x37] */
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	}
 
@@ -517,7 +517,7 @@ static int arcompact_genops(RAnalOp *op, ut64 addr, ut32 words[2]) {
 	return op->size;
 }
 
-static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int arcompact_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *data, int len) {
 	ut32 words[2]; /* storage for the de-swizled opcode data */
 	arc_fields fields;
 
@@ -527,7 +527,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	/* no unaligned code */
 	if (addr % 2 != 0) {
 		/* this fixes some of the reverse disassembly issues */
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		return 0;
 	}
 	if (len < 8) {
@@ -535,7 +535,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		return 0;
 	}
 
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ARCH_OP_TYPE_UNK;
 	op->ptr = UT64_MAX;
 	op->val = UT64_MAX;
 	op->jump = UT64_MAX;
@@ -571,14 +571,14 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			fields.limm = SEX_S21 (fields.limm);
 			fields.cond = (words[0] & 0x1f);
 			op->cond = map_cond2radare (fields.cond);
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 		} else {
 			/* Branch Unconditional Far 0x00 [0x1] */
 			fields.limm |= (fields.c & 0x0f) << 21;
 			/* the  & 0xf clearly shows we don't overflow */
 			/* TODO: don't generate code to show this */
 			fields.limm = SEX_S25 (fields.limm);
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ARCH_OP_TYPE_JMP;
 		}
 		arcompact_branch (op, addr, fields.limm, fields.mode_n);
 		break;
@@ -592,7 +592,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			fields.b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
 			fields.c = (words[0] & 0x00000fc0) >> 6;
 			fields.imm = SEX_S9 ((words[0] & 0x00fe0000) >> 16 | (words[0] & 0x8000) >> 7);
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 
 			if (fields.format2 == 0) {
 				/* Branch on Compare Register-Register, 0x01, [0x1, 0x0] */
@@ -618,14 +618,14 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 				fields.imm = SEX_S21 (fields.imm);
 				fields.cond = (words[0] & 0x1f);
 				op->cond = map_cond2radare (fields.cond);
-				op->type = R_ANAL_OP_TYPE_CCALL;
+				op->type = R_ARCH_OP_TYPE_CCALL;
 			} else {
 				/* Branch and Link Unconditional Far, 0x01, [0x0, 0x1] */
 				fields.imm |= (fields.c & 0x0f) << 21;
 				/* the  & 0xf clearly shows we don't overflow */
 				/* TODO: don't generate code to show this */
 				fields.imm = SEX_S25 (fields.imm);
-				op->type = R_ANAL_OP_TYPE_CALL;
+				op->type = R_ARCH_OP_TYPE_CALL;
 			}
 			arcompact_branch (op, addr, fields.imm, fields.mode_n);
 		}
@@ -637,11 +637,11 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		/* fields.mode_aa = (words[0] & 0x600) >> 9; */
 		fields.mode_zz = (words[0] & 0x180) >> 7;
 
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 
 		/* dst (fields.a) cannot be an extension core register */
 		if (fields.a == ARC_REG_PCL || fields.a == 61 || (fields.a >= 0x20 && fields.a <= 0x2b)) {
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 		}
 
 		map_zz2refptr (op, fields.mode_zz);
@@ -663,7 +663,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		/* ut8 mode_aa = (words[0] & 0x18) >> 3; */
 		fields.mode_zz = (words[0] & 0x6) >> 1;
 
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 
 		map_zz2refptr (op, fields.mode_zz);
 
@@ -683,7 +683,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		/* TODO: set op with GP,FP,SP src/dst details */
 		break;
 	case 4: /* General Operations */
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		return arcompact_genops (op, addr, words);
 	case 5:
 	case 6:
@@ -709,17 +709,17 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			fields.limm = words[1];
 		}
 		/* TODO: fill in the extansion functions */
-		// op->type = R_ANAL_OP_TYPE_UNK;
-		// op->type = R_ANAL_OP_TYPE_SHL;
-		op->type = R_ANAL_OP_TYPE_SHR;
+		// op->type = R_ARCH_OP_TYPE_UNK;
+		// op->type = R_ARCH_OP_TYPE_SHL;
+		op->type = R_ARCH_OP_TYPE_SHR;
 		break;
 	case 0x09:
 	case 0x0a:
 	case 0x0b: /* Market Specific Extension Instructions, 0x09 - 0x0B */
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		break;
 	case 0x0c: /* Load /Add Register-Register, 0x0C, [0x00 - 0x03] */
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		fields.subopcode = (words[0] & 0x00180000) >> 19;
 		/* fields.a	= (words[0] & 0x00070000) >> 16; */
 		/* fields.c	= (words[0] & 0x00e00000) >> 21; */
@@ -729,10 +729,10 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		case 0: /* Load long word (reg.+reg.) */
 		case 1: /* Load unsigned byte (reg.+reg.) */
 		case 2: /* Load unsigned word (reg.+reg.) */
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = R_ARCH_OP_TYPE_LOAD;
 			break;
 		case 3: /* Add */
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		}
 		break;
@@ -744,16 +744,16 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 
 		switch (fields.subopcode) {
 		case 0: /* Add */
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		case 1: /* Subtract */
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = R_ARCH_OP_TYPE_SUB;
 			break;
 		case 2: /* Multiple arithmetic shift left */
-			op->type = R_ANAL_OP_TYPE_SHL;
+			op->type = R_ARCH_OP_TYPE_SHL;
 			break;
 		case 3: /* Multiple arithmetic shift right */
-			op->type = R_ANAL_OP_TYPE_SHR;
+			op->type = R_ARCH_OP_TYPE_SHR;
 			break;
 		}
 		break;
@@ -769,14 +769,14 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 
 		switch (fields.subopcode) {
 		case 0: /* Add */
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		case 1: /* Move */
 		case 3: /* Move */
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			break;
 		case 2: /* Compare */
-			op->type = R_ANAL_OP_TYPE_CMP;
+			op->type = R_ARCH_OP_TYPE_CMP;
 			break;
 		}
 		break;
@@ -789,53 +789,53 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		case 0: /* Single Operand, Jumps and Special Format Instructions, 0x0F, [0x00, 0x00 - 0x07] */
 			switch (fields.c) {
 			case 0: /* J_S [r]*/
-				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->type = R_ARCH_OP_TYPE_UJMP;
 				arcompact_jump (op, 0, 0, 0);
 				break;
 			case 1: /* J_S.D [r] */
-				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->type = R_ARCH_OP_TYPE_UJMP;
 				arcompact_jump (op, 0, 0, 1);
 				break;
 			case 2: /* JL_S [r] */
-				op->type = R_ANAL_OP_TYPE_UCALL;
+				op->type = R_ARCH_OP_TYPE_UCALL;
 				arcompact_jump (op, 0, 0, 0);
 				break;
 			case 3: /* JL_S.D [r] */
-				op->type = R_ANAL_OP_TYPE_UCALL;
+				op->type = R_ARCH_OP_TYPE_UCALL;
 				arcompact_jump (op, 0, 0, 1);
 				break;
 			case 4:
 			case 5: /* Reserved - instruction error */
-				op->type = R_ANAL_OP_TYPE_ILL;
+				op->type = R_ARCH_OP_TYPE_ILL;
 				break;
 			case 6: /* SUB_S.NE [b] */
-				op->cond = R_ANAL_COND_NE;
-				op->type = R_ANAL_OP_TYPE_SUB;
+				op->cond = R_ARCH_OP_COND_NE;
+				op->type = R_ARCH_OP_TYPE_SUB;
 				break;
 			case 7: /* Zero Operand Instructions, 0x0F, [0x00, 0x07, 0x00 - 0x07] */
 				switch (fields.b) {
 				case 0: /* nop_s */
-					op->type = R_ANAL_OP_TYPE_NOP;
+					op->type = R_ARCH_OP_TYPE_NOP;
 					op->size = 4;
 					break;
 				case 1:
 				case 2:
 				case 3: /* unimplemented and Reserved - instruction error */
-					op->type = R_ANAL_OP_TYPE_ILL;
+					op->type = R_ARCH_OP_TYPE_ILL;
 					break;
 				case 4: /* JEQ_S [blink] */
-					op->cond = R_ANAL_COND_EQ;
-					op->type = R_ANAL_OP_TYPE_CRET;
+					op->cond = R_ARCH_OP_COND_EQ;
+					op->type = R_ARCH_OP_TYPE_CRET;
 					break;
 				case 5: /* JNE_S [blink] */
-					op->cond = R_ANAL_COND_NE;
-					op->type = R_ANAL_OP_TYPE_CRET;
+					op->cond = R_ARCH_OP_COND_NE;
+					op->type = R_ARCH_OP_TYPE_CRET;
 					break;
 				case 7: /* J_S.D [blink] */
 					op->delay = 1;
 				/* fall through */
 				case 6: /* J_S [blink] */
-					op->type = R_ANAL_OP_TYPE_RET;
+					op->type = R_ARCH_OP_TYPE_RET;
 					break;
 				}
 				break;
@@ -847,76 +847,76 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		case 9:
 		case 0xa:
 		case 0x17: /* Reserved - instruction error */
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 			break;
 		case 2:
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = R_ARCH_OP_TYPE_SUB;
 			break;
 		case 4:
-			op->type = R_ANAL_OP_TYPE_AND;
+			op->type = R_ARCH_OP_TYPE_AND;
 			break;
 		case 5:
-			op->type = R_ANAL_OP_TYPE_OR;
+			op->type = R_ARCH_OP_TYPE_OR;
 			break;
 		case 6: /* Logical bitwise AND with invert */
 			/* dest = src1 AND NOT src2 */
-			op->type = R_ANAL_OP_TYPE_AND;
+			op->type = R_ARCH_OP_TYPE_AND;
 			break;
 		case 7:
-			op->type = R_ANAL_OP_TYPE_XOR;
+			op->type = R_ARCH_OP_TYPE_XOR;
 			break;
 		case 0xb: /* Test */
 			/* no dst, b AND c */
-			op->type = R_ANAL_OP_TYPE_AND;
+			op->type = R_ARCH_OP_TYPE_AND;
 			break;
 		case 0xc:
-			op->type = R_ANAL_OP_TYPE_MUL;
+			op->type = R_ARCH_OP_TYPE_MUL;
 			break;
 		case 0xd:  /* Sign extend byte */
 		case 0xe:  /* Sign extend word */
 		case 0xf:  /* Zero extend byte */
 		case 0x10: /* Zero extend word */
 		case 0x13: /* Negate */
-			op->type = R_ANAL_OP_TYPE_CPL;
+			op->type = R_ARCH_OP_TYPE_CPL;
 			break;
 		case 0x11:
-			op->type = R_ANAL_OP_TYPE_ABS;
+			op->type = R_ARCH_OP_TYPE_ABS;
 			break;
 		case 0x12:
-			op->type = R_ANAL_OP_TYPE_NOT;
+			op->type = R_ARCH_OP_TYPE_NOT;
 			break;
 		case 0x14: /* Add with left shift by 1 */
 		case 0x15: /* Add with left shift by 2 */
 		case 0x16: /* Add with left shift by 3 */
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		case 0x18: /* Multiple arithmetic shift left */
-			op->type = R_ANAL_OP_TYPE_SAL;
+			op->type = R_ARCH_OP_TYPE_SAL;
 			break;
 		case 0x19: /* Multiple logical shift right */
-			op->type = R_ANAL_OP_TYPE_SHR;
+			op->type = R_ARCH_OP_TYPE_SHR;
 			break;
 		case 0x1a: /* Multiple arithmetic shift right */
-			op->type = R_ANAL_OP_TYPE_SAR;
+			op->type = R_ARCH_OP_TYPE_SAR;
 			break;
 		case 0x1b: /* Arithmetic shift left by one */
-			op->type = R_ANAL_OP_TYPE_SAL;
+			op->type = R_ARCH_OP_TYPE_SAL;
 			break;
 		case 0x1c: /* Arithmetic shift right by one */
-			op->type = R_ANAL_OP_TYPE_SAR;
+			op->type = R_ARCH_OP_TYPE_SAR;
 			break;
 		case 0x1d: /* Logical shift right by one */
-			op->type = R_ANAL_OP_TYPE_SHL;
+			op->type = R_ARCH_OP_TYPE_SHL;
 			break;
 		case 0x1e:
-			op->type = R_ANAL_OP_TYPE_TRAP;
+			op->type = R_ARCH_OP_TYPE_TRAP;
 			/* TODO: the description sounds more like a */
-			/* R_ANAL_OP_TYPE_SWI, but I don't know what */
+			/* R_ARCH_OP_TYPE_SWI, but I don't know what */
 			/* difference that would make to radare */
 			break;
 		case 0x1f:
-			op->type = R_ANAL_OP_TYPE_TRAP;
-			/* TODO: this should be R_ANAL_OP_TYPE_DEBUG, */
+			op->type = R_ARCH_OP_TYPE_TRAP;
+			/* TODO: this should be R_ARCH_OP_TYPE_DEBUG, */
 			/* but that type is commented out */
 			break;
 		}
@@ -926,36 +926,36 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	case 0x12: /* LDW_S	c,[b,u6] */
 	case 0x13: /* LDW_S.X	c,[b,u6] */
 		/* Load/Store with Offset, 0x10 - 0x16 */
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		break;
 	case 0x14: /* ST_S	c, [b, u7] */
 	case 0x15: /* STB_S c, [b, u5] */
 	case 0x16: /* STW_S c, [b, u6] */
 		/* Load/Store with Offset, 0x10 - 0x16 */
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		break;
 	case 0x17: /* Shift/Subtract/Bit Immediate, 0x17, [0x00 - 0x07] */
 		fields.subopcode = (words[0] & 0x00e00000) >> (16 + 5);
 		switch (fields.subopcode) {
 		case 0: /* Multiple arithmetic shift left */
-			op->type = R_ANAL_OP_TYPE_SAL;
+			op->type = R_ARCH_OP_TYPE_SAL;
 			break;
 		case 1: /* Multiple logical shift left */
-			op->type = R_ANAL_OP_TYPE_SHL;
+			op->type = R_ARCH_OP_TYPE_SHL;
 			break;
 		case 2: /* Multiple arithmetic shift right */
-			op->type = R_ANAL_OP_TYPE_SAR;
+			op->type = R_ARCH_OP_TYPE_SAR;
 			break;
 		case 3: /* Subtract */
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = R_ARCH_OP_TYPE_SUB;
 			break;
 		case 4: /* Bit set */
-			op->type = R_ANAL_OP_TYPE_OR;
+			op->type = R_ARCH_OP_TYPE_OR;
 			break;
 		case 5: /* Bit clear */
 		case 6: /* Bit mask */
 		case 7: /* Bit test */
-			op->type = R_ANAL_OP_TYPE_AND;
+			op->type = R_ARCH_OP_TYPE_AND;
 			break;
 		}
 		break;
@@ -964,26 +964,26 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		switch (fields.subopcode) {
 		case 0: /* Load long word sp-rel. */
 		case 1: /* Load unsigned byte sp-rel. */
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = R_ARCH_OP_TYPE_LOAD;
 			break;
 		case 2: /* Store long word sp-rel. */
 		case 3: /* Store unsigned byte sp-rel. */
-			op->type = R_ANAL_OP_TYPE_STORE;
+			op->type = R_ARCH_OP_TYPE_STORE;
 			break;
 		case 4: /* Add */
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		case 5: /* Add/Subtract SP Relative, 0x18, [0x05, 0x00-0x07] */
 			fields.b = (words[0] & 0x07000000) >> (16 + 8);
 			switch (fields.b) {
 			case 0: /* Add immediate to SP */
-				op->type = R_ANAL_OP_TYPE_ADD;
+				op->type = R_ARCH_OP_TYPE_ADD;
 				break;
 			case 1: /* Subtract immediate from SP */
-				op->type = R_ANAL_OP_TYPE_SUB;
+				op->type = R_ARCH_OP_TYPE_SUB;
 				break;
 			default:
-				op->type = R_ANAL_OP_TYPE_ILL;
+				op->type = R_ARCH_OP_TYPE_ILL;
 				break;
 			}
 			break;
@@ -992,10 +992,10 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			switch (fields.c) {
 			case 1:    /* Pop register from stack */
 			case 0x11: /* Pop blink from stack */
-				op->type = R_ANAL_OP_TYPE_POP;
+				op->type = R_ARCH_OP_TYPE_POP;
 				break;
 			default:
-				op->type = R_ANAL_OP_TYPE_ILL;
+				op->type = R_ARCH_OP_TYPE_ILL;
 				break;
 			}
 			break;
@@ -1004,10 +1004,10 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 			switch (fields.c) {
 			case 1:    /* Push register to stack */
 			case 0x11: /* Push blink to stack */
-				op->type = R_ANAL_OP_TYPE_PUSH;
+				op->type = R_ARCH_OP_TYPE_PUSH;
 				break;
 			default:
-				op->type = R_ANAL_OP_TYPE_ILL;
+				op->type = R_ARCH_OP_TYPE_ILL;
 				break;
 			}
 			break;
@@ -1019,38 +1019,38 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		case 0: /* Load gp-relative (32-bit aligned) to r0 */
 		case 1: /* Load unsigned byte gp-relative (8-bit aligned) to r0 */
 		case 2: /* Load unsigned word gp-relative (16-bit aligned) to r0 */
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = R_ARCH_OP_TYPE_LOAD;
 			break;
 		case 3: /* Add gp-relative (32-bit aligned) to r0 */
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			op->size = 8;
 			break;
 		}
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		break;
 	case 0x1a: /* Load PCL-Relative, 0x1A */
 		fields.c = (words[0] & 0x00ff0000) >> 14;
 		op->ptr = (addr & ~3) + fields.c;
 		op->refptr = 4;
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		break;
 	case 0x1b: /* Move Immediate, 0x1B */
 		op->val = (words[0] & 0x00ff0000) >> 16;
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case 0x1c: /* ADD/CMP Immediate, 0x1C, [0x00 - 0x01] */
 		fields.subopcode = (words[0] & 0x00800000) >> (16 + 7);
 		if (fields.subopcode == 0) {
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 		} else {
-			op->type = R_ANAL_OP_TYPE_CMP;
+			op->type = R_ARCH_OP_TYPE_CMP;
 		}
 		break;
 	case 0x1d: /* Branch on Compare Register with Zero, 0x1D, [0x00 - 0x01] */
 		/* fields.subopcode = (words[0] & 0x00800000) >> (16+7); */
 		fields.imm = SEX_S8 ((words[0] & 0x007f0000) >> (16 - 1));
 		/* fields.subopcode? reg NE: reg EQ; */
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		arcompact_branch (op, addr, fields.imm, 0);
 		break;
 	case 0x1e: /* Branch Conditionally, 0x1E, [0x00 - 0x03] */
@@ -1058,18 +1058,18 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		fields.imm = SEX_S10 ((words[0] & 0x01ff0000) >> (16 - 1));
 		switch (fields.subopcode) {
 		case 0: /* B_S */
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ARCH_OP_TYPE_JMP;
 			break;
 		case 1: /* BEQ_S */
-			op->cond = R_ANAL_COND_EQ;
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->cond = R_ARCH_OP_COND_EQ;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 			break;
 		case 2: /* BNE_S */
-			op->cond = R_ANAL_COND_NE;
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->cond = R_ARCH_OP_COND_NE;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 			break;
 		case 3: /* Bcc_S */
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 			fields.imm = SEX_S7 ((words[0] & 0x003f0000) >> (16 - 1));
 			/* TODO: cond codes (looks like it is the BR table again?) */
 			break;
@@ -1078,7 +1078,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		break;
 	case 0x1f: /* Branch and Link Unconditionally, 0x1F */
 		fields.imm = SEX_S13 ((words[0] & 0x07ff0000) >> (16 - 2));
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		arcompact_branch (op, addr, fields.imm, 0);
 		break;
 	}
@@ -1086,12 +1086,12 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	return op->size;
 }
 
-static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int arc_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *data, int len, RArchOpMask mask) {
 	const ut8 *b = (ut8 *)data;
 
 	op->addr = addr;
 	op->size = len;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		disassemble (anal, op, data, len);
 		//op->size = disassemble (anal, op, data, len);
 	}
@@ -1108,37 +1108,37 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len,
 	case 0x04: /* Branch */
 	case 0x05: /* Branch with Link */
 	case 0x06: /* Loop */
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		op->jump = addr + 4 + ((r_read_le32 (&data[0]) & 0x07ffff80) >> (7 - 2));
 		break;
 	case 0x07: /* Conditional Jump and Jump with Link */
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		op->jump = 0;
 		break;
 	case 0x08:
 	case 0x09:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		op->size = 8;
 		break;
 	case 0x0a:
 	case 0x0b:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		break;
 	case 0x0c:
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = R_ARCH_OP_TYPE_AND;
 		break;
 	case 0x0d:
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = R_ARCH_OP_TYPE_OR;
 		break;
 	case 0x0f:
 		if ((b[0] == 0xff) && (b[1] == 0xff)) {
-			op->type = R_ANAL_OP_TYPE_NOP;
+			op->type = R_ARCH_OP_TYPE_NOP;
 			break;
 		}
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		break;
 	case 0x13:
-		op->type = R_ANAL_OP_TYPE_ROR;
+		op->type = R_ARCH_OP_TYPE_ROR;
 		break;
 	default:
 		break;

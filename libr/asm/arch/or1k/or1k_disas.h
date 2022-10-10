@@ -106,14 +106,14 @@ typedef struct {
 	char *name;
 	int type;
 	int opcode_mask;
-	int insn_type; /**< One of \link _RAnalOpType \endlink */
+	int insn_type; /**< One of \link _RArchOpType \endlink */
 } insn_extra_t;
 
 typedef struct {
 	ut32 opcode;
 	char *name;
 	int type;
-	int insn_type; /**< One of \link _RAnalOpType \endlink */
+	int insn_type; /**< One of \link _RArchOpType \endlink */
 	insn_extra_t *extra;
 } insn_t;
 

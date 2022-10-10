@@ -32,7 +32,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int disassemble(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj;
 	if (len < 4) {
@@ -68,45 +68,45 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return op->size;
 }
 
-static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
+static int nios2_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *b, int len, RArchOpMask mask) {
 	if (!op) {
 		return 1;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		disassemble (anal, op, addr, b, len);
 	}
 	op->size = 4;
 
 	if ((b[0] & 0xff) == 0x3a) {
 		// XXX
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 	} else if ((b[0] & 0xf) == 0xa) {
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 	} else if ((b[0] & 0xf) == 4) {
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 	} else if ((b[0] & 0xf) == 5) {
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 	} else if ((b[0] & 0xf) == 6) {
 		// blt, r19, r5, 0x8023480
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		// TODO: address
 	} else if ((b[0] & 0xf) == 7) {
 		// blt, r19, r5, 0x8023480
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		// TODO: address
 	} else {
 		switch (b[0]) {
 		case 0x3a:
 			if (b[1] >= 0xa0 && b[1] <= 0xaf && b[3] == 0x3d) {
-				op->type = R_ANAL_OP_TYPE_TRAP;
+				op->type = R_ARCH_OP_TYPE_TRAP;
 			} else if ((b[1] >= 0xe0 && b[1] <= 0xe7) && b[2] == 0x3e && !b[3]) {
 				// nextpc ra
-				op->type = R_ANAL_OP_TYPE_RET;
+				op->type = R_ARCH_OP_TYPE_RET;
 			}
 			break;
 		case 0x01:
 			// jmpi
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ARCH_OP_TYPE_JMP;
 			break;
 		case 0x00:
 		case 0x20:
@@ -114,7 +114,7 @@ static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, 
 		case 0x80:
 		case 0xc0:
 			//
-			op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = R_ARCH_OP_TYPE_CALL;
 			break;
 		case 0x26:
 			// beq
@@ -124,7 +124,7 @@ static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, 
 		case 0x87:
 		case 0xc7:
 			// ldb
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = R_ARCH_OP_TYPE_LOAD;
 			break;
 		case 0x0d:
 		case 0x2d:
@@ -132,14 +132,14 @@ static int nios2_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, 
 		case 0x8d:
 		case 0xcd:
 			// sth && sthio
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = R_ARCH_OP_TYPE_LOAD;
 			break;
 		case 0x06:
 		case 0x46:
 		case 0x86:
 		case 0xc6:
 			// br
-			op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = R_ARCH_OP_TYPE_CALL;
 			break;
 		}
 	}

@@ -59,7 +59,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	pj_free (pj);
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	csh handle = init_capstone (a);
 	if (handle == 0) {
 		return -1;
@@ -70,12 +70,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	// capstone-next
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 	} else {
-		if (mask & R_ANAL_OP_MASK_OPEX) {
+		if (mask & R_ARCH_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
 		}
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
 				insn->mnemonic, insn->op_str[0]? " ": "",
 				insn->op_str);
@@ -86,13 +86,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case XCORE_INS_DRET:
 		case XCORE_INS_KRET:
 		case XCORE_INS_RETSP:
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 			break;
 		case XCORE_INS_DCALL:
 		case XCORE_INS_KCALL:
 		case XCORE_INS_ECALLF:
 		case XCORE_INS_ECALLT:
-			op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = R_ARCH_OP_TYPE_CALL;
 			op->jump = INSOP(0).imm;
 			break;
 		/* ??? */
@@ -103,16 +103,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case XCORE_INS_BF:
 		case XCORE_INS_BU:
 		case XCORE_INS_BRU:
-			op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = R_ARCH_OP_TYPE_CALL;
 			op->jump = INSOP(0).imm;
 			break;
 		case XCORE_INS_SUB:
 		case XCORE_INS_LSUB:
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = R_ARCH_OP_TYPE_SUB;
 			break;
 		case XCORE_INS_ADD:
 		case XCORE_INS_LADD:
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		}
 		cs_free (insn, n);

@@ -6,7 +6,7 @@ static const char *cmp_op[] = { "<", "<=", "==", "!=", ">", ">=", "in", "not in"
 
 static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt);
 
-int r_pyc_disasm(RAnalOp *opstruct, const ut8 *code, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *ops) {
+int r_pyc_disasm(RArchOp *opstruct, const ut8 *code, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *ops) {
 	pyc_code_object *cobj = NULL, *t = NULL;
 	ut32 extended_arg = 0, i = 0, oparg;
 	st64 start_offset, end_offset;

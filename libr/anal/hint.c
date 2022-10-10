@@ -370,7 +370,7 @@ R_API void r_anal_hint_unset_bits(RAnal *a, ut64 addr) {
 	r_rbtree_delete (&a->bits_hints, &addr, ranged_hint_record_cmp, NULL, bits_hint_record_free_rb, NULL);
 }
 
-R_API void r_anal_hint_free(RAnalHint *h) {
+R_API void r_anal_hint_free(RArchOpHint *h) {
 	if (h) {
 		free (h->arch);
 		free (h->esil);
@@ -452,7 +452,7 @@ R_API void r_anal_bits_hints_foreach(RAnal *anal, RAnalBitsHintCb cb, void *user
 	}
 }
 
-static void hint_merge(RAnalHint *hint, RAnalAddrHintRecord *record) {
+static void hint_merge(RArchOpHint *hint, RAnalAddrHintRecord *record) {
 	switch (record->type) {
 	case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
 		hint->immbase = record->immbase;
@@ -505,8 +505,8 @@ static void hint_merge(RAnalHint *hint, RAnalAddrHintRecord *record) {
 	}
 }
 
-R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
-	RAnalHint *hint = R_NEW0 (RAnalHint);
+R_API RArchOpHint *r_anal_hint_get(RAnal *a, ut64 addr) {
+	RArchOpHint *hint = R_NEW0 (RArchOpHint);
 	if (!hint) {
 		return NULL;
 	}

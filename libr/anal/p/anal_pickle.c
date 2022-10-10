@@ -168,7 +168,7 @@ static inline bool valid_offset(RAnal *a, ut64 addr) {
 	return true;
 }
 
-static inline int handle_int(RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
+static inline int handle_int(RArchOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
 	if (sz <= buflen && sz <= sizeof (op->val)) {
 		op->size += sz;
 		op->val = r_mem_get_num (buf, sz);
@@ -178,7 +178,7 @@ static inline int handle_int(RAnalOp *op, const char *name, int sz, const ut8 *b
 	return -1;
 }
 
-static inline int handle_long(RAnal *a, RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
+static inline int handle_long(RAnal *a, RArchOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
 	r_return_val_if_fail (sz == 1 || sz == 4, -1);
 	op->sign = true;
 
@@ -217,9 +217,9 @@ static inline int handle_long(RAnal *a, RAnalOp *op, const char *name, int sz, c
 	return op->size;
 }
 
-static inline int handle_float(RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
+static inline int handle_float(RArchOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
 	if (sz <= buflen && sz <= sizeof (op->val)) {
-		op->family = R_ANAL_OP_FAMILY_FPU;
+		op->family = R_ARCH_OP_FAMILY_FPU;
 		op->size += sz;
 		double d;
 		memcpy (&d, buf, sz);
@@ -271,7 +271,7 @@ static inline char *get_two_lines(const ut8 *buf, int len) {
 	return NULL;
 }
 
-static inline int handle_n_lines(RAnalOp *op, const char *name, int n, const ut8 *buf, int buflen) {
+static inline int handle_n_lines(RArchOp *op, const char *name, int n, const ut8 *buf, int buflen) {
 	r_return_val_if_fail (buflen >= 0 && name && n < 3 && n > 0, -1);
 
 	// TODO: use an alternative func for INT, FLOAT, LONG ops that gets the
@@ -284,14 +284,14 @@ static inline int handle_n_lines(RAnalOp *op, const char *name, int n, const ut8
 		op->mnemonic = r_str_newf ("%s \"%s\"", name, str);
 		free (str);
 	} else {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 	}
 	return op->size;
 }
 
-static inline int handle_opstring(RAnalOp *op, const ut8 *buf, int buflen) {
+static inline int handle_opstring(RArchOp *op, const ut8 *buf, int buflen) {
 	if (buf[0] != '\'') {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		return -1;
 	}
 	buf++;
@@ -313,7 +313,7 @@ static inline int handle_opstring(RAnalOp *op, const ut8 *buf, int buflen) {
 	return -1;
 }
 
-static inline void set_mnemonic_str(RAnalOp *op, const char *n, const ut8 *buf, size_t max) {
+static inline void set_mnemonic_str(RArchOp *op, const char *n, const ut8 *buf, size_t max) {
 	char *trunc = "";
 	size_t readlen = op->ptrsize;
 	if (op->ptrsize > max) {
@@ -329,7 +329,7 @@ static inline void set_mnemonic_str(RAnalOp *op, const char *n, const ut8 *buf, 
 	}
 }
 
-static inline int cnt_str(RAnal *a, RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
+static inline int cnt_str(RAnal *a, RArchOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
 	if (sz <= buflen && sz <= sizeof (op->val)) {
 		op->ptrsize = r_mem_get_num (buf, sz);
 		op->size = op->nopcode + sz + op->ptrsize;
@@ -340,7 +340,7 @@ static inline int cnt_str(RAnal *a, RAnalOp *op, const char *name, int sz, const
 			set_mnemonic_str (op, name, buf, R_MIN (buflen, MAXSTRLEN));
 		} else {
 			op->size = 1;
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 		}
 	}
 	return op->size;
@@ -350,13 +350,13 @@ static inline int cnt_str(RAnal *a, RAnalOp *op, const char *name, int sz, const
 	op->mnemonic = strdup (x); \
 	return op->size;
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	r_return_val_if_fail (a && op && buf && len > 0, -1);
 	// all opcodes are 1 byte, some have arbitrarily large strings as args
 	op->nopcode = 1;
 	op->size = 1;
 	op->addr = addr;
-	op->family = R_ANAL_OP_FAMILY_CPU;
+	op->family = R_ARCH_OP_FAMILY_CPU;
 
 	char opcode = *buf;
 	buf++;
@@ -505,7 +505,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	}
 
 	// bad opcode, must be at bad addr
-	op->type = R_ANAL_OP_TYPE_ILL;
+	op->type = R_ARCH_OP_TYPE_ILL;
 	return op->size;
 }
 

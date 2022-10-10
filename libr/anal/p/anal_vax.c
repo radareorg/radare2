@@ -35,7 +35,7 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int vax_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj;
 	RStrBuf *sb = r_strbuf_new (NULL);
@@ -55,8 +55,8 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	op->size = print_insn_vax ((bfd_vma)addr, &disasm_obj);
 
 	op->addr = addr;
-	op->type = R_ANAL_OP_TYPE_UNK;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	op->type = R_ARCH_OP_TYPE_UNK;
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_strbuf_drain (sb);
 	} else {
 		r_strbuf_free (sb);
@@ -66,29 +66,29 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	}
 	switch (buf[0]) {
 	case 0x04:
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		break;
 	case 0x2e:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case 0x78:
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = R_ARCH_OP_TYPE_SHL;
 		break;
 	case 0xc0:
 	case 0xc1:
 	case 0xd8:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		break;
 	case 0xd7:
-		op->type = R_ANAL_OP_TYPE_SUB; // dec
+		op->type = R_ARCH_OP_TYPE_SUB; // dec
 		break;
 	case 0x00:
 	case 0x01:
-		// op->type = R_ANAL_OP_TYPE_TRAP; // HALT
-		op->type = R_ANAL_OP_TYPE_NOP;
+		// op->type = R_ARCH_OP_TYPE_TRAP; // HALT
+		op->type = R_ARCH_OP_TYPE_NOP;
 		break;
 	case 0xac:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		break;
 	case 0x11:
 	case 0x12:
@@ -100,25 +100,25 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case 0x18:
 	case 0x19:
 	case 0x1e:
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		op->jump = op->addr + op->size + ((len > 1)? ((char)buf[1]): 0);
 		op->fail = op->addr + op->size;
 		break;
 	case 0xd0: // mcoml
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case 0xd4: //
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		break;
 	case 0xc2: // subl2 r0, r7
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		break;
 	case 0xca: // bicl
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		break;
 	case 0x31:
 	case 0xe9:
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		if (len > 2) {
 			op->jump = op->addr + op->size + ((buf[1] << 8) + buf[2]);
 			op->fail = op->addr + op->size;
@@ -126,50 +126,50 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		break;
 	case 0xc6:
 	case 0xc7:
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = R_ARCH_OP_TYPE_DIV;
 		break;
 	case 0x94: // movb
 	case 0x7d: // movb
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case 0x90:
 	case 0x9e:
 	case 0xde:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case 0xdd:
 	case 0x9f:
 	case 0xdf:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		break;
 	case 0xd1:
 	case 0xd5:
 	case 0x91:
 	case 0x51:
 	case 0x73:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		break;
 	case 0x95: // tstb
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		break;
 	case 0xd6:
 	case 0x61:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		break;
 	case 0x40:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		break;
 	case 0x9a:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case 0x83:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		break;
 	case 0x62:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		break;
 	case 0xfb: // calls
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		if (len > 6 && op->size <= len) {
 			const int oa = 3;
 			ut32 delta = buf[oa];

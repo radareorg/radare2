@@ -1857,10 +1857,10 @@ static int cmd_wa(void *data, const char *input) {
 		if (acode) {
 			if (input[0] == 'n') { // "wan"
 				int delta = 0;
-				RAnalOp analop;
+				RArchOp analop;
 				ut64 at = core->offset;
 repeat:
-				if (!r_anal_op (core->anal, &analop, at, core->block + delta, core->blocksize - delta, R_ANAL_OP_MASK_BASIC)) {
+				if (!r_anal_op (core->anal, &analop, at, core->block + delta, core->blocksize - delta, R_ARCH_OP_MASK_BASIC)) {
 					R_LOG_DEBUG ("Invalid instruction?");
 					r_anal_op_fini (&analop);
 					r_asm_code_free (acode);
@@ -1877,8 +1877,8 @@ repeat:
 				r_core_cmd0 (core, "wao nop");
 				input++;
 			} else if (input[0] == 'i') { // "wai"
-				RAnalOp analop;
-				if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
+				RArchOp analop;
+				if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
 					R_LOG_DEBUG ("Invalid instruction?");
 					r_anal_op_fini (&analop);
 					r_asm_code_free (acode);

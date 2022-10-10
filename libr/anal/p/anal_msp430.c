@@ -9,15 +9,15 @@
 
 #include "../arch/msp430/msp430_disas.h"
 
-static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int msp430_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	struct msp430_cmd cmd = {0};
 	op->size = -1;
 	op->nopcode = 1;
-	op->type = R_ANAL_OP_TYPE_UNK;
-	op->family = R_ANAL_OP_FAMILY_CPU;
+	op->type = R_ARCH_OP_TYPE_UNK;
+	op->family = R_ARCH_OP_FAMILY_CPU;
 
 	int ret = op->size = msp430_decode_command (buf, len, &cmd);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (ret < 1) {
 			op->mnemonic = strdup ("invalid");
 		} else if (ret > 0) {
@@ -47,20 +47,20 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		switch (cmd.opcode) {
 		case MSP430_RRA:
 		case MSP430_RRC:
-			op->type = R_ANAL_OP_TYPE_ROR;
+			op->type = R_ARCH_OP_TYPE_ROR;
 			break;
 		case MSP430_PUSH:
-			op->type = R_ANAL_OP_TYPE_PUSH;
+			op->type = R_ARCH_OP_TYPE_PUSH;
 			break;
 		case MSP430_CALL:
-			op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = R_ARCH_OP_TYPE_CALL;
 			op->fail = addr + op->size;
 			if (len > 4) {
 				op->jump = r_read_at_le16 (buf, 2);
 			}
 			break;
 		case MSP430_RETI:
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 			break;
 		}
 		break;
@@ -70,36 +70,36 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		case MSP430_BIC:
 		case MSP430_BIS:
 		case MSP430_MOV:
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			if ((cmd.instr)[0] == 'b' && (cmd.instr)[1] == 'r') {
 				// Emulated branch instruction, moves source operand to PC register.
-				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->type = R_ARCH_OP_TYPE_UJMP;
 			}
 			break;
 		case MSP430_DADD:
 		case MSP430_ADDC:
-		case MSP430_ADD: op->type = R_ANAL_OP_TYPE_ADD; break;
+		case MSP430_ADD: op->type = R_ARCH_OP_TYPE_ADD; break;
 		case MSP430_SUBC:
-		case MSP430_SUB: op->type = R_ANAL_OP_TYPE_SUB; break;
-		case MSP430_CMP: op->type = R_ANAL_OP_TYPE_CMP; break;
-		case MSP430_XOR: op->type = R_ANAL_OP_TYPE_XOR; break;
-		case MSP430_AND: op->type = R_ANAL_OP_TYPE_AND; break;
+		case MSP430_SUB: op->type = R_ARCH_OP_TYPE_SUB; break;
+		case MSP430_CMP: op->type = R_ARCH_OP_TYPE_CMP; break;
+		case MSP430_XOR: op->type = R_ARCH_OP_TYPE_XOR; break;
+		case MSP430_AND: op->type = R_ARCH_OP_TYPE_AND; break;
 		}
 		break;
 	case MSP430_JUMP:
 		if (cmd.jmp_cond == MSP430_JMP) {
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ARCH_OP_TYPE_JMP;
 		} else {
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 		}
 		op->jump = addr + cmd.jmp_addr;
 		op->fail = addr + 2;
 		break;
 	case MSP430_INV:
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		break;
 	default:
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		break;
 	}
 	return ret;

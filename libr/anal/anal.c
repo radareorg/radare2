@@ -344,7 +344,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 }
 
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
-	RAnalOp *op = NULL;
+	RArchOp *op = NULL;
 	ut8 *ret = NULL;
 	int oplen, idx = 0;
 
@@ -368,7 +368,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	memset (ret, 0xff, size);
 
 	while (idx < size) {
-		if ((oplen = r_anal_op (anal, op, at, data + idx, size - idx, R_ANAL_OP_MASK_BASIC)) < 1) {
+		if ((oplen = r_anal_op (anal, op, at, data + idx, size - idx, R_ARCH_OP_MASK_BASIC)) < 1) {
 			break;
 		}
 		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
@@ -405,8 +405,8 @@ R_API RList* r_anal_get_fcns(RAnal *anal) {
 	return anal->fcns;
 }
 
-R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
-	RAnalOp *op = R_NEW0 (RAnalOp);
+R_API RArchOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
+	RArchOp *op = R_NEW0 (RArchOp);
 	if (!op) {
 		return NULL;
 	}
@@ -416,24 +416,24 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 		return NULL;
 	}
 	int len = r_hex_str2bin (str, buf);
-	r_anal_op (anal, op, addr, buf, len, R_ANAL_OP_MASK_BASIC);
+	r_anal_op (anal, op, addr, buf, len, R_ARCH_OP_MASK_BASIC);
 	free (buf);
 	return op;
 }
 
-R_API bool r_anal_op_is_eob(RAnalOp *op) {
+R_API bool r_anal_op_is_eob(RArchOp *op) {
 	if (op->eob) {
 		return true;
 	}
 	switch (op->type) {
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_UJMP:
-	case R_ANAL_OP_TYPE_RJMP:
-	case R_ANAL_OP_TYPE_IJMP:
-	case R_ANAL_OP_TYPE_IRJMP:
-	case R_ANAL_OP_TYPE_CJMP:
-	case R_ANAL_OP_TYPE_RET:
-	case R_ANAL_OP_TYPE_TRAP:
+	case R_ARCH_OP_TYPE_JMP:
+	case R_ARCH_OP_TYPE_UJMP:
+	case R_ARCH_OP_TYPE_RJMP:
+	case R_ARCH_OP_TYPE_IJMP:
+	case R_ARCH_OP_TYPE_IRJMP:
+	case R_ARCH_OP_TYPE_CJMP:
+	case R_ARCH_OP_TYPE_RET:
+	case R_ARCH_OP_TYPE_TRAP:
 		return true;
 	default:
 		return false;
@@ -644,32 +644,32 @@ R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr) {
 }
 
 static bool noreturn_recurse(RAnal *anal, ut64 addr) {
-	RAnalOp op = {0};
+	RArchOp op = {0};
 	ut8 bbuf[0x10] = {0};
 	ut64 recurse_addr = UT64_MAX;
 	if (!anal->iob.read_at (anal->iob.io, addr, bbuf, sizeof (bbuf))) {
 		R_LOG_ERROR ("Couldn't read buffer");
 		return false;
 	}
-	if (r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL) < 1) {
+	if (r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL) < 1) {
 		return false;
 	}
-	switch (op.type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_JMP:
+	switch (op.type & R_ARCH_OP_TYPE_MASK) {
+	case R_ARCH_OP_TYPE_JMP:
 		if (op.jump == UT64_MAX) {
 			recurse_addr = op.ptr;
 		} else {
 			recurse_addr = op.jump;
 		}
 		break;
-	case R_ANAL_OP_TYPE_UCALL:
-	case R_ANAL_OP_TYPE_RCALL:
-	case R_ANAL_OP_TYPE_ICALL:
-	case R_ANAL_OP_TYPE_IRCALL:
+	case R_ARCH_OP_TYPE_UCALL:
+	case R_ARCH_OP_TYPE_RCALL:
+	case R_ARCH_OP_TYPE_ICALL:
+	case R_ARCH_OP_TYPE_IRCALL:
 		recurse_addr = op.ptr;
 		break;
-	case R_ANAL_OP_TYPE_CCALL:
-	case R_ANAL_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_CCALL:
+	case R_ARCH_OP_TYPE_CALL:
 		recurse_addr = op.jump;
 		break;
 	}

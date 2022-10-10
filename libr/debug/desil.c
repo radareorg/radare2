@@ -215,7 +215,7 @@ R_API void r_debug_esil_prestep(RDebug *d, int p) {
 
 R_API bool r_debug_esil_stepi(RDebug *d) {
 	r_return_val_if_fail (d, false);
-	RAnalOp op;
+	RArchOp op;
 	ut8 obuf[64];
 	int ret = 1;
 	dbg = d;
@@ -250,7 +250,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 		//	npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	}
 
-	if (r_anal_op (dbg->anal, &op, opc, obuf, sizeof (obuf), R_ANAL_OP_MASK_ESIL)) {
+	if (r_anal_op (dbg->anal, &op, opc, obuf, sizeof (obuf), R_ARCH_OP_MASK_ESIL)) {
 		if (esilbreak_check_pc (dbg, opc)) {
 			R_LOG_WARN ("STOP AT 0x%08"PFMT64x, opc);
 			ret = 0;

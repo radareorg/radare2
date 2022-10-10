@@ -21,9 +21,9 @@
 // calculate jump address from immediate
 #define JUMP(n) (addr + insn->size * (1 + IMM (n)))
 
-void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr);
+void analop_esil(RAnal *a, RArchOp *op, cs_insn *insn, ut64 addr);
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	csh handle = init_capstone (a);
 	if (handle == 0) {
 		return -1;
@@ -33,12 +33,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_insn *insn = NULL;
 	int n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
-		op->type = R_ANAL_OP_TYPE_ILL;
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->type = R_ARCH_OP_TYPE_ILL;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 	} else {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
 				insn->mnemonic,
 				insn->op_str[0]? " ": "",
@@ -47,7 +47,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		if (insn->detail) {
 			switch (insn->id) {
 			case BPF_INS_JMP:
-				op->type = R_ANAL_OP_TYPE_JMP;
+				op->type = R_ARCH_OP_TYPE_JMP;
 				op->jump = JUMP (0);
 				break;
 			case BPF_INS_JEQ:
@@ -61,7 +61,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			case BPF_INS_JLE:	///< eBPF only
 			case BPF_INS_JSLT:	///< eBPF only
 			case BPF_INS_JSLE:	///< eBPF only
-				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->type = R_ARCH_OP_TYPE_CJMP;
 				if (a->config->bits == 32) {
 					op->jump = JUMP (1);
 					op->fail = (insn->detail->bpf.op_count == 3) ? JUMP(2) : addr + insn->size;
@@ -71,70 +71,70 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				}
 				break;
 			case BPF_INS_CALL:	///< eBPF only
-				op->type = R_ANAL_OP_TYPE_CALL;
+				op->type = R_ARCH_OP_TYPE_CALL;
 				break;
 			case BPF_INS_EXIT:	///< eBPF only
-				//op->type = R_ANAL_OP_TYPE_TRAP;
-				op->type = R_ANAL_OP_TYPE_RET;
+				//op->type = R_ARCH_OP_TYPE_TRAP;
+				op->type = R_ARCH_OP_TYPE_RET;
 				break;
 			case BPF_INS_RET:
-				op->type = R_ANAL_OP_TYPE_RET;
+				op->type = R_ARCH_OP_TYPE_RET;
 				break;
 			case BPF_INS_TAX:
 			case BPF_INS_TXA:
-				op->type = R_ANAL_OP_TYPE_MOV;
+				op->type = R_ARCH_OP_TYPE_MOV;
 				break;
 			case BPF_INS_ADD:
 			case BPF_INS_ADD64:
-				op->type = R_ANAL_OP_TYPE_ADD;
+				op->type = R_ARCH_OP_TYPE_ADD;
 				break;
 			case BPF_INS_SUB:
 			case BPF_INS_SUB64:
-				op->type = R_ANAL_OP_TYPE_SUB;
+				op->type = R_ARCH_OP_TYPE_SUB;
 				break;
 			case BPF_INS_MUL:
 			case BPF_INS_MUL64:
-				op->type = R_ANAL_OP_TYPE_MUL;
+				op->type = R_ARCH_OP_TYPE_MUL;
 				break;
 			case BPF_INS_DIV:
 			case BPF_INS_DIV64:
 			case BPF_INS_MOD:
 			case BPF_INS_MOD64:
-				op->type = R_ANAL_OP_TYPE_DIV;
+				op->type = R_ARCH_OP_TYPE_DIV;
 				break;
 			case BPF_INS_OR:
 			case BPF_INS_OR64:
-				op->type = R_ANAL_OP_TYPE_OR;
+				op->type = R_ARCH_OP_TYPE_OR;
 				break;
 			case BPF_INS_AND:
 			case BPF_INS_AND64:
-				op->type = R_ANAL_OP_TYPE_AND;
+				op->type = R_ARCH_OP_TYPE_AND;
 				break;
 			case BPF_INS_LSH:
 			case BPF_INS_LSH64:
-				op->type = R_ANAL_OP_TYPE_SHL;
+				op->type = R_ARCH_OP_TYPE_SHL;
 				break;
 			case BPF_INS_RSH:
 			case BPF_INS_RSH64:
-				op->type = R_ANAL_OP_TYPE_SHR;
+				op->type = R_ARCH_OP_TYPE_SHR;
 				break;
 			case BPF_INS_XOR:
 			case BPF_INS_XOR64:
-				op->type = R_ANAL_OP_TYPE_XOR;
+				op->type = R_ARCH_OP_TYPE_XOR;
 				break;
 			case BPF_INS_NEG:
 			case BPF_INS_NEG64:
-				op->type = R_ANAL_OP_TYPE_NOT;
+				op->type = R_ARCH_OP_TYPE_NOT;
 				break;
 			case BPF_INS_ARSH:	///< eBPF only
 						///< ALU64: eBPF only
 			case BPF_INS_ARSH64:
-				op->type = R_ANAL_OP_TYPE_ADD;
+				op->type = R_ARCH_OP_TYPE_ADD;
 				break;
 			case BPF_INS_MOV:	///< eBPF only
 			case BPF_INS_MOV64:
 			case BPF_INS_LDDW:	///< eBPF only: load 64-bit imm
-				op->type = R_ANAL_OP_TYPE_MOV;
+				op->type = R_ARCH_OP_TYPE_MOV;
 				if (OPCOUNT > 1 && OP (1).type == BPF_OP_IMM) {
 					op->val = OP (1).imm;
 				} else if (insn->size == 16) { // lddw wtf
@@ -148,7 +148,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			case BPF_INS_BE16:
 			case BPF_INS_BE32:
 			case BPF_INS_BE64:
-				op->type = R_ANAL_OP_TYPE_MOV;
+				op->type = R_ARCH_OP_TYPE_MOV;
 				break;
 				///< Load
 			case BPF_INS_LDW:	///< eBPF only
@@ -158,7 +158,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			case BPF_INS_LDXH:	///< eBPF only
 			case BPF_INS_LDXB:	///< eBPF only
 			case BPF_INS_LDXDW:	///< eBPF only
-				op->type = R_ANAL_OP_TYPE_LOAD;
+				op->type = R_ARCH_OP_TYPE_LOAD;
 				break;
 				///< Store
 			case BPF_INS_STW:	///< eBPF only
@@ -171,11 +171,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			case BPF_INS_STXDW:	///< eBPF only
 			case BPF_INS_XADDW:	///< eBPF only
 			case BPF_INS_XADDDW:	///< eBPF only
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = R_ARCH_OP_TYPE_STORE;
 				break;
 			}
 
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				analop_esil(a, op, insn, addr);
 			}
 		}
@@ -225,7 +225,7 @@ static char* regname(uint8_t reg) {
 }
 
 #define REG(n) (regname(OP(n).reg))
-void bpf_alu(RAnal *a, RAnalOp *op, cs_insn *insn, const char* operation, int bits) {
+void bpf_alu(RAnal *a, RArchOp *op, cs_insn *insn, const char* operation, int bits) {
 	if (OPCOUNT == 2 && a->config->bits == 64) { // eBPF
 		if (bits == 64) {
 			if (OP (1).type == BPF_OP_IMM) {
@@ -254,7 +254,7 @@ void bpf_alu(RAnal *a, RAnalOp *op, cs_insn *insn, const char* operation, int bi
 	}
 }
 
-void bpf_load(RAnal *a, RAnalOp *op, cs_insn *insn, char* reg, int size) {
+void bpf_load(RAnal *a, RArchOp *op, cs_insn *insn, char* reg, int size) {
 	if (OPCOUNT > 1 && OP (0).type == BPF_OP_REG) {
 		esilprintf (op, "%d,%s,+,[%d],%s,=",
 			OP (1).mem.disp, regname(OP (1).mem.base), size, REG (0));
@@ -266,7 +266,7 @@ void bpf_load(RAnal *a, RAnalOp *op, cs_insn *insn, char* reg, int size) {
 	}
 }
 
-void bpf_store(RAnal *a, RAnalOp *op, cs_insn *insn, char *reg, int size) {
+void bpf_store(RAnal *a, RArchOp *op, cs_insn *insn, char *reg, int size) {
 	if (OPCOUNT > 0 && a->config->bits == 32) { // cBPF
 		esilprintf (op, "%s,m[%d],=", reg, OP (0).mmem);
 	} else if (OPCOUNT > 1) { // eBPF
@@ -280,7 +280,7 @@ void bpf_store(RAnal *a, RAnalOp *op, cs_insn *insn, char *reg, int size) {
 	}
 }
 
-void bpf_jump(RAnal *a, RAnalOp *op, cs_insn *insn, char *condition) {
+void bpf_jump(RAnal *a, RArchOp *op, cs_insn *insn, char *condition) {
 	if (OPCOUNT > 0 && a->config->bits == 32) { // cBPF
 		if (OP (0).type == BPF_OP_IMM) {
 			esilprintf (op, "%" PFMT64d ",a,NUM,%s,?{,0x%" PFMT64x ",}{,0x%" PFMT64x ",},pc,=",
@@ -305,7 +305,7 @@ void bpf_jump(RAnal *a, RAnalOp *op, cs_insn *insn, char *condition) {
 #define STORE(c, s) bpf_store(a, op, insn, c, s)
 #define CJMP(c) bpf_jump(a, op, insn, c)
 
-void analop_esil(RAnal *a, RAnalOp *op, cs_insn *insn, ut64 addr) {
+void analop_esil(RAnal *a, RArchOp *op, cs_insn *insn, ut64 addr) {
 	switch (insn->id) {
 	case BPF_INS_JMP:
 		esilprintf (op, "0x%" PFMT64x ",pc,=", op->jump);

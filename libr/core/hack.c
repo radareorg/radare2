@@ -26,7 +26,7 @@ void r_core_hack_help(const RCore *core) {
 	r_core_cmd_help (core, help_msg);
 }
 
-R_API bool r_core_hack_dalvik(RCore *core, const char *op, const RAnalOp *analop) {
+R_API bool r_core_hack_dalvik(RCore *core, const char *op, const RArchOp *analop) {
 	if (!strcmp (op, "nop")) {
 		r_core_cmdf (core, "wx 0000");
 	} else if (!strcmp (op, "ret2")) {
@@ -44,7 +44,7 @@ R_API bool r_core_hack_dalvik(RCore *core, const char *op, const RAnalOp *analop
 	return true;
 }
 
-R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop) {
+R_API bool r_core_hack_arm64(RCore *core, const char *op, const RArchOp *analop) {
 	if (!strcmp (op, "nop")) {
 		r_core_cmdf (core, "wx 1f2003d5");
 	} else if (!strcmp (op, "ret")) {
@@ -77,7 +77,7 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 	}
 	return true;
 }
-R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
+R_API bool r_core_hack_arm(RCore *core, const char *op, const RArchOp *analop) {
 	const int bits = core->rasm->config->bits;
 	const ut8 *b = core->block;
 
@@ -196,7 +196,7 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 	return true;
 }
 
-R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
+R_API bool r_core_hack_x86(RCore *core, const char *op, const RArchOp *analop) {
 	const ut8 *b = core->block;
 	int i, size = analop->size;
 	if (!strcmp (op, "nop")) {
@@ -266,7 +266,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 // R2580 - return bool
 R_API int r_core_hack(RCore *core, const char *op) {
 	r_return_val_if_fail (core && op, false);
-	bool (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
+	bool (*hack)(RCore *core, const char *op, const RArchOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
 	const int asmbits = core->rasm->config->bits;
 
@@ -287,8 +287,8 @@ R_API int r_core_hack(RCore *core, const char *op) {
 		R_LOG_WARN ("Write hacks are only implemented for x86, arm32, arm64 and dalvik");
 	}
 	if (hack) {
-		RAnalOp analop;
-		if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
+		RArchOp analop;
+		if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC)) {
 			R_LOG_ERROR ("anal op fail");
 			return false;
 		}

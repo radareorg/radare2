@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include "../arch/mcs96/mcs96.h"
 
-static int mcs96_len(const ut8 *buf, int len, RAnalOp *op) {
+static int mcs96_len(const ut8 *buf, int len, RArchOp *op) {
 	int ret = 1;
 	if (buf[0] == 0xfe) {
 		if (len < 2) {
@@ -98,7 +98,7 @@ static int mcs96_len(const ut8 *buf, int len, RAnalOp *op) {
 	return ret;
 }
 
-static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+static int disassemble(RAnal *a, RArchOp *op, const ut8 *buf, int len) {
 	if (len > 1 && !memcmp (buf, "\xff\xff", 2)) {
 		return -1;
 	}
@@ -106,9 +106,9 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int _op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int _op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *data, int len, RArchOpMask mask) {
 	int ilen = disassemble (anal, op, data, len);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		// do nothing
 	}
 	return ilen;

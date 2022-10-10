@@ -137,7 +137,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 
 #define ARG(x) (*str[x] != 0)? str[x]: arg (handle, insn, str[x], x)
 
-static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static int analop_esil(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	char str[8][32] = {{0}};
 	int i;
 
@@ -178,11 +178,11 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 	return 0;
 }
 
-static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
+static void op_fillval(RAnal *anal, RArchOp *op, csh *handle, cs_insn *insn) {
 	static R_TH_LOCAL RRegItem reg;
 	RAnalValue *dst, *src0, *src1;
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_LOAD:
+	switch (op->type & R_ARCH_OP_TYPE_MASK) {
+	case R_ARCH_OP_TYPE_LOAD:
 		if (OPERAND(1).type == RISCV_OP_MEM) {
 			ZERO_FILL (reg);
 			src0 = r_vector_push (op->srcs, NULL);
@@ -191,7 +191,7 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
 			src0->delta = OPERAND(1).mem.disp;
 		}
 		break;
-	case R_ANAL_OP_TYPE_STORE:
+	case R_ARCH_OP_TYPE_STORE:
 		if (OPERAND(1).type == RISCV_OP_MEM) {
 			ZERO_FILL (reg);
 			dst = r_vector_push (op->dsts, NULL);
@@ -200,20 +200,20 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
 			dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
-	case R_ANAL_OP_TYPE_SHL:
-	case R_ANAL_OP_TYPE_SHR:
-	case R_ANAL_OP_TYPE_SAR:
-	case R_ANAL_OP_TYPE_XOR:
-	case R_ANAL_OP_TYPE_SUB:
-	case R_ANAL_OP_TYPE_AND:
-	case R_ANAL_OP_TYPE_ADD:
-	case R_ANAL_OP_TYPE_OR:
+	case R_ARCH_OP_TYPE_SHL:
+	case R_ARCH_OP_TYPE_SHR:
+	case R_ARCH_OP_TYPE_SAR:
+	case R_ARCH_OP_TYPE_XOR:
+	case R_ARCH_OP_TYPE_SUB:
+	case R_ARCH_OP_TYPE_AND:
+	case R_ARCH_OP_TYPE_ADD:
+	case R_ARCH_OP_TYPE_OR:
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
-	case R_ANAL_OP_TYPE_MOV:
+	case R_ARCH_OP_TYPE_MOV:
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
-	case R_ANAL_OP_TYPE_DIV: // UDIV
+	case R_ARCH_OP_TYPE_DIV: // UDIV
 #if 0
 capstone bug
 ------------
@@ -255,22 +255,22 @@ capstone bug
 	}
 }
 
-static void set_opdir(RAnalOp *op) {
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_LOAD:
-		op->direction = R_ANAL_OP_DIR_READ;
+static void set_opdir(RArchOp *op) {
+	switch (op->type & R_ARCH_OP_TYPE_MASK) {
+	case R_ARCH_OP_TYPE_LOAD:
+		op->direction = R_ARCH_OP_DIR_READ;
 		break;
-	case R_ANAL_OP_TYPE_STORE:
-		op->direction = R_ANAL_OP_DIR_WRITE;
+	case R_ARCH_OP_TYPE_STORE:
+		op->direction = R_ARCH_OP_DIR_WRITE;
 		break;
-	case R_ANAL_OP_TYPE_LEA:
-		op->direction = R_ANAL_OP_DIR_REF;
+	case R_ARCH_OP_TYPE_LEA:
+		op->direction = R_ARCH_OP_DIR_REF;
 		break;
-	case R_ANAL_OP_TYPE_CALL:
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_UJMP:
-	case R_ANAL_OP_TYPE_UCALL:
-		op->direction = R_ANAL_OP_DIR_EXEC;
+	case R_ARCH_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_JMP:
+	case R_ARCH_OP_TYPE_UJMP:
+	case R_ARCH_OP_TYPE_UCALL:
+		op->direction = R_ARCH_OP_DIR_EXEC;
 		break;
 	default:
 		break;
@@ -281,7 +281,7 @@ static void set_opdir(RAnalOp *op) {
 #define CSINC_MODE (a->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32
 #include "capstone.inc"
 
-static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	csh hndl = init_capstone (anal);
 	if (hndl == 0) {
 		return -1;
@@ -302,7 +302,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	if (n < 1 || insn->size < 1) {
 		goto beach;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 		if (str) {
 			r_str_replace_char (str, '$', 0);
@@ -314,42 +314,42 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	opsize = op->size = insn->size;
 	switch (insn->id) {
 	case RISCV_INS_C_NOP:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		break;
 	case RISCV_INS_INVALID:
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		break;
 	case RISCV_INS_C_JALR:
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = R_ARCH_OP_TYPE_UCALL;
 		break;
 	case RISCV_INS_C_JR:
-		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->type = R_ARCH_OP_TYPE_UJMP;
 		break;
 	case RISCV_INS_C_MV:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case RISCV_INS_JAL:
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		op->jump = IMM(0);
 		op->fail = op->addr + op->size;
 		break;
 	case RISCV_INS_MRET:
 	case RISCV_INS_SRET:
 	case RISCV_INS_URET:
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		break;
 	}
 beach:
 	set_opdir (op);
-	if (insn && mask & R_ANAL_OP_MASK_OPEX) {
+	if (insn && mask & R_ARCH_OP_MASK_OPEX) {
 		opex (&op->opex, hndl, insn);
 	}
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
+	if (mask & R_ARCH_OP_MASK_VAL) {
 		op_fillval (anal, op, &hndl, insn);
 	}
 	cs_free (insn, n);

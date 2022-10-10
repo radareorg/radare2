@@ -62,7 +62,7 @@ static int m680xmode(const char *str) {
 #define IMM(x) insn->detail->m680x.operands[x].imm
 #define REL(x) insn->detail->m680x.operands[x].rel
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	csh handle = init_capstone (a);
 	if (handle == 0) {
 		return -1;
@@ -74,23 +74,23 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	op->size = 4;
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;
 		goto beach;
 	}
 	if (!memcmp (buf, "\xff\xff", R_MIN (len, 2))) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;
 		goto beach;
 	}
 	op->id = insn->id;
 	opsize = op->size = insn->size;
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = R_ARCH_OP_TYPE_UNK;
 	switch (insn->id) {
 	case M680X_INS_INVLD:
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		break;
 	case M680X_INS_ABA: ///< M6800/1/2/3
 	case M680X_INS_ABX:
@@ -109,7 +109,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_ADDF:
 	case M680X_INS_ADDR:
 	case M680X_INS_ADDW:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		break;
 	case M680X_INS_AIM:
 	case M680X_INS_AIS:
@@ -147,7 +147,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_BITMD:
 		break;
 	case M680X_INS_BRA:
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		op->jump = addr + op->size + REL(0).offset;
 		op->fail = UT64_MAX;
 		break;
@@ -174,7 +174,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_BSR:
 	case M680X_INS_BVC:
 	case M680X_INS_BVS:
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		op->jump = addr + op->size + REL(0).offset;
 		op->fail = addr + op->size;
 		break;
@@ -208,7 +208,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_CMPW:
 	case M680X_INS_CMPX:
 	case M680X_INS_CMPY:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		break;
 	case M680X_INS_COM:
 	case M680X_INS_COMA:
@@ -255,14 +255,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		break;
 	case M680X_INS_EMUL:
 	case M680X_INS_EMULS:
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		break;
 	case M680X_INS_EOR:
 	case M680X_INS_EORA:
 	case M680X_INS_EORB:
 	case M680X_INS_EORD:
 	case M680X_INS_EORR:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		break;
 	case M680X_INS_ETBL:
 	case M680X_INS_EXG:
@@ -272,7 +272,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		break;
 	case M680X_INS_IDIV:
 	case M680X_INS_IDIVS:
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = R_ARCH_OP_TYPE_DIV;
 		break;
 	case M680X_INS_ILLGL:
 		break;
@@ -284,17 +284,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_INCF:
 	case M680X_INS_INCW:
 	case M680X_INS_INCX:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		break;
 	case M680X_INS_INS: ///< M6800/1/2/3
 	case M680X_INS_INX: ///< M6800/1/2/3
 	case M680X_INS_INY:
 		break;
 	case M680X_INS_JMP:
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		break;
 	case M680X_INS_JSR:
-		op->type = R_ANAL_OP_TYPE_RJMP;
+		op->type = R_ARCH_OP_TYPE_RJMP;
 		break;
 	case M680X_INS_LBCC: ///< or LBHS
 	case M680X_INS_LBCS: ///< or LBLO
@@ -353,21 +353,21 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_MOV:
 	case M680X_INS_MOVB:
 	case M680X_INS_MOVW:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case M680X_INS_MUL:
 	case M680X_INS_MULD:
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		break;
 	case M680X_INS_NEG:
 	case M680X_INS_NEGA:
 	case M680X_INS_NEGB:
 	case M680X_INS_NEGD:
 	case M680X_INS_NEGX:
-		op->type = R_ANAL_OP_TYPE_NOT;
+		op->type = R_ARCH_OP_TYPE_NOT;
 		break;
 	case M680X_INS_NOP:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		break;
 	case M680X_INS_NSA:
 	case M680X_INS_OIM:
@@ -454,12 +454,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_SUBF:
 	case M680X_INS_SUBR:
 	case M680X_INS_SUBW:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		break;
 	case M680X_INS_SWI:
 	case M680X_INS_SWI2:
 	case M680X_INS_SWI3:
-		op->type = R_ANAL_OP_TYPE_SWI;
+		op->type = R_ARCH_OP_TYPE_SWI;
 		break;
 	case M680X_INS_SYNC:
 	case M680X_INS_TAB: ///< M6800/1/2/3
@@ -483,7 +483,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case M680X_INS_TSTF:
 	case M680X_INS_TSTW:
 	case M680X_INS_TSTX:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		break;
 	case M680X_INS_TSX: ///< M6800/1/2/3
 	case M680X_INS_TSY:
@@ -499,8 +499,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		break;
 	}
 beach:
-	if (mask & R_ANAL_OP_MASK_DISASM) {
-		if (op->type == R_ANAL_OP_TYPE_ILL) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		if (op->type == R_ARCH_OP_TYPE_ILL) {
 			op->mnemonic = strdup ("invalid");
 		} else {
 			op->mnemonic = r_str_newf ("%s%s%s", insn->mnemonic,

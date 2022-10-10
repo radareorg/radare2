@@ -46,7 +46,7 @@ int print_insn_cris_without_register_prefix(bfd_vma vma, disassemble_info *info)
 int print_insn_crisv32_with_register_prefix(bfd_vma vma, disassemble_info *info);
 int print_insn_crisv32_without_register_prefix(bfd_vma vma, disassemble_info *info);
 
-static char *disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+static char *disassemble(RAnal *a, RArchOp *op, const ut8 *buf, int len) {
 	ut8 bytes[8] = { 0 };
 	struct disassemble_info disasm_obj;
 	int mode = 2;
@@ -118,14 +118,14 @@ static char *disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	return r_strbuf_drain (sb);
 }
 
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int analop(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	int opsize = -1;
 	op->type = -1;
 	opsize = 2;
 	if (len < 1) {
 		return -1;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->addr = addr;
 		op->mnemonic = disassemble (a, op, buf, len);
 		if (!op->mnemonic) {
@@ -135,15 +135,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	switch (buf[0]) {
 	case 0x3f:
 	case 0x4f:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		opsize = 4;
 		break;
 	case 0x6f:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		opsize = 6;
 		break;
 	case 0x7f:
-		op->type = R_ANAL_OP_TYPE_LEA;
+		op->type = R_ARCH_OP_TYPE_LEA;
 		if (len > 5) {
 			op->ptr = buf[2];
 			op->ptr |= buf[3] << 8;
@@ -157,7 +157,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		break;
 	case 0xbf: // bsr
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		if (len > 5) {
 			st32 delta = buf[2];
 			delta |= buf[3] << 8;
@@ -175,9 +175,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		}
 		if (buf[1] == 0x00) {
-			op->type = R_ANAL_OP_TYPE_TRAP;
+			op->type = R_ARCH_OP_TYPE_TRAP;
 		} else {
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ARCH_OP_TYPE_JMP;
 			{
 				st8 delta = buf[0];
 				op->jump = addr + delta;
@@ -189,7 +189,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		}
 		if (buf[1] == 0xb9) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 		}
 		break;
 	default:
@@ -198,26 +198,26 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		switch (buf[1]) {
 		case 0x00:
-			op->type = R_ANAL_OP_TYPE_CJMP; // BCC
+			op->type = R_ARCH_OP_TYPE_CJMP; // BCC
 			break;
 		case 0xf3:
-			op->type = R_ANAL_OP_TYPE_SHR;
+			op->type = R_ARCH_OP_TYPE_SHR;
 			break;
 		case 0x96: // move.d r, r
 			if (buf[0] >= 0xc0) {
-				op->type = R_ANAL_OP_TYPE_CMP;
+				op->type = R_ARCH_OP_TYPE_CMP;
 			} else {
-				op->type = R_ANAL_OP_TYPE_MOV;
+				op->type = R_ARCH_OP_TYPE_MOV;
 			}
 			break;
 		case 0xf2:
 		case 0x0b:
 		case 0x72:
-			op->type = R_ANAL_OP_TYPE_CMP;
+			op->type = R_ARCH_OP_TYPE_CMP;
 			break;
 		case 0x05:
 			if (buf[0] == 0xb0) {
-				op->type = R_ANAL_OP_TYPE_NOP;
+				op->type = R_ARCH_OP_TYPE_NOP;
 			}
 			break;
 		case 0x01:
@@ -228,12 +228,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case 0x41:
 		case 0x61:
 		case 0x65:
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		case 0x12:
 		case 0xf6:
 		case 0xe2:
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = R_ARCH_OP_TYPE_SUB;
 			break;
 		case 0x82: // moveq i, r
 		case 0xba: // move.d [r], r
@@ -257,10 +257,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case 0xaa:
 		case 0xa6:
 		case 0xb6:
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			break;
 		case 0xe0:
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ARCH_OP_TYPE_JMP;
 			{
 				st8 delta = buf[0];
 				op->jump = addr + delta;
@@ -270,15 +270,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case 0x30:
 		case 0x20:
 		case 0x2d:
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 			op->jump = addr + buf[0];
 			op->fail = addr + 2; // delay slot here?
 			break;
 		case 0xbf:
-			op->type = R_ANAL_OP_TYPE_CALL; // bsr
+			op->type = R_ARCH_OP_TYPE_CALL; // bsr
 			break;
 		case 0xb9:
-			op->type = R_ANAL_OP_TYPE_UJMP; // jsr reg
+			op->type = R_ARCH_OP_TYPE_UJMP; // jsr reg
 			break;
 		}
 	}
@@ -292,17 +292,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case 0x61:
 	case 0x62:
 	case 0x63:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		break;
 	case 0x88:
 	case 0x84:
 	case 0x81:
 	case 0x8c:
 	case 0xad:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		break;
 	case 0x7f: // lapc <addr>, <reg>
-		op->type = R_ANAL_OP_TYPE_LEA;
+		op->type = R_ARCH_OP_TYPE_LEA;
 		break;
 	case 0xcf:
 	case 0xbe:
@@ -311,10 +311,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case 0x6a: // move.d reg, reg
 	case 0x7e:
 	case 0xfe:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		break;
 	case 0x00:
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		// jsr acr
 		break;
 	case 0xff:
@@ -324,7 +324,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case 0x1a:
 	case 0x9c:
 	case 0x6d: // bne
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		// jsr acr
 		break;
 	case 0xbf:
@@ -338,30 +338,30 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case 0xb7:
 	case 0xb8:
 	case 0xb9:
-		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->type = R_ARCH_OP_TYPE_UJMP;
 		// jsr acr
 		break;
 	case 0x8f: // test.b [acr]
 	case 0xc0:
 	case 0xe1:
 	case 0xaa:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		break;
 	default:
 		switch (*w) {
 		case 0xb0b9: //// jsr r0
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ARCH_OP_TYPE_CJMP;
 			break;
 		case 0xb005:
 		case 0x05b0:
-			op->type = R_ANAL_OP_TYPE_NOP;
+			op->type = R_ARCH_OP_TYPE_NOP;
 			break;
 		case 0xf0b9:
 		case 0xb9f0:
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 			break;
 		default:
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			break;
 		}
 	}

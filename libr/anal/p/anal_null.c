@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 
-static int null_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int null_anal(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *data, int len, RArchOpMask mask) {
 	return op->size = 1;
 }
 

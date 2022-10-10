@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include "../../asm/arch/jdh8/jdh8dis.c"
 
-static int jdh8_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int jdh8_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	int dlen = 0;
 	char *o = jdh8Disass (buf, len, &dlen);
 	op->mnemonic = strdup (o);

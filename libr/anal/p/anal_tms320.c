@@ -11,7 +11,7 @@
 
 static R_TH_LOCAL tms320_dasm_t engine = {0};
 
-int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_buf, int len, RAnalOpMask mask) {
+int tms320_c55x_plus_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *_buf, int len, RArchOpMask mask) {
 	if (!_buf || len < 1) {
 		return 0;
 	}
@@ -27,59 +27,59 @@ int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_buf, in
 	}
 	op->size = ins_len;
 	op->addr = addr;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (engine.syntax);
 	}
 
 	if (ins_len == 1) {
 		if (*ins == 0x20) {
-			op->type = R_ANAL_OP_TYPE_NOP;
+			op->type = R_ARCH_OP_TYPE_NOP;
 		} else if (*ins == 0x21) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = R_ARCH_OP_TYPE_RET;
 		}
 	} else if (ins_len >= 4 && buf[0] == 0xD8) {
 		//  BCC conditional absolute jump
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		op->jump = (buf[1] << 16) | (buf[2] << 8) | buf[3];
 	} else if (ins_len >= 2 && buf[0] == 0x6A) {
 		//  BCC conditional relative jump
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		op->jump = addr + ((st8)buf[1]) + ins_len;
 	} else if (ins_len >= 3 && buf[0] == 0x9A) {
 		// BCC conditional relative jump
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		op->jump = addr + (st16)((buf[1] << 8) | buf[2]) + ins_len;
 	} else if (ins_len >= 4 && buf[0] == 0x9C) {
 		// B unconditional absolute jump
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		op->jump = (buf[1] << 16) | (buf[2] << 8) | buf[3];
 	} else if (ins_len >= 3 && buf[0] == 0x68) {
 		// B unconditional relative jump
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		op->jump = addr + (st16)((buf[1] << 8) | buf[2]) + ins_len;
  	} else if (ins_len == 2 && buf[0] == 0x02) {
 		// CALL unconditional absolute call with acumulator register ACx
 
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = R_ARCH_OP_TYPE_UCALL;
 		op->fail = addr + ins_len;
  	} else if (ins_len >= 3 && buf[0] == 0x69) {
 		// CALL unconditional relative call
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		op->jump = addr + (st16)((buf[1] << 8) | buf[2]) + ins_len;
  	} else if (ins_len >= 3 && buf[0] == 0x9D) {
 		// CALL unconditional absolute call
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		op->jump = (buf[1] << 16) | (buf[2] << 8) | buf[3];
  	} else if (ins_len >= 3 && buf[0] == 0x9B) {
 		// CALLCC conditional relative call
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		op->jump = addr + (st16)((buf[1] << 8) | buf[2]) + ins_len;
  	} else if (ins_len >= 4 && buf[0] == 0xD9) {
 		// CALLCC conditional absolute call
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		op->jump = (buf[1] << 16) | (buf[2] << 8) | buf[3];
 	} else {
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 	}
 	return op->size;
 }
@@ -153,7 +153,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 #define CSINC TMS320C64X
 #include "capstone.inc"
 
-static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int tms320c64x_analop(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	csh handle = init_capstone (a);
 	if (handle == 0) {
 		return -1;
@@ -166,15 +166,15 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
-		op->type = R_ANAL_OP_TYPE_ILL;
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->type = R_ARCH_OP_TYPE_ILL;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 	} else {
-		if (mask & R_ANAL_OP_MASK_OPEX) {
+		if (mask & R_ARCH_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
 		}
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			// this is a bug in capstone, disassembling needs to use detail=off to avoid appending the instruction suffix
 			cs_insn *deinsn = NULL;
 			cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
@@ -193,26 +193,26 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 		op->id = insn->id;
 		switch (insn->id) {
 		case TMS320C64X_INS_INVALID:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = R_ARCH_OP_TYPE_ILL;
 			break;
 		case TMS320C64X_INS_AND:
 		case TMS320C64X_INS_ANDN:
-			op->type = R_ANAL_OP_TYPE_AND;
+			op->type = R_ARCH_OP_TYPE_AND;
 			break;
 		case TMS320C64X_INS_NOT:
-			op->type = R_ANAL_OP_TYPE_NOT;
+			op->type = R_ARCH_OP_TYPE_NOT;
 			break;
 		case TMS320C64X_INS_NEG:
-			op->type = R_ANAL_OP_TYPE_NOT;
+			op->type = R_ARCH_OP_TYPE_NOT;
 			break;
 		case TMS320C64X_INS_SWAP2:
 		case TMS320C64X_INS_SWAP4:
-		op->type = R_ANAL_OP_TYPE_MOV;
-			op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
+			op->type = R_ARCH_OP_TYPE_MOV;
 			break;
 		case TMS320C64X_INS_BNOP:
 		case TMS320C64X_INS_NOP:
-			op->type = R_ANAL_OP_TYPE_NOP;
+			op->type = R_ARCH_OP_TYPE_NOP;
 			break;
 		case TMS320C64X_INS_CMPEQ:
 		case TMS320C64X_INS_CMPEQ2:
@@ -222,10 +222,10 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 		case TMS320C64X_INS_CMPGTU4:
 		case TMS320C64X_INS_CMPLT:
 		case TMS320C64X_INS_CMPLTU:
-			op->type = R_ANAL_OP_TYPE_CMP;
+			op->type = R_ARCH_OP_TYPE_CMP;
 			break;
 		case TMS320C64X_INS_B:
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ARCH_OP_TYPE_JMP;
 			// higher 32bits of the 64bit address is lost, lets clone
 			if (insn->detail) {
 				op->jump = INSOP(0).imm + (addr & 0xFFFFFFFF00000000);
@@ -240,7 +240,7 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 		case TMS320C64X_INS_LDNW:
 		case TMS320C64X_INS_LDW:
 		case TMS320C64X_INS_LMBD:
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = R_ARCH_OP_TYPE_LOAD;
 			break;
 		case TMS320C64X_INS_STB:
 		case TMS320C64X_INS_STDW:
@@ -248,10 +248,10 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 		case TMS320C64X_INS_STNDW:
 		case TMS320C64X_INS_STNW:
 		case TMS320C64X_INS_STW:
-			op->type = R_ANAL_OP_TYPE_STORE;
+			op->type = R_ARCH_OP_TYPE_STORE;
 			break;
 		case TMS320C64X_INS_OR:
-			op->type = R_ANAL_OP_TYPE_OR;
+			op->type = R_ARCH_OP_TYPE_OR;
 			break;
 		case TMS320C64X_INS_SSUB:
 		case TMS320C64X_INS_SUB:
@@ -263,7 +263,7 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 		case TMS320C64X_INS_SUBAW:
 		case TMS320C64X_INS_SUBC:
 		case TMS320C64X_INS_SUBU:
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = R_ARCH_OP_TYPE_SUB;
 			break;
 		case TMS320C64X_INS_ADD:
 		case TMS320C64X_INS_ADD2:
@@ -279,7 +279,7 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 		case TMS320C64X_INS_SADD2:
 		case TMS320C64X_INS_SADDU4:
 		case TMS320C64X_INS_SADDUS2:
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = R_ARCH_OP_TYPE_ADD;
 			break;
 		}
 		cs_free (insn, n);
@@ -288,81 +288,81 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 }
 #endif
 
-typedef int (* TMS_ANAL_OP_FN)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
+typedef int (* TMS_ANAL_OP_FN)(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask);
 
-int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
-int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
-int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask);
+int tms320_c54x_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask);
+int tms320_c55x_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask);
+int tms320_c55x_plus_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask);
 
 static bool match(const char * str, const char *token) {
 	return !strncasecmp (str, token, strlen (token));
 }
 
-int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+int tms320_c54x_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	op->size = tms320_dasm (&engine, buf, len);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (engine.syntax);
 	}
 	return op->size;
 }
 
-int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+int tms320_c55x_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	const char * str = engine.syntax;
 
 	op->delay = 0;
 	op->size = tms320_dasm (&engine, buf, len);
-	op->type = R_ANAL_OP_TYPE_NULL;
+	op->type = R_ARCH_OP_TYPE_NULL;
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (str);
 	}
 
 	str = strstr(str, "||") ? str + 3 : str;
 	if (match (str, "B ")) {
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		if (match (str, "B AC")) {
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = R_ARCH_OP_TYPE_UJMP;
 		}
 	} else if (match (str, "BCC ") || match (str, "BCCU ")) {
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 	} else if (match (str, "CALL ")) {
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		if (match (str, "CALL AC")) {
-			op->type = R_ANAL_OP_TYPE_UCALL;
+			op->type = R_ARCH_OP_TYPE_UCALL;
 		}
 	} else if (match (str, "CALLCC ")) {
-		op->type = R_ANAL_OP_TYPE_CCALL;
+		op->type = R_ARCH_OP_TYPE_CCALL;
 	} else if (match (str, "RET")) {
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		if (match (str, "RETCC")) {
-			op->type = R_ANAL_OP_TYPE_CRET;
+			op->type = R_ARCH_OP_TYPE_CRET;
 		}
 	} else if (match (str, "MOV ")) {
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 	} else if (match (str, "PSHBOTH ")) {
-		op->type = R_ANAL_OP_TYPE_UPUSH;
+		op->type = R_ARCH_OP_TYPE_UPUSH;
 	} else if (match (str, "PSH ")) {
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 	} else if (match (str, "POPBOTH ") || match (str, "POP ")) {
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 	} else if (match (str, "CMP ")) {
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 	} else if (match (str, "CMPAND ")) {
-		op->type = R_ANAL_OP_TYPE_ACMP;
+		op->type = R_ARCH_OP_TYPE_ACMP;
 	} else if (match (str, "NOP")) {
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 	} else if (match (str, "INTR ")) {
-		op->type = R_ANAL_OP_TYPE_SWI;
+		op->type = R_ARCH_OP_TYPE_SWI;
 	} else if (match (str, "TRAP ")) {
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = R_ARCH_OP_TYPE_TRAP;
 	} else if (match (str, "INVALID")) {
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 	}
 
 	return op->size;
 }
 
-int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len, RAnalOpMask mask) {
+int tms320_op(RAnal * anal, RArchOp * op, ut64 addr, const ut8 * buf, int len, RArchOpMask mask) {
 	const char *cpu = anal->config->cpu;
 	TMS_ANAL_OP_FN aop = tms320_c55x_op;
 	if (R_STR_ISNOTEMPTY (cpu)) {

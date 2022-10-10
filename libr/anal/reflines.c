@@ -80,7 +80,7 @@ R_API void r_anal_reflines_free(RAnalRefline *rl) {
 R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
 	RList *list, *sten;
 	RListIter *iter;
-	RAnalOp op;
+	RArchOp op;
 	struct refline_end *el;
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
@@ -159,7 +159,7 @@ do_skip:
 
 		// This can segfault if opcode length and buffer check fails
 		r_anal_op_fini (&op);
-		int rc = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+		int rc = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 		if (rc <= 0) {
 			sz = 1;
 			goto __next;
@@ -172,12 +172,12 @@ do_skip:
 
 		/* store data */
 		switch (op.type) {
-		case R_ANAL_OP_TYPE_CALL:
+		case R_ARCH_OP_TYPE_CALL:
 			if (!linescall) {
 				break;
 			}
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_JMP:
+		case R_ARCH_OP_TYPE_CJMP:
+		case R_ARCH_OP_TYPE_JMP:
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
@@ -193,7 +193,7 @@ do_skip:
 				}
 			}
 			break;
-		case R_ANAL_OP_TYPE_SWITCH:
+		case R_ARCH_OP_TYPE_SWITCH:
 		{
 			RAnalCaseOp *caseop;
 			RListIter *iter;

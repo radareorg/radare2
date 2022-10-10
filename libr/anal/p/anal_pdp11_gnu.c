@@ -28,11 +28,11 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
 DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
-static int pdp11_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int pdp11_op(RAnal *a, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj = {0};
 	RStrBuf *sb = NULL;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		sb = r_strbuf_new (NULL);
 	}
 	size_t left = R_MIN (sizeof (bytes), len);
@@ -49,7 +49,7 @@ static int pdp11_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
 	op->size = print_insn_pdp11 ((bfd_vma)addr, &disasm_obj);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_strbuf_drain (sb);
 		r_str_replace_ch (op->mnemonic, '\t', ' ', true);
 		sb = NULL;

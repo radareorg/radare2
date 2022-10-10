@@ -832,7 +832,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	ut8 buf[32];
 	ut64 pc, sp, r;
 	ut64 next[2];
-	RAnalOp op;
+	RArchOp op;
 	int br, i;
 	union {
 		ut64 r64;
@@ -860,37 +860,37 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	if (!dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf))) {
 		return false;
 	}
-	if (!r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC)) {
+	if (!r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC)) {
 		return false;
 	}
-	if (op.type == R_ANAL_OP_TYPE_ILL) {
+	if (op.type == R_ARCH_OP_TYPE_ILL) {
 		return false;
 	}
 	switch (op.type) {
-	case R_ANAL_OP_TYPE_RET:
+	case R_ARCH_OP_TYPE_RET:
 		dbg->iob.read_at (dbg->iob.io, sp, (ut8 *)&sp_top, 8);
 		next[0] = (dbg->bits == R_SYS_BITS_32) ? sp_top.r32[0] : sp_top.r64;
 		br = 1;
 		break;
-	case R_ANAL_OP_TYPE_CJMP:
-	case R_ANAL_OP_TYPE_CCALL:
+	case R_ARCH_OP_TYPE_CJMP:
+	case R_ARCH_OP_TYPE_CCALL:
 		next[0] = op.jump;
 		next[1] = op.fail;
 		br = 2;
 		break;
-	case R_ANAL_OP_TYPE_CALL:
-	case R_ANAL_OP_TYPE_JMP:
+	case R_ARCH_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_JMP:
 		next[0] = op.jump;
 		br = 1;
 		break;
-	case R_ANAL_OP_TYPE_RJMP:
-	case R_ANAL_OP_TYPE_RCALL:
+	case R_ARCH_OP_TYPE_RJMP:
+	case R_ARCH_OP_TYPE_RCALL:
 		r = r_debug_reg_get (dbg,op.reg);
 		next[0] = r;
 		br = 1;
 		break;
-	case R_ANAL_OP_TYPE_IRCALL:
-	case R_ANAL_OP_TYPE_IRJMP:
+	case R_ARCH_OP_TYPE_IRCALL:
+	case R_ARCH_OP_TYPE_IRJMP:
 		r = r_debug_reg_get (dbg,op.reg);
 		if (!dbg->iob.read_at (dbg->iob.io, r, (ut8*)&memval, 8)) {
 			next[0] = op.addr + op.size;
@@ -899,8 +899,8 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		}
 		br = 1;
 		break;
-	case R_ANAL_OP_TYPE_UCALL:
-	case R_ANAL_OP_TYPE_MJMP:
+	case R_ARCH_OP_TYPE_UCALL:
+	case R_ARCH_OP_TYPE_MJMP:
 		if (op.ireg) {
 			r = r_debug_reg_get (dbg,op.ireg);
 		} else {
@@ -913,7 +913,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		}
 		br = 1;
 		break;
-	case R_ANAL_OP_TYPE_UJMP:
+	case R_ARCH_OP_TYPE_UJMP:
 	default:
 		next[0] = op.addr + op.size;
 		br = 1;
@@ -1050,18 +1050,18 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 }
 
 static bool isStepOverable(ut64 opType) {
-	switch (opType & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_SWI:
-	case R_ANAL_OP_TYPE_CALL:
-	case R_ANAL_OP_TYPE_UCALL:
-	case R_ANAL_OP_TYPE_RCALL:
+	switch (opType & R_ARCH_OP_TYPE_MASK) {
+	case R_ARCH_OP_TYPE_SWI:
+	case R_ARCH_OP_TYPE_CALL:
+	case R_ARCH_OP_TYPE_UCALL:
+	case R_ARCH_OP_TYPE_RCALL:
 		return true;
 	}
 	return false;
 }
 
 R_API int r_debug_step_over(RDebug *dbg, int steps) {
-	RAnalOp op;
+	RArchOp op;
 	ut64 buf_pc, pc, ins_size;
 	ut8 buf[DBG_BUF_SIZE];
 	int steps_taken = 0;
@@ -1107,7 +1107,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
 		// Analyze the opcode
-		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_BASIC)) {
+		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ARCH_OP_MASK_BASIC)) {
 			R_LOG_ERROR ("debug-step-over: Decode error at %"PFMT64x, pc);
 			return steps_taken;
 		}
@@ -1123,7 +1123,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 				R_LOG_ERROR ("Could not step over call @ 0x%"PFMT64x, pc);
 				return steps_taken;
 			}
-		} else if ((op.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK))) {
+		} else if ((op.prefix & (R_ARCH_OP_PREFIX_REP | R_ARCH_OP_PREFIX_REPNE | R_ARCH_OP_PREFIX_LOCK))) {
 			//R_LOG_ERROR ("REP: skip to next instruction");
 			if (!r_debug_continue_until (dbg, ins_size)) {
 				R_LOG_ERROR ("step over failed over rep");
@@ -1325,10 +1325,10 @@ repeat:
 		} else if (what & R_DBG_SIGNAL_SKIP) {
 			// skip signal. requires skipping one instruction
 			ut8 buf[64];
-			RAnalOp op = {0};
+			RArchOp op = {0};
 			ut64 pc = r_debug_reg_get (dbg, "PC");
 			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-			r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
+			r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
 			if (op.size > 0) {
 				const char *signame = r_signal_to_string (dbg->reason.signum);
 				r_debug_reg_set (dbg, "PC", pc+op.size);
@@ -1381,7 +1381,7 @@ R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
 R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	int ret, n = 0;
 	ut64 pc, buf_pc = 0;
-	RAnalOp op;
+	RArchOp op;
 	ut8 buf[DBG_BUF_SIZE];
 
 	if (r_debug_is_dead (dbg)) {
@@ -1413,7 +1413,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
 		// Analyze the opcode
-		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_BASIC)) {
+		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ARCH_OP_MASK_BASIC)) {
 			R_LOG_ERROR ("Decode error at %"PFMT64x, pc);
 			return false;
 		}
@@ -1548,7 +1548,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	}
 	if (!dbg->h->contsc) {
 		/* user-level syscall tracing */
-		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
+		r_debug_continue_until_optype (dbg, R_ARCH_OP_TYPE_SWI, 0);
 		return show_syscall (dbg, "A0");
 	}
 

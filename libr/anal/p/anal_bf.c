@@ -22,7 +22,7 @@ static int getid(char ch) {
 	return cidx? cidx - keys + 1: 0;
 }
 
-static int disassemble(RAnalOp *op, const ut8 *buf, int len) {
+static int disassemble(RArchOp *op, const ut8 *buf, int len) {
 	const ut8 *b;
 	size_t rep = 1;
 
@@ -135,12 +135,12 @@ static int assemble(const char *buf, ut8 *outbuf, int outbufsz) {
 }
 
 #define BUFSIZE_INC 32
-static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int bf_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	ut64 dst = 0LL;
 	if (!op) {
 		return 1;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		(void) disassemble (op, buf, len);
 	}
 	r_strbuf_init (&op->esil);
@@ -148,7 +148,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	op->id = getid (buf[0]);
 	switch (buf[0]) {
 	case '[':
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		op->fail = addr + 1;
 		buf = r_mem_dup ((void *)buf, len);
 		if (!buf) {
@@ -175,7 +175,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 					}
 				}
 				if (*p == 0x00 || *p == 0xff) {
-					op->type = R_ANAL_OP_TYPE_ILL;
+					op->type = R_ARCH_OP_TYPE_ILL;
 					goto beach;
 				}
 				if (i == len - 1 && anal->read_at) {
@@ -196,45 +196,45 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 beach:
 		free ((ut8 *)buf);
 		break;
-	case ']': op->type = R_ANAL_OP_TYPE_UJMP;
+	case ']': op->type = R_ARCH_OP_TYPE_UJMP;
 		// XXX This is wrong esil
 		r_strbuf_set (&op->esil, "brk,--=,brk,[1],pc,=");
 		break;
 	case '>':
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		op->size = countChar (buf, len, '>');
 		r_strbuf_setf (&op->esil, "%d,ptr,+=", op->size);
 		break;
 	case '<':
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		op->size = countChar (buf, len, '<');
 		r_strbuf_setf (&op->esil, "%d,ptr,-=", op->size);
 		break;
 	case '+':
 		op->size = countChar (buf, len, '+');
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		r_strbuf_setf (&op->esil, "%d,ptr,+=[1]", op->size);
 		break;
 	case '-':
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		op->size = countChar (buf, len, '-');
 		r_strbuf_setf (&op->esil, "%d,ptr,-=[1]", op->size);
 		break;
 	case '.':
 		// print element in stack to screen
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		r_strbuf_set (&op->esil, "ptr,[1],scr,=[1],scr,++=");
 		break;
 	case ',':
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		r_strbuf_set (&op->esil, "kbd,[1],ptr,=[1],kbd,++=");
 		break;
 	case 0x00:
 	case 0xff:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = R_ARCH_OP_TYPE_TRAP;
 		break;
 	default:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		r_strbuf_set (&op->esil, ",");
 		break;
 	}

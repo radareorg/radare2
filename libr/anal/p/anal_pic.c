@@ -34,7 +34,7 @@ typedef struct _pic_midrange_op_args_val {
 	ut8 b;
 } PicMidrangeOpArgsVal;
 
-typedef void (*pic_midrange_inst_handler_t) (RAnal *anal, RAnalOp *op,
+typedef void (*pic_midrange_inst_handler_t) (RAnal *anal, RArchOp *op,
 					     ut64 addr,
 					     PicMidrangeOpArgsVal *args);
 
@@ -45,7 +45,7 @@ typedef struct _pic_midrange_op_anal_info {
 } PicMidrangeOpAnalInfo;
 
 #define INST_HANDLER(OPCODE_NAME)					\
-	static void _inst__##OPCODE_NAME (RAnal *anal, RAnalOp *op,	\
+	static void _inst__##OPCODE_NAME (RAnal *anal, RArchOp *op,	\
 					  ut64 addr,			\
 					  PicMidrangeOpArgsVal *args)
 #define INST_DECL(NAME, ARGS)							\
@@ -93,19 +93,19 @@ typedef struct _pic_midrange_op_anal_info {
 INST_HANDLER (NOP) {}
 
 INST_HANDLER (RETFIE) {
-	op->type = R_ANAL_OP_TYPE_RET;
+	op->type = R_ARCH_OP_TYPE_RET;
 }
 
 INST_HANDLER (OPTION) {
-	op->type = R_ANAL_OP_TYPE_STORE;
+	op->type = R_ARCH_OP_TYPE_STORE;
 }
 
 INST_HANDLER (TRIS) {
-	op->type = R_ANAL_OP_TYPE_STORE;
+	op->type = R_ARCH_OP_TYPE_STORE;
 }
 
 INST_HANDLER (RETURN) {
-	op->type = R_ANAL_OP_TYPE_RET;
+	op->type = R_ARCH_OP_TYPE_RET;
 	e ("0x1f,stkptr,==,$z,?{,BREAK,},");
 	e ("_stack,stkptr,2,*,+,[2],2,*,pc,=,");
 	e ("0x01,stkptr,-=,");
@@ -114,7 +114,7 @@ INST_HANDLER (RETURN) {
 
 INST_HANDLER (CALL) {
 	ut64 pclath;
-	op->type = R_ANAL_OP_TYPE_CALL;
+	op->type = R_ARCH_OP_TYPE_CALL;
 	r_anal_esil_reg_read (anal->esil, "pclath", &pclath, NULL);
 	op->jump = 2 * (((pclath & 0x78) << 8) + args->k);
 	ef ("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
@@ -126,7 +126,7 @@ INST_HANDLER (CALL) {
 
 INST_HANDLER (GOTO) {
 	ut64 pclath;
-	op->type = R_ANAL_OP_TYPE_JMP;
+	op->type = R_ARCH_OP_TYPE_JMP;
 	r_anal_esil_reg_read (anal->esil, "pclath", &pclath, NULL);
 	op->jump = 2 * (((pclath & 0x78) << 8) + args->k);
 	ef ("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
@@ -148,7 +148,7 @@ INST_HANDLER (BSF) {
 
 INST_HANDLER (BTFSC) {
 	ut8 mask = (1 << args->b);
-	op->type = R_ANAL_OP_TYPE_CJMP;
+	op->type = R_ARCH_OP_TYPE_CJMP;
 	op->jump = addr + 4;
 	op->fail = addr + 2;
 	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,!,?{,0x%" PFMT64x ",pc,=,},",
@@ -157,7 +157,7 @@ INST_HANDLER (BTFSC) {
 
 INST_HANDLER (BTFSS) {
 	ut8 mask = (1 << args->b);
-	op->type = R_ANAL_OP_TYPE_CJMP;
+	op->type = R_ARCH_OP_TYPE_CJMP;
 	op->jump = addr + 4;
 	op->fail = addr + 2;
 	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,?{,0x%" PFMT64x ",pc,=,},", args->f,
@@ -166,7 +166,7 @@ INST_HANDLER (BTFSS) {
 
 INST_HANDLER (BRA) {
 	st16 branch = args->k;
-	op->type = R_ANAL_OP_TYPE_JMP;
+	op->type = R_ARCH_OP_TYPE_JMP;
 	branch |= ((branch & 0x100) ? 0xfe00 : 0);
 	op->jump = addr + 2 * (branch + 1);
 	ef ("%s0x%x,1,+,2,*,pc,+=,", branch < 0 ? "-" : "",
@@ -175,7 +175,7 @@ INST_HANDLER (BRA) {
 
 INST_HANDLER (BRW) {
 	ut64 wreg;
-	op->type = R_ANAL_OP_TYPE_UJMP;
+	op->type = R_ARCH_OP_TYPE_UJMP;
 	r_anal_esil_reg_read (anal->esil, "wreg", &wreg, NULL);
 	op->jump = addr + 2 * (wreg + 1);
 	e ("wreg,1,+,2,*,pc,+=,");
@@ -191,7 +191,7 @@ INST_HANDLER (CLR) {
 }
 
 INST_HANDLER (SUBWF) {
-	op->type = R_ANAL_OP_TYPE_SUB;
+	op->type = R_ARCH_OP_TYPE_SUB;
 	if (args->d) {
 		ef (PIC_MIDRANGE_ESIL_FWF_OP (-), args->f);
 	} else {
@@ -201,7 +201,7 @@ INST_HANDLER (SUBWF) {
 }
 
 INST_HANDLER (DECFSZ) {
-	op->type = R_ANAL_OP_TYPE_CJMP;
+	op->type = R_ARCH_OP_TYPE_CJMP;
 	op->jump = addr + 4;
 	op->fail = addr + 2;
 	if (args->d) {
@@ -215,7 +215,7 @@ INST_HANDLER (DECFSZ) {
 }
 
 INST_HANDLER (INCFSZ) {
-	op->type = R_ANAL_OP_TYPE_CJMP;
+	op->type = R_ARCH_OP_TYPE_CJMP;
 	op->jump = addr + 4;
 	op->fail = addr + 2;
 	if (args->d) {
@@ -229,7 +229,7 @@ INST_HANDLER (INCFSZ) {
 }
 
 INST_HANDLER (INCF) {
-	op->type = R_ANAL_OP_TYPE_ADD;
+	op->type = R_ARCH_OP_TYPE_ADD;
 	if (args->d) {
 		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",+=[1],", args->f);
 	} else {
@@ -240,7 +240,7 @@ INST_HANDLER (INCF) {
 }
 
 INST_HANDLER (DECF) {
-	op->type = R_ANAL_OP_TYPE_SUB;
+	op->type = R_ARCH_OP_TYPE_SUB;
 	if (args->d) {
 		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",-=[1],", args->f);
 	} else {
@@ -251,7 +251,7 @@ INST_HANDLER (DECF) {
 }
 
 INST_HANDLER (IORWF) {
-	op->type = R_ANAL_OP_TYPE_OR;
+	op->type = R_ARCH_OP_TYPE_OR;
 	if (args->d) {
 		ef (PIC_MIDRANGE_ESIL_FWF_OP (|), args->f);
 	} else {
@@ -260,7 +260,7 @@ INST_HANDLER (IORWF) {
 }
 
 INST_HANDLER (ANDWF) {
-	op->type = R_ANAL_OP_TYPE_AND;
+	op->type = R_ARCH_OP_TYPE_AND;
 	if (args->d) {
 		ef (PIC_MIDRANGE_ESIL_FWF_OP (&), args->f);
 	} else {
@@ -269,7 +269,7 @@ INST_HANDLER (ANDWF) {
 }
 
 INST_HANDLER (XORWF) {
-	op->type = R_ANAL_OP_TYPE_XOR;
+	op->type = R_ARCH_OP_TYPE_XOR;
 	if (args->d) {
 		ef (PIC_MIDRANGE_ESIL_FWF_OP (^), args->f);
 	} else {
@@ -278,7 +278,7 @@ INST_HANDLER (XORWF) {
 }
 
 INST_HANDLER (ADDWF) {
-	op->type = R_ANAL_OP_TYPE_ADD;
+	op->type = R_ARCH_OP_TYPE_ADD;
 	if (args->d) {
 		ef (PIC_MIDRANGE_ESIL_FWF_OP (+), args->f);
 	} else {
@@ -287,37 +287,37 @@ INST_HANDLER (ADDWF) {
 }
 
 INST_HANDLER (SUBLW) {
-	op->type = R_ANAL_OP_TYPE_SUB;
+	op->type = R_ARCH_OP_TYPE_SUB;
 	ef (PIC_MIDRANGE_ESIL_LW_OP (-), args->k);
 }
 
 INST_HANDLER (ADDLW) {
-	op->type = R_ANAL_OP_TYPE_ADD;
+	op->type = R_ARCH_OP_TYPE_ADD;
 	ef (PIC_MIDRANGE_ESIL_LW_OP (+), args->k);
 }
 
 INST_HANDLER (IORLW) {
-	op->type = R_ANAL_OP_TYPE_OR;
+	op->type = R_ARCH_OP_TYPE_OR;
 	ef (PIC_MIDRANGE_ESIL_LW_OP (|), args->k);
 }
 
 INST_HANDLER (ANDLW) {
-	op->type = R_ANAL_OP_TYPE_AND;
+	op->type = R_ARCH_OP_TYPE_AND;
 	ef (PIC_MIDRANGE_ESIL_LW_OP (&), args->k);
 }
 
 INST_HANDLER (XORLW) {
-	op->type = R_ANAL_OP_TYPE_XOR;
+	op->type = R_ARCH_OP_TYPE_XOR;
 	ef (PIC_MIDRANGE_ESIL_LW_OP (^), args->k);
 }
 
 INST_HANDLER (MOVLW) {
-	op->type = R_ANAL_OP_TYPE_LOAD;
+	op->type = R_ARCH_OP_TYPE_LOAD;
 	ef ("0x%x,wreg,=,", args->k);
 }
 
 INST_HANDLER (RETLW) {
-	op->type = R_ANAL_OP_TYPE_RET;
+	op->type = R_ARCH_OP_TYPE_RET;
 	ef ("0x%x,wreg,=,", args->k);
 	e ("0x1f,stkptr,==,$z,?{,BREAK,},");
 	e ("_stack,stkptr,2,*,+,[2],2,*,pc,=,");
@@ -326,17 +326,17 @@ INST_HANDLER (RETLW) {
 }
 
 INST_HANDLER (MOVLP) {
-	op->type = R_ANAL_OP_TYPE_LOAD;
+	op->type = R_ARCH_OP_TYPE_LOAD;
 	ef ("0x%x,pclath,=,", args->f);
 }
 
 INST_HANDLER (MOVLB) {
-	op->type = R_ANAL_OP_TYPE_LOAD;
+	op->type = R_ARCH_OP_TYPE_LOAD;
 	ef ("0x%x,bsr,=,", args->k);
 }
 
 INST_HANDLER (CALLW) {
-	op->type = R_ANAL_OP_TYPE_UCALL;
+	op->type = R_ARCH_OP_TYPE_UCALL;
 	e ("8,pclath,<<,0x%x,+,wreg,2,*,pc,=,");
 	e ("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
 	e ("0x0f,stkptr,==,$z,?{,0xff,stkptr,=,},");
@@ -345,12 +345,12 @@ INST_HANDLER (CALLW) {
 }
 
 INST_HANDLER (MOVWF) {
-	op->type = R_ANAL_OP_TYPE_STORE;
+	op->type = R_ARCH_OP_TYPE_STORE;
 	ef ("wreg," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],", args->f);
 }
 
 INST_HANDLER (MOVF) {
-	op->type = R_ANAL_OP_TYPE_LOAD;
+	op->type = R_ARCH_OP_TYPE_LOAD;
 	if (args->d) {
 		ef (PIC_MIDRANGE_ESIL_BSR_ADDR
 		    ",[1]," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
@@ -369,7 +369,7 @@ INST_HANDLER (SWAPF) {
 }
 
 INST_HANDLER (LSLF) {
-	op->type = R_ANAL_OP_TYPE_SHL;
+	op->type = R_ARCH_OP_TYPE_SHL;
 	ef ("7," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,c,=,", args->f);
 	if (args->d) {
 		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",<<=[1],", args->f);
@@ -381,7 +381,7 @@ INST_HANDLER (LSLF) {
 }
 
 INST_HANDLER (LSRF) {
-	op->type = R_ANAL_OP_TYPE_SHR;
+	op->type = R_ARCH_OP_TYPE_SHR;
 	ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,c,=,", args->f);
 	if (args->d) {
 		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",>>=[1],", args->f);
@@ -393,7 +393,7 @@ INST_HANDLER (LSRF) {
 }
 
 INST_HANDLER (ASRF) {
-	op->type = R_ANAL_OP_TYPE_SHR;
+	op->type = R_ARCH_OP_TYPE_SHR;
 	ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,c,=,", args->f);
 	ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,", args->f);
 	ef ("0x80," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,", args->f);
@@ -406,7 +406,7 @@ INST_HANDLER (ASRF) {
 }
 
 INST_HANDLER (RRF) {
-	op->type = R_ANAL_OP_TYPE_ROR;
+	op->type = R_ARCH_OP_TYPE_ROR;
 	ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],&,", args->f);
 	if (args->d) {
 		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",>>=[1],"
@@ -421,7 +421,7 @@ INST_HANDLER (RRF) {
 }
 
 INST_HANDLER (RLF) {
-	op->type = R_ANAL_OP_TYPE_ROL;
+	op->type = R_ARCH_OP_TYPE_ROL;
 	ef ("7," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],>>,", args->f);
 	if (args->d) {
 		ef ("1," PIC_MIDRANGE_ESIL_BSR_ADDR ",<<=[1],"
@@ -445,14 +445,14 @@ INST_HANDLER (COMF) {
 }
 
 INST_HANDLER (RESET) {
-	op->type = R_ANAL_OP_TYPE_JMP;
+	op->type = R_ARCH_OP_TYPE_JMP;
 	op->jump = 0;
 	e ("0x0,pc,=,");
 	e ("0x1f,stkptr,=,");
 }
 
 INST_HANDLER (ADDFSR) {
-	op->type = R_ANAL_OP_TYPE_ADD;
+	op->type = R_ARCH_OP_TYPE_ADD;
 	if (args->n == 0) {
 		ef ("0x%x,fsr0l,+=,", args->k);
 		e ("7,$c,?{,0x01,fsr0h,+=,},");
@@ -473,7 +473,7 @@ INST_HANDLER (SLEEP) {
 }
 
 INST_HANDLER (SUBWFB) {
-	op->type = R_ANAL_OP_TYPE_SUB;
+	op->type = R_ARCH_OP_TYPE_SUB;
 	e ("c,!=,");
 	if (args->d) {
 		ef (PIC_MIDRANGE_ESIL_FWF_OP_C (-), args->f);
@@ -484,7 +484,7 @@ INST_HANDLER (SUBWFB) {
 }
 
 INST_HANDLER (ADDWFC) {
-	op->type = R_ANAL_OP_TYPE_ADD;
+	op->type = R_ARCH_OP_TYPE_ADD;
 	if (args->d) {
 		ef (PIC_MIDRANGE_ESIL_FWF_OP_C (+), args->f);
 	} else {
@@ -696,7 +696,7 @@ static void anal_pic_midrange_malloc(RAnal *anal, bool force) {
 	}
 }
 
-static int anal_pic_midrange_op(RAnal *anal, RAnalOp *op, ut64 addr,
+static int anal_pic_midrange_op(RAnal *anal, RArchOp *op, ut64 addr,
 				 const ut8 *buf, int len) {
 
 	ut16 instr;
@@ -705,7 +705,7 @@ static int anal_pic_midrange_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	anal_pic_midrange_malloc (anal, false);
 
 	if (!buf || len < 2) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = R_ARCH_OP_TYPE_ILL;
 		return op->size;
 	}
 
@@ -714,7 +714,7 @@ static int anal_pic_midrange_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	// Default op params
 	op->size = 2;
 	op->cycles = 1;
-	op->type = R_ANAL_OP_TYPE_NOP;
+	op->type = R_ARCH_OP_TYPE_NOP;
 
 	PicMidrangeOpcode opcode = pic_midrange_get_opcode (instr);
 	PicMidrangeOpArgsVal args_val;
@@ -733,15 +733,15 @@ static int anal_pic_midrange_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	return op->size;
 }
 
-static void pic18_cond_branch(RAnalOp *op, ut64 addr, const ut8 *buf, char *flag) {
-	op->type = R_ANAL_OP_TYPE_CJMP;
+static void pic18_cond_branch(RArchOp *op, ut64 addr, const ut8 *buf, char *flag) {
+	op->type = R_ARCH_OP_TYPE_CJMP;
 	op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0xff);
 	op->fail = addr + op->size;
 	op->cycles = 2;
 	r_strbuf_setf (&op->esil, "%s,?,{,0x%" PFMT64x ",pc,=,}", flag, op->jump);
 }
 
-static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int anal_pic_pic18_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len) {
 	//TODO code should be refactored and broken into smaller chunks!!
 	//TODO complete the esil emitter
 	if (len < 2) {
@@ -761,15 +761,15 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 			goto beach;
 		}
 		op->size = 4;
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		return op->size;
 	};
 	switch (b >> 11) { //NEX_T
 	case 0x1b:	//rcall
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = R_ARCH_OP_TYPE_CALL;
 		return op->size;
 	case 0x1a: //bra
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		op->cycles = 2;
 		op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0x7ff);
 		r_strbuf_setf (&op->esil, "0x%" PFMT64x ",pc,=", op->jump);
@@ -777,7 +777,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	}
 	switch (b >> 12) { //NOP,movff,BAF_T
 	case 0xf:	//nop
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		op->cycles = 1;
 		r_strbuf_set (&op->esil, ",");
 		return op->size;
@@ -789,16 +789,16 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 			goto beach;
 		}
 		op->size = 4;
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		return op->size;
 	case 0xb: //btfsc
 	case 0xa: //btfss
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		return op->size;
 	case 0x9: //bcf
 	case 0x8: //bsf
 	case 0x7: //btg
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		return op->size;
 	};
 
@@ -838,46 +838,46 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		op->cycles = 2;
 		op->jump = ((dword_instr & 0xff) | ((dword_instr & 0xfff0000) >> 8)) * 2;
 		r_strbuf_setf (&op->esil, "0x%" PFMT64x ",pc,=", op->jump);
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = R_ARCH_OP_TYPE_JMP;
 		return op->size;
 	case 0xf: //addlw
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		op->cycles = 1;
 		//TODO add support for dc flag
 		r_strbuf_setf (&op->esil, "0x%x,wreg,+=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xe: //movlw
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		op->cycles = 1;
 		r_strbuf_setf (&op->esil, "0x%x,wreg,=,", *(ut16* )buf & 0xff);
 		return op->size;
 	case 0xd: //mullw
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		op->cycles = 1;
 		r_strbuf_setf (&op->esil, "0x%x,wreg,*,prod,=", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xc: //retlw
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		op->cycles = 2;
 		r_strbuf_setf (&op->esil, "0x%x,wreg,=,tos,pc,=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xb: //andlw
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = R_ARCH_OP_TYPE_AND;
 		op->cycles = 1;
 		r_strbuf_setf (&op->esil, "0x%x,wreg,&=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0xa: //xorlw
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		op->cycles = 1;
 		r_strbuf_setf (&op->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0x9: //iorlw
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = R_ARCH_OP_TYPE_OR;
 		op->cycles = 1;
 		r_strbuf_setf (&op->esil, "0x%x,wreg,^=,$z,z,:=,7,$s,n,:=,", *(ut16 *)buf & 0xff);
 		return op->size;
 	case 0x8: //sublw
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		op->cycles = 1;
 		//TODO add support for dc flag
 		r_strbuf_setf (&op->esil, "wreg,0x%x,-,wreg,=,$z,z,:=,7,$s,n,:=,7,$c,c,:=,7,$o,ov,:=,", *(ut16 *)buf & 0xff);
@@ -893,7 +893,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 			goto beach;
 		}
 		op->size = 4;
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		return op->size;
 	};
 	switch (b >> 10) { //DAF_T
@@ -903,69 +903,69 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	case 0x13:	//dcfsnz
 	case 0xb:	//decfsz
 	case 0x1:	//decf
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = R_ARCH_OP_TYPE_SUB;
 		return op->size;
 	case 0x14: //movf
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = R_ARCH_OP_TYPE_MOV;
 		return op->size;
 	case 0x12: //infsnz
 	case 0xf:  //incfsz
 	case 0xa:  //incf
 	case 0x8:  //addwfc
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		return op->size;
 	case 0x9: //addwf
 		op->cycles = 1;
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = R_ARCH_OP_TYPE_ADD;
 		return op->size;
 	case 0x11: //rlncf
 	case 0xd:  //rlcf
-		op->type = R_ANAL_OP_TYPE_ROL;
+		op->type = R_ARCH_OP_TYPE_ROL;
 		return op->size;
 	case 0x10: //rrncf
 	case 0xc:  //rrcf
-		op->type = R_ANAL_OP_TYPE_ROR;
+		op->type = R_ARCH_OP_TYPE_ROR;
 		return op->size;
 	case 0xe: //swapf
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		return op->size;
 	case 0x7: //comf
-		op->type = R_ANAL_OP_TYPE_CPL;
+		op->type = R_ARCH_OP_TYPE_CPL;
 		return op->size;
 	case 0x6: //xorwf
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = R_ARCH_OP_TYPE_XOR;
 		return op->size;
 	case 0x5: //andwf
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = R_ARCH_OP_TYPE_AND;
 		return op->size;
 	case 0x4: //iorwf
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = R_ARCH_OP_TYPE_OR;
 		return op->size;
 	};
 	switch (b >> 9) { //AF_T
 	case 0x37:	//movwf
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		return op->size;
 	case 0x36: //negf
 	case 0x35: //clrf
 	case 0x34: //setf
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		return op->size;
 	case 0x33: //tstfsz
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ARCH_OP_TYPE_CJMP;
 		return op->size;
 	case 0x32: //cpfsgt
 	case 0x31: //cpfseq
 	case 0x30: //cpfslt
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = R_ARCH_OP_TYPE_CMP;
 		return op->size;
 	case 0x1: //mulwf
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = R_ARCH_OP_TYPE_MUL;
 		return op->size;
 	};
 	switch (b >> 4) {
 	case 0x10: //movlb
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		op->cycles = 1;
 		r_strbuf_setf (&op->esil, "0x%x,bsr,=,", *(ut16 *)buf & 0xf);
 		return op->size;
@@ -975,48 +975,48 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	case 0x7:  //daw
 	case 0x4:  //clwdt
 	case 0x3:  //sleep
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = R_ARCH_OP_TYPE_UNK;
 		return op->size;
 	case 0x13: //return
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		op->cycles = 2;
 		r_strbuf_set (&op->esil, "tos,pc,=,");
 		return op->size;
 	case 0x12: //return
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		op->cycles = 2;
 		r_strbuf_set (&op->esil, "tos,pc,=");
 		return op->size;
 	case 0x11: //retfie
 	case 0x10: //retfie
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = R_ARCH_OP_TYPE_RET;
 		return op->size;
 	case 0xf: //tblwt
 	case 0xe: //tblwt
 	case 0xd: //tblwt
 	case 0xc: //tblwt
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = R_ARCH_OP_TYPE_LOAD;
 		return op->size;
 	case 0xb: //tblrd
 	case 0xa: //tblrd
 	case 0x9: //tblrd
 	case 0x8: //tblrd
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = R_ARCH_OP_TYPE_STORE;
 		return op->size;
 	case 0x6: //pop
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = R_ARCH_OP_TYPE_POP;
 		return op->size;
 	case 0x5: //push
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = R_ARCH_OP_TYPE_PUSH;
 		return op->size;
 	case 0x0: //nop
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = R_ARCH_OP_TYPE_NOP;
 		op->cycles = 1;
 		r_strbuf_set (&op->esil, ",");
 		return op->size;
 	};
 beach:
-	op->type = R_ANAL_OP_TYPE_ILL;
+	op->type = R_ARCH_OP_TYPE_ILL;
 	return op->size;
 }
 
@@ -1169,10 +1169,10 @@ static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
 	return r_reg_set_profile_string (esil->reg, p);
 }
 
-static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int anal_pic_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	const char *cpu = anal->config->cpu;
 	int opsz = -1;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = asm_pic_disassemble (cpu, buf, len, &opsz);
 	}
 	if (R_STR_ISNOTEMPTY (cpu)) {

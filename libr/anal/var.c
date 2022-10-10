@@ -743,25 +743,25 @@ R_API char *r_anal_var_get_constraints_readable(RAnalVar *var) {
 	for (i = 0; i < n; i += 1) {
 		RAnalVarConstraint *constr = r_vector_index_ptr (&var->constraints, i);
 		switch (constr->cond) {
-		case R_ANAL_COND_LE:
+		case R_ARCH_OP_COND_LE:
 			if (high) {
 				r_strbuf_append (&sb, " && ");
 			}
 			r_strbuf_appendf (&sb, "<= 0x%"PFMT64x, constr->val);
 			low = true;
 			break;
-		case R_ANAL_COND_LT:
+		case R_ARCH_OP_COND_LT:
 			if (high) {
 				r_strbuf_append (&sb, " && ");
 			}
 			r_strbuf_appendf (&sb, "< 0x%"PFMT64x, constr->val);
 			low = true;
 			break;
-		case R_ANAL_COND_GE:
+		case R_ARCH_OP_COND_GE:
 			r_strbuf_appendf (&sb, ">= 0x%"PFMT64x, constr->val);
 			high = true;
 			break;
-		case R_ANAL_COND_GT:
+		case R_ARCH_OP_COND_GT:
 			r_strbuf_appendf (&sb, "> 0x%"PFMT64x, constr->val);
 			high = true;
 			break;
@@ -896,7 +896,7 @@ static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta) {
 	return NULL;
 }
 
-static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
+static void extract_arg(RAnal *anal, RAnalFunction *fcn, RArchOp *op, const char *reg, const char *sign, char type) {
 	st64 ptr = 0;
 	char *addr, *esil_buf = NULL;
 	const st64 maxstackframe = 1024 * 8;
@@ -953,14 +953,14 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			if (*addr == ',') {
 				addr++;
 			}
-			if (!op->stackop && op->type != R_ANAL_OP_TYPE_PUSH && op->type != R_ANAL_OP_TYPE_POP
-				&& op->type != R_ANAL_OP_TYPE_RET && r_str_isnumber (addr)) {
+			if (!op->stackop && op->type != R_ARCH_OP_TYPE_PUSH && op->type != R_ARCH_OP_TYPE_POP
+				&& op->type != R_ARCH_OP_TYPE_RET && r_str_isnumber (addr)) {
 				ptr = (st64)r_num_get (NULL, addr);
 				val = r_vector_index_ptr (op->srcs, 0);
 				if (ptr && val && ptr == val->imm) {
 					goto beach;
 				}
-			} else if ((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET)) {
+			} else if ((op->stackop == R_ARCH_STACK_SET) || (op->stackop == R_ARCH_STACK_GET)) {
 				if (op->ptr % 4) {
 					goto beach;
 				}
@@ -977,7 +977,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		R_LOG_WARN ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
 	}
 
-	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_ANAL_VAR_ACCESS_TYPE_WRITE : R_ANAL_VAR_ACCESS_TYPE_READ;
+	int rw = (op->direction == R_ARCH_OP_DIR_WRITE) ? R_ANAL_VAR_ACCESS_TYPE_WRITE : R_ANAL_VAR_ACCESS_TYPE_READ;
 	if (*sign == '+') {
 		const bool isarg = type == R_ANAL_VAR_KIND_SPV ? ptr >= fcn->stack : ptr >= fcn->bp_off;
 		const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
@@ -1070,26 +1070,26 @@ beach:
 	free (esil_buf);
 }
 
-static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op);
+static bool is_reg_in_src(const char *regname, RAnal *anal, RArchOp *op);
 
-static inline bool op_affect_dst(RAnalOp* op) {
+static inline bool op_affect_dst(RArchOp* op) {
 	switch (op->type) {
-	case R_ANAL_OP_TYPE_ADD:
-	case R_ANAL_OP_TYPE_SUB:
-	case R_ANAL_OP_TYPE_MUL:
-	case R_ANAL_OP_TYPE_DIV:
-	case R_ANAL_OP_TYPE_SHR:
-	case R_ANAL_OP_TYPE_SHL:
-	case R_ANAL_OP_TYPE_SAL:
-	case R_ANAL_OP_TYPE_SAR:
-	case R_ANAL_OP_TYPE_OR:
-	case R_ANAL_OP_TYPE_AND:
-	case R_ANAL_OP_TYPE_XOR:
-	case R_ANAL_OP_TYPE_NOR:
-	case R_ANAL_OP_TYPE_NOT:
-	case R_ANAL_OP_TYPE_ROR:
-	case R_ANAL_OP_TYPE_ROL:
-	case R_ANAL_OP_TYPE_CAST:
+	case R_ARCH_OP_TYPE_ADD:
+	case R_ARCH_OP_TYPE_SUB:
+	case R_ARCH_OP_TYPE_MUL:
+	case R_ARCH_OP_TYPE_DIV:
+	case R_ARCH_OP_TYPE_SHR:
+	case R_ARCH_OP_TYPE_SHL:
+	case R_ARCH_OP_TYPE_SAL:
+	case R_ARCH_OP_TYPE_SAR:
+	case R_ARCH_OP_TYPE_OR:
+	case R_ARCH_OP_TYPE_AND:
+	case R_ARCH_OP_TYPE_XOR:
+	case R_ARCH_OP_TYPE_NOR:
+	case R_ARCH_OP_TYPE_NOT:
+	case R_ARCH_OP_TYPE_ROR:
+	case R_ARCH_OP_TYPE_ROL:
+	case R_ARCH_OP_TYPE_CAST:
 		return true;
 	default:
 		return false;
@@ -1102,15 +1102,15 @@ static inline bool arch_destroys_dst(const char *arch) {
 	return (STR_EQUAL (arch, "arm") || STR_EQUAL (arch, "riscv") || STR_EQUAL (arch, "ppc"));
 }
 
-static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal) {
+static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RArchOp *op, RAnal *anal) {
 	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
 	RAnalValue *src = r_vector_index_ptr (op->srcs, 0);
 	switch (op->type) {
-	case R_ANAL_OP_TYPE_POP:
+	case R_ARCH_OP_TYPE_POP:
 		return false;
-	case R_ANAL_OP_TYPE_MOV:
+	case R_ARCH_OP_TYPE_MOV:
 		return (is_reg_in_src (regname, anal, op)) || (STR_EQUAL (opdreg, regname) && dst->memref);
-	case R_ANAL_OP_TYPE_CMOV:
+	case R_ARCH_OP_TYPE_CMOV:
 		if (STR_EQUAL (opdreg, regname)) {
 			return false;
 		}
@@ -1118,8 +1118,8 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 			return true;
 		}
 		return false;
-	case R_ANAL_OP_TYPE_LEA:
-	case R_ANAL_OP_TYPE_LOAD:
+	case R_ARCH_OP_TYPE_LEA:
+	case R_ARCH_OP_TYPE_LOAD:
 		if (is_reg_in_src (regname, anal, op)) {
 			return true;
 		}
@@ -1127,7 +1127,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 			return false;
 		}
 		return false;
-	case R_ANAL_OP_TYPE_XOR:
+	case R_ARCH_OP_TYPE_XOR:
 		if (STR_EQUAL (opsreg, opdreg) && !src->memref && !dst->memref) {
 			return false;
 		}
@@ -1143,7 +1143,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 	}
 }
 
-static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
+static bool is_reg_in_src(const char *regname, RAnal *anal, RArchOp *op) {
 	RAnalValue *src0 = r_vector_index_ptr (op->srcs, 0);
 	RAnalValue *src1 = r_vector_index_ptr (op->srcs, 1);
 	RAnalValue *src2 = r_vector_index_ptr (op->srcs, 2);
@@ -1153,7 +1153,7 @@ static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
 	return (STR_EQUAL (regname, opsreg0)) || (STR_EQUAL (regname, opsreg1)) || (STR_EQUAL (regname, opsreg2));
 }
 
-R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
+R_API void r_anal_extract_rarg(RAnal *anal, RArchOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	int i, argc = 0;
 	r_return_if_fail (anal && op && fcn);
 	RAnalValue *src = r_vector_index_ptr (op->srcs, 0);
@@ -1176,7 +1176,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		argc = r_type_func_args_count (TDB, fname);
 	}
 
-	bool is_call = (op->type & 0xf) == R_ANAL_OP_TYPE_CALL || (op->type & 0xf) == R_ANAL_OP_TYPE_UCALL;
+	bool is_call = (op->type & 0xf) == R_ARCH_OP_TYPE_CALL || (op->type & 0xf) == R_ARCH_OP_TYPE_UCALL;
 	if (is_call && *count < max_count) {
 		RList *callee_rargs_l = NULL;
 		int callee_rargs = 0;
@@ -1352,7 +1352,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	free (fname);
 }
 
-R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
+R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RArchOp *op) {
 	r_return_if_fail (anal && fcn && op);
 
 	const char *BP = anal->reg->name[R_REG_NAME_BP];

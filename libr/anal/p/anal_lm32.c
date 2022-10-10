@@ -411,7 +411,7 @@ static bool r_asm_lm32_stringify(RAsmLm32Instruction *instr, char *str, int str_
 	return true;
 }
 
-static int lm32_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static int lm32_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *buf, int len, RArchOpMask mask) {
 	r_return_val_if_fail (anal && op, -1);
 	RAsmLm32Instruction instr = {0};
 	if (!buf || len < 4) {
@@ -426,9 +426,9 @@ static int lm32_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	if (!r_asm_lm32_stringify (&instr, bufasm, sizeof (bufasm))) {
 		return -1;
 	}
-	op->type = R_ANAL_OP_TYPE_MOV; // XXX
+	op->type = R_ARCH_OP_TYPE_MOV; // XXX
 	op->id = 0;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (bufasm);
 	}
 	op->size = 4;
