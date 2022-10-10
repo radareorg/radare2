@@ -341,8 +341,8 @@ SHLRS+=grub/libgrubfs.a
 SHLRS+=java/libr_java.a
 SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
-SHLRS+=yxml/libyxml.a
 SHLRS+=winkd/libr_winkd.a
+SHLRS+=yxml/libyxml.a
 SHLRS+=zip/librz.a
 
 libr_shlr.${EXT_AR}:

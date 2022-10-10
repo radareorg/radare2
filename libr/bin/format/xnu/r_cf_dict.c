@@ -1,12 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <r_util.h>
+#include <r_util/r_xml.h>
 #include <r_list.h>
-
-#include "yxml.h"
 #include "r_cf_dict.h"
-
-#define XMLBUFSIZE 4096
 
 typedef enum {
 	R_CF_STATE_ROOT,
@@ -64,16 +61,10 @@ static void r_cf_value_free(RCFValue *value);
 
 RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, int options) {
 	RCFValueDict *result = NULL;
-	yxml_t x;
 	int i, depth = 0;
 	char *content = NULL;
 
-	void *xml_buf = malloc (XMLBUFSIZE);
-	if (!xml_buf) {
-		return NULL;
-	}
-
-	yxml_init (&x, xml_buf, XMLBUFSIZE);
+	RXml *x = r_xml_new (4096);
 
 	RList *stack = r_list_newf ((RListFree)&r_cf_parse_state_free);
 	if (!stack) {
@@ -89,48 +80,48 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 			break;
 		}
 
-		yxml_ret_t r = yxml_parse (&x, doc);
+		RXmlRet r = r_xml_parse (x, doc);
 		if (r < 0) {
-			R_LOG_ERROR ("Parse at :%" PRIu32 ":%" PRIu64 " byte offset %" PRIu64, x.line, x.byte, x.total);
+			R_LOG_ERROR ("Parse at :%08" PFMT64d ":%" PFMT64d " byte offset %" PFMT64d, x->line, x->byte, x->total);
 			goto beach;
 		}
 
 		switch (r) {
-		case YXML_ELEMSTART: {
+		case R_XML_ELEMSTART: {
 			RCFParseState *state = (RCFParseState *)r_list_get_top (stack);
 			RCFParseState *next_state = NULL;
 
-			if (!strcmp (x.elem, "dict")) {
+			if (!strcmp (x->elem, "dict")) {
 				next_state = r_cf_parse_state_new (R_CF_STATE_IN_DICT);
 				if (!next_state) {
 					goto beach;
 				}
 				next_state->dict = r_cf_value_dict_new ();
-			} else if (!strcmp (x.elem, "array")) {
+			} else if (!strcmp (x->elem, "array")) {
 				next_state = r_cf_parse_state_new (R_CF_STATE_IN_ARRAY);
 				if (!next_state) {
 					goto beach;
 				}
 				next_state->array = r_cf_value_array_new ();
-			} else if (!strcmp (x.elem, "key") && state->phase == R_CF_STATE_IN_DICT) {
+			} else if (!strcmp (x->elem, "key") && state->phase == R_CF_STATE_IN_DICT) {
 				next_state = r_cf_parse_state_new (R_CF_STATE_IN_KEY);
 				if (!next_state) {
 					goto beach;
 				}
 				next_state->dict = state->dict;
-			} else if (!strcmp (x.elem, "string")) {
+			} else if (!strcmp (x->elem, "string")) {
 				next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
 				if (!next_state) {
 					goto beach;
 				}
 				next_state->value_type = R_CF_STRING;
-			} else if (!strcmp (x.elem, "integer")) {
+			} else if (!strcmp (x->elem, "integer")) {
 				next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
 				if (!next_state) {
 					goto beach;
 				}
 				next_state->value_type = R_CF_INTEGER;
-			} else if (!strcmp (x.elem, "data")) {
+			} else if (!strcmp (x->elem, "data")) {
 				if (options & R_CF_OPTION_SKIP_NSDATA) {
 					next_state = r_cf_parse_state_new (R_CF_STATE_IN_IGNORE);
 				} else {
@@ -140,13 +131,13 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 					}
 					next_state->value_type = R_CF_DATA;
 				}
-			} else if (!strcmp (x.elem, "true")) {
+			} else if (!strcmp (x->elem, "true")) {
 				next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
 				if (!next_state) {
 					goto beach;
 				}
 				next_state->value_type = R_CF_TRUE;
-			} else if (!strcmp (x.elem, "false")) {
+			} else if (!strcmp (x->elem, "false")) {
 				next_state = r_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
 				if (!next_state) {
 					goto beach;
@@ -157,14 +148,14 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 			if (next_state) {
 				r_list_push (stack, next_state);
 			} else {
-				eprintf ("Missing next state for elem: %s phase: %d\n", x.elem, state->phase);
+				eprintf ("Missing next state for elem: %s phase: %d\n", x->elem, state->phase);
 				break;
 			}
 			depth++;
 
 			break;
 		}
-		case YXML_ELEMEND: {
+		case R_XML_ELEMEND: {
 			RCFParseState *state = (RCFParseState *)r_list_pop (stack);
 			RCFParseState *next_state = (RCFParseState *)r_list_get_top (stack);
 			if (!state || !next_state) {
@@ -256,16 +247,12 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 			r_cf_parse_state_free (state);
 			break;
 		}
-		case YXML_CONTENT: {
+		case R_XML_CONTENT: {
 			RCFParseState *state = (RCFParseState *)r_list_get_top (stack);
 			if (state->phase == R_CF_STATE_IN_IGNORE) {
 				break;
 			}
-			if (!content) {
-				content = r_str_new (x.data);
-			} else {
-				content = r_str_append (content, x.data);
-			}
+			content = r_str_append (content, x->data);
 			break;
 		}
 		default:
@@ -277,16 +264,14 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 		}
 	}
 
-	yxml_ret_t r = yxml_eof (&x);
+	RXmlRet r = r_xml_eof (x);
 	if (r < 0) {
 		eprintf ("Invalid xml\n");
 	}
 
 beach:
-	R_FREE (xml_buf);
-	if (stack) {
-		r_list_free (stack);
-	}
+	r_xml_free (x);
+	r_list_free (stack);
 	free (content);
 
 	return result;

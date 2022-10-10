@@ -6,6 +6,7 @@ r_util_sources = [
   'w32.c',
   'w32dw.c',
   'alloc.c',
+  'rxml.c',
   'charset.c',
   'donut.c',
   'token.c',

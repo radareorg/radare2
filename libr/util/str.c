@@ -877,6 +877,7 @@ R_API char *r_str_prepend(char *ptr, const char *string) {
 }
 
 R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
+	r_return_val_if_fail (ptr && string, NULL);
 	char *msg = r_str_newlen (string, slen);
 	char *ret = r_str_append (ptr, msg);
 	free (msg);
