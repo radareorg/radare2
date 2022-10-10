@@ -2534,7 +2534,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				printline ("disp", "0x%08" PFMT64x "\n", op.disp);
 			}
 			if (op.refptr != UT64_MAX) {
-				printline ("refptr", "%d\n", op.refptr);
+				printline ("refptr", "0x%"PFMT64x"\n", op.refptr);
 			}
 			printline ("size", "%d\n", size);
 			printline ("sign", "%s\n", r_str_bool (op.sign));
