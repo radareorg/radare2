@@ -462,14 +462,15 @@ static void gb_anal_xoaasc_imm(RReg *reg, RArchOp *op, const ut8 *data) {
 	case R_ARCH_OP_TYPE_CMP:
 		r_strbuf_setf (&op->esil, "%d,a,==,$z,Z,:=,4,$b,H,:=,8,$b,C,:=,1,N,:=", data[1]);
 		break;
+	default:
+		break;
 	}
 }
 
 //load with [hl] as memref
 static inline void gb_anal_load_hl(RReg *reg, RArchOp *op, const ut8 data) {
-	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	RAnalValue *dst = r_vector_push (op->dsts, NULL);
+	RAnalValue *src = r_vector_push (op->srcs, NULL);
 	src->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
 	src->memref = 1;
 	src->absolute = true;
@@ -484,9 +485,8 @@ static inline void gb_anal_load_hl(RReg *reg, RArchOp *op, const ut8 data) {
 }
 
 static inline void gb_anal_load(RReg *reg, RArchOp *op, const ut8 *data) {
-	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	RAnalValue *dst = r_vector_push (op->dsts, NULL);
+	RAnalValue *src = r_vector_push (op->srcs, NULL);
 	dst->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
 	src->memref = 1;
 	switch (data[0]) {
@@ -518,9 +518,8 @@ static inline void gb_anal_load(RReg *reg, RArchOp *op, const ut8 *data) {
 }
 
 static inline void gb_anal_store_hl(RReg *reg, RArchOp *op, const ut8 *data) {
-	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	RAnalValue *dst = r_vector_push (op->dsts, NULL);
+	RAnalValue *src = r_vector_push (op->srcs, NULL);
 	dst->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
 	dst->memref = 1;
 	src->absolute = true;
@@ -540,9 +539,8 @@ static inline void gb_anal_store_hl(RReg *reg, RArchOp *op, const ut8 *data) {
 }
 
 static void gb_anal_store(RReg *reg, RArchOp *op, const ut8 *data) {
-	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	RAnalValue *dst = r_vector_push (op->dsts, NULL);
+	RAnalValue *src = r_vector_push (op->srcs, NULL);
 	dst->memref = 1;
 	src->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
 	switch (data[0]) {

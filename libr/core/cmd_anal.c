@@ -2392,7 +2392,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				pj_ks (pj, "ireg", op.ireg);
 			}
 			pj_ki (pj, "scale", op.scale);
-			if (op.refptr != -1) {
+			if (op.refptr != UT64_MAX) {
 				pj_ki (pj, "refptr", op.refptr);
 			}
 			pj_ki (pj, "cycles", op.cycles);
@@ -2451,11 +2451,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 #define printline(k, fmt, arg)\
 	{ \
-		if (use_color)\
-			r_cons_printf ("%s%s: " Color_RESET, color, k);\
-		else\
-			r_cons_printf ("%s: ", k);\
-		if (fmt) r_cons_printf (fmt, arg);\
+		if (use_color) { r_cons_printf ("%s%s: " Color_RESET, color, k);\
+		} else { r_cons_printf ("%s: ", k); }\
+		if (fmt) { r_cons_printf (fmt, arg); }\
 	}
 			printline ("address", "0x%" PFMT64x "\n", core->offset + idx);
 			printline ("opcode", "%s\n", r_asm_op_get_asm (&asmop));
@@ -2535,7 +2533,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.disp && op.disp != UT64_MAX) {
 				printline ("disp", "0x%08" PFMT64x "\n", op.disp);
 			}
-			if (op.refptr != -1) {
+			if (op.refptr != UT64_MAX) {
 				printline ("refptr", "%d\n", op.refptr);
 			}
 			printline ("size", "%d\n", size);
@@ -2550,7 +2548,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				printline ("failcycles", "%d\n", op.failcycles);
 			}
 			if (op.type2) {
-				printline ("type2", "0x%x\n", op.type2);
+				printline ("type2", "0x%"PFMT64x"\n", op.type2);
 			}
 			if (op.reg) {
 				printline ("reg", "%s\n", op.reg);

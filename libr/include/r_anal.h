@@ -388,14 +388,6 @@ typedef struct r_anal_case_obj_t {
 	ut64 value;
 } RAnalCaseOp;
 
-typedef struct r_anal_switch_obj_t {
-	ut64 addr;
-	ut64 min_val;
-	ut64 def_val;
-	ut64 max_val;
-	RList/*<RAnalCaseOp>*/ *cases;
-} RAnalSwitchOp;
-
 struct r_anal_t;
 struct r_anal_bb_t;
 typedef struct r_anal_callbacks_t {
@@ -710,7 +702,7 @@ typedef struct r_anal_op_t {
 	const char *ireg; /* register used for indirect memory computation*/
 	int scale;
 	ut64 disp;
-	RAnalSwitchOp *switch_op;
+	RArchSwitchOp *switch_op;
 	RArchOpHint hint;
 	RArchDataType datatype;
 	int vliw; // begin of opcode block.
@@ -759,7 +751,7 @@ typedef struct r_anal_bb_t {
 	ut8 *fingerprint;
 	RAnalDiff *diff;
 	RAnalCond *cond;
-	RAnalSwitchOp *switch_op;
+	RArchSwitchOp *switch_op;
 	ut16 *op_pos; // offsets of instructions in this block, count is ninstr - 1 (first is always 0)
 	ut8 *op_bytes;
 	ut8 *parent_reg_arena;
@@ -1852,9 +1844,9 @@ R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr
 R_API RArchOpHint *r_anal_hint_get(RAnal *anal, ut64 addr); // accumulate all available hints affecting the given address
 
 /* switch.c APIs */
-R_API RAnalSwitchOp *r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val);
-R_API void r_anal_switch_op_free(RAnalSwitchOp *swop);
-R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp *swop, ut64 addr, ut64 value, ut64 jump);
+R_API RArchSwitchOp *r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val);
+R_API void r_anal_switch_op_free(RArchSwitchOp *swop);
+R_API RAnalCaseOp* r_anal_switch_op_add_case(RArchSwitchOp *swop, ut64 addr, ut64 value, ut64 jump);
 
 /* cycles.c */
 R_API RAnalCycleFrame* r_anal_cycle_frame_new(void);

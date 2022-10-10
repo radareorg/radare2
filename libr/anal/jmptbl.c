@@ -52,7 +52,7 @@ static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock 
 	if (block->size != block_size) {
 		// block was be split during anal and does not contain the
 		// jmp instruction anymore, so we need to search for it and get it again
-		RAnalSwitchOp *sop = block->switch_op;
+		RArchSwitchOp *sop = block->switch_op;
 		block = r_anal_get_block_at (anal, ip);
 		if (!block) {
 			block = r_anal_bb_from_offset (anal, ip);

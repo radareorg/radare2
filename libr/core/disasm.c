@@ -5113,6 +5113,9 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 			r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
 		}
 		break;
+	default:
+		// nothing else
+		break;
 	}
 	ds_print_color_reset (ds);
 beach:

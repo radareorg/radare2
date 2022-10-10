@@ -1614,7 +1614,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 				pj_kn (pj, "fail", bbi->fail);
 			}
 			if (bbi->switch_op) {
-				RAnalSwitchOp *op = bbi->switch_op;
+				RArchSwitchOp *op = bbi->switch_op;
 				pj_k (pj, "switchop");
 				pj_o (pj);
 				pj_kn (pj, "offset", op->addr);

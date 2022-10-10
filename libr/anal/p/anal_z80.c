@@ -9,7 +9,7 @@
 #include "../arch/z80/z80asm.c"
 #include "../arch/z80/z80.c"
 
-static void z80_op_size(const ut8 *_data, int len, int *size, int *size_prefix) {
+static void z80_op_size(const ut8 *_data, int len, int *size, ut32 *size_prefix) {
 	ut8 data[4] = {0};
 	int type = 0;
 	if (len < 1) {

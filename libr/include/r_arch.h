@@ -163,7 +163,9 @@ typedef enum {
 	R_ARCH_OP_TYPE_PRIV = 40, /* privileged instruction */
 	R_ARCH_OP_TYPE_FPU = 41, /* floating point stuff */
 #endif
-} RArchOpType;
+} _RArchOpType;
+
+typedef ut64 RArchOpType;
 
 #if 0
 On x86 according to Wikipedia
@@ -338,7 +340,8 @@ typedef struct r_arch_op_t {
 	ut64 val;       /* reference to value */ /* XXX signed? */
 	ut32 ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr;  /* stack pointer */
-	bool refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
+	// bool refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
+	ut64 refptr;     /* XXX its treated as bool sometimes, othertimes as ut64 */
 	RVector /*RArchValue*/	*srcs;
 	RVector /*RArchValue*/	*dsts;
 	RList *access; /* RArchValue access information */

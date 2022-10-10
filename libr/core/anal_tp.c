@@ -432,6 +432,8 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 					case R_ARCH_OP_TYPE_STORE:
 						res = true;
 						break;
+					default:
+						break;
 					}
 				}
 			} else if (var && res && xaddr && (xaddr != UT64_MAX)) { // Type progation using value
