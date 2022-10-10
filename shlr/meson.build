@@ -484,20 +484,3 @@ mpc_dep = declare_dependency(
   link_with: libmpc,
   include_directories: mpc_inc
 )
-
-# handle yxml dependency
-yxml_files = [
-  'yxml/yxml.c'
-]
-
-yxml_inc = [platform_inc, include_directories(['yxml'])]
-
-libyxml = static_library('r2yxml', yxml_files,
-  include_directories: yxml_inc,
-  implicit_include_directories: false
-)
-
-yxml_dep = declare_dependency(
-  link_with: libyxml,
-  include_directories: yxml_inc
-)

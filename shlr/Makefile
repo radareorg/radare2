@@ -60,8 +60,8 @@ endif
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-# MODS=sdb zip java mpc yxml
-MODS=zip java mpc yxml
+# MODS=sdb zip java mpc
+MODS=zip java mpc
 MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
@@ -326,13 +326,6 @@ spp-sync sync-spp:
 spp: spp-sync
 	export CFLAGS="-DUSE_R2=1 -I../../libr/include -DHAVE_FORK=${HAVE_FORK} -fPIC";  $(MAKE) -C spp r2lib
 
-sync-yxml yxml-sync:
-	rm -rf yxml-git
-	git clone https://g.blicky.net/yxml.git/ yxml-git
-	cp -f yxml-git/yxml.c yxml/yxml.c
-	cp -f yxml-git/yxml.h yxml/yxml.h
-	rm -rf yxml-git
-
 SHLRS+=ar/libr_ar.a
 SHLRS+=bochs/lib/libbochs.a
 SHLRS+=capstone/libcapstone.a
@@ -341,7 +334,6 @@ SHLRS+=grub/libgrubfs.a
 SHLRS+=java/libr_java.a
 SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
-SHLRS+=yxml/libyxml.a
 SHLRS+=winkd/libr_winkd.a
 SHLRS+=zip/librz.a
 

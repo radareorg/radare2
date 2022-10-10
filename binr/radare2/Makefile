@@ -96,7 +96,6 @@ include ../../shlr/bochs/deps.mk
 include ../../shlr/grub/deps.mk
 include ../../shlr/qnx/deps.mk
 include ../../shlr/ar/deps.mk
-include ../../shlr/yxml/deps.mk
 include ../../shlr/sdb.mk
 
 LDFLAGS+=$(LINK)
