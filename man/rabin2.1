@@ -1,7 +1,7 @@
 .Dd Nov 22, 2021
 .Dt RABIN2 1
 .Sh NAME
-.Nm RABIN2
+.Nm rabin2
 .Nd Binary program info extractor
 .Sh SYNOPSIS
 .Nm rabin2
@@ -63,9 +63,9 @@ Show usage help message.
 .It Fl H
 Show header fields (see ih command in r2)
 .It Fl I
-Show binary info (iI in r2)
+Show binary info (see iI command in r2)
 .It Fl i
-Show imports (symbols imported from libraries) (ii)
+Show imports (symbols imported from libraries) (see ii command in r2)
 .It Fl j
 Output in json
 .It Fl k Ar query
@@ -89,7 +89,7 @@ Output file/folder for write operations (out by default)
 .It Fl O Ar binop
 Perform binary operation on target binary (dump, resize, change sections, ...) see '-O help' for more information
 .It Fl p
-Disable VA. Show always physical addresses (not the same as -B0)
+Disable VA. Always show physical addresses (not the same as -B0)
 .It Fl P
 Show debug/pdb information
 .It Fl PP
@@ -113,11 +113,11 @@ Show segments
 .It Fl t
 Show file hashes
 .It Fl T
-Show Certificates
+Show certificates
 .It Fl u
 Unfiltered (no rename duplicated symbols/sections)
 .It Fl U
-Show Resources
+Show resources
 .It Fl v
 Show version information
 .It Fl V
@@ -125,7 +125,7 @@ Show binary version information
 .It Fl w
 Show try/catch blocks
 .It Fl x
-Extract all sub binaries from a fat binary (f.ex: fatmach0)
+Extract all sub binaries from a fat binary (for example: fatmach0)
 .It Fl X Ar format file ...
 Package a fat or zip containing all the files passed (fat, zip)
 .It Fl z
