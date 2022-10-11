@@ -2746,7 +2746,17 @@ static int opxchg(RAsm *a, ut8 *data, const Opcode *op) {
 			& (op->operands[1].type & ALL_SIZE))) { // unmatched operand sizes
 			return -1;
 		}
-		if (op->operands[0].reg == X86R_EAX
+		if (a->config->bits == 64
+				&& op->operands[0].reg == X86R_EAX
+				&& !op->operands[0].extended
+				&& op->operands[0].type & OT_DWORD
+				&& op->operands[1].reg == X86R_EAX
+				&& !op->operands[1].extended
+				&& op->operands[1].type & OT_DWORD) {
+			data[l++] = 0x87;
+			data[l++] = 0xc0;
+			return l;
+		} else if (op->operands[0].reg == X86R_EAX
 				&& !op->operands[0].extended
 				&& !(op->operands[0].type & OT_BYTE)
 				&& op->operands[1].type & OT_GPREG) {
