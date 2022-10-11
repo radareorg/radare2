@@ -2,7 +2,7 @@
 .Dt RAFIND2 1
 .Sh NAME
 .Nm rafind2
-.Nd Advanced command-line hexadecimal editor
+.Nd advanced command-line byte pattern search in files
 .Sh SYNOPSIS
 .Nm rafind2
 .Op Fl cijzZXLnrhqv
@@ -15,7 +15,7 @@
 .Op Fl x Ar hex
 .Ar file|dir
 .Sh DESCRIPTION
-rafind2 is a program to find byte patterns into files
+rafind2 is a program to find byte patterns in files
 .Pp
 The options are:
 .Bl -tag -width Fl
@@ -34,23 +34,23 @@ Search for a specific wide string
 .It Fl V Ar size:value
 Search for a little-endian value of given size. For example -V 4:123
 .It Fl e Ar regex
-Search for a regular expression string matches
+Search for regular expression string matches
 .It Fl x Ar hex
 Search for an hexpair string
 .It Fl i
-Identify filetype (like file, uses r2 -qcpm)
+Identify file type (like file, uses r2 -qcpm)
 .It Fl L
 List available IO plugins
 .It Fl m
-Carve for known file-types using the r_magic signatures
+Carve for known file types using the r_magic signatures
 .It Fl M Ar mask
 Set binary mask to be applied
 .It Fl f Ar from
-Specify the source adddress
+Specify the source address
 .It Fl F Ar file
 Read the keyword to search from the contents of the given file
 .It Fl t Ar to
-Specify the target adddress
+Specify the target address
 .It Fl X
 Display hexdump of search results
 .It Fl Z
