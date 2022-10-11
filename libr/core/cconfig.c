@@ -136,7 +136,7 @@ bool rasm2_list(RCore *core, const char *arch, int fmt) {
 	int i;
 	const char *feat2, *feat;
 	RAsm *a = core->rasm;
-	char bits[32];
+	char *bits = NULL;
 	RAsmPlugin *h;
 	RListIter *iter;
 	bool any = false;
@@ -161,24 +161,23 @@ bool rasm2_list(RCore *core, const char *arch, int fmt) {
 				break;
 			}
 		} else {
-			bits[0] = 0;
-			/* The underscore makes it easier to distinguish the
-			 * columns */
+			RStrBuf *sb = r_strbuf_new ("");
 			if (h->bits & 8) {
-				strcat (bits, "_8");
+				r_strbuf_append (sb, "8");
 			}
 			if (h->bits & 16) {
-				strcat (bits, "_16");
+				r_strbuf_appendf (sb, "%s16", sb->len? ",": "");
 			}
 			if (h->bits & 32) {
-				strcat (bits, "_32");
+				r_strbuf_appendf (sb, "%s32", sb->len? ",": "");
 			}
 			if (h->bits & 64) {
-				strcat (bits, "_64");
+				r_strbuf_appendf (sb, "%s64", sb->len? ",": "");
 			}
-			if (!*bits) {
-				strcat (bits, "_0");
+			if (!h->bits) {
+				r_strbuf_appendf (sb, "%s0", sb->len? ",": "");
 			}
+			bits = r_strbuf_drain (sb);
 			feat = "__";
 			if (h->assemble && h->disassemble) {
 				feat = "ad";
@@ -198,19 +197,30 @@ bool rasm2_list(RCore *core, const char *arch, int fmt) {
 				pj_o (pj);
 				pj_k (pj, "bits");
 				pj_a (pj);
-				pj_i (pj, 32);
-				pj_i (pj, 64);
+				if (h->bits & 8) {
+					pj_i (pj, 8);
+				}
+				if (h->bits & 16) {
+					pj_i (pj, 16);
+				}
+				if (h->bits & 32) {
+					pj_i (pj, 32);
+				}
+				if (h->bits & 64) {
+					pj_i (pj, 64);
+				}
 				pj_end (pj);
 				pj_ks (pj, "license", license);
 				pj_ks (pj, "description", h->desc);
 				pj_ks (pj, "features", feat);
 				pj_end (pj);
 			} else {
-				r_cons_printf ("%s%s  %-9s  %-11s %-7s %s\n",
+				r_cons_printf ("%s%s  %-11s  %-11s %-7s %s\n",
 						feat, feat2, bits, h->name,
 						r_str_get_fail (h->license, "unknown"), h->desc);
 			}
 			any = true;
+			free (bits);
 		}
 	}
 	if (fmt == 'j') {
@@ -222,11 +232,11 @@ bool rasm2_list(RCore *core, const char *arch, int fmt) {
 }
 
 // more copypasta
-static bool ranal2_list(RCore *core, const char *arch, int fmt) {
+bool ranal2_list(RCore *core, const char *arch, int fmt) {
 	int i;
 	const char *feat2, *feat;
 	RAnal *a = core->anal;
-	char bits[32];
+	char *bits;
 	RAnalPlugin *h;
 	RListIter *iter;
 	bool any = false;
@@ -251,24 +261,23 @@ static bool ranal2_list(RCore *core, const char *arch, int fmt) {
 				break;
 			}
 		} else {
-			bits[0] = 0;
-			/* The underscore makes it easier to distinguish the
-			 * columns */
+			RStrBuf *sb = r_strbuf_new ("");
 			if (h->bits & 8) {
-				strcat (bits, "_8");
+				r_strbuf_append (sb, "8");
 			}
 			if (h->bits & 16) {
-				strcat (bits, "_16");
+				r_strbuf_appendf (sb, "%s16", sb->len? ",": "");
 			}
 			if (h->bits & 32) {
-				strcat (bits, "_32");
+				r_strbuf_appendf (sb, "%s32", sb->len? ",": "");
 			}
 			if (h->bits & 64) {
-				strcat (bits, "_64");
+				r_strbuf_appendf (sb, "%s64", sb->len? ",": "");
 			}
-			if (!*bits) {
-				strcat (bits, "_0");
+			if (!h->bits) {
+				r_strbuf_appendf (sb, "%s0", sb->len? ",": "");
 			}
+			bits = r_strbuf_drain (sb);
 			feat = "__";
 #if 0
 			if (h->assemble && h->disassemble) {
@@ -292,19 +301,30 @@ static bool ranal2_list(RCore *core, const char *arch, int fmt) {
 				pj_o (pj);
 				pj_k (pj, "bits");
 				pj_a (pj);
-				pj_i (pj, 32);
-				pj_i (pj, 64);
+				if (h->bits & 8) {
+					pj_i (pj, 8);
+				}
+				if (h->bits & 16) {
+					pj_i (pj, 16);
+				}
+				if (h->bits & 32) {
+					pj_i (pj, 32);
+				}
+				if (h->bits & 64) {
+					pj_i (pj, 64);
+				}
 				pj_end (pj);
 				pj_ks (pj, "license", license);
 				pj_ks (pj, "description", h->desc);
 				pj_ks (pj, "features", feat);
 				pj_end (pj);
 			} else {
-				r_cons_printf ("%s%s  %-9s  %-11s %-7s %s\n",
+				r_cons_printf ("%s%s  %-11s  %-11s %-7s %s\n",
 						feat, feat2, bits, h->name,
 						r_str_get_fail (h->license, "unknown"), h->desc);
 			}
 			any = true;
+			free (bits);
 		}
 	}
 	if (fmt == 'j') {
