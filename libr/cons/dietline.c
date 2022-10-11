@@ -1857,7 +1857,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 								I.buffer.index = 0;
 								break;
 							}
-							r_cons_readchar ();
+							r_cons_readchar (); // should be '5'
+							ch = r_cons_readchar ();
 						}
 #if __WINDOWS__
 						else {
