@@ -30,17 +30,20 @@ CFLAGS+=${LIBUV_CFLAGS}
 LDFLAGS+=${LIBUV_LDFLAGS}
 endif
 
-first:: all
+first::
+	make -C decompiler
+	make all
 
 include ${STATIC_CORE_PLUGINS}
 
 STATIC_OBJS=$(addprefix $(LTOP)/core/p/,$(STATIC_OBJ))
-OBJS+=$(STATIC_OBJS)
 
 include $(TOP)/shlr/gdb/deps.mk
 # include $(LIBR)/util/spp.mk
 include $(LTOP)/rules.mk
 include $(STOP)/java/deps.mk
+#include $(LTOP)/core/decompiler/core/dec.mk
+
 
 cmd.o: cmd_hash.c cmd_debug.c cmd_zign.c cmd_project.c \
 	cmd_open.c cmd_meta.c cmd_macro.c cmd_magic.c cmd_mount.c cmd_eval.c \
