@@ -1178,6 +1178,12 @@ ad "xchg r8d, r15d" 4587f8
 ad "xchg r15d, r8d" 4587c7
 ad "xchg rdx, r8" 4c87c2
 ad "xchg r15, rdx" 4987d7
+a "xchg ax, ax" 6690
+ad "xchg eax, eax" 87c0
+a "xchg rax, rax" 4890
+ad "xchg bx, ax" 6693
+ad "xchg ebx, eax" 93
+ad "xchg rbx, rax" 4893
 d "call qword [rip + 0x3a8f3e]" 48ff153e8f3a00
 d "call qword [rip + 0x1d638f]" 48ff158f631d00
 a "fmul st2, st0" dcca

@@ -406,6 +406,10 @@ d "xchg edi, eax" 97
 d "xchg edx, eax" 92
 d "xchg esi, eax" 96
 d "xchg esp, eax" 94
+a "xchg ax, ax" 6690
+a "xchg eax, eax" 90
+ad "xchg bx, ax" 6693
+ad "xchg ebx, eax" 93
 d "xgetbv" 0f01d0
 d "xlatb" D7
 d "xor al, 0" 3400
