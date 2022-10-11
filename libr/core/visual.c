@@ -1751,11 +1751,11 @@ static void visual_textlogs(RCore *core) {
 		if (R_STR_ISNOTEMPTY (vi)) {
 			r_core_cmd0 (core, vi);
 		}
-		const char *title = "[q] [visual-text-logs] Move with [jk] `i` to insert `-` trim logs [+-] idx %d log.level =";
+#define TEXTLOGS_TITLE "[q] [visual-text-logs] Move with [jk] `i` to insert `-` trim logs [+-] idx %d log.level = %d"
 		if (r_config_get_i (core->config, "scr.color") > 0) {
-			r_cons_printf (Color_YELLOW"%s %d\n"Color_RESET, title, index, log_level);
+			r_cons_printf (Color_YELLOW "" TEXTLOGS_TITLE "\n"Color_RESET, index, log_level);
 		} else {
-			r_cons_printf ("%s %d\n", title, index, log_level);
+			r_cons_printf (TEXTLOGS_TITLE "\n", index, log_level);
 		}
 		r_core_cmdf (core, "Tv %d", index);
 		r_cons_printf ("--\n");
