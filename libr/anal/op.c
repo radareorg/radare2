@@ -104,13 +104,13 @@ R_API void r_arch_op_to_analop(RAnalOp *op, RArchOp *archop) {
 	op->mnemonic = strdup (r_str_get (archop->mnemonic));
 	op->addr = archop->addr;
 	op->size = archop->size;
-	op->cond = archop->cond;
+	op->cond = (_RAnalCond)archop->cond;
 	op->id = archop->id;
 	op->cycles = archop->cycles;
 	op->delay = archop->delay;
 	op->type = archop->type;
-	op->prefix = archop->prefix;
-	op->stackop = archop->stackop;
+	op->prefix = (RAnalOpPrefix)archop->prefix;
+	op->stackop = (RAnalStackOp)archop->stackop;
 	op->jump = archop->jump;
 	op->fail = archop->fail;
 	op->ptr = archop->ptr;
@@ -118,7 +118,7 @@ R_API void r_arch_op_to_analop(RAnalOp *op, RArchOp *archop) {
 	op->val = archop->val;
 	op->nopcode = archop->nopcode;
 	op->disp = archop->disp;
-	op->direction = archop->direction;
+	op->direction = (RAnalOpDirection)archop->direction;
 	op->ptrsize = archop->ptrsize;
 	op->refptr = archop->refptr;
 	op->srcs = archop->srcs;
@@ -127,7 +127,7 @@ R_API void r_arch_op_to_analop(RAnalOp *op, RArchOp *archop) {
 	op->opex = archop->opex;
 	op->access = archop->access;
 	op->stackptr= archop->stackptr;
-	op->family = archop->family;
+	op->family = (RAnalOpFamily)archop->family;
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
