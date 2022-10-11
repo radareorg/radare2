@@ -1,11 +1,11 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include <string.h>
 #include "r_config.h"
 #include "r_cons.h"
 #include "r_core.h"
 
 bool rasm2_list(RCore *core, const char *arch, int fmt);
+bool ranal2_list(RCore *core, const char *arch, int fmt);
 
 static const char *help_msg_La[] = {
 	"Usage:", "La[qj]", " # asm/anal plugin list",
@@ -21,7 +21,9 @@ static const char *help_msg_L[] = {
 	"L",  "", "show this help",
 	"L", " blah."R_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name",
-	"La", "[qj]", "list asm/anal plugins (see: aL, e asm.arch=" "??" ")",
+	"La", "[qj]", "list analysis plugins",
+	"LA", "[qj]", "list arch plugins",
+	"Lb", "[qj]", "list bin plugins",
 	"Lc", "", "list core plugins (see",
 	"Ld", "", "list debug plugins (dL)",
 	"LD", "[j]", "list supported decompilers (e cmd.pdc=?)",
@@ -29,12 +31,13 @@ static const char *help_msg_L[] = {
 	"Lg", "", "list egg plugins",
 	"Lh", "", "list hash plugins (ph)",
 	"Li", "[j]", "list bin plugins (iL)",
-	"Lt", "[j]", "list color themes (eco)",
 	"Ll", "[j]", "list lang plugins (#!)",
 	"LL", "", "lock screen",
 	"Lm", "[j]", "list fs plugins (mL)",
 	"Lo", "", "list io plugins (oL)",
 	"Lp", "[j]", "list parser plugins (e asm.parser=?)",
+	"Ls", "[qj]", "list assembler plugins",
+	"Lt", "[j]", "list color themes (eco)",
 	NULL
 };
 
@@ -411,11 +414,31 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'a': // "La"
-		if (input[1] == '?') {
+		if (input[1] == '?') { // "La?"
 			r_core_cmd_help (core, help_msg_La);
-		} else {
-			// r_core_cmd0 (core, "e asm.arch=??");
+		} else { // asm plugins
+			ranal2_list (core, NULL, input[1]);
+			// r_core_cmd0 (core, "e anal.arch=??");
+		}
+		break;
+	case 's': // "Ls"
+		if (input[1] == '?') { // "Ls?"
+			r_core_cmd_help_match (core, help_msg_L, "Ls", true);
+		} else { // asm plugins
+			 // r_core_cmd0 (core, "e asm.arch=??");
 			rasm2_list (core, NULL, input[1]);
+		}
+		break;
+	case 'A': // "LA"
+		if (input[1] == '?') {
+			// r_core_cmd_help (core, help_msg_LA);
+		} else {
+			RListIter *iter;
+			RArchPlugin *item;
+			r_list_foreach (core->anal->arch->plugins, iter, item) {
+				eprintf ("%s\n", item->name);
+			}
+			// r_core_cmd0 (core, "e asm.arch=??");
 		}
 		break;
 	case 'p': // "Lp"

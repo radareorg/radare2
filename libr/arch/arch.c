@@ -99,6 +99,7 @@ static char *_find_bestmatch(RList *plugins, RArchConfig *cfg) {
 }
 
 // use config as new arch config and use matching decoder as current
+// must return arch->current, and remove that field. and use refcounting
 R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
 	r_return_val_if_fail (arch, false);
 	if (!config) {
@@ -125,6 +126,7 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
 }
 
 // set bits and update config
+// This api conflicts with r_arch_config_set_bits
 R_API bool r_arch_set_bits(RArch *arch, ut32 bits) {
 	r_return_val_if_fail (arch && bits, false);
 	if (!arch->cfg) {
@@ -132,6 +134,7 @@ R_API bool r_arch_set_bits(RArch *arch, ut32 bits) {
 		if (!arch->cfg) {
 			return false;
 		}
+		// r_arch_config_set_bits (arch->cfg, bits);
 		arch->cfg->bits = bits;
 		if (!r_arch_use (arch, arch->cfg)) {
 			r_unref (arch->cfg);
