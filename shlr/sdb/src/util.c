@@ -110,7 +110,7 @@ SDB_API char *sdb_itoa(ut64 n, int base, char *os, int oslen) {
 		s = tmpbuf;
 		sl = sizeof (tmpbuf);
 	}
-	const int imax = oslen - 2;
+	const int imax = sl - 2;
 	int i = imax;
 	if (base < 0) {
 		copy_string = 0;
