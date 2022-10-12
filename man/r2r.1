@@ -8,6 +8,7 @@
 .Op Fl h
 .Op Fl i
 .Op Fl n
+.Op Fl L
 .Op Fl q
 .Op Fl v
 .Op Fl V
@@ -15,6 +16,9 @@
 .Op Fl f Ar bin-for-json-tests
 .Op Fl F Ar fuzzbindir
 .Op Fl C Ar chdir
+.Op Fl o Ar file
+.Op Fl s Ar ignore
+.Op Fl t Ar seconds
 .Op [test-(dir|file) ...]
 .Sh DESCRIPTION
 Run all the radare2 regression tests matching a specific word in the name.
@@ -28,6 +32,8 @@ Show the help/usage message
 Interactive mode
 .It Fl n
 Do not run any test, just load/parse them
+.It Fl L
+Log mode (better printing for CI, logfiles, etc.)
 .It Fl q
 Quiet mode (use like this: r2r -qv)
 .It Fl v
@@ -44,10 +50,16 @@ Load the given binary when running the JSON tests
 Early chdir before running any test
 .It Fl F Ar directory
 Specify the path where the fuzzed binaries are
+.It Fl o Ar file
+Output test run information in JSON format to file
+.It Fl s Ar test
+Set R2R_SKIP_(TEST)=1 to skip running that test type
+.It Fl t Ar seconds
+Timeout per test (default is (30*60))
 .El
 .Sh USAGE
 .Pp
-Use the -n flag to dont run any test. Just load them.
+Use the -n flag to not run any test. Just load them.
 .Pp
   $ r2r -n
   [r2r] Loading tests...
