@@ -1598,6 +1598,22 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs, objc_cac
 			R_FREE (klass);
 			continue;
 		}
+		klass->lang = R_BIN_LANG_OBJC;
+		char *par = strchr (klass->name, '(');
+		if (par) {
+			size_t idx = par - klass->name;
+			char *super = strdup (klass->name);
+			super[idx++] = 0;
+			char *cpar = strchr (super + idx, ')');
+			if (cpar) {
+				*cpar = 0;
+			}
+		//	char *name = strdup (super + idx);
+			free (klass->super);
+			klass->super = super;
+		//	free (klass->name);
+		//	klass->name = name;
+		}
 		r_list_append (ret, klass);
 	}
 	return ret;
