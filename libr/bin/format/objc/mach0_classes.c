@@ -1249,7 +1249,7 @@ static SwiftType parse_type_entry(RBinFile *bf, ut64 typeaddr) {
 	ut32 words[16] = {0};
 	st32 *swords = (st32*)&words;
 	if (r_buf_read_at (bf->buf, typeaddr, (ut8*)&words, sizeof (words)) < 1) {
-		R_LOG_ERROR ("Invalid pointers");
+		R_LOG_DEBUG ("Invalid pointers");
 		return st;
 	}
 #if 0
@@ -1299,6 +1299,10 @@ ut32 fields_offset;
 
 static void parse_type(RList *list, RBinFile *bf, SwiftType st) {
 	char *otypename = readstr (bf, st.name_addr);
+	if (!otypename) {
+		R_LOG_DEBUG("swift-type-parse missing name");
+		return;
+	}
 	char *typename = r_name_filter_dup (otypename);
 	RBinClass *klass = r_bin_class_new (typename, NULL, false);
 	// eprintf ("Type name (%s)\n", typename);
