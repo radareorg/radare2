@@ -58,7 +58,7 @@ static void parse_skip(const char *arg) {
 }
 
 static int help(bool verbose) {
-	printf ("Usage: r2r [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
+	printf ("Usage: r2r [-qvVnLi] [-C dir] [-F dir] [-f file] [-o file] [-s test] [-t seconds] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
 		printf (
 		" -C [dir]     chdir before running r2r (default follows executable symlink + test/new\n"
@@ -72,19 +72,19 @@ static int help(bool verbose) {
 		" -n           do nothing (don't run any test, just load/parse them)\n"
 		" -o [file]    output test run information in JSON format to file\n"
 		" -q           quiet\n"
-		" -s [ignore]  set R2R_SKIP_(xxx)=1 to skip running those tests\n"
+		" -s [test]    set R2R_SKIP_(TEST)=1 to skip running that test type\n"
 		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
 		" -u           do not git pull/clone test/bins\n"
 		" -v           show version\n"
 		"\n"
 		"R2R_SKIP_ARCHOS=1  # do not run the arch-os-specific tests\n"
 		"R2R_SKIP_JSON=1    # do not run the JSON tests\n"
-		"R2R_SKIP_FUZZ=1    # do not run the rasm2 tests\n"
-		"R2R_SKIP_UNIT=1    # do not run the rasm2 tests\n"
-		"R2R_SKIP_CMD=1     # do not run the rasm2 tests\n"
+		"R2R_SKIP_FUZZ=1    # do not run the fuzz tests\n"
+		"R2R_SKIP_UNIT=1    # do not run the unit tests\n"
+		"R2R_SKIP_CMD=1     # do not run the cmds tests\n"
 		"R2R_SKIP_ASM=1     # do not run the rasm2 tests\n"
 		"\n"
-		"Supported test types: @asm @json @unit @fuzz @arch @cmds\n"
+		"Supported test types: @asm @json @unit @fuzz @arch @cmd\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
 	}
 	return 1;
