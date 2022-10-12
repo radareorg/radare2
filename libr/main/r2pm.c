@@ -556,8 +556,16 @@ static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, 
 	free (r2v);
 	if (global) {
 		r_sys_setenv ("GLOBAL", "1");
+		char *sudo = r_sys_getenv ("SUDO");
+		if (R_STR_ISEMPTY (sudo)) {
+			free (sudo);
+			sudo = strdup ("sudo");
+		}
+		r_sys_setenv ("R2PM_SUDO", sudo);
+		free (sudo);
 	} else {
 		r_sys_setenv ("GLOBAL", "0");
+		r_sys_setenv ("R2PM_SUDO", "");
 	}
 	r_list_foreach (targets, iter, t) {
 		if (R_STR_ISEMPTY (t)) {
@@ -689,22 +697,26 @@ static void r2pm_envhelp(bool verbose) {
 		char *r2pm_plugdir = r_sys_getenv ("R2PM_PLUGDIR");
 		char *r2pm_bindir = r_sys_getenv ("R2PM_BINDIR");
 		char *r2pm_dbdir = r_sys_getenv ("R2PM_DBDIR");
+		char *r2pm_prefix = r_sys_getenv ("R2PM_PREFIX");
 		char *r2pm_gitdir = r_sys_getenv ("R2PM_GITDIR");
 		printf ("R2_LOG_LEVEL=2         # define log.level for r2pm\n"\
 			"SUDO=sudo              # path to the SUDO executable\n"\
 			"MAKE=make              # path to the GNU MAKE executable\n"\
 			"R2PM_PLUGDIR=%s\n"\
+			"R2PM_PREFIX=%s\n"\
 			"R2PM_BINDIR=%s\n"\
 			"R2PM_OFFLINE=0\n"\
 			"R2PM_LEGACY=0\n"\
 			"R2PM_DBDIR=%s\n"\
 			"R2PM_GITDIR=%s\n",
 				r2pm_plugdir,
+				r2pm_prefix,
 				r2pm_bindir,
 				r2pm_dbdir,
 				r2pm_gitdir
 		       );
 		free (r2pm_plugdir);
+		free (r2pm_prefix);
 		free (r2pm_bindir);
 		free (r2pm_dbdir);
 		free (r2pm_gitdir);
@@ -713,6 +725,7 @@ static void r2pm_envhelp(bool verbose) {
 			"R2PM_PLUGDIR\n"\
 			"R2PM_BINDIR\n"\
 			"R2PM_OFFLINE\n"\
+			"R2PM_PREFIX\n"\
 			"R2PM_LEGACY\n"\
 			"R2PM_DBDIR\n"\
 			"R2PM_GITDIR\n");
