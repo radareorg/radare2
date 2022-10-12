@@ -1605,12 +1605,14 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs, objc_cac
 			char *super = strdup (klass->name);
 			super[idx++] = 0;
 			char *cpar = strchr (super + idx, ')');
-			if (cpar) *cpar = 0;
-			char *name = strdup (super + idx);
+			if (cpar) {
+				*cpar = 0;
+			}
+		//	char *name = strdup (super + idx);
 			free (klass->super);
 			klass->super = super;
-			free (klass->name);
-			klass->name = name;
+		//	free (klass->name);
+		//	klass->name = name;
 		}
 		r_list_append (ret, klass);
 	}

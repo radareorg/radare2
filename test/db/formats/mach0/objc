@@ -67,7 +67,7 @@ NAME=objc categories (swift)
 FILE=bins/mach0/TestSwiftObjc
 CMDS=ic~ class
 EXPECT=<<EOF
-0x100003078 [0x100001ad0 - 0x100001ad0]      0 ? class 0 TestSwiftObjc.ThisIsASwiftClass(TEST)
+0x100003078 [0x100001ad0 - 0x100001ad0]      0 objc class 0 TestSwiftObjc.ThisIsASwiftClass(TEST) :: TestSwiftObjc.ThisIsASwiftClass
 0x00001f34 [0x00001f34 - 0x00001f34]      0 swift class 0 ThisIsASwiftClass
 0x1000031e8 [0x100001d80 - 0x100001d80]      0 objc class 0 TestSwiftObjc.ThisIsASwiftClass :: NSObject
 EOF
