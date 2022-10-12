@@ -1857,7 +1857,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 								I.buffer.index = 0;
 								break;
 							}
-							r_cons_readchar ();
+							r_cons_readchar (); // should be '5'
+							ch = r_cons_readchar ();
 						}
 #if __WINDOWS__
 						else {
@@ -1872,15 +1873,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							break;
 						case 0x44:
 							// previous word
-							for (i = I.buffer.index; i > 0; i--) {
-								if (I.buffer.data[i] == ' ') {
-									I.buffer.index = i - 1;
-									break;
-								}
-							}
-							if (I.buffer.data[i] != ' ') {
-								I.buffer.index = 0;
-							}
+							i = I.buffer.index;
+							do {
+								i--;
+							} while (i > 0 && I.buffer.data[i-1] != ' ');
+							I.buffer.index = i;
 							break;
 						case 0x42:
 							// end
