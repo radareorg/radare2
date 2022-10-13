@@ -308,7 +308,7 @@ static ut32 arm_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 			first = false;
 		}
 	}
-	arminsn->str_asm = r_str_appendf (arminsn->str_asm, " }%s", psr ? "^" : "");
+	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "}%s", psr ? "^" : "");
 	return 0;
 }
 
@@ -419,7 +419,7 @@ static ut16 thumb_disasm_pushpop(struct winedbg_arm_insn *arminsn, ut16 inst) {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s", first ? "" : ", ", load ? "pc" : "lr");
 	}
 
-	arminsn->str_asm = r_str_append (arminsn->str_asm, " }");
+	arminsn->str_asm = r_str_append (arminsn->str_asm, "}");
 	return 0;
 }
 
@@ -437,7 +437,7 @@ static ut16 thumb_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut16 inst)
 		}
 	}
 
-	arminsn->str_asm = r_str_append (arminsn->str_asm, " }");
+	arminsn->str_asm = r_str_append (arminsn->str_asm, "}");
 	return 0;
 }
 

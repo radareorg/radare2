@@ -745,7 +745,7 @@ static st32 getregmemend(const char *input) {
 static st32 getreglist(const char *input) {
 	st32 res;
 
-	if (!input || (strlen (input) < 2) || (*input != '{') || !r_str_endswith (input, " }")) {
+	if (!input || (strlen (input) < 2) || (*input != '{') || !r_str_endswith (input, "}")) {
 		return -1;
 	}
 	if (*input) {

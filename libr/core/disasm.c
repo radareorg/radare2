@@ -3523,7 +3523,7 @@ static void ds_print_vliw(RDisasmState *ds, bool after) {
 		if (c > 0) {
 			ds->vliw_count--;
 			if (c == 1) {
-				r_cons_printf (" }");
+				r_cons_printf ("}");
 			}
 		}
 	} else {
