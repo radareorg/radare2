@@ -571,7 +571,7 @@ static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, 
 			free (p);
 		}
 		free (var);
-		r_cons_println (" };");
+		r_cons_println ("};");
 		space = "";
 		if (match) {
 			break;
@@ -614,7 +614,7 @@ static void print_enum_in_c_format(Sdb *TDB, const char *arg, bool multiline) {
 					}
 					r_list_free (list);
 				}
-				r_cons_println (multiline? "\n};": " };");
+				r_cons_println (multiline? "\n};": "};");
 				if (match) {
 					break;
 				}

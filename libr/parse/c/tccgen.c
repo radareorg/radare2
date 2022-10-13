@@ -951,7 +951,7 @@ do_decl:
 		ut64 iota = 0LL;
 		/* non empty enums are not allowed */
 		if (a == TOK_ENUM) {
-			if (!strcmp (name, "{ ")) {
+			if (!strcmp (name, "{")) {
 				// UNNAMED
 				eprintf ("anonymous enums are ignored\n");
 			}
@@ -972,7 +972,7 @@ do_decl:
 					//eprintf ("TOK %d %s\n", s1->ch, valstr);
 				}
 				// TODO: use is_typedef here
-				if (strcmp (name, "{ ")) {
+				if (strcmp (name, "{")) {
 					const char *varstr = get_tok_str (s1, v, NULL);
 					tcc_appendf (s1, "%s=enum\n", name);
 					tcc_appendf (s1, "[+]enum.%s=%s\n", name, varstr);

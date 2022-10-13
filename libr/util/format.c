@@ -98,7 +98,7 @@ static void r_print_format_u128(const RPrint* p, int endian, int mode,
 	}
 	if (MUSTSEEJSON) {
 		const char *end = endian? "big": "little";
-		p->cb_printf ("\",\"endian\":\"%s\",\"ctype\":\"uint128_t\" }", end);
+		p->cb_printf ("\",\"endian\":\"%s\",\"ctype\":\"uint128_t\"}", end);
 	}
 }
 
@@ -172,7 +172,7 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 			p->cb_printf (" ]");
 		}
 		if (MUSTSEEJSON) {
-			p->cb_printf (" }");
+			p->cb_printf ("}");
 		}
 	}
 }
@@ -234,10 +234,10 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 				}
 				i++;
 			}
-			p->cb_printf (" ]");
+			p->cb_printf ("]");
 		}
 		if (MUSTSEEJSON) {
-			p->cb_printf (" }");
+			p->cb_printf ("}");
 		}
 	}
 }
@@ -320,10 +320,10 @@ static int r_print_format_uleb(const RPrint* p, int endian, int mode,
 					elem--;
 				}
 			}
-			p->cb_printf (" ]");
+			p->cb_printf ("]");
 		}
 		if (MUSTSEEJSON) {
-			p->cb_printf (" }");
+			p->cb_printf ("}");
 		}
 	}
 	return offset;
@@ -387,10 +387,10 @@ static void r_print_format_char(const RPrint* p, int endian, int mode,
 				}
 				i++;
 			}
-			p->cb_printf (" ]");
+			p->cb_printf ("]");
 		}
 		if (MUSTSEEJSON) {
-			p->cb_printf (" }");
+			p->cb_printf ("}");
 		}
 	}
 }
@@ -452,10 +452,10 @@ static void r_print_format_decchar(const RPrint* p, int endian, int mode, const 
 				}
 				i++;
 			}
-			p->cb_printf (" ]");
+			p->cb_printf ("]");
 		}
 		if (MUSTSEEJSON) {
-			p->cb_printf (" }");
+			p->cb_printf ("}");
 		}
 	}
 }
@@ -472,7 +472,7 @@ static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 
 	if (MUSTSEEJSON) {
 		char *encstr = r_str_utf16_encode ((const char *)buffer, -1);
 		if (encstr) {
-			p->cb_printf ("%"PFMT64d",\"string\":\"%s\" }", seeki, encstr);
+			p->cb_printf ("%"PFMT64d",\"string\":\"%s\"}", seeki, encstr);
 			free (encstr);
 		}
 	} else if (MUSTSEESTRUCT) {
@@ -589,7 +589,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode, const cha
 		}
 		free (timestr);
 		if (MUSTSEEJSON) {
-			p->cb_printf (" }");
+			p->cb_printf ("}");
 		}
 	}
 }
@@ -672,7 +672,7 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode, const char
 			}
 			p->cb_printf (" ]");
 		}
-		p->cb_printf (" }");
+		p->cb_printf ("}");
 	}
 }
 
@@ -741,7 +741,7 @@ static void r_print_format_int(const RPrint* p, int endian, int mode, const char
 			}
 			p->cb_printf (" ]");
 		}
-		p->cb_printf (" }");
+		p->cb_printf ("}");
 	}
 }
 
@@ -827,9 +827,9 @@ static void r_print_format_octal(const RPrint* p, int endian, int mode, const ch
 				}
 				i += 4;
 			}
-			p->cb_printf (" ]");
+			p->cb_printf ("]");
 		}
-		p->cb_printf (" }");
+		p->cb_printf ("}");
 	}
 }
 
@@ -901,9 +901,9 @@ static void r_print_format_hexflag(const RPrint* p, int endian, int mode, const 
 				}
 				i += 4;
 			}
-			p->cb_printf (" ]");
+			p->cb_printf ("]");
 		}
-		p->cb_printf (" }");
+		p->cb_printf ("}");
 	}
 }
 
@@ -1000,7 +1000,7 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode, const 
 		}
 		p->cb_printf ("]");
 		if (MUSTSEEJSON) {
-			p->cb_printf (" }");
+			p->cb_printf ("}");
 		}
 		return size;
 	}
@@ -1054,7 +1054,7 @@ static void r_print_format_float(const RPrint* p, int endian, int mode, const ch
 			}
 		}
 		if (MUSTSEEJSON) {
-			p->cb_printf (" }");
+			p->cb_printf ("}");
 		}
 	}
 }
@@ -1110,7 +1110,7 @@ static void r_print_format_long_double(const RPrint* p, int endian, int mode, co
 			}
 		}
 		if (MUSTSEEJSON) {
-			p->cb_printf (" }");
+			p->cb_printf ("}");
 		}
 	}
 }
@@ -1166,7 +1166,7 @@ static void r_print_format_double(const RPrint* p, int endian, int mode, const c
 			}
 		}
 		if (MUSTSEEJSON) {
-			p->cb_printf (" }");
+			p->cb_printf ("}");
 		}
 	}
 }
@@ -1273,7 +1273,7 @@ static void r_print_format_word(const RPrint* p, int endian, int mode, const cha
 			}
 			p->cb_printf (" ]");
 		}
-		p->cb_printf (" }");
+		p->cb_printf ("}");
 	}
 }
 
@@ -1385,7 +1385,7 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 		if (overflow) {
 			p->cb_printf (",\"overflow\":true");
 		}
-		p->cb_printf (" }");
+		p->cb_printf ("}");
 	}
 }
 
@@ -1428,7 +1428,7 @@ static void r_print_format_nulltermwidestring(const RPrint* p, const int len, in
 				p->cb_printf (".");
 			}
 		}
-		p->cb_printf ("\" }");
+		p->cb_printf ("\"}");
 	}
 }
 
@@ -1442,13 +1442,13 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 	bitfield = r_type_enum_getbitfield (p->sdb_types, fmtname, addr);
 	if (bitfield && *bitfield) {
 		if (MUSTSEEJSON) {
-			p->cb_printf ("\"%s\" }", bitfield);
+			p->cb_printf ("\"%s\"}", bitfield);
 		} else if (MUSTSEE) {
 			p->cb_printf ("%s (bitfield) = %s\n", fieldname, bitfield);
 		}
 	} else {
 		if (MUSTSEEJSON) {
-			p->cb_printf ("\"`tb %s 0x%"PFMT64x"`\" }", fmtname, addr);
+			p->cb_printf ("\"`tb %s 0x%"PFMT64x"`\"}", fmtname, addr);
 		} else if (MUSTSEE) {
 			p->cb_printf ("%s (bitfield) = `tb %s 0x%"PFMT64x"`\n",
 				fieldname, fmtname, addr);
@@ -1473,7 +1473,7 @@ static void r_print_format_enum(const RPrint* p, ut64 seeki, char *fmtname,
 		if (mode & R_PRINT_DOT) {
 			p->cb_printf ("%s.%s", fmtname, enumvalue);
 		} else if (MUSTSEEJSON) {
-			p->cb_printf ("%"PFMT64d",\"label\":\"%s\",\"enum\":\"%s\" }",
+			p->cb_printf ("%"PFMT64d",\"label\":\"%s\",\"enum\":\"%s\"}",
 				addr, enumvalue, fmtname);
 		} else if (MUSTSEE) {
 			p->cb_printf ("%s (enum %s) = 0x%"PFMT64x" ; %s\n",
@@ -1483,7 +1483,7 @@ static void r_print_format_enum(const RPrint* p, ut64 seeki, char *fmtname,
 		}
 	} else {
 		if (MUSTSEEJSON) {
-			p->cb_printf ("%"PFMT64d",\"enum\":\"%s\" }", addr, fmtname);
+			p->cb_printf ("%"PFMT64d",\"enum\":\"%s\"}", addr, fmtname);
 		} else if (MUSTSEE) {
 			p->cb_printf ("%s (enum %s) = 0x%"PFMT64x"\n",//`te %s 0x%x`\n",
 				fieldname, fmtname, addr); //enumvalue); //fmtname, addr);
@@ -1508,7 +1508,7 @@ static void r_print_format_register(const RPrint* p, int mode,
 				p->cb_printf ("0x%08" PFMT64x "\n", p->get_register_value (p->reg, ri));
 			}
 		} else if (MUSTSEEJSON) {
-			p->cb_printf ("%"PFMT64d" }", p->get_register_value (p->reg, ri));
+			p->cb_printf ("%"PFMT64d"}", p->get_register_value (p->reg, ri));
 		}
 	} else {
 		p->cb_printf ("Register %s does not exists\n", name);
@@ -1606,9 +1606,9 @@ static void r_print_format_num(const RPrint *p, int endian, int mode, const char
 				}
 				i += bytes;
 			}
-			p->cb_printf (" ]");
+			p->cb_printf ("]");
 		}
-		p->cb_printf (" }");
+		p->cb_printf ("}");
 	}
 }
 
@@ -2184,7 +2184,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (otimes > times) {
 					p->cb_printf (",");
 				}
-				p->cb_printf ("[{\"index\":%d,\"offset\":%"PFMT64d" },", otimes-times, seek+i);
+				p->cb_printf ("[{\"index\":%d,\"offset\":%"PFMT64d"},", otimes-times, seek+i);
 			} else if (mode) {
 				p->cb_printf ("0x%08"PFMT64x" [%d] {\n", seek + i, otimes-times);
 			}
@@ -2482,7 +2482,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			int oi = i;
 			if (isptr == NULLPTR) {
 				if (MUSTSEEJSON) {
-					p->cb_printf ("\"NULL\" }");
+					p->cb_printf ("\"NULL\"}");
 				} else if (MUSTSEE) {
 					p->cb_printf (" NULL\n");
 				}
@@ -2503,7 +2503,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					{
 						st32 sw = (st32) r_read_le32 (buf + i);
 						if (MUSTSEEJSON) {
-							p->cb_printf ("\"0x%"PFMT64x"\" }", (ut64)seeki + sw);
+							p->cb_printf ("\"0x%"PFMT64x"\"}", (ut64)seeki + sw);
 						} else if (MUSTSEE) {
 							p->cb_printf ("0x%"PFMT64x, (ut64)seeki + sw);
 						} else {
@@ -2691,7 +2691,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					}
 					if (MUSTSEEJSON) {
 						if (isptr) {
-							p->cb_printf ("%"PFMT64d" },", seeki);
+							p->cb_printf ("%"PFMT64d"},", seeki);
 						} else {
 							p->cb_printf ("[");
 						}
@@ -2816,7 +2816,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				p->cb_printf ("\n");
 			}
 			if (mode & R_PRINT_DOT) {
-				p->cb_printf (" }");
+				p->cb_printf ("}");
 			}
 			if (mode & R_PRINT_SEEFLAGS && isptr != NULLPTR) {
 				int sz = i - oi;
@@ -2861,7 +2861,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			if (MUSTSEEJSON) {
 				p->cb_printf ("]");
 			} else if (mode) {
-				p->cb_printf (" }\n");
+				p->cb_printf ("}\n");
 			}
 		}
 		arg = orig;
@@ -2871,7 +2871,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		p->cb_printf("]\n");
 	}
 	if (MUSTSEESTRUCT && slide == 0) {
-		p->cb_printf (" }\n");
+		p->cb_printf ("}\n");
 	}
 	if (mode & R_PRINT_DOT) {
 		p->cb_printf ("\"];\n}\n");
