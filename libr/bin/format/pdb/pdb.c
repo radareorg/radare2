@@ -1003,7 +1003,7 @@ static void print_struct(const char *name, const int size, const RList *members,
 		printf ("  %s %s; // offset +0x%x\n", type_name, member_name, offset);
 		R_FREE (type_name);
 	}
-	printf (" };\n");
+	printf ("};\n");
 }
 
 /**
@@ -1036,7 +1036,7 @@ static void print_union(const char *name, const int size, const RList *members, 
 		printf ("  %s %s;\n", type_name, member_name);
 		R_FREE (type_name);
 	}
-	printf (" };\n");
+	printf ("};\n");
 }
 
 /**
@@ -1064,7 +1064,7 @@ static void print_enum(const char *name, const char *type, const RList *members,
 		}
 		printf ("  %s = %d,\n", member_name, value);
 	}
-	printf (" };\n");
+	printf ("};\n");
 }
 
 /**

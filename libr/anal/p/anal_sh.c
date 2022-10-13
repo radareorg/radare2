@@ -785,7 +785,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 				"*,"
 				"0xffffffff00000000,&,>>,mach,=," //MACH > mach
 				"0xffffffff,&,macl,=,"
-			" }{," //if S == 1
+			"}{," //if S == 1
 				S16_EXT("r%d,[2]")"," //@Rn sign extended
 				S16_EXT("r%d,[2]")"," //@Rm sign extended
 				"*"
@@ -793,11 +793,11 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 				"31,$o,?{," //if overflow
 					"macl,0x80000000,&,?{,"
 						"0x7fffffff,macl,=,"
-					" }{,"
+					"}{,"
 						"0x80000000,macl,=,"
-					" },"
-				" },"
-			" },"
+					"},"
+				"},"
+			"},"
 			"2,r%d,+=," //Rn+=2
 			"2,r%d,+=,", //Rm+=2
 			GET_TARGET_REG (code), GET_SOURCE_REG (code),

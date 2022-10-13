@@ -1493,7 +1493,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		if (insn->id == ARM64_INS_FCCMP || insn->id == ARM64_INS_FCCMPE) {
 			r_strbuf_append (&op->esil, ",");
 			arm_prefix_cond (op, insn->detail->arm64.cc);
-			r_strbuf_appendf (&op->esil, " }{,pstate,1,28,1,<<,-,&,0x%"PFMT64x",|,pstate,:=", IMM64(2) << 28);
+			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,0x%"PFMT64x",|,pstate,:=", IMM64(2) << 28);
 		}
 		break;
 	case ARM64_INS_FCVT:
@@ -1900,7 +1900,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		if (insn->id == ARM64_INS_CCMP || insn->id == ARM64_INS_CCMN) {
 			r_strbuf_append (&op->esil, ",");
 			arm_prefix_cond (op, insn->detail->arm64.cc);
-			r_strbuf_appendf (&op->esil, " }{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64 (2));
+			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64 (2));
 		}
 		break;
 	case ARM64_INS_CMN:
@@ -1914,7 +1914,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		if (insn->id == ARM64_INS_CCMN) {
 			r_strbuf_append (&op->esil, ",");
 			arm_prefix_cond (op, insn->detail->arm64.cc);
-			r_strbuf_appendf (&op->esil, " }{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64 (2));
+			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64 (2));
 		}
 		break;
 	case ARM64_INS_FCSEL:
@@ -3203,7 +3203,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			"8,0x00ff,%s,&,<<,%s,|=,"
 			"0x8000,%s,&,?{,"
 				"0xffff0000,%s,|=,"
-			" }",
+			"}",
 			r1, r0, r1, r0, r0, r0);
 		break;
 	}

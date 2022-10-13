@@ -4684,7 +4684,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 	  {
 	    d_append_string (dpi, "{default arg#");
 	    d_append_num (dpi, local_name->u.s_unary_num.num + 1);
-	    d_append_string (dpi, " }::");
+	    d_append_string (dpi, "}::");
 	    local_name = local_name->u.s_unary_num.sub;
 	  }
 	d_print_comp (dpi, options, local_name);
@@ -5868,7 +5868,7 @@ d_print_mod_list (struct d_print_info *dpi, int options,
 	{
 	  d_append_string (dpi, "{default arg#");
 	  d_append_num (dpi, dc->u.s_unary_num.num + 1);
-	  d_append_string (dpi, " }::");
+	  d_append_string (dpi, "}::");
 	  dc = dc->u.s_unary_num.sub;
 	}
 

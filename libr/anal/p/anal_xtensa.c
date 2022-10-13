@@ -742,7 +742,7 @@ static void esil_sign_extend(RStrBuf *esil, ut8 bit) {
 		"?{ "	CM
 			"0x%x"	CM
 			"|"	CM
-		" }"	CM,
+		"}"	CM,
 		bit_mask,
 		extend_mask
 	);
@@ -1053,7 +1053,7 @@ static void esil_move_conditional(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 				"%s%d"	CM
 				"%s%d"	CM
 				"="	CM
-			" }",
+			"}",
 		xtensa_regfile_shortname (isa, cond_rf),
 		cond,
 		compare_op,
@@ -1186,7 +1186,7 @@ static void esil_branch_compare_imm(xtensa_isa isa, xtensa_opcode opcode,
 	// PC will be already incremented by 3
 	esil_push_signed_imm (&op->esil, branch_imm + 4 - 3);
 
-	r_strbuf_append (&op->esil, "pc" CM "+=" CM " }");
+	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
 }
 
 static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
@@ -1249,7 +1249,7 @@ static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
 
 	esil_push_signed_imm (&op->esil, branch_imm);
 
-	r_strbuf_append (&op->esil, "pc" CM "+=" CM " }");
+	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
 }
 
 static void esil_branch_compare_single(xtensa_isa isa, xtensa_opcode opcode,
@@ -1307,7 +1307,7 @@ static void esil_branch_compare_single(xtensa_isa isa, xtensa_opcode opcode,
 
 	esil_push_signed_imm (&op->esil, branch_imm);
 
-	r_strbuf_append (&op->esil, "pc" CM "+=" CM " }");
+	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
 }
 
 static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
@@ -1384,7 +1384,7 @@ static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
 
 	esil_push_signed_imm (&op->esil, branch_imm);
 
-	r_strbuf_append (&op->esil, "pc" CM "+=" CM " }");
+	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
 }
 
 static void esil_bitwise_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
@@ -1492,7 +1492,7 @@ static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xten
 		&op->esil,
 			"pc"	CM
 			"+="	CM
-			" }"
+			"}"
 	);
 }
 
@@ -1556,7 +1556,7 @@ static void esil_branch_check_bit(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 		&op->esil,
 			"pc"	CM
 			"+="	CM
-			" }"
+			"}"
 	);
 }
 
@@ -1585,13 +1585,13 @@ static void esil_abs_neg(xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 				"0"     CM
 				"%s%d"	CM
 				"-"     CM
-				" }"	CM
+				"}"	CM
 				"0"	CM
 				"%s%d"	CM
 				">="	CM
 				"?{ "	CM
 				"%s%d"	CM
-				" }"	CM,
+				"}"	CM,
 			xtensa_regfile_shortname (isa, src_rf),
 			src_reg,
 			xtensa_regfile_shortname (isa, src_rf),

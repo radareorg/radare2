@@ -300,7 +300,7 @@ static ut32 arm_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short i;
 	bool first = true;
 
-	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s%s %s%s, { ", load ? "ldm" : "stm", tbl_addrmode[addrmode],
+	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s%s %s%s, {", load ? "ldm" : "stm", tbl_addrmode[addrmode],
 			get_cond (inst), tbl_regs[get_nibble (inst, 4)], writeback ? "!" : "");
 	for (i = 0; i < 16; i++, inst >>= 1) {
 		if (inst & 1) {
@@ -407,7 +407,7 @@ static ut16 thumb_disasm_pushpop(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	short i;
 	bool first = true;
 
-	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s { ", load ? "pop" : "push");
+	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s {", load ? "pop" : "push");
 
 	for (i = 0; i < 8; i++, inst >>= 1) {
 		if (inst & 1) {
@@ -428,7 +428,7 @@ static ut16 thumb_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut16 inst)
 	short i;
 	bool first = true;
 
-	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s %s!, { ", load ? "ldmia" : "stmia", tbl_regs[(inst >> 8) & 0x07]);
+	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s %s!, {", load ? "ldmia" : "stmia", tbl_regs[(inst >> 8) & 0x07]);
 
 	for (i = 0; i < 8; i++, inst >>= 1) {
 		if (inst & 1) {
