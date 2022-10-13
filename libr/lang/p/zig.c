@@ -85,7 +85,7 @@ static bool lang_zig_run(RLang *lang, const char *code, int len) {
 "\n}\n" \
 "pub fn r2cmd(core: &u8, cmd: u8) &u8 {\n" \
 "  return r_core_cmd_str(core, cmd);\n" \
-" }\n";
+"}\n";
 		fputs (zig_header, fd);
 		fputs (code, fd);
 		fputs (zig_footer, fd);

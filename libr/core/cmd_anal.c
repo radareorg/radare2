@@ -380,8 +380,8 @@ static const char *help_detail_ae[] = {
 	">>>=", "", "ror ax, bx => bx,ax,>>>=  # rotate right",
 	"<<<=", "", "rol ax, bx => bx,ax,<<<=  # rotate left",
 	"?{ ", "", "if popped value != 0 run the block until }",
-	" }{ ", "", "else block",
-	" }", "", "end of conditional block",
+	"}{", "", "else block",
+	"}", "", "end of conditional block",
 	"NAN", "", "checks if result in stack is not a number",
 	"I2D", "", "signed to double",
 	// "S2D", "", "signed to double",
@@ -10254,7 +10254,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 			font);
 		r_agraph_foreach (core->graph, agraph_print_node_dot, core);
 		r_agraph_foreach_edge (core->graph, agraph_print_edge_dot, core);
-		r_cons_printf (" }\n");
+		r_cons_printf ("}\n");
 		break;
 	}
 	case '*': // "agg*" -

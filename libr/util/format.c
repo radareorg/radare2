@@ -2473,7 +2473,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (type) {
 					p->cb_printf ("%*c%s %s; // ", ident, ' ', type, fieldname);
 				} else {
-					p->cb_printf ("%*cstruct %s { ", ident, ' ', fieldname);
+					p->cb_printf ("%*cstruct %s {", ident, ' ', fieldname);
 				}
 				free (type);
 			}

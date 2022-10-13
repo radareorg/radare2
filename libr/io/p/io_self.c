@@ -145,7 +145,7 @@ static int serenity_debug_regions(RIO *io, int pid) {
 	char *s = r_str_ndup (vmdata, sz);
 	char *p = s;
 	while (true) {
-		char *next = strstr (p, " },");
+		char *next = strstr (p, "},");
 		if (!next) {
 			next = strchr (p, '}');
 			if (!next) {

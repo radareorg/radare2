@@ -20,7 +20,7 @@ static const char *r2go_body = \
 	"\n"
 	"func r2cmd(core unsafe.Pointer, c string) string {\n"
 	"	return C.GoString(C.r_core_cmd_str(core, C.CString(c)))\n"
-	" }\n"
+	"}\n"
 	"\n"
 	"func main() {}\n";
 
@@ -104,7 +104,7 @@ static bool __gorun(RLang *lang, const char *code, int len) {
 		}
 		fputs (body, fd);
 		if (!has_entry) {
-			fputs (" }\n", fd);
+			fputs ("}\n", fd);
 		}
 		fclose (fd);
 		// system ("cat tmp.go");
@@ -158,7 +158,7 @@ static bool lang_go_run(RLang *lang, const char *code, int len) {
 #define r_lang_go_example ""\
 	"pub fn entry(r2 &R2) {\n" \
 	"  println(r2.cmd('?E Hello World'))\n" \
-	" }\n"
+	"}\n"
 
 static RLangPlugin r_lang_plugin_go = {
 	.name = "go",

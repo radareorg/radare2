@@ -3,7 +3,7 @@
 /^kv3opc_t kv3_v1_optab/,/Number of instructions/{
 	/^kv3opc_t kv3_v1_optab/d;
 	/Number of instructions/d;
-	/{ "/{
+	/{"/{
 		N;
 		s/ "",//;
 

@@ -723,7 +723,7 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 		}
 	}
 	if (!fmt) {
-		r_cons_printf (" }\n");
+		r_cons_printf ("}\n");
 	}
 
 	r_graph_free (aux_data.graph);
@@ -2201,7 +2201,7 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 				}
 			}
 			pj_end (pj); // "]"
-			pj_end (pj); // " }"
+			pj_end (pj); // "}"
 			r_cons_printf ("%s", pj_string (pj));
 			pj_free (pj);
 		}

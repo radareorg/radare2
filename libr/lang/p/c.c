@@ -113,7 +113,7 @@ static bool lang_c_run(RLang *lang, const char *code, int len) {
 	"    char *s = r_core_cmd_str (core, \"?E hello world\");\n"\
 	"    printf(\"%s\", s);\n"\
 	"    free (s);\n"\
-	" }\n"\
+	"}\n"\
 	""
 
 static RLangPlugin r_lang_plugin_c = {

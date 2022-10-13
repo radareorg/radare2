@@ -3529,9 +3529,9 @@ static void ds_print_vliw(RDisasmState *ds, bool after) {
 	} else {
 		if (v > 0) {
 			if (c > 0) {
-				r_cons_printf (" }{ ");
+				r_cons_printf ("}{");
 			} else {
-				r_cons_printf ("{ ");
+				r_cons_printf ("{");
 			}
 			ds->vliw_count = v;
 		}
