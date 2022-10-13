@@ -1166,7 +1166,7 @@ static const char *get_dwarf_reg_name(const char *arch, int reg_num, VariableLoc
 		}
 	}
 	// this can be very anoying as its printed over 9000 times
-	R_LOG_WARN ("get_dwarf_reg_name: unsupported arch: '%s' with %d bits", arch, bits);
+	R_LOG_DEBUG ("get_dwarf_reg_name: unsupported arch: '%s' with %d bits", arch, bits);
 	*kind = LOCATION_UNKNOWN;
 	return "unsupported_reg";
 }
