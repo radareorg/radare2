@@ -388,7 +388,7 @@ print_insn_hppa (bfd_vma memaddr, disassemble_info *info)
 #endif
 	  (*info->fprintf_func) (info->stream, "%s", opcode->name);
 
-	  if (!strchr ("cfCY?-+nHNZFIuv{ ", opcode->args[0])) {
+	  if (!strchr ("cfCY?-+nHNZFIuv{", opcode->args[0])) {
 		  (*info->fprintf_func) (info->stream, " ");
 	  }
 	  for (s = opcode->args; *s != '\0'; ++s)

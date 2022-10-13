@@ -3874,8 +3874,7 @@ print_insn_coprocessor (bfd_vma pc,
 			case '3': /* List */
 			  func (stream, "{ ");
 			  regno = (given >> 12) & 0x0000000f;
-			  if (single)
-			    {
+			  if (single) {
 			      regno <<= 1;
 			      regno += (given >> 22) & 1;
 			  } else {
