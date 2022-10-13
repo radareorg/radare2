@@ -4611,9 +4611,9 @@ ARC700_rtie_insn (arc_insn insn)
     ld/ldb/ldw r0, [gp, var@sda]  1
     ldw.as  r0, [gp, var@sda]     2
 
-    ld_s r0, [gp, var@sda]        10
-    ldb_ r0,  [gp, var@sda]       11
-    ldw_s  r0, [gp, var@sda]      12
+    ld_s r0, [gp, var@sda]       10
+    ldb_ r0, [gp, var@sda]       11
+    ldw_s r0, [gp, var@sda]      12
 
     Any other insn                -1
 

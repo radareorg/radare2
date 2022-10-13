@@ -3872,7 +3872,7 @@ print_insn_coprocessor (bfd_vma pc,
 			  break;
 
 			case '3': /* List */
-			  func (stream, "{ ");
+			  func (stream, "{");
 			  regno = (given >> 12) & 0x0000000f;
 			  if (single) {
 			      regno <<= 1;
@@ -3903,7 +3903,7 @@ print_insn_coprocessor (bfd_vma pc,
 				    regno + count);
 			    }
 
-			  func (stream, " }");
+			  func (stream, "}");
 		      } else if (*c == '4') {
 			      func (stream, ", %c%d", single ? 's' : 'd',
 				      regno + 1);
@@ -4219,7 +4219,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			int stride = (enc[type] >> 4) + 1;
 			int ix;
 
-			func (stream, "{ ");
+			func (stream, "{");
 			if (stride > 1) {
 				for (ix = 0; ix != n; ix++) {
 					func (stream, "%sd%d", ix ? "," : "", rd + ix * stride);
@@ -4304,7 +4304,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			    break;
                           }
 
-			func (stream, "{ ");
+			func (stream, "{");
 			for (i = 0; i < length; i++) {
 				func (stream, "%sd%d[%d]", (i == 0) ? "" : ",",
 					rd + i * stride, idx);
@@ -4340,7 +4340,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 				stride++;
 			}
 
-			func (stream, "{ ");
+			func (stream, "{");
 			if (stride > 1) {
 				for (ix = 0; ix != n; ix++) {
 					func (stream, "%sd%d[]", ix ? "," : "", rd + ix * stride);
@@ -4879,7 +4879,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 					  int started = 0;
 					  int reg;
 
-					  func (stream, "{ ");
+					  func (stream, "{");
 					  for (reg = 0; reg < 16; reg++) {
 						  if ((given & (1 << reg)) != 0) {
 							  if (started) {
@@ -4889,7 +4889,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 							  func (stream, "%s", arm_regnames[reg]);
 						  }
 					  }
-					  func (stream, " }");
+					  func (stream, "}");
 					  if (!started) {
 						  is_unpredictable = TRUE;
 					  }
@@ -5325,7 +5325,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 				  int started = 0;
 				  int reg;
 
-				  func (stream, "{ ");
+				  func (stream, "{");
 
 				  /* It would be nice if we could spot
 		     ranges, and generate the rS-rE format: */
@@ -5354,7 +5354,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 					  func (stream, "%s", arm_regnames[15] /* "pc" */);
 				  }
 
-				  func (stream, " }");
+				  func (stream, "}");
 			  } break;
 
 			  case 'W':
@@ -5820,7 +5820,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 				  int started = 0;
 				  int reg;
 
-				  func (stream, "{ ");
+				  func (stream, "{");
 				  for (reg = 0; reg < 16; reg++) {
 					  if ((given & (1 << reg)) != 0) {
 						  if (started) {
@@ -5830,7 +5830,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 						  func (stream, "%s", arm_regnames[reg]);
 					  }
 				  }
-				  func (stream, " }");
+				  func (stream, "}");
 			  } break;
 
 			  case 'E': {
