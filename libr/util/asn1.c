@@ -34,8 +34,9 @@ static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length) {
 }
 
 static RASN1Object *asn1_parse_header(const ut8 *buffer, ut32 length, const ut8 *start_pointer) {
-	ut8 head, length8, byte;
+	ut8 length8, byte;
 	ut64 length64;
+
 	if (!buffer || length < 3) {
 		return NULL;
 	}
@@ -44,7 +45,7 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer, ut32 length, const ut8 
 	if (!object) {
 		return NULL;
 	}
-	head = buffer[0];
+	ut8 head = buffer[0];
 	object->offset = start_pointer ? (buffer - start_pointer) : 0;
 	object->klass = head & ASN1_CLASS;
 	object->form = head & ASN1_FORM;
@@ -77,7 +78,6 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer, ut32 length, const ut8 
 		object->length = (ut32) length8;
 		object->sector = buffer + 2;
 	}
-
 	if (object->tag == TAG_BITSTRING && object->sector[0] == 0) {
 		if (object->length > 0) {
 			object->sector++; // real sector starts + 1

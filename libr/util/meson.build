@@ -50,7 +50,7 @@ r_util_sources = [
   'qrcode.c',
   'queue.c',
   'asn1.c',
-  'astr.c',
+  'asn1_str.c',
   'axml.c',
   'pkcs7.c',
   'x509.c',

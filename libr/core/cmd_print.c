@@ -103,18 +103,18 @@ static const char *help_msg_p6[] = {
 };
 
 static const char *help_msg_pF[] = {
-	"Usage: pF[apdbA]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml",
-	"pFa", "[len]", "decode ASN1 from current block",
-	"pFaq", "[len]", "decode ASN1 from current block (quiet output)",
-	"pFb", "[len]", "decode raw proto buffers",
-	"pFbv", "[len]", "decode raw proto buffers (verbose)",
-	"pFbj", "[len]", "decode raw proto buffers in JSON format",
-	"pFo", "[len]", "decode ASN1 OID",
-	"pFp", "[len]", "decode PKCS7",
-	"pFx", "[len]", "Same with X509",
-	"pFX", "[len]", "print decompressed xz block",
-	"pFA", "[len]", "decode Android Binary XML from current block",
+	"Usage: pF[apdbA][*vqj]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml",
+	"pFa", " [len]", "decode ASN1/DER from current block (PEM is B64(DER))",
+	"pFaq", " [len]", "decode ASN1 from current block (quiet output)",
+	"pFA", " [len]", "decode Android Binary XML from current block",
+	"pFb", " [len]", "decode raw proto buffers",
+	"pFbv", " [len]", "decode raw proto buffers (verbose)",
+	"pFbj", " [len]", "decode raw proto buffers in JSON format",
 	"pFB", "[j] [len]", "decode iOS Binary PLIST from current block",
+	"pFo", "[j] [len]", "decode ASN1 OID",
+	"pFp", " [len]", "decode PKCS7",
+	"pFx", " [len]", "Same with X509",
+	"pFX", " [len]", "print decompressed xz block",
 	NULL
 };
 
@@ -1291,16 +1291,12 @@ static void cmd_p_minus_e(RCore *core, ut64 at, ut64 ate) {
 }
 
 static void print_format_help_help_help_help(RCore *core) {
-	const char *help_msg[] = {
-		"    STAHP IT!!!", "", "",
-		NULL
-	};
-	r_core_cmd_help (core, help_msg);
+	R_LOG_WARN ("STOP IT");
 }
 
 static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, int size) {
 	switch (*input) {
-	case 'a':
+	case 'a': // "pFa" // DER/ASN1 encoding
 		{
 			asn1_setformat (input[1] != 'q');
 			RASN1Object *asn1 = r_asn1_create_object (data, size, data);
@@ -1316,7 +1312,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 			}
 		}
 		break;
-	case 'X': // "pFx" x509
+	case 'X': // "pFX" un-xz
 		{
 			size_t out_len = 0;
 			ut8 *out = r_sys_unxz (data, size, &out_len);
@@ -1340,6 +1336,19 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				r_x509_free_certificate (x509);
 			} else {
 				R_LOG_ERROR ("Malformed object: did you supply enough data? try to change the block size (see b?)");
+			}
+		}
+		break;
+	case 'o': // "pFo" asn1 oid
+		{
+			RASN1Object *asn1 = r_asn1_create_object (data, size, NULL);
+			if (asn1) {
+				RASN1String *str1 = r_asn1_stringify_oid (data, size);
+				if (str1) {
+					r_cons_printf ("%s\n", str1->string);
+					r_asn1_free_string (str1);
+				}
+				r_asn1_free_object (asn1);
 			}
 		}
 		break;
