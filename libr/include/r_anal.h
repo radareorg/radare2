@@ -1249,7 +1249,6 @@ typedef struct r_anal_esil_operation_t {
 	ut32 type;
 } RAnalEsilOp;
 
-
 // this is 80-bit offsets so we can address every piece of esil in an instruction
 typedef struct r_anal_esil_expr_offset_t {
 	ut64 off;
@@ -1277,12 +1276,12 @@ typedef struct r_anal_esil_cfg_t {
 } RAnalEsilCFG;
 
 enum {
-	R_ANAL_ESIL_DFG_BLOCK_CONST = 1,
-	R_ANAL_ESIL_DFG_BLOCK_VAR = 2,
-	R_ANAL_ESIL_DFG_BLOCK_PTR = 4,
-	R_ANAL_ESIL_DFG_BLOCK_RESULT = 8,
-	R_ANAL_ESIL_DFG_BLOCK_GENERATIVE = 16,
-};	//RAnalEsilDFGBlockType
+	R_ANAL_ESIL_DFG_TAG_CONST = 1,
+	R_ANAL_ESIL_DFG_TAG_VAR = 2,
+	R_ANAL_ESIL_DFG_TAG_PTR = 4,
+	R_ANAL_ESIL_DFG_TAG_RESULT = 8,
+	R_ANAL_ESIL_DFG_TAG_GENERATIVE = 16,
+};	//RAnalEsilDFGTagType
 
 typedef struct r_anal_esil_dfg_t {
 	ut32 idx;

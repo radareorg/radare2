@@ -7033,7 +7033,7 @@ static void print_esil_dfg_as_commands(RCore *core, RAnalEsilDFG *dfg) {
 			return;
 		}
 		r_strbuf_set (sb, esc_str);
-		if (enode->type & R_ANAL_ESIL_DFG_BLOCK_GENERATIVE) {
+		if (enode->type & R_ANAL_ESIL_DFG_TAG_GENERATIVE) {
 			r_strbuf_prepend (sb, "generative:");
 		}
 		char *b64_buf = r_base64_encode_dyn (r_strbuf_get (sb), sb->len);
