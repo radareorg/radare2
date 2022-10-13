@@ -551,7 +551,7 @@ EXPECT=<<EOF
   {
     "offset": 134513408,
     "esil": "ebp,ebp,^=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
-    "refptr": false,
+    "refptr": 0,
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 2,
@@ -574,7 +574,7 @@ EXPECT=<<EOF
   {
     "offset": 134513410,
     "esil": "esp,[4],esi,=,4,esp,+=",
-    "refptr": false,
+    "refptr": 0,
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 1,
@@ -590,7 +590,7 @@ EXPECT=<<EOF
   {
     "offset": 134513411,
     "esil": "esp,ecx,=",
-    "refptr": false,
+    "refptr": 0,
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 2,
@@ -607,7 +607,7 @@ EXPECT=<<EOF
     "offset": 134513413,
     "val": 4294967280,
     "esil": "4294967280,esp,&=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
-    "refptr": false,
+    "refptr": 0,
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 3,

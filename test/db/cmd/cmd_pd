@@ -434,7 +434,7 @@ s 6
 pdj -1
 EOF
 EXPECT=<<EOF
-[{"offset":1,"ptr":4248444,"val":4248444,"esil":"4248444,4,esp,-,=[4],4,esp,-=","refptr":false,"fcn_addr":0,"fcn_last":1020,"size":5,"opcode":"push 0x40d37c","disasm":"push 0x40d37c","bytes":"687cd34000","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":0}]
+[{"offset":1,"ptr":4248444,"val":4248444,"esil":"4248444,4,esp,-,=[4],4,esp,-=","refptr":0,"fcn_addr":0,"fcn_last":1020,"size":5,"opcode":"push 0x40d37c","disasm":"push 0x40d37c","bytes":"687cd34000","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":0}]
 EOF
 RUN
 
@@ -446,7 +446,7 @@ e asm.bits=64
 pdj 3 @ main
 EOF
 EXPECT=<<EOF
-[{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
+[{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
 EOF
 RUN
 
@@ -458,7 +458,7 @@ e asm.bits=64
 pdj -3 @ 0x0040050f
 EOF
 EXPECT=<<EOF
-[{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":false,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
+[{"offset":4195590,"esil":"rbp,8,rsp,-,=[8],8,rsp,-=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":1,"opcode":"push rbp","disasm":"push rbp","bytes":"55","family":"cpu","type":"rpush","reloc":false,"type_num":268435468,"type2_num":0,"flags":["main","sym.main"]},{"offset":4195591,"esil":"rsp,rbp,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":3,"opcode":"mov rbp, rsp","disasm":"mov rbp, rsp","bytes":"4889e5","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0},{"offset":4195594,"ptr":4195780,"val":4195780,"esil":"4195780,rdi,=","refptr":0,"fcn_addr":0,"fcn_last":0,"size":5,"opcode":"mov edi, 0x4005c4","disasm":"mov edi, str.Hello_World","bytes":"bfc4054000","family":"cpu","type":"mov","reloc":false,"type_num":9,"type2_num":0}]
 EOF
 RUN
 
@@ -466,7 +466,7 @@ NAME=pdj str in opcode
 FILE=bins/java/Hello.class
 CMDS=pdj 1 @ 0x000002ae
 EXPECT=<<EOF
-[{"offset":686,"esil":"","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"ldc \"World\"","disasm":"ldc \"World\"","bytes":"120b","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":2138640}]
+[{"offset":686,"esil":"","refptr":0,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"ldc \"World\"","disasm":"ldc \"World\"","bytes":"120b","family":"cpu","type":"push","reloc":false,"type_num":13,"type2_num":2138640}]
 EOF
 RUN
 
