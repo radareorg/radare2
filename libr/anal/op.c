@@ -99,7 +99,6 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	return 0;
 }
 
-<<<<<<< HEAD
 R_API void r_arch_op_to_analop(RAnalOp *op, RArchOp *archop) {
 	r_anal_op_init (op);
 	op->mnemonic = strdup (r_str_get (archop->mnemonic));
@@ -131,10 +130,7 @@ R_API void r_arch_op_to_analop(RAnalOp *op, RArchOp *archop) {
 	op->family = (RAnalOpFamily)archop->family;
 }
 
-R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-=======
 R_API int r_anal_op(RAnal *anal, RArchOp *op, ut64 addr, const ut8 *data, int len, RArchOpMask mask) {
->>>>>>> a9bc26a84f (Switch use RArchOp instead of RAnalOp, remove duplicated enums and structs ##arch)
 	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
 
