@@ -183,7 +183,7 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 						} else if (mode == 'j') {
 							pj_a (pj);
 						} else {
-							r_strbuf_append (sb, " {\n");
+							r_strbuf_append (sb, "{\n");
 						}
 						char *child = decode_buffer (pj, ps, pe, padcnt + 1, mode);
 						if (mode == 'j' || mode == 'J') {
@@ -192,7 +192,7 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 						} else {
 							r_strbuf_append (sb, child);
 							pad (sb, padcnt);
-							r_strbuf_append (sb, " }\n");
+							r_strbuf_append (sb, "}\n");
 						}
 						free (child);
 					}
@@ -207,7 +207,7 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 			if (mode == 'j' || mode == 'J') {
 				pj_o (pj);
 			} else {
-				r_strbuf_append (sb, " {\n");
+				r_strbuf_append (sb, "{\n");
 			}
 			padcnt++;
 			break;
@@ -219,7 +219,7 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 				pj_end (pj);
 			} else {
 				pad (sb, padcnt);
-				r_strbuf_append (sb, " }\n");
+				r_strbuf_append (sb, "}\n");
 			}
 			break;
 		case WIRE_32_BIT:

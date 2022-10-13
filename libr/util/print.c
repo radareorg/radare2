@@ -1650,7 +1650,7 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 			p->cb_printf ("\n");
 		}
 	}
-	p->cb_printf (" };\n");
+	p->cb_printf ("};\n");
 }
 
 // HACK :D
