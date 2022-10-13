@@ -183,7 +183,7 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 						} else if (mode == 'j') {
 							pj_a (pj);
 						} else {
-							r_strbuf_append (sb, "{\n");
+							r_strbuf_append (sb, " {\n");
 						}
 						char *child = decode_buffer (pj, ps, pe, padcnt + 1, mode);
 						if (mode == 'j' || mode == 'J') {

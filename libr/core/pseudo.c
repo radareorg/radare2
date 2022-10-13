@@ -373,7 +373,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				nindent = 1;
 				for (i = indent; i != nindent && i > 0; i--) {
 					NEWLINE (bb->addr, i);
-					PRINTF (" }");
+					PRINTF ("}");
 				}
 				NEWLINE (bb->addr, indent);
 				PRINTF ("return %s;", R0);
@@ -416,7 +416,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				int i;
 				for (i = indent; i != nindent; i--) {
 					NEWLINE (addr, i);
-					PRINTF (" }");
+					PRINTF ("}");
 				}
 			}
 			indent = nindent - 1;
@@ -488,7 +488,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					int i;
 					for (i = indent; i != nindent; i--) {
 						NEWLINE (bb->addr, i);
-						PRINTF (" }");
+						PRINTF ("}");
 					}
 				}
 				if (nindent != indent) {
@@ -527,7 +527,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_list_free (visited);
 	indent = 0;
 	NEWLINE (addr, indent);
-	PRINTF (" }\n");
+	PRINTF ("}\n");
 	if (pj) {
 		pj_end (pj);
 		char *kode = r_strbuf_drain (codestr);

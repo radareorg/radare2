@@ -163,7 +163,7 @@ EXPECT=<<EOF
  ulebtest : 0x00000014 = [ 608101, 4750, 37, 0 ]
 "wx 2a" @ 0x00000019
  ulebtest : 0x00000014 = [ 608101, 4750, 42, 0 ]
-[{"name":"ulebtest","type":"u","offset":20,"value":[ "608101", "4750", "42", "0" ]}]
+[{"name":"ulebtest","type":"u","offset":20,"value":[ "608101", "4750", "42", "0"]}]
 EOF
 RUN
 

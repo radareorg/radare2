@@ -77,7 +77,7 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 
 	if (headers) {
 		p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-		p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {\n", bits);
+		p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {", bits);
 	}
 
 	for (i = 0; !r_print_is_interrupted () && i < len; i++) {
