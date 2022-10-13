@@ -195,6 +195,15 @@ static const char *help_msg_afls[] = {
 	NULL
 };
 
+static const RCoreHelpMessage help_msg_aflx = {
+	"Usage:", "aflx", "[jv*] # list function xrefs",
+	"aflx", "", "list function xrefs (who references or calls the current function)",
+	"aflxj", "", "list function xrefs in JSON format",
+	"aflxv", "", "list function xrefs with names",
+	"aflx*", "", "list function xrefs in radare commands format",
+	NULL
+};
+
 static const char *help_msg_ai[] = {
 	"Usage:", "ai", "[j*] [sz] # analysis/address information/imports",
 	"ai", " @addr", "show address information",
@@ -607,7 +616,7 @@ static const char *help_msg_afl[] = {
 	"aflq", "", "list functions in quiet mode",
 	"aflqj", "", "list functions in json quiet mode",
 	"afls", "[?asn]", "sort function list by address, size or name",
-	"aflx", "", "list function xrefs (who references or calls the current function)",
+	"aflx", "[?*jv]", "list function xrefs (who references or calls the current function)",
 	NULL
 };
 
@@ -4496,36 +4505,55 @@ static int cmd_af(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_afl);
 			break;
 		case 'x': // "aflx"
+			switch (input[3]) {
+			default:
+			case '?':
+				r_core_cmd_help (core, help_msg_aflx);
+				return true;
+			case 'v': // "aflxv"
+			case '*': // "aflx*"
+			case 0: // default for "aflx"
 			{
-				if (input[3] == 'j') {
-					cmd_aflxj (core);
-				} else {
-					ut64 addr = faddr (core, core->offset, NULL);
-					RList *xrefs = r_anal_xrefs_get (core->anal, addr);
-					Sdb *db = sdb_new0 ();
-					// sort by function and uniq to avoid dupped results
-					RListIter *iter;
-					RAnalRef *ref;
-					r_list_foreach (xrefs, iter, ref) {
-						bool nr = false;
-						ut64 fa = faddr (core, ref->addr, &nr);
-						char *key = r_str_newf ("0x%08"PFMT64x, fa);
-						sdb_array_add_num (db, key, ref->addr, 0);
-					}
-					SdbList *keys = sdb_foreach_list (db, true);
-					SdbListIter *liter;
-					SdbKv *kv;
-					bool rad = input[3] == '*';
-					ls_foreach (keys, liter, kv) {
-						if (rad) {
-							r_cons_printf ("s %s;af-;af;s-\n", (const char *)kv->base.key);
-						} else {
-							r_cons_printf ("%s %s\n", (const char *)kv->base.key, (const char *)kv->base.value);
-						}
-					}
-					sdb_free (db);
-					ls_free (keys);
+				ut64 addr = faddr (core, core->offset, NULL);
+				RList *xrefs = r_anal_xrefs_get (core->anal, addr);
+				Sdb *db = sdb_new0 ();
+				// sort by function and uniq to avoid dupped results
+				RListIter *iter;
+				RAnalRef *ref;
+				r_list_foreach (xrefs, iter, ref) {
+					bool nr = false;
+					ut64 fa = faddr (core, ref->addr, &nr);
+					char *key = r_str_newf ("0x%08"PFMT64x, fa);
+					sdb_array_add_num (db, key, ref->addr, 0);
 				}
+				SdbList *keys = sdb_foreach_list (db, true);
+				SdbListIter *liter;
+				SdbKv *kv;
+				bool rad = input[3] == '*';
+				bool verbose = input[3] == 'v';
+				ls_foreach (keys, liter, kv) {
+					const char *key = sdbkv_key (kv);
+					const char *value = sdbkv_value (kv);
+				    if (verbose) {
+						ut64 fcn_xref_addr = r_num_get (NULL, key);
+						RAnalFunction *xref = r_anal_get_fcn_in (core->anal, fcn_xref_addr, R_ANAL_FCN_TYPE_ANY);
+						if (xref) {
+							r_cons_printf ("%s %s\n",  xref->name, value);
+							continue;
+						}
+					} else if (rad) {                                                                                                                                                                                      r_cons_printf ("s %s;af-;af;s-\n", (const char *)kv->base.key);
+						r_cons_printf ("s %s;af-;af;s-\n", key);
+						continue;
+					}
+					r_cons_printf ("%s %s\n", key, value);
+				}
+				sdb_free (db);
+				ls_free (keys);
+				break;
+			}
+			case 'j': // "aflxj"
+				cmd_aflxj (core);
+				break;
 			}
 			break;
 		case 's': // "afls"
