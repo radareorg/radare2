@@ -145,7 +145,7 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 				i += 8;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
@@ -169,7 +169,7 @@ static void r_print_format_quadword(const RPrint* p, int endian, int mode,
 				}
 				i += 8;
 			}
-			p->cb_printf ("]");
+			p->cb_printf (" ]");
 		}
 		if (MUSTSEEJSON) {
 			p->cb_printf ("}");
@@ -212,7 +212,7 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 				i++;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
@@ -234,7 +234,7 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 				}
 				i++;
 			}
-			p->cb_printf ("]");
+			p->cb_printf (" ]");
 		}
 		if (MUSTSEEJSON) {
 			p->cb_printf ("}");
@@ -294,7 +294,7 @@ static int r_print_format_uleb(const RPrint* p, int endian, int mode,
 				}
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
@@ -320,7 +320,7 @@ static int r_print_format_uleb(const RPrint* p, int endian, int mode,
 					elem--;
 				}
 			}
-			p->cb_printf ("]");
+			p->cb_printf (" ]");
 		}
 		if (MUSTSEEJSON) {
 			p->cb_printf ("}");
@@ -364,7 +364,7 @@ static void r_print_format_char(const RPrint* p, int endian, int mode,
 				i++;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
@@ -387,7 +387,7 @@ static void r_print_format_char(const RPrint* p, int endian, int mode,
 				}
 				i++;
 			}
-			p->cb_printf ("]");
+			p->cb_printf (" ]");
 		}
 		if (MUSTSEEJSON) {
 			p->cb_printf ("}");
@@ -429,7 +429,7 @@ static void r_print_format_decchar(const RPrint* p, int endian, int mode, const 
 				i++;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 	} else if (MUSTSEEJSON || MUSTSEESTRUCT) {
@@ -452,7 +452,7 @@ static void r_print_format_decchar(const RPrint* p, int endian, int mode, const 
 				}
 				i++;
 			}
-			p->cb_printf ("]");
+			p->cb_printf (" ]");
 		}
 		if (MUSTSEEJSON) {
 			p->cb_printf ("}");
@@ -551,7 +551,7 @@ static void r_print_format_time(const RPrint* p, int endian, int mode, const cha
 				i += 4;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 		free (timestr);
@@ -646,7 +646,7 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode, const char
 				i += 4;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 	} else if (MUSTSEEJSON) {
@@ -670,7 +670,7 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode, const char
 				}
 				i += 4;
 			}
-			p->cb_printf ("]");
+			p->cb_printf (" ]");
 		}
 		p->cb_printf ("}");
 	}
@@ -715,7 +715,7 @@ static void r_print_format_int(const RPrint* p, int endian, int mode, const char
 				i += 4;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 	} else if (MUSTSEEJSON) {
@@ -739,7 +739,7 @@ static void r_print_format_int(const RPrint* p, int endian, int mode, const char
 				}
 				i += 4;
 			}
-			p->cb_printf ("]");
+			p->cb_printf (" ]");
 		}
 		p->cb_printf ("}");
 	}
@@ -803,7 +803,7 @@ static void r_print_format_octal(const RPrint* p, int endian, int mode, const ch
 				i += 4;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 	} else if (MUSTSEEJSON) {
@@ -827,7 +827,7 @@ static void r_print_format_octal(const RPrint* p, int endian, int mode, const ch
 				}
 				i += 4;
 			}
-			p->cb_printf ("]");
+			p->cb_printf (" ]");
 		}
 		p->cb_printf ("}");
 	}
@@ -877,7 +877,7 @@ static void r_print_format_hexflag(const RPrint* p, int endian, int mode, const 
 				i += 4;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 	} else if (MUSTSEEJSON) {
@@ -901,7 +901,7 @@ static void r_print_format_hexflag(const RPrint* p, int endian, int mode, const 
 				}
 				i += 4;
 			}
-			p->cb_printf ("]");
+			p->cb_printf (" ]");
 		}
 		p->cb_printf ("}");
 	}
@@ -955,7 +955,7 @@ static int r_print_format_10bytes(const RPrint* p, int mode, const char *setval,
 		for (; j < 10; j++) {
 			p->cb_printf (", %d", buf[j]);
 		}
-		p->cb_printf ("]");
+		p->cb_printf (" ]");
 		return 0;
 	}
 	return 0;
@@ -998,7 +998,7 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode, const 
 		for (; j < 10; j++) {
 			p->cb_printf (", %d", buf[j]);
 		}
-		p->cb_printf ("]");
+		p->cb_printf (" ]");
 		if (MUSTSEEJSON) {
 			p->cb_printf ("}");
 		}
@@ -1050,7 +1050,7 @@ static void r_print_format_float(const RPrint* p, int endian, int mode, const ch
 				i += 4;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 		if (MUSTSEEJSON) {
@@ -1106,7 +1106,7 @@ static void r_print_format_long_double(const RPrint* p, int endian, int mode, co
 				i += 8;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 		if (MUSTSEEJSON) {
@@ -1162,7 +1162,7 @@ static void r_print_format_double(const RPrint* p, int endian, int mode, const c
 				i += 8;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 		if (MUSTSEEJSON) {
@@ -1245,7 +1245,7 @@ static void r_print_format_word(const RPrint* p, int endian, int mode, const cha
 				i += 2;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 	} else if (MUSTSEEJSON) {
@@ -1271,7 +1271,7 @@ static void r_print_format_word(const RPrint* p, int endian, int mode, const cha
 				}
 				i += 2;
 			}
-			p->cb_printf ("]");
+			p->cb_printf (" ]");
 		}
 		p->cb_printf ("}");
 	}
@@ -1578,7 +1578,7 @@ static void r_print_format_num(const RPrint *p, int endian, int mode, const char
 				i += bytes;
 			}
 			if (!SEEVALUE) {
-				p->cb_printf ("]");
+				p->cb_printf (" ]");
 			}
 		}
 	} else if (MUSTSEEJSON) {
@@ -1606,7 +1606,7 @@ static void r_print_format_num(const RPrint *p, int endian, int mode, const char
 				}
 				i += bytes;
 			}
-			p->cb_printf ("]");
+			p->cb_printf (" ]");
 		}
 		p->cb_printf ("}");
 	}
