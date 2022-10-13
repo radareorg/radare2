@@ -543,8 +543,10 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 		r_name_filter ((char *)func_name, 0);
 		//r_cons_printf ("[x] Found symbol %s at 0x%x\n", func_name, func_addr);
 		char *flagname = r_str_newf ("sym.go.%s", func_name);
-		r_flag_set (core->flags, flagname, func_addr, 1);
-		free (flagname);
+		if (flagname) {
+			r_flag_set (core->flags, flagname, func_addr, 1);
+			free (flagname);
+		}
 		offset += 2 * ptr_size;
 		num_syms++;
 	}
@@ -599,12 +601,13 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 	if (map->perm & R_PERM_X) {
 		ut8 buf[64];
 		r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
-		bool looksLikeAFunction = r_anal_check_fcn (core->anal, buf, sizeof (buf), ref->addr, r_io_map_begin (map),
-				r_io_map_end (map));
+		bool looksLikeAFunction = r_anal_check_fcn (core->anal, buf, sizeof (buf), ref->addr, r_io_map_begin (map), r_io_map_end (map));
 		if (looksLikeAFunction) {
 			if (core->anal->limit) {
-				if (ref->addr < core->anal->limit->from ||
-						ref->addr > core->anal->limit->to) {
+				if (ref->addr < core->anal->limit->from) {
+					return 1;
+				}
+				if (ref->addr > core->anal->limit->to) {
 					return 1;
 				}
 			}

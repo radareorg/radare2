@@ -30,9 +30,9 @@ static const struct {
 	{ "hamdist", R_HASH_HAMDIST },
 	{ "pcprint", R_HASH_PCPRINT },
 	{ "mod255", R_HASH_MOD255 },
-	// {"base64", R_HASH_BASE64},
-	// {"base91", R_HASH_BASE91},
-	// {"punycode", R_HASH_PUNYCODE},
+	// { "base64", R_HASH_BASE64},
+	// { "base91", R_HASH_BASE91},
+	// { "punycode", R_HASH_PUNYCODE},
 	{ "luhn", R_HASH_LUHN },
 	{ "ssdeep", R_HASH_SSDEEP },
 

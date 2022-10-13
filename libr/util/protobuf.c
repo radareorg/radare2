@@ -207,7 +207,7 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 			if (mode == 'j' || mode == 'J') {
 				pj_o (pj);
 			} else {
-				r_strbuf_append (sb, " {\n");
+				r_strbuf_append (sb, "{\n");
 			}
 			padcnt++;
 			break;

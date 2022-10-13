@@ -35,9 +35,9 @@ static int getnum(const char *s) {
 
 // radare tolower instruction in rasm, so we use 'x' instead of 'X' etc.
 specialregs RegsTable[REGS_TABLE] = {
-	{"-x", OPERAND_XP}, {"x", OPERAND_X}, {"x+", OPERAND_XP},
-	{"-y", OPERAND_YP}, {"y", OPERAND_Y}, {"y+", OPERAND_YP},
-	{"-z", OPERAND_ZP}, {"z", OPERAND_Z}, {"z+", OPERAND_ZP},
+	{ "-x", OPERAND_XP}, { "x", OPERAND_X}, { "x+", OPERAND_XP},
+	{ "-y", OPERAND_YP}, { "y", OPERAND_Y}, { "y+", OPERAND_YP},
+	{ "-z", OPERAND_ZP}, { "z", OPERAND_Z}, { "z+", OPERAND_ZP},
 };
 
 

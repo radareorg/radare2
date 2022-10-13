@@ -1747,7 +1747,7 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalFunction *fcn, RAnal
 			var->name, COLOR_ARG (ds, color_func_var_addr),
 			constr? " { ":"",
 			r_str_get (constr),
-			constr? "} ":"",
+			constr? " } ":"",
 			base, sign, delta);
 	if (ds->show_varsum == -1) {
 		char *val = r_core_cmd_strf (ds->core, ".afvd %s", var->name);
@@ -3523,15 +3523,15 @@ static void ds_print_vliw(RDisasmState *ds, bool after) {
 		if (c > 0) {
 			ds->vliw_count--;
 			if (c == 1) {
-				r_cons_printf (" }");
+				r_cons_printf ("}");
 			}
 		}
 	} else {
 		if (v > 0) {
 			if (c > 0) {
-				r_cons_printf ("}{ ");
+				r_cons_printf ("}{");
 			} else {
-				r_cons_printf ("{ ");
+				r_cons_printf ("{");
 			}
 			ds->vliw_count = v;
 		}

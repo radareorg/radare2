@@ -117,28 +117,28 @@ R_LIB_VERSION (r_util);
 #endif
 
 static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
-	{"x86", R_SYS_ARCH_X86},
-	{"arm", R_SYS_ARCH_ARM},
-	{"ppc", R_SYS_ARCH_PPC},
-	{"m68k", R_SYS_ARCH_M68K},
-	{"java", R_SYS_ARCH_JAVA},
-	{"mips", R_SYS_ARCH_MIPS},
-	{"sparc", R_SYS_ARCH_SPARC},
-	{"xap", R_SYS_ARCH_XAP},
-	{"tms320", R_SYS_ARCH_TMS320},
-	{"msil", R_SYS_ARCH_MSIL},
-	{"objd", R_SYS_ARCH_OBJD},
-	{"bf", R_SYS_ARCH_BF},
-	{"sh", R_SYS_ARCH_SH},
-	{"avr", R_SYS_ARCH_AVR},
-	{"dalvik", R_SYS_ARCH_DALVIK},
-	{"z80", R_SYS_ARCH_Z80},
-	{"arc", R_SYS_ARCH_ARC},
-	{"i8080", R_SYS_ARCH_I8080},
-	{"rar", R_SYS_ARCH_RAR},
-	{"lm32", R_SYS_ARCH_LM32},
-	{"v850", R_SYS_ARCH_V850},
-	{"bpf", R_SYS_ARCH_BPF},
+	{ "x86", R_SYS_ARCH_X86},
+	{ "arm", R_SYS_ARCH_ARM},
+	{ "ppc", R_SYS_ARCH_PPC},
+	{ "m68k", R_SYS_ARCH_M68K},
+	{ "java", R_SYS_ARCH_JAVA},
+	{ "mips", R_SYS_ARCH_MIPS},
+	{ "sparc", R_SYS_ARCH_SPARC},
+	{ "xap", R_SYS_ARCH_XAP},
+	{ "tms320", R_SYS_ARCH_TMS320},
+	{ "msil", R_SYS_ARCH_MSIL},
+	{ "objd", R_SYS_ARCH_OBJD},
+	{ "bf", R_SYS_ARCH_BF},
+	{ "sh", R_SYS_ARCH_SH},
+	{ "avr", R_SYS_ARCH_AVR},
+	{ "dalvik", R_SYS_ARCH_DALVIK},
+	{ "z80", R_SYS_ARCH_Z80},
+	{ "arc", R_SYS_ARCH_ARC},
+	{ "i8080", R_SYS_ARCH_I8080},
+	{ "rar", R_SYS_ARCH_RAR},
+	{ "lm32", R_SYS_ARCH_LM32},
+	{ "v850", R_SYS_ARCH_V850},
+	{ "bpf", R_SYS_ARCH_BPF},
 	{NULL, 0}
 };
 
@@ -833,7 +833,13 @@ R_API int r_sys_cmdbg(const char *str) {
 		return pid;
 	}
 	int ret = r_sandbox_system (str, 0);
-	eprintf ("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
+	PJ *pj = pj_new ();
+	pj_kn (pj, "exit", ret);
+	pj_kn (pj, "pid", pid);
+	pj_ks (pj, "cmd", str);
+	char *s = pj_drain (pj);
+	eprintf ("%s\n", s);
+	free (s);
 	exit (0);
 	return -1;
 #else

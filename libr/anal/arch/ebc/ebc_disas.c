@@ -632,7 +632,7 @@ static int decode_cmpi(const ut8 *bytes, ebc_command_t *cmd) {
 	char op1c[32];
 	char indx[32] = {0};
 	char immed[32] = {0};
-	char *suff[] = {"eq", "lte", "gte", "ulte", "ugte"};
+	char *suff[] = { "eq", "lte", "gte", "ulte", "ugte" };
 
 	snprintf (op1c, sizeof (op1c)-1, "%sr%u",
 		TEST_BIT(bytes[1], 3) ? "@" : "", op1);

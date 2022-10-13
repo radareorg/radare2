@@ -668,7 +668,7 @@ static void r_print_format_hex(const RPrint* p, int endian, int mode, const char
 				if (elem > -1) {
 					elem--;
 				}
-				i +=4;
+				i += 4;
 			}
 			p->cb_printf (" ]");
 		}
@@ -722,7 +722,7 @@ static void r_print_format_int(const RPrint* p, int endian, int mode, const char
 		if (size == -1) {
 			p->cb_printf ("%"PFMT64d, addr);
 		} else {
-			p->cb_printf ("[ ");
+			p->cb_printf ("[");
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
 				if (elem == -1 || elem == 0) {
@@ -955,7 +955,7 @@ static int r_print_format_10bytes(const RPrint* p, int mode, const char *setval,
 		for (; j < 10; j++) {
 			p->cb_printf (", %d", buf[j]);
 		}
-		p->cb_printf ("]");
+		p->cb_printf (" ]");
 		return 0;
 	}
 	return 0;
@@ -998,7 +998,7 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode, const 
 		for (; j < 10; j++) {
 			p->cb_printf (", %d", buf[j]);
 		}
-		p->cb_printf ("]");
+		p->cb_printf (" ]");
 		if (MUSTSEEJSON) {
 			p->cb_printf ("}");
 		}

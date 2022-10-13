@@ -12,10 +12,10 @@ static void print_usage(void) {
 
 ///////////////////////////////////////////////////////////////////////////////
 static const struct option long_options[] = {
-	{"pdb_file", required_argument, 0, 'f'},
-	{"print_types", no_argument, 0, 't'},
-	{"print_globals", required_argument, 0, 'g'},
-	{"help", no_argument, 0, 'h'},
+	{ "pdb_file", required_argument, 0, 'f'},
+	{ "print_types", no_argument, 0, 't'},
+	{ "print_globals", required_argument, 0, 'g'},
+	{ "help", no_argument, 0, 'h'},
 	{NULL, 0, 0, 0}
 };
 

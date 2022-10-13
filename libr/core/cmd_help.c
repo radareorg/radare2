@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static const char *help_msg_at[] = {
+static RCoreHelpMessage help_msg_at = {
 	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
 	"0", "", "alias for 's 0'",
 	"0x", "addr", "alias for 's 0x..'",
@@ -58,7 +58,7 @@ static const char *help_msg_at[] = {
 	NULL
 };
 
-static const char *help_msg_at_at[] = {
+static RCoreHelpMessage help_msg_at_at = {
 	"@@", "", " # foreach iterator command:",
 	"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
 	"x", " @@.file", "run 'x' over the offsets specified in the file (one offset per line)",
@@ -79,7 +79,7 @@ static const char *help_msg_at_at[] = {
 	NULL
 };
 
-static const char *help_msg_at_at_at[] = {
+static RCoreHelpMessage help_msg_at_at_at = {
 	"@@@", "", " # foreach offset+size iterator command:",
 	"x", " @@@=", "[addr] [size] ([addr] [size] ...)",
 	"x", " @@@C:cmd", "comments matching",
@@ -217,7 +217,7 @@ static const char *help_msg_root[] = {
 	NULL
 };
 
-static const char *help_msg_question_i[] = {
+static RCoreHelpMessage help_msg_question_i = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?i", " ([prompt])", "inquery the user and save that text into the yank clipboard (y)",
 	"?ie", " [msg]", "same as ?i, but prints the output, useful for oneliners",
@@ -229,7 +229,7 @@ static const char *help_msg_question_i[] = {
 	"?ip", " ([path])", "interactive hud mode to find files in given path",
 	NULL
 };
-static const char *help_msg_question_e[] = {
+static RCoreHelpMessage help_msg_question_e = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
 	"?e=", " 32", "progress bar at 32 percentage",
@@ -245,7 +245,7 @@ static const char *help_msg_question_e[] = {
 	NULL
 };
 
-static const char *help_msg_question[] = {
+static RCoreHelpMessage help_msg_question = {
 	"Usage: ?[?[?]] expression", "", "",
 	"?!", " [cmd]", "run cmd if $? == 0",
 	"?", " eip-0x804800", "show all representation result for this math expr",

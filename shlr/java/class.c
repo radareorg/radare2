@@ -1,6 +1,7 @@
-/* Apache 2.0 - Copyright 2007-2022 - pancake and dso
-   class.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
- */
+/* Apache 2.0 - Copyright 2007-2022 - pancake and dso */
+/* class.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+#define R_LOG_ORIGIN "java.class"
+
 #include <r_bin.h>
 #include <math.h>
 #include "class.h"
@@ -15,12 +16,16 @@
 
 #define MAX_CPITEMS 16
 
+static const ut16 R_BIN_JAVA_ELEMENT_VALUE_METAS_SZ = 14;
+static const ut32 RBIN_JAVA_ATTRS_METAS_SZ = 20;
+static R_TH_LOCAL bool R_BIN_JAVA_NULL_TYPE_INITTED = false;
+static R_TH_LOCAL RBinJavaObj *R_BIN_JAVA_GLOBAL_BIN = NULL;
+
 R_API char *U(r_bin_java_unmangle_method)(const char *flags, const char *name, const char *params, const char *r_value);
 R_API int r_bin_java_is_fm_type_private(RBinJavaField *fm_type);
 R_API int r_bin_java_is_fm_type_protected(RBinJavaField *fm_type);
 R_API ut32 U(r_bin_java_swap_uint)(ut32 x);
 
-// R_API const char * r_bin_java_get_this_class_name(RBinJavaObj *bin);
 R_API void U(add_cp_objs_to_sdb)(RBinJavaObj * bin);
 R_API void U(add_field_infos_to_sdb)(RBinJavaObj * bin);
 R_API void U(add_method_infos_to_sdb)(RBinJavaObj * bin);
@@ -381,9 +386,6 @@ static RBinJavaRefMetas R_BIN_JAVA_REF_METAS[] = {
 	{ "NewInvokeSpecial", R_BIN_JAVA_REF_NEWINVOKESPECIAL },
 	{ "InvokeInterface", R_BIN_JAVA_REF_INVOKEINTERFACE }
 };
-static const ut16 R_BIN_JAVA_ELEMENT_VALUE_METAS_SZ = 14;
-static R_TH_LOCAL bool R_BIN_JAVA_NULL_TYPE_INITTED = false;
-static R_TH_LOCAL RBinJavaObj *R_BIN_JAVA_GLOBAL_BIN = NULL;
 
 static RBinJavaElementValueMetas R_BIN_JAVA_ELEMENT_VALUE_METAS[] = {
 	{ "Byte", R_BIN_JAVA_EV_TAG_BYTE, NULL },
@@ -492,8 +494,6 @@ static RBinJavaAttrInfoObjectAllocs RBIN_JAVA_ATTRS_ALLOCS[] = {
 	{ r_bin_java_synthetic_attr_new, r_bin_java_synthetic_attr_free, r_bin_java_print_synthetic_attr_summary, r_bin_java_synthetic_attr_calc_size },
 	{ r_bin_java_unknown_attr_new, r_bin_java_unknown_attr_free, r_bin_java_print_unknown_attr_summary, r_bin_java_unknown_attr_calc_size }
 };
-// R_API ut32 RBIN_JAVA_ATTRS_METAS_SZ = 21;
-static ut32 RBIN_JAVA_ATTRS_METAS_SZ = 20;
 static RBinJavaAttrMetas RBIN_JAVA_ATTRS_METAS[] = {
 	{ "AnnotationDefault", R_BIN_JAVA_ATTR_TYPE_ANNOTATION_DEFAULT_ATTR, &RBIN_JAVA_ATTRS_ALLOCS[0] },
 	{ "BootstrapMethods", R_BIN_JAVA_ATTR_TYPE_BOOTSTRAP_METHODS_ATTR, &RBIN_JAVA_ATTRS_ALLOCS[1] },
@@ -1644,80 +1644,59 @@ R_API RBinJavaInterfaceInfo *r_bin_java_read_next_interface_item(RBinJavaObj *bi
 	}
 	return ifobj;
 }
-// R_API void addrow (RBinJavaObj *bin, int addr, int line) {
-// int n = bin->lines.count++;
-//// XXX. possible memleak
-// bin->lines.addr = realloc (bin->lines.addr, sizeof (int)*n+1);
-// bin->lines.addr[n] = addr;
-// bin->lines.line = realloc (bin->lines.line, sizeof (int)*n+1);
-// bin->lines.line[n] = line;
-// }
-// R_API struct r_bin_java_cp_item_t* r_bin_java_get_item_from_cp_CP(RBinJavaObj *bin, int i) {
-// return (i<0||i>bin->cf.cp_count)? &cp_null_item: &bin->cp_items[i];
-// }
 
 R_API char *r_bin_java_get_utf8_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
+	r_return_val_if_fail (bin, NULL);
 	/*
 	Search through the Constant Pool list for the given CP Index.
 	If the idx not found by directly going to the list index,
 	the list will be walked and then the IDX will be checked.
 	rvalue: new char* for caller to free.
 	*/
-	if (bin == NULL) {
-		return NULL;
-	}
 	return r_bin_java_get_utf8_from_cp_item_list (bin->cp_list, idx);
 }
 
 R_API ut32 r_bin_java_get_utf8_len_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
+	r_return_val_if_fail (bin, 0);
 	/*
 	Search through the Constant Pool list for the given CP Index.
 	If the idx not found by directly going to the list index,
 	the list will be walked and then the IDX will be checked.
 	rvalue: new char* for caller to free.
 	*/
-	if (bin == NULL) {
-		return 0;
-	}
 	return r_bin_java_get_utf8_len_from_cp_item_list (bin->cp_list, idx);
 }
 
 R_API char *r_bin_java_get_name_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
+	r_return_val_if_fail (bin, NULL);
 	/*
 	Search through the Constant Pool list for the given CP Index.
 	If the idx not found by directly going to the list index,
 	the list will be walked and then the IDX will be checked.
 	rvalue: new char* for caller to free.
 	*/
-	if (bin == NULL) {
-		return NULL;
-	}
 	return r_bin_java_get_name_from_cp_item_list (bin->cp_list, idx);
 }
 
 R_API char *r_bin_java_get_desc_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
+	r_return_val_if_fail (bin, NULL);
 	/*
 	Search through the Constant Pool list for the given CP Index.
 	If the idx not found by directly going to the list index,
 	the list will be walked and then the IDX will be checked.
 	rvalue: new char* for caller to free.
 	*/
-	if (bin == NULL) {
-		return NULL;
-	}
 	return r_bin_java_get_desc_from_cp_item_list (bin->cp_list, idx);
 }
 
 R_API RBinJavaCPTypeObj *r_bin_java_get_item_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
+	r_return_val_if_fail (bin, NULL);
 	/*
 	Search through the Constant Pool list for the given CP Index.
 	If the idx not found by directly going to the list index,
 	the list will be walked and then the IDX will be checked.
 	rvalue: RBinJavaObj* (user does NOT free).
 	*/
-	if (bin == NULL) {
-		return NULL;
-	}
 	if (idx > bin->cp_count || idx == 0) {
 		return r_bin_java_get_java_null_cp ();
 	}
@@ -2013,16 +1992,13 @@ R_API RBinJavaAttrInfo *r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 o
 	const ut8 *a_buf = offset + buf;
 	ut8 attr_idx_len = 6;
 	if (offset + 6 > buf_len) {
-		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile in Attribute offset "
-			"(0x%"PFMT64x ") > len  of remaining bytes (0x%"PFMT64x ").\n", offset, buf_len);
+		R_LOG_ERROR ("unable to parse Attribute offset (0x%"PFMT64x ") > len (0x%"PFMT64x ")", offset, buf_len);
 		return NULL;
 	}
 	// ut16 attr_idx, ut32 length of attr.
 	ut32 sz = R_BIN_JAVA_UINT (a_buf, 2) + attr_idx_len; // r_bin_java_read_int (bin, buf_offset+2) + attr_idx_len;
 	if (sz + offset > buf_len) {
-		eprintf ("[X] r_bin_java: Error unable to parse remainder of classfile in Attribute len "
-			"(0x%x) + offset (0x%"PFMT64x ") exceeds length of buffer (0x%"PFMT64x ").\n",
-			sz, offset, buf_len);
+		R_LOG_ERROR ("Unable to parse class Attribute len (0x%x) + offset (0x%"PFMT64x ") exceeds length of buffer (0x%"PFMT64x ")", sz, offset, buf_len);
 		return NULL;
 	}
 	// when reading the attr bytes, need to also

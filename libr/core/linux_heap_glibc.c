@@ -370,8 +370,8 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 		r_cons_newline ();
 	}
 
-	PRINT_GA ("  }\n");
-	PRINT_GA ("  binmap = {");
+	PRINT_GA ("}\n");
+	PRINT_GA (" binmap = { ");
 
 	for (i = 0; i < BINMAPSIZE; i++) {
 		if (i) {

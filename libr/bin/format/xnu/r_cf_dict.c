@@ -1,5 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
+/* radare - LGPL - Copyright 2019-2022 - mrmacete, pancake */
+
 #include <r_util.h>
 #include <r_util/r_xml.h>
 #include <r_list.h>
@@ -346,7 +346,6 @@ static void r_cf_value_dict_add(RCFValueDict *dict, RCFKeyValue *key_value) {
 	if (!dict || !dict->pairs) {
 		return;
 	}
-
 	r_list_push (dict->pairs, key_value);
 }
 
@@ -368,28 +367,21 @@ static void r_cf_value_dict_print(RCFValueDict *dict) {
 
 static RCFValueArray *r_cf_value_array_new(void) {
 	RCFValueArray *array = R_NEW0 (RCFValueArray);
-	if (!array) {
-		return NULL;
+	if (array) {
+		array->type = R_CF_ARRAY;
+		array->values = r_list_newf ((RListFree)&r_cf_value_free);
 	}
-
-	array->type = R_CF_ARRAY;
-	array->values = r_list_newf ((RListFree)&r_cf_value_free);
-
 	return array;
 }
 
 static void r_cf_value_array_free(RCFValueArray *array) {
-	if (!array) {
-		return;
+	if (array) {
+		if (array->values) {
+			r_list_free (array->values);
+			array->values = NULL;
+		}
+		free (array);
 	}
-
-	if (array->values) {
-		r_list_free (array->values);
-		array->values = NULL;
-	}
-
-	array->type = R_CF_INVALID;
-	R_FREE (array);
 }
 
 static void r_cf_value_array_add(RCFValueArray *array, RCFValue *value) {

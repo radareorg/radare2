@@ -1,14 +1,9 @@
-/* radare - LGPL - Copyright 2012 - pancake<nopcode.org>
-			     2022 - condret
-
+/* radare - LGPL - Copyright 2012 - pancake<nopcode.org> 2022 - condret
 	this file was based on anal_i8080.c */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include <r_reg.h>
 #include "gb/gbdis.c"
 #include "gb/gbasm.c"
 #include "gb/gb_makros.h"
@@ -16,11 +11,11 @@
 #include "gb/gb_makros.h"
 #include "gb/gb.h"
 
-static const char *regs_1[] = { "Z", "N", "H", "C"};
-static const char *regs_8[] = { "b", "c", "d", "e", "h", "l", "a", "a"};				//deprecate this and rename regs_x
-static const char *regs_x[] = { "b", "c", "d", "e", "h", "l", "hl", "a"};
-static const char *regs_16[] = { "bc", "de", "hl", "sp"};
-static const char *regs_16_alt[] = { "bc", "de", "hl", "af" };
+static const char * const regs_1[] = { "Z", "N", "H", "C" };
+static const char * const regs_8[] = { "b", "c", "d", "e", "h", "l", "a", "a" }; //deprecate this and rename regs_x
+static const char * const regs_x[] = { "b", "c", "d", "e", "h", "l", "hl", "a" };
+static const char * const regs_16[] = { "bc", "de", "hl", "sp" };
+static const char * const regs_16_alt[] = { "bc", "de", "hl", "af" };
 
 static ut8 gb_op_calljump(RAnal *a, RAnalOp *op, const ut8 *data, ut64 addr) {
 	if (GB_IS_RAM_DST (data[1],data[2])) {
@@ -36,11 +31,11 @@ static ut8 gb_op_calljump(RAnal *a, RAnalOp *op, const ut8 *data, ut64 addr) {
 	return true;
 }
 
-#if	0
+#if 0
 static inline int gb_anal_esil_banksw(RAnalOp *op) {
 	ut64 base = op->dst->base;
 	if (op->addr < 0x4000 && 0x1fff < base && base < 0x4000) {
-		r_strbuf_set (&op->esil, "mbcrom=0,?a%0x20,mbcrom=a-1");				//if a is a multiple of 0x20 mbcrom is 0, else it gets its value from a
+		r_strbuf_set (&op->esil, "mbcrom=0,?a%0x20,mbcrom=a-1"); //if a is a multiple of 0x20 mbcrom is 0, else it gets its value from a
 		return true;
 	}
 	if (base < 0x6000 && 0x3fff < base) {
@@ -470,7 +465,7 @@ static void gb_anal_xoaasc_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
 	}
 }
 
-	//load with [hl] as memref
+//load with [hl] as memref
 static inline void gb_anal_load_hl(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	dst = r_vector_push (op->dsts, NULL);

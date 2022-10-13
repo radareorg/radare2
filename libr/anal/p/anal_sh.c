@@ -199,7 +199,7 @@ static ut64 disarm_8bit_offset(ut64 pc, ut32 offs) {
 	return (off << 1) + pc + 4;
 }
 
-static char *regs[]={"r0","r1","r2","r3","r4","r5","r6","r7","r8","r9","r10","r11","r12","r13","r14","r15","pc"};
+static char *regs[]={ "r0","r1","r2","r3","r4","r5","r6","r7","r8","r9","r10","r11","r12","r13","r14","r15","pc" };
 
 static RAnalValue *anal_fill_ai_rg(RAnal *anal, int idx) {
 	RAnalValue *ret = r_anal_value_new ();

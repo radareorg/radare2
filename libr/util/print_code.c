@@ -293,7 +293,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 			p->cb_printf (" %02x", buf[i] & 0xff);
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf (" }\n");
+		p->cb_printf ("}\n");
 		break;
 	case 'j': // "pcj"
 		p->cb_printf ("[");

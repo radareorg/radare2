@@ -4850,7 +4850,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	}
 
 	/* Wait to move the first arg forward past the first 'd' until after argv creation.
-	 * "dd filename" results in {"", "filename"} instead of {"filename"}.
+	 * "dd filename" results in { "", "filename" } instead of { "filename" }.
 	 *
 	 * This mimics passing input+1 but allows a possible empty argv[0]
 	 * to preserve argument positions.
