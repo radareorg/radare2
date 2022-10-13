@@ -221,7 +221,7 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 		}
 	}
 
-	r_strbuf_append (sb, "{ ");
+	r_strbuf_append (sb, "{");
 	if (mask) {
 		ut32 bit;
 		const char *comma = "";
@@ -254,7 +254,7 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 	if (pc) {
 		r_strbuf_appendf (sb, "%sPC", mask ? ", " : "");
 	}
-	r_strbuf_append (sb, " }");
+	r_strbuf_append (sb, "}");
 	return true;
 }
 

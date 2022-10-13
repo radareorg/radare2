@@ -833,7 +833,13 @@ R_API int r_sys_cmdbg(const char *str) {
 		return pid;
 	}
 	int ret = r_sandbox_system (str, 0);
-	eprintf ("{exit: %d, pid: %d, cmd: \"%s\" }", ret, pid, str);
+	PJ *pj = pj_new ();
+	pj_kn (pj, "exit", ret);
+	pj_kn (pj, "pid", pid);
+	pj_ks (pj, "cmd", str);
+	char *s = pj_drain (pj);
+	eprintf ("%s\n", s);
+	free (s);
 	exit (0);
 	return -1;
 #else
