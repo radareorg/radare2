@@ -1202,6 +1202,8 @@ CMDS=<<EOF
 pFB
 b $s
 pFB
+?e --
+pFBj
 EOF
 EXPECT=<<EOF
 
@@ -1252,6 +1254,8 @@ UISupportedInterfaceOrientations~ipad:
   UIInterfaceOrientationPortraitUpsideDown
   UIInterfaceOrientationLandscapeLeft
   UIInterfaceOrientationLandscapeRight
+--
+{"BuildMachineOSBuild":"19D76","CFBundleDevelopmentRegion":"en","CFBundleExecutable":"iOSTestApp2","CFBundleIconFiles":["ns.png"],"CFBundleIdentifier":"com.nowsecure.iOSTestApp7","CFBundleInfoDictionaryVersion":"6.0","CFBundleName":"iOSTestApp","CFBundlePackageType":"APPL","CFBundleShortVersionString":"1.0","CFBundleSupportedPlatforms":["iPhoneOS"],"CFBundleVersion":"1","DTCompiler":"com.apple.compilers.llvm.clang.1_0","DTPlatformBuild":"17E255","DTPlatformName":"iphoneos","DTPlatformVersion":"13.4","DTSDKBuild":"17E255","DTSDKName":"iphoneos13.4","DTXcode":"1140","DTXcodeBuild":"11E146","LSApplicationQueriesSchemes":["cydia","undecimus","sileo"],"LSRequiresIPhoneOS":true,"MinimumOSVersion":"11.0","UIDeviceFamily":[1,2],"UILaunchStoryboardName":"LaunchScreen","UIMainStoryboardFile":"Main","UIRequiredDeviceCapabilities":["arm64"],"UIStatusBarTintParameters":{"UINavigationBar":{"Style":"UIBarStyleDefault","Translucent":true}},"UISupportedInterfaceOrientations":["UIInterfaceOrientationPortrait","UIInterfaceOrientationLandscapeLeft","UIInterfaceOrientationLandscapeRight"],"UISupportedInterfaceOrientations~ipad":["UIInterfaceOrientationPortrait","UIInterfaceOrientationPortraitUpsideDown","UIInterfaceOrientationLandscapeLeft","UIInterfaceOrientationLandscapeRight"]}
 EOF
 EXPECT_ERR=<<EOF
 ERROR: offset table offset points outside of valid range

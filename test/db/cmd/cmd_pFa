@@ -1,0 +1,24 @@
+NAME=pFa der decoding
+FILE=bins/cert/der
+CMDS=<<EOF
+pFa
+EOF
+EXPECT=<<EOF
+   0   159: 0: cons SEQUENCE            : 
+   3    13: 1: cons SEQUENCE            : 
+   5     9: 2: prim OBJECT_IDENTIFIER   : rsaEncryption
+  18   140: 1: prim BIT_STRING          : 
+  22   137: 2: cons SEQUENCE            : 
+  25   129: 3: prim INTEGER             : 00 cc 61 f9 ef 5a d0 bc 21 de 5b 3c a6 9e e7 25 |..a..Z..!.[<...%|
+                                        : d2 c5 04 ed f9 9a 6e 97 a0 27 9d 95 9f 23 64 ed |......n..'...#d.|
+                                        : 21 aa ef 8c 70 45 52 d5 d1 a3 de b2 ee 1a 0b e1 |!...pER.........|
+                                        : 55 8e 3c a1 82 b1 1a 8c 14 39 2b 6d e5 23 46 bc |U.<......9+m.#F.|
+                                        : 7c 88 bf 75 e3 fb 2b 9f 27 fa b2 1f 5c f1 99 34 ||..u..+.'...\..4|
+                                        : e3 11 0e a4 ad 72 a6 f0 73 f8 ab 38 b9 93 9b b6 |.....r..s..8....|
+                                        : 39 e7 8a d7 f4 34 11 9d 8c c2 b1 bd e4 ea f9 51 |9....4.........Q|
+                                        : 3b 05 65 08 c9 08 ed 43 c9 9b 0c eb 22 2c bb e1 |;.e....C....",..|
+                                        : ef                                              |.               |
+ 157     3: 3: prim INTEGER             : 010001
+
+EOF
+RUN
