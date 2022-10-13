@@ -732,7 +732,7 @@ static bool print_link_cb(void *p, const char *k, const char *v) {
 
 //TODO PJ
 static bool print_link_json_cb(void *p, const char *k, const char *v) {
-	r_cons_printf ("{\"0x%s\":\"%s\" }", k + strlen ("link."), v);
+	r_cons_printf ("{\"0x%s\":\"%s\"}", k + strlen ("link."), v);
 	return true;
 }
 
@@ -763,7 +763,7 @@ static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
 	}
 	r_cons_printf ("{\"%s\":", v);
 	r_core_cmdf (core, "pfj %s @ 0x%s", fmt, k + strlen ("link."));
-	r_cons_printf (" }");
+	r_cons_printf ("}");
 	return true;
 }
 

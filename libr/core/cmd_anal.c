@@ -379,7 +379,7 @@ static const char *help_detail_ae[] = {
 	"<<=", "", "shl ax, bx => bx,ax,<<=  # shift left",
 	">>>=", "", "ror ax, bx => bx,ax,>>>=  # rotate right",
 	"<<<=", "", "rol ax, bx => bx,ax,<<<=  # rotate left",
-	"?{ ", "", "if popped value != 0 run the block until }",
+	"?{", "", "if popped value != 0 run the block until }",
 	"}{", "", "else block",
 	"}", "", "end of conditional block",
 	"NAN", "", "checks if result in stack is not a number",
