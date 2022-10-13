@@ -83,14 +83,13 @@ R_API char *r_file_new(const char *root, ...) {
 
 R_API bool r_file_truncate(const char *filename, ut64 newsize) {
 	r_return_val_if_fail (filename, false);
-	int fd;
 	if (r_file_is_directory (filename)) {
 		return false;
 	}
 	if (!r_file_exists (filename) || !r_file_is_regular (filename)) {
 		return false;
 	}
-	fd = r_sandbox_open (filename, RDWR_FLAGS, 0644);
+	int fd = r_sandbox_open (filename, RDWR_FLAGS, 0644);
 	if (fd == -1) {
 		return false;
 	}
