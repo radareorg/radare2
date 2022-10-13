@@ -218,16 +218,14 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 			}
 			break;
 		case TT_CODEBLOCK:
-			nl = strchr (descptr + strlen (token), '\n');
-			if (nl) {
-				char *begin = nl + 1;
+			{
+				char *begin = descptr + strlen (token);
 				char *eoc = strstr (begin, "\n}\n");
 				if (eoc) {
-					return r_str_ndup (begin, eoc-begin);
-				} else {
-					R_LOG_ERROR ("Cannot find end of thing");
-					return NULL;
+					return r_str_ndup (begin, eoc - begin);
 				}
+				R_LOG_ERROR ("Cannot find end of thing");
+				return NULL;
 			}
 			break;
 		}
@@ -408,7 +406,7 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 	r2pm_setenv ();
 	R_LOG_DEBUG ("Entering %s", srcdir);
 #if __WINDOWS__
-	char *script = r2pm_get (pkg, "\nR2PM_INSTALL_WINDOWS() {", TT_CODEBLOCK);
+	char *script = r2pm_get (pkg, "\nR2PM_INSTALL_WINDOWS() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_ERROR ("This package does not have R2PM_INSTALL_WINDOWS instructions");
 		return 1;
@@ -417,13 +415,13 @@ static int r2pm_install_pkg(const char *pkg, bool global) {
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #else
-	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {", TT_CODEBLOCK);
+	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {\n", TT_CODEBLOCK);
 	if (!script) {
-		R_LOG_ERROR ("Invalid package name or script '%s'", pkg);
+		R_LOG_ERROR ("Cannot find the R2PM_INSTALL() {} script block for '%s'", pkg);
 		free (srcdir);
 		return 1;
 	}
-	R_LOG_DEBUG ("script (%s)", script);
+	eprintf ("script (%s)", script);
 	char *s = r_str_newf ("cd '%s/%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
@@ -465,7 +463,7 @@ static int r2pm_clean_pkg(const char *pkg) {
 	char *srcdir = r2pm_gitdir ();
 	if (R_STR_ISNOTEMPTY (srcdir)) {
 		char *d = r_file_new (srcdir, pkg, NULL);
-		if (d && r_file_exists (d)) {
+		if (d && r_file_is_directory (d)) {
 			r_file_rm_rf (d);
 		}
 		free (d);
@@ -479,7 +477,7 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 	char *srcdir = r2pm_gitdir ();
 	r2pm_setenv ();
 #if __WINDOWS__
-	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL_WINDOWS() {", TT_CODEBLOCK);
+	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL_WINDOWS() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_ERROR ("This package does not have R2PM_UNINSTALL_WINDOWS instructions");
 		free (srcdir);
@@ -489,7 +487,7 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #else
-	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL() {", TT_CODEBLOCK);
+	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_ERROR ("Cannot parse package");
 		free (srcdir);
@@ -617,7 +615,7 @@ static bool is_valid_package(const char *dbdir, const char *pkg) {
 	if (*pkg == '.') {
 		return false;
 	}
-	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {", TT_CODEBLOCK);
+	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_DEBUG ("Unable to find R2PM_INSTALL script in '%s'", pkg);
 		return false;
@@ -737,7 +735,6 @@ static void r2pm_varprint(const char *name) {
 	if (R_STR_ISEMPTY (name)) {
 		r2pm_envhelp (false);
 	} else {
-		r2pm_setenv ();
 		char *v = r_sys_getenv (name);
 		if (R_STR_ISNOTEMPTY (v)) {
 			printf ("%s\n", v);
@@ -775,6 +772,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		r2pm_actionword (&r2pm, argv[opt.ind]);
 	}
 	int i, c;
+	r2pm_setenv ();
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -818,7 +816,6 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 			break;
 		case 'H':
 			if (!strcmp (opt.arg, "H")) {
-				r2pm_setenv ();
 				r2pm_envhelp (true);
 			} else {
 				r2pm_varprint (opt.arg);
@@ -847,7 +844,6 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		return r_main_version_print ("r2pm");
 	}
 	if (r2pm.help || argc == 1) {
-		r2pm_setenv ();
 		printf ("%s", helpmsg);
 		if (r2pm.envhelp) {
 			r2pm_envhelp (true);
@@ -864,7 +860,6 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 			r_strbuf_appendf (sb, " %s", argv[i]);
 		}
 		char *cmd = r_strbuf_drain (sb);
-		r2pm_setenv ();
 		int res = r_sandbox_system (cmd, 1);
 		free (cmd);
 		return res;
@@ -884,6 +879,9 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		r_list_append (targets, strdup (argv[i]));
 	}
 	int res = -1;
+	if (r2pm.clean) {
+		res = r2pm_clean (targets);
+	}
 	if (r2pm.search) {
 		char *s = r2pm_search (argv[opt.ind]);
 		if (s) {
