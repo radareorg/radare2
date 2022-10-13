@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2009-2022 - pancake, h4ng3r */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -388,7 +388,15 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	if (dexhdr->types_offset + types_size >= dex->size) {
 		types_size = dex->size - dexhdr->types_offset;
 	}
+	if (types_size < 0) {
+		free (dex->strings);
+		free (dex->classes);
+		free (dex->methods);
+		free (dex->types);
+		goto fail;
+	}
 	dexhdr->types_size = types_size / sizeof (struct dex_type_t);
+
 	dex->types = (struct dex_type_t *) calloc (types_size + 1, sizeof (struct dex_type_t));
 	for (i = 0; i < dexhdr->types_size; i++) {
 		ut64 offset = dexhdr->types_offset + i * sizeof (struct dex_type_t);

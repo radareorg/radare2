@@ -69,7 +69,7 @@ static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64
 	if (!context->anal->iob.read_at (context->anal->iob.io, addr, buf, colSize)) {
 		return false;
 	}
-	bool be = context->anal->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (context->anal->config);
 
 	ut32 (*read_at_32)(const void *src, size_t offset) = be? r_read_at_be32 : r_read_at_le32;
 	col->signature = read_at_32 (buf, 0);
@@ -107,7 +107,7 @@ static bool rtti_msvc_read_class_hierarchy_descriptor(RVTableContext *context, u
 		return false;
 	}
 
-	const bool be = context->anal->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (context->anal->config);
 	ut32 (*read_at_32)(const void *src, size_t offset) = be? r_read_at_be32 : r_read_at_le32;
 	chd->signature = read_at_32 (buf, 0);
 	chd->attributes = read_at_32 (buf, 4);
@@ -141,7 +141,7 @@ static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 a
 	if (!context->anal->iob.read_at (context->anal->iob.io, addr, buf, bcdSize)) {
 		return false;
 	}
-	const bool be = context->anal->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (context->anal->config);
 	ut32 (*read_at_32)(const void *src, size_t offset) = be? r_read_at_be32 : r_read_at_le32;
 	int typeDescriptorAddrSize = R_MIN (context->word_size, 4);
 	bcd->type_descriptor_addr = (ut32) r_read_ble (buf, be, typeDescriptorAddrSize * 8);
@@ -195,7 +195,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 				r_list_free (ret);
 				return NULL;
 			}
-			bool be = context->anal->config->big_endian;
+			const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (context->anal->config);
 			ut32 (*read_32)(const void *src) = be? r_read_be32 : r_read_le32; // TODO: use ble32 instead
 			ut32 bcdOffset = read_32 (tmp);
 			if (bcdOffset == UT32_MAX) {

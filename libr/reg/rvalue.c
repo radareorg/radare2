@@ -2,16 +2,6 @@
 
 #include <r_reg.h>
 
-typedef ut32 ut27;
-// 580 move to r_util
-static ut27 r_read_me27(const ut8 *buf, int boff) {
-	ut27 ret = 0;
-	r_mem_copybits_delta ((ut8 *)&ret, 18, buf, boff, 9);
-	r_mem_copybits_delta ((ut8 *)&ret, 9, buf, boff + 9, 9);
-	r_mem_copybits_delta ((ut8 *)&ret, 0, buf, boff + 18, 9);
-	return ret;
-}
-
 R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 	r_return_val_if_fail (reg && item, 0);
 
@@ -77,7 +67,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	if (!regset->arena) {
 		return 0LL;
 	}
-	bool be = (reg->config)? reg->config->big_endian: false;
+	bool be = reg->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (reg->config): false;
 	switch (item->size) {
 	case 1: {
 		int offset = item->offset / 8;
@@ -97,6 +87,11 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	case 8:
 		if (regset->arena->size - off - 1 >= 0) {
 			return r_read_at_ble8 (regset->arena->bytes, off);
+		}
+		break;
+	case 12:
+		if (regset->arena->size - off - 2 >= 0) {
+			return r_read_ble16 (regset->arena->bytes + off, be) & 0x7ff;
 		}
 		break;
 	case 16:
@@ -144,7 +139,13 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 
 R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegisterId role) {
 	// TODO use mapping from RRegisterId to RRegItem (via RRegSet)
-	return r_reg_get_value (reg, r_reg_get (reg, r_reg_get_name (reg, role), -1));
+	RRegItem *ri = r_reg_get (reg, r_reg_get_name (reg, role), -1);
+	ut64 res = UT64_MAX;
+	if (ri) {
+		res = r_reg_get_value (reg, ri);
+		r_unref (ri);
+	}
+	return res;
 }
 
 R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
@@ -163,7 +164,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	if (!arena) {
 		return false;
 	}
-	bool be = (reg->config)? reg->config->big_endian: false;
+	bool be = reg->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (reg->config): false;
 	switch (item->size) {
 	case 80:
 	case 96: // long floating value
@@ -222,7 +223,12 @@ R_API bool r_reg_set_value_by_role(RReg *reg, RRegisterId role, ut64 val) {
 	r_return_val_if_fail (reg, false);
 	// TODO use mapping from RRegisterId to RRegItem (via RRegSet)
 	RRegItem *r = r_reg_get (reg, r_reg_get_name (reg, role), -1);
-	return r? r_reg_set_value (reg, r, val): false;
+	bool res = false;
+	if (r) {
+		res = r_reg_set_value (reg, r, val);
+		r_unref (r);
+	}
+	return res;
 }
 
 R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str) {
@@ -294,8 +300,7 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 }
 
 // TODO: support packbits=128 for xmm registers
-// R2_580 : return bool instead of int
-R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
+R_API bool r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val) {
 	r_return_val_if_fail (reg && reg->regset->arena && item, false);
 
 	if (packbits < 1) {

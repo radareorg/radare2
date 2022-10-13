@@ -1,10 +1,12 @@
-/* radare2 - LGPL - Copyright 2019-2021 - pancake */
+/* radare2 - LGPL - Copyright 2019-2022 - pancake */
 
 /* This code has been written by pancake which has been based on Alvaro's
  * r2pipe-python script which was based on FireEye script for IDA Pro.
  *
  * https://www.fireeye.com/blog/threat-research/2017/03/introduction_to_reve.html
  */
+
+#define R_LOG_ORIGIN "anal.objc"
 
 #include <r_core.h>
 
@@ -19,7 +21,6 @@ typedef struct {
 	RBinSection *_const;
 	RBinSection *_data;
 } RCoreObjc;
-
 
 const size_t objc2ClassSize = 0x28;
 const size_t objc2ClassInfoOffs = 0x20;
@@ -78,7 +79,7 @@ static inline ut64 readQword(RCoreObjc *objc, ut64 addr, bool *success) {
 }
 
 static void objc_analyze(RCore *core) {
-	const char *oldstr = r_print_rowlog (core->print, "Analyzing code to find selref references");
+	R_LOG_INFO ("Analyzing code to find selref references");
 	r_core_cmd0 (core, "aar");
 	if (!strcmp ("arm", r_config_get (core->config, "asm.arch"))) {
 		const bool emu_lazy = r_config_get_i (core->config, "emu.lazy");
@@ -86,7 +87,6 @@ static void objc_analyze(RCore *core) {
 		r_core_cmd0 (core, "aae");
 		r_config_set_b (core->config, "emu.lazy", emu_lazy);
 	}
-	r_print_rowlog_done (core->print, oldstr);
 }
 
 static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
@@ -142,13 +142,13 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	maxsize = R_MIN (maxsize, objc->file_size);
 	if (ss_const > maxsize) {
 		if (objc->core->bin->verbose) {
-			eprintf ("aao: Truncating ss_const from %u to %u\n", (int)ss_const, (int)maxsize);
+			R_LOG_WARN ("aao: Truncating ss_const from %u to %u", (int)ss_const, (int)maxsize);
 		}
 		ss_const = maxsize;
 	}
 	if (ss_selrefs > maxsize) {
 		if (objc->core->bin->verbose) {
-			eprintf ("aao: Truncating ss_selrefs from %u to %u\n", (int)ss_selrefs, (int)maxsize);
+			R_LOG_WARN ("aao: Truncating ss_selrefs from %u to %u", (int)ss_selrefs, (int)maxsize);
 		}
 		ss_selrefs = maxsize;
 	}
@@ -158,7 +158,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	}
 	const size_t word_size = objc->word_size; // assuming 8 because of the read_le64
 	if (!r_io_read_at (objc->core->io, objc->_const->vaddr, buf, ss_const)) {
-		eprintf ("aao: Cannot read the whole const section %u\n", (unsigned int)ss_const);
+		R_LOG_WARN ("aao: Cannot read the whole const section %u", (unsigned int)ss_const);
 		return false;
 	}
 	for (off = 0; off + word_size < ss_const && off + word_size < maxsize; off += word_size) {
@@ -169,7 +169,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 		}
 	}
 	if (!r_io_read_at (objc->core->io, va_selrefs, buf, ss_selrefs)) {
-		eprintf ("aao: Cannot read the whole selrefs section\n");
+		R_LOG_WARN ("aao: Cannot read the whole selrefs section");
 		return false;
 	}
 	for (off = 0; off + word_size < ss_selrefs && off + word_size < maxsize; off += word_size) {
@@ -242,8 +242,7 @@ static bool objc_find_refs(RCore *core) {
 		core_objc_free (objc);
 		return false;
 	}
-	const char *oldstr = r_print_rowlog (core->print, "Parsing metadata in ObjC to find hidden xrefs");
-	r_print_rowlog_done (core->print, oldstr);
+	R_LOG_INFO ("Parsing metadata in ObjC to find hidden xrefs");
 
 	ut64 off;
 	size_t total_xrefs = 0;
@@ -273,7 +272,7 @@ static bool objc_find_refs(RCore *core) {
 		ut64 delta = (objc2ClassMethSize * count);
 		ut64 to = classMethodsVA + delta - 8;
 		if (delta > objc->file_size) {
-			eprintf ("Workaround: Corrupted objc data? checking next %"PFMT64x" !< %"PFMT64x"\n", classMethodsVA, to);
+			R_LOG_WARN ("Workarounding malformed objc data. checking next %"PFMT64x" !< %"PFMT64x, classMethodsVA, to);
 			count = (objc->_data->vsize / objc2ClassMethSize) - 1;
 			delta = objc2ClassMethSize * count;
 			to = classMethodsVA + delta;
@@ -314,9 +313,7 @@ static bool objc_find_refs(RCore *core) {
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
 	const ut64 ss_selrefs = va_selrefs + objc->_selrefs->vsize;
 
-	char rs[128];
-	snprintf (rs, sizeof (rs), "Found %u objc xrefs...", (unsigned int)total_xrefs);
-	r_print_rowlog (core->print, rs);
+	R_LOG_INFO ("Found %u objc xrefs", (unsigned int)total_xrefs);
 	size_t total_words = 0;
 	ut64 a;
 	const size_t word_size = objc->word_size;
@@ -325,8 +322,7 @@ static bool objc_find_refs(RCore *core) {
 		r_meta_set (core->anal, R_META_TYPE_DATA, a, word_size, NULL);
 		total_words++;
 	}
-	snprintf (rs, sizeof (rs), "Found %u objc xrefs in %u dwords.", (unsigned int)total_xrefs, (unsigned int)total_words);
-	r_print_rowlog_done (core->print, rs);
+	R_LOG_INFO ("Found %u objc xrefs in %u dwords", (unsigned int)total_xrefs, (unsigned int)total_words);
 	core_objc_free (objc);
 	return true;
 }

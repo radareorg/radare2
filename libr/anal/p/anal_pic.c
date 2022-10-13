@@ -779,7 +779,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	case 0xf:	//nop
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
-		r_strbuf_setf (&op->esil, ",");
+		r_strbuf_set (&op->esil, ",");
 		return op->size;
 	case 0xc: //movff
 		if (len < 4) {
@@ -980,12 +980,12 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	case 0x13: //return
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->cycles = 2;
-		r_strbuf_setf (&op->esil, "tos,pc,=,");
+		r_strbuf_set (&op->esil, "tos,pc,=,");
 		return op->size;
 	case 0x12: //return
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->cycles = 2;
-		r_strbuf_setf (&op->esil, "tos,pc,=");
+		r_strbuf_set (&op->esil, "tos,pc,=");
 		return op->size;
 	case 0x11: //retfie
 	case 0x10: //retfie
@@ -1012,7 +1012,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	case 0x0: //nop
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
-		r_strbuf_setf (&op->esil, ",");
+		r_strbuf_set (&op->esil, ",");
 		return op->size;
 	};
 beach:

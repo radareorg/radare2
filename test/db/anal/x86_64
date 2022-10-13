@@ -827,9 +827,9 @@ afr
 afl
 EOF
 EXPECT=<<EOF
-0x00001f80    1 41           main
-0x00001f50    1 47           sym._foo
-0x00001f00    4 73           sym._bar
+0x00001f80    1     41 main
+0x00001f50    1     47 sym._foo
+0x00001f00    4     73 sym._bar
 EOF
 RUN
 
@@ -841,7 +841,7 @@ aF
 afl
 EOF
 EXPECT=<<EOF
-0x00001f80    1 41           main
+0x00001f80    1     41 main
 EOF
 RUN
 
@@ -867,9 +867,9 @@ aap
 afl
 EOF
 EXPECT=<<EOF
-0x00001f00    4 73           sym._bar
-0x00001f50    1 47           sym._foo
-0x00001f80    1 41           main
+0x00001f00    4     73 sym._bar
+0x00001f50    1     47 sym._foo
+0x00001f80    1     41 main
 EOF
 RUN
 
@@ -4118,9 +4118,9 @@ EXPECT=<<EOF
 |                                |
 `--------------------------------'
 
-address            size  nbbs edges    cc cost          min bound range max bound          calls locals args xref frame name
-================== ==== ===== ===== ===== ==== ================== ===== ================== ===== ====== ==== ==== ===== ====
-0x0000000000000003    9     3     3     0    4 0x0000000000000000     7 0x0000000000000007     0    0      0    0     0 fcn.00000003
+address            noret size  nbbs edges    cc cost          min bound range max bound          calls locals args xref frame name
+================== ===== ===== ===== ===== ===== ==== ================== ===== ================== ===== ====== ==== ==== ===== ====
+0x0000000000000003     0    9     3     3     0    4 0x0000000000000000     7 0x0000000000000007     0    0      0    0     0 fcn.00000003
 EOF
 RUN
 

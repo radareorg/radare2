@@ -82,7 +82,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 			break;
 		}
 		off++;
-		// int bank_number = (hb >> 5) & 7;
+		int bank_number = (hb >> 5) & 7;
 		int chunk_type = hb & 0x1f;
 		ut16 chunk_length = 0;
 		if (r_buf_read_at (buf, off, (ut8*)&chunk_length, 2) != 2) {
@@ -105,14 +105,12 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 		case CHUNK_CODE_ZIP:
 		case CHUNK_DEFAULT:
 		case CHUNK_SCREEN:
-#if 0
-			eprintf ("BANK %d CHUNK %2d (%s) LENGTH %d\n",
+			R_LOG_DEBUG ("BANK %d CHUNK %2d (%s) LENGTH %d",
 				bank_number, chunk_type,
 				chunk_name (chunk_type), chunk_length);
-#endif
 			break;
 		default:
-			// eprintf ("Invalid chunk at offset 0x%"PFMT64x"\n", off);
+			R_LOG_ERROR ("Invalid chunk at offset 0x%"PFMT64x, off);
 			return false;
 		}
 		// data
@@ -259,14 +257,12 @@ static RList *sections(RBinFile *bf) {
 				add_section (ret, n, off, chunk_length, vaddr);
 				free (n);
 			}
-#if 0
-			eprintf ("BANK %d CHUNK %2d (%s) LENGTH %d\n",
+			R_LOG_DEBUG ("BANK %d CHUNK %2d (%s) LENGTH %d",
 				bank_number, chunk_type,
 				chunk_name (chunk_type), chunk_length);
-#endif
 			break;
 		default:
-			eprintf ("Invalid chunk at offset 0x%"PFMT64x"\n", off);	
+			R_LOG_ERROR ("Invalid chunk at offset 0x%"PFMT64x, off);
 			return false;
 		}
 		// data

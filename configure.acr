@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 5.7.7
+VERSION 5.7.9
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -29,6 +29,8 @@ ARG_DISABLE WANT_THREADS threads disable use of thread apis ;
 
 (( useful for static builds . see sys/static.sh ))
 ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
+
+ARG_ENABLE R_CRITICAL_ENABLED threadsafety enable mutexes in critical code paths ;
 
 ARG_WITHOUT WANT_DYLINK dylink disable support for dynamic loading of plugins ;
 ARG_WITHOUT HAVE_FORK fork disable fork ;
@@ -140,6 +142,7 @@ IFNULL SSL_LDFLAGS {
 	}
 }
 
+ARG_WITH WANT_LIBUV libuv disable libuv dependency ;
 CHKVER libuv 1.0.0
 IF HAVE_LIBUV_VERSION_1_0_0 {
 	PKGCFG LIBUV_CFLAGS LIBUV_LDFLAGS libuv
@@ -148,7 +151,6 @@ IF HAVE_LIBUV_VERSION_1_0_0 {
 	}{
 		HAVE_LIBUV = 0 ;
 	}
-	ARG_WITHOUT WANT_LIBUV libuv disable libuv dependency ;
 	IFNOT WANT_LIBUV {
 		HAVE_LIBUV = 0 ;
 	}
@@ -277,7 +279,7 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_asm.pc
 	pkgcfg/r_bin.pc
 	pkgcfg/r_anal.pc
-	pkgcfg/r_hash.pc
+	pkgcfg/r_arch.pc
 	pkgcfg/r_cons.pc
 	pkgcfg/r_core.pc
 	pkgcfg/r_lang.pc

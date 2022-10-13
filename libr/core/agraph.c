@@ -1,16 +1,14 @@
-/* Copyright radare2 - 2014-2021 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2022 - pancake, ret2libc */
 
 #include <r_core.h>
-#include <r_cons.h>
 #include <r_util/r_graph_drawable.h>
-#include <ctype.h>
-#include <limits.h>
 
 static R_TH_LOCAL int mousemode = 0;
 static R_TH_LOCAL int disMode = 0;
 static R_TH_LOCAL int discroll = 0;
 static R_TH_LOCAL bool graphCursor = false;
-static const char *mousemodes[] = {
+
+static const char * const mousemodes[] = {
 	"canvas-y",
 	"canvas-x",
 	"node-y",
@@ -179,16 +177,16 @@ static int mode2opts(const RAGraph *g) {
 
 // duplicated from visual.c
 static void rotateAsmemu(RCore *core) {
-	const bool isEmuStr = r_config_get_i (core->config, "emu.str");
-	const bool isEmu = r_config_get_i (core->config, "asm.emu");
+	const bool isEmuStr = r_config_get_b (core->config, "emu.str");
+	const bool isEmu = r_config_get_b (core->config, "asm.emu");
 	if (isEmu) {
 		if (isEmuStr) {
-			r_config_set (core->config, "emu.str", "false");
+			r_config_set_b (core->config, "emu.str", false);
 		} else {
-			r_config_set (core->config, "asm.emu", "false");
+			r_config_set_b (core->config, "asm.emu", false);
 		}
 	} else {
-		r_config_set (core->config, "emu.str", "true");
+		r_config_set_b (core->config, "emu.str", true);
 	}
 }
 
@@ -2122,18 +2120,17 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		r_config_hold_free (hc);
 		return res;
 	}
-	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
 
 	// configure options
-	r_config_set_i (core->config, "asm.lines.bb", false);
-	r_config_set_i (core->config, "asm.lines", false);
+	r_config_set_b (core->config, "asm.lines.bb", false);
+	r_config_set_b (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmt.col", 0);
-	r_config_set_i (core->config, "asm.marks", false);
-	r_config_set_i (core->config, "asm.cmt.right", (opts & BODY_SUMMARY) || o_cmtright);
-	r_config_set_i (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);
-	r_config_set_i (core->config, "asm.bytes",
+	r_config_set_b (core->config, "asm.marks", false);
+	r_config_set_b (core->config, "asm.cmt.right", (opts & BODY_SUMMARY) || o_cmtright);
+	r_config_set_b (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);
+	r_config_set_b (core->config, "asm.bytes",
 		(opts & (BODY_SUMMARY | BODY_OFFSETS)) || o_bytes || o_flags_in_bytes);
-	r_config_set_i (core->config, "asm.bbmiddle", false);
+	r_config_set_b (core->config, "asm.bbmiddle", false);
 	core->print->cur_enabled = false;
 
 	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY || o_graph_offset) {
@@ -2142,8 +2139,14 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		r_config_set_i (core->config, "asm.offset", false);
 	}
 
-	bool html = r_config_get_i (core->config, "scr.html");
-	r_config_set_i (core->config, "scr.html", 0);
+	bool html = r_config_get_b (core->config, "scr.html");
+	r_config_set_b (core->config, "scr.html", false);
+
+	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
+	const char *bbcmd = r_config_get (core->config, "cmd.bbgraph");
+	if (R_STR_ISNOTEMPTY (bbcmd)) {
+		cmd = bbcmd;
+	}
 	if (r_config_get_i (core->config, "graph.aeab")) {
 		body = r_core_cmd_strf (core, "%s 0x%08"PFMT64x, "aeab", addr);
 	} else {
@@ -2212,7 +2215,7 @@ static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
 static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
-	bool emu = r_config_get_i (core->config, "asm.emu");
+	const bool emu = r_config_get_b (core->config, "asm.emu");
 	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena = NULL;
 	int saved_arena_size = 0;
@@ -2358,8 +2361,8 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RListIter *iter;
 	char *shortcut = NULL;
 	int shortcuts = 0;
-	bool emu = r_config_get_i (core->config, "asm.emu");
-	bool few = r_config_get_i (core->config, "graph.few");
+	bool emu = r_config_get_b (core->config, "asm.emu");
+	bool few = r_config_get_b (core->config, "graph.few");
 	int ret = false;
 	ut64 saved_gp = core->anal->gp;
 	int saved_arena_size = 0;
@@ -3192,8 +3195,7 @@ static void agraph_set_zoom(RAGraph *g, int v) {
 		const int K = 920;
 		if (g->zoom < v) {
 			g->can->sy = (g->can->sy * K) / 1000;
-		}
-		else {
+		} else {
 			g->can->sy = (g->can->sy * 1000) / K;
 		}
 		g->zoom = v;
@@ -3405,7 +3407,7 @@ static bool check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunc
 			free (title);
 		}
 		g->can->color = r_config_get_i (core->config, "scr.color");
-		g->hints = r_config_get_i (core->config, "graph.hints");
+		g->hints = r_config_get_b (core->config, "graph.hints");
 	}
 	if (g->update_seek_on || g->force_update_seek) {
 		RANode *n = g->update_seek_on;
@@ -3454,20 +3456,20 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	}
 	if (g->is_dis) {
 		(void) G (-g->can->sx + 1, -g->can->sy + 2);
-		int scr_utf8 = r_config_get_i (core->config, "scr.utf8");
-		int asm_bytes = r_config_get_i (core->config, "asm.bytes");
-		int asm_cmt_right = r_config_get_i (core->config, "asm.cmt.right");
-		r_config_set_i (core->config, "scr.utf8", 0);
-		r_config_set_i (core->config, "asm.bytes", 0);
-		r_config_set_i (core->config, "asm.cmt.right", 0);
+		bool scr_utf8 = r_config_get_b (core->config, "scr.utf8");
+		bool asm_bytes = r_config_get_b (core->config, "asm.bytes");
+		bool asm_cmt_right = r_config_get_b (core->config, "asm.cmt.right");
+		r_config_set_b (core->config, "scr.utf8", false);
+		r_config_set_b (core->config, "asm.bytes", false);
+		r_config_set_b (core->config, "asm.cmt.right", false);
 		char *str = r_core_cmd_str (core, "pd $r");
 		if (str) {
 			W (str);
 			free (str);
 		}
-		r_config_set_i (core->config, "scr.utf8", scr_utf8);
-		r_config_set_i (core->config, "asm.bytes", asm_bytes);
-		r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
+		r_config_set_b (core->config, "scr.utf8", scr_utf8);
+		r_config_set_b (core->config, "asm.bytes", asm_bytes);
+		r_config_set_b (core->config, "asm.cmt.right", asm_cmt_right);
 	}
 	if (g->title && *g->title) {
 		g->can->sy ++;
@@ -4067,19 +4069,20 @@ static void graph_breakpoint(RCore *core) {
 static void graph_continue(RCore *core) {
 	r_core_cmd (core, "dc", 0);
 }
+
 static void applyDisMode(RCore *core) {
 	switch (disMode) {
 	case 0:
-		r_config_set (core->config, "asm.pseudo", "false");
-		r_config_set (core->config, "asm.esil", "false");
+		r_config_set_b (core->config, "asm.pseudo", false);
+		r_config_set_b (core->config, "asm.esil", false);
 		break;
 	case 1:
-		r_config_set (core->config, "asm.pseudo", "true");
-		r_config_set (core->config, "asm.esil", "false");
+		r_config_set_b (core->config, "asm.pseudo", true);
+		r_config_set_b (core->config, "asm.esil", false);
 		break;
 	case 2:
-		r_config_set (core->config, "asm.pseudo", "false");
-		r_config_set (core->config, "asm.esil", "true");
+		r_config_set_b (core->config, "asm.pseudo", false);
+		r_config_set_b (core->config, "asm.esil", true);
 		break;
 	}
 }
@@ -4302,11 +4305,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->on_curnode_change = (RANodeCallback) seek_to_node;
 	g->on_curnode_change_data = core;
 	g->edgemode = r_config_get_i (core->config, "graph.edges");
-	g->hints = r_config_get_i (core->config, "graph.hints");
+	g->hints = r_config_get_b (core->config, "graph.hints");
 	g->is_interactive = is_interactive;
-	bool asm_comments = r_config_get_i (core->config, "asm.comments");
-	r_config_set (core->config, "asm.comments",
-			r_str_bool (r_config_get_i (core->config, "graph.comments")));
+	bool asm_comments = r_config_get_b (core->config, "asm.comments");
+	r_config_set_b (core->config, "asm.comments", r_config_get_b (core->config, "graph.comments"));
 
 	/* we want letters as shortcuts for call/jmps */
 	core->is_asmqjmps_letter = true;
@@ -4745,7 +4747,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
 				graphNodeMove (g, 'j', speed * 2);
 			} else {
-				can->sy -= (5*movspeed) * (invscroll? -1: 1);
+				can->sy -= (5 * movspeed) * (invscroll? -1: 1);
 			}
 			break;
 		case 'K':
@@ -5048,7 +5050,7 @@ R_API RAGraph *create_agraph_from_graph(const RGraph/*<RGraphNodeInfo>*/ *graph)
 	// Cache lookup to build edges
 	HtPPOptions pointer_options = {0};
 	HtPP /*<RGraphNode *node, RANode *anode>*/ *hashmap = ht_pp_new_opt (&pointer_options);
-	
+
 	if (!hashmap) {
 		r_agraph_free (result_agraph);
 		return NULL;

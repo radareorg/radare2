@@ -28,36 +28,36 @@ typedef ut8 cycles_move_lut[CYCLES_MOVE_LUT_SRCS][CYCLES_MOVE_LUT_DSTS];
 
 // move.b, move.w
 static cycles_move_lut cycles_move_w = {
-   /*  Dn, An, (An), (An)+, -(An), d(An), d(An,ix), xxx.W, xxx.L */
-    {   4,  4,    8,     8,     8,    12,       14,    12,    16 }, /* Dn       */
-    {   4,  4,    8,     8,     8,    12,       14,    12,    16 }, /* An       */
-    {   8,  8,   12,    12,    12,    16,       18,    16,    20 }, /* (An)     */
-    {   8,  8,   12,    12,    12,    16,       18,    16,    20 }, /* (An)+    */
-    {  10, 10,   14,    14,    14,    18,       20,    18,    22 }, /* -(An)    */
-    {  12, 12,   16,    16,    16,    20,       22,    20,    24 }, /* d(An)    */
-    {  14, 14,   18,    18,    18,    22,       24,    22,    26 }, /* d(An,ix) */
-    {  12, 12,   16,    16,    16,    20,       22,    20,    24 }, /* xxx.W    */
-    {  16, 16,   20,    20,    20,    24,       26,    24,    28 }, /* xxx.L    */
-    {  12, 12,   16,    16,    16,    20,       22,    20,    24 }, /* d(PC)    */
-    {  14, 14,   18,    18,    18,    22,       24,    22,    26 }, /* d(PC,ix) */
-    {  8,   8,   12,    12,    12,    16,       18,    16,    20 }, /* #xxx     */
+	/*  Dn, An, (An), (An)+, -(An), d(An), d(An,ix), xxx.W, xxx.L */
+	{   4,  4,    8,     8,     8,    12,       14,    12,    16 }, /* Dn       */
+	{   4,  4,    8,     8,     8,    12,       14,    12,    16 }, /* An       */
+	{   8,  8,   12,    12,    12,    16,       18,    16,    20 }, /* (An)     */
+	{   8,  8,   12,    12,    12,    16,       18,    16,    20 }, /* (An)+    */
+	{  10, 10,   14,    14,    14,    18,       20,    18,    22 }, /* -(An)    */
+	{  12, 12,   16,    16,    16,    20,       22,    20,    24 }, /* d(An)    */
+	{  14, 14,   18,    18,    18,    22,       24,    22,    26 }, /* d(An,ix) */
+	{  12, 12,   16,    16,    16,    20,       22,    20,    24 }, /* xxx.W    */
+	{  16, 16,   20,    20,    20,    24,       26,    24,    28 }, /* xxx.L    */
+	{  12, 12,   16,    16,    16,    20,       22,    20,    24 }, /* d(PC)    */
+	{  14, 14,   18,    18,    18,    22,       24,    22,    26 }, /* d(PC,ix) */
+	{  8,   8,   12,    12,    12,    16,       18,    16,    20 }, /* #xxx     */
 };
 
 // move.l
 static cycles_move_lut cycles_move_l = {
-   /*  Dn, An, (An), (An)+, -(An), d(An), d(An,ix), xxx.W, xxx.L */
-    {   4,  4,   12,    12,    12,    16,       18,    16,    20 }, /* Dn       */
-    {   4,  4,   12,    12,    12,    16,       18,    16,    20 }, /* An       */
-    {  12, 12,   20,    20,    20,    24,       26,    24,    28 }, /* (An)     */
-    {  12, 12,   20,    20,    20,    24,       26,    24,    28 }, /* (An)+    */
-    {  14, 14,   22,    22,    22,    26,       28,    26,    30 }, /* -(An)    */
-    {  16, 16,   24,    24,    24,    28,       30,    28,    32 }, /* d(An)    */
-    {  18, 18,   26,    26,    26,    30,       32,    30,    34 }, /* d(An,ix) */
-    {  16, 16,   24,    24,    24,    28,       30,    28,    32 }, /* xxx.W    */
-    {  20, 20,   28,    28,    28,    32,       34,    32,    36 }, /* xxx.L    */
-    {  16, 16,   24,    24,    24,    28,       30,    28,    32 }, /* d(PC)    */
-    {  18, 18,   26,    26,    26,    30,       32,    30,    34 }, /* d(PC,ix) */
-    {  12, 12,   20,    20,    20,    24,       26,    24,    28 }  /* #xxx     */
+	/*  Dn, An, (An), (An)+, -(An), d(An), d(An,ix), xxx.W, xxx.L */
+	{   4,  4,   12,    12,    12,    16,       18,    16,    20 }, /* Dn       */
+	{   4,  4,   12,    12,    12,    16,       18,    16,    20 }, /* An       */
+	{  12, 12,   20,    20,    20,    24,       26,    24,    28 }, /* (An)     */
+	{  12, 12,   20,    20,    20,    24,       26,    24,    28 }, /* (An)+    */
+	{  14, 14,   22,    22,    22,    26,       28,    26,    30 }, /* -(An)    */
+	{  16, 16,   24,    24,    24,    28,       30,    28,    32 }, /* d(An)    */
+	{  18, 18,   26,    26,    26,    30,       32,    30,    34 }, /* d(An,ix) */
+	{  16, 16,   24,    24,    24,    28,       30,    28,    32 }, /* xxx.W    */
+	{  20, 20,   28,    28,    28,    32,       34,    32,    36 }, /* xxx.L    */
+	{  16, 16,   24,    24,    24,    28,       30,    28,    32 }, /* d(PC)    */
+	{  18, 18,   26,    26,    26,    30,       32,    30,    34 }, /* d(PC,ix) */
+	{  12, 12,   20,    20,    20,    24,       26,    24,    28 }  /* #xxx     */
 };
 
 static int get_move_cycles (m68k_address_mode dst, m68k_address_mode src, bool is_long) {
@@ -74,7 +74,7 @@ static int get_move_cycles (m68k_address_mode dst, m68k_address_mode src, bool i
 // clang-format on
 
 static int get_capstone_mode (RAnal *a) {
-	int mode = a->config->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	int mode = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	// XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	// replace this with the asm.features?
 	const char *cpu = a->config->cpu;
@@ -221,28 +221,29 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 
 static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	static R_TH_LOCAL RRegItem reg;
+	RAnalValue *src, *dst;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
 		ZERO_FILL (reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
-			op->src[0] = r_anal_value_new ();
-			op->src[0]->reg = &reg;
-			parse_reg_name (op->src[0]->reg, handle, insn, 1);
-			op->src[0]->delta = OPERAND(0).mem.disp;
+			src = r_vector_push (op->srcs, NULL);
+			src->reg = &reg;
+			parse_reg_name (src->reg, handle, insn, 1);
+			src->delta = OPERAND(0).mem.disp;
 		} else if (OPERAND(0).type == M68K_OP_MEM) {
-			op->dst = r_anal_value_new ();
-			op->dst->reg = &reg;
-			parse_reg_name (op->dst->reg, handle, insn, 0);
-			op->dst->delta = OPERAND(1).mem.disp;
+			dst = r_vector_push (op->dsts, NULL);
+			dst->reg = &reg;
+			parse_reg_name (dst->reg, handle, insn, 0);
+			dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_LEA:
 		ZERO_FILL (reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
-			op->dst = r_anal_value_new ();
-			op->dst->reg = &reg;
-			parse_reg_name (op->dst->reg, handle, insn, 1);
-			op->dst->delta = OPERAND(1).mem.disp;
+			dst = r_vector_push (op->dsts, NULL);
+			dst->reg = &reg;
+			parse_reg_name (dst->reg, handle, insn, 1);
+			dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
 	}
@@ -253,12 +254,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (handle == 0) {
 		return -1;
 	}
-	
+
 	int n, opsize = -1;
 	cs_insn* insn = NULL;
 	cs_m68k *m68k;
 	cs_detail *detail;
-	
+
 	op->size = 4;
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	int on = n;
@@ -281,7 +282,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 				r_str_replace_char (p, '#', 0);
 				op->mnemonic = p;
 			} else {
-				free (str);
+				free (p);
 			}
 		}
 	}

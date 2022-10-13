@@ -5,11 +5,12 @@ no_user_plugins = get_option('plugins') == ''
 esil_plugins = [ 'dummy' ]
 asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
+arch_plugins = [ 'null' ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = [ 'xtr_sep64' ]
 io_plugins = [ 'malloc', 'xattr', 'fd', 'default', 'null', 'rbuf', 'r2pipe' , 'r2pipe']
-fs_plugins = [ 'r2', 'posix', 'io' ]
+fs_plugins = [ 'r2', 'posix', 'io', 'zip' ]
 bp_plugins = [ 'bf' ]
 crypto_plugins = [ 'xor', 'punycode' ]
 core_plugins = [ 'a2f' ]
@@ -62,7 +63,7 @@ if not no_user_plugins
     io_plugins += [ 'r2web' ]
   endif
   if user_plugins.contains('arm')
-    asm_plugins += [ 'arm_cs' ]
+    asm_plugins += [ 'arm' ]
     anal_plugins += [ 'arm_cs' ]
     bp_plugins += [ 'arm' ]
     parse_plugins += [ 'arm_pseudo' ]
@@ -77,10 +78,6 @@ if not no_user_plugins
   endif
   if user_plugins.contains('sparc')
     anal_plugins += [ 'sparc_cs' ]
-    if use_gpl
-      asm_plugins += [ 'sparc_gnu' ]
-      anal_plugins += [ 'sparc_gnu' ]
-    endif
     bp_plugins += [ 'sparc' ]
     # missing parse_plugins += [ 'sparc_pseudo' ]
   endif
@@ -123,11 +120,8 @@ if no_user_plugins
 
 asm_plugins += [
   'arm_as',
-  'arm_cs',
-  'arm_winedbg',
-  'or1k',
+  'arm',
   'ppc_as',
-  'ppc_cs',
   'x86_as',
   'x86_nasm',
   'x86_nz',
@@ -149,7 +143,6 @@ anal_plugins += [
   'bpf_cs',
   'chip8',
   'cr16',
-  'bpf',
   'cris',
   'dalvik',
   'ebc',
@@ -164,6 +157,7 @@ anal_plugins += [
   'lm32',
   'loongarch_gnu',
   'm68k_cs',
+  'm68k_gnu',
   'm680x_cs',
   'malbolge',
   'mcore',
@@ -198,21 +192,18 @@ if no_user_plugins
   if use_gpl
     asm_plugins += [
       # 'z80',
-      'arm_gnu',
-  #    'hppa_gnu',
-      'm68k_gnu',
-      'lanai_gnu',
-      'sparc_gnu'
     ]
     anal_plugins += [
       'z80',
       'arm_gnu',
+      'lanai_gnu',
       'bpf',
       'mips_gnu',
       'loongarch_gnu',
       's390_gnu',
       'pdp11_gnu',
       'ppc_gnu',
+      'm68k_gnu',
       'sparc_gnu',
     ]
   endif
@@ -263,6 +254,7 @@ bin_plugins += [
   'pebble',
   'prg',
   'psxexe',
+  'rel',
   'sfc',
   'smd',
   'sms',
@@ -363,6 +355,7 @@ fs_plugins += [
 io_plugins += [
   'ar',
   'fd',
+  'reg',
   'bfdbg',
   'bochs',
   'debug',
@@ -418,6 +411,8 @@ endif
 
 parse_plugins += [
   '6502_pseudo',
+  'bpf_pseudo',
+  'evm_pseudo',
   'arm_pseudo',
   'avr_pseudo',
   'chip8_pseudo',
@@ -438,6 +433,7 @@ endif
 
 include_files = [
   'include/r2naked.h',
+  'include/rvc.h',
   'include/r_agraph.h',
   'include/r_anal.h',
   'include/r_arch.h',
@@ -456,7 +452,6 @@ include_files = [
   'include/r_egg.h',
   'include/r_endian.h',
   'include/r_flag.h',
-  'include/r_flist.h',
   'include/r_fs.h',
   'include/r_getopt.h',
   'include/r_hash.h',
@@ -528,6 +523,7 @@ r_util_files = [
   'include/r_util/r_queue.h',
   'include/r_util/r_range.h',
   'include/r_util/r_rbtree.h',
+  'include/r_util/r_ref.h',
   'include/r_util/r_sandbox.h',
   'include/r_util/r_signal.h',
   'include/r_util/r_spaces.h',
@@ -553,7 +549,9 @@ r_util_files = [
 install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 
 r_crypto_files = [
-  'include/r_crypto/r_des.h'
+  'include/r_crypto/r_aes.h',
+  'include/r_crypto/r_des.h',
+  'include/r_crypto/r_sm4.h'
 ]
 install_headers(r_crypto_files, install_dir: join_paths(r2_incdir, 'r_crypto'))
 

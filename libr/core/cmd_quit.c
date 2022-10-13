@@ -25,7 +25,7 @@ static int cmd_Quit(void *data, const char *input) {
 			}
 			return R_CMD_RC_QUIT;
 		}
-		r_config_set (core->config, "scr.hist.save", "false");
+		r_config_set_b (core->config, "scr.hist.save", false);
 	}
 	if (IS_DIGIT (input[0]) || input[0] == ' ') {
 		r_core_return_code (core, r_num_math (core->num, input));
@@ -61,9 +61,9 @@ static int cmd_quit(void *data, const char *input) {
 			core->num->value = 1;
 		}
 		if (input[1] == 'y') {
-			core->num->value += 10;	
+			core->num->value += 10;
 		} else if (input[1] == 'n') {
-			core->num->value += 2;	
+			core->num->value += 2;
 		}
 		return R_CMD_RC_QUIT;
 	}

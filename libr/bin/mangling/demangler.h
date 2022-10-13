@@ -29,7 +29,7 @@ EDemanglerErr create_demangler(SDemangler **demangler);
 /// \return Returns eDemangleErrOK if creating of object has been finish with
 ///			success, else one of next errors: eManglingUnsupported,
 ///			eDemanglerErrMemoryAllocation, eDemanglerErrUnsupportedMangling,
-///			eDemanglerErrUnkown
+///			eDemanglerErrUnknown
 ///////////////////////////////////////////////////////////////////////////////
 EDemanglerErr init_demangler(SDemangler *demangler, char *sym);
 

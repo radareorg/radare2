@@ -185,7 +185,6 @@ static int parse(RParse *p, const char *data, char *str) {
 	*w0 = *w1 = *w2 = *w3 = '\0';
 	if (*buf) {
 		end = buf + strlen (buf);
-		
 		ptr = strchr (buf, '(');
 		if (!ptr) {
 			ptr = strchr (buf, ' ');
@@ -299,6 +298,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	} else {
 		replace (nw, wa, str);
 	}
+	r_str_fixspaces (str);
 	free (buf);
 	return true;
 }

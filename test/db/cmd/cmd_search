@@ -39,22 +39,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/m lzma
-FILE=bins/other/hello-world.lzma
-CMDS=pm
-EXPECT=<<EOF
-0x00000000 1 LZMA BE compressed data dictionary size: 32768 bytes
-EOF
-RUN
-
-NAME=/m lzma
-FILE=bins/other/smol.lzma
-CMDS=pm
-EXPECT=<<EOF
-0x00000000 1 LZMA LE compressed data dictionary size: 2162620 bytes
-EOF
-RUN
-
 NAME=/r push [imm] refs
 FILE=bins/pe/x.dll
 CMDS=/r 0x69682004
@@ -98,10 +82,21 @@ EXPECT=<<EOF
 0x100011a50             02208072  movk w2, 0x100
 0x100011ac4             02208072  movk w2, 0x100
 0x100011b38             02208072  movk w2, 0x100
+0x100012588             e3031832  mov w3, 0x100
 0x100013704             02208072  movk w2, 0x100
+0x100013c7c             e8031832  mov w8, 0x100
+0x100013d28             e10378b2  mov x1, 0x100
+0x100013db0             e8031832  mov w8, 0x100
+0x100013fe0             e80378b2  mov x8, 0x100
+0x10001413c             e00378b2  mov x0, 0x100
+0x100014670             e9031832  mov w9, 0x100
 0x10006cb40             ff0304d1  sub sp, sp, 0x100
 0x100072594             04208072  movk w4, 0x100
 0x10007856c             ff0304d1  sub sp, sp, 0x100
+0x100086a3c             e3031832  mov w3, 0x100
+0x100086ae0             e3031832  mov w3, 0x100
+0x100086b20             e3031832  mov w3, 0x100
+0x100086b5c             e3031832  mov w3, 0x100
 0x10009b4e8             ff0304d1  sub sp, sp, 0x100
 0x1000bfc00             04208072  movk w4, 0x100
 0x1000f24d0             ff0304d1  sub sp, sp, 0x100
@@ -540,34 +535,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=/m search from/to (seek 0)
-FILE=bins/pe/standard.exe
-CMDS=<<EOF
-e io.va = false
-s 0
-e search.from = 0
-e search.to = 0x10
-/m
-EOF
-EXPECT=<<EOF
-0x00000000 1 PE for MS Windows Intel 80386 32-bit
-EOF
-RUN
-
-NAME=/m search from/to (seek beyond data)
-FILE=bins/pe/standard.exe
-CMDS=<<EOF
-e io.va = false
-s 0x1000
-e search.from = 0
-e search.to = 0x10
-/m
-EOF
-EXPECT=<<EOF
-0x00000000 1 PE for MS Windows Intel 80386 32-bit
-EOF
-RUN
-
 NAME=/o search offset of instructions backward
 FILE=malloc://1024
 ARGS=-a x86 -b 32
@@ -610,21 +577,6 @@ e search.to = 0x200
 EOF
 EXPECT=<<EOF
 0x00000100 hit0_0 41424344
-EOF
-RUN
-
-NAME=/m search seek
-FILE=bins/pe/standard.exe
-CMDS=<<EOF
-e io.va = false
-s 0x1000
-/m~[0]
-s
-/fm
-EOF
-EXPECT=<<EOF
-0x00000000
-0x1000
 EOF
 RUN
 
@@ -1098,14 +1050,21 @@ EXPECT=<<EOF
 0x00000004 hit0_0 "ZZZZAAABAAA"
 EOF
 RUN
-
-NAME=/m on Info
-FILE=bins/other/Info.plist
+NAME=pm lzma
+FILE=bins/other/hello-world.lzma
 CMDS=<<EOF
-/m
+pm
 EOF
 EXPECT=<<EOF
-0x00000000 1 Binary PLIST data stream
+0x00000000 1 LZMA BE compressed data dictionary size: 32768 bytes
+EOF
+RUN
+
+NAME=pm lzma
+FILE=bins/other/smol.lzma
+CMDS=pm
+EXPECT=<<EOF
+0x00000000 1 LZMA LE compressed data dictionary size: 2162620 bytes
 EOF
 RUN
 

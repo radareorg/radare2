@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2022 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -984,7 +984,7 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	if (!io->cached) {
-		eprintf ("Warning: run r2 with -e bin.cache=true to fix relocations in disassembly\n");
+		R_LOG_WARN ("run r2 with -e bin.cache=true to fix relocations in disassembly");
 		return NULL;
 	}
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
@@ -1168,24 +1168,18 @@ static RBinInfo* info(RBinFile *bf) {
 		return NULL;
 	}
 	ret->machine = str;
-	if (!(str = Elf_(r_bin_elf_get_head_flag) (obj))) {
-		free (ret);
-		return NULL;
-	}
-	ret->head_flag = str;
 	if (!(str = Elf_(r_bin_elf_get_arch) (obj))) {
 		free (ret);
 		return NULL;
 	}
 	ret->arch = str;
+	ret->cpu = Elf_(r_bin_elf_get_cpu) (obj);
 
-	if ((str = Elf_(r_bin_elf_get_cpu) (obj))) {
-		ret->cpu = str;
+	ut32 elf_flags = ((ELFOBJ *)obj)->ehdr.e_flags;
+	if (elf_flags) {
+		ret->flags = r_str_newf ("0x%x", elf_flags);
 	}
-	if ((str = Elf_(r_bin_elf_get_abi) (obj))) {
-		ret->features = str;
-	}
-
+	ret->abi = Elf_(r_bin_elf_get_abi) (obj);
 	ret->rclass = strdup ("elf");
 	ret->bits = Elf_(r_bin_elf_get_bits) (obj);
 	if (!strcmp (ret->arch, "avr")) {

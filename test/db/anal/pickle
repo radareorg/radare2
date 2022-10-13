@@ -169,7 +169,13 @@ wa LONG_BINGET 0x11223344
 pid 1
 wa EXT4 0x11223344
 pid 1
-wa LONG4 0x11223344
+wa LONG4 11223344
+pid 1
+wa LONG1 11223344
+pid 1
+wa LONG4 -11223344
+pid 1
+wa LONG1 -11223344
 pid 1
 wa BININT2 0x1122
 pid 1
@@ -185,8 +191,6 @@ wa PROTO 0x11
 pid 1
 wa EXT1 0x11
 pid 1
-wa LONG1 0x11
-pid 1
 EOF
 EXPECT=<<EOF
 0x00000000   958877885544332211  frame 0x1122334455887788
@@ -194,7 +198,10 @@ EXPECT=<<EOF
 0x00000000           7244332211  long_binput 0x11223344
 0x00000000           6a44332211  long_binget 0x11223344
 0x00000000           8444332211  ext4 0x11223344
-0x00000000           8b44332211  long4 0x11223344
+0x00000000   8b040000003041ab00  long4 11223344
+0x00000000         8a043041ab00  long1 11223344
+0x00000000     8b03000000d0be54  long4 5553872
+0x00000000           8a03d0be54  long1 5553872
 0x00000000               4d2211  binint2 0x1122
 0x00000000               832211  ext2 0x1122
 0x00000000                 4b11  binint1 0x11
@@ -202,7 +209,6 @@ EXPECT=<<EOF
 0x00000000                 7111  binput 0x11
 0x00000000                 8011  proto 0x11
 0x00000000                 8211  ext1 0x11
-0x00000000                 8a11  long1 0x11
 EOF
 RUN
 
@@ -210,23 +216,23 @@ NAME=Assemble and dissassemble counted strings
 FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=pickle
-wa BINUNICODE8 AABBCCDD
+wa BINUNICODE8 "AABBCCDD"
 pid 1
-wa BINBYTES8 AABBCCDD
+wa BINBYTES8 "AABBCCDD"
 pid 1
-wa BYTEARRAY8 AABBCCDD
+wa BYTEARRAY8 "AABBCCDD"
 pid 1
-wa BINSTRING AABBCCDD
+wa BINSTRING "AABBCCDD"
 pid 1
-wa BINUNICODE AABBCCDD
+wa BINUNICODE "AABBCCDD"
 pid 1
-wa BINBYTES AABBCCDD
+wa BINBYTES "AABBCCDD"
 pid 1
-wa SHORT_BINBYTES AABBCCDD
+wa SHORT_BINBYTES "AABBCCDD"
 pid 1
-wa SHORT_BINSTRING AABBCCDD
+wa SHORT_BINSTRING "AABBCCDD"
 pid 1
-wa SHORT_BINUNICODE AABBCCDD
+wa SHORT_BINUNICODE "AABBCCDD"
 pid 1
 EOF
 EXPECT=<<EOF
@@ -260,25 +266,25 @@ NAME=Assemble and dissassemble newline strs
 FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=pickle
-wa INST string1 string2
+wa INST "string1 string2"
 pid 1
-wa GLOBAL string1 string2
+wa GLOBAL "string1 string2"
 pid 1
-wa FLOAT string_arg
+wa FLOAT "string_arg"
 pid 1
-wa INT string_arg
+wa INT "string_arg"
 pid 1
-wa LONG string_arg
+wa LONG "string_arg"
 pid 1
-wa PERSID string_arg
+wa PERSID "string_arg"
 pid 1
-wa STRING string_arg
+wa STRING "string_arg"
 pid 1
-wa UNICODE string_arg
+wa UNICODE "string_arg"
 pid 1
-wa GET string_arg
+wa GET "string_arg"
 pid 1
-wa PUT string_arg
+wa PUT "string_arg"
 pid 1
 EOF
 EXPECT=<<EOF
@@ -288,7 +294,7 @@ EXPECT=<<EOF
 0x00000000 49737472696e675f6172670a  int "string_arg"
 0x00000000 4c737472696e675f6172670a  long "string_arg"
 0x00000000 50737472696e675f6172670a  persid "string_arg"
-0x00000000 53737472696e675f6172670a  string "string_arg"
+0x00000000 5327737472696e675f617267270a  string "string_arg"
 0x00000000 56737472696e675f6172670a  unicode "string_arg"
 0x00000000 67737472696e675f6172670a  get "string_arg"
 0x00000000 70737472696e675f6172670a  put "string_arg"

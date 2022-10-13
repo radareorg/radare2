@@ -1,5 +1,6 @@
 NAME=color-args
 FILE=malloc://1024
+ARGS=-a x86 -b 64
 CMDS=<<EOF
 ec mov magenta
 ec nop yellow

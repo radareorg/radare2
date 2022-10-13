@@ -1,22 +1,21 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
+#define R_LOG_ORIGIN "anal.ppc.gnu"
+
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
 #include "disas-asm.h"
 
-static R_TH_LOCAL unsigned long Offset = 0;
-static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL ut8 bytes[4];
-
 static int ppc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-	int delta = (memaddr - Offset);
+	int delta = (memaddr - info->buffer_vma);
 	if (delta < 0) {
-		return -1;      // disable backward reads
+		return -1; // disable backward reads
 	}
 	if ((delta + length) > 4) {
 		return -1;
 	}
+	ut8 *bytes = info->buffer;
 	memcpy (myaddr, bytes + delta, length);
 	return 0;
 }
@@ -29,17 +28,17 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	char options[64];
-	struct disassemble_info disasm_obj;
+	ut8 bytes[8] = { 0 };
+	struct disassemble_info disasm_obj = {0};
 	if (len < 4) {
 		return -1;
 	}
-	buf_global = r_strbuf_new ("");
-	Offset = addr;
+	RStrBuf *sb = r_strbuf_new ("");
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
@@ -54,23 +53,29 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	}
 	disasm_obj.disassembler_options = options;
 	disasm_obj.buffer = bytes;
+	disasm_obj.buffer_vma = addr;
 	disasm_obj.read_memory_func = &ppc_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
-	if (a->config->big_endian) {
-		op->size = print_insn_big_powerpc ((bfd_vma)Offset, &disasm_obj);
+	disasm_obj.stream = sb;
+	if (disasm_obj.endian) {
+		op->size = print_insn_big_powerpc ((bfd_vma)addr, &disasm_obj);
 	} else {
-		op->size = print_insn_little_powerpc ((bfd_vma)Offset, &disasm_obj);
+		op->size = print_insn_little_powerpc ((bfd_vma)addr, &disasm_obj);
 	}
 	if (op->size == -1) {
-		op->mnemonic = strdup ("(data)");
+		op->mnemonic = strdup ("invalid");
+		r_strbuf_free (sb);
 	} else {
-		op->mnemonic = r_strbuf_drain (buf_global);
-		buf_global = NULL;
+		op->mnemonic = r_strbuf_drain (sb);
+		if (R_STR_ISEMPTY (op->mnemonic)) {
+			free (op->mnemonic);
+			op->mnemonic = strdup ("invalid");
+			op->size = -1;
+		}
 	}
 	return op->size;
 }
@@ -86,15 +91,17 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	int lk = bytes[3]&0x1;
 	//if (baddr>0x7fff)
 	//      baddr = -baddr;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
-		disassemble (anal, op, addr, bytes, len);
-	}
 
 	op->addr = addr;
 	op->type = 0;
 	op->size = 4;
-
-	//eprintf("OPCODE IS %08x : %02x (opcode=%d) baddr = %d\n", addr, bytes[0], opcode, baddr);
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		int res = disassemble (anal, op, addr, bytes, len);
+		if (res == -1) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+		}
+	}
+	R_LOG_DEBUG ("OPCODE IS %08x : %02x (opcode=%d) baddr = %d", addr, bytes[0], opcode, baddr);
 
 	switch (opcode) {
 //	case 0: // bl op->type = R_ANAL_OP_TYPE_NOP; break;
@@ -152,7 +159,7 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 }
 
 static bool set_reg_profile(RAnal *anal) {
-    const char *p =
+	const char *p =
 	"=PC	srr0\n"
 	"=SR	srr1\n" // status register
 	"=A0	r0\n"
@@ -237,42 +244,42 @@ R_API RLibStruct radare_plugin = {
 #if 0
 NOTES:
 ======
-     10000
-     AA = absolute address
-     LK = link bit
-     BD = bits 16-19
-       address
-     if (AA) {
-       address = (int32) BD << 2
-     } else {
-       address += (int32) BD << 2
-     }
-    AA LK
-    30 31
-     0  0  bc
-     1  0  bca
-     0  1  bcl
-     1  1  bcla
+	 10000
+	 AA = absolute address
+	 LK = link bit
+	 BD = bits 16-19
+	   address
+	 if (AA) {
+	   address = (int32) BD << 2
+	 } else {
+	   address += (int32) BD << 2
+	 }
+	AA LK
+	30 31
+	 0  0  bc
+	 1  0  bca
+	 0  1  bcl
+	 1  1  bcla
 
-     10011
-     BCCTR
-     LK = 31
+	 10011
+	 BCCTR
+	 LK = 31
 
-     bclr or bcr (Branch Conditional Link Register) Instruction
-     10011
+	 bclr or bcr (Branch Conditional Link Register) Instruction
+	 10011
 
-     6-29 -> LL (addr) ?
-     B  10010 -> branch
-     30 31
-     0  0   b
-     1  0   ba
-     0  1   bl
-     1  1   bla
-     SC SYSCALL 5 first bytes 10001
-     SVC SUPERVISORCALL
-     30 31
-     0  0  svc
-     0  1  svcl
-     1  0  svca
-     1  1  svcla
+	 6-29 -> LL (addr) ?
+	 B  10010 -> branch
+	 30 31
+	 0  0   b
+	 1  0   ba
+	 0  1   bl
+	 1  1   bla
+	 SC SYSCALL 5 first bytes 10001
+	 SVC SUPERVISORCALL
+	 30 31
+	 0  0  svc
+	 0  1  svcl
+	 1  0  svca
+	 1  1  svcla
 #endif

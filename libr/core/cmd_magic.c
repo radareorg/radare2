@@ -6,19 +6,16 @@
 static R_TH_LOCAL int magicdepth = 99;
 static R_TH_LOCAL RMagic *ck = NULL; // XXX: Use RCore->magic
 static R_TH_LOCAL char *ofile = NULL;
-static R_TH_LOCAL int kw_count = 0;
 
-static void r_core_magic_reset(RCore *core) {
-	kw_count = 0;
-}
-
-static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v, PJ *pj, int *hits) {
+static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut64 addr, int depth, int v, PJ *pj, int *hits) {
 	const char *fmt;
 	char *q, *p;
 	const char *str;
 	int delta = 0, adelta = 0, ret;
 	ut64 curoffset = core->offset;
 	int max_hits = r_config_get_i (core->config, "search.maxhits");
+	char *flag;
+
 	if (max_hits > 0 && *hits >= max_hits) {
 		return 0;
 	}
@@ -96,11 +93,11 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		ret = -1;
 		goto seek_exit;
 	}
-	str = r_magic_buffer (ck, core->block+delta, core->blocksize - delta);
+	str = r_magic_buffer (ck, core->block + delta, core->blocksize - delta);
 	if (str) {
 		const char *cmdhit;
 #if USE_LIB_MAGIC
-		if (!v && (!strcmp (str, "data") || strstr(str, "ASCII") || strstr (str, "ISO") || strstr (str, "no line terminator"))) {
+		if (!v && (!strcmp (str, "data") || strstr (str, "ASCII") || strstr (str, "ISO") || strstr (str, "no line terminator"))) {
 #else
 		if (!v && (!strcmp (str, "data"))) {
 #endif
@@ -116,9 +113,9 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		}
 		p = strdup (str);
 		fmt = p;
-		// processing newlinez
-		for (q=p; *q; q++) {
-			if (q[0]=='\\' && q[1]=='n') {
+		// processing newline
+		for (q = p; *q; q++) {
+			if (q[0] == '\\' && q[1]=='n') {
 				*q = '\n';
 				strcpy (q + 1, q + ((q[2] == ' ')? 3: 2));
 			}
@@ -128,15 +125,22 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		if (cmdhit && *cmdhit) {
 			r_core_cmd0 (core, cmdhit);
 		}
-		{
-			const char *searchprefix = r_config_get (core->config, "search.prefix");
-			char *flag = r_str_newf ("%s%d_%d", searchprefix, 0, kw_count++);
+
+		const char *searchprefix = r_config_get (core->config, "search.prefix");
+
+		// We do not flag for pm command.
+		if (kw) {
+			flag = r_str_newf ("%s%d_%d", searchprefix, kw->kwidx, kw->count);
 			r_flag_set (core->flags, flag, addr + adelta, 1);
-			free (flag);
 		}
 		// TODO: This must be a callback .. move this into RSearch?
 		if (!pj) {
-			r_cons_printf ("0x%08"PFMT64x" %d %s\n", addr + adelta, magicdepth - depth, p);
+			if (kw) {
+				r_cons_printf ("0x%08" PFMT64x " %d %s %s\n", addr + adelta, magicdepth - depth, flag, p);
+				R_FREE (flag);
+			} else {
+				r_cons_printf ("0x%08" PFMT64x " %d %s\n", addr + adelta, magicdepth - depth, p);
+			}
 		} else {
 			pj_o (pj);
 			pj_kN (pj, "offset", addr + adelta);
@@ -144,6 +148,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			pj_ks (pj, "info", p);
 			pj_end (pj);
 		}
+
 		if (must_report_progress) {
 			r_cons_clear_line (1);
 		}
@@ -163,16 +168,16 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 					} else {
 						sscanf (q + 1, "%"PFMT64d, &addr);
 					}
-					if (!fmt || !*fmt) {
+					if (R_STR_ISEMPTY (fmt)) {
 						fmt = file;
 					}
-					r_core_magic_at (core, fmt, addr, depth, 1, pj, hits);
+					r_core_magic_at (core, kw, fmt, addr, depth, 1, pj, hits);
 					*q = '@';
 				}
 				break;
 			}
 		}
-		free (p);
+		R_FREE (p);
 		r_magic_free (ck);
 		ck = NULL;
 //		return adelta+1;
@@ -198,8 +203,9 @@ seek_exit:
 static void r_core_magic(RCore *core, const char *file, int v, PJ *pj) {
 	ut64 addr = core->offset;
 	int hits = 0;
+
 	magicdepth = r_config_get_i (core->config, "magic.depth"); // TODO: do not use global var here
-	r_core_magic_at (core, file, addr, magicdepth, v, pj, &hits);
+	r_core_magic_at (core, NULL, file, addr, magicdepth, v, pj, &hits);
 	if (pj) {
 		r_cons_newline ();
 	}

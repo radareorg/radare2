@@ -49,7 +49,7 @@ typedef int witness_comp_t (const witness_t *, const witness_t *);
 #define	WITNESS_RANK_PROF_NEXT_THR_UID	WITNESS_RANK_LEAF
 #define	WITNESS_RANK_PROF_THREAD_ACTIVE_INIT	WITNESS_RANK_LEAF
 
-#define	WITNESS_INITIALIZER(rank) {"initializer", rank, NULL, {NULL, NULL}}
+#define	WITNESS_INITIALIZER(rank) { "initializer", rank, NULL, {NULL, NULL}}
 
 #endif /* JEMALLOC_H_TYPES */
 /******************************************************************************/

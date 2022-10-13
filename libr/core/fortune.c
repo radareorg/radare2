@@ -3,9 +3,11 @@
 #include <r_core.h>
 
 static char *getFortuneFile(RCore *core, const char *type) {
-	char *ft = r_str_newf(R_JOIN_2_PATHS (R2_HOME_FORTUNES, "fortunes.%s"), type);
+	char *fortunedir = r_xdg_datadir ("fortunes");
+	char *ft = r_str_newf ("%s/fortunes.%s", fortunedir, type);
 	char *path = r_str_home (ft);
 	free (ft);
+	free (fortunedir);
 	if (path && r_file_exists (path)) {
 		return path;
 	}
@@ -51,7 +53,7 @@ R_IPI RList *r_core_fortune_types(void) {	// R_API 5.8
 		return NULL;
 	}
 	free (fortune_dir);
-	fortune_dir = r_str_home (R2_HOME_FORTUNES);
+	fortune_dir = r_xdg_datadir ("fortunes");
 	if (fortune_dir) {
 		_push_types (types, fortune_dir);
 		free (fortune_dir);

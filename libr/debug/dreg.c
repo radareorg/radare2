@@ -5,20 +5,16 @@
 #include <r_cons.h>
 #include <r_reg.h>
 
-R_API bool r_debug_reg_sync(RDebug *dbg, int type, int write) {
+R_API bool r_debug_reg_sync(RDebug *dbg, int type, int must_write) {
+	r_return_val_if_fail (dbg && dbg->reg && dbg->h, false);
 	int i, n, size;
-	if (!dbg || !dbg->reg || !dbg->h) {
-		return false;
-	}
-	// There's no point in syncing a dead target
 	if (r_debug_is_dead (dbg)) {
 		return false;
 	}
-	// Check if the functions needed are available
-	if (write && !dbg->h->reg_write) {
+	if (must_write && !dbg->h->reg_write) {
 		return false;
 	}
-	if (!write && !dbg->h->reg_read) {
+	if (!must_write && !dbg->h->reg_read) {
 		return false;
 	}
 	// Sync all the types sequentially if asked
@@ -34,8 +30,8 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			int v = ((int)1 << i);
 			// skip checks on same request arena and check if this arena have inside the request arena type
 			if (n != i && (mask & v)) {
-				//eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
-				//eprintf(" request arena %i found at arena %i\n", i, n );
+				// eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
+				// eprintf(" request arena %i found at arena %i\n", i, n );
 				// if this arena have the request arena type, force to use this arena.
 				i = n;
 				break;
@@ -43,11 +39,11 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		}
 	}
 	do {
-		if (write) {
+		if (must_write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
 			if (!buf || !dbg->h->reg_write (dbg, i, buf, size)) {
 				if (i == R_REG_TYPE_GPR) {
-					eprintf ("r_debug_reg: error writing registers %d to %d\n", i, dbg->tid);
+					R_LOG_ERROR ("cannot write registers %d to %d", i, dbg->tid);
 				}
 				if (type != R_REG_TYPE_ALL || i == R_REG_TYPE_GPR) {
 					free (buf);
@@ -56,14 +52,13 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			}
 			free (buf);
 		} else {
-			// int bufsize = R_MAX (1024, dbg->reg->size*2); // i know. its hacky
 			int bufsize = dbg->reg->size;
-			//int bufsize = dbg->reg->regset[i].arena->size;
 			if (bufsize > 0) {
-				ut8 *buf = calloc (1 + 1, bufsize);
+				ut8 *buf = calloc (2, bufsize);
 				if (!buf) {
 					return false;
 				}
+#if 0
 				//we have already checked dbg->h and dbg->h->reg_read above
 				size = dbg->h->reg_read (dbg, i, buf, bufsize);
 				// we need to check against zero because reg_read can return false
@@ -72,6 +67,11 @@ R_API bool r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			//		free (buf);
 			//		return true;
 				}
+#else
+				if (dbg->h->reg_read (dbg, i, buf, bufsize)) {
+					r_reg_set_bytes (dbg->reg, i, buf, bufsize);
+				}
+#endif
 				free (buf);
 			}
 		}

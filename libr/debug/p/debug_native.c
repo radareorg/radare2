@@ -17,9 +17,10 @@
 #include "r_cons.h"
 
 static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
-static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
-static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size);
+static bool r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
+static bool r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size);
 struct r_debug_desc_plugin_t r_debug_desc_plugin_native;
+bool linux_generate_corefile(RDebug *dbg, RBuffer *dest);
 
 #include "native/bt.c"
 
@@ -152,7 +153,7 @@ static bool r_debug_native_attach(RDebug *dbg, int pid) {
 #else
 	int ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 	if (ret != -1) {
-		eprintf ("Trying to attach to %d\n", pid);
+		R_LOG_INFO ("Trying to attach to %d", pid);
 		r_sys_perror ("ptrace (PT_ATTACH)");
 	}
 	return true;
@@ -193,7 +194,7 @@ static bool r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 	errno = 0;
 	return ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0) == 0;
 #else
-	eprintf ("TODO: continue syscall not implemented yet\n");
+	R_LOG_TODO ("continue syscall not implemented yet");
 	return false;
 #endif
 }
@@ -506,15 +507,15 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	if (reason == R_DEBUG_REASON_UNKNOWN) {
 #endif
 		if (WIFEXITED (status)) {
-			eprintf ("child exited with status %d\n", WEXITSTATUS (status));
+			R_LOG_INFO ("child exited with status %d", WEXITSTATUS (status));
 			reason = R_DEBUG_REASON_DEAD;
 		} else if (WIFSIGNALED (status)) {
-			eprintf ("child received signal %d\n", WTERMSIG (status));
+			R_LOG_INFO ("child received signal %d", WTERMSIG (status));
 			reason = R_DEBUG_REASON_SIGNAL;
 		} else if (WIFSTOPPED (status)) {
 			if (WSTOPSIG (status) != SIGTRAP &&
 				WSTOPSIG (status) != SIGSTOP) {
-				eprintf ("Child stopped with signal %d\n", WSTOPSIG (status));
+				R_LOG_INFO ("Child stopped with signal %d", WSTOPSIG (status));
 			}
 
 			/* the ptrace documentation says GETSIGINFO is only necessary for
@@ -532,7 +533,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 #endif
 #ifdef WIFCONTINUED
 		} else if (WIFCONTINUED (status)) {
-			eprintf ("child continued...\n");
+			R_LOG_INFO ("child continued");
 			reason = R_DEBUG_REASON_NONE;
 #endif
 		} else if (status == 1) {
@@ -555,7 +556,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 
 	/* if we still don't know what to do, we have a problem... */
 	if (reason == R_DEBUG_REASON_UNKNOWN) {
-		eprintf ("%s: no idea what happened... wtf?!?!\n", __func__);
+		R_LOG_INFO ("no idea what happened here");
 		reason = R_DEBUG_REASON_ERROR;
 	}
 #endif // __APPLE__
@@ -689,7 +690,7 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
-static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static bool r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	if (size < 1) {
 		return false;
 	}
@@ -707,7 +708,7 @@ static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #endif
 }
 
-static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size) {
+static bool r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size) {
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #if __i386__ || __x86_64__
@@ -733,8 +734,9 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 #elif __sun
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid,
 			(void*)(size_t)buf, sizeof (R_DEBUG_REG_T));
-		if (sizeof (R_DEBUG_REG_T) < size)
+		if (sizeof (R_DEBUG_REG_T) < size) {
 			size = sizeof (R_DEBUG_REG_T);
+		}
 		return ret == 0;
 #else
 		return bsd_reg_write (dbg, type, buf, size);
@@ -749,7 +751,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 #else
 		return bsd_reg_write (dbg, type, buf, size);
 #endif
-	} //else eprintf ("TODO: reg_write_non-gpr (%d)\n", type);
+	} //else R_LOG_TODO ("reg_write_non-gpr (%d)", type);
 	return false;
 }
 
@@ -858,10 +860,11 @@ static RDebugMap* linux_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 			"x86", "x86.as",
 			"x64", "x86.as",
 			NULL};
-
-	/* NOTE: Since kernel 2.4,  that  system  call  has  been  superseded  by
-       		 mmap2(2 and  nowadays  the  glibc  mmap()  wrapper  function invokes
-       		 mmap2(2)). If arch is x86_32 then usage mmap2() */
+#if 0
+NOTE: Since kernel 2.4,  that  system  call  has  been  superseded  by
+mmap2(2 and  nowadays  the  glibc  mmap()  wrapper  function invokes
+mmap2(2)). If arch is x86_32 then usage mmap2() */
+#endif
 	if (!strcmp (dbg->arch, "x86") && dbg->bits == 4) {
 		sc_name = "mmap2";
 	} else {
@@ -978,7 +981,7 @@ static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 #elif __linux__
 	return linux_map_dealloc (dbg, addr, size);
 #else
-    // mdealloc not implemented for this platform
+	// mdealloc not implemented for this platform
 	return false;
 #endif
 }
@@ -1395,11 +1398,11 @@ static bool ll_arm64_hwbp_set(pid_t pid, ut64 _addr, int size, int wp, ut32 type
 	}
 
 	if (errno == EIO) {
-		eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s\n",
+		R_LOG_ERROR ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s",
 			strerror (errno));
 	}
 
-	eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s\n", strerror (errno));
+	R_LOG_ERROR ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s", strerror (errno));
 	return false;
 }
 
@@ -1416,11 +1419,11 @@ static bool ll_arm64_hwbp_del(pid_t pid, ut64 _addr, int size, int wp, ut32 type
 		return true;
 	}
 	if (errno == EIO) {
-		eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s\n",
+		R_LOG_ERROR ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s",
 			strerror (errno));
 	}
 
-	eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s\n", strerror (errno));
+	R_LOG_ERROR ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s", strerror (errno));
 	return false;
 }
 

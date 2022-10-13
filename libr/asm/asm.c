@@ -17,7 +17,7 @@ static const char *directives[] = {
 	".else", ".set", ".get", NULL
 };
 
-static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
+static const RAsmPlugin * const asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
 static void parseHeap(RParse *p, RStrBuf *s) {
 	char *op_buf_asm = r_strbuf_get (s);
@@ -92,7 +92,7 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	if (!buf) {
 		return 0;
 	}
-	bool be = a->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	if (n == 2) {
 		s = (short)s64;
 		r_write_ble16 (buf, s, be);
@@ -218,7 +218,7 @@ R_API RAsm *r_asm_new(void) {
 	}
 	a->config = r_arch_config_new ();
 	for (i = 0; asm_static_plugins[i]; i++) {
-		r_asm_add (a, asm_static_plugins[i]);
+		r_asm_add (a, (RAsmPlugin*)asm_static_plugins[i]);
 	}
 	return a;
 }
@@ -376,10 +376,6 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 					r_asm_set_cpu (a, NULL);
 				}
 				a->cur = h;
-#if 0
-				r_arch_use (a->config, h->arch);
-				r_arch_use (a->config, h->name);
-#endif
 				return true;
 			}
 		} else {
@@ -388,10 +384,9 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 				if (!strcmp (vv + 1, h->name)) {
 					char *arch = r_str_ndup (name, vv - name);
 #if 0
-					r_arch_set_cpu (a->config, arch);
+					r_arch_config_set_cpu (a->config, arch);
 					// r_asm_set_cpu (a, arch);
 					// h->arch = name;
-					// r_arch_use (a->config, arch);
 #else
 					r_asm_set_cpu (a, arch);
 #endif
@@ -402,7 +397,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 			} else {
 				if (!strcmp (name, h->name)) {
 #if 0
-					r_arch_set_cpu (a->config, NULL);
+					r_arch_config_set_cpu (a->config, NULL);
 #else
 					h->arch = name;
 					r_asm_set_cpu (a, NULL);
@@ -434,7 +429,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 // XXX this is r_arch
 R_DEPRECATE R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
 	r_return_if_fail (a);
-	r_arch_set_cpu (a->config, cpu);
+	r_arch_config_set_cpu (a->config, cpu);
 }
 
 static bool has_bits(RAsmPlugin *h, int bits) {
@@ -451,38 +446,38 @@ R_DEPRECATE R_API int r_asm_set_bits(RAsm *a, int bits) {
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 	r_return_val_if_fail (a, false);
-	a->config->big_endian = (bool)R_SYS_ENDIAN; // default is host endian
+	a->config->endian = R_SYS_ENDIAN ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE; // default is host endian
 	if (a->cur) {
 		switch (a->cur->endian) {
 		case R_SYS_ENDIAN_NONE:
 		case R_SYS_ENDIAN_BI:
 			// TODO: not yet implemented
-			a->config->big_endian = b;
+			a->config->big_endian = b ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
 			break;
 		case R_SYS_ENDIAN_LITTLE:
-			a->config->big_endian = false;
+			a->config->endian = R_SYS_ENDIAN_LITTLE;
 			break;
 		case R_SYS_ENDIAN_BIG:
-			a->config->big_endian = true;
+			a->config->big_endian = R_SYS_ENDIAN_BIG;
 			break;
 		default:
 			R_LOG_WARN ("RAsmPlugin doesn't specify endianness");
 			break;
 		}
 	} else {
-		a->config->big_endian = b;
+		a->config->endian = b ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
 	}
-	return a->config->big_endian;
+	return R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 }
 
 R_API bool r_asm_set_syntax(RAsm *a, int syntax) {
 	// TODO: move into r_arch ?
 	switch (syntax) {
-	case R_ASM_SYNTAX_REGNUM:
-	case R_ASM_SYNTAX_INTEL:
-	case R_ASM_SYNTAX_MASM:
-	case R_ASM_SYNTAX_ATT:
-	case R_ASM_SYNTAX_JZ:
+	case R_ARCH_SYNTAX_REGNUM:
+	case R_ARCH_SYNTAX_INTEL:
+	case R_ARCH_SYNTAX_MASM:
+	case R_ARCH_SYNTAX_ATT:
+	case R_ARCH_SYNTAX_JZ:
 		a->config->syntax = syntax;
 		return true;
 	default:
@@ -590,7 +585,6 @@ static bool assemblerMatches(RAsm *a, RAsmPlugin *h) {
 }
 
 static Ase findAssembler(RAsm *a, const char *kw) {
-	Ase ase = NULL;
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (a->acur && a->acur->assemble) {
@@ -603,11 +597,11 @@ static Ase findAssembler(RAsm *a, const char *kw) {
 					return h->assemble;
 				}
 			} else {
-				ase = h->assemble;
+				return h->assemble;
 			}
 		}
 	}
-	return ase;
+	return NULL;
 }
 
 static char *replace_directives_for(char *str, const char *token) {
@@ -726,7 +720,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	RAsmCode *acode;
 	ut64 pc = a->pc;
 	ut64 idx;
-	size_t ret;
+	int ret;
 	const size_t addrbytes = a->user? ((RCore *)a->user)->io->addrbytes: 1;
 
 	if (!(acode = r_asm_code_new ())) {
@@ -998,9 +992,9 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				ptr = ptr_start;
 				r_str_trim (ptr);
 				if (!strncmp (ptr, ".intel_syntax", 13)) {
-					a->config->syntax = R_ASM_SYNTAX_INTEL;
+					a->config->syntax = R_ARCH_SYNTAX_INTEL;
 				} else if (!strncmp (ptr, ".att_syntax", 11)) {
-					a->config->syntax = R_ASM_SYNTAX_ATT;
+					a->config->syntax = R_ARCH_SYNTAX_ATT;
 				} else if (!strncmp (ptr, ".endian", 7)) {
 					r_asm_set_big_endian (a, atoi (ptr + 7));
 				} else if (!strncmp (ptr, ".big_endian", 7 + 4)) {
@@ -1219,19 +1213,19 @@ R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l) {
 R_API int r_asm_syntax_from_string(const char *name) {
 	r_return_val_if_fail (name, -1);
 	if (!strcmp (name, "regnum")) {
-		return R_ASM_SYNTAX_REGNUM;
+		return R_ARCH_SYNTAX_REGNUM;
 	}
 	if (!strcmp (name, "jz")) {
-		return R_ASM_SYNTAX_JZ;
+		return R_ARCH_SYNTAX_JZ;
 	}
 	if (!strcmp (name, "intel")) {
-		return R_ASM_SYNTAX_INTEL;
+		return R_ARCH_SYNTAX_INTEL;
 	}
 	if (!strcmp (name, "masm")) {
-		return R_ASM_SYNTAX_MASM;
+		return R_ARCH_SYNTAX_MASM;
 	}
 	if (!strcmp (name, "att")) {
-		return R_ASM_SYNTAX_ATT;
+		return R_ARCH_SYNTAX_ATT;
 	}
 	return -1;
 }

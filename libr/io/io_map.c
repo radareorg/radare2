@@ -35,6 +35,16 @@ R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
 	const ut64 ofrom = r_io_map_from (map);
 	const ut64 oto = r_io_map_to (map);
 	ut64 size = r_io_map_size (map);
+	if (map->perm & R_PERM_RELOC) {
+		if (R_UNLIKELY (UT64_MAX - size + 1 < addr)) {
+			R_LOG_ERROR ("Mapsplit for reloc maps is not possible");
+			return false;
+		}
+		if (map->reloc_map->remap && !map->reloc_map->remap (io, map, addr)) {
+			R_LOG_ERROR ("Remapping reloc map %u failed", map->id);
+			return false;
+		}
+	}
 	r_io_map_set_begin (map, addr);
 	if (R_UNLIKELY (UT64_MAX - size + 1 < addr)) {
 		st64 saddr = (st64)addr;
@@ -86,6 +96,10 @@ R_API bool r_io_map_remap_fd(RIO *io, int fd, ut64 addr) {
 static bool _map_free_cb(void *user, void *data, ut32 id) {
 	RIOMap *map = (RIOMap *)data;
 	if (map) {
+		if ((map->perm & R_PERM_RELOC) && map->reloc_map && map->reloc_map->free) {
+			map->reloc_map->free (map->reloc_map->data);
+			// don't free map->reloc_map here, could be static
+		}
 		free (map->name);
 		free (map);
 	}
@@ -167,6 +181,37 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 		return map[1];
 	}
 	return NULL;
+}
+
+R_API RIOMap *r_io_reloc_map_add(RIO *io, int fd, int perm, RIORelocMap *rm, ut64 addr, ut64 size) {
+	r_return_val_if_fail (io && rm, NULL);
+	if (!size) {
+		return NULL;
+	}
+	//cannot split reloc maps
+	if ((UT64_MAX - size + 1) < addr) {
+		return NULL;
+	}
+	//check if desc exists
+	RIODesc* desc = r_io_desc_get (io, fd);
+	if (!desc) {
+		return NULL;
+	}
+	perm &= desc->perm | R_PERM_X;
+	perm |= R_PERM_RELOC;
+	RIOMap *map = io_map_new (io, fd, perm, 0, addr, size);
+	if (map) {
+		if (!r_io_bank_map_add_top (io, io->bank, map->id)) {
+			r_id_storage_delete (io->maps, map->id);
+			free (map);
+			if (rm->free) {
+				rm->free (rm->data);
+			}
+			return NULL;
+		}
+		map->reloc_map = rm;
+	}
+	return map;
 }
 
 R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
@@ -384,6 +429,10 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	r_return_val_if_fail (io, false);
 	RIOMap *map;
 	if (!newsize || !(map = r_io_map_get (io, id))) {
+		return false;
+	}
+	if (map->perm & R_PERM_RELOC) {
+		R_LOG_WARN ("Resizing reloc maps is not possible");
 		return false;
 	}
 	ut64 addr = r_io_map_begin (map);

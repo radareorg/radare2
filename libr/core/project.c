@@ -1,11 +1,11 @@
 /* radare - LGPL - Copyright 2010-2022 - pancake, rhl */
 
+#define USE_R2 1
+#define PROJECT_EXPERIMENTAL 0
+
 #include <r_core.h>
 #include <rvc.h>
-#define USE_R2 1
 #include <spp/spp.h>
-
-#define PROJECT_EXPERIMENTAL 0
 
 // project apis to be used from cmd_project.c
 
@@ -320,11 +320,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	char *prj_path = r_file_dirname(rcpath);
 	if (prj_path) {
 		//check if the project uses git
-		Rvc *vc = r_vc_git_open (prj_path);
-		if (!vc) {
-			// if the project does not use git, try rvc
-			vc = r_vc_open (prj_path);
-		}
+		Rvc *vc = rvc_git_open (prj_path);
 		core->prj->rvc = vc;
 		free (prj_path);
 	} else {
@@ -489,13 +485,6 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 }
 #endif
 
-static char *r_cons_drain(void) {
-	const char *buf = r_cons_get_buffer ();
-	size_t buf_size = r_cons_get_buffer_len ();
-	char *s = r_str_ndup (buf, buf_size);
-	r_cons_reset ();
-	return s;
-}
 static void flush(RStrBuf *sb) {
 	char * s = r_cons_drain ();
 	if (s) {
@@ -698,7 +687,9 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	if (core->prj->rvc || r_config_get_b (core->config, "prj.vc")) {
 		// assume that if the repo is not loaded, the repo doesn't exist
 		if (!core->prj->rvc) {
-			if (!(core->prj->rvc = rvc_git_init (core, prj_dir))) {
+			core->prj->rvc = rvc_init (prj_dir, RVC_TYPE_GIT);
+			if (!core->prj->rvc) {
+				R_LOG_WARN ("Cannot initialize git repositorty");
 				free (prj_dir);
 				free (script_path);
 				return false;
@@ -707,13 +698,15 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		RList *paths = r_list_new ();
 		if (paths) {
 			if (r_list_append (paths, prj_dir)) {
-				if (!rvc_git_commit (core, core->prj->rvc,
-							NULL, NULL, paths)) {
+				const char *author = r_config_get (core->config, "cfg.user");
+				const char *message = r_config_get (core->config, "prj.vc.message");
+				if (!rvc_git_commit (core->prj->rvc, message, author, paths)) {
 					r_list_free (paths);
 					free (prj_dir);
 					free (script_path);
 					return false;
 				}
+				r_vc_save (core->prj->rvc);
 			} else {
 				r_list_free (paths);
 				free (prj_dir);
@@ -769,7 +762,9 @@ R_API bool r_core_project_is_dirty(RCore *core) {
 }
 
 R_API void r_core_project_undirty(RCore *core) {
+	R_CRITICAL_ENTER (core);
 	core->config->is_dirty = false;
 	core->anal->is_dirty = false;
 	core->flags->is_dirty = false;
+	R_CRITICAL_LEAVE (core);
 }

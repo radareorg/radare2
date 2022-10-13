@@ -38,7 +38,7 @@ aoml~?
 EOF
 EXPECT=<<EOF
 invalid
-949
+1288
 471
 471
 EOF

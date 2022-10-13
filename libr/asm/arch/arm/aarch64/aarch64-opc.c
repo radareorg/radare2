@@ -344,22 +344,22 @@ aarch64_get_operand_desc (enum aarch64_opnd type)
 /* Table of all conditional affixes.  */
 const aarch64_cond aarch64_conds[16] =
 {
-  {{"eq", "none"}, 0x0},
-  {{"ne", "any"}, 0x1},
-  {{"cs", "hs", "nlast"}, 0x2},
-  {{"cc", "lo", "ul", "last"}, 0x3},
-  {{"mi", "first"}, 0x4},
-  {{"pl", "nfrst"}, 0x5},
-  {{"vs"}, 0x6},
-  {{"vc"}, 0x7},
-  {{"hi", "pmore"}, 0x8},
-  {{"ls", "plast"}, 0x9},
-  {{"ge", "tcont"}, 0xa},
-  {{"lt", "tstop"}, 0xb},
-  {{"gt"}, 0xc},
-  {{"le"}, 0xd},
-  {{"al"}, 0xe},
-  {{"nv"}, 0xf},
+  {{ "eq", "none" }, 0x0},
+  {{ "ne", "any" }, 0x1},
+  {{ "cs", "hs", "nlast" }, 0x2},
+  {{ "cc", "lo", "ul", "last" }, 0x3},
+  {{ "mi", "first" }, 0x4},
+  {{ "pl", "nfrst" }, 0x5},
+  {{ "vs" }, 0x6},
+  {{ "vc" }, 0x7},
+  {{ "hi", "pmore" }, 0x8},
+  {{ "ls", "plast" }, 0x9},
+  {{ "ge", "tcont" }, 0xa},
+  {{ "lt", "tstop" }, 0xb},
+  {{ "gt" }, 0xc},
+  {{ "le" }, 0xd},
+  {{ "al" }, 0xe},
+  {{ "nv" }, 0xf},
 };
 
 const aarch64_cond *
@@ -382,22 +382,22 @@ get_inverted_cond (const aarch64_cond *cond)
    which enables table-driven encoding/decoding for the modifiers.  */
 const struct aarch64_name_value_pair aarch64_operand_modifiers [] =
 {
-    {"none", 0x0},
-    {"msl",  0x0},
-    {"ror",  0x3},
-    {"asr",  0x2},
-    {"lsr",  0x1},
-    {"lsl",  0x0},
-    {"uxtb", 0x0},
-    {"uxth", 0x1},
-    {"uxtw", 0x2},
-    {"uxtx", 0x3},
-    {"sxtb", 0x4},
-    {"sxth", 0x5},
-    {"sxtw", 0x6},
-    {"sxtx", 0x7},
-    {"mul", 0x0},
-    {"mul vl", 0x0},
+    { "none", 0x0},
+    { "msl",  0x0},
+    { "ror",  0x3},
+    { "asr",  0x2},
+    { "lsr",  0x1},
+    { "lsl",  0x0},
+    { "uxtb", 0x0},
+    { "uxth", 0x1},
+    { "uxtw", 0x2},
+    { "uxtx", 0x3},
+    { "sxtb", 0x4},
+    { "sxth", 0x5},
+    { "sxtw", 0x6},
+    { "sxtx", 0x7},
+    { "mul", 0x0},
+    { "mul vl", 0x0},
     {NULL, 0},
 };
 
@@ -1099,8 +1099,7 @@ typedef struct
 
 static simd_imm_encoding simd_immediates[TOTAL_IMM_NB];
 
-static int
-simd_imm_encoding_cmp(const void *i1, const void *i2)
+static int simd_imm_encoding_cmp(const void *i1, const void *i2)
 {
   const simd_imm_encoding *imm1 = (const simd_imm_encoding *)i1;
   const simd_imm_encoding *imm2 = (const simd_imm_encoding *)i2;

@@ -19,6 +19,7 @@ iorw     false
 block    0x100
 type     EXEC (Executable file)
 arch     v850
+cpu      e1
 baddr    0x100000
 binsz    973677
 bintype  elf
@@ -26,6 +27,7 @@ bits     32
 canary   false
 class    ELF32
 compiler GCC: (GNU) 9.3.0
+flags    0xf0100000
 crypto   false
 endian   little
 havecode true

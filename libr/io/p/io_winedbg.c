@@ -179,10 +179,10 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (reply) {
 			int rw = 7;
 			free (reply);
-			eprintf ("Wine-dbg is ready to go!\n");
+			R_LOG_INFO ("Wine-dbg is ready to go");
 			return r_io_desc_new (io, &r_io_plugin_winedbg, pathname, rw, mode, gs);
 		}
-		eprintf ("Can't find the Wine-dbg prompt\n");
+		R_LOG_ERROR ("Can't find the Wine-dbg prompt");
 	}
 	return NULL;
 }
@@ -325,7 +325,7 @@ const char *msg =
 	} else if (r_str_startswith (cmd, "dc")) {
 		free (runcmd ("cont"));
 	} else if (r_str_startswith (cmd, "dso")) {
-		eprintf ("TODO: dso\n");
+		R_LOG_TODO ("dso");
 	} else if (r_str_startswith (cmd, "dp")) {
 		printcmd (io, "info thread");
 	} else if (r_str_startswith (cmd, "dm")) {

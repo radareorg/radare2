@@ -3,7 +3,6 @@
 #include <r_lib.h>
 #include <r_anal.h>
 
-//////////////////
 #include "disas-asm.h"
 #include <mybfd.h>
 
@@ -12,21 +11,21 @@ extern int decodeInstr(bfd_vma address, disassemble_info * info);
 extern int ARCTangent_decodeInstr(bfd_vma address, disassemble_info * info);
 extern int ARCompact_decodeInstr(bfd_vma address, disassemble_info * info);
 
-/* ugly globals */
-static R_TH_LOCAL ut32 Offset = 0;
-static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL int buf_len = 0;
-static R_TH_LOCAL ut8 bytes[32] = {0};
+#define BUFSZ 32
 
 static int arc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
-	int delta = (memaddr - Offset);
+	int delta = (memaddr - info->buffer_vma);
 	if (delta < 0) {
 		return -1; // disable backward reads
 	}
-	if ((delta + length) > sizeof (bytes)) {
+	if ((delta + length) > BUFSZ) {
 		return -1;
 	}
-	memcpy (myaddr, bytes + delta, R_MIN (buf_len - delta, length));
+	ut8 *bytes = info->buffer;
+	int nlen = R_MIN (BUFSZ - delta, length);
+	if (nlen > 0) {
+		memcpy (myaddr, bytes + delta, nlen);
+	}
 	return 0;
 }
 
@@ -38,45 +37,42 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+	ut8 bytes[BUFSZ] = {0};
 	struct disassemble_info disasm_obj = {0};
 	if (len < 2) {
 		return -1;
 	}
-	buf_global = r_strbuf_new ("");
-	Offset = op->addr;
+	RStrBuf *sb = r_strbuf_new ("");
 	if (len > sizeof (bytes)) {
 		len = sizeof (bytes);
 	}
-	memcpy (bytes, buf, len); // TODO handle compact
-	buf_len = len;
+	memcpy (bytes, buf, R_MIN (len, BUFSZ));
 	/* prepare disassembler */
 	disasm_obj.buffer = bytes;
+	disasm_obj.buffer_vma = op->addr;
 	disasm_obj.buffer_length = len;
 	disasm_obj.read_memory_func = &arc_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
+	disasm_obj.stream = sb;
 	disasm_obj.mach = 0;
 	if (a->config->bits == 16) {
-		op->size = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+		op->size = ARCompact_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
 	} else {
-		ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
-		//op->size = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+		ARCTangent_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
+		//op->size = ARCTangent_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
 	}
 	if (op->size == -1) {
-		op->mnemonic = strdup ("(data)");
-		r_strbuf_free (buf_global);
-	} else {
-		op->mnemonic = r_strbuf_drain (buf_global);
+		r_strbuf_set (sb, "(data)");
 	}
-	buf_global = NULL;
+	op->mnemonic = r_strbuf_drain (sb);
 	return op->size;
 }
 //////////////////
@@ -547,7 +543,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	op->refptr = 0;
 	op->delay = 0;
 
-	if (anal->config->big_endian) {
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config)) {
 		words[0] = r_read_be32 (&data[0]);
 		words[1] = r_read_be32 (&data[4]);
 	} else {

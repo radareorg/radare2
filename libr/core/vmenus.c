@@ -304,7 +304,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			r_anal_esil_runword (esil, word);
 			break;
 		case 'S':
-			eprintf ("esil step back :D\n");
+			R_LOG_WARN ("TODO: esil step back :D");
 			r_sys_usleep (500);
 			break;
 		case 'r':
@@ -1187,7 +1187,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 	case 'm':
 		// show methods
 		if (!_c) {
-			eprintf ("No class selected.\n");
+			R_LOG_WARN ("No class selected");
 			return mur;
 		}
 		r_cons_printf ("[hjkl_/cfM]> methods of %s\n\n", _c->name);
@@ -1710,7 +1710,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 	}
 	// maybe store in RCore, so we can save it in project and use it outside visual
 
-	eprintf ("Searching ROP gadgets...\n");
+	R_LOG_INFO ("Searching ROP gadgets");
 	char *ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
 	RList *rops = r_str_split_list (ropstr, "\n", 0);
 	int delta = 0;
@@ -1741,9 +1741,8 @@ R_API int r_core_visual_view_rop(RCore *core) {
 
 		char *wlist = r_str_widget_list (core, rops, rows, cur, print_rop);
 		r_cons_printf ("%s", wlist);
+		char *curline = r_str_trim_dup (wlist);
 		free (wlist);
-		char *curline = r_str_dup (NULL, r_str_trim_head_ro (r_str_widget_list (
-			core, rops, rows, cur, print_rop)));
 		if (curline) {
 			char *sp = strchr (curline, ' ');
 			if (sp) {
@@ -2135,16 +2134,16 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case 'd':
 			r_flag_unset_name (core->flags, fs2);
 			break;
-		case 'e':
+		case 'e': // "VTe"
 			/* TODO: prompt for addr, size, name */
-			eprintf ("TODO\n");
+			R_LOG_WARN ("TODO: VTe. prompt for addr, size, name");
 			r_sys_sleep (1);
 			break;
 		case '*':
-			r_core_block_size (core, core->blocksize+16);
+			r_core_block_size (core, core->blocksize + 16);
 			break;
 		case '/':
-			r_core_block_size (core, core->blocksize-16);
+			r_core_block_size (core, core->blocksize - 16);
 			break;
 		case '+':
 			if (menu == 1) {
@@ -2821,14 +2820,18 @@ R_API void r_core_visual_mounts(RCore *core) {
 			case 'j':
 				if (mode == 0) {
 					n = r_fs_partition_type_get (partition);
-					list = r_fs_partitions (core->fs, n, 0);
+					if (!n) {
+						partition = 0;
+						n = r_fs_partition_type_get (0);
+					}
+					if (n) {
+						list = r_fs_partitions (core->fs, n, 0);
+					}
 					if (option < r_list_length (list) - 1) {
 						option++;
 					}
 				} else if (mode == 1) {
-					if (partition < r_fs_partition_get_size () - 1) {
-						partition++;
-					}
+					partition++;
 				} else if (mode == 3) {
 					if (option < r_list_length (core->fs->roots) - 1) {
 						option++;
@@ -3090,7 +3093,7 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 				{
 					RRegItem *r = r_reg_index_get (core->anal->reg, var->delta);
 					if (!r) {
-						eprintf ("Register not found\n");
+						R_LOG_ERROR ("Register not found for %d var delta", var->delta);
 						break;
 					}
 					r_cons_printf ("%sarg %s %s @ %s\n",
@@ -3443,8 +3446,8 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 
 	level = 0;
 
-	int asmbytes = r_config_get_i (core->config, "asm.bytes");
-	r_config_set_i (core->config, "asm.bytes", 0);
+	bool asmbytes = r_config_get_b (core->config, "asm.bytes");
+	r_config_set_b (core->config, "asm.bytes", false);
 	for (;;) {
 		nfcns = r_list_length (core->anal->fcns);
 		addr = r_core_visual_anal_refresh (core);
@@ -3739,7 +3742,7 @@ beach:
 	core->cons->event_data = olde_user;
 	core->cons->event_resize = olde;
 	level = 0;
-	r_config_set_i (core->config, "asm.bytes", asmbytes);
+	r_config_set_b (core->config, "asm.bytes", asmbytes);
 }
 
 struct seek_flag_offset_t {
@@ -3775,7 +3778,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 			next = core->offset + aop.size;
 			found = true;
 		} else {
-			eprintf ("Invalid opcode\n");
+			R_LOG_ERROR ("Invalid opcode");
 		}
 	} else if (strstr (type, "fun")) {
 		RAnalFunction *fcni;
@@ -3805,7 +3808,7 @@ R_API void r_core_seek_previous(RCore *core, const char *type) {
 	ut64 next = 0;
 	bool found = false;
 	if (strstr (type, "opc")) {
-		eprintf ("TODO: r_core_seek_previous (opc)\n");
+		R_LOG_WARN ("TODO: r_core_seek_previous (opc)");
 	} else if (strstr (type, "fun")) {
 		RAnalFunction *fcni;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -3850,7 +3853,7 @@ static void handleHints(RCore *core) {
 	//TODO extend for more anal hints
 	int i = 0;
 	char ch[64] = {0};
-	const char *lines[] = {"[dh]- Define anal hint:"
+	const char *lines[] = { "[dh]- Define anal hint:"
 		," b [16,32,64]     set bits hint"
 		, NULL};
 	for (i = 0; lines[i]; i++) {
@@ -4118,7 +4121,7 @@ onemoretime:
 			r_core_cmd0 (core, q);
 			free (q);
 		} else {
-			eprintf ("Sorry. No flags or variables referenced here\n");
+			R_LOG_INFO ("Sorry. No flags or variables referenced here");
 			r_cons_any_key (NULL);
 		}
 		r_anal_op_fini (&op);
@@ -4138,7 +4141,7 @@ onemoretime:
 					r_cons_show_cursor (false);
 				}
 			} else {
-				eprintf ("Sorry. No flag here\n");
+				R_LOG_INFO ("Sorry. No flag here");
 				r_cons_any_key (NULL);
 			}
 		}
@@ -4158,7 +4161,7 @@ onemoretime:
 					r_cons_show_cursor (false);
 				}
 			} else {
-				eprintf ("Sorry. No flag here\n");
+				R_LOG_INFO ("Sorry. No flag here");
 				r_cons_any_key (NULL);
 			}
 		}
@@ -4185,7 +4188,7 @@ onemoretime:
 		r_core_cmdf (core, "afm $$+$F @0x%08"PFMT64x, off);
 		break;
 	case 'k':
-		eprintf ("TODO: merge up\n");
+		R_LOG_TODO ("merge up");
 		r_cons_any_key (NULL);
 		break;
 	// very weak and incomplete
@@ -4199,7 +4202,7 @@ onemoretime:
 		r_core_cmdf (core, "?i zone name;fz `yp` @ 0x%08"PFMT64x, off);
 		break;
 	case 'X': // "VdX"
-		eprintf ("Finding cross-references to 0x%08"PFMT64x" ...\n", off);
+		R_LOG_INFO ("Finding cross-references to 0x%08"PFMT64x, off);
 		r_core_cmdf (core, "./r 0x%08"PFMT64x" @ $S", off);
 		break;
 	case 'S':
@@ -4328,7 +4331,7 @@ onemoretime:
 			N = strtoull (end_off, &endptr, 16);
 		}
 		if (!end_off || end_off == endptr) {
-			eprintf ("Invalid numeric input\n");
+			R_LOG_ERROR ("Invalid numeric input");
 			r_cons_any_key (NULL);
 			free (end_off);
 			break;
@@ -4421,7 +4424,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		sprintf (color, rgb_xxx_fmt, rcolor.r, rcolor.g, rcolor.b);
 		if (rcolor.r2 || rcolor.g2 || rcolor.b2) {
-			color = r_str_appendf (color, " ");
+			color = r_str_append (color, " ");
 			color = r_str_appendf (color, rgb_xxx_fmt, rcolor.r2, rcolor.g2, rcolor.b2);
 			rcolor.a = ALPHA_FGBG;
 		} else {

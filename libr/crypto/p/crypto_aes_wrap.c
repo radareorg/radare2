@@ -1,32 +1,34 @@
-/* radare - LGPL - Copyright 2021 - Sylvain Pelissier
-   Implementation of AES Key Wrap Algorithm (RFC 3394) */
+/* radare - LGPL - Copyright 2021-2022 - Sylvain Pelissier
+ * Implementation of AES Key Wrap Algorithm (RFC 3394) */
 
 #include <r_lib.h>
 #include <r_crypto.h>
+#include <r_util/r_log.h>
 #include "crypto_aes_algo.h"
 
 #define BLOCK_SIZE 8
 
-static bool aes_wrap_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool aes_wrap_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
-	cry->key_len = keylen;
-	memcpy (cry->key, key, keylen);
-	cry->dir = direction;
+	cj->key_len = keylen;
+	memcpy (cj->key, key, keylen);
+	cj->dir = direction;
 	return true;
 }
 
-static int aes_wrap_get_key_size(RCrypto *cry) {
-	return cry->key_len;
+static int aes_wrap_get_key_size(RCryptoJob *cj) {
+	return cj->key_len;
 }
 
-static bool aes_wrap_set_iv(RCrypto *cry, const ut8 *iv_src, int ivlen) {
+static bool aes_wrap_set_iv(RCryptoJob *cj, const ut8 *iv_src, int ivlen) {
 	if (ivlen != BLOCK_SIZE) {
 		return false;
-	} else {
-		cry->iv = calloc (1, BLOCK_SIZE);
-		memcpy (cry->iv, iv_src, BLOCK_SIZE);
+	}
+	cj->iv = malloc (BLOCK_SIZE);
+	if (cj->iv) {
+		memcpy (cj->iv, iv_src, BLOCK_SIZE);
 	}
 	return true;
 }
@@ -35,7 +37,7 @@ static bool aes_wrap_use(const char *algo) {
 	return algo && !strcmp (algo, "aes-wrap");
 }
 
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	struct aes_state st;
 	ut64 blocks = len / BLOCK_SIZE;
 	ut8 tmp[16] = {0};
@@ -44,17 +46,17 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	int i, j;
 
 	if (len % BLOCK_SIZE != 0) {
-		eprintf ("Length must be a multiple of %d.\n", BLOCK_SIZE);
+		R_LOG_ERROR ("Length must be a multiple of %d", BLOCK_SIZE);
 		return false;
 	}
 
-	if (len < 16 && cry->dir == 0) {
-		eprintf ("Length must be at least 16.\n");
+	if (len < 16 && cj->dir == 0) {
+		R_LOG_ERROR ("Length must be at least 16");
 		return false;
 	}
 
-	if (len < 24 && cry->dir == 1) {
-		eprintf ("Length must be at least 24.\n");
+	if (len < 24 && cj->dir == 1) {
+		R_LOG_ERROR ("Length must be at least 24");
 		return false;
 	}
 
@@ -64,19 +66,21 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	}
 	long *obuf_ptr = (long *)obuf;
 
-	if (NULL == cry->iv) {
-		cry->iv = calloc (1, BLOCK_SIZE);
-		memset (cry->iv, 0xa6, BLOCK_SIZE);
+	if (!cj->iv) {
+		cj->iv = malloc (BLOCK_SIZE);
+		if (cj->iv) {
+			memset (cj->iv, 0xa6, BLOCK_SIZE);
+		}
 	}
 
-	st.key_size = cry->key_len;
+	st.key_size = cj->key_len;
 	st.rounds = 6 + (st.key_size / 4);
 	st.columns = st.key_size / 4;
-	memcpy (st.key, cry->key, st.key_size);
+	memcpy (st.key, cj->key, st.key_size);
 
-	if (cry->dir == 0) {
+	if (cj->dir == 0) {
 		// Encrypt
-		memcpy (obuf, cry->iv, BLOCK_SIZE);
+		memcpy (obuf, cj->iv, BLOCK_SIZE);
 		memcpy (obuf + BLOCK_SIZE, buf, len);
 		for (j = 0; j <= 5; j++) {
 			for (i = 0; i < blocks; i++) {
@@ -95,8 +99,8 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 				*(obuf_ptr + i + 1) = *(tmp_ptr + 1);
 			}
 		}
-		r_crypto_append (cry, obuf, len + BLOCK_SIZE);
-	} else if (cry->dir == 1) {
+		r_crypto_job_append (cj, obuf, len + BLOCK_SIZE);
+	} else if (cj->dir == 1) {
 		// Decrypt
 		blocks -= 1;
 		t = 6 * blocks;
@@ -117,29 +121,31 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 				*(obuf_ptr + i) = *(tmp_ptr + 1);
 			}
 		}
-		if (memcmp (cry->iv, obuf, BLOCK_SIZE)) {
-			eprintf ("Invalid integrity check\n");
+		if (memcmp (cj->iv, obuf, BLOCK_SIZE)) {
+			R_LOG_ERROR ("Invalid integrity check");
 			return false;
 		}
-		r_crypto_append (cry, obuf + BLOCK_SIZE, len - BLOCK_SIZE);
+		r_crypto_job_append (cj, obuf + BLOCK_SIZE, len - BLOCK_SIZE);
 	}
 
 	free (obuf);
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
+	return update (cj, buf, len);
 }
 
 RCryptoPlugin r_crypto_plugin_aes_wrap = {
 	.name = "aes-wrap",
+	.author = "Sylvain Pelissier",
+	.license = "LGPL",
 	.set_key = aes_wrap_set_key,
 	.get_key_size = aes_wrap_get_key_size,
 	.set_iv = aes_wrap_set_iv,
-	.use = aes_wrap_use,
+	.check = aes_wrap_use,
 	.update = update,
-	.final = final
+	.end = end
 };
 
 #ifndef R2_PLUGIN_INCORE

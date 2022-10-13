@@ -2,7 +2,7 @@ include ../../global.mk
 
 NAME=r_asm
 R2DEPS=r_syscall r_lang r_util r_parse
-R2DEPS+=r_flag r_cons r_reg
+R2DEPS+=r_flag r_cons r_reg r_arch
 CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch -I../../shlr
 CURDIR=p/
 

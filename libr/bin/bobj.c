@@ -92,7 +92,7 @@ static RList *classes_from_symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	RListIter *iter;
 	r_list_foreach (bf->o->symbols, iter, sym) {
-		if (sym->name[0] != '_') {
+		if (!sym->name || sym->name[0] != '_') {
 			continue;
 		}
 		const char *cn = sym->classname;
@@ -417,7 +417,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		bo->mem = p->mem (bf);
 	}
 	if (bo->info && bin->filter_rules & (R_BIN_REQ_INFO | R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
-		bo->lang = isSwift? R_BIN_NM_SWIFT: r_bin_load_languages (bf);
+		bo->lang = isSwift? R_BIN_LANG_SWIFT: r_bin_load_languages (bf);
 	}
 	return true;
 }
@@ -425,21 +425,15 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 R_IPI RRBTree *r_bin_object_patch_relocs(RBin *bin, RBinObject *bo) {
 	r_return_val_if_fail (bin && bo, NULL);
 
-	static R_TH_LOCAL bool first = true;
-	// r_bin_object_set_items set o->relocs but there we don't have access
-	// to io so we need to be run from bin_relocs, free the previous reloc and get
-	// the patched ones
-	if (first && bo->plugin && bo->plugin->patch_relocs) {
+	if (!bo->is_reloc_patched && bo->plugin && bo->plugin->patch_relocs) {
 		RList *tmp = bo->plugin->patch_relocs (bin);
-		first = false;
 		if (!tmp) {
 			return bo->relocs;
 		}
 		r_crbtree_free (bo->relocs);
 		REBASE_PADDR (bo, tmp, RBinReloc);
 		bo->relocs = list2rbtree (tmp);
-		first = false;
-		bin->is_reloc_patched = true;
+		bo->is_reloc_patched = true;
 		tmp->free = NULL;
 		r_list_free (tmp);
 	}

@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include "r_core.h"
 
+static R_TH_LOCAL bool getNext = false;
+
 static const char *help_msg_e[] = {
 	"Usage:", "e [var[=value]]", "Evaluable vars",
 	"e","?asm.bytes", "show description",
@@ -13,7 +15,9 @@ static const char *help_msg_e[] = {
 	"e var=?", "", "print all valid values of var",
 	"e var=??", "", "print all valid values of var with description",
 	"e.", "a=b", "same as 'e a=b' but without using a space",
-	"e,", "k=v,k=v,k=v", "comma separated k[=v]",
+	"e,", "[table-query]", "show the output in table format",
+	"e/", "asm", "filter configuration variables by name",
+	"e:", "k=v:k=v:k=v", "comma or colon separated k[=v]",
 	"e-", "", "reset config vars",
 	"e*", "", "dump config vars in r commands",
 	"e!", "a", "invert the boolean value of 'a' var",
@@ -21,6 +25,7 @@ static const char *help_msg_e[] = {
 	"ee", "var", "open editor to change the value of var",
 	"ed", "", "open editor to change the ~/.radare2rc",
 	"ej", "", "list config vars in JSON",
+	"eJ", "", "list config vars in verbose JSON",
 	"en", "", "list environment vars",
 	"env", " [k[=v]]", "get/set environment variable",
 	"er", " [key]", "set config key as readonly. no way back",
@@ -49,13 +54,13 @@ static const char *help_msg_ec[] = {
 	"Vars:", "", "",
 	"colors:", "", "rgb:000, red, green, blue, #ff0000, ...",
 	"e scr.color", "=0", "use more colors (0: no color 1: ansi 16, 2: 256, 3: 16M)",
-	"$DATADIR/radare2/cons", "", R_JOIN_2_PATHS ("~", R2_HOME_THEMES) " ./",
+	"$DATADIR/radare2/cons", "", "~/.local/share/radare2/cons", // XXX should be themes
 	NULL
 };
 
 static const char *help_msg_eco[] = {
 	"Usage: eco[jc] [theme]", "", "load theme (cf. Path and dir.prefix)",
-	"eco", "", "list available themes",
+	"eco", "", "list available themes (See e dir.themes)",
 	"eco.", "", "display current theme name",
 	"eco*", "", "show current theme script",
 	"eco!", "", "edit and reload current theme",
@@ -63,11 +68,9 @@ static const char *help_msg_eco[] = {
 	"ecoq", "", "list available themes without showing the current one",
 	"ecoj", "", "list available themes in JSON",
 	"Path:", "", "",
-	"$DATADIR/radare2/cons", "", R_JOIN_2_PATHS ("~", R2_HOME_THEMES) " ./",
+	"$DATADIR/radare2/cons", "", "~/.local/share/radare2/cons", // XXX should be themes
 	NULL
 };
-
-static bool getNext = false;
 
 static bool load_theme(RCore *core, const char *path) {
 	if (!r_file_exists (path)) {
@@ -82,6 +85,34 @@ static bool load_theme(RCore *core, const char *path) {
 	return res;
 }
 
+static void cmd_eval_table(RCore *core, const char *input) {
+	const char fmt = *input;
+	const char *q = input;
+	RTable *t = r_core_table (core, "eval");
+	RTableColumnType *typeString = r_table_type ("string");
+	RTableColumnType *typeBoolean = r_table_type ("bool");
+	r_table_add_column (t, typeBoolean, "ro", 0);
+	r_table_add_column (t, typeString, "type", 0);
+	r_table_add_column (t, typeString, "key", 0);
+	r_table_add_column (t, typeString, "value", 0);
+	r_table_add_column (t, typeString, "desc", 0);
+
+	RListIter *iter;
+	RConfigNode *node;
+	r_list_foreach (core->config->nodes, iter, node) {
+		r_strf_var (type, 32, "%s", r_config_node_type (node));
+		r_strf_var (ro, 32, "%s", r_config_node_is_ro (node)? "ro": "");
+		r_table_add_row (t, ro, type, node->name, node->value, node->desc, NULL);
+	}
+	if (r_table_query (t, q)) {
+		char *s = (fmt == 'j')
+			? r_table_tojson (t)
+			: r_table_tostring (t);
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
+	r_table_free (t);
+}
 static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 	const char *fn = r_str_lchr (file, '/');
 	if (!fn) fn = file;
@@ -123,18 +154,17 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 	if (!_arg || !*_arg) {
 		return false;
 	}
-	if (!r_str_cmp (_arg, "default", strlen (_arg))) {
+	if (!strcmp (_arg, "default")) {
 		core->theme = r_str_dup (core->theme, _arg);
 		r_cons_pal_init (core->cons->context);
 		return true;
 	}
 	char *arg = strdup (_arg);
+	// system themes directory
+	char *home = r_xdg_datadir ("cons");
 
-	char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_THEMES, "%s"), arg);
-	char *home = tmp ? r_str_home (tmp) : NULL;
-	free (tmp);
-
-	tmp = r_str_newf (R_JOIN_2_PATHS (R2_THEMES, "%s"), arg);
+	// system themes directory
+	char *tmp = r_str_newf (R_JOIN_2_PATHS (R2_THEMES, "%s"), arg);
 	path = tmp ? r_str_r2_prefix (tmp) : NULL;
 	free (tmp);
 
@@ -157,7 +187,7 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 				arg = NULL;
 			} else {
 				char *absfile = r_file_abspath (arg);
-				eprintf ("eco: cannot open colorscheme profile (%s)\n", absfile);
+				R_LOG_ERROR ("eco: cannot open colorscheme profile (%s)", absfile);
 				free (absfile);
 				failed = true;
 			}
@@ -190,7 +220,7 @@ R_API RList *r_core_list_themes(RCore *core) {
 	getNext = false;
 	char *tmp = strdup ("default");
 	r_list_append (list, tmp);
-	char *path = r_str_home (R2_HOME_THEMES R_SYS_DIR);
+	char *path = r_xdg_datadir ("cons");
 	if (path) {
 		list_themes_in_path (list, path);
 		R_FREE (path);
@@ -220,7 +250,7 @@ static void nextpal(RCore *core, int mode) {
 		}
 		pj_a (pj);
 	}
-	char *home = r_str_home (R2_HOME_THEMES R_SYS_DIR);
+	char *home = r_xdg_datadir ("cons");
 
 	getNext = false;
 	// spaguetti!
@@ -414,6 +444,9 @@ static int cmd_eval(void *data, const char *input) {
 	case 'x': // "ex"
 		// XXX we need headers for the cmd_xxx files.
 		return cmd_quit (data, "");
+	case 'J': // "eJ"
+		r_config_list (core->config, NULL, 'J');
+		break;
 	case 'j': // "ej"
 		r_config_list (core->config, NULL, 'j');
 		break;
@@ -464,8 +497,12 @@ static int cmd_eval(void *data, const char *input) {
 				r_list_free (themes_list);
 			}
 			break;
-		case 's': r_cons_pal_show (); break; // "ecs"
-		case '*': r_cons_pal_list (1, NULL); break; // "ec*"
+		case 's': // "ecs"
+			r_cons_pal_show ();
+			break;
+		case '*': // "ec*"
+			r_cons_pal_list (1, NULL);
+			break;
 		case 'h': // echo
 			if (input[2] == 'o') {
 				r_core_echo (core, input + 3);
@@ -545,7 +582,7 @@ static int cmd_eval(void *data, const char *input) {
 					color_code = r_cons_pal_parse (dup, NULL);
 					R_FREE (dup);
 					if (!color_code) {
-						eprintf ("Unknown color %s\n", argv[0]);
+						R_LOG_ERROR ("Unknown color %s", argv[0]);
 						r_str_argv_free (argv);
 						return true;
 					}
@@ -563,7 +600,7 @@ static int cmd_eval(void *data, const char *input) {
 					color_code = r_cons_pal_parse (dup, NULL);
 					R_FREE (dup);
 					if (!color_code) {
-						eprintf ("Unknown color %s\n", argv[1]);
+						R_LOG_ERROR ("Unknown color %s", argv[1]);
 						r_str_argv_free (argv);
 						free (word);
 						return true;
@@ -571,7 +608,7 @@ static int cmd_eval(void *data, const char *input) {
 				}
 				break;
 			default:
-				eprintf ("See ecH?\n");
+				R_LOG_INFO ("See ecH?");
 				r_str_argv_free (argv);
 				return true;
 			}
@@ -651,8 +688,12 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case '!': // "e!"
 		input = r_str_trim_head_ro (input + 1);
-		if (!r_config_toggle (core->config, input)) {
-			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
+		if (R_STR_ISNOTEMPTY (input) && *input != '?') {
+			if (!r_config_toggle (core->config, input)) {
+				R_LOG_ERROR ("'%s' is not a boolean variable", input);
+			}
+		} else {
+			r_core_cmd_help_match (core, help_msg_e, "e!", true);
 		}
 		break;
 	case 's': // "es"
@@ -669,14 +710,17 @@ static int cmd_eval(void *data, const char *input) {
 		if (input[1]) {
 			const char *key = input + ((input[1] == ' ')? 2: 1);
 			if (!r_config_readonly (core->config, key)) {
-				eprintf ("cannot find key '%s'\n", key);
+				R_LOG_ERROR ("cannot find key '%s'", key);
 			}
 		} else {
 			eprintf ("Usage: er [key]  # make an eval key PERMANENTLY read only\n");
 		}
 		break;
-	case ',': // "e."
+	case ':': // "e:"
 		r_config_eval (core->config, input + 1, true);
+		break;
+	case ',': // "e,"
+		cmd_eval_table (core, input + 1);
 		break;
 	case '.': // "e "
 	case ' ': // "e "

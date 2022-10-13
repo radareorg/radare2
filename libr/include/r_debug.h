@@ -383,7 +383,7 @@ typedef struct r_debug_plugin_t {
 	RList *(*threads)(RDebug *dbg, int pid);
 	RList *(*pids)(RDebug *dbg, int pid);
 	RList *(*tids)(RDebug *dbg, int pid);
-	RFList (*backtrace)(RDebug *dbg, int count);
+	RList (*backtrace)(RDebug *dbg, int count);
 	/* flow */
 	int (*stop)(RDebug *dbg);
 	bool (*step)(RDebug *dbg);
@@ -396,9 +396,8 @@ typedef struct r_debug_plugin_t {
 	bool (*contsc)(RDebug *dbg, int pid, int sc);
 	RList* (*frames)(RDebug *dbg, ut64 at);
 	RBreakpointCallback breakpoint;
-// XXX: specify, pid, tid, or RDebug ?
-	int (*reg_read)(RDebug *dbg, int type, ut8 *buf, int size);
-	int (*reg_write)(RDebug *dbg, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
+	bool (*reg_read)(RDebug *dbg, int type, ut8 *buf, int size);
+	bool (*reg_write)(RDebug *dbg, int type, const ut8 *buf, int size);
 	char* (*reg_profile)(RDebug *dbg);
 	int (*set_reg_profile)(const char *str);
 	/* memory */
@@ -438,9 +437,9 @@ R_API RDebug *r_debug_new(int hard);
 R_API void r_debug_free(RDebug *dbg);
 
 R_API bool r_debug_attach(RDebug *dbg, int pid);
-R_API int r_debug_detach(RDebug *dbg, int pid);
-R_API int r_debug_startv(RDebug *dbg, int argc, char **argv);
-R_API int r_debug_start(RDebug *dbg, const char *cmd);
+R_API bool r_debug_detach(RDebug *dbg, int pid);
+R_API bool r_debug_startv(RDebug *dbg, int argc, char **argv);
+R_API bool r_debug_start(RDebug *dbg, const char *cmd);
 
 /* reason we stopped */
 R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg);

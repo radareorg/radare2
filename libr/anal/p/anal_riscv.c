@@ -24,7 +24,7 @@ static int riscv_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int ou
 	}
 	ut8 *opbuf = outbuf;
 	int ret = riscv_assemble (str, addr, opbuf);
-	if (a->config->big_endian) {
+	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config)) {
 		ut8 *buf = opbuf;
 		ut8 tmp = buf[0];
 		buf[0] = buf[3];
@@ -349,7 +349,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 4;
-	bool be = anal->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
 	if (len < 2) {
 		op->size = 2;
 		return -1;
@@ -469,7 +469,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strncmp (name, "and", 3)) {
 			esilprintf (op, "%s,%s,&,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "auipc")) {
-			esilprintf (op, "%s000,$$,+,%s,=", ARG (1), ARG (0));
+			esilprintf (op, "%s000,0x%"PFMT64x",+,%s,=", ARG (1), addr, ARG (0));
 		} else if (!strncmp (name, "sll", 3)) {
 			esilprintf (op, "%s,%s,<<,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'w' || !strncmp (name, "slliw", 5)) {
@@ -560,50 +560,51 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		// jumps
 		else if (!strcmp (name, "jalr")) {
 			if (strcmp (ARG (0), "0")) {
-				esilprintf (op, "%s,%s,+,pc,=,%d,$$,+,%s,=", ARG (2), ARG (1), op->size, ARG (0));
+				esilprintf (op, "%s,%s,+,pc,:=,0x%"PFMT64x",%s,=", ARG (2), ARG (1), addr + op->size, ARG (0));
 			} else {
-				esilprintf (op, "%s,%s,+,pc,=", ARG (2), ARG (1));
+				esilprintf (op, "%s,%s,+,pc,:=", ARG (2), ARG (1));
 			}
 		} else if (!strcmp (name, "jal")) {
 			if (strcmp (ARG (0), "0")) {
 				if (args.num == 1) {
-					esilprintf (op, "%d,$$,+,ra,=,%s,pc,=", op->size, ARG (0));
+					//esilprintf (op, "%d,$$,+,ra,=,%s,pc,:=", op->size, ARG (0));
+					esilprintf (op, "pc,ra,=,%s,pc,:=", ARG (0));
 				} else {
-					esilprintf (op, "%d,$$,+,%s,=,%s,pc,=", op->size, ARG (0), ARG (1));
+					esilprintf (op, "0x%"PFMT64x",%s,=,%s,pc,:=", addr + op->size, ARG (0), ARG (1));
 				}
 			} else {
-				esilprintf (op, "%s,pc,=", ARG (1));
+				esilprintf (op, "%s,pc,:=", ARG (1));
 			}
 		} else if (!strcmp (name, "jr") || !strcmp (name, "j")) {
-			esilprintf (op, "%s,pc,=", ARG (0));
+			esilprintf (op, "%s,pc,:=", ARG (0));
 		} else if (!strcmp (name, "ecall") || !strcmp (name, "ebreak")) {
 			esilprintf (op, "TRAP");
 		}
 		// Branches & cmps
 		else if (!strcmp (name, "beq")) {
-			esilprintf (op, "%s,%s,==,$z,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+			esilprintf (op, "%s,%s,==,$z,?{,%s,pc,:=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "bne")) {
-			esilprintf (op, "%s,%s,==,$z,!,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+			esilprintf (op, "%s,%s,==,$z,!,?{,%s,pc,:=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "ble") || !strcmp (name, "bleu")) {
-			esilprintf (op, "%s,%s,<=,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+			esilprintf (op, "%s,%s,<=,?{,%s,pc,:=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "blt") || !strcmp (name, "bltu")) {
-			esilprintf (op, "%s,%s,<,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+			esilprintf (op, "%s,%s,<,?{,%s,pc,:=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "bge") || !strcmp (name, "bgeu")) {
-			esilprintf (op, "%s,%s,>=,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+			esilprintf (op, "%s,%s,>=,?{,%s,pc,:=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "bgt") || !strcmp (name, "bgtu")) {
-			esilprintf (op, "%s,%s,>,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+			esilprintf (op, "%s,%s,>,?{,%s,pc,:=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "beqz")) {
-			esilprintf (op, "%s,0,==,$z,?{,%s,pc,=,},", ARG (0), ARG (1));
+			esilprintf (op, "%s,0,==,$z,?{,%s,pc,:=,},", ARG (0), ARG (1));
 		} else if (!strcmp (name, "bnez")) {
-			esilprintf (op, "%s,0,==,$z,!,?{,%s,pc,=,},", ARG (0), ARG (1));
+			esilprintf (op, "%s,0,==,$z,!,?{,%s,pc,:=,},", ARG (0), ARG (1));
 		} else if (!strcmp (name, "blez")) {
-			esilprintf (op, "%s,0,<=,?{,%s,pc,=,},", ARG (0), ARG (1));
+			esilprintf (op, "%s,0,<=,?{,%s,pc,:=,},", ARG (0), ARG (1));
 		} else if (!strcmp (name, "bltz")) {
-			esilprintf (op, "%s,0,<,?{,%s,pc,=,},", ARG (0), ARG (1));
+			esilprintf (op, "%s,0,<,?{,%s,pc,:=,},", ARG (0), ARG (1));
 		} else if (!strcmp (name, "bgez")) {
-			esilprintf (op, "%s,0,>=,?{,%s,pc,=,},", ARG (0), ARG (1));
+			esilprintf (op, "%s,0,>=,?{,%s,pc,:=,},", ARG (0), ARG (1));
 		} else if (!strcmp (name, "bgtz")) {
-			esilprintf (op, "%s,0,>,?{,%s,pc,=,},", ARG (0), ARG (1));
+			esilprintf (op, "%s,0,>,?{,%s,pc,:=,},", ARG (0), ARG (1));
 		} else if (!strncmp (name, "seq", 3)) {
 			esilprintf (op, "%s,%s,==,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "sne", 3)) {
@@ -704,29 +705,30 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 	if (mask & R_ANAL_OP_MASK_VAL && args.num) {
 		int i, j = 1;
-		op->dst = R_NEW0 (RAnalValue);
+		RAnalValue *dst, *src;
+		dst = r_vector_push (op->dsts, NULL);
 		char *argf = strdup (o->args);
 		char *comma = strtok (argf, ",");
 		if (comma && strchr (comma, '(')) {
-			op->dst->delta = (st64)r_num_get (NULL, args.arg[0]);
-			op->dst->reg = r_reg_get (anal->reg, args.arg[1], -1);
+			dst->delta = (st64)r_num_get (NULL, args.arg[0]);
+			dst->reg = r_reg_get (anal->reg, args.arg[1], -1);
 			j = 2;
 		} else if (isdigit ((unsigned char)args.arg[j][0])) {
-			op->dst->imm = r_num_get (NULL, args.arg[0]);
+			dst->imm = r_num_get (NULL, args.arg[0]);
 		} else {
-			op->dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
+			dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
 		}
 		for (i = 0; j < args.num; i++, j++) {
-			op->src[i] = R_NEW0 (RAnalValue);
+			src = r_vector_push (op->srcs, NULL);
 			comma = strtok (NULL, ",");
 			if (comma && strchr (comma, '(')) {
-				op->src[i]->delta = (st64)r_num_get (NULL, args.arg[j]);
-				op->src[i]->reg = r_reg_get (anal->reg, args.arg[j + 1], -1);
+				src->delta = (st64)r_num_get (NULL, args.arg[j]);
+				src->reg = r_reg_get (anal->reg, args.arg[j + 1], -1);
 				j++;
 			} else if (isalpha ((unsigned char)args.arg[j][0])) {
-				op->src[i]->reg = r_reg_get (anal->reg, args.arg[j], -1);
+				src->reg = r_reg_get (anal->reg, args.arg[j], -1);
 			} else {
-				op->src[i]->imm = r_num_get (NULL, args.arg[j]);
+				src->imm = r_num_get (NULL, args.arg[j]);
 			}
 		}
 		free (argf);

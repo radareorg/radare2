@@ -7,7 +7,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-   http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,8 +30,8 @@ limitations under the License.
 #define BYTE uint8_t
 
 typedef struct _IMAGE_DATA_DIRECTORY {
-    DWORD   VirtualAddress;
-    DWORD   Size;
+	DWORD   VirtualAddress;
+	DWORD   Size;
 } IMAGE_DATA_DIRECTORY, *PIMAGE_DATA_DIRECTORY;
 
 #include "r_types.h"
@@ -290,19 +290,19 @@ STREAMS dotnet_parse_stream_headers(
     // Store necessary bits to parse these later. Not all tables will be
     // parsed, but are referenced from others. For example, the #Strings
     // stream is referenced from various tables in the #~ heap.
-    if (strncmp(stream_name, "#GUID", 5) == 0)
+    if (strncmp (stream_name, "#GUID", 5))
       headers.guid = stream_header;
     // Believe it or not, I have seen at least one binary which has a #- stream
     // instead of a #~ (215e1b54ae1aac153e55596e6f1a4350). This isn't in the
     // documentation anywhere but the structure is the same. I'm chosing not
     // to parse it for now.
-    else if (strncmp(stream_name, "#~", 2) == 0 && headers.tilde == NULL)
+    else if (strncmp (stream_name, "#~", 2) == 0 && headers.tilde == NULL)
       headers.tilde = stream_header;
-    else if (strncmp(stream_name, "#Strings", 8) == 0 && headers.string == NULL)
+    else if (strncmp (stream_name, "#Strings", 8) == 0 && headers.string == NULL)
       headers.string = stream_header;
-    else if (strncmp(stream_name, "#Blob", 5) == 0)
+    else if (strncmp (stream_name, "#Blob", 5) == 0)
       headers.blob = stream_header;
-    else if (strncmp(stream_name, "#US", 3) == 0 && headers.us == NULL)
+    else if (strncmp (stream_name, "#US", 3) == 0 && headers.us == NULL)
       headers.us = stream_header;
 
     // Stream name is padded to a multiple of 4.
@@ -801,7 +801,7 @@ void dotnet_parse_tilde_2(
                   pe, string_offset, *(WORD*) typeref_row);
             }
 
-            if (name && strncmp(name, "GuidAttribute", 13) != 0)
+            if (name && strncmp (name, "GuidAttribute", 13) != 0)
             {
               row_ptr += row_size;
               continue;

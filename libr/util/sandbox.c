@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2021 - pancake */
+/* radare - LGPL - Copyright 2012-2022 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
@@ -24,7 +24,7 @@ static R_TH_LOCAL int G_graintype = R_SANDBOX_GRAIN_NONE;
 static bool inHomeWww(const char *path) {
 	r_return_val_if_fail (path, false);
 	bool ret = false;
-	char *homeWww = r_str_home (R2_HOME_WWWROOT R_SYS_DIR);
+	char *homeWww = r_xdg_datadir ("www");
 	if (homeWww) {
 		if (r_str_startswith (path, homeWww)) {
 			ret = true;
@@ -67,7 +67,7 @@ R_API bool r_sandbox_check_path(const char *path) {
 	}
 
 	// ./ path is not allowed
-        if (path[0]=='.' && path[1]=='/') {
+	if (path[0]=='.' && path[1]=='/') {
 		return false;
 	}
 	// Properly check for directory traversal using "..". First, does it start with a .. part?
@@ -199,13 +199,11 @@ R_API bool r_sandbox_enable(bool e) {
 		};
 
 		size_t i, privrulescnt = sizeof (privrules) / sizeof (privrules[0]);
-		
 		if (!priv) {
 			eprintf ("sandbox: priv_allocset failed\n");
 			return false;
 		}
 		priv_basicset (priv);
-		
 		for (i = 0; i < privrulescnt; i ++) {
 			if (priv_delset (priv, privrules[i]) != 0) {
 				priv_emptyset (priv);

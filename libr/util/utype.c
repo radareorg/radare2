@@ -3,7 +3,7 @@
 #include <r_util.h>
 
 // R2_580 - return bool instead of int
-R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
+R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	const char *kind;
 	char var[128];
 	sprintf (var, "link.%08"PFMT64x, at);
@@ -17,14 +17,14 @@ R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 			eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", val, at + off);
 			return true;
 		}
-		eprintf ("Invalid kind of type\n");
+		R_LOG_ERROR ("Invalid kind of type");
 	}
 	return false;
 }
 
-R_API int r_type_kind(Sdb *TDB, const char *name) {
-	r_return_val_if_fail (TDB, -1);
-	if (!name) {
+R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
+	r_return_val_if_fail (TDB && name, -1);
+	if (R_STR_ISEMPTY (name)) {
 		// XXX should assert too
 		return -1;
 	}
@@ -315,7 +315,7 @@ static void types_range_del(Sdb *db, ut64 addr) {
 	ut64 base = TYPE_RANGE_BASE (addr);
 	r_strf_var (k, 64, "range.%"PFMT64x, base);
 	char valstr[SDB_NUM_BUFSZ];
-	const char *v = sdb_itoa (addr, valstr, SDB_NUM_BASE);
+	const char *v = sdb_itoa (addr, SDB_NUM_BASE, valstr, sizeof (valstr));
 	sdb_array_remove (db, k, v, 0);
 }
 
@@ -597,7 +597,7 @@ R_API const char *r_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_nam
 #define MIN_MATCH_LEN 4
 
 static inline bool is_function(const char *name) {
-	return name && !strcmp("func", name);
+	return name && !strcmp ("func", name);
 }
 
 static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {

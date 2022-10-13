@@ -3,7 +3,7 @@ FILE=bins/mach0/libr_bp.dylib
 ARGS=-A
 CMDS=afl~00760
 EXPECT=<<EOF
-0x00000760    7 379          sym._r_bp_new
+0x00000760    7    379 sym._r_bp_new
 EOF
 RUN
 

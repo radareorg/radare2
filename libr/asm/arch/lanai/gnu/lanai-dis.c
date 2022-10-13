@@ -63,8 +63,8 @@
 #include "disas-asm.h"
 
 static  char *reg_names[] =
-{ "r0", "r1", "pc", "ps", "sp", "fp", "r6", "r7",	
-  "r8", "r9","r10","r11","r12","r13","r14","r15",	
+{ "r0", "r1", "pc", "ps", "sp", "fp", "r6", "r7",
+  "r8", "r9","r10","r11","r12","r13","r14","r15",
  "r16","r17","r18","r19","r20","r21","r22","r23",
  "r24","r25","r26","r27","r28","r29","r30","r31",
 };
@@ -179,7 +179,7 @@ print_insn_lanai (memaddr, info)
 	      {
 
 		(*info->fprintf_func) (stream, " ");
-			
+
 		switch (*s)
 		  {
 		  /* By default, just print the character. */
@@ -204,7 +204,7 @@ print_insn_lanai (memaddr, info)
 		  case 'd':
 		    reg (X_RD (insn));
 		    break;
-		
+
 #undef	reg
 
 		  case '4': /* Op1 (for RRR) */

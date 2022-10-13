@@ -1,8 +1,7 @@
-/* radare - LGPL - Copyright 2019-2021 pancake */
+/* radare - LGPL - Copyright 2019-2022 pancake */
 
 #include "r_lib.h"
 #include "r_core.h"
-#include "r_lang.h"
 
 static const char *r2v_sym = "r2v__entry";
 
@@ -180,6 +179,7 @@ static bool lang_v_run(RLang *lang, const char *code, int len) {
 static RLangPlugin r_lang_plugin_v = {
 	.name = "v",
 	.ext = "v",
+	.author = "pancake",
 	.example = r_lang_v_example,
 	.desc = "V language extension",
 	.license = "MIT",

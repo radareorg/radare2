@@ -52,7 +52,7 @@ static bool _init_test_pvector2(RPVector *v, size_t len, size_t padding) {
 	for (i = 0; (size_t)i < len; i++) {
 		r_pvector_push (v, (void *)((size_t)i));
 	}
-	
+
 	return v->v.len == len && v->v.capacity == len + padding;
 }
 

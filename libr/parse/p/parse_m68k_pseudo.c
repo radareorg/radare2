@@ -61,7 +61,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "lsr",  "2 >>= 1", 2},
 		{ "lsl",  "2 <<= 1", 2},
 		{ "andi",  "2 &= 1", 2},
-		{ "nop",  ""},
+		{ "nop",  "" },
 //
 		{ NULL }
 	};

@@ -40,12 +40,14 @@ R_API void r_debug_bp_update(RDebug *dbg) {
 	}
 }
 
+#if __i386__ || __x86_64__
 static int r_debug_drx_at(RDebug *dbg, ut64 addr) {
 	if (dbg && dbg->h && dbg->h->drx) {
 		return dbg->h->drx (dbg, 0, addr, 0, 0, 0, DRX_API_GET_BP);
 	}
 	return -1;
 }
+#endif
 
 /*
  * Recoiling after a breakpoint has two stages:
@@ -56,13 +58,9 @@ static int r_debug_drx_at(RDebug *dbg, ut64 addr) {
  * r_debug_bp_hit handles stage 1.
  * r_debug_recoil handles stage 2.
  */
-static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
-	RBreakpointItem *b;
-
-	if (!pb) {
-		eprintf ("BreakpointItem is NULL!\n");
-		return false;
-	}
+static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
+	r_return_val_if_fail (dbg && pc_ri && pb, false);
+	RBreakpointItem *b = NULL;
 	/* initialize the output parameter */
 	*pb = NULL;
 
@@ -152,11 +150,11 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	if (pc_off) {
 		pc -= pc_off;
 		if (!r_reg_set_value (dbg->reg, pc_ri, pc)) {
-			eprintf ("failed to set PC!\n");
+			R_LOG_ERROR ("failed to set PC");
 			return false;
 		}
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)) {
-			eprintf ("cannot set registers!\n");
+			R_LOG_ERROR ("cannot set registers");
 			return false;
 		}
 	}
@@ -606,19 +604,20 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	return true;
 }
 
-R_API int r_debug_startv(struct r_debug_t *dbg, int argc, char **argv) {
+R_API bool r_debug_startv(struct r_debug_t *dbg, int argc, char **argv) {
 	/* TODO : r_debug_startv unimplemented */
 	return false;
 }
 
-R_API int r_debug_start(RDebug *dbg, const char *cmd) {
+R_API bool r_debug_start(RDebug *dbg, const char *cmd) {
 	/* TODO: this argc/argv parser is done in r_io */
 	// TODO: parse cmd and generate argc and argv
 	return false;
 }
 
-R_API int r_debug_detach(RDebug *dbg, int pid) {
-	int ret = 0;
+R_API bool r_debug_detach(RDebug *dbg, int pid) {
+	r_return_val_if_fail (dbg, false);
+	bool ret = false;
 	if (dbg->h && dbg->h->detach) {
 		ret = dbg->h->detach (dbg, pid);
 		if (dbg->pid == pid) {
@@ -1375,7 +1374,7 @@ R_API int r_debug_continue_pass_exception(RDebug *dbg) {
 #endif
 
 R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
-	eprintf ("TODO\n");
+	R_LOG_TODO ("not implemented");
 	return false;
 }
 
@@ -1390,7 +1389,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	}
 
 	if (!dbg->anal || !dbg->reg) {
-		eprintf ("Undefined pointer at dbg->anal\n");
+		R_LOG_ERROR ("Undefined pointer at dbg->anal");
 		return false;
 	}
 
@@ -1588,7 +1587,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		}
 #endif
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
-			eprintf ("--> cannot sync regs, process is probably dead\n");
+			R_LOG_ERROR ("cannot sync regs, process is probably dead");
 			return -1;
 		}
 		reg = show_syscall (dbg, "SN");
@@ -1623,7 +1622,7 @@ R_API int r_debug_syscall(RDebug *dbg, int num) {
 	if (dbg->h->contsc) {
 		ret = dbg->h->contsc (dbg, dbg->pid, num);
 	}
-	eprintf ("TODO: show syscall information\n");
+	R_LOG_TODO ("show syscall information");
 	/* r2rc task? ala inject? */
 	return (int)ret;
 }
@@ -1638,7 +1637,7 @@ R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig) {
 		}
 		return -1;
 	}
-	eprintf ("Backend does not implement kill()\n");
+	R_LOG_WARN ("this debugger backend does not implement kill");
 	return false;
 }
 

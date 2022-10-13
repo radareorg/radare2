@@ -15,11 +15,23 @@
 extern "C" {
 #endif
 
-#define R_SYS_BITS_8 1
-#define R_SYS_BITS_16 2
-#define R_SYS_BITS_32 4
-#define R_SYS_BITS_64 8
-#define R_SYS_BITS_27 16
+#if 1
+#define R_SYS_BITS_8	1
+#define R_SYS_BITS_16	2
+#define R_SYS_BITS_32	4
+#define R_SYS_BITS_64	8
+#define R_SYS_BITS_27	16
+#define R_SYS_BITS_4	32
+#define R_SYS_BITS_12	64
+#else
+#define R_SYS_BITS_4	1
+#define R_SYS_BITS_8	2
+#define R_SYS_BITS_12	4
+#define R_SYS_BITS_16	8
+#define R_SYS_BITS_27	16
+#define R_SYS_BITS_32	32
+#define R_SYS_BITS_64	64
+#endif
 
 typedef struct {
 	char *sysname;
@@ -67,6 +79,7 @@ R_API int r_sys_sleep(int secs);
 R_API int r_sys_usleep(int usecs);
 R_API char *r_sys_getenv(const char *key);
 R_API bool r_sys_getenv_asbool(const char *key);
+R_API int r_sys_getenv_asint(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value);
 R_API int r_sys_clearenv(void);
 R_API char *r_sys_whoami(void);
@@ -77,7 +90,7 @@ R_API bool r_sys_aslr(int val);
 R_API int r_sys_thp_mode(void);
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr);
 #if __WINDOWS__
-#if UNICODE
+#ifdef UNICODE
 #define W32_TCHAR_FSTR "%S"
 #define W32_TCALL(name) name"W"
 #define r_sys_conv_utf8_to_win(buf) r_utf8_to_utf16 (buf)

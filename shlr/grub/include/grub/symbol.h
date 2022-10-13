@@ -44,6 +44,6 @@
 #define GRUB_MODATTR(name, value)
 //#define GRUB_EXPORT(name)	.ascii "export:",#name,"\0"
 #define GRUB_EXPORT_END		.text
-#define GRUB_EXPORT(value)	
+#define GRUB_EXPORT(value)
 
 #endif /* ! GRUB_SYMBOL_HEADER */

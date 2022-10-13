@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake */
+/* radare - LGPL - Copyright 2011-2022 - pancake */
 
 #include <r_asm.h>
 #include <r_debug.h>
@@ -25,7 +25,7 @@ struct bfvm_regs {
 	ut32 memi;
 };
 
-static struct bfvm_regs r;
+static R_TH_LOCAL struct bfvm_regs r = {0};
 
 static bool is_io_bf(RDebug *dbg) {
 	RIODesc *d = dbg->iob.io->desc;
@@ -61,33 +61,33 @@ static bool r_debug_bf_step(RDebug *dbg) {
 	return true;
 }
 
-static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+static bool r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	r_return_val_if_fail (dbg && buf && size > 0, -1);
 	if (!is_io_bf (dbg)) {
-		return 0;
-	}
-	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data)) {
-		return 0;
-	}
-	RIOBdescbg *o = dbg->iob.io->desc->data;
-	r.pc = o->bfvm->eip;
-	r.ptr = o->bfvm->ptr;
-	r.sp = o->bfvm->esp;
-	r.scr = o->bfvm->screen;
-	r.scri = o->bfvm->screen_idx;
-	r.inp = o->bfvm->input;
-	r.inpi = o->bfvm->input_idx;
-	r.mem = o->bfvm->base;
-	r.memi = o->bfvm->ptr;
-	memcpy (buf, &r, sizeof (r));
-	//r_io_system (dbg->iob.io, "dr");
-	return sizeof (r);
-}
-
-static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	if (!dbg) {
 		return false;
 	}
+	if (!(dbg->iob.io) || !(dbg->iob.io->desc) || !(dbg->iob.io->desc->data)) {
+		return false;
+	}
+	RIOBdescbg *o = dbg->iob.io->desc->data;
+	if (o) {
+		r.pc = o->bfvm->eip;
+		r.ptr = o->bfvm->ptr;
+		r.sp = o->bfvm->esp;
+		r.scr = o->bfvm->screen;
+		r.scri = o->bfvm->screen_idx;
+		r.inp = o->bfvm->input;
+		r.inpi = o->bfvm->input_idx;
+		r.mem = o->bfvm->base;
+		r.memi = o->bfvm->ptr;
+		memcpy (buf, &r, sizeof (r));
+	}
+	//r_io_system (dbg->iob.io, "dr");
+	return true; // sizeof (r);
+}
+
+static bool r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+	r_return_val_if_fail (dbg, false);
 	if (!is_io_bf (dbg)) {
 		return 0;
 	}
@@ -95,16 +95,18 @@ static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size)
 		return 0;
 	}
 	RIOBdescbg *o = dbg->iob.io->desc->data;
-	memcpy (&r, buf, sizeof (r));
-	o->bfvm->eip = r.pc;
-	o->bfvm->ptr = r.ptr; // dup
-	o->bfvm->esp = r.sp;
-	o->bfvm->screen = r.scr;
-	o->bfvm->screen_idx = r.scri;
-	o->bfvm->input = r.inp;
-	o->bfvm->input_idx = r.inpi;
-	o->bfvm->base = r.mem;
-	o->bfvm->ptr = r.memi; // dup
+	if (o) {
+		memcpy (&r, buf, sizeof (r));
+		o->bfvm->eip = r.pc;
+		o->bfvm->ptr = r.ptr; // dup
+		o->bfvm->esp = r.sp;
+		o->bfvm->screen = r.scr;
+		o->bfvm->screen_idx = r.scri;
+		o->bfvm->input = r.inp;
+		o->bfvm->input_idx = r.inpi;
+		o->bfvm->base = r.mem;
+		o->bfvm->ptr = r.memi; // dup
+	}
 	return true;
 }
 

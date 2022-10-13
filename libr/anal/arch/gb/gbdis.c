@@ -23,7 +23,7 @@ static int gbOpLength(int gboptype) {
 	}
 }
 
-static void gb_hardware_register_name(char *reg, ut8 offset) {	
+static void gb_hardware_register_name(char *reg, ut8 offset) {
 	switch (offset) {
 	case 0x00: // Joy pad info
 		r_str_cpy (reg, "rP1")

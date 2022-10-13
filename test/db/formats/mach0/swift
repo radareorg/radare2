@@ -1,114 +1,32 @@
 NAME=mach0 swift demangle methods
 FILE=bins/mach0/swift/klass.orig
-ARGS=-e bin.verbose=true
-CMDS=q
-EXPECT=<<EOF
-f sym.swift.SomeClass.init = 0x100002a80
-f sym.swift.SomeClass.method.0 = 0x100003cff
-f sym.swift.SomeClass.method.1 = 0x100003d08
-f sym.swift.SomeClass.method.2 = 0x100003d0e
-f sym.swift.SomeClass.method.3 = 0x100003d17
-f sym.swift.SomeClass.method.4 = 0x100003d20
-f sym.swift.SomeClass.method.5 = 0x100003d24
-f sym.swift.SomeClass.method.6 = 0x100003d1d
-f sym.swift.SomeClass.method.__s5klass10SuperKlassCACycfCTq = 0x100003d90
-f sym.swift.SomeClass.method.8 = 0x100003d2c
-f sym.swift.SomeClass.method.9 = 0x100003d34
-f sym.swift.SomeClass.field.meh = 0x100003e8d
-f sym.swift.SomeClass.field.cow = 0x100003e91
-f sym.swift.SuperKlass.init = 0x100002440
-f sym.swift.SuperKlass.method.__s5klass10SuperKlassC10superfieldSivg = 0x1000028f0
-f sym.swift.SuperKlass.method.__s5klass10SuperKlassC10superfieldSivs = 0x100002950
-f sym.swift.SuperKlass.method.__s5klass10SuperKlassC10superfieldSivM = 0x1000029b0
-f sym.swift.SuperKlass.method.__s5klass10SuperKlassCACycfC = 0x100002a10
-f sym.swift.SuperKlass.method.4 = 0x100003d9c
-f sym.swift.SuperKlass.field.superfield = 0x100003e95
-EOF
-EXPECT_ERR=<<EOF
-data-in-code at 0xc360 size 8
-Cd 4 4 @ 0x1000031d8
-0x00003cb0 swift_type_entry:
-  flags:   0xc0000050
-  parent:  0x00003c98
-  name:    0x00003ca4 (SomeClass)
-  access:  0x100002a80
-  fields:  0x00003ea0
-  super:   0x00003e7e
-  members: 0x00003cd9
-  fields:  0x00003cd6
-  fieldsat:0x00003ce7
-0x00003d44 swift_type_entry:
-  flags:   0x80000050
-  parent:  0x00003c98
-  name:    0x00003d38 (SuperKlass)
-  access:  0x100002440
-  fields:  0x00003ec8
-  super:   0x00003d58
-  members: 0x00003d69
-  fields:  0x00003d69
-  fieldsat:0x00003d76
-EOF
-RUN
-
-NAME=mach0 swift demangle methods
-FILE=bins/mach0/swift-main
-CMDS=isq~&FooClass,method
-EXPECT=<<EOF
-0x1000047a0 0 FooClass.bar.method__Swift.String..init.witnesstable
-0x100004788 0 FooClass.foo.method__Swift.Int..init.witnesstable
-0x1000017a0 0 main.FooClass.foo.method__Swift.Int
-0x100001860 0 main.FooClass.bar.method__Swift.String
-EOF
-RUN
-
-NAME=mach0 swift-x86-64 aav
-ARGS=-e bin.demangle=false
-FILE=bins/mach0/swift-main
 CMDS=<<EOF
-C*~?^Cd
-aav
-C*~?^Cd
-Cd~?
+icc
 EOF
 EXPECT=<<EOF
-304
-324
-324
-EOF
-RUN
-
-NAME=swift-x86-64 calling convention
-ARGS=-e bin.demangle=false
-FILE=bins/mach0/swift5.1-throwError
-CMDS=<<EOF
-s sym.__s10throwError7ThrowerC0a2MyB0yyKF
-af
-afc swift
-afva
-afcr
-afv
-EOF
-EXPECT=<<EOF
-cc.swift.ret: rax
-cc.swift.arg0: rdi
-cc.swift.arg1: rsi
-cc.swift.arg2: rdx
-cc.swift.arg3: rcx
-cc.swift.arg4: r8
-cc.swift.arg5: r9
-cc.swift.arg6: xmm0
-cc.swift.arg7: xmm1
-cc.swift.arg8: xmm2
-cc.swift.arg9: xmm3
-cc.swift.arg10: xmm4
-cc.swift.self: r13
-cc.swift.error: r12
-arg int64_t self @ r13
-arg int64_t error @ r12
-var int64_t var_10h @ rbp-0x10
-var int64_t var_18h @ rbp-0x18
-var int64_t var_20h @ rbp-0x20
-var int64_t var_28h @ rbp-0x28
+@interface SomeClass
+{
+}
+@end
+@interface SuperKlass
+{
+}
+@end
+@interface klass.SomeClass : klass.SuperKlass
+{
+   klass.SomeClass::(ivar)meh
+   klass.SomeClass::(ivar)cow
+}
+@end
+@interface klass.SuperKlass : _TtCs12_SwiftObject
+{
+   klass.SuperKlass::(ivar)superfield
+}
+@end
+@interface swift
+{
+}
+@end
 EOF
 RUN
 

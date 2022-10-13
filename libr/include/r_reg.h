@@ -1,6 +1,7 @@
 #ifndef R2_REG_H
 #define R2_REG_H
 
+struct r_arch_config_t;
 #include <r_types.h>
 #include <r_arch.h>
 #include <r_list.h>
@@ -103,6 +104,7 @@ typedef struct r_reg_item_t {
 	char *comment;
 	int index;
 	int arena; /* in which arena is this reg living */
+       R_REF_TYPE;
 } RRegItem;
 
 typedef struct r_reg_arena_t {
@@ -131,7 +133,7 @@ typedef struct r_reg_t {
 	int size;
 	int bits_default;
 	ut64 hasbits;
-	RArchConfig *config;
+	struct r_arch_config_t *config;
 } RReg;
 
 R_API bool r_reg_hasbits_check(RReg *reg, int size);
@@ -161,7 +163,7 @@ R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item);
 
 R_API RRegSet *r_reg_regset_get(RReg *r, int type);
 R_API ut64 r_reg_getv(RReg *reg, const char *name);
-R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val);
+R_API bool r_reg_setv(RReg *reg, const char *name, ut64 val);
 R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32);
 R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64);
 R_API const char *r_reg_get_name_by_type(RReg *reg, const char *name);
@@ -188,9 +190,9 @@ R_API void r_reg_cond_apply(RReg *r, RRegFlags *f);
 R_API bool r_reg_cond_set(RReg *reg, const char *name, bool val);
 R_API bool r_reg_cond_get_value(RReg *r, const char *name);
 R_API bool r_reg_cond_bits_set(RReg *r, int type, RRegFlags *f, bool v);
-R_API int r_reg_cond_bits(RReg *r, int type, RRegFlags *f);
+R_API bool r_reg_cond_bits(RReg *r, int type, RRegFlags *f);
 R_API RRegFlags *r_reg_cond_retrieve(RReg *r, RRegFlags *);
-R_API int r_reg_cond(RReg *r, int type);
+R_API bool r_reg_cond(RReg *r, int type);
 
 /* integer value 8-64 bits */
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item);
@@ -216,7 +218,7 @@ R_API char *r_reg_get_bvalue(RReg *reg, RRegItem *item);
 R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str);
 
 /* packed registers */
-R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val);
+R_API bool r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, ut64 val);
 R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits);
 
 /* byte arena */
@@ -227,7 +229,7 @@ R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len);
 R_API int r_reg_arena_set_bytes(RReg *reg, const char *str);
 R_API RRegArena *r_reg_arena_new(int size);
 R_API void r_reg_arena_free(RRegArena *ra);
-R_API int r_reg_fit_arena(RReg *reg);
+R_API void r_reg_fit_arena(RReg *reg);
 R_API void r_reg_arena_swap(RReg *reg, int copy);
 R_API int r_reg_arena_push(RReg *reg);
 R_API void r_reg_arena_pop(RReg *reg);

@@ -148,7 +148,7 @@ static int r_bin_dmp64_init(struct r_bin_dmp64_obj_t *obj) {
 	return true;
 }
 
-R_API void r_bin_dmp64_free(struct r_bin_dmp64_obj_t *obj) {
+R_IPI void r_bin_dmp64_free(struct r_bin_dmp64_obj_t *obj) {
 	if (!obj) {
 		return;
 	}
@@ -162,7 +162,7 @@ R_API void r_bin_dmp64_free(struct r_bin_dmp64_obj_t *obj) {
 	free (obj);
 }
 
-struct r_bin_dmp64_obj_t *r_bin_dmp64_new_buf(RBuffer* buf) {
+R_IPI struct r_bin_dmp64_obj_t *r_bin_dmp64_new_buf(RBuffer* buf) {
 	struct r_bin_dmp64_obj_t *obj = R_NEW0 (struct r_bin_dmp64_obj_t);
 	if (!obj) {
 		return NULL;

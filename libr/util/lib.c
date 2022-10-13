@@ -12,7 +12,7 @@ static R_TH_LOCAL bool __has_debug = false;
 /* XXX : this must be registered in runtime */
 static const char *r_lib_types[] = {
 	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bin_xtr", "bin_ldr",
-	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", NULL
+	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", "arch", NULL
 };
 
 static const char *__lib_types_get(int idx) {
@@ -47,7 +47,7 @@ R_API void *r_lib_dl_open(const char *libname) {
 		ret = dlopen (NULL, RTLD_NOW);
 	}
 	if (!ret && __has_debug) {
-		eprintf ("r_lib_dl_open: error: %s (%s)\n", libname, dlerror ());
+		R_LOG_ERROR ("r_lib_dl_open failed %s (%s)", libname, dlerror ());
 	}
 #elif __WINDOWS__
 	LPTSTR libname_;
@@ -65,7 +65,7 @@ R_API void *r_lib_dl_open(const char *libname) {
 	ret = LoadLibrary (libname_);
 	free (libname_);
 	if (!ret && __has_debug) {
-		eprintf ("r_lib_dl_open: error: %s\n", libname);
+		R_LOG_ERROR ("r_lib_dl_open failed %s", libname);
 	}
 #endif
 #endif

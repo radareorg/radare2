@@ -63,14 +63,31 @@ static bool check_msvc(RBinSymbol *sym) {
 	return *sym->name == '?';
 }
 
+static inline bool check_kotlin(RBinSymbol *sym) {
+	return sym->name && strstr (sym->name, "kotlin_");
+}
+static inline bool check_groovy(RBinSymbol *sym) {
+	return strstr (sym->name, "_groovy");
+}
+static inline bool check_dart(RBinSymbol *sym) {
+	return strstr (sym->name, "io_flutter_");
+}
+
+static inline bool check_pascal(RBinSymbol *sym) {
+	if (strstr (sym->name, "$_$")) {
+		return true;
+	}
+	return strstr (sym->name, "_$$_");
+}
+
 /* This is about 10% of the loading time, optimize if possible */
 R_API int r_bin_load_languages(RBinFile *binfile) {
-	r_return_val_if_fail (binfile, R_BIN_NM_NONE);
-	r_return_val_if_fail (binfile->o, R_BIN_NM_NONE);
-	r_return_val_if_fail (binfile->o->info, R_BIN_NM_NONE);
+	r_return_val_if_fail (binfile, R_BIN_LANG_NONE);
+	r_return_val_if_fail (binfile->o, R_BIN_LANG_NONE);
+	r_return_val_if_fail (binfile->o->info, R_BIN_LANG_NONE);
 	RBinObject *o = binfile->o;
 	RBinInfo *info = o->info;
-	RBinSymbol *sym;
+	RBinSymbol *sym = NULL;
 	RListIter *iter, *iter2;
 	Langs cantbe = {0};
 	bool phobosIsChecked = false;
@@ -88,7 +105,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 	bool isObjC = false;
 
 	if (unknownType || !(isMacho || isElf || isPe)) {
-		return R_BIN_NM_NONE;
+		return R_BIN_LANG_NONE;
 	}
 
 	// check in imports . can be slow
@@ -107,12 +124,12 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 		if (!cantbe.rust) {
 			if (check_rust (sym)) {
 				info->lang = "rust";
-				return R_BIN_NM_RUST;
+				return R_BIN_LANG_RUST;
 			}
 		}
 		if (check_golang (sym)) {
 			info->lang = "go";
-			return R_BIN_NM_GO;
+			return R_BIN_LANG_GO;
 		}
 		if (!cantbe.swift) {
 			bool hasswift = false;
@@ -127,7 +144,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 			}
 			if (hasswift || check_swift (sym)) {
 				info->lang = "swift";
-				return R_BIN_NM_SWIFT;
+				return R_BIN_LANG_SWIFT;
 			}
 		}
 		if (!cantbe.cxx) {
@@ -141,7 +158,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 					}
 					if (strstr (lib, "msvcp")) {
 						info->lang = "msvc";
-						return R_BIN_NM_MSVC;
+						return R_BIN_LANG_MSVC;
 					}
 				}
 				cxxIsChecked = true;
@@ -154,7 +171,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 		if (!cantbe.objc) {
 			if (check_objc (sym)) {
 				info->lang = "objc";
-				return R_BIN_NM_OBJC;
+				return R_BIN_LANG_OBJC;
 			}
 		}
 		if (!cantbe.dlang) {
@@ -170,7 +187,7 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 			}
 			if (hasdlang || check_dlang (sym)) {
 				info->lang = "dlang";
-				return R_BIN_NM_DLANG;
+				return R_BIN_LANG_DLANG;
 			}
 		}
 		if (!cantbe.msvc) {
@@ -180,26 +197,45 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 		}
 	}
 	if (isObjC) {
-		return R_BIN_NM_OBJC | (isBlocks?R_BIN_NM_BLOCKS:0);
+		return R_BIN_LANG_OBJC | (isBlocks?R_BIN_LANG_BLOCKS:0);
+	}
+	if (sym) {
+		if (check_kotlin (sym)) {
+			info->lang = "kotlin";
+			return R_BIN_LANG_KOTLIN;
+		}
+		if (check_groovy (sym)) {
+			info->lang = "groovy";
+			return R_BIN_LANG_GROOVY;
+		}
+		if (check_dart (sym)) {
+ 			info->lang = "dart";
+ 			return R_BIN_LANG_DART;
+ 		}
+		if (check_pascal (sym)) {
+ 			info->lang = "pascal";
+ 			return R_BIN_LANG_PASCAL;
+ 		}
 	}
 	if (canBeCxx) {
-		return R_BIN_NM_CXX | (isBlocks?R_BIN_NM_BLOCKS:0);
+		return R_BIN_LANG_CXX | (isBlocks?R_BIN_LANG_BLOCKS:0);
 	}
 	if (isMsvc) {
-		return R_BIN_NM_MSVC;
+		return R_BIN_LANG_MSVC;
 	}
-	return R_BIN_NM_C | (isBlocks?R_BIN_NM_BLOCKS:0);
+	return R_BIN_LANG_C | (isBlocks?R_BIN_LANG_BLOCKS:0);
 }
 
+// if its ipi no need to be prefixed with r_
 R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	int type = 0;
 	RBinPlugin *plugin;
 	if (sym && sym[0] == sym[1] && sym[0] == '_') {
-		type = R_BIN_NM_CXX;
+		type = R_BIN_LANG_CXX;
 	}
 	if (def && *def) {
 		type = r_bin_demangle_type (def);
-		if (type != R_BIN_NM_NONE) {
+		if (type != R_BIN_LANG_NONE) {
 			return type;
 		}
 	}
@@ -211,7 +247,7 @@ R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 			type = r_bin_demangle_type (binfile->o->info->lang);
 		}
 	}
-	if (type == R_BIN_NM_NONE) {
+	if (type == R_BIN_LANG_NONE) {
 		type = r_bin_demangle_type (def);
 	}
 	return type;
@@ -219,27 +255,32 @@ R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 
 R_API const char *r_bin_lang_tostring(int lang) {
 	switch (lang & 0xffff) {
-	case R_BIN_NM_SWIFT:
+	case R_BIN_LANG_SWIFT:
 		return "swift";
-	case R_BIN_NM_GO:
+	case R_BIN_LANG_GO:
 		return "go";
-	case R_BIN_NM_JAVA:
+	case R_BIN_LANG_JAVA:
 		return "java";
-	case R_BIN_NM_KOTLIN:
+	case R_BIN_LANG_KOTLIN:
 		return "kotlin";
-	case R_BIN_NM_C:
-		return (lang & R_BIN_NM_BLOCKS)? "c with blocks": "c";
-	case R_BIN_NM_CXX:
-		return (lang & R_BIN_NM_BLOCKS)? "c++ with blocks": "c++";
-	case R_BIN_NM_DLANG:
+	case R_BIN_LANG_DART:
+		return "dart";
+	case R_BIN_LANG_GROOVY:
+		return "groovy";
+	case R_BIN_LANG_JNI:
+		return "jni";
+	case R_BIN_LANG_C:
+		return (lang & R_BIN_LANG_BLOCKS)? "c with blocks": "c";
+	case R_BIN_LANG_CXX:
+		return (lang & R_BIN_LANG_BLOCKS)? "c++ with blocks": "c++";
+	case R_BIN_LANG_DLANG:
 		return "d";
-	case R_BIN_NM_OBJC:
-		return (lang & R_BIN_NM_BLOCKS)? "objc with blocks": "objc";
-	case R_BIN_NM_MSVC:
+	case R_BIN_LANG_OBJC:
+		return (lang & R_BIN_LANG_BLOCKS)? "objc with blocks": "objc";
+	case R_BIN_LANG_MSVC:
 		return "msvc";
-	case R_BIN_NM_RUST:
+	case R_BIN_LANG_RUST:
 		return "rust";
 	}
-	return NULL;
+	return "?";
 }
-

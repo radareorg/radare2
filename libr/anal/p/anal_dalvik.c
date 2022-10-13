@@ -880,7 +880,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		break;
 	case 0x0a: // move-result
-	case 0x0b: // move-result-wide	
+	case 0x0b: // move-result-wide
 	case 0x0c: // move-result-object
 	case 0x0d: // move-exception
 	 	// TODO: add MOVRET OP TYPE ??
@@ -1630,35 +1630,6 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	return sz;
 }
 
-// TODO
-#if 0
-static int dalvik_opasm(RAnal *anal, ut64 addr, const char *str, ut8 *outbuf, int outlen) {
-	char **argv;
-	int argc;
-	int opcode;
-
-	outlen = 0;
-	argv = r_str_argv (str, &argc);
-
-	// TODO; use a hashtable here
-	for (opcode = 0; opcode < 256; opcode++) {
-		ut8 buf[4];
-		if (strcmp (dalvik_opcodes[opcode].name, argv[0])) {
-			continue;
-		}
-
-		r_write_ble32 (buf, opcode, anal->config->big_endian);
-		memcpy (outbuf, buf, sizeof (buf));
-		outlen = dalvik_opcodes[opcode].len;
-		break;
-	}
-
-	r_str_argv_free (argv);
-
-	return outlen;
-}
-#endif
-
 static bool set_reg_profile(RAnal *anal) {
 	const char * const p =
 	"=PC	ip\n"
@@ -1719,7 +1690,6 @@ RAnalPlugin r_anal_plugin_dalvik = {
 	.bits = 32,
 	.desc = "Dalvik (Android VM) bytecode analysis plugin",
 	.op = &dalvik_op,
-	//.opasm = &dalvik_opasm,
 	.esil = true
 };
 

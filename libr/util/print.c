@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2007-2021 - pancake */
+/* radare2 - LGPL - Copyright 2007-2022 - pancake */
 
 #include <r_util/r_print.h>
 #include <r_anal.h>
@@ -564,8 +564,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 			if (p->nbcolor > 0) {
 				// colorize N first bytes only
 				// used for op+arg in disasm hexpairs
-				lastcol = (i < p->nbcolor)
-					? color_0x00: color_0x7f;
+				lastcol = (i < p->nbcolor) ? color_0x00: color_0x7f;
 			} else if (s[0] == '0' && s[1] == '0') {
 				lastcol = color_0x00;
 			} else if (s[0] == '7' && s[1] == 'f') {
@@ -577,11 +576,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 				if (ch == -1) {
 					break;
 				}
-				if (IS_PRINTABLE (ch)) {
-					lastcol = color_text;
-				} else {
-					lastcol = color_other;
-				}
+				lastcol = IS_PRINTABLE (ch) ? color_text: color_other;
 			}
 			memcat (d, lastcol);
 		}
@@ -665,8 +660,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool zeroend = (options & R_PRINT_STRING_ZEROEND);
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
+	bool is_interactive = (p && p->cons) ? p->cons->context->is_interactive: false;
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
-	bool color = (p->flags & R_PRINT_FLAGS_COLOR);
+	bool use_color = p && (p->flags & R_PRINT_FLAGS_COLOR);
 	int col = 0;
 	i = 0;
 	for (; !r_print_is_interrupted () && i < len; i++) {
@@ -694,8 +690,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 				p->cb_printf ("\\\\");
 			} else if ((b == '\n' && !esc_nl)) {
 				p->cb_printf ("\n");
-				if (color)
+				if (use_color && is_interactive) {
 					p->cb_printf (R_CONS_CLEAR_FROM_CURSOR_TO_EOL);
+				}
 			} else if (IS_PRINTABLE (b)) {
 				p->cb_printf ("%c", b);
 			} else {
@@ -892,6 +889,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 	switch (base) {
 	case -10:
+	case -11:
 		bytefmt = "0x%08x ";
 		pre = " ";
 		if (inc < 4) {
@@ -899,6 +897,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 		break;
 	case -1:
+	case -2:
 		bytefmt = "0x%08x ";
 		pre = "  ";
 		if (inc < 4) {
@@ -911,6 +910,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		break;
 	case 10:
 		bytefmt = "%3d";
+		pre = " ";
+		break;
+	case 11:
+		bytefmt = "%3u";
 		pre = " ";
 		break;
 	case 16:
@@ -992,9 +995,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					if  (use_hdroff) {
 						if (use_pair) {
-							printfmt ("%c%c",
+							if ((((i + k) >> 4) + K) % 16) {
+								printfmt ("%c%c",
 									hex[(((i+k) >> 4) + K) % 16],
 									hex[(i + k) % 16]);
+							} else {
+								printfmt (" %c", hex[(i + k) % 16]);
+							}
 						} else {
 							printfmt (" %c", hex[(i + k) % 16]);
 						}
@@ -1049,7 +1056,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool printValue = true;
 	bool oPrintValue = true;
 	bool isPxr = (p && p->flags & R_PRINT_FLAGS_REFS);
-	bool be = p->config? p->config->big_endian: R_SYS_ENDIAN;
+	bool be = p->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 
 	for (i = j = 0; i < len; i += (stride? stride: inc)) {
 		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
@@ -1131,8 +1138,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 				if (p && (base == 32 || base == 64)) {
 					int left = len - i;
-					/* TODO: check step. it should be 2/4 for base(32) and 8 for
-					 *       base(64) */
+					// TODO: check step. it should be 2/4 for base(32) and 8 for base64
 					ut64 n = 0;
 					size_t sz_n = (base == 64)
 						? sizeof (ut64) : (step == 2)
@@ -1199,7 +1205,18 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt ("%23" PFMT64d " ", (st64)w);
 					r_print_cursor (p, j, 8, 0);
 					j += 7;
-				} else if (base == -1) {
+				} else if (base == -9) {
+					st64 w = r_read_ble64 (buf + j, be);
+					r_print_cursor (p, j, 8, 1);
+					printfmt ("%23" PFMT64u " ", (st64)w);
+					r_print_cursor (p, j, 8, 0);
+					j += 7;
+				} else if (base == -2) { // pxu1
+					ut8 w = buf[j];
+					r_print_cursor (p, j, 1, 1);
+					printfmt ("%4u ", w);
+					r_print_cursor (p, j, 1, 0);
+				} else if (base == -1) { // pxd1
 					st8 w = r_read_ble8 (buf + j);
 					r_print_cursor (p, j, 1, 1);
 					printfmt ("%4d ", w);
@@ -1212,11 +1229,27 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						r_print_cursor (p, j, 2, 0);
 					}
 					j += 1;
-				} else if (base == 10) { // "pxd"
+				} else if (base == -11) { // pxu2
+					if (j + 1 < len) {
+						ut16 w = r_read_ble16 (buf + j, be);
+						r_print_cursor (p, j, 2, 1);
+						printfmt ("%7u ", (w & 0xFFFF));
+						r_print_cursor (p, j, 2, 0);
+					}
+					j += 1;
+				} else if (base == 10) { // "pxd2"
 					if (j + 3 < len) {
 						int w = r_read_ble32 (buf + j, be);
 						r_print_cursor (p, j, 4, 1);
 						printfmt ("%13d ", w);
+						r_print_cursor (p, j, 4, 0);
+					}
+					j += 3;
+				} else if (base == 11) { // "pxu"
+					if (j + 3 < len) {
+						int w = r_read_ble32 (buf + j, be);
+						r_print_cursor (p, j, 4, 1);
+						printfmt ("%13u ", w);
 						r_print_cursor (p, j, 4, 0);
 					}
 					j += 3;
@@ -1617,7 +1650,7 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 			p->cb_printf ("\n");
 		}
 	}
-	p->cb_printf (" };\n");
+	p->cb_printf ("};\n");
 }
 
 // HACK :D
@@ -2380,7 +2413,7 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	}
 	int i, words = (len / bytesize);
 	p->cb_printf ("[");
-	bool be = p->config? p->config->big_endian: R_SYS_ENDIAN;
+	bool be = p->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	for (i = 0; i < words; i++) {
 		switch (wordsize) {
 		case 8: {
@@ -2417,7 +2450,7 @@ R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	}
 	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
 	if (!buf) {
-		eprintf ("allocation failed\n");
+		R_LOG_ERROR ("allocation failed");
 		return;
 	}
 	if (!p) {
@@ -2443,35 +2476,6 @@ R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	p->cb_printf ("\n");
 	free (buf);
 }
-
-R_API const char* r_print_rowlog(RPrint *print, const char *str) {
-	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
-	bool verbose = print->scr_prompt;
-	r_return_val_if_fail (print->cb_eprintf, NULL);
-	if (!verbose) {
-		return NULL;
-	}
-	if (use_color) {
-		print->cb_eprintf ("[ ] "Color_YELLOW"%s\r["Color_RESET, str);
-	} else {
-		print->cb_eprintf ("[ ] %s\r[", str);
-	}
-	return str;
-}
-
-R_API void r_print_rowlog_done(RPrint *print, const char *str) {
-	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
-	bool verbose =  print->scr_prompt;
-	r_return_if_fail (print->cb_eprintf);
-	if (verbose) {
-		if (use_color) {
-			print->cb_eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", str);
-		} else {
-			print->cb_eprintf ("\r[x] %s\n", str);
-		}
-	}
-}
-
 
 R_API RBraile r_print_braile(int u) {
 #define CH0(x) ((x) >> 8)

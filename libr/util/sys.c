@@ -117,29 +117,29 @@ R_LIB_VERSION (r_util);
 #endif
 
 static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
-    {"x86", R_SYS_ARCH_X86},
-    {"arm", R_SYS_ARCH_ARM},
-    {"ppc", R_SYS_ARCH_PPC},
-    {"m68k", R_SYS_ARCH_M68K},
-    {"java", R_SYS_ARCH_JAVA},
-    {"mips", R_SYS_ARCH_MIPS},
-    {"sparc", R_SYS_ARCH_SPARC},
-    {"xap", R_SYS_ARCH_XAP},
-    {"tms320", R_SYS_ARCH_TMS320},
-    {"msil", R_SYS_ARCH_MSIL},
-    {"objd", R_SYS_ARCH_OBJD},
-    {"bf", R_SYS_ARCH_BF},
-    {"sh", R_SYS_ARCH_SH},
-    {"avr", R_SYS_ARCH_AVR},
-    {"dalvik", R_SYS_ARCH_DALVIK},
-    {"z80", R_SYS_ARCH_Z80},
-    {"arc", R_SYS_ARCH_ARC},
-    {"i8080", R_SYS_ARCH_I8080},
-    {"rar", R_SYS_ARCH_RAR},
-    {"lm32", R_SYS_ARCH_LM32},
-    {"v850", R_SYS_ARCH_V850},
-    {"bpf", R_SYS_ARCH_BPF},
-    {NULL, 0}
+	{ "x86", R_SYS_ARCH_X86},
+	{ "arm", R_SYS_ARCH_ARM},
+	{ "ppc", R_SYS_ARCH_PPC},
+	{ "m68k", R_SYS_ARCH_M68K},
+	{ "java", R_SYS_ARCH_JAVA},
+	{ "mips", R_SYS_ARCH_MIPS},
+	{ "sparc", R_SYS_ARCH_SPARC},
+	{ "xap", R_SYS_ARCH_XAP},
+	{ "tms320", R_SYS_ARCH_TMS320},
+	{ "msil", R_SYS_ARCH_MSIL},
+	{ "objd", R_SYS_ARCH_OBJD},
+	{ "bf", R_SYS_ARCH_BF},
+	{ "sh", R_SYS_ARCH_SH},
+	{ "avr", R_SYS_ARCH_AVR},
+	{ "dalvik", R_SYS_ARCH_DALVIK},
+	{ "z80", R_SYS_ARCH_Z80},
+	{ "arc", R_SYS_ARCH_ARC},
+	{ "i8080", R_SYS_ARCH_I8080},
+	{ "rar", R_SYS_ARCH_RAR},
+	{ "lm32", R_SYS_ARCH_LM32},
+	{ "v850", R_SYS_ARCH_V850},
+	{ "bpf", R_SYS_ARCH_BPF},
+	{NULL, 0}
 };
 
 R_API void r_sys_signable(bool v) {
@@ -554,6 +554,14 @@ R_API bool r_sys_getenv_asbool(const char *key) {
 	return res;
 }
 
+R_API int r_sys_getenv_asint(const char *key) {
+	r_return_val_if_fail (key, false);
+	char *env = r_sys_getenv (key);
+	const int res = env? atoi (env): 0;
+	free (env);
+	return res;
+}
+
 R_API char *r_sys_getdir(void) {
 #if __WINDOWS__
 	return _getcwd (NULL, 0);
@@ -622,6 +630,10 @@ R_API bool r_sys_aslr(int val) {
 
 #if __UNIX__ && HAVE_SYSTEM
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return false;
+	}
+
 	char *mysterr = NULL;
 	if (!sterr) {
 		sterr = &mysterr;
@@ -765,7 +777,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 			// char *escmd = r_str_escape (cmd);
 			// R_LOG_ERROR ("error code %d (%s): %s", WEXITSTATUS (status), escmd, *sterr);
 			// eprintf ("(%s)\n", output);
-			// eprintf ("%s: failed command '%s'\n", __func__, escmd);
+			R_LOG_DEBUG ("command failed: %s", cmd);
 			// free (escmd);
 			ret = false;
 		}
@@ -821,7 +833,13 @@ R_API int r_sys_cmdbg(const char *str) {
 		return pid;
 	}
 	int ret = r_sandbox_system (str, 0);
-	eprintf ("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
+	PJ *pj = pj_new ();
+	pj_kn (pj, "exit", ret);
+	pj_kn (pj, "pid", pid);
+	pj_ks (pj, "cmd", str);
+	char *s = pj_drain (pj);
+	eprintf ("%s\n", s);
+	free (s);
 	exit (0);
 	return -1;
 #else
@@ -1042,12 +1060,12 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	// TODO: define R_SYS_ALIGN_FORWARD in r_util.h
 	ut8 *bufptr = malloc (len);
 	if (!bufptr) {
-		eprintf ("r_sys_run_rop: Cannot allocate buffer\n");
+		R_LOG_ERROR ("Cannot allocate %d byte buffer", len);
 		return false;
 	}
 
 	if (!buf) {
-		eprintf ("r_sys_run_rop: Cannot execute empty rop chain\n");
+		R_LOG_ERROR ("Cannot execute empty rop chain");
 		free (bufptr);
 		return false;
 	}
@@ -1067,13 +1085,13 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	}
 	st = 0;
 	if (waitpid (pid, &st, 0) == -1) {
-		eprintf ("r_sys_run_rop: waitpid failed\n");
+		R_LOG_ERROR ("waitpid failed");
 		free (bufptr);
 		return -1;
 	}
 	if (WIFSIGNALED (st)) {
 		int num = WTERMSIG (st);
-		eprintf ("Got signal %d\n", num);
+		R_LOG_INFO ("Got signal %d", num);
 		ret = num;
 	} else {
 		ret = WEXITSTATUS (st);
@@ -1096,32 +1114,32 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 		// Upon failure fallback to GetProcessImageFileName
 		length = r_w32_GetProcessImageFileName (processHandle, filename, maxlength);
 		if (length == 0) {
-			eprintf ("r_sys_pid_to_path: Error calling GetProcessImageFileName\n");
+			R_LOG_ERROR ("calling GetProcessImageFileName failed");
 			return NULL;
 		}
 		// Convert NT path to win32 path
 		char *name = r_sys_conv_win_to_utf8 (filename);
 		if (!name) {
-			eprintf ("r_sys_pid_to_path: Error converting to utf8\n");
+			R_LOG_ERROR ("Error converting filepath to utf8");
 			return NULL;
 		}
 		char *tmp = strchr (name + 1, '\\');
 		if (!tmp) {
 			free (name);
-			eprintf ("r_sys_pid_to_path: Malformed NT path\n");
+			R_LOG_ERROR ("Malformed NT path");
 			return NULL;
 		}
 		tmp = strchr (tmp + 1, '\\');
 		if (!tmp) {
 			free (name);
-			eprintf ("r_sys_pid_to_path: Malformed NT path\n");
+			R_LOG_ERROR ("Malformed NT path");
 			return NULL;
 		}
 		length = tmp - name;
 		tmp = malloc (length + 1);
 		if (!tmp) {
 			free (name);
-			eprintf ("r_sys_pid_to_path: Error allocating memory\n");
+			R_LOG_ERROR ("Error allocating memory");
 			return NULL;
 		}
 		r_str_ncpy (tmp, name, length);
@@ -1133,7 +1151,7 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 				if (!dvc) {
 					free (name);
 					free (tmp);
-					eprintf ("r_sys_pid_to_path: Error converting to utf8\n");
+					R_LOG_ERROR ("Cannot convert to utf8");
 					return NULL;
 				}
 				if (!strcmp (tmp, dvc)) {
@@ -1142,14 +1160,13 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 					char *d = r_sys_conv_win_to_utf8 (drv);
 					if (!d) {
 						free (name);
-						eprintf ("r_sys_pid_to_path: Error converting to utf8\n");
+						R_LOG_ERROR ("Cannot convert to utf8");
 						return NULL;
 					}
 					tmp = r_str_newf ("%s%s", d, &name[length]);
 					free (d);
 					if (!tmp) {
 						free (name);
-						eprintf ("r_sys_pid_to_path: Error calling r_str_newf\n");
 						return NULL;
 					}
 					result = strdup (tmp);

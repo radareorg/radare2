@@ -500,6 +500,9 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int ra
 		bf->fd = fd;
 		bf->curxtr = xtrname ? r_bin_get_xtrplugin_by_name (bin, xtrname) : NULL;
 		bf->sdb = sdb;
+		if ((st64)file_sz < 0) {
+			file_sz = 1024 * 64;
+		}
 		bf->size = file_sz;
 		bf->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
 		bf->xtr_obj = NULL;
@@ -721,6 +724,7 @@ R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
 	}
 	if (obj) {
 		if (!obj->info) {
+			R_LOG_DEBUG ("bin object have no information");
 			return false;
 		}
 		if (!obj->info->lang) {
@@ -936,7 +940,7 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	// By SLURP_LIMIT normally cannot compute ...
 	if (buf_len > limit) {
 		if (bin->verbose) {
-			R_LOG_WARN ("r_bin_file_hash: file exceeds bin.hashlimit");
+			R_LOG_WARN ("file size exceeds bin.hashlimit");
 		}
 		return NULL;
 	}
@@ -1073,11 +1077,14 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 		R_LOG_ERROR ("Cannot allocate class %s", klass);
 		return NULL;
 	}
+	int lang = (strstr (method, "JNI") || strstr (klass, "JNI"))? R_BIN_LANG_JNI: R_BIN_LANG_CXX;
+	c->lang = lang;
 	RBinSymbol *sym = __getMethod (bf, klass, method);
 	if (!sym) {
 		sym = R_NEW0 (RBinSymbol);
 		if (sym) {
 			sym->name = strdup (method);
+			sym->lang = lang;
 			r_list_append (c->methods, sym);
 			char *name = r_str_newf ("%s::%s", klass, method);
 			ht_pp_insert (bf->o->methods_ht, name, sym);
@@ -1088,7 +1095,7 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 }
 
 R_API RBinField *r_bin_file_add_field(RBinFile *binfile, const char *classname, const char *name) {
-	R_LOG_ERROR ("TODO: RBinFile.addField() is not implemented");
+	R_LOG_TODO ("RBinFile.addField() is not implemented");
 	return NULL;
 }
 

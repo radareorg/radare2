@@ -111,6 +111,7 @@ static const char *help_msg_te[] = {
 	"Usage: te[...]", "", "",
 	"te", "", "list all loaded enums",
 	"te", " <enum>", "print all values of enum for given name",
+	"te-", "<enum>", "delete enum type definition",
 	"tej", "", "list all loaded enums in json",
 	"tej", " <enum>", "show enum in json",
 	"te", " <enum> <value>", "show name for given enum number",
@@ -150,6 +151,7 @@ static const char *help_msg_tn[] = {
 	"Usage:", "tn [-][0xaddr|symname]", " manage no-return marks",
 	"tn[a]", " 0x3000", "stop function analysis if call/jmp to this address",
 	"tn[n]", " sym.imp.exit", "same as above but for flag/fcn names",
+	"tnf", "", "same as `afl,noret/eq/1`",
 	"tn-", " 0x3000 sym.imp.exit ...", "remove some no-return references",
 	"tn-*", "", "remove all no-return references",
 	"tn", "", "list them all",
@@ -160,6 +162,7 @@ static const char *help_msg_ts[] = {
 	"Usage: ts[...]", " [type]", "",
 	"ts", "", "list all loaded structs",
 	"ts", " [type]", "show pf format string for given struct",
+	"ts-", "[type]", "delete struct type definition",
 	"tsj", "", "list all loaded structs in json",
 	"tsj", " [type]", "show pf format string for given struct in json",
 	"ts*", "", "show pf.<name> format string for all loaded structs",
@@ -295,7 +298,7 @@ static void cmd_tcc(RCore *core, const char *input) {
 static void showFormat(RCore *core, const char *name, int mode) {
 	const char *isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
-		eprintf ("IS ENUM\n");
+		R_LOG_INFO ("Type is an enum");
 	} else {
 		char *fmt = r_type_format (core->anal->sdb_types, name);
 		if (fmt) {
@@ -312,10 +315,15 @@ static void showFormat(RCore *core, const char *name, int mode) {
 				r_cons_printf ("%s", pj_string (pj));
 				pj_free (pj);
 			} else {
-				if (mode) {
-					r_cons_printf ("pf.%s %s\n", name, fmt);
+				if (R_STR_ISNOTEMPTY (fmt)) {
+					if (mode) {
+						r_cons_printf ("pf.%s %s\n", name, fmt);
+					} else {
+						r_cons_printf ("pf %s\n", fmt);
+					}
 				} else {
-					r_cons_printf ("pf %s\n", fmt);
+					// This happens when the type hasnt been fully removed
+					R_LOG_DEBUG ("Type wasnt properly deleted");
 				}
 			}
 			free (fmt);
@@ -421,6 +429,9 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 				r_anal_noreturn_add (core->anal, arg, UT64_MAX);
 			}
 		}
+		break;
+	case 'f': // "tnf"
+		r_core_cmd0 (core, "afl,noret/eq/1");
 		break;
 	case 'a': // "tna"
 		if (input[1] == ' ') {
@@ -983,18 +994,20 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			if (aop.ireg) {
 				index = r_reg_getv (esil->anal->reg, aop.ireg) * aop.scale;
 			}
-			int j, src_imm = -1, dst_imm = -1;
+			int src_imm = -1, dst_imm = -1;
 			ut64 src_addr = UT64_MAX;
 			ut64 dst_addr = UT64_MAX;
-			for (j = 0; j < 3; j++) {
-				if (aop.src[j] && aop.src[j]->reg && aop.src[j]->reg->name) {
-					src_addr = r_reg_getv (esil->anal->reg, aop.src[j]->reg->name) + index;
-					src_imm = aop.src[j]->delta;
+			RAnalValue *src = NULL;
+			r_vector_foreach (aop.srcs, src) {
+				if (src && src->reg && src->reg->name) {
+					src_addr = r_reg_getv (esil->anal->reg, src->reg->name) + index;
+					src_imm = src->delta;
 				}
 			}
-			if (aop.dst && aop.dst->reg && aop.dst->reg->name) {
-				dst_addr = r_reg_getv (esil->anal->reg, aop.dst->reg->name) + index;
-				dst_imm = aop.dst->delta;
+			RAnalValue *dst = r_vector_index_ptr (aop.dsts, 0);
+			if (dst && dst->reg && dst->reg->name) {
+				dst_addr = r_reg_getv (esil->anal->reg, dst->reg->name) + index;
+				dst_imm = dst->delta;
 			}
 			RAnalVar *var = r_anal_get_used_function_var (core->anal, aop.addr);
 			if (false) { // src_addr != UT64_MAX || dst_addr != UT64_MAX) {
@@ -1173,6 +1186,9 @@ static int cmd_type(void *data, const char *input) {
 				ls_free (l);
 			}
 			break;
+		case '-': // "ts-"
+			r_core_cmdf (core, "t-%s", r_str_trim_head_ro (input + 2));
+			break;
 		case ' ':
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
 			break;
@@ -1219,6 +1235,9 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		switch (input[1]) {
+		case '-':
+			r_core_cmdf (core, "t-%s", r_str_trim_head_ro (input + 2));
+			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_te);
 			break;
@@ -1370,30 +1389,30 @@ static int cmd_type(void *data, const char *input) {
 				if (!strcmp (filename, "-")) {
 					char *tmp = r_core_editor (core, "*.h", "");
 					if (tmp) {
-						char *error_msg = NULL;
-						char *out = r_parse_c_string (core->anal, tmp, &error_msg);
+						char *errmsg = NULL;
+						char *out = r_parse_c_string (core->anal, tmp, &errmsg);
 						if (out) {
 							// r_cons_strcat (out);
 							r_anal_save_parsed_type (core->anal, out);
 							free (out);
 						}
-						if (error_msg) {
-							fprintf (stderr, "%s", error_msg);
-							free (error_msg);
+						if (errmsg) {
+							R_LOG_ERROR ("%s", errmsg);
+							free (errmsg);
 						}
 						free (tmp);
 					}
 				} else {
-					char *error_msg = NULL;
-					char *out = r_parse_c_file (core->anal, filename, dir, &error_msg);
+					char *errmsg = NULL;
+					char *out = r_parse_c_file (core->anal, filename, dir, &errmsg);
 					if (out) {
 						//r_cons_strcat (out);
 						r_anal_save_parsed_type (core->anal, out);
 						free (out);
 					}
-					if (error_msg) {
-						fprintf (stderr, "%s", error_msg);
-						free (error_msg);
+					if (errmsg) {
+						R_LOG_ERROR ("%s", errmsg);
+						free (errmsg);
 					}
 				}
 				free (homefile);
@@ -1417,17 +1436,17 @@ static int cmd_type(void *data, const char *input) {
 				char *str = r_core_cmd_strf (core , "tc %s", input + 2);
 				char *tmp = r_core_editor (core, "*.h", str);
 				if (tmp) {
-					char *error_msg = NULL;
-					char *out = r_parse_c_string (core->anal, tmp, &error_msg);
+					char *errmsg = NULL;
+					char *out = r_parse_c_string (core->anal, tmp, &errmsg);
 					if (out) {
 						// remove previous types and save new edited types
 						sdb_reset (TDB);
 						r_anal_save_parsed_type (core->anal, out);
 						free (out);
 					}
-					if (error_msg) {
-						eprintf ("%s\n", error_msg);
-						free (error_msg);
+					if (errmsg) {
+						R_LOG_ERROR ("%s", errmsg);
+						free (errmsg);
 					}
 					free (tmp);
 				}
@@ -1449,16 +1468,16 @@ static int cmd_type(void *data, const char *input) {
 			if (!tmp) {
 				break;
 			}
-			char *error_msg = NULL;
-			char *out = r_parse_c_string (core->anal, tmp, &error_msg);
+			char *errmsg = NULL;
+			char *out = r_parse_c_string (core->anal, tmp, &errmsg);
 			free (tmp);
 			if (out) {
 				r_anal_save_parsed_type (core->anal, out);
 				free (out);
 			}
-			if (error_msg) {
-				R_LOG_ERROR ("%s", error_msg);
-				free (error_msg);
+			if (errmsg) {
+				R_LOG_ERROR ("%s", errmsg);
+				free (errmsg);
 			}
 		} else {
 			R_LOG_ERROR ("Invalid use of td. See td? for help");

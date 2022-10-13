@@ -84,7 +84,7 @@ static char *regatoi(const RRegex *preg, char *localbuf, size_t localbufsize) {
 	}
 
 	(void)snprintf (localbuf, localbufsize, "%d", r->code);
-	return(localbuf);
+	return localbuf;
 }
 
 /*

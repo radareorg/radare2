@@ -72,7 +72,7 @@ static int test_or(void) {
 	} else {
 		mu_assert_eq (1, 0, "r_regex_exec compiles invalid regex");
 	}
-	
+
 	r_regex_free (rx);
 	rx = r_regex_new ("ebx", "");
 	// mu_assert_eq (res, 1, "mov eax001");

@@ -76,6 +76,7 @@ R_API const char *pj_string(PJ *j) {
 static PJ *pj_begin(PJ *j, char type) {
 	if (j) {
 		if (!j || j->level >= R_PRINT_JSON_DEPTH_LIMIT) {
+			R_LOG_ERROR ("JSON depth limit reached");
 			return NULL;
 		}
 		char msg[2] = { type, 0 };

@@ -1225,7 +1225,7 @@ static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int l
 			}
 			ase->opc_htab_inited = 1;
 		}
-		
+
 		it = ase->la_opcode_ht[LA_INSN_HASH(opcode)];
 		/* it = ase->opcode; */
 		for (; it->match; it++) {
@@ -1238,7 +1238,7 @@ static int loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int l
 		}
 	}
 	op->id = insn_id;
-	
+
 	switch (insn_id) {
 	case LA_INS_BEQ:
 	case LA_INS_BNE:
@@ -1382,7 +1382,7 @@ RAnalPlugin r_anal_plugin_loongarch_gnu = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-        .type = R_LIB_TYPE_ANAL,
-        .data = &r_anal_plugin_loongarch_gnu
+	.type = R_LIB_TYPE_ANAL,
+	.data = &r_anal_plugin_loongarch_gnu
 };
 #endif

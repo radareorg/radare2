@@ -1,10 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
-#include <r_socket.h>
 #include <config.h>
-#include <r_config.h>
-#include <r_util.h>
 #if __UNIX__
 #include <signal.h>
 #endif
@@ -119,7 +116,7 @@ R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size) {
 	RRBTree *relocs = r_bin_get_relocs (core->bin);
 	if (!relocs) {
 		return NULL;
-        }
+	}
 	struct getreloc_t gr = { .vaddr = addr, .size = size };
 	return r_crbtree_find (relocs, &gr, getreloc_tree, NULL);
 }
@@ -446,7 +443,7 @@ static ut64 numvar_instruction_backward(RCore *core, const char *input) {
 		n = atoi (input + 1);
 	}
 	if (n < 1) {
-		eprintf ("Invalid negative value\n");
+		R_LOG_ERROR ("Invalid negative value");
 		n = 1;
 	}
 	int numinstr = n;
@@ -495,7 +492,7 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 		n = atoi (input + 1);
 	}
 	if (n < 1) {
-		eprintf ("Invalid negative value\n");
+		R_LOG_ERROR ("Invalid negative value");
 		n = 1;
 	}
 	for (i = 0; i < n; i++) {
@@ -511,7 +508,7 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 		//val += ret;
 	}
 	return val;
-	
+
 }
 
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
@@ -595,7 +592,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		ut8 buf[sizeof (ut64)] = {0};
 		(void)r_io_read_at (core->io, n, buf, R_MIN (sizeof (buf), refsz));
-		bool be = core->rasm->config->big_endian;
+		const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 		switch (refsz) {
 		case 8:
 			return r_read_ble64 (buf, be);
@@ -606,7 +603,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 1:
 			return r_read_ble8 (buf);
 		default:
-			r_cons_eprintf ("Invalid reference size: %d (%s)\n", refsz, str);
+			R_LOG_ERROR ("Invalid reference size: %d (%s)", refsz, str);
 			return 0LL;
 		}
 }
@@ -644,7 +641,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return r_debug_reg_get (core->dbg, str + 2);
 		case 'k': // $k{kv}
 			if (str[2] != '{') {
-				r_cons_eprintf ("Expected '{' after 'k'.\n");
+				R_LOG_ERROR ("Expected '{' after 'k'");
 				break;
 			}
 			bptr = strdup (str + 3);
@@ -659,7 +656,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			out = sdb_querys (core->sdb, NULL, 0, bptr);
 			if (out && *out) {
 				if (strstr (out, "$k{")) {
-					r_cons_eprintf ("Recursivity is not permitted here\n");
+					R_LOG_ERROR ("Recursivity is not permitted here");
 				} else {
 					ret = r_num_math (core->num, out);
 				}
@@ -863,7 +860,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 			return 0;
 		default:
-			r_cons_eprintf ("Invalid variable '%s'\n", str);
+			R_LOG_ERROR ("Invalid variable '%s'", str);
 			return 0;
 		}
 		break;
@@ -1150,13 +1147,12 @@ static void autocomplete_mount_point(RLineCompletion *completion, RCore *core, c
 
 static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const char *str, const char *path) {
 	r_return_if_fail (completion && core && str && path);
-	char *lpath = NULL, *dirname = NULL , *basename = NULL;
-	char *p = NULL;
-	char *pwd = (core->rfs && core->rfs->cwd && *(core->rfs->cwd)) ? *(core->rfs->cwd): ".";
+	char *dirname = NULL , *basename = NULL;
+	char *pwd = strdup (core->rfs->cwd? (const char *)core->rfs->cwd: ".");
 	int n = 0;
 	RFSFile *file;
-	lpath = r_str_new (path);
-	p = (char *)r_str_last (lpath, R_SYS_DIR);
+	char *lpath = r_str_new (path);
+	char *p = (char *)r_str_last (lpath, R_SYS_DIR);
 	if (p) {
 		*p = 0;
 		if (p == lpath) { // /xxx
@@ -1164,30 +1160,31 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 		} else if (lpath[0] == '.') { // ./xxx/yyy
 			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
 		} else if (lpath[0] == '/') { // /xxx/yyy
-      			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
-    		} else { // xxx/yyy
-      			if (strlen (pwd) == 1) { // if pwd is root
+			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
+		} else { // xxx/yyy
+			if (strlen (pwd) == 1) { // if pwd is root
 				dirname = r_file_new ("", lpath, NULL);
-      			} else {
+			} else {
 				dirname = r_file_new (pwd, lpath, NULL);
-      			}
+			}
 		}
 		basename = r_str_new (p + 1);
 	} else { // xxx
-    		if (strlen (pwd) == 1) {
-      			dirname = r_str_newf ("%s", R_SYS_DIR);
-    		} else {
-      			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
-    		}
+		if (strlen (pwd) == 1) {
+			dirname = r_str_newf ("%s", R_SYS_DIR);
+		} else {
+			dirname = r_str_newf ("%s%s", pwd, R_SYS_DIR);
+		}
 		basename = r_str_new (lpath);
 	}
+	R_FREE (pwd);
 
 	if (!dirname || !basename) {
 		goto out;
 	}
 	RList *list = r_fs_dir (core->fs, dirname);
 	n = strlen (basename);
-	bool chgdir = !strncmp (str, "cd ", 3);
+	bool chgdir = r_str_startswith (str, "cd ");
 	if (list) {
 		RListIter *iter;
 		r_list_foreach (list, iter, file) {
@@ -1729,29 +1726,23 @@ static void autocomplete_macro(RCore *core, RLineCompletion *completion, const c
 static void autocomplete_file(RLineCompletion *completion, const char *str) {
 	r_return_if_fail (completion && str);
 	char *pipe = strchr (str, '>');
-
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
 	}
-	if (str && !*str) {
-		autocomplete_process_path (completion, str, "./");
-	} else {
-		autocomplete_process_path (completion, str, str);
-	}
+	const char *arg = (str && !*str)? "./": str;
+	autocomplete_process_path (completion, str, arg);
 }
 
 static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const char *str) {
 	r_return_if_fail (str);
 	char *pipe = strchr (str, '>');
-	char *path = (core->rfs && core->rfs->cwd && *(core->rfs->cwd)) ? *(core->rfs->cwd): "/";
+	char *path = strdup ((core->rfs->cwd && *core->rfs->cwd) ? (const char *)core->rfs->cwd: "/");
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
 	}
-	if (str && !*str) {
-		autocomplete_ms_path (completion, core, str, path);
-	} else {
-		autocomplete_ms_path (completion, core, str, str);
-	}
+	const char *arg = (str && !*str)? path: str;
+	autocomplete_ms_path (completion, core, str, arg);
+	free (path);
 }
 
 static void autocomplete_charsets(RCore *core, RLineCompletion *completion, const char *str) {
@@ -1935,7 +1926,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 	}
 	if (r_config_get_b (core->config, "scr.prompt.tabhelp")) {
 		if (buf->data[0] != '$' // handle aliases below
-				&& strncmp(buf->data, "#!", 2) // rlang help fails
+				&& strncmp (buf->data, "#!", 2) // rlang help fails
 				&& !strchr (buf->data, ' ')) {
 			r_line_completion_clear (completion);
 			char *s = r_core_cmd_strf (core, "%s?", buf->data);
@@ -2170,6 +2161,7 @@ static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLineProm
 }
 
 R_API int r_core_fgets(char *buf, int len) {
+	r_return_val_if_fail (buf, -1);
 	RCons *cons = r_cons_singleton ();
 	RLine *rli = cons->line;
 	bool prompt = cons->context->is_interactive;
@@ -2540,7 +2532,7 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 			case 2:
 				r = r_utf8_encode_str ((const RRune *)buf, widebuf, sizeof (widebuf) - 1);
 				if (r == -1) {
-					r_cons_eprintf ("Something was wrong with refs\n");
+					R_LOG_ERROR ("Something was wrong with refs");
 				} else {
 					if (pj) {
 						pj_ks (pj, "string", (const char *)widebuf);
@@ -2671,7 +2663,7 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, ut8 ch, bo
 
 static void r_core_setenv(RCore *core) {
 	char *e = r_sys_getenv ("PATH");
-	char *h = r_str_home (R2_HOME_BIN);
+	char *h = r_xdg_datadir ("prefix/bin"); // support \\ on windows :?
 	char *n = r_str_newf ("%s%s%s", h, R_SYS_ENVSEP, e);
 	r_sys_setenv ("PATH", n);
 	free (n);
@@ -2705,18 +2697,22 @@ static bool r_core_anal_read_at(struct r_anal_t *anal, ut64 addr, ut8 *buf, int 
 }
 
 static void *r_core_sleep_begin(RCore *core) {
+	R_CRITICAL_ENTER (core);
 	RCoreTask *task = r_core_task_self (&core->tasks);
 	if (task) {
 		r_core_task_sleep_begin (task);
 	}
+	R_CRITICAL_LEAVE (core);
 	return task;
 }
 
 static void r_core_sleep_end(RCore *core, void *user) {
+	R_CRITICAL_ENTER (core);
 	RCoreTask *task = (RCoreTask *)user;
 	if (task) {
 		r_core_task_sleep_end (task);
 	}
+	R_CRITICAL_LEAVE (core);
 }
 
 static void __foreach(RCore *core, const char **cmds, int type) {
@@ -2747,7 +2743,7 @@ static void __init_autocomplete_default(RCore* core) {
 	const char *files[] = {
 		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala", "v.",
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
-		"idp", "idpi", "L", "obf", "o+", "oc", "r2", "rabin2", "rasm2", "rahash2", "rax2",
+		"idp", "idpi", "L", "obf", "o+", "oc", "of", "r2", "rabin2", "rasm2", "rahash2", "rax2",
 		"rafind2", "cd", "ls", "on", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "dd", "dd+",
 		"vi", "vim", "nvi", "neovim", "nvim", "nano",
@@ -2968,7 +2964,7 @@ static RThreadFunctionRet thchan_handler(RThread *th) {
 			// eprintf ("thchan_handler no message\n");
 		//	r_th_sem_post (cm->sem);
 		//	r_th_channel_write (core->chan, NULL);
-		//r_th_lock_leave (cm->lock);
+		// r_th_lock_leave (cm->lock);
 			continue;
 		}
 		char *res = r_core_cmd_str (core, (const char *)cm->msg);
@@ -2981,20 +2977,34 @@ static RThreadFunctionRet thchan_handler(RThread *th) {
 	return 0;
 }
 
+static bool cbcore(void *user, int type, const char *origin, const char *msg) {
+	if (!msg) {
+		return false;
+	}
+	RCore *core = (RCore*)user;
+	char *s = R_STR_ISNOTEMPTY (msg)? r_str_newf ("%s %s", origin? origin: "*", msg): strdup (origin);
+	r_core_log_add (core, s);
+	free (s);
+	return false;
+}
+
 R_API bool r_core_init(RCore *core) {
 	r_w32_init ();
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
 	if (!core->block) {
-		r_cons_eprintf ("Cannot allocate %d byte(s)\n", R_CORE_BLOCKSIZE);
-		/* XXX memory leak */
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", R_CORE_BLOCKSIZE);
 		return false;
 	}
 	core->chan = NULL;
 	r_core_setenv (core);
+	core->lock = r_th_lock_new (true);
+	core->in_log_process = false;
+	core->rfs = r_fs_shell_new ();
 	core->ev = r_event_new (core);
 	r_event_hook (core->ev, R_EVENT_ALL, cb_event_handler, NULL);
 	core->max_cmd_depth = R_CONS_CMD_DEPTH + 1;
+	core->lock = r_th_lock_new (true);
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;
@@ -3014,6 +3024,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->offsize = r_core_print_offsize;
 	core->print->cb_printf = r_cons_printf;
 #if __WINDOWS__
+	// XXX R2_580 deprecate this callback? we have the rlog apis
 	core->print->cb_eprintf = win_eprintf;
 #endif
 	core->print->cb_color = r_cons_rainbow_get;
@@ -3037,7 +3048,6 @@ R_API bool r_core_init(RCore *core) {
 	core->vmode = false;
 	core->printidx = 0;
 	core->lastcmd = NULL;
-	core->cmdlog = NULL;
 
 	if (core->print->charset) {
 		sdb_free (core->print->charset->db);
@@ -3051,6 +3061,7 @@ R_API bool r_core_init(RCore *core) {
 	core->cmdrepeat = true;
 	core->yank_buf = r_buf_new ();
 	core->num = r_num_new (&num_callback, &str_callback, core);
+	core->crypto = r_crypto_new ();
 	core->egg = r_egg_new ();
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
 
@@ -3075,14 +3086,11 @@ R_API bool r_core_init(RCore *core) {
 		core->cons->user_fgets = (void *)r_core_fgets;
 #endif
 		//r_line_singleton ()->user = (void *)core;
-		char *histpath = r_str_home (".cache/radare2/history");
-		if (histpath) {
-			r_line_hist_load (histpath);
-			free (histpath);
-		}
 	}
 	core->print->cons = core->cons;
 	r_cons_bind (&core->print->consbind);
+	core->cmdlog = NULL;
+	r_log_add_callback (cbcore, core);
 
 	// We save the old num ad user, in order to restore it after free
 	core->lang = r_lang_new ();
@@ -3186,7 +3194,6 @@ R_API bool r_core_init(RCore *core) {
 	core->dbg->bp->cb_printf = r_cons_printf;
 	core->dbg->ev = core->ev;
 	r_core_config_init (core);
-
 	r_core_loadlibs_init (core);
 	//r_core_loadlibs (core);
 
@@ -3252,6 +3259,7 @@ R_API void r_core_fini(RCore *c) {
 	if (c->chan) {
 		r_th_channel_free (c->chan);
 	}
+	r_crypto_free (c->crypto);
 	r_core_task_break_all (&c->tasks);
 	r_core_task_join (&c->tasks, NULL, -1);
 	r_core_wait (c);
@@ -3261,7 +3269,7 @@ R_API void r_core_fini(RCore *c) {
 	r_list_free (c->ropchain);
 	r_table_free (c->table);
 	r_event_free (c->ev);
-	free (c->cmdlog);
+	R_FREE (c->cmdlog);
 	free (c->lastsearch);
 	r_list_free (c->cmdqueue);
 	free (c->lastcmd);
@@ -3314,6 +3322,7 @@ R_API void r_core_fini(RCore *c) {
 	sdb_free (c->sdb);
 	r_core_log_free (c->log);
 	r_parse_free (c->parser);
+	r_fs_shell_free (c->rfs);
 	free (c->times);
 }
 
@@ -3419,9 +3428,9 @@ static void set_prompt(RCore *r) {
 	}
 
 	// TODO: also in visual prompt and disasm/hexdump ?
-	if (r_config_get_i (r->config, "asm.segoff")) {
+	if (r_config_get_b (r->config, "asm.offset.segment")) {
 		ut32 sb = r_config_get_i (r->config, "anal.cs"); // segment base value
-		ut32 sg = r_config_get_i (r->config, "asm.seggrn"); // segment granurality
+		ut32 sg = r_config_get_i (r->config, "asm.offset.segment.bits"); // segment granurality
 		ut32 a, b;
 		r_num_segaddr (r->offset, sb, sg, &a, &b);
 		snprintf (tmp, sizeof (tmp), "%04x:%04x", a, b);
@@ -3561,6 +3570,7 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize) {
 		r_cons_eprintf ("Block size %d is too big\n", bsize);
 		return false;
 	}
+	R_CRITICAL_ENTER (core);
 	core->offset = addr;
 	if (bsize < 1) {
 		bsize = 1;
@@ -3580,6 +3590,7 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize) {
 		memset (core->block, 0xff, core->blocksize);
 		r_core_block_read (core);
 	}
+	R_CRITICAL_LEAVE (core);
 	return ret;
 }
 

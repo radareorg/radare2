@@ -1,11 +1,11 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
-#include <string.h>
 #include "r_config.h"
 #include "r_cons.h"
 #include "r_core.h"
 
 bool rasm2_list(RCore *core, const char *arch, int fmt);
+bool ranal2_list(RCore *core, const char *arch, int fmt);
 
 static const char *help_msg_La[] = {
 	"Usage:", "La[qj]", " # asm/anal plugin list",
@@ -21,7 +21,9 @@ static const char *help_msg_L[] = {
 	"L",  "", "show this help",
 	"L", " blah."R_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name",
-	"La", "[qj]", "list asm/anal plugins (see: aL, e asm.arch=" "??" ")",
+	"La", "[qj]", "list analysis plugins",
+	"LA", "[qj]", "list arch plugins",
+	"Lb", "[qj]", "list bin plugins",
 	"Lc", "", "list core plugins (see",
 	"Ld", "", "list debug plugins (dL)",
 	"LD", "[j]", "list supported decompilers (e cmd.pdc=?)",
@@ -29,17 +31,18 @@ static const char *help_msg_L[] = {
 	"Lg", "", "list egg plugins",
 	"Lh", "", "list hash plugins (ph)",
 	"Li", "[j]", "list bin plugins (iL)",
-	"Lt", "[j]", "list color themes (eco)",
 	"Ll", "[j]", "list lang plugins (#!)",
 	"LL", "", "lock screen",
 	"Lm", "[j]", "list fs plugins (mL)",
 	"Lo", "", "list io plugins (oL)",
 	"Lp", "[j]", "list parser plugins (e asm.parser=?)",
+	"Ls", "[qj]", "list assembler plugins",
+	"Lt", "[j]", "list color themes (eco)",
 	NULL
 };
 
 static const char *help_msg_T[] = {
-	"Usage:", "T", "[-][ num|msg]",
+	"Usage:", "T", "[-][ num|msg] # text-log utility with timestamps",
 	"T", "", "list all Text log messages",
 	"T", " message", "add new log message",
 	"T", " 123", "list log from 123",
@@ -50,7 +53,6 @@ static const char *help_msg_T[] = {
 	"Tl", "", "get last log message id",
 	"Tj", "", "list in json format",
 	"Tm", " [idx]", "display log messages without index",
-	"Ts", "", "list files in current directory (see pwd, cd)",
 	"TT", "", "enter into the text log chat console",
 	"T=", "[.]", "pull logs from remote r2 instance specified by http.sync",
 	"T=&", "", "start background thread syncing with the remote server",
@@ -69,7 +71,7 @@ static void screenlock(RCore *core) {
 		return;
 	}
 	if (strcmp (pass, again)) {
-		eprintf ("Password mismatch!\n");
+		R_LOG_ERROR ("Password mismatch!");
 		free (pass);
 		free (again);
 		return;
@@ -92,7 +94,7 @@ static void screenlock(RCore *core) {
 		if (msg && !strcmp (msg, pass)) {
 			running = false;
 		} else {
-			eprintf ("\nInvalid password.\n");
+			R_LOG_ERROR ("Invalid password");
 			last = r_time_now ();
 			tries++;
 		}
@@ -102,7 +104,7 @@ static void screenlock(RCore *core) {
 	} while (running);
 	r_cons_set_cup (true);
 	free (pass);
-	eprintf ("Unlocked!\n");
+	R_LOG_INFO ("Unlocked!");
 }
 
 static int textlog_chat(RCore *core) {
@@ -147,7 +149,7 @@ static int textlog_chat(RCore *core) {
 		} else if (!strcmp (buf, "/quit")) {
 			return 0;
 		} else if (*buf == '/') {
-			eprintf ("Unknown command: %s\n", buf);
+			R_LOG_ERROR ("Unknown command: %s", buf);
 		} else {
 			snprintf (msg, sizeof (msg), "[%s] %s", me, buf);
 			r_core_log_add (core, msg);
@@ -189,13 +191,13 @@ static char *expr2cmd(RCoreLog *log, const char *line) {
 				return r_str_newf ("CCu base64:%s @ 0x%"PFMT64x"\n", msg, addr);
 			}
 		}
-		eprintf ("add-comment parsing error\n");
+		R_LOG_ERROR ("Cannot parse add-comment expression");
 	}
 	if (!strncmp (line, "del-comment", 11)) {
 		if (line[11] == ' ') {
 			return r_str_newf ("CC-%s\n", line + 12);
 		}
-		eprintf ("add-comment parsing error\n");
+		R_LOG_ERROR ("Cannot parse add-comment expression");
 	}
 	return NULL;
 }
@@ -213,8 +215,42 @@ static int log_callback_r2(RCore *core, int count, const char *line) {
 }
 
 static int log_callback_all(RCore *log, int count, const char *line) {
-	r_cons_printf ("%d %s\n", count, line);
+	r_cons_printf ("%.2d %s\n", count, line);
 	return 0;
+}
+
+R_API void r_core_log_view(RCore *core, int num) {
+	if (num < 1) {
+		num = 1;
+	}
+	int i;
+	for (i = num - 3; i < num + 3; i++) {
+		r_cons_printf ("%s", (num == i)? "* ": "  ");
+		if (i < 1) {
+			r_cons_printf ("   ^\n");
+			continue;
+		}
+		if (i >= core->log->last) {
+			r_cons_printf ("   $\n");
+			continue;
+		}
+		if (i < core->log->first) {
+			r_cons_printf ("   ^\n");
+			continue;
+		}
+		const char *msg = r_strpool_get_i (core->log->sp, i);
+		if (msg) {
+			char *m = r_str_ndup (msg, 60);
+			char *nl = strchr (m, '\n');
+			if (nl) {
+				*nl = 0;
+			}
+			r_cons_printf ("%.2d %s\n", i, m);
+			free (m);
+		} else {
+			r_cons_printf ("%.2d ..\n", i);
+		}
+	}
 }
 
 static int cmd_log(void *data, const char *input) {
@@ -241,15 +277,18 @@ static int cmd_log(void *data, const char *input) {
 					r_cons_less_str (b, NULL);
 					free (b);
 				} else {
-					eprintf ("File not found\n");
+					R_LOG_ERROR ("File not found");
 				}
 			} else {
 				eprintf ("Usage: less [filename]\n");
 			}
 		}
 		break;
+	case 'v': // "Tv"
+		r_core_log_view (core, (int)r_num_math (core->num, input + 2));
+		break;
 	case 'l': // "Tl"
-		r_cons_printf ("%d\n", core->log->last - 1);
+		r_cons_printf ("%.2d\n", core->log->last - 1);
 		break;
 	case '-': //  "T-"
 		r_core_log_del (core, n);
@@ -261,7 +300,7 @@ static int cmd_log(void *data, const char *input) {
 		if (r_cons_is_interactive ()) {
 			textlog_chat (core);
 		} else {
-			eprintf ("Only available when the screen is interactive\n");
+			R_LOG_ERROR ("The TT command needs scr.interactive=true");
 		}
 		break;
 	case '=': // "T="
@@ -277,7 +316,7 @@ static int cmd_log(void *data, const char *input) {
 				r_cons_break_pop ();
 			} else {
 				// TODO: Sucks that we can't enqueue functions, only commands
-				eprintf ("Background thread syncing with http.sync started.\n");
+				R_LOG_INFO ("Background thread syncing with http.sync started");
 				RCoreTask *task = r_core_task_new (core, true, "T=&&", NULL, core);
 				r_core_task_enqueue (&core->tasks, task);
 			}
@@ -305,7 +344,14 @@ static int cmd_log(void *data, const char *input) {
 		if (n > 0 || *input == '0') {
 			r_core_log_list (core, n, n2, *input);
 		} else {
-			r_core_log_add (core, input + 1);
+			const char *arg = input + 1;
+			if (r_str_startswith (arg, "base64:")) {
+				ut8 *s = r_base64_decode_dyn (arg + 7, -1);
+				r_core_log_add (core, (const char *)s);
+				free (s);
+			} else {
+				r_core_log_add (core, arg);
+			}
 		}
 		break;
 	case 'm': // "Tm"
@@ -368,11 +414,31 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'a': // "La"
-		if (input[1] == '?') {
+		if (input[1] == '?') { // "La?"
 			r_core_cmd_help (core, help_msg_La);
-		} else {
-			// r_core_cmd0 (core, "e asm.arch=??");
+		} else { // asm plugins
+			ranal2_list (core, NULL, input[1]);
+			// r_core_cmd0 (core, "e anal.arch=??");
+		}
+		break;
+	case 's': // "Ls"
+		if (input[1] == '?') { // "Ls?"
+			r_core_cmd_help_match (core, help_msg_L, "Ls", true);
+		} else { // asm plugins
+			 // r_core_cmd0 (core, "e asm.arch=??");
 			rasm2_list (core, NULL, input[1]);
+		}
+		break;
+	case 'A': // "LA"
+		if (input[1] == '?') {
+			// r_core_cmd_help (core, help_msg_LA);
+		} else {
+			RListIter *iter;
+			RArchPlugin *item;
+			r_list_foreach (core->anal->arch->plugins, iter, item) {
+				eprintf ("%s\n", item->name);
+			}
+			// r_core_cmd0 (core, "e asm.arch=??");
 		}
 		break;
 	case 'p': // "Lp"
@@ -430,7 +496,11 @@ static int cmd_plugins(void *data, const char *input) {
 		}
 		break;
 	case 'L': // "LL"
-		screenlock (core);
+		if (r_config_get_b (core->config, "scr.interactive")) {
+			screenlock (core);
+		} else {
+			R_LOG_ERROR ("lock screen requires scr.interactive");
+		}
 		break;
 	case 'g': // "Lg"
 		if (input[1] == 'j') {

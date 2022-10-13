@@ -1,22 +1,24 @@
-/* RISC-V disassembler
-   Copyright 2011-2015 Free Software Foundation, Inc.
-   Contributed by Andrew Waterman (waterman@cs.berkeley.edu) at UC Berkeley.
-   Based on MIPS target.
-   This file is part of the GNU opcodes library.
-   This library is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
-   It is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-   License for more details.
-   You should have received a copy of the GNU General Public License
-   along with this program; see the file COPYING3. If not,
-   see <http://www.gnu.org/licenses/>.
+/* RISC-V disassembler 2011-2015 - FSF */
 
-   - Code changes to make r2 friendly (qnix@0x80.org)
-*/
+#if 0
+Copyright 2011-2015 Free Software Foundation, Inc.
+Contributed by Andrew Waterman (waterman@cs.berkeley.edu) at UC Berkeley.
+Based on MIPS target.
+This file is part of the GNU opcodes library.
+This library is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+It is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+License for more details.
+You should have received a copy of the GNU General Public License
+along with this program; see the file COPYING3. If not,
+see <http://www.gnu.org/licenses/>.
+
+- Code changes to make r2 friendly (qnix@0x80.org)
+#endif
 
 #include <r_asm.h>
 
@@ -253,7 +255,7 @@ static void get_insn_args(char *buf, const char *d, insn_t l, uint64_t pc) {
 			break;
 		default:
 			/* xgettext:c-format */
-			sprintf (buf+strlen (buf), "# internal error, undefined modifier (%c)",
+			sprintf (buf + strlen (buf), "# internal error, undefined modifier (%c)",
 			  *d);
 			return;
 		}
@@ -267,7 +269,7 @@ static struct riscv_opcode *get_opcode(insn_t word) {
 #define OP_HASH_IDX(i) ((i) & (riscv_insn_length (i) == 2 ? 3 : OP_MASK_OP))
 
 	if (!init) {
-		for (op=riscv_opcodes; op < &riscv_opcodes[NUMOPCODES]; op++) {
+		for (op = riscv_opcodes; op < &riscv_opcodes[NUMOPCODES]; op++) {
 			if (!riscv_hash[OP_HASH_IDX (op->match)]) {
 				riscv_hash[OP_HASH_IDX (op->match)] = op;
 			}

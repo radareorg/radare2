@@ -160,6 +160,14 @@ static const struct opmap op_name_map[] = {
 	{ "readonly_buffer", '\x98' }
 };
 
+static inline bool valid_offset(RAnal *a, ut64 addr) {
+	RIOIsValidOff validoff = a->iob.io? a->iob.is_valid_offset: NULL;
+	if (validoff && !validoff (a->iob.io, addr, 0)) {
+		return false;
+	}
+	return true;
+}
+
 static inline int handle_int(RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
 	if (sz <= buflen && sz <= sizeof (op->val)) {
 		op->size += sz;
@@ -168,6 +176,45 @@ static inline int handle_int(RAnalOp *op, const char *name, int sz, const ut8 *b
 		return op->size;
 	}
 	return -1;
+}
+
+static inline int handle_long(RAnal *a, RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
+	r_return_val_if_fail (sz == 1 || sz == 4, -1);
+	op->sign = true;
+
+	// process how long the numer is is
+	if (sz > buflen) {
+		return -1;
+	}
+	ut64 longlen = r_mem_get_num (buf, sz);
+	buf += sz;
+	buflen -= sz;
+	op->size += sz + longlen;
+
+	if (longlen <= sizeof (op->val) && longlen <= buflen) {
+		op->val = 0;
+		if (longlen) {
+			st64 i, out = 0;
+			bool neg = buf[longlen - 1] & 0x80? true: false;
+			for (i = 0; i < longlen; i++) {
+				ut8 v = neg? ~buf[i]: buf[i]; // force positive
+				out += (ut64)v << (8 * i);
+			}
+			if (neg) {
+				out = -out - 1;
+			}
+			op->val = out;
+		}
+		op->mnemonic = r_str_newf ("long%d %" PFMT64d, sz, op->val);
+	} else {
+		if (!valid_offset (a, op->addr + op->size - 1)) {
+			op->size = 1;
+			return -1;
+		}
+		op->mnemonic = r_str_newf ("long%d <%" PFMT64d " bytes long int too big>", sz, longlen);
+		op->val = UT8_MAX;
+	}
+	return op->size;
 }
 
 static inline int handle_float(RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
@@ -242,16 +289,40 @@ static inline int handle_n_lines(RAnalOp *op, const char *name, int n, const ut8
 	return op->size;
 }
 
+static inline int handle_opstring(RAnalOp *op, const ut8 *buf, int buflen) {
+	if (buf[0] != '\'') {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return -1;
+	}
+	buf++;
+	buflen --; // remove starting quote
+	char *str = get_line (buf, buflen);
+	if (str) {
+		size_t len = strlen (str);
+		if (len > 0 && str[len - 1] == '\'') {
+			str[len - 1] = '\0';
+			op->mnemonic = r_str_newf ("string \"%s\"", str);
+			op->ptr = op->addr + 2; // skip op and first '
+			op->ptrsize = len - 1; // remove last ' from len
+			op->size = 2 + op->ptrsize + 2; // (S') + str + ('\n)
+			free (str);
+			return op->size;
+		}
+		free (str);
+	}
+	return -1;
+}
+
 static inline void set_mnemonic_str(RAnalOp *op, const char *n, const ut8 *buf, size_t max) {
-	char *dots = "";
+	char *trunc = "";
 	size_t readlen = op->ptrsize;
 	if (op->ptrsize > max) {
-		dots = "...";
+		trunc = "<truncated>";
 		readlen = max;
 	}
 	char *str = r_str_escape_raw ((ut8 *)buf, readlen);
 	if (str) {
-		op->mnemonic = r_str_newf ("%s \"%s%s\"", n, str, dots);
+		op->mnemonic = r_str_newf ("%s \"%s\"%s", n, str, trunc);
 		free (str);
 	} else {
 		op->mnemonic = r_str_newf ("%s <failed to decode str>", n);
@@ -263,16 +334,13 @@ static inline int cnt_str(RAnal *a, RAnalOp *op, const char *name, int sz, const
 		op->ptrsize = r_mem_get_num (buf, sz);
 		op->size = op->nopcode + sz + op->ptrsize;
 		op->ptr = op->addr + sz + op->nopcode;
-		RIOIsValidOff validoff = a->iob.io? a->iob.is_valid_offset: NULL;
-		if (validoff && !validoff (a->iob.io, op->addr + op->size - 1, 0)) {
-			// end of string is in bad area, probably this is invalid offset for op
-			op->size = 1;
-			op->type = R_ANAL_OP_TYPE_ILL;
-		} else {
-			// handle string
+		if (valid_offset (a, op->addr + op->size - 1)) {
 			buflen -= sz;
 			buf += sz;
 			set_mnemonic_str (op, name, buf, R_MIN (buflen, MAXSTRLEN));
+		} else {
+			op->size = 1;
+			op->type = R_ANAL_OP_TYPE_ILL;
 		}
 	}
 	return op->size;
@@ -327,7 +395,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case OP_REDUCE:
 		trivial_op ("reduce");
 	case OP_STRING:
-		return handle_n_lines (op, "string", 1, buf, len);
+		return handle_opstring (op, buf, len);
 	case OP_BINSTRING:
 		return cnt_str (a, op, "binstring", 4, buf, len);
 	case OP_SHORT_BINSTRING:
@@ -401,9 +469,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case OP_NEWFALSE:
 		trivial_op ("newfalse");
 	case OP_LONG1:
-		return handle_int (op, "long1", 1, buf, len);
+		return handle_long (a, op, "long1", 1, buf, len);
 	case OP_LONG4:
-		return handle_int (op, "long4", 4, buf, len);
+		return handle_long (a, op, "long1", 4, buf, len);
 	case OP_BINBYTES:
 		return cnt_str (a, op, "binbytes", 4, buf, len);
 	case OP_SHORT_BINBYTES:
@@ -442,11 +510,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 }
 
 static inline bool write_num_sz(ut64 n, int byte_sz, ut8 *outbuf, int outsz) {
+	if (byte_sz > outsz) {
+		return false;
+	}
 	int bits = r_num_to_bits (NULL, n);
-	// TODO: signedness prbly wrong...
-	if (bits > byte_sz * 8) {
-		R_LOG_ERROR ("Arg 0x%" PFMT64x " is more than %d bits", n, bits);
-		false;
+	if (n && bits > byte_sz * 8) {
+		R_LOG_ERROR ("Arg 0x%" PFMT64x " is more than %d bytes", n, byte_sz);
+		return false;
 	}
 	switch (byte_sz) {
 	case 1:
@@ -467,19 +537,72 @@ static inline bool write_num_sz(ut64 n, int byte_sz, ut8 *outbuf, int outsz) {
 	return true;
 }
 
-static inline int assemble_int(const char *str, int byte_sz, ut8 *outbuf, int outsz) {
-	if (outsz < byte_sz) {
-		return -2;
-	}
+static inline bool get_asmembled_num(const char *str, ut64 *out) {
 	RNum *num = r_num_new (NULL, NULL, NULL);
 	if (num) {
-		ut64 n = r_num_math (num, str);
+		*out = r_num_math (num, str);
 		r_num_free (num);
-		if (write_num_sz (n, byte_sz, outbuf, outsz)) {
-			return byte_sz;
-		}
+		return true;
+	}
+	return false;
+}
+
+static inline int assemble_int(const char *str, int byte_sz, ut8 *outbuf, int outsz) {
+	ut64 n;
+	if (outsz < byte_sz || !get_asmembled_num (str, &n)) {
+		return -2;
+	}
+	if (write_num_sz (n, byte_sz, outbuf, outsz)) {
+		return byte_sz;
 	}
 	return 0;
+}
+
+static inline int l_num_to_bytes(ut64 n, bool sign) {
+	bool flip = false;
+	st64 test = n;
+	int ret = 0;
+	if (sign && test < 0) {
+		test = -test;
+		flip = true;
+	}
+	st64 last = 0;
+	while (test) {
+		last = test;
+		test = test >> 8;
+		ret++;
+	}
+	if (!flip && last & 0x80) {
+		ret++; // extra null byte needed to indicate positive
+	}
+	return ret;
+}
+
+static inline int assemble_longint(const char *str, int byte_sz, ut8 *outbuf, int outsz) {
+	// long1 is followed by a single byte indicating size of the encoded long,
+	// so up to 255 byte numbers, long4 uses 4 bytes to encode size
+	ut64 n;
+	if (get_asmembled_num (str, &n)) {
+		if (!n && write_num_sz (n, byte_sz, outbuf, outsz)) { // special, can be smaller
+			return byte_sz;
+		}
+		int bytes = l_num_to_bytes (n, true);
+		if (bytes > sizeof (ut64)) {
+			R_LOG_ERROR ("Can't assemble longs larger then 64 bits yet");
+			return -2;
+		}
+		int writesize = bytes + byte_sz;
+		if (writesize < outsz && write_num_sz (bytes, byte_sz, outbuf, outsz)) {
+			outbuf += byte_sz;
+			outsz -= byte_sz;
+			size_t i;
+			for (i = 0; i < bytes; i++) {
+				outbuf[i] = 0xff & (n >> (i * 8));
+			}
+			return writesize;
+		}
+	}
+	return -2;
 }
 
 static inline int assemble_float(const char *str, ut8 *outbuf, int outsz) {
@@ -496,37 +619,61 @@ static inline int assemble_float(const char *str, ut8 *outbuf, int outsz) {
 	return 0;
 }
 
-static inline int assemble_cnt_str(const char *str, int byte_sz, ut8 *outbuf, int outsz) {
+static inline st64 str_valid_arg(const char *str) {
+	size_t len = strlen (str);
+	if (len < 2 || str[0] != '\"' || str[len - 1] != '\"') {
+		R_LOG_ERROR ("String arg must be quoted");
+		return -2;
+	}
+	return len;
+}
+
+static inline int assemble_cnt_str(char *str, int byte_sz, ut8 *outbuf, int outsz) {
+	st64 len = str_valid_arg (str);
+	if (len < 0) {
+		return len;
+	}
+	// remove quotes from string
+	str[len - 1] = '\0';
+	str++;
 	int wlen = -2;
-	char *write_str = strdup (str);
-	if (write_str) {
-		int len = r_str_unescape (write_str);
-		if (len > 0 && len + byte_sz <= outsz && write_num_sz (len, byte_sz, outbuf, outsz)) {
-			wlen = len + byte_sz;
-			memcpy (outbuf + byte_sz, write_str, len);
-		}
-		free (write_str);
+	len = r_str_unescape (str);
+	if (len > 0 && len + byte_sz <= outsz && write_num_sz (len, byte_sz, outbuf, outsz)) {
+		wlen = len + byte_sz;
+		memcpy (outbuf + byte_sz, str, len);
 	}
 	return wlen;
 }
 
-static inline int assemble_n_str(char *str, ut32 cnt, ut8 *outbuf, int outsz) {
+static inline int assemble_n_str(char *str, ut32 cnt, ut8 *outbuf, int outsz, bool q) {
 	r_return_val_if_fail (cnt <= 2, -2);
-	size_t len = strlen (str);
-	if (len + 1 > outsz) { // str must be be \n terminated in outbuf
+	st64 len = str_valid_arg (str);
+	if (len < 0) {
+		return len;
+	}
+	if (outsz > 0 && len > outsz - 1) { // str must be be \n terminated in outbuf
 		R_LOG_ERROR ("String to large for assembler to handle");
-		return -1;
+		return -2;
 	}
 	if (strchr (str, '\n')) {
 		R_LOG_ERROR ("Shouldn't be newlines in argument");
-		return -1;
+		return -2;
+	}
+
+	if (q) { // string is rpr bracket quoted
+		str[0] = '\'';
+		str[len - 1] = '\'';
+	} else {
+		// don't include quotes in output
+		str = str + 1;
+		len -= 2;
 	}
 
 	if (cnt == 2) {
 		char *space = strchr (str, ' ');
 		if (!space) {
 			R_LOG_ERROR ("Need space between args");
-			return -1;
+			return -2;
 		}
 		*space = '\n';
 	}
@@ -619,7 +766,6 @@ static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int o
 		case OP_LONG_BINPUT:
 		case OP_LONG_BINGET:
 		case OP_EXT4:
-		case OP_LONG4:
 			wlen += assemble_int (arg, 4, outbuf, outsz);
 			break;
 		case OP_BININT2:
@@ -631,8 +777,13 @@ static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int o
 		case OP_BINPUT:
 		case OP_PROTO:
 		case OP_EXT1:
-		case OP_LONG1:
 			wlen += assemble_int (arg, 1, outbuf, outsz);
+			break;
+		case OP_LONG4:
+			wlen += assemble_longint (arg, 4, outbuf, outsz);
+			break;
+		case OP_LONG1:
+			wlen += assemble_longint (arg, 1, outbuf, outsz);
 			break;
 		// float
 		case OP_BINFLOAT:
@@ -657,18 +808,21 @@ static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int o
 		// two lines
 		case OP_INST:
 		case OP_GLOBAL:
-			wlen += assemble_n_str (arg, 2, outbuf, outsz);
+			wlen += assemble_n_str (arg, 2, outbuf, outsz, false);
 			break;
 		// one line
 		case OP_FLOAT:
 		case OP_INT:
 		case OP_LONG:
 		case OP_PERSID:
-		case OP_STRING:
 		case OP_UNICODE:
 		case OP_GET:
 		case OP_PUT:
-			wlen += assemble_n_str (arg, 1, outbuf, outsz);
+			wlen += assemble_n_str (arg, 1, outbuf, outsz, false);
+			break;
+		// one like rpr style
+		case OP_STRING:
+			wlen += assemble_n_str (arg, 1, outbuf, outsz, true);
 			break;
 		default:
 			r_warn_if_reached ();

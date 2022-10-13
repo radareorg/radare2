@@ -156,7 +156,7 @@ R_API int r_io_desc_cache_read(RIODesc *desc, ut64 paddr, ut8 *buf, int len) {
 	cbaddr = paddr % R_IO_DESC_CACHE_SIZE;
 	while (amount < len) {
 		// get an existing desc-cache, if it exists
-		if (!(cache = (RIODescCache *)ht_up_find (desc->cache, caddr, NULL))) {	
+		if (!(cache = (RIODescCache *)ht_up_find (desc->cache, caddr, NULL))) {
 			amount += (R_IO_DESC_CACHE_SIZE - cbaddr);
 			ptr += (R_IO_DESC_CACHE_SIZE - cbaddr);
 			goto beach;
@@ -333,7 +333,7 @@ static bool __desc_cache_cleanup_cb(void *user, const ut64 k, const void *v) {
 	}
 	if (size <= (blockaddr + R_IO_DESC_CACHE_SIZE - 1)) {
 		//this looks scary, but it isn't
-		byteaddr = (int)(size - blockaddr) - 1;		
+		byteaddr = (int)(size - blockaddr) - 1;
 		cache->cached &= cleanup_masks[byteaddr];
 	}
 	return true;

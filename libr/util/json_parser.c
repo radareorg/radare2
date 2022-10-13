@@ -366,10 +366,10 @@ static char *parse_value(RJson *parent, const char *key, char *p) {
 	return NULL;
 }
 
-// XXX make this api const char *text instead of char *text
-R_API RJson *r_json_parse(char *text) {
+R_API R_MUSTUSE RJson *r_json_parse(R_BORROW char *text) {
 	RJson js = {0};
-	if (!parse_value (&js, 0, text)) {
+	bool res = parse_value (&js, 0, text);
+	if (!res) {
 		if (js.children.first) {
 			r_json_free (js.children.first);
 		}
@@ -398,3 +398,22 @@ R_API const RJson *r_json_item(const RJson *json, size_t idx) {
 	return NULL;
 }
 
+R_API const char *r_json_type(const RJson *json) {
+	switch (json->type) {
+	case R_JSON_ARRAY:
+		return "array";
+	case R_JSON_OBJECT:
+		return "object";
+	case R_JSON_INTEGER:
+		return "integer";
+	case R_JSON_BOOLEAN:
+		return "boolean";
+	case R_JSON_DOUBLE:
+		return "double";
+	case R_JSON_STRING:
+		return "string";
+	case R_JSON_NULL:
+		return "null";
+	}
+	return "";
+}

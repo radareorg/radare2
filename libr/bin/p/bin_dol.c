@@ -1,24 +1,21 @@
-/* radare - LGPL - 2015-2019 - pancake */
+/* radare - LGPL - 2015-2022 - pancake */
 
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
-#include <string.h>
 
-/*
-   Start	End	Length	Description
-   0x0	0x3	4	File offset to start of Text0
-   0x04	0x1b	24	File offsets for Text1..6
-   0x1c	0x47	44	File offsets for Data0..10
-   0x48	0x4B	4	Loading address for Text0
-   0x4C	0x8F	68	Loading addresses for Text1..6, Data0..10
-   0x90	0xD7	72	Section sizes for Text0..6, Data0..10
-   0xD8	0xDB	4	BSS address
-   0xDC	0xDF	4	BSS size
-   0xE0	0xE3	4	Entry point
-   0xE4	0xFF		padding
- */
+#if 0
+Start	End	Length	Description
+0x0	0x3	4	File offset to start of Text0
+0x04	0x1b	24	File offsets for Text1..6
+0x1c	0x47	44	File offsets for Data0..10
+0x48	0x4B	4	Loading address for Text0
+0x4C	0x8F	68	Loading addresses for Text1..6, Data0..10
+0x90	0xD7	72	Section sizes for Text0..6, Data0..10
+0xD8	0xDB	4	BSS address
+0xDC	0xDF	4	BSS size
+0xE0	0xE3	4	Entry point
+0xE4	0xFF		padding
+#endif
 
 #define N_TEXT 7
 #define N_DATA 11

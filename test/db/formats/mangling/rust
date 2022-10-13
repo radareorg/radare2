@@ -45,7 +45,7 @@ aa
 afl~example
 EOF
 EXPECT=<<EOF
-0x00002b30    2 15           sym._example::Foo_as_example::Bar_::bar::h26dc608664264fb6
-0x00002b40    1 31           sym.example::main::hf45903a20ef2ad21
+0x00002b30    2     15 sym._example::Foo_as_example::Bar_::bar::h26dc608664264fb6
+0x00002b40    1     31 sym.example::main::hf45903a20ef2ad21
 EOF
 RUN

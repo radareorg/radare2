@@ -12,9 +12,6 @@
 */
 
 #include <r_util.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
 
 struct line {
 	int h, len, n, e;
@@ -81,7 +78,7 @@ static int splitlines(const char *a, int len, struct line **lr) {
 }
 
 inline static int cmp(struct line *a, struct line *b) {
-	return a->h != b->h || a->len != b->len || memcmp(a->l, b->l, a->len);
+	return a->h != b->h || a->len != b->len || memcmp (a->l, b->l, a->len);
 }
 
 static int equatelines(struct line *a, int an, struct line *b, int bn) {
@@ -338,7 +335,7 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 					break;
 				}
 			}
-#if 0	
+#if 0
 			if (rlen > 0) {
 				//printf ("Remove %d byte(s) at %d\n", rlen, offa);
 				printf ("r-%d @ 0x%"PFMT64x"\n", rlen, (ut64)offa);

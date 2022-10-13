@@ -10,6 +10,8 @@ static const char *help_msg_m[] = {
 	"mL", "[Lj]", "list filesystem plugins (Same as Lm), mLL shows only fs plugin names",
 	"mc", " [file]", "cat: Show the contents of the given file",
 	"md", " /", "list files and directory on the virtual r2's fs",
+	"mdd", " /", "show file size like `ls -l` in ms",
+	"mdq", " /", "show just the file name (quiet)",
 	"mf", "[?] [o|n]", "search files for given filename or for offset",
 	"mg", " /foo [offset size]", "get fs file/dir and dump to disk (support base64:)",
 	"mi", " /foo/bar", "get offset and size of given file",
@@ -70,6 +72,14 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 	RListIter *iter;
 	RFSFile *file;
 	RFSRoot *root;
+	bool minus_ele = *input == 'd'; // "mdd"
+	if (minus_ele) {
+		input++;
+	}
+	bool minus_quiet = *input == 'q'; // "mdq"
+	if (minus_quiet) {
+		input++;
+	}
 	input = r_str_trim_head_ro (input + isJSON);
 	if (r_str_startswith (input, "base64:")) {
 		const char *encoded = input + 7;
@@ -88,14 +98,29 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 		r_list_foreach (list, iter, file) {
 			if (isJSON) {
 				pj_o (pj);
-				pj_ks (pj, "type", t2s(file->type));
+				pj_ks (pj, "type", t2s (file->type));
+				pj_kn (pj, "size", file->size);
 				pj_ks (pj, "name", file->name);
 				pj_end (pj);
 			} else {
-				r_cons_printf ("%c %s\n", file->type, file->name);
+				if (minus_quiet) {
+					if (file->type == 'd') {
+						r_cons_printf ("%s/\n", file->name);
+					} else {
+						r_cons_printf ("%s\n", file->name);
+					}
+				} else if (minus_ele) {
+					r_cons_printf ("%c %10d %s\n", file->type, file->size, file->name);
+				} else {
+					r_cons_printf ("%c %s\n", file->type, file->name);
+				}
 			}
 		}
 		r_list_free (list);
+	} else {
+		if (strlen (input) > 1) {
+			R_LOG_ERROR ("Invalid path");
+		}
 	}
 	const char *path = *input ? input : "/";
 	r_list_foreach (core->fs->roots, iter, root) {
@@ -169,21 +194,21 @@ static int cmd_mount(void *data, const char *_input) {
 			const char *fstype = ptr;
 			if (*mountp != '/') {
 				if (*fstype != '/') {
-					eprintf ("Invalid mountpoint\n");
+					R_LOG_ERROR ("Invalid mountpoint");
 					return 0;
 				}
 				mountp = ptr;
 				fstype = input;
 			}
 			if (fstype && !r_fs_mount (core->fs, fstype, mountp, off)) {
-				eprintf ("Cannot mount %s\n", input);
+				R_LOG_ERROR ("Cannot mount %s", input);
 			}
 		} else {
 			if (!(ptr = r_fs_name (core->fs, core->offset))) {
-				eprintf ("Unknown filesystem type\n");
+				R_LOG_ERROR ("Unknown filesystem type");
 			}
 			if (ptr && !r_fs_mount (core->fs, ptr, input, core->offset)) {
-				eprintf ("Cannot mount %s\n", input);
+				R_LOG_ERROR ("Cannot mount %s", input);
 			}
 			free (ptr);
 		}
@@ -292,7 +317,7 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 			r_list_free (list);
 		} else {
-			eprintf ("Cannot read partition\n");
+			R_LOG_ERROR ("Cannot read partition");
 		}
 		break;
 	case 'o': // "mo"
@@ -309,7 +334,7 @@ static int cmd_mount(void *data, const char *_input) {
 					r_io_desc_write (fd, file->data, file->size);
 				}
 			} else {
-				eprintf ("Cannot open file\n");
+				R_LOG_ERROR ("Cannot open file");
 			}
 		}
 		break;
@@ -325,7 +350,7 @@ static int cmd_mount(void *data, const char *_input) {
 				r_cons_printf ("f file %d 0x%08"PFMT64x"\n", file->size, file->off);
 				r_fs_close (core->fs, file);
 			} else {
-				eprintf ("Cannot open file\n");
+				R_LOG_ERROR ("Cannot open file");
 			}
 		}
 		break;
@@ -378,7 +403,7 @@ static int cmd_mount(void *data, const char *_input) {
 		char *hfilename = NULL;
 		const char *filename = r_str_trim_head_ro (input);
 		if (R_STR_ISEMPTY (filename)) {
-			eprintf ("No filename given\n");
+			R_LOG_WARN ("No filename given");
 			break;
 		}
 		if (r_str_startswith (filename, "base64:")) {
@@ -401,7 +426,7 @@ static int cmd_mount(void *data, const char *_input) {
 			int blocksize = file->size < core->blocksize ? file->size : core->blocksize;
 			size = size > 0 ? size : file->size;
 			if (r_file_exists (localFile) && !r_sys_truncate (localFile, 0)) {
-				eprintf ("Cannot create file %s\n", localFile);
+				R_LOG_ERROR ("Cannot create file %s", localFile);
 				break;
 			}
 			while (total_bytes_read < size && ptr < file->size) {
@@ -422,7 +447,7 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 			free (localFile);
 		} else if (!r_fs_dir_dump (core->fs, filename, ptr)) {
-			eprintf ("Cannot open file (%s) (%s).\n", filename, ptr);
+			R_LOG_ERROR ("Cannot open file (%s) (%s)", filename, ptr);
 		}
 		free (hfilename);
 		break;
@@ -444,7 +469,7 @@ static int cmd_mount(void *data, const char *_input) {
 				}
 				//XXX: r_list_purge (list);
 			} else {
-				eprintf ("Unknown store path\n");
+				R_LOG_ERROR ("Unknown store path");
 			}
 			break;
 		case 'o':
@@ -460,7 +485,7 @@ static int cmd_mount(void *data, const char *_input) {
 				}
 				//XXX: r_list_purge (list);
 			} else {
-				eprintf ("Unknown store path\n");
+				R_LOG_ERROR ("Unknown store path");
 			}
 			break;
 		}
@@ -470,6 +495,10 @@ static int cmd_mount(void *data, const char *_input) {
 			r_core_cmd_help_match_spec (core, help_msg_m, "ms", 0, true);
 			break;
 		};
+		if (!r_config_get_b (core->config, "scr.interactive")) {
+			R_LOG_ERROR ("mount shell requires scr.interactive");
+			break;
+		}
 		if (core->http_up) {
 			free (oinput);
 			return false;
@@ -477,21 +506,17 @@ static int cmd_mount(void *data, const char *_input) {
 		input = (char *)r_str_trim_head_ro (input + 1);
 		r_cons_set_raw (false);
 		{
-			char *cwd = strdup (r_config_get (core->config, "fs.cwd"));
-			RFSShell shell = {
-				.cwd = &cwd,
-				.set_prompt = r_line_set_prompt,
-				.readline = r_line_readline,
-				.hist_add = r_line_hist_add
-			};
-			core->rfs = &shell;
+			free (core->rfs->cwd);
+			core->rfs->cwd = strdup (r_config_get (core->config, "fs.cwd"));
+			core->rfs->set_prompt = r_line_set_prompt;
+			core->rfs->readline = r_line_readline;
+			core->rfs->hist_add = r_line_hist_add;
 			core->autocomplete_type = AUTOCOMPLETE_MS;
 			r_core_autocomplete_reload (core);
-			r_fs_shell_prompt (&shell, core->fs, input);
+			r_fs_shell (core->rfs, core->fs, input);
 			core->autocomplete_type = AUTOCOMPLETE_DEFAULT;
 			r_core_autocomplete_reload (core);
-			r_config_set (core->config, "fs.cwd", cwd);
-			R_FREE (cwd);
+			r_config_set (core->config, "fs.cwd", (const char *)core->rfs->cwd);
 		}
 		break;
 	case 'w': // "mw"

@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static const char *help_msg_P[] = {
+static RCoreHelpMessage help_msg_P = {
 	"Usage:", "P[?.+-*cdilnsS] [file]", "Project management",
 	"P", " [file]", "open project (formerly Po)",
 	"P.", "", "show current loaded project (see prj.name)",
@@ -22,11 +22,11 @@ static const char *help_msg_P[] = {
 	"Px", "-", "close the opened project (R2_580 -> Pc)",
 	"NOTE:", "", "the 'e prj.name' evar can save/open/rename/list projects.",
 	"NOTE:", "", "see the other 'e??prj.' evars for more options.",
-	"NOTE:", "", "project are stored in " R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS),
+	"NOTE:", "", "project are stored in dir.projects",
 	NULL
 };
 
-static const char *help_msg_Pn[] = {
+static RCoreHelpMessage help_msg_Pn = {
 	"Usage:", "Pn[j-?] [...]", "Project Notes",
 	"Pn", "", "show project notes",
 	"Pn", " -", "edit notes with cfg.editor",
@@ -83,8 +83,8 @@ static int cmd_project(void *data, const char *input) {
 		} else if (input[1]) { // "Po"
 			r_core_project_open (core, file);
 		} else {
-			if (str && *str) {
-				r_cons_println (file);
+			if (R_STR_ISNOTEMPTY (str)) {
+				r_cons_println (str);
 			}
 		}
 		break;
@@ -95,9 +95,10 @@ static int cmd_project(void *data, const char *input) {
 				r_config_get (core->config, "prj.name"), NULL);
 			if (r_syscmd_pushd (pdir)) {
 				if (r_file_is_directory (".git")) {
+					// TODO: Use ravc2 api
 					r_sys_cmdf ("git diff @~%d", atoi (input + 1));
 				} else {
-					eprintf ("TODO: Not a git project. Diffing projects is WIP for now.\n");
+					R_LOG_TODO ("Not a git project. Diffing projects is WIP for now");
 				}
 				r_syscmd_popd ();
 			}
@@ -300,8 +301,12 @@ static int cmd_project(void *data, const char *input) {
 				free (prj_name);
 			}
 		} else if (r_project_is_loaded (core->prj)) {
-			r_cons_println (core->prj->name);
-			r_cons_println (core->prj->path);
+			if (R_STR_ISNOTEMPTY (core->prj->name)) {
+				r_cons_println (core->prj->name);
+			}
+			if (R_STR_ISNOTEMPTY (core->prj->path)) {
+				r_cons_println (core->prj->path);
+			}
 		}
 		break;
 	case '.': // "P."

@@ -8,7 +8,7 @@ static const char *help_msg_w[] = {
 	"w"," foobar","write string 'foobar'",
 	"w+","string","write string and seek at the end of it",
 	"w0"," [len]","write 'len' bytes with value 0x00",
-	"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
+	"w6","[d|e|x] base64/string/hex","write base64 [d]ecoded or [e]ncoded string",
 	"wa","[?] push ebp","write opcode, separated by ';' (use '\"' around the command)",
 	"waf"," f.asm","assemble file and write bytes",
 	"waF"," f.asm","assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code",
@@ -49,6 +49,7 @@ static const char *help_msg_wa[] = {
 	"wa", " nop", "write nopcode using asm.arch and asm.bits",
 	"wai", " jmp 0x8080", "write inside this op (fill with nops or error if doesnt fit)",
 	"wan", " jmp 0x8080", "write instruction(s) nopping the trailing bytes",
+	"wa+", " nop", "write a nop and seek after it (use 7wa+nop to write 7 consecutive nops)",
 	"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
 	"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
 	"waf", " f.asm" , "assemble file and write bytes",
@@ -71,13 +72,15 @@ static const char *help_msg_wA[] = {
 };
 
 static const char *help_msg_wc[] = {
-	"Usage:", "wc[jir+-*?]","  # NOTE: Uses io.cache=true",
+	"Usage:", "wc[jir+-*?]","  # See `e io.cache = true`",
 	"wc","","list all write changes",
 	"wcj","","list all write changes in JSON",
 	"wc-"," [from] [to]","remove write op at curseek or given addr",
 	"wc+"," [from] [to]","commit change from cache to io",
-	"wc*","","\"\" in radare commands",
-	"wcr","","reset all write changes in cache",
+	"wc*","","write commands",
+	"wcr","","revert all writes in the cache",
+	"wcu","","undo last change",
+	"wcU","","redo undone change (TODO)",
 	"wci","","commit write cache",
 	"wcf"," [file]","commit write cache into given file",
 	"wcp"," [fd]", "list all cached write-operations on p-layer for specified fd or current fd",
@@ -97,27 +100,26 @@ static const char *help_msg_we[] = {
 };
 
 static const char *help_msg_wo[] = {
-	"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize]",
-	"wo[24aAdlmorwx]","", "without hexpair values, clipboard is used",
-	"wo2"," [val]","2=  2 byte endian swap (word)",
-	"wo4"," [val]", "4=  4 byte endian swap (dword)",
-	"wo8"," [val]", "8=  8 byte endian swap (qword)",
-	"woa"," [val]", "+=  addition (f.ex: woa 0102)",
-	"woA"," [val]","&=  and",
-	"wod"," [val]", "/=  divide",
-	"woD","[algo] [key] [IV]","decrypt current block with given algo and key",
-	"woe"," [from to] [step] [wsz=1]","..  create sequence",
-	"woE"," [algo] [key] [IV]", "encrypt current block with given algo and key",
-	"woi","", "inverse bytes in current block",
-	"wol"," [val]","<<= shift left",
-	"wom"," [val]", "*=  multiply",
-	"woo"," [val]","|=  or",
-	"wop[DO]"," [arg]","De Bruijn Patterns",
-	"wor"," [val]", ">>= shift right",
-	"woR","","random bytes (alias for 'wr $b')",
-	"wos"," [val]", "-=  substraction",
-	"wow"," [val]", "==  write looped value (alias for 'wb')",
-	"wox"," [val]","^=  xor  (f.ex: wox 0x90)",
+	"Usage:","wo[asmdxoArl24]"," [hexpairs] @ addr[!bsize] write operation in current block",
+	"wo2", "", "2=  2 byte endian swap (word)",
+	"wo4", "", "4=  4 byte endian swap (dword)",
+	"wo8", "", "8=  8 byte endian swap (qword)",
+	"woa", " [hexpair]", "+= addition (f.ex: woa 0102)",
+	"woA", " [hexpair]", "&=  and",
+	"wod", " [hexpair]", "/=  divide",
+	"woD", "[algo] [key] [IV]", "decrypt current block with given algo and key",
+	"woE", " [algo] [key] [IV]", "encrypt current block with given algo and key",
+	"woe", " [from to] [step] [wsz=1]","..  create sequence",
+	"woi", "", "inverse bytes in current block",
+	"wol", " [val]", "<<= shift left",
+	"wom", " [val]", "*=  multiply",
+	"woo", " [val]", "|=  or",
+	"wop[DO]", " [arg]", "De Bruijn Patterns",
+	"wor", " [val]", ">>= shift right",
+	"woR", "", "random bytes (alias for 'wr $b')",
+	"wos", " [val]", "-=  substraction",
+	"wow", " [val]", "==  write looped value (alias for 'wb')",
+	"wox", " [val]", "^=  xor  (f.ex: wox 0x90)",
 	NULL
 };
 
@@ -179,7 +181,8 @@ static const char *help_msg_wv[] = {
 
 static const char *help_msg_wx[] = {
 	"Usage:", "wx[f] [arg]", "",
-	"wx", " 9090", "write two intel nops",
+	"wx", " 3.", "write the left nibble of the current byte",
+	"wx", " .5", "write the right nibble of the current byte",
 	"wx+", " 9090", "write hexpairs and seek forward",
 	"wxf", " -|file", "write contents of hexpairs file here",
 	NULL
@@ -243,9 +246,9 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 		free (binkey);
 		return false;
 	}
-	RCrypto *cry = r_crypto_new ();
-	if (r_crypto_use (cry, algo)) {
-		if (r_crypto_set_key (cry, binkey, keylen, 0, direction)) {
+	RCryptoJob *cj = r_crypto_use (core->crypto, algo);
+	if (cj) {
+		if (r_crypto_job_set_key (cj, binkey, keylen, 0, direction)) {
 			if (iv) {
 				ut8 *biniv = malloc (strlen (iv) + 1);
 				int ivlen = r_hex_str2bin (iv, biniv);
@@ -253,15 +256,15 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 					ivlen = strlen(iv);
 					strcpy ((char *)biniv, iv);
 				}
-				if (!r_crypto_set_iv (cry, biniv, ivlen)) {
+				if (!r_crypto_job_set_iv (cj, biniv, ivlen)) {
 					R_LOG_ERROR ("Invalid IV");
 					return 0;
 				}
 			}
-			r_crypto_update (cry, (const ut8*)core->block, core->blocksize);
+			r_crypto_job_update (cj, (const ut8*)core->block, core->blocksize);
 
 			int result_size = 0;
-			ut8 *result = r_crypto_get_output (cry, &result_size);
+			ut8 *result = r_crypto_job_get_output (cj, &result_size);
 			if (result) {
 				if (!r_core_write_at (core, core->offset, result, result_size)) {
 					R_LOG_ERROR ("write failed at 0x%08"PFMT64x, core->offset);
@@ -273,12 +276,10 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 			R_LOG_ERROR ("Invalid key");
 		}
 		free (binkey);
-		r_crypto_free (cry);
 		return 0;
 	} else {
 		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((!direction) ? "encryption" : "decryption") ,algo);
 	}
-	r_crypto_free (cry);
 	return 1;
 }
 
@@ -339,8 +340,12 @@ static int cmd_wo(void *data, const char *input) {
 	case '2': // "wo2"
 	case '4': // "wo4"
 	case '8': // "wo8"
-		if (input[1]) {  // parse val from arg
-			r_core_write_op (core, r_str_trim_head_ro (input + 2), input[0]);
+		if (input[1] == '?') {  // parse val from arg
+			char s[8];
+			snprintf (s, sizeof (s), "wo%c", input[0]);
+			r_core_cmd_help_match (core, help_msg_wo, s, true);
+		} else if (input[1]) {  // parse val from arg
+			r_core_write_op (core, r_str_trim_head_ro (input + 1), input[0]);
 		} else {  // use clipboard instead of val
 			r_core_write_op (core, NULL, input[0]);
 		}
@@ -376,35 +381,7 @@ static int cmd_wo(void *data, const char *input) {
 				encrypt_or_decrypt_block (core, algo, key, direction, iv);
 			} else {
 				eprintf ("Usage: wo%c [algo] [key] [IV]\n", ((!direction)?'E':'D'));
-				eprintf ("Currently supported hashes:\n");
-				ut64 bits;
-				int i;
-				for (i = 0; ; i++) {
-					bits = ((ut64)1) << i;
-					const char *name = r_hash_name (bits);
-					if R_STR_ISEMPTY (name) {
-						break;
-					}
-					printf ("  %s\n", name);
-				}
-				eprintf ("Available Encoders/Decoders: \n");
-				for (i = 0; ; i++) {
-					bits = (1ULL) << i;
-					const char *name = r_crypto_codec_name ((const RCryptoSelector)bits);
-					if (R_STR_ISEMPTY (name)) {
-						break;
-					}
-					printf ("  %s\n", name);
-				}
-				eprintf ("Currently supported crypto algos:\n");
-				for (i = 0; ; i++) {
-					bits = (1ULL) << i;
-					const char *name = r_crypto_name ((const RCryptoSelector)bits);
-					if R_STR_ISEMPTY (name) {
-						break;
-					}
-					printf ("  %s\n", name);
-				}
+				r_crypto_list (core->crypto, r_cons_printf, 0);
 			}
 			free (args);
 		}
@@ -915,7 +892,9 @@ static int cmd_w6(void *data, const char *input) {
 	int len = 0, str_len;
 
 	if (input[0] && input[1] != ' ') {
-		fail = true;
+		if (input[0] != 'e' && input[0] != 'd') {
+			fail = true;
+		}
 	}
 	const char *str = (input[0] && input[1] && input[2])? input + 2: "";
 	str_len = strlen (str) + 1;
@@ -923,16 +902,16 @@ static int cmd_w6(void *data, const char *input) {
 		switch (input[0]) {
 		case 'd': // "w6d"
 			buf = malloc (str_len);
-			if (!buf) {
-				break;
-			}
-			len = r_base64_decode (buf, str, -1);
-			if (len < 0) {
-				free (buf);
-				fail = true;
+			if (buf) {
+				len = r_base64_decode (buf, str, -1);
+				if (len < 0) {
+					R_LOG_WARN ("Invalid hexpair string");
+					R_FREE (buf);
+					fail = true;
+				}
 			}
 			break;
-		case 'e': { // "w6e"
+		case 'x': { // "w6x"
 			ut8 *bin_buf = malloc (str_len);
 			if (!bin_buf) {
 				break;
@@ -944,11 +923,29 @@ static int cmd_w6(void *data, const char *input) {
 				buf = calloc (str_len + 1, 4);
 				len = r_base64_encode ((char *)buf, bin_buf, bin_len);
 				if (len == 0) {
-					free (buf);
+					R_FREE (buf);
 					fail = true;
 				}
 			}
 			free (bin_buf);
+			}
+			break;
+		case 'e': { // "w6e"
+			ut8 *bin_buf = malloc (str_len);
+			if (!bin_buf) {
+				break;
+			}
+			char *s = r_str_trim_dup (input + 1);
+			int slen = strlen (s);
+			free (buf);
+			buf = malloc ((4+slen) * 4);
+			len = r_base64_encode ((char *)buf, (const ut8*)s, slen);
+			if (len == 0) {
+				R_FREE (buf);
+				fail = true;
+			}
+			free (bin_buf);
+			free (s);
 			break;
 		}
 		default:
@@ -964,7 +961,7 @@ static int cmd_w6(void *data, const char *input) {
 		r_core_block_read (core);
 		free (buf);
 	} else {
-		eprintf ("Usage: w6[de] base64/hex\n");
+		eprintf ("Usage: w6[d|e|x] base64/string/hex\n");
 	}
 	return 0;
 }
@@ -1197,7 +1194,7 @@ static int cmd_wu(void *data, const char *input) {
 			free (data);
 		}
 	} else {
-		eprintf ("|Usage: wu [unified-diff-patch]    # see 'cu'\n");
+		eprintf ("Usage: wu [unified-diff-patch]    # see 'cu'\n");
 	}
 	return 0;
 }
@@ -1303,6 +1300,30 @@ static void cmd_wcf(RCore *core, const char *dfn) {
 	free (sfn);
 }
 
+static void wcu(RCore *core) {
+	void **iter;
+	RIO *io = core->io;
+	r_pvector_foreach_prev (&io->cache, iter) {
+		RIOCache *c = *iter;
+		int cached = io->cached;
+		io->cached = 0;
+		r_io_write_at (io, r_itv_begin (c->itv), c->odata, r_itv_size (c->itv));
+		c->written = false;
+		io->cached = cached;
+		r_pvector_remove_data (&io->cache, c);
+		free (c->data);
+		free (c->odata);
+		free (c);
+		break;
+	}
+	r_skyline_clear (&io->cache_skyline);
+	r_pvector_foreach (&io->cache, iter) {
+		RIOCache *c = *iter;
+		c = *iter;
+		r_skyline_add (&io->cache_skyline, c->itv, c);
+	}
+}
+
 static int cmd_wc(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -1313,6 +1334,12 @@ static int cmd_wc(void *data, const char *input) {
 		break;
 	case '?': // "wc?"
 		r_core_cmd_help (core, help_msg_wc);
+		break;
+	case 'u': // "wcu"
+		wcu (core);
+		break;
+	case 'U': // "wcU"
+		R_LOG_ERROR ("TODO: Not implemented");
 		break;
 	case 'f': // "wcf"
 		if (input[1] == ' ') {
@@ -1327,7 +1354,7 @@ static int cmd_wc(void *data, const char *input) {
 	case '+': // "wc+"
 		if (input[1]=='*') { // "wc+*"
 			//r_io_cache_reset (core->io, core->io->cached);
-			eprintf ("TODO\n");
+			R_LOG_TODO ("wc+*");
 		} else if (input[1]==' ') { // "wc+ "
 			char *p = strchr (input + 2, ' ');
 			ut64 to, from;
@@ -1354,7 +1381,7 @@ static int cmd_wc(void *data, const char *input) {
 			break;
 		}
 		ut64 from, to;
-		if (input[1]==' ') { // "wc- "
+		if (input[1] == ' ') { // "wc- "
 			char *p = strchr (input+2, ' ');
 			if (p) {
 				*p = 0;
@@ -1369,11 +1396,11 @@ static int cmd_wc(void *data, const char *input) {
 				to = from + core->blocksize;
 			}
 		} else {
-			R_LOG_ERROR ("Invalidate write cache at 0x%08"PFMT64x, core->offset);
+			R_LOG_INFO ("Invalidate write cache at 0x%08"PFMT64x, core->offset);
 			from = core->offset;
 			to = core->offset + core->blocksize;
 		}
-		R_LOG_ERROR ("invalidated %d cache(s)", r_io_cache_invalidate (core->io, from, to));
+		R_LOG_INFO ("Invalidated %d cache(s)", r_io_cache_invalidate (core->io, from, to));
 		r_core_block_read (core);
 		break;
 	}
@@ -1390,8 +1417,8 @@ static int cmd_wc(void *data, const char *input) {
 	case 'r': // "wcr"
 		r_io_cache_reset (core->io, core->io->cached);
 		/* Before loading the core block we have to make sure that if
-			* the cache wrote past the original EOF these changes are no
-			* longer displayed. */
+		 * the cache wrote past the original EOF these changes are no
+		 * longer displayed. */
 		memset (core->block, 0xff, core->blocksize);
 		r_core_block_read (core);
 		break;
@@ -1742,7 +1769,7 @@ static int cmd_wx(void *data, const char *input) {
 	int size;
 	switch (input[0]) {
 	case ' ': // "wx "
-		cmd_write_hexpair (core, input + 0);
+		cmd_write_hexpair (core, r_str_trim_head_ro (input));
 		break;
 	case 'f': // "wxf"
 		arg = (const char *)(input + ((input[1]==' ')? 2: 1));
@@ -1820,13 +1847,13 @@ static int cmd_wa(void *data, const char *input) {
 		}
 		break;
 	case ' ':
+	case '+':
 	case 'i':
 	case 'n':
 	case '*': {
 		const char *file = r_str_trim_head_ro (input + 1);
-		RAsmCode *acode;
 		r_asm_set_pc (core->rasm, core->offset);
-		acode = r_asm_massemble (core->rasm, file);
+		RAsmCode *acode = r_asm_massemble (core->rasm, file);
 		if (acode) {
 			if (input[0] == 'n') { // "wan"
 				int delta = 0;
@@ -1874,8 +1901,8 @@ repeat:
 					if (!r_core_write_at (core, core->offset, acode->bytes, acode->len)) {
 						cmd_write_fail (core);
 					} else {
-						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+1, hex);
+						if (r_config_get_b (core->config, "scr.prompt")) { // maybe check interactive?
+							R_LOG_INFO ("Written %d byte(s) (%s) = wx %s @ 0x%08"PFMT64x, acode->len, input + 1, hex, core->offset);
 						}
 						WSEEK (core, acode->len);
 					}
@@ -1884,6 +1911,9 @@ repeat:
 				free (hex);
 			} else {
 				R_LOG_WARN ("Nothing to do");
+			}
+			if (*input == '+') {
+				r_core_seek (core, core->offset + acode->len, true);
 			}
 			r_asm_code_free (acode);
 		}
@@ -2023,7 +2053,7 @@ static int cmd_wm(void *data, const char *input) {
 	int size = r_hex_str2bin (input, (ut8 *)str);
 	switch (input[0]) {
 	case '\0':
-		eprintf ("TODO: Display current write mask");
+		R_LOG_TODO ("Display current write mask");
 		break;
 	case '?':
 		break;
@@ -2120,11 +2150,11 @@ static int cmd_ws(void *data, const char *input) {
 				r_io_write_at (core->io, core->offset, lenbuf, 1);
 				break;
 			case 2:
-				r_write_ble16 (lenbuf, len, core->anal->config->big_endian);
+				r_write_ble16 (lenbuf, len, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config));
 				r_io_write_at (core->io, core->offset, lenbuf, 2);
 				break;
 			case 4:
-				r_write_ble32 (lenbuf, len, core->anal->config->big_endian);
+				r_write_ble32 (lenbuf, len, R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config));
 				r_io_write_at (core->io, core->offset, lenbuf, 4);
 				break;
 			}

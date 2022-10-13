@@ -76,10 +76,9 @@ RUN
 NAME=rabin -k file
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -k ${R2_FILE}
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-Missing file.
+[31mERROR:[0m Missing file
 EOF
 RUN
 
@@ -836,7 +835,7 @@ machine  x86 64 all
 nx       false
 os       darwin
 pic      true
-relocs   false
+relocs   true
 sanitize false
 static   false
 stripped false
@@ -882,15 +881,16 @@ NAME=rabin2 -c
 FILE=bins/java/test.class
 CMDS=!rabin2 -c ${R2_FILE}
 EXPECT=<<EOF
-0x00000000 [0x000008f9 - 0x00000b99]    672 class 0 test :: groovy/lang/Script
-0x000008f9 method 0      <init>
-0x0000092e method 1      <init>
-0x0000096e method 2      main
-0x000009ae method 3      run
-0x00000aba method 4      $getStaticMetaClass
-0x00000afb method 5      $createCallSiteArray_1
-0x00000b6a method 6      $createCallSiteArray
-0x00000b99 method 7      $getCallSiteArray
+0x00000000 [0x000008f9 - 0x00000b99]    672 java class 0 test :: groovy/lang/Script
+0x000008f9 java method 0      <init>
+0x0000092e java method 1      <init>
+0x0000096e java method 2      main
+0x000009ae java method 3      run
+0x00000aba java method 4      $getStaticMetaClass
+0x00000afb java method 5      $createCallSiteArray_1
+0x00000b6a java method 6      $createCallSiteArray
+0x00000b99 java method 7      $getCallSiteArray
+0x00000000 java field 0      __$stMC
 EOF
 RUN
 
@@ -898,7 +898,7 @@ NAME=rabin2 -cq
 FILE=bins/java/test.class
 CMDS=!rabin2 -cq ${R2_FILE}
 EXPECT=<<EOF
-0x00000000 [0x000008f9 - 0x00000b99] test groovy/lang/Script
+0x00000000 [0x000008f9 - 0x00000b99] java test groovy/lang/Script
 EOF
 RUN
 
@@ -914,7 +914,7 @@ NAME=rabin2 -D Unsupported
 FILE=--
 CMDS=!rabin2 -D XXX LOLILOL
 EXPECT_ERR=<<EOF
-Unsupported demangler
+[31mERROR:[0m Unsupported demangler
 EOF
 RUN
 
@@ -954,7 +954,7 @@ NAME=rabin2 -O bad op
 FILE=-
 CMDS=!rabin2 -O bad_op -
 EXPECT_ERR=<<EOF
-Unknown operation. use -O help
+[31mERROR:[0m Unknown operation. use -O help
 EOF
 RUN
 
@@ -1231,6 +1231,6 @@ NAME=rabin2 -S ""
 FILE=-
 CMDS=!rabin2 -S ""
 EXPECT_ERR=<<EOF
-Cannot open empty path
+[31mERROR:[0m Cannot open empty path
 EOF
 RUN

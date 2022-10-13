@@ -28,6 +28,11 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->refptr = 0;
 		op->val = UT64_MAX;
 		op->disp = UT64_MAX;
+
+		op->srcs = r_vector_new (sizeof (RAnalValue), NULL, NULL);
+		op->dsts = r_vector_new (sizeof (RAnalValue), NULL, NULL);
+		r_vector_reserve (op->srcs, 3);
+		r_vector_reserve (op->dsts, 1);
 	}
 }
 
@@ -35,14 +40,10 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	if (!op) {
 		return;
 	}
-	r_anal_value_free (op->src[0]);
-	r_anal_value_free (op->src[1]);
-	r_anal_value_free (op->src[2]);
-	op->src[0] = NULL;
-	op->src[1] = NULL;
-	op->src[2] = NULL;
-	r_anal_value_free (op->dst);
-	op->dst = NULL;
+	r_vector_free (op->srcs);
+	r_vector_free (op->dsts);
+	op->srcs = NULL;
+	op->dsts = NULL;
 	r_list_free (op->access);
 	op->access = NULL;
 	r_strbuf_fini (&op->opex);
@@ -98,25 +99,89 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	return 0;
 }
 
+R_API void r_arch_op_to_analop(RAnalOp *op, RArchOp *archop) {
+	r_anal_op_init (op);
+	op->mnemonic = strdup (r_str_get (archop->mnemonic));
+	op->addr = archop->addr;
+	op->size = archop->size;
+	op->cond = (_RAnalCond)archop->cond;
+	op->id = archop->id;
+	op->cycles = archop->cycles;
+	op->delay = archop->delay;
+	op->type = archop->type;
+	op->prefix = (RAnalOpPrefix)archop->prefix;
+	op->stackop = (RAnalStackOp)archop->stackop;
+	op->jump = archop->jump;
+	op->fail = archop->fail;
+	op->ptr = archop->ptr;
+	op->scale = archop->scale;
+	op->val = archop->val;
+	op->nopcode = archop->nopcode;
+	op->disp = archop->disp;
+	op->direction = (RAnalOpDirection)archop->direction;
+	op->ptrsize = archop->ptrsize;
+	op->refptr = archop->refptr;
+	op->srcs = archop->srcs;
+	op->dsts = archop->dsts;
+	op->esil = archop->esil;
+	op->opex = archop->opex;
+	op->access = archop->access;
+	op->stackptr= archop->stackptr;
+	op->family = (RAnalOpFamily)archop->family;
+}
+
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
 
+	// use core binding to set asm.bits correctly based on the addr
+	// this is because of the hassle of arm/thumb
+	// this causes the reg profile to be invalidated
+	if (anal && anal->coreb.archbits) {
+		anal->coreb.archbits (anal->coreb.core, addr);
+	}
+	const int pcalign = anal->config->pcalign;
+	if (pcalign && (addr % pcalign)) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->addr = addr;
+		op->size = 1;
+		return -1;
+	}
 	int ret = R_MIN (2, len);
-	if (len > 0 && anal->cur && anal->cur->op) {
-		// use core binding to set asm.bits correctly based on the addr
-		// this is because of the hassle of arm/thumb
-		// this causes the reg profile to be invalidated
-		if (anal && anal->coreb.archbits) {
-			anal->coreb.archbits (anal->coreb.core, addr);
+	if (len > 0 && anal->arch->current) {
+		RArchOp archop = {0};
+		ut32 archmask = 0;
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			archmask |= R_ARCH_OP_MASK_DISASM;
 		}
-		const int pcalign = anal->config->pcalign;
-		if (pcalign && (addr % pcalign)) {
+		if (mask & R_ANAL_OP_MASK_ESIL) {
+			archmask |= R_ARCH_OP_MASK_ESIL;
+		}
+		if (mask & R_ANAL_OP_MASK_VAL) {
+			archmask |= R_ARCH_OP_MASK_VAL;
+		}
+		if (mask & R_ANAL_OP_MASK_OPEX) {
+			archmask |= R_ARCH_OP_MASK_OPEX;
+		}
+		if (mask & R_ANAL_OP_MASK_BASIC) {
+			archmask |= R_ARCH_OP_MASK_BASIC;
+		}
+		ret = r_arch_decode (anal->arch, NULL, &archop, addr, data, len, archmask);
+		r_arch_op_to_analop (op, &archop);
+		// ret = anal->arch->op (anal, op, addr, data, len, mask);
+		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
-			op->addr = addr;
-			op->size = 1;
-			return -1;
+			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			if (op->size < 0) {
+				op->size = 1;
+			}
 		}
+		op->addr = addr;
+		/* consider at least 1 byte to be part of the opcode */
+		if (op->nopcode < 1) {
+			op->nopcode = 1;
+		}
+	} else if (len > 0 && anal->cur && anal->cur->op) {
 		ret = anal->cur->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
@@ -168,10 +233,8 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	} else {
 		nop->mnemonic = NULL;
 	}
-	nop->src[0] = r_anal_value_copy (op->src[0]);
-	nop->src[1] = r_anal_value_copy (op->src[1]);
-	nop->src[2] = r_anal_value_copy (op->src[2]);
-	nop->dst = r_anal_value_copy (op->dst);
+	nop->srcs = r_vector_clone (op->srcs);
+	nop->dsts = r_vector_clone (op->dsts);
 	if (op->access) {
 		RListIter *it;
 		RAnalValue *val;
@@ -397,9 +460,12 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	RAnalBlock *bb;
 	RAnalFunction *f;
 	char *cstr, ret[128];
-	char *r0 = r_anal_value_to_string (op->dst);
-	char *a0 = r_anal_value_to_string (op->src[0]);
-	char *a1 = r_anal_value_to_string (op->src[1]);
+	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
+	RAnalValue *src0 = r_vector_index_ptr (op->srcs, 0);
+	RAnalValue *src1 = r_vector_index_ptr (op->srcs, 1);
+	char *r0 = r_anal_value_to_string (dst);
+	char *a0 = r_anal_value_to_string (src0);
+	char *a1 = r_anal_value_to_string (src1);
 	if (!r0) {
 		r0 = strdup ("?");
 	}
@@ -620,16 +686,16 @@ struct op_family {
 	int id;
 };
 static const struct op_family of[] = {
-	{"cpu", R_ANAL_OP_FAMILY_CPU},
-	{"fpu", R_ANAL_OP_FAMILY_FPU},
-	{"mmx", R_ANAL_OP_FAMILY_MMX},
-	{"sse", R_ANAL_OP_FAMILY_SSE},
-	{"priv", R_ANAL_OP_FAMILY_PRIV},
-	{"virt", R_ANAL_OP_FAMILY_VIRT},
-	{"crpt", R_ANAL_OP_FAMILY_CRYPTO},
-	{"io", R_ANAL_OP_FAMILY_IO},
-	{"sec", R_ANAL_OP_FAMILY_SECURITY},
-	{"thread", R_ANAL_OP_FAMILY_THREAD},
+	{ "cpu", R_ANAL_OP_FAMILY_CPU},
+	{ "fpu", R_ANAL_OP_FAMILY_FPU},
+	{ "mmx", R_ANAL_OP_FAMILY_MMX},
+	{ "sse", R_ANAL_OP_FAMILY_SSE},
+	{ "priv", R_ANAL_OP_FAMILY_PRIV},
+	{ "virt", R_ANAL_OP_FAMILY_VIRT},
+	{ "crpt", R_ANAL_OP_FAMILY_CRYPTO},
+	{ "io", R_ANAL_OP_FAMILY_IO},
+	{ "sec", R_ANAL_OP_FAMILY_SECURITY},
+	{ "thread", R_ANAL_OP_FAMILY_THREAD},
 };
 
 R_API int r_anal_op_family_from_string(const char *f) {
@@ -687,10 +753,12 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
 	ut8 buf[32];
 	anal->iob.read_at (anal->iob.io, addr, buf, sizeof (buf));
 	RAnalOp op = {0};
+	RAnalValue *dst = NULL;
 	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL) > 0) {
-		if (op.dst && op.dst->reg && op.dst->reg->name && (!name || !strcmp (op.dst->reg->name, name))) {
-			if (op.src[0]) {
-				return op.src[0]->delta;
+		dst = r_vector_index_ptr (op.dsts, 0);
+		if (dst && dst->reg && dst->reg->name && (!name || !strcmp (dst->reg->name, name))) {
+			if (r_vector_len (op.srcs)) {
+				return ((RAnalValue*)r_vector_index_ptr (op.srcs, 0))->delta;
 			}
 		}
 	}

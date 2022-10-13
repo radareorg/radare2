@@ -4034,62 +4034,62 @@ static const struct arc_operand_value arc_reg_names_a700[] =
   { "memsubsys",0x67,AUXREG_AC, ARC_REGISTER_READONLY},
   { "MEMSUBSYS",0x67,AUXREG_AC, ARC_REGISTER_READONLY},
   /* Interrupt vector base register */
-  {"vecbase_ac_build",0x68,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"VECBASE_AC_BUILD",0x68,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "vecbase_ac_build",0x68,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "VECBASE_AC_BUILD",0x68,AUXREG_AC, ARC_REGISTER_READONLY},
   /* Peripheral base address register */
   { "p_base_addr",0x69,AUXREG_AC, ARC_REGISTER_READONLY},
   { "P_BASE_ADDR",0x69,AUXREG_AC, ARC_REGISTER_READONLY},
   /* MMU BCR . Specifies the associativity of the TLB etc. */
-  {"mmu_build",0x6F,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"MMU_BUILD",0x6F,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "mmu_build",0x6F,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "MMU_BUILD",0x6F,AUXREG_AC, ARC_REGISTER_READONLY},
   /* ARC Angel BCR . Specifies the version of the ARC Angel Dev. Board */
   { "arcangel_build",0x70,AUXREG_AC, ARC_REGISTER_READONLY},
   { "ARCANGEL_BUILD",0x70,AUXREG_AC, ARC_REGISTER_READONLY},
   /* Data Cache BCR . Associativity/Line Size/ size of the Data Cache etc. */
-  {"dcache_build",0x72,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"DCACHE_BUILD",0x72,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "dcache_build",0x72,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "DCACHE_BUILD",0x72,AUXREG_AC, ARC_REGISTER_READONLY},
   /* Information regarding multiple arc debug interfaces */
-  {"madi_build",0x73,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"MADI_BUILD",0x73,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "madi_build",0x73,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "MADI_BUILD",0x73,AUXREG_AC, ARC_REGISTER_READONLY},
   /* BCR for data closely coupled memory */
-  {"dccm_build",0x74,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"DCCM_BUILD",0x74,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "dccm_build",0x74,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "DCCM_BUILD",0x74,AUXREG_AC, ARC_REGISTER_READONLY},
   /* BCR for timers */
-  {"timer_build",0x75,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"TIMER_BUILD",0x75,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "timer_build",0x75,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "TIMER_BUILD",0x75,AUXREG_AC, ARC_REGISTER_READONLY},
   /* Actionpoints build */
-  {"ap_build",0x76,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"AP_BUILD",0x76,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "ap_build",0x76,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "AP_BUILD",0x76,AUXREG_AC, ARC_REGISTER_READONLY},
   /* Instruction Cache BCR */
-  {"icache_build",0x77,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"ICACHE_BUILD",0x77,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "icache_build",0x77,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "ICACHE_BUILD",0x77,AUXREG_AC, ARC_REGISTER_READONLY},
   /* BCR for Instruction Closely Coupled Memory.
      Used to be BCR for Saturated ADD/SUB.
   */
-  {"iccm_build",0x78,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"ICCM_BUILD",0x78,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "iccm_build",0x78,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "ICCM_BUILD",0x78,AUXREG_AC, ARC_REGISTER_READONLY},
   /* BCR for X/Y Memory */
-  {"dspram_build",0x79,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"DSPRAM_BUILD",0x79,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "dspram_build",0x79,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "DSPRAM_BUILD",0x79,AUXREG_AC, ARC_REGISTER_READONLY},
   /* BCR for MAC / MUL */
-  {"mac_build",0x7A,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"MAC_BUILD",0x7A,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "mac_build",0x7A,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "MAC_BUILD",0x7A,AUXREG_AC, ARC_REGISTER_READONLY},
   /* BCR for old 32 * 32 Multiply */
-  {"multiply_build",0x7B,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"MULTIPLY_BUILD",0x7B,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "multiply_build",0x7B,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "MULTIPLY_BUILD",0x7B,AUXREG_AC, ARC_REGISTER_READONLY},
 
   /* BCR for swap */
-  {"swap_build",0x7C,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"SWAP_BUILD",0x7C,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "swap_build",0x7C,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "SWAP_BUILD",0x7C,AUXREG_AC, ARC_REGISTER_READONLY},
   /* BCR For Norm */
-  {"norm_build",0x7D,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"NORM_BUILD",0x7D,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "norm_build",0x7D,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "NORM_BUILD",0x7D,AUXREG_AC, ARC_REGISTER_READONLY},
   /* BCR for Min  / Max instructions */
-  {"minmax_build",0x7E,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"MINMAX_BUILD",0x7E,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "minmax_build",0x7E,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "MINMAX_BUILD",0x7E,AUXREG_AC, ARC_REGISTER_READONLY},
   /* BCR for barrel shifter */
-  {"barrel_build",0x7F,AUXREG_AC, ARC_REGISTER_READONLY},
-  {"BARREL_BUILD",0x7F,AUXREG_AC, ARC_REGISTER_READONLY}
+  { "barrel_build",0x7F,AUXREG_AC, ARC_REGISTER_READONLY},
+  { "BARREL_BUILD",0x7F,AUXREG_AC, ARC_REGISTER_READONLY}
 
 };
 
@@ -4420,7 +4420,7 @@ arc_opval_supported (const struct arc_operand_value *opval ATTRIBUTE_UNUSED)
     return 1;
   return 0;
 #endif
-  return(1);
+  return 1;
 }
 
 
@@ -4611,9 +4611,9 @@ ARC700_rtie_insn (arc_insn insn)
     ld/ldb/ldw r0, [gp, var@sda]  1
     ldw.as  r0, [gp, var@sda]     2
 
-    ld_s r0, [gp, var@sda]        10
-    ldb_ r0,  [gp, var@sda]       11
-    ldw_s  r0, [gp, var@sda]      12
+    ld_s r0, [gp, var@sda]       10
+    ldb_ r0, [gp, var@sda]       11
+    ldw_s r0, [gp, var@sda]      12
 
     Any other insn                -1
 

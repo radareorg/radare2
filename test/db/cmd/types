@@ -15,6 +15,25 @@ pf zd hello world
 EOF
 RUN
 
+NAME=ts add and delete
+FILE=--
+CMDS=<<EOF
+t-*
+?e --
+"td typedef struct {int a;} Foo;"
+ts
+ts Foo
+ts-Foo
+?e --
+ts~Foo
+EOF
+EXPECT=<<EOF
+--
+Foo
+--
+EOF
+RUN
+
 NAME=typelinks
 FILE=-
 CMDS=<<EOF
@@ -343,7 +362,8 @@ ts~addr,date,dox,name
 t addr
 EOF
 EXPECT_ERR=<<EOF
-bins/other/error.h:2: warning: #error your compiler doesn't have support to my API
+ERROR: bins/other/error.h:2: warning: #error your compiler doesn't have support to my API
+
 EOF
 EXPECT=<<EOF
 char
@@ -1434,10 +1454,10 @@ s sym.range_or
 pd 1~4h
 EOF
 EXPECT=<<EOF
-|           ; var signed int64_t var_4h  { > 0xa} @ rbp-0x4
-|           ; var signed int64_t var_14h  { > 0x0 && <= 0x9} @ rbp-0x14
-|           ; var signed int64_t var_4h  { > 0x64 && <= 0xc7} @ rbp-0x4
-|           ; var signed int64_t var_4h  { > 0xff && <= 0x12b || > 0x14 && <= 0x31 || > 0x6f && <= 0xdd} @ rbp-0x4
+|           ; var signed int64_t var_4h  { > 0xa } @ rbp-0x4
+|           ; var signed int64_t var_14h  { > 0x0 && <= 0x9 } @ rbp-0x14
+|           ; var signed int64_t var_4h  { > 0x64 && <= 0xc7 } @ rbp-0x4
+|           ; var signed int64_t var_4h  { > 0xff && <= 0x12b || > 0x14 && <= 0x31 || > 0x6f && <= 0xdd } @ rbp-0x4
 EOF
 RUN
 

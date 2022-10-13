@@ -57,24 +57,30 @@ static int __waitpid(int pid) {
 #if __OpenBSD__ || __NetBSD__ || __KFBSD__ || defined(__serenity__)
 typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, int data);
 #else
-typedef size_t ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
-// XXX. using int read fails on some addresses
-// XXX. using long here breaks 'w AAAABBBBCCCCDDDD' in r2 -d
+typedef long ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
 #endif
 
-static int debug_os_read_at(RIO *io, int pid, ut32 *buf, int sz, ut64 addr) {
-	ut32 words = sz / sizeof (ut32);
-	ut32 last = sz % sizeof (ut32);
-	ut32 x, lr, *at = (ut32*)(size_t)addr;
+static int debug_os_read_at(RIO *io, int pid, ut8 *buf, int sz, ut64 addr) {
+	ut32 amod = addr % sizeof (ptrace_word);
+	ut64 aaddr = addr - amod;
+	ut32 x, first = amod ? sizeof (ptrace_word) - amod: 0;
+	ptrace_word lr;
 	if (sz < 1 || addr == UT64_MAX) {
 		return -1;
 	}
-	for (x = 0; x < words; x++) {
-		buf[x] = (ut32)debug_read_raw (io, pid, (void *)(at++));
+
+	if (first) {
+		lr = debug_read_raw (io, pid, (size_t)aaddr) >> (amod * 8);
+		memcpy (buf, &lr, first);
+		aaddr += sizeof (ptrace_word);
+		buf += first;
 	}
-	if (last) {
-		lr = (ut32)debug_read_raw (io, pid, at);
-		memcpy (buf+x, &lr, last) ;
+	for (x = first; x < sz; x += sizeof (ptrace_word)) {
+		ut32 size = R_MIN (sz - x, sizeof (ptrace_word));
+		lr = debug_read_raw (io, pid, (size_t)aaddr);
+		memcpy (buf, &lr, size);
+		aaddr += sizeof (ptrace_word);
+		buf += sizeof (ptrace_word);
 	}
 	return sz;
 }
@@ -110,9 +116,9 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 		}
 	}
 #endif
-	ut32 *aligned_buf = (ut32*)r_malloc_aligned (len, sizeof (ut32));
+	ut8 *aligned_buf = (ut8*)r_malloc_aligned (len, sizeof (ptrace_word));
 	if (aligned_buf) {
-		int res = debug_os_read_at (io, RIOPTRACE_PID (desc), (ut32*)aligned_buf, len, addr);
+		int res = debug_os_read_at (io, RIOPTRACE_PID (desc), aligned_buf, len, addr);
 		memcpy (buf, aligned_buf, len);
 		r_free_aligned (aligned_buf);
 		return res;
@@ -136,7 +142,7 @@ static int ptrace_write_at(RIO *io, int pid, const ut8 *pbuf, int sz, ut64 addr)
 		}
 	}
 	if (last) {
-		lr = debug_read_raw (io, pid, (void*)at);
+		lr = debug_read_raw (io, pid, (void *)at);
 		memcpy (&lr, buf + x, last);
 		if (debug_write_raw (io, pid, (void*)at, lr)) {
 			return sz - last;
@@ -160,11 +166,9 @@ static void open_pidmem(RIOPtrace *iop) {
 	if (iop->fd == -1) {
 		iop->fd = open (pidmem, O_RDONLY);
 	}
-#if 0
-	if (iop->fd == -1)
-		eprintf ("Warning: Cannot open /proc/%d/mem. "
-			"Fallback to ptrace io.\n", iop->pid);
-#endif
+	if (iop->fd == -1) {
+		R_LOG_DEBUG ("Cannot open /proc/%d/mem. Fallback to ptrace io", iop->pid);
+	}
 #else
 	iop->fd = -1;
 #endif

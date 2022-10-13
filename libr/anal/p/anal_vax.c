@@ -1,8 +1,5 @@
 /* radare - GPL - Copyright 2015-2022 - pancake, condret */
 
-#include <string.h>
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_anal.h>
 #include "../../asm/arch/include/disas-asm.h"
@@ -12,13 +9,9 @@
 // XXX: do not hardcode size/type here, use proper decoding table
 // http://hotkosc.ru:8080/method-vax.doc
 
-static R_TH_LOCAL unsigned long Offset = 0;
-static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL const ut8 *bytes = NULL;
-static R_TH_LOCAL int bytes_size = 0;
-
 static int vax_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-	int delta = (memaddr - Offset);
+	const size_t bytes_size = 8;
+	int delta = (memaddr - info->buffer_vma);
 	if (delta < 0) {
 		return -1; // disable backward reads
 	}
@@ -26,6 +19,7 @@ static int vax_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length
 		return -1;
 	}
 	const int left = bytes_size - delta;
+	ut8 *bytes = info->buffer;
 	memcpy (myaddr, bytes + delta, R_MIN (length, left));
 	return 0;
 }
@@ -38,36 +32,35 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj;
-	buf_global = r_strbuf_new(NULL);
-	bytes = buf;
-	bytes_size = len;
-	Offset = addr;
+	RStrBuf *sb = r_strbuf_new (NULL);
+	memcpy (bytes, buf, R_MIN (len, sizeof (bytes)));
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	disasm_obj.buffer = (ut8*)bytes;
+	disasm_obj.buffer_vma = addr;
 	disasm_obj.read_memory_func = &vax_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.endian = BFD_ENDIAN_LITTLE;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
-	op->size = print_insn_vax ((bfd_vma)Offset, &disasm_obj);
+	disasm_obj.stream = sb;
+	op->size = print_insn_vax ((bfd_vma)addr, &disasm_obj);
 
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		op->mnemonic = r_strbuf_drain (buf_global);
+		op->mnemonic = r_strbuf_drain (sb);
 	} else {
-		r_strbuf_free (buf_global);
+		r_strbuf_free (sb);
 	}
-	buf_global = NULL;
 	if (op->size == -1) {
 		return op->size;
 	}

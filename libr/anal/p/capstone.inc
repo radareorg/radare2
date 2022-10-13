@@ -14,51 +14,48 @@
 #define CSINC_ARCH CSINC_ARCH_(CSINC)
 #define CSINC_ARCH_(y) TOKEN_PASTE(CS_ARCH_, y)
 
-static R_TH_LOCAL int cs_obits = 32;
-static R_TH_LOCAL int cs_omode = 0;
-static R_TH_LOCAL csh cs_handle = 0;
-
 static csh init_capstone (RAnal *a) {
 	int mode = (CSINC_MODE);
-	if (mode != cs_omode || a->config->bits != cs_obits) {
-		if (cs_handle != 0) {
-			cs_close (&cs_handle);
-			cs_handle = 0; // unnecessary
+	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
+		if (a->cs_handle != 0) {
+			cs_close (&a->cs_handle);
+			a->cs_handle = 0; // unnecessary
 		}
-		cs_omode = mode;
-		cs_obits = a->config->bits;
+		a->cs_omode = mode;
+		a->cs_obits = a->config->bits;
 	}
-	if (cs_handle == 0) {
-		int ret = cs_open (CSINC_ARCH, mode, &cs_handle);
+	if (a->cs_handle == 0) {
+		int ret = cs_open (CSINC_ARCH, mode, &a->cs_handle);
 		if (ret != CS_ERR_OK) {
 			R_LOG_ERROR ("Capstone failed: cs_open(%#x, %#x): %s", CSINC_ARCH, mode, cs_strerror (ret));
-			cs_handle = 0;
+			a->cs_handle = 0;
 		} else {
-			cs_option (cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
+			cs_option (a->cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 #if CS_API_MAJOR >= 4
-			cs_option (cs_handle, CS_OPT_UNSIGNED, CS_OPT_ON);
+			cs_option (a->cs_handle, CS_OPT_UNSIGNED, CS_OPT_ON);
 #endif
 		}
 	}
-	if (cs_handle) {
-		if (a->config->syntax == R_ASM_SYNTAX_ATT) {
-			cs_option (cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
+	if (a->cs_handle) {
+		if (a->config->syntax == R_ARCH_SYNTAX_ATT) {
+			cs_option (a->cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
 #if CS_API_MAJOR >= 4
-		} else if (a->config->syntax == R_ASM_SYNTAX_MASM) {
-			cs_option (cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
+		} else if (a->config->syntax == R_ARCH_SYNTAX_MASM) {
+			cs_option (a->cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
 #endif
 		} else {
-			cs_option (cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
+			cs_option (a->cs_handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
 		}
 	}
 
-	return cs_handle;
+	return a->cs_handle;
 }
 
 static char *cs_mnemonics(RAnal *a, int id, bool json) {
 	int i;
 	csh cs_handle = init_capstone (a);
 	if (cs_handle == 0) {
+		a->cs_handle = cs_handle;
 		return NULL;
 	}
 

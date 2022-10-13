@@ -93,13 +93,14 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	ParsedOperands parsed_operands[RSP_MAX_OPNDS];
 	memset (parsed_operands, 0, sizeof (ParsedOperands) * RSP_MAX_OPNDS);
 	rsp_instruction r_instr;
+	RAnalValue *tmpval;
 
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 4;
 	op->addr = addr;
 	r_strbuf_set (&op->esil, "TODO");
 
-	ut32 iw = r_read_ble32 (b, anal->config->big_endian);
+	ut32 iw = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
 	r_instr = rsp_instruction_decode (addr, iw);
 
 	if (mask & R_ANAL_OP_MASK_DISASM) {
@@ -173,8 +174,8 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		break;
 	case RSP_OP_LUI:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_ADD:
@@ -182,72 +183,72 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	case RSP_OP_ADDI:
 	case RSP_OP_ADDIU:
 		op->type = R_ANAL_OP_TYPE_ADD;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[1] = parsed_operands[2].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
+		r_vector_push (op->srcs, parsed_operands[2].value);
 		r_strbuf_setf (&op->esil, "%s,%s,+,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_SUB:
 	case RSP_OP_SUBU:
 		op->type = R_ANAL_OP_TYPE_SUB;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[1] = parsed_operands[2].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
+		r_vector_push (op->srcs, parsed_operands[2].value);
 		r_strbuf_setf (&op->esil, "%s,%s,-,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_AND:
 	case RSP_OP_ANDI:
 		op->type = R_ANAL_OP_TYPE_AND;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[1] = parsed_operands[2].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
+		r_vector_push (op->srcs, parsed_operands[2].value);
 		r_strbuf_setf (&op->esil, "%s,%s,&,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_OR:
 	case RSP_OP_ORI:
 		op->type = R_ANAL_OP_TYPE_OR;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[1] = parsed_operands[2].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
+		r_vector_push (op->srcs, parsed_operands[2].value);
 		r_strbuf_setf (&op->esil, "%s,%s,|,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_XOR:
 	case RSP_OP_XORI:
 		op->type = R_ANAL_OP_TYPE_XOR;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[1] = parsed_operands[2].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
+		r_vector_push (op->srcs, parsed_operands[2].value);
 		r_strbuf_setf (&op->esil, "%s,%s,^,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_NOR:
 		op->type = R_ANAL_OP_TYPE_NOR;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[1] = parsed_operands[2].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
+		r_vector_push (op->srcs, parsed_operands[2].value);
 		// TODO
 		break;
 	case RSP_OP_SLL:
 	case RSP_OP_SLLV:
 		op->type = R_ANAL_OP_TYPE_SHL;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[1] = parsed_operands[2].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
+		r_vector_push (op->srcs, parsed_operands[2].value);
 		r_strbuf_setf (&op->esil, "%s,%s,<<,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_SRL:
 	case RSP_OP_SRLV:
 		op->type = R_ANAL_OP_TYPE_SHR;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[1] = parsed_operands[2].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
+		r_vector_push (op->srcs, parsed_operands[2].value);
 		r_strbuf_setf (&op->esil, "%s,%s,>>,%s,=", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_SRA:
 	case RSP_OP_SRAV:
 		op->type = R_ANAL_OP_TYPE_SAR;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[1] = parsed_operands[2].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
+		r_vector_push (op->srcs, parsed_operands[2].value);
 		// TODO
 		break;
 	case RSP_OP_SLT:
@@ -256,23 +257,23 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	case RSP_OP_SLTIU:
 		op->type = R_ANAL_OP_TYPE_CMOV;
 		op->cond = R_ANAL_COND_LT;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[1] = parsed_operands[2].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
+		r_vector_push (op->srcs, parsed_operands[2].value);
 		r_strbuf_setf (&op->esil, "%s,%s,<,$z,?{,1,%s,=,}{,0,%s,=,}", parsed_operands[2].esil, parsed_operands[1].esil, parsed_operands[0].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_J:
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->dst = r_anal_value_new ();
-		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
-		op->src[0] = parsed_operands[0].value;
+		tmpval = r_vector_push (op->dsts, NULL);
+		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		r_vector_push (op->srcs, parsed_operands[0].value);
 		r_strbuf_setf (&op->esil, "%s,PC,=", parsed_operands[0].esil);
 		break;
 	case RSP_OP_JAL:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->dst = r_anal_value_new ();
-		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
-		op->src[0] = parsed_operands[0].value;
+		tmpval = r_vector_push (op->dsts, NULL);
+		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		r_vector_push (op->srcs, parsed_operands[0].value);
 		r_strbuf_setf (&op->esil, "%s,PC,=,0x%08" PFMT64x ",RA,=", parsed_operands[0].esil, op->fail);
 		break;
 	case RSP_OP_JR:
@@ -283,165 +284,173 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->delay = 1;
 		op->eob = 1;
 		op->fail = rsp_mem_addr (addr + 8, RSP_IMEM_OFFSET);
-		op->dst = r_anal_value_new ();
-		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
-		op->src[0] = parsed_operands[0].value;
+		tmpval = r_vector_push (op->dsts, NULL);
+		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		r_vector_push (op->srcs, parsed_operands[0].value);
 		r_strbuf_setf (&op->esil, "%s,PC,=", parsed_operands[0].esil);
 		break;
 	case RSP_OP_BEQ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->cond = R_ANAL_COND_EQ;
-		op->dst = r_anal_value_new ();
-		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
-		op->src[0] = parsed_operands[0].value;
-		op->src[1] = parsed_operands[1].value;
+		tmpval = r_vector_push (op->dsts, NULL);
+		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		r_vector_push (op->srcs, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,%s,==,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil, parsed_operands[2].esil);
 		break;
 	case RSP_OP_BNE:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->cond = R_ANAL_COND_NE;
-		op->dst = r_anal_value_new ();
-		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
-		op->src[0] = parsed_operands[0].value;
-		op->src[1] = parsed_operands[1].value;
+		tmpval = r_vector_push (op->dsts, NULL);
+		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		r_vector_push (op->srcs, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,%s,==,$z,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil, parsed_operands[2].esil);
 		break;
 	case RSP_OP_BLEZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->cond = R_ANAL_COND_LE;
-		op->dst = r_anal_value_new ();
-		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
-		op->src[0] = parsed_operands[0].value;
-		op->src[1] = parsed_operands[1].value;
+		tmpval = r_vector_push (op->dsts, NULL);
+		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		r_vector_push (op->srcs, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,!,%s,0x80000000,&,!,!,|,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[0].esil, parsed_operands[1].esil);
 //		r_strbuf_setf (&op->esil, "0,%s,<=,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BGTZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->cond = R_ANAL_COND_GT;
-		op->dst = r_anal_value_new ();
-		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
-		op->src[0] = parsed_operands[0].value;
-		op->src[1] = parsed_operands[1].value;
+		tmpval = r_vector_push (op->dsts, NULL);
+		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		r_vector_push (op->srcs, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,0x80000000,&,!,%s,!,!,&,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[0].esil, parsed_operands[1].esil);
 //		r_strbuf_setf (&op->esil, "0,%s,>,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BLTZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->cond = R_ANAL_COND_LT;
-		op->dst = r_anal_value_new ();
-		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
-		op->src[0] = parsed_operands[0].value;
-		op->src[1] = parsed_operands[1].value;
+		tmpval = r_vector_push (op->dsts, NULL);
+		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		r_vector_push (op->srcs, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,0x80000000,&,!,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 //		r_strbuf_setf (&op->esil, "0,%s,<,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BGEZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->cond = R_ANAL_COND_GE;
-		op->dst = r_anal_value_new ();
-		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
-		op->src[0] = parsed_operands[0].value;
-		op->src[1] = parsed_operands[1].value;
+		tmpval = r_vector_push (op->dsts, NULL);
+		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		r_vector_push (op->srcs, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,0x80000000,&,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 //		r_strbuf_setf (&op->esil, "0,%s,>=,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BLTZAL:
 		op->type = R_ANAL_OP_TYPE_CCALL;
 		op->cond = R_ANAL_COND_LT;
-		op->dst = r_anal_value_new ();
-		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
-		op->src[0] = parsed_operands[0].value;
-		op->src[1] = parsed_operands[1].value;
+		tmpval = r_vector_push (op->dsts, NULL);
+		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		r_vector_push (op->srcs, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
 		// TODO
 		break;
 	case RSP_OP_BGEZAL:
 		op->type = R_ANAL_OP_TYPE_CCALL;
 		op->cond = R_ANAL_COND_GE;
-		op->dst = r_anal_value_new ();
-		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
-		op->src[0] = parsed_operands[0].value;
-		op->src[1] = parsed_operands[1].value;
+		tmpval = r_vector_push (op->dsts, NULL);
+		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		r_vector_push (op->srcs, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
 		// TODO
 		break;
 	case RSP_OP_LB:
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[0]->memref = op->refptr = 1;
+		tmpval = parsed_operands[1].value;
+		tmpval->memref = op->refptr = 1;
+		r_vector_push (op->srcs, tmpval);
+		r_vector_push (op->dsts, parsed_operands[0].value);
 		// FIXME: sign extend
 		r_strbuf_setf (&op->esil, "%s,[1],%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_LH:
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[0]->memref = op->refptr = 2;
+		tmpval = parsed_operands[1].value;
+		tmpval->memref = op->refptr = 2;
+		r_vector_push (op->srcs, tmpval);
+		r_vector_push (op->dsts, parsed_operands[0].value);
 		// FIXME: sign extend
 		r_strbuf_setf (&op->esil, "%s,[2],%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_LW:
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[0]->memref = op->refptr = 4;
+		tmpval = parsed_operands[1].value;
+		tmpval->memref = op->refptr = 4;
+		r_vector_push (op->srcs, tmpval);
+		r_vector_push (op->dsts, parsed_operands[0].value);
 		r_strbuf_setf (&op->esil, "%s,[4],%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_LBU:
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[0]->memref = op->refptr = 1;
+		tmpval = parsed_operands[1].value;
+		tmpval->memref = op->refptr = 1;
+		r_vector_push (op->srcs, tmpval);
+		r_vector_push (op->dsts, parsed_operands[0].value);
 		r_strbuf_setf (&op->esil, "%s,[1],%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_LHU:
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
-		op->src[0]->memref = op->refptr = 2;
+		tmpval = parsed_operands[1].value;
+		tmpval->memref = op->refptr = 2;
+		r_vector_push (op->srcs, tmpval);
+		r_vector_push (op->dsts, parsed_operands[0].value);
 		r_strbuf_setf (&op->esil, "%s,[2],%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_SB:
 		op->type = R_ANAL_OP_TYPE_STORE;
-		op->src[0] = parsed_operands[0].value;
-		op->dst = parsed_operands[1].value;
-		op->dst->memref = op->refptr = 1;
+		tmpval = parsed_operands[1].value;
+		tmpval->memref = op->refptr = 1;
+		r_vector_push (op->srcs, parsed_operands[0].value);
+		r_vector_push (op->dsts, tmpval);
 		r_strbuf_setf (&op->esil, "%s,%s,=[1]", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_SH:
 		op->type = R_ANAL_OP_TYPE_STORE;
-		op->src[0] = parsed_operands[0].value;
-		op->dst = parsed_operands[1].value;
-		op->dst->memref = op->refptr = 2;
+		tmpval = parsed_operands[1].value;
+		tmpval->memref = op->refptr = 2;
+		r_vector_push (op->srcs, parsed_operands[0].value);
+		r_vector_push (op->dsts, tmpval);
 		r_strbuf_setf (&op->esil, "%s,%s,=[2]", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_SW:
 		op->type = R_ANAL_OP_TYPE_STORE;
-		op->src[0] = parsed_operands[0].value;
-		op->dst = parsed_operands[1].value;
-		op->dst->memref = op->refptr = 4;
+		tmpval = parsed_operands[1].value;
+		tmpval->memref = op->refptr = 4;
+		r_vector_push (op->srcs, parsed_operands[0].value);
+		r_vector_push (op->dsts, tmpval);
 		r_strbuf_setf (&op->esil, "%s,%s,=[4]", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_MFC0:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		op->dst = parsed_operands[0].value;
-		op->src[0] = parsed_operands[1].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
+		r_vector_push (op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,%s,=", parsed_operands[1].esil, parsed_operands[0].esil);
 		break;
 	case RSP_OP_MTC0:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		op->src[0] = parsed_operands[0].value;
-		op->dst = parsed_operands[1].value;
+		r_vector_push (op->srcs, parsed_operands[0].value);
+		r_vector_push (op->dsts, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,%s,=", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_MFC2:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		op->dst = parsed_operands[0].value;
+		r_vector_push (op->dsts, parsed_operands[0].value);
 		//op->src[0] = parsed_operands[1].value;
 		break;
 	case RSP_OP_MTC2:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		op->src[0] = parsed_operands[0].value;
+		r_vector_push (op->srcs, parsed_operands[0].value);
 		//op->dst = parsed_operands[1].value;
 		break;
 	case RSP_OP_CFC2:

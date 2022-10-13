@@ -381,15 +381,15 @@ On x86 according to Wikipedia
 	Prefix group 4
 	0x67: Address-size override prefix
 #endif
-	typedef enum {
-		R_ANAL_OP_PREFIX_COND     = 1,
-		R_ANAL_OP_PREFIX_REP      = 1<<1,
-		R_ANAL_OP_PREFIX_REPNE    = 1<<2,
-		R_ANAL_OP_PREFIX_LOCK     = 1<<3,
-		R_ANAL_OP_PREFIX_LIKELY   = 1<<4,
-		R_ANAL_OP_PREFIX_UNLIKELY = 1<<5
-		/* TODO: add segment override typemods? */
-	} RAnalOpPrefix;
+typedef enum {
+	R_ANAL_OP_PREFIX_COND     = 1,
+	R_ANAL_OP_PREFIX_REP      = 1<<1,
+	R_ANAL_OP_PREFIX_REPNE    = 1<<2,
+	R_ANAL_OP_PREFIX_LOCK     = 1<<3,
+	R_ANAL_OP_PREFIX_LIKELY   = 1<<4,
+	R_ANAL_OP_PREFIX_UNLIKELY = 1<<5
+	/* TODO: add segment override typemods? */
+} RAnalOpPrefix;
 
 // XXX: this definition is plain wrong. use enum or empower bits
 #define R_ANAL_OP_TYPE_MASK 0x8000ffff
@@ -559,6 +559,7 @@ typedef struct r_anal_options_t {
 	int graph_depth;
 	bool vars; //analyze local var and arguments
 	bool varname_stack; // name vars based on their offset in the stack
+	bool var_newstack; // new sp-relative variable analysis
 	int cjmpref;
 	int jmpref;
 	int jmpabove;
@@ -625,6 +626,7 @@ typedef struct r_anal_t {
 	struct r_anal_esil_t *esil;
 	struct r_anal_plugin_t *cur;
 	struct r_anal_esil_plugin_t *esil_cur; // ???
+	RArch *arch;
 	RAnalRange *limit; // anal.from, anal.to
 	RList *plugins; // anal plugins
 	RList *esil_plugins;
@@ -666,6 +668,14 @@ typedef struct r_anal_t {
 	RStrConstPool constpool;
 	RList *leaddrs;
 	char *pincmd;
+	/* private */
+	RThreadLock *lock;
+	ut64 cmpval;
+	ut64 lea_jmptbl_ip;
+	int cs_obits;
+	int cs_omode;
+	size_t cs_handle;
+	/* end private */
 	R_DIRTY_VAR;
 } RAnal;
 
@@ -792,6 +802,7 @@ R_DEPRECATE typedef struct r_anal_var_field_t {
 	st64 delta;
 	bool field;
 } RAnalVarField;
+
 // TO DEPRECATE
 // Use r_anal_get_functions_in¿() instead
 R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type);
@@ -876,8 +887,10 @@ typedef struct r_anal_op_t {
 	int ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
 	st64 stackptr;  /* stack pointer */
 	int refptr;     /* if (0) ptr = "reference" else ptr = "load memory of refptr bytes" */
-	RAnalValue *src[3];
-	RAnalValue *dst;
+	RVector/*RAnalValue*/	*srcs;
+	//RAnalValue *src[3];
+	RVector/*RAnalValue*/	*dsts;
+	//RAnalValue *dst;
 	RList *access; /* RAnalValue access information */
 	RStrBuf esil;
 	RStrBuf opex;
@@ -1211,13 +1224,10 @@ typedef struct r_anal_esil_t {
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
 	int stack_fd;	// ahem, let's not do this
-#if R2_580
 	bool in_cmd_step;
-#endif
 } RAnalEsil;
 
 #undef ESIL
-
 
 enum {
 	R_ANAL_ESIL_OP_TYPE_UNKNOWN = 0x1,
@@ -1238,7 +1248,6 @@ typedef struct r_anal_esil_operation_t {
 	ut32 pop;		// amount of operands popped
 	ut32 type;
 } RAnalEsilOp;
-
 
 // this is 80-bit offsets so we can address every piece of esil in an instruction
 typedef struct r_anal_esil_expr_offset_t {
@@ -1267,17 +1276,17 @@ typedef struct r_anal_esil_cfg_t {
 } RAnalEsilCFG;
 
 enum {
-	R_ANAL_ESIL_DFG_BLOCK_CONST = 1,
-	R_ANAL_ESIL_DFG_BLOCK_VAR = 2,
-	R_ANAL_ESIL_DFG_BLOCK_PTR = 4,
-	R_ANAL_ESIL_DFG_BLOCK_RESULT = 8,
-	R_ANAL_ESIL_DFG_BLOCK_GENERATIVE = 16,
-};	//RAnalEsilDFGBlockType
+	R_ANAL_ESIL_DFG_TAG_CONST = 1,
+	R_ANAL_ESIL_DFG_TAG_VAR = 2,
+	R_ANAL_ESIL_DFG_TAG_PTR = 4,
+	R_ANAL_ESIL_DFG_TAG_RESULT = 8,
+	R_ANAL_ESIL_DFG_TAG_GENERATIVE = 16,
+};	//RAnalEsilDFGTagType
 
 typedef struct r_anal_esil_dfg_t {
 	ut32 idx;
 	Sdb *regs;		//resolves regnames to intervals
-	RRBTree *reg_vars;	//vars represented in regs
+	RRBTree *vars;		//vars represented in regs and mem
 	RQueue *todo;		//todo-queue allocated in this struct for perf
 	void *insert;		//needed for setting regs in dfg
 	RGraph *flow;
@@ -1682,7 +1691,6 @@ R_API bool r_anal_function_add_bb(RAnal *anal, RAnalFunction *fcn,
 		ut64 addr, ut64 size,
 		ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff);
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
-R_API void r_anal_function_invalidate_read_ahead_cache(void);
 
 R_API void r_anal_function_check_bp_use(RAnalFunction *fcn);
 R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size);
@@ -2175,6 +2183,7 @@ R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name);
 R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *class_name, ut64 offset);
 R_API RGraph/*<RGraphNodeInfo>*/ *r_anal_class_get_inheritance_graph(RAnal *anal);
 
+R_IPI RAnalEsilCFG *r_anal_esil_cfg_new(void);
 R_API RAnalEsilCFG *r_anal_esil_cfg_expr(RAnalEsilCFG *cfg, RAnal *anal, const ut64 off, char *expr);
 R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *op);
 R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg);
@@ -2189,6 +2198,7 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const c
 R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg);
 R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg);
 R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg);
+R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
@@ -2279,6 +2289,9 @@ extern RAnalPlugin r_anal_plugin_pyc;
 extern RAnalPlugin r_anal_plugin_pickle;
 extern RAnalPlugin r_anal_plugin_evm_cs;
 extern RAnalPlugin r_anal_plugin_bpf;
+extern RAnalPlugin r_anal_plugin_hppa_gnu;
+extern RAnalPlugin r_anal_plugin_lanai_gnu;
+extern RAnalPlugin r_anal_plugin_m68k_gnu;
 extern RAnalPlugin r_anal_plugin_lm32;
 extern RAnalEsilPlugin r_esil_plugin_dummy;
 

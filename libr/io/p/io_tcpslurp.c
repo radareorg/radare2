@@ -55,7 +55,7 @@ static ut8 *tcpme(const char *pathname, int *code, int *len) {
 			}
 			r_socket_free (s);
 		} else {
-			eprintf ("Missing port.\n");
+			R_LOG_ERROR ("Missing port");
 		}
 		free (host);
 	}

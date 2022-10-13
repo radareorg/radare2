@@ -21,3 +21,42 @@ EXPECT=<<EOF
 hello world
 EOF
 RUN
+
+NAME=both bsae64
+FILE=-
+CMDS=<<EOF
+p6ds `p6es hello world`
+EOF
+EXPECT=<<EOF
+hello world
+EOF
+RUN
+
+NAME=base64 zero-terminated
+FILE=-
+CMDS=<<EOF
+b 16
+w `p6es hello world`
+p6d
+p6dz
+EOF
+EXPECT=<<EOF
+hello world
+hello world
+hello world
+EOF
+RUN
+
+NAME=w6e/w6d
+FILE=-
+CMDS=<<EOF
+w6e hello world
+psz
+w6d `psz`
+psz
+EOF
+EXPECT=<<EOF
+aGVsbG8gd29ybGQ=
+hello worldybGQ=
+EOF
+RUN

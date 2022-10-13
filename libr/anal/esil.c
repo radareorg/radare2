@@ -408,6 +408,7 @@ static bool internal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *n
 				eprintf ("%s < %x\n", regname, (int)*num);
 			}
 		}
+		r_unref (reg);
 		return true;
 	}
 	return false;
@@ -451,7 +452,7 @@ static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname
 		R_LOG_WARN ("RReg profile does not contain BP register");
 		return false;
 	}
-	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp(reg->name, bp)) || num)) { //I trust k-maps
+	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp (reg->name, bp)) || num)) { //I trust k-maps
 		r_reg_set_value (esil->anal->reg, reg, num);
 		return true;
 	}
@@ -460,7 +461,7 @@ static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname
 
 R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 	char str[SDB_NUM_BUFSZ] = {0};
-	sdb_itoa (num, str, 16);
+	sdb_itoa (num, 16, str, sizeof (str));
 	return r_anal_esil_push (esil, str);
 }
 
@@ -608,7 +609,7 @@ R_API bool r_anal_esil_signext(RAnalEsil *esil, bool assign) {
 		return false;
 	}
 	free (p_dst);
-	
+
 	// Make sure the other bits are 0
 	ut64 m = 0;
 	if (dst > 0 && dst < 64) {
@@ -786,6 +787,7 @@ static bool esil_js(RAnalEsil *esil) {
 //	- condret
 // YES PLS KILL IT
 static bool esil_address(RAnalEsil *esil) {
+	R_LOG_WARN ("support for esil operation $$ is about to end soon, avoid using it!");
 	r_return_val_if_fail (esil, false);
 	// esil->address = r_reg_getv (esil->anal->reg, "pc");
 	return r_anal_esil_pushnum (esil, esil->address);
@@ -1086,16 +1088,16 @@ CF - carry flag -- Set on high-order bit carry or borrow; cleared otherwise
 	num>>63
 PF - parity flag
 	(num&0xff)
-    Set if low-order eight bits of result contain an even number of "1" bits; cleared otherwise
+	Set if low-order eight bits of result contain an even number of "1" bits; cleared otherwise
 ZF - zero flags
-    Set if result is zero; cleared otherwise
+	Set if result is zero; cleared otherwise
 	zf = num?0:1;
 SF - sign flag
-    Set equal to high-order bit of result (0 if positive 1 if negative)
+	Set equal to high-order bit of result (0 if positive 1 if negative)
 	sf = ((st64)num)<0)?1:0;
 OF - overflow flag
 	if (a>0&&b>0 && (a+b)<0)
-    Set if result is too large a positive number or too small a negative number (excluding sign bit) to fit in destination operand; cleared otherwise
+	Set if result is too large a positive number or too small a negative number (excluding sign bit) to fit in destination operand; cleared otherwise
 
 JBE: CF = 1 || ZF = 1
 
@@ -1716,23 +1718,23 @@ static bool esil_diveq(RAnalEsil *esil) {
 
 // 128 bit multiplication result
 static void mult64to128(ut64 op1, ut64 op2, ut64 *hi, ut64 *lo) {
-    ut64 u1 = (op1 & 0xffffffff);
-    ut64 v1 = (op2 & 0xffffffff);
-    ut64 t = (u1 * v1);
-    ut64 w3 = (t & 0xffffffff);
-    ut64 k = (t >> 32);
+	ut64 u1 = (op1 & 0xffffffff);
+	ut64 v1 = (op2 & 0xffffffff);
+	ut64 t = (u1 * v1);
+	ut64 w3 = (t & 0xffffffff);
+	ut64 k = (t >> 32);
 
-    op1 >>= 32;
-    t = (op1 * v1) + k;
-    k = (t & 0xffffffff);
-    ut64 w1 = (t >> 32);
+	op1 >>= 32;
+	t = (op1 * v1) + k;
+	k = (t & 0xffffffff);
+	ut64 w1 = (t >> 32);
 
-    op2 >>= 32;
-    t = (u1 * op2) + k;
-    k = (t >> 32);
+	op2 >>= 32;
+	t = (u1 * op2) + k;
+	k = (t >> 32);
 
-    *hi = (op1 * op2) + w1 + k;
-    *lo = (t << 32) + w3;
+	*hi = (op1 * op2) + w1 + k;
+	*lo = (t << 32) + w3;
 }
 
 static bool esil_long_mul(RAnalEsil *esil) {
@@ -2019,10 +2021,10 @@ static bool esil_poke_n(RAnalEsil *esil, int bits) {
 			if (bits == 128) {
 				src2 = r_anal_esil_pop (esil);
 				if (src2 && r_anal_esil_get_parm (esil, src2, &num2)) {
-					r_write_ble (b, num, esil->anal->config->big_endian, 64);
+					r_write_ble (b, num, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), 64);
 					ret = r_anal_esil_mem_write (esil, addr, b, bytes);
 					if (ret == 0) {
-						r_write_ble (b, num2, esil->anal->config->big_endian, 64);
+						r_write_ble (b, num2, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), 64);
 						ret = r_anal_esil_mem_write (esil, addr + 8, b, bytes);
 					}
 					goto out;
@@ -2036,12 +2038,12 @@ static bool esil_poke_n(RAnalEsil *esil, int bits) {
 			esil->cb.hook_mem_read = NULL;
 			r_anal_esil_mem_read (esil, addr, b, bytes);
 			esil->cb.hook_mem_read = oldhook;
-			n = r_read_ble64 (b, esil->anal->config->big_endian);
+			n = r_read_ble64 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
 			esil->old = n;
 			esil->cur = num;
 			esil->lastsz = bits;
 			num = num & bitmask;
-			r_write_ble (b, num, esil->anal->config->big_endian, bits);
+			r_write_ble (b, num, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), bits);
 			ret = r_anal_esil_mem_write (esil, addr, b, bytes);
 		}
 	}
@@ -2101,7 +2103,7 @@ static bool esil_poke_some(RAnalEsil *esil) {
 					}
 					r_anal_esil_get_parm_size (esil, foo, &tmp, &regsize);
 					isregornum (esil, foo, &num64);
-					r_write_ble (b, num64, esil->anal->config->big_endian, regsize);
+					r_write_ble (b, num64, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), regsize);
 					const int size_bytes = regsize / 8;
 					const ut32 written = r_anal_esil_mem_write (esil, ptr, b, size_bytes);
 					if (written != size_bytes) {
@@ -2133,7 +2135,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 	ut32 bytes = bits / 8;
 	char *dst = r_anal_esil_pop (esil);
 	if (!dst) {
-		eprintf ("ESIL-ERROR at 0x%08"PFMT64x": Cannot peek memory without specifying an address\n", esil->address);
+		R_LOG_ERROR ("ESIL failed at 0x%08"PFMT64x": Won't peek the memory unless the users tells that", esil->address);
 		return false;
 	}
 	//eprintf ("GONA PEEK %d dst:%s\n", bits, dst);
@@ -2143,9 +2145,9 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 			ret = r_anal_esil_mem_read (esil, addr, a, bytes);
 			ut64 b = r_read_ble64 (&a, 0); //esil->anal->config->big_endian);
 			ut64 c = r_read_ble64 (&a[8], 0); //esil->anal->config->big_endian);
-			sdb_itoa (b, res, 16);
+			sdb_itoa (b, 16, res, sizeof (res));
 			r_anal_esil_push (esil, res);
-			sdb_itoa (c, res, 16);
+			sdb_itoa (c, 16, res, sizeof (res));
 			r_anal_esil_push (esil, res);
 			free (dst);
 			return ret;
@@ -2157,11 +2159,11 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 		ut64 b = r_read_ble64 (a, esil->anal->config->big_endian);
 #else
 		ut64 b = r_read_ble64 (a, 0);
-		if (esil->anal->config->big_endian) {
+		if (R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config)) {
 			r_mem_swapendian ((ut8*)&b, (const ut8*)&b, bytes);
 		}
 #endif
-		sdb_itoa (b & bitmask, res, 16);
+		sdb_itoa (b & bitmask, 16, res, sizeof (res));
 		r_anal_esil_push (esil, res);
 		esil->lastsz = bits;
 	}
@@ -2224,7 +2226,7 @@ static bool esil_peek_some(RAnalEsil *esil) {
 						free (count);
 						return false;
 					}
-					ut32 num32 = r_read_ble32 (a, esil->anal->config->big_endian);
+					ut32 num32 = r_read_ble32 (a, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
 					r_anal_esil_reg_write (esil, foo, num32);
 					ptr += 4;
 					free (foo);
@@ -3136,7 +3138,7 @@ static bool esil_float_cmp(RAnalEsil *esil) {
 			ret = r_anal_esil_pushnum (esil, fabs(s - d) <= DBL_EPSILON);
 		}
 	} else {
-		ERR("esil_float_cmp: invalid parameters.");
+		ERR ("esil_float_cmp: invalid parameters.");
 	}
 	free (dst);
 	free (src);
@@ -3489,7 +3491,7 @@ static bool runword(RAnalEsil *esil, const char *word) {
 		}
 		return true;
 	}
-	if (esil->skip && strcmp(word, "?{")) {
+	if (esil->skip && strcmp (word, "?{")) {
 		return true;
 	}
 
@@ -3582,28 +3584,15 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 }
 
 static bool __stepOut(RAnalEsil *esil, const char *cmd) {
-#if R2_580
 	if (cmd && esil && esil->cmd && !esil->in_cmd_step) {
 		esil->in_cmd_step = true;
 		if (esil->cmd (esil, cmd, esil->address, 0)) {
-			inCmdStep = false;
+			esil->in_cmd_step = false;
 			// if returns 1 we skip the impl
 			return true;
 		}
 		esil->in_cmd_step = false;
 	}
-#else
-	static R_TH_LOCAL bool inCmdStep = false;
-	if (cmd && esil && esil->cmd && !inCmdStep) {
-		inCmdStep = true;
-		if (esil->cmd (esil, cmd, esil->address, 0)) {
-			inCmdStep = false;
-			// if returns 1 we skip the impl
-			return true;
-		}
-		inCmdStep = false;
-	}
-#endif
 	return false;
 }
 

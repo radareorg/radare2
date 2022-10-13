@@ -202,12 +202,12 @@ static void esil2c_free(EsilC *user) {
 }
 
 static bool esil2c_mw(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	eprintf ("TODO: poke%d 0x%08"PFMT64x" %d\n", len, addr, *buf);
+	R_LOG_TODO ("poke%d 0x%08"PFMT64x" %d", len, addr, *buf);
 	return true;
 }
 
 static bool esil2c_mr(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
-	eprintf ("TODO: peek%d 0x%08"PFMT64x"\n", len, addr);
+	R_LOG_TODO ("peek%d 0x%08"PFMT64x, len, addr);
 	return true;
 }
 

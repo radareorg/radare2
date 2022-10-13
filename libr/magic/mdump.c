@@ -44,7 +44,7 @@
 #define SZOF(a)	(sizeof (a) / sizeof (a[0]))
 
 #ifndef COMPILE_ONLY
-void file_mdump(struct r_magic *m) {
+void file_mdump(RMagic *ms, struct r_magic *m) {
 	char pp[ASCTIME_BUF_MAXLEN];
 
 	(void) eprintf ("[%u", m->lineno);
@@ -53,8 +53,8 @@ void file_mdump(struct r_magic *m) {
 	if (m->flag & INDIR) {
 		(void) eprintf ("(%s,",
 			       /* Note: type is unsigned */
-			       (m->in_type < file_nnames) ?
-					magic_file_names[m->in_type] : "*bad*");
+			       (m->in_type < FILE_NAMES_SIZE) ?
+					ms->magic_file_names[m->in_type] : "*bad*");
 		if (m->in_op & FILE_OPINVERSE)
 			(void) fputc('~', stderr);
 		(void) eprintf ("%c%u),",
@@ -64,7 +64,7 @@ void file_mdump(struct r_magic *m) {
 	}
 	(void) eprintf (" %s%s", (m->flag & UNSIGNED) ? "u" : "",
 		       /* Note: type is unsigned */
-		       (m->type < file_nnames) ? magic_file_names[m->type] : "*bad*");
+		       (m->type < FILE_NAMES_SIZE) ? ms->magic_file_names[m->type] : "*bad*");
 	if (m->mask_op & FILE_OPINVERSE)
 		(void) fputc('~', stderr);
 
@@ -174,18 +174,17 @@ void file_mdump(struct r_magic *m) {
 /*VARARGS*/
 void file_magwarn(struct r_magic_set *ms, const char *f, ...) {
 	va_list va;
-
-	/* cuz we use stdout for most, stderr here */
-	(void) fflush(stdout);
-
-	if (ms->file)
-		(void) eprintf ("%s, %lu: ", ms->file,
-		    (unsigned long)ms->line);
-	(void) eprintf ("Warning: ");
-	va_start(va, f);
-	(void) vfprintf (stderr, f, va);
-	va_end(va);
-	(void) fputc('\n', stderr);
+	RStrBuf *sb = r_strbuf_new ("");
+	if (R_STR_ISNOTEMPTY (ms->file)) {
+		r_strbuf_appendf (sb, "%s, %lu: ",
+			ms->file, (unsigned long)ms->line);
+	}
+	va_start (va, f);
+	r_strbuf_vappendf (sb, f, va);
+	va_end (va);
+	char *msg = r_strbuf_drain (sb);
+	R_LOG_WARN ("%s", msg);
+	free (msg);
 }
 
 const char *file_fmttime(ut32 v, int local, char *pp) {

@@ -61,7 +61,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	if (mask & R_ANAL_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
 	}
-	const bool be = anal->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
 	ut16 word1 = r_read_ble16 (buf, be);
 	if (ret == 4) {
 		word2 = r_read_ble16 (buf + 2, be);
@@ -115,8 +115,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		} else {
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		}
-		r_strbuf_appendf (&op->esil, "r%u,pc,=",
-						 REG1(word1));
+		r_strbuf_appendf (&op->esil, "r%u,pc,:=", REG1(word1));
 		break;
 	case V810_OR:
 		op->type = R_ANAL_OP_TYPE_OR;
@@ -254,19 +253,19 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		r_strbuf_appendf (&op->esil, "r%u,%hd,+,[1],r%u,=",
 						 REG1(word1), word2, REG2(word1));
-		r_strbuf_appendf (&op->esil, ",DUP,0x80,&,?{,0xffffff00,|,}");
+		r_strbuf_append (&op->esil, ",DUP,0x80,&,?{,0xffffff00,|,}");
 		break;
 	case V810_LDH:
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		r_strbuf_appendf (&op->esil, "r%u,%hd,+,0xfffffffe,&,[2],r%u,=",
 						 REG1(word1), word2, REG2(word1));
-		r_strbuf_appendf (&op->esil, ",DUP,0x8000,&,?{,0xffffff00,|,}");
+		r_strbuf_append (&op->esil, ",DUP,0x8000,&,?{,0xffffff00,|,}");
 		break;
 	case V810_LDW:
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		r_strbuf_appendf (&op->esil, "r%u,%hd,+,0xfffffffc,&,[4],r%u,=",
 						 REG1(word1), word2, REG2(word1));
-		r_strbuf_appendf (&op->esil, ",DUP,0x80000000,&,?{,0xffffff00,|,}");
+		r_strbuf_append (&op->esil, ",DUP,0x80000000,&,?{,0xffffff00,|,}");
 		break;
 	case V810_STB:
 		op->type = R_ANAL_OP_TYPE_STORE;
@@ -297,7 +296,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	case V810_RETI:
 		op->type = R_ANAL_OP_TYPE_RET;
-		//r_strbuf_appendf (&op->esil, "np,?{,fepc,fepsw,}{,eipc,eipsw,},psw,=,pc,=");
+		// r_strbuf_append (&op->esil, "np,?{,fepc,fepsw,}{,eipc,eipsw,},psw,=,pc,=");
 		break;
 	case V810_JAL:
 	case V810_JR:
@@ -307,12 +306,12 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 
 		if (opcode == V810_JAL) {
 			op->type = R_ANAL_OP_TYPE_CALL;
-			r_strbuf_appendf (&op->esil, "$$,4,+,r31,=,");
+			r_strbuf_appendf (&op->esil, "0x%"PFMT64x",+,r31,=,", op->fail);
 		} else {
 			op->type = R_ANAL_OP_TYPE_JMP;
 		}
 
-		r_strbuf_appendf (&op->esil, "$$,%d,+,pc,=", jumpdisp);
+		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",+,pc,:=", op->jump);
 		break;
 	case V810_BCOND:
 		cond = COND(word1);
@@ -328,52 +327,52 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 
 		switch (cond) {
 		case V810_COND_V:
-			r_strbuf_appendf (&op->esil, "ov");
+			r_strbuf_append (&op->esil, "ov");
 			break;
 		case V810_COND_L:
-			r_strbuf_appendf (&op->esil, "cy");
+			r_strbuf_append (&op->esil, "cy");
 			break;
 		case V810_COND_E:
-			r_strbuf_appendf (&op->esil, "z");
+			r_strbuf_append (&op->esil, "z");
 			break;
 		case V810_COND_NH:
-			r_strbuf_appendf (&op->esil, "cy,z,|");
+			r_strbuf_append (&op->esil, "cy,z,|");
 			break;
 		case V810_COND_N:
-			r_strbuf_appendf (&op->esil, "s");
+			r_strbuf_append (&op->esil, "s");
 			break;
 		case V810_COND_NONE:
-			r_strbuf_appendf (&op->esil, "1");
+			r_strbuf_append (&op->esil, "1");
 			break;
 		case V810_COND_LT:
-			r_strbuf_appendf (&op->esil, "s,ov,^");
+			r_strbuf_append (&op->esil, "s,ov,^");
 			break;
 		case V810_COND_LE:
-			r_strbuf_appendf (&op->esil, "s,ov,^,z,|");
+			r_strbuf_append (&op->esil, "s,ov,^,z,|");
 			break;
 		case V810_COND_NV:
-			r_strbuf_appendf (&op->esil, "ov,!");
+			r_strbuf_append (&op->esil, "ov,!");
 			break;
 		case V810_COND_NL:
-			r_strbuf_appendf (&op->esil, "cy,!");
+			r_strbuf_append (&op->esil, "cy,!");
 			break;
 		case V810_COND_NE:
-			r_strbuf_appendf (&op->esil, "z,!");
+			r_strbuf_append (&op->esil, "z,!");
 			break;
 		case V810_COND_H:
-			r_strbuf_appendf (&op->esil, "cy,z,|,!");
+			r_strbuf_append (&op->esil, "cy,z,|,!");
 			break;
 		case V810_COND_P:
-			r_strbuf_appendf (&op->esil, "s,!");
+			r_strbuf_append (&op->esil, "s,!");
 			break;
 		case V810_COND_GE:
-			r_strbuf_appendf (&op->esil, "s,ov,^,!");
+			r_strbuf_append (&op->esil, "s,ov,^,!");
 			break;
 		case V810_COND_GT:
-			r_strbuf_appendf (&op->esil, "s,ov,^,z,|,!");
+			r_strbuf_append (&op->esil, "s,ov,^,z,|,!");
 			break;
 		}
-		r_strbuf_appendf (&op->esil, ",?{,$$,%d,+,pc,=,}", jumpdisp);
+		r_strbuf_appendf (&op->esil, ",?{,0x%"PFMT64x",pc,:=,}", op->jump);
 		break;
 	}
 

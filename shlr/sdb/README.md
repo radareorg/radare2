@@ -113,7 +113,7 @@ a=3
 -a
 3
 ```
-	
+
 Remove the database
 
 ```

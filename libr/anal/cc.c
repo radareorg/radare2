@@ -214,15 +214,12 @@ R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	int i = 0;
 	r_return_val_if_fail (anal && DB && cc, 0);
-	static R_TH_LOCAL void *oldDB = NULL;
-	static R_TH_LOCAL char *oldCC = NULL;
-	static R_TH_LOCAL int oldArg = 0;
-	if (oldDB == DB && !strcmp (cc, oldCC)) {
-		return oldArg;
+
+	r_strf_var (lastarg, 64, "cc.%s.lastarg", cc);
+	int count = sdb_num_get (DB, lastarg, 0);
+	if (count > 0) {
+		return count;
 	}
-	oldDB = DB;
-	free (oldCC);
-	oldCC = strdup (cc);
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		r_strf_var (query, 64, "cc.%s.arg%d", cc, i);
 		const char *res = sdb_const_get (DB, query, 0);
@@ -230,7 +227,9 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 			break;
 		}
 	}
-	oldArg = i;
+	if (i > 0) {
+		sdb_num_set (DB, lastarg, i, 0);
+	}
 	return i;
 }
 

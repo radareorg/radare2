@@ -602,3 +602,57 @@ EXPECT=<<EOF
 134
 EOF
 RUN
+
+NAME=obf
+FILE=--
+CMDS=<<EOF
+# pwd
+obf ./bins/mach0/test-arm32
+is~?
+obf ./bins/mach0/ls-m1
+is~?
+ob 1
+is~?
+i
+?e -- o
+o
+?e -- ob
+ob
+EOF
+EXPECT=<<EOF
+8
+138
+8
+arch     arm
+baddr    0x4000
+binsz    65536
+bintype  mach0
+bits     32
+canary   false
+class    MACH0
+compiler clang
+crypto   false
+endian   little
+havecode true
+intrp    /usr/lib/dyld
+laddr    0x0
+lang     c
+linenum  false
+lsyms    false
+machine  v7
+nx       false
+os       ios
+pic      true
+relocs   true
+sanitize false
+static   false
+stripped false
+subsys   darwin
+va       true
+-- o
+-- ob
+- 0 3 arm-32 ba:0x00000000 sz:65536 ./bins/mach0/test-arm32
+* 1 3 arm-32 ba:0x00004000 sz:65536 ./bins/mach0/test-arm32
+- 2 3 x86-64 ba:0x100000000 sz:72800 ./bins/mach0/ls-m1
+EOF
+RUN

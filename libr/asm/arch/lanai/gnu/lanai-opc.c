@@ -143,7 +143,7 @@ L3_RI|L3_RI_OP(op)|((f)?L3_RI_F:0)|((h)?L3_RI_H:0)|(((op)==L3_AND)?L3_RS1(1):0))
 	| (((op)&L3_ARITH)?1<<6:0) | ((op)==L3_SH?1<<7:0) )
 
 /* The order of the opcodes in the table is significant:
-	
+
 	* The assembler requires that all instances of the same mnemonic must
 	be consecutive.	If they aren't, the assembler will bomb at runtime.
 
@@ -439,7 +439,7 @@ struct lanai_opcode lanai_opcodes[] = {
 
   { "leadz",	LEADZ_PAIR(0)			,"1,d",	     F_LEADZ,0},
   { "leadz.f",	LEADZ_PAIR(1)			,"1,d",	     F_LEADZ,0},
-							
+
   /* or */
 
   { "or",	RR_PAIR(0,L3_OR)		,"1,2,d",    F_RR,0},
@@ -449,8 +449,8 @@ struct lanai_opcode lanai_opcodes[] = {
   { "or.f",	RI_PAIR(L3_OR,1,0)		,"1,j,d",    F_RI,0},
   { "or.f",	RI_PAIR(L3_OR,1,1)		,"1,J,d",    F_RI,0},
 
-  /* popc */						
-							
+  /* popc */
+
   { "popc",	POPC_PAIR(0)			,"1,d",	     F_POPC,0},
   { "popc.f",	POPC_PAIR(1)			,"1,d",	     F_POPC,0},
 

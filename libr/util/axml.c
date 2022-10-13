@@ -216,38 +216,51 @@ static char *resource_value(string_pool_t *pool, const ut8 *data, ut64 data_size
 	return r_str_new ("null");
 }
 
-static bool dump_element(RStrBuf *sb, string_pool_t *pool, namespace_t *namespace,
+static bool dump_element(PJ *pj, RStrBuf *sb, string_pool_t *pool, namespace_t *namespace,
 		const ut8 *data, ut64 data_size, start_element_t *element, size_t element_size,
 		const ut32 *resource_map, ut32 resource_map_length, st32 *depth, bool start) {
 	ut32 i;
 
 	char *name = string_lookup (pool, data, data_size, r_read_le32 (&element->name), NULL);
 	for (i = 0; i < *depth; i++) {
-		r_strbuf_appendf (sb, "\t");
+		r_strbuf_append (sb, "\t");
 	}
 
 	if (start) {
+		if (pj) {
+			pj_o (pj);
+		}
 		r_strbuf_appendf (sb, "<%s", name);
+		if (pj) {
+			pj_ko (pj, name);
+		}
 		ut16 count = r_read_le16 (&element->attribute_count);
 		if (*depth == 0 && namespace) {
 			char *key = string_lookup (pool, data, data_size, namespace->prefix, NULL);
 			char *value = string_lookup (pool, data, data_size, namespace->uri, NULL);
+			if (pj) {
+				pj_ko (pj, "xmlns");
+				pj_ks (pj, key, value);
+				pj_end (pj);
+			}
 			r_strbuf_appendf (sb, " xmlns:%s=\"%s\"", key, value);
 			free (key);
 			free (value);
 		}
 
 		if (count * sizeof (attribute_t) > element_size) {
-			r_strbuf_appendf (sb, " />");
+			r_strbuf_append (sb, " />");
+			if (pj) {
+				pj_end (pj);
+			}
 			R_LOG_ERROR ("Invalid element count");
 			free (name);
 			return false;
 		}
 
 		if (count != 0) {
-			r_strbuf_appendf (sb, " ");
+			r_strbuf_append (sb, " ");
 		}
-
 		for (i = 0; i < count; i++) {
 			attribute_t a = element->attributes[i];
 			ut32 key_index = r_read_le32 (&a.name);
@@ -274,12 +287,20 @@ static bool dump_element(RStrBuf *sb, string_pool_t *pool, namespace_t *namespac
 			if (r_read_le32 (&a.namespace) != -1 && namespace && namespace->prefix != -1) {
 				char *ns = string_lookup (pool, data, data_size, namespace->prefix, NULL);
 				r_strbuf_appendf (sb, "%s:%s=\"%s\"", ns, key, value);
+				if (pj) {
+					char *k = r_str_newf ("%s:%s", ns, key);
+					pj_ks (pj, k, value);
+					free (k);
+				}
 				free (ns);
 			} else {
 				r_strbuf_appendf (sb, "%s=\"%s\"", key, value);
+				if (pj) {
+					pj_ks (pj, key, value);
+				}
 			}
 			if (i != count - 1) {
-				r_strbuf_appendf (sb, " ");
+				r_strbuf_append (sb, " ");
 			}
 			if (!resource_key) {
 				free ((char *)key);
@@ -290,24 +311,26 @@ static bool dump_element(RStrBuf *sb, string_pool_t *pool, namespace_t *namespac
 		r_strbuf_appendf (sb, "</%s", name);
 	}
 
-	r_strbuf_appendf (sb, ">\n");
+	r_strbuf_append (sb, ">\n");
+	if (pj) {
+		pj_end (pj);
+	}
 	free (name);
 	return true;
 }
 
-R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
+R_API char *r_axml_decode(const ut8 *data, const ut64 data_size, PJ *pj) {
+	r_return_val_if_fail (data, NULL);
 	string_pool_t *pool = NULL;
 	namespace_t *namespace = NULL;
 	const ut32 *resource_map = NULL;
 	ut32 resource_map_length = 0;
-	RStrBuf *sb = NULL;
 	st32 depth = 0;
 
 	if (!data_size) {
 		return NULL;
 	}
-
-	r_return_val_if_fail (data, NULL);
+	RStrBuf *sb = r_strbuf_new ("");
 
 	RBuffer *buffer = r_buf_new_with_pointers (data, data_size, false);
 	if (!buffer) {
@@ -330,10 +353,7 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 	if (binary_size > data_size) {
 		goto bad;
 	}
-
 	offset += sizeof (header);
-
-	sb = r_strbuf_new ("");
 
 	while (offset < binary_size) {
 		if (r_buf_fread_at (buffer, offset, (ut8 *)&header, "ssi", 1) != sizeof (header)) {
@@ -352,7 +372,6 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 			if (header_size == 0 || header_size > data_size) {
 				goto bad;
 			}
-
 			pool = malloc (header_size);
 			if (!pool) {
 				goto bad;
@@ -367,30 +386,25 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 			if (!pool) {
 				goto bad;
 			}
-
 			ut16 header_size = header.size;
 			if (header_size == 0 || header_size > data_size) {
 				goto bad;
 			}
-
 			start_element_t *element = malloc (header_size);
 			if (!element) {
 				goto bad;
 			}
-
 			if (r_buf_read_at (buffer, offset, (void *)element, header_size) != header_size) {
 				free (element);
 				goto bad;
 			}
-
-			if (!dump_element (sb, pool, namespace, data, data_size, element, header_size,
+			if (!dump_element (pj, sb, pool, namespace, data, data_size, element, header_size,
 					resource_map, resource_map_length, &depth, true)) {
 				free (element);
 				goto bad;
 			}
-
+			pj_ka (pj, "child");
 			depth++;
-
 			free (element);
 		} break;
 		case TYPE_END_ELEMENT: {
@@ -398,7 +412,6 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 			if (depth < 0) {
 				goto bad;
 			}
-
 			end_element_t end;
 			if (r_buf_read_at (buffer, offset, (void *)&end, sizeof (end)) != sizeof (end)) {
 				goto bad;
@@ -406,15 +419,19 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 
 			// The beginning of the start and end element structs
 			// are the same, so we can use this interchangably
-			if (!dump_element (sb, pool, namespace, data, data_size, (start_element_t *)&end, 0,
+			if (!dump_element (pj, sb, pool, namespace, data, data_size, (start_element_t *)&end, 0,
 					resource_map, resource_map_length, &depth, false)) {
 				goto bad;
 			}
+			pj_end (pj);
 		} break;
 		case TYPE_START_NAMESPACE: {
 			// If there is already a start namespace, override it
 			free (namespace);
 			namespace = malloc (sizeof (*namespace));
+			if (!namespace) {
+				goto bad;
+			}
 			if (r_buf_fread_at (buffer, offset, (ut8 *)namespace, "iiii", 1) != sizeof (*namespace)) {
 				goto bad;
 			}
@@ -432,7 +449,15 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 		default:
 			R_LOG_WARN ("Type is not recognized: %#x", type);
 		}
-		offset += header.size - sizeof (header);
+		int delta = header.size - sizeof (header);
+		if (delta < 1) {
+			R_LOG_WARN ("Truncated header size");
+			break;
+		}
+		offset += delta;
+	}
+	if (pj) {
+		pj_end (pj);
 	}
 
 	r_buf_free (buffer);

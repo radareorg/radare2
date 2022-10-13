@@ -23,6 +23,16 @@ static const char * const rwxstr[] = {
 	[15] = "rwx",
 };
 
+// equal string, same case
+R_API bool r_str_eq(const char *s1, const char *s2) {
+	return s1 && s2 && !strcmp (s1, s2);
+}
+
+// equal string, ignoring case
+R_API bool r_str_eqi(const char *s1, const char *s2) {
+	return s1 && s2 && !r_str_casecmp (s1, s2);
+}
+
 R_API int r_str_casecmp(const char *s1, const char *s2) {
 #ifdef _MSC_VER
 	return stricmp (s1, s2);
@@ -121,8 +131,11 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 
 R_API const char *r_str_sysbits(const int v) {
 	switch (v) {
+	case R_SYS_BITS_4: return "4";
 	case R_SYS_BITS_8: return "8";
+	case R_SYS_BITS_4 | R_SYS_BITS_8: return "4,8";
 	case R_SYS_BITS_16: return "16";
+	case R_SYS_BITS_27: return "27";
 	case R_SYS_BITS_32: return "32";
 	case R_SYS_BITS_64: return "64";
 	case R_SYS_BITS_16 | R_SYS_BITS_32: return "16,32";
@@ -514,14 +527,15 @@ R_API const char *r_str_word_get0(const char *str, int idx) {
 }
 
 // Return the number of times that the character ch appears in the string.
-R_API int r_str_char_count(const char *string, char ch) {
-	int i, count = 0;
+R_API size_t r_str_char_count(const char *string, char ch) {
+	r_return_val_if_fail (string, 0);
+	size_t i, count = 0;
 	for (i = 0; string[i]; i++) {
 		if (string[i] == ch) {
 			count++;
 		}
 	}
-	return R_MAX (0, count);
+	return count;
 }
 
 // Counts the number of words (separated by separator characters: newlines, tabs,
@@ -745,7 +759,7 @@ R_API size_t r_str_ncpy(char *dst, const char *src, size_t n) {
 	return i;
 }
 
-/* memccmp("foo.bar", "foo.cow, '.') == 0 */
+/* memccmp ("foo.bar", "foo.cow, '.') == 0 */
 // Returns 1 if src and dst are equal up until the first instance of ch in src.
 R_API bool r_str_ccmp(const char *dst, const char *src, int ch) {
 	int i;
@@ -863,6 +877,7 @@ R_API char *r_str_prepend(char *ptr, const char *string) {
 }
 
 R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
+	r_return_val_if_fail (string, NULL);
 	char *msg = r_str_newlen (string, slen);
 	char *ret = r_str_append (ptr, msg);
 	free (msg);
@@ -925,6 +940,18 @@ R_API char *r_str_appendf(char *ptr, const char *fmt, ...) {
 R_API char *r_str_appendch(char *x, char y) {
 	char b[2] = { y, 0 };
 	return r_str_append (x, b);
+}
+
+R_API R_MUSTUSE char* r_str_replace_all(char *str, const char *key, const char *val) {
+	char *res = str;
+	while (strstr (str, key)) {
+		res = r_str_replace (str, key, val, true);
+		if (!res) {
+			return str;
+		}
+		str = res;
+	}
+	return res;
 }
 
 R_API R_MUSTUSE char* r_str_replace(char *str, const char *key, const char *val, int g) {
@@ -1932,6 +1959,30 @@ R_API size_t r_str_ansi_nlen(const char *str, size_t slen) {
 	return len; // len > 0 ? len: 1;
 }
 
+// remove ansi escape codes from string, decolorizing it
+R_API size_t r_str_ansi_strip(char *str) {
+	size_t i = 0;
+	while (str[i]) {
+		size_t chlen = __str_ansi_length (str + i);
+		if (chlen > 1) {
+			r_str_cpy (str + i + 1, str + i + chlen);
+		}
+		i++;
+	}
+	return i;
+}
+
+// insert a string into another string, supports ansi control chars
+R_API char *r_str_insert(R_OWN char *src, int pos, const char *str) {
+	char *a = r_str_ndup (src, pos);
+	char *b = strdup (src + pos + r_str_ansi_len (str));
+	char *r = r_str_newf ("%s%s%s", a, str, b);
+	free (a);
+	free (b);
+	free (src);
+	return r;
+}
+
 R_API size_t r_str_ansi_len(const char *str) {
 	return r_str_ansi_nlen (str, 0);
 }
@@ -1998,8 +2049,12 @@ R_API bool r_str_is_printable(const char *str) {
 }
 
 R_API bool r_str_is_printable_limited(const char *str, int size) {
+	int left = size;
+	if (size < 0) {
+		left = strlen (str);
+	}
 	while (size > 0 && *str) {
-		int ulen = r_utf8_decode ((const ut8*)str, strlen (str), NULL);
+		int ulen = r_utf8_decode ((const ut8*)str, left, NULL);
 		if (ulen > 1) {
 			str += ulen;
 			continue;
@@ -2009,6 +2064,7 @@ R_API bool r_str_is_printable_limited(const char *str, int size) {
 		}
 		str++;
 		size--;
+		left -= ulen;
 	}
 	return true;
 }
@@ -3233,9 +3289,19 @@ R_API char *r_str_wrap(const char *str, int w) {
 	}
 	size_t r_size = 8 * strlen (str);
 	r = ret = malloc (r_size);
+	if (!r) {
+		return NULL;
+	}
 	char *end = r + r_size;
 	int cw = 0;
 	while (*str && r + 1 < end) {
+		size_t ansilen = __str_ansi_length (str);
+		if (ansilen > 1) {
+			memcpy (r, str, ansilen);
+			str += ansilen;
+			r += ansilen;
+			continue;
+		}
 		if (*str == '\t') {
 			// skip
 		} else if (*str == '\r') {
@@ -3352,10 +3418,11 @@ R_API bool r_str_endswith(const char *str, const char *needle) {
 }
 
 // Splits the string <str> by string <c> and returns the result in a list.
+// XXX should take const char * as argument!!
 R_API RList *r_str_split_list(char *str, const char *c, int n)  {
 	r_return_val_if_fail (str && c, NULL);
 	RList *lst = r_list_newf (NULL);
-	char *aux = str;
+	char *aux = str; // XXX should be an strdup
 	int i = 0;
 	char  *e = aux;
 	for (;e;) {
@@ -3741,13 +3808,13 @@ R_API void r_str_stripLine(char *str, const char *key) {
 
 R_API char *r_str_list_join(RList *str, const char *sep) {
 	r_return_val_if_fail (str && sep, NULL);
+	RListIter *iter;
 	RStrBuf *sb = r_strbuf_new ("");
-	const char *p;
-	while ((p = r_list_pop_head (str))) {
+	r_list_foreach_iter (str, iter) {
 		if (r_strbuf_length (sb) != 0) {
 			r_strbuf_append (sb, sep);
 		}
-		r_strbuf_append (sb, p);
+		r_strbuf_append (sb, iter->data);
 	}
 	return r_strbuf_drain (sb);
 }
@@ -3787,7 +3854,7 @@ R_API int r_str_fmtargs(const char *fmt) {
 // Returns "true" or "false" as a string given an input integer. The returned
 // value is consistent with C's definition of 0 is false, and all other values
 // are true.
-R_API const char *r_str_bool(int b) {
+R_API const char *r_str_bool(bool b) {
 	return b? "true": "false";
 }
 
@@ -3919,7 +3986,7 @@ R_API char *r_str_version(const char *program) {
 			(R_SYS_BITS & 8)? 64: 32,
 			*R2_GITTAP ? R2_GITTAP: "");
 	if (*R2_GITTIP) {
-		s = r_str_appendf (s, "commit: "R2_GITTIP" build: "R2_BIRTH);
+		s = r_str_append (s, "commit: "R2_GITTIP" build: "R2_BIRTH);
 	}
 	return s;
 }
@@ -3960,5 +4027,25 @@ R_API bool r_str_startswith(const char *str, const char *needle) {
 		return true;
 	}
 	return !strncmp (str, needle, strlen (needle));
+}
+
+R_API void r_str_fixspaces(char *str) {
+	// add space after commas
+	char *os = strdup (str);
+	int i, j;
+	for (i = j = 0; os[i]; i++,j++) {
+		char ch = os[i];
+		str[j] = ch;
+		if (ch == ',') {
+			j++;
+			str[j] = ' ';
+			while (os[i + 1] == ' ') {
+				i++;
+			}
+		}
+	}
+	str[j] = 0;
+	free (os);
+	r_str_trim_tail (str);
 }
 

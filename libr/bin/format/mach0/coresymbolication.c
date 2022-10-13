@@ -120,12 +120,12 @@ static void meta_add_fileline(RBinFile *bf, ut64 vaddr, ut32 size, RCoreSymCache
 	if (!s) {
 		return;
 	}
-	char aoffset[64];
+	char aoffset[SDB_NUM_BUFSZ];
 	ut64 cursor = vaddr;
 	ut64 end = cursor + R_MAX (size, 1);
 	char *fileline = r_str_newf ("%s:%d", flc->file, flc->line);
 	while (cursor < end) {
-		char *aoffsetptr = sdb_itoa (cursor, aoffset, 16);
+		char *aoffsetptr = sdb_itoa (cursor, 16, aoffset, sizeof (aoffset));
 		if (!aoffsetptr) {
 			break;
 		}
@@ -164,12 +164,12 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 	if (!hdr) {
 		return NULL;
 	}
-	if (hdr->version != 1) {
-		eprintf ("Unsupported CoreSymbolication cache version (%d)\n", hdr->version);
+	if (hdr->version != 1 && hdr->version != 7) {
+		R_LOG_ERROR ("Unsupported CoreSymbolication cache version (%d)", hdr->version);
 		goto beach;
 	}
 	if (hdr->size == 0 || hdr->size > r_buf_size (buf) - off) {
-		eprintf ("Corrupted CoreSymbolication header: size out of bounds (0x%x)\n", hdr->size);
+		R_LOG_ERROR ("Corrupted CoreSymbolication header: size out of bounds (0x%x)", hdr->size);
 		goto beach;
 	}
 	result = R_NEW0 (RCoreSymCacheElement);
@@ -194,7 +194,10 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 		result->binary_version = str_dup_safe (b, b + (size_t)hdr->version_off, end);
 	}
 	const size_t word_size = bits / 8;
-	const ut64 start_of_sections = (ut64)hdr->n_segments * R_CS_EL_SIZE_SEG + R_CS_EL_OFF_SEGS;
+	ut64 start_of_sections = (ut64)hdr->n_segments * R_CS_EL_SIZE_SEG + R_CS_EL_OFF_SEGS;
+	if (hdr->p) {
+		start_of_sections += 8;
+	}
 	const ut64 sect_size = (bits == 32) ? R_CS_EL_SIZE_SECT_32 : R_CS_EL_SIZE_SECT_64;
 	const ut64 start_of_symbols = start_of_sections + (ut64)hdr->n_sections * sect_size;
 	const ut64 start_of_lined_symbols = start_of_symbols + (ut64)hdr->n_symbols * R_CS_EL_SIZE_SYM;
@@ -222,16 +225,19 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 		}
 		size_t i;
 		ut8 *cursor = b + R_CS_EL_OFF_SEGS;
+		if (hdr->p) {
+			cursor += 8;
+		}
 		for (i = 0; i < hdr->n_segments && cursor + sizeof (RCoreSymCacheElementSegment) < end; i++) {
 			RCoreSymCacheElementSegment *seg = &result->segments[i];
 			seg->paddr = seg->vaddr = r_read_le64 (cursor);
 			cursor += 8;
-			if (cursor >= end) {
+			if (cursor + 8 > end) {
 				break;
 			}
 			seg->size = seg->vsize = r_read_le64 (cursor);
 			cursor += 8;
-			if (cursor >= end) {
+			if (cursor + 16 > end) {
 				break;
 			}
 			seg->name = str_dup_safe_fixed (b, cursor, 16, end);

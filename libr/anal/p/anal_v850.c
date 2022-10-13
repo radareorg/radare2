@@ -145,16 +145,16 @@ static void update_flags(RAnalOp *op, int flags) {
 
 static void clear_flags(RAnalOp *op, int flags) {
 	if (flags & V850_FLAG_CY) {
-		r_strbuf_append (&op->esil, ",0,cy,=");
+		r_strbuf_append (&op->esil, ",0,cy,:=");
 	}
 	if (flags & V850_FLAG_OV) {
-		r_strbuf_append (&op->esil, ",0,ov,=");
+		r_strbuf_append (&op->esil, ",0,ov,:=");
 	}
 	if (flags & V850_FLAG_S) {
-		r_strbuf_append (&op->esil, ",0,s,=");
+		r_strbuf_append (&op->esil, ",0,s,:=");
 	}
 	if (flags & V850_FLAG_Z) {
-		r_strbuf_append (&op->esil, ",0,z,=");
+		r_strbuf_append (&op->esil, ",0,z,:=");
 	}
 }
 
@@ -245,7 +245,7 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		}
 		op->jump = word1; // UT64_MAX; // this is n RJMP instruction .. F1_RN1 (word1);
 		op->fail = addr + 2;
-		r_strbuf_appendf (&op->esil, "%s,pc,=", F1_RN1(word1));
+		r_strbuf_appendf (&op->esil, "%s,pc,:=", F1_RN1(word1));
 		break;
 	case V850_JARL2:
 		// TODO: fix displacement reading
@@ -380,7 +380,7 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		destaddr = ((((word1 >> 4) & 0x7) |
 			((word1 >> 11) << 3)) << 1);
 		if (destaddr & 0x100) {
-			destaddrs = destaddr | 0xFE00;
+			destaddrs = destaddr | 0xfe00;
 		} else {
 			destaddrs = destaddr;
 		}
@@ -389,52 +389,52 @@ static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		switch (F3_COND(word1)) {
 		case V850_COND_V:
-			r_strbuf_appendf (&op->esil, "ov");
+			r_strbuf_append (&op->esil, "ov");
 			break;
 		case V850_COND_CL:
-			r_strbuf_appendf (&op->esil, "cy");
+			r_strbuf_append (&op->esil, "cy");
 			break;
 		case V850_COND_ZE:
-			r_strbuf_appendf (&op->esil, "z");
+			r_strbuf_append (&op->esil, "z");
 			break;
 		case V850_COND_NH:
-			r_strbuf_appendf (&op->esil, "cy,z,|");
+			r_strbuf_append (&op->esil, "cy,z,|");
 			break;
 		case V850_COND_N:
-			r_strbuf_appendf (&op->esil, "s");
+			r_strbuf_append (&op->esil, "s");
 			break;
 		case V850_COND_AL: // Always
-			r_strbuf_appendf (&op->esil, "1");
+			r_strbuf_append (&op->esil, "1");
 			break;
 		case V850_COND_LT:
-			r_strbuf_appendf (&op->esil, "s,ov,^");
+			r_strbuf_append (&op->esil, "s,ov,^");
 			break;
 		case V850_COND_LE:
-			r_strbuf_appendf (&op->esil, "s,ov,^,z,|");
+			r_strbuf_append (&op->esil, "s,ov,^,z,|");
 			break;
 		case V850_COND_NV:
-			r_strbuf_appendf (&op->esil, "ov,!");
+			r_strbuf_append (&op->esil, "ov,!");
 			break;
 		case V850_COND_NL:
-			r_strbuf_appendf (&op->esil, "cy,!");
+			r_strbuf_append (&op->esil, "cy,!");
 			break;
 		case V850_COND_NE:
-			r_strbuf_appendf (&op->esil, "z,!");
+			r_strbuf_append (&op->esil, "z,!");
 			break;
 		case V850_COND_H:
-			r_strbuf_appendf (&op->esil, "cy,z,|,!");
+			r_strbuf_append (&op->esil, "cy,z,|,!");
 			break;
 		case V850_COND_P:
-			r_strbuf_appendf (&op->esil, "s,!");
+			r_strbuf_append (&op->esil, "s,!");
 			break;
 		case V850_COND_GE:
-			r_strbuf_appendf (&op->esil, "s,ov,^,!");
+			r_strbuf_append (&op->esil, "s,ov,^,!");
 			break;
 		case V850_COND_GT:
-			r_strbuf_appendf (&op->esil, "s,ov,^,z,|,!");
+			r_strbuf_append (&op->esil, "s,ov,^,z,|,!");
 			break;
 		}
-		r_strbuf_appendf (&op->esil, ",?{,$$,%d,+,pc,=,}", destaddrs);
+		r_strbuf_appendf (&op->esil, ",?{,0x%"PFMT64x",pc,:=,}", op->jump);
 		break;
 	case V850_BIT_MANIP:
 		{
@@ -568,7 +568,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 	op->size = inst.size;
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		if (anal->config->syntax == R_ASM_SYNTAX_ATT) {
+		if (anal->config->syntax == R_ARCH_SYNTAX_ATT) {
 			op->mnemonic = r_str_replace (inst.text, "[r", "[%r", -1);
 			op->mnemonic = r_str_replace (op->mnemonic, " r", " %r", -1);
 			op->mnemonic = r_str_replace (op->mnemonic, "(r", "(%r", -1);

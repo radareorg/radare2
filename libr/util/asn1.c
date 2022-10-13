@@ -4,6 +4,7 @@
 #include <r_util.h>
 
 static R_TH_LOCAL int ASN1_STD_FORMAT = 1;
+static R_TH_LOCAL char temp_name[4096] = {0};
 
 R_API void asn1_setformat(int fmt) {
 	ASN1_STD_FORMAT = fmt;
@@ -33,8 +34,9 @@ static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length) {
 }
 
 static RASN1Object *asn1_parse_header(const ut8 *buffer, ut32 length, const ut8 *start_pointer) {
-	ut8 head, length8, byte;
+	ut8 length8, byte;
 	ut64 length64;
+
 	if (!buffer || length < 3) {
 		return NULL;
 	}
@@ -43,7 +45,7 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer, ut32 length, const ut8 
 	if (!object) {
 		return NULL;
 	}
-	head = buffer[0];
+	ut8 head = buffer[0];
 	object->offset = start_pointer ? (buffer - start_pointer) : 0;
 	object->klass = head & ASN1_CLASS;
 	object->form = head & ASN1_FORM;
@@ -76,7 +78,6 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer, ut32 length, const ut8 
 		object->length = (ut32) length8;
 		object->sector = buffer + 2;
 	}
-
 	if (object->tag == TAG_BITSTRING && object->sector[0] == 0) {
 		if (object->length > 0) {
 			object->sector++; // real sector starts + 1
@@ -153,7 +154,7 @@ R_API RASN1Binary *r_asn1_create_binary(const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return NULL;
 	}
-	ut8* buf = (ut8*) calloc (sizeof (*buf), length);
+	ut8* buf = (ut8*) calloc (1, length);
 	if (!buf) {
 		return NULL;
 	}
@@ -228,7 +229,7 @@ static RASN1String* r_asn1_print_hexdump_padded(RASN1Object *object, ut32 depth)
 		pad = "                                        : ";
 	} else {
 		pad = r_str_pad (' ', depth * 2);
-		r_strbuf_appendf (sb, "  ");
+		r_strbuf_append (sb, "  ");
 	}
 
 	for (i = 0, j = 0; i < object->length; i++, j++) {
@@ -243,7 +244,7 @@ static RASN1String* r_asn1_print_hexdump_padded(RASN1Object *object, ut32 depth)
 	}
 
 	while ((i % 16) != 0) {
-		r_strbuf_appendf (sb, "   ");
+		r_strbuf_append (sb, "   ");
 		i++;
 	}
 	r_strbuf_appendf (sb, "|%-16s|", readable);
@@ -268,7 +269,6 @@ R_API char *r_asn1_to_string(RASN1Object *object, ut32 depth, RStrBuf *sb) {
 	}
 	//this shall not be freed. it's a pointer into the buffer.
 	RASN1String* asn1str = NULL;
-	static R_TH_LOCAL char temp_name[4096] = {0};
 	const char* name = "";
 	const char* string = "";
 

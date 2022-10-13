@@ -21,16 +21,15 @@ SDB_API bool sdb_lock_file(const char *f, char *buf, size_t buf_size) {
 }
 
 SDB_API bool sdb_lock(const char *s) {
-	int fd;
 	char pidstr[64];
 	if (!s) {
 		return false;
 	}
-	fd = open (s, O_CREAT | O_TRUNC | O_WRONLY | O_EXCL, SDB_MODE);
+	int fd = open (s, O_CREAT | O_TRUNC | O_WRONLY | O_EXCL, SDB_MODE);
 	if (fd == -1) {
 		return false;
 	}
-	char *pid = sdb_itoa (getpid (), pidstr, 10);
+	char *pid = sdb_itoa (getpid (), 10, pidstr, sizeof (pidstr));
 	if (pid) {
 		if ((write (fd, pid, strlen (pid)) < 0)
 			|| (write (fd, "\n", 1) < 0)) {

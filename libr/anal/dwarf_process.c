@@ -99,22 +99,21 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
 	}
 	size_t newlen = l + sb->len;
 	char *ns = malloc (newlen + 1);
+	if (!ns) {
+		return false;
+	}
 	bool ret = false;
 	char *sb_str = sb->ptr ? sb->ptr : sb->buf;
 	char *pivot = strrchr (sb_str, c);
-	if (!pivot) {
-		free (ns);
-		return false;
-	}
-	size_t idx = pivot - sb_str;
-	if (ns) {
+	if (pivot) {
+		size_t idx = pivot - sb_str;
 		memcpy (ns, sb_str, idx);
 		memcpy (ns + idx, s, l);
 		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
 		ns[newlen] = 0;
 		ret = r_strbuf_set (sb, ns);
-		free (ns);
 	}
+	free (ns);
 	return ret;
 }
 /**
@@ -775,7 +774,7 @@ static void get_spec_die_type(Context *ctx, RBinDwarfDie *die, RStrBuf *ret_type
 }
 
 /* For some languages linkage name is more informative like C++,
-   but for Rust it's rubbish and the normal name is fine */
+ * but for Rust it's rubbish and the normal name is fine */
 static bool prefer_linkage_name(const char *lang) {
 	if (!lang || !strcmp (lang, "rust") || !strcmp (lang, "ada")) {
 		return false;
@@ -923,6 +922,116 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKin
 	}
 }
 
+static const char *map_dwarf_reg_to_arm64_reg(ut64 reg_num, VariableLocationKind *kind) {
+	*kind = LOCATION_REGISTER;
+	switch (reg_num) {
+	case 0: return "x0";
+	case 1: return "x1";
+	case 2: return "x2";
+	case 3: return "x3";
+	case 4: return "x4";
+	case 5: return "x5";
+	case 6: return "x6";
+	case 7: return "x7";
+	case 8: return "x8";
+	case 9: return "x9";
+	case 10: return "x10";
+	case 11: return "x11";
+	case 12: return "x12";
+	case 13: return "x13";
+	case 14: return "x14";
+	case 15: return "x15";
+	case 16: return "x16";
+	case 17: return "x17";
+	case 18: return "x18";
+	case 19: return "x19";
+	case 20: return "x20";
+	case 21: return "x21";
+	case 22: return "x22";
+	case 23: return "x23";
+	case 24: return "x24";
+	case 25: return "x25";
+	case 26: return "x26";
+	case 27: return "x27";
+	case 28: return "x28";
+	case 29: return "x29";
+	case 30: return "x30";
+	case 31: return "sp";
+	case 32: return "pc";
+	case 33: return "elr_mode";
+	case 34: return "rasign_state";
+	case 35: return "tpidrr0_el0";
+	case 36: return "tpidr_el0";
+	case 37: return "tpidr_el1";
+	case 38: return "tpidr_el2";
+	case 39: return "tpidr_el3";
+	}
+#if 0
+ARM64 - dwarf register mapping
+0–30	X0–X30	64-bit general registers (Note 1)
+31	SP	64-bit stack pointer
+32	PC	64-bit program counter (Note 9)
+33	ELR_mode	The current mode exception link register
+34	RA_SIGN_STATE	Return address signed state pseudo-register (Note 8)
+35	TPIDRRO_ELO	EL0 Read-Only Software Thread ID register
+36	TPIDR_ELO	EL0 Read/Write Software Thread ID register
+37	TPIDR_EL1	EL1 Software Thread ID register
+38	TPIDR_EL2	EL2 Software Thread ID register
+39	TPIDR_EL3	EL3 Software Thread ID register
+40-45	Reserved	-
+46	VG (Beta)	64-bit SVE vector granule pseudo-register (Note 2, Note 3)
+47	FFR (Beta)	VG × 8-bit SVE first fault register (Note 4)
+48-63	P0-P15 (Beta)	VG × 8-bit SVE predicate registers (Note 4)
+64-95	V0-V31	128-bit FP/Advanced SIMD registers (Note 5, Note 7)
+96-127	Z0-Z31 (Beta)	VG × 64-bit SVE vector registers (Note 6, Note 7)
+#endif
+	*kind = LOCATION_UNKNOWN;
+	return "unk"; // please complete the list :___
+}
+
+static const char *map_dwarf_reg_to_v850_reg(ut64 reg_num, VariableLocationKind *kind) {
+	*kind = LOCATION_REGISTER;
+	switch (reg_num) {
+	case 0: return "r0"; // wired to ground so it may shift
+	case 1: return "r1";
+	case 2: return "r2";
+	case 3: return "r3";
+	case 4: return "r4";
+	case 5: return "r5";
+	case 6: return "r6";
+	case 7: return "r7";
+	case 8: return "r8";
+	case 9: return "r9";
+	case 10: return "r10";
+	case 11: return "r11";
+	case 12: return "r12";
+	case 13: return "r13";
+	case 14: return "r14";
+	case 15: return "r15";
+	case 16: return "r16";
+	case 17: return "r17";
+	case 18: return "r18";
+	case 19: return "r19";
+	case 20: return "r20";
+	case 21: return "r21";
+	case 22: return "r22";
+	case 23: return "r23";
+	case 24: return "r24";
+	case 25: return "r25";
+	case 26: return "r26";
+	case 27: return "r27";
+	case 28: return "r28";
+	case 29: return "r29";
+	case 30: return "r30";
+	case 31: return "r31";
+	case 32: return "pc"; // uhm
+	default:
+		R_LOG_WARN ("Unhandled dwarf register reference number %d", (int)reg_num);
+		*kind = LOCATION_UNKNOWN;
+		return "unsupported_reg";
+	}
+}
+
 /* x86 https://01.org/sites/default/files/file_attach/intel386-psabi-1.0.pdf */
 static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
@@ -1036,22 +1145,28 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, VariableLocationKind
 }
 
 /* returns string literal register name!
-   TODO add more arches                 */
+ * TODO add more arches                 */
 static const char *get_dwarf_reg_name(const char *arch, int reg_num, VariableLocationKind *kind, int bits) {
 	R_LOG_DEBUG ("get_dwarf_reg_name %s %d", arch, bits);
-	if (arch && !strcmp (arch, "x86")) {
-		if (bits == 64) {
-			return map_dwarf_reg_to_x86_64_reg (reg_num, kind);
+	if (arch) {
+		if (!strcmp (arch, "x86")) {
+			if (bits == 64) {
+				return map_dwarf_reg_to_x86_64_reg (reg_num, kind);
+			}
+			return map_dwarf_reg_to_x86_reg (reg_num, kind);
 		}
-		return map_dwarf_reg_to_x86_reg (reg_num, kind);
-	} else if (arch && !strcmp (arch, "ppc")) {
-		if (bits == 64) {
+		if (!strcmp (arch, "arm") && bits == 64) {
+			return map_dwarf_reg_to_arm64_reg (reg_num, kind);
+		}
+		if (!strcmp (arch, "v850")) {
+			return map_dwarf_reg_to_v850_reg (reg_num, kind);
+		}
+		if (!strcmp (arch, "ppc") && bits == 64) {
 			return map_dwarf_reg_to_ppc64_reg (reg_num, kind);
 		}
-	} else {
-		// unknwown arch
 	}
-	R_LOG_WARN ("get_dwarf_reg_name: unsupported arch: '%s' with %d bits", arch, bits);
+	// this can be very anoying as its printed over 9000 times
+	R_LOG_DEBUG ("get_dwarf_reg_name: unsupported arch: '%s' with %d bits", arch, bits);
 	*kind = LOCATION_UNKNOWN;
 	return "unsupported_reg";
 }
@@ -1109,7 +1224,7 @@ static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrV
 	const char *reg_name = NULL; /* literal */
 	const char *arch = ctx->anal->config->arch;
 	const int bits = ctx->anal->config->bits;
-	const bool be = ctx->anal->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ctx->anal->config);
 	size_t i;
 	for (i = 0; i < block.length; i++) {
 		switch (block.data[i]) {
@@ -1313,14 +1428,16 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					const RBinDwarfAttrValue *val = &child_die->attr_values[i];
 					switch (val->attr_name) {
 					case DW_AT_name:
-						if (!get_linkage_name || !has_linkage_name) {
+						if ((!get_linkage_name || !has_linkage_name) && val->kind == DW_AT_KIND_STRING) {
 							name = val->string.content;
 						}
 						break;
 					case DW_AT_linkage_name:
 					case DW_AT_MIPS_linkage_name:
-						name = val->string.content;
-						has_linkage_name = true;
+						if (val->kind == DW_AT_KIND_STRING) {
+							name = val->string.content;
+							has_linkage_name = true;
+						}
 						break;
 					case DW_AT_type:
 						parse_type (ctx, val->reference, &type, NULL, NULL);
@@ -1362,7 +1479,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 					r_strbuf_fini (&type);
 				}
 			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
-				r_strbuf_appendf (args, "va_args ...,");
+				r_strbuf_append (args, "va_args ...,");
 			}
 			if (child_die->has_children) {
 				child_depth++;

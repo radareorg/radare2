@@ -567,7 +567,7 @@ aa
 afl~abort
 EOF
 EXPECT=<<EOF
-0x000102bc    1 12           sym.imp.abort
+0x000102bc    1     12 sym.imp.abort
 EOF
 RUN
 
@@ -578,7 +578,7 @@ aa
 afl~weak
 EOF
 EXPECT=<<EOF
-0x00010304    1 28           sym.call_weak_fn
+0x00010304    1     28 sym.call_weak_fn
 EOF
 RUN
 
@@ -589,7 +589,7 @@ af @@ sym*
 afl~weak
 EOF
 EXPECT=<<EOF
-0x00010304    1 28           sym.call_weak_fn
+0x00010304    1     28 sym.call_weak_fn
 EOF
 RUN
 
@@ -610,24 +610,25 @@ NAME=ELF ARM: aa2
 FILE=bins/elf/analysis/arm_32_flags0
 CMDS=<<EOF
 aa
+aflsa
 afl
 EOF
 EXPECT=<<EOF
-0x000102c8    1 44           entry0
-0x000102a4    1 12           sym.imp.__libc_start_main
-0x00010304    1 28           sym.call_weak_fn
-0x00010328    1 36           sym.deregister_tm_clones
-0x00010358    1 44           sym.register_tm_clones
-0x00010390    1 36           sym.__do_global_dtors_aux
-0x000103b8    4 44           entry.init0
-0x00010494    1 4            sym.__libc_csu_fini
-0x00010498    1 8            sym._fini
-0x000103ec    1 28           sym.func
-0x00010434    3 88           sym.__libc_csu_init
-0x00010278    1 12           sym._init
-0x00010408    1 40           main
-0x00010298    1 12           sym.imp.printf
-0x000102bc    1 12           sym.imp.abort
+0x00010278    1     12 sym._init
+0x00010298    1     12 sym.imp.printf
+0x000102a4    1     12 sym.imp.__libc_start_main
+0x000102bc    1     12 sym.imp.abort
+0x000102c8    1     44 entry0
+0x00010304    1     28 sym.call_weak_fn
+0x00010328    1     36 sym.deregister_tm_clones
+0x00010358    1     44 sym.register_tm_clones
+0x00010390    1     36 sym.__do_global_dtors_aux
+0x000103b8    4     44 entry.init0
+0x000103ec    1     28 sym.func
+0x00010408    1     40 main
+0x00010434    3     88 sym.__libc_csu_init
+0x00010494    1      4 sym.__libc_csu_fini
+0x00010498    1      8 sym._fini
 EOF
 RUN
 
@@ -889,9 +890,9 @@ EOF
 EXPECT=<<EOF
 address: 0x568
 opcode: push {r3, lr}
-esilcost: 16
+esilcost: 24
 disasm: push {r3, lr}
-pseudo: push (r3, lr) 
+pseudo: push (r3, lr)
 mnemonic: push
 mask: ffffffff
 prefix: 0
@@ -902,7 +903,7 @@ size: 4
 sign: false
 type: push
 cycles: 1
-esil: 8,sp,-=,lr,r3,2,sp,=[*]
+esil: 8,sp,-=,r3,sp,=[4],lr,sp,4,+,=[4]
 family: cpu
 stackop: inc
 stackptr: 8

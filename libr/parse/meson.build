@@ -24,6 +24,8 @@ r_parse_sources = [
   'parse.c',
   'p/parse_6502_pseudo.c',
   'p/parse_arm_pseudo.c',
+  'p/parse_evm_pseudo.c',
+  'p/parse_bpf_pseudo.c',
   'p/parse_att2intel.c',
   'p/parse_avr_pseudo.c',
   'p/parse_chip8_pseudo.c',

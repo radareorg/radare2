@@ -48,7 +48,7 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 			return GHT_MAX;
 		}
 		r_list_foreach (syms, iter, s) {
-			if (!strcmp(s->name, symname)) {
+			if (!strcmp (s->name, symname)) {
 				vaddr = s->vaddr;
 				break;
 			}
@@ -237,7 +237,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 							r_io_read_at (core->io, (GHT)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
 						}
 					}
-					PRINT_GA ("}\n");
+					PRINT_GA (" }\n");
 				}
 			}
 			free (ar);
@@ -298,7 +298,7 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 				PRINTF_BA ("@ 0x%"PFMT64x"\n", at);
 			}
 		}
-		PRINT_GA ("}\n");
+		PRINT_GA (" }\n");
 		break;
 	case ' ':
 		arena = r_num_math (core->num, input + 1);
@@ -339,7 +339,7 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 		PRINTF_BA ("  chunks_hooks = 0x%"PFMT64x"\n", OO(chunk_hooks));
 		PRINTF_BA ("  bins = %d 0x%"PFMT64x"\n", JM_NBINS, OO(bins));
 		PRINTF_BA ("  runs_avail = %d 0x%"PFMT64x"\n", NPSIZES, OO(runs_avail));
-		PRINT_GA ("}\n");
+		PRINT_GA (" }\n");
 		break;
 	}
 	free (ar);
@@ -419,7 +419,7 @@ static void GH(jemalloc_get_bins)(RCore *core, const char *input) {
 				PRINT_YA ("  }\n");
 			}
 		}
-		PRINT_GA ("}\n");
+		PRINT_GA (" }\n");
 		break;
 	}
 	free (ar);

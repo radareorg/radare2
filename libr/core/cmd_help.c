@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-static const char *help_msg_at[] = {
+static RCoreHelpMessage help_msg_at = {
 	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
 	"0", "", "alias for 's 0'",
 	"0x", "addr", "alias for 's 0x..'",
@@ -58,7 +58,7 @@ static const char *help_msg_at[] = {
 	NULL
 };
 
-static const char *help_msg_at_at[] = {
+static RCoreHelpMessage help_msg_at_at = {
 	"@@", "", " # foreach iterator command:",
 	"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
 	"x", " @@.file", "run 'x' over the offsets specified in the file (one offset per line)",
@@ -79,7 +79,7 @@ static const char *help_msg_at_at[] = {
 	NULL
 };
 
-static const char *help_msg_at_at_at[] = {
+static RCoreHelpMessage help_msg_at_at_at = {
 	"@@@", "", " # foreach offset+size iterator command:",
 	"x", " @@@=", "[addr] [size] ([addr] [size] ...)",
 	"x", " @@@C:cmd", "comments matching",
@@ -217,7 +217,19 @@ static const char *help_msg_root[] = {
 	NULL
 };
 
-static const char *help_msg_question_e[] = {
+static RCoreHelpMessage help_msg_question_i = {
+	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
+	"?i", " ([prompt])", "inquery the user and save that text into the yank clipboard (y)",
+	"?ie", " [msg]", "same as ?i, but prints the output, useful for oneliners",
+	"?iy", " [question]", "dialog yes/no with default Yes",
+	"?if", " [math-expr]", "evaluates math expression returns true if result is zero",
+	"?in", " [question]", "dialog yes/no with default No",
+	"?im", " [msg]", "like ?ie, but using RCons.message (clear-screen + press-any-key)",
+	"?ik", "", "press any key",
+	"?ip", " ([path])", "interactive hud mode to find files in given path",
+	NULL
+};
+static RCoreHelpMessage help_msg_question_e = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
 	"?e=", " 32", "progress bar at 32 percentage",
@@ -233,7 +245,7 @@ static const char *help_msg_question_e[] = {
 	NULL
 };
 
-static const char *help_msg_question[] = {
+static RCoreHelpMessage help_msg_question = {
 	"Usage: ?[?[?]] expression", "", "",
 	"?!", " [cmd]", "run cmd if $? == 0",
 	"?", " eip-0x804800", "show all representation result for this math expr",
@@ -603,12 +615,12 @@ static int cmd_help(void *data, const char *input) {
 		ut64 b = 0;
 		ut32 r = UT32_MAX;
 		if (input[1]) {
-			strncpy (out, input+(input[1]==' '? 2: 1), sizeof (out)-1);
+			strncpy (out, input + (input[1] ==' '? 2: 1), sizeof (out)-1);
 			p = strchr (out + 1, ' ');
 			if (p) {
 				*p = 0;
 				b = (ut32)r_num_math (core->num, out);
-				r = (ut32)r_num_math (core->num, p+1)-b;
+				r = (ut32)r_num_math (core->num, p + 1) - b;
 			} else {
 				r = (ut32)r_num_math (core->num, out);
 			}
@@ -629,7 +641,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
 			//b64 decoding takes at most strlen(str) * 4
-			const int buflen = (strlen (input+3) * 4) + 1;
+			const int buflen = (strlen (input + 3) * 4) + 1;
 			char* buf = calloc (buflen, sizeof (char));
 			if (!buf) {
 				return false;
@@ -676,7 +688,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == ' ') {
 			char *q, *p = strdup (input + 2);
 			if (!p) {
-				eprintf ("Cannot strdup\n");
+				R_LOG_ERROR ("Cannot strdup");
 				return 0;
 			}
 			q = strchr (p, ' ');
@@ -690,7 +702,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			free (p);
 		} else {
-			eprintf ("Whitespace expected after '?f'\n");
+			R_LOG_ERROR ("expected whitespace after '?f'");
 		}
 		break;
 	case 'o': // "?o"
@@ -737,7 +749,7 @@ static int cmd_help(void *data, const char *input) {
 				const char *err = NULL;
 				n = r_num_calc (core->num, str, &err);
 				if (core->num->dbz) {
-					eprintf ("RNum ERROR: Division by Zero\n");
+					R_LOG_ERROR ("Division by Zero");
 				}
 				if (err) {
 					R_LOG_ERROR (err);
@@ -757,7 +769,6 @@ static int cmd_help(void *data, const char *input) {
 					pj_ks (pj, "octal", r_strf ("0%"PFMT64o, n));
 					pj_ks (pj, "unit", unit);
 					pj_ks (pj, "segment", r_strf ("%04x:%04x", s, a));
-
 				} else {
 					if (n >> 32) {
 						r_cons_printf ("int64   %"PFMT64d"\n", (st64)n);
@@ -817,10 +828,10 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'q': // "?q"
 		if (core->num->dbz) {
-			eprintf ("RNum ERROR: Division by Zero\n");
+			R_LOG_ERROR ("Division by Zero");
 		}
 		if (input[1] == '?') {
-			r_cons_printf ("|Usage: ?q [num]  # Update $? without printing anything\n"
+			r_cons_printf ("Usage: ?q [num]  # Update $? without printing anything\n"
 				"|?q 123; ?? x    # hexdump if 123 != 0");
 		} else {
 			const char *space = strchr (input, ' ');
@@ -842,7 +853,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 		}
 		if (core->num->dbz) {
-			eprintf ("RNum ERROR: Division by Zero\n");
+			R_LOG_ERROR ("Division by Zero");
 		}
 		switch (input[1]) {
 		case '?':
@@ -900,7 +911,7 @@ static int cmd_help(void *data, const char *input) {
 					int val = strcmp (s, e);
 					r_core_return_value (core, val);
 				} else {
-					eprintf ("Missing secondary word in expression to compare\n");
+					R_LOG_ERROR ("Missing secondary word in expression to compare");
 				}
 				free (s);
 			} else {
@@ -1072,7 +1083,7 @@ static int cmd_help(void *data, const char *input) {
 					out[len] = 0;
 					r_cons_println ((const char*)out);
 				} else {
-					eprintf ("Error parsing the hexpair string\n");
+					R_LOG_ERROR ("invalid hexpair string");
 				}
 				free (out);
 			}
@@ -1302,9 +1313,12 @@ static int cmd_help(void *data, const char *input) {
 	case 'i': // "?i" input num
 		r_cons_set_raw(0);
 		if (!r_cons_is_interactive ()) {
-			eprintf ("Not running in interactive mode\n");
+			R_LOG_ERROR ("Not running in interactive mode");
 		} else {
 			switch (input[1]) {
+			case '?': // "?i?"
+				r_core_cmd_help (core, help_msg_question_i);
+				break;
 			case 'f': // "?if"
 				r_core_return_value (core, !r_num_conditional (core->num, input + 2));
 				eprintf ("%s\n", r_str_bool (!core->num->value));
@@ -1313,7 +1327,28 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_message (input + 2);
 				break;
 			case 'p': // "?ip"
-				r_core_return_value (core, r_core_yank_hud_path (core, input + 2, 0) == true);
+				{
+					const bool interactive = r_config_get_b (core->config, "scr.interactive");
+					if (interactive) {
+						r_core_return_value (core, r_core_yank_hud_path (core, input + 2, 0) == true);
+					} else {
+						R_LOG_WARN ("?ip requires scr.interactive=true");
+					}
+				}
+				break;
+			case 'e': // "?ie"
+				{
+				char foo[1024];
+				r_cons_flush ();
+				for (input+=2; *input == ' '; input++);
+				// TODO: r_cons_input()
+				snprintf (foo, sizeof (foo) - 1, "%s: ", input);
+				r_line_set_prompt (foo);
+				r_cons_fgets (foo, sizeof (foo), 0, NULL);
+				foo[sizeof (foo) - 1] = 0;
+				r_cons_printf ("%s\n", foo);
+				r_core_return_value (core, 0);
+				}
 				break;
 			case 'k': // "?ik"
 				 r_cons_any_key (NULL);
@@ -1347,7 +1382,7 @@ static int cmd_help(void *data, const char *input) {
 		ut64 addr = r_num_math (core->num, input + 1);
 		char *rstr = core->print->hasrefs (core->print->user, addr, true);
 		if (!rstr) {
-			eprintf ("Cannot get refs\n");
+			R_LOG_ERROR ("Cannot get refs at 0x%08"PFMT64x, addr);
 			break;
 		}
 		r_cons_println (rstr);
@@ -1374,7 +1409,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 		} else {
 			if (core->num->dbz) {
-				eprintf ("RNum ERROR: Division by Zero\n");
+				R_LOG_ERROR ("Division by Zero");
 			}
 			r_cons_printf ("%"PFMT64d"\n", core->num->value);
 		}

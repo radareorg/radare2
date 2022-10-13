@@ -94,32 +94,23 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 	return false;
 }
 
-// XXX conflict naming with tostring()
 R_API char *r_anal_cond_to_string(RAnalCond *cond) {
-	char *out = NULL;
-	if (!cond) {
-		return NULL;
-	}
+	r_return_val_if_fail (cond, NULL);
 	const char *cnd = condstring (cond);
 	char *val0 = r_anal_value_to_string (cond->arg[0]);
-	char *val1 = r_anal_value_to_string (cond->arg[1]);
+	char *out = NULL;
 	if (val0) {
 		if (R_ANAL_COND_SINGLE (cond)) {
-			int val0len = strlen (val0) + 10;
-			if ((out = malloc (val0len))) {
-				snprintf (out, val0len, "%s%s", cnd, val0);
-			}
+			out = r_str_newf ("%s%s", cnd, val0);
 		} else {
+			char *val1 = r_anal_value_to_string (cond->arg[1]);
 			if (val1) {
-				int val0len = strlen (val0) + strlen (val1) + 10;
-				if ((out = malloc (val0len))) {
-					snprintf (out, val0len, "%s %s %s", val0, cnd, val1);
-				}
+				out = r_str_newf ("%s %s %s", val0, cnd, val1);
+				free (val1);
 			}
 		}
+		free (val0);
 	}
-	free (val0);
-	free (val1);
 	return out? out: strdup ("?");
 }
 
@@ -130,10 +121,10 @@ R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 	}
 	//v->reg[0] = op->src[0];
 	//v->reg[1] = op->src[1];
-	cond->arg[0] = op->src[0];
-	op->src[0] = NULL;
-	cond->arg[1] = op->src[1];
-	op->src[1] = NULL;
+	cond->arg[0] = r_anal_value_copy (r_vector_index_ptr (op->srcs, 0));
+	cond->arg[1] = r_anal_value_copy (r_vector_index_ptr (op->srcs, 1));
+	r_vector_free (op->srcs);
+	op->srcs = NULL;
 	// TODO: moar!
 	//cond->arg[1] = op->src[1];
 	return cond;
