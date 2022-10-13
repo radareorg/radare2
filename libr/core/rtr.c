@@ -1326,7 +1326,7 @@ beach:
 #else
 
 R_API int r_core_rtr_cmds(RCore *core, const char *port) {
-	unsigned char buf[4097];
+	ut8 buf[4097];
 	RSocket *ch = NULL;
 	int i, ret;
 	char *str;

@@ -1,11 +1,10 @@
-/* radare - Apache - Copyright 2014-2020 - dso, pancake */
+/* radare - Apache - Copyright 2014-2022 - dso, pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_cmd.h>
 #include <r_core.h>
 #include <r_cons.h>
-#include <string.h>
 #include <r_anal.h>
 
 #include "../../../shlr/java/ops.h"
@@ -15,7 +14,6 @@
 #define DO_THE_DBG 0
 #undef IFDBG
 #define IFDBG if (DO_THE_DBG)
-
 
 typedef struct found_idx_t {
 	ut16 idx;
@@ -1581,7 +1579,7 @@ static int r_cmd_java_print_class_definitions(RBinJavaObj *obj) {
 			idx++;
 		}
 	}
-	r_cons_printf (" }\n");
+	r_cons_printf ("}\n");
 
 	r_list_free (the_imports);
 	r_list_free (the_fields);

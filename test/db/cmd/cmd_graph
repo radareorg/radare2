@@ -376,7 +376,7 @@ node [fillcolor=white, style=filled shape=box fontname="Courier" fontsize="8"];
 "0x456" [URL="0x456", color="lightgray", label="0x456\nbody2
 "]
 "0x123" -> "0x456" [color=cyan]
- }
+}
 EOF
 RUN
 
