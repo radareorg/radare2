@@ -2548,7 +2548,7 @@ repeat:
 		pj_free (pj);
 		break;
 	case R_GRAPH_FORMAT_DOT:
-		r_cons_printf (" }\n");
+		r_cons_printf ("}\n");
 		break;
 	}
 }
@@ -3807,7 +3807,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		}
 	}
 	if (!is_keva && !is_html && !is_json && !is_star && !is_json_format_disasm) {
-		r_cons_printf (" }\n");
+		r_cons_printf ("}\n");
 	}
 	if (is_json) {
 		pj_end (pj);

@@ -77,7 +77,7 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 
 	if (headers) {
 		p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-		p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {", bits);
+		p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {\n", bits);
 	}
 
 	for (i = 0; !r_print_is_interrupted () && i < len; i++) {
@@ -266,7 +266,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		p->cb_printf ("}];\n");
 		break;
 	case 'v': // "pcv" // JaVa
-		p->cb_printf ("byte[] ba = {");
+		p->cb_printf ("byte[] ba = {\n");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? ",": "");
