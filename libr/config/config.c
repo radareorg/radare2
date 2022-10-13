@@ -62,7 +62,7 @@ R_API void r_config_node_free(void *n) {
 	}
 }
 
-static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
+static void config_print_value_json(RConfig *cfg, PJ *pj, RConfigNode *node) {
 	r_return_if_fail (cfg && node);
 	const char *val = node->value;
 	if (!val) {
@@ -72,59 +72,62 @@ static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
 	if (r_config_node_is_bool (node) || r_config_node_is_int (node)) {
 		if (!strncmp (val, "0x", 2)) {
 			ut64 n = r_num_get (NULL, val);
-			cfg->cb_printf ("%"PFMT64d, n);
+			if (pj) {
+				pj_n (pj, n);
+			} else {
+				cfg->cb_printf ("%"PFMT64d, n);
+			}
 		} else if (r_str_isnumber (val) || (*val /* HACK */ && r_str_is_bool (val))) {
-			cfg->cb_printf ("%s", val);  // TODO: always use true/false for bool json str
+			if (pj) {
+				pj_s (pj, val);
+			} else {
+				cfg->cb_printf ("%s", val);  // TODO: always use true/false for bool json str
+			}
+		} else {
+			if (pj) {
+				pj_s (pj, sval);
+			} else {
+				cfg->cb_printf ("\"%s\"", sval);
+			}
+		}
+	} else {
+		if (pj) {
+			pj_s (pj, sval);
 		} else {
 			cfg->cb_printf ("\"%s\"", sval);
 		}
-	} else {
-		cfg->cb_printf ("\"%s\"", sval);
 	}
 	free (sval);
 }
 
-static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, const char *sfx, bool verbose, bool json) {
+static void config_print_node(RConfig *cfg, RConfigNode *node, PJ *pj, const char *pfx, const char *sfx, bool verbose) {
 	r_return_if_fail (cfg && node && pfx && sfx);
 	char *option;
-	bool isFirst;
 	RListIter *iter;
-	char *es = NULL;
 
-	if (json) {
+	if (pj) {
 		if (verbose) {
-			cfg->cb_printf ("{");
-			cfg->cb_printf ("\"name\":\"%s\",", node->name);
-			cfg->cb_printf ("\"value\":");
-			config_print_value_json (cfg, node);
-			cfg->cb_printf (",\"type\":\"%s\",", r_config_node_type (node));
-			es = r_str_escape (node->desc);
-			if (es) {
-				cfg->cb_printf ("\"desc\":\"%s\",", es);
-				free (es);
+			pj_o (pj);
+			pj_ks (pj, "name", node->name);
+			pj_ks (pj, "value", node->name);
+			pj_ks (pj, "type", r_config_node_type (node));
+			pj_k (pj, "value");
+			config_print_value_json (cfg, pj, node);
+			if (R_STR_ISNOTEMPTY (node->desc)) {
+				pj_ks (pj, "desc", node->desc);
 			}
-			cfg->cb_printf ("\"ro\":%s", r_str_bool (r_config_node_is_ro (node)));
+			pj_kb (pj, "ro", r_config_node_is_ro (node));
 			if (node->options && !r_list_empty (node->options)) {
-				isFirst = true;
-				cfg->cb_printf (",\"options\":[");
+				pj_ka (pj, "options");
 				r_list_foreach (node->options, iter, option) {
-					es = r_str_escape (option);
-					if (es) {
-						if (isFirst) {
-							isFirst = false;
-						} else {
-							cfg->cb_printf (",");
-						}
-						cfg->cb_printf ("\"%s\"", es);
-						free (es);
-					}
+					pj_s (pj, option);
 				}
-				cfg->cb_printf ("]");
+				pj_end (pj);
 			}
-			cfg->cb_printf ("}");
+			pj_end (pj);
 		} else {
-			cfg->cb_printf ("\"%s\":", node->name);
-			config_print_value_json (cfg, node);
+			pj_k (pj, node->name);
+			config_print_value_json (cfg, pj, node);
 		}
 	} else {
 		if (verbose) {
@@ -133,8 +136,8 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, 
 				r_config_node_is_ro (node) ? "(ro)" : "",
 				node->desc);
 			if (node->options && !r_list_empty (node->options)) {
-				isFirst = true;
-				cfg->cb_printf(" [");
+				bool isFirst = true;
+				cfg->cb_printf ("[");
 				r_list_foreach (node->options, iter, option) {
 					if (isFirst) {
 						isFirst = false;
@@ -161,8 +164,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	const char *pfx = "";
 	int len = 0;
 	bool verbose = false;
-	bool json = false;
-	bool isFirst = false;
+	PJ *pj = NULL;
 
 	if (!IS_NULLSTR (str)) {
 		str = r_str_trim_head_ro (str);
@@ -170,17 +172,19 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		if (len > 0 && (str[0] == 'j' || str[0] == 'J')) {
 			str++;
 			len--;
-			json = true;
 			rad = 'J';
 		}
 		if (len > 0 && str[0] == ' ') {
 			str++;
 			len--;
 		}
-		if (strlen (str) == 0) {
+		if (R_STR_ISEMPTY (str)) {
 			str = NULL;
 			len = 0;
 		}
+	}
+	if (rad == 'j' || rad == 'J') {
+		pj = pj_new ();
 	}
 
 	switch (rad) {
@@ -191,7 +195,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	case 0:
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
-				config_print_node (cfg, node, pfx, sfx, verbose, json);
+				config_print_node (cfg, node, NULL, pfx, sfx, verbose);
 			}
 		}
 		break;
@@ -204,7 +208,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 				if (r_str_startswith (node->name, "dir.")) {
 					continue;
 				}
-				config_print_node (cfg, node, "\"e ", "\"", verbose, json);
+				config_print_node (cfg, node, NULL, "\"e ", "\"", verbose);
 			}
 		}
 		break;
@@ -258,7 +262,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		verbose = true;
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
-				config_print_node (cfg, node, pfx, sfx, verbose, json);
+				config_print_node (cfg, node, NULL, pfx, sfx, verbose);
 			}
 		}
 		break;
@@ -273,30 +277,25 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		verbose = true;
 		/* fallthrou */
 	case 'j':
-		isFirst = true;
 		if (verbose) {
-			cfg->cb_printf ("[");
+			pj_a (pj);
 		} else {
-			cfg->cb_printf ("{");
+			pj_o (pj);
 		}
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len)))) {
 				if (!str || !strncmp (str, node->name, len)) {
-					if (isFirst) {
-						isFirst = false;
-					} else {
-						cfg->cb_printf (",");
-					}
-					config_print_node (cfg, node, pfx, sfx, verbose, true);
+					config_print_node (cfg, node, pj, pfx, sfx, verbose);
 				}
 			}
 		}
-		if (verbose) {
-			cfg->cb_printf ("]\n");
-		} else {
-			cfg->cb_printf ("}\n");
-		}
+		pj_end (pj);
 		break;
+	}
+	if (pj) {
+		char *s = pj_drain (pj);
+		cfg->cb_printf ("%s\n", s);
+		free (s);
 	}
 }
 
