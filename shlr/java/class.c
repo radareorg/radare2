@@ -1657,7 +1657,7 @@ R_API char *r_bin_java_get_utf8_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
 }
 
 R_API ut32 r_bin_java_get_utf8_len_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
-	r_return_val_if_fail (bin, NULL);
+	r_return_val_if_fail (bin, 0);
 	/*
 	Search through the Constant Pool list for the given CP Index.
 	If the idx not found by directly going to the list index,
