@@ -356,7 +356,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			if ((b[3] & 0xf) == 5) {
 				op->ptr = 8 + addr + b[0] + ((b[1] & 0xf) << 8);
 				// XXX: if set it breaks the visual disasm wtf
-				// op->refptr = true;
+				op->refptr = 4;
 			}
 		case 4:
 		case 6:

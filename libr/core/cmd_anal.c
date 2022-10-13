@@ -2249,7 +2249,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					r_cons_printf ("%s: %s\n", opname, d);
 					free (d);
 				} else {
-					R_LOG_ERROR ("Unknown opcode");
+					R_LOG_ERROR ("Unknown opcode at 0x%08"PFMT64x, addr);
 				}
 				free (opname);
 			}
