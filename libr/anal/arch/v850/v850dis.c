@@ -278,8 +278,8 @@ static char *distillate(v850np_inst *inst, const char *esilfmt) {
 	}
 	if (arg) {
 		arg = strdup (arg + 1);
-		arg = r_str_replace (arg, "{ ", "", true);
-		arg = r_str_replace (arg, " }", "", true);
+		arg = r_str_replace (arg, "{", "", true);
+		arg = r_str_replace (arg, "}", "", true);
 		arg = r_str_replace (arg, "[", ",", true);
 		arg = r_str_replace (arg, "]", "", true);
 		args = r_str_split_list (arg, ",", 0);

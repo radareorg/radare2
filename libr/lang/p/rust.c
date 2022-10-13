@@ -84,7 +84,7 @@ static bool lang_rust_run(RLang *lang, const char *code, int len) {
 "extern {\n" \
 "        pub fn r_core_cmd_str(core: *const u8, s: *const u8) -> *const u8;\n" \
 "        pub fn free (ptr: *const u8);\n" \
-" }\n" \
+"}\n" \
 "\n" \
 "pub struct R2;\n" \
 "\n" \
@@ -98,7 +98,7 @@ static bool lang_rust_run(RLang *lang, const char *code, int len) {
 "                        String::from (c_str)\n" \
 "                }\n" \
 "        }\n" \
-" }\n" \
+"}\n" \
 "\n" \
 "#[no_mangle]\n" \
 "#[allow(unused_variables)]\n" \
@@ -108,7 +108,7 @@ static bool lang_rust_run(RLang *lang, const char *code, int len) {
 "        unsafe { /* because core is external */\n";
 		const char *rust_footer = \
 "        }\n" \
-" }\n";
+"}\n";
 	fputs (rust_header, fd);
 	fputs (code, fd);
 	fputs (rust_footer, fd);

@@ -266,7 +266,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		p->cb_printf ("}];\n");
 		break;
 	case 'v': // "pcv" // JaVa
-		p->cb_printf ("byte[] ba = {\n");
+		p->cb_printf ("byte[] ba = {");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? ",": "");
