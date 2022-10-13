@@ -1,9 +1,75 @@
-NAME=search magic
+NAME=search magic Flash
 FILE=bins/swf/CurveBall.swf  
 CMDS=<<EOF
 /m
+/m
 EOF
 EXPECT=<<EOF
-0x00000000 1 Macromedia Flash data, version 5 file size (header included) 67765
+0x00000000 1 hit0_0 Macromedia Flash data, version 5 file size (header included) 67765
+0x00000000 1 hit1_0 Macromedia Flash data, version 5 file size (header included) 67765
+EOF
+RUN
+
+NAME=search magic JSON GPG
+FILE=bins/other/private.pgp
+CMDS=<<EOF
+/mj
+EOF
+EXPECT=<<EOF
+[{"offset":5,"depth":1,"info":"PGP Private key"}]
+EOF
+RUN
+
+NAME=/m search from/to (seek 0)
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+e io.va = false
+s 0
+e search.from = 0
+e search.to = 0x10
+/m
+EOF
+EXPECT=<<EOF
+0x00000000 1 hit0_0 PE for MS Windows Intel 80386 32-bit
+EOF
+RUN
+
+NAME=/m search from/to (seek beyond data)
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+e io.va = false
+s 0x1000
+e search.from = 0
+e search.to = 0x10
+/m
+EOF
+EXPECT=<<EOF
+0x00000000 1 hit0_0 PE for MS Windows Intel 80386 32-bit
+EOF
+RUN
+
+NAME=/m search seek
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+e io.va = false
+s 0x1000
+/m~[0]
+s
+/fm
+EOF
+EXPECT=<<EOF
+0x00000000
+0x1000
+EOF
+RUN
+
+NAME=/m on Info
+FILE=bins/other/Info.plist
+CMDS=<<EOF
+e search.prefix = magic
+/m
+EOF
+EXPECT=<<EOF
+0x00000000 1 magic0_0 Binary PLIST data stream
 EOF
 RUN

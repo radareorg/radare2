@@ -4113,10 +4113,17 @@ reread:
 			ut64 addr = search_itv.addr;
 			RListIter *iter;
 			RIOMap *map;
+			RSearchKeyword *kw;
+
+			kw = r_search_keyword_new_hexmask ("00", NULL);
+			kw->keyword_length = 1;
+			r_search_reset (core->search, R_SEARCH_MAGIC);
+			r_search_kw_add (core->search, kw);
+
 			if (param.outmode == R_MODE_JSON) {
 				pj_a (param.pj);
 			}
-			r_core_magic_reset (core);
+
 			int maxHits = r_config_get_i (core->config, "search.maxhits");
 			int hits = 0;
 			r_list_foreach (param.boundaries, iter, map) {
@@ -4128,7 +4135,7 @@ reread:
 					if (r_cons_is_breaked ()) {
 						break;
 					}
-					ret = r_core_magic_at (core, file, addr, 99, false, param.outmode == R_MODE_JSON ? param.pj : NULL, &hits);
+					ret = r_core_magic_at (core, kw, file, addr, 99, false, param.outmode == R_MODE_JSON? param.pj: NULL, &hits);
 					if (ret == -1) {
 						// something went terribly wrong.
 						break;
