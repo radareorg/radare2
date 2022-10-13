@@ -21,7 +21,7 @@
 #define S_T 11
 #define LFSR_T 12
 
-static char *fsr[] = {"fsr0", "fsr1", "fsr2", "reserved"};
+static char *fsr[] = { "fsr0", "fsr1", "fsr2", "reserved" };
 
 static struct {
 	ut16 opmin;

@@ -655,7 +655,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			ret = 0LL;
 			out = sdb_querys (core->sdb, NULL, 0, bptr);
 			if (out && *out) {
-				if (strstr (out, "$k{")) {
+				if (strstr (out, "$k{ ")) {
 					R_LOG_ERROR ("Recursivity is not permitted here");
 				} else {
 					ret = r_num_math (core->num, out);
@@ -4104,7 +4104,7 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 			"sc@syscall(%d);\n"
 			"main@global(0,1024) { sc(%s);\n"
 			":int3\n"
-			"}\n", num, args);
+			" }\n", num, args);
 	r_egg_reset (core->egg);
 	// TODO: setup arch/bits/os?
 	r_egg_load (core->egg, code, 0);

@@ -62,7 +62,7 @@ R_API char *r_graph_drawable_to_dot(RGraph /*RGraphNodeInfo*/ *graph, const char
 			r_strbuf_appendf (&buf, "%d -> %d\n", node->idx, target->idx);
 		}
 	}
-	r_strbuf_append (&buf, "}\n");
+	r_strbuf_append (&buf, " }\n");
 	return r_strbuf_drain_nofree (&buf);
 }
 

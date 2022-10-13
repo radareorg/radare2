@@ -245,15 +245,15 @@ void _handle_fi_leave(EsilCfgGen *gen, ut32 id, const bool has_next) {
 void _handle_control_flow_ifelsefi (EsilCfgGen *gen, char *atom, ut32 id) {
 	// we're probably going to see more ?{ and }, than }{
 	// so checking against ?{ and } befor }{ is therefor better for perf (lololol)
-	if (!strcmp (atom, "?{")) {
+	if (!strcmp (atom, "?{ ")) {
 		_handle_if_enter (gen, id, !!r_id_storage_get (gen->atoms, id + 1));
 		return;
 	}
-	if (!strcmp (atom, "}")) {
+	if (!strcmp (atom, " }")) {
 		_handle_fi_leave (gen, id, !!r_id_storage_get (gen->atoms, id + 1));
 		return;
 	}
-	if (!strcmp (atom, "}{")) {
+	if (!strcmp (atom, " }{ ")) {
 		_handle_else_enter (gen, id, !!r_id_storage_get (gen->atoms, id + 1));
 	}
 }

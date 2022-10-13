@@ -295,7 +295,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		PRINTF ("static inline int pop() {int r = stack[%s]; %s+=%d; return r;}\n", S0, S0, (int)sizeof (int));
 		PRINTF ("\n");
 	}
-	PRINTF ("int %s (int esi, int edx) {", fcn->name);
+	PRINTF ("int %s (int esi, int edx) { ", fcn->name);
 	indent++;
 	RList *visited = r_list_newf (NULL);
 	ut64 addr = fcn->addr;
@@ -373,7 +373,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				nindent = 1;
 				for (i = indent; i != nindent && i > 0; i--) {
 					NEWLINE (bb->addr, i);
-					PRINTF ("}");
+					PRINTF (" }");
 				}
 				NEWLINE (bb->addr, indent);
 				PRINTF ("return %s;", R0);
@@ -394,7 +394,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			if (sdb_num_get (db, K_ELSE (bb->addr), 0)) {
 				NEWLINE (addr, indent);
 				if (!strcmp (blocktype, "else")) {
-					PRINTF (" // } %s {", blocktype);
+					PRINTF (" // } %s { ", blocktype);
 				} else {
 					PRINTF (" // } %s (?);", blocktype);
 				}
@@ -416,7 +416,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				int i;
 				for (i = indent; i != nindent; i--) {
 					NEWLINE (addr, i);
-					PRINTF ("}");
+					PRINTF (" }");
 				}
 			}
 			indent = nindent - 1;
@@ -471,7 +471,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 							blocktype = "else";
 						}
 						NEWLINE (bb->addr, indent);
-						PRINTF (" // do {");
+						PRINTF (" // do { ");
 						indent++;
 					}
 				}
@@ -488,12 +488,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					int i;
 					for (i = indent; i != nindent; i--) {
 						NEWLINE (bb->addr, i);
-						PRINTF ("}");
+						PRINTF (" }");
 					}
 				}
 				if (nindent != indent) {
 					NEWLINE (bb->addr, indent);
-					PRINTF (" // } else {");
+					PRINTF (" // } else { ");
 				}
 				indent = nindent;
 			}
@@ -527,7 +527,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_list_free (visited);
 	indent = 0;
 	NEWLINE (addr, indent);
-	PRINTF ("}\n");
+	PRINTF (" }\n");
 	if (pj) {
 		pj_end (pj);
 		char *kode = r_strbuf_drain (codestr);

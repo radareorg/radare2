@@ -279,16 +279,16 @@ struct op_family {
 	int id;
 };
 static const struct op_family of[] = {
-	{"cpu", R_ARCH_OP_FAMILY_CPU},
-	{"fpu", R_ARCH_OP_FAMILY_FPU},
-	{"mmx", R_ARCH_OP_FAMILY_MMX},
-	{"sse", R_ARCH_OP_FAMILY_SSE},
-	{"priv", R_ARCH_OP_FAMILY_PRIV},
-	{"virt", R_ARCH_OP_FAMILY_VIRT},
-	{"crpt", R_ARCH_OP_FAMILY_CRYPTO},
-	{"io", R_ARCH_OP_FAMILY_IO},
-	{"sec", R_ARCH_OP_FAMILY_SECURITY},
-	{"thread", R_ARCH_OP_FAMILY_THREAD},
+	{ "cpu", R_ARCH_OP_FAMILY_CPU},
+	{ "fpu", R_ARCH_OP_FAMILY_FPU},
+	{ "mmx", R_ARCH_OP_FAMILY_MMX},
+	{ "sse", R_ARCH_OP_FAMILY_SSE},
+	{ "priv", R_ARCH_OP_FAMILY_PRIV},
+	{ "virt", R_ARCH_OP_FAMILY_VIRT},
+	{ "crpt", R_ARCH_OP_FAMILY_CRYPTO},
+	{ "io", R_ARCH_OP_FAMILY_IO},
+	{ "sec", R_ARCH_OP_FAMILY_SECURITY},
+	{ "thread", R_ARCH_OP_FAMILY_THREAD},
 };
 
 R_API int r_arch_op_family_from_string(const char *f) {

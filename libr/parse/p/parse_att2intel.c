@@ -11,22 +11,22 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		const char *op;
 		const char *str;
 	} ops[] = {
-		{ "cmpl", "cmp 2, 1"},
-		{ "testl", "test 2, 1"},
-		{ "leal", "lea 2, 1"},
-		{ "movl", "mov 2, 1"},
-		{ "xorl", "xor 2, 1"},
-		{ "andl", "and 2, 1"},
-		{ "orl", "or 2, 1"},
-		{ "addl", "add 2, 1"},
-		{ "incl", "inc 1"},
-		{ "decl", "dec 1"},
-		{ "subl", "sub 2, 1"},
-		{ "mull", "mul 2, 1"},
-		{ "divl", "div 2, 1"},
-		{ "pushl", "push 1"},
-		{ "popl", "pop 1"},
-		{ "ret", "ret"},
+		{ "cmpl", "cmp 2, 1" },
+		{ "testl", "test 2, 1" },
+		{ "leal", "lea 2, 1" },
+		{ "movl", "mov 2, 1" },
+		{ "xorl", "xor 2, 1" },
+		{ "andl", "and 2, 1" },
+		{ "orl", "or 2, 1" },
+		{ "addl", "add 2, 1" },
+		{ "incl", "inc 1" },
+		{ "decl", "dec 1" },
+		{ "subl", "sub 2, 1" },
+		{ "mull", "mul 2, 1" },
+		{ "divl", "div 2, 1" },
+		{ "pushl", "push 1" },
+		{ "popl", "pop 1" },
+		{ "ret", "ret" },
 		{ NULL }
 	};
 

@@ -3455,7 +3455,7 @@ static bool runword(RAnalEsil *esil, const char *word) {
 	}
 
 	// Don't push anything onto stack when processing if statements
-	if (!strcmp (word, "?{") && esil->Reil) {
+	if (!strcmp (word, "?{ ") && esil->Reil) {
 		esil->Reil->skip = esil->Reil->skip? 0: 1;
 		if (esil->Reil->skip) {
 			esil->Reil->cmd_count = 0;
@@ -3467,7 +3467,7 @@ static bool runword(RAnalEsil *esil, const char *word) {
 		char *if_buf = esil->Reil->if_buf;
 		size_t n = strlen (if_buf);
 		snprintf (if_buf + n, sizeof (esil->Reil->if_buf) - n, "%s,", word);
-		if (!strcmp (word, "}")) {
+		if (!strcmp (word, " }")) {
 			r_anal_esil_pushnum (esil, esil->Reil->addr + esil->Reil->cmd_count + 1);
 			r_anal_esil_parse (esil, esil->Reil->if_buf);
 		} else if (iscommand (esil, word, &op)) {
@@ -3477,7 +3477,7 @@ static bool runword(RAnalEsil *esil, const char *word) {
 	}
 
 	//eprintf ("WORD (%d) (%s)\n", esil->skip, word);
-	if (!strcmp (word, "}{")) {
+	if (!strcmp (word, " }{ ")) {
 		if (esil->skip == 1) {
 			esil->skip = 0;
 		} else if (esil->skip == 0) {	//this isn't perfect, but should work for valid esil
@@ -3485,13 +3485,13 @@ static bool runword(RAnalEsil *esil, const char *word) {
 		}
 		return true;
 	}
-	if (!strcmp (word, "}")) {
+	if (!strcmp (word, " }")) {
 		if (esil->skip) {
 			esil->skip--;
 		}
 		return true;
 	}
-	if (esil->skip && strcmp (word, "?{")) {
+	if (esil->skip && strcmp (word, "?{ ")) {
 		return true;
 	}
 
@@ -3791,7 +3791,7 @@ R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP (">", esil_bigger, 1, 2, OT_MATH);
 	OP ("<=", esil_smaller_equal, 1, 2, OT_MATH);
 	OP (">=", esil_bigger_equal, 1, 2, OT_MATH);
-	OP ("?{", esil_if, 0, 1, OT_CTR);
+	OP ("?{ ", esil_if, 0, 1, OT_CTR);
 	OP ("<<", esil_lsl, 1, 2, OT_MATH);
 	OP ("<<=", esil_lsleq, 0, 2, OT_MATH | OT_REGW);
 	OP (">>", esil_lsr, 1, 2, OT_MATH);
@@ -3802,8 +3802,8 @@ R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("<<<", esil_rol, 1, 2, OT_MATH);
 	OP ("&", esil_and, 1, 2, OT_MATH);
 	OP ("&=", esil_andeq, 0, 2, OT_MATH | OT_REGW);
-	OP ("}", esil_nop, 0, 0, OT_CTR); // just to avoid push
-	OP ("}{", esil_nop, 0, 0, OT_CTR);
+	OP (" }", esil_nop, 0, 0, OT_CTR); // just to avoid push
+	OP (" }{ ", esil_nop, 0, 0, OT_CTR);
 	OP ("|", esil_or, 1, 2, OT_MATH);
 	OP ("|=", esil_oreq, 0, 2, OT_MATH | OT_REGW);
 	OP ("!", esil_neg, 1, 1, OT_MATH);

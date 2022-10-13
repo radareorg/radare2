@@ -819,7 +819,7 @@ static bool linux_map_thp(RDebug *dbg, ut64 addr, int size) {
 	snprintf (code, sizeof (code),
 		"sc_madvise@syscall(%d);\n"
 		"main@naked(0) { .rarg0 = sc_madvise(0x%08" PFMT64x ",%d, %d);break;\n"
-		"}\n",
+		" }\n",
 		num, addr, size, MADV_HUGEPAGE);
 	r_egg_reset (dbg->egg);
 	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
@@ -877,7 +877,7 @@ mmap2(2)). If arch is x86_32 then usage mmap2() */
 	snprintf (code, sizeof (code),
 		"sc_mmap@syscall(%d);\n"
 		"main@naked(0) { .rarg0 = sc_mmap(0x%08"PFMT64x",%d,%d,%d,%d,%d);break;\n"
-		"}\n",
+		" }\n",
 		num, addr, size, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 	r_egg_reset (dbg->egg);
 	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
@@ -930,7 +930,7 @@ static int linux_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	snprintf (code, sizeof (code),
 		"sc_munmap@syscall(%d);\n"
 		"main@naked(0) { .rarg0 = sc_munmap(0x%08" PFMT64x ",%d);break;\n"
-		"}\n",
+		" }\n",
 		num, addr, size);
 	r_egg_reset (dbg->egg);
 	r_egg_setup (dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);
@@ -1548,7 +1548,7 @@ static int r_debug_native_map_protect(RDebug *dbg, ut64 addr, int size, int perm
 		"sc@syscall(%d);\n"
 		"main@global(0) { sc(%p,%d,%d);\n"
 		":int3\n"
-		"}\n", num, (void*)(size_t)addr, size, io_perms_to_prot (perms));
+		" }\n", num, (void*)(size_t)addr, size, io_perms_to_prot (perms));
 
 	r_egg_reset (dbg->egg);
 	r_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);

@@ -34,7 +34,7 @@ echo "agg"
 
 elif [ $MODE = "dot" ]; then
 
-echo "digraph G {"
+echo "digraph G { "
 cat /tmp/rdeps.txt | perl -ne '
 /(.*):(.*)=(.*)$/;
 my $lib=$1;
@@ -42,7 +42,7 @@ my $lib=$1;
 foreach $dep (@deps) {
   print " $dep -> r_$lib;\n";
 }';
-echo "}";
+echo " }";
 
 else
 
@@ -55,10 +55,10 @@ BEGIN { $id = 0; my %libs={}; }
 /(.*):(.*)=(.*)$/;
 my $lib=$1;
 $id++;
-  unless($libs{"r_$lib"}) {
+  unless($libs{ "r_$lib" }) {
 	print "node [\n  id \"r_$lib\"\n  label \"r_$lib\"\n]\n";
 	print STDERR "r_$lib\n";
-	$libs{"r_$lib"}=1;
+	$libs{ "r_$lib" }=1;
   }
 $libs["r_$lib"]=1;
 @deps=split(/ /, $3);

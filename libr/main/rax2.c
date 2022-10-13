@@ -580,7 +580,7 @@ dotherax:
 		r_print_hex_from_bin (NULL, str);
 		return true;
 	} else if (flags & (1 << 21)) { // -i
-		RStrBuf *sb = r_strbuf_new ("unsigned char buf[] = {");
+		RStrBuf *sb = r_strbuf_new ("unsigned char buf[] = { ");
 		/* reasonable amount of bytes per line */
 		const int byte_per_col = 12;
 		for (i = 0; i < len-1; i++) {
@@ -595,7 +595,7 @@ dotherax:
 			r_strbuf_append (sb, "\n  ");
 		}
 		r_strbuf_appendf (sb, "0x%02x\n", (ut8) str[len - 1]);
-		r_strbuf_append (sb, "};\n");
+		r_strbuf_append (sb, " };\n");
 		r_strbuf_appendf (sb, "unsigned int buf_len = %d;\n", len);
 		char *s = r_strbuf_drain (sb);
 		if (s) {

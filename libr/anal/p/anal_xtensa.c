@@ -739,10 +739,10 @@ static void esil_sign_extend(RStrBuf *esil, ut8 bit) {
 		"&"	CM
 		"0"	CM
 		"==,$z,!"	CM
-		"?{"	CM
+		"?{ "	CM
 			"0x%x"	CM
 			"|"	CM
-		"}"	CM,
+		" }"	CM,
 		bit_mask,
 		extend_mask
 	);
@@ -1049,11 +1049,11 @@ static void esil_move_conditional(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 			"0"	CM
 			"%s%d"	CM
 			"%s"	CM
-			"?{"	CM
+			"?{ "	CM
 				"%s%d"	CM
 				"%s%d"	CM
 				"="	CM
-			"}",
+			" }",
 		xtensa_regfile_shortname (isa, cond_rf),
 		cond,
 		compare_op,
@@ -1179,14 +1179,14 @@ static void esil_branch_compare_imm(xtensa_isa isa, xtensa_opcode opcode,
 	esil_push_signed_imm (&op->esil, cmp_imm);
 
 	r_strbuf_appendf (&op->esil, "%s" CM, compare_op);
-	r_strbuf_append (&op->esil, "?{" CM);
+	r_strbuf_append (&op->esil, "?{ " CM);
 
 	// ISA defines branch target as offset + 4,
 	// but at the time of ESIL evaluation
 	// PC will be already incremented by 3
 	esil_push_signed_imm (&op->esil, branch_imm + 4 - 3);
 
-	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
+	r_strbuf_append (&op->esil, "pc" CM "+=" CM " }");
 }
 
 static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
@@ -1239,7 +1239,7 @@ static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
 			"%s%d"	CM
 			"%s%d"	CM
 			"%s"	CM
-			"?{"	CM,
+			"?{ "	CM,
 		xtensa_regfile_shortname (isa, op2_rf),
 		op2_reg,
 		xtensa_regfile_shortname (isa, op1_rf),
@@ -1249,7 +1249,7 @@ static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
 
 	esil_push_signed_imm (&op->esil, branch_imm);
 
-	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
+	r_strbuf_append (&op->esil, "pc" CM "+=" CM " }");
 }
 
 static void esil_branch_compare_single(xtensa_isa isa, xtensa_opcode opcode,
@@ -1299,7 +1299,7 @@ static void esil_branch_compare_single(xtensa_isa isa, xtensa_opcode opcode,
 			"0"	CM
 			"%s%d"	CM
 			"%s"	CM
-			"?{"	CM,
+			"?{ "	CM,
 		xtensa_regfile_shortname (isa, op_rf),
 		op_reg,
 		compare_op
@@ -1307,7 +1307,7 @@ static void esil_branch_compare_single(xtensa_isa isa, xtensa_opcode opcode,
 
 	esil_push_signed_imm (&op->esil, branch_imm);
 
-	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
+	r_strbuf_append (&op->esil, "pc" CM "+=" CM " }");
 }
 
 static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
@@ -1372,7 +1372,7 @@ static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
 			"&"	CM
 			"%s%d"	CM
 			"%s"	CM
-			"?{"	CM,
+			"?{ "	CM,
 		xtensa_regfile_shortname (isa, op1_rf),
 		op1_reg,
 		xtensa_regfile_shortname (isa, op2_rf),
@@ -1384,7 +1384,7 @@ static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
 
 	esil_push_signed_imm (&op->esil, branch_imm);
 
-	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
+	r_strbuf_append (&op->esil, "pc" CM "+=" CM " }");
 }
 
 static void esil_bitwise_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
@@ -1479,7 +1479,7 @@ static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xten
 			"&"	CM
 			"0"	CM
 			"%s"	CM
-			"?{"	CM,
+			"?{ "	CM,
 		xtensa_regfile_shortname (isa, src_rf),
 		src_reg,
 		mask,
@@ -1492,7 +1492,7 @@ static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xten
 		&op->esil,
 			"pc"	CM
 			"+="	CM
-			"}"
+			" }"
 	);
 }
 
@@ -1542,7 +1542,7 @@ static void esil_branch_check_bit(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 			"&"	CM
 			"0"	CM
 			"%s"	CM
-			"?{"	CM,
+			"?{ "	CM,
 		xtensa_regfile_shortname (isa, bit_rf),
 		bit_reg,
 		xtensa_regfile_shortname (isa, src_rf),
@@ -1556,7 +1556,7 @@ static void esil_branch_check_bit(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 		&op->esil,
 			"pc"	CM
 			"+="	CM
-			"}"
+			" }"
 	);
 }
 
@@ -1581,17 +1581,17 @@ static void esil_abs_neg(xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 				"0"	CM
 				"%s%d"	CM
 				"<"	CM
-				"?{"	CM
+				"?{ "	CM
 				"0"     CM
 				"%s%d"	CM
 				"-"     CM
-				"}"	CM
+				" }"	CM
 				"0"	CM
 				"%s%d"	CM
 				">="	CM
-				"?{"	CM
+				"?{ "	CM
 				"%s%d"	CM
-				"}"	CM,
+				" }"	CM,
 			xtensa_regfile_shortname (isa, src_rf),
 			src_reg,
 			xtensa_regfile_shortname (isa, src_rf),

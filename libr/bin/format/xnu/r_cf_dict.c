@@ -355,7 +355,7 @@ static void r_cf_value_dict_print(RCFValueDict *dict) {
 	RCFKeyValue *key_value;
 	int length = r_list_length (dict->pairs);
 	int i = 0;
-	printf ("{");
+	printf ("{ ");
 	r_list_foreach (dict->pairs, iter, key_value) {
 		printf ("\"%s\":", key_value->key);
 		r_cf_value_print (key_value->value);
@@ -363,7 +363,7 @@ static void r_cf_value_dict_print(RCFValueDict *dict) {
 			printf (",");
 		}
 	}
-	printf ("}");
+	printf (" }");
 }
 
 static RCFValueArray *r_cf_value_array_new(void) {

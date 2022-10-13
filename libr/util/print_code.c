@@ -62,7 +62,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 		}
 		i += j;
 	}
-	p->cb_printf ("};\n");
+	p->cb_printf (" };\n");
 }
 
 static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w, bool headers) {
@@ -77,7 +77,7 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 
 	if (headers) {
 		p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
-		p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = {", bits);
+		p->cb_printf ("const uint%d_t buffer[_BUFFER_SIZE] = { ", bits);
 	}
 
 	for (i = 0; !r_print_is_interrupted () && i < len; i++) {
@@ -188,13 +188,13 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		p->cb_printf ("\n.equ shellcode_len, %d\n", len);
 		break;
 	case 'g': // "pcg"
-		p->cb_printf ("var BUFF = [%d]byte{", len);
+		p->cb_printf ("var BUFF = [%d]byte{ ", len);
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			p->cb_printf ("0x%x%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf ("}\n");
+		p->cb_printf (" }\n");
 		break;
 	case 's': // "pcs"
 		p->cb_printf ("\"");
@@ -263,16 +263,16 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 			p->cb_printf ("0x%x%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf ("}];\n");
+		p->cb_printf (" }];\n");
 		break;
 	case 'v': // "pcv" // JaVa
-		p->cb_printf ("byte[] ba = {");
+		p->cb_printf ("byte[] ba = { ");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? ",": "");
 			r_print_cursor (p, i, 1, 0);
 		}
-		p->cb_printf ("};\n");
+		p->cb_printf (" };\n");
 		break;
 	case 'V': // "pcV" // vlang.io
 		p->cb_printf ("const data = [ byte(%d),\n  ", buf[0]);
@@ -287,7 +287,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		p->cb_printf ("\n]\n");
 		break;
 	case 'y': // "pcy"
-		p->cb_printf ("$hex_%"PFMT64x" = {", addr);
+		p->cb_printf ("$hex_%"PFMT64x" = { ", addr);
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			p->cb_printf (" %02x", buf[i] & 0xff);

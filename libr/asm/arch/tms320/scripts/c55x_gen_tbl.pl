@@ -118,7 +118,7 @@ sub dump_head
 		printf("\t},\n");
 	}
 
-	printf("},\n");
+	printf(" },\n");
 }
 
 sub flag2name

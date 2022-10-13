@@ -304,7 +304,7 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 		PRINTF_GA ("0x%"PFMT64x, (ut64)main_arena->GH(fastbinsY)[i]);
 		PRINT_GA (",\n");
 	}
-	PRINT_GA ("}\n");
+	PRINT_GA (" }\n");
 	PRINT_GA ("  top = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(top));
 	PRINT_GA (",\n");
@@ -371,7 +371,7 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 	}
 
 	PRINT_GA ("  }\n");
-	PRINT_GA ("  binmap = {");
+	PRINT_GA ("  binmap = { ");
 
 	for (i = 0; i < BINMAPSIZE; i++) {
 		if (i) {
@@ -379,7 +379,7 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 		}
 		PRINTF_BA ("0x%x", (ut32)main_arena->binmap[i]);
 	}
-	PRINT_GA ("}\n");
+	PRINT_GA (" }\n");
 	PRINT_GA ("  next = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(next));
 	PRINT_GA (",\n");
@@ -392,7 +392,7 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 	PRINT_GA ("  max_system_mem = ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(max_system_mem));
 	PRINT_GA (",\n");
-	PRINT_GA ("}\n\n");
+	PRINT_GA (" }\n\n");
 }
 
 static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
@@ -881,7 +881,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 				PRINT_BA ("  0x0\n");
 			}
 		}
-		PRINT_YA ("}\n");
+		PRINT_YA (" }\n");
 		break;
 	case ' ': // dmhf [bin_num]
 		num_bin = r_num_get (NULL, input) - 1;
@@ -1440,7 +1440,7 @@ void GH(print_inst_minfo)(GH(RHeapInfo) *heap_info, GHT hinfo) {
 	PRINTF_BA ("0x%"PFMT64x"\n", (ut64)heap_info->size);
 	PRINT_YA ("  mprotect_size = ");
 	PRINTF_BA ("0x%"PFMT64x"\n", (ut64)heap_info->mprotect_size);
-	PRINT_YA ("}\n\n");
+	PRINT_YA (" }\n\n");
 }
 
 void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {

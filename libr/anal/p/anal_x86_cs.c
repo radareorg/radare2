@@ -347,7 +347,7 @@ static int cond_x862r2(int id) {
 
 /* reg indices are based on Intel doc for 32-bit ModR/M byte */
 static const char *reg32_to_name(ut8 reg) {
-	const char * const names[] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
+	const char * const names[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi" };
 	return reg < R_ARRAY_SIZE (names) ? names[reg] : "unk";
 }
 

@@ -16,10 +16,10 @@
 #include "gb/gb_makros.h"
 #include "gb/gb.h"
 
-static const char *regs_1[] = { "Z", "N", "H", "C"};
-static const char *regs_8[] = { "b", "c", "d", "e", "h", "l", "a", "a"};				//deprecate this and rename regs_x
-static const char *regs_x[] = { "b", "c", "d", "e", "h", "l", "hl", "a"};
-static const char *regs_16[] = { "bc", "de", "hl", "sp"};
+static const char *regs_1[] = { "Z", "N", "H", "C" };
+static const char *regs_8[] = { "b", "c", "d", "e", "h", "l", "a", "a" };				//deprecate this and rename regs_x
+static const char *regs_x[] = { "b", "c", "d", "e", "h", "l", "hl", "a" };
+static const char *regs_16[] = { "bc", "de", "hl", "sp" };
 static const char *regs_16_alt[] = { "bc", "de", "hl", "af" };
 
 static ut8 gb_op_calljump(RAnal *a, RAnalOp *op, const ut8 *data, ut64 addr) {

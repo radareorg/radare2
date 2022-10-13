@@ -1581,7 +1581,7 @@ static int r_cmd_java_print_class_definitions(RBinJavaObj *obj) {
 			idx++;
 		}
 	}
-	r_cons_printf ("}\n");
+	r_cons_printf (" }\n");
 
 	r_list_free (the_imports);
 	r_list_free (the_fields);

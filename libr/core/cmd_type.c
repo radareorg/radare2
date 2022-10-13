@@ -571,7 +571,7 @@ static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, 
 			free (p);
 		}
 		free (var);
-		r_cons_println ("};");
+		r_cons_println (" };");
 		space = "";
 		if (match) {
 			break;
@@ -614,7 +614,7 @@ static void print_enum_in_c_format(Sdb *TDB, const char *arg, bool multiline) {
 					}
 					r_list_free (list);
 				}
-				r_cons_println (multiline? "\n};": "};");
+				r_cons_println (multiline? "\n};": " };");
 				if (match) {
 					break;
 				}
@@ -732,7 +732,7 @@ static bool print_link_cb(void *p, const char *k, const char *v) {
 
 //TODO PJ
 static bool print_link_json_cb(void *p, const char *k, const char *v) {
-	r_cons_printf ("{\"0x%s\":\"%s\"}", k + strlen ("link."), v);
+	r_cons_printf ("{\"0x%s\":\"%s\" }", k + strlen ("link."), v);
 	return true;
 }
 
@@ -763,7 +763,7 @@ static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
 	}
 	r_cons_printf ("{\"%s\":", v);
 	r_core_cmdf (core, "pfj %s @ 0x%s", fmt, k + strlen ("link."));
-	r_cons_printf ("}");
+	r_cons_printf (" }");
 	return true;
 }
 

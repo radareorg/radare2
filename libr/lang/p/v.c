@@ -32,19 +32,19 @@ static const char *r2v_body = \
 	"    }\n"
 	"    return ''\n"
 	"  }\n"
-	"}\n"
+	" }\n"
 	"\n"
 	"pub fn (core &R2)str() string {\n"
 	"        return i64(core).str()\n"
-	"}\n"
+	" }\n"
 	"\n"
 	"pub fn (core &R2)free() {\n"
 	"        unsafe {C.r_core_free (core)}\n"
-	"}\n"
+	" }\n"
 	"\n"
 	"fn new() &R2 {\n"
 	"        return C.r_core_new ()\n"
-	"}\n";
+	" }\n";
 
 typedef struct VParse {
 	RStrBuf *head;
@@ -121,7 +121,7 @@ static bool __run(RLang *lang, const char *code, int len) {
 		}
 		fputs (body, fd);
 		if (!strstr (body, "fn entry")) {
-			fputs ("}\n", fd);
+			fputs (" }\n", fd);
 		}
 		fclose (fd);
 		lang_v_file (lang, ".tmp.v");
@@ -174,7 +174,7 @@ static bool lang_v_run(RLang *lang, const char *code, int len) {
 #define r_lang_v_example ""\
 	"pub fn entry(r2 &R2) {\n" \
 	"  println(r2.cmd('?E Hello World'))\n" \
-	"}\n"
+	" }\n"
 
 static RLangPlugin r_lang_plugin_v = {
 	.name = "v",

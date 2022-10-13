@@ -192,7 +192,7 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 						} else {
 							r_strbuf_append (sb, child);
 							pad (sb, padcnt);
-							r_strbuf_append (sb, "}\n");
+							r_strbuf_append (sb, " }\n");
 						}
 						free (child);
 					}
@@ -219,7 +219,7 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 				pj_end (pj);
 			} else {
 				pad (sb, padcnt);
-				r_strbuf_append (sb, "}\n");
+				r_strbuf_append (sb, " }\n");
 			}
 			break;
 		case WIRE_32_BIT:

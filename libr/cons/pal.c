@@ -537,7 +537,7 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 	const char *hasnext;
 	int i;
 	if (rad == 'j') {
-		r_cons_print ("{");
+		r_cons_print ("{ ");
 	}
 	for (i = 0; keys[i].name; i++) {
 		RColor *rcolor = RCOLOR_AT (i);
@@ -609,7 +609,7 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 		}
 	}
 	if (rad == 'j') {
-		r_cons_print ("}\n");
+		r_cons_print (" }\n");
 	}
 }
 

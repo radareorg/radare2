@@ -731,12 +731,12 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			const char *name;
 			int protocol;
 		} uris[7] = {
-			{"tcp", RTR_PROTOCOL_TCP},
-			{"udp", RTR_PROTOCOL_UDP},
-			{"rap", RTR_PROTOCOL_RAP},
-			{"r2p", RTR_PROTOCOL_RAP},
-			{"http", RTR_PROTOCOL_HTTP},
-			{"unix", RTR_PROTOCOL_UNIX},
+			{ "tcp", RTR_PROTOCOL_TCP},
+			{ "udp", RTR_PROTOCOL_UDP},
+			{ "rap", RTR_PROTOCOL_RAP},
+			{ "r2p", RTR_PROTOCOL_RAP},
+			{ "http", RTR_PROTOCOL_HTTP},
+			{ "unix", RTR_PROTOCOL_UNIX},
 			{NULL, 0}
 		};
 		char *s = r_str_ndup (input, pikaboo - input);
