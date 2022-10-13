@@ -1,9 +1,6 @@
 /* radare - LGPL - Copyright 2019-2022 - condret */
 
-//#include <r_util.h>
 #include <r_anal.h>
-//#include <r_reg.h>
-//#include <sdb.h>
 
 typedef enum {
 	VAR_TYPE_REG = 0,
