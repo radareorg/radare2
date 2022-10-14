@@ -536,17 +536,22 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 	char *name, **color;
 	const char *hasnext;
 	int i;
+	PJ *pj = NULL;
 	if (rad == 'j') {
-		r_cons_print ("{");
+		pj = pj_new ();
+		pj_o (pj);
 	}
 	for (i = 0; keys[i].name; i++) {
 		RColor *rcolor = RCOLOR_AT (i);
 		color = COLOR_AT (i);
 		switch (rad) {
 		case 'j':
-			hasnext = (keys[i + 1].name) ? "," : "";
-			r_cons_printf ("\"%s\":[%d,%d,%d]%s",
-				keys[i].name, rcolor->r, rcolor->g, rcolor->b, hasnext);
+			pj_k (pj, keys[i].name);
+			pj_a (pj);
+			pj_n (pj, rcolor->r);
+			pj_n (pj, rcolor->g);
+			pj_n (pj, rcolor->b);
+			pj_end (pj);
 			break;
 		case 'c': {
 			const char *prefix = r_str_trim_head_ro (arg);
@@ -608,8 +613,11 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
 				keys[i].name);
 		}
 	}
-	if (rad == 'j') {
-		r_cons_print ("}\n");
+	if (rad == 'j' || pj) {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_printf ("%s\n", s);
+		free (s);
 	}
 }
 
