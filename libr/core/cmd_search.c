@@ -2280,6 +2280,11 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 }
 
 static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
+	bool silent = false;
+	if (!input) {
+		input = "";
+		silent = true;
+	}
 	ut64 at;
 	RAnalOp aop;
 	int hasch = 0;
@@ -2305,13 +2310,24 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
+		if (!(map->perm & R_PERM_X)) {
+			continue;
+		}
 		for (i = 0, at = from; at < to; i++, at++) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
 			at = from + i;
-			ut8 bufop[32];
-			r_io_read_at (core->io, at, bufop, sizeof (bufop));
+			ut8 bufop[32] = {0};
+			if (!r_io_read_at (core->io, at, bufop, sizeof (bufop))) {
+				break;
+			}
+			bool fail = !memcmp (bufop, "\xff\xff\xff\xff", 4);
+			if (fail) {
+				R_LOG_DEBUG ("Invalid read at 0x%08"PFMT64x, at);
+				break;
+			}
+
 			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 			if (ret) {
 				if (hasch > 0) {
@@ -2346,7 +2362,6 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 							char ch2 = (aop.val >> 16) & 0xff;
 							char ch3 = (aop.val >> 24) & 0xff;
 							if (IS_PRINTABLE (ch0) && IS_PRINTABLE (ch1) && IS_PRINTABLE (ch2)) {
-								eprintf ("JAJA LE STRING IS %c %c %c %c\n", ch0, ch1, ch2, ch3);
 								char chstr[2] = {ch0, 0};
 								r_strbuf_append (sb, chstr);
 								chstr[0] = ch1;
@@ -2405,9 +2420,15 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	r_list_free (words);
 	free (word);
 	r_cons_break_pop ();
-	char *res = r_strbuf_drain (rb);
-	r_cons_println (res);
-	free (res);
+	if (silent) {
+		r_strbuf_free (rb);
+	} else {
+		char *res = r_strbuf_drain (rb);
+		if (R_STR_ISNOTEMPTY (res)) {
+			r_cons_println (res);
+		}
+		free (res);
+	}
 	r_strbuf_free (sb);
 	return false;
 }
@@ -3828,16 +3849,25 @@ reread:
 			dosearch = false;
 			break;
 		case 'z':
-			if (input[2] == '?') { // "/az"
+			switch (input[2]) {
+			case '?': // "/az"
 				r_core_cmd_help_match (core, help_msg_slash_a, "/az", true);
-			} else if (input[2] == 'q') { // "/azq"
+				break;
+			case 'q': // "/azq"
 				do_analstr_search (core, &param, true, r_str_trim_head_ro (input + 3));
-			} else if (input[2] == ' ') { // "/az [num]"
+				break;
+			case 's': // "/azs"
+				do_analstr_search (core, &param, true, NULL);
+				break;
+			case ' ': // "/az [num]"
 				do_analstr_search (core, &param, false, r_str_trim_head_ro (input + 2));
-			} else if (input[2] == 0) { // "/az"
+				break;
+			case 0:
 				do_analstr_search (core, &param, false, "");
-			} else {
+				break;
+			default:
 				r_core_cmd_help_match (core, help_msg_slash_a, "/az", true);
+				break;
 			}
 			dosearch = false;
 			break;
