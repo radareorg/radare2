@@ -11,7 +11,7 @@ jobs:
         id: "determine-repo"
         run: "echo \"::set-output name=repo::${GITHUB_REPOSITORY}\""
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download Coverity Build Tool
         run: |
           wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=radare2" -O cov-analysis-linux64.tar.gz

@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Installing with symlinks
       run: sys/wasi.sh
     - uses: actions/upload-artifact@v3
@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Installing the musl runtime
       run: |
         sudo apt-get --assume-yes update
@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Packaging for Debian
       run: |
         export CFLAGS="-Werror"
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Packaging for 32bit Debian
       run: |
         sudo apt --assume-yes update
@@ -85,7 +85,7 @@ jobs:
 #    container: centos:8
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v2
+#      uses: actions/checkout@v3
 #    - name: Prepare Skeleton
 #      run: |
 #        mkdir -p SOURCES SPECS
@@ -104,7 +104,7 @@ jobs:
 #    container: centos:8
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v2
+#      uses: actions/checkout@v3
 #    - name: Install tools for CentOS:8
 #      run: |
 #        yum install -y patch unzip git gcc make python38 python38-pip rpm-build rpmdevtools wget
@@ -136,7 +136,7 @@ jobs:
     runs-on: macos-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Packaging
       run: dist/macos/build-pkg.sh
 #    - name: Building Radare2
@@ -153,7 +153,7 @@ jobs:
      runs-on: macos-12
      steps:
      - name: Checkout
-       uses: actions/checkout@v2
+       uses: actions/checkout@v3
      - name: Packaging
        env:
          ARCHFLAGS: '-arch arm64'
@@ -167,7 +167,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install pkg-config/ldid2 with Homebrew
       run: brew install pkg-config ldid
     - name: Create cydia32 package
@@ -183,7 +183,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install pkg-config/ldid2 with Homebrew
       run: brew install pkg-config ldid
     - name: Create cydia package
@@ -210,7 +210,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -231,7 +231,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -256,7 +256,7 @@ jobs:
       #  name: [x86_64, arm, aarch64]
         name: [x86_64]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes update
@@ -289,7 +289,7 @@ jobs:
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - uses: actions/setup-python@v2
 #      with:
 #        python-version: '3.7'
@@ -309,7 +309,7 @@ jobs:
         ninja -C build -j1 install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
-#    - uses: actions/checkout@v2
+#    - uses: actions/checkout@v3
 #      with:
 #        repository: radareorg/radare2-win-installer
 #        path: ./radare2-win-installer
@@ -335,7 +335,7 @@ jobs:
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - uses: actions/setup-python@v2
 #      with:
 #        python-version: '3.7'
@@ -379,7 +379,7 @@ jobs:
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - uses: actions/setup-python@v2
 #      with:
 #        python-version: '3.7'
@@ -429,7 +429,7 @@ jobs:
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - uses: actions/setup-python@v2
 #      with:
 #        python-version: '3.7'
@@ -456,7 +456,7 @@ jobs:
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64
-#    - uses: actions/checkout@v2
+#    - uses: actions/checkout@v3
 #      with:
 #        repository: radareorg/radare2-win-installer
 #        path: ./radare2-win-installer
@@ -475,7 +475,7 @@ jobs:
 #  freebsd:
 #    runs-on: macos-10.15
 #    steps:
-#    - uses: actions/checkout@v2
+#    - uses: actions/checkout@v3
 #    - name: Build r2 in FreeBSD
 #      id: build
 #      uses: vmactions/freebsd-vm@v0.1.6
@@ -532,7 +532,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Download all git history and tags
       - name: Check if is a release
@@ -546,7 +546,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Download all git history and tags
       - name: Extract r2 version

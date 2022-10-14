@@ -14,7 +14,7 @@ jobs:
 #    runs-on: ubuntu-20.04
 #    steps:
 #    - name: Checkout
-#      uses: actions/checkout@v2
+#      uses: actions/checkout@v3
 #    - name: Building r2 without network access
 #      run: |
 #        ./preconfigure
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Setting up bad libnames
       run: |
         mkdir -p /tmp/fakelibs /tmp/fakeincs
@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Linting
       run: sys/lint.sh
     - name: Building without capstone
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Installing capstone
       run: |
         git clone --branch next --single-branch --depth=1 https://github.com/capstone-engine/capstone
@@ -126,7 +126,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Installing with symlinks
       run: |
         export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
@@ -140,7 +140,7 @@ jobs:
 #    if: contains(github.ref, 'ci-')
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Building Radare2
       run: |
         pip install r2pipe wheel
@@ -155,7 +155,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Installing the musl runtime
       run: |
         sudo apt install musl-tools
@@ -170,7 +170,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -186,7 +186,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: build and run
       run: |
         # test and build rpath installation
@@ -204,7 +204,7 @@ jobs:
     runs-on: macos-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: build and run
       run: |
         # test and build rpath installation
@@ -220,7 +220,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     #- name: XXX this is not possible with make Install from a directory with spaces
     #  run: |
     #    git config pull.rebase false
@@ -256,7 +256,7 @@ jobs:
     continue-on-error: true
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Building Radare2
       run: |
         pip install r2pipe
@@ -283,7 +283,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Building Radare2
       run: |
         pip install r2pipe
@@ -314,7 +314,7 @@ jobs:
           maximum-size: 16GB
           disk-root: "C:"
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - uses: actions/setup-python@v2
 #      with:
 #        python-version: '3.7'
@@ -345,7 +345,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Compiling
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
@@ -360,7 +360,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Compiling
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
