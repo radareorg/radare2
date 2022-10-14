@@ -856,7 +856,6 @@ static inline char *pickle_json_mnemonic(int id) {
 			pj_s (pj, op_name_map[id].name);
 		} else if (id == -1) {
 			size_t i;
-			RStrBuf *buf = r_strbuf_new ("");
 			for (i = 0; i < R_ARRAY_SIZE (op_name_map); i++) {
 				pj_s (pj, op_name_map[i].name);
 			}
