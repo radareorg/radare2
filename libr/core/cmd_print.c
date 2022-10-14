@@ -5382,6 +5382,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 						pj_kn (pj, "at", refi->at);
 						pj_end (pj);
 						r_anal_op_free (op);
+						free (dst);
 					} else {
 						char *s = r_core_cmd_strf (core, "pdi %i @ 0x%08"PFMT64x, 1, refi->at);
 						r_cons_printf ("%s", s);

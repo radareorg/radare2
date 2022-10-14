@@ -344,11 +344,15 @@ static int cmd_log(void *data, const char *input) {
 		if (n > 0 || *input == '0') {
 			r_core_log_list (core, n, n2, *input);
 		} else {
-			const char *arg = input + 1;
+			const char *arg = r_str_trim_head_ro (input + 1);
 			if (r_str_startswith (arg, "base64:")) {
 				ut8 *s = r_base64_decode_dyn (arg + 7, -1);
-				r_core_log_add (core, (const char *)s);
-				free (s);
+				if (s) {
+					r_core_log_add (core, (const char *)s);
+					free (s);
+				} else {
+					R_LOG_ERROR ("Invalid base64 stream");
+				}
 			} else {
 				r_core_log_add (core, arg);
 			}

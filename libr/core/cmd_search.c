@@ -2408,6 +2408,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	char *res = r_strbuf_drain (rb);
 	r_cons_println (res);
 	free (res);
+	r_strbuf_free (sb);
 	return false;
 }
 
