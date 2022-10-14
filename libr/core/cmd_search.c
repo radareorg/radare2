@@ -2305,13 +2305,30 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
+		if (!(map->perm & R_PERM_X)) {
+			continue;
+		}
 		for (i = 0, at = from; at < to; i++, at++) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
 			at = from + i;
-			ut8 bufop[32];
-			r_io_read_at (core->io, at, bufop, sizeof (bufop));
+			ut8 bufop[32] = {0};
+			if (!r_io_read_at (core->io, at, bufop, sizeof (bufop))) {
+				break;
+			}
+			bool fail = true;
+			for (i = 1; i < sizeof (bufop); i++) {
+				if (bufop[i] != bufop[0]) {
+					fail = false;
+					break;
+				}
+			}
+			if (fail) {
+				R_LOG_DEBUG ("Invalid read at 0x%08"PFMT64x, at);
+				break;
+			}
+
 			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 			if (ret) {
 				if (hasch > 0) {
@@ -2406,7 +2423,9 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	free (word);
 	r_cons_break_pop ();
 	char *res = r_strbuf_drain (rb);
-	r_cons_println (res);
+	if (R_STR_ISNOTEMPTY (res)) {
+		r_cons_println (res);
+	}
 	free (res);
 	r_strbuf_free (sb);
 	return false;

@@ -11729,10 +11729,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 
 				if (input[1] == 'a') { // "aaaa"
-					r_core_cmd0 (core, "/azq > /dev/null");
+					r_core_cmd0 (core, "/azq");
 					if (!didAap) {
 						didAap = true;
 						R_LOG_INFO ("Finding function preludes");
+eprintf ("me\n");
 						(void)r_core_search_preludes (core, false); // "aap"
 						r_core_task_yield (&core->tasks);
 					}
@@ -11741,6 +11742,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				} else {
 					R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
 				}
+eprintf ("ja\n");
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {
 					r_core_cmdf (core, "dL %s", dh_orig);
