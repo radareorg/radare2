@@ -131,6 +131,7 @@ static int r_core_magic_at(RCore *core, RSearchKeyword *kw, const char *file, ut
 		// We do not flag for pm command.
 		if (kw) {
 			flag = r_str_newf ("%s%d_%d", searchprefix, kw->kwidx, kw->count);
+			kw->count++;
 			r_flag_set (core->flags, flag, addr + adelta, 1);
 		}
 		// TODO: This must be a callback .. move this into RSearch?

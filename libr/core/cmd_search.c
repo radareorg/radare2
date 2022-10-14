@@ -3859,10 +3859,6 @@ reread:
 				kw = r_search_keyword_new_hexmask ("01020408102040801b366cc0ab4d9a2f5ebf63c697356ad4b37dfaefc591", NULL); // AES
 				r_search_kw_add (search, kw);
 
-				// base64
-				kw = r_search_keyword_new_str ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", NULL, NULL, false);
-				r_search_kw_add (search, kw);
-
 				// blowfish
 				if (le) {
 					// LE blowfish

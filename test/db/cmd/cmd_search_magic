@@ -73,3 +73,14 @@ EXPECT=<<EOF
 0x00000000 1 magic0_0 Binary PLIST data stream
 EOF
 RUN
+
+NAME=/m on Zip
+FILE=bins/zip/CDinFN.zip
+CMDS=<<EOF
+/m
+EOF
+EXPECT=<<EOF
+0x00000000 1 hit0_0 ZIP Zip archive data, at least v1.0 to extract
+0x00000062 1 hit0_1 End of Zip archive
+EOF
+RUN
