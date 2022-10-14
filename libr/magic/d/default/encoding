@@ -1,0 +1,8 @@
+#Base64 index tables
+0   string ABCDEFGHIJKLMNOPQRSTUVWXYZabcde
+> 31 string fghijklmnopqrstuvwxyz0123456789
+> 62 string +/                              Base64 standard index table
+
+0   string ACEGIKMOQSUWYBDFHJLNPRTVXZacegi
+> 31 string kmoqsuwybdfhjlnprtvxz0246813579
+> 62 string \=+                             Base64 SerComm index table
