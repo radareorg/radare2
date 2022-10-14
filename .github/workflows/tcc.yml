@@ -17,21 +17,18 @@ jobs:
           cd tinycc
           git checkout mob
           git reset --hard 917aad3bcfbb534875aa6d66609bdb36459460a4
-
     - name: Compiling and installing TinyCC
       working-directory: tinycc
       run: |
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-
     - uses: actions/checkout@v2
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v2
       with:
           repository: radareorg/radare2-testbins
           path: test/bins
-
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes install gperf wheel setuptools || true
@@ -44,7 +41,6 @@ jobs:
           ./configure --prefix=/usr --with-compiler=tcc
           make -j
           sudo make install
-
     - name: Run tests
       env:
         PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
