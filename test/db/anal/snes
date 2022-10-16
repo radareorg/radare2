@@ -7,6 +7,6 @@ afr
 aflc
 EOF
 EXPECT=<<EOF
-102
+208
 EOF
 RUN

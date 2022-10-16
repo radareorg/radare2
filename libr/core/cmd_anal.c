@@ -11730,8 +11730,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 
 				if (input[1] == 'a') { // "aaaa"
-					R_LOG_INFO ("Scanning for strings constructed in code (/azq 5)");
-					r_core_cmd0 (core, "/azq 5");
+					R_LOG_INFO ("Scanning for strings constructed in code (/azs)");
+					r_core_cmd0 (core, "/azs");
 					if (!didAap) {
 						didAap = true;
 						R_LOG_INFO ("Finding function preludes (aap)");

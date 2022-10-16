@@ -376,7 +376,7 @@ pd 20 @  dbg.palya
 EOF
 EXPECT=<<EOF
             ;-- unit p(mozgkigyo palya(smallint,smallint)):
-            ; CALL XREFS from main @ +0x1a87(x), +0x1c7d(x), +0x23f3(x), +0x3679(x)
+            ; CALL XREFS from dbg.$main @ 0x405237(x), 0x40542d(x), 0x405ba3(x), 0x406e29(x)
 / 439: dbg.palya() ();
 |           ; var SmallInt mag @ rbp-0x8
 |           ; var SmallInt szel @ rbp-0x10

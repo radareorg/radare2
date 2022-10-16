@@ -83,6 +83,8 @@ static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_XCHG;
 		break;
 	case 0x00: // brk
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
 	case 0x02: // cop
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
