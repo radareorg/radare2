@@ -536,7 +536,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	char *op_dst = NULL;
 	char *op_src = NULL;
 	if (depth < 1) {
-		R_LOG_DEBUG ("Too deep fcn_recurse at 0x%"PFMT64x, addr);
+		R_LOG_WARN ("Analysis of 0x%08"PFMT64x" stopped at 0x%08"PFMT64x", use a higher anal.depth to continue", fcn->addr, addr);
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 	// TODO Store all this stuff in the heap so we save memory in the stack
@@ -673,8 +673,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	op = r_anal_op_new ();
 	while (addrbytes * idx < maxlen) {
 		if (!last_is_reg_mov_lea) {
-			free (last_reg_mov_lea_name);
-			last_reg_mov_lea_name = NULL;
+			R_FREE (last_reg_mov_lea_name);
 		}
 		if (anal->limit && anal->limit->to <= addr + idx) {
 			break;
@@ -961,6 +960,7 @@ repeat:
 						last_is_reg_mov_lea = true;
 					}
 				}
+			}
 #else
 			if (op->ptr != UT64_MAX) {
 				leaddr_pair *pair = R_NEW (leaddr_pair);
