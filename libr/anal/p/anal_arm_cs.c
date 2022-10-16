@@ -2089,7 +2089,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		if (ISPREINDEX64 ()) {
 			// "stp x2, x3, [x8, 0x20]!
 			// "32,x8,+=,x2,x8,=[8],x3,x8,8,+,=[8]",
-			r_strbuf_setf(&op->esil,
+			r_strbuf_setf (&op->esil,
 					"%" PFMT64d ",%s,%c=,%s,%s,=[%d],%s,%s,%d,+,=[%d]",
 					abs, MEMBASE64 (2), sign,
 					REG64 (0), MEMBASE64 (2), size,
@@ -4361,10 +4361,10 @@ static void set_src_dst(RAnalValue *val, RReg *reg, csh *handle, cs_insn *insn, 
 }
 
 static void create_src_dst(RAnalOp *op) {
-	r_vector_push (op->srcs, NULL);
-	r_vector_push (op->srcs, NULL);
-	r_vector_push (op->srcs, NULL);
-	r_vector_push (op->dsts, NULL);
+	r_vector_push (&op->srcs, NULL);
+	r_vector_push (&op->srcs, NULL);
+	r_vector_push (&op->srcs, NULL);
+	r_vector_push (&op->dsts, NULL);
 }
 
 static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int bits) {
@@ -4410,9 +4410,9 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 			break;
 		}
 		for (j = 0; j < 3; j++, i++) {
-			set_src_dst (r_vector_index_ptr (op->srcs, j), anal->reg, &handle, insn, i, bits);
+			set_src_dst (r_vector_index_ptr (&op->srcs, j), anal->reg, &handle, insn, i, bits);
 		}
-		set_src_dst (r_vector_index_ptr (op->dsts, 0), anal->reg, &handle, insn, 0, bits);
+		set_src_dst (r_vector_index_ptr (&op->dsts, 0), anal->reg, &handle, insn, 0, bits);
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (count > 2) {
@@ -4428,9 +4428,9 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 				}
 			}
 		}
-		set_src_dst (r_vector_index_ptr (op->dsts, 0), anal->reg, &handle, insn, --count, bits);
+		set_src_dst (r_vector_index_ptr (&op->dsts, 0), anal->reg, &handle, insn, --count, bits);
 		for (j = 0; j < 3 && j < count; j++) {
-			set_src_dst (r_vector_index_ptr (op->srcs, j), anal->reg, &handle, insn, j, bits);
+			set_src_dst (r_vector_index_ptr (&op->srcs, j), anal->reg, &handle, insn, j, bits);
 		}
 		break;
 	default:

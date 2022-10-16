@@ -80,7 +80,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (INSOP (0).type == SPARC_OP_MEM) {
 			ZERO_FILL (reg);
-			val = r_vector_push (op->srcs, NULL);
+			val = r_vector_push (&op->srcs, NULL);
 			val->reg = &reg;
 			parse_reg_name (val->reg, handle, insn, 0);
 			val->delta = INSOP(0).mem.disp;
@@ -89,7 +89,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_STORE:
 		if (INSOP (1).type == SPARC_OP_MEM) {
 			ZERO_FILL (reg);
-			val = r_vector_push (op->dsts, NULL);
+			val = r_vector_push (&op->dsts, NULL);
 			val->reg = &reg;
 			parse_reg_name (val->reg, handle, insn, 1);
 			val->delta = INSOP(1).mem.disp;

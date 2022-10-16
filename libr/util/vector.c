@@ -52,7 +52,14 @@ R_API RVector *r_vector_new(size_t elem_size, RVectorFree free, void *free_user)
 	return vec;
 }
 
-static void vector_free_elems(RVector *vec) {
+R_API void r_vector_fini(RVector *vec) {
+	r_return_if_fail (vec);
+	r_vector_clear (vec);
+	vec->free = NULL;
+	vec->free_user = NULL;
+}
+
+static inline void vector_free_elems(RVector *vec) {
 	if (vec->free) {
 		while (vec->len > 0) {
 			vec->free (r_vector_index_ptr (vec, --vec->len), vec->free_user);
@@ -60,13 +67,6 @@ static void vector_free_elems(RVector *vec) {
 	} else {
 		vec->len = 0;
 	}
-}
-
-R_API void r_vector_fini(RVector *vec) {
-	r_return_if_fail (vec);
-	r_vector_clear (vec);
-	vec->free = NULL;
-	vec->free_user = NULL;
 }
 
 R_API void r_vector_clear(RVector *vec) {

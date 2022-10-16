@@ -226,12 +226,12 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_MOV:
 		ZERO_FILL (reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
-			src = r_vector_push (op->srcs, NULL);
+			src = r_vector_push (&op->srcs, NULL);
 			src->reg = &reg;
 			parse_reg_name (src->reg, handle, insn, 1);
 			src->delta = OPERAND(0).mem.disp;
 		} else if (OPERAND(0).type == M68K_OP_MEM) {
-			dst = r_vector_push (op->dsts, NULL);
+			dst = r_vector_push (&op->dsts, NULL);
 			dst->reg = &reg;
 			parse_reg_name (dst->reg, handle, insn, 0);
 			dst->delta = OPERAND(1).mem.disp;
@@ -240,7 +240,7 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	case R_ANAL_OP_TYPE_LEA:
 		ZERO_FILL (reg);
 		if (OPERAND(1).type == M68K_OP_MEM) {
-			dst = r_vector_push (op->dsts, NULL);
+			dst = r_vector_push (&op->dsts, NULL);
 			dst->reg = &reg;
 			parse_reg_name (dst->reg, handle, insn, 1);
 			dst->delta = OPERAND(1).mem.disp;

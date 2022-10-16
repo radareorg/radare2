@@ -29,10 +29,12 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->val = UT64_MAX;
 		op->disp = UT64_MAX;
 
-		op->srcs = r_vector_new (sizeof (RAnalValue), NULL, NULL);
-		op->dsts = r_vector_new (sizeof (RAnalValue), NULL, NULL);
-		r_vector_reserve (op->srcs, 3);
-		r_vector_reserve (op->dsts, 1);
+		r_vector_init (&op->srcs, sizeof (RAnalValue), NULL, NULL);
+		r_vector_init (&op->dsts, sizeof (RAnalValue), NULL, NULL);
+#if 0
+		r_vector_reserve (&op->srcs, 3);
+		r_vector_reserve (&op->dsts, 1);
+#endif
 	}
 }
 
@@ -40,10 +42,9 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	if (!op) {
 		return;
 	}
-	r_vector_free (op->srcs);
-	r_vector_free (op->dsts);
-	op->srcs = NULL;
-	op->dsts = NULL;
+	// should be a static vector not a pointer
+	r_vector_fini (&op->srcs);
+	r_vector_fini (&op->dsts);
 	r_list_free (op->access);
 	op->access = NULL;
 	r_strbuf_fini (&op->opex);
@@ -170,6 +171,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return ret;
 }
 
+#if 0
 R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	RAnalOp *nop = R_NEW0 (RAnalOp);
 	if (!nop) {
@@ -185,8 +187,11 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	} else {
 		nop->mnemonic = NULL;
 	}
-	nop->srcs = r_vector_clone (op->srcs);
-	nop->dsts = r_vector_clone (op->dsts);
+R_LOG_ERROR ("Cannot clone an op");
+#if 0
+	&op->srcs = r_vector_clone (&op->srcs);
+	&op->dsts = r_vector_clone (&op->dsts);
+#endif
 	if (op->access) {
 		RListIter *it;
 		RAnalValue *val;
@@ -200,6 +205,7 @@ R_API RAnalOp *r_anal_op_copy(RAnalOp *op) {
 	r_strbuf_copy (&nop->esil, &op->esil);
 	return nop;
 }
+#endif
 
 R_API bool r_anal_op_nonlinear(int t) {
 	t &= R_ANAL_OP_TYPE_MASK;
@@ -412,9 +418,9 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	RAnalBlock *bb;
 	RAnalFunction *f;
 	char *cstr, ret[128];
-	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
-	RAnalValue *src0 = r_vector_index_ptr (op->srcs, 0);
-	RAnalValue *src1 = r_vector_index_ptr (op->srcs, 1);
+	RAnalValue *dst = r_vector_index_ptr (&op->dsts, 0);
+	RAnalValue *src0 = r_vector_index_ptr (&op->srcs, 0);
+	RAnalValue *src1 = r_vector_index_ptr (&op->srcs, 1);
 	char *r0 = r_anal_value_to_string (dst);
 	char *a0 = r_anal_value_to_string (src0);
 	char *a1 = r_anal_value_to_string (src1);
@@ -707,10 +713,10 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
 	RAnalOp op = {0};
 	RAnalValue *dst = NULL;
 	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ARCH_OP_MASK_ALL) > 0) {
-		dst = r_vector_index_ptr (op.dsts, 0);
+		dst = r_vector_index_ptr (&op.dsts, 0);
 		if (dst && dst->reg && dst->reg->name && (!name || !strcmp (dst->reg->name, name))) {
-			if (r_vector_len (op.srcs)) {
-				return ((RAnalValue*)r_vector_index_ptr (op.srcs, 0))->delta;
+			if (r_vector_len (&op.srcs)) {
+				return ((RAnalValue*)r_vector_index_ptr (&op.srcs, 0))->delta;
 			}
 		}
 	}
