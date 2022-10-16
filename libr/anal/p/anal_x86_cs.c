@@ -1501,7 +1501,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		case X86_OP_REG:
 			{
 			src = getarg (&gop, 0, 0, NULL, NULL);
-			val = r_vector_push (op->srcs, NULL);
+			val = r_vector_push (&op->srcs, NULL);
 			val->reg = r_reg_get (a->reg, src, R_REG_TYPE_GPR);
 			//XXX fallthrough
 			free (src);
@@ -2547,10 +2547,10 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 }
 
 #define CREATE_SRC_DST(op) \
-	src0 = r_vector_push ((op)->srcs, NULL); \
-	src1 = r_vector_push ((op)->srcs, NULL); \
-	src2 = r_vector_push ((op)->srcs, NULL); \
-	dst = r_vector_push ((op)->dsts, NULL);
+	src0 = r_vector_push (&(op)->srcs, NULL); \
+	src1 = r_vector_push (&(op)->srcs, NULL); \
+	src2 = r_vector_push (&(op)->srcs, NULL); \
+	dst = r_vector_push (&(op)->dsts, NULL);
 
 static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, int x) {
 	if (!val) {

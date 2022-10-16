@@ -9549,7 +9549,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			if (ret >= 0) {
 				// HACK: Just convert only the first imm seen
 				RAnalValue *src = NULL;
-				r_vector_foreach (op.srcs, src) {
+				r_vector_foreach (&op.srcs, src) {
 					if (src) {
 						if (src->imm) {
 							offimm = src->imm;
@@ -9559,7 +9559,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 					}
 				}
 				if (!offimm) {
-					RAnalValue *dst = r_vector_index_ptr (op.dsts, 0);
+					RAnalValue *dst = r_vector_index_ptr (&op.dsts, 0);
 					if (dst) {
 						if (dst->imm) {
 							offimm = dst->imm;

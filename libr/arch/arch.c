@@ -113,6 +113,7 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
 		return false;
 	}
 	RArchConfig *oconfig = arch->cfg;
+	r_unref (oconfig);
 	r_ref (config);
 	arch->cfg = config;
 	if (!r_arch_use_decoder (arch, dname)) {

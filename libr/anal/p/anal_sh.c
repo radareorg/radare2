@@ -405,15 +405,15 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		op->type = R_ANAL_OP_TYPE_MUL;
 	}
 	if (dst) {
-		r_vector_push (op->dsts, dst);
+		r_vector_push (&op->dsts, dst);
 		r_anal_value_free (dst);
 	}
 	if (src0) {
-		r_vector_push (op->srcs, src0);
+		r_vector_push (&op->srcs, src0);
 		r_anal_value_free (src0);
 	}
 	if (src1) {
-		r_vector_push (op->srcs, src1);
+		r_vector_push (&op->srcs, src1);
 		r_anal_value_free (src1);
 	}
 	return op->size;
@@ -426,8 +426,8 @@ static int movl_reg_rdisp(RAnal* anal, RAnalOp* op, ut16 code) {
 	src = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 	dst = anal_fill_reg_disp_mem (anal, GET_TARGET_REG (code), code & 0x0F, LONG_SIZE);
 	r_strbuf_setf (&op->esil, "r%d,r%d,0x%x,+,=[4]", GET_SOURCE_REG (code), GET_TARGET_REG (code), (code & 0xF) << 2);
-	r_vector_push (op->dsts, dst);
-	r_vector_push (op->srcs, src);
+	r_vector_push (&op->dsts, dst);
+	r_vector_push (&op->srcs, src);
 	r_anal_value_free (dst);
 	r_anal_value_free (src);
 	return op->size;
@@ -504,15 +504,15 @@ static int first_nibble_is_2(RAnal* anal, RAnalOp* op, ut16 code) {
 	}
 
 	if (dst) {
-		r_vector_push (op->dsts, dst);
+		r_vector_push (&op->dsts, dst);
 		r_anal_value_free (dst);
 	}
 	if (src0) {
-		r_vector_push (op->srcs, src0);
+		r_vector_push (&op->srcs, src0);
 		r_anal_value_free (src0);
 	}
 	if (src1) {
-		r_vector_push (op->srcs, src1);
+		r_vector_push (&op->srcs, src1);
 		r_anal_value_free (src1);
 	}
 	return op->size;
@@ -617,15 +617,15 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 		r_strbuf_setf (&op->esil, "32,r%d,r%d,0x80000000,&,?{,0xFFFFFFFF00000000,+,},r%d,r%d,0x80000000,&,?{,0xFFFFFFFF00000000,+,},*,DUP,0xFFFFFFFF,&,macl,=,>>,mach,=", GET_SOURCE_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 	}
 	if (dst) {
-		r_vector_push (op->dsts, dst);
+		r_vector_push (&op->dsts, dst);
 		r_anal_value_free (dst);
 	}
 	if (src0) {
-		r_vector_push (op->srcs, src0);
+		r_vector_push (&op->srcs, src0);
 		r_anal_value_free (src0);
 	}
 	if (src1) {
-		r_vector_push (op->srcs, src1);
+		r_vector_push (&op->srcs, src1);
 		r_anal_value_free (src1);
 	}
 	return op->size;
@@ -807,7 +807,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_MUL;
 	}
 	if (dst) {
-		r_vector_push (op->dsts, dst);
+		r_vector_push (&op->dsts, dst);
 		r_anal_value_free (dst);
 	}
 	return op->size;
@@ -820,8 +820,8 @@ static int movl_rdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	src = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, LONG_SIZE);
 	r_strbuf_setf (&op->esil, "r%d,0x%x,+,[4],r%d,=", GET_SOURCE_REG (code), (code&0xF) * 4, GET_TARGET_REG (code));
-	r_vector_push (op->dsts, dst);
-	r_vector_push (op->srcs, src);
+	r_vector_push (&op->dsts, dst);
+	r_vector_push (&op->srcs, src);
 	r_anal_value_free (dst);
 	r_anal_value_free (src);
 	return op->size;
@@ -909,11 +909,11 @@ static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_MOV;
 	}
 	if (dst) {
-		r_vector_push (op->dsts, dst);
+		r_vector_push (&op->dsts, dst);
 		r_anal_value_free (dst);
 	}
 	if (src) {
-		r_vector_push (op->srcs, src);
+		r_vector_push (&op->srcs, src);
 		r_anal_value_free (src);
 	}
 	return op->size;
@@ -927,8 +927,8 @@ static int add_imm(RAnal* anal, RAnalOp* op, ut16 code) {
 	src = anal_fill_im (anal, (st8)(code & 0xFF)); //Casting to (st8) forces sign-extension.
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	r_strbuf_setf (&op->esil, "0x%x,DUP,0x80,&,?{,0xFFFFFF00,|,},r%d,+=", code & 0xFF, GET_TARGET_REG (code));
-	r_vector_push (op->dsts, dst);
-	r_vector_push (op->srcs, src);
+	r_vector_push (&op->dsts, dst);
+	r_vector_push (&op->srcs, src);
 	r_anal_value_free (dst);
 	r_anal_value_free (src);
 	return op->size;
@@ -981,11 +981,11 @@ static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code) {
 		r_strbuf_setf (&op->esil, "r0,0xFFFF,&,0x%x,r%d,+,=[2]", (code & 0xF) * 2, GET_SOURCE_REG (code));
 	}
 	if (dst) {
-		r_vector_push (op->dsts, dst);
+		r_vector_push (&op->dsts, dst);
 		r_anal_value_free (dst);
 	}
 	if (src) {
-		r_vector_push (op->srcs, src);
+		r_vector_push (&op->srcs, src);
 		r_anal_value_free (src);
 	}
 	return op->size;
@@ -1000,8 +1000,8 @@ static int movw_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	src->base = (code & 0xFF) * 2+op->addr + 4;
 	src->memref = 1;
 	r_strbuf_setf (&op->esil, "0x%" PFMT64x ",[2],r%d,=,r%d,0x8000,&,?{,0xFFFF0000,r%d,|=,}", src->base, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
-	r_vector_push (op->dsts, dst);
-	r_vector_push (op->srcs, src);
+	r_vector_push (&op->dsts, dst);
+	r_vector_push (&op->srcs, src);
 	r_anal_value_free (dst);
 	r_anal_value_free (src);
 	return op->size;
@@ -1112,15 +1112,15 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 	}
 
 	if (dst) {
-		r_vector_push (op->dsts, dst);
+		r_vector_push (&op->dsts, dst);
 		r_anal_value_free (dst);
 	}
 	if (src0) {
-		r_vector_push (op->srcs, src0);
+		r_vector_push (&op->srcs, src0);
 		r_anal_value_free (src0);
 	}
 	if (src1) {
-		r_vector_push (op->srcs, src1);
+		r_vector_push (&op->srcs, src1);
 		r_anal_value_free (src1);
 	}
 	return op->size;
@@ -1135,8 +1135,8 @@ static int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	//r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + (op->addr & 0xfffffff3) + 4, GET_TARGET_REG (code));
 	r_strbuf_setf (&op->esil, "0x%" PFMT64x ",[4],r%d,=", (code & 0xFF) * 4 + ((op->addr >> 2)<<2) + 4, GET_TARGET_REG (code));
-	r_vector_push (op->dsts, dst);
-	r_vector_push (op->srcs, src);
+	r_vector_push (&op->dsts, dst);
+	r_vector_push (&op->srcs, src);
 	r_anal_value_free (dst);
 	r_anal_value_free (src);
 	return op->size;
@@ -1149,8 +1149,8 @@ static int mov_imm_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	src = anal_fill_im (anal, (st8)(code & 0xFF));
 	r_strbuf_setf (&op->esil, "0x%x,r%d,=,r%d,0x80,&,?{,0xFFFFFF00,r%d,|=,}", code & 0xFF, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
-	r_vector_push (op->dsts, dst);
-	r_vector_push (op->srcs, src);
+	r_vector_push (&op->dsts, dst);
+	r_vector_push (&op->srcs, src);
 	r_anal_value_free (dst);
 	r_anal_value_free (src);
 	return op->size;

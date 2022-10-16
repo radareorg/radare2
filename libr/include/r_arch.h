@@ -162,7 +162,6 @@ R_API bool r_arch_value_set_ut64(RArchValue *val, struct r_reg_t *reg, RIOBind *
 R_API char *r_arch_value_to_string(RArchValue *value);
 #endif
 
-// R_API RAnalOp *r_arch_op_copy(RAnalOp *op);
 R_API int r_arch_optype_from_string(const char *type);
 R_API const char *r_arch_optype_to_string(int t);
 R_API const char *r_arch_stackop_to_string(int s);

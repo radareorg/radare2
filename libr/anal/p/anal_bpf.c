@@ -711,8 +711,8 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 	(op)->ptrsize = (size);
 
 #define NEW_SRC_DST(op) \
-	src = r_vector_push ((op)->srcs, NULL); \
-	dst = r_vector_push ((op)->dsts, NULL);
+	src = r_vector_push (&(op)->srcs, NULL); \
+	dst = r_vector_push (&(op)->dsts, NULL);
 
 #define SET_REG_SRC_DST(op, _src, _dst) \
 	NEW_SRC_DST ((op)); \
@@ -725,11 +725,11 @@ static int bpf_opasm (RAnal *a, ut64 pc, const char *str, ut8 *outbuf, int outsi
 	src->imm = (_imm);
 
 #define SET_A_SRC(op) \
-	src = r_vector_push ((op)->srcs, NULL); \
+	src = r_vector_push (&(op)->srcs, NULL); \
 	src->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
 
 #define SET_A_DST(op) \
-	dst = r_vector_push ((op)->dsts, NULL); \
+	dst = r_vector_push (&(op)->dsts, NULL); \
 	dst->reg = r_reg_get (anal->reg, "A", R_REG_TYPE_GPR);
 
 // (k) >= 0 must also be true, but the value is already unsigned

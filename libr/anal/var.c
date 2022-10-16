@@ -904,7 +904,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 
 	r_return_if_fail (anal && fcn && op && reg);
 
-	r_vector_foreach (op->srcs, val) {
+	r_vector_foreach (&op->srcs, val) {
 		if (val && val->reg && val->reg->name) {
 			if (!strcmp (reg, val->reg->name)) {
 				st64 delta = val->delta;
@@ -938,7 +938,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		if (strncmp (addr, "0x", 2)) {
 			//XXX: This is a workaround for inconsistent esil
-			val = r_vector_index_ptr (op->dsts, 0);
+			val = r_vector_index_ptr (&op->dsts, 0);
 			if (!op->stackop && val) {
 				const char *sp = r_reg_get_name (anal->reg, R_REG_NAME_SP);
 				const char *bp = r_reg_get_name (anal->reg, R_REG_NAME_BP);
@@ -956,7 +956,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			if (!op->stackop && op->type != R_ANAL_OP_TYPE_PUSH && op->type != R_ANAL_OP_TYPE_POP
 				&& op->type != R_ANAL_OP_TYPE_RET && r_str_isnumber (addr)) {
 				ptr = (st64)r_num_get (NULL, addr);
-				val = r_vector_index_ptr (op->srcs, 0);
+				val = r_vector_index_ptr (&op->srcs, 0);
 				if (ptr && val && ptr == val->imm) {
 					goto beach;
 				}
@@ -973,7 +973,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 	}
 
-	if (anal->verbose && (!r_vector_index_ptr (op->srcs, 0) || !r_vector_index_ptr (op->dsts, 0))) {
+	if (anal->verbose && (!r_vector_index_ptr (&op->srcs, 0) || !r_vector_index_ptr (&op->dsts, 0))) {
 		R_LOG_WARN ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
 	}
 
@@ -1103,8 +1103,8 @@ static inline bool arch_destroys_dst(const char *arch) {
 }
 
 static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal) {
-	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
-	RAnalValue *src = r_vector_index_ptr (op->srcs, 0);
+	RAnalValue *dst = r_vector_index_ptr (&op->dsts, 0);
+	RAnalValue *src = r_vector_index_ptr (&op->srcs, 0);
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_POP:
 		return false;
@@ -1144,9 +1144,9 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 }
 
 static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
-	RAnalValue *src0 = r_vector_index_ptr (op->srcs, 0);
-	RAnalValue *src1 = r_vector_index_ptr (op->srcs, 1);
-	RAnalValue *src2 = r_vector_index_ptr (op->srcs, 2);
+	RAnalValue *src0 = r_vector_index_ptr (&op->srcs, 0);
+	RAnalValue *src1 = r_vector_index_ptr (&op->srcs, 1);
+	RAnalValue *src2 = r_vector_index_ptr (&op->srcs, 2);
 	const char* opsreg0 = src0 ? get_regname (anal, src0) : NULL;
 	const char* opsreg1 = src1 ? get_regname (anal, src1) : NULL;
 	const char* opsreg2 = src2 ? get_regname (anal, src2) : NULL;
@@ -1156,8 +1156,8 @@ static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	int i, argc = 0;
 	r_return_if_fail (anal && op && fcn);
-	RAnalValue *src = r_vector_index_ptr (op->srcs, 0);
-	RAnalValue *dst = r_vector_index_ptr (op->dsts, 0);
+	RAnalValue *src = r_vector_index_ptr (&op->srcs, 0);
+	RAnalValue *dst = r_vector_index_ptr (&op->dsts, 0);
 	const char *opsreg = src ? get_regname (anal, src) : NULL;
 	const char *opdreg = dst ? get_regname (anal, dst) : NULL;
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;

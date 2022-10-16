@@ -111,8 +111,8 @@ static inline void gb_anal_esil_jmp(RAnalOp *op) {
 
 static inline void gb_anal_jmp_hl(RReg *reg, RAnalOp *op) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, "pc", R_REG_TYPE_GPR);
 	src->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
 	r_strbuf_set (&op->esil, "hl,pc,:=");
@@ -120,8 +120,8 @@ static inline void gb_anal_jmp_hl(RReg *reg, RAnalOp *op) {
 
 static inline void gb_anal_id(RAnal *anal, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
 	src->absolute = true;
 	if (data == 0x34 || data == 0x35) {
@@ -153,8 +153,8 @@ static inline void gb_anal_id(RAnal *anal, RAnalOp *op, const ut8 data) {
 
 static inline void gb_anal_add_hl(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
 	src->reg = r_reg_get (reg, regs_16[((data & 0xf0)>>4)], R_REG_TYPE_GPR);
 	r_strbuf_setf (&op->esil, "%s,hl,+=,0,N,:=", regs_16[((data & 0xf0)>>4)]);	//hl+=<reg>,N=0
@@ -162,8 +162,8 @@ static inline void gb_anal_add_hl(RReg *reg, RAnalOp *op, const ut8 data) {
 
 static inline void gb_anal_add_sp(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, "sp", R_REG_TYPE_GPR);
 	src->imm = (st8)data;
 	if (data < 128) {
@@ -176,8 +176,8 @@ static inline void gb_anal_add_sp(RReg *reg, RAnalOp *op, const ut8 data) {
 
 static void gb_anal_mov_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	if (data[0] & 1) {
 		dst->reg = r_reg_get (reg, regs_16[data[0]>>4], R_REG_TYPE_GPR);
 		src->imm = GB_SOFTCAST (data[1], data[2]);
@@ -193,8 +193,8 @@ static void gb_anal_mov_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
 
 static inline void gb_anal_mov_sp_hl(RReg *reg, RAnalOp *op) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, "sp", R_REG_TYPE_GPR);
 	src->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
 	r_strbuf_set (&op->esil, "hl,sp,=");
@@ -202,9 +202,9 @@ static inline void gb_anal_mov_sp_hl(RReg *reg, RAnalOp *op) {
 
 static inline void gb_anal_mov_hl_sp(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src0, *src1;
-	dst = r_vector_push (op->dsts, NULL);
-	src0 = r_vector_push (op->srcs, NULL);
-	src1 = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src0 = r_vector_push (&op->srcs, NULL);
+	src1 = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, regs_16[2], R_REG_TYPE_GPR);
 	src0->reg = r_reg_get (reg, regs_16[3], R_REG_TYPE_GPR);
 	src1->imm = (st8)data;
@@ -218,8 +218,8 @@ static inline void gb_anal_mov_hl_sp(RReg *reg, RAnalOp *op, const ut8 data) {
 
 static void gb_anal_mov_reg(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, regs_8[(data/8) - 8], R_REG_TYPE_GPR);
 	src->reg = r_reg_get (reg, regs_8[data & 7], R_REG_TYPE_GPR);
 	r_strbuf_setf (&op->esil, "%s,%s,=", regs_8[data & 7], regs_8[(data/8) - 8]);
@@ -227,8 +227,8 @@ static void gb_anal_mov_reg(RReg *reg, RAnalOp *op, const ut8 data) {
 
 static inline void gb_anal_mov_ime(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, "ime", R_REG_TYPE_GPR);
 	src->absolute = true;
 	src->imm = (data != 0xf3);
@@ -240,8 +240,8 @@ static inline void gb_anal_mov_ime(RReg *reg, RAnalOp *op, const ut8 data) {
 
 static inline void gb_anal_mov_scf(RReg *reg, RAnalOp *op) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, regs_1[3], R_REG_TYPE_GPR);
 	src->imm = 1;
 	r_strbuf_set (&op->esil, "1,C,:=");
@@ -249,8 +249,8 @@ static inline void gb_anal_mov_scf(RReg *reg, RAnalOp *op) {
 
 static inline void gb_anal_xor_cpl(RReg *reg, RAnalOp *op) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, regs_8[7], R_REG_TYPE_GPR);
 	src->imm = 0xff;
 	r_strbuf_set (&op->esil, "0xff,a,^=,1,N,:=,1,H,:=");
@@ -258,8 +258,8 @@ static inline void gb_anal_xor_cpl(RReg *reg, RAnalOp *op) {
 
 static inline void gb_anal_xor_ccf(RReg *reg, RAnalOp *op) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, regs_1[3], R_REG_TYPE_GPR);
 	src->imm = 1;
 	r_strbuf_set (&op->esil, "C,!=");
@@ -267,8 +267,8 @@ static inline void gb_anal_xor_ccf(RReg *reg, RAnalOp *op) {
 
 static inline void gb_anal_cond(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
 	if (data & 0x8) {
 		op->cond = R_ANAL_COND_EQ;
@@ -295,18 +295,18 @@ static inline void gb_anal_pp(RReg *reg, RAnalOp *op, const ut8 data) {//push , 
 	RAnalValue val = {0};
 	val.reg = r_reg_get (reg, regs_16_alt[(data>>4) - 12], R_REG_TYPE_GPR);
 	if ((data & 0xf) == 1) {
-		r_vector_push (op->dsts, &val);
+		r_vector_push (&op->dsts, &val);
 		r_strbuf_setf (&op->esil, "sp,[2],%s,=,2,sp,+=", regs_16_alt[(data>>4) - 12]);		//pop
 	} else {
-		r_vector_push (op->srcs, &val);
+		r_vector_push (&op->srcs, &val);
 		r_strbuf_setf (&op->esil, "2,sp,-=,%s,sp,=[2]", regs_16_alt[(data>>4) - 12]);		//push
 	}
 }
 
 static inline void gb_anal_and_res(RAnal *anal, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = ((~(0x1 << ((data >> 3) & 7))) & 0xff);
 	dst->memref = ((data & 7) == 6);
 	dst->reg = r_reg_get (anal->reg, regs_x[data & 7], R_REG_TYPE_GPR);
@@ -319,8 +319,8 @@ static inline void gb_anal_and_res(RAnal *anal, RAnalOp *op, const ut8 data) {
 
 static inline void gb_anal_and_bit(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1<<((data>>3) & 7);
 	dst->memref = ((data & 7) == 6);
 	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
@@ -333,8 +333,8 @@ static inline void gb_anal_and_bit(RReg *reg, RAnalOp *op, const ut8 data) {
 
 static inline void gb_anal_or_set(RAnal *anal, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = (data>>3) & 7;
 	dst->memref = ((data & 7) == 6);
 	dst->reg = r_reg_get (anal->reg, regs_x[data & 7], R_REG_TYPE_GPR);
@@ -347,9 +347,9 @@ static inline void gb_anal_or_set(RAnal *anal, RAnalOp *op, const ut8 data) {
 
 static void gb_anal_xoaasc(RReg *reg, RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src0, *src1;
-	dst = r_vector_push (op->dsts, NULL);
-	src0 = r_vector_push (op->srcs, NULL);
-	src1 = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src0 = r_vector_push (&op->srcs, NULL);
+	src1 = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
 	src0->reg = r_reg_get (reg, regs_x[data[0] & 7], R_REG_TYPE_GPR);
 	src0->memref = ((data[0] & 7) == 6);
@@ -425,9 +425,9 @@ static void gb_anal_xoaasc(RReg *reg, RAnalOp *op, const ut8 *data) {
 // xor , or, and, add, adc, sub, sbc, cp
 static void gb_anal_xoaasc_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src0, *src1;
-	dst = r_vector_push (op->dsts, NULL);
-	src0 = r_vector_push (op->srcs, NULL);
-	src1 = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src0 = r_vector_push (&op->srcs, NULL);
+	src1 = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
 	src0->absolute = true;
 	src0->imm = data[1];
@@ -468,8 +468,8 @@ static void gb_anal_xoaasc_imm(RReg *reg, RAnalOp *op, const ut8 *data) {
 //load with [hl] as memref
 static inline void gb_anal_load_hl(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
 	src->memref = 1;
 	src->absolute = true;
@@ -485,8 +485,8 @@ static inline void gb_anal_load_hl(RReg *reg, RAnalOp *op, const ut8 data) {
 
 static inline void gb_anal_load(RReg *reg, RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
 	src->memref = 1;
 	switch (data[0]) {
@@ -519,8 +519,8 @@ static inline void gb_anal_load(RReg *reg, RAnalOp *op, const ut8 *data) {
 
 static inline void gb_anal_store_hl(RReg *reg, RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	dst->reg = r_reg_get (reg, "hl", R_REG_TYPE_GPR);
 	dst->memref = 1;
 	src->absolute = true;
@@ -541,8 +541,8 @@ static inline void gb_anal_store_hl(RReg *reg, RAnalOp *op, const ut8 *data) {
 
 static void gb_anal_store(RReg *reg, RAnalOp *op, const ut8 *data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	dst->memref = 1;
 	src->reg = r_reg_get (reg, "a", R_REG_TYPE_GPR);
 	switch (data[0]) {
@@ -573,8 +573,8 @@ static void gb_anal_store(RReg *reg, RAnalOp *op, const ut8 *data) {
 
 static inline void gb_anal_cb_swap(RReg *reg, RAnalOp* op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 4;
 	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	if ((data & 7) == 6) {
@@ -587,8 +587,8 @@ static inline void gb_anal_cb_swap(RReg *reg, RAnalOp* op, const ut8 data) {
 
 static inline void gb_anal_cb_rlc(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
 	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	if ((data & 7) == 6) {
@@ -601,8 +601,8 @@ static inline void gb_anal_cb_rlc(RReg *reg, RAnalOp *op, const ut8 data) {
 
 static inline void gb_anal_cb_rl(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
 	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	if ((data & 7) == 6) {
@@ -615,8 +615,8 @@ static inline void gb_anal_cb_rl(RReg *reg, RAnalOp *op, const ut8 data) {
 
 static inline void gb_anal_cb_rrc(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
 	dst->reg = r_reg_get(reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	if ((data &7) == 6) {
@@ -629,8 +629,8 @@ static inline void gb_anal_cb_rrc(RReg *reg, RAnalOp *op, const ut8 data) {
 
 static inline void gb_anal_cb_rr(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
 	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	if ((data & 7) == 6) {
@@ -644,8 +644,8 @@ static inline void gb_anal_cb_rr(RReg *reg, RAnalOp *op, const ut8 data) {
 static inline void gb_anal_cb_sla(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
 	//sra+sla+srl in one function, like xoaasc
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
 	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	dst->memref = ((data & 7) == 6);
@@ -658,8 +658,8 @@ static inline void gb_anal_cb_sla(RReg *reg, RAnalOp *op, const ut8 data) {
 
 static inline void gb_anal_cb_sra(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
 	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	dst->memref = ((data & 7) == 6);
@@ -672,8 +672,8 @@ static inline void gb_anal_cb_sra(RReg *reg, RAnalOp *op, const ut8 data) {
 
 static inline void gb_anal_cb_srl(RReg *reg, RAnalOp *op, const ut8 data) {
 	RAnalValue *dst, *src;
-	dst = r_vector_push (op->dsts, NULL);
-	src = r_vector_push (op->srcs, NULL);
+	dst = r_vector_push (&op->dsts, NULL);
+	src = r_vector_push (&op->srcs, NULL);
 	src->imm = 1;
 	dst->reg = r_reg_get (reg, regs_x[data & 7], R_REG_TYPE_GPR);
 	dst->memref = ((data & 7) == 6);
