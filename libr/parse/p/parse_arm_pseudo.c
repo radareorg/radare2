@@ -339,10 +339,6 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		return false;
 	}
 
-	if (!p->varlist) {
-		free (tstr);
-		return false;
-	}
 	if (p->subrel) {
 		char *rip;
 		if (p->pseudo) {
@@ -375,7 +371,7 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			tstr = tstr_new;
 		}
 	}
-	if (f) {
+	if (f && p->varlist) {
 		bpargs = p->varlist (f, 'b');
 		spargs = p->varlist (f, 's');
 		bool ucase = IS_UPPER (*tstr);
