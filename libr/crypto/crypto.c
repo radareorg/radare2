@@ -15,7 +15,7 @@ R_API void r_crypto_init(RCrypto *cry) {
 	r_return_if_fail (cry);
 	int i;
 	cry->user = NULL;
-	cry->plugins = r_list_newf (NULL);
+	cry->plugins = r_list_newf (free);
 	for (i = 0; crypto_static_plugins[i]; i++) {
 		RCryptoPlugin *p = R_NEW0 (RCryptoPlugin);
 		if (p) {
