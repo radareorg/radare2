@@ -114,19 +114,19 @@ static int i4004_decode(RArchConfig *cfg, RAnalOp *op, ut64 addr, const ut8 *buf
 	switch (high) {
 	case 0:
 		if (low) {
-			op->type = R_ARCH_OP_TYPE_ILL;
+			op->type = R_ANAL_OP_TYPE_ILL;
 			if (mask & R_ARCH_OP_MASK_DISASM) {
 				strcpy (basm, "invalid");
 			}
 		} else {
-			op->type = R_ARCH_OP_TYPE_NOP;
+			op->type = R_ANAL_OP_TYPE_NOP;
 			if (mask & R_ARCH_OP_MASK_DISASM) {
 				strcpy (basm, "nop");
 			}
 		}
 		break;
 	case 1:
-		op->type = R_ARCH_OP_TYPE_CJMP;
+		op->type = R_ANAL_OP_TYPE_CJMP;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			snprintf (basm, basz, "jcn 0x%x 0x%x", low, buf[1]);
 		}
@@ -139,7 +139,7 @@ static int i4004_decode(RArchConfig *cfg, RAnalOp *op, ut64 addr, const ut8 *buf
 				snprintf (basm, basz, "src r%d", (low & 0xe) >> 1);
 			}
 		} else {
-			op->type = R_ARCH_OP_TYPE_MOV;
+			op->type = R_ANAL_OP_TYPE_MOV;
 			op->val = buf[1];
 			if (mask & R_ARCH_OP_MASK_DISASM) {
 				snprintf (basm, basz, "fim r%dr%d, 0x%x", low & 0xe,
@@ -149,26 +149,26 @@ static int i4004_decode(RArchConfig *cfg, RAnalOp *op, ut64 addr, const ut8 *buf
 		break;
 	case 3:
 		if (low & 1) {
-			op->type = R_ARCH_OP_TYPE_RJMP;
+			op->type = R_ANAL_OP_TYPE_RJMP;
 			if (mask & R_ARCH_OP_MASK_DISASM) {
 				snprintf (basm, basz, "jin r%dr%d", low & 0xe, (low & 0xe) + 1);
 			}
 		} else {
-			op->type = R_ARCH_OP_TYPE_MOV;
+			op->type = R_ANAL_OP_TYPE_MOV;
 			if (mask & R_ARCH_OP_MASK_DISASM) {
 				snprintf (basm, basz, "fin r%dr%d", low & 0xe, (low & 0xe) + 1);
 			}
 		}
 		break;
 	case 4:
-		op->type = R_ARCH_OP_TYPE_JMP;
+		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = (ut16) (low<<8) | buf[1];
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			snprintf (basm, basz, "jun 0x%x", (ut16)op->jump);
 		}
 		break;
 	case 5:
-		op->type = R_ARCH_OP_TYPE_CALL;
+		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = (ut16) (low<<8) | buf[1];
 		op->fail = addr + rlen;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -176,13 +176,13 @@ static int i4004_decode(RArchConfig *cfg, RAnalOp *op, ut64 addr, const ut8 *buf
 		}
 		break;
 	case 6:
-		op->type = R_ARCH_OP_TYPE_ADD;
+		op->type = R_ANAL_OP_TYPE_ADD;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			snprintf (basm, basz, "inc r%d", low);
 		}
 		break;
 	case 7:
-		op->type = R_ARCH_OP_TYPE_CJMP;
+		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->fail = (addr & (~0xFF)) + buf[1];
 		op->jump = addr + rlen;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -190,37 +190,37 @@ static int i4004_decode(RArchConfig *cfg, RAnalOp *op, ut64 addr, const ut8 *buf
 		}
 		break;
 	case 8:
-		op->type = R_ARCH_OP_TYPE_ADD;
+		op->type = R_ANAL_OP_TYPE_ADD;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			snprintf (basm, basz, "add r%d", low);
 		}
 		break;
 	case 9:
-		op->type = R_ARCH_OP_TYPE_SUB;
+		op->type = R_ANAL_OP_TYPE_SUB;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			snprintf (basm, basz, "sub r%d", low);
 		}
 		break;
 	case 10:
-		op->type = R_ARCH_OP_TYPE_MOV;
+		op->type = R_ANAL_OP_TYPE_MOV;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			snprintf (basm, basz, "ld r%d", low);
 		}
 		break;
 	case 11:
-		op->type = R_ARCH_OP_TYPE_XCHG;
+		op->type = R_ANAL_OP_TYPE_XCHG;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			snprintf (basm, basz, "xch r%d", low);
 		}
 		break;
 	case 12:
-		op->type = R_ARCH_OP_TYPE_RET;
+		op->type = R_ANAL_OP_TYPE_RET;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			snprintf (basm, basz, "bbl 0x%x", low);
 		}
 		break;
 	case 13:
-		op->type = R_ARCH_OP_TYPE_LOAD;
+		op->type = R_ANAL_OP_TYPE_LOAD;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			snprintf (basm, basz, "ldm 0x%x", low);
 		}
@@ -233,16 +233,16 @@ static int i4004_decode(RArchConfig *cfg, RAnalOp *op, ut64 addr, const ut8 *buf
 		strncpy (basm, i4004_f[low], basz);
 		basm[basz - 1] = '\0';
 		if (!strcmp (basm, "dac")) {
-			op->type = R_ARCH_OP_TYPE_SUB;
+			op->type = R_ANAL_OP_TYPE_SUB;
 		}
 		break;
 	}
 	if (!strcmp (basm, "invalid")) {
-		op->type = R_ARCH_OP_TYPE_ILL;
+		op->type = R_ANAL_OP_TYPE_ILL;
 	} else if (!strcmp (basm, "ral")) {
-		op->type = R_ARCH_OP_TYPE_SHL;
+		op->type = R_ANAL_OP_TYPE_SHL;
 	} else if (!strcmp (basm, "rar")) {
-		op->type = R_ARCH_OP_TYPE_SHR;
+		op->type = R_ANAL_OP_TYPE_SHR;
 	}
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (basm);

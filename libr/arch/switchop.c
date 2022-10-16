@@ -2,6 +2,7 @@
 
 #include <r_arch.h>
 
+#if 0
 static RArchSwitchOp *__switch_op_new(void) {
 	RArchSwitchOp * swop = R_NEW0 (RArchSwitchOp);
 	if (swop) {
@@ -52,3 +53,4 @@ R_API RArchCaseOp* r_arch_switch_op_add_case(RArchSwitchOp *swop, ut64 addr, ut6
 	}
 	return caseop;
 }
+#endif
