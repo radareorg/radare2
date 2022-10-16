@@ -66,6 +66,7 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg) {
 		break;
 	default:
 		bits = UT32_MAX;
+		break;
 	}
 	ut32 score = 0;
 	if (!strcmp (p->arch, cfg->arch)) {
@@ -105,6 +106,9 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
 	if (!config) {
 		config = arch->cfg;
 	}
+	if (config && arch->cfg == config) {
+		return true;
+	}
 	if (!config) {
 	//	arch->decoder = NULL;
 	}
@@ -113,10 +117,8 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
 		return false;
 	}
 	RArchConfig *oconfig = arch->cfg;
-	if (oconfig == config) {
-		return true;
-	}
 	r_ref (config);
+	r_unref (arch->cfg);
 	arch->cfg = config;
 	if (!r_arch_use_decoder (arch, dname)) {
 		arch->cfg = oconfig;
@@ -133,14 +135,14 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
 R_API bool r_arch_set_bits(RArch *arch, ut32 bits) {
 	r_return_val_if_fail (arch && bits, false);
 	if (!arch->cfg) {
-		arch->cfg = r_arch_config_new ();
-		if (!arch->cfg) {
+		RArchConfig *cfg = r_arch_config_new ();
+		if (!cfg) {
 			return false;
 		}
 		// r_arch_config_set_bits (arch->cfg, bits);
-		arch->cfg->bits = bits;
-		if (!r_arch_use (arch, arch->cfg)) {
-			r_unref (arch->cfg);
+		cfg->bits = bits;
+		if (!r_arch_use (arch, cfg)) {
+			r_unref (cfg);
 			arch->cfg = NULL;
 			return false;
 		}
@@ -167,13 +169,13 @@ R_API bool r_arch_set_bits(RArch *arch, ut32 bits) {
 R_API bool r_arch_set_endian(RArch *arch, ut32 endian) {
 	r_return_val_if_fail (arch, false);
 	if (!arch->cfg) {
-		arch->cfg = r_arch_config_new ();
-		if (!arch->cfg) {
+		RArchConfig *cfg = r_arch_config_new ();
+		if (!cfg) {
 			return false;
 		}
-		arch->cfg->endian = endian;
-		if (!r_arch_use (arch, arch->cfg)) {
-			r_unref (arch->cfg);
+		cfg->endian = endian;
+		if (!r_arch_use (arch, cfg)) {
+			r_unref (cfg);
 			arch->cfg = NULL;
 			return false;
 		}
@@ -204,14 +206,14 @@ R_API bool r_arch_set_arch(RArch *arch, char *archname) {
 		return false;
 	}
 	if (!arch->cfg) {
-		arch->cfg = r_arch_config_new ();
-		if (!arch->cfg) {
+		RArchConfig *cfg = r_arch_config_new ();
+		if (!cfg) {
 			free (_arch);
 			return false;
 		}
-		arch->cfg->arch = _arch;
-		if (!r_arch_use (arch, arch->cfg)) {
-			r_unref (arch->cfg);
+		cfg->arch =_arch;
+		if (!r_arch_use (arch, cfg)) {
+			r_unref (cfg);
 			arch->cfg = NULL;
 			return false;
 		}

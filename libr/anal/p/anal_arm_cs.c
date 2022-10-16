@@ -4323,6 +4323,9 @@ static void set_opdir(RAnalOp *op) {
 }
 
 static void set_src_dst(RAnalValue *val, RReg *reg, csh *handle, cs_insn *insn, int x, int bits) {
+	if (!val) {
+		return;
+	}
 	cs_arm_op armop = INSOP (x);
 	cs_arm64_op arm64op = INSOP64 (x);
 	if (bits == 64) {
@@ -4410,9 +4413,9 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 			break;
 		}
 		for (j = 0; j < 3; j++, i++) {
-			set_src_dst (r_vector_index_ptr (&op->srcs, j), anal->reg, &handle, insn, i, bits);
+			set_src_dst (r_vector_at (&op->srcs, j), anal->reg, &handle, insn, i, bits);
 		}
-		set_src_dst (r_vector_index_ptr (&op->dsts, 0), anal->reg, &handle, insn, 0, bits);
+		set_src_dst (r_vector_at (&op->dsts, 0), anal->reg, &handle, insn, 0, bits);
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (count > 2) {
@@ -4428,9 +4431,9 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 				}
 			}
 		}
-		set_src_dst (r_vector_index_ptr (&op->dsts, 0), anal->reg, &handle, insn, --count, bits);
+		set_src_dst (r_vector_at (&op->dsts, 0), anal->reg, &handle, insn, --count, bits);
 		for (j = 0; j < 3 && j < count; j++) {
-			set_src_dst (r_vector_index_ptr (&op->srcs, j), anal->reg, &handle, insn, j, bits);
+			set_src_dst (r_vector_at (&op->srcs, j), anal->reg, &handle, insn, j, bits);
 		}
 		break;
 	default:
@@ -4521,6 +4524,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		cs_free (insn, n);
 	} else {
+		cs_free (insn, n);
 		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (len < 4) {
