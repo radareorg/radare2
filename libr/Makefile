@@ -189,12 +189,11 @@ install-includes:
 	(cd ../shlr/sdb/src && for FILE in *.h ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/sdb/$$FILE" ; \
 	done)
-	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_util"
+	for a in r_util r_crypto r_anal ; do \
+	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/$$a" ; \
 	(cd include/r_util && for FILE in * ; do \
-		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_util/$$FILE" ; done)
-	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_crypto"
-	(cd include/r_crypto && for FILE in * ; do \
-		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_crypto/$$FILE" ; done)
+		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/$$a/$$FILE" ; done) ; \
+	done
 
 symstall install-symlink:
 	@cd .. && \
