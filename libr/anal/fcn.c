@@ -535,7 +535,13 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	char *sp_reg = NULL;
 	char *op_dst = NULL;
 	char *op_src = NULL;
-	if (depth < 1) {
+	if (depth < -1) {
+		// only happens when we want to analyze 1 basic block
+		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
+	} else if (depth == -1) {
+		// if its -1 lets just analyze once
+	//	return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
+	} else if (depth < 1) {
 		R_LOG_WARN ("Analysis of 0x%08"PFMT64x" stopped at 0x%08"PFMT64x", use a higher anal.depth to continue", fcn->addr, addr);
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
@@ -1712,7 +1718,7 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 	const bool is_x86 = a->cur->arch && !strcmp (a->cur->arch, "x86");
 	// TODO fix this x86-ism
 	if (is_x86) {
-		fcn_recurse (a, fcn, addr, size, 1);
+		fcn_recurse (a, fcn, addr, size, -1);
 		block = r_anal_get_block_at (a, addr);
 		if (block) {
 			r_anal_block_set_size (block, size);
