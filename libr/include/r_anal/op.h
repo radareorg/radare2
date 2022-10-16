@@ -4,6 +4,10 @@
 #include <r_reg.h>
 #include <r_anal/hint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	R_ANAL_OP_PREFIX_COND     = 1,
 	R_ANAL_OP_PREFIX_REP      = 1<<1,
@@ -283,6 +287,10 @@ typedef struct r_anal_op_t {
 	RAnalDataType datatype;
 	int vliw; // begin of opcode block.
 } RAnalOp;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

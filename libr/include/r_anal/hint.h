@@ -1,6 +1,10 @@
 #ifndef R2_ANAL_HINT_H
 #define R2_ANAL_HINT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum r_anal_addr_hint_type_t {
 	R_ANAL_ADDR_HINT_TYPE_IMMBASE,
 	R_ANAL_ADDR_HINT_TYPE_JUMP,
@@ -62,6 +66,10 @@ typedef struct r_anal_hint_t {
 	int nword;
 	ut64 stackframe;
 } RAnalHint;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
