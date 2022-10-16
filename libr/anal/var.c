@@ -9,6 +9,7 @@
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - ((RAnalVarAccess *)y)->offset))
 
 R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
+	r_return_val_if_fail (anal && var, false);
 	char *fmt = r_type_format (anal->sdb_types, var->type);
 	RRegItem *i;
 	if (!fmt) {
@@ -54,7 +55,7 @@ R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	return true;
 }
 
-static const char * __int_type_from_size(int size) {
+static const char * const __int_type_from_size(int size) {
 	switch (size) {
 	case 1: return "int8_t";
 	case 2: return "int16_t";
@@ -69,8 +70,6 @@ R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
 	RListIter *it;
 	RAnalVar *var;
 	RList *var_list = r_anal_var_all_list (a, fcn);
-	r_return_val_if_fail (var_list, false);
-
 	r_list_foreach (var_list, it, var) {
 		// Resync delta in case the registers list changed
 		// XXX imho this is wrong. as it needs to be reordered by the calling convention not by register index
@@ -83,7 +82,6 @@ R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
 			}
 		}
 	}
-
 	r_list_free (var_list);
 	return true;
 }
@@ -117,7 +115,7 @@ static void shadow_var_struct_members(RAnalVar *var) {
 	}
 }
 
-static bool inline valid_var_kind(char kind) {
+static inline bool valid_var_kind(char kind) {
 	switch (kind) {
 	case R_ANAL_VAR_KIND_BPV: // base pointer var/args
 	case R_ANAL_VAR_KIND_SPV: // stack pointer var/args
@@ -188,6 +186,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 }
 
 R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList *l) {
+	r_return_val_if_fail (fcn && l, false);
 	RListIter *iter;
 	RAnalVarProt *vp;
 	r_list_foreach (l, iter, vp) {
@@ -513,6 +512,7 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, u
 }
 
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
+	r_return_val_if_fail (fcn, NULL);
 	st64 offset = addr - fcn->addr;
 	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
 	if (!inst_accesses) {
@@ -1417,9 +1417,7 @@ static void var_field_free(RAnalVarField *field) {
 }
 
 R_API RList *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind) {
-	if (!fcn) {
-		return NULL;
-	}
+	r_return_val_if_fail (fcn, NULL);
 	RList *list = r_list_newf ((RListFree)var_field_free);
 	if (kind < 1) {
 		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
