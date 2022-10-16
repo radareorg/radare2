@@ -88,6 +88,13 @@ static inline void *r_vector_index_ptr(RVector *vec, size_t index) {
 	return (char *)vec->a + vec->elem_size * index;
 }
 
+static inline void *r_vector_at(RVector *vec, int index) {
+	if (vec && index >= 0 && index < vec->capacity) {
+		return (char *)vec->a + (vec->elem_size * index);
+	}
+	return NULL;
+}
+
 // helper function to assign an element of size vec->elem_size from elem to p.
 // elem is a pointer to the actual data to assign!
 R_API void r_vector_assign(RVector *vec, void *p, void *elem);
