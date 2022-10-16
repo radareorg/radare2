@@ -34,19 +34,13 @@
  *	@(#)regcomp.c	8.5 (Berkeley) 3/20/94
  */
 
-#include <sys/types.h>
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <limits.h>
-#include <stdlib.h>
+#include <r_th.h>
 #include "r_regex.h"
 #include "r_util/r_str.h"
 #include "r_util/r_assert.h"
 
 #include "utils.h"
 #include "regex2.h"
-
 #include "cclass.h"
 #include "cname.h"
 
@@ -107,7 +101,7 @@ static void stripsnug(struct parse *, struct re_guts *);
 static void findmust(struct parse *, struct re_guts *);
 static sopno pluscount(struct parse *, struct re_guts *);
 
-static char nuls[10];		/* place to point scanner in event of error */
+static R_TH_LOCAL char nuls[10];		/* place to point scanner in event of error */
 
 /*
  * macros for use with parse structure
@@ -186,7 +180,7 @@ R_API RRegex *r_regex_new(const char *pattern, const char *flags) {
 
 R_API int r_regex_flags(const char *f) {
 	int flags = 0;
-	if (!f || !*f) {
+	if (R_STR_ISEMPTY (f)) {
 		return 0;
 	}
 	if (strchr (f, 'e')) {
@@ -369,8 +363,8 @@ static void p_ere(struct parse *p, int stop) { /* character this ERE should end 
 
 	for (;;) {
 		/* do a bunch of concatenated expressions */
-		conc = HERE();
-		while (MORE() && (c = PEEK()) != '|' && c != stop) {
+		conc = HERE ();
+		while (MORE () && (c = PEEK ()) != '|' && c != stop) {
 			p_ere_exp (p);
 		}
 		REQUIRE (HERE () != conc, R_REGEX_EMPTY); /* require nonempty */
@@ -384,18 +378,18 @@ static void p_ere(struct parse *p, int stop) { /* character this ERE should end 
 			prevback = conc;
 			isFirst = false;
 		}
-		ASTERN(OOR1, prevback);
-		prevback = THERE();
-		AHEAD(prevfwd);			/* fix previous offset */
-		prevfwd = HERE();
-		EMIT(OOR2, 0);			/* offset is very wrong */
+		ASTERN (OOR1, prevback);
+		prevback = THERE ();
+		AHEAD (prevfwd); /* fix previous offset */
+		prevfwd = HERE ();
+		EMIT (OOR2, 0); /* offset is very wrong */
 	}
 
-	if (!isFirst) {		/* tail-end fixups */
-		AHEAD(prevfwd);
-		ASTERN(O_CH, prevback);
+	if (!isFirst) { /* tail-end fixups */
+		AHEAD (prevfwd);
+		ASTERN (O_CH, prevback);
 	}
-	//asert(!MORE() || SEE(stop));
+	// asert(!MORE() || SEE(stop));
 }
 
 /*
@@ -457,25 +451,25 @@ static void p_ere_exp(struct parse *p) {
 		break;
 	case '.':
 		if (p->g->cflags & R_REGEX_NEWLINE) {
-			nonnewline(p);
+			nonnewline (p);
 		} else {
 			EMIT (OANY, 0);
 		}
 		break;
 	case '[':
-		p_bracket(p);
+		p_bracket (p);
 		break;
 	case '\\':
-		REQUIRE(MORE(), R_REGEX_EESCAPE);
-		c = GETNEXT();
-		if (!isalpha(c)) {
-			ordinary(p, c);
+		REQUIRE (MORE(), R_REGEX_EESCAPE);
+		c = GETNEXT ();
+		if (!isalpha (c)) {
+			ordinary (p, c);
 		} else {
-			special(p, c);
+			special (p, c);
 		}
 		break;
-	case '{':		/* okay as ordinary except if digit follows */
-		REQUIRE(!MORE() || !isdigit((ut8)PEEK()), R_REGEX_BADRPT);
+	case '{': /* okay as ordinary except if digit follows */
+		REQUIRE (!MORE() || !isdigit((ut8)PEEK()), R_REGEX_BADRPT);
 		/* FALLTHROUGH */
 	default:
 		ordinary(p, c);

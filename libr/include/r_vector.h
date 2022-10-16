@@ -85,7 +85,7 @@ static inline size_t r_vector_len(const RVector *vec) {
 // returns a pointer to the offset inside the array where the element of the index lies.
 static inline void *r_vector_index_ptr(RVector *vec, size_t index) {
 	r_return_val_if_fail (vec && index < vec->capacity, NULL);
-	return (char *)vec->a + vec->elem_size * index;
+	return (char *)vec->a + (vec->elem_size * index);
 }
 
 static inline void *r_vector_at(RVector *vec, int index) {

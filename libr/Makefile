@@ -191,7 +191,7 @@ install-includes:
 	done)
 	for a in r_util r_crypto r_anal ; do \
 	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/$$a" ; \
-	(cd include/r_util && for FILE in * ; do \
+	(cd include/$$a && for FILE in * ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/$$a/$$FILE" ; done) ; \
 	done
 
