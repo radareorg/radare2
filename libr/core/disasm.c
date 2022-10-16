@@ -1412,8 +1412,12 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		ds_pre_xrefs (ds, fcnlines);
 		ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
-			ds_comment (ds, false, "%s 0x%08"PFMT64x"  ",
-				r_anal_ref_type_tostring (refi->type), refi->addr);
+			const char *t = r_anal_ref_type_tostring (refi->type);
+			if (t && strcmp (t, "NULL")) {
+				ds_comment (ds, false, "%s 0x%08"PFMT64x"  ", t, refi->addr);
+			} else {
+				ds_comment (ds, false, "0x%08"PFMT64x"  ", refi->addr);
+			}
 			if (count == cols) {
 				if (iter->n) {
 					ds_print_color_reset (ds);
