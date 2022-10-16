@@ -327,6 +327,7 @@ static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
 }
 
 static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+	r_return_val_if_fail (p, false);
 	RList *spargs = NULL;
 	RList *bpargs = NULL;
 	RListIter *iter;
@@ -374,64 +375,65 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			tstr = tstr_new;
 		}
 	}
-
-	bpargs = p->varlist (f, 'b');
-	spargs = p->varlist (f, 's');
-	bool ucase = IS_UPPER (*tstr);
-	RAnalVarField *var;
-	r_list_foreach (bpargs, iter, var) {
-		st64 delta = p->get_ptr_at
-			? p->get_ptr_at (f, var->delta, addr)
-			: ST64_MAX;
-		if (delta == ST64_MAX && var->field) {
-			delta = var->delta + f->bp_off;
-		} else if (delta == ST64_MAX) {
-			continue;
-		}
-		const char *reg = NULL;
-		if (p->get_reg_at) {
-			reg = p->get_reg_at (f, var->delta, addr);
-		}
-		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_BP];
-		}
-		oldstr = mount_oldstr (p, reg, delta, ucase);
-		if (strstr (tstr, oldstr)) {
-			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
-			free (oldstr);
-			break;
-		}
-		free (oldstr);
-	}
-	r_list_foreach (spargs, iter, var) {
-		st64 delta = var->delta;
-		if (!newstack) {
-			delta = p->get_ptr_at
+	if (f) {
+		bpargs = p->varlist (f, 'b');
+		spargs = p->varlist (f, 's');
+		bool ucase = IS_UPPER (*tstr);
+		RAnalVarField *var;
+		r_list_foreach (bpargs, iter, var) {
+			st64 delta = p->get_ptr_at
 				? p->get_ptr_at (f, var->delta, addr)
 				: ST64_MAX;
 			if (delta == ST64_MAX && var->field) {
-				delta = var->delta;
+				delta = var->delta + f->bp_off;
 			} else if (delta == ST64_MAX) {
 				continue;
 			}
-		}
-		const char *reg = NULL;
-		if (p->get_reg_at) {
-			reg = p->get_reg_at (f, var->delta, addr);
-		}
-		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_SP];
-		}
-		oldstr = mount_oldstr (p, reg, delta, ucase);
-		if (strstr (tstr, oldstr)) {
-			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
+			const char *reg = NULL;
+			if (p->get_reg_at) {
+				reg = p->get_reg_at (f, var->delta, addr);
+			}
+			if (!reg) {
+				reg = anal->reg->name[R_REG_NAME_BP];
+			}
+			oldstr = mount_oldstr (p, reg, delta, ucase);
+			if (strstr (tstr, oldstr)) {
+				tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
+				free (oldstr);
+				break;
+			}
 			free (oldstr);
-			break;
 		}
-		free (oldstr);
+		r_list_foreach (spargs, iter, var) {
+			st64 delta = var->delta;
+			if (!newstack) {
+				delta = p->get_ptr_at
+					? p->get_ptr_at (f, var->delta, addr)
+					: ST64_MAX;
+				if (delta == ST64_MAX && var->field) {
+					delta = var->delta;
+				} else if (delta == ST64_MAX) {
+					continue;
+				}
+			}
+			const char *reg = NULL;
+			if (p->get_reg_at) {
+				reg = p->get_reg_at (f, var->delta, addr);
+			}
+			if (!reg) {
+				reg = anal->reg->name[R_REG_NAME_SP];
+			}
+			oldstr = mount_oldstr (p, reg, delta, ucase);
+			if (strstr (tstr, oldstr)) {
+				tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
+				free (oldstr);
+				break;
+			}
+			free (oldstr);
+		}
+		r_list_free (bpargs);
+		r_list_free (spargs);
 	}
-	r_list_free (bpargs);
-	r_list_free (spargs);
 	if (len > strlen (tstr)) {
 		strcpy  (str, tstr);
 	} else {
