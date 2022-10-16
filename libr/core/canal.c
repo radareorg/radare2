@@ -3543,6 +3543,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 #else
 		pos = (opaddr - bb->addr);
 		if (r_anal_op (core->anal, &op, opaddr, buf + pos, bb->size - pos, mask) < 1) {
+			r_anal_op_fini (&op);
 			break;
 		}
 #endif

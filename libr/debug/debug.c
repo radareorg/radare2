@@ -419,13 +419,13 @@ R_API void r_debug_free(RDebug *dbg) {
 		r_list_free (dbg->maps_user);
 		r_list_free (dbg->threads);
 		r_num_free (dbg->num);
-		sdb_free (dbg->sgnls);
 		r_tree_free (dbg->tree);
 		sdb_foreach (dbg->tracenodes, (SdbForeachCallback)free_tracenodes_entry, dbg);
 		sdb_free (dbg->tracenodes);
 		r_list_free (dbg->plugins);
 		r_list_free (dbg->call_frames);
 		free (dbg->btalgo);
+		r_debug_signal_fini (dbg);
 		r_debug_trace_free (dbg->trace);
 		r_debug_session_free (dbg->session);
 		r_anal_op_free (dbg->cur_op);

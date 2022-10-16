@@ -1004,7 +1004,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 					src_imm = src->delta;
 				}
 			}
-			RAnalValue *dst = r_vector_index_ptr (&aop.dsts, 0);
+			RAnalValue *dst = r_vector_at (&aop.dsts, 0);
 			if (dst && dst->reg && dst->reg->name) {
 				dst_addr = r_reg_getv (esil->anal->reg, dst->reg->name) + index;
 				dst_imm = dst->delta;

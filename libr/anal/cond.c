@@ -119,13 +119,14 @@ R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 	if (!(cond = r_anal_cond_new ())) {
 		return NULL;
 	}
-	//v->reg[0] = op->src[0];
-	//v->reg[1] = op->src[1];
-	cond->arg[0] = r_anal_value_copy (r_vector_index_ptr (&op->srcs, 0));
-	cond->arg[1] = r_anal_value_copy (r_vector_index_ptr (&op->srcs, 1));
-	r_vector_fini (&op->srcs);
-	// TODO: moar!
-	//cond->arg[1] = op->src[1];
+	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
+	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
+	if (!src0 || !src1) {
+		return NULL;
+	}
+	// TODO: use r_ref
+	cond->arg[0] = r_anal_value_copy (src0);
+	cond->arg[1] = r_anal_value_copy (src1);
 	return cond;
 }
 

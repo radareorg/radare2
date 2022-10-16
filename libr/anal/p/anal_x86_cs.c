@@ -2256,6 +2256,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			esilprintf (op, "%s,I2D,%s", src, dst);
 			break;
 		}
+		free (src);
+		free (dst);
 		break;
 	}
 	case X86_INS_BT:

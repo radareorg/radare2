@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2020 - pancake */
+/* radare - LGPL - Copyright 2014-2022 - pancake */
 
 #include <r_debug.h>
 
@@ -49,6 +49,10 @@ static struct {
 	{ "SIGRTMAX", "NSIG" },
 	{ NULL }
 };
+
+R_API void r_debug_signal_fini(RDebug *dbg) {
+	sdb_free (DB);
+}
 
 R_API void r_debug_signal_init(RDebug *dbg) {
 	int i;

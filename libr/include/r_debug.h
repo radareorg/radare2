@@ -485,6 +485,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file);
 
 /* send signals */
 R_API void r_debug_signal_init(RDebug *dbg);
+R_API void r_debug_signal_fini(RDebug *dbg);
 R_API int r_debug_signal_send(RDebug *dbg, int num);
 R_API int r_debug_signal_what(RDebug *dbg, int num);
 R_API int r_debug_signal_resolve(RDebug *dbg, const char *signame);

@@ -4135,7 +4135,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 			gh->word_nth = 0;
 		}
 
-		struct r_agraph_location *pos = r_vector_index_ptr (&gh->word_list, gh->word_nth);
+		struct r_agraph_location *pos = r_vector_at (&gh->word_list, gh->word_nth);
 		gh->word_nth++;
 		if (pos) {
 			can->sx = -pos->x + can->w / 2;

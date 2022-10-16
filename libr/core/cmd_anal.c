@@ -9559,7 +9559,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 					}
 				}
 				if (!offimm) {
-					RAnalValue *dst = r_vector_index_ptr (&op.dsts, 0);
+					RAnalValue *dst = r_vector_at (&op.dsts, 0);
 					if (dst) {
 						if (dst->imm) {
 							offimm = dst->imm;
