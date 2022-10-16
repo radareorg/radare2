@@ -8,6 +8,13 @@ if [ "$(id -u)" = 0 ]; then
 	fi
 fi
 
+echo "$PWD" | grep -q " "
+if [ $? = 0 ]; then
+	echo "You can't build radare from a directory with spaces with make" > /dev/stderr
+	echo "To solve this you must 'meson' instead" > /dev/stderr
+	exit 1
+fi
+
 export USE_CS4=0
 # if owner of sys/install.sh != uid && uid == 0 { exec sudo -u id -A $SUDO_UID sys/install.sh $* }
 ARGS=""
