@@ -11557,7 +11557,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			bool didAap = false;
 			char *dh_orig = NULL;
 			if (!strncmp (input, "aaaaa", 5)) {
-				R_LOG_INFO ("An r2 developer is coming to your place to manually analyze this program. Please wait for it");
+				R_LOG_INFO ("We fired the r2 developer that was heading to your location to help you analyze this binary");
+				R_LOG_INFO ("Contact support for premium service");
 				if (r_cons_is_interactive ()) {
 					r_cons_any_key (NULL);
 				}
@@ -11575,7 +11576,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 			// Run afvn in all fcns
 			if (r_config_get_b (core->config, "anal.vars")) {
-				R_LOG_INFO ("Analyze all functions arguments/locals");
+				R_LOG_INFO ("Analyze all functions arguments/locals (afva@@@F)");
 				// r_core_cmd0 (core, "afva@@f");
 				r_core_cmd0 (core, "afva@@@F");
 			}
@@ -11658,7 +11659,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 				if (!didAap && isPreludableArch) {
 					didAap = true;
-					R_LOG_INFO ("Finding function preludes");
+					R_LOG_INFO ("Finding function preludes (aap)");
 					(void)r_core_search_preludes (core, false); // "aap"
 					r_core_task_yield (&core->tasks);
 				}
@@ -11729,14 +11730,15 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 
 				if (input[1] == 'a') { // "aaaa"
-					r_core_cmd0 (core, "/azq");
+					R_LOG_INFO ("Scanning for strings constructed in code (/azq 5)");
+					r_core_cmd0 (core, "/azq 5");
 					if (!didAap) {
 						didAap = true;
-						R_LOG_INFO ("Finding function preludes");
+						R_LOG_INFO ("Finding function preludes (aap)");
 						(void)r_core_search_preludes (core, false); // "aap"
 						r_core_task_yield (&core->tasks);
 					}
-					R_LOG_INFO ("Enable constraint types analysis for variables");
+					R_LOG_INFO ("Enable anal.types.constraint for experimental type propagation");
 					r_config_set_b (core->config, "anal.types.constraint", true);
 				} else {
 					R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
