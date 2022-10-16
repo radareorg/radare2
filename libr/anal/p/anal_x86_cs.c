@@ -1693,6 +1693,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			src = getarg (&gop, 1, 0, NULL, NULL);
 			dst = getarg (&gop, 0, 1, "-", NULL);
 			esilprintf (op, "%s,%s", src, dst);
+			free (src);
+			free (dst);
 		}
 		break;
 	case X86_INS_SUB:
@@ -1710,6 +1712,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			// represents a "borrow"
 			esilprintf (op, "%s,%s,%s,0x%"PFMT64x",-,!,%u,$o,^,of,:=,%u,$s,sf,:=,$z,zf,:=,$p,pf,:=,%u,$b,cf,:=,3,$b,af,:=",
 				src, dst, src, (uint64_t)(1ULL) << (bitsize - 1), bitsize - 1, bitsize - 1, bitsize);
+			free (src);
+			free (dst);
 		}
 		break;
 	case X86_INS_SBB:
@@ -1720,6 +1724,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			dst = getarg (&gop, 0, 0, NULL, &bitsize);
 			esilprintf (op, "cf,%s,+,%s,-=,%d,$o,of,:=,%d,$s,sf,:=,$z,zf,:=,$p,pf,:=,%d,$b,cf,:=",
 				src, dst, bitsize - 1, bitsize - 1, bitsize);
+			free (src);
+			free (dst);
 		}
 		break;
 	case X86_INS_LIDT:
