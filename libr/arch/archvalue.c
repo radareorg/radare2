@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2010-2022 - pancake, condret */
 
+#if 0
 #include <r_arch.h>
 #include <r_io.h>
 #include <r_reg.h>
@@ -112,3 +113,4 @@ R_API char *r_arch_value_to_string(RArchValue *value) {
 	}
 	return out;
 }
+#endif

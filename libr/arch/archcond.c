@@ -2,6 +2,7 @@
 
 #include <r_arch.h>
 
+#if 0
 R_API const char *r_arch_cond_to_string(RArchCond cc) {
 	switch (cc) {
 	case R_ARCH_COND_EQ: return "eq";
@@ -23,3 +24,4 @@ R_API const char *r_arch_cond_to_string(RArchCond cc) {
 	}
 	return "??";
 }
+#endif
