@@ -4,6 +4,7 @@
 #define R2_ARCH_H
 
 #include <r_util.h>
+#include <r_anal/op.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -271,19 +272,20 @@ typedef enum {
 	R_ARCH_DATATYPE_FLOAT,
 } RArchDataType;
 
+#if 0
 typedef struct r_arch_op_t {
 	char *mnemonic; /* mnemonic.. it actually contains the args too, we should replace rasm with this */
 	ut64 addr;      /* address */
-	RArchOpType type;	/* type of opcode */
-	RArchOpPrefix prefix;	/* type of opcode prefix (rep,lock,..) */
-	RArchOpType type2;	/* used by java */
+	RAnalOpType type;	/* type of opcode */
+	RAnalOpPrefix prefix;	/* type of opcode prefix (rep,lock,..) */
+	RAnalOpType type2;	/* used by java */
 	RArchStackOp stackop;	/* operation on stack? */
 	RArchCond cond;	/* condition type */
 	int size;       /* size in bytes of opcode */
 	ut32 nopcode;    /* number of bytes representing the opcode (not the arguments) TODO: find better name */
 	ut32 cycles;	/* cpu-cycles taken by instruction */
 	ut32 failcycles;	/* conditional cpu-cycles */
-	RArchOpFamily family;	/* family of opcode */
+	RAnalOpFamily family;	/* family of opcode */
 	int id;         /* instruction id */
 	bool eob;       /* end of block (boolean) */
 	bool sign;      /* operates on signed values, false by default */
@@ -291,7 +293,7 @@ typedef struct r_arch_op_t {
 	int delay;      /* delay N slots (mips, ..)*/
 	ut64 jump;      /* true jmp */
 	ut64 fail;      /* false jmp */
-	RArchOpDirection direction;
+	RAnalOpDirection direction;
 	st64 ptr;       /* reference to memory */ /* XXX signed? */
 	ut64 val;       /* reference to value */ /* XXX signed? */
 	ut32 ptrsize;    /* f.ex: zero extends for 8, 16 or 32 bits only */
@@ -310,7 +312,8 @@ typedef struct r_arch_op_t {
 	ut32 new_bits;
 	RArchDataType datatype;
 	int vliw; // begin of opcode block.
-} RArchOp;
+} RAnalOp;
+#endif
 
 #define R_ARCH_INFO_MIN_OP_SIZE	0
 #define R_ARCH_INFO_MAX_OP_SIZE	1
@@ -319,11 +322,25 @@ typedef struct r_arch_op_t {
 #define R_ARCH_INFO_DATA_ALIGN	8
 #define R_ARCH_INFO_JMPMID	16	//supported jmpmid
 
+#if 0
+// R2_580 use this format instead?
 #define	R_ARCH_OP_MASK_BASIC	0	// Just fills basic op info , it's fast
 #define R_ARCH_OP_MASK_ESIL	1	// It fills RAnalop->esil info
 #define R_ARCH_OP_MASK_VAL	2	// It fills RAnalop->dst/src info
 #define	R_ARCH_OP_MASK_OPEX	4	// It fills RAnalop->opex info
 #define	R_ARCH_OP_MASK_DISASM	8	// It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
+#else
+// TODO rename to RAnalDecodeMask.ESIL, ...
+typedef enum {
+	R_ARCH_OP_MASK_BASIC = 0, // Just fills basic op info , it's fast
+	R_ARCH_OP_MASK_ESIL  = 1, // It fills RAnalop->esil info
+	R_ARCH_OP_MASK_VAL   = 2, // It fills RAnalop->dst/src info
+	R_ARCH_OP_MASK_HINT  = 4, // It calls r_anal_op_hint to override anal options
+	R_ARCH_OP_MASK_OPEX  = 8, // It fills RAnalop->opex info
+	R_ARCH_OP_MASK_DISASM = 16, // It fills RAnalop->mnemonic // should be RAnalOp->disasm // only from r_core_anal_op()
+	R_ARCH_OP_MASK_ALL   = 1 | 2 | 4 | 8 | 16
+} RAnalOpMask;
+#endif
 
 typedef struct r_arch_decoder_t {
 	struct r_arch_plugin_t *p;
@@ -354,7 +371,7 @@ typedef struct r_arch_plugin_t {
 	bool (*init)(void **user);
 	void (*fini)(void *user);
 	int (*info)(RArchConfig *cfg, ut32 query);
-	int (*decode)(RArchConfig *cfg, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user);
+	int (*decode)(RArchConfig *cfg, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user);
 	bool (*set_reg_profile)(RArchConfig *cfg, struct r_reg_t *reg);
 //TODO: reenable this later
 //	bool (*esil_init)(RAnalEsil *esil);
@@ -367,7 +384,7 @@ R_API bool r_arch_load_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_use_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_unload_decoder(RArch *arch, const char *dname);
 R_API int r_arch_info(RArch *arch, const char *dname, ut32 query);
-R_API int r_arch_decode(RArch *arch, const char *dname, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask);
+R_API int r_arch_decode(RArch *arch, const char *dname, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask);
 R_API bool r_arch_set_reg_profile(RArch *arch, const char *dname, struct r_reg_t *reg);
 //R_API bool r_arch_esil_init(RArch *arch, const char *dname, RAnalEsil *esil);
 //R_API void r_arch_esil_fini(RArch *arch, const char *dname, RAnalEsil *esil);
@@ -402,20 +419,23 @@ R_API ut64 r_arch_value_to_ut64(RArchValue *val, struct r_reg_t *reg);
 R_API bool r_arch_value_set_ut64(RArchValue *val, struct r_reg_t *reg, RIOBind *iob, ut64 num);
 R_API char *r_arch_value_to_string(RArchValue *value);
 
-// archop.c
-R_API RArchOp *r_arch_op_new(void);
-R_API void r_arch_op_init(RArchOp *op);
-R_API void r_arch_op_fini(RArchOp *op);
-R_API void r_arch_op_free(void *_op);
-R_API RArchOp *r_arch_op_copy(RArchOp *op);
+
+// R_API RAnalOp *r_arch_op_copy(RAnalOp *op);
 R_API int r_arch_optype_from_string(const char *type);
 R_API const char *r_arch_optype_to_string(int t);
 R_API const char *r_arch_stackop_to_string(int s);
+
+// MOVE BACK TO ANAL
+// archop.c
+#if 0
+R_API RAnalOp *r_arch_op_new(void);
+R_API void r_arch_op_init(RAnalOp *op);
+R_API void r_arch_op_fini(RAnalOp *op);
+R_API void r_arch_op_free(void *_op);
+#endif
 R_API const char *r_arch_op_family_to_string(int n);
 R_API int r_arch_op_family_from_string(const char *f);
-R_API const char *r_arch_op_direction_to_string(RArchOp *op);
-struct r_anal_op_t;
-R_API void r_arch_op_to_analop(struct r_anal_op_t *op, struct r_arch_op_t *archop);
+R_API const char *r_arch_op_direction_to_string(struct r_anal_op_t *op);
 
 // archcond.c
 R_API const char *r_arch_cond_to_string(RArchCond cc);

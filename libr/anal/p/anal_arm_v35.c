@@ -2530,26 +2530,26 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		r_str_replace_char (output, '\t', ' ');
 		r_str_replace_char (output, '#', ' ');
 		if (r_str_startswith (output, "UNDEF")) {
-			if (mask & R_ANAL_OP_MASK_DISASM) {
+			if (mask & R_ARCH_OP_MASK_DISASM) {
 				op->mnemonic = strdup ("undefined");
 			}
 			return 4;
 		}
 		//r_strbuf_set (&op->buf_asm, output);
 		op->type = R_ANAL_OP_TYPE_ILL;
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup (output);
 		}
 		anop64 (a, op, &insn);
-		if (mask & R_ANAL_OP_MASK_OPEX) {
+		if (mask & R_ARCH_OP_MASK_OPEX) {
 			opex64 (&op->opex, &insn);
 		}
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			analop_esil (a, op, addr, buf, len, &insn);
 		}
 		return op->size;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup ("invalid");
 	}
 	//r_strbuf_set (&op->buf_asm, "invalid");

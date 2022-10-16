@@ -58,7 +58,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	if (ret <= 0) {
 		return ret;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
 	}
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);

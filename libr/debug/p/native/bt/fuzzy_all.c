@@ -22,12 +22,12 @@ static int iscallret(RDebug *dbg, ut64 addr) {
 	} else {
 		RAnalOp op;
 		(void) dbg->iob.read_at (dbg->iob.io, addr-8, buf, 8);
-		(void) r_anal_op (dbg->anal, &op, addr-8, buf, 8, R_ANAL_OP_MASK_BASIC);
+		(void) r_anal_op (dbg->anal, &op, addr-8, buf, 8, R_ARCH_OP_MASK_BASIC);
 		if (op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL) {
 			return 1;
 		}
 		/* delay slot */
-		(void) r_anal_op (dbg->anal, &op, addr-4, buf, 4, R_ANAL_OP_MASK_BASIC);
+		(void) r_anal_op (dbg->anal, &op, addr-4, buf, 4, R_ARCH_OP_MASK_BASIC);
 		if (op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL) {
 			return 1;
 		}

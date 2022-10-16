@@ -124,7 +124,7 @@ R_API int r_arch_info(RArch *arch, const char *dname, ut32 query) {
 	return decoder->p->info (arch->cfg, query);
 }
 
-R_API int r_arch_decode(RArch *arch, const char *dname, RArchOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
+R_API int r_arch_decode(RArch *arch, const char *dname, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask) {
 	r_return_val_if_fail (arch && op && data && (len > 0), -1);
 	RArchDecoder *decoder = NULL;
 	if (dname) {

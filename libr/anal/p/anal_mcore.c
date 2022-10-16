@@ -16,7 +16,7 @@ static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 
 	op->size = 2;
 	if ((instr = mcore_next (&handle))) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			char tmp[256];
 			mcore_snprint (tmp, sizeof (tmp), addr, instr);
 			op->mnemonic = strdup (tmp);

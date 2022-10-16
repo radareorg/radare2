@@ -530,7 +530,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		// disassemble using the analysis plugin if found
 		RAnalOp aop;
 		a->analb.opinit (&aop);
-		ret = a->analb.decode (a->analb.anal, &aop, a->pc, buf, len, R_ANAL_OP_MASK_DISASM);
+		ret = a->analb.decode (a->analb.anal, &aop, a->pc, buf, len, R_ARCH_OP_MASK_DISASM);
 		op->size = aop.size;
 		if (aop.mnemonic) {
 			r_strbuf_set (&op->buf_asm, aop.mnemonic);

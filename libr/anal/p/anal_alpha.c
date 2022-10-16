@@ -38,7 +38,7 @@ static int alpha_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	if (len < 4) {
 		return -1;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		sb = r_strbuf_new (NULL);
 	}
 
@@ -55,7 +55,7 @@ static int alpha_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	disasm_obj.stream = sb;
 	op->size = print_insn_alpha ((bfd_vma)addr, &disasm_obj);
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		if (op->size > 0) {
 			op->mnemonic = r_strbuf_drain (sb);
 			sb = NULL;

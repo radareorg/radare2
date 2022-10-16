@@ -1654,7 +1654,7 @@ static void __cursor_up(RCore *core) {
 
 static void __cursor_down(RCore *core) {
 	RPrint *print = core->print;
-	RAnalOp *aop = r_core_anal_op (core, core->offset + print->cur, R_ANAL_OP_MASK_BASIC);
+	RAnalOp *aop = r_core_anal_op (core, core->offset + print->cur, R_ARCH_OP_MASK_BASIC);
 	if (aop) {
 		print->cur += aop->size;
 		r_anal_op_free (aop);
@@ -6543,7 +6543,7 @@ static void prevOpcode(RCore *core) {
 }
 
 static void nextOpcode(RCore *core) {
-	RAnalOp *aop = r_core_anal_op (core, core->offset + core->print->cur, R_ANAL_OP_MASK_BASIC);
+	RAnalOp *aop = r_core_anal_op (core, core->offset + core->print->cur, R_ARCH_OP_MASK_BASIC);
 	RPrint *p = core->print;
 	if (aop) {
 		p->cur += aop->size;

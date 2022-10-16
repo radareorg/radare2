@@ -153,7 +153,7 @@ R_API void r_core_print_func_args(RCore *core) {
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	ut64 cur_addr = r_reg_getv (core->anal->reg, pc);
 	RListIter *iter;
-	RAnalOp *op = r_core_anal_op (core, cur_addr, R_ANAL_OP_MASK_BASIC);
+	RAnalOp *op = r_core_anal_op (core, cur_addr, R_ARCH_OP_MASK_BASIC);
 	if (!op) {
 		return;
 	}

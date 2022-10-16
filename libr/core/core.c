@@ -466,7 +466,7 @@ static ut64 numvar_instruction_backward(RCore *core, const char *input) {
 			}
 			RAnalOp op = {0};
 			ret = r_anal_op (core->anal, &op, prev_addr, data,
-				sizeof (data), R_ANAL_OP_MASK_BASIC);
+				sizeof (data), R_ARCH_OP_MASK_BASIC);
 			if (ret < 1) {
 				ret = 1;
 			}
@@ -499,7 +499,7 @@ static ut64 numvar_instruction(RCore *core, const char *input) {
 		r_io_read_at (core->io, val, data, sizeof (data));
 		RAnalOp op;
 		ret = r_anal_op (core->anal, &op, val, data,
-			sizeof (data), R_ANAL_OP_MASK_BASIC);
+			sizeof (data), R_ARCH_OP_MASK_BASIC);
 		if (ret < 1) {
 			ret = 1;
 		}
@@ -619,7 +619,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'm':
 		case 'v':
 		case 'l':
-			r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC);
+			r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ARCH_OP_MASK_BASIC);
 			r_anal_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
 			break;
 		default:

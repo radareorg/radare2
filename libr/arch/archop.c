@@ -4,13 +4,17 @@
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RArchOp *r_arch_op_new(void) {
-	RArchOp *op = R_NEW (RArchOp);
+// XXX this is unused
+
+
+#if 0
+R_API RAnalOp *r_arch_op_new(void) {
+	RAnalOp *op = R_NEW (RAnalOp);
 	r_arch_op_init (op);
 	return op;
 }
 
-R_API void r_arch_op_init(RArchOp *op) {
+R_API void r_arch_op_init(RAnalOp *op) {
 	if (op) {
 		memset (op, 0, sizeof (*op));
 		op->addr = UT64_MAX;
@@ -26,7 +30,7 @@ R_API void r_arch_op_init(RArchOp *op) {
 	}
 }
 
-R_API void r_arch_op_fini(RArchOp *op) {
+R_API void r_arch_op_fini(RAnalOp *op) {
 	if (!op) {
 		return;
 	}
@@ -51,8 +55,8 @@ R_API void r_arch_op_free(void *_op) {
 	free (_op);
 }
 
-R_API RArchOp *r_arch_op_copy(RArchOp *op) {
-	RArchOp *nop = R_NEW0 (RArchOp);
+R_API RAnalOp *r_arch_op_copy(RAnalOp *op) {
+	RAnalOp *nop = R_NEW0 (RAnalOp);
 	if (!nop) {
 		return NULL;
 	}
@@ -301,7 +305,7 @@ R_API int r_arch_op_family_from_string(const char *f) {
 	return R_ARCH_OP_FAMILY_UNKNOWN;
 }
 
-R_API const char *r_arch_op_direction_to_string(RArchOp *op) {
+R_API const char *r_arch_op_direction_to_string(RAnalOp *op) {
 	if (!op) {
 		return "none";
 	}
@@ -311,3 +315,5 @@ R_API const char *r_arch_op_direction_to_string(RArchOp *op) {
 		: d == 4 ? "exec"
 		: d == 8 ? "ref": "none";
 }
+
+#endif

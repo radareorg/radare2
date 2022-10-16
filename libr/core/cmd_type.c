@@ -865,7 +865,7 @@ R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to) {
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	while (at < to) {
-		RAnalOp *op = r_core_anal_op (core, at, R_ANAL_OP_MASK_BASIC);
+		RAnalOp *op = r_core_anal_op (core, at, R_ARCH_OP_MASK_BASIC);
 		if (!op || op->size <= 0) {
 			at += minopcode;
 			continue;
@@ -981,7 +981,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
 			}
-			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_VAL);
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ARCH_OP_MASK_VAL);
 			if (ret <= 0) {
 				i += minopcode;
 				at += minopcode;

@@ -213,7 +213,7 @@ static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int 
 		}
 		break;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (buf_asm);
 	}
 	return op->size;

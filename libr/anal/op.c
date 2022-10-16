@@ -99,37 +99,6 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	return 0;
 }
 
-R_API void r_arch_op_to_analop(RAnalOp *op, RArchOp *archop) {
-	r_anal_op_init (op);
-	op->mnemonic = strdup (r_str_get (archop->mnemonic));
-	op->addr = archop->addr;
-	op->size = archop->size;
-	op->cond = (_RAnalCond)archop->cond;
-	op->id = archop->id;
-	op->cycles = archop->cycles;
-	op->delay = archop->delay;
-	op->type = archop->type;
-	op->prefix = (RAnalOpPrefix)archop->prefix;
-	op->stackop = (RAnalStackOp)archop->stackop;
-	op->jump = archop->jump;
-	op->fail = archop->fail;
-	op->ptr = archop->ptr;
-	op->scale = archop->scale;
-	op->val = archop->val;
-	op->nopcode = archop->nopcode;
-	op->disp = archop->disp;
-	op->direction = (RAnalOpDirection)archop->direction;
-	op->ptrsize = archop->ptrsize;
-	op->refptr = archop->refptr;
-	op->srcs = archop->srcs;
-	op->dsts = archop->dsts;
-	op->esil = archop->esil;
-	op->opex = archop->opex;
-	op->access = archop->access;
-	op->stackptr= archop->stackptr;
-	op->family = (RAnalOpFamily)archop->family;
-}
-
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);
@@ -149,25 +118,8 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 	int ret = R_MIN (2, len);
 	if (len > 0 && anal->arch->current) {
-		RArchOp archop = {0};
-		ut32 archmask = 0;
-		if (mask & R_ANAL_OP_MASK_DISASM) {
-			archmask |= R_ARCH_OP_MASK_DISASM;
-		}
-		if (mask & R_ANAL_OP_MASK_ESIL) {
-			archmask |= R_ARCH_OP_MASK_ESIL;
-		}
-		if (mask & R_ANAL_OP_MASK_VAL) {
-			archmask |= R_ARCH_OP_MASK_VAL;
-		}
-		if (mask & R_ANAL_OP_MASK_OPEX) {
-			archmask |= R_ARCH_OP_MASK_OPEX;
-		}
-		if (mask & R_ANAL_OP_MASK_BASIC) {
-			archmask |= R_ARCH_OP_MASK_BASIC;
-		}
-		ret = r_arch_decode (anal->arch, NULL, &archop, addr, data, len, archmask);
-		r_arch_op_to_analop (op, &archop);
+		ret = r_arch_decode (anal->arch, NULL, op, addr, data, len, mask);
+		// r_arch_op_to_analop (op, &archop);
 		// ret = anal->arch->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
@@ -203,12 +155,12 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->cycles = defaultCycles (op);
 		}
 	}
-	if (!op->mnemonic && (mask & R_ANAL_OP_MASK_DISASM)) {
+	if (!op->mnemonic && (mask & R_ARCH_OP_MASK_DISASM)) {
 		if (anal->verbose) {
-			R_LOG_WARN ("unhandled R_ANAL_OP_MASK_DISASM in r_anal_op");
+			R_LOG_WARN ("unhandled R_ARCH_OP_MASK_DISASM in r_anal_op");
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_HINT) {
+	if (mask & R_ARCH_OP_MASK_HINT) {
 		RAnalHint *hint = r_anal_hint_get (anal, addr);
 		if (hint) {
 			r_anal_op_hint (op, hint);
@@ -754,7 +706,7 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
 	anal->iob.read_at (anal->iob.io, addr, buf, sizeof (buf));
 	RAnalOp op = {0};
 	RAnalValue *dst = NULL;
-	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL) > 0) {
+	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ARCH_OP_MASK_ALL) > 0) {
 		dst = r_vector_index_ptr (op.dsts, 0);
 		if (dst && dst->reg && dst->reg->name && (!name || !strcmp (dst->reg->name, name))) {
 			if (r_vector_len (op.srcs)) {

@@ -903,7 +903,7 @@ static int archinfo(RArchConfig *cfg, ut32 q) {
 	return 4;
 }
 
-static int decode(RArchConfig *cfg, RArchOp *op, ut64 addr, const ut8 *buf, int len, ut32 mask, void *user) {
+static int decode(RArchConfig *cfg, RAnalOp *op, ut64 addr, const ut8 *buf, int len, ut32 mask, void *user) {
 	op->size = 4;
 	op->eob = false;
 

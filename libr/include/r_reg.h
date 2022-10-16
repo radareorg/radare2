@@ -1,9 +1,8 @@
 #ifndef R2_REG_H
 #define R2_REG_H
 
-struct r_arch_config_t;
 #include <r_types.h>
-#include <r_arch.h>
+#include <r_util/r_ref.h>
 #include <r_list.h>
 #include <r_util/r_hex.h>
 #include <r_util/r_assert.h>
@@ -121,6 +120,8 @@ typedef struct r_reg_set_t {
 	int maskregstype; /* which type of regs have this reg set (logic mask with RRegisterType  R_REG_TYPE_XXX) */
 } RRegSet;
 
+struct r_arch_config_t;
+#include <r_arch.h>
 typedef struct r_reg_t {
 	char *profile;
 	char *reg_profile_cmt;

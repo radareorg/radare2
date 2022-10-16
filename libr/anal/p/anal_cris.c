@@ -125,7 +125,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (len < 1) {
 		return -1;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->addr = addr;
 		op->mnemonic = disassemble (a, op, buf, len);
 		if (!op->mnemonic) {

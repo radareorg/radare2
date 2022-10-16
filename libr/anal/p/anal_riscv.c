@@ -374,7 +374,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (!o || !o->name) {
 		return op->size;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = riscv_disassemble (anal, addr, data, len);
 		if (!op->mnemonic) {
 			op->mnemonic = strdup ("invalid");
@@ -703,7 +703,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 				"c.lw", "c.lwsp", "c.li", "c.lui")) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 	}
-	if (mask & R_ANAL_OP_MASK_VAL && args.num) {
+	if (mask & R_ARCH_OP_MASK_VAL && args.num) {
 		int i, j = 1;
 		RAnalValue *dst, *src;
 		dst = r_vector_push (op->dsts, NULL);

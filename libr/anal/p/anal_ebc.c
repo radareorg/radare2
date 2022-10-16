@@ -57,7 +57,7 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return -1;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		char *inststr = cmd.operands[0]
 			? r_str_newf ("%s %s", cmd.instr, cmd.operands)
 			: strdup (cmd.instr);
