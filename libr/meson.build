@@ -437,6 +437,8 @@ include_files = [
   'include/r_agraph.h',
   'include/r_anal.h',
   'include/r_arch.h',
+  'include/r_anal/op.h',
+  'include/r_anal/hint.h',
   'include/r_asm.h',
   'include/r_bin.h',
   'include/r_bin_dwarf.h',

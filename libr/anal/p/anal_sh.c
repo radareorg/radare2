@@ -1301,7 +1301,7 @@ static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, 
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 2;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->size = disassemble (anal, op, data, len);
 		// should be always 2?
 	}

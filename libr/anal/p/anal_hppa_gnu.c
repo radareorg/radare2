@@ -31,7 +31,7 @@ static int hppa_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RA
 	ut8 bytes[8] = {0};
 	struct disassemble_info disasm_obj = {0};
 	RStrBuf *sb = NULL;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		sb = r_strbuf_new (NULL);
 	}
 	memcpy (bytes, buf, R_MIN (sizeof (bytes), len)); // TODO handle thumb
@@ -49,7 +49,7 @@ static int hppa_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RA
 	op->size = print_insn_hppa ((bfd_vma)addr, &disasm_obj);
 
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_strbuf_drain (sb);
 		sb = NULL;
 		r_str_replace_ch (op->mnemonic, '\t', ' ', true);

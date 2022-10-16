@@ -64,7 +64,7 @@ static int xap_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 2;
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_ndup (d.d_asm, sizeof (d.d_asm));
 	}
 

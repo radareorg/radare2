@@ -1172,7 +1172,7 @@ static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
 static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	const char *cpu = anal->config->cpu;
 	int opsz = -1;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = asm_pic_disassemble (cpu, buf, len, &opsz);
 	}
 	if (R_STR_ISNOTEMPTY (cpu)) {

@@ -447,7 +447,7 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->size = sz;
 
 	r_mem_swaporcopy ((ut8*)&insn, data, 4, !R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		disassemble (anal, op, addr, (ut8 *)&insn, 4);
 	}
 

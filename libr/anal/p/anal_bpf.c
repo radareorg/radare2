@@ -771,7 +771,7 @@ static int bpf_anal (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	op->addr = addr;
 
 	r_strbuf_init (&op->esil);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		(void)disassemble (op, addr, data, len);
 	}
 

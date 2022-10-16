@@ -50,7 +50,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->size = arm_disasm_one_insn (arminsn);
 	op->jump = arminsn->jmp;
 	op->fail = arminsn->fail;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		const char *cpu = r_str_get_fail (anal->config->cpu, "");
 		if (!strcmp (cpu, "wd")) {
 			const char *asmstr = winedbg_arm_insn_asm (arminsn);
@@ -333,7 +333,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return op_thumb (anal, op, addr, data, len, mask);
 	}
 	op->size = arm_disasm_one_insn (arminsn);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		const char *cpu = r_str_get_fail (anal->config->cpu, "");
 		if (!strcmp (cpu, "wd")) {
 			const char *asmstr = winedbg_arm_insn_asm (arminsn);
@@ -546,7 +546,7 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 }
 
 static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		const char *cpu = r_str_get_fail (anal->config->cpu, "");
 		if (strcmp (cpu, "wd")) {
 			disassemble (anal, op, addr, data, len);

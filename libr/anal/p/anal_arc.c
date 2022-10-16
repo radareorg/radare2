@@ -1091,7 +1091,7 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len,
 
 	op->addr = addr;
 	op->size = len;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		disassemble (anal, op, data, len);
 		//op->size = disassemble (anal, op, data, len);
 	}

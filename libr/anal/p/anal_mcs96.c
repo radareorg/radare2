@@ -108,7 +108,7 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 
 static int _op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	int ilen = disassemble (anal, op, data, len);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		// do nothing
 	}
 	return ilen;

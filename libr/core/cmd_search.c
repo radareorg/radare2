@@ -1206,7 +1206,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 	}
 	while (nb_instr < max_instr) {
 		ht_uu_insert (localbadstart, idx, 1);
-		int error = r_anal_op (core->anal, &aop, addr, buf + idx, buflen - idx, R_ANAL_OP_MASK_DISASM);
+		int error = r_anal_op (core->anal, &aop, addr, buf + idx, buflen - idx, R_ARCH_OP_MASK_DISASM);
 		if (error < 0 || (nb_instr == 0 && (is_end_gadget (&aop, 0) || aop.type == R_ANAL_OP_TYPE_NOP))) {
 			valid = false;
 			goto ret;
@@ -1335,7 +1335,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ESIL);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_ESIL);
 			size += hit->len;
 			if (analop.type != R_ANAL_OP_TYPE_RET) {
 				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
@@ -1374,7 +1374,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_BASIC);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_BASIC);
 			size += hit->len;
 			const char *opstr = R_STRBUF_SAFEGET (&analop.esil);
 			if (analop.type != R_ANAL_OP_TYPE_RET) {
@@ -1417,7 +1417,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ESIL);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_ESIL);
 			size += hit->len;
 			if (analop.type != R_ANAL_OP_TYPE_RET) {
 				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
@@ -1573,7 +1573,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			RAnalOp end_gadget = {0};
 			// Disassemble one.
 			if (r_anal_op (core->anal, &end_gadget, from + i, buf + i,
-				    delta - i, R_ANAL_OP_MASK_BASIC) < 1) {
+				    delta - i, R_ARCH_OP_MASK_BASIC) < 1) {
 				r_anal_op_fini (&end_gadget);
 				continue;
 			}
@@ -1932,7 +1932,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 		if (!i) {
 			r_io_read_at (core->io, curpc, arr, bsize);
 		}
-		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_BASIC);
+		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ARCH_OP_MASK_BASIC);
 		if (inslen) {
  			int incr = (core->search->align > 0)? core->search->align - 1:  inslen - 1;
 			if (incr < 0) {
@@ -2028,7 +2028,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
 			}
-			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_ESIL);
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ARCH_OP_MASK_ESIL);
 			curpos = idx++ % (MAXINSTR + 1);
 			previnstr[curpos] = ret; // This array holds prev n instr size + cur instr size
 #if !USE_EMULATION
@@ -2328,7 +2328,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 				break;
 			}
 
-			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 			if (ret) {
 				if (hasch > 0) {
 					hasch--;
@@ -2523,7 +2523,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 			at = from + i;
 			ut8 bufop[32];
 			r_io_read_at (core->io, at, bufop, sizeof (bufop));
-			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 			if (ret) {
 				bool match = false;
 				if (type == 'm') {
@@ -3314,7 +3314,7 @@ static void __core_cmd_search_asm_infinite(RCore *core, const char *arg) {
 		}
 		(void) r_io_read_at (core->io, map_begin, buf, map_size);
 		for (at = map_begin; at + 24 < map_end; at += 1) {
-			r_anal_op (core->anal, &analop, at, buf + (at - map_begin), 24, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+			r_anal_op (core->anal, &analop, at, buf + (at - map_begin), 24, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 			if (at == analop.jump) {
 				r_cons_printf ("0x%08"PFMT64x"\n", at);
 			}
@@ -3418,7 +3418,7 @@ static void __core_cmd_search_backward(RCore *core, int delta) {
 			}
 			int left = R_MIN ((map_end - at), maxopsz);
 			int rc = r_anal_op (core->anal, &analop, at, buf + (at - map_begin), left,
-				R_ANAL_OP_MASK_DISASM | R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+				R_ARCH_OP_MASK_DISASM | R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 			if (rc < 1) {
 				at += minopsz - 1;
 				continue;

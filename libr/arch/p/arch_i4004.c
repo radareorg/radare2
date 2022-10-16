@@ -97,7 +97,7 @@ static int i4004_get_ins_len(ut8 hex) {
 	return ret;
 }
 
-static int i4004_decode(RArchConfig *cfg, RArchOp *op, ut64 addr, const ut8 *buf, int len, ut32 mask, void *user) {
+static int i4004_decode(RArchConfig *cfg, RAnalOp *op, ut64 addr, const ut8 *buf, int len, ut32 mask, void *user) {
 	char basm[64];
 	const size_t basz = sizeof (basm);
 	int rlen = i4004_get_ins_len (*buf);

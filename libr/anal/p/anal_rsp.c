@@ -79,7 +79,7 @@ static RStrBuf *disassemble(RStrBuf *buf_asm, rsp_instruction *r_instr) {
 static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	if (len < 4) {
 		op->type = R_ANAL_OP_TYPE_ILL;
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 		return op->size = 0;
@@ -103,7 +103,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	ut32 iw = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
 	r_instr = rsp_instruction_decode (addr, iw);
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		RStrBuf *buf_asm = r_strbuf_new ("");
 		if (buf_asm) {
 			op->mnemonic = r_strbuf_drain (disassemble (buf_asm, &r_instr));

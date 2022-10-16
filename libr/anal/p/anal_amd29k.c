@@ -290,7 +290,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 
 	amd29k_instr_t instruction = {0};
 	if (amd29k_instr_decode (buf, len, &instruction, a->config->cpu)) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			const int buf_asm_len = 64;
 			char *buf_asm = calloc (buf_asm_len, 1);
 			if (buf_asm) {

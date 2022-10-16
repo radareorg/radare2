@@ -264,7 +264,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	int on = n;
 	if (!insn || !strncmp (insn->mnemonic, "dc.w", 4)) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 			n = 2;
 		} else {
@@ -274,7 +274,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->size = 2;
 		opsize = 2;
 		goto beach;
-	} else if (mask & R_ANAL_OP_MASK_DISASM) {
+	} else if (mask & R_ARCH_OP_MASK_DISASM) {
 		char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 		if (str) {
 			char *p = r_str_replace (str, "$", "0x", true);
@@ -302,7 +302,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	m68k = &detail->m68k;
 	op->id = insn->id;
 	opsize = op->size = insn->size;
-	if (mask & R_ANAL_OP_MASK_OPEX) {
+	if (mask & R_ARCH_OP_MASK_OPEX) {
 		opex (&op->opex, handle, insn);
 	}
 	switch (insn->id) {
@@ -780,7 +780,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->stackptr = 0;
 		break;
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
+	if (mask & R_ARCH_OP_MASK_VAL) {
 		op_fillval (op, handle, insn);
 	}
 beach:
