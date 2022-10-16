@@ -2282,8 +2282,17 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
 	bool silent = false;
 	if (!input) {
-		input = "";
+		input = "5";
 		silent = true;
+	}
+	// const char *where = r_config_get (core->config, "anal.in");
+	const char *where = "bin.sections.x";
+
+	r_list_free (param->boundaries);
+	param->boundaries = r_core_get_boundaries_prot (core, R_PERM_X, where, "search");
+	if (r_list_empty (param->boundaries)) {
+		where = r_config_get (core->config, "anal.in");
+		param->boundaries = r_core_get_boundaries_prot (core, R_PERM_X, where, "search");
 	}
 	ut64 at;
 	RAnalOp aop;
@@ -2408,11 +2417,10 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 					lastch = UT64_MAX;
 				}
 				int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
-				if (inc < 0) {
-					inc = 0;
+				if (inc > 0) {
+					i += inc;
+					at += inc;
 				}
-				i += inc;
-				at += inc;
 			}
 			r_anal_op_fini (&aop);
 		}

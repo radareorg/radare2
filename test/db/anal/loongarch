@@ -13,11 +13,12 @@ RUN
 NAME=mozi aae functions
 FILE=bins/elf/analysis/loongarch64-curl
 CMDS=<<EOF
+e anal.depth=256
 aae
 aflc
 EOF
 EXPECT=<<EOF
-403
+400
 EOF
 RUN
 
