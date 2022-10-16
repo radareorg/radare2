@@ -3260,6 +3260,7 @@ R_API void r_core_fini(RCore *c) {
 		r_th_channel_free (c->chan);
 	}
 	r_crypto_free (c->crypto);
+	r_th_lock_free (c->lock);
 	r_core_task_break_all (&c->tasks);
 	r_core_task_join (&c->tasks, NULL, -1);
 	r_core_wait (c);

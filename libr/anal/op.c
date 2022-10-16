@@ -418,9 +418,9 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	RAnalBlock *bb;
 	RAnalFunction *f;
 	char *cstr, ret[128];
-	RAnalValue *dst = r_vector_index_ptr (&op->dsts, 0);
-	RAnalValue *src0 = r_vector_index_ptr (&op->srcs, 0);
-	RAnalValue *src1 = r_vector_index_ptr (&op->srcs, 1);
+	RAnalValue *dst = r_vector_at (&op->dsts, 0);
+	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
+	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
 	char *r0 = r_anal_value_to_string (dst);
 	char *a0 = r_anal_value_to_string (src0);
 	char *a1 = r_anal_value_to_string (src1);
@@ -713,10 +713,10 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name) {
 	RAnalOp op = {0};
 	RAnalValue *dst = NULL;
 	if (r_anal_op (anal, &op, addr, buf, sizeof (buf), R_ARCH_OP_MASK_ALL) > 0) {
-		dst = r_vector_index_ptr (&op.dsts, 0);
+		dst = r_vector_at (&op.dsts, 0);
 		if (dst && dst->reg && dst->reg->name && (!name || !strcmp (dst->reg->name, name))) {
-			if (r_vector_len (&op.srcs)) {
-				return ((RAnalValue*)r_vector_index_ptr (&op.srcs, 0))->delta;
+			if (r_vector_len (&op.srcs) > 0) {
+				return ((RAnalValue*)r_vector_at (&op.srcs, 0))->delta;
 			}
 		}
 	}
