@@ -398,7 +398,7 @@ shot:
 		radare.org:/srv/http/radareorg/get/shot
 
 tests test:
-	$(MAKE) -C test
+	$(MAKE) -j -C test
 
 macos-sign:
 	$(MAKE) -C binr/radare2 macos-sign
