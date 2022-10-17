@@ -1084,7 +1084,6 @@ static int signed_compare_gt(ut64 a, ut64 b, ut64 size) {
 static void pushnums(RAnalEsil *esil, const char *src, ut64 num, const char *dst, ut64 num2) {
 	esil->old = num;
 	esil->cur = num - num2;
-	bool ret = true;
 	RRegItem *ri = r_reg_get (esil->anal->reg, dst, -1);
 	if (ri) {
 		esil->lastsz = esil_internal_sizeof_reg (esil, dst);
@@ -1099,7 +1098,6 @@ static void pushnums(RAnalEsil *esil, const char *src, ut64 num, const char *dst
 			esil->lastsz = 64;
 		}
 	}
-	r_anal_esil_pushnum (esil, !signed_compare_gt (num, num2, esil->lastsz));
 }
 
 // This function also sets internal vars which is used in flag calculations.
