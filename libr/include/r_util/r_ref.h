@@ -1,6 +1,9 @@
 
 // reference counter
 #define USE_THREADSAFE_REFS 0
+#define USE_DEBUG_REFS 0
+#define USE_DEBUG_REFS_MAX 100
+
 #if USE_THREADSAFE_REFS
 #include <r_th.h>
 #endif
@@ -46,7 +49,7 @@ static inline void *r_unref_(void *p, RRef *ref) {
 	}
 	r_th_lock_enter (ref->lock);
 	ref->count--;
-	if (ref->count == 0) {
+	if (ref->count == 0 && ref->free) {
 		ref->free (p);
 	}
 	r_th_lock_leave (ref->lock);
@@ -64,12 +67,18 @@ typedef int RRef;
 #define R_REF_TYPE RRef R_REF_NAME; void (*free)(void*)
 #define r_ref_count(x) (x)->R_REF_NAME
 
-#define r_ref(x) (x)->R_REF_NAME++
+// TODO: detect integer overflow
+#if USE_DEBUG_REFS
+#define r_ref(x) do { eprintf ("REF %p %d\n", (x), (x)->R_REF_NAME); r_sys_backtrace (); if (USE_DEBUG_REFS_MAX) { (x)->R_REF_NAME > USE_DEBUG_REFS_MAX) { kill(getpid(), SIGINT); } } (x)->R_REF_NAME++; } while (0)
+#define r_unref(x) { eprintf ("UNREF %p %d\n", (x), ((x)?(x)->R_REF_NAME: 0)); if ((x) != NULL && (x)->R_REF_NAME > 0 && !--((x)->R_REF_NAME)) { eprintf ("unref.free %p\n", (x)); if ((x)->free) { (x)->free(x); } (x) = NULL; } }
+#else
+#define r_ref(x) do { (x)->R_REF_NAME++; } while (0)
+#define r_unref(x) { if ((x) != NULL && (x)->R_REF_NAME > 0 && !--((x)->R_REF_NAME)) { if ((x)->free) { (x)->free(x); } (x) = NULL; } }
+#endif
 #define r_ref_ptr(x) ((x)->R_REF_NAME++, (x));
-#define r_ref_init(x,y) (x)->R_REF_NAME = 1;(x)->free = (void *)(y)
-// #define r_unref(x) { assert (x->R_REF_NAME > 0); if (!--(x->R_REF_NAME)) { x->free(x); } }
-#define r_unref(x) { if ((x) != NULL && (x)->R_REF_NAME > 0 && !--((x)->R_REF_NAME)) { (x)->free(x); (x) = NULL; } }
-#define r_ref_set(x,y) do { if ((x) != (y) && (x) != NULL) { r_unref(x); } (x)=(y); (y)->R_REF_NAME++; } while(0)
+#define r_ref_init(x,y) (x)->R_REF_NAME = 1; (x)->free = (void *)(y)
+// #define r_ref_set(x,y) do { if ((x) != (y) && (x) != NULL) { r_unref(x); } (x)=(y); (y)->R_REF_NAME++; } while(0)
+#define r_ref_set(x,y) do { r_ref((y)); r_unref((x)); (x) = (y); } while(0)
 
 #endif
 
