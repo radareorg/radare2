@@ -1056,6 +1056,50 @@ static bool esil_syscall(RAnalEsil *esil) {
 	return false;
 }
 
+// NOTE on following comparison functions:
+// The push to top of the stack is based on a
+// signed compare (as this causes least surprise to the users).
+// If an unsigned comparison is necessary, one must not use the
+// result pushed onto the top of the stack, but rather test the flags which
+// are set as a result of the compare.
+
+static int signed_compare_gt(ut64 a, ut64 b, ut64 size) {
+	int result;
+	switch (size) {
+	case 1:  result = (a & 1) > (b & 1);
+		break;
+	case 8:  result = (st8) a > (st8) b;
+		break;
+	case 16: result = (st16) a > (st16) b;
+		break;
+	case 32: result = (st32) a > (st32) b;
+		break;
+	case 64:
+	default: result = (st64) a > (st64) b;
+		break;
+	}
+	return result;
+}
+
+static void pushnums(RAnalEsil *esil, const char *src, ut64 num, const char *dst, ut64 num2) {
+	esil->old = num;
+	esil->cur = num - num2;
+	RRegItem *ri = r_reg_get (esil->anal->reg, dst, -1);
+	if (ri) {
+		esil->lastsz = esil_internal_sizeof_reg (esil, dst);
+		r_unref (ri);
+	} else {
+		ri = r_reg_get (esil->anal->reg, src, -1);
+		if (ri) {
+			esil->lastsz = esil_internal_sizeof_reg (esil, src);
+			r_unref (ri);
+		} else {
+			// default size is set to 64 as internally operands are ut64
+			esil->lastsz = 64;
+		}
+	}
+}
+
 // This function also sets internal vars which is used in flag calculations.
 static bool esil_cmp(RAnalEsil *esil) {
 	ut64 num, num2;
@@ -1064,17 +1108,8 @@ static bool esil_cmp(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			esil->old = num;
-			esil->cur = num - num2;
 			ret = true;
-			if (r_reg_get (esil->anal->reg, dst, -1)) {
-				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			} else if (r_reg_get (esil->anal->reg, src, -1)) {
-				esil->lastsz = esil_internal_sizeof_reg (esil, src);
-			} else {
-				// default size is set to 64 as internally operands are ut64
-				esil->lastsz = 64;
-			}
+			pushnums (esil, dst, num, src, num2);
 		}
 	}
 	free (dst);
@@ -2817,31 +2852,6 @@ static bool esil_swap(RAnalEsil *esil) {
 	return true;
 }
 
-// NOTE on following comparison functions:
-// The push to top of the stack is based on a
-// signed compare (as this causes least surprise to the users).
-// If an unsigned comparison is necessary, one must not use the
-// result pushed onto the top of the stack, but rather test the flags which
-// are set as a result of the compare.
-
-static int signed_compare_gt(ut64 a, ut64 b, ut64 size) {
-	int result;
-	switch (size) {
-	case 1:  result = (a & 1) > (b & 1);
-		break;
-	case 8:  result = (st8) a > (st8) b;
-		break;
-	case 16: result = (st16) a > (st16) b;
-		break;
-	case 32: result = (st32) a > (st32) b;
-		break;
-	case 64:
-	default: result = (st64) a > (st64) b;
-		break;
-	}
-	return result;
-}
-
 static bool esil_smaller(RAnalEsil *esil) { // 'dst < src' => 'src,dst,<'
 	ut64 num, num2;
 	bool ret = false;
@@ -2849,19 +2859,10 @@ static bool esil_smaller(RAnalEsil *esil) { // 'dst < src' => 'src,dst,<'
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			esil->old = num;
-			esil->cur = num - num2;
 			ret = true;
-			if (r_reg_get (esil->anal->reg, dst, -1)) {
-				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			} else if (r_reg_get (esil->anal->reg, src, -1)) {
-				esil->lastsz = esil_internal_sizeof_reg (esil, src);
-			} else {
-				// default size is set to 64 as internally operands are ut64
-				esil->lastsz = 64;
-			}
+			pushnums (esil, dst, num, src, num2);
 			r_anal_esil_pushnum (esil, (num != num2)
-				& !signed_compare_gt (num, num2, esil->lastsz));
+					& !signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
 	free (dst);
@@ -2876,17 +2877,8 @@ static bool esil_bigger(RAnalEsil *esil) { // 'dst > src' => 'src,dst,>'
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			esil->old = num;
-			esil->cur = num - num2;
 			ret = true;
-			if (r_reg_get (esil->anal->reg, dst, -1)) {
-				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			} else if (r_reg_get (esil->anal->reg, src, -1)) {
-				esil->lastsz = esil_internal_sizeof_reg (esil, src);
-			} else {
-				// default size is set to 64 as internally operands are ut64
-				esil->lastsz = 64;
-			}
+			pushnums (esil, dst, num, src, num2);
 			r_anal_esil_pushnum (esil, signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
@@ -2902,17 +2894,8 @@ static bool esil_smaller_equal(RAnalEsil *esil) { // 'dst <= src' => 'src,dst,<=
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			esil->old = num;
-			esil->cur = num - num2;
 			ret = true;
-			if (r_reg_get (esil->anal->reg, dst, -1)) {
-				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			} else if (r_reg_get (esil->anal->reg, src, -1)) {
-				esil->lastsz = esil_internal_sizeof_reg (esil, src);
-			} else {
-				// default size is set to 64 as internally operands are ut64
-				esil->lastsz = 64;
-			}
+			pushnums (esil, dst, num, src, num2);
 			r_anal_esil_pushnum (esil, !signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
@@ -2928,17 +2911,8 @@ static bool esil_bigger_equal(RAnalEsil *esil) { // 'dst >= src' => 'src,dst,>='
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			esil->old = num;
-			esil->cur = num - num2;
+			pushnums (esil, dst, num, src, num2);
 			ret = true;
-			if (r_reg_get (esil->anal->reg, dst, -1)) {
-				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			} else if (r_reg_get (esil->anal->reg, src, -1)) {
-				esil->lastsz = esil_internal_sizeof_reg (esil, src);
-			} else {
-				// default size is set to 64 as internally operands are ut64
-				esil->lastsz = 64;
-			}
 			r_anal_esil_pushnum (esil, (num == num2)
 					| signed_compare_gt (num, num2, esil->lastsz));
 		}
@@ -3027,17 +3001,15 @@ static bool esil_int_to_double(RAnalEsil *esil, int sign) {
 	char *src = r_anal_esil_pop (esil);
 	if (src) {
 		if (r_anal_esil_get_parm (esil, src, &s.u64)) {
-			if (sign) {
-				ret = esil_pushnum_float (esil, (double)(s.s64) * 1.0);
-			} else {
-				ret = esil_pushnum_float(esil, (double)(s.u64) * 1.0);
-			}
+			ret = (sign)
+				? esil_pushnum_float (esil, (double)(s.s64) * 1.0)
+				: esil_pushnum_float (esil, (double)(s.u64) * 1.0);
 		} else {
-			ERR("esil_int_to_float: invalid parameters.");
+			ERR ("esil_int_to_float: invalid parameters");
 		}
 		free (src);
 	} else {
-		ERR("esil_int_to_float: fail to get argument from stack.");
+		ERR ("esil_int_to_float: fail to get argument from stack");
 	}
 	return ret;
 }
