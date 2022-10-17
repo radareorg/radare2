@@ -4468,7 +4468,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
 		if (a->cs_handle != 0) {
 			cs_close (&a->cs_handle);
-			a->cs_handle = 0;
 		}
 		a->cs_omode = mode;
 		a->cs_obits = a->config->bits;
@@ -4479,18 +4478,19 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		ret = (a->config->bits == 64)?
 			cs_open (CS_ARCH_ARM64, mode, &a->cs_handle):
 			cs_open (CS_ARCH_ARM, mode, &a->cs_handle);
-		cs_option (a->cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 		if (ret != CS_ERR_OK) {
 			R_LOG_ERROR ("Capstone failed: cs_open(CS_ARCH_ARM%s, %x, ...): %s",
 				(a->config->bits == 64) ? "64" : "", mode, cs_strerror (ret));
-			a->cs_handle = 0;
+			cs_close (&a->cs_handle); // sets cs_handle to 0
 			R_CRITICAL_LEAVE (a);
 			return -1;
 		}
+		cs_option (a->cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	n = cs_disasm (a->cs_handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n > 0 && is_valid_mnemonic (insn->mnemonic)) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
+			free (op->mnemonic);
 			op->mnemonic = r_str_newf ("%s%s%s",
 				insn->mnemonic,
 				insn->op_str[0]? " ": "",
@@ -4529,6 +4529,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (len < 4) {
 			if (mask & R_ARCH_OP_MASK_DISASM) {
+				free (op->mnemonic);
 				op->mnemonic = strdup ("invalid");
 			}
 			R_CRITICAL_LEAVE (a);
@@ -4537,6 +4538,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		hackyArmAnal (a, op, buf, len);
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			if (hackyArmAsm (a, op, buf, len) < 1) {
+				free (op->mnemonic);
 				op->mnemonic = strdup ("invalid");
 			} else if (op->type == R_ANAL_OP_TYPE_ILL) {
 				op->type = R_ANAL_OP_TYPE_UNK;	//this is because hackyArmAnal and hackyArmAsm work differently
@@ -4544,8 +4546,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 	}
 #if 0
-	cs_close (cs_handle);
-	cs_handle = 0;
+	cs_close (a->cs_handle);
 #endif
 	R_CRITICAL_LEAVE (a);
 	return op->size;
@@ -4565,7 +4566,6 @@ static char *arm_mnemonics(RAnal *a, int id, bool json) {
 	if (mode != a->cs_omode || a->config->bits != a->cs_obits) {
 		if (a->cs_handle != 0) {
 			cs_close (&a->cs_handle);
-			a->cs_handle = 0;
 		}
 		a->cs_omode = mode;
 		a->cs_obits = a->config->bits;
