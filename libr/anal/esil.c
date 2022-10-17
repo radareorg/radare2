@@ -71,7 +71,12 @@ static bool r_anal_esil_runpending(RAnalEsil *esil, char *pending) {
 
 static bool ispackedreg(RAnalEsil *esil, const char *str) {
 	RRegItem *ri = r_reg_get (esil->anal->reg, str, -1);
-	return ri? ri->packed_size > 0: false;
+	if (ri) {
+		bool is_packed = ri->packed_size > 0;
+		r_unref (ri);
+		return is_packed;
+	}
+	return false;
 }
 
 static bool isregornum(RAnalEsil *esil, const char *str, ut64 *num) {
@@ -224,7 +229,12 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 static ut8 esil_internal_sizeof_reg(RAnalEsil *esil, const char *r) {
 	r_return_val_if_fail (esil && esil->anal && esil->anal->reg && r, 0);
 	RRegItem *ri = r_reg_get (esil->anal->reg, r, -1);
-	return ri? ri->size: 0;
+	if (ri) {
+		ut8 reg_size = ri->size; // why a reg size cant be > 256 bits?
+		r_unref (ri);
+		return reg_size;
+	}
+	return 0;
 }
 
 static bool alignCheck(RAnalEsil *esil, ut64 addr) {
@@ -397,18 +407,18 @@ R_API bool r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int
 }
 
 static bool internal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
-	RRegItem *reg = r_reg_get (esil->anal->reg, regname, -1);
-	if (reg) {
+	RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
+	if (ri) {
 		if (size) {
-			*size = reg->size;
+			*size = ri->size;
 		}
 		if (num) {
-			*num = r_reg_get_value (esil->anal->reg, reg);
+			*num = r_reg_get_value (esil->anal->reg, ri);
 			if (esil->verbose) {
 				eprintf ("%s < %x\n", regname, (int)*num);
 			}
 		}
-		r_unref (reg);
+		r_unref (ri);
 		return true;
 	}
 	return false;
@@ -416,12 +426,13 @@ static bool internal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *n
 
 static bool internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 num) {
 	if (esil && esil->anal) {
-		RRegItem *reg = r_reg_get (esil->anal->reg, regname, -1);
-		if (reg) {
-			r_reg_set_value (esil->anal->reg, reg, num);
+		RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
+		if (ri) {
+			r_reg_set_value (esil->anal->reg, ri, num);
 			if (esil->verbose) {
 				eprintf ("%s = %x\n", regname, (int)num);
 			}
+			r_unref (ri);
 			return true;
 		}
 	}
@@ -435,7 +446,6 @@ static bool internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 n
 static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname, ut64 num) {
 	r_return_val_if_fail (esil && esil->anal && esil->anal->reg, false);
 
-	RRegItem *reg = r_reg_get (esil->anal->reg, regname, -1);
 	const char *pc = r_reg_get_name (esil->anal->reg, R_REG_NAME_PC);
 	const char *sp = r_reg_get_name (esil->anal->reg, R_REG_NAME_SP);
 	const char *bp = r_reg_get_name (esil->anal->reg, R_REG_NAME_BP);
@@ -452,10 +462,13 @@ static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname
 		R_LOG_WARN ("RReg profile does not contain BP register");
 		return false;
 	}
-	if (reg && reg->name && ((strcmp (reg->name , pc) && strcmp (reg->name, sp) && strcmp (reg->name, bp)) || num)) { //I trust k-maps
-		r_reg_set_value (esil->anal->reg, reg, num);
+	RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
+	if (ri && ri->name && ((strcmp (ri->name , pc) && strcmp (ri->name, sp) && strcmp (ri->name, bp)) || num)) { //I trust k-maps
+		r_reg_set_value (esil->anal->reg, ri, num);
+		r_unref (ri);
 		return true;
 	}
+	r_unref (ri);
 	return false;
 }
 
@@ -482,6 +495,15 @@ R_API char *r_anal_esil_pop(RAnalEsil *esil) {
 	return esil->stack[--esil->stackptr];
 }
 
+static int not_a_number(RAnalEsil *esil, const char *str) {
+	RRegItem *ri = r_reg_get (esil->anal->reg, str, -1);
+	if (ri) {
+		r_unref (ri);
+		return R_ANAL_ESIL_PARM_REG;
+	}
+	return R_ANAL_ESIL_PARM_INVALID;
+}
+
 R_API int r_anal_esil_get_parm_type(RAnalEsil *esil, const char *str) {
 	int len, i;
 
@@ -492,19 +514,14 @@ R_API int r_anal_esil_get_parm_type(RAnalEsil *esil, const char *str) {
 		return R_ANAL_ESIL_PARM_NUM;
 	}
 	if (!((IS_DIGIT (str[0])) || str[0] == '-')) {
-		goto not_a_number;
+		return not_a_number (esil, str);
 	}
 	for (i = 1; i < len; i++) {
 		if (!(IS_DIGIT (str[i]))) {
-			goto not_a_number;
+			return not_a_number (esil, str);
 		}
 	}
 	return R_ANAL_ESIL_PARM_NUM;
-not_a_number:
-	if (r_reg_get (esil->anal->reg, str, -1)) {
-		return R_ANAL_ESIL_PARM_REG;
-	}
-	return R_ANAL_ESIL_PARM_INVALID;
 }
 
 static bool get_parm_size(RAnalEsil *esil, const char *str, ut64 *num, int *size) {

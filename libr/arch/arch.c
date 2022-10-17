@@ -286,8 +286,6 @@ R_API void r_arch_free(RArch *arch) {
 	r_return_if_fail (arch);
 	ht_pp_free (arch->decoders);
 	r_list_free (arch->plugins);
-	if (arch->cfg) {
-		r_unref (arch->cfg);
-	}
+	r_unref (arch->cfg);
 	free (arch);
 }

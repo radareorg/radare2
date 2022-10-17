@@ -4237,19 +4237,25 @@ static bool is_valid(arm_reg reg) {
 	return reg != ARM_REG_INVALID;
 }
 
+// XXX this function is a disaster
 static int parse_reg_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm_op armop = INSOP (reg_num);
 	switch (armop.type) {
 	case ARM_OP_REG:
+		r_unref (*reg_base);
 		*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.reg), R_REG_TYPE_ALL);
 		break;
 	case ARM_OP_MEM:
 		if (is_valid (armop.mem.base) && is_valid (armop.mem.index)) {
+			r_unref (*reg_base);
+			r_unref (*reg_delta);
 			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
 			*reg_delta = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
 		} else if (is_valid (armop.mem.base)) {
+			r_unref (*reg_base);
 			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
 		} else if (is_valid (armop.mem.index)) {
+			r_unref (*reg_base);
 			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
 		}
 		break;
@@ -4322,7 +4328,7 @@ static void set_opdir(RAnalOp *op) {
 	}
 }
 
-static void set_src_dst(RAnalValue *val, RReg *reg, csh *handle, cs_insn *insn, int x, int bits) {
+static void set_src_dst(RReg *reg, RAnalValue *val, csh *handle, cs_insn *insn, int x, int bits) {
 	if (!val) {
 		return;
 	}
@@ -4413,9 +4419,9 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 			break;
 		}
 		for (j = 0; j < 3; j++, i++) {
-			set_src_dst (r_vector_at (&op->srcs, j), anal->reg, &handle, insn, i, bits);
+			set_src_dst (anal->reg, r_vector_at (&op->srcs, j), &handle, insn, i, bits);
 		}
-		set_src_dst (r_vector_at (&op->dsts, 0), anal->reg, &handle, insn, 0, bits);
+		set_src_dst (anal->reg, r_vector_at (&op->dsts, 0), &handle, insn, 0, bits);
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (count > 2) {
@@ -4431,9 +4437,9 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int 
 				}
 			}
 		}
-		set_src_dst (r_vector_at (&op->dsts, 0), anal->reg, &handle, insn, --count, bits);
+		set_src_dst (anal->reg, r_vector_at (&op->dsts, 0), &handle, insn, --count, bits);
 		for (j = 0; j < 3 && j < count; j++) {
-			set_src_dst (r_vector_at (&op->srcs, j), anal->reg, &handle, insn, j, bits);
+			set_src_dst (anal->reg, r_vector_at (&op->srcs, j), &handle, insn, j, bits);
 		}
 		break;
 	default:

@@ -55,10 +55,12 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	if (type < 0 || type2 < 0) {
 		return "Invalid register type";
 	}
-	if (r_reg_get (reg, tok[1], R_REG_TYPE_ALL)) {
+	RRegItem *ri = r_reg_get (reg, tok[1], R_REG_TYPE_ALL);
+	if (ri) {
 		R_LOG_WARN ("Duplicated register definition for '%s' has been ignored", tok[1]);
 		return NULL;
 	}
+	r_unref (ri);
 
 	RRegItem *item = R_NEW0 (RRegItem);
 	if (!item) {
@@ -70,6 +72,7 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	item->size = parse_size (tok[2], &end);
 	if (*end || !item->size) {
 		r_reg_item_free (item);
+		r_unref (ri);
 		return "Invalid size";
 	}
 	if (!strcmp (tok[3], "?")) {

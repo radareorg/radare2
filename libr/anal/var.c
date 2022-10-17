@@ -74,11 +74,12 @@ R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
 		// Resync delta in case the registers list changed
 		// XXX imho this is wrong. as it needs to be reordered by the calling convention not by register index
 		if (var->isarg && var->kind == 'r') {
-			RRegItem *reg = r_reg_get (a->reg, var->regname, -1);
-			if (reg) {
-				if (var->delta != reg->index) {
-					var->delta = reg->index;
+			RRegItem *ri = r_reg_get (a->reg, var->regname, -1);
+			if (ri) {
+				if (var->delta != ri->index) {
+					var->delta = ri->index;
 				}
+				r_unref (ri);
 			}
 		}
 	}
@@ -576,20 +577,24 @@ R_API int r_anal_var_get_argnum(RAnalVar *var) {
 	if (!var->regname) {
 		return -1;
 	}
-	RRegItem *reg = r_reg_get (anal->reg, var->regname, -1);
-	if (!reg) {
+	RRegItem *ri = r_reg_get (anal->reg, var->regname, -1);
+	if (!ri) {
 		return -1;
 	}
+	char *ri_name = strdup (ri->name);
+	r_unref (ri);
 	int i;
 	char *cc = var->fcn->cc ? strdup (var->fcn->cc): NULL;
 	int arg_max = cc ? r_anal_cc_max_arg (anal, cc) : 0;
 	for (i = 0; i < arg_max; i++) {
 		const char *reg_arg = r_anal_cc_arg (anal, cc, i);
-		if (reg_arg && !strcmp (reg->name, reg_arg)) {
+		if (reg_arg && !strcmp (ri_name, reg_arg)) {
 			free (cc);
+			free (ri_name);
 			return i;
 		}
 	}
+	free (ri_name);
 	free (cc);
 	return -1;
 }
@@ -856,6 +861,7 @@ static const char *get_regname(RAnal *anal, RAnalValue *value) {
 		if (ri && (ri->size == 32) && (anal->config->bits == 64)) {
 			name = r_reg_32_to_64 (anal->reg, value->reg->name);
 		}
+		r_unref (ri);
 	}
 	return name;
 }
@@ -1218,6 +1224,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			RRegItem *ri = r_reg_get (anal->reg, regname, -1);
 			if (ri) {
 				delta = ri->index;
+				r_unref (ri);
 			}
 			if (fname) {
 				type = r_type_func_args_type (TDB, fname, i);
@@ -1269,6 +1276,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				ri = r_reg_get (anal->reg, regname, -1);
 				if (ri) {
 					delta = ri->index;
+					r_unref (ri);
 				}
 			}
 			if (reg_set[i] == 1 && is_used_like_an_arg) {
@@ -1314,6 +1322,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			RRegItem *ri = r_reg_get (anal->reg, selfreg, -1);
 			if (ri) {
 				delta = ri->index;
+				r_unref (ri);
 			}
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, vname);
 			if (newvar) {
@@ -1338,6 +1347,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			RRegItem *ri = r_reg_get (anal->reg, errorreg, -1);
 			if (ri) {
 				delta = ri->index;
+				r_unref (ri);
 			}
 			RAnalVar *newvar = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, 0, size, true, vname);
 			if (newvar) {

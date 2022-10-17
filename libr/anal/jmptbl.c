@@ -351,6 +351,7 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 		if (tmp_dst && tmp_dst->reg) {
 			cmp_reg = tmp_dst->reg;
 		} else if (tmp_aop.reg) {
+			r_unref (cmp_reg);
 			cmp_reg = r_reg_get (anal->reg, tmp_aop.reg, R_REG_TYPE_ALL);
 		} else if (tmp_src && tmp_src->reg) {
 			cmp_reg = tmp_src->reg;
@@ -375,6 +376,7 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 			r_anal_op_fini (&tmp_aop);
 		}
 	}
+	r_unref (cmp_reg);
 	r_vector_fini (&v);
 	free (buf);
 	return isValid;
@@ -523,6 +525,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 			if (tmp_dst && tmp_dst->reg) {
 				cmp_reg = tmp_dst->reg;
 			} else if (tmp_aop.reg) {
+				r_unref (cmp_reg);
 				cmp_reg = r_reg_get (anal->reg, tmp_aop.reg, R_REG_TYPE_ALL);
 			} else if (tmp_src && tmp_src->reg) {
 				cmp_reg = tmp_src->reg;
@@ -552,6 +555,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 			r_anal_op_fini (&tmp_aop);
 		}
 	}
+	r_unref (cmp_reg);
 	free (bb_buf);
 	// eprintf ("switch at 0x%" PFMT64x "\n\tdefault case 0x%" PFMT64x "\n\t#cases: %d\n",
 	// 		addr,
