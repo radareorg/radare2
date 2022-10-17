@@ -1200,6 +1200,11 @@ R_API bool r_vc_git_commit(Rvc *vc, const char *message, const char *author, con
 		return false;
 	}
 	if (R_STR_ISEMPTY (message)) {
+		if (!r_cons_is_interactive ()) {
+			message = strdup ("default message");
+		}
+	}
+	if (R_STR_ISEMPTY (message)) {
 		char *epath = r_str_escape (vc->path);
 		if (epath) {
 			int res = r_sys_cmdf ("git -C \"%s\" commit --author \"%s <%s@localhost>\"",
@@ -1311,7 +1316,8 @@ R_API bool rvc_git_checkout(Rvc *rvc, const char *bname) {
 	return r_vc_git_checkout (rvc, bname);
 }
 
-R_API bool MELLLLLOQUTOrvc_git_repo_exists(const RCore *core, const char *path) {
+#if 0
+R_API bool r_vc_git_repo_exists(const RCore *core, const char *path) {
 	char *frp = !strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")?
 		r_file_new (path, ".rvc", NULL):
 		r_file_new (path, ".git", NULL);
@@ -1322,6 +1328,7 @@ R_API bool MELLLLLOQUTOrvc_git_repo_exists(const RCore *core, const char *path) 
 	}
 	return false;
 }
+#endif
 
 R_API Rvc *r_vc_open(const char *rp, RvcType type) {
 	Rvc *repo = R_NEW (Rvc);
