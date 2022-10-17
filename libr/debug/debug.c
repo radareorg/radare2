@@ -573,8 +573,9 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 
 	/* Propagate return value */
 	if (ret) {
-		ri_ret = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_R0], R_REG_TYPE_GPR);
+		RRegItem *ri_ret = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_R0], R_REG_TYPE_GPR);
 		*ret = r_reg_get_value (dbg->reg, ri_ret);
+		r_unref (ri_ret);
 	}
 
 	if (restore) {
@@ -586,7 +587,9 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		r_reg_read_regs (dbg->reg, reg_backup, reg_backup_sz);
 	} else {
 		/* Restore PC */
+		RRegItem *ri_pc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
 		r_reg_set_value (dbg->reg, ri_pc, reg_pc);
+		r_unref (ri_pc);
 	}
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true);
 
