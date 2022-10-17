@@ -6,6 +6,7 @@ static void _ac_free(RArchConfig *cfg) {
 	if (cfg) {
 		free (cfg->decoder);
 		free (cfg->arch);
+		free (cfg->abi);
 		free (cfg->cpu);
 		free (cfg->os);
 		free (cfg);

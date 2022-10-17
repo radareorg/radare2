@@ -610,9 +610,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 				fcn_takeover_block_recursive (fcn, existing_bb);
 			}
 		}
-		if (existing_bb) {
-			r_anal_block_unref (existing_bb);
-		}
+		// r_unref (existing_bb);
+		r_anal_block_unref (existing_bb);
 		if (anal->opt.recont) {
 			return R_ANAL_RET_END;
 		}
@@ -705,7 +704,8 @@ repeat:
 			gotoBeach (R_ANAL_RET_ERROR)
 		}
 		r_anal_op_fini (op);
-		if ((oplen = r_anal_op (anal, op, at, buf, bytes_read, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT)) < 1) {
+		oplen = r_anal_op (anal, op, at, buf, bytes_read, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT);
+		if (oplen < 1) {
 			if (anal->verbose) {
 				R_LOG_WARN ("Invalid instruction at 0x%"PFMT64x" with %d bits", at, anal->config->bits);
 			}
@@ -1499,6 +1499,7 @@ R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 l
 	for (i = 0; i < bufsz && opcnt < 10; i += oplen, opcnt++) {
 		r_anal_op_fini (&op);
 		if ((oplen = r_anal_op (anal, &op, addr + i, buf + i, bufsz - i, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT)) < 1) {
+			r_anal_op_fini (&op);
 			return false;
 		}
 		switch (op.type) {
@@ -1515,16 +1516,19 @@ R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 l
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 			if (op.jump < low || op.jump >= high) {
+				r_anal_op_fini (&op);
 				return false;
 			}
 			brcnt++;
 			break;
 		case R_ANAL_OP_TYPE_UNK:
+			r_anal_op_fini (&op);
 			return false;
 		default:
 			break;
 		}
 	}
+	r_anal_op_fini (&op);
 	return (pushcnt + movcnt + brcnt > 5);
 }
 
@@ -2093,28 +2097,28 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 	const char *opdreg = (dst && dst->reg) ? dst->reg->name : NULL;
 	const char *opsreg = (src && src->reg) ? src->reg->name : NULL;
 	const char *bp_name = anal->reg->name[R_REG_NAME_BP];
-	bool is_bp_dst = opdreg && !dst->memref && !strcmp (opdreg, bp_name);
-	bool is_bp_src = opsreg && !src->memref && !strcmp (opsreg, bp_name);
+	bool dst_is_bp = opdreg && !dst->memref && !strcmp (opdreg, bp_name);
+	bool src_is_bp = opsreg && !src->memref && !strcmp (opsreg, bp_name);
 	if (op->type == R_ANAL_OP_TYPE_XCHG) {
-		return is_bp_src || is_bp_dst;
+		return src_is_bp || dst_is_bp;
 	}
-	return is_bp_dst;
+	return dst_is_bp;
 }
 
 /*
  * This function checks whether any operation in a given function may change bp (excluding "mov bp, sp"
  * and "pop bp" at the end).
  */
-static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
+R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
+	r_return_if_fail (fcn);
+	RAnal *anal = fcn->anal;
 	RListIter *iter;
 	RAnalBlock *bb;
 	char *pos;
+	// XXX omg this is one of the most awful things ive seen lately
 	char str_to_find[40];
 	snprintf (str_to_find, sizeof (str_to_find),
 		"\"type\":\"reg\",\"value\":\"%s", anal->reg->name[R_REG_NAME_BP]);
-	if (!fcn) {
-		return;
-	}
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RAnalOp op;
 		RAnalValue *src = NULL;
@@ -2134,12 +2138,14 @@ static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_MOV:
 			case R_ANAL_OP_TYPE_LEA:
-				if (can_affect_bp (anal, &op) && src && src->reg && src->reg->name
-				&& strcmp (src->reg->name, anal->reg->name[R_REG_NAME_SP])) {
-					fcn->bp_frame = false;
-					r_anal_op_fini (&op);
-					free (buf);
-					return;
+				if (can_affect_bp (anal, &op)) {
+					const char *spreg = anal->reg->name[R_REG_NAME_SP];
+					if (src && src->reg && src->reg->name && strcmp (src->reg->name, spreg)) {
+						fcn->bp_frame = false;
+						r_anal_op_fini (&op);
+						free (buf);
+						return;
+					}
 				}
 				break;
 			case R_ANAL_OP_TYPE_ADD:
@@ -2183,11 +2189,6 @@ static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 		}
 		free (buf);
 	}
-}
-
-R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
-	r_return_if_fail (fcn);
-	__anal_fcn_check_bp_use (fcn->anal, fcn);
 }
 
 typedef struct {

@@ -153,6 +153,7 @@ static bool trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 			ret = ocbs.hook_reg_write (esil, name, val);
 			esil->cb = cbs;
 		}
+		r_unref (ri);
 	}
 	return ret;
 }

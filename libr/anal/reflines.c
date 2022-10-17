@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
 
 #include <r_core.h>
 #include <r_util.h>
@@ -78,9 +78,8 @@ R_API void r_anal_reflines_free(RAnalRefline *rl) {
  * linesout - true if you want to display lines that go outside of the scope [addr;addr+len)
  * linescall - true if you want to display call lines */
 R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
-	RList *list, *sten;
 	RListIter *iter;
-	RAnalOp op;
+	RAnalOp op = {0};
 	struct refline_end *el;
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
@@ -88,7 +87,6 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	int sz = 0, count = 0;
 	ut64 opc = addr;
 
-	memset (&op, 0, sizeof (op));
 	/*
 	 * 1) find all reflines
 	 * 2) sort "from"s and "to"s in a list
@@ -100,11 +98,11 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	 *        refline, we free that level.
 	 */
 
-	list = r_list_newf (free);
+	RList *list = r_list_newf (free);
 	if (!list) {
 		return NULL;
 	}
-	sten = r_list_newf ((RListFree)free);
+	RList *sten = r_list_newf ((RListFree)free);
 	if (!sten) {
 		goto list_err;
 	}
@@ -260,6 +258,7 @@ do_skip:
 
 sten_err:
 list_err:
+	r_anal_op_fini (&op);
 	r_list_free (sten);
 	r_list_free (list);
 	return NULL;

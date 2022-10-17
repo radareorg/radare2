@@ -305,18 +305,18 @@ beach:
 
 R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
 	r_return_val_if_fail (dbg && name, false);
-	RRegItem *ri;
 	int role = r_reg_get_name_idx (name);
-	if (!dbg || !dbg->reg) {
+	if (!dbg->reg) {
 		return false;
 	}
 	if (role != -1) {
 		name = r_reg_get_name (dbg->reg, role);
 	}
-	ri = r_reg_get (dbg->reg, name, R_REG_TYPE_ALL);
+	RRegItem *ri = r_reg_get (dbg->reg, name, R_REG_TYPE_ALL);
 	if (ri) {
 		r_reg_set_value (dbg->reg, ri, num);
 		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, true);
+		r_unref (ri);
 	}
 	return (ri);
 }
@@ -360,6 +360,7 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 		} else {
 			ret = r_reg_get_value (dbg->reg, ri);
 		}
+		r_unref (ri);
 	} else {
 		if (err) {
 			*err = 1;

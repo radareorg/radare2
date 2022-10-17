@@ -1962,13 +1962,14 @@ static int var_cmd(RCore *core, const char *str) {
 		r_str_trim_head (name);
 
 		if (type == 'r') { //registers
-			RRegItem *i = r_reg_get (core->anal->reg, p, -1);
-			if (!i) {
+			RRegItem *ri = r_reg_get (core->anal->reg, p, -1);
+			if (!ri) {
 				R_LOG_ERROR ("Register not found");
 				break;
 			}
-			delta = i->index;
+			delta = ri->index;
 			isarg = true;
+			r_unref (ri);
 		} else {
 			delta = r_num_math (core->num, p);
 		}

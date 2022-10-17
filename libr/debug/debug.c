@@ -520,8 +520,6 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 	ut8 stack_backup[4096];
 	ut8 *pc_backup = NULL, *reg_backup = NULL;
 	int reg_backup_sz;
-	RRegItem *ri_sp, *ri_pc, *ri_ret;
-	ut64 reg_sp, reg_pc, bp_addr;
 
 	r_return_val_if_fail (dbg && buf && len > 0, false);
 
@@ -529,15 +527,9 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		return false;
 	}
 
-	ri_pc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
-	ri_sp = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_SP], R_REG_TYPE_GPR);
-
-	if (!ri_pc) {
-		R_LOG_ERROR ("r_debug_execute: Cannot get program counter");
-		return false;
-	}
-
-	if (restore && !ignore_stack && !ri_sp) {
+	const char *pc = dbg->reg->name[R_REG_NAME_PC];
+	const char *sp = dbg->reg->name[R_REG_NAME_SP];
+	if (restore && !ignore_stack) {
 		R_LOG_ERROR ("r_debug_execute: Cannot get stack pointer");
 		return false;
 	}
@@ -550,8 +542,8 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		return false;
 	}
 
-	reg_pc = r_reg_get_value (dbg->reg, ri_pc);
-	reg_sp = r_reg_get_value (dbg->reg, ri_sp);
+	ut64 reg_pc = r_reg_getv (dbg->reg, pc);
+	ut64 reg_sp = r_reg_getv (dbg->reg, sp);
 
 	pc_backup = malloc (len);
 	if (!pc_backup) {
@@ -566,7 +558,7 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		dbg->iob.read_at (dbg->iob.io, reg_sp, stack_backup, 4096);
 	}
 
-	bp_addr = reg_pc + len;
+	ut64 bp_addr = reg_pc + len;
 	r_bp_add_sw (dbg->bp, bp_addr, dbg->bpsize, R_BP_PROT_EXEC);
 
 	dbg->iob.write_at (dbg->iob.io, reg_pc, buf, len);
@@ -581,8 +573,9 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 
 	/* Propagate return value */
 	if (ret) {
-		ri_ret = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_R0], R_REG_TYPE_GPR);
+		RRegItem *ri_ret = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_R0], R_REG_TYPE_GPR);
 		*ret = r_reg_get_value (dbg->reg, ri_ret);
+		r_unref (ri_ret);
 	}
 
 	if (restore) {
@@ -594,7 +587,9 @@ R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret
 		r_reg_read_regs (dbg->reg, reg_backup, reg_backup_sz);
 	} else {
 		/* Restore PC */
+		RRegItem *ri_pc = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
 		r_reg_set_value (dbg->reg, ri_pc, reg_pc);
+		r_unref (ri_pc);
 	}
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true);
 
