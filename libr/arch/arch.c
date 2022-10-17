@@ -214,7 +214,6 @@ R_API bool r_arch_set_arch(RArch *arch, char *archname) {
 		cfg->arch =_arch;
 		if (!r_arch_use (arch, cfg)) {
 			r_unref (cfg);
-			arch->cfg = NULL;
 			return false;
 		}
 		return true;

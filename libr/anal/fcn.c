@@ -529,6 +529,7 @@ static inline bool has_vars(RAnal *anal, ut64 addr) {
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
+	RRegItem *variadic_reg = NULL;
 	ReadAhead ra = {0};
 	ra.cache_addr = UT64_MAX; // invalidate the cache
 	char *bp_reg = NULL;
@@ -574,11 +575,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	const bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
 	const bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
 	const bool is_dalvik = is_x86 ? false : anal->cur->arch && !strncmp (anal->cur->arch, "dalvik", 6);
-	RRegItem *variadic_reg = NULL;
-	if (is_amd64) {
-		variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
-	}
-	bool has_variadic_reg = !!variadic_reg;
 
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
@@ -674,6 +670,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		bp_reg = strdup (_bp_reg);
 		sp_reg = strdup (_sp_reg);
 	}
+	if (is_amd64) {
+		variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
+	}
+	bool has_variadic_reg = !!variadic_reg;
 
 	op = r_anal_op_new ();
 	while (addrbytes * idx < maxlen) {
@@ -1449,6 +1449,7 @@ analopfinish:
 			last_is_mov_lr_pc = false;
 		}
 		if (has_variadic_reg && !fcn->is_variadic) {
+			r_unref (variadic_reg);
 			variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
 			bool dst_is_variadic = dst && dst->reg
 					&& variadic_reg && dst->reg->offset == variadic_reg->offset;
@@ -1463,6 +1464,7 @@ analopfinish:
 		}
 	}
 beach:
+	r_unref (variadic_reg);
 	free (op_src);
 	free (op_dst);
 	free (bp_reg);

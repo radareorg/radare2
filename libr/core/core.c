@@ -3104,9 +3104,21 @@ R_API bool r_core_init(RCore *core) {
 	core->rasm->num = core->num;
 	r_asm_set_user_ptr (core->rasm, core);
 	core->anal = r_anal_new ();
+#if 1
+	r_unref (core->print->config);
+	r_unref (core->anal->config);
+	r_unref (core->anal->reg->config);
+	r_ref (core->rasm->config);
+	core->print->config = core->rasm->config;
+	r_ref (core->rasm->config);
+	core->anal->config = core->rasm->config;
+	r_ref (core->rasm->config);
+	core->anal->reg->config=core->rasm->config;
+#else
 	r_ref_set (core->print->config, core->rasm->config);
 	r_ref_set (core->anal->config, core->rasm->config);
 	r_ref_set (core->anal->reg->config, core->rasm->config);
+#endif
 	// RAnal.new() doesnt initializes this field. but it should be refcounted
 	core->anal->print = core->print;
 	r_anal_set_bits (core->anal, 32); // core->rasm->config->bits);
