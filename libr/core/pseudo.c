@@ -510,17 +510,20 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			char *os = r_str_prefix_all (s, indentstr);
 			free (s);
 			s = os;
+			size_t codelen = r_strbuf_length (codestr);
+			r_strbuf_append (codestr, s);
 			if (pj) {
 				pj_o (pj);
-				pj_kn (pj, "start", r_strbuf_length (codestr));
-				r_strbuf_append (codestr, s);
-				pj_kn (pj, "end", r_strbuf_length (codestr));
+				pj_kn (pj, "start", codelen);
+				pj_kn (pj, "end", codelen);
 				pj_kn (pj, "offset", addr);
 				pj_ks (pj, "type", "offset");
 				pj_end (pj);
 			}
-			NEWLINE (bb->addr, 1);
-			PRINTF ("loc_0x%08"PFMT64x": // orphan\n%s", bb->addr, s);
+			if (codelen > 0) {
+				NEWLINE (bb->addr, 1);
+				PRINTF ("loc_0x%08"PFMT64x": // orphan\n%s", bb->addr, s);
+			}
 			free (s);
 		}
 	}
