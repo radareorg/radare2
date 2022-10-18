@@ -3100,7 +3100,7 @@ R_API bool r_core_init(RCore *core) {
 	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
-	core->rasm = r_asm_new ();
+	core->rasm = core->egg->rasm;
 	core->rasm->num = core->num;
 	r_asm_set_user_ptr (core->rasm, core);
 	core->anal = r_anal_new ();
@@ -3326,6 +3326,7 @@ R_API void r_core_fini(RCore *c) {
 	r_search_free (c->search);
 	r_flag_free (c->flags);
 	r_fs_free (c->fs);
+	c->egg->rasm = NULL;
 	r_egg_free (c->egg);
 	r_lib_free (c->lib);
 	r_buf_free (c->yank_buf);
