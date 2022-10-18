@@ -182,11 +182,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_pdc);
 		return false;
 	}
+	RStrBuf *out = r_strbuf_new ("");
 #define PRINTF(a, ...) {\
 	if (pj) {\
 		r_strbuf_appendf (codestr, a, ##__VA_ARGS__);\
 	} else {\
-		r_cons_printf (a, ##__VA_ARGS__);\
+		r_strbuf_appendf (out, a, ##__VA_ARGS__);\
 	}}
 #define NEWLINE(a,i) {\
 	size_t eos = R_MIN ((i) * 2, sizeof (indentstr) - 2);\
@@ -196,9 +197,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (show_addr) r_strbuf_appendf (codestr, "\n0x%08"PFMT64x" | %s", a, indentstr);\
 		else r_strbuf_appendf (codestr, "\n%s", indentstr);\
 	} else {\
-		r_cons_newline();\
-		if (show_addr) r_cons_printf (" 0x%08"PFMT64x" | %s", a, indentstr);\
-		else r_cons_printf ("%s", indentstr); }\
+		r_strbuf_append (out, "\n");\
+		if (show_addr) r_strbuf_appendf (out, " 0x%08"PFMT64x" | %s", a, indentstr);\
+		else r_strbuf_append (out, indentstr); }\
 	}
 	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
 	if (cmdPdc && *cmdPdc && !strstr (cmdPdc, "pdc")) {
@@ -511,14 +512,16 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			free (s);
 			s = os;
 			size_t codelen = r_strbuf_length (codestr);
-			r_strbuf_append (codestr, s);
 			if (pj) {
 				pj_o (pj);
 				pj_kn (pj, "start", codelen);
+				r_strbuf_append (codestr, s);
 				pj_kn (pj, "end", codelen);
 				pj_kn (pj, "offset", addr);
 				pj_ks (pj, "type", "offset");
 				pj_end (pj);
+			} else {
+				r_strbuf_append (codestr, s);
 			}
 			if (codelen > 0) {
 				NEWLINE (bb->addr, 1);
@@ -540,6 +543,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_cons_printf ("%s\n", j);
 		free (kode);
 		free (j);
+		r_strbuf_free (out);
+	} else {
+		char *s = r_strbuf_drain (out);
+		r_cons_printf ("%s\n", s);
+		free (s);
 	}
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);

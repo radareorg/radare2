@@ -147,6 +147,7 @@ int entry0 (int esi, int edx) {
         // VOID ExitProcess(NULL)
          // (break)
 }
+
 EOF
 RUN
 
