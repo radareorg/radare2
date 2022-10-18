@@ -1098,7 +1098,7 @@ static int signed_compare_gt(ut64 a, ut64 b, ut64 size) {
 	return result;
 }
 
-static void pushnums(RAnalEsil *esil, const char *src, ut64 num, const char *dst, ut64 num2) {
+static void pushnums(RAnalEsil *esil, const char *src, ut64 num2, const char *dst, ut64 num) {
 	esil->old = num;
 	esil->cur = num - num2;
 	RRegItem *ri = r_reg_get (esil->anal->reg, dst, -1);
@@ -1126,7 +1126,7 @@ static bool esil_cmp(RAnalEsil *esil) {
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
 			ret = true;
-			pushnums (esil, dst, num, src, num2);
+			pushnums (esil, src, num2, dst, num);
 		}
 	}
 	free (dst);
@@ -2877,7 +2877,7 @@ static bool esil_smaller(RAnalEsil *esil) { // 'dst < src' => 'src,dst,<'
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
 			ret = true;
-			pushnums (esil, dst, num, src, num2);
+			pushnums (esil, src, num2, dst, num);
 			r_anal_esil_pushnum (esil, (num != num2)
 					& !signed_compare_gt (num, num2, esil->lastsz));
 		}
@@ -2895,7 +2895,7 @@ static bool esil_bigger(RAnalEsil *esil) { // 'dst > src' => 'src,dst,>'
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
 			ret = true;
-			pushnums (esil, dst, num, src, num2);
+			pushnums (esil, src, num2, dst, num);
 			r_anal_esil_pushnum (esil, signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
@@ -2912,7 +2912,7 @@ static bool esil_smaller_equal(RAnalEsil *esil) { // 'dst <= src' => 'src,dst,<=
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
 			ret = true;
-			pushnums (esil, dst, num, src, num2);
+			pushnums (esil, src, num2, dst, num);
 			r_anal_esil_pushnum (esil, !signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
@@ -2928,7 +2928,7 @@ static bool esil_bigger_equal(RAnalEsil *esil) { // 'dst >= src' => 'src,dst,>='
 	char *src = r_anal_esil_pop (esil);
 	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
 		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
-			pushnums (esil, dst, num, src, num2);
+			pushnums (esil, src, num2, dst, num);
 			ret = true;
 			r_anal_esil_pushnum (esil, (num == num2)
 					| signed_compare_gt (num, num2, esil->lastsz));
