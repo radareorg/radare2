@@ -110,6 +110,7 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
 		return true;
 	}
 	if (!config) {
+		return false;
 	//	arch->decoder = NULL;
 	}
 	const char *dname = config->decoder ? config->decoder: _find_bestmatch (arch->plugins, config);
@@ -117,11 +118,13 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
 		return false;
 	}
 	RArchConfig *oconfig = arch->cfg;
-	r_ref (config);
 	r_unref (arch->cfg);
 	arch->cfg = config;
+	r_ref (arch->cfg);
 	if (!r_arch_use_decoder (arch, dname)) {
+		r_unref (arch->cfg);
 		arch->cfg = oconfig;
+		r_ref (oconfig);
 		r_unref (config);
 		arch->current = NULL;
 		return false;
@@ -211,6 +214,7 @@ R_API bool r_arch_set_arch(RArch *arch, char *archname) {
 			free (_arch);
 			return false;
 		}
+		free (cfg->arch);
 		cfg->arch =_arch;
 		if (!r_arch_use (arch, cfg)) {
 			r_unref (cfg);

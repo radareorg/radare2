@@ -122,6 +122,7 @@ R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
 	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
 	if (!src0 || !src1) {
+		r_anal_cond_free (cond);
 		return NULL;
 	}
 	// TODO: use r_ref

@@ -239,7 +239,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 				break;
 			case R_ANAL_OP_TYPE_UNK:
 			case R_ANAL_OP_TYPE_ILL:
-				eprintf ("a2f: Invalid instruction\n");
+				R_LOG_DEBUG ("a2f: Invalid instruction");
 				block_end = true;
 				break;
 			default:
