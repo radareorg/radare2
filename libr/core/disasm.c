@@ -1366,6 +1366,7 @@ static void ds_show_refs(RDisasmState *ds) {
 					ds_comment (ds, true, "; 0x%" PFMT64x, ref->addr);
 				}
 			}
+			r_anal_op_fini (&aop);
 		}
 		ds_print_color_reset (ds);
 	}
@@ -5601,6 +5602,7 @@ toro:
 			// TODO: check for ds->analop.type and ret
 			ds->dest = ds->analop.jump;
 		}
+		r_anal_op_fini (&ds->analop);
 	} else {
 		/* highlight eip */
 		const char *pc = core->anal->reg->name[R_REG_NAME_PC];
@@ -5647,6 +5649,22 @@ toro:
 				continue;
 			}
 		}
+		r_core_seek_arch_bits (core, ds->at); // slow but safe
+		ds->has_description = false;
+		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
+		ds->printed_str_addr = UT64_MAX;
+		ds->printed_flag_addr = UT64_MAX;
+		// XXX. this must be done in ds_update_pc()
+		// ds_update_pc (ds, ds->at);
+		r_asm_set_pc (core->rasm, ds->at);
+		ds_update_ref_lines (ds);
+		r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL);
+		if (ds_must_strip (ds)) {
+			inc = ds->analop.size;
+			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
+			r_anal_op_fini (&ds->analop);
+			continue;
+		}
 		if (!ds->show_comment_right) {
 			if (ds->show_cmtesil) {
 				const char *esil = R_STRBUF_SAFEGET (&ds->analop.esil);
@@ -5663,23 +5681,6 @@ toro:
 					ds_comment (ds, true, "; %s", esil);
 				}
 			}
-		}
-		r_core_seek_arch_bits (core, ds->at); // slow but safe
-		ds->has_description = false;
-		ds->hint = r_core_hint_begin (core, ds->hint, ds->at);
-		ds->printed_str_addr = UT64_MAX;
-		ds->printed_flag_addr = UT64_MAX;
-		// XXX. this must be done in ds_update_pc()
-		// ds_update_pc (ds, ds->at);
-		r_asm_set_pc (core->rasm, ds->at);
-		ds_update_ref_lines (ds);
-		r_anal_op_fini (&ds->analop);
-		r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL);
-		if (ds_must_strip (ds)) {
-			inc = ds->analop.size;
-			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
-			r_anal_op_fini (&ds->analop);
-			continue;
 		}
 		// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		f = ds->fcn = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
@@ -6032,6 +6033,7 @@ toro:
 			inc = skip_bytes_bb;
 		}
 		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
+		r_anal_op_fini (&ds->analop);
 	}
 	r_anal_op_fini (&ds->analop);
 

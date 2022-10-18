@@ -2696,6 +2696,7 @@ static RList *get_calls(RAnalBlock *block) {
 		for (i = 0; i < block->size; i++) {
 			int ret = r_anal_op (block->anal, &op, block->addr + i, data + i, block->size - i, R_ARCH_OP_MASK_HINT);
 			if (ret < 1) {
+				r_anal_op_fini (&op);
 				continue;
 			}
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
@@ -6558,6 +6559,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			if (len < 1) {
 				R_LOG_ERROR ("Invalid 0x%08"PFMT64x" instruction %02x %02x",
 					addr + ptr, buf[ptr], buf[ptr + 1]);
+				r_anal_op_fini (&aop);
 				break;
 			}
 			if (cfg_r2wars) {
@@ -6742,6 +6744,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 		ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, flags);
 		if (ret < 1) {
 			R_LOG_ERROR ("Failed analysis at 0x%08"PFMT64x, addr);
+			r_anal_op_fini (&aop);
 			break;
 		}
 		// skip calls and such
@@ -7088,6 +7091,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			print_esil_dfg_as_commands (core, dfg);
 			r_anal_esil_dfg_free (dfg);
 		}
+		r_anal_op_free (aop);
 	}
 		break;
 	case 'i':	// "aegi"
@@ -8187,7 +8191,7 @@ ctrl_c:
 }
 
 static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommands, bool importsOnly) {
-	RAnalOp op;
+	RAnalOp op = {0};
 	int depth = r_config_get_i (core->config, "anal.depth");
 	const int addrbytes = core->io->addrbytes;
 	const int bsz = 4096;
@@ -8232,6 +8236,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 		if (setBits != core->rasm->config->bits) {
 			r_config_set_i (core->config, "asm.bits", setBits);
 		}
+		r_anal_op_fini (&op);
 		if (r_anal_op (core->anal, &op, addr, buf + bufi, bsz - bufi, 0) > 0) {
 			if (op.size < 1) {
 				op.size = minop;
@@ -8249,7 +8254,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 					isValidCall = false;
 				}
 				if (isValidCall) {
-					ut8 buf[4];
+					ut8 buf[4] = {0};
 					r_io_read_at (core->io, op.jump, buf, 4);
 					isValidCall = memcmp (buf, "\x00\x00\x00\x00", 4);
 				}
@@ -8323,6 +8328,9 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 			r_list_foreach (ranges, iter, map) {
 				ut64 addr = r_io_map_begin (map);
 				_anal_calls (core, addr, r_io_map_end (map), printCommands, importsOnly);
+				if (r_cons_is_breaked ()) {
+					break;
+				}
 			}
 		}
 	} else {
@@ -9173,6 +9181,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							if (aop.type == R_ANAL_OP_TYPE_UCALL) {
 								cmd_anal_ucall_ref (core, ref->addr);
 							}
+							r_anal_op_fini (&aop);
 						}
 						r_cons_newline ();
 						free (desc_to_free);
@@ -12712,8 +12721,12 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'o': cmd_anal_opcode (core, input + 1); break; // "ao"
-	case 'O': cmd_anal_bytes (core, input + 1); break; // "aO"
+	case 'o': // "ao"
+		cmd_anal_opcode (core, input + 1);
+		break;
+	case 'O': // "aO"
+		cmd_anal_bytes (core, input + 1);
+		break;
 	case 'F': // "aF"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_aF);

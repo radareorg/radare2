@@ -785,12 +785,15 @@ repeat:
 					for (i = 0; i < MAX_INSTR ; i++) {
 						jmp_op = r_core_anal_op (core, jmp_addr, R_ARCH_OP_MASK_BASIC);
 						if (!jmp_op) {
+							r_anal_op_free (jmp_op);
+							r_anal_op_fini (&aop);
 							break;
 						}
 						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_block_contains (jmpbb, jmp_addr))
 								|| jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
 							jmp = true;
 							r_anal_op_free (jmp_op);
+							r_anal_op_fini (&aop);
 							break;
 						}
 						jmp_addr += jmp_op->size;
@@ -866,6 +869,7 @@ repeat:
 out_function:
 	R_FREE (ret_reg);
 	R_FREE (ret_type);
+	r_anal_op_fini (&aop);
 	r_cons_break_pop();
 	free (bblist);
 	anal_emul_restore (core, hc, dt, et);

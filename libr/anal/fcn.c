@@ -184,9 +184,11 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 		}
 		if (aop->type == R_ANAL_OP_TYPE_UJMP || aop->type == R_ANAL_OP_TYPE_RJMP) {
 			isValid = true;
+			r_anal_op_fini (aop);
 			break;
 		}
 		if (aop->type == R_ANAL_OP_TYPE_JMP || aop->type == R_ANAL_OP_TYPE_CJMP) {
+			r_anal_op_fini (aop);
 			break;
 		}
 		if (aop->type == R_ANAL_OP_TYPE_MOV) {

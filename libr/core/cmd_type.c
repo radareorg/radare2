@@ -868,6 +868,7 @@ R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to) {
 		RAnalOp *op = r_core_anal_op (core, at, R_ARCH_OP_MASK_BASIC);
 		if (!op || op->size <= 0) {
 			at += minopcode;
+			r_anal_op_free (op);
 			continue;
 		}
 		if ((op->stackop == R_ANAL_STACK_INC) && R_ABS (op->stackptr) < 8096) {
