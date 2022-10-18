@@ -620,7 +620,7 @@ static void __set_cmd_str_cache(RCore *core, RPanel *p, char *s) {
 		return;
 	}
 	free (p->model->cmdStrCache);
-	p->model->cmdStrCache = s;
+	p->model->cmdStrCache = strdup (s);
 	__set_dcb (core, p);
 	__set_pcb (p);
 }
@@ -972,7 +972,7 @@ static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache
 
 static char *__find_cmd_str_cache(RCore *core, RPanel* panel) {
 	if (panel->model->cache && panel->model->cmdStrCache) {
-		return panel->model->cmdStrCache;
+		return strdup (panel->model->cmdStrCache);
 	}
 	return __handle_cmd_str_cache (core, panel, false);
 }
@@ -4530,6 +4530,9 @@ static void __print_decompiler_cb(void *user, void *p) {
 	char *cmdstr = NULL;
 	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	if (!func) {
+		char *msg = r_str_newf ("No function at 0x%08"PFMT64x, core->offset);
+		__update_pdc_contents (core, panel, msg);
+		free (msg);
 		return;
 	}
 	if (panel->model->cache) {
@@ -4544,10 +4547,12 @@ static void __print_decompiler_cb(void *user, void *p) {
 		if (cmdstr) {
 			free (panel->model->cmdStrCache);
 			panel->model->cmdStrCache = strdup (cmdstr);
-			cmdstr = panel->model->cmdStrCache;
+		//	free (cmdstr);
+			cmdstr = strdup (panel->model->cmdStrCache);
 			if (R_STR_ISNOTEMPTY (cmdstr)) {
 				__update_pdc_contents (core, panel, cmdstr);
 			}
+			free (cmdstr);
 		}
 	}
 	return;
