@@ -991,7 +991,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	}
 	// TODO This code block must be deleted when all the anal plugs support disasm
 	if (!op->mnemonic && mask & R_ARCH_OP_MASK_DISASM) {
-		RAsmOp asmop;
+		RAsmOp asmop = {0};
 		if (core->anal->verbose) {
 			R_LOG_WARN ("Implement RAnalOp.MASK_DISASM for current anal.arch. Using the sluggish RAsmOp fallback for now");
 		}
@@ -1004,7 +1004,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	}
 	return op;
 err_op:
-	free (op);
+	r_anal_op_free (op);
 	return NULL;
 }
 
@@ -3858,8 +3858,10 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 		//if is not bl do not analyze
 		if (buf[3] == 0x94) {
 			if (r_anal_op (core->anal, aop, addr, buf, len, R_ARCH_OP_MASK_BASIC)) {
+				r_anal_op_fini (aop);
 				return true;
 			}
+			r_anal_op_fini (aop);
 		}
 		break;
 	default:
@@ -3868,9 +3870,11 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 			switch (aop->type & R_ANAL_OP_TYPE_MASK) {
 			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_CCALL:
+				r_anal_op_fini (aop);
 				return true;
 			}
 		}
+		r_anal_op_fini (aop);
 		break;
 	}
 	return false;
@@ -3945,6 +3949,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				case 'w':
 				case 'x':
 					{
+						r_anal_op_fini (&op);
 						r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ARCH_OP_MASK_BASIC);
 						int mask = mode=='r' ? 1 : mode == 'w' ? 2: mode == 'x' ? 4: 0;
 						if (op.direction == mask) {
@@ -3955,6 +3960,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 					}
 					break;
 				default:
+					r_anal_op_fini (&op);
 					if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ARCH_OP_MASK_BASIC)) {
 						r_anal_op_fini (&op);
 						continue;
@@ -3993,6 +3999,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 					break;
 				default:
 					{
+						r_anal_op_fini (&op);
 						if (!r_anal_op (core->anal, &op, at + i, buf + i, core->blocksize - i, R_ARCH_OP_MASK_BASIC)) {
 							r_anal_op_fini (&op);
 							continue;
@@ -4180,6 +4187,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			ret = r_anal_op (core->anal, &op, at + i, buf + i, bsz - i, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 			if (ret < 1) {
 				i += minopsz;
+				r_anal_op_fini (&op);
 				continue;
 			}
 			i += ret;

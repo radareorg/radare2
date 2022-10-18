@@ -317,15 +317,18 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 
 		if (foundCmp) {
 			if (tmp_aop.type != R_ANAL_OP_TYPE_CJMP) {
+				r_anal_op_fini (&tmp_aop);
 				continue;
 			}
 
 			*default_case = tmp_aop.jump == tmp_aop.jump + len ? tmp_aop.fail : tmp_aop.jump;
+			r_anal_op_fini (&tmp_aop);
 			break;
 		}
 
 		ut32 type = tmp_aop.type & R_ANAL_OP_TYPE_MASK;
 		if (type != R_ANAL_OP_TYPE_CMP) {
+			r_anal_op_fini (&tmp_aop);
 			continue;
 		}
 		// get the value of the cmp

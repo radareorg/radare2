@@ -1272,8 +1272,8 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		}
 		free (opst);
 		aop.mnemonic = NULL;
-		r_strbuf_fini (&aop.esil);
 		nb_instr++;
+		r_anal_op_fini (&aop);
 	}
 ret:
 	r_anal_op_fini (&aop);
@@ -1349,6 +1349,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			pj_end (pj);
 			free (buf);
 			r_asm_op_fini (&asmop);
+			r_anal_op_fini (&analop);
 		}
 		pj_end (pj);
 		if (db && hit) {
@@ -1392,6 +1393,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			}
 			free (buf);
 			r_asm_op_fini (&asmop);
+			r_anal_op_fini (&analop);
 		}
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
@@ -1946,6 +1948,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			}
 		}
+		r_anal_op_fini (&aop);
 	}
 	free (arr);
 	int sysno = r_debug_reg_get (core->dbg, a0);

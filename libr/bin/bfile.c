@@ -1031,8 +1031,8 @@ R_IPI RBinClass *r_bin_class_new(const char *name, const char *super, int view) 
 	if (c) {
 		c->name = strdup (name);
 		c->super = super? strdup (super): NULL;
-		c->methods = r_list_new ();
-		c->fields = r_list_new ();
+		c->methods = r_list_newf (r_bin_symbol_free);
+		c->fields = r_list_newf (r_bin_field_free);
 		c->visibility = view;
 	}
 	return c;
@@ -1085,9 +1085,9 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *klass, const c
 		if (sym) {
 			sym->name = strdup (method);
 			sym->lang = lang;
-			r_list_append (c->methods, sym);
 			char *name = r_str_newf ("%s::%s", klass, method);
 			ht_pp_insert (bf->o->methods_ht, name, sym);
+			r_list_append (c->methods, sym);
 			free (name);
 		}
 	}

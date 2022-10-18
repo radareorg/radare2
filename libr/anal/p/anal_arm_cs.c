@@ -4551,9 +4551,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			}
 		}
 	}
-#if 0
-	cs_close (a->cs_handle);
-#endif
 	R_CRITICAL_LEAVE (a);
 	return op->size;
 }
