@@ -11,6 +11,7 @@
 
 typedef char RStringShort[32];
 
+static int init(void* user);
 static R_TH_LOCAL HtUU *ht_itblock = NULL;
 static R_TH_LOCAL HtUU *ht_it = NULL;
 
@@ -3724,6 +3725,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 
 static void anal_itblock(cs_insn *insn) {
 	size_t i, size =  r_str_nlen (insn->mnemonic, 5);
+	init (NULL);
 	ht_uu_update (ht_itblock, insn->address,  size);
 	for (i = 1; i < size; i++) {
 		switch (insn->mnemonic[i]) {
@@ -3741,6 +3743,7 @@ static void anal_itblock(cs_insn *insn) {
 }
 
 static void check_itblock(cs_insn *insn) {
+	init (NULL);
 	size_t x;
 	bool found;
 	ut64 itlen = ht_uu_find (ht_itblock, insn->address, &found);

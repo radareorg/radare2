@@ -2448,7 +2448,7 @@ R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	if (!len) {
 		return;
 	}
-	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
+	ut64 n, *buf = calloc (sizeof (ut64), ((len + 63) / 64));
 	if (!buf) {
 		R_LOG_ERROR ("allocation failed");
 		return;

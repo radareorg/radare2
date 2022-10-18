@@ -381,10 +381,14 @@ R_API void r_core_seek_arch_bits(RCore *core, ut64 addr) {
 	const char *arch = NULL;
 	r_core_arch_bits_at (core, addr, &bits, &arch);
 	if (bits) {
-		r_config_set_i (core->config, "asm.bits", bits);
+		if (bits != core->anal->config->bits) {
+			r_config_set_i (core->config, "asm.bits", bits);
+		}
 	}
 	if (arch) {
-		r_config_set (core->config, "asm.arch", arch);
+		if (core->anal->config->arch && strcmp (arch, core->anal->config->arch)) {
+			r_config_set (core->config, "asm.arch", arch);
+		}
 	}
 }
 
