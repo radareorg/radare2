@@ -1961,7 +1961,7 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		}
 	}
 	if (r_config_get_i (core->config, "anal.a2f")) {
-		r_core_cmd0 (core, ".a2f");
+		r_core_cmdf (core, ".a2f @ 0x%08"PFMT64x, at);
 		return 0;
 	}
 	if (use_esil) {
