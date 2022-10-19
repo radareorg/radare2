@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake, maijin */
 
 #include <r_core.h>
-#include <r_util/r_graph_drawable.h>
+#include <r_util.h>
 
 #define SLOW_ANALYSIS 1
 #define MAX_SCAN_SIZE 0x7ffffff
@@ -464,11 +464,10 @@ static const char *help_msg_aeC[] = {
 };
 
 static const char *help_msg_aeg[] = {
-	"Usage:", "aeg[cfiv*]", " [...]",
+	"Usage:", "aeg[fiv]", " [...]",
 	"aeg", "", "analyze current instruction as an esil graph",
 	"aegf", "", "analyze given expression and filter for register",
-	"aeg*", "", "analyze current instruction as an esil graph",
-	"aegv", "", "analyse and launch the visual interactive mode (.aeg*;aggv == aegv)",
+	"aegv", "", "analyse and launch the visual interactive mode",
 	NULL
 };
 
@@ -7021,90 +7020,96 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 #endif
 }
 
-static void print_esil_dfg_as_commands(RCore *core, RAnalEsilDFG *dfg) {
-	RListIter *iter, *ator;
-	RGraphNode *node, *edon;
-	RStrBuf *sb = r_strbuf_new ("");
-	if (!sb) {
-		return;
-	}
-	r_cons_println ("ag-");
-	r_list_foreach (r_graph_get_nodes (dfg->flow), iter, node) {
-		const RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)node->data;
-		char *esc_str = r_str_escape (r_strbuf_get (enode->content));
-		if (!esc_str) {
-			r_strbuf_free (sb);
-			return;
-		}
-		r_strbuf_set (sb, esc_str);
-		if (enode->type & R_ANAL_ESIL_DFG_TAG_GENERATIVE) {
-			r_strbuf_prepend (sb, "generative:");
-		}
-		char *b64_buf = r_base64_encode_dyn (r_strbuf_get (sb), sb->len);
-		if (!b64_buf) {
-			r_strbuf_free (sb);
-			free (esc_str);
-			return;
-		}
+static char *_aeg_get_title (void *data) {
+	RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)data;
+	return r_str_newf ("%d", enode->idx);
+}
 
-		r_cons_printf ("agn %d base64:%s\n", enode->idx, b64_buf);
-		free (b64_buf);
-		free (esc_str);
-	}
-	r_strbuf_free (sb);
-
-	r_list_foreach (r_graph_get_nodes (dfg->flow), iter, node) {
-		const RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)node->data;
-		r_list_foreach (r_graph_get_neighbours (dfg->flow, node), ator, edon) {
-			const RAnalEsilDFGNode *edone = (RAnalEsilDFGNode *)edon->data;
-			r_cons_printf ("age %d %d\n", enode->idx, edone->idx);
-		}
-	}
+static char *_aeg_get_body (void *data) {
+	RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)data;
+	return r_str_newf ("%s%s",
+		(enode->type & R_ANAL_ESIL_DFG_TAG_GENERATIVE)? "generative:": "",
+		r_strbuf_get (enode->content));
 }
 
 static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 	r_return_if_fail (core && argc >= 0 && argv);
+	RAGraphTransitionCBs cbs = {
+		.get_title = _aeg_get_title,
+		.get_body = _aeg_get_body
+	};
 	switch (argv[0][1]) {
 	case '\x00':	// "aeg"
-		if (argc == 1) {
-			r_core_cmd0 (core, ".aeg*;agg");
-		} else {
-			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
-			r_return_if_fail (dfg);
-			print_esil_dfg_as_commands (core, dfg);
-			r_anal_esil_dfg_free (dfg);
-		}
-		break;
-	case '*':	// "aeg*"
-	{
-		RAnalOp *aop = r_core_anal_op (core, core->offset, R_ARCH_OP_MASK_ESIL);
-		if (!aop) {
-			return;
-		}
-		const char *esilstr = r_strbuf_get (&aop->esil);
-		if (R_STR_ISNOTEMPTY (esilstr)) {
-			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilstr);
-			if (!dfg) {
+		{
+			if (argc == 1) {
+				RAnalOp *aop = r_core_anal_op (core, core->offset, R_ARCH_OP_MASK_ESIL);
+				if (!aop) {
+					return;
+				}
+				const char *esilstr = r_strbuf_get (&aop->esil);
+				if (R_STR_ISNOTEMPTY (esilstr)) {
+					RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilstr);
+					if (!dfg) {
+						r_anal_op_free (aop);
+						return;
+					}
+					RAGraph *agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
+					r_anal_esil_dfg_free (dfg);
+					agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");
+					r_agraph_print (agraph);
+					r_agraph_free (agraph);
+				}
 				r_anal_op_free (aop);
-				return;
+			} else {
+				RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
+				r_return_if_fail (dfg);
+				RAGraph *agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
+				r_anal_esil_dfg_free (dfg);
+				agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");
+				r_agraph_print (agraph);
+				r_agraph_free (agraph);
 			}
-			print_esil_dfg_as_commands (core, dfg);
-			r_anal_esil_dfg_free (dfg);
 		}
-		r_anal_op_free (aop);
-	}
 		break;
 	case 'i':	// "aegi"
 	case 'v':	// "aegv"
 	{
-		RConfigHold *hc = r_config_hold_new (core->config);
-		if (!hc) {
-			return;
+		RAGraph *agraph = NULL;
+		if (argc == 1) {
+			RAnalOp *aop = r_core_anal_op (core, core->offset, R_ARCH_OP_MASK_ESIL);
+			if (!aop) {
+				return;
+			}
+			const char *esilstr = r_strbuf_get (&aop->esil);
+			if (R_STR_ISNOTEMPTY (esilstr)) {
+				RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilstr);
+				if (!dfg) {
+					r_anal_op_free (aop);
+					return;
+				}
+				agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
+				r_anal_esil_dfg_free (dfg);
+			}
+			r_anal_op_free (aop);
+		} else {
+			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
+			r_return_if_fail (dfg);
+			agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
+			r_anal_esil_dfg_free (dfg);
 		}
-		r_config_hold (hc, "cmd.gprompt",  NULL);
-		r_config_set (core->config, "cmd.gprompt", "pi 1");
-		r_core_cmd0 (core, ".aeg*;aggv");
-		r_config_hold_free (hc);
+		const ut64 osc = r_config_get_i (core->config, "scr.color");
+		r_config_set_i (core->config, "scr.color", 0);
+		ut64 oseek = core->offset;
+//		bool ov = r_cons_is_interactive ();
+		agraph->need_update_dim = true;
+		int update_seek = r_core_visual_graph (core, agraph, NULL, true);
+		r_cons_show_cursor (true);
+		r_cons_enable_mouse (false);
+		if (update_seek != -1) {
+			r_core_seek (core, oseek, false);
+		}
+		r_agraph_free (agraph);
+		r_config_set_i (core->config, "scr.color", osc);
 	}
 		break;
 	case 'f':	// "aegf"
@@ -7116,6 +7121,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		}
 	}
 		break;
+#if 0
 	case 'c':	// "aegc"
 	{
 		RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
@@ -7135,6 +7141,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		r_anal_esil_dfg_free (dfg);
 	}
 		break;
+#endif
 	case '?': // "aeg?"
 	default:
 		r_core_cmd_help (core, help_msg_aeg);
@@ -10345,6 +10352,16 @@ static char *print_graph_dot(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph) {
 	return result;
 }
 
+static char *_graph_node_info_get_title(void *data) {
+	RGraphNodeInfo *info = (RGraphNodeInfo *)data;
+	return (info && info->title)? strdup (info->title): NULL;
+}
+
+static char *_graph_node_info_get_body(void *data) {
+	RGraphNodeInfo *info = (RGraphNodeInfo *)data;
+	return (info && info->body)? strdup (info->body): NULL;
+}
+
 static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, int use_utf, bool use_offset, const char *input) {
 	RAGraph *agraph = NULL;
 	RListIter *it;
@@ -10360,7 +10377,11 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 	case 'k':
 	case 'v':
 	case 'i': {
-		agraph = create_agraph_from_graph (graph);
+		RAGraphTransitionCBs cbs = {
+			.get_title = _graph_node_info_get_title,
+			.get_body = _graph_node_info_get_body
+		};
+		agraph = r_agraph_new_from_graph (graph, &cbs);
 		switch (*input) {
 		case 0:
 			agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");

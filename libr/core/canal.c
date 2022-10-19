@@ -7,7 +7,7 @@
 #include <r_core.h>
 #include <r_bin.h>
 #include <ht_uu.h>
-#include <r_util/r_graph_drawable.h>
+#include <r_util.h>
 
 HEAPTYPE (ut64);
 

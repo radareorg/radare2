@@ -2,9 +2,7 @@
 
 #include <r_anal.h>
 #include <r_vector.h>
-#include <r_util/r_graph_drawable.h>
-#include "../include/r_anal.h"
-#include "../include/r_util/r_graph.h"
+#include <r_util.h>
 
 static void r_anal_class_base_delete_class(RAnal *anal, const char *class_name);
 static void r_anal_class_method_delete_class(RAnal *anal, const char *class_name);
