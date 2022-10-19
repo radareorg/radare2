@@ -2885,11 +2885,11 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 				}
 				if (!bin->main_addr || bin->main_addr == UT64_MAX) {
 					const char *name = sym->name;
-					if (!strcmp (name, "__Dmain")) {
+					if (name && !strcmp (name, "__Dmain")) {
 						bin->main_addr = symbols[i].addr;
 					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
 						bin->main_addr = symbols[i].addr;
-					} else if (!strcmp (symbols[i].name, "_main")) {
+					} else if (symbols[i].name && !strcmp (symbols[i].name, "_main")) {
 						bin->main_addr = symbols[i].addr;
 					}
 				}
