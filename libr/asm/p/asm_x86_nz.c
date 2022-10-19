@@ -46,7 +46,7 @@ static ut64 getnum(RAsm *a, const char *s);
 
 #define ALL_SIZE     (OT_BYTE | OT_WORD | OT_DWORD | OT_QWORD | OT_OWORD)
 
-// For register operands, we mostl don't care about the size.
+// For register operands, we mostly don't care about the size.
 // So let's just set all relevant flags.
 #define OT_FPUSIZE  (OT_DWORD | OT_QWORD | OT_TBYTE)
 #define OT_XMMSIZE  (OT_DWORD | OT_QWORD | OT_OWORD)
@@ -1957,7 +1957,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				} else {
 					rm = op->operands[0].regs[0];
 				}
-				//[epb] alone is illegal, so we need to fake a [ebp+0]
+				//[ebp] alone is illegal, so we need to fake a [ebp+0]
 				if (rm == 5 && mod == 0) {
 					mod = 1;
 				}
