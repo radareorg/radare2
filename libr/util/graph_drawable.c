@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2007-2020 - pancake, ret2libc */
 
 #include <r_core.h>
-#include <r_util/r_graph_drawable.h>
+#include <r_util.h>
 
 R_API void r_graph_free_node_info(void *ptr) {
 	if (ptr) {

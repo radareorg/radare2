@@ -2,7 +2,7 @@
 #define R2_GRAPH_DRAWABLE_H
 
 #include <r_types.h>
-#include <r_util/r_graph.h>
+#include <r_util.h>
 #include <r_config.h>
 
 #ifdef __cplusplus
