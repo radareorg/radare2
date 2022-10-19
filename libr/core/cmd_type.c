@@ -777,24 +777,32 @@ static bool print_typelist_r_cb(void *p, const char *k, const char *v) {
 }
 
 static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
+	r_return_val_if_fail (p && k, false);
 	RCore *core = (RCore *)p;
+	if (!v) {
+		v = "";
+	}
 	PJ *pj = pj_new ();
 	pj_o (pj);
 	Sdb *sdb = core->anal->sdb_types;
 	char *sizecmd = r_str_newf ("type.%s.size", k);
-	char *size_s = sdb_querys (sdb, NULL, -1, sizecmd);
+	char *size_s = sdb_get (sdb, sizecmd, NULL);
 	char *formatcmd = r_str_newf ("type.%s", k);
-	char *format_s = sdb_querys (sdb, NULL, -1, formatcmd);
-	r_str_trim (format_s);
-	pj_ks (pj, "type", k);
-	pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
-	pj_ks (pj, "format", format_s);
+	char *format_s = sdb_get (sdb, formatcmd, NULL);
+	if (size_s && format_s) {
+		r_str_trim (format_s);
+		pj_ks (pj, "type", k);
+		pj_ki (pj, "size", size_s ? atoi (size_s) : -1);
+		pj_ks (pj, "format", format_s);
+		r_cons_printf ("%s", pj_string (pj));
+	} else {
+		R_LOG_DEBUG ("Internal sdb inconsistency for %s", sizecmd);
+	}
 	pj_end (pj);
-	r_cons_printf ("%s", pj_string (pj));
 	pj_free (pj);
 	free (size_s);
-	free (format_s);
 	free (sizecmd);
+	free (format_s);
 	free (formatcmd);
 	return true;
 }
@@ -1822,6 +1830,9 @@ static int cmd_type(void *data, const char *input) {
 						} else {
 							char *q = r_str_newf ("typedef.%s", name);
 							const char *res = sdb_const_get (TDB, q, 0);
+							if (!res) {
+								res = "";
+							}
 							pj_ks (pj, name, res);
 							free (q);
 						}
