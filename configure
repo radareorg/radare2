@@ -193,7 +193,7 @@ Optional Features:
   --without-fork         disable fork
   --without-ptrace-wrap  build ptrace-wrap support needed for the iaito debugger on Linux
   --without-gperf        do not statically link the sdb databases even if gperf is found
-  --without-capstone     dont build the capstone dependency
+  --without-capstone     don't build the capstone dependency
   --with-libr            build libr.a and libr.dylib
   --with-capstone5       build next branch of capstone5 (default)
   --with-capstone4       build v4 branch of capstone
