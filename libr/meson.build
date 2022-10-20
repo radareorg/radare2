@@ -437,8 +437,6 @@ include_files = [
   'include/r_agraph.h',
   'include/r_anal.h',
   'include/r_arch.h',
-  'include/r_anal/op.h',
-  'include/r_anal/hint.h',
   'include/r_asm.h',
   'include/r_bin.h',
   'include/r_bin_dwarf.h',
@@ -556,6 +554,12 @@ r_crypto_files = [
   'include/r_crypto/r_sm4.h'
 ]
 install_headers(r_crypto_files, install_dir: join_paths(r2_incdir, 'r_crypto'))
+
+r_anal_files = [
+  'include/r_anal/op.h',
+  'include/r_anal/hint.h',
+]
+install_headers(r_anal_files, install_dir: join_paths(r2_incdir, 'r_anal'))
 
 sflib_common_files = [
   join_paths('include/sflib/common/sftypes.h'),
