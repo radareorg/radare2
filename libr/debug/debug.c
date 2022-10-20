@@ -650,8 +650,8 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	}
 	dbg->pid = pid;
 	dbg->tid = tid;
-	if (dbg->tid != -1) {
-		char *pidcmd = r_str_newf ("pid %d", dbg->tid);
+	if (dbg->pid != -1) {
+		char *pidcmd = r_str_newf ("pid %d", dbg->pid);
 		if (pidcmd) {
 			free (r_io_system (dbg->iob.io, pidcmd));
 			free (pidcmd);
