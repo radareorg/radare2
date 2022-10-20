@@ -904,7 +904,6 @@ static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta) {
 
 static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	st64 ptr = 0;
-	char *addr, *esil_buf = NULL;
 	const st64 maxstackframe = 1024 * 8;
 	RAnalValue *val = NULL;
 
@@ -927,7 +926,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		if (!op_esil) {
 			return;
 		}
-		esil_buf = strdup (op_esil);
+		char *esil_buf = strdup (op_esil);
 		if (!esil_buf) {
 			return;
 		}
@@ -938,7 +937,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			return;
 		}
 		*ptr_end = 0;
-		addr = ptr_end;
+		char *addr = ptr_end;
 		while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
 			addr--;
 		}
@@ -977,6 +976,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		} else {
 			ptr = (st64)r_num_get (NULL, addr);
 		}
+		free (esil_buf);
 	}
 
 	if (anal->verbose && (!r_vector_at (&op->srcs, 0) || !r_vector_at (&op->dsts, 0))) {
@@ -1073,7 +1073,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 	}
 beach:
-	free (esil_buf);
+	;
 }
 
 static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op);
