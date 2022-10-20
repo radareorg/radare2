@@ -695,11 +695,11 @@ static void printFunctionType(RCore *core, const char *input) {
 	}
 	pj_end (pj);
 	pj_end (pj);
-	const char *s = pj_drain (pj);
+	char *s = pj_drain (pj);
 	if (R_STR_ISEMPTY (s)) {
 		r_cons_printf ("{}");
 	} else {
-		r_cons_printf ("%s", s);
+		r_cons_printf ("%s,", s);
 	}
 	free (s);
 	free (res);
@@ -816,28 +816,18 @@ static void print_keys(Sdb *TDB, RCore *core, SdbForeachCallback filter, SdbFore
 	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
 	SdbListIter *it;
 	SdbKv *kv;
-	const char *comma = "";
 
 	if (json) {
 		r_cons_print ("{\"types\":[");
 	}
-	bool cancomma = false;
 	ls_foreach (l, it, kv) {
 		const char *k = sdbkv_key (kv);
 		const char *v = sdbkv_value (kv);
 		if (R_STR_ISEMPTY (k)) {
 			continue;
 		}
-		if (cancomma) {
-			if (json) {
-				r_cons_printf ("%s", comma);
-				cancomma = false;
-				comma = ",";
-			}
-		}
 		if (v) {
 			printfn_cb (core, k, v);
-			cancomma = true;
 		}
 	}
 	if (json) {

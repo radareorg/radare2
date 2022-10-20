@@ -79,6 +79,7 @@ static void listxrefs(HtUP *m, ut64 addr, RList *list) {
 	}
 }
 
+// XXX THIS IS HEAVY IN MEMORY USAGE
 static void setxref(HtUP *m, ut64 from, ut64 to, int type) {
 	bool found;
 	HtUP *ht = ht_up_find (m, from, &found);
