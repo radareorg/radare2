@@ -2488,7 +2488,7 @@ static void __handle_tab_new_with_cur_panel(RCore *core) {
 	__init_panel_param (core, new_panel, cur->model->title, cur->model->cmd);
 	new_panel->model->cache = cur->model->cache;
 	new_panel->model->funcName = r_str_new (cur->model->funcName);
-	__set_cmd_str_cache (core, new_panel, r_str_new (cur->model->cmdStrCache));
+	__set_cmd_str_cache (core, new_panel, cur->model->cmdStrCache);
 	__maximize_panel_size (new_panels);
 
 	core->panels = prev;
@@ -4519,9 +4519,11 @@ static void __print_default_cb(void *user, void *p) {
 	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
 	char *cmdstr = __find_cmd_str_cache (core, panel);
 	if (update || !cmdstr) {
+		free (cmdstr);
 		cmdstr = __handle_cmd_str_cache (core, panel, false);
 	}
 	__update_panel_contents (core, panel, cmdstr);
+	free (cmdstr);
 }
 
 static void __print_decompiler_cb(void *user, void *p) {
@@ -4576,12 +4578,14 @@ static void __print_disasmsummary_cb(void *user, void *p) {
 	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
 	char *cmdstr = __find_cmd_str_cache (core, panel);
 	if (update || !cmdstr) {
+		free (cmdstr);
 		cmdstr = __handle_cmd_str_cache (core, panel, true);
 		if (panel->model->cache && panel->model->cmdStrCache) {
 			__reset_scroll_pos (panel);
 		}
 	}
 	__update_panel_contents (core, panel, cmdstr);
+	free (cmdstr);
 }
 
 static void __print_disassembly_cb(void *user, void *p) {
@@ -4605,11 +4609,13 @@ static void __print_disassembly_cb(void *user, void *p) {
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		r_core_cmd (core, ".dr*", 0);
 	}
+	free (cmdstr);
 	cmdstr = __handle_cmd_str_cache (core, panel, false);
 	core->offset = o_offset;
 	free (panel->model->cmd);
 	panel->model->cmd = ocmd;
 	__update_panel_contents (core, panel, cmdstr);
+	free (cmdstr);
 }
 
 static void __do_panels_refresh(RCore *core) {
@@ -4648,12 +4654,14 @@ static void __print_graph_cb(void *user, void *p) {
 	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
 	char *cmdstr = __find_cmd_str_cache (core, panel);
 	if (update || !cmdstr) {
+		free (cmdstr);
 		cmdstr = __handle_cmd_str_cache (core, panel, false);
 	}
 	core->cons->event_resize = NULL;
 	core->cons->event_data = core;
 	core->cons->event_resize = (RConsEvent) __do_panels_refreshOneShot;
 	__update_panel_contents (core, panel, cmdstr);
+	free (cmdstr);
 }
 
 static void __print_stack_cb(void *user, void *p) {

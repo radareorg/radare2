@@ -1200,13 +1200,16 @@ R_API bool r_vc_git_commit(Rvc *vc, const char *message, const char *author, con
 		return false;
 	}
 	if (R_STR_ISEMPTY (message)) {
+		free (message);
 		if (!r_cons_is_interactive ()) {
 			message = strdup ("default message");
 		}
 	}
 	if (R_STR_ISEMPTY (message)) {
+		free (message);
 		char *epath = r_str_escape (vc->path);
 		if (epath) {
+			// XXX ensure CWD in the same line?
 			int res = r_sys_cmdf ("git -C \"%s\" commit --author \"%s <%s@localhost>\"",
 					epath, escauth, escauth);
 			free (escauth);
@@ -1222,11 +1225,13 @@ R_API bool r_vc_git_commit(Rvc *vc, const char *message, const char *author, con
 			int res = r_sys_cmdf ("git -C %s commit -m %s --author \"%s <%s@localhost>\"",
 					epath, emsg, escauth, escauth);
 			free (escauth);
+			free (message);
 			free (epath);
 			free (emsg);
 			return res == 0;
 		}
 	}
+	free (message);
 	return false;
 }
 

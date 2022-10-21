@@ -952,6 +952,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 					if (anal->verbose) {
 						R_LOG_WARN ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
 					}
+					free (esil_buf);
 					goto beach;
 				}
 			}
@@ -963,14 +964,17 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 				ptr = (st64)r_num_get (NULL, addr);
 				val = r_vector_at (&op->srcs, 0);
 				if (ptr && val && ptr == val->imm) {
+					free (esil_buf);
 					goto beach;
 				}
 			} else if ((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET)) {
 				if (op->ptr % 4) {
+					free (esil_buf);
 					goto beach;
 				}
 				ptr = R_ABS (op->ptr);
 			} else {
+				free (esil_buf);
 				goto beach;
 			}
 		} else {
