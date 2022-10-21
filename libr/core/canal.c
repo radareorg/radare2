@@ -5238,10 +5238,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	ut64 start = addr;
 	ut64 end = 0LL;
 	ut64 cur;
-	if (esil_anal_stop || r_cons_is_breaked ()) {
-		// faster ^C
-		return;
-	}
+	esil_anal_stop = false;
 
 	mycore = core;
 	if (!strcmp (str, "?")) {
@@ -5307,7 +5304,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		r_core_cmd0 (core, "aei");
 		ESIL = core->anal->esil;
 		if (!ESIL) {
-			eprintf ("ESIL not initialized\n");
+			R_LOG_ERROR ("ESIL is not initialized");
 			return;
 		}
 		r_core_cmd0 (core, "aeim");
