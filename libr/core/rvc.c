@@ -1184,7 +1184,8 @@ R_API bool r_vc_git_add(Rvc *vc, const RList *files) {
 	return ret;
 }
 
-R_API bool r_vc_git_commit(Rvc *vc, const char *message, const char *author, const RList *files) {
+R_API bool r_vc_git_commit(Rvc *vc, const char *_message, const char *author, const RList *files) {
+	char *message = _message? strdup (_message): NULL;
 	if (!r_vc_git_add (vc, files)) {
 		return false;
 	}
