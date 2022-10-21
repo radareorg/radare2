@@ -61,6 +61,7 @@ typedef struct r_ascii_graph_t {
 	int is_instep;
 	bool is_tiny;
 	bool is_dis;
+	bool is_handmade;
 	int edgemode;
 	int mode;
 	bool is_callgraph;

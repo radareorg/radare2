@@ -3208,6 +3208,9 @@ static void agraph_set_zoom(RAGraph *g, int v) {
  * (callgraph, CFG, etc.), set the default layout for these nodes and center
  * the screen on the selected one */
 static bool agraph_reload_nodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
+	if (g->is_handmade) {
+		return true;
+	}
 	r_agraph_reset (g);
 	return reload_nodes (g, core, fcn);
 }
@@ -3364,7 +3367,7 @@ static bool check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunc
 	int oldpos[2] = {
 		0, 0
 	};
-	if (g->update_seek_on && r_config_get_i (core->config, "graph.few")) {
+	if (g->update_seek_on && core && r_config_get_i (core->config, "graph.few")) {
 		g->need_reload_nodes = true;
 	}
 	if (g->need_reload_nodes && core) {
@@ -3525,7 +3528,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 			g->can = _can;
 			char *s = strdup (r_cons_singleton()->context->buffer);
 			r_cons_pop ();
-			cmd_agfb3 (core, s, w-40, 2);
+			cmd_agfb3 (core, s, w - 40, 2);
 			free (s);
 			g->can->h /= 4;
 			r_cons_flush ();
@@ -3553,11 +3556,9 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	RAGraph *g = grd->g;
 	RAnalFunction *f = NULL;
 	RAnalFunction **fcn = grd->fcn;
-
 	if (!fcn) {
 		return agraph_print (g, grd->fs, core, NULL);
 	}
-
 	// allow to change the current function during debugging
 	if (g->is_instep && r_config_get_b (core->config, "cfg.debug")) {
 		// seek only when the graph node changes
