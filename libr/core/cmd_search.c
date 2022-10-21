@@ -169,8 +169,8 @@ static const char *help_msg_slash_a[] = {
 	"/al", "", "same as aoml, list all opcodes",
 	"/am", " opcode", "search for specific instructions of specific mnemonic",
 	"/ao", " instr", "search for instruction 'instr' (in all offsets)",
-	"/as", "[l] ([type])", "search for syscalls (See /at swi and /af priv)",
-	"/at", "[l] ([type])", "search for instructions of given type",
+	"/as", "[qjl] ([type])", "search for syscalls (See /at swi and /af priv)",
+	"/at", "[qjl] ([type])", "search for instructions of given type",
 	"/az[q]", " ([minstr])", "search assembly constructed strings (q)uiet reduces FP (uses bin.minsz)",
 	NULL
 };
@@ -496,7 +496,7 @@ R_API int r_core_search_uds(RCore *core, int mode) {
 	if (mode == 'j') {
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_cons_println (s);
+		r_cons_print (s);
 		free (s);
 	}
 	return ret;
@@ -2007,6 +2007,11 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			esp32 = r_str_newf ("%s,=", reg);
 		}
 	}
+	if (param->pj) {
+		pj_o (param->pj);
+		pj_ks (param->pj, "cmd", "/asj");
+		pj_ka (param->pj, "results");
+	}
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
@@ -2061,10 +2066,39 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 #else
 				scNumber = syscallNumber;
 #endif
+#if 1
+				if (scNumber < 0 || scNumber > 0xFFFFF) {
+					r_anal_op_fini (&aop);
+					continue;
+				}
+#endif
 				scVector = (aop.val > 0)? aop.val: -1; // int 0x80 (aop.val = 0x80)
 				RSyscallItem *item = r_syscall_get (core->anal->syscall, scNumber, scVector);
 				if (item) {
-					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);
+					if (param->pj) {
+						pj_o (param->pj);
+						pj_kn (param->pj, "addr", at);
+						pj_ks (param->pj, "name", item->name);
+						pj_kn (param->pj, "sysnum", item->num);
+						if (aop.val && aop.val != UT64_MAX) {
+							pj_kn (param->pj, "num", aop.val);
+						}
+						pj_end (param->pj);
+					} else {
+						r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);
+					}
+#if 0
+				} else {
+					if (param->pj) {
+						pj_o (param->pj);
+						pj_kn (param->pj, "addr", at);
+						pj_kn (param->pj, "sysnum", scNumber);
+						pj_kn (param->pj, "num", scVector);
+						pj_end (param->pj);
+					} else {
+						r_cons_printf ("0x%08"PFMT64x" %d\n", at, scNumber);
+					}
+#endif
 				}
 				memset (previnstr, 0, (MAXINSTR + 1) * sizeof (*previnstr)); // clearing the buffer
 				if (searchflags) {
@@ -2098,6 +2132,10 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		}
 	}
 beach:
+	if (param->pj) {
+		pj_end (param->pj);
+		pj_end (param->pj);
+	}
 	r_core_seek (core, oldoff, true);
 	r_anal_esil_free (esil);
 	r_cons_break_pop ();
@@ -2514,10 +2552,13 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		R_LOG_ERROR ("Shouldn't be reached");
 		return true;
 	}
-	if (mode == 'j') {
-		pj_a (param->pj);
-	}
 	input = r_str_trim_head_ro (input);
+	if (param->outmode == R_MODE_JSON) {
+		pj_o (param->pj);
+		pj_ks (param->pj, "cmd", "/atj");
+		pj_ks (param->pj, "arg", input);
+		pj_ka (param->pj, "result");
+	}
 	r_cons_break_push (NULL, NULL);
 	RIOMap* map;
 	RListIter *iter;
@@ -2581,12 +2622,14 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 				}
 				if (match) {
 					char *opstr = r_core_op_str (core, at);
+					const char *optype = r_anal_optype_to_string (aop.type);
 					switch (mode) {
 					case 'j':
 						pj_o (param->pj);
 						pj_kN (param->pj, "addr", at);
 						pj_ki (param->pj, "size", ret);
 						pj_ks (param->pj, "opstr", opstr);
+						pj_ks (param->pj, "type", optype);
 						pj_end (param->pj);
 						break;
 					case 'q':
@@ -2595,9 +2638,9 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 					default:
 						if (type == 'f') {
 							const char *fam = r_anal_op_family_to_string (aop.family);
-							r_cons_printf ("0x%08"PFMT64x " %d %s %s\n", at, ret, fam, opstr);
+							r_cons_printf ("0x%08"PFMT64x " %s %s %d %s\n", at, fam, optype, ret, opstr);
 						} else {
-							r_cons_printf ("0x%08"PFMT64x " %d %s\n", at, ret, opstr);
+							r_cons_printf ("0x%08"PFMT64x " %s %d %s\n", at, optype, ret, opstr);
 						}
 						break;
 					}
@@ -2634,6 +2677,7 @@ done:
 	r_list_free (words);
 	free (word);
 	if (mode == 'j') {
+		pj_end (param->pj);
 		pj_end (param->pj);
 	}
 	r_cons_break_pop ();
@@ -3483,6 +3527,31 @@ static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
 	}
 }
 
+static int chatoi(const char *arg) {
+	if (isdigit (*arg)) {
+		return *arg - '0';
+	}
+	return 0;
+}
+
+static bool is_json_command(const char *input, int *param_offset) {
+	const char *lastch = strchr (input, ' ');
+	const char *nextch = NULL;
+	if (lastch && lastch > input) {
+		lastch--;
+		nextch = r_str_trim_head_ro (lastch);
+	} else {
+		lastch = input + strlen (input) - 1;
+	}
+	if (param_offset) {
+		if (*lastch && lastch[1]) {
+			int delta = 2 + (nextch - input);
+			*param_offset = delta;
+		}
+	}
+	return (*lastch == 'j');
+}
+
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	bool dosearch_read = false;
@@ -3503,7 +3572,6 @@ static int cmd_search(void *data, const char *input) {
 	}
 	RSearch *search = core->search;
 	int ignorecase = false;
-	int param_offset = 2;
 	char *inp;
 	if (!core || !core->io) {
 		R_LOG_ERROR ("Can't search if we don't have an open file");
@@ -3513,7 +3581,7 @@ static int cmd_search(void *data, const char *input) {
 		R_LOG_ERROR ("Can't search from within a search");
 		return R_CMD_RC_SUCCESS;
 	}
-	if (input[0] == '/') {
+	if (input[0] == '/') { // "//" - repeat last search
 		if (core->lastsearch) {
 			input = core->lastsearch;
 		} else {
@@ -3571,24 +3639,28 @@ static int cmd_search(void *data, const char *input) {
 	core->search->overlap = r_config_get_i (core->config, "search.overlap");
 	core->search->bckwrds = false;
 
-	/* Quick & dirty check for json output */
-	if (input[0] && (input[1] == 'j') && (input[0] != ' ')) {
+	int param_offset = 2;
+	if (is_json_command (input, &param_offset)) {
 		param.outmode = R_MODE_JSON;
-		param_offset++;
 	}
-	param.pj = r_core_pj_new (core);
+	// eprintf ("COMMAND (%d) %d (%s)(%s)\n", param.outmode == R_MODE_JSON, param_offset, input, input + param_offset);
+	if (param.outmode == R_MODE_JSON) {
+		param.pj = r_core_pj_new (core);
+	}
 
 reread:
 	switch (*input) {
-	case '!':
+	case '!': // "/!"
 		input++;
+		param_offset--;
 		param.inverse = true;
 		goto reread;
-	case 'b': // "/b" backward search TODO(maskray) add a generic reverse function
+	case 'b': // "/b" backward search
 		if (*(++input) == '?') {
 			r_core_cmd_help (core, help_msg_search_backward);
 			goto beach;
 		}
+		param_offset--;
 		if (*input == 'p') { // "/bp" backward prelude
 			__core_cmd_search_backward_prelude (core, false, false);
 			goto beach;
@@ -3604,26 +3676,26 @@ reread:
 		}
 		goto reread;
 	case 'o': { // "/o" print the offset of the Previous opcode
-		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_search_offset);
-			break;
-		}
-		ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
-		n = R_ABS((st64)n);
-		if (((st64)n) < 1) {
-			n = 1;
-		}
-		if (!r_core_prevop_addr (core, core->offset, n, &addr)) {
-			addr = UT64_MAX;
-			(void)r_core_asm_bwdis_len (core, NULL, &addr, n);
-		}
-		if (param.outmode == R_MODE_JSON) {
-			r_cons_printf ("[%"PFMT64u "]", addr);
-		} else {
-			r_cons_printf ("0x%08"PFMT64x "\n", addr);
+			  if (input[1] == '?') {
+				  r_core_cmd_help (core, help_msg_search_offset);
+				  break;
+			  }
+			  ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
+			  n = R_ABS((st64)n);
+			  if (((st64)n) < 1) {
+				  n = 1;
+			  }
+			  if (!r_core_prevop_addr (core, core->offset, n, &addr)) {
+				  addr = UT64_MAX;
+				  (void)r_core_asm_bwdis_len (core, NULL, &addr, n);
+			  }
+			  if (param.outmode == R_MODE_JSON) {
+				  r_cons_printf ("[%"PFMT64u "]", addr);
+			  } else {
+				  r_cons_printf ("0x%08"PFMT64x "\n", addr);
+			  }
 		}
 		break;
-	}
 	case 'O': { // "/O" alternative to "/o"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_search_offset_without_anal);
@@ -3748,7 +3820,7 @@ reread:
 			break;
 		case 'u': // "/ru"
 			{
-				bool v = r_config_get_i (core->config, "search.verbose");
+				bool v = r_config_get_b (core->config, "search.verbose");
 				int mode = input[2];
 				if (!mode && !v) {
 					mode = 'q';
@@ -3851,10 +3923,10 @@ reread:
 				free (kwd);
 			}
 			break;
-		case 's': // "asl"
+		case 's': // "/asl"
 			if (input[2] == 'l') { // "asl"
 				r_core_cmd0 (core, "asl");
-			} else { // "as"
+			} else { // "/as" "/asj"
 				do_syscall_search (core, &param);
 			}
 			dosearch = false;
@@ -4215,14 +4287,11 @@ reread:
 		break;
 	case 'V': // "/V"
 		{
-			if (input[2] == 'j') {
-				param.outmode = R_MODE_JSON;
-				param_offset++;
-			} else if (strchr (input + 1, '*')) {
+			if (strchr (input + 1, '*')) {
 				param.outmode = R_MODE_RADARE;
 			}
-			int err = 1, vsize = atoi (input + 1);
-			const char *num_str = input + param_offset + 1;
+			int err = 1, vsize = chatoi (input + 1);
+			const char *num_str = input + param_offset;
 			if (vsize && input[2] && num_str) {
 				if (param.outmode == R_MODE_JSON) {
 					pj_a (param.pj);
@@ -4261,10 +4330,6 @@ reread:
 			if (input[1] == '?') {
 				r_cons_print ("Usage: /v[1|2|4|8] [value]\n");
 				break;
-			}
-			if (input[2] == 'j') {
-				param.outmode = R_MODE_JSON;
-				param_offset++;
 			}
 		}
 		r_search_reset (core->search, R_SEARCH_KEYWORD);

@@ -24,7 +24,7 @@ static const char *help_msg_L[] = {
 	"La", "[qj]", "list analysis plugins",
 	"LA", "[qj]", "list arch plugins",
 	"Lb", "[qj]", "list bin plugins",
-	"Lc", "", "list core plugins (see",
+	"Lc", "", "list core plugins",
 	"Ld", "", "list debug plugins (dL)",
 	"LD", "[j]", "list supported decompilers (e cmd.pdc=?)",
 	"Le", "", "list esil plugins",

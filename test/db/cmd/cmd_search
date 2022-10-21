@@ -399,7 +399,7 @@ e asm.bits=32
 /at ret
 EOF
 EXPECT=<<EOF
-0x00000005 1 ret
+0x00000005 ret 1 ret
 EOF
 RUN
 
@@ -413,8 +413,8 @@ e search.to = 0x00000050
 /at xor
 EOF
 EXPECT=<<EOF
-0x0000003c 2 xor al, 0x80
-0x00000040 2 xor al, 0x80
+0x0000003c xor 2 xor al, 0x80
+0x00000040 xor 2 xor al, 0x80
 EOF
 RUN
 
@@ -428,8 +428,8 @@ e search.to = 0x00000050
 /at xor
 EOF
 EXPECT=<<EOF
-0x0000003c 2 xor al, 0x80
-0x00000040 2 xor al, 0x80
+0x0000003c xor 2 xor al, 0x80
+0x00000040 xor 2 xor al, 0x80
 EOF
 RUN
 

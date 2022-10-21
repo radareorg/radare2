@@ -189,9 +189,9 @@ e asm.bits=32
 /at pop
 EOF
 EXPECT=<<EOF
-0x00000003 1 pop ebx
+0x00000003 pop 1 pop ebx
 pop ebx
-0x00000004 1 pop ebp
+0x00000004 pop 1 pop ebp
 pop ebp
 EOF
 RUN

@@ -17,10 +17,10 @@ EOF
 EXPECT=<<EOF
 rcall
 call
-0x00000000 4 bl 0x4e3f84
+0x00000000 call 4 bl 0x4e3f84
 --
 --
-0x00000004 4 blr x8
+0x00000004 rcall 4 blr x8
 EOF
 RUN
 
