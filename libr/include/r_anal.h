@@ -938,6 +938,7 @@ typedef struct r_anal_esil_dfg_t {
 	RGraph *flow;
 	RGraphNode *cur;
 	RGraphNode *old;
+	RAnalEsil *esil;
 	bool malloc_failed;
 } RAnalEsilDFG;
 
@@ -945,12 +946,11 @@ typedef struct r_anal_esil_dfg_node_t {
 	// add more info here
 	ut32 idx;
 	RStrBuf *content;
-	ut32 /*RAnalEsilDFGBlockType*/ type;
+	ut32 /*RAnalEsilDFGTagType*/ type;
 } RAnalEsilDFGNode;
 
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 
-// TODO: use RBuffer instead of data+len?
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 typedef int (*RAnalOpAsmCallback)(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outlen);
 
@@ -1839,7 +1839,7 @@ R_API SdbGperf *r_anal_get_gperf_cc(const char *k);
 R_API SdbGperf *r_anal_get_gperf_types(const char *k);
 
 R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char *c);
-R_API RAnalEsilDFG *r_anal_esil_dfg_new(RReg *regs);
+R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal *anal);
 R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg);
 R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr);
 R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg);
