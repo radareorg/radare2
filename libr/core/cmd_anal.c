@@ -466,7 +466,6 @@ static const char *help_msg_aeC[] = {
 static const char *help_msg_aeg[] = {
 	"Usage:", "aeg[fniv]", " [...]",
 	"aeg", "", "analyze current instruction as an esil graph",
-	"aegi", "", "?",
 	"aegf", "", "analyze given expression and filter for register",
 	"aegn", "", "create data flow graph for N instructions",
 	"aegv", "", "analyse and launch the visual interactive mode",
@@ -7093,7 +7092,6 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			R_LOG_ERROR ("Usage: aegn [number-of-instructions-to-combine-its-esil-essence]\n");
 		}
 		break;
-	case 'i': // "aegi" 
 	case 'v': // "aegv" - visual
 	{
 		RAGraph *agraph = NULL;
@@ -10259,8 +10257,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		}
 		break;
 	}
-	case 'v': // "aggv"
-	case 'i': // "aggi" - open current core->graph in interactive mode
+	case 'v': // "aggv" - open current core->graph in interactive visual mode
 	{
 		RANode *ran = r_agraph_get_first_node (core->graph);
 		if (ran) {
