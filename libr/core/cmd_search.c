@@ -2499,7 +2499,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		case 'q':
 			mode = *input;
 			break;
-		case 'l': // "/alt" "/alf"
+		case 'l': // "/alt" "/alf" "/atl"
 			switch (type) {
 			case 't': // "/alt"
 			case 'f': // "/alf"
@@ -2507,7 +2507,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 					const char *str = type == 'f'
 						? r_anal_op_family_to_string (i)
 						: r_anal_optype_to_string (i);
-					if (!str || !*str) {
+					if (R_STR_ISEMPTY (str)) {
 						break;
 					}
 					if (!strcmp (str, "undefined")) {
@@ -2565,7 +2565,40 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 	RIOMap* map;
 	RListIter *iter;
 	char *word = strdup (input);
+	// check if its a valid instruction type or family
+	r_str_replace_ch (word, ' ', ',', -1);
 	RList *words = r_str_split_list (word, ",", 0);
+	if ((type == 't' || type == 'f') && r_list_length (words) > 0) {
+		bool failed = false;
+		RListIter *iter;
+		char *word;
+		r_list_foreach (words, iter, word) {
+			if (R_STR_ISEMPTY (word) || !strcmp (word, "(null)")) {
+				continue;
+			}
+			bool found = false;
+			for (i = 0; i < 64; i++) {
+				const char *str = type == 'f'
+					? r_anal_op_family_to_string (i)
+					: r_anal_optype_to_string (i);
+				if (R_STR_ISEMPTY (str)) {
+					break;
+				}
+				if (!strcmp (str, word)) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				failed = true;
+				break;
+			}
+		}
+		if (failed) {
+			R_LOG_ERROR ("Invalid argument for /at or /af, see /atl or /afl");
+			return true;
+		}
+	}
 
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = r_io_map_begin (map);
@@ -2580,17 +2613,17 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 			if (ret) {
 				bool match = false;
-				if (type == 'm') {
+				if (type == 'm') { // "/atm"
 					const char *fam = aop.mnemonic;
 					if (fam && (!*input || r_str_startswith (fam, input))) {
 						match = true;
 					}
-				} else if (type == 'f') {
+				} else if (type == 'f') { // "/atf"
 					const char *fam = r_anal_op_family_to_string (aop.family);
 					if (fam && (!*input || !strcmp (input, fam))) {
 						match = true;
 					}
-				} else {
+				} else { // "/at"
 					const char *type = r_anal_optype_to_string (aop.type);
 					if (type) {
 						bool isCandidate = !*input;
