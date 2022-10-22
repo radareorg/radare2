@@ -159,7 +159,7 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int len) {
 	}
 	chunk = (IOTreeBufChunk *)node->data;
 	if (r_itv_include (chunk->itv, search_itv)) {
-		ut8 *dst = &chunk->buf[r_itv_begin (chunk->itv) - r_itv_begin (search_itv)];
+		ut8 *dst = &chunk->buf[r_itv_begin (search_itv) - r_itv_begin (chunk->itv)];
 		memcpy (dst, buf, r_itv_size (search_itv));
 		treebuf->seek = r_itv_end (search_itv);
 		return (int)r_itv_size (search_itv);
@@ -169,18 +169,22 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int len) {
 		chunk->buf = realloc (chunk->buf, r_itv_size (chunk->itv));
 	}
 	node = r_rbnode_next (node);
-	chunk = node? (IOTreeBufChunk *)node->data: NULL;
-	while (chunk && r_itv_include (search_itv, chunk->itv)) {
-		node = r_rbnode_next (node);
-		r_crbtree_delete (treebuf->tree, &chunk->itv, _treebuf_chunk_find, NULL);
+	if (node) {
 		chunk = node? (IOTreeBufChunk *)node->data: NULL;
+		while (chunk && r_itv_include (search_itv, chunk->itv)) {
+			node = r_rbnode_next (node);
+			r_crbtree_delete (treebuf->tree, &chunk->itv, _treebuf_chunk_find, NULL);
+			chunk = node? (IOTreeBufChunk *)node->data: NULL;
+		}
 	}
-	if (chunk && r_itv_end (search_itv) == r_itv_begin (chunk->itv)) {
-		chunk->buf = realloc (chunk->buf, r_itv_size (search_itv) + r_itv_size (chunk->itv));
-		memmove (&chunk->buf[r_itv_size (search_itv)], chunk->buf, r_itv_size (chunk->itv));
+	if (chunk && r_itv_end (search_itv) >= r_itv_begin (chunk->itv)) {
+		chunk->buf = realloc (chunk->buf, r_itv_end (chunk->itv) - r_itv_begin (search_itv));
+		memmove (&chunk->buf[r_itv_size (search_itv)],
+			&chunk->buf[r_itv_end (search_itv) - r_itv_begin (chunk->itv)],
+			r_itv_end (chunk->itv) - r_itv_end (search_itv));
 		memcpy (chunk->buf, buf, r_itv_size (search_itv));
+		chunk->itv.size = r_itv_end (chunk->itv) - r_itv_begin (search_itv);
 		chunk->itv.addr = search_itv.addr;
-		chunk->itv.size += search_itv.size;
 		treebuf->seek = r_itv_end (search_itv);
 		return (int)r_itv_size (search_itv);
 	}
