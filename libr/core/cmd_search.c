@@ -143,9 +143,10 @@ static const char *help_msg_slash[] = {
 };
 
 static const char *help_msg_slash_at[] = {
-	"Usage:", "/at[mjsf] [arg]", "Search for instructions matching type/family/mnemonic",
-	"/atf", " [family]", "search for given-family type of instructions",
+	"Usage:", "/at[flmj] [arg]", "Search for instructions matching type/family/mnemonic",
 	"/at", " [optype,optype2]", "list instructions matching any of the comma separated optypes",
+	"/atj", " [optype,optype2]", "same as above but using json as output",
+	"/atf", " [family]", "search for given-family type of instructions",
 	"/atl", "", "list all the instruction types (RAnalOp.Type)",
 	"/atm", "", "search matching only the instruction mnemonic",
 	NULL
@@ -2506,7 +2507,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 				for (i = 0; i < 64; i++) {
 					const char *str = type == 'f'
 						? r_anal_op_family_to_string (i)
-						: r_anal_optype_to_string (i);
+						: r_anal_optype_index (i);
 					if (R_STR_ISEMPTY (str)) {
 						break;
 					}
@@ -2577,10 +2578,10 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 				continue;
 			}
 			bool found = false;
-			for (i = 0; i < 64; i++) {
+			for (i = 0; i < 1024; i++) {
 				const char *str = type == 'f'
 					? r_anal_op_family_to_string (i)
-					: r_anal_optype_to_string (i);
+					: r_anal_optype_index (i);
 				if (R_STR_ISEMPTY (str)) {
 					break;
 				}

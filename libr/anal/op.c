@@ -252,10 +252,11 @@ R_API bool r_anal_op_ismemref(int t) {
 	}
 }
 
+#define OPTYPES_COUNT 62
 static struct optype {
 	const int type;
 	const char *name;
-} optypes[] = {
+} optypes[OPTYPES_COUNT] = {
 	{ R_ANAL_OP_TYPE_IO, "io" },
 	{ R_ANAL_OP_TYPE_ACMP, "acmp" },
 	{ R_ANAL_OP_TYPE_ADD, "add" },
@@ -328,6 +329,13 @@ R_API int r_anal_optype_from_string(const char *type) {
 		}
 	}
 	return -1;
+}
+
+R_API const char *r_anal_optype_index(int idx) {
+	if (idx < 0 || idx >= OPTYPES_COUNT) {
+		return NULL;
+	}
+	return optypes[idx].name;
 }
 
 R_API const char *r_anal_optype_to_string(int t) {
