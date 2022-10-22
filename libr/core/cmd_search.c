@@ -2068,8 +2068,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 #endif
 #if 1
 				if (scNumber < 0 || scNumber > 0xFFFFF) {
-					r_anal_op_fini (&aop);
-					continue;
+					goto theverynext;
 				}
 #endif
 				scVector = (aop.val > 0)? aop.val: -1; // int 0x80 (aop.val = 0x80)
@@ -2122,13 +2121,16 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				syscallNumber = 0;
 #endif
 			}
-			int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
-			if (inc < 0) {
-				inc = minopcode;
+theverynext:
+			{
+				int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
+				if (inc < 0) {
+					inc = minopcode;
+				}
+				i += inc;
+				at += inc;
+				r_anal_op_fini (&aop);
 			}
-			i += inc;
-			at += inc;
-			r_anal_op_fini (&aop);
 		}
 	}
 beach:

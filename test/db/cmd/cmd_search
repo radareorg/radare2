@@ -1232,6 +1232,7 @@ EXPECT=<<EOF
 0x0009c928 futex
 0x0009ca89 futex
 0x0009caee futex
+0x0009cb65 futex
 0x0009cff8 futex
 0x0009d0e8 futex
 0x0009d1c4 futex
