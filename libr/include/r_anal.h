@@ -1050,6 +1050,7 @@ R_API bool r_anal_op_nonlinear(int t);
 R_API const char *r_anal_op_direction_tostring(RAnalOp *op);
 R_API bool r_anal_op_ismemref(int t);
 R_API const char *r_anal_optype_to_string(int t);
+R_API const char *r_anal_optype_index(int idx);
 R_API int r_anal_optype_from_string(const char *type);
 R_API const char *r_anal_op_family_to_string(int n);
 R_API int r_anal_op_family_from_string(const char *f);
