@@ -7057,7 +7057,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 				RAGraph *agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
 				r_anal_esil_dfg_free (dfg);
 				agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");
-				agraph->layout = 1;
+				agraph->layout = r_config_get_i (core->config, "graph.layout");
 				r_agraph_print (agraph);
 				r_agraph_free (agraph);
 			}
@@ -7077,7 +7077,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 				RAGraph *agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
 				r_anal_esil_dfg_free (dfg);
 				agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");
-				agraph->layout = 1;
+				agraph->layout = r_config_get_i (core->config, "graph.layout");
 				r_agraph_print (agraph);
 				r_agraph_free (agraph);
 			}
@@ -7092,7 +7092,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			int n = r_num_math (core->num, argv[1]);
 			r_core_cmdf (core, "aeg `pieq %d`", n);
 		} else {
-			R_LOG_ERROR ("Usage: aegn [number-of-instructions-to-combine-its-esil-essence]\n");
+			R_LOG_ERROR ("Usage: aegn [number-of-instructions-to-combine-its-esil-essence]");
 		}
 		break;
 	case 'v': // "aegv" - visual
@@ -7123,9 +7123,8 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		const ut64 osc = r_config_get_i (core->config, "scr.color");
 		r_config_set_i (core->config, "scr.color", 0);
 		ut64 oseek = core->offset;
-//		bool ov = r_cons_is_interactive ();
 		agraph->need_update_dim = true;
-		agraph->layout = 1;
+		agraph->layout = r_config_get_i (core->config, "graph.layout");
 		int update_seek = r_core_visual_graph (core, agraph, NULL, true);
 		r_cons_show_cursor (true);
 		r_cons_enable_mouse (false);
