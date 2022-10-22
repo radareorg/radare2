@@ -15,6 +15,7 @@ static const char *help_msg_i[] = {
 	"ia", "", "show all info (imports, exports, sections..)",
 	"ib", "", "reload the current buffer for setting of the bin (use once only)",
 	"ic", "", "List classes, methods and fields (icj for json)",
+	"ic.", "", "show class and method name in current seek",
 	"icc", "", "List classes, methods and fields in Header Format",
 	"icg", " [str]", "List classes as agn/age commands to create class hirearchy graphs (matches str if provided)",
 	"icq", "", "List classes, in quiet mode (just the classname)",
@@ -1339,7 +1340,7 @@ static int cmd_info(void *data, const char *input) {
 					}
 				}
 				goto done;
-			} else if (input[1] == ' ' || input[1] == 's' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
+			} else if (input[1] == ' ' || input[1] == '.' || input[1] == 's' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
 				RList *objs = r_core_bin_files (core);
 				RListIter *objs_iter;
 				RBinFile *bf;
@@ -1461,6 +1462,34 @@ static int cmd_info(void *data, const char *input) {
 								if (!r_list_empty (cls->methods)) {
 									r_cons_newline ();
 								}
+							}
+						} else if (input[1] == '.') { // "ic."
+							ut64 addr = core->offset;
+							ut64 min = UT64_MAX;
+							const char *method = NULL;
+							ut64 max = 0LL;
+							r_list_foreach (obj->classes, iter, cls) {
+								method = NULL;
+								r_list_foreach (cls->methods, iter2, sym) {
+									if (sym->vaddr < min) {
+										min = sym->vaddr;
+									}
+									if (sym->vaddr + sym->size > max) {
+										max = sym->vaddr + sym->size;
+									}
+									if (addr >= sym->vaddr && addr <= sym->vaddr + sym->size) {
+										method = sym->name;
+									}
+								}
+								if (addr >= min && addr < max) {
+									if (method) {
+										r_cons_printf ("%s::%s\n", cls->name, method);
+									} else {
+										r_cons_printf ("%s\n", cls->name);
+									}
+								}
+								min = UT64_MAX;
+								max = 0LL;
 							}
 						} else if (input[1] == 'c') { // "icc"
 							mode = R_MODE_CLASSDUMP;

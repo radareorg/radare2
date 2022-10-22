@@ -1,0 +1,19 @@
+NAME=ic dot
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+s 0x1000fbef0
+ic.
+fd
+pd 3
+EOF
+EXPECT=<<EOF
+GADDevice::jailbroken
+method.GADDevice.jailbroken
+            ;-- method.GADDevice.jailbroken:
+            ;-- func.1000fbef0:
+            0x1000fbef0      f44fbea9       stp x20, x19, [sp, -0x20]!
+            0x1000fbef4      fd7b01a9       stp x29, x30, [sp, 0x10]
+            0x1000fbef8      fd430091       add x29, sp, 0x10
+EOF
+RUN
+
