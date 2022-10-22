@@ -466,6 +466,7 @@ static const char *help_msg_aeC[] = {
 static const char *help_msg_aeg[] = {
 	"Usage:", "aeg[fniv]", " [...]",
 	"aeg", "", "analyze current instruction as an esil graph",
+	"aegb", "", "data flow graph for current basic block (aeg `pieq $Fi`)",
 	"aegf", "", "analyze given expression and filter for register",
 	"aegn", "", "create data flow graph for N instructions",
 	"aegv", "", "analyse and launch the visual interactive mode",
@@ -7083,10 +7084,12 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			free (esilexpr);
 		}
 		break;
+	case 'b': // "aegb"
+		r_core_cmd0 (core, "aeg `pieq $Fi`");
+		break;
 	case 'n': // "aegn"
 		if (argc > 1) {
 			int n = r_num_math (core->num, argv[1]);
-			eprintf ("Pe %d\n", n);
 			r_core_cmdf (core, "aeg `pieq %d`", n);
 		} else {
 			R_LOG_ERROR ("Usage: aegn [number-of-instructions-to-combine-its-esil-essence]\n");
