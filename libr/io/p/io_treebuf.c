@@ -27,6 +27,21 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 	return !strcmp (pathname, "treebuf://");
 }
 
+static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
+	if (cmd && !strcmp (cmd, "reset")) {
+		RRBTree *tree = r_crbtree_new (_treebuf_chunk_free);
+		if (!tree) {
+			free (tree);
+			R_LOG_ERROR ("Allocation failed");
+			return "-1";
+		}
+		IOTreeBuf *treebuf = (IOTreeBuf *)desc->data;
+		r_crbtree_free (treebuf->tree);
+		treebuf->tree = tree;
+	}
+	return "0";
+}
+
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!__check (io, pathname, false)) {
 		return NULL;
@@ -202,6 +217,7 @@ RIOPlugin r_io_plugin_treebuf = {
 	.desc = "Dynamic sparse like buffer without size restriction",
 	.uris = "treebuf://",
 	.license = "LGPL",
+	.system = __system,
 	.open = __open,
 	.close = __close,
 	.read = __read,
