@@ -33,13 +33,13 @@ static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 		if (!tree) {
 			free (tree);
 			R_LOG_ERROR ("Allocation failed");
-			return "-1";
+			return NULL;
 		}
 		IOTreeBuf *treebuf = (IOTreeBuf *)desc->data;
 		r_crbtree_free (treebuf->tree);
 		treebuf->tree = tree;
 	}
-	return "0";
+	return NULL;
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
