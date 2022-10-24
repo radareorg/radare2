@@ -2409,7 +2409,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				pj_ks (pj, "direction", r_anal_op_direction_tostring (&op));
 			}
 			const char *arg = (op.type & R_ANAL_OP_TYPE_COND)
-				? r_anal_cond_tostring (op.cond): NULL;
+				? r_anal_cond_type_tostring (op.cond): NULL;
 			if (arg) {
 				pj_ks (pj, "cond", arg);
 			}
