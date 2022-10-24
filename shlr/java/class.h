@@ -988,7 +988,7 @@ R_API char * r_bin_java_resolve_without_space(RBinJavaObj *BIN_OBJ, int idx);
 R_API char * U(r_bin_java_resolve_cp_idx_type)(RBinJavaObj *BIN_OBJ, int idx);
 R_API char * U(r_bin_java_resolve_b64_encode)(RBinJavaObj *BIN_OBJ, ut16 idx);
 R_API ut64 U(r_bin_java_resolve_cp_idx_address)(RBinJavaObj *BIN_OBJ, int idx);
-R_API char * U(r_bin_java_resolve_cp_idx_to_string)(RBinJavaObj *BIN_OBJ, int idx);
+R_API char * U(r_bin_java_resolve_cp_idx_tostring)(RBinJavaObj *BIN_OBJ, int idx);
 R_API int U(r_bin_java_resolve_cp_idx_print_summary)(RBinJavaObj *BIN_OBJ, int idx);
 
 R_API struct java_const_value_t * U(r_bin_java_resolve_to_const_value)(RBinJavaObj *BIN_OBJ, int idx);

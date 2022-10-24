@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2010-2016 - pancake */
+/* radare - LGPL - Copyright 2010-2022 - pancake */
 
 #include <r_anal.h>
 
-R_API const char *r_anal_cond_tostring(int cc) {
+R_API const char *r_anal_cond_type_tostring(int cc) {
 	switch (cc) {
 	case R_ANAL_COND_EQ: return "eq";
 	case R_ANAL_COND_NV: return "nv";

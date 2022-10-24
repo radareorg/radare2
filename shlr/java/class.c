@@ -8358,7 +8358,7 @@ R_API ut64 r_bin_java_resolve_cp_idx_address(RBinJavaObj *BIN_OBJ, int idx) {
 	return addr;
 }
 
-R_API char *r_bin_java_resolve_cp_idx_to_string(RBinJavaObj *BIN_OBJ, int idx) {
+R_API char *r_bin_java_resolve_cp_idx_tostring(RBinJavaObj *BIN_OBJ, int idx) {
 	RBinJavaCPTypeObj *item = NULL;
 	char *value = NULL;
 	if (BIN_OBJ && BIN_OBJ->cp_count < 1) {

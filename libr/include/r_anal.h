@@ -1491,7 +1491,7 @@ R_API void r_anal_cond_free(RAnalCond *c);
 R_API char *r_anal_cond_tostring(RAnalCond *cond);
 R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond);
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
-R_API const char *r_anal_cond_tostring(int cc);
+R_API const char *r_anal_cond_type_tostring(int cc);
 
 /* jmptbl */
 R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr);
