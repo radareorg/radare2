@@ -267,6 +267,9 @@ R_API char* r_print_json_indent(const char* s, bool color, const char *tab, cons
 R_API char* r_print_json_human(const char* s);
 R_API char* r_print_json_path(const char* s, int pos);
 
+// code
+R_API char *r_print_code_tocolor(const char *s);
+R_API char *r_print_code_indent(const char *s);
 #endif
 
 #ifdef __cplusplus

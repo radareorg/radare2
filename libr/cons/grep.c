@@ -603,7 +603,7 @@ R_API void r_cons_grepbuf(void) {
 		return;
 	}
 
-	if ((!len || !buf || !*buf) && (grep->json || grep->less)) {
+	if ((!len || R_STR_ISEMPTY (buf)) && (grep->json || grep->less)) {
 		grep->json = false;
 		grep->hud = false;
 		grep->less = 0;

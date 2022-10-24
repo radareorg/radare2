@@ -472,7 +472,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 							blocktype = "else";
 						}
 						NEWLINE (bb->addr, indent);
-						PRINTF (" // do {");
+						PRINTF ("do {");
+						indent++;
 						indent++;
 					}
 				}
@@ -480,7 +481,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 				if (addr == UT64_MAX) {
 					NEWLINE (bb->addr, indent);
-					PRINTF (" // (break)");
+					PRINTF ("break;");
 					break;
 				}
 				bb = r_anal_bb_from_offset (core->anal, addr);
@@ -494,7 +495,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				}
 				if (nindent != indent) {
 					NEWLINE (bb->addr, indent);
-					PRINTF (" // } else {");
+					PRINTF ("} else {");
 				}
 				indent = nindent;
 			}
@@ -534,6 +535,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	indent = 0;
 	NEWLINE (addr, indent);
 	PRINTF ("}\n");
+	r_config_hold_restore (hc);
+	r_config_hold_free (hc);
 	if (pj) {
 		pj_end (pj);
 		char *kode = r_strbuf_drain (codestr);
@@ -546,11 +549,14 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_strbuf_free (out);
 	} else {
 		char *s = r_strbuf_drain (out);
+		if (r_config_get (core->config, "scr.color") > 0) {
+			char *ss = r_print_code_tocolor (s);
+			free (s);
+			s = ss;
+		}
 		r_cons_printf ("%s\n", s);
 		free (s);
 	}
-	r_config_hold_restore (hc);
-	r_config_hold_free (hc);
 	sdb_free (db);
 	return true;
 }

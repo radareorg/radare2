@@ -2524,3 +2524,136 @@ R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len) {
 	}
 	print->cb_printf ("\n");
 }
+
+R_API char *r_print_code_indent(const char *s) {
+	// honors {} not implemented
+	return NULL;
+}
+
+R_API char *r_print_code_tocolor(const char *o) {
+	char *s = strdup (o);
+	s = r_str_replace (s, "\r", "", 1);
+	s = r_str_replace (s, "goto ", Color_GREEN"goto "Color_RESET, 1);
+	s = r_str_replace (s, "(byte)", Color_RED"(byte)"Color_RESET, 1);
+
+	RStrBuf *sb = r_strbuf_new ("");
+	const char *p = s;
+	while (*p) {
+		if (r_str_startswith (p, "\n\n")) {
+			p++;
+			continue;
+		}
+		const char *nl = strchr (p, '\n');
+		const char *cm = strstr (p, "//");
+		const char *lb = strchr (p, ':');
+		const char *cl = strstr (p, " ()");
+		const char *st = strstr (p, " str.");
+		const char *w = r_str_trim_head_ro (p);
+		if (w == nl) {
+			eprintf ("EMPTY LINE\n");
+			sleep (1);
+			// empty line
+			p = w;
+			continue;
+		}
+		if (lb && lb > p) {
+			const char *prev = lb - 1;
+			if (*prev == ' ') {
+				lb = 0;
+			}
+		}
+		if (r_str_startswith (w, "(byte)")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_RED "(byte)"Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 6;
+		} else if (r_str_startswith (w, "if ")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_YELLOW"if "Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 3;
+		} else if (r_str_startswith (w, "do {")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_YELLOW"do {"Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 4;
+		} else if (r_str_startswith (w, "int ")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_CYAN"int "Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 4;
+		} else if (r_str_startswith (w, "return ")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_GREEN "return "Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 7;
+		} else if (r_str_startswith (w, "break;")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_GREEN "break;"Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 6;
+		} else if (r_str_startswith (w, "while ")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_GREEN "while "Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 6;
+		} else if (r_str_startswith (w, "goto ")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_GREEN "goto "Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 5;
+		} else if (st > 0 && st < nl) {
+			const char *eos = R_MIN (nl, cm);
+			if (eos < st) {
+				eos = nl;
+			}
+				st += 5;
+				r_strbuf_append_n (sb, p, st - p); // pre
+				r_strbuf_append (sb, Color_CYAN);
+				r_strbuf_append (sb, " \"");
+				char *trim = r_str_ndup (st, eos - st);
+				r_str_trim (trim);
+				r_strbuf_append (sb, trim);
+				free (trim);
+				r_strbuf_append (sb, "\"");
+				r_strbuf_append (sb, Color_RESET);
+				p = eos;
+		} else if (cl > 0 && cl < nl && cl < cm) {
+			// colorize calls
+			r_strbuf_append (sb, Color_GREEN);
+			if (cm > 0 && cm < nl) {
+				r_strbuf_append_n (sb, p, cm - p);
+				p = cm;
+			} else {
+				r_strbuf_append_n (sb, p, nl - p);
+				p = nl;
+			}
+			r_strbuf_append (sb, Color_RESET);
+		} else if (cm > 0 && cm < nl) {
+			// colorize comments
+			if (cm > p) {
+				r_strbuf_append_n (sb, p, cm - p);
+			} else {
+				r_strbuf_append_n (sb, " ", 1);
+			}
+			r_strbuf_append (sb, Color_MAGENTA);
+			r_strbuf_append_n (sb, cm, nl - cm);
+			r_strbuf_append (sb, Color_RESET);
+			p = nl;
+		} else if (lb > 0 && lb < nl && lb < cm && (lb[1] == ' ' || lb[1] == '\n')) {
+			// colorize labels
+			size_t len = lb - p + 1;
+			r_strbuf_append (sb, Color_YELLOW);
+			r_strbuf_append_n (sb, p, len);
+			r_strbuf_append (sb, Color_RESET);
+			p = lb + 1;
+		} else {
+			r_strbuf_append_n (sb, p, 1);
+			p++;
+		}
+	}
+	free (s);
+	char *r = r_strbuf_drain (sb);
+	r_str_trim_emptylines (r);
+	return r;
+}
