@@ -1138,7 +1138,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				memcpy (acode->bytes + idx, r_strbuf_get (&op.buf), r_strbuf_length (&op.buf));
 				memset (acode->bytes + idx + ret, 0, idx + ret);
 				if (op.buf_inc && r_buf_size (op.buf_inc) > 1) {
-					char *inc = r_buf_to_string (op.buf_inc);
+					char *inc = r_buf_tostring (op.buf_inc);
 					r_buf_free (op.buf_inc);
 					op.buf_inc = NULL;
 					if (inc) {
@@ -1184,7 +1184,7 @@ R_API bool r_asm_set_arch(RAsm *a, const char *name, int bits) {
 }
 
 /* to ease the use of the native bindings (not used in r2) */
-R_API char *r_asm_to_string(RAsm *a, ut64 addr, const ut8 *b, int l) {
+R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l) {
 	r_return_val_if_fail (a && b && l >= 0, NULL);
 	r_asm_set_pc (a, addr);
 	RAsmCode *code = r_asm_mdisassemble (a, b, l);

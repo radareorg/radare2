@@ -257,7 +257,7 @@ static RASN1String* r_asn1_print_hexdump_padded(RASN1Object *object, ut32 depth)
 	return asn1str;
 }
 
-R_API char *r_asn1_to_string(RASN1Object *object, ut32 depth, RStrBuf *sb) {
+R_API char *r_asn1_tostring(RASN1Object *object, ut32 depth, RStrBuf *sb) {
 	ut32 i;
 	bool root = false;
 	if (!object) {
@@ -426,7 +426,7 @@ R_API char *r_asn1_to_string(RASN1Object *object, ut32 depth, RStrBuf *sb) {
 		r_asn1_free_string (asn1str);
 		if (object->list.objects) {
 			for (i = 0; i < object->list.length; i++) {
-				r_asn1_to_string (object->list.objects[i], depth + 1, sb);
+				r_asn1_tostring (object->list.objects[i], depth + 1, sb);
 			}
 		}
 	} else {
@@ -435,7 +435,7 @@ R_API char *r_asn1_to_string(RASN1Object *object, ut32 depth, RStrBuf *sb) {
 		if (object->list.objects) {
 			for (i = 0; i < object->list.length; i++) {
 				RASN1Object *obj = object->list.objects[i];
-				r_asn1_to_string (obj, depth + 1, sb);
+				r_asn1_tostring (obj, depth + 1, sb);
 			}
 		}
 	}

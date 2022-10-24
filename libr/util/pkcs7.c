@@ -473,7 +473,7 @@ static void r_x509_signedinfo_dump(RPKCS7SignerInfo *si, const char *pad, RStrBu
 	free (pad3);
 }
 
-R_API char *r_pkcs7_cms_to_string(RCMS *container) {
+R_API char *r_pkcs7_cms_tostring(RCMS *container) {
 	ut32 i;
 	if (!container) {
 		return NULL;
@@ -498,7 +498,7 @@ R_API char *r_pkcs7_cms_to_string(RCMS *container) {
 	}
 
 	for (i = 0; i < container->signedData.crls.length; i++) {
-		char *res = r_x509_crl_to_string (container->signedData.crls.elements[i], "    ");
+		char *res = r_x509_crl_tostring (container->signedData.crls.elements[i], "    ");
 		if (res) {
 			r_strbuf_append (sb, res);
 			free (res);

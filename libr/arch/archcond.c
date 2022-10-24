@@ -3,7 +3,7 @@
 #include <r_arch.h>
 
 #if 0
-R_API const char *r_arch_cond_to_string(RArchCond cc) {
+R_API const char *r_arch_cond_tostring(RArchCond cc) {
 	switch (cc) {
 	case R_ARCH_COND_EQ: return "eq";
 	case R_ARCH_COND_NV: return "nv";

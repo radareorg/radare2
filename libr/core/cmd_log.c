@@ -84,9 +84,9 @@ static void screenlock(RCore *core) {
 	do {
 		r_cons_clear00 ();
 		r_cons_printf ("Retries: %d\n", tries);
-		r_cons_printf ("Locked ts: %s\n", r_time_to_string (begin));
+		r_cons_printf ("Locked ts: %s\n", r_time_tostring (begin));
 		if (last != UT64_MAX) {
-			r_cons_printf ("Last try: %s\n", r_time_to_string (last));
+			r_cons_printf ("Last try: %s\n", r_time_tostring (last));
 		}
 		r_cons_newline ();
 		r_cons_flush ();

@@ -1061,7 +1061,7 @@ static void print_hint_h_format(HintNode *node) {
 				r_cons_printf (" syntax='%s'", record->syntax);
 				break;
 			case R_ANAL_ADDR_HINT_TYPE_OPTYPE: {
-				const char *type = r_anal_optype_to_string (record->optype);
+				const char *type = r_anal_optype_tostring (record->optype);
 				if (type) {
 					r_cons_printf (" type='%s'", type);
 				}
@@ -1144,7 +1144,7 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 					HINTCMD_ADDR (node, "ahS %s", record->syntax); // TODO: escape for newcmd
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_OPTYPE: {
-					const char *type = r_anal_optype_to_string (record->optype);
+					const char *type = r_anal_optype_tostring (record->optype);
 					if (type) {
 						HINTCMD_ADDR (node, "aho %s", type); // TODO: escape for newcmd
 					}
@@ -1215,7 +1215,7 @@ static void hint_node_print(HintNode *node, int mode, PJ *pj) {
 					pj_ks (pj, "syntax", record->syntax);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_OPTYPE: {
-					const char *type = r_anal_optype_to_string (record->optype);
+					const char *type = r_anal_optype_tostring (record->optype);
 					if (type) {
 						pj_ks (pj, "type", type);
 					}
@@ -1699,7 +1699,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 						c->config = core->config;
 						// XXX. the bbi->addr doesnt needs to be in the same address in core2
 						char *str2 = r_core_cmd_strf (c, "pdb @ 0x%08"PFMT64x, bbi->diff->addr);
-						char *diffstr = r_diff_buffers_to_string (d,
+						char *diffstr = r_diff_buffers_tostring (d,
 								(const ut8*)str, strlen (str),
 								(const ut8*)str2, strlen (str2));
 
@@ -4397,7 +4397,7 @@ R_API int r_core_anal_data(RCore *core, ut64 addr, int count, int depth, int wor
 		/* but it should not.. so this must be fixed in anal/data.c instead of */
 		/* null terminating here */
 		d = r_anal_data (core->anal, addr + i, buf + i, len - i, wordsize);
-		str = r_anal_data_to_string (d, pal);
+		str = r_anal_data_tostring (d, pal);
 		r_cons_println (str);
 
 		if (d) {

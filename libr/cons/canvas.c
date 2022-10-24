@@ -346,7 +346,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 	c->x = orig_x;
 }
 
-R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
+R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
 	r_return_val_if_fail (c, NULL);
 
 	int x, y, olen = 0, attr_x = 0;
@@ -406,7 +406,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 }
 
 R_API void r_cons_canvas_print_region(RConsCanvas *c) {
-	char *o = r_cons_canvas_to_string (c);
+	char *o = r_cons_canvas_tostring (c);
 	if (o) {
 		r_str_trim_tail (o);
 		if (*o) {
@@ -417,7 +417,7 @@ R_API void r_cons_canvas_print_region(RConsCanvas *c) {
 }
 
 R_API void r_cons_canvas_print(RConsCanvas *c) {
-	char *o = r_cons_canvas_to_string (c);
+	char *o = r_cons_canvas_tostring (c);
 	if (o) {
 		r_cons_strcat (o);
 		free (o);

@@ -1044,15 +1044,15 @@ R_API RAnalType *r_anal_type_new(void);
 R_API void r_anal_type_add(RAnal *l, RAnalType *t);
 R_API RAnalType *r_anal_type_find(RAnal *a, const char* name);
 R_API void r_anal_type_list(RAnal *a, short category, short enabled);
-R_API const char *r_anal_datatype_to_string(RAnalDataType t);
+R_API const char *r_anal_datatype_tostring(RAnalDataType t);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
 R_API bool r_anal_op_nonlinear(int t);
 R_API const char *r_anal_op_direction_tostring(RAnalOp *op);
 R_API bool r_anal_op_ismemref(int t);
-R_API const char *r_anal_optype_to_string(int t);
+R_API const char *r_anal_optype_tostring(int t);
 R_API const char *r_anal_optype_index(int idx);
 R_API int r_anal_optype_from_string(const char *type);
-R_API const char *r_anal_op_family_to_string(int n);
+R_API const char *r_anal_op_family_tostring(int n);
 R_API int r_anal_op_family_from_string(const char *f);
 R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
@@ -1261,7 +1261,7 @@ R_API RList *r_anal_op_list_new(void);
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 R_API int r_anal_opasm(RAnal *anal, ut64 pc, const char *s, ut8 *outbuf, int outlen);
 R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *hexstr);
-R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
+R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op);
 
 R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsize);
 R_API bool r_anal_esil_set_pc(RAnalEsil *esil, ut64 addr);
@@ -1479,7 +1479,7 @@ R_API RAnalValue *r_anal_value_new(void);
 R_API RAnalValue *r_anal_value_copy(RAnalValue *ov);
 R_API RAnalValue *r_anal_value_new_from_string(const char *str);
 R_API st64 r_anal_value_eval(RAnalValue *value);
-R_API char *r_anal_value_to_string(RAnalValue *value);
+R_API char *r_anal_value_tostring(RAnalValue *value);
 R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val);
 R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num);
 R_API void r_anal_value_free(RAnalValue *value);
@@ -1488,10 +1488,10 @@ R_API RAnalCond *r_anal_cond_new(void);
 R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op);
 R_API void r_anal_cond_fini(RAnalCond *c);
 R_API void r_anal_cond_free(RAnalCond *c);
-R_API char *r_anal_cond_to_string(RAnalCond *cond);
+R_API char *r_anal_cond_tostring(RAnalCond *cond);
 R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond);
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
-R_API const char *r_anal_cond_tostring(int cc);
+R_API const char *r_anal_cond_type_tostring(int cc);
 
 /* jmptbl */
 R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr);
@@ -1551,7 +1551,7 @@ R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int size, int 
 R_API RAnalData *r_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, int len);
 R_API void r_anal_data_free(RAnalData *d);
 #include <r_cons.h>
-R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal);
+R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette *pal);
 
 /* meta
  *
@@ -1619,7 +1619,7 @@ R_API void r_meta_rebase(RAnal *anal, ut64 diff);
 // Calculate the total size covered by meta items of the given type.
 R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type);
 
-R_API const char *r_meta_type_to_string(int type);
+R_API const char *r_meta_type_tostring(int type);
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full);
 R_API void r_meta_print_list_all(RAnal *a, int type, int rad, const char *tq);
 R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq);

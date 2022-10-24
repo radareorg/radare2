@@ -9,7 +9,7 @@
 #define LM32_UNUSED 0
 
 //str has to be at least 8 chars elements long
-static bool reg_number_to_string(ut8 reg, char *str) {
+static bool reg_number_tostring(ut8 reg, char *str) {
 	ut8 match_idx = 0xff;
 	int i;
 	for (i = 0; i < RAsmLm32RegNumber; i++) {
@@ -79,7 +79,7 @@ static int string_to_opcode(const char *str, ut8 *num) {
 #endif
 
 //str has to be at least 8 chars elements long
-static bool csr_number_to_string(ut8 csr, char *str) {
+static bool csr_number_tostring(ut8 csr, char *str) {
 	ut8 match_idx = 0xff;
 	int i;
 	for (i = 0; i < RAsmLm32CsrNumber; i++) {
@@ -256,42 +256,42 @@ static bool write_reg_names_to_struct(RAsmLm32Instruction *instr) {
 	case reg_imm16_zeroextend:
 	case reg_imm5:
 	case two_regs:
-		if (!reg_number_to_string (instr->dest_reg, instr->dest_reg_str)) {
+		if (!reg_number_tostring (instr->dest_reg, instr->dest_reg_str)) {
 			return false;
 		}
-		if (!reg_number_to_string (instr->src0_reg, instr->src0_reg_str)) {
+		if (!reg_number_tostring (instr->src0_reg, instr->src0_reg_str)) {
 			return false;
 		}
 		break;
 	case one_reg:
-		if (!reg_number_to_string (instr->src0_reg, instr->src0_reg_str)) {
+		if (!reg_number_tostring (instr->src0_reg, instr->src0_reg_str)) {
 			return false;
 		}
 		break;
 	case three_regs:
-		if (!reg_number_to_string (instr->dest_reg, instr->dest_reg_str)) {
+		if (!reg_number_tostring (instr->dest_reg, instr->dest_reg_str)) {
 			return false;
 		}
-		if (!reg_number_to_string (instr->src0_reg, instr->src0_reg_str)) {
+		if (!reg_number_tostring (instr->src0_reg, instr->src0_reg_str)) {
 			return false;
 		}
-		if (!reg_number_to_string (instr->src1_reg, instr->src1_reg_str)) {
+		if (!reg_number_tostring (instr->src1_reg, instr->src1_reg_str)) {
 			return false;
 		}
 		break;
 	case reg_csr:
-		if (!reg_number_to_string (instr->src0_reg, instr->src0_reg_str)) {
+		if (!reg_number_tostring (instr->src0_reg, instr->src0_reg_str)) {
 			return false;
 		}
-		if (!csr_number_to_string (instr->csr, instr->csr_reg_str)) {
+		if (!csr_number_tostring (instr->csr, instr->csr_reg_str)) {
 			return false;
 		}
 		break;
 	case csr_reg:
-		if (!reg_number_to_string (instr->dest_reg, instr->dest_reg_str)) {
+		if (!reg_number_tostring (instr->dest_reg, instr->dest_reg_str)) {
 			return false;
 		}
-		if (!csr_number_to_string (instr->csr, instr->csr_reg_str)) {
+		if (!csr_number_tostring (instr->csr, instr->csr_reg_str)) {
 			return false;
 		}
 		break;

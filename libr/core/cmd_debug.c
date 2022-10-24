@@ -922,7 +922,7 @@ static bool step_until_optype(RCore *core, const char *_optypes) {
 		// This is slow because we do lots of strcmp's.
 		// To improve this, the function r_anal_optype_string_to_int should be implemented
 		// I also don't check if the opcode type exists.
-		const char *optype_str = r_anal_optype_to_string (op.type);
+		const char *optype_str = r_anal_optype_tostring (op.type);
 		r_list_foreach (optypes_list, iter, optype) {
 			if (!strcmp (optype_str, optype)) {
 				goto cleanup_after_push;
@@ -2593,7 +2593,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					if (*name == '=') {
 						for (i = 0; i < R_REG_COND_LAST; i++) {
 							r_cons_printf ("%s:%d ",
-									r_reg_cond_to_string (i),
+									r_reg_cond_tostring (i),
 									r_reg_cond_bits (core->dbg->reg, i, rf));
 						}
 						r_cons_newline ();
@@ -2601,7 +2601,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 						for (i = 0; i < R_REG_COND_LAST; i++) {
 							r_cons_printf ("%d %s\n",
 									r_reg_cond_bits (core->dbg->reg, i, rf),
-									r_reg_cond_to_string (i));
+									r_reg_cond_tostring (i));
 						}
 					}
 					free (rf);
@@ -4181,7 +4181,7 @@ static void r_core_debug_kill(RCore *core, const char *input) {
 			const char *signame, *arg = input + 1;
 			int signum = atoi (arg);
 			if (signum > 0) {
-				signame = r_signal_to_string (signum);
+				signame = r_signal_tostring (signum);
 				if (signame)
 					r_cons_println (signame);
 			} else {
@@ -5490,11 +5490,11 @@ static int cmd_debug(void *data, const char *input) {
 					if (core->dbg->reason.type == R_DEBUG_REASON_SIGNAL) {
 						P ("signalstr=%s\n", r_signal_to_human (core->dbg->reason.signum));
 					}
-					P ("stopreason=%s\n", r_debug_reason_to_string (stop));
+					P ("stopreason=%s\n", r_debug_reason_tostring (stop));
 				}
 				if (rdi) {
-					const char *s = r_signal_to_string (core->dbg->reason.signum);
-					P ("type=%s\n", r_debug_reason_to_string (core->dbg->reason.type));
+					const char *s = r_signal_tostring (core->dbg->reason.signum);
+					P ("type=%s\n", r_debug_reason_tostring (core->dbg->reason.type));
 					P ("signal=%s\n", r_str_get_fail (s, "none"));
 					P ("sigstr=%s\n", r_signal_to_human (core->dbg->reason.signum));
 					P ("signum=%d\n", core->dbg->reason.signum);
@@ -5545,7 +5545,7 @@ static int cmd_debug(void *data, const char *input) {
 							ut8 *b = getFileData (core, arg2, &bl);
 							if (a && b) {
 								RDiff *d = r_diff_new ();
-								char *uni = r_diff_buffers_to_string (d, a, al, b, bl);
+								char *uni = r_diff_buffers_tostring (d, a, al, b, bl);
 								r_cons_printf ("%s\n", uni);
 								r_diff_free (d);
 								free (uni);
@@ -5578,10 +5578,10 @@ static int cmd_debug(void *data, const char *input) {
 				{
 					PJ *pj = r_core_pj_new (core);
 					pj_o (pj);
-					pj_ks (pj, "stopreason", r_debug_reason_to_string (stop));
+					pj_ks (pj, "stopreason", r_debug_reason_tostring (stop));
 				if (rdi) {
-					const char *s = r_signal_to_string (core->dbg->reason.signum);
-					pj_ks (pj, "type", r_debug_reason_to_string (core->dbg->reason.type));
+					const char *s = r_signal_tostring (core->dbg->reason.signum);
+					pj_ks (pj, "type", r_debug_reason_tostring (core->dbg->reason.type));
 					pj_ks (pj, "signal", r_str_get_fail (s, "none"));
 					pj_kn (pj, "signum", core->dbg->reason.signum);
 					pj_ks (pj, "sigstr", r_signal_to_human (core->dbg->reason.signum));
@@ -5617,7 +5617,7 @@ static int cmd_debug(void *data, const char *input) {
 #undef PS
 			case 'q':
 				{
-					const char *r = r_debug_reason_to_string (core->dbg->reason.type);
+					const char *r = r_debug_reason_tostring (core->dbg->reason.type);
 					if (!r) {
 						r = "none";
 					}

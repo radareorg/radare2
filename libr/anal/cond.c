@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2010-2016 - pancake */
+/* radare - LGPL - Copyright 2010-2022 - pancake */
 
 #include <r_anal.h>
 
-R_API const char *r_anal_cond_tostring(int cc) {
+R_API const char *r_anal_cond_type_tostring(int cc) {
 	switch (cc) {
 	case R_ANAL_COND_EQ: return "eq";
 	case R_ANAL_COND_NV: return "nv";
@@ -94,16 +94,16 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 	return false;
 }
 
-R_API char *r_anal_cond_to_string(RAnalCond *cond) {
+R_API char *r_anal_cond_tostring(RAnalCond *cond) {
 	r_return_val_if_fail (cond, NULL);
 	const char *cnd = condstring (cond);
-	char *val0 = r_anal_value_to_string (cond->arg[0]);
+	char *val0 = r_anal_value_tostring (cond->arg[0]);
 	char *out = NULL;
 	if (val0) {
 		if (R_ANAL_COND_SINGLE (cond)) {
 			out = r_str_newf ("%s%s", cnd, val0);
 		} else {
-			char *val1 = r_anal_value_to_string (cond->arg[1]);
+			char *val1 = r_anal_value_tostring (cond->arg[1]);
 			if (val1) {
 				out = r_str_newf ("%s %s %s", val0, cnd, val1);
 				free (val1);

@@ -164,7 +164,7 @@ R_API int r_arch_optype_from_string(const char *type) {
 	return -1;
 }
 
-R_API const char *r_arch_optype_to_string(int t) {
+R_API const char *r_arch_optype_tostring(int t) {
 	bool once = true;
 repeat:
 	// TODO: delete
@@ -243,7 +243,7 @@ repeat:
 	return "undefined";
 }
 
-R_API const char *r_arch_stackop_to_string(int s) {
+R_API const char *r_arch_stackop_tostring(int s) {
 	switch (s) {
 	case R_ARCH_STACK_NULL:
 		return "null";
@@ -261,7 +261,7 @@ R_API const char *r_arch_stackop_to_string(int s) {
 	return "unk";
 }
 
-R_API const char *r_arch_op_family_to_string(int n) {
+R_API const char *r_arch_op_family_tostring(int n) {
 	switch (n) {
 	case R_ARCH_OP_FAMILY_UNKNOWN: return "unk";
 	case R_ARCH_OP_FAMILY_CPU: return "cpu";
@@ -305,7 +305,7 @@ R_API int r_arch_op_family_from_string(const char *f) {
 	return R_ARCH_OP_FAMILY_UNKNOWN;
 }
 
-R_API const char *r_arch_op_direction_to_string(RAnalOp *op) {
+R_API const char *r_arch_op_direction_tostring(RAnalOp *op) {
 	if (!op) {
 		return "none";
 	}

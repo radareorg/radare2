@@ -172,7 +172,7 @@ typedef struct {
 } RDiffUser;
 
 #if USE_SYSTEM_DIFF
-R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+R_API char *r_diff_buffers_tostring(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	return r_diff_buffers_unified (d, a, la, b, lb);
 }
 
@@ -210,7 +210,7 @@ static int tostring(RDiff *d, void *user, RDiffOp *op) {
 	return 1;
 }
 
-R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+R_API char *r_diff_buffers_tostring(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	// XXX buffers_static doesnt constructs the correct string in this callback
 	void *c = d->callback;
 	void *u = d->user;

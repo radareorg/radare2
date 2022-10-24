@@ -4228,7 +4228,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		insn->detail->arm.update_flags = 0;
 		free (op->mnemonic);
 		op->mnemonic = r_str_newf ("%s%s%s%s",
-			r_anal_optype_to_string (op->type),
+			r_anal_optype_tostring (op->type),
 			cc_name (itcond),
 			insn->op_str[0]? " ": "",
 			insn->op_str);

@@ -101,7 +101,7 @@ R_API bool r_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_
 
 // RConfigNode
 R_API RConfigNode *r_config_node_desc(RConfigNode *node, const char *desc);
-R_API char *r_config_node_to_string(RConfigNode *node);
+R_API char *r_config_node_tostring(RConfigNode *node);
 R_API void r_config_node_add_option(RConfigNode *node, const char *option);
 R_API void r_config_node_purge_options(RConfigNode *node);
 

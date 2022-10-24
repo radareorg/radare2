@@ -607,7 +607,7 @@ void r_x509_crlentry_dump (RX509CRLEntry *crle, const char *pad, RStrBuf *sb) {
 	r_asn1_free_string (id);
 }
 
-R_API char *r_x509_crl_to_string(RX509CertificateRevocationList *crl, const char *pad) {
+R_API char *r_x509_crl_tostring(RX509CertificateRevocationList *crl, const char *pad) {
 	RASN1String *algo = NULL, *last = NULL, *next = NULL;
 	ut32 i;
 	char *pad2, *pad3;
