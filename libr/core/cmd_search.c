@@ -299,7 +299,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				char *s = r_hash_to_string (NULL, hashname, buf + i, len);
+				char *s = r_hash_tostring (NULL, hashname, buf + i, len);
 				if (!(i % 5)) {
 					eprintf ("%d\r", i);
 				}
@@ -1346,7 +1346,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 			pj_kN (pj, "offset", hit->addr);
 			pj_ki (pj, "size", hit->len);
 			pj_ks (pj, "opcode", r_asm_op_get_asm (&asmop));
-			pj_ks (pj, "type", r_anal_optype_to_string (analop.type));
+			pj_ks (pj, "type", r_anal_optype_tostring (analop.type));
 			pj_end (pj);
 			free (buf);
 			r_asm_op_fini (&asmop);
@@ -2506,7 +2506,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 			case 'f': // "/alf"
 				for (i = 0; i < 64; i++) {
 					const char *str = type == 'f'
-						? r_anal_op_family_to_string (i)
+						? r_anal_op_family_tostring (i)
 						: r_anal_optype_index (i);
 					if (R_STR_ISEMPTY (str)) {
 						break;
@@ -2580,7 +2580,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 			bool found = false;
 			for (i = 0; i < 1024; i++) {
 				const char *str = type == 'f'
-					? r_anal_op_family_to_string (i)
+					? r_anal_op_family_tostring (i)
 					: r_anal_optype_index (i);
 				if (R_STR_ISEMPTY (str)) {
 					break;
@@ -2620,12 +2620,12 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 						match = true;
 					}
 				} else if (type == 'f') { // "/atf"
-					const char *fam = r_anal_op_family_to_string (aop.family);
+					const char *fam = r_anal_op_family_tostring (aop.family);
 					if (fam && (!*input || !strcmp (input, fam))) {
 						match = true;
 					}
 				} else { // "/at"
-					const char *type = r_anal_optype_to_string (aop.type);
+					const char *type = r_anal_optype_tostring (aop.type);
 					if (type) {
 						bool isCandidate = !*input;
 						if (!strcmp (input, "cswi")) {
@@ -2658,7 +2658,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 				}
 				if (match) {
 					char *opstr = r_core_op_str (core, at);
-					const char *optype = r_anal_optype_to_string (aop.type);
+					const char *optype = r_anal_optype_tostring (aop.type);
 					switch (mode) {
 					case 'j':
 						pj_o (param->pj);
@@ -2673,7 +2673,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 						break;
 					default:
 						if (type == 'f') {
-							const char *fam = r_anal_op_family_to_string (aop.family);
+							const char *fam = r_anal_op_family_tostring (aop.family);
 							r_cons_printf ("0x%08"PFMT64x " %s %s %d %s\n", at, fam, optype, ret, opstr);
 						} else {
 							r_cons_printf ("0x%08"PFMT64x " %s %d %s\n", at, optype, ret, opstr);

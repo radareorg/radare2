@@ -15,7 +15,7 @@ R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 	return node;
 }
 
-R_API char *r_config_node_to_string(RConfigNode *node) {
+R_API char *r_config_node_tostring(RConfigNode *node) {
 	return (node && node->name)? strdup (node->name): NULL;
 }
 

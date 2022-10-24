@@ -26,7 +26,7 @@ R_API ut64 r_time_now_mono(void);
 R_API R_MUSTUSE char *r_time_stamp_to_str(time_t timeStamp);
 R_API ut32 r_time_dos_time_stamp_to_posix(ut32 timeStamp);
 R_API bool r_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const ut32 possiblePosixOrDosTimeStamp);
-R_API const char *r_time_to_string(ut64 ts);
+R_API const char *r_time_tostring(ut64 ts);
 
 // Cross platform thread-safe time functions
 R_API char *r_asctime_r(const struct tm *tm, char *buf);

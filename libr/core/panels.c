@@ -3760,7 +3760,7 @@ static bool __drag_and_resize(RCore *core) {
 static char *__get_word_from_canvas(RCore *core, RPanels *panels, int x, int y) {
 	RStrBuf rsb;
 	r_strbuf_init (&rsb);
-	char *cs = r_cons_canvas_to_string (panels->can);
+	char *cs = r_cons_canvas_tostring (panels->can);
 	r_strbuf_setf (&rsb, " %s", cs);
 	char *R = r_str_ansi_crop (r_strbuf_get (&rsb), 0, y - 1, x + 1024, y);
 	r_str_ansi_filter (R, NULL, NULL, -1);
@@ -3790,7 +3790,7 @@ static char *__get_word_from_canvas(RCore *core, RPanels *panels, int x, int y) 
 }
 
 static char *__get_word_from_canvas_for_menu(RCore *core, RPanels *panels, int x, int y) {
-	char *cs = r_cons_canvas_to_string (panels->can);
+	char *cs = r_cons_canvas_tostring (panels->can);
 	char *R = r_str_ansi_crop (cs, 0, y - 1, x + 1024, y);
 	r_str_ansi_filter (R, NULL, NULL, -1);
 	char *r = r_str_ansi_crop (cs, x - 1, y - 1, x + 1024, y);
@@ -5899,7 +5899,7 @@ static void __refresh_core_offset(RCore *core) {
 }
 
 static void demo_begin(RCore *core, RConsCanvas *can) {
-	char *s = r_cons_canvas_to_string (can);
+	char *s = r_cons_canvas_tostring (can);
 	if (s) {
 		// TODO drop utf8!!
 		r_str_ansi_filter (s, NULL, NULL, -1);
@@ -5928,7 +5928,7 @@ static void demo_end(RCore *core, RConsCanvas *can) {
 	__panels_refresh (core);
 	firstRun= true;
 	r_config_set_b (core->config, "scr.utf8", utf8);
-	char *s = r_cons_canvas_to_string (can);
+	char *s = r_cons_canvas_tostring (can);
 	if (s) {
 		// TODO drop utf8!!
 		r_str_ansi_filter (s, NULL, NULL, -1);

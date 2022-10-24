@@ -2375,9 +2375,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				pj_kn (pj, "ptr", op.ptr);
 			}
 			pj_ki (pj, "size", size);
-			pj_ks (pj, "type", r_anal_optype_to_string (op.type));
+			pj_ks (pj, "type", r_anal_optype_tostring (op.type));
 			{
-				const char *datatype = r_anal_datatype_to_string (op.datatype);
+				const char *datatype = r_anal_datatype_tostring (op.datatype);
 				if (datatype) {
 					pj_ks (pj, "datatype", datatype);
 				}
@@ -2413,7 +2413,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (arg) {
 				pj_ks (pj, "cond", arg);
 			}
-			pj_ks (pj, "family", r_anal_op_family_to_string (op.family));
+			pj_ks (pj, "family", r_anal_op_family_tostring (op.family));
 			pj_end (pj);
 		} else if (fmt == 'r') {
 			if (R_STR_ISNOTEMPTY (esilstr)) {
@@ -2542,8 +2542,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			printline ("size", "%d\n", size);
 			printline ("sign", "%s\n", r_str_bool (op.sign));
-			printline ("type", "%s\n", r_anal_optype_to_string (op.type));
-			const char *datatype = r_anal_datatype_to_string (op.datatype);
+			printline ("type", "%s\n", r_anal_optype_tostring (op.type));
+			const char *datatype = r_anal_datatype_tostring (op.datatype);
 			if (datatype) {
 				printline ("datatype", "%s\n", datatype);
 			}
@@ -2592,7 +2592,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					printline ("cond", "%s\n", arg);
 				}
 			}
-			printline ("family", "%s\n", r_anal_op_family_to_string (op.family));
+			printline ("family", "%s\n", r_anal_op_family_tostring (op.family));
 			if (op.stackop != R_ANAL_STACK_NULL) {
 				printline ("stackop", "%s\n", r_anal_stackop_tostring (op.stackop));
 			}
@@ -3613,10 +3613,10 @@ static void __updateStats(RCore *core, Sdb *db, ut64 addr, int statsMode) {
 		return;
 	}
 	if (statsMode == 'f') {
-		const char *family = r_anal_op_family_to_string (op->family);
+		const char *family = r_anal_op_family_tostring (op->family);
 		sdb_num_inc (db, family, 1, 0);
 	} else if (statsMode == 'o') {
-		const char *type = r_anal_optype_to_string (op->type);
+		const char *type = r_anal_optype_tostring (op->type);
 		sdb_num_inc (db, type, 1, 0);
 	} else {
 		char *mnem = strdup (op->mnemonic);
@@ -5514,7 +5514,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 					if (*name == '=') {
 						for (i = 0; i < R_REG_COND_LAST; i++) {
 							r_cons_printf ("%s:%d ",
-								r_reg_cond_to_string (i),
+								r_reg_cond_tostring (i),
 								r_reg_cond_bits (core->dbg->reg, i, rf));
 						}
 						r_cons_newline ();
@@ -5522,7 +5522,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 						for (i = 0; i < R_REG_COND_LAST; i++) {
 							r_cons_printf ("%d %s\n",
 								r_reg_cond_bits (core->dbg->reg, i, rf),
-								r_reg_cond_to_string (i));
+								r_reg_cond_tostring (i));
 						}
 					}
 					free (rf);
@@ -9301,7 +9301,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			// show if any
 			RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
 			if (hint && hint->type > 0) {
-				r_cons_printf ("%s\n", r_anal_optype_to_string (hint->type));
+				r_cons_printf ("%s\n", r_anal_optype_tostring (hint->type));
 			}
 			r_anal_hint_free (hint);
 		}  else if (input[1] == '-') {
@@ -10209,7 +10209,7 @@ R_API void r_core_agraph_treemap(RCore *core, int use_utf, const char *input) {
 			r_cons_canvas_box (canvas, mi->x, mi->y, mi->w, mi->h, "");
 		}
 	}
-	char *s = r_cons_canvas_to_string (canvas);
+	char *s = r_cons_canvas_tostring (canvas);
 	if (s) {
 		r_cons_println (s);
 		free (s);

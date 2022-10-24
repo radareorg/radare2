@@ -72,7 +72,7 @@ static int showanal(RAsmState *as, RAnalOp *op, ut64 offset, ut8 *buf, int len, 
 		return ret;
 	}
 	char *stackop = stackop2str (op->stackop);
-	const char *optype = r_anal_optype_to_string (op->type);
+	const char *optype = r_anal_optype_tostring (op->type);
 	char *bytes = r_hex_bin2strdup (buf, ret);
 	if (as->json) {
 		pj_o (pj);
@@ -113,7 +113,7 @@ static int showanal(RAsmState *as, RAnalOp *op, ut64 offset, ut8 *buf, int len, 
 		printf ("stackop:  %s\n", stackop);
 		printf ("esil:     %s\n", r_strbuf_get (&op->esil));
 		printf ("stackptr: %" PFMT64d "\n", op->stackptr);
-		// produces (null) printf ("decode str: %s\n", r_anal_op_to_string (anal, op));
+		// produces (null) printf ("decode str: %s\n", r_anal_op_tostring (anal, op));
 		printf ("\n");
 	}
 	free (stackop);

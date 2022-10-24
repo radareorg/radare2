@@ -200,7 +200,7 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API const char *r_time_to_string(ut64 ts) {
+R_API const char *r_time_tostring(ut64 ts) {
 	time_t l = ts >> 20;
 	return r_time_stamp_to_str (l);
 }

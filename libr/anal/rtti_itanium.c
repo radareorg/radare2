@@ -291,7 +291,7 @@ static si_class_type_info *rtti_itanium_si_class_type_info_new(RVTableContext *c
 	return result;
 }
 
-static const char *type_to_string(RTypeInfoType type) {
+static const char *type_tostring(RTypeInfoType type) {
 	switch (type) {
 	case R_TYPEINFO_TYPE_CLASS:
 		return CLASS_TYPE_INFO_NAME;
@@ -313,7 +313,7 @@ static void rtti_itanium_print_class_type_info(class_type_info *cti, const char 
 			"%s  Type Name: %s\n"
 			"%s  Name unique: %s\n",
 			prefix, cti->typeinfo_addr,
-			prefix, type_to_string (cti->type),
+			prefix, type_tostring (cti->type),
 			prefix, cti->class_vtable_addr,
 			prefix, cti->vtable_addr,
 			prefix, cti->name_addr,
@@ -328,7 +328,7 @@ static void rtti_itanium_print_class_type_info_json(class_type_info *cti) {
 	}
 
 	pj_o (pj);
-	pj_ks (pj, "type", type_to_string (cti->type));
+	pj_ks (pj, "type", type_tostring (cti->type));
 	pj_kn (pj, "found_at", cti->typeinfo_addr);
 	pj_kn (pj, "class_vtable", cti->class_vtable_addr);
 	pj_kn (pj, "ref_to_type_class", cti->vtable_addr);
@@ -353,7 +353,7 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 			"%s  Count of base classes: 0x%x"
 			"\n",
 			prefix, vmi_cti->typeinfo_addr,
-			prefix, type_to_string (vmi_cti->type),
+			prefix, type_tostring (vmi_cti->type),
 			prefix, vmi_cti->class_vtable_addr,
 			prefix, vmi_cti->vtable_addr,
 			prefix, vmi_cti->name_addr,
@@ -379,7 +379,7 @@ static void rtti_itanium_print_vmi_class_type_info_json(vmi_class_type_info *vmi
 	}
 
 	pj_o (pj);
-	pj_ks (pj, "type", type_to_string (vmi_cti->type));
+	pj_ks (pj, "type", type_tostring (vmi_cti->type));
 	pj_kn (pj, "found_at", vmi_cti->typeinfo_addr);
 	pj_kn (pj, "class_vtable", vmi_cti->class_vtable_addr);
 	pj_kn (pj, "ref_to_type_class", vmi_cti->vtable_addr);
@@ -413,7 +413,7 @@ static void rtti_itanium_print_si_class_type_info(si_class_type_info *si_cti, co
 			"%s  Name unique: %s\n"
 			"%s  Reference to parent's type info: 0x%08" PFMT64x "\n",
 			prefix, si_cti->typeinfo_addr,
-			prefix, type_to_string (si_cti->type),
+			prefix, type_tostring (si_cti->type),
 			prefix, si_cti->class_vtable_addr,
 			prefix, si_cti->vtable_addr,
 			prefix, si_cti->name_addr,
@@ -429,7 +429,7 @@ static void rtti_itanium_print_si_class_type_info_json(si_class_type_info *si_ct
 	}
 
 	pj_o (pj);
-	pj_ks (pj, "type", type_to_string (si_cti->type));
+	pj_ks (pj, "type", type_tostring (si_cti->type));
 	pj_kn (pj, "found_at", si_cti->typeinfo_addr);
 	pj_kn (pj, "class_vtable", si_cti->class_vtable_addr);
 	pj_kn (pj, "ref_to_type_class", si_cti->vtable_addr);

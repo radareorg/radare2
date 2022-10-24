@@ -2610,7 +2610,7 @@ static char *build_hash_string(PJ *pj, int mode, const char *chksum, ut8 *data, 
 	RListIter *iter;
 	const char *hashname;
 	r_list_foreach (hashlist, iter, hashname) {
-		chkstr = r_hash_to_string (NULL, hashname, data, datalen);
+		chkstr = r_hash_tostring (NULL, hashname, data, datalen);
 		if (!chkstr) {
 			continue;
 		}

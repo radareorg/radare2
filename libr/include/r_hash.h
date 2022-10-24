@@ -271,7 +271,7 @@ typedef struct r_hash_seed_t {
 #define R_HASH_SIZE_SHA384 48
 #define R_HASH_SIZE_SHA512 64
 #define R_HASH_SIZE_ADLER32 4
-/* entropy is double !! size 0 for test in r_hash_to_string */
+/* entropy is double !! size 0 for test in r_hash_tostring */
 #define R_HASH_SIZE_ENTROPY 0
 #define R_HASH_SIZE_PCPRINT 1
 #define R_HASH_SIZE_MOD255 1
@@ -504,7 +504,7 @@ R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_hmac_sha256(RHash *ctx, const ut8 *input, int len, const ut8 *key, int klen);
 
-R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int len);
+R_API char *r_hash_tostring(RHash *ctx, const char *name, const ut8 *data, int len);
 
 /* static methods */
 R_API const char *r_hash_name(ut64 bit);

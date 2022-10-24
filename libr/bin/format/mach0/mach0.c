@@ -1238,7 +1238,7 @@ static int parse_dylib(struct MACH0_(obj_t) *bin, ut64 off) {
 	return true;
 }
 
-static const char *cmd_to_string(ut32 cmd) {
+static const char *cmd_tostring(ut32 cmd) {
 	switch (cmd) {
 	case LC_DATA_IN_CODE:
 		return "LC_DATA_IN_CODE";
@@ -1444,7 +1444,7 @@ static const char *cmd_to_pf_definition(ut32 cmd) {
 	return NULL;
 }
 
-static const char *build_version_platform_to_string(ut32 platform) {
+static const char *build_version_platform_tostring(ut32 platform) {
 	switch (platform) {
 	case 1:
 		return "macOS";
@@ -1469,7 +1469,7 @@ static const char *build_version_platform_to_string(ut32 platform) {
 	}
 }
 
-static const char *build_version_tool_to_string(ut32 tool) {
+static const char *build_version_tool_tostring(ut32 tool) {
 	switch (tool) {
 	case 1:
 		return "clang";
@@ -4315,7 +4315,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 			cb_printf ("pf.%s @ 0x%08"PFMT64x"\n", pf_definition, pvaddr - 4);
 		}
 		cb_printf ("0x%08"PFMT64x"  cmd %7d 0x%x %s\n",
-			pvaddr - 4, n, lcType, cmd_to_string (lcType));
+			pvaddr - 4, n, lcType, cmd_tostring (lcType));
 		READWORD ();
 		if (addr > length) {
 			break;
@@ -4330,7 +4330,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 		switch (lcType) {
 		case LC_BUILD_VERSION: {
 			cb_printf ("0x%08"PFMT64x"  platform    %s\n",
-				pvaddr, build_version_platform_to_string (r_buf_read_le32_at (buf, addr)));
+				pvaddr, build_version_platform_tostring (r_buf_read_le32_at (buf, addr)));
 			cb_printf ("0x%08"PFMT64x"  minos       %d.%d.%d\n",
 				pvaddr + 4, r_buf_read_le16_at (buf, addr + 6), r_buf_read8_at (buf, addr + 5),
 				r_buf_read8_at (buf, addr + 4));
@@ -4344,7 +4344,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 			while (off < (lcSize - 8) && ntools--) {
 				cb_printf ("pf.mach0_build_version_tool @ 0x%08"PFMT64x"\n", pvaddr + off);
 				cb_printf ("0x%08"PFMT64x"  tool        %s\n",
-					pvaddr + off, build_version_tool_to_string (r_buf_read_le32_at (buf, addr + off)));
+					pvaddr + off, build_version_tool_tostring (r_buf_read_le32_at (buf, addr + off)));
 				off += 4;
 				if (off >= (lcSize - 8)) {
 					break;
@@ -4533,7 +4533,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 		}
 		const char *pf_definition = cmd_to_pf_definition (lcType);
 		if (pf_definition) {
-			snprintf (load_command_flagname, sizeof (load_command_flagname), "load_command_%d_%s", n, cmd_to_string (lcType));
+			snprintf (load_command_flagname, sizeof (load_command_flagname), "load_command_%d_%s", n, cmd_tostring (lcType));
 			r_list_append (ret, r_bin_field_new (addr, addr, 1, load_command_flagname, pf_definition, pf_definition, true));
 		}
 		switch (lcType) {

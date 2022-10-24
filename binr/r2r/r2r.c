@@ -681,7 +681,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
-	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected),
+	char *uni = r_diff_buffers_tostring (d, (const ut8 *)expected, (int)strlen (expected),
 			(const ut8 *)output, (int)strlen (output));
 	r_diff_free (d);
 

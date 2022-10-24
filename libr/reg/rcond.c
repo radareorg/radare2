@@ -41,7 +41,7 @@ R_API bool r_reg_cond_set(RReg *r, const char *name, bool val) {
 	return false;
 }
 
-R_API const char *r_reg_cond_to_string(int n) {
+R_API const char *r_reg_cond_tostring(int n) {
 	const char *cs[] = {
 		"eq", "ne", "cf", "neg", "of", "hi", "he",
 		"lo", "loe", "ge", "gt", "lt", "le"

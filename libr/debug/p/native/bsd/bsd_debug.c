@@ -28,7 +28,7 @@
 #endif
 
 #if __KFBSD__
-static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen) {
+static void addr_tostring(struct sockaddr_storage *ss, char *buffer, int buflen) {
 	char buffer2[INET6_ADDRSTRLEN];
 	struct sockaddr_in6 *sin6;
 	struct sockaddr_in *sin;
@@ -462,13 +462,13 @@ RList *bsd_desc_list(int pid) {
 				struct sockaddr_un *sun =
 					(struct sockaddr_un *)&kve->kf_sa_local;
 				if (sun->sun_path[0] != 0)
-					addr_to_string (&kve->kf_sa_local, path, sizeof (path));
+					addr_tostring (&kve->kf_sa_local, path, sizeof (path));
 				else
-					addr_to_string (&kve->kf_sa_peer, path, sizeof (path));
+					addr_tostring (&kve->kf_sa_peer, path, sizeof (path));
 			} else {
-				addr_to_string (&kve->kf_sa_local, path, sizeof (path));
+				addr_tostring (&kve->kf_sa_local, path, sizeof (path));
 				strcat (path, " ");
-				addr_to_string (&kve->kf_sa_peer, path + strlen (path),
+				addr_tostring (&kve->kf_sa_peer, path + strlen (path),
 						sizeof (path));
 			}
 #else
@@ -476,13 +476,13 @@ RList *bsd_desc_list(int pid) {
 				struct sockaddr_un *sun =
 					(struct sockaddr_un *)&kve->kf_un.kf_sock.kf_sa_local;
 				if (sun->sun_path[0] != 0)
-					addr_to_string (&kve->kf_un.kf_sock.kf_sa_local, path, sizeof (path));
+					addr_tostring (&kve->kf_un.kf_sock.kf_sa_local, path, sizeof (path));
 				else
-					addr_to_string (&kve->kf_un.kf_sock.kf_sa_peer, path, sizeof (path));
+					addr_tostring (&kve->kf_un.kf_sock.kf_sa_peer, path, sizeof (path));
 			} else {
-				addr_to_string (&kve->kf_un.kf_sock.kf_sa_local, path, sizeof (path));
+				addr_tostring (&kve->kf_un.kf_sock.kf_sa_local, path, sizeof (path));
 				strcat (path, " ");
-				addr_to_string (&kve->kf_un.kf_sock.kf_sa_peer, path + strlen (path),
+				addr_tostring (&kve->kf_un.kf_sock.kf_sa_peer, path + strlen (path),
 						sizeof (path));
 			}
 #endif

@@ -69,7 +69,7 @@ R_API bool r_arch_value_set_ut64(RArchValue *val, RReg *reg, RIOBind *iob, ut64 
 	return false;
 }
 
-R_API char *r_arch_value_to_string(RArchValue *value) {
+R_API char *r_arch_value_tostring(RArchValue *value) {
 	char *out = NULL;
 	if (value) {
 		out = r_str_new ("");

@@ -338,7 +338,7 @@ R_API const char *r_anal_optype_index(int idx) {
 	return optypes[idx].name;
 }
 
-R_API const char *r_anal_optype_to_string(int t) {
+R_API const char *r_anal_optype_tostring(int t) {
 	bool once = true;
 repeat:
 	// TODO: delete
@@ -422,16 +422,16 @@ R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op) {
 }
 
 // TODO: use esil here?
-R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
+R_API char *r_anal_op_tostring(RAnal *anal, RAnalOp *op) {
 	RAnalBlock *bb;
 	RAnalFunction *f;
 	char *cstr, ret[128];
 	RAnalValue *dst = r_vector_at (&op->dsts, 0);
 	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
 	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
-	char *r0 = r_anal_value_to_string (dst);
-	char *a0 = r_anal_value_to_string (src0);
-	char *a1 = r_anal_value_to_string (src1);
+	char *r0 = r_anal_value_tostring (dst);
+	char *a0 = r_anal_value_tostring (src0);
+	char *a1 = r_anal_value_tostring (src1);
 	if (!r0) {
 		r0 = strdup ("?");
 	}
@@ -448,7 +448,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_CJMP:
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
-			cstr = r_anal_cond_to_string (bb->cond);
+			cstr = r_anal_cond_tostring (bb->cond);
 			snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
 			free (cstr);
 		} else {
@@ -489,7 +489,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_CCALL:
 		f = r_anal_get_fcn_in (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
-			cstr = r_anal_cond_to_string (bb->cond);
+			cstr = r_anal_cond_tostring (bb->cond);
 			if (f) {
 				snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
 			} else {
@@ -567,7 +567,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_CRET:
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
-			cstr = r_anal_cond_to_string (bb->cond);
+			cstr = r_anal_cond_tostring (bb->cond);
 			snprintf (ret, sizeof (ret), "if (%s) ret", cstr);
 			free (cstr);
 		} else {
@@ -630,7 +630,7 @@ R_API const char *r_anal_stackop_tostring(int s) {
 	return "unk";
 }
 
-R_API const char *r_anal_op_family_to_string(int n) {
+R_API const char *r_anal_op_family_tostring(int n) {
 	switch (n) {
 	case R_ANAL_OP_FAMILY_UNKNOWN: return "unk";
 	case R_ANAL_OP_FAMILY_CPU: return "cpu";

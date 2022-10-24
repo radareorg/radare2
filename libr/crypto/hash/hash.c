@@ -359,7 +359,7 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, R_NULLABLE RHashSee
 	free (buf);
 }
 
-R_API R_MUSTUSE char *r_hash_to_string(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
+R_API R_MUSTUSE char *r_hash_tostring(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
 	r_return_val_if_fail (name && len >= 0, NULL);
 	ut64 algo = r_hash_name_to_bits (name);
 	char *digest_hex = NULL;

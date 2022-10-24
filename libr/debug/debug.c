@@ -676,7 +676,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 }
 
 // TODO type should be enum so we can ensure to not miss an item
-R_API const char *r_debug_reason_to_string(int type) {
+R_API const char *r_debug_reason_tostring(int type) {
 	switch (type) {
 	case R_DEBUG_REASON_ABORT: return "abort";
 	case R_DEBUG_REASON_BREAKPOINT: return "breakpoint";
@@ -812,7 +812,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 		if (reason == R_DEBUG_REASON_SIGNAL && dbg->reason.signum != -1) {
 			/* handle signal on continuations here */
 			int what = r_debug_signal_what (dbg, dbg->reason.signum);
-			const char *name = r_signal_to_string (dbg->reason.signum);
+			const char *name = r_signal_tostring (dbg->reason.signum);
 			const char *humn = r_signal_to_human (dbg->reason.signum);
 			if (name && strcmp ("SIGTRAP", name)) {
 				r_cons_printf ("[+] signal %d aka %s received %d (%s)\n",
@@ -1325,7 +1325,7 @@ repeat:
 			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 			r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC);
 			if (op.size > 0) {
-				const char *signame = r_signal_to_string (dbg->reason.signum);
+				const char *signame = r_signal_tostring (dbg->reason.signum);
 				r_debug_reg_set (dbg, "PC", pc+op.size);
 				eprintf ("Skip signal %d handler %s\n",
 					dbg->reason.signum, signame);

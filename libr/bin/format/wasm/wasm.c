@@ -259,7 +259,7 @@ static inline RBinWasmSection *section_first_with_id(RList *sections, ut8 id) {
 	return NULL;
 }
 
-const char *r_bin_wasm_valuetype_to_string (r_bin_wasm_value_type_t type) {
+const char *r_bin_wasm_valuetype_tostring (r_bin_wasm_value_type_t type) {
 	switch (type) {
 	case R_BIN_WASM_VALUETYPE_i32:
 		return "i32";
@@ -287,7 +287,7 @@ static inline bool strbuf_append_type_vec(RStrBuf *sb, RBinWasmTypeVec *vec) {
 		if (i > 0 && !r_strbuf_append (sb, ", ")) {
 			return false;
 		}
-		const char *s = r_bin_wasm_valuetype_to_string (vec->types[i]);
+		const char *s = r_bin_wasm_valuetype_tostring (vec->types[i]);
 		if (!s || !r_strbuf_append (sb, s)) {
 			return false;
 		}
@@ -304,14 +304,14 @@ static bool append_rets(RStrBuf *sb, RBinWasmTypeVec *rets) {
 	if (!rets->count) {
 		ret &= r_strbuf_append (sb, "nil");
 	} else if (rets->count == 1) {
-		ret &= r_strbuf_append (sb, r_bin_wasm_valuetype_to_string (rets->types[0]));
+		ret &= r_strbuf_append (sb, r_bin_wasm_valuetype_tostring (rets->types[0]));
 	} else {
 		ret &= strbuf_append_type_vec (sb, rets);
 	}
 	return ret;
 }
 
-static const char *r_bin_wasm_type_entry_to_string(RBinWasmTypeEntry *type) {
+static const char *r_bin_wasm_type_entry_tostring(RBinWasmTypeEntry *type) {
 	r_return_val_if_fail (type, NULL);
 	if (type->to_str) {
 		return type->to_str;
@@ -478,7 +478,7 @@ static RBinWasmTypeEntry *parse_type_entry(RBinWasmObj *bin, ut64 bound, ut32 in
 	if (!type->rets) {
 		goto beach;
 	}
-	r_bin_wasm_type_entry_to_string (type);
+	r_bin_wasm_type_entry_tostring (type);
 
 	return type;
 
@@ -854,7 +854,7 @@ static inline bool r_bin_wasm_get_custom_name_entries(RBinWasmObj *bin, RBinWasm
 	if (!bin->names) {
 		bin->names = R_NEW0 (RBinWasmCustomNames);
 		if (!bin->names) {
-			return NULL;
+			return false;
 		}
 	}
 
@@ -864,7 +864,7 @@ static inline bool r_bin_wasm_get_custom_name_entries(RBinWasmObj *bin, RBinWasm
 		}
 	}
 
-	return bin->names;
+	return bin->names != NULL;
 }
 
 static bool parse_import_sec(RBinWasmObj *bin) {

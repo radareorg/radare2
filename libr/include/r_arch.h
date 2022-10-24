@@ -168,12 +168,12 @@ R_API RArchValue *r_arch_value_copy(RArchValue *ov);
 R_API void r_arch_value_free(RArchValue *value);
 R_API ut64 r_arch_value_to_ut64(RArchValue *val, struct r_reg_t *reg);
 R_API bool r_arch_value_set_ut64(RArchValue *val, struct r_reg_t *reg, RIOBind *iob, ut64 num);
-R_API char *r_arch_value_to_string(RArchValue *value);
+R_API char *r_arch_value_tostring(RArchValue *value);
 #endif
 
 R_API int r_arch_optype_from_string(const char *type);
-R_API const char *r_arch_optype_to_string(int t);
-R_API const char *r_arch_stackop_to_string(int s);
+R_API const char *r_arch_optype_tostring(int t);
+R_API const char *r_arch_stackop_tostring(int s);
 
 // MOVE BACK TO ANAL
 // archop.c
@@ -183,12 +183,12 @@ R_API void r_arch_op_init(RAnalOp *op);
 R_API void r_arch_op_fini(RAnalOp *op);
 R_API void r_arch_op_free(void *_op);
 #endif
-R_API const char *r_arch_op_family_to_string(int n);
+R_API const char *r_arch_op_family_tostring(int n);
 R_API int r_arch_op_family_from_string(const char *f);
-R_API const char *r_arch_op_direction_to_string(struct r_anal_op_t *op);
+R_API const char *r_arch_op_direction_tostring(struct r_anal_op_t *op);
 
 // archcond.c
-// R_API const char *r_arch_cond_to_string(RArchCond cc);
+// R_API const char *r_arch_cond_tostring(RArchCond cc);
 
 extern RArchPlugin r_arch_plugin_null;
 extern RArchPlugin r_arch_plugin_i4004;

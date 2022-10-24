@@ -62,7 +62,7 @@ R_API int r_socket_flush(RSocket *s) {
 R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	return -1;
 }
-R_API char *r_socket_to_string(RSocket *s) {
+R_API char *r_socket_tostring(RSocket *s) {
 	return NULL;
 }
 R_API int r_socket_write(RSocket *s, const void *buf, int len) {
@@ -763,7 +763,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	return select (s->fd + 1, &rfds, NULL, NULL, &tv);
 }
 
-R_API char *r_socket_to_string(RSocket *s) {
+R_API char *r_socket_tostring(RSocket *s) {
 #if __WINDOWS__
 	return r_str_newf ("fd%d", (int)(size_t)s->fd);
 #elif __UNIX__
