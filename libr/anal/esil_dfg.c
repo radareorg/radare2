@@ -1139,11 +1139,32 @@ static bool edf_consume_1_use_old_new_push_1(RAnalEsil *esil, const char *op_str
 	return r_anal_esil_push (esil, r_strbuf_get (result->content));
 }
 
+static bool _dfg_mem_read (RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+	RAnalEsilDFG *dfg = (RAnalEsilDFG *)esil->user;
+	addr &= esil->addrmask;
+	return (dfg->iob.fd_read_at (dfg->iob.io, dfg->fd, addr, buf, len) > 0);
+}
+
+static bool _dfg_mem_write (RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+	RAnalEsilDFG *dfg = (RAnalEsilDFG *)esil->user;
+	addr &= esil->addrmask;
+	return (dfg->iob.fd_write_at (dfg->iob.io, dfg->fd, addr, buf, len) > 0);
+}
+
 R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal* anal) {
 	r_return_val_if_fail (anal && anal->reg, NULL);
 	RAnalEsilDFG *dfg = R_NEW0 (RAnalEsilDFG);
 	if (!dfg) {
 		return NULL;
+	}
+	if (anal->iob.io) {
+		const bool autofd = anal->iob.io->autofd;
+		anal->iob.io->autofd = false;
+		dfg->fd = anal->iob.fd_open (anal->iob.io, "treebuf://", R_PERM_RW, 0);
+		if (dfg->fd >= 0) {
+			memcpy (&dfg->iob, &anal->iob, sizeof (RIOBind));
+		}
+		anal->iob.io->autofd = autofd;
 	}
 	dfg->esil = r_anal_esil_new (4096, 0, 1);
 	if (!dfg->esil) {
@@ -1196,6 +1217,11 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal* anal) {
 		free (reg);
 	}
 	r_anal_esil_setup(dfg->esil, anal, 0, 0, 0);
+	if (dfg->iob.io && dfg->fd >= 0) {
+		dfg->esil->user = dfg;
+		dfg->esil->cb.mem_read = _dfg_mem_read;
+		dfg->esil->cb.mem_write = _dfg_mem_write;
+	}
 	return dfg;
 }
 
@@ -1213,6 +1239,9 @@ R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg) {
 		r_crbtree_free (dfg->vars);
 		r_queue_free (dfg->todo);
 		r_anal_esil_free (dfg->esil);
+		if (dfg->iob.io && dfg->fd >= 0) {
+			dfg->iob.fd_close (dfg->iob.io, dfg->fd);
+		}
 		free (dfg);
 	}
 }
