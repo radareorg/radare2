@@ -310,7 +310,7 @@ bool callback(RTokenizer *tok) {
 				RListIter *iter;
 				r_list_foreach (data->args, iter, arg) {
 					if (arg) {
-						eprintf ("%s", r_str_pad (' ', (tok->indent +1)* 2));
+						eprintf ("%s", r_str_pad (' ', (tok->indent + 1) * 2));
 						eprintf (" - %s%c", arg, 10);
 						if (data->pj) {
 							char *lz = (char *)r_str_rchr (arg, NULL, ' ');
@@ -440,9 +440,10 @@ break;
 				// eprintf ("CASE %s%c", data->word, 10);
 				break;
 			}
+		case '\n':
 		case ';':
 			if (data->inreturn) {
-				indent(tok);
+				indent (tok);
 				// eprintf ("-- ARG (%s)%c", data->s, 10);
 				if (data->pj) {
 					pj_ks (data->pj, "value", data->s);

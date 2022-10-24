@@ -67,6 +67,31 @@ R_API char* r_str_trim_lines(char *str) {
 	return r_strbuf_drain (sb);
 }
 
+R_API void r_str_trim_emptylines(char *str) {
+	r_str_trim_tail (str);
+	char *r = str;
+	while (*r) {
+		if (*r == '\n') {
+			r++;
+			// skip empty lines
+			char *nl = r;
+			while (*r && *r != '\n') {
+				if (!isspace (*r)) {
+					break;
+				}
+				r++;
+			}
+			if (*r == '\n') {
+				r_str_cpy (nl, r + 1);
+			}
+		}
+		if (!*r) {
+			break;
+		}
+		r++;
+	}
+}
+
 R_API char *r_str_trim_dup(const char *str) {
 	char *a = strdup (str);
 	r_str_trim (a);
