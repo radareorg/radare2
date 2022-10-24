@@ -36,12 +36,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "asl", "# = # << #", { 1, 2, 3 } },
 		{ 0, "asrs", "# = # >> #", { 1, 2, 3 } },
 		{ 0, "asr", "# = # >> #", { 1, 2, 3 } },
-		{ 0, "b", "jmp #", { 1 } },
-		{ 0, "cbz", "if !# jmp #", { 1, 2 } },
-		{ 0, "cbnz", "if # jmp #", { 1, 2 } },
-		{ 0, "b.w", "jmp #", { 1 } },
-		{ 0, "b.gt", "jmp ifgt #", { 1 } },
-		{ 0, "b.le", "jmp ifle #", { 1 } },
+		{ 0, "b", "goto #", { 1 } },
+		{ 0, "cbz", "if !# goto #", { 1, 2 } },
+		{ 0, "cbnz", "if # goto #", { 1, 2 } },
+		{ 0, "b.w", "goto #", { 1 } },
+		{ 0, "b.gt", "goto ifgt #", { 1 } },
+		{ 0, "b.le", "goto ifle #", { 1 } },
 		{ 0, "beq lr", "ifeq ret", {0} },
 		{ 0, "beq", "je #", { 1 } },
 		{ 0, "call", "# ()", { 1 } },
@@ -49,13 +49,19 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "blx", "# ()", { 1 } },
 		{ 0, "bx lr", "ret", {0} },
 		{ 0, "bxeq", "je #", { 1 } },
+		{ 0, "b.eq", "if (eq) goto #", { 1 } },
+		{ 0, "b.ne", "if (eq) goto #", { 1 } },
 		{ 0, "cmf", "if (# == #)", { 1, 2 } },
 		{ 0, "cmn", "if (# != #)", { 1, 2 } },
 		{ 0, "cmp", "if (# == #)", { 1, 2 } },
 		{ 0, "fcmp", "if (# == #)", { 1, 2 } },
 		{ 0, "tst", "if ((# & #) == 0)", { 1, 2 } },
+		{ 4, "csel", "# = (#)? # : #", { 1, 4, 2, 3 } },
+		{ 2, "cset", "# = (#)? 1 : 0", { 1, 2 } },
 		{ 0, "dvf", "# = # / #", { 1, 2, 3 } },
 		{ 0, "eor", "# = # ^ #", { 1, 2, 3 } },
+		{ 3, "tbnz", "if (# != #) goto #", { 1, 2, 3 } },
+		{ 3, "tbz", "if (# == #) goto #", { 1, 2, 3 } },
 		{ 1, "bkpt", "breakpoint #", { 1 } },
 		{ 1, "udf", "undefined #", { 1 } },
 		{ 2, "sxtb", "# = (char) #", { 1, 2 } },
@@ -75,18 +81,17 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 3, "ldrsb", "# = (byte) # + #", { 1, 2, 3 } },
 		{ 3, "ldr.w", "# = # + #", { 1, 2, 3 } },
 		{ 3, "ldrsw", "# = # + #", { 1, 2, 3 } },
-		{ 0, "lsl", "# = # << #", { 1, 2, 3 } },
-		{ 0, "lsr", "# = # >> #", { 1, 2, 3 } },
 		{ 0, "mov", "# = #", { 1, 2 } },
 		{ 0, "fmov", "# = #", { 1, 2 } },
 		{ 0, "mvn", "# = ~#", { 1, 2 } },
 		{ 0, "movz", "# = #", { 1, 2 } },
+		{ 4, "movk", "# = # # #", { 1, 2, 3, 4 } },
 		{ 0, "movk", "# = #", { 1, 2 } },
 		{ 0, "movn", "# = ~#", { 1, 2 } },
 		{ 0, "neg", "# = !#", { 1, 2 } },
 		{ 0, "sxtw", "# = #", { 1, 2 } },
 		{ 0, "stur", "# = #", { 2, 1 } },
-		{ 0, "stp", "# = (#, 2)", { 3, 1 } },
+		{ 4, "stp", "# + # = (#, 2)", { 3, 4, 1 } },
 		{ 0, "ldp", "(#, 2) = 3", { 1 } },
 		{ 0, "vmov.i32", "# = #", { 1, 2 } },
 		{ 0, "muf", "# = # * #", { 1, 2, 3 } },
@@ -105,6 +110,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "lsls", "# = # << #", { 1, 2, 3 } },
 		{ 0, "lsr", "# = # >> #", { 1, 2, 3 } },
 		{ 0, "lsl", "# = # << #", { 1, 2, 3 } },
+		{ 0, "lsr.w", "# = # >> #", { 1, 2, 3 } },
+		{ 0, "lsl.w", "# = # << #", { 1, 2, 3 } },
 		{ 2, "str", "# = #", { 2, 1 } },
 		{ 2, "strb", "# = (byte) #", { 2, 1 } },
 		{ 2, "strh", "# = (half) #", { 2, 1 } },
@@ -128,10 +135,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "addw", "# = # + #", { 1, 2, 3 } },
 		{ 0, "sub.w", "# = # - #", { 1, 2, 3 } },
 		{ 0, "tst.w", "if ((# & #) == 0)", { 1, 2 } },
-		{ 0, "lsr.w", "# = # >> #", { 1, 2, 3 } },
-		{ 0, "lsl.w", "# = # << #", { 1, 2, 3 } },
 		{ 0, "pop.w", "pop #", { 1 } },
 		{ 0, "vpop", "pop #", { 1 } },
+		{ 0, "paciza", "", { 1 } },
 		{ 0, "vpush", "push #", { 1 } },
 		{ 0, "push.w", "push #", { 1 } },
 		{ 0, NULL }
@@ -194,7 +200,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 static int parse(RParse *p, const char *data, char *str) {
-	char w0[256], w1[256], w2[256], w3[256];
+	char w0[256], w1[256], w2[256], w3[256], w4[256];
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr;
 
@@ -207,28 +213,25 @@ static int parse(RParse *p, const char *data, char *str) {
 	}
 	memcpy (buf, data, len + 1);
 	if (*buf) {
-		*w0 = *w1 = *w2 = *w3 = '\0';
+		*w0 = *w1 = *w2 = *w3 = *w4 = '\0';
 		ptr = strchr (buf, ' ');
 		if (!ptr) {
 			ptr = strchr (buf, '\t');
 		}
 		if (ptr) {
 			*ptr = '\0';
-			for (++ptr; *ptr == ' '; ptr++) {
-				;
-			}
+			ptr = (char *)r_str_trim_head_ro (ptr + 1);
 			strncpy (w0, buf, sizeof (w0) - 1);
 			strncpy (w1, ptr, sizeof (w1) - 1);
-
 			optr = ptr;
 			if (*ptr == '(') {
-				ptr = strchr (ptr+1, ')');
+				ptr = strchr (ptr + 1, ')');
 			}
 			if (ptr && *ptr == '[') {
-				ptr = strchr (ptr+1, ']');
+				ptr = strchr (ptr + 1, ']');
 			}
 			if (ptr && *ptr == '{') {
-				ptr = strchr (ptr+1, '}');
+				ptr = strchr (ptr + 1, '}');
 			}
 			if (!ptr) {
 				R_LOG_ERROR ("Unbalanced bracket");
@@ -238,27 +241,31 @@ static int parse(RParse *p, const char *data, char *str) {
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (++ptr; *ptr == ' '; ptr++) {
-					;
-				}
+				ptr = (char *)r_str_trim_head_ro (ptr + 1);
 				strncpy (w1, optr, sizeof (w1) - 1);
 				strncpy (w2, ptr, sizeof (w2) - 1);
 				optr = ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
-					for (++ptr; *ptr == ' '; ptr++) {
-						;
-					}
+					ptr = (char *)r_str_trim_head_ro (ptr + 1);
 					strncpy (w2, optr, sizeof (w2) - 1);
 					strncpy (w3, ptr, sizeof (w3) - 1);
+					optr = ptr;
+					ptr = strchr (ptr, ',');
+					if (ptr) {
+						*ptr = '\0';
+						ptr = (char *)r_str_trim_head_ro (ptr + 1);
+						strncpy (w3, optr, sizeof (w3) - 1);
+						strncpy (w4, ptr, sizeof (w4) - 1);
+					}
 				}
 			}
 		}
 		{
-			const char *wa[] = { w0, w1, w2, w3 };
+			const char *wa[] = { w0, w1, w2, w3, w4 };
 			int nw = 0;
-			for (i = 0; i < 4; i++) {
+			for (i = 0; i < 5; i++) {
 				if (wa[i][0]) {
 					nw++;
 				}
@@ -266,8 +273,10 @@ static int parse(RParse *p, const char *data, char *str) {
 			replace (nw, wa, str);
 		}
 	}
-	{
-		char *s = strdup (str);
+	char *s = strdup (str);
+	if (s) {
+		s = r_str_replace (s, " lsl ", " << ", 1);
+		s = r_str_replace (s, " lsr ", " >> ", 1);
 		s = r_str_replace (s, "+ -", "- ", 1);
 		s = r_str_replace (s, "- -", "+ ", 1);
 		strcpy (str, s);
