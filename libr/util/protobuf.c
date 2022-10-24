@@ -4,7 +4,7 @@
 #include <r_cons.h>
 #include <r_util/pj.h>
 
-typedef float  ft32;
+typedef float ft32;
 typedef double ft64;
 
 #define WIRE_VARINT    0 // int32, int64, uint32, uint64, sint32, sint64, bool, enum
@@ -137,7 +137,8 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 					pj_o (pj);
 					pj_ks (pj, "type", "64bit");
 					pj_kn (pj, "value", *i);
-					pj_kn (pj, "fvalue", *f);
+					double d = *f;
+					pj_kd (pj, "fvalue", d);
 					pj_end (pj);
 				} else if (mode == 'j') {
 					pj_n (pj, *i);
@@ -231,7 +232,7 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 					pj_o (pj);
 					pj_ks (pj, "type", "32bit");
 					pj_kn (pj, "value", *i);
-					pj_kn (pj, "fvalue", *f);
+					pj_kd (pj, "fvalue", *f);
 					pj_end (pj);
 				} else if (mode == 'j') {
 					pj_n (pj, *i);

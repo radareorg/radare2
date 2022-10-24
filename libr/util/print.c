@@ -2550,9 +2550,6 @@ R_API char *r_print_code_tocolor(const char *o) {
 		const char *st = strstr (p, " str.");
 		const char *w = r_str_trim_head_ro (p);
 		if (w == nl) {
-			eprintf ("EMPTY LINE\n");
-			sleep (1);
-			// empty line
 			p = w;
 			continue;
 		}

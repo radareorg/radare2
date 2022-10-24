@@ -26,7 +26,7 @@ R_API double r_reg_get_double(RReg *reg, RRegItem *item) {
 }
 
 R_API bool r_reg_set_double(RReg *reg, RRegItem *item, double value) {
-	r_return_val_if_fail (reg && item, 0.0f);
+	r_return_val_if_fail (reg && item, false);
 	ut8 *src;
 	switch (item->size) {
 	case 64:
