@@ -1287,7 +1287,6 @@ R_API RList *rvc_git_get_branches(Rvc *rvc) {
 	return rvc->p->get_branches (rvc);
 }
 
-// R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files)
 R_API bool rvc_git_commit(Rvc *rvc, const char *message, const char *author, const RList *files) {
 	r_return_val_if_fail (rvc && message && author && files, false);
 	if (rvc->p->type == RVC_TYPE_RVC) {
