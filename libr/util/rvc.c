@@ -1,10 +1,16 @@
 /* radare - LGPL - Copyright 2021-2022 - RHL120, pancake */
 
-#define R_LOG_ORIGIN "core.rvc"
+#define R_LOG_ORIGIN "rvc"
 
+#undef R_IPI
+#define R_IPI static
+#include "../crypto/hash/sha2.c"
+#undef R_IPI
+#define R_IPI
+
+#include <r_util.h>
 #include "r_config.h"
-#include "r_core.h"
-#include "rvc.h"
+#include <rvc.h>
 #include <sdb.h>
 #define FIRST_BRANCH "branches.master"
 #define NOT_SPECIAL(c) IS_DIGIT (c) || IS_LOWER (c) || c == '_'
@@ -16,7 +22,7 @@
 #define NULLVAL "-"
 
 //Access both git and rvc functionality from one set of functions
-static inline void warn(void) {
+static inline void rvc_warn(void) {
 	R_LOG_WARN ("rvc is still under development and can be unstable, be careful");
 }
 
@@ -65,10 +71,9 @@ static bool file_copyrf(const char *src, const char *dst) {
 				r_sys_mkdirp (dstp);
 			} else {
 				if (!file_copyp (path, dstp)) {
-				R_LOG_ERROR ("Failed to copy the file: %s to %s",
-						path, dstp);
-				ret = false;
-				//continue copying files don't break
+					R_LOG_ERROR ("Failed to copy the file: %s to %s", path, dstp);
+					ret = false;
+					//continue copying files don't break
 				}
 			}
 			free (dstp);
@@ -127,7 +132,8 @@ static bool repo_exists(const char *path) {
 		return false;
 	}
 	bool r = true;
-	char *files[3] = {r_file_new (rp, DBNAME, NULL),
+	char *files[3] = {
+		r_file_new (rp, DBNAME, NULL),
 		r_file_new (rp, "commits", NULL),
 		r_file_new (rp, "blobs", NULL)
 	};
@@ -139,8 +145,7 @@ static bool repo_exists(const char *path) {
 			break;
 		}
 		if (!r_file_is_directory (files[i]) && !r_file_exists (files[i])) {
-			R_LOG_ERROR ("Corrupt repo: %s doesn't exist",
-					files[i]);
+			R_LOG_ERROR ("Corrupt repo: %s doesn't exist", files[i]);
 			r = false;
 			break;
 		}
@@ -165,15 +170,13 @@ static bool is_valid_branch_name(const char *name) {
 	return true;
 }
 
-static char *find_sha256(const ut8 *block, int len) {
-	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
-	if (!ctx) {
-		return NULL;
-	}
-	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
-	char *ret = r_hex_bin2strdup (c, R_HASH_SIZE_SHA256);
-	r_hash_free (ctx);
-	return ret;
+static char *compute_hash(const ut8 *data, size_t len) {
+	R_SHA256_CTX ctx;
+	r_SHA256_Init (&ctx);
+	r_SHA256_Update (&ctx, data, len);
+	char textdigest[r_SHA256_DIGEST_STRING_LENGTH] = {0};
+	r_SHA256_End (&ctx, textdigest);
+	return strdup (textdigest);
 }
 
 static inline char *sha256_file(const char *fname) {
@@ -181,7 +184,7 @@ static inline char *sha256_file(const char *fname) {
 	char *res = NULL;
 	char *content = r_file_slurp (fname, &content_length);
 	if (content) {
-		res = find_sha256 ((const ut8 *)content, content_length);
+		res = compute_hash ((const ut8 *)content, content_length);
 		free (content);
 	}
 	return res;
@@ -193,12 +196,12 @@ static void free_blobs(RList *blobs) {
 	r_list_foreach (blobs, iter, blob) {
 		free (blob->fhash);
 		free (blob->fname);
+		free (blob);
 	}
 	r_list_free (blobs);
 }
 
 static char *absp2rp(Rvc *rvc, const char *absp) {
-	char *p;
 	char *arp = r_file_abspath (rvc->path);
 	if (!arp) {
 		return NULL;
@@ -207,7 +210,7 @@ static char *absp2rp(Rvc *rvc, const char *absp) {
 		free (arp);
 		return NULL;
 	}
-	p = r_str_new (absp + r_str_len_utf8 (arp));
+	char *p = r_str_new (absp + r_str_len_utf8 (arp));
 	free (arp);
 	if (!p) {
 		return NULL;
@@ -617,32 +620,26 @@ static char *find_blob_hash(Rvc *rvc, const char *fname) {
 static char *write_commit(Rvc *rvc, const char *message, const char *author, RList *blobs) {
 	RvcBlob *blob;
 	RListIter *iter;
-	char *content = r_str_newf ("message=%s\nauthor=%s\ntime=%" PFMT64x "\n"
-			COMMIT_BLOB_SEP, message, author, (ut64) r_time_now ());
-	if (!content) {
-		return false;
-	}
+	RStrBuf *sb = r_strbuf_newf ("message=%s\nauthor=%s\ntime=%" PFMT64d "\n" COMMIT_BLOB_SEP,
+			message, author, (ut64) r_time_now ());
 	r_list_foreach (blobs, iter, blob) {
-		content = r_str_appendf (content, "\n%s=%s", blob->fname,
-				blob->fhash);
-		if (!content) {
+		r_strbuf_appendf (sb, "\n%s=%s", blob->fname, blob->fhash);
+	}
+	size_t len = r_strbuf_length (sb);
+	char *content = r_strbuf_drain (sb);
+	char *commit_hash = compute_hash ((const ut8*)content, len);
+	if (commit_hash) {
+		char *commit_path = r_file_new (rvc->path, ".rvc", "commits", commit_hash, NULL);
+		if (!commit_path || !r_file_dump (commit_path, (const ut8*)content, -1, false)) {
 			return false;
 		}
-	}
-	char *commit_hash = find_sha256 ((unsigned char *)
-			content, r_str_len_utf8 (content));
-	if (!commit_hash) {
-		free (content);
-		return false;
-	}
-	char *commit_path = r_file_new (rvc->path, ".rvc","commits", commit_hash, NULL);
-	if (!commit_path || !r_file_dump (commit_path, (const ut8*)content, -1, false)) {
-		free (content);
-		free (commit_hash);
-		return false;
+		return commit_hash;
+	} else {
+		R_LOG_ERROR ("Cannot compute hash");
 	}
 	free (content);
-	return commit_hash;
+	free (commit_hash);
+	return false;
 }
 
 static RvcBlob *bfadd(Rvc *rvc, const char *fname) {
@@ -749,11 +746,13 @@ fail_ret:
 }
 
 R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const RList *files) {
-	warn ();
+	rvc_warn ();
 	if (!repo_exists (rvc->path)) {
 		R_LOG_ERROR ("No valid repo in %s", rvc->path);
 		return false;
 	}
+#if 0
+	/// XXX this should be handled by the caller
 	if (R_STR_ISEMPTY (message)) {
 		char *path = NULL;
 		(void)r_file_mkstemp ("rvc", &path);
@@ -768,6 +767,7 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 			return false;
 		}
 	}
+#endif
 	if (message && r_str_len_utf8 (message) > MAX_MESSAGE_LEN) {
 		R_LOG_ERROR ("Commit message is too long");
 		return false;
@@ -1202,17 +1202,14 @@ R_API bool r_vc_git_commit(Rvc *vc, const char *_message, const char *author, co
 	}
 	if (R_STR_ISEMPTY (message)) {
 		R_FREE (message);
-		if (!r_cons_is_interactive ()) {
-			message = strdup ("default message");
-		}
+		message = strdup ("default message");
 	}
 	if (R_STR_ISEMPTY (message)) {
 		R_FREE (message);
 		char *epath = r_str_escape (vc->path);
 		if (epath) {
 			// XXX ensure CWD in the same line?
-			int res = r_sys_cmdf ("git -C \"%s\" commit --author \"%s <%s@localhost>\"",
-					epath, escauth, escauth);
+			int res = r_sys_cmdf ("git -C \"%s\" commit --author \"%s <%s@localhost>\"", epath, escauth, escauth);
 			free (escauth);
 			free (epath);
 			return res == 0;
@@ -1237,6 +1234,7 @@ R_API bool r_vc_git_commit(Rvc *vc, const char *_message, const char *author, co
 }
 
 R_API bool r_vc_reset(Rvc *rvc) {
+	r_return_val_if_fail (rvc, false);
 	if (!repo_exists (rvc->path)) {
 		return false;
 	}
@@ -1287,7 +1285,6 @@ R_API RList *rvc_git_get_branches(Rvc *rvc) {
 	return rvc->p->get_branches (rvc);
 }
 
-// R_API bool rvc_git_commit(RCore *core, Rvc *rvc, const char *message, const char *author, const RList *files)
 R_API bool rvc_git_commit(Rvc *rvc, const char *message, const char *author, const RList *files) {
 	r_return_val_if_fail (rvc && message && author && files, false);
 	if (rvc->p->type == RVC_TYPE_RVC) {
@@ -1303,7 +1300,7 @@ R_API bool rvc_git_commit(Rvc *rvc, const char *message, const char *author, con
 R_API bool rvc_git_branch(Rvc *rvc, const char *bname) {
 	r_return_val_if_fail (rvc && bname, false);
 	if (rvc->p->type == RVC_TYPE_RVC) {
-		warn ();
+		rvc_warn ();
 		r_vc_branch (rvc, bname);
 		return r_vc_save(rvc);
 	}
@@ -1315,7 +1312,7 @@ R_API bool rvc_git_checkout(Rvc *rvc, const char *bname) {
 	return rvc->p->checkout (rvc, bname);
 #endif
 	if (rvc->p->type == RVC_TYPE_RVC) {
-		warn ();
+		rvc_warn ();
 		r_vc_checkout (rvc, bname);
 		return r_vc_save (rvc);
 	}
@@ -1586,7 +1583,7 @@ R_API Rvc *rvc_init(const char *path, RvcType type) {
 		break;
 	case RVC_TYPE_RVC:
 		{
-			warn ();
+			rvc_warn ();
 			Rvc *rvc = r_vc_new (path);
 			if (!rvc || !r_vc_save (rvc)) {
 				return NULL;
@@ -1605,4 +1602,3 @@ R_API void rvc_git_close(Rvc *vc, bool save) {
 	r_return_if_fail (vc && vc->p);
 	vc->p->close (vc, true);
 }
-
