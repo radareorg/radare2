@@ -2532,10 +2532,7 @@ R_API char *r_print_code_indent(const char *s) {
 
 R_API char *r_print_code_tocolor(const char *o) {
 	char *s = strdup (o);
-#if 1
 	s = r_str_replace (s, "\r", "", 1);
-	s = r_str_replace (s, "\n\n", "\n", 1);
-	s = r_str_replace (s, "\n\n", "\n", 1);
 	s = r_str_replace (s, "goto ", Color_GREEN"goto "Color_RESET, 1);
 	s = r_str_replace (s, "(byte)", Color_RED"(byte)"Color_RESET, 1);
 
@@ -2552,13 +2549,6 @@ R_API char *r_print_code_tocolor(const char *o) {
 		const char *cl = strstr (p, " ()");
 		const char *st = strstr (p, " str.");
 		const char *w = r_str_trim_head_ro (p);
-#if 0
-		{
-			char *res = r_str_ndup (p, nl-p);
-			eprintf ("(%s)\n", res);
-			free (res);
-		}
-#endif
 		if (w == nl) {
 			eprintf ("EMPTY LINE\n");
 			sleep (1);
@@ -2614,18 +2604,21 @@ R_API char *r_print_code_tocolor(const char *o) {
 			p = w + 5;
 		} else if (st > 0 && st < nl) {
 			const char *eos = R_MIN (nl, cm);
-			st += 5;
-			r_strbuf_append_n (sb, p, st - p); // pre
-			r_strbuf_append (sb, Color_CYAN);
-			r_strbuf_append (sb, " \"");
-			char *trim = r_str_ndup (st, eos - st);
-			r_str_trim (trim);
-			r_strbuf_append (sb, trim);
-			free (trim);
-			r_strbuf_append (sb, "\"");
-			r_strbuf_append (sb, Color_RESET);
-			p = eos;
-		} else if (cl > 0 && cl < nl) {
+			if (eos < st) {
+				eos = nl;
+			}
+				st += 5;
+				r_strbuf_append_n (sb, p, st - p); // pre
+				r_strbuf_append (sb, Color_CYAN);
+				r_strbuf_append (sb, " \"");
+				char *trim = r_str_ndup (st, eos - st);
+				r_str_trim (trim);
+				r_strbuf_append (sb, trim);
+				free (trim);
+				r_strbuf_append (sb, "\"");
+				r_strbuf_append (sb, Color_RESET);
+				p = eos;
+		} else if (cl > 0 && cl < nl && cl < cm) {
 			// colorize calls
 			r_strbuf_append (sb, Color_GREEN);
 			if (cm > 0 && cm < nl) {
@@ -2636,17 +2629,6 @@ R_API char *r_print_code_tocolor(const char *o) {
 				p = nl;
 			}
 			r_strbuf_append (sb, Color_RESET);
-#if 0
-		} else if (w > p && w < nl && nl > 0) {
-			p = nl;
-#endif
-		} else if (lb > 0 && lb < nl && lb < cm && (lb[1] == ' ' || lb[1] == '\n')) {
-			// colorize labels
-			size_t len = lb - p + 1;
-			r_strbuf_append (sb, Color_YELLOW);
-			r_strbuf_append_n (sb, p, len);
-			r_strbuf_append (sb, Color_RESET);
-			p = lb + 1;
 		} else if (cm > 0 && cm < nl) {
 			// colorize comments
 			if (cm > p) {
@@ -2658,6 +2640,13 @@ R_API char *r_print_code_tocolor(const char *o) {
 			r_strbuf_append_n (sb, cm, nl - cm);
 			r_strbuf_append (sb, Color_RESET);
 			p = nl;
+		} else if (lb > 0 && lb < nl && lb < cm && (lb[1] == ' ' || lb[1] == '\n')) {
+			// colorize labels
+			size_t len = lb - p + 1;
+			r_strbuf_append (sb, Color_YELLOW);
+			r_strbuf_append_n (sb, p, len);
+			r_strbuf_append (sb, Color_RESET);
+			p = lb + 1;
 		} else {
 			r_strbuf_append_n (sb, p, 1);
 			p++;
@@ -2667,5 +2656,4 @@ R_API char *r_print_code_tocolor(const char *o) {
 	char *r = r_strbuf_drain (sb);
 	r_str_trim_emptylines (r);
 	return r;
-#endif
 }
