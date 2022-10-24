@@ -1455,7 +1455,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 				int i, amount = swift5_types_size / 4;
 				int res = r_buf_read_at (bf->buf, swift5_types_addr, (ut8*)words, aligned_size); // TODO check for return
 				if (res >= aligned_size) {
-					for (i = 0; i + 4 < amount; i++) {
+					for (i = 0; i < amount; i++) {
 						st32 word = r_read_le32 (&words[i]);
 						ut64 type_address = swift5_types_addr + (i * 4) + word;
 						SwiftType st = parse_type_entry (bf, type_address);
