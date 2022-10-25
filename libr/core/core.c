@@ -1,5 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2022 - pancake */
 
+#define R_LOG_ORIGIN "core"
+
 #include <r_core.h>
 #include <config.h>
 #if __UNIX__
@@ -36,7 +38,7 @@ static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 static int on_fcn_delete(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	RCore *core = (RCore*)_user;
 	const char *cmd = r_config_get (core->config, "cmd.fcn.delete");
-	if (cmd && *cmd) {
+	if (R_STR_ISNOTEMPTY (cmd)) {
 		ut64 oaddr = core->offset;
 		ut64 addr = fcn->addr;
 		r_core_seek (core, addr, true);
@@ -826,7 +828,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'o': { // $o
 			RBinSection *s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true);
 			return s ? core->offset - s->vaddr + s->paddr : core->offset;
-			break;
 		}
 		case 'O': // $O
 			if (core->print->cur_enabled) {
@@ -1246,7 +1247,6 @@ static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const cha
 	const int needle_len = strlen (needle);
 	int i;
 
-
 	c.needle = needle;
 	c.needle_len = needle_len;
 	// Filter out command aliases?
@@ -1301,14 +1301,12 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 	if (!path) {
 		goto out;
 	}
-
 #if 0
 	if (path[0] == '>') {
 		is_pipe = true;
 		path++;
 	}
 #endif
-
 	lpath = r_str_new (path);
 #if __WINDOWS__
 	r_str_replace_ch (lpath, '/', '\\', true);
@@ -2543,7 +2541,6 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 				break;
 			}
 		}
-
 	}
 	if ((type & R_ANAL_ADDR_TYPE_READ) && !(type & R_ANAL_ADDR_TYPE_EXEC) && depth) {
 		// Try to telescope further, but only several levels deep.
@@ -3196,7 +3193,7 @@ R_API bool r_core_init(RCore *core) {
 	r_core_bind (core, &core->dbg->bp->coreb);
 	r_core_bind (core, &core->io->coreb);
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
-	//r_debug_use (core->dbg, "native");
+	// r_debug_use (core->dbg, "native");
 // XXX pushing uninitialized regstate results in trashed reg values
 //	r_reg_arena_push (core->dbg->reg); // create a 2 level register state stack
 //	core->dbg->anal->reg = core->anal->reg; // XXX: dupped instance.. can cause lost pointerz
@@ -3207,7 +3204,6 @@ R_API bool r_core_init(RCore *core) {
 	r_core_config_init (core);
 	r_core_loadlibs_init (core);
 	//r_core_loadlibs (core);
-
 	// TODO: get arch from r_bin or from native arch
 #if 0
 	// Seems unnecessary
