@@ -1,4 +1,4 @@
-# http://www.win.tue.nl/~aeb/partitions/partition_types-1.html
+# https://www.win.tue.nl/~aeb/partitions/partition_types-1.html
 0=empty
 1.fs=fat
 1=DOS 12-bit FAT

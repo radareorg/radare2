@@ -5,7 +5,7 @@
 
 #if 0
 https://es.wikipedia.org/wiki/Amiga_Hunk
-http://amiga-dev.wikidot.com/file-format:hunk
+https://amiga-dev.wikidot.com/file-format:hunk
 #endif
 
 #define HUNK_MAGIC "\x00\x00\x03\xf3"

@@ -1,7 +1,7 @@
 #ifndef OMF_SPECS_H_
 #define OMF_SPECS_H_
 
-// additionnal informations : http://pierrelib.pagesperso-orange.fr/exec_formats/OMF_v1.1.pdf
+// additionnal informations : https://pierrelib.pagesperso-orange.fr/exec_formats/OMF_v1.1.pdf
 
 // record type
 #define OMF_THEADR	0x80  // Translator Header Record

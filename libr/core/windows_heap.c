@@ -19,8 +19,8 @@
 *	References:
 *	Windows NT(2000) Native API Reference (Book)
 *	Papers:
-*	http://illmatics.com/Understanding_the_LFH.pdf
-*	http://illmatics.com/Windows%208%20Heap%20Internals.pdf
+*	https://illmatics.com/Understanding_the_LFH.pdf
+*	https://illmatics.com/Windows%208%20Heap%20Internals.pdf
 *	https://www.blackhat.com/docs/us-16/materials/us-16-Yason-Windows-10-Segment-Heap-Internals-wp.pdf
 *
 *	This code has 2 different approaches to getting the heap info:

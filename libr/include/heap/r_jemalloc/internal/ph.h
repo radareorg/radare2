@@ -7,7 +7,7 @@
  * With auxiliary twopass list, described in a follow on paper.
  *
  * "Pairing Heaps: Experiments and Analysis"
- * http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.106.2988&rep=rep1&type=pdf
+ * https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.106.2988&rep=rep1&type=pdf
  *
  *******************************************************************************
  */

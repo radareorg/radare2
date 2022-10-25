@@ -66,7 +66,7 @@ static const char* mcore_ctrl_registers[] = {
  */
 
 // MCORE instruction set
-// http://www.ece.ualberta.ca/~cmpe490/documents/motorola/MCORERM.pdf
+// https://www.ece.ualberta.ca/~cmpe490/documents/motorola/MCORERM.pdf
 
 #define INVALID_FIELD (0)
 

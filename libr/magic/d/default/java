@@ -15,7 +15,7 @@
 # 0	belong		0xcececece	Java JCE KeyStore
 # !:mime	application/x-java-jce-keystore
 
-# Android .dex format. http://retrodev.com/android/dexformat.html
+# Android .dex format. https://retrodev.com/android/dexformat.html
 # https://source.android.com/devices/tech/dalvik/dex-format.html
 # From <mkf@google.com> "Mike Fleming"
 0	string	dex\n
@@ -32,7 +32,7 @@
 
 # Android .vdex format.
 # https://android.googlesource.com/platform/art/+/master/runtime/vdex_file.h#114
-# http://romainthomas.fr/post/android-vdex/
+# https://romainthomas.fr/post/android-vdex/
 # https://github.com/anestisb/vdexExtractor/blob/master/src/vdex/vdex_common.h#L30
 0	string	vdex
 >0	regex	vdex[0-9][0-9][0-9]\0	Android VDEX file

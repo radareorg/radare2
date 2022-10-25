@@ -1,4 +1,4 @@
-/* copypasted from http://pastie.org/3732465 */
+/* copypasted from https://pastie.org/3732465 */
 /* adapted by pancake // public license */
 /* known bugs: some (%s, NULL) happen */
 

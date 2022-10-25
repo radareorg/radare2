@@ -3,7 +3,7 @@ FILE=bins/mach0/AppIOSEntitlements.ios
 CMDS=iC
 EXPECT=<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
         <key>com.apple.application-identifier</key>
@@ -45,7 +45,7 @@ FILE=bins/mach0/AppIOSEntitlements.ios
 CMDS=!rabin2 -OC `i~file:0[1]`
 EXPECT=<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
         <key>com.apple.application-identifier</key>

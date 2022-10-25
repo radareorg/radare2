@@ -35,4 +35,4 @@ $ dockcross make
 Here is some more context and references:
 
 https://github.com/radareorg/radare2/pull/5060
-http://blogs.nopcode.org/brainstorm/2016/07/26/cross-compiling-with-docker
+https://blogs.nopcode.org/brainstorm/2016/07/26/cross-compiling-with-docker

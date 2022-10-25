@@ -1770,7 +1770,7 @@ static EDemanglerErr parse_function(const char *sym, STypeCodeStr *type_code_str
 
 	// currently does not use because I can not find real example of
 	// where to use this
-	// just read in http://www.agner.org/optimize/calling_conventions.pdf
+	// just read in https://www.agner.org/optimize/calling_conventions.pdf
 	// that this is possible
 	// when some find the case where it is used please remove this (void)*
 	// lines

@@ -28,7 +28,7 @@
 ## Is there a boot block written 1 sector in?
 #>512    belong&077777777	0600407	\b, boot block present
 ## Joerg Jenderek: Smart Boot Manager backup file is 41 byte header + first sectors of disc
-## (http://btmgr.sourceforge.net/docs/user-guide-3.html)
+## (https://btmgr.sourceforge.net/docs/user-guide-3.html)
 #0		string	SBMBAKUP_	Smart Boot Manager backup file
 #>9		string	x		\b, version %-5.5s
 #>>14		string	=_		
@@ -91,7 +91,7 @@
 >139	string	Invalid\ partition\ table\0		
 >>163	string	Error\ loading\ operating\ system\0	
 >>>194	string	Missing\ operating\ system\0		\b, Microsoft Windows XP mbr
-# http://www.heise.de/ct/05/09/006/ page 184
+# https://www.heise.de/ct/05/09/006/ page 184
 #HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices\DosDevices\?:=Serial4Bytes+8Bytes
 >>>>0x1B8	ulelong	>0				\b,Serial 0x%-.4x
 >300	string	Invalid\ partition\ table\0	
@@ -110,13 +110,13 @@
 >>96	string	read\ error\ while\ reading\ drive	\b, FREE-DOS Beta 0.9 MBR
 >271	string	Operating\ system\ loading 		
 >>296	string	error\r					\b, SYSLINUX MBR (2.10)
-# http://www.acronis.de/
+# https://www.acronis.de/
 >362	string	MBR\ Error\ \0\r			
 >>376	string	ress\ any\ key\ to\ 			
 >>>392	string	boot\ from\ floppy...\0			\b, Acronis MBR
 # added by Joerg Jenderek
-# http://www.visopsys.org/
-# http://partitionlogic.org.uk/
+# https://www.visopsys.org/
+# https://partitionlogic.org.uk/
 >309	string	No\ bootable\ partition\ found\r	
 >>339	string	I/O\ Error\ reading\ boot\ sector\r	\b, Visopsys MBR
 >349	string	No\ bootable\ partition\ found\r	
@@ -134,7 +134,7 @@
 >>172	string	LILO				\b, version 22.5.8 Debian
 # updated by Joerg Jenderek
 # variables according to grub-0.97/stage1/stage1.S or
-# http://www.gnu.org/software/grub/manual/grub.html#Embedded-data
+# https://www.gnu.org/software/grub/manual/grub.html#Embedded-data
 # usual values are marked with comments to get only informations of strange GRUB loaders
 >0		ulelong		0x009048EB	
 >>0x41		ubyte		<2		
@@ -168,14 +168,14 @@
 >>>>321		string	Loading\ stage1.5	\b, GRUB version x.y
 >>>380		string	Geom\0Hard\ Disk\0Read\0\ Error\0
 >>>>374		string	GRUB\ \0		\b, GRUB version n.m
-# http://syslinux.zytor.com/
+# https://syslinux.zytor.com/
 >478	string	Boot\ failed\r			
 >>495	string	LDLINUX\ SYS			\b, SYSLINUX bootloader (1.62)
 >480	string	Boot\ failed\r			
 >>495	string	LDLINUX\ SYS			\b, SYSLINUX bootloader (2.06 or 2.11)
 >484	string	Boot\ error\r			\b, SYSLINUX bootloader (3.11)
 >395	string	chksum\0\ ERROR!\0		\b, Gujin bootloader
-# http://www.bcdwb.de/bcdw/index_e.htm
+# https://www.bcdwb.de/bcdw/index_e.htm
 >3	string	BCDL				
 >>498	string	BCDL\ \ \ \ BIN			\b, Bootable CD Loader (1.50Z)
 # mbr partition table entries
@@ -234,7 +234,7 @@
 >>>>>>>>>>>>502		ulelong		x	\b, startsector %u
 >>>>>>>>>>>>506		ulelong		x	\b, %u sectors
 # mbr partition table entries end
-# http://www.acronis.de/
+# https://www.acronis.de/
 #FAT label=ACRONIS\ SZ
 #OEM-ID=BOOTWIZ0
 >442	string	Non-system\ disk,\ 	
@@ -624,14 +624,14 @@
 >>>>505		ubyte&0xDF	>0			
 >>>>>505	string		x 			\b.%-.3s
 # added by Joerg Jenderek
-# http://www.visopsys.org/
-# http://partitionlogic.org.uk/
+# https://www.visopsys.org/
+# https://partitionlogic.org.uk/
 # OEM-ID=Visopsys
 >478		ulelong	0					
 >>(1.b+326)	string	I/O\ Error\ reading\ 			
 >>>(1.b+344)	string	Visopsys\ loader\r			
 >>>>(1.b+361)	string	Press\ any\ key\ to\ continue.\r	\b, Visopsys loader
-# http://alexfru.chat.ru/epm.html#bootprog
+# https://alexfru.chat.ru/epm.html#bootprog
 >494	ubyte	>0x4D					
 >>495	string	>E					
 >>>495	string	<S					
@@ -669,7 +669,7 @@
 #it also hangs with another message ("NF").
 >>>>>492		string		RENF		\b, FAT (12 bit)
 >>>>>495		string		RENF		\b, FAT (16 bit)
-# http://alexfru.chat.ru/epm.html#bootprog
+# https://alexfru.chat.ru/epm.html#bootprog
 >494	ubyte	>0x4D					
 >>495	string	>E					
 >>>495	string	<S					
@@ -708,9 +708,9 @@
 >>>>>492		string		RENF		\b, FAT (12 bit)
 >>>>>495		string		RENF		\b, FAT (16 bit)
 # added by Joerg Jenderek
-# http://syslinux.zytor.com/iso.php
+# https://syslinux.zytor.com/iso.php
 0	ulelong	0x7c40eafa		isolinux Loader
-# http://syslinux.zytor.com/pxe.php
+# https://syslinux.zytor.com/pxe.php
 0	ulelong	0x007c05ea		pxelinux Loader
 0	ulelong	0x60669c66		pxelinux Loader
 # loader end
@@ -729,7 +729,7 @@
 >>>>>>>466	ubyte	0x0F			\b, extended partition table (LBA)
 >>>>>>>466	ubyte	0x0			\b, extended partition table (last)	
 # JuMP short     bootcodeoffset NOP assembler instructions will usually be EB xx 90
-# http://mirror.href.com/thestarman/asm/2bytejumps.htmm#FWD
+# https://mirror.href.com/thestarman/asm/2bytejumps.htmm#FWD
 # older drives may use Near JuMP instruction E9 xx xx
 >0		lelong&0x009000EB	0x009000EB
 >0		lelong&0x000000E9	0x000000E9
@@ -742,7 +742,7 @@
 >>>11		uleshort	<32769		
 >>>>11		uleshort	>31		
 >>>>>3		string		>\0		\b, OEM-ID "%8.8s"
-#http://mirror.href.com/thestarman/asm/debug/debug2.htm#IHC
+#https://mirror.href.com/thestarman/asm/debug/debug2.htm#IHC
 >>>>>>8		string		IHC		\b cached by Windows 9M
 >>>>>11		uleshort	>512		\b, Bytes/sector %u
 #>>>>>11	uleshort	=512		\b, Bytes/sector %u=512 (usual)
@@ -849,7 +849,7 @@
 # added by Joerg Jenderek
 # In the second sector (+0x200) are variables according to grub-0.97/stage2/asm.S or
 # grub-1.94/kern/i386/pc/startup.S
-# http://www.gnu.org/software/grub/manual/grub.html#Embedded-data
+# https://www.gnu.org/software/grub/manual/grub.html#Embedded-data
 # usual values are marked with comments to get only informations of strange GRUB loaders
 0x200	uleshort		0x70EA		
 # found only version 3.{1,2}
@@ -1123,8 +1123,8 @@
 #        10	SS, 8 SPT
 #        11	DS, 8 SPT
 #
-#  11111001	Double density 3½ floppy disk, high density 5¼
-#  11110000	High density 3½ floppy disk
+#  11111001	Double density 3ï¿½ floppy disk, high density 5ï¿½
+#  11110000	High density 3ï¿½ floppy disk
 #  11111000	Hard disk any format
 #
 
@@ -1320,7 +1320,7 @@
 >984    string          x               volume label is '%-12.12s'
 
 # From: Thomas Klausner <wiz@NetBSD.org>
-# http://filext.com/file-extension/DAA
+# https://filext.com/file-extension/DAA
 # describes the daa file format. The magic would be:
 0	string		DAA\x0\x0\x0\x0\x0	PowerISO Direct-Access-Archive
 
@@ -1333,7 +1333,7 @@
 # DOS x86 sector updated and separated from "DOS/MBR boot sector" by Joerg Jenderek at May 2011
 # JuMP short     bootcodeoffset NOP assembler instructions will usually be EB xx 90
 # over BIOS parameter block (BPB)
-# http://thestarman.pcministry.com/asm/2bytejumps.htm#FWD
+# https://thestarman.pcministry.com/asm/2bytejumps.htm#FWD
 # older drives may use Near JuMP instruction E9 xx xx
 # minimal short forward jump found 0x29 for bootloaders or 0x0
 # maximal short forward jump is 0x7f
@@ -1354,7 +1354,7 @@
 >>>>>0		ubyte		0xE9		
 >>>>>>1		uleshort	x		\b, code offset 0x%x+3
 >>>>>3		string		>\0		\b, OEM-ID "%-.8s"
-#http://mirror.href.com/thestarman/asm/debug/debug2.htm#IHC
+#https://mirror.href.com/thestarman/asm/debug/debug2.htm#IHC
 >>>>>>8		string		IHC		\b cached by Windows 9M
 >>>>>11		uleshort	>512		\b, Bytes/sector %u
 #>>>>>11	uleshort	=512		\b, Bytes/sector %u=512 (usual)
@@ -1388,7 +1388,7 @@
 >>>>>26		ubyte		=1		\b, heads %u
 # valid only for sector sizes with more then 32 Bytes
 >>>>>11		uleshort	>32		
-# http://en.wikipedia.org/wiki/Design_of_the_FAT_file_system#Extended_BIOS_Parameter_Block
+# https://en.wikipedia.org/wiki/Design_of_the_FAT_file_system#Extended_BIOS_Parameter_Block
 # skip for values 2,2Ah,70h,73h,DFh
 # and continue for extended boot signature values 0,28h,29h,80h
 >>>>>>38	ubyte&0x56	=0		
@@ -1419,7 +1419,7 @@
 # Normally the number of clusters is calculated by the values of BPP.
 # if it is small enough FAT is 12 bit, if it is too big enough FAT is 32 bit,
 # otherwise FAT is 16 bit.
-# http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/determining-fat-widths.html
+# https://homepage.ntlworld.com/jonathan.deboynepollard/FGA/determining-fat-widths.html
 >>>>>82		string/c	!fat32		
 >>>>>>54	string		FAT12		\b, FAT (12 bit)
 >>>>>>54	string		FAT16		\b, FAT (16 bit)
@@ -1450,7 +1450,7 @@
 # FAT32 bit specific
 >>>>>82		string/c	fat32		\b, FAT (32 bit)
 >>>>>>36	ulelong		x		\b, sectors/FAT %u
-# http://technet.microsoft.com/en-us/library/cc977221.aspx
+# https://technet.microsoft.com/en-us/library/cc977221.aspx
 >>>>>>40	uleshort	>0		\b, extension flags 0x%x
 #>>>>>>40	uleshort	=0		\b, extension flags %hu
 >>>>>>42	uleshort	>0		\b, fsVersion %u
@@ -1467,7 +1467,7 @@
 #>>>>>>50	uleshort	=6		\b, Backup boot sector %u (usual)
 >>>>>>50	default		x		
 >>>>>>>50	uleshort	x		\b, Backup boot sector %u
-# corrected by Joerg Jenderek at Feb 2011 according to http://thestarman.pcministry.com/asm/mbr/MSWIN41.htm#FSINFO
+# corrected by Joerg Jenderek at Feb 2011 according to https://thestarman.pcministry.com/asm/mbr/MSWIN41.htm#FSINFO
 >>>>>>52	ulelong		>0		\b, reserved1 0x%x
 >>>>>>56	ulelong		>0		\b, reserved2 0x%x
 >>>>>>60	ulelong		>0		\b, reserved3 0x%x
@@ -1493,8 +1493,8 @@
 >>>>>>>(11.s)	ulelong&0x00ffffF0	0x00ffffF0	\b, followed by FAT
 # floppy image
 !:mime application/x-ima
-# NTFS specific added by Joerg Jenderek at Mar 2011 according to http://thestarman.pcministry.com/asm/mbr/NTFSBR.htm
-# and http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/bios-parameter-block.html
+# NTFS specific added by Joerg Jenderek at Mar 2011 according to https://thestarman.pcministry.com/asm/mbr/NTFSBR.htm
+# and https://homepage.ntlworld.com/jonathan.deboynepollard/FGA/bios-parameter-block.html
 # 0 FATs
 >>>>>16	ubyte		=0		
 # 0 root entries
@@ -1527,7 +1527,7 @@
 >>>>>>>>>0x258	ulelong&0x00009090	=0x00009090	
 #>>>>>>>>>>&-92		indirect	x	\b; contains
 # For 2nd NTFS sector added by Joerg Jenderek at Jan 2013
-# http://thestarman.pcministry.com/asm/mbr/NTFSbrHexEd.htm
+# https://thestarman.pcministry.com/asm/mbr/NTFSbrHexEd.htm
 # unused assembler instructions JMP y2;NOP;NOP
 0x056		ulelong&0xFFFF0FFF	0x909002EB	
 # unicode loadername terminated by CTRL-D

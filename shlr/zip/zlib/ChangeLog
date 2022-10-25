@@ -4,7 +4,7 @@
 Changes in 1.2.8 (28 Apr 2013)
 - Update contrib/minizip/iowin32.c for Windows RT [Vollant]
 - Do not force Z_CONST for C++
-- Clean up contrib/vstudio [Ro§]
+- Clean up contrib/vstudio [Roï¿½]
 - Correct spelling error in zlib.h
 - Fix mixed line endings in contrib/vstudio
 
@@ -261,7 +261,7 @@ Changes in 1.2.5.1 (10 Sep 2011)
 - Add dummy name before $(SHAREDLIBV) in Makefile [Bar-Lev, Bowler]
 - Delete line in configure that adds -L. libz.a to LDFLAGS [Weigelt]
 - Add debug records in assmebler code [Londer]
-- Update RFC references to use http://tools.ietf.org/html/... [Li]
+- Update RFC references to use https://tools.ietf.org/html/... [Li]
 - Add --archs option, use of libtool to configure for Mac OS X [Borstel]
 
 Changes in 1.2.5 (19 Apr 2010)
@@ -556,7 +556,7 @@ Changes in 1.2.3.2 (3 September 2006)
 - Rig configure --shared to build both shared and static [Teredesai, Truta]
 - Remove zconf.in.h and instead create a new zlibdefs.h file
 - Fix contrib/minizip/unzip.c non-encrypted after encrypted [Vollant]
-- Add treebuild.xml (see http://treebuild.metux.de/) [Weigelt]
+- Add treebuild.xml (see https://treebuild.metux.de/) [Weigelt]
 
 Changes in 1.2.3.1 (16 August 2006)
 - Add watcom directory with OpenWatcom make files [Daniel]
@@ -564,7 +564,7 @@ Changes in 1.2.3.1 (16 August 2006)
 - Update make_vms.com [Zinser]
 - Use -fPIC for shared build in configure [Teredesai, Nicholson]
 - Use only major version number for libz.so on IRIX and OSF1 [Reinholdtsen]
-- Use fdopen() (not _fdopen()) for Interix in zutil.h [BŠck]
+- Use fdopen() (not _fdopen()) for Interix in zutil.h [Bï¿½ck]
 - Add some FAQ entries about the contrib directory
 - Update the MVS question in the FAQ
 - Avoid extraneous reads after EOF in gzio.c [Brown]
@@ -995,7 +995,7 @@ Changes in 1.2.0 (9 March 2003)
 Changes in 1.1.4 (11 March 2002)
 - ZFREE was repeated on same allocation on some error conditions.
   This creates a security problem described in
-  http://www.zlib.org/advisory-2002-03-11.txt
+  https://www.zlib.org/advisory-2002-03-11.txt
 - Returned incorrect error (Z_MEM_ERROR) on some invalid data
 - Avoid accesses before window for invalid distances with inflate window
   less than 32K.
@@ -1011,7 +1011,7 @@ Changes in 1.1.3 (9 July 1998)
 - fix miniunzip when the last entry in a zip file is itself a zip file
   (J Lillge)
 - add contrib/asm586 and contrib/asm686 (Brian Raiter)
-  See http://www.muppetlabs.com/~breadbox/software/assembly.html
+  See https://www.muppetlabs.com/~breadbox/software/assembly.html
 - add support for Delphi 3 in contrib/delphi (Bob Dellaca)
 - add support for C++Builder 3 and Delphi 3 in contrib/delphi2 (Davide Moretti)
 - do not exit prematurely in untgz if 0 at start of block (Magnus Holmgren)
@@ -1052,7 +1052,7 @@ Changes in 1.1.3 (9 July 1998)
 
 Changes in 1.1.2 (19 March 98)
 - added contrib/minzip, mini zip and unzip based on zlib (Gilles Vollant)
-  See http://www.winimage.com/zLibDll/unzip.html
+  See https://www.winimage.com/zLibDll/unzip.html
 - preinitialize the inflate tables for fixed codes, to make the code
   completely thread safe (Mark)
 - some simplifications and slight speed-up to the inflate code (Mark)
@@ -1178,7 +1178,7 @@ Changes in 1.0.6 (19 Jan 1998)
         386 asm code replacing longest_match().
    contrib/iostream/ by Kevin Ruland <kevin@rodin.wustl.edu>
         A C++ I/O streams interface to the zlib gz* functions
-   contrib/iostream2/  by Tyge Løvset <Tyge.Lovset@cmr.no>
+   contrib/iostream2/  by Tyge Lï¿½vset <Tyge.Lovset@cmr.no>
         Another C++ I/O streams interface
    contrib/untgz/  by "Pedro A. Aranda Guti\irrez" <paag@tid.es>
         A very simple tar.gz file extractor using zlib

@@ -385,7 +385,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 
 /**
  * @brief Parses structured entry into *result RAnalStructMember
- * http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
+ * https://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
  *
  * @param ctx
  * @param idx index of the current entry
@@ -427,7 +427,7 @@ static RAnalStructMember *parse_struct_member(Context *ctx, ut64 idx, RAnalStruc
 				the beginning of containing entity. If containing entity has
 				a bit offset, member has that bit offset aswell
 				2.: value is a location description
-				http://www.dwarfstd.org/doc/DWARF4.pdf#page=39&zoom=100,0,0
+				https://www.dwarfstd.org/doc/DWARF4.pdf#page=39&zoom=100,0,0
 			*/
 			offset = value->uconstant;
 			break;
@@ -466,7 +466,7 @@ cleanup:
 
 /**
  * @brief  Parses enum entry into *result RAnalEnumCase
- * http://www.dwarfstd.org/doc/DWARF4.pdf#page=110&zoom=100,0,0
+ * https://www.dwarfstd.org/doc/DWARF4.pdf#page=110&zoom=100,0,0
  *
  * @param ctx
  * @param idx index of the current entry
@@ -514,7 +514,7 @@ cleanup:
  * @param ctx
  * @param idx index of the current entry
  */
-// http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
+// https://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
 static void parse_structure_type(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
@@ -651,7 +651,7 @@ cleanup:
  * @brief Parses a typedef entry into RAnalBaseType and saves it
  *        using r_anal_save_base_type ()
  *
- * http://www.dwarfstd.org/doc/DWARF4.pdf#page=96&zoom=100,0,0
+ * https://www.dwarfstd.org/doc/DWARF4.pdf#page=96&zoom=100,0,0
  *
  * @param ctx
  * @param idx index of the current entry

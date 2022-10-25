@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# $ hg clone http://hg.youterm.com/toys
+# $ hg clone https://hg.youterm.com/toys
 # lochist > lochist.txt
 # perl graph-int-per-line.pl
 #

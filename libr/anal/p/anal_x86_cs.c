@@ -1754,7 +1754,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			if (!arg2 && !arg1) {
 				// TODO: IDIV rbx not implemented. this is just a workaround
 				//
-				// http://www.tptp.cc/mirrors/siyobik.info/instruction/IDIV.html
+				// https://www.tptp.cc/mirrors/siyobik.info/instruction/IDIV.html
 				// Divides (signed) the value in the AX, DX:AX, or EDX:EAX registers (dividend) by the source operand (divisor) and stores the result in the AX (AH:AL), DX:AX, or EDX:EAX registers. The source operand can be a general-purpose register or a memory location. The action of this instruction depends on the operand size (dividend/divisor), as shown in the following table:
 				// IDIV RBX    ==   RDX:RAX /= RBX
 

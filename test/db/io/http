@@ -1,5 +1,5 @@
-NAME=r2 http://example.org
-FILE=http://example.org
+NAME=r2 https://example.org
+FILE=https://example.org
 CMDS=<<EOF
 r
 b 64

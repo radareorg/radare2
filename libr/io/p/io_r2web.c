@@ -110,14 +110,14 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 				path[path_len - 1] = 0;
 			}
 		}
-		char *url = r_str_newf ("http://%s/?V", path);
+		char *url = r_str_newf ("https://%s/?V", path);
 		//eprintf  ("URL:(%s)\n", url);
 		out = r_socket_http_get (url, &code, &rlen);
 		//eprintf ("RES %d %d\n", code, rlen);
 		//eprintf ("OUT(%s)\n", out);
 		if (out && rlen > 0) {
 			mal->fd = getmalfd (mal);
-			mal->url = r_str_newf ("http://%s", path);
+			mal->url = r_str_newf ("https://%s", path);
 			free (path);
 			free (out);
 			free (url);
