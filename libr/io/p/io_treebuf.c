@@ -185,7 +185,7 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int len) {
 	}
 	node = r_rbnode_next (node);
 	if (node) {
-		chunk = node? (IOTreeBufChunk *)node->data: NULL;
+		chunk = (IOTreeBufChunk *)node->data;
 		while (chunk && r_itv_include (search_itv, chunk->itv)) {
 			node = r_rbnode_next (node);
 			r_crbtree_delete (treebuf->tree, &chunk->itv, _treebuf_chunk_find, NULL);

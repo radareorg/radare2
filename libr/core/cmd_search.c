@@ -4158,15 +4158,12 @@ reread:
 			}
 		case 'a': // "/ca"
 			{
-				RSearchKeyword *kw;
-
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || *(space - 1) == '?') {
 					r_core_cmd_help_match (core, help_msg_slash_c, "/ca", true);
 					goto beach;
 				} else {
-					kw = r_search_keyword_new_hexmask ("00", NULL);
 					if (input[2] == 'j') {
 						param.outmode = R_MODE_JSON;
 					}
@@ -4178,13 +4175,14 @@ reread:
 						param.key_search_len = SM4_SEARCH_LENGTH;
 						r_search_reset (core->search, R_SEARCH_SM4);
 					} else {
-						eprintf ("Unsupported block ciphers: %s\n", arg);
+						R_LOG_ERROR ("Unsupported block cipher: %s", arg);
 						goto beach;
 					}
 					if (core->blocksize < param.key_search_len) {
-						eprintf ("Block size must be bigger than %d bytes for the search\n", param.key_search_len);
+						R_LOG_ERROR ("Block size must be larger than %d bytes", param.key_search_len);
 						goto beach;
 					}
+					RSearchKeyword *kw = r_search_keyword_new_hexmask ("00", NULL);
 					r_search_kw_add (search, kw);
 					r_search_begin (core->search);
 					param.key_search = true;
