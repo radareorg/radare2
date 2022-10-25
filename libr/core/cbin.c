@@ -3624,6 +3624,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			}
 			r_cons_printf ("};\"\n");
 		} else if (IS_MODE_JSON (mode)) {
+			const bool bin_filter = r_config_get_b (c->config, "bin.filter");
 			pj_o (pj);
 			pj_ks (pj, "classname", c->name);
 			pj_kN (pj, "addr", c->addr);
@@ -3644,12 +3645,15 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 				if (fi) {
 					pj_ks (pj, "flag", fi->realname? fi->realname: fi->name);
 				}
-				char *s = r_core_cmd_strf (r, "isqq.@0x%08"PFMT64x"@e:bin.demangle=false", sym->vaddr);
-				r_str_trim (s);
-				if (R_STR_ISNOTEMPTY (s)) {
-					pj_ks (pj, "realname", s);
+				if (bin_filter) {
+					// XXX SUPER SLOW and probably unnecessary
+					char *s = r_core_cmd_strf (r, "isqq.@0x%08"PFMT64x"@e:bin.demangle=false", sym->vaddr);
+					r_str_trim (s);
+					if (R_STR_ISNOTEMPTY (s)) {
+						pj_ks (pj, "realname", s);
+					}
+					free (s);
 				}
-				free (s);
 				if (sym->method_flags) {
 					char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
 					pj_k (pj, "flags");
