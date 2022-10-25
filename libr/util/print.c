@@ -2549,6 +2549,9 @@ R_API char *r_print_code_tocolor(const char *o) {
 		const char *cl = strstr (p, " ()");
 		const char *st = strstr (p, " str.");
 		const char *w = r_str_trim_head_ro (p);
+		if (st > cm && st < nl) {
+			st = NULL;
+		}
 		if (w == nl) {
 			p = w;
 			continue;
