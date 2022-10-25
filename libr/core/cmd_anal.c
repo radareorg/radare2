@@ -69,7 +69,7 @@ static const char *help_msg_aae[] = {
 	"aaep", "", "same as aepa@@@i - define anal pins by import flag names",
 	"aaep", "a", "run 'aep ret0@@@i' and then 'aaep' - all unknown imports are faked to return 0",
 	"aaef", "", "emulate all functions using esil to find out computed references (same as aef@@@F)",
-	"aae", " [addr]", "same as aepa@@@i - define anal pins by import flag names",
+	"aae", " [size] ([addr])", "same as aepa@@@i - define anal pins by import flag names",
 	"aae", "", "honor anal.{in,from,to} and emulate all executable regions",
 	NULL
 };
@@ -164,7 +164,7 @@ static const char *help_msg_aa[] = {
 	"aac*", " [len]", "flag function calls without performing a complete analysis",
 	"aaci", "", "flag import xrefs only",
 	"aad", " [len]", "analyze data references to code",
-	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
+	"aae", "[?] [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaef", "", "analyze references with ESIL in all functions",
 	"aaf", "[?][efrt] ", "analyze all functions relationships with flags, type matching and consecutive",
 	"aaF", " [sym*]", "set anal.in=block for all the spaces between flags matching glob",
