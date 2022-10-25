@@ -241,6 +241,28 @@ regset 7 (seg)
 EOF
 RUN
 
+NAME=bad regprofile log test
+FILE=-
+CMDS=<<EOF
+e log.origin=true
+e asm.arch=x86
+e asm.bits=64
+arps
+arp scripts/badrp.r2
+arps
+ar=
+ar rax
+EOF
+EXPECT=<<EOF
+160
+88
+    rax 0x00000000       
+0x00000000
+EOF
+EXPECT_ERR=<<EOF
+ERROR: [r_reg_set_profile_string] =A0 not defined
+EOF
+RUN
 
 NAME=bad regprofile
 FILE=-
@@ -260,7 +282,7 @@ EXPECT=<<EOF
 0x00000000
 EOF
 EXPECT_ERR=<<EOF
-Warning: =A0 not defined
+ERROR: =A0 not defined
 EOF
 RUN
 
@@ -280,13 +302,14 @@ EXPECT=<<EOF
 1
 EOF
 EXPECT_ERR=<<EOF
-r_reg_set_profile_string: Parse error @ line 3 (Invalid syntax: Wrong number of columns)
+ERROR: Parse error @ line 3 (Invalid syntax: Wrong number of columns)
 EOF
 RUN
 
 NAME=bad regprofile 2
 FILE=-
 CMDS=<<EOF
+e log.origin=true
 e asm.arch=x86
 e asm.bits=64
 arps
@@ -303,6 +326,6 @@ EXPECT=<<EOF
 160
 EOF
 EXPECT_ERR=<<EOF
-r_reg_set_profile_string: Parse error @ line 3 (Invalid syntax: Wrong number of columns)
+ERROR: [r_reg_set_profile_string] Parse error @ line 3 (Invalid syntax: Wrong number of columns)
 EOF
 RUN

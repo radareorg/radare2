@@ -1,5 +1,7 @@
 /* radare - Copyright 2014-2022 pancake, defragger */
 
+#define R_LOG_ORIGIN "a2f"
+
 #include <r_types.h>
 #include <r_core.h>
 #include <r_io.h>
@@ -107,12 +109,12 @@ void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
 	}
 	ut64* value = (ut64*) calloc (1, sizeof (ut64));
 	if (!value) {
-		eprintf ("Failed to allocate memory for address stack\n");
+		R_LOG_DEBUG ("Failed to allocate memory for address stack");
 		return;
 	}
 	*value = addr;
 	if (!r_stack_push (stack, (void*)value)) {
-		eprintf ("Failed to push address on stack\n");
+		R_LOG_DEBUG ("Failed to push address on stack");
 		free (value);
 		return;
 	}
@@ -140,7 +142,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 		block_end = false;
 		value = (ut64*) r_stack_pop (stack);
 		if (!value) {
-			eprintf ("Failed to pop next address from stack\n");
+			R_LOG_ERROR ("Failed to pop next address from stack");
 			break;
 		}
 
@@ -148,14 +150,14 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 		free (value);
 		cur = 0;
 		while (!block_end && cur < maxfcnsize) {
-			op = r_core_anal_op (core, addr + cur, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
+			op = r_core_anal_op (core, addr + cur, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 			if (!op || !op->mnemonic) {
-				eprintf ("a2f: Cannot analyze opcode at 0x%"PFMT64x"\n", addr+cur);
+				R_LOG_DEBUG ("a2f: Cannot analyze opcode at 0x%"PFMT64x, addr+cur);
 				oaddr = UT64_MAX;
 				break;
 			}
 			if (op->mnemonic[0] == '?') {
-				eprintf ("a2f: Cannot analyze opcode at 0x%"PFMT64x"\n", addr+cur);
+				R_LOG_DEBUG ("a2f: Cannot analyze opcode at 0x%"PFMT64x, addr+cur);
 				oaddr = UT64_MAX;
 				break;
 			}
@@ -239,7 +241,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 				break;
 			case R_ANAL_OP_TYPE_UNK:
 			case R_ANAL_OP_TYPE_ILL:
-				eprintf ("a2f: Invalid instruction\n");
+				R_LOG_DEBUG ("a2f: Invalid instruction");
 				block_end = true;
 				break;
 			default:
@@ -296,20 +298,19 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 	char *function_label;
 	bool vars = r_config_get_b (core->config, "anal.vars");
 	if (!db) {
-		eprintf ("Cannot create db\n");
+		R_LOG_ERROR ("Cannot create db");
 		return false;
 	}
 
 	RList *delayed_commands = r_list_newf (free);
 	if (!delayed_commands) {
-		eprintf ("Failed to initialize the delayed command list\n");
 		sdb_free (db);
 		return false;
 	}
 
 	ut64 a = analyzeStackBased (core, db, addr, delayed_commands);
 	if (addr == UT64_MAX) {
-		eprintf ("Initial analysis failed\n");
+		R_LOG_ERROR ("Initial analysis failed");
 		return false;
 	}
 	if (a != UT64_MAX) {
@@ -400,7 +401,7 @@ static int r_cmd_anal_call(void *user, const char *input) {
 		switch (input[2]) {
 		case 'f':
 			if (!analyzeFunction (core, core->offset)) {
-				eprintf ("a2f: Failed to analyze function at 0x%08"PFMT64x".\n", core->offset);
+				R_LOG_DEBUG ("a2f: Failed to analyze function at 0x%08"PFMT64x, core->offset);
 			}
 			break;
 		default:

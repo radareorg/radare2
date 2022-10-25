@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2021 - pancake */
+/* radare - LGPL - Copyright 2015-2022 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,12 +36,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "asl", "# = # << #", { 1, 2, 3 } },
 		{ 0, "asrs", "# = # >> #", { 1, 2, 3 } },
 		{ 0, "asr", "# = # >> #", { 1, 2, 3 } },
-		{ 0, "b", "jmp #", { 1 } },
-		{ 0, "cbz", "if !# jmp #", { 1, 2 } },
-		{ 0, "cbnz", "if # jmp #", { 1, 2 } },
-		{ 0, "b.w", "jmp #", { 1 } },
-		{ 0, "b.gt", "jmp ifgt #", { 1 } },
-		{ 0, "b.le", "jmp ifle #", { 1 } },
+		{ 0, "b", "goto #", { 1 } },
+		{ 0, "cbz", "if !# goto #", { 1, 2 } },
+		{ 0, "cbnz", "if # goto #", { 1, 2 } },
+		{ 0, "b.w", "goto #", { 1 } },
+		{ 0, "b.gt", "goto ifgt #", { 1 } },
+		{ 0, "b.le", "goto ifle #", { 1 } },
 		{ 0, "beq lr", "ifeq ret", {0} },
 		{ 0, "beq", "je #", { 1 } },
 		{ 0, "call", "# ()", { 1 } },
@@ -49,13 +49,19 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "blx", "# ()", { 1 } },
 		{ 0, "bx lr", "ret", {0} },
 		{ 0, "bxeq", "je #", { 1 } },
+		{ 0, "b.eq", "if (eq) goto #", { 1 } },
+		{ 0, "b.ne", "if (eq) goto #", { 1 } },
 		{ 0, "cmf", "if (# == #)", { 1, 2 } },
 		{ 0, "cmn", "if (# != #)", { 1, 2 } },
 		{ 0, "cmp", "if (# == #)", { 1, 2 } },
 		{ 0, "fcmp", "if (# == #)", { 1, 2 } },
 		{ 0, "tst", "if ((# & #) == 0)", { 1, 2 } },
+		{ 4, "csel", "# = (#)? # : #", { 1, 4, 2, 3 } },
+		{ 2, "cset", "# = (#)? 1 : 0", { 1, 2 } },
 		{ 0, "dvf", "# = # / #", { 1, 2, 3 } },
 		{ 0, "eor", "# = # ^ #", { 1, 2, 3 } },
+		{ 3, "tbnz", "if (# != #) goto #", { 1, 2, 3 } },
+		{ 3, "tbz", "if (# == #) goto #", { 1, 2, 3 } },
 		{ 1, "bkpt", "breakpoint #", { 1 } },
 		{ 1, "udf", "undefined #", { 1 } },
 		{ 2, "sxtb", "# = (char) #", { 1, 2 } },
@@ -75,18 +81,17 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 3, "ldrsb", "# = (byte) # + #", { 1, 2, 3 } },
 		{ 3, "ldr.w", "# = # + #", { 1, 2, 3 } },
 		{ 3, "ldrsw", "# = # + #", { 1, 2, 3 } },
-		{ 0, "lsl", "# = # << #", { 1, 2, 3 } },
-		{ 0, "lsr", "# = # >> #", { 1, 2, 3 } },
 		{ 0, "mov", "# = #", { 1, 2 } },
 		{ 0, "fmov", "# = #", { 1, 2 } },
 		{ 0, "mvn", "# = ~#", { 1, 2 } },
 		{ 0, "movz", "# = #", { 1, 2 } },
+		{ 4, "movk", "# = # # #", { 1, 2, 3, 4 } },
 		{ 0, "movk", "# = #", { 1, 2 } },
 		{ 0, "movn", "# = ~#", { 1, 2 } },
 		{ 0, "neg", "# = !#", { 1, 2 } },
 		{ 0, "sxtw", "# = #", { 1, 2 } },
 		{ 0, "stur", "# = #", { 2, 1 } },
-		{ 0, "stp", "# = (#, 2)", { 3, 1 } },
+		{ 4, "stp", "# + # = (#, 2)", { 3, 4, 1 } },
 		{ 0, "ldp", "(#, 2) = 3", { 1 } },
 		{ 0, "vmov.i32", "# = #", { 1, 2 } },
 		{ 0, "muf", "# = # * #", { 1, 2, 3 } },
@@ -105,6 +110,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "lsls", "# = # << #", { 1, 2, 3 } },
 		{ 0, "lsr", "# = # >> #", { 1, 2, 3 } },
 		{ 0, "lsl", "# = # << #", { 1, 2, 3 } },
+		{ 0, "lsr.w", "# = # >> #", { 1, 2, 3 } },
+		{ 0, "lsl.w", "# = # << #", { 1, 2, 3 } },
 		{ 2, "str", "# = #", { 2, 1 } },
 		{ 2, "strb", "# = (byte) #", { 2, 1 } },
 		{ 2, "strh", "# = (half) #", { 2, 1 } },
@@ -128,10 +135,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "addw", "# = # + #", { 1, 2, 3 } },
 		{ 0, "sub.w", "# = # - #", { 1, 2, 3 } },
 		{ 0, "tst.w", "if ((# & #) == 0)", { 1, 2 } },
-		{ 0, "lsr.w", "# = # >> #", { 1, 2, 3 } },
-		{ 0, "lsl.w", "# = # << #", { 1, 2, 3 } },
 		{ 0, "pop.w", "pop #", { 1 } },
 		{ 0, "vpop", "pop #", { 1 } },
+		{ 0, "paciza", "", { 1 } },
 		{ 0, "vpush", "push #", { 1 } },
 		{ 0, "push.w", "push #", { 1 } },
 		{ 0, NULL }
@@ -194,7 +200,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 static int parse(RParse *p, const char *data, char *str) {
-	char w0[256], w1[256], w2[256], w3[256];
+	char w0[256], w1[256], w2[256], w3[256], w4[256];
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr;
 
@@ -207,58 +213,59 @@ static int parse(RParse *p, const char *data, char *str) {
 	}
 	memcpy (buf, data, len + 1);
 	if (*buf) {
-		*w0 = *w1 = *w2 = *w3 = '\0';
+		*w0 = *w1 = *w2 = *w3 = *w4 = '\0';
 		ptr = strchr (buf, ' ');
 		if (!ptr) {
 			ptr = strchr (buf, '\t');
 		}
 		if (ptr) {
 			*ptr = '\0';
-			for (++ptr; *ptr == ' '; ptr++) {
-				;
-			}
+			ptr = (char *)r_str_trim_head_ro (ptr + 1);
 			strncpy (w0, buf, sizeof (w0) - 1);
 			strncpy (w1, ptr, sizeof (w1) - 1);
-
 			optr = ptr;
 			if (*ptr == '(') {
-				ptr = strchr (ptr+1, ')');
+				ptr = strchr (ptr + 1, ')');
 			}
 			if (ptr && *ptr == '[') {
-				ptr = strchr (ptr+1, ']');
+				ptr = strchr (ptr + 1, ']');
 			}
 			if (ptr && *ptr == '{') {
-				ptr = strchr (ptr+1, '}');
+				ptr = strchr (ptr + 1, '}');
 			}
 			if (!ptr) {
-				eprintf ("Unbalanced bracket\n");
-				free(buf);
+				R_LOG_ERROR ("Unbalanced bracket");
+				free (buf);
 				return false;
 			}
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (++ptr; *ptr == ' '; ptr++) {
-					;
-				}
+				ptr = (char *)r_str_trim_head_ro (ptr + 1);
 				strncpy (w1, optr, sizeof (w1) - 1);
 				strncpy (w2, ptr, sizeof (w2) - 1);
 				optr = ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
-					for (++ptr; *ptr == ' '; ptr++) {
-						;
-					}
+					ptr = (char *)r_str_trim_head_ro (ptr + 1);
 					strncpy (w2, optr, sizeof (w2) - 1);
 					strncpy (w3, ptr, sizeof (w3) - 1);
+					optr = ptr;
+					ptr = strchr (ptr, ',');
+					if (ptr) {
+						*ptr = '\0';
+						ptr = (char *)r_str_trim_head_ro (ptr + 1);
+						strncpy (w3, optr, sizeof (w3) - 1);
+						strncpy (w4, ptr, sizeof (w4) - 1);
+					}
 				}
 			}
 		}
 		{
-			const char *wa[] = { w0, w1, w2, w3 };
+			const char *wa[] = { w0, w1, w2, w3, w4 };
 			int nw = 0;
-			for (i = 0; i < 4; i++) {
+			for (i = 0; i < 5; i++) {
 				if (wa[i][0]) {
 					nw++;
 				}
@@ -266,14 +273,17 @@ static int parse(RParse *p, const char *data, char *str) {
 			replace (nw, wa, str);
 		}
 	}
-	{
-		char *s = strdup (str);
+	char *s = strdup (str);
+	if (s) {
+		s = r_str_replace (s, " lsl ", " << ", 1);
+		s = r_str_replace (s, " lsr ", " >> ", 1);
 		s = r_str_replace (s, "+ -", "- ", 1);
 		s = r_str_replace (s, "- -", "+ ", 1);
 		strcpy (str, s);
 		free (s);
 	}
 	free (buf);
+	r_str_fixspaces (str);
 	return true;
 }
 
@@ -326,20 +336,18 @@ static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
 }
 
 static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+	r_return_val_if_fail (p, false);
 	RList *spargs = NULL;
 	RList *bpargs = NULL;
 	RListIter *iter;
 	RAnal *anal = p->analb.anal;
 	char *oldstr;
+	bool newstack = anal->opt.var_newstack;
 	char *tstr = strdup (data);
 	if (!tstr) {
 		return false;
 	}
 
-	if (!p->varlist) {
-		free (tstr);
-		return false;
-	}
 	if (p->subrel) {
 		char *rip;
 		if (p->pseudo) {
@@ -372,61 +380,65 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			tstr = tstr_new;
 		}
 	}
-
-	bpargs = p->varlist (f, 'b');
-	spargs = p->varlist (f, 's');
-	bool ucase = IS_UPPER (*tstr);
-	RAnalVarField *var;
-	r_list_foreach (bpargs, iter, var) {
-		st64 delta = p->get_ptr_at
-			? p->get_ptr_at (f, var->delta, addr)
-			: ST64_MAX;
-		if (delta == ST64_MAX && var->field) {
-			delta = var->delta + f->bp_off;
-		} else if (delta == ST64_MAX) {
-			continue;
-		}
-		const char *reg = NULL;
-		if (p->get_reg_at) {
-			reg = p->get_reg_at (f, var->delta, addr);
-		}
-		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_BP];
-		}
-		oldstr = mount_oldstr (p, reg, delta, ucase);
-		if (strstr (tstr, oldstr)) {
-			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
+	if (f && p->varlist) {
+		bpargs = p->varlist (f, 'b');
+		spargs = p->varlist (f, 's');
+		bool ucase = IS_UPPER (*tstr);
+		RAnalVarField *var;
+		r_list_foreach (bpargs, iter, var) {
+			st64 delta = p->get_ptr_at
+				? p->get_ptr_at (f, var->delta, addr)
+				: ST64_MAX;
+			if (delta == ST64_MAX && var->field) {
+				delta = var->delta + f->bp_off;
+			} else if (delta == ST64_MAX) {
+				continue;
+			}
+			const char *reg = NULL;
+			if (p->get_reg_at) {
+				reg = p->get_reg_at (f, var->delta, addr);
+			}
+			if (!reg) {
+				reg = anal->reg->name[R_REG_NAME_BP];
+			}
+			oldstr = mount_oldstr (p, reg, delta, ucase);
+			if (strstr (tstr, oldstr)) {
+				tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
+				free (oldstr);
+				break;
+			}
 			free (oldstr);
-			break;
 		}
-		free (oldstr);
-	}
-	r_list_foreach (spargs, iter, var) {
-		st64 delta = p->get_ptr_at
-			? p->get_ptr_at (f, var->delta, addr)
-			: ST64_MAX;
-		if (delta == ST64_MAX && var->field) {
-			delta = var->delta;
-		} else if (delta == ST64_MAX) {
-			continue;
-		}
-		const char *reg = NULL;
-		if (p->get_reg_at) {
-			reg = p->get_reg_at (f, var->delta, addr);
-		}
-		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_SP];
-		}
-		oldstr = mount_oldstr (p, reg, delta, ucase);
-		if (strstr (tstr, oldstr)) {
-			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
+		r_list_foreach (spargs, iter, var) {
+			st64 delta = var->delta;
+			if (!newstack) {
+				delta = p->get_ptr_at
+					? p->get_ptr_at (f, var->delta, addr)
+					: ST64_MAX;
+				if (delta == ST64_MAX && var->field) {
+					delta = var->delta;
+				} else if (delta == ST64_MAX) {
+					continue;
+				}
+			}
+			const char *reg = NULL;
+			if (p->get_reg_at) {
+				reg = p->get_reg_at (f, var->delta, addr);
+			}
+			if (!reg) {
+				reg = anal->reg->name[R_REG_NAME_SP];
+			}
+			oldstr = mount_oldstr (p, reg, delta, ucase);
+			if (strstr (tstr, oldstr)) {
+				tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
+				free (oldstr);
+				break;
+			}
 			free (oldstr);
-			break;
 		}
-		free (oldstr);
+		r_list_free (bpargs);
+		r_list_free (spargs);
 	}
-	r_list_free (bpargs);
-	r_list_free (spargs);
 	if (len > strlen (tstr)) {
 		strcpy  (str, tstr);
 	} else {

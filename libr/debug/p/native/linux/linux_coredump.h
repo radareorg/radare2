@@ -3,6 +3,7 @@
 #ifndef LINUX_COREDUMP_H
 #define LINUX_COREDUMP_H
 
+#include "linux_debug.h"
 #include "elf_specs.h"
 #include <sys/procfs.h>
 
@@ -57,7 +58,7 @@
 
 #define SIZE_PR_FNAME	16
 
-#define SIZE_NT_FILE_DESCSZ	sizeof(unsigned long) * 3   /* start_address * end_address * offset_address */
+#define SIZE_NT_FILE_DESCSZ	sizeof (unsigned long) * 3   /* start_address * end_address * offset_address */
 /*
 NT_FILE layout:
 	[number of mappings]
@@ -208,8 +209,5 @@ typedef enum {
 extern ssize_t process_vm_readv(pid_t pid, const struct iovec *local_iov,
 	unsigned long liovcnt, const struct iovec *remote_iov,
 	unsigned long riovcnt, unsigned long flags);
-
-bool linux_generate_corefile (RDebug *dbg, RBuffer *dest);
-int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 
 #endif

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2019 - pancake */
+/* radare - LGPL - Copyright 2017-2022 - pancake */
 
 #include "r_types_base.h"
 #include "r_io.h"
@@ -160,7 +160,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "winedbg://", 10));
+	return r_str_startswith (pathname, "winedbg://");
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
@@ -179,10 +179,10 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (reply) {
 			int rw = 7;
 			free (reply);
-			eprintf ("Wine-dbg is ready to go!\n");
+			R_LOG_INFO ("Wine-dbg is ready to go");
 			return r_io_desc_new (io, &r_io_plugin_winedbg, pathname, rw, mode, gs);
 		}
-		eprintf ("Can't find the Wine-dbg prompt\n");
+		R_LOG_ERROR ("Can't find the Wine-dbg prompt");
 	}
 	return NULL;
 }
@@ -233,7 +233,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "")) {
 		return NULL;
 	}
-	if (!strncmp (cmd, "?", 1)) {
+	if (*cmd == '?') {
 		eprintf ("dr  : show registers\n");
 		eprintf ("dr* : show registers as flags\n");
 		eprintf ("drp : show reg profile\n");
@@ -243,14 +243,14 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("dc  : continue\n");
 		eprintf ("dm  : show maps\n");
 		eprintf ("pid : show current process id\n");
-	} else if (!strncmp (cmd, "dr8", 3)) {
+	} else if (r_str_startswith (cmd, "dr8")) {
 		struct winedbg_x86_32 r = regState ();
 		ut8 *arena = (ut8*)calloc (3, sizeof (struct winedbg_x86_32));
 		if (arena) {
 			r_hex_bin2str ((ut8*)&r, sizeof (r), (char *)arena);
 			return (char *)arena;
 		}
-	} else if (!strncmp (cmd, "drp", 3)) {
+	} else if (r_str_startswith (cmd, "drp")) {
 const char *msg =
 "=PC	eip\n"\
 "=SP	esp\n"\
@@ -296,7 +296,7 @@ const char *msg =
 "flg	rf	.1	.202	0\n"\
 "flg	vm	.1	.203	0\n";
 		return strdup (msg);
-	} else if (!strncmp (cmd, "dr*", 3)) {
+	} else if (r_str_startswith (cmd, "dr*")) {
 		struct winedbg_x86_32 r = regState ();
 		io->cb_printf ("f eip = 0x%08x\n", r.eip);
 		io->cb_printf ("f esp = 0x%08x\n", r.esp);
@@ -314,21 +314,21 @@ const char *msg =
 		io->cb_printf ("f es = 0x%08x\n", r.es);
 		io->cb_printf ("f fs = 0x%08x\n", r.fs);
 		io->cb_printf ("f gs = 0x%08x\n", r.gs);
-	} else if (!strncmp (cmd, "dr", 2)) {
+	} else if (r_str_startswith (cmd, "dr")) {
 		printcmd (io, "info reg");
-	} else if (!strncmp (cmd, "db ", 3)) {
+	} else if (r_str_startswith (cmd, "db ")) {
 		int n = r_num_get (NULL, cmd + 3) || io->off;
 		r_strf_var (brkcmd, 32, "break *%x", n);
 		free (runcmd (brkcmd));
-	} else if (!strncmp (cmd, "ds", 2)) {
+	} else if (r_str_startswith (cmd, "ds")) {
 		free (runcmd ("stepi"));
-	} else if (!strncmp (cmd, "dc", 2)) {
+	} else if (r_str_startswith (cmd, "dc")) {
 		free (runcmd ("cont"));
-	} else if (!strncmp (cmd, "dso", 3)) {
-		eprintf ("TODO: dso\n");
-	} else if (!strncmp (cmd, "dp", 3)) {
+	} else if (r_str_startswith (cmd, "dso")) {
+		R_LOG_TODO ("dso");
+	} else if (r_str_startswith (cmd, "dp")) {
 		printcmd (io, "info thread");
-	} else if (!strncmp (cmd, "dm", 3)) {
+	} else if (r_str_startswith (cmd, "dm")) {
 		char *wineDbgMaps = runcmd ("info maps");
 		char *res = NULL;
 		if (wineDbgMaps) {
@@ -358,7 +358,7 @@ const char *msg =
 			free (wineDbgMaps);
 			return res;
 		}
-	} else if (!strncmp (cmd, "pid", 3)) {
+	} else if (r_str_startswith (cmd, "pid")) {
 		return r_str_newf ("%d", fd->fd);
 	} else {
 		printcmd (io, cmd);

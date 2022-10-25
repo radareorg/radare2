@@ -1,23 +1,26 @@
 /* radare - LGPL - Copyright 2007-2022 - pancake */
 
+#define R_LOG_ORIGIN "rax2"
+
 #include <r_main.h>
 #include <r_util.h>
 #include <r_util/r_print.h>
 
-// don't use fixed sized buffers
+// XXX don't use fixed sized buffers
 #define STDIN_BUFFER_SIZE 354096
-static int rax(RNum *num, char *str, int len, int last, ut64 *flags, int *fm);
+static bool rax(RNum *num, char *str, int len, int last, ut64 *flags, int *fm);
 
 static int use_stdin(RNum *num, ut64 *flags, int *fm) {
+	r_return_val_if_fail (num && flags, -1);
 	if (!flags) {
 		return 0;
 	}
 	char *buf = calloc (1, STDIN_BUFFER_SIZE + 1);
-	int l;
 	if (!buf) {
 		return 0;
 	}
-	if (!(*flags & (1<<14))) {
+	int l;
+	if (!(*flags & (1 << 14))) {
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
 			// make sure we don't read beyond boundaries
 			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
@@ -40,15 +43,24 @@ static int use_stdin(RNum *num, ut64 *flags, int *fm) {
 	} else {
 		l = 1;
 	}
+	int rc = 0;
 	if (l > 0) {
-		rax (num, buf, l, 0, flags, fm);
+		if (!rax (num, buf, l, 0, flags, fm)) {
+			rc = 1;
+		}
 	}
 	free (buf);
-	return 0;
+	return rc;
 }
 
-static int format_output(RNum *num, char mode, const char *s, int force_mode, ut64 flags) {
-	ut64 n = r_num_math (num, s);
+static bool format_output(RNum *num, char mode, const char *s, int force_mode, ut64 flags) {
+	const char *errstr = NULL;
+	ut64 n = r_num_calc (num, s, &errstr);
+	if (errstr) {
+		R_LOG_ERROR (errstr);
+		// eprintf ("%s\n", num->nc.calc_err);
+		return false;
+	}
 	char strbits[65];
 	if (force_mode) {
 		mode = force_mode;
@@ -71,8 +83,11 @@ static int format_output(RNum *num, char mode, const char *s, int force_mode, ut
 		int n2 = (int) n;
 		float *f = (float *) &n2;
 		printf ("%ff\n", *f);
-	} break;
-	case 'f': printf ("%.01lf\n", num->fvalue); break;
+		}
+		break;
+	case 'f':
+		printf ("%.01lf\n", num->fvalue);
+		break;
 	case 'l':
 		R_STATIC_ASSERT (sizeof (float) == 4);
 		float f = (float) num->fvalue;
@@ -97,8 +112,8 @@ static int format_output(RNum *num, char mode, const char *s, int force_mode, ut
 		}
 		break;
 	default:
-		eprintf ("Unknown output mode %d\n", mode);
-		break;
+		R_LOG_ERROR ("Unknown output mode %d", mode);
+		return false;
 	}
 	return true;
 }
@@ -163,7 +178,8 @@ static int help(void) {
 	return true;
 }
 
-static int rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
+static bool rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
+	const char *errstr = NULL;
 	ut64 flags = *_flags;
 	const char *nl = "";
 	ut8 *buf;
@@ -257,7 +273,7 @@ dotherax:
 		int n = ((strlen (str)) >> 1) + 1;
 		buf = malloc (n);
 		if (buf) {
-			memset (buf, '\0', n);
+			memset (buf, 0, n);
 			n = r_hex_str2bin (str, (ut8 *) buf);
 			if (n > 0) {
 				fwrite (buf, n, 1, stdout);
@@ -265,7 +281,7 @@ dotherax:
 #if __EMSCRIPTEN__
 			puts ("");
 #else
-			if (nl && *nl) {
+			if (R_STR_ISNOTEMPTY (nl)) {
 				puts ("");
 			}
 #endif
@@ -306,8 +322,13 @@ dotherax:
 		ut32 *m = (ut32 *) buf;
 		memset (buf, '\0', n);
 		n = r_hex_str2bin (str, (ut8 *) buf);
-		if (n < 1 || !memcmp (str, "0x", 2)) {
-			ut64 q = r_num_math (num, str);
+		if (n < 1 || r_str_startswith (str, "0x")) {
+			ut64 q = r_num_calc (num, str, &errstr);
+			if (errstr) {
+				R_LOG_ERROR (errstr);
+				free (buf);
+				return false;
+			}
 			s = r_print_randomart ((ut8 *) &q, sizeof (q), q);
 			printf ("%s\n", s);
 			free (s);
@@ -319,7 +340,11 @@ dotherax:
 		free (m);
 		return true;
 	} else if (flags & (1 << 9)) { // -n
-		ut64 n = r_num_math (num, str);
+		ut64 n = r_num_calc (num, str, &errstr);
+		if (errstr) {
+			R_LOG_ERROR (errstr);
+			return false;
+		}
 		if (n >> 32) {
 			/* is 64 bit value */
 			if (flags & 1) {
@@ -365,7 +390,11 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 16)) { // -w
-		ut64 n = r_num_math (num, str);
+		ut64 n = r_num_calc (num, str, &errstr);
+		if (errstr) {
+			R_LOG_ERROR (errstr);
+			return false;
+		}
 		if (n >> 31) {
 			// is >32bit
 			n = (st64) (st32) n;
@@ -377,7 +406,11 @@ dotherax:
 		printf ("%" PFMT64d "\n", n);
 		return true;
 	} else if (flags & (1 << 15)) { // -N
-		ut64 n = r_num_math (num, str);
+		ut64 n = r_num_calc (num, str, &errstr);
+		if (errstr) {
+			R_LOG_ERROR (errstr);
+			return false;
+		}
 		if (n >> 32) {
 			/* is 64 bit value */
 			if (flags & 1) {
@@ -406,8 +439,12 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 10)) { // -u
-		char buf[8];
-		r_num_units (buf, sizeof (buf), r_num_math (NULL, str));
+		char buf[8] = {0};
+		r_num_units (buf, sizeof (buf), r_num_calc (NULL, str, &errstr));
+		if (errstr) {
+			R_LOG_ERROR (errstr);
+			return false;
+		}
 		printf ("%s\n", buf);
 		return true;
 	} else if (flags & (1 << 11)) { // -t
@@ -417,10 +454,18 @@ dotherax:
 		if (r_list_length (split) >= 2 && strlen (r_list_head (split)->n->data) > 2) {
 			gmt = (const char*) r_list_head (split)->n->data + 2;
 		}
-		ut32 n = r_num_math (num, ts);
+		ut32 n = r_num_calc (num, ts, &errstr);
+		if (errstr) {
+			R_LOG_ERROR (errstr);
+			return false;
+		}
 		RPrint *p = r_print_new ();
 		if (gmt) {
-			p->datezone = r_num_math (num, gmt);
+			p->datezone = r_num_calc (num, gmt, &errstr);
+			if (errstr) {
+				R_LOG_ERROR (errstr);
+				return false;
+			}
 		}
 		r_print_date_unix (p, (const ut8 *) &n, sizeof (ut32));
 		r_print_free (p);
@@ -456,7 +501,7 @@ dotherax:
 				fflush (stdout);
 				free (res);
 			} else {
-				eprintf ("Invalid input.\n");
+				R_LOG_ERROR ("Invalid input");
 			}
 			free (s);
 		}
@@ -467,10 +512,14 @@ dotherax:
 		ut32 n32, s, a;
 		double d;
 		float f;
-		ut64 n = r_num_math (num, str);
-
-		if (num->dbz) {
-			eprintf ("RNum ERROR: Division by Zero\n");
+		const char *errstr = NULL;
+		ut64 n = r_num_calc (num, str, &errstr);
+		if (errstr) {
+			R_LOG_ERROR (errstr);
+			return false;
+		}
+		if (num->dbz) { // XXX should be done in errstr already
+			R_LOG_ERROR ("division by zero");
 			return false;
 		}
 		n32 = (ut32) (n & UT32_MAX);
@@ -531,24 +580,30 @@ dotherax:
 		r_print_hex_from_bin (NULL, str);
 		return true;
 	} else if (flags & (1 << 21)) { // -i
-		printf ("unsigned char buf[] = {");
+		RStrBuf *sb = r_strbuf_new ("unsigned char buf[] = {");
 		/* reasonable amount of bytes per line */
 		const int byte_per_col = 12;
 		for (i = 0; i < len-1; i++) {
 			/* wrapping every N bytes */
 			if (i % byte_per_col == 0) {
-				printf ("\n  ");
+				r_strbuf_append (sb, "\n  ");
 			}
-			printf ("0x%02x, ", (ut8) str[i]);
+			r_strbuf_appendf (sb, "0x%02x, ", (ut8) str[i]);
 		}
 		/* some care for the last element */
 		if (i % byte_per_col == 0) {
-			printf("\n  ");
+			r_strbuf_append (sb, "\n  ");
 		}
-		printf ("0x%02x\n", (ut8) str[len - 1]);
-		printf ("};\n");
-		printf ("unsigned int buf_len = %d;\n", len);
-		return true;
+		r_strbuf_appendf (sb, "0x%02x\n", (ut8) str[len - 1]);
+		r_strbuf_append (sb, "};\n");
+		r_strbuf_appendf (sb, "unsigned int buf_len = %d;\n", len);
+		char *s = r_strbuf_drain (sb);
+		if (s) {
+			printf ("%s", s);
+			free (s);
+			return true;
+		}
+		return false;
 	} else if (flags & (1 << 22)) { // -o
 		// check -r
 		// flags & (1 << 18)
@@ -561,10 +616,15 @@ dotherax:
 			modified_str = r_str_new (str);
 		}
 
-		ut64 n = r_num_math (num, modified_str);
+		const char *errstr = NULL;
+		ut64 n = r_num_calc (num, modified_str, &errstr);
 		free (modified_str);
+		if (errstr) {
+			R_LOG_ERROR ("Division by Zero");
+			return false;
+		}
 		if (num->dbz) {
-			eprintf ("RNum ERROR: Division by Zero\n");
+			R_LOG_ERROR ("Division by Zero");
 			return false;
 		}
 
@@ -573,7 +633,7 @@ dotherax:
 			printf ("%s", asnum);
 			free (asnum);
 		} else {
-			eprintf ("No String Possible\n");
+			R_LOG_ERROR ("Not a string");
 			return false;
 		}
 		return true;
@@ -584,14 +644,19 @@ dotherax:
 			ut32 ip32 = ip[0] | (ip[1] << 8) | (ip[2] << 16) | (ip[3] << 24);
 			printf ("0x%08x\n", ip32);
 		} else {
-			ut32 ip32 = (ut32)r_num_math (NULL, str);
+			const char *errstr = NULL;
+			ut32 ip32 = (ut32)r_num_calc (NULL, str, &errstr);
+			if (errstr) {
+				R_LOG_ERROR (errstr);
+				return false;
+			}
 			ut8 ip[4] = { ip32 & 0xff, (ip32 >> 8) & 0xff, (ip32 >> 16) & 0xff, ip32 >> 24 };
 			printf ("%d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
 		}
 		return true;
 	}
 
-	if  (str[0] == '0' && (tolower ((unsigned char)str[1]) == 'x')) {
+	if  (str[0] == '0' && (tolower ((ut8)str[1]) == 'x')) {
 		out_mode = (flags & 32)? '0': 'I';
 	} else if (r_str_startswith (str, "b")) {
 		out_mode = 'B';
@@ -624,17 +689,20 @@ dotherax:
 	}
 	while ((p = strchr (str, ' '))) {
 		*p = 0;
-		format_output (num, out_mode, str, *fm, flags);
+		if (!format_output (num, out_mode, str, *fm, flags)) {
+			return false;
+		}
 		str = p + 1;
 	}
 	if (*str) {
-		format_output (num, out_mode, str, *fm, flags);
+		return format_output (num, out_mode, str, *fm, flags);
 	}
 	return true;
 }
 
 R_API int r_main_rax2(int argc, const char **argv) {
 	int i, fm = 0;
+	int rc = 0;
 	if (argc < 2) {
 		help_usage ();
 		// use_stdin (num, NULL, &fm);
@@ -643,11 +711,15 @@ R_API int r_main_rax2(int argc, const char **argv) {
 		ut64 flags = 0;
 		for (i = 1; i < argc; i++) {
 			char *argv_i = strdup (argv[i]);
-			r_str_unescape (argv_i);
-			rax (num, argv_i, 0, i == argc - 1, &flags, &fm);
-			free (argv_i);
+			if (argv_i) {
+				r_str_unescape (argv_i);
+				if (!rax (num, argv_i, 0, i == argc - 1, &flags, &fm)) {
+					rc = 1;
+				}
+				free (argv_i);
+			}
 		}
 		r_num_free (num);
 	}
-	return 0;
+	return rc;
 }

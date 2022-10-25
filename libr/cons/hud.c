@@ -20,7 +20,7 @@ R_API char *r_cons_hud_file(const char *f) {
 // the lines starting with # )
 R_API char *r_cons_hud_line_string(const char *s) {
 	if (!r_cons_is_interactive ()) {
-		R_LOG_ERROR ("Hud mode requires scr.interactive=true.");
+		R_LOG_ERROR ("Hud mode requires scr.interactive=true");
 		return NULL;
 	}
 	char *os, *track, *ret, *o = strdup (s);
@@ -59,7 +59,7 @@ R_API char *r_cons_hud_line_string(const char *s) {
 // the lines starting with # )
 R_API char *r_cons_hud_string(const char *s) {
 	if (!r_cons_is_interactive ()) {
-		R_LOG_ERROR ("Hud mode requires scr.interactive=true.");
+		R_LOG_ERROR ("Hud mode requires scr.interactive=true");
 		return NULL;
 	}
 	char *os, *track, *ret, *o = strdup (s);
@@ -95,10 +95,10 @@ R_API char *r_cons_hud_string(const char *s) {
 }
 
 /* Match a filter on a line. A filter can contain multiple words
-   separated by spaces, which are all matched *in any order* over the target
-   entry. If all words are present, the function returns true.
-   The mask is a character buffer which is filled by 'x' to mark those characters
-   that match the filter */
+ * separated by spaces, which are all matched *in any order* over the target
+ * entry. If all words are present, the function returns true.
+ * The mask is a character buffer which is filled by 'x' to mark those characters
+ * that match the filter */
 static bool __matchString(char *entry, char *filter, char *mask, const int mask_size) {
 	char *p, *current_token = filter;
 	const char *filter_end = filter + strlen (filter);
@@ -454,7 +454,7 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 		}
 		r_list_free (files);
 	} else {
-		R_LOG_ERROR ("No files found\n");
+		R_LOG_ERROR ("No files found");
 	}
 	if (!ret) {
 		free (tmp);

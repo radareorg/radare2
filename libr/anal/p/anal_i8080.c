@@ -13,10 +13,15 @@
 
 static int i8080_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	char out[32];
-	int ilen = i8080_disasm (data, out, len);
+	ut8 code[3] = {0};
+	memcpy (code, data, R_MIN (sizeof (code), len));
+	int ilen = i8080_disasm (code, out, len);
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		op->mnemonic = r_str_ndup (out, sizeof (out));
+	}
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
-	switch (data[0]) {
+	switch (code[0]) {
 	case 0x00:
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;

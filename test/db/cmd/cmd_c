@@ -45,23 +45,39 @@ RUN
 
 NAME=cmd_c2
 FILE=bins/elf/ls
-CMDS=c2 0xf3f3
+CMDS=<<EOF
+c2 0xf3f3
+?e ---
+c2* 0xf3f3
+EOF
 EXPECT=<<EOF
 0x00005ae1 (byte=02)   0f ' '  ->  f3 ' '
+---
+wx f3 @ 0x00005ae1
 EOF
 RUN
 
 NAME=cmd_c4
 FILE=bins/elf/ls
-CMDS=c4 0xfa1e0ff2
+CMDS=<<EOF
+c4 0xfa1e0ff2
+?e ---
+c4* 0xfa1e0ff2
+EOF
 EXPECT=<<EOF
 0x00005ae0 (byte=01)   f3 ' '  ->  f2 ' '
+---
+wx f2 @ 0x00005ae0
 EOF
 RUN
 
 NAME=cmd_c8
 FILE=bins/elf/ls
-CMDS=c8 0x8989898989898989
+CMDS=<<EOF
+c8 0x8989898989898989
+?e ---
+c8* 0x8989898989898989
+EOF
 EXPECT=<<EOF
 0x00005ae0 (byte=01)   f3 ' '  ->  89 ' '
 0x00005ae1 (byte=02)   0f ' '  ->  89 ' '
@@ -70,5 +86,13 @@ EXPECT=<<EOF
 0x00005ae4 (byte=05)   31 '1'  ->  89 ' '
 0x00005ae5 (byte=06)   ed ' '  ->  89 ' '
 0x00005ae6 (byte=07)   49 'I'  ->  89 ' '
+---
+wx 89 @ 0x00005ae0
+wx 89 @ 0x00005ae1
+wx 89 @ 0x00005ae2
+wx 89 @ 0x00005ae3
+wx 89 @ 0x00005ae4
+wx 89 @ 0x00005ae5
+wx 89 @ 0x00005ae6
 EOF
 RUN

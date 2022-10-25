@@ -1,10 +1,8 @@
-/* radare2 - LGPL - Copyright 2015-2017 - pancake */
-
-/* XXX: maybe this should be implemented in RBin */
-/* we need to extract the code section and get offset flags */
+/* radare2 - LGPL - Copyright 2015-2022 - pancake */
 
 #include <r_fs.h>
 #include <r_types.h>
+
 R_PACKED (
 typedef struct {
 	ut8 flag; // 0x80 if active
@@ -36,11 +34,10 @@ static int fs_part_dos(void *disk, void *ptr, void *closure) {
 	memset (&mbr, 0, sizeof (mbr));
 	fs->iob.read_at (fs->iob.io, 0, (ut8*)&mbr, sizeof (mbr));
 	if (mbr.aa55 != 0xaa55) {
-		eprintf ("Invalid DOS signature at 0x%x\n",
-			(int)r_offsetof (MBR, aa55));
+		R_LOG_ERROR ("Invalid DOS signature at 0x%x", (int)r_offsetof (MBR, aa55));
 		return 0;
 	}
-	for (i=0; i<4; i++) {
+	for (i = 0; i < 4; i++) {
 		ut64 addr, aend;
 		DOS_ENTRY *e = &mbr.entries[i];
 		if (e->type != 0) {

@@ -89,7 +89,7 @@
 # in a different place, so we must use an indirect offset.
 >>>(84.b+85)		string		\x03vorbis
 >>>>(84.b+96)		string/c	Xiphophorus\ libVorbis\ I	\b, created by: Xiphophorus libVorbis I
->>>>>(84.b+120)		string		>00000000	
+>>>>>(84.b+120)		string		>00000000
 # Map to beta version numbers:
 >>>>>>(84.b+120)	string		<20000508	(<beta1, prepublic)
 >>>>>>(84.b+120)	string		20000508	(1.0 beta 1 or beta 2)
@@ -111,7 +111,7 @@
 >>>>>>(84.b+120)	string		>20011231	(pre-1.0 CVS)
 # For the 1.0 release, Xiphophorus is replaced by Xiph.Org
 >>>>(84.b+96)		string/c	Xiph.Org\ libVorbis\ I	\b, created by: Xiph.Org libVorbis I
->>>>>(84.b+117)		string		>00000000	
+>>>>>(84.b+117)		string		>00000000
 >>>>>>(84.b+117)	string		<20020717	(pre-1.0 CVS)
 >>>>>>(84.b+117)	string		20020717	(1.0)
 >>>>>>(84.b+117)	string		20030909	(1.0.1)

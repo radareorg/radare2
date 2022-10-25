@@ -2,7 +2,6 @@
 #define R2_LIST_H
 
 #include <r_types.h>
-#include <r_flist.h>
 #include <sdb.h>
 #ifdef __cplusplus
 extern "C" {
@@ -34,11 +33,6 @@ typedef struct r_list_range_t {
 typedef int (*RListComparator)(const void *a, const void *b);
 typedef ut64 (*RListComparatorItem)(const void *a);
 
-#define ROFList_Parent RList
-typedef struct r_oflist_t {
-	ROFList_Parent super; // super class
-	RFList *array;	// statical readonly cache of linked list as a pointer array
-} ROFList;
 #endif
 
 #ifdef R_API

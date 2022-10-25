@@ -48,7 +48,6 @@ static PTHREAD_ITEM __r_debug_thread_add(RDebug *dbg, DWORD pid, DWORD tid, HAND
 	}
 	pthread = R_NEW0 (THREAD_ITEM);
 	if (!pthread) {
-		R_LOG_ERROR ("__r_debug_thread_add: Memory allocation failed.\n");
 		return NULL;
 	}
 	*pthread = th;
@@ -122,7 +121,7 @@ static int __set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
 	CONTEXT ctx = {0};
 	size = R_MIN (size, sizeof (ctx));
 	memcpy (&ctx, buf, size);
-	if(!(ret = SetThreadContext (th, &ctx))) {
+	if (!(ret = SetThreadContext (th, &ctx))) {
 		r_sys_perror ("__set_thread_context/SetThreadContext");
 	}
 	return ret;
@@ -181,7 +180,7 @@ static int __get_avx(HANDLE th, ut128 xmm[16], ut128 ymm[16]) {
 		goto err_get_avx;
 	}
 	newxmm = (ut128 *)r_w32_LocateXStateFeature (ctx, XSTATE_LEGACY_SSE, &featurelen);
-		nregs = featurelen / sizeof(*newxmm);
+		nregs = featurelen / sizeof (*newxmm);
 	for (index = 0; index < nregs; index++) {
 		ymm[index].High = 0;
 		xmm[index].High = 0;
@@ -472,7 +471,7 @@ err_get_file_name_from_handle:
 		char *ret = r_sys_conv_win_to_utf8 (filename);
 		free (filename);
 		return ret;
-	}	
+	}
 	return NULL;
 }
 
@@ -577,12 +576,12 @@ int w32_attach_new_process(RDebug* dbg, int pid) {
 	int tid = -1;
 
 	if (!w32_detach (dbg, dbg->pid)) {
-		eprintf ("Failed to detach from (%d)\n", dbg->pid);
+		R_LOG_ERROR ("Failed to detach from (%d)", dbg->pid);
 		return -1;
 	}
 
 	if ((tid = w32_attach (dbg, pid)) < 0) {
-		eprintf ("Failed to attach to (%d)\n", pid);
+		R_LOG_ERROR ("Failed to attach to (%d)", pid);
 		return -1;
 	}
 
@@ -638,7 +637,7 @@ bool w32_select(RDebug *dbg, int pid, int tid) {
 			wrap->pi.hThread = th->hThread;
 			selected = th->tid;
 			break;
-		}	
+		}
 	}
 
 	if (dbg->coreb.cfggeti (dbg->coreb.core, "dbg.threads")) {
@@ -671,7 +670,7 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 		}
 		return true;
 	}
-	
+
 	bool ret = false;
 	if (TerminateProcess (wrap->pi.hProcess, 1)) {
 		ret = true;
@@ -951,7 +950,7 @@ RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid) {
 				break;
 			default:
 				print_exception_event (&de);
-				if (is_exception_fatal (de.u.Exception.ExceptionRecord.ExceptionCode)) {				
+				if (is_exception_fatal (de.u.Exception.ExceptionRecord.ExceptionCode)) {
 					next_event = 0;
 					dbg->reason.type = exception_to_reason (de.u.Exception.ExceptionRecord.ExceptionCode);
 					dbg->reason.tid = de.dwThreadId;
@@ -1209,7 +1208,7 @@ static void __w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 		goto err___w32_info_user;
 	}
 	if (*usr_dom) {
-		rdi->usr = r_str_newf (W32_TCHAR_FSTR"\\"W32_TCHAR_FSTR, usr_dom, usr);		
+		rdi->usr = r_str_newf (W32_TCHAR_FSTR"\\"W32_TCHAR_FSTR, usr_dom, usr);
 	} else {
 		rdi->usr = r_sys_conv_win_to_utf8 (usr);
 	}

@@ -1,4 +1,4 @@
-/* radare - GPL - Copyright 2010-2016 pancake */
+/* radare - GPL - Copyright 2010-2022 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -17,7 +17,7 @@ static libqnxr_t *desc = NULL;
 static RIODesc *rioqnx = NULL;
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	return (!strncmp (file, "qnx://", 6));
+	return r_str_startswith (file, "qnx://");
 }
 
 /* hacky cache to speedup io a bit */
@@ -89,11 +89,11 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		// FIX: Don't allocate more than one RIODesc
 		return rioqnx;
 	}
-	strncpy (host, file + 6, sizeof(host) - 1);
-	host[sizeof(host) - 1] = '\0';
+	strncpy (host, file + 6, sizeof (host) - 1);
+	host[sizeof (host) - 1] = '\0';
 	port = strchr (host, ':');
 	if (!port) {
-		eprintf ("Port not specified. Please use qnx://[host]:[port]\n");
+		R_LOG_ERROR ("Port not specified. Please use qnx://[host]:[port]");
 		return NULL;
 	}
 	*port = '\0';
@@ -104,7 +104,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 
 	if (r_sandbox_enable (0)) {
-		eprintf ("sandbox: Cannot use network\n");
+		R_LOG_ERROR ("sandbox: Cannot use network");
 		return NULL;
 	}
 	rioq = R_NEW0 (RIOQnx);
@@ -115,7 +115,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		rioqnx = r_io_desc_new (io, &r_io_plugin_qnx, file, rw, mode, rioq);
 		return rioqnx;
 	}
-	eprintf ("qnx.io.open: Cannot connect to host.\n");
+	R_LOG_ERROR ("qnx.io.open: Cannot connect to host");
 	free (rioq);
 	return NULL;
 }

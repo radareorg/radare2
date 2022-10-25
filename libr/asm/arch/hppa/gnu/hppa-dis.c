@@ -112,11 +112,11 @@ static const char *const wide_add_cond_names[] =
 static const char *const logical_cond_names[] =
 {
   "", ",=", ",<", ",<=", 0, 0, 0, ",od",
-  ",tr", ",<>", ",>=", ",>", 0, 0, 0, ",ev"};
+  ",tr", ",<>", ",>=", ",>", 0, 0, 0, ",ev" };
 static const char *const logical_cond_64_names[] =
 {
   ",*", ",*=", ",*<", ",*<=", 0, 0, 0, ",*od",
-  ",*tr", ",*<>", ",*>=", ",*>", 0, 0, 0, ",*ev"};
+  ",*tr", ",*<>", ",*>=", ",*>", 0, 0, 0, ",*ev" };
 static const char *const unit_cond_names[] =
 {
   "", ",swz", ",sbz", ",shz", ",sdc", ",swc", ",sbc", ",shc",
@@ -139,15 +139,15 @@ static const char *const bb_cond_64_names[] =
 {
   ",*<", ",*>="
 };
-static const char *const index_compl_names[] = {"", ",m", ",s", ",sm"};
-static const char *const short_ldst_compl_names[] = {"", ",ma", "", ",mb"};
+static const char *const index_compl_names[] = { "", ",m", ",s", ",sm" };
+static const char *const short_ldst_compl_names[] = { "", ",ma", "", ",mb" };
 static const char *const short_bytes_compl_names[] =
 {
   "", ",b,m", ",e", ",e,m"
 };
-static const char *const float_format_names[] = {",sgl", ",dbl", "", ",quad"};
-static const char *const fcnv_fixed_names[] = {",w", ",dw", "", ",qw"};
-static const char *const fcnv_ufixed_names[] = {",uw", ",udw", "", ",uqw"};
+static const char *const float_format_names[] = { ",sgl", ",dbl", "", ",quad" };
+static const char *const fcnv_fixed_names[] = { ",w", ",dw", "", ",qw" };
+static const char *const fcnv_ufixed_names[] = { ",uw", ",udw", "", ",uqw" };
 static const char *const float_comp_names[] =
 {
   ",false?", ",false", ",?", ",!<=>", ",=", ",=t", ",?=", ",!<>",
@@ -155,10 +155,10 @@ static const char *const float_comp_names[] =
   ",!?<=", ",>", ",?>", ",!<=", ",!?<", ",>=", ",?>=", ",!<",
   ",!?=", ",<>", ",!=", ",!=t", ",!?", ",<=>", ",true?", ",true"
 };
-static const char *const signed_unsigned_names[] = {",u", ",s"};
-static const char *const mix_half_names[] = {",l", ",r"};
-static const char *const saturation_names[] = {",us", ",ss", 0, ""};
-static const char *const read_write_names[] = {",r", ",w"};
+static const char *const signed_unsigned_names[] = { ",u", ",s" };
+static const char *const mix_half_names[] = { ",l", ",r" };
+static const char *const saturation_names[] = { ",us", ",ss", 0, "" };
+static const char *const read_write_names[] = { ",r", ",w" };
 static const char *const add_compl_names[] = { 0, "", ",l", ",tsv" };
 
 /* For a bunch of different instructions form an index into a

@@ -55,22 +55,24 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	if (type < 0 || type2 < 0) {
 		return "Invalid register type";
 	}
-	if (r_reg_get (reg, tok[1], R_REG_TYPE_ALL)) {
-		eprintf ("Duplicated register definition for '%s' has been ignored.\n", tok[1]);
+	RRegItem *ri = r_reg_get (reg, tok[1], R_REG_TYPE_ALL);
+	if (ri) {
+		R_LOG_WARN ("Duplicated register definition for '%s' has been ignored", tok[1]);
 		return NULL;
 	}
+	r_unref (ri);
 
 	RRegItem *item = R_NEW0 (RRegItem);
 	if (!item) {
 		return "Unable to allocate memory";
 	}
-
 	item->type = type;
 	item->name = strdup (tok[1]);
 	// All the numeric arguments are strictly checked
 	item->size = parse_size (tok[2], &end);
 	if (*end || !item->size) {
 		r_reg_item_free (item);
+		r_unref (ri);
 		return "Invalid size";
 	}
 	if (!strcmp (tok[3], "?")) {
@@ -120,10 +122,12 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	if (!reg->regset[type2].regs) {
 		reg->regset[type2].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
+	r_ref (item);
 	r_list_append (reg->regset[type2].regs, item);
 	if (!reg->regset[type2].ht_regs) {
 		reg->regset[type2].ht_regs = ht_pp_new0 ();
 	}
+	// r_ref (item);
 	ht_pp_insert (reg->regset[type2].ht_regs, item->name, item);
 
 	// Update the overall profile size
@@ -238,9 +242,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 				}
 				// Warn the user if something went wrong
 				if (r) {
-					eprintf ("%s: Parse error @ line %d (%s)\n",
-							__FUNCTION__, l, r);
-					//eprintf ("(%s)\n", str);
+					R_LOG_ERROR ("Parse error @ line %d (%s)", l, r);
 					// Clean up
 					r_reg_free_internal (reg, false);
 					r_reg_init (reg);
@@ -250,14 +252,13 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 		}
 	} while (*p++);
 	if (!have_a0) {
-		eprintf ("Warning: =A0 not defined\n");
+		R_LOG_ERROR ("=A0 not defined");
 		//r_reg_free_internal (reg, false);
 		///return false;
 	}
 	reg->size = 0;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegSet *rs = &reg->regset[i];
-		//eprintf ("* arena %s size %d\n", r_reg_get_type (i), rs->arena->size);
 		if (rs && rs->arena) {
 			reg->size += rs->arena->size;
 		}
@@ -288,7 +289,7 @@ R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
 		}
 	}
 	if (!str) {
-		eprintf ("r_reg_set_profile: Cannot find '%s'\n", profile);
+		R_LOG_WARN ("Cannot find '%s'", profile);
 		return false;
 	}
 	bool ret = r_reg_set_profile_string (reg, str);
@@ -329,7 +330,7 @@ static char *gdb_to_r2_profile(const char *gdb) {
 		if ((ptr1 = strchr (ptr, '\n'))) {
 			*ptr1 = '\0';
 		} else {
-			eprintf ("Could not parse line: %s (missing \\n)\n", ptr);
+			R_LOG_WARN ("Could not parse line: %s (missing newline)", ptr);
 			r_strbuf_free (sb);
 			return false;
 		}
@@ -338,7 +339,7 @@ static char *gdb_to_r2_profile(const char *gdb) {
 		// Groups is optional, others not
 		if (ret < 6) {
 			if (*ptr != '*') {
-				eprintf ("Could not parse line: %s\n", ptr);
+				R_LOG_WARN ("Could not parse line: %s", ptr);
 				r_strbuf_free (sb);
 				return false;
 			}
@@ -436,7 +437,7 @@ R_API char *r_reg_parse_gdb_profile(const char *profile_file) {
 		free (str);
 		return ret;
 	}
-	eprintf ("r_reg_parse_gdb_profile: Cannot find '%s'\n", profile_file);
+	R_LOG_WARN ("r_reg_parse_gdb_profile: Cannot find '%s'", profile_file);
 	return NULL;
 }
 

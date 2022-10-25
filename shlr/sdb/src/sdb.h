@@ -31,7 +31,15 @@ extern "C" {
 #define SZT_ADD_OVFCHK(x, y) ((SIZE_MAX - (x)) <= (y))
 #endif
 
-	/* printf format check attributes */
+#if defined(__GNUC__)
+#define SDB_LIKELY(x) __builtin_expect((size_t)(x),1)
+#define SDB_UNLIKELY(x) __builtin_expect((size_t)(x),0)
+#else
+#define SDB_LIKELY(x) (x)
+#define SDB_UNLIKELY(x) (x)
+#endif
+
+/* printf format check attributes */
 #if defined(__clang__) || defined(__GNUC__)
 #define SDB_PRINTF_CHECK(fmt, dots) __attribute__ ((format (printf, fmt, dots)))
 #else
@@ -163,6 +171,7 @@ SDB_API int sdb_query_file(Sdb *s, const char* file);
 SDB_API bool sdb_exists(Sdb*, const char *key);
 SDB_API bool sdb_remove(Sdb*, const char *key, ut32 cas);
 SDB_API int sdb_unset(Sdb*, const char *key, ut32 cas);
+SDB_API int sdb_nunset(Sdb*, ut64 nkey, ut32 cas);
 SDB_API int sdb_unset_like(Sdb *s, const char *k);
 SDB_API char** sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback cb);
 
@@ -185,6 +194,7 @@ SDB_API bool sdb_diff(Sdb *a, Sdb *b, SdbDiffCallback cb, void *cb_user);
 
 // Gets a pointer to the value associated with `key`.
 SDB_API char *sdb_get(Sdb*, const char *key, ut32 *cas);
+SDB_API char *sdb_nget(Sdb*, ut64 nkey, ut32 *cas);
 
 // Gets a pointer to the value associated with `key` and returns in `vlen` the
 // length of the value string.
@@ -197,10 +207,14 @@ SDB_API const char *sdb_const_get(Sdb*, const char *key, ut32 *cas);
 // `vlen` the length of the value string.
 SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *cas);
 SDB_API int sdb_set(Sdb*, const char *key, const char *data, ut32 cas);
+SDB_API int sdb_nset(Sdb*, ut64 nkey, const char *data, ut32 cas);
+SDB_API ut64 sdb_num_nget(Sdb *s, ut64 nkey, ut32 *cas);
+SDB_API int sdb_num_nset(Sdb* s, ut64 nkey, ut64 nval, ut32 cas);
 SDB_API int sdb_set_owned(Sdb* s, const char *key, char *val, ut32 cas);
 SDB_API int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas);
 SDB_API int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas);
 SDB_API int sdb_add(Sdb* s, const char *key, const char *val, ut32 cas);
+SDB_API int sdb_nadd(Sdb* s, ut64 nkey, const char *val, ut32 cas);
 SDB_API bool sdb_sync(Sdb*);
 SDB_API void sdbkv_free(SdbKv *kv);
 
@@ -246,7 +260,8 @@ SDB_API bool sdb_journal_clear(Sdb *s);
 SDB_API bool sdb_journal_unlink(Sdb *s);
 
 /* numeric */
-SDB_API char *sdb_itoa(ut64 n, char *s, int base);
+SDB_API char *sdb_itoa(ut64 n, int base, char *s, int slen);
+SDB_API char *sdb_itoas(ut64 n, int base);
 SDB_API ut64  sdb_atoi(const char *s);
 
 /* locking */

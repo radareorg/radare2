@@ -149,7 +149,7 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 		}
 		return false;
 	}
-	
+
 	env ("R2PIPE_IN", input[0]);
 	env ("R2PIPE_OUT", output[1]);
 
@@ -221,7 +221,7 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 			if (safe_in != -1) {
 				dup2 (safe_in, 0);
 			} else {
-				eprintf ("Cannot open ttyname(0) %s\n", term_in);
+				R_LOG_ERROR ("Cannot open ttyname(0) %s", term_in);
 			}
 		}
 	}
@@ -309,6 +309,7 @@ static bool lang_pipe_file(RLang *lang, const char *file) {
 static RLangPlugin r_lang_plugin_pipe = {
 	.name = "pipe",
 	.ext = "pipe",
+	.author = "pancake",
 	.license = "LGPL",
 	.desc = "Use #!pipe node script.js",
 	.run = lang_pipe_run,

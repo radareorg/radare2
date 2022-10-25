@@ -968,16 +968,15 @@ bool winkd_write_reg(WindCtx *ctx, const uint8_t *buf, int size) {
 	winkd_lock_leave (ctx);
 
 	kd_req_t *rr = PKT_REQ (pkt);
-
-	if (rr->ret) {
-		WIND_DBG eprintf("%s: req returned %08x\n", __FUNCTION__, rr->ret);
+	if (rr && rr->ret) {
+		WIND_DBG eprintf ("%s: req returned %08x\n", __FUNCTION__, rr->ret);
 		free (pkt);
-		return 0;
+		return false;
 	}
 
 	free (pkt);
-
-	return size;
+	return true;
+	// return size;
 error:
 	winkd_lock_leave (ctx);
 	return 0;

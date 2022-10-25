@@ -1,6 +1,8 @@
 #ifndef R_ENDIAN_H
 #define R_ENDIAN_H
 
+#include <r_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

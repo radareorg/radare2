@@ -1,0 +1,395 @@
+NAME=Basic op types working, even at EOF
+FILE=malloc://73
+CMDS=<<EOF
+e asm.arch=pickle
+wx+284b424d42414a44434241954746454443424100550055044142434442040000
+wx+00414243448d0400000000000000414243444c3334354c0a63414243440a4546
+wx+47480a550441424344
+s-73
+pid 12
+EOF
+EXPECT=<<EOF
+0x00000000                   28  mark
+0x00000001                 4b42  binint1 0x42
+0x00000003               4d4241  binint2 0x4142
+0x00000006           4a44434241  binint 0x41424344
+0x0000000b   954746454443424100  frame 0x41424344454647
+0x00000014                 5500  short_binstring ""
+0x00000016         550441424344  short_binstring "ABCD"
+0x0000001c   420400000041424344  binbytes "ABCD"
+0x00000025 8d040000000000000041424344  binunicode8 "ABCD"
+0x00000032         4c3334354c0a  long "345L"
+0x00000038 63414243440a454647480a  global "ABCD EFGH"
+0x00000043         550441424344  short_binstring "ABCD"
+EOF
+RUN
+
+NAME=Invalid/filtered string ops
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=pickle
+wx+585804000000414200436341000a4344
+s 0
+pid 8
+EOF
+EXPECT=<<EOF
+0x00000000                   58  
+0x00000001   580400000041420043  binunicode "AB\x00C"
+0x0000000a                   63  
+0x0000000b                   41  
+0x0000000c                   00  
+0x0000000d                   0a  
+0x0000000e                   43  
+0x0000000f                   44  
+EOF
+RUN
+
+NAME=Assemble and dissassemble single byte funcs
+FILE=malloc://8
+CMDS=<<EOF
+e asm.arch=pickle
+wa MARK
+pid 1
+wa STOP
+pid 1
+wa POP
+pid 1
+wa POP_MARK
+pid 1
+wa DUP
+pid 1
+wa NONE
+pid 1
+wa BINPERSID
+pid 1
+wa REDUCE
+pid 1
+wa APPEND
+pid 1
+wa BUILD
+pid 1
+wa DICT
+pid 1
+wa EMPTY_DICT
+pid 1
+wa APPENDS
+pid 1
+wa LIST
+pid 1
+wa EMPTY_LIST
+pid 1
+wa OBJ
+pid 1
+wa SETITEM
+pid 1
+wa TUPLE
+pid 1
+wa EMPTY_TUPLE
+pid 1
+wa SETITEMS
+pid 1
+wa NEWOBJ
+pid 1
+wa TUPLE1
+pid 1
+wa TUPLE2
+pid 1
+wa TUPLE3
+pid 1
+wa NEWTRUE
+pid 1
+wa NEWFALSE
+pid 1
+wa EMPTY_SET
+pid 1
+wa ADDITEMS
+pid 1
+wa FROZENSET
+pid 1
+wa NEWOBJ_EX
+pid 1
+wa STACK_GLOBAL
+pid 1
+wa MEMOIZE
+pid 1
+wa NEXT_BUFFER
+pid 1
+wa READONLY_BUFFER
+pid 1
+EOF
+EXPECT=<<EOF
+0x00000000                   28  mark
+0x00000000                   2e  stop
+0x00000000                   30  pop
+0x00000000                   31  pop_mark
+0x00000000                   32  dup
+0x00000000                   4e  none
+0x00000000                   51  binpersid
+0x00000000                   52  reduce
+0x00000000                   61  append
+0x00000000                   62  build
+0x00000000                   64  dict
+0x00000000                   7d  empty_dict
+0x00000000                   65  appends
+0x00000000                   6c  list
+0x00000000                   5d  empty_list
+0x00000000                   6f  obj
+0x00000000                   73  setitem
+0x00000000                   74  tuple
+0x00000000                   29  empty_tuple
+0x00000000                   75  setitems
+0x00000000                   81  newobj
+0x00000000                   85  tuple1
+0x00000000                   86  tuple2
+0x00000000                   87  tuple3
+0x00000000                   88  newtrue
+0x00000000                   89  newfalse
+0x00000000                   8f  empty_set
+0x00000000                   90  additems
+0x00000000                   91  frozenset
+0x00000000                   92  newobj_ex
+0x00000000                   93  stack_global
+0x00000000                   94  memoize
+0x00000000                   97  next_buffer
+0x00000000                   98  readonly_buffer
+EOF
+RUN
+
+NAME=Assemble and dissassemble all ints
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=pickle
+wa FRAME 0x1122334455887788
+pid 1
+wa BININT 0x11223344
+pid 1
+wa LONG_BINPUT 0x11223344
+pid 1
+wa LONG_BINGET 0x11223344
+pid 1
+wa EXT4 0x11223344
+pid 1
+wa LONG4 11223344
+pid 1
+wa LONG1 11223344
+pid 1
+wa LONG4 -11223344
+pid 1
+wa LONG1 -11223344
+pid 1
+wa BININT2 0x1122
+pid 1
+wa EXT2 0x1122
+pid 1
+wa BININT1 0x11
+pid 1
+wa BINGET 0x11
+pid 1
+wa BINPUT 0x11
+pid 1
+wa PROTO 0x11
+pid 1
+wa EXT1 0x11
+pid 1
+EOF
+EXPECT=<<EOF
+0x00000000   958877885544332211  frame 0x1122334455887788
+0x00000000           4a44332211  binint 0x11223344
+0x00000000           7244332211  long_binput 0x11223344
+0x00000000           6a44332211  long_binget 0x11223344
+0x00000000           8444332211  ext4 0x11223344
+0x00000000   8b040000003041ab00  long4 11223344
+0x00000000         8a043041ab00  long1 11223344
+0x00000000     8b03000000d0be54  long4 5553872
+0x00000000           8a03d0be54  long1 5553872
+0x00000000               4d2211  binint2 0x1122
+0x00000000               832211  ext2 0x1122
+0x00000000                 4b11  binint1 0x11
+0x00000000                 6811  binget 0x11
+0x00000000                 7111  binput 0x11
+0x00000000                 8011  proto 0x11
+0x00000000                 8211  ext1 0x11
+EOF
+RUN
+
+NAME=Assemble and dissassemble counted strings
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=pickle
+wa BINUNICODE8 "AABBCCDD"
+pid 1
+wa BINBYTES8 "AABBCCDD"
+pid 1
+wa BYTEARRAY8 "AABBCCDD"
+pid 1
+wa BINSTRING "AABBCCDD"
+pid 1
+wa BINUNICODE "AABBCCDD"
+pid 1
+wa BINBYTES "AABBCCDD"
+pid 1
+wa SHORT_BINBYTES "AABBCCDD"
+pid 1
+wa SHORT_BINSTRING "AABBCCDD"
+pid 1
+wa SHORT_BINUNICODE "AABBCCDD"
+pid 1
+EOF
+EXPECT=<<EOF
+0x00000000 8d08000000000000006161626263636464  binunicode8 "aabbccdd"
+0x00000000 8e08000000000000006161626263636464  binbytes8 "aabbccdd"
+0x00000000 9608000000000000006161626263636464  bytearray8 "aabbccdd"
+0x00000000 54080000006161626263636464  binstring "aabbccdd"
+0x00000000 58080000006161626263636464  binunicode "aabbccdd"
+0x00000000 42080000006161626263636464  binbytes "aabbccdd"
+0x00000000 43086161626263636464  short_binbytes "aabbccdd"
+0x00000000 55086161626263636464  short_binstring "aabbccdd"
+0x00000000 8c086161626263636464  short_binunicode "aabbccdd"
+EOF
+RUN
+
+
+NAME=Assemble and dissassemble float
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=pickle
+wa BINFLOAT 4.328
+pid 1
+e asm.arch=pickle
+EOF
+EXPECT=<<EOF
+0x00000000   4740114fdf3b645a1d  binfloat 4.328000
+EOF
+RUN
+
+NAME=Assemble and dissassemble newline strs
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=pickle
+wa INST "string1 string2"
+pid 1
+wa GLOBAL "string1 string2"
+pid 1
+wa FLOAT "string_arg"
+pid 1
+wa INT "string_arg"
+pid 1
+wa LONG "string_arg"
+pid 1
+wa PERSID "string_arg"
+pid 1
+wa STRING "string_arg"
+pid 1
+wa UNICODE "string_arg"
+pid 1
+wa GET "string_arg"
+pid 1
+wa PUT "string_arg"
+pid 1
+EOF
+EXPECT=<<EOF
+0x00000000 69737472696e67310a737472696e67320a  inst "string1 string2"
+0x00000000 63737472696e67310a737472696e67320a  global "string1 string2"
+0x00000000 46737472696e675f6172670a  float "string_arg"
+0x00000000 49737472696e675f6172670a  int "string_arg"
+0x00000000 4c737472696e675f6172670a  long "string_arg"
+0x00000000 50737472696e675f6172670a  persid "string_arg"
+0x00000000 5327737472696e675f617267270a  string "string_arg"
+0x00000000 56737472696e675f6172670a  unicode "string_arg"
+0x00000000 67737472696e675f6172670a  get "string_arg"
+0x00000000 70737472696e675f6172670a  put "string_arg"
+EOF
+RUN
+
+NAME=Fail to Assemble bad newline strs
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=pickle
+wa INST no_space_when_needed
+pxw 1
+wa PUT too_longggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
+pxw 1
+EOF
+EXPECT=<<EOF
+0x00000000  0x00000000                                   .
+0x00000000  0x00000000                                   .
+EOF
+RUN
+
+NAME=mnemonics
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=pickle
+aoml
+EOF
+EXPECT=<<EOF
+mark
+stop
+pop
+pop_mark
+dup
+float
+int
+binint
+binint1
+long
+binint2
+none
+persid
+binpersid
+reduce
+string
+binstring
+short_binstring
+unicode
+binunicode
+append
+build
+global
+dict
+empty_dict
+appends
+get
+binget
+inst
+long_binget
+list
+empty_list
+obj
+put
+binput
+long_binput
+setitem
+tuple
+empty_tuple
+setitems
+binfloat
+proto
+newobj
+ext1
+ext2
+ext4
+tuple1
+tuple2
+tuple3
+newtrue
+newfalse
+long1
+long4
+binbytes
+short_binbytes
+short_binunicode
+binunicode8
+binbytes8
+empty_set
+additems
+frozenset
+newobj_ex
+stack_global
+memoize
+frame
+bytearray8
+next_buffer
+readonly_buffer
+EOF
+RUN

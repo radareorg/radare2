@@ -220,7 +220,7 @@ R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut6
 	if (!vreg) {
 		vreg = r_vector_new (sizeof (RDebugChangeReg), NULL, NULL);
 		if (!vreg) {
-			eprintf ("Error: creating a register vector.\n");
+			R_LOG_ERROR ("creating a register vector");
 			return false;
 		}
 		ht_up_insert (session->registers, offset | (arena << 16), vreg);
@@ -235,7 +235,7 @@ R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8
 	if (!vmem) {
 		vmem = r_vector_new (sizeof (RDebugChangeMem), NULL, NULL);
 		if (!vmem) {
-			eprintf ("Error: creating a memory vector.\n");
+			R_LOG_ERROR ("creating a memory vector");
 			return false;
 		}
 		ht_up_insert (session->memory, addr, vmem);
@@ -275,7 +275,7 @@ static void serialize_registers(Sdb *db, HtUP *registers) {
 	ht_up_foreach (registers, serialize_register_cb, db);
 }
 
-// 0x<addr>={"size":<size_t>, "a":[<RDebugChangeMem>]}},
+// 0x<addr>={ "size":<size_t>, "a":[<RDebugChangeMem>]}},
 static bool serialize_memory_cb(void *db, const ut64 k, const void *v) {
 	RDebugChangeMem *mem;
 	RVector *vmem = (RVector *)v;
@@ -311,8 +311,8 @@ static void serialize_checkpoints(Sdb *db, RVector *checkpoints) {
 
 	r_vector_foreach (checkpoints, chkpt) {
 		// 0x<cnum>={
-		//   registers:{"<RRegisterType>":<RRegArena>, ...},
-		//   snaps:{"size":<size_t>, "a":[<RDebugSnap>]}
+		//   registers:{ "<RRegisterType>":<RRegArena>, ...},
+		//   snaps:{ "size":<size_t>, "a":[<RDebugSnap>]}
 		// }
 		PJ *j = pj_new ();
 		if (!j) {
@@ -321,7 +321,7 @@ static void serialize_checkpoints(Sdb *db, RVector *checkpoints) {
 		pj_o (j);
 
 		// Serialize RRegArena to "registers"
-		// {"size":<int>, "bytes":"<base64>"}
+		// { "size":<int>, "bytes":"<base64>" }
 		pj_ka (j, "registers");
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			RRegArena *arena = chkpt->arena[i];
@@ -338,7 +338,7 @@ static void serialize_checkpoints(Sdb *db, RVector *checkpoints) {
 		pj_end (j);
 
 		// Serialize RDebugSnap to "snaps"
-		// {"name":<str>, "addr":<ut64>, "addr_end":<ut64>, "size":<ut64>,
+		// { "name":<str>, "addr":<ut64>, "addr_end":<ut64>, "size":<ut64>,
 		//  "data":"<base64>", "perm":<int>, "user":<int>, "shared":<bool>}
 		pj_ka (j, "snaps");
 		r_list_foreach (chkpt->snaps, iter, snap) {
@@ -375,28 +375,28 @@ static void serialize_checkpoints(Sdb *db, RVector *checkpoints) {
  *   maxcnum=<maxcnum>
  *
  *   /registers
- *     0x<addr>={"size":<size_t>, "a":[<RDebugChangeReg>]}
+ *     0x<addr>={ "size":<size_t>, "a":[<RDebugChangeReg>]}
  *
  *   /memory
- *     0x<addr>={"size":<size_t>, "a":[<RDebugChangeMem>]}
+ *     0x<addr>={ "size":<size_t>, "a":[<RDebugChangeMem>]}
  *
  *   /checkpoints
  *     0x<cnum>={
- *       registers:{"<RRegisterType>":<RRegArena>, ...},
- *       snaps:{"size":<size_t>, "a":[<RDebugSnap>]}
+ *       registers:{ "<RRegisterType>":<RRegArena>, ...},
+ *       snaps:{ "size":<size_t>, "a":[<RDebugSnap>]}
  *     }
  *
  * RDebugChangeReg JSON:
- * {"cnum":<int>, "data":<ut64>}
+ * { "cnum":<int>, "data":<ut64>}
  *
  * RDebugChangeMem JSON:
- * {"cnum":<int>, "data":<ut8>}
+ * { "cnum":<int>, "data":<ut8>}
  *
  * RRegArena JSON:
- * {"size":<int>, "bytes":"<base64>"}
+ * { "size":<int>, "bytes":"<base64>" }
  *
  * RDebugSnap JSON:
- * {"name":<str>, "addr":<ut64>, "addr_end":<ut64>, "size":<ut64>,
+ * { "name":<str>, "addr":<ut64>, "addr_end":<ut64>, "size":<ut64>,
  *  "data":"<base64>", "perm":<int>, "user":<int>, "shared":<bool>}
  *
  * Notes:
@@ -412,14 +412,14 @@ R_API void r_debug_session_serialize(RDebugSession *session, Sdb *db) {
 static bool session_sdb_save(Sdb *db, const char *path) {
 	char *filename;
 	if (!r_file_is_directory (path)) {
-		eprintf ("Error: %s is not a directory\n", path);
+		R_LOG_ERROR ("%s is not a directory", path);
 		return false;
 	}
 
 	filename = r_str_newf ("%s%ssession.sdb", path, R_SYS_DIR);
 	sdb_file (db, filename);
 	if (!sdb_sync (db)) {
-		eprintf ("Failed to sync session to %s\n", filename);
+		R_LOG_ERROR ("Failed to sync session to %s", filename);
 		free (filename);
 		sdb_close (db);
 		return false;
@@ -433,7 +433,7 @@ static bool session_sdb_save(Sdb *db, const char *path) {
 		char *filename = r_str_newf ("%s%s%s.sdb", path, R_SYS_DIR, ns->name);
 		sdb_file (ns->sdb, filename);
 		if (!sdb_sync (ns->sdb)) {
-			eprintf ("Failed to sync %s to %s\n", ns->name, filename);
+			R_LOG_ERROR ("Failed to sync %s to %s", ns->name, filename);
 			free (filename);
 			sdb_close (ns->sdb);
 			return false;
@@ -481,7 +481,7 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 	// Insert a new vector into `memory` HtUP at `addr`
 	RVector *vmem = r_vector_new (sizeof (RDebugChangeMem), NULL, NULL);
 	if (!vmem) {
-		eprintf ("Error: failed to allocate RVector vmem.\n");
+		R_LOG_ERROR ("failed to allocate RVector vmem");
 		free (json_str);
 		r_json_free (reg_json);
 		return false;
@@ -530,7 +530,7 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 	HtUP *registers = user;
 	RVector *vreg = r_vector_new (sizeof (RDebugChangeReg), NULL, NULL);
 	if (!vreg) {
-		eprintf ("Error: failed to allocate RVector vreg.\n");
+		R_LOG_ERROR ("failed to allocate RVector vreg");
 		r_json_free (reg_json);
 		free (json_str);
 		return true;
@@ -639,7 +639,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 
 		RDebugSnap *snap = R_NEW0 (RDebugSnap);
 		if (!snap) {
-			eprintf ("Error: failed to allocate RDebugSnap snap\n");
+			R_LOG_ERROR ("failed to allocate RDebugSnap snap");
 			continue;
 		}
 		snap->name = strdup (namej->str_value);
@@ -667,7 +667,7 @@ static void deserialize_checkpoints(Sdb *db, RVector *checkpoints) {
 static bool session_sdb_load_ns(Sdb *db, const char *nspath, const char *filename) {
 	Sdb *tmpdb = sdb_new0 ();
 	if (sdb_open (tmpdb, filename) == -1) {
-		eprintf ("Error: failed to load %s into sdb\n", filename);
+		R_LOG_ERROR ("failed to load %s into sdb", filename);
 		sdb_free (tmpdb);
 		return false;
 	}
@@ -711,7 +711,7 @@ R_API void r_debug_session_deserialize(RDebugSession *session, Sdb *db) {
 #define DESERIALIZE(ns, func) do { \
 		subdb = sdb_ns (db, ns, false); \
 		if (!subdb) { \
-			eprintf ("Error: missing " ns " namespace\n"); \
+			R_LOG_ERROR ("missing " ns " namespace"); \
 			return; \
 		} \
 		func; \

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2022 pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -13,8 +13,9 @@ typedef struct {
 #define RIOW32_HANDLE(x) (((RIOW32*)x)->hnd)
 
 static int w32__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	return WriteFile (RIOW32_HANDLE (fd), buf, count, NULL, NULL);
 }
 
@@ -32,18 +33,18 @@ static bool w32__close(RIODesc *fd) {
 	return false;
 }
 
-// TODO: handle filesize and so on
 static ut64 w32__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	SetFilePointer (RIOW32_HANDLE (fd), offset, 0, !whence?FILE_BEGIN:whence==1?FILE_CURRENT:FILE_END);
-	return (!whence)?offset:whence==1?io->off+offset:ST64_MAX;
+	int where = !whence? FILE_BEGIN: whence == 1? FILE_CURRENT: FILE_END;
+	SetFilePointer (RIOW32_HANDLE (fd), offset, 0, where);
+	return (whence == 0)? offset: (whence == 1)? io->off + offset: ST64_MAX;
 }
 
 static bool w32__plugin_open(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "w32://", 6));
+	return r_str_startswith (pathname, "w32://");
 }
 
 static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
-	if (!strncmp (pathname, "w32://", 6)) {
+	if (r_str_startswith (pathname, "w32://")) {
 		RIOW32 *w32 = R_NEW0 (RIOW32);
 		if (!w32) {
 			return NULL;
@@ -75,6 +76,7 @@ RIOPlugin r_io_plugin_w32 = {
 	.name = "w32",
 	.desc = "w32 API io",
 	.license = "LGPL3",
+	.author = "pancake",
 	.uris = "w32://",
 	.open = w32__open,
 	.close = w32__close,

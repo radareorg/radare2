@@ -59,7 +59,7 @@ static const char *const riscv_pred_succ[16] =
 #define RVC_BRANCH_REACH ((1ULL << RVC_BRANCH_BITS) * RISCV_BRANCH_ALIGN)
 
 #define RV_X(x, s, n)  (((x) >> (s)) & ((1 << (n)) - 1))
-#define RV_IMM_SIGN(x) (-(long long)(((x) >> 31) & 1))
+#define RV_IMM_SIGN(x) (ut64)(-(st64)((((ut64)x) >> 31) & 1))
 
 #define EXTRACT_ITYPE_IMM(x) \
   (RV_X(x, 20, 12) | (RV_IMM_SIGN(x) << 12))
@@ -72,7 +72,7 @@ static const char *const riscv_pred_succ[16] =
 #define EXTRACT_UJTYPE_IMM(x) \
   ((RV_X(x, 21, 10) << 1) | (RV_X(x, 20, 1) << 11) | (RV_X(x, 12, 8) << 12) | (RV_IMM_SIGN(x) << 20))
 #define EXTRACT_RVC_IMM(x) \
-  (RV_X(x, 2, 5) | (-(long long)RV_X(x, 12, 1) << 5))
+  (RV_X(x, 2, 5) | ((ut64)(-(st64)RV_X(x, 12, 1)) << 5))
 #define EXTRACT_RVC_LUI_IMM(x) \
   (EXTRACT_RVC_IMM (x) << RISCV_IMM_BITS)
 #define EXTRACT_RVC_SIMM3(x) \
@@ -94,7 +94,7 @@ static const char *const riscv_pred_succ[16] =
 #define EXTRACT_RVC_SDSP_IMM(x) \
   ((RV_X(x, 10, 3) << 3) | (RV_X(x, 7, 3) << 6))
 #define EXTRACT_RVC_B_IMM(x) \
-  ((RV_X(x, 3, 2) << 1) | (RV_X(x, 10, 2) << 3) | (RV_X(x, 2, 1) << 5) | (RV_X(x, 5, 2) << 6) | (-(long long)RV_X(x, 12, 1) << 8))
+  ((RV_X(x, 3, 2) << 1) | (RV_X(x, 10, 2) << 3) | (RV_X(x, 2, 1) << 5) | (RV_X(x, 5, 2) << 6) | (((ut64)-(st64)RV_X(x, 12, 1)) << 8))
 #define EXTRACT_RVC_J_IMM(x) \
   ((RV_X(x, 3, 3) << 1) | (RV_X(x, 11, 1) << 4) | (RV_X(x, 2, 1) << 5) | (RV_X(x, 7, 1) << 6) | (RV_X(x, 6, 1) << 7) | (RV_X(x, 9, 2) << 8) | (RV_X(x, 8, 1) << 10) | (-(long long)RV_X(x, 12, 1) << 11))
 
@@ -342,7 +342,7 @@ extern const char * const riscv_fpr_names_abi[NFPR];
 extern struct riscv_opcode *riscv_opcodes;
 //extern const struct riscv_opcode riscv_opcodes[];
 #ifdef _MSC_VER
-extern int bfd_riscv_num_opcodes;
+extern const int bfd_riscv_num_opcodes;
 #endif
 #endif
 #define NUMOPCODES bfd_riscv_num_opcodes

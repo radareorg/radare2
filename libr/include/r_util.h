@@ -8,7 +8,6 @@
 #include <r_getopt.h>
 #include <r_list.h> // radare linked list
 #include <r_skiplist.h> // skiplist
-#include <r_flist.h> // radare fixed pointer array iterators
 #include <r_th.h>
 #if !__WINDOWS__
 #include <dirent.h>
@@ -73,11 +72,13 @@ int gettimeofday (struct timeval* p, void* tz);
 #include "r_util/r_idpool.h"
 #include "r_util/r_asn1.h"
 #include "r_util/pj.h"
+#include "r_util/r_graph_drawable.h"
 #include "r_util/bplist.h"
 #include "r_util/r_x509.h"
 #include "r_util/r_pkcs7.h"
 #include "r_util/r_protobuf.h"
 #include "r_util/r_big.h"
+#include "r_util/r_ref.h"
 #include "r_util/r_w32.h"
 #include "r_util/r_token.h"
 #include "r_util/r_axml.h"
@@ -88,6 +89,7 @@ extern "C" {
 #endif
 
 R_LIB_VERSION_HEADER (r_util);
+
 #ifdef __cplusplus
 }
 #endif

@@ -18,8 +18,6 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static bool __close(RIODesc *fd) {
-	RBuffer *b = fd->data;
-	r_buf_free (b);
 	return true;
 }
 
@@ -29,7 +27,7 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "rbuf://", 7));
+	return r_str_startswith (pathname, "rbuf://");
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {

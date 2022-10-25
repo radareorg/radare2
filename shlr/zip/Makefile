@@ -1,6 +1,9 @@
 NAME=rz
 LIBAR=librz.$(EXT_AR)
 
+# libzip = 1.9.2
+# zlib = 1.2.12
+
 include ../../config-user.mk
 include ../../libr/config.mk
 include ../../mk/platform.mk

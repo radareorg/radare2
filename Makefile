@@ -59,6 +59,12 @@ all: plugins.cfg libr/include/r_version.h
 GIT_TAP=$(shell git describe --tags --match '[0-9]*' 2>/dev/null)
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo $(R2_VERSION))
 R2_VER=$(shell ./configure -qV)
+ifeq ($(GIT_TAP),)
+GIT_TAP=$(R2_VER)
+endif
+ifeq ($(GIT_TIP),)
+GIT_TIP=$(R2_VER)
+endif
 ifdef SOURCE_DATE_EPOCH
 GIT_NOW=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u "+%Y-%m-%d")
 else
@@ -147,9 +153,11 @@ windist:
 	mkdir -p "${WINDIST}/share/doc/radare2"
 	mkdir -p "${WINDIST}/include/libr/sdb"
 	mkdir -p "${WINDIST}/include/libr/r_util"
+	mkdir -p "${WINDIST}/include/libr/r_anal"
 	@echo "${C}[WINDIST] Copying development files${R}"
 	cp -f shlr/sdb/src/*.h "${WINDIST}/include/libr/sdb/"
 	cp -f libr/include/r_util/*.h "${WINDIST}/include/libr/r_util/"
+	cp -f libr/include/r_anal/*.h "${WINDIST}/include/libr/r_anal/"
 	cp -f libr/include/*.h "${WINDIST}/include/libr"
 	#mkdir -p "${WINDIST}/include/libr/sflib"
 	@cp -f doc/fortunes.* "${WINDIST}/share/doc/radare2"
@@ -390,7 +398,7 @@ shot:
 		radare.org:/srv/http/radareorg/get/shot
 
 tests test:
-	$(MAKE) -C test
+	$(MAKE) -j -C test
 
 macos-sign:
 	$(MAKE) -C binr/radare2 macos-sign

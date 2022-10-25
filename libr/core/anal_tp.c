@@ -148,7 +148,7 @@ static void __var_retype(RAnal *anal, RAnalVar *var, const char *vname, const ch
 
 static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 	RAnal *anal = core->anal;
-	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL);
+	RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL);
 	if (!op || r_strbuf_is_empty (&op->esil)) {
 		r_anal_op_free (op);
 		return;
@@ -304,11 +304,11 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		stack_rev = true;
 	}
 	place = r_anal_cc_arg (anal, cc, 0);
-	if (place && r_str_startswith ("stack", place)) {
+	if (place && r_str_startswith (place, "stack")) {
 		in_stack = true;
 	}
 	if (verbose && !strncmp (fcn_name, "sym.imp.", 8)) {
-		eprintf ("Warning: Missing function definition for '%s'\n", fcn_name + 8);
+		R_LOG_WARN ("Missing function definition for '%s'", fcn_name + 8);
 	}
 	if (!max) {
 		if (!in_stack) {
@@ -341,7 +341,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		if (!in_stack) {
 			//XXX: param arg_num must be fixed to support floating point register
 			place = r_anal_cc_arg (anal, cc, arg_num);
-			if (place && r_str_startswith ("stack", place)) {
+			if (place && r_str_startswith (place, "stack")) {
 				in_stack = true;
 			}
 		}
@@ -357,12 +357,12 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 			if (instr_addr < baddr) {
 				break;
 			}
-			RAnalOp *op = r_core_anal_op (core, instr_addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL);
+			RAnalOp *op = r_core_anal_op (core, instr_addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
 			if (!op) {
 				r_anal_op_free (op);
 				break;
 			}
-			RAnalOp *next_op = r_core_anal_op (core, instr_addr + op->size, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL);
+			RAnalOp *next_op = r_core_anal_op (core, instr_addr + op->size, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL);
 			if (!next_op || (j != idx && (next_op->type == R_ANAL_OP_TYPE_CALL
 							|| next_op->type == R_ANAL_OP_TYPE_JMP))) {
 				r_anal_op_free (op);
@@ -509,7 +509,7 @@ static bool fast_step(RCore *core, RAnalOp *aop) {
 }
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
-	const int op_tions = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT;
+	const int op_tions = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT;
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
@@ -551,7 +551,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	dtrace->ht = ht_pp_new_size (fcn->ninstr, opt.dupvalue, opt.freefn, opt.calcsizeV);
 	dtrace->ht->opt = opt;
 
-	const bool be = core->rasm->config->big_endian;
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	char *fcn_name = NULL;
 	char *ret_type = NULL;
 	bool str_flag = false;
@@ -583,7 +583,7 @@ repeat:
 	for (j = 0; j < bblist_size; j++) {
 		bb = r_anal_get_block_at (core->anal, bblist[j]);
 		if (!bb) {
-			eprintf ("Warning: basic block at 0x%08"PFMT64x" was removed during analysis.\n", bblist[j]);
+			R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", bblist[j]);
 			retries--;
 			free (bblist);
 			goto repeat;
@@ -636,7 +636,7 @@ repeat:
 			if (i < bblist_size) {
 				bb = r_anal_get_block_at (core->anal, bb_addr);
 				if (!bb) {
-					eprintf ("Warning: basic block at 0x%08"PFMT64x" was removed during analysis.\n", bblist[i]);
+					R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", bblist[i]);
 					retries--;
 					free (bblist);
 					goto repeat;
@@ -647,7 +647,7 @@ repeat:
 			Sdb *trace = anal->esil->trace->db;
 			cur_idx = sdb_num_get (trace, "idx", 0);
 			RAnalVar *var = r_anal_get_used_function_var (anal, aop.addr);
-			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ANAL_OP_MASK_BASIC); // | _VAL ?
+			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ARCH_OP_MASK_BASIC); // | _VAL ?
 			ut32 type = aop.type & R_ANAL_OP_TYPE_MASK;
 			if (aop.type == R_ANAL_OP_TYPE_CALL || aop.type & R_ANAL_OP_TYPE_UCALL) {
 				char *full_name = NULL;
@@ -696,7 +696,7 @@ repeat:
 					if (!strcmp (fcn_name, "__stack_chk_fail")) {
 						r_strf_var (query, 32, "%d.addr", cur_idx - 1);
 						ut64 mov_addr = sdb_num_get (trace, query, 0);
-						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_BASIC);
+						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_BASIC);
 						if (mop) {
 							RAnalVar *mopvar = r_anal_get_used_function_var (anal, mop->addr);
 							ut32 vt = mop->type & R_ANAL_OP_TYPE_MASK;
@@ -783,14 +783,17 @@ repeat:
 
 					// Check exit status of jmp branch
 					for (i = 0; i < MAX_INSTR ; i++) {
-						jmp_op = r_core_anal_op (core, jmp_addr, R_ANAL_OP_MASK_BASIC);
+						jmp_op = r_core_anal_op (core, jmp_addr, R_ARCH_OP_MASK_BASIC);
 						if (!jmp_op) {
+							r_anal_op_free (jmp_op);
+							r_anal_op_fini (&aop);
 							break;
 						}
 						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_block_contains (jmpbb, jmp_addr))
 								|| jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
 							jmp = true;
 							r_anal_op_free (jmp_op);
+							r_anal_op_fini (&aop);
 							break;
 						}
 						jmp_addr += jmp_op->size;
@@ -866,6 +869,7 @@ repeat:
 out_function:
 	R_FREE (ret_reg);
 	R_FREE (ret_type);
+	r_anal_op_fini (&aop);
 	r_cons_break_pop();
 	free (bblist);
 	anal_emul_restore (core, hc, dt, et);

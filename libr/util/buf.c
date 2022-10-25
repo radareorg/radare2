@@ -22,7 +22,8 @@ typedef enum {
 
 static bool buf_init(RBuffer *b, const void *user) {
 	r_return_val_if_fail (b && b->methods, false);
-	return b->methods->init? b->methods->init (b, user): true;
+	const RBufferInit init = b->methods->init;
+	return init? init (b, user): true;
 }
 
 static void buf_wholefree(RBuffer *b) {
@@ -33,39 +34,46 @@ static void buf_wholefree(RBuffer *b) {
 
 static bool buf_fini(RBuffer *b) {
 	r_return_val_if_fail (b && b->methods, false);
-	return b->methods->fini? b->methods->fini (b): true;
+	const RBufferFini fini = b->methods->fini;
+	return fini? fini (b): true;
 }
 
 static ut64 buf_get_size(RBuffer *b) {
 	r_return_val_if_fail (b && b->methods, UT64_MAX);
-	return b->methods->get_size? b->methods->get_size (b): UT64_MAX;
+	const RBufferGetSize get_size = b->methods->get_size;
+	return get_size? get_size (b): UT64_MAX;
 }
 
 static st64 buf_read(RBuffer *b, ut8 *buf, size_t len) {
 	r_return_val_if_fail (b && b->methods, -1);
-	return b->methods->read? b->methods->read (b, buf, len): -1;
+	const RBufferRead bufread = b->methods->read;
+	return bufread? bufread (b, buf, len): -1;
 }
 
 static st64 buf_write(RBuffer *b, const ut8 *buf, size_t len) {
 	r_return_val_if_fail (b && b->methods, -1);
 	buf_wholefree (b);
-	return b->methods->write? b->methods->write (b, buf, len): -1;
+	const RBufferWrite bufwrite = b->methods->write;
+	return bufwrite? bufwrite (b, buf, len): -1;
 }
 
 static st64 buf_seek(RBuffer *b, st64 addr, int whence) {
 	r_return_val_if_fail (b && b->methods, -1);
-	return b->methods->seek? b->methods->seek (b, addr, whence): -1;
+	const RBufferSeek bufseek = b->methods->seek;
+	return bufseek? bufseek (b, addr, whence): -1;
 }
 
 static bool buf_resize(RBuffer *b, ut64 newsize) {
 	r_return_val_if_fail (b && b->methods, -1);
-	return b->methods->resize? b->methods->resize (b, newsize): false;
+	const RBufferResize bufresize = b->methods->resize;
+	return bufresize? bufresize (b, newsize): false;
 }
 
 static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
 	r_return_val_if_fail (b && b->methods, NULL);
-	if (b->methods->get_whole_buf) {
-		return b->methods->get_whole_buf (b, sz);
+	RBufferGetWholeBuf bufwhole = b->methods->get_whole_buf;
+	if (bufwhole) {
+		return bufwhole (b, sz);
 	}
 	ut64 bsz = r_buf_size (b);
 	// bsz = 4096; // FAKE MINIMUM SIZE TO READ THE BIN HEADER
@@ -278,7 +286,7 @@ R_API bool r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	return r_buf_insert_bytes (b, 0, buf, length) >= 0;
 }
 
-R_API char *r_buf_to_string(RBuffer *b) {
+R_API char *r_buf_tostring(RBuffer *b) {
 	ut64 sz = r_buf_size (b);
 	char *s = malloc (sz + 1);
 	if (!s) {
@@ -385,17 +393,15 @@ R_API bool r_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, ut64 size
 	r_return_val_if_fail (b && a && !b->readonly, false);
 	ut8 *tmp = R_NEWS (ut8, size);
 	bool res = false;
-
-	if (!tmp) {
-		return false;
-	}
-	st64 r = r_buf_read_at (a, offset, tmp, size);
-	if (r < 0) {
-		goto err;
-	}
-	res = r_buf_append_bytes (b, tmp, r);
+	if (tmp) {
+		st64 r = r_buf_read_at (a, offset, tmp, size);
+		if (r < 0) {
+			goto err;
+		}
+		res = r_buf_append_bytes (b, tmp, r);
 err:
-	free (tmp);
+		free (tmp);
+	}
 	return res;
 }
 
@@ -440,7 +446,14 @@ R_API ut8 *r_buf_read_all(RBuffer *b, int *blen) {
 	}
 	ut8 *buf = malloc (buflen + 1);
 	buf_seek (b, 0, R_BUF_SET);
-	buf_read (b, buf, buflen);
+	st64 newlen = buf_read (b, buf, buflen);
+	if (newlen != buflen) {
+		if (newlen > 0) {
+			buflen = newlen;
+		} else {
+			R_LOG_WARN ("buf_read_all fails");
+		}
+	}
 	if (blen) {
 		*blen = buflen;
 	}
@@ -552,9 +565,12 @@ R_API st64 r_buf_fread(RBuffer *b, ut8 *buf, const char *fmt, int n) {
 	r_return_val_if_fail (b && buf && fmt, -1);
 	// XXX: we assume the caller knows what he's doing
 	RBuffer *dst = r_buf_new_with_pointers (buf, UT64_MAX, false);
-	st64 res = buf_format (dst, b, fmt, n);
-	r_buf_free (dst);
-	return res;
+	if (dst) {
+		st64 res = buf_format (dst, b, fmt, n);
+		r_buf_free (dst);
+		return res;
+	}
+	return -1;
 }
 
 R_API st64 r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
@@ -598,7 +614,7 @@ R_API st64 r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len) {
 		return r;
 	}
 	r = r_buf_read (b, buf, len);
-	r_buf_seek (b, o_addr, R_BUF_SET);
+	r_buf_seek (b, (ut64)o_addr, R_BUF_SET);
 	return r;
 }
 
@@ -609,12 +625,12 @@ R_API st64 r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len) {
 	if (r < 0) {
 		return r;
 	}
-
 	r = r_buf_write (b, buf, len);
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return r;
 }
 
+// XXX 580 use r_ref api instead
 R_API void r_buf_fini(RBuffer *b) {
 	if (!b) {
 		return;
@@ -623,7 +639,6 @@ R_API void r_buf_fini(RBuffer *b) {
 		b->refctr--;
 		return;
 	}
-
 	// free the whole_buf only if it was initially allocated by the buf types
 	if (b->methods->get_whole_buf) {
 		if (b->methods->free_whole_buf) {
@@ -635,6 +650,7 @@ R_API void r_buf_fini(RBuffer *b) {
 	buf_fini (b);
 }
 
+// XXX 580 use r_ref api instead
 R_API void r_buf_free(RBuffer *b) {
 	if (b) {
 		bool unreferenced = b && b->refctr == 0;
@@ -655,6 +671,7 @@ R_API bool r_buf_resize(RBuffer *b, ut64 newsize) {
 	return buf_resize (b, newsize);
 }
 
+// XXX 580 use r_ref api instead
 R_API RBuffer *r_buf_ref(RBuffer *b) {
 	if (b) {
 		b->refctr++;
@@ -663,7 +680,8 @@ R_API RBuffer *r_buf_ref(RBuffer *b) {
 }
 
 R_API RList *r_buf_nonempty_list(RBuffer *b) {
-	return b->methods->nonempty_list? b->methods->nonempty_list (b): NULL;
+	const RBufferNonEmptyList nelist = b->methods->nonempty_list;
+	return nelist ? nelist (b): NULL;
 }
 
 R_API st64 r_buf_uleb128(RBuffer *b, ut64 *v) {

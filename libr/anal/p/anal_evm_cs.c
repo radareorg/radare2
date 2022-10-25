@@ -10,6 +10,12 @@
 #define CSINC EVM
 #include "capstone.inc"
 
+struct evm_anal_info {
+	Sdb *pushs_db;
+};
+
+static R_TH_LOCAL struct evm_anal_info *evm_ai = NULL;
+
 static void set_opdir(RAnalOp *op) {
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
@@ -32,32 +38,68 @@ static void set_opdir(RAnalOp *op) {
 	}
 }
 
+/* Jumps/calls in EVM are done via first pushing dst value
+ * on the stack, and then calling a jump/jumpi instruction, for example:
+ *   0x0000000d push 0x42
+ *   0x0000000f jumpi
+ *
+ * we are storing the value in push instruction to db, but not at the
+ * addr of the push instruction, but at the addr of next jumpi instruction.
+ * So in our example we are inserting (0xf, 0x42)
+ */
+static int evm_add_push_to_db(RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	ut64 next_cmd_addr = 0;
+	ut64 dst_addr = 0;
+	size_t i, push_size;
+
+	push_size = op->id - EVM_INS_PUSH1;
+	next_cmd_addr = addr + push_size + 2;
+
+	for (i = 0; i < push_size + 1; i++) {
+		dst_addr <<= 8;
+		dst_addr |= buf[i + 1];
+	}
+
+	if (evm_ai) {
+		sdb_num_nset (evm_ai->pushs_db, next_cmd_addr, dst_addr, 0);
+	}
+
+	return 0;
+}
+
+static ut64 evm_get_jmp_addr(ut64 addr) {
+	ut64 ret = -1;
+	ret = sdb_num_nget (evm_ai->pushs_db, addr, 0);
+	return ret;
+}
+
 static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh hndl = init_capstone (anal);
+
 	if (hndl == 0) {
 		return -1;
 	}
-	
+
 	int n, opsize = -1;
-	cs_insn* insn;
+	cs_insn *insn;
 	char *str;
 
 	op->addr = addr;
 	if (len < 1) {
 		return -1;
 	}
-	op->size = 4;
+	op->size = 1;
 	op->type = R_ANAL_OP_TYPE_UNK;
-	n = cs_disasm (hndl, (ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (hndl, (ut8 *)buf, len, addr, 1, &insn);
 	opsize = 1;
 	if (n < 1 || insn->size < 1) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 		goto beach;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
-		if (!r_str_cmp(insn->op_str, "0x", 2)) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		if (!r_str_cmp (insn->op_str, "0x", 2)) {
 			str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 		} else {
 			str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " 0x": "", insn->op_str);
@@ -76,11 +118,17 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		break;
 	case EVM_INS_JUMP:
 		op->type = R_ANAL_OP_TYPE_JMP;
+		op->fail = op->addr + 1;
+		op->jump = evm_get_jmp_addr (addr);
 		esilprintf (op, "32,sp,-=,sp,[1],pc,:=");
+		break;
+	case EVM_INS_JUMPDEST:
+		op->type = R_ANAL_OP_TYPE_NOP;
 		break;
 	case EVM_INS_JUMPI:
 		op->fail = op->addr + 1;
 		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = evm_get_jmp_addr (addr);
 		break;
 	case EVM_INS_MLOAD:
 	case EVM_INS_SLOAD:
@@ -102,11 +150,13 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_COINBASE:
 	case EVM_INS_BLOCKHASH:
 		break;
+	case EVM_INS_SHA3:
+		op->type = R_ANAL_OP_TYPE_CRYPTO;
+		break;
 	case EVM_INS_CODECOPY:
 	case EVM_INS_SWAP1:
 	case EVM_INS_SWAP2:
 	case EVM_INS_SWAP12:
-	case EVM_INS_REVERT:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case EVM_INS_GAS:
@@ -130,6 +180,19 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_SDIV:
 		op->type = R_ANAL_OP_TYPE_DIV;
 		break;
+	case EVM_INS_AND:
+		op->type = R_ANAL_OP_TYPE_AND;
+		break;
+	case EVM_INS_OR:
+		op->type = R_ANAL_OP_TYPE_OR;
+		break;
+	case EVM_INS_XOR:
+		op->type = R_ANAL_OP_TYPE_XOR;
+		break;
+	case EVM_INS_NOT:
+		op->type = R_ANAL_OP_TYPE_NOT;
+		break;
+	case EVM_INS_REVERT:
 	case EVM_INS_RETURN:
 		op->type = R_ANAL_OP_TYPE_RET;
 		break;
@@ -154,6 +217,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_PUSH1:
 		esilprintf (op, "0x%s,sp,=[1],32,sp,+=", insn->op_str);
 		op->type = R_ANAL_OP_TYPE_PUSH;
+		evm_add_push_to_db (op, addr, buf, len);
 		break;
 	case EVM_INS_PUSH2:
 	case EVM_INS_PUSH3:
@@ -176,6 +240,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_PUSH22:
 	case EVM_INS_PUSH23:
 		op->type = R_ANAL_OP_TYPE_PUSH;
+		evm_add_push_to_db (op, addr, buf, len);
 		break;
 	// Handle https://github.com/capstone-engine/capstone/pull/1231. Can be removed when merged.
 	case EVM_INS_PUSH24:
@@ -221,19 +286,29 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_POP:
 		op->type = R_ANAL_OP_TYPE_POP;
 		break;
+	case EVM_INS_CODESIZE:
+		op->type = R_ANAL_OP_TYPE_LENGTH;
+		break;
+	case EVM_INS_LOG0:
+	case EVM_INS_LOG1:
+	case EVM_INS_LOG2:
+	case EVM_INS_LOG3:
+	case EVM_INS_LOG4:
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
 	}
 beach:
 	set_opdir (op);
 #if 0
-	if (insn && mask & R_ANAL_OP_MASK_OPEX) {
+	if (insn && mask & R_ARCH_OP_MASK_OPEX) {
 		opex (&op->opex, hndl, insn);
 	}
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
+	if (mask & R_ARCH_OP_MASK_VAL) {
 		op_fillval (anal, op, &hndl, insn);
 	}
 #endif
@@ -242,18 +317,38 @@ beach:
 }
 
 static char *get_reg_profile(RAnal *anal) {
-	const char *p = \
+	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
 		"=BP	bp\n"
 		"=A0	r0\n"
+		"=SN	r0\n"
 
 		"gpr	pc	.32	0	0\n"
 		"gpr	sp	.32	4	0\n"
 		"gpr	bp	.32	8	0\n"
-		"gpr	r0	.32	12	0\n"
-		;
+		"gpr	r0	.32	12	0\n";
 	return (p && *p)? strdup (p): NULL;
+}
+
+static int evm_anal_init(void *user) {
+	if (!evm_ai) {
+		evm_ai = R_NEW0 (struct evm_anal_info);
+		evm_ai->pushs_db = sdb_new0 ();
+		if (!evm_ai) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static int evm_anal_fini(void *user) {
+	if (evm_ai) {
+		sdb_free (evm_ai->pushs_db);
+		R_FREE (evm_ai);
+	}
+	return true;
 }
 
 static int archinfo(RAnal *anal, int q) {
@@ -276,9 +371,11 @@ RAnalPlugin r_anal_plugin_evm_cs = {
 	.arch = "evm",
 	.get_reg_profile = get_reg_profile,
 	.archinfo = archinfo,
-	.bits = 32,
+	.bits = 8,
 	.op = &analop,
 	.mnemonics = cs_mnemonics,
+	.init = evm_anal_init,
+	.fini = evm_anal_fini
 };
 
 #ifndef R2_PLUGIN_INCORE
@@ -290,7 +387,7 @@ R_API RLibStruct radare_plugin = {
 #endif
 
 #else
-RAnalPlugin r_anal_plugin_evm_cs = {0};
+RAnalPlugin r_anal_plugin_evm_cs = { 0 };
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,

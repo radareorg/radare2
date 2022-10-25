@@ -4611,7 +4611,7 @@ Operand_uimm16x4_decode (uint32 *valp)
 {
   unsigned uimm16x4_0, imm16_0;
   imm16_0 = *valp & 0xffff;
-  uimm16x4_0 = (((0xffff) << 16) | imm16_0) << 2;
+  uimm16x4_0 = ((((ut32)0xffff) << 16) | imm16_0) << 2;
   *valp = uimm16x4_0;
   return 0;
 }

@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <stddef.h>
-#include "r_cons.h"
 #include "r_core.h"
 
 static const char *help_msg_fR[] = {
@@ -251,7 +250,7 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 				kw = r_str_ndup (fname, fname_len);
 			}
 		}
-		
+
 		bool found = false;
 		r_list_foreach (list, iter2, fn) {
 			if (r_cons_is_breaked ()) {
@@ -750,7 +749,6 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 	return true;
 }
 
-
 static void print_function_labels_for(RAnalFunction *fcn, int rad, PJ *pj) {
 	r_return_if_fail (fcn && (rad != 'j' || pj));
 	bool json = rad == 'j';
@@ -799,7 +797,7 @@ static void print_function_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
 }
 
 static int cmd_flag(void *data, const char *input) {
-	static int flagenum = 0;
+	static R_TH_LOCAL int flagenum = 0;
 	RCore *core = (RCore *)data;
 	ut64 off = core->offset;
 	char *ptr, *str = NULL;
@@ -835,7 +833,7 @@ rep:
 			flagenum = 0;
 			break;
 		default:
-			eprintf ("|Usage: fe[-| name] @@= 1 2 3 4\n");
+			eprintf ("Usage: fe[-| name] @@= 1 2 3 4\n");
 			break;
 		}
 		break;
@@ -1292,7 +1290,8 @@ rep:
 		break;
 	case 'c': // "fc"
 		if (input[1] == 0 || input[1] == '.') {
-			const RList *list = input[1]? r_flag_get_list (core->flags, core->offset): r_flag_all_list (core->flags, false);
+			RList *list_to_free = input[1]? NULL: r_flag_all_list (core->flags, false);
+			const RList *list = input[1]? r_flag_get_list (core->flags, core->offset): list_to_free;
 			RListIter *iter;
 			RFlagItem *fi;
 			r_list_foreach (list, iter, fi) {
@@ -1305,27 +1304,31 @@ rep:
 					}
 				}
 			}
+			r_list_free (list_to_free);
 		} else if (input[1] == '-') {
 			RListIter *iter;
 			RFlagItem *fi;
 			ut64 addr = (input[1] && input[2] != '*' && input[2]) ? r_num_math (core->num, input + 2): core->offset;
+			RList *list_to_free = (input[1] && input[2]=='*')? r_flag_all_list (core->flags, false): NULL;
 			const RList *list = (input[1] && input[2]=='*')?
-				r_flag_all_list (core->flags, false)
+				list_to_free
 				: r_flag_get_list (core->flags, addr);
 			r_list_foreach (list, iter, fi) {
 				if (fi->color) {
 					R_FREE (fi->color);
 				}
 			}
+			r_list_free (list_to_free);
 		} else if (input[1] == '*') {
 			RListIter *iter;
 			RFlagItem *fi;
-			const RList *list = r_flag_all_list (core->flags, false);
+			RList *list = r_flag_all_list (core->flags, false);
 			r_list_foreach (list, iter, fi) {
 				if (fi->color) {
 					r_cons_printf ("fc %s=%s\n", fi->name, fi->color);
 				}
 			}
+			r_list_free (list);
 		} else if (input[1] == ' ') {
 			const char *ret;
 			char *arg = r_str_trim_dup (input + 2);
@@ -1591,14 +1594,14 @@ rep:
 								pj_ks (pj, "realname", flag->realname);
 							}
 							pj_end (pj);
-							
+
 						} else {
 							// Print realname if exists and asm.flags.real is enabled
 							if (core->flags->realnames && flag->realname) {
 								r_cons_println (flag->realname);
 							} else {
 								r_cons_println (flag->name);
-							}	
+							}
 						}
 					}
 				}

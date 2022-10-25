@@ -8,7 +8,6 @@ CFLAGS+=${PIC_CFLAGS}
 
 LIBAR=libr_winkd.${EXT_AR}
 LDFLAGS+=-L../../libr/crypto  -lr_crypto
-LDFLAGS+=-L../../libr/hash -lr_hash
 LDFLAGS+=-L../../libr/socket -lr_socket
 LDFLAGS+=-L../../libr/util -lr_util
 

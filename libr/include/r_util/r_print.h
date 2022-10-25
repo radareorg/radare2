@@ -100,7 +100,7 @@ typedef struct r_print_t {
 	bool scr_prompt;
 	int (*disasm)(void *p, ut64 addr);
 	PrintfCallback oprintf;
-	RArchConfig *config; // 
+	RArchConfig *config;
 	int width;
 	int limit;
 	bool histblock;
@@ -253,9 +253,6 @@ R_API ut32 r_print_rowoff(RPrint *p, int i);
 R_API void r_print_set_rowoff(RPrint *p, int i, ut32 offset, bool overwrite);
 R_API int r_print_row_at_off(RPrint *p, ut32 offset);
 R_API int r_print_pie(RPrint *p, ut64 *values, int nvalues, int size);
-
-R_API const char* r_print_rowlog(RPrint *print, const char *str);
-R_API void r_print_rowlog_done(RPrint *print, const char *str);
 R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len);
 
 // WIP
@@ -270,6 +267,9 @@ R_API char* r_print_json_indent(const char* s, bool color, const char *tab, cons
 R_API char* r_print_json_human(const char* s);
 R_API char* r_print_json_path(const char* s, int pos);
 
+// code
+R_API char *r_print_code_tocolor(const char *s);
+R_API char *r_print_code_indent(const char *s);
 #endif
 
 #ifdef __cplusplus

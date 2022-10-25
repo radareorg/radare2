@@ -1,22 +1,24 @@
 /* radare2 - LGPL - Copyright 2009-2022 - pancake, condret */
 
 #include <r_core.h>
-#include <r_util.h>
 
 static char *getFortuneFile(RCore *core, const char *type) {
-	char *home = r_sys_getenv (R_SYS_HOME);
-	if (!home) {
-		return NULL;
-	}
-	char *path = r_str_newf (R_JOIN_3_PATHS ("%s", R2_HOME_FORTUNES, "fortunes.%s"),
-		home, type);
-	free (home);
+	char *fortunedir = r_xdg_datadir ("fortunes");
+	char *ft = r_str_newf ("%s/fortunes.%s", fortunedir, type);
+	char *path = r_str_home (ft);
+	free (ft);
+	free (fortunedir);
 	if (path && r_file_exists (path)) {
 		return path;
 	}
 	free (path);
-	return r_str_newf (R_JOIN_3_PATHS ("%s", R2_FORTUNES, "fortunes.%s"),
+	path = r_str_newf (R_JOIN_3_PATHS ("%s", R2_FORTUNES, "fortunes.%s"),
 		r_sys_prefix (NULL), type);
+	if (path && r_file_exists (path)) {
+		return path;
+	}
+	free (path);
+	return NULL;
 }
 
 static bool _push_types(RList *type_list, char *fortune_dir) {
@@ -51,7 +53,7 @@ R_IPI RList *r_core_fortune_types(void) {	// R_API 5.8
 		return NULL;
 	}
 	free (fortune_dir);
-	fortune_dir = r_str_home (R2_HOME_FORTUNES);
+	fortune_dir = r_xdg_datadir ("fortunes");
 	if (fortune_dir) {
 		_push_types (types, fortune_dir);
 		free (fortune_dir);
@@ -105,12 +107,14 @@ static char *getrandomline(RCore *core) {
 		if (strstr (types, fortunes)) {
 			int lines = 0;
 			char *file = getFortuneFile (core, fortunes);
-			templine = r_file_slurp_random_line_count (file, &lines);
-			if (templine && *templine) {
-				free (line);
-				line = templine;
+			if (file) {
+				templine = r_file_slurp_random_line_count (file, &lines);
+				if (templine && *templine) {
+					free (line);
+					line = templine;
+				}
+				free (file);
 			}
-			free (file);
 		}
 	}
 	r_list_free (ftypes);

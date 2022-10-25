@@ -24,7 +24,7 @@ R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *sym, ut64 vaddr) 
 	char *str, *out, *in;
 
 	str = r_bin_demangle_cxx (binfile, sym, vaddr);
-	
+
 	if (!str) {
 		return str;
 	}

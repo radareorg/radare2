@@ -3,6 +3,7 @@ FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=bpf
 e asm.bits=32
+e asm.parser=x86.pseudo
 wx 0400000001000000
 ao@0
 EOF
@@ -11,7 +12,7 @@ address: 0x0
 opcode: add 0x1
 esilcost: 0
 disasm: add 0x1
-pseudo: 0x1 += 
+pseudo: 0x1 +=
 mnemonic: add
 description: add src to dst (32-bit)
 mask: ffffffffffffffff

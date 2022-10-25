@@ -18,7 +18,9 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 pa call eax
-e asm.assembler=java
+e asm.arch=java
+# XXX asm.assembler only works if the assembler is in asm plugin, wont fallback on anal ones
+# e asm.assembler=java
 pa bipush 33
 EOF
 EXPECT=<<EOF
@@ -34,10 +36,9 @@ e asm.arch=x86
 e asm.bits=32
 pa out 256,AL
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-Cannot assemble 'out 256,AL' at line 3
+ERROR: Cannot assemble 'out 256,AL' at line 3
 EOF
 RUN
 
@@ -48,10 +49,9 @@ e asm.arch=x86
 e asm.bits=32
 pa push 0x3311223311222222
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-Cannot assemble 'push 0x3311223311222222' at line 3
+ERROR: Cannot assemble 'push 0x3311223311222222' at line 3
 EOF
 RUN
 
@@ -62,9 +62,8 @@ e asm.arch=x86
 e asm.bits=32
 pa mov eax, 0x3311223311222222
 EOF
-EXPECT=<<EOF
-EOF
+EXPECT=
 EXPECT_ERR=<<EOF
-Cannot assemble 'mov eax, 0x3311223311222222' at line 3
+ERROR: Cannot assemble 'mov eax, 0x3311223311222222' at line 3
 EOF
 RUN

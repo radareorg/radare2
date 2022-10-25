@@ -9,6 +9,7 @@ static RMain foo[] = {
 	{ "rax2", r_main_rax2 },
 	{ "radiff2", r_main_radiff2 },
 	{ "rafind2", r_main_rafind2 },
+	{ "ravc2", r_main_ravc2 },
 	{ "rarun2", r_main_rarun2 },
 	{ "rasm2", r_main_rasm2 },
 	{ "ragg2", r_main_ragg2 },

@@ -14,14 +14,14 @@ R_API void r_debug_snap_free(RDebugSnap *snap) {
 R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	r_return_val_if_fail (dbg && map, NULL);
 	if (map->size < 1) {
-		eprintf ("Invalid map size\n");
+		R_LOG_ERROR ("Invalid map size");
 		return NULL;
 	}
 	// TODO: Support streaming memory snapshots to avoid big allocations
 	if (map->size > dbg->maxsnapsize) {
 		char *us = r_num_units (NULL, 0, map->size);
 		const char *name = r_str_get (map->name);
-		eprintf ("Not snapping map %s (%s > dbg.maxsnapsize)\n", name, us);
+		R_LOG_ERROR ("Not snapping map %s (%s > dbg.maxsnapsize)", name, us);
 		free (us);
 		return NULL;
 	}
@@ -44,7 +44,7 @@ R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 		r_debug_snap_free (snap);
 		return NULL;
 	}
-	eprintf ("Reading %d byte(s) from 0x%08"PFMT64x "...\n", snap->size, snap->addr);
+	R_LOG_ERROR ("Reading %d byte(s) from 0x%08"PFMT64x, snap->size, snap->addr);
 	dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size);
 
 	return snap;

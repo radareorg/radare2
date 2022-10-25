@@ -344,22 +344,22 @@ aarch64_get_operand_desc (enum aarch64_opnd type)
 /* Table of all conditional affixes.  */
 const aarch64_cond aarch64_conds[16] =
 {
-  {{"eq", "none"}, 0x0},
-  {{"ne", "any"}, 0x1},
-  {{"cs", "hs", "nlast"}, 0x2},
-  {{"cc", "lo", "ul", "last"}, 0x3},
-  {{"mi", "first"}, 0x4},
-  {{"pl", "nfrst"}, 0x5},
-  {{"vs"}, 0x6},
-  {{"vc"}, 0x7},
-  {{"hi", "pmore"}, 0x8},
-  {{"ls", "plast"}, 0x9},
-  {{"ge", "tcont"}, 0xa},
-  {{"lt", "tstop"}, 0xb},
-  {{"gt"}, 0xc},
-  {{"le"}, 0xd},
-  {{"al"}, 0xe},
-  {{"nv"}, 0xf},
+  {{ "eq", "none" }, 0x0},
+  {{ "ne", "any" }, 0x1},
+  {{ "cs", "hs", "nlast" }, 0x2},
+  {{ "cc", "lo", "ul", "last" }, 0x3},
+  {{ "mi", "first" }, 0x4},
+  {{ "pl", "nfrst" }, 0x5},
+  {{ "vs" }, 0x6},
+  {{ "vc" }, 0x7},
+  {{ "hi", "pmore" }, 0x8},
+  {{ "ls", "plast" }, 0x9},
+  {{ "ge", "tcont" }, 0xa},
+  {{ "lt", "tstop" }, 0xb},
+  {{ "gt" }, 0xc},
+  {{ "le" }, 0xd},
+  {{ "al" }, 0xe},
+  {{ "nv" }, 0xf},
 };
 
 const aarch64_cond *
@@ -382,22 +382,22 @@ get_inverted_cond (const aarch64_cond *cond)
    which enables table-driven encoding/decoding for the modifiers.  */
 const struct aarch64_name_value_pair aarch64_operand_modifiers [] =
 {
-    {"none", 0x0},
-    {"msl",  0x0},
-    {"ror",  0x3},
-    {"asr",  0x2},
-    {"lsr",  0x1},
-    {"lsl",  0x0},
-    {"uxtb", 0x0},
-    {"uxth", 0x1},
-    {"uxtw", 0x2},
-    {"uxtx", 0x3},
-    {"sxtb", 0x4},
-    {"sxth", 0x5},
-    {"sxtw", 0x6},
-    {"sxtx", 0x7},
-    {"mul", 0x0},
-    {"mul vl", 0x0},
+    { "none", 0x0},
+    { "msl",  0x0},
+    { "ror",  0x3},
+    { "asr",  0x2},
+    { "lsr",  0x1},
+    { "lsl",  0x0},
+    { "uxtb", 0x0},
+    { "uxth", 0x1},
+    { "uxtw", 0x2},
+    { "uxtx", 0x3},
+    { "sxtb", 0x4},
+    { "sxth", 0x5},
+    { "sxtw", 0x6},
+    { "sxtx", 0x7},
+    { "mul", 0x0},
+    { "mul vl", 0x0},
     {NULL, 0},
 };
 
@@ -1099,8 +1099,7 @@ typedef struct
 
 static simd_imm_encoding simd_immediates[TOTAL_IMM_NB];
 
-static int
-simd_imm_encoding_cmp(const void *i1, const void *i2)
+static int simd_imm_encoding_cmp(const void *i1, const void *i2)
 {
   const simd_imm_encoding *imm1 = (const simd_imm_encoding *)i1;
   const simd_imm_encoding *imm2 = (const simd_imm_encoding *)i2;
@@ -1189,7 +1188,7 @@ build_immediate_table (void)
     }
   assert (nb_imms == TOTAL_IMM_NB);
   qsort(simd_immediates, nb_imms,
-	sizeof(simd_immediates[0]), simd_imm_encoding_cmp);
+	sizeof (simd_immediates[0]), simd_imm_encoding_cmp);
 }
 
 /* Return TRUE if VALUE is a valid logical immediate, i.e. bitmask, that can
@@ -1232,7 +1231,7 @@ aarch64_logical_immediate_p (uint64_t value, int esize, aarch64_insn *encoding)
   imm_enc.imm = value;
   imm_encoding = (const simd_imm_encoding *)
     bsearch(&imm_enc, simd_immediates, TOTAL_IMM_NB,
-            sizeof(simd_immediates[0]), simd_imm_encoding_cmp);
+            sizeof (simd_immediates[0]), simd_imm_encoding_cmp);
   if (imm_encoding == NULL)
     {
       DEBUG_TRACE ("exit with FALSE");
@@ -2748,9 +2747,9 @@ aarch64_operand_index (const enum aarch64_opnd *operands, enum aarch64_opnd oper
     R (16), R (17), R (18), R (19), R (20), R (21), R (22), R (23), \
     R (24), R (25), R (26), R (27), R (28), R (29), R (30),  FOR31 }
 /* [0][0]  32-bit integer regs with sp   Wn
-   [0][1]  64-bit integer regs with sp   Xn  sf=1
+   [0][1]  64-bit integer regs with sp   Xn  sf = 1
    [1][0]  32-bit integer regs with #0   Wn
-   [1][1]  64-bit integer regs with #0   Xn  sf=1 */
+   [1][1]  64-bit integer regs with #0   Xn  sf = 1 */
 static const char *int_reg[2][2][32] = {
 #define R32(X) "w" #X
 #define R64(X) "x" #X

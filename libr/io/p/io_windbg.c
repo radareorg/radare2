@@ -382,7 +382,7 @@ static bool windbg_init(void) {
 }
 
 static bool windbg_check(RIO *io, const char *uri, bool many) {
-	return !strncmp (uri, WINDBGURI, strlen (WINDBGURI));
+	return r_str_startswith (uri, WINDBGURI);
 }
 
 typedef enum {
@@ -534,7 +534,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 			hr = ITHISCALL (dbgClient, CreateProcess, 0ULL, cmd, spawn_options);
 			free (cmd);
 		} else {
-			eprintf ("Missing argument for local spawn\n");
+			R_LOG_ERROR ("Missing argument for local spawn");
 		}
 		break;
 	case TARGET_LOCAL_ATTACH: // -p (PID)
@@ -542,7 +542,7 @@ static RIODesc *windbg_open(RIO *io, const char *uri, int perm, int mode) {
 		break;
 	case TARGET_LOCAL_KERNEL: // -kl
 		if (ITHISCALL0 (dbgClient, IsKernelDebuggerEnabled) == S_FALSE) {
-			eprintf ("Live Kernel debug not available. Set the /debug boot switch to enable it\n");
+			R_LOG_ERROR ("Live Kernel debug not available. Set the /debug boot switch to enable it");
 		} else {
 			hr = ITHISCALL (dbgClient, AttachKernel, DEBUG_ATTACH_LOCAL_KERNEL, args);
 		}
@@ -663,7 +663,7 @@ static bool windbg_getbase(RIODesc *fd, ut64 *base) {
 
 static char *windbg_system(RIO *io, RIODesc *fd, const char *cmd) {
 	DbgEngContext *idbg = fd->data;
-	if (R_STR_ISEMPTY (cmd) || !strncmp ("pid", cmd, 3)) {
+	if (R_STR_ISEMPTY (cmd) || r_str_startswith (cmd, "pid")) {
 		return NULL;
 	}
 	ITHISCALL (dbgCtrl, Execute, DEBUG_OUTCTL_ALL_CLIENTS, cmd, DEBUG_EXECUTE_DEFAULT);

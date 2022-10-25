@@ -26,7 +26,12 @@ R_API RAnalValue *r_anal_value_copy(RAnalValue *ov) {
 
 // TODO: move into .h as #define free
 R_API void r_anal_value_free(RAnalValue *value) {
-	free (value);
+	if (value) {
+		r_unref (value->seg);
+		r_unref (value->reg);
+		r_unref (value->regdelta);
+		free (value);
+	}
 #if 0
 	ut64 pval = (ut64)(size_t)value;
 	if (pval && pval != UT64_MAX) {
@@ -55,7 +60,7 @@ R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 	case 4:
 	case 8:
 		//anal->bio ...
-		eprintf ("TODO: memref for to_ut64 not supported\n");
+		R_LOG_INFO ("memref for to_ut64 is not supported");
 		break;
 	}
 	return num;
@@ -69,7 +74,7 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 			r_mem_set_num (data, val->memref, num);
 			anal->iob.write_at (anal->iob.io, addr, data, val->memref);
 		} else {
-			eprintf ("No IO binded to r_anal\n");
+			R_LOG_ERROR ("No IO binded to r_anal");
 		}
 	} else {
 		if (val->reg) {
@@ -79,7 +84,7 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 	return false;							//is this necessary
 }
 
-R_API char *r_anal_value_to_string(RAnalValue *value) {
+R_API char *r_anal_value_tostring(RAnalValue *value) {
 	char *out = NULL;
 	if (value) {
 		out = r_str_new ("");

@@ -100,7 +100,7 @@ static bool is_bin(const ut8 *buf, int size) {
 }
 
 // TODO: add is_flag, is comment?
-R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
+R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette *pal) {
 	int i, len, mallocsz = 1024;
 	ut32 n32;
 
@@ -110,7 +110,6 @@ R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
 
 	RStrBuf *sb = r_strbuf_new (NULL);
 	if (!sb || !r_strbuf_reserve (sb, mallocsz)) {
-		eprintf ("Cannot allocate %d byte(s)\n", mallocsz);
 		return NULL;
 	}
 	if (pal) {
@@ -225,7 +224,6 @@ R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int t
 		ad->buf = malloc (len + 1);
 		if (!ad->buf) {
 			r_anal_data_free (ad);
-			eprintf ("Cannot allocate %d byte(s)\n", len + 1);
 			return NULL;
 		}
 		memcpy (ad->buf, ad->str, len + 1);
@@ -401,7 +399,7 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	return "data";
 }
 
-R_API const char *r_anal_datatype_to_string(RAnalDataType t) {
+R_API const char *r_anal_datatype_tostring(RAnalDataType t) {
 	switch (t) {
 	case R_ANAL_DATATYPE_NULL:
 		return NULL;

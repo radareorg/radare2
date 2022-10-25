@@ -768,7 +768,7 @@ inline static ut64 extract_field(int w, int o, ut64 v) {
 	return (v >> o) & m;
 }
 
-inline static ut64 sx(int w, ut64 v){
+inline static ut64 sx(int w, ut64 v) {
 	ut64 s = 1ULL << (w - 1);
 	ut64 m = s - 1;
 

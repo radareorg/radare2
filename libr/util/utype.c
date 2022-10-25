@@ -2,7 +2,8 @@
 
 #include <r_util.h>
 
-R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
+// R2_580 - return bool instead of int
+R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	const char *kind;
 	char var[128];
 	sprintf (var, "link.%08"PFMT64x, at);
@@ -16,13 +17,15 @@ R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 			eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x"\n", val, at + off);
 			return true;
 		}
-		eprintf ("Invalid kind of type\n");
+		R_LOG_ERROR ("Invalid kind of type");
 	}
 	return false;
 }
 
-R_API int r_type_kind(Sdb *TDB, const char *name) {
-	if (!name) {
+R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
+	r_return_val_if_fail (TDB && name, -1);
+	if (R_STR_ISEMPTY (name)) {
+		// XXX should assert too
 		return -1;
 	}
 	const char *type = sdb_const_get (TDB, name, 0);
@@ -143,7 +146,7 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 		}
 		return 0;
 	}
-	if (!strcmp (t, "type")){
+	if (!strcmp (t, "type")) {
 		char *query = r_str_newf ("type.%s.size", tmptype);
 		ut64 r = sdb_num_get (TDB, query, 0); // returns size in bits
 		free (query);
@@ -312,7 +315,7 @@ static void types_range_del(Sdb *db, ut64 addr) {
 	ut64 base = TYPE_RANGE_BASE (addr);
 	r_strf_var (k, 64, "range.%"PFMT64x, base);
 	char valstr[SDB_NUM_BUFSZ];
-	const char *v = sdb_itoa (addr, valstr, SDB_NUM_BASE);
+	const char *v = sdb_itoa (addr, SDB_NUM_BASE, valstr, sizeof (valstr));
 	sdb_array_remove (db, k, v, 0);
 }
 
@@ -451,7 +454,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 					vars = r_str_append (vars, " ");
 				}
 			} else {
-				eprintf ("Cannot resolve type '%s'\n", var3);
+				R_LOG_ERROR ("Cannot resolve type '%s'", var3);
 			}
 			free (type);
 		}
@@ -505,7 +508,7 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
 		int i, n = sdb_array_length (TDB, r_strf ("%s.%s", kind, name));
 		char *elements_key = r_str_newf ("%s.%s", kind, name);
-		for (i = 0; i< n; i++) {
+		for (i = 0; i < n; i++) {
 			char *p = sdb_array_get (TDB, elements_key, i, NULL);
 			sdb_unset (TDB, r_strf ("%s.%s", elements_key, p), 0);
 			free (p);
@@ -555,7 +558,7 @@ R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
 	return fcn && !strcmp (fcn, "func");
 }
 
-R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name){
+R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name) {
 	r_strf_var (query, 64, "func.%s.ret", func_name);
 	return sdb_const_get (TDB, query, 0);
 }
@@ -594,7 +597,7 @@ R_API const char *r_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_nam
 #define MIN_MATCH_LEN 4
 
 static inline bool is_function(const char *name) {
-	return name && !strcmp("func", name);
+	return name && !strcmp ("func", name);
 }
 
 static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {

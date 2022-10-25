@@ -1,9 +1,7 @@
-/* radare2 - LGPL - Copyright 2017-2018 - wargio */
+/* radare2 - LGPL - Copyright 2017-2022 - wargio */
 
-#include <stdlib.h>
-#include <string.h>
 #include <r_util.h>
-#include "./x509.h"
+#include "x509.h"
 
 extern void r_x509_name_json (PJ *pj, RX509Name *name);
 extern void r_x509_free_crl (RX509CertificateRevocationList *crl);
@@ -475,7 +473,7 @@ static void r_x509_signedinfo_dump(RPKCS7SignerInfo *si, const char *pad, RStrBu
 	free (pad3);
 }
 
-R_API char *r_pkcs7_cms_to_string(RCMS *container) {
+R_API char *r_pkcs7_cms_tostring(RCMS *container) {
 	ut32 i;
 	if (!container) {
 		return NULL;
@@ -500,14 +498,14 @@ R_API char *r_pkcs7_cms_to_string(RCMS *container) {
 	}
 
 	for (i = 0; i < container->signedData.crls.length; i++) {
-		char *res = r_x509_crl_to_string (container->signedData.crls.elements[i], "    ");
+		char *res = r_x509_crl_tostring (container->signedData.crls.elements[i], "    ");
 		if (res) {
 			r_strbuf_append (sb, res);
 			free (res);
 		}
 	}
 
-	r_strbuf_appendf (sb, "  SignerInfos:\n");
+	r_strbuf_append (sb, "  SignerInfos:\n");
 	if (container->signedData.signerinfos.elements) {
 		for (i = 0; i < container->signedData.signerinfos.length; i++) {
 			r_x509_signedinfo_dump (container->signedData.signerinfos.elements[i], "    ", sb);

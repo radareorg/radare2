@@ -89,7 +89,6 @@ if get_option('enable_tests')
         r_parse_dep,
         r_egg_dep,
         r_search_dep,
-        r_hash_dep,
         r_crypto_dep,
         r_magic_dep,
         lrt,

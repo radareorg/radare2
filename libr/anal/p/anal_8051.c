@@ -6,8 +6,9 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#include <8051_ops.h>
-#include "../asm/arch/8051/8051_disas.c"
+#include "../arch/8051/8051_ops.h"
+#include "../arch/8051/8051_ass.c"
+#include "../arch/8051/8051_disas.c"
 
 typedef struct {
 	const char *name;
@@ -172,7 +173,7 @@ typedef struct {
 	const char *name;
 	ut8 offset; // offset into memory, where the value is held
 	ut8 resetvalue; // value the register takes in case of a reset
-	ut8 num_bytes; // no more than sizeof(ut64)
+	ut8 num_bytes; // no more than sizeof (ut64)
 	ut8 banked : 1;
 	ut8 isdptr : 1;
 } RI8051Reg;
@@ -180,36 +181,36 @@ typedef struct {
 // custom reg read/write temporarily disabled - see r2 issue #9242
 static RI8051Reg registers[] = {
 	// keep these sorted
-	{"a",     0xE0, 0x00, 1, 0},
-	{"b",     0xF0, 0x00, 1, 0},
-	{"dph",   0x83, 0x00, 1, 0},
-	{"dpl",   0x82, 0x00, 1, 0},
-	{"dptr",  0x82, 0x00, 2, 0, 1},
-	{"ie",    0xA8, 0x00, 1, 0},
-	{"ip",    0xB8, 0x00, 1, 0},
-	{"p0",    0x80, 0xFF, 1, 0},
-	{"p1",    0x90, 0xFF, 1, 0},
-	{"p2",    0xA0, 0xFF, 1, 0},
-	{"p3",    0xB0, 0xFF, 1, 0},
-	{"pcon",  0x87, 0x00, 1, 0},
-	{"psw",   0xD0, 0x00, 1, 0},
-	{"r0",    0x00, 0x00, 1, 1},
-	{"r1",    0x01, 0x00, 1, 1},
-	{"r2",    0x02, 0x00, 1, 1},
-	{"r3",    0x03, 0x00, 1, 1},
-	{"r4",    0x04, 0x00, 1, 1},
-	{"r5",    0x05, 0x00, 1, 1},
-	{"r6",    0x06, 0x00, 1, 1},
-	{"r7",    0x07, 0x00, 1, 1},
-	{"sbuf",  0x99, 0x00, 1, 0},
-	{"scon",  0x98, 0x00, 1, 0},
-	{"sp",    0x81, 0x07, 1, 0},
-	{"tcon",  0x88, 0x00, 1, 0},
-	{"th0",   0x8C, 0x00, 1, 0},
-	{"th1",   0x8D, 0x00, 1, 0},
-	{"tl0",   0x8A, 0x00, 1, 0},
-	{"tl1",   0x8B, 0x00, 1, 0},
-	{"tmod",  0x89, 0x00, 1, 0}
+	{ "a",     0xE0, 0x00, 1, 0},
+	{ "b",     0xF0, 0x00, 1, 0},
+	{ "dph",   0x83, 0x00, 1, 0},
+	{ "dpl",   0x82, 0x00, 1, 0},
+	{ "dptr",  0x82, 0x00, 2, 0, 1},
+	{ "ie",    0xA8, 0x00, 1, 0},
+	{ "ip",    0xB8, 0x00, 1, 0},
+	{ "p0",    0x80, 0xFF, 1, 0},
+	{ "p1",    0x90, 0xFF, 1, 0},
+	{ "p2",    0xA0, 0xFF, 1, 0},
+	{ "p3",    0xB0, 0xFF, 1, 0},
+	{ "pcon",  0x87, 0x00, 1, 0},
+	{ "psw",   0xD0, 0x00, 1, 0},
+	{ "r0",    0x00, 0x00, 1, 1},
+	{ "r1",    0x01, 0x00, 1, 1},
+	{ "r2",    0x02, 0x00, 1, 1},
+	{ "r3",    0x03, 0x00, 1, 1},
+	{ "r4",    0x04, 0x00, 1, 1},
+	{ "r5",    0x05, 0x00, 1, 1},
+	{ "r6",    0x06, 0x00, 1, 1},
+	{ "r7",    0x07, 0x00, 1, 1},
+	{ "sbuf",  0x99, 0x00, 1, 0},
+	{ "scon",  0x98, 0x00, 1, 0},
+	{ "sp",    0x81, 0x07, 1, 0},
+	{ "tcon",  0x88, 0x00, 1, 0},
+	{ "th0",   0x8C, 0x00, 1, 0},
+	{ "th1",   0x8D, 0x00, 1, 0},
+	{ "tl0",   0x8A, 0x00, 1, 0},
+	{ "tl1",   0x8B, 0x00, 1, 0},
+	{ "tmod",  0x89, 0x00, 1, 0}
 };
 #endif
 
@@ -1046,7 +1047,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->refptr = 1;
 	}
 
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		ut8 copy[3] = {0, 0, 0};
 		memcpy (copy, buf, len >= 3 ? 3 : len);
 		analop_esil (anal, op, addr, copy);
@@ -1058,6 +1059,22 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return op->size;
 }
 
+static int archinfo(RAnal *anal, int q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 3;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 1;
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 1;
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
+		return 1;
+	}
+	return 0;
+}
+
 RAnalPlugin r_anal_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
@@ -1066,9 +1083,11 @@ RAnalPlugin r_anal_plugin_8051 = {
 	.desc = "8051 CPU code analysis plugin",
 	.license = "LGPL3",
 	.op = &i8051_op,
+	.opasm = &assemble_8051,
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_i8051_init,
-	.esil_fini = esil_i8051_fini
+	.esil_fini = esil_i8051_fini,
+	.archinfo = archinfo
 };
 
 #ifndef R2_PLUGIN_INCORE

@@ -50,7 +50,7 @@ static void showBuffer(RBuffer *b) {
 }
 
 #if 0
-static int compileShellcode(REgg *egg, const char *input){
+static int compileShellcode(REgg *egg, const char *input) {
 	int i = 0;
 	RBuffer *b;
 	if (!r_egg_shellcode (egg, input)) {
@@ -303,7 +303,7 @@ static int cmd_egg(void *data, const char *input) {
 			break;
 		case '\0':
 			// r_pair_list (egg->pair,NULL);
-			eprintf ("TODO: list options\n");
+			R_LOG_TODO ("list options");
 			break;
 		default:
 			eprintf ("Usage: gc [k=v]\n");

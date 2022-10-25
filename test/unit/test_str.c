@@ -167,6 +167,29 @@ bool test_r_str_split(void) {
 	mu_end;
 }
 
+bool test_r_str_split_list(void) {
+#if 0
+> "".split("\n")
+[ '' ]
+> "\n".split("\n")
+[ '', '' ]
+>
+#endif
+	{
+		char* hi = strdup ("");
+		RList *r = r_str_split_list (hi, "\n", 0);
+		mu_assert_eq (r_list_length (r), 1, "split empty");
+		free (hi);
+	}
+	{
+		char* hi = strdup ("\n");
+		RList *r = r_str_split_list (hi, "\n", 0);
+		mu_assert_eq (r_list_length (r), 2, "split newline");
+		free (hi);
+	}
+	mu_end;
+}
+
 bool test_r_str_tokenize(void) {
 	//XXX r_str_word0 doesn't work on "hello      world" to
 	// tokenize into ["hello", "world"]
@@ -522,6 +545,7 @@ bool all_tests () {
 	mu_run_test (test_r_str_trim);
 	mu_run_test (test_r_str_case);
 	mu_run_test (test_r_str_split);
+	mu_run_test (test_r_str_split_list);
 	mu_run_test (test_r_str_tokenize);
 	mu_run_test (test_r_str_char_count);
 	mu_run_test (test_r_str_word_count);

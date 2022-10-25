@@ -3,9 +3,8 @@ include ../config.mk
 NAME=r_io
 R2DEPS+=r_util
 R2DEPS+=r_socket
-R2DEPS+=r_hash
-R2DEPS+=r_cons
 R2DEPS+=r_crypto
+R2DEPS+=r_cons
 STATIC_OBJS=$(subst ..,p/..,$(subst io_,p/io_,$(STATIC_OBJ)))
 OBJS=${STATIC_OBJS}
 OBJS+=io.o io_plugin.o io_map.o io_desc.o io_cache.o p_cache.o undo.o ioutils.o io_fd.o io_memory.o

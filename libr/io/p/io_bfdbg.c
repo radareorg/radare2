@@ -147,21 +147,21 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "bfdbg://", 8));
+	return r_str_startswith (pathname, "bfdbg://");
 }
 
 static inline int getmalfd(RIOBfdbg *mal) {
-	return 0xffff & (int)(size_t)mal->buf;
+	return UT16_MAX & (unsigned int)(size_t)mal->buf;
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	char *out;
 	if (__plugin_open (io, pathname, 0)) {
-		RIOBind iob;
 		RIOBfdbg *mal = R_NEW0 (RIOBfdbg);
 		if (!mal) {
 			return NULL;
 		}
+		RIOBind iob;
 		r_io_bind (io, &iob);
 		mal->fd = getmalfd (mal);
 		mal->bfvm = bfvm_new (&iob);
@@ -184,8 +184,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return r_io_desc_new (io, &r_io_plugin_bfdbg,
 				pathname, rw, mode, mal);
 		}
-		eprintf ("Cannot allocate (%s) %"PFMT32u" byte(s)\n",
-			pathname+9, mal->size);
+		R_LOG_ERROR ("Cannot allocate %"PFMT32u" byte(s) for %s",
+			mal->size, pathname + 9);
 		free (mal);
 		free (out);
 	}

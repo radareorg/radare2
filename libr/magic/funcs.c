@@ -119,12 +119,12 @@ static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut
 		return;
 	}
 	if (lineno != 0) {
-		free(ms->o.buf);
+		free (ms->o.buf);
 		ms->o.buf = NULL;
 		(void)file_printf (ms, "line %u: ", lineno);
 	}
 	// OPENBSDBUG
-        file_vprintf (ms, f, va);
+	file_vprintf (ms, f, va);
 	if (error > 0) {
 		(void)file_printf (ms, " (%s)", strerror (error));
 	}
@@ -133,6 +133,7 @@ static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut
 }
 
 /*VARARGS*/
+// XXX deprecate and just use R_LOG
 void file_error(RMagic *ms, int error, const char *f, ...) {
 	va_list va;
 	va_start (va, f);
@@ -217,12 +218,13 @@ int file_reset(RMagic *ms) {
 	if (!ms) {
 		return 0;
 	}
+	ms->last_cont_level = 0;
 	free (ms->o.buf);
 	ms->o.buf = NULL;
 	ms->haderr = 0;
 	ms->error = -1;
 	if (!ms->mlist) {
-		file_error (ms, 0, "no magic files loaded! ");
+		// eprintf ("no magic files loaded, nothing to scan\n");
 		return -1;
 	}
 	return 0;
@@ -274,7 +276,7 @@ const char *file_getbuffer(RMagic *ms) {
 		int mb_conv = 1;
 		size_t bytesconsumed;
 		char *eop;
-		(void)memset(&state, 0, sizeof(mbstate_t));
+		(void)memset(&state, 0, sizeof (mbstate_t));
 
 		np = ms->o.pbuf;
 		op = ms->o.buf;
@@ -309,7 +311,7 @@ const char *file_getbuffer(RMagic *ms) {
 #endif
 	for (np = ms->o.pbuf, op = ms->o.buf; *op; op++) {
 		if (isprint ((ut8)*op)) {
-			*np++ = *op;	
+			*np++ = *op;
 		} else {
 			OCTALIFY (np, op);
 		}

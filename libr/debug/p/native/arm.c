@@ -17,7 +17,7 @@ Flags
 	PL = n // positive
 	VS = V // overflow
 	VC = v // no overflow
-	
+
 	// unsigned
 	HI = zC                (!z && c)
 	LS = Z || c            (z || !c)

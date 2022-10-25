@@ -141,43 +141,7 @@ typedef struct xtensa_relax_info_struct xtensa_relax_info;
 #endif
 
 xtensa_isa xtensa_default_isa;
-    // xtensa_default_isa = xtensa_isa_init (0, 0);
-
-int filename_cmp(const char *s1, const char *s2) {
-#if !defined(HAVE_DOS_BASED_FILE_SYSTEM) \
-    && !defined(HAVE_CASE_INSENSITIVE_FILE_SYSTEM)
-  return strcmp(s1, s2);
-#else
-  for (;;)
-    {
-      int c1 = *s1;
-      int c2 = *s2;
-
-#if defined (HAVE_CASE_INSENSITIVE_FILE_SYSTEM)
-      c1 = TOLOWER (c1);
-      c2 = TOLOWER (c2);
-#endif
-
-#if defined (HAVE_DOS_BASED_FILE_SYSTEM)
-      /* On DOS-based file systems, the '/' and the '\' are equivalent.  */
-      if (c1 == '/')
-        c1 = '\\';
-      if (c2 == '/')
-        c2 = '\\';
-#endif
-
-      if (c1 != c2)
-        return (c1 - c2);
-
-      if (c1 == '\0')
-        return 0;
-
-      s1++;
-      s2++;
-    }
-#endif
-}
-
+// xtensa_default_isa = xtensa_isa_init (0, 0);
 
 #if 0
 
@@ -11149,7 +11113,7 @@ match_section_group (bfd *abfd ATTRIBUTE_UNUSED, asection *sec, void *inf)
 }
 
 
-static int linkonce_len = sizeof(".gnu.linkonce.") - 1;
+static int linkonce_len = sizeof (".gnu.linkonce.") - 1;
 
 static char *
 xtensa_property_section_name (asection *sec, const char *base_name)

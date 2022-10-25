@@ -1,43 +1,68 @@
 /* radare - LGPL - Copyright 2010-2022 - pancake */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
+#include "disas-asm.h"
+#include "opcode/mips.h"
 
-
+static R_TH_LOCAL char *pre_cpu = NULL;
 static R_TH_LOCAL ut64 t9_pre = UT64_MAX;
+
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+	return 0;
+}
+
+static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	//--
+}
+
+static int mips_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
+	int delta = (memaddr - info->buffer_vma);
+	if (delta < 0) {
+		return -1; // disable backward reads
+	}
+	if ((delta + length) > 4) {
+		return -1;
+	}
+	ut8 *bytes = info->buffer;
+	memcpy (myaddr, bytes + delta, length);
+	return 0;
+}
+
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS ()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS ()
+
 #define REG_BUF_MAX 32
 // ESIL macros:
 
 // put the sign bit on the stack
-#define ES_IS_NEGATIVE(arg) "1,"arg",<<<,1,&"
+#define ES_IS_NEGATIVE(arg) "1," arg ",<<<,1,&"
 
-#define ES_B(x) "0xff,"x",&"
-#define ES_H(x) "0xffff,"x",&"
-#define ES_W(x) "0xffffffff,"x",&"
+#define ES_B(x) "0xff," x ",&"
+#define ES_H(x) "0xffff," x ",&"
+#define ES_W(x) "0xffffffff," x ",&"
 // call with delay slot
-#define ES_CALL_DR(ra, addr) "pc,4,+,"ra",=,"ES_J(addr)
-#define ES_CALL_D(addr) ES_CALL_DR("ra", addr)
+#define ES_CALL_DR(ra, addr) "pc,4,+," ra ",=," ES_J (addr)
+#define ES_CALL_D(addr)      ES_CALL_DR ("ra", addr)
 
 // call without delay slot
-#define ES_CALL_NDR(ra, addr) "pc,"ra",=,"ES_J(addr)
-#define ES_CALL_ND(addr) ES_CALL_NDR("ra", addr)
+#define ES_CALL_NDR(ra, addr) "pc," ra ",=," ES_J (addr)
+#define ES_CALL_ND(addr)      ES_CALL_NDR ("ra", addr)
 
 #define USE_DS 0
 #if USE_DS
 // emit ERR trap if executed in a delay slot
 #define ES_TRAP_DS() "$ds,!,!,?{,$$,1,TRAP,BREAK,},"
 // jump to address
-#define ES_J(addr) addr",SETJT,1,SETD"
+#define ES_J(addr) addr ",SETJT,1,SETD"
 #else
 #define ES_TRAP_DS() ""
-#define ES_J(addr) addr",pc,="
+#define ES_J(addr)   addr ",pc,:="
 #endif
 
-#define ES_SIGN32_64(arg)	es_sign_n_64 (a, op, arg, 32)
-#define ES_SIGN16_64(arg)	es_sign_n_64 (a, op, arg, 16)
+#define ES_SIGN32_64(arg) es_sign_n_64 (a, op, arg, 32)
+#define ES_SIGN16_64(arg) es_sign_n_64 (a, op, arg, 16)
 
 #define ES_ADD_CK32_OVERF(x, y, z) es_add_ck (op, x, y, z, 32)
 #define ES_ADD_CK64_OVERF(x, y, z) es_add_ck (op, x, y, z, 64)
@@ -46,15 +71,15 @@ static inline void es_sign_n_64(RAnal *a, RAnalOp *op, const char *arg, int bit)
 	if (a->config->bits == 64) {
 		r_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", bit, arg, arg);
 	} else {
-		r_strbuf_append (&op->esil,",");
+		r_strbuf_append (&op->esil, ",");
 	}
 }
 
 static inline void es_add_ck(RAnalOp *op, const char *a1, const char *a2, const char *re, int bit) {
-	ut64 mask = 1ULL << (bit-1);
+	ut64 mask = 1ULL << (bit - 1);
 	r_strbuf_appendf (&op->esil,
-		"%d,0x%" PFMT64x ",%s,%s,^,&,>>,%d,0x%" PFMT64x ",%s,%s,+,&,>>,|,1,==,$z,?{,$$,1,TRAP,}{,%s,%s,+,%s,=,}",
-		bit-2, mask, a1, a2, bit-1, mask, a1, a2, a1, a2, re);
+		"%d,0x%" PFMT64x ",%s,%s,^,&,>>,%d,0x%" PFMT64x ",%s,%s,+,&,>>,|,1,==,$z,?{,0x%" PFMT64x ",1,TRAP,}{,%s,%s,+,%s,=,}",
+		bit - 2, mask, a1, a2, bit - 1, mask, a1, a2, op->addr, a1, a2, re);
 }
 // MIPS instruction
 typedef enum mips_insn {
@@ -687,12 +712,11 @@ typedef enum mips_insn {
 	MIPS_INS_NEGU,
 
 	//> special instructions
-	MIPS_INS_JALR_HB,	// jump and link with Hazard Barrier
-	MIPS_INS_JR_HB,		// jump register with Hazard Barrier
+	MIPS_INS_JALR_HB, // jump and link with Hazard Barrier
+	MIPS_INS_JR_HB, // jump register with Hazard Barrier
 
 	MIPS_INS_ENDING,
 } mips_insn;
-
 
 struct gnu_rreg {
 	const char *rs;
@@ -724,15 +748,13 @@ typedef struct gnu_insn {
 	};
 } gnu_insn;
 
-
 #define R_REG(x) ((const char *)insn->r_reg.x)
 #define I_REG(x) ((const char *)insn->i_reg.x)
 #define J_REG(x) ((const char *)insn->j_reg.x)
 
-
 /* Return a mapping from the register number i.e. $0 .. $31 to string name */
-static const char* mips_reg_decode(ut32 reg_num) {
-/* See page 36 of "See Mips Run Linux, 2e, D. Sweetman, 2007"*/
+static const char *mips_reg_decode(ut32 reg_num) {
+	/* See page 36 of "See Mips Run Linux, 2e, D. Sweetman, 2007"*/
 	static const char *REGISTERS[32] = {
 		"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
 		"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
@@ -745,293 +767,338 @@ static const char* mips_reg_decode(ut32 reg_num) {
 	return NULL;
 }
 
-static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn*insn) {
+static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn *insn) {
 
 	switch (insn->id) {
-		case MIPS_INS_NOP:
-			r_strbuf_setf (&op->esil, ",");
-			break;
-		case MIPS_INS_BREAK:
-			//r_strbuf_setf (&op->esil, "%d,%d,TRAP", IMM (0), IMM (0));
-			break;
-		case MIPS_INS_SD:
-			r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[8]",
-				I_REG (rt), I_REG (imm), I_REG (rs));
-			break;
-		case MIPS_INS_SW:
-		case MIPS_INS_SWL:
-		case MIPS_INS_SWR:
-			r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[4]",
-				I_REG (rt),I_REG (imm), I_REG (rs));
-			break;
-		case MIPS_INS_SH:
-			r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[2]",
-				I_REG (rt),I_REG (imm), I_REG (rs));
-			break;
-		case MIPS_INS_SWC1:
-		case MIPS_INS_SWC2:
-			break;
-		case MIPS_INS_SB:
-			r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[1]",
-				I_REG (rt),I_REG (imm), I_REG (rs));
-			break;
-		case MIPS_INS_CMP:
-		case MIPS_INS_CMPU:
-		case MIPS_INS_CMPGU:
-		case MIPS_INS_CMPGDU:
-		case MIPS_INS_CMPI:
-			break;
-		case MIPS_INS_SHRAV:
-		case MIPS_INS_SHRAV_R:
-		case MIPS_INS_SHRA:
-		case MIPS_INS_SHRA_R:
-			break;
-		case MIPS_INS_SRA:
-			r_strbuf_appendf (&op->esil,
-				ES_W ("%s,%s")",>>,31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
-				R_REG (sa), R_REG (rt), R_REG (rt), R_REG (sa), R_REG (rd));
-			break;
-		case MIPS_INS_DSRA:
-			r_strbuf_appendf (&op->esil,
-				"%s,%s,>>,31,%s,>>,?{,32,%s,32,-,0xffffffff,<<,0xffffffff,&,<<,}{,0,},|,%s,=",
-				R_REG (sa), R_REG (rt), R_REG (rt), R_REG (sa), R_REG (rd));
-			break;
-		case MIPS_INS_SHRL:
-			// suffix 'S' forces conditional flag to be updated
-			break;
-		case MIPS_INS_SRLV:
-		case MIPS_INS_SRL:
-			r_strbuf_appendf (&op->esil, "%s,%s,>>,%s,=", \
-							R_REG (rs)?R_REG (rs):R_REG (sa), R_REG (rt),R_REG (rd) );
-			break;
-		case MIPS_INS_SLLV:
-		case MIPS_INS_SLL:
-			r_strbuf_appendf (&op->esil, "%s,%s,<<,%s,=", \
-							R_REG (rs)?R_REG (rs):R_REG (sa),R_REG (rt),R_REG (rd) );
-			break;
-		case MIPS_INS_BAL:
-		case MIPS_INS_JAL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_D ("%s"), I_REG (jump));
-			break;
-		case MIPS_INS_JALR:
-		case MIPS_INS_JALRS:
-			if (strcmp(R_REG(rd), "rd")==0) {
-				r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_D ("%s"), R_REG (rs));
-			} else {
-				r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_DR ("%s", "%s"), R_REG (rd), R_REG (rs));
-			}
-			break;
-		case MIPS_INS_JR:
-		case MIPS_INS_JRC:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J ("%s"), R_REG (rs));
-			break;
-		case MIPS_INS_J:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J ("%s"), J_REG (jump));
-		case MIPS_INS_B:
-			// jump to address with conditional
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J ("%s"), I_REG (jump));
-			break;
-		case MIPS_INS_BNE: // bne $s, $t, offset
-		case MIPS_INS_BNEL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,%s,==,$z,!,?{," ES_J ("%s") ",}",
-				I_REG (rs), I_REG (rt), I_REG (jump));
-			break;
-		case MIPS_INS_BEQ:
-		case MIPS_INS_BEQL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,%s,==,$z,?{," ES_J ("%s") ",}",
-				I_REG (rs), I_REG (rt), I_REG (jump));
-			break;
-		case MIPS_INS_BZ:
-		case MIPS_INS_BEQZ:
-		case MIPS_INS_BEQZC:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,0,==,$z,?{," ES_J ("%s") ",}",
-				I_REG (rs), I_REG (jump));
-			break;
-		case MIPS_INS_BNEZ:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,0,==,$z,!,?{," ES_J ("%s") ",}",
-				I_REG (rs), I_REG (jump));
-			break;
-		case MIPS_INS_BLEZ:
-		case MIPS_INS_BLEZC:
-		case MIPS_INS_BLEZL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,%s,==,$z,?{," ES_J ("%s") ",BREAK,},",
-				I_REG (rs), I_REG (jump));
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J ("%s") ",}",
-				I_REG (rs), I_REG (jump));
-			break;
-		case MIPS_INS_BGEZ:
-		case MIPS_INS_BGEZC:
-		case MIPS_INS_BGEZL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J ("%s") ",}",
-				I_REG (rs), I_REG (jump));
-			break;
-		case MIPS_INS_BGEZAL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_CALL_D ("%s") ",}",
-				I_REG (rs), I_REG (jump));
-			break;
-		case MIPS_INS_BLTZAL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_CALL_D ("%s") ",}",
-				I_REG (rs), I_REG (jump));
-			break;
-		case MIPS_INS_BLTZ:
-		case MIPS_INS_BLTZC:
-		case MIPS_INS_BLTZL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J ("%s") ",}",
-				I_REG (rs), I_REG (jump));
-			break;
-		case MIPS_INS_BGTZ:
-		case MIPS_INS_BGTZC:
-		case MIPS_INS_BGTZL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,%s,==,$z,?{,BREAK,},", I_REG (rs));
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J ("%s") ",}",
-				I_REG (rs), I_REG (jump));
-			break;
-		case MIPS_INS_BTEQZ:
-			break;
-		case MIPS_INS_BTNEZ:
-			break;
-		case MIPS_INS_MOV:
-		case MIPS_INS_MOVE:
-			r_strbuf_appendf (&op->esil, "%s,%s,=", R_REG (rs), R_REG (rd));
-			break;
-		case MIPS_INS_MOVZ:
-		case MIPS_INS_MOVF:
-			r_strbuf_appendf (&op->esil, "0,%s,==,$z,?{,%s,%s,=,}",
-				R_REG (rt), R_REG (rs), R_REG (rd));
-			break;
-		case MIPS_INS_MOVT:
-			r_strbuf_appendf (&op->esil, "1,%s,==,$z,?{,%s,%s,=,}",
-				R_REG (rt), R_REG (rs), R_REG (rd));
-			break;
-		case MIPS_INS_FSUB:
-		case MIPS_INS_SUB:
-		case MIPS_INS_SUBU:
-		case MIPS_INS_DSUB:
-		case MIPS_INS_DSUBU:
-			r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
-				R_REG (rt), R_REG (rs), R_REG (rd));
-			break;
-		case MIPS_INS_NEG:
-		case MIPS_INS_NEGU:
-			break;
-		/** signed -- sets overflow flag */
-		case MIPS_INS_ADD:
-			ES_ADD_CK32_OVERF(R_REG (rs), R_REG (rt), R_REG (rd));
+	case MIPS_INS_NOP:
+		r_strbuf_set (&op->esil, ",");
 		break;
-		case MIPS_INS_ADDI:
-			ES_ADD_CK32_OVERF(I_REG (imm), I_REG (rs), I_REG (rt));
-			break;
-		case MIPS_INS_DADD:
-			ES_ADD_CK64_OVERF(R_REG (rs), R_REG (rt), R_REG (rd));
-			break;
-		case MIPS_INS_DADDU:
-		case MIPS_INS_ADDU:
-			r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",\
-				R_REG (rt), R_REG (rs), R_REG (rd));
-			break;
-		case MIPS_INS_DADDI:
-		ES_ADD_CK64_OVERF(I_REG (imm), I_REG (rs), I_REG (rt));
+	case MIPS_INS_BREAK:
+		// r_strbuf_setf (&op->esil, "%d,%d,TRAP", IMM (0), IMM (0));
 		break;
-		case MIPS_INS_ADDIU:
-		case MIPS_INS_DADDIU:
-			r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
-				I_REG (imm), I_REG (rs), I_REG (rt));
-			ES_SIGN32_64 (I_REG (rt));
-			break;
-		case MIPS_INS_LI:
-		case MIPS_INS_LDI:
-			r_strbuf_appendf (&op->esil, "%s,%s,=", I_REG (imm), I_REG (rt));
-			break;
-		case MIPS_INS_LUI:
-			r_strbuf_appendf (&op->esil, "%s0000,%s,=",I_REG (imm), I_REG (rt));
-			break;
-		case MIPS_INS_LB:
-			op->sign = true;	//To load a byte from memory as a signed value
-			/* fallthrough */
-		case MIPS_INS_LBU:
-			//one of these is wrong
-			r_strbuf_appendf (&op->esil, "%s,%s,+,[1],%s,=",\
-				I_REG (imm), I_REG (rs), I_REG (rt));\
-			break;
-		case MIPS_INS_LW:
-		case MIPS_INS_LWC1:
-		case MIPS_INS_LWC2:
-		case MIPS_INS_LWL:
-		case MIPS_INS_LWR:
-		case MIPS_INS_LWU:
-		case MIPS_INS_LL:
-			r_strbuf_appendf (&op->esil, "%s,%s,+,[4],%s,=",\
-				I_REG (imm), I_REG (rs), I_REG (rt));\
-			break;
-		case MIPS_INS_LDL:
-		case MIPS_INS_LDC1:
-		case MIPS_INS_LDC2:
-		case MIPS_INS_LLD:
-		case MIPS_INS_LD:
-			r_strbuf_appendf (&op->esil, "%s,%s,+,[8],%s,=",\
-				I_REG (imm), I_REG (rs), I_REG (rt));\
-			break;
-		case MIPS_INS_LH:
-			op->sign = true;	//To load a byte from memory as a signed value
-			/* fallthrough */
-		case MIPS_INS_LHU:
-			r_strbuf_appendf (&op->esil, "%s,%s,+,[2],%s,=",\
-				I_REG (imm), I_REG (rs), I_REG (rt));\
-			break;
-		case MIPS_INS_LHX:
-		case MIPS_INS_LWX:
-			break;
-		case MIPS_INS_AND:
-			r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=", R_REG (rt), R_REG (rs), R_REG (rd));
+	case MIPS_INS_SD:
+		r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[8]",
+			I_REG (rt), I_REG (imm), I_REG (rs));
 		break;
-		case MIPS_INS_ANDI:
-			r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
-			break;
-		case MIPS_INS_OR:
-			r_strbuf_appendf (&op->esil, "%s,%s,|,%s,=", R_REG (rt), R_REG (rs), R_REG (rd));
-			break;
-		case MIPS_INS_ORI:
-			r_strbuf_appendf (&op->esil, "%s,%s,|,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
-			break;
-		case MIPS_INS_XOR:
-			r_strbuf_appendf (&op->esil, "%s,%s,^,%s,=", R_REG (rt), R_REG (rs), R_REG (rd));
-			break;
-		case MIPS_INS_XORI:
-			r_strbuf_appendf (&op->esil, "%s,%s,^,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
-			break;
-		case MIPS_INS_NOR:
-			r_strbuf_appendf (&op->esil, "%s,%s,|,0xffffffff,^,%s,=",R_REG (rs), R_REG (rt), R_REG (rd));
-			break;
-		case MIPS_INS_SLT:
-			r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", R_REG (rs), R_REG (rt));
-			break;
-		case MIPS_INS_SLTI:
-			r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
-			break;
-		case MIPS_INS_SLTU:
-			r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,t,=",
-				R_REG (rs), R_REG (rt));
-			break;
-		case MIPS_INS_SLTIU:
-			r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,%s,=",
-				I_REG (imm), I_REG (rs), I_REG (rt));
-			break;
-		case MIPS_INS_MUL:
-		r_strbuf_appendf (&op->esil, ES_W("%s,%s,*")",%s,=", R_REG (rs), R_REG (rt), R_REG (rd));
+	case MIPS_INS_SW:
+	case MIPS_INS_SWL:
+	case MIPS_INS_SWR:
+		r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[4]",
+			I_REG (rt), I_REG (imm), I_REG (rs));
+		break;
+	case MIPS_INS_SH:
+		r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[2]",
+			I_REG (rt), I_REG (imm), I_REG (rs));
+		break;
+	case MIPS_INS_SWC1:
+	case MIPS_INS_SWC2:
+		break;
+	case MIPS_INS_SB:
+		r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[1]",
+			I_REG (rt), I_REG (imm), I_REG (rs));
+		break;
+	case MIPS_INS_CMP:
+	case MIPS_INS_CMPU:
+	case MIPS_INS_CMPGU:
+	case MIPS_INS_CMPGDU:
+	case MIPS_INS_CMPI:
+		break;
+	case MIPS_INS_SHRAV:
+	case MIPS_INS_SHRAV_R:
+	case MIPS_INS_SHRA:
+	case MIPS_INS_SHRA_R:
+		break;
+	case MIPS_INS_SRA:
+		r_strbuf_appendf (&op->esil,
+			ES_W ("%s,%s") ",>>,31,%s,>>,?{,%s,32,-,0xffffffff,<<,0xffffffff,&,}{,0,},|,%s,=",
+			R_REG (sa), R_REG (rt), R_REG (rt), R_REG (sa), R_REG (rd));
+		break;
+	case MIPS_INS_DSRA:
+		r_strbuf_appendf (&op->esil,
+			"%s,%s,>>,31,%s,>>,?{,32,%s,32,-,0xffffffff,<<,0xffffffff,&,<<,}{,0,},|,%s,=",
+			R_REG (sa), R_REG (rt), R_REG (rt), R_REG (sa), R_REG (rd));
+		break;
+	case MIPS_INS_SHRL:
+		// suffix 'S' forces conditional flag to be updated
+		break;
+	case MIPS_INS_SRLV:
+	case MIPS_INS_SRL:
+		r_strbuf_appendf (&op->esil, "%s,%s,>>,%s,=",
+			R_REG (rs) ? R_REG (rs) : R_REG (sa), R_REG (rt), R_REG (rd));
+		break;
+	case MIPS_INS_SLLV:
+	case MIPS_INS_SLL:
+		r_strbuf_appendf (&op->esil, "%s,%s,<<,%s,=",
+			R_REG (rs) ? R_REG (rs) : R_REG (sa), R_REG (rt), R_REG (rd));
+		break;
+	case MIPS_INS_BAL:
+	case MIPS_INS_JAL:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_D ("%s"), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_JALR:
+	case MIPS_INS_JALRS:
+		if (!strcmp (R_REG (rd), "rd")) {
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_D ("%s"), R_REG (rs));
+		} else {
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_DR ("%s", "%s"), R_REG (rd), R_REG (rs));
+		}
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_JR:
+	case MIPS_INS_JRC:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J ("%s"), R_REG (rs));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_J:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J ("%s"), J_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+	case MIPS_INS_B:
+		// jump to address with conditional
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J ("%s"), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BNE: // bne $s, $t, offset
+	case MIPS_INS_BNEL:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,%s,==,$z,!,?{," ES_J ("%s") ",}",
+			I_REG (rs), I_REG (rt), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BEQ:
+	case MIPS_INS_BEQL:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,%s,==,$z,?{," ES_J ("%s") ",}",
+			I_REG (rs), I_REG (rt), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BZ:
+	case MIPS_INS_BEQZ:
+	case MIPS_INS_BEQZC:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,0,==,$z,?{," ES_J ("%s") ",}",
+			I_REG (rs), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BNEZ:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,0,==,$z,!,?{," ES_J ("%s") ",}",
+			I_REG (rs), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BLEZ:
+	case MIPS_INS_BLEZC:
+	case MIPS_INS_BLEZL:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,%s,==,$z,?{," ES_J ("%s") ",BREAK,},",
+			I_REG (rs), I_REG (jump));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J ("%s") ",}",
+			I_REG (rs), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BGEZ:
+	case MIPS_INS_BGEZC:
+	case MIPS_INS_BGEZL:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J ("%s") ",}",
+			I_REG (rs), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BGEZAL:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_CALL_D ("%s") ",}",
+			I_REG (rs), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BLTZAL:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_CALL_D ("%s") ",}",
+			I_REG (rs), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BLTZ:
+	case MIPS_INS_BLTZC:
+	case MIPS_INS_BLTZL:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J ("%s") ",}",
+			I_REG (rs), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BGTZ:
+	case MIPS_INS_BGTZC:
+	case MIPS_INS_BGTZL:
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,%s,==,$z,?{,BREAK,},", I_REG (rs));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_J ("%s") ",}",
+			I_REG (rs), I_REG (jump));
+#if USE_DS
+		r_strbuf_replacef (&op->esil, "$$", "0x%"PFMT64x, addr);
+#endif
+		break;
+	case MIPS_INS_BTEQZ:
+		break;
+	case MIPS_INS_BTNEZ:
+		break;
+	case MIPS_INS_MOV:
+	case MIPS_INS_MOVE:
+		r_strbuf_appendf (&op->esil, "%s,%s,=", R_REG (rs), R_REG (rd));
+		break;
+	case MIPS_INS_MOVZ:
+	case MIPS_INS_MOVF:
+		r_strbuf_appendf (&op->esil, "0,%s,==,$z,?{,%s,%s,=,}",
+			R_REG (rt), R_REG (rs), R_REG (rd));
+		break;
+	case MIPS_INS_MOVT:
+		r_strbuf_appendf (&op->esil, "1,%s,==,$z,?{,%s,%s,=,}",
+			R_REG (rt), R_REG (rs), R_REG (rd));
+		break;
+	case MIPS_INS_FSUB:
+	case MIPS_INS_SUB:
+	case MIPS_INS_SUBU:
+	case MIPS_INS_DSUB:
+	case MIPS_INS_DSUBU:
+		r_strbuf_appendf (&op->esil, "%s,%s,-,%s,=",
+			R_REG (rt), R_REG (rs), R_REG (rd));
+		break;
+	case MIPS_INS_NEG:
+	case MIPS_INS_NEGU:
+		break;
+	/** signed -- sets overflow flag */
+	case MIPS_INS_ADD:
+		ES_ADD_CK32_OVERF (R_REG (rs), R_REG (rt), R_REG (rd));
+		break;
+	case MIPS_INS_ADDI:
+		ES_ADD_CK32_OVERF (I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
+	case MIPS_INS_DADD:
+		ES_ADD_CK64_OVERF (R_REG (rs), R_REG (rt), R_REG (rd));
+		break;
+	case MIPS_INS_DADDU:
+	case MIPS_INS_ADDU:
+		r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
+			R_REG (rt), R_REG (rs), R_REG (rd));
+		break;
+	case MIPS_INS_DADDI:
+		ES_ADD_CK64_OVERF (I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
+	case MIPS_INS_ADDIU:
+	case MIPS_INS_DADDIU:
+		r_strbuf_appendf (&op->esil, "%s,%s,+,%s,=",
+			I_REG (imm), I_REG (rs), I_REG (rt));
+		ES_SIGN32_64 (I_REG (rt));
+		break;
+	case MIPS_INS_LI:
+	case MIPS_INS_LDI:
+		r_strbuf_appendf (&op->esil, "%s,%s,=", I_REG (imm), I_REG (rt));
+		break;
+	case MIPS_INS_LUI:
+		r_strbuf_appendf (&op->esil, "%s0000,%s,=", I_REG (imm), I_REG (rt));
+		break;
+	case MIPS_INS_LB:
+		op->sign = true; // To load a byte from memory as a signed value
+		/* fallthrough */
+	case MIPS_INS_LBU:
+		// one of these is wrong
+		r_strbuf_appendf (&op->esil, "%s,%s,+,[1],%s,=",
+			I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
+	case MIPS_INS_LW:
+	case MIPS_INS_LWC1:
+	case MIPS_INS_LWC2:
+	case MIPS_INS_LWL:
+	case MIPS_INS_LWR:
+	case MIPS_INS_LWU:
+	case MIPS_INS_LL:
+		r_strbuf_appendf (&op->esil, "%s,%s,+,[4],%s,=",
+			I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
+	case MIPS_INS_LDL:
+	case MIPS_INS_LDC1:
+	case MIPS_INS_LDC2:
+	case MIPS_INS_LLD:
+	case MIPS_INS_LD:
+		r_strbuf_appendf (&op->esil, "%s,%s,+,[8],%s,=",
+			I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
+	case MIPS_INS_LH:
+		op->sign = true; // To load a byte from memory as a signed value
+		/* fallthrough */
+	case MIPS_INS_LHU:
+		r_strbuf_appendf (&op->esil, "%s,%s,+,[2],%s,=",
+			I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
+	case MIPS_INS_LHX:
+	case MIPS_INS_LWX:
+		break;
+	case MIPS_INS_AND:
+		r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=", R_REG (rt), R_REG (rs), R_REG (rd));
+		break;
+	case MIPS_INS_ANDI:
+		r_strbuf_appendf (&op->esil, "%s,%s,&,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
+	case MIPS_INS_OR:
+		r_strbuf_appendf (&op->esil, "%s,%s,|,%s,=", R_REG (rt), R_REG (rs), R_REG (rd));
+		break;
+	case MIPS_INS_ORI:
+		r_strbuf_appendf (&op->esil, "%s,%s,|,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
+	case MIPS_INS_XOR:
+		r_strbuf_appendf (&op->esil, "%s,%s,^,%s,=", R_REG (rt), R_REG (rs), R_REG (rd));
+		break;
+	case MIPS_INS_XORI:
+		r_strbuf_appendf (&op->esil, "%s,%s,^,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
+	case MIPS_INS_NOR:
+		r_strbuf_appendf (&op->esil, "%s,%s,|,0xffffffff,^,%s,=", R_REG (rs), R_REG (rt), R_REG (rd));
+		break;
+	case MIPS_INS_SLT:
+		r_strbuf_appendf (&op->esil, "%s,%s,<,t,=", R_REG (rs), R_REG (rt));
+		break;
+	case MIPS_INS_SLTI:
+		r_strbuf_appendf (&op->esil, "%s,%s,<,%s,=", I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
+	case MIPS_INS_SLTU:
+		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,t,=",
+			R_REG (rs), R_REG (rt));
+		break;
+	case MIPS_INS_SLTIU:
+		r_strbuf_appendf (&op->esil, "%s,0xffffffff,&,%s,0xffffffff,&,<,%s,=",
+			I_REG (imm), I_REG (rs), I_REG (rt));
+		break;
+	case MIPS_INS_MUL:
+		r_strbuf_appendf (&op->esil, ES_W ("%s,%s,*") ",%s,=", R_REG (rs), R_REG (rt), R_REG (rd));
 		ES_SIGN32_64 (R_REG (rd));
-			break;
-		case MIPS_INS_MULT:
-		case MIPS_INS_MULTU:
-			r_strbuf_appendf (&op->esil, ES_W("%s,%s,*")",lo,=", R_REG (rs), R_REG (rt));
-			ES_SIGN32_64 ("lo");
-			r_strbuf_appendf (&op->esil, ES_W("32,%s,%s,*,>>")",hi,=", R_REG (rs), R_REG (rt));
-			ES_SIGN32_64 ("hi");
-			break;
-		case MIPS_INS_MFLO:
-			r_strbuf_appendf (&op->esil, "lo,%s,=", R_REG (rd));
+		break;
+	case MIPS_INS_MULT:
+	case MIPS_INS_MULTU:
+		r_strbuf_appendf (&op->esil, ES_W ("%s,%s,*") ",lo,=", R_REG (rs), R_REG (rt));
+		ES_SIGN32_64 ("lo");
+		r_strbuf_appendf (&op->esil, ES_W ("32,%s,%s,*,>>") ",hi,=", R_REG (rs), R_REG (rt));
+		ES_SIGN32_64 ("hi");
+		break;
+	case MIPS_INS_MFLO:
+		r_strbuf_appendf (&op->esil, "lo,%s,=", R_REG (rd));
 		break;
 	case MIPS_INS_MFHI:
-			r_strbuf_appendf (&op->esil, "hi,%s,=", R_REG (rd));
+		r_strbuf_appendf (&op->esil, "hi,%s,=", R_REG (rd));
 		break;
 	case MIPS_INS_MTLO:
 		r_strbuf_appendf (&op->esil, "%s,lo,=,", R_REG (rs));
@@ -1044,69 +1111,145 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn*insn) {
 	default:
 		return -1;
 	}
-	
 	return 0;
 }
 
+static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+	ut8 bytes[8] = { 0 };
+	struct disassemble_info disasm_obj = { 0 };
+	if (len < 4) {
+		return -1;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	memcpy (&bytes, buf, R_MIN (len, sizeof (bytes)));
+
+	const char *cpu = a->config->cpu;
+
+	/* prepare disassembler */
+	if (cpu && (!pre_cpu || !strcmp (cpu, pre_cpu))) {
+		if (!r_str_casecmp (cpu, "mips64r2")) {
+			disasm_obj.mach = bfd_mach_mipsisa64r2;
+		} else if (!r_str_casecmp (cpu, "mips32r2")) {
+			disasm_obj.mach = bfd_mach_mipsisa32r2;
+		} else if (!r_str_casecmp (cpu, "mips64")) {
+			disasm_obj.mach = bfd_mach_mipsisa64;
+		} else if (!r_str_casecmp (cpu, "mips32")) {
+			disasm_obj.mach = bfd_mach_mipsisa32;
+		} else if (!r_str_casecmp (cpu, "loongson3a")) {
+			disasm_obj.mach = bfd_mach_mips_gs464;
+		} else if (!r_str_casecmp (cpu, "gs464")) {
+			disasm_obj.mach = bfd_mach_mips_gs464;
+		} else if (!r_str_casecmp (cpu, "gs464e")) {
+			disasm_obj.mach = bfd_mach_mips_gs464e;
+		} else if (!r_str_casecmp (cpu, "gs264e")) {
+			disasm_obj.mach = bfd_mach_mips_gs264e;
+		} else if (!r_str_casecmp (cpu, "loongson2e")) {
+			disasm_obj.mach = bfd_mach_mips_loongson_2e;
+		} else if (!r_str_casecmp (cpu, "loongson2f")) {
+			disasm_obj.mach = bfd_mach_mips_loongson_2f;
+		} else if (!r_str_casecmp (cpu, "mips32/64")) {
+			// Fallback for default config
+			disasm_obj.mach = bfd_mach_mips_loongson_2f;
+		}
+		pre_cpu = r_str_dup (pre_cpu, cpu);
+	} else {
+		disasm_obj.mach = bfd_mach_mips_loongson_2f;
+	}
+
+	const char *abi = a->config->abi;
+	// const char *features = a->config->features;
+	disasm_obj.disassembler_options = NULL;
+	if (R_STR_ISNOTEMPTY (abi)) {
+		// n32, n64, o32
+		disasm_obj.disassembler_options = r_str_newf ("abi=%s", abi);
+	}
+
+	const ut64 addr = op->addr;
+	disasm_obj.arch = CPU_LOONGSON_2F; // XXX should be different see .mach
+	disasm_obj.buffer = (ut8 *)&bytes;
+	disasm_obj.read_memory_func = &mips_buffer_read_memory;
+	disasm_obj.symbol_at_address_func = &symbol_at_address;
+	disasm_obj.memory_error_func = &memory_error_func;
+	disasm_obj.print_address_func = &generic_print_address_func;
+	disasm_obj.buffer_vma = addr;
+	disasm_obj.buffer_length = 4;
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+	disasm_obj.fprintf_func = &generic_fprintf_func;
+	disasm_obj.stream = sb;
+	op->size = (disasm_obj.endian == BFD_ENDIAN_LITTLE)
+		? print_insn_little_mips ((bfd_vma)addr, &disasm_obj)
+		: print_insn_big_mips ((bfd_vma)addr, &disasm_obj);
+	if (op->size == -1) {
+		op->mnemonic = strdup ("(data)");
+		r_strbuf_free (sb);
+	} else {
+		op->mnemonic = r_strbuf_drain (sb);
+	}
+	free (disasm_obj.disassembler_options);
+	return op->size;
+}
 
 static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	ut32 opcode;
-	// WIP char buf[10]; int reg; int family;
-	int oplen = (anal->config->bits == 16)? 2: 4;
-	const ut8 * buf;
+	int oplen = (anal->config->bits == 16) ? 2 : 4;
+	const ut8 *buf;
 	gnu_insn insn;
 
 	if (!op) {
 		return oplen;
 	}
-	
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		op->addr = addr;
+		disassemble (anal, op, b, len);
+	}
+
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = oplen;
 	op->addr = addr;
 	// Be endian aware
-	opcode = r_read_ble32 (b, anal->config->big_endian);
+	opcode = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
 
 	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], anal->big_endian);
 	if (opcode == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return oplen;
 	}
-	
-	opcode = r_swap_ut32(opcode);
-	buf = (ut8 *) & opcode;
+
+	opcode = r_swap_ut32 (opcode);
+	buf = (ut8 *)&opcode;
 
 	int optype = buf[0] >> 2;
 	insn.optype = optype;
 	insn.id = 0;
 
 	if (optype == 0) {
-/*
-	R-TYPE
-	======
-	opcode (6)  rs (5)  rt (5)  rd (5)  sa (5)  function (6)
-	rs = register source
-	rt = register target
-	rd = register destination
-	sa =
-	fu =
-		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
-		 1111 1111  1111 1111  1111 1111  1111 1111
-		 \_op__/\_rs__/\_rt_/  \_rd_/\_sa__/\_fun_/
-		   |      |      |       |      |      |
-		 buf[0]>>2  |  (buf[1]&31)   |      |   buf[3]&63
-		          |          (buf[2]>>3)  |
-		  (buf[0]&3)<<3)+(buf[1]>>5)   (buf[2]&7)+(buf[3]>>6)
-*/
-		int rs = ((buf[0]&3)<<3) + (buf[1]>>5);
-		int rt = buf[1]&31;
-		int rd = buf[2]>>3;
-		int sa = ((buf[2]&7)<<2)+(buf[3]>>6);
-		int fun = buf[3]&63;
-	
+		/*
+			R-TYPE
+			======
+			opcode (6)  rs (5)  rt (5)  rd (5)  sa (5)  function (6)
+			rs = register source
+			rt = register target
+			rd = register destination
+			sa =
+			fu =
+				 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
+				 1111 1111  1111 1111  1111 1111  1111 1111
+				 \_op__/\_rs__/\_rt_/  \_rd_/\_sa__/\_fun_/
+				   |      |      |       |      |      |
+				 buf[0]>>2  |  (buf[1]&31)   |      |   buf[3]&63
+					  |          (buf[2]>>3)  |
+				  (buf[0]&3)<<3)+(buf[1]>>5)   (buf[2]&7)+(buf[3]>>6)
+		*/
+		int rs = ((buf[0] & 3) << 3) + (buf[1] >> 5);
+		int rt = buf[1] & 31;
+		int rd = buf[2] >> 3;
+		int sa = ((buf[2] & 7) << 2) + (buf[3] >> 6);
+		int fun = buf[3] & 63;
+
 		insn.r_reg.rs = mips_reg_decode (rs);
 		insn.r_reg.rd = mips_reg_decode (rd);
 		insn.r_reg.rt = mips_reg_decode (rt);
-		snprintf ((char *)insn.r_reg.sa, REG_BUF_MAX, "%"PFMT32d, sa);
+		snprintf ((char *)insn.r_reg.sa, REG_BUF_MAX, "%" PFMT32d, sa);
 
 		switch (fun) {
 		case 0: // sll
@@ -1134,7 +1277,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->type = R_ANAL_OP_TYPE_SAR;
 			break;
 		case 59: // dsra
-			insn.id = MIPS_INS_DSRA;	//TODO double
+			insn.id = MIPS_INS_DSRA; // TODO double
 			op->type = R_ANAL_OP_TYPE_SAR;
 			break;
 		case 63: // dsra32
@@ -1142,8 +1285,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->type = R_ANAL_OP_TYPE_SAR;
 			break;
 		case 8: // jr
-			//eprintf ("%llx jr\n", addr);
-			// TODO: check return value or gtfo
+			// eprintf ("%llx jr\n", addr);
+			//  TODO: check return value or gtfo
 			op->delay = 1;
 			insn.id = MIPS_INS_JR;
 			if (rs == 31) {
@@ -1158,17 +1301,17 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			}
 			break;
 		case 9: // jalr
-			//eprintf ("%llx jalr\n", addr);
+			// eprintf ("%llx jalr\n", addr);
 			op->delay = 1;
 			insn.id = MIPS_INS_JALR;
-			if (rs  == 25){
+			if (rs == 25) {
 				op->type = R_ANAL_OP_TYPE_RCALL;
 				op->jump = t9_pre;
 				break;
 			}
 			op->type = R_ANAL_OP_TYPE_UCALL;
 			break;
-		case 10: //movz
+		case 10: // movz
 			insn.id = MIPS_INS_MOVZ;
 			break;
 		case 12: // syscall
@@ -1207,12 +1350,12 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			insn.id = MIPS_INS_ADDU;
 			op->type = R_ANAL_OP_TYPE_ADD;
 			break;
-		case 44: //dadd
+		case 44: // dadd
 			insn.id = MIPS_INS_DADD;
 			op->type = R_ANAL_OP_TYPE_ADD;
 			break;
-		case 45: //daddu move
-			if(rt == 0) {
+		case 45: // daddu move
+			if (rt == 0) {
 				op->type = R_ANAL_OP_TYPE_MOV;
 				insn.id = MIPS_INS_MOV;
 				break;
@@ -1225,11 +1368,11 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			insn.id = MIPS_INS_SUB;
 			op->type = R_ANAL_OP_TYPE_SUB;
 			break;
-		case 46: //dsub
+		case 46: // dsub
 			insn.id = MIPS_INS_SUB;
 			op->type = R_ANAL_OP_TYPE_SUB;
 			break;
-		case 47: //dsubu
+		case 47: // dsubu
 			insn.id = MIPS_INS_SUB;
 			op->type = R_ANAL_OP_TYPE_SUB;
 			break;
@@ -1256,20 +1399,19 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			insn.id = MIPS_INS_SLTU;
 			break;
 		default:
-		//	eprintf ("%llx %d\n", addr, optype);
+			//	eprintf ("%llx %d\n", addr, optype);
 			break;
 		}
-		//family = 'R';
-	} else
-	if ((optype & 0x3e) == 2) {
-/*
-		// J-TYPE
-		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
-		 1111 1111  1111 1111  1111 1111  1111 1111
-		 \_op__/\______address____________________/
-                   |             |
-               (buf[0]>>2)  ((buf[0]&3)<<24)+(buf[1]<<16)+(buf[2]<<8)+buf[3]
-*/
+		// family = 'R';
+	} else if ((optype & 0x3e) == 2) {
+		/*
+				// J-TYPE
+				 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
+				 1111 1111  1111 1111  1111 1111  1111 1111
+				 \_op__/\______address____________________/
+				   |             |
+			       (buf[0]>>2)  ((buf[0]&3)<<24)+(buf[1]<<16)+(buf[2]<<8)+buf[3]
+		*/
 		// FIXME: what happens when addr is using a virtual map?
 		// ANS: address will be E 0x000000..0x0ffffffc
 		//      but addr could be anywhere
@@ -1288,7 +1430,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		// Maybe better solution: use a cfg. variable to do
 		// the offset... but I dont yet know how to get to that
 		// from this static function
-		int address = (((buf[0]&3)<<24)+(buf[1]<<16)+(buf[2]<<8)+buf[3]) << 2;
+		int address = (((buf[0] & 3) << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3]) << 2;
 		ut64 page_hack = addr & 0xf0000000;
 
 		switch (optype) {
@@ -1297,7 +1439,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = page_hack + address;
 			op->delay = 1;
-			snprintf ((char *)insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
+			snprintf ((char *)insn.j_reg.jump, REG_BUF_MAX, "0x%" PFMT64x, op->jump);
 			break;
 		case 3: // jal
 			insn.id = MIPS_INS_JAL;
@@ -1305,10 +1447,10 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->jump = page_hack + address;
 			op->fail = addr + 8;
 			op->delay = 1;
-			snprintf ((char *)insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
+			snprintf ((char *)insn.j_reg.jump, REG_BUF_MAX, "0x%" PFMT64x, op->jump);
 			break;
 		}
-		//family = 'J';
+		// family = 'J';
 	} else if ((optype & 0x3c) == 0x10) {
 /*
 	C-TYPE
@@ -1320,17 +1462,17 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		 \_op__/\_fmt_/\_ft_/  \_fs_/\_fd__/\_fun_/
 		   |      |      |       |      |      |
 		 buf[0]>>2  |  (buf[1]&31)   |      |   buf[3]&63
-		          |          (buf[2]>>3)  |
+			  |          (buf[2]>>3)  |
 		  (buf[0]&3)<<3)+(buf[1]>>5)   (buf[2]&7)+(buf[3]>>6)
 */
 #if WIP
-		int fmt = ((buf[0]&3)<<3) + (buf[1]>>5);
-		int ft = (buf[1]&31);
-		int fs = (buf[2]>>3);
-		int fd = (buf[2]&7)+(buf[3]>>6);
+		int fmt = ((buf[0] & 3) << 3) + (buf[1] >> 5);
+		int ft = (buf[1] & 31);
+		int fs = (buf[2] >> 3);
+		int fd = (buf[2] & 7) + (buf[3] >> 6);
 #endif
-		int fun = (buf[3]&63);
-		//family = 'C';
+		int fun = (buf[3] & 63);
+		// family = 'C';
 		switch (fun) {
 		case 0: // mtc1
 			break;
@@ -1340,23 +1482,23 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			break;
 		case 3: // div.s
 			break;
-		// ....
+			// ....
 		}
 	} else {
-/*
-	I-TYPE
-	======
-   	all opcodes but 000000 000001x and 0100xx
-	opcode (6)  rs (5)  rt (5) immediate (16)
+		/*
+			I-TYPE
+			======
+			all opcodes but 000000 000001x and 0100xx
+			opcode (6)  rs (5)  rt (5) immediate (16)
 
-		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
-		 1111 1111  1111 1111  1111 1111  1111 1111
-		 \_op__/\_rs__/\_rt_/  \_______imm________/
-		   |      |      |              |
-		 buf[0]>>2  |  (buf[1]&31)          |
-		          |                     |
-		 ((buf[0]&3)<<3)+(buf[1]>>5)   (buf[2]<<8)+buf[3]
-*/
+				 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
+				 1111 1111  1111 1111  1111 1111  1111 1111
+				 \_op__/\_rs__/\_rt_/  \_______imm________/
+				   |      |      |              |
+				 buf[0]>>2  |  (buf[1]&31)          |
+					  |                     |
+				 ((buf[0]&3)<<3)+(buf[1]>>5)   (buf[2]<<8)+buf[3]
+		*/
 		op->refptr = 0;
 		int rs = ((buf[0] & 3) << 3) + (buf[1] >> 5);
 		int rt = buf[1] & 31;
@@ -1367,46 +1509,47 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 
 		insn.i_reg.rs = mips_reg_decode (rs);
 		insn.i_reg.rt = mips_reg_decode (rt);
-		snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "%"PFMT32d, imm);
+		snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "%" PFMT32d, imm);
 
+		RAnalValue *src, *dst;
 		switch (optype) {
 		case 1:
 			switch (rt) {
-				case 0: //bltz
-					insn.id = MIPS_INS_BLTZ;
-					break;
-				case 1: //bgez
-					insn.id = MIPS_INS_BGEZ;
-					break;
-				case 17: //bal  bgezal
-					if (rs==0) {
-						op->jump = addr+(imm<<2)+4;
-						snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump) ;
-						insn.id = MIPS_INS_BAL;
-					} else {
-						op->fail = addr+8;
-						insn.id = MIPS_INS_BGEZAL;	
-					}
-					op->delay = 1;
-					op->type = R_ANAL_OP_TYPE_CALL;
-					break;
-				default:
-					op->delay = 1;
-					op->fail = addr+8;
-					break;
-			}	
+			case 0: // bltz
+				insn.id = MIPS_INS_BLTZ;
+				break;
+			case 1: // bgez
+				insn.id = MIPS_INS_BGEZ;
+				break;
+			case 17: // bal  bgezal
+				if (rs == 0) {
+					op->jump = addr + (imm << 2) + 4;
+					snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%" PFMT64x, op->jump);
+					insn.id = MIPS_INS_BAL;
+				} else {
+					op->fail = addr + 8;
+					insn.id = MIPS_INS_BGEZAL;
+				}
+				op->delay = 1;
+				op->type = R_ANAL_OP_TYPE_CALL;
+				break;
+			default:
+				op->delay = 1;
+				op->fail = addr + 8;
+				break;
+			}
 			break;
 		case 4: // beq
 			if (!insn.id) {
 				insn.id = MIPS_INS_BEQ;
-				if(rt == 0) {
-					insn.id = MIPS_INS_BEQZ ;
+				if (rt == 0) {
+					insn.id = MIPS_INS_BEQZ;
 				}
 			}
 		case 5: // bne // also bnez
 			if (!insn.id) {
 				insn.id = MIPS_INS_BNE;
-				if(rt == 0) {
+				if (rt == 0) {
 					insn.id = MIPS_INS_BNEZ;
 				}
 			}
@@ -1423,8 +1566,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->jump = addr + (imm << 2) + 4;
 			op->fail = addr + 8;
 			op->delay = 1;
-			
-			snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
+
+			snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%" PFMT64x, op->jump);
 			break;
 		// The following idiom is very common in mips 32 bit:
 		//
@@ -1444,24 +1587,24 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		// flags directly, as suggested here: https://github.com/radareorg/radare2/issues/949#issuecomment-43654922
 		case 15: // lui
 			insn.id = MIPS_INS_LUI;
-			snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
-			op->dst = r_anal_value_new ();
-			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
+			snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
+			dst = r_vector_push (&op->dsts, NULL);
+			dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
 			op->val = imm;
 			break;
 		case 9: // addiu
 			insn.id = MIPS_INS_ADDIU;
 			op->type = R_ANAL_OP_TYPE_ADD;
-			op->dst = r_anal_value_new ();
-			op->dst->reg = r_reg_get (anal->reg, mips_reg_decode(rt), R_REG_TYPE_GPR);
+			dst = r_vector_push (&op->dsts, NULL);
+			dst->reg = r_reg_get (anal->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
-			op->src[0] = r_anal_value_new ();
-			op->src[0]->reg = r_reg_get (anal->reg, mips_reg_decode(rs), R_REG_TYPE_GPR);
+			src = r_vector_push (&op->srcs, NULL);
+			src->reg = r_reg_get (anal->reg, mips_reg_decode (rs), R_REG_TYPE_GPR);
 			op->val = imm; // Beware: this one is signed... use `?vi $v`
 			if (rs == 0) {
 				insn.id = MIPS_INS_LI;
-				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
+				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
 			}
 			break;
 		case 8: // addi
@@ -1495,31 +1638,31 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			op->type = R_ANAL_OP_TYPE_ADD;
 			if (rs == 0) {
 				insn.id = MIPS_INS_LDI;
-				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
+				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
 			}
 			break;
 		case 32: // lb
-			op->refptr =  1;
+			op->refptr = 1;
 			insn.id = MIPS_INS_LB;
-			 /* fallthrough */
+			/* fallthrough */
 		case 33: // lh
 			if (!op->refptr) {
-				op->refptr =  2;
+				op->refptr = 2;
 				insn.id = MIPS_INS_LB;
 			}
-			 /* fallthrough */
+			/* fallthrough */
 		case 35: // lw
 			if (!op->refptr) {
-				op->refptr =  4;
+				op->refptr = 4;
 				insn.id = MIPS_INS_LW;
 			}
-			 /* fallthrough */
+			/* fallthrough */
 		case 55: // ld
 			if (!op->refptr) {
-				op->refptr =  8;
+				op->refptr = 8;
 				insn.id = MIPS_INS_LD;
 			}
-			
+
 			if (rs == 28) {
 				op->ptr = anal->gp + imm;
 			} else {
@@ -1550,7 +1693,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 			insn.id = MIPS_INS_SW;
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
-		case 63: //sd
+		case 63: // sd
 			insn.id = MIPS_INS_SD;
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
@@ -1560,209 +1703,208 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		case 29: // jalx
 			insn.id = MIPS_INS_JALX;
 			op->type = R_ANAL_OP_TYPE_CALL;
-			op->jump = addr + 4*((buf[3] | buf[2]<<8 | buf[1]<<16));
+			op->jump = addr + 4 * ((buf[3] | buf[2] << 8 | buf[1] << 16));
 			op->fail = addr + 8;
 			op->delay = 1;
-			snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
+			snprintf ((char *)insn.i_reg.jump, REG_BUF_MAX, "0x%" PFMT64x, op->jump);
 
 			break;
 		}
-		//family = 'I';
+		// family = 'I';
 	}
 
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, addr, &insn)) {
 			r_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
-		//TODO: add op_fillval (anal, op, &insn);
+	if (mask & R_ARCH_OP_MASK_VAL) {
+		// TODO: add op_fillval (anal, op, &insn);
 	}
 	return oplen;
-/*
- R - all instructions that only take registers as arguments (jalr, jr)
-     opcode 000000
-     opcode (6) 	rs (5) 	rt (5) 	rd (5) 	sa (5) 	function (6)
-		add 	rd, rs, rt 	100000
-		addu 	rd, rs, rt 	100001
-		and 	rd, rs, rt 	100100
-		break 		001101
-		div 	rs, rt 	011010
-		divu 	rs, rt 	011011
-		jalr 	rd, rs 	001001
-		jr 	rs 	001000
+	/*
+	 R - all instructions that only take registers as arguments (jalr, jr)
+	     opcode 000000
+	     opcode (6) 	rs (5) 	rt (5) 	rd (5) 	sa (5) 	function (6)
+			add 	rd, rs, rt 	100000
+			addu 	rd, rs, rt 	100001
+			and 	rd, rs, rt 	100100
+			break 		001101
+			div 	rs, rt 	011010
+			divu 	rs, rt 	011011
+			jalr 	rd, rs 	001001
+			jr 	rs 	001000
 
-		mfhi 	rd 	010000
-		mflo 	rd 	010010
-		mthi 	rs 	010001
-		mtlo 	rs 	010011
-		mult 	rs, rt 	011000
-		multu 	rs, rt 	011001
+			mfhi 	rd 	010000
+			mflo 	rd 	010010
+			mthi 	rs 	010001
+			mtlo 	rs 	010011
+			mult 	rs, rt 	011000
+			multu 	rs, rt 	011001
 
-		nor 	rd, rs, rt 	100111
-		or 	rd, rs, rt 	100101
-		sll 	rd, rt, sa 	000000
-		sllv 	rd, rt, rs 	000100
-		slt 	rd, rs, rt 	101010
-		sltu 	rd, rs, rt 	101011
+			nor 	rd, rs, rt 	100111
+			or 	rd, rs, rt 	100101
+			sll 	rd, rt, sa 	000000
+			sllv 	rd, rt, rs 	000100
+			slt 	rd, rs, rt 	101010
+			sltu 	rd, rs, rt 	101011
 
-		sra 	rd, rt, sa 	000011
-		srav 	rd, rt, rs 	000111
+			sra 	rd, rt, sa 	000011
+			srav 	rd, rt, rs 	000111
 
-		srl 	rd, rt, sa 	000010
-		srlv 	rd, rt, rs 	000110
+			srl 	rd, rt, sa 	000010
+			srlv 	rd, rt, rs 	000110
 
-		sub 	rd, rs, rt 	100010
-		subu 	rd, rs, rt 	100011
-		syscall 		001100
-		xor 	rd, rs, rt 	100110
- I - instructions with immediate operand, load/store/..
-     all opcodes but 000000 000001x and 0100xx
-     opcode (6) 	rs (5) 	rt (5) 	immediate (16)
-		addi 	rt, rs, immediate 	001000
-		addiu 	rt, rs, immediate 	001001
-		andi 	rt, rs, immediate 	001100
-		beq 	rs, rt, label 	000100
+			sub 	rd, rs, rt 	100010
+			subu 	rd, rs, rt 	100011
+			syscall 		001100
+			xor 	rd, rs, rt 	100110
+	 I - instructions with immediate operand, load/store/..
+	     all opcodes but 000000 000001x and 0100xx
+	     opcode (6) 	rs (5) 	rt (5) 	immediate (16)
+			addi 	rt, rs, immediate 	001000
+			addiu 	rt, rs, immediate 	001001
+			andi 	rt, rs, immediate 	001100
+			beq 	rs, rt, label 	000100
 
-		bgez 	rs, label 	000001 	rt = 00001
+			bgez 	rs, label 	000001 	rt = 00001
 
-		bgtz 	rs, label 	000111 	rt = 00000
-		blez 	rs, label 	000110 	rt = 00000
+			bgtz 	rs, label 	000111 	rt = 00000
+			blez 	rs, label 	000110 	rt = 00000
 
-		bltz 	rs, label 	000001 	rt = 00000
-		bne 	rs, rt, label 	000101
-		lb 	rt, immediate(rs) 	100000
-		lbu 	rt, immediate(rs) 	100100
+			bltz 	rs, label 	000001 	rt = 00000
+			bne 	rs, rt, label 	000101
+			lb 	rt, immediate(rs) 	100000
+			lbu 	rt, immediate(rs) 	100100
 
-		lh 	rt, immediate(rs) 	100001
-		lhu 	rt, immediate(rs) 	100101
+			lh 	rt, immediate(rs) 	100001
+			lhu 	rt, immediate(rs) 	100101
 
-		lui 	rt, immediate 	 	001111
+			lui 	rt, immediate 	 	001111
 
-		lw 	rt, immediate(rs) 	100011
-		lwc1 	rt, immediate(rs) 	110001
+			lw 	rt, immediate(rs) 	100011
+			lwc1 	rt, immediate(rs) 	110001
 
-		ori 	rt, rs, immediate 	001101
-		sb 	rt, immediate(rs) 	101000
+			ori 	rt, rs, immediate 	001101
+			sb 	rt, immediate(rs) 	101000
 
-		slti 	rt, rs, immediate 	001010
-		sltiu 	rt, rs, immediate 	001011
-		sh 	rt, immediate(rs) 	101001
-		sw 	rt, immediate(rs) 	101011
-		swc1 	rt, immediate(rs) 	111001
-		xori 	rt, rs, immediate 	001110
- J - require memory address like j, jal
-     00001x
-     opcode (6) 	target (26)
-		j 	label 	000010 	coded address of label
-		jal 	label 	000011 	coded address of label
- C - coprocessor insutrctions that use cp0, cp1, ..
-     0100xx
-     opcode (6) 	format (5) 	ft (5) 	fs (5) 	fd (5) 	function (6)
-		add.s 	fd, fs, ft 	000000 	10000
-		cvt.s.w	fd, fs, ft 	100000 	10100
-		cvt.w.s	fd, fs, ft 	100100 	10000
-		div.s 	fd, fs, ft 	000011 	10000
-		mfc1 	ft, fs 		000000 	00000
-		mov.s 	fd, fs 		000110 	10000
-		mtc1 	ft, fs 		000000 	00100
-		mul.s 	fd, fs, ft 	000010 	10000
-		sub.s 	fd, fs, ft 	000001 	10000
-*/
+			slti 	rt, rs, immediate 	001010
+			sltiu 	rt, rs, immediate 	001011
+			sh 	rt, immediate(rs) 	101001
+			sw 	rt, immediate(rs) 	101011
+			swc1 	rt, immediate(rs) 	111001
+			xori 	rt, rs, immediate 	001110
+	 J - require memory address like j, jal
+	     00001x
+	     opcode (6) 	target (26)
+			j 	label 	000010 	coded address of label
+			jal 	label 	000011 	coded address of label
+	 C - coprocessor insutrctions that use cp0, cp1, ..
+	     0100xx
+	     opcode (6) 	format (5) 	ft (5) 	fs (5) 	fd (5) 	function (6)
+			add.s 	fd, fs, ft 	000000 	10000
+			cvt.s.w	fd, fs, ft 	100000 	10100
+			cvt.w.s	fd, fs, ft 	100100 	10000
+			div.s 	fd, fs, ft 	000011 	10000
+			mfc1 	ft, fs 		000000 	00000
+			mov.s 	fd, fs 		000110 	10000
+			mtc1 	ft, fs 		000000 	00100
+			mul.s 	fd, fs, ft 	000010 	10000
+			sub.s 	fd, fs, ft 	000001 	10000
+	*/
 	return op->size;
 }
 /* Set the profile register */
-static bool mips_set_reg_profile(RAnal* anal){
-     const char *p =
+static bool mips_set_reg_profile(RAnal *anal) {
+	const char *p =
 #if 0
-	  "=PC    pc\n"
-	  "=SP    sp\n"
-	  "=A0    a0\n"
-	  "=A1    a1\n"
-	  "=A2    a2\n"
-	  "=A3    a3\n"
-	  "gpr	zero	.32	0	0\n"
-	  "gpr	at	.32	4	0\n"
-	  "gpr	v0	.32	8	0\n"
-	  "gpr	v1	.32	12	0\n"
-	  "gpr	a0	.32	16	0\n"
-	  "gpr	a1	.32	20	0\n"
-	  "gpr	a2	.32	24	0\n"
-	  "gpr	a3	.32	28	0\n"
-	  "gpr	t0	.32	32	0\n"
-	  "gpr	t1	.32	36	0\n"
-	  "gpr	t2 	.32	40	0\n"
-	  "gpr	t3 	.32	44	0\n"
-	  "gpr	t4 	.32	48	0\n"
-	  "gpr	t5 	.32	52	0\n"
-	  "gpr	t6 	.32	56	0\n"
-	  "gpr	t7 	.32	60	0\n"
-	  "gpr	s0	.32	64	0\n"
-	  "gpr	s1	.32	68	0\n"
-	  "gpr	s2 	.32	72	0\n"
-	  "gpr	s3 	.32	76	0\n"
-	  "gpr	s4 	.32	80	0\n"
-	  "gpr	s5 	.32	84	0\n"
-	  "gpr	s6 	.32	88	0\n"
-	  "gpr	s7 	.32	92	0\n"
-	  "gpr	t8 	.32	96	0\n"
-	  "gpr	t9 	.32	100	0\n"
-	  "gpr	k0 	.32	104	0\n"
-	  "gpr	k1 	.32	108	0\n"
-	  "gpr	gp 	.32	112	0\n"
-	  "gpr	sp	.32	116	0\n"
-	  "gpr	fp	.32	120	0\n"
-	  "gpr	ra	.32	124	0\n"
-	  "gpr	pc	.32	128	0\n";
+		"=PC    pc\n"
+		"=SP    sp\n"
+		"=A0    a0\n"
+		"=A1    a1\n"
+		"=A2    a2\n"
+		"=A3    a3\n"
+		"gpr	zero	.32	0	0\n"
+		"gpr	at	.32	4	0\n"
+		"gpr	v0	.32	8	0\n"
+		"gpr	v1	.32	12	0\n"
+		"gpr	a0	.32	16	0\n"
+		"gpr	a1	.32	20	0\n"
+		"gpr	a2	.32	24	0\n"
+		"gpr	a3	.32	28	0\n"
+		"gpr	t0	.32	32	0\n"
+		"gpr	t1	.32	36	0\n"
+		"gpr	t2 	.32	40	0\n"
+		"gpr	t3 	.32	44	0\n"
+		"gpr	t4 	.32	48	0\n"
+		"gpr	t5 	.32	52	0\n"
+		"gpr	t6 	.32	56	0\n"
+		"gpr	t7 	.32	60	0\n"
+		"gpr	s0	.32	64	0\n"
+		"gpr	s1	.32	68	0\n"
+		"gpr	s2 	.32	72	0\n"
+		"gpr	s3 	.32	76	0\n"
+		"gpr	s4 	.32	80	0\n"
+		"gpr	s5 	.32	84	0\n"
+		"gpr	s6 	.32	88	0\n"
+		"gpr	s7 	.32	92	0\n"
+		"gpr	t8 	.32	96	0\n"
+		"gpr	t9 	.32	100	0\n"
+		"gpr	k0 	.32	104	0\n"
+		"gpr	k1 	.32	108	0\n"
+		"gpr	gp 	.32	112	0\n"
+		"gpr	sp	.32	116	0\n"
+		"gpr	fp	.32	120	0\n"
+		"gpr	ra	.32	124	0\n"
+		"gpr	pc	.32	128	0\n";
 #else
-     // take the one from the debugger //
-	"=PC	pc\n"
-	"=SP	sp\n"
-	"=BP	fp\n"
-	"=A0	a0\n"
-	"=A1	a1\n"
-	"=A2	a2\n"
-	"=A3	a3\n"
-	"gpr	zero	.64	0	0\n"
-	// XXX DUPPED CAUSES FAILURE "gpr	at	.32	8	0\n"
-	"gpr	at	.64	8	0\n"
-	"gpr	v0	.64	16	0\n"
-	"gpr	v1	.64	24	0\n"
-	/* args */
-	"gpr	a0	.64	32	0\n"
-	"gpr	a1	.64	40	0\n"
-	"gpr	a2	.64	48	0\n"
-	"gpr	a3	.64	56	0\n"
-	/* tmp */
-	"gpr	t0	.64	64	0\n"
-	"gpr	t1	.64	72	0\n"
-	"gpr	t2	.64	80	0\n"
-	"gpr	t3	.64	88	0\n"
-	"gpr	t4	.64	96	0\n"
-	"gpr	t5	.64	104	0\n"
-	"gpr	t6	.64	112	0\n"
-	"gpr	t7	.64	120	0\n"
-	/* saved */
-	"gpr	s0	.64	128	0\n"
-	"gpr	s1	.64	136	0\n"
-	"gpr	s2	.64	144	0\n"
-	"gpr	s3	.64	152	0\n"
-	"gpr	s4	.64	160	0\n"
-	"gpr	s5	.64	168	0\n"
-	"gpr	s6	.64	176	0\n"
-	"gpr	s7	.64	184	0\n"
-	"gpr	t8	.64	192	0\n"
-	"gpr	t9	.64	200	0\n"
-	/* special */
-	"gpr	k0	.64	208	0\n"
-	"gpr	k1	.64	216	0\n"
-	"gpr	gp	.64	224	0\n"
-	"gpr	sp	.64	232	0\n"
-	"gpr	fp	.64	240	0\n"
-	"gpr	ra	.64	248	0\n"
-	/* extra */
-	"gpr	pc	.64	272	0\n"
-	;
+		// take the one from the debugger //
+		"=PC	pc\n"
+		"=SP	sp\n"
+		"=BP	fp\n"
+		"=A0	a0\n"
+		"=A1	a1\n"
+		"=A2	a2\n"
+		"=A3	a3\n"
+		"gpr	zero	.64	0	0\n"
+		// XXX DUPPED CAUSES FAILURE "gpr	at	.32	8	0\n"
+		"gpr	at	.64	8	0\n"
+		"gpr	v0	.64	16	0\n"
+		"gpr	v1	.64	24	0\n"
+		/* args */
+		"gpr	a0	.64	32	0\n"
+		"gpr	a1	.64	40	0\n"
+		"gpr	a2	.64	48	0\n"
+		"gpr	a3	.64	56	0\n"
+		/* tmp */
+		"gpr	t0	.64	64	0\n"
+		"gpr	t1	.64	72	0\n"
+		"gpr	t2	.64	80	0\n"
+		"gpr	t3	.64	88	0\n"
+		"gpr	t4	.64	96	0\n"
+		"gpr	t5	.64	104	0\n"
+		"gpr	t6	.64	112	0\n"
+		"gpr	t7	.64	120	0\n"
+		/* saved */
+		"gpr	s0	.64	128	0\n"
+		"gpr	s1	.64	136	0\n"
+		"gpr	s2	.64	144	0\n"
+		"gpr	s3	.64	152	0\n"
+		"gpr	s4	.64	160	0\n"
+		"gpr	s5	.64	168	0\n"
+		"gpr	s6	.64	176	0\n"
+		"gpr	s7	.64	184	0\n"
+		"gpr	t8	.64	192	0\n"
+		"gpr	t9	.64	200	0\n"
+		/* special */
+		"gpr	k0	.64	208	0\n"
+		"gpr	k1	.64	216	0\n"
+		"gpr	gp	.64	224	0\n"
+		"gpr	sp	.64	232	0\n"
+		"gpr	fp	.64	240	0\n"
+		"gpr	ra	.64	248	0\n"
+		/* extra */
+		"gpr	pc	.64	272	0\n";
 #endif
 	return r_reg_set_profile_string (anal->reg, p);
 }
@@ -1775,6 +1917,7 @@ RAnalPlugin r_anal_plugin_mips_gnu = {
 	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
 	.license = "LGPL3",
+	.cpus = "mips64r2,mips32r2,mips64,mips32,loongson3a,gs464,gs464e,gs264e,loongson2e,loongson2f,mips32/64",
 	.arch = "mips",
 	.bits = 32,
 	.esil = true,

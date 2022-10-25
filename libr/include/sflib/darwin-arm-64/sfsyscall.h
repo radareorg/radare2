@@ -34,7 +34,7 @@ do { \
 /* syscall macros */
 // x16 holds syscallnumber
 
-#define PENE __NR_##name
+// #define NRNAME __NR_##name
 
 #define _sfsyscall0(type,name) \
 type name(void) \

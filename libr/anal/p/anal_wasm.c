@@ -1,7 +1,7 @@
 /* radare2 - LGPL - Copyright 2017-2022 - pancake, xvilka, deroad */
 
-#include <string.h>
-#include <r_types.h>
+#define R_LOG_ORIGIN "anal.wasm"
+
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
@@ -38,7 +38,11 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 	}
 	while (anal->iob.read_at (anal->iob.io, address, buffer, sizeof (buffer))) {
 		size = wasm_dis (&wop, ptr, end - ptr);
-		if (!wop.txt || (wop.type == WASM_TYPE_OP_CORE && wop.op.core == WASM_OP_TRAP)) {
+		if (!wop.txt) {
+			break;
+		}
+		free (wop.txt);
+		if (wop.type == WASM_TYPE_OP_CORE && wop.op.core == WASM_OP_TRAP) {
 			// if invalid stop here.
 			break;
 		}
@@ -74,7 +78,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	WasmOp wop = {{0}};
 	RAnalHint *hint = NULL;
 	int ret = wasm_dis (&wop, data, len);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (wop.txt);
 	}
 	op->nopcode = 1;
@@ -167,10 +171,10 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 					}
 				} else {
 					if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_JMP, val, false)) {
-						eprintf ("[wasm] cannot find jump type for br (using block type)\n");
+						R_LOG_WARN ("cannot find jump type for br (using block type)");
 						r_anal_hint_set_jump (anal, addr, op->jump);
 					} else {
-						eprintf ("[wasm] cannot find jump for br\n");
+						R_LOG_WARN ("cannot find jump for br");
 					}
 				}
 				r_anal_hint_free (hint2);
@@ -198,11 +202,11 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 					}
 				} else {
 					if (advance_till_scope_end (anal, op, addr + op->size, R_ANAL_OP_TYPE_CJMP, val, false)) {
-						eprintf ("[wasm] cannot find jump type for br_if (using block type)\n");
+						R_LOG_WARN ("cannot find jump type for br_if (using block type)");
 						op->fail = addr + op->size;
 						r_anal_hint_set_jump (anal, addr, op->jump);
 					} else {
-						eprintf ("[wasm] cannot find jump for br_if\n");
+						R_LOG_WARN ("cannot find jump for br_if");
 					}
 				}
 				r_anal_hint_free (hint2);

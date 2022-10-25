@@ -2346,7 +2346,7 @@ EXPECT=<<EOF
   {
     "offset": 0,
     "esil": "0,cf,:=,32,eax,%,1,<<,32,eax,/,esp,+,[4],&,?{,1,cf,:=,},32,eax,%,1,<<,32,eax,/,esp,+,|=[4]",
-    "refptr": false,
+    "refptr": 0,
     "fcn_addr": 0,
     "fcn_last": 0,
     "size": 4,
@@ -2364,6 +2364,7 @@ EOF
 RUN
 
 NAME=bsf reg32, reg32
+REQUIRE=gas linux x86
 CMDS=<<EOF
 #
 # Common parts
@@ -2426,6 +2427,7 @@ EOF
 RUN
 
 NAME=bsr reg32, reg32
+REQUIRE=gas linux x86
 CMDS=<<EOF
 #
 # Common parts
@@ -2466,7 +2468,7 @@ EXPECT=<<EOF
 0x00000001
 0x00000000
 0x00000000
-0x00000000
+0x0000001f
 0x00000000
 EOF
 RUN

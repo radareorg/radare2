@@ -114,7 +114,6 @@ libr.${EXT_AR}: .libr2
 ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}
 endif
-E+=../shlr/yxml/libyxml.${EXT_AR}
 E+=../shlr/ar/libr_ar.${EXT_AR}
 E+=../shlr/winkd/libr_winkd.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
@@ -190,12 +189,11 @@ install-includes:
 	(cd ../shlr/sdb/src && for FILE in *.h ; do \
 		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/sdb/$$FILE" ; \
 	done)
-	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_util"
-	(cd include/r_util && for FILE in * ; do \
-		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_util/$$FILE" ; done)
-	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/r_crypto"
-	(cd include/r_crypto && for FILE in * ; do \
-		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/r_crypto/$$FILE" ; done)
+	for a in r_util r_crypto r_anal ; do \
+	${INSTALL_DIR} "${DESTDIR}${INCLUDEDIR}/libr/$$a" ; \
+	(cd include/$$a && for FILE in * ; do \
+		${INSTALL_DATA} $$FILE "${DESTDIR}${INCLUDEDIR}/libr/$$a/$$FILE" ; done) ; \
+	done
 
 symstall install-symlink:
 	@cd .. && \

@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include <r_anal.h>
 
-#include "kvx.h"
+#include "kvx/kvx.h"
 
 static const char *kvx_reg_profile = ""
 	"=PC	pc\n"
@@ -245,7 +245,7 @@ static int kvx_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	op->size = insn->len * sizeof (ut32);
 
 	if (insn->opc) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			kvx_instr_print (insn, addr, strasm, sizeof (strasm));
 			op->mnemonic = strdup (strasm);
 		}

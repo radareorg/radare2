@@ -95,9 +95,9 @@ struct lanai_opcode {
 #define	F_ALIAS		1	/* Alias for a "real" instruction */
 #define	F_JSR		2	/* Subroutine call */
 
-#define	F_RI		0x10	
-#define	F_RR		0x20	
-#define	F_RRR		0x40	
+#define	F_RI		0x10
+#define	F_RR		0x20
+#define	F_RRR		0x40
 #define	F_RM		0x80
 #define	F_RRM		0x100
 #define	F_BR		0x200
@@ -152,7 +152,7 @@ Kinds of operands:
 	L	0x????ffff
 	l	0xffff????
 	k	-j
-	
+
 	o	16 bit signed offset
         s	6 bit signed shift constant
 	i	10 bit signed immediate.

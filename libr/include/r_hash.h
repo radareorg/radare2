@@ -3,6 +3,7 @@
 
 #include "r_types.h"
 #include "r_util/r_mem.h"
+#include "r_util/r_log.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -233,6 +234,7 @@ typedef struct r_hash_seed_t {
 #define R_HASH_SIZE_CRC16_X25 2
 #define R_HASH_SIZE_CRC16_XMODEM 2
 #endif /* #if R_HAVE_CRC16_EXTRA */
+#define R_HASH_SIZE_SIP 8
 
 #if R_HAVE_CRC24
 #define R_HASH_SIZE_CRC24 3
@@ -269,7 +271,7 @@ typedef struct r_hash_seed_t {
 #define R_HASH_SIZE_SHA384 48
 #define R_HASH_SIZE_SHA512 64
 #define R_HASH_SIZE_ADLER32 4
-/* entropy is double !! size 0 for test in r_hash_to_string */
+/* entropy is double !! size 0 for test in r_hash_tostring */
 #define R_HASH_SIZE_ENTROPY 0
 #define R_HASH_SIZE_PCPRINT 1
 #define R_HASH_SIZE_MOD255 1
@@ -283,7 +285,7 @@ typedef struct r_hash_seed_t {
 #define R_HASH_SIZE_FLETCHER32 4
 #define R_HASH_SIZE_FLETCHER64 8
 
-#define R_HASH_NBITS (8*sizeof(ut64))
+#define R_HASH_NBITS (8*sizeof (ut64))
 
 enum HASH_INDICES {
 	R_HASH_IDX_MD5 = 0,
@@ -382,6 +384,7 @@ enum HASH_INDICES {
 	R_HASH_IDX_FLETCHER16,
 	R_HASH_IDX_FLETCHER32,
 	R_HASH_IDX_FLETCHER64,
+	R_HASH_IDX_SIP,
 	R_HASH_NUM_INDICES
 };
 
@@ -481,6 +484,7 @@ enum HASH_INDICES {
 #define R_HASH_CRC64_XZ (1ULL << R_HASH_IDX_CRC64_XZ)
 #define R_HASH_CRC64_ISO (1ULL << R_HASH_IDX_CRC64_ISO)
 #endif /* #if R_HAVE_CRC64 */
+#define R_HASH_SIP (1ULL << R_HASH_IDX_SIP)
 
 #define R_HASH_ALL ((1ULL << R_MIN(63, R_HASH_NUM_INDICES))-1)
 
@@ -490,6 +494,7 @@ R_API RHash *r_hash_new(bool rst, ut64 flags);
 R_API void r_hash_free(RHash *ctx);
 
 /* methods */
+R_API ut8 *r_hash_do_sip(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_ssdeep(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len);
@@ -499,7 +504,7 @@ R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_hmac_sha256(RHash *ctx, const ut8 *input, int len, const ut8 *key, int klen);
 
-R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int len);
+R_API char *r_hash_tostring(RHash *ctx, const char *name, const ut8 *data, int len);
 
 /* static methods */
 R_API const char *r_hash_name(ut64 bit);
@@ -520,6 +525,7 @@ R_API ut8 r_hash_mod255(const ut8 *b, ut64 len);
 R_API ut64 r_hash_luhn(const ut8 *buf, ut64 len);
 R_API char *r_hash_ssdeep(const ut8 *buf, size_t len);
 R_API utcrc r_hash_crc_preset(const ut8 *data, ut32 size, enum CRC_PRESETS preset);
+R_API ut64 r_hash_sip(const ut8* buf, ut64 len);
 
 /* analysis */
 R_API ut8  r_hash_hamdist(const ut8 *buf, int len);

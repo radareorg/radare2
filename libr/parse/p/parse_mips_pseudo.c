@@ -94,21 +94,21 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ NULL }
 	};
 
-	for (i=0; ops[i].op; i++) {
+	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr) {
-				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
+				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
 					if (can_replace (ops[i].str, j, ops[i].max_operands)) {
 						const char *w = argv[ ops[i].str[j]-'0' ];
 						if (w) {
-							strcpy (newstr+k, w);
+							strcpy (newstr + k, w);
 							k += strlen (w) - 1;
 						}
 					} else {
 						newstr[k] = ops[i].str[j];
 					}
 				}
-				newstr[k]='\0';
+				newstr[k] = '\0';
 			}
 			return true;
 		}
@@ -117,7 +117,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	/* TODO: this is slow */
 	if (newstr) {
 		newstr[0] = '\0';
-		for (i=0; i<argc; i++) {
+		for (i = 0; i < argc; i++) {
 			strcat (newstr, argv[i]);
 			strcat (newstr, (i == 0 || i== argc - 1)?" ":", ");
 		}
@@ -206,7 +206,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		{
 			const char *wa[] = { w0, w1, w2, w3, w4 };
 			int nw = 0;
-			for (i=0; i<4; i++) {
+			for (i = 0; i < 4; i++) {
 				if (wa[i][0] != '\0') {
 					nw++;
 				}
@@ -256,102 +256,102 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	char *tstr = strdup (data);
 	RAnal *anal = p->analb.anal;
 
-	if (!p->varlist) {
-		free (tstr);
-		return false;
-	}
-	RList *bpargs = p->varlist (f, 'b');
-	RList *spargs = p->varlist (f, 's');
-	const bool ucase = IS_UPPER (*tstr);
-	RAnalVarField *var;
-	r_list_foreach (spargs, iter, var) {
-		st64 delta = p->get_ptr_at
-			? p->get_ptr_at (f, var->delta, addr)
-			: ST64_MAX;
-		if (delta == ST64_MAX && var->field) {
-			delta = var->delta;
-		} else if (delta == ST64_MAX) {
-			continue;
-		}
-		const char *reg = NULL;
-		if (p->get_reg_at) {
-			reg = p->get_reg_at (f, var->delta, addr);
-		}
-		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_SP];
-		}
-		char *tmpf;
-		//TODO: honor asm pseudo
-		if (R_ABS (delta) < 10) {
-			tmpf = "%d(%s)";
-		} else if (delta > 0) {
-			tmpf = "0x%x(%s)";
-		} else {
-			tmpf = "-0x%x(%s)";
-		}
-		oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
-		if (ucase) {
-			char *comma = strchr (oldstr, ',');
-			if (comma) {
-				*comma = 0;
-				r_str_case (oldstr, true);
-				*comma = ',';
+	if (f && p->varlist) {
+		RList *bpargs = p->varlist (f, 'b');
+		RList *spargs = p->varlist (f, 's');
+		const bool ucase = IS_UPPER (*tstr);
+		RAnalVarField *var;
+		r_list_foreach (spargs, iter, var) {
+			st64 delta = p->get_ptr_at
+				? p->get_ptr_at (f, var->delta, addr)
+				: ST64_MAX;
+			if (delta == ST64_MAX && var->field) {
+				delta = var->delta;
+			} else if (delta == ST64_MAX) {
+				continue;
 			}
-		}
-		if (strstr (tstr, oldstr)) {
-			char *newstr = (p->localvar_only)
-				? r_str_newf ("(%s)", var->name)
-				: r_str_newf ("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
-			tstr = r_str_replace (tstr, oldstr, newstr, 1);
-			free (newstr);
-			free (oldstr);
-			break;
-		}
-		free (oldstr);
-	}
-	r_list_foreach (bpargs, iter, var) {
-		char *tmpf = NULL;
-		st64 delta = p->get_ptr_at
-			? p->get_ptr_at (f, var->delta, addr)
-			: ST64_MAX;
-		if (delta == ST64_MAX && var->field) {
-			delta = var->delta + f->bp_off;
-		} else if (delta == ST64_MAX) {
-			continue;
-		}
-		const char *reg = NULL;
-		if (p->get_reg_at) {
-			reg = p->get_reg_at (f, var->delta, addr);
-		}
-		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_BP];
-		}
-		if (R_ABS (delta) < 10) {
-			tmpf = "%d(%s)";
-		} else if (delta > 0) {
-			tmpf = "0x%x(%s)";
-		} else {
-			tmpf = "-0x%x(%s)";
-		}
-		oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
-		if (ucase) {
-			char *comma = strchr (oldstr, ',');
-			if (comma) {
-				*comma = 0;
-				r_str_case (oldstr, true);
-				*comma = ',';
+			const char *reg = NULL;
+			if (p->get_reg_at) {
+				reg = p->get_reg_at (f, var->delta, addr);
 			}
-		}
-		if (strstr (tstr, oldstr)) {
-			char *newstr = (p->localvar_only)
-				? r_str_newf ("(%s)", var->name)
-				: r_str_newf ("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
-			tstr = r_str_replace (tstr, oldstr, newstr, 1);
-			free (newstr);
+			if (!reg) {
+				reg = anal->reg->name[R_REG_NAME_SP];
+			}
+			char *tmpf;
+			//TODO: honor asm pseudo
+			if (R_ABS (delta) < 10) {
+				tmpf = "%d(%s)";
+			} else if (delta > 0) {
+				tmpf = "0x%x(%s)";
+			} else {
+				tmpf = "-0x%x(%s)";
+			}
+			oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
+			if (ucase) {
+				char *comma = strchr (oldstr, ',');
+				if (comma) {
+					*comma = 0;
+					r_str_case (oldstr, true);
+					*comma = ',';
+				}
+			}
+			if (strstr (tstr, oldstr)) {
+				char *newstr = (p->localvar_only)
+					? r_str_newf ("(%s)", var->name)
+					: r_str_newf ("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
+				tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				free (newstr);
+				free (oldstr);
+				break;
+			}
 			free (oldstr);
-			break;
 		}
-		free (oldstr);
+		r_list_foreach (bpargs, iter, var) {
+			char *tmpf = NULL;
+			st64 delta = p->get_ptr_at
+				? p->get_ptr_at (f, var->delta, addr)
+				: ST64_MAX;
+			if (delta == ST64_MAX && var->field) {
+				delta = var->delta + f->bp_off;
+			} else if (delta == ST64_MAX) {
+				continue;
+			}
+			const char *reg = NULL;
+			if (p->get_reg_at) {
+				reg = p->get_reg_at (f, var->delta, addr);
+			}
+			if (!reg) {
+				reg = anal->reg->name[R_REG_NAME_BP];
+			}
+			if (R_ABS (delta) < 10) {
+				tmpf = "%d(%s)";
+			} else if (delta > 0) {
+				tmpf = "0x%x(%s)";
+			} else {
+				tmpf = "-0x%x(%s)";
+			}
+			oldstr = r_str_newf (tmpf, R_ABS (delta), reg);
+			if (ucase) {
+				char *comma = strchr (oldstr, ',');
+				if (comma) {
+					*comma = 0;
+					r_str_case (oldstr, true);
+					*comma = ',';
+				}
+			}
+			if (strstr (tstr, oldstr)) {
+				char *newstr = (p->localvar_only)
+					? r_str_newf ("(%s)", var->name)
+					: r_str_newf ("%s%s(%s)", delta > 0 ? "" : "-", var->name, reg);
+				tstr = r_str_replace (tstr, oldstr, newstr, 1);
+				free (newstr);
+				free (oldstr);
+				break;
+			}
+			free (oldstr);
+		}
+		r_list_free (bpargs);
+		r_list_free (spargs);
 	}
 	bool ret = true;
 	if (len > strlen (tstr)) {
@@ -361,8 +361,6 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		ret = false;
 	}
 	free (tstr);
-	r_list_free (bpargs);
-	r_list_free (spargs);
 	return ret;
 }
 

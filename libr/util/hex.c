@@ -1,9 +1,6 @@
 /* radare - LGPL - Copyright 2007-2020 - pancake */
 
-#include "r_types.h"
-#include "r_util.h"
-#include <stdio.h>
-#include <ctype.h>
+#include <r_util.h>
 
 /* int c; ret = hex_to_byte(&c, 'c'); */
 R_API bool r_hex_to_byte(ut8 *val, ut8 c) {
@@ -154,7 +151,7 @@ const char *skip_comment_c(const char *code) {
 		if (end) {
 			code = end + 2;
 		} else {
-			eprintf ("Missing closing comment\n");
+			R_LOG_ERROR ("Missing closing comment");
 		}
 	} else if (!strncmp (code, "//", 2)) {
 		char *end = strchr (code, '\n');
@@ -359,8 +356,7 @@ R_API int r_hex_pair2bin(const char *arg) {
 		}
 		d = c;
 		if (*ptr != '.' && r_hex_to_byte (&c, *ptr)) {
-			eprintf ("Invalid hexa string at char '%c' (%s).\n",
-				*ptr, arg);
+			R_LOG_ERROR ("Invalid hexa string at char '%c' (%s)", *ptr, arg);
 			return -1;
 		}
 		c |= d;
@@ -444,7 +440,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 		if (out) {
 			r_hex_to_byte (&out[nibbles / 2], '0');
 		}
-		return -(nibbles+1) / 2;
+		return -((nibbles + 1) / 2);
 	}
 
 	return nibbles / 2;
@@ -465,9 +461,9 @@ R_API int r_hex_str2bin_until_new(const char *in, ut8 **out) {
 
 	int ret = -1;
 	size_t nibbles = 0;
-	ut8 *buf = malloc (len);
+	ut8 *buf = calloc (1, len);
 	if (buf) {
-		while (!r_hex_to_byte (buf + nibbles / 2, *in)) {
+		while (!r_hex_to_byte (buf + (nibbles / 2), *in)) {
 			nibbles++;
 			in++;
 		}

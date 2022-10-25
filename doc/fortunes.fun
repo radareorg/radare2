@@ -29,7 +29,7 @@ No such file or directory.
 Default scripting languages are NodeJS and Python.
 -bash: r2: command not found
 Press any key to continue ...
-Ilo ni li pona li pali e lipu. mi wile e ni: sina kama jo e musi
+ilo ni li pona li pali e lipu. o musi!
 radare2 for FideOS, now with extra potato
 Your project name should contain an uppercase letter, 8 vowels, some numbers, and the first 5 characters of your private bitcoin key.
 This computer has gone to sleep.
@@ -268,7 +268,7 @@ Error: There's a missing space before the opening parenthesis '('
 WARNING: r_list_length: assertion 'list' failed (line 55)
 This accessory is not supported by this version of radare2.
 When can we have an official anime mascot for radare2?
-Iaito became Cutter the same way Iai-giri became Cut.
+Radare2, we need you to ctrl+s the world.
 Sorry, radare2 has experienced an internal error.
 Segmentation fault (core dumped)
 Use rabin2 to discover the real TRUTH
@@ -308,3 +308,12 @@ radare2[15449] Corpse failure, too many 6
 Process[15449] crashed: radare2. Too many corpses being created.
 You can't sleep now there are monsters nearby
 Every journey begins with a choice
+Do 'r2pm -i r2premium; echo "e cfg.fortunes.type = nsfw" >> ~/.radare2rc' for a even more fun with r2
+pneumonic
+Click below to prove you are not a bot
+Sorry, not sorry.
+fix it or set the machine on fire
+burn it before the bug spreads to other installations
+The signals are strong tonight
+It's dangerous to go alone, take this.
+"If you gotta burn it all to the ground; Then let it burn"

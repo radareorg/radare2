@@ -1,19 +1,20 @@
-/* tiv - terminal image viewer - MIT 2013-2019 - pancake */
+/* tiv - terminal image viewer - MIT 2013-2022 - pancake */
 
 #include <r_cons.h>
+#include <r_th.h>
 
 #define XY(b,x,y) ( b+((y)*(w*3))+(x*3) )
 #define ABS(x) (((x)<0)?-(x):(x))
 #define POND(x,y) (ABS((x)) * (y))
 
-void (*renderer)(PrintfCallback cb_printf, const ut8*, const ut8 *);
+static R_TH_LOCAL void (*renderer)(PrintfCallback cb_printf, const ut8*, const ut8 *);
 
 static int reduce8(int r, int g, int b) {
 	int colors_len = 8;
 	int select = 0;
 	int odistance = -1;
 	int i, k = 1;
-	int colors[][3] = {
+	const int colors[][3] = {
 		{ 0x00,0x00,0x00 }, // black
 		{ 0xd0,0x10,0x10 }, // red
 		{ 0x10,0xe0,0x10 }, // green
@@ -28,10 +29,14 @@ static int reduce8(int r, int g, int b) {
 	g /= k; g *= k;
 	b /= k; b *= k;
 	// B&W
-	if (r<30 && g<30 && b<30) return 0;
-	if (r>200&& g>200&& b>200) return 7;
+	if (r < 30 && g < 30 && b < 30) {
+		return 0;
+	}
+	if (r > 200 && g > 200 && b > 200) {
+		return 7;
+	}
 	odistance = -1;
-	for (i = 0; i<colors_len; i++) {
+	for (i = 0; i < colors_len; i++) {
 		int distance =
 			  POND (colors[i][0]-r, r)
 			+ POND (colors[i][1]-g, g)
@@ -47,7 +52,9 @@ static int reduce8(int r, int g, int b) {
 static void render_ansi(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
 	int fg = 0;
 	int color = reduce8 (c[0], c[1], c[2]);
-	if (color == -1)return;
+	if (color == -1) {
+		return;
+	}
 	//if (c[0]<30 && c[1]<30 && c[2]<30) fg = 1;
 	cb_printf ("\x1b[%dm", color+(fg?30:40));
 }
@@ -56,10 +63,10 @@ static int rgb(int r, int g, int b) {
 	r = R_DIM (r, 0, 255);
 	g = R_DIM (g, 0, 255);
 	b = R_DIM (b, 0, 255);
-	r = (int)(r/50.6);
-	g = (int)(g/50.6);
-	b = (int)(b/50.6);
-	return 16 + (r*36) + (g*6) + b;
+	r = (int)(r / 50.6);
+	g = (int)(g / 50.6);
+	b = (int)(b / 50.6);
+	return 16 + (r * 36) + (g * 6) + b;
 }
 
 static void render_256(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
@@ -74,40 +81,48 @@ static void render_rgb(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
 
 static void render_greyscale(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
 	int color1, color2, k;
-	color1 = (c[0]+c[1]+c[2]) / 3;
-	color2 = (d[0]+d[1]+d[2]) / 3;
-	k = 231 + ((int)((float)color1/10.3));
-	if (k<232) k = 232;
+	color1 = (c[0] + c[1] + c[2]) / 3;
+	color2 = (d[0] + d[1] + d[2]) / 3;
+	k = 231 + ((int)((float)color1 / 10.3));
+	if (k < 232) {
+		k = 232;
+	}
 	cb_printf ("\x1b[%d;5;%dm", 48, k); // bg
-	k = 231 + ((int)((float)color2/10.3));
-	if (k<232) k = 232;
+	k = 231 + ((int)((float)color2 / 10.3));
+	if (k < 232) {
+		k = 232;
+	}
 	cb_printf ("\x1b[%d;5;%dm", 38, k); // fg
 }
 
 static void render_ascii(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
-	const char *pal = " `.,-:+*%$#";
+	const char * const pal = " `.,-:+*%$#";
 	int idx, pal_len = strlen (pal);
-	float p = ((double)(c[0]+c[1]+c[2])/3);
-	float q = ((double)(d[0]+d[1]+d[2])/3);
-	idx = (int)(((p+q)/2) / (255/pal_len));
-	if (idx >= pal_len) idx = pal_len-1;
+	float p = ((double)(c[0] + c[1] + c[2]) / 3);
+	float q = ((double)(d[0] + d[1] + d[2]) / 3);
+	idx = (int)(((p + q)/2) / (255 / pal_len));
+	if (idx >= pal_len) {
+		idx = pal_len - 1;
+	}
 	cb_printf ("%c", pal[idx]);
 }
 
 static void dorender(PrintfCallback cb_printf, const ut8 *buf, int len, int w, int h) {
 	const ut8 *c, *d;
 	int x, y;
-	for (y=0; y<h; y+=2) {
-		for (x=0; x<w; x++) {
+	for (y = 0; y < h; y += 2) {
+		for (x = 0; x < w; x++) {
 			c = XY (buf, x, y);
 			d = XY (buf, x, y + 1);
-			if (d + 3 > (buf+len)) break;
+			if (d + 3 > (buf + len)) {
+				break;
+			}
 			renderer (cb_printf, c, d);
 			if (renderer != render_ascii) {
 				render_ascii (cb_printf, c, d);
 			}
 		}
-		cb_printf ((renderer==render_ascii)?"\n":"\x1b[0m\n");
+		cb_printf ((renderer == render_ascii)? "\n": "\x1b[0m\n");
 	}
 }
 
@@ -119,8 +134,12 @@ static void selectrenderer(int mode) {
 	case 'A':
 		renderer = render_ansi;
 		break;
-	case 'g': renderer = render_greyscale; break;
-	case '2': renderer = render_256; break;
+	case 'g':
+		renderer = render_greyscale;
+		break;
+	case '2':
+		renderer = render_256;
+		break;
 	default:
 		renderer = render_rgb;
 		break;

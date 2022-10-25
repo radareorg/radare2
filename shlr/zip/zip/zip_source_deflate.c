@@ -1,3 +1,4 @@
+#if 0
 /*
   zip_source_deflate.c -- deflate (de)compressoin routines
   Copyright (C) 2009 Dieter Baron and Thomas Klausner
@@ -111,7 +112,7 @@ compress_read(struct zip_source *src, struct deflate *ctx,
 
     if (len == 0)
 	return 0;
-	
+
     ctx->zstr.next_out = (Bytef *)data;
     ctx->zstr.avail_out = (uInt)len; /* XXX: check for overflow */
 
@@ -185,7 +186,7 @@ decompress_read(struct zip_source *src, struct deflate *ctx,
 
     if (len == 0)
 	return 0;
-	
+
     ctx->zstr.next_out = (Bytef *)data;
     ctx->zstr.avail_out = (uInt)len; /* XXX: check for overflow */
 
@@ -196,7 +197,7 @@ decompress_read(struct zip_source *src, struct deflate *ctx,
 	switch (ret) {
 	case Z_OK:
 	    break;
-	
+
 	case Z_STREAM_END:
 	    ctx->eof = 1;
 	    end = 1;
@@ -390,3 +391,4 @@ deflate_free(struct deflate *ctx)
     /* XXX: deflateEnd if close was not called */
     free(ctx);
 }
+#endif

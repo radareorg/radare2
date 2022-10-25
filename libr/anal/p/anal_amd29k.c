@@ -6,7 +6,7 @@
 
 
 static bool set_reg_profile(RAnal *anal) {
-	const char *p =
+	const char * const p =
 			"=PC	pc\n"
 			"=SP	gp1\n"
 			"=BP	gp2\n"
@@ -290,6 +290,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 
 	amd29k_instr_t instruction = {0};
 	if (amd29k_instr_decode (buf, len, &instruction, a->config->cpu)) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			const int buf_asm_len = 64;
+			char *buf_asm = calloc (buf_asm_len, 1);
+			if (buf_asm) {
+				amd29k_instr_print (buf_asm, buf_asm_len, addr, &instruction);
+				op->mnemonic = buf_asm;
+			}
+		}
+
 		op->type = instruction.op_type;
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_JMP:
@@ -331,6 +340,8 @@ RAnalPlugin r_anal_plugin_amd29k = {
 	.archinfo = archinfo,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,
+	.cpus = CPU_29000","CPU_29050,
+	.endian = R_SYS_ENDIAN_LITTLE,
 };
 
 #ifndef R2_PLUGIN_INCORE

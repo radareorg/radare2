@@ -208,7 +208,7 @@ a_attr void								\
 a_prefix##new(a_ph_type *ph)						\
 {									\
 									\
-	memset(ph, 0, sizeof(ph(a_type)));				\
+	memset(ph, 0, sizeof (ph(a_type)));				\
 }									\
 a_attr bool								\
 a_prefix##empty(a_ph_type *ph)						\
@@ -229,7 +229,7 @@ a_attr void								\
 a_prefix##insert(a_ph_type *ph, a_type *phn)				\
 {									\
 									\
-	memset(&phn->a_field, 0, sizeof(phn(a_type)));			\
+	memset(&phn->a_field, 0, sizeof (phn(a_type)));			\
 									\
 	/*								\
 	 * Treat the root as an aux list during insertion, and lazily	\

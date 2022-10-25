@@ -5,6 +5,8 @@
 
 #include <r_lib.h>
 #include <r_crypto.h>
+#include <r_util/r_assert.h>
+#include <r_util/r_log.h>
 #include <memory.h>
 
 #define BLOCK_SIZE 8
@@ -178,7 +180,7 @@ static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf,
 	if (!state || !inbuf || !outbuf || buflen < 0 || buflen%8 != 0) {
 		//let user deal with padding
 		if (buflen % 8 != 0) {
-			eprintf ("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
+			R_LOG_ERROR ("Invalid input length %d. Expected length is multiple of 8 bytes", buflen);
 		}
 		return;
 	}
@@ -288,51 +290,63 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 	return true;
 }
 
-static struct blowfish_state st = {{0}};
-
-static bool blowfish_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	cry->dir = direction;
-	return blowfish_init (&st, key, keylen);
-}
-
-static int blowfish_get_key_size(RCrypto *cry) {
-	return st.key_size;
-}
-
-static bool blowfish_use(const char *algo) {
-	return !strcmp (algo, "blowfish");
-}
-
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
-	if (!cry || !buf) {
-		return false;
+static struct blowfish_state *get_st(RCryptoJob *cj) {
+	if (cj) {
+		struct blowfish_state *st = cj->data;
+		if (!cj->data) {
+			cj->data = R_NEW0 (struct blowfish_state);
+			st = cj->data;
+		}
+		return st;
 	}
+	return NULL;
+}
+
+static bool blowfish_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+	struct blowfish_state *st = get_st (cj);
+	cj->dir = direction;
+	return blowfish_init (st, key, keylen);
+}
+
+static int blowfish_get_key_size(RCryptoJob *cj) {
+	struct blowfish_state *st = get_st (cj);
+	if (st) {
+		return st->key_size;
+	}
+	return -1;
+}
+
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
+	r_return_val_if_fail (cj && cj->data && buf, false);
+	struct blowfish_state *st = get_st (cj);
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
-	if (cry->dir == 0) {
-		blowfish_crypt (&st, buf, obuf, len);
-	} else if (cry->dir == 1) {
-		blowfish_decrypt (&st, buf, obuf, len);
+	if (cj->dir == 0) {
+		blowfish_crypt (st, buf, obuf, len);
+	} else if (cj->dir == 1) {
+		blowfish_decrypt (st, buf, obuf, len);
 	}
-	r_crypto_append (cry, obuf, len);
+	r_crypto_job_append (cj, obuf, len);
 	free (obuf);
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+static bool end(RCryptoJob *cj, const ut8 *buf, int len) {
+	bool res = update (cj, buf, len);
+	R_FREE (cj->data);
+	return res;
 }
 
 RCryptoPlugin r_crypto_plugin_blowfish = {
 	.name = "blowfish",
 	.license = "LGPL3",
+	.implements = "blowfish",
 	.set_key = blowfish_set_key,
 	.get_key_size = blowfish_get_key_size,
-	.use = blowfish_use,
 	.update = update,
-	.final = final
+	.end = end
 };
 
 #ifndef R2_PLUGIN_INCORE
@@ -350,11 +364,11 @@ int main() {
 
 	/* encrypt */
 	blowfish_init (&st, (const ut8*)"key", 3);
-	blowfish_crypt (&st, (const ut8*)"helloworld123456", out, sizeof(out));
+	blowfish_crypt (&st, (const ut8*)"helloworld123456", out, sizeof (out));
 
 	/* decrypt */
 	blowfish_init (&st, (const ut8*)"key", 3);
-	blowfish_decrypt (&st, out, out, sizeof(out));
+	blowfish_decrypt (&st, out, out, sizeof (out));
 
 	eprintf ("%s\n", (const char *)out); // must print "helloworld123456"
 }

@@ -1,4 +1,5 @@
 #include <r_util.h>
+#include <r_util/r_ref.h>
 #include "minunit.h"
 
 static Sdb *setup_sdb(void) {
@@ -180,20 +181,24 @@ static TypeTest *r_type_test_new(const char *name) {
 	return tt;
 }
 
-R_REF_FUNCTIONS(TypeTest, r_type_test);
+// DEPRECATE R_REF_FUNCTIONS
+// R_REF_FUNCTIONS(TypeTest, r_type_test);
 
 bool test_references(void) {
 	TypeTest *tt = r_type_test_new ("foo");
-	mu_assert_eq (tt->refcount, 1, "reference count issue");
-	r_type_test_ref (tt);
-	mu_assert_eq (tt->refcount, 2, "reference count issue");
-	r_type_test_unref (tt);
+	mu_assert_eq (r_ref_count (tt), 1, "reference count issue");
+	r_ref (tt);
+	mu_assert_eq (r_ref_count (tt), 2, "reference count issue");
+	r_unref (tt);
 	mu_assert_streq (tt->name, "foo", "typetest name should be foo");
-	mu_assert_eq (tt->refcount, 1, "reference count issue");
-	r_type_test_unref (tt); // tt becomes invalid
-	mu_assert_eq (tt->refcount, 0, "reference count issue");
-	mu_assert_streq (tt->name, "", "typetest name should be foo");
-	free (tt);
+	mu_assert_eq (r_ref_count (tt), 1, "reference count issue");
+	r_unref (tt); // tt becomes invalid
+	if (tt) {
+		mu_assert_eq (0, 1, "reference count invalidation is failing");
+		// mu_assert_eq (r_ref_count (tt), 0, "reference count issue");
+		// mu_assert_streq (tt->name, "", "typetest name should be foo");
+		free (tt);
+	}
 	mu_end;
 }
 

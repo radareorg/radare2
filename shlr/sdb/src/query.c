@@ -174,7 +174,8 @@ SDB_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	StrBuf *out = strbuf_new ();
 	if ((int)len < 1 || !buf) {
 		bufset = true;
-		buf = (char *)malloc ((len = 64));
+		len = 64;
+		buf = (char *)calloc (1, len);
 		if (!buf) {
 			strbuf_free (out);
 			return NULL;
@@ -418,26 +419,22 @@ next_quote:
 				} else {
 					// never happens
 				}
-				nstr = sdb_itoa (curnum, numstr, 10);
+				nstr = sdb_itoa (curnum, 10, numstr, sizeof (numstr));
 				strbuf_append (out, nstr, 1);
 			}
 		} else if (val) {
 			if (sdb_isnum (val)) {
 				int op = *cmd;
 				if (*val == '-') {
-					if (*cmd == '-') {
-						op = '+';
-					} else {
-						op = '-';
-					}
+					op = (*cmd == '-')? '+': '-';
 					d = sdb_atoi (val + 1);
 				} else {
 					d = sdb_atoi (val);
 				}
-				if (op=='+') {
-					sdb_num_inc (s, cmd+1, d, 0);
+				if (op == '+') {
+					sdb_num_inc (s, cmd + 1, d, 0);
 				} else {
-					sdb_num_dec (s, cmd+1, d, 0);
+					sdb_num_dec (s, cmd + 1, d, 0);
 				}
 			} else {
 				if (*cmd == '+') {

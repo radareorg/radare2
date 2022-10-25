@@ -4,13 +4,19 @@
 #include <string.h>
 #include <r_types.h>
 #include <r_lib.h>
-#include <r_asm.h>
 #include <r_anal.h>
 #include <r_util.h>
 
-#include <propeller_disas.h>
+#include "propeller/propeller_disas.h"
 
 static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	if (len < 4) {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
+		return op->size = 0;
+	}
 	int ret;
 	struct propeller_cmd cmd;
 
@@ -19,10 +25,24 @@ static int propeller_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int
 	ret = op->size = propeller_decode_command (buf, &cmd);
 
 	if (ret < 0) {
-		return ret;
+		op->type = R_ANAL_OP_TYPE_ILL;
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
+		return op->size = ret;
 	}
 
 	op->addr = addr;
+
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		if (cmd.prefix[0] && cmd.operands[0]) {
+			op->mnemonic = r_str_newf ("%s %s %s", cmd.prefix, cmd.instr, cmd.operands);
+		} else if (cmd.operands[0]) {
+			op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
+		} else {
+			op->mnemonic  = r_str_newf ("%s", cmd.instr);
+		}
+	}
 
 	switch (cmd.opcode) {
 	case PROP_TEST:

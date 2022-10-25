@@ -16,7 +16,7 @@
 #include <string.h>
 #include <r_types.h>
 
-#define ARRAY_LENGTH(a) (sizeof(a)/sizeof((a)[0]))
+#define ARRAY_LENGTH(a) (sizeof (a)/sizeof ((a)[0]))
 
 const struct lh5801_insn_class_desc
 		lh5801_insn_class_descs[LH5801_INSNC_NUMBER] = {
@@ -763,7 +763,7 @@ int lh5801_decode(struct lh5801_insn *insn, const ut8 *buf, int len) {
 		fmt = desc.format;
 		ifmt_reg = fmt & LH5801_IFMT_REG_MASK;
 
-		if(!lh5801_ifmt_fd_matches(fmt, fd))
+		if (!lh5801_ifmt_fd_matches(fmt, fd))
 			continue;
 
 		/* Ignore instructions referencing the register number 3. */

@@ -1,9 +1,14 @@
 #ifndef R2_CONFIGURE_H
 #define R2_CONFIGURE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "r_version.h"
 
 #define R_CHECKS_LEVEL @R_CHECKS_LEVEL@
+#define R_CRITICAL_ENABLED @R_CRITICAL_ENABLED@
 #define DEBUGGER @DEBUGGER@
 #define HAVE_DECL_ADDR_NO_RANDOMIZE @HAVE_DECL_ADDR_NO_RANDOMIZE@
 #define HAVE_ARC4RANDOM_UNIFORM @HAVE_ARC4RANDOM_UNIFORM@
@@ -35,7 +40,7 @@
 #define R2_SDB "@SDB@"
 #define R2_ZIGNS "@ZIGNS@"
 #define R2_THEMES "@THEMES@"
-#define R2_FORTUNES "@FORTUNES@"
+#define R2_FORTUNES R_JOIN_3_PATHS ("@DATADIR@", "doc", "radare2")
 #define R2_FLAGS "@FLAGS@"
 #define R2_HUD "@HUD@"
 #else
@@ -74,27 +79,6 @@
 #define R2_SDB_MAGIC        R_JOIN_2_PATHS (R2_SDB, "magic")
 #define R2_SDB_FORMAT       R_JOIN_2_PATHS (R2_SDB, "format")
 
-#define R2_HOME_CONFIGDIR   R_JOIN_2_PATHS (".config", "radare2")
-#define R2_HOME_DATADIR     R_JOIN_3_PATHS (".local", "share", "radare2")
-#define R2_HOME_CACHEDIR    R_JOIN_2_PATHS (".cache", "radare2")
-
-#define R2_HOME_THEMES      R_JOIN_2_PATHS (R2_HOME_DATADIR, "cons")
-#define R2_HOME_FORTUNES    R_JOIN_2_PATHS (R2_HOME_DATADIR, "fortunes")
-#define R2_HOME_PLUGINS     R_JOIN_2_PATHS (R2_HOME_DATADIR, "plugins")
-#define R2_HOME_ZIGNS       R_JOIN_2_PATHS (R2_HOME_DATADIR, "zigns")
-#define R2_HOME_PDB         R_JOIN_2_PATHS (R2_HOME_DATADIR, "pdb")
-#define R2_HOME_PROJECTS    R_JOIN_2_PATHS (R2_HOME_DATADIR, "projects")
-#define R2_HOME_WWWROOT     R_JOIN_2_PATHS (R2_HOME_DATADIR, "www")
-#define R2_HOME_SDB_FCNSIGN R_JOIN_2_PATHS (R2_HOME_DATADIR, "fcnsign")
-#define R2_HOME_SDB_FORMAT  R_JOIN_2_PATHS (R2_HOME_DATADIR, "format")
-#define R2_HOME_HUD         R_JOIN_2_PATHS (R2_HOME_DATADIR, "hud")
-#define R2_HOME_BINRC       R_JOIN_2_PATHS (R2_HOME_DATADIR, "rc.d")
-#define R2_HOME_BIN         R_JOIN_3_PATHS (R2_HOME_DATADIR, "prefix", "bin")
-
-#define R2_HOME_HISTORY     R_JOIN_2_PATHS (R2_HOME_CACHEDIR, "history")
-
-#define R2_HOME_RC          R_JOIN_2_PATHS (R2_HOME_CONFIGDIR, "radare2rc")
-#define R2_HOME_RC_DIR      R_JOIN_2_PATHS (R2_HOME_CONFIGDIR, "radare2rc.d")
 #define R2_GLOBAL_RC        R_JOIN_2_PATHS (R2_DATDIR_R2, "radare2rc")
 
 #define HAVE_LIB_MAGIC @HAVE_LIB_MAGIC@
@@ -123,6 +107,10 @@
 #define HAVE_JEMALLOC 0
 #else
 #define HAVE_JEMALLOC @HAVE_JEMALLOC@
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

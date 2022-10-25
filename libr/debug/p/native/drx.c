@@ -10,10 +10,9 @@
 #define DR_ENABLE_SIZE          2	/* Two enable bits per debug register.  */
 
 /* Fields reserved by Intel.  This includes the GD (General Detect
-   Enable) flag, which causes a debug exception to be generated when a
-   MOV instruction accesses one of the debug registers.
-
-   FIXME: My Intel manual says we should use 0xF800, not 0xFC00.  */
+ * Enable) flag, which causes a debug exception to be generated when a
+ * MOV instruction accesses one of the debug registers.
+ * FIXME: My Intel manual says we should use 0xF800, not 0xFC00.  */
 #define DR_CONTROL_RESERVED     (0xFC00)
 
 #define I386_DR_CONTROL_MASK    (~DR_CONTROL_RESERVED)

@@ -44,7 +44,7 @@ static int fs_io_read(RFSFile *file, ut64 addr, int len) {
 	if (!abs_path) {
 		return -1;
 	}
-	
+
 	char *enc_uri = enbase (abs_path);
 	free (abs_path);
 	char *cmd = r_str_newf ("mg %s 0x%08"PFMT64x" %d", enc_uri, addr, len);
@@ -57,7 +57,7 @@ static int fs_io_read(RFSFile *file, ut64 addr, int len) {
 	if (res) {
 		int encoded_size = strlen (res);
 		if (encoded_size != len * 2) {
-			eprintf ("Unexpected size (%d vs %d)\n", encoded_size, len*2);
+			R_LOG_ERROR ("Unexpected size (%d vs %d)", encoded_size, len * 2);
 			R_FREE (res);
 			return -1;
 		}
@@ -68,7 +68,7 @@ static int fs_io_read(RFSFile *file, ut64 addr, int len) {
 		}
 		int ret = r_hex_str2bin (res, file->data);
 		if (ret != len) {
-			eprintf ("Inconsistent read\n");
+			R_LOG_ERROR ("Inconsistent read");
 			R_FREE (file->data);
 		}
 		R_FREE (res);
@@ -125,7 +125,7 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	return list;
 }
 
-static int fs_io_mount(RFSRoot *root) {
+static bool fs_io_mount(RFSRoot *root) {
 	root->ptr = NULL;
 	return true;
 }

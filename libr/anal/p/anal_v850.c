@@ -1,15 +1,9 @@
-/* radare - LGPL - Copyright 2012-2021 - pancake
-	2014 - Fedor Sakharov <fedor.sakharov@gmail.com> */
+/* radare - MIT - Copyright 2021-2022 - pancake, brainstorm */
 
-#include <string.h>
-#include <r_types.h>
 #include <r_lib.h>
-#include <r_asm.h>
 #include <r_anal.h>
-#include <r_util.h>
-#include <r_endian.h>
-
-#include <v850_disas.h>
+#include "../arch/v850/v850dis.h"
+#include "../arch/v850/v850e0.h"
 
 // Format I
 #define F1_REG1(instr) ((instr) & 0x1F)
@@ -151,50 +145,48 @@ static void update_flags(RAnalOp *op, int flags) {
 
 static void clear_flags(RAnalOp *op, int flags) {
 	if (flags & V850_FLAG_CY) {
-		r_strbuf_append (&op->esil, ",0,cy,=");
+		r_strbuf_append (&op->esil, ",0,cy,:=");
 	}
 	if (flags & V850_FLAG_OV) {
-		r_strbuf_append (&op->esil, ",0,ov,=");
+		r_strbuf_append (&op->esil, ",0,ov,:=");
 	}
 	if (flags & V850_FLAG_S) {
-		r_strbuf_append (&op->esil, ",0,s,=");
+		r_strbuf_append (&op->esil, ",0,s,:=");
 	}
 	if (flags & V850_FLAG_Z) {
-		r_strbuf_append (&op->esil, ",0,z,=");
+		r_strbuf_append (&op->esil, ",0,z,:=");
 	}
 }
 
-static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	int ret = 0;
+static int v850e0_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	ut8 opcode = 0;
 	const char *reg1 = NULL;
 	const char *reg2 = NULL;
 	ut32 bitmask = 0;
 	ut16 destaddr = 0;
 	st16 destaddrs = 0;
-	ut16 word1 = 0, word2 = 0;
-	struct v850_cmd cmd;
+	struct v850_cmd cmd = {0};
 
-	if (len < 1 || (len > 0 && !memcmp (buf, "\xff\xff\xff\xff\xff\xff", R_MIN (len, 6)))) {
+	if (len < 1 || !memcmp (buf, "\xff\xff\xff\xff\xff\xff", R_MIN (len, 6))) {
 		return -1;
 	}
 
-	memset (&cmd, 0, sizeof (cmd));
-
-	ret = op->size = v850_decode_command (buf, len, &cmd);
+	int ret = op->size = v850_decode_command (buf, len, &cmd);
 	if (ret < 1) {
 		return ret;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
-		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		if (R_STR_ISNOTEMPTY (cmd.operands)) {
+			op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
+ 		} else {
+			op->mnemonic = r_str_newf ("%s", cmd.instr);
+		}
 	}
 
 	op->addr = addr;
 
-	word1 = r_read_le16 (buf);
-	if (ret == 4) {
-		word2 = r_read_le16 (buf + 2);
-	}
+	ut16 word1 = r_read_le16 (buf);
+	ut16 word2 = (ret == 4)? r_read_le16 (buf + 2): 0;
 	opcode = get_opcode (word1);
 
 	switch (opcode) {
@@ -246,14 +238,14 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		update_flags (op, V850_FLAG_OV | V850_FLAG_S | V850_FLAG_Z);
 		break;
 	case V850_JMP:
-		if (F1_REG1(word1) == 31) {
+		if (F1_REG1 (word1) == 31) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		} else {
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		}
 		op->jump = word1; // UT64_MAX; // this is n RJMP instruction .. F1_RN1 (word1);
 		op->fail = addr + 2;
-		r_strbuf_appendf (&op->esil, "%s,pc,=", F1_RN1(word1));
+		r_strbuf_appendf (&op->esil, "%s,pc,:=", F1_RN1(word1));
 		break;
 	case V850_JARL2:
 		// TODO: fix displacement reading
@@ -388,7 +380,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		destaddr = ((((word1 >> 4) & 0x7) |
 			((word1 >> 11) << 3)) << 1);
 		if (destaddr & 0x100) {
-			destaddrs = destaddr | 0xFE00;
+			destaddrs = destaddr | 0xfe00;
 		} else {
 			destaddrs = destaddr;
 		}
@@ -397,52 +389,52 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		switch (F3_COND(word1)) {
 		case V850_COND_V:
-			r_strbuf_appendf (&op->esil, "ov");
+			r_strbuf_append (&op->esil, "ov");
 			break;
 		case V850_COND_CL:
-			r_strbuf_appendf (&op->esil, "cy");
+			r_strbuf_append (&op->esil, "cy");
 			break;
 		case V850_COND_ZE:
-			r_strbuf_appendf (&op->esil, "z");
+			r_strbuf_append (&op->esil, "z");
 			break;
 		case V850_COND_NH:
-			r_strbuf_appendf (&op->esil, "cy,z,|");
+			r_strbuf_append (&op->esil, "cy,z,|");
 			break;
 		case V850_COND_N:
-			r_strbuf_appendf (&op->esil, "s");
+			r_strbuf_append (&op->esil, "s");
 			break;
 		case V850_COND_AL: // Always
-			r_strbuf_appendf (&op->esil, "1");
+			r_strbuf_append (&op->esil, "1");
 			break;
 		case V850_COND_LT:
-			r_strbuf_appendf (&op->esil, "s,ov,^");
+			r_strbuf_append (&op->esil, "s,ov,^");
 			break;
 		case V850_COND_LE:
-			r_strbuf_appendf (&op->esil, "s,ov,^,z,|");
+			r_strbuf_append (&op->esil, "s,ov,^,z,|");
 			break;
 		case V850_COND_NV:
-			r_strbuf_appendf (&op->esil, "ov,!");
+			r_strbuf_append (&op->esil, "ov,!");
 			break;
 		case V850_COND_NL:
-			r_strbuf_appendf (&op->esil, "cy,!");
+			r_strbuf_append (&op->esil, "cy,!");
 			break;
 		case V850_COND_NE:
-			r_strbuf_appendf (&op->esil, "z,!");
+			r_strbuf_append (&op->esil, "z,!");
 			break;
 		case V850_COND_H:
-			r_strbuf_appendf (&op->esil, "cy,z,|,!");
+			r_strbuf_append (&op->esil, "cy,z,|,!");
 			break;
 		case V850_COND_P:
-			r_strbuf_appendf (&op->esil, "s,!");
+			r_strbuf_append (&op->esil, "s,!");
 			break;
 		case V850_COND_GE:
-			r_strbuf_appendf (&op->esil, "s,ov,^,!");
+			r_strbuf_append (&op->esil, "s,ov,^,!");
 			break;
 		case V850_COND_GT:
-			r_strbuf_appendf (&op->esil, "s,ov,^,z,|,!");
+			r_strbuf_append (&op->esil, "s,ov,^,z,|,!");
 			break;
 		}
-		r_strbuf_appendf (&op->esil, ",?{,$$,%d,+,pc,=,}", destaddrs);
+		r_strbuf_appendf (&op->esil, ",?{,0x%"PFMT64x",pc,:=,}", op->jump);
 		break;
 	case V850_BIT_MANIP:
 		{
@@ -490,10 +482,109 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	return ret;
 }
 
+// V850NP
+
+#define DEFAULT_CPU_MODEL V850_CPU_E2
+static int cpumodel_from_string(const char *s) {
+	if (R_STR_ISEMPTY (s) || !strcmp (s, "v850")) {
+		return DEFAULT_CPU_MODEL;
+	}
+	if (!strcmp (s, "all")) {
+		return V850_CPU_ALL;
+	}
+	if (!strcmp (s, "e2v3")) {
+		return V850_CPU_E2V3;
+	}
+	if (!strcmp (s, "e3v5")) {
+		return V850_CPU_E3V5;
+	}
+	if (!strcmp (s, "e2")) {
+		return V850_CPU_E2;
+	}
+	if (!strcmp (s, "e1")) {
+		return V850_CPU_E1;
+	}
+	if (!strcmp (s, "e0")) {
+		return V850_CPU_E0;
+	}
+	if (!strcmp (s, "e")) {
+		return V850_CPU_E;
+	}
+	if (!strcmp (s, "0")) {
+		return V850_CPU_0;
+	}
+	int num = r_num_get (NULL, s);
+	return num? num: DEFAULT_CPU_MODEL;
+}
+
+static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+	int cpumodel = cpumodel_from_string (anal->config->cpu);
+	if (cpumodel == V850_CPU_E0) {
+		return v850e0_op (anal, op, addr, buf, len, mask);
+	}
+#if 0
+	cpumodel |= V850_CPU_OPTION_ALIAS;
+	cpumodel |= V850_CPU_OPTION_EXTENSION;
+#endif
+	v850np_inst inst = {0};
+	op->size = v850np_disasm (&inst, cpumodel, addr, buf, len);
+	if (op->size < 2) {
+		op->size = 2;
+	}
+	if (mask & R_ARCH_OP_MASK_ESIL) {
+		r_strbuf_set (&op->esil, inst.esil);
+	}
+	if (inst.op) {
+		op->type = inst.op->type;
+		op->family = inst.op->family;
+		if (len >= 2 && !memcmp (buf, "\x7f\x00", 2)) {
+			op->type = R_ANAL_OP_TYPE_RET;
+		}
+	}
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_MOV:
+		op->val = inst.value;
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+	case R_ANAL_OP_TYPE_LOAD:
+		op->ptr = inst.value;
+		break;
+	case R_ANAL_OP_TYPE_JMP:
+		op->jump = addr + inst.value;
+		break;
+	case R_ANAL_OP_TYPE_CJMP:
+		op->jump = addr + inst.value;
+		op->fail = addr + inst.size;
+		break;
+	case R_ANAL_OP_TYPE_POP:
+		if (inst.op && strstr (inst.op->esil, "#2")) {
+			op->type = R_ANAL_OP_TYPE_RET;
+		}
+		break;
+	case R_ANAL_OP_TYPE_CALL:
+		op->jump = addr + inst.value;
+		op->fail = addr + inst.size;
+		break;
+	}
+	op->size = inst.size;
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		if (anal->config->syntax == R_ARCH_SYNTAX_ATT) {
+			op->mnemonic = r_str_replace (inst.text, "[r", "[%r", -1);
+			op->mnemonic = r_str_replace (op->mnemonic, " r", " %r", -1);
+			op->mnemonic = r_str_replace (op->mnemonic, "(r", "(%r", -1);
+		} else {
+			op->mnemonic = inst.text;
+		}
+	} else {
+		free (inst.text);
+	}
+	return inst.size;
+}
+
 static char *get_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
-		"=SP	r3\n"
+		"=SP	sp\n"
 		"=BP	ep\n"
 		"=SN	r1\n"
 		"=ZF	z\n"
@@ -506,13 +597,13 @@ static char *get_reg_profile(RAnal *anal) {
 		"=OF	ov\n"
 		"=CF	cy\n"
 
-		"gpr	r0	.32	?   0\n" // r0' is always zero
+		"gpr	r0	.32	?   0\n"
 		"gpr	r1	.32	4   0\n"
 		"gpr	r2	.32	8   0\n"
-		"gpr	r3	.32	12  0\n"
 		"gpr	sp	.32	12  0\n"
-		"gpr	r4	.32	16  0\n"
+		"gpr	r3	.32	12  0\n"
 		"gpr	gp	.32	16  0\n"
+		"gpr	r4	.32	16  0\n"
 		"gpr	r5	.32	20  0\n"
 		"gpr	tp	.32	20  0\n"
 		"gpr	r6	.32	24  0\n"
@@ -551,10 +642,42 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	epi  .1 132.17 0\n" // exception processing interrupt
 		"gpr	id   .1 132.18 0\n" // :? should be id
 		"gpr	sat  .1 132.19 0\n" // saturation detection
-		"flg	cy  .1 132.28 0\n" // carry or borrow
-		"flg	ov  .1 132.29 0\n" // overflow
-		"flg	s   .1 132.30 0\n" // signed result
-		"flg	z   .1 132.31 0\n"; // zero result
+		"flg	cy  .1 132.28 0 carry\n" // carry or borrow
+		"flg	ov  .1 132.29 0 overflow\n" // overflow
+		"flg	s   .1 132.30 0 sign\n" // signed result
+		"flg	z   .1 132.31 0 zero\n" // zero result
+
+		"gpr	eipc	.32	$	0\n"
+		"gpr	eipsw	.32	$	0\n"
+		"gpr	fepc	.32	$	0\n"
+		"gpr	fepsw	.32	$	0\n"
+		"gpr	ecr	.32	$	0\n"
+		"gpr	sr6	.32	$	0\n"
+		"gpr	sr7	.32	$	0\n"
+		"gpr	sr8	.32	$	0\n"
+		"gpr	sr9	.32	$	0\n"
+		"gpr	sr10	.32	$	0\n"
+		"gpr	sr11	.32	$	0\n"
+		"gpr	sr12	.32	$	0\n"
+		"gpr	eiic	.32	$	0\n"
+		"gpr	feic	.32	$	0\n"
+		"gpr	dbic	.32	$	0\n"
+		"gpr	ctpc	.32	$	0\n"
+		"gpr	ctpcw	.32	$	0\n"
+		"gpr	dbpc	.32	$	0\n"
+		"gpr	dbpsw	.32	$	0\n"
+		"gpr	ctbp	.32	$	0\n"
+		"gpr	dir	.32	$	0\n"
+		"gpr	bpc	.32	$	0\n"
+		"gpr	asid	.32	$	0\n"
+		"gpr	bpav	.32	$	0\n"
+		"gpr	bpam	.32	$	0\n"
+		"gpr	bpdv	.32	$	0\n"
+		"gpr	bpdm	.32	$	0\n"
+		"gpr	eiwr	.32	$	0\n"
+		"gpr	fewr	.32	$	0\n"
+		"gpr	dbwr	.32	$	0\n"
+		"gpr	bsel	.32	$	0\n";
 	return strdup (p);
 }
 
@@ -579,14 +702,25 @@ static int archinfo(RAnal *anal, int q) {
 	return 0;
 }
 
+static int v850_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *buf, int len) {
+	r_return_val_if_fail (anal && s && buf && len >= 0, -1);
+	if (!strcmp (s, "nop")) {
+		memset (buf, 0, R_MIN (len, 2));
+		return 2;
+	}
+	return 0;
+}
+
 RAnalPlugin r_anal_plugin_v850 = {
 	.name = "v850",
 	.desc = "V850 code analysis plugin",
-	.license = "LGPL3",
+	.license = "MIT",
 	.preludes = anal_preludes,
+	.cpus = "e0,0,e,e1,e2,e2v3,e3v5,all",
 	.arch = "v850",
 	.bits = 32,
 	.op = v850_op,
+	.opasm = v850_opasm,
 	.esil = true,
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,

@@ -19,6 +19,7 @@ iorw     false
 block    0x100
 type     EXEC (Executable file)
 arch     v850
+cpu      e1
 baddr    0x100000
 binsz    973677
 bintype  elf
@@ -26,6 +27,7 @@ bits     32
 canary   false
 class    ELF32
 compiler GCC: (GNU) 9.3.0
+flags    0xf0100000
 crypto   false
 endian   little
 havecode true
@@ -44,8 +46,8 @@ static   true
 stripped false
 subsys   linux
 va       true
-            0x00100004      3506ffff       movea 0xffff, r21, r0
-            0x00100008      0000           mov r0, r0
-            0x0010000a      23060000       movea 0x0, r3, r0
+            0x00100004      3506ffff0000   mov 0xffff, r21
+            0x0010000a      230600002000   mov loc._stack, sp
+            0x00100010      3e06bc7d1100   mov obj.__impure_ptr, ep
 EOF
 RUN

@@ -181,76 +181,6 @@ typedef struct {
 	mach_msg_type_number_t count;
 } coredump_thread_state_flavor_t;
 
-#if defined (__ppc__)
-
-static coredump_thread_state_flavor_t
-thread_flavor_array[] = {
-	{ PPC_THREAD_STATE,	PPC_THREAD_STATE_COUNT },
-	{ PPC_FLOAT_STATE, PPC_FLOAT_STATE_COUNT },
-	{ PPC_EXCEPTION_STATE, PPC_EXCEPTION_STATE_COUNT },
-	{ PPC_VECTOR_STATE,	PPC_VECTOR_STATE_COUNT },
-};
-
-static int coredump_nflavors = 4;
-
-#elif defined (__ppc64__)
-
-coredump_thread_state_flavor_t
-thread_flavor_array[] = {
-	{ PPC_THREAD_STATE64, PPC_THREAD_STATE64_COUNT },
-	{ PPC_FLOAT_STATE, PPC_FLOAT_STATE_COUNT },
-	{ PPC_EXCEPTION_STATE64, PPC_EXCEPTION_STATE64_COUNT },
-	{ PPC_VECTOR_STATE,	PPC_VECTOR_STATE_COUNT },
-};
-
-static int coredump_nflavors = 4;
-
-#elif defined (__i386__)
-
-static coredump_thread_state_flavor_t
-thread_flavor_array[] = {
-	{ x86_THREAD_STATE32, x86_THREAD_STATE32_COUNT },
-	{ x86_FLOAT_STATE32, x86_FLOAT_STATE32_COUNT },
-	{ x86_EXCEPTION_STATE32, x86_EXCEPTION_STATE32_COUNT },
-};
-
-static int coredump_nflavors = 3;
-
-#elif defined (__x86_64__)
-
-static coredump_thread_state_flavor_t
-thread_flavor_array[] = {
-	{ x86_THREAD_STATE64, x86_THREAD_STATE64_COUNT },
-	{ x86_FLOAT_STATE64, x86_FLOAT_STATE64_COUNT },
-	{ x86_EXCEPTION_STATE64, x86_EXCEPTION_STATE64_COUNT },
-};
-
-static int coredump_nflavors = 3;
-
-#elif defined (__aarch64__) || defined (__arm64__)
-
-static coredump_thread_state_flavor_t
-thread_flavor_array[] = {
-	{ ARM_UNIFIED_THREAD_STATE, ARM_UNIFIED_THREAD_STATE_COUNT}
-};
-
-static int coredump_nflavors = 1;
-
-#elif defined (__arm__)
-
-static coredump_thread_state_flavor_t
-thread_flavor_array[] = {
-	{ ARM_THREAD_STATE64, ARM_THREAD_STATE64_COUNT }
-};
-
-static int coredump_nflavors = 1;
-
-#else
-// XXX: Add __arm__ for iOS devices?
-#warning Unsupported architecture
-
-#endif
-
 #define MAX_TSTATE_FLAVORS 10
 #define DEFAULT_COREFILE_DEST "core.%u"
 #define R_DEBUG_REASON_MACH_RCV_INTERRUPTED -2
@@ -266,8 +196,8 @@ task_t pid_to_task (int pid);
 int xnu_get_vmmap_entries_for_pid (pid_t pid);
 char *xnu_corefile_default_location(void);
 bool xnu_generate_corefile(RDebug *dbg, RBuffer *dest);
-int xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
-int xnu_reg_write(RDebug *dgb, int type, const ut8 *buf, int size);
+bool xnu_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
+bool xnu_reg_write(RDebug *dgb, int type, const ut8 *buf, int size);
 char *xnu_reg_profile (RDebug *dbg);
 bool xnu_attach(RDebug *dbg, int pid);
 bool xnu_step(RDebug *dbg);

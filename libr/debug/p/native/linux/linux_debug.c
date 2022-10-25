@@ -464,14 +464,14 @@ static void linux_dbg_wait_break_main(RDebug *dbg) {
 	// in another process group.
 	if (dpgid != tpgid) {
 		if (!linux_kill_thread (dbg->pid, SIGINT)) {
-			eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
+			R_LOG_ERROR ("Could not interrupt pid (%d)", dbg->pid);
 		}
 	}
 }
 
 static void linux_dbg_wait_break(RDebug *dbg) {
 	if (!linux_kill_thread (dbg->pid, SIGINT)) {
-		eprintf ("Could not interrupt pid (%d)\n", dbg->pid);
+		R_LOG_ERROR ("Could not interrupt pid (%d)", dbg->pid);
 	}
 }
 
@@ -670,13 +670,13 @@ static bool linux_attach_single_pid(RDebug *dbg, int pid) {
 		// Make sure SIGSTOP is delivered and wait for it since we can't affect the pid
 		// until it hits SIGSTOP.
 		if (!linux_stop_thread (dbg, pid)) {
-			eprintf ("Could not stop pid (%d)\n", pid);
+			R_LOG_ERROR ("Could not stop pid (%d)", pid);
 			return false;
 		}
 	}
 
 	if (!linux_set_options (dbg, pid)) {
-		eprintf("failed set_options on %d\n", pid);
+		R_LOG_ERROR("failed set_options on %d", pid);
 		return false;
 	}
 	dbg->pid = pid;
@@ -922,7 +922,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 #define MAXPID 99999
 		/* otherwise, brute force the pids */
 		for (i = pid; i < MAXPID; i++) { // XXX
-			if (procfs_pid_slurp (i, "status", buf, sizeof(buf)) == -1) {
+			if (procfs_pid_slurp (i, "status", buf, sizeof (buf)) == -1) {
 				continue;
 			}
 			int uid = 0;
@@ -940,9 +940,9 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 					continue;
 				}
 
-				if (procfs_pid_slurp (i, "comm", buf, sizeof(buf)) == -1) {
+				if (procfs_pid_slurp (i, "comm", buf, sizeof (buf)) == -1) {
 					/* fall back to auto-id */
-					snprintf (buf, sizeof(buf), "thread_%d", thid++);
+					snprintf (buf, sizeof (buf), "thread_%d", thid++);
 				}
 				r_list_append (list, r_debug_pid_new (buf, i, uid, 's', 0));
 			}
@@ -970,7 +970,11 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 	r_cons_printf ("foo = 0x%04lx          \n", (fpregs).foo);\
 	r_cons_printf ("fos = 0x%04lx              ", (fpregs).fos)
 
-static void print_fpu(void *f){
+static void print_fpu(void *f) {
+	if (!f) {
+		R_LOG_WARN ("getfpregs not implemented");
+		return;
+	}
 #if __x86_64__
 	int i,j;
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
@@ -1027,7 +1031,7 @@ static void print_fpu(void *f){
 	r_cons_printf ("foo = 0x%08x\n", (ut32)fpxregs.foo);
 	r_cons_printf ("fos = 0x%08x\n", (ut32)fpxregs.fos);
 	r_cons_printf ("mxcsr = 0x%08x\n", (ut32)fpxregs.mxcsr);
-	for(i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) {
 		ut32 *a = (ut32*)(&fpxregs.xmm_space);
 		ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
 		ut32 *c = (ut32*)&fpxregs.st_space;
@@ -1046,7 +1050,7 @@ static void print_fpu(void *f){
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct *)f;
 	r_cons_printf ("---- x86-32-noxmm ----\n");
 	PRINT_FPU_NOXMM (fpregs);
-	for(i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) {
 		ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
 		double *d = (double*)b;
 		ut32 *c = (ut32*)&fpregs.st_space;
@@ -1062,13 +1066,13 @@ static void print_fpu(void *f){
 #endif
 }
 
-int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	bool showfpu = false;
 	int pid = dbg->tid;
 	if (pid == -1) {
 		if (dbg->pid == -1) {
-			eprintf ("linux_reg_read: Invalid pid %d\n", pid);
-			return 0;
+			R_LOG_ERROR ("Invalid pid %d", pid);
+			return false;
 		}
 		pid = dbg->pid;
 	}
@@ -1092,8 +1096,8 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			}
 			long ret = r_debug_ptrace (dbg, PTRACE_PEEKUSER, pid,
 					(void *)r_offsetof (struct user, u_debugreg[i]), 0);
-			if ((i+1) * sizeof (ret) > size) {
-				eprintf ("linux_reg_get: Buffer too small %d\n", size);
+			if ((i + 1) * sizeof (ret) > size) {
+				R_LOG_ERROR ("Buffer of %d is too small for ptrace.peekuser", size);
 				break;
 			}
 			memcpy (buf + (i * sizeof (ret)), &ret, sizeof (ret));
@@ -1110,10 +1114,8 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	case R_REG_TYPE_FPU:
 	case R_REG_TYPE_MMX:
 	case R_REG_TYPE_XMM:
-#if __POWERPC__
-		return false;
-#elif __x86_64__ || __i386__
 		{
+#if __x86_64__ || __i386__
 		struct user_fpregs_struct fpregs;
 		if (type == R_REG_TYPE_FPU) {
 #if __x86_64__
@@ -1167,10 +1169,14 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #endif // !__ANDROID__
 #endif // __i386__
 		}
-		}
+		return size;
 #else
+		if (showfpu) {
+			print_fpu (NULL);
+		}
 	#warning getfpregs not implemented for this platform
 #endif
+		}
 		break;
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:
@@ -1184,7 +1190,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				.iov_base = &regs,
 				.iov_len = sizeof (regs)
 			};
-			ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (size_t)1, &io);
+			ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)(size_t)1, &io);
 			// ret = ptrace (PTRACE_GETREGSET, pid, (void*)(size_t)(NT_PRSTATUS), NULL); // &io);
 #elif __BSD__ && (__POWERPC__ || __sparc__)
 			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
@@ -1214,7 +1220,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		struct _xstate xstate;
 		struct iovec iov = {};
 		iov.iov_base = &xstate;
-		iov.iov_len = sizeof(struct _xstate);
+		iov.iov_len = sizeof (struct _xstate);
 		ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)NT_X86_XSTATE, &iov);
 		if (errno == ENODEV) {
 			// ignore ENODEV, it just means this CPU or kernel doesn't support XSTATE
@@ -1229,7 +1235,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		// stitch together xstate.fpstate._xmm and xstate.ymmh assuming LE
 		int ri,rj;
 		for (ri = 0; ri < 16; ri++)	{
-			for (rj=0; rj < 4; rj++)	{
+			for (rj = 0; rj < 4; rj++)	{
 #ifdef __ANDROID__
 				ymm_space[ri*8+rj] = ((struct _libc_fpstate*) &xstate.fpstate)->_xmm[ri].element[rj];
 #else
@@ -1251,7 +1257,7 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	return false;
 }
 
-int linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+bool linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	int pid = dbg->tid;
 
 	if (type == R_REG_TYPE_DRX) {
@@ -1264,7 +1270,7 @@ int linux_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 			}
 			if (r_debug_ptrace (dbg, PTRACE_POKEUSER, pid,
 					(void *)r_offsetof (struct user, u_debugreg[i]), (r_ptrace_data_t)val[i])) {
-				eprintf ("ptrace error for dr %d\n", i);
+				R_LOG_ERROR ("ptrace failed for dr %d", i);
 				r_sys_perror ("ptrace POKEUSER");
 			}
 		}

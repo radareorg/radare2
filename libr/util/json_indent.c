@@ -2,6 +2,7 @@
 
 #include <r_util.h>
 
+#define MAX_JSON_INDENT 128
 
 static void doIndent(int idt, char** o, const char *tab) {
 	int i;
@@ -41,10 +42,9 @@ static const char *origColors[] = {
 
 R_API char* r_print_json_path(const char* s, int pos) {
 	int indent = 0;
-#define DSZ 128
-	const char *words[DSZ] = { NULL };
-	int lengths[DSZ] = {0};
-	int indexs[DSZ] = {0};
+	const char *words[MAX_JSON_INDENT] = { NULL };
+	int lengths[MAX_JSON_INDENT] = {0};
+	int indexs[MAX_JSON_INDENT] = {0};
 	int instr = 0;
 	bool isarr = false;
 	if (!s) {
@@ -66,7 +66,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 				if (cur > pos) {
 					break;
 				}
-				if (indent < DSZ) {
+				if (indent < MAX_JSON_INDENT) {
 					words[indent - 1] = str_a;
 					lengths[indent - 1] = s - str_a;
 					indexs[indent - 1] = 0;
@@ -88,7 +88,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 		case ',':
 			if (isarr) {
 				arrpos ++;
-				if (indent < DSZ) {
+				if (indent < MAX_JSON_INDENT) {
 					indexs[indent - 1] = arrpos;
 					lengths[indent - 1] = (s - os);
 				}
@@ -100,8 +100,8 @@ R_API char* r_print_json_path(const char* s, int pos) {
 				isarr = true;
 				arrpos = 0;
 			}
-			if (indent > 128) {
-				eprintf ("JSON indentation is too deep\n");
+			if (indent > MAX_JSON_INDENT) {
+				R_LOG_ERROR ("JSON indentation is too deep");
 				indent = 0;
 			} else {
 				indent++;
@@ -118,8 +118,8 @@ R_API char* r_print_json_path(const char* s, int pos) {
 	}
 	int i;
 	ut64 opos = 0;
-	for (i = 0; i < DSZ && i < indent; i++) {
-		if ((int)(size_t)words[i] < DSZ) {
+	for (i = 0; i < MAX_JSON_INDENT && i < indent; i++) {
+		if ((int)(size_t)words[i] < MAX_JSON_INDENT) {
 			ut64 cur = lengths[i];
 			if (cur < opos) {
 				continue;
@@ -227,8 +227,8 @@ R_API char* r_print_json_human(const char* s) {
 			if (indent > 0) {
 				*o++ = (indent != -1)? '\n': ' ';
 			}
-			if (indent > 128) {
-				eprintf ("JSON indentation is too deep\n");
+			if (indent > MAX_JSON_INDENT) {
+				R_LOG_ERROR ("JSON indentation is too deep");
 				indent = 0;
 			} else {
 				indent++;
@@ -347,8 +347,8 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab, cons
 			isValue = false;
 			*o++ = *s;
 			*o++ = (indent != -1)? '\n': ' ';
-			if (indent > 128) {
-				eprintf ("JSON indentation is too deep\n");
+			if (indent > MAX_JSON_INDENT) {
+				R_LOG_ERROR ("JSON indentation is too deep");
 				indent = 0;
 			} else {
 				indent++;

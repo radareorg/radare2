@@ -211,8 +211,8 @@ static void _6502_anal_esil_inc_reg(RAnalOp *op, ut8 data0, char* sign) {
 }
 
 static void _6502_anal_esil_mov(RAnalOp *op, ut8 data0) {
-	const char* src="unk";
-	const char* dst="unk";
+	const char* src = "unk";
+	const char* dst = "unk";
 	switch(data0) {
 	case 0xaa: // tax
 		src="a";
@@ -253,7 +253,7 @@ static void _6502_anal_esil_mov(RAnalOp *op, ut8 data0) {
 static void _6502_anal_esil_push(RAnalOp *op, ut8 data0) {
 	// case 0x08: // php
 	// case 0x48: // pha
-	char *reg = (data0==0x08) ? "flags" : "a";
+	char *reg = (data0 == 0x08) ? "flags" : "a";
 	// stack is on page one: sp + 0x100
 	r_strbuf_setf (&op->esil, "%s,sp,0x100,+,=[1],sp,--=", reg);
 }
@@ -261,7 +261,7 @@ static void _6502_anal_esil_push(RAnalOp *op, ut8 data0) {
 static void _6502_anal_esil_pop(RAnalOp *op, ut8 data0) {
 	// case 0x28: // plp
 	// case 0x68: // pla
-	char *reg = (data0==0x28) ? "flags" : "a";
+	char *reg = (data0 == 0x28) ? "flags" : "a";
 	// stack is on page one: sp + 0x100
 	r_strbuf_setf (&op->esil, "sp,++=,sp,0x100,+,[1],%s,=", reg);
 
@@ -271,7 +271,7 @@ static void _6502_anal_esil_pop(RAnalOp *op, ut8 data0) {
 }
 
 static void _6502_anal_esil_flags(RAnalOp *op, ut8 data0) {
-	int enabled=0;
+	int enabled = 0;
 	char flag ='u';
 	switch(data0) {
 	case 0x78: // sei
@@ -314,7 +314,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return -1;
 	}
 
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		(void) _6502Disass (addr, op, data, len);
 	}
 
@@ -441,7 +441,8 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_SWI;
 		// override 65816 code which seems to be wrong: size is 1, but pc = pc + 2
 		op->size = 1;
-		// PC + 2 to Stack, P to Stack  B=1 D=0 I=1. "B" is not a flag. Only its bit is pushed on the stack
+		// PC + 2 to Stack, P to Stack  B=1 D=0 I=1. "B" is not a flag.
+		// Only its bit is pushed on the stack
 		// PC was already incremented by one at this point. Needs to incremented once more
 		// New PC is Interrupt Vector: $fffe. (FIXME: Confirm this is valid for all 6502)
 		r_strbuf_set (&op->esil, ",1,I,=,0,D,=,flags,0x10,|,0x100,sp,+,=[1],pc,1,+,0xfe,sp,+,=[2],3,sp,-=,0xfffe,[2],pc,=");

@@ -182,7 +182,7 @@ R_API void r_cons_canvas_clear(RConsCanvas *c) {
 R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	bool ret = true;
 	if (!c) {
-		return 0;
+		return false;
 	}
 	y += c->sy;
 	x += c->sx;
@@ -236,11 +236,11 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	if (!c->b) {
 		goto beach;
 	}
-	c->blen = malloc (sizeof *c->blen * h);
+	c->blen = malloc ((sizeof *c->blen) * h);
 	if (!c->blen) {
 		goto beach;
 	}
-	c->bsize = malloc (sizeof *c->bsize * h);
+	c->bsize = malloc ((sizeof *c->bsize) * h);
 	if (!c->bsize) {
 		goto beach;
 	}
@@ -346,7 +346,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 	c->x = orig_x;
 }
 
-R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
+R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
 	r_return_val_if_fail (c, NULL);
 
 	int x, y, olen = 0, attr_x = 0;
@@ -406,7 +406,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 }
 
 R_API void r_cons_canvas_print_region(RConsCanvas *c) {
-	char *o = r_cons_canvas_to_string (c);
+	char *o = r_cons_canvas_tostring (c);
 	if (o) {
 		r_str_trim_tail (o);
 		if (*o) {
@@ -417,7 +417,7 @@ R_API void r_cons_canvas_print_region(RConsCanvas *c) {
 }
 
 R_API void r_cons_canvas_print(RConsCanvas *c) {
-	char *o = r_cons_canvas_to_string (c);
+	char *o = r_cons_canvas_tostring (c);
 	if (o) {
 		r_cons_strcat (o);
 		free (o);
@@ -429,13 +429,13 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	if (!c || w < 0 || h <= 0) {
 		return false;
 	}
-	int *newblen = realloc (c->blen, sizeof (*c->blen) * h);
+	int *newblen = realloc (c->blen, sizeof (int) * h);
 	if (!newblen) {
 		r_cons_canvas_free (c);
 		return false;
 	}
 	c->blen = newblen;
-	int *newbsize = realloc (c->bsize, sizeof (*c->bsize) * h);
+	int *newbsize = realloc (c->bsize, sizeof (int) * h);
 	if (!newbsize) {
 		r_cons_canvas_free (c);
 		return false;
@@ -457,6 +457,9 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	for (i = 0; i < h; i++) {
 		if (i < c->h) {
 			newline = realloc (c->b[i], sizeof (*c->b[i]) * (w + 1));
+			if (newline) {
+				c->b[i] = newline;
+			}
 		} else {
 			newline = malloc (w + 1);
 		}

@@ -72,7 +72,16 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 }
 
 R_API bool r_anal_cc_once(RAnal *anal) {
-	return sdb_add (DB, "warn", "once", 0);
+	R_CRITICAL_ENTER (anal);
+	bool res = sdb_add (DB, "warn", "once", 0);
+	R_CRITICAL_LEAVE (anal);
+	return res;
+}
+
+R_API void r_anal_cc_reset(RAnal *anal) {
+	R_CRITICAL_ENTER (anal);
+	sdb_reset (DB);
+	R_CRITICAL_LEAVE (anal);
 }
 
 R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
@@ -116,13 +125,13 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	int i;
 	// get cc by name and print the expr
 	if (r_str_cmp (sdb_const_get (DB, name, 0), "cc", -1)) {
-		eprintf ("This is not a valid calling convention name (%s)\n", name);
+		R_LOG_ERROR ("This is not a valid calling convention name (%s)", name);
 		return NULL;
 	}
 	r_strf_var (ccret, 128, "cc.%s.ret", name);
 	const char *ret = sdb_const_get (DB, ccret, 0);
 	if (!ret) {
-		eprintf ("Cannot find return type for %s\n", name);
+		R_LOG_ERROR ("Cannot find return type for %s", name);
 		return NULL;
 	}
 	RStrBuf *sb = r_strbuf_new (NULL);
@@ -196,9 +205,12 @@ R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *s
 
 R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
+	R_CRITICAL_ENTER (anal);
 	r_strf_var (query, 64, "cc.%s.error", convention);
 	const char *error = sdb_const_get (DB, query, 0);
-	return error? r_str_constpool_get (&anal->constpool, error): NULL;
+	const char * res = error? r_str_constpool_get (&anal->constpool, error): NULL;
+	R_CRITICAL_LEAVE (anal);
+	return res;
 }
 
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error) {
@@ -214,15 +226,12 @@ R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	int i = 0;
 	r_return_val_if_fail (anal && DB && cc, 0);
-	static R_TH_LOCAL void *oldDB = NULL;
-	static R_TH_LOCAL char *oldCC = NULL;
-	static R_TH_LOCAL int oldArg = 0;
-	if (oldDB == DB && !strcmp (cc, oldCC)) {
-		return oldArg;
+
+	r_strf_var (lastarg, 64, "cc.%s.lastarg", cc);
+	int count = sdb_num_get (DB, lastarg, 0);
+	if (count > 0) {
+		return count;
 	}
-	oldDB = DB;
-	free (oldCC);
-	oldCC = strdup (cc);
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		r_strf_var (query, 64, "cc.%s.arg%d", cc, i);
 		const char *res = sdb_const_get (DB, query, 0);
@@ -230,7 +239,9 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 			break;
 		}
 	}
-	oldArg = i;
+	if (i > 0) {
+		sdb_num_set (DB, lastarg, i, 0);
+	}
 	return i;
 }
 

@@ -22,7 +22,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-
 #include <r_util.h>
 #include <r_util/bplist.h>
 
@@ -116,18 +115,18 @@ static bool parse_uint_node(RBPlist *bplist, const char **bnode, ut8 size) {
 	size = 1 << size; // make length less misleading
 #if 1
 	switch (size) {
-	case sizeof(ut8):
-	case sizeof(ut16):
-	case sizeof(ut32):
-	case sizeof(ut64):
-		// data.length = sizeof(ut64);
+	case sizeof (ut8):
+	case sizeof (ut16):
+	case sizeof (ut32):
+	case sizeof (ut64):
+		// data.length = sizeof (ut64);
 		break;
 	case 16:
 		// data.length = size;
 		break;
 	default:
-		//free(data);
-		eprintf ("%s: Invalid byte size for integer node\n", __func__);
+		// free (data);
+		R_LOG_ERROR ("Invalid byte size for integer node");
 		return false;
 	};
 #endif
@@ -144,16 +143,16 @@ static double parse_real(const char **bnode, ut8 size) {
 	ut8 buf[8] = {0};
 	memcpy (&data, *bnode, sizeof (buf));
 	switch (1 << size) {
-	case sizeof(ut32):
+	case sizeof (ut32):
 		*(ut32*)buf = float_bswap32 (data);
 		realval = *(float *) buf;
 		break;
-	case sizeof(ut64):
+	case sizeof (ut64):
 		*(ut64*)buf = float_bswap64 (data);
 		realval = *(double *) buf;
 		break;
 	default:
-		eprintf ("%s: Invalid byte size for real node\n", __func__);
+		R_LOG_ERROR ("Invalid byte size for real node");
 		return false;
 	}
 	return realval;
@@ -210,7 +209,7 @@ static bool parse_dict_node(RBPlist *bplist, const char** bnode, ut64 size) {
 
 		if ((index1_ptr < bplist->data || index1_ptr + bplist->ref_size > bplist->offset_table) ||
 				(index2_ptr < bplist->data || index2_ptr + bplist->ref_size > bplist->offset_table)) {
-			eprintf ("%s: dict entry %" PRIu64 " is outside of valid range\n", __func__, j);
+			R_LOG_ERROR ("dict entry %" PRIu64 " is outside of valid range", j);
 			return false;
 		}
 
@@ -218,16 +217,16 @@ static bool parse_dict_node(RBPlist *bplist, const char** bnode, ut64 size) {
 		ut64 index2 = UINT_TO_HOST(index2_ptr, bplist->ref_size);
 
 		if (index1 >= bplist->num_objects) {
-			eprintf ("%s: dict entry %" PRIu64 ": key index (%" PRIu64 ") must be smaller than the number of objects (%" PRIu64 ")\n", __func__, j, index1, bplist->num_objects);
+			R_LOG_ERROR ("dict entry %" PRIu64 ": key index (%" PRIu64 ") must be smaller than the number of objects (%" PRIu64 ")", j, index1, bplist->num_objects);
 			return false;
 		}
 		if (index2 >= bplist->num_objects) {
-			eprintf ("%s: dict entry %" PRIu64 ": value index (%" PRIu64 ") must be smaller than the number of objects (%" PRIu64 ")\n", __func__, j, index1, bplist->num_objects);
+			R_LOG_ERROR ("dict entry %" PRIu64 ": value index (%" PRIu64 ") must be smaller than the number of objects (%" PRIu64 ")", j, index1, bplist->num_objects);
 			return false;
 		}
 		/* key */
 		if (!parse_bin_node_at_index (bplist, index1)) {
-			eprintf ("cannot find key\n");
+			R_LOG_ERROR ("cannot find key");
 			return false;
 		}
 		pj_kraw (bplist->pj);
@@ -252,14 +251,14 @@ static bool parse_array_node(RBPlist *bplist, const char** bnode, const ut64 siz
 		const char *index1_ptr = (*bnode) + str_j;
 
 		if (index1_ptr < bplist->data || index1_ptr + bplist->ref_size > bplist->offset_table) {
-			eprintf ("%s: array item %" PRIu64 " is outside of valid range\n", __func__, j);
+			R_LOG_ERROR ("array item %" PRIu64 " is outside of valid range", j);
 			return false;
 		}
 
 		index1 = UINT_TO_HOST(index1_ptr, bplist->ref_size);
 
 		if (index1 >= bplist->num_objects) {
-			eprintf ("%s: array item %" PRIu64 " object index (%" PRIu64 ") must be smaller than the number of objects (%" PRIu64 ")\n", __func__, j, index1, bplist->num_objects);
+			R_LOG_ERROR ("array item %" PRIu64 " object index (%" PRIu64 ") must be smaller than the number of objects (%" PRIu64 ")", j, index1, bplist->num_objects);
 			return false;
 		}
 
@@ -277,7 +276,7 @@ static bool parse_uid_node(RBPlist *bplist, const char **bnode, ut8 size) {
 	size++;
 	long long intval = UINT_TO_HOST (*bnode, size);
 	if (intval > UINT32_MAX) {
-		eprintf ("%s: value %" PRIu64 " too large for UID node (must be <= %u)\n", __func__, (ut64)intval, UINT32_MAX);
+		R_LOG_ERROR ("value %" PRIu64 " too large for UID node (must be <= %u)", (ut64)intval, UINT32_MAX);
 		return false;
 	}
 
@@ -309,13 +308,13 @@ static bool parse_bin_node(RBPlist *bplist, const char** object) {
 			{
 				ut16 next_size = **object & BPLIST_FILL;
 				if ((**object & BPLIST_MASK) != BPLIST_UINT) {
-					eprintf ("%s: invalid size node type for node type 0x%02x: found 0x%02x, expected 0x%02x\n", __func__, type, **object & BPLIST_MASK, BPLIST_UINT);
+					R_LOG_ERROR ("invalid size node type for node type 0x%02x: found 0x%02x, expected 0x%02x", type, **object & BPLIST_MASK, BPLIST_UINT);
 					return false;
 				}
 				(*object)++;
 				next_size = 1 << next_size;
 				if (*object + next_size > bplist->offset_table) {
-					eprintf ("%s: size node data bytes for node type 0x%02x point outside of valid range\n", __func__, type);
+					R_LOG_ERROR ("size node data bytes for node type 0x%02x point outside of valid range", type);
 					return false;
 				}
 				size = UINT_TO_HOST(*object, next_size);
@@ -346,70 +345,70 @@ static bool parse_bin_node(RBPlist *bplist, const char** object) {
 		}
 	case BPLIST_UINT:
 		if (pobject + (ut64)(1 << size) > poffset_table) {
-			eprintf ("%s: BPLIST_UINT data bytes point outside of valid range\n", __func__);
+			R_LOG_ERROR ("BPLIST_UINT data bytes point outside of valid range");
 			return false;
 		}
 		return parse_uint_node (bplist, object, size);
 	case BPLIST_REAL:
 		if (pobject + (ut64)(1 << size) > poffset_table) {
-			eprintf ("%s: BPLIST_REAL data bytes point outside of valid range\n", __func__);
+			R_LOG_ERROR ("BPLIST_REAL data bytes point outside of valid range");
 			return false;
 		}
 		pj_d (bplist->pj, parse_real (object, size));
 		return true;
 	case BPLIST_DATE:
 		if (3 != size) {
-			eprintf ("%s: invalid data size for BPLIST_DATE node\n", __func__);
+			R_LOG_ERROR ("invalid data size for BPLIST_DATE node");
 			return false;
 		}
 		if (pobject + (ut64)(1 << size) > poffset_table) {
-			eprintf ("%s: BPLIST_DATE data bytes point outside of valid range\n", __func__);
+			R_LOG_ERROR ("BPLIST_DATE data bytes point outside of valid range");
 			return false;
 		}
 		return parse_date_node (bplist, object, size);
 	case BPLIST_DATA:
 		if (pobject + size < pobject || pobject + size > poffset_table) {
-			eprintf ("%s: BPLIST_DATA data bytes point outside of valid range\n", __func__);
+			R_LOG_ERROR ("BPLIST_DATA data bytes point outside of valid range");
 			return false;
 		}
 		return parse_data_node (bplist, object, size);
 	case BPLIST_STRING:
 		if (pobject + size < pobject || pobject + size > poffset_table) {
-			eprintf ("%s: BPLIST_STRING data bytes point outside of valid range\n", __func__);
+			R_LOG_ERROR ("BPLIST_STRING data bytes point outside of valid range");
 			return false;
 		}
 		return parse_string_node (bplist, object, size);
 	case BPLIST_UNICODE:
-		if (size*2 < size) {
-			eprintf ("%s: Integer overflow when calculating BPLIST_UNICODE data size.\n", __func__);
+		if (size * 2 < size) {
+			R_LOG_ERROR ("Integer overflow when calculating BPLIST_UNICODE data size");
 			return false;
 		}
 		if (pobject + size*2 < pobject || pobject + size*2 > poffset_table) {
-			eprintf ("%s: BPLIST_UNICODE data bytes point outside of valid range\n", __func__);
+			R_LOG_ERROR ("BPLIST_UNICODE data bytes point outside of valid range");
 			return false;
 		}
 		return parse_unicode_node (bplist, object, size);
 	case BPLIST_SET:
 	case BPLIST_ARRAY:
 		if (pobject + size < pobject || pobject + size > poffset_table) {
-			eprintf ("%s: BPLIST_ARRAY data bytes point outside of valid range\n", __func__);
+			R_LOG_ERROR ("BPLIST_ARRAY data bytes point outside of valid range");
 			return false;
 		}
 		return parse_array_node(bplist, object, size);
 	case BPLIST_UID:
 		if (pobject + size + 1 > poffset_table) {
-			eprintf ("%s: BPLIST_UID data bytes point outside of valid range\n", __func__);
+			R_LOG_ERROR ("BPLIST_UID data bytes point outside of valid range");
 			return false;
 		}
 		return parse_uid_node (bplist, object, size);
 	case BPLIST_DICT:
 		if (pobject + size < pobject || pobject + size > poffset_table) {
-			eprintf ("%s: BPLIST_DICT data bytes point outside of valid range\n", __func__);
+			R_LOG_ERROR ("BPLIST_DICT data bytes point outside of valid range");
 			return false;
 		}
 		return parse_dict_node (bplist, object, size);
 	default:
-		eprintf ("%s: unexpected node type 0x%02x\n", __func__, type);
+		R_LOG_ERROR ("unexpected node type 0x%02x", type);
 		return false;
 	}
 	return true;
@@ -417,20 +416,20 @@ static bool parse_bin_node(RBPlist *bplist, const char** object) {
 
 static bool parse_bin_node_at_index(RBPlist *bplist, ut32 node_index) {
 	if (node_index >= bplist->num_objects) {
-		eprintf ("node index (%u) must be smaller than the number of objects (%" PRIu64 ")\n", node_index, bplist->num_objects);
+		R_LOG_ERROR ("node index (%u) must be smaller than the number of objects (%" PRIu64 ")", node_index, bplist->num_objects);
 		return false;
 	}
 	const char *idx_ptr = bplist->offset_table + node_index * bplist->offset_size;
 	if (idx_ptr < bplist->offset_table ||
 			idx_ptr >= bplist->offset_table + bplist->num_objects * bplist->offset_size) {
-		eprintf ("node index %u points outside of valid range\n", node_index);
+		R_LOG_ERROR ("node index %u points outside of valid range", node_index);
 		return false;
 	}
 
 	const char* ptr = bplist->data + UINT_TO_HOST(idx_ptr, bplist->offset_size);
 	/* make sure the node offset is in a sane range */
 	if ((ptr < bplist->data) || (ptr >= bplist->offset_table)) {
-		eprintf ("offset for node index %u points outside of valid range\n", node_index);
+		R_LOG_ERROR ("offset for node index %u points outside of valid range", node_index);
 		return false;
 	}
 	/* finally parse node */
@@ -448,12 +447,12 @@ R_API bool r_bplist_parse(PJ *pj, const ut8 *data, size_t data_len) {
 	}
 
 	if (data_len < BPLIST_MAGIC_SIZE + BPLIST_VERSION_SIZE + sizeof (BPlistTrailer)) {
-		eprintf ("plist data is to small to hold a binary plist\n");
+		R_LOG_ERROR ("plist data is to small to hold a binary plist");
 		return false;
 	}
 	// check version
 	if (memcmp (data + BPLIST_MAGIC_SIZE, BPLIST_VERSION, BPLIST_VERSION_SIZE)) {
-		eprintf ("unsupported binary plist version '%.2s\n", data+BPLIST_MAGIC_SIZE);
+		R_LOG_ERROR ("unsupported binary plist version '%.2s", data+BPLIST_MAGIC_SIZE);
 		return false;
 	}
 
@@ -469,37 +468,32 @@ R_API bool r_bplist_parse(PJ *pj, const ut8 *data, size_t data_len) {
 	const ut8 *offset_table = (ut8 *)(data + be64toh (trailer->offset_table_offset));
 
 	if (num_objects == 0) {
-		eprintf ("number of objects must be larger than 0\n");
+		R_LOG_ERROR ("number of objects must be larger than 0");
 		return false;
 	}
-
 	if (offset_size == 0) {
-		eprintf ("offset size in trailer must be larger than 0\n");
+		R_LOG_ERROR ("offset size in trailer must be larger than 0");
 		return false;
 	}
-
 	if (ref_size == 0) {
-		eprintf ("object reference size in trailer must be larger than 0\n");
+		R_LOG_ERROR ("object reference size in trailer must be larger than 0");
 		return false;
 	}
-
 	if (root_object >= num_objects) {
-		eprintf ("root object index (%" PRIu64 ") must be smaller than number of objects (%" PRIu64 ")\n", root_object, num_objects);
+		R_LOG_ERROR ("root object index (%" PRIu64 ") must be smaller than number of objects (%" PRIu64 ")", root_object, num_objects);
 		return false;
 	}
-
 	if (offset_table < start_data || offset_table >= end_data) {
-		eprintf ("offset table offset points outside of valid range\n");
+		R_LOG_ERROR ("offset table offset points outside of valid range");
 		return false;
 	}
-
 	if (UT64_MUL_OVFCHK (num_objects, offset_size)) {
-		eprintf ("integer overflow when calculating offset table size\n");
+		R_LOG_ERROR ("integer overflow when calculating offset table size");
 		return false;
 	}
 	ut64 offset_table_size = num_objects * offset_size;
 	if (offset_table_size > (ut64)(end_data - offset_table)) {
-		eprintf ("offset table points outside of valid range\n");
+		R_LOG_ERROR ("offset table points outside of valid range");
 		return false;
 	}
 

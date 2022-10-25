@@ -22,12 +22,12 @@ static int iscallret(RDebug *dbg, ut64 addr) {
 	} else {
 		RAnalOp op;
 		(void) dbg->iob.read_at (dbg->iob.io, addr-8, buf, 8);
-		(void) r_anal_op (dbg->anal, &op, addr-8, buf, 8, R_ANAL_OP_MASK_BASIC);
+		(void) r_anal_op (dbg->anal, &op, addr-8, buf, 8, R_ARCH_OP_MASK_BASIC);
 		if (op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL) {
 			return 1;
 		}
 		/* delay slot */
-		(void) r_anal_op (dbg->anal, &op, addr-4, buf, 4, R_ANAL_OP_MASK_BASIC);
+		(void) r_anal_op (dbg->anal, &op, addr-4, buf, 4, R_ARCH_OP_MASK_BASIC);
 		if (op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL) {
 			return 1;
 		}
@@ -49,18 +49,21 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 
 	stacksize = 1024*512; // 512KB .. should get the size from the regions if possible
 	stack = malloc (stacksize);
+	if (!stack) {
+		return NULL;
+	}
 	if (at == UT64_MAX) {
 		RRegItem *ri;
 		RReg *reg = dbg->reg;
 		const char *spname = r_reg_get_name (reg, R_REG_NAME_SP);
 		if (!spname) {
-			eprintf ("Cannot find stack pointer register\n");
+			R_LOG_ERROR ("Cannot find stack pointer register");
 			free (stack);
 			return NULL;
 		}
 		ri = r_reg_get (reg, spname, R_REG_TYPE_GPR);
 		if (!ri) {
-			eprintf ("Cannot find stack pointer register\n");
+			R_LOG_ERROR ("Cannot find stack pointer register");
 			free (stack);
 			return NULL;
 		}
@@ -74,7 +77,7 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 	cursp = oldsp = sp;
 	(void)bio->read_at (bio->io, sp, stack, stacksize);
 	ptr = stack;
-	for (i=0; i<dbg->btdepth; i++) {
+	for (i = 0; i < dbg->btdepth; i++) {
 		p64 = (ut64*)ptr;
 		p32 = (ut32*)ptr;
 		p16 = (ut16*)ptr;
@@ -83,8 +86,9 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 		case 4: addr = *p32; break;
 		case 2: addr = *p16; break;
 		default:
-			eprintf ("Invalid word size with asm.bits\n");
+			R_LOG_ERROR ("Invalid word size with asm.bits");
 			r_list_free (list);
+			free (stack);
 			return NULL;
 		}
 		if (iscallret (dbg, addr)) {
@@ -93,12 +97,13 @@ static RList *backtrace_fuzzy(RDebug *dbg, ut64 at) {
 			frame->size = cursp - oldsp;
 			frame->sp = cursp;
 			frame->bp = oldsp; //addr + (i * wordsize); // -4 || -8
-			// eprintf ("--------------> 0x%llx (%d)\n", addr, frame->size);
+			// R_LOG_DEBUG ("--------------> 0x%llx (%d)", addr, frame->size);
 			r_list_append (list, frame);
 			oldsp = cursp;
 		}
 		ptr += wordsize;
 		cursp += wordsize;
 	}
+	free (stack);
 	return list;
 }

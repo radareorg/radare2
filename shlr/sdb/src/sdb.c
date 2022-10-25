@@ -305,8 +305,18 @@ SDB_API char *sdb_get(Sdb* s, const char *key, ut32 *cas) {
 	return sdb_get_len (s, key, NULL, cas);
 }
 
+SDB_API char *sdb_nget(Sdb* s, ut64 nkey, ut32 *cas) {
+	char buf[SDB_NUM_BUFSZ];
+	const char *key = sdb_itoa (nkey, 16, buf, sizeof (buf));
+	return sdb_get_len (s, key, NULL, cas);
+}
+
 SDB_API int sdb_unset(Sdb* s, const char *key, ut32 cas) {
 	return key? sdb_set (s, key, "", cas): 0;
+}
+
+SDB_API int sdb_nunset(Sdb* s, ut64 nkey, ut32 cas) {
+	return sdb_nset (s, nkey, "", cas);
 }
 
 /* remove from memory */
@@ -367,6 +377,12 @@ SDB_API int sdb_add(Sdb* s, const char *key, const char *val, ut32 cas) {
 		return 0;
 	}
 	return sdb_set (s, key, val, cas);
+}
+
+SDB_API int sdb_nadd(Sdb* s, ut64 nkey, const char *val, ut32 cas) {
+	char buf[SDB_NUM_BUFSZ];
+	const char *key = sdb_itoa (nkey, 16, buf, sizeof (buf));
+	return sdb_add (s, key, val, cas);
 }
 
 SDB_API bool sdb_exists(Sdb* s, const char *key) {
@@ -661,14 +677,35 @@ SDB_API int sdb_set(Sdb* s, const char *key, const char *val, ut32 cas) {
 	return sdb_set_internal (s, key, (char *)val, false, cas);
 }
 
+SDB_API int sdb_nset(Sdb* s, ut64 nkey, const char *val, ut32 cas) {
+	char buf[SDB_NUM_BUFSZ];
+	const char *key = sdb_itoa (nkey, 16, buf, sizeof (buf));
+	return sdb_set_internal (s, key, (char *)val, false, cas);
+}
+
+SDB_API int sdb_num_nset(Sdb* s, ut64 nkey, ut64 nval, ut32 cas) {
+	char buf[SDB_NUM_BUFSZ];
+	const char *key = sdb_itoa (nkey, 16, buf, sizeof (buf));
+	return sdb_num_set (s, key, nval, cas);
+}
+
+SDB_API ut64 sdb_num_nget(Sdb *s, ut64 nkey, ut32 *cas) {
+	char buf[SDB_NUM_BUFSZ];
+	const char *key = sdb_itoa (nkey, 16, buf, sizeof (buf));
+	return sdb_num_get (s, key, cas);
+}
+
 static bool sdb_foreach_list_cb(void *user, const char *k, const char *v) {
 	SdbList *list = (SdbList *)user;
 	SdbKv *kv = R_NEW0 (SdbKv);
-	/* seems like some k/v are constructed in the stack and cant be used after returning */
-	kv->base.key = strdup (k);
-	kv->base.value = strdup (v);
-	ls_append (list, kv);
-	return 1;
+	if (kv) {
+		/* seems like some k/v are constructed in the stack and cant be used after returning */
+		kv->base.key = strdup (k);
+		kv->base.value = strdup (v);
+		ls_append (list, kv);
+		return true;
+	}
+	return false;
 }
 
 static int __cmp_asc(const void *a, const void *b) {
@@ -818,7 +855,7 @@ SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
 	}
 
 	ut32 i;
-	for (i = 0; i < s->ht->size; ++i) {
+	for (i = 0; i < s->ht->size; i++) {
 		HtPPBucket *bt = &s->ht->table[i];
 		SdbKv *kv;
 		ut32 j, count;
@@ -865,7 +902,7 @@ SDB_API bool sdb_sync(Sdb* s) {
 	}
 
 	/* append new keyvalues */
-	for (i = 0; i < s->ht->size; ++i) {
+	for (i = 0; i < s->ht->size; i++) {
 		HtPPBucket *bt = &s->ht->table[i];
 		SdbKv *kv;
 		ut32 j, count;

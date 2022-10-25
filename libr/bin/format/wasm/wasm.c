@@ -1,5 +1,7 @@
 /* radare2 - LGPL - Copyright 2017-2022 - pancake, cgvwzq, Dennis Goodlett */
 
+#define R_LOG_ORIGIN "bin.wasm"
+
 #include <r_lib.h>
 #include <r_bin.h>
 #include "wasm.h"
@@ -82,7 +84,7 @@ static bool consume_str_r(RBuffer *b, ut64 bound, size_t len, char *out) {
 	return false;
 }
 
-static bool inline consume_str_new(RBuffer *b, ut64 bound, ut32 *len_out, char **str_out) {
+static inline bool consume_str_new(RBuffer *b, ut64 bound, ut32 *len_out, char **str_out) {
 	r_return_val_if_fail (str_out, false);
 	*str_out = NULL;
 	if (len_out) {
@@ -137,14 +139,19 @@ static bool consume_encoded_name_new(RBuffer *b, ut64 bound, ut32 *len_out, char
 	}
 
 	size_t i, oi = 0;
-	for (i = 0; i < len && oi + 4 < maxsize; i++) {
+	for (i = 0; i < len && oi + 6 < maxsize; i++) {
 		if (WASM_IS_OK (orig, i, len)) {
 			sout[oi++] = orig[i];
 		} else {
-			oi += snprintf (sout + oi, maxsize - oi, "_%02x_", orig[i]);
+			int res = snprintf (sout + oi, maxsize - oi, "_%02x_", orig[i]);
+			oi += res;
 		}
 	}
-	sout[oi++] = '\0';
+	if (oi >= maxsize) {
+		sout[maxsize - 1] = '\0';
+	} else {
+		sout[oi++] = '\0';
+	}
 	free (orig);
 
 	char *tmp = realloc (sout, oi);
@@ -220,37 +227,39 @@ static size_t consume_limits_r(RBuffer *b, ut64 bound, struct r_bin_wasm_resizab
 }
 
 // Utils
-static RList *r_bin_wasm_get_sections_by_id(RList *sections, ut8 id) {
-	RList *ret = r_list_newf (NULL);
-	if (ret) {
-		RBinWasmSection *sec;
-		RListIter *iter;
-		r_list_foreach (sections, iter, sec) {
-			if (sec->id == id) {
-				r_list_append (ret, sec);
+#define CUST_NAME_START "\x04name"
+#define CUST_NAME_START_LEN sizeof CUST_NAME_START - 1
+static inline RBinWasmSection *sections_first_custom_name(RBinWasmObj *bin) {
+	RBuffer *buf = bin->buf;
+	RListIter *iter;
+	RBinWasmSection *sec;
+	r_list_foreach (bin->g_sections, iter, sec) {
+		if (sec->id == R_BIN_WASM_SECTION_CUSTOM && sec->size > 6) {
+			ut8 _tmp[CUST_NAME_START_LEN] = {0};
+			if (r_buf_read_at (buf, sec->offset, _tmp, CUST_NAME_START_LEN) > 0) {
+				if (!memcmp (CUST_NAME_START, _tmp, CUST_NAME_START_LEN)) {
+					return sec;
+				}
 			}
 		}
 	}
-	return ret;
+	return NULL;
 }
+#undef CUST_NAME_START
+#undef CUST_NAME_START_LEN
 
-static RBinWasmSection *section_by_id_unique(RList *sections, ut8 id) {
-	RList *l = r_bin_wasm_get_sections_by_id (sections, id);
-	RBinWasmSection *sec = NULL;
-	if (l) {
-		int len = r_list_length (l);
-		if (len) {
-			sec = r_list_first (l);
-			if (sec && len > 1) {
-				eprintf ("[wasm] Using first %s section of %d\n", sec->name, len);
-			}
+static inline RBinWasmSection *section_first_with_id(RList *sections, ut8 id) {
+	RBinWasmSection *sec;
+	RListIter *iter;
+	r_list_foreach (sections, iter, sec) {
+		if (sec->id == id) {
+			return sec;
 		}
 	}
-	r_list_free (l);
-	return sec;
+	return NULL;
 }
 
-const char *r_bin_wasm_valuetype_to_string (r_bin_wasm_value_type_t type) {
+const char *r_bin_wasm_valuetype_tostring (r_bin_wasm_value_type_t type) {
 	switch (type) {
 	case R_BIN_WASM_VALUETYPE_i32:
 		return "i32";
@@ -278,7 +287,7 @@ static inline bool strbuf_append_type_vec(RStrBuf *sb, RBinWasmTypeVec *vec) {
 		if (i > 0 && !r_strbuf_append (sb, ", ")) {
 			return false;
 		}
-		const char *s = r_bin_wasm_valuetype_to_string (vec->types[i]);
+		const char *s = r_bin_wasm_valuetype_tostring (vec->types[i]);
 		if (!s || !r_strbuf_append (sb, s)) {
 			return false;
 		}
@@ -295,14 +304,14 @@ static bool append_rets(RStrBuf *sb, RBinWasmTypeVec *rets) {
 	if (!rets->count) {
 		ret &= r_strbuf_append (sb, "nil");
 	} else if (rets->count == 1) {
-		ret &= r_strbuf_append (sb, r_bin_wasm_valuetype_to_string (rets->types[0]));
+		ret &= r_strbuf_append (sb, r_bin_wasm_valuetype_tostring (rets->types[0]));
 	} else {
 		ret &= strbuf_append_type_vec (sb, rets);
 	}
 	return ret;
 }
 
-static const char *r_bin_wasm_type_entry_to_string(RBinWasmTypeEntry *type) {
+static const char *r_bin_wasm_type_entry_tostring(RBinWasmTypeEntry *type) {
 	r_return_val_if_fail (type, NULL);
 	if (type->to_str) {
 		return type->to_str;
@@ -350,6 +359,14 @@ static void free_import_entry(RBinWasmImportEntry *entry) {
 	}
 }
 
+static inline void free_all_imports(RBinWasmObj *bin) {
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
+		r_pvector_free (bin->g_imports_arr[i]);
+	}
+	memset (bin->g_imports_arr, 0, sizeof (bin->g_imports_arr));
+}
+
 static void free_export_entry(RBinWasmExportEntry *entry) {
 	if (entry) {
 		free (entry->field_str);
@@ -371,42 +388,30 @@ static void wasm_sec_free(RBinWasmSection *sec) {
 	}
 }
 
-static void wasm_custom_name_local_free(RBinWasmCustomNameLocalName *name) {
-	if (name) {
-		r_id_storage_free (name->names);
-		R_FREE (name);
+bool _store_free_cb(void *user, void *data, ut32 id) {
+	free (data);
+	return true;
+}
+
+static inline void storage_deep_free(RIDStorage *store) {
+	if (store) {
+		r_id_storage_foreach (store, (RIDStorageForeachCb)_store_free_cb, NULL);
+		r_id_storage_free (store);
 	}
 }
 
-static inline void wasm_custom_local_names_free(RBinWasmCustomNameLocalNames *local) {
-	if (local) {
-		r_list_free (local->locals);
-		R_FREE (local);
-	}
+static bool _2d_store_free_cb(void *user, void *data, ut32 id) {
+	RIDStorage *store = (RIDStorage *)data;
+	storage_deep_free (store);
+	return true;
 }
 
-static void wasm_custom_name_free(RBinWasmCustomNameEntry *cust) {
-	if (cust) {
-		switch (cust->type) {
-		case R_BIN_WASM_NAMETYPE_Module:
-			R_FREE (cust->mod_name);
-			break;
-		case R_BIN_WASM_NAMETYPE_Function:
-			if (cust->func) {
-				r_id_storage_free (cust->func->names);
-				R_FREE (cust->func);
-			}
-			break;
-		case R_BIN_WASM_NAMETYPE_Local:
-			wasm_custom_local_names_free (cust->local);
-			break;
-		case R_BIN_WASM_NAMETYPE_None:
-			break;
-		default:
-			eprintf ("Unkown type: 0x%x\n", cust->type);
-			r_warn_if_reached ();
-		}
-		R_FREE (cust);
+static inline void free_custom_names(RBinWasmCustomNames *names) {
+	if (names) {
+		free (names->mod.name);
+		storage_deep_free (names->funcs.store);
+		r_id_storage_foreach (names->locals.store, (RIDStorageForeachCb)_2d_store_free_cb, NULL);
+		free (names);
 	}
 }
 
@@ -418,7 +423,9 @@ static inline RPVector *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryFcn pa
 	if (!consume_u32_r (buf, bound, &count)) {
 		return NULL;
 	}
-
+	if (count > r_buf_size (buf)) {
+		count = r_buf_size (buf) - r_buf_tell (buf);
+	}
 	RPVector *vec = r_pvector_new (free_entry);
 	if (vec) {
 		r_pvector_reserve (vec, count);
@@ -427,7 +434,7 @@ static inline RPVector *parse_vec(RBinWasmObj *bin, ut64 bound, ParseEntryFcn pa
 			ut64 start = r_buf_tell (buf);
 			void *e = parse_entry (bin, bound, i);
 			if (!e || !r_pvector_push (vec, e)) {
-				eprintf ("[wasm] Failed to parse entry %u/%u of vec at 0x%" PFMT64x "\n", i, count, start);
+				R_LOG_ERROR ("Failed to parse entry %u/%u of vec at 0x%" PFMT64x, i, count, start);
 				free_entry (e);
 				break;
 			}
@@ -458,7 +465,7 @@ static RBinWasmTypeEntry *parse_type_entry(RBinWasmObj *bin, ut64 bound, ut32 in
 		goto beach;
 	}
 	if (type->form != R_BIN_WASM_VALUETYPE_FUNC) {
-		R_LOG_WARN ("Halting types section parsing at invalid type 0x%02x at offset: 0x%" PFMTSZx "\n", type->form, type->file_offset);
+		R_LOG_WARN ("Halting types section parsing at invalid type 0x%02x at offset: 0x%" PFMTSZx, type->form, type->file_offset);
 		goto beach;
 	}
 
@@ -471,7 +478,7 @@ static RBinWasmTypeEntry *parse_type_entry(RBinWasmObj *bin, ut64 bound, ut32 in
 	if (!type->rets) {
 		goto beach;
 	}
-	r_bin_wasm_type_entry_to_string (type);
+	r_bin_wasm_type_entry_tostring (type);
 
 	return type;
 
@@ -480,7 +487,7 @@ beach:
 	return NULL;
 }
 
-static void *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
+static RBinWasmImportEntry *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
 	RBuffer *b = bin->buf;
 	RBinWasmImportEntry *ptr = R_NEW0 (RBinWasmImportEntry);
 	if (!ptr) {
@@ -501,12 +508,12 @@ static void *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
 		goto beach;
 	}
 	switch (ptr->kind) {
-	case 0: // Function
+	case R_BIN_WASM_EXTERNALKIND_Function:
 		if (!consume_u32_r (b, bound, &ptr->type_f)) {
 			goto beach;
 		}
 		break;
-	case 1: // Table
+	case R_BIN_WASM_EXTERNALKIND_Table:
 		if (!consume_s7_r (b, bound, (st8 *)&ptr->type_t.elem_type)) {
 			goto beach;
 		}
@@ -514,12 +521,12 @@ static void *parse_import_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
 			goto beach;
 		}
 		break;
-	case 2: // Memory
+	case R_BIN_WASM_EXTERNALKIND_Memory:
 		if (!consume_limits_r (b, bound, &ptr->type_m.limits)) {
 			goto beach;
 		}
 		break;
-	case 3: // Global
+	case R_BIN_WASM_EXTERNALKIND_Global:
 		if (!consume_s7_r (b, bound, (st8 *)&ptr->type_g.content_type)) {
 			goto beach;
 		}
@@ -599,7 +606,7 @@ static RBinWasmCodeEntry *parse_code_entry(RBinWasmObj *bin, ut64 bound, ut32 in
 	r_buf_read (b, &end, 1);
 	if (end != R_BIN_WASM_END_OF_CODE) {
 		ut32 where = r_buf_tell (b) - 1;
-		eprintf ("[wasm] Code entry at starting at 0x%x has ending byte 0x%x at 0x%x, should be 0x%x\n",
+		R_LOG_WARN ("Wasm code entry at starting at 0x%x has ending byte 0x%x at 0x%x, should be 0x%x",
 			(ut32)ptr->file_offset, end, where, R_BIN_WASM_END_OF_CODE);
 		goto beach;
 	}
@@ -636,136 +643,104 @@ beach:
 	return NULL;
 }
 
-static bool parse_namemap(RBuffer *b, ut64 bound, RIDStorage *map, ut32 *count) {
-	size_t i;
-	if (!consume_u32_r (b, bound, count)) {
+static RIDStorage *parse_namemap(RBuffer *b, ut64 bound) {
+	RIDStorage *store = r_id_storage_new (0, UT32_MAX);
+	ut32 i, count;
+	if (store && consume_u32_r (b, bound, &count)) {
+		for (i = 0; i < count; i++) {
+			ut32 idx;
+			if (!consume_u32_r (b, bound, &idx)) {
+				break;
+			}
+
+			char *name = NULL;
+			if (!consume_encoded_name_new (b, bound, NULL, &name)) {
+				R_FREE (name);
+				break;
+			}
+
+			if (!r_id_storage_add (store, name, &idx)) {
+				R_FREE (name);
+				break;
+			};
+		}
+	}
+	return store;
+}
+
+static inline RIDStorage *parse_custom_names_local(RBuffer *b, ut64 bound) {
+	RIDStorage *store = r_id_storage_new (0, UT32_MAX);
+	ut32 i, count;
+	if (store && consume_u32_r (b, bound, &count)) {
+		for (i = 0; i < count; i++) {
+			ut32 idx;
+			if (!consume_u32_r (b, bound, &idx)) {
+				break;
+			}
+			RIDStorage *funcstore = parse_namemap (b, bound);
+			if (!funcstore || !r_id_storage_add (store, funcstore, &idx)) {
+				storage_deep_free (funcstore);
+				break;
+			}
+		}
+	}
+	return store;
+}
+
+static inline bool parse_custom_name_section(RBinWasmObj *bin, ut64 bound) {
+	RBinWasmCustomNames *names = bin->names;
+	RBuffer *b = bin->buf;
+	ut64 start = r_buf_tell (b);
+	ut8 type;
+	if (!consume_u7_r (b, bound, &type)) {
+		return false;
+	};
+
+	ut32 size;
+	if (!consume_u32_r (b, bound, &size)) {
 		return false;
 	}
 
-	for (i = 0; i < *count; i++) {
-		ut32 idx;
-		if (!consume_u32_r (b, bound, &idx)) {
-			return false;
-		}
-
-		char *name = NULL;
-		if (!consume_encoded_name_new (b, bound, NULL, &name)) {
-			R_FREE (name);
-			return false;
-		}
-
-		if (!r_id_storage_add (map, name, &idx)) {
-			R_FREE (name);
-			return false;
-		};
+	ut64 new_bound = start + size - 1;
+	if (new_bound > bound) {
+		R_LOG_WARN ("custom name subection at 0x%" PFMT64x " extends beyond the custom section", start);
+		new_bound = bound;
 	}
 
-	return true;
-}
-
-static inline RBinWasmCustomNameLocalName *parse_local_name(RBuffer *b, ut64 bound) {
-	RBinWasmCustomNameLocalName *local_name = R_NEW0 (RBinWasmCustomNameLocalName);
-	if (local_name) {
-		if (!consume_u32_r (b, bound, &local_name->index)) {
-			goto beach;
-		}
-
-		local_name->names = r_id_storage_new (0, UT32_MAX);
-		if (!local_name->names) {
-			goto beach;
-		}
-
-		if (!parse_namemap (b, bound, local_name->names, &local_name->names_count)) {
-			goto beach;
-		}
-
-		return local_name;
-	}
-beach:
-	wasm_custom_name_local_free (local_name);
-	return NULL;
-}
-
-static inline RBinWasmCustomNameLocalNames *parse_custom_names_local(RBuffer *b, ut64 bound) {
-	RBinWasmCustomNameLocalNames *local = R_NEW0 (RBinWasmCustomNameLocalNames);
-	if (!local) {
-		return NULL;
-	}
-	if (!consume_u32_r (b, bound, &local->count)) {
-		goto beach;
-	}
-
-	local->locals = r_list_newf ((RListFree)wasm_custom_name_local_free);
-	if (local->locals) {
-		size_t i;
-		for (i = 0; i < local->count; i++) {
-			RBinWasmCustomNameLocalName *local_name = parse_local_name (b, bound);
-			if (!local_name || !r_list_append (local->locals, local_name)) {
-				wasm_custom_name_local_free (local_name);
-				goto beach;
-			}
-		}
-		return local;
-	}
-
-beach:
-	wasm_custom_local_names_free (local);
-	return NULL;
-}
-
-static RBinWasmCustomNameEntry *parse_custom_name_entry(RBinWasmObj *bin, ut64 bound) {
-	RBuffer *b = bin->buf;
-	RBinWasmCustomNameEntry *cust = R_NEW0 (RBinWasmCustomNameEntry);
-	if (!cust) {
-		return NULL;
-	}
-	cust->type = R_BIN_WASM_NAMETYPE_None;
-
-	size_t start = r_buf_tell (b);
-	if (!consume_u7_r (b, bound, &cust->type)) {
-		goto beach;
-	};
-
-	if (!consume_u32_r (b, bound, &cust->size)) {
-		goto beach;
-	};
-
-	switch (cust->type) {
+	switch (type) {
 	case R_BIN_WASM_NAMETYPE_Module:
-		if (!consume_encoded_name_new (b, bound, NULL, &cust->mod_name)) {
-			goto beach;
+		if (names->mod.name) {
+			eprintf ("[wasm] Multiple module names in custom name section! first: 0x%" PFMT64x ", this: 0x%" PFMT64x "\n", names->mod.file_offset, start);
+		} else if (!consume_encoded_name_new (b, bound, NULL, &names->mod.name)) {
+			eprintf ("[wasm] Custom Name section corrupt module name at 0x%" PFMT64x "\n", start);
+		} else {
+			names->mod.file_offset = start;
 		}
 		break;
 	case R_BIN_WASM_NAMETYPE_Function:
-		cust->func = R_NEW0 (RBinWasmCustomNameFunctionNames);
-		if (!cust->func) {
-			goto beach;
-		}
-		cust->func->names = r_id_storage_new (0, UT32_MAX);
-		if (!cust->func->names) {
-			goto beach;
-		}
-
-		if (!parse_namemap (b, bound, cust->func->names, &cust->func->count)) {
-			goto beach;
+		if (names->funcs.store) {
+			eprintf ("[wasm] Multiple function susbections in custom name section! first: 0x%" PFMT64x ", this: 0x%" PFMT64x "\n", names->funcs.file_offset, start);
+		} else {
+			names->funcs.file_offset = start;
+			names->funcs.store = parse_namemap (b, bound);
 		}
 		break;
 	case R_BIN_WASM_NAMETYPE_Local:
-		cust->local = parse_custom_names_local (b, bound);
-		if (!cust->local) {
-			goto beach;
+		if (names->locals.store) {
+			eprintf ("[wasm] Multiple locals susbections in custom name section! first: 0x%" PFMT64x ", this: 0x%" PFMT64x "\n", names->locals.file_offset, start);
+		} else {
+			names->funcs.file_offset = start;
+			names->locals.store = parse_custom_names_local (b, bound);
 		}
 		break;
 	default:
-		R_LOG_WARN ("[wasm] Halting custom name section parsing at unknown type 0x%x offset 0x%" PFMTSZx "\n", cust->type, start);
-		cust->type = R_BIN_WASM_NAMETYPE_None;
-		goto beach;
+		R_LOG_WARN ("Unknown custom name subsection with id: %d", type);
+		break;
 	}
 
-	return cust;
-beach:
-	wasm_custom_name_free (cust);
-	return NULL;
+	// even if a custom section fails to parse, as long as we have length we can try to parse the next one
+	r_buf_seek (b, bound + 1, R_BUF_SET);
+	return true;
 }
 
 static RBinWasmMemoryEntry *parse_memory_entry(RBinWasmObj *bin, ut64 bound, ut32 index) {
@@ -857,7 +832,7 @@ beach:
 
 static ut32 r_bin_wasm_get_start(RBinWasmObj *bin) {
 	if (bin->g_start == UT32_MAX) {
-		RBinWasmSection *sec = section_by_id_unique (bin->g_sections, R_BIN_WASM_SECTION_START);
+		RBinWasmSection *sec = section_first_with_id (bin->g_sections, R_BIN_WASM_SECTION_START);
 		if (sec) {
 			RBuffer *b = bin->buf;
 			r_buf_seek (b, sec->payload_data, R_BUF_SET);
@@ -870,34 +845,83 @@ static ut32 r_bin_wasm_get_start(RBinWasmObj *bin) {
 	return bin->g_start;
 }
 
-static RList *r_bin_wasm_get_custom_name_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
-	RList *ret = r_list_newf ((RListFree)wasm_custom_name_free);
-
+static inline bool r_bin_wasm_get_custom_name_entries(RBinWasmObj *bin, RBinWasmSection *sec) {
 	RBuffer *buf = bin->buf;
-
 	r_buf_seek (buf, sec->payload_data, R_BUF_SET);
 	ut64 bound = sec->payload_data + sec->payload_len - 1;
 
-	if (bound > r_buf_size (buf)) {
-		goto beach;
+	r_return_val_if_fail (bound <= r_buf_size (buf), false); // should be checked in section parsing
+	if (!bin->names) {
+		bin->names = R_NEW0 (RBinWasmCustomNames);
+		if (!bin->names) {
+			return false;
+		}
 	}
 
 	while (r_buf_tell (buf) < bound) {
-		RBinWasmCustomNameEntry *nam = parse_custom_name_entry (bin, bound);
-
-		if (!nam) {
-			break; // allow partial parsing of section
-		}
-
-		if (!r_list_append (ret, nam)) {
-			goto beach;
+		if (!parse_custom_name_section (bin, bound)) {
+			break;
 		}
 	}
 
-	return ret;
-beach:
-	r_list_free (ret);
-	return NULL;
+	return bin->names != NULL;
+}
+
+static bool parse_import_sec(RBinWasmObj *bin) {
+	r_return_val_if_fail (bin && bin->g_sections, false);
+	// each import type has seperate index space, so we parse them into 4 vecs
+	free_all_imports (bin); // ensure all are empty
+
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
+		bin->g_imports_arr[i] = r_pvector_new ((RPVectorFree)free_import_entry);
+		if (!bin->g_imports_arr[i]) {
+			return false;
+		}
+	}
+
+	RBinWasmSection *sec = section_first_with_id (bin->g_sections, R_BIN_WASM_SECTION_IMPORT);
+	if (!sec) {
+		return true; // not an error, empty import section
+	}
+
+	RBuffer *buf = bin->buf;
+	ut64 offset = sec->payload_data;
+	ut64 len = sec->payload_len;
+	ut64 bound = offset + len - 1;
+
+	if (r_buf_seek (buf, offset, R_BUF_SET) != offset) {
+		return false;
+	}
+
+	ut32 count;
+	if (!consume_u32_r (buf, bound, &count)) {
+		return false;
+	}
+
+	// over estimate size, shrink later
+	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
+		r_pvector_reserve (bin->g_imports_arr[i], count);
+	}
+
+	for (i = 0; i < count; i++) {
+		ut64 start = r_buf_tell (buf);
+		RBinWasmImportEntry *imp = parse_import_entry (bin, bound, i);
+		if (imp && imp->kind < R_ARRAY_SIZE (bin->g_imports_arr)) {
+			r_pvector_push (bin->g_imports_arr[imp->kind], imp);
+		} else {
+			R_LOG_ERROR ("Failed to parse import entry %u/%u of vec at 0x%" PFMT64x, i, count, start);
+			free_import_entry (imp);
+			break;
+		}
+	}
+
+	ut32 seen = 0;
+	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
+		r_pvector_shrink (bin->g_imports_arr[i]);
+		seen += r_pvector_len (bin->g_imports_arr[i]);
+	}
+	return seen == count? true: false;
 }
 
 // Public functions
@@ -912,7 +936,7 @@ RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf) {
 		// but dependency problems when sections are disordered (against spec)
 
 		bin->g_types = r_bin_wasm_get_types (bin);
-		bin->g_imports = r_bin_wasm_get_imports (bin);
+		parse_import_sec (bin);
 		bin->g_funcs = r_bin_wasm_get_functions (bin);
 		bin->g_tables = r_bin_wasm_get_tables (bin);
 		bin->g_memories = r_bin_wasm_get_memories (bin);
@@ -921,7 +945,7 @@ RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf) {
 		bin->g_codes = r_bin_wasm_get_codes (bin);
 		bin->g_datas = r_bin_wasm_get_datas (bin);
 
-		bin->g_names = r_bin_wasm_get_custom_names (bin);
+		r_bin_wasm_get_custom_names (bin);
 
 		// entrypoint from Start section
 		bin->entrypoint = r_bin_wasm_get_entrypoint (bin);
@@ -934,7 +958,7 @@ void wasm_obj_free(RBinWasmObj *bin) {
 		r_buf_free (bin->buf);
 		r_list_free (bin->g_sections);
 		r_pvector_free (bin->g_types);
-		r_pvector_free (bin->g_imports);
+		free_all_imports (bin);
 		r_pvector_free (bin->g_funcs);
 		r_pvector_free (bin->g_tables);
 		r_pvector_free (bin->g_memories);
@@ -943,7 +967,7 @@ void wasm_obj_free(RBinWasmObj *bin) {
 		r_pvector_free (bin->g_elements);
 		r_pvector_free (bin->g_codes);
 		r_pvector_free (bin->g_datas);
-		r_list_free (bin->g_names);
+		free_custom_names (bin->names);
 		free (bin);
 	}
 }
@@ -1051,14 +1075,14 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 			ptr->name_len = 4;
 			break;
 		default:
-			eprintf ("[wasm] error: unkown section id: %d\n", ptr->id);
+			R_LOG_ERROR ("unknown section id: %d", ptr->id);
 			r_buf_seek (b, ptr->size - 1, R_BUF_CUR);
 			continue;
 		}
 		if (ptr->offset + (ut64)ptr->size - 1 > bound) {
 			// TODO: Better error handling here
 			ut32 diff = ptr->size - (bound + 1 - ptr->offset);
-			eprintf ("[wasm] Artificially reducing size of section %s by 0x%x bytes so it fits in the file\n", ptr->name, diff);
+			R_LOG_INFO ("Artificially reducing size of section %s by 0x%x bytes so it fits in the file", ptr->name, diff);
 			ptr->size -= diff;
 		}
 		ptr->payload_data = r_buf_tell (b);
@@ -1076,7 +1100,7 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 	bin->g_sections = ret;
 	return ret;
 beach:
-	eprintf ("[wasm] error: beach sections\n");
+	R_LOG_ERROR ("beach sections");
 	free (ptr);
 	return ret;
 }
@@ -1097,7 +1121,21 @@ ut32 r_bin_wasm_get_entrypoint(RBinWasmObj *bin) {
 	return 0;
 }
 
+static int _export_sorter(const void *_a, const void *_b) {
+	const RBinWasmExportEntry *a = _a;
+	const RBinWasmExportEntry *b = _b;
+	st64 diff = (st64)a->kind - b->kind;
+	if (!diff) {
+		diff = (st64)a->index - b->index;
+		if (!diff) { // index collision shouldn't happen
+			diff = (st64)a->sec_i - b->sec_i;
+		}
+	}
+	return diff > 0? 1: -1;
+}
+
 static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
+	RPVectorComparator sorter = NULL;
 	RPVector **cache = NULL;
 	RPVectorFree pfree = (RPVectorFree)free;
 	ParseEntryFcn parser;
@@ -1106,11 +1144,6 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 		parser = (ParseEntryFcn)parse_type_entry;
 		pfree = (RPVectorFree)free_type_entry;
 		cache = &bin->g_types;
-		break;
-	case R_BIN_WASM_SECTION_IMPORT:
-		parser = (ParseEntryFcn)parse_import_entry;
-		pfree = (RPVectorFree)free_import_entry;
-		cache = &bin->g_imports;
 		break;
 	case R_BIN_WASM_SECTION_FUNCTION:
 		parser = (ParseEntryFcn)parse_function_entry;
@@ -1132,6 +1165,7 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 		parser = (ParseEntryFcn)parse_export_entry;
 		pfree = (RPVectorFree)free_export_entry;
 		cache = &bin->g_exports;
+		sorter = (RPVectorComparator)_export_sorter;
 		break;
 	case R_BIN_WASM_SECTION_ELEMENT:
 		parser = (ParseEntryFcn)parse_element_entry;
@@ -1165,12 +1199,15 @@ static RPVector *parse_sub_section_vec(RBinWasmObj *bin, RBinWasmSection *sec) {
 	}
 
 	*cache = parse_vec (bin, bound, parser, pfree);
+	if (sorter) {
+		r_pvector_sort (*cache, sorter);
+	}
 	return *cache;
 }
 
 // warns if there are two sections of this type
 static inline RPVector *parse_unique_subsec_vec_by_id(RBinWasmObj *bin, ut8 id) {
-	RBinWasmSection *sec = section_by_id_unique (bin->g_sections, id);
+	RBinWasmSection *sec = section_first_with_id (bin->g_sections, id);
 	if (sec) {
 		return parse_sub_section_vec (bin, sec);
 	}
@@ -1182,9 +1219,13 @@ RPVector *r_bin_wasm_get_types(RBinWasmObj *bin) {
 	return bin->g_types? bin->g_types: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_TYPE);
 }
 
-RPVector *r_bin_wasm_get_imports(RBinWasmObj *bin) {
-	r_return_val_if_fail (bin && bin->g_sections, NULL);
-	return bin->g_imports? bin->g_imports: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_IMPORT);
+RPVector *r_bin_wasm_get_imports_kind(RBinWasmObj *bin, ut32 kind) {
+	r_return_val_if_fail (bin && bin->g_sections && kind < R_ARRAY_SIZE (bin->g_imports_arr), NULL);
+	RPVector **vec = &bin->g_imports_arr[kind];
+	if (!*vec) {
+		parse_import_sec (bin);
+	}
+	return *vec;
 }
 
 RPVector *r_bin_wasm_get_functions(RBinWasmObj *bin) {
@@ -1227,47 +1268,25 @@ RPVector *r_bin_wasm_get_datas(RBinWasmObj *bin) {
 	return bin->g_datas? bin->g_datas: parse_unique_subsec_vec_by_id (bin, R_BIN_WASM_SECTION_DATA);
 }
 
-RList *r_bin_wasm_get_custom_names(RBinWasmObj *bin) {
-	RList *customs = NULL;
-
+RBinWasmCustomNames *r_bin_wasm_get_custom_names(RBinWasmObj *bin) {
 	r_return_val_if_fail (bin && bin->g_sections, NULL);
+	if (bin->names) {
+		return bin->names;
+	}
 
-	if (bin->g_names) {
-		return bin->g_names;
-	}
-	if (!(customs = r_bin_wasm_get_sections_by_id (bin->g_sections, R_BIN_WASM_SECTION_CUSTOM))) {
-		return r_list_new ();
-	}
 	// support for multiple "name" sections against spec
-	RBinWasmSection *cust = (RBinWasmSection *)r_list_first (customs);
-	if (!cust || !cust->name) {
-		r_list_free (customs);
-		return r_list_new ();
+	RBinWasmSection *sec = sections_first_custom_name (bin);
+	if (sec) {
+		r_bin_wasm_get_custom_name_entries (bin, sec);
 	}
-	if (strcmp (cust->name, "name")) {
-		r_list_free (customs);
-		return r_list_new ();
-	}
-	bin->g_names = r_bin_wasm_get_custom_name_entries (bin, cust);
-	r_list_free (customs);
-	return bin->g_names;
+	return bin->names;
 }
 
 const char *r_bin_wasm_get_function_name(RBinWasmObj *bin, ut32 idx) {
-	if (!(bin && bin->g_names)) {
-		return NULL;
-	};
+	r_return_val_if_fail (bin, NULL);
 
-	RListIter *iter;
-	RBinWasmCustomNameEntry *nam;
-	r_list_foreach (bin->g_names, iter, nam) {
-		if (nam->type == R_BIN_WASM_NAMETYPE_Function) {
-			const char *n = r_id_storage_get (nam->func->names, idx);
-			if (n) {
-				return n;
-			}
-		}
+	if (bin->names && bin->names->funcs.store) {
+		return r_id_storage_get (bin->names->funcs.store, idx);
 	}
-
 	return NULL;
 }

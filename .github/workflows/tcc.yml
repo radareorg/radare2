@@ -17,21 +17,18 @@ jobs:
           cd tinycc
           git checkout mob
           git reset --hard 917aad3bcfbb534875aa6d66609bdb36459460a4
-
     - name: Compiling and installing TinyCC
       working-directory: tinycc
       run: |
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
           repository: radareorg/radare2-testbins
           path: test/bins
-
     - name: Install dependencies
       run: |
         sudo apt-get --assume-yes install gperf wheel setuptools || true
@@ -44,7 +41,6 @@ jobs:
           ./configure --prefix=/usr --with-compiler=tcc
           make -j
           sudo make install
-
     - name: Run tests
       env:
         PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
@@ -53,7 +49,7 @@ jobs:
         r2r -v
         export R2R_SKIP_ASM=1
         export R2R_SKIP_ARCHOS=1
-        make -C test
+        make -j -C test
   nodbg:
     name: ubuntu-tcc-nodbg
     runs-on: ubuntu-latest
@@ -71,9 +67,9 @@ jobs:
       run: |
           sh ./configure --prefix=/usr --without-debugger
           make -j && sudo make install
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
           repository: radareorg/radare2-testbins
           path: test/bins
@@ -93,7 +89,7 @@ jobs:
         r2r -v
         export R2R_SKIP_ASM=1
         export R2R_SKIP_ARCHOS=1
-        make -C test
+        make -j -C test
   r2pm:
     name: r2pm-tcc
     runs-on: ubuntu-latest
@@ -110,7 +106,7 @@ jobs:
           sh ./configure --prefix=/usr
           make -j
           sudo make install
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Configure, build and install
       env:
           CC: tcc
@@ -119,14 +115,19 @@ jobs:
           ./configure --prefix=/usr --with-compiler=tcc
           make -j
           sudo make install
+    - name: Initialize and update the r2pm package database
+      run: r2pm -U
     - name: Install samurai
       run: r2pm -i samurai
     - name: Install samurai (clean)
       run: r2pm -ci samurai
     - name: Install samurai (native)
-      run: R2PM_NATIVE=1 r2pm -i samurai
-
+      run: r2pm -i samurai
     - name: Install muon
       run: r2pm -i muon
     - name: Install muon (native)
-      run: R2PM_NATIVE=1 r2pm -i muon
+      run: r2pm -i muon
+    - name: Building r2 with muon+samu
+      run: |
+          r2pm -r muon setup b
+          r2pm -r samu -j4 -C b >/dev/null

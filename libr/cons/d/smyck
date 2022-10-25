@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 # ref: https://color.smyck.org/
+=======
+# ref: http://color.smyck.org/
+ecd
+>>>>>>> 9a4fe919c644d18bc037335428debbf9699b6074
 ec b0x00 rgb:222
 ec b0x7f rgb:fff
 ec b0xff rgb:eee

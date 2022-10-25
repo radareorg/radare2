@@ -114,28 +114,28 @@
 #>>>0x04	  byte		8	incrementing secondary index .XGn file
 
 ## XBase database files
-#0      byte       0x02	
+#0      byte       0x02
 #>8     leshort	  >0
 #>>12   leshort    0	FoxBase
 #!:mime	application/x-dbf
 #>>>0x04	lelong		0		(no records)
 #>>>0x04	lelong		>0		(%ld records)
 #
-#0      byte       0x03	
+#0      byte       0x03
 #!:mime	application/x-dbf
 #>8     leshort	  >0
 #>>12   leshort    0	FoxBase+, FoxPro, dBaseIII+, dBaseIV, no memo
 #>>>0x04	lelong		0		(no records)
 #>>>0x04	lelong		>0		(%ld records)
 #
-#0      byte       0x04	
+#0      byte       0x04
 #!:mime	application/x-dbf
 #>8     leshort	  >0
 #>>12   leshort    0	dBASE IV no memo file
 #>>>0x04	lelong		0		(no records)
 #>>>0x04	lelong		>0		(%ld records)
 #
-#0      byte       0x05	
+#0      byte       0x05
 #!:mime	application/x-dbf
 #>8     leshort	  >0
 #>>12   leshort    0	dBASE V no memo file
@@ -163,7 +163,7 @@
 #>>>0x04	lelong		0		(no records)
 #>>>0x04	lelong		>0		(%ld records)
 #
-#0      byte       0x83	
+#0      byte       0x83
 #!:mime	application/x-dbf
 #>8     leshort	  >0
 #>>12   leshort    0	FoxBase+, dBaseIII+ with memo
@@ -177,7 +177,7 @@
 #>>>0x04	lelong		0		(no records)
 #>>>0x04	lelong		>0		(%ld records)
 #
-#0      byte       0x8e	
+#0      byte       0x8e
 #!:mime	application/x-dbf
 #>8     leshort	  >0
 #>>12   leshort    0	dBaseIV with SQL Table

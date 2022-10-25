@@ -198,7 +198,7 @@ static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, i
 	}
 	int available = r_buf_read_at (buf, off, b, size);
 	if (available != size) {
-		eprintf ("Warning: r_buf_read_at failed\n");
+		R_LOG_WARN ("r_buf_read_at failed");
 		return NULL;
 	}
 #if 0
@@ -206,7 +206,7 @@ static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, i
 	// data, brobably dwords, and then the same section list again
 	// this function aims to parse it.
 	0x00000138 |1a2b b2a1 0300 0000 1a2b b2a1 e055 0000| .+.......+...U..
-                         n_segments ----.          .--- how many sections ?
+	                n_segments ----.          .--- how many sections ?
 	0x00000148 |0100 0000 ca55 0000 0400 0000 1800 0000| .....U..........
 	             .---- how many symbols? 0xc7
 	0x00000158 |c700 0000 0000 0000 0000 0000 0104 0000| ................
@@ -235,13 +235,13 @@ static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, i
 		// hack for C22F7494
 		available = r_buf_read_at (buf, off - 8, b, size);
 		if (available != size) {
-			eprintf ("Warning: r_buf_read_at failed\n");
+			R_LOG_WARN ("r_buf_read_at failed");
 			return NULL;
 		}
 		if (!memcmp ("\x1a\x2b\xb2\xa1", b, 4)) { // 0x130  ?
 			off -= 8;
 		} else {
-			eprintf ("0x%08x  parsing error: invalid magic retry\n", off);
+			R_LOG_ERROR ("0x%08x parsing failed. invalid magic retry", off);
 		}
 	}
 	D eprintf ("0x%08x  magic  OK\n", off);

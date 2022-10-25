@@ -910,7 +910,7 @@ struct encryption_info_command_64 {
 struct version_min_command {
 	uint32_t cmd;       // LC_VERSION_MIN_MACOSX or
 	// LC_VERSION_MIN_IPHONEOS
-	uint32_t cmdsize;   // sizeof(struct version_min_command)
+	uint32_t cmdsize;   // sizeof (struct version_min_command)
 	uint32_t version;   // X.Y.Z is encoded in nibbles xxxx.yy.zz
 	uint32_t sdk;       // X.Y.Z is encoded in nibbles xxxx.yy.zz
 };
@@ -1418,18 +1418,18 @@ enum X86ThreadFlavors {
 };
 
 #define x86_THREAD_STATE64_COUNT \
-sizeof(struct x86_thread_state64_t) / sizeof(uint32_t);
+sizeof (struct x86_thread_state64_t) / sizeof (uint32_t);
 #define x86_FLOAT_STATE64_COUNT \
-sizeof(struct x86_float_state64_t) / sizeof(uint32_t);
+sizeof (struct x86_float_state64_t) / sizeof (uint32_t);
 #define x86_EXCEPTION_STATE64_COUNT \
-sizeof(struct x86_exception_state64_t) / sizeof(uint32_t);
+sizeof (struct x86_exception_state64_t) / sizeof (uint32_t);
 
 #define x86_THREAD_STATE_COUNT \
-sizeof(struct x86_thread_state_t) / sizeof(uint32_t);
+sizeof (struct x86_thread_state_t) / sizeof (uint32_t);
 #define x86_FLOAT_STATE_COUNT \
-sizeof(struct x86_float_state_t) / sizeof(uint32_t);
+sizeof (struct x86_float_state_t) / sizeof (uint32_t);
 #define x86_EXCEPTION_STATE_COUNT \
-sizeof(struct x86_exception_state_t) / sizeof(uint32_t);
+sizeof (struct x86_exception_state_t) / sizeof (uint32_t);
 
 #define EXPORT_SYMBOL_FLAGS_KIND_MASK 0x03
 #define EXPORT_SYMBOL_FLAGS_KIND_REGULAR 0x00
@@ -1580,6 +1580,29 @@ struct dyld_chained_ptr_arm64e_auth_bind24 {
 		next : 11,
 		bind : 1, // == 1
 		auth : 1; // == 1
+};
+
+struct dyld_chained_ptr_32_rebase {
+	uint32_t target : 26,
+		next : 5,
+		bind : 1; // == 0
+};
+
+struct dyld_chained_ptr_32_bind {
+	uint32_t ordinal : 20,
+		addend : 6,
+		next : 5,
+		bind : 1; // == 1
+};
+
+struct dyld_chained_ptr_32_cache_rebase {
+	uint32_t target : 30,
+		next : 2;
+};
+
+struct dyld_chained_ptr_32_firmware_rebase {
+	uint32_t target : 26,
+		next : 6;
 };
 
 enum {

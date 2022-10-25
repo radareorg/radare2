@@ -29,12 +29,12 @@ static RList *__cfg(RFSRoot *root, const char *path);
 static RList *__flags(RFSRoot *root, const char *path);
 
 static Routes routes[] = {
-	{"/cfg", &__cfg, &__cfg_cat, &__cfg_write },
-	{"/flags", &__flags, &__flags_cat, NULL},
-	{"/version", NULL, &__version, NULL},
-	{"/seek", NULL, &__seek_cat, &__seek_write },
-	{"/bsize", NULL, &__bsize_cat, &__bsize_write },
-	{"/", &__root},
+	{ "/cfg", &__cfg, &__cfg_cat, &__cfg_write },
+	{ "/flags", &__flags, &__flags_cat, NULL},
+	{ "/version", NULL, &__version, NULL},
+	{ "/seek", NULL, &__seek_cat, &__seek_write },
+	{ "/bsize", NULL, &__bsize_cat, &__bsize_write },
+	{ "/", &__root},
 	{NULL, NULL}
 };
 
@@ -120,7 +120,6 @@ static int fs_r2_read(RFSFile *file, ut64 addr, int len) {
 }
 
 static void fs_r2_close(RFSFile *file) {
-	// eprintf ("TODO: fs.r2.close\n");
 	//fclose (file->ptr);
 }
 
@@ -284,7 +283,7 @@ static RList *fs_r2_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	return NULL;
 }
 
-static int fs_r2_mount(RFSRoot *root) {
+static bool fs_r2_mount(RFSRoot *root) {
 	root->ptr = NULL;
 	return true;
 }

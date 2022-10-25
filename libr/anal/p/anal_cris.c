@@ -2,6 +2,121 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
+#include "disas-asm.h"
+#if 0
+
+Documentation
+-------------
+http://developer.axis.com/old/documentation/hw/etraxfs/des_ref/des_ref.pdf
+http://developer.axis.com/old/documentation/hw/etraxfs/iop_howto/iop_howto.pdf
+
+#endif
+
+static int cris_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+	int delta = (memaddr - info->buffer_vma);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 8) {
+		return -1;
+	}
+	const ut8 *bytes = info->buffer;
+	memcpy (myaddr, bytes + delta, length);
+	return 0;
+}
+
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
+	return 0;
+}
+
+static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	//--
+}
+
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
+
+bfd_boolean cris_parse_disassembler_options(disassemble_info *info, int distype);
+
+// TODO: refactor the gnu code to have a getter instead of exposing so many disasm entrypoints
+int print_insn_crisv10_v32_with_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_crisv10_v32_without_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_cris_with_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_cris_without_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_crisv32_with_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_crisv32_without_register_prefix(bfd_vma vma, disassemble_info *info);
+
+static char *disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
+	ut8 bytes[8] = { 0 };
+	struct disassemble_info disasm_obj;
+	int mode = 2;
+	if (len < 4) {
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	const ut64 addr = op->addr;
+	memcpy (bytes, buf, R_MIN (len, 8)); // TODO handle thumb
+
+	/* prepare disassembler */
+	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
+	disasm_obj.disassembler_options = (a->config->bits == 64)?"64":"";
+	disasm_obj.buffer = bytes;
+	disasm_obj.read_memory_func = &cris_buffer_read_memory;
+	disasm_obj.symbol_at_address_func = &symbol_at_address;
+	disasm_obj.memory_error_func = &memory_error_func;
+	disasm_obj.print_address_func = &generic_print_address_func;
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
+	disasm_obj.fprintf_func = &generic_fprintf_func;
+	disasm_obj.stream = sb;
+	disasm_obj.buffer_vma = op->addr;
+
+	const char *cpu = a->config->cpu;
+	if (R_STR_ISNOTEMPTY (cpu)) {
+		// enum cris_disass_family { cris_dis_v0_v10, cris_dis_common_v10_v32, cris_dis_v32 };
+		// 0: v0-v10
+		// 1: v10-v32
+		// 2: v32
+		mode = 0;
+		if (strstr (cpu,  "v10")) {
+			mode = 1;
+		}
+		if (strstr (cpu,  "v32")) {
+			mode = 2;
+		}
+	} else {
+		mode = 2;
+	}
+	(void)cris_parse_disassembler_options (&disasm_obj, mode);
+	if (a->config->syntax == R_ARCH_SYNTAX_ATT) {
+		switch (mode) {
+		case 0:
+			op->size = print_insn_cris_with_register_prefix ((bfd_vma)addr, &disasm_obj);
+			break;
+		case 1:
+			op->size = print_insn_crisv10_v32_with_register_prefix ((bfd_vma)addr, &disasm_obj);
+			break;
+		default:
+			op->size = print_insn_crisv32_with_register_prefix ((bfd_vma)addr, &disasm_obj);
+			break;
+		}
+	} else {
+		switch (mode) {
+		case 0:
+			op->size = print_insn_cris_without_register_prefix ((bfd_vma)addr, &disasm_obj);
+			break;
+		case 1:
+			op->size = print_insn_crisv10_v32_without_register_prefix ((bfd_vma)addr, &disasm_obj);
+			break;
+		default:
+			op->size = print_insn_crisv32_without_register_prefix ((bfd_vma)addr, &disasm_obj);
+			break;
+		}
+	}
+	if (op->size == -1) {
+		r_strbuf_set (sb, "(data)");
+	}
+	return r_strbuf_drain (sb);
+}
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int opsize = -1;
@@ -9,6 +124,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	opsize = 2;
 	if (len < 1) {
 		return -1;
+	}
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		op->addr = addr;
+		op->mnemonic = disassemble (a, op, buf, len);
+		if (!op->mnemonic) {
+			op->mnemonic = strdup ("invalid");
+		}
 	}
 	switch (buf[0]) {
 	case 0x3f:

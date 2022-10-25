@@ -88,10 +88,13 @@ R_API RAnal *r_anal_new(void) {
 		free (anal);
 		return NULL;
 	}
+	anal->cmpval = UT64_MAX;
+	anal->lea_jmptbl_ip = UT64_MAX;
 	anal->bb_tree = NULL;
 	anal->ht_addr_fun = ht_up_new0 ();
 	anal->ht_name_fun = ht_pp_new0 ();
 	anal->config = r_arch_config_new ();
+	anal->arch = r_arch_new ();
 	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
@@ -100,6 +103,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->cxxabi = R_ANAL_CPP_ABI_ITANIUM;
 	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
+	anal->lock = r_th_lock_new (true);
 	r_spaces_init (&anal->meta_spaces, "CS");
 	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_UNSET, meta_unset_for, NULL);
 	r_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_COUNT, meta_count_for, NULL);
@@ -163,8 +167,10 @@ R_API void r_anal_free(RAnal *a) {
 	ht_pp_free (a->ht_name_fun);
 	set_u_free (a->visited);
 	r_anal_hint_storage_fini (a);
+	r_th_lock_free (a->lock);
 	r_interval_tree_fini (&a->meta);
 	r_unref (a->config);
+	r_arch_free (a->arch);
 	free (a->zign_path);
 	r_list_free (a->plugins);
 	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
@@ -223,24 +229,31 @@ R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
 }
 
 R_API bool r_anal_use(RAnal *anal, const char *name) {
+	r_return_val_if_fail (anal, false);
+	if (anal->arch) {
+		bool res = r_arch_use (anal->arch, anal->config);
+		if (res) {
+			R_LOG_WARN ("Using experimental r_arch plugin");
+		} else {
+			anal->arch->current = NULL;
+		}
+	}
 	RListIter *it;
 	RAnalPlugin *h;
-	if (anal) {
-		r_list_foreach (anal->plugins, it, h) {
-			if (!h->name || strcmp (h->name, name)) {
-				continue;
-			}
+	r_list_foreach (anal->plugins, it, h) {
+		if (!h->name || strcmp (h->name, name)) {
+			continue;
+		}
 #if 0
-			// regression happening here for asm.emu
-			if (anal->cur && anal->cur == h) {
-				return true;
-			}
-#endif
-			anal->cur = h;
-			r_arch_use (anal->config, h->arch);
-			r_anal_set_reg_profile (anal, NULL);
+		// regression happening here for asm.emu
+		if (anal->cur && anal->cur == h) {
 			return true;
 		}
+#endif
+		anal->cur = h;
+		r_arch_config_use (anal->config, h->arch);
+		r_anal_set_reg_profile (anal, NULL);
+		return true;
 	}
 	return false;
 }
@@ -269,12 +282,12 @@ R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
 	return ret;
 }
 
-R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits) {
+R_API bool r_anal_set_triplet(RAnal *anal, R_NULLABLE const char *os, R_NULLABLE const char *arch, int bits) {
 	r_return_val_if_fail (anal, false);
-	if (!os || !*os) {
+	if (R_STR_ISEMPTY (os)) {
 		os = R_SYS_OS;
 	}
-	if (!arch || !*arch) {
+	if (R_STR_ISEMPTY (arch)) {
 		arch = anal->cur? anal->cur->arch: R_SYS_ARCH;
 	}
 	if (bits < 1) {
@@ -288,10 +301,13 @@ R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int
 
 // copypasta from core/cbin.c
 static void sdb_concat_by_path(Sdb *s, const char *path) {
+	r_return_if_fail (s && path);
 	Sdb *db = sdb_new (0, path, 0);
-	sdb_merge (s, db);
-	sdb_close (db);
-	sdb_free (db);
+	if (db) {
+		sdb_merge (s, db);
+		sdb_close (db);
+		sdb_free (db);
+	}
 }
 
 R_API bool r_anal_set_os(RAnal *anal, const char *os) {
@@ -320,7 +336,7 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 
 R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	int obits = anal->config->bits;
-	r_arch_set_bits (anal->config, bits);
+	r_arch_config_set_bits (anal->config, bits);
 	if (bits != obits) {
 		r_anal_set_reg_profile (anal, NULL);
 	}
@@ -352,7 +368,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	memset (ret, 0xff, size);
 
 	while (idx < size) {
-		if ((oplen = r_anal_op (anal, op, at, data + idx, size - idx, R_ANAL_OP_MASK_BASIC)) < 1) {
+		if ((oplen = r_anal_op (anal, op, at, data + idx, size - idx, R_ARCH_OP_MASK_BASIC)) < 1) {
 			break;
 		}
 		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
@@ -400,7 +416,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 		return NULL;
 	}
 	int len = r_hex_str2bin (str, buf);
-	r_anal_op (anal, op, addr, buf, len, R_ANAL_OP_MASK_BASIC);
+	r_anal_op (anal, op, addr, buf, len, R_ARCH_OP_MASK_BASIC);
 	free (buf);
 	return op;
 }
@@ -537,7 +553,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, -1);
 		RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 		if (!fcn && !fi) {
-			eprintf ("Can't find Function at given address\n");
+			R_LOG_ERROR ("Can't find Function at given address");
 			return false;
 		}
 		tmp_name = fcn ? fcn->name: fi->name;
@@ -555,10 +571,10 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 			if (name) {
 				sdb_bool_set (TDB, K_NORET_FUNC (name), true, 0);
 			} else {
-				eprintf ("Can't find prototype for: %s\n", tmp_name);
+				R_LOG_WARN ("Can't find prototype for: %s", tmp_name);
 			}
 		} else {
-			eprintf ("Can't find prototype for: %s\n", tmp_name);
+			R_LOG_WARN ("Can't find prototype for: %s", tmp_name);
 		}
 		//return false;
 	}
@@ -632,10 +648,10 @@ static bool noreturn_recurse(RAnal *anal, ut64 addr) {
 	ut8 bbuf[0x10] = {0};
 	ut64 recurse_addr = UT64_MAX;
 	if (!anal->iob.read_at (anal->iob.io, addr, bbuf, sizeof (bbuf))) {
-		eprintf ("Couldn't read buffer\n");
+		R_LOG_ERROR ("Couldn't read buffer");
 		return false;
 	}
-	if (r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL) < 1) {
+	if (r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL) < 1) {
 		return false;
 	}
 	switch (op.type & R_ANAL_OP_TYPE_MASK) {

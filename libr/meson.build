@@ -5,11 +5,12 @@ no_user_plugins = get_option('plugins') == ''
 esil_plugins = [ 'dummy' ]
 asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
+arch_plugins = [ 'null' ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = [ 'xtr_sep64' ]
-io_plugins = [ 'malloc', 'fd', 'default', 'null', 'rbuf', 'r2pipe' , 'r2pipe']
-fs_plugins = [ 'r2', 'posix', 'io' ]
+io_plugins = [ 'malloc', 'xattr', 'fd', 'default', 'null', 'rbuf', 'r2pipe' , 'r2pipe']
+fs_plugins = [ 'r2', 'posix', 'io', 'zip' ]
 bp_plugins = [ 'bf' ]
 crypto_plugins = [ 'xor', 'punycode' ]
 core_plugins = [ 'a2f' ]
@@ -52,7 +53,7 @@ if not no_user_plugins
     ]
   endif
   if user_plugins.contains('x86')
-    asm_plugins += [ 'x86_cs', 'x86_nz' ]
+    asm_plugins += [ 'x86_nz' ]
     anal_plugins += [ 'x86_cs' ]
     bp_plugins += [ 'x86' ]
     parse_plugins += [ 'x86_pseudo' ]
@@ -62,13 +63,13 @@ if not no_user_plugins
     io_plugins += [ 'r2web' ]
   endif
   if user_plugins.contains('arm')
-    asm_plugins += [ 'arm_cs' ]
+    asm_plugins += [ 'arm' ]
     anal_plugins += [ 'arm_cs' ]
     bp_plugins += [ 'arm' ]
     parse_plugins += [ 'arm_pseudo' ]
   endif
   if user_plugins.contains('v850')
-    anal_plugins += [ 'v850', 'v850_np', 'v810' ]
+    anal_plugins += [ 'v850', 'v810' ]
     parse_plugins += [ 'v850_pseudo' ]
   endif
   if user_plugins.contains('wasm')
@@ -76,20 +77,13 @@ if not no_user_plugins
     parse_plugins += [ 'wasm_pseudo' ]
   endif
   if user_plugins.contains('sparc')
-    asm_plugins += [ 'sparc_cs' ]
     anal_plugins += [ 'sparc_cs' ]
-    if use_gpl
-      asm_plugins += [ 'sparc_gnu' ]
-      anal_plugins += [ 'sparc_gnu' ]
-    endif
     bp_plugins += [ 'sparc' ]
     # missing parse_plugins += [ 'sparc_pseudo' ]
   endif
   if user_plugins.contains('mips')
-    asm_plugins += [ 'mips_cs' ]
     anal_plugins += [ 'mips_cs' ]
     if use_gpl
-      asm_plugins += [ 'mips_gnu' ]
       anal_plugins += [ 'mips_gnu' ]
     endif
     bp_plugins += [ 'mips' ]
@@ -97,12 +91,10 @@ if not no_user_plugins
   endif
   if user_plugins.contains('dalvik')
     bin_plugins += [ 'dex' ]
-    asm_plugins += [ 'dalvik' ]
     anal_plugins += [ 'dalvik' ]
     parse_plugins += [ 'dalvik_pseudo' ]
   endif
   if user_plugins.contains('riscv')
-    asm_plugins += [ 'riscv' ]
     anal_plugins += [ 'riscv' ]
     parse_plugins += [ 'riscv_pseudo' ]
   endif
@@ -127,46 +119,23 @@ endif
 if no_user_plugins
 
 asm_plugins += [
-  '8051',
-  'amd29k',
   'arm_as',
-  'arm_cs',
-  'arm_winedbg',
-  'avr',
-  'dalvik',
-  'dcpu16',
-  'gb',
-  'h8300',
-  'i8080',
-  'java',
-  'lm32',
-  'm680x_cs',
-  'mcs96',
-  'mips_cs',
-  'or1k',
+  'arm',
   'ppc_as',
-  'ppc_cs',
-  'propeller',
-  'riscv',
-  'rsp',
-  'sh',
-  'sparc_cs',
-  'tms320',
   'x86_as',
-  'x86_cs',
   'x86_nasm',
   'x86_nz',
-  'xap',
-  'xcore_cs',
 ]
 
 # TODO: add the pyc plugin for meson builds too
 anal_plugins += [
   '6502',
   '6502_cs',
+  'mcs96',
   '8051',
+  'alpha',
   'amd29k',
-  #'arc',
+  # 'arc',
   'arm_cs',
   'avr',
   'bf',
@@ -174,7 +143,6 @@ anal_plugins += [
   'bpf_cs',
   'chip8',
   'cr16',
-  'bpf',
   'cris',
   'dalvik',
   'ebc',
@@ -186,8 +154,10 @@ anal_plugins += [
   'java',
   'kvx',
   'lh5801',
+  'lm32',
   'loongarch_gnu',
   'm68k_cs',
+  'm68k_gnu',
   'm680x_cs',
   'malbolge',
   'mcore',
@@ -209,7 +179,6 @@ anal_plugins += [
   'tricore',
   'v810',
   'v850',
-  'v850_np',
   'vax',
   'wasm',
   'ws',
@@ -223,23 +192,18 @@ if no_user_plugins
   if use_gpl
     asm_plugins += [
       # 'z80',
-      'arm_gnu',
-      'cris_gnu',
-  #    'hppa_gnu',
-      'm68k_gnu',
-      'lanai_gnu',
-      'mips_gnu',
-      'sparc_gnu'
     ]
     anal_plugins += [
       'z80',
       'arm_gnu',
+      'lanai_gnu',
       'bpf',
       'mips_gnu',
       'loongarch_gnu',
       's390_gnu',
       'pdp11_gnu',
       'ppc_gnu',
+      'm68k_gnu',
       'sparc_gnu',
     ]
   endif
@@ -290,6 +254,7 @@ bin_plugins += [
   'pebble',
   'prg',
   'psxexe',
+  'rel',
   'sfc',
   'smd',
   'sms',
@@ -390,6 +355,7 @@ fs_plugins += [
 io_plugins += [
   'ar',
   'fd',
+  'reg',
   'bfdbg',
   'bochs',
   'debug',
@@ -445,6 +411,8 @@ endif
 
 parse_plugins += [
   '6502_pseudo',
+  'bpf_pseudo',
+  'evm_pseudo',
   'arm_pseudo',
   'avr_pseudo',
   'chip8_pseudo',
@@ -464,125 +432,134 @@ parse_plugins += [
 endif
 
 include_files = [
-  join_paths('include/r2naked.h'),
-  join_paths('include/r_agraph.h'),
-  join_paths('include/r_anal.h'),
-  join_paths('include/r_arch.h'),
-  join_paths('include/r_asm.h'),
-  join_paths('include/r_bin.h'),
-  join_paths('include/r_bin_dwarf.h'),
-  join_paths('include/r_bind.h'),
-  join_paths('include/r_bp.h'),
-  join_paths('include/r_cmd.h'),
-  join_paths('include/r_codemeta.h'),
-  join_paths('include/r_config.h'),
-  join_paths('include/r_cons.h'),
-  join_paths('include/r_core.h'),
-  join_paths('include/r_crypto.h'),
-  join_paths('include/r_debug.h'),
-  join_paths('include/r_egg.h'),
-  join_paths('include/r_endian.h'),
-  join_paths('include/r_flag.h'),
-  join_paths('include/r_flist.h'),
-  join_paths('include/r_fs.h'),
-  join_paths('include/r_getopt.h'),
-  join_paths('include/r_hash.h'),
-  join_paths('include/r_heap_glibc.h'),
-  join_paths('include/r_heap_jemalloc.h'),
-  join_paths('include/r_io.h'),
-  join_paths('include/r_lang.h'),
-  join_paths('include/r_lib.h'),
-  join_paths('include/r_list.h'),
-  join_paths('include/r_magic.h'),
-  join_paths('include/r_main.h'),
-  join_paths('include/r_parse.h'),
-  join_paths('include/r_pdb.h'),
-  join_paths('include/r_qrcode.h'),
-  join_paths('include/r_reg.h'),
-  join_paths('include/r_regex.h'),
-  join_paths('include/r_search.h'),
-  join_paths('include/r_sign.h'),
-  join_paths('include/r_skiplist.h'),
-  join_paths('include/r_skyline.h'),
-  join_paths('include/r_socket.h'),
-  join_paths('include/r_syscall.h'),
-  join_paths('include/r_th.h'),
-  join_paths('include/r_types.h'),
-  join_paths('include/r_types_base.h'),
-  join_paths('include/r_types_overflow.h'),
-  join_paths('include/r_util.h'),
-  join_paths('include/r_vector.h'),
+  'include/r2naked.h',
+  'include/rvc.h',
+  'include/r_agraph.h',
+  'include/r_anal.h',
+  'include/r_arch.h',
+  'include/r_asm.h',
+  'include/r_bin.h',
+  'include/r_bin_dwarf.h',
+  'include/r_bind.h',
+  'include/r_bp.h',
+  'include/r_cmd.h',
+  'include/r_codemeta.h',
+  'include/r_config.h',
+  'include/r_cons.h',
+  'include/r_core.h',
+  'include/r_crypto.h',
+  'include/r_debug.h',
+  'include/r_egg.h',
+  'include/r_endian.h',
+  'include/r_flag.h',
+  'include/r_fs.h',
+  'include/r_getopt.h',
+  'include/r_hash.h',
+  'include/r_heap_glibc.h',
+  'include/r_heap_jemalloc.h',
+  'include/r_io.h',
+  'include/r_lang.h',
+  'include/r_lib.h',
+  'include/r_list.h',
+  'include/r_magic.h',
+  'include/r_main.h',
+  'include/r_parse.h',
+  'include/r_pdb.h',
+  'include/r_qrcode.h',
+  'include/r_reg.h',
+  'include/r_regex.h',
+  'include/r_search.h',
+  'include/r_sign.h',
+  'include/r_skiplist.h',
+  'include/r_skyline.h',
+  'include/r_socket.h',
+  'include/r_syscall.h',
+  'include/r_th.h',
+  'include/r_types.h',
+  'include/r_types_base.h',
+  'include/r_types_overflow.h',
+  'include/r_util.h',
+  'include/r_vector.h',
 ]
 install_headers(include_files, install_dir: r2_incdir)
 
 r_util_files = [
-  join_paths('include/r_util/bplist.h'),
-  join_paths('include/r_util/pj.h'),
-  join_paths('include/r_util/r_alloc.h'),
-  join_paths('include/r_util/r_ascii_table.h'),
-  join_paths('include/r_util/r_asn1.h'),
-  join_paths('include/r_util/r_assert.h'),
-  join_paths('include/r_util/r_axml.h'),
-  join_paths('include/r_util/r_base64.h'),
-  join_paths('include/r_util/r_base91.h'),
-  join_paths('include/r_util/r_big.h'),
-  join_paths('include/r_util/r_bitmap.h'),
-  join_paths('include/r_util/r_buf.h'),
-  join_paths('include/r_util/r_cache.h'),
-  join_paths('include/r_util/r_ctypes.h'),
-  join_paths('include/r_util/r_debruijn.h'),
-  join_paths('include/r_util/r_diff.h'),
-  join_paths('include/r_util/r_event.h'),
-  join_paths('include/r_util/r_file.h'),
-  join_paths('include/r_util/r_graph.h'),
-  join_paths('include/r_util/r_graph_drawable.h'),
-  join_paths('include/r_util/r_hex.h'),
-  join_paths('include/r_util/r_idpool.h'),
-  join_paths('include/r_util/r_intervaltree.h'),
-  join_paths('include/r_util/r_itv.h'),
-  join_paths('include/r_util/r_json.h'),
-  join_paths('include/r_util/r_log.h'),
-  join_paths('include/r_util/r_mem.h'),
-  join_paths('include/r_util/r_name.h'),
-  join_paths('include/r_util/r_new_rbtree.h'),
-  join_paths('include/r_util/r_num.h'),
-  join_paths('include/r_util/r_panels.h'),
-  join_paths('include/r_util/r_pkcs7.h'),
-  join_paths('include/r_util/r_pool.h'),
-  join_paths('include/r_util/r_print.h'),
-  join_paths('include/r_util/r_protobuf.h'),
-  join_paths('include/r_util/r_punycode.h'),
-  join_paths('include/r_util/r_queue.h'),
-  join_paths('include/r_util/r_range.h'),
-  join_paths('include/r_util/r_rbtree.h'),
-  join_paths('include/r_util/r_sandbox.h'),
-  join_paths('include/r_util/r_signal.h'),
-  join_paths('include/r_util/r_spaces.h'),
-  join_paths('include/r_util/r_stack.h'),
-  join_paths('include/r_util/r_str.h'),
-  join_paths('include/r_util/r_str_constpool.h'),
-  join_paths('include/r_util/r_str_util.h'),
-  join_paths('include/r_util/r_strbuf.h'),
-  join_paths('include/r_util/r_strpool.h'),
-  join_paths('include/r_util/r_sys.h'),
-  join_paths('include/r_util/r_table.h'),
-  join_paths('include/r_util/r_time.h'),
-  join_paths('include/r_util/r_token.h'),
-  join_paths('include/r_util/r_tree.h'),
-  join_paths('include/r_util/r_uleb128.h'),
-  join_paths('include/r_util/r_utf16.h'),
-  join_paths('include/r_util/r_utf32.h'),
-  join_paths('include/r_util/r_utf8.h'),
-  join_paths('include/r_util/r_w32.h'),
-  join_paths('include/r_util/r_w32dw.h'),
-  join_paths('include/r_util/r_x509.h')
+  'include/r_util/bplist.h',
+  'include/r_util/pj.h',
+  'include/r_util/r_alloc.h',
+  'include/r_util/r_ascii_table.h',
+  'include/r_util/r_asn1.h',
+  'include/r_util/r_assert.h',
+  'include/r_util/r_axml.h',
+  'include/r_util/r_base64.h',
+  'include/r_util/r_base91.h',
+  'include/r_util/r_big.h',
+  'include/r_util/r_bitmap.h',
+  'include/r_util/r_buf.h',
+  'include/r_util/r_cache.h',
+  'include/r_util/r_ctypes.h',
+  'include/r_util/r_debruijn.h',
+  'include/r_util/r_diff.h',
+  'include/r_util/r_event.h',
+  'include/r_util/r_file.h',
+  'include/r_util/r_graph.h',
+  'include/r_util/r_graph_drawable.h',
+  'include/r_util/r_hex.h',
+  'include/r_util/r_idpool.h',
+  'include/r_util/r_intervaltree.h',
+  'include/r_util/r_itv.h',
+  'include/r_util/r_json.h',
+  'include/r_util/r_log.h',
+  'include/r_util/r_mem.h',
+  'include/r_util/r_name.h',
+  'include/r_util/r_new_rbtree.h',
+  'include/r_util/r_num.h',
+  'include/r_util/r_panels.h',
+  'include/r_util/r_pkcs7.h',
+  'include/r_util/r_pool.h',
+  'include/r_util/r_print.h',
+  'include/r_util/r_protobuf.h',
+  'include/r_util/r_punycode.h',
+  'include/r_util/r_queue.h',
+  'include/r_util/r_range.h',
+  'include/r_util/r_rbtree.h',
+  'include/r_util/r_ref.h',
+  'include/r_util/r_sandbox.h',
+  'include/r_util/r_signal.h',
+  'include/r_util/r_spaces.h',
+  'include/r_util/r_stack.h',
+  'include/r_util/r_str.h',
+  'include/r_util/r_str_constpool.h',
+  'include/r_util/r_str_util.h',
+  'include/r_util/r_strbuf.h',
+  'include/r_util/r_strpool.h',
+  'include/r_util/r_sys.h',
+  'include/r_util/r_table.h',
+  'include/r_util/r_time.h',
+  'include/r_util/r_token.h',
+  'include/r_util/r_tree.h',
+  'include/r_util/r_uleb128.h',
+  'include/r_util/r_utf16.h',
+  'include/r_util/r_utf32.h',
+  'include/r_util/r_utf8.h',
+  'include/r_util/r_w32.h',
+  'include/r_util/r_w32dw.h',
+  'include/r_util/r_x509.h'
 ]
 install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 
 r_crypto_files = [
-  'include/r_crypto/r_des.h'
+  'include/r_crypto/r_aes.h',
+  'include/r_crypto/r_des.h',
+  'include/r_crypto/r_sm4.h'
 ]
 install_headers(r_crypto_files, install_dir: join_paths(r2_incdir, 'r_crypto'))
+
+r_anal_files = [
+  'include/r_anal/op.h',
+  'include/r_anal/hint.h',
+]
+install_headers(r_anal_files, install_dir: join_paths(r2_incdir, 'r_anal'))
 
 sflib_common_files = [
   join_paths('include/sflib/common/sftypes.h'),

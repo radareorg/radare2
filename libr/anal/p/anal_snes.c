@@ -72,7 +72,7 @@ static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	op->nopcode = 1;
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = snes_disass (addr, data, len);
 	}
 	switch (data[0]) {
@@ -83,6 +83,8 @@ static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_XCHG;
 		break;
 	case 0x00: // brk
+		op->type = R_ANAL_OP_TYPE_TRAP;
+		break;
 	case 0x02: // cop
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;

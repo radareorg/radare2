@@ -21,7 +21,7 @@
 #include <winkd.h>
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	return (!strncmp (file, "winkd://", 8));
+	return r_str_startswith (file, "winkd://");
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
@@ -44,26 +44,26 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 
 	if (!iob) {
-		eprintf ("Error: Invalid WinDBG path\n");
+		R_LOG_ERROR ("Invalid WinDBG path");
 		return NULL;
 	}
 
 	void *io_ctx = iob->open (file + 8);
 	if (!io_ctx) {
-		eprintf ("Error: Could not open the %s\n", iob->name);
+		R_LOG_ERROR ("Could not open the %s", iob->name);
 		return NULL;
 	}
-	eprintf ("Opened %s %s with fd %p\n", iob->name, file + 8, io_ctx);
+	R_LOG_INFO ("Opened %s %s with fd %p", iob->name, file + 8, io_ctx);
 
 	io_desc_t *desc = io_desc_new (iob, io_ctx);
 	if (!desc) {
-		eprintf ("Error: Could not create io_desc_t\n");
+		R_LOG_ERROR ("Could not create io_desc_t");
 		return NULL;
 	}
 
 	WindCtx *ctx = winkd_ctx_new (desc);
 	if (!ctx) {
-		eprintf ("Failed to initialize winkd context\n");
+		R_LOG_ERROR ("Failed to initialize winkd context");
 		return NULL;
 	}
 	return r_io_desc_new (io, &r_io_plugin_winkd, file, rw, mode, ctx);

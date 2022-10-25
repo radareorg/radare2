@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2007-2021 - pancake */
+/* radare2 - LGPL - Copyright 2007-2022 - pancake */
 
 #include <r_util/r_print.h>
 #include <r_anal.h>
@@ -564,8 +564,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 			if (p->nbcolor > 0) {
 				// colorize N first bytes only
 				// used for op+arg in disasm hexpairs
-				lastcol = (i < p->nbcolor)
-					? color_0x00: color_0x7f;
+				lastcol = (i < p->nbcolor) ? color_0x00: color_0x7f;
 			} else if (s[0] == '0' && s[1] == '0') {
 				lastcol = color_0x00;
 			} else if (s[0] == '7' && s[1] == 'f') {
@@ -577,11 +576,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 				if (ch == -1) {
 					break;
 				}
-				if (IS_PRINTABLE (ch)) {
-					lastcol = color_text;
-				} else {
-					lastcol = color_other;
-				}
+				lastcol = IS_PRINTABLE (ch) ? color_text: color_other;
 			}
 			memcat (d, lastcol);
 		}
@@ -665,7 +660,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool zeroend = (options & R_PRINT_STRING_ZEROEND);
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
+	bool is_interactive = (p && p->cons) ? p->cons->context->is_interactive: false;
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
+	bool use_color = p && (p->flags & R_PRINT_FLAGS_COLOR);
 	int col = 0;
 	i = 0;
 	for (; !r_print_is_interrupted () && i < len; i++) {
@@ -691,7 +688,12 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 		} else {
 			if (b == '\\') {
 				p->cb_printf ("\\\\");
-			} else if ((b == '\n' && !esc_nl) || IS_PRINTABLE (b)) {
+			} else if ((b == '\n' && !esc_nl)) {
+				p->cb_printf ("\n");
+				if (use_color && is_interactive) {
+					p->cb_printf (R_CONS_CLEAR_FROM_CURSOR_TO_EOL);
+				}
+			} else if (IS_PRINTABLE (b)) {
 				p->cb_printf ("%c", b);
 			} else {
 				p->cb_printf ("\\x%02x", b);
@@ -887,6 +889,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 	switch (base) {
 	case -10:
+	case -11:
 		bytefmt = "0x%08x ";
 		pre = " ";
 		if (inc < 4) {
@@ -894,6 +897,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		}
 		break;
 	case -1:
+	case -2:
 		bytefmt = "0x%08x ";
 		pre = "  ";
 		if (inc < 4) {
@@ -906,6 +910,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		break;
 	case 10:
 		bytefmt = "%3d";
+		pre = " ";
+		break;
+	case 11:
+		bytefmt = "%3u";
 		pre = " ";
 		break;
 	case 16:
@@ -987,9 +995,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					if  (use_hdroff) {
 						if (use_pair) {
-							printfmt ("%c%c",
+							if ((((i + k) >> 4) + K) % 16) {
+								printfmt ("%c%c",
 									hex[(((i+k) >> 4) + K) % 16],
 									hex[(i + k) % 16]);
+							} else {
+								printfmt (" %c", hex[(i + k) % 16]);
+							}
 						} else {
 							printfmt (" %c", hex[(i + k) % 16]);
 						}
@@ -1044,7 +1056,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool printValue = true;
 	bool oPrintValue = true;
 	bool isPxr = (p && p->flags & R_PRINT_FLAGS_REFS);
-	bool be = p->config? p->config->big_endian: R_SYS_ENDIAN;
+	bool be = p->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 
 	for (i = j = 0; i < len; i += (stride? stride: inc)) {
 		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
@@ -1126,8 +1138,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 				if (p && (base == 32 || base == 64)) {
 					int left = len - i;
-					/* TODO: check step. it should be 2/4 for base(32) and 8 for
-					 *       base(64) */
+					// TODO: check step. it should be 2/4 for base(32) and 8 for base64
 					ut64 n = 0;
 					size_t sz_n = (base == 64)
 						? sizeof (ut64) : (step == 2)
@@ -1194,7 +1205,18 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					printfmt ("%23" PFMT64d " ", (st64)w);
 					r_print_cursor (p, j, 8, 0);
 					j += 7;
-				} else if (base == -1) {
+				} else if (base == -9) {
+					st64 w = r_read_ble64 (buf + j, be);
+					r_print_cursor (p, j, 8, 1);
+					printfmt ("%23" PFMT64u " ", (st64)w);
+					r_print_cursor (p, j, 8, 0);
+					j += 7;
+				} else if (base == -2) { // pxu1
+					ut8 w = buf[j];
+					r_print_cursor (p, j, 1, 1);
+					printfmt ("%4u ", w);
+					r_print_cursor (p, j, 1, 0);
+				} else if (base == -1) { // pxd1
 					st8 w = r_read_ble8 (buf + j);
 					r_print_cursor (p, j, 1, 1);
 					printfmt ("%4d ", w);
@@ -1207,11 +1229,27 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						r_print_cursor (p, j, 2, 0);
 					}
 					j += 1;
-				} else if (base == 10) { // "pxd"
+				} else if (base == -11) { // pxu2
+					if (j + 1 < len) {
+						ut16 w = r_read_ble16 (buf + j, be);
+						r_print_cursor (p, j, 2, 1);
+						printfmt ("%7u ", (w & 0xFFFF));
+						r_print_cursor (p, j, 2, 0);
+					}
+					j += 1;
+				} else if (base == 10) { // "pxd2"
 					if (j + 3 < len) {
 						int w = r_read_ble32 (buf + j, be);
 						r_print_cursor (p, j, 4, 1);
 						printfmt ("%13d ", w);
+						r_print_cursor (p, j, 4, 0);
+					}
+					j += 3;
+				} else if (base == 11) { // "pxu"
+					if (j + 3 < len) {
+						int w = r_read_ble32 (buf + j, be);
+						r_print_cursor (p, j, 4, 1);
+						printfmt ("%13u ", w);
 						r_print_cursor (p, j, 4, 0);
 					}
 					j += 3;
@@ -1447,7 +1485,6 @@ static const char* getchardiff(RPrint *p, char *fmt, ut8 a, ut8 b) {
 	} else {
 		sprintf (fmt, "%c", ch);
 	}
-	//else { fmt[0] = ch; fmt[1]=0; }
 	return fmt;
 }
 
@@ -1613,7 +1650,7 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 			p->cb_printf ("\n");
 		}
 	}
-	p->cb_printf (" };\n");
+	p->cb_printf ("};\n");
 }
 
 // HACK :D
@@ -1847,10 +1884,9 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	for (i = 0; i < size; i++) {
 		cols = arr[i] > cols ? arr[i] : cols;
 	}
-	cols /= 5;
+	int div = R_MAX (255 / (p->cols * 3), 1);
+	cols /= div;
 	for (i = 0; i < size; i++) {
-		ut8 next = (i + 1 < size)? arr[i + 1]: 0;
-		int base = 0, k = 0;
 		if (addr != UT64_MAX && step > 0) {
 			ut64 at = addr + (i * step);
 			if (show_offset) {
@@ -1871,34 +1907,8 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		} else {
 			p->cb_printf ("%s", v_line);
 		}
-		if (next < INC) {
-			base = 1;
-		}
-		if (next < arr[i]) {
-			if (arr[i] > INC) {
-				for (j = 0; j < next + base; j += INC) {
-					printHistBlock (p, k, cols);
-					k++;
-				}
-			}
-			for (j = next + INC; j + base < arr[i]; j += INC) {
-				printHistBlock (p, k, cols);
-				k++;
-			}
-		} else {
-			printHistBlock (p, k, cols);
-			k++;
-		}
-		if (i + 1 == size) {
-			for (j = arr[i] + INC + base; j + base < next; j += INC) {
-				printHistBlock (p, k, cols);
-				k++;
-			}
-		} else if (arr[i + 1] > arr[i]) {
-			for (j = arr[i] + INC + base; j + base < next; j += INC) {
-				printHistBlock (p, k, cols);
-				k++;
-			}
+		for (j = 0; j < arr[i] / div; j++) {
+			printHistBlock (p, j, cols);
 		}
 		if (show_colors) {
 			p->cb_printf ("%s", Color_RESET);
@@ -1951,8 +1961,11 @@ static void r_print_2bpp_newline(RPrint *p, bool useColor) {
 }
 
 R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, size_t buflen, ut32 tiles, const char **colors) {
+	if (!tiles) {
+		return;
+	}
 	if (!colors) {
-		colors = (const char *[]){
+		colors = (const char *[]) {
 			Color_BGWHITE,
 			Color_BGRED,
 			Color_BGBLUE,
@@ -2400,7 +2413,7 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	}
 	int i, words = (len / bytesize);
 	p->cb_printf ("[");
-	bool be = p->config? p->config->big_endian: R_SYS_ENDIAN;
+	bool be = p->config? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	for (i = 0; i < words; i++) {
 		switch (wordsize) {
 		case 8: {
@@ -2435,9 +2448,9 @@ R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	if (!len) {
 		return;
 	}
-	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
+	ut64 n, *buf = calloc (sizeof (ut64), ((len + 63) / 64));
 	if (!buf) {
-		eprintf ("allocation failed\n");
+		R_LOG_ERROR ("allocation failed");
 		return;
 	}
 	if (!p) {
@@ -2463,35 +2476,6 @@ R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	p->cb_printf ("\n");
 	free (buf);
 }
-
-R_API const char* r_print_rowlog(RPrint *print, const char *str) {
-	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
-	bool verbose = print->scr_prompt;
-	r_return_val_if_fail (print->cb_eprintf, NULL);
-	if (!verbose) {
-		return NULL;
-	}
-	if (use_color) {
-		print->cb_eprintf ("[ ] "Color_YELLOW"%s\r["Color_RESET, str);
-	} else {
-		print->cb_eprintf ("[ ] %s\r[", str);
-	}
-	return str;
-}
-
-R_API void r_print_rowlog_done(RPrint *print, const char *str) {
-	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
-	bool verbose =  print->scr_prompt;
-	r_return_if_fail (print->cb_eprintf);
-	if (verbose) {
-		if (use_color) {
-			print->cb_eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", str);
-		} else {
-			print->cb_eprintf ("\r[x] %s\n", str);
-		}
-	}
-}
-
 
 R_API RBraile r_print_braile(int u) {
 #define CH0(x) ((x) >> 8)
@@ -2539,4 +2523,134 @@ R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len) {
 		}
 	}
 	print->cb_printf ("\n");
+}
+
+R_API char *r_print_code_indent(const char *s) {
+	// honors {} not implemented
+	return NULL;
+}
+
+R_API char *r_print_code_tocolor(const char *o) {
+	char *s = strdup (o);
+	s = r_str_replace (s, "\r", "", 1);
+	s = r_str_replace (s, "goto ", Color_GREEN"goto "Color_RESET, 1);
+	s = r_str_replace (s, "(byte)", Color_RED"(byte)"Color_RESET, 1);
+
+	RStrBuf *sb = r_strbuf_new ("");
+	const char *p = s;
+	while (*p) {
+		if (r_str_startswith (p, "\n\n")) {
+			p++;
+			continue;
+		}
+		const char *nl = strchr (p, '\n');
+		const char *cm = strstr (p, "//");
+		const char *lb = strchr (p, ':');
+		const char *cl = strstr (p, " ()");
+		const char *st = strstr (p, " str.");
+		const char *w = r_str_trim_head_ro (p);
+		if (w == nl) {
+			p = w;
+			continue;
+		}
+		if (lb && lb > p) {
+			const char *prev = lb - 1;
+			if (*prev == ' ') {
+				lb = 0;
+			}
+		}
+		if (r_str_startswith (w, "(byte)")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_RED "(byte)"Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 6;
+		} else if (r_str_startswith (w, "if ")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_YELLOW"if "Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 3;
+		} else if (r_str_startswith (w, "do {")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_YELLOW"do {"Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 4;
+		} else if (r_str_startswith (w, "int ")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_CYAN"int "Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 4;
+		} else if (r_str_startswith (w, "return ")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_GREEN "return "Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 7;
+		} else if (r_str_startswith (w, "break;")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_GREEN "break;"Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 6;
+		} else if (r_str_startswith (w, "while ")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_GREEN "while "Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 6;
+		} else if (r_str_startswith (w, "goto ")) {
+			r_strbuf_append_n (sb, p, w - p);
+			const char *msg = Color_GREEN "goto "Color_RESET;
+			r_strbuf_append (sb, msg);
+			p = w + 5;
+		} else if (st > 0 && st < nl) {
+			const char *eos = R_MIN (nl, cm);
+			if (eos < st) {
+				eos = nl;
+			}
+				st += 5;
+				r_strbuf_append_n (sb, p, st - p); // pre
+				r_strbuf_append (sb, Color_CYAN);
+				r_strbuf_append (sb, " \"");
+				char *trim = r_str_ndup (st, eos - st);
+				r_str_trim (trim);
+				r_strbuf_append (sb, trim);
+				free (trim);
+				r_strbuf_append (sb, "\"");
+				r_strbuf_append (sb, Color_RESET);
+				p = eos;
+		} else if (cl > 0 && cl < nl && cl < cm) {
+			// colorize calls
+			r_strbuf_append (sb, Color_GREEN);
+			if (cm > 0 && cm < nl) {
+				r_strbuf_append_n (sb, p, cm - p);
+				p = cm;
+			} else {
+				r_strbuf_append_n (sb, p, nl - p);
+				p = nl;
+			}
+			r_strbuf_append (sb, Color_RESET);
+		} else if (cm > 0 && cm < nl) {
+			// colorize comments
+			if (cm > p) {
+				r_strbuf_append_n (sb, p, cm - p);
+			} else {
+				r_strbuf_append_n (sb, " ", 1);
+			}
+			r_strbuf_append (sb, Color_MAGENTA);
+			r_strbuf_append_n (sb, cm, nl - cm);
+			r_strbuf_append (sb, Color_RESET);
+			p = nl;
+		} else if (lb > 0 && lb < nl && lb < cm && (lb[1] == ' ' || lb[1] == '\n')) {
+			// colorize labels
+			size_t len = lb - p + 1;
+			r_strbuf_append (sb, Color_YELLOW);
+			r_strbuf_append_n (sb, p, len);
+			r_strbuf_append (sb, Color_RESET);
+			p = lb + 1;
+		} else {
+			r_strbuf_append_n (sb, p, 1);
+			p++;
+		}
+	}
+	free (s);
+	char *r = r_strbuf_drain (sb);
+	r_str_trim_emptylines (r);
+	return r;
 }

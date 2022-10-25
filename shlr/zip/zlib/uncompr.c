@@ -30,7 +30,7 @@ int ZEXPORT uncompress2 (dest, destLen, source, sourceLen)
     const Bytef *source;
     uLong *sourceLen;
 {
-    z_stream stream = {0};
+    z_stream stream;
     int err;
     const uInt max = (uInt)-1;
     uLong len, left;
@@ -48,7 +48,6 @@ int ZEXPORT uncompress2 (dest, destLen, source, sourceLen)
 
     stream.next_in = (z_const Bytef *)source;
     stream.avail_in = 0;
-    stream.total_out = 0;
     stream.zalloc = (alloc_func)0;
     stream.zfree = (free_func)0;
     stream.opaque = (voidpf)0;

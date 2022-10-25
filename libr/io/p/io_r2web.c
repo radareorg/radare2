@@ -88,7 +88,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	const char *uri = "r2web://";
-	return (!strncmp (pathname, uri, strlen (uri)));
+	return r_str_startswith (pathname, uri);
 }
 
 static inline int getmalfd(RIOR2Web *mal) {
@@ -128,7 +128,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		free (mal);
 		free (out);
 		free (path);
-		eprintf ("Error: Try http://localhost:9090/cmd/");
+		R_LOG_WARN ("Try http://localhost:9090/cmd/");
 	}
 	return NULL;
 }

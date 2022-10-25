@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_lib.h>
 #include <r_crypto.h>
 
-int mod(int a, int b) {
+static int mod(int a, int b) {
 	if (b < 0) {
 		return mod (-a, -b);
 	}
@@ -52,49 +52,40 @@ static void rot_decrypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 	}
 }
 
-static ut8 rot_key;
-static int flag = 0;
-
-static bool rot_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	flag = direction;
-	return rot_init (&rot_key, key, keylen);
+static bool rot_set_key(RCryptoJob *cj, const ut8 *key, int keylen, int mode, int direction) {
+	cj->flag = direction;
+	return rot_init (&cj->rot_key, key, keylen);
 }
 
-static int rot_get_key_size(RCrypto *cry) {
+static int rot_get_key_size(RCryptoJob *cj) {
 	//Returning number of bytes occupied by ut8
 	return 1;
 }
 
-static bool rot_use(const char *algo) {
-	return !strcmp (algo, "rot");
-}
-
-static bool update(RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCryptoJob *cj, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
-	if (flag == 0) {
-		rot_crypt (rot_key, buf, obuf, len);
-	} else if (flag == 1) {
-		rot_decrypt (rot_key, buf, obuf, len);
+	if (cj->flag == 0) {
+		rot_crypt (cj->rot_key, buf, obuf, len);
+	} else if (cj->flag == 1) {
+		rot_decrypt (cj->rot_key, buf, obuf, len);
 	}
-	r_crypto_append (cry, obuf, len);
+	r_crypto_job_append (cj, obuf, len);
 	free (obuf);
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
-}
-
 RCryptoPlugin r_crypto_plugin_rot = {
 	.name = "rot",
+	.implements = "rot",
+	.author = "pancake",
+	.license = "MIT",
 	.set_key = rot_set_key,
 	.get_key_size = rot_get_key_size,
-	.use = rot_use,
 	.update = update,
-	.final = final
+	.end = update
 };
 
 #ifndef R2_PLUGIN_INCORE

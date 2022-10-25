@@ -22,6 +22,7 @@ DEBUGGER=1
 USE_MAGIC=0
 WANT_THREADS=1
 LOADLIBS=1
+R_CRITICAL_ENABLED=0
 WANT_DYLINK=1
 HAVE_FORK=1
 WANT_PTRACE_WRAP=1
@@ -36,7 +37,7 @@ USE_ZIP=0
 USE_XXHASH=0
 WITH_GPL=1
 WANT_OPENSSL=0
-WANT_LIBUV=1
+WANT_LIBUV=0
 USE_RPATH=0
 [ -z "${USERCC}" ] && USERCC="gcc"
 [ -z "${USEROSTYPE}" ] && USEROSTYPE="auto"
@@ -134,12 +135,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='radare2' ; VERSION='5.7.1' ; VERSION_MAJOR=5; VERSION_MINOR=7; VERSION_PATCH=1; VERSION_NUMBER=50701; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2' ; VERSION='5.7.9' ; VERSION_MAJOR=5; VERSION_MINOR=7; VERSION_PATCH=9; VERSION_NUMBER=50709; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-5.7.1 to adapt to many kinds of systems.
+'configure' configures radare2-5.7.9 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -187,11 +188,12 @@ Optional Features:
   --with-sysmagic        force to use system's magic
   --disable-threads      disable use of thread apis
   --disable-loadlibs     disable loading plugins
+  --enable-threadsafety  enable mutexes in critical code paths
   --without-dylink       disable support for dynamic loading of plugins
   --without-fork         disable fork
   --without-ptrace-wrap  build ptrace-wrap support needed for the iaito debugger on Linux
   --without-gperf        do not statically link the sdb databases even if gperf is found
-  --without-capstone     dont build the capstone dependency
+  --without-capstone     don't build the capstone dependency
   --with-libr            build libr.a and libr.dylib
   --with-capstone5       build next branch of capstone5 (default)
   --with-capstone4       build v4 branch of capstone
@@ -201,7 +203,7 @@ Optional Features:
   --with-sysxxhash       force to use system's xxhash
   --without-gpl          do not build GPL code (grub, cxx, ... )
   --with-openssl         build with openssl if possible
-  --without-libuv        disable libuv dependency
+  --with-libuv           disable libuv dependency
   --with-rpath           use rpath to build
   --with-compiler        Define compiler to use (see mk/) (USERCC=gcc)
   --with-ostype          Choose OS ( android windows wsl mingw32 bsd solaris gnulinux darwin haiku ) (USEROSTYPE=auto)
@@ -244,10 +246,10 @@ ocho() {
 
 show_version() {
 if [ "$QUIET" = 1 ]; then
-	echo "5.7.1"
+	echo "5.7.9"
 	exit 0
 fi
-echo "radare2-5.7.1 configuration script done with acr v2.0.0.
+echo "radare2-5.7.9 configuration script done with acr v2.0.0.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -276,12 +278,12 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:   radare2"
-echo "VERSION:   5.7.1"
+echo "VERSION:   5.7.9"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
 echo "PKG-CONFIG:  capstone liblz4 openssl libuv"
-echo "FLAGS:     --disable-debugger --with-sysmagic --disable-threads --disable-loadlibs --without-dylink --without-fork --without-ptrace-wrap --without-gperf --without-capstone --with-libr --with-capstone5 --with-capstone4 --with-syscapstone --with-syslz4 --with-syszip --with-sysxxhash --without-gpl --with-openssl --without-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2"
+echo "FLAGS:     --disable-debugger --with-sysmagic --disable-threads --disable-loadlibs --enable-threadsafety --without-dylink --without-fork --without-ptrace-wrap --without-gperf --without-capstone --with-libr --with-capstone5 --with-capstone4 --with-syscapstone --with-syslz4 --with-syszip --with-sysxxhash --without-gpl --with-openssl --with-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2"
 	exit 0
 	;;
 --cache-file)
@@ -335,6 +337,7 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --disable-threads --disable-
 "--with-sysmagic") USE_MAGIC="1"; ;;
 "--disable-threads") WANT_THREADS="0"; ;;
 "--disable-loadlibs") LOADLIBS="0"; ;;
+"--enable-threadsafety") R_CRITICAL_ENABLED="1"; ;;
 "--without-dylink") WANT_DYLINK="0"; ;;
 "--without-fork") HAVE_FORK="0"; ;;
 "--without-ptrace-wrap") WANT_PTRACE_WRAP="0"; ;;
@@ -349,7 +352,7 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --disable-threads --disable-
 "--with-sysxxhash") USE_XXHASH="1"; ;;
 "--without-gpl") WITH_GPL="0"; ;;
 "--with-openssl") WANT_OPENSSL="1"; ;;
-"--without-libuv") WANT_LIBUV="0"; ;;
+"--with-libuv") WANT_LIBUV="1"; ;;
 "--with-rpath") USE_RPATH="1"; ;;
 --with-compiler) if [ -z "${value}" ]; then USERCC="gcc"; else USERCC="${value}" ; fi ;;
 --with-ostype) if [ -z "${value}" ]; then USEROSTYPE="auto"; else USEROSTYPE="${value}" ; fi ;;
@@ -373,7 +376,7 @@ parse_options "$1"
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR ETCDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS PKGCONFIG HAVE_PATCH PATCH HAVE_AR AR HAVE_GIT GIT HAVE_GPERF GPERF HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC WANT_THREADS LOADLIBS WANT_DYLINK HAVE_FORK WANT_PTRACE_WRAP WANT_GPERF WANT_CAPSTONE WITH_LIBR USE_CS5 USE_CS4 WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE LZ4_CFLAGS LZ4_LDFLAGS HAVE_PKGCFG_LIBLZ4 WITH_SYSLZ4 USE_SYSLZ4 HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_DECL___GLIBC__ HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE_SIGACTION HAVE_CLOCK_GETTIME CLOCK_LDFLAGS SUPPORT_GNU99 HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV WANT_LIBUV USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP R_CHECKS_LEVEL"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR ETCDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS PKGCONFIG HAVE_PATCH PATCH HAVE_AR AR HAVE_GIT GIT HAVE_GPERF GPERF HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC WANT_THREADS LOADLIBS R_CRITICAL_ENABLED WANT_DYLINK HAVE_FORK WANT_PTRACE_WRAP WANT_GPERF WANT_CAPSTONE WITH_LIBR USE_CS5 USE_CS4 WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE LZ4_CFLAGS LZ4_LDFLAGS HAVE_PKGCFG_LIBLZ4 WITH_SYSLZ4 USE_SYSLZ4 HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_DECL___GLIBC__ HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE_SIGACTION HAVE_CLOCK_GETTIME CLOCK_LDFLAGS SUPPORT_GNU99 HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL WANT_LIBUV HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP R_CHECKS_LEVEL"
 
 create_environ
 
@@ -850,7 +853,7 @@ for A in ${ENVWORDS} ; do
 	SEDFLAGS="${SEDFLAGS}s,@${A}@,${VAR},g;"
 done
 SEDFLAGS="${SEDFLAGS}'"
-for A in ./config-user.mk libr/include/r_userconf.h pkgcfg/r_io.pc pkgcfg/r_magic.pc pkgcfg/r_asm.pc pkgcfg/r_bin.pc pkgcfg/r_anal.pc pkgcfg/r_hash.pc pkgcfg/r_cons.pc pkgcfg/r_core.pc pkgcfg/r_lang.pc pkgcfg/r_socket.pc pkgcfg/r_debug.pc pkgcfg/r_reg.pc pkgcfg/r_config.pc pkgcfg/r_flag.pc pkgcfg/r_syscall.pc pkgcfg/r_util.pc pkgcfg/r_search.pc pkgcfg/r_bp.pc pkgcfg/r_parse.pc pkgcfg/r_fs.pc pkgcfg/r_egg.pc pkgcfg/r_crypto.pc  ; do # SUBDIRS
+for A in ./config-user.mk libr/include/r_userconf.h pkgcfg/r_io.pc pkgcfg/r_magic.pc pkgcfg/r_asm.pc pkgcfg/r_bin.pc pkgcfg/r_anal.pc pkgcfg/r_arch.pc pkgcfg/r_cons.pc pkgcfg/r_core.pc pkgcfg/r_lang.pc pkgcfg/r_socket.pc pkgcfg/r_debug.pc pkgcfg/r_reg.pc pkgcfg/r_config.pc pkgcfg/r_flag.pc pkgcfg/r_syscall.pc pkgcfg/r_util.pc pkgcfg/r_search.pc pkgcfg/r_bp.pc pkgcfg/r_parse.pc pkgcfg/r_fs.pc pkgcfg/r_egg.pc pkgcfg/r_crypto.pc  ; do # SUBDIRS
 if [ -f "${VPATH}/${A}.acr" ]; then
   SD_TARGET=${A}
  else

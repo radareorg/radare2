@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util/r_print.h>
+#include <r_util/r_json.h>
 #include <sdb.h>
 
 #define I(x) r_cons_singleton ()->x
@@ -23,7 +24,9 @@ static const char *help_detail_tilde[] = {
 	"modifier:", "", "",
 	" &",        "", "all words must match to grep the line",
 	" $[n]",     "", "sort numerically / alphabetically the Nth column",
-	" $!",       "", "sort in inverse order",
+	" $",        "", "sort in alphabetic order",
+	" $!",       "", "inverse alphabetical sort",
+	" $!!",      "", "reverse the lines (like the `tac` tool)",
 	" ,",        "", "token to define another keyword",
 	" +",        "", "case insensitive grep (grep -i)",
 	" ^",        "", "words must be placed at the beginning of line",
@@ -44,6 +47,7 @@ static const char *help_detail_tilde[] = {
 	" {}",       "", "json indentation",
 	" {}..",     "", "less json indentation",
 	" {}...",    "", "hud json indentation",
+	" {=}",       "", "gron-like output (key=value)",
 	" {path}",   "", "json path grep",
 	"endmodifier:", "", "",
 	" $",        "", "words must be placed at the end of line",
@@ -88,7 +92,7 @@ static void parse_grep_expression(const char *str) {
 		len = 0;
 	}
 	if (len > R_CONS_GREP_BUFSIZE - 1) {
-		R_LOG_ERROR ("r_cons_grep: too long!\n");
+		R_LOG_ERROR ("r_cons_grep: too long!");
 		return;
 	}
 	if (len > 0 && str[len] == '?') {
@@ -110,7 +114,7 @@ static void parse_grep_expression(const char *str) {
 		ptr = ptrs[ptrs_length];
 		ptrs_length++;
 		if (ptrs_length >= R_CONS_GREP_COUNT) {
-			R_LOG_ERROR ("to many nested greps\n");
+			R_LOG_ERROR ("too many nested greps");
 			return;
 		}
 	}
@@ -150,17 +154,20 @@ static void parse_grep_expression(const char *str) {
 				if (ptr[1] == ':') {
 					grep->human = true; // human friendly indentation ij~{:
 					grep->json = 1;
-					if (!strncmp (ptr, "{:...", 5)) {
+					if (r_str_startswith (ptr, "{:...")) {
 						grep->hud = true;
-					} else if (!strncmp (ptr, "{:..", 4)) {
+					} else if (r_str_startswith (ptr, "{:..")) {
 						grep->less = 1;
 					}
+				} else if (ptr[1] == '=' && ptr[2] == '}') {
+					grep->gron = true;
+					ptr += 2;
 				} else if (ptr[1] == '}') {
 					// standard json indentation
 					grep->json = 1;
-					if (!strncmp (ptr, "{}...", 5)) {
+					if (r_str_startswith (ptr, "{}...")) {
 						grep->hud = true;
-					} else if (!strncmp (ptr, "{}..", 4)) {
+					} else if (r_str_startswith (ptr, "{}..")) {
 						grep->less = 1;
 					}
 				} else {
@@ -180,13 +187,17 @@ static void parse_grep_expression(const char *str) {
 				break;
 			case '$':
 				ptr++;
+				grep->sort = 0;
 				if (*ptr == '!') {
+					if (ptr[1] == '!') {
+						grep->sort = -1;
+						ptr++;
+					}
 					grep->sort_invert = true;
 					ptr++;
 				} else {
 					grep->sort_invert = false;
 				}
-				grep->sort = atoi (ptr);
 				while (IS_DIGIT (*ptr)) {
 					ptr++;
 				}
@@ -354,12 +365,12 @@ static void parse_grep_expression(const char *str) {
 					continue;
 				}
 				if (wlen >= R_CONS_GREP_WORD_SIZE - 1) {
-					R_LOG_ERROR ("grep string too long\n");
+					R_LOG_ERROR ("grep string too long");
 					continue;
 				}
 				grep->nstrings++;
 				if (grep->nstrings > R_CONS_GREP_WORDS - 1) {
-					R_LOG_ERROR ("too many grep strings\n");
+					R_LOG_ERROR ("too many grep strings");
 					break;
 				}
 				r_str_ncpy (grep->strings[grep->nstrings - 1],
@@ -398,17 +409,16 @@ static char *find_next_intgrep(char *cmd, const char *quotes) {
  * with reshaped grep expression.
 */
 static char *preprocess_filter_expr(char *cmd, const char *quotes) {
-	char *p1, *p2, *ns = NULL;
+	char *p2, *ns = NULL;
 	const char *strsep = "&";
-	int len;
 	int i;
 
-	p1 = find_next_intgrep (cmd, quotes);
+	char *p1 = find_next_intgrep (cmd, quotes);
 	if (!p1) {
 		return NULL;
 	}
 
-	len = strlen (p1);
+	int len = strlen (p1);
 	if (len > 4 && r_str_endswith (p1, "~?") && p1[len - 3] != '\\') {
 		p1[len - 2] = '\0';
 		ns = r_str_append (ns, "?");
@@ -498,10 +508,68 @@ static int cmp(const void *a, const void *b) {
 	return strcmp (a, b);
 }
 
+static bool gron(RStrBuf *sb, RJson *node, const char *root) {
+	if (!sb || !node || !root) {
+		return false;
+	}
+	switch (node->type) {
+	case R_JSON_ARRAY:
+		{
+			RJson *cn = node->children.first;
+			int n = 0;
+			r_strbuf_appendf (sb, "%s = [];\n", root);
+			while (cn) {
+				char *newroot = r_str_newf ("%s[%d]", root, n);
+				gron (sb, cn, newroot);
+				free (newroot);
+				cn = cn->next;
+				n++;
+			}
+		}
+		break;
+	case R_JSON_OBJECT:
+		{
+			RJson *cn = node->children.first;
+			r_strbuf_appendf (sb, "%s = {};\n", root);
+			while (cn) {
+				char *newroot = r_str_newf ("%s.%s", root, cn->key);
+				gron (sb, cn, newroot);
+				cn = cn->next;
+			}
+		}
+		break;
+	case R_JSON_STRING:
+		{
+			size_t l = strlen (node->str_value);
+			char *estr = r_str_encoded_json (node->str_value, l, PJ_ENCODING_STR_DEFAULT);
+			r_strbuf_appendf (sb, "%s = \"%s\";\n", root, estr);
+			free (estr);
+		}
+		break;
+	case R_JSON_BOOLEAN:
+		r_strbuf_appendf (sb, "%s = %s;\n", root, r_str_bool (node->num.u_value));
+		break;
+	case R_JSON_INTEGER:
+		r_strbuf_appendf (sb, "%s = %"PFMT64d";\n", root, node->num.u_value);
+		break;
+	case R_JSON_NULL:
+		r_strbuf_appendf (sb, "%s = null;\n", root);
+		break;
+	case R_JSON_DOUBLE:
+		r_strbuf_appendf (sb, "%s = %lf;\n", root, node->num.dbl_value);
+		break;
+		break;
+	default:
+		eprintf ("unk %s\n", r_json_type (node));
+		break;
+	}
+	return true;
+}
+
 R_API void r_cons_grepbuf(void) {
 	RCons *cons = r_cons_singleton ();
 	const char *buf = cons->context->buffer;
-	const int len = cons->context->buffer_len;
+	size_t len = cons->context->buffer_len;
 	RConsGrep *grep = &cons->context->grep;
 	const char *in = buf;
 	int ret, total_lines = 0, l = 0, tl = 0;
@@ -535,10 +603,10 @@ R_API void r_cons_grepbuf(void) {
 		return;
 	}
 
-	if ((!len || !buf || !*buf) && (grep->json || grep->less)) {
-		grep->json = 0;
+	if ((!len || R_STR_ISEMPTY (buf)) && (grep->json || grep->less)) {
+		grep->json = false;
+		grep->hud = false;
 		grep->less = 0;
-		grep->hud = 0;
 		return;
 	}
 	if (grep->ascart) {
@@ -566,6 +634,23 @@ R_API void r_cons_grepbuf(void) {
 		grep->zoomy = 0;
 		free (sin);
 		return;
+	}
+	if (grep->gron) {
+		char *a = strdup (cons->context->buffer);
+		RJson *node = r_json_parse (a);
+		RStrBuf *sb = r_strbuf_new ("");
+		gron (sb, node, "json");
+		char *s = r_strbuf_drain (sb);
+		R_FREE (cons->context->buffer);
+		cons->context->buffer_len = 0;
+		cons->context->buffer_sz = 0;
+		r_cons_print (s);
+		buf = cons->context->buffer;
+		len = cons->context->buffer_len;
+		r_json_free (node);
+		free (a);
+		free (s);
+		goto continuation;
 	}
 	if (grep->json) {
 		if (grep->json_path) {
@@ -637,7 +722,9 @@ R_API void r_cons_grepbuf(void) {
 		}
 		return;
 	}
-	RStrBuf *ob = r_strbuf_new ("");
+	RStrBuf *ob = NULL;
+continuation:
+	ob = r_strbuf_new ("");
 	// if we modify cons->lines we should update I.context->buffer too
 	cons->lines = 0;
 	// used to count lines and change negative grep.line values
@@ -751,7 +838,7 @@ R_API void r_cons_grepbuf(void) {
 		r_strbuf_free (ob);
 		return;
 	}
-	
+
 	const int ob_len = r_strbuf_length (ob);
 	if (ob_len >= cons->context->buffer_sz) {
 		cons->context->buffer_sz = ob_len + 1;
@@ -763,7 +850,7 @@ R_API void r_cons_grepbuf(void) {
 	}
 	cons->context->buffer_len = ob_len;
 
-	if (grep->sort != -1) {
+	if (grep->sort != -1 || grep->sort_invert) {
 #define INSERT_LINES(list)\
 		do {\
 			r_list_foreach (list, iter, str) {\
@@ -783,7 +870,9 @@ R_API void r_cons_grepbuf(void) {
 		RConsContext *ctx = cons->context;
 		ctx->sorted_column = grep->sort;
 
-		r_list_sort (ctx->sorted_lines, cmp);
+		if (grep->sort != -1) {
+			r_list_sort (ctx->sorted_lines, cmp);
+		}
 		if (grep->sort_invert) {
 			r_list_reverse (ctx->sorted_lines);
 		}
@@ -894,7 +983,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			}
 			outlen = outlen > 0? outlen - 1: 0;
 			if (outlen > len) { // should never happen
-				R_LOG_ERROR ("r_cons_grep_line: wtf, how you reach this?\n");
+				R_LOG_ERROR ("r_cons_grep_line: wtf, how you reach this?");
 				free (in);
 				free (out);
 				return -1;
@@ -907,7 +996,18 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	}
 	free (in);
 	free (out);
-	if (grep->sort != -1) {
+	if (grep->sort_invert && grep->sort == -1) {
+		char ch = buf[len];
+		buf[len] = 0;
+		if (!ctx->sorted_lines) {
+			ctx->sorted_lines = r_list_newf (free);
+		}
+		if (!ctx->unsorted_lines) {
+			ctx->unsorted_lines = r_list_newf (free);
+		}
+		r_list_append (ctx->sorted_lines, strdup (buf));
+		buf[len] = ch;
+	} else if (grep->sort != -1) {
 		char ch = buf[len];
 		buf[len] = 0;
 		if (!ctx->sorted_lines) {

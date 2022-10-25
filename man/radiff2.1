@@ -1,12 +1,13 @@
 .Dd Feb 10, 2018
 .Dt RADIFF2 1
 .Sh NAME
-.Nm RADIFF2
+.Nm radiff2
 .Nd unified binary diffing utility
 .Sh SYNOPSIS
 .Nm radiff2
-.Op Fl AabcCdDhOrspxXvzZ
+.Op Fl 1AabcCdDhOrspxXvzZ
 .Op Fl t Ar 0-100
+.Op Fl B Ar baddr
 .Op Fl i Ar i,s
 .Op Fl g Ar sym
 .Op Fl S Ar algo
@@ -16,14 +17,16 @@
 radiff2 implements many binary diffing algorithms for data and code.
 .Pp
 .Bl -tag -width Fl
+.It Fl 1
+Binary output (GDIFF format)
 .It Fl A
 Analyze binary after loading it with RCore (see -C) and use -AA to run aaaa instead of aaa.
 .It Fl a
 Specify architecture (x86, arm, ..)
 .It Fl b
 Select register size bits for given arch
-.It Fl B
-Binary output (GDIFF format)
+.It Fl B Ar baddr
+Specify the base address to add to the offsets in the diff listings
 .It Fl c
 Count number of differences.
 .It Fl e [k=v]
@@ -38,8 +41,8 @@ Show disasm instead of hexpairs (honors -a arch and -b bits)
 Graph diff output of given symbol, or between two functions, at given offsets: one for each binary.
 .It Fl h
 Show usage help message.
-.It Fl i Ar i, s
-Compare imports or symbols from given files (radiff2 -ii /bin/ls /bin/cat)
+.It Fl i Ar i, s, c, m, f
+Compare (i)mports, (s)ymbols, (c)lassnames, (m)ethods, (f)ields from given files (radiff2 -ii /bin/ls /bin/cat)
 .It Fl n
 Suppress address names (show only addresses) when code diffing.
 .It Fl O

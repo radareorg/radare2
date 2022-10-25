@@ -12,9 +12,6 @@
 */
 
 #include <r_util.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
 
 struct line {
 	int h, len, n, e;
@@ -52,7 +49,7 @@ static int splitlines(const char *a, int len, struct line **lr) {
 		}
 	}
 
-	*lr = l = (struct line *)malloc(sizeof(struct line) * i);
+	*lr = l = (struct line *)malloc(sizeof (struct line) * i);
 	if (!l) {
 		return -1;
 	}
@@ -81,7 +78,7 @@ static int splitlines(const char *a, int len, struct line **lr) {
 }
 
 inline static int cmp(struct line *a, struct line *b) {
-	return a->h != b->h || a->len != b->len || memcmp(a->l, b->l, a->len);
+	return a->h != b->h || a->len != b->len || memcmp (a->l, b->l, a->len);
 }
 
 static int equatelines(struct line *a, int an, struct line *b, int bn) {
@@ -96,7 +93,7 @@ static int equatelines(struct line *a, int an, struct line *b, int bn) {
 
 	/* try to allocate a large hash table to avoid collisions */
 	for (scale = 4; scale; scale /= 2) {
-		h = (struct pos *)malloc(scale * buckets * sizeof(struct pos));
+		h = (struct pos *)malloc(scale * buckets * sizeof (struct pos));
 		if (h) {
 			break;
 		}
@@ -153,7 +150,7 @@ static int equatelines(struct line *a, int an, struct line *b, int bn) {
 	}
 
 	/* discard hash tables */
-	free(h);
+	free (h);
 	return 1;
 }
 
@@ -230,18 +227,17 @@ static void recurse(struct line *a, struct line *b, struct pos *pos,
 	recurse(a, b, pos, i + k, a2, j + k, b2, l);
 }
 
-static struct hunklist diff(struct line *a, int an, struct line *b, int bn)
-{
+static struct hunklist diff(struct line *a, int an, struct line *b, int bn) {
 	struct hunklist l;
 	struct hunk *curr;
 	struct pos *pos;
 	int t;
 
 	/* allocate and fill arrays */
-	t = equatelines(a, an, b, bn);
-	pos = (struct pos *)calloc(bn ? bn : 1, sizeof(struct pos));
+	t = equatelines (a, an, b, bn);
+	pos = (struct pos *)calloc (bn ? bn : 1, sizeof (struct pos));
 	/* we can't have more matches than lines in the shorter file */
-	l.head = l.base = (struct hunk *)malloc (sizeof(struct hunk)
+	l.head = l.base = (struct hunk *)malloc (sizeof (struct hunk)
 		* ((an<bn ? an:bn) + 1));
 
 	if (pos && l.base && t) {
@@ -252,7 +248,7 @@ static struct hunklist diff(struct line *a, int an, struct line *b, int bn)
 		l.head++;
 	}
 
-	free(pos);
+	free (pos);
 
 	/* normalize the hunk list, try to push each hunk towards the end */
 	for (curr = l.base; curr != l.head; curr++) {
@@ -339,15 +335,16 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 					break;
 				}
 			}
-#if 0	
+#if 0
 			if (rlen > 0) {
 				//printf ("Remove %d byte(s) at %d\n", rlen, offa);
 				printf ("r-%d @ 0x%"PFMT64x"\n", rlen, (ut64)offa);
 			}
 			printf ("e file.write=true\n"); // XXX
 			printf ("wx ");
-			for(i=0;i<len;i++)
+			for (i = 0; i < len; i++) {
 				printf ("%02x", bl[lb].l[i]);
+			}
 			printf (" @ 0x%"PFMT64x"\n", (ut64)offa);
 			rb += 12 + len;
 #endif

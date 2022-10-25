@@ -1,11 +1,10 @@
-/* radare - LGPL - Copyright 2012-2020 - pancake */
+/* radare - LGPL - Copyright 2012-2022 - pancake */
 
 #include <r_util.h>
 
 R_API RStrpool* r_strpool_new(int sz) {
 	RStrpool *p = R_NEW (RStrpool);
 	if (!p) {
-		eprintf ("Malloc failed!\n");
 		return NULL;
 	}
 	if (sz < 1) {
@@ -13,7 +12,6 @@ R_API RStrpool* r_strpool_new(int sz) {
 	}
 	p->str = malloc (sz);
 	if (!p->str) {
-		eprintf ("Malloc failed!\n");
 		free (p);
 		return NULL;
 	}
@@ -40,13 +38,11 @@ R_API char *r_strpool_alloc(RStrpool *p, int l) {
 			p->size += R_STRPOOL_INC;
 		}
 		if (p->size < osize) {
-			eprintf ("Underflow!\n");
 			p->size = osize;
 			return NULL;
 		}
 		ret = realloc (p->str, p->size);
 		if (!ret) {
-			eprintf ("Realloc failed!\n");
 			free (p->str);
 			p->str = NULL;
 			return NULL;
@@ -72,7 +68,7 @@ R_API int r_strpool_append(RStrpool *p, const char *s) {
 	return r_strpool_memcat (p, s, l);
 }
 
-R_API int r_strpool_ansi_chop(RStrpool *p, int n){
+R_API int r_strpool_ansi_chop(RStrpool *p, int n) {
 	/* p->str need not be a c-string */
 	int i = r_str_ansi_trim (p->str, p->len, n);
 	p->len = i;
@@ -80,19 +76,18 @@ R_API int r_strpool_ansi_chop(RStrpool *p, int n){
 }
 
 R_API void r_strpool_free(RStrpool *p) {
-	free (p->str);
-	free (p);
+	if (p) {
+		free (p->str);
+		free (p);
+	}
 }
 
 R_API int r_strpool_fit(RStrpool *p) {
-	char *s;
 	if (p->len == p->size) {
 		return false;
 	}
-	s = realloc (p->str, p->len);
-	if (!s)
-	{
-		eprintf ("Realloc failed!\n");
+	char *s = realloc (p->str, p->len);
+	if (!s) {
 		free (p->str);
 		return false;
 	}
@@ -141,14 +136,17 @@ R_API char *r_strpool_next(RStrpool *p, int index) {
 }
 
 R_API char *r_strpool_slice(RStrpool *p, int index) {
-	int idx, len;
-	char *o, *x = r_strpool_get_i (p, index + 1);
-	if (!x || !*x) {
+	char *x = r_strpool_get_i (p, index + 1);
+	if (!x) {
 		return NULL;
 	}
-	idx = (size_t)(x - p->str);
-	len = p->len - idx;
-	o = malloc (len + 128);
+	if (!(*x)) {
+		free (x);
+		return NULL;
+	}
+	int idx = (size_t)(x - p->str);
+	int len = p->len - idx;
+	char *o = malloc (len + 128);
 	if (!o) {
 		return NULL;
 	}

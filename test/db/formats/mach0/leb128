@@ -1,9 +1,17 @@
 NAME=macho trie malformed uleb128
 FILE=bins/mach0/macho-trie-bad-export-info-malformed-uleb128
 CMDS=<<EOF
+?en id.version=
+k bin/cur/info/id.version
+?en id.compat=
+k bin/cur/info/id.compat
+EOF
+EXPECT=<<EOF
+id.version=0.0.24
+id.compat=0.0.1
 EOF
 EXPECT_ERR=<<EOF
-malformed uleb128
-malformed uleb128
+ERROR: malformed uleb128
+ERROR: malformed uleb128
 EOF
 RUN

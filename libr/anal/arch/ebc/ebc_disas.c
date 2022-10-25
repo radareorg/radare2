@@ -142,7 +142,7 @@ static int decode_jmp(const ut8 *bytes, ebc_command_t *cmd) {
 	snprintf(cmd->instr, EBC_INSTR_MAXLEN, "%s%d%s", instr_names[EBC_JMP], bits,
 			TEST_BIT(bytes[1], 7) ? TEST_BIT(bytes[1], 6) ? "cs" : "cc" : "");
 
-	if (TEST_BIT(bytes[0], 6)){
+	if (TEST_BIT(bytes[0], 6)) {
 		immed = *(ut64*)(bytes + 2);
 		bits = 64;
 		ret = 10;
@@ -286,35 +286,35 @@ static int decode_cmpeq(const ut8 *bytes, ebc_command_t *cmd) {
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%deq",
 			instr_names[EBC_CMPLTE], bits);
-	return decode_cmp(bytes, cmd);
+	return decode_cmp (bytes, cmd);
 }
 
 static int decode_cmplte(const ut8 *bytes, ebc_command_t *cmd) {
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%dlte",
 			instr_names[EBC_CMPLTE], bits);
-	return decode_cmp(bytes, cmd);
+	return decode_cmp (bytes, cmd);
 }
 
 static int decode_cmpgte(const ut8 *bytes, ebc_command_t *cmd) {
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%dgte",
 			instr_names[EBC_CMPGTE], bits);
-	return decode_cmp(bytes, cmd);
+	return decode_cmp (bytes, cmd);
 }
 
 static int decode_cmpulte(const ut8 *bytes, ebc_command_t *cmd) {
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%dulte",
 			instr_names[EBC_CMPULTE], bits);
-	return decode_cmp(bytes, cmd);
+	return decode_cmp (bytes, cmd);
 }
 
 static int decode_cmpugte(const ut8 *bytes, ebc_command_t *cmd) {
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%dugte",
 			instr_names[EBC_CMPUGTE], bits);
-	return decode_cmp(bytes, cmd);
+	return decode_cmp (bytes, cmd);
 }
 
 static int decode_not(const ut8 *bytes, ebc_command_t *cmd) {
@@ -632,7 +632,7 @@ static int decode_cmpi(const ut8 *bytes, ebc_command_t *cmd) {
 	char op1c[32];
 	char indx[32] = {0};
 	char immed[32] = {0};
-	char *suff[] = {"eq", "lte", "gte", "ulte", "ugte"};
+	char *suff[] = { "eq", "lte", "gte", "ulte", "ugte" };
 
 	snprintf (op1c, sizeof (op1c)-1, "%sr%u",
 		TEST_BIT(bytes[1], 3) ? "@" : "", op1);

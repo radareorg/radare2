@@ -90,7 +90,7 @@ RUN
 NAME=assembler
 FILE=-
 CMDS=<<EOF
-e asm.arch=mips.gnu
+e asm.arch=mips
 e asm.bits=32
 e cfg.bigendian=0
 pa lui t9, 0x41
@@ -112,7 +112,7 @@ RUN
 NAME=with-spaces
 FILE=-
 CMDS=<<EOF
-e asm.arch=mips.gnu
+e asm.arch=mips
 e asm.bits=32
 e cfg.bigendian=0
 pa addiu v0, v1, 33
@@ -256,8 +256,8 @@ EXPECT=<<EOF
 (fcn) fcn.80100020 8
 0x80100020      0800e003   jr ra
 0x80100024      00000000   nop
-0x80100000    1 32           fcn.80100000
-0x80100020    1 8            fcn.80100020
+0x80100000    1     32 fcn.80100000
+0x80100020    1      8 fcn.80100020
 EOF
 RUN
 
@@ -574,9 +574,9 @@ ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
 e asm.calls=false
+e anal.in=io.maps
 e asm.bits=32
 e asm.arch=mips
-e anal.noncode=1
 e asm.comments=0
 e anal.hasnext=1
 e anal.nopskip=1
@@ -647,8 +647,8 @@ CMDS=<<EOF
 e io.va=true
 e asm.calls=false
 e asm.bits=32
+e anal.in=io.maps
 e asm.arch=mips
-e anal.noncode=1
 e asm.comments=0
 e anal.hasnext=1
 e anal.nopskip=1

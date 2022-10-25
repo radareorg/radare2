@@ -1,21 +1,16 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2022 - pancake */
 
 #include <r_reg.h>
-#include <r_util.h>
 
 // TODO: add support for 80bit floating point value
 
 // long double = 128 bit
 R_API double r_reg_get_double(RReg *reg, RRegItem *item) {
-	RRegSet *regset;
+	r_return_val_if_fail (reg && item, 0.0f);
 	double vld = 0.0f;
-	int off;
 	double ret = 0.0f;
-	if (!reg || !item) {
-		return 0LL;
-	}
-	off = BITS2BYTES (item->offset);
-	regset = &reg->regset[item->arena];
+	int off = BITS2BYTES (item->offset);
+	RRegSet *regset = &reg->regset[item->arena];
 	switch (item->size) {
 	case 64:
 		if (regset->arena->size - off - 1 >= 0) {
@@ -24,26 +19,22 @@ R_API double r_reg_get_double(RReg *reg, RRegItem *item) {
 		}
 		break;
 	default:
-		eprintf ("r_reg_set_double: Bit size %d not supported\n", item->size);
+		R_LOG_WARN ("Bit size %d not supported", item->size);
 		return 0.0f;
 	}
 	return ret;
 }
 
 R_API bool r_reg_set_double(RReg *reg, RRegItem *item, double value) {
+	r_return_val_if_fail (reg && item, false);
 	ut8 *src;
-
-	if (!item) {
-		eprintf ("r_reg_set_value: item is NULL\n");
-		return false;
-	}
 	switch (item->size) {
 	case 64:
 		// FIXME: endian
 		src = (ut8 *)&value;
 		break;
 	default:
-		eprintf ("r_reg_set_double: Bit size %d not supported\n", item->size);
+		R_LOG_WARN ("r_reg_set_double: Bit size %d not supported", item->size);
 		return false;
 	}
 	if (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size) >= 0) {
@@ -52,12 +43,13 @@ R_API bool r_reg_set_double(RReg *reg, RRegItem *item, double value) {
 			src, item->size);
 		return true;
 	}
-	eprintf ("r_reg_set_value: Cannot set %s to %lf\n", item->name, value);
+	R_LOG_WARN ("r_reg_set_value: Cannot set %s to %lf", item->name, value);
 	return false;
 }
 
 // long double = 80 bit
 R_API long double r_reg_get_longdouble(RReg *reg, RRegItem *item) {
+	r_return_val_if_fail (reg && item, 0.0f);
 	RRegSet *regset;
 	long double vld = 0.0f;
 	int off;
@@ -78,19 +70,16 @@ R_API long double r_reg_get_longdouble(RReg *reg, RRegItem *item) {
 		}
 		break;
 	default:
-		eprintf ("r_reg_get_longdouble: Bit size %d not supported\n", item->size);
+		R_LOG_WARN ("Bit size %d not supported", item->size);
 		return 0.0f;
 	}
 	return ret;
 }
 
 R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
+	r_return_val_if_fail (reg && item, false);
 	ut8 *src = NULL;
 
-	if (!item) {
-		eprintf ("r_reg_set_value: item is NULL\n");
-		return false;
-	}
 	switch (item->size) {
 	case 80:
 	case 96:
@@ -99,7 +88,7 @@ R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
 		src = (ut8 *)&value;
 		break;
 	default:
-		eprintf ("r_reg_set_longdouble: Bit size %d not supported\n", item->size);
+		R_LOG_WARN ("Bit size %d not supported", item->size);
 		return false;
 	}
 	if (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size) >= 0) {
@@ -108,8 +97,7 @@ R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
 			src, item->size);
 		return true;
 	}
-	eprintf ("r_reg_set_value: Cannot set %s to %lf\n", item->name, (double)value);
-	// eprintf ("r_reg_set_value: Cannot set %s to %" LDBLFMT "\n", item->name, CASTLDBL value);
+	R_LOG_WARN ("Cannot set %s to %lf", item->name, (double)value);
 	return false;
 }
 

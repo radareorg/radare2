@@ -37,7 +37,7 @@ R_API ut64 r_time_now_mono(void) {
 	return v.QuadPart;
 #elif __APPLE__ && !defined(MAC_OS_X_VERSION_10_12)
 	ut64 ticks = mach_absolute_time ();
-	static mach_timebase_info_data_t tb;
+	static R_TH_LOCAL mach_timebase_info_data_t tb;
 	mach_timebase_info (&tb);
 	return ((ticks * tb.numer) / tb.denom) / R_NSEC_PER_USEC;
 #elif HAS_CLOCK_MONOTONIC
@@ -51,7 +51,7 @@ R_API ut64 r_time_now_mono(void) {
 }
 
 // R_API char *r_time_stamp_to_str(ut32 timeStamp) {
-R_API char *r_time_stamp_to_str(time_t timeStamp) {
+R_API R_MUSTUSE char *r_time_stamp_to_str(time_t timeStamp) {
 #if __WINDOWS__
 	time_t rawtime;
 	struct tm *tminfo;
@@ -104,7 +104,7 @@ R_API ut32 r_time_dos_time_stamp_to_posix(ut32 timeStamp) {
 	t.tm_isdst = -1;
 	time_t epochTime = mktime (&t);
 
-	return (ut32) epochTime;
+	return (ut32) (epochTime & UT32_MAX);
 }
 
 R_API bool r_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const ut32 possiblePosixOrDosTimeStamp) {
@@ -117,10 +117,9 @@ R_API bool r_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const ut
 
 
 R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len) {
-	if(len < 4) {
+	if (len < 4) {
 		return 0;
 	}
-
 	ut32 dt = buf[3] << 24 | buf[2] << 16 | buf[1] << 8 | buf[0];
 	char *s = r_time_stamp_to_str (r_time_dos_time_stamp_to_posix (dt));
 	if (!s) {
@@ -133,12 +132,11 @@ R_API int r_print_date_dos(RPrint *p, const ut8 *buf, int len) {
 
 R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 	const int hfs_unix_delta = 2082844800;
-	time_t t = 0;
 	int ret = 0;
 
-	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
+	const bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	if (p && len >= sizeof (ut32)) {
-		t = r_read_ble32 (buf, be);
+		time_t t = r_read_ble32 (buf, be);
 		if (p->datefmt[0]) {
 			t += p->datezone * 60 * 60;
 			t += hfs_unix_delta;
@@ -151,12 +149,11 @@ R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 }
 
 R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
-	time_t t = 0;
 	int ret = 0;
 
-	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
+	const bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	if (p && len >= sizeof (ut32)) {
-		t = r_read_ble32 (buf, be);
+		time_t t = r_read_ble32 (buf, be);
 		if (p->datefmt[0]) {
 			t += p->datezone * (60*60);
 			char *datestr = r_time_stamp_to_str (t);
@@ -185,16 +182,15 @@ R_DEPRECATE R_API int r_print_date_get_now(RPrint *p, char *str) {
 }
 
 R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
-	ut64 l, L = 0x2b6109100LL;
-	time_t t;
+	const ut64 L = 0x2b6109100LL;
 	int ret = 0;
 
-	bool be = (p && p->config)? p->config->big_endian: R_SYS_ENDIAN;
+	const bool be = (p && p->config)? R_ARCH_CONFIG_IS_BIG_ENDIAN (p->config): R_SYS_ENDIAN;
 	if (p && len >= sizeof (ut64)) {
-		l = r_read_ble64 (buf, be);
+		ut64 l = r_read_ble64 (buf, be);
 		l /= 10000000; // 100ns to s
 		l = (l > L ? l-L : 0); // isValidUnixTime?
-		t = (time_t) l; // TODO limit above!
+		time_t t = (time_t) l; // TODO limit above!
 		if (p->datefmt[0]) {
 			p->cb_printf ("%s\n", r_time_stamp_to_str (t));
 			ret = sizeof (time_t);
@@ -204,7 +200,7 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API const char *r_time_to_string(ut64 ts) {
+R_API const char *r_time_tostring(ut64 ts) {
 	time_t l = ts >> 20;
 	return r_time_stamp_to_str (l);
 }

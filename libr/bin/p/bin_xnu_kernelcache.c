@@ -547,7 +547,7 @@ static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 	}
 
 	ut64 cursor = kmod_start;
-	for(; cursor < kmod_end; cursor += 8) {
+	for (; cursor < kmod_end; cursor += 8) {
 		ut8 bytes[8];
 		if (r_buf_read_at (obj->cache_buf, cursor, bytes, 8) < 8) {
 			goto beach;
@@ -815,7 +815,7 @@ static struct MACH0_(obj_t) *create_kext_shared_mach0(RKernelCacheObj *obj, RKex
 	opts.verbose = false;
 	opts.header_at = kext->range.offset;
 	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (buf, &opts);
-	r_buf_free (buf);
+	// RESULTS IN UAF we should ref and unref instead r_buf_free (buf);
 	return mach0;
 }
 
@@ -2048,7 +2048,7 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 
-	// move into 
+	// move into
 	if (count > cache->internal_buffer_size) {
 		if (cache->internal_buffer) {
 			R_FREE (cache->internal_buffer);
@@ -2110,7 +2110,7 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 	struct MACH0_(obj_t) *obj = kobj->mach0;
 	ut64 eob = off + count;
 	size_t i = 0;
-	for (; i < obj->nsegs; i++) {
+	for (; i < obj->segs_count; i++) {
 		if (!obj->chained_starts[i]) {
 			continue;
 		}

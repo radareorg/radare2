@@ -33,6 +33,7 @@
 
 #if !USE_LIB_MAGIC
 
+#include <r_util.h>
 #include "file.h"
 #include "r_regex.h"
 #include <string.h>
@@ -40,15 +41,12 @@
 #include <stdlib.h>
 #include "r_util/r_time.h"
 
-static int match(RMagic *, struct r_magic *, ut32,
-    const ut8 *, size_t, int);
-static int mget(RMagic *, const ut8 *,
-    struct r_magic *, size_t, unsigned int);
+static int match(RMagic *, struct r_magic *, ut32, const ut8 *, size_t, int);
+static int mget(RMagic *, const ut8 *, struct r_magic *, size_t, unsigned int);
 static int magiccheck(RMagic *, struct r_magic *);
 static st32 mprint(RMagic *, struct r_magic *);
 static void mdebug(ut32, const char *, size_t);
-static int mcopy(RMagic *, union VALUETYPE *, int, int,
-    const ut8 *, ut32, size_t, size_t);
+static int mcopy(RMagic *, union VALUETYPE *, int, int, const ut8 *, ut32, size_t, size_t);
 static int mconvert(RMagic *, struct r_magic *);
 static int print_sep(RMagic *, int);
 static void cvt_8(union VALUETYPE *, const struct r_magic *);
@@ -341,7 +339,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 			}
 			break;
 		}
-		t = ms->offset + sizeof(char);
+		t = ms->offset + sizeof (char);
 		break;
   	case FILE_SHORT:
   	case FILE_BESHORT:
@@ -367,7 +365,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 			}
 			break;
 		}
-		t = ms->offset + sizeof(short);
+		t = ms->offset + sizeof (short);
 		break;
   	case FILE_LONG:
   	case FILE_BELONG:
@@ -394,7 +392,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 			}
 			break;
 		}
-		t = ms->offset + sizeof(st32);
+		t = ms->offset + sizeof (st32);
   		break;
   	case FILE_QUAD:
   	case FILE_BEQUAD:
@@ -403,7 +401,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		if (file_printf (ms, R_MAGIC_DESC, (ut64)v) == -1) {
 			return -1;
 		}
-		t = ms->offset + sizeof(ut64);
+		t = ms->offset + sizeof (ut64);
   		break;
 
   	case FILE_STRING:
@@ -436,7 +434,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		if (file_printf (ms, R_MAGIC_DESC, file_fmttime (p->l, 1, pp)) == -1) {
 			return -1;
 		}
-		t = ms->offset + sizeof(time_t);
+		t = ms->offset + sizeof (time_t);
 		break;
 	case FILE_LDATE:
 	case FILE_BELDATE:
@@ -445,7 +443,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		if (file_printf (ms, R_MAGIC_DESC, file_fmttime (p->l, 0, pp)) == -1) {
 			return -1;
 		}
-		t = ms->offset + sizeof(time_t);
+		t = ms->offset + sizeof (time_t);
 		break;
 	case FILE_QDATE:
 	case FILE_BEQDATE:
@@ -453,7 +451,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		if (file_printf (ms, R_MAGIC_DESC, file_fmttime ((ut32)p->q, 1, pp)) == -1) {
 			return -1;
 		}
-		t = ms->offset + sizeof(ut64);
+		t = ms->offset + sizeof (ut64);
 		break;
 	case FILE_QLDATE:
 	case FILE_BEQLDATE:
@@ -461,7 +459,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		if (file_printf (ms, R_MAGIC_DESC, file_fmttime ((ut32)p->q, 0, pp)) == -1) {
 			return -1;
 		}
-		t = ms->offset + sizeof(ut64);
+		t = ms->offset + sizeof (ut64);
 		break;
   	case FILE_FLOAT:
   	case FILE_BEFLOAT:
@@ -487,7 +485,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 			}
 			break;
 		}
-		t = ms->offset + sizeof(float);
+		t = ms->offset + sizeof (float);
   		break;
   	case FILE_DOUBLE:
   	case FILE_BEDOUBLE:
@@ -513,24 +511,19 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 			}
 			break;
 		}
-		t = ms->offset + sizeof(double);
+		t = ms->offset + sizeof (double);
   		break;
 	case FILE_REGEX: {
-		char *cp;
-		int rval;
-
-		cp = strdupn((const char *)ms->search.s, ms->search.rm_len);
+		char *cp = r_str_ndup ((const char *)ms->search.s, ms->search.rm_len);
 		if (!cp) {
 			file_oomem(ms, ms->search.rm_len);
 			return -1;
 		}
-		rval = file_printf(ms, R_MAGIC_DESC, cp);
-		free(cp);
-
+		int rval = file_printf(ms, R_MAGIC_DESC, cp);
+		free (cp);
 		if (rval == -1) {
 			return -1;
 		}
-
 		if ((m->str_flags & REGEX_OFFSET_START)) {
 			t = ms->search.offset;
 		} else {
@@ -666,7 +659,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 		size_t len;
 
 		/* Null terminate and eat *trailing* return */
-		p->s[sizeof(p->s) - 1] = '\0';
+		p->s[sizeof (p->s) - 1] = '\0';
 		len = strlen(p->s);
 		if (len-- && p->s[len] == '\n') {
 			p->s[len] = '\0';
@@ -834,7 +827,7 @@ static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 
 			const ut8 *src = s + offset;
 			const ut8 *esrc = s + nbytes;
 			char *dst = p->s;
-			char *edst = &p->s[sizeof(p->s) - 1];
+			char *edst = &p->s[sizeof (p->s) - 1];
 
 			if (type == FILE_BESTRING16) {
 				src++;
@@ -898,8 +891,8 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 	}
 
 	if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-		mdebug(offset, (char *)(void *)p, sizeof(union VALUETYPE));
-		file_mdump(m);
+		mdebug (offset, (char *)(void *)p, sizeof (union VALUETYPE));
+		file_mdump (ms, m);
 	}
 
 	if (m->flag & INDIR) {
@@ -1171,9 +1164,8 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 		ms->offset = offset;
 
 		if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-			mdebug (offset, (char *)(void *)p,
-			    sizeof (union VALUETYPE));
-			file_mdump(m);
+			mdebug (offset, (char *)(void *)p, sizeof (union VALUETYPE));
+			file_mdump (ms, m);
 		}
 	}
 
@@ -1239,7 +1231,7 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags) {
 	/*
 	 * Convert the source args to unsigned here so that (1) the
-	 * compare will be unsigned as it is in strncmp() and (2) so
+	 * compare will be unsigned as it is in strncmp and (2) so
 	 * the ctype functions will work correctly without extra
 	 * casting.
 	 */
@@ -1248,7 +1240,7 @@ static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags)
 	ut64 v;
 
 	/*
-	 * What we want here is v = strncmp(s1, s2, len),
+	 * What we want here is v = strncmp (s1, s2, len),
 	 * but ignoring any nulls.
 	 */
 	v = 0;
@@ -1301,7 +1293,7 @@ static ut64 file_strncmp16(const char *a, const char *b, size_t len, ut32 flags)
 	 * At the moment, I am unsure.
 	 */
 	flags = 0;
-	return file_strncmp(a, b, len, flags);
+	return file_strncmp (a, b, len, flags);
 }
 
 static int magiccheck(RMagic *ms, struct r_magic *m) {

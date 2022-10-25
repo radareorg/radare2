@@ -1,13 +1,8 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake */
+/* radare - LGPL - Copyright 2012-2022 - pancake */
+
 #include <r_util.h>
 
-#if 0
-for(i=0; i<len; i++) {
-	packing_7bit_character(config.block+i, buffer);
-	cons_printf("%c", buffer[0]);
-}
-#endif
-
+// return void
 R_API int r_print_pack7bit(const char *src, char *dest) {
 	int i, j = 0, shift = 0;
 	ut8 ch1, ch2;

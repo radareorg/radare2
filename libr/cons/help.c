@@ -2,10 +2,12 @@
 
 #include <r_cons.h>
 
-R_API void r_cons_cmd_help_json(const char *help[]) {
+R_API void r_cons_cmd_help_json(const char * const help[]) {
 	int i, max_length = 0;
-	const char *usage_str = "Usage:";
-	const char *help_cmd = NULL, *help_args = NULL, *help_desc = NULL;
+	const char * const usage_str = "Usage:";
+	const char * help_cmd = NULL;
+	const char * help_args = NULL;
+	const char * help_desc = NULL;
 
 	// calculate padding for description text in advance
 	for (i = 0; help[i]; i += 3) {
@@ -26,7 +28,7 @@ R_API void r_cons_cmd_help_json(const char *help[]) {
 		help_args = help[i + 1];
 		help_desc = help[i + 2];
 
-		
+
 		if (r_str_startswith (help_cmd, usage_str)) {
 			pj_ks (pj, "root", help_cmd);
 			pj_ks (pj, "args", help_args);
@@ -47,12 +49,14 @@ R_API void r_cons_cmd_help_json(const char *help[]) {
 	pj_end (pj);
 	pj_end (pj);
 	char *s = pj_drain (pj);
-	r_cons_printf ("%s\n", s);
-	free (s);
+	if (s) {
+		r_cons_printf ("%s\n", s);
+		free (s);
+	}
 }
 
 /* Print a coloured help message */
-R_API void r_cons_cmd_help(const char *help[], bool use_color) {
+R_API void r_cons_cmd_help(const char * const help[], bool use_color) {
 	RCons *cons = r_cons_singleton ();
 	const char *pal_input_color = use_color ? cons->context->pal.input : "";
 	const char *pal_args_color = use_color ? cons->context->pal.args : "";
@@ -79,9 +83,10 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 		help_args = help[i + 1];
 		help_desc = help[i + 2];
 
-		if (!strncmp (help_cmd, usage_str, strlen (usage_str))) {
+		if (r_str_startswith (help_cmd, usage_str)) {
 			/* Usage header */
-			r_cons_printf ("%s%s",pal_args_color, help_cmd);
+			const char *afterusage = help_cmd + strlen (usage_str);
+			r_cons_printf ("Usage:%s%s", pal_args_color, afterusage);
 			if (help_args[0]) {
 				r_cons_printf (" %s", help_args);
 			}
@@ -105,7 +110,7 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	}
 }
 
-static void print_match(const char **match, bool use_color) {
+static void print_match(const char * const *match, bool use_color) {
 	const char *match_help_text[4];
 	size_t i;
 
@@ -124,7 +129,7 @@ static void print_match(const char **match, bool use_color) {
  * If exact is false, will match any command that contains the search text.
  * For example, ("pd", 'r', false) matches both `pdr` and `pdr.`.
  */
-R_API void r_cons_cmd_help_match(const char *help[], bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact) {
+R_API void r_cons_cmd_help_match(const char * const help[], bool use_color, R_BORROW R_NONNULL char *cmd, char spec, bool exact) {
 	size_t i;
 
 	if (spec) {
@@ -150,4 +155,3 @@ R_API void r_cons_cmd_help_match(const char *help[], bool use_color, R_BORROW R_
 		free (cmd);
 	}
 }
-

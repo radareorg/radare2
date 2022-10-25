@@ -194,9 +194,9 @@ d "movntdq xmmword [eax], xmm0" 660fe700
 d "movnti dword [eax], eax" 0fc300
 d "movntq qword [eax], mm0" 0fe700
 d "movq qword [eax], xmm0" 660fd600
-d "movsb byte es:[edi], byte ptr [esi]" a4
-d "movsd dword es:[edi], dword ptr [esi]" a5
-d "movsd dword es:[edi], dword ptr fs:[esi]" 64a5
+d "movsb byte es:[edi], byte [esi]" a4
+d "movsd dword es:[edi], dword [esi]" a5
+d "movsd dword es:[edi], dword fs:[esi]" 64a5
 d "movshdup xmm0, xmmword [eax]" f30f1600
 d "movsldup xmm0, xmmword [eax]" f30f1200
 d "movss dword [eax], xmm0" f30f1100
@@ -303,7 +303,7 @@ d "rdmsr" 0f32
 d "rdpmc" 0f33
 d "rdtsc" 0f31
 d "rdtscp" 0f01f9
-d "repne movsb byte es:[edi], byte ptr [esi]" f2a4
+d "repne movsb byte es:[edi], byte [esi]" f2a4
 dB "invalid" f389d8 # rep mov eax, ecb - not string instruction
 d "retf 0" CA0000
 d "rol byte [eax], 0" c00000
@@ -406,6 +406,10 @@ d "xchg edi, eax" 97
 d "xchg edx, eax" 92
 d "xchg esi, eax" 96
 d "xchg esp, eax" 94
+a "xchg ax, ax" 6690
+a "xchg eax, eax" 90
+ad "xchg bx, ax" 6693
+ad "xchg ebx, eax" 93
 d "xgetbv" 0f01d0
 d "xlatb" D7
 d "xor al, 0" 3400
@@ -442,7 +446,7 @@ dB "pextrq dword [eax], xmm0, 0" 660f3a16
 dB "pinsrq xmm0, dword [eax], 0" 660f3a22
 dB "pmovmskb eax, mm0" 0fd7
 dB "popcnt eax, qword [eax]" f30fb8
-d "rep movsb byte es:[edi], byte ptr [esi]" f3a4
+d "rep movsb byte es:[edi], byte [esi]" f3a4
 dB "retw" 66c3
 dB "skinit" 0f01de
 dB "swapgs" 0f1ff8
@@ -1018,8 +1022,8 @@ aB "cmpordpd xmm0, xmmword [eax]" 660fc20007
 aB "cmpordps xmm0, xmmword [eax]" 0fc20007
 aB "cmpordsd xmm0, qword [eax]" f20fc20007
 aB "cmpordss xmm0, dword [eax]" f30fc20007
-ad "cmpsb byte [esi], byte ptr es:[edi]" a6
-ad "cmpsd dword [esi], dword ptr es:[edi]" a7
+ad "cmpsb byte [esi], byte es:[edi]" a6
+ad "cmpsd dword [esi], dword es:[edi]" a7
 aB "cmpsd xmm0, qword [eax]" f20fc20000
 aB "cmpunordpd xmm0, xmmword [eax]" 660fc20003
 aB "cmpunordps xmm0, xmmword [eax]" 0fc20003
@@ -2077,7 +2081,6 @@ aB "xsave [eax]" 0fae20
 a "xsetbv" 0f01d1
 a "int 0x80" cd80
 a "mov eax, 33" b821000000
-a "mov rax, 33" 48c7c021000000
 a "mov [ebp+4],0" c7450400000000
 a "jmp 0x1b" eb05 0x14
 ad "sete al" 0f94c0

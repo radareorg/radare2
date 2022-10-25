@@ -48,6 +48,7 @@ static RLangPlugin r_lang_plugin_spp = {
 	.name = "spp",
 	.ext = "spp",
 	.license = "MIT",
+	.author = "pancake",
 	.desc = "SPP template programs",
 	.example = r_lang_spp_example,
 	.run = lang_spp_run,

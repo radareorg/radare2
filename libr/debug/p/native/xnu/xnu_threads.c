@@ -17,7 +17,7 @@ static void xnu_thread_free(xnu_thread_t *thread) {
 	// count
 	kr = mach_port_deallocate (mach_task_self (), thread->port);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocate thread port\n");
+		R_LOG_ERROR ("failed to deallocate thread port");
 	}
 	free (thread);
 }
@@ -103,9 +103,11 @@ static bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 #elif __arm__ || __arm || __armv7__
 	thread->count = ARM_DEBUG_STATE_COUNT;
 	thread->flavor = ARM_DEBUG_STATE;
+	mach_msg_type_number_t count;
 	rc = thread_set_state (thread->port, thread->flavor,
 			       (thread_state_t)&thread->debug.drx,
-			       &thread->count);
+				&count);
+	thread->count = count;
 #elif __POWERPC__
 /* not supported */
 # ifndef PPC_DEBUG_STATE32
@@ -138,7 +140,6 @@ static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	// thread->flavor is used in a switch+case but in regs->tsh.flavor we
 	// specify
 	thread->state = &regs->uts;
-	//thread->state = regs;
 	thread->flavor = x86_THREAD_STATE;
 	thread->count = x86_THREAD_STATE_COUNT;
 	if (dbg->bits == R_SYS_BITS_64) {
@@ -154,8 +155,8 @@ static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	thread->flavor = ARM_UNIFIED_THREAD_STATE;
 	thread->count = ARM_UNIFIED_THREAD_STATE_COUNT;
 #endif
-	//thread->state = regs;
-	thread->state = &regs->uts;
+	//thread->state = &regs->uts;
+	thread->state = &regs;
 	if (dbg->bits == R_SYS_BITS_64) {
 		thread->flavor = ARM_THREAD_STATE64;
 		thread->count = ARM_THREAD_STATE64_COUNT;
@@ -191,8 +192,8 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 #if __POWERPC__
 	thread->state = regs;
 #elif  __arm64 || __aarch64 || __arch64__ || __arm64__
-	//thread->state = regs;
-	thread->state = &regs->uts;
+	thread->state = regs;
+	// thread->state = &regs->uts;
 	if (dbg->bits == R_SYS_BITS_64) {
 		thread->flavor = ARM_THREAD_STATE64;
 		thread->count = ARM_THREAD_STATE64_COUNT;
@@ -235,14 +236,14 @@ static bool xnu_fill_info_thread(RDebug *dbg, xnu_thread_t *thread) {
 	kern_return_t kr = thread_info (thread->port, THREAD_BASIC_INFO,
 		(thread_info_t)&thread->basic_info, &count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Fail to get thread_basic_info\n");
+		R_LOG_ERROR ("Fail to get thread_basic_info");
 		return false;
 	}
 	count = THREAD_IDENTIFIER_INFO_COUNT;
 	kr = thread_info (thread->port, THREAD_IDENTIFIER_INFO,
 			  (thread_info_t)&identifier_info, &count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Fail to get thread_identifier_info\n");
+		R_LOG_ERROR ("Fail to get thread_identifier_info");
 		return false;
 	}
 	R_FREE (thread->name);
@@ -313,7 +314,7 @@ static int xnu_update_thread_list(RDebug *dbg) {
 	if (kr != KERN_SUCCESS) {
 		// we can get into this when the process has terminated but we
 		// still hold the old task because we are caching it
-		eprintf ("Failed to get list of task's threads\n");
+		R_LOG_ERROR ("Failed to get list of task's threads");
 		return false;
 	}
 	if (r_list_empty (dbg->threads)) {
@@ -321,11 +322,11 @@ static int xnu_update_thread_list(RDebug *dbg) {
 		for (i = 0; i < thread_count; i++) {
 			thread = xnu_get_thread_with_info (dbg, thread_list[i]);
 			if (!thread) {
-				eprintf ("Failed to fill_thread\n");
+				R_LOG_ERROR ("Failed to fill_thread");
 				continue;
 			}
 			if (!r_list_append (dbg->threads, thread)) {
-				eprintf ("Failed to add thread to list\n");
+				R_LOG_ERROR ("Failed to add thread to list");
 				xnu_thread_free (thread);
 			}
 		}
@@ -362,7 +363,7 @@ static int xnu_update_thread_list(RDebug *dbg) {
 				kr = mach_port_deallocate (mach_task_self (),
 							   thread_list[i]);
 				if (kr != KERN_SUCCESS) {
-					eprintf ("Failed to deallocate port\n");
+					R_LOG_ERROR ("Failed to deallocate port");
 				}
 				continue;
 			}

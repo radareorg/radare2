@@ -1,7 +1,6 @@
 #ifndef R2_CMD_H
 #define R2_CMD_H
 
-#include <r_types.h>
 #include <r_util.h>
 #include <r_bind.h>
 #include "ht_pp.h"
@@ -11,8 +10,6 @@ extern "C" {
 #endif
 
 typedef struct r_core_t RCore;
-
-//R_LIB_VERSION_HEADER (r_cmd);
 
 #define MACRO_LIMIT 1024
 #define MACRO_LABELS 20
@@ -54,7 +51,7 @@ typedef struct r_cmd_macro_t {
 	ut64 *brk_value;
 	ut64 _brk_value;
 	int brk;
-// 	int (*cmd)(void *user, const char *cmd);
+	int macro_level;
 	RCoreCmd cmd;
 	PrintfCallback cb_printf;
 	void *user;
@@ -217,14 +214,9 @@ typedef struct r_cmd_descriptor_t {
 #ifdef R_API
 R_API RCmd *r_cmd_new(void);
 R_API RCmd *r_cmd_free(RCmd *cmd);
+R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API void r_cmd_set_data(RCmd *cmd, void *data);
 R_API bool r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);
-R_API bool r_core_del(RCmd *cmd, const char *command);
-R_API int r_cmd_call(RCmd *cmd, const char *command);
-R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args);
-R_API RCmdDesc *r_cmd_get_root(RCmd *cmd);
-R_API RCmdDesc *r_cmd_get_desc(RCmd *cmd, const char *cmd_identifier);
-R_API char *r_cmd_get_help(RCmd *cmd, RCmdParsedArgs *args, bool use_color);
 
 static inline RCmdStatus r_cmd_int2status(int v) {
 	if (v == -2) {

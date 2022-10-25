@@ -14,55 +14,55 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		const char *op;
 		const char *str;
 	} ops[] = {
-		{0, "ei", "enable-interrupts"},
-		{0, "di", "disable-interrupts"},
-		{0, "reti", "ret"},
-		{2, "ld.hu", "2 = 1"},
-		{1, "zxb", "1 = O"},
-		{1, "zxh", "1 = O"},
-		{1, "zxw", "1 = O"},
-		{2, "set1", "2 |= (I << 2)"},
-		{2, "clr1", "2 &= ~(I << 2)"},
-		{2, "sld.w", "2 = (word) 1"},
-		{2, "sld.h", "2 = (half) 1"},
-		{2, "sld.b", "2 = (byte) 1"},
-		{2, "ld.bu", "2 = 1"},
-		{2, "ld.w", "2 = (word) 1"},
-		{2, "ld.h", "2 = (half) 1"},
-		{2, "ld.b", "2 = (byte) 1"},
-		{2, "st.h", "2 = (half) 1"},
-		{2, "st.w", "2 = (word) 1"},
-		{2, "st.b", "2 = (byte) 1"},
-		{2, "sst.w", "2 = (word) 1"},
-		{2, "sst.h", "2 = (half) 1"},
-		{2, "sst.b", "2 = (byte) 1"},
-		{2, "stsr", "2 = 1"},
-		{2, "ldsr", "2 = 1"},
-		{2, "and", "3 = 2 & 1"},
-		{3, "andi", "3 = 2 & 1"},
-		{2, "add", "2 += 1"},
-		{3, "addi", "3 = 2 + 1"},
-		{2, "sub", "2 -= 1"},
-		{2, "divh", "2 /= 1"},
-		{3, "divh", "3 = 2 / 1"},
-		{2, "mulh", "2 *= 1"},
-		{3, "mul", "3 = 2 * 1"},
-		{3, "mulf.s", "3 = 2 * 1"},
-		{2, "shl", "2 <<= 1"},
-		{2, "shr", "2 >>= 1"},
-		{2, "xor", "2 ^= 1"},
-		{3, "xori", "3 = 1 ^ 2"},
-		{2, "tst", "2 == 1"},
-		{2, "tst1", "2 == 1"},
-		{1, "jr", "goto 1"},
-		{1, "jmp", "goto 1"},
-		{2, "cmp", "2 == 1"},
-		{4, "cmov", "4 == 1 ? 2 : 3"},
-		{2, "mov", "2 = 1"},
-		{3, "movhi", "3 = (1 << XX) + 2"},
-		{3, "movea", "3 = 1 & 2"},
-		{3, "ori", "3 = 1 | 2"},
-		{2, "jarl", "call 1 # 2"},
+		{0, "ei", "enable-interrupts" },
+		{0, "di", "disable-interrupts" },
+		{0, "reti", "ret" },
+		{2, "ld.hu", "2 = 1" },
+		{1, "zxb", "1 = O" },
+		{1, "zxh", "1 = O" },
+		{1, "zxw", "1 = O" },
+		{2, "set1", "2 |= (I << 2)" },
+		{2, "clr1", "2 &= ~(I << 2)" },
+		{2, "sld.w", "2 = (word) 1" },
+		{2, "sld.h", "2 = (half) 1" },
+		{2, "sld.b", "2 = (byte) 1" },
+		{2, "ld.bu", "2 = 1" },
+		{2, "ld.w", "2 = (word) 1" },
+		{2, "ld.h", "2 = (half) 1" },
+		{2, "ld.b", "2 = (byte) 1" },
+		{2, "st.h", "2 = (half) 1" },
+		{2, "st.w", "2 = (word) 1" },
+		{2, "st.b", "2 = (byte) 1" },
+		{2, "sst.w", "2 = (word) 1" },
+		{2, "sst.h", "2 = (half) 1" },
+		{2, "sst.b", "2 = (byte) 1" },
+		{2, "stsr", "2 = 1" },
+		{2, "ldsr", "2 = 1" },
+		{2, "and", "3 = 2 & 1" },
+		{3, "andi", "3 = 2 & 1" },
+		{2, "add", "2 += 1" },
+		{3, "addi", "3 = 2 + 1" },
+		{2, "sub", "2 -= 1" },
+		{2, "divh", "2 /= 1" },
+		{3, "divh", "3 = 2 / 1" },
+		{2, "mulh", "2 *= 1" },
+		{3, "mul", "3 = 2 * 1" },
+		{3, "mulf.s", "3 = 2 * 1" },
+		{2, "shl", "2 <<= 1" },
+		{2, "shr", "2 >>= 1" },
+		{2, "xor", "2 ^= 1" },
+		{3, "xori", "3 = 1 ^ 2" },
+		{2, "tst", "2 == 1" },
+		{2, "tst1", "2 == 1" },
+		{1, "jr", "goto 1" },
+		{1, "jmp", "goto 1" },
+		{2, "cmp", "2 == 1" },
+		{4, "cmov", "4 == 1 ? 2 : 3" },
+		{2, "mov", "2 = 1" },
+		{3, "movhi", "3 = (1 << XX) + 2" },
+		{3, "movea", "3 = 1 & 2" },
+		{3, "ori", "3 = 1 | 2" },
+		{2, "jarl", "call 1 # 2" },
 		{0, NULL}
 	};
 	if (!newstr) {
@@ -204,7 +204,7 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		char *neg = strstr (data, " -");
 		if (neg && neg < r0) {
 			char *n = r_str_ndup (r_str_trim_head_ro (neg), (int)(size_t)(r0 - neg - 1));
-			int negdelta = strstr (n, "0x")? -r_num_get (NULL, n + 1): atoi (n);
+			int negdelta = strstr (n, "0x")? -((int)r_num_get (NULL, n + 1)): atoi (n);
 			free (n);
 			*neg = 0;
 			ut64 addr = UT32_MAX + negdelta + 1;
@@ -214,7 +214,9 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			return true;
 		}
 	}
-	strcpy (str, data);
+	if (str != data) {
+		r_str_cpy (str, data);
+	}
 	return false;
 }
 

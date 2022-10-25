@@ -74,9 +74,6 @@ RFlag:
 RFS:
   - libr/fs/**/*
 
-RHash:
-  - libr/hash/**/*
-
 RIO:
   - libr/io/**/*
 

@@ -1,12 +1,12 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_lib.h>
 #include <r_asm.h>
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
-	if (a->config->syntax != R_ASM_SYNTAX_INTEL) {
-		eprintf ("asm.x86.nasm does not support non-intel syntax\n");
+	if (a->config->syntax != R_ARCH_SYNTAX_INTEL) {
+		R_LOG_ERROR ("asm.x86.nasm does not support non-intel syntax");
 		return -1;
 	}
 
@@ -38,7 +38,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		op->size = read (ofd, buf, sizeof (buf));
 		r_asm_op_set_buf (op, buf, op->size);
 	} else {
-		eprintf ("Error running 'nasm'\n");
+		R_LOG_ERROR ("running 'nasm'");
 	}
 
 	close (ofd);

@@ -906,7 +906,7 @@ ut8 x64_osx_setuid_fork_binsh[] =
 	"\x48\x31\xf6\x0f\x05\xb8\xc4\x88\x88\xfa\x05\x77\x77\x77\x07\x48\xbf\x2f\x62\x69"
 	"\x6e\x2f\x2f\x73\x68\x56\x57\x48\x89\xe7\x0f\x05";
 
-#define ENTRY(a,b,c,x,y,z) { .name=x, .desc=z, .data=(ut8 *)&y, .len=sizeof(y)-1, \
+#define ENTRY(a,b,c,x,y,z) { .name=x, .desc=z, .data=(ut8 *)&y, .len=sizeof (y)-1, \
 	.cmd=a, .host=b, .port=c },
 #define ENTRY_NULL() { NULL, NULL, NULL, 0 }
 

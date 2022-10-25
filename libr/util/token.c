@@ -253,10 +253,10 @@ bool callback(RTokenizer *tok) {
 		if (!strcmp (data->word, "case")) {
 			R_FREE (data->word);
 			data->incase = true;
-			break;	
+			break;
 		}
 		if (!strcmp (data->word, "default")) {
-			break;	
+			break;
 		}
 		if (!strcmp (data->word, "return")) {
 			if (data->pj) {
@@ -271,7 +271,7 @@ bool callback(RTokenizer *tok) {
 			return false;
 		}
 		if (!strcmp (data->word, "break")) {
-			break;	
+			break;
 		}
 		if (data->s) {
 			data->s = r_str_append (data->s, " ");
@@ -310,7 +310,7 @@ bool callback(RTokenizer *tok) {
 				RListIter *iter;
 				r_list_foreach (data->args, iter, arg) {
 					if (arg) {
-						eprintf ("%s", r_str_pad (' ', (tok->indent +1)* 2));
+						eprintf ("%s", r_str_pad (' ', (tok->indent + 1) * 2));
 						eprintf (" - %s%c", arg, 10);
 						if (data->pj) {
 							char *lz = (char *)r_str_rchr (arg, NULL, ' ');
@@ -349,10 +349,10 @@ bool callback(RTokenizer *tok) {
 		} else if (tok->ch == '(') {
 			data->parlevel++;
 			if (data->word) {
-				if ( !strcmp (data->word, "if")) {
+				if (!strcmp (data->word, "if")) {
 					indent (tok);
 					eprintf ("IF %d%c", tok->indent, 10);
-				} else if ( !strcmp (data->word, "switch")) {
+				} else if (!strcmp (data->word, "switch")) {
 					data->inswitch = true;
 					indent (tok);
 					eprintf ("SWITCH%c", 10);
@@ -440,9 +440,10 @@ break;
 				// eprintf ("CASE %s%c", data->word, 10);
 				break;
 			}
+		case '\n':
 		case ';':
 			if (data->inreturn) {
-				indent(tok);
+				indent (tok);
 				// eprintf ("-- ARG (%s)%c", data->s, 10);
 				if (data->pj) {
 					pj_ks (data->pj, "value", data->s);
@@ -523,7 +524,7 @@ int main() {
 		);
 	Data data = {0};
 	char *s = r_file_slurp ("a.c", NULL);
-	data.pj = pj_new ();;
+	data.pj = pj_new ();
 	pj_o (data.pj);
 	tokenize (s, callback, &data);
 	pj_end (data.pj);

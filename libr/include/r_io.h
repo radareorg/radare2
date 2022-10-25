@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2021 - condret, pancake */
+/* radare2 - LGPL - Copyright 2017-2022 - condret, pancake */
 
 #ifndef R2_IO_H
 #define R2_IO_H
@@ -10,9 +10,9 @@
 #include "r_skyline.h"
 #include <r_util/r_w32dw.h>
 
-#define R_IO_SEEK_SET	0
-#define R_IO_SEEK_CUR	1
-#define R_IO_SEEK_END	2
+#define R_IO_SEEK_SET 0
+#define R_IO_SEEK_CUR 1
+#define R_IO_SEEK_END 2
 
 #define R_IO_UNDOS 64
 
@@ -198,13 +198,26 @@ typedef struct r_io_plugin_t {
 	bool (*check)(RIO *io, const char *, bool many);
 } RIOPlugin;
 
+struct r_io_map_t;
+
+typedef struct r_io_reloc_map_t {
+	void *data;
+	int (*read)(RIO *io, struct r_io_map_t *map, ut64 addr, ut8 *buf, int len);
+	int (*write)(RIO *io, struct r_io_map_t *map, ut64 addr, const ut8 *buf, int len);
+	bool (*remap)(RIO *io, struct r_io_map_t *map, ut64 addr);
+	void (*free)(void *data);
+} RIORelocMap;
+
 typedef struct r_io_map_t {
 	int fd;
 	int perm;
 	ut32 id;
 	ut64 ts;
 	RInterval itv;
-	ut64 delta; // paddr = vaddr - itv.addr + delta
+	union {
+		ut64 delta; // paddr = vaddr - itv.addr + delta
+		RIORelocMap *reloc_map;
+	};
 	char *name;
 } RIOMap;
 
@@ -235,7 +248,7 @@ typedef struct r_io_cache_t {
 	int written;
 } RIOCache;
 
-#define R_IO_DESC_CACHE_SIZE (sizeof(ut64) * 8)
+#define R_IO_DESC_CACHE_SIZE (sizeof (ut64) * 8)
 typedef struct r_io_desc_cache_t {
 	ut64 cached;
 	ut8 cdata[R_IO_DESC_CACHE_SIZE];
@@ -327,8 +340,9 @@ R_API bool r_io_map_exists(RIO *io, RIOMap *map);
 R_API bool r_io_map_exists_for_id(RIO *io, ut32 id);
 R_API RIOMap *r_io_map_get(RIO *io, ut32 id);
 R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
+R_API RIOMap *r_io_reloc_map_add(RIO *io, int fd, int perm, RIORelocMap *rm, ut64 addr, ut64 size);
 R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
-R_API RIOMap *r_io_map_get_at(RIO *io, ut64 addr);		//returns the map at vaddr with the highest priority
+R_API RIOMap *r_io_map_get_at(RIO *io, ut64 vaddr); // returns the map at vaddr with the highest priority
 R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref);
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr);
 R_API RIOMap *r_io_map_get_paddr(RIO *io, ut64 paddr);		//returns the map at paddr with the highest priority
@@ -386,7 +400,7 @@ R_API void r_io_bank_drain(RIO *io, const ut32 bankid);
 
 //io.c
 R_API RIO *r_io_new(void);
-R_API RIO *r_io_init(RIO *io);
+R_API void r_io_init(RIO *io);
 R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode);		//should return int
 R_API RIODesc *r_io_open(RIO *io, const char *uri, int flags, int mode);
 R_API RIODesc *r_io_open_at(RIO *io, const char *uri, int flags, int mode, ut64 at);
@@ -585,8 +599,11 @@ extern RIOPlugin r_io_plugin_winedbg;
 extern RIOPlugin r_io_plugin_gprobe;
 extern RIOPlugin r_io_plugin_fd;
 extern RIOPlugin r_io_plugin_socket;
+extern RIOPlugin r_io_plugin_xattr;
 extern RIOPlugin r_io_plugin_isotp;
 extern RIOPlugin r_io_plugin_xalz;
+extern RIOPlugin r_io_plugin_reg;
+extern RIOPlugin r_io_plugin_treebuf;
 
 #if __cplusplus
 }

@@ -5,13 +5,13 @@
 
 R_LIB_VERSION (r_reg);
 
-static const char *types[R_REG_TYPE_LAST + 1] = {
+static const char * const types[R_REG_TYPE_LAST + 1] = {
 	"gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", NULL
 };
 
 R_API bool r_reg_hasbits_check(RReg *reg, int size) {
 	return reg->hasbits & size;
-#define HB(x) if(size&x && reg->hasbits &x) return true
+#define HB(x) if (size&x && reg->hasbits &x) return true
 	HB(1);
 	HB(2);
 	HB(4);
@@ -31,7 +31,7 @@ R_API void r_reg_hasbits_clear(RReg *reg) {
 
 R_API bool r_reg_hasbits_use(RReg *reg, int size) {
 	bool done = false;
-#define HB(x) if(size&x) { reg->hasbits |=x; done = true; }
+#define HB(x) if (size&(x)) { reg->hasbits |= (x); done = true; }
 	HB(1);
 	HB(2);
 	HB(4);
@@ -127,9 +127,12 @@ R_API int r_reg_type_by_name(const char *str) {
 }
 
 R_API void r_reg_item_free(RRegItem *item) {
-	free (item->name);
-	free (item->flags);
-	free (item);
+	if (item) {
+		// TODO use unref here :?
+		free (item->name);
+		free (item->flags);
+		free (item);
+	}
 }
 
 R_API int r_reg_get_name_idx(const char *type) {
@@ -188,7 +191,7 @@ R_API const char *r_reg_get_name(RReg *reg, int role) {
 	return NULL;
 }
 
-static const char *roles[R_REG_NAME_LAST + 1] = {
+static const char * const roles[R_REG_NAME_LAST + 1] = {
 	"PC", "SP", "SR", "BP", "LR", "RS",
 	"A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9",
 	"R0", "R1", "R2", "R3", "F0", "F1", "F2", "F3",
@@ -337,16 +340,26 @@ R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item) {
 	return false;
 }
 
-R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val) {
+R_API bool r_reg_setv(RReg *reg, const char *name, ut64 val) {
 	r_return_val_if_fail (reg && name, UT64_MAX);
+	bool res = false;
 	RRegItem *ri = r_reg_get (reg, name, -1);
-	return ri? r_reg_set_value (reg, ri, val): UT64_MAX;
+	if (ri) {
+		res = r_reg_set_value (reg, ri, val);
+		r_unref (ri);
+	}
+	return res;
 }
 
 R_API ut64 r_reg_getv(RReg *reg, const char *name) {
 	r_return_val_if_fail (reg && name, UT64_MAX);
 	RRegItem *ri = r_reg_get (reg, name, -1);
-	return ri? r_reg_get_value (reg, ri): UT64_MAX;
+	ut64 res = UT64_MAX;
+	if (ri) {
+		res = r_reg_get_value (reg, ri);
+		r_unref (ri);
+	}
+	return res;
 }
 
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
@@ -376,6 +389,7 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 			bool found = false;
 			RRegItem *item = ht_pp_find (pp, name, &found);
 			if (found) {
+				r_ref (item);
 				return item;
 			}
 		}

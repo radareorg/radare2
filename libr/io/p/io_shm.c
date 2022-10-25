@@ -88,7 +88,7 @@ static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool shm__plugin_open(RIO *io, const char *pathname, bool many) {
-	return !strncmp (pathname, "shm://", 6);
+	return r_str_startswith (pathname, "shm://");
 }
 
 static inline int getshmfd(RIOShm *shm) {
@@ -96,7 +96,7 @@ static inline int getshmfd(RIOShm *shm) {
 }
 
 static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
-	if (!strncmp (pathname, "shm://", 6)) {
+	if (r_str_startswith (pathname, "shm://")) {
 		RIOShm *shm = R_NEW0 (RIOShm);
 		if (!shm) {
 			return NULL;
@@ -120,10 +120,10 @@ static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		shm->size = SHMATSZ;
 		if (shm->fd != -1) {
-			eprintf ("Connected to shared memory 0x%08x\n", shm->id);
+			R_LOG_INFO ("Connected to shared memory 0x%08x", shm->id);
 			return r_io_desc_new (io, &r_io_plugin_shm, pathname, rw, mode, shm);
 		}
-		eprintf ("Cannot connect to shared memory (%d)\n", shm->id);
+		R_LOG_ERROR ("Cannot connect to shared memory (%d)", shm->id);
 		free (shm);
 	}
 	return NULL;

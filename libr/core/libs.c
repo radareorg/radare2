@@ -80,7 +80,7 @@ static void __loadSystemPlugins(RCore *core, int where, const char *path) {
 		free (p);
 	}
 	if (where & R_CORE_LOADLIBS_HOME) {
-		char *hpd = r_str_home (R2_HOME_PLUGINS);
+		char *hpd = r_xdg_datadir ("plugins");
 		if (hpd) {
 			r_lib_opendir (core->lib, hpd);
 			free (hpd);
@@ -114,9 +114,8 @@ R_API void r_core_loadlibs_init(RCore *core) {
 }
 
 static bool __isScriptFilename(const char *name) {
-	const char *ext = r_str_lchr (name, '.');
+	const char *ext = r_file_extension (name);
 	if (ext) {
-		ext++;
 		if (0
 		|| !strcmp (ext, "c")
 		|| !strcmp (ext, "go")
@@ -139,12 +138,12 @@ R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
 	ut64 prev = r_time_now_mono ();
 	__loadSystemPlugins (core, where, path);
 	/* TODO: all those default plugin paths should be defined in r_lib */
-	if (!r_config_get_i (core->config, "cfg.plugins")) {
+	if (!r_config_get_b (core->config, "cfg.plugins")) {
 		core->times->loadlibs_time = 0;
 		return false;
 	}
 	// load script plugins
-	char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
+	char *homeplugindir = r_xdg_datadir ("plugins");
 	RList *files = r_sys_dir (homeplugindir);
 	RListIter *iter;
 	char *file;

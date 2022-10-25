@@ -20,6 +20,9 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#undef R_LOG_ORIGIN
+#define R_LOG_ORIGIN "asm.z80"
+
 #ifndef R_API_I
 #define R_API_I
 #endif
@@ -124,7 +127,7 @@ static const char *delspc(const char *ptr) {
 static void rd_comma(const char **p) {
 	*p = delspc (*p);
 	if (**p != ',') {
-		eprintf ("`,' expected. Remainder of line: %s\n", *p);
+		R_LOG_ERROR ("`,' expected. Remainder of line: %s", *p);
 		return;
 	}
 	*p = delspc ((*p) + 1);
@@ -153,7 +156,7 @@ static int indx(const char **ptr, const char **list, int error, const char **exp
 	*ptr = delspc (*ptr);
 	if (!**ptr) {
 		if (error) {
-			eprintf ("unexpected end of line\n");
+			R_LOG_ERROR ("unexpected end of line");
 			return 0;
 		} else {
 			return 0;
@@ -205,7 +208,6 @@ static int indx(const char **ptr, const char **list, int error, const char **exp
 		comma++;
 		return i + 1;
 	}
-	// if (error) eprintf ("parse error. Remainder of line=%s\n", *ptr);
 	return 0;
 }
 
@@ -230,7 +232,7 @@ static void readlabel(const char **p, int store) {
 		return;
 	}
 	if (pos == *p) {
-		eprintf ("`:' found without a label");
+		R_LOG_ERROR ("`:' found without a label");
 		return;
 	}
 	if (!store) {
@@ -241,7 +243,7 @@ static void readlabel(const char **p, int store) {
 	dummy = *p;
 	j = rd_label (&dummy, &i, &previous, sp, 0);
 	if (i || j) {
-		eprintf ("duplicate definition of label %s\n", *p);
+		R_LOG_ERROR ("duplicate definition of label %s", *p);
 		*p = c;
 		return;
 	}
@@ -730,7 +732,7 @@ static int rd_ldbcdehla(const char **p) {
 		int x;
 		x = 0xdd + 0x20 * (i > 12);
 		if (indexed && indexed != x) {
-			eprintf ("illegal use of index registers\n");
+			R_LOG_ERROR ("illegal use of index registers");
 			return 0;
 		}
 		indexed = x;
@@ -738,7 +740,7 @@ static int rd_ldbcdehla(const char **p) {
 	}
 	if (i > 8) {
 		if (indexed) {
-			eprintf ("illegal use of index registers\n");
+			R_LOG_ERROR ("illegal use of index registers");
 			return 0;
 		}
 		indexed = 0xDD + 0x20 * (i == 10);
@@ -860,7 +862,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			}
 			if (has_argument (&ptr)) {
 				if (r != A) {
-					eprintf ("parse error before: %s\n", ptr);
+					R_LOG_ERROR ("parse error before: %s", ptr);
 					break;
 				}
 				if (!(r = rd_r (&ptr))) {
@@ -1404,7 +1406,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			}
 			if (has_argument (&ptr)) {		/* SUB A,r ?  */
 				if (r != A) {
-					eprintf ("parse error before: %s\n", ptr);
+					R_LOG_ERROR ("parse error before: %s", ptr);
 					break;
 				}
 				if (!(r = rd_r (&ptr))) {
@@ -1435,7 +1437,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 					while (*ptr != quote) {
 						write_one_byte (rd_character (&ptr, NULL, 1), 0);
 						if (*ptr == 0) {
-							eprintf ("end of line in quoted string\n");
+							R_LOG_ERROR ("end of line in quoted string");
 							break;
 						}
 					}
@@ -1450,7 +1452,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 					continue;
 				}
 				if (*ptr != 0) {
-					eprintf ("junk in byte definition: %s\n", ptr);
+					R_LOG_ERROR ("junk in byte definition: %s", ptr);
 				}
 				break;
 			}
@@ -1458,7 +1460,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 		case Z80_DEFW:
 		case Z80_DW:
 			if (!rd_word (&ptr, ',')) {
-				eprintf ("No data for word definition\n");
+				R_LOG_ERROR ("No data for word definition");
 				break;
 			}
 			while (1) {
@@ -1468,7 +1470,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				}
 				++ptr;
 				if (!rd_word (&ptr, ',')) {
-					eprintf ("Missing expression in defw\n");
+					R_LOG_ERROR ("Missing expression in defw");
 				}
 			}
 			break;
@@ -1476,8 +1478,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 		case Z80_DS:
 			r = rd_expr (&ptr, ',', NULL, sp, 1);
 			if (r < 0) {
-				eprintf ("ds should have its first argument >=0"
-						" (not -0x%x)\n", -r);
+				R_LOG_ERROR ("ds should have its first argument >=0 (not -0x%x)", -r);
 				break;
 			}
 			ptr = delspc (ptr);
@@ -1500,21 +1501,21 @@ static int assemble(const char *str, unsigned char *_obuf) {
 		case Z80_IF:
 			break;
 		case Z80_ELSE:
-			eprintf ("else without if\n");
+			R_LOG_ERROR ("else without if");
 			break;
 		case Z80_ENDIF:
-			eprintf ("endif without if\n");
+			R_LOG_ERROR ("endif without if");
 			break;
 		case Z80_ENDM:
 			if (stack[sp].file) {
-				eprintf ("endm outside macro definition\n");
+				R_LOG_ERROR ("endm outside macro definition");
 			}
 			break;
 		case Z80_SEEK:
-			eprintf ("seek error\n");
+			R_LOG_ERROR ("seek error");
 			break;
 		default:
-			// eprintf ("command or comment expected (was %s)\n", ptr);
+			R_LOG_DEBUG ("command or comment expected (was %s)", ptr);
 			free (z80buffer);
 			return 0;
 	}

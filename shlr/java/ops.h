@@ -5,31 +5,31 @@
 #define R2_JAVA_OPS_H
 
 enum {
-	R_ANAL_JAVA_ILL_OP  =-1,   /* illegal instruction // trap */
+	R_ANAL_JAVA_ILL_OP = -1,   /* illegal instruction // trap */
 	R_ANAL_JAVA_NULL_OP = 0,
 	R_ANAL_JAVA_NOP = 1, /* does nothing */
-	R_ANAL_JAVA_STORE_OP  = 1 << 20,  // Load or Store memory operation
-	R_ANAL_JAVA_LOAD_OP   = 1 << 21,  // Load or Store memory operation
-	R_ANAL_JAVA_REG_OP	= 1 << 22,  // register operation
-	R_ANAL_JAVA_OBJ_OP	= 1 << 23,  // operates on an object
-	R_ANAL_JAVA_STACK_OP  = 1 << 25,  // stack based operation
-	R_ANAL_JAVA_BIN_OP	= 1 << 26,  // binary operation
-	R_ANAL_JAVA_CODE_OP   = 1 << 27,  // operates on code
-	R_ANAL_JAVA_DATA_OP   = 1 << 28,  // operates on data
-	R_ANAL_JAVA_UNK_OP  = 1 << 29,  /* unknown opcode type */
-	R_ANAL_JAVA_REP_OP  = 1 << 30,  /* repeats next instruction N times */
-	R_ANAL_JAVA_COND_OP = 1 << 31,
+	R_ANAL_JAVA_STORE_OP = 1 << 20,  // Load or Store memory operation
+	R_ANAL_JAVA_LOAD_OP = 1 << 21,  // Load or Store memory operation
+	R_ANAL_JAVA_REG_OP = 1 << 22,  // register operation
+	R_ANAL_JAVA_OBJ_OP = 1 << 23,  // operates on an object
+	R_ANAL_JAVA_STACK_OP = 1 << 25,  // stack based operation
+	R_ANAL_JAVA_BIN_OP = 1 << 26,  // binary operation
+	R_ANAL_JAVA_CODE_OP = 1 << 27,  // operates on code
+	R_ANAL_JAVA_DATA_OP = 1 << 28,  // operates on data
+	R_ANAL_JAVA_UNK_OP = 1 << 29,  /* unknown opcode type */
+	R_ANAL_JAVA_REP_OP = 1 << 30,  /* repeats next instruction N times */
+	R_ANAL_JAVA_COND_OP = 1U << 31,
 };
 
 enum {
-	R_ANAL_JAVA_TYPE_REF_NULL  = 0,
-	R_ANAL_JAVA_TYPE_REF_UNK   = 1 << 1,
-	R_ANAL_JAVA_TYPE_REF	   = 1 << 2,
+	R_ANAL_JAVA_TYPE_REF_NULL = 0,
+	R_ANAL_JAVA_TYPE_REF_UNK = 1 << 1,
+	R_ANAL_JAVA_TYPE_REF = 1 << 2,
 	R_ANAL_JAVA_TYPE_SIGNED	= 1 << 3,
-	R_ANAL_JAVA_TYPE_PRIM	  = 1 << 4,
-	R_ANAL_JAVA_TYPE_CONST	 = 1 << 5,
+	R_ANAL_JAVA_TYPE_PRIM = 1 << 4,
+	R_ANAL_JAVA_TYPE_CONST = 1 << 5,
 	R_ANAL_JAVA_TYPE_STATIC	= 1 << 6,
-	R_ANAL_JAVA_TYPE_VOLATILE  = 1 << 7,
+	R_ANAL_JAVA_TYPE_VOLATILE = 1 << 7,
 	R_ANAL_JAVA_TYPE_PUBLIC	= 1 << 8,
 
 	R_ANAL_JAVA_TYPE_BOOL   = 1 << 10,
@@ -62,18 +62,18 @@ enum {
 
 enum {
 	// call return types
-			R_ANAL_JAVA_RET_TYPE_REF_NULL = 1 << 10,
-	R_ANAL_JAVA_RET_TYPE_REF	  = 1 << 11 ,
-	R_ANAL_JAVA_RET_TYPE_PRIM	 = 1 << 12 ,
-	R_ANAL_JAVA_RET_TYPE_CONST	= 1 << 13,
-	R_ANAL_JAVA_RET_TYPE_STATIC   = 1 << 14,
+	R_ANAL_JAVA_RET_TYPE_REF_NULL = 1 << 10,
+	R_ANAL_JAVA_RET_TYPE_REF = 1 << 11 ,
+	R_ANAL_JAVA_RET_TYPE_PRIM = 1 << 12 ,
+	R_ANAL_JAVA_RET_TYPE_CONST = 1 << 13,
+	R_ANAL_JAVA_RET_TYPE_STATIC = 1 << 14,
 };
 
 // jmp conditionals
 enum {
 	// TODO these should be mapped to some sort of
 	// flags register
-			R_ANAL_JAVA_COND_EQ  = 1 << 11,
+	R_ANAL_JAVA_COND_EQ  = 1 << 11,
 	R_ANAL_JAVA_COND_NE  = 1 << 12,
 	R_ANAL_JAVA_COND_GE  = 1 << 13,
 	R_ANAL_JAVA_COND_GT  = 1 << 14,
@@ -128,7 +128,7 @@ enum {
 	R_ANAL_JAVA_LDST_FROM_VAR   =  1 << 5,
 
 	// If indirect load, where are we getting the indirection,
-			R_ANAL_JAVA_LDST_INDIRECT_REF  = 1 << 6,
+	R_ANAL_JAVA_LDST_INDIRECT_REF  = 1 << 6,
 	R_ANAL_JAVA_LDST_INDIRECT_MEM  = 1 << 6,
 
 	R_ANAL_JAVA_LDST_INDIRECT_REG   =  1 << 7,
@@ -137,7 +137,7 @@ enum {
 	R_ANAL_JAVA_LDST_INDIRECT_VAR   =  1 << 10,
 
 	// Location to put the item,
-			R_ANAL_JAVA_LDST_TO_REF  = 1 << 11,
+	R_ANAL_JAVA_LDST_TO_REF  = 1 << 11,
 	R_ANAL_JAVA_LDST_TO_MEM  = 1 << 11,
 
 	R_ANAL_JAVA_LDST_TO_REG = 1 << 12,
@@ -145,7 +145,7 @@ enum {
 	R_ANAL_JAVA_LDST_TO_VAR =    1 << 14,
 
 	// Stack, Memory, Register, Bss, Data ,
-			R_ANAL_JAVA_LDST_OP_PUSH  = 1 << 15  ,
+	R_ANAL_JAVA_LDST_OP_PUSH  = 1 << 15  ,
 	R_ANAL_JAVA_LDST_OP_POP   = 1 << 16,
 	R_ANAL_JAVA_LDST_OP_MOV   = 1 << 17 ,
 	R_ANAL_JAVA_LDST_OP_EFF_ADDR   = 1 << 18,
@@ -159,8 +159,6 @@ enum {
 		R_ANAL_JAVA_LDST_FROM_CONST |\
 		R_ANAL_JAVA_LDST_TO_STACK |\
 		R_ANAL_JAVA_TYPE_REF,
-
-
 
 	R_ANAL_JAVA_LDST_LOAD_FROM_CONST_TO_STACK = R_ANAL_JAVA_LDST_OP_PUSH |\
 		R_ANAL_JAVA_LOAD_OP |\

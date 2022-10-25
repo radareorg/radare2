@@ -122,8 +122,7 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 		addr = r_num_get (NULL, p);
 		addr2 = r_num_get (NULL, p2);
 		r_range_add (rgs, addr, addr2, 1);
-	} else
-	if (p) {
+	} else if (p) {
 		addr = r_num_get (NULL, p);
 		r_range_add (rgs, addr, addr + 1, 1);
 	}
@@ -132,12 +131,12 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 }
 
 #if 0
-    update to      new one     update fr   update fr/to  ignore
+	    update to      new one     update fr   update fr/to  ignore
 
-   |______|        |___|           |_____|      |____|      |_______|  range_t
-+     |______|   +      |__|   + |___|      + |_________|  +  |__|     fr/to
-  ------------   -----------   -----------  -------------  -----------
-=  |_________|   = |___||__|   = |_______|  = |_________|   |_______|  result
+	   |______|        |___|           |_____|      |____|      |_______|  range_t
+	+     |______|   +      |__|   + |___|      + |_________|  +  |__|     fr/to
+	  ------------   -----------   -----------  -------------  -----------
+	=  |_________|   = |___||__|   = |_______|  = |_________|   |_______|  result
 #endif
 
 RRangeItem *r_range_add(RRange *rgs, ut64 fr, ut64 to, int rw) {
@@ -182,12 +181,12 @@ RRangeItem *r_range_add(RRange *rgs, ut64 fr, ut64 to, int rw) {
 }
 
 #if 0
-    update to      ignore      update fr      delete        split
+	    update to      ignore      update fr      delete        split
 
-   |______|        |___|           |_____|      |____|       |________|  range_t
--     |______|   -      |__|   - |___|      - |_________|  -    |__|     fr/to
-  ------------   -----------   -----------  -------------  ------------
-=  |__|          =             =     |___|  =                |__|  |__|   result
+	   |______|        |___|           |_____|      |____|       |________|  range_t
+	-     |______|   -      |__|   - |___|      - |_________|  -    |__|     fr/to
+	  ------------   -----------   -----------  -------------  ------------
+	=  |__|          =             =     |___|  =                |__|  |__|   result
 #endif
 
 R_API int r_range_sub(RRange *rgs, ut64 fr, ut64 to) {
@@ -345,10 +344,10 @@ int r_range_get_n(RRange *rgs, int n, ut64 *fr, ut64 *to) {
 }
 
 #if 0
-     .....|______________________|...
-      |_____|  |____|  |_______|
-    ---------------------------------
-            |__|    |__|       |_|
+	 .....|______________________|...
+	  |_____|  |____|  |_______|
+	---------------------------------
+		|__|    |__|       |_|
 #endif
 RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 	// ut64 total = 0;

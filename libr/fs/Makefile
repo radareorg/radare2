@@ -1,5 +1,5 @@
 NAME=r_fs
-R2DEPS=r_util r_io r_socket r_hash r_cons r_crypto
+R2DEPS=r_util r_io r_socket r_cons r_crypto
 CFLAGS:=-DR2_PLUGIN_INCORE -Iarch/include -Iarch $(CFLAGS)
 
 SHLR=../../shlr/
@@ -16,15 +16,10 @@ foo:
 
 include ${STATIC_FS_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst fs_,p/fs_,$(STATIC_OBJ)))
-OBJS=${STATIC_OBJS} fs.o fs_file.o shell.o
-#p/grub/main.o
-
-#p/grub/libgrubfs.a:
-#	cd p/grub && ${MAKE} libgrubfs.a CC="${CC}"
+OBJS=${STATIC_OBJS} fs.o fs_file.o fs_shell.o
 
 pre:
 	cd d && ${MAKE}
-#	@if [ ! -e libr_fs.${EXT_SO} ]; then if [ ! -e libr_fs.${EXT_AR} ]; then rm -f ${STATIC_OBJS} ; fi ; fi
 
 re:
 	rm -f fs.o libr_fs.so
@@ -33,12 +28,7 @@ re:
 	sudo ${MAKE} install
 	cd t && ${MAKE}
 
-test:
-	#valgrind r2 -i test.rsc /tmp/test.fs.img
-	gdb --args r2 -i test.rsc /tmp/test.fs.img
-
 plugins:
-	#cd p/grub && ${MAKE} libgrubfs.a CC="${CC}"
 	cd p && ${MAKE} all
 
 include ../rules.mk

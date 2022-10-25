@@ -33,11 +33,11 @@ typedef ut64 elf_offset_t;
 #endif
 
 #define fmt_addr "%08lx-%08lx"
-#define ELF_HDR_SIZE sizeof(elf_hdr_t)
+#define ELF_HDR_SIZE sizeof (elf_hdr_t)
 
 /*Some fields from note section must be padded to 4 or 8 bytes*/
 #define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
-#define sizeof_round_up(b) round_up(sizeof(b))
+#define sizeof_round_up(b) round_up(sizeof (b))
 
 static map_file_t mapping_file = { 0, 0 };
 static note_info_t note_info[NT_LENGHT_T];
@@ -88,7 +88,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 
 	p = R_NEW0 (prpsinfo_t);
 	if (!p) {
-		eprintf ("Couldn't allocate memory for prpsinfo_t\n");
+		R_LOG_ERROR ("Couldn't allocate memory for prpsinfo_t");
 		return NULL;
 	}
 
@@ -97,7 +97,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 	file = r_strf ("/proc/%d/cmdline", mypid);
 	buffer = r_file_slurp (file, &len);
 	if (!buffer) {
-		eprintf ("buffer NULL\n");
+		R_LOG_ERROR ("buffer NULL");
 		goto error;
 	}
 	buffer[len] = 0;
@@ -822,7 +822,7 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 	}
 	if (!p->num_threads || p->num_threads < 1) {
 		free (p);
-		eprintf ("Warning: number of threads is < 1\n");
+		R_LOG_WARN ("number of threads is < 1");
 		return NULL;
 	}
 	file = r_strf ("/proc/%d/status", dbg->pid);
@@ -1082,7 +1082,7 @@ static int *get_unique_thread_id(RDebug *dbg, int n_threads) {
 
 void detach_threads (RDebug *dbg, int *thread_id, int n_threads) {
 	int i;
-	for(i = 0; i < n_threads ; i++) {
+	for (i = 0; i < n_threads ; i++) {
 		if (dbg->pid != thread_id[i]) {
 			if (r_debug_ptrace (dbg, PTRACE_DETACH, thread_id[i], 0, 0) < 0) {
 				r_sys_perror ("PTRACE_DETACH");
@@ -1342,7 +1342,7 @@ fail:
 static int get_xsave_size(RDebug *dbg, int pid) {
 #ifdef PTRACE_GETREGSET
 	struct iovec local;
-	unsigned long xstate_hdr[XSTATE_HDR_SIZE/sizeof(unsigned long)];
+	unsigned long xstate_hdr[XSTATE_HDR_SIZE/sizeof (unsigned long)];
 	unsigned long xcr0;
 
 	/*We request with NT_X86_XSTATE. Maybe our PC does not have xsave flag. In that case errno would be -ENODEV.

@@ -1,10 +1,8 @@
-/* radare2 - LGPL - Copyright 2017-2021 - wargio */
+/* radare2 - LGPL - Copyright 2017-2022 - wargio */
 
-#include <r_util.h>
 #include <r_cons.h>
-#include <stdlib.h>
-#include <string.h>
-#include "./x509.h"
+#include <r_util.h>
+#include "x509.h"
 
 static bool r_x509_parse_validity(RX509Validity *validity, RASN1Object *object) {
 	RASN1Object *o;
@@ -128,7 +126,7 @@ R_API bool r_x509_parse_extension(RX509Extension *ext, RASN1Object *object) {
 		ext->extnID = r_asn1_stringify_oid (o->sector, o->length);
 		o = object->list.objects[1];
 		if (o->tag == TAG_BOOLEAN && object->list.length > 2) {
-			//This field is optional (so len must be 3)
+			// This field is optional (so len must be 3)
 			ext->critical = o->sector[0] != 0;
 			o = object->list.objects[2];
 		}
@@ -182,6 +180,9 @@ R_API bool r_x509_parse_tbscertificate(RX509TBSCertificate *tbsc, RASN1Object *o
 	}
 	if (shift < object->list.length && elems[shift]->klass == CLASS_UNIVERSAL && elems[shift]->tag == TAG_INTEGER) {
 		tbsc->serialNumber = r_asn1_stringify_integer (elems[shift]->sector, elems[shift]->length);
+	}
+	if (object->list.length < shift + 6) {
+		return false;
 	}
 	r_x509_parse_algorithmidentifier (&tbsc->signature, elems[shift + 1]);
 	r_x509_parse_name (&tbsc->issuer, elems[shift + 2]);
@@ -258,16 +259,25 @@ R_API RX509Certificate *r_x509_parse_certificate2(const ut8 *buffer, ut32 length
 }
 
 R_API RX509CRLEntry *r_x509_parse_crlentry(RASN1Object *object) {
-	RX509CRLEntry *entry;
 	if (!object || object->list.length != 2) {
 		return NULL;
 	}
-	entry = (RX509CRLEntry *)malloc (sizeof (RX509CRLEntry));
+	RX509CRLEntry *entry = R_NEW0 (RX509CRLEntry);
 	if (!entry) {
 		return NULL;
 	}
-	entry->userCertificate = r_asn1_create_binary (object->list.objects[0]->sector, object->list.objects[0]->length);
-	entry->revocationDate = r_asn1_stringify_utctime (object->list.objects[1]->sector, object->list.objects[1]->length);
+	struct r_asn1_object_t *obj0 = object->list.objects[0];
+	if (!obj0) {
+		free (entry);
+		return NULL;
+	}
+	entry->userCertificate = r_asn1_create_binary (obj0->sector, obj0->length);
+	struct r_asn1_object_t *obj1 = object->list.objects[1];
+	if (!obj1) {
+		free (entry);
+		return NULL;
+	}
+	entry->revocationDate = r_asn1_stringify_utctime (obj1->sector, obj1->length);
 	return entry;
 }
 
@@ -597,7 +607,7 @@ void r_x509_crlentry_dump (RX509CRLEntry *crle, const char *pad, RStrBuf *sb) {
 	r_asn1_free_string (id);
 }
 
-R_API char *r_x509_crl_to_string(RX509CertificateRevocationList *crl, const char *pad) {
+R_API char *r_x509_crl_tostring(RX509CertificateRevocationList *crl, const char *pad) {
 	RASN1String *algo = NULL, *last = NULL, *next = NULL;
 	ut32 i;
 	char *pad2, *pad3;

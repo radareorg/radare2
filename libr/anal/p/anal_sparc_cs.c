@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2017 - pancake */
+/* radare2 - LGPL - Copyright 2014-2022 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -75,30 +75,37 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 
 static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	static R_TH_LOCAL RRegItem reg;
+	RAnalValue *val;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (INSOP (0).type == SPARC_OP_MEM) {
 			ZERO_FILL (reg);
-			op->src[0] = r_anal_value_new ();
-			op->src[0]->reg = &reg;
-			parse_reg_name (op->src[0]->reg, handle, insn, 0);
-			op->src[0]->delta = INSOP(0).mem.disp;
+			val = r_vector_push (&op->srcs, NULL);
+			val->reg = &reg;
+			parse_reg_name (val->reg, handle, insn, 0);
+			val->delta = INSOP(0).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (INSOP (1).type == SPARC_OP_MEM) {
 			ZERO_FILL (reg);
-			op->dst = r_anal_value_new ();
-			op->dst->reg = &reg;
-			parse_reg_name (op->dst->reg, handle, insn, 1);
-			op->dst->delta = INSOP(1).mem.disp;
+			val = r_vector_push (&op->dsts, NULL);
+			val->reg = &reg;
+			parse_reg_name (val->reg, handle, insn, 1);
+			val->delta = INSOP(1).mem.disp;
 		}
 		break;
 	}
 }
 
-static int get_capstone_mode (RAnal *a) {
+static int get_capstone_mode(RAnal *a) {
 	int mode = CS_MODE_LITTLE_ENDIAN;
+#if 0
+	// XXX capstone doesnt support big endian sparc, this code does nothing, so we need to swap around
+	if (a->config->big_endian) {
+		mode = CS_MODE_BIG_ENDIAN;
+	}
+#endif
 	const char *cpu = a->config->cpu;
 	if (cpu && !strcmp (cpu, "v9")) {
 		mode |= CS_MODE_V9;
@@ -115,26 +122,26 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (handle == 0) {
 		return -1;
 	}
-
-	cs_insn *insn;
-	int n;
-
-	if (!a->config->big_endian) {
-		return -1;
-	}
+	cs_insn *insn = NULL;
+#if 0
+SPARC-V9 supports both little- and big-endian byte orders for data accesses only; instruction accesses
+are always performed using big-endian byte order. In SPARC-V8, all data and instruction accesses are
+performed in big-endian byte order.
+#endif
 
 	// capstone-next
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
-		if (mask & R_ANAL_OP_MASK_OPEX) {
+		if (mask & R_ARCH_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
 		}
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
 					insn->mnemonic, insn->op_str[0]? " ": "",
 					insn->op_str);
+			r_str_replace_char (op->mnemonic, '%', 0);
 		}
 		op->size = insn->size;
 		op->id = insn->id;
@@ -318,7 +325,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->type = R_ANAL_OP_TYPE_DIV;
 			break;
 		}
-		if (mask & R_ANAL_OP_MASK_VAL) {
+		if (mask & R_ARCH_OP_MASK_VAL) {
 			op_fillval (op, handle, insn);
 		}
 		cs_free (insn, n);
@@ -329,6 +336,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 static bool set_reg_profile(RAnal *anal) {
 	const char *p = \
 		"=PC	pc\n"
+		"=SN	g1\n"
 		"=SP	sp\n"
 		"=BP	fp\n"
 		"=A0	i0\n"
@@ -395,6 +403,7 @@ RAnalPlugin r_anal_plugin_sparc_cs = {
 	.license = "BSD",
 	.arch = "sparc",
 	.bits = 32|64,
+	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.archinfo = archinfo,
 	.op = &analop,
 	.set_reg_profile = &set_reg_profile,

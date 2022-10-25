@@ -1,6 +1,6 @@
-/* radare2 - LGPL - Copyright 2015-2019 - pancake */
+/* radare2 - LGPL - Copyright 2015-2022 - pancake */
 
-#include <r_asm.h>
+#include <r_anal.h>
 #include <r_lib.h>
 #include <capstone/capstone.h>
 
@@ -67,7 +67,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (handle == 0) {
 		return -1;
 	}
-	
+
 	int n, opsize = -1;
 	cs_insn* insn;
 
@@ -87,6 +87,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	}
 	op->id = insn->id;
 	opsize = op->size = insn->size;
+	op->type = R_ANAL_OP_TYPE_UNK;
 	switch (insn->id) {
 	case M680X_INS_INVLD:
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -498,6 +499,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		break;
 	}
 beach:
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		if (op->type == R_ANAL_OP_TYPE_ILL) {
+			op->mnemonic = strdup ("invalid");
+		} else {
+			op->mnemonic = r_str_newf ("%s%s%s", insn->mnemonic,
+					insn->op_str[0]?" ": "", insn->op_str);
+			r_str_replace_in (op->mnemonic, strlen (op->mnemonic),
+				"ptr ", "", true);
+		}
+	}
 	cs_free (insn, n);
 	return opsize;
 }

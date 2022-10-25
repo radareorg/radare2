@@ -58,7 +58,7 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf){
+static RList* sections(RBinFile *bf) {
 	ut8 bank;
 	int i;
 	RList *ret;

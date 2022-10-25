@@ -66,7 +66,7 @@ R_API REgg *r_egg_new(void) {
 		goto beach;
 	}
 	egg->plugins = r_list_new ();
-	for (i=0; egg_static_plugins[i]; i++) {
+	for (i = 0; egg_static_plugins[i]; i++) {
 		r_egg_add (egg, egg_static_plugins[i]);
 	}
 	return egg;
@@ -93,9 +93,9 @@ R_API bool r_egg_add(REgg *a, REggPlugin *foo) {
 	return true;
 }
 
-R_API char *r_egg_to_string(REgg *egg) {
+R_API char *r_egg_tostring(REgg *egg) {
 	r_return_val_if_fail (egg, NULL);
-	return r_buf_to_string (egg->buf);
+	return r_buf_tostring (egg->buf);
 }
 
 R_API void r_egg_free(REgg *egg) {
@@ -337,8 +337,8 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 		r_asm_use (egg->rasm, asm_name);
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, egg->endian);
-		r_asm_set_syntax (egg->rasm, R_ASM_SYNTAX_INTEL);
-		code = r_buf_to_string (egg->buf);
+		r_asm_set_syntax (egg->rasm, R_ARCH_SYNTAX_INTEL);
+		code = r_buf_tostring (egg->buf);
 		asmcode = r_asm_massemble (egg->rasm, code);
 		if (asmcode) {
 			if (asmcode->len > 0) {
@@ -346,7 +346,7 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 			}
 			// LEAK r_asm_code_free (asmcode);
 		} else {
-			eprintf ("fail assembling\n");
+			R_LOG_ERROR ("fail assembling");
 		}
 	}
 	free (code);
@@ -372,7 +372,7 @@ R_API bool r_egg_compile(REgg *egg) {
 	for (; b; ) {
 		r_egg_lang_parsechar (egg, b);
 		if (egg->lang.elem_n >= sizeof (egg->lang.elem)) {
-			eprintf ("ERROR: elem too large.\n");
+			R_LOG_ERROR ("too large element");
 			break;
 		}
 		size_t r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
@@ -382,7 +382,7 @@ R_API bool r_egg_compile(REgg *egg) {
 		// XXX: some parse fail errors are false positives :(
 	}
 	if (egg->context > 0) {
-		eprintf ("ERROR: expected '}' at the end of the file. %d left\n", egg->context);
+		R_LOG_ERROR ("expected '}' at the end of the file. %d left", egg->context);
 		return false;
 	}
 	// TODO: handle errors here
@@ -397,11 +397,11 @@ R_API RBuffer *r_egg_get_bin(REgg *egg) {
 //R_API int r_egg_dump (REgg *egg, const char *file) { }
 
 R_API char *r_egg_get_source(REgg *egg) {
-	return r_buf_to_string (egg->src);
+	return r_buf_tostring (egg->src);
 }
 
 R_API char *r_egg_get_assembly(REgg *egg) {
-	return r_buf_to_string (egg->buf);
+	return r_buf_tostring (egg->buf);
 }
 
 R_API void r_egg_append(REgg *egg, const char *src) {
@@ -448,7 +448,7 @@ R_API bool r_egg_padding(REgg *egg, const char *pad) {
 		number = strtol (p, NULL, 10);
 
 		if (number < 1) {
-			eprintf ("Invalid padding length at %d\n", number);
+			R_LOG_ERROR ("Invalid padding length at %d", number);
 			free (o);
 			return false;
 		}
@@ -462,7 +462,7 @@ R_API bool r_egg_padding(REgg *egg, const char *pad) {
 		case 't':
 		case 'T': padding_byte = 0xcc; break;
 		default:
-			eprintf ("Invalid padding format (%c)\n", *p);
+			R_LOG_ERROR ("Invalid padding format (%c)", *p);
 			eprintf ("Valid ones are:\n");
 			eprintf ("	s S : NULL byte\n");
 			eprintf ("	n N : nop\n");
@@ -511,7 +511,7 @@ R_API bool r_egg_shellcode(REgg *egg, const char *name) {
 		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p->name)) {
 			b = p->build (egg);
 			if (!b) {
-				eprintf ("%s Shellcode has failed\n", p->name);
+				R_LOG_ERROR ("%s Shellcode has failed", p->name);
 				return false;
 			}
 			ut64 tmpsz;
@@ -526,16 +526,15 @@ R_API bool r_egg_shellcode(REgg *egg, const char *name) {
 R_API bool r_egg_encode(REgg *egg, const char *name) {
 	REggPlugin *p;
 	RListIter *iter;
-	RBuffer *b;
 	r_list_foreach (egg->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->name)) {
-			b = p->build (egg);
-			if (!b) {
-				return false;
+			RBuffer *b = p->build (egg);
+			if (b) {
+				r_buf_free (egg->bin);
+				egg->bin = b;
+				return true;
 			}
-			r_buf_free (egg->bin);
-			egg->bin = b;
-			return true;
+			return false;
 		}
 	}
 	return false;
@@ -573,11 +572,11 @@ R_API void r_egg_finalize(REgg *egg) {
 			const ut8 *buf = r_buf_data (ep->b, &sz);
 			int r = r_buf_write_at (egg->bin, ep->off, buf, sz);
 			if (r < sz) {
-				eprintf ("Error during patch\n");
+				R_LOG_ERROR ("cannot write");
 				return;
 			}
 		} else {
-			eprintf ("Cannot patch outside\n");
+			R_LOG_ERROR ("Cannot patch outside");
 			return;
 		}
 	}
@@ -589,6 +588,6 @@ R_API void r_egg_pattern(REgg *egg, int size) {
 		r_egg_prepend_bytes (egg, (const ut8*)ret, strlen(ret));
 		free (ret);
 	} else {
-		eprintf ("Invalid debruijn pattern length.\n");
+		R_LOG_ERROR ("Invalid debruijn pattern length");
 	}
 }

@@ -60,7 +60,7 @@ bool bochs_cmd_stop(libbochs_t * b) {
 	};
 	hKernel = GetModuleHandle (TEXT ("kernel32"));
 	FARPROC apiOffset = (FARPROC)GetProcAddress (hKernel, "GenerateConsoleCtrlEvent");
-	*((DWORD *)&buffer[20]) = (DWORD)apiOffset;
+	*((DWORD *)&buffer[20]) = (DWORD *)(size_t)apiOffset; // XXX
 	ExitCode = RunRemoteThread_(b, (const ut8*)&buffer, 0x1Eu, 0, &ExitCode) && ExitCode;
 	return ExitCode;
 #else
@@ -72,7 +72,7 @@ bool bochs_wait(libbochs_t *b) {
 #if __WINDOWS__
 	int times = 100;
 	DWORD dwRead, aval, leftm;
-	bochs_reset_buffer(b);	
+	bochs_reset_buffer(b);
 	do {
 		while (PeekNamedPipe (b->hReadPipeIn, NULL, 0, NULL, &aval, &leftm)) {
 			if (aval < 0) break;
@@ -164,7 +164,7 @@ int bochs_read(libbochs_t* b, ut64 addr, int count, ut8 * buf) {
 	}
 	return 0;
 }
-	
+
 void bochs_close(libbochs_t* b) {
 	b->isRunning = false;
 #if __WINDOWS__

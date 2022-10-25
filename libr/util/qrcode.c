@@ -23,9 +23,6 @@
  */
 
 #include <r_util.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
 #include "r_qrcode.h"
 
 /*---- Forward declarations for private functions ----*/
@@ -88,7 +85,7 @@ static int qrcodegen_getSize(const uint8_t qrcode[]);
 
 /*
  * Returns the color of the module (pixel) at the given coordinates, which is either
- * false for white or true for black. The top left corner has the coordinates (x=0, y=0).
+ * false for white or true for black. The top left corner has the coordinates (x,y)=(0,0)
  * If the given coordinates are out of bounds, then false (white) is returned.
  */
 static bool qrcodegen_getModule(const uint8_t qrcode[], int x, int y);
@@ -173,7 +170,7 @@ R_API bool r_qrcode_text(const char *text, ut8 tempBuffer[], ut8 qrcode[], enum 
 	if (version == 0) {
 		return false;
 	}
-	memset (qrcode, 0, qrcodegen_BUFFER_LEN_FOR_VERSION (version) * sizeof(qrcode[0]));
+	memset (qrcode, 0, qrcodegen_BUFFER_LEN_FOR_VERSION (version) * sizeof (qrcode[0]));
 	int bitLen = 0;
 
 	// Make segment header and append data
@@ -257,7 +254,7 @@ R_API bool r_qrcode_bin(ut8 *dataAndTemp, int dataLen, ut8 *qrcode,
 	}
 
 	// Make bit sequence and QR Code
-	memset (qrcode, 0, qrcodegen_BUFFER_LEN_FOR_VERSION (version) * sizeof(qrcode[0]));
+	memset (qrcode, 0, qrcodegen_BUFFER_LEN_FOR_VERSION (version) * sizeof (qrcode[0]));
 	int bitLen = 0;
 	appendBitsToBuffer (4, 4, qrcode, &bitLen);
 	appendBitsToBuffer ((unsigned int) dataLen, (version <= 9? 8: 16), qrcode, &bitLen);
@@ -523,7 +520,7 @@ static void calcReedSolomonGenerator(int degree, ut8 result[]) {
 	if (degree < 1 || degree > 31) {
 		return;
 	}
-	memset (result, 0, degree * sizeof(result[0]));
+	memset (result, 0, degree * sizeof (result[0]));
 	result[degree - 1] = 1;
 
 	// Compute the product polynomial (x - r^0) * (x - r^1) * (x - r^2) * ... * (x - r^{degree-1}),
@@ -551,11 +548,11 @@ static void calcReedSolomonRemainder(const ut8 data[], int dataLen, const ut8 ge
 	if (degree < 1 || degree > 31) {
 		return;
 	}
-	memset (result, 0, degree * sizeof(result[0]));
+	memset (result, 0, degree * sizeof (result[0]));
 	int i, j;
 	for (i = 0; i < dataLen; i++) {
 		ut8 factor = data[i] ^ result[0];
-		memmove (&result[0], &result[1], (degree - 1) * sizeof(result[0]));
+		memmove (&result[0], &result[1], (degree - 1) * sizeof (result[0]));
 		result[degree - 1] = 0;
 		for (j = 0; j < degree; j++) {
 			result[j] ^= finiteFieldMultiply (generator[j], factor);
@@ -584,7 +581,7 @@ static ut8 finiteFieldMultiply(ut8 x, ut8 y) {
 static void initializeFunctionModules(int version, ut8 qrcode[]) {
 	// Initialize QR Code
 	int qrsize = version * 4 + 17;
-	memset (qrcode, 0, ((qrsize * qrsize + 7) / 8 + 1) * sizeof(qrcode[0]));
+	memset (qrcode, 0, ((qrsize * qrsize + 7) / 8 + 1) * sizeof (qrcode[0]));
 	qrcode[0] = (ut8) qrsize;
 
 	// Fill horizontal and vertical timing patterns
@@ -997,7 +994,7 @@ static void setModuleBounded(ut8 qrcode[], int x, int y, bool isBlack) {
 static char qrcode_utf8_expansions[16][7] = { "  ","▀ "," ▀","▀▀",
 											  "▄ ","█ ","▄▀","█▀",
 											  " ▄","▀▄"," █","▀█",
-											  "▄▄","█▄","▄█","██"};
+											  "▄▄","█▄","▄█","██" };
 
 R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool inverted) {
 	uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX] = {
@@ -1039,11 +1036,8 @@ R_API char *r_qrcode_gen(const ut8 *text, int len, bool utf8, bool inverted) {
 				bmp |= qrcodegen_getModule (qrcode, x + 1, y) << 1;
 				bmp |= qrcodegen_getModule (qrcode, x, y + 1) << 2;
 				bmp |= qrcodegen_getModule (qrcode, x + 1, y + 1) << 3;
-				const char *pixel =
-					qrcode_utf8_expansions[
-						inverted
-						? 15 - bmp
-						: bmp];
+				int index = inverted ? 15 - bmp : bmp;
+				const char *pixel = qrcode_utf8_expansions[index];
 				memcpy (p, pixel, strlen (pixel));
 				p += strlen (pixel);
 			}

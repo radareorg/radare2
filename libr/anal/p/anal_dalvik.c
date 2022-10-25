@@ -1,15 +1,27 @@
 /* radare - LGPL - Copyright 2010-2019 - pancake */
 
-#include <r_types.h>
-#include <r_lib.h>
-#include <r_asm.h>
 #include <r_anal.h>
-
-#include "../../asm/arch/dalvik/opcode.h"
-#include "../../bin/format/dex/dex.h"
+#include <dalvik/opcode.h>
 
 #define GETWIDE "32,v%u,<<,v%u,|"
 #define SETWIDE "DUP,v%u,=,32,SWAP,>>,v%u,="
+
+static inline int _anal_get_offset(RAnal *a, int type, int idx) {
+	if (a && a->binb.bin && a->binb.get_offset) {
+		return a->binb.get_offset (a->binb.bin, type, idx);
+	}
+
+	return -1;
+}
+
+static inline const char *_anal_get_name(RAnal *a, int type, int idx) {
+	if (a && a->binb.bin && a->binb.get_name) {
+		return a->binb.get_name (a->binb.bin, type, idx,
+				(bool)a->coreb.cfggeti (a->coreb.core, "asm.pseudo"));
+	}
+
+	return NULL;
+}
 
 static const char *getCond(ut8 cond) {
 	switch (cond) {
@@ -43,74 +55,74 @@ typedef enum {
 	OP_DOUBLE
 } OperandType;
 
-/*static void format10t(int len, const unsigned char* data, ut32* dst) {
+/*static void format10t(int len, const ut8* data, ut32* dst) {
 	if (len > 1) {
 		*dst = data[1];
 	}
 }*/
 
-static void format11x(int len, const unsigned char* data, ut32* dst) {
+static void format11x(int len, const ut8* data, ut32* dst) {
 	if (len > 1) {
 		*dst = data[1] & 0x0F;
 	}
 }
 
-static void format11n(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format11n(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 1) {
 		*dst = data[1] & 0x0F;
 		*src = (st32)((st8)((data[1] & 0xF0) >> 4)); // uhhh
 	}
 }
 
-static void format12x(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format12x(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 1) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
 	}
 }
 
-/*static void format20t(int len, const unsigned char* data, ut32* dst) {
+/*static void format20t(int len, const ut8* data, ut32* dst) {
 	if (len > 3) {
 		*dst = r_read_le16 (data + 2);
 	}
 }*/
 
-static void format21t(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format21t(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = 2*r_read_le16 (data + 2);
 	}
 }
 
-static void format21s(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format21s(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = (st32)(st16)r_read_le16 (data + 2);
 	}
 }
 
-static void format21hw(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format21hw(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = (ut32)((st16)r_read_le16 (data + 2)) << 16;
 	}
 }
 
-static void format21hd(int len, const unsigned char* data, ut32* dst, st64* src) {
+static void format21hd(int len, const ut8* data, ut32* dst, st64* src) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = (ut64)((st64)(st16)r_read_le16 (data + 2)) << 48;
 	}
 }
 
-static void format21c(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format21c(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = r_read_le16 (data + 2);
 	}
 }
 
-static void format22c(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+static void format22c(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 3) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
@@ -119,14 +131,14 @@ static void format22c(int len, const unsigned char* data, ut32* dst, ut32* src, 
 }
 
 // same as 21c but not for literals
-static void format22x(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format22x(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = r_read_le16 (data + 2);
 	}
 }
 
-static void format22t(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+static void format22t(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 3) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
@@ -134,7 +146,7 @@ static void format22t(int len, const unsigned char* data, ut32* dst, ut32* src, 
 	}
 }
 
-static void format22s(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+static void format22s(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 3) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
@@ -142,7 +154,7 @@ static void format22s(int len, const unsigned char* data, ut32* dst, ut32* src, 
 	}
 }
 
-static void format22b(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+static void format22b(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 3) {
 		*dst = data[1];
 		*src = data[2];
@@ -150,7 +162,7 @@ static void format22b(int len, const unsigned char* data, ut32* dst, ut32* src, 
 	}
 }
 
-static void format23x(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+static void format23x(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 1) {
 		*dst = data[1];
 		*src = data[2];
@@ -158,34 +170,34 @@ static void format23x(int len, const unsigned char* data, ut32* dst, ut32* src, 
 	}
 }
 
-/*static void format30t(int len, const unsigned char* data, ut32* dst) {
+/*static void format30t(int len, const ut8* data, ut32* dst) {
 	if (len > 5) {
 		*dst = r_read_le32(data+2);
 	}
 }*/
 
-static void format31i(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format31i(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 5) {
 		*dst = data[1];
 		*src = r_read_le32(data+2);
 	}
 }
 
-static void format31c(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format31c(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 5) {
 		*dst = data[1];
 		*src = r_read_le32(data+2);
 	}
 }
 
-static void format32x(int len, const unsigned char* data, ut32* dst, ut32* src) {
+static void format32x(int len, const ut8* data, ut32* dst, ut32* src) {
 	if (len > 5) {
 		*dst = r_read_le16 (data + 2);
 		*src = r_read_le16 (data + 4);
 	}
 }
 
-/*static void format3rc(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+/*static void format3rc(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 5) {
 		*src = data[1] - 1;
 		*dst = r_read_le16 (data + 2);
@@ -193,7 +205,7 @@ static void format32x(int len, const unsigned char* data, ut32* dst, ut32* src) 
 	}
 }
 
-static void format4rcc(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref1, ut32* ref2) {
+static void format4rcc(int len, const ut8* data, ut32* dst, ut32* src, ut32* ref1, ut32* ref2) {
 	if (len > 7) {
 		*src  = data[1] - 1;
 		*dst  = r_read_le16 (data + 2);
@@ -202,18 +214,15 @@ static void format4rcc(int len, const unsigned char* data, ut32* dst, ut32* src,
 	}
 }*/
 
-static void format51l(int len, const unsigned char* data, ut32* dst, st64* src) {
+static void format51l(int len, const ut8* data, ut32* dst, st64* src) {
 	if (len > 9) {
 		*dst = data[1];
 		*src = (st64)r_read_le64 (data + 2);
 	}
 }
 
-
 #define OPCALL(x, y, z) dalvik_math_op(op, data, len, mask, x, y, z)
-static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len,
-	RAnalOpMask mask, char* operation, unsigned int optype, OperandType ot) {
-
+static void dalvik_math_op(RAnalOp* op, const ut8* data, int len, RAnalOpMask mask, char* operation, unsigned int optype, OperandType ot) {
 	ut32 vA = 0, vB = 0, vC = 0;
 	op->type = optype;
 	if (ot == OP_FLOAT || ot == OP_DOUBLE) {
@@ -235,7 +244,7 @@ static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len,
 		v = ""; // value is literal not register
 	}
 
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & R_ARCH_OP_MASK_ESIL) {
 		if (ot == OP_INT) {
 			if (optype == R_ANAL_OP_TYPE_DIV || optype == R_ANAL_OP_TYPE_MOD) {
 				esilprintf (op, "32,%s%d,~,32,v%u,~,%s,v%u,=", v, vC, vB, operation, vA);
@@ -257,14 +266,532 @@ static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len,
 	}
 }
 
+static int dalvik_disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, int size) {
+	r_return_val_if_fail  (a && op && buf && len > 0, -1);
+
+	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0;
+	char str[1024], *strasm = NULL;
+	const char *flag_str = NULL;
+	ut64 offset;
+	ut8 opcode = buf[0];
+
+	a->config->dataalign = 2;
+
+	if (buf[0] == 0x00) { /* nop */
+		if (len < 2) {
+			return -1;
+		}
+		op->nopcode = 2;
+		switch (buf[1]) {
+		case 0x01: /* packed-switch-payload */
+			// ushort size
+			// int first_key
+			// int[size] = relative offsets
+			{
+				ut16 array_size = buf[2] | (buf[3] << 8);
+				int first_key = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
+				op->mnemonic = r_str_newf ("packed-switch-payload %d, %d", array_size, first_key);
+				size = 8;
+				payload = 2 * (array_size * 2);
+				len = 0;
+			}
+			break;
+		case 0x02: /* sparse-switch-payload */
+			// ushort size
+			// int[size] keys
+			// int[size] relative offsets
+			{
+				ut16 array_size = buf[2] | (buf[3] << 8);
+				op->mnemonic = r_str_newf ("sparse-switch-payload %d", array_size);
+				size = 4;
+				payload = 2 * (array_size * 4);
+				len = 0;
+			}
+			break;
+		case 0x03: /* fill-array-data-payload */
+			// element_width = 2 bytes ushort little endian
+			// size = 4 bytes uint
+			// ([size*element_width+1)/2)+4
+			if (len > 7) {
+				ut16 elem_width = buf[2] | (buf[3] << 8);
+				ut32 array_size = buf[4] | (buf[5] << 8) | (buf[6] << 16) | (buf[7] << 24);
+				op->mnemonic = r_str_newf ("fill-array-data-payload %d, %d", elem_width, array_size);
+				payload = array_size * elem_width;
+			}
+			size = 8;
+			len = 0;
+			break;
+		default:
+			/* nop */
+			break;
+		}
+	}
+
+	strasm = NULL;
+	if (size <= len) {
+		strasm = strdup (dalvik_opcodes[opcode].name);
+		size = dalvik_opcodes[opcode].len;
+		switch (dalvik_opcodes[opcode].fmt) {
+		case fmtop: break;
+		case fmtopvAvB:
+			vA = buf[1] & 0x0f;
+			vB = (buf[1] & 0xf0) >> 4;
+			snprintf (str, sizeof (str), " v%i, v%i", vA, vB);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAAvBBBB:
+			vA = (int) buf[1];
+			vB = (buf[3] << 8) | buf[2];
+			snprintf (str, sizeof (str), " v%i, v%i", vA, vB);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAAAAvBBBB: // buf[1] seems useless :/
+			vA = (buf[3] << 8) | buf[2];
+			vB = (buf[5] << 8) | buf[4];
+			snprintf (str, sizeof (str), " v%i, v%i", vA, vB);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAA:
+			vA = (int) buf[1];
+			snprintf (str, sizeof (str), " v%i", vA);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAcB:
+			vA = buf[1] & 0x0f;
+			vB = (buf[1] & 0xf0) >> 4;
+			snprintf (str, sizeof (str), " v%i, %#x", vA, vB);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAAcBBBB:
+			vA = (int) buf[1];
+			{
+				short sB = (buf[3] << 8) | buf[2];
+				snprintf (str, sizeof (str), " v%i, %#04hx", vA, sB);
+				strasm = r_str_append (strasm, str);
+			}
+			break;
+		case fmtopvAAcBBBBBBBB:
+			vA = (int) buf[1];
+			vB = buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24);
+			if (buf[0] == 0x17) { //const-wide/32
+				snprintf (str, sizeof (str), " v%i:v%i, 0x%08x", vA, vA + 1, vB);
+			} else { //const
+				snprintf (str, sizeof (str), " v%i, 0x%08x", vA, vB);
+			}
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAAcBBBB0000:
+			vA = (int) buf[1];
+			// vB = 0|(buf[3]<<16)|(buf[2]<<24);
+			vB = 0 | (buf[2] << 16) | (buf[3] << 24);
+			if (buf[0] == 0x19) { // const-wide/high16
+				snprintf (str, sizeof (str), " v%i:v%i, 0x%08x", vA, vA + 1, vB);
+			} else {
+				snprintf (str, sizeof (str), " v%i, 0x%08x", vA, vB);
+			}
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAAcBBBBBBBBBBBBBBBB:
+			vA = (int) buf[1];
+			ut64 lB = (ut64)buf[2] | ((ut64)buf[3] << 8)|
+				((ut64)buf[4] << 16) | ((ut64)buf[5] << 24)|
+				((ut64)buf[6] << 32) | ((ut64)buf[7] << 40)|
+				((ut64)(buf[8]&0xff) << 48) | ((ut64)(buf[9]&0xff) << 56);
+			snprintf (str, sizeof (str), " v%i:v%i, 0x%"PFMT64x, vA, vA + 1, lB);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAAvBBvCC:
+			vA = (int) buf[1];
+			vB = (int) buf[2];
+			vC = (int) buf[3];
+			snprintf (str, sizeof (str), " v%i, v%i, v%i", vA, vB, vC);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAAvBBcCC:
+			vA = (int) buf[1];
+			vB = (int) buf[2];
+			vC = (int) buf[3];
+			snprintf (str, sizeof (str), " v%i, v%i, %#x", vA, vB, vC);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAvBcCCCC:
+			vA = buf[1] & 0x0f;
+			vB = (buf[1] & 0xf0) >> 4;
+			vC = (buf[3] << 8) | buf[2];
+			snprintf (str, sizeof (str), " v%i, v%i, %#x", vA, vB, vC);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtoppAA:
+			vA = (signed char) buf[1];
+			//snprintf (str, sizeof (str), " %i", vA*2); // vA : word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, addr + (vA * 2)); // vA : word -> byte
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtoppAAAA:
+			vA = (short) (buf[3] << 8 | buf[2]);
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, addr + (vA * 2)); // vA : word -> byte
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAApBBBB: // if-*z
+			vA = (int) buf[1];
+			vB = (int) (buf[3] << 8 | buf[2]);
+			//snprintf (str, sizeof (str), " v%i, %i", vA, vB);
+			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, addr + (vB * 2));
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtoppAAAAAAAA:
+			vA = (int) (buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24));
+			//snprintf (str, sizeof (str), " %#08x", vA*2); // vA: word -> byte
+			snprintf (str, sizeof (str), " 0x%08"PFMT64x, addr + (vA*2)); // vA : word -> byte
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAvBpCCCC: // if-*
+			vA = buf[1] & 0x0f;
+			vB = (buf[1] & 0xf0) >> 4;
+			vC = (int) (buf[3] << 8 | buf[2]);
+			//snprintf (str, sizeof (str), " v%i, v%i, %i", vA, vB, vC);
+			snprintf (str, sizeof (str)," v%i, v%i, 0x%08"PFMT64x, vA, vB, addr + (vC * 2));
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAApBBBBBBBB:
+			vA = buf[1];
+			vB = buf[2] | (buf[3] << 8) | (buf[4] << 16) | (buf[5] << 24);
+			snprintf (str, sizeof (str), " v%i, 0x%08"PFMT64x, vA, addr + (vB * 2) + 8);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtoptinlineI:
+			vA = (int) (buf[1] & 0x0f);
+			vB = (buf[3] << 8) | buf[2];
+			*str = 0;
+			switch (vA) {
+			case 1:
+				snprintf (str, sizeof (str), " {v%i}", buf[4] & 0x0f);
+				break;
+			case 2:
+				snprintf (str, sizeof (str), " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
+				break;
+			case 3:
+				snprintf (str, sizeof (str), " {v%i, v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4, buf[5] & 0x0f);
+				break;
+			case 4:
+				snprintf (str, sizeof (str), " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
+						(buf[4] & 0xf0) >> 4, buf[5] & 0x0f, (buf[5] & 0xf0) >> 4);
+				break;
+			default:
+				snprintf (str, sizeof (str), " {}");
+			}
+			strasm = r_str_append (strasm, str);
+			snprintf (str, sizeof (str), ", [%04x]", vB);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtoptinlineIR:
+		case fmtoptinvokeVSR:
+			vA = (int) buf[1];
+			vB = (buf[3] << 8) | buf[2];
+			vC = (buf[5] << 8) | buf[4];
+			snprintf (str, sizeof (str), " {v%i..v%i}, [%04x]", vC, vC + vA - 1, vB);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtoptinvokeVS:
+			vA = (int) (buf[1] & 0xf0) >> 4;
+			vB = (buf[3] << 8) | buf[2];
+			switch (vA) {
+			case 1:
+				snprintf (str, sizeof (str), " {v%i}", buf[4] & 0x0f);
+				break;
+			case 2:
+				snprintf (str, sizeof (str), " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
+				break;
+			case 3:
+				snprintf (str, sizeof (str), " {v%i, v%i, v%i}", buf[4] & 0x0f,
+						(buf[4] & 0xf0) >> 4, buf[5] & 0x0f);
+				break;
+			case 4:
+				snprintf (str, sizeof (str), " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
+						(buf[4] & 0xf0) >> 4, buf[5] & 0x0f, (buf[5] & 0xf0) >> 4);
+				break;
+			default:
+				snprintf (str, sizeof (str), " {}");
+				break;
+			}
+			strasm = r_str_append (strasm, str);
+			snprintf (str, sizeof (str), ", [%04x]", vB);
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAAtBBBB: // "sput-*"
+			vA = (int) buf[1];
+			vB = (buf[3] << 8) | buf[2];
+			if (buf[0] == 0x1a) {
+				offset = _anal_get_offset (a, 's', vB);
+				if (offset == -1) {
+					snprintf (str, sizeof (str), " v%i, string+%i", vA, vB);
+				} else {
+					snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
+				}
+			} else if (buf[0] == 0x1c || buf[0] == 0x1f || buf[0] == 0x22) {
+				flag_str = _anal_get_name (a, 'c', vB);
+				if (!flag_str) {
+					snprintf (str, sizeof (str), " v%i, class+%i", vA, vB);
+				} else {
+					snprintf (str, sizeof (str), " v%i, %s", vA, flag_str);
+				}
+			} else {
+				flag_str = _anal_get_name (a, 'f', vB);
+				if (!flag_str) {
+					snprintf (str, sizeof (str), " v%i, field+%i", vA, vB);
+				} else {
+					snprintf (str, sizeof (str), " v%i, %s", vA, flag_str);
+				}
+			}
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtoptopvAvBoCCCC:
+			vA = (buf[1] & 0x0f);
+			vB = (buf[1] & 0xf0) >> 4;
+			vC = (buf[3]<<8) | buf[2];
+			offset = _anal_get_offset (a, 'o', vC);
+			if (offset == -1) {
+				snprintf (str, sizeof (str), " v%i, v%i, [obj+%04x]", vA, vB, vC);
+			} else {
+				snprintf (str, sizeof (str), " v%i, v%i, [0x%"PFMT64x"]", vA, vB, offset);
+			}
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopAAtBBBB:
+			vA = (int) buf[1];
+			vB = (buf[3] << 8) | buf[2];
+			offset = _anal_get_offset (a, 't', vB);
+			if (offset == -1) {
+				snprintf (str, sizeof (str), " v%i, thing+%i", vA, vB);
+			} else {
+				snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
+			}
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAvBtCCCC:
+			vA = (buf[1] & 0x0f);
+			vB = (buf[1] & 0xf0) >> 4;
+			vC = (buf[3] << 8) | buf[2];
+			if (buf[0] == 0x20 || buf[0] == 0x23) { //instance-of & new-array
+				flag_str = _anal_get_name (a, 'c', vC);
+				if (flag_str) {
+					snprintf (str, sizeof (str), " v%i, v%i, %s", vA, vB, flag_str);
+				} else {
+					snprintf (str, sizeof (str), " v%i, v%i, class+%i", vA, vB, vC);
+				}
+			} else {
+				flag_str = _anal_get_name (a, 'f', vC);
+				if (flag_str) {
+					snprintf (str, sizeof (str), " v%i, v%i, %s", vA, vB, flag_str);
+				} else {
+					snprintf (str, sizeof (str), " v%i, v%i, field+%i", vA, vB, vC);
+				}
+			}
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvAAtBBBBBBBB:
+			vA = (int) buf[1];
+			vB = (int) (buf[5] | (buf[4] << 8) | (buf[3] << 16) | (buf[2] << 24));
+			offset = _anal_get_offset (a, 's', vB);
+			if (offset == -1) {
+				snprintf (str, sizeof (str), " v%i, string+%i", vA, vB);
+			} else {
+				snprintf (str, sizeof (str), " v%i, 0x%"PFMT64x, vA, offset);
+			}
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvCCCCmBBBB:
+			vA = (int) buf[1];
+			vB = (buf[3] << 8) | buf[2];
+			vC = (buf[5] << 8) | buf[4];
+			if (buf[0] == 0x25) { // filled-new-array/range
+				flag_str = _anal_get_name (a, 'c', vB);
+				if (flag_str) {
+					snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
+				}
+				else {
+					snprintf (str, sizeof (str), " {v%i..v%i}, class+%i", vC, vC + vA - 1, vB);
+				}
+			} else if (buf[0] == 0xfd) { // invoke-custom/range
+				flag_str = _anal_get_name (a, 's', vB);
+				if (flag_str) {
+					snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
+				}
+				else {
+					snprintf (str, sizeof (str), " {v%i..v%i}, call_site+%i", vC, vC + vA - 1, vB);
+				}
+			} else {
+				flag_str = _anal_get_name (a, 'm', vB);
+				if (flag_str) {
+					snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
+				}
+				else {
+					snprintf (str, sizeof (str), " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
+				}
+			}
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtopvXtBBBB:
+			vA = (int) (buf[1] & 0xf0) >> 4;
+			vB = (buf[3] << 8) | buf[2];
+			switch (vA) {
+				case 1:
+					snprintf (str, sizeof (str), " {v%i}", buf[4] & 0x0f);
+					break;
+				case 2:
+					snprintf (str, sizeof (str), " {v%i, v%i}", buf[4] & 0x0f, (buf[4] & 0xf0) >> 4);
+					break;
+				case 3:
+					snprintf (str, sizeof (str), " {v%i, v%i, v%i}", buf[4] & 0x0f,
+							(buf[4] & 0xf0) >> 4, buf[5] & 0x0f);
+					break;
+				case 4:
+					snprintf (str, sizeof (str), " {v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
+							(buf[4] & 0xf0) >> 4, buf[5] & 0x0f, (buf[5] & 0xf0) >> 4);
+					break;
+				case 5:
+					snprintf (str, sizeof (str), " {v%i, v%i, v%i, v%i, v%i}", buf[4] & 0x0f,
+							(buf[4] & 0xf0) >> 4, buf[5] & 0x0f, (buf[5] & 0xf0) >> 4, buf[1] & 0x0f); // TOODO: recheck this
+					break;
+				default:
+					snprintf (str, sizeof (str), " {}");
+			}
+			strasm = r_str_append (strasm, str);
+			if (buf[0] == 0x24) { // filled-new-array
+				flag_str = _anal_get_name (a, 'c', vB);
+				if (flag_str) {
+					snprintf (str, sizeof (str), ", %s ; 0x%x", flag_str, vB);
+				} else {
+					snprintf (str, sizeof (str), ", class+%i", vB);
+				}
+			} else if (buf[0] == 0xfc) { // invoke-custom
+				flag_str = _anal_get_name (a, 's', vB);
+				if (flag_str) {
+					snprintf (str, sizeof (str), ", %s ; 0x%x", flag_str, vB);
+				} else {
+					snprintf (str, sizeof (str), ", call_site+%i", vB);
+				}
+			} else { // invoke-kind
+				flag_str = _anal_get_name (a, 'm', vB);
+				if (flag_str) {
+					snprintf (str, sizeof (str), ", %s ; 0x%x", flag_str, vB);
+				} else {
+					snprintf (str, sizeof (str), ", method+%i", vB);
+				}
+
+			}
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtop45CC:
+			vA = (buf[1] & 0xf0) >> 4;
+			vG = (buf[1] & 0x0f);
+			vB = (buf[3] << 8) | buf[2];
+			vD = (buf[4] & 0xf0) >> 4;
+			vC = (buf[4] & 0x0f);
+			vF = (buf[5] & 0xf0) >> 4;
+			vE  = (buf[5] & 0x0f);
+			vH = (buf[7] << 8) | buf[6];
+
+			switch (vA) {
+			case 1:
+				snprintf (str, sizeof (str), " {v%d}", vC);
+				break;
+			case 2:
+				snprintf (str, sizeof (str), " {v%d, v%d}", vC, vD);
+				break;
+			case 3:
+				snprintf (str, sizeof (str), " {v%d, v%d, v%d}", vC, vD, vE);
+				break;
+			case 4:
+				snprintf (str, sizeof (str), " {v%d, v%d, v%d, v%d}", vC, vD, vE, vF);
+				break;
+			case 5:
+				snprintf (str, sizeof (str), " {v%d, v%d, v%d, v%d, v%d}", vC, vD, vE, vF, vG);
+				break;
+			default:
+				snprintf (str, sizeof (str), " %d", vC);
+				break;
+			}
+			strasm = r_str_append (strasm, str);
+
+			flag_str = _anal_get_name (a, 'm', vB);
+			if (flag_str) {
+				strasm = r_str_appendf (strasm, ", %s", flag_str);
+			} else {
+				strasm = r_str_appendf (strasm, ", method+%i", vB);
+			}
+
+			flag_str = _anal_get_name (a, 'p', vH);
+			if (flag_str) {
+				strasm = r_str_appendf (strasm, ", %s", flag_str);
+			} else {
+				strasm = r_str_appendf (strasm, ", proto+%i", vH);
+			}
+			break;
+		case fmtop4RCC:
+			vA = (int) buf[1];
+			vB = (buf[3] << 8) | buf[2];
+			vC = (buf[5] << 8) | buf[4];
+			vH = (buf[7] << 8) | buf[6];
+			flag_str = _anal_get_name (a, 'm', vB);
+			if (flag_str) {
+				snprintf (str, sizeof (str), " {v%i..v%i}, %s", vC, vC + vA - 1, flag_str);
+			} else {
+				snprintf (str, sizeof (str), " {v%i..v%i}, method+%i", vC, vC + vA - 1, vB);
+			}
+			strasm = r_str_append (strasm, str);
+
+			flag_str = _anal_get_name (a, 'p', vH);
+			if (flag_str) {
+				snprintf (str, sizeof (str), ", %s", flag_str);
+			} else {
+				snprintf (str, sizeof (str), ", proto+%i", vH);
+			}
+			strasm = r_str_append (strasm, str);
+			break;
+		case fmtoptinvokeI: // Any opcode has this formats
+		case fmtoptinvokeIR:
+		case fmt00:
+		default:
+			R_FREE (strasm);
+			size = 2;
+		}
+		op->mnemonic = r_str_new (r_str_get_fail (strasm, "invalid"));
+	} else if (len > 0) {
+		op->mnemonic = r_str_new ("invalid");
+		size = len;
+	}
+
+	if (len > 0 && payload > len) {
+		payload = len;
+	}
+
+	if (size + payload < 0) {
+		op->size = 0;
+	} else if (size + payload >= len) {
+		op->size = len;
+	} else {
+		op->size = size + payload;
+	}
+
+	free (strasm);
+	free ((char *)flag_str);
+
+	return size;
+}
+
 static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+	r_return_val_if_fail  (anal && op && data && len > 0, -1);
+
 	int sz = dalvik_opcodes[data[0]].len;
-	if (!op || sz >= len) {
-		if (op && (mask & R_ANAL_OP_MASK_DISASM)) {
-			op->mnemonic = strdup ("invalid");
+	if (!op || sz > len) {
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = r_str_new ("invalid");
 		}
 		return -1;
 	}
+
+	op->addr = addr;
 	op->size = sz;
 	op->nopcode = 1; // Necessary??
 	op->id = data[0];
@@ -279,8 +806,9 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	}
 	switch (data[0]) {
 	case 0x00:
+		// TODO handle 2-byte instructions like in dalvik_disassemble()
 		op->type = R_ANAL_OP_TYPE_NOP;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, ",");
 		}
 		break;
@@ -290,14 +818,14 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			format12x(len, data, &vA, &vB);
 			if (vA == vB) {
 				op->type = R_ANAL_OP_TYPE_NOP;
-				if (mask & R_ANAL_OP_MASK_ESIL) {
+				if (mask & R_ARCH_OP_MASK_ESIL) {
 					esilprintf (op, ",");
 				}
 			} else {
 				op->type = R_ANAL_OP_TYPE_MOV;
 				//op->stackop = R_ANAL_STACK_SET;
 				//op->ptr = -vA;
-				if (mask & R_ANAL_OP_MASK_ESIL) {
+				if (mask & R_ARCH_OP_MASK_ESIL) {
 					esilprintf (op, "v%u,v%u,=", vB, vA);
 				}
 			}
@@ -308,14 +836,14 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			format12x(len, data, &vA, &vB);
 			if (vA == vB) {
 				op->type = R_ANAL_OP_TYPE_NOP;
-				if (mask & R_ANAL_OP_MASK_ESIL) {
+				if (mask & R_ARCH_OP_MASK_ESIL) {
 					esilprintf (op, ",");
 				}
 			} else {
 				op->type = R_ANAL_OP_TYPE_MOV;
 				//op->stackop = R_ANAL_STACK_SET;
 				//op->ptr = -vA;
-				if (mask & R_ANAL_OP_MASK_ESIL) {
+				if (mask & R_ARCH_OP_MASK_ESIL) {
 					esilprintf (op, "v%u,v%u,=,v%u,v%u,=", vB, vA, vB+1, vA+1);
 				}
 			}
@@ -324,14 +852,14 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x02: // move/from16
 	case 0x08: // move-object/from16
 		op->type = R_ANAL_OP_TYPE_MOV;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format22x(len, data, &vA, &vB);
 			esilprintf (op, "v%u,v%u,=", vB, vA);
 		}
 		break;
 	case 0x05: // move-wide/from16
 		op->type = R_ANAL_OP_TYPE_MOV;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format22x(len, data, &vA, &vB);
 			esilprintf (op, "v%u,v%u,=,v%u,v%u,=", vB, vA, vB+1, vA+1);
 		}
@@ -339,25 +867,25 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x03: // move/16
 	case 0x09: // move-object/16
 		op->type = R_ANAL_OP_TYPE_MOV;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format32x(len, data, &vA, &vB);
 			esilprintf (op, "v%u,v%u,=", vB, vA);
 		}
 		break;
 	case 0x06: // mov-wide/16
 		op->type = R_ANAL_OP_TYPE_MOV;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format32x(len, data, &vA, &vB);
 			esilprintf (op, "v%u,v%u,=,v%u,v%u,=", vB, vA, vB+1, vA+1);
 		}
 		break;
 	case 0x0a: // move-result
-	case 0x0b: // move-result-wide	
+	case 0x0b: // move-result-wide
 	case 0x0c: // move-result-object
 	case 0x0d: // move-exception
 	 	// TODO: add MOVRET OP TYPE ??
 		op->type = R_ANAL_OP_TYPE_MOV;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format11x(len, data, &vA);
 			esilprintf (op, "sp,v%u,=[8],8,sp,+=,8", vA);
 		}
@@ -369,8 +897,8 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xf1: // return-void-barrier
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->eob = true;
-		//TODO: handle return if(0x0e) {} else {}
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		//TODO: handle return if (0x0e) {} else {}
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			if (data[0] == 0x0e) {// return-void
 				esilprintf (op, "sp,[8],ip,=,8,sp,+=");
 			} else {
@@ -384,7 +912,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->type = R_ANAL_OP_TYPE_MOV;
 			format11n(len, data, &vA, &vB);
 			op->val = vB;
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				esilprintf (op, "%d,v%u,=", (st32)vB, vA);
 			}
 		}
@@ -392,7 +920,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x13: // const/16
 		op->type = R_ANAL_OP_TYPE_MOV;
 		format21s(len, data, &vA, &vB);
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, "%d,v%u,=", (st32)vB, vA);
 		}
 		op->val = vB;
@@ -401,7 +929,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_MOV;
 		format31i(len, data, &vA, &vB);
 		op->val = vB;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, "%d,v%u,=", (st32)vB, vA);
 		}
 		break;
@@ -409,14 +937,14 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_MOV;
 		format21hw(len, data, &vA, &vB);
 		op->val = vB;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, "%d,v%u,=", (st32)vB, vA);
 		}
 		break;
 	case 0x16: // const-wide/16
 		op->type = R_ANAL_OP_TYPE_MOV;
 		format21s(len, data, &vA, &vB);
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, "%" PFMT64d "," SETWIDE, (st64)(st32)vB, vA, vA+1);
 		}
 		op->val = vB;
@@ -424,7 +952,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x17: // const-wide/32
 		op->type = R_ANAL_OP_TYPE_MOV;
 		format31i(len, data, &vA, &vB);
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, "%" PFMT64d "," SETWIDE, (st64)(st32)vB, vA, vA+1);
 		}
 		op->val = vB;
@@ -434,7 +962,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->type = R_ANAL_OP_TYPE_MOV;
 			st64 vB = 0;
 			format51l(len, data, &vA, &vB);
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				esilprintf (op, "%" PFMT64d "," SETWIDE, vB, vA, vA+1);
 			}
 			op->val = vB;
@@ -446,7 +974,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->type = R_ANAL_OP_TYPE_MOV;
 			st64 vB = 0;
 			format21hd(len, data, &vA, &vB);
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				esilprintf (op, "%" PFMT64d "," SETWIDE, vB, vA, vA+1);
 			}
 			op->val = vB;
@@ -457,9 +985,9 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->datatype = R_ANAL_DATATYPE_STRING;
 		if (len > 2) {
 			format21c(len, data, &vA, &vB);
-			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
+			ut64 offset = _anal_get_offset (anal, 's', vB);
 			op->ptr = offset;
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				esilprintf (op, "0x%"PFMT64x",v%u,=", offset, vA);
 			}
 		}
@@ -469,9 +997,9 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->type = R_ANAL_OP_TYPE_MOV;
 			op->datatype = R_ANAL_DATATYPE_STRING;
 			format31c(len, data, &vA, &vB);
-			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
+			ut64 offset = _anal_get_offset (anal, 's', vB);
 			op->ptr = offset;
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				esilprintf (op, "0x%"PFMT64x",v%u,=", offset, vA);
 			}
 			break;
@@ -481,9 +1009,9 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->type = R_ANAL_OP_TYPE_MOV;
 			op->datatype = R_ANAL_DATATYPE_CLASS;
 			format21c(len, data, &vA, &vB);
-			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
+			ut64 offset = _anal_get_offset (anal, 's', vB);
 			op->ptr = offset;
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				esilprintf (op, "0x%"PFMT64x",v%u,=", offset, vA);
 			}
 			break;
@@ -492,7 +1020,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_PUSH;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 1;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, ",");
 		}
 		break;
@@ -500,27 +1028,27 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_POP;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -1;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, ",");
 		}
 		break;
 	// we are going to completely ignore exception stuff
 	case 0x1f: // check-cast
 		op->type = R_ANAL_OP_TYPE_CMP;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, ",");
 		}
 		break;
 	case 0x20: // instance-of
 		op->type = R_ANAL_OP_TYPE_CMP;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, "%d,instanceof,%d,-,!,v%u,=", vC, vB, vA);
 		}
 		break;
 	case 0x21: // array-length
 		op->type = R_ANAL_OP_TYPE_LENGTH;
 		op->datatype = R_ANAL_DATATYPE_ARRAY;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format12x(len, data, &vA, &vB);
 			esilprintf (op, "v%d,arraylength,v%d,=", vB, vA);
 		}
@@ -530,16 +1058,16 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 
 		// resolve class name for vB
 		format21c(len, data, &vA, &vB);
-		ut64 off = R_ANAL_GET_OFFSET (anal, 't', vB);
+		ut64 off = _anal_get_offset (anal, 't', vB);
 		op->ptr = off;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, "%" PFMT64u ",new,v%d,=", off, vA);
 		}
 		break;
 	case 0x23: // new-array
 		op->type = R_ANAL_OP_TYPE_NEW;
 		// 0x1c, 0x1f, 0x22
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format22c(len, data, &vA, &vB, &vC);
 			esilprintf (op, "%u,%u,newarray,v%u,=",vC, vB, vA);
 		}
@@ -549,14 +1077,14 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x26: // filled-new-array-data
 		op->type = R_ANAL_OP_TYPE_NEW;
 		// 0x1c, 0x1f, 0x22
-		/*if (len > 2 && mask & R_ANAL_OP_MASK_ESIL) {
+		/*if (len > 2 && mask & R_ARCH_OP_MASK_ESIL) {
 			format35c(data, &vA, &vB, &vC);
 			esilprintf (op, "%u,%u,newarray,v%u,=",vC, vB, vA);
 		}*/
 		break;
 	case 0x27: // throw
 		op->type = R_ANAL_OP_TYPE_TRAP;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format11x(len, data, &vA);
 			esilprintf (op, "v%u,TRAP", vA);
 		}
@@ -566,7 +1094,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->jump = addr + ((char)data[1])*2;
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->eob = true;
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
 			}
 		}
@@ -576,7 +1104,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->jump = addr + (short)(data[2]|data[3]<<8)*2;
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->eob = true;
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
 			}
 		}
@@ -587,7 +1115,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->jump = addr + (dst * 2);
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->eob = true;
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
 			}
 		}
@@ -601,7 +1129,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	//case 0x3f: // cmpg-float // ???? wrong disasm imho 2e0f12003f0f
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->family = R_ANAL_OP_FAMILY_FPU;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format23x(len, data, &vA, &vB, &vC);
 			esilprintf (op, "32,v%u,F2D,32,v%u,F2D,F<=,?{,32,v%u,F2D,32,v%u,F2D,F==,!,-1,*,}{,1,},v%u,=", vC, vB, vC, vB, vA);
 		}
@@ -610,14 +1138,14 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x30: // cmlg-double
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->family = R_ANAL_OP_FAMILY_FPU;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format23x(len, data, &vA, &vB, &vC);
 			esilprintf (op, "v%u,v%u,F<=,?{,v%u,v%u,F==,!,-1,*,}{,1,},v%u,=", vC, vB, vC, vB, vA);
 		}
 		break;
 	case 0x31: // cmp-long
 		op->type = R_ANAL_OP_TYPE_CMP;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format23x(len, data, &vA, &vB, &vC);
 			// weird expression but should work
 			esilprintf (op, GETWIDE "," GETWIDE ",-,DUP,0,<=,?{,1,}{,-1,},SWAP,!,?{,0,},v%u,=", vC+1, vC, vB+1, vB, vA);
@@ -636,7 +1164,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->jump = addr + vC; //(len>3?(short)(data[2]|data[3]<<8)*2 : 0);
 			op->fail = addr + sz;
 			op->eob = true;
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				const char *cond = getCond (data[0]);
 				esilprintf (op, "v%u,v%u,%s,?{,%"PFMT64d",ip,=,}", vB, vA, cond, op->jump);
 			}
@@ -656,7 +1184,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->jump = addr + vB; //(len>3?(short)(data[2]|data[3]<<8)*2 : 0);
 			op->fail = addr + sz;
 			op->eob = true;
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				const char *cond = getCond (data[0]);
 				esilprintf (op, "0,v%u,%s,?{,%"PFMT64d",ip,=,}", vA, cond, op->jump);
 			}
@@ -666,7 +1194,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 1;
 		op->eob = true;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, ",");
 		}
 		break;
@@ -704,7 +1232,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		//break;
 	case 0x54: // iget-object
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			ut32 vA = (data[1] & 0x0f);
 			ut32 vB = (data[1] & 0xf0) >> 4;
 			ut32 vC = (data[2] & 0x0f);
@@ -716,8 +1244,8 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			op->datatype = R_ANAL_DATATYPE_OBJECT;
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			ut32 vC = len > 3?(data[3] << 8) | data[2] : 0;
-			op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			op->ptr = _anal_get_offset (anal, 'f', vC);
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				ut32 vA = (data[1] & 0x0f);
 				esilprintf (op, "%" PFMT64d ",v%d,=", op->ptr, vA);
 			}
@@ -726,7 +1254,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x63: // sget-boolean
 		op->datatype = R_ANAL_DATATYPE_BOOLEAN;
 		op->type = R_ANAL_OP_TYPE_LOAD;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			ut32 vA = (data[1] & 0x0f);
 			ut32 vB = (data[1] & 0xf0) >> 4;
 			ut32 vC = (data[2] & 0x0f);
@@ -763,36 +1291,36 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xfe:
 		op->type = R_ANAL_OP_TYPE_STORE;
 		vC = len > 3?(data[3] << 8) | data[2] : 0;
-		op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		op->ptr = _anal_get_offset (anal, 'f', vC);
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			ut32 vA = (data[1] & 0x0f);
 			esilprintf (op, "%" PFMT64d ",v%u,=", op->ptr, vA);
 		}
 		break;
 	case 0x7b: // neg-int
 		op->type = R_ANAL_OP_TYPE_NOT;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format12x(len, data, &vA, &vB);
 			esilprintf (op, "v%u,0,-,0xffffffff,&,v%u,=", vB, vA);
 		}
 		break;
 	case 0x7c: // not-int
 		op->type = R_ANAL_OP_TYPE_NOT;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format12x(len, data, &vA, &vB);
 			esilprintf (op, "0xffffffff,v%u,^,v%u,=", vB, vA);
 		}
 		break;
 	case 0x7d: // neg-long
 		op->type = R_ANAL_OP_TYPE_NOT;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format12x(len, data, &vA, &vB);
 			esilprintf (op, GETWIDE ",0,-," SETWIDE, vB+1, vB, vA, vA+1);
 		}
 		break;
 	case 0x7e: // not-long
 		op->type = R_ANAL_OP_TYPE_NOT;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format12x(len, data, &vA, &vB);
 			esilprintf (op, "-1," GETWIDE ",^," SETWIDE, vB+1, vB, vA, vA+1);
 		}
@@ -800,7 +1328,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x7f: // neg-float
 		op->type = R_ANAL_OP_TYPE_NOT;
 		op->family = R_ANAL_OP_FAMILY_FPU;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format12x(len, data, &vA, &vB);
 			esilprintf (op, "32,32,v%u,F2D,0,I2D,F-,D2F,v%u,=", vB, vA);
 		}
@@ -808,7 +1336,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x80: // neg-double
 		op->type = R_ANAL_OP_TYPE_NOT;
 		op->family = R_ANAL_OP_FAMILY_FPU;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			format12x(len, data, &vA, &vB);
 			esilprintf (op, GETWIDE ",0,I2D,F-," SETWIDE, vB+1, vB, vA, vA+1);
 		}
@@ -834,7 +1362,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		format12x(len, data, &vA, &vB);
 
 		// do all the casting here
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			// op->refptr = 0;
 			// many of these might need sign extensions
 			switch (data[0]) {
@@ -1032,7 +1560,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 
 	case 0xec: // breakpoint
 		op->type = R_ANAL_OP_TYPE_TRAP;
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			esilprintf (op, "TRAP");
 		}
 		break;
@@ -1048,7 +1576,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			//XXX fix this better since the check avoid an oob
 			//but the jump will be incorrect
 			ut32 vB = len > 3?(data[3] << 8) | data[2] : 0;
-			ut64 dst = anal->binb.get_offset (anal->binb.bin, 'm', vB);
+			ut64 dst = _anal_get_offset (anal, 'm', vB);
 			if (dst == 0) {
 				op->type = R_ANAL_OP_TYPE_UCALL;
 			} else {
@@ -1056,7 +1584,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 				op->jump = dst;
 			}
 			op->fail = addr + sz;
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & R_ARCH_OP_MASK_ESIL) {
 				// TODO: handle /range instructions
 				esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", op->fail, op->jump);
 			}
@@ -1074,14 +1602,14 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 			//XXX fix this better since the check avoid an oob
 			//but the jump will be incorrect
 			// ut32 vB = len > 3?(data[3] << 8) | data[2] : 3;
-			//op->jump = anal->binb.get_offset (anal->binb.bin, 'm', vB);
+			//op->jump = _anal_get_offset (anal, 'm', vB);
 			op->fail = addr + sz;
 			// op->type = R_ANAL_OP_TYPE_CALL;
 			op->type = R_ANAL_OP_TYPE_UCALL;
 			// TODO: handle /range instructions
 			// NOP esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", addr);
 		}
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			// TODO: handle /range instructions
 			esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", op->fail, op->jump);
 		}
@@ -1094,11 +1622,16 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		break;
 	}
+
+	if (mask & R_ARCH_OP_MASK_DISASM) {
+		dalvik_disassemble (anal, op, addr, data, len, sz);
+	}
+
 	return sz;
 }
 
 static bool set_reg_profile(RAnal *anal) {
-	const char *p =
+	const char * const p =
 	"=PC	ip\n"
 	"=SP	sp\n"
 	"=BP	bp\n"

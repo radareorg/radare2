@@ -1,10 +1,9 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nikolai */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nikolai */
 
 #include <r_util/r_diff.h>
 
 // the non-system-diff doesnt work well
 #define USE_SYSTEM_DIFF 1
-
 
 R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b) {
 	RDiff *d = R_NEW0 (RDiff);
@@ -173,7 +172,7 @@ typedef struct {
 } RDiffUser;
 
 #if USE_SYSTEM_DIFF
-R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+R_API char *r_diff_buffers_tostring(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	return r_diff_buffers_unified (d, a, la, b, lb);
 }
 
@@ -211,7 +210,7 @@ static int tostring(RDiff *d, void *user, RDiffOp *op) {
 	return 1;
 }
 
-R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+R_API char *r_diff_buffers_tostring(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	// XXX buffers_static doesnt constructs the correct string in this callback
 	void *c = d->callback;
 	void *u = d->user;
@@ -243,7 +242,7 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 	lb = R_ABS (lb);
 	if (la != lb) {
 		len = R_MIN (la, lb);
-		eprintf ("Buffer truncated to %d byte(s) (%d not compared)\n", len, R_ABS(lb - la));
+		R_LOG_INFO ("Buffer truncated to %d byte(s) (%d not compared)", len, R_ABS(lb - la));
 	} else {
 		len = la;
 	}
@@ -263,29 +262,42 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 	return 0;
 }
 
-// XXX: temporary files are
 R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
-	r_file_dump (".a", a, la, 0);
-	r_file_dump (".b", b, lb, 0);
+	char *fa = NULL;
+	char *fb = NULL;
+	int fd = r_file_mkstemp ("r_diff", &fa);
+	int fe = r_file_mkstemp ("r_diff", &fb);
+	if (fd == -1 || fe == -1) {
+		R_LOG_ERROR ("Failed to create temporary files");
+		return NULL;
+	}
+	if (!fa || !fb) {
+		R_LOG_ERROR ("fafb nul");
+		return NULL;
+	}
+	r_file_dump (fa, a, la, 0);
+	r_file_dump (fb, b, lb, 0);
 #if 0
 	if (r_mem_is_printable (a, R_MIN (5, la))) {
-		r_file_dump (".a", a, la, 0);
-		r_file_dump (".b", b, lb, 0);
+		r_file_dump (fa, a, la, 0);
+		r_file_dump (fb, b, lb, 0);
 	} else {
-		r_file_hexdump (".a", a, la, 0);
-		r_file_hexdump (".b", b, lb, 0);
+		r_file_hexdump (fa, a, la, 0);
+		r_file_hexdump (fb, b, lb, 0);
 	}
 #endif
 	char *err = NULL;
 	char *out = NULL;
 	int out_len;
-	char *diff_cmdline = r_str_newf ("%s .a .b", d->diff_cmd);
+	char *diff_cmdline = r_str_newf ("%s %s %s", d->diff_cmd, fa, fb);
 	if (diff_cmdline) {
 		(void)r_sys_cmd_str_full (diff_cmdline, NULL, 0, &out, &out_len, &err);
 		free (diff_cmdline);
 	}
-	r_file_rm (".a");
-	r_file_rm (".b");
+	close (fd);
+	close (fe);
+	r_file_rm (fa);
+	r_file_rm (fb);
 	free (err);
 	return out;
 }
@@ -620,7 +632,7 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 		} else if (!a_ch && b_ch) {
 			cur_align = R2R_ALIGN_TOP_GAP;
 		} else if (a_ch != b_ch) {
-			eprintf ("Internal error: mismatch detected!\n");
+			R_LOG_ERROR ("Internal mismatch detected!");
 			cur_align = R2R_ALIGN_MISMATCH;
 		} else {
 			cur_align = R2R_ALIGN_MATCH;
@@ -792,11 +804,11 @@ static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst,
 }
 
 /**
- * \brief Return Levenshtein distance and put array of changes, of unkown
+ * \brief Return Levenshtein distance and put array of changes, of unknown
  * lenght, in chgs
  * \param bufa Structure to represent starting buffer
  * \param bufb Structure to represent the buffer to reach
- * \param maxdst Max Levenshtein distance need, send UT32_MAX if unkown.
+ * \param maxdst Max Levenshtein distance need, send UT32_MAX if unknown.
  * \param levdiff Function pointer returning true when there is a difference.
  * \param chgs Returned array of changes to get from bufa to bufb
  *
@@ -829,7 +841,8 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 	size_t skip;
 	ut32 alen = bufa->len;
 	ut32 blen = bufb->len;
-	for (skip=0; skip < alen && !levdiff (bufa, bufb, skip, skip); skip++) {}
+	for (skip = 0; skip < alen && !levdiff (bufa, bufb, skip, skip); skip++) {
+	}
 
 	// strip suffix as long as bytes don't diff
 	size_t i;
@@ -938,11 +951,11 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 	{
 		// for debugging matrix
 		size_t total = 0;
-		for (i=0; i <= alen; i++) {
+		for (i = 0; i <= alen; i++) {
 			Levrow *bow = matrix + i;
 			ut32 j;
 			printf ("   ");
-			for (j=0; j <= blen; j++) {
+			for (j = 0; j <= blen; j++) {
 				ut32 val = lev_get_val (bow, j);
 				if (val >= UT32_MAX - 1) {
 					printf (" ..");

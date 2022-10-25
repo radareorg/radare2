@@ -2,7 +2,6 @@
 
 #include <r_io.h>
 #include <r_lib.h>
-#include <r_util.h>
 #include <libbochs.h>
 
 typedef struct {
@@ -14,7 +13,7 @@ static R_TH_LOCAL RIODesc *riobochs = NULL;
 extern RIOPlugin r_io_plugin_bochs; // forward declaration
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
-	return !strncmp (file, "bochs://", strlen ("bochs://"));
+	return r_str_startswith (file, "bochs://");
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
@@ -40,7 +39,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		fileCfg = strdup (i + 1);
 	} else {
 		free (fileCfg);
-		eprintf ("Error can't find :\n");
+		R_LOG_ERROR ("can't find :");
 		return NULL;
 	}
 	riob = R_NEW0 (RIOBochs);
@@ -50,8 +49,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		desc = &riob->desc;
 		riobochs = r_io_desc_new (io, &r_io_plugin_bochs, file, rw, mode, riob);
 		//riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
-		free(fileBochs);
-		free(fileCfg);
+		free (fileBochs);
+		free (fileCfg);
 		return riobochs;
 	}
 	free (riob);
@@ -84,14 +83,13 @@ static bool __close(RIODesc *fd) {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
-	lprintf ("system command (%s)\n", cmd);
-	if (!strcmp (cmd, "help")) {
-		lprintf ("Usage: =!cmd args\n"
-				" =!:<bochscmd>      - Send a bochs command.\n"
-				" =!dobreak	  - pause bochs.\n");
+	if (*cmd == '?' || !strcmp (cmd, "help")) {
+		eprintf ("Usage: :cmd args\n"
+			" ::<bochscmd>      - Send a bochs command.\n"
+			" :dobreak	  - pause bochs.\n");
 		bochs_send_cmd (desc, &cmd[1], true);
 		io->cb_printf ("%s\n", desc->data);
-	} else if (!strncmp (cmd, "dobreak", 7)) {
+	} else if (r_str_startswith (cmd, "dobreak")) {
 		bochs_cmd_stop (desc);
 		io->cb_printf ("%s\n", desc->data);
 	}

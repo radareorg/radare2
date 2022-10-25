@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2021 - pancake */
+/* radare - LGPL - Copyright 2015-2022 - pancake */
 /*
 Usage Example:
 
@@ -189,14 +189,14 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 		}
 	}
 	if (!done) {
-		eprintf ("Cannot find R2PIPE_IN or R2PIPE_OUT environment\n");
+		R_LOG_ERROR ("Cannot find R2PIPE_IN or R2PIPE_OUT environment");
 		R_FREE (r2p);
 	}
 	free (in);
 	free (out);
 	return r2p;
 #else
-	eprintf ("r2pipe_open(NULL) not supported on windows\n");
+	R_LOG_ERROR ("r2pipe_open(NULL) not supported on windows");
 	return NULL;
 #endif
 }
@@ -235,7 +235,7 @@ R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
 		}
 		return r2pipe;
 	}
-	eprintf ("Cannot resolve r_core_cmd, r_core_cmd_str, r_core_free\n");
+	R_LOG_ERROR ("Cannot resolve r_core_cmd, r_core_cmd_str, r_core_free");
 	return NULL;
 }
 
@@ -254,13 +254,13 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 #else
 	int r = pipe (r2p->input);
 	if (r != 0) {
-		eprintf ("pipe failed on input\n");
+		R_LOG_ERROR ("pipe failed on input");
 		r2pipe_close (r2p);
 		return NULL;
 	}
 	r = pipe (r2p->output);
 	if (r != 0) {
-		eprintf ("pipe failed on output\n");
+		R_LOG_ERROR ("pipe failed on output");
 		r2pipe_close (r2p);
 		return NULL;
 	}
@@ -276,12 +276,12 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 		signed char ch = -1;
 		// eprintf ("[+] r2pipeipe child is %d\n", r2pipe->child);
 		if (read (r2p->output[0], &ch, 1) != 1) {
-			eprintf ("Failed to read 1 byte\n");
+			R_LOG_ERROR ("Failed to read 1 byte");
 			r2pipe_close (r2p);
 			return NULL;
 		}
 		if (ch == -1) {
-			eprintf ("[+] r2pipe link error.\n");
+			R_LOG_ERROR ("[+] r2pipe link error");
 			r2pipe_close (r2p);
 			return NULL;
 		}
@@ -303,7 +303,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 			r2p->output[0] = -1;
 			rc = r_sandbox_system (cmd, 1);
 			if (rc != 0) {
-				eprintf ("return code %d for %s\n", rc, cmd);
+				R_LOG_ERROR ("return code %d for %s", rc, cmd);
 			}
 			// trigger the blocking read
 			if (write (1, "\xff", 1) != 1) {

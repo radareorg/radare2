@@ -103,9 +103,9 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 	res = malloc(50);
 	if (!res) {
 		return NULL;
-	}	
-	if(op2 == 2) {
-		if(op) {
+	}
+	if (op2 == 2) {
+		if (op) {
 			sprintf (res, "*ar%ld(short(#0x%lx))",
 				 (long int)reg_num, (long int)idx * op);
 		} else {
@@ -113,9 +113,9 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 		}
 	} else {
 		type = (op >> 3 | 2 * op2);
-		if(type == 6) {
+		if (type == 6) {
 			sprintf(res, "@#0x%lx", (long int)idx * (reg_num | 16 * (op & 7)));
-		} else if(type == 7) {
+		} else if (type == 7) {
 			sprintf(res, "*sp(#0x%lx)", (long int)idx * (reg_num | 16 * (op & 7)));
 		} else {
 			type = idx | 16 * op;
@@ -189,7 +189,7 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 			case 26:
 			case 27:
 				idx = get_ins_part(ins_pos, 2);
-				if(ret_len) {
+				if (ret_len) {
 					*ret_len = 2;
 				}
 				switch (type) {
@@ -211,7 +211,7 @@ char *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 			case 29:
 			case 30:
 				idx = get_ins_part(ins_pos, 3);
-				if(ret_len) {
+				if (ret_len) {
 					*ret_len = 3;
 				}
 				switch (type) {
@@ -1069,11 +1069,11 @@ char *get_sim_reg (char *reg_arg, ut32 ins_bits) {
 	code = ins_bits & 3;
 	switch (code) {
 	case 0:
-		if(reg_arg && strchr (reg_arg, 'w')) {
-			if(code == 62) {
+		if (reg_arg && strchr (reg_arg, 'w')) {
+			if (code == 62) {
 				return strdup ("sim0");
 			}
-			if(code == 63) {
+			if (code == 63) {
 				return strdup ("sim0");
 			}
 		}

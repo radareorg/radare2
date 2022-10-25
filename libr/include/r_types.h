@@ -35,10 +35,27 @@
 #define R_OUT /* parameter is written, not read */
 #define R_INOUT /* parameter is read and written */
 #define R_OWN /* pointer ownership is transferred */
-#define R_BORROW /* pointer ownership is not transferred, it must not be freed by the receiver */
+#define R_BORROW /* pointer ownership is not transferred, it must not be freed by the caller */
 #define R_NONNULL /* pointer can not be null */
 #define R_NULLABLE /* pointer can be null */
-#define R_DEPRECATE /* should not be used in new code and should/will be removed in the future */
+
+/* should not be used in new code and should/will be removed in the future */
+#ifdef __GNUC__
+#  define R_DEPRECATE
+#  define R_DEPRECATED __attribute__((deprecated))
+#else
+#  define R_DEPRECATE
+#  define R_DEPRECATED
+#endif
+
+#ifdef __GNUC__
+#  define R_WIP __attribute__((deprecated))
+// ("this function is considered as work-in-progress", "use it at your own risk")))
+// warning doesnt work on llvm/clang, its a gcc specific thing,
+// __attribute__((warning("Don't use this function yet. its too new")))
+#else
+#  define R_WIP /* should not be used in new code and should/will be removed in the future */
+#endif
 #define R_IFNULL(x) /* default value for the pointer when null */
 
 #ifdef R_NEW
@@ -69,6 +86,7 @@
 #define R_PERM_PRIV	16
 #define R_PERM_ACCESS	32
 #define R_PERM_CREAT	64
+#define R_PERM_RELOC	128
 
 
 // HACK to fix capstone-android-mips build
@@ -137,6 +155,8 @@
 #  define UNUSED_FUNCTION(x) UNUSED_ ## x
 #endif
 
+#define R_UNUSED_RESULT(x) if ((x)) {}
+
 #if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
 #define __KFBSD__ 1
 #else
@@ -157,20 +177,10 @@
 # define __UNIX__ 1
 #endif
 
-#if 0
-// XXX any non-unix system dont have termios :? android?
-#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__ || __HAIKU__ || __serenity__ || __vinix__
-#define HAVE_PTY 1
-#else
-#define HAVE_PTY 0
-#endif
-#endif
-
 #undef HAVE_PTY
 #if EMSCRIPTEN || __wasi__ || defined(__serenity__)
 #define HAVE_PTY 0
 #else
-// #define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
 #define HAVE_PTY __UNIX__ && LIBC_HAVE_FORK && !__sun
 #endif
 
@@ -327,11 +337,11 @@ R_API const char *x##_version(void) { return "" R2_GITTAP; }
 
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
-#define R_NEWS0(x,y) (x*)calloc(y,sizeof(x))
-#define R_NEWS(x,y) (x*)malloc(sizeof(x)*(y))
-#define R_NEW0(x) (x*)calloc(1,sizeof(x))
-#define R_NEW(x) (x*)malloc(sizeof(x))
-#define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof(x), y)
+#define R_NEWS0(x,y) (x*)calloc(y,sizeof (x))
+#define R_NEWS(x,y) (x*)malloc(sizeof (x)*(y))
+#define R_NEW0(x) (x*)calloc(1,sizeof (x))
+#define R_NEW(x) (x*)malloc(sizeof (x))
+#define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof (x), y)
 
 static inline void *r_new_copy(int size, void *data) {
 	void *a = malloc(size);
@@ -341,7 +351,7 @@ static inline void *r_new_copy(int size, void *data) {
 	return a;
 }
 // TODO: Make R_NEW_COPY be 1 arg, not two
-#define R_NEW_COPY(x,y) x=(void*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
+#define R_NEW_COPY(x,y) x=(void*)malloc(sizeof (y));memcpy(x,y,sizeof (y))
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
 #define R_ARRAY_SIZE(x) (sizeof (x) / sizeof ((x)[0]))
 #define R_PTR_MOVE(d,s) d=s;s=NULL;
@@ -373,7 +383,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define _perror(str,file,line,func) \
   { \
 	  char buf[256]; \
-	  snprintf(buf,sizeof(buf),"[%s:%d %s] %s",file,line,func,str); \
+	  snprintf(buf,sizeof (buf),"[%s:%d %s] %s",file,line,func,str); \
 	  r_sys_perror_str(buf); \
   }
 #define perror(x) _perror(x,__FILE__,__LINE__,__func__)
@@ -658,7 +668,9 @@ typedef enum {
 
 
 #define HAS_CLOCK_NANOSLEEP 0
-#if CLOCK_MONOTONIC && MONOTONIC_UNIX
+#if defined(__wasi__)
+# define HAS_CLOCK_MONOTONIC 0
+#elif CLOCK_MONOTONIC && MONOTONIC_UNIX
 # define HAS_CLOCK_MONOTONIC 1
 # if HAVE_CLOCK_NANOSLEEP
 #  undef HAS_CLOCK_NANOSLEEP
@@ -750,20 +762,5 @@ static inline void r_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, v
 #ifndef container_of
 #define container_of(ptr, type, member) (ptr? ((type *)((char *)(ptr) - r_offsetof(type, member))): NULL)
 #endif
-
-// reference counter
-typedef int RRef;
-
-#define R_REF_NAME refcount
-#define r_ref(x) ((x)->R_REF_NAME++, (x));
-#define r_ref_set(x,y) do { if(x) { (x)->R_REF_NAME--; } (x)=(y); (x)->R_REF_NAME++;} while(0)
-#define r_ref_init(x,y) (x)->R_REF_NAME = 1;(x)->free = (void *)(y)
-// #define r_unref(x) { assert (x->R_REF_NAME > 0); if (!--(x->R_REF_NAME)) { x->free(x); } }
-#define r_unref(x) { if (x->R_REF_NAME > 0 && !--(x->R_REF_NAME)) { x->free(x); } }
-
-#define R_REF_TYPE RRef R_REF_NAME; void (*free)(void*)
-#define R_REF_FUNCTIONS(s, n) \
-static inline void n##_ref(s *x) { x->R_REF_NAME++; } \
-static inline void n##_unref(s *x) { r_unref(x); }
 
 #endif // R2_TYPES_H

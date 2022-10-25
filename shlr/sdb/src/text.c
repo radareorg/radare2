@@ -454,7 +454,7 @@ beach:
 }
 
 SDB_API bool sdb_text_check(Sdb *s, const char *file) {
-	char buf[64];
+	char buf[64] = {0};
 	int fd = open (file, O_RDONLY | O_BINARY);
 	if (fd < 0) {
 		return false;
@@ -466,6 +466,9 @@ SDB_API bool sdb_text_check(Sdb *s, const char *file) {
 	}
 	int count = read (fd, buf, R_MIN (st.st_size, (off_t)sizeof (buf)));
 	close (fd);
+	if (count < 1) {
+		return false;
+	}
 	bool is_ascii = true;
 	bool has_eq = false;
 	bool has_nl = false;

@@ -58,11 +58,11 @@ static RList *oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	RList * res = r_list_newf (r_bin_xtrdata_free);
 	r_list_append (res, data);
 
-	if ((data = oneshot (bin, buf, size, SUB_BIN_NATIVE))){
+	if ((data = oneshot (bin, buf, size, SUB_BIN_NATIVE))) {
 		r_list_append (res, data);
 	}
 
-	if ((data = oneshot (bin, buf, size, SUB_BIN_NET))){
+	if ((data = oneshot (bin, buf, size, SUB_BIN_NET))) {
 		r_list_append (res, data);
 	}
 
@@ -70,7 +70,7 @@ static RList *oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 }
 
 //implement this later
-static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, void *foo) {// struct Pe_32_r_bin_pemixed_obj_t* pe_bin){
+static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, void *foo) {// struct Pe_32_r_bin_pemixed_obj_t* pe_bin) {
 	meta->arch = NULL;
 	meta->bits = 0;
 	meta->machine = NULL;

@@ -43,7 +43,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return !memcmp (magic, "PBLAPP\x00\x00", 8);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (bf, b);
 }
 
@@ -62,7 +62,7 @@ static RBinInfo* info(RBinFile *bf) {
 	memset (&pai, 0, sizeof (pai));
 	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai));
 	if (reat != sizeof (pai)) {
-		eprintf ("Truncated Header\n");
+		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
 	if (!(ret = R_NEW0 (RBinInfo))) {
@@ -89,8 +89,8 @@ static RList* sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	PebbleAppInfo pai = {{0}};
-	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof(pai))) {
-		eprintf ("Truncated Header\n");
+	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai))) {
+		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
 	if (!(ret = r_list_new ())) {
@@ -174,8 +174,8 @@ static RList* entries(RBinFile *bf) {
 	RBinAddr *ptr = NULL;
 	RList *ret;
 	PebbleAppInfo pai;
-	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof(pai))) {
-		eprintf ("Truncated Header\n");
+	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai))) {
+		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
 	if (!(ret = r_list_new ())) {

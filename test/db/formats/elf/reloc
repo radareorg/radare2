@@ -125,7 +125,7 @@ call printk
 pop eax
 leave
 ret
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+- offset -  7C7D 7E7F 8081 8283 8485 8687 8889 8A8B  CDEF0123456789AB
 0x0800007c  e8cc c802 0055 89e5 68a2 0000 08e8 c3c8  .....U..h.......
 0x0800008c  0200 31c0 c9c3 5589 e568 b100 0008 e8b2  ..1...U..h......
 0x0800009c  c802 0058 c9c3                           ...X..
@@ -155,7 +155,7 @@ call printk
 pop eax
 leave
 ret
-- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+- offset -  7C7D 7E7F 8081 8283 8485 8687 8889 8A8B  CDEF0123456789AB
 0x0800007c  e8fc ffff ff55 89e5 6800 0000 00e8 fcff  .....U..h.......
 0x0800008c  ffff 31c0 c9c3 5589 e568 0f00 0000 e8fc  ..1...U..h......
 0x0800009c  ffff ff58 c9c3                           ...X..

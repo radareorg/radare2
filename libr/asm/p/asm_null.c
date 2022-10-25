@@ -1,9 +1,5 @@
-/* radare - LGPL - Copyright 2019-2021 - pancake */
+/* radare - LGPL - Copyright 2019-2022 - pancake */
 
-#include <stdio.h>
-#include <string.h>
-#include <r_types.h>
-#include <r_lib.h>
 #include <r_asm.h>
 
 RAsmPlugin r_asm_plugin_null = {

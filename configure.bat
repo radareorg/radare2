@@ -11,6 +11,10 @@ if "%*" == "static" (
   set MESON_FLAGS=%MESON_FLAGS% -Dstatic_runtime=true -Dblob=true -Denable_r2r=false -Denable_tests=false
 )
 
+if "%*" == "release" (
+  set MESON_FLAGS=%MESON_FLAGS% --buildtype=release
+)
+
 set PATH=%CD%\prefix\bin;%PATH%
 set WORKS=0
 if EXIST vs (
@@ -30,7 +34,7 @@ set WORKS=0
 if EXIST b (
   meson b %MESON_FLAGS% --reconfigure && set WORKS=1
 ) else (
-  meson b %MESON_FLAGS% --buildtype=release && set WORKS=1
+  meson b %MESON_FLAGS% && set WORKS=1
 )
 
 if %WORKS% EQU 1 (

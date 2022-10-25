@@ -5,49 +5,50 @@
 #include <r_cons.h>
 #include <r_th.h>
 
-static R_TH_LOCAL int color_table[256] = {0};
-static R_TH_LOCAL int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
+static const int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
 
 static void init_color_table(void) {
+	RConsContext *ctx = r_cons_singleton ()->context;
 	int i, r, g, b;
 	// ansi colors
-	color_table[0] = 0x000000;
-	color_table[1] = 0x800000;
-	color_table[2] = 0x008000;
-	color_table[3] = 0x808000;
-	color_table[4] = 0x000080;
-	color_table[5] = 0x800080;
-	color_table[6] = 0x008080;
-	color_table[7] = 0xc0c0c0;
-	color_table[8] = 0x808080;
-	color_table[9] = 0xff0000;
-	color_table[10] = 0x00ff00;
-	color_table[11] = 0xffff00;
-	color_table[12] = 0x0000ff;
-	color_table[13] = 0xff00ff;
-	color_table[14] = 0x00ffff;
-	color_table[15] = 0xffffff;
+	ctx->colors[0] = 0x000000;
+	ctx->colors[1] = 0x800000;
+	ctx->colors[2] = 0x008000;
+	ctx->colors[3] = 0x808000;
+	ctx->colors[4] = 0x000080;
+	ctx->colors[5] = 0x800080;
+	ctx->colors[6] = 0x008080;
+	ctx->colors[7] = 0xc0c0c0;
+	ctx->colors[8] = 0x808080;
+	ctx->colors[9] = 0xff0000;
+	ctx->colors[10] = 0x00ff00;
+	ctx->colors[11] = 0xffff00;
+	ctx->colors[12] = 0x0000ff;
+	ctx->colors[13] = 0xff00ff;
+	ctx->colors[14] = 0x00ffff;
+	ctx->colors[15] = 0xffffff;
 	// color palette
 	for (i = 0; i < 216; i++) {
 		r = value_range[(i / 36) % 6];
 		g = value_range[(i / 6) % 6];
 		b = value_range[i % 6];
-		color_table[i + 16] = ((r << 16) & 0xffffff) +
+		ctx->colors[i + 16] = ((r << 16) & 0xffffff) +
 			((g << 8) & 0xffff) + (b & 0xff);
 	}
 	// grayscale
 	for (i = 0; i < 24; i++) {
 		r = 8 + (i * 10);
-		color_table[i + 232] = ((r << 16) & 0xffffff) +
+		ctx->colors[i + 232] = ((r << 16) & 0xffffff) +
 			((r << 8) & 0xffff) + (r & 0xff);
 	}
 }
 
 static int __lookup_rgb(int r, int g, int b) {
+	RConsContext *ctx = r_cons_singleton ()->context;
 	int i, color = (r << 16) + (g << 8) + b;
 	// lookup extended colors only, coz non-extended can be changed by users.
-	for (i = 16; i < 256; i++) {
-		if (color_table[i] == color) {
+	for (i = 16; i < 232; i++) {
+		if (ctx->colors[i] == color) {
 			return i;
 		}
 	}
@@ -75,10 +76,10 @@ static ut32 __approximate_rgb(int r, int g, int b) {
 	b &= 0xff;
 	return (ut32)((G * M * M)  + (g * M) + b) + 16;
 #else
-	const int k = (int)(256.0 / 6);
-	r = R_DIM ((int)(r / k), 0, 6);
-	g = R_DIM ((int)(g / k), 0, 6);
-	b = R_DIM ((b / k), 0, 6);
+	const int k = 256 / 6;
+	r = R_DIM (r / k, 0, 5);
+	g = R_DIM (g / k, 0, 5);
+	b = R_DIM (b / k, 0, 5);
 	return 16 + (r * 36) + (g * 6) + b;
 #endif
 }
@@ -92,10 +93,11 @@ static int rgb(int r, int g, int b) {
 }
 
 static void __unrgb(int color, int *r, int *g, int *b) {
+	RConsContext *ctx = r_cons_singleton ()->context;
 	if (color < 0 || color > 255) {
 		*r = *g = *b = 0;
 	} else {
-		int rgb = color_table[color];
+		int rgb = ctx->colors[color];
 		*r = (rgb >> 16) & 0xff;
 		*g = (rgb >> 8) & 0xff;
 		*b = rgb & 0xff;
@@ -103,7 +105,8 @@ static void __unrgb(int color, int *r, int *g, int *b) {
 }
 
 R_API void r_cons_rgb_init(void) {
-	if (color_table[255] == 0) {
+	RConsContext *ctx = r_cons_singleton ()->context;
+	if (ctx->colors[255] == 0) {
 		init_color_table ();
 	}
 }
@@ -258,17 +261,11 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 				: (r == 0xff || g == 0xff || b == 0xff)
 					? 60
 					: 0;  // eco bright-specific
-			if (r == g && g == b) {
-				r = (r > 0x7f) ? 1 : 0;
-				g = (g > 0x7f) ? 1 : 0;
-				b = (b > 0x7f) ? 1 : 0;
-			} else {
-				ut8 k = (r + g + b) / 3;
-				r = (r >= k) ? 1 : 0;
-				g = (g >= k) ? 1 : 0;
-				b = (b >= k) ? 1 : 0;
-			}
-			c = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
+			ut8 k = (r + g + b) / 3;
+			r = (r >= k) ? 1 : 0;
+			g = (g >= k) ? 1 : 0;
+			b = (b >= k) ? 1 : 0;
+			c = r + (g << 1) + (b << 2);
 		}
 		written = snprintf (outstr + i, sz - i, "%dm", fgbg + bright + c);
 		break;

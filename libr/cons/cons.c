@@ -8,13 +8,12 @@
 
 R_LIB_VERSION (r_cons);
 
-// Stub function that cb_main_output gets pointed to in util/log.c by r_cons_new
-// This allows Iaito to set per-task logging redirection
-static R_TH_LOCAL RThreadLock *lock = NULL;
+static R_TH_LOCAL int oldraw = -1;
 static R_TH_LOCAL RConsContext r_cons_context_default = {{{{0}}}};
 static R_TH_LOCAL RCons g_cons_instance = {0};
 static R_TH_LOCAL RCons *r_cons_instance = NULL;
-static R_TH_LOCAL RThreadLock r_cons_lock = R_THREAD_LOCK_INIT;
+static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
+static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
 #define I (r_cons_instance)
 #define C (getctx())
 
@@ -26,7 +25,10 @@ static RConsContext *getctx(void) {
 	return r_cons_instance->context;
 }
 
-//this structure goes into cons_stack when r_cons_push/pop
+R_API bool r_cons_is_initialized(void) {
+	return r_cons_instance != NULL;
+}
+
 typedef struct {
 	char *buf;
 	int buf_len;
@@ -42,7 +44,7 @@ typedef struct {
 
 static void cons_grep_reset(RConsGrep *grep) {
 	if (grep) {
-		R_FREE (grep->str); // double-free
+		R_FREE (grep->str);
 		ZERO_FILL (*grep);
 		grep->line = -1;
 		grep->sort = -1;
@@ -58,11 +60,6 @@ static void break_stack_free(void *ptr) {
 static void cons_stack_free(void *ptr) {
 	RConsStack *s = (RConsStack *)ptr;
 	R_FREE (s->buf);
-/*
-	if (s->grep) {
-		R_FREE (s->grep->str); // FREE
-	}
-*/
 	cons_grep_reset (s->grep);
 	R_FREE (s->grep);
 	free (s);
@@ -341,8 +338,7 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 	if (!context || !context->break_stack) {
 		return;
 	}
-
-	//if we don't have any element in the stack start the signal
+	// if we don't have any element in the stack start the signal
 	RConsBreakStack *b = R_NEW0 (RConsBreakStack);
 	if (!b) {
 		return;
@@ -357,11 +353,11 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 #endif
 		context->breaked = false;
 	}
-	//save the actual state
+	// save the actual state
 	b->event_interrupt = context->event_interrupt;
 	b->event_interrupt_data = context->event_interrupt_data;
 	r_stack_push (context->break_stack, b);
-	//configure break
+	// configure break
 	context->event_interrupt = cb;
 	context->event_interrupt_data = user;
 }
@@ -517,6 +513,7 @@ R_API void r_cons_break_end(void) {
 }
 
 R_API void *r_cons_sleep_begin(void) {
+	R_CRITICAL_ENTER (I);
 	if (!r_cons_instance) {
 		r_cons_thready ();
 	}
@@ -533,6 +530,7 @@ R_API void r_cons_sleep_end(void *user) {
 	if (I->cb_sleep_end) {
 		I->cb_sleep_end (I->user, user);
 	}
+	R_CRITICAL_LEAVE (I);
 }
 
 #if __WINDOWS__
@@ -628,12 +626,12 @@ R_API RCons *r_cons_new(void) {
 	if (I->refcnt != 1) {
 		return I;
 	}
-	if (lock) {
-		r_th_lock_wait (lock);
+	if (I->lock) {
+		r_th_lock_wait (I->lock);
 	} else {
-		lock = r_th_lock_new (false);
+		I->lock = r_th_lock_new (false);
 	}
-	r_th_lock_enter (lock);
+	R_CRITICAL_ENTER (I);
 	I->use_utf8 = r_cons_is_utf8 ();
 	I->rgbstr = r_cons_rgb_str_off;
 	I->line = r_line_new ();
@@ -685,7 +683,7 @@ R_API RCons *r_cons_new(void) {
 	GetConsoleMode (h, &I->term_buf);
 	I->term_raw = 0;
 	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE)) {
-		R_LOG_ERROR ("r_cons: Cannot set control console handler");
+		R_LOG_ERROR ("Cannot set control console handler");
 	}
 #endif
 	I->pager = NULL; /* no pager by default */
@@ -693,10 +691,8 @@ R_API RCons *r_cons_new(void) {
 	I->show_vals = false;
 	r_cons_reset ();
 	r_cons_rgb_init ();
-
 	r_print_set_is_interrupted_cb (r_cons_is_breaked);
-	r_th_lock_leave (lock);
-
+	R_CRITICAL_LEAVE (I);
 	return I;
 }
 
@@ -733,11 +729,10 @@ static bool palloc(int moar) {
 		return false;
 	}
 	if (!C->buffer) {
-		int new_sz;
 		if ((INT_MAX - MOAR) < moar) {
 			return false;
 		}
-		new_sz = moar + MOAR;
+		size_t new_sz = moar + MOAR;
 		temp = calloc (1, new_sz);
 		if (temp) {
 			C->buffer_sz = new_sz;
@@ -837,14 +832,15 @@ R_API void r_cons_clear(void) {
 }
 
 R_API void r_cons_reset(void) {
-	if (C->buffer) {
-		C->buffer[0] = '\0';
+	RConsContext *c = C;
+	if (c->buffer) {
+		c->buffer[0] = '\0';
 	}
-	C->buffer_len = 0;
+	c->buffer_len = 0;
 	I->lines = 0;
-	I->lastline = C->buffer;
-	cons_grep_reset (&C->grep);
-	C->pageable = true;
+	I->lastline = c->buffer;
+	cons_grep_reset (&c->grep);
+	c->pageable = true;
 }
 
 R_API const char *r_cons_get_buffer(void) {
@@ -972,7 +968,6 @@ static bool lastMatters(void) {
 }
 
 R_API void r_cons_echo(const char *msg) {
-	static R_TH_LOCAL RStrBuf *echodata = NULL; // TODO: move into RConsInstance? maybe nope
 	if (msg) {
 		if (echodata) {
 			r_strbuf_append (echodata, msg);
@@ -1028,7 +1023,7 @@ static void optimize(void) {
 			//	eprintf ("ERN (%d) %s%c", pos, escape, 10);
 				onescape = false;
 			} else {
-				if (escape_n + 1 >= sizeof(escape)) {
+				if (escape_n + 1 >= sizeof (escape)) {
 					escape_n = 0;
 					onescape = false;
 				}
@@ -1044,6 +1039,14 @@ static void optimize(void) {
 	// eprintf ("FROM %d TO %d (%d)%c", C->buffer_len, len, codes, 10);
 	C->buffer_len = len;
 	free (oldstr);
+}
+
+R_API char *r_cons_drain(void) {
+	const char *buf = r_cons_get_buffer ();
+	size_t buf_size = r_cons_get_buffer_len ();
+	char *s = r_str_ndup (buf, buf_size);
+	r_cons_reset ();
+	return s;
 }
 
 R_API void r_cons_flush(void) {
@@ -1100,9 +1103,10 @@ R_API void r_cons_flush(void) {
 			}
 		} else if (I->maxpage > 0 && C->buffer_len > I->maxpage) {
 #if COUNT_LINES
+			char *buffer = C->buffer;
 			int i, lines = 0;
-			for (i = 0; C->buffer[i]; i++) {
-				if (C->buffer[i] == '\n') {
+			for (i = 0; buffer[i]; i++) {
+				if (buffer[i] == '\n') {
 					lines ++;
 				}
 			}
@@ -1126,11 +1130,11 @@ R_API void r_cons_flush(void) {
 		FILE *d = r_sandbox_fopen (tee, "a+");
 		if (d) {
 			if (C->buffer_len != fwrite (C->buffer, 1, C->buffer_len, d)) {
-				eprintf ("r_cons_flush: fwrite: error (%s)\n", tee);
+				R_LOG_ERROR ("r_cons_flush: fwrite: error (%s)", tee);
 			}
 			fclose (d);
 		} else {
-			eprintf ("Cannot write on '%s'\n", tee);
+			R_LOG_ERROR ("Cannot write on '%s'", tee);
 		}
 	}
 	r_cons_highlight (I->highlight);
@@ -1195,7 +1199,6 @@ R_API void r_cons_visual_flush(void) {
 
 R_API void r_cons_print_fps(int col) {
 	int fps = 0, w = r_cons_get_size (NULL);
-	static R_TH_LOCAL ut64 prev = 0LL; //r_time_now_mono ();
 	fps = 0;
 	if (prev) {
 		ut64 now = r_time_now_mono ();
@@ -1427,13 +1430,13 @@ R_API int r_cons_write(const char *str, int len) {
 		}
 	}
 	if (str && len > 0 && !I->null) {
-		r_th_lock_enter (&r_cons_lock);
+		R_CRITICAL_ENTER (I);
 		if (palloc (len + 1)) {
 			memcpy (C->buffer + C->buffer_len, str, len);
 			C->buffer_len += len;
 			C->buffer[C->buffer_len] = 0;
 		}
-		r_th_lock_leave (&r_cons_lock);
+		R_CRITICAL_LEAVE (I);
 	}
 	if (C->flush) {
 		r_cons_flush ();
@@ -1457,11 +1460,11 @@ R_API void r_cons_memset(char ch, int len) {
 }
 
 R_API void r_cons_strcat(const char *str) {
-	int len;
-	if (!str || I->null) {
+	r_return_if_fail (str);
+	if (!I || I->null) {
 		return;
 	}
-	len = strlen (str);
+	size_t len = strlen (str);
 	if (len > 0) {
 		r_cons_write (str, len);
 	}
@@ -1489,14 +1492,15 @@ now the console color is reset with each \n (same stuff do it here but in correc
 /* return the aproximated x,y of cursor before flushing */
 // XXX this function is a huge bottleneck
 R_API int r_cons_get_cursor(int *rows) {
+	RConsContext *c = C;
 	int i, col = 0;
 	int row = 0;
 	// TODO: we need to handle GOTOXY and CLRSCR ansi escape code too
-	for (i = 0; i < C->buffer_len; i++) {
+	for (i = 0; i < c->buffer_len; i++) {
 		// ignore ansi chars, copypasta from r_str_ansi_len
-		if (C->buffer[i] == 0x1b) {
-			char ch2 = C->buffer[i + 1];
-			char *str = C->buffer;
+		if (c->buffer[i] == 0x1b) {
+			char ch2 = c->buffer[i + 1];
+			char *str = c->buffer;
 			if (ch2 == '\\') {
 				i++;
 			} else if (ch2 == ']') {
@@ -1508,7 +1512,7 @@ R_API int r_cons_get_cursor(int *rows) {
 					;
 				}
 			}
-		} else if (C->buffer[i] == '\n') {
+		} else if (c->buffer[i] == '\n') {
 			row++;
 			col = 0;
 		} else {
@@ -1557,6 +1561,13 @@ R_API bool r_cons_is_tty(void) {
 		return false;
 	}
 	return true;
+#elif __WINDOWS__
+	HANDLE hOut = GetStdHandle (STD_OUTPUT_HANDLE);
+	if (GetFileType (hOut) == FILE_TYPE_CHAR) {
+		DWORD unused;
+		return GetConsoleMode (hOut, &unused);
+	}
+	return false;
 #else
 	/* non-UNIX do not have ttys */
 	return false;
@@ -1731,6 +1742,12 @@ R_API int r_cons_is_vtcompat(void) {
 	DWORD major;
 	DWORD minor;
 	DWORD release = 0;
+	char *cmd_session = r_sys_getenv ("SESSIONNAME");
+	if (cmd_session) {
+		free (cmd_session);
+		return 2;
+	}
+	// Windows Terminal
 	char *wt_session = r_sys_getenv ("WT_SESSION");
 	if (wt_session) {
 		free (wt_session);
@@ -1810,13 +1827,12 @@ R_API void r_cons_show_cursor(int cursor) {
  *
  * For optimization reasons, there's no initialization flag, so you need to
  * ensure that the make the first call to r_cons_set_raw() with '1' and
- * the next calls ^=1, so: 1, 0, 1, 0, 1, ...
+ * the next calls ^= 1, so: 1, 0, 1, 0, 1, ...
  *
  * If you doesn't use this order you'll probably loss your terminal properties.
  *
  */
 R_API void r_cons_set_raw(bool is_raw) {
-	static R_TH_LOCAL int oldraw = -1;
 	if (oldraw != -1) {
 		if (is_raw == oldraw) {
 			return;
@@ -1870,7 +1886,7 @@ R_API void r_cons_set_utf8(bool b) {
 				r_sys_perror ("r_cons_set_utf8");
 			}
 		} else {
-			R_LOG_WARN ("UTF-8 Codepage not installed.");
+			R_LOG_WARN ("UTF-8 Codepage not installed");
 		}
 	} else {
 		UINT acp = GetACP ();
@@ -1885,12 +1901,12 @@ R_API void r_cons_invert(int set, int color) {
 	r_cons_strcat (R_CONS_INVERT (set, color));
 }
 
-/*
-  Enable/Disable scrolling in terminal:
-    FMI: cd libr/cons/t ; make ti ; ./ti
-  smcup: disable terminal scrolling (fullscreen mode)
-  rmcup: enable terminal scrolling (normal mode)
-*/
+#if 0
+Enable/Disable scrolling in terminal:
+FMI: cd libr/cons/t ; make ti ; ./ti
+smcup: disable terminal scrolling (fullscreen mode)
+rmcup: enable terminal scrolling (normal mode)
+#endif
 R_API bool r_cons_set_cup(bool enable) {
 #if __UNIX__
 	const char *code = enable
@@ -2026,8 +2042,10 @@ R_API void r_cons_highlight(const char *word) {
 }
 
 R_API char *r_cons_lastline(int *len) {
-	char *b = C->buffer + C->buffer_len;
-	while (b > C->buffer) {
+	RConsContext *c = C;
+	char *start = c->buffer;
+	char *b = start + c->buffer_len;
+	while (b > start) {
 		b--;
 		if (*b == '\n') {
 			b++;
@@ -2035,8 +2053,8 @@ R_API char *r_cons_lastline(int *len) {
 		}
 	}
 	if (len) {
-		int delta = b - C->buffer;
-		*len = C->buffer_len - delta;
+		int delta = b - start;
+		*len = c->buffer_len - delta;
 	}
 	return b;
 }
@@ -2044,16 +2062,18 @@ R_API char *r_cons_lastline(int *len) {
 // same as r_cons_lastline(), but len will be the number of
 // utf-8 characters excluding ansi escape sequences as opposed to just bytes
 R_API char *r_cons_lastline_utf8_ansi_len(int *len) {
+	RConsContext *c = C;
 	if (!len) {
 		return r_cons_lastline (0);
 	}
 
-	char *b = C->buffer + C->buffer_len;
+	char *start = c->buffer;
+	char *b = start + c->buffer_len;
 	int l = 0;
 	int last_possible_ansi_end = 0;
 	char ch = '\0';
 	char ch2;
-	while (b > C->buffer) {
+	while (b > start) {
 		ch2 = ch;
 		ch = *b;
 
@@ -2104,21 +2124,23 @@ R_API char *r_cons_swap_ground(const char *col) {
 }
 
 R_API bool r_cons_drop(int n) {
-	if (n > C->buffer_len) {
-		C->buffer_len = 0;
+	RConsContext *c = C;
+	if (n > c->buffer_len) {
+		c->buffer_len = 0;
 		return false;
 	}
-	C->buffer_len -= n;
+	c->buffer_len -= n;
 	return true;
 }
 
 R_API void r_cons_chop(void) {
-	while (C->buffer_len > 0) {
-		char ch = C->buffer[C->buffer_len - 1];
+	RConsContext *c = C;
+	while (c->buffer_len > 0) {
+		char ch = c->buffer[c->buffer_len - 1];
 		if (ch != '\n' && !IS_WHITESPACE (ch)) {
 			break;
 		}
-		C->buffer_len--;
+		c->buffer_len--;
 	}
 }
 
@@ -2171,10 +2193,15 @@ R_API void r_cons_clear_buffer(void) {
 }
 
 R_API void r_cons_thready(void) {
-	r_th_lock_enter (&r_cons_lock);
+	if (r_cons_instance) {
+		R_CRITICAL_ENTER (I);
+	}
+	C->unbreakable = true;
+	r_sys_signable (false); // disable signal handling
 	if (!r_cons_instance) {
 		r_cons_new ();
 	}
-	C->unbreakable = true;
-	r_th_lock_leave (&r_cons_lock);
+	if (r_cons_instance) {
+		R_CRITICAL_LEAVE (I);
+	}
 }

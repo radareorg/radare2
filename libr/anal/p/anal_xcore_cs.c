@@ -64,7 +64,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (handle == 0) {
 		return -1;
 	}
-	
+
 	cs_insn *insn;
 	int n;
 	// capstone-next
@@ -72,8 +72,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
-		if (mask & R_ANAL_OP_MASK_OPEX) {
+		if (mask & R_ARCH_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
+		}
+		if (mask & R_ARCH_OP_MASK_DISASM) {
+			op->mnemonic = r_str_newf ("%s%s%s",
+				insn->mnemonic, insn->op_str[0]? " ": "",
+				insn->op_str);
 		}
 		op->size = insn->size;
 		op->id = insn->id;

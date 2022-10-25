@@ -391,7 +391,7 @@ wx 08bf
 aoe
 EOF
 EXPECT=<<EOF
-0x0 zf,?{,2,$$,+,pc,=,}
+0x0 zf,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -404,7 +404,7 @@ wx 18bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 zf,!,?{,2,$$,+,pc,=,}
+0x0 zf,!,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -417,7 +417,7 @@ wx 28bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 cf,?{,2,$$,+,pc,=,}
+0x0 cf,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -430,7 +430,7 @@ wx 38bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 cf,!,?{,2,$$,+,pc,=,}
+0x0 cf,!,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -443,7 +443,7 @@ wx 48bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 nf,?{,2,$$,+,pc,=,}
+0x0 nf,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -456,7 +456,7 @@ wx 58bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 nf,!,?{,2,$$,+,pc,=,}
+0x0 nf,!,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -469,7 +469,7 @@ wx 68bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 vf,?{,2,$$,+,pc,=,}
+0x0 vf,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -482,7 +482,7 @@ wx 78bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 vf,!,?{,2,$$,+,pc,=,}
+0x0 vf,!,?{,0x2,pc,:=,}
 EOF
 RUN
 
@@ -495,7 +495,7 @@ wx e8bf00000000
 aoe
 EOF
 EXPECT=<<EOF
-0x0 2,$$,+,pc,=
+0x0 0x2,pc,:=
 EOF
 RUN
 
@@ -560,6 +560,30 @@ EXPECT=<<EOF
 0x00000000
 0x0fffffff
 0x20000000
+EOF
+RUN
+
+NAME=rors r1, r2
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar > /dev/null
+ar r1=0x80000001
+ar r2=0x1
+"wa rors r1, r2;rors r1, r2"
+aes
+ar r1
+ar cpsr
+aes
+ar r1
+ar cpsr
+EOF
+EXPECT=<<EOF
+0xc0000000
+0xa0000000
+0x60000000
+0x00000000
 EOF
 RUN
 
@@ -978,7 +1002,7 @@ aer lr
 aer pc
 EOF
 EXPECT=<<EOF
-0x00000005
+0x00000004
 0x00000008
 EOF
 RUN

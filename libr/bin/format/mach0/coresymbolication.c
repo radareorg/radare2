@@ -120,12 +120,12 @@ static void meta_add_fileline(RBinFile *bf, ut64 vaddr, ut32 size, RCoreSymCache
 	if (!s) {
 		return;
 	}
-	char aoffset[64];
+	char aoffset[SDB_NUM_BUFSZ];
 	ut64 cursor = vaddr;
 	ut64 end = cursor + R_MAX (size, 1);
 	char *fileline = r_str_newf ("%s:%d", flc->file, flc->line);
 	while (cursor < end) {
-		char *aoffsetptr = sdb_itoa (cursor, aoffset, 16);
+		char *aoffsetptr = sdb_itoa (cursor, 16, aoffset, sizeof (aoffset));
 		if (!aoffsetptr) {
 			break;
 		}
@@ -164,12 +164,12 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 	if (!hdr) {
 		return NULL;
 	}
-	if (hdr->version != 1) {
-		eprintf ("Unsupported CoreSymbolication cache version (%d)\n", hdr->version);
+	if (hdr->version != 1 && hdr->version != 7) {
+		R_LOG_ERROR ("Unsupported CoreSymbolication cache version (%d)", hdr->version);
 		goto beach;
 	}
 	if (hdr->size == 0 || hdr->size > r_buf_size (buf) - off) {
-		eprintf ("Corrupted CoreSymbolication header: size out of bounds (0x%x)\n", hdr->size);
+		R_LOG_ERROR ("Corrupted CoreSymbolication header: size out of bounds (0x%x)", hdr->size);
 		goto beach;
 	}
 	result = R_NEW0 (RCoreSymCacheElement);
@@ -194,7 +194,10 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 		result->binary_version = str_dup_safe (b, b + (size_t)hdr->version_off, end);
 	}
 	const size_t word_size = bits / 8;
-	const ut64 start_of_sections = (ut64)hdr->n_segments * R_CS_EL_SIZE_SEG + R_CS_EL_OFF_SEGS;
+	ut64 start_of_sections = (ut64)hdr->n_segments * R_CS_EL_SIZE_SEG + R_CS_EL_OFF_SEGS;
+	if (hdr->p) {
+		start_of_sections += 8;
+	}
 	const ut64 sect_size = (bits == 32) ? R_CS_EL_SIZE_SECT_32 : R_CS_EL_SIZE_SECT_64;
 	const ut64 start_of_symbols = start_of_sections + (ut64)hdr->n_sections * sect_size;
 	const ut64 start_of_lined_symbols = start_of_symbols + (ut64)hdr->n_symbols * R_CS_EL_SIZE_SYM;
@@ -222,16 +225,19 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 		}
 		size_t i;
 		ut8 *cursor = b + R_CS_EL_OFF_SEGS;
+		if (hdr->p) {
+			cursor += 8;
+		}
 		for (i = 0; i < hdr->n_segments && cursor + sizeof (RCoreSymCacheElementSegment) < end; i++) {
 			RCoreSymCacheElementSegment *seg = &result->segments[i];
 			seg->paddr = seg->vaddr = r_read_le64 (cursor);
 			cursor += 8;
-			if (cursor >= end) {
+			if (cursor + 8 > end) {
 				break;
 			}
 			seg->size = seg->vsize = r_read_le64 (cursor);
 			cursor += 8;
-			if (cursor >= end) {
+			if (cursor + 16 > end) {
 				break;
 			}
 			seg->name = str_dup_safe_fixed (b, cursor, 16, end);
@@ -257,7 +263,7 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 			}
 		}
 	}
-	bool relative_to_strings = false;
+	bool relative_tostrings = false;
 	ut8* string_origin;
 	if (hdr->n_sections > 0) {
 		result->sections = R_NEWS0 (RCoreSymCacheElementSection, hdr->n_sections);
@@ -287,13 +293,13 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 			}
 			ut64 sect_name_off = r_read_ble (cursor, false, bits);
 			if (!i && !sect_name_off) {
-				relative_to_strings = true;
+				relative_tostrings = true;
 			}
 			cursor += word_size;
 			if (bits == 32) {
 				cursor += word_size;
 			}
-			string_origin = relative_to_strings? b + start_of_strings : sect_start;
+			string_origin = relative_tostrings? b + start_of_strings : sect_start;
 			if (sect_name_off < (ut64)(size_t)(end - string_origin)) {
 				sect->name = str_dup_safe (b, string_origin + sect_name_off, end);
 			} else {
@@ -316,13 +322,13 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 			size_t name_off = r_read_le32 (cursor + 0xc);
 			size_t mangled_name_off = r_read_le32 (cursor + 0x10);
 			sym->unk2 = (st32)r_read_le32 (cursor + 0x14);
-			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			string_origin = relative_tostrings? b + start_of_strings : cursor;
 			sym->name = str_dup_safe (b, string_origin + name_off, end);
 			if (!sym->name) {
 				cursor += R_CS_EL_SIZE_SYM;
 				continue;
 			}
-			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			string_origin = relative_tostrings? b + start_of_strings : cursor;
 			sym->mangled_name = str_dup_safe (b, string_origin + mangled_name_off, end);
 			if (!sym->mangled_name) {
 				cursor += R_CS_EL_SIZE_SYM;
@@ -349,19 +355,19 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 			size_t file_name_off = r_read_le32 (cursor + 0x18);
 			lsym->flc.line = r_read_le32 (cursor + 0x1c);
 			lsym->flc.col = r_read_le32 (cursor + 0x20);
-			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			string_origin = relative_tostrings? b + start_of_strings : cursor;
 			lsym->sym.name = str_dup_safe (b, string_origin + name_off, end);
 			if (!lsym->sym.name) {
 				cursor += R_CS_EL_SIZE_LSYM;
 				continue;
 			}
-			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			string_origin = relative_tostrings? b + start_of_strings : cursor;
 			lsym->sym.mangled_name = str_dup_safe (b, string_origin + mangled_name_off, end);
 			if (!lsym->sym.mangled_name) {
 				cursor += R_CS_EL_SIZE_LSYM;
 				continue;
 			}
-			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			string_origin = relative_tostrings? b + start_of_strings : cursor;
 			lsym->flc.file = str_dup_safe (b, string_origin + file_name_off, end);
 			if (!lsym->flc.file) {
 				cursor += R_CS_EL_SIZE_LSYM;
@@ -385,7 +391,7 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 			size_t file_name_off = r_read_le32 (cursor + 8);
 			info->flc.line = r_read_le32 (cursor + 0xc);
 			info->flc.col = r_read_le32 (cursor + 0x10);
-			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			string_origin = relative_tostrings? b + start_of_strings : cursor;
 			info->flc.file = str_dup_safe (b, string_origin + file_name_off, end);
 			if (!info->flc.file) {
 				break;

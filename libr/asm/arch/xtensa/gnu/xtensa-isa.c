@@ -25,7 +25,40 @@
 #include "../../include/xtensa-isa.h"
 #include "../../include/xtensa-isa-internal.h"
 
-extern int filename_cmp (const char *s1, const char *s2);
+static int filename_cmp(const char *s1, const char *s2) {
+#if !defined(HAVE_DOS_BASED_FILE_SYSTEM) \
+    && !defined(HAVE_CASE_INSENSITIVE_FILE_SYSTEM)
+  return strcmp (s1, s2);
+#else
+  for (;;)
+    {
+      int c1 = *s1;
+      int c2 = *s2;
+
+#if defined (HAVE_CASE_INSENSITIVE_FILE_SYSTEM)
+      c1 = TOLOWER (c1);
+      c2 = TOLOWER (c2);
+#endif
+
+#if defined (HAVE_DOS_BASED_FILE_SYSTEM)
+      /* On DOS-based file systems, the '/' and the '\' are equivalent.  */
+      if (c1 == '/')
+        c1 = '\\';
+      if (c2 == '/')
+        c2 = '\\';
+#endif
+
+      if (c1 != c2)
+        return (c1 - c2);
+
+      if (c1 == '\0')
+        return 0;
+
+      s1++;
+      s2++;
+    }
+#endif
+}
 xtensa_isa_status xtisa_errno;
 char xtisa_error_msg[1024];
 
@@ -223,12 +256,12 @@ xtensa_insnbuf_from_chars (xtensa_isa isa,
   fence_post = start + (num_chars * increment);
   memset (insn, 0, xtensa_insnbuf_size (isa) * sizeof (xtensa_insnbuf_word));
 
-  for (i = start; i != fence_post; i += increment, ++cp)
-    {
+  for (i = start; i != fence_post; i += increment, ++cp) {
       int word_inx = byte_to_word_index (i);
       int bit_inx = byte_to_bit_index (i);
-
-      insn[word_inx] |= (*cp & 0xff) << bit_inx;
+      if (bit_inx < 24) {
+	      insn[word_inx] |= (*cp & 0xff) << bit_inx;
+      }
     }
 }
 

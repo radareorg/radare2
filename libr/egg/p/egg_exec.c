@@ -85,7 +85,7 @@ static RBuffer *build(REgg *egg) {
 		break;
 	case R_EGG_OS_LINUX:
 		if (suid) {
-			eprintf ("no suid for this platform\n");
+			R_LOG_WARN ("no suid for this platform");
 		}
 		suid = 0;
 		switch (egg->arch) {
@@ -100,7 +100,7 @@ static RBuffer *build(REgg *egg) {
 					int len = strlen (shell);
 					if (len > sizeof (st64) - 1) {
 						*shell = 0;
-						eprintf ("Unsupported CMD length\n");
+						R_LOG_ERROR ("Unsupported CMD length");
 						break;
 					}
 					st64 b = 0;
@@ -119,7 +119,7 @@ static RBuffer *build(REgg *egg) {
 				}
 				break;
 			default:
-				eprintf ("Unsupported arch %d bits\n", egg->bits);
+				R_LOG_ERROR ("Unsupported arch %d bits", egg->bits);
 			}
 			break;
 		case R_SYS_ARCH_ARM:
@@ -131,13 +131,13 @@ static RBuffer *build(REgg *egg) {
 				sc = arm_linux_binsh;
 				break;
 			default:
-				eprintf ("Unsupported arch %d bits\n", egg->bits);
+				R_LOG_ERROR ("Unsupported arch %d bits", egg->bits);
 			}
 			break;
 		}
 		break;
 	default:
-		eprintf ("Unsupported os %x\n", egg->os);
+		R_LOG_ERROR ("Unsupported os %x", egg->os);
 		break;
 	}
 
@@ -147,7 +147,7 @@ static RBuffer *build(REgg *egg) {
 			if (cd) {
 				r_buf_write_at (buf, cd, (const ut8 *)shell, strlen (shell) + 1);
 			} else {
-				eprintf ("Cannot set shell\n");
+				R_LOG_ERROR ("Cannot set shell");
 			}
 		}
 	}

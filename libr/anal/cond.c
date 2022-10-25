@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2010-2016 - pancake */
+/* radare - LGPL - Copyright 2010-2022 - pancake */
 
 #include <r_anal.h>
 
-R_API const char *r_anal_cond_tostring(int cc) {
+R_API const char *r_anal_cond_type_tostring(int cc) {
 	switch (cc) {
 	case R_ANAL_COND_EQ: return "eq";
 	case R_ANAL_COND_NV: return "nv";
@@ -85,42 +85,32 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 		switch (cond->type) {
 		case R_ANAL_COND_EQ: return !arg0;
 		case R_ANAL_COND_NE: return arg0;
-		case R_ANAL_COND_GT: return arg0>0;
-		case R_ANAL_COND_GE: return arg0>=0;
-		case R_ANAL_COND_LT: return arg0<0;
-		case R_ANAL_COND_LE: return arg0<=0;
+		case R_ANAL_COND_GT: return arg0 > 0;
+		case R_ANAL_COND_GE: return arg0 >= 0;
+		case R_ANAL_COND_LT: return arg0 < 0;
+		case R_ANAL_COND_LE: return arg0 <= 0;
 		}
 	}
 	return false;
 }
 
-// XXX conflict naming with tostring()
-R_API char *r_anal_cond_to_string(RAnalCond *cond) {
-	char *val0, *val1, *out = NULL;
-	const char *cnd;
-	if (!cond) {
-		return NULL;
-	}
-	cnd = condstring (cond);
-	val0 = r_anal_value_to_string (cond->arg[0]);
-	val1 = r_anal_value_to_string (cond->arg[1]);
+R_API char *r_anal_cond_tostring(RAnalCond *cond) {
+	r_return_val_if_fail (cond, NULL);
+	const char *cnd = condstring (cond);
+	char *val0 = r_anal_value_tostring (cond->arg[0]);
+	char *out = NULL;
 	if (val0) {
 		if (R_ANAL_COND_SINGLE (cond)) {
-			int val0len = strlen (val0) + 10;
-			if ((out = malloc (val0len))) {
-				snprintf (out, val0len, "%s%s", cnd, val0);
-			}
+			out = r_str_newf ("%s%s", cnd, val0);
 		} else {
+			char *val1 = r_anal_value_tostring (cond->arg[1]);
 			if (val1) {
-				int val0len = strlen (val0) + strlen (val1) + 10;
-				if ((out = malloc (val0len))) {
-					snprintf (out, val0len, "%s %s %s", val0, cnd, val1);
-				}
+				out = r_str_newf ("%s %s %s", val0, cnd, val1);
+				free (val1);
 			}
 		}
+		free (val0);
 	}
-	free (val0);
-	free (val1);
 	return out? out: strdup ("?");
 }
 
@@ -129,14 +119,15 @@ R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 	if (!(cond = r_anal_cond_new ())) {
 		return NULL;
 	}
-	//v->reg[0] = op->src[0];
-	//v->reg[1] = op->src[1];
-	cond->arg[0] = op->src[0];
-	op->src[0] = NULL;
-	cond->arg[1] = op->src[1];
-	op->src[1] = NULL;
-	// TODO: moar!
-	//cond->arg[1] = op->src[1];
+	RAnalValue *src0 = r_vector_at (&op->srcs, 0);
+	RAnalValue *src1 = r_vector_at (&op->srcs, 1);
+	if (!src0 || !src1) {
+		r_anal_cond_free (cond);
+		return NULL;
+	}
+	// TODO: use r_ref
+	cond->arg[0] = r_anal_value_copy (src0);
+	cond->arg[1] = r_anal_value_copy (src1);
 	return cond;
 }
 

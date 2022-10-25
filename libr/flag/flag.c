@@ -36,11 +36,15 @@ static void flag_skiplist_free(void *data) {
 }
 
 static int flag_skiplist_cmp(const void *va, const void *vb) {
-	const RFlagsAtOffset *a = (RFlagsAtOffset *)va, *b = (RFlagsAtOffset *)vb;
-	if (a->off == b->off) {
-		return 0;
+	const ut64 ao = ((RFlagsAtOffset *)va)->off;
+	const ut64 bo = ((RFlagsAtOffset *)vb)->off;
+	if (R_LIKELY (ao < bo)) {
+		return -1;
 	}
-	return a->off < b->off? -1: 1;
+	if (R_LIKELY (ao > bo)) {
+		return 1;
+	}
+	return 0;
 }
 
 static ut64 num_callback(RNum *user, const char *name, int *ok) {
@@ -74,10 +78,12 @@ static void free_item_name(RFlagItem *item) {
 	}
 }
 
-/* return the list of flag at the nearest position.
-   dir == -1 -> result <= off
-   dir == 0 ->  result == off
-   dir == 1 ->  result >= off*/
+#if 0
+return the list of flag at the nearest position:
+dir == -1 -> result <= off
+dir == 0 ->  result == off
+dir == 1 ->  result >= off
+#endif
 static RFlagsAtOffset *r_flag_get_nearest_list(RFlag *f, ut64 off, int dir) {
 	RFlagsAtOffset key = { .off = off };
 	RFlagsAtOffset *flags = (dir >= 0)
@@ -231,6 +237,7 @@ R_API RFlag *r_flag_new(void) {
 		r_flag_free (f);
 		return NULL;
 	}
+	f->lock = r_th_lock_new (true);
 	f->base = 0;
 	f->cb_printf = (PrintfCallback)printf;
 	f->zones = r_list_newf (r_flag_zone_item_free);
@@ -275,6 +282,8 @@ R_API void r_flag_item_free(RFlagItem *item) {
 
 R_API RFlag *r_flag_free(RFlag *f) {
 	r_return_val_if_fail (f, NULL);
+	r_th_lock_free (f->lock);
+	f->lock = NULL;
 	r_skiplist_free (f->by_off);
 	ht_pp_free (f->ht_name);
 	sdb_free (f->tags);
@@ -604,6 +613,7 @@ static bool isFunctionFlag(const char *n) {
  * NULL is returned if such a item is not found. */
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 	r_return_val_if_fail (f, NULL);
+	R_CRITICAL_ENTER (f);
 	if (f->mask) {
 		off &= f->mask;
 	}
@@ -612,6 +622,7 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 	RListIter *iter;
 	const RFlagsAtOffset *flags_at = r_flag_get_nearest_list (f, off, -1);
 	if (!flags_at) {
+		R_CRITICAL_LEAVE (f);
 		return NULL;
 	}
 	if (flags_at->off == off) {
@@ -629,11 +640,13 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 			}
 		}
 		if (nice) {
+			R_CRITICAL_LEAVE (f);
 			return evalFlag (f, nice);
 		}
 	}
 
 	if (!closest) {
+		R_CRITICAL_LEAVE (f);
 		return NULL;
 	}
 	while (!nice && flags_at) {
@@ -643,19 +656,18 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 				continue;
 			}
 			if (item->offset == off) {
-				eprintf ("XXX Should never happend\n");
+				R_LOG_ERROR ("The impossible happened");
 				return evalFlag (f, item);
 			}
 			nice = item;
 			break;
 		}
-		if (!nice && flags_at->off) {
-			flags_at = r_flag_get_nearest_list (f, flags_at->off - 1, -1);
-		} else {
-			flags_at = NULL;
-		}
+		flags_at = (!nice && flags_at->off) ?
+			r_flag_get_nearest_list (f, flags_at->off - 1, -1): NULL;
 	}
-	return nice? evalFlag (f, nice): NULL;
+	RFlagItem *fi = nice? evalFlag (f, nice): NULL;
+	R_CRITICAL_LEAVE (f);
+	return fi;
 }
 
 static bool append_to_list(RFlagItem *fi, void *user) {
@@ -757,7 +769,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	}
 	// this should never happen because the name is filtered before..
 	if (!r_name_check (itemname)) {
-		eprintf ("Invalid flag name '%s'\n", name);
+		R_LOG_ERROR ("Invalid flag name '%s'", name);
 		return NULL;
 	}
 

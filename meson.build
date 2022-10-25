@@ -1,4 +1,4 @@
-project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.49', version : '5.7.1')
+project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.49', version : '5.7.9')
 
 py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
@@ -37,6 +37,9 @@ if git_exe.found()
   if git_rev_list.returncode() == 0
     version_commit = git_rev_list.stdout().strip()
   endif
+  if version_commit == ''
+    version_commit = '0'
+  endif
 
   # Get gittap
   git_describe = run_command(git_exe, '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
@@ -66,6 +69,10 @@ endif
 
 if get_option('r2_gittip') != ''
   gittip = get_option('r2_gittip')
+endif
+
+if gittip == ''
+  gittip = r2_version
 endif
 
 # Get current date
@@ -112,6 +119,12 @@ if get_option('static_runtime')
   if cc.get_id() == 'msvc'
     add_project_arguments('/MT', language: 'c')
   endif
+endif
+
+if get_option('threadsafety')
+  r2_critical_enabled = 1
+else
+  r2_critical_enabled = 0
 endif
 
 if get_option('wasan')
@@ -221,6 +234,7 @@ conf_data = configuration_data()
 conf_data.set('plugins_core', '&r_core_plugin_' + ', &r_core_plugin_'.join(core_plugins) + ', 0')
 conf_data.set('plugins_esil', '&r_esil_plugin_' + ', &r_esil_plugin_'.join(esil_plugins) + ', 0')
 conf_data.set('plugins_anal', '&r_anal_plugin_' + ', &r_anal_plugin_'.join(anal_plugins) + ', 0')
+conf_data.set('plugins_arch', '&r_arch_plugin_' + ', &r_arch_plugin_'.join(arch_plugins) + ', 0')
 conf_data.set('plugins_asm', '&r_asm_plugin_' + ', &r_asm_plugin_'.join(asm_plugins) + ', 0')
 conf_data.set('plugins_bp', '&r_bp_plugin_' + ', &r_bp_plugin_'.join(bp_plugins) + ', 0')
 conf_data.set('plugins_bin', '&r_bin_plugin_' + ', &r_bin_plugin_'.join(bin_plugins) + ', 0')
@@ -233,12 +247,6 @@ conf_data.set('plugins_debug', '&r_debug_plugin_' + ', &r_debug_plugin_'.join(de
 conf_data.set('plugins_egg', '&r_egg_plugin_' + ', &r_egg_plugin_'.join(egg_plugins) + ', 0')
 conf_data.set('plugins_lang', '&r_lang_plugin_' + ', &r_lang_plugin_'.join(lang_plugins) + ', 0')
 conf_data.set('plugins_parse', '&r_parse_plugin_' + ', &r_parse_plugin_'.join(parse_plugins) + ', 0')
-
-# userconf_h = configure_file(
-#  input: 'libr/include/r_userconf.h.acr',
-#  output: 'r_userconf.h',
-#  configuration: conf_data
-#)
 
 config_h = configure_file(
   input: 'libr/config.h.in',
@@ -367,6 +375,7 @@ userconf.set10('WANT_DYLINK', use_dylink)
 userconf.set10('WANT_THREADS', get_option('want_threads'))
 userconf.set10('WANT_CAPSTONE', get_option('want_capstone'))
 userconf.set10('HAVE_PTRACE', have_ptrace)
+userconf.set('R_CRITICAL_ENABLED', r2_critical_enabled)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', not get_option('nogpl'))
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
@@ -430,7 +439,6 @@ libr_pc = configure_file(
 )
 
 subdir('shlr/zip')
-
 
 # handle sdb dependency
 # NOTE: copying most of the stuff from sdb to here for the moment, since we
@@ -570,7 +578,6 @@ endif
 subdir('shlr/lz4')
 subdir('libr/util')
 subdir('libr/socket')
-subdir('libr/hash')
 subdir('libr/crypto')
 subdir('shlr')
 subdir('libr/cons')
@@ -582,6 +589,8 @@ subdir('libr/search')
 subdir('libr/magic')
 subdir('libr/flag')
 subdir('libr/reg')
+subdir('libr/arch')
+subdir('libr/fs')
 subdir('libr/bin')
 subdir('libr/config')
 subdir('libr/parse')
@@ -589,7 +598,6 @@ subdir('libr/lang')
 subdir('libr/asm')
 subdir('libr/anal')
 subdir('libr/egg')
-subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
 subdir('libr/cons/d')
@@ -603,7 +611,6 @@ if meson.is_subproject()
     dependencies: [
       r_anal_dep,
       r_asm_dep,
-      r_bin_dep,
       r_bp_dep,
       r_config_dep,
       r_cons_dep,
@@ -614,7 +621,7 @@ if meson.is_subproject()
       r_egg_dep,
       r_flag_dep,
       r_fs_dep,
-      r_hash_dep,
+      r_bin_dep,
       r_io_dep,
       r_lang_dep,
       r_magic_dep,
@@ -638,6 +645,7 @@ if get_option('use_webui')
 endif
 
 subdir('test/unit')
+subdir('test/fuzz')
 
 install_data(
   'doc/fortunes.fun',

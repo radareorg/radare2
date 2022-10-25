@@ -1,23 +1,19 @@
-/* radare2 - LGPL - Copyright 2016-2018 - pancake */
+/* radare2 - LGPL - Copyright 2016-2022 - pancake */
 
 #include <r_asm.h>
 #include <r_anal.h>
 #include <xtensa-isa.h>
 
-// GNU DISASM BEGIN
-
 #include "disas-asm.h"
 
 #define INSN_BUFFER_SIZE 4
 
-static R_TH_LOCAL ut64 offset = 0;
-static R_TH_LOCAL RStrBuf *buf_global = NULL;
-static R_TH_LOCAL ut8 bytes[INSN_BUFFER_SIZE];
-
 static int xtensa_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+	// TODO honor delta ?
 	if (length > INSN_BUFFER_SIZE) {
 		length = INSN_BUFFER_SIZE;
 	}
+	ut8 *bytes = info->buffer;
 	memcpy (myaddr, bytes, length);
 	return 0;
 }
@@ -30,13 +26,13 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
-DECLARE_GENERIC_FPRINTF_FUNC()
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC_NOGLOBALS()
+DECLARE_GENERIC_FPRINTF_FUNC_NOGLOBALS()
 
 static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	ut8 bytes[INSN_BUFFER_SIZE] = {0};
 	struct disassemble_info disasm_obj;
-	buf_global = r_strbuf_new ("");
-	offset = addr;
+	RStrBuf *sb = r_strbuf_new ("");
 	if (len > INSN_BUFFER_SIZE) {
 		len = INSN_BUFFER_SIZE;
 	}
@@ -46,22 +42,21 @@ static int disassemble(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
 	disasm_obj.disassembler_options = (a->config->bits == 64)?"64":"";
 	disasm_obj.buffer = bytes;
-	disasm_obj.buffer_length = len;
+	disasm_obj.buffer_vma = len;
+	disasm_obj.buffer_length = R_MIN (len, INSN_BUFFER_SIZE);
 	disasm_obj.read_memory_func = &xtensa_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !a->config->big_endian;
+	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
-	disasm_obj.stream = stdout;
+	disasm_obj.stream = sb;
 
-	op->size = print_insn_xtensa ((bfd_vma)offset, &disasm_obj);
+	op->size = print_insn_xtensa ((bfd_vma)addr, &disasm_obj);
 	if (op->size == -1) {
-		op->mnemonic = strdup ("(data)");
-	} else {
-		op->mnemonic = r_strbuf_drain (buf_global);
-		buf_global = NULL;
+		r_strbuf_set (sb, "(data)");
 	}
+	op->mnemonic = r_strbuf_drain (sb);
 	return op->size;
 }
 // GNU DISASM END
@@ -1184,14 +1179,14 @@ static void esil_branch_compare_imm(xtensa_isa isa, xtensa_opcode opcode,
 	esil_push_signed_imm (&op->esil, cmp_imm);
 
 	r_strbuf_appendf (&op->esil, "%s" CM, compare_op);
-	r_strbuf_appendf (&op->esil, "?{" CM);
+	r_strbuf_append (&op->esil, "?{" CM);
 
 	// ISA defines branch target as offset + 4,
 	// but at the time of ESIL evaluation
 	// PC will be already incremented by 3
 	esil_push_signed_imm (&op->esil, branch_imm + 4 - 3);
 
-	r_strbuf_appendf (&op->esil, "pc" CM "+=" CM "}");
+	r_strbuf_append (&op->esil, "pc" CM "+=" CM "}");
 }
 
 static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
@@ -1347,7 +1342,7 @@ static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
 	case 68:	/* ball */
 		snprintf(
 			compare_val,
-			sizeof(compare_val),
+			sizeof (compare_val),
 			"%s%d",
 			xtensa_regfile_shortname (isa, op2_rf),
 			op2_reg
@@ -1457,8 +1452,11 @@ static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xten
 
 	bit_clear = opcode == 56;
 	cmp_op = bit_clear ? "==,$z" : "==,$z,!";
-	mask = 1 << imm_bit;
-
+	if (imm_bit > 31) {
+		mask = 0;
+	} else {
+		mask = (ut32)1 << imm_bit;
+	}
 	sign_extend (&imm_offset, 7);
 	imm_offset += 4 - 3;
 
@@ -1643,7 +1641,9 @@ static void esil_call(xtensa_isa isa, xtensa_opcode opcode,
 	sign_extend (&imm_offset, 17);
 
 	if (call) {
-		imm_offset <<= 2;
+		ut32 uimm_offset = (imm_offset & (UT32_MAX >> 2));
+		uimm_offset <<= 2;
+		imm_offset = uimm_offset;
 	}
 
 	imm_offset += 4 - 3;
@@ -1863,7 +1863,7 @@ static void analop_esil(xtensa_isa isa, xtensa_opcode opcode, xtensa_format form
 		break;
 	case 98: /* ret */
 	case 35: /* ret.n */
-		r_strbuf_setf (&op->esil, "a0,pc,=");
+		r_strbuf_set (&op->esil, "a0,pc,=");
 		break;
 	case 82: /* l16ui */
 	case 83: /* l16si */
@@ -1972,7 +1972,7 @@ static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origina
 	if (!op) {
 		return 1;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & R_ARCH_OP_MASK_DISASM) {
 		disassemble (anal, op, addr, buf_original, len_original);
 	}
 
@@ -1984,7 +1984,7 @@ static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origina
 	xtensa_op0_fns[(buf_original[0] & 0xf)] (anal, op, addr, buf_original);
 
 	ut8 buffer[XTENSA_MAX_LENGTH] = {0};
-	int len = R_MIN(op->size, XTENSA_MAX_LENGTH);
+	int len = R_MIN (op->size, XTENSA_MAX_LENGTH);
 	memcpy (buffer, buf_original, len);
 
 	unsigned int i;
@@ -2005,7 +2005,7 @@ static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origina
 		slot_buffer = xtensa_insnbuf_alloc (isa);
 	}
 
-	memset (insn_buffer, 0,	xtensa_insnbuf_size (isa) * sizeof(xtensa_insnbuf_word));
+	memset (insn_buffer, 0,	xtensa_insnbuf_size (isa) * sizeof (xtensa_insnbuf_word));
 
 	xtensa_insnbuf_from_chars (isa, insn_buffer, buffer, len);
 	format = xtensa_format_decode (isa, insn_buffer);
@@ -2027,7 +2027,7 @@ static int xtensa_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origina
 			xtensa_check_stack_op (isa, opcode, format, i, slot_buffer, op);
 		}
 
-		if (mask & R_ANAL_OP_MASK_ESIL) {
+		if (mask & R_ARCH_OP_MASK_ESIL) {
 			analop_esil (isa, opcode, format, i, slot_buffer, op);
 		}
 	}

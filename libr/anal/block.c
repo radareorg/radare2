@@ -181,11 +181,14 @@ R_API RAnalBlock *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size) {
 	if (r_anal_get_block_at (anal, addr)) {
 		return NULL;
 	}
+	R_CRITICAL_ENTER (anal);
 	RAnalBlock *block = block_new (anal, addr, size);
 	if (!block) {
+		R_CRITICAL_LEAVE (anal);
 		return NULL;
 	}
 	r_rbtree_aug_insert (&anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
+	R_CRITICAL_LEAVE (anal);
 	return block;
 }
 
@@ -368,7 +371,7 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 	a->fail = b->fail;
 	if (a->switch_op) {
 		if (a->anal->verbose) {
-			eprintf ("Dropping switch table at 0x%" PFMT64x " of block at 0x%" PFMT64x "\n", a->switch_op->addr, a->addr);
+			R_LOG_INFO ("Dropping switch table at 0x%" PFMT64x " of block at 0x%" PFMT64x, a->switch_op->addr, a->addr);
 		}
 		r_anal_switch_op_free (a->switch_op);
 	}
@@ -413,7 +416,7 @@ R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb c
 		if (!cb (addr, user)) { \
 			return false; \
 		} \
-	} while(0);
+	} while (0);
 
 	CB_ADDR (block->jump);
 	CB_ADDR (block->fail);

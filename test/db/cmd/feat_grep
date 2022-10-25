@@ -1,3 +1,85 @@
+NAME=?e ~$! invert tac
+FILE=bins/elf/crackme
+CMDS=<<EOF
+iS
+?e --
+iS~$!!
+EOF
+EXPECT=<<EOF
+[Sections]
+
+nth paddr        size vaddr       vsize perm name
+-------------------------------------------------
+0   0x00000000    0x0 0x00000000    0x0 ---- 
+1   0x00000200   0x1c 0x00400200   0x1c -r-- .interp
+2   0x0000021c   0x20 0x0040021c   0x20 -r-- .note.ABI-tag
+3   0x0000023c   0x24 0x0040023c   0x24 -r-- .note.gnu.build-id
+4   0x00000260   0x3c 0x00400260   0x3c -r-- .hash
+5   0x000002a0   0x28 0x004002a0   0x28 -r-- .gnu.hash
+6   0x000002c8   0xf0 0x004002c8   0xf0 -r-- .dynsym
+7   0x000003b8   0x65 0x004003b8   0x65 -r-- .dynstr
+8   0x0000041e   0x14 0x0040041e   0x14 -r-- .gnu.version
+9   0x00000438   0x20 0x00400438   0x20 -r-- .gnu.version_r
+10  0x00000458   0x48 0x00400458   0x48 -r-- .rela.dyn
+11  0x000004a0   0x90 0x004004a0   0x90 -r-- .rela.plt
+12  0x00000530   0x18 0x00400530   0x18 -r-x .init
+13  0x00000548   0x70 0x00400548   0x70 -r-x .plt
+14  0x000005c0  0x248 0x004005c0  0x248 -r-x .text
+15  0x00000808    0xe 0x00400808    0xe -r-x .fini
+16  0x00000818   0x3a 0x00400818   0x3a -r-- .rodata
+17  0x00000854   0x24 0x00400854   0x24 -r-- .eh_frame_hdr
+18  0x00000878   0x7c 0x00400878   0x7c -r-- .eh_frame
+19  0x000008f8   0x10 0x006008f8   0x10 -rw- .ctors
+20  0x00000908   0x10 0x00600908   0x10 -rw- .dtors
+21  0x00000918    0x8 0x00600918    0x8 -rw- .jcr
+22  0x00000920  0x1a0 0x00600920  0x1a0 -rw- .dynamic
+23  0x00000ac0    0x8 0x00600ac0    0x8 -rw- .got
+24  0x00000ac8   0x48 0x00600ac8   0x48 -rw- .got.plt
+25  0x00000b10   0x10 0x00600b10   0x10 -rw- .data
+26  0x00000b20    0x0 0x00600b20   0x28 -rw- .bss
+27  0x00000b20   0x1c 0x00000000   0x1c ---- .comment
+28  0x00000b3c   0xfe 0x00000000   0xfe ---- .shstrtab
+29  0x00001400  0x6a8 0x00000000  0x6a8 ---- .symtab
+30  0x00001aa8  0x269 0x00000000  0x269 ---- .strtab
+
+--
+30  0x00001aa8  0x269 0x00000000  0x269 ---- .strtab
+29  0x00001400  0x6a8 0x00000000  0x6a8 ---- .symtab
+28  0x00000b3c   0xfe 0x00000000   0xfe ---- .shstrtab
+27  0x00000b20   0x1c 0x00000000   0x1c ---- .comment
+26  0x00000b20    0x0 0x00600b20   0x28 -rw- .bss
+25  0x00000b10   0x10 0x00600b10   0x10 -rw- .data
+24  0x00000ac8   0x48 0x00600ac8   0x48 -rw- .got.plt
+23  0x00000ac0    0x8 0x00600ac0    0x8 -rw- .got
+22  0x00000920  0x1a0 0x00600920  0x1a0 -rw- .dynamic
+21  0x00000918    0x8 0x00600918    0x8 -rw- .jcr
+20  0x00000908   0x10 0x00600908   0x10 -rw- .dtors
+19  0x000008f8   0x10 0x006008f8   0x10 -rw- .ctors
+18  0x00000878   0x7c 0x00400878   0x7c -r-- .eh_frame
+17  0x00000854   0x24 0x00400854   0x24 -r-- .eh_frame_hdr
+16  0x00000818   0x3a 0x00400818   0x3a -r-- .rodata
+15  0x00000808    0xe 0x00400808    0xe -r-x .fini
+14  0x000005c0  0x248 0x004005c0  0x248 -r-x .text
+13  0x00000548   0x70 0x00400548   0x70 -r-x .plt
+12  0x00000530   0x18 0x00400530   0x18 -r-x .init
+11  0x000004a0   0x90 0x004004a0   0x90 -r-- .rela.plt
+10  0x00000458   0x48 0x00400458   0x48 -r-- .rela.dyn
+9   0x00000438   0x20 0x00400438   0x20 -r-- .gnu.version_r
+8   0x0000041e   0x14 0x0040041e   0x14 -r-- .gnu.version
+7   0x000003b8   0x65 0x004003b8   0x65 -r-- .dynstr
+6   0x000002c8   0xf0 0x004002c8   0xf0 -r-- .dynsym
+5   0x000002a0   0x28 0x004002a0   0x28 -r-- .gnu.hash
+4   0x00000260   0x3c 0x00400260   0x3c -r-- .hash
+3   0x0000023c   0x24 0x0040023c   0x24 -r-- .note.gnu.build-id
+2   0x0000021c   0x20 0x0040021c   0x20 -r-- .note.ABI-tag
+1   0x00000200   0x1c 0x00400200   0x1c -r-- .interp
+0   0x00000000    0x0 0x00000000    0x0 ---- 
+-------------------------------------------------
+nth paddr        size vaddr       vsize perm name
+[Sections]
+EOF
+RUN
+
 NAME=?e ~
 FILE=malloc://1024
 CMDS=?e jeje~jojo
@@ -394,19 +476,31 @@ EOF
 RUN
 
 NAME=sort lines
+FILE=malloc://1024
 CMDS=<<EOF
+?e -- alphabetical sort --
 ?e 3\n2\n4\n1~$
+?e -- inverted alphabetical sort --
 ?e 3\n2\n4\n1~$!
+?e -- invert (like tac) --
+?e 3\n2\n4\n1~$!!
 EOF
 EXPECT=<<EOF
+-- alphabetical sort --
 1
 2
 3
 4
+-- inverted alphabetical sort --
 4
 3
 2
 1
+-- invert (like tac) --
+1
+4
+2
+3
 EOF
 RUN
 
@@ -447,5 +541,86 @@ i~[0]:0
 EOF
 EXPECT=<<EOF
 fd
+EOF
+RUN
+
+NAME=ij.gron
+FILE=bins/elf/crackme
+CMDS=<<EOF
+ij~{=}
+EOF
+EXPECT=<<EOF
+json = {};
+json.core = {};
+json.core.type = "EXEC (Executable file)";
+json.core.file = "bins/elf/crackme";
+json.core.fd = 3;
+json.core.size = 7441;
+json.core.humansz = "7.3K";
+json.core.iorw = false;
+json.core.mode = "r-x";
+json.core.minopsz = 1;
+json.core.maxopsz = 16;
+json.core.invopsz = 1;
+json.core.block = 256;
+json.core.format = "elf64";
+json.bin = {};
+json.bin.arch = "x86";
+json.bin.baddr = 4194304;
+json.bin.binsz = 7441;
+json.bin.bintype = "elf";
+json.bin.bits = 64;
+json.bin.canary = false;
+json.bin.class = "ELF64";
+json.bin.compiled = "";
+json.bin.compiler = "GCC: (Debian 4.4.5-8) 4.4.5";
+json.bin.crypto = false;
+json.bin.dbg_file = "";
+json.bin.endian = "little";
+json.bin.havecode = true;
+json.bin.guid = "";
+json.bin.intrp = "/lib64/ld-linux-x86-64.so.2";
+json.bin.laddr = 0;
+json.bin.lang = "c";
+json.bin.linenum = true;
+json.bin.lsyms = true;
+json.bin.machine = "AMD x86-64 architecture";
+json.bin.nx = true;
+json.bin.os = "linux";
+json.bin.cc = "";
+json.bin.pic = false;
+json.bin.relocs = true;
+json.bin.relro = "no";
+json.bin.rpath = "NONE";
+json.bin.sanitize = false;
+json.bin.static = false;
+json.bin.stripped = false;
+json.bin.subsys = "linux";
+json.bin.va = true;
+json.bin.checksums = {};
+EOF
+RUN
+
+NAME=ij.gron.grep
+FILE=bins/elf/crackme
+CMDS=<<EOF
+ij~{=}opsz
+EOF
+EXPECT=<<EOF
+json.core.minopsz = 1;
+json.core.maxopsz = 16;
+json.core.invopsz = 1;
+EOF
+RUN
+
+NAME=ij.gron.grep.two
+FILE=bins/elf/crackme
+CMDS=<<EOF
+ij~{=}~opsz
+EOF
+EXPECT=<<EOF
+json.core.minopsz = 1;
+json.core.maxopsz = 16;
+json.core.invopsz = 1;
 EOF
 RUN

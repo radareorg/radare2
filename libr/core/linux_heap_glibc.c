@@ -370,8 +370,8 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 		r_cons_newline ();
 	}
 
-	PRINT_GA ("  }\n");
-	PRINT_GA ("  binmap = {");
+	PRINT_GA ("}\n");
+	PRINT_GA (" binmap = { ");
 
 	for (i = 0; i < BINMAPSIZE; i++) {
 		if (i) {
@@ -445,17 +445,14 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	}
 
 	if (libc_addr_sta == GHT_MAX || libc_addr_end == GHT_MAX) {
-		if (r_config_get_b (core->config, "cfg.debug")) {
-			eprintf ("Warning: Can't find glibc mapped in memory (see dm)\n");
-		} else {
-			eprintf ("Warning: Can't find arena mapped in memory (see om)\n");
-		}
+		const char *cmd = r_config_get_b (core->config, "cfg.debug")? "dm": "om";
+		R_LOG_WARN ("Can't find arena mapped in memory (see %s)", cmd);
 		return false;
 	}
 
 	GH(get_brks) (core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
-		eprintf ("No Heap section\n");
+		R_LOG_ERROR ("No heap section found");
 		return false;
 	}
 
@@ -475,7 +472,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	}
 	while (addr_srch < libc_addr_end) {
 		GH (update_main_arena) (core, addr_srch, ta);
-		if ( ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
+		if (ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
 			ta->GH(system_mem) == heap_sz) {
 
 			*m_arena = addr_srch;
@@ -487,7 +484,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		}
 		addr_srch += sizeof (GHT);
 	}
-	eprintf ("Warning: Can't find main_arena in mapped memory\n");
+	R_LOG_WARN ("Can't find main_arena in mapped memory");
 	free (ta);
 	return false;
 }
@@ -699,7 +696,7 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena
 
 	GH(get_brks) (core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
-		eprintf ("No Heap section\n");
+		R_LOG_ERROR ("No heap section found");
 		return -1;
 	}
 
@@ -762,7 +759,7 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 	case 'g': // dmhbg [bin_num]
 		num_bin = r_num_get (NULL, input + j) - 1;
 		if (num_bin > NBINS - 2) {
-			eprintf ("Error: 0 < bin <= %d\n", NBINS - 1);
+			R_LOG_ERROR ("0 < bin <= %d", NBINS - 1);
 			break;
 		}
 		PRINTF_YA ("  Bin %03"PFMT64u":\n", (ut64)num_bin + 1);
@@ -799,7 +796,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 
 	GH(get_brks) (core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
-		eprintf ("No Heap section\n");
+		R_LOG_ERROR ("No heap section found");
 		free (cnk);
 		return 0;
 	}
@@ -889,7 +886,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 	case ' ': // dmhf [bin_num]
 		num_bin = r_num_get (NULL, input) - 1;
 		if (num_bin >= NFASTBINS) {
-			eprintf ("Error: 0 < bin <= %d\n", NFASTBINS);
+			R_LOG_ERROR ("0 < bin <= %d", NFASTBINS);
 			break;
 		}
 		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin, demangle)) {
@@ -916,9 +913,9 @@ static GH (RTcache)* GH (tcache_new) (RCore *core) {
 static void GH (tcache_free) (GH (RTcache)* tcache) {
 	r_return_if_fail (tcache);
 	tcache->type == NEW
-		? free(tcache->RHeapTcache.heap_tcache)
-		: free(tcache->RHeapTcache.heap_tcache_pre_230);
-	free(tcache);
+		? free (tcache->RHeapTcache.heap_tcache)
+		: free (tcache->RHeapTcache.heap_tcache_pre_230);
+	free (tcache);
 }
 
 static bool GH (tcache_read) (RCore *core, GHT tcache_start, GH (RTcache)* tcache) {
@@ -998,7 +995,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 	GHT fc_offset = GH (tcache_chunk_size) (core, brk_start);
 	initial_brk = brk_start + fc_offset;
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
-		eprintf ("No heap section\n");
+		R_LOG_ERROR ("No heap section found");
 		return;
 	}
 
@@ -1018,7 +1015,7 @@ static void GH (print_tcache_instance)(RCore *core, GHT m_arena, MallocState *ma
 		GHT mmap_start = GHT_MAX, tcache_start = GHT_MAX;
 		MallocState *ta = R_NEW0 (MallocState);
 		if (!ta) {
-			free(ta);
+			free (ta);
 			GH (tcache_free) (r_tcache);
 			return;
 		}
@@ -1089,7 +1086,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	}
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
-		eprintf ("No Heap section\n");
+		R_LOG_ERROR ("No heap section");
 		return;
 	}
 
@@ -1138,7 +1135,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	top_title = r_str_new ("");
 
 	if (!r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)))) {
-		eprintf ("Cannot read\n");
+		R_LOG_ERROR ("Cannot read");
 		free (cnk);
 		free (cnk_next);
 		r_cons_canvas_free (can);
@@ -1195,7 +1192,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			case '*':
 				r_cons_printf ("fs heap.corrupted\n");
 				ut64 chunkflag = (ut64)((prev_chunk >> 4) & 0xffffULL);
-				r_cons_printf ("f chunk.corrupted.%06"PFMT64x" %d 0x%"PFMT64x"\n", 
+				r_cons_printf ("f chunk.corrupted.%06"PFMT64x" %d 0x%"PFMT64x"\n",
 					chunkflag, (int)cnk->size, (ut64)prev_chunk);
 				break;
 			case 'g':
@@ -1427,7 +1424,7 @@ void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena)
 			}
 		}
 	}
-	free(ta);
+	free (ta);
 }
 
 void GH(print_inst_minfo)(GH(RHeapInfo) *heap_info, GHT hinfo) {

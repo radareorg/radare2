@@ -19,7 +19,7 @@ static int r_bin_dyldcache_apply_patch(RBuffer* buf, ut32 data, ut64 offset) {
 	return r_buf_write_at (buf, offset, (ut8 *)&data, sizeof (data));
 }
 
-#define NZ_OFFSET(x, y, z) if((x) > 0) r_bin_dyldcache_apply_patch (dbuf, (x) - linkedit_offset, addend + r_offsetof (y, z))
+#define NZ_OFFSET(x, y, z) if ((x) > 0) r_bin_dyldcache_apply_patch (dbuf, (x) - linkedit_offset, addend + r_offsetof (y, z))
 
 // make it public in util/buf.c ?
 static ut64 r_buf_read64le(RBuffer *buf, ut64 off) {
@@ -67,12 +67,12 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		return NULL;
 	}
 	if (bin->hdr.startaddr > bin->size) {
-		eprintf ("corrupted dyldcache\n");
+		R_LOG_ERROR ("corrupted dyldcache");
 		goto ret_err;
 	}
 
 	if (bin->hdr.startaddr > bin->size || bin->hdr.baseaddroff > bin->size) {
-		eprintf ("corrupted dyldcache\n");
+		R_LOG_ERROR ("corrupted dyldcache");
 		goto ret_err;
 	}
 	int sz = bin->nlibs * sizeof (struct dyld_cache_image_info);
@@ -84,13 +84,13 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	dyld_vmbase = r_buf_read64le (bin->b, bin->hdr.baseaddroff);
 	liboff = image_infos[idx].address - dyld_vmbase;
 	if (liboff > bin->size) {
-		eprintf ("Corrupted file\n");
+		R_LOG_ERROR ("Corrupted file");
 		goto ret_err;
 	}
 	ret->offset = liboff;
 	int pfo = image_infos[idx].pathFileOffset;
 	if (pfo < 0 || pfo > bin->size) {
-		eprintf ("corrupted file: pathFileOffset > bin->size (%d)\n", pfo);
+		R_LOG_ERROR ("corrupted file: pathFileOffset > bin->size (%d)", pfo);
 		goto ret_err;
 	}
 	libname = r_buf_read_string (bin->b, pfo, 64);
@@ -146,7 +146,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 			}
 			int t = seg.filesize;
 			if (seg.fileoff + seg.filesize > bin->size || seg.fileoff > bin->size) {
-				eprintf ("malformed dyldcache\n");
+				R_LOG_ERROR ("malformed dyldcache");
 				goto dbuf_err;
 			}
 			r_buf_append_buf_slice (dbuf, bin->b, seg.fileoff, t);
