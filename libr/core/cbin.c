@@ -3502,6 +3502,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 		r_cons_println ("fs classes");
 	}
 
+	const bool bin_filter = r_config_get_b (r->config, "bin.filter");
 	r_list_foreach (cs, iter, c) {
 		if (!c || !c->name || !c->name[0]) {
 			continue;
@@ -3624,7 +3625,6 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			}
 			r_cons_printf ("};\"\n");
 		} else if (IS_MODE_JSON (mode)) {
-			const bool bin_filter = r_config_get_b (c->config, "bin.filter");
 			pj_o (pj);
 			pj_ks (pj, "classname", c->name);
 			pj_kN (pj, "addr", c->addr);
