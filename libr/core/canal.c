@@ -5292,8 +5292,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		}
 	}
 
-	R_LOG_DEBUG ("aae length (%s) 0x%"PFMT64x"\n", str, end);
-	R_LOG_DEBUG ("aae addr (%s) 0x%"PFMT64x"\n", target, start);
+	R_LOG_DEBUG ("aae length (%s) 0x%"PFMT64x, str, end);
+	R_LOG_DEBUG ("aae addr (%s) 0x%"PFMT64x, target, start);
 
 	if (end < start) {
 		R_LOG_DEBUG ("end < start");
