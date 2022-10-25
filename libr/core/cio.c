@@ -270,36 +270,39 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	} else {
 		if (isnum) {
 			ut64 n = r_num_math (core->num, arg);
-			bool be = r_config_get_i (core->config, "cfg.bigendian");
+			bool be = r_config_get_b (core->config, "cfg.bigendian");
 			free (str);
+			len = 0;
 			str = calloc (8, 1);
-			switch (numsize) {
-			case 1:
-				if (n > UT8_MAX) {
-					R_LOG_ERROR ("%d doesnt fit in ut8.max", n);
-					goto beach;
+			if (R_LIKELY (str)) {
+				switch (numsize) {
+				case 1:
+					if (n > UT8_MAX) {
+						R_LOG_ERROR ("%d doesnt fit in ut8.max", n);
+						goto beach;
+					}
+					str[0] = n;
+					break;
+				case 2:
+					if (n > UT16_MAX) {
+						R_LOG_ERROR ("%d doesnt fit in ut16.max", n);
+						goto beach;
+					}
+					r_write_ble16 (str, n, be);
+					break;
+				case 4:
+					if (n > UT32_MAX) {
+						R_LOG_ERROR ("%d doesnt fit in ut32.max", n);
+						goto beach;
+					}
+					r_write_ble32 (str, n, be);
+					break;
+				case 8:
+					r_write_ble64 (str, n, be);
+					break;
 				}
-				str[0] = n;
-				break;
-			case 2:
-				if (n > UT16_MAX) {
-					R_LOG_ERROR ("%d doesnt fit in ut16.max", n);
-					goto beach;
-				}
-				r_write_ble16 (str, n, be);
-				break;
-			case 4:
-				if (n > UT32_MAX) {
-					R_LOG_ERROR ("%d doesnt fit in ut32.max", n);
-					goto beach;
-				}
-				r_write_ble32 (str, n, be);
-				break;
-			case 8:
-				r_write_ble64 (str, n, be);
-				break;
+				len = numsize;
 			}
-			len = numsize;
 		}
 		for (i = j = 0; i < core->blocksize; i++) {
 			switch (op) {
