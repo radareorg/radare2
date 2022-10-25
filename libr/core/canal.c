@@ -5220,7 +5220,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 	return true;
 }
 
-R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
+R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *target /* addr */) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
 	bool gp_fixed = r_config_get_b (core->config, "anal.gpfixed");
@@ -5235,7 +5235,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
 	bool archIsArm = false;
 	ut64 addr = core->offset;
-	ut64 start = addr;
+	ut64 start = core->offset;
 	ut64 end = 0LL;
 	ut64 cur;
 	esil_anal_stop = false;
@@ -5249,34 +5249,29 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	if (target) {
 		const char *expr = r_str_trim_head_ro (target);
 		if (*expr) {
-			refptr = ntarget = r_num_math (core->num, expr);
-			if (!refptr) {
-				ntarget = refptr = addr;
+			ntarget = r_num_math (core->num, expr);
+			if (ntarget && ntarget != UT64_MAX) {
+				refptr = ntarget;
+			} else {
+				refptr = addr;
+				ntarget = addr;
 			}
 		} else {
 			ntarget = UT64_MAX;
 			refptr = 0LL;
 		}
+		start = ntarget;
+		end_address_set = true;
 	} else {
-		ntarget = UT64_MAX;
+		ntarget = core->offset;
 		refptr = 0LL;
 	}
-	RAnalFunction *fcn = NULL;
-	if (!strcmp (str, "f")) {
-		fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-		if (fcn) {
-			start = r_anal_function_min_addr (fcn);
-			addr = fcn->addr;
-			end = r_anal_function_max_addr (fcn);
-			end_address_set = true;
-		}
-	}
 
-	if (!end_address_set) {
-		if (str[0] == ' ') {
-			end = addr + r_num_math (core->num, str + 1);
+	if (!end_address_set || !end) {
+		if (R_STR_ISNOTEMPTY (str)) { // str[0] == ' ') {
+			end = addr + r_num_math (core->num, str);
 		} else {
-			RIOMap *map = r_io_map_get_at (core->io, addr);
+			RIOMap *map = r_io_map_get_at (core->io, start);
 			if (map) {
 				end = r_io_map_end (map);
 			} else {
@@ -5284,7 +5279,26 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			}
 		}
 	}
+	RAnalFunction *fcn = NULL;
+	if (!strcmp (str, "f")) {
+		fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+		if (fcn) {
+			start = r_anal_function_min_addr (fcn);
+			if (start != UT64_MAX) {
+				addr = fcn->addr;
+				end = r_anal_function_max_addr (fcn);
+				end_address_set = true;
+			}
+		}
+	}
 
+	R_LOG_DEBUG ("aae length (%s) 0x%"PFMT64x"\n", str, end);
+	R_LOG_DEBUG ("aae addr (%s) 0x%"PFMT64x"\n", target, start);
+
+	if (end < start) {
+		R_LOG_DEBUG ("end < start");
+		return;
+	}
 	iend = end - start;
 	if (iend < 0) {
 		return;
@@ -5423,7 +5437,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		r_anal_op_fini (&op);
 		r_asm_set_pc (core->rasm, cur);
 		i_old = i;
-		if (i > iend) {
+		if (i >= iend) {
 			goto repeat;
 		}
 		int opflags = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT;
@@ -5826,7 +5840,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 				case 2: v16 = *(uut16 *)v; match = (v16 >= vmin && v16 <= vmax); value = v16; break;
 				case 4: v32 = *(uut32 *)v; match = (v32 >= vmin && v32 <= vmax); value = v32; break;
 				case 8: v64 = *(uut64 *)v; match = (v64 >= vmin && v64 <= vmax); value = v64; break;
-				default: eprintf ("Unknown vsize %d\n", vsize); return -1;
+				default: R_LOG_ERROR ("Unknown vsize %d", vsize); return -1;
 				}
 			}
 			if (match && !vinfun) {

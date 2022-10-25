@@ -56078,3 +56078,14 @@ EXPECT=<<EOF
 0x10012bfe0 -> 0x10012c1c0  CODE:--x
 EOF
 RUN
+
+NAME=aae honors given size
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+aae 0x7c @ 0x10000f5dc
+axt str.setWindow:
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
