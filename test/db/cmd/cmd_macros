@@ -180,3 +180,53 @@ World 0
 Hello 1
 EOF
 RUN
+
+NAME=json
+FILE=-
+CMDS=<<EOF
+(foo;bar;cow)
+(bar;cow;foo)
+(j)~{}
+?e --
+(j~{}
+?e --
+(j)~{}>$a
+$a~name
+EOF
+EXPECT=<<EOF
+{
+  "cmd": "(j",
+  "macros": [
+    {
+      "name": "foo",
+      "args": "",
+      "cmds": "bar\ncow"
+    },
+    {
+      "name": "bar",
+      "args": "",
+      "cmds": "cow\nfoo"
+    }
+  ]
+}
+--
+{
+  "cmd": "(j",
+  "macros": [
+    {
+      "name": "foo",
+      "args": "",
+      "cmds": "bar\ncow"
+    },
+    {
+      "name": "bar",
+      "args": "",
+      "cmds": "cow\nfoo"
+    }
+  ]
+}
+--
+      "name": "foo",
+      "name": "bar",
+EOF
+RUN
