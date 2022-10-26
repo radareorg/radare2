@@ -586,14 +586,14 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 
 	pbody = strchr (name, ';');
 	if (!pbody) {
-		R_LOG_ERROR ("Invalid macro body");
+		R_LOG_ERROR ("Invalid macro body in '%s'", name);
 		free (name);
 		return false;
 	}
 	*pbody = '\0';
 	pbody++;
 
-	if (*name && name[1] && name[strlen (name)-1]==')') {
+	if (*name && name[1] && name[strlen (name) - 1] == ')') {
 		R_LOG_ERROR ("missing macro body?");
 		free (name);
 		return false;
@@ -701,17 +701,35 @@ static void macro_meta(RCmdMacro *mac) {
 }
 // TODO: use mac->cb_printf which is r_cons_printf at the end
 R_API void r_cmd_macro_list(RCmdMacro *mac, int mode) {
+	RCmdMacroItem *m;
+	int j, idx = 0;
+	RListIter *iter;
 	if (mode == '*') {
 		macro_meta (mac);
 		return;
 	}
 	if (mode == 'j') {
-		R_LOG_ERROR ("TODO: JSON output for macros");
+		PJ *pj = pj_new ();
+		pj_o (pj);
+		pj_ks (pj, "cmd", "(j");
+		pj_ka (pj, "macros");
+		r_list_foreach (mac->macros, iter, m) {
+			pj_o (pj);
+			pj_ks (pj, "name", m->name);
+			pj_ks (pj, "args", m->args);
+			pj_ks (pj, "cmds", r_str_trim_head_ro (m->code));
+			pj_end (pj);
+			idx++;
+		}
+
+		pj_end (pj);
+		pj_end (pj);
+
+		char *s = pj_drain (pj);
+		mac->cb_printf ("%s\n", s);
+		free (s);
 		return;
 	}
-	RCmdMacroItem *m;
-	int j, idx = 0;
-	RListIter *iter;
 	r_list_foreach (mac->macros, iter, m) {
 		mac->cb_printf ("%d (%s %s; ", idx, m->name, m->args);
 		for (j = 0; m->code[j]; j++) {
@@ -852,7 +870,7 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 		//	eprintf("===> ADD LABEL(%s)\n", ptr);
 			if (i == 0) {
 				strncpy (labels[*labels_n].name, ptr, 64);
-				labels[*labels_n].ptr = ptr+strlen (ptr)+1;
+				labels[*labels_n].ptr = ptr + strlen (ptr) + 1;
 				*labels_n = *labels_n + 1;
 			}
 		}
@@ -877,7 +895,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	}
 	char *ptr = strchr (str, ')');
 	if (!ptr) {
-		R_LOG_ERROR ("Missing end ')' parenthesis");
+		R_LOG_ERROR ("Missing end ')' parenthesis in '%s'", str);
 		free (str);
 		return false;
 	} else {
