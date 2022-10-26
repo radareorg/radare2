@@ -10,8 +10,8 @@ static const char *help_msg_lparen[] = {
 	"(-foo)", "", "remove a macro",
 	".(foo)", "", "to call it",
 	"()", "", "break inside macro",
-	"(*", "", "list all defined macros",
-	"(j", "", "list macros in json format",
+	"(*)", "", "list all defined macros",
+	"(j)", "", "list macros in json format",
 	"", "Argument support:", "",
 	"(foo x y; $0 @ $1)", "", "define fun with args (x - $0; y - $1)",
 	".(foo 128 0x804800)", "", "call it with args",
@@ -27,7 +27,7 @@ static int cmd_macro(void *data, const char *_input) {
 #endif
 	if (input[0] == 'j' || input[0] == '*') {
 		const char ch = input[1];
-		if (ch == 0 || ch == ' ' || ch == '|' || ch == '>') {
+		if (!ch || ch == ')') {
 			r_cmd_macro_list (&core->rcmd->macro, *input);
 			return R_CMD_RC_SUCCESS;
 		}

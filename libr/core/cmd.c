@@ -3340,6 +3340,9 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 }
 
 static bool is_macro_command(const char *ptr) {
+	if (!strchr (ptr, ')')) {
+		return false;
+	}
 	ptr = r_str_trim_head_ro (ptr);
 	while (IS_DIGIT (*ptr)) {
 		ptr++;
