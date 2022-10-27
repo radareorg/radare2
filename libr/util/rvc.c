@@ -2,16 +2,14 @@
 
 #define R_LOG_ORIGIN "rvc"
 
-#undef R_IPI
-#define R_IPI R_HIDDEN static
-#include "../crypto/hash/sha2.c"
-#undef R_IPI
-#define R_IPI
-
 #include <r_util.h>
 #include "r_config.h"
 #include <rvc.h>
 #include <sdb.h>
+
+#define R_CRYPTO_INTERNAL 1
+#include "../crypto/hash/sha2.c"
+
 #define FIRST_BRANCH "branches.master"
 #define NOT_SPECIAL(c) IS_DIGIT (c) || IS_LOWER (c) || c == '_'
 #define COMMIT_BLOB_SEP "----"
