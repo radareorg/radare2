@@ -11,6 +11,7 @@ typedef struct r_type_enum {
 } RTypeEnum;
 
 typedef enum {
+	R_TYPE_INVALID = -1,
 	R_TYPE_BASIC = 0,
 	R_TYPE_ENUM = 1,
 	R_TYPE_STRUCT = 2,

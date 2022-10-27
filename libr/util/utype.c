@@ -2,7 +2,6 @@
 
 #include <r_util.h>
 
-// R2_580 - return bool instead of int
 R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	const char *kind;
 	char var[128];
@@ -23,14 +22,10 @@ R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 }
 
 R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
-	r_return_val_if_fail (TDB && name, -1);
-	if (R_STR_ISEMPTY (name)) {
-		// XXX should assert too
-		return -1;
-	}
+	r_return_val_if_fail (TDB && R_STR_ISNOTEMPTY (name), -1);
 	const char *type = sdb_const_get (TDB, name, 0);
 	if (!type) {
-		return -1;
+		return R_TYPE_INVALID;
 	}
 	if (!strcmp (type, "enum")) {
 		return R_TYPE_ENUM;
@@ -47,7 +42,7 @@ R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
 	if (!strcmp (type, "typedef")) {
 		return R_TYPE_TYPEDEF;
 	}
-	return -1;
+	return R_TYPE_INVALID;
 }
 
 R_API RList* r_type_get_enum(Sdb *TDB, const char *name) {
