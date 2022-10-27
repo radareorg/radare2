@@ -1,8 +1,8 @@
 #ifndef _R_MD5_H
 #define _R_MD5_H
 
-void r_MD5_Init(MD5_CTX *);
-void r_MD5_Update(MD5_CTX *, const ut8*, unsigned int);
-void r_MD5_Final(ut8 [16], MD5_CTX *);
+void r_hash_md5_init(RHashMD5Context *);
+void r_hash_md5_update(RHashMD5Context *, const ut8*, unsigned int);
+void r_hash_md5_final(ut8 [16], RHashMD5Context *);
 
 #endif
