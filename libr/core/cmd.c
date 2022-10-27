@@ -98,6 +98,7 @@ static RCoreHelpMessage help_msg_plus = {
 static RCoreHelpMessage help_msg_j = {
 	"Usage:", "j[:o]in", "run command with json facilities or join two files",
 	"j:", "?e", "run '?e' command and show the result stats in json",
+	"ji:", "[cmd]", "run command and indent it as json like (cmd~{})",
 	"join", " f1 f2", "join the contents of two files",
 	NULL
 };
@@ -1528,6 +1529,14 @@ static int cmd_l(void *data, const char *input) { // "l"
 
 static int cmd_join(void *data, const char *input) { // "join"
 	RCore *core = (RCore *)data;
+	if (r_str_startswith (input, "i:")) {
+		char *res = r_core_cmd_str (core, input + 2);
+		char *indented = r_print_json_indent (res, true, "  ", NULL);
+		r_cons_printf ("%s\n", indented);
+		free (indented);
+		free (res);
+		return R_CMD_RC_SUCCESS;
+	}
 	if (input[0] == ':') {
 		PJ *pj = r_core_pj_new (core);
 		// buffer rlog calls into a string
@@ -1545,7 +1554,7 @@ static int cmd_join(void *data, const char *input) { // "join"
 		s = pj_drain (pj);
 		r_cons_printf ("%s\n", s);
 		free (s);
-		return 0;
+		return R_CMD_RC_SUCCESS;
 	}
 	char *tmp = strdup (input);
 	const char *arg1 = strchr (tmp, ' ');
@@ -1586,11 +1595,11 @@ static int cmd_join(void *data, const char *input) { // "join"
 		break;
 	}
 	free (tmp);
-	return 0;
+	return R_CMD_RC_SUCCESS;
 beach:
 	r_core_cmd_help (core, help_msg_j);
 	free (tmp);
-	return 0;
+	return R_CMD_RC_SUCCESS;
 }
 
 static int cmd_plus(void *data, const char *input) {
