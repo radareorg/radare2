@@ -32,8 +32,6 @@
  * $Id: sha2.c,v 1.1 2001/11/08 00:01:51 adg Exp adg $
  */
 
-#include <r_hash.h>
-#include <r_util/r_assert.h>
 #include "sha2.h"
 
 #define WEAK_ALIASING 0
