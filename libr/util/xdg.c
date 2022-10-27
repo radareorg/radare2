@@ -14,7 +14,7 @@ static char *xdg(const char *env, const char *a, const char *s) {
 	char *dir = r_sys_getenv (env);
 	if (R_STR_ISEMPTY (dir)) {
 		free (dir);
-		dir = r_str_home (a);
+		dir = r_file_home (a);
 	}
 	char *res = r_file_new (dir, "radare2", s, NULL);
 	free (dir);

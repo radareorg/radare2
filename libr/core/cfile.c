@@ -547,7 +547,7 @@ static void load_scripts_for(RCore *core, const char *name) {
 	char *file;
 	RListIter *iter;
 	char *hdir = r_str_newf (R_JOIN_2_PATHS (R2_HOME_BINRC, "bin-%s"), name);
-	char *path = r_str_home (hdir);
+	char *path = r_file_home (hdir);
 	RList *files = r_sys_dir (path);
 	if (!r_list_empty (files)) {
 		R_LOG_INFO ("[binrc] path: %s", path);

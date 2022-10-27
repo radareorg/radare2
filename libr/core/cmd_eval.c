@@ -651,12 +651,12 @@ static int cmd_eval(void *data, const char *input) {
 			eprintf ("  ed    : ${cfg.editor} ~/.radare2rc\n");
 			eprintf ("  ed-   : rm ~/.radare2rc\n");
 		} else if (input[1] == '-') {
-			char *file = r_str_home (".radare2rc");
+			char *file = r_file_home (".radare2rc");
 			r_cons_printf ("rm %s\n", file);
 			// r_file_rm (file);
 			free (file);
 		} else {
-			char *file = r_str_home (".radare2rc");
+			char *file = r_file_home (".radare2rc");
 			if (r_cons_is_interactive ()) {
 				r_file_touch (file);
 				char * res = r_cons_editor (file, NULL);

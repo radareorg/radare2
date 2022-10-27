@@ -1074,7 +1074,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_config_set_b (r->config, "scr.utf8", false);
 	}
 
-	char *histpath = r_str_home (".cache/radare2/history");
+	char *histpath = r_file_home (".cache/radare2/history");
 	if (histpath) {
 		r_line_hist_load (histpath);
 		free (histpath);

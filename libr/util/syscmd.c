@@ -199,13 +199,13 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	if (!path || !*path) {
 		path = ".";
 	} else if (!strncmp (path, "~/", 2)) {
-		homepath = r_str_home (path + 2);
+		homepath = r_file_home (path + 2);
 		if (homepath) {
 			path = (const char *)homepath;
 		}
 	} else if (*path == '$') {
 		if (!strncmp (path + 1, "home", 4) || !strncmp (path + 1, "HOME", 4)) {
-			homepath = r_str_home ((strlen (path) > 5)? path + 6: NULL);
+			homepath = r_file_home ((strlen (path) > 5)? path + 6: NULL);
 			if (homepath) {
 				path = (const char *)homepath;
 			}

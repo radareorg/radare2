@@ -4410,7 +4410,7 @@ R_API void r_core_parse_radare2rc(RCore *r) {
 		homerc = rcfile;
 	} else {
 		free (rcfile);
-		homerc = r_str_home (".radare2rc");
+		homerc = r_file_home (".radare2rc");
 	}
 	if (homerc && r_file_is_regular (homerc)) {
 		R_LOG_DEBUG ("user script loaded from %s", homerc);

@@ -326,7 +326,7 @@ R_API bool r_sandbox_creat(const char *path, int mode) {
 }
 
 static inline char *expand_home(const char *p) {
-	return (*p == '~')? r_str_home (p): strdup (p);
+	return (*p == '~')? r_file_home (p): strdup (p);
 }
 
 R_API int r_sandbox_lseek(int fd, ut64 addr, int whence) {

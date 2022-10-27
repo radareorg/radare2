@@ -56,7 +56,7 @@ R_API char *r_file_new(const char *root, ...) {
 	va_start (ap, root);
 	RStrBuf *sb = r_strbuf_new ("");
 	if (!strcmp (root, "~")) {
-		char *h = r_str_home (NULL);
+		char *h = r_file_home (NULL);
 		if (!h) {
 			va_end (ap);
 			r_strbuf_free (sb);
@@ -232,7 +232,7 @@ R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
 		return strdup (file);
 	}
 	if (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2)) {
-		ret = r_str_home (file + 2);
+		ret = r_file_home (file + 2);
 	} else {
 #if __UNIX__
 		if (cwd && *file != '/') {
@@ -1432,7 +1432,7 @@ R_API RList* r_file_glob(const char *_globbed_path, int maxdepth) {
 			glob_ptr = last_slash + 1;
 			if (globbed_path[0] == '~') {
 				char *rpath = r_str_newlen (globbed_path + 2, last_slash - globbed_path - 1);
-				path = r_str_home (r_str_get (rpath));
+				path = r_file_home (r_str_get (rpath));
 				free (rpath);
 			} else {
 				path = r_str_newlen (globbed_path, last_slash - globbed_path + 1);
