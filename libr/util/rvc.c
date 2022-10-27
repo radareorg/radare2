@@ -3,7 +3,7 @@
 #define R_LOG_ORIGIN "rvc"
 
 #undef R_IPI
-#define R_IPI static
+#define R_IPI R_HIDDEN static
 #include "../crypto/hash/sha2.c"
 #undef R_IPI
 #define R_IPI
