@@ -288,7 +288,7 @@ R_IPI void r_sha256_init(RSha256Context *context) {
 		return;
 	}
 	memcpy (context->state, sha256_initial_hash_value, R_SHA256_DIGEST_LENGTH);
-	r_mem_memzero (context->buffer, R_SHA256_BLOCK_LENGTH);
+	r_mem_zero (context->buffer, R_SHA256_BLOCK_LENGTH);
 	context->bitcount = 0;
 }
 
@@ -569,7 +569,7 @@ R_IPI void r_sha256_final(ut8 digest[R_SHA256_DIGEST_LENGTH], RSha256Context *co
 	}
 
 	/* Clean up state data: */
-	r_mem_memzero (context, sizeof (*context));
+	r_mem_zero (context, sizeof (*context));
 	usedspace = 0;
 }
 
@@ -590,9 +590,9 @@ R_IPI char *r_sha256_end(RSha256Context *context, char buffer[R_SHA256_DIGEST_ST
 		}
 		*buffer = (char) 0;
 	} else {
-		r_mem_memzero (context, sizeof (*context));
+		r_mem_zero (context, sizeof (*context));
 	}
-	r_mem_memzero (digest, sizeof (digest));
+	r_mem_zero (digest, sizeof (digest));
 	return buffer;
 }
 
@@ -609,7 +609,7 @@ R_IPI void r_sha512_init(RSha512Context *context) {
 		return;
 	}
 	memcpy (context->state, sha512_initial_hash_value, R_SHA512_DIGEST_LENGTH);
-	r_mem_memzero (context->buffer, R_SHA512_BLOCK_LENGTH);
+	r_mem_zero (context->buffer, R_SHA512_BLOCK_LENGTH);
 	context->bitcount[0] = context->bitcount[1] = 0;
 }
 
@@ -898,7 +898,7 @@ R_IPI void r_sha512_final(ut8 digest[R_SHA512_DIGEST_LENGTH], RSha512Context *co
 	}
 
 	/* Zero out state data */
-	r_mem_memzero (context, sizeof (*context));
+	r_mem_zero (context, sizeof (*context));
 }
 
 R_IPI char *r_sha512_end(RSha512Context *context, char buffer[R_SHA512_DIGEST_STRING_LENGTH]) {
@@ -920,9 +920,9 @@ R_IPI char *r_sha512_end(RSha512Context *context, char buffer[R_SHA512_DIGEST_ST
 		}
 		*buffer = (char) 0;
 	} else {
-		r_mem_memzero (context, sizeof (*context));
+		r_mem_zero (context, sizeof (*context));
 	}
-	r_mem_memzero (digest, sizeof (digest));
+	r_mem_zero (digest, sizeof (digest));
 	return buffer;
 }
 
