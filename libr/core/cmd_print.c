@@ -104,14 +104,13 @@ static const char *help_msg_p6[] = {
 
 static const char *help_msg_pF[] = {
 	"Usage: pF[apdbA][*vqj]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml",
-	"pFa", " [len]", "decode ASN1/DER from current block (PEM is B64(DER))",
-	"pFaq", " [len]", "decode ASN1 from current block (quiet output)",
-	"pFA", " [len]", "decode Android Binary XML from current block",
+	"pFa", "[q] [len]", "decode ASN1/DER from current block (PEM is B64(DER))",
+	"pFA", "[j] [len]", "decode Android Binary XML from current block",
 	"pFb", "[vj] [len]", "decode raw proto buffers in (verbose, JSON) format",
 	"pFB", "[j] [len]", "decode iOS Binary PLIST from current block",
 	"pFo", "[j] [len]", "decode ASN1 OID",
 	"pFp", "[j] [len]", "decode PKCS7",
-	"pFx", " [len]", "Same with X509",
+	"pFx", "[j] [len]", "Same with X509",
 	"pFX", " [len]", "print decompressed xz block",
 	NULL
 };
@@ -1324,12 +1323,22 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		{
 			RX509Certificate* x509 = r_x509_parse_certificate (r_asn1_create_object (data, size, data));
 			if (x509) {
-				RStrBuf *sb = r_strbuf_new ("");
-				r_x509_certificate_dump (x509, NULL, sb);
-				char *res = r_strbuf_drain (sb);
-				if (res) {
-					r_cons_printf ("%s\n", res);
-					free (res);
+				if (input[1] == 'j') { // "pFxj"
+					PJ *pj = r_core_pj_new (core);
+					r_x509_certificate_json (pj, x509);
+					char *res = pj_drain (pj);
+					if (res) {
+						r_cons_printf ("%s\n", res);
+						free (res);
+					}
+				} else {
+					RStrBuf *sb = r_strbuf_new ("");
+					r_x509_certificate_dump (x509, NULL, sb);
+					char *res = r_strbuf_drain (sb);
+					if (res) {
+						r_cons_printf ("%s\n", res);
+						free (res);
+					}
 				}
 				r_x509_free_certificate (x509);
 			} else {
