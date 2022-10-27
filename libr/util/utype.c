@@ -481,7 +481,7 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 			return strdup (fmt);
 		}
 	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
-		return fmt_struct_union(TDB, var, false);
+		return fmt_struct_union (TDB, var, false);
 	}
 	if (!strcmp (kind, "typedef")) {
 		snprintf (var2, sizeof (var2), "typedef.%s", t);
@@ -601,15 +601,13 @@ static inline bool is_function(const char *name) {
 }
 
 static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {
-	if (strlen(name) < MIN_MATCH_LEN) {
+	if (strlen (name) < MIN_MATCH_LEN) {
 		return NULL;
 	}
-
-	const char *res = sdb_const_get(TDB, name, NULL);
-	if (is_function(res)) {
-		return strdup(name);
+	const char *res = sdb_const_get (TDB, name, NULL);
+	if (is_function (res)) {
+		return strdup (name);
 	}
-
 	return NULL;
 }
 

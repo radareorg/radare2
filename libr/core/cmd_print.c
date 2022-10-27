@@ -107,12 +107,10 @@ static const char *help_msg_pF[] = {
 	"pFa", " [len]", "decode ASN1/DER from current block (PEM is B64(DER))",
 	"pFaq", " [len]", "decode ASN1 from current block (quiet output)",
 	"pFA", " [len]", "decode Android Binary XML from current block",
-	"pFb", " [len]", "decode raw proto buffers",
-	"pFbv", " [len]", "decode raw proto buffers (verbose)",
-	"pFbj", " [len]", "decode raw proto buffers in JSON format",
+	"pFb", "[vj] [len]", "decode raw proto buffers in (verbose, JSON) format",
 	"pFB", "[j] [len]", "decode iOS Binary PLIST from current block",
 	"pFo", "[j] [len]", "decode ASN1 OID",
-	"pFp", " [len]", "decode PKCS7",
+	"pFp", "[j] [len]", "decode PKCS7",
 	"pFx", " [len]", "Same with X509",
 	"pFX", " [len]", "print decompressed xz block",
 	NULL
@@ -1356,10 +1354,19 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		{
 			RCMS *cms = r_pkcs7_parse_cms (data, size);
 			if (cms) {
-				char *res = r_pkcs7_cms_tostring (cms);
-				if (res) {
-					r_cons_printf ("%s\n", res);
-					free (res);
+				if (input[1] == 'j') {
+					PJ *pj = r_pkcs7_cms_json (cms);
+					if (pj) {
+						char *res = pj_drain (pj);
+						r_cons_printf ("%s\n", res);
+						free (res);
+					}
+				} else {
+					char *res = r_pkcs7_cms_tostring (cms);
+					if (res) {
+						r_cons_printf ("%s\n", res);
+						free (res);
+					}
 				}
 				r_pkcs7_free_cms (cms);
 			} else {
