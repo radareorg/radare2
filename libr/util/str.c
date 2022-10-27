@@ -260,7 +260,7 @@ R_API void r_str_case(char *str, bool up) {
 	}
 }
 
-R_API R_MUSTUSE char *r_str_home(const char *str) {
+R_API R_MUSTUSE char *r_file_home(const char *str) {
 	char *dst, *home = r_sys_getenv (R_SYS_HOME);
 	size_t length;
 	if (!home) {

@@ -1394,7 +1394,7 @@ static int cmd_type(void *data, const char *input) {
 				char *homefile = NULL;
 				if (*filename == '~') {
 					if (filename[1] && filename[2]) {
-						homefile = r_str_home (filename + 2);
+						homefile = r_file_home (filename + 2);
 						filename = homefile;
 					}
 				}

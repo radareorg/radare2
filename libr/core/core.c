@@ -1321,9 +1321,9 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 			dirname = r_str_new (R_SYS_DIR);
 #endif
 		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
-			dirname = r_str_home (lpath + 2);
+			dirname = r_file_home (lpath + 2);
 		} else if (lpath[0] == '~') { // ~/xxx
-			if (!(home = r_str_home (NULL))) {
+			if (!(home = r_file_home (NULL))) {
 				goto out;
 			}
 			dirname = r_str_newf ("%s%s", home, R_SYS_DIR);
