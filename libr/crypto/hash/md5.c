@@ -57,7 +57,7 @@
 }
 
 /* Encodes input (ut32) into output (ut8). Assumes len is a multiple of 4. */
-static void Encode(ut8 *output, ut32 *input, ut32 len) {
+static void encode(ut8 *output, ut32 *input, ut32 len) {
 	ut32 i, j;
 	for (i = 0, j = 0; j < len; i++, j += 4) {
 		output[j] = (ut8)(input[i] & 0xff);
@@ -68,7 +68,7 @@ static void Encode(ut8 *output, ut32 *input, ut32 len) {
 }
 
 /* Decodes input (ut8) into output (ut32). Assumes len is a multiple of 4 */
-static void Decode(ut32 *output, const ut8 *input, ut32 len) {
+static void decode(ut32 *output, const ut8 *input, ut32 len) {
 	ut32 i, j;
 	for (i = 0, j = 0; j < len; i++, j += 4) {
 		output[i] = ((ut32)input[j]) | (((ut32)input[j + 1]) << 8) |
@@ -81,7 +81,7 @@ static void Decode(ut32 *output, const ut8 *input, ut32 len) {
 static void MD5Transform(ut32 state[4], const ut8 block[64]) {
 	ut32 a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
-	Decode (x, block, 64);
+	decode (x, block, 64);
 
 	/* Round 1 */
 	FF (a, b, c, d, x[ 0], 7, 0xd76aa478);
@@ -171,7 +171,7 @@ static const ut8 PADDING[64] = {
 };
 
 /* MD5 initialization. Begins an MD5 operation, writing a new context */
-void r_MD5_Init(R_MD5_CTX *context) {
+void r_hash_md5_init(RHashMD5Context *context) {
 	if (context) {
 		context->count[0] = context->count[1] = 0;
 		context->state[0] = 0x67452301;
@@ -183,7 +183,7 @@ void r_MD5_Init(R_MD5_CTX *context) {
 
 /* MD5 block update operation. Continues an MD5 message-digest operation,
  * processing another message block, and updating the context */
-void r_MD5_Update(R_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
+void r_hash_md5_update(RHashMD5Context *context, const ut8 *input, ut32 inputLen) {
 	ut32 i;
 
 	/* Compute number of bytes mod 64 */
@@ -212,22 +212,22 @@ void r_MD5_Update(R_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
 	memmove ((void*)&context->buffer[index], (void*)&input[i], inputLen - i);
 }
 
-void r_MD5_Final(ut8 digest[16], R_MD5_CTX *context) {
+void r_hash_md5_final(ut8 digest[16], RHashMD5Context *context) {
 	ut8 bits[8];
 
 	/* Save number of bits */
-	Encode (bits, context->count, 8);
+	encode (bits, context->count, 8);
 
 	/* Pad out to 56 mod 64.  */
 	ut32 index = (ut32)((context->count[0] >> 3) & 0x3f);
 	ut32 padLen = (index < 56) ? (56 - index) : (120 - index);
-	r_MD5_Update (context, PADDING, padLen);
+	r_hash_md5_update (context, PADDING, padLen);
 
 	/* Append length (before padding) */
-	r_MD5_Update (context, bits, 8);
+	r_hash_md5_update (context, bits, 8);
 
 	/* Store state in digest */
-	Encode (digest, context->state, 16);
+	encode (digest, context->state, 16);
 
 	/* Zeroize sensitive information.  */
 	r_mem_memzero ((void*)context, sizeof (*context));

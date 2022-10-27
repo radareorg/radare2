@@ -14,37 +14,37 @@ R_LIB_VERSION_HEADER (r_hash);
 #if HAVE_LIB_SSL
 #include <openssl/sha.h>
 #include <openssl/md5.h>
-typedef MD5_CTX R_MD5_CTX;
-typedef SHA_CTX R_SHA_CTX;
-typedef SHA256_CTX R_SHA256_CTX;
-typedef SHA512_CTX R_SHA384_CTX;
-typedef SHA512_CTX R_SHA512_CTX;
+typedef MD5_CTX RHashMD5Context;
+typedef SHA_CTX RHashShaContext;
+typedef SHA256_CTX RSha256Context;
+typedef SHA512_CTX RSha384Context;
+typedef SHA512_CTX RSha512Context;
 #define SHA256_BLOCK_LENGTH SHA256_CBLOCK
 #define SHA384_BLOCK_LENGTH SHA384_CBLOCK
 #define SHA512_BLOCK_LENGTH SHA512_CBLOCK
 #else
-#define MD5_CTX R_MD5_CTX
+#define MD5_CTX RHashMD5Context
 
 /* hashing */
 typedef struct {
 	ut32 state[4];
 	ut32 count[2];
 	ut8 buffer[64];
-} R_MD5_CTX;
+} RHashMD5Context;
 
 typedef struct {
 	ut32 H[5];
 	ut32 W[80];
 	int lenW;
 	ut32 sizeHi, sizeLo;
-} R_SHA_CTX;
+} RHashShaContext;
 
 #define SHA256_BLOCK_LENGTH 64
 typedef struct _SHA256_CTX {
 	ut32 state[8];
 	ut64 bitcount;
 	ut8 buffer[SHA256_BLOCK_LENGTH];
-} R_SHA256_CTX;
+} RSha256Context;
 
 #define SHA384_BLOCK_LENGTH 128
 #define SHA512_BLOCK_LENGTH 128
@@ -52,8 +52,9 @@ typedef struct _SHA512_CTX {
 	ut64 state[8];
 	ut64 bitcount[2];
 	ut8 buffer[SHA512_BLOCK_LENGTH];
-} R_SHA512_CTX;
-typedef R_SHA512_CTX R_SHA384_CTX;
+} RSha512Context;
+
+typedef RSha512Context RSha384Context;
 #endif
 
 
@@ -174,11 +175,11 @@ enum CRC_PRESETS {
 #define RHash struct r_hash_t
 
 struct r_hash_t {
-	R_MD5_CTX md5;
-	R_SHA_CTX sha1;
-	R_SHA256_CTX sha256;
-	R_SHA384_CTX sha384;
-	R_SHA512_CTX sha512;
+	RHashMD5Context md5;
+	RHashShaContext sha1;
+	RSha256Context sha256;
+	RSha384Context sha384;
+	RSha512Context sha512;
 	bool rst;
 	double entropy;
 	ut8 R_ALIGNED(8) digest[128];

@@ -171,34 +171,36 @@ static bool is_valid_branch_name(const char *name) {
 }
 
 static char *compute_hash(const ut8 *data, size_t len) {
-	R_SHA256_CTX ctx;
-	r_SHA256_Init (&ctx);
-	r_SHA256_Update (&ctx, data, len);
-	char textdigest[r_SHA256_DIGEST_STRING_LENGTH] = {0};
-	r_SHA256_End (&ctx, textdigest);
+	RSha256Context ctx;
+	r_sha256_init (&ctx);
+	r_sha256_update (&ctx, data, len);
+	char textdigest[R_SHA256_DIGEST_STRING_LENGTH] = {0};
+	r_sha256_end (&ctx, textdigest);
 	return strdup (textdigest);
 }
 
 static inline char *sha256_file(const char *fname) {
 	size_t content_length = 0;
-	char *res = NULL;
 	char *content = r_file_slurp (fname, &content_length);
 	if (content) {
-		res = compute_hash ((const ut8 *)content, content_length);
+		char *res = compute_hash ((const ut8 *)content, content_length);
 		free (content);
+		return res;
 	}
-	return res;
+	return NULL;
 }
 
 static void free_blobs(RList *blobs) {
-	RListIter *iter;
-	RvcBlob *blob;
-	r_list_foreach (blobs, iter, blob) {
-		free (blob->fhash);
-		free (blob->fname);
-		free (blob);
+	if (blobs) {
+		RListIter *iter;
+		RvcBlob *blob;
+		r_list_foreach (blobs, iter, blob) {
+			free (blob->fhash);
+			free (blob->fname);
+			free (blob);
+		}
+		r_list_free (blobs);
 	}
-	r_list_free (blobs);
 }
 
 static char *absp2rp(Rvc *rvc, const char *absp) {

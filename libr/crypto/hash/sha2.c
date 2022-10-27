@@ -81,6 +81,7 @@
  * <machine/endian.h> where the appropriate definitions are actually
  * made).
  */
+// XXX r2 have the definition for this and thats just crap bloatware
 #ifndef BYTE_ORDER
 // XXX: workaround for windows
 #define LITTLE_ENDIAN 1234
@@ -96,9 +97,9 @@
 
 /*** SHA-256/384/512 Various Length Definitions ***********************/
 /* NOTE: Most of these are in sha2.h */
-#define r_SHA256_SHORT_BLOCK_LENGTH       (SHA256_BLOCK_LENGTH - 8)
-#define r_SHA384_SHORT_BLOCK_LENGTH       (SHA384_BLOCK_LENGTH - 16)
-#define r_SHA512_SHORT_BLOCK_LENGTH       (SHA512_BLOCK_LENGTH - 16)
+#define R_SHA256_SHORT_BLOCK_LENGTH       (SHA256_BLOCK_LENGTH - 8)
+#define R_SHA384_SHORT_BLOCK_LENGTH       (SHA384_BLOCK_LENGTH - 16)
+#define R_SHA512_SHORT_BLOCK_LENGTH       (SHA512_BLOCK_LENGTH - 16)
 
 
 /*** ENDIAN REVERSAL MACROS *******************************************/
@@ -162,15 +163,16 @@
 #define sigma0_512(x)   (S64 ( 1, (x)) ^ S64 ( 8, (x)) ^ R ( 7, (x)))
 #define sigma1_512(x)   (S64 (19, (x)) ^ S64 (61, (x)) ^ R ( 6, (x)))
 
+#if 0
 /*** INTERNAL FUNCTION PROTOTYPES *************************************/
 /* NOTE: These should not be accessed directly from outside this
  * library -- they are intended for private internal visibility/use
  * only.
  */
-static void SHA512_Last(R_SHA512_CTX *);
-static void SHA256_Transform(R_SHA256_CTX *, const ut32 *);
-static void SHA512_Transform(R_SHA512_CTX *, const ut64 *);
-
+static void SHA512_Last(RSha512Context *);
+static void SHA256_Transform(RSha256Context *, const ut32 *);
+static void SHA512_Transform(RSha512Context *, const ut64 *);
+#endif
 
 /*** SHA-XYZ INITIAL HASH VALUES AND CONSTANTS ************************/
 /* Hash constant words K for SHA-256: */
@@ -281,12 +283,12 @@ static const char * const sha2_hex_digits = "0123456789abcdef";
 
 
 /*** SHA-256: *********************************************************/
-void r_SHA256_Init(R_SHA256_CTX *context) {
-	if (context == (R_SHA256_CTX *) 0) {
+R_IPI void r_sha256_init(RSha256Context *context) {
+	if (context == (RSha256Context *) 0) {
 		return;
 	}
-	memcpy (context->state, sha256_initial_hash_value, r_SHA256_DIGEST_LENGTH);
-	r_mem_memzero (context->buffer, r_SHA256_BLOCK_LENGTH);
+	memcpy (context->state, sha256_initial_hash_value, R_SHA256_DIGEST_LENGTH);
+	r_mem_memzero (context->buffer, R_SHA256_BLOCK_LENGTH);
 	context->bitcount = 0;
 }
 
@@ -327,7 +329,7 @@ void r_SHA256_Init(R_SHA256_CTX *context) {
 	(h) = T1 + Sigma0_256 (a) + Maj ((a), (b), (c));\
 	j++
 
-static void SHA256_Transform(R_SHA256_CTX *context, const ut32 *data) {
+static void SHA256_Transform(RSha256Context *context, const ut32 *data) {
 	ut32 a, b, c, d, e, f, g, h, s0, s1;
 	ut32 T1, *W256;
 	int j;
@@ -385,7 +387,7 @@ static void SHA256_Transform(R_SHA256_CTX *context, const ut32 *data) {
 
 #else /* SHA2_UNROLL_TRANSFORM */
 
-static void SHA256_Transform(R_SHA256_CTX *context, const ut32 *data) {
+static void SHA256_Transform(RSha256Context *context, const ut32 *data) {
 	ut32 a, b, c, d, e, f, g, h, s0, s1;
 	ut32 T1, T2, *W256;
 	int j;
@@ -465,7 +467,7 @@ static void SHA256_Transform(R_SHA256_CTX *context, const ut32 *data) {
 
 #endif /* SHA2_UNROLL_TRANSFORM */
 
-void r_SHA256_Update(R_SHA256_CTX *context, const ut8 *data, size_t len) {
+R_IPI void r_sha256_update(RSha256Context *context, const ut8 *data, size_t len) {
 	r_return_if_fail (context);
 	if (!data || len == 0) {
 		return;
@@ -504,7 +506,7 @@ void r_SHA256_Update(R_SHA256_CTX *context, const ut8 *data, size_t len) {
 	}
 }
 
-void r_SHA256_Final(ut8 digest[r_SHA256_DIGEST_LENGTH], R_SHA256_CTX *context) {
+R_IPI void r_sha256_final(ut8 digest[R_SHA256_DIGEST_LENGTH], RSha256Context *context) {
 	r_return_if_fail (context);
 	ut32 *d = (ut32 *) digest;
 	unsigned int usedspace;
@@ -520,32 +522,32 @@ void r_SHA256_Final(ut8 digest[r_SHA256_DIGEST_LENGTH], R_SHA256_CTX *context) {
 			/* Begin padding with a 1 bit: */
 			context->buffer[usedspace++] = 0x80;
 
-			if (usedspace <= r_SHA256_SHORT_BLOCK_LENGTH) {
+			if (usedspace <= R_SHA256_SHORT_BLOCK_LENGTH) {
 				/* Set-up for the last transform: */
-				memset (&context->buffer[usedspace], 0, r_SHA256_SHORT_BLOCK_LENGTH - usedspace);
+				memset (&context->buffer[usedspace], 0, R_SHA256_SHORT_BLOCK_LENGTH - usedspace);
 			} else {
-				if (usedspace < r_SHA256_BLOCK_LENGTH) {
-					memset (&context->buffer[usedspace], 0, r_SHA256_BLOCK_LENGTH - usedspace);
+				if (usedspace < R_SHA256_BLOCK_LENGTH) {
+					memset (&context->buffer[usedspace], 0, R_SHA256_BLOCK_LENGTH - usedspace);
 				}
 				/* Do second-to-last transform: */
 				SHA256_Transform (context, (ut32 *) context->buffer);
 
 				/* And set-up for the last transform: */
-				memset (context->buffer, 0, r_SHA256_SHORT_BLOCK_LENGTH);
+				memset (context->buffer, 0, R_SHA256_SHORT_BLOCK_LENGTH);
 			}
 		} else {
 			/* Set-up for the last transform: */
-			memset (context->buffer, 0, r_SHA256_SHORT_BLOCK_LENGTH);
+			memset (context->buffer, 0, R_SHA256_SHORT_BLOCK_LENGTH);
 
 			/* Begin padding with a 1 bit: */
 			*context->buffer = 0x80;
 		}
 		/* Set the bit count: */
 #if WEAK_ALIASING
-		*(ut64 *) &context->buffer[r_SHA256_SHORT_BLOCK_LENGTH] = context->bitcount;
+		*(ut64 *) &context->buffer[R_SHA256_SHORT_BLOCK_LENGTH] = context->bitcount;
 #else
 		{
-			ut64 *p = (ut64 *) ((ut8 *) context->buffer + r_SHA256_SHORT_BLOCK_LENGTH);
+			ut64 *p = (ut64 *) ((ut8 *) context->buffer + R_SHA256_SHORT_BLOCK_LENGTH);
 			*p = (ut64) context->bitcount;
 		}
 #endif
@@ -562,7 +564,7 @@ void r_SHA256_Final(ut8 digest[r_SHA256_DIGEST_LENGTH], R_SHA256_CTX *context) {
 			}
 		}
 #else
-		memcpy (d, context->state, r_SHA256_DIGEST_LENGTH);
+		memcpy (d, context->state, R_SHA256_DIGEST_LENGTH);
 #endif
 	}
 
@@ -571,8 +573,8 @@ void r_SHA256_Final(ut8 digest[r_SHA256_DIGEST_LENGTH], R_SHA256_CTX *context) {
 	usedspace = 0;
 }
 
-char *r_SHA256_End(R_SHA256_CTX *context, char buffer[r_SHA256_DIGEST_STRING_LENGTH]) {
-	ut8 digest[r_SHA256_DIGEST_LENGTH], *d = digest;
+R_IPI char *r_sha256_end(RSha256Context *context, char buffer[R_SHA256_DIGEST_STRING_LENGTH]) {
+	ut8 digest[R_SHA256_DIGEST_LENGTH], *d = digest;
 	int i;
 
 	if (!context) {
@@ -580,8 +582,8 @@ char *r_SHA256_End(R_SHA256_CTX *context, char buffer[r_SHA256_DIGEST_STRING_LEN
 	}
 
 	if (buffer) {
-		r_SHA256_Final (digest, context);
-		for (i = 0; i < r_SHA256_DIGEST_LENGTH; i++) {
+		r_sha256_final (digest, context);
+		for (i = 0; i < R_SHA256_DIGEST_LENGTH; i++) {
 			*buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
 			*buffer++ = sha2_hex_digits[*d & 0x0f];
 			d++;
@@ -590,24 +592,24 @@ char *r_SHA256_End(R_SHA256_CTX *context, char buffer[r_SHA256_DIGEST_STRING_LEN
 	} else {
 		r_mem_memzero (context, sizeof (*context));
 	}
-	r_mem_memzero (digest, r_SHA256_DIGEST_LENGTH);
+	r_mem_memzero (digest, sizeof (digest));
 	return buffer;
 }
 
-char *r_SHA256_Data(const ut8 *data, size_t len, char digest[r_SHA256_DIGEST_STRING_LENGTH]) {
-	R_SHA256_CTX context;
-	r_SHA256_Init (&context);
-	r_SHA256_Update (&context, data, len);
-	return r_SHA256_End (&context, digest);
+R_IPI char *r_sha256_data(const ut8 *data, size_t len, char digest[R_SHA256_DIGEST_STRING_LENGTH]) {
+	RSha256Context context;
+	r_sha256_init (&context);
+	r_sha256_update (&context, data, len);
+	return r_sha256_end (&context, digest);
 }
 
 /*** SHA-512: *********************************************************/
-void r_SHA512_Init(R_SHA512_CTX *context) {
-	if (context == (R_SHA512_CTX *) 0) {
+R_IPI void r_sha512_init(RSha512Context *context) {
+	if (context == (RSha512Context *) 0) {
 		return;
 	}
-	memcpy (context->state, sha512_initial_hash_value, r_SHA512_DIGEST_LENGTH);
-	r_mem_memzero (context->buffer, r_SHA512_BLOCK_LENGTH);
+	memcpy (context->state, sha512_initial_hash_value, R_SHA512_DIGEST_LENGTH);
+	r_mem_memzero (context->buffer, R_SHA512_BLOCK_LENGTH);
 	context->bitcount[0] = context->bitcount[1] = 0;
 }
 
@@ -647,7 +649,7 @@ void r_SHA512_Init(R_SHA512_CTX *context) {
 	(h) = T1 + Sigma0_512 (a) + Maj ((a), (b), (c));\
 	j++
 
-static void SHA512_Transform(R_SHA512_CTX *context, const ut64 *data) {
+static void SHA512_Transform(RSha512Context *context, const ut64 *data) {
 	ut64 a, b, c, d, e, f, g, h, s0, s1;
 	ut64 T1, *W512 = (ut64 *) context->buffer;
 	int j;
@@ -702,7 +704,7 @@ static void SHA512_Transform(R_SHA512_CTX *context, const ut64 *data) {
 
 #else /* SHA2_UNROLL_TRANSFORM */
 
-static void SHA512_Transform(R_SHA512_CTX *context, const ut64 *data) {
+static void SHA512_Transform(RSha512Context *context, const ut64 *data) {
 	ut64 s0, s1, T1, T2, *W512 = (ut64 *) context->buffer;
 	int j;
 
@@ -779,20 +781,13 @@ static void SHA512_Transform(R_SHA512_CTX *context, const ut64 *data) {
 
 #endif /* SHA2_UNROLL_TRANSFORM */
 
-void r_SHA512_Update(R_SHA512_CTX *context, const ut8 *data, size_t len) {
-	unsigned int freespace, usedspace;
-
-	if (len == 0) {
-		/* Calling with no data is valid - we do nothing */
+R_IPI void r_sha512_update(RSha512Context *context, const ut8 *data, size_t len) {
+	if (!context || !data || len < 1) {
 		return;
 	}
 
-	/* Sanity check: */
-	if (!context || !data) {
-		return;
-	}
-
-	usedspace = (context->bitcount[0] >> 3) % SHA512_BLOCK_LENGTH;
+	unsigned int usedspace = (context->bitcount[0] >> 3) % SHA512_BLOCK_LENGTH;
+	unsigned int freespace = 0;
 	if (usedspace > 0) {
 		/* Calculate how much free space is available in the buffer */
 		freespace = SHA512_BLOCK_LENGTH - usedspace;
@@ -816,7 +811,7 @@ void r_SHA512_Update(R_SHA512_CTX *context, const ut8 *data, size_t len) {
 	while (len >= SHA512_BLOCK_LENGTH) {
 		/* Process as many complete blocks as we can */
 		SHA512_Transform (context, (ut64 *) data);
-		ADDINC128 (context->bitcount, r_SHA512_BLOCK_LENGTH << 3);
+		ADDINC128 (context->bitcount, R_SHA512_BLOCK_LENGTH << 3);
 		len -= SHA512_BLOCK_LENGTH;
 		data += SHA512_BLOCK_LENGTH;
 	}
@@ -825,14 +820,10 @@ void r_SHA512_Update(R_SHA512_CTX *context, const ut8 *data, size_t len) {
 		memcpy (context->buffer, data, len);
 		ADDINC128 (context->bitcount, len << 3);
 	}
-	/* Clean up: */
-	usedspace = freespace = 0;
 }
 
-static void SHA512_Last(R_SHA512_CTX *context) {
-	unsigned int usedspace;
-
-	usedspace = (context->bitcount[0] >> 3) % SHA512_BLOCK_LENGTH;
+static void SHA512_Last(RSha512Context *context) {
+	unsigned int usedspace = (context->bitcount[0] >> 3) % SHA512_BLOCK_LENGTH;
 #if BYTE_ORDER == LITTLE_ENDIAN
 	/* Convert FROM host byte order */
 	REVERSE64 (context->bitcount[0], context->bitcount[0]);
@@ -842,35 +833,35 @@ static void SHA512_Last(R_SHA512_CTX *context) {
 		/* Begin padding with a 1 bit: */
 		context->buffer[usedspace++] = 0x80;
 
-		if (usedspace <= r_SHA512_SHORT_BLOCK_LENGTH) {
+		if (usedspace <= R_SHA512_SHORT_BLOCK_LENGTH) {
 			/* Set-up for the last transform: */
-			memset (&context->buffer[usedspace], 0, r_SHA512_SHORT_BLOCK_LENGTH - usedspace);
+			memset (&context->buffer[usedspace], 0, R_SHA512_SHORT_BLOCK_LENGTH - usedspace);
 		} else {
-			if (usedspace < r_SHA512_BLOCK_LENGTH) {
-				memset (&context->buffer[usedspace], 0, r_SHA512_BLOCK_LENGTH - usedspace);
+			if (usedspace < R_SHA512_BLOCK_LENGTH) {
+				memset (&context->buffer[usedspace], 0, R_SHA512_BLOCK_LENGTH - usedspace);
 			}
 			/* Do second-to-last transform: */
 			SHA512_Transform (context, (ut64 *) context->buffer);
 
 			/* And set-up for the last transform: */
-			memset (context->buffer, 0, r_SHA512_BLOCK_LENGTH - 2);
+			memset (context->buffer, 0, R_SHA512_BLOCK_LENGTH - 2);
 		}
 	} else {
 		/* Prepare for final transform: */
-		memset (context->buffer, 0, r_SHA512_SHORT_BLOCK_LENGTH);
+		memset (context->buffer, 0, R_SHA512_SHORT_BLOCK_LENGTH);
 
 		/* Begin padding with a 1 bit: */
 		*context->buffer = 0x80;
 	}
 	/* Store the length of input data (in bits): */
 #if WEAK_ALIASING
-	*(ut64 *) &context->buffer[r_SHA512_SHORT_BLOCK_LENGTH] = context->bitcount[1];
-	*(ut64 *) &context->buffer[r_SHA512_SHORT_BLOCK_LENGTH + 8] = context->bitcount[0];
+	*(ut64 *) &context->buffer[R_SHA512_SHORT_BLOCK_LENGTH] = context->bitcount[1];
+	*(ut64 *) &context->buffer[R_SHA512_SHORT_BLOCK_LENGTH + 8] = context->bitcount[0];
 #else
 	{
-		ut64 *p = (ut64 *) ((ut8 *) context->buffer + r_SHA512_SHORT_BLOCK_LENGTH);
+		ut64 *p = (ut64 *) ((ut8 *) context->buffer + R_SHA512_SHORT_BLOCK_LENGTH);
 		*p = (ut64) context->bitcount[1];
-		p = (ut64 *) ((ut8 *) context->buffer + r_SHA512_SHORT_BLOCK_LENGTH + 8);
+		p = (ut64 *) ((ut8 *) context->buffer + R_SHA512_SHORT_BLOCK_LENGTH + 8);
 		*p = (ut64) context->bitcount[0];
 	}
 #endif
@@ -879,7 +870,7 @@ static void SHA512_Last(R_SHA512_CTX *context) {
 	SHA512_Transform (context, (ut64 *) context->buffer);
 }
 
-void r_SHA512_Final(ut8 digest[r_SHA512_DIGEST_LENGTH], R_SHA512_CTX *context) {
+R_IPI void r_sha512_final(ut8 digest[R_SHA512_DIGEST_LENGTH], RSha512Context *context) {
 	ut64 *d = (ut64 *) digest;
 
 	/* Sanity check: */
@@ -902,7 +893,7 @@ void r_SHA512_Final(ut8 digest[r_SHA512_DIGEST_LENGTH], R_SHA512_CTX *context) {
 			}
 		}
 #else
-		memcpy (d, context->state, r_SHA512_DIGEST_LENGTH);
+		memcpy (d, context->state, R_SHA512_DIGEST_LENGTH);
 #endif
 	}
 
@@ -910,8 +901,9 @@ void r_SHA512_Final(ut8 digest[r_SHA512_DIGEST_LENGTH], R_SHA512_CTX *context) {
 	r_mem_memzero (context, sizeof (*context));
 }
 
-char *r_SHA512_End(R_SHA512_CTX *context, char buffer[r_SHA512_DIGEST_STRING_LENGTH]) {
-	ut8 digest[r_SHA512_DIGEST_LENGTH], *d = digest;
+R_IPI char *r_sha512_end(RSha512Context *context, char buffer[R_SHA512_DIGEST_STRING_LENGTH]) {
+	ut8 digest[R_SHA512_DIGEST_LENGTH];
+	ut8 *d = digest;
 	int i;
 
 	/* Sanity check: */
@@ -920,9 +912,8 @@ char *r_SHA512_End(R_SHA512_CTX *context, char buffer[r_SHA512_DIGEST_STRING_LEN
 	}
 
 	if (buffer) {
-		r_SHA512_Final (digest, context);
-
-		for (i = 0; i < r_SHA512_DIGEST_LENGTH; i++) {
+		r_sha512_final (digest, context);
+		for (i = 0; i < R_SHA512_DIGEST_LENGTH; i++) {
 			*buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
 			*buffer++ = sha2_hex_digits[*d & 0x0f];
 			d++;
@@ -931,33 +922,31 @@ char *r_SHA512_End(R_SHA512_CTX *context, char buffer[r_SHA512_DIGEST_STRING_LEN
 	} else {
 		r_mem_memzero (context, sizeof (*context));
 	}
-	r_mem_memzero (digest, r_SHA512_DIGEST_LENGTH);
+	r_mem_memzero (digest, sizeof (digest));
 	return buffer;
 }
 
-char *r_SHA512_Data(const ut8 *data, size_t len, char digest[r_SHA512_DIGEST_STRING_LENGTH]) {
-	R_SHA512_CTX context;
-	r_SHA512_Init (&context);
-	r_SHA512_Update (&context, data, len);
-	return r_SHA512_End (&context, digest);
+R_IPI char *r_sha512_data(const ut8 *data, size_t len, char digest[R_SHA512_DIGEST_STRING_LENGTH]) {
+	RSha512Context context;
+	r_sha512_init (&context);
+	r_sha512_update (&context, data, len);
+	return r_sha512_end (&context, digest);
 }
 
-
 /*** SHA-384: *********************************************************/
-void r_SHA384_Init(R_SHA384_CTX *context) {
-	if (context == (R_SHA384_CTX *) 0) {
-		return;
-	}
-	memcpy (context->state, sha384_initial_hash_value, r_SHA512_DIGEST_LENGTH);
-	memset (context->buffer, 0, r_SHA384_BLOCK_LENGTH);
+R_IPI void r_sha384_init(RSha384Context *context) {
+	r_return_if_fail (context);
+	memcpy (context->state, sha384_initial_hash_value, R_SHA512_DIGEST_LENGTH);
+	memset (context->buffer, 0, R_SHA384_BLOCK_LENGTH);
 	context->bitcount[0] = context->bitcount[1] = 0;
 }
 
-void r_SHA384_Update(R_SHA384_CTX *context, const ut8 *data, size_t len) {
-	r_SHA512_Update ((R_SHA512_CTX *) context, data, len);
+R_IPI void r_sha384_update(RSha384Context *context, const ut8 *data, size_t len) {
+	// wat :D 512 is not 384 looks like a bad function name to me
+	r_sha512_update ((RSha512Context *) context, data, len);
 }
 
-void r_SHA384_Final(ut8 digest[r_SHA384_DIGEST_LENGTH], R_SHA384_CTX *context) {
+R_IPI void r_sha384_final(ut8 digest[R_SHA384_DIGEST_LENGTH], RSha384Context *context) {
 	ut64 *d = (ut64 *) digest;
 
 	/* Sanity check: */
@@ -967,7 +956,7 @@ void r_SHA384_Final(ut8 digest[r_SHA384_DIGEST_LENGTH], R_SHA384_CTX *context) {
 
 	/* If no digest buffer is passed, we don't bother doing this: */
 	if (digest != (ut8 *) 0) {
-		SHA512_Last ((R_SHA512_CTX *) context);
+		SHA512_Last ((RSha512Context *) context);
 
 		/* Save the hash data for output: */
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -980,7 +969,7 @@ void r_SHA384_Final(ut8 digest[r_SHA384_DIGEST_LENGTH], R_SHA384_CTX *context) {
 			}
 		}
 #else
-		memcpy (d, context->state, r_SHA384_DIGEST_LENGTH);
+		memcpy (d, context->state, R_SHA384_DIGEST_LENGTH);
 #endif
 	}
 
@@ -988,8 +977,8 @@ void r_SHA384_Final(ut8 digest[r_SHA384_DIGEST_LENGTH], R_SHA384_CTX *context) {
 	memset (context, 0, sizeof (*context));
 }
 
-char *r_SHA384_End(R_SHA384_CTX *context, char buffer[r_SHA384_DIGEST_STRING_LENGTH]) {
-	ut8 digest[r_SHA384_DIGEST_LENGTH], *d = digest;
+R_IPI char *r_sha384_end(RSha384Context *context, char buffer[R_SHA384_DIGEST_STRING_LENGTH]) {
+	ut8 digest[R_SHA384_DIGEST_LENGTH], *d = digest;
 	int i;
 
 	/* Sanity check: */
@@ -997,25 +986,25 @@ char *r_SHA384_End(R_SHA384_CTX *context, char buffer[r_SHA384_DIGEST_STRING_LEN
 		return NULL;
 	}
 
-	if (buffer != (char *) 0) {
-		r_SHA384_Final (digest, context);
+	if (buffer) {
+		r_sha384_final (digest, context);
 
-		for (i = 0; i < r_SHA384_DIGEST_LENGTH; i++) {
+		for (i = 0; i < sizeof (digest); i++) {
 			*buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
 			*buffer++ = sha2_hex_digits[*d & 0x0f];
 			d++;
 		}
-		*buffer = (char) 0;
+		*buffer = 0;
 	} else {
 		memset (context, 0, sizeof (*context));
 	}
-	memset (digest, 0, r_SHA384_DIGEST_LENGTH);
+	memset (digest, 0, sizeof (digest));
 	return buffer;
 }
 
-char *r_SHA384_Data(const ut8 *data, size_t len, char digest[r_SHA384_DIGEST_STRING_LENGTH]) {
-	R_SHA384_CTX context;
-	r_SHA384_Init (&context);
-	r_SHA384_Update (&context, data, len);
-	return r_SHA384_End (&context, digest);
+R_IPI char *r_sha384_data(const ut8 *data, size_t len, char digest[R_SHA384_DIGEST_STRING_LENGTH]) {
+	RSha384Context context;
+	r_sha384_init (&context);
+	r_sha384_update (&context, data, len);
+	return r_sha384_end (&context, digest);
 }
