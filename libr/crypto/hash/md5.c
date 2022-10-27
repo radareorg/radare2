@@ -161,7 +161,7 @@ static void MD5Transform(ut32 state[4], const ut8 block[64]) {
 	state[3] += d;
 
 	/* Zeroize sensitive information. check if compiler optimizes out this */
-	r_mem_memzero ((void*)x, sizeof (x));
+	r_mem_zero ((void*)x, sizeof (x));
 }
 
 static const ut8 PADDING[64] = {
@@ -230,5 +230,5 @@ void r_hash_md5_final(ut8 digest[16], RHashMD5Context *context) {
 	encode (digest, context->state, 16);
 
 	/* Zeroize sensitive information.  */
-	r_mem_memzero ((void*)context, sizeof (*context));
+	r_mem_zero ((void*)context, sizeof (*context));
 }

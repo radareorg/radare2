@@ -91,7 +91,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 		return R_HASH_SIZE_PARITY;
 	}
 	if (algobit & R_HASH_ENTROPY) {
-		r_mem_memzero (ctx->digest, sizeof (ctx->entropy));
+		r_mem_zero (ctx->digest, sizeof (ctx->entropy));
 		ctx->entropy = r_hash_entropy (buf, len);
 		return R_HASH_SIZE_ENTROPY;
 	}
