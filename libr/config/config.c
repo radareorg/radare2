@@ -663,10 +663,7 @@ R_API bool r_config_eval(RConfig *cfg, const char *str, bool many) {
 		return false;
 	}
 	if (many) {
-		// space separated list of k=v k=v,..
-		// if you want to use spaces go for base64 or e.
-		const char *ch = strstr (s, ":")? ":": ","; // R2_580 change to only use ':' imho but comma looks more natural
-		RList *list = r_str_split_list (s, ch, 0);
+		RList *list = r_str_split_list (s, ":", 0);
 		RListIter *iter;
 		char *name;
 		r_list_foreach (list, iter, name) {
