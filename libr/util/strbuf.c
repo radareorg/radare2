@@ -10,6 +10,16 @@ R_API RStrBuf *r_strbuf_new(const char *str) {
 	return s;
 }
 
+R_API RStrBuf *r_strbuf_newf(const char *fmt, ...) {
+	r_return_val_if_fail (fmt, NULL);
+	RStrBuf *sb = R_NEW0 (RStrBuf);
+	va_list ap;
+	va_start (ap, fmt);
+	bool ret = r_strbuf_vappendf (sb, fmt, ap);
+	va_end (ap);
+	return sb;
+}
+
 R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb) {
 	r_return_val_if_fail (sa && sb, false);
 	if (sa->len != sb->len) {
