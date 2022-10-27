@@ -250,7 +250,7 @@ R_API bool r_th_kill(RThread *th, bool force) {
 // enable should be bool and th->ready must be protected with locks
 R_API bool r_th_start(RThread *th, int enable) {
 	bool ret = true;
-	enable = false; /// R2_580. remove the enable bit imho
+	enable = false;
 	if (enable) {
 		R_LOG_WARN ("r_th_start.enable should be removed");
 		if (!r_th_is_running (th)) {
