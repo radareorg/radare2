@@ -50,7 +50,6 @@ R_API ut64 r_time_now_mono(void) {
 #endif
 }
 
-// R_API char *r_time_stamp_to_str(ut32 timeStamp) {
 R_API R_MUSTUSE char *r_time_stamp_to_str(time_t timeStamp) {
 #if __WINDOWS__
 	time_t rawtime;
@@ -167,20 +166,6 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_DEPRECATE R_API int r_print_date_get_now(RPrint *p, char *str) {
-	eprintf ("This function is wrong in so many ways, dont use it, will be removed in r2-5.8\n");
-	int ret = 0;
-	time_t l;
-
-	*str = 0;
-	l = time (0);
-
-	str = r_time_stamp_to_str (l);
-	p->cb_printf ("%s\n", str);
-	ret = sizeof (time_t);
-	return ret;
-}
-
 R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 	const ut64 L = 0x2b6109100LL;
 	int ret = 0;
@@ -200,7 +185,7 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API const char *r_time_tostring(ut64 ts) {
+R_API char *r_time_tostring(ut64 ts) {
 	time_t l = ts >> 20;
 	return r_time_stamp_to_str (l);
 }

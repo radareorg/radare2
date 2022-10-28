@@ -8202,7 +8202,9 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 			if (!from && !to) {
 				R_LOG_ERROR ("Cannot determine search boundaries");
 			} else if (to - from > UT32_MAX) {
-				R_LOG_WARN ("Skipping huge range");
+				char *unit = r_num_units (NULL, 0, to - from);
+				R_LOG_WARN ("Skipping huge range (%s)", unit);
+				free (unit);
 			} else {
 				R_LOG_DEBUG ("abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (to - from), from);
 				r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, (to - from), from);
@@ -11030,7 +11032,9 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 				if (!from && !to) {
 					R_LOG_ERROR ("Cannot determine xref search boundaries");
 				} else if (to - from > UT32_MAX) {
-					R_LOG_ERROR ("Skipping huge range");
+					char *unit = r_num_units (NULL, 0, to - from);
+					R_LOG_WARN ("Skipping huge range (%s)", unit);
+					free (unit);
 				} else {
 					if (rad == 'j') {
 						pj_ki (pj, "mapid", map->id);
@@ -11331,7 +11335,9 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 					break;
 				}
 				if (end - begin > UT32_MAX) {
-					R_LOG_INFO ("Skipping huge range");
+					char *unit = r_num_units (NULL, 0, end - begin);
+					R_LOG_WARN ("Skipping huge range (%s)", unit);
+					free (unit);
 					continue;
 				}
 				R_LOG_INFO ("aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x, from, to, begin, end);

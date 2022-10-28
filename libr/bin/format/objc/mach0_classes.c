@@ -1444,15 +1444,15 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 
 	bool want_swift = !r_sys_getenv_asbool ("RABIN2_NOSWIFT");
 	if (want_swift && swift5_types_addr != UT64_MAX) {
-		// eprintf ("Parsing Swift metadata\n");
 		const int aligned_fieldmd_size = swift5_fieldmd_size + (swift5_fieldmd_size % 4);
 		st32 *fieldmd = malloc (aligned_fieldmd_size);
 		if (fieldmd) {
 			const int aligned_size = swift5_types_size + (swift5_types_size % 4);
-				r_buf_read_at (bf->buf, swift5_fieldmd_addr, (ut8*)fieldmd, aligned_fieldmd_size);
-			st32 *words = malloc (aligned_size);
+			r_buf_read_at (bf->buf, swift5_fieldmd_addr, (ut8*)fieldmd, aligned_fieldmd_size);
+			int amount = aligned_size / 4;
+			st32 *words = calloc (sizeof (st32), amount);
 			if (words) {
-				int i, amount = swift5_types_size / 4;
+				int i;
 				int res = r_buf_read_at (bf->buf, swift5_types_addr, (ut8*)words, aligned_size); // TODO check for return
 				if (res >= aligned_size) {
 					for (i = 0; i < amount; i++) {

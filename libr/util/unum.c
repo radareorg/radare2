@@ -108,7 +108,8 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 	char unit;
 	const char *fmt_str;
 	if (!buf) {
-		buf = malloc (64);
+		len = 64;
+		buf = malloc (len);
 		if (!buf) {
 			return NULL;
 		}
