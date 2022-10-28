@@ -1652,17 +1652,6 @@ static bool cb_cmdrepeat(void *user, void *data) {
 	return true;
 }
 
-// R2_580 rename to log.sink=file:path log.sink=echo etc..
-static bool cb_screrrmode(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
-	if (*node->value == '?') {
-		r_cons_printf ("Valid values: null, echo, buffer, quiet, flush\n");
-		return false;
-	}
-	r_cons_errmodes (node->value);
-	return true;
-}
-
 static bool cb_scrnull(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3844,39 +3833,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("cfg.cpuaffinity", 0, "run on cpuid");
 
 	/* log */
-	// R2_LOGLEVEL / log.level
-#if 0
-	p = r_sys_getenv ("R2_LOGLEVEL");
-	SETICB ("log.level", p? atoi(p): R_DEFAULT_LOGLVL, cb_log_config_level, "target log level/severity"\
-	 " (0:SILLY, 1:DEBUG, 2:VERBOSE, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
-	);
-	free (p);
-	// R2_LOGTRAP_LEVEL / log.traplevel
-	p = r_sys_getenv ("R2_LOGTRAPLEVEL");
-	SETICB ("log.traplevel", p ? atoi(p) : R_LOGLVL_FATAL, cb_log_config_traplevel, "log level for trapping R2 when hit"\
-	 " (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
-	);
-	free (p);
-	// R2_LOGFILE / log.file
-	p = r_sys_getenv ("R2_LOGFILE");
-	SETCB ("log.file", r_str_get (p), cb_log_config_file, "logging output filename / path");
-	free (p);
-	// R2_LOGSRCINFO / log.srcinfo
-	p = r_sys_getenv ("R2_LOGSRCINFO");
-	SETCB ("log.srcinfo", r_str_get_fail (p, "false"), cb_log_config_srcinfo, "should the log output contain src info (filename:lineno)");
-	free (p);
-	// R2_LOGCOLORS / log.colors
-	p = r_sys_getenv ("R2_LOGCOLORS");
-	SETCB ("log.colors", r_str_get_fail (p, "false"), cb_log_config_colors, "should the log output use colors (TODO)");
-	free (p);
-
-	SETCB ("log.events", "false", &cb_log_events, "remote HTTP server to sync events with");
-#endif
-	SETICB ("log.level", R_LOGLVL_DEFAULT, cb_log_config_level, "Target log level/severity (0:FATAL 1:ERROR 2:INFO 3:WARN 4:DEBUG)");
+	SETICB ("log.level", R_LOGLVL_DEFAULT, cb_log_config_level, "Target log level/severity (0:FATAL 1:ERROR 2:INFO 3:WARN 4:TODO 5:DEBUG)");
 	SETCB ("log.ts", "false", cb_log_config_ts, "Show timestamp in log messages");
 
 	SETICB ("log.traplevel", 0, cb_log_config_traplevel, "Log level for trapping R2 when hit");
-	SETCB ("log.file", "", cb_log_config_file, "Save log messages to given filename"); // 580 -rename to file.log ?)
 	SETCB ("log.filter", "", cb_log_config_filter, "Filter only messages matching given origin");
 	SETCB ("log.origin", "false", cb_log_origin, "Show [origin] in log messages");
 	SETCB ("log.source", "false", cb_log_source, "Show source [file:line] in the log message");
@@ -4263,7 +4223,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("scr.prompt.sect", "false", "show section name in the prompt");
 	SETBPREF ("scr.tts", "false", "use tts if available by a command (see ic)");
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "show user prompt (used by r2 -q)");
-	SETCB ("scr.tee", "", &cb_teefile, "pipe output to file of this name");
 	SETICB ("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?COLOR_MODE_16:COLOR_MODE_DISABLED, &cb_color, "enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
 	r_config_set_getter (cfg, "scr.color", (RConfigCallback)cb_color_getter);
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "enable colors when using ~grep");
@@ -4273,7 +4232,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("scr.color.args", "true", "colorize arguments and variables of functions");
 	SETBPREF ("scr.color.bytes", "true", "colorize bytes that represent the opcodes of the instruction");
 	SETCB ("scr.null", "false", &cb_scrnull, "show no output");
-	SETCB ("scr.errmode", "echo", &cb_screrrmode, "error string handling");
 	SETCB ("scr.utf8", r_str_bool (r_cons_is_utf8()), &cb_utf8, "show UTF-8 characters instead of ANSI");
 	SETCB ("scr.utf8.curvy", "false", &cb_utf8_curvy, "show curved UTF-8 corners (requires scr.utf8)");
 	SETCB ("scr.demo", "false", &cb_scr_demo, "use demoscene effects if available");
@@ -4348,6 +4306,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("file.info", "true", "RBin info loaded");
 	SETPREF ("file.type", "", "type of current file");
 	SETI ("file.loadalign", 1024, "alignment of load addresses");
+#if R2_580
+	SETCB ("file.log", "", cb_log_config_file, "Save log messages to given filename (log.file)");
+	SETCB ("file.output", "", &cb_teefile, "pipe output to file of this name (scr.tee)");
+#else
+	SETCB ("log.file", "", cb_log_config_file, "Save log messages to given filename");
+	SETCB ("scr.tee", "", &cb_teefile, "pipe output to file of this name");
+#endif
 	/* magic */
 	SETI ("magic.depth", 100, "recursivity depth in magic description strings");
 

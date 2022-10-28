@@ -392,8 +392,6 @@ typedef struct r_cons_context_t {
 	char *buffer; // TODO: replace with RStrBuf
 	size_t buffer_len;
 	size_t buffer_sz;
-	RStrBuf *error; // r_cons_eprintf / r_cons_errstr / r_cons_errmode
-	int errmode;
 	bool breaked;
 	bool was_breaked;
 	bool unbreakable;
@@ -850,11 +848,6 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig);
 R_API char *r_cons_editor(const char *file, const char *str);
 R_API void r_cons_reset(void);
 R_API void r_cons_reset_colors(void);
-R_API char *r_cons_errstr(void);
-R_API void r_cons_errmode(int mode);
-R_API void r_cons_errmodes(const char *mode);
-R_API int r_cons_eprintf(const char *format, ...);
-R_API void r_cons_eflush(void);
 R_API void r_cons_print_clear(void);
 R_API void r_cons_echo(const char *msg);
 R_API void r_cons_zero(void);

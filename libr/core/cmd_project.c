@@ -129,10 +129,10 @@ static int cmd_project(void *data, const char *input) {
 		}
 		if (!R_STR_ISEMPTY (file)) {
 			if (!r_core_project_save (core, file)) {
-				r_cons_eprintf ("Cannot save project.\n");
+				R_LOG_ERROR ("Cannot save project");
 			}
 		} else {
-			r_cons_eprintf ("Use: Ps [projectname]\n");
+			R_LOG_INFO ("Use: Ps [projectname]");
 		}
 		break;
 	case '!': // "P!"
@@ -167,7 +167,7 @@ static int cmd_project(void *data, const char *input) {
 		} else if (input[1] == '*') {
 			r_core_project_save_script (core, "/dev/stdout", R_CORE_PRJ_ALL);
 		} else {
-			r_cons_eprintf ("Usage: PS[*] [projectname]\n");
+			eprintf ("Usage: PS[*] [projectname]\n");
 		}
 		break;
 	case 'n': // "Pn"
