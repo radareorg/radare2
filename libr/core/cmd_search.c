@@ -4425,14 +4425,14 @@ reread:
 			break;
 		}
 		if (input[2]) {
-			if (input[2] == '?') {
+			if (input[2] == '?') { // "/w?"
 				r_core_cmd_help (core, help_msg_search_wide_string);
 				break;
 			}
-			if (input[1] == 'j' || input[2] == 'j') {
+			if (input[1] == 'j' || input[2] == 'j') { // "/wj"
 				param.outmode = R_MODE_JSON;
 			}
-			if (input[1] == 'i' || input[2] == 'i') {
+			if (input[1] == 'i' || input[2] == 'i') { // "/wi"
 				ignorecase = true;
 			}
 		} else {
@@ -4446,7 +4446,7 @@ reread:
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 				r_config_get_i (core->config, "search.distance"));
-		RSearchKeyword *skw = r_search_keyword_new_wide (input + strstart, NULL, NULL, false);
+		RSearchKeyword *skw = r_search_keyword_new_wide (input + strstart, NULL, NULL, ignorecase);
 		if (skw) {
 			r_search_kw_add (core->search, skw);
 			r_search_begin (core->search);
