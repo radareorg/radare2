@@ -54,7 +54,7 @@ R_API void r_search_keyword_free(RSearchKeyword *kw) {
 	free (kw);
 }
 
-R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bmstr, const char *data, int ignore_case) {
+R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bmstr, const char *data, bool ignore_case) {
 	r_return_val_if_fail (kwbuf, NULL);
 	ut8 *bmbuf = NULL;
 	int bmlen = 0;
@@ -78,7 +78,7 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bm
 	return kw;
 }
 
-R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *bmstr, const char *data, int ignore_case) {
+R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *bmstr, const char *data, bool ignore_case) {
 	RSearchKeyword *kw;
 	int len;
 	const char *p2;

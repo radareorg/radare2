@@ -9,7 +9,7 @@ static int cmd_search(void *data, const char *input);
 #define USE_EMULATION 1
 
 #define AES_SEARCH_LENGTH 40
-#define SM4_SEARCH_LENGTH         24
+#define SM4_SEARCH_LENGTH 24
 #define PRIVATE_KEY_SEARCH_LENGTH 11
 
 static const char *help_msg_search_wide_string[] = {
@@ -4438,59 +4438,42 @@ reread:
 		} else {
 			param.outmode = R_MODE_RADARE;
 		}
-
 		size_t shift = 1 + ignorecase;
 		if (param.outmode == R_MODE_JSON) {
 			shift++;
 		}
-		size_t strstart;
-		const char *p2;
-		char *p;
-		strstart = shift + 1;
-		len = strlen (input + strstart);
-		inp = calloc ((len + 1), 2);
-		for (p2 = input + strstart, p = inp; *p2; p += 2, p2++) {
-			if (ignorecase) {
-				p[0] = tolower ((const ut8) *p2);
-			} else {
-				p[0] = *p2;
-			}
-			p[1] = 0;
-		}
+		size_t strstart = shift + 1;
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 				r_config_get_i (core->config, "search.distance"));
-		RSearchKeyword *skw;
-		skw = r_search_keyword_new ((const ut8 *) inp, len * 2, NULL, 0, NULL);
-		free (inp);
+		RSearchKeyword *skw = r_search_keyword_new_wide (input + strstart, NULL, NULL, false);
 		if (skw) {
-			skw->icase = ignorecase;
 			r_search_kw_add (core->search, skw);
 			r_search_begin (core->search);
 			dosearch = true;
 		} else {
-			eprintf ("Invalid keyword\n");
+			R_LOG_ERROR ("Invalid keyword");
 			break;
 		}
+		break;
 	case 'i': // "/i"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_search_string_no_case);
 			break;
 		}
 		if (input[param_offset - 1] != ' ') {
-			eprintf ("Missing ' ' after /i\n");
+			R_LOG_ERROR ("Missing ' ' after /i");
 			r_core_return_value (core, R_CMD_RC_FAILURE);
 			goto beach;
 		}
 		ignorecase = true;
+		// fallthrough
 	case 'j': // "/j"
 		if (input[0] == 'j' && input[1] == ' ') {
 			param.outmode = R_MODE_JSON;
 		}
 		// fallthrough
 	case ' ': // "/ " search string
-		inp = strdup (input + 1 + ignorecase + (param.outmode == R_MODE_JSON ? 1 : 0));
-		len = r_str_unescape (inp);
 #if 0
 		if (!json) {
 			eprintf ("Searching %d byte(s) from 0x%08"PFMT64x " to 0x%08"PFMT64x ": ",
@@ -4501,45 +4484,40 @@ reread:
 			eprintf ("\n");
 		}
 #endif
-		r_search_reset (core->search, R_SEARCH_KEYWORD);
-		r_search_set_distance (core->search, (int)
-			r_config_get_i (core->config, "search.distance"));
 		{
-			RSearchKeyword *skw;
-			skw = r_search_keyword_new ((const ut8 *) inp, len, NULL, 0, NULL);
-			free (inp);
+			const int distance = r_config_get_i (core->config, "search.distance");
+			inp = strdup (input + 1 + ignorecase + (param.outmode == R_MODE_JSON ? 1 : 0));
+			len = r_str_unescape (inp);
+			r_search_reset (core->search, R_SEARCH_KEYWORD);
+			r_search_set_distance (core->search, distance);
+			RSearchKeyword *skw = r_search_keyword_new_str (inp, NULL, NULL, ignorecase);
 			if (skw) {
 				skw->icase = ignorecase;
 				skw->type = R_SEARCH_KEYWORD_TYPE_STRING;
 				r_search_kw_add (core->search, skw);
+				r_search_begin (core->search);
+				dosearch = true;
 			} else {
-				eprintf ("Invalid keyword\n");
-				break;
+				R_LOG_ERROR ("Invalid keyword");
 			}
 		}
-		r_search_begin (core->search);
-		dosearch = true;
 		break;
 	case 'k': // "/k" Rabin Karp String search
-		inp = r_str_trim_dup (input + 1);
-		len = r_str_unescape (inp);
-		r_search_reset (core->search, R_SEARCH_RABIN_KARP);
-		r_search_set_distance (core->search, (int)r_config_get_i (core->config, "search.distance"));
 		{
-			RSearchKeyword *skw;
-			skw = r_search_keyword_new ((const ut8 *)inp, len, NULL, 0, NULL);
+			inp = r_str_trim_dup (input + 1);
+			len = r_str_unescape (inp);
+			r_search_reset (core->search, R_SEARCH_RABIN_KARP);
+			r_search_set_distance (core->search, (int)r_config_get_i (core->config, "search.distance"));
+			RSearchKeyword *skw = r_search_keyword_new_str (inp, NULL, NULL, ignorecase);
 			free (inp);
 			if (skw) {
-				skw->icase = ignorecase;
-				skw->type = R_SEARCH_KEYWORD_TYPE_STRING;
 				r_search_kw_add (core->search, skw);
+				r_search_begin (core->search);
+				dosearch_read = true;
 			} else {
-				eprintf ("Invalid keyword\n");
-				break;
+				R_LOG_ERROR ("Invalid keyword");
 			}
 		}
-		r_search_begin (core->search);
-		dosearch_read = true;
 		break;
 	case 'e': // "/e" match regexp
 		if (input[1] == '?') {
@@ -4559,7 +4537,7 @@ reread:
 			r_search_begin (core->search);
 			dosearch_read = true;
 		} else {
-			eprintf ("Missing regex\n");
+			R_LOG_ERROR ("Missing regex");
 		}
 		break;
 	case 'E': // "/E"
@@ -4580,7 +4558,7 @@ reread:
 			r_search_begin (core->search);
 			dosearch = true;
 		} else {
-			eprintf ("Missing delta\n");
+			R_LOG_ERROR ("Missing delta");
 		}
 		break;
 	case 'h': // "/h"
@@ -4607,7 +4585,7 @@ reread:
 				search_hash (core, arg, p, min, max, &param);
 			}
 		} else {
-			eprintf ("Missing hash. See ph?\n");
+			R_LOG_ERROR ("Missing hash. See ph?");
 		}
 		free (arg);
 	}
