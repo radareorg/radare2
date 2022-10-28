@@ -115,9 +115,6 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *parent) {
 	context->breaked = false;
 	context->cmd_depth = R_CONS_CMD_DEPTH + 1;
-	context->error = r_strbuf_new ("");
-	context->errmode = R_CONS_ERRMODE_ECHO;
-	context->buffer = NULL;
 	context->buffer_sz = 0;
 	context->lastEnabled = true;
 	context->buffer_len = 0;
@@ -143,7 +140,6 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 }
 
 static void cons_context_deinit(RConsContext *context) {
-	R_FREE (context->error);
 	r_stack_free (context->cons_stack);
 	context->cons_stack = NULL;
 	r_stack_free (context->break_stack);
