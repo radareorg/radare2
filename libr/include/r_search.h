@@ -41,8 +41,8 @@ typedef struct r_search_keyword_t {
 	ut32 binmask_length;
 	void *data;
 	int count;
-	int kwidx;
-	int icase; // ignore case
+	int kwidx; // index
+	bool icase; // ignore case
 	int type;
 	ut64 last; // last hit hint
 } RSearchKeyword;
@@ -109,8 +109,8 @@ R_API int r_search_maps(RSearch *s, RList /*<<RIOMap>>*/ *maps);
 
 R_API void r_search_keyword_free(RSearchKeyword *kw);
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *bm, int bmlen, const char *data);
-R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bm, const char *data, int icase);
-R_API RSearchKeyword* r_search_keyword_new_wide(const char *kw, const char *bm, const char *data, int icase);
+R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bm, const char *data, bool icase);
+R_API RSearchKeyword* r_search_keyword_new_wide(const char *kw, const char *bm, const char *data, bool icase);
 R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data);
 R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char *data);
 R_API RSearchKeyword *r_search_keyword_new_regexp(const char *str, const char *data);
