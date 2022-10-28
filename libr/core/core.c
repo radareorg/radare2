@@ -3738,7 +3738,7 @@ reaccept:
 						R_LOG_ERROR ("(flags: %d) len: %d filename: '%s'", flg, cmd, ptr);
 					} else {
 						pipefd = -1;
-						R_LOG_ERROR ("Cannot open file (%s)\n", ptr);
+						R_LOG_ERROR ("Cannot open file (%s)", ptr);
 						r_socket_close (c);
 						if (r_config_get_i (core->config, "rap.loop")) {
 							R_LOG_INFO ("rap: waiting for new connection");
