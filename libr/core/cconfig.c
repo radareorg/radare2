@@ -1652,17 +1652,6 @@ static bool cb_cmdrepeat(void *user, void *data) {
 	return true;
 }
 
-// R2_580 rename to log.sink=file:path log.sink=echo etc..
-static bool cb_screrrmode(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
-	if (*node->value == '?') {
-		r_cons_printf ("Valid values: null, echo, buffer, quiet, flush\n");
-		return false;
-	}
-	r_cons_errmodes (node->value);
-	return true;
-}
-
 static bool cb_scrnull(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -4273,7 +4262,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("scr.color.args", "true", "colorize arguments and variables of functions");
 	SETBPREF ("scr.color.bytes", "true", "colorize bytes that represent the opcodes of the instruction");
 	SETCB ("scr.null", "false", &cb_scrnull, "show no output");
-	SETCB ("scr.errmode", "echo", &cb_screrrmode, "error string handling");
+	// SETCB ("scr.errmode", "echo", &cb_screrrmode, "error string handling");
+	// R2_580 rename to log.sink=file:path log.sink=echo etc..
 	SETCB ("scr.utf8", r_str_bool (r_cons_is_utf8()), &cb_utf8, "show UTF-8 characters instead of ANSI");
 	SETCB ("scr.utf8.curvy", "false", &cb_utf8_curvy, "show curved UTF-8 corners (requires scr.utf8)");
 	SETCB ("scr.demo", "false", &cb_scr_demo, "use demoscene effects if available");

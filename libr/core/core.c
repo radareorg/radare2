@@ -3572,12 +3572,12 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize) {
 	if (r_sandbox_enable (0)) {
 		// TODO : restrict to filesize?
 		if (bsize > 1024 * 32) {
-			r_cons_eprintf ("Sandbox mode restricts blocksize bigger than 32k\n");
+			R_LOG_ERROR ("Sandbox mode restricts blocksize bigger than 32k");
 			return false;
 		}
 	}
 	if (bsize > core->blocksize_max) {
-		r_cons_eprintf ("Block size %d is too big\n", bsize);
+		R_LOG_ERROR ("Block size %d is too big", bsize);
 		return false;
 	}
 	R_CRITICAL_ENTER (core);
@@ -3585,13 +3585,13 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize) {
 	if (bsize < 1) {
 		bsize = 1;
 	} else if (core->blocksize_max && bsize>core->blocksize_max) {
-		r_cons_eprintf ("bsize is bigger than `bm`. dimmed to 0x%x > 0x%x\n",
+		R_LOG_ERROR ("bsize is bigger than `bm`. dimmed to 0x%x > 0x%x",
 			bsize, core->blocksize_max);
 		bsize = core->blocksize_max;
 	}
 	bump = realloc (core->block, bsize + 1);
 	if (!bump) {
-		r_cons_eprintf ("Oops. cannot allocate that much (%u)\n", bsize);
+		R_LOG_ERROR ("Oops. cannot allocate that much (%u)", bsize);
 		ret = false;
 	} else {
 		ret = true;
@@ -3674,12 +3674,12 @@ R_API bool r_core_serve(RCore *core, RIODesc *file) {
 
 	RIORap *rior = (RIORap *)file->data;
 	if (!rior || !rior->fd) {
-		r_cons_eprintf ("rap: cannot listen.\n");
+		R_LOG_ERROR ("rap: cannot listen");
 		return false;
 	}
 	RSocket *fd = rior->fd;
-	r_cons_eprintf ("RAP Server started (rap.loop=%s)\n",
-			r_config_get (core->config, "rap.loop"));
+	const char *arg = r_config_get (core->config, "rap.loop");
+	R_LOG_INFO ("RAP Server started (rap.loop=%s)", arg);
 	r_cons_break_push (rap_break, rior);
 reaccept:
 	while (!r_cons_is_breaked ()) {
@@ -3691,16 +3691,16 @@ reaccept:
 			goto out_of_function;
 		}
 		if (!c) {
-			r_cons_eprintf ("rap: cannot accept\n");
+			R_LOG_ERROR ("rap: cannot accept");
 			r_socket_free (c);
 			goto out_of_function;
 		}
-		r_cons_eprintf ("rap: client connected\n");
+		R_LOG_INFO ("rap: client connected");
 		for (;!r_cons_is_breaked ();) {
 			if (!r_socket_read_block (c, &cmd, 1)) {
-				r_cons_eprintf ("rap: connection closed\n");
+				R_LOG_INFO ("rap: connection closed");
 				if (r_config_get_i (core->config, "rap.loop")) {
-					r_cons_eprintf ("rap: waiting for new connection\n");
+					R_LOG_INFO ("rap: waiting for new connection");
 					r_socket_free (c);
 					goto reaccept;
 				}
@@ -3709,7 +3709,7 @@ reaccept:
 			switch (cmd) {
 			case RAP_PACKET_OPEN:
 				r_socket_read_block (c, &flg, 1); // flags
-				r_cons_eprintf ("open (%d): ", cmd);
+				R_LOG_DEBUG ("open (%d)", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
 				if (UT8_ADD_OVFCHK (cmd, 1)) {
@@ -3717,7 +3717,7 @@ reaccept:
 				}
 				ptr = malloc ((size_t)cmd + 1);
 				if (!ptr) {
-					r_cons_eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
+					R_LOG_ERROR ("Cannot malloc in rmt-open len = %d", cmd);
 				} else {
 					ut64 baddr = r_config_get_i (core->config, "bin.laddr");
 					r_socket_read_block (c, ptr, cmd);
@@ -3735,14 +3735,13 @@ reaccept:
 						} else {
 							pipefd = -1;
 						}
-						r_cons_eprintf ("(flags: %d) len: %d filename: '%s'\n",
-							flg, cmd, ptr); //config.file);
+						R_LOG_ERROR ("(flags: %d) len: %d filename: '%s'", flg, cmd, ptr);
 					} else {
 						pipefd = -1;
-						r_cons_eprintf ("Cannot open file (%s)\n", ptr);
+						R_LOG_ERROR ("Cannot open file (%s)\n", ptr);
 						r_socket_close (c);
 						if (r_config_get_i (core->config, "rap.loop")) {
-							r_cons_eprintf ("rap: waiting for new connection\n");
+							R_LOG_INFO ("rap: waiting for new connection");
 							r_socket_free (c);
 							goto reaccept;
 						}
@@ -3777,7 +3776,7 @@ reaccept:
 					r_socket_flush (c);
 					R_FREE (ptr);
 				} else {
-					r_cons_eprintf ("Cannot read %d byte(s)\n", i);
+					R_LOG_ERROR ("Cannot read %d byte(s)", i);
 					r_socket_free (c);
 					// TODO: reply error here
 					goto out_of_function;
@@ -3803,10 +3802,10 @@ reaccept:
 						r_config_set_b (core->config, "scr.interactive", scr_interactive);
 						free (cmd);
 					} else {
-						r_cons_eprintf ("rap: cannot malloc\n");
+						R_LOG_ERROR ("rap: cannot malloc");
 					}
 				} else {
-					r_cons_eprintf ("rap: invalid length '%d'\n", i);
+					R_LOG_INFO ("rap: invalid length '%d'", i);
 				}
 				/* write */
 				if (cmd_output) {
@@ -3832,11 +3831,11 @@ reaccept:
 					r_socket_read_block (c, b, 5);
 					if (b[0] == (RAP_PACKET_CMD | RAP_PACKET_REPLY)) {
 						ut32 n = r_read_be32 (b + 1);
-						r_cons_eprintf ("REPLY %d\n", n);
+						R_LOG_DEBUG ("REPLY %d", n);
 						if (n > 0) {
 							ut8 *res = calloc (1, n);
 							r_socket_read_block (c, res, n);
-							r_cons_eprintf ("RESPONSE(%s)\n", (const char *)res);
+							R_LOG_DEBUG ("RESPONSE(%s)", (const char *)res);
 							free (res);
 						}
 					}
@@ -3928,19 +3927,19 @@ reaccept:
 						r_socket_close (c);
 					}
 				} else {
-					r_cons_eprintf ("[rap] unknown command 0x%02x\n", cmd);
+					R_LOG_ERROR ("[rap] unknown command 0x%02x", cmd);
 					r_socket_close (c);
 					R_FREE (ptr);
 				}
 				if (r_config_get_i (core->config, "rap.loop")) {
-					r_cons_eprintf ("rap: waiting for new connection\n");
+					R_LOG_INFO ("rap: waiting for new connection");
 					r_socket_free (c);
 					goto reaccept;
 				}
 				goto out_of_function;
 			}
 		}
-		r_cons_eprintf ("client: disconnected\n");
+		R_LOG_INFO ("client: disconnected");
 		r_socket_free (c);
 	}
 out_of_function:
@@ -3952,7 +3951,7 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 	int ret, len = core->blocksize;
 	ut8 *buf = malloc (len);
 	if (!buf) {
-		r_cons_eprintf ("Cannot allocate blocksize\n");
+		R_LOG_ERROR ("Cannot allocate blocksize");
 		return false;
 	}
 	while (from < to) {
@@ -3961,7 +3960,7 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 			len = (int)delta;
 		}
 		if (!r_io_read_at (core->io, from, buf, len)) {
-			r_cons_eprintf ("Cannot read at 0x%"PFMT64x"\n", from);
+			R_LOG_ERROR ("Cannot read at 0x%"PFMT64x, from);
 			break;
 		}
 		for (ret = 0; ret < len;) {
@@ -4008,7 +4007,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		return NULL;
 	}
 	if (readonly) {
-		r_cons_eprintf ("Opening in read-only\n");
+		R_LOG_INFO ("Opening in read-only");
 	} else {
 		if (str) {
 			const size_t str_len = strlen (str);
@@ -4080,7 +4079,7 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 
 	//arch check
 	if (strcmp (core->anal->cur->arch, "x86")) {
-		r_cons_eprintf ("architecture not yet supported!\n");
+		R_LOG_ERROR ("architecture not yet supported!");
 		return 0;
 	}
 
@@ -4095,18 +4094,18 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 	switch (core->rasm->config->bits) {
 	case 32:
 		if (strcmp (name, "setup") && !num ) {
-			r_cons_eprintf ("syscall not found!\n");
+			R_LOG_ERROR ("syscall not found!");
 			return 0;
 		}
 		break;
 	case 64:
 		if (strcmp (name, "read") && !num ) {
-			r_cons_eprintf ("syscall not found!\n");
+			R_LOG_ERROR ("syscall not found!");
 			return 0;
 		}
 		break;
 	default:
-		r_cons_eprintf ("syscall not found!\n");
+		R_LOG_ERROR ("syscall not found!");
 		return 0;
 	}
 
@@ -4120,10 +4119,10 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 	r_egg_load (core->egg, code, 0);
 
 	if (!r_egg_compile (core->egg)) {
-		r_cons_eprintf ("Cannot compile.\n");
+		R_LOG_ERROR ("Cannot compile");
 	}
 	if (!r_egg_assemble (core->egg)) {
-		r_cons_eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOG_ERROR ("r_egg_assemble: invalid assembly");
 	}
 	if ((b = r_egg_get_bin (core->egg))) {
 #if 0
@@ -4210,7 +4209,7 @@ R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd
 			r_core_autocomplete_free (ac);
 			RCoreAutocomplete **updated = realloc (parent->subcmds, (parent->n_subcmds - 1) * sizeof (RCoreAutocomplete*));
 			if (!updated && (parent->n_subcmds - 1) > 0) {
-				r_cons_eprintf ("Something really bad has happen.. this should never ever happen..\n");
+				R_LOG_INFO ("Something really bad has happen.. this should never ever happen");
 				return false;
 			}
 			parent->subcmds = updated;
