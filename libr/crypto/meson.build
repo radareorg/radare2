@@ -41,7 +41,7 @@ r_crypto_sources += files(
 r_crypto_deps = [r_util_dep]
 
 if use_sys_xxhash
-  r_crypto_deps += files(sys_xxhash)
+  r_crypto_deps += sys_xxhash
 else
   r_crypto_sources += files('hash/xxhash.c')
 endif
