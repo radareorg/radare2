@@ -29,6 +29,7 @@ static int cmd_macro(void *data, const char *_input) {
 		const char ch = input[1];
 		if (!ch || ch == ')') {
 			r_cmd_macro_list (&core->rcmd->macro, *input);
+			free (input);
 			return R_CMD_RC_SUCCESS;
 		}
 	}

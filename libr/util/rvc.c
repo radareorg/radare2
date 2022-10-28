@@ -549,17 +549,14 @@ R_API RList *r_vc_get_uncommitted(Rvc *rvc) {
 				break;
 			}
 			free (file_hash);
-			char *append = r_str_new (blob_absp);
-			if (!append) {
-				free (blob_absp);
-				goto fail_ret;
-			}
 			if (!r_list_append (ret, blob_absp)) {
 				free (blob_absp);
 				goto fail_ret;
 			}
 		}
-		if (!found) {
+		if (found) {
+			free (blob_absp);
+		} else {
 			if (!strcmp (NULLVAL, blob->fhash)) {
 				free (blob_absp);
 				continue;
@@ -631,8 +628,13 @@ static char *write_commit(Rvc *rvc, const char *message, const char *author, RLi
 	if (commit_hash) {
 		char *commit_path = r_file_new (rvc->path, ".rvc", "commits", commit_hash, NULL);
 		if (!commit_path || !r_file_dump (commit_path, (const ut8*)content, -1, false)) {
+			free (commit_hash);
+			free (commit_path);
+			free (content);
 			return false;
 		}
+		free (content);
+		free (commit_path);
 		return commit_hash;
 	} else {
 		R_LOG_ERROR ("Cannot compute hash");
@@ -689,6 +691,7 @@ fail_ret:
 	free (ret->fhash);
 	free (ret->fname);
 	free (ret);
+	free (absp);
 	return NULL;
 }
 
@@ -773,10 +776,9 @@ R_API bool r_vc_commit(Rvc *rvc, const char *message, const char *author, const 
 		return false;
 	}
 	const char *m;
-	for (m = message; *m; m++) {
+	for (m = message; m && *m; m++) {
 		if (*m < ' ' && *m != '\n') {
-			R_LOG_ERROR ("commit messages must not contain unprintable charecters %c",
-					*m);
+			R_LOG_ERROR ("commit messages must contain only printable characters '%c'", *m);
 			return false;
 		}
 	}

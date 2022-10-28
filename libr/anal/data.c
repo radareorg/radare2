@@ -110,6 +110,7 @@ R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette *pal) {
 
 	RStrBuf *sb = r_strbuf_new (NULL);
 	if (!sb || !r_strbuf_reserve (sb, mallocsz)) {
+		r_strbuf_free (sb);
 		return NULL;
 	}
 	if (pal) {
