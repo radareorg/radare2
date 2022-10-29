@@ -62,6 +62,7 @@ typedef struct r_r2pm_t {
 	bool clean;
 	bool force;
 	bool global;
+	bool plugdir; // requires -c/clean
 	bool list;
 	bool add;
 	bool init;
@@ -766,7 +767,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	}
 	R2Pm r2pm = {0};
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "aqcdiIhH:flgrsuUv");
+	r_getopt_init (&opt, argc, argv, "aqcdiIhH:flgrpsuUv");
 	if (opt.ind < argc) {
 		// TODO: fully deprecate during the 5.9.x cycle
 		r2pm_actionword (&r2pm, argv[opt.ind]);
@@ -789,6 +790,9 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 			break;
 		case 'd':
 			r2pm.doc = true;
+			break;
+		case 'p':
+			r2pm.plugdir = true;
 			break;
 		case 'I':
 			r2pm.info = true;
@@ -831,6 +835,18 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 		case 'v':
 			r2pm.version = true;
 			break;
+		}
+	}
+	if (r2pm.plugdir) {
+		if (r2pm.clean) {
+			char *plugdir = r_xdg_datadir ("plugins");
+			if (R_STR_ISNOTEMPTY (plugdir)) {
+				r_file_rm_rf (plugdir);
+				free (plugdir);
+			}
+		} else {
+			R_LOG_ERROR ("-p requires -c");
+			return 1;
 		}
 	}
 	if (r2pm.init) {
