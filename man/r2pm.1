@@ -5,7 +5,7 @@
 .Nd radare2 package manager
 .Sh SYNOPSIS
 .Nm r2pm
-.Op [adhHIiuUglsv]
+.Op [adhHIipuUglsv]
 .Op [pkg ...]
 .Sh DESCRIPTION
 Allows to install, update, uninstall and discover plugins and tools that can be used with radare2.
@@ -34,6 +34,8 @@ List installed packages
 Search in database for packages matching keyword
 .It Fl r Ar command ...args
 Run command with R2PM_BINDIR in PATH
+.It Fl p
+Requires -c to clean the R2PM_PLUGDIR
 .It Fl v
 Show version information
 .It Fl h
