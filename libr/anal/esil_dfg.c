@@ -2,6 +2,9 @@
 
 #include <r_anal.h>
 
+#define R_ANAL_ESIL_DFG_TAG_LI_MASK	(R_ANAL_ESIL_DFG_TAG_VAR | R_ANAL_ESIL_DFG_TAG_CONST \
+					| R_ANAL_ESIL_DFG_TAG_GENERATIVE | R_ANAL_ESIL_DFG_TAG_RESULT | R_ANAL_ESIL_DFG_TAG_PTR)
+
 typedef enum {
 	VAR_TYPE_REG = 0,
 	VAR_TYPE_MEM,
@@ -389,7 +392,7 @@ static RGraphNode *_edf_origin_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	RGraphNode *reg_node = r_graph_add_node (dfg->flow, r_anal_esil_dfg_node_new (dfg, reg));
 	RAnalEsilDFGNode *_origin_reg_node = r_anal_esil_dfg_node_new (dfg, reg);
 	r_strbuf_appendf (_origin_reg_node->content, ":var_%d", dfg->idx++);
-	_origin_reg_node->type = R_ANAL_ESIL_DFG_TAG_VAR;
+	_origin_reg_node->type = R_ANAL_ESIL_DFG_TAG_VAR | R_ANAL_ESIL_DFG_TAG_REG;
 	origin_reg_node = r_graph_add_node (dfg->flow, _origin_reg_node);
 	r_graph_add_edge (dfg->flow, reg_node, origin_reg_node);
 	sdb_ptr_set (dfg->regs, origin_reg, origin_reg_node, 0);
@@ -511,7 +514,7 @@ static RGraphNode *_edf_uninitialized_mem_get(RAnalEsilDFG *dfg, ut64 addr, ut32
 	RAnalEsilDFGNode *mem_node = r_anal_esil_dfg_node_new (dfg, content);
 	free (content);
 	dfg->idx++;
-	mem_node->type = R_ANAL_ESIL_DFG_TAG_VAR;
+	mem_node->type = R_ANAL_ESIL_DFG_TAG_VAR | R_ANAL_ESIL_DFG_TAG_MEM;
 	RGraphNode *mem_gnode = r_graph_add_node (dfg->flow, mem_node);
 	r_graph_add_edge (dfg->flow, orig_mem_gnode, mem_gnode);
 	return mem_gnode;
@@ -748,7 +751,7 @@ static bool _edf_consume_2_set_reg(RAnalEsil *esil, const bool use_origin) {
 	r_graph_add_edge (edf->flow, src_node, op_node);
 	edf->old = old_dst_node;
 	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, dst);
-	result->type = R_ANAL_ESIL_DFG_TAG_RESULT | R_ANAL_ESIL_DFG_TAG_VAR;
+	result->type = R_ANAL_ESIL_DFG_TAG_RESULT | R_ANAL_ESIL_DFG_TAG_VAR | R_ANAL_ESIL_DFG_TAG_REG;
 	if (use_origin) {
 		if (((RAnalEsilDFGNode *)(src_node->data))->type & R_ANAL_ESIL_DFG_TAG_CONST) {
 			result->type |= R_ANAL_ESIL_DFG_TAG_CONST;
@@ -963,7 +966,7 @@ static bool edf_consume_1_get_mem_push_1(RAnalEsil *esil) {
 	}
 
 	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, "result_");
-	result->type = R_ANAL_ESIL_DFG_TAG_RESULT;
+	result->type = R_ANAL_ESIL_DFG_TAG_RESULT | R_ANAL_ESIL_DFG_TAG_MEM;
 	if (mem_src_node && (((RAnalEsilDFGNode *)mem_src_node->data)->type & R_ANAL_ESIL_DFG_TAG_CONST)) {
 		result->type |= R_ANAL_ESIL_DFG_TAG_CONST;
 	}
@@ -1062,7 +1065,8 @@ static bool edf_consume_2_set_mem(RAnalEsil *esil) {
 	char *content = r_str_newf ("[%d]@%s:mem_var_%d", mem_size, dst, edf->idx + 1);
 	RAnalEsilDFGNode *result = r_anal_esil_dfg_node_new (edf, content);
 	free (content);
-	result->type = R_ANAL_ESIL_DFG_TAG_VAR | (((RAnalEsilDFGNode *)src_node)->type & R_ANAL_ESIL_DFG_TAG_CONST);
+	result->type = R_ANAL_ESIL_DFG_TAG_VAR | (((RAnalEsilDFGNode *)src_node)->type & R_ANAL_ESIL_DFG_TAG_CONST) |
+		R_ANAL_ESIL_DFG_TAG_MEM;
 	dst_node = r_graph_add_node (edf->flow, result);
 	if (write_result) {
 		_edf_mem_set (edf, dst_addr, mem_size, dst_node);
@@ -1324,7 +1328,7 @@ static int _dfg_gnode_reducer_insert_cmp(void *incoming, void *in, void *user) {
 
 static void _dfg_filter_rev_dfs(RGraphNode *n, RAnalEsilDFGFilter *filter) {
 	RAnalEsilDFGNode *node = (RAnalEsilDFGNode *)n->data;
-	switch (node->type) {
+	switch (node->type & R_ANAL_ESIL_DFG_TAG_LI_MASK) {
 	case R_ANAL_ESIL_DFG_TAG_CONST:
 	case R_ANAL_ESIL_DFG_TAG_VAR:
 	case R_ANAL_ESIL_DFG_TAG_PTR:
@@ -1358,7 +1362,7 @@ static void _dfg_const_reducer_rev_dfs_cb(RGraphNode *n, RGraphVisitor *vi) {
 	RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)n->data;
 	_dfg_filter_rev_dfs (n, &reducer->filter);
 	r_queue_enqueue (reducer->filter.dfg->todo, n);
-	if (enode->type == (R_ANAL_ESIL_DFG_TAG_CONST | R_ANAL_ESIL_DFG_TAG_RESULT)) {
+	if ((enode->type & R_ANAL_ESIL_DFG_TAG_LI_MASK) == (R_ANAL_ESIL_DFG_TAG_CONST | R_ANAL_ESIL_DFG_TAG_RESULT)) {
 		// n can only exist in the tree, if it is a const-result
 		r_crbtree_delete (reducer->const_result_gnodes, n, _dfg_gnode_reducer_insert_cmp, NULL);
 	}
