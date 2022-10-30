@@ -927,6 +927,8 @@ enum {
 	R_ANAL_ESIL_DFG_TAG_PTR = 4,
 	R_ANAL_ESIL_DFG_TAG_RESULT = 8,
 	R_ANAL_ESIL_DFG_TAG_GENERATIVE = 16,
+	R_ANAL_ESIL_DFG_TAG_REG = 32,
+	R_ANAL_ESIL_DFG_TAG_MEM = 64,
 };	//RAnalEsilDFGTagType
 
 typedef struct r_anal_esil_dfg_t {
