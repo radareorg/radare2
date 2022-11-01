@@ -1295,11 +1295,11 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 	switch (*input) {
 	case 'a': // "pFa" // DER/ASN1 encoding
 		{
-			asn1_setformat (input[1] != 'q');
-			RASN1Object *asn1 = r_asn1_create_object (data, size, data);
+			int fmt = 'j'; // input[1];
+			RASN1Object *asn1 = r_asn1_object_parse (data, data, size, fmt);
 			if (asn1) {
-				char *res = r_asn1_tostring (asn1, 0, NULL);
-				r_asn1_free_object (asn1);
+				char *res = r_asn1_object_tostring (asn1, 0, NULL, fmt);
+				r_asn1_object_free (asn1);
 				if (res) {
 					r_cons_printf ("%s\n", res);
 					free (res);
@@ -1321,7 +1321,13 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'x': // "pFx" x509
 		{
-			RX509Certificate* x509 = r_x509_parse_certificate (r_asn1_create_object (data, size, data));
+			ut8 *buf = (ut8*)data;
+			RASN1Object *obj = r_asn1_object_parse (buf, buf, size, input[1]);
+			if (!obj) {
+				R_LOG_ERROR ("cannot parse asn1 object");
+				break;
+			}
+			RX509Certificate* x509 = r_x509_parse_certificate (obj);
 			if (x509) {
 				if (input[1] == 'j') { // "pFxj"
 					PJ *pj = r_core_pj_new (core);
@@ -1348,14 +1354,14 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'o': // "pFo" asn1 oid
 		{
-			RASN1Object *asn1 = r_asn1_create_object (data, size, NULL);
-			if (asn1) {
-				RASN1String *str1 = r_asn1_stringify_oid (data, size);
-				if (str1) {
-					r_cons_printf ("%s\n", str1->string);
-					r_asn1_free_string (str1);
+			const char fmt = input[1];
+			RAsn1 *a = r_asn1_new (data, size, fmt);
+			if (a) {
+				char *oid = r_asn1_oid (a);
+				if (oid) {
+					r_cons_printf ("%s\n", oid);
 				}
-				r_asn1_free_object (asn1);
+				r_asn1_free (a);
 			}
 		}
 		break;
@@ -1441,8 +1447,10 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 }
 
 R_API void r_core_gadget_free(RCoreGadget *g) {
-	free (g->cmd);
-	free (g);
+	if (g) {
+		free (g->cmd);
+		free (g);
+	}
 }
 
 static const char *help_msg_pg[] = {

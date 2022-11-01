@@ -1,9 +1,10 @@
-/* radare2 - LGPL - Copyright 2017-2018 - wargio, pancake */
+/* radare2 - LGPL - Copyright 2017-2022 - wargio, pancake */
 
 #include <r_util.h>
 #include "asn1_oids.h"
 
-static const char* _hex = "0123456789abcdef";
+// XXX reuse hex.c
+static const char* const _hex = "0123456789abcdef";
 
 R_API RASN1String *r_asn1_create_string(const char *string, bool allocated, ut32 length) {
 	if (!string || !length) {
@@ -32,16 +33,16 @@ R_API RASN1String *r_asn1_concatenate_strings(RASN1String *s0, RASN1String *s1, 
 	str = (char*) malloc (len);
 	if (!str) {
 		if (freestr) {
-			r_asn1_free_string (s0);
-			r_asn1_free_string (s1);
+			r_asn1_string_free (s0);
+			r_asn1_string_free (s1);
 		}
 		return NULL;
 	}
 	memcpy (str, s0->string, s0->length);
 	memcpy (str + s0->length - 1, s1->string, s1->length);
 	if (freestr) {
-		r_asn1_free_string (s0);
-		r_asn1_free_string (s1);
+		r_asn1_string_free (s0);
+		r_asn1_string_free (s1);
 	}
 	RASN1String *res = r_asn1_create_string (str, true, len);
 	if (!res) {
@@ -309,7 +310,7 @@ R_API RASN1String *r_asn1_stringify_oid(const ut8* buffer, ut32 length) {
 	return asn1str;
 }
 
-R_API void r_asn1_free_string(RASN1String* str) {
+R_API void r_asn1_string_free(RASN1String* str) {
 	if (str) {
 		if (str->allocated) {
 			free ((char*) str->string);
