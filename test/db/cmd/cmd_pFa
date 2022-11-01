@@ -22,3 +22,65 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=pFa der json decoding
+FILE=bins/cert/der
+CMDS=<<EOF
+pFaj~{}
+EOF
+EXPECT=<<EOF
+{
+  "offset": 0,
+  "length": 159,
+  "form": "cons",
+  "name": "SEQUENCE",
+  "children": [
+    {
+      "offset": 3,
+      "length": 13,
+      "form": "cons",
+      "name": "SEQUENCE",
+      "children": [
+        {
+          "offset": 5,
+          "length": 9,
+          "form": "prim",
+          "name": "OBJECT_IDENTIFIER",
+          "value": "rsaEncryption"
+        }
+      ]
+    },
+    {
+      "offset": 18,
+      "length": 140,
+      "form": "prim",
+      "name": "BIT_STRING",
+      "children": [
+        {
+          "offset": 22,
+          "length": 137,
+          "form": "cons",
+          "name": "SEQUENCE",
+          "children": [
+            {
+              "offset": 25,
+              "length": 129,
+              "form": "prim",
+              "name": "INTEGER",
+              "value": "00cc61f9ef5ad0bc21de5b3ca69ee725d2c504edf99a6e97a0279d959f2364ed21aaef8c704552d5d1a3deb2ee1a0be1558e3ca182b11a8c14392b6de52346bc7c88bf75e3fb2b9f27fab21f5cf19934e3110ea4ad72a6f073f8ab38b9939bb639e78ad7f434119d8cc2b1bde4eaf9513b056508c908ed43c99b0ceb222cbbe1ef"
+            },
+            {
+              "offset": 157,
+              "length": 3,
+              "form": "prim",
+              "name": "INTEGER",
+              "value": "010001"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+EOF
+RUN

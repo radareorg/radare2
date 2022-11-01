@@ -3,12 +3,6 @@
 #include <r_cons.h>
 #include <r_util.h>
 
-// XXX remove global
-static R_TH_LOCAL int ASN1_STD_FORMAT = 1;
-R_API void asn1_setformat(int fmt) {
-	ASN1_STD_FORMAT = fmt;
-}
-
 static ut32 asn1_ber_indefinite(const ut8 *buffer, ut32 length) {
 	if (!buffer || length < 3) {
 		return 0;
@@ -40,20 +34,20 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 		return NULL;
 	}
 
-	RASN1Object *msg = R_NEW0 (RASN1Object);
-	if (!msg) {
+	RASN1Object *obj = R_NEW0 (RASN1Object);
+	if (!obj) {
 		return NULL;
 	}
 	ut8 head = buffer[0];
-	msg->offset = buffer_base ? (buffer - buffer_base) : 0;
-	msg->klass = head & ASN1_CLASS;
-	msg->form = head & ASN1_FORM;
-	msg->tag = head & ASN1_TAG;
+	obj->offset = buffer_base ? (buffer - buffer_base) : 0;
+	obj->klass = head & ASN1_CLASS;
+	obj->form = head & ASN1_FORM;
+	obj->tag = head & ASN1_TAG;
 	length8 = buffer[1];
 	if (length8 & ASN1_LENLONG) {
 		length64 = 0;
 		length8 &= ASN1_LENSHORT;
-		msg->sector = buffer + 2;
+		obj->sector = buffer + 2;
 		if (length8 && length8 < length - 2) {
 			ut8 i8;
 			// can overflow.
@@ -65,31 +59,31 @@ static RASN1Object *asn1_parse_header(const ut8 *buffer_base, const ut8 *buffer,
 					goto out_error;
 				}
 			}
-			msg->sector += length8;
+			obj->sector += length8;
 		} else {
 			if (length < 3) {
 				goto out_error;
 			}
-			length64 = asn1_ber_indefinite (msg->sector, length - 2);
+			length64 = asn1_ber_indefinite (obj->sector, length - 2);
 		}
-		msg->length = (ut32) length64;
+		obj->length = (ut32) length64;
 	} else {
-		msg->length = (ut32) length8;
-		msg->sector = buffer + 2;
+		obj->length = (ut32) length8;
+		obj->sector = buffer + 2;
 	}
-	if (msg->tag == TAG_BITSTRING && msg->sector[0] == 0) {
-		if (msg->length > 0) {
-			msg->sector++; // real sector starts + 1
-			msg->length--;
+	if (obj->tag == TAG_BITSTRING && obj->sector[0] == 0) {
+		if (obj->length > 0) {
+			obj->sector++; // real sector starts + 1
+			obj->length--;
 		}
 	}
-	if (msg->length > length) {
-		// Malformed msg - overflow from data ptr
+	if (obj->length > length) {
+		// Malformed obj - overflow from data ptr
 		goto out_error;
 	}
-	return msg;
+	return obj;
 out_error:
-	free (msg);
+	free (obj);
 	return NULL;
 }
 
@@ -99,21 +93,19 @@ static ut32 asn1_count_objects(const ut8 *buffer, ut32 length) {
 		return 0;
 	}
 	ut32 counter = 0;
-	RASN1Object *msg = NULL;
 	const ut8 *next = buffer;
 	const ut8 *end = buffer + length;
 	while (next >= buffer && next < end) {
 		// i do not care about the offset now.
-		msg = asn1_parse_header (buffer, next, (size_t)(end - next));
-		if (!msg || next == msg->sector) {
-			R_FREE (msg);
+		RASN1Object *obj = asn1_parse_header (buffer, next, (size_t)(end - next));
+		if (!obj || next == obj->sector) {
+			R_FREE (obj);
 			break;
 		}
-		next = msg->sector + msg->length;
+		next = obj->sector + obj->length;
 		counter++;
-		R_FREE (msg);
+		R_FREE (obj);
 	}
-	R_FREE (msg);
 	return counter;
 }
 
@@ -150,16 +142,6 @@ R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer
 	return object;
 }
 
-R_API char *r_asn1_oid(RAsn1 *a) {
-	char *res = NULL;
-	RASN1String *s = r_asn1_stringify_oid (a->buffer, a->length);
-	if (s) {
-		res = strdup (s->string);
-		r_asn1_string_free (s);
-	}
-	return res;
-}
-
 R_API RAsn1 *r_asn1_new(const ut8 *buffer, int length, int fmtmode) {
 	RAsn1 *a = R_NEW0 (RAsn1);
 	a->buffer = buffer;
@@ -168,9 +150,14 @@ R_API RAsn1 *r_asn1_new(const ut8 *buffer, int length, int fmtmode) {
 	switch (fmtmode) {
 	case 'j':
 		a->pj = pj_new ();
+		pj_o (a->pj);
+		pj_ka (a->pj, "root");
 		break;
 	}
 	a->root = r_asn1_object_parse (buffer, buffer, length, fmtmode);
+	if (fmtmode == 'j') {
+		pj_end (a->pj);
+	}
 	return a;
 }
 
@@ -181,6 +168,27 @@ R_API void r_asn1_free(RAsn1 *a) {
 		pj_free (a->pj);
 		free (a);
 	}
+}
+
+R_API char *r_asn1_oid(RAsn1 *a) {
+	char *res = NULL;
+	RASN1String *s = r_asn1_stringify_oid (a->buffer, a->length);
+	if (s) {
+		res = strdup (s->string);
+		r_asn1_string_free (s);
+	}
+	return res;
+}
+
+R_API char *r_asn1_tostring(RAsn1 *a) {
+	PJ *pj = (a->fmtmode == 'j')? pj_new (): NULL;
+	char *res = r_asn1_object_tostring (a->root, 0, NULL, pj, a->fmtmode);
+	if (pj) {
+		free (res);
+		res = pj_drain (pj);
+		return res;
+	}
+	return res;
 }
 
 R_API RASN1Binary *r_asn1_create_binary(const ut8 *buffer, ut32 length) {
@@ -202,20 +210,20 @@ R_API RASN1Binary *r_asn1_create_binary(const ut8 *buffer, ut32 length) {
 	return bin;
 }
 
-R_API void r_asn1_print_hex(RASN1Object *msg, char* buffer, ut32 size, ut32 depth) {
+static void asn1_hexstring(RASN1Object *obj, char* buffer, ut32 size, ut32 depth, int fmtmode) {
 	ut32 i;
-	if (!msg || !msg->sector) {
+	if (!obj || !obj->sector) {
 		return;
 	}
 	char* p = buffer;
 	char* end = buffer + size;
-	if (depth > 0 && !ASN1_STD_FORMAT) {
+	if (depth > 0 && fmtmode == 'q') {
 		const char *pad = r_str_pad (' ', (depth * 2) - 2);
 		snprintf (p, end - p, "%s", pad);
 		p += strlen (pad);
 	}
-	for (i = 0; i < msg->length && p < end; i++) {
-		snprintf (p, end - p, "%02x", msg->sector[i]);
+	for (i = 0; i < obj->length && p < end; i++) {
+		snprintf (p, end - p, "%02x", obj->sector[i]);
 		p += 2;
 	}
 	if (p >= end) {
@@ -224,13 +232,12 @@ R_API void r_asn1_print_hex(RASN1Object *msg, char* buffer, ut32 size, ut32 dept
 	}
 }
 
-#if !ASN1_STD_FORMAT
-static void asn1_printkv(RStrBuf *sb, RASN1Object *msg, int depth, const char *k, const char *v) {
+static void asn1_printkv(RStrBuf *sb, RASN1Object *obj, int depth, const char *k, const char *v) {
 	const char *pad = r_str_pad (' ', (depth * 2) - 2);
-	if (msg->form && !*v) {
+	if (obj->form && !*v) {
 		return;
 	}
-	switch (msg->tag) {
+	switch (obj->tag) {
 	case TAG_NULL:
 	case TAG_EOC:
 		break;
@@ -248,57 +255,65 @@ static void asn1_printkv(RStrBuf *sb, RASN1Object *msg, int depth, const char *k
 		break;
 	}
 }
-#endif
 
-static RASN1String* asn1_hexdump(RASN1Object *msg, ut32 depth, int fmtmode) {
+static RASN1String* asn1_hexdump(RASN1Object *obj, ut32 depth, int fmtmode) {
 	const char *pad;
 	ut32 i, j;
 	char readable[20] = {0};
-	if (!msg || !msg->sector || msg->length < 1) {
+	if (!obj || !obj->sector || obj->length < 1) {
 		return NULL;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	if (fmtmode) {
+	if (fmtmode == 'j') {
+		pad = "";
+	} else if (fmtmode != 'q') {
 		pad = "                                        : ";
 	} else {
 		pad = r_str_pad (' ', depth * 2);
 		r_strbuf_append (sb, "  ");
 	}
 
-	for (i = 0, j = 0; i < msg->length; i++, j++) {
-		ut8 c = msg->sector[i];
-		if (i > 0 && (i % 16) == 0) {
-			r_strbuf_appendf (sb, "|%-16s|\n%s", readable, pad);
-			memset (readable, 0, sizeof (readable));
-			j = 0;
+	const int length = obj->length;
+	if (fmtmode == 'j') {
+		for (i = 0; i < length; i++) {
+			ut8 c = obj->sector[i];
+			r_strbuf_appendf (sb, "%02x", c);
 		}
-		r_strbuf_appendf (sb, "%02x ", c);
-		readable[j] = IS_PRINTABLE (c) ? c : '.';
-	}
+	} else {
+		for (i = 0, j = 0; i < length; i++, j++) {
+			ut8 c = obj->sector[i];
+			if (i > 0 && (i % 16) == 0) {
+				r_strbuf_appendf (sb, "|%-16s|\n%s", readable, pad);
+				memset (readable, 0, sizeof (readable));
+				j = 0;
+			}
+			r_strbuf_appendf (sb, "%02x ", c);
+			readable[j] = IS_PRINTABLE (c) ? c : '.';
+		}
 
-	while ((i % 16) != 0) {
-		r_strbuf_append (sb, "   ");
-		i++;
+		while ((i % 16) != 0) {
+			r_strbuf_append (sb, "   ");
+			i++;
+		}
+		r_strbuf_appendf (sb, "|%-16s|", readable);
 	}
-	r_strbuf_appendf (sb, "|%-16s|", readable);
 	char* text = r_strbuf_drain (sb);
-	RASN1String* asn1str = r_asn1_create_string (text, true, strlen (text) + 1);
-	if (!asn1str) {
+	RASN1String* as = r_asn1_create_string (text, true, strlen (text) + 1);
+	if (!as) {
 		/* no memory left.. */
 		free (text);
 	}
-	return asn1str;
+	return as;
 }
 
 // XXX this function signature is confusing
-R_API char *r_asn1_object_tostring(RASN1Object *msg, ut32 depth, RStrBuf *sb, int fmtmode) {
+R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ *pj, int fmtmode) {
 	bool root = false;
-	// RStrBuf *sb = msg->sb;
 	if (!sb) {
 		sb = r_strbuf_new ("");
 		root = true;
 	}
-	if (!msg) {
+	if (!obj) {
 		return NULL;
 	}
 	char temp_name[4096] = {0};
@@ -308,48 +323,48 @@ R_API char *r_asn1_object_tostring(RASN1Object *msg, ut32 depth, RStrBuf *sb, in
 	const char* name = "";
 	const char* string = "";
 
-	switch (msg->klass) {
+	switch (obj->klass) {
 	case CLASS_UNIVERSAL: // universal
-		switch (msg->tag) {
+		switch (obj->tag) {
 		case TAG_EOC:
 			name = "EOC";
 			break;
 		case TAG_BOOLEAN:
 			name = "BOOLEAN";
-			if (msg->sector) {
-				string = r_str_bool (msg->sector[0] != 0);
+			if (obj->sector) {
+				string = r_str_bool (obj->sector[0] != 0);
 			}
 			break;
 		case TAG_INTEGER:
 			name = "INTEGER";
-			if (msg->length < 16) {
-				r_asn1_print_hex (msg, temp_name, sizeof (temp_name), depth);
+			if (obj->length < 16) {
+				asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
 				string = temp_name;
 			} else {
-				asn1str = asn1_hexdump (msg, depth, fmtmode);
+				asn1str = asn1_hexdump (obj, depth, fmtmode);
 			}
 			break;
 		case TAG_BITSTRING:
 			name = "BIT_STRING";
-			if (!msg->list.objects) {
-				if (msg->length < 16) {
-					r_asn1_print_hex (msg, temp_name, sizeof (temp_name), depth);
+			if (!obj->list.objects) {
+				if (obj->length < 16) {
+					asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
 					string = temp_name;
 				} else {
-					asn1str = asn1_hexdump (msg, depth, fmtmode);
+					asn1str = asn1_hexdump (obj, depth, fmtmode);
 				}
 			}
 			break;
 		case TAG_OCTETSTRING:
 			name = "OCTET_STRING";
-			if (r_str_is_printable_limited ((const char *)msg->sector, msg->length)) {
-				asn1str = r_asn1_stringify_string (msg->sector, msg->length);
-			} else if (!msg->list.objects) {
-				if (msg->length < 16) {
-					r_asn1_print_hex (msg, temp_name, sizeof (temp_name), depth);
+			if (r_str_is_printable_limited ((const char *)obj->sector, obj->length)) {
+				asn1str = r_asn1_stringify_string (obj->sector, obj->length);
+			} else if (!obj->list.objects) {
+				if (obj->length < 16) {
+					asn1_hexstring (obj, temp_name, sizeof (temp_name), depth, fmtmode);
 					string = temp_name;
 				} else {
-					asn1str = asn1_hexdump (msg, depth, fmtmode);
+					asn1str = asn1_hexdump (obj, depth, fmtmode);
 				}
 			}
 			break;
@@ -358,7 +373,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *msg, ut32 depth, RStrBuf *sb, in
 			break;
 		case TAG_OID:
 			name = "OBJECT_IDENTIFIER";
-			asn1str = r_asn1_stringify_oid (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_oid (obj->sector, obj->length);
 			break;
 		case TAG_OBJDESCRIPTOR:
 			name = "OBJECT_DESCRIPTOR";
@@ -368,7 +383,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *msg, ut32 depth, RStrBuf *sb, in
 			break;
 		case TAG_REAL:
 			name = "REAL";
-			asn1str = asn1_hexdump (msg, depth, fmtmode);
+			asn1str = asn1_hexdump (obj, depth, fmtmode);
 			break;
 		case TAG_ENUMERATED:
 			name = "ENUMERATED";
@@ -378,7 +393,7 @@ R_API char *r_asn1_object_tostring(RASN1Object *msg, ut32 depth, RStrBuf *sb, in
 			break;
 		case TAG_UTF8STRING:
 			name = "UTF8String";
-			asn1str = r_asn1_stringify_string (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_string (obj->sector, obj->length);
 			break;
 		case TAG_SEQUENCE:
 			name = "SEQUENCE";
@@ -388,93 +403,122 @@ R_API char *r_asn1_object_tostring(RASN1Object *msg, ut32 depth, RStrBuf *sb, in
 			break;
 		case TAG_NUMERICSTRING:
 			name = "NumericString";
-			asn1str = r_asn1_stringify_string (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_string (obj->sector, obj->length);
 			break;
 		case TAG_PRINTABLESTRING:
 			name = "PrintableString"; // ASCII subset
-			asn1str = r_asn1_stringify_string (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_string (obj->sector, obj->length);
 			break;
 		case TAG_T61STRING:
 			name = "TeletexString"; // aka T61String
-			asn1str = r_asn1_stringify_string (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_string (obj->sector, obj->length);
 			break;
 		case TAG_VIDEOTEXSTRING:
 			name = "VideotexString";
-			asn1str = r_asn1_stringify_string (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_string (obj->sector, obj->length);
 			break;
 		case TAG_IA5STRING:
 			name = "IA5String"; // ASCII
-			asn1str = r_asn1_stringify_string (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_string (obj->sector, obj->length);
 			break;
 		case TAG_UTCTIME:
 			name = "UTCTime";
-			asn1str = r_asn1_stringify_utctime (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_utctime (obj->sector, obj->length);
 			break;
 		case TAG_GENERALIZEDTIME:
 			name = "GeneralizedTime";
-			asn1str = r_asn1_stringify_time (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_time (obj->sector, obj->length);
 			break;
 		case TAG_GRAPHICSTRING:
 			name = "GraphicString";
-			asn1str = r_asn1_stringify_string (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_string (obj->sector, obj->length);
 			break;
 		case TAG_VISIBLESTRING:
 			name = "VisibleString"; // ASCII subset
-			asn1str = r_asn1_stringify_string (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_string (obj->sector, obj->length);
 			break;
 		case TAG_GENERALSTRING:
 			name = "GeneralString";
 			break;
 		case TAG_UNIVERSALSTRING:
 			name = "UniversalString";
-			asn1str = r_asn1_stringify_string (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_string (obj->sector, obj->length);
 			break;
 		case TAG_BMPSTRING:
 			name = "BMPString";
-			asn1str = r_asn1_stringify_string (msg->sector, msg->length);
+			asn1str = r_asn1_stringify_string (obj->sector, obj->length);
 			break;
 		default:
-			snprintf (temp_name, sizeof (temp_name), "Universal_%u", msg->tag);
+			snprintf (temp_name, sizeof (temp_name), "Universal_%u", obj->tag);
 			name = temp_name;
 			break;
 		}
 		break;
 	case CLASS_APPLICATION:
-		snprintf (temp_name, sizeof (temp_name), "Application_%u", msg->tag);
+		snprintf (temp_name, sizeof (temp_name), "Application_%u", obj->tag);
 		name = temp_name;
 		break;
 	case CLASS_CONTEXT:
-		snprintf (temp_name, sizeof (temp_name), "Context [%u]", msg->tag); // Context
+		snprintf (temp_name, sizeof (temp_name), "Context [%u]", obj->tag); // Context
 		name = temp_name;
 		break;
 	case CLASS_PRIVATE:
-		snprintf (temp_name, sizeof (temp_name), "Private_%u", msg->tag);
+		snprintf (temp_name, sizeof (temp_name), "Private_%u", obj->tag);
 		name = temp_name;
 		break;
 	}
 	if (asn1str) {
 		string = asn1str->string;
 	}
-	if (fmtmode) {
-		r_strbuf_appendf (sb, "%4"PFMT64d"  ", msg->offset);
-		r_strbuf_appendf (sb, "%4u:%2d: %s %-20s: %s\n", msg->length,
-			depth, msg->form ? "cons" : "prim", name, string);
-		r_asn1_string_free (asn1str);
-		if (msg->list.objects) {
-			for (i = 0; i < msg->list.length; i++) {
-				r_asn1_object_tostring (msg->list.objects[i], depth + 1, sb, fmtmode);
+	switch (fmtmode) {
+	case 'q':
+		// QUIET MODE
+		asn1_printkv (sb, obj, depth, name, string);
+		if (obj->list.objects) {
+			for (i = 0; i < obj->list.length; i++) {
+				RASN1Object *o = obj->list.objects[i];
+				char *s = r_asn1_object_tostring (o, depth + 1, sb, pj, fmtmode);
+				eprintf ("-> %s\n", s);
+				free (s);
 			}
 		}
-	} else {
-		asn1_printkv (sb, msg, depth, name, string);
-		r_asn1_string_free (asn1str);
-		if (msg->list.objects) {
-			for (i = 0; i < msg->list.length; i++) {
-				RASN1Object *obj = msg->list.objects[i];
-				r_asn1_object_tostring (obj, depth + 1, sb, fmtmode);
+		break;
+	case 'r':
+		// TODO: add comments
+		break;
+	case 'j':
+		// return pj_drain (pj);
+		pj_o (pj);
+		pj_kn (pj, "offset", obj->offset);
+		pj_kn (pj, "length", obj->length);
+		pj_ks (pj, "form", obj->form? "cons": "prim");
+		pj_ks (pj, "name", name);
+		if (R_STR_ISNOTEMPTY (string)) {
+			pj_ks (pj, "value", string);
+		}
+		if (obj->list.objects) {
+			pj_ka (pj, "children");
+			for (i = 0; i < obj->list.length; i++) {
+				char *s = r_asn1_object_tostring (obj->list.objects[i], depth + 1, sb, pj, fmtmode);
+				free (s);
+			}
+			pj_end (pj);
+		}
+		pj_end (pj);
+		break;
+	case 0: // verbose default
+	default:
+		r_strbuf_appendf (sb, "%4"PFMT64d"  ", obj->offset);
+		r_strbuf_appendf (sb, "%4u:%2d: %s %-20s: %s\n", obj->length,
+			depth, obj->form ? "cons" : "prim", name, string);
+		if (obj->list.objects) {
+			for (i = 0; i < obj->list.length; i++) {
+				r_asn1_object_tostring (obj->list.objects[i], depth + 1, sb, pj, fmtmode);
 			}
 		}
+		break;
 	}
+	r_asn1_string_free (asn1str);
 	return root? r_strbuf_drain (sb): NULL;
 }
 

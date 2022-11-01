@@ -104,7 +104,7 @@ static const char *help_msg_p6[] = {
 
 static const char *help_msg_pF[] = {
 	"Usage: pF[apdbA][*vqj]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml",
-	"pFa", "[q] [len]", "decode ASN1/DER from current block (PEM is B64(DER))",
+	"pFa", "[jq] [len]", "decode ASN1/DER from current block (PEM is B64(DER))",
 	"pFA", "[j] [len]", "decode Android Binary XML from current block",
 	"pFb", "[vj] [len]", "decode raw proto buffers in (verbose, JSON) format",
 	"pFB", "[j] [len]", "decode iOS Binary PLIST from current block",
@@ -1295,11 +1295,13 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 	switch (*input) {
 	case 'a': // "pFa" // DER/ASN1 encoding
 		{
-			int fmt = 'j'; // input[1];
-			RASN1Object *asn1 = r_asn1_object_parse (data, data, size, fmt);
-			if (asn1) {
-				char *res = r_asn1_object_tostring (asn1, 0, NULL, fmt);
-				r_asn1_object_free (asn1);
+			int fmt = input[1];
+			RAsn1 *a = r_asn1_new (data, size, fmt);
+			// RASN1Object *asn1 = r_asn1_object_parse (data, data, size, fmt);
+			if (a) {
+				char *res = r_asn1_tostring (a);
+				// char *res = r_asn1_object_tostring (asn1, 0, NULL, fmt);
+				r_asn1_free (a);
 				if (res) {
 					r_cons_printf ("%s\n", res);
 					free (res);
