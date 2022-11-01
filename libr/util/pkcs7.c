@@ -128,8 +128,8 @@ static void r_pkcs7_free_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdentifi
 
 static void r_pkcs7_free_contentinfo(RPKCS7ContentInfo *ci) {
 	if (ci) {
-		r_asn1_free_binary (ci->content);
-		r_asn1_free_string (ci->contentType);
+		r_asn1_binary_free (ci->content);
+		r_asn1_string_free (ci->contentType);
 		// Used internally pkcs #7, so it shouldn't free ci.
 	}
 }
@@ -149,7 +149,7 @@ static bool r_pkcs7_parse_issuerandserialnumber(RPKCS7IssuerAndSerialNumber *ias
 static void r_pkcs7_free_issuerandserialnumber(RPKCS7IssuerAndSerialNumber *iasu) {
 	if (iasu) {
 		r_x509_free_name (&iasu->issuer);
-		r_asn1_free_binary (iasu->serialNumber);
+		r_asn1_binary_free (iasu->serialNumber);
 		// Used internally pkcs #7, so it shouldn't free iasu.
 	}
 }
@@ -191,8 +191,8 @@ static bool r_pkcs7_parse_signerinfo(RPKCS7SignerInfo *si, RASN1Object *object) 
 
 static void r_pkcs7_free_attribute(RPKCS7Attribute *attribute) {
 	if (attribute) {
-		r_asn1_free_binary (attribute->data);
-		r_asn1_free_string (attribute->oid);
+		r_asn1_binary_free (attribute->data);
+		r_asn1_string_free (attribute->oid);
 		free (attribute);
 	}
 }
@@ -214,7 +214,7 @@ static void r_pkcs7_free_signerinfo(RPKCS7SignerInfo *si) {
 		r_x509_free_algorithmidentifier (&si->digestAlgorithm);
 		r_pkcs7_free_attributes (&si->authenticatedAttributes);
 		r_x509_free_algorithmidentifier (&si->digestEncryptionAlgorithm);
-		r_asn1_free_binary (si->encryptedDigest);
+		r_asn1_binary_free (si->encryptedDigest);
 		r_pkcs7_free_attributes (&si->unauthenticatedAttributes);
 		free (si);
 	}
@@ -303,18 +303,18 @@ R_API RCMS *r_pkcs7_parse_cms(const ut8 *buffer, ut32 length) {
 	if (!container) {
 		return NULL;
 	}
-	RASN1Object *object = r_asn1_create_object (buffer, length, buffer);
+	RASN1Object *object = r_asn1_object_parse (buffer, buffer, length, 0);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1] ||
 		object->list.objects[1]->list.length < 1) {
-		r_asn1_free_object (object);
+		r_asn1_object_free (object);
 		free (container);
 		return NULL;
 	}
 	if (object->list.objects[0]) {
 		container->contentType = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 		if (!container->contentType) {
-			r_asn1_free_object (object);
+			r_asn1_object_free (object);
 			free (container);
 			return NULL;
 		}
@@ -322,13 +322,13 @@ R_API RCMS *r_pkcs7_parse_cms(const ut8 *buffer, ut32 length) {
 	if (object->list.objects[1]) {
 		r_pkcs7_parse_signeddata (&container->signedData, object->list.objects[1]->list.objects[0]);
 	}
-	r_asn1_free_object (object);
+	r_asn1_object_free (object);
 	return container;
 }
 
 R_API void r_pkcs7_free_cms(RCMS *container) {
 	if (container) {
-		r_asn1_free_string (container->contentType);
+		r_asn1_string_free (container->contentType);
 		r_pkcs7_free_signeddata (&container->signedData);
 		free (container);
 	}
@@ -428,7 +428,7 @@ static void r_x509_signedinfo_dump(RPKCS7SignerInfo *si, const char *pad, RStrBu
 		s = r_asn1_stringify_integer (o->binary, o->length);
 	}
 	r_strbuf_appendf (sb, "%sSerial Number:\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
-	r_asn1_free_string (s);
+	r_asn1_string_free (s);
 
 	s = si->digestAlgorithm.algorithm;
 	r_strbuf_appendf (sb, "%sDigest Algorithm:\n%s%s\n%sAuthenticated Attributes:\n",
@@ -448,7 +448,7 @@ static void r_x509_signedinfo_dump(RPKCS7SignerInfo *si, const char *pad, RStrBu
 	//	if ((o = si->encryptedDigest)) s = r_asn1_stringify_bytes (o->binary, o->length);
 	//	else s = NULL;
 	//	eprintf ("%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
-	//	r_asn1_free_string (s);
+	//	r_asn1_string_free (s);
 	r_strbuf_appendf (sb, "%sEncrypted Digest: %u bytes\n", pad2, o ? o->length : 0);
 	r_strbuf_appendf (sb, "%sUnauthenticated Attributes:\n", pad2);
 	for (i = 0; i < si->unauthenticatedAttributes.length; i++) {
@@ -519,7 +519,7 @@ R_API void r_x509_signedinfo_json(PJ *pj, RPKCS7SignerInfo *si) {
 			if (s) {
 				pj_ks (pj, "SerialNumber", s->string);
 			}
-			r_asn1_free_string (s);
+			r_asn1_string_free (s);
 		}
 
 		if (si->digestAlgorithm.algorithm) {
@@ -552,7 +552,7 @@ R_API void r_x509_signedinfo_json(PJ *pj, RPKCS7SignerInfo *si) {
 			if (s) {
 				pj_ks (pj, "EncryptedDigest", s->string);
 			}
-			r_asn1_free_string (s);
+			r_asn1_string_free (s);
 		}
 
 		pj_k (pj, "UnauthenticatedAttributes");
@@ -674,7 +674,7 @@ R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
 		free (spcinfo);
 		return NULL;
 	}
-	RASN1Object *object = r_asn1_create_object (content->binary, content->length, content->binary);
+	RASN1Object *object = r_asn1_object_parse (content->binary, content->binary, content->length, 0);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1]) {
 		R_FREE (spcinfo);
@@ -693,20 +693,20 @@ R_API SpcIndirectDataContent *r_pkcs7_parse_spcinfo(RCMS *cms) {
 		}
 	}
 beach:
-	r_asn1_free_object (object);
+	r_asn1_object_free (object);
 	return spcinfo;
 }
 
 static void r_pkcs7_free_spcdata(SpcAttributeTypeAndOptionalValue *data) {
 	if (data) {
-		r_asn1_free_string (data->type);
-		r_asn1_free_binary (data->data);
+		r_asn1_string_free (data->type);
+		r_asn1_binary_free (data->data);
 	}
 }
 
 static void r_pkcs7_free_spcmessagedigest(SpcDigestInfo *messageDigest) {
 	if (messageDigest) {
-		r_asn1_free_binary (messageDigest->digest);
+		r_asn1_binary_free (messageDigest->digest);
 		r_x509_free_algorithmidentifier (&messageDigest->digestAlgorithm);
 	}
 }

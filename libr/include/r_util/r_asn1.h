@@ -2,6 +2,8 @@
 #define R_ASN1_H
 
 #include <stdint.h>
+#include <r_util/pj.h>
+#include <r_util/r_strbuf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,7 +69,7 @@ typedef struct r_asn1_string_t {
 typedef struct r_asn1_list_t {
 	ut32 length;
 	struct r_asn1_object_t **objects;
-} ASN1List;
+} RASN1List;
 
 typedef struct r_asn1_bin_t {
 	ut32 length;
@@ -81,11 +83,25 @@ typedef struct r_asn1_object_t {
 	const ut8 *sector; /* Sector containing data */
 	ut32 length; /* Sector Length */
 	ut64 offset; /* Object offset */
-	ASN1List list; /* List of objects contained in the sector */
+	RASN1List list; /* List of objects contained in the sector */
 } RASN1Object;
 
+typedef struct r_asn1_t {
+	const ut8 *buffer;
+	size_t length;
+	int fmtmode; // 'q' 'j', 'v' 0
+	RStrBuf *sb;
+	PJ *pj;
+	RASN1Object *root;
+} RAsn1;
+
+R_API RAsn1 *r_asn1_new(const ut8 *buffer, int length, int fmtmode);
+R_API char *r_asn1_tostring(RAsn1 *a); // TODO move int fmtmode
+R_API void r_asn1_free(RAsn1 *a);
+R_API char *r_asn1_oid(RAsn1 *a);
 
 R_API RASN1Object *r_asn1_create_object(const ut8 *buffer, ut32 length, const ut8 *start_pointer);
+R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer, ut32 length, int fmtmode);
 R_API RASN1Binary *r_asn1_create_binary(const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_create_string(const char *string, bool allocated, ut32 length);
 R_API RASN1String *r_asn1_stringify_bits(const ut8 *buffer, ut32 length);
@@ -97,12 +113,10 @@ R_API RASN1String *r_asn1_stringify_bytes(const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_boolean(const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_oid(const ut8* buffer, ut32 length);
 
-R_API void r_asn1_free_object(RASN1Object *object);
-// R_API void r_asn1_print_object (RASN1Object *object, ut32 depth);
-R_API char *r_asn1_tostring(RASN1Object *object, ut32 depth, RStrBuf *sb);
-R_API void r_asn1_free_string(RASN1String *string);
-R_API void r_asn1_free_binary(RASN1Binary *string);
-R_API void asn1_setformat(int fmt);
+R_API char *r_asn1_object_tostring(RASN1Object *object, ut32 depth, RStrBuf *sb, int fmtmode);
+R_API void r_asn1_object_free(RASN1Object *msg);
+R_API void r_asn1_string_free(RASN1String *string);
+R_API void r_asn1_binary_free(RASN1Binary *string);
 
 #ifdef __cplusplus
 }
