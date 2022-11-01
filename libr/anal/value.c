@@ -84,6 +84,19 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 	return false;							//is this necessary
 }
 
+R_API const char *r_anal_value_type_tostring(RAnalValue *value) {
+	if (value->type == R_ANAL_VAL_REG) {
+		return "reg";
+	}
+	if (value->type == R_ANAL_VAL_MEM) {
+		return "mem";
+	}
+	if (value->type == R_ANAL_VAL_IMM) {
+		return "imm";
+	}
+	return "unk";
+}
+
 R_API char *r_anal_value_tostring(RAnalValue *value) {
 	char *out = NULL;
 	if (value) {

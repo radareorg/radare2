@@ -305,7 +305,6 @@ R_API void r_pvector_remove_data(RPVector *vec, void *x) {
 	if (!el) {
 		return;
 	}
-
 	size_t index = el - (void **)vec->v.a;
 	r_vector_remove_at (&vec->v, index, NULL);
 }
