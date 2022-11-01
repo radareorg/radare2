@@ -870,6 +870,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	// then do this:
 	// $ openssl asn1parse -inform der -in a|less
 	// $ openssl pkcs7 -inform DER -print_certs -text -in a
+	// uhm we have pFa to parse der/asn1 we can do it inline
 	for (i = 0; i < super.count; i++) {
 		if (data + i > bin->size) {
 			bin->signature = (ut8 *)strdup ("Malformed entitlement");
@@ -1806,7 +1807,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			{
 			struct uuid_command uc = {0};
 			if (off + sizeof (struct uuid_command) > bin->size) {
-				bprintf ("UUID out of bounds\n");
+				R_LOG_DEBUG ("UUID out of bounds");
 				return false;
 			}
 			if (r_buf_fread_at (bin->b, off, (ut8*)&uc, "24c", 1) != -1) {
@@ -1815,7 +1816,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				snprintf (key, sizeof (key)-1, "uuid.%d", bin->uuidn++);
 				r_hex_bin2str ((ut8*)&uc.uuid, 16, val);
 				sdb_set (bin->kv, key, val, 0);
-				//for (i=0;i<16; i++) bprintf ("%02x%c", uc.uuid[i], (i==15)?'\n':'-');
+				// for (i=0;i<16; i++) bprintf ("%02x%c", uc.uuid[i], (i==15)?'\n':'-');
 			}
 			}
 			break;
@@ -1827,7 +1828,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			struct MACH0_(encryption_info_command) eic = {0};
 			ut8 seic[sizeof (struct MACH0_(encryption_info_command))] = {0};
 			if (off + sizeof (struct MACH0_(encryption_info_command)) > bin->size) {
-				bprintf ("encryption info out of bounds\n");
+				R_LOG_DEBUG ("encryption info out of bounds");
 				return false;
 			}
 			if (r_buf_read_at (bin->b, off, seic, sizeof (struct MACH0_(encryption_info_command))) != -1) {
@@ -1849,15 +1850,15 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			{
 				sdb_set (bin->kv, cmd_flagname, "dylinker", 0);
 				R_FREE (bin->intrp);
-				//bprintf ("[mach0] load dynamic linker\n");
+				R_LOG_DEBUG ("[mach0] load dynamic linker");
 				struct dylinker_command dy = {0};
 				ut8 sdy[sizeof (struct dylinker_command)] = {0};
 				if (off + sizeof (struct dylinker_command) > bin->size) {
-					bprintf ("Warning: Cannot parse dylinker command\n");
+					R_LOG_DEBUG ("Cannot parse dylinker command");
 					return false;
 				}
 				if (r_buf_read_at (bin->b, off, sdy, sizeof (struct dylinker_command)) == -1) {
-					bprintf ("Warning: read (LC_DYLD_INFO) at 0x%08"PFMT64x"\n", off);
+					R_LOG_DEBUG ("Cannot read (LC_DYLD_INFO) at 0x%08"PFMT64x, off);
 				} else {
 					dy.cmd = r_read_ble32 (&sdy[0], bin->big_endian);
 					dy.cmdsize = r_read_ble32 (&sdy[4], bin->big_endian);
@@ -1885,11 +1886,11 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			sdb_set (bin->kv, cmd_flagname, "main", 0);
 
 			if (!is_first_thread) {
-				bprintf ("Error: LC_MAIN with other threads\n");
+				R_LOG_DEBUG ("Error: LC_MAIN with other threads");
 				return false;
 			}
 			if (off + 8 > bin->size || off + sizeof (ep) > bin->size) {
-				bprintf ("invalid command size for main\n");
+				R_LOG_DEBUG ("invalid command size for main");
 				return false;
 			}
 			r_buf_read_at (bin->b, off + 8, sep, 2 * sizeof (ut64));
@@ -1908,13 +1909,13 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 		case LC_UNIXTHREAD:
 			sdb_set (bin->kv, cmd_flagname, "unixthread", 0);
 			if (!is_first_thread) {
-				bprintf ("Error: LC_UNIXTHREAD with other threads\n");
+				R_LOG_DEBUG ("Error LC_UNIXTHREAD with other threads");
 				return false;
 			}
 		case LC_THREAD:
 			sdb_set (bin->kv, cmd_flagname, "thread", 0);
 			if (!parse_thread (bin, &lc, off, is_first_thread)) {
-				bprintf ("Cannot parse thread\n");
+				R_LOG_DEBUG ("Cannot parse thread");
 				return false;
 			}
 			is_first_thread = false;
@@ -1924,7 +1925,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			sdb_set (bin->kv, cmd_flagname, "load_dylib", 0);
 			bin->nlibs++;
 			if (!parse_dylib (bin, off)) {
-				bprintf ("Cannot parse dylib\n");
+				R_LOG_DEBUG ("Cannot parse dylib command");
 				bin->nlibs--;
 				return false;
 			}
@@ -2062,7 +2063,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				r_buf_read_at (bin->b, off + 8, buf, sizeof (buf));
 				ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
 				ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
-				eprintf ("data-in-code at 0x%x size %d\n", dataoff, datasize);
+				R_LOG_INFO ("data-in-code at 0x%x size %d", dataoff, datasize);
 				ut8 *db = (ut8*)malloc (datasize);
 				if (db) {
 					r_buf_read_at (bin->b, dataoff, db, datasize);
@@ -2105,11 +2106,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 
 	if (!has_chained_fixups && bin->hdr.cputype == CPU_TYPE_ARM64 &&
 		(bin->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
-#if 0
-		if (bin->verbose) {
-			eprintf ("reconstructing chained fixups\n");
-		}
-#endif
+		R_LOG_DEBUG ("reconstructing chained fixups");
 		reconstruct_chained_fixup (bin);
 	}
 	return true;
@@ -3611,7 +3608,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 						}
 						break;
 					default:
-						bprintf ("Error: Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x\n", imm);
+						R_LOG_DEBUG ("Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x", imm);
 					}
 					break;
 				}

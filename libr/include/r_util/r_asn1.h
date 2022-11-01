@@ -100,8 +100,8 @@ R_API char *r_asn1_tostring(RAsn1 *a); // TODO move int fmtmode
 R_API void r_asn1_free(RAsn1 *a);
 R_API char *r_asn1_oid(RAsn1 *a);
 
-R_API RASN1Object *r_asn1_create_object(const ut8 *buffer, ut32 length, const ut8 *start_pointer);
 R_API RASN1Object *r_asn1_object_parse(const ut8 *buffer_base, const ut8 *buffer, ut32 length, int fmtmode);
+
 R_API RASN1Binary *r_asn1_create_binary(const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_create_string(const char *string, bool allocated, ut32 length);
 R_API RASN1String *r_asn1_stringify_bits(const ut8 *buffer, ut32 length);
@@ -113,7 +113,7 @@ R_API RASN1String *r_asn1_stringify_bytes(const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_boolean(const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_oid(const ut8* buffer, ut32 length);
 
-R_API char *r_asn1_object_tostring(RASN1Object *object, ut32 depth, RStrBuf *sb, int fmtmode);
+R_API char *r_asn1_object_tostring(RASN1Object *object, ut32 depth, RStrBuf *sb, PJ *pj, int fmtmode);
 R_API void r_asn1_object_free(RASN1Object *msg);
 R_API void r_asn1_string_free(RASN1String *string);
 R_API void r_asn1_binary_free(RASN1Binary *string);

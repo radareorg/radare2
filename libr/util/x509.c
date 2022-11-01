@@ -38,7 +38,7 @@ static inline bool is_oid_object(RASN1Object *object) {
 		object->list.objects[0]->tag == TAG_OID;
 }
 
-bool r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object *object) {
+R_API bool r_x509_parse_algorithmidentifier(RX509AlgorithmIdentifier *ai, RASN1Object *object) {
 	r_return_val_if_fail (ai && object, false);
 
 	if (object->list.length < 1 || !object->list.objects || !is_oid_object (object)) {
@@ -51,7 +51,7 @@ bool r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object
 	return true;
 }
 
-bool r_x509_parse_subjectpublickeyinfo (RX509SubjectPublicKeyInfo *spki, RASN1Object *object) {
+R_API bool r_x509_parse_subjectpublickeyinfo(RX509SubjectPublicKeyInfo *spki, RASN1Object *object) {
 	RASN1Object *o;
 	if (!spki || !object || object->list.length != 2) {
 		return false;
@@ -117,11 +117,11 @@ R_API bool r_x509_parse_name(RX509Name *name, RASN1Object *object) {
 }
 
 R_API bool r_x509_parse_extension(RX509Extension *ext, RASN1Object *object) {
-	RASN1Object *o;
-	if (!ext || !object || object->list.length != 2) {
+	r_return_val_if_fail (ext && object, false);
+	if (object->list.length != 2) {
 		return false;
 	}
-	o = object->list.objects[0];
+	RASN1Object *o = object->list.objects[0];
 	if (o && o->tag == TAG_OID) {
 		ext->extnID = r_asn1_stringify_oid (o->sector, o->length);
 		o = object->list.objects[1];
@@ -235,9 +235,7 @@ R_API RX509Certificate *r_x509_parse_certificate(RASN1Object *object) {
 		R_FREE (cert);
 		goto fail;
 	}
-	cert->signature = (RASN1Binary *) r_asn1_object_parse (
-			object->list.objects[2]->sector,
-			object->list.objects[2]->sector, object->list.objects[2]->length, 0);
+	cert->signature = r_asn1_create_binary (object->list.objects[2]->sector, object->list.objects[2]->length);
 	r_x509_parse_tbscertificate (&cert->tbsCertificate, object->list.objects[0]);
 
 	if (!r_x509_parse_algorithmidentifier (&cert->algorithmIdentifier, object->list.objects[1])) {
@@ -449,7 +447,7 @@ static void r_x509_validity_dump(RX509Validity *validity, const char *pad, RStrB
 	r_strbuf_appendf (sb, "%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
 }
 
-void r_x509_name_dump (RX509Name *name, const char *pad, RStrBuf *sb) {
+R_API void r_x509_name_dump(RX509Name *name, const char *pad, RStrBuf *sb) {
 	ut32 i;
 	if (!name) {
 		return;
@@ -561,7 +559,7 @@ static void r_x509_tbscertificate_dump(RX509TBSCertificate *tbsc, const char *pa
 	free (pad2);
 }
 
-void r_x509_certificate_dump (RX509Certificate *cert, const char *pad, RStrBuf *sb) {
+R_API void r_x509_certificate_dump(RX509Certificate *cert, const char *pad, RStrBuf *sb) {
 	RASN1String *algo = NULL;
 	char *pad2;
 	if (!cert) {
@@ -588,7 +586,7 @@ void r_x509_certificate_dump (RX509Certificate *cert, const char *pad, RStrBuf *
 	//	r_asn1_string_free (signature);
 }
 
-void r_x509_crlentry_dump (RX509CRLEntry *crle, const char *pad, RStrBuf *sb) {
+R_API void r_x509_crlentry_dump(RX509CRLEntry *crle, const char *pad, RStrBuf *sb) {
 	RASN1String *id = NULL, *utc = NULL;
 	if (!crle) {
 		return;
