@@ -1480,6 +1480,7 @@ R_API RAnalValue *r_anal_value_copy(RAnalValue *ov);
 R_API RAnalValue *r_anal_value_new_from_string(const char *str);
 R_API st64 r_anal_value_eval(RAnalValue *value);
 R_API char *r_anal_value_tostring(RAnalValue *value);
+R_API const char *r_anal_value_type_tostring(RAnalValue *value);
 R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val);
 R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num);
 R_API void r_anal_value_free(RAnalValue *value);

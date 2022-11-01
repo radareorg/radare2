@@ -2170,6 +2170,28 @@ static inline RAnalEsil *esil_new_setup(RCore *core) {
 	return esil;
 }
 
+static void val_tojson(PJ *pj, RAnalValue *val) {
+	char *s = r_anal_value_tostring (val);
+	pj_ks (pj, "name", s);
+	free (s);
+	pj_ks (pj, "type", r_anal_value_type_tostring (val));
+	if (val->access) {
+		pj_ks (pj, "access", (val->access & R_ANAL_ACC_W)? "rw": "ro");
+	}
+	if (val->absolute) {
+		pj_kn (pj, "absolute", val->absolute);
+	}
+	if (val->imm) {
+		pj_kn (pj, "imm", val->imm);
+	}
+	if (val->delta) {
+		pj_kn (pj, "delta", val->delta);
+	}
+	if (val->mul) {
+		pj_kn (pj, "mul", val->mul);
+	}
+}
+
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
 	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -2322,6 +2344,25 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (d);
 				free (opname);
 			}
+
+			if (r_vector_len (&op.srcs) > 0) {
+				pj_ka (pj, "srcs");
+				RAnalValue *val;
+				r_vector_foreach (&op.srcs, val) {
+					val_tojson (pj, val);
+				}
+				pj_end (pj);
+			}
+
+			if (r_vector_len (&op.dsts) > 0) {
+				pj_ka (pj, "dsts");
+				RAnalValue *val;
+				r_vector_foreach (&op.dsts, val) {
+					val_tojson (pj, val);
+				}
+				pj_end (pj);
+			}
+
 			pj_ks (pj, "mnemonic", mnem);
 			{
 				ut8 *mask = r_anal_mask (core->anal, len - idx, buf + idx, core->offset + idx);
@@ -7881,16 +7922,17 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 
 static void cmd_anal_bytes(RCore *core, const char *input) {
 	int len = core->blocksize;
-	int tbs = len;
 	if (input[0]) {
 		len = (int)r_num_get (core->num, input + 1);
-		if (len > tbs) {
-			r_core_block_size (core, len);
-		}
 	}
-	core_anal_bytes (core, core->block, len, 0, input[0]);
-	if (tbs != core->blocksize) {
-		r_core_block_size (core, tbs);
+	if (len < 1) {
+		return;
+	}
+	ut8 *buf = calloc (len, 1);
+	if (buf) {
+		r_io_read_at (core->io, core->offset, buf, len);
+		core_anal_bytes (core, buf, len, 0, input[0]);
+		free (buf);
 	}
 }
 

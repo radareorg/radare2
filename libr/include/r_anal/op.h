@@ -27,6 +27,8 @@ typedef enum {
 	R_ANAL_STACK_RESET,
 	R_ANAL_STACK_ALIGN,
 } RAnalStackOp;
+
+// XXX deprecate those names are uglyies and we can reuse R_PERM
 typedef enum {
 	R_ANAL_ACC_UNKNOWN = 0,
 	R_ANAL_ACC_R = (1 << 0),
