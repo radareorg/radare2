@@ -174,7 +174,11 @@ R_API char *r_asn1_oid(RAsn1 *a) {
 	char *res = NULL;
 	RASN1String *s = r_asn1_stringify_oid (a->buffer, a->length);
 	if (s) {
-		res = strdup (s->string);
+		if (a->fmtmode == 'j') {
+			res = r_str_newf ("{\"oid\":\"%s\"}", s->string);
+		} else {
+			res = strdup (s->string);
+		}
 		r_asn1_string_free (s);
 	}
 	return res;
