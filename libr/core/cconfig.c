@@ -4244,7 +4244,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.demo", "false", &cb_scr_demo, "use demoscene effects if available");
 	SETCB ("scr.hist.block", "true", &cb_scr_histblock, "use blocks for histogram");
 	SETCB ("scr.hist.filter", "true", &cb_scr_histfilter, "filter history for matching lines when using up/down keys");
+#if __EMSCRIPTEN__ || __wasi__
+	SETBPREF ("scr.hist.save", "false", "always save history on exit");
+#else
 	SETBPREF ("scr.hist.save", "true", "always save history on exit");
+#endif
 	SETICB("scr.hist.size", R_LINE_HISTSIZE, &cb_scr_histsize, "set input lines history size");
 	n = NODECB ("scr.strconv", "asciiesc", &cb_scrstrconv);
 	SETDESC (n, "convert string before display");
