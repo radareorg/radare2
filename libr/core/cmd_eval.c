@@ -160,6 +160,7 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 		return true;
 	}
 	char *arg = strdup (_arg);
+
 	// system themes directory
 	char *home = r_xdg_datadir ("cons");
 
@@ -186,12 +187,28 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 				core->themepath = arg;
 				arg = NULL;
 			} else {
-				char *absfile = r_file_abspath (arg);
-				R_LOG_ERROR ("eco: cannot open colorscheme profile (%s)", absfile);
-				free (absfile);
 				failed = true;
 			}
 		}
+	}
+	if (failed) {
+#if WITH_STATIC_THEMES
+		const RConsTheme *theme = r_cons_themes ();
+		while (theme && theme->name) {
+			if (!strcmp (theme->name, arg)) {
+				r_core_cmd0 (core, theme->script);
+				free (arg);
+				failed = false;
+				break;
+			}
+			theme++;
+		}
+		if (failed) {
+			R_LOG_ERROR ("eco: cannot open colorscheme profile (%s)", arg);
+		}
+#else
+		R_LOG_ERROR ("eco: cannot open colorscheme profile (%s)", arg);
+#endif
 	}
 	free (home);
 	free (path);

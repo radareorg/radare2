@@ -68,6 +68,7 @@ if [ 1 = "${DOCFG}" ]; then
 		${MAKE} mrproper > /dev/null 2>&1
 	fi
 	export CFLAGS="${CFLAGS} -fPIC"
+	export CFGARGS="$CFGARGS --with-static-themes"
 	cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
 	./configure-plugins || exit 1
 	./configure --prefix="$PREFIX" --without-gpl --with-libr --without-libuv $CFGARGS || exit 1
