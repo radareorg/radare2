@@ -26,6 +26,7 @@ static const char *help_msg_o[] = {
 	"on","[?][n] [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
 	"oo","[?][+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
 	"op","[r|n|p|fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
+	"ot"," [file]", "same as `touch [file]`",
 	"oq","","list all open files",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
 	NULL
@@ -1839,6 +1840,9 @@ static int cmd_open(void *data, const char *input) {
 		} else {
 			r_core_cmd_help_match (core, help_msg_o, "of", true);
 		}
+		return 0;
+	case 't': // "ot"
+		r_core_cmd_strf (core, "touch%s", input + 1);
 		return 0;
 	case 'p': // "op"
 		/* handle prioritize */

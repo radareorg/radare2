@@ -1434,7 +1434,7 @@ static int cmd_type(void *data, const char *input) {
 				if (arg) {
 					r_file_touch (arg + 1);
 				} else {
-					eprintf ("Usage: touch [filename]\n");
+					eprintf ("Usage: ot|touch [filename]\n");
 				}
 			} else if (input[1] == 's') {
 				const char *dbpath = input + 3;
