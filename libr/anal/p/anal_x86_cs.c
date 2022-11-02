@@ -3004,7 +3004,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_VMOVUPD:
 	case X86_INS_VMOVUPS:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		op->family = R_ANAL_OP_FAMILY_SSE;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 		break;
 	case X86_INS_PCMPEQB:
 	case X86_INS_PCMPEQD:
@@ -3045,7 +3045,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_VPCMPW:
 #endif
 		op->type = R_ANAL_OP_TYPE_CMP;
-		op->family = R_ANAL_OP_FAMILY_SSE;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 		break;
 	case X86_INS_MOVSS:
 	case X86_INS_MOV:
@@ -3619,7 +3619,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_PACKSSWB:
 	case X86_INS_PACKUSWB:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 		break;
 	case X86_INS_PADDB:
 	case X86_INS_PADDD:
@@ -3629,7 +3629,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_PADDUSB:
 	case X86_INS_PADDUSW:
 		op->type = R_ANAL_OP_TYPE_ADD;
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 		break;
 	case X86_INS_XCHG:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -3681,17 +3681,17 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		break;
 	}
 	if (cs_insn_group (*handle, insn, X86_GRP_MMX)) {
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 	}
 	// TODO: add SSE* families?
 	if (cs_insn_group (*handle, insn, X86_GRP_SSE1)) {
-		op->family = R_ANAL_OP_FAMILY_SSE;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 	}
 	if (cs_insn_group (*handle, insn, X86_GRP_SSE2)) {
-		op->family = R_ANAL_OP_FAMILY_SSE;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 	}
 	if (cs_insn_group (*handle, insn, X86_GRP_SSE3)) {
-		op->family = R_ANAL_OP_FAMILY_SSE;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 	}
 }
 

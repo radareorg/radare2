@@ -1112,8 +1112,8 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		return true;
 		break;
 	case R_REG_TYPE_FPU:
-	case R_REG_TYPE_MMX:
-	case R_REG_TYPE_XMM:
+	case R_REG_TYPE_VEC64: // MMX
+	case R_REG_TYPE_VEC128: // XMM
 		{
 #if __x86_64__ || __i386__
 		struct user_fpregs_struct fpregs;
@@ -1178,42 +1178,10 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #endif
 		}
 		break;
-	case R_REG_TYPE_SEG:
-	case R_REG_TYPE_FLG:
-	case R_REG_TYPE_GPR:
-		{
-			R_DEBUG_REG_T regs;
-			memset (&regs, 0, sizeof (regs));
-			memset (buf, 0, size);
-#if (__arm64__ || __aarch64__ || __s390x__) && defined(PTRACE_GETREGSET)
-			struct iovec io = {
-				.iov_base = &regs,
-				.iov_len = sizeof (regs)
-			};
-			ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)(size_t)1, &io);
-			// ret = ptrace (PTRACE_GETREGSET, pid, (void*)(size_t)(NT_PRSTATUS), NULL); // &io);
-#elif __BSD__ && (__POWERPC__ || __sparc__)
-			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
-#else
-			/* linux -{arm/mips/riscv/x86/x86_64} */
-			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, NULL, &regs);
-#endif
-			/*
-			 * if perror here says 'no such process' and the
-			 * process exists still.. is because there's a missing call
-			 * to 'wait'. and the process is not yet available to accept
-			 * more ptrace queries.
-			 */
-			if (ret != 0) {
-				r_sys_perror ("PTRACE_GETREGS");
-				return false;
-			}
-			size = R_MIN (sizeof (regs), size);
-			memcpy (buf, &regs, size);
-			return size;
-		}
+	case R_REG_TYPE_VEC512: // ZMM
+		R_LOG_DEBUG ("zmm registers not supported yet");
 		break;
-	case R_REG_TYPE_YMM:
+	case R_REG_TYPE_VEC256: // YMM
 		{
 #if HAVE_YMM && __x86_64__ && defined(PTRACE_GETREGSET)
 		ut32 ymm_space[128];	// full ymm registers
@@ -1251,6 +1219,41 @@ bool linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		return size;
 #endif
 		return false;
+		}
+		break;
+	case R_REG_TYPE_SEG:
+	case R_REG_TYPE_FLG:
+	case R_REG_TYPE_GPR:
+		{
+			R_DEBUG_REG_T regs;
+			memset (&regs, 0, sizeof (regs));
+			memset (buf, 0, size);
+#if (__arm64__ || __aarch64__ || __s390x__) && defined(PTRACE_GETREGSET)
+			struct iovec io = {
+				.iov_base = &regs,
+				.iov_len = sizeof (regs)
+			};
+			ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)(size_t)1, &io);
+			// ret = ptrace (PTRACE_GETREGSET, pid, (void*)(size_t)(NT_PRSTATUS), NULL); // &io);
+#elif __BSD__ && (__POWERPC__ || __sparc__)
+			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, &regs, NULL);
+#else
+			/* linux -{arm/mips/riscv/x86/x86_64} */
+			ret = r_debug_ptrace (dbg, PTRACE_GETREGS, pid, NULL, &regs);
+#endif
+			/*
+			 * if perror here says 'no such process' and the
+			 * process exists still.. is because there's a missing call
+			 * to 'wait'. and the process is not yet available to accept
+			 * more ptrace queries.
+			 */
+			if (ret != 0) {
+				r_sys_perror ("PTRACE_GETREGS");
+				return false;
+			}
+			size = R_MIN (sizeof (regs), size);
+			memcpy (buf, &regs, size);
+			return size;
 		}
 		break;
 	}

@@ -801,7 +801,7 @@ static void anop64(RAnal *a, RAnalOp *op, Instruction *insn) {
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_PRIVILEGE)) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_NEON)) {
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_FPARMV8)) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
 	} else {

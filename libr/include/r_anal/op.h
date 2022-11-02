@@ -68,8 +68,7 @@ typedef enum {
 	R_ANAL_OP_FAMILY_UNKNOWN = -1,
 	R_ANAL_OP_FAMILY_CPU = 0,	/* normal cpu instruction */
 	R_ANAL_OP_FAMILY_FPU,    	/* fpu (floating point) */
-	R_ANAL_OP_FAMILY_MMX,    	/* multimedia instruction (packed data) */
-	R_ANAL_OP_FAMILY_SSE,    	/* extended multimedia instruction (packed data) */
+	R_ANAL_OP_FAMILY_VEC,    	/* vector instruction (packed data) */
 	R_ANAL_OP_FAMILY_PRIV,   	/* privileged instruction */
 	R_ANAL_OP_FAMILY_CRYPTO, 	/* cryptographic instructions */
 	R_ANAL_OP_FAMILY_THREAD, 	/* thread/lock/sync instructions */

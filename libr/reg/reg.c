@@ -6,7 +6,9 @@
 R_LIB_VERSION (r_reg);
 
 static const char * const types[R_REG_TYPE_LAST + 1] = {
-	"gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", NULL
+	// PAST "gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", NULL
+	"gpr", "drx", "fpu", "vec64", "vec128", "vec256", "vec512", "flg", "seg", NULL
+	// FUTURE "gpr", "drx", "fpu", "vec", "flg", "seg", NULL
 };
 
 R_API bool r_reg_hasbits_check(RReg *reg, int size) {
