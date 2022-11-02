@@ -89,7 +89,7 @@ static int r_main_r2pipe(int argc, const char **argv) {
 		}
 	} else {
 		R_LOG_ERROR ("R2PIPE_(IN|OUT) environment not set");
-		R_LOG_ERROR ("Usage: r2 -c '!*r2p x' # run commands via r2pipe");
+		R_LOG_INFO ("Usage: r2 -c '!*r2p x' # run commands via r2pipe");
 		rc = 1;
 	}
 	free (_in);

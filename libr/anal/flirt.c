@@ -1102,7 +1102,7 @@ static void print_arch(ut8 arch) {
 	PRINT_ARCH (IDASIG__ARCH__DALVIK, "DALVIK");
 }
 
-#define PRINT_FLAG(define, str) if (flags & define) { R_LOG_ERROR (" %s", str); }
+#define PRINT_FLAG(define, str) if (flags & define) { eprintf (" %s", str); }
 static void print_file_types(ut32 flags) {
 	PRINT_FLAG (IDASIG__FILE__DOS_EXE_OLD, "DOS_EXE_OLD");
 	PRINT_FLAG (IDASIG__FILE__DOS_COM_OLD, "DOS_COM_OLD");
@@ -1161,7 +1161,7 @@ static void print_features(ut16 flags) {
 
 static void print_header(idasig_v5_t *header) {
 	// eprintf("magic: %s\n", header->magic);
-	eprintf ("version: %d", header->version);
+	eprintf ("version: %d\n", header->version);
 	eprintf ("arch:"); print_arch (header->arch); eprintf ("\n");
 	eprintf ("file_types:"); print_file_types (header->file_types); eprintf ("\n");
 	eprintf ("os_types:"); print_os_types (header->os_types); eprintf ("\n");

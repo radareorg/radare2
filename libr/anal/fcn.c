@@ -813,7 +813,7 @@ repeat:
 			// Save the location of it in `delay.idx`
 			// note, we have still increased size of basic block
 			// (and function)
-			R_LOG_INFO ("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%"PFMT64u, at - oplen, bb->size);
+			R_LOG_DEBUG ("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%"PFMT64u, at - oplen, bb->size);
 			delay.idx = idx - oplen;
 			delay.cnt = op->delay;
 			delay.pending = 1; // we need this in case the actual idx is zero...
@@ -1411,7 +1411,7 @@ analopfinish:
 			}
 			if (!op->cond) {
 				if (anal->verbose) {
-					R_LOG_ERROR ("RET 0x%08"PFMT64x ". overlap=%s %"PFMT64u" %"PFMT64u,
+					R_LOG_DEBUG ("RET 0x%08"PFMT64x ". overlap=%s %"PFMT64u" %"PFMT64u,
 						addr + delay.un_idx - oplen, r_str_bool (overlapped),
 						bb->size, r_anal_function_linear_size (fcn));
 				}
