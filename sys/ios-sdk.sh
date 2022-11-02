@@ -32,7 +32,7 @@ iosConfigure() {
 	cp -f dist/plugins-cfg/${PLUGINS_CFG} plugins.cfg
 	./configure --with-libr --prefix=${PREFIX} --with-ostype=darwin \
 		--disable-debugger --without-gpl \
-		--without-fork --without-libuv --with-compiler=ios-sdk \
+		--without-fork --with-compiler=ios-sdk \
 		--target=arm64-unknown-darwin
 	return $?
 }

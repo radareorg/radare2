@@ -69,7 +69,7 @@ cp -f dist/plugins-cfg/plugins.ios.cfg plugins.cfg
 ./configure --prefix="${PREFIX}" \
 	${CFGFLAGS} \
 	--with-ostype=darwin --with-libr \
-	--without-gpl --without-fork --without-libuv \
+	--without-gpl --without-fork \
 	--with-compiler=ios-sdk \
 	--target=arm-unknown-darwin
 fi

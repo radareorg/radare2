@@ -22,7 +22,7 @@ fi
 rm -rf "${SRC}"
 ${MAKE} mrproper 2>/dev/null
 export CFLAGS="-O2 $CFLAGS"
-./configure --prefix="${PREFIX}" --without-libuv || exit 1
+./configure --prefix="${PREFIX}" || exit 1
 ${MAKE} -j4 || exit 1
 # TODO: run sys/install.sh
 ${MAKE} install PREFIX="${PREFIX}" DESTDIR=${SRC} || exit 1

@@ -126,11 +126,9 @@ if [ "${BUILD}" = 1 ]; then
 		# dup
 		echo ./configure --with-compiler=android \
 			--with-ostype=android \
-			--without-libuv \
 			--prefix=${PREFIX} ${CFGFLAGS}
 		cp -f plugins.android.cfg plugins.cfg
-		./configure --with-compiler=android --without-libuv \
-			--with-ostype=android \
+		./configure --with-compiler=android --with-ostype=android \
 			--prefix=${PREFIX} ${CFGFLAGS} || exit 1
 		${MAKE} -s -j 4 || exit 1
 	fi

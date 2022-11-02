@@ -299,8 +299,11 @@ R_API void r_io_map_del(RIO *io, ut32 id) {
 	if (!map) {
 		return;
 	}
-	ut32 bankid;
-	r_return_if_fail (r_id_storage_get_lowest (io->banks, &bankid));
+	ut32 bankid = 0;
+	if (!r_id_storage_get_lowest (io->banks, &bankid)) {
+		R_LOG_ERROR ("Cannot get the lowest bankid");
+		return;
+	}
 	do {
 		// TODO: use threads for every bank, except the current bank (io->bank)
 		r_io_bank_del_map (io, bankid, id);
