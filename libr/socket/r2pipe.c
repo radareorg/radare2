@@ -30,7 +30,7 @@ Usage Example:
 #define NO_CHILD -1
 #endif
 
-#ifdef __wasi__
+#if defined(__wasi__) && __wasi__
 #define HAVE_R2PIPE 0
 #else
 #define HAVE_R2PIPE 1
