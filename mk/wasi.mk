@@ -7,7 +7,8 @@ EXT_EXE=.wasm
 EXT_SO=.o
 WITH_LIBS=0
 EXT_AR=a
-CC=$(WASI_SDK)/bin/clang --sysroot=$(WASI_SYSROOT) -DHAVE_PTHREAD=0 -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_MMAN -DHAVE_PTY=0 -lc-printscan-long-double
+CC=$(WASI_SDK)/bin/clang --sysroot=$(WASI_SYSROOT) -DHAVE_PTHREAD=0 -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_MMAN -DHAVE_PTY=0
+# -lc-printscan-long-double
 AR=$(WASI_SDK)/bin/ar
 LINK=
 RANLIB=$(WASI_SDK)/bin/ranlib
