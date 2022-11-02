@@ -50,7 +50,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 	if (val[0] == '\'') {
 		size_t len = strlen (val);
 		if (len > 1 && val[len - 1] == '\'') {
-			eprintf ("Error: Invalid string syntax, use <<EOF instead of '...'\n");
+			R_LOG_ERROR ("Invalid string syntax, use <<EOF instead of '...'");
 			return NULL;
 		}
 	}
@@ -58,13 +58,13 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 		// <<EOF syntax
 		const char *endtoken = val + 2;
 		if (!*endtoken) {
-			eprintf ("Error: Missing opening end token after <<\n");
+			R_LOG_ERROR ("Missing opening end token after <<");
 			return NULL;
 		}
 		if (strcmp (endtoken, "EOF") != 0) {
 			// In case there will be strings containing "EOF" inside of them, this requirement
 			// can be weakened to only apply for strings which do not contain "EOF".
-			eprintf ("Error: End token must be \"EOF\", got \"%s\" instead.\n", endtoken);
+			R_LOG_ERROR ("End token must be \"EOF\", got \"%s\" instead", endtoken);
 			return NULL;
 		}
 		RStrBuf *buf = r_strbuf_new ("");
@@ -90,7 +90,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 				r_strbuf_append (buf, "\n");
 			}
 		} while ((line = *nextline));
-		eprintf ("Error: Missing closing end token %s\n", endtoken);
+		R_LOG_ERROR ("Missing closing end token %s", endtoken);
 		r_strbuf_free (buf);
 		return NULL;
 	}
@@ -101,7 +101,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 	char *contents = r_file_slurp (file, NULL);
 	if (!contents) {
-		eprintf ("Failed to open file \"%s\"\n", file);
+		R_LOG_ERROR ("Failed to open file \"%s\"", file);
 		return NULL;
 	}
 
@@ -450,7 +450,7 @@ R_API void r2r_json_test_free(R2RJsonTest *test) {
 R_API RPVector *r2r_load_json_test_file(const char *file) {
 	char *contents = r_file_slurp (file, NULL);
 	if (!contents) {
-		eprintf ("Failed to open file \"%s\"\n", file);
+		R_LOG_ERROR ("Failed to open file \"%s\"", file);
 		return NULL;
 	}
 
@@ -584,7 +584,7 @@ static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
 
 static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	if (depth <= 0) {
-		eprintf ("Directories for loading tests too deep: %s\n", path);
+		R_LOG_ERROR ("Directories for loading tests too deep: %s", path);
 		return false;
 	}
 	if (r_file_is_directory (path)) {
@@ -605,16 +605,16 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			if (!strcmp (subname, "extras")) {
 				// Only load "extras" dirs if explicitly specified
-				eprintf ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies.\n", path, subname);
+				R_LOG_ERROR ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies", path, subname);
 				continue;
 			}
 			if (skip_asm && strstr (path, R_SYS_DIR"asm"R_SYS_DIR)) {
-				eprintf ("R2R_SKIP_ASM: Skipping %s.\n", path);
+				R_LOG_ERROR ("R2R_SKIP_ASM: Skipping %s", path);
 				continue;
 			}
 			bool is_archos_folder = !strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos");
 			if (is_archos_folder && (skip_archos || strcmp (subname, R2R_ARCH_OS))) {
-				eprintf ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform.\n", path, subname);
+				R_LOG_ERROR ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform", path, subname);
 				continue;
 			}
 			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
@@ -629,7 +629,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	}
 
 	if (!r_file_exists (path)) {
-		eprintf ("Path \"%s\" does not exist\n", path);
+		R_LOG_ERROR ("Path \"%s\" does not exist", path);
 		return false;
 	}
 
@@ -759,7 +759,7 @@ R_API bool r2r_test_database_load_fuzz(R2RTestDatabase *db, const char *path) {
 	}
 
 	if (!r_file_exists (path)) {
-		eprintf ("Path \"%s\" does not exist\n", path);
+		R_LOG_ERROR ("Path \"%s\" does not exist", path);
 		return false;
 	}
 

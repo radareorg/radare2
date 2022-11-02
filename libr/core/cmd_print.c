@@ -1774,7 +1774,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (val) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, val, mode, 0));
 			} else {
-				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
+				eprintf ("Struct %s not defined. Use pfs.struct_name | pfs format\n", _input);
 			}
 		} else if (*_input == ' ') {
 			while (*_input == ' ' && *_input != '\0') {
@@ -1783,7 +1783,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (*_input) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, _input, mode, 0));
 			} else {
-				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
+				eprintf ("Struct %s not defined. Use pfs.struct_name | pfs format\n", _input);
 			}
 		} else {
 			eprintf ("Usage: pfs.struct_name | pfs format\n");
@@ -1822,7 +1822,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		if (_input[2] == ' ') {
 			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 2), PFB_ART);
 		} else {
-			eprintf ("Usage: pfb [binfmt] [names...]\n");
+			R_LOG_ERROR ("Usage: pfb [binfmt] [names...]");
 		}
 		return;
 	case 'o': // "pfo"
@@ -5643,11 +5643,11 @@ static bool check_string_at(RCore *core, ut64 addr) {
 		}
 	}
 #if 0
-	eprintf ("pascal %d\n", is_pascal1 + is_pascal2);
-	eprintf ("utf8 %d\n", is_utf8);
-	eprintf ("utf16 %d\n", is_utf16le+ is_utf16be);
-	eprintf ("ascii %d\n", is_ascii);
-	eprintf ("render\n");
+	R_LOG_ERROR ("pascal %d", is_pascal1 + is_pascal2);
+	R_LOG_ERROR ("utf8 %d", is_utf8);
+	R_LOG_ERROR ("utf16 %d", is_utf16le+ is_utf16be);
+	R_LOG_ERROR ("ascii %d", is_ascii);
+	R_LOG_ERROR ("render");
 #endif
 	// render the stuff
 	if (out) {
@@ -5732,7 +5732,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		if (halp) {
-			eprintf ("Usage: pushd [dir]\n");
+			R_LOG_ERROR ("Usage: pushd [dir]");
 			r_core_return_value (core, 1);
 		}
 		return 0;
@@ -5741,7 +5741,7 @@ static int cmd_print(void *data, const char *input) {
 		bool all = strstr (input, "-a");
 		bool halp = strstr (input, "-h");
 		if (halp) {
-			eprintf ("Usage: popd [-a]\n");
+			R_LOG_ERROR ("Usage: popd [-a]");
 			r_core_return_value (core, 1);
 		} else {
 			bool suc = all
@@ -5876,7 +5876,7 @@ static int cmd_print(void *data, const char *input) {
 					(void)r_io_read_at (core->io, 0, data, core->offset);
 					char *res = r_print_json_path ((const char *)data, core->offset);
 					if (res) {
-						eprintf ("-> res(%s)\n", res);
+						R_LOG_ERROR ("-> res(%s)", res);
 					}
 /*
 					char *res = r_print_json_indent ((char*)data, false, "  ", NULL);
@@ -6029,7 +6029,7 @@ static int cmd_print(void *data, const char *input) {
 			RAsmCode *acode = r_asm_massemble (core->rasm, input + 1);
 			if (acode) {
 				if (!acode->len) {
-					eprintf ("Usage: pa [instruction-to-assemble] ; use pd to disassemble\n");
+					R_LOG_ERROR ("Usage: pa [instruction-to-assemble] ; use pd to disassemble");
 				} else {
 					size_t i;
 					for (i = 0; i < acode->len; i++) {
@@ -7039,7 +7039,7 @@ static int cmd_print(void *data, const char *input) {
 			cmd_pCx (core, input + 2, "pc");
 			break;
 		default:
-			eprintf ("Usage: pC[dDaAxwc] - column output for pxa, pxA, pxw, ..\n");
+			R_LOG_ERROR ("Usage: pC[dDaAxwc] - column output for pxa, pxA, pxw, .. ");
 			break;
 		}
 		break;
@@ -7167,7 +7167,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '3': // "p3" [file]
 		if (input[1] == '?') {
-			eprintf ("Usage: p3 [file] - print 3D stereogram image of current block\n");
+			R_LOG_ERROR ("Usage: p3 [file] - print 3D stereogram image of current block");
 		} else if (input[1] == ' ') {
 			char *data = r_file_slurp (input + 2, NULL);
 			if (!data) {
@@ -7488,7 +7488,7 @@ static int cmd_print(void *data, const char *input) {
 				int mode = input[2];
 				int wordsize = core->anal->config->bits / 8;
 				if (mode == '?') {
-					eprintf ("Usage: pxr[1248][*,jq] [length]\n");
+					R_LOG_ERROR ("Usage: pxr[1248][*,jq] [length]");
 					break;
 				}
 				if (mode && isdigit (mode)) {
