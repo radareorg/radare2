@@ -541,6 +541,7 @@ static const char *help_msg_px[] = {
 	"px", "", "show hexdump",
 	"px--", "[n]", "context hexdump (the hexdump version of pd--3)",
 	"px/", "", "same as x/ in gdb (help x)",
+	"px*", "", "same as pc* or p8*, print r2 commands as in hexdump",
 	"px0", "", "8bit hexpair list of bytes until zero byte",
 	"pxa", "", "show annotated hexdump",
 	"pxA", "[?]", "show op analysis color map",
@@ -7229,6 +7230,9 @@ static int cmd_print(void *data, const char *input) {
 					free (data);
 				}
 			}
+			break;
+		case '*': // "px*"
+			r_core_cmd0 (core, "pc*");
 			break;
 		case '/': // "px/"
 			r_core_print_examine (core, input + 2);
