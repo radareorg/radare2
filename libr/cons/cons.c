@@ -2140,3 +2140,9 @@ R_API void r_cons_thready(void) {
 		R_CRITICAL_LEAVE (I);
 	}
 }
+
+#include "d_themes.inc"
+
+R_API const RConsTheme **r_cons_themes (void) {
+	return (const RConsTheme **)d_themes;
+}

@@ -160,6 +160,18 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 		return true;
 	}
 	char *arg = strdup (_arg);
+
+	const RConsTheme **themes = r_cons_themes ();
+	const RConsTheme *theme = themes[0];
+	while (theme && theme->name) {
+		if (!strcmp (theme->name, arg)) {
+			r_core_cmd0 (core, theme->script);
+			free (arg);
+			return true;
+		}
+		theme++;
+	}
+
 	// system themes directory
 	char *home = r_xdg_datadir ("cons");
 
