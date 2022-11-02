@@ -6,8 +6,10 @@ static bool test_r2pipe(void) {
 	R2Pipe *r = r2pipe_open ("radare2 -q0 -");
 	mu_assert ("r2pipe can spawn", r);
 	char *hello = r2pipe_cmd (r, "?e hello world");
-	mu_assert_streq (hello, "hello world\n", "r2pipe hello world");
-	free (hello);
+	if (hello) {
+		mu_assert_streq (hello, "hello world\n", "r2pipe hello world");
+		free (hello);
+	}
 	r2pipe_close (r);
 	mu_end;
 }
