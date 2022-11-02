@@ -123,11 +123,11 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		p->cb_printf ("wx+");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
 			if (i && !(i % 32)) {
-				p->cb_printf ("\nwx+");
+				p->cb_printf (";\nwx+");
 			}
 			p->cb_printf ("%02x", buf[i]);
 		}
-		p->cb_printf ("\ns-%d\n", len);
+		p->cb_printf (";\ns-%d\n", len);
 		break;
 	case 'A': // "pcA"
 		/* implemented in core because of disasm :( */
