@@ -639,6 +639,8 @@ R_API RCons *r_cons_new(void) {
 	I->teefile = NULL;
 	I->fix_columns = 0;
 	I->fix_rows = 0;
+	I->backup_fd = -1;
+	I->backup_fdn = -1;
 	I->mouse_event = 0;
 	I->force_rows = 0;
 	I->force_columns = 0;

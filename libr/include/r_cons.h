@@ -515,6 +515,8 @@ typedef struct r_cons_t {
 	// TODO: move into instance? + avoid unnecessary copies
 	RThreadLock *lock;
 	RConsCursorPos cpos;
+	int backup_fd;
+	int backup_fdn;
 } RCons;
 
 #define R_CONS_KEY_F1 0xf1
@@ -754,7 +756,6 @@ typedef struct r_cons_canvas_line_style_t {
 #define ARROW_RIGHT 8
 #define ARROW_LEFT 9
 #endif
-
 
 #ifdef R_API
 R_API void r_cons_image(const ut8 *buf, int bufsz, int width, int mode);
