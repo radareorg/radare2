@@ -577,6 +577,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	const bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
 	const bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
 	const bool is_dalvik = is_x86 ? false : anal->cur->arch && !strncmp (anal->cur->arch, "dalvik", 6);
+	const bool propagate_noreturn = anal->opt.propagate_noreturn;
 
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
@@ -1219,7 +1220,7 @@ repeat:
 			// XXX: this is TYPE_MCALL or indirect-call
 			(void) r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_CALL);
 
-			if (r_anal_noreturn_at (anal, op->ptr)) {
+			if (propagate_noreturn && r_anal_noreturn_at (anal, op->ptr)) {
 				RAnalFunction *f = r_anal_get_function_at (anal, op->ptr);
 				if (f) {
 					f->is_noreturn = true;
@@ -1232,7 +1233,7 @@ repeat:
 			/* call dst */
 			(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 
-			if (r_anal_noreturn_at (anal, op->jump)) {
+			if (propagate_noreturn && r_anal_noreturn_at (anal, op->jump)) {
 				RAnalFunction *f = r_anal_get_function_at (anal, op->jump);
 				if (f) {
 					f->is_noreturn = true;

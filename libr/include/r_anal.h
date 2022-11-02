@@ -384,6 +384,8 @@ typedef struct r_anal_options_t {
 	bool delay;
 	int tailcall;
 	bool retpoline;
+	bool propagate_noreturn;
+	bool recursive_noreturn; // anal.rnr
 } RAnalOptions;
 
 typedef enum {
@@ -435,7 +437,6 @@ typedef struct r_anal_t {
 	Sdb *sdb_zigns;
 	HtUP *dict_refs;
 	HtUP *dict_xrefs;
-	bool recursive_noreturn; // anal.rnr
 	RSpaces zign_spaces;
 	char *zign_path; // dir.zigns
 	PrintfCallback cb_printf;
@@ -455,7 +456,6 @@ typedef struct r_anal_t {
 	RAnalCallbacks cb;
 	RAnalOptions opt;
 	RList *reflines;
-	//RList *noreturn;
 	RListComparator columnSort;
 	int stackptr;
 	bool (*log)(struct r_anal_t *anal, const char *msg);

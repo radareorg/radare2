@@ -699,7 +699,7 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 			return true;
 		}
 	}
-	if (anal->recursive_noreturn) {
+	if (anal->opt.recursive_noreturn) {
 		return noreturn_recurse (anal, addr);
 	}
 	return false;

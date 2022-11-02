@@ -3119,9 +3119,15 @@ static bool cb_anal_limits(void *user, RConfigNode *node) {
 	return 1;
 }
 
-static bool cb_anal_rnr(void *user, RConfigNode *node) {
+static bool cb_anal_noret_refs(void *user, RConfigNode *node) {
 	RCore *core = (RCore*)user;
-	core->anal->recursive_noreturn = node->i_value;
+	core->anal->opt.recursive_noreturn = node->i_value;
+	return 1;
+}
+
+static bool cb_anal_noret(void *user, RConfigNode *node) {
+	RCore *core = (RCore*)user;
+	core->anal->opt.propagate_noreturn = node->i_value;
 	return 1;
 }
 
@@ -3451,7 +3457,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "set the value of the GP register (MIPS)");
 	SETBPREF ("anal.gpfixed", "true", "set gp register to anal.gp before emulating each instruction in aae");
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "restrict analysis to address range [anal.from:anal.to]");
-	SETCB ("anal.rnr", "false", (RConfigCallback)&cb_anal_rnr, "recursive no return checks (EXPERIMENTAL)");
+	SETCB ("anal.noret.refs", "false", (RConfigCallback)&cb_anal_noret_refs, "recursive no return checks (EXPERIMENTAL)");
+	SETCB ("anal.noret", "true", (RConfigCallback)&cb_anal_noret, "propagate noreturn attributes (EXPERIMENTAL)");
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "restrict analysis to address range [anal.from:anal.to]");
 	SETICB ("anal.from", -1, (RConfigCallback)&cb_anal_from, "lower limit on the address range for analysis");
 	SETICB ("anal.to", -1, (RConfigCallback)&cb_anal_from, "upper limit on the address range for analysis");
