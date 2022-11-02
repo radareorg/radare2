@@ -2329,6 +2329,14 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 	ut64 i, at;
 	RIOMap *map;
 	RListIter *iter;
+	const char *where = "bin.sections.x";
+
+	r_list_free (param->boundaries);
+	param->boundaries = r_core_get_boundaries_prot (core, R_PERM_X, where, "search");
+	if (r_list_empty (param->boundaries)) {
+		where = r_config_get (core->config, "anal.in");
+		param->boundaries = r_core_get_boundaries_prot (core, R_PERM_X, where, "search");
+	}
 	if (!core->anal->esil) {
 		// initialize esil vm
 		r_core_cmd0 (core, "aei");
@@ -2513,17 +2521,14 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 							}
 						}
 						if (R_STR_ISNOTEMPTY (s)) {
-							char *ss = strdup (s);
-							r_str_trim (ss);
+							char *ss = r_str_trim_dup (s);
 							r_strbuf_appendf (rb, "0x%08"PFMT64x" %s\n", firstch, ss);
-							{
-								r_name_filter (ss, -1);
-								RCoreAsmHit cah = {
-									.addr = firstch,
-									.len = lastch - firstch,
-								};
-								search_hit_at (core, param, &cah, ss);
-							}
+							r_name_filter (ss, -1);
+							RCoreAsmHit cah = {
+								.addr = firstch,
+								.len = lastch - firstch,
+							};
+							search_hit_at (core, param, &cah, ss);
 							free (ss);
 						}
 					}
@@ -4037,10 +4042,10 @@ reread:
 			}
 			dosearch = false;
 			break;
-		case 'u':
+		case 'u': // "/au"
 			do_unkjmp_search (core, &param, false, r_str_trim_head_ro (input + 2));
 			break;
-		case 'z':
+		case 'z': // "/az"
 			switch (input[2]) {
 			case '?': // "/az"
 				r_core_cmd_help_match (core, help_msg_slash_a, "/az", true);
