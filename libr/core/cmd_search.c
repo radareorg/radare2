@@ -2323,6 +2323,76 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 	}
 }
 
+static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
+	const int flags = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM;
+	RAnalOp aop;
+	ut64 i, at;
+	RIOMap *map;
+	RListIter *iter;
+	if (!core->anal->esil) {
+		// initialize esil vm
+		r_core_cmd0 (core, "aei");
+		if (!core->anal->esil) {
+			R_LOG_ERROR ("Cannot initialize the ESIL vm");
+			return;
+		}
+	}
+	r_list_foreach (param->boundaries, iter, map) {
+		ut64 from = r_io_map_begin (map);
+		ut64 to = r_io_map_end (map);
+		if (!(map->perm & R_PERM_X)) {
+			continue;
+		}
+		r_cons_break_push (NULL, NULL);
+		for (i = 0, at = from; at < to; i++, at++) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			ut64 at = from + i;
+			ut8 bufop[32] = {0};
+			if (!r_io_read_at (core->io, at, bufop, sizeof (bufop))) {
+				break;
+			}
+			bool fail = !memcmp (bufop, "\xff\xff\xff\xff", 4);
+			if (fail) {
+				R_LOG_DEBUG ("Invalid read at 0x%08"PFMT64x, at);
+				break;
+			}
+
+			int ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), flags);
+			if (ret) {
+				r_anal_esil_set_pc (core->anal->esil, at);
+				r_reg_setv (core->anal->reg, "PC", at);
+				const char *esil = r_strbuf_get (&aop.esil);
+				bool res = r_anal_esil_parse (core->anal->esil, esil);
+				if (res) {
+					ut64 d = r_reg_getv (core->anal->reg, "PC");
+					if (!d || !r_io_is_valid_offset (core->io, d, 0) || d == at + aop.size) {
+						R_LOG_DEBUG ("Invalid destination offset");
+					} else {
+						switch (aop.type) {
+						case R_ANAL_OP_TYPE_UCALL:
+						case R_ANAL_OP_TYPE_RCALL:
+							r_cons_printf ("CC RCALL 0x%08"PFMT64x" // %s @ 0x%08"PFMT64x"\n", d, aop.mnemonic, at);
+							break;
+						case R_ANAL_OP_TYPE_UJMP:
+						case R_ANAL_OP_TYPE_RJMP:
+							r_cons_printf ("CC RJMP 0x%08"PFMT64x" // %s @ 0x%08"PFMT64x"\n", d, aop.mnemonic, at);
+							break;
+						default:
+							// eprintf ("--> 0x%08"PFMT64x" %s\n", aop.addr, aop.mnemonic);
+							break;
+						}
+					}
+				}
+				i += aop.size - 1;
+			}
+			r_anal_op_fini (&aop);
+		}
+		r_cons_break_pop ();
+	}
+}
+
 static bool do_analstr_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
 	bool silent = false;
 	if (!input) {
@@ -3966,6 +4036,9 @@ reread:
 				do_syscall_search (core, &param);
 			}
 			dosearch = false;
+			break;
+		case 'u':
+			do_unkjmp_search (core, &param, false, r_str_trim_head_ro (input + 2));
 			break;
 		case 'z':
 			switch (input[2]) {
