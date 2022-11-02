@@ -178,7 +178,7 @@ bool test_r_reg_get_list(void) {
 	bool success = r_reg_set_profile_string (reg,
 		"gpr		eax		.32	24	0\n\
 		fpu			sf0		.32	304	0\n\
-		xmm@fpu		xmm0	.64	160	4");
+		vec128@fpu		xmm0	.64	160	4");
 	mu_assert_eq (success, true, "define eax, sf0 and xmm0 register");
 
 	mask = ((int)1 << R_REG_TYPE_VEC128);
@@ -199,13 +199,14 @@ bool test_r_reg_get_pack(void) {
 	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
+	/// XXX xmm0h and l should be of size 64 not 128!!
 	r_reg_set_profile_string (reg,
 		"vec128    xmm0	.128	0	16\n\
-		vec64    xmm0h	.64		0	8\n\
-		vec64    xmm0l	.64		8	8\n\
+		vec128    xmm0h	.64		0	8\n\
+		vec128    xmm0l	.64		8	8\n\
 		vec128    xmm1	.128	16	16\n\
-		vec64    xmm1h	.64		16	8\n\
-		vec64    xmm1l	.64		24	8");
+		vec128    xmm1h	.64		16	8\n\
+		vec128    xmm1l	.64		24	8");
 
 	r = r_reg_get (reg, "xmm0", R_REG_TYPE_VEC128);
 	r_reg_set_pack (reg, r, 0, 64, 0x0011223344556677);
