@@ -161,8 +161,7 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 	}
 	char *arg = strdup (_arg);
 
-	const RConsTheme **themes = r_cons_themes ();
-	const RConsTheme *theme = themes[0];
+	const RConsTheme *theme = r_cons_themes ();
 	while (theme && theme->name) {
 		if (!strcmp (theme->name, arg)) {
 			r_core_cmd0 (core, theme->script);

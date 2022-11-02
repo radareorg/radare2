@@ -780,7 +780,7 @@ R_API void r_cons_canvas_line_back_edge(RConsCanvas *c, int x, int y, int x2, in
 
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void);
-R_API const RConsTheme **r_cons_themes (void);
+R_API const RConsTheme *r_cons_themes(void);
 R_API void r_cons_chop(void);
 R_API RConsContext *r_cons_context(void);
 R_API RCons *r_cons_free(void);
