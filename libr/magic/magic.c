@@ -135,7 +135,7 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 		int flags = O_RDONLY | O_BINARY;
 
 		if (stat (inname, &sb) == 0 && S_ISFIFO (sb.st_mode)) {
-#if O_NONBLOCK
+#ifdef O_NONBLOCK
 			flags |= O_NONBLOCK;
 #endif
 			ispipe = true;
