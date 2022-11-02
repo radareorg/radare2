@@ -380,6 +380,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 				return true;
 			}
 		} else {
+			// resolve asm plugin by name, support multi-arch assemblers
 			char *vv = strchr (name, '.');
 			if (vv) {
 				if (!strcmp (vv + 1, h->name)) {
@@ -392,6 +393,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 					r_asm_set_cpu (a, arch);
 #endif
 					a->cur = h;
+					load_asm_descriptions (a, h);
 					free (arch);
 					return true;
 				}
@@ -404,6 +406,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 					r_asm_set_cpu (a, NULL);
 #endif
 					a->cur = h;
+					load_asm_descriptions (a, h);
 					return true;
 				}
 			}
@@ -413,7 +416,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		if (a->analb.use (a->analb.anal, name)) {
 			load_asm_descriptions (a, NULL);
 		} else {
-			R_LOG_ERROR ("Cannot find arch plugin with this name. See rasm2 -L and rasm2 -LL");
+			R_LOG_ERROR ("Cannot find '%s' asm/arch/anal plugin. See rasm2 -L and rasm2 -LL", name);
 		}
 	}
 #if 0
