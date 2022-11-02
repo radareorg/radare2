@@ -3987,35 +3987,35 @@ static char *get_reg_profile(RAnal *anal) {
 		//"drx	dr5	.32	20	0\n"
 		"drx	dr6	.32	24	0\n"
 		"drx	dr7	.32	28	0\n"
-		"xmm@fpu    xmm0  .128 160  4\n"
-		"fpu    xmm0l .64 160  0\n"
-		"fpu    xmm0h .64 168  0\n"
+		"vec128@fpu    xmm0  .128 160  4\n"
+		"vec64@fpu    xmm0l .64 160  0\n"
+		"vec64@fpu    xmm0h .64 168  0\n"
 
-		"xmm@fpu    xmm1  .128 176  4\n"
+		"vec128@fpu    xmm1  .128 176  4\n"
 		"fpu    xmm1l .64 176  0\n"
 		"fpu    xmm1h .64 184  0\n"
 
-		"xmm@fpu    xmm2  .128 192  4\n"
+		"vec128@fpu    xmm2  .128 192  4\n"
 		"fpu    xmm2l .64 192  0\n"
 		"fpu    xmm2h .64 200  0\n"
 
-		"xmm@fpu    xmm3  .128 208  4\n"
+		"vec128@fpu    xmm3  .128 208  4\n"
 		"fpu    xmm3l .64 208  0\n"
 		"fpu    xmm3h .64 216  0\n"
 
-		"xmm@fpu    xmm4  .128 224  4\n"
+		"vec128@fpu    xmm4  .128 224  4\n"
 		"fpu    xmm4l .64 224  0\n"
 		"fpu    xmm4h .64 232  0\n"
 
-		"xmm@fpu    xmm5  .128 240  4\n"
-		"fpu    xmm5l .64 240  0\n"
-		"fpu    xmm5h .64 248  0\n"
+		"vec128@fpu    xmm5  .128 240  4\n"
+		"fpu    vec1285l .64 240  0\n"
+		"fpu    vec1285h .64 248  0\n"
 
-		"xmm@fpu    xmm6  .128 256  4\n"
-		"fpu    xmm6l .64 256  0\n"
-		"fpu    xmm6h .64 264  0\n"
+		"vec128@fpu    xmm6  .128 256  4\n"
+		"fpu    vec1286l .64 256  0\n"
+		"fpu    vec1286h .64 264  0\n"
 
-		"xmm@fpu    xmm7  .128 272  4\n"
+		"vec128@fpu    xmm7  .128 272  4\n"
 		"fpu    xmm7l .64 272  0\n"
 		"fpu    xmm7h .64 280  0\n";
 
@@ -4194,35 +4194,35 @@ static char *get_reg_profile(RAnal *anal) {
 		 "fpu    st6 .64 128  0\n"
 		 "fpu    st7 .64 144  0\n"
 
-		 "xmm@fpu    xmm0  .128 160  4\n"
+		 "vec128@fpu    xmm0  .128 160  4\n"
 		 "fpu    xmm0l .64 160  0\n"
 		 "fpu    xmm0h .64 168  0\n"
 
-		 "xmm@fpu    xmm1  .128 176  4\n"
+		 "vec128@fpu    xmm1  .128 176  4\n"
 		 "fpu    xmm1l .64 176  0\n"
 		 "fpu    xmm1h .64 184  0\n"
 
-		 "xmm@fpu    xmm2  .128 192  4\n"
+		 "vec128@fpu    xmm2  .128 192  4\n"
 		 "fpu    xmm2l .64 192  0\n"
 		 "fpu    xmm2h .64 200  0\n"
 
-		 "xmm@fpu    xmm3  .128 208  4\n"
+		 "vec128@fpu    xmm3  .128 208  4\n"
 		 "fpu    xmm3l .64 208  0\n"
 		 "fpu    xmm3h .64 216  0\n"
 
-		 "xmm@fpu    xmm4  .128 224  4\n"
+		 "vec128@fpu    xmm4  .128 224  4\n"
 		 "fpu    xmm4l .64 224  0\n"
 		 "fpu    xmm4h .64 232  0\n"
 
-		 "xmm@fpu    xmm5  .128 240  4\n"
+		 "vec128@fpu    xmm5  .128 240  4\n"
 		 "fpu    xmm5l .64 240  0\n"
 		 "fpu    xmm5h .64 248  0\n"
 
-		 "xmm@fpu    xmm6  .128 256  4\n"
+		 "vec128@fpu    xmm6  .128 256  4\n"
 		 "fpu    xmm6l .64 256  0\n"
 		 "fpu    xmm6h .64 264  0\n"
 
-		 "xmm@fpu    xmm7  .128 272  4\n"
+		 "vec128@fpu    xmm7  .128 272  4\n"
 		 "fpu    xmm7l .64 272  0\n"
 		 "fpu    xmm7h .64 280  0\n"
 		 "fpu    x64   .64 288  0\n");
