@@ -33,8 +33,8 @@
 
 #if __UNIX__
 #include <sys/ioctl.h>
-#include <sys/resource.h>
 #ifndef __wasi__
+#include <sys/resource.h>
 #include <grp.h>
 #endif
 #include <errno.h>
