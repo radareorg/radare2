@@ -1,5 +1,5 @@
-WASI_SDK=$(HOME)/Downloads/wasi/wasi-sdk-12.0
-WASI_SYSROOT=$(HOME)/Downloads/wasi/wasi-sysroot
+WASI_SDK=$(HOME)/Downloads/wasi/wasi-sdk-16.0
+WASI_SYSROOT=$(HOME)/Downloads/wasi/wasi-sysroot-16.0
 
 ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
