@@ -10,7 +10,8 @@ static const char *help_msg_o[] = {
 	"o","","list opened files",
 	"o","-1","close file descriptor 1",
 	"o*","","list opened files in r2 commands",
-	"o+"," [file]","open file in read-write mode",
+	"o+"," [file]", "open a file in read-write mode",
+	"o++"," [file]", "create and open file in read-write mode (see ot and omr)",
 	"o-","!*","close all opened files",
 	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
 	"o.","","show current filename (or o.q/oq to get the fd)",
@@ -1900,7 +1901,15 @@ static int cmd_open(void *data, const char *input) {
 		return 0;
 		break;
 	case '+': // "o+"
+		if (input[1] == '?' || (input[1] && input[2] == '?')) {
+			r_core_cmd_help_match (core, help_msg_o, "o+", false);
+			return 0;
+		}
 		perms |= R_PERM_W;
+		if (input[1] == '+') { // "o++"
+			perms |= R_PERM_CREAT;
+			input++;
+		}
 		/* fallthrough */
 	case ' ': // "o" "o "
 		ptr = input + 1;
@@ -1946,7 +1955,7 @@ static int cmd_open(void *data, const char *input) {
 					RIODesc *desc = r_io_desc_get (core->io, fd);
 					if (desc && (desc->perm & R_PERM_W)) {
 						RListIter *iter;
-						RList *maplist =r_io_map_get_by_fd (core->io, desc->fd);
+						RList *maplist = r_io_map_get_by_fd (core->io, desc->fd);
 						if (!maplist) {
 							break;
 						}
@@ -1960,6 +1969,9 @@ static int cmd_open(void *data, const char *input) {
 					}
 				}
 			} else {
+				if (perms & R_PERM_W) {
+					// create file!
+				}
 				R_LOG_ERROR ("cannot open file %s", argv0);
 			}
 		}
