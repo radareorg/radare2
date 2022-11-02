@@ -74,11 +74,9 @@ R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
 
 /* TODO: add timeout here ? */
 R_API char *r2pipe_read(R2Pipe *r2pipe) {
-#if HAVE_R2PIPE
-	return NULL;
-#else
-	int bufsz = 0;
 	char *buf = NULL;
+#if HAVE_R2PIPE
+	int bufsz = 0;
 	if (!r2pipe) {
 		return NULL;
 	}
@@ -122,8 +120,8 @@ R_API char *r2pipe_read(R2Pipe *r2pipe) {
 		buf[zpos] = 0;
 	}
 #endif
-	return buf;
 #endif
+	return buf;
 }
 
 R_API int r2pipe_close(R2Pipe *r2pipe) {
@@ -172,7 +170,7 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 	return 0;
 }
 
-#if __WINDOWS__
+#if HAVE_R2PIPE && __WINDOWS__
 static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 	CHAR buf[1024];
 	r2pipe->pipe = CreateNamedPipe (TEXT ("\\\\.\\pipe\\R2PIPE_IN"),
