@@ -502,7 +502,31 @@ static int cmd_eval(void *data, const char *input) {
 				RList *themes_list = r_core_list_themes (core);
 				RListIter *th_iter;
 				const char *th;
+				const RConsTheme *themes = r_cons_themes ();
+				const RConsTheme *theme = themes;
+				while (theme && theme->name) {
+					const char *th = theme->name;
+					if (input[2] == 'q') {
+						r_cons_printf ("%s\n", th);
+					} else if (core->theme && !strcmp (core->theme, th)) {
+						r_cons_printf ("- %s\n", th);
+					} else {
+						r_cons_printf ("  %s\n", th);
+					}
+					theme++;
+				}
+				bool skip = false;
 				r_list_foreach (themes_list, th_iter, th) {
+					skip = false;
+					for (theme = themes; (theme && theme->name); theme++) {
+						if (!strcmp (theme->name, th)) {
+							skip = true;
+							break;
+						}
+					}
+					if (skip) {
+						continue;
+					}
 					if (input[2] == 'q') {
 						r_cons_printf ("%s\n", th);
 					} else if (core->theme && !strcmp (core->theme, th)) {
