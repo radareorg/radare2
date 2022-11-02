@@ -30,6 +30,12 @@ Usage Example:
 #define NO_CHILD -1
 #endif
 
+#ifdef __wasi__
+#define HAVE_R2PIPE 0
+#else
+#define HAVE_R2PIPE 1
+#endif
+
 #if !__WINDOWS__
 static void env(const char *s, int f) {
 	char *a = r_str_newf ("%d", f);
@@ -39,6 +45,7 @@ static void env(const char *s, int f) {
 #endif
 
 R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
+#if HAVE_R2PIPE
 	char *cmd;
 	int ret, len;
 	if (!r2pipe || !str) {
@@ -60,10 +67,16 @@ R_API int r2pipe_write(R2Pipe *r2pipe, const char *str) {
 #endif
 	free (cmd);
 	return ret;
+#else
+	return -1;
+#endif
 }
 
 /* TODO: add timeout here ? */
 R_API char *r2pipe_read(R2Pipe *r2pipe) {
+#if HAVE_R2PIPE
+	return NULL;
+#else
 	int bufsz = 0;
 	char *buf = NULL;
 	if (!r2pipe) {
@@ -110,9 +123,11 @@ R_API char *r2pipe_read(R2Pipe *r2pipe) {
 	}
 #endif
 	return buf;
+#endif
 }
 
 R_API int r2pipe_close(R2Pipe *r2pipe) {
+#if HAVE_R2PIPE
 	if (!r2pipe) {
 		return 0;
 	}
@@ -152,6 +167,7 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 		r2pipe->child = NO_CHILD;
 	}
 #endif
+#endif
 	free (r2pipe);
 	return 0;
 }
@@ -175,7 +191,7 @@ static int w32_createPipe(R2Pipe *r2pipe, const char *cmd) {
 
 static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 	r_return_val_if_fail (r2p, NULL);
-#if __UNIX__ || defined(__CYGWIN__)
+#if HAVE_R2PIPE && (__UNIX__ || defined(__CYGWIN__))
 	char *out = r_sys_getenv ("R2PIPE_IN");
 	char *in = r_sys_getenv ("R2PIPE_OUT");
 	int done = false;
@@ -196,7 +212,7 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 	free (out);
 	return r2p;
 #else
-	R_LOG_ERROR ("r2pipe_open(NULL) not supported on windows");
+	R_LOG_ERROR ("r2pipe_open(NULL) not supported on this platform");
 	return NULL;
 #endif
 }
@@ -204,7 +220,7 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 static R2Pipe *r2pipe_new(void) {
 	R2Pipe *r2pipe = R_NEW0 (R2Pipe);
 	if (r2pipe) {
-#if __UNIX__
+#if HAVE_R2PIPE && __UNIX__
 		r2pipe->input[0] = r2pipe->input[1] = -1;
 		r2pipe->output[0] = r2pipe->output[1] = -1;
 #endif
@@ -222,6 +238,7 @@ R_API R2Pipe *r2pipe_open_corebind(RCoreBind *coreb) {
 }
 
 R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
+#if HAVE_R2PIPE
 	void *libr = r_lib_dl_open (libr_path);
 	void* (*rnew)() = r_lib_dl_sym (libr, "r_core_new");
 	char* (*rcmd)(void *c, const char *cmd) = r_lib_dl_sym (libr, "r_core_cmd_str");
@@ -235,11 +252,13 @@ R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
 		}
 		return r2pipe;
 	}
+#endif
 	R_LOG_ERROR ("Cannot resolve r_core_cmd, r_core_cmd_str, r_core_free");
 	return NULL;
 }
 
 R_API R2Pipe *r2pipe_open(const char *cmd) {
+#if HAVE_R2PIPE
 	R2Pipe *r2p = r2pipe_new ();
 	if (!r2p) {
 		return NULL;
@@ -320,18 +339,26 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 	}
 #endif
 	return r2p;
+#else
+	return NULL;
+#endif
 }
 
 R_API char *r2pipe_cmd(R2Pipe *r2p, const char *str) {
+#if HAVE_R2PIPE
 	r_return_val_if_fail (r2p && str, NULL);
 	if (!*str || !r2pipe_write (r2p, str)) {
 		r_sys_perror ("r2pipe_write");
 		return NULL;
 	}
 	return r2pipe_read (r2p);
+#else
+	return NULL;
+#endif
 }
 
 R_API char *r2pipe_cmdf(R2Pipe *r2p, const char *fmt, ...) {
+#if HAVE_R2PIPE
 	int ret, ret2;
 	char *p, string[1024];
 	va_list ap, ap2;
@@ -360,5 +387,8 @@ R_API char *r2pipe_cmdf(R2Pipe *r2p, const char *fmt, ...) {
 	va_end (ap2);
 	va_end (ap);
 	return (char*)fmt;
+#else
+	return NULL;
+#endif
 }
 
