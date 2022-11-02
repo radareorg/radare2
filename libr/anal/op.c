@@ -636,8 +636,7 @@ R_API const char *r_anal_op_family_tostring(int n) {
 	case R_ANAL_OP_FAMILY_CPU: return "cpu";
 	case R_ANAL_OP_FAMILY_SECURITY: return "sec";
 	case R_ANAL_OP_FAMILY_FPU: return "fpu";
-	case R_ANAL_OP_FAMILY_MMX: return "mmx";
-	case R_ANAL_OP_FAMILY_SSE: return "sse";
+	case R_ANAL_OP_FAMILY_VEC: return "vec";
 	case R_ANAL_OP_FAMILY_PRIV: return "priv";
 	case R_ANAL_OP_FAMILY_THREAD: return "thrd";
 	case R_ANAL_OP_FAMILY_CRYPTO: return "crpt";
@@ -651,21 +650,21 @@ struct op_family {
 	const char *name;
 	int id;
 };
+
 static const struct op_family of[] = {
 	{ "cpu", R_ANAL_OP_FAMILY_CPU},
 	{ "fpu", R_ANAL_OP_FAMILY_FPU},
-	{ "mmx", R_ANAL_OP_FAMILY_MMX},
-	{ "sse", R_ANAL_OP_FAMILY_SSE},
+	{ "vec", R_ANAL_OP_FAMILY_VEC},
 	{ "priv", R_ANAL_OP_FAMILY_PRIV},
 	{ "virt", R_ANAL_OP_FAMILY_VIRT},
-	{ "crpt", R_ANAL_OP_FAMILY_CRYPTO},
+	{ "crypto", R_ANAL_OP_FAMILY_CRYPTO},
 	{ "io", R_ANAL_OP_FAMILY_IO},
 	{ "sec", R_ANAL_OP_FAMILY_SECURITY},
 	{ "thread", R_ANAL_OP_FAMILY_THREAD},
 };
 
 R_API int r_anal_op_family_from_string(const char *f) {
-	int i;
+	size_t i;
 	for (i = 0; i < sizeof (of) / sizeof (of[0]); i ++) {
 		if (!strcmp (f, of[i].name)) {
 			return of[i].id;

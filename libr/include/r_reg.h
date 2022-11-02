@@ -7,6 +7,8 @@
 #include <r_util/r_hex.h>
 #include <r_util/r_assert.h>
 
+#define R_REG_USE_VEC 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,9 +23,10 @@ typedef enum {
 	R_REG_TYPE_GPR,
 	R_REG_TYPE_DRX,
 	R_REG_TYPE_FPU,
-	R_REG_TYPE_MMX,
-	R_REG_TYPE_XMM,
-	R_REG_TYPE_YMM,
+	R_REG_TYPE_VEC64, // MMX
+	R_REG_TYPE_VEC128, // XMM
+	R_REG_TYPE_VEC256, // YMM
+	R_REG_TYPE_VEC512, // ZMM
 	R_REG_TYPE_FLG,
 	R_REG_TYPE_SEG,
 	R_REG_TYPE_LAST,

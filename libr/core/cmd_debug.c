@@ -2686,7 +2686,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			int size = 0; // auto
 			char *q, *p, *name;
 			char *eq = NULL;
-			RRegisterType reg_type = R_REG_TYPE_XMM;
+			RRegisterType reg_type = R_REG_TYPE_VEC128;
 			if ((str[1] == ' ' && str[2] != '\x00') || (str[1] == 'y' && str[2] == ' ' && str[3] != '\x00')) {
 				if (str[1] == 'y') { // support `drmy ymm0` and `drm ymm0`
 					str = str + 1;
@@ -2724,7 +2724,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			} else {
 				explicit_size = 1;
 				if (str[1] == 'y') {
-					reg_type = R_REG_TYPE_YMM;
+					reg_type = R_REG_TYPE_VEC256;
 					str = str + 1;
 				}
 				if (str[2] == ' ' && str[3] != '\x00') {
@@ -2766,7 +2766,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				if (item) {
 					if (eq) {
 						// TODO: support setting YMM registers
-						if (reg_type == R_REG_TYPE_YMM) {
+						if (reg_type == R_REG_TYPE_VEC256) {
 							R_LOG_WARN ("Setting ymm registers not supported yet!");
 						} else {
 							ut64 val = r_num_math (core->num, eq);
@@ -2806,18 +2806,18 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			}
 		} else { // drm # no arg
 			if (str[1] == 'y') { // drmy
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_YMM, false);
-				r_debug_reg_list (core->dbg, R_REG_TYPE_YMM, 256, NULL, 0, 0);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_VEC256, false);
+				r_debug_reg_list (core->dbg, R_REG_TYPE_VEC256, 256, NULL, 0, 0);
 			} else { // drm
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, false);
-				r_debug_reg_list (core->dbg, R_REG_TYPE_XMM, 128, NULL, 0, 0);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_VEC128, false);
+				r_debug_reg_list (core->dbg, R_REG_TYPE_VEC128, 128, NULL, 0, 0);
 			}
 		}
 		//r_debug_drx_list (core->dbg);
 		break;
 	case 'f': // "drf"
 		//r_debug_drx_list (core->dbg);
-		if (str[1]=='?') {
+		if (str[1] == '?') {
 			eprintf ("usage: drf [fpureg] [= value]\n");
 		} else if (str[1]==' ') {
 			char *p, *name = strdup (str + 2);

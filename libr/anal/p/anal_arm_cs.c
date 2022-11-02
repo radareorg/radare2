@@ -3281,7 +3281,7 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->family = R_ANAL_OP_FAMILY_PRIV;
 #endif
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_NEON)) {
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_FPARMV8)) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
 	} else {
@@ -3781,11 +3781,11 @@ static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb,
 		op->family = R_ANAL_OP_FAMILY_VIRT;
 #endif
 	} else if (cs_insn_group (handle, insn, ARM_GRP_NEON)) {
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 	} else if (cs_insn_group (handle, insn, ARM_GRP_FPARMV8)) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
 	} else if (cs_insn_group (handle, insn, ARM_GRP_THUMB2DSP)) {
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = R_ANAL_OP_FAMILY_VEC;
 	} else {
 		op->family = R_ANAL_OP_FAMILY_CPU;
 	}

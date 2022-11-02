@@ -641,7 +641,9 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 		// TODO
 		struct dbreg dbr;
 		ret = ptrace (PT_GETDBREGS, pid, (caddr_t)&dbr, sizeof (dbr));
-		if (ret != 0) return false;
+		if (ret != 0) {
+			return false;
+		}
 		// XXX: maybe the register map is not correct, must review
 	}
 #endif
@@ -649,8 +651,11 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 		return true;
 		break;
 	case R_REG_TYPE_FPU:
-	case R_REG_TYPE_MMX:
-	case R_REG_TYPE_XMM:
+	case R_REG_TYPE_VEC64: // MMX
+	case R_REG_TYPE_VEC128: // XMM
+	case R_REG_TYPE_VEC256: // YMM
+	case R_REG_TYPE_VEC512: // ZMM
+		// not implemented
 		break;
 	case R_REG_TYPE_SEG:
 	case R_REG_TYPE_FLG:
@@ -662,7 +667,7 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 		#if __NetBSD__ || __OpenBSD__
 			ret = ptrace (PTRACE_GETREGS, pid, (caddr_t)&regs, sizeof (regs));
 		#elif __KFBSD__
-			ret = ptrace(PT_GETREGS, pid, (caddr_t)&regs, 0);
+			ret = ptrace (PT_GETREGS, pid, (caddr_t)&regs, 0);
 		#else
 			#warning not implemented for this platform
 			ret = 1;
