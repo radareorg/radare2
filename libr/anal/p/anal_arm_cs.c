@@ -4461,6 +4461,17 @@ static inline bool is_valid_mnemonic(const char *m) {
 	return !r_str_startswith (m, "hint") && !r_str_startswith (m, "udf");
 }
 
+static void initcs(csh ud) {
+	cs_opt_mem mem = {
+		.malloc = malloc,
+		.calloc = calloc,
+		.realloc = realloc,
+		.free = free,
+		.vsnprintf = vsnprintf,
+	};
+	cs_option (ud, CS_OPT_MEM, (size_t)&mem);
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	R_CRITICAL_ENTER (a);
 	cs_insn *insn = NULL;
@@ -4484,6 +4495,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	}
 	op->size = (a->config->bits == 16)? 2: 4;
 	op->addr = addr;
+	initcs (a->cs_handle);
 	if (a->cs_handle == 0) {
 		ret = (a->config->bits == 64)?
 			cs_open (CS_ARCH_ARM64, mode, &a->cs_handle):
@@ -4497,6 +4509,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		cs_option (a->cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
+	// TODO: use csh handle = init_capstone (a);
 	n = cs_disasm (a->cs_handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n > 0 && is_valid_mnemonic (insn->mnemonic)) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
