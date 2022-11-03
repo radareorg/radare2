@@ -1568,6 +1568,7 @@ static int cmd_wt(RCore *core, const char *input) {
 		}
 		case 'f': // "wtf"
 			switch (input[1]) {
+			case '\0':
 			case '?': // "wtf?"
 				r_core_cmd_help_match (core, help_msg_wt, "wtf", true);
 				ret = 1;
