@@ -4253,6 +4253,7 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin) {
 }
 
 void MACH0_(mach_headerfields)(RBinFile *bf) {
+	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	if (!cb_printf) {
 		cb_printf = printf;
@@ -4304,6 +4305,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 		addr += 4;
 		pvaddr += 4;
 	}
+	init_sdb_formats (bin);
 	for (n = 0; n < mh->ncmds && addr < length; n++) {
 		READWORD ();
 		ut32 lcType = word;
