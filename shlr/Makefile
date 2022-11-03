@@ -252,7 +252,7 @@ capstone-sync:
 ifeq ($(WITHOUT_PULL),1)
 	@echo "Nothing to sync because of --without-pull"
 else
-	if [ ! -d capstone ]; then \
+	if [ ! -d capstone ] || [ $(shell [ -d capstone/.git ] && git --git-dir capstone/.git rev-parse HEAD) != $(CS_TIP) ]; then \
 		"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}" "${CS_ARCHIVE_URL}" ; \
 	fi
 endif

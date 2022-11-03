@@ -127,7 +127,7 @@ if [ -z "${CS_ARCHIVE}" ]; then
 	fi
 fi
 
-if [ -d capstone ]; then
+if [ -d capstone -a ! -d capstone/.git ] || [ "$(git --git-dir capstone/.git rev-parse --verify HEAD > /dev/null 2>&1)" = ${CS_TIP} ]; then
 	echo "[capstone] Nothing to do"
 	exit 0
 fi
