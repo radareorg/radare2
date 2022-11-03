@@ -1917,12 +1917,20 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 	return true;
 }
 
+static bool check_tabhelp_exceptions(const char *s) {
+	if (r_str_startswith (s, "pf.")) {
+		return true;
+	}
+	return false;
+}
+
 R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type) {
 	if (!core) {
 		autocomplete_default (core, completion, buf);
 		return;
 	}
-	if (r_config_get_b (core->config, "scr.prompt.tabhelp")) {
+	const bool tabhelp_exception = check_tabhelp_exceptions (buf->data);
+	if (!tabhelp_exception && r_config_get_b (core->config, "scr.prompt.tabhelp")) {
 		if (buf->data[0] != '$' // handle aliases below
 				&& strncmp (buf->data, "#!", 2) // rlang help fails
 				&& !strchr (buf->data, ' ')) {
