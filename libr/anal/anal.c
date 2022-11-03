@@ -647,6 +647,9 @@ static bool noreturn_recurse(RAnal *anal, ut64 addr) {
 	RAnalOp op = {0};
 	ut8 bbuf[0x10] = {0};
 	ut64 recurse_addr = UT64_MAX;
+	if (!addr || addr == UT64_MAX) {
+		return false;
+	}
 	if (!anal->iob.read_at (anal->iob.io, addr, bbuf, sizeof (bbuf))) {
 		R_LOG_ERROR ("Couldn't read buffer");
 		return false;
