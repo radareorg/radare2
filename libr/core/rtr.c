@@ -1000,8 +1000,10 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 				RT->input = strdup (input + 1);
 				//RapThread rt = { core, strdup (input + 1) };
 				rapthread = r_th_new (r_core_rtr_rap_thread, RT, false);
+#if 0
 				int cpuaff = (int)r_config_get_i (core->config, "cfg.cpuaffinity");
 				r_th_setaffinity (rapthread, cpuaff);
+#endif
 				r_th_setname (rapthread, "rapthread");
 				r_th_start (rapthread, false);
 				R_LOG_INFO ("Background rap server started");
