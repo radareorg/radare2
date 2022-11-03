@@ -111,6 +111,9 @@ static RCoreHelpMessage help_msg_dash = {
 	"-b", " 32", "same as e or r2 -e",
 	"-c", " cpu", "same as r2 -e asm.cpu=",
 	"-e", " k=v", "same as r2 -b or e asm.bits",
+	"-f", "", "block size = file size (b $s)",
+	"-i", " [file]", "same as . [file], to run a script",
+	"-s", " [addr]", "same as r2 -e asm.cpu=",
 	"--", "", "seek one block backward. Same as s-- (see `b` command)",
 	NULL
 };
@@ -1631,6 +1634,15 @@ static int cmd_stdin(void *data, const char *input) {
 		case 'a': // "-a"
 			r_core_cmdf (core, "e asm.arch=%s", arg);
 			r_core_cmdf (core, "e anal.arch=%s", arg);
+			break;
+		case 'i': // "-i"
+			r_core_cmdf (core, ". %s", arg);
+			break;
+		case 's': // "-s"
+			r_core_cmdf (core, "s %s", arg);
+			break;
+		case 'f': // "-f"
+			r_core_cmd0 (core, "b $s");
 			break;
 		case 'b': // "-b"
 			r_core_cmdf (core, "e asm.bits=%s", arg);
