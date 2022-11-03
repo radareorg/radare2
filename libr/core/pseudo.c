@@ -358,8 +358,10 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						pj_ks (pj, "type", "offset");
 						pj_end (pj);
 					}
-					NEWLINE (addr, indent);
-					PRINTF ("%s", line);
+					if (R_STR_ISNOTEMPTY (line)) {
+						NEWLINE (addr, indent);
+						PRINTF ("%s", line);
+					}
 				}
 				r_list_free (lines);
 				free (code);
