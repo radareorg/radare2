@@ -480,6 +480,19 @@ static void update_analarch_options(RCore *core, RConfigNode *node) {
 	}
 }
 
+static void update_archarch_options(RCore *core, RConfigNode *node) {
+	RArchPlugin *h;
+	RListIter *it;
+	if (core && core->anal && core->anal->arch && node) {
+		r_config_node_purge_options (node);
+		r_list_foreach (core->anal->arch->plugins, it, h) {
+			if (h->name) {
+				SETOPTIONS (node, h->name, NULL);
+			}
+		}
+	}
+}
+
 static bool cb_analarch(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -588,6 +601,11 @@ static bool cb_archendian(void *user, void *data) {
 static bool cb_archarch(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
+	if (*node->value == '?') {
+		update_archarch_options (core, node);
+		print_node_options (node);
+		return false;
+	}
 	r_return_val_if_fail (node && core && core->anal && core->anal->arch, false);
 	return core->anal->arch? r_arch_set_arch (core->anal->arch, node->value): true;
 }
@@ -3519,7 +3537,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("arch.endian", R_SYS_ENDIAN? "big": "little", &cb_archendian);
 	SETDESC (n, "set arch endianess");
 	SETOPTIONS (n, "big", "little", "bigswap", "littleswap", NULL);
-	n = NODECB ("arch.arch", "none", &cb_archarch);
+	n = NODECB ("arch.arch", "null", &cb_archarch);
 	SETDESC (n, "select the architecture to use");
 	r_config_set_getter (cfg, "arch.arch", (RConfigCallback)cb_archarch_getter);
 	SETCB ("arch.autoselect", "false", &cb_archautoselect, "automagically select matching decoder on arch related config changes (has no effect atm)");

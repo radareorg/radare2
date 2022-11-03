@@ -233,7 +233,7 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 	if (anal->arch) {
 		bool res = r_arch_use (anal->arch, anal->config);
 		if (res) {
-			R_LOG_WARN ("Using experimental r_arch plugin");
+			R_LOG_DEBUG ("sing experimental '%s' r_arch plugin", name);
 		} else {
 			anal->arch->current = NULL;
 		}

@@ -177,6 +177,74 @@ static const char *has_esil(RAsmState *as, const char *name) {
 	return "__";
 }
 
+static void rarch2_list(RAsmState *as, const char *arch) {
+	char bits[32];
+	RArchPlugin *h;
+	RListIter *iter;
+	const char *feat2, *feat;
+	PJ *pj = NULL;
+	if (as->json) {
+		pj = pj_new ();
+		pj_a (pj);
+	}
+	r_list_foreach (as->anal->arch->plugins, iter, h) {
+		feat = "_d";
+		feat2 = "e";
+		bits[0] = 0;
+		if (h->bits == 27) {
+			strcat (bits, "27");
+		} else if (h->bits == 0) {
+			strcat (bits, "any");
+		} else {
+			if (h->bits & 4) {
+				strcat (bits, "4 ");
+			}
+			if (h->bits & 8) {
+				strcat (bits, "8 ");
+			}
+			if (h->bits & 16) {
+				strcat (bits, "16 ");
+			}
+			if (h->bits & 32) {
+				strcat (bits, "32 ");
+			}
+			if (h->bits & 64) {
+				strcat (bits, "64 ");
+			}
+		}
+		if (as->quiet) {
+			printf ("%s\n", h->name);
+		} else if (as->json) {
+			pj_o (pj);
+			pj_ks (pj, "name", h->name);
+			pj_k (pj, "bits");
+			pj_a (pj);
+			pj_i (pj, 32);
+			pj_i (pj, 64);
+			pj_end (pj);
+			pj_ks (pj, "license", r_str_get_fail (h->license, "unknown"));
+			pj_ks (pj, "description", h->desc);
+			pj_ks (pj, "features", feat);
+			pj_end (pj);
+		} else {
+			printf ("%s%s %-11s %-11s %-7s %s",
+					feat, feat2, bits, h->name,
+					r_str_get_fail (h->license, "unknown"), h->desc);
+			if (h->author) {
+				printf (" (by %s)", h->author);
+			}
+			if (h->version) {
+				printf (" v%s", h->version);
+			}
+			printf ("\n");
+		}
+	}
+	if (as->json) {
+		pj_end (pj);
+		printf ("%s\n", pj_string (pj));
+	}
+}
+
 static void ranal2_list(RAsmState *as, const char *arch) {
 	char bits[32];
 	RAnalPlugin *h;
@@ -361,7 +429,8 @@ static int rasm_show_help(int v) {
 			" -k [kernel]  select operating system (linux, windows, darwin, ..)\n"
 			" -l [len]     input/Output length\n"
 			" -L           list RAsm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
-			" -LL          list RAnal plugins\n"
+			" -LL          list RAnal plugins (see anal.arch=?) combines with -j\n"
+			" -LLL         list RArch plugins (see arch.arch=?) combines with -j\n"
 			" -o,-@ [addr] set start address for code (default 0)\n"
 			" -O [file]    output file name (rasm2 -Bf a.asm -O a)\n"
 			" -p           run SPP over input for assembly\n"
@@ -741,6 +810,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	const char *file = NULL;
 	bool list_plugins = false;
 	bool list_anal_plugins = false;
+	bool list_arch_plugins = false;
 	bool isbig = false;
 	bool rad = false;
 	bool use_spp = false;
@@ -830,7 +900,9 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			len = r_num_math (NULL, opt.arg);
 			break;
 		case 'L':
-			if (list_plugins) {
+			if (list_anal_plugins) {
+				list_arch_plugins = true;
+			} else if (list_plugins) {
 				list_anal_plugins = true;
 			} else {
 				list_plugins = true;
@@ -892,6 +964,11 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 
 	if (help > 0) {
 		ret = rasm_show_help (help > 1? 2: 0);
+		goto beach;
+	}
+	if (list_arch_plugins) {
+		rarch2_list (as, opt.argv[opt.ind]);
+		ret = 1;
 		goto beach;
 	}
 	if (list_anal_plugins) {
