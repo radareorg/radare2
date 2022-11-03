@@ -172,6 +172,7 @@ R_API const char *r_arch_op_direction_tostring(struct r_anal_op_t *op);
 extern RArchPlugin r_arch_plugin_null;
 extern RArchPlugin r_arch_plugin_i4004;
 extern RArchPlugin r_arch_plugin_amd29k;
+extern RArchPlugin r_arch_plugin_jdh8;
 
 #ifdef __cplusplus
 }
