@@ -201,8 +201,11 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		goto beach;
 	}
 
+	bool is_modern = main_mach0->hdr.filetype == MH_FILESET ||
+		(main_mach0->hdr.cputype == CPU_TYPE_ARM64 && main_mach0->hdr.cpusubtype  == 0xc0000002);
+
 	RCFValueDict *prelink_info = NULL;
-	if (main_mach0->hdr.filetype != MH_FILESET && prelink_range->range.size) {
+	if (!is_modern && prelink_range->range.size) {
 		prelink_info = r_cf_value_dict_parse (fbuf, prelink_range->range.offset,
 				prelink_range->range.size, R_CF_OPTION_SKIP_NSDATA);
 		if (!prelink_info) {
