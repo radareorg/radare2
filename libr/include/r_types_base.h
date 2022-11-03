@@ -204,6 +204,16 @@ typedef struct _utX {
 #define NAN (0.0f/0.0f)
 #endif
 
+#define F32_NAN   (strtof("NAN", NULL))
+#define F32_PINF  (strtof("INF", NULL))
+#define F32_NINF  (-strtof("INF", NULL))
+#define F64_NAN   (strtod("NAN", NULL))
+#define F64_PINF  (strtod("INF", NULL))
+#define F64_NINF  (-strtod("INF", NULL))
+#define F128_NAN  (strtold("NAN", NULL))
+#define F128_PINF (strtold("INF", NULL))
+#define F128_NINF (-strtold("INF", NULL))
+
 /* A workaround against libc headers redefinition of __attribute__:
  * Standard include has lines like
  * #if (GCC_VERSION < 2007)
