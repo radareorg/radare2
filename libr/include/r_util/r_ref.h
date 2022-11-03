@@ -1,3 +1,5 @@
+#ifndef R2_UTIL_REF_H
+#define R2_UTIL_REF_H
 
 // reference counter
 #define USE_THREADSAFE_REFS 0
@@ -84,4 +86,6 @@ typedef int RRef;
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
