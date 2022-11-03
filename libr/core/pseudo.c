@@ -346,6 +346,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						char *s = strchr (line, ' ');
 						if (s) {
 							line = r_str_trim_head_ro (s + 1);
+						} else {
+							line = "";
 						}
 					}
 					if (pj) {
@@ -367,7 +369,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (sdb_const_get (db, K_INDENT (bb->addr), 0)) {
 			// already analyzed, go pop and continue
 			// XXX check if can't pop
-			R_LOG_DEBUG ("%s// 0x%08llx already analyzed", indentstr, bb->addr);
+			R_LOG_DEBUG ("%s// 0x%08"PFMT64x" already analyzed", indentstr, bb->addr);
 			ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 			if (addr == UT64_MAX) {
 				int i;
@@ -405,7 +407,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 			if (addr != bb->addr) {
 				queuegoto = addr;
-				// r_cons_printf ("\n%s  goto loc_0x%llx", indentstr, addr);
+				// r_cons_printf ("\n%s  goto loc_0x%"PFMT64x, indentstr, addr);
 			}
 			bb = r_anal_bb_from_offset (core->anal, addr);
 			if (!bb) {
@@ -549,7 +551,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_strbuf_free (out);
 	} else {
 		char *s = r_strbuf_drain (out);
-		if (r_config_get (core->config, "scr.color") > 0) {
+		if (r_config_get_i (core->config, "scr.color") > 0) {
 			char *ss = r_print_code_tocolor (s);
 			free (s);
 			s = ss;
