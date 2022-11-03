@@ -645,13 +645,13 @@ static char *write_commit(Rvc *rvc, const char *message, const char *author, RLi
 }
 
 static RvcBlob *bfadd(Rvc *rvc, const char *fname) {
-	RvcBlob *ret = R_NEW (RvcBlob);
-	if (!ret) {
-		return NULL;
-	}
 	char *absp = r_file_abspath (fname);
 	if (!absp) {
-		free (ret);
+		return NULL;
+	}
+	RvcBlob *ret = R_NEW (RvcBlob);
+	if (!ret) {
+		free (absp);
 		return NULL;
 	}
 	ret->fname = absp2rp (rvc, absp);
@@ -662,15 +662,14 @@ static RvcBlob *bfadd(Rvc *rvc, const char *fname) {
 	}
 	if (!r_file_exists (absp)) {
 		ret->fhash = r_str_new (NULLVAL);
-		free (absp);
 		if (!ret->fhash) {
 			goto fail_ret;
 		}
+		free (absp);
 		return ret;
 	}
 	ret->fhash = sha256_file (absp);
 	if (!ret->fhash) {
-		free (absp);
 		goto fail_ret;
 	}
 	char *bpath = r_file_new (rvc->path, ".rvc", "blobs", ret->fhash, NULL);
