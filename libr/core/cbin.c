@@ -244,6 +244,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 			if (fmtsize < 1) {
 				continue;
 			}
+			fmtsize += 4; // increase buffer to fix a bug in compuatation for pf.elf_header size doesnt harms other cases but should be fixed
 			free (offset_key);
 			if (off) {
 				if (IS_MODE_RAD (mode)) {
