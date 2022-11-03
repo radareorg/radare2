@@ -4291,6 +4291,7 @@ R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RC
 	if (filter && filter->name) {
 		name = filter->name;
 	}
+	r_core_bin_export_info (core, R_MODE_SET);
 
 	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
