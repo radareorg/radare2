@@ -107,6 +107,10 @@ static RCoreHelpMessage help_msg_dash = {
 	"Usage:", "-", "open editor and run the r2 commands in the saved document",
 	"", "'-' '.-' '. -'", " those three commands do the same",
 	"-", "8", "same as s-8, but shorter to type (see +? command)",
+	"-a", " x86", "same as r2 -a x86 or e asm.arch=x86",
+	"-b", " 32", "same as e or r2 -e",
+	"-c", " cpu", "same as r2 -e asm.cpu=",
+	"-e", " k=v", "same as r2 -b or e asm.bits",
 	"--", "", "seek one block backward. Same as s-- (see `b` command)",
 	NULL
 };
@@ -1615,10 +1619,35 @@ static int cmd_plus(void *data, const char *input) {
 static int cmd_stdin(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (*input) {
-		if (input[0] == '?') {
+		const char *arg = r_str_trim_head_ro (input + 1);
+		if (R_STR_ISEMPTY (arg)) {
+			arg = "?";
+		}
+		switch (*input) {
+		case '?': // "-?"
+		case 'h': // "-h"
 			r_core_cmd_help (core, help_msg_dash);
-		} else {
+			break;
+		case 'a': // "-a"
+			r_core_cmdf (core, "e asm.arch=%s", arg);
+			r_core_cmdf (core, "e anal.arch=%s", arg);
+			break;
+		case 'b': // "-b"
+			r_core_cmdf (core, "e asm.bits=%s", arg);
+			break;
+		case 'c': // "-c"
+			r_core_cmdf (core, "e asm.cpu=%s", arg);
+			break;
+		case 'e': // "-e"
+			if (*arg == '?') {
+				r_core_cmd0 (core, "e");
+			} else {
+				r_core_cmdf (core, "e %s", arg);
+			}
+			break;
+		default:
 			r_core_cmdf (core, "s-%s", r_str_trim_head_ro (input));
+			break;
 		}
 		return 0;
 	}
