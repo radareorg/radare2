@@ -426,6 +426,7 @@ NAME=flags
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=f
 EXPECT=<<EOF
+0x00000000 52 elf_header
 0x00000000 0 section.
 0x00000000 17 section..comment
 0x00000000 262 section..shstrtab
@@ -433,7 +434,6 @@ EXPECT=<<EOF
 0x00000000 599 section..strtab
 0x00000000 0 segment.GNU_STACK
 0x00000000 0 sym..comment
-0x00000000 52 elf_header
 0x00000034 32 elf_phdr
 0x000001fc 74 elf_strtab
 0x000006c5 262 elf_shstrtab

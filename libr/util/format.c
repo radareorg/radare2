@@ -2025,8 +2025,7 @@ static char *get_format_type(const char fmt, const char arg) {
 //TODO PJ
 #define MINUSONE ((void*)(size_t)-1)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
-R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
-		const char *formatname, int mode, const char *setval, char *ofield) {
+R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len, const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const int old_bits = (p && p->config)? p->config->bits: 32;
 	int p_bits = old_bits;
@@ -2034,7 +2033,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	ut64 addr = 0, addr64 = 0, seeki = 0;
 	// XXX delete global
 	static R_TH_LOCAL int slide = 0, oldslide = 0, ident = 4;
-	char namefmt[32], *field = NULL;
+	char namefmt[128], *field = NULL;
 	const char *arg = NULL;
 	const char *fmt = NULL;
 	bool fmt_owned = false;
@@ -2232,7 +2231,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					addr = addr64;
 				}
 			} else {
-				R_LOG_DEBUG ("format string is too large for this buffer");
+				R_LOG_WARN ("format string (%s) is too large for this buffer (%d, %d)", formatname, i + fs, len);
 				goto beach;
 			}
 
