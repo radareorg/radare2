@@ -68,6 +68,14 @@ hello
 EOF
 RUN
 
+NAME=r rax2 -D null byte
+FILE=-
+CMDS=rax2 -D ZQBlAA== |rax2 -S
+EXPECT=<<EOF
+65006500
+EOF
+RUN
+
 NAME=rax2 -S hello | rax2 -s
 FILE=-
 CMDS=!rax2 -S hello | rax2 -s
@@ -85,14 +93,6 @@ RUN
 NAME=rax2 -S hello | rax2 -s (2)
 FILE=-
 CMDS=!echo hello | rax2 -S | rax2 -s | rax2 -S | rax2 -s
-EXPECT=<<EOF
-hello
-EOF
-RUN
-
-NAME=rax2 -E | rax2 -D -E
-FILE=-
-CMDS=!echo hello | rax2 -E |rax2 -D |rax2 -E | rax2 -D  |rax2 -E|rax2 -D |rax2 -E | rax2 -D
 EXPECT=<<EOF
 hello
 EOF

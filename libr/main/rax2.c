@@ -483,11 +483,11 @@ dotherax:
 		}
 		return true;
 	} else if (flags & (1 << 13)) { // -D
-		const int n = strlen (str);
+		int n = strlen (str);
 		ut8 *out = calloc (1, n / 4 * 3 + 1);
 		if (out) {
-			r_base64_decode (out, str, n);
-			printf ("%s%s", out, nl);
+			n = r_base64_decode (out, str, n);
+			fwrite (out, n, 1, stdout);
 			fflush (stdout);
 			free (out);
 		}
