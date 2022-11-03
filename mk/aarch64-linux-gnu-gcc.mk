@@ -2,13 +2,14 @@ ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
 CROSS=aarch64-linux-gnu-
 CC=${CROSS}gcc
+USER_CC=${CC}
 RANLIB=${CROSS}ranlib
+ONELIB=0
 OSTYPE=linux
-LINK=
 AR=${CROSS}ar
 CC_AR=${AR} -r ${LIBAR}
-PARTIALLD=${CROSS}ld -r --whole-archive
-PICFLAGS=
+PARTIALLD=${CROSS}ld -r
+PICFLAGS=-fPIC -fpic
 CFLAGS+=${PICFLAGS} -MD
 CC_LIB=${CC} -shared -o
 CFLAGS_INCLUDE=-I
@@ -20,4 +21,5 @@ CFLAGS_OPT1=-O1
 CFLAGS_OPT2=-O2
 CFLAGS_OPT3=-O3
 CFLAGS_DEBUG=-g
+OBJCOPY=${CROSS}objcopy
 endif
