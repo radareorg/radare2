@@ -133,7 +133,6 @@ r_anal_sources = [
   'p/anal_v850.c',
   'p/anal_vax.c',
   'arch/vax/vax-dis.c',
-  'p/anal_jdh8.c',
   'p/anal_wasm.c',
   'p/anal_ws.c',
   # join_paths('arch/whitespace/wsdis.c'),
