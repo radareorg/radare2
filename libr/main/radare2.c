@@ -131,7 +131,7 @@ static int main_help(int line) {
 		" -j           use json for -v, -L and maybe others\n"
 		" -k [OS/kern] set asm.os (linux, macos, w32, netbsd, ...)\n"
 		" -l [lib]     load plugin file\n"
-		" -L           list supported IO plugins\n"
+		" -L, -LL      list supported IO plugins (-LL list core plugins)\n"
 		" -m [addr]    map file at given address (loadaddr)\n"
 		" -M           do not demangle symbol names\n"
 		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
@@ -496,6 +496,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
 	bool do_list_io_plugins = false;
+	bool do_list_core_plugins = false;
 	char *file = NULL;
 	char *pfile = NULL;
 	const char *asmarch = NULL;
@@ -726,7 +727,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_lib_open (r->lib, opt.arg);
 			break;
 		case 'L':
-			do_list_io_plugins = true;
+			if (do_list_io_plugins) {
+				do_list_core_plugins = true;
+			} else {
+				do_list_io_plugins = true;
+			}
 			break;
 		case 'm':
 			r_config_set_i (r->config, "io.va", 1);
@@ -941,6 +946,15 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		goto beach;
 	}
 
+	if (do_list_core_plugins) {
+		r_core_cmd0 (r, "Lc");
+		r_cons_flush ();
+		LISTS_FREE ();
+		free (pfile);
+		R_FREE (debugbackend);
+		free (envprofile);
+		return 0;
+	}
 	if (do_list_io_plugins) {
 		if (r_config_get_b (r->config, "cfg.plugins")) {
 			r_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
