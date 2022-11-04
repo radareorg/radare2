@@ -30,8 +30,8 @@
 # $ r2 -d /bin/true
 #
 
-# Using debian 10 as base image.
 FROM debian:10
+# FROM ubuntu:20.04
 
 # Label base
 LABEL r2docker latest
@@ -39,7 +39,7 @@ LABEL r2docker latest
 # Radare version
 ARG R2_VERSION=master
 # R2pipe python version
-ARG R2_PIPE_PY_VERSION=1.6.5
+ARG R2_PIPE_PY_VERSION=1.7.3
 
 ARG with_arm32_as
 ARG with_arm64_as
