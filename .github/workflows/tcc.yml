@@ -131,3 +131,50 @@ jobs:
       run: |
           r2pm -r muon setup b
           r2pm -r samu -j4 -C b >/dev/null
+
+  syslibs:
+    name: ubuntu-tcc-syslibs
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout TinyCC repository
+      run: |
+          git clone https://github.com/mirror/tinycc.git
+          cd tinycc && git checkout mob
+          git reset --hard 917aad3bcfbb534875aa6d66609bdb36459460a4
+          sudo apt-get --assume-yes install gperf wheel setuptools || true
+          sudo python -m pip install --upgrade pip
+          pip install r2pipe
+    - name: Compiling and installing TinyCC
+      working-directory: tinycc
+      run: |
+          sh ./configure --prefix=/usr --without-debugger
+          make -j && sudo make install
+    - uses: actions/checkout@v3
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v3
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
+    - name: Configure, build and install
+      env:
+          CC: tcc
+      run: |
+          sudo apt-get --assume-yes install libxxhash-dev liblz4-dev libzip-dev libmagic-dev libcapstone-dev
+          ./configure --prefix=/usr --with-compiler=tcc \
+              --with-syscapstone \
+              --with-sysxxhash \
+              --with-sysmagic \
+              --with-syszip \
+              --with-syslz4
+          make -j
+          sudo make install
+
+    - name: Run tests
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+      run: |
+        r2 -v
+        r2r -v
+        export R2R_SKIP_ASM=1
+        export R2R_SKIP_ARCHOS=1
+        make -j -C test
