@@ -109,9 +109,7 @@ WORKDIR /home/r2
 ENV HOME /home/r2
 
 # Setup r2pm
-RUN r2pm init && \
-  r2pm update && \
-  chown -R r2:r2 /home/r2/.config
+RUN r2pm init && r2pm update
 
 # Base command for container
 CMD ["/bin/bash"]
