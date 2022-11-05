@@ -3,11 +3,17 @@
 ARG="$1"
 
 TARGETS="
+	arm-linux
 	arm64-linux
 	amd64-linux
 	riscv64-linux
 	mips-linux
+
+	arm64-darwin
+	amd64-darwin
+
 	native
+	clean
 "
 
 if [ -z "$ARG" ]; then
@@ -22,6 +28,16 @@ TARGET="$ARG"
 #export LD="zig cc"
 
 case "$TARGET" in
+clean)
+	make clean
+	exit 0
+	;;
+arm64-darwin|aarch64-darwin)
+	TARGET="aarch64-linux"
+	;;
+arm-darwin|arm32-darwin)
+	TARGET="arm-linux"
+	;;
 arm64-linux|aarch64-linux)
 	TARGET="aarch64-linux"
 	;;
