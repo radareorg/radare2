@@ -32,10 +32,13 @@ clean)
 	make clean
 	exit 0
 	;;
-arm64-darwin|aarch64-darwin)
-	TARGET="aarch64-linux"
+amd64-darwin|x86_64-darwin)
+	TARGET="x86_64-darwin"
 	;;
-arm-darwin|arm32-darwin)
+arm64-darwin|aarch64-darwin)
+	TARGET="aarch64-darwin"
+	;;
+arm-linux|arm32-linux)
 	TARGET="arm-linux"
 	;;
 arm64-linux|aarch64-linux)
