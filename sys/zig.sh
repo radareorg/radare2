@@ -17,8 +17,8 @@ TARGETS="
 "
 
 if [ -z "$ARG" ]; then
-	echo "Usage: sys/zig.sh [cpu] [os]"
-	echo "$TARGETS"
+	echo "Usage: sys/zig.sh [target]"
+	echo "Targets:$TARGETS"
 #echo "CPUS: x86_64 arm aarch64 i386 riscv64 wasm32"
 #echo "OSS: linux macos windows freebsd netbsd dragonfly UEFI"
 	exit 1
@@ -29,7 +29,7 @@ TARGET="$ARG"
 
 case "$TARGET" in
 clean)
-	make clean
+	make clean > /dev/null
 	exit 0
 	;;
 amd64-darwin|x86_64-darwin)
@@ -67,8 +67,8 @@ native)
 	;;
 esac
 
-export CFLAGS="-Oz"
-export LDFLAGS="-flto"
+#export CFLAGS="-Oz"
+#export LDFLAGS="-flto"
 
 if [ -z "${TARGET}" ]; then
 	export CC="zig cc"
