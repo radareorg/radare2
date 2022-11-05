@@ -54,7 +54,7 @@ amd64-freebsd|x86_64-freebsd|x64-freebsd)
 	TARGET="x86_64-freebsd"
 	;;
 mips-linux|mips64-linux)
-	TARGET="mips64-linux"
+	TARGET="mips-linux"
 	;;
 amd64-netbsd)
 	TARGET="x86_64-netbsd"
