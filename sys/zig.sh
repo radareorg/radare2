@@ -8,6 +8,9 @@ TARGETS="
 	amd64-linux
 	riscv64-linux
 	mips-linux
+	sparcv9-linux
+	ppc-linux
+	ppc64-linux
 
 	arm64-darwin
 	amd64-darwin
@@ -43,6 +46,12 @@ arm-linux|arm32-linux)
 	;;
 arm64-linux|aarch64-linux)
 	TARGET="aarch64-linux"
+	;;
+ppc-linux|powerpc-linux)
+	TARGET="powerpc-linux"
+	;;
+ppc64-linux|powerpc64-linux)
+	TARGET="powerpc64-linux"
 	;;
 amd64-linux|x86_64-linux|x64-linux)
 	TARGET="x86_64-linux"
