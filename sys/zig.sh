@@ -23,10 +23,14 @@ Experimental:
 	i386-windows
 	amd64-windows
 	arm64-windows
+
+See \`zig targets\` for more details.
 "
 
 if [ -z "$ARG" ]; then
 	echo "Usage: sys/zig.sh [target]"
+	echo "Environment:"
+	echo "	STATIC=0|1    # build r2 statically"
 	echo "Targets:$TARGETS"
 #echo "CPUS: x86_64 arm aarch64 i386 riscv64 wasm32"
 #echo "OSS: linux macos windows freebsd netbsd dragonfly UEFI"
@@ -143,5 +147,8 @@ export AR="zig ar"
 export RANLIB="zig ranlib"
 rm -f libr/include/r_version.h
 # ./configure --host=aarch64-gnu-linux --with-ostype=linux
+if [ "$STATIC" = 1 ]; then
+	CFGFLAGS="--with-libr"
+fi
 ./configure --with-ostype=$OSTYPE ${CFGFLAGS} || exit 1
 time make -j
