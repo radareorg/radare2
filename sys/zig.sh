@@ -55,7 +55,7 @@ arm64-darwin|aarch64-darwin|arm64-macos|aarch64-macos)
 	CFGFLAGS="--disable-debugger"
 	;;
 wasm32|wasm|wasm32-wasi|wasi)
-	TARGET="wasm32-wasi"
+	TARGET="wasm32-wasi-musl"
 	;;
 arm-linux|arm32-linux)
 	TARGET="arm-linux"
@@ -99,7 +99,11 @@ arm64-windows|aarch64-windows)
 	OSTYPE=windows
 	;;
 amd64-netbsd)
-	TARGET="aarch64-netbsd"
+	## missing libc
+	TARGET="x86_64-netbsd.9"
+	;;
+wip)
+	TARGET="aarch64-netbsd.9-musl"
 	;;
 native)
 	TARGET=""
