@@ -20,6 +20,9 @@ Experimental:
 	arm64-macos
 	amd64-macos
 	amd64-netbsd
+	i386-windows
+	amd64-windows
+	arm64-windows
 "
 
 if [ -z "$ARG" ]; then
@@ -83,6 +86,18 @@ ios)
 	OSTYPE=darwin
 	CFGFLAGS="--disable-debugger"
 	;;
+w32|wXP|wxp|i386-windows)
+	TARGET="i386-windows-gnu"
+	OSTYPE=windows
+	;;
+w64|windows)
+	TARGET="x86_64-windows-gnu"
+	OSTYPE=windows
+	;;
+arm64-windows|aarch64-windows)
+	TARGET="aarch64-windows-gnu"
+	OSTYPE=windows
+	;;
 amd64-netbsd)
 	TARGET="aarch64-netbsd"
 	;;
@@ -94,6 +109,7 @@ native)
 	;;
 esac
 
+# seems to be problematic, better leave cflags to the user
 #export CFLAGS="-Oz"
 #export LDFLAGS="-flto"
 
@@ -104,10 +120,21 @@ else
 	export CC="zig cc -target ${TARGET}"
 	export LD="zig cc -target ${TARGET}"
 fi
-# nollvm
+# nollvm doesnt work with all targets
 #export CC="$CC -fstage1 -fno-LLVM"
 #export LD="$LD -fstage1 -fno-LLVM"
-export EXT_SO=so
+case "$OSTYPE" in
+macos|ios|darwin)
+	export EXT_SO=dylib
+	;;
+windows)
+	export EXT_AR=lib
+	export EXT_SO=dll
+	;;
+*)
+	export EXT_SO=so
+	;;
+esac
 export AR="zig ar"
 export RANLIB="zig ranlib"
 rm -f libr/include/r_version.h
