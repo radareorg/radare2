@@ -11,9 +11,10 @@ TARGETS="
 	sparcv9-linux
 	ppc-linux
 	ppc64-linux
+	wasm32-wasi
 
-	arm64-darwin
-	amd64-darwin
+	arm64-macos
+	amd64-macos
 
 	native
 	clean
@@ -27,19 +28,29 @@ if [ -z "$ARG" ]; then
 	exit 1
 fi
 TARGET="$ARG"
+OSTYPE=gnulinux
 #export CC="zig cc -std=c11"
 #export LD="zig cc"
+
+CFGFLAGS=""
 
 case "$TARGET" in
 clean)
 	make clean > /dev/null
 	exit 0
 	;;
-amd64-darwin|x86_64-darwin)
-	TARGET="x86_64-darwin"
+amd64-darwin|x86_64-darwin|amd64-macos|x86_64-macos)
+	TARGET="x86_64-macos"
+	OSTYPE=darwin
+	CFGFLAGS="--disable-debugger" # ptrace.h is missing
 	;;
-arm64-darwin|aarch64-darwin)
-	TARGET="aarch64-darwin"
+arm64-darwin|aarch64-darwin|arm64-macos|aarch64-macos)
+	TARGET="aarch64-macos"
+	OSTYPE=darwin
+	CFGFLAGS="--disable-debugger"
+	;;
+wasm32|wasm|wasm32-wasi|wasi)
+	TARGET="wasm32-wasi"
 	;;
 arm-linux|arm32-linux)
 	TARGET="arm-linux"
@@ -94,5 +105,5 @@ export AR="zig ar"
 export RANLIB="zig ranlib"
 rm -f libr/include/r_version.h
 # ./configure --host=aarch64-gnu-linux --with-ostype=linux
-./configure --with-ostype=gnulinux || exit 1
+./configure --with-ostype=$OSTYPE ${CFGFLAGS} || exit 1
 time make -j
