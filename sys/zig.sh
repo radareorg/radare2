@@ -65,7 +65,7 @@ arm-linux|arm32-linux)
 	TARGET="arm-linux"
 	;;
 arm64-linux|aarch64-linux)
-	TARGET="aarch64-linux"
+	TARGET="aarch64-linux-musl"
 	;;
 ppc-linux|powerpc-linux)
 	TARGET="powerpc-linux"

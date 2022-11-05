@@ -1,5 +1,8 @@
+ifeq ($(uname -m),arm64)
+ARCH=arm64
+else
 ARCH=amd64
-# ARCH=arm64
+endif
 
 DOCKER_IMAGE=r2docker
 DOCKERFLAGS+=--privileged
@@ -13,4 +16,4 @@ endif
 
 all:
 	docker build $(DOCKER_PLATFORM) -t $(DOCKER_IMAGE) .
-	docker run $(DOCKER_PLATFORM) -v $(shell pwd)/../..:/r $(DOCKERFLAGS) -i -t r2
+	docker run $(DOCKER_PLATFORM) -v $(shell pwd)/../..:/r -v /tmp:/tmp $(DOCKERFLAGS) -i -t ${DOCKER_IMAGE}
