@@ -145,10 +145,19 @@ windows)
 esac
 export AR="zig ar"
 export RANLIB="zig ranlib"
-rm -f libr/include/r_version.h
-# ./configure --host=aarch64-gnu-linux --with-ostype=linux
 if [ "$STATIC" = 1 ]; then
 	CFGFLAGS="--with-libr"
+	export PARTIALLD="${CC} -r -Wl,--whole-archive -c"
 fi
-./configure --with-ostype=$OSTYPE ${CFGFLAGS} || exit 1
-time make -j
+
+RUN_CONFIGURE=1
+if [ "$RUN_CONFIGURE" = 1 ]; then
+	rm -f libr/include/r_version.h
+	# ./configure --host=aarch64-gnu-linux --with-ostype=linux
+	./configure --with-ostype=$OSTYPE ${CFGFLAGS} || exit 1
+fi
+if [ "${STATIC}" = 1 ]; then
+	time make -j PARTIALLD="${PARTIALLD}"
+else
+	time make -j
+fi
