@@ -5,7 +5,7 @@
 
 # cross compile to linux-arm64
 export CC="zig cc -target aarch64-linux -Oz"
-export LD="zig cc -target aarch64-linux -Oz"
+export LD="zig cc -target aarch64-linux -Oz -flto"
 export EXT_SO=so
 export AR="zig ar"
 export RANLIB="zig ranlib"
