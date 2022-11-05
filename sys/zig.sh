@@ -3,6 +3,9 @@
 ARG="$1"
 
 TARGETS="
+	native
+	clean
+
 	arm-linux
 	arm64-linux
 	amd64-linux
@@ -13,11 +16,10 @@ TARGETS="
 	ppc64-linux
 	wasm32-wasi
 
+Experimental:
 	arm64-macos
 	amd64-macos
-
-	native
-	clean
+	amd64-netbsd
 "
 
 if [ -z "$ARG" ]; then
