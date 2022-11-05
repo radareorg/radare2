@@ -78,8 +78,10 @@ amd64-freebsd|x86_64-freebsd|x64-freebsd)
 mips-linux|mips64-linux)
 	TARGET="mips-linux"
 	;;
-android)
-	TARGET="aarch64-linux-android"
+ios)
+	TARGET="aarch64-ios-none" #aarch64-linux-android"
+	OSTYPE=darwin
+	CFGFLAGS="--disable-debugger"
 	;;
 amd64-netbsd)
 	TARGET="aarch64-netbsd"
