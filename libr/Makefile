@@ -234,7 +234,7 @@ install: install-includes install-pkgconfig
 	  ${INSTALL_LIB} "$$lib" "${DESTDIR}${LIBDIR}/$$lib"; \
 	fi
 	# object archives
-	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v fs/p` ; do \
+	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v dis.a | grep -v fs/p` ; do \
 	  echo " ${DESTDIR}${LIBDIR}/$$FILE"; ${INSTALL_DATA} $$FILE "${DESTDIR}${LIBDIR}" ; done || true
 	# plugins
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/radare2/${VERSION}"
