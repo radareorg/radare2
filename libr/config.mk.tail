@@ -35,10 +35,6 @@ LINK+=$(shell echo ${R2DEPS} | sed -e 's:r_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_A
 endif
 endif
 
-# Debug
-ifneq ($(OSTYPE),mingw32)
-CFLAGS+=-g
-endif
 CFLAGS+=-Wall
 
 # libgmp
@@ -61,6 +57,7 @@ endif
 
 # XXX do it in configure stage
 OSTYPE?=gnulinux
+
 ifeq (${OSTYPE},auto)
  _UNAME=$(shell uname)
  ifeq ($(_UNAME),Darwin)
@@ -93,6 +90,9 @@ OSTYPE=bsd
 endif
 
 # Output
+ifneq ($(OSTYPE),mingw32)
+CFLAGS+=-g
+endif
 ifeq (${OSTYPE},windows)
 CFLAGS+=-D__WINDOWS__=1
 EXT_AR=lib
