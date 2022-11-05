@@ -6,6 +6,7 @@ TARGETS="
 	arm64-linux
 	amd64-linux
 	riscv64-linux
+	mips-linux
 	native
 "
 
@@ -32,6 +33,9 @@ riscv-linux|riscv64-linux)
 	;;
 amd64-freebsd|x86_64-freebsd|x64-freebsd)
 	TARGET="x86_64-freebsd"
+	;;
+mips-linux|mips64-linux)
+	TARGET="mips64-linux"
 	;;
 amd64-netbsd)
 	TARGET="x86_64-netbsd"
