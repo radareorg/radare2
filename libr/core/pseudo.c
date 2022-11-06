@@ -255,10 +255,6 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.cmt.col", 30);
 	r_config_set_b (core->config, "io.cache", true);
 	r_core_cmd0 (core, "aeim");
-	PJ *pj = NULL;
-	if (show_json) {
-		pj = r_core_pj_new (core);
-	}
 
 	r_strf_buffer (64);
 	RStrBuf *codestr = r_strbuf_new ("");
@@ -273,6 +269,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	int indent = 0;
 	int nindent = 1;
 	int n_bb = r_list_length (fcn->bbs);
+	PJ *pj = NULL;
 	if (show_json) {
 		pj = r_core_pj_new (core);
 		pj_o (pj);
@@ -560,6 +557,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		}
 		r_cons_printf ("%s\n", s);
 		free (s);
+		r_strbuf_free (codestr);
 	}
 	sdb_free (db);
 	return true;
