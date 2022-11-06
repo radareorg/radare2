@@ -557,6 +557,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		}
 		r_cons_printf ("%s\n", s);
 		free (s);
+		r_strbuf_free (codestr);
 	}
 	sdb_free (db);
 	return true;
