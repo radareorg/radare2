@@ -13,7 +13,7 @@ bool test_r2r_database_load_cmd(void) {
 	R2RTestDatabase *db = r2r_test_database_new ();
 	database_load (db, FILENAME, 1);
 
-	mu_assert_eq (r_pvector_len (&db->tests), 4, "tests count");
+	mu_assert_eq (r_pvector_length (&db->tests), 4, "tests count");
 
 	R2RTest *test = r_pvector_at (&db->tests, 0);
 	mu_assert_eq (test->type, R2R_TEST_TYPE_CMD, "test type");

@@ -51,7 +51,6 @@ if get_option('enable_tests')
     'reg',
     'sign',
     'skiplist',
-    'skyline',
     'spaces',
     'sparse',
     'stack',
