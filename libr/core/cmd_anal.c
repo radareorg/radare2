@@ -2345,7 +2345,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				free (opname);
 			}
 
-			if (r_vector_len (&op.srcs) > 0) {
+			if (r_vector_length (&op.srcs) > 0) {
 				pj_ka (pj, "srcs");
 				RAnalValue *val;
 				r_vector_foreach (&op.srcs, val) {
@@ -2354,7 +2354,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				pj_end (pj);
 			}
 
-			if (r_vector_len (&op.dsts) > 0) {
+			if (r_vector_length (&op.dsts) > 0) {
 				pj_ka (pj, "dsts");
 				RAnalValue *val;
 				r_vector_foreach (&op.dsts, val) {

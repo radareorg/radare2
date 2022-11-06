@@ -919,7 +919,7 @@ static bool parse_import_sec(RBinWasmObj *bin) {
 	ut32 seen = 0;
 	for (i = 0; i < R_ARRAY_SIZE (bin->g_imports_arr); i++) {
 		r_pvector_shrink (bin->g_imports_arr[i]);
-		seen += r_pvector_len (bin->g_imports_arr[i]);
+		seen += r_pvector_length (bin->g_imports_arr[i]);
 	}
 	return seen == count? true: false;
 }

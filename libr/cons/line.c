@@ -71,7 +71,7 @@ R_API void r_line_completion_push(RLineCompletion *completion, const char *str) 
 	if (completion->quit) {
 		return;
 	}
-	if (r_pvector_len (&completion->args) < completion->args_limit) {
+	if (r_pvector_length (&completion->args) < completion->args_limit) {
 		char *s = strdup (str);
 		if (s) {
 			r_pvector_push (&completion->args, (void *)s);

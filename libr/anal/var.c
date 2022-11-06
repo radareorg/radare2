@@ -232,7 +232,7 @@ R_API void r_anal_var_delete(RAnalVar *var) {
 	r_return_if_fail (var);
 	RAnalFunction *fcn = var->fcn;
 	size_t i;
-	for (i = 0; i < r_pvector_len (&fcn->vars); i++) {
+	for (i = 0; i < r_pvector_length (&fcn->vars); i++) {
 		RAnalVar *v = r_pvector_at (&fcn->vars, i);
 		if (v == var) {
 			r_pvector_remove_at (&fcn->vars, i);
@@ -245,7 +245,7 @@ R_API void r_anal_var_delete(RAnalVar *var) {
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind) {
 	r_return_if_fail (fcn);
 	size_t i;
-	for (i = 0; i < r_pvector_len (&fcn->vars);) {
+	for (i = 0; i < r_pvector_length (&fcn->vars);) {
 		RAnalVar *var = r_pvector_at (&fcn->vars, i);
 		if (var->kind == kind) {
 			r_pvector_remove_at (&fcn->vars, i);
@@ -804,7 +804,7 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
 
 R_API int r_anal_var_count_all(RAnalFunction *fcn) {
 	r_return_val_if_fail (fcn, 0);
-	return r_pvector_len (&fcn->vars);
+	return r_pvector_length (&fcn->vars);
 }
 
 R_API int r_anal_var_count_args(RAnalFunction *fcn) {

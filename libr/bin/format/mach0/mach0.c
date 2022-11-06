@@ -3543,7 +3543,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 					case BIND_SUBOPCODE_THREADED_APPLY:
 						if (threaded_binds) {
 							int cur_seg_idx = (seg_idx != -1)? seg_idx: 0;
-							size_t n_threaded_binds = r_pvector_len (threaded_binds);
+							size_t n_threaded_binds = r_pvector_length (threaded_binds);
 							while (addr < segment_end_addr) {
 								ut8 tmp[8];
 								ut64 paddr = addr - bin->segs[cur_seg_idx].vmaddr + bin->segs[cur_seg_idx].fileoff;
