@@ -405,12 +405,12 @@ RAnalPlugin r_anal_plugin_tms320 = {
 #if CAPSTONE_HAS_TMS320C64X
 	.cpus = "c54x,c55x,c55x+,c64x",
 	.desc = "TMS320 DSP family (c54x,c55x,c55x+,c64x)",
+	.mnemonics = &cs_mnemonics,
 #else
 	.cpus = "c54x,c55x,c55x+",
 	.desc = "TMS320 DSP family (c54x,c55x,c55x+)",
 #endif
 	.op = &tms320_op,
-	.mnemonics = &cs_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE
