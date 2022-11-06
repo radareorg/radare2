@@ -5,7 +5,10 @@ no_user_plugins = get_option('plugins') == ''
 esil_plugins = [ 'dummy' ]
 asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
-arch_plugins = [ 'null' ]
+arch_plugins = [ 'null',
+  'i4004',
+  'amd29k',
+]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
 bin_xtr_plugins = [ 'xtr_sep64' ]
@@ -133,7 +136,6 @@ anal_plugins += [
   'mcs96',
   '8051',
   'alpha',
-  'amd29k',
   # 'arc',
   'arm_cs',
   'avr',
