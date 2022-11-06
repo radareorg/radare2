@@ -66,7 +66,6 @@ R_API RList *r_type_get_enum(Sdb *TDB, const char *name) {
 					r_list_append (res, member);
 				} else {
 					free (member);
-					free (var2);
 				}
 				free (var2);
 			} else {
