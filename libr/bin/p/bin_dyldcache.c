@@ -987,16 +987,18 @@ static cache_imgxtr_t *read_cache_imgextra(RBuffer *cache_buf, cache_hdr_t *hdr,
 
 static char *get_lib_name(RBuffer *cache_buf, cache_img_t *img) {
 	char file[256];
-	char *lib_name = file;
+	const char *lib_name = file;
 	if (r_buf_read_at (cache_buf, img->pathFileOffset, (ut8*) &file, sizeof (file)) == sizeof (file)) {
-		file[255] = 0;
-		/*char * last_slash = strrchr (file, '/');
+		file[sizeof (file) - 1] = 0; // wtf
+#if 0
+		char * last_slash = strrchr (file, '/');
 		if (last_slash && *last_slash) {
 			lib_name = last_slash + 1;
-		}*/
+		}
+#endif
 		return strdup (lib_name);
 	}
-	return strdup ("FAIL");
+	return strdup ("FAIL"); /// XXX return NULL instead
 }
 
 static int string_contains(const void *a, const void *b) {

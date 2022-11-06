@@ -93,6 +93,8 @@ typedef struct r_arch_t {
 	bool autoselect;
 } RArch;
 
+typedef int (*RArchOpAsmCallback)(RArch *a, ut64 addr, const char *str, ut8 *outbuf, int outlen);
+
 typedef struct r_arch_plugin_t {
 	char *name;
 	char *desc;
@@ -110,6 +112,7 @@ typedef struct r_arch_plugin_t {
 	int (*info)(RArchConfig *cfg, ut32 query);
 	int (*decode)(RArchConfig *cfg, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user);
 	bool (*set_reg_profile)(RArchConfig *cfg, struct r_reg_t *reg);
+	RArchOpAsmCallback opasm;
 //TODO: reenable this later
 //	bool (*esil_init)(RAnalEsil *esil);
 //	void (*esil_fini)(RAnalEsil *esil);
@@ -122,13 +125,14 @@ R_API bool r_arch_use_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_unload_decoder(RArch *arch, const char *dname);
 R_API int r_arch_info(RArch *arch, const char *dname, ut32 query);
 R_API int r_arch_decode(RArch *arch, const char *dname, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask);
+R_API int r_arch_encode(RArch *a, ut64 addr, const char *s, ut8 *outbuf, int outlen);
 R_API bool r_arch_set_reg_profile(RArch *arch, const char *dname, struct r_reg_t *reg);
 //R_API bool r_arch_esil_init(RArch *arch, const char *dname, RAnalEsil *esil);
 //R_API void r_arch_esil_fini(RArch *arch, const char *dname, RAnalEsil *esil);
 
 // arch.c
 R_API RArch *r_arch_new(void);
-R_API bool r_arch_use(RArch *arch, RArchConfig *config);
+R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name);
 R_API bool r_arch_set_bits(RArch *arch, ut32 bits);
 R_API bool r_arch_set_endian(RArch *arch, ut32 endian);
 R_API bool r_arch_set_arch(RArch *arch, char *archname);

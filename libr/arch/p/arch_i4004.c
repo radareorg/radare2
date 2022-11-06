@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2016-2022 - pancake, condret */
 
 #include <r_arch.h>
+#include "../i/i4004/gperfdb.c"
 
 static bool set_reg_profile(RArchConfig *cfg, RReg *reg) {
 	const char *p =
@@ -250,6 +251,135 @@ static int i4004_decode(RArchConfig *cfg, RAnalOp *op, ut64 addr, const ut8 *buf
 	return op->size = rlen;
 }
 
+static int i4004_anal_opasm(RArch *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
+	char *s = strdup (str);
+	r_str_case (s, false);
+	s = r_str_replace (s, "_", "?", false);	// mitigate a bug in sdb -C
+	s = r_str_replace (s, ",", " _ ", false);
+	int i, nelems;
+	char **elems = r_str_argv (s, &nelems);
+	RStrBuf *sbuf = r_strbuf_new (elems[0]);
+	for (i = 1; i < nelems; i++) {
+		if (r_is_valid_input_num_value (NULL, elems[i])) {
+			r_strbuf_appendf (sbuf, " 0x%"PFMT64x, r_num_get (NULL, elems[i]));
+		} else {
+			r_strbuf_appendf (sbuf, " %s", elems[i]);
+		}
+	}
+	// this db should be instantiated once on plugin session
+#if 1
+	Sdb *asm_db = sdb_new0 ();
+	sdb_open_gperf (asm_db, (SdbGperf *)&gperf_i4004);
+	char *hex_output = sdb_get (asm_db, r_strbuf_get (sbuf), NULL);
+	sdb_free (asm_db);
+	r_strbuf_free (sbuf);
+	if (hex_output) {
+		r_str_argv_free (elems);
+		free (s);
+		r_hex_str2bin (hex_output, outbuf);
+		free (hex_output);
+		return 1;
+	}
+#endif
+	if (strlen (elems[0]) != 3) {
+		r_str_argv_free (elems);
+		free (s);
+		return 0;
+	}
+	int ret = 0;
+	switch (elems[0][0] << 16 | elems[0][1] << 8 | elems[0][2]) {
+	case 0x6a636e: // jcn
+		if (nelems > 2 && r_is_valid_input_num_value (NULL, elems[1])
+			&& r_is_valid_input_num_value (NULL, elems[2])) {
+			ut64 v = r_num_get (NULL, elems[1]);
+			if (v < 0x10) {
+				outbuf[0] = 0x10 | (ut8)v;
+				v = r_num_get (NULL, elems[2]);
+				if (v < 0x100) {
+					outbuf[1] = (ut8)v;
+					ret = 2;
+				}
+			}
+		}
+		break;
+	case 0x66696d: // fim
+		if (nelems > 3 && !strcmp (elems[2], "_") && r_is_valid_input_num_value (NULL, elems[3])) {
+			const ut64 v = r_num_get (NULL, elems[3]);
+			if (v < 0x100) {
+				ret = 2;
+				if (!strcmp (elems[1], "r0r1")) {
+					outbuf[0] = 0x20;
+					outbuf[1] = (ut8)v;
+				} else if (!strcmp (elems[1], "r2r3")) {
+					outbuf[0] = 0x22;
+					outbuf[1] = (ut8)v;
+				} else if (!strcmp (elems[1], "r4r5")) {
+					outbuf[0] = 0x24;
+					outbuf[1] = (ut8)v;
+				} else if (!strcmp (elems[1], "r6r7")) {
+					outbuf[0] = 0x26;
+					outbuf[1] = (ut8)v;
+				} else if (!strcmp (elems[1], "r8r9")) {
+					outbuf[0] = 0x28;
+					outbuf[1] = (ut8)v;
+				} else if (!strcmp (elems[1], "r10r11")) {
+					outbuf[0] = 0x2a;
+					outbuf[1] = (ut8)v;
+				} else if (!strcmp (elems[1], "r12r14")) {
+					outbuf[0] = 0x2c;
+					outbuf[1] = (ut8)v;
+				} else if (!strcmp (elems[1], "r14r15")) {
+					outbuf[0] = 0x2e;
+					outbuf[1] = (ut8)v;
+				} else {
+					ret = 0;
+				}
+			}
+		}
+		break;
+	case 0x6a756e: // jun
+		if (nelems > 1 && r_is_valid_input_num_value (NULL, elems[1])) {
+			const ut64 v = r_num_get (NULL, elems[1]);
+			if (v < 0x1000) {
+				outbuf[0] = 0x40 | (v & 0xf00) >> 8;
+				outbuf[1] = v & 0xff;
+				ret = 2;
+			}
+		}
+		break;
+	case 0x6a6d73: // jms
+		if (nelems > 1 && r_is_valid_input_num_value (NULL, elems[1])) {
+			const ut64 v = r_num_get (NULL, elems[1]);
+			if (v < 0x1000) {
+				outbuf[0] = 0x50 | (v & 0xf00) >> 8;
+				outbuf[1] = v & 0xff;
+				ret = 2;
+			}
+		}
+		break;
+	case 0x69737a: // isz
+		if (nelems > 3 && elems[1][0] == 'r' && r_is_valid_input_num_value (NULL, &elems[1][1])
+			&& !strcmp (elems[2], "_") && r_is_valid_input_num_value (NULL, elems[3])) {
+			ut64 v = r_num_get (NULL, &elems[1][1]);
+			if (v < 0x10) {
+				outbuf[0] = 0x70 | (ut8)v;
+				v = r_num_get (NULL, elems[3]);
+				if (v < 0x100) {
+					outbuf[1] = (ut8)v;
+					ret = 2;
+				}
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	r_str_argv_free (elems);
+	free (s);
+	return ret;
+}
+
 RArchPlugin r_arch_plugin_i4004 = {
 	.name = "i4004",
 	.desc = "i4004 decoder plugin",
@@ -261,6 +391,7 @@ RArchPlugin r_arch_plugin_i4004 = {
 	.esil = false,
 	.author = "pancake, condret",
 	.decode = &i4004_decode,
+	.opasm = &i4004_anal_opasm,
 	.set_reg_profile = &set_reg_profile
 };
 

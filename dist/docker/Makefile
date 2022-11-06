@@ -1,4 +1,4 @@
-ifeq ($(uname -m),arm64)
+ifeq ($(shell uname -m),arm64)
 ARCH=arm64
 else
 ARCH=amd64
