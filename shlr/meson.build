@@ -32,7 +32,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
         'capstone-include.patch'
       ]
     elif capstone_version == 'v4'
-      CS_TIP = 'a7cac8352f7397aa73bb2e2dcc1b6cdb2e1b8461'
+      CS_TIP = '1d230532840a37ac032c6ab80128238fc930c6c1'
       CS_BRA = 'v4'
       patches_files = [
         'capstone-calloc.patch',
