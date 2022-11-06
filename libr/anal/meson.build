@@ -77,7 +77,6 @@ r_anal_sources = [
   'p/anal_evm_cs.c',
   'p/anal_gb.c',
   'p/anal_h8300.c',
-  'p/anal_i4004.c',
   'p/anal_i8080.c',
   'p/anal_java.c',
   'p/anal_kvx.c',

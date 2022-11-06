@@ -231,6 +231,11 @@ typedef struct _utX {
 #define R_PACKED( __Declaration__ ) __Declaration__ __attribute__((__packed__))
 #endif
 
+#define R_UNWRAP2(a,b) ((a)? a->b: NULL)
+#define R_UNWRAP3(a,b,c) ((a)? a->b? a->b->c: NULL: NULL)
+#define R_UNWRAP4(a,b,c,d) ((a)? a->b? a->b->c? a->b->c->d: NULL: NULL: NULL)
+#define R_UNWRAP5(a,b,c,d,e) ((a)? a->b? a->b->c? a->b->c->d: a->b->c->d->e: NULL: NULL: NULL: NULL)
+
 #ifdef __GNUC__
 #define R_UNUSED __attribute__((__unused__))
 #define R_WEAK __attribute__ ((weak))

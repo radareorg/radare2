@@ -5,10 +5,10 @@
 
 static const RArchPlugin * const arch_static_plugins[] = { R_ARCH_STATIC_PLUGINS };
 
-static void plugin_free (void *p) {
+static void plugin_free(void *p) {
 }
 
-static void _decoder_free_cb (HtPPKv *kv) {
+static void _decoder_free_cb(HtPPKv *kv) {
 	free (kv->key);
 	RArchDecoder *decoder = (RArchDecoder *)kv->value;
 	if (decoder->p->fini) {
@@ -40,7 +40,7 @@ R_API RArch *r_arch_new(void) {
 	return a;
 }
 
-static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg) {
+static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 	ut32 bits;
 	switch (cfg->bits) {
 	case 64:
@@ -69,8 +69,11 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg) {
 		break;
 	}
 	ut32 score = 0;
+	if (name && !strcmp (p->name, name)) {
+		score += 50;
+	}
 	if (!strcmp (p->arch, cfg->arch)) {
-		score = 50;
+		score += 50;
 	}
 	if (p->bits & bits) {
 		score += (!!score) * 30;
@@ -81,27 +84,27 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg) {
 	return score;
 }
 
-static char *_find_bestmatch(RList *plugins, RArchConfig *cfg) {
+static char *_find_bestmatch(RList *plugins, RArchConfig *cfg, const char *name) {
 	ut8 best_score = 0;
-	char *name = NULL;
+	char *rname = NULL;
 	RListIter *iter;
 	RArchPlugin *p;
 	r_list_foreach (plugins, iter, p) {
-		const ut32 score = _rate_compat (p, cfg);
+		const ut32 score = _rate_compat (p, cfg, name);
 		if (score > best_score) {
 			best_score = score;
-			name = p->name;
+			rname = p->name;
 		}
 		if (score == 100) {
 			break;
 		}
 	}
-	return name;
+	return rname;
 }
 
 // use config as new arch config and use matching decoder as current
 // must return arch->current, and remove that field. and use refcounting
-R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
+R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 	r_return_val_if_fail (arch, false);
 	if (!config) {
 		config = arch->cfg;
@@ -110,10 +113,10 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config) {
 		return true;
 	}
 	if (!config) {
-		return false;
 	//	arch->decoder = NULL;
+		return false;
 	}
-	const char *dname = config->decoder ? config->decoder: _find_bestmatch (arch->plugins, config);
+	const char *dname = config->decoder ? config->decoder: _find_bestmatch (arch->plugins, config, name);
 	if (!dname) {
 		return false;
 	}
@@ -144,7 +147,7 @@ R_API bool r_arch_set_bits(RArch *arch, ut32 bits) {
 		}
 		// r_arch_config_set_bits (arch->cfg, bits);
 		cfg->bits = bits;
-		if (!r_arch_use (arch, cfg)) {
+		if (!r_arch_use (arch, cfg, NULL)) {
 			r_unref (cfg);
 			arch->cfg = NULL;
 			return false;
@@ -153,17 +156,17 @@ R_API bool r_arch_set_bits(RArch *arch, ut32 bits) {
 	}
 	if (arch->autoselect) {
 		if (arch->current) {
-			const ut32 score = _rate_compat (arch->current->p, arch->cfg);
+			const ut32 score = _rate_compat (arch->current->p, arch->cfg, NULL);
 			arch->cfg->bits = bits;
-			if (!score || score > _rate_compat (arch->current->p, arch->cfg)) {
+			if (!score || score > _rate_compat (arch->current->p, arch->cfg, NULL)) {
 				R_FREE (arch->cfg->decoder);
-				return r_arch_use (arch, arch->cfg);
+				return r_arch_use (arch, arch->cfg, NULL);
 			}
 			return true;
 		}
 		R_FREE (arch->cfg->decoder);
 		arch->cfg->bits = bits;
-		return r_arch_use (arch, arch->cfg);
+		return r_arch_use (arch, arch->cfg, NULL);
 	}
 	arch->cfg->bits = bits;
 	return true;
@@ -177,7 +180,7 @@ R_API bool r_arch_set_endian(RArch *arch, ut32 endian) {
 			return false;
 		}
 		cfg->endian = endian;
-		if (!r_arch_use (arch, cfg)) {
+		if (!r_arch_use (arch, cfg, NULL)) {
 			r_unref (cfg);
 			arch->cfg = NULL;
 			return false;
@@ -186,17 +189,17 @@ R_API bool r_arch_set_endian(RArch *arch, ut32 endian) {
 	}
 	if (arch->autoselect) {
 		if (arch->current) {
-			const ut32 score = _rate_compat (arch->current->p, arch->cfg);
+			const ut32 score = _rate_compat (arch->current->p, arch->cfg, NULL);
 			arch->cfg->endian = endian;
-			if (!score || score > _rate_compat (arch->current->p, arch->cfg)) {
+			if (!score || score > _rate_compat (arch->current->p, arch->cfg, NULL)) {
 				R_FREE (arch->cfg->decoder);
-				return r_arch_use (arch, arch->cfg);
+				return r_arch_use (arch, arch->cfg, NULL);
 			}
 			return true;
 		}
 		R_FREE (arch->cfg->decoder);
 		arch->cfg->endian = endian;
-		return r_arch_use (arch, arch->cfg);
+		return r_arch_use (arch, arch->cfg, NULL);
 	}
 	arch->cfg->endian = endian;
 	return true;
@@ -216,7 +219,7 @@ R_API bool r_arch_set_arch(RArch *arch, char *archname) {
 		}
 		free (cfg->arch);
 		cfg->arch =_arch;
-		if (!r_arch_use (arch, cfg)) {
+		if (!r_arch_use (arch, cfg, archname)) {
 			r_unref (cfg);
 			return false;
 		}
@@ -224,19 +227,19 @@ R_API bool r_arch_set_arch(RArch *arch, char *archname) {
 	}
 	if (arch->autoselect) {
 		if (arch->current) {
-			const ut32 score = _rate_compat (arch->current->p, arch->cfg);
+			const ut32 score = _rate_compat (arch->current->p, arch->cfg, archname);
 			free (arch->cfg->arch);
 			arch->cfg->arch = _arch;
-			if (!score || score > _rate_compat (arch->current->p, arch->cfg)) {
+			if (!score || score > _rate_compat (arch->current->p, arch->cfg, archname)) {
 				R_FREE (arch->cfg->decoder);
-				return r_arch_use (arch, arch->cfg);
+				return r_arch_use (arch, arch->cfg, archname);
 			}
 			return true;
 		}
 		R_FREE (arch->cfg->decoder);
 		free (arch->cfg->arch);
 		arch->cfg->arch = _arch;
-		return r_arch_use (arch, arch->cfg);
+		return r_arch_use (arch, arch->cfg, archname);
 	}
 	free (arch->cfg->arch);
 	arch->cfg->arch = _arch;
@@ -292,3 +295,20 @@ R_API void r_arch_free(RArch *arch) {
 	r_unref (arch->cfg);
 	free (arch);
 }
+
+#if 0
+R_API int r_arch_info(RArch *a, int query) {
+	r_return_val_if_fail (a, -1);
+	switch (query) {
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ANAL_ARCHINFO_ALIGN:
+		if (arch->current && anal->arch->current->archinfo) {
+			return arch->current->archinfo (arch, query);
+		}
+		break;
+	}
+	return -1;
+}
+#endif

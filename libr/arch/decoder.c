@@ -111,7 +111,7 @@ R_API bool r_arch_unload_decoder(RArch *arch, const char *dname) {
 }
 
 R_API int r_arch_info(RArch *arch, const char *dname, ut32 query) {
-	r_return_val_if_fail (arch && arch->decoders, -1);
+	r_return_val_if_fail (arch, -1);
 	RArchDecoder *decoder = NULL;
 	if (dname) {
 		decoder = (RArchDecoder *)ht_pp_find (arch->decoders, dname, NULL);
