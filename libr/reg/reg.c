@@ -303,10 +303,9 @@ R_API void r_reg_free(RReg *reg) {
 
 R_API RReg *r_reg_init(RReg *reg) {
 	r_return_val_if_fail (reg, NULL);
-	RRegArena *arena;
 	size_t i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		arena = r_reg_arena_new (0);
+		RRegArena *arena = r_reg_arena_new (0);
 		if (!arena) {
 			free (reg);
 			return NULL;
@@ -326,6 +325,69 @@ R_API RReg *r_reg_init(RReg *reg) {
 
 R_API RReg *r_reg_new(void) {
 	return r_reg_init (R_NEW0 (RReg));
+}
+
+R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
+	r_return_if_fail (d && s);
+	d->cur = NULL; // TODO. not yet implemented
+	d->arena = r_reg_arena_clone (s->arena);
+	d->maskregstype = s->maskregstype;
+	// RListIter *iter;
+	// TODO: not implemented
+	// r_list_foreach (s->pool, iter, a) { }
+	// r_list_foreach (s->regs , iter, a) { }
+	// clone the ht_regs hashtable
+}
+
+R_API RRegItem *r_reg_item_clone(RRegItem *r) {
+	r_return_val_if_fail (r, NULL);
+	RRegItem *ri = R_NEW0 (RRegItem);
+	if (!ri) {
+		return NULL;
+	}
+	ri->name = strdup (r->name);
+	ri->size = r->size;
+	ri->offset = r->offset;
+	ri->packed_size = r->packed_size;
+	ri->is_float = r->is_float;
+	if (r->flags) {
+		ri->flags = strdup (r->flags);
+	}
+	if (r->comment) {
+		ri->comment = strdup (r->comment);
+	}
+	r->index = ri->index;
+	r->arena = ri->arena;
+	return ri;
+}
+
+R_API RReg *r_reg_clone(RReg *r) {
+	RListIter *iter;
+	RRegItem *reg;
+	int i;
+	RReg *rr = R_NEW0 (RReg);
+	rr->profile = strdup (r->profile);
+	rr->reg_profile_cmt = strdup (r->reg_profile_cmt);
+	rr->reg_profile_str = strdup (r->reg_profile_str);
+	for (i = 0; i < R_REG_NAME_LAST; i++) {
+		rr->name[i] = strdup (r->name[i]);
+		r_reg_set_copy (&rr->regset[i], &r->regset[i]);
+	}
+	rr->iters = r->iters;
+	rr->size = r->size;
+	rr->bits_default = r->bits_default;
+	rr->hasbits = r->hasbits;
+	r_ref (r->config);
+	rr->config = r->config;
+	r_list_foreach (r->allregs, iter, reg) {
+		RRegItem *ri = r_reg_item_clone (reg);
+		r_list_append (rr->allregs, ri);
+	}
+	r_list_foreach (r->roregs, iter, reg) {
+		RRegItem *ri = r_reg_item_clone (reg);
+		r_list_append (rr->roregs, ri);
+	}
+	return rr;
 }
 
 R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item) {
@@ -463,6 +525,7 @@ R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8 *buf, int buflen,
 	return NULL;
 }
 
+// XXX conflicts with r_reg_set_get wtf bad namings :D
 R_API RRegSet *r_reg_regset_get(RReg *r, int type) {
 	r_return_val_if_fail (r, NULL);
 	if (type < 0 || type >= R_REG_TYPE_LAST) {
