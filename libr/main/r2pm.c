@@ -325,6 +325,9 @@ static void r2pm_setenv(void) {
 
 	r_sys_setenv ("R2_LIBEXT", R_LIB_EXT);
 
+	// Deprecate this R2PM_FAIL when R2_590 is out
+	r_sys_setenv ("R2PM_FAIL", "exit 1");
+
 	char *gdir = r2pm_gitdir ();
 	r_sys_setenv ("R2PM_GITDIR", gdir);
 	free (gdir);
@@ -473,6 +476,7 @@ static int r2pm_clean_pkg(const char *pkg) {
 	return 0;
 }
 
+// looks copypaste with r2pm_install_pkg()
 static int r2pm_uninstall_pkg(const char *pkg) {
 	R_LOG_INFO ("Uninstalling %s", pkg);
 	char *srcdir = r2pm_gitdir ();
@@ -490,7 +494,7 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 #else
 	char *script = r2pm_get (pkg, "\nR2PM_UNINSTALL() {\n", TT_CODEBLOCK);
 	if (!script) {
-		R_LOG_ERROR ("Cannot parse package");
+		R_LOG_ERROR ("Cannot find the R2PM_UNINSTALL() {} script block for '%s'", pkg);
 		free (srcdir);
 		return 1;
 	}
