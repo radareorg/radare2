@@ -1094,8 +1094,10 @@ static void __update_help(RCore *core, RPanels *ps) {
 				break;
 			}
 			// panel's title does not change, keep it short and simple
-			p->model->title = r_str_dup (p->model->title, help);
-			p->model->cmd = r_str_dup (p->model->cmd, help);
+			free (p->model->title);
+			p->model->title = strdup (help);
+			free (p->model->cmd);
+			p->model->cmd = strdup (help);
 			r_core_visual_append_help (rsb, title, msg);
 			if (!rsb) {
 				break;
@@ -1186,19 +1188,22 @@ static void __init_panel_param(RCore *core, RPanel *p, const char *title, const 
 	m->funcName = NULL;
 	v->refresh = true;
 	v->edge = 0;
+	free (m->title);
+	free (m->cmd);
 	if (title) {
-		m->title = r_str_dup (m->title, title);
+		m->title = strdup (title);
+		free (m->cmd);
 		if (cmd) {
-			m->cmd = r_str_dup (m->cmd, cmd);
+			m->cmd = strdup (cmd);
 		} else {
-			m->cmd = r_str_dup (m->cmd, "");
+			m->cmd = strdup ("");
 		}
 	} else if (cmd) {
-		m->title = r_str_dup (m->title, cmd);
-		m->cmd = r_str_dup (m->cmd, cmd);
+		m->title = strdup (cmd);
+		m->cmd = strdup (cmd);
 	} else {
-		m->title = r_str_dup (m->title, "");
-		m->cmd = r_str_dup (m->cmd, "");
+		m->title = strdup ("");
+		m->cmd = strdup ("");
 	}
 	__set_pcb (p);
 	if (R_STR_ISNOTEMPTY (m->cmd)) {
@@ -1952,32 +1957,13 @@ static void __init_sdb(RCore *core) {
 	sdb_set (db, "File Hashes", "it", 0);
 }
 
-#if 0
-static void __free_panel_model(RPanel *panel) {
-	if (!panel) {
-		return;
-	}
-	free (panel->model->title);
-	free (panel->model->cmd);
-	free (panel->model->cmdStrCache);
-	free (panel->model->readOnly);
-	free (panel->model);
-}
-#endif
-
 static void __replace_cmd(RCore *core, const char *title, const char *cmd) {
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
-#if 0
-	__free_panel_model (cur);
-	cur->model = R_NEW0 (RPanelModel);
-	cur->model->title = strdup (title);
-#else
 	free (cur->model->cmd);
 	free (cur->model->title);
 	cur->model->cmd = strdup (cmd);
 	cur->model->title = strdup (title);
-#endif
 	cur->model->cache = false;
 	__set_cmd_str_cache (core, cur, NULL);
 	cur->model->cache = false;
@@ -2285,7 +2271,8 @@ static void __rotate_panel_cmds(RCore *core, const char **cmds, const int cmdsle
 		snprintf (replace, sizeof (replace), "%s%s", prefix, between);
 		p->model->cmd = r_str_replace (p->model->cmd, replace, tmp, 1);
 	} else {
-		p->model->cmd = r_str_dup (p->model->cmd, tmp);
+		free (p->model->cmd);
+		p->model->cmd = strdup (tmp);
 	}
 	__set_cmd_str_cache (core, p, NULL);
 	p->view->refresh = true;
@@ -4507,7 +4494,8 @@ static bool __check_func_diff(RCore *core, RPanel *p) {
 		return true;
 	}
 	if (!p->model->funcName || strcmp (p->model->funcName, func->name)) {
-		p->model->funcName = r_str_dup (p->model->funcName, func->name);
+		free (p->model->funcName);
+		p->model->funcName = strdup (func->name);
 		return true;
 	}
 	return false;
@@ -6416,8 +6404,10 @@ R_API bool r_core_panels_load(RCore *core, const char *_name) {
 		__init_panel_param (core, p, title, cmd);
 		// TODO: fix code duplication with __update_help
 		if (r_str_endswith (cmd, "Help")) {
-			p->model->title = r_str_dup (p->model->title, "Help");
-			p->model->cmd = r_str_dup (p->model->cmd, "Help");
+			free (p->model->title);
+			free (p->model->cmd);
+			p->model->title = strdup ("Help");
+			p->model->cmd = strdup ("Help");
 			RStrBuf *rsb = r_strbuf_new (NULL);
 			r_core_visual_append_help (rsb, "Panels Mode", help_msg_panels);
 			if (!rsb) {

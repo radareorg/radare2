@@ -42,7 +42,7 @@ static char *entitlements(RBinFile *bf, bool json) {
 		pj_s (pj, s);
 		return pj_drain (pj);
 	}
-	return r_str_dup (NULL, (const char*)bin->signature);
+	return strdup ((const char*)bin->signature);
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
@@ -536,7 +536,7 @@ static RBinInfo *info(RBinFile *bf) {
 			}
 		}
 	}
-	ret->intrp = r_str_dup (NULL, MACH0_(get_intrp)(bf->o->bin_obj));
+	ret->intrp = strdup (MACH0_(get_intrp)(bf->o->bin_obj));
 	ret->compiler = strdup ("clang");
 	ret->rclass = strdup ("mach0");
 	ret->os = strdup (MACH0_(get_os)(bf->o->bin_obj));
