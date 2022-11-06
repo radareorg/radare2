@@ -1791,7 +1791,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		return false;
 	}
 	if (bin_cache) {
-		if (r_pvector_len (&r->io->cache) == 0) {
+		if (r_pvector_length (&r->io->cache) == 0) {
 			r_config_set_b (r->config, "io.cache", false);
 		} else {
 			r_config_set_b (r->config, "io.cache.read", true);

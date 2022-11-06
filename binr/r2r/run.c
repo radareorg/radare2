@@ -924,7 +924,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, cons
 #else
 	size_t env_size = load_plugins ? 0 : 1;
 #endif
-	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_len (&args), envvars, envvals, env_size, timeout_ms, user);
+	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_length (&args), envvars, envvals, env_size, timeout_ms, user);
 	r_pvector_clear (&args);
 #if __WINDOWS__
 	free (wcmds);
@@ -1088,7 +1088,7 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 	r_strbuf_init (&cmd_buf);
 	if (test->mode & R2R_ASM_TEST_MODE_ASSEMBLE) {
 		r_pvector_push (&args, test->disasm);
-		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_len (&args), NULL, NULL, 0);
+		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_length (&args), NULL, NULL, 0);
 		if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
 			r2r_subprocess_kill (proc);
 			out->as_timeout = true;
@@ -1126,7 +1126,7 @@ rip:
 		}
 		r_pvector_push (&args, "-d");
 		r_pvector_push (&args, hex);
-		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_len (&args), NULL, NULL, 0);
+		R2RSubprocess *proc = r2r_subprocess_start (config->rasm2_cmd, args.v.a, r_pvector_length (&args), NULL, NULL, 0);
 		if (!r2r_subprocess_wait (proc, config->timeout_ms)) {
 			r2r_subprocess_kill (proc);
 			out->disas_timeout = true;

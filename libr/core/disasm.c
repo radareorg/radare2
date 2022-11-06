@@ -7233,8 +7233,8 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	}
 	free (buf);
 	r_reg_arena_pop (reg);
-	int len = r_pvector_len (&ocache);
-	if (r_pvector_len (&core->io->cache) > len) {
+	int len = r_pvector_length (&ocache);
+	if (r_pvector_length (&core->io->cache) > len) {
 		// TODO: Implement push/pop for IO.cache
 		while (len > 0) {
 			(void)r_pvector_pop_front (&core->io->cache);

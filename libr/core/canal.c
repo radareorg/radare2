@@ -3454,11 +3454,11 @@ typedef struct {
 
 static bool anal_block_on_exit(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	int *cur_regset = r_pvector_pop (&ctx->reg_set);
-	if (r_pvector_len (&ctx->reg_set) == 0) {
+	if (r_pvector_length (&ctx->reg_set) == 0) {
 		free (cur_regset);
 		return false;
 	}
-	int *prev_regset = r_pvector_at (&ctx->reg_set, r_pvector_len (&ctx->reg_set) - 1);
+	int *prev_regset = r_pvector_at (&ctx->reg_set, r_pvector_length (&ctx->reg_set) - 1);
 	size_t i;
 	for (i = 0; i < REG_SET_SIZE; i++) {
 		if (!prev_regset[i] && cur_regset[i] == 1) {
@@ -3499,11 +3499,11 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		free (buf);
 		return false;
 	}
-	if (r_pvector_len (&ctx->reg_set) == 0) {
+	if (r_pvector_length (&ctx->reg_set) == 0) {
 		free (buf);
 		return false;
 	}
-	int *parent_reg_set = r_pvector_at (&ctx->reg_set, r_pvector_len (&ctx->reg_set) - 1);
+	int *parent_reg_set = r_pvector_at (&ctx->reg_set, r_pvector_length (&ctx->reg_set) - 1);
 	int *reg_set = R_NEWS (int, REG_SET_SIZE);
 	memcpy (reg_set, parent_reg_set, REG_SET_SIZE * sizeof (int));
 	r_pvector_push (&ctx->reg_set, reg_set);
