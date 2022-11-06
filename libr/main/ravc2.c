@@ -157,7 +157,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	} else if (!strcmp (action, "checkout") && opt.argc > 2) {
 		save =  rvc_git_checkout (rvc, opt.argv[opt.ind + 1]);
 	} else if (!strcmp (action, "status")) {
-		char *current_branch = r_vc_current_branch (rvc);
+		char *current_branch = r_vc_git_current_branch (rvc);
 		if (current_branch) {
 			printf ("Branch: %s\n", current_branch);
 			RList *uncommitted = rvc->p->get_uncommitted (rvc);
