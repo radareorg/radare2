@@ -6,8 +6,8 @@ extern "C" {
 #endif
 
 typedef struct r_type_enum {
-	const char *name;
-	const char *val;
+	char *name;
+	char *val;
 } RTypeEnum;
 
 typedef enum {
