@@ -77,9 +77,11 @@ R_API RList *r_type_get_enum(Sdb *TDB, const char *name) {
 }
 
 R_API void r_type_enum_free(RTypeEnum *member) {
-	free (member->name);
-	free (member->val);
-	free (member);
+	if (member) {
+		free (member->name);
+		free (member->val);
+		free (member);
+	}
 }
 
 R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val) {
