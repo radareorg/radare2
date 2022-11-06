@@ -92,6 +92,9 @@ update_capstone_git() {
 #		done
 #		git reset --hard "${CS_TIP}"
 #	fi
+	if ! git show --oneline ${CS_TIP} &>/dev/null ; then
+	    git fetch
+	fi
 	git reset --hard "${CS_TIP}"
 	if [ -n "${CS_REV}" ]; then
 		if ! git config user.name ; then
