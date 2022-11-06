@@ -53,7 +53,6 @@ r_anal_sources = [
   'p/anal_alpha.c',
   '../asm/arch/alpha/gnu/alpha-dis.c',
   '../asm/arch/alpha/gnu/alpha-opc.c',
-  'p/anal_amd29k.c',
 
 #  'p/anal_arc.c',
 #  'arch/arc/gnu/arc-dis.c',
