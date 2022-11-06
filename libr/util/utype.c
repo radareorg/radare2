@@ -45,14 +45,14 @@ R_API RTypeKind r_type_kind(Sdb *TDB, const char *name) {
 	return R_TYPE_INVALID;
 }
 
-R_API RList* r_type_get_enum(Sdb *TDB, const char *name) {
+R_API RList *r_type_get_enum(Sdb *TDB, const char *name) {
 	char *p, var[130];
 	int n;
 
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
-	RList *res = r_list_new ();
+	RList *res = r_list_newf ((RListFree) r_type_enum_free);
 	snprintf (var, sizeof (var), "enum.%s", name);
 	for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 		RTypeEnum *member = R_NEW0 (RTypeEnum);
@@ -68,12 +68,19 @@ R_API RList* r_type_get_enum(Sdb *TDB, const char *name) {
 					free (member);
 					free (var2);
 				}
+				free (var2);
 			} else {
 				free (member);
 			}
 		}
 	}
 	return res;
+}
+
+R_API void r_type_enum_free(RTypeEnum *member) {
+	free (member->name);
+	free (member->val);
+	free (member);
 }
 
 R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val) {
@@ -271,7 +278,7 @@ R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 }
 
 // XXX this function is slow!
-R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
+R_API RList *r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	RList *offtypes = r_list_new ();
 	SdbList *ls = sdb_foreach_list (TDB, true);
 	SdbListIter *lsi;
