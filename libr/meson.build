@@ -150,7 +150,6 @@ anal_plugins += [
   'evm_cs',
   'gb',
   'h8300',
-  'i4004',
   'i8080',
   'java',
   'kvx',

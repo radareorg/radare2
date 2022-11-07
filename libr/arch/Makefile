@@ -11,6 +11,8 @@ pre: libr_arch.$(EXT_SO) libr_arch.$(EXT_AR)
 
 include $(STATIC_ARCH_PLUGINS)
 STATIC_OBJS=$(subst ..,p/..,$(subst arch_,p/arch_,$(STATIC_OBJ)))
-OBJS=arch.o aconfig.o decoder.o switchop.o archop.o archvalue.o archcond.o ${STATIC_OBJS}
+OBJS=arch.o aconfig.o switchop.o archop.o archvalue.o archcond.o
+OBJS+=${STATIC_OBJS}
+OBJS+=encoder.o decoder.o
 
 include ../rules.mk

@@ -23,6 +23,7 @@ R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 }
 
 R_API void r_anal_unset_limits(RAnal *anal) {
+	r_return_if_fail (anal);
 	R_FREE (anal->limit);
 }
 
@@ -231,9 +232,10 @@ R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
 R_API bool r_anal_use(RAnal *anal, const char *name) {
 	r_return_val_if_fail (anal, false);
 	if (anal->arch) {
-		bool res = r_arch_use (anal->arch, anal->config);
+		bool res = r_arch_use (anal->arch, anal->config, name);
 		if (res) {
 			R_LOG_DEBUG ("sing experimental '%s' r_arch plugin", name);
+			return true;
 		} else {
 			anal->arch->current = NULL;
 		}
@@ -456,13 +458,20 @@ R_API void r_anal_purge(RAnal *anal) {
 	r_anal_purge_imports (anal);
 }
 
-R_API int r_anal_archinfo(RAnal *anal, int query) {
+// XXX deprecate
+R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) {
 	r_return_val_if_fail (anal, -1);
 	switch (query) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 	case R_ANAL_ARCHINFO_INV_OP_SIZE:
 	case R_ANAL_ARCHINFO_ALIGN:
+		{
+			int res = r_arch_info (anal->arch, NULL, query);
+			if (res != -1) {
+				return res;
+			}
+		}
 		if (anal->cur && anal->cur->archinfo) {
 			return anal->cur->archinfo (anal, query);
 		}
@@ -713,8 +722,8 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 		b->anal = anal;
 		b->get_fcn_in = r_anal_get_fcn_in;
 		b->get_hint = r_anal_hint_get;
-		b->encode = (RAnalEncode)r_anal_opasm;
-		b->decode = (RAnalDecode)r_anal_op;
+		b->encode = (RAnalEncode)r_anal_opasm; // TODO rename to encode
+		b->decode = (RAnalDecode)r_anal_op; // TODO rename to decode
 		b->opinit = r_anal_op_init;
 		b->mnemonics = r_anal_mnemonics;
 		b->opfini = r_anal_op_fini;

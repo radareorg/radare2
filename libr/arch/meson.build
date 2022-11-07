@@ -2,6 +2,7 @@ r_arch_sources = [
   'arch.c',
   'aconfig.c',
   'decoder.c',
+  'encoder.c',
   'switchop.c',
   'archop.c',
   'archcond.c',

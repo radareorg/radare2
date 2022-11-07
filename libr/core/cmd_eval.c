@@ -128,11 +128,13 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 		break;
 	case 'n': // next
 		if (core->theme && !strcmp (core->theme, "default")) {
-			core->theme = r_str_dup (core->theme, fn);
+			free (core->theme);
+			core->theme = strdup (fn);
 			getNext = false;
 		}
 		if (getNext) {
-			core->theme = r_str_dup (core->theme, fn);
+			free (core->theme);
+			core->theme = strdup (fn);
 			getNext = false;
 			return false;
 		} else if (core->theme) {
@@ -140,7 +142,8 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 				getNext = true;
 			}
 		} else {
-			core->theme = r_str_dup (core->theme, fn);
+			free (core->theme);
+			core->theme = strdup (fn);
 			return false;
 		}
 		break;
@@ -151,11 +154,14 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 static bool cmd_load_theme(RCore *core, const char *_arg) {
 	bool failed = false;
 	char *path;
-	if (!_arg || !*_arg) {
+	if (R_STR_ISEMPTY (_arg)) {
 		return false;
 	}
 	if (!strcmp (_arg, "default")) {
-		core->theme = r_str_dup (core->theme, _arg);
+		if (_arg != core->theme) {
+			free (core->theme);
+			core->theme = strdup (_arg);
+		}
 		r_cons_pal_init (core->cons->context);
 		return true;
 	}
@@ -170,19 +176,22 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 	free (tmp);
 
 	if (load_theme (core, home)) {
-		core->theme = r_str_dup (core->theme, arg);
+		free (core->theme);
+		core->theme = strdup (arg);
 		free (core->themepath);
 		core->themepath = home;
 		home = NULL;
 	} else {
 		if (load_theme (core, path)) {
-			core->theme = r_str_dup (core->theme, arg);
+			free (core->theme);
+			core->theme = strdup (arg);
 			free (core->themepath);
 			core->themepath = path;
 			path = NULL;
 		} else {
 			if (load_theme (core, arg)) {
-				core->theme = r_str_dup (core->theme, arg);
+				free (core->theme);
+				core->theme = strdup (arg);
 				free (core->themepath);
 				core->themepath = arg;
 				arg = NULL;

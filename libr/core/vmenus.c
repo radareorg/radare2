@@ -2400,9 +2400,11 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 	} else {
 // XXX: must use config_set () to run callbacks!
 		if (editor) {
-			char * buf = r_core_editor (core, NULL, node->value);
-			node->value = r_str_dup (node->value, buf);
-			free (buf);
+			char *buf = r_core_editor (core, NULL, node->value);
+			if (buf) {
+				free (node->value);
+				node->value = buf;
+			}
 		} else {
 			// FGETS AND SO
 			r_cons_printf ("New value (old=%s): \n", node->value);
@@ -2414,7 +2416,7 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			r_config_set (core->config, name, buf);
-			//node->value = r_str_dup (node->value, buf);
+			//node->value = strdup (node->value, buf);
 		}
 	}
 }

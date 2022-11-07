@@ -1388,7 +1388,7 @@ R_API RBinJavaField *r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 of
 	method->descriptor = r_bin_java_get_utf8_from_bin_cp_list (bin, (ut32) method->descriptor_idx);
 	IFDBG eprintf ("Method descriptor_idx: %d, which is: ord: %d, name: %s, value: %s\n", idx, item->metas->ord, ((RBinJavaCPTypeMetas *)item->metas->type_info)->name, method->descriptor);
 	if (!method->descriptor) {
-		method->descriptor = r_str_dup (NULL, "NULL");
+		method->descriptor = strdup ("NULL");
 		IFDBG eprintf ("r_bin_java_read_next_method: Unable to find the descriptor for 0x%02x index.\n", method->descriptor_idx);
 	}
 	IFDBG eprintf ("Looking for a NameAndType CP with name_idx: %d descriptor_idx: %d\n", method->name_idx, method->descriptor_idx);
@@ -1401,7 +1401,7 @@ R_API RBinJavaField *r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 of
 		IFDBG eprintf ("Method requesting ref_cp_obj the following which is: ord: %d, name: %s\n", method->field_ref_cp_obj->metas->ord, ((RBinJavaCPTypeMetas *)method->field_ref_cp_obj->metas->type_info)->name);
 		IFDBG eprintf ("MethodRef class name resolves to: %s\n", method->class_name);
 		if (!method->class_name) {
-			method->class_name = r_str_dup (NULL, "NULL");
+			method->class_name = strdup ("NULL");
 		}
 	} else {
 		// XXX - default to this class?
@@ -1488,7 +1488,7 @@ R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 	field->descriptor = r_bin_java_get_utf8_from_bin_cp_list (bin, (ut32) field->descriptor_idx);
 	IFDBG eprintf ("Field descriptor_idx: %d, which is: ord: %d, name: %s, value: %s\n", idx, item->metas->ord, ((RBinJavaCPTypeMetas *)item->metas->type_info)->name, field->descriptor);
 	if (!field->descriptor) {
-		field->descriptor = r_str_dup (NULL, "NULL");
+		field->descriptor = strdup ("NULL");
 		IFDBG eprintf ("r_bin_java_read_next_field: Unable to find the descriptor for 0x%02x index.\n", field->descriptor_idx);
 	}
 	IFDBG eprintf ("Looking for a NameAndType CP with name_idx: %d descriptor_idx: %d\n", field->name_idx, field->descriptor_idx);
@@ -1501,7 +1501,7 @@ R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 		IFDBG eprintf ("Field requesting ref_cp_obj the following which is: ord: %d, name: %s\n", field->field_ref_cp_obj->metas->ord, ((RBinJavaCPTypeMetas *)field->field_ref_cp_obj->metas->type_info)->name);
 		IFDBG eprintf ("FieldRef class name resolves to: %s\n", field->class_name);
 		if (!field->class_name) {
-			field->class_name = r_str_dup (NULL, "NULL");
+			field->class_name = strdup ("NULL");
 		}
 	} else {
 		// XXX - default to this class?
@@ -1967,7 +1967,7 @@ R_API RBinJavaAttrInfo *r_bin_java_default_attr_new(RBinJavaObj *bin, ut8 *buffe
 	attr->name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, attr->name_idx);
 	if (!attr->name) {
 		// Something bad has happened
-		attr->name = r_str_dup (NULL, "NULL");
+		attr->name = strdup ("NULL");
 		eprintf ("r_bin_java_default_attr_new: Unable to find the name for %d index.\n", attr->name_idx);
 	}
 	type_info = r_bin_java_get_attr_type_by_name (attr->name);
@@ -3743,7 +3743,7 @@ R_API RBinJavaAttrInfo *r_bin_java_inner_classes_attr_new(RBinJavaObj *bin, ut8 
 			}
 			icattr->name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, obj);
 			if (!icattr->name) {
-				icattr->name = r_str_dup (NULL, "NULL");
+				icattr->name = strdup ("NULL");
 				eprintf ("r_bin_java_inner_classes_attr: Unable to find the name for %d index.\n", icattr->inner_name_idx);
 				free (icattr);
 				break;
@@ -4106,12 +4106,12 @@ R_API RBinJavaInterfaceInfo *r_bin_java_interface_new(RBinJavaObj *bin, const ut
 			if (ifobj->cp_class) {
 				ifobj->name = r_bin_java_get_item_name_from_bin_cp_list (bin, ifobj->cp_class);
 			} else {
-				ifobj->name = r_str_dup (NULL, "NULL");
+				ifobj->name = strdup ("NULL");
 			}
 			ifobj->size = 2;
 		} else {
 			ifobj->class_info_idx = 0;
-			ifobj->name = r_str_dup (NULL, "NULL");
+			ifobj->name = strdup ("NULL");
 		}
 	}
 	return ifobj;
@@ -4739,7 +4739,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_interfacemethodref_cp_new(RBinJavaObj *bin, 
 		obj->tag = tag;
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = r_str_dup (NULL, (const char *) R_BIN_JAVA_CP_METAS[tag].name);
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);
 		obj->info.cp_interface.class_idx = R_BIN_JAVA_USHORT (buffer, 1);
 		obj->info.cp_interface.name_and_type_idx = R_BIN_JAVA_USHORT (buffer, 3);
 
@@ -4769,7 +4769,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_string_cp_new(RBinJavaObj *bin, ut8 *buffer,
 		obj->tag = tag;
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = r_str_dup (NULL, (const char *) R_BIN_JAVA_CP_METAS[tag].name);
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);
 		obj->info.cp_string.string_idx = R_BIN_JAVA_USHORT (buffer, 1);
 	}
 	return obj;
@@ -4797,7 +4797,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_integer_cp_new(RBinJavaObj *bin, ut8 *buffer
 		obj->tag = tag;
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = r_str_dup (NULL, (const char *) R_BIN_JAVA_CP_METAS[tag].name);
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);
 		memset (&obj->info.cp_integer.bytes, 0, sizeof (obj->info.cp_integer.bytes));
 		memcpy (&obj->info.cp_integer.bytes.raw, buffer + 1, 4);
 
@@ -4827,7 +4827,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_float_cp_new(RBinJavaObj *bin, ut8 *buffer, 
 		obj->tag = tag;
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = r_str_dup (NULL, (const char *) R_BIN_JAVA_CP_METAS[tag].name);
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);
 		memset (&obj->info.cp_float.bytes, 0, sizeof (obj->info.cp_float.bytes));
 		memcpy (&obj->info.cp_float.bytes.raw, buffer, 4);
 	}
@@ -4857,7 +4857,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_long_cp_new(RBinJavaObj *bin, ut8 *buffer, u
 		obj->tag = tag;
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = r_str_dup (NULL, (const char *) R_BIN_JAVA_CP_METAS[tag].name);
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);
 		memset (&obj->info.cp_long.bytes, 0, sizeof (obj->info.cp_long.bytes));
 		memcpy (&(obj->info.cp_long.bytes), buffer + 1, 8);
 
@@ -4888,7 +4888,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_double_cp_new(RBinJavaObj *bin, ut8 *buffer,
 		obj->tag = tag;
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = r_str_dup (NULL, (const char *) R_BIN_JAVA_CP_METAS[tag].name);
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);
 		memset (&obj->info.cp_double.bytes, 0, sizeof (obj->info.cp_double.bytes));
 		memcpy (&obj->info.cp_double.bytes, buffer + 1, 8);
 	}
@@ -4915,7 +4915,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_utf8_cp_new(RBinJavaObj *bin, ut8 *buffer, u
 		obj->tag = tag;
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = r_str_dup (NULL, (const char *) R_BIN_JAVA_CP_METAS[tag].name);
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);
 		obj->info.cp_utf8.length = R_BIN_JAVA_USHORT (buffer, 1);
 		obj->info.cp_utf8.bytes = (ut8 *) malloc (obj->info.cp_utf8.length + 1);
 		if (obj->info.cp_utf8.bytes) {
@@ -4957,7 +4957,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_name_and_type_cp_new(RBinJavaObj *bin, ut8 *
 	if (obj) {
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = r_str_dup (NULL, (const char *) R_BIN_JAVA_CP_METAS[tag].name);;
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);;
 		obj->tag = tag;
 		obj->info.cp_name_and_type.name_idx = R_BIN_JAVA_USHORT (buffer, 1);
 		obj->info.cp_name_and_type.descriptor_idx = R_BIN_JAVA_USHORT (buffer, 3);
@@ -4987,7 +4987,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_methodtype_cp_new(RBinJavaObj *bin, ut8 *buf
 	if (obj) {
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = r_str_dup (NULL, (const char *) R_BIN_JAVA_CP_METAS[tag].name);;
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);;
 		obj->tag = tag;
 		obj->info.cp_method_type.descriptor_index = R_BIN_JAVA_USHORT (buffer, 1);
 	}
@@ -5012,7 +5012,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_methodhandle_cp_new(RBinJavaObj *bin, ut8 *b
 	if (obj) {
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = r_str_dup (NULL, (const char *) R_BIN_JAVA_CP_METAS[tag].name);;
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);;
 		obj->tag = tag;
 		obj->info.cp_method_handle.reference_kind = buffer[1];
 		obj->info.cp_method_handle.reference_index = R_BIN_JAVA_USHORT (buffer, 2);
@@ -5038,7 +5038,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_invokedynamic_cp_new(RBinJavaObj *bin, ut8 *
 	if ((obj = R_NEW0 (RBinJavaCPTypeObj))) {
 		obj->metas = R_NEW0 (RBinJavaMetaInfo);
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
-		obj->name = r_str_dup (NULL, (const char *) R_BIN_JAVA_CP_METAS[tag].name);;
+		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);;
 		obj->tag = tag;
 		obj->info.cp_invoke_dynamic.bootstrap_method_attr_index = R_BIN_JAVA_USHORT (buffer, 1);
 		obj->info.cp_invoke_dynamic.name_and_type_index = R_BIN_JAVA_USHORT (buffer, 3);

@@ -180,7 +180,8 @@ R_API int r_reg_get_name_idx(const char *type) {
 R_API bool r_reg_set_name(RReg *reg, int role, const char *name) {
 	r_return_val_if_fail (reg && name, false);
 	if (role >= 0 && role < R_REG_NAME_LAST) {
-		reg->name[role] = r_str_dup (reg->name[role], name);
+		free (reg->name[role]);
+		reg->name[role] = strdup (name);
 		return true;
 	}
 	return false;

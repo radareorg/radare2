@@ -316,7 +316,7 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (a) {
-		if (name && *name) {
+		if (R_STR_ISNOTEMPTY (name)) {
 			r_list_foreach (a->plugins, iter, h) {
 				if (h->assemble && !strcmp (h->name, name)) {
 					a->acur = h;
@@ -342,7 +342,7 @@ static void load_asm_descriptions(RAsm *a, RAsmPlugin *p) {
 		arch = a->config->cpu;
 	}
 #if HAVE_GPERF
-	SdbGperf *gp = r_asm_get_gperf (arch); // p->name);
+	SdbGperf *gp = r_asm_get_gperf (arch);
 	if (gp) {
 		sdb_free (a->pair);
 		a->pair = sdb_new0 ();
@@ -353,8 +353,12 @@ static void load_asm_descriptions(RAsm *a, RAsmPlugin *p) {
 	char *r2prefix = r_str_r2_prefix (R2_SDB_OPCODES);
 	char *file = r_str_newf ("%s/%s.sdb", r_str_getf (r2prefix), arch);
 	if (file) {
+#if 0
+		sdb_reset (a->pair);
+#else
 		sdb_free (a->pair);
 		a->pair = sdb_new (NULL, file, 0);
+#endif
 		free (file);
 	}
 	free (r2prefix);
@@ -369,54 +373,56 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	}
 	RAsmPlugin *h;
 	RListIter *iter;
+	char *dotname = strdup (name);
+	char *vv = strchr (dotname, '.');
+	if (vv) {
+		*vv = 0;
+	} else {
+		R_FREE (dotname);
+	}
 	r_list_foreach (a->plugins, iter, h) {
-		if (h->arch) {
-			if (!strcmp (h->name, name)) {
-				if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
-					load_asm_descriptions (a, h);
-					r_asm_set_cpu (a, NULL);
-				}
+		if (!strcmp (h->name, name)) {
+			if (!a->cur || (a->cur && h->arch && strcmp (a->cur->arch, h->arch))) {
+				load_asm_descriptions (a, h);
+				r_asm_set_cpu (a, NULL);
+			}
+			a->cur = h;
+			return true;
+		}
+		if (dotname && h->arch && !strcmp (dotname,  h->arch)) {
+			char *arch = r_str_ndup (name, vv - name);
+#if 0
+			r_arch_config_set_cpu (a->config, arch);
+			// r_asm_set_cpu (a, arch);
+			// h->arch = name;
+#else
+			r_asm_set_cpu (a, arch);
+#endif
+			a->cur = h;
+			load_asm_descriptions (a, h);
+			free (arch);
+			return true;
+		}
+#if 0
+			} else if (!strcmp (name, h->name)) {
+#if 0
+				r_arch_config_set_cpu (a->config, NULL);
+#else
+				h->arch = name; // leaks wtf is this shit
+				r_asm_set_cpu (a, NULL);
+#endif
 				a->cur = h;
+				load_asm_descriptions (a, h);
 				return true;
 			}
-		} else {
-			// resolve asm plugin by name, support multi-arch assemblers
-			char *vv = strchr (name, '.');
-			if (vv) {
-				if (!strcmp (vv + 1, h->name)) {
-					char *arch = r_str_ndup (name, vv - name);
-#if 0
-					r_arch_config_set_cpu (a->config, arch);
-					// r_asm_set_cpu (a, arch);
-					// h->arch = name;
-#else
-					r_asm_set_cpu (a, arch);
 #endif
-					a->cur = h;
-					load_asm_descriptions (a, h);
-					free (arch);
-					return true;
-				}
-			} else {
-				if (!strcmp (name, h->name)) {
-#if 0
-					r_arch_config_set_cpu (a->config, NULL);
-#else
-					h->arch = name;
-					r_asm_set_cpu (a, NULL);
-#endif
-					a->cur = h;
-					load_asm_descriptions (a, h);
-					return true;
-				}
-			}
-		}
 	}
 	if (a->analb.anal) {
 		if (a->analb.use (a->analb.anal, name)) {
 			load_asm_descriptions (a, NULL);
+			// return true;
 		} else {
-			R_LOG_ERROR ("Cannot find '%s' asm/arch/anal plugin. See rasm2 -L and rasm2 -LL", name);
+			R_LOG_ERROR ("Cannot find '%s' asm/arch/anal plugin. See rasm2 -L, -LL or -LLL", name);
 		}
 	}
 #if 0
@@ -425,7 +431,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	a->pair = NULL;
 #endif
 	if (strcmp (name, "null")) {
-		return r_asm_use (a, "null");
+		return r_asm_use (a, "null"); // x86.nz");
 	}
 	return false;
 }
@@ -581,31 +587,41 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 typedef int (*Ase)(RAsm *a, RAsmOp *op, const char *buf);
 
-static bool assemblerMatches(RAsm *a, RAsmPlugin *h) {
+static bool assemblerMatches(RAsm *a, RAsmPlugin *h, const char *ends_with) {
+	const char *arch = R_UNWRAP3 (a, config, arch);
 	if (!a || !h->arch || !h->assemble || !has_bits (h, a->config->bits)) {
 		return false;
 	}
-	return (a->cur->arch && !strncmp (a->config->arch, h->arch, strlen (a->cur->arch)));
+	const char *cur_arch = R_UNWRAP3 (a, cur, arch);
+	if (!strcmp (h->arch, arch)) {
+		if (ends_with) {
+			return r_str_endswith (h->name, ends_with);
+		}
+		if ((cur_arch && r_str_startswith (cur_arch, h->arch))) {
+			return true;
+		}
+	}
+	return false;
 }
 
-static Ase findAssembler(RAsm *a, const char *kw) {
-	RAsmPlugin *h;
-	RListIter *iter;
-	if (a->acur && a->acur->assemble) {
-		return a->acur->assemble;
-	}
-	r_list_foreach (a->plugins, iter, h) {
-		if (assemblerMatches (a, h)) {
-			if (kw) {
-				if (strstr (h->name, kw)) {
-					return h->assemble;
+static Ase find_assembler(RAsm *a, const char *kw) {
+	RAsmAssembleCallback aac = R_UNWRAP3 (a, acur, assemble);
+	if (!aac) {
+		RAsmPlugin *h;
+		RListIter *iter;
+		r_list_foreach (a->plugins, iter, h) {
+			if (assemblerMatches (a, h, kw)) {
+				if (kw) {
+					if (r_str_endswith (h->name, kw)) {
+						aac = h->assemble;
+						break;
+					}
 				}
-			} else {
-				return h->assemble;
+				break;
 			}
 		}
 	}
-	return NULL;
+	return aac;
 }
 
 static char *replace_directives_for(char *str, const char *token) {
@@ -620,7 +636,7 @@ static char *replace_directives_for(char *str, const char *token) {
 		if (p) {
 			char *nl = strchr (p, '\n');
 			if (nl) {
-				*nl ++ = 0;
+				*nl++ = 0;
 			}
 			char _ = *p;
 			*p = 0;
@@ -675,17 +691,17 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (a->ifilter) {
 		r_parse_parse (a->ifilter, buf, b);
 	}
-	r_str_case (b, 0); // to-lower
-	memset (op, 0, sizeof (RAsmOp));
+	r_str_case (b, false); // to-lower
+	r_asm_op_init (op);
 	if (a->cur) {
-		Ase ase = NULL;
-		if (!a->cur->assemble) {
+		Ase ase = R_UNWRAP3 (a, cur, assemble);
+		if (!ase) {
 			/* find callback if no assembler support in current plugin */
-			ase = findAssembler (a, ".ks");
+			ase = find_assembler (a, ".ks");
 			if (!ase) {
-				ase = findAssembler (a, ".nz");
+				ase = find_assembler (a, ".nz");
 				if (!ase) {
-					ase = findAssembler (a, NULL);
+					ase = find_assembler (a, NULL);
 				}
 			}
 			if (!ase && a->analb.anal) {
@@ -934,7 +950,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				if (cptr && ptr && cptr < ptr) {
 					likely_comment = false;
 					for (cptr += 1; cptr < ptr ; cptr += 1) {
-						if (! isspace ((unsigned char) *cptr)) {
+						if (! isspace ((int) *cptr)) {
 							likely_comment = true;
 							break;
 						}
@@ -955,7 +971,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 			if (!*ptr_start) {
 				continue;
 			}
-			linenum ++;
+			linenum++;
 			/* labels */
 			if (labels && (ptr = strchr (ptr_start, ':'))) {
 				bool is_a_label = true;

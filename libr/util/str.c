@@ -676,7 +676,7 @@ R_API const char *r_str_nstr(const char *s, const char *find, int slen) {
 }
 
 // Returns a new heap-allocated copy of str.
-// XXX what's the diff with r_str_dup ?
+// XXX what's the diff with strdup ?
 R_API char *r_str_new(const char *str) {
 	return str? strdup (str): NULL;
 }
@@ -851,13 +851,6 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 	memcpy (out, ptr, olen);
 	out[olen] = 0;
 	return out;
-}
-
-// TODO: deprecate?
-R_API char *r_str_dup(char *ptr, const char *string) {
-	char *str = r_str_new (string);
-	free (ptr); // in case ptr == string
-	return str;
 }
 
 R_API char *r_str_prepend(char *ptr, const char *string) {

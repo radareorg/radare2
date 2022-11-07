@@ -254,7 +254,7 @@ static RList* entries(RBinFile *bf) {
 static char *signature(RBinFile *bf, bool json) {
  	char buf[SDB_NUM_BUFSZ];
  	QnxObj *qo = bf->o->bin_obj;
-	return qo? r_str_dup (NULL, sdb_itoa (qo->rwend.signature, 10, buf, sizeof (buf))): NULL;
+	return qo? strdup (sdb_itoa (qo->rwend.signature, 10, buf, sizeof (buf))): NULL;
 }
 
 static ut64 get_vaddr(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
