@@ -393,3 +393,20 @@ next_buffer
 readonly_buffer
 EOF
 RUN
+
+NAME=Empty strings assemble
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=pickle
+wa+ string ""
+wa+ short_binstring ""
+wa global " "
+s 0
+pid 3
+EOF
+EXPECT=<<EOF
+0x00000000             5327270a  string ""
+0x00000004                 5500  short_binstring ""
+0x00000006               630a0a  global " "
+EOF
+RUN
