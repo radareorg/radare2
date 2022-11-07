@@ -154,12 +154,14 @@ static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 static bool cmd_load_theme(RCore *core, const char *_arg) {
 	bool failed = false;
 	char *path;
-	if (!_arg || !*_arg) {
+	if (R_STR_ISEMPTY (_arg)) {
 		return false;
 	}
 	if (!strcmp (_arg, "default")) {
-		free (core->theme);
-		core->theme = strdup (_arg);
+		if (_arg != core->theme) {
+			free (core->theme);
+			core->theme = strdup (_arg);
+		}
 		r_cons_pal_init (core->cons->context);
 		return true;
 	}
