@@ -536,7 +536,8 @@ static RBinInfo *info(RBinFile *bf) {
 			}
 		}
 	}
-	ret->intrp = strdup (MACH0_(get_intrp)(bf->o->bin_obj));
+	const char *intrp = MACH0_(get_intrp)(bf->o->bin_obj);
+	ret->intrp = intrp? strdup (intrp): NULL;
 	ret->compiler = strdup ("clang");
 	ret->rclass = strdup ("mach0");
 	ret->os = strdup (MACH0_(get_os)(bf->o->bin_obj));
