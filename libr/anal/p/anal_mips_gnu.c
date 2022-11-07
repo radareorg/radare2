@@ -1151,7 +1151,8 @@ static int disassemble(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 			// Fallback for default config
 			disasm_obj.mach = bfd_mach_mips_loongson_2f;
 		}
-		pre_cpu = r_str_dup (pre_cpu, cpu);
+		free (pre_cpu);
+		pre_cpu = strdup (cpu);
 	} else {
 		disasm_obj.mach = bfd_mach_mips_loongson_2f;
 	}

@@ -54,8 +54,9 @@ typedef struct r_charset_t {
 
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
 #define R_STR_ISNOTEMPTY(x) ((x) && *(x))
-#define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
-#define r_str_array(x,y) ((y>=0 && y<(sizeof (x)/sizeof (*x)))?x[y]:"")
+// XXX must deprecate
+#define R_STR_DUP(x) (((x) != NULL) ? strdup ((x)) : NULL)
+#define r_str_array(x,y) ((y >= 0 && y < (sizeof (x) / sizeof (*(x))))?(x)[(y)]: "")
 R_API RCharset *r_charset_new(void);
 R_API void r_charset_free(RCharset *charset);
 R_API RCharsetRune *r_charset_rune_new(const ut8 *ch, const ut8 *hx);
@@ -190,7 +191,6 @@ R_API const char *r_str_get(const char *str);
 R_API const char *r_str_get_fail(const char *str, const char *failstr);
 R_API const char *r_str_getf(const char *str);
 R_API char *r_str_ndup(const char *ptr, int len);
-R_API char *r_str_dup(char *ptr, const char *string);
 R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
 R_API int r_str_delta(char *p, char a, char b);
 R_API void r_str_filter(char *str, int len);
