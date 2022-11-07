@@ -589,19 +589,6 @@ typedef int (*Ase)(RAsm *a, RAsmOp *op, const char *buf);
 
 static bool assemblerMatches(RAsm *a, RAsmPlugin *h, const char *ends_with) {
 	const char *arch = R_UNWRAP3 (a, config, arch);
-#if 0
-	if (!a || !h->arch) {
-		return false;
-	}
-	if (!a || !h->arch || !h->assemble || !has_bits (h, a->config->bits)) {
-		return false;
-	}
-	const char *cur_arch = R_UNWRAP3 (a, cur, arch);
-	if (ends_with) {
-		return r_str_endswith (h->name, ends_with);
-	}
-	return (cur_arch && r_str_startswith (cur_arch, h->arch));
-#else
 	if (!a || !h->arch || !h->assemble || !has_bits (h, a->config->bits)) {
 		return false;
 	}
@@ -612,19 +599,9 @@ static bool assemblerMatches(RAsm *a, RAsmPlugin *h, const char *ends_with) {
 		}
 		if ((cur_arch && r_str_startswith (cur_arch, h->arch))) {
 			return true;
-		} else if (arch && strcmp (arch, "null") && r_str_startswith (arch, h->name)) {
-			eprintf ("Pene (%s) (%s)\n", ends_with, h->name);
-#if 0
-			/// fails on arm
-			if (ends_with) {
-				return r_str_endswith (h->name, ends_with);
-			}
-#endif
-			return false;
 		}
 	}
 	return false;
-#endif
 }
 
 static Ase find_assembler(RAsm *a, const char *kw) {
