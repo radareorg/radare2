@@ -865,9 +865,7 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 		} else {
 			function->name[i] = '\0';
 		}
-#if DEBUG
-		eprintf ("%04X:%s ", function->offset, function->name);
-#endif
+		R_LOG_ERROR ("%04X:%s ", function->offset, function->name);
 		*flags = current_byte;
 		r_list_append (module->public_functions, function);
 	} while (*flags & IDASIG__PARSE__MORE_PUBLIC_NAMES);

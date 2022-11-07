@@ -88,8 +88,8 @@ static int r_main_r2pipe(int argc, const char **argv) {
 			r2cmd (in, out, argv[i]);
 		}
 	} else {
-		eprintf ("Error: R2PIPE_(IN|OUT) environment not set\n");
-		eprintf ("Usage: r2 -c '!*r2p x' # run commands via r2pipe\n");
+		R_LOG_ERROR ("R2PIPE_(IN|OUT) environment not set");
+		R_LOG_INFO ("Usage: r2 -c '!*r2p x' # run commands via r2pipe");
 		rc = 1;
 	}
 	free (_in);

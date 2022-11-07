@@ -212,7 +212,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 			NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, env,
 			NULL, &start_info, &proc_info)) {
 		free (env);
-		eprintf ("CreateProcess failed: %#x\n", (int)GetLastError ());
+		R_LOG_ERROR ("CreateProcess failed: %#x", (int)GetLastError ());
 		goto error;
 	}
 	free (env);
@@ -999,7 +999,7 @@ R_API bool r2r_check_jq_available(void) {
 	const char *invalid_json = "this is not json lol";
 	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
 	if (!proc) {
-		eprintf ("Cnnot start subprocess\n");
+		R_LOG_ERROR ("Cnnot start subprocess");
 		return false;
 	}
 	r2r_subprocess_stdin_write (proc, (const ut8 *)invalid_json, strlen (invalid_json));
