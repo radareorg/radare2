@@ -626,7 +626,6 @@ static const ut32 colormap[256] = {
 
 static void __cmd_pad(RCore *core, const char *arg) {
 	if (*arg == '?') {
-		eprintf ("Usage: pad [hexpairs] # disassembly given bytes\n");
 		r_core_cmd_help_match (core, help_msg_pa, "pad", false);
 		return;
 	}
@@ -6014,7 +6013,7 @@ static int cmd_print(void *data, const char *input) {
 				__cmd_pad (core, arg);
 				break;
 			case '?': // "pad?"
-				r_cons_printf ("|Usage: pad [hex]       print assembly expression from hexpairs\n");
+				r_core_cmd_help_match (core, help_msg_pa, "pad", false);
 				break;
 			default:
 				r_cons_printf ("|Usage: pa[edD] [asm|hex]  print (dis)assembled\n");
@@ -6031,7 +6030,7 @@ static int cmd_print(void *data, const char *input) {
 			RAsmCode *acode = r_asm_massemble (core->rasm, input + 1);
 			if (acode) {
 				if (!acode->len) {
-					R_LOG_ERROR ("Usage: pa [instruction-to-assemble] ; use pd to disassemble");
+					r_core_cmd_help_match (core, help_msg_pa, "pa", false);
 				} else {
 					size_t i;
 					for (i = 0; i < acode->len; i++) {
