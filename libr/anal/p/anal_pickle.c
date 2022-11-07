@@ -638,7 +638,7 @@ static inline int assemble_cnt_str(char *str, int byte_sz, ut8 *outbuf, int outs
 	str++;
 	int wlen = -2;
 	len = r_str_unescape (str);
-	if (len > 0 && len + byte_sz <= outsz && write_num_sz (len, byte_sz, outbuf, outsz)) {
+	if (len >= 0 && len + byte_sz <= outsz && write_num_sz (len, byte_sz, outbuf, outsz)) {
 		wlen = len + byte_sz;
 		memcpy (outbuf + byte_sz, str, len);
 	}
