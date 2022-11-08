@@ -6,6 +6,8 @@ esil_plugins = [ 'dummy' ]
 asm_plugins = [ 'null' ]
 anal_plugins = [ 'null' ]
 arch_plugins = [ 'null',
+  'sh',
+  'jdh8',
   'i4004',
   'amd29k',
 ]
@@ -171,7 +173,6 @@ anal_plugins += [
   'riscv',
   'riscv_cs',
   'rsp',
-  'sh',
   'snes',
   'sparc_cs',
   's390_cs',

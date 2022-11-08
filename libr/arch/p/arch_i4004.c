@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2016-2022 - pancake, condret */
 
 #include <r_arch.h>
-#include "../i/i4004/gperfdb.c"
+#include "./i4004/gperfdb.c"
 
 static bool set_reg_profile(RArchConfig *cfg, RReg *reg) {
 	const char *p =
@@ -98,7 +98,7 @@ static int i4004_get_ins_len(ut8 hex) {
 	return ret;
 }
 
-static int i4004_decode(RArchConfig *cfg, RAnalOp *op, ut64 addr, const ut8 *buf, int len, ut32 mask, void *user) {
+static int i4004_decode(RArch *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, ut32 mask, void *user) {
 	char basm[64];
 	const size_t basz = sizeof (basm);
 	int rlen = i4004_get_ins_len (*buf);

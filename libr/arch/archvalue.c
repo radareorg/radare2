@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2010-2022 - pancake, condret */
 
-#if 0
 #include <r_arch.h>
 #include <r_io.h>
 #include <r_reg.h>
@@ -8,6 +7,7 @@
 R_API RArchValue *r_arch_value_new(void) { //macro for this ?
 	return R_NEW0 (RArchValue);
 }
+#if 0
 
 R_API RArchValue *r_arch_value_copy(RArchValue *ov) {
 	r_return_val_if_fail (ov, NULL);

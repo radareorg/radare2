@@ -28,35 +28,6 @@ typedef enum {
 	R_ANAL_STACK_ALIGN,
 } RAnalStackOp;
 
-// XXX deprecate those names are uglyies and we can reuse R_PERM
-typedef enum {
-	R_ANAL_ACC_UNKNOWN = 0,
-	R_ANAL_ACC_R = (1 << 0),
-	R_ANAL_ACC_W = (1 << 1),
-} RAnalValueAccess;
-
-typedef enum {
-	R_ANAL_VAL_REG,
-	R_ANAL_VAL_MEM,
-	R_ANAL_VAL_IMM,
-} RAnalValueType;
-
-// base + reg + regdelta * mul + delta
-typedef struct r_anal_value_t {
-	RAnalValueType type;
-	RAnalValueAccess access;
-	int absolute; // if true, unsigned cast is used
-	int memref; // is memory reference? which size? 1, 2 ,4, 8
-	ut64 base ; // numeric address
-	st64 delta; // numeric delta
-	st64 imm; // immediate value
-	int mul; // multiplier (reg*4+base)
-	// XXX can be invalidated if regprofile changes causing an UAF
-	RRegItem *seg; // segment selector register
-	RRegItem *reg; // register item reference
-	RRegItem *regdelta; // register index used
-} RAnalValue;
-
 typedef enum {
 	R_ANAL_OP_DIR_READ = 1,
 	R_ANAL_OP_DIR_WRITE = 2,

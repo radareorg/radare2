@@ -66,14 +66,10 @@ static void zign_rename_for(REvent *ev, int type, void *user, void *data) {
 void r_anal_hint_storage_init(RAnal *a);
 void r_anal_hint_storage_fini(RAnal *a);
 
-static void r_meta_item_fini(RAnalMetaItem *item) {
-	free (item->str);
-}
-
 static void r_meta_item_free(void *_item) {
 	if (_item) {
 		RAnalMetaItem *item = _item;
-		r_meta_item_fini (item);
+		free (item->str);
 		free (item);
 	}
 }
@@ -722,7 +718,7 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 		b->anal = anal;
 		b->get_fcn_in = r_anal_get_fcn_in;
 		b->get_hint = r_anal_hint_get;
-		b->encode = (RAnalEncode)r_anal_opasm; // TODO rename to encode
+		b->encode = (RAnalEncode)r_anal_opasm; // TODO rename to encode.. and use r_arch_encode when all plugs are moved
 		b->decode = (RAnalDecode)r_anal_op; // TODO rename to decode
 		b->opinit = r_anal_op_init;
 		b->mnemonics = r_anal_mnemonics;

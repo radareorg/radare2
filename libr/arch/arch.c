@@ -6,6 +6,7 @@
 static const RArchPlugin * const arch_static_plugins[] = { R_ARCH_STATIC_PLUGINS };
 
 static void plugin_free(void *p) {
+	// XXX
 }
 
 static void _decoder_free_cb(HtPPKv *kv) {
@@ -289,11 +290,12 @@ R_API bool r_arch_del(RArch *arch, const char *name) {
 }
 
 R_API void r_arch_free(RArch *arch) {
-	r_return_if_fail (arch);
-	ht_pp_free (arch->decoders);
-	r_list_free (arch->plugins);
-	r_unref (arch->cfg);
-	free (arch);
+	if (arch) {
+		ht_pp_free (arch->decoders);
+		r_list_free (arch->plugins);
+		r_unref (arch->cfg);
+		free (arch);
+	}
 }
 
 #if 0
