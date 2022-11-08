@@ -1192,7 +1192,6 @@ static void __init_panel_param(RCore *core, RPanel *p, const char *title, const 
 	free (m->cmd);
 	if (title) {
 		m->title = strdup (title);
-		free (m->cmd);
 		if (cmd) {
 			m->cmd = strdup (cmd);
 		} else {

@@ -487,8 +487,12 @@ dotherax:
 		ut8 *out = calloc (1, n / 4 * 3 + 1);
 		if (out) {
 			n = r_base64_decode (out, str, n);
-			fwrite (out, n, 1, stdout);
-			fflush (stdout);
+			if (n > 0) {
+				fwrite (out, n, 1, stdout);
+				fflush (stdout);
+			} else {
+				R_LOG_ERROR ("Cannot decode");
+			}
 			free (out);
 		}
 		return true;
