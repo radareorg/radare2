@@ -199,14 +199,16 @@ static ut64 disarm_8bit_offset(ut64 pc, ut32 offs) {
 	return (off << 1) + pc + 4;
 }
 
-static const char *regs[]={ "r0", "r1","r2", "r3", "r4","r5","r6","r7","r8","r9","r10","r11","r12","r13","r14","r15","pc" };
+#if USE_REG_NAMES
+static const char *regs[] = { "r0", "r1","r2", "r3", "r4","r5","r6","r7","r8","r9","r10","r11","r12","r13","r14","r15","pc" };
+#endif
 
 static RArchValue *anal_fill_ai_rg(RArch *anal, int idx) {
 	RArchValue *ret = r_arch_value_new ();
 #if USE_REG_NAMES
 	ret->reg = regs[idx];
 #else
-	ret->reg = r_reg_get (anal->reg, regs[idx], R_REG_TYPE_GPR);
+	// ret->reg = r_reg_get (anal->reg, regs[idx], R_REG_TYPE_GPR);
 #endif
 	return ret;
 }
@@ -240,7 +242,7 @@ static RArchValue *anal_fill_r0_reg_ref(RArch *anal, int reg, st64 size) {
 #if USE_REG_NAMES
 	ret->regdelta = regs[reg];
 #else
-	ret->regdelta = r_reg_get (anal->reg, regs[reg], R_REG_TYPE_GPR);
+	// ret->regdelta = r_reg_get (anal->reg, regs[reg], R_REG_TYPE_GPR);
 #endif
 	ret->memref = size;
 	return ret;
@@ -263,11 +265,10 @@ static RArchValue *anal_pcrel_disp_mov(RArch* anal, RAnalOp* op, ut8 disp, int s
 //= PC+4+R<reg>
 static RArchValue *anal_regrel_jump(RArch* anal, RAnalOp* op, ut8 reg) {
 	RArchValue *ret = r_arch_value_new ();
-	const char *reg_name = regs[reg];
 #if USE_REG_NAMES
-	ret->reg = reg_name;
+	ret->reg = regs[reg];
 #else
-	ret->reg = r_reg_get (anal->reg, reg_name, R_REG_TYPE_GPR);
+	// ret->reg = r_reg_get (anal->reg, regs[reg], R_REG_TYPE_GPR);
 #endif
 	ret->base = op->addr + 4;
 	return ret;

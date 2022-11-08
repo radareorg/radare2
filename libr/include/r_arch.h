@@ -199,7 +199,7 @@ typedef enum {
 } RArchValueType;
 #define RAnalValueType RArchValueType
 
-#define USE_REG_NAMES 1
+#define USE_REG_NAMES 0
 
 // base + reg + regdelta * mul + delta
 typedef struct r_arch_value_t {
