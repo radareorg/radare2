@@ -1141,7 +1141,6 @@ static int mov_imm_reg(RArch* arch, RAnalOp* op, ut16 code) {
 
 // nibble=f;
 static int fpu_insn(RArch* a, RAnalOp* op, ut16 code) {
-	// 
 	// Not interested on FPU stuff for now
 	op->family = R_ANAL_OP_FAMILY_FPU;
 	return op->size;

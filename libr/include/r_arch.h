@@ -109,7 +109,7 @@ typedef int (*RArchPluginInfoCallback)(RArchConfig *cfg, ut32 query);
 typedef int (*RArchPluginDecodeCallback)(RArch *cfg, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user);
 #if 0
 // addr, data/len and *user can be taken from RAnalOp, so the user must fill those fields before calling this functions
-R_API int r_arch_op_setbytes (op, ut64 addr, const ut8* data, int len);
+R_API int r_arch_op_setbytes(op, ut64 addr, const ut8* data, int len);
 typedef bool (*RArchPluginDecodeCallback)(RArchInstance *cfg, struct r_anal_op_t *op, RArchDecodeMask mask);
 typedef bool (*RArchPluginEncodeCallback)(RArchInstance *cfg, struct r_anal_op_t *op);
 /*
