@@ -11,7 +11,7 @@ r_arch_sources = [
   'p/arch_i4004.c',
   'p/arch_amd29k.c',
   'p/arch_jdh8.c',
-  'p/anal_sh.c',
+  'p/arch_sh.c',
   'p/sh/gnu/sh-dis.c',
 ]
 
