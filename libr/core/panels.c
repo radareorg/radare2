@@ -938,7 +938,7 @@ static void __update_pdc_contents(RCore *core, RPanel *panel, char *cmdstr) {
 static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache) {
 	// XXX force cache is always used as false!!
 	if (panel->model->cache) {
-		return panel->model->cmdStrCache;
+		return strdup (panel->model->cmdStrCache);
 	}
 	char *cmd = __apply_filter_cmd (core, panel);
 	bool b = core->print->cur_enabled && __get_cur_panel (core->panels) != panel;
@@ -947,7 +947,6 @@ static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache
 		if (b) {
 			core->print->cur_enabled = false;
 		}
-
 		bool o_interactive = r_cons_is_interactive ();
 		r_cons_set_interactive (false);
 		out = (*cmd == '.')
@@ -971,8 +970,9 @@ static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache
 }
 
 static char *__find_cmd_str_cache(RCore *core, RPanel* panel) {
-	if (panel->model->cache && panel->model->cmdStrCache) {
-		return strdup (panel->model->cmdStrCache);
+	const char *cs = R_UNWRAP3 (panel, model, cmdStrCache);
+	if (panel->model->cache && cs) {
+		return strdup (cs);
 	}
 	return __handle_cmd_str_cache (core, panel, false);
 }
@@ -986,7 +986,9 @@ static void __panel_all_clear(RPanels *panels) {
 	for (i = 0; i < panels->n_panels; i++) {
 		panel = __get_panel (panels, i);
 		if (panel) {
-			r_cons_canvas_fill (panels->can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, ' ');
+			r_cons_canvas_fill (panels->can,
+				panel->view->pos.x, panel->view->pos.y,
+				panel->view->pos.w, panel->view->pos.h, ' ');
 		}
 	}
 	print_notch (NULL);
@@ -997,7 +999,7 @@ static void __panel_all_clear(RPanels *panels) {
 static void __layout_default(RPanels *panels) {
 	RPanel *p0 = __get_panel (panels, 0);
 	if (!p0) {
-		eprintf ("_get_panel (...,0) return null\n");
+		R_LOG_ERROR ("_get_panel (...,0) return null");
 		return;
 	}
 	int h, w = r_cons_get_size (&h);
@@ -1150,7 +1152,7 @@ static void __set_curnode(RCore *core, int idx) {
 static bool __check_panel_num(RCore *core) {
 	RPanels *panels = core->panels;
 	if (panels->n_panels + 1 > PANEL_NUM_LIMIT) {
-		const char *msg = "panel limit exceeded.";
+		const char *msg = "panel limit exceeded";
 		(void)__show_status (core, msg);
 		return false;
 	}
@@ -7268,7 +7270,6 @@ virtualmouse:
 		break;
 #endif
 	default:
-		// eprintf ("Key %d\n", key);
 		// sleep (1);
 		break;
 	}
