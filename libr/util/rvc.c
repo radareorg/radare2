@@ -1221,7 +1221,7 @@ R_API bool r_vc_git_commit(Rvc *vc, const char *_message, const char *author, co
 	if (epath) {
 		char *emsg = r_str_escape (message);
 		if (emsg) {
-			int res = r_sys_cmdf ("git -C %s commit -m %s --author \"%s <%s@localhost>\"",
+			int res = r_sys_cmdf ("git -C \"%s\" commit -m \"%s\" --author \"%s <%s@localhost>\"",
 					epath, emsg, escauth, escauth);
 			free (escauth);
 			free (message);
