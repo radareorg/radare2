@@ -271,10 +271,10 @@ R_DEPRECATE R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
 	}
 	/// if the code goes this way, it means that we are expecting the anal plugin to give us the regprofile which should be deprecated
 	bool ret = false;
-	RArchPluginRegistersCallback set_reg_profile = R_UNWRAP5 (anal, arch, current, p, regs);
 	if (anal && anal->cur && anal->cur->set_reg_profile) {
 		ret = anal->cur->set_reg_profile (anal);
 	} else if (anal->arch && anal->arch->current && anal->arch->current->p && anal->arch->current->p->set_reg_profile) {
+		// RArchPluginRegistersCallback set_reg_profile = R_UNWRAP5 (anal, arch, current, p, regs);
 		ret = anal->arch->current->p->set_reg_profile (anal->arch->cfg, anal->reg);
 	} else if (anal->arch && anal->arch->current && anal->arch->current->p && anal->arch->current->p->set_reg_profile) {
 		ret = anal->arch->current->p->set_reg_profile (anal->arch->cfg, anal->reg);
