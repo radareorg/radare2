@@ -15,8 +15,10 @@ r_arch_sources = [
   'p/sh/gnu/sh-dis.c',
 ]
 
+arch_inc = include_directories('../asm/arch/include')
+
 r_arch = library('r_arch', r_arch_sources,
-  include_directories: [platform_inc],
+  include_directories: [platform_inc, arch_inc],
   c_args: library_cflags,
   dependencies: [
     r_util_dep,
