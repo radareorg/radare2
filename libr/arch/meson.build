@@ -35,7 +35,7 @@ r_arch_dep = declare_dependency(link_with: r_arch,
 
 if get_option('blob')
 r_arch_static = static_library('r_arch_static', r_arch_sources,
-  include_directories: [platform_inc],
+  include_directories: [platform_inc, arch_inc],
   c_args: library_cflags,
   dependencies: [r_util_static_dep],
   install: true,
