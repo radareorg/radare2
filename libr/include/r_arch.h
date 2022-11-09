@@ -107,6 +107,7 @@ typedef int (*RArchOpAsmCallback)(RArch *a, ut64 addr, const char *str, ut8 *out
 typedef int (*RArchPluginInfoCallback)(RArchConfig *cfg, ut32 query);
 // typedef int (*RArchPluginDecodeCallback)(RArchConfig *cfg, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user);
 typedef int (*RArchPluginDecodeCallback)(RArch *cfg, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user);
+typedef char *(*RArchPluginRegistersCallback)(RArchInstance *ai);
 #if 0
 // addr, data/len and *user can be taken from RAnalOp, so the user must fill those fields before calling this functions
 R_API int r_arch_op_setbytes(op, ut64 addr, const ut8* data, int len);
@@ -146,8 +147,9 @@ typedef struct r_arch_plugin_t {
 	void (*fini)(void *user);
 	RArchPluginInfoCallback info;
 	RArchPluginDecodeCallback decode;
+	RArchPluginRegistersCallback regs;
 	bool (*set_reg_profile)(RArchConfig *cfg, struct r_reg_t *reg);
-	RArchOpAsmCallback opasm; // rename to encode
+	RArchOpAsmCallback encode;
 //TODO: reenable this later
 //	bool (*esil_init)(RAnalEsil *esil);
 //	void (*esil_fini)(RAnalEsil *esil);

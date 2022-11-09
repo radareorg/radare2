@@ -1168,6 +1168,7 @@ static int (*first_nibble_decode[])(RArch*,RAnalOp*,ut16) = {
 
 /* Set the profile register */
 static bool sh_set_reg_profile(RArchConfig* arch, struct r_reg_t *reg) {
+	eprintf ("reg profile lol\n");
 	//TODO Add system ( ssr, spc ) + fpu regs
 	const char * const p =
 		"=PC	pc\n"

@@ -230,7 +230,7 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 	if (anal->arch) {
 		bool res = r_arch_use (anal->arch, anal->config, name);
 		if (res) {
-			R_LOG_DEBUG ("sing experimental '%s' r_arch plugin", name);
+			r_anal_set_reg_profile (anal, NULL);
 			return true;
 		} else {
 			anal->arch->current = NULL;
@@ -257,18 +257,27 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 }
 
 R_API char *r_anal_get_reg_profile(RAnal *anal) {
+	if (anal->arch && anal->arch->current && anal->arch->current->p && anal->arch->current->p->set_reg_profile) {
+		eprintf ("WINRAR must get wat awat at\n");
+	}
 	return (anal && anal->cur && anal->cur->get_reg_profile)
 		? anal->cur->get_reg_profile (anal) : NULL;
 }
 
 // deprecate.. or at least reuse get_reg_profile...
-R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
+R_DEPRECATE R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
 	if (p) {
 		return r_reg_set_profile_string (anal->reg, p);
 	}
+	/// if the code goes this way, it means that we are expecting the anal plugin to give us the regprofile which should be deprecated
 	bool ret = false;
+	RArchPluginRegistersCallback set_reg_profile = R_UNWRAP5 (anal, arch, current, p, regs);
 	if (anal && anal->cur && anal->cur->set_reg_profile) {
 		ret = anal->cur->set_reg_profile (anal);
+	} else if (anal->arch && anal->arch->current && anal->arch->current->p && anal->arch->current->p->set_reg_profile) {
+		ret = anal->arch->current->p->set_reg_profile (anal->arch->cfg, anal->reg);
+	} else if (anal->arch && anal->arch->current && anal->arch->current->p && anal->arch->current->p->set_reg_profile) {
+		ret = anal->arch->current->p->set_reg_profile (anal->arch->cfg, anal->reg);
 	} else {
 		char *p = r_anal_get_reg_profile (anal);
 		if (p && *p) {
@@ -780,6 +789,6 @@ R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
 }
 
 R_API void r_anal_purge_imports(RAnal *anal) {
-	R_DIRTY(anal);
 	r_list_purge (anal->imports);
+	R_DIRTY (anal);
 }
