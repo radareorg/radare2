@@ -327,18 +327,6 @@ R_API RReg *r_reg_new(void) {
 	return r_reg_init (R_NEW0 (RReg));
 }
 
-R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
-	r_return_if_fail (d && s);
-	d->cur = NULL; // TODO. not yet implemented
-	d->arena = r_reg_arena_clone (s->arena);
-	d->maskregstype = s->maskregstype;
-	// RListIter *iter;
-	// TODO: not implemented
-	// r_list_foreach (s->pool, iter, a) { }
-	// r_list_foreach (s->regs , iter, a) { }
-	// clone the ht_regs hashtable
-}
-
 R_API RRegItem *r_reg_item_clone(RRegItem *r) {
 	r_return_val_if_fail (r, NULL);
 	RRegItem *ri = R_NEW0 (RRegItem);
@@ -359,6 +347,29 @@ R_API RRegItem *r_reg_item_clone(RRegItem *r) {
 	r->index = ri->index;
 	r->arena = ri->arena;
 	return ri;
+}
+
+// TODO rename regset to reggroup . R_API void r_reg_group_copy(RRegGroup *d, RRegGroup *s) ..
+R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
+	r_return_if_fail (d && s);
+	d->cur = NULL; // TODO. not yet implemented
+	d->arena = r_reg_arena_clone (s->arena);
+	d->maskregstype = s->maskregstype;
+	RRegArena *a;
+	RListIter *iter;
+	r_list_foreach (s->pool, iter, a) {
+		RRegArena *na = r_reg_arena_clone (a);
+		r_list_append (d->pool, na);
+		d->cur = iter; // always points to the last..
+	}
+	HtPP *pp = ht_pp_new0 ();
+	RRegItem *r;
+	r_list_foreach (s->regs, iter, r) {
+		RRegItem *nr = r_reg_item_clone (r);
+		r_list_append (d->regs, nr);
+		ht_pp_insert (pp, nr->name, nr);
+	}
+	d->ht_regs = pp;
 }
 
 R_API RReg *r_reg_clone(RReg *r) {

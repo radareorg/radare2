@@ -119,9 +119,9 @@ typedef struct r_reg_set_t {
 	RList *pool;      /* RRegArena */
 	RList *regs;      /* RRegItem */
 	HtPP *ht_regs;    /* name:RRegItem */
-	RListIter *cur;
+	RListIter *cur;   /* RRegArenaIter */
 	int maskregstype; /* which type of regs have this reg set (logic mask with RRegisterType  R_REG_TYPE_XXX) */
-} RRegSet;
+} RRegSet; // Rename to RegGroup, because Set can be confusing with the 'set' keyword
 
 struct r_arch_config_t;
 #include <r_arch.h>
