@@ -161,7 +161,7 @@ static const char *help_msg_p[] = {
 	"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
 	"p-", "[?][jh] [mode]", "bar|json|histogram blocks (mode: e?search.in)",
 	"p2", " [len]", "8x8 2bpp-tiles",
-	"p3", " [file]", "print stereogram (3D)",
+	"p3", " [file]", "print 3D stereogram image of current block",
 	"p6", "[de] [len]", "base64 decode/encode",
 	"p8", "[?][j] [len]", "8bit hexpair list of bytes",
 	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
@@ -5877,7 +5877,7 @@ static int cmd_print(void *data, const char *input) {
 					(void)r_io_read_at (core->io, 0, data, core->offset);
 					char *res = r_print_json_path ((const char *)data, core->offset);
 					if (res) {
-						R_LOG_ERROR ("-> res(%s)", res);
+						r_cons_println (res);
 					}
 /*
 					char *res = r_print_json_indent ((char*)data, false, "  ", NULL);
@@ -7168,7 +7168,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '3': // "p3" [file]
 		if (input[1] == '?') {
-			R_LOG_ERROR ("Usage: p3 [file] - print 3D stereogram image of current block");
+			r_core_cmd_help_match (core, help_msg_p, "p3", true);
 		} else if (input[1] == ' ') {
 			char *data = r_file_slurp (input + 2, NULL);
 			if (!data) {
@@ -7492,7 +7492,7 @@ static int cmd_print(void *data, const char *input) {
 				int mode = input[2];
 				int wordsize = core->anal->config->bits / 8;
 				if (mode == '?') {
-					R_LOG_ERROR ("Usage: pxr[1248][*,jq] [length]");
+					r_core_cmd_help_match (core, help_msg_px, "pxr", false);
 					break;
 				}
 				if (mode && isdigit (mode)) {

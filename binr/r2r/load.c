@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2020-2022 - pancake, thestr4ng3r */
 
+#define R_LOG_ORIGIN "r2r.load"
+
 #include "r2r.h"
 
 #define LINEFMT "%s, line %"PFMT64u": "
