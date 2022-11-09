@@ -106,7 +106,7 @@ typedef struct r_reg_item_t {
 	char *comment;
 	int index;
 	int arena; /* in which arena is this reg living */
-       R_REF_TYPE;
+	R_REF_TYPE;
 } RRegItem;
 
 typedef struct r_reg_arena_t {
@@ -119,9 +119,9 @@ typedef struct r_reg_set_t {
 	RList *pool;      /* RRegArena */
 	RList *regs;      /* RRegItem */
 	HtPP *ht_regs;    /* name:RRegItem */
-	RListIter *cur;
+	RListIter *cur;   /* RRegArenaIter */
 	int maskregstype; /* which type of regs have this reg set (logic mask with RRegisterType  R_REG_TYPE_XXX) */
-} RRegSet;
+} RRegSet; // Rename to RegGroup, because Set can be confusing with the 'set' keyword
 
 struct r_arch_config_t;
 #include <r_arch.h>
@@ -166,6 +166,7 @@ R_API char *r_reg_parse_gdb_profile(const char *profile);
 R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item);
 
 R_API RRegSet *r_reg_regset_get(RReg *r, int type);
+R_API RRegSet *r_reg_regset_clone(RRegSet *r);
 R_API ut64 r_reg_getv(RReg *reg, const char *name);
 R_API bool r_reg_setv(RReg *reg, const char *name, ut64 val);
 R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32);
@@ -232,6 +233,7 @@ R_API bool r_reg_set_bytes(RReg *reg, int type, const ut8 *buf, const int len);
 R_API bool r_reg_read_regs(RReg *reg, ut8 *buf, const int len);
 R_API int r_reg_arena_set_bytes(RReg *reg, const char *str);
 R_API RRegArena *r_reg_arena_new(int size);
+R_API RRegArena *r_reg_arena_clone(RRegArena *a);
 R_API void r_reg_arena_free(RRegArena *ra);
 R_API void r_reg_fit_arena(RReg *reg);
 R_API void r_reg_arena_swap(RReg *reg, int copy);
