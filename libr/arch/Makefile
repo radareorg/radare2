@@ -4,6 +4,7 @@ NAME=r_arch
 R2DEPS+=r_util r_reg
 
 CFLAGS+=-DR2_PLUGIN_INCORE
+CFLAGS:=-I.. -I$(LTOP)/asm/arch/include -DR2_PLUGIN_INCORE -Iarch -I$(TOP)/shlr $(CFLAGS)
 
 .PHONY: pre
 pre: libr_arch.$(EXT_SO) libr_arch.$(EXT_AR)

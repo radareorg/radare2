@@ -87,13 +87,49 @@ typedef struct r_arch_decoder_t {
 
 typedef struct r_arch_t {
 	RList *plugins;	       // all plugins
+	struct r_arch_instance_t *cur; // this var must deprecate current!
 	RArchDecoder *current; // currently used decoder
 	HtPP *decoders;        // as decoders instantiated plugins
 	RArchConfig *cfg;      // config
 	bool autoselect;
 } RArch;
 
+typedef struct r_arch_instance_t {
+	struct r_arch_t *arch;
+	struct r_arch_plugin_t *plugin;
+	RArchConfig *config; // TODO remove arch->config!
+	void *data;
+	void *user;
+} RArchInstance;
+
 typedef int (*RArchOpAsmCallback)(RArch *a, ut64 addr, const char *str, ut8 *outbuf, int outlen);
+// typedef int (*RArchPluginInfoCallback)(RArchInstance *i, ut32 query);
+typedef int (*RArchPluginInfoCallback)(RArchConfig *cfg, ut32 query);
+// typedef int (*RArchPluginDecodeCallback)(RArchConfig *cfg, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user);
+typedef int (*RArchPluginDecodeCallback)(RArch *cfg, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user);
+typedef char *(*RArchPluginRegistersCallback)(RArchInstance *ai);
+#if 0
+// addr, data/len and *user can be taken from RAnalOp, so the user must fill those fields before calling this functions
+R_API int r_arch_op_setbytes(op, ut64 addr, const ut8* data, int len);
+typedef bool (*RArchPluginDecodeCallback)(RArchInstance *cfg, struct r_anal_op_t *op, RArchDecodeMask mask);
+typedef bool (*RArchPluginEncodeCallback)(RArchInstance *cfg, struct r_anal_op_t *op);
+/*
+   RArchOp op;
+   RArch *a = r_arch_new ();
+   RArchConfig *cfg = r_arch_config_new ();
+   RArchInstance *ai = r_arch_use (a, cfg, "x86");
+   RArchOp *op = r_arch_new ();
+   r_arch_op_setbytes (op, 0x10080840, "\x90", 1);
+   if (r_arch_instance_decode (ai, op)) {
+	r_cons_printf ("Disasm of 0x90 is %s\n", r_arch_op_tostring (op));
+   } else {
+   	R_LOG_ERROR ("Cannot disassemble");
+   }
+   r_arch_op_free (op);
+   r_arch_instance_free (ai);
+   r_arch_free (a);
+   */
+#endif
 
 typedef struct r_arch_plugin_t {
 	char *name;
@@ -107,12 +143,13 @@ typedef struct r_arch_plugin_t {
 	ut32 bits;
 	ut32 addr_bits;
 	bool esil;
-	bool (*init)(void **user);
+	bool (*init)(void **user); // Should return an RArchSession, this struct contains all the info we need
 	void (*fini)(void *user);
-	int (*info)(RArchConfig *cfg, ut32 query);
-	int (*decode)(RArchConfig *cfg, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user);
+	RArchPluginInfoCallback info;
+	RArchPluginDecodeCallback decode;
+	RArchPluginRegistersCallback regs;
 	bool (*set_reg_profile)(RArchConfig *cfg, struct r_reg_t *reg);
-	RArchOpAsmCallback opasm;
+	RArchOpAsmCallback encode;
 //TODO: reenable this later
 //	bool (*esil_init)(RAnalEsil *esil);
 //	void (*esil_fini)(RAnalEsil *esil);
@@ -123,12 +160,16 @@ typedef struct r_arch_plugin_t {
 R_API bool r_arch_load_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_use_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_unload_decoder(RArch *arch, const char *dname);
+
 R_API int r_arch_info(RArch *arch, const char *dname, ut32 query);
 R_API int r_arch_decode(RArch *arch, const char *dname, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask);
 R_API int r_arch_encode(RArch *a, ut64 addr, const char *s, ut8 *outbuf, int outlen);
 R_API bool r_arch_set_reg_profile(RArch *arch, const char *dname, struct r_reg_t *reg);
 //R_API bool r_arch_esil_init(RArch *arch, const char *dname, RAnalEsil *esil);
 //R_API void r_arch_esil_fini(RArch *arch, const char *dname, RAnalEsil *esil);
+
+// instance.c
+// R_API RArchInstance r_arch_use(RArch *arch, RArchConfig *config, const char *name);
 
 // arch.c
 R_API RArch *r_arch_new(void);
@@ -146,6 +187,46 @@ R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu
 R_API void r_arch_config_set_bits(RArchConfig *config, int bits);
 R_API RArchConfig *r_arch_config_new(void);
 
+// XXX deprecate those names are uglyies and we can reuse R_PERM
+typedef enum {
+	R_ANAL_ACC_UNKNOWN = 0,
+	R_ANAL_ACC_R = (1 << 0),
+	R_ANAL_ACC_W = (1 << 1),
+} RArchValueAccess;
+
+typedef enum {
+	R_ANAL_VAL_REG,
+	R_ANAL_VAL_MEM,
+	R_ANAL_VAL_IMM,
+} RArchValueType;
+#define RAnalValueType RArchValueType
+
+#define USE_REG_NAMES 0
+
+// base + reg + regdelta * mul + delta
+typedef struct r_arch_value_t {
+	RArchValueType type;
+	RArchValueAccess access;
+	int absolute; // if true, unsigned cast is used
+	int memref; // is memory reference? which size? 1, 2 ,4, 8
+	ut64 base ; // numeric address
+	st64 delta; // numeric delta
+	st64 imm; // immediate value
+	int mul; // multiplier (reg*4+base)
+#if USE_REG_NAMES
+	const char *seg;
+	const char *reg;
+	const char *regdelta;
+#else
+	// XXX can be invalidated if regprofile changes causing an UAF
+	RRegItem *seg; // segment selector register
+	RRegItem *reg; // register item reference
+	RRegItem *regdelta; // register index used
+#endif
+} RArchValue;
+// backward compat
+#define RAnalValue RArchValue
+R_API RArchValue *r_arch_value_new(void);
 #if 0
 // switchop
 R_API RArchSwitchOp *r_arch_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val);
@@ -153,7 +234,6 @@ R_API RArchCaseOp *r_arch_case_op_new(ut64 addr, ut64 val, ut64 jump);
 R_API void r_arch_switch_op_free(RArchSwitchOp *swop);
 R_API RArchCaseOp* r_arch_switch_op_add_case(RArchSwitchOp *swop, ut64 addr, ut64 value, ut64 jump);
 // archvalue.c
-R_API RAnalValue *r_arch_value_new(void);
 R_API RArchValue *r_arch_value_copy(RArchValue *ov);
 R_API void r_arch_value_free(RArchValue *value);
 R_API ut64 r_arch_value_to_ut64(RArchValue *val, struct r_reg_t *reg);
@@ -177,6 +257,7 @@ extern RArchPlugin r_arch_plugin_null;
 extern RArchPlugin r_arch_plugin_i4004;
 extern RArchPlugin r_arch_plugin_amd29k;
 extern RArchPlugin r_arch_plugin_jdh8;
+extern RArchPlugin r_arch_plugin_sh;
 
 #ifdef __cplusplus
 }

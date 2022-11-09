@@ -1,9 +1,9 @@
 /* radare - LGPL - Copyright 2016-2022 - pancake, condret */
 
 #include <r_arch.h>
-#include "../i/i4004/gperfdb.c"
+#include "./i4004/gperfdb.c"
 
-static bool set_reg_profile(RArchConfig *cfg, RReg *reg) {
+static char *i4004_regs(RArchInstance *a) {
 	const char *p =
 		"=PC	PC\n"
 		/* syntax not yet supported */
@@ -43,7 +43,7 @@ static bool set_reg_profile(RArchConfig *cfg, RReg *reg) {
 		"gpr	PC2	.12	.104	0\n"
 		"gpr	PC3	.12	.120	0\n"
 		;
-	return r_reg_set_profile_string (reg, p);
+	return strdup (p);
 }
 
 /* That 3 is a hack */
@@ -98,7 +98,7 @@ static int i4004_get_ins_len(ut8 hex) {
 	return ret;
 }
 
-static int i4004_decode(RArchConfig *cfg, RAnalOp *op, ut64 addr, const ut8 *buf, int len, ut32 mask, void *user) {
+static int i4004_decode(RArch *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, ut32 mask, void *user) {
 	char basm[64];
 	const size_t basz = sizeof (basm);
 	int rlen = i4004_get_ins_len (*buf);
@@ -251,7 +251,7 @@ static int i4004_decode(RArchConfig *cfg, RAnalOp *op, ut64 addr, const ut8 *buf
 	return op->size = rlen;
 }
 
-static int i4004_anal_opasm(RArch *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
+static int i4004_encode(RArch *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
 	char *s = strdup (str);
 	r_str_case (s, false);
 	s = r_str_replace (s, "_", "?", false);	// mitigate a bug in sdb -C
@@ -391,8 +391,8 @@ RArchPlugin r_arch_plugin_i4004 = {
 	.esil = false,
 	.author = "pancake, condret",
 	.decode = &i4004_decode,
-	.opasm = &i4004_anal_opasm,
-	.set_reg_profile = &set_reg_profile
+	.encode = &i4004_encode,
+	.regs = &i4004_regs,
 };
 
 #ifndef R2_PLUGIN_INCORE

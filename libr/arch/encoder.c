@@ -9,10 +9,9 @@
 
 R_API int r_arch_encode(RArch *a, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
 	int res = 0;
-	RArchOpAsmCallback opasm = R_UNWRAP4 (a, current, p, opasm);
-
-	if (opasm) { // a->current && a->current->p && a->current->p->opasm) {
-		res = opasm (a, addr, s, outbuf, outlen);
+	RArchOpAsmCallback encode = R_UNWRAP4 (a, current, p, encode);
+	if (encode) {
+		res = encode (a, addr, s, outbuf, outlen);
 	}
 	return res;
 }
