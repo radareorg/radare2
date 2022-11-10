@@ -1,6 +1,8 @@
 
+#define R_LOG_ORIGIN "r2r"
 #define main not_main
 #include "../../binr/r2r/r2r.c"
+#undef R_LOG_ORIGIN
 #include "../../binr/r2r/load.c"
 #include "../../binr/r2r/run.c"
 #undef main
