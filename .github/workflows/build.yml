@@ -133,7 +133,7 @@ jobs:
 
   # macOS
   macos-acr-x64:
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -165,7 +165,7 @@ jobs:
          name: macos-acr-m1
   ios-cydia32:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
     - uses: actions/checkout@v3
     - name: Install pkg-config/ldid2 with Homebrew
@@ -181,7 +181,7 @@ jobs:
 
   ios-cydia:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
     - uses: actions/checkout@v3
     - name: Install pkg-config/ldid2 with Homebrew
