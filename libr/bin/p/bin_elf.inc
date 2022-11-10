@@ -295,7 +295,12 @@ static RList* sections(RBinFile *bf) {
 					for (at = preinit_addr; at < preinit_end; at += R_BIN_ELF_WORDSIZE) {
 						ut64 paddr = Elf_(r_bin_elf_v2p) (obj, at);
 						// ut64 vaddr = Elf_(r_bin_elf_p2v) (obj, at);
-						ut64 addr = r_buf_read_ble64_at (bf->buf, paddr, big_endian);
+						ut64 addr = 0;
+						if (R_BIN_ELF_WORDSIZE == 8) {
+							addr = r_buf_read_ble64_at (bf->buf, paddr, big_endian);
+						} else {
+							addr = r_buf_read_ble32_at (bf->buf, paddr, big_endian);
+						}
 						RBinAddr *ba = R_NEW0 (RBinAddr);
 						if (ba) {
 							ba->paddr = Elf_(r_bin_elf_v2p) (obj, addr);
