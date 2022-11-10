@@ -161,7 +161,7 @@ static const char *help_msg_p[] = {
 	"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
 	"p-", "[?][jh] [mode]", "bar|json|histogram blocks (mode: e?search.in)",
 	"p2", " [len]", "8x8 2bpp-tiles",
-	"p3", " [file]", "print stereogram (3D)",
+	"p3", " [file]", "print 3D stereogram image of current block",
 	"p6", "[de] [len]", "base64 decode/encode",
 	"p8", "[?][j] [len]", "8bit hexpair list of bytes",
 	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
@@ -626,7 +626,7 @@ static const ut32 colormap[256] = {
 
 static void __cmd_pad(RCore *core, const char *arg) {
 	if (*arg == '?') {
-		eprintf ("Usage: pad [hexpairs] # disassembly given bytes\n");
+		r_core_cmd_help_match (core, help_msg_pa, "pad", false);
 		return;
 	}
 	r_asm_set_pc (core->rasm, core->offset);
@@ -1775,7 +1775,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (val) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, val, mode, 0));
 			} else {
-				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
+				R_LOG_WARN ("Struct %s not defined. Use pfs.struct_name | pfs format", _input);
 			}
 		} else if (*_input == ' ') {
 			while (*_input == ' ' && *_input != '\0') {
@@ -1784,7 +1784,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (*_input) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, _input, mode, 0));
 			} else {
-				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
+				R_LOG_WARN ("Struct %s not defined. Use pfs.struct_name | pfs format", _input);
 			}
 		} else {
 			eprintf ("Usage: pfs.struct_name | pfs format\n");
@@ -5742,7 +5742,7 @@ static int cmd_print(void *data, const char *input) {
 		bool all = strstr (input, "-a");
 		bool halp = strstr (input, "-h");
 		if (halp) {
-			eprintf ("Usage: popd [-a]\n");
+			R_LOG_ERROR ("Usage: popd [-a]");
 			r_core_return_value (core, 1);
 		} else {
 			bool suc = all
@@ -5877,7 +5877,7 @@ static int cmd_print(void *data, const char *input) {
 					(void)r_io_read_at (core->io, 0, data, core->offset);
 					char *res = r_print_json_path ((const char *)data, core->offset);
 					if (res) {
-						eprintf ("-> res(%s)\n", res);
+						r_cons_println (res);
 					}
 /*
 					char *res = r_print_json_indent ((char*)data, false, "  ", NULL);
@@ -6013,7 +6013,7 @@ static int cmd_print(void *data, const char *input) {
 				__cmd_pad (core, arg);
 				break;
 			case '?': // "pad?"
-				r_cons_printf ("|Usage: pad [hex]       print assembly expression from hexpairs\n");
+				r_core_cmd_help_match (core, help_msg_pa, "pad", false);
 				break;
 			default:
 				r_cons_printf ("|Usage: pa[edD] [asm|hex]  print (dis)assembled\n");
@@ -6030,7 +6030,7 @@ static int cmd_print(void *data, const char *input) {
 			RAsmCode *acode = r_asm_massemble (core->rasm, input + 1);
 			if (acode) {
 				if (!acode->len) {
-					eprintf ("Usage: pa [instruction-to-assemble] ; use pd to disassemble\n");
+					r_core_cmd_help_match (core, help_msg_pa, "pa", false);
 				} else {
 					size_t i;
 					for (i = 0; i < acode->len; i++) {
@@ -7168,7 +7168,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '3': // "p3" [file]
 		if (input[1] == '?') {
-			eprintf ("Usage: p3 [file] - print 3D stereogram image of current block\n");
+			r_core_cmd_help_match (core, help_msg_p, "p3", true);
 		} else if (input[1] == ' ') {
 			char *data = r_file_slurp (input + 2, NULL);
 			if (!data) {
@@ -7492,7 +7492,7 @@ static int cmd_print(void *data, const char *input) {
 				int mode = input[2];
 				int wordsize = core->anal->config->bits / 8;
 				if (mode == '?') {
-					eprintf ("Usage: pxr[1248][*,jq] [length]\n");
+					r_core_cmd_help_match (core, help_msg_px, "pxr", false);
 					break;
 				}
 				if (mode && isdigit (mode)) {
