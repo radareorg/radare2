@@ -171,30 +171,51 @@ static bool is_wordable_section(const char *name) {
 	return false;
 }
 
+static int elf_flags_to_section_perms(int flags) {
+	int perm = 0;
+	if (R_BIN_ELF_SCN_IS_EXECUTABLE (flags)) {
+		perm |= R_PERM_X;
+	}
+	if (R_BIN_ELF_SCN_IS_WRITABLE (flags)) {
+		perm |= R_PERM_W;
+	}
+	if (R_BIN_ELF_SCN_IS_READABLE (flags)) {
+		perm |= R_PERM_R;
+	}
+	return perm;
+}
+
+static bool is_data_section(const char *name) {
+	if (strstr (name, "data") && !strstr (name, "rel") && !strstr (name, "pydata")) {
+		return true;
+	}
+	if (!strcmp (name, "C")) {
+		return true;
+	}
+	return false;
+}
+
 static RList* sections(RBinFile *bf) {
 	struct Elf_(r_bin_elf_obj_t)* obj = (bf && bf->o)? bf->o->bin_obj : NULL;
 	struct r_bin_elf_section_t *section = NULL;
 	int i, found_load = 0;
 	RBinSection *ptr = NULL;
-	RList *ret = NULL;
-
-	if (!obj || !(ret = r_list_newf ((RListFree)r_bin_section_free))) {
+	if (!obj) {
 		return NULL;
 	}
-
-	//there is not leak in section since they are cached by elf.c
-	//and freed within Elf_(r_bin_elf_free)
+	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
+	if (!ret) {
+		return NULL;
+	}
+	// there is not leak in section since they are cached by elf.c
+	// and freed within Elf_(r_bin_elf_free)
 	if ((section = Elf_(r_bin_elf_get_sections) (obj))) {
 		for (i = 0; !section[i].last; i++) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
 				break;
 			}
 			ptr->name = strdup ((char*)section[i].name);
-			if (strstr (ptr->name, "data") && !strstr (ptr->name, "rel") && !strstr (ptr->name, "pydata")) {
-				ptr->is_data = true;
-			} else if (!strcmp (ptr->name, "C")) {
-				ptr->is_data = true;
-			}
+			ptr->is_data = is_data_section (ptr->name);
 			if (is_wordable_section (ptr->name)) {
 				ptr->format = r_str_newf ("Cd %d[%"PFMT64d"]",
 					R_BIN_ELF_WORDSIZE, section[i].size / R_BIN_ELF_WORDSIZE);
@@ -205,15 +226,7 @@ static RList* sections(RBinFile *bf) {
 			ptr->vaddr = section[i].rva;
 			ptr->add = !obj->phdr; // Load sections if there is no PHDR
 			ptr->perm = 0;
-			if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags)) {
-				ptr->perm |= R_PERM_X;
-			}
-			if (R_BIN_ELF_SCN_IS_WRITABLE (section[i].flags)) {
-				ptr->perm |= R_PERM_W;
-			}
-			if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags)) {
-				ptr->perm |= R_PERM_R;
-			}
+			ptr->perm = elf_flags_to_section_perms (section[i].flags);
 			r_list_append (ret, ptr);
 		}
 	}
@@ -221,9 +234,11 @@ static RList* sections(RBinFile *bf) {
 	// program headers is another section
 	ut16 mach = obj->ehdr.e_machine;
 	Elf_(Phdr)* phdr = obj->phdr;
-
+	obj->inits = r_list_newf ((RListFree)free); // r_bin_addr_free);
 
 	if (phdr) {
+		int bin_bits = Elf_(r_bin_elf_get_bits) (obj);
+		int big_endian = Elf_(r_bin_elf_is_big_endian) (obj);
 		ut64 num = Elf_(r_bin_elf_get_phnum) (obj);
 		int n = 0;
 		for (i = 0; i < num; i++) {
@@ -240,6 +255,60 @@ static RList* sections(RBinFile *bf) {
 			switch (phdr[i].p_type) {
 			case PT_DYNAMIC:
 				ptr->name = strdup ("DYNAMIC");
+				// get elf segment
+				// fill dt dynamic here
+				{
+					ut64 paddr = ptr->paddr;
+					ut64 paddr_end = paddr + ptr->size;
+					ut64 at = paddr;
+					ut64 preinit_addr = UT64_MAX;
+					ut64 preinit_size = UT64_MAX;
+					for (at = paddr; at < paddr_end; at += sizeof (Elf_(Dyn))) {
+						Elf_(Dyn) entry;
+#if R_BIN_ELF64
+						entry.d_tag = r_buf_read_ble64_at (bf->buf, at, big_endian);
+						entry.d_un.d_val = r_buf_read_ble64_at (bf->buf, at + sizeof (entry.d_tag), big_endian);
+#else
+						entry.d_tag = r_buf_read_ble32_at (bf->buf, at, big_endian);
+						entry.d_un.d_val = r_buf_read_ble32_at (bf->buf, at + sizeof (entry.d_tag), big_endian);
+#endif
+						if (entry.d_tag == DT_NULL) {
+							break;
+						}
+						switch (entry.d_tag) {
+						case DT_INIT_ARRAY:
+						case DT_FINI_ARRAY:
+							break;
+						case DT_INIT_ARRAYSZ:
+						case DT_FINI_ARRAYSZ:
+							break;
+						case DT_PREINIT_ARRAY:
+							preinit_addr = entry.d_un.d_val;
+							break;
+						case DT_PREINIT_ARRAYSZ:
+							preinit_size = entry.d_un.d_val;
+							break;
+							// TODO: Also add DT_INIT_ARRAY and D
+						}
+						// eprintf ("add dt.dyn.entry tag=%d value=0x%08x\n", entry.d_tag, entry.d_un.d_val);
+					}
+					RListIter *iter;
+					ut64 preinit_end = preinit_addr + preinit_size;
+					for (at = preinit_addr; at < preinit_end; at += R_BIN_ELF_WORDSIZE) {
+						ut64 paddr = Elf_(r_bin_elf_v2p) (obj, at);
+						// ut64 vaddr = Elf_(r_bin_elf_p2v) (obj, at);
+						ut64 addr = r_buf_read_ble64_at (bf->buf, paddr, big_endian);
+						RBinAddr *ba = R_NEW0 (RBinAddr);
+						if (ba) {
+							ba->paddr = Elf_(r_bin_elf_v2p) (obj, addr);
+							ba->vaddr = addr;
+							ba->hpaddr = paddr;
+							ba->hvaddr = at;
+							ba->type = R_BIN_ENTRY_TYPE_PREINIT;
+							r_list_append (obj->inits, ba);
+						}
+					}
+				}
 				break;
 			case PT_LOAD:
 				ptr->name = r_str_newf ("LOAD%d", n++);
@@ -366,33 +435,34 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 		} else if (!strcmp (sec->name, ".preinit_array")) {
 			type = R_BIN_ENTRY_TYPE_PREINIT;
 		}
-		if (type != -1) {
-			ut8 *buf = calloc (sec->size, 1);
-			if (!buf) {
-				continue;
-			}
-			(void)r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
-			if (bits == 32) {
-				for (i = 0; (i + 3) < sec->size; i += 4) {
-					ut32 addr32 = r_read_le32 (buf + i);
-					if (addr32) {
-						RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
-						                         (ut64)addr32, type, bits);
-						r_list_append (ret, ba);
-					}
-				}
-			} else {
-				for (i = 0; (i + 7) < sec->size; i += 8) {
-					ut64 addr64 = r_read_le64 (buf + i);
-					if (addr64) {
-						RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
-						                         addr64, type, bits);
-						r_list_append (ret, ba);
-					}
-				}
-			}
-			free (buf);
+		if (type == -1) {
+			continue;
 		}
+		ut8 *buf = calloc (sec->size, 1);
+		if (!buf) {
+			continue;
+		}
+		(void)r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
+		if (bits == 32) {
+			for (i = 0; (i + 3) < sec->size; i += 4) {
+				ut32 addr32 = r_read_le32 (buf + i);
+				if (addr32) {
+					RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
+					                         (ut64)addr32, type, bits);
+					r_list_append (ret, ba);
+				}
+			}
+		} else {
+			for (i = 0; (i + 7) < sec->size; i += 8) {
+				ut64 addr64 = r_read_le64 (buf + i);
+				if (addr64) {
+					RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
+					                         addr64, type, bits);
+					r_list_append (ret, ba);
+				}
+			}
+		}
+		free (buf);
 	}
 	r_list_free (secs);
 }
@@ -476,6 +546,11 @@ static RList* entries(RBinFile *bf) {
 	}
 	int bin_bits = Elf_(r_bin_elf_get_bits) (bf->o->bin_obj);
 	process_constructors (bf, ret, bin_bits < 32 ? 32: bin_bits);
+	RListIter *iter;
+	RBinAddr *foo;
+	r_list_foreach (obj->inits, iter, foo) {
+		r_list_append (ret, foo);
+	}
 	return ret;
 }
 

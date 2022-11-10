@@ -163,6 +163,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	RBinElfSymbol *phdr_symbols;
 	RBinElfSymbol *phdr_imports;
 	HtUP *rel_cache;
+	RList *inits;
 };
 
 int Elf_(r_bin_elf_has_va)(struct Elf_(r_bin_elf_obj_t) *bin);
