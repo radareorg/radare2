@@ -166,7 +166,7 @@ jobs:
         CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
   macos-test:
-    runs-on: macos-latest
+    runs-on: macos-11
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
@@ -201,7 +201,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: macos-rpath
     continue-on-error: true
-    runs-on: macos-latest
+    runs-on: macos-11
     steps:
     - name: Checkout
       uses: actions/checkout@v3
