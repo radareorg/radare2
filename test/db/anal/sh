@@ -33,51 +33,6 @@ mov r14, r15
 mov.l @r15+, r14
 rts
 nop
-nop
-.word 0x00000000
-mov.l r15, @(0x10,r0)
-mov.l r14, @-r15
-sts.l pr, @-r15
-add 0xF4, r15
-mov r15, r14
-mov r14, r1
-add 0xCC, r1
-mov.l r4, @(0x38,r1)
-mov r14, r1
-add 0xCC, r1
-mov.l r5, @(0x34,r1)
-mov r14, r1
-add 0xCC, r1
-mov 0x00, r2
-mov.l r2, @(0x3c,r1)
-bra 0x00001054
-nop
-invalid
-jsr @r1
-nop
-mov r14, r1
-add 0xCC, r1
-mov r14, r2
-add 0xCC, r2
-mov.l @(0x3c,r2), r2
-add 0x01, r2
-mov.l r2, @(0x3c,r1)
-mov r14, r1
-add 0xCC, r1
-mov.l @(0x3c,r1), r2
-mov 0x02, r1
-cmp/gt r1, r2
-bf 0x00001040
-mov 0x00, r1
-mov r1, r0
-add 0x0C, r14
-mov r14, r15
-lds.l @r15+, pr
-mov.l @r15+, r14
-rts
-nop
-.word 0x00000000
-mov.l r0, @(0x0,r0)
 EOF
 RUN
 
