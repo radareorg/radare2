@@ -345,9 +345,11 @@ static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
 	default:
 		break;
 	}
-
+	free (op->bytes);
+	op->bytes = r_mem_dup (outbuf, ret);
+	op->size = ret;
 	r_str_argv_free (elems);
-	return ret;
+	return true;
 }
 
 RArchPlugin r_arch_plugin_i4004 = {

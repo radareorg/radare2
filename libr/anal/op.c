@@ -100,8 +100,18 @@ static int defaultCycles(RAnalOp *op) {
 // XXX deprecate!! or at least call  r_arch_bath tradition
 R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
 	int ret = 0;
-	if (outlen > 0 && anal->arch->current) {
-		ret = r_arch_encode (anal->arch, NULL, 0);
+	if (outlen > 0 && anal->arch->session) {
+		RAnalOp *op = r_anal_op_new ();
+		r_anal_op_set_mnemonic (op, addr, s);
+		ret = r_arch_encode (anal->arch, op, 0);
+		int finlen = R_MIN (outlen, op->size);
+		if (op->bytes) {
+			memcpy (outbuf, op->bytes, outlen);
+		} else {
+			r_anal_op_free (op);
+			return -1;
+		}
+		r_anal_op_free (op);
 		// ret = r_arch_encode (anal->arch, addr, s, outbuf, outlen);
 		// r_arch_op_to_analop (op, &archop);
 		// ret = anal->arch->op (anal, op, addr, data, len, mask);
