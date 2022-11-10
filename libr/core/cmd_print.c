@@ -7040,7 +7040,7 @@ static int cmd_print(void *data, const char *input) {
 			cmd_pCx (core, input + 2, "pc");
 			break;
 		default:
-			R_LOG_ERROR ("Usage: pC[dDaAxwc] - column output for pxa, pxA, pxw, .. ");
+			eprintf ("Usage: pC[dDaAxwc] - column output for pxa, pxA, pxw, ..\n");
 			break;
 		}
 		break;
