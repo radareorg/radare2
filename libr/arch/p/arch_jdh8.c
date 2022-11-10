@@ -4,7 +4,9 @@
 #include <r_lib.h>
 #include "./jdh8/jdh8dis.c"
 
-static int decode(RArch *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, ut32 mask, void *user) {
+static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
+	const ut8 *buf = op->bytes;
+	int len = op->size;
 	int dlen = 0;
 	char *o = jdh8Disass (buf, len, &dlen);
 	op->mnemonic = strdup (o);

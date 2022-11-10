@@ -1047,6 +1047,8 @@ R_API void r_anal_type_list(RAnal *a, short category, short enabled);
 R_API const char *r_anal_datatype_tostring(RAnalDataType t);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
 R_API bool r_anal_op_nonlinear(int t);
+R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size);
+R_API bool r_anal_op_set_mnemonic(RAnalOp *op, ut64 addr, const char *s);
 R_API const char *r_anal_op_direction_tostring(RAnalOp *op);
 R_API bool r_anal_op_ismemref(int t);
 R_API const char *r_anal_optype_tostring(int t);

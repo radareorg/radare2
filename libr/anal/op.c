@@ -10,6 +10,12 @@ R_API RAnalOp *r_anal_op_new(void) {
 	return op;
 }
 
+R_API RAnalOp *r_anal_op_clone(RAnalOp *op) {
+	RAnalOp *nop = R_NEW0 (RAnalOp);
+	memcpy (nop, op, sizeof (RAnalOp));
+	return nop;
+}
+
 R_API RList *r_anal_op_list_new(void) {
 	RList *list = r_list_new ();
 	if (list) {
@@ -47,6 +53,7 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	r_vector_fini (&op->dsts);
 	r_list_free (op->access);
 	op->access = NULL;
+	R_FREE (op->bytes);
 	r_strbuf_fini (&op->opex);
 	r_strbuf_fini (&op->esil);
 	r_anal_switch_op_free (op->switch_op);
@@ -89,28 +96,32 @@ static int defaultCycles(RAnalOp *op) {
 	}
 }
 
+#if 1
+// XXX deprecate!! or at least call  r_arch_bath tradition
 R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
 	int ret = 0;
-	if (outlen > 0 && anal->arch->current) {
-		ret = r_arch_encode (anal->arch, addr, s, outbuf, outlen);
-		// r_arch_op_to_analop (op, &archop);
-		// ret = anal->arch->op (anal, op, addr, data, len, mask);
-		if (ret < 1) {
-			ret = r_arch_info (anal->arch, NULL, R_ANAL_ARCHINFO_INV_OP_SIZE);
-			if (ret < 0) {
-				ret = r_arch_info (anal->arch, NULL, R_ANAL_ARCHINFO_ALIGN);
-				if (ret < 0) {
+	if (outlen > 0 && anal->arch->session) {
+		RAnalOp *op = r_anal_op_new ();
+		r_anal_op_set_mnemonic (op, addr, s);
+		if (!r_arch_encode (anal->arch, op, 0)) {
+			int ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			if (ret < 1) {
+				ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_ALIGN);
+				if (ret < 1) {
 					ret = 1;
 				}
 			}
 		}
-		// op->addr = addr;
-		/* consider at least 1 byte to be part of the opcode */
-#if 0
-		if (op->nopcode < 1) {
-			op->nopcode = 1;
+		int finlen = R_MIN (outlen, op->size);
+		ret = op->size;
+		if (op->bytes && finlen > 0) {
+			memcpy (outbuf, op->bytes, finlen);
+		} else {
+			r_anal_op_free (op);
+			return -1;
 		}
-#endif
+		r_anal_op_free (op);
+		/* consider at least 1 byte to be part of the opcode */
 	} else if (anal && outbuf && outlen > 0 && anal->cur && anal->cur->opasm) {
 		// use core binding to set asm.bits correctly based on the addr
 		// this is because of the hassle of arm/thumb
@@ -119,6 +130,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	}
 	return ret;
 }
+#endif
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_anal_op_init (op);
@@ -138,8 +150,17 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return -1;
 	}
 	int ret = R_MIN (2, len);
-	if (len > 0 && anal->arch->current) {
-		ret = r_arch_decode (anal->arch, NULL, op, addr, data, len, mask);
+	if (len > 0 && anal->arch->session) {
+		r_anal_op_set_bytes (op, addr, data, len);
+		bool bret = r_arch_decode (anal->arch, op, mask);
+		if (!bret) {
+			op->type = R_ANAL_OP_TYPE_ILL;
+			op->size = r_anal_archinfo (anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			if (op->size < 0) {
+				op->size = 1;
+			}
+		}
+#if 0
 		// r_arch_op_to_analop (op, &archop);
 		// ret = anal->arch->op (anal, op, addr, data, len, mask);
 		if (ret < 1) {
@@ -149,6 +170,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 				op->size = 1;
 			}
 		}
+#endif
 		op->addr = addr;
 		/* consider at least 1 byte to be part of the opcode */
 		if (op->nopcode < 1) {
@@ -761,4 +783,26 @@ R_API const char *r_anal_op_direction_tostring(RAnalOp *op) {
 		: d == 2 ? "write"
 		: d == 4 ? "exec"
 		: d == 8 ? "ref": "none";
+}
+
+R_API bool r_anal_op_set_mnemonic(RAnalOp *op, ut64 addr, const char *s) {
+	char *news = strdup (s);
+	if (news) {
+		free (op->mnemonic);
+		op->mnemonic = news;
+		op->addr = addr;
+		return true;
+	}
+	return false;
+}
+
+R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size) {
+	if (op) {
+		op->addr = addr;
+		free (op->bytes);
+		op->bytes = r_mem_dup (data, size);
+		op->size = size;
+		return true;
+	}
+	return false;
 }

@@ -22,13 +22,11 @@ EOF
 EXPECT=<<EOF
 mov.l r14, @-r15
 mov r15, r14
-(data)
-unaligned
+invalid
 mov.l @r1, r1
 mov r1, r2
 add 0x01, r2
-(data)
-unaligned
+invalid
 mov.l r2, @r1
 nop
 mov r14, r15
