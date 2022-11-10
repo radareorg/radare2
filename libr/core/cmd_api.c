@@ -980,7 +980,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					*end = '\n';
 					ptr = end + 1;
 				} else {
-					mac->macro_level --;
+					mac->macro_level--;
 					free (str);
 					goto out_clean;
 				}
