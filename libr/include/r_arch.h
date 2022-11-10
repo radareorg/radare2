@@ -87,49 +87,36 @@ typedef struct r_arch_decoder_t {
 
 typedef struct r_arch_t {
 	RList *plugins;	       // all plugins
+	struct r_arch_session_t *session;
+	// HtPP *ht_plugins; faster resolution by name
+#if 1
 	struct r_arch_instance_t *cur; // this var must deprecate current!
 	RArchDecoder *current; // currently used decoder
 	HtPP *decoders;        // as decoders instantiated plugins
-	RArchConfig *cfg;      // config
+	RArchConfig *cfg;      // global / default config
 	bool autoselect;
+#endif
 } RArch;
 
-typedef struct r_arch_instance_t {
+typedef struct r_arch_session_t {
 	struct r_arch_t *arch;
 	struct r_arch_plugin_t *plugin;
 	RArchConfig *config; // TODO remove arch->config!
 	void *data;
 	void *user;
-} RArchInstance;
+	R_REF_TYPE;
+} RArchSession;
 
-typedef int (*RArchOpAsmCallback)(RArch *a, ut64 addr, const char *str, ut8 *outbuf, int outlen);
-// typedef int (*RArchPluginInfoCallback)(RArchInstance *i, ut32 query);
-typedef int (*RArchPluginInfoCallback)(RArchConfig *cfg, ut32 query);
-// typedef int (*RArchPluginDecodeCallback)(RArchConfig *cfg, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user);
-typedef int (*RArchPluginDecodeCallback)(RArch *cfg, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user);
-typedef char *(*RArchPluginRegistersCallback)(RArchInstance *ai);
-#if 0
-// addr, data/len and *user can be taken from RAnalOp, so the user must fill those fields before calling this functions
-R_API int r_arch_op_setbytes(op, ut64 addr, const ut8* data, int len);
-typedef bool (*RArchPluginDecodeCallback)(RArchInstance *cfg, struct r_anal_op_t *op, RArchDecodeMask mask);
-typedef bool (*RArchPluginEncodeCallback)(RArchInstance *cfg, struct r_anal_op_t *op);
-/*
-   RArchOp op;
-   RArch *a = r_arch_new ();
-   RArchConfig *cfg = r_arch_config_new ();
-   RArchInstance *ai = r_arch_use (a, cfg, "x86");
-   RArchOp *op = r_arch_new ();
-   r_arch_op_setbytes (op, 0x10080840, "\x90", 1);
-   if (r_arch_instance_decode (ai, op)) {
-	r_cons_printf ("Disasm of 0x90 is %s\n", r_arch_op_tostring (op));
-   } else {
-   	R_LOG_ERROR ("Cannot disassemble");
-   }
-   r_arch_op_free (op);
-   r_arch_instance_free (ai);
-   r_arch_free (a);
-   */
-#endif
+typedef int (*RArchPluginInfoCallback)(RArchSession *cfg, ut32 query);
+typedef char *(*RArchPluginRegistersCallback)(RArchSession *ai);
+
+typedef ut32 RArchDecodeMask;
+typedef ut32 RArchEncodeMask; // syntax ?
+
+typedef bool (*RArchPluginDecodeCallback)(RArchSession *cfg, struct r_anal_op_t *op, RArchDecodeMask mask);
+typedef bool (*RArchPluginEncodeCallback)(RArchSession *cfg, struct r_anal_op_t *op, RArchEncodeMask mask);
+typedef bool (*RArchPluginInitCallback)(RArchSession *s);
+typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
 
 typedef struct r_arch_plugin_t {
 	char *name;
@@ -143,13 +130,12 @@ typedef struct r_arch_plugin_t {
 	ut32 bits;
 	ut32 addr_bits;
 	bool esil;
-	bool (*init)(void **user); // Should return an RArchSession, this struct contains all the info we need
-	void (*fini)(void *user);
+	RArchPluginInitCallback init;
+	RArchPluginInitCallback fini;
 	RArchPluginInfoCallback info;
-	RArchPluginDecodeCallback decode;
 	RArchPluginRegistersCallback regs;
-	bool (*set_reg_profile)(RArchConfig *cfg, struct r_reg_t *reg);
-	RArchOpAsmCallback encode;
+	RArchPluginEncodeCallback encode;
+	RArchPluginDecodeCallback decode;
 //TODO: reenable this later
 //	bool (*esil_init)(RAnalEsil *esil);
 //	void (*esil_fini)(RAnalEsil *esil);
@@ -161,20 +147,28 @@ R_API bool r_arch_load_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_use_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_unload_decoder(RArch *arch, const char *dname);
 
-R_API int r_arch_info(RArch *arch, const char *dname, ut32 query);
-R_API int r_arch_decode(RArch *arch, const char *dname, struct r_anal_op_t *op, ut64 addr, const ut8 *data, int len, ut32 mask);
-R_API int r_arch_encode(RArch *a, ut64 addr, const char *s, ut8 *outbuf, int outlen);
-R_API bool r_arch_set_reg_profile(RArch *arch, const char *dname, struct r_reg_t *reg);
+R_API int r_arch_info(RArch *arch, int query);
+
+// deprecate
+R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask);
+// deprecate
+R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask);
 //R_API bool r_arch_esil_init(RArch *arch, const char *dname, RAnalEsil *esil);
 //R_API void r_arch_esil_fini(RArch *arch, const char *dname, RAnalEsil *esil);
 
-// instance.c
-// R_API RArchInstance r_arch_use(RArch *arch, RArchConfig *config, const char *name);
+R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *ap);
+R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask mask);
+R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask);
 
 // arch.c
 R_API RArch *r_arch_new(void);
 R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name);
+// instance.c
+// R_API RArchSession r_arch_use(RArch *arch, RArchConfig *config, const char *name);
+
 R_API bool r_arch_set_bits(RArch *arch, ut32 bits);
+
+
 R_API bool r_arch_set_endian(RArch *arch, ut32 endian);
 R_API bool r_arch_set_arch(RArch *arch, char *archname);
 R_API bool r_arch_add(RArch *arch, RArchPlugin *ap);
@@ -184,8 +178,13 @@ R_API void r_arch_free(RArch *arch);
 // aconfig.c
 R_API void r_arch_config_use(RArchConfig *config, R_NULLABLE const char *arch);
 R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu);
-R_API void r_arch_config_set_bits(RArchConfig *config, int bits);
+R_API bool r_arch_config_set_bits(RArchConfig *c, int bits);
 R_API RArchConfig *r_arch_config_new(void);
+R_API RArchConfig *r_arch_config_clone(RArchConfig *c);
+R_API void r_arch_config_free(RArchConfig *);
+
+
+// the archconfig inside an arch session
 
 // XXX deprecate those names are uglyies and we can reuse R_PERM
 typedef enum {

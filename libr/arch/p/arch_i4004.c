@@ -3,45 +3,9 @@
 #include <r_arch.h>
 #include "./i4004/gperfdb.c"
 
-static char *i4004_regs(RArchInstance *a) {
+static char *i4004_regs(RArchSession *a) {
 	const char *p =
-		"=PC	PC\n"
-		/* syntax not yet supported */
-		// "=SP	&PC1\n"
-		"=A0	r0\n"
-		"=A1	r1\n"
-		"=A2	r2\n"
-		"=A3	r3\n"
-		"=R0	r0\n"
-		"gpr	r0	.4	0	0\n"
-		"gpr	r1	.4	.4	0\n"
-		"gpr	r0r1	1	0	0\n"
-		"gpr	r2	.4	.8	0\n"
-		"gpr	r3	.4	.12	0\n"
-		"gpr	r2r3	1	1	0\n"
-		"gpr	r4	.4	.16	0\n"
-		"gpr	r5	.4	.20	0\n"
-		"gpr	r4r5	1	2	0\n"
-		"gpr	r6	.4	.24	0\n"
-		"gpr	r7	.4	.28	0\n"
-		"gpr	r6r7	1	3	0\n"
-		"gpr	r8	.4	.32	0\n"
-		"gpr	r9	.4	.36	0\n"
-		"gpr	r8r9	1	4	0\n"
-		"gpr	r10	.4	.40	0\n"
-		"gpr	r11	.4	.44	0\n"
-		"gpr	r10r11	1	5	0\n"
-		"gpr	r12	.4	.52	0\n"
-		"gpr	r13	.4	.56	0\n"
-		"gpr	r12r13	1	6	0\n"
-		"gpr	r14	.4	.60	0\n"
-		"gpr	r15	.4	.64	0\n"
-		"gpr	r14r15	1	7	0\n"
-		"gpr	PC	.12	.72	0\n"
-		/* stack */
-		"gpr	PC1	.12	.88	0\n"
-		"gpr	PC2	.12	.104	0\n"
-		"gpr	PC3	.12	.120	0\n"
+#include "i4004/regs.h"
 		;
 	return strdup (p);
 }
@@ -90,7 +54,7 @@ static const char *i4004_f[16] = {
 };
 
 static int i4004_get_ins_len(ut8 hex) {
-	ut8 high = (hex & 0xf0)>>4;
+	ut8 high = (hex & 0xf0) >> 4;
 	int ret = i4004_ins_len[high];
 	if (ret == 3) {
 		ret = (hex & 1) ? 1 : 2;
@@ -98,7 +62,10 @@ static int i4004_get_ins_len(ut8 hex) {
 	return ret;
 }
 
-static int i4004_decode(RArch *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, ut32 mask, void *user) {
+static bool i4004_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
+	ut64 addr = op->addr;
+	const ut8 *buf = op->bytes;
+	int len = op->size;
 	char basm[64];
 	const size_t basz = sizeof (basm);
 	int rlen = i4004_get_ins_len (*buf);
@@ -110,7 +77,9 @@ static int i4004_decode(RArch *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	basm[0] = 0;
 
 	if (rlen > len) {
-		return op->size = 0;
+		op->size = 0;
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return false;
 	}
 	switch (high) {
 	case 0:
@@ -163,14 +132,14 @@ static int i4004_decode(RArch *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		break;
 	case 4:
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = (ut16) (low<<8) | buf[1];
+		op->jump = (ut16) (low << 8) | buf[1];
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			snprintf (basm, basz, "jun 0x%x", (ut16)op->jump);
 		}
 		break;
 	case 5:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = (ut16) (low<<8) | buf[1];
+		op->jump = (ut16) (low << 8) | buf[1];
 		op->fail = addr + rlen;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			snprintf (basm, basz, "jms 0x%x", (ut16)op->jump);
@@ -248,11 +217,14 @@ static int i4004_decode(RArch *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = strdup (basm);
 	}
-	return op->size = rlen;
+	op->size = rlen;
+	return true;
 }
 
-static int i4004_encode(RArch *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
-	char *s = strdup (str);
+static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
+	ut8 outbuf[32];
+	// r_anal_op_set_bytes (op, addr, outbuf, outsize);
+	char *s = strdup (op->mnemonic);
 	r_str_case (s, false);
 	s = r_str_replace (s, "_", "?", false);	// mitigate a bug in sdb -C
 	s = r_str_replace (s, ",", " _ ", false);
@@ -283,7 +255,6 @@ static int i4004_encode(RArch *a, ut64 addr, const char *str, ut8 *outbuf, int o
 #endif
 	if (strlen (elems[0]) != 3) {
 		r_str_argv_free (elems);
-		free (s);
 		return 0;
 	}
 	int ret = 0;
@@ -376,7 +347,6 @@ static int i4004_encode(RArch *a, ut64 addr, const char *str, ut8 *outbuf, int o
 	}
 
 	r_str_argv_free (elems);
-	free (s);
 	return ret;
 }
 

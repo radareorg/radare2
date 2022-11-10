@@ -225,6 +225,7 @@ typedef struct r_anal_op_t {
 	ut32 type2;	/* used by java */
 	RAnalStackOp stackop;	/* operation on stack? */
 	_RAnalCond cond;	/* condition type */
+	ut8 *bytes;     /* can be null, but is used for encoding and decoding, malloc of `size` */
 	int size;       /* size in bytes of opcode */
 	int nopcode;    /* number of bytes representing the opcode (not the arguments) TODO: find better name */
 	int cycles;	/* cpu-cycles taken by instruction */
@@ -248,8 +249,8 @@ typedef struct r_anal_op_t {
 	RList *access; /* RAnalValue access information */
 	RStrBuf esil;
 	RStrBuf opex;
-	const char *reg; /* destination register */
-	const char *ireg; /* register used for indirect memory computation*/
+	const char *reg; /* destination register rename to dreg or dst_reg */
+	const char *ireg; /* register used for indirect memory computation . TODO rename to ind_reg */
 	int scale;
 	ut64 disp;
 	RAnalSwitchOp *switch_op;

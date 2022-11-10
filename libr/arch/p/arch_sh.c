@@ -1,8 +1,7 @@
 /* radare - LGPL - Copyright 2010-2022 eloi <limited-entropy.com> */
 
 #include <r_lib.h>
-#include <r_asm.h>
-#include <r_anal.h>
+#include <r_arch.h>
 #include "disas-asm.h"
 
 #define BUFSZ 16
@@ -1166,50 +1165,18 @@ static int (*first_nibble_decode[])(RArch*,RAnalOp*,ut16) = {
 	fpu_insn
 };
 
-/* Set the profile register */
-static bool sh_set_reg_profile(RArchConfig* arch, struct r_reg_t *reg) {
-	eprintf ("reg profile lol\n");
-	//TODO Add system ( ssr, spc ) + fpu regs
+static char *regs(RArchSession *s) {
 	const char * const p =
-		"=PC	pc\n"
-		"=SN	r0\n"
-		"=SP	r15\n"
-		"=BP	r14\n"
-		"=A0	r4\n"
-		"=A1	r5\n"
-		"=A2	r6\n"
-		"=A3	r7\n"
-		"=R0	r0\n"
-		"gpr	r0	.32	0	0\n"
-		"gpr	r1	.32	4	0\n"
-		"gpr	r2	.32	8	0\n"
-		"gpr	r3	.32	12	0\n"
-		"gpr	r4	.32	16	0\n"
-		"gpr	r5	.32	20	0\n"
-		"gpr	r6	.32	24	0\n"
-		"gpr	r7	.32	28	0\n"
-		"gpr	r8	.32	32	0\n"
-		"gpr	r9	.32	36	0\n"
-		"gpr	r10	.32	40	0\n"
-		"gpr	r11	.32	44	0\n"
-		"gpr	r12	.32	48	0\n"
-		"gpr	r13	.32	52	0\n"
-		"gpr	r14	.32	56	0\n"
-		"gpr	r15	.32	60	0\n"
-		"gpr	pc	.32	64	0\n"
-		"gpr	pr	.32	68	0\n"
-		"gpr	sr	.32	72	0\n"
-		"gpr	gbr	.32	76	0\n"
-		"gpr	vbr	.32	80	0\n"
-		"gpr	mach	.32	84	0\n"
-		"gpr	macl	.32	88	0\n";
-	return r_reg_set_profile_string (reg, p);
+#include "sh/regs.h"
+	;
+	return strdup (p);
 }
 
-static int archinfo(RArchConfig *a, ut32 q) {
+static int archinfo(RArchSession *s, ut32 q) {
 	return 2;
 }
 
+// XXX this function should be generalized under the gnu-dis-asm utils
 static int sh_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	int delta = (memaddr - info->buffer_vma);
 	if (delta < 0) {
@@ -1262,9 +1229,9 @@ static int disassemble(RArch *a, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.stream = sb;
 
 	if (disasm_obj.endian == BFD_ENDIAN_BIG) {
-		op->size = print_insn_shb ((bfd_vma)addr, &disasm_obj);
-	} else {
 		op->size = print_insn_shl ((bfd_vma)addr, &disasm_obj);
+	} else {
+		op->size = print_insn_shb ((bfd_vma)addr, &disasm_obj);
 	}
 	if (op->size == -1) {
 		op->mnemonic = strdup ("(data)");
@@ -1277,12 +1244,17 @@ static int disassemble(RArch *a, RAnalOp *op, const ut8 *buf, int len) {
 
 /* This is the basic operation analysis. Just initialize and jump to
  * routines defined in first_nibble_decode table */
-static int sh_op(RArch *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut32 mask, void *user) {
-// static int sh_op(RArch *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	if (!op || !a || !data || len < 2) {
-		return 0;
+static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
+	r_return_val_if_fail (s && op, false);
+	if (!op || !s) {
+		return false;
 	}
-	op->addr = addr;
+	RArch *a = s->arch;
+	if (op->size < 2) {
+		return false;
+	}
+	int len = op->size;
+	const ut8 *data = op->bytes;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 2;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -1290,9 +1262,10 @@ static int sh_op(RArch *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, ut3
 		// should be always 2?
 	}
 	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->cfg);
-	ut8 msb = be? data[0]: data[1];
-	ut8 lsb = be? data[1]: data[0];
-	return first_nibble_decode[(msb >> 4) & 0x0F](a, op, (ut16)(((ut16)msb << 8) | lsb));
+	ut8 lsb = be? data[0]: data[1];
+	ut8 msb = be? data[1]: data[0];
+	op->size = first_nibble_decode[(msb >> 4) & 0x0F](a, op, (ut16)(((ut16)msb << 8) | lsb));
+	return true;
 }
 
 RArchPlugin r_arch_plugin_sh = {
@@ -1303,8 +1276,8 @@ RArchPlugin r_arch_plugin_sh = {
 	.arch = "sh",
 	.info = archinfo,
 	.bits = 32,
-	.decode = &sh_op,
-	.set_reg_profile = &sh_set_reg_profile,
+	.decode = &decode,
+	.regs = regs,
 	.esil = true
 };
 

@@ -13,6 +13,12 @@ static void _ac_free(RArchConfig *cfg) {
 	}
 }
 
+R_API void r_arch_config_free(RArchConfig *r) {
+	if (r) {
+		r_unref (r);
+	}
+}
+
 R_API void r_arch_config_use(RArchConfig *config, R_NULLABLE const char *arch) {
 	r_return_if_fail (config);
 	// R_LOG_DEBUG ("RArch.USE (%s)", arch);
@@ -23,6 +29,11 @@ R_API void r_arch_config_use(RArchConfig *config, R_NULLABLE const char *arch) {
 	config->arch = R_STR_ISNOTEMPTY (arch) ? strdup (arch) : NULL;
 }
 
+R_API bool r_arch_config_iseq(RArchConfig *a, RArchConfig *b) {
+	r_return_val_if_fail (a && b, false);
+	return false;
+}
+
 R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu) {
 	r_return_if_fail (config);
 	// R_LOG_DEBUG ("RArch.CPU (%s)", cpu);
@@ -30,12 +41,33 @@ R_API void r_arch_config_set_cpu(RArchConfig *config, R_NULLABLE const char *cpu
 	config->cpu = R_STR_ISNOTEMPTY (cpu) ? strdup (cpu) : NULL;
 }
 
-R_API void r_arch_config_set_bits(RArchConfig *config, int bits) {
-	r_return_if_fail (config);
-	config->bits = bits;
-	// callback
-	// r_signal_now (config->events, "bits"
-	// r_signal_on (config->events, "bits", &cb_bitschange);
+R_API bool r_arch_config_set_bits(RArchConfig *config, int bits) {
+	r_return_val_if_fail (config, false);
+	// if the config is tied to a session, there must be a callback to notify the plugin
+	// that the config has chnaged and act accordingly. this is,
+	bool is_valid = true;
+#if 0
+	if (config->setbits) {
+		is_valid = config->setbits (config, bits);
+	}
+#endif
+	if (is_valid) {
+		config->bits = bits;
+	}
+	return is_valid;
+}
+
+R_API RArchConfig *r_arch_config_clone(RArchConfig *c) {
+	r_return_val_if_fail (c, NULL);
+	RArchConfig *ac = R_NEW0 (RArchConfig);
+	if (!ac) {
+		return NULL;
+	}
+	ac->arch = R_STR_DUP (c->arch);
+	ac->abi = R_STR_DUP (c->abi);
+	ac->cpu = R_STR_DUP (c->cpu);
+	ac->os = R_STR_DUP (c->os);
+	return ac;
 }
 
 R_API RArchConfig *r_arch_config_new(void) {

@@ -34,6 +34,7 @@ R_API RArch *r_arch_new(void) {
 		free (a);
 		return NULL;
 	}
+	a->cfg = r_arch_config_new ();
 	ut32 i = 0;
 	while (arch_static_plugins[i]) {
 		r_arch_add (a, (RArchPlugin*)arch_static_plugins[i++]);
@@ -85,22 +86,22 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 	return score;
 }
 
-static char *_find_bestmatch(RList *plugins, RArchConfig *cfg, const char *name) {
+static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *name) {
 	ut8 best_score = 0;
-	char *rname = NULL;
+	RArchPlugin *ap = NULL;
 	RListIter *iter;
 	RArchPlugin *p;
-	r_list_foreach (plugins, iter, p) {
+	r_list_foreach (arch->plugins, iter, p) {
 		const ut32 score = _rate_compat (p, cfg, name);
 		if (score > best_score) {
 			best_score = score;
-			rname = p->name;
+			ap = p;
 		}
 		if (score == 100) {
 			break;
 		}
 	}
-	return rname;
+	return ap;
 }
 
 // use config as new arch config and use matching decoder as current
@@ -110,13 +111,29 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 	if (!config) {
 		config = arch->cfg;
 	}
+#if 0
 	if (config && arch->cfg == config) {
+		eprintf ("retur\n");
 		return true;
 	}
-	if (!config) {
-	//	arch->decoder = NULL;
+#endif
+	RArchPlugin *ap = find_bestmatch (arch, config, name);
+	if (!ap) {
+		r_unref (arch->session);
+		arch->session = NULL;
 		return false;
 	}
+	arch->session = r_arch_session (arch, config, ap);
+#if 0
+	RArchConfig *oconfig = arch->cfg;
+	r_unref (arch->cfg);
+	arch->cfg = config;
+	r_ref (arch->cfg);
+	r_unref (oconfig);
+#endif
+#if 0
+	// the res is boilerplate imho
+
 	const char *dname = config->decoder ? config->decoder: _find_bestmatch (arch->plugins, config, name);
 	if (!dname) {
 		return false;
@@ -134,7 +151,22 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 		return false;
 	}
 	r_unref (oconfig);
+#endif
 	return true;
+}
+
+R_API bool r_arch_use_decoder(RArch *arch, const char *dname) {
+	RArchConfig *cfg = r_arch_config_clone (arch->cfg);
+	bool r = r_arch_use (arch, cfg, dname);
+	if (!r) {
+		r_unref (cfg);
+	}
+	return r;
+}
+
+R_API bool r_arch_use_encoder(RArch *arch, const char *dname) {
+	/// XXX this should be storing the plugin in a separate pointer
+	return r_arch_use (arch, arch->cfg, dname);
 }
 
 // set bits and update config
@@ -207,6 +239,7 @@ R_API bool r_arch_set_endian(RArch *arch, ut32 endian) {
 }
 
 R_API bool r_arch_set_arch(RArch *arch, char *archname) {
+	// Rename to _use_arch instead ?
 	r_return_val_if_fail (arch && archname, false);
 	char *_arch = strdup (archname);
 	if (!_arch) {
@@ -252,7 +285,7 @@ R_API bool r_arch_add(RArch *a, RArchPlugin *ap) {
 	return !!r_list_append (a->plugins, ap);
 }
 
-static bool _pick_any_decoder_as_current (void *user, const char *dname, const void *dec) {
+static bool _pick_any_decoder_as_current(void *user, const char *dname, const void *dec) {
 	RArch *arch = (RArch *)user;
 	arch->current = (RArchDecoder *)dec;
 	return false;
@@ -298,19 +331,18 @@ R_API void r_arch_free(RArch *arch) {
 	}
 }
 
-#if 0
 R_API int r_arch_info(RArch *a, int query) {
-	r_return_val_if_fail (a, -1);
-	switch (query) {
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
-	case R_ANAL_ARCHINFO_INV_OP_SIZE:
-	case R_ANAL_ARCHINFO_ALIGN:
-		if (arch->current && anal->arch->current->archinfo) {
-			return arch->current->archinfo (arch, query);
-		}
-		break;
-	}
-	return -1;
+	RArchSession *session = R_UNWRAP2 (a, session);
+	RArchPluginInfoCallback info = R_UNWRAP4 (a, session, plugin, info);
+	return info? info (session, query): -1;
 }
-#endif
+
+R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask) {
+	RArchPluginEncodeCallback encode = R_UNWRAP4 (a, session, plugin, encode);
+	return encode? encode (a->session, op, mask): false;
+}
+
+R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask) {
+	RArchPluginEncodeCallback decode = R_UNWRAP4 (a, session, plugin, decode);
+	return decode? decode (a->session, op, mask): false;
+}
