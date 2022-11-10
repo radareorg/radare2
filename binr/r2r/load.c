@@ -103,7 +103,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 	char *contents = r_file_slurp (file, NULL);
 	if (!contents) {
-		R_LOG_ERROR ("Failed to open file \"%s\"", file);
+		R_LOG_ERROR ("Failed to open %s", file);
 		return NULL;
 	}
 
@@ -452,7 +452,7 @@ R_API void r2r_json_test_free(R2RJsonTest *test) {
 R_API RPVector *r2r_load_json_test_file(const char *file) {
 	char *contents = r_file_slurp (file, NULL);
 	if (!contents) {
-		R_LOG_ERROR ("Failed to open file \"%s\"", file);
+		R_LOG_ERROR ("Failed to open %s", file);
 		return NULL;
 	}
 
@@ -607,11 +607,11 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			if (!strcmp (subname, "extras")) {
 				// Only load "extras" dirs if explicitly specified
-				R_LOG_ERROR ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies", path, subname);
+				R_LOG_WARN ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies", path, subname);
 				continue;
 			}
 			if (skip_asm && strstr (path, R_SYS_DIR"asm"R_SYS_DIR)) {
-				R_LOG_ERROR ("R2R_SKIP_ASM: Skipping %s", path);
+				R_LOG_INFO ("R2R_SKIP_ASM: Skipping %s", path);
 				continue;
 			}
 			bool is_archos_folder = !strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos");

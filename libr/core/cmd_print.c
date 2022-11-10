@@ -1775,7 +1775,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (val) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, val, mode, 0));
 			} else {
-				eprintf ("Struct %s not defined. Use pfs.struct_name | pfs format\n", _input);
+				R_LOG_WARN ("Struct %s not defined. Use pfs.struct_name | pfs format\n", _input);
 			}
 		} else if (*_input == ' ') {
 			while (*_input == ' ' && *_input != '\0') {
@@ -1784,7 +1784,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (*_input) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, _input, mode, 0));
 			} else {
-				eprintf ("Struct %s not defined. Use pfs.struct_name | pfs format\n", _input);
+				R_LOG_WARN ("Struct %s not defined. Use pfs.struct_name | pfs format\n", _input);
 			}
 		} else {
 			eprintf ("Usage: pfs.struct_name | pfs format\n");
@@ -1823,7 +1823,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		if (_input[2] == ' ') {
 			r_core_cmd_print_binformat (core, r_str_trim_head_ro (_input + 2), PFB_ART);
 		} else {
-			R_LOG_ERROR ("Usage: pfb [binfmt] [names...]");
+			eprintf ("Usage: pfb [binfmt] [names...]\n");
 		}
 		return;
 	case 'o': // "pfo"
@@ -5733,7 +5733,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 		if (halp) {
-			R_LOG_ERROR ("Usage: pushd [dir]");
+			eprintf ("Usage: pushd [dir]\n");
 			r_core_return_value (core, 1);
 		}
 		return 0;
