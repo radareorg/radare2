@@ -237,6 +237,7 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 #undef DO_KEY_NUM
 
 		R_LOG_ERROR (LINEFMT ": Unknown key \"%s\"", file, linenum, line);
+		break;
 	} while ((line = nextline));
 beach:
 	free (contents);

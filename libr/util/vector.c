@@ -158,6 +158,9 @@ R_API void *r_vector_insert(RVector *vec, size_t index, void *x) {
 
 R_API void *r_vector_insert_range(RVector *vec, size_t index, void *first, size_t count) {
 	r_return_val_if_fail (vec && index <= vec->len, NULL);
+	if (count < 1) {
+		return NULL;
+	}
 	if (vec->len + count > vec->capacity) {
 		RESIZE_OR_RETURN_NULL (R_MAX (NEXT_VECTOR_CAPACITY, vec->len + count));
 	}
