@@ -237,8 +237,8 @@ static RList* sections(RBinFile *bf) {
 	obj->inits = r_list_newf ((RListFree)free); // r_bin_addr_free);
 
 	if (phdr) {
-		int bin_bits = Elf_(r_bin_elf_get_bits) (obj);
 		int big_endian = Elf_(r_bin_elf_is_big_endian) (obj);
+		Elf_(Dyn) entry;
 		ut64 num = Elf_(r_bin_elf_get_phnum) (obj);
 		int n = 0;
 		for (i = 0; i < num; i++) {
@@ -264,7 +264,6 @@ static RList* sections(RBinFile *bf) {
 					ut64 preinit_addr = UT64_MAX;
 					ut64 preinit_size = UT64_MAX;
 					for (at = paddr; at < paddr_end; at += sizeof (Elf_(Dyn))) {
-						Elf_(Dyn) entry;
 #if R_BIN_ELF64
 						entry.d_tag = r_buf_read_ble64_at (bf->buf, at, big_endian);
 						entry.d_un.d_val = r_buf_read_ble64_at (bf->buf, at + sizeof (entry.d_tag), big_endian);
@@ -292,7 +291,6 @@ static RList* sections(RBinFile *bf) {
 						}
 						// eprintf ("add dt.dyn.entry tag=%d value=0x%08x\n", entry.d_tag, entry.d_un.d_val);
 					}
-					RListIter *iter;
 					ut64 preinit_end = preinit_addr + preinit_size;
 					for (at = preinit_addr; at < preinit_end; at += R_BIN_ELF_WORDSIZE) {
 						ut64 paddr = Elf_(r_bin_elf_v2p) (obj, at);
@@ -304,6 +302,7 @@ static RList* sections(RBinFile *bf) {
 							ba->vaddr = addr;
 							ba->hpaddr = paddr;
 							ba->hvaddr = at;
+							ba->bits = sizeof (entry.d_tag) * 8;
 							ba->type = R_BIN_ENTRY_TYPE_PREINIT;
 							r_list_append (obj->inits, ba);
 						}
