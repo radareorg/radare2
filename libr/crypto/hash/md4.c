@@ -140,7 +140,7 @@ static void copy4(ut8 *out, ut32 x) {
 	out[3] = (x >> 24) & 0xFF;
 }
 
-void MD4(const ut8 *in, int n, ut8 *out) {
+R_IPI void r_hash_md4(const ut8 *in, int n, ut8 *out) {
 	ut8 buf[128];
 	ut32 M[16];
 	ut32 b = n * 8;
@@ -189,7 +189,7 @@ void MD4(const ut8 *in, int n, ut8 *out) {
 }
 
 #else
-void MD4(const ut8 *in, int n, ut8 *out) {
+R_IPI void r_hash_md4(const ut8 *in, int n, ut8 *out) {
 	R_LOG_ERROR ("md4 is only available on GPL builds");
 }
 #endif

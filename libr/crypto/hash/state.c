@@ -177,7 +177,7 @@ R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
 
 R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, int len) {
 	if (len >= 0) {
-		MD4 (input, len, ctx->digest);
+		r_hash_md4 (input, len, ctx->digest);
 		return ctx->digest;
 	}
 	return NULL;
