@@ -1775,7 +1775,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (val) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, val, mode, 0));
 			} else {
-				R_LOG_WARN ("Struct %s not defined. Use pfs.struct_name | pfs format\n", _input);
+				R_LOG_WARN ("Struct %s not defined. Use pfs.struct_name | pfs format", _input);
 			}
 		} else if (*_input == ' ') {
 			while (*_input == ' ' && *_input != '\0') {
@@ -1784,7 +1784,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (*_input) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (core->print, _input, mode, 0));
 			} else {
-				R_LOG_WARN ("Struct %s not defined. Use pfs.struct_name | pfs format\n", _input);
+				R_LOG_WARN ("Struct %s not defined. Use pfs.struct_name | pfs format", _input);
 			}
 		} else {
 			eprintf ("Usage: pfs.struct_name | pfs format\n");
