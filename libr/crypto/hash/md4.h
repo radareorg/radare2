@@ -1,6 +1,6 @@
-#ifndef _R_MD4_H
-#define _R_MD4_H
+#ifndef R_HASH_MD4_H
+#define R_HASH_MD4_H
 
-void MD4(const ut8 *in, int n, ut8 *out);
+R_IPI void r_hash_md4 (const ut8 *in, int n, ut8 *out);
 
 #endif
