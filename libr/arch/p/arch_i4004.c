@@ -248,9 +248,12 @@ static bool i4004_encode(RArchSession *se, RAnalOp *op, RArchEncodeMask mask) {
 	if (hex_output) {
 		r_str_argv_free (elems);
 		free (s);
-		r_hex_str2bin (hex_output, outbuf);
+		int hexlen = r_hex_str2bin (hex_output, outbuf);
+		op->size = hexlen;
+		free (op->bytes);
+		op->bytes = r_mem_dup (outbuf, hexlen);
 		free (hex_output);
-		return 1;
+		return true;
 	}
 #endif
 	if (strlen (elems[0]) != 3) {
