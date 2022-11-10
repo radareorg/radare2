@@ -979,6 +979,10 @@ static void cmd_pCD(RCore *core, const char *input) {
 	r_core_block_size (core, rows * 32);
 	char *cmd = NULL;
 	int columns = 2;
+	const char *stack_cmd = core->stkcmd;
+	if (R_STR_ISEMPTY (stack_cmd)) {
+		stack_cmd = "px";
+	}
 	for (i = 0; i < columns; i++) {
 		switch (i) {
 		case 0:
@@ -988,7 +992,7 @@ static void cmd_pCD(RCore *core, const char *input) {
 		case 1:
 			(void) r_cons_canvas_gotoxy (c, 28, 0);
 			// cmd = r_str_newf ("pxw 128@r:SP;pd@r:PC");
-			cmd = r_str_newf ("%s 128@r:SP;pd@ 0x%"PFMT64x, core->stkcmd, osek);
+			cmd = r_str_newf ("%s 128@r:SP;pd@ 0x%"PFMT64x, stack_cmd, osek);
 			break;
 		}
 		char *dis = r_core_cmd_str (core, cmd);
