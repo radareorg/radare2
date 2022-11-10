@@ -103,8 +103,17 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 	if (outlen > 0 && anal->arch->session) {
 		RAnalOp *op = r_anal_op_new ();
 		r_anal_op_set_mnemonic (op, addr, s);
-		ret = r_arch_encode (anal->arch, op, 0);
+		if (!r_arch_encode (anal->arch, op, 0)) {
+			int ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_INV_OP_SIZE);
+			if (ret < 1) {
+				ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_ALIGN);
+				if (ret < 1) {
+					ret = 1;
+				}
+			}
+		}
 		int finlen = R_MIN (outlen, op->size);
+		ret = op->size;
 		if (op->bytes && finlen > 0) {
 			memcpy (outbuf, op->bytes, finlen);
 		} else {
@@ -112,25 +121,7 @@ R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int o
 			return -1;
 		}
 		r_anal_op_free (op);
-		// ret = r_arch_encode (anal->arch, addr, s, outbuf, outlen);
-		// r_arch_op_to_analop (op, &archop);
-		// ret = anal->arch->op (anal, op, addr, data, len, mask);
-		if (!ret) {
-			ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_INV_OP_SIZE);
-			if (!ret) {
-				ret = r_arch_info (anal->arch, R_ANAL_ARCHINFO_ALIGN);
-				if (!ret) {
-					ret = 1;
-				}
-			}
-		}
-		// op->addr = addr;
 		/* consider at least 1 byte to be part of the opcode */
-#if 0
-		if (op->nopcode < 1) {
-			op->nopcode = 1;
-		}
-#endif
 	} else if (anal && outbuf && outlen > 0 && anal->cur && anal->cur->opasm) {
 		// use core binding to set asm.bits correctly based on the addr
 		// this is because of the hassle of arm/thumb
