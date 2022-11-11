@@ -201,21 +201,33 @@ static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int sy
 	ut64 preinit_end = preinit_addr + preinit_size;
 	int big_endian = Elf_(r_bin_elf_is_big_endian) (obj);
 	ut64 at;
-	for (at = preinit_addr; at < preinit_end; at += R_BIN_ELF_WORDSIZE) {
-		ut64 paddr = Elf_(r_bin_elf_v2p) (obj, at);
+	ut64 from = Elf_(r_bin_elf_v2p) (obj, preinit_addr);
+	ut64 _baddr = baddr (bf);
+	ut64 to = from + preinit_size;
+	for (at = from; at < to ; at += R_BIN_ELF_WORDSIZE) {
+		//ut64 paddr = Elf_(r_bin_elf_v2p) (obj, at);
 		// ut64 vaddr = Elf_(r_bin_elf_p2v) (obj, at);
 		ut64 addr = 0;
 		if (R_BIN_ELF_WORDSIZE == 8) {
-			addr = r_buf_read_ble64_at (bf->buf, paddr, big_endian);
+			addr = r_buf_read_ble64_at (bf->buf, at, big_endian);
 		} else {
-			addr = r_buf_read_ble32_at (bf->buf, paddr, big_endian);
+			addr = r_buf_read_ble32_at (bf->buf, at, big_endian);
+		}
+		if (!addr || addr == UT64_MAX) {
+			R_LOG_DEBUG ("invalid dynamic init address at 0x%08"PFMT64x, at);
+			break;
+		}
+		ut64 caddr = Elf_(r_bin_elf_v2p) (obj, addr);
+		if (!caddr) {
+			R_LOG_DEBUG ("v2p failed for 0x%08"PFMT64x, caddr);
+			break;
 		}
 		ba = R_NEW0 (RBinAddr);
 		if (ba) {
-			ba->paddr = Elf_(r_bin_elf_v2p) (obj, addr);
+			ba->paddr = caddr;
 			ba->vaddr = addr;
-			ba->hpaddr = paddr;
-			ba->hvaddr = at;
+			ba->hpaddr = at;
+			ba->hvaddr = at + _baddr;
 			ba->bits = R_BIN_ELF_WORDSIZE * 8;
 			ba->type = symtype;
 			r_list_append (obj->inits, ba);
