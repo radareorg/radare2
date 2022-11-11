@@ -381,9 +381,9 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 		return;
 	}
 	R_CRITICAL_ENTER (r);
-	bool b64str = r_config_get_i (r->config, "bin.b64str");
-	int minstr = r_config_get_i (r->config, "bin.minstr");
-	int maxstr = r_config_get_i (r->config, "bin.maxstr");
+	bool b64str = r_config_get_i (r->config, "bin.str.debase64");
+	int minstr = r_config_get_i (r->config, "bin.str.min");
+	int maxstr = r_config_get_i (r->config, "bin.str.max");
 	RBin *bin = r->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
 	RListIter *iter;
@@ -641,7 +641,7 @@ static bool bin_strings(RCore *r, PJ *pj, int mode, int va) {
 	RList *list;
 	RBinFile *binfile = r_bin_cur (r->bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
-	int rawstr = r_config_get_i (r->config, "bin.rawstr");
+	int rawstr = r_config_get_i (r->config, "bin.str.raw");
 	if (!binfile || !plugin) {
 		return false;
 	}

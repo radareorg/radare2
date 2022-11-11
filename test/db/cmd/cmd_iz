@@ -15,22 +15,22 @@ CMDS=<<EOF
 ?e -- default --
 iz
 ?e -- geq 12 --
-e bin.minstr=12
+e bin.str.min=12
 iz
 ?e -- geq 13 --
-e bin.minstr=13
+e bin.str.min=13
 iz
 ?e -- geq 0 --
-e bin.minstr=0
+e bin.str.min=0
 iz
 ?e -- leq 12 --
-e bin.maxstr=12
+e bin.str.max=12
 iz
 ?e -- leq 11 --
-e bin.maxstr=11
+e bin.str.max=11
 iz
 ?e -- no limit --
-e bin.maxstr=0
+e bin.str.max=0
 iz
 EOF
 EXPECT=<<EOF

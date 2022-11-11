@@ -2432,7 +2432,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	ut64 firstch = UT64_MAX;
 	int minstr = r_num_math (core->num, input);
 	if (minstr < 1) {
-		minstr = r_config_get_i (core->config, "bin.minstr");
+		minstr = r_config_get_i (core->config, "bin.str.min");
 		if (minstr < 1) {
 			minstr = 1;
 		}

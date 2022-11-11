@@ -3780,7 +3780,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.useldr", "true", &cb_useldr, "use loader plugins when loading files");
 	SETCB ("bin.str.purge", "", &cb_strpurge, "purge strings (e bin.str.purge=? provides more detail)");
 	SETPREF ("bin.str.real", "false", "set the realname in rbin.strings for better disasm (EXPERIMENTAL)");
-	SETBPREF ("bin.b64str", "false", "try to debase64 the strings");
+	SETBPREF ("bin.str.debase64", "false", "try to debase64 the strings");
 	SETCB ("bin.str.nofp", "false", &cb_nofp, "set to true to reduce the false positive strings (EXPERIMENTAL)");
 	SETCB ("bin.at", "false", &cb_binat, "RBin.cur depends on RCore.offset");
 	SETBPREF ("bin.libs", "false", "try to load libraries after loading main binary");
@@ -3798,15 +3798,15 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("bin.laddr", 0, "base address for loading library ('*.so')");
 	SETCB ("bin.dbginfo", "true", &cb_bindbginfo, "load debug information at startup if available");
 	SETBPREF ("bin.relocs", "true", "load relocs information at startup if available");
-	SETICB ("bin.minstr", 0, &cb_binminstr, "minimum string length for r_bin");
+	SETICB ("bin.str.min", 0, &cb_binminstr, "minimum string length for r_bin");
 	SETICB ("bin.maxsymlen", 0, &cb_binmaxsymlen, "maximum length for symbol names");
-	SETICB ("bin.maxstr", 0, &cb_binmaxstr, "maximum string length for r_bin");
-	SETICB ("bin.maxstrbuf", 1024*1024*10, & cb_binmaxstrbuf, "maximum size of range to load strings from");
+	SETICB ("bin.str.max", 0, &cb_binmaxstr, "maximum string length for r_bin");
+	SETICB ("bin.str.maxbuf", 1024*1024*10, & cb_binmaxstrbuf, "maximum size of range to load strings from");
 	n = NODECB ("bin.str.enc", "guess", &cb_binstrenc);
 	SETDESC (n, "default string encoding of binary");
 	SETOPTIONS (n, "ascii", "latin1", "utf8", "utf16le", "utf32le", "utf16be", "utf32be", "guess", NULL);
 	SETCB ("bin.prefix", "", &cb_binprefix, "prefix all symbols/sections/relocs with a specific string");
-	SETCB ("bin.rawstr", "false", &cb_rawstr, "load strings from raw binaries");
+	SETCB ("bin.str.raw", "false", &cb_rawstr, "load strings from raw binaries");
 	SETCB ("bin.strings", "true", &cb_binstrings, "load strings from rbin on startup");
 	SETCB ("bin.debase64", "false", &cb_debase64, "try to debase64 all strings");
 	SETBPREF ("bin.classes", "true", "load classes from rbin on startup");

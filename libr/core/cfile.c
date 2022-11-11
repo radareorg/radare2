@@ -373,7 +373,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, R_NULLABLE con
 	opt.xtr_idx = xtr_idx;
 	if (!r_bin_open (r->bin, filenameuri, &opt)) {
 		R_LOG_ERROR ("bin.open failed %s", filenameuri);
-		if (r_config_get_b (r->config, "bin.rawstr")) {
+		if (r_config_get_b (r->config, "bin.str.raw")) {
 			r_bin_file_options_init (&opt, fd, baseaddr, UT64_MAX, true);
 			opt.xtr_idx = xtr_idx;
 			if (!r_bin_open (r->bin, filenameuri, &opt)) {
@@ -399,10 +399,10 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, R_NULLABLE con
 	if (plugin && !strcmp (plugin->name, "any")) {
 		// set use of raw strings
 		// r_config_set_i (r->config, "io.va", false);
-		// r_config_set_b (r->config, "bin.rawstr", true);
-		// get bin.minstr
-		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
-		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
+		// r_config_set_b (r->config, "bin.str.raw", true);
+		// get bin.str.min
+		r->bin->minstrlen = r_config_get_i (r->config, "bin.str.min");
+		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
 	} else if (binfile) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
@@ -456,10 +456,10 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		// set use of raw strings
 		r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 		// r_config_set_i (r->config, "io.va", false);
-		// r_config_set_b (r->config, "bin.rawstr", true);
-		// get bin.minstr
-		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
-		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
+		// r_config_set_b (r->config, "bin.str.raw", true);
+		// get bin.str.min
+		r->bin->minstrlen = r_config_get_i (r->config, "bin.str.min");
+		r->bin->maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
 	} else if (binfile) {
 		RBinObject *obj = r_bin_cur_object (r->bin);
 		RBinInfo *info = obj? obj->info: NULL;
@@ -635,8 +635,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		is_io_load = true;
 	//	r_io_use_fd (r->io, desc->fd);
 	}
-	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
-	r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
+	r->bin->minstrlen = r_config_get_i (r->config, "bin.str.min");
+	r->bin->maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
 	R_CRITICAL_LEAVE (r);
 	if (is_io_load) {
 		// TODO? necessary to restore the desc back?
@@ -678,11 +678,11 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				? UT64_MAX : r_io_desc_size (desc);
 			r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, size);
 			// set use of raw strings
-			// r_config_set_b (r->config, "bin.rawstr", true);
+			// r_config_set_b (r->config, "bin.str.raw", true);
 			// r_config_set_b (r->config, "io.va", false);
-			// get bin.minstr
-			r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
-			r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
+			// get bin.str.min
+			r->bin->minstrlen = r_config_get_i (r->config, "bin.str.min");
+			r->bin->maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
 		} else if (binfile) {
 			RBinObject *obj = r_bin_cur_object (r->bin);
 			if (obj) {

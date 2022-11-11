@@ -1074,7 +1074,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_config_set_b (r->config, "bin.strings", false);
 		break;
 	case 2:
-		r_config_set_b (r->config, "bin.rawstr", true);
+		r_config_set_b (r->config, "bin.str.raw", true);
 		break;
 	}
 	if (zflag > 3) {
