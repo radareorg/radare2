@@ -346,8 +346,7 @@ static const char *help_msg_dr[] = {
 	"drf", "", "show fpu registers (80 bit long double)",
 	"dri", "", "show inverse registers dump (sorted by value)",
 	"drl", "[j]", "list all register names",
-	"drm", "[?]", "show multimedia packed registers",
-	//	"drm", " xmm0 0 32 = 12", "Set the first 32 bit word of the xmm0 reg to 12", // Do not advertise - broken
+	"drv", "[?]", "show vector registers (also known as sve / packed / multimedia)",
 	"dro", "", "show previous (old) values of registers",
 	"drp", "[?] ", "display current register profile",
 	"drr", "", "show registers references (telescoping)",
@@ -407,25 +406,25 @@ static const char *help_msg_drx[] = {
 	NULL
 };
 
-static const char *help_msg_drm[] = {
-	"Usage: drm", " [reg] [idx] [wordsize] [= value]", "Show multimedia packed registers",
-	"drm", "", "show XMM registers",
-	"drm", " xmm0", "show all packings of xmm0",
-	"drm", " xmm0 0 32 = 12", "set the first 32 bit word of the xmm0 reg to 12",
-	"drmb", " [reg]", "show registers as bytes",
-	"drmw", " [reg]", "show registers as words",
-	"drmd", " [reg]", "show registers as doublewords",
-	"drmq", " [reg]", "show registers as quadwords",
-	"drmq", " xmm0~[0]", "show first quadword of xmm0",
-	"drmf", " [reg]", "show registers as 32-bit floating point",
-	"drml", " [reg]", "show registers as 64-bit floating point",
-	"drmyb", " [reg]", "show YMM registers as bytes",
-	"drmyw", " [reg]", "show YMM registers as words",
-	"drmyd", " [reg]", "show YMM registers as doublewords",
-	"drmyq", " [reg]", "show YMM registers as quadwords",
-	"drmq", " ymm0~[3]", "show fourth quadword of ymm0",
-	"drmyf", " [reg]", "show YMM registers as 32-bit floating point",
-	"drmyl", " [reg]", "show YMM registers as 64-bit floating point",
+static const char *help_msg_drv[] = {
+	"Usage: drv", " [reg] [idx] [wordsize] [= value]", "Show multimedia packed registers",
+	"drv", "", "show XMM registers",
+	"drv", " xmm0", "show all packings of xmm0",
+	"drv", " xmm0 0 32 = 12", "set the first 32 bit word of the xmm0 reg to 12",
+	"drvb", " [reg]", "show registers as bytes",
+	"drvw", " [reg]", "show registers as words",
+	"drvd", " [reg]", "show registers as doublewords",
+	"drvq", " [reg]", "show registers as quadwords",
+	"drvq", " xmm0~[0]", "show first quadword of xmm0",
+	"drvf", " [reg]", "show registers as 32-bit floating point",
+	"drvl", " [reg]", "show registers as 64-bit floating point",
+	"drvyb", " [reg]", "show YMM registers as bytes",
+	"drvyw", " [reg]", "show YMM registers as words",
+	"drvyd", " [reg]", "show YMM registers as doublewords",
+	"drvyq", " [reg]", "show YMM registers as quadwords",
+	"drvq", " ymm0~[3]", "show fourth quadword of ymm0",
+	"drvyf", " [reg]", "show YMM registers as 32-bit floating point",
+	"drvyl", " [reg]", "show YMM registers as 64-bit floating point",
 	NULL
 };
 
@@ -2673,9 +2672,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			break;
 		}
 		break;
-	case 'm': // "drm"
+	case 'v': // "drv"
 		if (str[1]=='?') {
-			r_core_cmd_help (core, help_msg_drm);
+			r_core_cmd_help (core, help_msg_drv);
 		} else if (str[1] == ' ' || str[1] == 'b' || str[1] == 'd' || str[1] == 'w' || str[1] == 'q' || str[1] == 'l'
 				   || str[1] == 'f' || (str[1] == 'y' && str[2] != '\x00')) {
 			char explicit_index = 0;
@@ -2688,7 +2687,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			char *eq = NULL;
 			RRegisterType reg_type = R_REG_TYPE_VEC128;
 			if ((str[1] == ' ' && str[2] != '\x00') || (str[1] == 'y' && str[2] == ' ' && str[3] != '\x00')) {
-				if (str[1] == 'y') { // support `drmy ymm0` and `drm ymm0`
+				if (str[1] == 'y') { // support `drvy ymm0` and `drv ymm0`
 					str = str + 1;
 				}
 				name = strdup (str + 2);
@@ -2732,27 +2731,27 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					explicit_name = 1;
 				}
 				switch (str[1])	{
-				case 'b': // "drmb"
+				case 'b': // "drvb"
 					size = pack_sizes[0];
 					pack_show[0] = 1;
 					break;
-				case 'w': // "drmw"
+				case 'w': // "drvw"
 					size = pack_sizes[1];
 					pack_show[1] = 1;
 					break;
-				case 'd': // "drmd"
+				case 'd': // "drvd"
 					size = pack_sizes[2];
 					pack_show[2] = 1;
 					break;
-				case 'q': // "drmq"
+				case 'q': // "drvq"
 					size = pack_sizes[3];
 					pack_show[3] = 1;
 					break;
-				case 'f': // "drmf"
+				case 'f': // "drvf"
 					size = pack_sizes[4];
 					pack_show[4] = 1;
 					break;
-				case 'l': // "drml"
+				case 'l': // "drvl"
 					size = pack_sizes[5];
 					pack_show[5] = 1;
 					break;
@@ -2804,11 +2803,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					}
 				}
 			}
-		} else { // drm # no arg
-			if (str[1] == 'y') { // drmy
+		} else { // drv # no arg
+			if (str[1] == 'y') { // drvy
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_VEC256, false);
 				r_debug_reg_list (core->dbg, R_REG_TYPE_VEC256, 256, NULL, 0, 0);
-			} else { // drm
+			} else { // drv
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_VEC128, false);
 				r_debug_reg_list (core->dbg, R_REG_TYPE_VEC128, 128, NULL, 0, 0);
 			}
