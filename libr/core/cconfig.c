@@ -1296,6 +1296,13 @@ static bool cb_useldr(void *user, void *data) {
 	return true;
 }
 
+static bool cb_nofp(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->bin->strings_nofp = node->i_value;
+	return true;
+}
+
 static bool cb_binat(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -3774,6 +3781,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.str.purge", "", &cb_strpurge, "purge strings (e bin.str.purge=? provides more detail)");
 	SETPREF ("bin.str.real", "false", "set the realname in rbin.strings for better disasm (EXPERIMENTAL)");
 	SETBPREF ("bin.b64str", "false", "try to debase64 the strings");
+	SETCB ("bin.str.nofp", "false", &cb_nofp, "set to true to reduce the false positive strings (EXPERIMENTAL)");
 	SETCB ("bin.at", "false", &cb_binat, "RBin.cur depends on RCore.offset");
 	SETBPREF ("bin.libs", "false", "try to load libraries after loading main binary");
 	n = NODECB ("bin.str.filter", "", &cb_strfilter);

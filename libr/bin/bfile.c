@@ -107,9 +107,9 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	}
 }
 
-static int string_scan_range(RList *list, RBinFile *bf, int min,
-			      const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
+static int string_scan_range(RList *list, RBinFile *bf, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	RBin *bin = bf->rbin;
+	const bool strings_nofp = bin->strings_nofp;
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
@@ -268,20 +268,34 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				}
 				rc = r_utf8_encode (tmp + i, r);
 				runes++;
-				/* Print the escape code */
 			} else if (r && r < 0x100 && strchr ("\b\v\f\n\r\t\a\033\\", (char)r)) {
-				if ((i + 32) < sizeof (tmp) && r < 93) {
-					tmp[i + 0] = '\\';
-					tmp[i + 1] = "       abtnvfr             e  "
-					             "                              "
-					             "                              "
-					             "  \\"[r];
+				/* Print the escape code */
+				if (strings_nofp) {
+					rc = 2;
+					if (r && r < 0x100 && strchr ("\n\r\t\033\\", (char)r)) {
+						// eprintf ("is special\n");
+						runes++;
+						// accept it as it is
+						rc = 1;
+					} else {
+						rc = 1;
+						r = 0;
+						break;
+					}
 				} else {
-					// string too long
-					break;
+					if ((i + 32) < sizeof (tmp) && r < 93) {
+						tmp[i + 0] = '\\';
+						tmp[i + 1] = "       abtnvfr             e  "
+							"                              "
+							"                              "
+							"  \\"[r];
+					} else {
+						// string too long
+						break;
+					}
+					rc = 2;
+					runes++;
 				}
-				rc = 2;
-				runes++;
 			} else {
 				/* \0 marks the end of C-strings */
 				break;
@@ -385,7 +399,10 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			ut64 baddr = bf->loadaddr && bf->o? bf->o->baddr: bf->loadaddr;
 			bs->paddr = str_start + baddr;
 			bs->vaddr = str_start - pdelta + vdelta + baddr;
-			bs->string = r_str_ndup ((const char *)tmp, i);
+			bs->string = r_str_ndup ((const char *)tmp, i); // Use stringviews to save memory
+			if (strings_nofp) {
+				r_str_trim (bs->string); // trim spaces to ease readability
+			}
 			if (list) {
 				r_list_append (list, bs);
 				if (bf->o) {
@@ -424,7 +441,7 @@ static bool __isDataSection(RBinFile *a, RBinSection *s) {
 	return strstr (s->name, "_const");
 }
 
-static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 from, ut64 to, RBinSection *section) {
+static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool nofp, ut64 from, ut64 to, RBinSection *section) {
 	r_return_if_fail (bf && bf->buf);
 
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
@@ -842,6 +859,7 @@ R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {
 
 // TODO: searchStrings() instead
 R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
+	const bool nofp = bf->rbin->strings_nofp;
 	r_return_val_if_fail (bf, NULL);
 	RListIter *iter;
 	RBinSection *section;
@@ -851,7 +869,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 		RBinObject *o = bf->o;
 		r_list_foreach (o->sections, iter, section) {
 			if (__isDataSection (bf, section)) {
-				get_strings_range (bf, ret, min, raw, section->paddr,
+				get_strings_range (bf, ret, min, raw, nofp, section->paddr,
 						section->paddr + section->size, section);
 			}
 		}
@@ -865,6 +883,9 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 				// XXX do not walk if bin.strings == 0
 				ut8 *p;
 				if (section->size > bf->size) {
+					continue;
+				}
+				if (section->size < 1) {
 					continue;
 				}
 				ut8 *sbuf = malloc (section->size);
@@ -900,7 +921,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 			}
 		}
 	} else {
-		get_strings_range (bf, ret, min, raw, 0, bf->size, NULL);
+		get_strings_range (bf, ret, min, raw, nofp, 0, bf->size, NULL);
 	}
 	return ret;
 }

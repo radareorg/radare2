@@ -335,6 +335,7 @@ struct r_bin_t {
 	int maxsymlen;
 	ut64 maxstrbuf;
 	int rawstr;
+	bool strings_nofp; // move to options struct passed instead of min, dump raw on every getstrings call
 	Sdb *sdb;
 	RIDStorage *ids;
 	RList/*<RBinPlugin>*/ *plugins;
