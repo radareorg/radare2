@@ -177,4 +177,4 @@ jobs:
         r2r -v
         export R2R_SKIP_ASM=1
         export R2R_SKIP_ARCHOS=1
-        make -j -C test
+        make -j -C test/unit
