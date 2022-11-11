@@ -2320,7 +2320,7 @@ static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 			r_anal_function_remove_block (fcn, bb);
 		}
 
-		RList *bbs = r_list_clone (fcn->bbs);
+		RList *bbs = r_list_clone (fcn->bbs, NULL);
 		r_anal_block_automerge (bbs);
 		r_anal_function_delete_unused_vars (fcn);
 		r_list_free (bbs);

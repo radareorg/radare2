@@ -151,6 +151,7 @@ struct MACH0_(obj_t) {
 	RBinImport **imports_by_ord;
 	size_t imports_by_ord_size;
 	HtPP *imports_by_name;
+	RList *cached_segments;
 
 	struct dysymtab_command dysymtab;
 	struct load_command main_cmd;

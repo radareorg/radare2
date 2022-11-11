@@ -829,7 +829,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	RListIter *it;
 	RAnalFunction *fcn;
 	// We need to clone the list because block->fcns will get modified in the loop
-	RList *fcns_cpy = r_list_clone (block->fcns);
+	RList *fcns_cpy = r_list_clone (block->fcns, NULL);
 	r_list_foreach (fcns_cpy, it, fcn) {
 		RAnalBlock *entry = r_anal_get_block_at (block->anal, fcn->addr);
 		if (entry && r_list_contains (entry->fcns, fcn)) {

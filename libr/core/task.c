@@ -167,7 +167,7 @@ R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, i
 	} else {
 		TASK_SIGSET_T old_sigset;
 		tasks_lock_enter (scheduler, &old_sigset);
-		RList *tasks = r_list_clone (scheduler->tasks);
+		RList *tasks = r_list_clone (scheduler->tasks, NULL);
 		RListIter *iter;
 		RCoreTask *task;
 		r_list_foreach (tasks, iter, task) {

@@ -5139,7 +5139,7 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 		if (!ctx->cur_bb) {
 			ctx->path = r_list_new ();
 			ctx->switch_path = r_list_new ();
-			ctx->bbl = r_list_clone (ctx->fcn->bbs);
+			ctx->bbl = r_list_clone (ctx->fcn->bbs, NULL);
 			ctx->cur_bb = r_anal_get_block_at (ctx->fcn->anal, ctx->fcn->addr);
 			if (!ctx->cur_bb) {
 				return false;
@@ -6217,8 +6217,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 			if (!block) {
 				continue;
 			}
-
-			RList *block_fcns = r_list_clone (block->fcns);
+			RList *block_fcns = r_list_clone (block->fcns, NULL);
 			if (request_fcn) {
 				// specific function requested, check if it contains the bb
 				if (!r_list_contains (block->fcns, request_fcn)) {

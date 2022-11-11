@@ -2283,15 +2283,20 @@ static bool is_data_section(RBinSection *sect) {
 }
 
 RList *MACH0_(get_segments)(RBinFile *bf) {
-	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
+	struct MACH0_(obj_t) *macho = bf->o->bin_obj;
+
+	if (macho->cached_segments) {
+		return r_list_clone (macho->cached_segments, (RListClone)r_bin_section_clone);
+	}
+
 	RList *list = r_list_newf ((RListFree)r_bin_section_free);
 	size_t i, j;
 
 	/* for core files */
-	if (bin->nsegs > 0) {
+	if (macho->nsegs > 0) {
 		struct MACH0_(segment_command) *seg;
-		for (i = 0; i < bin->nsegs; i++) {
-			seg = &bin->segs[i];
+		for (i = 0; i < macho->nsegs; i++) {
+			seg = &macho->segs[i];
 			if (!seg->initprot) {
 				continue;
 			}
@@ -2313,31 +2318,31 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 			r_list_append (list, s);
 		}
 	}
-	if (bin->nsects > 0) {
-		int last_section = R_MIN (bin->nsects, MACHO_MAX_SECTIONS);
+	if (macho->nsects > 0) {
+		int last_section = R_MIN (macho->nsects, MACHO_MAX_SECTIONS);
 		for (i = 0; i < last_section; i++) {
 			RBinSection *s = R_NEW0 (RBinSection);
 			if (!s) {
 				break;
 			}
-			s->vaddr = (ut64)bin->sects[i].addr;
-			s->vsize = (ut64)bin->sects[i].size;
+			s->vaddr = (ut64)macho->sects[i].addr;
+			s->vsize = (ut64)macho->sects[i].size;
 			s->is_segment = false;
-			s->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
+			s->size = (macho->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)macho->sects[i].size;
 			// XXX flags
-			s->paddr = (ut64)bin->sects[i].offset;
+			s->paddr = (ut64)macho->sects[i].offset;
 			int segment_index = 0;
-			//s->perm =prot2perm (bin->segs[j].initprot);
-			for (j = 0; j < bin->nsegs; j++) {
-				if (s->vaddr >= bin->segs[j].vmaddr &&
-						s->vaddr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
-					s->perm = prot2perm (bin->segs[j].initprot);
+			//s->perm =prot2perm (macho->segs[j].initprot);
+			for (j = 0; j < macho->nsegs; j++) {
+				if (s->vaddr >= macho->segs[j].vmaddr &&
+						s->vaddr < (macho->segs[j].vmaddr + macho->segs[j].vmsize)) {
+					s->perm = prot2perm (macho->segs[j].initprot);
 					segment_index = j;
 					break;
 				}
 			}
-			char *section_name = r_str_ndup (bin->sects[i].sectname, 16);
-			char *segment_name = r_str_newf ("%u.%s", (ut32)i, bin->segs[segment_index].segname);
+			char *section_name = r_str_ndup (macho->sects[i].sectname, 16);
+			char *segment_name = r_str_newf ("%u.%s", (ut32)i, macho->segs[segment_index].segname);
 			s->name = r_str_newf ("%s.%s", segment_name, section_name);
 			if (strstr (s->name, "__const")) {
 				s->format = r_str_newf ("Cd 4 %"PFMT64d, s->size / 4);
@@ -2356,6 +2361,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 			free (section_name);
 		}
 	}
+	macho->cached_segments = r_list_clone (list, (RListClone)r_bin_section_clone);
 	return list;
 }
 

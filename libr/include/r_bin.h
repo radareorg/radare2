@@ -664,6 +664,7 @@ typedef struct r_bin_bind_t {
 } RBinBind;
 
 R_IPI RBinSection *r_bin_section_new(const char *name);
+R_API RBinSection *r_bin_section_clone(RBinSection *s);
 R_IPI void r_bin_section_free(RBinSection *bs);
 R_API void r_bin_info_free(RBinInfo *rb);
 R_API void r_bin_import_free(RBinImport *imp);
