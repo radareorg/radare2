@@ -1219,7 +1219,7 @@ static int cmd_info(void *data, const char *input) {
 #if 1
 				if (rdump) {
 					RBinFile *bf = r_bin_cur (core->bin);
-					int min = r_config_get_i (core->config, "bin.minstr");
+					int min = r_config_get_i (core->config, "bin.str.min");
 					if (bf) {
 						bf->strmode = mode;
 						RList *res = r_bin_dump_strings (bf, min, 2);
@@ -1230,7 +1230,7 @@ static int cmd_info(void *data, const char *input) {
 				RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
 #else
 				// XXX for some reason this is breaking tests
-				int min = r_config_get_i (core->config, "bin.minstr");
+				int min = r_config_get_i (core->config, "bin.str.min");
 				{
 					RList *objs = r_core_bin_files (core);
 					RListIter *iter;
