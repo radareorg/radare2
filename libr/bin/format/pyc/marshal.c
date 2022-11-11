@@ -763,7 +763,7 @@ static pyc_object *copy_object(pyc_object *object) {
 			break;
 		case TYPE_TUPLE:
 		case TYPE_SMALL_TUPLE:
-			copy->data = r_list_clone (object->data);
+			copy->data = r_list_clone (object->data, NULL);
 			break;
 		case TYPE_INT:
 		case TYPE_INT64:

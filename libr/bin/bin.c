@@ -62,7 +62,7 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 
 		data->file_count = file_count;
 		data->metadata = metadata;
 		data->loaded = false;
-// don't slice twice TODO. review this
+		// don't slice twice TODO. review this
 		data->buf = r_buf_ref (buf); // r_buf_new_slice (buf, offset, size);
 	}
 	return data;
@@ -105,6 +105,7 @@ R_API RList *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
 }
 
 R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr) {
+	r_return_if_fail (opt);
 	memset (opt, 0, sizeof (*opt));
 	opt->baseaddr = baseaddr;
 	opt->loadaddr = loadaddr;
@@ -112,7 +113,8 @@ R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, 
 	opt->rawstr = rawstr;
 }
 
-R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int bits) {
+R_API void r_bin_arch_options_init(RBinArchOptions *opt, R_NULLABLE const char *arch, int bits) {
+	r_return_if_fail (opt);
 	opt->arch = arch? arch: R_SYS_ARCH;
 	opt->bits = bits? bits: R_SYS_BITS;
 }
@@ -167,10 +169,10 @@ R_API RBinImport *r_bin_import_clone(RBinImport *o) {
 
 R_API void r_bin_import_free(RBinImport *imp) {
 	if (imp) {
-		R_FREE (imp->name);
-		R_FREE (imp->libname);
-		R_FREE (imp->classname);
-		R_FREE (imp->descriptor);
+		free (imp->name);
+		free (imp->libname);
+		free (imp->classname);
+		free (imp->descriptor);
 		free (imp);
 	}
 }
@@ -1418,6 +1420,16 @@ R_IPI RBinSection *r_bin_section_new(const char *name) {
 		s->name = name? strdup (name): NULL;
 	}
 	return s;
+}
+
+R_API RBinSection *r_bin_section_clone(RBinSection *s) {
+	RBinSection *d = R_NEW0 (RBinSection);
+	if (d) {
+		memcpy (d, s, sizeof (RBinSection));
+		d->name = s->name? strdup (s->name): NULL;
+		d->format = s->format? strdup (s->format): NULL;
+	}
+	return d;
 }
 
 R_IPI void r_bin_section_free(RBinSection *bs) {

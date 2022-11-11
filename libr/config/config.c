@@ -46,7 +46,7 @@ R_API RConfigNode* r_config_node_clone(RConfigNode *n) {
 		cn->i_value = n->i_value;
 		cn->flags = n->flags;
 		cn->setter = n->setter;
-		cn->options = n->options? r_list_clone (n->options): NULL;
+		cn->options = n->options? r_list_clone (n->options, NULL): NULL;
 	}
 	return cn;
 }

@@ -168,7 +168,7 @@ static RBinInfo *info(RBinFile *bf) {
 static RList *relocs(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
-	return r_list_clone (qo->fixups);
+	return r_list_clone (qo->fixups, NULL);
 }
 
 static void header(RBinFile *bf) {
@@ -203,7 +203,7 @@ static RList* symbols(RBinFile *bf) {
 static RList* sections(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
-	return r_list_clone (qo->sections);
+	return r_list_clone (qo->sections, NULL);
 }
 
 /*

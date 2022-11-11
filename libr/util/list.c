@@ -390,7 +390,7 @@ R_API void r_list_reverse(RList *list) {
 	list->tail = tmp;
 }
 
-R_API RList *r_list_clone(const RList *list) {
+R_API RList *r_list_clone(const RList *list, RListClone clone) {
 	RListIter *iter;
 	void *data;
 
@@ -400,9 +400,16 @@ R_API RList *r_list_clone(const RList *list) {
 	if (!l) {
 		return NULL;
 	}
-	l->free = NULL;
-	r_list_foreach (list, iter, data) {
-		r_list_append (l, data);
+	if (clone) {
+		l->free = list->free;
+		r_list_foreach (list, iter, data) {
+			r_list_append (l, clone (data));
+		}
+	} else {
+		l->free = NULL;
+		r_list_foreach (list, iter, data) {
+			r_list_append (l, data);
+		}
 	}
 	l->sorted = list->sorted;
 	return l;
@@ -667,6 +674,7 @@ R_API int r_list_uniq_inplace(RList *list, RListComparatorItem cmp) {
 	set_u_free (s);
 	return deleted;
 }
+
 R_API char *r_list_to_str(RList *list, char ch) {
 	RListIter *iter;
 	RStrBuf *buf = r_strbuf_new ("");

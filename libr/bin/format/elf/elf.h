@@ -155,7 +155,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	RBuffer *b;
 	Sdb *kv;
 	/*cache purpose*/
-	RBinElfSection *g_sections;
+	RBinElfSection *g_sections; // RBinElfSection
 	RBinElfSymbol *g_symbols;
 	RBinElfSymbol *g_imports;
 	RBinElfReloc *g_relocs;
@@ -163,6 +163,8 @@ struct Elf_(r_bin_elf_obj_t) {
 	RBinElfSymbol *phdr_symbols;
 	RBinElfSymbol *phdr_imports;
 	HtUP *rel_cache;
+	RList *inits;
+	RList *cached_sections; // RBinSection
 };
 
 int Elf_(r_bin_elf_has_va)(struct Elf_(r_bin_elf_obj_t) *bin);
@@ -219,4 +221,5 @@ RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin);
 RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 					  struct r_bin_elf_symbol_t *symbol,
 					  const char *namefmt);
+R_API RBinSection *r_bin_section_clone(RBinSection *s);
 #endif
