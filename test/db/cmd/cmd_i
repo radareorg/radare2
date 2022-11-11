@@ -3630,10 +3630,7 @@ EOF
 EXPECT=<<EOF
 vaddr=0x08048486 paddr=0x00000486 hvaddr=0x08049ed4 hpaddr=0x00000ed4 type=preinit
 vaddr=0x0804849f paddr=0x0000049f hvaddr=0x08049ed8 hpaddr=0x00000ed8 type=preinit
-vaddr=0x08048486 paddr=0x00000486 hvaddr=0x08049ed4 hpaddr=0x00000ed4 type=preinit
-vaddr=0x0804849f paddr=0x0000049f hvaddr=0x08049ed8 hpaddr=0x00000ed8 type=preinit
             ;-- entry.preinit1:
-            ;-- entry.preinit3:
             ;-- preinit2:
             0x0804849f      push ebp
 EOF
@@ -3680,12 +3677,6 @@ fs symbols
 "f entry.fini4 1 0x080485e7"
 "f entry.fini4_hpaddr 1 0x00000f00"
 "s entry.fini4"
-"f entry.preinit2 1 0x08048486"
-"f entry.preinit2_hpaddr 1 0x00000ed4"
-"s entry.preinit2"
-"f entry.preinit3 1 0x0804849f"
-"f entry.preinit3_hpaddr 1 0x00000ed8"
-"s entry.preinit3"
 EOF
 RUN
 
@@ -3799,6 +3790,8 @@ vaddr      paddr      type   name
 0x000003f0 16 sym.imp.puts
 0x00000400 16 sym.imp.__libc_start_main
 0x00000420 1 entry0
+0x00000500 1 entry.fini0
+0x00000550 1 entry.init0
 0x00000590 256 main
 0x00000590 60 sym.main
 0x0000064c 4 obj._IO_stdin_used
@@ -3880,9 +3873,9 @@ EXPECT=<<EOF
             ;-- segment.GNU_RELRO:
             ;-- .preinit_array:
             ;-- __preinit:
-            0x08049ed4      .dword 0x08048486 ; entry.preinit0 ; entry.preinit2 ; sym.preinit ; [18] -rw- section size 8 named .preinit_array
+            0x08049ed4      .dword 0x08048486 ; entry.preinit0 ; sym.preinit ; [18] -rw- section size 8 named .preinit_array
             ;-- __preinit2:
-            0x08049ed8      .dword 0x0804849f ; entry.preinit1 ; entry.preinit3 ; sym.preinit2
+            0x08049ed8      .dword 0x0804849f ; entry.preinit1 ; sym.preinit2
 
             ;-- section..init_array:
             ;-- .init_array:
