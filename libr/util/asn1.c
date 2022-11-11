@@ -313,12 +313,12 @@ static RASN1String* asn1_hexdump(RASN1Object *obj, ut32 depth, int fmtmode) {
 // XXX this function signature is confusing
 R_API char *r_asn1_object_tostring(RASN1Object *obj, ut32 depth, RStrBuf *sb, PJ *pj, int fmtmode) {
 	bool root = false;
+	if (!obj) {
+		return NULL;
+	}
 	if (!sb) {
 		sb = r_strbuf_new ("");
 		root = true;
-	}
-	if (!obj) {
-		return NULL;
 	}
 	char temp_name[4096] = {0};
 	ut32 i;

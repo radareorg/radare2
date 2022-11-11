@@ -1843,7 +1843,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		return 0;
 	case 't': // "ot"
-		r_core_cmd_strf (core, "touch%s", input + 1);
+		r_core_cmdf (core, "touch%s", input + 1);
 		return 0;
 	case 'p': // "op"
 		/* handle prioritize */
