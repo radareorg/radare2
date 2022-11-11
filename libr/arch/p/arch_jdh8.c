@@ -5,14 +5,17 @@
 #include "./jdh8/jdh8dis.c"
 
 static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
-	const ut8 *buf = op->bytes;
-	int len = op->size;
 	int dlen = 0;
-	char *o = jdh8Disass (buf, len, &dlen);
-	op->mnemonic = strdup (o);
+	char *o = jdh8Disass (op->bytes, op->size, &dlen);
+	const bool is_valid = o && strcmp (o, "invalid");
+	if (R_STR_ISNOTEMPTY (o)) {
+		free (op->mnemonic);
+		op->mnemonic = o;
+		o = NULL;
+	}
 	op->size = R_MAX (0, dlen);
-	// honor DISASM, add esil and more
-	return dlen;
+	free (o);
+	return is_valid;
 }
 
 RArchPlugin r_arch_plugin_jdh8 = {
