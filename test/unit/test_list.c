@@ -446,7 +446,7 @@ bool test_r_list_clone(void) {
 		r_list_prepend (list1, test[i]);
 	}
 
-	list2 = r_list_clone (list1);
+	list2 = r_list_clone (list1, NULL);
 
 	char buf[BUF_LENGTH];
 	RListIter *iter1 = list1->head;
