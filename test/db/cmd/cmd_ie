@@ -110,6 +110,24 @@ EXPECT_ERR=<<EOF
 DEBUG: RCore.cmd('=!')
 DEBUG: Dynamic tag 16 not handled
 DEBUG: bin object have no information
+DEBUG: add dt.dyn.entry tag=3 value=0x0002fde8
+DEBUG: add dt.dyn.entry tag=2 value=0x00000188
+DEBUG: add dt.dyn.entry tag=23 value=0x00000940
+DEBUG: add dt.dyn.entry tag=20 value=0x00000011
+DEBUG: add dt.dyn.entry tag=17 value=0x000008b8
+DEBUG: add dt.dyn.entry tag=18 value=0x00000088
+DEBUG: add dt.dyn.entry tag=19 value=0x00000008
+DEBUG: add dt.dyn.entry tag=1879048186 value=0x00000011
+DEBUG: add dt.dyn.entry tag=6 value=0x000000b4
+DEBUG: add dt.dyn.entry tag=11 value=0x00000010
+DEBUG: add dt.dyn.entry tag=5 value=0x00000484
+DEBUG: add dt.dyn.entry tag=10 value=0x000002a2
+DEBUG: add dt.dyn.entry tag=4 value=0x00000728
+DEBUG: add dt.dyn.entry tag=1 value=0x00000287
+DEBUG: add dt.dyn.entry tag=1 value=0x0000028f
+DEBUG: add dt.dyn.entry tag=1 value=0x00000298
+DEBUG: add dt.dyn.entry tag=16 value=0x00000000
+DEBUG: add dt.dyn.entry tag=30 value=0x00000002
 ERROR: Cannot determine entrypoint, using 0x00000d28
 DEBUG: RCore.cmd('Cd 4[48] @ 0x12000')
 DEBUG: (cannot find opening [) in (48])

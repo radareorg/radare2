@@ -204,17 +204,21 @@ static const char *regs[] = { "r0", "r1","r2", "r3", "r4","r5","r6","r7","r8","r
 
 static RArchValue *anal_fill_ai_rg(RArch *anal, int idx) {
 	RArchValue *ret = r_arch_value_new ();
+	if (ret) {
 #if USE_REG_NAMES
-	ret->reg = regs[idx];
+		ret->reg = regs[idx];
 #else
-	// ret->reg = r_reg_get (anal->reg, regs[idx], R_REG_TYPE_GPR);
+		// ret->reg = r_reg_get (anal->reg, regs[idx], R_REG_TYPE_GPR);
 #endif
+	}
 	return ret;
 }
 
 static RArchValue *anal_fill_im(RArch *anal, st32 v) {
 	RArchValue *ret = r_arch_value_new ();
-	ret->imm = v;
+	if (ret) {
+		ret->imm = v;
+	}
 	return ret;
 }
 
@@ -231,45 +235,52 @@ static RArchValue *anal_fill_reg_disp_mem(RArch *anal, int reg, st64 delta, st64
 /* Rn */
 static RArchValue *anal_fill_reg_ref(RArch *anal, int reg, st64 size) {
 	RArchValue *ret = anal_fill_ai_rg (anal, reg);
-	ret->memref = size;
+	if (ret) {
+		ret->memref = size;
+	}
 	return ret;
 }
 
 /* @(R0,Rx) references for all sizes */
 static RArchValue *anal_fill_r0_reg_ref(RArch *anal, int reg, st64 size) {
 	RArchValue *ret = anal_fill_ai_rg (anal, 0);
+	if (ret) {
 #if USE_REG_NAMES
-	ret->regdelta = regs[reg];
+		ret->regdelta = regs[reg];
 #else
-	// ret->regdelta = r_reg_get (anal->reg, regs[reg], R_REG_TYPE_GPR);
+		// ret->regdelta = r_reg_get (anal->reg, regs[reg], R_REG_TYPE_GPR);
 #endif
-	ret->memref = size;
+		ret->memref = size;
+	}
 	return ret;
 }
 
 // @(disp,PC) for size=2(.w), size=4(.l). disp is 0-extended
 static RArchValue *anal_pcrel_disp_mov(RArch* anal, RAnalOp* op, ut8 disp, int size) {
 	RArchValue *ret = r_arch_value_new ();
-	if (size==2) {
-		ret->base = op->addr + 4;
-		ret->delta = disp << 1;
-	} else {
-		ret->base = (op->addr + 4) & ~0x03;
-		ret->delta = disp << 2;
+	if (ret) {
+		if (size == 2) {
+			ret->base = op->addr + 4;
+			ret->delta = disp << 1;
+		} else {
+			ret->base = (op->addr + 4) & ~0x03;
+			ret->delta = disp << 2;
+		}
 	}
-
 	return ret;
 }
 
 //= PC+4+R<reg>
 static RArchValue *anal_regrel_jump(RArch* anal, RAnalOp* op, ut8 reg) {
 	RArchValue *ret = r_arch_value_new ();
+	if (ret) {
 #if USE_REG_NAMES
-	ret->reg = regs[reg];
+		ret->reg = regs[reg];
 #else
-	// ret->reg = r_reg_get (anal->reg, regs[reg], R_REG_TYPE_GPR);
+		// ret->reg = r_reg_get (anal->reg, regs[reg], R_REG_TYPE_GPR);
 #endif
-	ret->base = op->addr + 4;
+		ret->base = op->addr + 4;
+	}
 	return ret;
 }
 
@@ -428,6 +439,9 @@ static int first_nibble_is_0(RArch* anal, RAnalOp* op, ut16 code) { //STOP
 	if (src1) {
 		r_vector_push (&op->srcs, src1);
 	}
+	free (src0);
+	free (src1);
+	free (dst);
 	return op->size;
 }
 
@@ -437,8 +451,12 @@ static int movl_reg_rdisp(RArch* anal, RAnalOp* op, ut16 code) {
 	RArchValue *src = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 	RArchValue *dst = anal_fill_reg_disp_mem (anal, GET_TARGET_REG (code), code & 0x0F, LONG_SIZE);
 	r_strbuf_setf (&op->esil, "r%d,r%d,0x%x,+,=[4]", GET_SOURCE_REG (code), GET_TARGET_REG (code), (code & 0xF) << 2);
-	r_vector_push (&op->dsts, dst);
-	r_vector_push (&op->srcs, src);
+	if (src && dst) {
+		r_vector_push (&op->dsts, dst);
+		r_vector_push (&op->srcs, src);
+	}
+	free (src);
+	free (dst);
 	return op->size;
 }
 
@@ -521,9 +539,11 @@ static int first_nibble_is_2(RArch* anal, RAnalOp* op, ut16 code) {
 	if (src1) {
 		r_vector_push (&op->srcs, src1);
 	}
+	free (src0);
+	free (src1);
+	free (dst);
 	return op->size;
 }
-
 
 static int first_nibble_is_3(RArch* anal, RAnalOp* op, ut16 code) {
 	RArchValue *dst = NULL, *src0 = NULL, *src1 = NULL;
@@ -631,10 +651,11 @@ static int first_nibble_is_3(RArch* anal, RAnalOp* op, ut16 code) {
 	if (src1) {
 		r_vector_push (&op->srcs, src1);
 	}
+	free (src0);
+	free (src1);
+	free (dst);
 	return op->size;
 }
-
-
 
 static int first_nibble_is_4(RArch* anal, RAnalOp* op, ut16 code) {
 	RArchValue *dst = NULL;
@@ -812,18 +833,22 @@ static int first_nibble_is_4(RArch* anal, RAnalOp* op, ut16 code) {
 	if (dst) {
 		r_vector_push (&op->dsts, dst);
 	}
+	free (dst);
 	return op->size;
 }
 
 //nibble=5; 0101nnnnmmmmi4*4 mov.l @(<disp>,<REG_M>),<REG_N>
 static int movl_rdisp_reg(RArch* anal, RAnalOp* op, ut16 code) {
-	RArchValue *dst, *src;
 	op->type = R_ANAL_OP_TYPE_LOAD;
-	dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-	src = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, LONG_SIZE);
-	r_strbuf_setf (&op->esil, "r%d,0x%x,+,[4],r%d,=", GET_SOURCE_REG (code), (code&0xF) * 4, GET_TARGET_REG (code));
-	r_vector_push (&op->dsts, dst);
-	r_vector_push (&op->srcs, src);
+	RArchValue *dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
+	RArchValue *src = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, LONG_SIZE);
+	r_strbuf_setf (&op->esil, "r%d,0x%x,+,[4],r%d,=", GET_SOURCE_REG (code), (code & 0xF) * 4, GET_TARGET_REG (code));
+	if (src && dst) {
+		r_vector_push (&op->dsts, dst);
+		r_vector_push (&op->srcs, src);
+	}
+	free (src);
+	free (dst);
 	return op->size;
 }
 
@@ -914,6 +939,8 @@ static int first_nibble_is_6(RArch* anal, RAnalOp* op, ut16 code) {
 	if (src) {
 		r_vector_push (&op->srcs, src);
 	}
+	free (src);
+	free (dst);
 	return op->size;
 }
 
@@ -926,8 +953,12 @@ static int add_imm(RArch* anal, RAnalOp* op, ut16 code) {
 	// mask VALUE
 	RArchValue *src = anal_fill_im (anal, (st8)(code & 0xFF)); //Casting to (st8) forces sign-extension.
 	RArchValue *dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-	r_vector_push (&op->dsts, dst);
-	r_vector_push (&op->srcs, src);
+	if (src && dst) {
+		r_vector_push (&op->dsts, dst);
+		r_vector_push (&op->srcs, src);
+	}
+	free (src);
+	free (dst);
 	return op->size;
 }
 
@@ -983,6 +1014,8 @@ static int first_nibble_is_8(RArch* anal, RAnalOp* op, ut16 code) {
 	if (src) {
 		r_vector_push (&op->srcs, src);
 	}
+	free (src);
+	free (dst);
 	return op->size;
 }
 
@@ -994,8 +1027,12 @@ static int movw_pcdisp_reg(RArch* anal, RAnalOp* op, ut16 code) {
 	src->base = (code & 0xFF) * 2+op->addr + 4;
 	src->memref = 1;
 	r_strbuf_setf (&op->esil, "0x%" PFMT64x ",[2],r%d,=,r%d,0x8000,&,?{,0xFFFF0000,r%d,|=,}", src->base, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
-	r_vector_push (&op->dsts, dst);
-	r_vector_push (&op->srcs, src);
+	if (src && dst) {
+		r_vector_push (&op->dsts, dst);
+		r_vector_push (&op->srcs, src);
+	}
+	free (src);
+	free (dst);
 	return op->size;
 }
 
@@ -1112,29 +1149,40 @@ static int first_nibble_is_c(RArch* anal, RAnalOp* op, ut16 code) {
 	if (src1) {
 		r_vector_push (&op->srcs, src1);
 	}
+	free (dst);
+	free (src0);
+	free (src1);
 	return op->size;
 }
 
 // nibble=d; 1101nnnni8 : mov.l @(<disp>,PC), Rn
 static int movl_pcdisp_reg(RArch* anal, RAnalOp* op, ut16 code) {
 	op->type = R_ANAL_OP_TYPE_LOAD;
+	r_strbuf_setf (&op->esil, "0x%" PFMT64x ",[4],r%d,=", (code & 0xFF) * 4 + ((op->addr >> 2)<<2) + 4, GET_TARGET_REG (code));
 	RArchValue *src = anal_pcrel_disp_mov (anal, op, code & 0xFF, LONG_SIZE);
 	RArchValue *dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	// r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + (op->addr & 0xfffffff3) + 4, GET_TARGET_REG (code));
-	r_strbuf_setf (&op->esil, "0x%" PFMT64x ",[4],r%d,=", (code & 0xFF) * 4 + ((op->addr >> 2)<<2) + 4, GET_TARGET_REG (code));
-	r_vector_push (&op->dsts, dst);
-	r_vector_push (&op->srcs, src);
+	if (src && dst) {
+		r_vector_push (&op->dsts, dst);
+		r_vector_push (&op->srcs, src);
+	}
+	free (src);
+	free (dst);
 	return op->size;
 }
 
 // nibble=e; 1110nnnni8*1.... mov #<imm>,<REG_N>
 static int mov_imm_reg(RArch* arch, RAnalOp* op, ut16 code) {
 	op->type = R_ANAL_OP_TYPE_MOV;
+	r_strbuf_setf (&op->esil, "0x%x,r%d,=,r%d,0x80,&,?{,0xFFFFFF00,r%d,|=,}", code & 0xFF, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 	RArchValue *dst = anal_fill_ai_rg (arch, GET_TARGET_REG (code));
 	RArchValue *src = anal_fill_im (arch, (st8)(code & 0xFF));
-	r_strbuf_setf (&op->esil, "0x%x,r%d,=,r%d,0x80,&,?{,0xFFFFFF00,r%d,|=,}", code & 0xFF, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
-	r_vector_push (&op->dsts, dst);
-	r_vector_push (&op->srcs, src);
+	if (dst && src) {
+		r_vector_push (&op->dsts, dst);
+		r_vector_push (&op->srcs, src);
+	}
+	free (src);
+	free (dst);
 	return op->size;
 }
 
@@ -1246,9 +1294,6 @@ static int disassemble(RArch *a, RAnalOp *op, const ut8 *buf, int len) {
  * routines defined in first_nibble_decode table */
 static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	r_return_val_if_fail (s && op, false);
-	if (!op || !s) {
-		return false;
-	}
 	RArch *a = s->arch;
 	if (op->size < 2) {
 		return false;
