@@ -1983,7 +1983,6 @@ static int var_cmd(RCore *core, const char *str) {
 			r_str_trim (vartype);
 		}
 		if (type == 'b') {
-			eprintf ("DELTA\n");
 			delta -= fcn->bp_off;
 		}
 		if ((type == 'b') && delta > 0) {
