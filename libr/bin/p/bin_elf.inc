@@ -198,7 +198,6 @@ static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int sy
 			return;
 		}
 	}
-	ut64 preinit_end = preinit_addr + preinit_size;
 	int big_endian = Elf_(r_bin_elf_is_big_endian) (obj);
 	ut64 at;
 	ut64 from = Elf_(r_bin_elf_v2p) (obj, preinit_addr);
