@@ -3780,7 +3780,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.useldr", "true", &cb_useldr, "use loader plugins when loading files");
 	SETCB ("bin.str.purge", "", &cb_strpurge, "purge strings (e bin.str.purge=? provides more detail)");
 	SETPREF ("bin.str.real", "false", "set the realname in rbin.strings for better disasm (EXPERIMENTAL)");
-	SETBPREF ("bin.str.debase64", "false", "try to debase64 the strings");
 	SETCB ("bin.str.nofp", "false", &cb_nofp, "set to true to reduce the false positive strings (EXPERIMENTAL)");
 	SETCB ("bin.at", "false", &cb_binat, "RBin.cur depends on RCore.offset");
 	SETBPREF ("bin.libs", "false", "try to load libraries after loading main binary");
@@ -3808,7 +3807,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.prefix", "", &cb_binprefix, "prefix all symbols/sections/relocs with a specific string");
 	SETCB ("bin.str.raw", "false", &cb_rawstr, "load strings from raw binaries");
 	SETCB ("bin.strings", "true", &cb_binstrings, "load strings from rbin on startup");
-	SETCB ("bin.debase64", "false", &cb_debase64, "try to debase64 all strings");
+	SETCB ("bin.str.debase64", "false", &cb_debase64, "try to debase64 all strings");
 	SETBPREF ("bin.classes", "true", "load classes from rbin on startup");
 	SETCB ("bin.verbose", "false", &cb_binverbose, "show RBin warnings when loading binaries");
 

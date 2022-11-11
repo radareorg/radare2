@@ -1489,7 +1489,9 @@ static int bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin
 				pj_kn (pj, "hvaddr", hvaddr);
 			}
 			pj_kn (pj, hpaddr_key, hpaddr);
-			pj_ks (pj, "type", type);
+			if (R_STR_ISNOTEMPTY (type)) {
+				pj_ks (pj, "type", type);
+			}
 			pj_end (pj);
 		} else if (IS_MODE_RAD (mode)) {
 			char *name = NULL;
@@ -2821,14 +2823,13 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 	char *str = NULL;
 	RBinSection *section;
 	RBinInfo *info = NULL;
-	RList *sections;
 	RListIter *iter;
 	RTable *table = r_core_table (r, "sections");
 	r_return_val_if_fail (table, false);
 	int i = 0;
 	int fd = -1;
 	bool printHere = false;
-	sections = r_bin_get_sections (r->bin);
+	RList *sections = r_bin_get_sections (r->bin);
 #if LOAD_BSS_MALLOC
 	const bool inDebugger = r_config_get_b (r->config, "cfg.debug");
 #endif
@@ -2900,11 +2901,11 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		if (hashtypes) {
-			r_table_set_columnsf (table, "dXxXxsss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "name");
+			r_table_set_columnsf (table, "dXxXxssss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", hashtypes, "type", "name");
 		} else {
-			r_table_set_columnsf (table, "dXxXxss",
-				"nth", "paddr", "size", "vaddr", "vsize", "perm", "name");
+			r_table_set_columnsf (table, "dXxXxsss",
+				"nth", "paddr", "size", "vaddr", "vsize", "perm", "type", "name");
 		}
 		// r_table_align (table, 0, R_TABLE_ALIGN_CENTER);
 		r_table_align (table, 2, R_TABLE_ALIGN_RIGHT);
@@ -3000,7 +3001,7 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 				}
 			}
 #endif
-			if (section->format) {
+			if (R_STR_ISNOTEMPTY (section->format)) {
 				// This is damn slow if section vsize is HUGE
 				if (section->vsize < 1024 * 1024 * 2) {
 					r_core_cmdf (r, "%s @ 0x%" PFMT64x, section->format, section->vaddr);
@@ -3083,6 +3084,9 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			pj_ks (pj, "name", section->name);
 			pj_kN (pj, "size", section->size);
 			pj_kN (pj, "vsize", section->vsize);
+			if (R_STR_ISNOTEMPTY (section->type)) {
+				pj_ks (pj, "type", section->type);
+			}
 			pj_ks (pj, "perm", perms);
 			if (hashtypes && (int)section->size > 0) {
 				int datalen = section->size;
@@ -3139,16 +3143,20 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 				: section->name;
 			// seems like asm.bits is a bitmask that seems to be always 32,64
 			// const char *asmbits = r_str_sysbits (bits);
+			const char *stype = (section->type)? section->type: "";
+			if (R_STR_ISEMPTY (stype)) {
+				stype = print_segments? "MAP": "----";
+			}
 			if (hashtypes) {
+				r_table_add_rowf (table, "dXxXxssss", i,
+					(ut64)section->paddr, (ut64)section->size,
+					(ut64)addr, (ut64)section->vsize,
+					perms, r_str_get (hashstr), stype, section_name);
+			} else {
 				r_table_add_rowf (table, "dXxXxsss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					perms, r_str_get (hashstr), section_name);
-			} else {
-				r_table_add_rowf (table, "dXxXxss", i,
-					(ut64)section->paddr, (ut64)section->size,
-					(ut64)addr, (ut64)section->vsize,
-					perms, section_name);
+					perms, stype, section_name);
 			}
 			free (hashstr);
 		}

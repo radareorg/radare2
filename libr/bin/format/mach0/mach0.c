@@ -2282,6 +2282,71 @@ static bool is_data_section(RBinSection *sect) {
 	return false;
 }
 
+static const char *macho_section_type_tostring(int flags) {
+	switch (flags & UT8_MAX) {
+	case S_REGULAR:
+		return "REGULAR";
+	case S_ZEROFILL:
+		return "ZEROFILL";
+	case S_CSTRING_LITERALS:
+		return "CSTRINGS";
+	case S_4BYTE_LITERALS:
+		return "4BYTE";
+	case S_8BYTE_LITERALS:
+		return "8BYTE";
+	case S_16BYTE_LITERALS:
+		return "16BYTE";
+	case S_SYMBOL_STUBS:
+		return "SYMBOL_STUBS";
+	case S_LITERAL_POINTERS:
+		return "POINTERS";
+	case S_NON_LAZY_SYMBOL_POINTERS:
+		return "NONLAZY_POINTERS";
+	case S_THREAD_LOCAL_REGULAR:
+		return "TLS_REGULAR";
+	case S_THREAD_LOCAL_ZEROFILL:
+		return "TLS_ZEROFILL";
+	case S_THREAD_LOCAL_VARIABLES:
+		return "TLS_VARIABLES";
+	case S_THREAD_LOCAL_VARIABLE_POINTERS:
+		return "TLS_POINTERS";
+	case S_THREAD_LOCAL_INIT_FUNCTION_POINTERS:
+		return "TLS_INIT_FUNCTIONS";
+	case S_GB_ZEROFILL:
+		return "GB_ZEROFILL";
+	case S_COALESCED:
+		return "COALESCED";
+	case S_DTRACE_DOF:
+		return "DTRACE_DOF";
+	case S_INTERPOSING: // 0x0du,
+		return "INTERPOSING";
+	case S_LAZY_SYMBOL_POINTERS: // 0x0du,
+		return "LAZY_SYMBOL_POINTERS";
+	case S_MOD_INIT_FUNC_POINTERS:
+		return "MOD_INIT_FUNC_POINTERS";
+	case S_MOD_TERM_FUNC_POINTERS:
+		return "MOD_TERM_FUNC_POINTERS";
+	case S_LAZY_DYLIB_SYMBOL_POINTERS:
+		return "LAZY_DYLIB_SYMBOL_POINTERS";
+#if 0
+	S_ATTR_PURE_INSTRUCTIONS   = 0x80000000u,
+	S_ATTR_NO_TOC              = 0x40000000u,
+	S_ATTR_STRIP_STATIC_SYMS   = 0x20000000u,
+	S_ATTR_NO_DEAD_STRIP       = 0x10000000u,
+	S_ATTR_LIVE_SUPPORT        = 0x08000000u,
+	S_ATTR_SELF_MODIFYING_CODE = 0x04000000u,
+	S_ATTR_DEBUG               = 0x02000000u,
+	S_ATTR_SOME_INSTRUCTIONS   = 0x00000400u,
+	S_ATTR_EXT_RELOC           = 0x00000200u,
+	S_ATTR_LOC_RELOC           = 0x00000100u,
+	INDIRECT_SYMBOL_LOCAL = 0x80000000u,
+	INDIRECT_SYMBOL_ABS   = 0x40000000u
+#endif
+	}
+	eprintf ("Unk %x\n", flags);
+	return "";
+}
+
 RList *MACH0_(get_segments)(RBinFile *bf) {
 	struct MACH0_(obj_t) *macho = bf->o->bin_obj;
 
@@ -2329,10 +2394,9 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 			s->vsize = (ut64)macho->sects[i].size;
 			s->is_segment = false;
 			s->size = (macho->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)macho->sects[i].size;
-			// XXX flags
+			s->type = macho_section_type_tostring (macho->sects[i].flags);
 			s->paddr = (ut64)macho->sects[i].offset;
 			int segment_index = 0;
-			//s->perm =prot2perm (macho->segs[j].initprot);
 			for (j = 0; j < macho->nsegs; j++) {
 				if (s->vaddr >= macho->segs[j].vmaddr &&
 						s->vaddr < (macho->segs[j].vmaddr + macho->segs[j].vmsize)) {

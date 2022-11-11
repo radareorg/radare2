@@ -349,11 +349,11 @@ static int init_phdr(ELFOBJ *bin) {
 }
 
 static int init_shdr(ELFOBJ *bin) {
+	r_return_val_if_fail (bin && !bin->shdr, false);
+
 	ut32 shdr_size;
 	ut8 shdr[sizeof (Elf_(Shdr))] = {0};
 	size_t i, j, len;
-
-	r_return_val_if_fail (bin && !bin->shdr, false);
 
 	if (!UT32_MUL (&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
 		return false;
