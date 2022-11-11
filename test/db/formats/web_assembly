@@ -73,12 +73,12 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
-0   0x0000000a   0x11 0x0000000a   0x11 ---- type
-1   0x0000001d   0x2d 0x0000001d   0x2d ---- function
-2   0x0000004d  0x1dd 0x0000004d  0x1dd ---- export
-3   0x0000022d  0x1f7 0x0000022d  0x1f7 ---- code
+nth paddr        size vaddr       vsize perm type name
+------------------------------------------------------
+0   0x0000000a   0x11 0x0000000a   0x11 ---- ---- type
+1   0x0000001d   0x2d 0x0000001d   0x2d ---- ---- function
+2   0x0000004d  0x1dd 0x0000004d  0x1dd ---- ---- export
+3   0x0000022d  0x1f7 0x0000022d  0x1f7 ---- ---- code
 
 EOF
 RUN

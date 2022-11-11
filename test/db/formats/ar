@@ -2,7 +2,7 @@ NAME=ar file sections
 FILE=ar://bins/ar/libgdbr.a//responses.o
 CMDS=iS~:5
 EXPECT=<<EOF
-1   0x00000040  0x147e 0x08000040  0x147e -r-x .text
+1   0x00000040  0x147e 0x08000040  0x147e -r-x PROGBITS .text
 EOF
 RUN
 

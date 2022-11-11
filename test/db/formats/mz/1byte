@@ -8,10 +8,10 @@ EOF
 EXPECT=<<EOF
 [Sections]
 
-nth paddr       size vaddr       vsize perm name
-------------------------------------------------
-0   0x00000200   0x0 0x00000000    0x0 -rwx seg_000
-1   0x00000200   0x1 0x00000000    0x1 -rwx seg_001
+nth paddr       size vaddr       vsize perm type name
+-----------------------------------------------------
+0   0x00000200   0x0 0x00000000    0x0 -rwx ---- seg_000
+1   0x00000200   0x1 0x00000000    0x1 -rwx ---- seg_001
 
             ;-- mz.dos_header:
             ;-- section.seg_000:

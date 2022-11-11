@@ -21,10 +21,10 @@ CMDS=iS
 EXPECT=<<EOF
 [Sections]
 
-nth paddr        size vaddr       vsize perm name
--------------------------------------------------
-0   0x00000044   0xf6 0x00000044   0xf6 ---- LMF_LOAD
-1   0x00000152  0x6c3 0x00000152  0x6c3 ---- LMF_LOAD
+nth paddr        size vaddr       vsize perm type name
+------------------------------------------------------
+0   0x00000044   0xf6 0x00000044   0xf6 ---- ---- LMF_LOAD
+1   0x00000152  0x6c3 0x00000152  0x6c3 ---- ---- LMF_LOAD
 
 EOF
 RUN

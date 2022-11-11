@@ -33,10 +33,10 @@ CMDS=iSS
 EXPECT=<<EOF
 [Segments]
 
-nth paddr         size vaddr        vsize perm name
----------------------------------------------------
-0   0x00000a00  0x54ee 0x00000a00  0x54ee ---x MOVEABLE.2560
-1   0x00007600  0x3ec4 0x00007600  0x3ec4 -rwx MOVEABLE.30208
+nth paddr         size vaddr        vsize perm type name
+--------------------------------------------------------
+0   0x00000a00  0x54ee 0x00000a00  0x54ee ---x MAP  MOVEABLE.2560
+1   0x00007600  0x3ec4 0x00007600  0x3ec4 -rwx MAP  MOVEABLE.30208
 
 EOF
 RUN

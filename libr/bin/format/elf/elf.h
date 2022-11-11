@@ -34,7 +34,6 @@
 #define R_BIN_ELF_XWORD_MAX UT64_MAX
 #endif
 
-
 typedef struct r_bin_elf_section_t {
 	ut64 offset;
 	ut64 rva;
