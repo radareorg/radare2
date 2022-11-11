@@ -143,7 +143,7 @@ fi
 
 if [ "$NEED_CAPSTONE" = 1 ]; then
 	if [ -d shlr/capstone ]; then
-		${MAKE} -C shlr headsup || rm -rf shlr/capstone
+		${MAKE} -C shlr headsup 2> /dev/null || rm -rf shlr/capstone
 	fi
 	if [ ! -d shlr/capstone ]; then
 		./preconfigure
