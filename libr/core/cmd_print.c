@@ -1367,6 +1367,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				char *oid = r_asn1_oid (a);
 				if (oid) {
 					r_cons_printf ("%s\n", oid);
+					free (oid);
 				}
 				r_asn1_free (a);
 			}

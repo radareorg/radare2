@@ -243,6 +243,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		pj_end (pj);
 		printf ("%s\n", pj_string (pj));
 	}
+	pj_free (pj);
 }
 
 static void ranal2_list(RAsmState *as, const char *arch) {
