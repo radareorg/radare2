@@ -70,7 +70,7 @@ R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 	r_list_foreach_safe (dbg->cur_op->access, it, it_tmp, val) {
 		switch (val->type) {
 		case R_ANAL_VAL_REG:
-			if (!(val->access & R_ANAL_ACC_W)) {
+			if (!(val->access & R_PERM_W)) {
 				r_list_delete (dbg->cur_op->access, it);
 			}
 			break;
@@ -81,7 +81,7 @@ R_API bool r_debug_trace_ins_before(RDebug *dbg) {
 				break;
 			}
 
-			if (val->access & R_ANAL_ACC_W) {
+			if (val->access & R_PERM_W) {
 				// resolve memory address
 				ut64 addr = 0;
 				addr += val->delta;
@@ -114,7 +114,7 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 	// Add reg/mem write change
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
 	r_list_foreach (dbg->cur_op->access, it, val) {
-		if (!(val->access & R_ANAL_ACC_W)) {
+		if (!(val->access & R_PERM_W)) {
 			continue;
 		}
 

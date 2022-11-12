@@ -6,8 +6,8 @@
 #define MAXSTRLEN 128
 
 struct opmap {
-	const char *name;
-	char op;
+	const char * const name;
+	const char op;
 };
 
 enum opcode {
@@ -161,9 +161,11 @@ static const struct opmap op_name_map[] = {
 };
 
 static inline bool valid_offset(RAnal *a, ut64 addr) {
-	RIOIsValidOff validoff = a->iob.io? a->iob.is_valid_offset: NULL;
-	if (validoff && !validoff (a->iob.io, addr, 0)) {
-		return false;
+	if (a) {
+		RIOIsValidOff validoff = a->iob.io? a->iob.is_valid_offset: NULL;
+		if (validoff && !validoff (a->iob.io, addr, 0)) {
+			return false;
+		}
 	}
 	return true;
 }
@@ -172,6 +174,7 @@ static inline int handle_int(RAnalOp *op, const char *name, int sz, const ut8 *b
 	if (sz <= buflen && sz <= sizeof (op->val)) {
 		op->size += sz;
 		op->val = r_mem_get_num (buf, sz);
+		free (op->mnemonic);
 		op->mnemonic = r_str_newf ("%s 0x%" PFMT64x, name, op->val);
 		return op->size;
 	}
@@ -195,7 +198,7 @@ static inline int handle_long(RAnal *a, RAnalOp *op, const char *name, int sz, c
 		op->val = 0;
 		if (longlen) {
 			st64 i, out = 0;
-			bool neg = buf[longlen - 1] & 0x80? true: false;
+			bool neg = (buf[longlen - 1] & 0x80) != 0;
 			for (i = 0; i < longlen; i++) {
 				ut8 v = neg? ~buf[i]: buf[i]; // force positive
 				out += (ut64)v << (8 * i);
@@ -249,9 +252,9 @@ static inline char *get_line(const ut8 *buf, int len) {
 }
 
 static inline char *get_two_lines(const ut8 *buf, int len) {
-	char *out = malloc (len);
 	const char * const rep = " \x00";
 	int i, cnt = 0;
+	char *out = malloc (len);
 	if (out) {
 		for (i = 0; i < len; i++) {
 			char c = buf[i];
@@ -276,7 +279,7 @@ static inline int handle_n_lines(RAnalOp *op, const char *name, int n, const ut8
 
 	// TODO: use an alternative func for INT, FLOAT, LONG ops that gets the
 	// value from arg str
-	char *str = n == 2? get_two_lines (buf, buflen): get_line (buf, buflen);
+	char *str = (n == 2)? get_two_lines (buf, buflen): get_line (buf, buflen);
 	if (str) {
 		op->ptr = op->addr + op->nopcode;
 		op->ptrsize = strlen (str) + 1;
@@ -346,32 +349,36 @@ static inline int cnt_str(RAnal *a, RAnalOp *op, const char *name, int sz, const
 	return op->size;
 }
 
-#define trivial_op(x) \
-	op->mnemonic = strdup (x); \
-	return op->size;
-
-static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	r_return_val_if_fail (a && op && buf && len > 0, -1);
+static bool pickle_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
+	r_return_val_if_fail (s && op, false);
+	const ut8 *buf = op->bytes;
+	RAnal *a = NULL; // s->arch;
+	int len = op->size;
 	// all opcodes are 1 byte, some have arbitrarily large strings as args
 	op->nopcode = 1;
 	op->size = 1;
-	op->addr = addr;
 	op->family = R_ANAL_OP_FAMILY_CPU;
 
 	char opcode = *buf;
 	buf++;
 	len--;
+	const char *opstr = NULL;
 	switch (opcode) {
 	case OP_MARK:
-		trivial_op ("mark");
+		opstr = "mark";
+		break;
 	case OP_STOP:
-		trivial_op ("stop");
+		opstr = "stop";
+		break;
 	case OP_POP:
-		trivial_op ("pop");
+		opstr = "pop";
+		break;
 	case OP_POP_MARK:
-		trivial_op ("pop_mark");
+		opstr = "pop_mark";
+		break;
 	case OP_DUP:
-		trivial_op ("dup");
+		opstr = "dup";
+		break;
 	case OP_FLOAT:
 		return handle_n_lines (op, "float", 1, buf, len);
 	case OP_INT:
@@ -386,14 +393,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case OP_BININT2:
 		return handle_int (op, "binint2", 2, buf, len);
 	case OP_NONE:
-		trivial_op ("none");
+		opstr = "none";
+		break;
 	case OP_PERSID:
 		// TODO: validate
 		return handle_n_lines (op, "persid", 1, buf, len);
 	case OP_BINPERSID:
-		trivial_op ("binpersid");
+		opstr = "binpersid";
+		break;
 	case OP_REDUCE:
-		trivial_op ("reduce");
+		opstr = "reduce";
+		break;
 	case OP_STRING:
 		return handle_opstring (op, buf, len);
 	case OP_BINSTRING:
@@ -405,17 +415,22 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case OP_BINUNICODE:
 		return cnt_str (a, op, "binunicode", 4, buf, len);
 	case OP_APPEND:
-		trivial_op ("append");
+		opstr = "append";
+		break;
 	case OP_BUILD:
-		trivial_op ("build");
+		opstr = "build";
+		break;
 	case OP_GLOBAL:
 		return handle_n_lines (op, "global", 2, buf, len);
 	case OP_DICT:
-		trivial_op ("dict");
+		opstr = "dict";
+		break;
 	case OP_EMPTY_DICT:
-		trivial_op ("empty_dict");
+		opstr = "empty_dict";
+		break;
 	case OP_APPENDS:
-		trivial_op ("appends");
+		opstr = "appends";
+		break;
 	case OP_GET:
 		return handle_n_lines (op, "get", 1, buf, len);
 	case OP_BINGET:
@@ -426,11 +441,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case OP_LONG_BINGET:
 		return handle_int (op, "long_binget", 4, buf, len);
 	case OP_LIST:
-		trivial_op ("list");
+		opstr = "list";
+		break;
 	case OP_EMPTY_LIST:
-		trivial_op ("empty_list");
+		opstr = "empty_list";
+		break;
 	case OP_OBJ:
-		trivial_op ("obj");
+		opstr = "obj";
+		break;
 	case OP_PUT:
 		return handle_n_lines (op, "put", 1, buf, len);
 	case OP_BINPUT:
@@ -438,19 +456,24 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case OP_LONG_BINPUT:
 		return handle_int (op, "long_binput", 4, buf, len);
 	case OP_SETITEM:
-		trivial_op ("setitem");
+		opstr = "setitem";
+		break;
 	case OP_TUPLE:
-		trivial_op ("tuple");
+		opstr = "tuple";
+		break;
 	case OP_EMPTY_TUPLE:
-		trivial_op ("empty_tuple");
+		opstr = "empty_tuple";
+		break;
 	case OP_SETITEMS:
-		trivial_op ("setitems");
+		opstr = "setitems";
+		break;
 	case OP_BINFLOAT:
 		return handle_float (op, "binfloat", 8, buf, len);
 	case OP_PROTO:
 		return handle_int (op, "proto", 1, buf, len);
 	case OP_NEWOBJ:
-		trivial_op ("newobj");
+		opstr = "newobj";
+		break;
 	case OP_EXT1:
 		// I don't *think* it's signed
 		return handle_int (op, "ext1", 1, buf, len);
@@ -459,15 +482,20 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case OP_EXT4:
 		return handle_int (op, "ext4", 4, buf, len);
 	case OP_TUPLE1:
-		trivial_op ("tuple1");
+		opstr = "tuple1";
+		break;
 	case OP_TUPLE2:
-		trivial_op ("tuple2");
+		opstr = "tuple2";
+		break;
 	case OP_TUPLE3:
-		trivial_op ("tuple3");
+		opstr = "tuple3";
+		break;
 	case OP_NEWTRUE:
-		trivial_op ("newtrue");
+		opstr = "newtrue";
+		break;
 	case OP_NEWFALSE:
-		trivial_op ("newfalse");
+		opstr = "newfalse";
+		break;
 	case OP_LONG1:
 		return handle_long (a, op, "long1", 1, buf, len);
 	case OP_LONG4:
@@ -483,29 +511,40 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	case OP_BINBYTES8:
 		return cnt_str (a, op, "binbytes8", 8, buf, len);
 	case OP_EMPTY_SET:
-		trivial_op ("empty_set");
+		opstr = "empty_set";
+		break;
 	case OP_ADDITEMS:
-		trivial_op ("additems");
+		opstr = "additems";
+		break;
 	case OP_FROZENSET:
-		trivial_op ("frozenset");
+		opstr = "frozenset";
+		break;
 	case OP_NEWOBJ_EX:
-		trivial_op ("newobj_ex");
+		opstr = "newobj_ex";
+		break;
 	case OP_STACK_GLOBAL:
-		trivial_op ("stack_global");
+		opstr = "stack_global";
+		break;
 	case OP_MEMOIZE:
-		trivial_op ("memoize");
+		opstr = "memoize";
+		break;
 	case OP_FRAME:
 		return handle_int (op, "frame", 8, buf, len);
 	case OP_BYTEARRAY8:
 		return cnt_str (a, op, "bytearray8", 8, buf, len);
 	case OP_NEXT_BUFFER:
-		trivial_op ("next_buffer");
+		opstr = "next_buffer";
+		break;
 	case OP_READONLY_BUFFER:
-		trivial_op ("readonly_buffer");
+		opstr = "readonly_buffer";
+		break;
 	}
-
-	// bad opcode, must be at bad addr
-	op->type = R_ANAL_OP_TYPE_ILL;
+	if (opstr) {
+		op->mnemonic = strdup (opstr);
+	} else {
+		// bad opcode, must be at bad addr
+		op->type = R_ANAL_OP_TYPE_ILL;
+	}
 	return op->size;
 }
 
@@ -695,7 +734,11 @@ static inline int write_op(char *opstr, ut8 *outbuf) {
 	return ret;
 }
 
-static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsz) {
+static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
+	const char *str = op->mnemonic;
+	ut8 _outbuf[64];
+	ut8 *outbuf = _outbuf;
+	int outsz = sizeof (_outbuf);
 	r_return_val_if_fail (str && *str && outsz > 0 && outbuf, -1);
 	int wlen = 0;
 	char *opstr = strdup (str); // get a non-const str to manipulate
@@ -833,7 +876,7 @@ static int pickle_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int o
 	return wlen;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int pickle_info(RArchSession *s, ut32 q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_ALIGN:
 		return 0;
@@ -866,7 +909,7 @@ static inline char *pickle_json_mnemonic(int id) {
 	return NULL;
 }
 
-static char *pickle_mnemonics(RAnal *a, int id, bool json) {
+static char *pickle_mnemonics(RArchSession *s, int id, bool json) {
 	if (json) {
 		return pickle_json_mnemonic (id);
 	}
@@ -882,28 +925,26 @@ static char *pickle_mnemonics(RAnal *a, int id, bool json) {
 		}
 		return r_strbuf_drain (buf);
 	}
-
 	return NULL;
 }
 
-RAnalPlugin r_anal_plugin_pickle = {
+RArchPlugin r_arch_plugin_pickle = {
 	.name = "pickle",
 	.desc = "Python Pickle Machine Disassembler",
 	.esil = false,
 	.license = "BSD",
 	.arch = "pickle",
-	.bits = 8, // not real sure
-	.op = &analop,
-	.opasm = &pickle_opasm,
-	// .preludes = anal_preludes,
-	.archinfo = archinfo,
+	.bits = 8, // not sure
+	.decode = &pickle_decode,
+	.encode = &pickle_encode,
+	.info = pickle_info,
 	.mnemonics = pickle_mnemonics,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_pickle,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_pickle,
 	.version = R2_VERSION
 };
 #endif
