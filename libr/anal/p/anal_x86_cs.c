@@ -2396,7 +2396,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 	val = r_anal_value_new ();
 	if (val) {
 		val->type = R_ANAL_VAL_REG;
-		val->access = R_ANAL_ACC_W;
+		val->access = R_PERM_W;
 		val->reg = cs_reg2reg (reg, handle, X86_REG_RIP);
 		r_list_append (ret, val);
 	}
@@ -2411,7 +2411,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 				val = r_anal_value_new ();
 				if (val) {
 					val->type = R_ANAL_VAL_REG;
-					val->access = R_ANAL_ACC_R;
+					val->access = R_PERM_R;
 					val->reg = cs_reg2reg (reg, handle, regs_read[i]);
 					r_list_append (ret, val);
 				}
@@ -2422,7 +2422,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 				val = r_anal_value_new ();
 				if (val) {
 					val->type = R_ANAL_VAL_REG;
-					val->access = R_ANAL_ACC_W;
+					val->access = R_PERM_W;
 					val->reg = cs_reg2reg (reg, handle, regs_write[i]);
 					r_list_append (ret, val);
 				}
@@ -2436,7 +2436,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 		val = r_anal_value_new ();
 		if (val) {
 			val->type = R_ANAL_VAL_MEM;
-			val->access = R_ANAL_ACC_W;
+			val->access = R_PERM_W;
 			val->reg = cs_reg2reg (reg, handle, sp);
 			val->delta = -INSOP(0).size;
 			val->memref = INSOP(0).size;
@@ -2448,7 +2448,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 		val = r_anal_value_new ();
 		if (val) {
 			val->type = R_ANAL_VAL_MEM;
-			val->access = R_ANAL_ACC_W;
+			val->access = R_PERM_W;
 			val->reg = cs_reg2reg (reg, handle, sp);
 			val->delta = -16;
 			val->memref = 16;
@@ -2460,7 +2460,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 		val = r_anal_value_new ();
 		if (val) {
 			val->type = R_ANAL_VAL_MEM;
-			val->access = R_ANAL_ACC_W;
+			val->access = R_PERM_W;
 			val->reg = cs_reg2reg (reg, handle, sp);
 			val->delta = -32;
 			val->memref = 32;
@@ -2471,7 +2471,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 		val = r_anal_value_new ();
 		if (val) {
 			val->type = R_ANAL_VAL_MEM;
-			val->access = R_ANAL_ACC_W;
+			val->access = R_PERM_W;
 			val->reg = cs_reg2reg (reg, handle, sp);
 			val->delta = -2;
 			val->memref = 2;
@@ -2482,7 +2482,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 		val = r_anal_value_new ();
 		if (val) {
 			val->type = R_ANAL_VAL_MEM;
-			val->access = R_ANAL_ACC_W;
+			val->access = R_PERM_W;
 			val->reg = cs_reg2reg (reg, handle, sp);
 			val->delta = -4;
 			val->memref = 4;
@@ -2493,7 +2493,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 		val = r_anal_value_new ();
 		if (val) {
 			val->type = R_ANAL_VAL_MEM;
-			val->access = R_ANAL_ACC_W;
+			val->access = R_PERM_W;
 			val->reg = cs_reg2reg (reg, handle, sp);
 			val->delta = -8;
 			val->memref = 8;
@@ -2505,7 +2505,7 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 		val = r_anal_value_new ();
 		if (val) {
 			val->type = R_ANAL_VAL_MEM;
-			val->access = R_ANAL_ACC_W;
+			val->access = R_PERM_W;
 			val->reg = cs_reg2reg (reg, handle, sp);
 			val->delta = -regsz;
 			val->memref = regsz;
@@ -2525,17 +2525,17 @@ static void set_access_info(RReg *reg, RAnalOp *op, csh *handle, cs_insn *insn, 
 #if CS_API_MAJOR >= 4
 				switch (INSOP (i).access) {
 				case CS_AC_READ:
-				    val->access = R_ANAL_ACC_R;
+				    val->access = R_PERM_R;
 				    break;
 				case CS_AC_WRITE:
-				    val->access = R_ANAL_ACC_W;
+				    val->access = R_PERM_W;
 				    break;
 				case CS_AC_INVALID:
-				    val->access = R_ANAL_ACC_UNKNOWN;
+				    val->access = 0;
 				    break;
 				}
 #else
-				val->access = R_ANAL_ACC_UNKNOWN;
+				val->access = 0;
 #endif
 				val->mul = INSOP (i).mem.scale;
 				val->delta = INSOP (i).mem.disp;

@@ -107,14 +107,14 @@ typedef struct r_arch_session_t {
 	R_REF_TYPE;
 } RArchSession;
 
-typedef int (*RArchPluginInfoCallback)(RArchSession *cfg, ut32 query);
-typedef char *(*RArchPluginRegistersCallback)(RArchSession *ai);
-
 typedef ut32 RArchDecodeMask;
 typedef ut32 RArchEncodeMask; // syntax ?
 
-typedef bool (*RArchPluginDecodeCallback)(RArchSession *cfg, struct r_anal_op_t *op, RArchDecodeMask mask);
-typedef bool (*RArchPluginEncodeCallback)(RArchSession *cfg, struct r_anal_op_t *op, RArchEncodeMask mask);
+typedef int (*RArchPluginInfoCallback)(RArchSession *cfg, ut32 query);
+typedef char *(*RArchPluginRegistersCallback)(RArchSession *ai);
+typedef char *(*RArchPluginMnemonicsCallback)(RArchSession *s, int id, bool json);
+typedef bool (*RArchPluginDecodeCallback)(RArchSession *s, struct r_anal_op_t *op, RArchDecodeMask mask);
+typedef bool (*RArchPluginEncodeCallback)(RArchSession *s, struct r_anal_op_t *op, RArchEncodeMask mask);
 typedef bool (*RArchPluginInitCallback)(RArchSession *s);
 typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
 
@@ -136,6 +136,7 @@ typedef struct r_arch_plugin_t {
 	RArchPluginRegistersCallback regs;
 	RArchPluginEncodeCallback encode;
 	RArchPluginDecodeCallback decode;
+	RArchPluginMnemonicsCallback mnemonics;
 //TODO: reenable this later
 //	bool (*esil_init)(RAnalEsil *esil);
 //	void (*esil_fini)(RAnalEsil *esil);
@@ -147,11 +148,10 @@ R_API bool r_arch_load_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_use_decoder(RArch *arch, const char *dname);
 R_API bool r_arch_unload_decoder(RArch *arch, const char *dname);
 
-R_API int r_arch_info(RArch *arch, int query);
 
 // deprecate
+R_API int r_arch_info(RArch *arch, int query);
 R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask);
-// deprecate
 R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask);
 //R_API bool r_arch_esil_init(RArch *arch, const char *dname, RAnalEsil *esil);
 //R_API void r_arch_esil_fini(RArch *arch, const char *dname, RAnalEsil *esil);
@@ -159,21 +159,20 @@ R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask);
 R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *ap);
 R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask mask);
 R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask);
+R_API int r_arch_session_info(RArchSession *ai, int q);
 
 // arch.c
 R_API RArch *r_arch_new(void);
 R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name);
-// instance.c
-// R_API RArchSession r_arch_use(RArch *arch, RArchConfig *config, const char *name);
 
-R_API bool r_arch_set_bits(RArch *arch, ut32 bits);
-
-
-R_API bool r_arch_set_endian(RArch *arch, ut32 endian);
-R_API bool r_arch_set_arch(RArch *arch, char *archname);
+// arch plugins management apis
 R_API bool r_arch_add(RArch *arch, RArchPlugin *ap);
 R_API bool r_arch_del(RArch *arch, const char *name);
 R_API void r_arch_free(RArch *arch);
+
+R_API bool r_arch_set_bits(RArch *arch, ut32 bits);
+R_API bool r_arch_set_endian(RArch *arch, ut32 endian);
+R_API bool r_arch_set_arch(RArch *arch, char *archname);
 
 // aconfig.c
 R_API void r_arch_config_use(RArchConfig *config, R_NULLABLE const char *arch);
@@ -182,16 +181,6 @@ R_API bool r_arch_config_set_bits(RArchConfig *c, int bits);
 R_API RArchConfig *r_arch_config_new(void);
 R_API RArchConfig *r_arch_config_clone(RArchConfig *c);
 R_API void r_arch_config_free(RArchConfig *);
-
-
-// the archconfig inside an arch session
-
-// XXX deprecate those names are uglyies and we can reuse R_PERM
-typedef enum {
-	R_ANAL_ACC_UNKNOWN = 0,
-	R_ANAL_ACC_R = (1 << 0),
-	R_ANAL_ACC_W = (1 << 1),
-} RArchValueAccess;
 
 typedef enum {
 	R_ANAL_VAL_REG,
@@ -205,7 +194,7 @@ typedef enum {
 // base + reg + regdelta * mul + delta
 typedef struct r_arch_value_t {
 	RArchValueType type;
-	RArchValueAccess access;
+	int access; // rename to `perm` and use R_PERM_R | _W | _X
 	int absolute; // if true, unsigned cast is used
 	int memref; // is memory reference? which size? 1, 2 ,4, 8
 	ut64 base ; // numeric address
@@ -256,6 +245,7 @@ extern RArchPlugin r_arch_plugin_null;
 extern RArchPlugin r_arch_plugin_i4004;
 extern RArchPlugin r_arch_plugin_amd29k;
 extern RArchPlugin r_arch_plugin_jdh8;
+extern RArchPlugin r_arch_plugin_pickle;
 extern RArchPlugin r_arch_plugin_sh;
 
 #ifdef __cplusplus
