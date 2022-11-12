@@ -12,7 +12,7 @@ pre: libr_arch.$(EXT_SO) libr_arch.$(EXT_AR)
 
 include $(STATIC_ARCH_PLUGINS)
 STATIC_OBJS=$(subst ..,p/..,$(subst arch_,p/arch_,$(STATIC_OBJ)))
-OBJS=arch.o aconfig.o switchop.o archop.o archvalue.o archcond.o session.o
+OBJS=arch.o arch_config.o arch_switch.o arch_op.o arch_value.o arch_cond.o arch_session.o
 OBJS+=${STATIC_OBJS}
 
 include ../rules.mk

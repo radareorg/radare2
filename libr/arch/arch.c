@@ -74,7 +74,7 @@ static ut32 _rate_compat(RArchPlugin *p, RArchConfig *cfg, const char *name) {
 	if (name && !strcmp (p->name, name)) {
 		score += 50;
 	}
-	if (!strcmp (p->arch, cfg->arch)) {
+	if (cfg->arch && !strcmp (p->arch, cfg->arch)) {
 		score += 50;
 	}
 	if (p->bits & bits) {
@@ -97,7 +97,7 @@ static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *na
 			best_score = score;
 			ap = p;
 		}
-		if (score == 100) {
+		if (score >= 100) {
 			break;
 		}
 	}

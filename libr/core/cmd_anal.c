@@ -2175,7 +2175,7 @@ static void val_tojson(PJ *pj, RAnalValue *val) {
 	free (s);
 	pj_ks (pj, "type", r_anal_value_type_tostring (val));
 	if (val->access) {
-		pj_ks (pj, "access", (val->access & R_ANAL_ACC_W)? "rw": "ro");
+		pj_ks (pj, "access", (val->access & R_PERM_W)? "rw": "ro");
 	}
 	if (val->absolute) {
 		pj_kn (pj, "absolute", val->absolute);

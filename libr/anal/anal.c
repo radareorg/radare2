@@ -219,7 +219,11 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 }
 
 R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
-	if (anal->cur && anal->cur->mnemonics) {
+	RArchSession *session = R_UNWRAP3 (anal, arch, session);
+	RArchPluginMnemonicsCallback arch_mnemonics = R_UNWRAP3 (session, plugin, mnemonics);
+	if (arch_mnemonics) {
+		return arch_mnemonics (session, id, json);
+	} else if (anal->cur && anal->cur->mnemonics) {
 		return anal->cur->mnemonics (anal, id, json);
 	}
 	return NULL;

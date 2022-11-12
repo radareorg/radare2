@@ -24,11 +24,33 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Invalid/filtered mark string ops
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=pickle
+wx+285804000000414200436341000a4344
+# b 16
+s 0
+pid 8
+EOF
+EXPECT=<<EOF
+0x00000000                   28  mark
+0x00000001   580400000041420043  binunicode "AB\x00C"
+0x0000000a                   63  
+0x0000000b                   41  
+0x0000000c                   00  
+0x0000000d                   0a  
+0x0000000e                   43  
+0x0000000f                   44  
+EOF
+RUN
+
 NAME=Invalid/filtered string ops
 FILE=malloc://16
 CMDS=<<EOF
 e asm.arch=pickle
 wx+585804000000414200436341000a4344
+# b 16
 s 0
 pid 8
 EOF
@@ -47,7 +69,7 @@ RUN
 NAME=Assemble and dissassemble single byte funcs
 FILE=malloc://8
 CMDS=<<EOF
-e asm.arch=pickle
+-a pickle;-b 8
 wa MARK
 pid 1
 wa STOP
@@ -158,7 +180,7 @@ RUN
 NAME=Assemble and dissassemble all ints
 FILE=malloc://16
 CMDS=<<EOF
-e asm.arch=pickle
+-b 8;e asm.arch=pickle
 wa FRAME 0x1122334455887788
 pid 1
 wa BININT 0x11223344
@@ -215,6 +237,7 @@ RUN
 NAME=Assemble and dissassemble counted strings
 FILE=malloc://32
 CMDS=<<EOF
+-b 8
 e asm.arch=pickle
 wa BINUNICODE8 "AABBCCDD"
 pid 1
@@ -252,6 +275,7 @@ RUN
 NAME=Assemble and dissassemble float
 FILE=malloc://16
 CMDS=<<EOF
+e asm.bits=8
 e asm.arch=pickle
 wa BINFLOAT 4.328
 pid 1
@@ -265,6 +289,7 @@ RUN
 NAME=Assemble and dissassemble newline strs
 FILE=malloc://32
 CMDS=<<EOF
+-b 8
 e asm.arch=pickle
 wa INST "string1 string2"
 pid 1
@@ -397,6 +422,7 @@ RUN
 NAME=Empty strings assemble
 FILE=malloc://16
 CMDS=<<EOF
+e asm.bits=8
 e asm.arch=pickle
 wa+ string ""
 wa+ short_binstring ""
