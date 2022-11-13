@@ -1,8 +1,0 @@
-crz=crazy operation
-end=end
-in=inputs a character, as an ascii code
-jmp=jump
-mov=moves data from src to dst
-nop=do nothing
-out=prints the value, as an ascii character, to the screen
-rotr=rotates the value by one ternary digit

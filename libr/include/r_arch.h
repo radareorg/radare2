@@ -257,7 +257,6 @@ extern RArchPlugin r_arch_plugin_i4004;
 extern RArchPlugin r_arch_plugin_amd29k;
 extern RArchPlugin r_arch_plugin_jdh8;
 extern RArchPlugin r_arch_plugin_sh;
-extern RArchPlugin r_arch_plugin_malbolge;
 
 #ifdef __cplusplus
 }

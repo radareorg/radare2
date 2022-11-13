@@ -86,7 +86,6 @@ r_anal_sources = [
   'p/anal_m68k_gnu.c',
   '../asm/arch/m68k/gnu/m68k-dis.c',
   '../asm/arch/m68k/gnu/m68k-opc.c',
-  'p/anal_malbolge.c',
   'p/anal_mcore.c',
   'p/anal_mips_cs.c',
   '../asm/arch/mips/mipsasm.c',

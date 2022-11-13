@@ -1893,7 +1893,6 @@ extern RAnalPlugin r_anal_plugin_kvx;
 extern RAnalPlugin r_anal_plugin_lh5801;
 extern RAnalPlugin r_anal_plugin_m68k_cs;
 extern RAnalPlugin r_anal_plugin_m680x_cs;
-extern RAnalPlugin r_anal_plugin_malbolge;
 extern RAnalPlugin r_anal_plugin_mcore;
 extern RAnalPlugin r_anal_plugin_mips_cs;
 extern RAnalPlugin r_anal_plugin_mips_gnu;

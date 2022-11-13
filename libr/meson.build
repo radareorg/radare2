@@ -161,7 +161,6 @@ anal_plugins += [
   'm68k_cs',
   'm68k_gnu',
   'm680x_cs',
-  'malbolge',
   'mcore',
   'mips_cs',
   'msp430',
