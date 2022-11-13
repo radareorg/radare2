@@ -212,6 +212,26 @@ typedef struct r_anal_reil_t {
 	char pc[8];
 } RAnalReil;
 
+typedef struct r_anal_esil_plugin_t {
+	char *name;
+	char *desc;
+	char *license;
+	char *arch;
+	char *author;
+	char *version;
+	void *(*init)(RAnalEsil *esil);			// can allocate stuff and return that
+	void (*fini)(RAnalEsil *esil, void *user);	// deallocates allocated things from init
+} RAnalEsilPlugin;
+
+// Some kind of container, pointer to plugin + pointer to user
+typedef struct r_anal_esil_active_plugin_t {
+	RAnalEsilPlugin *plugin;
+	void *user;
+} RAnalEsilActivePlugin;
+
+
+extern RAnalEsilPlugin r_esil_plugin_dummy;
+
 #ifdef __cplusplus
 }
 #endif

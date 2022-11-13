@@ -18,6 +18,7 @@ CFLAGS+=-I$(SHLR)/spp
 LDFLAGS+=-L../../libr/main -lr_main
 LDFLAGS+=-L../../libr/io -lr_io
 LDFLAGS+=-L../../libr/bp -lr_bp
+LDFLAGS+=-L../../libr/esil -lr_esil
 LDFLAGS+=-L../../libr/socket -lr_socket
 LDFLAGS+=-L../../libr/bin -lr_bin
 LDFLAGS+=-L../../libr/arch -lr_arch

@@ -60,7 +60,6 @@ OBJS+=d/i8080.o
 OBJS+=d/java.o
 OBJS+=d/lm32.o
 OBJS+=d/m68k.o
-OBJS+=d/malbolge.o
 OBJS+=d/mips.o
 OBJS+=d/tricore.o
 OBJS+=d/s390.o

@@ -3,9 +3,9 @@ exec_prefix=${prefix}
 libdir=@LIBDIR@
 includedir=${prefix}/include
 
-Name: r_anal
+Name: r_esil
 Description: radare foundation libraries
 Version: @VERSION@
-Requires: r_util r_reg r_syscall r_search r_cons r_flag r_crypto r_arch r_esil
-Libs: -L${libdir} -lr_anal
+Requires: r_util r_reg
+Libs: -L${libdir} -lr_esil
 Cflags: -I${includedir}/libr

@@ -4,15 +4,16 @@ r_esil_sources = [
   'esil_plugin.c',
   'esil_stats.c',
   'esil_trace.c',
+  'p/esil_dummy.c',
 ]
-
-extra_includes = include_directories('../asm/esil/include')
+esil_extra_inc = include_directories('..', '../include')
 
 r_esil = library('r_esil', r_esil_sources,
-  include_directories: [platform_inc, extra_includes],
+  include_directories: [platform_inc, esil_extra_inc, sdb_inc],
   c_args: library_cflags,
   dependencies: [
     r_util_dep,
+    sdb_dep,
     r_reg_dep
   ],
   install: true,
@@ -21,12 +22,13 @@ r_esil = library('r_esil', r_esil_sources,
   soversion: r2_libversion
 )
 
+
 r_esil_dep = declare_dependency(link_with: r_esil,
-                              include_directories: [platform_inc])
+                              include_directories: [platform_inc, esil_extra_inc, sdb_inc])
 
 if get_option('blob')
 r_esil_static = static_library('r_esil_static', r_esil_sources,
-  include_directories: [platform_inc, extra_includes],
+  include_directories: [platform_inc, sdb_inc, esil_extra_inc],
   c_args: library_cflags,
   dependencies: [r_util_static_dep],
   install: true,
@@ -34,7 +36,7 @@ r_esil_static = static_library('r_esil_static', r_esil_sources,
 )
 
 r_esil_static_dep = declare_dependency(link_with: r_esil_static,
-  include_directories: [platform_inc])
+  include_directories: [platform_inc, esil_extra_inc, sdb_inc])
 endif
 
 pkgconfig_mod.generate(r_esil,
