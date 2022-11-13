@@ -170,15 +170,15 @@ static inline bool valid_offset(RAnal *a, ut64 addr) {
 	return true;
 }
 
-static inline int handle_int(RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
+static inline bool handle_int(RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
 	if (sz <= buflen && sz <= sizeof (op->val)) {
 		op->size += sz;
 		op->val = r_mem_get_num (buf, sz);
 		free (op->mnemonic);
 		op->mnemonic = r_str_newf ("%s 0x%" PFMT64x, name, op->val);
-		return op->size;
+		return true;
 	}
-	return -1;
+	return false;
 }
 
 static inline int handle_long(RAnal *a, RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
@@ -274,9 +274,8 @@ static inline char *get_two_lines(const ut8 *buf, int len) {
 	return NULL;
 }
 
-static inline int handle_n_lines(RAnalOp *op, const char *name, int n, const ut8 *buf, int buflen) {
+static inline bool handle_n_lines(RAnalOp *op, const char *name, int n, const ut8 *buf, int buflen) {
 	r_return_val_if_fail (buflen >= 0 && name && n < 3 && n > 0, -1);
-
 	// TODO: use an alternative func for INT, FLOAT, LONG ops that gets the
 	// value from arg str
 	char *str = (n == 2)? get_two_lines (buf, buflen): get_line (buf, buflen);
@@ -286,10 +285,11 @@ static inline int handle_n_lines(RAnalOp *op, const char *name, int n, const ut8
 		op->size += op->ptrsize;
 		op->mnemonic = r_str_newf ("%s \"%s\"", name, str);
 		free (str);
-	} else {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		return true;
 	}
-	return op->size;
+	op->type = R_ANAL_OP_TYPE_ILL;
+	op->size = 1;
+	return false;
 }
 
 static inline int handle_opstring(RAnalOp *op, const ut8 *buf, int buflen) {
@@ -332,25 +332,35 @@ static inline void set_mnemonic_str(RAnalOp *op, const char *n, const ut8 *buf, 
 	}
 }
 
-static inline int cnt_str(RAnal *a, RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
+static bool cnt_str(RAnal *a, RAnalOp *op, const char *name, int sz, const ut8 *buf, int buflen) {
 	if (sz <= buflen && sz <= sizeof (op->val)) {
+		if (buf[3] == 0xff || buf[2] == 0xff) {
+			return false;
+		}
 		op->ptrsize = r_mem_get_num (buf, sz);
+		if (op->ptrsize + 4 >= buflen) {
+			return false;
+		}
 		op->size = op->nopcode + sz + op->ptrsize;
 		op->ptr = op->addr + sz + op->nopcode;
 		if (valid_offset (a, op->addr + op->size - 1)) {
 			buflen -= sz;
 			buf += sz;
 			set_mnemonic_str (op, name, buf, R_MIN (buflen, MAXSTRLEN));
+			return true;
 		} else {
 			op->size = 1;
 			op->type = R_ANAL_OP_TYPE_ILL;
 		}
 	}
-	return op->size;
+	return false;
 }
 
 static bool pickle_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 	r_return_val_if_fail (s && op, false);
+	if (op->size < 1 || !op->bytes) {
+		return false;
+	}
 	const ut8 *buf = op->bytes;
 	RAnal *a = NULL; // s->arch;
 	int len = op->size;
@@ -358,6 +368,7 @@ static bool pickle_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 	op->nopcode = 1;
 	op->size = 1;
 	op->family = R_ANAL_OP_FAMILY_CPU;
+	op->type = R_ANAL_OP_TYPE_MOV;
 
 	char opcode = *buf;
 	buf++;
@@ -541,11 +552,13 @@ static bool pickle_decode(RArchSession *s, RAnalOp *op, RAnalOpMask mask) {
 	}
 	if (opstr) {
 		op->mnemonic = strdup (opstr);
+		op->size = 1;
 	} else {
 		// bad opcode, must be at bad addr
 		op->type = R_ANAL_OP_TYPE_ILL;
+		return false;
 	}
-	return op->size;
+	return true;
 }
 
 static inline bool write_num_sz(ut64 n, int byte_sz, ut8 *outbuf, int outsz) {
@@ -667,10 +680,10 @@ static inline st64 str_valid_arg(const char *str) {
 	return len;
 }
 
-static inline int assemble_cnt_str(char *str, int byte_sz, ut8 *outbuf, int outsz) {
+static int assemble_cnt_str(char *str, int byte_sz, ut8 *outbuf, int outsz) {
 	st64 len = str_valid_arg (str);
 	if (len < 0) {
-		return len;
+		return 0;
 	}
 	// remove quotes from string
 	str[len - 1] = '\0';
@@ -871,11 +884,14 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 		}
 	}
 	if (wlen > 0) {
+		free (op->bytes);
 		op->bytes = malloc (wlen);
 		memcpy (op->bytes, _outbuf, wlen);
+		op->size = wlen;
+	} else {
+		op->size = 1;
 	}
 	free (opstr);
-	op->size = wlen;
 	return true;
 }
 
