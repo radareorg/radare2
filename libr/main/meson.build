@@ -23,6 +23,7 @@ r_main_deps = [
   r_flag_dep,
   r_asm_dep,
   r_core_dep,
+  r_esil_dep,
   r_debug_dep,
   r_bin_dep,
   r_lang_dep,

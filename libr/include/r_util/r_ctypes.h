@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <sdb.h>
+
 typedef struct r_type_enum {
 	char *name;
 	char *val;

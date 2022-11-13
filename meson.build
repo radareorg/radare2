@@ -247,6 +247,7 @@ conf_data.set('plugins_debug', '&r_debug_plugin_' + ', &r_debug_plugin_'.join(de
 conf_data.set('plugins_egg', '&r_egg_plugin_' + ', &r_egg_plugin_'.join(egg_plugins) + ', 0')
 conf_data.set('plugins_lang', '&r_lang_plugin_' + ', &r_lang_plugin_'.join(lang_plugins) + ', 0')
 conf_data.set('plugins_parse', '&r_parse_plugin_' + ', &r_parse_plugin_'.join(parse_plugins) + ', 0')
+conf_data.set('WANT_THREADS', get_option('want_threads')? '1': '0')
 
 config_h = configure_file(
   input: 'libr/config.h.in',
@@ -602,6 +603,7 @@ subdir('libr/config')
 subdir('libr/parse')
 subdir('libr/lang')
 subdir('libr/asm')
+subdir('libr/esil')
 subdir('libr/anal')
 subdir('libr/egg')
 subdir('libr/debug')

@@ -807,23 +807,6 @@ typedef struct r_anal_plugin_t {
 	char *(*mnemonics)(RAnal *a, int id, bool json);
 } RAnalPlugin;
 
-typedef struct r_anal_esil_plugin_t {
-	char *name;
-	char *desc;
-	char *license;
-	char *arch;
-	char *author;
-	char *version;
-	void *(*init)(RAnalEsil *esil);			// can allocate stuff and return that
-	void (*fini)(RAnalEsil *esil, void *user);	// deallocates allocated things from init
-} RAnalEsilPlugin;
-
-// Some kind of container, pointer to plugin + pointer to user
-typedef struct r_anal_esil_active_plugin_t {
-	RAnalEsilPlugin *plugin;
-	void *user;
-} RAnalEsilActivePlugin;
-
 /*----------------------------------------------------------------------------------------------*/
 int * (r_anal_compare) (RAnalFunction , RAnalFunction );
 /*----------------------------------------------------------------------------------------------*/
@@ -1692,7 +1675,6 @@ extern RAnalPlugin r_anal_plugin_kvx;
 extern RAnalPlugin r_anal_plugin_lh5801;
 extern RAnalPlugin r_anal_plugin_m68k_cs;
 extern RAnalPlugin r_anal_plugin_m680x_cs;
-extern RAnalPlugin r_anal_plugin_malbolge;
 extern RAnalPlugin r_anal_plugin_mcore;
 extern RAnalPlugin r_anal_plugin_mips_cs;
 extern RAnalPlugin r_anal_plugin_mips_gnu;
@@ -1741,7 +1723,6 @@ extern RAnalPlugin r_anal_plugin_hppa_gnu;
 extern RAnalPlugin r_anal_plugin_lanai_gnu;
 extern RAnalPlugin r_anal_plugin_m68k_gnu;
 extern RAnalPlugin r_anal_plugin_lm32;
-extern RAnalEsilPlugin r_esil_plugin_dummy;
 
 #ifdef __cplusplus
 }
