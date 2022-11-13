@@ -536,7 +536,14 @@ jobs:
         with:
           fetch-depth: 0 # Download all git history and tags
       - name: Check if is a release
-        run: git describe --exact-match --tags ${{ github.sha }} | awk 'BEGIN{tag="-";r="no"}/^[0-9]+\.[0-9]+/{tag=$0;r="yes"};END{print "{is}={yes}";print "{tag}={${tag}}}"' >> $GITHUB_OUTPUT
+        run: |
+          TAG="`git describe --exact-match --tags ${{ github.sha }}`"
+          if [ -n "$TAG" ]; then
+            echo "{tag}={$TAG}" >> $GITHUB_OUTPUT
+            echo "{is}={yes}" >> $GITHUB_OUTPUT
+          else
+            echo "{is}={no}" >> $GITHUB_OUTPUT
+          fi
         id: release
 
   release:
