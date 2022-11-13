@@ -764,13 +764,14 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		case 'P':
 			if (is_active (R_BIN_REQ_PDB)) {
 				set_action (R_BIN_REQ_PDB_DWNLD);
+				unset_action (R_BIN_REQ_PDB);
 			} else {
 				set_action (R_BIN_REQ_PDB);
 			}
 			break;
 		case 'D':
-			if (argv[opt.ind] && argv[opt.ind+1] && \
-				(!argv[opt.ind+1][0] || !strcmp (argv[opt.ind+1], "all"))) {
+			if (argv[opt.ind] && argv[opt.ind + 1] && \
+				(!argv[opt.ind + 1][0] || !strcmp (argv[opt.ind + 1], "all"))) {
 				r_config_set (core.config, "bin.lang", argv[opt.ind]);
 				r_config_set_b (core.config, "bin.demangle", true);
 				opt.ind += 2;
@@ -1130,13 +1131,12 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		r_core_fini (&core);
 		return 0;
 	}
-#define isradjson (rad==R_MODE_JSON&&actions>0)
+#define isradjson ((rad == R_MODE_JSON) && (actions > 0))
 #define run_action(n,x,y) {\
 	if (action & (x)) {\
 		if (isradjson) { pj_k (pj, n); } \
 		if (!r_core_bin_info (&core, y, pj, rad, va, &filter, chksum)) {\
 			R_LOG_ERROR ("Missing bin header %s", n);\
-			if (isradjson) { pj_b (pj, false); }\
 		};\
 	}\
 }
