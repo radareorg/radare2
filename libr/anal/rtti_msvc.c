@@ -5,7 +5,6 @@
 #define NAME_BUF_SIZE    64
 #define BASE_CLASSES_MAX 32
 
-
 typedef struct rtti_complete_object_locator_t {
 	ut32 signature;
 	ut32 vtable_offset;         // offset of the vtable within class
@@ -39,6 +38,38 @@ typedef struct rtti_type_descriptor_t {
 	ut64 spare;
 	char *name;
 } rtti_type_descriptor;
+
+typedef struct recovery_type_descriptor_t RecoveryTypeDescriptor;
+
+typedef struct recovery_base_descriptor_t {
+	rtti_base_class_descriptor *bcd;
+	RecoveryTypeDescriptor *td;
+} RecoveryBaseDescriptor;
+
+typedef struct recovery_complete_object_locator_t {
+	ut64 addr;
+	bool valid;
+	RVTableInfo *vtable;
+	rtti_complete_object_locator col;
+	RecoveryTypeDescriptor *td;
+	rtti_class_hierarchy_descriptor chd;
+	RList *bcd; // <rtti_base_class_descriptor>
+	RVector base_td; // <RecoveryBaseDescriptor>
+} RecoveryCompleteObjectLocator;
+
+typedef struct rtti_msvc_anal_context_t {
+	RVTableContext *vt_context;
+	RPVector vtables; // <RVTableInfo>
+	RPVector complete_object_locators; // <RecoveryCompleteObjectLocator>
+	HtUP *addr_col; // <ut64, RecoveryCompleteObjectLocator *>
+	RPVector type_descriptors; // <RecoveryTypeDescriptor>
+	HtUP *addr_td; // <ut64, RecoveryTypeDescriptor *>
+	HtUP *col_td_classes; // <ut64, char *> contains already recovered classes for col (or td) addresses
+} RRTTIMSVCAnalContext;
+
+RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col);
+static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col);
+static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td);
 
 static void rtti_type_descriptor_fini(rtti_type_descriptor *td) {
 	free (td->name);
@@ -627,25 +658,6 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 R_API bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, int mode, bool strict) {
 	return rtti_msvc_print_complete_object_locator_recurse (context, addr, mode, strict);
 }
-
-typedef struct recovery_type_descriptor_t RecoveryTypeDescriptor;
-
-typedef struct recovery_base_descriptor_t {
-	rtti_base_class_descriptor *bcd;
-	RecoveryTypeDescriptor *td;
-} RecoveryBaseDescriptor;
-
-typedef struct recovery_complete_object_locator_t {
-	ut64 addr;
-	bool valid;
-	RVTableInfo *vtable;
-	rtti_complete_object_locator col;
-	RecoveryTypeDescriptor *td;
-	rtti_class_hierarchy_descriptor chd;
-	RList *bcd; // <rtti_base_class_descriptor>
-	RVector base_td; // <RecoveryBaseDescriptor>
-} RecoveryCompleteObjectLocator;
-
 RecoveryCompleteObjectLocator *recovery_complete_object_locator_new() {
 	RecoveryCompleteObjectLocator *col = R_NEW0 (RecoveryCompleteObjectLocator);
 	if (!col) {
@@ -692,16 +704,6 @@ static void recovery_type_descriptor_free(RecoveryTypeDescriptor *td) {
 	rtti_type_descriptor_fini (&td->td);
 	free (td);
 }
-
-typedef struct rtti_msvc_anal_context_t {
-	RVTableContext *vt_context;
-	RPVector vtables; // <RVTableInfo>
-	RPVector complete_object_locators; // <RecoveryCompleteObjectLocator>
-	HtUP *addr_col; // <ut64, RecoveryCompleteObjectLocator *>
-	RPVector type_descriptors; // <RecoveryTypeDescriptor>
-	HtUP *addr_td; // <ut64, RecoveryTypeDescriptor *>
-	HtUP *col_td_classes; // <ut64, char *> contains already recovered classes for col (or td) addresses
-} RRTTIMSVCAnalContext;
 
 
 RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col);
