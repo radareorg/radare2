@@ -24,7 +24,7 @@ enum {
 	R_ASM_MOD_SRCREG1 = '1',
 	R_ASM_MOD_SRCREG2 = '2'
 };
-
+// XXX should be using RArchOp !!!
 typedef struct r_asm_op_t {
 	int size; // instruction size (must be deprecated. just use buf.len
 	int bitsize; // instruction size in bits (or 0 if fits in 8bit bytes) // wtf why dupe this field? :D
@@ -60,7 +60,7 @@ typedef struct r_asm_t {
 	RArchConfig *config;
 	ut64 pc;
 	void *user;
-	_RAsmPlugin *cur; // disassemble
+	_RAsmPlugin *cur; // disassemble .. should be RArchPlugin
 	_RAsmPlugin *acur; // assemble
 	RList *plugins;
 	RBinBind binb;
@@ -71,7 +71,6 @@ typedef struct r_asm_t {
 	RSyscall *syscall;
 	RNum *num;
 	int dataalign;
-	bool immdisp; //TODO: Remove this for 5.8.
 	HtPP *flags;
 	bool pseudo;
 } RAsm;
@@ -119,7 +118,7 @@ R_API int r_asm_set_bits(RAsm *a, int bits);
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu);
 R_API bool r_asm_set_big_endian(RAsm *a, bool big_endian);
 
-R_API bool r_asm_set_syntax(RAsm *a, int syntax);
+R_API bool r_asm_set_syntax(RAsm *a, int syntax); // This is in RArchConfig
 R_API int r_asm_syntax_from_string(const char *name);
 R_API int r_asm_set_pc(RAsm *a, ut64 pc);
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
@@ -147,7 +146,7 @@ R_API bool r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value
 R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str);
 R_API char* r_asm_code_get_hex(RAsmCode *acode);
 
-/* op.c */
+/* op.c XXX deprecate we have RArchOp which does the same */
 R_API RAsmOp *r_asm_op_new(void);
 R_API void r_asm_op_init(RAsmOp *op);
 R_API void r_asm_op_free(RAsmOp *op);

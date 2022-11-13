@@ -1,13 +1,13 @@
-/* radare - LGPL - Copyright 2015 - danielps */
+/* radare - LGPL - Copyright 2015-2022 - danielps, pancake */
 
 #include <string.h>
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
-#include <r_anal.h>
+#include <r_arch.h>
 #include <r_util.h>
 
-#include <v810_disas.h>
+#include "v810/v810_disas.h"
 
 enum {
 	V810_FLAG_CY = 1,
@@ -46,7 +46,10 @@ static void clear_flags(RAnalOp *op, int flags) {
 	}
 }
 
-static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
+static bool v810_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
+	ut64 addr = op->addr;
+	int len = op->size;
+	const ut8 *buf = op->bytes;
 	ut8 opcode, reg1, reg2, imm5, cond;
 	ut16 word2 = 0;
 	st32 jumpdisp;
@@ -61,13 +64,13 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
 	}
-	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config);
 	ut16 word1 = r_read_ble16 (buf, be);
 	if (ret == 4) {
 		word2 = r_read_ble16 (buf + 2, be);
 	}
 	op->addr = addr;
-	opcode = OPCODE(word1);
+	opcode = OPCODE (word1);
 	if (opcode >> 3 == 0x4) {
 		opcode &= 0x20;
 	}
@@ -75,19 +78,27 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	switch (opcode) {
 	case V810_MOV:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		r_strbuf_appendf (&op->esil, "r%u,r%u,=", REG1(word1), REG2(word1));
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			r_strbuf_appendf (&op->esil, "r%u,r%u,=", REG1(word1), REG2(word1));
+		}
 		break;
 	case V810_MOV_IMM5:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		r_strbuf_appendf (&op->esil, "%d,r%u,=", (st8)SEXT5(IMM5(word1)), REG2(word1));
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			r_strbuf_appendf (&op->esil, "%d,r%u,=", (st8)SEXT5(IMM5(word1)), REG2(word1));
+		}
 		break;
 	case V810_MOVHI:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		r_strbuf_appendf (&op->esil, "16,%hu,<<,r%u,+,r%u,=", word2, REG1(word1), REG2(word1));
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			r_strbuf_appendf (&op->esil, "16,%hu,<<,r%u,+,r%u,=", word2, REG1(word1), REG2(word1));
+		}
 		break;
 	case V810_MOVEA:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		r_strbuf_appendf (&op->esil, "%hd,r%u,+,r%u,=", word2, REG1(word1), REG2(word1));
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			r_strbuf_appendf (&op->esil, "%hd,r%u,+,r%u,=", word2, REG1(word1), REG2(word1));
+		}
 		break;
 	case V810_LDSR:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -97,16 +108,20 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	case V810_NOT:
 		op->type = R_ANAL_OP_TYPE_NOT;
-		r_strbuf_appendf (&op->esil, "r%u,0xffffffff,^,r%u,=", REG1(word1), REG2(word1));
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			r_strbuf_appendf (&op->esil, "r%u,0xffffffff,^,r%u,=", REG1(word1), REG2(word1));
+		}
 		update_flags (op, V810_FLAG_S | V810_FLAG_Z);
 		clear_flags (op, V810_FLAG_OV);
 		break;
 	case V810_DIV:
 	case V810_DIVU:
 		op->type = R_ANAL_OP_TYPE_DIV;
-		r_strbuf_appendf (&op->esil, "r%u,r%u,/=,r%u,r%u,%%,r30,=",
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			r_strbuf_appendf (&op->esil, "r%u,r%u,/=,r%u,r%u,%%,r30,=",
 						 REG1(word1), REG2(word1),
 						 REG1(word1), REG2(word1));
+		}
 		update_flags (op, V810_FLAG_OV | V810_FLAG_S | V810_FLAG_Z);
 		break;
 	case V810_JMP:
@@ -119,8 +134,10 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	case V810_OR:
 		op->type = R_ANAL_OP_TYPE_OR;
-		r_strbuf_appendf (&op->esil, "r%u,r%u,|=",
-						 REG1(word1), REG2(word1));
+		if (mask & R_ARCH_OP_MASK_ESIL) {
+			r_strbuf_appendf (&op->esil, "r%u,r%u,|=",
+				REG1(word1), REG2(word1));
+		}
 		update_flags (op, V810_FLAG_S | V810_FLAG_Z);
 		clear_flags (op, V810_FLAG_OV);
 		break;
@@ -300,7 +317,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		break;
 	case V810_JAL:
 	case V810_JR:
-		jumpdisp = DISP26(word1, word2);
+		jumpdisp = DISP26 (word1, word2);
 		op->jump = addr + jumpdisp;
 		op->fail = addr + 4;
 
@@ -319,8 +336,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			op->type = R_ANAL_OP_TYPE_NOP;
 			break;
 		}
-
-		jumpdisp = DISP9(word1);
+		jumpdisp = DISP9 (word1);
 		op->jump = addr + jumpdisp;
 		op->fail = addr + 2;
 		op->type = R_ANAL_OP_TYPE_CJMP;
@@ -375,11 +391,11 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		r_strbuf_appendf (&op->esil, ",?{,0x%"PFMT64x",pc,:=,}", op->jump);
 		break;
 	}
-
-	return ret;
+	op->size = ret;
+	return ret > 0;
 }
 
-static bool set_reg_profile(RAnal *anal) {
+static char *v810_regs(RArchSession *s) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r3\n"
@@ -432,25 +448,24 @@ static bool set_reg_profile(RAnal *anal) {
 		"flg	ov  .1 132.29 0\n"
 		"flg	s   .1 132.30 0\n"
 		"flg	z   .1 132.31 0\n";
-
-	return r_reg_set_profile_string (anal->reg, p);
+	return strdup (p);
 }
 
-RAnalPlugin r_anal_plugin_v810 = {
+RArchPlugin r_arch_plugin_v810 = {
 	.name = "v810",
 	.desc = "V810 code analysis plugin",
 	.license = "LGPL3",
 	.arch = "v810",
 	.bits = 32,
-	.op = v810_op,
 	.esil = true,
-	.set_reg_profile = set_reg_profile,
+	.decode = v810_decode,
+	.regs = v810_regs,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_v810,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_v810,
 	.version = R2_VERSION
 };
 #endif
