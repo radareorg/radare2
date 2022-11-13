@@ -6988,11 +6988,10 @@ virtualmouse:
 			core->cons->cpos.x--;
 			core->print->cur--;
 		} else if (core->print->cur_enabled) {
-			core->print->cur--;
+			cur->model->directionCb (core, (int)LEFT);
 			RPanel *cp = __get_cur_panel (core->panels);
 			if (cp) {
 				core->cons->cpos.x--;
-				core->print->cur--;
 				cp->view->curpos--;
 			}
 		} else if (cur->model->directionCb) {
@@ -7006,7 +7005,6 @@ virtualmouse:
 		} else if (cur->model->directionCb) {
 			cur->model->directionCb (core, (int)RIGHT);
 			r_cons_switchbuf (false);
-			core->print->cur++;
 		} else if (core->print->cur_enabled) {
 			core->print->cur++;
 		}
