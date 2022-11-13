@@ -721,17 +721,15 @@ static inline int assemble_n_str(char *str, ut32 cnt, ut8 *outbuf, int outsz, bo
 	return len + 1;
 }
 
-static inline int write_op(char *opstr, ut8 *outbuf) {
-	bool ret = false;
+static inline bool write_op(char *opstr, ut8 *outbuf) {
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (op_name_map); i++) {
 		if (!r_str_casecmp (opstr, op_name_map[i].name)) {
 			*outbuf = (ut8)op_name_map[i].op;
-			ret = true;
-			break;
+			return true;
 		}
 	}
-	return ret;
+	return false;
 }
 
 static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
@@ -743,7 +741,7 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	int wlen = 0;
 	char *opstr = strdup (str); // get a non-const str to manipulate
 	if (!opstr) {
-		return -1;
+		return false;
 	}
 
 	// get arg w/o whitespace
@@ -757,11 +755,11 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	}
 
 	if (write_op (opstr, outbuf)) {
-		char op = (char)*outbuf;
+		char ob = (char)*outbuf;
 		wlen++;
 		outbuf++;
 		outsz--;
-		switch (op) {
+		switch (ob) {
 		// single byte
 		case OP_MARK:
 		case OP_STOP:
@@ -872,8 +870,13 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 			wlen = -1;
 		}
 	}
+	if (wlen > 0) {
+		op->bytes = malloc (wlen);
+		memcpy (op->bytes, _outbuf, wlen);
+	}
 	free (opstr);
-	return wlen;
+	op->size = wlen;
+	return true;
 }
 
 static int pickle_info(RArchSession *s, ut32 q) {
