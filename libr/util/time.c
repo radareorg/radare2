@@ -218,7 +218,7 @@ static int get_time_correction(void) {
 	gettimeofday (&tv, (void*) &tz);
 	return (int) (tz.tz_minuteswest * 60); // in seconds
 #else
-#prama message("warning BEAT time may not correct for this platform")
+#pragma message("warning BEAT time may not correct for this platform")
 	return (60*60); // hardcoded gmt+1
 #endif
 }

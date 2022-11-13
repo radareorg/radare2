@@ -4312,7 +4312,7 @@ cplus_demangle_print_callback (int options,
     dpi.copy_templates = alloca (dpi.num_copy_templates
 				 * sizeof (*dpi.copy_templates));
 #endif
-    dpi.depth = 512;
+    dpi.depth = 1024;
 
     d_print_comp (&dpi, options, dc);
   }

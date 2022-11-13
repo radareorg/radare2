@@ -143,7 +143,6 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 	// fixme: other modes
 	if (item && mode == R_MODE_JSON) {
 		pj_o (pj);
-
 		pj_ks (pj, "type", item->type);
 		pj_ks (pj, "perm", r_str_rwx_i (item->perm));
 		pj_kn (pj, "size", item->size);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2021 - inisider */
+/* radare - LGPL - Copyright 2014-2022 - inisider */
 
 #include <string.h>
 #include <r_util.h>

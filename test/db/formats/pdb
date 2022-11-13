@@ -16,7 +16,7 @@ CMDS=<<EOF
 !!rabin2 -PPj bins/pdb/user32.dll
 EOF
 EXPECT=<<EOF
-{"pdb":{"file":"user32.pdb","download":true},"pdb":false}
+{"pdb":{"file":"user32.pdb","download":true}}
 EOF
 RUN
 

@@ -1287,11 +1287,19 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 
 	pdb.cb_printf = r_cons_printf;
 	if (!init_pdb_parser (&pdb, file)) {
+		if (pj || mode == 'j') {
+			pj_o (pj);
+			pj_end (pj);
+		}
 		return false;
 	}
 	if (!pdb.pdb_parse (&pdb)) {
 		R_LOG_ERROR ("pdb was not parsed");
 		pdb.finish_pdb_parse (&pdb);
+		if (pj || mode == 'j') {
+			pj_o (pj);
+			pj_end (pj);
+		}
 		return false;
 	}
 
@@ -1299,6 +1307,9 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	case R_MODE_SET:
 		mode = 's';
 		r_core_cmd0 (core, ".iP*");
+		if (pj) {
+			pj_end (pj);
+		}
 		return true;
 	case R_MODE_JSON:
 		mode = 'j';
@@ -1311,7 +1322,7 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 		mode = 'd'; // default
 		break;
 	}
-	if (mode == 'j') {
+	if (pj || mode == 'j') {
 		pj_o (pj);
 	}
 
@@ -1321,7 +1332,7 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	r_parse_pdb_types (core->anal, &pdb);
 	pdb.finish_pdb_parse (&pdb);
 
-	if (mode == 'j') {
+	if (pj || mode == 'j') {
 		pj_end (pj);
 	}
 	return true;
