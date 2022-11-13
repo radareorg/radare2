@@ -1623,17 +1623,18 @@ static int cmd_stdin(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (*input) {
 		const char *arg = r_str_trim_head_ro (input + 1);
-		if (R_STR_ISEMPTY (arg)) {
-			arg = "?";
-		}
 		switch (*input) {
 		case '?': // "-?"
 		case 'h': // "-h"
 			r_core_cmd_help (core, help_msg_dash);
 			break;
 		case 'a': // "-a"
-			r_core_cmdf (core, "e asm.arch=%s", arg);
-			r_core_cmdf (core, "e anal.arch=%s", arg);
+			if (R_STR_ISEMPTY (arg)) {
+				r_core_cmdf (core, "e asm.arch");
+			} else {
+				r_core_cmdf (core, "e asm.arch=%s", arg);
+				r_core_cmdf (core, "e anal.arch=%s", arg);
+			}
 			break;
 		case 'i': // "-i"
 			r_core_cmdf (core, ". %s", arg);
@@ -1645,7 +1646,11 @@ static int cmd_stdin(void *data, const char *input) {
 			r_core_cmd0 (core, "b $s");
 			break;
 		case 'b': // "-b"
-			r_core_cmdf (core, "e asm.bits=%s", arg);
+			if (R_STR_ISEMPTY (arg)) {
+				r_core_cmdf (core, "e asm.bits");
+			} else {
+				r_core_cmdf (core, "e asm.bits=%s", arg);
+			}
 			break;
 		case 'c': // "-c"
 			r_core_cmdf (core, "e asm.cpu=%s", arg);
