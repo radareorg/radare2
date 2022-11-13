@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2014-2022 - pancake, condret */
 
-#define R_LOG_ORIGIN "anal.esil"
+#define R_LOG_ORIGIN "esil"
 
 #include <r_anal.h>
 
@@ -238,8 +238,8 @@ static ut8 esil_internal_sizeof_reg(RAnalEsil *esil, const char *r) {
 }
 
 static bool alignCheck(RAnalEsil *esil, ut64 addr) {
-	int dataAlign = r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
-	return !(dataAlign > 0 && addr % dataAlign);
+	const int da = esil->data_align; // r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
+	return !(da > 0 && addr % da);
 }
 
 static bool internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {

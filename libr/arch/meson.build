@@ -10,6 +10,7 @@ r_arch_sources = [
   'p/arch_i4004.c',
   'p/arch_amd29k.c',
   'p/arch_jdh8.c',
+  'p/arch_malbolge.c',
   'p/arch_sh.c',
   'p/sh/gnu/sh-dis.c',
 ]

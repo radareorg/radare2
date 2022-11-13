@@ -438,6 +438,7 @@ include_files = [
   'include/r_agraph.h',
   'include/r_anal.h',
   'include/r_arch.h',
+  'include/r_esil.h',
   'include/r_asm.h',
   'include/r_bin.h',
   'include/r_bin_dwarf.h',
@@ -561,6 +562,11 @@ r_anal_files = [
   'include/r_anal/hint.h',
 ]
 install_headers(r_anal_files, install_dir: join_paths(r2_incdir, 'r_anal'))
+
+r_esil_files = [
+  'include/r_esil.h',
+]
+install_headers(r_esil_files, install_dir: join_paths(r2_incdir, 'r_esil'))
 
 sflib_common_files = [
   join_paths('include/sflib/common/sftypes.h'),
