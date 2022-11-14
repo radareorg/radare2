@@ -42,7 +42,7 @@ R_API void r_project_close(RProject *p) {
 		R_FREE (p->name);
 		R_FREE (p->path);
 		if (p->rvc) {
-			r_vc_close (p->rvc, true);
+			rvc_close (p->rvc, true);
 			p->rvc = NULL;
 		}
 	}
