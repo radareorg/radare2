@@ -13,8 +13,11 @@ r_arch_sources = [
   'p/arch_pickle.c',
   'p/arch_sh.c',
   'p/sh/gnu/sh-dis.c',
+  'p/arch_v810.c',
+  'p/v810/v810_disas.c',
 ]
 
+# must be deleted when anal refactor is done
 arch_inc = include_directories('../asm/arch/include')
 
 r_arch = library('r_arch', r_arch_sources,

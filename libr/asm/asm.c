@@ -760,6 +760,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		if (ret < 1) {
 			ret = 1;
 		}
+		ret = op.size;
 		if (a->ofilter) {
 			parseHeap (a->ofilter, &op.buf_asm);
 		}
