@@ -399,6 +399,18 @@ R_API void r_core_echo(RCore *core, const char *input) {
 	}
 }
 
+static bool is_static_theme(const char *th) {
+	const RConsTheme *theme = r_cons_themes ();
+	while (theme && theme->name) {
+		const char *tn = theme->name;
+		if (!strcmp (th, tn)) {
+			return true;
+		}
+		theme++;
+	}
+	return false;
+}
+
 static int cmd_eval(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -524,16 +536,8 @@ static int cmd_eval(void *data, const char *input) {
 					}
 					theme++;
 				}
-				bool skip = false;
 				r_list_foreach (themes_list, th_iter, th) {
-					skip = false;
-					for (theme = themes; (theme && theme->name); theme++) {
-						if (!strcmp (theme->name, th)) {
-							skip = true;
-							break;
-						}
-					}
-					if (skip) {
+					if (is_static_theme (th)) {
 						continue;
 					}
 					if (input[2] == 'q') {
