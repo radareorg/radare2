@@ -22,7 +22,7 @@ static void help(void) {
 		" commit   [message] [files...] commit the files with the message\n"
 		" checkout [branch]             set the current branch to the given branch\n"
 		" status                        print a status message\n"
-		" reset                         remove all uncommitted changes\n"
+		" reset                         remove all uncommited changes\n"
 		" log                           print all commits\n"
 		" RAVC2_USER=[n]                override cfg.user value to author commit\n"
 	);
@@ -104,7 +104,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		free (rp);
 		return rvc? !r_vc_save (rvc) : 1;
 	}
-	Rvc *rvc = rvc_git_open (rp);
+	Rvc *rvc = rvc_open (rp);
 	if (!rvc) {
 		R_LOG_ERROR ("Invalid action or repository in %s", rp);
 		R_FREE (rp);
@@ -121,7 +121,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			r_list_foreach (branches, iter, branch) {
 				printf ("%s\n", branch);
 			}
-			r_list_free(branches);
+			r_list_free (branches);
 		} else {
 			// TODO: use api not plugin fields: rvc_branch (rvc, opt.argv[opt.ind + 1]);
 			save = rvc->p->branch (rvc, opt.argv[opt.ind + 1]);
@@ -157,26 +157,26 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	} else if (!strcmp (action, "checkout") && opt.argc > 2) {
 		save =  rvc_git_checkout (rvc, opt.argv[opt.ind + 1]);
 	} else if (!strcmp (action, "status")) {
-		char *current_branch = rvc->p->current_branch (rvc);
+		char *current_branch = rvc->p->curbranch (rvc);
 		if (current_branch) {
 			printf ("Branch: %s\n", current_branch);
-			RList *uncommitted = rvc->p->get_uncommitted (rvc);
-			if (r_list_empty (uncommitted)) {
+			RList *uncommited = rvc->p->uncommited (rvc);
+			if (r_list_empty (uncommited)) {
 				printf ("All files are committed\n");
 			} else {
 				printf ("The following files were NOT committed:\n");
 				RListIter *iter;
 				const char *file;
-				r_list_foreach (uncommitted, iter, file) {
+				r_list_foreach (uncommited, iter, file) {
 					printf ("%s\n", file);
 				}
 			}
-			r_list_free (uncommitted);
+			r_list_free (uncommited);
 		}
 	} else if (!strcmp (action, "reset")) {
 		save = rvc->p->reset (rvc);
 	} else if (!strcmp (action, "log")) {
-		save = rvc->p->print_commits (rvc);
+		save = rvc->p->log (rvc);
 	} else {
 		R_LOG_ERROR ("Incorrect command");
 	}
