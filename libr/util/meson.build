@@ -8,6 +8,8 @@ r_util_sources = [
   'alloc.c',
   'rxml.c',
   'rvc.c',
+  'rvc_git.c',
+  'rvc_rvc.c',
   'charset.c',
   'donut.c',
   'token.c',
