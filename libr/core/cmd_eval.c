@@ -406,6 +406,7 @@ static bool is_static_theme(const char *th) {
 		if (!strcmp (th, tn)) {
 			return true;
 		}
+		theme++;
 	}
 	return false;
 }
