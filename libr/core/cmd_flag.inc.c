@@ -1164,10 +1164,14 @@ rep:
 			p = strchr (arg, ' ');
 			if (p) {
 				*p++ = 0;
-				item = r_flag_get_i (core->flags,
-					r_num_math (core->num, arg));
-				if (item)
-					item->size = r_num_math (core->num, p);
+				ut64 narg = r_num_math (core->num, arg);
+				item = r_flag_get_i (core->flags, narg);
+				ut64 nsize = r_num_math (core->num, p);
+				if (item) {
+					item->size = nsize;
+				} else {
+					r_flag_set (core->flags, arg, core->offset, nsize);
+				}
 			} else {
 				if (*arg) {
 					item = r_flag_get_i (core->flags, core->offset);
