@@ -5176,9 +5176,19 @@ static int cmd_debug(void *data, const char *input) {
 		return 0;
 	}
 	if (!strncmp (input, "ate", 3)) { // "date" -- same as pt.
-		char *nostr = r_time_stamp_to_str (time (0));
-		r_cons_println (nostr);
-		free (nostr);
+		if (strstr (input, "-h") || strstr (input, "?")) {
+			eprintf ("Usage: date [-b] # use -b for beat time\n");
+			return 0;
+		}
+		bool use_beat = strstr (input, "-b");
+		if (use_beat) {
+			int beats = r_time_beats (r_time_now (), NULL);
+			r_cons_printf ("@%03d\n", beats);
+		} else {
+			char *nostr = r_time_stamp_to_str (time (0));
+			r_cons_println (nostr);
+			free (nostr);
+		}
 		return 0;
 	}
 

@@ -207,3 +207,34 @@ R_API char *r_ctime_r(const time_t *timer, char *buf) {
 	return ctime_r (timer, buf);
 #endif
 }
+
+static int get_time_correction(void) {
+#if __UNIX__
+	struct my_timezone {
+		int tz_minuteswest;     /* minutes west of Greenwich */
+		int tz_dsttime;         /* type of DST correction */
+	} tz;
+	struct timeval tv;
+	gettimeofday (&tv, (void*) &tz);
+	return (int) (tz.tz_minuteswest * 60); // in seconds
+#else
+#warning BEAT time may not correct for this platform
+	return (60*60); // hardcoded gmt+1
+#endif
+}
+
+R_API int r_time_beats(ut64 ts, int *sub) {
+	if (sub) {
+		// R_WARN_LOG ("sub-beats not implemented yet");
+	}
+	ut64 seconds = ts / (1000 * 1000);
+	int time_correction = get_time_correction ();
+	seconds -= time_correction;
+	seconds %= 86400;
+	ut64 beats = ((seconds / 86.4) * 100) / 100;
+	if (beats >= 1000) {
+		return R_ABS (beats - 1000);
+	}
+	return beats;
+}
+

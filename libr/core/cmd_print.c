@@ -517,6 +517,7 @@ static const char *help_msg_pt[] = {
 	"Usage: pt", "[dn]", "print timestamps",
 	"pt.", "", "print current time",
 	"pt", "", "print UNIX time (32 bit `cfg.bigendian`) Since January 1, 1970",
+	"ptb", "", "print BEAT time (Swatch Internet Time)",
 	"ptd", "", "print DOS time (32 bit `cfg.bigendian`) Since January 1, 1980",
 	"pth", "", "print HFS time (32 bit `cfg.bigendian`) Since January 1, 1904",
 	"ptn", "", "print NTFS time (64 bit `cfg.bigendian`) Since January 1, 1601",
@@ -8014,6 +8015,19 @@ static int cmd_print(void *data, const char *input) {
 			}
 			for (l = 0; l < len; l += sizeof (ut32)) {
 				r_print_date_hfs (core->print, block + l, sizeof (ut32));
+			}
+			break;
+		case 'b': // "ptb"
+			if (len < sizeof (ut32)) {
+				R_LOG_WARN ("Change the block size: b %d", (int) sizeof (ut32));
+			}
+			if (len % sizeof (ut32)) {
+				len = len - (len % sizeof (ut32));
+			}
+			for (l = 0; l < len; l += sizeof (ut64)) {
+				ut64 ts = r_read_le64 (block + l);
+				int beats = r_time_beats (ts, NULL);
+				r_cons_printf ("@%03d\n", beats);
 			}
 			break;
 		case 'd': // "ptd"
