@@ -313,19 +313,18 @@ R_API bool r_asm_is_valid(RAsm *a, const char *name) {
 }
 
 R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
+	r_return_val_if_fail (a && name, false);
 	RAsmPlugin *h;
 	RListIter *iter;
-	if (a) {
-		if (R_STR_ISNOTEMPTY (name)) {
-			r_list_foreach (a->plugins, iter, h) {
-				if (h->assemble && !strcmp (h->name, name)) {
-					a->acur = h;
-					return true;
-				}
+	if (R_STR_ISNOTEMPTY (name)) {
+		r_list_foreach (a->plugins, iter, h) {
+			if (h->assemble && !strcmp (h->name, name)) {
+				a->acur = h;
+				return true;
 			}
 		}
-		a->acur = NULL;
 	}
+	a->acur = NULL;
 	return false;
 }
 
@@ -694,7 +693,10 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	r_str_case (b, false); // to-lower
 	r_asm_op_init (op);
 	if (a->cur) {
-		Ase ase = R_UNWRAP3 (a, cur, assemble);
+		Ase ase = R_UNWRAP3 (a, acur, assemble);
+		if (!ase) {
+			ase = R_UNWRAP3 (a, cur, assemble);
+		}
 		if (!ase) {
 			/* find callback if no assembler support in current plugin */
 			ase = find_assembler (a, ".ks");
@@ -714,8 +716,6 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 				r_strbuf_setbin (&op->buf, buf, R_MIN (ret, sizeof (buf)));
 				a->analb.opfini (&aop);
 			}
-		} else {
-			ase = a->cur->assemble;
 		}
 		if (ase) {
 			ret = ase (a, op, b);
