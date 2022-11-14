@@ -114,7 +114,9 @@ typedef struct r_anal_esil_t {
 	Sdb *stats;
 	RAnalEsilTrace *trace;
 	RAnalEsilCallbacks cb;
+#if 0
 	struct r_anal_reil_t *Reil;
+#endif
 	char *pending; // pending op computed as a macro
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
@@ -132,6 +134,18 @@ typedef struct r_anal_esil_t {
 	bool in_cmd_step;
 } RAnalEsil;
 
+enum {
+	R_ANAL_ESIL_PARM_INVALID = 0,
+	R_ANAL_ESIL_PARM_REG,
+	R_ANAL_ESIL_PARM_NUM,
+};
+
+typedef struct r_anal_ref_char_t {
+	char *str;
+	char *cols;
+} RAnalRefStr;
+
+#if 0
 
 /* reil -- must be deprecated */
 /* Constructs to convert from ESIL to REIL */
@@ -182,17 +196,6 @@ typedef struct r_anal_reil_arg {
 	char name[32];         // Name of the argument
 } RAnalReilArg;
 
-enum {
-	R_ANAL_ESIL_PARM_INVALID = 0,
-	R_ANAL_ESIL_PARM_REG,
-	R_ANAL_ESIL_PARM_NUM,
-};
-
-typedef struct r_anal_ref_char_t {
-	char *str;
-	char *cols;
-} RAnalRefStr;
-
 // Instruction arg1, arg2, arg3
 typedef struct r_anal_reil_inst_t {
 	RAnalReilOpcode opcode;
@@ -211,6 +214,7 @@ typedef struct r_anal_reil_t {
 	char if_buf[64];
 	char pc[8];
 } RAnalReil;
+#endif
 
 typedef struct r_anal_esil_plugin_t {
 	char *name;
