@@ -57,10 +57,12 @@ static bool v810_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 
 	memset (&cmd, 0, sizeof (cmd));
 
-	int ret = op->size = v810_decode_command (buf, len, &cmd);
+	int ret = v810_decode_command (buf, len, &cmd);
 	if (ret <= 0) {
+		op->size = 1;
 		return ret;
 	}
+	op->size = ret;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		op->mnemonic = r_str_newf ("%s %s", cmd.instr, cmd.operands);
 	}
@@ -392,7 +394,7 @@ static bool v810_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	}
 	op->size = ret;
-	return ret > 0;
+	return true;
 }
 
 static char *v810_regs(RArchSession *s) {
