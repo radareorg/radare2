@@ -21,7 +21,7 @@ static Rvc *open_git(const char *path) {
 	}
 	vc->db = NULL;
 	if (!r_vc_use (vc, RVC_TYPE_GIT)) {
-		r_vc_free (vc);
+		rvc_free (vc);
 		return NULL;
 	}
 	return vc;
@@ -90,7 +90,7 @@ static bool add_git(Rvc *vc, const RList *files) {
 	return ret;
 }
 
-static bool _git_commit(Rvc *vc, const char *_message, const char *author, const RList *files) {
+static bool commit_git(Rvc *vc, const char *_message, const char *author, const RList *files) {
 	char *message = _message? strdup (_message): NULL;
 	if (!add_git (vc, files)) {
 		return false;
@@ -289,7 +289,7 @@ R_API bool save_git(Rvc *vc) {
 const RvcPlugin r_vc_plugin_git = {
 	.name = "git",
 	.type = RVC_TYPE_GIT,
-	.commit = _git_commit,
+	.commit = commit_git,
 	.branch = _git_branch,
 	.checkout = checkout_git,
 	.branches = branches_git,

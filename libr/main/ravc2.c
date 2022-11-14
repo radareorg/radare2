@@ -95,16 +95,16 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		if (opt.argc <= 2) {
 			R_LOG_ERROR ("Usage: ravc2 <git | rvc>");
 		} else if (!strcmp (opt.argv[opt.ind + 1], "git")) {
-			rvc = r_vc_git_init (rp);
+			rvc = rvc_open (rp, RVC_TYPE_GIT);
 		} else if (!strcmp (opt.argv[opt.ind + 1], "rvc")) {
-			rvc = r_vc_new (rp);
+			rvc = rvc_open (rp, RVC_TYPE_RVC);
 		} else {
 			R_LOG_ERROR ("unknown option %s", opt.argv[opt.ind + 1]);
 		}
 		free (rp);
-		return rvc? !r_vc_save (rvc) : 1;
+		return rvc? !rvc_save (rvc) : 1;
 	}
-	Rvc *rvc = rvc_open (rp);
+	Rvc *rvc = rvc_open (rp, RVC_TYPE_ANY);
 	if (!rvc) {
 		R_LOG_ERROR ("Invalid action or repository in %s", rp);
 		R_FREE (rp);
@@ -115,7 +115,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	// commands that need Rvc *
 	if (!strcmp (action, "branch")) {
 		if (opt.argc <= 2) {
-			RList *branches = rvc_git_get_branches (rvc);
+			RList *branches = rvc_branches (rvc);
 			RListIter *iter;
 			char *branch;
 			r_list_foreach (branches, iter, branch) {
@@ -155,7 +155,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			free (message);
 		}
 	} else if (!strcmp (action, "checkout") && opt.argc > 2) {
-		save =  rvc_git_checkout (rvc, opt.argv[opt.ind + 1]);
+		save =  rvc_checkout (rvc, opt.argv[opt.ind + 1]);
 	} else if (!strcmp (action, "status")) {
 		char *current_branch = rvc->p->curbranch (rvc);
 		if (current_branch) {
@@ -181,6 +181,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		R_LOG_ERROR ("Incorrect command");
 	}
 ret:
-	rvc_git_close (rvc, save);
+	rvc_close (rvc, save);
+	// rvc_git_close (rvc, save);
 	return !save;
 }

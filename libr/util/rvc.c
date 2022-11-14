@@ -9,7 +9,7 @@ extern RvcPlugin r_vc_plugin_git;
 extern RvcPlugin r_vc_plugin_rvc;
 
 
-R_API void r_vc_free(Rvc *vc) {
+R_API void rvc_free(Rvc *vc) {
 	if (vc) {
 		// sdb_sync ()
 		sdb_close (vc->db);
@@ -36,7 +36,7 @@ R_API int rvc_repo_type(const char *path) {
 	return -1;
 }
 
-R_API Rvc *rvc_open(const char *path, int type) {
+R_API Rvc *rvc_open(const char *path, RvcType type) {
 	r_return_val_if_fail (path, NULL);
 	int repotype = (type == -1)? rvc_repo_type (path): type;
 	switch (repotype) {
@@ -48,6 +48,7 @@ R_API Rvc *rvc_open(const char *path, int type) {
 	return NULL;
 }
 
+#if 0
 // XXX this is conceptually wrong
 R_API Rvc *rvc_init(const char *path, RvcType type) {
 	r_return_val_if_fail (path, NULL);
@@ -77,6 +78,7 @@ R_API Rvc *rvc_init(const char *path, RvcType type) {
 #endif
 	return NULL;
 }
+#endif
 
 R_API void rvc_close(Rvc *vc, bool save) {
 	r_return_if_fail (vc);
@@ -108,4 +110,10 @@ R_API bool rvc_save(Rvc *vc) {
 	r_return_val_if_fail (vc, NULL);
 	RvcPluginSave s = R_UNWRAP3 (vc, p, save);
 	return s? s (vc): false;
+}
+
+R_API bool rvc_commit(Rvc *vc, const char *message, const char *author, const RList *files) {
+	r_return_val_if_fail (vc, false);
+	RvcPluginCommit ci = R_UNWRAP3 (vc, p, commit);
+	return ci? ci (vc, message, author, files): false;
 }

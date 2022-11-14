@@ -1086,7 +1086,7 @@ R_API bool clone_rvc(const Rvc *rvc, const char *dst) {
 					} else {
 						R_LOG_ERROR ("Failed to reset");
 					}
-					r_vc_free (dst_repo);
+					rvc_free (dst_repo);
 				}
 			} else {
 				R_LOG_ERROR ("Failed to copy files");
@@ -1103,7 +1103,7 @@ static void close_rvc(Rvc *vc, bool save) {
 	if (save) {
 		save_rvc (vc);
 	}
-	r_vc_free (vc);
+	rvc_free (vc);
 }
 
 static bool save_rvc(Rvc *vc) {

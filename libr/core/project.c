@@ -320,7 +320,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	char *prj_path = r_file_dirname(rcpath);
 	if (prj_path) {
 		//check if the project uses git
-		Rvc *vc = rvc_git_open (prj_path);
+		Rvc *vc = rvc_open (prj_path, RVC_TYPE_GIT);
 		core->prj->rvc = vc;
 		free (prj_path);
 	} else {
@@ -687,7 +687,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	if (core->prj->rvc || r_config_get_b (core->config, "prj.vc")) {
 		// assume that if the repo is not loaded, the repo doesn't exist
 		if (!core->prj->rvc) {
-			core->prj->rvc = rvc_init (prj_dir, RVC_TYPE_GIT);
+			core->prj->rvc = rvc_open (prj_dir, RVC_TYPE_GIT);
 			if (!core->prj->rvc) {
 				R_LOG_WARN ("Cannot initialize git repositorty");
 				free (prj_dir);
@@ -700,13 +700,13 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 			if (r_list_append (paths, prj_dir)) {
 				const char *author = r_config_get (core->config, "cfg.user");
 				const char *message = r_config_get (core->config, "prj.vc.message");
-				if (!rvc_git_commit (core->prj->rvc, message, author, paths)) {
+				if (!rvc_commit (core->prj->rvc, message, author, paths)) {
 					r_list_free (paths);
 					free (prj_dir);
 					free (script_path);
 					return false;
 				}
-				r_vc_save (core->prj->rvc);
+				rvc_save (core->prj->rvc);
 			} else {
 				r_list_free (paths);
 				free (prj_dir);
