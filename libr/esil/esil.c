@@ -3443,6 +3443,7 @@ static bool runword(RAnalEsil *esil, const char *word) {
 		return false;
 	}
 
+#if 0
 	// Don't push anything onto stack when processing if statements
 	if (!strcmp (word, "?{") && esil->Reil) {
 		esil->Reil->skip = esil->Reil->skip? 0: 1;
@@ -3464,6 +3465,7 @@ static bool runword(RAnalEsil *esil, const char *word) {
 		}
 		return true;
 	}
+#endif
 
 	//eprintf ("WORD (%d) (%s)\n", esil->skip, word);
 	if (!strcmp (word, "}{")) {
