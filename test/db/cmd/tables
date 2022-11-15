@@ -1,5 +1,6 @@
 NAME=tables sum
 FILE=bins/elf/analysis/elf-virtualtable
+ARGS=-e bin.types=true
 CMDS=<<EOF
 f, size/sum
 EOF
@@ -75,6 +76,7 @@ RUN
 
 NAME=tables csv
 FILE=bins/elf/analysis/elf-virtualtable
+ARGS=-e bin.types=true
 CMDS=<<EOF
 f, size/ne/0,addr/ne/0x00000000,/head/10,:csv~:..20
 f, space/eq/relocs,addr/cols/name,/head/3,:json~{}

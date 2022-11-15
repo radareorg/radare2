@@ -200,6 +200,7 @@ RUN
 
 NAME=pxr1248
 FILE=bins/elf/crackme
+ARGS=-e bin.types=true
 CMDS=<<EOF
 pxr4 32@0x00600ae0
 pxr8 32@0x00600ae0

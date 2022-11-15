@@ -95,6 +95,7 @@ RUN
 
 NAME=2: fs *
 FILE=bins/elf/analysis/main
+ARGS=-e bin.types=true
 CMDS=<<EOF
 fs *
 fs~?*

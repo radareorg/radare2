@@ -1,6 +1,6 @@
 NAME=PE JSON test
 FILE=bins/pe/ch22.exe
-ARGS=-nn
+ARGS=-nn -e bin.types=true
 CMDS=<<EOF
 e asm.bits=32
 s 0x80
@@ -84,7 +84,7 @@ RUN
 
 NAME=Complex request with specific array element and specific field
 FILE=bins/pe/ch22.exe
-ARGS=-nn
+ARGS=-nn -e bin.types=true
 CMDS=<<EOF
 e asm.bits=32
 s 0x80
@@ -470,7 +470,7 @@ RUN
 
 NAME=-nn filename with @
 FILE=bins/elf/analysis/tiny1@invalid_addr
-ARGS=-nn
+ARGS=-nn -e bin.types=true
 CMDS=<<EOF
 e io.va=0
 pf.elf_header @ elf_header
