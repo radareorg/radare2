@@ -86,7 +86,8 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
-		return op->size = 0;
+		op->size = 4;
+		return false;
 	}
 	int i;
 	typedef struct {
@@ -666,8 +667,7 @@ static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	default: break;
 	}
-
-	return op->size;
+	return true;
 }
 
 
