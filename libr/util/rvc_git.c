@@ -3,11 +3,20 @@
 #define R_LOG_ORIGIN "vc.git"
 #include <rvc.h>
 
+
 static Rvc *open_git(const char *path) {
 	char *git_path = r_file_new (path, ".git", NULL);
 	if (!git_path || !r_file_is_directory (git_path)) {
-		free (git_path);
-		return NULL;
+		char *escpath = r_str_escape (path);
+		int ret = r_sys_cmdf ("git init \"%s\"", escpath);
+		free (escpath);
+		if (ret != 0) {
+			R_LOG_WARN ("git init failed");
+		}
+		if (!r_file_is_directory (git_path)) {
+			free (git_path);
+			return NULL;
+		}
 	}
 	free (git_path);
 	Rvc *vc = R_NEW (Rvc);
@@ -20,21 +29,12 @@ static Rvc *open_git(const char *path) {
 		return NULL;
 	}
 	vc->db = NULL;
-	if (!r_vc_use (vc, RVC_TYPE_GIT)) {
+	if (!rvc_use (vc, RVC_TYPE_GIT)) {
 		rvc_free (vc);
 		return NULL;
 	}
 	return vc;
 }
-#if 0 // UNUSED
-
-static Rvc *open_init_git(const char *path) {
-	char *escpath = r_str_escape (path);
-	int ret = r_sys_cmdf ("git init \"%s\"", escpath);
-	free (escpath);
-	return !ret? git_open (path) : NULL;
-}
-#endif
 
 static bool _git_branch(Rvc *vc, const char *name) {
 	char *escpath = r_str_escape (vc->path);
@@ -300,5 +300,6 @@ const RvcPlugin r_vc_plugin_git = {
 	.clone = clone_git,
 	.close = close_git,
 	.save = save_git,
+	// .init = init_git,
 	.open = open_git,
 };

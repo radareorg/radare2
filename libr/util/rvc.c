@@ -18,7 +18,7 @@ R_API void rvc_free(Rvc *vc) {
 	}
 }
 
-R_API bool r_vc_use(Rvc *vc, RvcType type) {
+R_API bool rvc_use(Rvc *vc, RvcType type) {
 	switch (type) {
 	case RVC_TYPE_GIT:
 		vc->p = &r_vc_plugin_git;
@@ -38,14 +38,19 @@ R_API int rvc_repo_type(const char *path) {
 
 R_API Rvc *rvc_open(const char *path, RvcType type) {
 	r_return_val_if_fail (path, NULL);
+	Rvc *rvc = NULL;
 	int repotype = (type == -1)? rvc_repo_type (path): type;
 	switch (repotype) {
 	case RVC_TYPE_GIT:
-		return r_vc_plugin_git.open (path);
+		rvc = r_vc_plugin_git.open (path);
+		rvc->p = &r_vc_plugin_git;
+		break;
 	case RVC_TYPE_RVC:
-		return r_vc_plugin_rvc.open (path);
+		rvc = r_vc_plugin_rvc.open (path);
+		rvc->p = &r_vc_plugin_rvc;
+		break;
 	}
-	return NULL;
+	return rvc;
 }
 
 #if 0

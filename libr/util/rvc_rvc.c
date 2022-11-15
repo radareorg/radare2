@@ -52,7 +52,7 @@ static bool branch_exists(Rvc *rvc, const char *bname) {
 	return ret;
 }
 
-R_API Rvc *r_vc_new(const char *path) {
+static Rvc *rvc_rvc_new(const char *path) {
 	char *commitp, *blobsp;
 #if 0
 	if (repo_exists (path)) {
@@ -110,7 +110,7 @@ R_API Rvc *r_vc_new(const char *path) {
 		free (rvc);
 		return NULL;
 	}
-	if (!r_vc_use (rvc, RVC_TYPE_RVC)) {
+	if (!rvc_use (rvc, RVC_TYPE_RVC)) {
 		sdb_unlink (rvc->db);
 		sdb_free (rvc->db);
 		free (rvc->path);
@@ -1032,8 +1032,11 @@ static Rvc *open_rvc(const char *rp) {
 			repo->db = vcdb_open (rp) ;
 			switch (type) {
 			case RVC_TYPE_RVC:
+				sdb_free (repo->db);
+				free (repo);
+				return rvc_rvc_new (rp);
 			case RVC_TYPE_GIT:
-				if (r_vc_use (repo, type)) {
+				if (rvc_use (repo, type)) {
 					return repo;
 				}
 				break;
@@ -1044,7 +1047,7 @@ static Rvc *open_rvc(const char *rp) {
 					if (r_file_exists (rvcdir)) {
 						free (rvcdir);
 						type = RVC_TYPE_RVC;
-						if (r_vc_use (repo, type)) {
+						if (rvc_use (repo, type)) {
 							return repo;
 						}
 					}
@@ -1053,7 +1056,7 @@ static Rvc *open_rvc(const char *rp) {
 					if (r_file_exists (gitdir)) {
 						free (gitdir);
 						type = RVC_TYPE_GIT;
-						if (r_vc_use (repo, type)) {
+						if (rvc_use (repo, type)) {
 							return repo;
 						}
 					}
