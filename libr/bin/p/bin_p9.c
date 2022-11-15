@@ -20,30 +20,57 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 		return false;
 	}
 
-	struct plan9_exec *header = R_NEW0 (struct plan9_exec);
-	if (r_buf_fread_at (bf->buf, 0, (ut8 *)header, "IIIIIIII", 1) != sizeof (*header)) {
+	RBinPlan9Obj *o = R_NEW0 (RBinPlan9Obj);
+
+	if (r_buf_fread_at (bf->buf, 0, (ut8 *)&o->header, "IIIIIIII", 1) != sizeof (o->header)) {
 		return false;
 	}
 
+	o->header_size = sizeof (struct plan9_exec);
+
+	// for extended headers (64-bit binaries)
+	if (o->header.magic & HDR_MAGIC) {
+		o->entry = r_buf_read_be64_at (bf->buf, o->header_size);
+		if (o->entry == UT64_MAX) {
+			return false;
+		}
+		o->header_size += 8;
+	} else {
+		o->entry = o->header.entry;
+	}
+
+	// kernels require different maps (see uses for details)
+	o->is_kernel = o->entry & KERNEL_MASK;
+
 	if (bin_obj) {
-		*bin_obj = header;
+		*bin_obj = o;
 	}
 
 	return true;
 }
 
 static void destroy(RBinFile *bf) {
-	// r_buf_free (bf->o->bin_obj);
+	free (bf->o->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
-	struct plan9_exec *header = (struct plan9_exec *)bf->o->bin_obj;
+	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->o->bin_obj;
 
-	switch (header->magic) {
+	switch (o->header.magic) {
 	case MAGIC_ARM64:
+		// if this is an arm64 kernel: check mask and return known
+		// base address. see libmach for definitions.
+		if (o->is_kernel) {
+			return 0xffffffff80000000ULL;
+		}
 		return 0x10000ULL;
-	case MAGIC_PPC64:
 	case MAGIC_AMD64:
+		// if this is an amd64 kernel. see above
+		if (o->is_kernel) {
+			return 0xffffffff80110000ULL;
+		}
+		// fallthrough
+	case MAGIC_PPC64:
 		return 0x200000ULL;
 	case MAGIC_68020:
 	case MAGIC_INTEL_386:
@@ -69,7 +96,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 static RList *entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
-	struct plan9_exec *header = (struct plan9_exec *)bf->o->bin_obj;
+	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->o->bin_obj;
 
 	if (!(ret = r_list_new ())) {
 		return NULL;
@@ -78,16 +105,12 @@ static RList *entries(RBinFile *bf) {
 	ret->free = free;
 
 	if ((ptr = R_NEW0 (RBinAddr))) {
-		// if there is an extended header (64-bit), read the additional entry
-		if (header->magic & HDR_MAGIC) {
-			ut64 entry = r_buf_read_be64_at (bf->buf, sizeof (struct plan9_exec));
-			ptr->paddr = entry - baddr (bf);
-			ptr->vaddr = entry;
-		} else {
-			ptr->paddr = header->entry - baddr (bf);
-			ptr->vaddr = header->entry;
+		ptr->paddr = o->entry - baddr (bf);
+		// for kernels the header is not mapped
+		if (o->is_kernel) {
+			ptr->paddr += o->header_size;
 		}
-
+		ptr->vaddr = o->entry;
 		r_list_append (ret, ptr);
 	}
 
@@ -97,7 +120,8 @@ static RList *entries(RBinFile *bf) {
 static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	struct plan9_exec *header = (struct plan9_exec *)bf->o->bin_obj;
+	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->o->bin_obj;
+
 	if (!bf->o->info) {
 		return NULL;
 	}
@@ -107,8 +131,8 @@ static RList *sections(RBinFile *bf) {
 	}
 
 	ut32 align = 0x1000;
-	// on some platfroms the text segment has a separate alignment from the rest
-	switch (header->magic) {
+	// on some platforms the text segment has a separate alignment
+	switch (o->header.magic) {
 	case MAGIC_AMD64:
 		align = 0x200000;
 		break;
@@ -120,7 +144,8 @@ static RList *sections(RBinFile *bf) {
 		break;
 	}
 
-	ut64 phys = 0;
+	// for kernels the header is not mapped
+	ut64 phys = o->is_kernel? o->header_size: 0;
 	ut64 vsize = 0;
 
 	// add text segment
@@ -128,8 +153,8 @@ static RList *sections(RBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
-	ptr->size = header->text;
-	ptr->vsize = P9_ALIGN (header->text, align);
+	ptr->size = o->header.text;
+	ptr->vsize = P9_ALIGN (o->header.text, align);
 	ptr->paddr = phys;
 	ptr->vaddr = baddr (bf);
 	ptr->perm = R_PERM_RX; // r-x
@@ -138,10 +163,9 @@ static RList *sections(RBinFile *bf) {
 	phys += ptr->size;
 	vsize += ptr->vsize;
 
-	// the header is included in the text segment but not in further segments
-	phys += sizeof (struct plan9_exec);
-	if (header->magic & HDR_MAGIC) {
-		phys += 8;
+	// for regular applications: header is included in the text segment
+	if (!o->is_kernel) {
+		phys += o->header_size;
 	}
 
 	// switch back to 4k page size
@@ -152,8 +176,8 @@ static RList *sections(RBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup ("data");
-	ptr->size = header->data;
-	ptr->vsize = P9_ALIGN (header->data, align);
+	ptr->size = o->header.data;
+	ptr->vsize = P9_ALIGN (o->header.data, align);
 	ptr->paddr = phys;
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_RW;
@@ -168,7 +192,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	ptr->name = strdup ("bss");
 	ptr->size = 0;
-	ptr->vsize = P9_ALIGN (header->bss, align);
+	ptr->vsize = P9_ALIGN (o->header.bss, align);
 	ptr->paddr = 0;
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_RW;
@@ -182,8 +206,8 @@ static RList *sections(RBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup ("syms");
-	ptr->size = header->syms;
-	ptr->vsize = P9_ALIGN (header->syms, align);
+	ptr->size = o->header.syms;
+	ptr->vsize = P9_ALIGN (o->header.syms, align);
 	ptr->paddr = phys;
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
@@ -197,8 +221,8 @@ static RList *sections(RBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup ("spsz");
-	ptr->size = header->spsz;
-	ptr->vsize = P9_ALIGN (header->spsz, align);
+	ptr->size = o->header.spsz;
+	ptr->vsize = P9_ALIGN (o->header.spsz, align);
 	ptr->paddr = phys;
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
@@ -212,8 +236,8 @@ static RList *sections(RBinFile *bf) {
 		return ret;
 	}
 	ptr->name = strdup ("pcsz");
-	ptr->size = header->pcsz;
-	ptr->vsize = P9_ALIGN (header->pcsz, align);
+	ptr->size = o->header.pcsz;
+	ptr->vsize = P9_ALIGN (o->header.pcsz, align);
 	ptr->paddr = phys;
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
@@ -225,21 +249,18 @@ static RList *sections(RBinFile *bf) {
 
 static RList *symbols(RBinFile *bf) {
 	RList *ret = NULL;
-	struct plan9_exec *header = (struct plan9_exec *)bf->o->bin_obj;
+	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->o->bin_obj;
 
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
 
-	ut64 syms = sizeof (struct plan9_exec) + header->text + header->data;
-	if (header->magic & HDR_MAGIC) {
-		syms += 8;
-	}
+	ut64 syms = o->header_size + o->header.text + o->header.data;
 
 	ut64 offset = 0;
-	while (offset < header->syms) {
+	while (offset < o->header.syms) {
 		ut64 value;
-		if (header->magic & HDR_MAGIC) {
+		if (o->header.magic & HDR_MAGIC) {
 			// for 64-bit binaries the value type is 8 bytes
 			value = r_buf_read_be64_at (bf->buf, syms + offset);
 			if (value == UT64_MAX) {
@@ -270,7 +291,7 @@ static RList *symbols(RBinFile *bf) {
 		// source file names or source file line offsets contain additional details
 		if (type == 'Z' || type == 'z') {
 			// look for two adjacent zeros to terminate the sequence
-			ut64 j, fin = (header->syms > offset)? header->syms - offset: 0;
+			ut64 j, fin = (o->header.syms > offset)? o->header.syms - offset: 0;
 			for (j = 0; j < fin; j++) {
 				ut16 data = r_buf_read_be16_at (bf->buf, syms + offset + j);
 				if (data == UT16_MAX) {
@@ -307,6 +328,10 @@ static RList *symbols(RBinFile *bf) {
 
 		ptr->name = name;
 		ptr->paddr = value - baddr (bf);
+		// for kernels the header is not mapped
+		if (o->is_kernel) {
+			ptr->paddr += o->header_size;
+		}
 		ptr->vaddr = value;
 		ptr->size = 0;
 		ptr->ordinal = 0;
