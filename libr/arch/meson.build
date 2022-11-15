@@ -11,6 +11,8 @@ r_arch_sources = [
   'p/arch_amd29k.c',
   'p/arch_jdh8.c',
   'p/arch_pickle.c',
+  'p/arch_rsp.c',
+  'p/rsp/rsp_idec.c',
   'p/arch_sh.c',
   'p/sh/gnu/sh-dis.c',
   'p/arch_v810.c',

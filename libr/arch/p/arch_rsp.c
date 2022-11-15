@@ -8,7 +8,7 @@
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_anal.h>
-#include <rsp/rsp_idec.h>
+#include "rsp/rsp_idec.h"
 
 static RStrBuf *disassemble(RStrBuf *buf_asm, rsp_instruction *r_instr) {
 	int i;
@@ -76,13 +76,18 @@ static RStrBuf *disassemble(RStrBuf *buf_asm, rsp_instruction *r_instr) {
 	return buf_asm;
 }
 
-static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
+// static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
+static bool rsp_op(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
+	const ut8* b = op->bytes;
+	const int len = op->size;
+	const ut64 addr = op->addr;
 	if (len < 4) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
-		return op->size = 0;
+		op->size = 4;
+		return false;
 	}
 	int i;
 	typedef struct {
@@ -100,7 +105,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	op->addr = addr;
 	r_strbuf_set (&op->esil, "TODO");
 
-	ut32 iw = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config));
+	ut32 iw = r_read_ble32 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (s->config));
 	r_instr = rsp_instruction_decode (addr, iw);
 
 	if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -112,13 +117,17 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 
 	/* parse operands */
 	for (i = 0; i < r_instr.noperands; i++) {
-		parsed_operands[i].value = r_anal_value_new ();
+		parsed_operands[i].value = r_arch_value_new ();
 		parsed_operands[i].esil[0] = '\0';
 
 		switch (r_instr.operands[i].type) {
 		case RSP_OPND_GP_REG:
 			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%s", rsp_gp_reg_soft_names[r_instr.operands[i].u]);
-			parsed_operands[i].value->reg = r_reg_get (anal->reg, rsp_gp_reg_soft_names[r_instr.operands[i].u], R_REG_TYPE_GPR);
+#if USE_REG_NAMES
+			parsed_operands[i].value->reg = rsp_gp_reg_soft_names[r_instr.operands[i].u];
+#else
+		// 	parsed_operands[i].value->reg = r_reg_get (anal->reg, rsp_gp_reg_soft_names[r_instr.operands[i].u], R_REG_TYPE_GPR);
+#endif
 			break;
 		case RSP_OPND_ZIMM:
 		case RSP_OPND_SHIFT_AMOUNT:
@@ -132,7 +141,11 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		case RSP_OPND_BASE_OFFSET:
 			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil),
 			"%"PFMT64d",%s,+", r_instr.operands[i].s, rsp_gp_reg_soft_names[r_instr.operands[i].u]);
-			parsed_operands[i].value->reg = r_reg_get (anal->reg, rsp_gp_reg_soft_names[r_instr.operands[i].u], R_REG_TYPE_GPR);
+#if USE_REG_NAMES
+			parsed_operands[i].value->reg = rsp_gp_reg_soft_names[r_instr.operands[i].u];
+#else
+			// parsed_operands[i].value->reg = r_reg_get (anal->reg, rsp_gp_reg_soft_names[r_instr.operands[i].u], R_REG_TYPE_GPR);
+#endif
 			parsed_operands[i].value->imm = r_instr.operands[i].s;
 			break;
 		case RSP_OPND_OFFSET:
@@ -147,7 +160,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 			break;
 		case RSP_OPND_C0_REG:
 			snprintf (parsed_operands[i].esil, sizeof (parsed_operands[i].esil), "%s", rsp_c0_reg_names[r_instr.operands[i].u]);
-			parsed_operands[i].value->reg = r_reg_get (anal->reg, rsp_c0_reg_names[r_instr.operands[i].u], R_REG_TYPE_GPR);
+			// parsed_operands[i].value->reg = r_reg_get (anal->reg, rsp_c0_reg_names[r_instr.operands[i].u], R_REG_TYPE_GPR);
 			break;
 		case RSP_OPND_C2_CREG:
 		case RSP_OPND_C2_ACCU:
@@ -265,14 +278,14 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 	case RSP_OP_J:
 		op->type = R_ANAL_OP_TYPE_JMP;
 		tmpval = r_vector_push (&op->dsts, NULL);
-		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
 		r_strbuf_setf (&op->esil, "%s,PC,=", parsed_operands[0].esil);
 		break;
 	case RSP_OP_JAL:
 		op->type = R_ANAL_OP_TYPE_CALL;
 		tmpval = r_vector_push (&op->dsts, NULL);
-		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
 		r_strbuf_setf (&op->esil, "%s,PC,=,0x%08" PFMT64x ",RA,=", parsed_operands[0].esil, op->fail);
 		break;
@@ -285,7 +298,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->eob = 1;
 		op->fail = rsp_mem_addr (addr + 8, RSP_IMEM_OFFSET);
 		tmpval = r_vector_push (&op->dsts, NULL);
-		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
 		r_strbuf_setf (&op->esil, "%s,PC,=", parsed_operands[0].esil);
 		break;
@@ -293,7 +306,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->cond = R_ANAL_COND_EQ;
 		tmpval = r_vector_push (&op->dsts, NULL);
-		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
 		r_vector_push (&op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,%s,==,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil, parsed_operands[2].esil);
@@ -302,7 +315,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->cond = R_ANAL_COND_NE;
 		tmpval = r_vector_push (&op->dsts, NULL);
-		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
 		r_vector_push (&op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,%s,==,$z,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil, parsed_operands[2].esil);
@@ -311,7 +324,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->cond = R_ANAL_COND_LE;
 		tmpval = r_vector_push (&op->dsts, NULL);
-		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
 		r_vector_push (&op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,!,%s,0x80000000,&,!,!,|,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[0].esil, parsed_operands[1].esil);
@@ -321,7 +334,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->cond = R_ANAL_COND_GT;
 		tmpval = r_vector_push (&op->dsts, NULL);
-		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
 		r_vector_push (&op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,0x80000000,&,!,%s,!,!,&,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[0].esil, parsed_operands[1].esil);
@@ -331,7 +344,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->cond = R_ANAL_COND_LT;
 		tmpval = r_vector_push (&op->dsts, NULL);
-		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
 		r_vector_push (&op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,0x80000000,&,!,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
@@ -341,7 +354,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->cond = R_ANAL_COND_GE;
 		tmpval = r_vector_push (&op->dsts, NULL);
-		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
 		r_vector_push (&op->srcs, parsed_operands[1].value);
 		r_strbuf_setf (&op->esil, "%s,0x80000000,&,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
@@ -351,7 +364,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->type = R_ANAL_OP_TYPE_CCALL;
 		op->cond = R_ANAL_COND_LT;
 		tmpval = r_vector_push (&op->dsts, NULL);
-		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
 		r_vector_push (&op->srcs, parsed_operands[1].value);
 		// TODO
@@ -360,7 +373,7 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		op->type = R_ANAL_OP_TYPE_CCALL;
 		op->cond = R_ANAL_COND_GE;
 		tmpval = r_vector_push (&op->dsts, NULL);
-		tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
+		// tmpval->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		r_vector_push (&op->srcs, parsed_operands[0].value);
 		r_vector_push (&op->srcs, parsed_operands[1].value);
 		// TODO
@@ -654,12 +667,11 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RA
 		break;
 	default: break;
 	}
-
-	return op->size;
+	return true;
 }
 
 
-static char *get_reg_profile(RAnal *anal) {
+static char *get_reg_profile(RArchSession *s) {
 	static const char *p =
 		"=PC    pc\n"
 		"=SP    sp\n"
@@ -763,26 +775,26 @@ static char *get_reg_profile(RAnal *anal) {
 	return strdup (p);
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RArchSession *s, ut32 q) {
 	return 4;
 }
 
-RAnalPlugin r_anal_plugin_rsp = {
+RArchPlugin r_arch_plugin_rsp = {
 	.name = "rsp",
 	.desc = "RSP code analysis plugin",
 	.license = "LGPL3",
 	.arch = "rsp",
 	.esil = true,
 	.bits = 32,
-	.op = &rsp_op,
-	.archinfo = &archinfo,
-	.get_reg_profile = &get_reg_profile,
+	.decode = &rsp_op,
+	.info = &archinfo,
+	.regs = &get_reg_profile,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_rsp,
+	.type = R_LIB_TYPE_ARCH,
+	.data = &r_arch_plugin_rsp,
 	.version = R2_VERSION
 };
 #endif

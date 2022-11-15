@@ -9,6 +9,7 @@ arch_plugins = [ 'null',
   'sh',
   'jdh8',
   'i4004',
+  'rsp',
   'amd29k',
 ]
 bin_plugins = [ 'any' ]
@@ -172,7 +173,6 @@ anal_plugins += [
   'propeller',
   'riscv',
   'riscv_cs',
-  'rsp',
   'snes',
   'sparc_cs',
   's390_cs',
