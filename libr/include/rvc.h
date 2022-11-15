@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#include <r_core.h>
+#include <r_util.h>
 #include <sdb.h>
 
 typedef struct r_vc_blob_t {
