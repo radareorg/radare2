@@ -17,6 +17,15 @@ struct plan9_exec {
 	ut32 pcsz;
 });
 
+typedef struct r_bin_plan9_obj_t {
+	struct plan9_exec header;
+	// can indicate an extended header (for 64-bit binaries)
+	ut64 header_size;
+	// use this instead of the one in the header
+	ut64 entry;
+	bool is_kernel;
+} RBinPlan9Obj;
+
 /* Flag for extended header. This means that an additional 64-bit integer follows
  * the standard header which specifies the 64-bit entrypoint. */
 #define HDR_MAGIC 0x00008000
@@ -47,6 +56,8 @@ struct plan9_exec {
 #define	MAGIC_ATT_DSP_3210 _MAGIC(0, 17)
 #define	MAGIC_AMD_29000 _MAGIC(0, 19)
 #define	MAGIC_DEC_ALPHA _MAGIC(0, 23)
+
+#define KERNEL_MASK 0xffff800000000000ULL
 
 /* Reads four bytes from b. */
 bool r_bin_p9_get_arch(R_NONNULL RBuffer *b, R_NONNULL RSysArch *arch, R_NONNULL int *bits, R_NONNULL int *big_endian);
