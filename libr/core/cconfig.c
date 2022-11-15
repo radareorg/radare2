@@ -3778,6 +3778,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("bin.hashlimit", "10M", "only compute hash when opening a file if smaller than this size");
 	SETCB ("bin.usextr", "true", &cb_usextr, "use extract plugins when loading files");
 	SETCB ("bin.useldr", "true", &cb_useldr, "use loader plugins when loading files");
+	SETPREF ("bin.types", "true", "parse and load filetype and language file header structs");
 	SETCB ("bin.str.purge", "", &cb_strpurge, "purge strings (e bin.str.purge=? provides more detail)");
 	SETPREF ("bin.str.real", "false", "set the realname in rbin.strings for better disasm (EXPERIMENTAL)");
 	SETCB ("bin.str.nofp", "false", &cb_nofp, "set to true to reduce the false positive strings (EXPERIMENTAL)");

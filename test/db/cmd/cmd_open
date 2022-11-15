@@ -71,7 +71,7 @@ RUN
 
 NAME=oonn
 FILE=bins/mach0/mac-ls2
-ARGS=-n
+ARGS=-n -e bin.types=true
 CMDS=<<EOF
 pf.~?
 oonn
@@ -87,6 +87,7 @@ RUN
 
 NAME=oonn
 FILE=bins/mach0/mac-ls2
+ARGS=-e bin.types=true
 CMDS=<<EOF
 pf.~?
 oonn
@@ -235,6 +236,7 @@ RUN
 
 NAME=oob consider baddr
 FILE=bins/mach0/mac-ls
+ARGS=-e bin.types=true
 CMDS=<<EOF
 e bin.baddr = 0xf00000
 k old_v=`ieq`
@@ -254,7 +256,7 @@ RUN
 
 NAME=oob consider laddr 32bit
 FILE=bins/mach0/fatmach0-3true
-ARGS=-a x86 -b 32
+ARGS=-a x86 -b 32 -e bin.types=true
 CMDS=<<EOF
 e bin.laddr = 0x5000
 e bin.baddr = -1

@@ -1,4 +1,5 @@
 NAME=MZ: 1byte
+ARGS=-e bin.types=true
 FILE=bins/mz/1byte.exe
 CMDS=<<EOF
 iS

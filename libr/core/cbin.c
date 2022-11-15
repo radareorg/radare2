@@ -155,6 +155,7 @@ R_API bool r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
 
 R_API void r_core_bin_export_info(RCore *core, int mode) {
 	char *flagname = NULL, *offset = NULL;
+	SdbList *ls = NULL;
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (!bf) {
 		return;
@@ -170,8 +171,12 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_push (core->flags, "format");
 	}
+	if (!r_config_get_b (core->config, "bin.types")) {
+		goto leave;
+	}
+
 	// iterate over all keys
-	SdbList *ls = sdb_foreach_list (db, false);
+	ls = sdb_foreach_list (db, false);
 	ls_foreach (ls, iter, kv) {
 		char *k = sdbkv_key (kv);
 		char *v = sdbkv_value (kv);
@@ -280,6 +285,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 		}
 		free (dup);
 	}
+leave:
 	free (offset);
 	ls_free (ls);
 	if (IS_MODE_SET (mode)) {

@@ -537,7 +537,7 @@ jobs:
           fetch-depth: 0 # Download all git history and tags
       - name: Check if is a release
         run: |
-          TAG="`git describe --exact-match --tags ${{ github.sha }}`"
+          TAG="`git describe --exact-match --tags ${{ github.sha }} || true`"
           if [ -n "$TAG" ]; then
             echo "{tag}={$TAG}" >> $GITHUB_OUTPUT
             echo "{is}={yes}" >> $GITHUB_OUTPUT

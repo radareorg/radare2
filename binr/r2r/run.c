@@ -886,6 +886,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, cons
 	RPVector args;
 	r_pvector_init (&args, NULL);
 	r_pvector_push (&args, "-escr.utf8=0");
+	r_pvector_push (&args, "-ebin.types=false");
 	r_pvector_push (&args, "-escr.color=0");
 	r_pvector_push (&args, "-escr.interactive=0");
 	r_pvector_push (&args, "-N");

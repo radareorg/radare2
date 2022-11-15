@@ -1,5 +1,6 @@
 NAME=fnj shows demangled symbols
 FILE=bins/elf/demangle-test-cpp
+ARGS=-e bin.types=true
 CMDS=<<EOF
 aaa
 fj~{259}

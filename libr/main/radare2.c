@@ -747,6 +747,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				load_bin = LOAD_BIN_NOTHING;
 			} else if (load_bin == LOAD_BIN_NOTHING) { // second n => "-nn"
 				load_bin = LOAD_BIN_STRUCTURES_ONLY;
+				r_config_set_b (r->config, "bin.types", true);
 			}
 			r_config_set_b (r->config, "file.info", false);
 			break;

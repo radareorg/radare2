@@ -250,7 +250,10 @@ RUN
 
 NAME=flags spaces
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=fs
+ARGS=-e bin.types=true
+CMDS=<<EOF
+fs
+EOF
 EXPECT=<<EOF
     0 * classes
     5 * format
@@ -266,6 +269,7 @@ RUN
 
 NAME=flags spaces after analysis
 FILE=bins/elf/analysis/x86-helloworld-gcc
+ARGS=-e bin.types=true
 CMDS=<<EOF
 aa;fs *;fs
 afl~?
@@ -287,7 +291,10 @@ RUN
 
 NAME=flags spaces after analysis again
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=s entry0+4; af;fs *;fs
+ARGS=-e bin.types=true
+CMDS=<<EOF
+s entry0+4; af;fs *;fs
+EOF
 EXPECT=<<EOF
     0 * classes
     5 * format
@@ -416,7 +423,10 @@ RUN
 
 NAME=flags (total)
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=f~?
+ARGS=-e bin.types=true
+CMDS=<<EOF
+f~?
+EOF
 EXPECT=<<EOF
 111
 EOF
@@ -424,7 +434,10 @@ RUN
 
 NAME=flags
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=f
+ARGS=-e bin.types=true
+CMDS=<<EOF
+f
+EOF
 EXPECT=<<EOF
 0x00000000 52 elf_header
 0x00000000 0 section.

@@ -3678,6 +3678,7 @@ RUN
 
 NAME=is sht null
 FILE=bins/elf/sht_null_symbols
+ARGS=-e bin.types=true
 CMDS=is; ir; f
 EXPECT=<<EOF
 [Symbols]
@@ -3975,6 +3976,7 @@ RUN
 
 NAME=ik*
 FILE=bins/mach0/fatmach0-3true
+ARGS=-e bin.types=true
 CMDS=ik*~?mach0_segment64_0
 EXPECT=<<EOF
 1
