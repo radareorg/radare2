@@ -692,6 +692,8 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr);
 
 R_IPI RBinClass *r_bin_class_new(const char *name, const char *super, int view);
 R_API void r_bin_class_free(RBinClass *);
+// uhm should be tied used because we dont want bincur to change because of open
+R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *opt);
 
 // plugins/bind functions
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);

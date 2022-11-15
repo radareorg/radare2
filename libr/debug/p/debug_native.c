@@ -319,6 +319,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 			bool autoload_pdb = dbg->coreb.cfggeti (core, "pdb.autoload");
 			if (autoload_pdb) {
 				PLIB_ITEM lib = r->lib;
+#if 0
 				dbg->coreb.cmdf (core, "\"o \\\"%s\\\" 0x%p\"", lib->Path, lib->BaseOfDll);
 				char *o_res = dbg->coreb.cmdstrf (core, "o~+%s", lib->Name);
 				int fd = atoi (o_res);
@@ -327,17 +328,32 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 					char *pdb_file = dbg->coreb.cmdstr (core, "i~dbg_file");
 					if (pdb_file && (r_str_trim (pdb_file), *pdb_file)) {
 						if (!r_file_exists (pdb_file + 9)) {
+#else
+				RBinFileOptions opts = { 0 };
+				opts.baseaddr = (uintptr_t)lib->BaseOfDll;
+				// RBinFile *bf = r_bin_file_open (core->bin, lib->Path, &opts);
+				if (!r_bin_open (core->bin, lib->Path, &opts)) {
+					R_LOG_ERROR ("cannot open file");
+					return R_DEBUG_REASON_ERROR;
+				}
+				// file_new (core->bin, lib->Path, 0, 0, bf->fd, NULL, NULL, false);
+				RBinFile *bf = r_bin_cur (core->bin);
+				if (bf) {
+					const RBinInfo *info = r_bin_get_info (core->bin);
+					if (info && R_STR_ISNOTEMPTY (info->debug_file_name)) {
+						if (!r_file_exists (info->debug_file_name)) {
+#endif
 							dbg->coreb.cmdf (core, "idpd");
 						}
 						dbg->coreb.cmdf (core, "idp");
 					}
-					dbg->coreb.cmdf (core, "o-%d", fd);
+					dbg->coreb.cmdf (core, "o-%d", bf->fd);
 				}
 			}
 			r_debug_info_free (r);
 		} else {
-			r_cons_printf ("Loading unknown library.\n");
 			r_cons_flush ();
+			R_LOG_WARN ("Loading unknown library");
 		}
 		restore_thread = true;
 	} else if (reason == R_DEBUG_REASON_EXIT_LIB) {

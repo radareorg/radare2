@@ -1144,3 +1144,12 @@ R_API RList *r_bin_file_get_symbols(RBinFile *bf) {
 	RBinObject *o = bf->o;
 	return o? o->symbols: NULL;
 }
+
+#if R2_580
+R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *opt) {
+	if (r_bin_open (bin, file, opt)) {
+		return r_bin_cur (bin);
+	}
+	return NULL;
+}
+#endif
