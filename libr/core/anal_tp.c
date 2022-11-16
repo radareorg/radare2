@@ -6,14 +6,14 @@
 #include <r_core.h>
 #define LOOP_MAX 10
 
-static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, RAnalEsilTrace **et) {
+static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, REsilTrace **et) {
 	if (!core->anal->esil) {
 		return false;
 	}
 	*dt = core->dbg->trace;
 	*et = core->anal->esil->trace;
 	core->dbg->trace = r_debug_trace_new ();
-	core->anal->esil->trace = r_anal_esil_trace_new (core->anal->esil);
+	core->anal->esil->trace = r_esil_trace_new (core->anal->esil);
 	r_config_hold (hc, "esil.romem", "dbg.trace", "esil.nonull", "dbg.follow", NULL);
 	r_config_set_b (core->config, "esil.romem", true);
 	r_config_set_b (core->config, "dbg.trace", true);
@@ -29,11 +29,11 @@ static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, RAnal
 	return (core->dbg->trace && core->anal->esil->trace);
 }
 
-static void anal_emul_restore(RCore *core, RConfigHold *hc, RDebugTrace *dt, RAnalEsilTrace *et) {
+static void anal_emul_restore(RCore *core, RConfigHold *hc, RDebugTrace *dt, REsilTrace *et) {
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	r_debug_trace_free (core->dbg->trace);
-	r_anal_esil_trace_free (core->anal->esil->trace);
+	r_esil_trace_free (core->anal->esil->trace);
 	core->anal->esil->trace = et;
 	core->dbg->trace = dt;
 }
@@ -464,7 +464,7 @@ static bool fast_step(RCore *core, RAnalOp *aop) {
 #if SLOW_STEP
 	return r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 #else
-	RAnalEsil *esil = core->anal->esil;
+	REsil *esil = core->anal->esil;
 	const char *e = R_STRBUF_SAFEGET (&aop->esil);
 	if (R_STR_ISEMPTY (e)) {
 		return false;
@@ -490,11 +490,11 @@ static bool fast_step(RCore *core, RAnalOp *aop) {
 	if (aop->size < 1 || ret < 1) {
 		return false;
 	}
-	// r_anal_esil_parse (esil, e);
+	// r_esil_parse (esil, e);
 #if 1
 	RReg *reg = core->dbg->reg;
 	core->dbg->reg = core->anal->reg;
-	r_anal_esil_set_pc (esil, aop->addr);
+	r_esil_set_pc (esil, aop->addr);
 	r_debug_trace_op (core->dbg, aop); // calls esil.parse() internally
 	core->dbg->reg = reg;
 #else
@@ -503,7 +503,7 @@ static bool fast_step(RCore *core, RAnalOp *aop) {
 	// select next instruction
 	const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	r_reg_setv (core->anal->reg, pcname, aop->addr + aop->size);
-	r_anal_esil_stack_free (esil);
+	r_esil_stack_free (esil);
 	return true;
 #endif
 }
@@ -534,7 +534,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		return;
 	}
 	RDebugTrace *dt = NULL;
-	RAnalEsilTrace *et = NULL;
+	REsilTrace *et = NULL;
 	if (!anal_emul_init (core, hc, &dt, &et) || !fcn) {
 		anal_emul_restore (core, hc, dt, et);
 		return;

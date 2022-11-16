@@ -138,8 +138,8 @@ typedef struct r_arch_plugin_t {
 	RArchPluginDecodeCallback decode;
 	RArchPluginMnemonicsCallback mnemonics;
 //TODO: reenable this later
-//	bool (*esil_init)(RAnalEsil *esil);
-//	void (*esil_fini)(RAnalEsil *esil);
+//	bool (*esil_init)(REsil *esil);
+//	void (*esil_fini)(REsil *esil);
 } RArchPlugin;
 
 // decoder.c
@@ -153,8 +153,8 @@ R_API bool r_arch_unload_decoder(RArch *arch, const char *dname);
 R_API int r_arch_info(RArch *arch, int query);
 R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask);
 R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask);
-//R_API bool r_arch_esil_init(RArch *arch, const char *dname, RAnalEsil *esil);
-//R_API void r_arch_esil_fini(RArch *arch, const char *dname, RAnalEsil *esil);
+//R_API bool r_arch_esil_init(RArch *arch, const char *dname, REsil *esil);
+//R_API void r_arch_esil_fini(RArch *arch, const char *dname, REsil *esil);
 
 R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *ap);
 R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask mask);

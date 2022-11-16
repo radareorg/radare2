@@ -6,24 +6,24 @@
 #define KEY(x) r_strf ("%d."x, esil->trace->idx)
 #define KEYAT(x,y) r_strf ("%d."x".0x%"PFMT64x, esil->trace->idx, y)
 #define KEYREG(x,y) r_strf ("%d."x".%s", esil->trace->idx, y)
-#define CMP_REG_CHANGE(x, y) ((x) - ((RAnalEsilRegChange *)y)->idx)
-#define CMP_MEM_CHANGE(x, y) ((x) - ((RAnalEsilMemChange *)y)->idx)
+#define CMP_REG_CHANGE(x, y) ((x) - ((REsilRegChange *)y)->idx)
+#define CMP_MEM_CHANGE(x, y) ((x) - ((REsilMemChange *)y)->idx)
 
 static int ocbs_set = false;
-static RAnalEsilCallbacks ocbs = {0};
+static REsilCallbacks ocbs = {0};
 
 static void htup_vector_free(HtUPKv *kv) {
 	r_vector_free (kv->value);
 }
 
-R_API RAnalEsilTrace *r_anal_esil_trace_new(RAnalEsil *esil) {
+R_API REsilTrace *r_esil_trace_new(REsil *esil) {
 	r_return_val_if_fail (esil, NULL);
 	if (!esil->stack_addr || !esil->stack_size) {
 		R_LOG_ERROR ("Run `aeim` to initialize a stack for the ESIL vm");
 		return NULL;
 	}
 	size_t i;
-	RAnalEsilTrace *trace = R_NEW0 (RAnalEsilTrace);
+	REsilTrace *trace = R_NEW0 (REsilTrace);
 	if (!trace) {
 		return NULL;
 	}
@@ -63,11 +63,11 @@ R_API RAnalEsilTrace *r_anal_esil_trace_new(RAnalEsil *esil) {
 	return trace;
 error:
 	R_LOG_ERROR ("trace initialization failed");
-	r_anal_esil_trace_free (trace);
+	r_esil_trace_free (trace);
 	return NULL;
 }
 
-R_API void r_anal_esil_trace_free(RAnalEsilTrace *trace) {
+R_API void r_esil_trace_free(REsilTrace *trace) {
 	size_t i;
 	if (trace) {
 		ht_up_free (trace->registers);
@@ -81,38 +81,38 @@ R_API void r_anal_esil_trace_free(RAnalEsilTrace *trace) {
 	}
 }
 
-static void add_reg_change(RAnalEsilTrace *trace, int idx, RRegItem *ri, ut64 data) {
+static void add_reg_change(REsilTrace *trace, int idx, RRegItem *ri, ut64 data) {
 	r_return_if_fail (trace && ri);
 	ut64 addr = ri->offset | (ri->arena << 16);
 	RVector *vreg = ht_up_find (trace->registers, addr, NULL);
 	if (!vreg) {
-		vreg = r_vector_new (sizeof (RAnalEsilRegChange), NULL, NULL);
+		vreg = r_vector_new (sizeof (REsilRegChange), NULL, NULL);
 		if (!vreg) {
 			R_LOG_ERROR ("creating a register vector");
 			return;
 		}
 		ht_up_insert (trace->registers, addr, vreg);
 	}
-	RAnalEsilRegChange reg = { idx, data };
+	REsilRegChange reg = { idx, data };
 	r_vector_push (vreg, &reg);
 }
 
-static void add_mem_change(RAnalEsilTrace *trace, int idx, ut64 addr, ut8 data) {
+static void add_mem_change(REsilTrace *trace, int idx, ut64 addr, ut8 data) {
 	r_return_if_fail (trace);
 	RVector *vmem = ht_up_find (trace->memory, addr, NULL);
 	if (!vmem) {
-		vmem = r_vector_new (sizeof (RAnalEsilMemChange), NULL, NULL);
+		vmem = r_vector_new (sizeof (REsilMemChange), NULL, NULL);
 		if (!vmem) {
 			R_LOG_ERROR ("creating a memory vector");
 			return;
 		}
 		ht_up_insert (trace->memory, addr, vmem);
 	}
-	RAnalEsilMemChange mem = { idx, data };
+	REsilMemChange mem = { idx, data };
 	r_vector_push (vmem, &mem);
 }
 
-static bool trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
+static bool trace_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *size) {
 	r_return_val_if_fail (esil && name && res, -1);
 	r_strf_buffer (128);
 	bool ret = false;
@@ -121,7 +121,7 @@ static bool trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, in
 		return false;
 	}
 	if (ocbs.hook_reg_read) {
-		RAnalEsilCallbacks cbs = esil->cb;
+		REsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;
 		ret = ocbs.hook_reg_read (esil, name, res, size);
 		esil->cb = cbs;
@@ -138,7 +138,7 @@ static bool trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, in
 	return ret;
 }
 
-static bool trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
+static bool trace_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 	r_strf_buffer (128);
 	bool ret = false;
 	//eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
@@ -148,7 +148,7 @@ static bool trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 		sdb_num_set (DB, KEYREG ("reg.write", name), *val, 0);
 		add_reg_change (esil->trace, esil->trace->idx + 1, ri, *val);
 		if (ocbs.hook_reg_write) {
-			RAnalEsilCallbacks cbs = esil->cb;
+			REsilCallbacks cbs = esil->cb;
 			esil->cb = ocbs;
 			ret = ocbs.hook_reg_write (esil, name, val);
 			esil->cb = cbs;
@@ -158,7 +158,7 @@ static bool trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	return ret;
 }
 
-static bool trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool trace_hook_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	char *hexbuf = calloc ((1 + len), 4);
 	r_strf_buffer (128);
 	int ret = 0;
@@ -172,7 +172,7 @@ static bool trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	free (hexbuf);
 
 	if (ocbs.hook_mem_read) {
-		RAnalEsilCallbacks cbs = esil->cb;
+		REsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;
 		ret = ocbs.hook_mem_read (esil, addr, buf, len);
 		esil->cb = cbs;
@@ -180,7 +180,7 @@ static bool trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return ret;
 }
 
-static bool trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	size_t i;
 	int ret = 0;
 	char *hexbuf = malloc ((1 + len) * 3);
@@ -198,7 +198,7 @@ static bool trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int
 	}
 
 	if (ocbs.hook_mem_write) {
-		RAnalEsilCallbacks cbs = esil->cb;
+		REsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;
 		ret = ocbs.hook_mem_write (esil, addr, buf, len);
 		esil->cb = cbs;
@@ -206,7 +206,7 @@ static bool trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int
 	return ret;
 }
 
-R_API void r_anal_esil_trace_op(RAnalEsil *esil, RAnalOp *op) {
+R_API void r_esil_trace_op(REsil *esil, RAnalOp *op) {
 	r_return_if_fail (esil && op);
 	r_strf_buffer (128);
 	const char *expr = r_strbuf_get (&op->esil);
@@ -215,20 +215,20 @@ R_API void r_anal_esil_trace_op(RAnalEsil *esil, RAnalOp *op) {
 		return;
 	}
 	if (!esil->trace) {
-		esil->trace = r_anal_esil_trace_new (esil);
+		esil->trace = r_esil_trace_new (esil);
 		if (!esil->trace) {
 			return;
 		}
 	}
 	/* restore from trace when `idx` is not at the end */
 	if (esil->trace->idx != esil->trace->end_idx) {
-		r_anal_esil_trace_restore (esil, esil->trace->idx + 1);
+		r_esil_trace_restore (esil, esil->trace->idx + 1);
 		return;
 	}
 	/* save old callbacks */
 	int esil_verbose = esil->verbose;
 	if (ocbs_set) {
-		eprintf ("r_anal_esil_trace_op: Cannot call recursively\n");
+		eprintf ("r_esil_trace_op: Cannot call recursively\n");
 	}
 	ocbs = esil->cb;
 	ocbs_set = true;
@@ -248,8 +248,8 @@ R_API void r_anal_esil_trace_op(RAnalEsil *esil, RAnalOp *op) {
 	esil->cb.hook_mem_read = trace_hook_mem_read;
 	esil->cb.hook_mem_write = trace_hook_mem_write;
 	/* evaluate esil expression */
-	r_anal_esil_parse (esil, expr);
-	r_anal_esil_stack_free (esil);
+	r_esil_parse (esil, expr);
+	r_esil_stack_free (esil);
 	/* restore hooks */
 	esil->cb = ocbs;
 	ocbs_set = false;
@@ -261,33 +261,33 @@ R_API void r_anal_esil_trace_op(RAnalEsil *esil, RAnalOp *op) {
 
 static bool restore_memory_cb(void *user, const ut64 key, const void *value) {
 	size_t index;
-	RAnalEsil *esil = user;
+	REsil *esil = user;
 	RVector *vmem = (RVector *)value;
 
 	r_vector_upper_bound (vmem, esil->trace->idx, index, CMP_MEM_CHANGE);
 	if (index > 0 && index <= vmem->len) {
-		RAnalEsilMemChange *c = r_vector_index_ptr (vmem, index - 1);
+		REsilMemChange *c = r_vector_index_ptr (vmem, index - 1);
 		esil->anal->iob.write_at (esil->anal->iob.io, key, &c->data, 1);
 	}
 	return true;
 }
 
-static bool restore_register(RAnalEsil *esil, RRegItem *ri, int idx) {
+static bool restore_register(REsil *esil, RRegItem *ri, int idx) {
 	size_t index;
 	RVector *vreg = ht_up_find (esil->trace->registers, ri->offset | (ri->arena << 16), NULL);
 	if (vreg) {
 		r_vector_upper_bound (vreg, idx, index, CMP_REG_CHANGE);
 		if (index > 0 && index <= vreg->len) {
-			RAnalEsilRegChange *c = r_vector_index_ptr (vreg, index - 1);
+			REsilRegChange *c = r_vector_index_ptr (vreg, index - 1);
 			r_reg_set_value (esil->anal->reg, ri, c->data);
 		}
 	}
 	return true;
 }
 
-R_API void r_anal_esil_trace_restore(RAnalEsil *esil, int idx) {
+R_API void r_esil_trace_restore(REsil *esil, int idx) {
 	size_t i;
-	RAnalEsilTrace *trace = esil->trace;
+	REsilTrace *trace = esil->trace;
 	// Restore initial state when going backward
 	if (idx < esil->trace->idx) {
 		// Restore initial registers value
@@ -361,7 +361,7 @@ static int cmp_strings_by_leading_number(void *data1, void *data2) {
 	return 0;
 }
 
-R_API void r_anal_esil_trace_list(RAnalEsil *esil) {
+R_API void r_esil_trace_list(REsil *esil) {
 	PrintfCallback p = esil->anal->cb_printf;
 	SdbKv *kv;
 	SdbListIter *iter;
@@ -373,7 +373,7 @@ R_API void r_anal_esil_trace_list(RAnalEsil *esil) {
 	ls_free (list);
 }
 
-R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
+R_API void r_esil_trace_show(REsil *esil, int idx) {
 	r_strf_buffer (128);
 	PrintfCallback p = esil->anal->cb_printf;
 	const char *str2;

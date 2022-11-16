@@ -57,7 +57,7 @@ R_API bool r_anal_pin_set(RAnal *a, const char *name, const char *cmd) {
 	return sdb_add (a->sdb_pins, ckey, cmd, 0);
 }
 
-typedef void (*RAnalEsilPin)(RAnal *a);
+typedef void (*REsilPin)(RAnal *a);
 
 /* pin api */
 
@@ -121,7 +121,7 @@ R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 #if 0
 		const char *name;
 		if (name) {
-			RAnalEsilPin fcnptr = (RAnalEsilPin)
+			REsilPin fcnptr = (REsilPin)
 				sdb_ptr_get (DB, name, NULL);
 			if (fcnptr) {
 				fcnptr (a);

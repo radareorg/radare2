@@ -92,7 +92,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->ht_name_fun = ht_pp_new0 ();
 	anal->config = r_arch_config_new ();
 	anal->arch = r_arch_new ();
-	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
+	anal->esil_goto_limit = R_ESIL_GOTO_LIMIT;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->gp = 0LL;
@@ -181,7 +181,7 @@ R_API void r_anal_free(RAnal *a) {
 	r_list_free (a->leaddrs);
 	sdb_free (a->sdb);
 	if (a->esil) {
-		r_anal_esil_free (a->esil);
+		r_esil_free (a->esil);
 		a->esil = NULL;
 	}
 	free (a->last_disasm_reg);
@@ -194,9 +194,9 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 	anal->user = user;
 }
 
-R_API bool r_anal_esil_use(RAnal *anal, const char *name) {
+R_API bool r_esil_use(RAnal *anal, const char *name) {
 	RListIter *it;
-	RAnalEsilPlugin *h;
+	REsilPlugin *h;
 
 	if (anal) {
 		r_list_foreach (anal->esil_plugins, it, h) {

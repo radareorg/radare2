@@ -779,7 +779,7 @@ static int step_until_esil(RCore *core, const char *esilstr) {
 		}
 		r_debug_step (core->dbg, 1);
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
-		if (r_anal_esil_condition (core->anal->esil, esilstr)) {
+		if (r_esil_condition (core->anal->esil, esilstr)) {
 			R_LOG_INFO ("ESIL BREAK!");
 			break;
 		}
@@ -5324,14 +5324,14 @@ static int cmd_debug(void *data, const char *input) {
 				int iotrap = r_config_get_i (core->config, "esil.iotrap");
 				int nonull = r_config_get_i (core->config, "esil.nonull");
 				unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-				if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
+				if (!(core->anal->esil = r_esil_new (stacksize, iotrap, addrsize))) {
 					return 0;
 				}
-				r_anal_esil_setup (core->anal->esil, core->anal, romem, stats, nonull);
+				r_esil_setup (core->anal->esil, core->anal, romem, stats, nonull);
 			}
 			switch (input[2]) {
 			case 0: // "dte"
-				r_anal_esil_trace_list (core->anal->esil);
+				r_esil_trace_list (core->anal->esil);
 				break;
 			case 'i': { // "dtei"
 				ut64 addr = r_num_math (core->num, input + 3);
@@ -5340,7 +5340,7 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_ESIL);
 				if (op) {
-					r_anal_esil_trace_op (core->anal->esil, op);
+					r_esil_trace_op (core->anal->esil, op);
 				}
 				r_anal_op_free (op);
 			} break;
@@ -5356,7 +5356,7 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case ' ': { // "dte "
 				int idx = atoi (input + 3);
-				r_anal_esil_trace_show (
+				r_esil_trace_show (
 					core->anal->esil, idx);
 			} break;
 			case 'k': // "dtek"

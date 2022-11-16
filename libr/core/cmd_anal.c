@@ -1245,7 +1245,7 @@ static bool cmd_anal_aaft(RCore *core) {
 			continue;
 		}
 		r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
-		r_anal_esil_set_pc (core->anal->esil, fcn->addr);
+		r_esil_set_pc (core->anal->esil, fcn->addr);
 		r_core_anal_type_match (core, fcn);
 		if (r_cons_is_breaked ()) {
 			break;
@@ -1271,7 +1271,7 @@ static void type_cmd(RCore *core, const char *input) {
 	switch (*input) {
 	case '\0': // "aft"
 		seek = core->offset;
-		r_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
+		r_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
 		r_core_anal_type_match (core, fcn);
 		r_core_seek (core, seek, true);
 		break;
@@ -2119,13 +2119,13 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	return r_str_append (res, ")");
 }
 
-static bool mw(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool mw(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int *ec = (int*)esil->user;
 	*ec += (len * 2);
 	return true;
 }
 
-static bool mr(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool mr(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	int *ec = (int*)esil->user;
 	*ec += len;
 	return true;
@@ -2136,13 +2136,13 @@ static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 		return 0;
 	}
 	int ec = 0;
-	RAnalEsil *e = r_anal_esil_new (256, 0, 0);
-	r_anal_esil_setup (e, core->anal, false, false, false);
+	REsil *e = r_esil_new (256, 0, 0);
+	r_esil_setup (e, core->anal, false, false, false);
 	e->user = &ec;
 	e->cb.mem_read = mr;
 	e->cb.mem_write = mw;
-	r_anal_esil_parse (e, expr);
-	r_anal_esil_free (e);
+	r_esil_parse (e, expr);
+	r_esil_free (e);
 	return ec;
 }
 
@@ -2154,16 +2154,16 @@ static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 	}
 }
 
-static inline RAnalEsil *esil_new_setup(RCore *core) {
+static inline REsil *esil_new_setup(RCore *core) {
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-	RAnalEsil *esil = r_anal_esil_new (stacksize, iotrap, addrsize);
+	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
 	if (esil) {
 		int romem = r_config_get_i (core->config, "esil.romem");
 		int stats = r_config_get_i (core->config, "esil.stats");
 		bool nonull = r_config_get_b (core->config, "esil.nonull");
-		r_anal_esil_setup (esil, core->anal, romem, stats, nonull);
+		r_esil_setup (esil, core->anal, romem, stats, nonull);
 		esil->verbose = r_config_get_i (core->config, "esil.verbose");
 	}
 	return esil;
@@ -2205,13 +2205,13 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	PJ *pj = NULL;
 	int totalsize = 0;
 #if 0
-	RAnalEsil *esil = r_anal_esil_new (256, 0, 0);
-	r_anal_esil_setup (esil, core->anal, false, false, false);
+	REsil *esil = r_esil_new (256, 0, 0);
+	r_esil_setup (esil, core->anal, false, false, false);
 	esil->user = &ec;
 	esil->cb.mem_read = mr;
 	esil->cb.mem_write = mw;
 #else
-	RAnalEsil *esil = NULL;
+	REsil *esil = NULL;
 #endif
 
 	// Variables required for setting up ESIL to REIL conversion
@@ -2464,9 +2464,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 						r_cons_printf ("0x%" PFMT64x " %s\n", core->offset + idx, esilstr);
 					}
 					esil = core->anal->esil;
-					r_anal_esil_parse (esil, esilstr);
-					r_anal_esil_dumpstack (esil);
-					r_anal_esil_stack_free (esil);
+					r_esil_parse (esil, esilstr);
+					r_esil_dumpstack (esil);
+					r_esil_stack_free (esil);
 					esil = NULL;
 				} else {
 					R_LOG_ERROR ("ESIL is not initialized. Run `aei`");
@@ -2655,7 +2655,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
 	}
-	r_anal_esil_free (esil);
+	r_esil_free (esil);
 }
 
 static int bb_cmp(const void *a, const void *b) {
@@ -5722,9 +5722,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 
 static ut64 initializeEsil(RCore *core) {
 	int exectrap = r_config_get_i (core->config, "esil.exectrap");
-	RAnalEsil *esil = esil_new_setup (core);
+	REsil *esil = esil_new_setup (core);
 	if (esil) {
-		r_anal_esil_free (core->anal->esil);
+		r_esil_free (core->anal->esil);
 		core->anal->esil = esil;
 	} else {
 		return UT64_MAX;
@@ -5773,7 +5773,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	int ret;
 	ut8 code[32];
 	RAnalOp op = {0};
-	RAnalEsil *esil = core->anal->esil;
+	REsil *esil = core->anal->esil;
 	const char *_pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	if (R_STR_ISEMPTY (_pcname)) {
 		R_LOG_ERROR ("Cannot find =PC in current reg profile");
@@ -5910,7 +5910,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			r_reg_setv (core->anal->reg, pcname, addr + op.size);
 		}
 		if (ret) {
-			r_anal_esil_set_pc (esil, addr);
+			r_esil_set_pc (esil, addr);
 			const char *e = R_STRBUF_SAFEGET (&op.esil);
 			if (core->dbg->trace->enabled) {
 				RReg *reg = core->dbg->reg;
@@ -5918,11 +5918,11 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				r_debug_trace_op (core->dbg, &op);
 				core->dbg->reg = reg;
 			} else if (R_STR_ISNOTEMPTY (e)) {
-				r_anal_esil_parse (esil, e);
+				r_esil_parse (esil, e);
 				if (core->anal->cur && core->anal->cur->esil_post_loop) {
 					core->anal->cur->esil_post_loop (esil, &op);
 				}
-				r_anal_esil_stack_free (esil);
+				r_esil_stack_free (esil);
 			}
 			bool isNextFall = false;
 			if (op.type == R_ANAL_OP_TYPE_CJMP) {
@@ -5943,7 +5943,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				ut64 naddr = addr + op.size;
 				RAnalOp op2 = {0};
 				// emulate only 1 instruction
-				r_anal_esil_set_pc (esil, naddr);
+				r_esil_set_pc (esil, naddr);
 				(void)r_io_read_at (core->io, naddr, code2, sizeof (code2));
 				// TODO: sometimes this is dupe
 				ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
@@ -5962,7 +5962,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					}
 					const char *e = R_STRBUF_SAFEGET (&op2.esil);
 					if (R_STR_ISNOTEMPTY (e)) {
-						r_anal_esil_parse (esil, e);
+						r_esil_parse (esil, e);
 					}
 				} else {
 					R_LOG_ERROR ("Invalid instruction at 0x%08"PFMT64x, naddr);
@@ -6009,7 +6009,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			return_tail (0);
 		}
 		if (until_expr) {
-			if (r_anal_esil_condition (core->anal->esil, until_expr)) {
+			if (r_esil_condition (core->anal->esil, until_expr)) {
 				if (core->anal->esil->verbose) {
 					R_LOG_INFO ("ESIL BREAK!");
 				}
@@ -6032,9 +6032,9 @@ R_API bool r_core_esil_step_back(RCore *core) {
 		R_LOG_INFO ("Run `aeim` to initialize the esil VM and enable e dbg.trace=true");
 		return false;
 	}
-	RAnalEsil *esil = core->anal->esil;
+	REsil *esil = core->anal->esil;
 	if (esil->trace->idx > 0) {
-		r_anal_esil_trace_restore (esil, esil->trace->idx - 1);
+		r_esil_trace_restore (esil, esil->trace->idx - 1);
 		return true;
 	}
 	return false;
@@ -6179,7 +6179,7 @@ static void initialize_stack(RCore *core, ut64 addr, ut64 size) {
 }
 
 static void cmd_esil_mem(RCore *core, const char *input) {
-	RAnalEsil *esil = core->anal->esil;
+	REsil *esil = core->anal->esil;
 	RIOMap *stack_map;
 	ut64 curoff = core->offset;
 	const char *patt = "";
@@ -6195,7 +6195,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		if (!esil) {
 			return;
 		}
-		r_anal_esil_free (core->anal->esil);
+		r_esil_free (core->anal->esil);
 		core->anal->esil = esil;
 		{
 			const char *s = r_config_get (core->config, "cmd.esil.intr");
@@ -6343,7 +6343,7 @@ static void esil_init(RCore *core) {
 			R_FREE (regstate);
 			return;
 		}
-		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0, nonull);
+		r_esil_setup (core->anal->esil, core->anal, 0, 0, nonull);
 	}
 	free (regstate);
 	regstate = r_reg_arena_peek (core->anal->reg);
@@ -6400,7 +6400,7 @@ typedef struct {
 	int size;
 } AeaMemItem;
 
-static bool mymemwrite(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool mymemwrite(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	AeaMemItem *n;
 	RListIter *iter;
 	r_list_foreach (mymemxsw, iter, n) {
@@ -6420,7 +6420,7 @@ static bool mymemwrite(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool mymemread(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool mymemread(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	RListIter *iter;
 	AeaMemItem *n;
 	r_list_foreach (mymemxsr, iter, n) {
@@ -6440,7 +6440,7 @@ static bool mymemread(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return true;
 }
 
-static bool myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
+static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 	AeaStats *stats = esil->user;
 	if (oldregread && !strcmp (name, oldregread)) {
 		r_list_pop (stats->regread);
@@ -6462,7 +6462,7 @@ static bool myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	return false;
 }
 
-static bool myregread(RAnalEsil *esil, const char *name, ut64 *val, int *len) {
+static bool myregread(REsil *esil, const char *name, ut64 *val, int *len) {
 	AeaStats *stats = esil->user;
 	if (!IS_DIGIT (*name)) {
 		if (!contains (stats->inputregs, name)) {
@@ -6533,7 +6533,7 @@ static void showmem_json(RList *list, PJ *pj) {
 }
 
 static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
-	RAnalEsil *esil;
+	REsil *esil;
 	int ptr, ops, ops_end = 0, len, buf_sz;
 	ut64 addr_end;
 	AeaStats stats;
@@ -6612,8 +6612,8 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 					}
 				}
 			}
-			r_anal_esil_parse (esil, esilstr);
-			r_anal_esil_stack_free (esil);
+			r_esil_parse (esil, esilstr);
+			r_esil_stack_free (esil);
 		}
 		r_anal_op_fini (&aop);
 		if (len < 1) {
@@ -6625,7 +6625,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	esil->cb.hook_reg_write = NULL;
 	esil->cb.hook_reg_read = NULL;
 	//esil_fini (core);
-	r_anal_esil_free (esil);
+	r_esil_free (esil);
 	r_reg_arena_pop (core->anal->reg);
 	regnow = r_list_newf (free);
 	{
@@ -6740,7 +6740,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 }
 
 static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
-	RAnalEsil *esil = core->anal->esil;
+	REsil *esil = core->anal->esil;
 	int i, j = 0;
 	ut8 *buf;
 	RAnalOp aop = {0};
@@ -6805,7 +6805,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 			const char *e = R_STRBUF_SAFEGET (&aop.esil);
 			if (e && *e) {
 				 // eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
-				(void)r_anal_esil_parse (esil, e);
+				(void)r_esil_parse (esil, e);
 			}
 			break;
 		}
@@ -6967,7 +6967,7 @@ R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 	return type;
 }
 
-static bool regwrite_hook(RAnalEsil *esil, const char *name, ut64 *val) {
+static bool regwrite_hook(REsil *esil, const char *name, ut64 *val) {
 	RCore *core = esil->user;
 	int type = core_type_by_addr (core, *val);
 	if (type != -1) {
@@ -7034,12 +7034,12 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 						// eprintf ("0x%08"PFMT64x"  %s\n", pc, op.mnemonic);
 						if (R_STR_ISNOTEMPTY (esilstr)) {
 							r_reg_setv (core->anal->reg, pcname, pc + op.size);
-							r_anal_esil_set_pc (core->anal->esil, pc);
-							r_anal_esil_parse (core->anal->esil, esilstr);
+							r_esil_set_pc (core->anal->esil, pc);
+							r_esil_parse (core->anal->esil, esilstr);
 							if (anal_verbose) {
-								r_anal_esil_dumpstack (core->anal->esil);
+								r_esil_dumpstack (core->anal->esil);
 							}
-							r_anal_esil_stack_free (core->anal->esil);
+							r_esil_stack_free (core->anal->esil);
 						}
 					}
 					pc += op.size;
@@ -7057,20 +7057,20 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 	core->anal->esil->user = u;
 	r_reg_setv (core->anal->reg, pcname, old_pc);
 #if 0
-	r_anal_esil_free (core->anal->esil);
+	r_esil_free (core->anal->esil);
 	core->anal->esil = NULL;
 #endif
 }
 
 static char *_aeg_get_title(void *data) {
-	RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)data;
+	REsilDFGNode *enode = (REsilDFGNode *)data;
 	return r_str_newf ("%d", enode->idx);
 }
 
 static char *_aeg_get_body(void *data) {
-	RAnalEsilDFGNode *enode = (RAnalEsilDFGNode *)data;
+	REsilDFGNode *enode = (REsilDFGNode *)data;
 	return r_str_newf ("%s%s",
-		(enode->type & R_ANAL_ESIL_DFG_TAG_GENERATIVE)? "generative:": "",
+		(enode->type & R_ESIL_DFG_TAG_GENERATIVE)? "generative:": "",
 		r_strbuf_get (enode->content));
 }
 
@@ -7089,13 +7089,13 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			}
 			const char *esilstr = r_strbuf_get (&aop->esil);
 			if (R_STR_ISNOTEMPTY (esilstr)) {
-				RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilstr);
+				REsilDFG *dfg = r_esil_dfg_expr (core->anal, NULL, esilstr);
 				if (!dfg) {
 					r_anal_op_free (aop);
 					return;
 				}
 				RAGraph *agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
-				r_anal_esil_dfg_free (dfg);
+				r_esil_dfg_free (dfg);
 				agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");
 				agraph->layout = r_config_get_i (core->config, "graph.layout");
 				r_agraph_print (agraph);
@@ -7112,10 +7112,10 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 				r_strbuf_append (sb, argv[i]);
 			}
 			char *esilexpr = r_strbuf_drain (sb);
-			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilexpr);
+			REsilDFG *dfg = r_esil_dfg_expr (core->anal, NULL, esilexpr);
 			if (dfg) {
 				RAGraph *agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
-				r_anal_esil_dfg_free (dfg);
+				r_esil_dfg_free (dfg);
 				agraph->can->linemode = r_config_get_i (core->config, "graph.linemode");
 				agraph->layout = r_config_get_i (core->config, "graph.layout");
 				r_agraph_print (agraph);
@@ -7145,20 +7145,20 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			}
 			const char *esilstr = r_strbuf_get (&aop->esil);
 			if (R_STR_ISNOTEMPTY (esilstr)) {
-				RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilstr);
+				REsilDFG *dfg = r_esil_dfg_expr (core->anal, NULL, esilstr);
 				if (!dfg) {
 					r_anal_op_free (aop);
 					return;
 				}
 				agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
-				r_anal_esil_dfg_free (dfg);
+				r_esil_dfg_free (dfg);
 			}
 			r_anal_op_free (aop);
 		} else {
-			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
+			REsilDFG *dfg = r_esil_dfg_expr (core->anal, NULL, argv[1]);
 			r_return_if_fail (dfg);
 			agraph = r_agraph_new_from_graph (dfg->flow, &cbs);
-			r_anal_esil_dfg_free (dfg);
+			r_esil_dfg_free (dfg);
 		}
 		const ut64 osc = r_config_get_i (core->config, "scr.color");
 		r_config_set_i (core->config, "scr.color", 0);
@@ -7177,7 +7177,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		break;
 	case 'f':	// "aegf"
 	{
-		RStrBuf *filtered = r_anal_esil_dfg_filter_expr (core->anal, argv[1], argv[2]);
+		RStrBuf *filtered = r_esil_dfg_filter_expr (core->anal, argv[1], argv[2]);
 		if (filtered) {
 			r_cons_printf ("%s\n", r_strbuf_get (filtered));
 			r_strbuf_free (filtered);
@@ -7187,13 +7187,13 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 #if 0
 	case 'c':	// "aegc"
 	{
-		RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
+		REsilDFG *dfg = r_esil_dfg_expr (core->anal, NULL, argv[1]);
 		if (!dfg) {
 			return;
 		}
-		r_anal_esil_dfg_fold_const (core->anal, dfg);
+		r_esil_dfg_fold_const (core->anal, dfg);
 		if (argv[0][1] == 'f') {	// "aegcf"
-			RStrBuf *filtered = r_anal_esil_dfg_filter (dfg, argv[2]);
+			RStrBuf *filtered = r_esil_dfg_filter (dfg, argv[2]);
 			if (filtered) {
 				r_cons_printf ("%s\n", r_strbuf_get (filtered));
 				r_strbuf_free (filtered);
@@ -7201,7 +7201,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		} else {
 			print_esil_dfg_as_commands (core, dfg);
 		}
-		r_anal_esil_dfg_free (dfg);
+		r_esil_dfg_free (dfg);
 	}
 		break;
 #endif
@@ -7213,7 +7213,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 }
 
 static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
-	RAnalEsil *esil = core->anal->esil;
+	REsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
 	ut64 adr ;
 	char *n, *n1;
@@ -7314,19 +7314,19 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		break;
 	case ' ':
 	case 'q':
-		//r_anal_esil_eval (core->anal, input + 1);
+		//r_esil_eval (core->anal, input + 1);
 		if (!esil) {
 			core->anal->esil = esil = esil_new_setup (core);
 			if (!esil) {
 				return;
 			}
 		}
-		r_anal_esil_set_pc (esil, core->offset);
-		r_anal_esil_parse (esil, input + 1);
+		r_esil_set_pc (esil, core->offset);
+		r_esil_parse (esil, input + 1);
 		if (verbose && *input != 'q') {
-			r_anal_esil_dumpstack (esil);
+			r_esil_dumpstack (esil);
 		}
-		r_anal_esil_stack_free (esil);
+		r_esil_stack_free (esil);
 		break;
 	case 's': // "aes"
 		// "aes" "aeso" "aesu" "aesue"
@@ -7349,7 +7349,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			}
 			r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			r_debug_reg_set (core->dbg, "PC", pc + op->size);
-			r_anal_esil_set_pc (esil, pc + op->size);
+			r_esil_set_pc (esil, pc + op->size);
 			r_core_cmd0 (core, ".ar*");
 			r_anal_op_free (op);
 		} break;
@@ -7501,7 +7501,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				op = NULL;
 				if (core->anal->esil->trap || core->anal->esil->trap_code) {
 					R_LOG_INFO ("esil trap '%s' (%d) at 0x%08" PFMT64x,
-							r_anal_esil_trapstr (core->anal->esil->trap),
+							r_esil_trapstr (core->anal->esil->trap),
 							core->anal->esil->trap_code, addr);
 					break;
 				}
@@ -7606,11 +7606,11 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			if (esil) {
 				sdb_reset (esil->stats);
 			}
-			r_anal_esil_free (esil);
+			r_esil_free (esil);
 			core->anal->esil = NULL;
 			break;
 		case 0: //lolololol
-			r_anal_esil_free (esil);
+			r_esil_free (esil);
 			esil = core->anal->esil = esil_new_setup (core);
 			if (!esil) {
 				return;
@@ -7668,7 +7668,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		break;
 	case 'L': // aeL commands
 		{
-			RAnalEsilPlugin *p;
+			REsilPlugin *p;
 			RListIter *iter;
 			r_list_foreach (core->anal->esil_plugins, iter, p) {
 				r_cons_printf ("%s\n", p->name);
@@ -7729,7 +7729,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 					R_LOG_INFO ("ESIL trace already started");
 					break;
 				}
-				esil->trace = r_anal_esil_trace_new (esil);
+				esil->trace = r_esil_trace_new (esil);
 				if (!esil->trace) {
 					break;
 				}
@@ -7744,7 +7744,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 					eprintf ("No ESIL trace started\n");
 					break;
 				}
-				r_anal_esil_trace_free (esil->trace);
+				r_esil_trace_free (esil->trace);
 				esil->trace = NULL;
 				r_config_set_b (core->config, "dbg.trace", false);
 				break;
@@ -8105,7 +8105,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			if (ret > 0) {
 				const char *arg = input + 2;
 				const char *expr = R_STRBUF_SAFEGET (&aop.esil);
-				RStrBuf *b = r_anal_esil_dfg_filter_expr (core->anal, expr, arg);
+				RStrBuf *b = r_esil_dfg_filter_expr (core->anal, expr, arg);
 				if (b) {
 					char *s = r_strbuf_drain (b);
 					r_cons_printf ("%s\n", s);

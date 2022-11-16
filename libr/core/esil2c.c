@@ -5,21 +5,21 @@ typedef struct {
 	RStrBuf *sb;
 } EsilC;
 
-static char *esil2c(RCore *core, RAnalEsil *esil, const char *expr) {
+static char *esil2c(RCore *core, REsil *esil, const char *expr) {
 	EsilC *user = esil->user;
 	RStrBuf *sb = r_strbuf_new ("");
 	user->sb = sb;
-	if (!r_anal_esil_parse (esil, expr)) {
+	if (!r_esil_parse (esil, expr)) {
 		R_LOG_ERROR ("Invalid ESIL expression");
 	}
 	user->sb = NULL;
 	return r_strbuf_drain (sb);
 }
 
-static bool esil2c_eq(RAnalEsil *esil) {
+static bool esil2c_eq(REsil *esil) {
 	EsilC *user = esil->user;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (!src || !dst) {
 		free (dst);
@@ -37,23 +37,23 @@ static bool esil2c_eq(RAnalEsil *esil) {
 	return true;
 }
 
-static bool esil2c_peek8(RAnalEsil *esil) {
+static bool esil2c_peek8(REsil *esil) {
 	EsilC *user = esil->user;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (!src) {
 		return false;
 	}
 	r_strbuf_appendf (user->sb, "  tmp = mem_qword[%s];\n", src);
-	r_anal_esil_push (esil, "tmp");
+	r_esil_push (esil, "tmp");
 	free (src);
 	return true;
 }
 
-static bool esil2c_poke8(RAnalEsil *esil) {
+static bool esil2c_poke8(REsil *esil) {
 	EsilC *user = esil->user;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (!src || !dst) {
 		free (dst);
@@ -66,10 +66,10 @@ static bool esil2c_poke8(RAnalEsil *esil) {
 	return true;
 }
 
-static bool esil2c_addeq(RAnalEsil *esil) {
+static bool esil2c_addeq(REsil *esil) {
 	EsilC *user = esil->user;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (!src || !dst) {
 		free (dst);
@@ -82,10 +82,10 @@ static bool esil2c_addeq(RAnalEsil *esil) {
 	return true;
 }
 
-static bool esil2c_add(RAnalEsil *esil) {
+static bool esil2c_add(REsil *esil) {
 	EsilC *user = esil->user;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (!src || !dst) {
 		free (dst);
@@ -98,10 +98,10 @@ static bool esil2c_add(RAnalEsil *esil) {
 	return true;
 }
 
-static bool esil2c_subeq(RAnalEsil *esil) {
+static bool esil2c_subeq(REsil *esil) {
 	EsilC *user = esil->user;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (!src || !dst) {
 		free (dst);
@@ -114,10 +114,10 @@ static bool esil2c_subeq(RAnalEsil *esil) {
 	return true;
 }
 
-static bool esil2c_xor(RAnalEsil *esil) {
+static bool esil2c_xor(REsil *esil) {
 	EsilC *user = esil->user;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (!src || !dst) {
 		free (dst);
@@ -126,17 +126,17 @@ static bool esil2c_xor(RAnalEsil *esil) {
 	}
 	char *var = r_str_newf ("tmp%d", esil->stackptr);
 	r_strbuf_appendf (user->sb, "  %s = %s ^ %s;\n", var, dst, src);
-	r_anal_esil_push (esil, var);
+	r_esil_push (esil, var);
 	free (dst);
 	free (src);
 	free (var);
 	return true;
 }
 
-static bool esil2c_sub(RAnalEsil *esil) {
+static bool esil2c_sub(REsil *esil) {
 	EsilC *user = esil->user;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (!src || !dst) {
 		free (dst);
@@ -144,15 +144,15 @@ static bool esil2c_sub(RAnalEsil *esil) {
 		return false;
 	}
 	r_strbuf_appendf (user->sb, "  tmp = %s - %s;\n", dst, src);
-	r_anal_esil_push (esil, "tmp");
+	r_esil_push (esil, "tmp");
 	free (dst);
 	free (src);
 	return true;
 }
 
-static bool esil2c_dec(RAnalEsil *esil) {
+static bool esil2c_dec(REsil *esil) {
 	EsilC *user = esil->user;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (!src) {
 		return false;
 	}
@@ -161,9 +161,9 @@ static bool esil2c_dec(RAnalEsil *esil) {
 	return true;
 }
 
-static bool esil2c_inc(RAnalEsil *esil) {
+static bool esil2c_inc(REsil *esil) {
 	EsilC *user = esil->user;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (!src) {
 		return false;
 	}
@@ -172,23 +172,23 @@ static bool esil2c_inc(RAnalEsil *esil) {
 	return true;
 }
 
-static bool esil2c_neg(RAnalEsil *esil) {
+static bool esil2c_neg(REsil *esil) {
 	EsilC *user = esil->user;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (!src) {
 		return false;
 	}
 	char *var = r_str_newf ("tmp%d", esil->stackptr);
 	r_strbuf_appendf (user->sb, "  %s = !%s;\n", var, src);
-	r_anal_esil_push (esil, var);
+	r_esil_push (esil, var);
 	free (src);
 	free (var);
 	return true;
 }
 
-static bool esil2c_goto(RAnalEsil *esil) {
+static bool esil2c_goto(REsil *esil) {
 	EsilC *user = esil->user;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (!src) {
 		return false;
 	}
@@ -201,38 +201,38 @@ static void esil2c_free(EsilC *user) {
 	free (user);
 }
 
-static bool esil2c_mw(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool esil2c_mw(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	R_LOG_TODO ("poke%d 0x%08"PFMT64x" %d", len, addr, *buf);
 	return true;
 }
 
-static bool esil2c_mr(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool esil2c_mr(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	R_LOG_TODO ("peek%d 0x%08"PFMT64x, len, addr);
 	return true;
 }
 
-static void esil2c_setup(RCore *core, RAnalEsil *esil) {
+static void esil2c_setup(RCore *core, REsil *esil) {
 	EsilC *user = R_NEW (EsilC);
 	esil->user = user;
 	esil->anal = core->anal;
 	esil->verbose = true; // r_config_get_b (core->config, "esil.verbose");
 	esil->cb.mem_read = esil2c_mr;
 	esil->cb.mem_write = esil2c_mw;
-	r_anal_esil_set_op (esil, "=", esil2c_eq, 0, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, ":=", esil2c_eq, 0, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "-", esil2c_sub, 1, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "^", esil2c_xor, 1, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "++", esil2c_inc, 1, 1, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "--", esil2c_dec, 1, 1, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "+", esil2c_add, 1, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "+=", esil2c_addeq, 0, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "!", esil2c_neg, 1, 1, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "-=", esil2c_subeq, 0, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "=[8]", esil2c_poke8, 0, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "=[]", esil2c_poke8, 0, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "[8]", esil2c_peek8, 1, 1, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "[]", esil2c_peek8, 1, 1, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	r_anal_esil_set_op (esil, "GOTO", esil2c_goto, 0, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
-	// r_anal_esil_set_op (esil, "+=", esil2c_set, 0, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "=", esil2c_eq, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, ":=", esil2c_eq, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "-", esil2c_sub, 1, 2, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "^", esil2c_xor, 1, 2, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "++", esil2c_inc, 1, 1, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "--", esil2c_dec, 1, 1, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "+", esil2c_add, 1, 2, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "+=", esil2c_addeq, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "!", esil2c_neg, 1, 1, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "-=", esil2c_subeq, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "=[8]", esil2c_poke8, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "=[]", esil2c_poke8, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "[8]", esil2c_peek8, 1, 1, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "[]", esil2c_peek8, 1, 1, R_ESIL_OP_TYPE_REG_WRITE);
+	r_esil_set_op (esil, "GOTO", esil2c_goto, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
+	// r_esil_set_op (esil, "+=", esil2c_set, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
 }
 

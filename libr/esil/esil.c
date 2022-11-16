@@ -17,7 +17,7 @@
 #define IFDBG if (esil && esil->verbose > 1)
 #define IFVBS if (esil && esil->verbose > 0)
 #define ERR(...) if (esil->verbose) { R_LOG_ERROR (__VA_ARGS__); }
-#define FLG(x) R_ANAL_ESIL_FLAG_##x
+#define FLG(x) R_ESIL_FLAG_##x
 #define cpuflag(x, y)\
 if (esil) {\
 	if (y) { \
@@ -39,7 +39,7 @@ static inline ut64 genmask(int bits) {
 	return m;
 }
 
-static bool isnum(RAnalEsil *esil, const char *str, ut64 *num) {
+static bool isnum(REsil *esil, const char *str, ut64 *num) {
 	if (!esil || !str) {
 		return false;
 	}
@@ -55,21 +55,21 @@ static bool isnum(RAnalEsil *esil, const char *str, ut64 *num) {
 	return false;
 }
 
-static bool r_anal_esil_runpending(RAnalEsil *esil, char *pending) {
+static bool r_esil_runpending(REsil *esil, char *pending) {
 	if (pending) {
 		free (esil->pending);
 		esil->pending = pending;
 	} else if (esil->pending) {
 		char *expr = esil->pending;
 		esil->pending = NULL;
-		r_anal_esil_parse (esil, expr);
+		r_esil_parse (esil, expr);
 		free (expr);
 		return true;
 	}
 	return false;
 }
 
-static bool ispackedreg(RAnalEsil *esil, const char *str) {
+static bool ispackedreg(REsil *esil, const char *str) {
 	RRegItem *ri = r_reg_get (esil->anal->reg, str, -1);
 	if (ri) {
 		bool is_packed = ri->packed_size > 0;
@@ -79,8 +79,8 @@ static bool ispackedreg(RAnalEsil *esil, const char *str) {
 	return false;
 }
 
-static bool isregornum(RAnalEsil *esil, const char *str, ut64 *num) {
-	if (!r_anal_esil_reg_read (esil, str, num, NULL)) {
+static bool isregornum(REsil *esil, const char *str, ut64 *num) {
+	if (!r_esil_reg_read (esil, str, num, NULL)) {
 		if (!isnum (esil, str, num)) {
 			return false;
 		}
@@ -89,8 +89,8 @@ static bool isregornum(RAnalEsil *esil, const char *str, ut64 *num) {
 }
 
 /* pop Register or Number */
-static bool popRN(RAnalEsil *esil, ut64 *n) {
-	char *str = r_anal_esil_pop (esil);
+static bool popRN(REsil *esil, ut64 *n) {
+	char *str = r_esil_pop (esil);
 	if (str) {
 		bool ret = isregornum (esil, str, n);
 		free (str);
@@ -99,7 +99,7 @@ static bool popRN(RAnalEsil *esil, ut64 *n) {
 	return false;
 }
 
-/* R_ANAL_ESIL API */
+/* R_ESIL API */
 
 static void esil_ops_free(HtPPKv *kv) {
 	if (kv) {
@@ -108,8 +108,8 @@ static void esil_ops_free(HtPPKv *kv) {
 	}
 }
 
-R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
-	RAnalEsil *esil = R_NEW0 (RAnalEsil);
+R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
+	REsil *esil = R_NEW0 (REsil);
 	if (!esil) {
 		return NULL;
 	}
@@ -123,20 +123,20 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsiz
 	}
 	esil->verbose = false;
 	esil->stacksize = stacksize;
-	esil->parse_goto_count = R_ANAL_ESIL_GOTO_LIMIT;
+	esil->parse_goto_count = R_ESIL_GOTO_LIMIT;
 	esil->ops = ht_pp_new (NULL, esil_ops_free, NULL);
 	esil->iotrap = iotrap;
-	r_anal_esil_handlers_init (esil);
-	r_anal_esil_plugins_init (esil);
+	r_esil_handlers_init (esil);
+	r_esil_plugins_init (esil);
 	esil->addrmask = genmask (addrsize - 1);
 	return esil;
 }
 
-R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb code, ut32 push, ut32 pop, ut32 type) {
+R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type) {
 	r_return_val_if_fail (code && R_STR_ISNOTEMPTY (op) && esil && esil->ops, false);
-	RAnalEsilOp *eop = ht_pp_find (esil->ops, op, NULL);
+	REsilOp *eop = ht_pp_find (esil->ops, op, NULL);
 	if (!eop) {
-		eop = R_NEW (RAnalEsilOp);
+		eop = R_NEW (REsilOp);
 		if (!eop) {
 			return false;
 		}
@@ -153,17 +153,17 @@ R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb cod
 	return true;
 }
 
-R_API RAnalEsilOp *r_anal_esil_get_op(RAnalEsil *esil, const char *op) {
+R_API REsilOp *r_esil_get_op(REsil *esil, const char *op) {
 	r_return_val_if_fail (esil && esil->ops && R_STR_ISNOTEMPTY (op), NULL);
-	return (RAnalEsilOp *) ht_pp_find (esil->ops, op, NULL);
+	return (REsilOp *) ht_pp_find (esil->ops, op, NULL);
 }
 
-R_API void r_anal_esil_del_op(RAnalEsil *esil, const char *op) {
+R_API void r_esil_del_op(REsil *esil, const char *op) {
 	r_return_if_fail (esil && esil->ops && R_STR_ISNOTEMPTY (op));
 	ht_pp_delete (esil->ops, op);
 }
 
-static bool r_anal_esil_fire_trap(RAnalEsil *esil, int trap_type, int trap_code) {
+static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 	r_return_val_if_fail (esil, false);
 	if (esil->cmd) {
 		if (esil->cmd (esil, esil->cmd_trap, trap_type, trap_code)) {
@@ -179,14 +179,14 @@ static bool r_anal_esil_fire_trap(RAnalEsil *esil, int trap_type, int trap_code)
 		}
 	}
 #if 0
-	RAnalEsilTrapCB icb;
-	icb = (RAnalEsilTrapCB)sdb_ptr_get (esil->traps, i, 0);
+	REsilTrapCB icb;
+	icb = (REsilTrapCB)sdb_ptr_get (esil->traps, i, 0);
 	return icb (esil, trap_type, trap_code);
 #endif
 	return false;
 }
 
-R_API bool r_anal_esil_set_pc(RAnalEsil *esil, ut64 addr) {
+R_API bool r_esil_set_pc(REsil *esil, ut64 addr) {
 	if (esil) {
 		// r_reg_set_value_by_role (esil->anal->reg, R_REG_NAME_PC, addr);
 		esil->address = addr;
@@ -195,26 +195,26 @@ R_API bool r_anal_esil_set_pc(RAnalEsil *esil, ut64 addr) {
 	return false;
 }
 
-R_API void r_anal_esil_free(RAnalEsil *esil) {
+R_API void r_esil_free(REsil *esil) {
 	if (!esil) {
 		return;
 	}
 	if (esil->anal && esil == esil->anal->esil) {
 		esil->anal->esil = NULL;
 	}
-	r_anal_esil_plugins_fini (esil);
-	r_anal_esil_handlers_fini (esil);
+	r_esil_plugins_fini (esil);
+	r_esil_handlers_fini (esil);
 	ht_pp_free (esil->ops);
 	esil->ops = NULL;
 	sdb_free (esil->stats);
 	free (esil->pending);
 	esil->stats = NULL;
-	r_anal_esil_stack_free (esil);
+	r_esil_stack_free (esil);
 	free (esil->stack);
 	if (esil->anal && esil->anal->cur && esil->anal->cur->esil_fini) {
 		esil->anal->cur->esil_fini (esil);
 	}
-	r_anal_esil_trace_free (esil->trace);
+	r_esil_trace_free (esil->trace);
 	esil->trace = NULL;
 	free (esil->cmd_intr);
 	free (esil->cmd_trap);
@@ -226,7 +226,7 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	free (esil);
 }
 
-static ut8 esil_internal_sizeof_reg(RAnalEsil *esil, const char *r) {
+static ut8 esil_internal_sizeof_reg(REsil *esil, const char *r) {
 	r_return_val_if_fail (esil && esil->anal && esil->anal->reg && r, 0);
 	RRegItem *ri = r_reg_get (esil->anal->reg, r, -1);
 	if (ri) {
@@ -237,12 +237,12 @@ static ut8 esil_internal_sizeof_reg(RAnalEsil *esil, const char *r) {
 	return 0;
 }
 
-static bool alignCheck(RAnalEsil *esil, ut64 addr) {
+static bool alignCheck(REsil *esil, ut64 addr) {
 	const int da = esil->data_align; // r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
 	return !(da > 0 && addr % da);
 }
 
-static bool internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	r_return_val_if_fail (esil && esil->anal && esil->anal->iob.io, 0);
 
 	addr &= esil->addrmask;
@@ -274,7 +274,7 @@ static bool internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len
 	return len;
 }
 
-static bool internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool internal_esil_mem_read_no_null(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	r_return_val_if_fail (esil && esil->anal && esil->anal->iob.io, 0);
 
 	addr &= esil->addrmask;
@@ -296,7 +296,7 @@ static bool internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf,
 	return len;
 }
 
-R_API bool r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	r_return_val_if_fail (buf && esil, 0);
 	bool ret = false;
 	addr &= esil->addrmask;
@@ -328,7 +328,7 @@ R_API bool r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return ret;
 }
 
-static bool internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int ret = 0;
 	if (!esil || !esil->anal || !esil->anal->iob.io || esil->nowrite) {
 		return 0;
@@ -363,7 +363,7 @@ static bool internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, 
 	return ret;
 }
 
-static bool internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool internal_esil_mem_write_no_null(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	bool ret = false;
 	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
 		return false;
@@ -386,7 +386,7 @@ static bool internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut
 	return ret;
 }
 
-R_API bool r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	r_return_val_if_fail (esil && buf, false);
 	int i, ret = 0;
 	addr &= esil->addrmask;
@@ -406,7 +406,7 @@ R_API bool r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int
 	return ret;
 }
 
-static bool internal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
+static bool internal_esil_reg_read(REsil *esil, const char *regname, ut64 *num, int *size) {
 	RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
 	if (ri) {
 		if (size) {
@@ -424,7 +424,7 @@ static bool internal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *n
 	return false;
 }
 
-static bool internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 num) {
+static bool internal_esil_reg_write(REsil *esil, const char *regname, ut64 num) {
 	if (esil && esil->anal) {
 		RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
 		if (ri) {
@@ -443,7 +443,7 @@ static bool internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 n
 //Are you really trying to prevent the analyzed binary from doing anything that would cause it to segfault irl?
 //WHY?
 //	- condret
-static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname, ut64 num) {
+static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut64 num) {
 	r_return_val_if_fail (esil && esil->anal && esil->anal->reg, false);
 
 	const char *pc = r_reg_get_name (esil->anal->reg, R_REG_NAME_PC);
@@ -472,13 +472,13 @@ static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname
 	return false;
 }
 
-R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
+R_API bool r_esil_pushnum(REsil *esil, ut64 num) {
 	char str[SDB_NUM_BUFSZ] = {0};
 	sdb_itoa (num, 16, str, sizeof (str));
-	return r_anal_esil_push (esil, str);
+	return r_esil_push (esil, str);
 }
 
-R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str) {
+R_API bool r_esil_push(REsil *esil, const char *str) {
 	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str), false);
 	if (esil->stackptr > (esil->stacksize - 1)) {
 		return false;
@@ -487,7 +487,7 @@ R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str) {
 	return true;
 }
 
-R_API char *r_anal_esil_pop(RAnalEsil *esil) {
+R_API char *r_esil_pop(REsil *esil) {
 	r_return_val_if_fail (esil, NULL);
 	if (esil->stackptr < 1) {
 		return NULL;
@@ -495,23 +495,23 @@ R_API char *r_anal_esil_pop(RAnalEsil *esil) {
 	return esil->stack[--esil->stackptr];
 }
 
-static int not_a_number(RAnalEsil *esil, const char *str) {
+static int not_a_number(REsil *esil, const char *str) {
 	RRegItem *ri = r_reg_get (esil->anal->reg, str, -1);
 	if (ri) {
 		r_unref (ri);
-		return R_ANAL_ESIL_PARM_REG;
+		return R_ESIL_PARM_REG;
 	}
-	return R_ANAL_ESIL_PARM_INVALID;
+	return R_ESIL_PARM_INVALID;
 }
 
-R_API int r_anal_esil_get_parm_type(RAnalEsil *esil, const char *str) {
+R_API int r_esil_get_parm_type(REsil *esil, const char *str) {
 	int len, i;
 
 	if (!str || !(len = strlen (str))) {
-		return R_ANAL_ESIL_PARM_INVALID;
+		return R_ESIL_PARM_INVALID;
 	}
 	if (!strncmp (str, "0x", 2)) {
-		return R_ANAL_ESIL_PARM_NUM;
+		return R_ESIL_PARM_NUM;
 	}
 	if (!((IS_DIGIT (str[0])) || str[0] == '-')) {
 		return not_a_number (esil, str);
@@ -521,26 +521,26 @@ R_API int r_anal_esil_get_parm_type(RAnalEsil *esil, const char *str) {
 			return not_a_number (esil, str);
 		}
 	}
-	return R_ANAL_ESIL_PARM_NUM;
+	return R_ESIL_PARM_NUM;
 }
 
-static bool get_parm_size(RAnalEsil *esil, const char *str, ut64 *num, int *size) {
+static bool get_parm_size(REsil *esil, const char *str, ut64 *num, int *size) {
 	if (R_STR_ISEMPTY (str)) {
 		return false;
 	}
-	int parm_type = r_anal_esil_get_parm_type (esil, str);
+	int parm_type = r_esil_get_parm_type (esil, str);
 	if (!num || !esil) {
 		return false;
 	}
 	switch (parm_type) {
-	case R_ANAL_ESIL_PARM_NUM:
+	case R_ESIL_PARM_NUM:
 		*num = r_num_get (NULL, str);
 		if (size) {
 			*size = esil->anal->config->bits;
 		}
 		return true;
-	case R_ANAL_ESIL_PARM_REG:
-		if (!r_anal_esil_reg_read (esil, str, num, size)) {
+	case R_ESIL_PARM_REG:
+		if (!r_esil_reg_read (esil, str, num, size)) {
 			break;
 		}
 		return true;
@@ -554,11 +554,11 @@ static bool get_parm_size(RAnalEsil *esil, const char *str, ut64 *num, int *size
 	return false;
 }
 
-R_API int r_anal_esil_get_parm(RAnalEsil *esil, const char *str, ut64 *num) {
+R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num) {
 	return get_parm_size (esil, str, num, NULL);
 }
 
-R_API bool r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num) {
+R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 num) {
 	bool ret = 0;
 	IFDBG { eprintf ("%s=0x%" PFMT64x "\n", dst, num); }
 	if (esil && esil->cb.hook_reg_write) {
@@ -570,15 +570,15 @@ R_API bool r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num) {
 	return ret;
 }
 
-R_API bool r_anal_esil_reg_read_nocallback(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
+R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *num, int *size) {
 	void *old_hook_reg_read = (void *) esil->cb.hook_reg_read;
 	esil->cb.hook_reg_read = NULL;
-	bool ret = r_anal_esil_reg_read (esil, regname, num, size);
+	bool ret = r_esil_reg_read (esil, regname, num, size);
 	esil->cb.hook_reg_read = old_hook_reg_read;
 	return ret;
 }
 
-R_API bool r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
+R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *num, int *size) {
 	r_return_val_if_fail (esil && regname, false);
 	bool ret = false;
 	ut64 localnum = 0LL; // XXX why is this necessary?
@@ -598,28 +598,28 @@ R_API bool r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num,
 	return ret;
 }
 
-R_API bool r_anal_esil_signext(RAnalEsil *esil, bool assign) {
+R_API bool r_esil_signext(REsil *esil, bool assign) {
 	bool ret = false;
 	ut64 src, dst;
 
-	char *p_src = r_anal_esil_pop (esil);
+	char *p_src = r_esil_pop (esil);
 	if (!p_src) {
 		return false;
 	}
 
-	if (!r_anal_esil_get_parm (esil, p_src, &src)) {
+	if (!r_esil_get_parm (esil, p_src, &src)) {
 		ERR ("esil_of: empty stack");
 		free (p_src);
 		return false;
 	}
 
-	char *p_dst = r_anal_esil_pop (esil);
+	char *p_dst = r_esil_pop (esil);
 	if (!p_dst) {
 		free (p_src);
 		return false;
 	}
 
-	if (!r_anal_esil_get_parm (esil, p_dst, &dst)) {
+	if (!r_esil_get_parm (esil, p_dst, &dst)) {
 		ERR ("esil_of: empty stack");
 		free (p_src);
 		free (p_dst);
@@ -638,9 +638,9 @@ R_API bool r_anal_esil_signext(RAnalEsil *esil, bool assign) {
 
 	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
 	if (assign) {
-		ret = r_anal_esil_reg_write (esil, p_src, ((src ^ m) - m));
+		ret = r_esil_reg_write (esil, p_src, ((src ^ m) - m));
 	} else {
-		ret = r_anal_esil_pushnum (esil, ((src ^ m) - m));
+		ret = r_esil_pushnum (esil, ((src ^ m) - m));
 	}
 
 	free (p_src);
@@ -651,8 +651,8 @@ R_API bool r_anal_esil_signext(RAnalEsil *esil, bool assign) {
 // and other instructions involving signed values, extends n bit value to 64 bit value
 // example : >"ae 8,0x81,~" ( <src bit width>,<value>,~ )
 // output  : 0xffffffffffffff81
-static bool esil_signext(RAnalEsil *esil) {
-	return r_anal_esil_signext (esil, false);
+static bool esil_signext(REsil *esil) {
+	return r_esil_signext (esil, false);
 }
 
 // sign extension assignement
@@ -660,23 +660,23 @@ static bool esil_signext(RAnalEsil *esil) {
 //           > "ae 8,a0,~="   ( <src bit width>,register,~= )
 // output  : > ar a0
 //           0xffffff81
-static bool esil_signexteq(RAnalEsil *esil) {
-	return r_anal_esil_signext (esil, true);
+static bool esil_signexteq(REsil *esil) {
+	return r_esil_signext (esil, true);
 }
 
-static bool esil_zf(RAnalEsil *esil) {
-	return r_anal_esil_pushnum (esil, !(esil->cur & genmask (esil->lastsz - 1)));
+static bool esil_zf(REsil *esil) {
+	return r_esil_pushnum (esil, !(esil->cur & genmask (esil->lastsz - 1)));
 }
 
 // checks if there was a carry from bit x (x,$c)
-static bool esil_cf(RAnalEsil *esil) {
-	char *src = r_anal_esil_pop (esil);
+static bool esil_cf(REsil *esil) {
+	char *src = r_esil_pop (esil);
 
 	if (!src) {
 		return false;
 	}
 
-	if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_NUM) {
+	if (r_esil_get_parm_type (esil, src) != R_ESIL_PARM_NUM) {
 		//I'd wish we could enforce consts here
 		//I can't say why, but I feel like "al,$c" would be cancer af
 		//	- condret
@@ -684,30 +684,30 @@ static bool esil_cf(RAnalEsil *esil) {
 		return false;
 	}
 	ut64 bit;
-	r_anal_esil_get_parm (esil, src, &bit);
+	r_esil_get_parm (esil, src, &bit);
 	free (src);
 	//carry from bit <src>
 	//range of src goes from 0 to 63
 	//
 	//implements bit mod 64
 	const ut64 mask = genmask (bit & 0x3f);
-	return r_anal_esil_pushnum (esil, (esil->cur & mask) < (esil->old & mask));
+	return r_esil_pushnum (esil, (esil->cur & mask) < (esil->old & mask));
 }
 
 // checks if there was a borrow from bit x (x,$b)
-static bool esil_bf(RAnalEsil *esil) {
-	char *src = r_anal_esil_pop (esil);
+static bool esil_bf(REsil *esil) {
+	char *src = r_esil_pop (esil);
 
 	if (!src) {
 		return false;
 	}
 
-	if (r_anal_esil_get_parm_type (esil, src) != R_ANAL_ESIL_PARM_NUM) {
+	if (r_esil_get_parm_type (esil, src) != R_ESIL_PARM_NUM) {
 		free (src);
 		return false;
 	}
 	ut64 bit;
-	r_anal_esil_get_parm (esil, src, &bit);
+	r_esil_get_parm (esil, src, &bit);
 	free (src);
 	//borrow from bit <src>
 	//range of src goes from 1 to 64
@@ -715,10 +715,10 @@ static bool esil_bf(RAnalEsil *esil) {
 	//
 	//implements (bit - 1) mod 64
 	const ut64 mask = genmask ((bit + 0x3f) & 0x3f);
-	return r_anal_esil_pushnum (esil, (esil->old & mask) < (esil->cur & mask));
+	return r_esil_pushnum (esil, (esil->old & mask) < (esil->cur & mask));
 }
 
-static bool esil_pf(RAnalEsil *esil) {
+static bool esil_pf(REsil *esil) {
 	// Set if the number of set bits in the least significant _byte_ is a multiple of 2.
 	//   - Taken from: https://graphics.stanford.edu/~seander/bithacks.html#ParityWith64Bits
 	const ut64 c1 = 0x0101010101010101ULL;
@@ -726,26 +726,26 @@ static bool esil_pf(RAnalEsil *esil) {
 	const ut64 c3 = 0x1FF;
 	// Take only the least significant byte.
 	ut64 lsb = esil->cur & 0xff;
-	return r_anal_esil_pushnum (esil, !((((lsb * c1) & c2) % c3) & 1));
+	return r_esil_pushnum (esil, !((((lsb * c1) & c2) % c3) & 1));
 }
 
 // like carry
 // checks overflow from bit x (x,$o)
 //	x,$o ===> x,$c,x-1,$c,^
-static bool esil_of(RAnalEsil *esil) {
-	char *p_bit = r_anal_esil_pop (esil);
+static bool esil_of(REsil *esil) {
+	char *p_bit = r_esil_pop (esil);
 
 	if (!p_bit) {
 		return false;
 	}
 
-	if (r_anal_esil_get_parm_type (esil, p_bit) != R_ANAL_ESIL_PARM_NUM) {
+	if (r_esil_get_parm_type (esil, p_bit) != R_ESIL_PARM_NUM) {
 		free (p_bit);
 		return false;
 	}
 	ut64 bit;
 
-	if (!r_anal_esil_get_parm (esil, p_bit, &bit)) {
+	if (!r_esil_get_parm (esil, p_bit, &bit)) {
 		ERR ("esil_of: empty stack");
 		free (p_bit);
 		return false;
@@ -754,26 +754,26 @@ static bool esil_of(RAnalEsil *esil) {
 
 	const ut64 m[2] = {genmask (bit & 0x3f), genmask ((bit + 0x3f) & 0x3f)};
 	const ut64 result = ((esil->cur & m[0]) < (esil->old & m[0])) ^ ((esil->cur & m[1]) < (esil->old & m[1]));
-	ut64 res = r_anal_esil_pushnum (esil, result);
+	ut64 res = r_esil_pushnum (esil, result);
 	return res;
 }
 
 //checks sign bit at x (x,$s)
-static bool esil_sf(RAnalEsil *esil) {
+static bool esil_sf(REsil *esil) {
 	r_return_val_if_fail (esil, false);
 
-	char *p_size = r_anal_esil_pop (esil);
+	char *p_size = r_esil_pop (esil);
 	if (!p_size) {
 		R_LOG_WARN ("$sf cannot pop value");
 		return false;
 	}
 
-	if (r_anal_esil_get_parm_type (esil, p_size) != R_ANAL_ESIL_PARM_NUM) {
+	if (r_esil_get_parm_type (esil, p_size) != R_ESIL_PARM_NUM) {
 		free (p_size);
 		return false;
 	}
 	ut64 size, num;
-	r_anal_esil_get_parm (esil, p_size, &size);
+	r_esil_get_parm (esil, p_size, &size);
 	free (p_size);
 
 	if (size > 63) {
@@ -781,49 +781,49 @@ static bool esil_sf(RAnalEsil *esil) {
 	} else {
 		num = (esil->cur >> size) & 1;
 	}
-	return r_anal_esil_pushnum (esil, num);
+	return r_esil_pushnum (esil, num);
 }
 
-static bool esil_ds(RAnalEsil *esil) {
+static bool esil_ds(REsil *esil) {
 	r_return_val_if_fail (esil, false);
-	return r_anal_esil_pushnum (esil, esil->delay);
+	return r_esil_pushnum (esil, esil->delay);
 }
 
-static bool esil_jt(RAnalEsil *esil) {
+static bool esil_jt(REsil *esil) {
 	r_return_val_if_fail (esil, false);
-	return r_anal_esil_pushnum (esil, esil->jump_target);
+	return r_esil_pushnum (esil, esil->jump_target);
 }
 
-static bool esil_js(RAnalEsil *esil) {
+static bool esil_js(REsil *esil) {
 	r_return_val_if_fail (esil, false);
-	return r_anal_esil_pushnum (esil, esil->jump_target_set);
+	return r_esil_pushnum (esil, esil->jump_target_set);
 }
 
 //can we please deprecate this, plugins should know their current address
 //even if they don't know it, $$ should be equal to PC register at the begin of each expression
 //	- condret
 // YES PLS KILL IT
-static bool esil_address(RAnalEsil *esil) {
+static bool esil_address(REsil *esil) {
 	R_LOG_WARN ("support for esil operation $$ is about to end soon, avoid using it!");
 	r_return_val_if_fail (esil, false);
 	// esil->address = r_reg_getv (esil->anal->reg, "pc");
-	return r_anal_esil_pushnum (esil, esil->address);
+	return r_esil_pushnum (esil, esil->address);
 }
 
-static bool esil_weak_eq(RAnalEsil *esil) {
+static bool esil_weak_eq(REsil *esil) {
 	r_return_val_if_fail (esil && esil->anal, false);
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
-	if (!(dst && src && (r_anal_esil_get_parm_type(esil, dst) == R_ANAL_ESIL_PARM_REG))) {
+	if (!(dst && src && (r_esil_get_parm_type(esil, dst) == R_ESIL_PARM_REG))) {
 		free (dst);
 		free (src);
 		return false;
 	}
 
 	ut64 src_num;
-	if (r_anal_esil_get_parm (esil, src, &src_num)) {
-		(void)r_anal_esil_reg_write (esil, dst, src_num);
+	if (r_esil_get_parm (esil, src, &src_num)) {
+		(void)r_esil_reg_write (esil, dst, src_num);
 		free (src);
 		free (dst);
 		return true;
@@ -834,11 +834,11 @@ static bool esil_weak_eq(RAnalEsil *esil) {
 	return false;
 }
 
-static bool esil_eq(RAnalEsil *esil) {
+static bool esil_eq(REsil *esil) {
 	bool ret = false;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (!src || !dst) {
 		ERR ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x, esil->address);
 		free (src);
@@ -846,19 +846,19 @@ static bool esil_eq(RAnalEsil *esil) {
 		return false;
 	}
 	if (ispackedreg (esil, dst)) {
-		char *src2 = r_anal_esil_pop (esil);
+		char *src2 = r_esil_pop (esil);
 		char *newreg = r_str_newf ("%sl", dst);
-		if (r_anal_esil_get_parm (esil, src2, &num2)) {
-			ret = r_anal_esil_reg_write (esil, newreg, num2);
+		if (r_esil_get_parm (esil, src2, &num2)) {
+			ret = r_esil_reg_write (esil, newreg, num2);
 		}
 		free (newreg);
 		free (src2);
 		goto beach;
 	}
 
-	if (src && dst && r_anal_esil_reg_read_nocallback (esil, dst, &num, NULL)) {
-		if (r_anal_esil_get_parm (esil, src, &num2)) {
-			ret = r_anal_esil_reg_write (esil, dst, num2);
+	if (src && dst && r_esil_reg_read_nocallback (esil, dst, &num, NULL)) {
+		if (r_esil_get_parm (esil, src, &num2)) {
+			ret = r_esil_reg_write (esil, dst, num2);
 			esil->cur = num2;
 			esil->old = num;
 			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
@@ -874,18 +874,18 @@ beach:
 	return ret;
 }
 
-static bool esil_neg(RAnalEsil *esil) {
+static bool esil_neg(REsil *esil) {
 	bool ret = false;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (src) {
 		ut64 num;
-		if (r_anal_esil_get_parm (esil, src, &num)) {
-			r_anal_esil_pushnum (esil, !num);
+		if (r_esil_get_parm (esil, src, &num)) {
+			r_esil_pushnum (esil, !num);
 			ret = true;
 		} else {
 			if (isregornum (esil, src, &num)) {
 				ret = true;
-				r_anal_esil_pushnum (esil, !num);
+				r_esil_pushnum (esil, !num);
 			} else {
 				eprintf ("0x%08"PFMT64x" esil_neg: unknown reg %s\n", esil->address, src);
 			}
@@ -897,37 +897,37 @@ static bool esil_neg(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_negeq(RAnalEsil *esil) {
+static bool esil_negeq(REsil *esil) {
 	bool ret = false;
 	ut64 num;
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_reg_read (esil, src, &num, NULL)) {
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_reg_read (esil, src, &num, NULL)) {
 		num = !num;
-		r_anal_esil_reg_write (esil, src, num);
+		r_esil_reg_write (esil, src, num);
 		ret = true;
 	} else {
 		ERR ("esil_negeq: empty stack");
 	}
 	free (src);
-	//r_anal_esil_pushnum (esil, ret);
+	//r_esil_pushnum (esil, ret);
 	return ret;
 }
 
-static bool esil_nop(RAnalEsil *esil) {
+static bool esil_nop(REsil *esil) {
 	return true;
 }
 
-static bool esil_andeq(RAnalEsil *esil) {
+static bool esil_andeq(REsil *esil) {
 	bool ret = false;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_reg_read (esil, dst, &num, NULL)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_reg_read (esil, dst, &num, NULL)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			esil->old = num;
 			esil->cur = num & num2;
 			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			r_anal_esil_reg_write (esil, dst, num & num2);
+			r_esil_reg_write (esil, dst, num & num2);
 			ret = true;
 		} else {
 			ERR ("esil_andeq: empty stack");
@@ -938,17 +938,17 @@ static bool esil_andeq(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_oreq(RAnalEsil *esil) {
+static bool esil_oreq(REsil *esil) {
 	bool ret = false;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_reg_read (esil, dst, &num, NULL)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_reg_read (esil, dst, &num, NULL)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			esil->old = num;
 			esil->cur = num | num2;
 			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			ret = r_anal_esil_reg_write (esil, dst, num | num2);
+			ret = r_esil_reg_write (esil, dst, num | num2);
 		} else {
 			ERR ("esil_ordeq: empty stack");
 		}
@@ -958,17 +958,17 @@ static bool esil_oreq(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_xoreq(RAnalEsil *esil) {
+static bool esil_xoreq(REsil *esil) {
 	bool ret = false;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_reg_read (esil, dst, &num, NULL)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_reg_read (esil, dst, &num, NULL)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 				esil->old = num;
 				esil->cur = num ^ num2;
 				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			ret = r_anal_esil_reg_write (esil, dst, num ^ num2);
+			ret = r_esil_reg_write (esil, dst, num ^ num2);
 		} else {
 			ERR ("esil_xoreq: empty stack");
 		}
@@ -979,9 +979,9 @@ static bool esil_xoreq(RAnalEsil *esil) {
 }
 
 #if 0
-static int esil_interrupt_linux_i386(RAnalEsil *esil) { 		//move this into a plugin
+static int esil_interrupt_linux_i386(REsil *esil) { 		//move this into a plugin
 	ut32 sn, ret = 0;
-	char *usn = r_anal_esil_pop (esil);
+	char *usn = r_esil_pop (esil);
 	if (usn) {
 		sn = (ut32) r_num_get (NULL, usn);
 	} else sn = 0x80;
@@ -1034,18 +1034,18 @@ static int esil_interrupt_linux_i386(RAnalEsil *esil) { 		//move this into a plu
 }
 #endif
 
-static bool esil_trap(RAnalEsil *esil) {
+static bool esil_trap(REsil *esil) {
 	ut64 s, d;
 	if (popRN (esil, &s) && popRN (esil, &d)) {
 		esil->trap = s;
 		esil->trap_code = d;
-		return r_anal_esil_fire_trap (esil, (int)s, (int)d);
+		return r_esil_fire_trap (esil, (int)s, (int)d);
 	}
 	ERR ("esil_trap: missing parameters in stack");
 	return false;
 }
 
-static bool esil_bits(RAnalEsil *esil) {
+static bool esil_bits(REsil *esil) {
 	ut64 s;
 	if (popRN (esil, &s)) {
 		if (esil->anal && esil->anal->coreb.setab) {
@@ -1057,18 +1057,18 @@ static bool esil_bits(RAnalEsil *esil) {
 	return false;
 }
 
-static bool esil_interrupt(RAnalEsil *esil) {
+static bool esil_interrupt(REsil *esil) {
 	ut64 interrupt;
 	if (popRN (esil, &interrupt)) {
-		return r_anal_esil_fire_interrupt (esil, (ut32)interrupt);
+		return r_esil_fire_interrupt (esil, (ut32)interrupt);
 	}
 	return false;
 }
 
-static bool esil_syscall(RAnalEsil *esil) {
+static bool esil_syscall(REsil *esil) {
 	ut64 sc;
 	if (popRN (esil, &sc)) {
-		return r_anal_esil_do_syscall (esil, (ut32)sc);
+		return r_esil_do_syscall (esil, (ut32)sc);
 	}
 	return false;
 }
@@ -1098,7 +1098,7 @@ static int signed_compare_gt(ut64 a, ut64 b, ut64 size) {
 	return result;
 }
 
-static void pushnums(RAnalEsil *esil, const char *src, ut64 num2, const char *dst, ut64 num) {
+static void pushnums(REsil *esil, const char *src, ut64 num2, const char *dst, ut64 num) {
 	esil->old = num;
 	esil->cur = num - num2;
 	RRegItem *ri = r_reg_get (esil->anal->reg, dst, -1);
@@ -1118,13 +1118,13 @@ static void pushnums(RAnalEsil *esil, const char *src, ut64 num2, const char *ds
 }
 
 // This function also sets internal vars which is used in flag calculations.
-static bool esil_cmp(RAnalEsil *esil) {
+static bool esil_cmp(REsil *esil) {
 	ut64 num, num2;
 	bool ret = false;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_get_parm (esil, dst, &num)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			ret = true;
 			pushnums (esil, src, num2, dst, num);
 		}
@@ -1170,21 +1170,21 @@ JBE: CF = 1 || ZF = 1
  * Defining new cpu flags
  */
 #if 0
-static int esil_ifset(RAnalEsil *esil) {
-	char *s, *src = r_anal_esil_pop (esil);
+static int esil_ifset(REsil *esil) {
+	char *s, *src = r_esil_pop (esil);
 	for (s=src; *s; s++) {
 		switch (*s) {
 		case 'z':
-			r_anal_esil_reg_write (esil, "zf", R_BIT_CHK(&esil->flags, FLG(ZERO)));
+			r_esil_reg_write (esil, "zf", R_BIT_CHK(&esil->flags, FLG(ZERO)));
 			break;
 		case 'c':
-			r_anal_esil_reg_write (esil, "cf", R_BIT_CHK(&esil->flags, FLG(CARRY)));
+			r_esil_reg_write (esil, "cf", R_BIT_CHK(&esil->flags, FLG(CARRY)));
 			break;
 		case 'o':
-			r_anal_esil_reg_write (esil, "of", R_BIT_CHK(&esil->flags, FLG(OVERFLOW)));
+			r_esil_reg_write (esil, "of", R_BIT_CHK(&esil->flags, FLG(OVERFLOW)));
 			break;
 		case 'p':
-			r_anal_esil_reg_write (esil, "pf", R_BIT_CHK(&esil->flags, FLG(PARITY)));
+			r_esil_reg_write (esil, "pf", R_BIT_CHK(&esil->flags, FLG(PARITY)));
 			break;
 		}
 	}
@@ -1193,15 +1193,15 @@ static int esil_ifset(RAnalEsil *esil) {
 }
 #endif
 
-static bool esil_if (RAnalEsil *esil) {
+static bool esil_if (REsil *esil) {
 	ut64 num = 0LL;
 	if (esil->skip) {
 		esil->skip++;
 		return true;
 	}
 	bool ret = false;
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &num)) {
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &num)) {
 		// condition not matching, skipping until
 		if (!num) {
 			esil->skip++;
@@ -1212,18 +1212,18 @@ static bool esil_if (RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_lsl(RAnalEsil *esil) {
+static bool esil_lsl(REsil *esil) {
 	bool ret = false;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_get_parm (esil, dst, &num)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			if (num2 > sizeof (ut64) * 8) {
 				ERR ("esil_lsl: shift is too big");
 			} else {
 				const ut64 shift = (num2 > 63)? 0: num << num2;
-				r_anal_esil_pushnum (esil, shift);
+				r_esil_pushnum (esil, shift);
 				ret = true;
 			}
 		} else {
@@ -1235,13 +1235,13 @@ static bool esil_lsl(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_lsleq(RAnalEsil *esil) {
+static bool esil_lsleq(REsil *esil) {
 	bool ret = false;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_reg_read (esil, dst, &num, NULL)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_reg_read (esil, dst, &num, NULL)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			if (num2 > sizeof (ut64) * 8) {
 				ERR ("esil_lsleq: shift is too big");
 			} else {
@@ -1253,7 +1253,7 @@ static bool esil_lsleq(RAnalEsil *esil) {
 				}
 				esil->cur = num;
 				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-				r_anal_esil_reg_write (esil, dst, num);
+				r_esil_reg_write (esil, dst, num);
 				ret = true;
 			}
 		} else {
@@ -1265,15 +1265,15 @@ static bool esil_lsleq(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_lsr(RAnalEsil *esil) {
+static bool esil_lsr(REsil *esil) {
 	bool ret = false;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_get_parm (esil, dst, &num)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			ut64 res = num >> R_MIN (num2, 63);
-			r_anal_esil_pushnum (esil, res);
+			r_esil_pushnum (esil, res);
 			ret = true;
 		} else {
 			ERR ("esil_lsr: empty stack");
@@ -1284,13 +1284,13 @@ static bool esil_lsr(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_lsreq(RAnalEsil *esil) {
+static bool esil_lsreq(REsil *esil) {
 	bool ret = false;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_reg_read (esil, dst, &num, NULL)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_reg_read (esil, dst, &num, NULL)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			if (num2 > 63) {
 				if (esil->verbose) {
 					eprintf ("Invalid shift at 0x%08"PFMT64x"\n", esil->address);
@@ -1301,7 +1301,7 @@ static bool esil_lsreq(RAnalEsil *esil) {
 			num >>= num2;
 			esil->cur = num;
 			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			r_anal_esil_reg_write (esil, dst, num);
+			r_esil_reg_write (esil, dst, num);
 			ret = true;
 		} else {
 			ERR ("esil_lsreq: empty stack");
@@ -1312,14 +1312,14 @@ static bool esil_lsreq(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_asreq(RAnalEsil *esil) {
+static bool esil_asreq(REsil *esil) {
 	bool ret = false;
 	int regsize = 0;
 	ut64 op_num, param_num;
-	char *op = r_anal_esil_pop (esil);
-	char *param = r_anal_esil_pop (esil);
+	char *op = r_esil_pop (esil);
+	char *param = r_esil_pop (esil);
 	if (op && get_parm_size (esil, op, &op_num, &regsize)) {
-		if (param && r_anal_esil_get_parm (esil, param, &param_num)) {
+		if (param && r_esil_get_parm (esil, param, &param_num)) {
 			ut64 mask = (regsize - 1);
 			param_num &= mask;
 			bool isNegative;
@@ -1374,8 +1374,8 @@ static bool esil_asreq(RAnalEsil *esil) {
 			ut64 res = op_num;
 			esil->cur = res;
 			esil->lastsz = esil_internal_sizeof_reg (esil, op);
-			r_anal_esil_reg_write (esil, op, res);
-			// r_anal_esil_pushnum (esil, res);
+			r_esil_reg_write (esil, op, res);
+			// r_esil_pushnum (esil, res);
 			ret = true;
 		} else {
 			if (esil->verbose) {
@@ -1388,14 +1388,14 @@ static bool esil_asreq(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_asr(RAnalEsil *esil) {
+static bool esil_asr(REsil *esil) {
 	bool ret = false;
 	int regsize = 0;
 	ut64 op_num = 0, param_num = 0;
-	char *op = r_anal_esil_pop (esil);
-	char *param = r_anal_esil_pop (esil);
+	char *op = r_esil_pop (esil);
+	char *param = r_esil_pop (esil);
 	if (op && get_parm_size (esil, op, &op_num, &regsize)) {
-		if (param && r_anal_esil_get_parm (esil, param, &param_num)) {
+		if (param && r_esil_get_parm (esil, param, &param_num)) {
 			if (param_num > regsize - 1) {
 				// capstone bug?
 				if (esil->verbose) {
@@ -1424,7 +1424,7 @@ static bool esil_asr(RAnalEsil *esil) {
 				op_num >>= param_num;
 			}
 			ut64 res = op_num;
-			r_anal_esil_pushnum (esil, res);
+			r_esil_pushnum (esil, res);
 			ret = true;
 		} else {
 			ERR ("esil_asr: empty stack");
@@ -1435,18 +1435,18 @@ static bool esil_asr(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_ror(RAnalEsil *esil) {
+static bool esil_ror(REsil *esil) {
 	bool ret = 0;
 	int regsize;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (dst && get_parm_size (esil, dst, &num, &regsize)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			ut64 mask = (regsize - 1);
 			num2 &= mask;
 			ut64 res = (num >> num2) | (num << ((-(st64)num2) & mask));
-			r_anal_esil_pushnum (esil, res);
+			r_esil_pushnum (esil, res);
 			ret = true;
 		} else {
 			ERR ("esil_ror: empty stack");
@@ -1457,18 +1457,18 @@ static bool esil_ror(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_rol(RAnalEsil *esil) {
+static bool esil_rol(REsil *esil) {
 	bool ret = 0;
 	int regsize;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (dst && get_parm_size (esil, dst, &num, &regsize)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			ut64 mask = (regsize - 1);
 			num2 &= mask;
 			ut64 res = (num << num2) | (num >> ((-(st64)num2) & mask));
-			r_anal_esil_pushnum (esil, res);
+			r_esil_pushnum (esil, res);
 			ret = true;
 		} else {
 			ERR ("esil_rol: empty stack");
@@ -1479,15 +1479,15 @@ static bool esil_rol(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_and(RAnalEsil *esil) {
+static bool esil_and(REsil *esil) {
 	bool ret = false;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_get_parm (esil, dst, &num)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			num &= num2;
-			r_anal_esil_pushnum (esil, num);
+			r_esil_pushnum (esil, num);
 			ret = true;
 		} else {
 			ERR ("esil_and: empty stack");
@@ -1498,15 +1498,15 @@ static bool esil_and(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_xor(RAnalEsil *esil) {
+static bool esil_xor(REsil *esil) {
 	bool ret = false;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_get_parm (esil, dst, &num)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			num ^= num2;
-			r_anal_esil_pushnum (esil, num);
+			r_esil_pushnum (esil, num);
 			ret = true;
 		} else {
 			ERR ("esil_xor: empty stack");
@@ -1517,15 +1517,15 @@ static bool esil_xor(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_or(RAnalEsil *esil) {
+static bool esil_or(REsil *esil) {
 	bool ret = false;
 	ut64 num, num2;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_get_parm (esil, dst, &num)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			num |= num2;
-			r_anal_esil_pushnum (esil, num);
+			r_esil_pushnum (esil, num);
 			ret = true;
 		} else {
 			ERR ("esil_xor: empty stack");
@@ -1536,7 +1536,7 @@ static bool esil_or(RAnalEsil *esil) {
 	return ret;
 }
 
-R_API const char *r_anal_esil_trapstr(int type) {
+R_API const char *r_esil_trapstr(int type) {
 	switch (type) {
 	case R_ANAL_TRAP_READ_ERR:
 		return "read-err";
@@ -1559,13 +1559,13 @@ R_API const char *r_anal_esil_trapstr(int type) {
 	}
 }
 
-R_API bool r_anal_esil_dumpstack(RAnalEsil *esil) {
+R_API bool r_esil_dumpstack(REsil *esil) {
 	r_return_val_if_fail (esil, false);
 	int i;
 	if (esil->trap) {
 		eprintf ("ESIL TRAP type %d code 0x%08x %s\n",
 			esil->trap, esil->trap_code,
-			r_anal_esil_trapstr (esil->trap));
+			r_esil_trapstr (esil->trap));
 	}
 	if (esil->stackptr < 1) {
 		return false;
@@ -1576,47 +1576,47 @@ R_API bool r_anal_esil_dumpstack(RAnalEsil *esil) {
 	return true;
 }
 
-static bool esil_break(RAnalEsil *esil) {
+static bool esil_break(REsil *esil) {
 	esil->parse_stop = 1;
 	return 1;
 }
 
-static bool esil_clear(RAnalEsil *esil) {
+static bool esil_clear(REsil *esil) {
 	char *r;
-	while ((r = r_anal_esil_pop (esil))) {
+	while ((r = r_esil_pop (esil))) {
 		free (r);
 	}
 	return 1;
 }
 
-static bool esil_todo(RAnalEsil *esil) {
+static bool esil_todo(REsil *esil) {
 	esil->parse_stop = 2;
 	return 1;
 }
 
-static bool esil_goto(RAnalEsil *esil) {
+static bool esil_goto(REsil *esil) {
 	ut64 num = 0;
-	char *src = r_anal_esil_pop (esil);
-	if (src && *src && r_anal_esil_get_parm (esil, src, &num)) {
+	char *src = r_esil_pop (esil);
+	if (src && *src && r_esil_get_parm (esil, src, &num)) {
 		esil->parse_goto = num;
 	}
 	free (src);
 	return 1;
 }
 
-static bool esil_pop(RAnalEsil *esil) {
-	char *dst = r_anal_esil_pop (esil);
+static bool esil_pop(REsil *esil) {
+	char *dst = r_esil_pop (esil);
 	free (dst);
 	return 1;
 }
 
-static bool esil_mod(RAnalEsil *esil) {
+static bool esil_mod(REsil *esil) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
+		if (dst && r_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
 				if (esil->verbose > 0) {
 					eprintf ("0x%08"PFMT64x" esil_mod: Division by zero!\n", esil->address);
@@ -1624,7 +1624,7 @@ static bool esil_mod(RAnalEsil *esil) {
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
-				r_anal_esil_pushnum (esil, d % s);
+				r_esil_pushnum (esil, d % s);
 			}
 			ret = true;
 		}
@@ -1636,13 +1636,13 @@ static bool esil_mod(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_signed_mod(RAnalEsil *esil) {
+static bool esil_signed_mod(REsil *esil) {
 	bool ret = false;
 	st64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, (ut64 *)&s)) {
-		if (dst && r_anal_esil_get_parm (esil, dst, (ut64 *)&d)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, (ut64 *)&s)) {
+		if (dst && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (ST64_DIV_OVFCHK (d, s)) {
 				if (esil->verbose > 0) {
 					eprintf ("0x%08"PFMT64x" esil_mod: Division by zero!\n", esil->address);
@@ -1650,7 +1650,7 @@ static bool esil_signed_mod(RAnalEsil *esil) {
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
-				r_anal_esil_pushnum (esil, d % s);
+				r_esil_pushnum (esil, d % s);
 			}
 			ret = true;
 		}
@@ -1662,18 +1662,18 @@ static bool esil_signed_mod(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_modeq(RAnalEsil *esil) {
+static bool esil_modeq(REsil *esil) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_reg_read (esil, dst, &d, NULL)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
+		if (dst && r_esil_reg_read (esil, dst, &d, NULL)) {
 			if (s) {
 				esil->old = d;
 				esil->cur = d % s;
 				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-				r_anal_esil_reg_write (esil, dst, d % s);
+				r_esil_reg_write (esil, dst, d % s);
 			} else {
 				ERR ("esil_modeq: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
@@ -1691,19 +1691,19 @@ static bool esil_modeq(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_div(RAnalEsil *esil) {
+static bool esil_div(REsil *esil) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
+		if (dst && r_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
 				ERR ("esil_div: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
-				r_anal_esil_pushnum (esil, d / s);
+				r_esil_pushnum (esil, d / s);
 			}
 			ret = true;
 		}
@@ -1715,19 +1715,19 @@ static bool esil_div(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_signed_div(RAnalEsil *esil) {
+static bool esil_signed_div(REsil *esil) {
 	bool ret = false;
 	st64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, (ut64 *)&s)) {
-		if (dst && r_anal_esil_get_parm (esil, dst, (ut64 *)&d)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, (ut64 *)&s)) {
+		if (dst && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (ST64_DIV_OVFCHK (d, s)) {
 				ERR ("esil_div: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
-				r_anal_esil_pushnum (esil, d / s);
+				r_esil_pushnum (esil, d / s);
 			}
 			ret = true;
 		}
@@ -1739,18 +1739,18 @@ static bool esil_signed_div(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_diveq(RAnalEsil *esil) {
+static bool esil_diveq(REsil *esil) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_reg_read (esil, dst, &d, NULL)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
+		if (dst && r_esil_reg_read (esil, dst, &d, NULL)) {
 			if (s) {
 				esil->old = d;
 				esil->cur = d / s;
 				esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-				r_anal_esil_reg_write (esil, dst, d / s);
+				r_esil_reg_write (esil, dst, d / s);
 			} else {
 				// eprintf ("0x%08"PFMT64x" esil_diveq: Division by zero!\n", esil->address);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
@@ -1789,17 +1789,17 @@ static void mult64to128(ut64 op1, ut64 op2, ut64 *hi, ut64 *lo) {
 	*lo = (t << 32) + w3;
 }
 
-static bool esil_long_mul(RAnalEsil *esil) {
+static bool esil_long_mul(REsil *esil) {
 	bool ret = false;
 	ut64 s, d;
 	ut64 hi, lo;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
+		if (dst && r_esil_get_parm (esil, dst, &d)) {
 			mult64to128(s, d, &hi, &lo);
-			r_anal_esil_pushnum (esil, hi);
-			r_anal_esil_pushnum (esil, lo);
+			r_esil_pushnum (esil, hi);
+			r_esil_pushnum (esil, lo);
 			ret = true;
 		} else {
 			ERR ("esil_long_mul: empty stack");
@@ -1812,14 +1812,14 @@ static bool esil_long_mul(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_mul(RAnalEsil *esil) {
+static bool esil_mul(REsil *esil) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
-			r_anal_esil_pushnum (esil, d * s);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
+		if (dst && r_esil_get_parm (esil, dst, &d)) {
+			r_esil_pushnum (esil, d * s);
 			ret = true;
 		} else {
 			ERR ("esil_mul: empty stack");
@@ -1832,17 +1832,17 @@ static bool esil_mul(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_muleq(RAnalEsil *esil) {
+static bool esil_muleq(REsil *esil) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_reg_read (esil, dst, &d, NULL)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
+		if (dst && r_esil_reg_read (esil, dst, &d, NULL)) {
 			esil->old = d;
 			esil->cur = d * s;
 			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			ret = r_anal_esil_reg_write (esil, dst, s * d);
+			ret = r_esil_reg_write (esil, dst, s * d);
 		} else {
 			ERR ("esil_muleq: empty stack");
 		}
@@ -1854,13 +1854,13 @@ static bool esil_muleq(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_add(RAnalEsil *esil) {
+static bool esil_add(REsil *esil) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if ((src && r_anal_esil_get_parm (esil, src, &s)) && (dst && r_anal_esil_get_parm (esil, dst, &d))) {
-		r_anal_esil_pushnum (esil, s + d);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if ((src && r_esil_get_parm (esil, src, &s)) && (dst && r_esil_get_parm (esil, dst, &d))) {
+		r_esil_pushnum (esil, s + d);
 		ret = true;
 	} else {
 		ERR ("esil_add: invalid parameters");
@@ -1871,11 +1871,11 @@ static bool esil_add(RAnalEsil *esil) {
 }
 
 #if ESIL_MACRO
-static bool esil_inc_macro(RAnalEsil *esil) {
+static bool esil_inc_macro(REsil *esil) {
 	bool ret = false;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (R_STR_ISNOTEMPTY (src)) {
-		r_anal_esil_runpending (esil, r_str_newf ("1,%s,+", src));
+		r_esil_runpending (esil, r_str_newf ("1,%s,+", src));
 		ret = true;
 	} else {
 		ERR ("esil_inc: invalid parameters");
@@ -1884,11 +1884,11 @@ static bool esil_inc_macro(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_inceq_macro(RAnalEsil *esil) {
+static bool esil_inceq_macro(REsil *esil) {
 	bool ret = false;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (R_STR_ISNOTEMPTY (src)) {
-		r_anal_esil_runpending (esil, r_str_newf ("1,%s,+,%s,=", src, src));
+		r_esil_runpending (esil, r_str_newf ("1,%s,+,%s,=", src, src));
 		ret = true;
 	} else {
 		ERR ("esil_inceq_macro: invalid parameters");
@@ -1898,12 +1898,12 @@ static bool esil_inceq_macro(RAnalEsil *esil) {
 }
 
 #if 0
-static bool esil_addeq_macro(RAnalEsil *esil) {
+static bool esil_addeq_macro(REsil *esil) {
 	bool ret = false;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (R_STR_ISNOTEMPTY (src) && R_STR_ISNOTEMPTY (dst)) {
-		r_anal_esil_runpending (esil, r_str_newf ("%s,%s,+,%s,=", src, dst, dst));
+		r_esil_runpending (esil, r_str_newf ("%s,%s,+,%s,=", src, dst, dst));
 		ret = true;
 	} else {
 		ERR ("esil_addeq_macro: invalid parameters");
@@ -1913,12 +1913,12 @@ static bool esil_addeq_macro(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_subeq_macro(RAnalEsil *esil) {
+static bool esil_subeq_macro(REsil *esil) {
 	bool ret = false;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (R_STR_ISNOTEMPTY (src) && R_STR_ISNOTEMPTY (dst)) {
-		r_anal_esil_runpending (esil, r_str_newf ("%s,%s,-,%s,=", src, dst, dst));
+		r_esil_runpending (esil, r_str_newf ("%s,%s,-,%s,=", src, dst, dst));
 		ret = true;
 	} else {
 		ERR ("esil_subeq_macro: invalid parameters");
@@ -1929,13 +1929,13 @@ static bool esil_subeq_macro(RAnalEsil *esil) {
 }
 #endif
 #else
-static bool esil_inc(RAnalEsil *esil) {
+static bool esil_inc(REsil *esil) {
 	bool ret = false;
 	ut64 s;
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
 		s++;
-		ret = r_anal_esil_pushnum (esil, s);
+		ret = r_esil_pushnum (esil, s);
 	} else {
 		ERR ("esil_inc: invalid parameters");
 	}
@@ -1943,15 +1943,15 @@ static bool esil_inc(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_inceq(RAnalEsil *esil) {
+static bool esil_inceq(REsil *esil) {
 	bool ret = false;
 	ut64 sd;
-	char *src_dst = r_anal_esil_pop (esil);
-	if (src_dst && (r_anal_esil_get_parm_type (esil, src_dst) == R_ANAL_ESIL_PARM_REG) && r_anal_esil_get_parm (esil, src_dst, &sd)) {
+	char *src_dst = r_esil_pop (esil);
+	if (src_dst && (r_esil_get_parm_type (esil, src_dst) == R_ESIL_PARM_REG) && r_esil_get_parm (esil, src_dst, &sd)) {
 		// inc rax
 		esil->old = sd++;
 		esil->cur = sd;
-		r_anal_esil_reg_write (esil, src_dst, sd);
+		r_esil_reg_write (esil, src_dst, sd);
 		esil->lastsz = esil_internal_sizeof_reg (esil, src_dst);
 		ret = true;
 	} else {
@@ -1963,17 +1963,17 @@ static bool esil_inceq(RAnalEsil *esil) {
 
 #endif
 
-static bool esil_addeq(RAnalEsil *esil) {
+static bool esil_addeq(REsil *esil) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_reg_read (esil, dst, &d, NULL)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
+		if (dst && r_esil_reg_read (esil, dst, &d, NULL)) {
 			esil->old = d;
 			esil->cur = d + s;
 			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			ret = r_anal_esil_reg_write (esil, dst, s + d);
+			ret = r_esil_reg_write (esil, dst, s + d);
 		}
 	} else {
 		ERR ("esil_addeq: invalid parameters");
@@ -1983,17 +1983,17 @@ static bool esil_addeq(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_subeq(RAnalEsil *esil) {
+static bool esil_subeq(REsil *esil) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_reg_read (esil, dst, &d, NULL)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
+		if (dst && r_esil_reg_read (esil, dst, &d, NULL)) {
 			esil->old = d;
 			esil->cur = d - s;
 			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			ret = r_anal_esil_reg_write (esil, dst, d - s);
+			ret = r_esil_reg_write (esil, dst, d - s);
 		}
 	} else {
 		ERR ("esil_subeq: invalid parameters");
@@ -2004,13 +2004,13 @@ static bool esil_subeq(RAnalEsil *esil) {
 }
 
 
-static bool esil_sub(RAnalEsil *esil) {
+static bool esil_sub(REsil *esil) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if ((src && r_anal_esil_get_parm (esil, src, &s)) && (dst && r_anal_esil_get_parm (esil, dst, &d))) {
-		ret = r_anal_esil_pushnum (esil, d - s);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if ((src && r_esil_get_parm (esil, src, &s)) && (dst && r_esil_get_parm (esil, dst, &d))) {
+		ret = r_esil_pushnum (esil, d - s);
 	} else {
 		ERR ("esil_sub: invalid parameters");
 	}
@@ -2019,13 +2019,13 @@ static bool esil_sub(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_dec(RAnalEsil *esil) {
+static bool esil_dec(REsil *esil) {
 	bool ret = false;
 	ut64 s;
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
 		s--;
-		ret = r_anal_esil_pushnum (esil, s);
+		ret = r_esil_pushnum (esil, s);
 	} else {
 		ERR ("esil_dec: invalid parameters");
 	}
@@ -2033,15 +2033,15 @@ static bool esil_dec(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_deceq(RAnalEsil *esil) {
+static bool esil_deceq(REsil *esil) {
 	bool ret = false;
 	ut64 sd;
-	char *src_dst = r_anal_esil_pop (esil);
-	if (src_dst && (r_anal_esil_get_parm_type (esil, src_dst) == R_ANAL_ESIL_PARM_REG) && r_anal_esil_get_parm (esil, src_dst, &sd)) {
+	char *src_dst = r_esil_pop (esil);
+	if (src_dst && (r_esil_get_parm_type (esil, src_dst) == R_ESIL_PARM_REG) && r_esil_get_parm (esil, src_dst, &sd)) {
 		esil->old = sd;
 		sd--;
 		esil->cur = sd;
-		r_anal_esil_reg_write (esil, src_dst, sd);
+		r_esil_reg_write (esil, src_dst, sd);
 		esil->lastsz = esil_internal_sizeof_reg (esil, src_dst);
 		ret = true;
 	} else {
@@ -2052,13 +2052,13 @@ static bool esil_deceq(RAnalEsil *esil) {
 }
 
 /* POKE */
-static bool esil_poke_n(RAnalEsil *esil, int bits) {
+static bool esil_poke_n(REsil *esil, int bits) {
 	ut64 bitmask = genmask (bits - 1);
 	ut64 num, num2, addr;
 	ut8 b[8] = {0};
 	ut64 n;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	int bytes = R_MIN (sizeof (b), bits / 8);
 	if (bits % 8) {
 		free (src);
@@ -2068,16 +2068,16 @@ static bool esil_poke_n(RAnalEsil *esil, int bits) {
 	bool ret = false;
 	//eprintf ("GONA POKE %d src:%s dst:%s\n", bits, src, dst);
 	char *src2 = NULL;
-	if (src && r_anal_esil_get_parm (esil, src, &num)) {
-		if (dst && r_anal_esil_get_parm (esil, dst, &addr)) {
+	if (src && r_esil_get_parm (esil, src, &num)) {
+		if (dst && r_esil_get_parm (esil, dst, &addr)) {
 			if (bits == 128) {
-				src2 = r_anal_esil_pop (esil);
-				if (src2 && r_anal_esil_get_parm (esil, src2, &num2)) {
+				src2 = r_esil_pop (esil);
+				if (src2 && r_esil_get_parm (esil, src2, &num2)) {
 					r_write_ble (b, num, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), 64);
-					ret = r_anal_esil_mem_write (esil, addr, b, bytes);
+					ret = r_esil_mem_write (esil, addr, b, bytes);
 					if (ret == 0) {
 						r_write_ble (b, num2, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), 64);
-						ret = r_anal_esil_mem_write (esil, addr + 8, b, bytes);
+						ret = r_esil_mem_write (esil, addr + 8, b, bytes);
 					}
 					goto out;
 				}
@@ -2088,7 +2088,7 @@ static bool esil_poke_n(RAnalEsil *esil, int bits) {
 			// we disable hooks to avoid run hooks on internal peeks
 			void * oldhook = (void*)esil->cb.hook_mem_read;
 			esil->cb.hook_mem_read = NULL;
-			r_anal_esil_mem_read (esil, addr, b, bytes);
+			r_esil_mem_read (esil, addr, b, bytes);
 			esil->cb.hook_mem_read = oldhook;
 			n = r_read_ble64 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
 			esil->old = n;
@@ -2096,7 +2096,7 @@ static bool esil_poke_n(RAnalEsil *esil, int bits) {
 			esil->lastsz = bits;
 			num = num & bitmask;
 			r_write_ble (b, num, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), bits);
-			ret = r_anal_esil_mem_write (esil, addr, b, bytes);
+			ret = r_esil_mem_write (esil, addr, b, bytes);
 		}
 	}
 out:
@@ -2106,47 +2106,47 @@ out:
 	return ret;
 }
 
-static bool esil_poke1(RAnalEsil *esil) {
+static bool esil_poke1(REsil *esil) {
 	return esil_poke_n (esil, 8);
 }
 
-static bool esil_poke2(RAnalEsil *esil) {
+static bool esil_poke2(REsil *esil) {
 	return esil_poke_n (esil, 16);
 }
 
-static bool esil_poke3(RAnalEsil *esil) {
+static bool esil_poke3(REsil *esil) {
 	return esil_poke_n (esil, 24);
 }
 
-static bool esil_poke4(RAnalEsil *esil) {
+static bool esil_poke4(REsil *esil) {
 	return esil_poke_n (esil, 32);
 }
 
-static bool esil_poke8(RAnalEsil *esil) {
+static bool esil_poke8(REsil *esil) {
 	return esil_poke_n (esil, 64);
 }
 
-static bool esil_poke16(RAnalEsil *esil) {
+static bool esil_poke16(REsil *esil) {
 	return esil_poke_n (esil, 128);
 }
 
-static bool esil_poke_some(RAnalEsil *esil) {
+static bool esil_poke_some(REsil *esil) {
 	bool ret = false;
 	int i, regsize;
 	ut64 ptr, regs = 0, tmp;
-	char *count, *dst = r_anal_esil_pop (esil);
+	char *count, *dst = r_esil_pop (esil);
 
 	if (dst && get_parm_size (esil, dst, &tmp, &regsize)) {
 		// reg
 		isregornum (esil, dst, &ptr);
-		count = r_anal_esil_pop (esil);
+		count = r_esil_pop (esil);
 		if (count) {
 			isregornum (esil, count, &regs);
 			if (regs > 0) {
 				ut8 b[8] = {0};
 				ut64 num64;
 				for (i = 0; i < regs; i++) {
-					char *foo = r_anal_esil_pop (esil);
+					char *foo = r_esil_pop (esil);
 					if (!foo) {
 						// avoid looping out of stack
 						free (dst);
@@ -2157,7 +2157,7 @@ static bool esil_poke_some(RAnalEsil *esil) {
 					isregornum (esil, foo, &num64);
 					r_write_ble (b, num64, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), regsize);
 					const int size_bytes = regsize / 8;
-					const ut32 written = r_anal_esil_mem_write (esil, ptr, b, size_bytes);
+					const ut32 written = r_esil_mem_write (esil, ptr, b, size_bytes);
 					if (written != size_bytes) {
 						//R_LOG_ERROR ("Cannot write at 0x%08" PFMT64x, ptr);
 						esil->trap = 1;
@@ -2177,7 +2177,7 @@ static bool esil_poke_some(RAnalEsil *esil) {
 
 /* PEEK */
 
-static bool esil_peek_n(RAnalEsil *esil, int bits) {
+static bool esil_peek_n(REsil *esil, int bits) {
 	if (bits & 7) {
 		return false;
 	}
@@ -2185,7 +2185,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 	char res[SDB_NUM_BUFSZ];
 	ut64 addr;
 	ut32 bytes = bits / 8;
-	char *dst = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
 	if (!dst) {
 		R_LOG_ERROR ("ESIL failed at 0x%08"PFMT64x": Won't peek the memory unless the users tells that", esil->address);
 		return false;
@@ -2194,19 +2194,19 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 	if (dst && isregornum (esil, dst, &addr)) {
 		if (bits == 128) {
 			ut8 a[sizeof (ut64) * 2] = {0};
-			ret = r_anal_esil_mem_read (esil, addr, a, bytes);
+			ret = r_esil_mem_read (esil, addr, a, bytes);
 			ut64 b = r_read_ble64 (&a, 0); //esil->anal->config->big_endian);
 			ut64 c = r_read_ble64 (&a[8], 0); //esil->anal->config->big_endian);
 			sdb_itoa (b, 16, res, sizeof (res));
-			r_anal_esil_push (esil, res);
+			r_esil_push (esil, res);
 			sdb_itoa (c, 16, res, sizeof (res));
-			r_anal_esil_push (esil, res);
+			r_esil_push (esil, res);
 			free (dst);
 			return ret;
 		}
 		ut64 bitmask = genmask (bits - 1);
 		ut8 a[sizeof (ut64)] = {0};
-		ret = !!r_anal_esil_mem_read (esil, addr, a, bytes);
+		ret = !!r_esil_mem_read (esil, addr, a, bytes);
 #if 0
 		ut64 b = r_read_ble64 (a, esil->anal->config->big_endian);
 #else
@@ -2216,60 +2216,60 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 		}
 #endif
 		sdb_itoa (b & bitmask, 16, res, sizeof (res));
-		r_anal_esil_push (esil, res);
+		r_esil_push (esil, res);
 		esil->lastsz = bits;
 	}
 	free (dst);
 	return ret;
 }
 
-static bool esil_peek1(RAnalEsil *esil) {
+static bool esil_peek1(REsil *esil) {
 	return esil_peek_n (esil, 8);
 }
 
-static bool esil_peek2(RAnalEsil *esil) {
+static bool esil_peek2(REsil *esil) {
 	return esil_peek_n (esil, 16);
 }
 
-static bool esil_peek3(RAnalEsil *esil) {
+static bool esil_peek3(REsil *esil) {
 	return esil_peek_n (esil, 24);
 }
 
-static bool esil_peek4(RAnalEsil *esil) {
+static bool esil_peek4(REsil *esil) {
 	return esil_peek_n (esil, 32);
 }
 
-static bool esil_peek8(RAnalEsil *esil) {
+static bool esil_peek8(REsil *esil) {
 	return esil_peek_n (esil, 64);
 }
 
-static bool esil_peek16(RAnalEsil *esil) {
+static bool esil_peek16(REsil *esil) {
 	// packed only
 	return esil_peek_n (esil, 128);
 }
 
-static bool esil_peek_some(RAnalEsil *esil) {
+static bool esil_peek_some(REsil *esil) {
 	int i;
 	ut64 ptr, regs;
 	// pop ptr
-	char *count, *dst = r_anal_esil_pop (esil);
+	char *count, *dst = r_esil_pop (esil);
 	if (dst) {
 		// reg
 		isregornum (esil, dst, &ptr);
-		count = r_anal_esil_pop (esil);
+		count = r_esil_pop (esil);
 		if (count) {
 			isregornum (esil, count, &regs);
 			if (regs > 0) {
 				ut8 a[4];
 				for (i = 0; i < regs; i++) {
-					char *foo = r_anal_esil_pop (esil);
+					char *foo = r_esil_pop (esil);
 					if (!foo) {
 						ERR ("Cannot pop in peek");
 						free (dst);
 						free (count);
 						return false;
 					}
-					bool oks = r_anal_esil_mem_read (esil, ptr, a, 4);
+					bool oks = r_esil_mem_read (esil, ptr, a, 4);
 					if (!oks) {
 						if (esil->verbose) {
 							R_LOG_ERROR ("Cannot peek from 0x%08" PFMT64x, ptr);
@@ -2279,7 +2279,7 @@ static bool esil_peek_some(RAnalEsil *esil) {
 						return false;
 					}
 					ut32 num32 = r_read_ble32 (a, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
-					r_anal_esil_reg_write (esil, foo, num32);
+					r_esil_reg_write (esil, foo, num32);
 					ptr += 4;
 					free (foo);
 				}
@@ -2295,20 +2295,20 @@ static bool esil_peek_some(RAnalEsil *esil) {
 
 /* OREQ */
 
-static bool esil_mem_oreq_n(RAnalEsil *esil, int bits) {
+static bool esil_mem_oreq_n(REsil *esil, int bits) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);  //save the dst-addr
-	char *src0 = r_anal_esil_pop (esil); //get the src
+	char *dst = r_esil_pop (esil);  //save the dst-addr
+	char *src0 = r_esil_pop (esil); //get the src
 	char *src1 = NULL;
-	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) { 	//get the src
-		r_anal_esil_push (esil, dst);			//push the dst-addr
+	if (src0 && r_esil_get_parm (esil, src0, &s)) { 	//get the src
+		r_esil_push (esil, dst);			//push the dst-addr
 		ret = !!esil_peek_n (esil, bits);		//read
-		src1 = r_anal_esil_pop (esil);			//get the old dst-value
-		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) { //get the old dst-value
+		src1 = r_esil_pop (esil);			//get the old dst-value
+		if (src1 && r_esil_get_parm (esil, src1, &d)) { //get the old dst-value
 			d |= s;					//calculate the new dst-value
-			r_anal_esil_pushnum (esil, d);		//push the new dst-value
-			r_anal_esil_push (esil, dst);		//push the dst-addr
+			r_esil_pushnum (esil, d);		//push the new dst-value
+			r_esil_push (esil, dst);		//push the dst-addr
 			ret &= (!!esil_poke_n (esil, bits));	//write
 		} else {
 			ret = false;
@@ -2323,35 +2323,35 @@ static bool esil_mem_oreq_n(RAnalEsil *esil, int bits) {
 	return ret;
 }
 
-static bool esil_mem_oreq1(RAnalEsil *esil) {
+static bool esil_mem_oreq1(REsil *esil) {
 	return esil_mem_oreq_n (esil, 8);
 }
-static bool esil_mem_oreq2(RAnalEsil *esil) {
+static bool esil_mem_oreq2(REsil *esil) {
 	return esil_mem_oreq_n (esil, 16);
 }
-static bool esil_mem_oreq4(RAnalEsil *esil) {
+static bool esil_mem_oreq4(REsil *esil) {
 	return esil_mem_oreq_n (esil, 32);
 }
-static bool esil_mem_oreq8(RAnalEsil *esil) {
+static bool esil_mem_oreq8(REsil *esil) {
 	return esil_mem_oreq_n (esil, 64);
 }
 
 /* XOREQ */
 
-static bool esil_mem_xoreq_n(RAnalEsil *esil, int bits) {
+static bool esil_mem_xoreq_n(REsil *esil, int bits) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src0 = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src0 = r_esil_pop (esil);
 	char *src1 = NULL;
-	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
-		r_anal_esil_push (esil, dst);
+	if (src0 && r_esil_get_parm (esil, src0, &s)) {
+		r_esil_push (esil, dst);
 		ret = !!esil_peek_n (esil, bits);
-		src1 = r_anal_esil_pop (esil);
-		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+		src1 = r_esil_pop (esil);
+		if (src1 && r_esil_get_parm (esil, src1, &d)) {
 			d ^= s;
-			r_anal_esil_pushnum (esil, d);
-			r_anal_esil_push (esil, dst);
+			r_esil_pushnum (esil, d);
+			r_esil_push (esil, dst);
 			ret &= (!!esil_poke_n (esil, bits));
 		} else {
 			ret = false;
@@ -2366,35 +2366,35 @@ static bool esil_mem_xoreq_n(RAnalEsil *esil, int bits) {
 	return ret;
 }
 
-static bool esil_mem_xoreq1(RAnalEsil *esil) {
+static bool esil_mem_xoreq1(REsil *esil) {
 	return esil_mem_xoreq_n (esil, 8);
 }
-static bool esil_mem_xoreq2(RAnalEsil *esil) {
+static bool esil_mem_xoreq2(REsil *esil) {
 	return esil_mem_xoreq_n (esil, 16);
 }
-static bool esil_mem_xoreq4(RAnalEsil *esil) {
+static bool esil_mem_xoreq4(REsil *esil) {
 	return esil_mem_xoreq_n (esil, 32);
 }
-static bool esil_mem_xoreq8(RAnalEsil *esil) {
+static bool esil_mem_xoreq8(REsil *esil) {
 	return esil_mem_xoreq_n (esil, 64);
 }
 
 /* ANDEQ */
 
-static bool esil_mem_andeq_n(RAnalEsil *esil, int bits) {
+static bool esil_mem_andeq_n(REsil *esil, int bits) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src0 = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src0 = r_esil_pop (esil);
 	char *src1 = NULL;
-	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
-		r_anal_esil_push (esil, dst);
+	if (src0 && r_esil_get_parm (esil, src0, &s)) {
+		r_esil_push (esil, dst);
 		ret = (!!esil_peek_n (esil, bits));
-		src1 = r_anal_esil_pop (esil);
-		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+		src1 = r_esil_pop (esil);
+		if (src1 && r_esil_get_parm (esil, src1, &d)) {
 			d &= s;
-			r_anal_esil_pushnum (esil, d);
-			r_anal_esil_push (esil, dst);
+			r_esil_pushnum (esil, d);
+			r_esil_push (esil, dst);
 			ret &= (!!esil_poke_n (esil, bits));
 		} else {
 			ret = false;
@@ -2409,35 +2409,35 @@ static bool esil_mem_andeq_n(RAnalEsil *esil, int bits) {
 	return ret;
 }
 
-static bool esil_mem_andeq1(RAnalEsil *esil) {
+static bool esil_mem_andeq1(REsil *esil) {
 	return esil_mem_andeq_n (esil, 8);
 }
-static bool esil_mem_andeq2(RAnalEsil *esil) {
+static bool esil_mem_andeq2(REsil *esil) {
 	return esil_mem_andeq_n (esil, 16);
 }
-static bool esil_mem_andeq4(RAnalEsil *esil) {
+static bool esil_mem_andeq4(REsil *esil) {
 	return esil_mem_andeq_n (esil, 32);
 }
-static bool esil_mem_andeq8(RAnalEsil *esil) {
+static bool esil_mem_andeq8(REsil *esil) {
 	return esil_mem_andeq_n (esil, 64);
 }
 
 /* ADDEQ */
 
-static bool esil_mem_addeq_n(RAnalEsil *esil, int bits) {
+static bool esil_mem_addeq_n(REsil *esil, int bits) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src0 = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src0 = r_esil_pop (esil);
 	char *src1 = NULL;
-	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
-		r_anal_esil_push (esil, dst);
+	if (src0 && r_esil_get_parm (esil, src0, &s)) {
+		r_esil_push (esil, dst);
 		ret = !!esil_peek_n (esil, bits);
-		src1 = r_anal_esil_pop (esil);
-		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+		src1 = r_esil_pop (esil);
+		if (src1 && r_esil_get_parm (esil, src1, &d)) {
 			d += s;
-			r_anal_esil_pushnum (esil, d);
-			r_anal_esil_push (esil, dst);
+			r_esil_pushnum (esil, d);
+			r_esil_push (esil, dst);
 			ret &= (!!esil_poke_n (esil, bits));
 		} else {
 			ret = false;
@@ -2452,35 +2452,35 @@ static bool esil_mem_addeq_n(RAnalEsil *esil, int bits) {
 	return ret;
 }
 
-static bool esil_mem_addeq1(RAnalEsil *esil) {
+static bool esil_mem_addeq1(REsil *esil) {
 	return esil_mem_addeq_n (esil, 8);
 }
-static bool esil_mem_addeq2(RAnalEsil *esil) {
+static bool esil_mem_addeq2(REsil *esil) {
 	return esil_mem_addeq_n (esil, 16);
 }
-static bool esil_mem_addeq4(RAnalEsil *esil) {
+static bool esil_mem_addeq4(REsil *esil) {
 	return esil_mem_addeq_n (esil, 32);
 }
-static bool esil_mem_addeq8(RAnalEsil *esil) {
+static bool esil_mem_addeq8(REsil *esil) {
 	return esil_mem_addeq_n (esil, 64);
 }
 
 /* SUBEQ */
 
-static bool esil_mem_subeq_n(RAnalEsil *esil, int bits) {
+static bool esil_mem_subeq_n(REsil *esil, int bits) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src0 = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src0 = r_esil_pop (esil);
 	char *src1 = NULL;
-	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
-		r_anal_esil_push (esil, dst);
+	if (src0 && r_esil_get_parm (esil, src0, &s)) {
+		r_esil_push (esil, dst);
 		ret = !!esil_peek_n (esil, bits);
-		src1 = r_anal_esil_pop (esil);
-		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+		src1 = r_esil_pop (esil);
+		if (src1 && r_esil_get_parm (esil, src1, &d)) {
 			d -= s;
-			r_anal_esil_pushnum (esil, d);
-			r_anal_esil_push (esil, dst);
+			r_esil_pushnum (esil, d);
+			r_esil_push (esil, dst);
 			ret &= !!esil_poke_n (esil, bits);
 		} else {
 			ret = false;
@@ -2495,41 +2495,41 @@ static bool esil_mem_subeq_n(RAnalEsil *esil, int bits) {
 	return ret;
 }
 
-static bool esil_mem_subeq1(RAnalEsil *esil) {
+static bool esil_mem_subeq1(REsil *esil) {
 	return esil_mem_subeq_n (esil, 8);
 }
-static bool esil_mem_subeq2(RAnalEsil *esil) {
+static bool esil_mem_subeq2(REsil *esil) {
 	return esil_mem_subeq_n (esil, 16);
 }
-static bool esil_mem_subeq4(RAnalEsil *esil) {
+static bool esil_mem_subeq4(REsil *esil) {
 	return esil_mem_subeq_n (esil, 32);
 }
-static bool esil_mem_subeq8(RAnalEsil *esil) {
+static bool esil_mem_subeq8(REsil *esil) {
 	return esil_mem_subeq_n (esil, 64);
 }
 
 /* MODEQ */
 
-static bool esil_mem_modeq_n(RAnalEsil *esil, int bits) {
+static bool esil_mem_modeq_n(REsil *esil, int bits) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src0 = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src0 = r_esil_pop (esil);
 	char *src1 = NULL;
-	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+	if (src0 && r_esil_get_parm (esil, src0, &s)) {
 		if (s == 0) {
 			ERR ("esil_mem_modeq4: Division by zero!");
 			esil->trap = R_ANAL_TRAP_DIVBYZERO;
 			esil->trap_code = 0;
 		} else {
-			r_anal_esil_push (esil, dst);
+			r_esil_push (esil, dst);
 			ret = !!esil_peek_n (esil, bits);
-			src1 = r_anal_esil_pop (esil);
-			if (src1 && r_anal_esil_get_parm (esil, src1, &d) && s >= 1) {
-				r_anal_esil_pushnum (esil, d % s);
+			src1 = r_esil_pop (esil);
+			if (src1 && r_esil_get_parm (esil, src1, &d) && s >= 1) {
+				r_esil_pushnum (esil, d % s);
 				d = d % s;
-				r_anal_esil_pushnum (esil, d);
-				r_anal_esil_push (esil, dst);
+				r_esil_pushnum (esil, d);
+				r_esil_push (esil, dst);
 				ret &= (!!esil_poke_n (esil, bits));
 			} else {
 				ret = false;
@@ -2545,40 +2545,40 @@ static bool esil_mem_modeq_n(RAnalEsil *esil, int bits) {
 	return ret;
 }
 
-static bool esil_mem_modeq1(RAnalEsil *esil) {
+static bool esil_mem_modeq1(REsil *esil) {
 	return esil_mem_modeq_n (esil, 8);
 }
-static bool esil_mem_modeq2(RAnalEsil *esil) {
+static bool esil_mem_modeq2(REsil *esil) {
 	return esil_mem_modeq_n (esil, 16);
 }
-static bool esil_mem_modeq4(RAnalEsil *esil) {
+static bool esil_mem_modeq4(REsil *esil) {
 	return esil_mem_modeq_n (esil, 32);
 }
-static bool esil_mem_modeq8(RAnalEsil *esil) {
+static bool esil_mem_modeq8(REsil *esil) {
 	return esil_mem_modeq_n (esil, 64);
 }
 
 /* DIVEQ */
 
-static bool esil_mem_diveq_n(RAnalEsil *esil, int bits) {
+static bool esil_mem_diveq_n(REsil *esil, int bits) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src0 = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src0 = r_esil_pop (esil);
 	char *src1 = NULL;
-	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+	if (src0 && r_esil_get_parm (esil, src0, &s)) {
 		if (s == 0) {
 			ERR ("esil_mem_diveq8: Division by zero!");
 			esil->trap = R_ANAL_TRAP_DIVBYZERO;
 			esil->trap_code = 0;
 		} else {
-			r_anal_esil_push (esil, dst);
+			r_esil_push (esil, dst);
 			ret = !!esil_peek_n (esil, bits);
-			src1 = r_anal_esil_pop (esil);
-			if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			src1 = r_esil_pop (esil);
+			if (src1 && r_esil_get_parm (esil, src1, &d)) {
 				d = d / s;
-				r_anal_esil_pushnum (esil, d);
-				r_anal_esil_push (esil, dst);
+				r_esil_pushnum (esil, d);
+				r_esil_push (esil, dst);
 				ret &= (!!esil_poke_n (esil, bits));
 			} else {
 				ret = false;
@@ -2594,35 +2594,35 @@ static bool esil_mem_diveq_n(RAnalEsil *esil, int bits) {
 	return ret;
 }
 
-static bool esil_mem_diveq1(RAnalEsil *esil) {
+static bool esil_mem_diveq1(REsil *esil) {
 	return esil_mem_diveq_n (esil, 8);
 }
-static bool esil_mem_diveq2(RAnalEsil *esil) {
+static bool esil_mem_diveq2(REsil *esil) {
 	return esil_mem_diveq_n (esil, 16);
 }
-static bool esil_mem_diveq4(RAnalEsil *esil) {
+static bool esil_mem_diveq4(REsil *esil) {
 	return esil_mem_diveq_n (esil, 32);
 }
-static bool esil_mem_diveq8(RAnalEsil *esil) {
+static bool esil_mem_diveq8(REsil *esil) {
 	return esil_mem_diveq_n (esil, 64);
 }
 
 /* MULEQ */
 
-static bool esil_mem_muleq_n(RAnalEsil *esil, int bits, ut64 bitmask) {
+static bool esil_mem_muleq_n(REsil *esil, int bits, ut64 bitmask) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src0 = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src0 = r_esil_pop (esil);
 	char *src1 = NULL;
-	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
-		r_anal_esil_push (esil, dst);
+	if (src0 && r_esil_get_parm (esil, src0, &s)) {
+		r_esil_push (esil, dst);
 		ret = !!esil_peek_n (esil, bits);
-		src1 = r_anal_esil_pop (esil);
-		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+		src1 = r_esil_pop (esil);
+		if (src1 && r_esil_get_parm (esil, src1, &d)) {
 			d *= s;
-			r_anal_esil_pushnum (esil, d);
-			r_anal_esil_push (esil, dst);
+			r_esil_pushnum (esil, d);
+			r_esil_push (esil, dst);
 			ret &= (!!esil_poke_n (esil, bits));
 		} else {
 			ret = false;
@@ -2637,37 +2637,37 @@ static bool esil_mem_muleq_n(RAnalEsil *esil, int bits, ut64 bitmask) {
 	return ret;
 }
 
-static bool esil_mem_muleq1(RAnalEsil *esil) {
+static bool esil_mem_muleq1(REsil *esil) {
 	return esil_mem_muleq_n (esil, 8, UT8_MAX);
 }
-static bool esil_mem_muleq2(RAnalEsil *esil) {
+static bool esil_mem_muleq2(REsil *esil) {
 	return esil_mem_muleq_n (esil, 16, UT16_MAX);
 }
-static bool esil_mem_muleq4(RAnalEsil *esil) {
+static bool esil_mem_muleq4(REsil *esil) {
 	return esil_mem_muleq_n (esil, 32, UT32_MAX);
 }
-static bool esil_mem_muleq8(RAnalEsil *esil) {
+static bool esil_mem_muleq8(REsil *esil) {
 	return esil_mem_muleq_n (esil, 64, UT64_MAX);
 }
 
 /* INCEQ */
 
-static bool esil_mem_inceq_n(RAnalEsil *esil, int bits) {
+static bool esil_mem_inceq_n(REsil *esil, int bits) {
 	bool ret = false;
 	ut64 s;
-	char *off = r_anal_esil_pop (esil);
+	char *off = r_esil_pop (esil);
 	char *src = NULL;
 	if (off) {
-		r_anal_esil_push (esil, off);
+		r_esil_push (esil, off);
 		ret = !!esil_peek_n (esil, bits);
-		src = r_anal_esil_pop (esil);
-		if (src && r_anal_esil_get_parm (esil, src, &s)) {
+		src = r_esil_pop (esil);
+		if (src && r_esil_get_parm (esil, src, &s)) {
 			esil->old = s;
 			s++;
 			esil->cur = s;
 			esil->lastsz = bits;
-			r_anal_esil_pushnum (esil, s);
-			r_anal_esil_push (esil, off);
+			r_esil_pushnum (esil, s);
+			r_esil_push (esil, off);
 			ret &= (!!esil_poke_n (esil, bits));
 		} else {
 			ret = false;
@@ -2681,34 +2681,34 @@ static bool esil_mem_inceq_n(RAnalEsil *esil, int bits) {
 	return ret;
 }
 
-static bool esil_mem_inceq1(RAnalEsil *esil) {
+static bool esil_mem_inceq1(REsil *esil) {
 	return esil_mem_inceq_n (esil, 8);
 }
-static bool esil_mem_inceq2(RAnalEsil *esil) {
+static bool esil_mem_inceq2(REsil *esil) {
 	return esil_mem_inceq_n (esil, 16);
 }
-static bool esil_mem_inceq4(RAnalEsil *esil) {
+static bool esil_mem_inceq4(REsil *esil) {
 	return esil_mem_inceq_n (esil, 32);
 }
-static bool esil_mem_inceq8(RAnalEsil *esil) {
+static bool esil_mem_inceq8(REsil *esil) {
 	return esil_mem_inceq_n (esil, 64);
 }
 
 /* DECEQ */
 
-static bool esil_mem_deceq_n(RAnalEsil *esil, int bits) {
+static bool esil_mem_deceq_n(REsil *esil, int bits) {
 	bool ret = false;
 	ut64 s;
-	char *off = r_anal_esil_pop (esil);
+	char *off = r_esil_pop (esil);
 	char *src = NULL;
 	if (off) {
-		r_anal_esil_push (esil, off);
+		r_esil_push (esil, off);
 		ret = !!esil_peek_n (esil, bits);
-		src = r_anal_esil_pop (esil);
-		if (src && r_anal_esil_get_parm (esil, src, &s)) {
+		src = r_esil_pop (esil);
+		if (src && r_esil_get_parm (esil, src, &s)) {
 			s--;
-			r_anal_esil_pushnum (esil, s);
-			r_anal_esil_push (esil, off);
+			r_esil_pushnum (esil, s);
+			r_esil_push (esil, off);
 			ret &= (!!esil_poke_n (esil, bits));
 		} else {
 			ret = false;
@@ -2722,42 +2722,42 @@ static bool esil_mem_deceq_n(RAnalEsil *esil, int bits) {
 	return ret;
 }
 
-static bool esil_mem_deceq1(RAnalEsil *esil) {
+static bool esil_mem_deceq1(REsil *esil) {
 	return esil_mem_deceq_n (esil, 8);
 }
-static bool esil_mem_deceq2(RAnalEsil *esil) {
+static bool esil_mem_deceq2(REsil *esil) {
 	return esil_mem_deceq_n (esil, 16);
 }
-static bool esil_mem_deceq4(RAnalEsil *esil) {
+static bool esil_mem_deceq4(REsil *esil) {
 	return esil_mem_deceq_n (esil, 32);
 }
-static bool esil_mem_deceq8(RAnalEsil *esil) {
+static bool esil_mem_deceq8(REsil *esil) {
 	return esil_mem_deceq_n (esil, 64);
 }
 
 /* LSLEQ */
 
-static bool esil_mem_lsleq_n(RAnalEsil *esil, int bits) {
+static bool esil_mem_lsleq_n(REsil *esil, int bits) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src0 = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src0 = r_esil_pop (esil);
 	char *src1 = NULL;
-	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+	if (src0 && r_esil_get_parm (esil, src0, &s)) {
 		if (s > sizeof (ut64) * 8) {
 			ERR ("esil_mem_lsleq_n: shift is too big");
 		} else {
-			r_anal_esil_push (esil, dst);
+			r_esil_push (esil, dst);
 			ret = !!esil_peek_n (esil, bits);
-			src1 = r_anal_esil_pop (esil);
-			if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			src1 = r_esil_pop (esil);
+			if (src1 && r_esil_get_parm (esil, src1, &d)) {
 				if (s > 63) {
 					d = 0;
 				} else {
 					d <<= s;
 				}
-				r_anal_esil_pushnum (esil, d);
-				r_anal_esil_push (esil, dst);
+				r_esil_pushnum (esil, d);
+				r_esil_push (esil, dst);
 				ret &= (!!esil_poke_n (esil, bits));
 			} else {
 				ret = false;
@@ -2773,35 +2773,35 @@ static bool esil_mem_lsleq_n(RAnalEsil *esil, int bits) {
 	return ret;
 }
 
-static bool esil_mem_lsleq1(RAnalEsil *esil) {
+static bool esil_mem_lsleq1(REsil *esil) {
 	return esil_mem_lsleq_n (esil, 8);
 }
-static bool esil_mem_lsleq2(RAnalEsil *esil) {
+static bool esil_mem_lsleq2(REsil *esil) {
 	return esil_mem_lsleq_n (esil, 16);
 }
-static bool esil_mem_lsleq4(RAnalEsil *esil) {
+static bool esil_mem_lsleq4(REsil *esil) {
 	return esil_mem_lsleq_n (esil, 32);
 }
-static bool esil_mem_lsleq8(RAnalEsil *esil) {
+static bool esil_mem_lsleq8(REsil *esil) {
 	return esil_mem_lsleq_n (esil, 64);
 }
 
 /* LSREQ */
 
-static bool esil_mem_lsreq_n(RAnalEsil *esil, int bits) {
+static bool esil_mem_lsreq_n(REsil *esil, int bits) {
 	bool ret = false;
 	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src0 = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src0 = r_esil_pop (esil);
 	char *src1 = NULL;
-	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
-		r_anal_esil_push (esil, dst);
+	if (src0 && r_esil_get_parm (esil, src0, &s)) {
+		r_esil_push (esil, dst);
 		ret = (!!esil_peek_n (esil, bits));
-		src1 = r_anal_esil_pop (esil);
-		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+		src1 = r_esil_pop (esil);
+		if (src1 && r_esil_get_parm (esil, src1, &d)) {
 			d >>= s;
-			r_anal_esil_pushnum (esil, d);
-			r_anal_esil_push (esil, dst);
+			r_esil_pushnum (esil, d);
+			r_esil_push (esil, dst);
 			ret &= (!!esil_poke_n (esil, bits));
 		} else {
 			ret = false;
@@ -2816,46 +2816,46 @@ static bool esil_mem_lsreq_n(RAnalEsil *esil, int bits) {
 	return ret;
 }
 
-static bool esil_mem_lsreq1(RAnalEsil *esil) {
+static bool esil_mem_lsreq1(REsil *esil) {
 	return esil_mem_lsreq_n (esil, 8);
 }
-static bool esil_mem_lsreq2(RAnalEsil *esil) {
+static bool esil_mem_lsreq2(REsil *esil) {
 	return esil_mem_lsreq_n (esil, 16);
 }
-static bool esil_mem_lsreq4(RAnalEsil *esil) {
+static bool esil_mem_lsreq4(REsil *esil) {
 	return esil_mem_lsreq_n (esil, 32);
 }
-static bool esil_mem_lsreq8(RAnalEsil *esil) {
+static bool esil_mem_lsreq8(REsil *esil) {
 	return esil_mem_lsreq_n (esil, 64);
 }
 
 /* get value of register or memory reference and push the value */
-static bool esil_num(RAnalEsil *esil) {
+static bool esil_num(REsil *esil) {
 	char *dup_me;
 	ut64 dup;
 	if (!esil) {
 		return false;
 	}
-	if (!(dup_me = r_anal_esil_pop (esil))) {
+	if (!(dup_me = r_esil_pop (esil))) {
 		return false;
 	}
-	if (!r_anal_esil_get_parm (esil, dup_me, &dup)) {
+	if (!r_esil_get_parm (esil, dup_me, &dup)) {
 		free (dup_me);
 		return false;
 	}
 	free (dup_me);
-	return r_anal_esil_pushnum (esil, dup);
+	return r_esil_pushnum (esil, dup);
 }
 
 /* duplicate the last element in the stack */
-static bool esil_dup(RAnalEsil *esil) {
+static bool esil_dup(REsil *esil) {
 	if (!esil || !esil->stack || esil->stackptr < 1 || esil->stackptr > (esil->stacksize - 1)) {
 		return false;
 	}
-	return r_anal_esil_push (esil, esil->stack[esil->stackptr-1]);
+	return r_esil_push (esil, esil->stack[esil->stackptr-1]);
 }
 
-static bool esil_swap(RAnalEsil *esil) {
+static bool esil_swap(REsil *esil) {
 	char *tmp;
 	if (!esil || !esil->stack || esil->stackptr < 2) {
 		return false;
@@ -2869,16 +2869,16 @@ static bool esil_swap(RAnalEsil *esil) {
 	return true;
 }
 
-static bool esil_smaller(RAnalEsil *esil) { // 'dst < src' => 'src,dst,<'
+static bool esil_smaller(REsil *esil) { // 'dst < src' => 'src,dst,<'
 	ut64 num, num2;
 	bool ret = false;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_get_parm (esil, dst, &num)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			ret = true;
 			pushnums (esil, src, num2, dst, num);
-			r_anal_esil_pushnum (esil, (num != num2)
+			r_esil_pushnum (esil, (num != num2)
 					& !signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
@@ -2887,16 +2887,16 @@ static bool esil_smaller(RAnalEsil *esil) { // 'dst < src' => 'src,dst,<'
 	return ret;
 }
 
-static bool esil_bigger(RAnalEsil *esil) { // 'dst > src' => 'src,dst,>'
+static bool esil_bigger(REsil *esil) { // 'dst > src' => 'src,dst,>'
 	ut64 num, num2;
 	bool ret = false;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_get_parm (esil, dst, &num)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			ret = true;
 			pushnums (esil, src, num2, dst, num);
-			r_anal_esil_pushnum (esil, signed_compare_gt (num, num2, esil->lastsz));
+			r_esil_pushnum (esil, signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
 	free (dst);
@@ -2904,16 +2904,16 @@ static bool esil_bigger(RAnalEsil *esil) { // 'dst > src' => 'src,dst,>'
 	return ret;
 }
 
-static bool esil_smaller_equal(RAnalEsil *esil) { // 'dst <= src' => 'src,dst,<='
+static bool esil_smaller_equal(REsil *esil) { // 'dst <= src' => 'src,dst,<='
 	ut64 num, num2;
 	bool ret = false;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_get_parm (esil, dst, &num)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			ret = true;
 			pushnums (esil, src, num2, dst, num);
-			r_anal_esil_pushnum (esil, !signed_compare_gt (num, num2, esil->lastsz));
+			r_esil_pushnum (esil, !signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
 	free (dst);
@@ -2921,16 +2921,16 @@ static bool esil_smaller_equal(RAnalEsil *esil) { // 'dst <= src' => 'src,dst,<=
 	return ret;
 }
 
-static bool esil_bigger_equal(RAnalEsil *esil) { // 'dst >= src' => 'src,dst,>='
+static bool esil_bigger_equal(REsil *esil) { // 'dst >= src' => 'src,dst,>='
 	ut64 num, num2;
 	bool ret = false;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (dst && r_anal_esil_get_parm (esil, dst, &num)) {
-		if (src && r_anal_esil_get_parm (esil, src, &num2)) {
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (dst && r_esil_get_parm (esil, dst, &num)) {
+		if (src && r_esil_get_parm (esil, src, &num2)) {
 			pushnums (esil, src, num2, dst, num);
 			ret = true;
-			r_anal_esil_pushnum (esil, (num == num2)
+			r_esil_pushnum (esil, (num == num2)
 					| signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
@@ -2939,11 +2939,11 @@ static bool esil_bigger_equal(RAnalEsil *esil) { // 'dst >= src' => 'src,dst,>='
 	return ret;
 }
 
-static bool esil_set_jump_target(RAnalEsil *esil) {
+static bool esil_set_jump_target(REsil *esil) {
 	bool ret = false;
 	ut64 s;
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
 		esil->jump_target = s;
 		esil->jump_target_set = 1;
 		ret = true;
@@ -2955,11 +2955,11 @@ static bool esil_set_jump_target(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_set_jump_target_set(RAnalEsil *esil) {
+static bool esil_set_jump_target_set(REsil *esil) {
 	bool ret = false;
 	ut64 s;
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
 		esil->jump_target_set = s;
 		ret = true;
 	} else {
@@ -2970,11 +2970,11 @@ static bool esil_set_jump_target_set(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_set_delay_slot(RAnalEsil *esil) {
+static bool esil_set_delay_slot(REsil *esil) {
 	bool ret = false;
 	ut64 s;
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &s)) {
 		esil->delay = s;
 		ret = true;
 	} else {
@@ -2985,23 +2985,23 @@ static bool esil_set_delay_slot(RAnalEsil *esil) {
 	return ret;
 }
 
-static int esil_get_parm_float(RAnalEsil *esil, const char *str, double *num) {
-	return r_anal_esil_get_parm (esil, str, (ut64 *)num);
+static int esil_get_parm_float(REsil *esil, const char *str, double *num) {
+	return r_esil_get_parm (esil, str, (ut64 *)num);
 }
 
-static bool esil_pushnum_float(RAnalEsil *esil, double num) {
+static bool esil_pushnum_float(REsil *esil, double num) {
 	RNumFloat n;
 	n.f64 = num;
-	return r_anal_esil_pushnum (esil, n.u64);
+	return r_esil_pushnum (esil, n.u64);
 }
 
-static bool esil_is_nan(RAnalEsil *esil) {
+static bool esil_is_nan(REsil *esil) {
 	bool ret = false;
 	double s;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s)) {
-			ret = r_anal_esil_pushnum (esil, isnan(s));
+			ret = r_esil_pushnum (esil, isnan(s));
 		} else {
 			ERR("esil_is_nan: invalid parameters.");
 		}
@@ -3012,12 +3012,12 @@ static bool esil_is_nan(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_int_to_double(RAnalEsil *esil, int sign) {
+static bool esil_int_to_double(REsil *esil, int sign) {
 	bool ret = false;
 	RNumFloat s;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (src) {
-		if (r_anal_esil_get_parm (esil, src, &s.u64)) {
+		if (r_esil_get_parm (esil, src, &s.u64)) {
 			ret = (sign)
 				? esil_pushnum_float (esil, (double)(s.s64) * 1.0)
 				: esil_pushnum_float (esil, (double)(s.u64) * 1.0);
@@ -3031,24 +3031,24 @@ static bool esil_int_to_double(RAnalEsil *esil, int sign) {
 	return ret;
 }
 
-static bool esil_signed_to_double(RAnalEsil *esil) {
+static bool esil_signed_to_double(REsil *esil) {
 	return esil_int_to_double(esil, 1);
 }
 
-static bool esil_unsigned_to_double(RAnalEsil *esil) {
+static bool esil_unsigned_to_double(REsil *esil) {
 	return esil_int_to_double(esil, 0);
 }
 
-static bool esil_double_to_int(RAnalEsil *esil) {
+static bool esil_double_to_int(REsil *esil) {
 	bool ret = false;
 	RNumFloat s;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s.f64)) {
 			if (isnan(s.f64) || isinf(s.f64)) {
 				ERR("esil_float_to_int: nan or inf detected.");
 			}
-			ret = r_anal_esil_pushnum (esil, (st64)(s.f64));
+			ret = r_esil_pushnum (esil, (st64)(s.f64));
 		} else {
 			ERR("esil_float_to_int: invalid parameters.");
 		}
@@ -3059,25 +3059,25 @@ static bool esil_double_to_int(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_double_to_float(RAnalEsil *esil) {
+static bool esil_double_to_float(REsil *esil) {
 	bool ret = false;
 	RNumFloat d;
 	RNumFloat f;
 	ut64 s = 0;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
-	if (r_anal_esil_get_parm (esil, src, &s) && esil_get_parm_float (esil, dst, &d.f64)) {
+	if (r_esil_get_parm (esil, src, &s) && esil_get_parm_float (esil, dst, &d.f64)) {
 		if (isnan (d.f64) || isinf (d.f64)) {
-			ret = r_anal_esil_pushnum (esil, d.u64);
+			ret = r_esil_pushnum (esil, d.u64);
 		} else if (s == 32) {
 			f.f32 = (float)d.f64;
-			ret = r_anal_esil_pushnum (esil, f.u32);
+			ret = r_esil_pushnum (esil, f.u32);
 		} else if (s == 64) {
-			ret = r_anal_esil_pushnum (esil, d.u64);
+			ret = r_esil_pushnum (esil, d.u64);
 		/* TODO handle 80 bit and 128 bit floats */
 		} else {
-			ret = r_anal_esil_pushnum (esil, d.u64);
+			ret = r_esil_pushnum (esil, d.u64);
 		}
 	} else {
 		ERR("esil_float_to_float: invalid parameters.");
@@ -3088,14 +3088,14 @@ static bool esil_double_to_float(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_to_double(RAnalEsil *esil) {
+static bool esil_float_to_double(REsil *esil) {
 	bool ret = false;
 	RNumFloat d;
 	ut64 s = 0;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
-	if (r_anal_esil_get_parm (esil, src, &s) && esil_get_parm_float (esil, dst, &d.f64)) {
+	if (r_esil_get_parm (esil, src, &s) && esil_get_parm_float (esil, dst, &d.f64)) {
 		if (isnan(d.f64) || isinf(d.f64)) {
 			ret = esil_pushnum_float (esil, d.f64);
 		} else if (s == 32) {
@@ -3114,17 +3114,17 @@ static bool esil_float_to_double(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_cmp(RAnalEsil *esil) {
+static bool esil_float_cmp(REsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (src && dst && esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s) || isnan(d)) {
-			ret = r_anal_esil_pushnum (esil, 0);
+			ret = r_esil_pushnum (esil, 0);
 		} else {
-			ret = r_anal_esil_pushnum (esil, fabs(s - d) <= DBL_EPSILON);
+			ret = r_esil_pushnum (esil, fabs(s - d) <= DBL_EPSILON);
 		}
 	} else {
 		ERR ("esil_float_cmp: invalid parameters.");
@@ -3134,17 +3134,17 @@ static bool esil_float_cmp(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_negcmp(RAnalEsil *esil) {
+static bool esil_float_negcmp(REsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (src && dst && esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s) || isnan(d)) {
-			ret = r_anal_esil_pushnum (esil, 0);
+			ret = r_esil_pushnum (esil, 0);
 		} else {
-			ret = r_anal_esil_pushnum (esil, fabs(s - d) >= DBL_EPSILON);
+			ret = r_esil_pushnum (esil, fabs(s - d) >= DBL_EPSILON);
 		}
 	} else {
 		ERR("esil_float_negcmp: invalid parameters.");
@@ -3154,17 +3154,17 @@ static bool esil_float_negcmp(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_less(RAnalEsil *esil) {
+static bool esil_float_less(REsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (esil_get_parm_float (esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan (s) || isnan (d)) {
-			ret = r_anal_esil_pushnum (esil, 0);
+			ret = r_esil_pushnum (esil, 0);
 		} else {
-			ret = r_anal_esil_pushnum (esil, d < s);
+			ret = r_esil_pushnum (esil, d < s);
 		}
 	} else {
 		ERR("esil_float_less: invalid parameters.");
@@ -3174,17 +3174,17 @@ static bool esil_float_less(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_lesseq(RAnalEsil *esil) {
+static bool esil_float_lesseq(REsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (esil_get_parm_float (esil, src, &s) && esil_get_parm_float (esil, dst, &d)) {
 		if (isnan (s) || isnan (d)) {
-			ret = r_anal_esil_pushnum (esil, 0);
+			ret = r_esil_pushnum (esil, 0);
 		} else {
-			ret = r_anal_esil_pushnum (esil, d <= s);
+			ret = r_esil_pushnum (esil, d <= s);
 		}
 	} else {
 		ERR ("esil_float_lesseq: invalid parameters.");
@@ -3194,11 +3194,11 @@ static bool esil_float_lesseq(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_add(RAnalEsil *esil) {
+static bool esil_float_add(REsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
@@ -3224,11 +3224,11 @@ static bool esil_float_add(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_sub(RAnalEsil *esil) {
+static bool esil_float_sub(REsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
@@ -3254,11 +3254,11 @@ static bool esil_float_sub(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_mul(RAnalEsil *esil) {
+static bool esil_float_mul(REsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan (s)) {
@@ -3284,11 +3284,11 @@ static bool esil_float_mul(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_div(RAnalEsil *esil) {
+static bool esil_float_div(REsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
@@ -3314,10 +3314,10 @@ static bool esil_float_div(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_neg(RAnalEsil *esil) {
+static bool esil_float_neg(REsil *esil) {
 	bool ret = false;
 	double s;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (src)	{
 		if (esil_get_parm_float(esil, src, &s)) {
@@ -3332,10 +3332,10 @@ static bool esil_float_neg(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_ceil(RAnalEsil *esil) {
+static bool esil_float_ceil(REsil *esil) {
 	bool ret = false;
 	double s;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s)) {
@@ -3354,10 +3354,10 @@ static bool esil_float_ceil(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_floor(RAnalEsil *esil) {
+static bool esil_float_floor(REsil *esil) {
 	bool ret = false;
 	double s;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s)) {
@@ -3377,10 +3377,10 @@ static bool esil_float_floor(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_round(RAnalEsil *esil) {
+static bool esil_float_round(REsil *esil) {
 	bool ret = false;
 	double s;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s)) {
@@ -3399,10 +3399,10 @@ static bool esil_float_round(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_float_sqrt(RAnalEsil *esil) {
+static bool esil_float_sqrt(REsil *esil) {
 	bool ret = false;
 	double s;
-	char *src = r_anal_esil_pop (esil);
+	char *src = r_esil_pop (esil);
 
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s)) {
@@ -3421,8 +3421,8 @@ static bool esil_float_sqrt(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool iscommand(RAnalEsil *esil, const char *word, RAnalEsilOp **op) {
-	RAnalEsilOp *eop = r_anal_esil_get_op (esil, word);
+static bool iscommand(REsil *esil, const char *word, REsilOp **op) {
+	REsilOp *eop = r_esil_get_op (esil, word);
 	if (eop) {
 		*op = eop;
 		return true;
@@ -3430,8 +3430,8 @@ static bool iscommand(RAnalEsil *esil, const char *word, RAnalEsilOp **op) {
 	return false;
 }
 
-static bool runword(RAnalEsil *esil, const char *word) {
-	RAnalEsilOp *op = NULL;
+static bool runword(REsil *esil, const char *word) {
+	REsilOp *op = NULL;
 	if (!word) {
 		return false;
 	}
@@ -3458,8 +3458,8 @@ static bool runword(RAnalEsil *esil, const char *word) {
 		size_t n = strlen (if_buf);
 		snprintf (if_buf + n, sizeof (esil->Reil->if_buf) - n, "%s,", word);
 		if (!strcmp (word, "}")) {
-			r_anal_esil_pushnum (esil, esil->Reil->addr + esil->Reil->cmd_count + 1);
-			r_anal_esil_parse (esil, esil->Reil->if_buf);
+			r_esil_pushnum (esil, esil->Reil->addr + esil->Reil->cmd_count + 1);
+			r_esil_parse (esil, esil->Reil->if_buf);
 		} else if (iscommand (esil, word, &op)) {
 			esil->Reil->cmd_count++;
 		}
@@ -3514,7 +3514,7 @@ static bool runword(RAnalEsil *esil, const char *word) {
 	}
 
 	// push value
-	if (!r_anal_esil_push (esil, word)) {
+	if (!r_esil_push (esil, word)) {
 		ERR ("ESIL stack is full");
 		esil->trap = 1;
 		esil->trap_code = 1;
@@ -3545,7 +3545,7 @@ static const char *gotoWord(const char *str, int n) {
  * 2: continue in loop
  * 3: normal continuation
  */
-static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
+static int evalWord(REsil *esil, const char *ostr, const char **str) {
 	r_return_val_if_fail (esil && str, 0);
 	if (!*str) {
 		return 0;
@@ -3574,7 +3574,7 @@ static int evalWord(RAnalEsil *esil, const char *ostr, const char **str) {
 	return 3;
 }
 
-static bool __stepOut(RAnalEsil *esil, const char *cmd) {
+static bool __stepOut(REsil *esil, const char *cmd) {
 	if (cmd && esil && esil->cmd && !esil->in_cmd_step) {
 		esil->in_cmd_step = true;
 		if (esil->cmd (esil, cmd, esil->address, 0)) {
@@ -3587,7 +3587,7 @@ static bool __stepOut(RAnalEsil *esil, const char *cmd) {
 	return false;
 }
 
-R_API bool r_anal_esil_parse(RAnalEsil *esil, const char *str) {
+R_API bool r_esil_parse(REsil *esil, const char *str) {
 	int wordi = 0;
 	int dorunword;
 	char word[64];
@@ -3613,13 +3613,13 @@ loop:
 	esil->parse_goto = -1;
 	esil->parse_stop = 0;
 // memleak or failing aetr test. wat du
-//	r_anal_esil_stack_free (esil);
-	esil->parse_goto_count = esil->anal? esil->anal->esil_goto_limit: R_ANAL_ESIL_GOTO_LIMIT;
+//	r_esil_stack_free (esil);
+	esil->parse_goto_count = esil->anal? esil->anal->esil_goto_limit: R_ESIL_GOTO_LIMIT;
 	str = ostr;
 repeat:
 	wordi = 0;
 	while (*str) {
-		if (r_anal_esil_runpending (esil, NULL)) {
+		if (r_esil_runpending (esil, NULL)) {
 			continue;
 		}
 		if (str == hashbang) {
@@ -3669,7 +3669,7 @@ repeat:
 	}
 	word[wordi] = 0;
 	if (*word) {
-		if (r_anal_esil_runpending (esil, NULL)) {
+		if (r_esil_runpending (esil, NULL)) {
 			goto step_out;
 		}
 		if (!runword (esil, word)) {
@@ -3681,16 +3681,16 @@ repeat:
 		case 2: goto repeat;
 		}
 	}
-	r_anal_esil_runpending (esil, NULL);
+	r_esil_runpending (esil, NULL);
 	__stepOut (esil, esil->cmd_step_out);
 	return 1;
 step_out:
-	r_anal_esil_runpending (esil, NULL);
+	r_esil_runpending (esil, NULL);
 	__stepOut (esil, esil->cmd_step_out);
 	return 0;
 }
 
-R_API bool r_anal_esil_runword(RAnalEsil *esil, const char *word) {
+R_API bool r_esil_runword(REsil *esil, const char *word) {
 	const char *str = NULL;
 	if (runword (esil, word)) {
 		(void)evalWord (esil, word, &str);
@@ -3701,7 +3701,7 @@ R_API bool r_anal_esil_runword(RAnalEsil *esil, const char *word) {
 
 //frees all elements from the stack, not the stack itself
 //rename to stack_empty() ?
-R_API void r_anal_esil_stack_free(RAnalEsil *esil) {
+R_API void r_esil_stack_free(REsil *esil) {
 	int i;
 	if (esil) {
 		for (i = 0; i < esil->stackptr; i++) {
@@ -3711,7 +3711,7 @@ R_API void r_anal_esil_stack_free(RAnalEsil *esil) {
 	}
 }
 
-R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
+R_API int r_esil_condition(REsil *esil, const char *str) {
 	char *popped;
 	int ret;
 	if (!esil) {
@@ -3720,8 +3720,8 @@ R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 	while (*str == ' ') {
 		str++; // use proper string chop?
 	}
-	(void) r_anal_esil_parse (esil, str);
-	popped = r_anal_esil_pop (esil);
+	(void) r_esil_parse (esil, str);
+	popped = r_esil_pop (esil);
 	if (popped) {
 		ut64 num;
 		if (isregornum (esil, popped, &num)) {
@@ -3737,15 +3737,15 @@ R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 	return ret;
 }
 
-#define OP(v, w, x, y, z) r_anal_esil_set_op (esil, v, w, x, y, z)
-#define	OT_UNK	R_ANAL_ESIL_OP_TYPE_UNKNOWN
-#define	OT_CTR	R_ANAL_ESIL_OP_TYPE_CONTROL_FLOW
-#define	OT_MATH	R_ANAL_ESIL_OP_TYPE_MATH
-#define	OT_REGW	R_ANAL_ESIL_OP_TYPE_REG_WRITE
-#define	OT_MEMW	R_ANAL_ESIL_OP_TYPE_MEM_WRITE
-#define	OT_MEMR	R_ANAL_ESIL_OP_TYPE_MEM_READ
+#define OP(v, w, x, y, z) r_esil_set_op (esil, v, w, x, y, z)
+#define	OT_UNK	R_ESIL_OP_TYPE_UNKNOWN
+#define	OT_CTR	R_ESIL_OP_TYPE_CONTROL_FLOW
+#define	OT_MATH	R_ESIL_OP_TYPE_MATH
+#define	OT_REGW	R_ESIL_OP_TYPE_REG_WRITE
+#define	OT_MEMW	R_ESIL_OP_TYPE_MEM_WRITE
+#define	OT_MEMR	R_ESIL_OP_TYPE_MEM_READ
 
-R_API void r_anal_esil_setup_macros(RAnalEsil *esil) {
+R_API void r_esil_setup_macros(REsil *esil) {
 #if ESIL_MACRO
 	OP ("++", esil_inc_macro, 1, 1, OT_MATH);
 	OP ("++=", esil_inceq_macro, 1, 1, OT_MATH);
@@ -3761,7 +3761,7 @@ R_API void r_anal_esil_setup_macros(RAnalEsil *esil) {
 #endif
 }
 
-R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
+R_API void r_esil_setup_ops(REsil *esil) {
 	OP ("$", esil_interrupt, 0, 1, OT_UNK); // hm, type seems a bit wrong
 	OP ("()", esil_syscall, 0, 1, OT_UNK);  // same
 	OP ("$z", esil_zf, 1, 0, OT_UNK);
@@ -3878,7 +3878,7 @@ R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("[4]", esil_peek4, 1, 1, OT_MEMR);
 	OP ("[8]", esil_peek8, 1, 1, OT_MEMR);
 	OP ("[16]", esil_peek16, 1, 1, OT_MEMR);
-	OP ("STACK", r_anal_esil_dumpstack, 0, 0, OT_UNK);
+	OP ("STACK", r_esil_dumpstack, 0, 0, OT_UNK);
 	OP ("POP", esil_pop, 0, 1, OT_UNK);
 	OP ("TODO", esil_todo, 0, 0, OT_UNK);
 	OP ("GOTO", esil_goto, 0, 1, OT_CTR);
@@ -3918,7 +3918,7 @@ R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
 }
 
 /* register callbacks using this anal module. */
-R_API bool r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats, int nonull) {
+R_API bool r_esil_setup(REsil *esil, RAnal *anal, int romem, int stats, int nonull) {
 	r_return_val_if_fail (esil, false);
 	//esil->debug = 0;
 	esil->anal = anal;
@@ -3942,10 +3942,10 @@ R_API bool r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats,
 		esil->cb.mem_read = internal_esil_mem_read;
 		esil->cb.mem_write = internal_esil_mem_write;
 	}
-	r_anal_esil_mem_ro (esil, romem);
-	r_anal_esil_stats (esil, stats);
-	r_anal_esil_setup_macros (esil);
-	r_anal_esil_setup_ops (esil);
+	r_esil_mem_ro (esil, romem);
+	r_esil_stats (esil, stats);
+	r_esil_setup_macros (esil);
+	r_esil_setup_ops (esil);
 
 	return (anal->cur && anal->cur->esil_init)
 		? anal->cur->esil_init (esil): true;

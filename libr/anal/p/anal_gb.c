@@ -684,22 +684,22 @@ static inline void gb_anal_cb_srl(RReg *reg, RAnalOp *op, const ut8 data) {
 	}
 }
 
-static bool gb_custom_daa(RAnalEsil *esil) {
+static bool gb_custom_daa(REsil *esil) {
 	if (!esil || !esil->anal || !esil->anal->reg) {
 		return false;
 	}
-	char *v = r_anal_esil_pop (esil);
+	char *v = r_esil_pop (esil);
 	ut64 n;
-	if (!v || !r_anal_esil_get_parm (esil, v, &n)) {
+	if (!v || !r_esil_get_parm (esil, v, &n)) {
 		return false;
 	}
 	R_FREE (v);
 	ut8 val = (ut8)n;
-	r_anal_esil_reg_read (esil, "H", &n, NULL);
+	r_esil_reg_read (esil, "H", &n, NULL);
 	const ut8 H = (ut8)n;
-	r_anal_esil_reg_read (esil, "C", &n, NULL);
+	r_esil_reg_read (esil, "C", &n, NULL);
 	const ut8 C = (ut8)n;
-	r_anal_esil_reg_read (esil, "N", &n, NULL);
+	r_esil_reg_read (esil, "N", &n, NULL);
 	if (n) {
 		if (C) {
 			val = (val - 0x60) & 0xff;
@@ -715,7 +715,7 @@ static bool gb_custom_daa(RAnalEsil *esil) {
 			val += 0x06;
 		};
 	}
-	return r_anal_esil_pushnum (esil, val);
+	return r_esil_pushnum (esil, val);
 }
 
 static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
@@ -1529,9 +1529,9 @@ static bool set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-static int esil_gb_init(RAnalEsil *esil) {
+static int esil_gb_init(REsil *esil) {
 	GBUser *user = R_NEW0 (GBUser);
-	r_anal_esil_set_op (esil, "daa", gb_custom_daa, 1, 1, R_ANAL_ESIL_OP_TYPE_MATH | R_ANAL_ESIL_OP_TYPE_CUSTOM);
+	r_esil_set_op (esil, "daa", gb_custom_daa, 1, 1, R_ESIL_OP_TYPE_MATH | R_ESIL_OP_TYPE_CUSTOM);
 	if (user) {
 		if (esil->anal) {
 			esil->anal->iob.read_at (esil->anal->iob.io, 0x147, &user->mbc_id, 1);
@@ -1552,7 +1552,7 @@ static int esil_gb_init(RAnalEsil *esil) {
 	return true;
 }
 
-static int esil_gb_fini(RAnalEsil *esil) {
+static int esil_gb_fini(REsil *esil) {
 	R_FREE (esil->cb.user);
 	return true;
 }

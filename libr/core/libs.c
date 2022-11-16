@@ -37,8 +37,8 @@ CB (debug, dbg)
 CB (bp, dbg->bp)
 CB (lang, lang)
 CB (anal, anal)
-#define r_anal_esil_add r_anal_esil_plugin_add
-CB (anal_esil, anal->esil)
+#define r_esil_add r_esil_plugin_add
+CB (esil, anal->esil)
 CB (asm, rasm)
 CB (parse, parser)
 CB (bin, bin)
@@ -104,7 +104,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (BP, "debugger breakpoint plugins", bp);
 	DF (LANG, "language plugins", lang);
 	DF (ANAL, "analysis plugins", anal);
-	DF (ESIL, "esil emulation plugins", anal_esil);
+	DF (ESIL, "esil emulation plugins", esil);
 	DF (ASM, "(dis)assembler plugins", asm);
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);

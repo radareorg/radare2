@@ -4530,19 +4530,19 @@ static void ds_print_relocs(RDisasmState *ds) {
 	}
 }
 
-static bool mymemwrite0(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool mymemwrite0(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return false;
 }
 
-static bool mymemwrite1(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool mymemwrite1(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool mymemwrite2(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool mymemwrite2(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return (addr >= emustack_min && addr < emustack_max);
 }
 
-static char *ssa_get(RAnalEsil *esil, const char *reg) {
+static char *ssa_get(REsil *esil, const char *reg) {
 	RDisasmState *ds = esil->user;
 	if (isdigit ((unsigned char)*reg)) {
 		return strdup (reg);
@@ -4554,13 +4554,13 @@ static char *ssa_get(RAnalEsil *esil, const char *reg) {
 	return r_str_newf ("%s_%d", reg, n);
 }
 
-static void ssa_set(RAnalEsil *esil, const char *reg) {
+static void ssa_set(REsil *esil, const char *reg) {
 	RDisasmState *ds = esil->user;
 	(void)sdb_num_inc (ds->ssa, reg, 1, 0);
 }
 
 #define R_DISASM_MAX_STR 512
-static bool myregread(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
+static bool myregread(REsil *esil, const char *name, ut64 *res, int *size) {
 	RDisasmState *ds = esil->user;
 	if (ds && ds->show_emu_ssa) {
 		if (!isdigit ((unsigned char)*name)) {
@@ -4572,7 +4572,7 @@ static bool myregread(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	return false;
 }
 
-static bool myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
+static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
 	RDisasmState *ds = esil->user;
@@ -4736,10 +4736,10 @@ static void ds_pre_emulation(RDisasmState *ds) {
 		return;
 	}
 	ut64 base = f->offset;
-	RAnalEsil *esil = ds->core->anal->esil;
+	REsil *esil = ds->core->anal->esil;
 	int i, end = ds->core->offset - base;
 	int maxemu = 1024 * 1024;
-	RAnalEsilHookRegWriteCB orig_cb = esil->cb.hook_reg_write;
+	REsilHookRegWriteCB orig_cb = esil->cb.hook_reg_write;
 	if (end < 0 || end > maxemu) {
 		return;
 	}
@@ -4754,8 +4754,8 @@ static void ds_pre_emulation(RDisasmState *ds) {
 				// underlying assumption of esil expressions is pc register is set prior to emulation
 				r_reg_setv (ds->core->anal->reg, r_reg_get_name (ds->core->anal->reg, R_REG_NAME_PC),
 					addr + op->size);
-				r_anal_esil_set_pc (esil, addr);
-				r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op->esil));
+				r_esil_set_pc (esil, addr);
+				r_esil_parse (esil, R_STRBUF_SAFEGET (&op->esil));
 				if (op->size > 0) {
 					i += op->size - 1;
 				}
@@ -4787,11 +4787,11 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 		int esd = r_config_get_i (core->config, "esil.stack.depth");
 		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
-		if (!(core->anal->esil = r_anal_esil_new (esd, iotrap, addrsize))) {
+		if (!(core->anal->esil = r_esil_new (esd, iotrap, addrsize))) {
 			R_FREE (ds->esil_regstate);
 			return;
 		}
-		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0, 1);
+		r_esil_setup (core->anal->esil, core->anal, 0, 0, 1);
 	}
 	core->anal->esil->user = ds;
 	free (ds->esil_regstate);
@@ -4923,9 +4923,9 @@ static void mipsTweak(RDisasmState *ds) {
 // modifies anal register state
 static void ds_print_esil_anal(RDisasmState *ds) {
 	RCore *core = ds->core;
-	RAnalEsil *esil = core->anal->esil;
+	REsil *esil = core->anal->esil;
 	const char *pc;
-	bool (*hook_mem_write)(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
+	bool (*hook_mem_write)(REsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
 	int i, nargs;
 	ut64 at = r_core_pava (core, ds->at);
 	RConfigHold *hc = r_config_hold_new (core->config);
@@ -4967,10 +4967,10 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	const char *esilstr = R_STRBUF_SAFEGET (&ds->analop.esil);
 	if (R_STR_ISNOTEMPTY (esilstr)) {
 		mipsTweak (ds);
-		r_anal_esil_set_pc (esil, at);
-		r_anal_esil_parse (esil, esilstr);
+		r_esil_set_pc (esil, at);
+		r_esil_parse (esil, esilstr);
 	}
-	r_anal_esil_stack_free (esil);
+	r_esil_stack_free (esil);
 	r_config_hold (hc, "io.cache", NULL);
 	r_config_set_b (core->config, "io.cache", true);
 	if (!ds->show_comments) {
@@ -5014,7 +5014,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 			if (pcv == UT64_MAX) {
 				pcv = ds->analop.ptr; // call [reloc-addr] // windows style
 				if (pcv == UT64_MAX || !pcv) {
-					r_anal_esil_reg_read (esil, "$jt", &pcv, NULL);
+					r_esil_reg_read (esil, "$jt", &pcv, NULL);
 					if (pcv == UT64_MAX || !pcv) {
 						pcv = r_reg_getv (core->anal->reg, pc);
 					}
@@ -7125,7 +7125,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 			r_core_cmd0 (core, "aeim");
 		}
 	}
-	RAnalEsil *esil = core->anal->esil;
+	REsil *esil = core->anal->esil;
 	RPVector ocache = core->io->cache;
 	RCache *ocacheb = core->io->buffer;
 	const int ocached = core->io->cached;
@@ -7221,11 +7221,11 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		if (invalid_instr) {
 			break;
 		}
-		r_anal_esil_set_pc (core->anal->esil, op_addr);
+		r_esil_set_pc (core->anal->esil, op_addr);
 		r_reg_set_value (reg, pc, op_addr + op.size);
 		const char *e = r_strbuf_get (&op.esil);
 		if (R_STR_ISNOTEMPTY (e)) {
-			r_anal_esil_parse (esil, e);
+			r_esil_parse (esil, e);
 		}
 		r_anal_op_fini (&op);
 

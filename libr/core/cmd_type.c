@@ -928,7 +928,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	const char *varpfx;
 	int dbg_follow = r_config_get_i (core->config, "dbg.follow");
 	Sdb *TDB = core->anal->sdb_types;
-	RAnalEsil *esil;
+	REsil *esil;
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
@@ -939,10 +939,10 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	if (!fcn) {
 		return;
 	}
-	if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
+	if (!(esil = r_esil_new (stacksize, iotrap, addrsize))) {
 		return;
 	}
-	r_anal_esil_setup (esil, core->anal, 0, 0, 0);
+	r_esil_setup (esil, core->anal, 0, 0, 0);
 	int i, ret, bsize = R_MAX (64, core->blocksize);
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int maxinstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
@@ -950,7 +950,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
 		free (buf);
-		r_anal_esil_free (esil);
+		r_esil_free (esil);
 		return;
 	}
 	r_reg_arena_push (core->anal->reg);
@@ -1069,7 +1069,7 @@ beach:
 		r_core_cmd0 (core, "aeim-");
 	}
 	r_core_seek (core, oldoff, true);
-	r_anal_esil_free (esil);
+	r_esil_free (esil);
 	r_reg_arena_pop (core->anal->reg);
 	r_core_cmd0 (core, ".ar*");
 	r_cons_break_pop ();

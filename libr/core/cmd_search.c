@@ -1749,13 +1749,13 @@ bad:
 	return result;
 }
 
-static bool esil_addrinfo(RAnalEsil *esil) {
+static bool esil_addrinfo(REsil *esil) {
 	RCore *core = (RCore *) esil->cb.user;
 	ut64 num = 0;
-	char *src = r_anal_esil_pop (esil);
-	if (src && *src && r_anal_esil_get_parm (esil, src, &num)) {
+	char *src = r_esil_pop (esil);
+	if (src && *src && r_esil_get_parm (esil, src, &num)) {
 		num = r_core_anal_address (core, num);
-		r_anal_esil_pushnum (esil, num);
+		r_esil_pushnum (esil, num);
 	} else {
 // error. empty stack?
 		return false;
@@ -1803,14 +1803,14 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		ut64 to = r_io_map_end (map);
 		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 		if (!core->anal->esil) {
-			core->anal->esil = r_anal_esil_new (stacksize, iotrap, addrsize);
+			core->anal->esil = r_esil_new (stacksize, iotrap, addrsize);
 		}
 		/* hook addrinfo */
 		core->anal->esil->cb.user = core;
-		r_anal_esil_set_op (core->anal->esil, "AddrInfo", esil_addrinfo, 1, 1, R_ANAL_ESIL_OP_TYPE_UNKNOWN);
+		r_esil_set_op (core->anal->esil, "AddrInfo", esil_addrinfo, 1, 1, R_ESIL_OP_TYPE_UNKNOWN);
 		/* hook addrinfo */
-		r_anal_esil_setup (core->anal->esil, core->anal, 1, 0, nonull);
-		r_anal_esil_stack_free (core->anal->esil);
+		r_esil_setup (core->anal->esil, core->anal, 1, 0, nonull);
+		r_esil_stack_free (core->anal->esil);
 		core->anal->esil->verbose = 0;
 
 		r_cons_break_push (NULL, NULL);
@@ -1829,21 +1829,21 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			// instack
 			// inlibrary
 			// inheap
-			r_anal_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
+			r_esil_set_op (core->anal->esil, "AddressInfo", esil_search_address_info);
 #endif
 			if (r_cons_is_breaked ()) {
 				R_LOG_INFO ("Breaked at 0x%08"PFMT64x, addr);
 				break;
 			}
-			r_anal_esil_set_pc (core->anal->esil, addr);
-			if (!r_anal_esil_parse (core->anal->esil, input + 2)) {
+			r_esil_set_pc (core->anal->esil, addr);
+			if (!r_esil_parse (core->anal->esil, input + 2)) {
 				// XXX: return value doesnt seems to be correct here
 				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
 				break;
 			}
 			hit_happens = false;
-			res = r_anal_esil_pop (core->anal->esil);
-			if (r_anal_esil_get_parm (core->anal->esil, res, &nres)) {
+			res = r_esil_pop (core->anal->esil);
+			if (r_esil_get_parm (core->anal->esil, res, &nres)) {
 				if (cfgDebug) {
 					eprintf ("RES 0x%08"PFMT64x" %"PFMT64d"\n", addr, nres);
 				}
@@ -1864,11 +1864,11 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				}
 			} else {
 				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
-				r_anal_esil_stack_free (core->anal->esil);
+				r_esil_stack_free (core->anal->esil);
 				free (res);
 				break;
 			}
-			r_anal_esil_stack_free (core->anal->esil);
+			r_esil_stack_free (core->anal->esil);
 			free (res);
 
 			if (hit_happens) {
@@ -1972,24 +1972,24 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	RListIter *iter;
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	RAnalEsil *esil;
+	REsil *esil;
 	int align = core->search->align;
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
-	if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
+	if (!(esil = r_esil_new (stacksize, iotrap, addrsize))) {
 		return;
 	}
 	int *previnstr = calloc (MAXINSTR + 1, sizeof (int));
 	if (!previnstr) {
-		r_anal_esil_free (esil);
+		r_esil_free (esil);
 		return;
 	}
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
 		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
-		r_anal_esil_free (esil);
+		r_esil_free (esil);
 		free (previnstr);
 		return;
 	}
@@ -2140,7 +2140,7 @@ beach:
 		pj_end (param->pj);
 	}
 	r_core_seek (core, oldoff, true);
-	r_anal_esil_free (esil);
+	r_esil_free (esil);
 	r_cons_break_pop ();
 	free (buf);
 	free (esp32);
@@ -2369,10 +2369,10 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 
 			int ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), flags);
 			if (ret) {
-				r_anal_esil_set_pc (core->anal->esil, at);
+				r_esil_set_pc (core->anal->esil, at);
 				r_reg_setv (core->anal->reg, "PC", at);
 				const char *esil = r_strbuf_get (&aop.esil);
-				bool res = r_anal_esil_parse (core->anal->esil, esil);
+				bool res = r_esil_parse (core->anal->esil, esil);
 				if (res) {
 					ut64 d = r_reg_getv (core->anal->reg, "PC");
 					if (!d || !r_io_is_valid_offset (core->io, d, 0) || d == at + aop.size) {

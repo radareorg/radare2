@@ -5,28 +5,28 @@
 #include <config.h>
 #include "../config.h"
 
-static RAnalEsilPlugin *esil_static_plugins[] = {
+static REsilPlugin *esil_static_plugins[] = {
 	R_ESIL_STATIC_PLUGINS
 };
 
-R_API void r_anal_esil_plugins_init(RAnalEsil *esil) {
+R_API void r_esil_plugins_init(REsil *esil) {
 	r_return_if_fail (esil);
 	esil->plugins = r_list_new ();
 	esil->active_plugins = r_list_new ();
 	size_t i = 0;
 	while (esil_static_plugins[i]) {
-		r_anal_esil_plugin_add (esil, esil_static_plugins[i]);
+		r_esil_plugin_add (esil, esil_static_plugins[i]);
 		i++;
 	}
 }
 
-R_API void r_anal_esil_plugins_fini(RAnalEsil *esil) {
+R_API void r_esil_plugins_fini(REsil *esil) {
 	r_return_if_fail (esil);
 	if (!esil->plugins || !esil->active_plugins) {
 		return;
 	}
 	while (r_list_length (esil->active_plugins)) {
-		RAnalEsilActivePlugin *eap = (RAnalEsilActivePlugin *)r_list_pop (esil->active_plugins);
+		REsilActivePlugin *eap = (REsilActivePlugin *)r_list_pop (esil->active_plugins);
 		eap->plugin->fini (esil, eap->user);
 		free (eap);
 	}
@@ -36,15 +36,15 @@ R_API void r_anal_esil_plugins_fini(RAnalEsil *esil) {
 	esil->plugins = NULL;
 }
 
-R_API bool r_anal_esil_plugin_add(RAnalEsil *esil, RAnalEsilPlugin *plugin) {
+R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin) {
 	r_return_val_if_fail (esil && esil->plugins && plugin, false);
 	r_list_append (esil->plugins, plugin);
 	return true;
 }
 
-static RAnalEsilActivePlugin *_get_active_plugin(RAnalEsil *esil, const char *name) {
+static REsilActivePlugin *_get_active_plugin(REsil *esil, const char *name) {
 	RListIter *iter;
-	RAnalEsilActivePlugin *eap;
+	REsilActivePlugin *eap;
 	r_list_foreach (esil->active_plugins, iter, eap) {
 		if (!strcmp (eap->plugin->name, name)) {
 			return eap;
@@ -53,7 +53,7 @@ static RAnalEsilActivePlugin *_get_active_plugin(RAnalEsil *esil, const char *na
 	return NULL;
 }
 
-R_API bool r_anal_esil_plugin_activate(RAnalEsil *esil, const char *name) {
+R_API bool r_esil_plugin_activate(REsil *esil, const char *name) {
 	r_return_val_if_fail (esil && esil->plugins &&
 				esil->active_plugins && name, false);
 	// check if plugin is already activated
@@ -61,10 +61,10 @@ R_API bool r_anal_esil_plugin_activate(RAnalEsil *esil, const char *name) {
 		return false;
 	}
 	RListIter *iter;
-	RAnalEsilPlugin *ep;
+	REsilPlugin *ep;
 	r_list_foreach (esil->plugins, iter, ep) {
 		if (!strcmp (ep->name, name)) {
-			RAnalEsilActivePlugin *eap = R_NEW (RAnalEsilActivePlugin);
+			REsilActivePlugin *eap = R_NEW (REsilActivePlugin);
 			if (!eap) {
 				return false;
 			}
@@ -77,10 +77,10 @@ R_API bool r_anal_esil_plugin_activate(RAnalEsil *esil, const char *name) {
 	return false;
 }
 
-R_API void r_anal_esil_plugin_deactivate(RAnalEsil *esil, const char *name) {
+R_API void r_esil_plugin_deactivate(REsil *esil, const char *name) {
 	r_return_if_fail (esil && esil->active_plugins && name);
 	RListIter *iter;
-	RAnalEsilActivePlugin *eap;
+	REsilActivePlugin *eap;
 	r_list_foreach (esil->active_plugins, iter, eap) {
 		if (!strcmp (eap->plugin->name, name)) {
 			eap->plugin->fini (esil, eap->user);
