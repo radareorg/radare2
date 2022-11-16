@@ -32,14 +32,25 @@ R_API bool rvc_use(Rvc *vc, RvcType type) {
 	return true;
 }
 
-R_API int rvc_repo_type(const char *path) {
-	return -1;
+R_API RvcType rvc_repo_type(const char *path) {
+	const char *paths[] = {".git", ".rvc"};
+	const RvcType types[] = {RVC_TYPE_GIT, RVC_TYPE_RVC};
+	size_t i = 0;
+	for (; i < sizeof (paths) / sizeof (char *)
+			&& i < sizeof (types) / sizeof (RvcType); i++) {
+		char *p = r_file_new (path, paths[i], NULL);
+		if (r_file_is_directory(p)) {
+			return types[i];
+		}
+		free (p);
+	}
+	return RVC_TYPE_INV;
 }
 
 R_API Rvc *rvc_open(const char *path, RvcType type) {
 	r_return_val_if_fail (path, NULL);
 	Rvc *rvc = NULL;
-	int repotype = (type == -1)? rvc_repo_type (path): type;
+	int repotype = (type == RVC_TYPE_ANY)? rvc_repo_type (path): type;
 	switch (repotype) {
 	case RVC_TYPE_GIT:
 		rvc = r_vc_plugin_git.open (path);
@@ -89,7 +100,7 @@ R_API void rvc_close(Rvc *vc, bool save) {
 	r_return_if_fail (vc);
 	RvcPluginClose klose = R_UNWRAP3 (vc, p, close);
 	if (klose) {
-	       klose (vc, save);
+		klose (vc, save);
 	}
 }
 
