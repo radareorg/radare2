@@ -1026,8 +1026,10 @@ static Rvc *open_rvc(const char *rp) {
 	if (rvc_repo_exists(rp)) {
 		Rvc *repo = R_NEW (Rvc);
 		if (repo) {
-			if((repo->db = vcdb_open (rp))) {
-				if ((repo->path = strdup(rp))) {
+			repo->db = vcdb_open (rp);
+			if (repo->db) {
+				repo->path = strdup(rp);
+				if (repo->path) {
 					return repo;
 				}
 			}
@@ -1038,7 +1040,7 @@ static Rvc *open_rvc(const char *rp) {
 			return repo;
 		}
 	}
-	R_LOG_ERROR("Failed to open rvc repo in: %s\n", rp);
+	R_LOG_ERROR("Can't open rvc repo in: %s", rp);
 	return NULL;
 }
 

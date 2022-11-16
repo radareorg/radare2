@@ -35,7 +35,8 @@ R_API bool rvc_use(Rvc *vc, RvcType type) {
 R_API __attribute__((noinline)) RvcType rvc_repo_type(const char *path) {
 	const char *paths[] = {".git", ".rvc"};
 	const RvcType types[] = {RVC_TYPE_GIT, RVC_TYPE_RVC};
-	for (size_t i = 0; i < sizeof (paths) / sizeof (char *) 
+	size_t i = 0;
+	for (; i < sizeof (paths) / sizeof (char *)
 			&& i < sizeof (types) / sizeof (RvcType); i++) {
 		char *p = r_file_new (path, paths[i], NULL);
 		if (r_file_is_directory(p)) {
