@@ -1023,55 +1023,22 @@ static Sdb *vcdb_open(const char *rp) {
 }
 
 static Rvc *open_rvc(const char *rp) {
-	int type = RVC_TYPE_RVC;
-	// XXX this is conceptually wrong
-	Rvc *repo = R_NEW (Rvc);
-	if (repo) {
-		repo->path = r_str_new (rp);
-		if (repo->path) {
-			repo->db = vcdb_open (rp) ;
-			switch (type) {
-			case RVC_TYPE_RVC:
-				sdb_free (repo->db);
-				free (repo);
-				return rvc_rvc_new (rp);
-			case RVC_TYPE_GIT:
-				if (rvc_use (repo, type)) {
+	if (rvc_repo_exists(rp)) {
+		Rvc *repo = R_NEW (Rvc);
+		if (repo) {
+			if((repo->db = vcdb_open (rp))) {
+				if ((repo->path = strdup(rp))) {
 					return repo;
 				}
-				break;
-			case RVC_TYPE_ANY:
-				{
-					char *rvcdir = r_str_newf ("%s/.rvc/" DBNAME, rp);
-					// check if .git exists and then .rvc or the other way
-					if (r_file_exists (rvcdir)) {
-						free (rvcdir);
-						type = RVC_TYPE_RVC;
-						if (rvc_use (repo, type)) {
-							return repo;
-						}
-					}
-					free (rvcdir);
-					char *gitdir = r_str_newf ("%s/.git/config", rp);
-					if (r_file_exists (gitdir)) {
-						free (gitdir);
-						type = RVC_TYPE_GIT;
-						if (rvc_use (repo, type)) {
-							return repo;
-						}
-					}
-					free (gitdir);
-				}
-				break;
-			default:
-				// unknown vc type
-				break;
 			}
-			sdb_free (repo->db);
-			free (repo->path);
 		}
-		free (repo);
+	} else {
+		Rvc *repo = rvc_rvc_new(rp);
+		if (repo) {
+			return repo;
+		}
 	}
+	R_LOG_ERROR("Failed to open rvc repo in: %s\n", rp);
 	return NULL;
 }
 
