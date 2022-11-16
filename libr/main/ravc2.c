@@ -4,6 +4,7 @@
 
 #include <rvc.h>
 #include <r_list.h>
+#include <r_main.h>
 
 static void usage(void) {
 	printf ("Usage: ravc2 [-qvh] [action] [args ...]\n");
