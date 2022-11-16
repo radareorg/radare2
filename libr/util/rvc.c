@@ -32,7 +32,7 @@ R_API bool rvc_use(Rvc *vc, RvcType type) {
 	return true;
 }
 
-R_API __attribute__((noinline)) RvcType rvc_repo_type(const char *path) {
+R_API RvcType rvc_repo_type(const char *path) {
 	const char *paths[] = {".git", ".rvc"};
 	const RvcType types[] = {RVC_TYPE_GIT, RVC_TYPE_RVC};
 	size_t i = 0;
@@ -100,7 +100,7 @@ R_API void rvc_close(Rvc *vc, bool save) {
 	r_return_if_fail (vc);
 	RvcPluginClose klose = R_UNWRAP3 (vc, p, close);
 	if (klose) {
-	       klose (vc, save);
+		klose (vc, save);
 	}
 }
 
