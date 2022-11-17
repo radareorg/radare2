@@ -131,7 +131,7 @@ addition to reading blogposts, slides or the [official radare2
 book](https://book.rada.re), here are some methods to contact us:
 
 ## Community
-i
+
 * [irc.libera.chat](https://libera.chat): `#radare`, `#radare_side`
 * [Matrix](https://matrix.to/#/#radare:matrix.org): `#radare:matrix.org`
 * Telegram: [Main Channel](https://t.me/radare) and [Side Channel](https://t.me/radare_side)
