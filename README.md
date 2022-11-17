@@ -3,7 +3,7 @@
 ## Radare2: Libre Reversing Framework for Unix Geeks
 
 [![Latest packaged version](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions) [![Tests Status](https://github.com/radareorg/radare2/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/ci.yml?query=branch%3Amaster) [![build](https://github.com/radareorg/radare2/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/build.yml?query=branch%3Amaster) [![tcc](https://github.com/radareorg/radare2/actions/workflows/tcc.yml/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/tcc.yml)
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) [![TODO](https://img.shields.io/github/search/radareorg/radare2/TODO.svg)](https://github.com/radareorg/radare2/search?q=TODO) [![GLOBALS](https://img.shields.io/github/search/radareorg/radare2/R_TH_LOCAL.svg)](https://github.com/radareorg/radare2/search?q=R_TH_LOCAL)[![XXX](https://img.shields.io/github/search/radareorg/radare2/XXX.svg)](https://github.com/radareorg/radare2/search?q=XXX) [![Discord](https://badgen.net/discord/members/UkkuYbNU)](https://discord.gg/UkkuYbNU)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) [![TODO](https://img.shields.io/github/search/radareorg/radare2/TODO.svg)](https://github.com/radareorg/radare2/search?q=TODO) [![GLOBALS](https://img.shields.io/github/search/radareorg/radare2/R_TH_LOCAL.svg)](https://github.com/radareorg/radare2/search?q=R_TH_LOCAL)[![XXX](https://img.shields.io/github/search/radareorg/radare2/XXX.svg)](https://github.com/radareorg/radare2/search?q=XXX) [![Discord](https://badgen.net/discord/members/UkkuYbNU)](https://discord.gg/YBey7CR9jf)
 
 See the [Releases](https://github.com/radareorg/radare2/releases) page for
 downloads. The current git `master` branch is `5.7.9`, next will be `5.8.0`.
@@ -131,11 +131,11 @@ addition to reading blogposts, slides or the [official radare2
 book](https://book.rada.re), here are some methods to contact us:
 
 ## Community
-
+i
 * [irc.libera.chat](https://libera.chat): `#radare`, `#radare_side`
 * [Matrix](https://matrix.to/#/#radare:matrix.org): `#radare:matrix.org`
 * Telegram: [Main Channel](https://t.me/radare) and [Side Channel](https://t.me/radare_side)
-* [Discord server](https://discord.gg/UkkuYbNU)
+* [Discord server](https://discord.gg/YBey7CR9jf)
 * Twitter: [@radareorg](https://twitter.com/radareorg)
 * Website: [https://www.radare.org/](https://www.radare.org/)
 
