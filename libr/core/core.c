@@ -940,7 +940,7 @@ static const char *ms_argv[] = {
 static const char *radare_argv[] = {
 	"whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "sort", "uniq", "join", "less", "exit", "quit",
 	"#?", "#!", "#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
-	"#!python", "#!vala", "#!pipe",
+	"#!python", "#!vala", "#!pipe", "#!qjs", "#!tiny",
 	"*?", "*", "$",
 	"(", "(*", "(-", "()", ".?", ".", "..", "...", ".:", ".--", ".-", ".!", ".(", "./", ".*",
 	"_?", "_",
@@ -2746,7 +2746,7 @@ static void __init_autocomplete_default(RCore* core) {
 		"db-", "dbc", "dbC", "dbd", "dbe", "dbs", "dbi", "dbte", "dbtd", "dbts", NULL
 	};
 	const char *files[] = {
-		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala", "v.",
+		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!qjs", "#!tiny", "#!vala", "v.",
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
 		"idp", "idpi", "L", "obf", "o+", "oc", "of", "r2", "rabin2", "rasm2", "rahash2", "rax2",
 		"rafind2", "cd", "ls", "on", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",

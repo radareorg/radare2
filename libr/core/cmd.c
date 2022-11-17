@@ -1381,6 +1381,13 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 						R_LOG_ERROR ("r2pm -ci rlang-wren");
 					}
 					ret = 1;
+				} else if (!strcmp (ext, "tiny")) {
+					if (r_lang_use (core->lang, "tiny")) {
+						r_lang_run_file (core->lang, file);
+					} else {
+						R_LOG_ERROR ("r2pm -ci rlang-tiny");
+					}
+					ret = 1;
 				} else if (!strcmp (ext, "pl")) {
 					char *cmd = cmdstr ("perl");
 					r_lang_use (core->lang, "pipe");
