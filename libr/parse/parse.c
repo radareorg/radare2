@@ -8,6 +8,38 @@ R_LIB_VERSION (r_parse);
 static RParsePlugin *parse_static_plugins[] =
 	{ R_PARSE_STATIC_PLUGINS };
 
+#if 0
+typedef struct r_parse_session_t {
+	RParse *p;
+	RParsePlugin *cur;
+	void *user;
+	// all the settings
+	RSpace *flagspace;
+	RSpace *notin_flagspace;
+	bool pseudo;
+	bool subreg; // replace registers with their respective alias/role name (rdi=A0, ...)
+	bool subrel; // replace rip relative expressions in instruction
+	bool subtail; // replace any immediate relative to current address with .. prefix syntax
+	bool localvar_only; // if true use only the local variable name (e.g. [local_10h] instead of [ebp + local10h])
+	ut64 subrel_addr;
+	int maxflagnamelen;
+	int minval;
+	char *retleave_asm;
+} RParseSession;
+
+R_API RParseSession *r_parse_new_session(RParse *p, const char *name) {
+	if (r_parse_use (p, name)) {
+		RParseSession *ps = R_NEW0 (RParseSession);
+		ps->p = p;
+		ps->cur = p->cur;
+		return ps;
+	}
+	return NULL;
+}
+
+R_API char *r_parse_
+#endif
+
 R_API RParse *r_parse_new(void) {
 	RParse *p = R_NEW0 (RParse);
 	if (!p) {
@@ -89,6 +121,7 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 	return false;
 }
 
+#if 0
 // this function is a bit confussing, assembles C code into wat?, whehres theh input and wheres the output
 // and its unused. so imho it sshould be DEPRECATED this conflicts with rasm.assemble imhoh
 R_API bool r_parse_assemble(RParse *p, char *data, char *str) {
@@ -121,20 +154,39 @@ R_API bool r_parse_assemble(RParse *p, char *data, char *str) {
 	free (in);
 	return ret;
 }
+#endif
 
 // data is input disasm, str is output pseudo
-// TODO: refactooring, this should return char * instead
-R_API bool r_parse_parse(RParse *p, const char *data, char *str) {
+// TODO: refactoring, this should return char * instead
+// like parseHeap()
+R_API char *r_parse_instruction(RParse *p, const char *data) {
+	r_return_val_if_fail (p && data, false);
+	char *str = malloc (32 + strlen (data) * 2);
+	strcpy (str, data);
+	bool bres = (p && p->cur && p->cur->parse)
+		? p->cur->parse (p, data, str) : false;
+	if (bres) {
+		return str;
+	}
+	free (str);
+	return NULL;
+}
+
+R_API bool r_parse_parse(RParse *p, const char *data, char *str) { // TODO deprecate. because r_parse_instruction is better
 	r_return_val_if_fail (p && data && str, false);
 	return (p && data && *data && p->cur && p->cur->parse)
 		? p->cur->parse (p, data, str) : false;
 }
 
-R_API char *r_parse_immtrim(char *opstr) {
-	if (R_STR_ISEMPTY (opstr)) {
+R_API char *r_parse_immtrim(char *_opstr) {
+// R_API char *r_parse_immtrim(const char *_opstr) {
+	if (R_STR_ISEMPTY (_opstr)) {
 		return NULL;
 	}
-	char *n = strstr (opstr, "0x");
+	char *opstr = _opstr;
+	// TODO: make this inmutable strdup
+	// char *opstr = strdup (_opstr);
+	char *n = strstr (_opstr, "0x");
 	if (n) {
 		char *p = n + 2;
 		while (IS_HEXCHAR (*p)) {

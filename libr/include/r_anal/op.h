@@ -259,6 +259,25 @@ typedef struct r_anal_op_t {
 	int vliw; // begin of opcode block.
 } RAnalOp;
 
+R_API void r_anal_op_free(void *_op);
+R_API bool r_anal_op_nonlinear(int t);
+R_API void r_anal_op_init(RAnalOp *op);
+R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size);
+R_API bool r_anal_op_set_mnemonic(RAnalOp *op, ut64 addr, const char *s);
+R_API const char *r_anal_op_direction_tostring(RAnalOp *op);
+R_API bool r_anal_op_ismemref(int t);
+R_API const char *r_anal_optype_tostring(int t);
+R_API const char *r_anal_optype_index(int idx);
+R_API int r_anal_optype_from_string(const char *type);
+R_API const char *r_anal_op_family_tostring(int n);
+R_API int r_anal_op_family_from_string(const char *f);
+R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint);
+
+/* switch.c APIs */
+R_API RAnalSwitchOp *r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val);
+R_API void r_anal_switch_op_free(RAnalSwitchOp *swop);
+R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp *swop, ut64 addr, ut64 value, ut64 jump);
+
 #ifdef __cplusplus
 }
 #endif

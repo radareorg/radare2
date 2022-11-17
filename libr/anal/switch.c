@@ -2,6 +2,8 @@
 
 #include <r_anal.h>
 
+#if 0
+// moved to arch/switch
 static RAnalSwitchOp *__switch_op_new(void) {
 	RAnalSwitchOp * swop = R_NEW0 (RAnalSwitchOp);
 	if (swop) {
@@ -52,3 +54,4 @@ R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp *swop, ut64 addr, ut6
 	}
 	return caseop;
 }
+#endif

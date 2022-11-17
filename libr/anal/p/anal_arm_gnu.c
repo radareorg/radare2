@@ -616,6 +616,13 @@ RAnalPlugin r_anal_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
 	.cpus = "v2,v2a,v3M,v4,v5,v5t,v5te,v5j,XScale,ep9312,iWMMXt,iWMMXt2,wd",
+#if 0
+	// arm32 and arm64
+	"crypto,databarrier,divide,fparmv8,multpro,neon,t2extractpack,"
+	"thumb2dsp,trustzone,v4t,v5t,v5te,v6,v6t2,v7,v8,vfp2,vfp3,vfp4,"
+	"arm,mclass,notmclass,thumb,thumb1only,thumb2,prev8,fpvmlx,"
+	"mulops,crc,dpvfp,v6m"
+#endif
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.license = "LGPL3",
 	.bits = 16 | 32 | 64,
