@@ -6,14 +6,13 @@ R_API RAsmCode *r_asm_code_new(void) {
 	return R_NEW0 (RAsmCode);
 }
 
-R_API void* r_asm_code_free(RAsmCode *acode) {
+R_API void r_asm_code_free(RAsmCode *acode) {
 	if (acode) {
 		r_list_free (acode->equs);
 		free (acode->bytes);
 		free (acode->assembly);
 		free (acode);
 	}
-	return NULL;
 }
 
 R_API void r_asm_equ_item_free(RAsmEqu *equ) {

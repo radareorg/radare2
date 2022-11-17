@@ -362,14 +362,8 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 				}
 			}
 			feat = "__";
-			if (h->assemble && h->disassemble) {
-				feat = "ad";
-			}
-			if (h->assemble && !h->disassemble) {
+			if (h->assemble) {
 				feat = "a_";
-			}
-			if (!h->assemble && h->disassemble) {
-				feat = "_d";
 			}
 			feat2 = has_esil (as, h->name);
 			if (as->quiet) {

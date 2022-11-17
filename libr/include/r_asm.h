@@ -49,7 +49,7 @@ typedef struct r_asm_code_t {
 	int code_align;
 } RAsmCode;
 
-// TODO: Must use Hashtable instead of this hack
+// TODO: use a hashtable instead of an rlist
 typedef struct {
 	char *key;
 	char *value;
@@ -91,7 +91,6 @@ typedef struct r_asm_plugin_t {
 	int endian;
 	bool (*init)(void *user);
 	bool (*fini)(void *user);
-	int (*disassemble)(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
 
 	RAsmAssembleCallback assemble;
 	RAsmModifyCallback modify;
@@ -130,8 +129,8 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp);
 R_API char *r_asm_tostring(RAsm *a, ut64 addr, const ut8 *b, int l);
 /* to ease the use of the native bindings (not used in r2) */
 R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l);
-R_API int r_asm_sub_names_input(RAsm *a, const char *f);
-R_API int r_asm_sub_names_output(RAsm *a, const char *f);
+R_API bool r_asm_sub_names_input(RAsm *a, const char *f);
+R_API bool r_asm_sub_names_output(RAsm *a, const char *f);
 R_API char *r_asm_describe(RAsm *a, const char* str);
 R_API RList* r_asm_get_plugins(RAsm *a);
 R_API void r_asm_list_directives(void);
@@ -140,7 +139,7 @@ R_API RList *r_asm_cpus(RAsm *a);
 
 /* code.c */
 R_API RAsmCode *r_asm_code_new(void);
-R_API void* r_asm_code_free(RAsmCode *acode);
+R_API void r_asm_code_free(RAsmCode *acode);
 R_API void r_asm_equ_item_free(RAsmEqu *equ);
 R_API bool r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value);
 R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str);
