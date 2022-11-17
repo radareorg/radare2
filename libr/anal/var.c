@@ -1756,13 +1756,18 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 		// This avoids false positives present in argument recovery
 		// and straight away print arguments fetched from types db
 #if 1
-// TODO: option to filter unsupported types or not
 		for (i = 0; i < argc; i++) {
 			char *type = r_type_func_args_type (TDB, type_fcn_name, i);
 			const char *name = r_type_func_args_name (TDB, type_fcn_name, i);
-			if (!type || !*type || !name) {
-				// USE RLOG API
-				R_LOG_WARN ("Missing type for '%s'", type_fcn_name);
+			r_str_trim (type);
+			if (R_STR_ISEMPTY (type) && !strcmp (name, "...")) {
+				R_LOG_DEBUG ("Detected, but unhandled vararg type"); // TODO implement vararg support
+				// this is vararg type!
+				free (type);
+				type = strdup ("vararg");
+			}
+			if (R_STR_ISEMPTY (type) || R_STR_ISEMPTY (name)) {
+				R_LOG_WARN ("Missing type for arg %d of function '%s'", i, type_fcn_name);
 				goto beach;
 			}
 			size_t len = strlen (type);
