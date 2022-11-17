@@ -82,7 +82,7 @@ static bool esilbreak_check_pc(RDebug *dbg, ut64 pc) {
 	return false;
 }
 
-static bool esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	EsilBreak *ew;
 	RListIter *iter;
 	eprintf (Color_GREEN"MEM READ 0x%"PFMT64x"\n"Color_RESET, addr);
@@ -97,7 +97,7 @@ static bool esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return false;
 }
 
-static bool esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	EsilBreak *ew;
 	RListIter *iter;
 	eprintf (Color_RED"MEM WRTE 0x%"PFMT64x"\n"Color_RESET, addr);
@@ -112,7 +112,7 @@ static bool esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int 
 	return false; // fallback
 }
 
-static bool esilbreak_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
+static bool esilbreak_reg_read(REsil *esil, const char *regname, ut64 *num, int *size) {
 	EsilBreak *ew;
 	RListIter *iter;
 	if (regname[0]>='0' && regname[0]<='9') {
@@ -187,7 +187,7 @@ static int exprmatchreg(RDebug *dbg, const char *regname, const char *expr) {
 	return ret;
 }
 
-static bool esilbreak_reg_write(RAnalEsil *esil, const char *regname, ut64 *num) {
+static bool esilbreak_reg_write(REsil *esil, const char *regname, ut64 *num) {
 	EsilBreak *ew;
 	RListIter *iter;
 	if (regname[0] >= '0' && regname[0] <= '9') {
@@ -220,7 +220,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 	int ret = 1;
 	dbg = d;
 	if (!ESIL) {
-		ESIL = r_anal_esil_new (32, true, 64);
+		ESIL = r_esil_new (32, true, 64);
 		// TODO setup something?
 		if (!ESIL) {
 			return false;
@@ -255,11 +255,11 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 			R_LOG_WARN ("STOP AT 0x%08"PFMT64x, opc);
 			ret = 0;
 		} else {
-			r_anal_esil_set_pc (ESIL, opc);
+			r_esil_set_pc (ESIL, opc);
 			eprintf ("0x%08"PFMT64x"  %s\n", opc, R_STRBUF_SAFEGET (&op.esil));
-			(void)r_anal_esil_parse (ESIL, R_STRBUF_SAFEGET (&op.esil));
-			//r_anal_esil_dumpstack (ESIL);
-			r_anal_esil_stack_free (ESIL);
+			(void)r_esil_parse (ESIL, R_STRBUF_SAFEGET (&op.esil));
+			//r_esil_dumpstack (ESIL);
+			r_esil_stack_free (ESIL);
 			ret = 1;
 		}
 	}

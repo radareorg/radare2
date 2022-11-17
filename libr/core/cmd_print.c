@@ -5492,8 +5492,8 @@ static void core_print_decompile(RCore *core, const char *input) {
 	int minopsize = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	int bits = r_config_get_i (core->config, "asm.bits");
 	int ss = 16 * 1024;
-	RAnalEsil *esil = r_anal_esil_new (ss, 0, bits);
-	// r_anal_esil_setup (esil, core->anal, true, 0, 0);
+	REsil *esil = r_esil_new (ss, 0, bits);
+	// r_esil_setup (esil, core->anal, true, 0, 0);
 	esil2c_setup (core, esil);
 	for (i = 0; i < count; i++) {
 		RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
@@ -5502,7 +5502,7 @@ static void core_print_decompile(RCore *core, const char *input) {
 			continue;
 		}
 		const char *es = R_STRBUF_SAFEGET (&op->esil);
-		r_anal_esil_set_pc (esil, addr);
+		r_esil_set_pc (esil, addr);
 		r_cons_printf ("addr_0x%08"PFMT64x"_0: // %s\n", addr, es);
 		char *cstr = esil2c (core, esil, es);
 		if (cstr) {
@@ -5514,7 +5514,7 @@ static void core_print_decompile(RCore *core, const char *input) {
 	}
 	esil2c_free (esil->user);
 	esil->user = NULL;
-	r_anal_esil_free (esil);
+	r_esil_free (esil);
 }
 
 static bool strnullpad_check(const ut8 *buf, int len, int clen, int inc, bool be) {

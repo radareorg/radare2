@@ -12,37 +12,37 @@ extern "C" {
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 // only flags that affect control flow
 enum {
-	R_ANAL_ESIL_FLAG_ZERO = 1,
-	R_ANAL_ESIL_FLAG_CARRY = 2,
-	R_ANAL_ESIL_FLAG_OVERFLOW = 4,
-	R_ANAL_ESIL_FLAG_PARITY = 8,
-	R_ANAL_ESIL_FLAG_SIGN = 16,
+	R_ESIL_FLAG_ZERO = 1,
+	R_ESIL_FLAG_CARRY = 2,
+	R_ESIL_FLAG_OVERFLOW = 4,
+	R_ESIL_FLAG_PARITY = 8,
+	R_ESIL_FLAG_SIGN = 16,
 	// ...
 };
 
 #define ESIL_INTERNAL_PREFIX '$'
 #define ESIL_STACK_NAME "esil.ram"
 
-typedef struct r_anal_esil_t ESIL;
+typedef struct r_esil_t ESIL;
 
-typedef bool (*RAnalEsilHandlerCB)(ESIL *esil, ut32 h, void *user);
+typedef bool (*REsilHandlerCB)(ESIL *esil, ut32 h, void *user);
 
-typedef struct r_anal_esil_handler_t {
-	RAnalEsilHandlerCB cb;
+typedef struct r_esil_handler_t {
+	REsilHandlerCB cb;
 	void *user;
-} RAnalEsilHandler;
+} REsilHandler;
 
-typedef struct r_anal_esil_change_reg_t {
+typedef struct r_esil_change_reg_t {
 	int idx;
 	ut64 data;
-} RAnalEsilRegChange;
+} REsilRegChange;
 
-typedef struct r_anal_esil_change_mem_t {
+typedef struct r_esil_change_mem_t {
 	int idx;
 	ut8 data;
-} RAnalEsilMemChange;
+} REsilMemChange;
 
-typedef struct r_anal_esil_trace_t {
+typedef struct r_esil_trace_t {
 	int idx;
 	int end_idx;
 	HtUP *registers;
@@ -53,11 +53,11 @@ typedef struct r_anal_esil_trace_t {
 	ut8 *stack_data;
 	//TODO remove `db` and reuse info above
 	Sdb *db;
-} RAnalEsilTrace;
+} REsilTrace;
 
-typedef bool (*RAnalEsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
+typedef bool (*REsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
 
-typedef struct r_anal_esil_callbacks_t {
+typedef struct r_esil_callbacks_t {
 	void *user;
 	/* callbacks */
 	bool (*hook_flag_read)(ESIL *esil, const char *flag, ut64 *num);
@@ -68,11 +68,11 @@ typedef struct r_anal_esil_callbacks_t {
 	bool (*mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
 	bool (*hook_reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
 	bool (*reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
-	RAnalEsilHookRegWriteCB hook_reg_write;
+	REsilHookRegWriteCB hook_reg_write;
 	bool (*reg_write)(ESIL *esil, const char *name, ut64 val);
-} RAnalEsilCallbacks;
+} REsilCallbacks;
 
-typedef struct r_anal_esil_t {
+typedef struct r_esil_t {
 	struct r_anal_t *anal; // XXX maybe just use arch?
 	char **stack;
 	ut64 addrmask;
@@ -106,14 +106,14 @@ typedef struct r_anal_esil_t {
 	SdbMini *interrupts;
 	SdbMini *syscalls;
 	//this is a disgusting workaround, because we have no ht-like storage without magic keys, that you cannot use, with int-keys
-	RAnalEsilHandler *intr0;
-	RAnalEsilHandler *sysc0;
+	REsilHandler *intr0;
+	REsilHandler *sysc0;
 	RList *plugins;
 	RList *active_plugins;
 	/* deep esil parsing fills this */
 	Sdb *stats;
-	RAnalEsilTrace *trace;
-	RAnalEsilCallbacks cb;
+	REsilTrace *trace;
+	REsilCallbacks cb;
 #if 0
 	struct r_anal_reil_t *Reil;
 #endif
@@ -132,12 +132,12 @@ typedef struct r_anal_esil_t {
 	void *user;
 	int stack_fd;	// ahem, let's not do this
 	bool in_cmd_step;
-} RAnalEsil;
+} REsil;
 
 enum {
-	R_ANAL_ESIL_PARM_INVALID = 0,
-	R_ANAL_ESIL_PARM_REG,
-	R_ANAL_ESIL_PARM_NUM,
+	R_ESIL_PARM_INVALID = 0,
+	R_ESIL_PARM_REG,
+	R_ESIL_PARM_NUM,
 };
 
 typedef struct r_anal_ref_char_t {
@@ -216,25 +216,25 @@ typedef struct r_anal_reil_t {
 } RAnalReil;
 #endif
 
-typedef struct r_anal_esil_plugin_t {
+typedef struct r_esil_plugin_t {
 	char *name;
 	char *desc;
 	char *license;
 	char *arch;
 	char *author;
 	char *version;
-	void *(*init)(RAnalEsil *esil);			// can allocate stuff and return that
-	void (*fini)(RAnalEsil *esil, void *user);	// deallocates allocated things from init
-} RAnalEsilPlugin;
+	void *(*init)(REsil *esil);			// can allocate stuff and return that
+	void (*fini)(REsil *esil, void *user);	// deallocates allocated things from init
+} REsilPlugin;
 
 // Some kind of container, pointer to plugin + pointer to user
-typedef struct r_anal_esil_active_plugin_t {
-	RAnalEsilPlugin *plugin;
+typedef struct r_esil_active_plugin_t {
+	REsilPlugin *plugin;
 	void *user;
-} RAnalEsilActivePlugin;
+} REsilActivePlugin;
 
 
-extern RAnalEsilPlugin r_esil_plugin_dummy;
+extern REsilPlugin r_esil_plugin_dummy;
 
 #ifdef __cplusplus
 }

@@ -115,7 +115,7 @@ INST_HANDLER (RETURN) {
 INST_HANDLER (CALL) {
 	ut64 pclath;
 	op->type = R_ANAL_OP_TYPE_CALL;
-	r_anal_esil_reg_read (anal->esil, "pclath", &pclath, NULL);
+	r_esil_reg_read (anal->esil, "pclath", &pclath, NULL);
 	op->jump = 2 * (((pclath & 0x78) << 8) + args->k);
 	ef ("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
 	e ("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
@@ -127,7 +127,7 @@ INST_HANDLER (CALL) {
 INST_HANDLER (GOTO) {
 	ut64 pclath;
 	op->type = R_ANAL_OP_TYPE_JMP;
-	r_anal_esil_reg_read (anal->esil, "pclath", &pclath, NULL);
+	r_esil_reg_read (anal->esil, "pclath", &pclath, NULL);
 	op->jump = 2 * (((pclath & 0x78) << 8) + args->k);
 	ef ("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
 }
@@ -176,7 +176,7 @@ INST_HANDLER (BRA) {
 INST_HANDLER (BRW) {
 	ut64 wreg;
 	op->type = R_ANAL_OP_TYPE_UJMP;
-	r_anal_esil_reg_read (anal->esil, "wreg", &wreg, NULL);
+	r_esil_reg_read (anal->esil, "wreg", &wreg, NULL);
 	op->jump = addr + 2 * (wreg + 1);
 	e ("wreg,1,+,2,*,pc,+=,");
 }

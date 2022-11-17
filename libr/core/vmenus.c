@@ -121,7 +121,7 @@ static int wordpos(const char *esil, int n) {
 	return (size_t)(w - esil);
 }
 
-static void showreg(RAnalEsil *esil, const char *rn, const char *desc) {
+static void showreg(REsil *esil, const char *rn, const char *desc) {
 	ut64 nm = 0;
 	int sz = 0;
 	r_cons_printf ("%s 0x%08"PFMT64x" (%d) ; %s\n", rn, nm, sz, desc);
@@ -151,10 +151,10 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		return false;
 	}
 	r_reg_arena_push (core->anal->reg);
-	RAnalEsil *esil = r_anal_esil_new (20, 0, addrsize);
-	r_anal_esil_setup (esil, core->anal, false, false, false);
+	REsil *esil = r_esil_new (20, 0, addrsize);
+	r_esil_setup (esil, core->anal, false, false, false);
 	// esil->anal = core->anal;
-	r_anal_esil_set_pc (esil, core->offset);
+	r_esil_set_pc (esil, core->offset);
 	char *expr = NULL;
 	bool refresh = false;
 	for (;;) {
@@ -228,7 +228,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			free (r);
 		}
 		r_cons_printf ("esil stack:\n");
-		r_anal_esil_dumpstack (esil);
+		r_esil_dumpstack (esil);
 		if (!input) {
 			r_anal_op_fini (&analop);
 		}
@@ -247,20 +247,20 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		case 'n':
 		case 'P':
 			x = 0;
-			r_anal_esil_free (esil);
-			esil = r_anal_esil_new (20, 0, addrsize);
+			r_esil_free (esil);
+			esil = r_esil_new (20, 0, addrsize);
 			esil->anal = core->anal;
 			r_core_cmd0 (core, "so+1");
-			r_anal_esil_set_pc (esil, core->offset);
+			r_esil_set_pc (esil, core->offset);
 			break;
 		case 'N':
 		case 'p':
 			x = 0;
-			r_anal_esil_free (esil);
-			esil = r_anal_esil_new (20, 0, addrsize);
+			r_esil_free (esil);
+			esil = r_esil_new (20, 0, addrsize);
 			esil->anal = core->anal;
 			r_core_cmd0 (core, "so-1");
-			r_anal_esil_set_pc (esil, core->offset);
+			r_esil_set_pc (esil, core->offset);
 			break;
 		case '=':
 		{ // TODO: edit
@@ -301,7 +301,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			// eprintf ("step ((%s))\n", word);
 			// r_sys_usleep (500);
 			x = R_MIN (x + 1, nbits - 1);
-			r_anal_esil_runword (esil, word);
+			r_esil_runword (esil, word);
 			break;
 		case 'S':
 			R_LOG_WARN ("TODO: esil step back :D");
@@ -352,7 +352,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 beach:
 	free (expr);
 	r_reg_arena_pop (core->anal->reg);
-	r_anal_esil_free (esil);
+	r_esil_free (esil);
 	free (word);
 	free (ginput);
 	return true;

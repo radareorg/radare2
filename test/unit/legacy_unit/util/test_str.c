@@ -3,7 +3,7 @@
 
 
 void check(const char *exp, const char *act, const char *desc) {
-	if (strcmp(exp, act) == 0)
+	if (strcmp (exp, act) == 0)
 		printf("\x1b[34m[+][%s]\x1b[39;49m test passed\n", desc);
 	else
 		printf("\x1b[31m[-][%s]\x1b[39;49m test failed (actual = %s\x1b[39;49m, expected = %s\x1b[39;49m)\n", desc, act, exp);

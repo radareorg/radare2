@@ -3806,29 +3806,29 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 }
 
 #if 0
-static int x86_int_0x80(RAnalEsil *esil, int interrupt) {
+static int x86_int_0x80(REsil *esil, int interrupt) {
 	int syscall;
 	ut64 eax, ebx, ecx, edx;
 	if (!esil || (interrupt != 0x80))
 		return false;
-	r_anal_esil_reg_read (esil, "eax", &eax, NULL);
-	r_anal_esil_reg_read (esil, "ebx", &ebx, NULL);
-	r_anal_esil_reg_read (esil, "ecx", &ecx, NULL);
-	r_anal_esil_reg_read (esil, "edx", &edx, NULL);
+	r_esil_reg_read (esil, "eax", &eax, NULL);
+	r_esil_reg_read (esil, "ebx", &ebx, NULL);
+	r_esil_reg_read (esil, "ecx", &ecx, NULL);
+	r_esil_reg_read (esil, "edx", &edx, NULL);
 	syscall = (int) eax;
 	switch (syscall) {
 	case 3:
 		{
 			char *dst = calloc (1, (size_t)edx);
 			(void)read ((ut32)ebx, dst, (size_t)edx);
-			r_anal_esil_mem_write (esil, ecx, (ut8 *)dst, (int)edx);
+			r_esil_mem_write (esil, ecx, (ut8 *)dst, (int)edx);
 			free (dst);
 			return true;
 		}
 	case 4:
 		{
 			char *src = malloc ((size_t)edx);
-			r_anal_esil_mem_read (esil, ecx, (ut8 *)src, (int)edx);
+			r_esil_mem_read (esil, ecx, (ut8 *)src, (int)edx);
 			write ((ut32)ebx, src, (size_t)edx);
 			free (src);
 			return true;
@@ -3840,25 +3840,25 @@ static int x86_int_0x80(RAnalEsil *esil, int interrupt) {
 #endif
 
 #if 0
-static int esil_x86_cs_intr(RAnalEsil *esil, int intr) {
+static int esil_x86_cs_intr(REsil *esil, int intr) {
 	if (!esil) return false;
 	R_LOG_DEBUG ("INTERRUPT 0x%02x HAPPENS", intr);
 	return true;
 }
 #endif
 
-static int esil_x86_cs_init(RAnalEsil *esil) {
+static int esil_x86_cs_init(REsil *esil) {
 	if (!esil) {
 		return false;
 	}
 	// XXX. this depends on kernel
-	// r_anal_esil_set_interrupt (esil, 0x80, x86_int_0x80);
+	// r_esil_set_interrupt (esil, 0x80, x86_int_0x80);
 	/* disable by default */
-//	r_anal_esil_set_interrupt (esil, 0x80, NULL);	// this is stupid, don't do this
+//	r_esil_set_interrupt (esil, 0x80, NULL);	// this is stupid, don't do this
 	return true;
 }
 
-static int esil_x86_cs_fini(RAnalEsil *esil) {
+static int esil_x86_cs_fini(REsil *esil) {
 	return true;
 }
 

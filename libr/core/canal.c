@@ -4860,7 +4860,7 @@ static ut64 delta_for_access(RAnalOp *op, RAnalVarAccessType type) {
 	return 0;
 }
 
-static void handle_var_stack_access(RAnalEsil *esil, ut64 addr, RAnalVarAccessType type, int len) {
+static void handle_var_stack_access(REsil *esil, ut64 addr, RAnalVarAccessType type, int len) {
 	if (!esil || !esil->user) {
 		return;
 	}
@@ -4901,7 +4901,7 @@ static bool is_stack(RIO *io, ut64 addr) {
 	return false;
 }
 
-static bool esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool esilbreak_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	handle_var_stack_access (esil, addr, R_ANAL_VAR_ACCESS_TYPE_WRITE, len);
 	// ignore writes in stack
 	if (myvalid (mycore->io, addr) && r_io_read_at (mycore->io, addr, (ut8*)buf, len)) {
@@ -4922,7 +4922,7 @@ static R_TH_LOCAL ut64 esilbreak_last_data = UT64_MAX;
 static R_TH_LOCAL ut64 ntarget = UT64_MAX;
 
 // TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
-static bool esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	ut8 str[128];
 	if (addr != UT64_MAX) {
 		esilbreak_last_read = addr;
@@ -4976,7 +4976,7 @@ static bool esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return false; // fallback
 }
 
-static bool esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
+static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 	if (!esil || !esil->anal || !esil->user) {
 		return false;
 	}
@@ -5019,12 +5019,12 @@ static bool esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	return 0;
 }
 
-static void getpcfromstack(RCore *core, RAnalEsil *esil) {
+static void getpcfromstack(RCore *core, REsil *esil) {
 	ut64 cur;
 	ut64 addr;
 	ut64 size;
 	int idx;
-	RAnalEsil esil_cpy;
+	REsil esil_cpy;
 	RAnalOp op = {0};
 	RAnalFunction *fcn = NULL;
 	ut8 *buf = NULL;
@@ -5091,9 +5091,9 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	snprintf (tmp_esil_str, tmp_esil_str_len - 1, "%20" PFMT64u "%s", esil_cpy.old, &esilstr[strlen (spname) + 4]);
 	r_str_trim (tmp_esil_str);
 	idx += op.size;
-	r_anal_esil_set_pc (&esil_cpy, cur);
-	r_anal_esil_parse (&esil_cpy, tmp_esil_str);
-	r_anal_esil_stack_free (&esil_cpy);
+	r_esil_set_pc (&esil_cpy, cur);
+	r_esil_parse (&esil_cpy, tmp_esil_str);
+	r_esil_stack_free (&esil_cpy);
 	free (tmp_esil_str);
 
 	cur = addr + idx;
@@ -5106,12 +5106,12 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	r_asm_set_pc (core->rasm, cur);
 
 	esilstr = R_STRBUF_SAFEGET (&op.esil);
-	r_anal_esil_set_pc (&esil_cpy, cur);
+	r_esil_set_pc (&esil_cpy, cur);
 	if (!esilstr || !*esilstr) {
 		goto err_anal_op;
 	}
-	r_anal_esil_parse (&esil_cpy, esilstr);
-	r_anal_esil_stack_free (&esil_cpy);
+	r_esil_parse (&esil_cpy, esilstr);
+	r_esil_stack_free (&esil_cpy);
 
 	memcpy (esil, &esil_cpy, sizeof (esil_cpy));
 
@@ -5225,7 +5225,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
 	bool gp_fixed = r_config_get_b (core->config, "anal.gpfixed");
 	bool newstack = r_config_get_b (core->config, "anal.var.newstack");
-	RAnalEsil *ESIL = core->anal->esil;
+	REsil *ESIL = core->anal->esil;
 	ut64 refptr = 0LL;
 	char *pcname = NULL;
 	RAnalOp op = {0};
@@ -5517,15 +5517,15 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (R_STR_ISEMPTY (esilstr)) {
 			goto repeat;
 		}
-		r_anal_esil_set_pc (ESIL, cur);
+		r_esil_set_pc (ESIL, cur);
 		r_reg_setv (core->anal->reg, pcname, cur + op.size);
 		if (gp_fixed && gp_reg) {
 			r_reg_setv (core->anal->reg, gp_reg, gp);
 		}
-		(void)r_anal_esil_parse (ESIL, esilstr);
+		(void)r_esil_parse (ESIL, esilstr);
 		// looks like ^C is handled by esil_parse !!!!
-		//r_anal_esil_dumpstack (ESIL);
-		//r_anal_esil_stack_free (ESIL);
+		//r_esil_dumpstack (ESIL);
+		//r_esil_stack_free (ESIL);
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_LEA:
 			// arm64
@@ -5682,7 +5682,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		default:
 			break;
 		}
-		r_anal_esil_stack_free (ESIL);
+		r_esil_stack_free (ESIL);
 repeat:
 		if (!r_anal_get_block_at (core->anal, cur)) {
 			size_t fcn_i;

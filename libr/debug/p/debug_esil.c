@@ -37,7 +37,7 @@ static bool __esil_step(RDebug *dbg) {
 	if (oplen > 0) {
 		if (*R_STRBUF_SAFEGET (&op.esil)) {
 			eprintf ("ESIL: %s\n", R_STRBUF_SAFEGET (&op.esil));
-			r_anal_esil_parse (dbg->anal->esil, R_STRBUF_SAFEGET (&op.esil));
+			r_esil_parse (dbg->anal->esil, R_STRBUF_SAFEGET (&op.esil));
 		}
 	}
 	r_anal_op_fini (&op);

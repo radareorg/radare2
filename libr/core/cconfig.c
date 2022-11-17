@@ -2174,7 +2174,7 @@ static bool cb_iopcachewrite(void *user, void *data) {
 	return true;
 }
 
-R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
+R_API bool r_core_esil_cmd(REsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	if (cmd && *cmd) {
 		RCore *core = esil->anal->user;
 		r_core_cmdf (core, "%s %"PFMT64d" %" PFMT64d, cmd, a1, a2);

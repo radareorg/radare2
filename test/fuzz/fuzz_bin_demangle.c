@@ -33,7 +33,7 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 	int i, c;
 	for (i = 1; i < argc; i++) {
 		++argv;
-		if (strcmp((*lf_argv)[i], "--") == 0) {
+		if (strcmp ((*lf_argv)[i], "--") == 0) {
 			has_args = true;
 			break;
 		}
