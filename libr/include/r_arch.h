@@ -43,6 +43,7 @@ typedef struct r_arch_config_t {
 	int syntax;
 	int pcalign;
 	int dataalign;
+	int addrbytes; // move from RIO->addrbytes to RArchConfig->addrbytes
 	int segbas;
 	int seggrn;
 	int invhex;

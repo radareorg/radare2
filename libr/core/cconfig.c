@@ -179,14 +179,8 @@ bool rasm2_list(RCore *core, const char *arch, int fmt) {
 			}
 			bits = r_strbuf_drain (sb);
 			feat = "__";
-			if (h->assemble && h->disassemble) {
-				feat = "ad";
-			}
-			if (h->assemble && !h->disassemble) {
+			if (h->assemble) {
 				feat = "a_";
-			}
-			if (!h->assemble && h->disassemble) {
-				feat = "_d";
 			}
 			feat2 = has_esil (core, h->name);
 			if (fmt == 'q') {
@@ -279,19 +273,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 			}
 			bits = r_strbuf_drain (sb);
 			feat = "__";
-#if 0
-			if (h->assemble && h->disassemble) {
-				feat = "ad";
-			}
-			if (h->assemble && !h->disassemble) {
-				feat = "a_";
-			}
-			if (!h->assemble && h->disassemble) {
-				feat = "_d";
-			}
-#else
 			feat = "_d";
-#endif
 			feat2 = has_esil (core, h->name);
 			if (fmt == 'q') {
 				r_cons_println (h->name);

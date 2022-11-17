@@ -2,8 +2,6 @@
 
 #include <r_core.h>
 
-static ut64 getnum(RAsm *a, const char *s);
-
 #define ENCODING_SHIFT 0
 #define OPTYPE_SHIFT   6
 #define REGMASK_SHIFT  16
@@ -4669,6 +4667,16 @@ static bool is_st_register(const char *token) {
 	return false;
 }
 
+static ut64 getnum(RAsm *a, const char *s) {
+	if (!s) {
+		return 0;
+	}
+	if (*s == '$') {
+		s++;
+	}
+	return r_num_math (a->num, s);
+}
+
 /**
  * Get the register at position pos in str. Increase pos afterwards.
  */
@@ -5098,16 +5106,6 @@ static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
 		out->operands_count++;
 	}
 	return 0;
-}
-
-static ut64 getnum(RAsm *a, const char *s) {
-	if (!s) {
-		return 0;
-	}
-	if (*s == '$') {
-		s++;
-	}
-	return r_num_math (a->num, s);
 }
 
 static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
