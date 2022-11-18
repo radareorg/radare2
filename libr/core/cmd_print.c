@@ -83,6 +83,7 @@ static const char *help_msg_pc[] = {
 	"pcg", "", "Golang",
 	"pcS", "", "shellscript that reconstructs the bin",
 	"pcs", "", "string",
+	"pcn", "", "space separated list of numbers",
 	"pcv", "", "JaVa",
 	"pcV", "", "V (vlang.io)",
 	"pcw", "", "C words (4 byte)",
@@ -7024,25 +7025,25 @@ static int cmd_print(void *data, const char *input) {
 			cmd_pCd (core, "");
 			break;
 		case ' ':
-		case 'd':
+		case 'd': // "pCd"
 			cmd_pCd (core, input + 2);
 			break;
-		case 'D':
+		case 'D': // "pCD"
 			cmd_pCD (core, input + 2);
 			break;
-		case 'a':
+		case 'a': // "pCa"
 			cmd_pCx (core, input + 2, "pxa");
 			break;
-		case 'A':
+		case 'A': // pCA"
 			cmd_pCx (core, input + 2, "pxA");
 			break;
-		case 'x':
+		case 'x': // "pCx"
 			cmd_pCx (core, input + 2, "px");
 			break;
-		case 'w':
+		case 'w': // "pCw"
 			cmd_pCx (core, input + 2, "pxw");
 			break;
-		case 'c':
+		case 'c': // "pCc"
 			cmd_pCx (core, input + 2, "pc");
 			break;
 		default:

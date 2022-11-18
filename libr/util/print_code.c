@@ -228,6 +228,14 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		p->cb_printf ("\", 'base64');\n");
 		free (out);
 	} break;
+	case 'n': // "pcn"
+		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+			r_print_cursor (p, i, 1, 1);
+			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? " ": "");
+			r_print_cursor (p, i, 1, 0);
+		}
+		p->cb_printf ("\n");
+		break;
 	case 'k': // "pck" kotlin
 		p->cb_printf ("val arr = byteArrayOfInts(");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
