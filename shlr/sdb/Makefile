@@ -157,17 +157,18 @@ symstall: install-dirs
 		ln -fs ${PWD}/src/$$a ${DESTDIR}${LIBDIR}/$$a ; done
 	ln -fs ${PWD}/src/sdb.1 ${DESTDIR}${MANDIR}/sdb.1
 	ln -fs ${PWD}/src/sdb ${DESTDIR}${BINDIR}
-	ln -fs ${PWD}/src/sdb.h ${DESTDIR}${INCDIR}/sdb
+	mkdir -p ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/sdb.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/include/sdb/version.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/cdb.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/ht_uu.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/ht_up.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/ht_pp.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/types.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/ls.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/cdb_make.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/buffer.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/config.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/cdb.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/ht_uu.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/ht_up.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/ht_pp.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/types.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/ls.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/cdb_make.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/buffer.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/config.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/bindings/vala/sdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
 	ln -fs ${PWD}/bindings/vala/mcsdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
 ifneq (${HAVE_VALA},)
