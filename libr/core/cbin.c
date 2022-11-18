@@ -1129,12 +1129,21 @@ static void file_lines_free_kv(HtPPKv *kv) {
 static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 	RBinDwarfRow *row;
 	RListIter *iter;
-	if (!r_config_get_i (core->config, "bin.dbginfo")) {
+	if (IS_MODE_JSON (mode)) {
+		pj_a (pj);
+	}
+	if (!r_config_get_b (core->config, "bin.dbginfo")) {
+		if (IS_MODE_JSON (mode)) {
+			pj_end (pj);
+		}
 		return false;
 	}
 	RBinFile *binfile = r_bin_cur (core->bin);
 	RBinPlugin * plugin = r_bin_file_cur_plugin (binfile);
 	if (!binfile) {
+		if (IS_MODE_JSON (mode)) {
+			pj_end (pj);
+		}
 		return false;
 	}
 	RList *list = NULL;
@@ -1146,6 +1155,9 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 		// TODO: complete and speed-up support for dwarf
 		RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (core->bin, mode);
 		if (!da) {
+			if (IS_MODE_JSON (mode)) {
+				pj_end (pj);
+			}
 			return false;
 		}
 		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (da, core->bin, mode);
@@ -1171,6 +1183,9 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 		r_bin_dwarf_free_debug_abbrev (da);
 	}
 	if (!list) {
+		if (IS_MODE_JSON (mode)) {
+			pj_end (pj);
+		}
 		return false;
 	}
 
@@ -1178,9 +1193,6 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 	/* cache file:line contents */
 	HtPP* file_lines = ht_pp_new (NULL, file_lines_free_kv, NULL);
 
-	if (IS_MODE_JSON (mode)) {
-		pj_a (pj);
-	}
 
 	SetP *set = set_p_new ();
 	//TODO we should need to store all this in sdb, or do a filecontentscache in libr/util
@@ -1268,7 +1280,7 @@ static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 				       row->address, row->file, row->line);
 		}
 	}
-	if (IS_MODE_JSON(mode)) {
+	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
 	}
 	set_p_free (set);
@@ -4244,27 +4256,31 @@ static bool bin_resources(RCore *r, PJ *pj, int mode) {
 }
 
 static bool bin_versioninfo(RCore *r, PJ *pj, int mode) {
+	if (IS_MODE_JSON (mode)) {
+		pj_a (pj);
+	}
 	const RBinInfo *info = r_bin_get_info (r->bin);
 	if (!info || !info->rclass) {
 		if (IS_MODE_JSON (mode)) {
-			r_cons_print ("[]");
+			pj_end (pj);
 		}
 		return false;
 	}
-	if (!strncmp ("pe", info->rclass, 2)) {
+	const char *rclass = info->rclass;
+	if (r_str_startswith (rclass, "pe")) {
 		bin_pe_versioninfo (r, pj, mode);
-	} else if (!strncmp ("elf", info->rclass, 3)) {
+	} else if (r_str_startswith (rclass, "elf")) {
 		bin_elf_versioninfo (r, pj, mode);
-	} else if (!strncmp ("mach0", info->rclass, 5)) {
+	} else if (r_str_startswith (rclass, "mach0")) {
 		bin_mach0_versioninfo (r); // TODO
-		if (IS_MODE_JSON (mode)) {
-			r_cons_print ("[]");
-		}
 	} else {
 		if (IS_MODE_JSON (mode)) {
-			r_cons_print ("[]");
+			pj_end (pj);
 		}
 		return false;
+	}
+	if (IS_MODE_JSON (mode)) {
+		pj_end (pj);
 	}
 	return true;
 }
