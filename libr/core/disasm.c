@@ -5512,7 +5512,7 @@ static void ds_end_line_highlight(RDisasmState *ds) {
  *
  * pdu_condition_type is only used if pdu_condition is not NULL
  */
-R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, enum pdu_condition pdu_condition_type, const void *pdu_condition, bool count_bytes, bool json, PJ *pj, RAnalFunction *pdf) {
+R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, enum r_pdu_condition_t pdu_condition_type, const void *pdu_condition, bool count_bytes, bool json, PJ *pj, RAnalFunction *pdf) {
 	RPrint *p = core->print;
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
