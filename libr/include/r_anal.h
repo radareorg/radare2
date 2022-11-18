@@ -834,17 +834,6 @@ R_API RAnalType *r_anal_type_find(RAnal *a, const char* name);
 R_API void r_anal_type_list(RAnal *a, short category, short enabled);
 R_API const char *r_anal_datatype_tostring(RAnalDataType t);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
-R_API bool r_anal_op_nonlinear(int t);
-R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size);
-R_API bool r_anal_op_set_mnemonic(RAnalOp *op, ut64 addr, const char *s);
-R_API const char *r_anal_op_direction_tostring(RAnalOp *op);
-R_API bool r_anal_op_ismemref(int t);
-R_API const char *r_anal_optype_tostring(int t);
-R_API const char *r_anal_optype_index(int idx);
-R_API int r_anal_optype_from_string(const char *type);
-R_API const char *r_anal_op_family_tostring(int n);
-R_API int r_anal_op_family_from_string(const char *f);
-R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
 
@@ -1476,11 +1465,6 @@ R_API R_NULLABLE R_BORROW const char *r_anal_hint_arch_at(RAnal *anal, ut64 addr
 R_API int r_anal_hint_bits_at(RAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr);
 
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr); // accumulate all available hints affecting the given address
-
-/* switch.c APIs */
-R_API RAnalSwitchOp *r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val);
-R_API void r_anal_switch_op_free(RAnalSwitchOp *swop);
-R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp *swop, ut64 addr, ut64 value, ut64 jump);
 
 /* cycles.c */
 R_API RAnalCycleFrame* r_anal_cycle_frame_new(void);

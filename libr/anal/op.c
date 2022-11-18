@@ -4,71 +4,6 @@
 #include <r_util.h>
 #include <r_list.h>
 
-R_API RAnalOp *r_anal_op_new(void) {
-	RAnalOp *op = R_NEW (RAnalOp);
-	r_anal_op_init (op);
-	return op;
-}
-
-R_API RAnalOp *r_anal_op_clone(RAnalOp *op) {
-	RAnalOp *nop = R_NEW0 (RAnalOp);
-	memcpy (nop, op, sizeof (RAnalOp));
-	return nop;
-}
-
-R_API RList *r_anal_op_list_new(void) {
-	RList *list = r_list_new ();
-	if (list) {
-		list->free = &r_anal_op_free;
-	}
-	return list;
-}
-
-R_API void r_anal_op_init(RAnalOp *op) {
-	if (op) {
-		memset (op, 0, sizeof (*op));
-		op->addr = UT64_MAX;
-		op->jump = UT64_MAX;
-		op->fail = UT64_MAX;
-		op->ptr = UT64_MAX;
-		op->refptr = 0;
-		op->val = UT64_MAX;
-		op->disp = UT64_MAX;
-
-		r_vector_init (&op->srcs, sizeof (RAnalValue), NULL, NULL);
-		r_vector_init (&op->dsts, sizeof (RAnalValue), NULL, NULL);
-#if 0
-		r_vector_reserve (&op->srcs, 3);
-		r_vector_reserve (&op->dsts, 1);
-#endif
-	}
-}
-
-R_API void r_anal_op_fini(RAnalOp *op) {
-	if (!op) {
-		return;
-	}
-	// should be a static vector not a pointer
-	r_vector_fini (&op->srcs);
-	r_vector_fini (&op->dsts);
-	r_list_free (op->access);
-	op->access = NULL;
-	R_FREE (op->bytes);
-	r_strbuf_fini (&op->opex);
-	r_strbuf_fini (&op->esil);
-	r_anal_switch_op_free (op->switch_op);
-	op->switch_op = NULL;
-	R_FREE (op->mnemonic);
-}
-
-R_API void r_anal_op_free(void *_op) {
-	if (!_op) {
-		return;
-	}
-	r_anal_op_fini (_op);
-	memset (_op, 0, sizeof (RAnalOp));
-	free (_op);
-}
 
 static int defaultCycles(RAnalOp *op) {
 	switch (op->type) {
@@ -783,26 +718,4 @@ R_API const char *r_anal_op_direction_tostring(RAnalOp *op) {
 		: d == 2 ? "write"
 		: d == 4 ? "exec"
 		: d == 8 ? "ref": "none";
-}
-
-R_API bool r_anal_op_set_mnemonic(RAnalOp *op, ut64 addr, const char *s) {
-	char *news = strdup (s);
-	if (news) {
-		free (op->mnemonic);
-		op->mnemonic = news;
-		op->addr = addr;
-		return true;
-	}
-	return false;
-}
-
-R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size) {
-	if (op) {
-		op->addr = addr;
-		free (op->bytes);
-		op->bytes = r_mem_dup (data, size);
-		op->size = size;
-		return true;
-	}
-	return false;
 }

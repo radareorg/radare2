@@ -20,21 +20,6 @@ static const char *directives[] = {
 
 static const RAsmPlugin * const asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
-static void parseHeap(RParse *p, RStrBuf *s) {
-	char *op_buf_asm = r_strbuf_get (s);
-	size_t len = r_strbuf_length (s);
-	char *out = malloc (64 + (len * 2));
-	if (out) {
-		*out = 0;
-		strcpy (out , op_buf_asm);
-		// XXX we shouldn't pad here because we have to refactor
-		// the RParse API to handle boundaries and chunks properly
-		r_parse_parse (p, op_buf_asm, out);
-		r_strbuf_set (s, out);
-		free (out);
-	}
-}
-
 /* pseudo.c - private api */
 static int r_asm_pseudo_align(RAsmCode *acode, RAsmOp *op, const char *input) {
 	acode->code_align = r_num_math (NULL, input);
@@ -323,6 +308,7 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 		r_list_foreach (a->plugins, iter, h) {
 			if (h->assemble && !strcmp (h->name, name)) {
 				a->acur = h;
+				// a->ecur = r_arch_use (a->arch); // create a new instance for `ecur`
 				return true;
 			}
 		}
@@ -467,10 +453,12 @@ R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 			a->config->big_endian = b ? R_SYS_ENDIAN_BIG: R_SYS_ENDIAN_LITTLE;
 			break;
 		case R_SYS_ENDIAN_LITTLE:
+			a->config->big_endian = false;
 			a->config->endian = R_SYS_ENDIAN_LITTLE;
 			break;
 		case R_SYS_ENDIAN_BIG:
-			a->config->big_endian = R_SYS_ENDIAN_BIG;
+			a->config->big_endian = true;
+			a->config->endian = R_SYS_ENDIAN_BIG;
 			break;
 		default:
 			R_LOG_WARN ("RAsmPlugin doesn't specify endianness");
@@ -564,7 +552,11 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	if (a->ofilter) {
-		parseHeap (a->ofilter, &op->buf_asm);
+		const char *oldtext = r_strbuf_get (&op->buf_asm);
+		char *newtext = r_parse_instruction (a->ofilter, oldtext);
+		if (newtext) {
+			r_strbuf_set (&op->buf_asm, newtext);
+		}
 	}
 	int opsz = (op->size > 0)? R_MAX (0, R_MIN (len, op->size)): 1;
 	r_asm_op_set_buf (op, buf, opsz);
@@ -666,6 +658,17 @@ R_API void r_asm_list_directives(void) {
 	}
 }
 
+R_API RAnalOp *r_asm_assemble2(RAsm *a, const char *str) {
+	RAnalOp *op = r_anal_op_new ();
+	r_anal_op_set_mnemonic (op, a->pc, str);
+	bool res = r_arch_session_encode (a->ecur, op, R_ARCH_SYNTAX_INTEL);
+	if (!res) {
+		r_anal_op_free (op);
+		return NULL;
+	}
+	return op;
+}
+
 // returns instruction size
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	r_return_val_if_fail (a && op && buf, 0);
@@ -743,7 +746,11 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		}
 		ret = op.size;
 		if (a->ofilter) {
-			parseHeap (a->ofilter, &op.buf_asm);
+			const char *oldtext = r_strbuf_get (&op.buf_asm);
+			char *newtext = r_parse_instruction (a->ofilter, oldtext);
+			if (newtext) {
+				r_strbuf_set (&op.buf_asm, newtext);
+			}
 		}
 		r_strbuf_append (buf_asm, r_strbuf_get (&op.buf_asm));
 		r_strbuf_append (buf_asm, "\n");
@@ -854,8 +861,7 @@ static int parse_asm_directive(RAsm *a, RAsmOp *op, RAsmCode *acode, char *ptr_s
 		ret = true; // do nothing, ignored
 	} else if (r_str_startswith (ptr, ".section")) {
 		ret = true; // do nothing, ignored
-	} else if (r_str_startswith (ptr, ".byte ") ||
-			r_str_startswith (ptr, ".int8 ")) {
+	} else if (r_str_startswith (ptr, ".byte ") || r_str_startswith (ptr, ".int8 ")) {
 		ret = r_asm_pseudo_byte (op, ptr + 6);
 	} else if (r_str_startswith (ptr, ".glob")) {
 		// .global .globl

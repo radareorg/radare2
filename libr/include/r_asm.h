@@ -57,11 +57,14 @@ typedef struct {
 
 #define _RAsmPlugin struct r_asm_plugin_t
 typedef struct r_asm_t {
+	RArch *arch;
 	RArchConfig *config;
 	ut64 pc;
 	void *user;
-	_RAsmPlugin *cur; // disassemble .. should be RArchPlugin
-	_RAsmPlugin *acur; // assemble
+	RArchSession *ecur; // encode current
+	RArchSession *dcur; // decode current
+	_RAsmPlugin *cur; // disassemble .. should be RArchPlugin DEPRECATE
+	_RAsmPlugin *acur; // assemble DEPRECATE
 	RList *plugins;
 	RBinBind binb;
 	RAnalBind analb;
@@ -93,6 +96,7 @@ typedef struct r_asm_plugin_t {
 	bool (*fini)(void *user);
 
 	RAsmAssembleCallback assemble;
+	RArchPluginEncodeCallback encode;
 	RAsmModifyCallback modify;
 	char *(*mnemonics)(RAsm *a, int id, bool json);
 	const char *features;

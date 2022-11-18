@@ -5512,7 +5512,7 @@ static void ds_end_line_highlight(RDisasmState *ds) {
  *
  * pdu_condition_type is only used if pdu_condition is not NULL
  */
-R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, enum pdu_condition pdu_condition_type, const void *pdu_condition, bool count_bytes, bool json, PJ *pj, RAnalFunction *pdf) {
+R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, enum r_pdu_condition_t pdu_condition_type, const void *pdu_condition, bool count_bytes, bool json, PJ *pj, RAnalFunction *pdf) {
 	RPrint *p = core->print;
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
@@ -5548,9 +5548,9 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 		/*if (pdu_condition_type == esil) {
 			pdu_condition_esil = (const char *)pdu_condition;
 		} else*/
-		if (pdu_condition_type == instruction) {
+		if (pdu_condition_type == pdu_instruction) {
 			pdu_condition_instruction = (const char *)pdu_condition;
-		} else if (pdu_condition_type == opcode) {
+		} else if (pdu_condition_type == pdu_opcode) {
 			pdu_condition_opcode = (const char *)pdu_condition;
 			opcode_len = strlen (pdu_condition_opcode);
 		}
@@ -6008,13 +6008,13 @@ toro:
 				/*case esil:
 					pdu_condition_met = true;
 					break;*/
-				case instruction:
+				case pdu_instruction:
 					// match full instruction
 					if (!strcmp (pdu_condition_instruction, opstr_nocolor)) {
 						pdu_condition_met = true;
 					}
 					break;
-				case opcode:
+				case pdu_opcode:
 					// opcode must be followed by space or end of string
 					if (!strncmp (pdu_condition_opcode, opstr_nocolor, opcode_len)
 							&& (opstr_nocolor[opcode_len] == ' '
