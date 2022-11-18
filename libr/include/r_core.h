@@ -683,9 +683,9 @@ R_API ut32 r_core_asm_bwdis_len(RCore* core, int* len, ut64* start_addr, ut32 l)
 
 
 enum r_pdu_condition_t {
-	//esil,
-	instruction,
-	opcode
+	//pdu_esil,
+	pdu_instruction,
+	pdu_opcode
 };
 R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, enum r_pdu_condition_t pdu_condition_type, const void *pdu_condition, bool count_bytes, bool json, PJ *pj, RAnalFunction *pdf);
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
