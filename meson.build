@@ -474,12 +474,12 @@ sdb_files = [
   'shlr/sdb/src/num.c',
   'shlr/sdb/src/query.c',
   'shlr/sdb/src/sdb.c',
-  'shlr/sdb/src/sdbht.c',
+  'shlr/sdb/src/ht.c',
   'shlr/sdb/src/util.c',
   'shlr/sdb/src/text.c'
 ]
 
-sdb_inc = [platform_inc, include_directories(join_paths('shlr','sdb','src'))]
+sdb_inc = [platform_inc, include_directories(join_paths('shlr','sdb','include'))]
 
 # XXX we have sdb/meson.build for this!! dont dup
 # Create sdb_version.h
@@ -524,7 +524,7 @@ sdb_dep = declare_dependency(
 
 sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
   include_directories: [
-    include_directories('shlr/sdb/src')
+    include_directories('shlr/sdb/include')
   ],
   implicit_include_directories: false,
   native: true,
