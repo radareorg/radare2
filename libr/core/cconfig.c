@@ -3994,6 +3994,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.cprompt", "", "column visual prompt commands");
 	SETPREF ("cmd.gprompt", "", "graph visual prompt commands");
 	SETPREF ("cmd.hit", "", "run when a search hit is found");
+#if __UNIX__
+	SETPREF ("cmd.usr1", "", "run when SIGUSR1 signal is received");
+	SETPREF ("cmd.usr2", "", "run when SIGUSR2 signal is received");
+#endif
 	SETPREF ("cmd.open", "", "run when file is opened");
 	SETPREF ("cmd.load", "", "run when binary is loaded");
 	SETPREF ("cmd.bbgraph", "", "show the output of this command in the graph basic blocks");
