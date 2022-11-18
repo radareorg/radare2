@@ -15,7 +15,7 @@ endif
 ifeq ($(USE_PIE),1)
 CFLAGS+=-pie
 endif
-CFLAGS:=-I$(LTOP)/include -I$(LTOP)/include/sdb $(CFLAGS)
+CFLAGS:=-I$(LTOP)/include $(CFLAGS)
 
 ifeq (${ANDROID},1)
 LDFLAGS+=-lm

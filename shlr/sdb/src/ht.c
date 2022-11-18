@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2011-2022 - pancake */
 
-#include "sdbht.h"
+#include "sdb/ht.h"
 
 void sdbkv_fini(SdbKv *kv) {
 	free (kv->base.key);

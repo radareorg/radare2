@@ -26,7 +26,7 @@ endif
 endif
 endif
 
-CFLAGS:=-I../../libr/include -I../../libr/include/sdb $(CFLAGS)
+CFLAGS:=-I../../libr/include $(CFLAGS)
 LIBAR=libr_ar.${EXT_AR}
 LDFLAGS+=-L../../libr/util
 LIBS=-lr_util

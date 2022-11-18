@@ -3,7 +3,7 @@ include ../../config-user.mk
 include ../../mk/platform.mk
 include ../../mk/${COMPILER}.mk
 
-CFLAGS:=-I../../libr/include -I../../libr/include/sdb $(CFLAGS)
+CFLAGS:=-I../../libr/include $(CFLAGS)
 CFLAGS+=${PIC_CFLAGS}
 
 LIBAR=libr_winkd.${EXT_AR}

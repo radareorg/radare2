@@ -125,8 +125,8 @@ sdb-host:
 	@echo "HOST SDB"
 	@echo ">>>>>>>>"
 	@echo
-	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
-	$(MAKE) -C sdb/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
+	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/include/sdb/version.h
+	$(MAKE) -C sdb/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='-I$(SHLR)/sdb/include' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/src/.sdb${BUILD_EXT_EXE}
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/sdb$(BUILD_EXT_EXE)
 	rm -f $(SDB_LIBA)
@@ -139,19 +139,21 @@ sdb-target:
 	@echo ">>>>>>>>>>"
 	@echo
 	rm -f src/libsdb.$(EXT_AR)
-	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
-	$(MAKE) -C sdb/src sdb_version.h
+	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o ../include/sdb/version.h
+	$(MAKE) -C sdb/src ../include/sdb/version.h
 ifeq ($(EXT_EXE),.wasm)
-	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED} -DHAVE_MMAN=0" \
+	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CPPFLAGS=-I$(SHLR)/sdb/include \
+		CFLAGS_SHARED="${CFLAGS_SHARED} -DHAVE_MMAN=0" \
 		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS} -DHAVE_MMAN=0' LDFLAGS='${LDFLAGS}' libsdb.$(EXT_AR)
 else
-	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
+	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CPPFLAGS=-I$(SHLR)/sdb/include \
+		CFLAGS_SHARED="${CFLAGS_SHARED}" \
 		CC="${CC}" AR="${AR}" ARCH=undefined LDFLAGS='${LDFLAGS}' libsdb.$(EXT_AR)
 endif
 	$(RANLIB) sdb/src/libsdb.$(EXT_AR)
 
 .PHONY: sdb-sync sync-sdb sdbclean sdb-native sdb-target
-SDB_F=README.md config.mk src Makefile meson.build wasi.mk wasi.sh
+SDB_F=README.md config.mk src include Makefile meson.build wasi.mk wasi.sh
 SDB_SYNCFILES=$(addprefix sdb.vc/,${SDB_F})
 I=../libr/include
 
@@ -175,8 +177,8 @@ sdb-sync sync-sdb:
 	mkdir -p sdb
 	cp -rf ${SDB_SYNCFILES} sdb
 	rm -rf sdb.vc
-	rm -f src/sdb_version.h
-	$(MAKE) -C sdb src/sdb_version.h
+	rm -f include/sdb/version.h
+	$(MAKE) -C sdb include/sdb/version.h
 	mkdir -p sdb/test sdb/memcache
 	sed -e 's,HAVE_VALA=,HAVE_VALA=#,' sdb/config.mk > .t
 	mv .t sdb/config.mk

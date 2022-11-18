@@ -1,7 +1,7 @@
 /* sdb - MIT - Copyright 2018-2022 - ret2libc, pancake */
 
-#include "sdb.h"
-#include "ht_pu.h"
+#include "sdb/sdb.h"
+#include "sdb/ht_pu.h"
 #include "ht.inc"
 
 static void free_kv_key(HT_(Kv) *kv) {

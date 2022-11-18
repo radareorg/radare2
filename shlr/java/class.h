@@ -10,7 +10,7 @@
 #define U(x) x
 #include <r_list.h>
 #include <r_bin.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 
 #if defined(_MSC_VER) && !defined(R_API_BIN_ONLY)
 #undef R_API

@@ -3,7 +3,7 @@
 #include <r_cons.h>
 #include <r_util/r_print.h>
 #include <r_util/r_json.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 
 #define I(x) r_cons_singleton ()->x
 

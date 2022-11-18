@@ -12,7 +12,7 @@
 /* public headers */
 #include <r_util.h>
 #include <r_types.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 
 
 /* private headers */

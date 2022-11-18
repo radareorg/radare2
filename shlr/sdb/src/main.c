@@ -8,7 +8,7 @@
 #if USE_DLSYSTEM
 #include <dlfcn.h>
 #endif
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 typedef enum {
 	text,
@@ -548,7 +548,9 @@ static int insertkeys(Sdb *db, const char **args, int nargs, int mode) {
 		for (i = 0; i < nargs; i++) {
 			switch (mode) {
 			case '-':
-				must_save |= sdb_query (db, args[i]);
+				if (sdb_query (db, args[i])) {
+					must_save = true;
+				}
 				break;
 			case '=':
 				if (strchr (args[i], '=')) {
@@ -1011,18 +1013,22 @@ int main(int argc, const char **argv) {
 			int kvs = mo->db0 + 2;
 			if (mo->argi + 2 < mo->argc) {
 				for (i = mo->argi + 2; i < argc; i++) {
-					save |= sdb_query (s, mo->argv[i]);
+					if (sdb_query (s, mo->argv[i])) {
+						save = true;
+					}
 					if (mo->format) {
 						fflush (stdout);
 						ret = write_null ();
 					}
 				}
 			} else {
-				if (kvs < argc) {
-					save |= insertkeys (s, argv + mo->argi + 2, argc - kvs, '-');
+				if (kvs < argc && insertkeys (s, argv + mo->argi + 2, argc - kvs, '-')) {
+					save = true;
 				}
 				for (; (line = slurp (stdin, NULL));) {
-					save |= sdb_query (s, line);
+					if (sdb_query (s, line)) {
+						save = true;
+					}
 					if (mo->format) {
 						fflush (stdout);
 						ret = write_null ();
@@ -1050,7 +1056,9 @@ int main(int argc, const char **argv) {
 		sdb_config (s, options);
 		if (mo->argi + 1 < mo->argc) {
 			for (i = mo->db0 + 1; i < argc; i++) {
-				save |= sdb_query (s, mo->argv[i]);
+				if (sdb_query (s, mo->argv[i])) {
+					save = true;
+				}
 				if (mo->format) {
 					fflush (stdout);
 					ret = write_null ();

@@ -2,7 +2,7 @@
 
 #define R_LOG_ORIGIN "cmdapi"
 #include <r_core.h>
-#include "ht_pp.h"
+#include <sdb/ht_pp.h>
 
 #define NCMDS (sizeof (cmd->cmds) / sizeof (*cmd->cmds))
 

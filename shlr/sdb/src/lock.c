@@ -1,7 +1,7 @@
 /* sdb - MIT - Copyright 2012-2022 - pancake */
 
 #include <fcntl.h>
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 SDB_API bool sdb_lock_file(const char *f, char *buf, size_t buf_size) {
 	size_t len;

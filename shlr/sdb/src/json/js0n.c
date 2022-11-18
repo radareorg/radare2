@@ -3,7 +3,7 @@
 
 // opportunity to further optimize would be having different jump tables for higher depths
 
-#include "rangstr.h"
+#include "sdb/rangstr.h"
 
 #define PUSH(i) if(depth == 1) prev = *out++ = ((cur+i) - js)
 #define CAP(i) if(depth == 1) prev = *out++ = ((cur+i) - (js + prev) + 1)

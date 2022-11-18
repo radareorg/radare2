@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2011-2022 - pancake */
 
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 SDB_API void sdb_ns_lock(Sdb *s, int lock, int depth) {
 	SdbListIter *it;

@@ -1,1 +1,1 @@
-CFLAGS+=-I$(SHLR)/sdb/src
+CFLAGS+=-I$(SHLR)/sdb/include

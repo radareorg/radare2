@@ -19,7 +19,7 @@ struct r_reg_t;
 
 #include <r_reg.h>
 #include <r_io.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 
 enum {
 	R_ARCH_SYNTAX_NONE = 0,

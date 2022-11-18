@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2011-2016 - pancake */
 
-#include "sdb.h"
+#include "sdb/sdb.h"
 #include <fcntl.h>
 #if __UNIX__ || __MINGW32__
 #include <unistd.h>

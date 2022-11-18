@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <ht_uu.h>
+#include <sdb/ht_uu.h>
 #include "cs_version.h"
 #include "../arch/arm/asm-arm.h"
 

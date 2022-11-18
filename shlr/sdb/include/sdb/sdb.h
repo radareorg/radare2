@@ -11,12 +11,13 @@ extern "C" {
 #endif
 
 #include "types.h"
-#include "sdbht.h"
+#include "ht.h"
 #include "ls.h"
 #include "dict.h"
 #include "cdb.h"
 #include "cdb_make.h"
-#include "sdb_version.h"
+#include "version.h"
+#include "rangstr.h"
 
 /* Key value sizes */
 #define SDB_MIN_VALUE 1
@@ -281,7 +282,7 @@ SDB_API ut32 sdb_hash_len(const char *key, ut32 *len);
 SDB_API ut8 sdb_hash_byte(const char *s);
 
 /* json api */
-// SDB_API int sdb_js0n(const unsigned char *js, RangstrType len, RangstrType *out);
+SDB_API int sdb_js0n(const unsigned char *js, RangstrType len, RangstrType *out);
 SDB_API bool sdb_isjson(const char *k);
 SDB_API char *sdb_json_get_str (const char *json, const char *path);
 SDB_API bool sdb_json_get_bool(const char *json, const char *path);

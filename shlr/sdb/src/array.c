@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2011-2022 - pancake */
 
-#include "sdb.h"
+#include "sdb/sdb.h"
 #include <limits.h>
 
 // TODO: Push should always prepend. do not make this configurable

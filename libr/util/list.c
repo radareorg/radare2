@@ -2,7 +2,7 @@
 
 #define _R_LIST_C_
 #include "r_util.h"
-#include <set.h>
+#include <sdb/set.h>
 
 #define MERGE_LIMIT 24
 

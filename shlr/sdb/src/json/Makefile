@@ -8,6 +8,7 @@ CFLAGS+=-Wall -g
 BIN=a.out
 OBJ=rangstr.o path.o js0n.o api.o main.o
 OBJ+=../libsdb.a
+CFLAGS+=-I../../include
 
 all: ${BIN}
 

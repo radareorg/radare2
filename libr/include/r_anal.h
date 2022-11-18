@@ -17,10 +17,10 @@
 #include <r_util.h>
 #include <r_bind.h>
 #include <r_syscall.h>
-#include <set.h>
 #include <r_flag.h>
 #include <r_bin.h>
 #include <r_codemeta.h>
+#include <sdb/set.h>
 
 #ifdef __cplusplus
 extern "C" {

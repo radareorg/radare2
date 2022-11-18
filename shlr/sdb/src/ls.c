@@ -1,7 +1,7 @@
 /* sdb - MIT - Copyright 2007-2022 - pancake, alvaro */
 
 #include <string.h>
-#include "ls.h"
+#include "sdb/ls.h"
 
 #if 0
   1 128= 7s / 32
