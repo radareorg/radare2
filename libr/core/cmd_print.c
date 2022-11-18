@@ -1190,7 +1190,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			break;
 		}
 
-		ret = r_core_print_disasm (core, addr, buf, len, 0, opcode, "call", false,
+		ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_opcode, "call", false,
 				input[1] == 'j', NULL, NULL);
 		break;
 	/*case 'e': // "pdue"
@@ -1207,7 +1207,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdui", true);
 			break;
 		}
-		ret = r_core_print_disasm (core, addr, buf, len, 0, instruction, arg, false,
+		ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_instruction, arg, false,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case 'o': // "pduo"
@@ -1215,7 +1215,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pduo", true);
 			break;
 		}
-		ret = r_core_print_disasm (core, addr, buf, len, 0, opcode, arg, false,
+		ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_opcode, arg, false,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case 's': // "pdus"
@@ -1223,7 +1223,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdus", true);
 			break;
 		}
-		ret = r_core_print_disasm (core, addr, buf, len, 0, instruction, "syscall", false,
+		ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_instruction, "syscall", false,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case '?': // "pdu?"
