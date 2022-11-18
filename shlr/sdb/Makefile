@@ -153,8 +153,7 @@ ifneq (${HAVE_VALA},)
 endif
 
 symstall: install-dirs
-	cd src ; for a in libsdb.* ; do \
-		ln -fs ${PWD}/src/$$a ${DESTDIR}${LIBDIR}/$$a ; done
+	cd src && for a in libsdb.* ; do ln -fs ${PWD}/src/$$a ${DESTDIR}${LIBDIR}/$$a ; done
 	ln -fs ${PWD}/src/sdb.1 ${DESTDIR}${MANDIR}/sdb.1
 	ln -fs ${PWD}/src/sdb ${DESTDIR}${BINDIR}
 	mkdir -p ${DESTDIR}${INCDIR}/sdb

@@ -408,6 +408,9 @@ osx-pkg:
 quality:
 	./sys/shellcheck.sh
 
+ctags:
+	@ctags **/*.c **/*.h > /dev/null
+
 menu nconfig:
 	./sys/menu.sh || true
 
