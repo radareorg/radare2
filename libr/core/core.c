@@ -2993,6 +2993,7 @@ static bool cbcore(void *user, int type, const char *origin, const char *msg) {
 	return false;
 }
 
+#if __UNIX__
 static R_TH_LOCAL RCore *Gcore = NULL;
 
 static void cmdusr1(int p) {
@@ -3010,11 +3011,14 @@ static void cmdusr2(int p) {
 		r_cons_flush ();
 	}
 }
+#endif
 
 R_API bool r_core_init(RCore *core) {
+#if __UNIX__
 	Gcore = core;
 	r_sys_signal (SIGUSR1, cmdusr1);
 	r_sys_signal (SIGUSR2, cmdusr2);
+#endif
 	r_w32_init ();
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
