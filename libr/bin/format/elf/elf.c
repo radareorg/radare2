@@ -1897,7 +1897,11 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	} else {
 		/* non-thumb entry points */
 		if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
-			return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x34]) & ~1);
+			if (buf[0x40 + 2] == 0xff && buf[0x40 + 3] == 0xeb) {
+				// eprintf ("custom\n");
+			} else if (!memcmp (buf + 0x28 + 2, "\xff\xeb", 2)) {
+				return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x34]) & ~1);
+			}
 		}
 		if (!memcmp (buf, "\x24\xc0\x9f\xe5\x00\xb0\xa0\xe3", 8)) {
 			return Elf_(r_bin_elf_v2p) (bin, r_read_le32 (&buf[0x30]) & ~1);
