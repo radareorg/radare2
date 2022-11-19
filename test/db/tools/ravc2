@@ -78,3 +78,17 @@ message=hello world!
 ****
 EOF
 RUN
+
+NAME=ravc2 init git
+CMDS=<<EOF
+mkdir ravc2_init_git_test
+cd ravc2_init_git_test
+!!ravc2 init git
+ls
+cd ../
+rmrf ravc2_init_git_test
+EOF
+EXPECT=<<EOF
+                ./                 ../               .git/
+EOF
+RUN
