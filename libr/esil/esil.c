@@ -3345,7 +3345,7 @@ static bool esil_float_ceil(REsil *esil) {
 				ret = esil_pushnum_float (esil, ceil(s));
 			}
 		} else {
-			ERR ("esil_float_ceil: invalid parameters.");
+			ERR ("esil_float_ceil: invalid parameters");
 		}
 		free (src);
 	} else {
