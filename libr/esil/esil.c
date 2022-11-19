@@ -3501,7 +3501,7 @@ static bool runword(REsil *esil, const char *word) {
 			free (esil->current_opstr);
 			esil->current_opstr = NULL;
 			if (!ret) {
-				R_LOG_DEBUG ("%s returned 0\n", word);
+				R_LOG_DEBUG ("%s returned 0", word);
 			}
 			return ret;
 		}
