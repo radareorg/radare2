@@ -2,7 +2,7 @@
 
 #include <r_hash.h>
 #include <r_util.h>
-#include <ht_uu.h>
+#include <sdb/ht_uu.h>
 #include "pe.h"
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452

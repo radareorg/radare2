@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #include <r_util.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 
 typedef struct r_vc_blob_t {
 	char *fname;

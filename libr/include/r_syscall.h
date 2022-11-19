@@ -9,7 +9,7 @@ extern "C" {
 
 #include <r_types.h>
 #include <r_util.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 
 R_LIB_VERSION_HEADER (r_syscall);
 

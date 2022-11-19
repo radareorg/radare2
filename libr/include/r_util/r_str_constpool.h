@@ -2,7 +2,7 @@
 #define R_STR_CONSTPOOL_H
 
 #include <r_types.h>
-#include <sdbht.h>
+#include <sdb/ht.h>
 
 #include <stdbool.h>
 

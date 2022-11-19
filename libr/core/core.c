@@ -4171,7 +4171,8 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 }
 
 R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd, int type, bool lock) {
-	if (!parent || !cmd || type < 0 || type >= R_CORE_AUTOCMPLT_END) {
+	r_return_val_if_fail (parent && cmd, NULL);
+	if (type < 0 || type >= R_CORE_AUTOCMPLT_END) {
 		return NULL;
 	}
 	RCoreAutocomplete *autocmpl = R_NEW0 (RCoreAutocomplete);

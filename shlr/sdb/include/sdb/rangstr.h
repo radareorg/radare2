@@ -2,7 +2,7 @@
 #define _INCLUDE_RANGSTR_H_
 
 #include <sys/types.h>
-#include "../types.h"
+#include "sdb/types.h"
 
 #define RangstrType unsigned int
 
@@ -13,7 +13,7 @@ typedef struct {
 	const char *p;
 } Rangstr;
 
-#if 0
+#if 1
 SDB_IPI void rangstr_print (Rangstr *s);
 SDB_IPI Rangstr rangstr_new (const char *s);
 SDB_IPI Rangstr rangstr_null(void);

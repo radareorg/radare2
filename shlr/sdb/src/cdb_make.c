@@ -1,8 +1,8 @@
 /* Public domain. */
 
-#include "sdb.h"
-#include "cdb.h"
-#include "cdb_make.h"
+#include "sdb/sdb.h"
+#include "sdb/cdb.h"
+#include "sdb/cdb_make.h"
 
 #define ALIGNMENT sizeof (void*)
 

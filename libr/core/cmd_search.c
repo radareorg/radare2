@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2010-2022 - pancake */
 
 #include <r_core.h>
-#include <ht_uu.h>
+#include <sdb/ht_uu.h>
 #include "cmd_search_rop.c"
 
 static int cmd_search(void *data, const char *input);

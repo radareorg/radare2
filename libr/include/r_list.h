@@ -2,7 +2,7 @@
 #define R2_LIST_H
 
 #include <r_types.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

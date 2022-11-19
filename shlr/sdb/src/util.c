@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2011-2022 - pancake */
 
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 #define FORCE_COLLISION 0
 

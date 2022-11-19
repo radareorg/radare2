@@ -155,7 +155,7 @@ windist:
 	mkdir -p "${WINDIST}/include/libr/r_util"
 	mkdir -p "${WINDIST}/include/libr/r_anal"
 	@echo "${C}[WINDIST] Copying development files${R}"
-	cp -f shlr/sdb/src/*.h "${WINDIST}/include/libr/sdb/"
+	cp -f shlr/sdb/include/*.h "${WINDIST}/include/libr/sdb/"
 	cp -f libr/include/r_util/*.h "${WINDIST}/include/libr/r_util/"
 	cp -f libr/include/r_anal/*.h "${WINDIST}/include/libr/r_anal/"
 	cp -f libr/include/*.h "${WINDIST}/include/libr"
@@ -232,10 +232,8 @@ install: install-doc install-man install-www install-pkgconfig
 	$(MAKE) -C binr install
 	$(MAKE) -C shlr install
 	for DIR in ${DATADIRS} ; do $(MAKE) -C "$$DIR" install ; done
-	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
-		rm -f last ; ln -fs $(VERSION) last
-	cd "$(DESTDIR)$(DATADIR)/radare2/" ;\
-		rm -f last ; ln -fs $(VERSION) last
+	cd "$(DESTDIR)$(LIBDIR)/radare2/" && rm -f last && ln -fs $(VERSION) last
+	cd "$(DESTDIR)$(DATADIR)/radare2/" && rm -f last && ln -fs $(VERSION) last
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${BINDIR}"
@@ -409,6 +407,9 @@ osx-pkg:
 
 quality:
 	./sys/shellcheck.sh
+
+ctags:
+	@ctags **/*.c **/*.h > /dev/null
 
 menu nconfig:
 	./sys/menu.sh || true

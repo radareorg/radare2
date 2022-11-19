@@ -8,7 +8,7 @@
 #undef HT_TYPE
 #define HT_TYPE 3
 #include "ht_inc.h"
-#include "sdbht.h"
+#include "ht.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -2,7 +2,7 @@ BINDIR := bin
 BINS=$(patsubst %.c,$(BINDIR)/%,$(wildcard *.c))
 LDFLAGS+=$(shell pkg-config --libs r_core)
 CFLAGS+=-I../../libr/include
-CFLAGS+=-I../../shlr/sdb/src
+CFLAGS+=-I../../shlr/sdb/include
 CFLAGS+=-g
 ifeq ($(ASAN),1)
 	ASAN_LD_PRELOAD=LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
@@ -24,6 +24,6 @@ run: $(BINS)
 
 clean:
 	rm -f $(BINS)
-	rm -fd "$(BINDIR)"
+	-rm -fd "$(BINDIR)"
 
 .PHONY: all

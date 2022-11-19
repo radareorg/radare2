@@ -2,7 +2,6 @@
 
 #include <r_anal.h>
 #include <r_hash.h>
-#include <ht_uu.h>
 
 #define unwrap(rbnode) container_of (rbnode, RAnalBlock, _rb)
 

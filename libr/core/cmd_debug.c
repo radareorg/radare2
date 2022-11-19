@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 #include <r_debug.h>
-#include <sdb.h>
+#include <sdb/sdb.h>
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%"PFMT64u
 #ifndef SIGKILL

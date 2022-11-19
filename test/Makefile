@@ -52,6 +52,7 @@ yara: bins
 	${RUNTEST} db/extras/cmd/yara
 
 clean:
+	$(MAKE) -C unit clean
 	rm -rf tmp
 
 rc:

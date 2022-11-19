@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 typedef struct {
 	char *buf;

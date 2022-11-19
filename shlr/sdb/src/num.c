@@ -1,7 +1,6 @@
-/* sdb - MIT - Copyright 2011-2016 - pancake */
+/* sdb - MIT - Copyright 2011-2022 - pancake */
 
-#include "sdb.h"
-#include "types.h"
+#include "sdb/sdb.h"
 
 // check if key exists and if it's a number.. rename?
 SDB_API bool sdb_num_exists (Sdb *s, const char *key) {

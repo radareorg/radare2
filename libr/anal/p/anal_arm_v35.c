@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include <ht_uu.h>
+#include <sdb/ht_uu.h>
 #include <r_util/r_assert.h>
 #include "encodings_dec.h"
 #include "encodings_fmt.h"

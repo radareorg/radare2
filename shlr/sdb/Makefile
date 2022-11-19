@@ -10,7 +10,7 @@ CFLAGS_ASAN=$(addprefix -fsanitize=,$(ASANOPTS))
 CFLAGS_LEAK=$(addprefix -fsanitize=,$(LEAKOPTS))
 MKDIR=mkdir
 
-all: pkgconfig src/sdb_version.h
+all: pkgconfig include/sdb/version.h
 	${MAKE} -C src
 ifeq ($(BUILD_MEMCACHE),1)
 	${MAKE} -C memcache
@@ -36,7 +36,7 @@ o xo xoxo ox:
 	g++ -o sdb src/*.c  -I src/
 
 wasi wasm: $(WASI_SDK)
-	${MAKE} src/sdb_version.h
+	${MAKE} include/sdb/version.h
 	CC=$(WASI_CC) CFLAGS="$(WASI_CFLAGS)" $(MAKE) CC=$(WASI_CC) -C src all WITHPIC=0
 	mv src/sdb src/sdb.wasm
 	file src/sdb.wasm
@@ -45,34 +45,35 @@ test:
 	${MAKE} -C test
 
 asan:
-	$(MAKE) src/sdb_version.h
+	$(MAKE) include/sdb/version.h
 	CC=gcc LDFLAGS="$(CFLAGS_ASAN)" CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C src all
 asantest:
 	export ASAN_OPTIONS=detect_leaks=0 ; \
 	CC=gcc CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C test
 
 leak:
-	$(MAKE) src/sdb_version.h
+	$(MAKE) include/sdb/version.h
 	CC=gcc LDFLAGS="$(CFLAGS_LEAK)" CFLAGS="$(CFLAGS_LEAK)" $(MAKE) -C src all
+
 leaktest:
-	CC=gcc CFLAGS="$(CFLAGS_LEAK)" $(MAKE) -C test
+	CC=gcc CFLAGS="$(CFLAGS_LEAK)" LDFLAGS="$(CFLAGS_LEAK)" $(MAKE) -C test
 
 pkgconfig:
 	[ -d pkgconfig ] && ${MAKE} -C pkgconfig || true
 
-src/sdb_version.h:
-	echo '#define SDB_VERSION "${SDBVER}"' > src/sdb_version.h
+include/sdb/version.h:
+	echo '#define SDB_VERSION "${SDBVER}"' > include/sdb/version.h
 
 CFILES=cdb.c buffer.c cdb_make.c ls.c ht.c sdb.c num.c base64.c text.c
 CFILES+=json.c ns.c lock.c util.c disk.c query.c array.c fmt.c main.c
 EMCCFLAGS=-O2 -s EXPORTED_FUNCTIONS="['_sdb_querys','_sdb_new0']"
 #EMCCFLAGS+=--embed-file sdb.data
 
-sdb.js: src/sdb_version.h
+sdb.js: include/sdb/version.h
 	cd src ; emcc ${EMCCFLAGS} -I. -o ../sdb.js ${CFILES}
 
 clean:
-	rm -f src/sdb_version.h
+	rm -f include/sdb/version.h
 	$(MAKE) -C src clean
 	$(MAKE) -C memcache clean
 	$(MAKE) -C test clean
@@ -101,9 +102,9 @@ install-dirs:
 	$(INSTALL_DIR) ${DESTDIR}${MANDIR} ${DESTDIR}${LIBDIR}/pkgconfig ${DESTDIR}${BINDIR} 
 	$(INSTALL_DIR) ${DESTDIR}${DATADIR}/vala/vapi ${DESTDIR}${INCDIR}/sdb
 
-INCFILES=src/sdb.h src/sdb_version.h src/cdb.h src/ht_uu.h src/ht_up.h src/ht_pp.h src/types.h
-INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h src/sdbht.h
-INCFILES+=src/dict.h src/set.h src/ht_inc.h
+INCFLS=sdb.h version.h cdb.h ht_uu.h ht_up.h ht_pp.h types.h
+INCFLS+=ls.h cdb_make.h buffer.h config.h ht.h dict.h set.h ht_inc.h
+INCFILES=$(addprefix include/sdb/,$(INCFLS))
 
 install: pkgconfig install-dirs
 	$(INSTALL_MAN) src/sdb.1 ${DESTDIR}${MANDIR}
@@ -115,8 +116,9 @@ install: pkgconfig install-dirs
 	  ln -s libsdb$(SOVER) libsdb$(EXT_SO) ; \
 	  ln -s libsdb$(SOVER) libsdb$(EXT_SO).$(SOVERSION) ; \
 	fi
-	$(INSTALL_DATA) $(INCFILES) ${DESTDIR}${INCDIR}/sdb
-	$(INSTALL_PROGRAM) src/sdb ${DESTDIR}${BINDIR}
+	mkdir -p $(DESTDIR)/$(INCDIR)/sdb
+	$(INSTALL_DATA) $(INCFILES) $(DESTDIR)$(INCDIR)/sdb
+	$(INSTALL_PROGRAM) src/sdb $(DESTDIR)$(BINDIR)
 ifeq ($(BUILD_MEMCACHE),1)
 	$(INSTALL_DATA) memcache/libmcsdb.a ${DESTDIR}${LIBDIR}
 	$(INSTALL_DATA) memcache/mcsdb.h ${DESTDIR}${INCDIR}/sdb
@@ -151,21 +153,21 @@ ifneq (${HAVE_VALA},)
 endif
 
 symstall: install-dirs
-	cd src ; for a in libsdb.* ; do \
-		ln -fs ${PWD}/src/$$a ${DESTDIR}${LIBDIR}/$$a ; done
+	cd src && for a in libsdb.* ; do ln -fs ${PWD}/src/$$a ${DESTDIR}${LIBDIR}/$$a ; done
 	ln -fs ${PWD}/src/sdb.1 ${DESTDIR}${MANDIR}/sdb.1
 	ln -fs ${PWD}/src/sdb ${DESTDIR}${BINDIR}
-	ln -fs ${PWD}/src/sdb.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/sdb_version.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/cdb.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/ht_uu.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/ht_up.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/ht_pp.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/types.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/ls.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/cdb_make.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/buffer.h ${DESTDIR}${INCDIR}/sdb
-	ln -fs ${PWD}/src/config.h ${DESTDIR}${INCDIR}/sdb
+	mkdir -p ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/sdb.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/version.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/cdb.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/ht_uu.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/ht_up.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/ht_pp.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/types.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/ls.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/cdb_make.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/buffer.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/include/sdb/config.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/bindings/vala/sdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
 	ln -fs ${PWD}/bindings/vala/mcsdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
 ifneq (${HAVE_VALA},)
@@ -183,7 +185,7 @@ WCP=i386-mingw32
 # mxe
 #WCP=i686-pc-mingw32
 
-w32: src/sdb_version.h
+w32: include/sdb/version.h
 	cd src ; \
 	${MAKE} OS=w32 WCP=${WCP} CC=${WCP}-gcc AR=${WCP}-ar RANLIB=${WCP}-ranlib sdb.exe
 
@@ -191,7 +193,8 @@ w32: src/sdb_version.h
 IOS_CC=$(shell xcrun --sdk iphoneos --find clang) -isysroot $(shell xcrun --sdk iphoneos --show-sdk-path) -arch armv7 -arch arm64
 IOS_AR=$(shell xcrun --sdk iphoneos --find ar)
 IOS_RL=$(shell xcrun --sdk iphoneos --find ranlib)
-ios: src/sdb_version.h
+
+ios: include/sdb/version.h
 	${MAKE} CFLAGS=-DUSE_DLSYSTEM=1 OS=Darwin ARCH=arm CC="${IOS_CC}" AR="${IOS_AR}" RANLIB="${IOS_RL}" HAVE_VALA= all
 
 v version:

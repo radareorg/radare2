@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "rangstr.h"
+#include "sdb/rangstr.h"
 
 SDB_IPI Rangstr rangstr_null(void) {
 	Rangstr rs = {0, 0, 0, 0, 0};

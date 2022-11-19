@@ -474,13 +474,14 @@ sdb_files = [
   'shlr/sdb/src/num.c',
   'shlr/sdb/src/query.c',
   'shlr/sdb/src/sdb.c',
-  'shlr/sdb/src/sdbht.c',
+  'shlr/sdb/src/ht.c',
   'shlr/sdb/src/util.c',
   'shlr/sdb/src/text.c'
 ]
 
-sdb_inc = [platform_inc, include_directories(join_paths('shlr','sdb','src'))]
+sdb_inc = [platform_inc, include_directories(join_paths('shlr','sdb','include'))]
 
+# XXX we have sdb/meson.build for this!! dont dup
 # Create sdb_version.h
 r = run_command(py3_exe, join_paths('sys','sdb_version.py'), join_paths('shlr','sdb','config.mk'))
 if r.returncode() == 0
@@ -488,25 +489,25 @@ if r.returncode() == 0
 else
   sdb_version = 'unknown'
 endif
-run_command(py3_exe, '-c', 'with open("shlr/sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
+run_command(py3_exe, '-c', 'with open("shlr/sdb/include/sdb/version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
 
 sdb_inc_files = [
-  'shlr/sdb/src/buffer.h',
-  'shlr/sdb/src/cdb.h',
-  'shlr/sdb/src/set.h',
-  'shlr/sdb/src/cdb_make.h',
-  'shlr/sdb/src/config.h',
-  'shlr/sdb/src/dict.h',
-  'shlr/sdb/src/ht_inc.h',
-  'shlr/sdb/src/ht_pp.h',
-  'shlr/sdb/src/ht_up.h',
-  'shlr/sdb/src/ht_uu.h',
-  'shlr/sdb/src/ht_pu.h',
-  'shlr/sdb/src/ls.h',
-  'shlr/sdb/src/sdb.h',
-  'shlr/sdb/src/sdbht.h',
-  'shlr/sdb/src/sdb_version.h',
-  'shlr/sdb/src/types.h'
+  'shlr/sdb/include/sdb/buffer.h',
+  'shlr/sdb/include/sdb/cdb.h',
+  'shlr/sdb/include/sdb/set.h',
+  'shlr/sdb/include/sdb/cdb_make.h',
+  'shlr/sdb/include/sdb/config.h',
+  'shlr/sdb/include/sdb/dict.h',
+  'shlr/sdb/include/sdb/ht_inc.h',
+  'shlr/sdb/include/sdb/ht_pp.h',
+  'shlr/sdb/include/sdb/ht_up.h',
+  'shlr/sdb/include/sdb/ht_uu.h',
+  'shlr/sdb/include/sdb/ht_pu.h',
+  'shlr/sdb/include/sdb/ls.h',
+  'shlr/sdb/include/sdb/sdb.h',
+  'shlr/sdb/include/sdb/ht.h',
+  'shlr/sdb/include/sdb/version.h',
+  'shlr/sdb/include/sdb/types.h'
 ]
 install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
 
@@ -523,7 +524,7 @@ sdb_dep = declare_dependency(
 
 sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
   include_directories: [
-    include_directories('shlr/sdb/src')
+    include_directories('shlr/sdb/include')
   ],
   implicit_include_directories: false,
   native: true,

@@ -9,7 +9,7 @@
 #include <r_cons.h>
 #include "../i/private.h"
 #include "elf/elf.h"
-#include <ht_uu.h>
+#include <sdb/ht_uu.h>
 
 static RBinInfo* info(RBinFile *bf);
 

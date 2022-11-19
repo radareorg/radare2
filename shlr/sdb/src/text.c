@@ -1,6 +1,6 @@
 /* sdb - MIT - Copyright 2020-2022 - pancake, thestr4ng3r */
 
-#include "sdb.h"
+#include "sdb/sdb.h"
 
 #include <fcntl.h>
 #include <limits.h>
